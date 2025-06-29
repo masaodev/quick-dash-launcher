@@ -70,6 +70,7 @@ const App: React.FC = () => {
 
     switch (e.key) {
       case 'Enter':
+        e.stopPropagation();
         if (e.shiftKey && filteredItems[selectedIndex]) {
           await window.electronAPI.openParentFolder(filteredItems[selectedIndex]);
         } else if (filteredItems[selectedIndex]) {
@@ -78,12 +79,14 @@ const App: React.FC = () => {
         break;
       case 'ArrowUp':
         e.preventDefault();
+        e.stopPropagation();
         setSelectedIndex(prev => 
           prev > 0 ? prev - 1 : filteredItems.length - 1
         );
         break;
       case 'ArrowDown':
         e.preventDefault();
+        e.stopPropagation();
         setSelectedIndex(prev => 
           prev < filteredItems.length - 1 ? prev + 1 : 0
         );

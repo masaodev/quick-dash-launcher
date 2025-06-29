@@ -11,7 +11,7 @@ let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 // const store = new Store(); // Reserved for future use
 
-const HOTKEY = 'Ctrl+Alt+Q';
+const HOTKEY = 'Ctrl+Alt+W';
 const CONFIG_FOLDER = path.join(app.getPath('userData'), 'config');
 const ICONS_FOLDER = path.join(CONFIG_FOLDER, 'icons');
 const FAVICONS_FOLDER = path.join(CONFIG_FOLDER, 'favicons');
