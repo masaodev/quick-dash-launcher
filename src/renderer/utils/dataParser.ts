@@ -1,0 +1,106 @@
+import { LauncherItem, DataFile } from '../../common/types';
+
+export function parseDataFiles(dataFiles: DataFile[]): {
+  mainItems: LauncherItem[];
+  tempItems: LauncherItem[];
+} {
+  const mainItems: LauncherItem[] = [];
+  const tempItems: LauncherItem[] = [];
+  const seenPaths = new Set<string>();
+
+  dataFiles.forEach(file => {
+    const lines = file.content.split('\n');
+    const items = file.name === 'tempdata.txt' ? tempItems : mainItems;
+
+    lines.forEach(line => {
+      line = line.trim();
+      
+      // Skip empty lines and comments
+      if (!line || line.startsWith('//')) {
+        return;
+      }
+
+      // Parse directory directive
+      if (line.startsWith('dir,')) {
+        // const dirPath = line.substring(4).trim();
+        // TODO: Implement directory scanning
+        return;
+      }
+
+      const parts = line.split(',').map(p => p.trim());
+      if (parts.length < 2) {
+        return;
+      }
+
+      const [name, itemPath, ...args] = parts;
+      
+      // Skip duplicates
+      if (seenPaths.has(itemPath)) {
+        return;
+      }
+      seenPaths.add(itemPath);
+
+      const item: LauncherItem = {
+        name,
+        path: itemPath,
+        type: detectItemType(itemPath),
+        args: args.length > 0 ? args.join(' ') : undefined,
+      };
+
+      items.push(item);
+    });
+  });
+
+  // Sort items by name
+  mainItems.sort((a, b) => a.name.localeCompare(b.name, 'ja'));
+  tempItems.sort((a, b) => a.name.localeCompare(b.name, 'ja'));
+
+  return { mainItems, tempItems };
+}
+
+function detectItemType(itemPath: string): LauncherItem['type'] {
+  // URLs
+  if (itemPath.includes('://')) {
+    // Check for custom URI schemes
+    const scheme = itemPath.split('://')[0];
+    if (!['http', 'https', 'ftp'].includes(scheme)) {
+      return 'uri';
+    }
+    return 'url';
+  }
+
+  // Shell paths
+  if (itemPath.startsWith('shell:')) {
+    return 'folder';
+  }
+
+  // File extensions
+  const lastDot = itemPath.lastIndexOf('.');
+  const ext = lastDot !== -1 ? itemPath.substring(lastDot).toLowerCase() : '';
+  
+  // Executables
+  if (ext === '.exe' || ext === '.bat' || ext === '.cmd' || ext === '.com') {
+    return 'app';
+  }
+
+  // Check if it's likely a directory
+  if (!ext || itemPath.endsWith('/') || itemPath.endsWith('\\')) {
+    return 'folder';
+  }
+
+  // Default to file
+  return 'file';
+}
+
+export function filterItems(items: LauncherItem[], query: string): LauncherItem[] {
+  if (!query) {
+    return items;
+  }
+
+  const keywords = query.toLowerCase().split(/\s+/).filter(k => k.length > 0);
+
+  return items.filter(item => {
+    const itemText = item.name.toLowerCase();
+    return keywords.every(keyword => itemText.includes(keyword));
+  });
+}
