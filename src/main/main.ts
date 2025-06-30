@@ -3,6 +3,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 // import Store from 'electron-store'; // Reserved for future use
 import { LauncherItem, DataFile } from '../common/types';
+const ws = require('windows-shortcuts');
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
@@ -172,6 +173,54 @@ app.on('will-quit', () => {
   globalShortcut.unregisterAll();
 });
 
+// Function to scan directory for shortcuts
+async function scanDirectoryForShortcuts(dirPath: string): Promise<string[]> {
+  const results: string[] = [];
+  
+  try {
+    const files = fs.readdirSync(dirPath);
+    
+    for (const file of files) {
+      const filePath = path.join(dirPath, file);
+      
+      // Skip directories
+      if (fs.statSync(filePath).isDirectory()) {
+        continue;
+      }
+      
+      // Process .lnk files (Windows shortcuts)
+      if (path.extname(file).toLowerCase() === '.lnk') {
+        try {
+          const shortcut = await new Promise<any>((resolve, reject) => {
+            ws.query(filePath, (err: any, shortcut: any) => {
+              if (err) reject(err);
+              else resolve(shortcut);
+            });
+          });
+          
+          if (shortcut && shortcut.target) {
+            const displayName = path.basename(file, '.lnk');
+            let line = `${displayName},${shortcut.target}`;
+            
+            // Add arguments if present
+            if (shortcut.args && shortcut.args.trim()) {
+              line += `,${shortcut.args}`;
+            }
+            
+            results.push(line);
+          }
+        } catch (error) {
+          console.error(`Error reading shortcut ${filePath}:`, error);
+        }
+      }
+    }
+  } catch (error) {
+    console.error(`Error reading directory ${dirPath}:`, error);
+  }
+  
+  return results;
+}
+
 // IPC handlers
 ipcMain.handle('get-config-folder', () => CONFIG_FOLDER);
 
@@ -182,7 +231,30 @@ ipcMain.handle('load-data-files', async () => {
   for (const fileName of dataFiles) {
     const filePath = path.join(CONFIG_FOLDER, fileName);
     if (fs.existsSync(filePath)) {
-      const content = fs.readFileSync(filePath, 'utf8');
+      let content = fs.readFileSync(filePath, 'utf8');
+      
+      // Process dir directives
+      const lines = content.split('\n');
+      const processedLines: string[] = [];
+      
+      for (const line of lines) {
+        const trimmedLine = line.trim();
+        if (trimmedLine.startsWith('dir,')) {
+          const dirPath = trimmedLine.substring(4).trim();
+          if (fs.existsSync(dirPath) && fs.statSync(dirPath).isDirectory()) {
+            try {
+              const shortcuts = await scanDirectoryForShortcuts(dirPath);
+              processedLines.push(...shortcuts);
+            } catch (error) {
+              console.error(`Error scanning directory ${dirPath}:`, error);
+            }
+          }
+        } else {
+          processedLines.push(line);
+        }
+      }
+      
+      content = processedLines.join('\n');
       files.push({ name: fileName, content });
     }
   }

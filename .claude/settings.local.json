@@ -4,7 +4,10 @@
       "Bash(rm:*)",
       "Bash(node:*)",
       "Bash(find:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "WebFetch(domain:www.electronjs.org)",
+      "WebFetch(domain:github.com)",
+      "Bash(npm run start:*)"
     ],
     "deny": [
       "Bash(npm install:*)",

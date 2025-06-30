@@ -20,10 +20,8 @@ export function parseDataFiles(dataFiles: DataFile[]): {
         return;
       }
 
-      // Parse directory directive
+      // Skip dir directives (already processed in main process)
       if (line.startsWith('dir,')) {
-        // const dirPath = line.substring(4).trim();
-        // TODO: Implement directory scanning
         return;
       }
 
