@@ -36,6 +36,7 @@
     "wait-on": "^8.0.3"
   },
   "dependencies": {
+    "@bitdisaster/exe-icon-extractor": "^1.0.10",
     "electron-store": "^10.1.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

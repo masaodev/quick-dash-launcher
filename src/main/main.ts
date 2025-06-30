@@ -330,13 +330,22 @@ ipcMain.handle('open-data-file', async () => {
 ipcMain.handle('fetch-favicon', async (_event, url: string) => {
   try {
     const domain = new URL(url).hostname;
-    const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+    const faviconPath = path.join(FAVICONS_FOLDER, `${domain}_favicon_32.png`);
     
+    // Check if favicon is already cached
+    if (fs.existsSync(faviconPath)) {
+      const cachedFavicon = fs.readFileSync(faviconPath);
+      const base64 = cachedFavicon.toString('base64');
+      return `data:image/png;base64,${base64}`;
+    }
+    
+    // Fetch new favicon
+    const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
     const response = await fetch(faviconUrl);
     const buffer = await response.arrayBuffer();
     const base64 = Buffer.from(buffer).toString('base64');
     
-    const faviconPath = path.join(FAVICONS_FOLDER, `${domain}_favicon_32.png`);
+    // Save to cache
     fs.writeFileSync(faviconPath, Buffer.from(buffer));
     
     return `data:image/png;base64,${base64}`;
@@ -346,8 +355,41 @@ ipcMain.handle('fetch-favicon', async (_event, url: string) => {
   }
 });
 
-ipcMain.handle('extract-icon', async (_event, _filePath: string) => {
-  // This is a placeholder for icon extraction
-  // In a real implementation, you would use native modules to extract icons
-  return null;
+ipcMain.handle('extract-icon', async (_event, filePath: string) => {
+  try {
+    // Check if the file exists
+    if (!fs.existsSync(filePath)) {
+      console.error('ファイルが見つかりません:', filePath);
+      return null;
+    }
+    
+    // Generate cache filename
+    const iconName = path.basename(filePath, path.extname(filePath)) + '_icon.png';
+    const iconPath = path.join(FAVICONS_FOLDER, iconName);
+    
+    // Check if icon is already cached
+    if (fs.existsSync(iconPath)) {
+      const cachedIcon = fs.readFileSync(iconPath);
+      const base64 = cachedIcon.toString('base64');
+      return `data:image/png;base64,${base64}`;
+    }
+    
+    // Extract icon
+    const iconExtractor = require('@bitdisaster/exe-icon-extractor');
+    const iconBuffer = iconExtractor.extractIcon(filePath, 'large');
+    
+    if (iconBuffer) {
+      // Save to cache
+      fs.writeFileSync(iconPath, iconBuffer);
+      
+      // Convert to base64 data URL
+      const base64 = iconBuffer.toString('base64');
+      return `data:image/png;base64,${base64}`;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('アイコンの抽出に失敗しました:', error);
+    return null;
+  }
 });

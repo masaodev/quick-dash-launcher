@@ -55,8 +55,46 @@ const App: React.FC = () => {
   const loadItems = async () => {
     const dataFiles = await window.electronAPI.loadDataFiles();
     const { mainItems: main, tempItems: temp } = parseDataFiles(dataFiles);
-    setMainItems(main);
-    setTempItems(temp);
+    
+    // Load icons for all items
+    const loadIconsForItems = async (items: LauncherItem[]) => {
+      const itemsWithIcons = await Promise.all(
+        items.map(async (item) => {
+          if (!item.icon) {
+            if (item.type === 'url') {
+              // Fetch favicon for URLs
+              try {
+                const icon = await window.electronAPI.fetchFavicon(item.path);
+                return { ...item, icon: icon || undefined };
+              } catch (error) {
+                console.error(`Failed to fetch favicon for ${item.path}:`, error);
+                return item;
+              }
+            } else if (item.type === 'app' && item.path.endsWith('.exe')) {
+              // Extract icon for Windows executables
+              try {
+                const icon = await window.electronAPI.extractIcon(item.path);
+                return { ...item, icon: icon || undefined };
+              } catch (error) {
+                console.error(`Failed to extract icon for ${item.path}:`, error);
+                return item;
+              }
+            }
+          }
+          return item;
+        })
+      );
+      return itemsWithIcons;
+    };
+    
+    // Load icons for both main and temp items
+    const [mainWithIcons, tempWithIcons] = await Promise.all([
+      loadIconsForItems(main),
+      loadIconsForItems(temp)
+    ]);
+    
+    setMainItems(mainWithIcons);
+    setTempItems(tempWithIcons);
   };
 
   const handleSearch = (query: string) => {
@@ -123,18 +161,32 @@ const App: React.FC = () => {
     const filteredItems = filterItems(items, searchQuery);
     const selectedItem = filteredItems[selectedIndex];
     
-    if (selectedItem && selectedItem.type === 'url') {
-      const favicon = await window.electronAPI.fetchFavicon(selectedItem.path);
-      if (favicon) {
-        selectedItem.icon = favicon;
-        loadItems();
+    if (selectedItem) {
+      let icon: string | null = null;
+      
+      if (selectedItem.type === 'url') {
+        // Fetch favicon for URLs
+        icon = await window.electronAPI.fetchFavicon(selectedItem.path);
+      } else if (selectedItem.type === 'app' && selectedItem.path.endsWith('.exe')) {
+        // Extract icon for Windows executables
+        icon = await window.electronAPI.extractIcon(selectedItem.path);
+      }
+      
+      if (icon) {
+        // Update the icon in the current items list
+        const updateItems = activeTab === 'main' ? setMainItems : setTempItems;
+        const currentItemsList = activeTab === 'main' ? mainItems : tempItems;
+        
+        updateItems(currentItemsList.map(item => 
+          item.path === selectedItem.path ? { ...item, icon } : item
+        ));
       }
     }
   };
 
   const handleExtractAllIcons = async () => {
-    // TODO: Implement batch icon extraction
-    console.log('Extract all icons');
+    // Reload items to fetch all icons
+    await loadItems();
   };
 
   const currentItems = activeTab === 'main' ? mainItems : tempItems;

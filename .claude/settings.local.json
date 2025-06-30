@@ -7,7 +7,8 @@
       "Bash(ls:*)",
       "WebFetch(domain:www.electronjs.org)",
       "WebFetch(domain:github.com)",
-      "Bash(npm run start:*)"
+      "Bash(npm run start:*)",
+      "Bash(npm search \"icon extractor windows\")"
     ],
     "deny": [
       "Bash(npm install:*)",
