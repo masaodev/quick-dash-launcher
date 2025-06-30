@@ -7,7 +7,9 @@
       "Bash(npm run dev:*)",
       "Bash(npm uninstall:*)",
       "Bash(node:*)",
-      "Bash(npm cache clean:*)"
+      "Bash(npm cache clean:*)",
+      "Bash(find:*)",
+      "Bash(ls:*)"
     ],
     "deny": []
   }
