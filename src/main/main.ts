@@ -1,11 +1,8 @@
 import { app, BrowserWindow, globalShortcut, Tray, Menu, ipcMain, shell, nativeImage } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
-import { fileURLToPath } from 'url';
 // import Store from 'electron-store'; // Reserved for future use
 import { LauncherItem, DataFile } from '../common/types';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;

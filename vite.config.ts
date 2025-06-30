@@ -3,9 +3,6 @@ import react from '@vitejs/plugin-react';
 import electron from 'vite-plugin-electron';
 import renderer from 'vite-plugin-electron-renderer';
 import { resolve } from 'path';
-import { fileURLToPath } from 'url';
-
-const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
 export default defineConfig({
   plugins: [
@@ -18,12 +15,15 @@ export default defineConfig({
             outDir: 'dist/main',
             lib: {
               entry: 'src/main/main.ts',
-              formats: ['es']
+              formats: ['cjs'],
+              fileName: () => 'main.js'
             },
             rollupOptions: {
               external: ['electron', 'electron-store'],
               output: {
-                format: 'es'
+                format: 'cjs',
+                inlineDynamicImports: true,
+                entryFileNames: '[name].js'
               }
             }
           }
@@ -39,12 +39,15 @@ export default defineConfig({
             outDir: 'dist/main',
             lib: {
               entry: 'src/main/preload.ts',
-              formats: ['cjs']
+              formats: ['cjs'],
+              fileName: () => 'preload.js'
             },
             rollupOptions: {
               external: ['electron'],
               output: {
-                format: 'cjs'
+                format: 'cjs',
+                inlineDynamicImports: true,
+                entryFileNames: '[name].js'
               }
             }
           }
@@ -62,7 +65,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@common': resolve(__dirname, './src/common')
+      '@common': resolve(process.cwd(), './src/common')
     }
   }
 });

@@ -1,7 +1,6 @@
 {
   "name": "quick-dash-launcher",
   "version": "1.0.0",
-  "type": "module",
   "main": "dist/main/main.js",
   "scripts": {
     "dev": "vite",
