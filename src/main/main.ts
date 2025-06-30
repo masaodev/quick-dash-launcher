@@ -200,13 +200,19 @@ ipcMain.handle('save-temp-data', async (_event, content: string) => {
 
 ipcMain.handle('open-item', async (_event, item: LauncherItem) => {
   try {
+    console.log(`アイテムを起動中: ${item.displayName} (${item.type})`);
+    console.log(`パス: ${item.path}`);
+    if (item.args) {
+      console.log(`引数: ${item.args}`);
+    }
+    
     if (item.type === 'url') {
       await shell.openExternal(item.path);
     } else if (item.type === 'file' || item.type === 'folder') {
       await shell.openPath(item.path);
     } else if (item.type === 'app') {
       if (item.args) {
-        const { spawn } = require('child_process');
+        const { spawn } = await import('child_process');
         spawn(item.path, item.args.split(' '), { detached: true });
       } else {
         await shell.openPath(item.path);
@@ -220,6 +226,12 @@ ipcMain.handle('open-item', async (_event, item: LauncherItem) => {
     }
   } catch (error) {
     console.error('アイテムの起動に失敗しました:', error);
+    console.error('失敗したアイテム:', {
+      displayName: item.displayName,
+      type: item.type,
+      path: item.path,
+      args: item.args || 'なし'
+    });
   }
 });
 
