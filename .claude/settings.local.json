@@ -1,16 +1,18 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm install:*)",
-      "Bash(npm run build:*)",
       "Bash(rm:*)",
-      "Bash(npm run dev:*)",
-      "Bash(npm uninstall:*)",
       "Bash(node:*)",
-      "Bash(npm cache clean:*)",
       "Bash(find:*)",
       "Bash(ls:*)"
     ],
-    "deny": []
+    "deny": [
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(npm cache clean:*)",
+      "Bash(npm:*)"
+    ]
   }
 }
