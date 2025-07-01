@@ -56,45 +56,8 @@ const App: React.FC = () => {
     const dataFiles = await window.electronAPI.loadDataFiles();
     const { mainItems: main, tempItems: temp } = parseDataFiles(dataFiles);
     
-    // Load icons for all items
-    const loadIconsForItems = async (items: LauncherItem[]) => {
-      const itemsWithIcons = await Promise.all(
-        items.map(async (item) => {
-          if (!item.icon) {
-            if (item.type === 'url') {
-              // Fetch favicon for URLs
-              try {
-                const icon = await window.electronAPI.fetchFavicon(item.path);
-                return { ...item, icon: icon || undefined };
-              } catch (error) {
-                console.error(`Failed to fetch favicon for ${item.path}:`, error);
-                return item;
-              }
-            } else if (item.type === 'app' && item.path.endsWith('.exe')) {
-              // Extract icon for Windows executables
-              try {
-                const icon = await window.electronAPI.extractIcon(item.path);
-                return { ...item, icon: icon || undefined };
-              } catch (error) {
-                console.error(`Failed to extract icon for ${item.path}:`, error);
-                return item;
-              }
-            }
-          }
-          return item;
-        })
-      );
-      return itemsWithIcons;
-    };
-    
-    // Load icons for both main and temp items
-    const [mainWithIcons, tempWithIcons] = await Promise.all([
-      loadIconsForItems(main),
-      loadIconsForItems(temp)
-    ]);
-    
-    setMainItems(mainWithIcons);
-    setTempItems(tempWithIcons);
+    setMainItems(main);
+    setTempItems(temp);
   };
 
   const handleSearch = (query: string) => {
@@ -185,8 +148,45 @@ const App: React.FC = () => {
   };
 
   const handleExtractAllIcons = async () => {
-    // Reload items to fetch all icons
-    await loadItems();
+    // Load icons for all items
+    const loadIconsForItems = async (items: LauncherItem[]) => {
+      const itemsWithIcons = await Promise.all(
+        items.map(async (item) => {
+          if (!item.icon) {
+            if (item.type === 'url') {
+              // Fetch favicon for URLs
+              try {
+                const icon = await window.electronAPI.fetchFavicon(item.path);
+                return { ...item, icon: icon || undefined };
+              } catch (error) {
+                console.error(`Failed to fetch favicon for ${item.path}:`, error);
+                return item;
+              }
+            } else if (item.type === 'app' && item.path.endsWith('.exe')) {
+              // Extract icon for Windows executables
+              try {
+                const icon = await window.electronAPI.extractIcon(item.path);
+                return { ...item, icon: icon || undefined };
+              } catch (error) {
+                console.error(`Failed to extract icon for ${item.path}:`, error);
+                return item;
+              }
+            }
+          }
+          return item;
+        })
+      );
+      return itemsWithIcons;
+    };
+    
+    // Load icons for both main and temp items
+    const [mainWithIcons, tempWithIcons] = await Promise.all([
+      loadIconsForItems(mainItems),
+      loadIconsForItems(tempItems)
+    ]);
+    
+    setMainItems(mainWithIcons);
+    setTempItems(tempWithIcons);
   };
 
   const currentItems = activeTab === 'main' ? mainItems : tempItems;
