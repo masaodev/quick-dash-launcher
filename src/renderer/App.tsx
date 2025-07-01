@@ -56,8 +56,23 @@ const App: React.FC = () => {
     const dataFiles = await window.electronAPI.loadDataFiles();
     const { mainItems: main, tempItems: temp } = parseDataFiles(dataFiles);
     
-    setMainItems(main);
-    setTempItems(temp);
+    // Load cached icons
+    const allItems = [...main, ...temp];
+    const iconCache = await window.electronAPI.loadCachedIcons(allItems);
+    
+    // Apply cached icons to items
+    const mainWithIcons = main.map(item => ({
+      ...item,
+      icon: iconCache[item.path] || item.icon
+    }));
+    
+    const tempWithIcons = temp.map(item => ({
+      ...item,
+      icon: iconCache[item.path] || item.icon
+    }));
+    
+    setMainItems(mainWithIcons);
+    setTempItems(tempWithIcons);
   };
 
   const handleSearch = (query: string) => {

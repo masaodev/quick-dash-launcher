@@ -69,6 +69,42 @@ async function extractIcon(filePath: string, faviconsFolder: string): Promise<st
   }
 }
 
+async function loadCachedIcons(items: any[], faviconsFolder: string): Promise<Record<string, string>> {
+  const iconCache: Record<string, string> = {};
+  
+  for (const item of items) {
+    try {
+      let iconPath: string | null = null;
+      
+      if (item.type === 'url' && item.path && item.path.includes('://')) {
+        // URLの場合、ファビコンをチェック
+        const domain = new URL(item.path).hostname;
+        const faviconPath = path.join(faviconsFolder, `${domain}_favicon_32.png`);
+        if (fs.existsSync(faviconPath)) {
+          iconPath = faviconPath;
+        }
+      } else if (item.type === 'app' && item.path && item.path.endsWith('.exe')) {
+        // .exeファイルの場合、アイコンをチェック
+        const iconName = path.basename(item.path, '.exe') + '_icon.png';
+        const exeIconPath = path.join(faviconsFolder, iconName);
+        if (fs.existsSync(exeIconPath)) {
+          iconPath = exeIconPath;
+        }
+      }
+      
+      if (iconPath) {
+        const iconBuffer = fs.readFileSync(iconPath);
+        const base64 = iconBuffer.toString('base64');
+        iconCache[item.path] = `data:image/png;base64,${base64}`;
+      }
+    } catch (error) {
+      console.error(`Failed to load cached icon for ${item.path}:`, error);
+    }
+  }
+  
+  return iconCache;
+}
+
 export function setupIconHandlers(faviconsFolder: string) {
   ipcMain.handle('fetch-favicon', async (_event, url: string) => {
     return await fetchFavicon(url, faviconsFolder);
@@ -76,5 +112,9 @@ export function setupIconHandlers(faviconsFolder: string) {
   
   ipcMain.handle('extract-icon', async (_event, filePath: string) => {
     return await extractIcon(filePath, faviconsFolder);
+  });
+  
+  ipcMain.handle('load-cached-icons', async (_event, items: any[]) => {
+    return await loadCachedIcons(items, faviconsFolder);
   });
 }

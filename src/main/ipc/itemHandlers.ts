@@ -3,7 +3,7 @@ import { LauncherItem } from '../../common/types';
 
 async function openItem(item: LauncherItem, mainWindow: BrowserWindow | null): Promise<void> {
   try {
-    console.log(`アイテムを起動中: ${item.displayName} (${item.type})`);
+    console.log(`アイテムを起動中: ${item.name} (${item.type})`);
     console.log(`パス: ${item.path}`);
     if (item.args) {
       console.log(`引数: ${item.args}`);
@@ -30,7 +30,7 @@ async function openItem(item: LauncherItem, mainWindow: BrowserWindow | null): P
   } catch (error) {
     console.error('アイテムの起動に失敗しました:', error);
     console.error('失敗したアイテム:', {
-      displayName: item.displayName,
+      name: item.name,
       type: item.type,
       path: item.path,
       args: item.args || 'なし'
