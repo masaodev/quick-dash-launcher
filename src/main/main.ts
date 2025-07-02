@@ -8,7 +8,12 @@ let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 // const store = new Store(); // 将来の使用のために予約
 
+// 設定定数
 const HOTKEY = 'Ctrl+Alt+W';
+const WINDOW_WIDTH = 479;
+const WINDOW_HEIGHT = 506;
+
+// ディレクトリパス
 const CONFIG_FOLDER = path.join(app.getPath('userData'), 'config');
 const ICONS_FOLDER = path.join(CONFIG_FOLDER, 'icons');
 const FAVICONS_FOLDER = path.join(CONFIG_FOLDER, 'favicons');
@@ -17,8 +22,8 @@ const BACKUP_FOLDER = path.join(CONFIG_FOLDER, 'backup');
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 479,
-    height: 506,
+    width: WINDOW_WIDTH,
+    height: WINDOW_HEIGHT,
     center: true,
     alwaysOnTop: true,
     frame: false,
@@ -152,6 +157,11 @@ function backupDataFiles() {
   });
 }
 
+// Helper function to get the main window
+function getMainWindow(): BrowserWindow | null {
+  return mainWindow;
+}
+
 app.whenReady().then(() => {
   ensureDirectories();
   createDefaultDataFile();
@@ -162,7 +172,7 @@ app.whenReady().then(() => {
   registerGlobalShortcut();
   
   // IPCハンドラーのセットアップ
-  setupIPCHandlers(CONFIG_FOLDER, FAVICONS_FOLDER, getMainWindow);
+  setupIPCHandlers(CONFIG_FOLDER, FAVICONS_FOLDER, ICONS_FOLDER, getMainWindow);
 });
 
 app.on('window-all-closed', () => {
@@ -174,7 +184,3 @@ app.on('window-all-closed', () => {
 app.on('will-quit', () => {
   globalShortcut.unregisterAll();
 });
-
-function getMainWindow(): BrowserWindow | null {
-  return mainWindow;
-}

@@ -15,13 +15,7 @@ export function parseDataFiles(dataFiles: DataFile[]): {
     lines.forEach(line => {
       line = line.trim();
       
-      // Skip empty lines and comments
-      if (!line || line.startsWith('//')) {
-        return;
-      }
-
-      // Skip dir directives (already processed in main process)
-      if (line.startsWith('dir,')) {
+      if (shouldSkipLine(line)) {
         return;
       }
 
@@ -56,15 +50,15 @@ export function parseDataFiles(dataFiles: DataFile[]): {
   return { mainItems, tempItems };
 }
 
+function shouldSkipLine(line: string): boolean {
+  return !line || line.startsWith('//') || line.startsWith('dir,');
+}
+
 function detectItemType(itemPath: string): LauncherItem['type'] {
-  // URLs
   if (itemPath.includes('://')) {
-    // Check for custom URI schemes
     const scheme = itemPath.split('://')[0];
-    if (!['http', 'https', 'ftp'].includes(scheme)) {
-      return 'uri';
-    }
-    return 'url';
+    const webSchemes = ['http', 'https', 'ftp'];
+    return webSchemes.includes(scheme) ? 'url' : 'uri';
   }
 
   // Shell paths
@@ -72,12 +66,10 @@ function detectItemType(itemPath: string): LauncherItem['type'] {
     return 'folder';
   }
 
-  // File extensions
-  const lastDot = itemPath.lastIndexOf('.');
-  const ext = lastDot !== -1 ? itemPath.substring(lastDot).toLowerCase() : '';
+  const ext = getFileExtension(itemPath);
   
-  // Executables
-  if (ext === '.exe' || ext === '.bat' || ext === '.cmd' || ext === '.com') {
+  const executableExtensions = ['.exe', '.bat', '.cmd', '.com'];
+  if (executableExtensions.includes(ext)) {
     return 'app';
   }
 
@@ -88,6 +80,11 @@ function detectItemType(itemPath: string): LauncherItem['type'] {
 
   // Default to file
   return 'file';
+}
+
+function getFileExtension(path: string): string {
+  const lastDot = path.lastIndexOf('.');
+  return lastDot !== -1 ? path.substring(lastDot).toLowerCase() : '';
 }
 
 function parseCSVLine(line: string): string[] {

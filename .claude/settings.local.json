@@ -9,7 +9,8 @@
       "WebFetch(domain:github.com)",
       "Bash(npm run start:*)",
       "Bash(npm search \"icon extractor windows\")",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(rg:*)"
     ],
     "deny": [
       "Bash(npm install:*)",

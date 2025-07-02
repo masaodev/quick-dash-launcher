@@ -7,10 +7,11 @@ import { setupIconHandlers } from './iconHandlers';
 export function setupIPCHandlers(
   configFolder: string,
   faviconsFolder: string,
+  iconsFolder: string,
   getMainWindow: () => BrowserWindow | null
 ) {
   setupDataHandlers(configFolder);
   setupItemHandlers(getMainWindow);
   setupConfigHandlers(configFolder);
-  setupIconHandlers(faviconsFolder);
+  setupIconHandlers(faviconsFolder, iconsFolder);
 }
