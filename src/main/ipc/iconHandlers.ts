@@ -170,13 +170,9 @@ async function loadCachedIcons(items: any[], faviconsFolder: string): Promise<Re
     try {
       let iconPath: string | null = null;
       
+      // URLの場合、ファビコンをスキップ（ボタン押下時のみ取得）
       if (item.type === 'url' && item.path && item.path.includes('://')) {
-        // URLの場合、ファビコンをチェック
-        const domain = new URL(item.path).hostname;
-        const faviconPath = path.join(faviconsFolder, `${domain}_favicon_32.png`);
-        if (fs.existsSync(faviconPath)) {
-          iconPath = faviconPath;
-        }
+        continue;
       } else if (item.type === 'app' && item.path && item.path.endsWith('.exe')) {
         // .exeファイルの場合、アイコンをチェック
         const iconName = path.basename(item.path, '.exe') + '_icon.png';
