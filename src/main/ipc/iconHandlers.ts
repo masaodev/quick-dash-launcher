@@ -71,7 +71,15 @@ async function extractIcon(filePath: string, iconsFolder: string): Promise<strin
 
 async function extractFileIconByExtension(filePath: string, faviconsFolder: string): Promise<string | null> {
   try {
-    const fileExtension = path.extname(filePath).toLowerCase();
+    let fileExtension: string;
+    
+    // URIスキーマの場合は特別処理
+    if (filePath.includes('://')) {
+      fileExtension = extractExtensionFromUri(filePath);
+    } else {
+      fileExtension = path.extname(filePath).toLowerCase();
+    }
+    
     if (!fileExtension) {
       console.log('拡張子がありません:', filePath);
       return null;
@@ -89,17 +97,27 @@ async function extractFileIconByExtension(filePath: string, faviconsFolder: stri
       return `data:image/png;base64,${base64}`;
     }
     
-    // extract-file-iconを使用してアイコンを取得
-    const extractFileIcon = require('extract-file-icon');
-    const iconBuffer = extractFileIcon(filePath, 32);
+    // 拡張子に対応するダミーファイルを作成してアイコンを取得
+    const tempFilePath = createTempFileForExtension(extensionName);
     
-    if (iconBuffer && iconBuffer.length > 0) {
-      // キャッシュに保存
-      fs.writeFileSync(iconPath, iconBuffer);
+    try {
+      // extract-file-iconを使用してアイコンを取得
+      const extractFileIcon = require('extract-file-icon');
+      const iconBuffer = extractFileIcon(tempFilePath, 32);
       
-      // base64データURLに変換
-      const base64 = iconBuffer.toString('base64');
-      return `data:image/png;base64,${base64}`;
+      if (iconBuffer && iconBuffer.length > 0) {
+        // キャッシュに保存
+        fs.writeFileSync(iconPath, iconBuffer);
+        
+        // base64データURLに変換
+        const base64 = iconBuffer.toString('base64');
+        return `data:image/png;base64,${base64}`;
+      }
+    } finally {
+      // 一時ファイルを削除
+      if (fs.existsSync(tempFilePath)) {
+        fs.unlinkSync(tempFilePath);
+      }
     }
     
     return null;
@@ -107,6 +125,42 @@ async function extractFileIconByExtension(filePath: string, faviconsFolder: stri
     console.error('拡張子ベースのアイコン抽出に失敗しました:', error);
     return null;
   }
+}
+
+function extractExtensionFromUri(uri: string): string {
+  try {
+    // URIからファイル名部分を抽出
+    // 例: ms-excel:ofe|ofc|u|https://...Book%204.xlsx -> .xlsx
+    
+    // パイプ区切りの最後の部分（URL部分）を取得
+    const parts = uri.split('|');
+    const lastPart = parts[parts.length - 1];
+    
+    // URLデコードしてファイル名を取得
+    const decodedUrl = decodeURIComponent(lastPart);
+    
+    // パス部分からファイル名を抽出
+    const fileName = decodedUrl.split('/').pop() || '';
+    
+    // 拡張子を抽出
+    const extensionMatch = fileName.match(/\.[^.]+$/);
+    return extensionMatch ? extensionMatch[0].toLowerCase() : '';
+  } catch (error) {
+    console.error('URIから拡張子の抽出に失敗:', error);
+    return '';
+  }
+}
+
+function createTempFileForExtension(extension: string): string {
+  const os = require('os');
+  const tempDir = os.tmpdir();
+  const tempFileName = `temp_icon_extract_${Date.now()}.${extension}`;
+  const tempFilePath = path.join(tempDir, tempFileName);
+  
+  // 空のファイルを作成
+  fs.writeFileSync(tempFilePath, '');
+  
+  return tempFilePath;
 }
 
 async function loadCachedIcons(items: any[], faviconsFolder: string, iconsFolder: string): Promise<Record<string, string>> {
@@ -130,9 +184,18 @@ async function loadCachedIcons(items: any[], faviconsFolder: string, iconsFolder
         if (fs.existsSync(exeIconPath)) {
           iconPath = exeIconPath;
         }
-      } else if (item.type === 'file' && item.path) {
-        // ファイルの場合、拡張子ベースのアイコンをチェック
-        const fileExtension = path.extname(item.path).toLowerCase();
+      } else if ((item.type === 'file' || item.type === 'uri') && item.path) {
+        // ファイルまたはURIの場合、拡張子ベースのアイコンをチェック
+        let fileExtension: string;
+        
+        if (item.path.includes('://')) {
+          // URIスキーマの場合
+          fileExtension = extractExtensionFromUri(item.path);
+        } else {
+          // 通常のファイルパスの場合
+          fileExtension = path.extname(item.path).toLowerCase();
+        }
+        
         if (fileExtension) {
           const extensionName = fileExtension.replace('.', '');
           const extensionIconPath = path.join(faviconsFolder, `ext_${extensionName}_icon.png`);

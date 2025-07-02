@@ -142,7 +142,7 @@ const App: React.FC = () => {
       } else if (selectedItem.type === 'app' && selectedItem.path.endsWith('.exe')) {
         // Extract icon for Windows executables
         icon = await window.electronAPI.extractIcon(selectedItem.path);
-      } else if (selectedItem.type === 'file') {
+      } else if (selectedItem.type === 'file' || selectedItem.type === 'uri') {
         // Extract icon based on file extension
         icon = await window.electronAPI.extractFileIconByExtension(selectedItem.path);
       }
@@ -174,7 +174,7 @@ const App: React.FC = () => {
               } else if (item.type === 'app' && item.path.endsWith('.exe')) {
                 // Extract icon for Windows executables
                 icon = await window.electronAPI.extractIcon(item.path);
-              } else if (item.type === 'file') {
+              } else if (item.type === 'file' || item.type === 'uri') {
                 // Extract icon based on file extension
                 icon = await window.electronAPI.extractFileIconByExtension(item.path);
               }
