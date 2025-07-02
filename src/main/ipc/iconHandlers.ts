@@ -1,7 +1,6 @@
 import { ipcMain } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
-import * as extractFileIcon from 'extract-file-icon';
 
 async function fetchFavicon(url: string, faviconsFolder: string): Promise<string | null> {
   try {
@@ -91,6 +90,7 @@ async function extractFileIconByExtension(filePath: string, faviconsFolder: stri
     }
     
     // extract-file-iconを使用してアイコンを取得
+    const extractFileIcon = require('extract-file-icon');
     const iconBuffer = extractFileIcon(filePath, 32);
     
     if (iconBuffer && iconBuffer.length > 0) {
