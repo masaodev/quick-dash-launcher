@@ -134,20 +134,26 @@ const App: React.FC = () => {
     const selectedItem = filteredItems[selectedIndex];
     
     if (selectedItem) {
+      console.log('ファビコン取得対象アイテム:', selectedItem);
       let icon: string | null = null;
       
       if (selectedItem.type === 'url') {
         // Fetch favicon for URLs
+        console.log('URLのファビコンを取得中:', selectedItem.path);
         icon = await window.electronAPI.fetchFavicon(selectedItem.path);
+        console.log('取得したファビコン:', icon ? 'あり' : 'なし');
       } else if (selectedItem.type === 'app' && selectedItem.path.endsWith('.exe')) {
         // Extract icon for Windows executables
+        console.log('EXEアイコンを取得中:', selectedItem.path);
         icon = await window.electronAPI.extractIcon(selectedItem.path);
       } else if (selectedItem.type === 'file' || selectedItem.type === 'uri') {
         // Extract icon based on file extension
+        console.log('ファイルアイコンを取得中:', selectedItem.path);
         icon = await window.electronAPI.extractFileIconByExtension(selectedItem.path);
       }
       
       if (icon) {
+        console.log('アイコンを更新します');
         // Update the icon in the current items list
         const updateItems = activeTab === 'main' ? setMainItems : setTempItems;
         const currentItemsList = activeTab === 'main' ? mainItems : tempItems;
@@ -155,7 +161,11 @@ const App: React.FC = () => {
         updateItems(currentItemsList.map(item => 
           item.path === selectedItem.path ? { ...item, icon } : item
         ));
+      } else {
+        console.log('アイコンの取得に失敗しました');
       }
+    } else {
+      console.log('選択されたアイテムがありません');
     }
   };
 
