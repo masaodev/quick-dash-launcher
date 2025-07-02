@@ -10,6 +10,7 @@ export interface ElectronAPI {
   openDataFile: () => Promise<void>;
   fetchFavicon: (url: string) => Promise<string | null>;
   extractIcon: (filePath: string) => Promise<string | null>;
+  extractFileIconByExtension: (filePath: string) => Promise<string | null>;
   loadCachedIcons: (items: LauncherItem[]) => Promise<Record<string, string>>;
   onWindowShown: (callback: () => void) => void;
 }
