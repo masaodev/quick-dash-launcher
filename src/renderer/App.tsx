@@ -142,6 +142,9 @@ const App: React.FC = () => {
       } else if (selectedItem.type === 'app' && selectedItem.path.endsWith('.exe')) {
         // Extract icon for Windows executables
         icon = await window.electronAPI.extractIcon(selectedItem.path);
+      } else if (selectedItem.type === 'file') {
+        // Extract icon based on file extension
+        icon = await window.electronAPI.extractFileIconByExtension(selectedItem.path);
       }
       
       if (icon) {
@@ -162,24 +165,24 @@ const App: React.FC = () => {
       const itemsWithIcons = await Promise.all(
         items.map(async (item) => {
           if (!item.icon) {
-            if (item.type === 'url') {
-              // Fetch favicon for URLs
-              try {
-                const icon = await window.electronAPI.fetchFavicon(item.path);
-                return { ...item, icon: icon || undefined };
-              } catch (error) {
-                console.error(`Failed to fetch favicon for ${item.path}:`, error);
-                return item;
+            try {
+              let icon: string | null = null;
+              
+              if (item.type === 'url') {
+                // Fetch favicon for URLs
+                icon = await window.electronAPI.fetchFavicon(item.path);
+              } else if (item.type === 'app' && item.path.endsWith('.exe')) {
+                // Extract icon for Windows executables
+                icon = await window.electronAPI.extractIcon(item.path);
+              } else if (item.type === 'file') {
+                // Extract icon based on file extension
+                icon = await window.electronAPI.extractFileIconByExtension(item.path);
               }
-            } else if (item.type === 'app' && item.path.endsWith('.exe')) {
-              // Extract icon for Windows executables
-              try {
-                const icon = await window.electronAPI.extractIcon(item.path);
-                return { ...item, icon: icon || undefined };
-              } catch (error) {
-                console.error(`Failed to extract icon for ${item.path}:`, error);
-                return item;
-              }
+              
+              return { ...item, icon: icon || undefined };
+            } catch (error) {
+              console.error(`Failed to extract icon for ${item.path}:`, error);
+              return item;
             }
           }
           return item;

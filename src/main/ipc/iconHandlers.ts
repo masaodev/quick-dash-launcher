@@ -1,6 +1,7 @@
 import { ipcMain } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
+import * as extractFileIcon from 'extract-file-icon';
 
 async function fetchFavicon(url: string, faviconsFolder: string): Promise<string | null> {
   try {
@@ -69,6 +70,45 @@ async function extractIcon(filePath: string, iconsFolder: string): Promise<strin
   }
 }
 
+async function extractFileIconByExtension(filePath: string, faviconsFolder: string): Promise<string | null> {
+  try {
+    const fileExtension = path.extname(filePath).toLowerCase();
+    if (!fileExtension) {
+      console.log('拡張子がありません:', filePath);
+      return null;
+    }
+    
+    // 拡張子ベースのキャッシュファイル名を生成
+    const extensionName = fileExtension.replace('.', '');
+    const iconName = `ext_${extensionName}_icon.png`;
+    const iconPath = path.join(faviconsFolder, iconName);
+    
+    // アイコンがすでにキャッシュされているか確認
+    if (fs.existsSync(iconPath)) {
+      const cachedIcon = fs.readFileSync(iconPath);
+      const base64 = cachedIcon.toString('base64');
+      return `data:image/png;base64,${base64}`;
+    }
+    
+    // extract-file-iconを使用してアイコンを取得
+    const iconBuffer = extractFileIcon(filePath, 32);
+    
+    if (iconBuffer && iconBuffer.length > 0) {
+      // キャッシュに保存
+      fs.writeFileSync(iconPath, iconBuffer);
+      
+      // base64データURLに変換
+      const base64 = iconBuffer.toString('base64');
+      return `data:image/png;base64,${base64}`;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('拡張子ベースのアイコン抽出に失敗しました:', error);
+    return null;
+  }
+}
+
 async function loadCachedIcons(items: any[], faviconsFolder: string, iconsFolder: string): Promise<Record<string, string>> {
   const iconCache: Record<string, string> = {};
   
@@ -89,6 +129,16 @@ async function loadCachedIcons(items: any[], faviconsFolder: string, iconsFolder
         const exeIconPath = path.join(iconsFolder, iconName);
         if (fs.existsSync(exeIconPath)) {
           iconPath = exeIconPath;
+        }
+      } else if (item.type === 'file' && item.path) {
+        // ファイルの場合、拡張子ベースのアイコンをチェック
+        const fileExtension = path.extname(item.path).toLowerCase();
+        if (fileExtension) {
+          const extensionName = fileExtension.replace('.', '');
+          const extensionIconPath = path.join(faviconsFolder, `ext_${extensionName}_icon.png`);
+          if (fs.existsSync(extensionIconPath)) {
+            iconPath = extensionIconPath;
+          }
         }
       }
       
@@ -112,6 +162,10 @@ export function setupIconHandlers(faviconsFolder: string, iconsFolder: string) {
   
   ipcMain.handle('extract-icon', async (_event, filePath: string) => {
     return await extractIcon(filePath, iconsFolder);
+  });
+  
+  ipcMain.handle('extract-file-icon-by-extension', async (_event, filePath: string) => {
+    return await extractFileIconByExtension(filePath, faviconsFolder);
   });
   
   ipcMain.handle('load-cached-icons', async (_event, items: any[]) => {

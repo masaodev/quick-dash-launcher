@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openDataFile: () => ipcRenderer.invoke('open-data-file'),
   fetchFavicon: (url: string) => ipcRenderer.invoke('fetch-favicon', url),
   extractIcon: (filePath: string) => ipcRenderer.invoke('extract-icon', filePath),
+  extractFileIconByExtension: (filePath: string) => ipcRenderer.invoke('extract-file-icon-by-extension', filePath),
   loadCachedIcons: (items: LauncherItem[]) => ipcRenderer.invoke('load-cached-icons', items),
   onWindowShown: (callback: () => void) => {
     ipcRenderer.on('window-shown', callback);

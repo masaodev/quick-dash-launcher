@@ -38,6 +38,7 @@
   "dependencies": {
     "@bitdisaster/exe-icon-extractor": "^1.0.10",
     "electron-store": "^10.1.0",
+    "extract-file-icon": "^0.3.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "windows-shortcuts": "^0.1.6"
