@@ -1,9 +1,7 @@
-import { ipcMain } from 'electron';
+import { ipcMain, shell } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import { DataFile } from '../../common/types';
-
-const ws = require('windows-shortcuts');
 
 async function scanDirectoryForShortcuts(dirPath: string): Promise<string[]> {
   const results: string[] = [];
@@ -22,20 +20,16 @@ async function scanDirectoryForShortcuts(dirPath: string): Promise<string[]> {
       // .lnkファイル（Windowsショートカット）を処理
       if (path.extname(file).toLowerCase() === '.lnk') {
         try {
-          const shortcut = await new Promise<any>((resolve, reject) => {
-            ws.query(filePath, (err: any, shortcut: any) => {
-              if (err) reject(err);
-              else resolve(shortcut);
-            });
-          });
+          // Electron のネイティブ機能を使用してショートカットを読み取り
+          const shortcutDetails = shell.readShortcutLink(filePath);
           
-          if (shortcut && shortcut.target) {
+          if (shortcutDetails && shortcutDetails.target) {
             const displayName = path.basename(file, '.lnk');
-            let line = `${displayName},${shortcut.target}`;
+            let line = `${displayName},${shortcutDetails.target}`;
             
             // 引数が存在する場合は追加
-            if (shortcut.args && shortcut.args.trim()) {
-              line += `,${shortcut.args}`;
+            if (shortcutDetails.args && shortcutDetails.args.trim()) {
+              line += `,${shortcutDetails.args}`;
             }
             
             results.push(line);
