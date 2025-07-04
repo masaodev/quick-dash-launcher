@@ -115,6 +115,7 @@ function extractExtensionFromUri(uri: string): string {
   try {
     // URIからファイル名部分を抽出
     // 例: ms-excel:ofe|ofc|u|https://...Book%204.xlsx -> .xlsx
+    // 例: ms-excel:ofe|ofc|u|https://...Book%204.xlsx?web=1 -> .xlsx
     
     // パイプ区切りの最後の部分（URL部分）を取得
     const parts = uri.split('|');
@@ -124,7 +125,10 @@ function extractExtensionFromUri(uri: string): string {
     const decodedUrl = decodeURIComponent(lastPart);
     
     // パス部分からファイル名を抽出
-    const fileName = decodedUrl.split('/').pop() || '';
+    let fileName = decodedUrl.split('/').pop() || '';
+    
+    // クエリパラメータとフラグメントを除去
+    fileName = fileName.split('?')[0].split('#')[0];
     
     // 拡張子を抽出
     const extensionMatch = fileName.match(/\.[^.]+$/);
