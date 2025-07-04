@@ -17,6 +17,15 @@ npm run start           # ビルドして実行
 npm run dist            # Windowsインストーラーの作成
 ```
 
+### WSL2環境でのビルド
+
+WSL2環境からビルドするときは、Windows上でビルドさせるために、PowerShellを使ってください：
+
+```bash
+powershell.exe -Command "npm run build"
+powershell.exe -Command "npm run dist"
+```
+
 ## アーキテクチャ
 
 ### プロセス構造
