@@ -25,6 +25,7 @@ body {
   background-color: #f8f8f8;
   border-bottom: 1px solid #e0e0e0;
   gap: 8px;
+  -webkit-app-region: drag;
 }
 
 .search-box {
@@ -35,6 +36,7 @@ body {
   border: 1px solid #ccc;
   border-radius: 4px;
   outline: none;
+  -webkit-app-region: no-drag;
 }
 
 .search-box:focus {
@@ -59,6 +61,7 @@ body {
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
+  -webkit-app-region: no-drag;
 }
 
 .action-button:hover {
