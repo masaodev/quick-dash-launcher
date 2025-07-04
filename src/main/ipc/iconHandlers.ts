@@ -177,7 +177,7 @@ async function loadCachedIcons(items: any[], faviconsFolder: string, iconsFolder
         if (fs.existsSync(exeIconPath)) {
           iconPath = exeIconPath;
         }
-      } else if ((item.type === 'file' || item.type === 'uri') && item.path) {
+      } else if ((item.type === 'file' || item.type === 'customUri') && item.path) {
         // ファイルまたはURIの場合、拡張子ベースのアイコンをチェック
         let fileExtension: string;
         

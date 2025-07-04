@@ -20,7 +20,7 @@ async function openItem(item: LauncherItem, mainWindow: BrowserWindow | null): P
       } else {
         await shell.openPath(item.path);
       }
-    } else if (item.type === 'uri') {
+    } else if (item.type === 'customUri') {
       await shell.openExternal(item.path);
     }
     

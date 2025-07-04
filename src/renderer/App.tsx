@@ -181,7 +181,7 @@ const App: React.FC = () => {
               if (item.type === 'app' && item.path.endsWith('.exe')) {
                 // Extract icon for Windows executables
                 icon = await window.electronAPI.extractIcon(item.path);
-              } else if (item.type === 'file' || item.type === 'uri') {
+              } else if (item.type === 'file' || item.type === 'customUri') {
                 // Extract icon based on file extension
                 icon = await window.electronAPI.extractFileIconByExtension(item.path);
               }

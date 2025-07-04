@@ -1,7 +1,7 @@
 export interface LauncherItem {
   name: string;
   path: string;
-  type: 'url' | 'file' | 'folder' | 'app' | 'uri';
+  type: 'url' | 'file' | 'folder' | 'app' | 'customUri';
   icon?: string;
   args?: string;
 }

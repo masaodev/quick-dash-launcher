@@ -62,7 +62,7 @@ function detectItemType(itemPath: string): LauncherItem['type'] {
     // Check for custom URI schemes
     const scheme = itemPath.split('://')[0];
     if (!['http', 'https', 'ftp'].includes(scheme)) {
-      return 'uri';
+      return 'customUri';
     }
     return 'url';
   }

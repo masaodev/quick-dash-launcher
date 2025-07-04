@@ -37,7 +37,7 @@ const ItemList: React.FC<ItemListProps> = ({
         return '⚙️';
       case 'file':
         return '📄';
-      case 'uri':
+      case 'customUri':
         return '🔗';
       default:
         return '❓';
