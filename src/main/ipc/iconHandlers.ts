@@ -50,10 +50,10 @@ async function extractIcon(filePath: string, faviconsFolder: string): Promise<st
     }
     
     // アイコンを抽出
-    const iconExtractor = require('@bitdisaster/exe-icon-extractor');
-    const iconBuffer = iconExtractor.extractIcon(filePath, 'large');
+    const extractFileIcon = require('extract-file-icon');
+    const iconBuffer = extractFileIcon(filePath, 32);
     
-    if (iconBuffer) {
+    if (iconBuffer && iconBuffer.length > 0) {
       // キャッシュに保存
       fs.writeFileSync(iconPath, iconBuffer);
       
