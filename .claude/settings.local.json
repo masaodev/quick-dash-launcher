@@ -10,7 +10,8 @@
       "Bash(npm run start:*)",
       "Bash(npm search \"icon extractor windows\")",
       "Bash(npx tsc:*)",
-      "Bash(powershell.exe -Command:*)"
+      "Bash(powershell.exe -Command:*)",
+      "Bash(mkdir:*)"
     ],
     "deny": []
   }
