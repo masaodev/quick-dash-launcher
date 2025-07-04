@@ -1,10 +1,14 @@
 import { ipcMain } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
+import { exec } from 'child_process';
+import { promisify } from 'util';
 import { FaviconService } from '../services/faviconService';
 
 // FaviconServiceのインスタンスを保持
 let faviconService: FaviconService;
+
+const execAsync = promisify(exec);
 
 async function fetchFavicon(url: string, faviconsFolder: string): Promise<string | null> {
   if (!faviconService) {
@@ -49,6 +53,53 @@ async function extractIcon(filePath: string, iconsFolder: string): Promise<strin
     return null;
   } catch (error) {
     console.error('アイコンの抽出に失敗しました:', error);
+    return null;
+  }
+}
+
+async function extractCustomUriIcon(uri: string, iconsFolder: string): Promise<string | null> {
+  try {
+    // URIスキーマを抽出
+    const schemeMatch = uri.match(/^([^:]+):/);
+    if (!schemeMatch) {
+      return null;
+    }
+    
+    const scheme = schemeMatch[1];
+    
+    // キャッシュファイル名を生成
+    const iconName = `uri_${scheme}_icon.png`;
+    const iconPath = path.join(iconsFolder, iconName);
+    
+    // アイコンがすでにキャッシュされているか確認
+    if (fs.existsSync(iconPath)) {
+      const cachedIcon = fs.readFileSync(iconPath);
+      const base64 = cachedIcon.toString('base64');
+      return `data:image/png;base64,${base64}`;
+    }
+    
+    // レジストリからハンドラーアプリケーションを取得
+    const handlerPath = await getUriSchemeHandler(scheme);
+    if (!handlerPath) {
+      return null;
+    }
+    
+    // ハンドラーアプリケーションからアイコンを抽出
+    const extractFileIcon = require('extract-file-icon');
+    const iconBuffer = extractFileIcon(handlerPath, 32);
+    
+    if (iconBuffer && iconBuffer.length > 0) {
+      // キャッシュに保存
+      fs.writeFileSync(iconPath, iconBuffer);
+      
+      // base64データURLに変換
+      const base64 = iconBuffer.toString('base64');
+      return `data:image/png;base64,${base64}`;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('カスタムURIアイコンの抽出に失敗しました:', error);
     return null;
   }
 }
@@ -107,6 +158,48 @@ async function extractFileIconByExtension(filePath: string, extensionsFolder: st
     return null;
   } catch (error) {
     console.error('拡張子ベースのアイコン抽出に失敗しました:', error);
+    return null;
+  }
+}
+
+async function getUriSchemeHandler(scheme: string): Promise<string | null> {
+  if (process.platform !== 'win32') {
+    return null;
+  }
+
+  try {
+    // スキーマからコロンとスラッシュを除去
+    const cleanScheme = scheme.replace(/[:\\/]/g, '');
+    
+    // レジストリからスキーマハンドラーを取得
+    const { stdout } = await execAsync(
+      `reg query "HKEY_CLASSES_ROOT\\${cleanScheme}" /ve`,
+      { encoding: 'utf8' }
+    );
+    
+    // レジストリから実行ファイルパスを取得
+    const { stdout: commandStdout } = await execAsync(
+      `reg query "HKEY_CLASSES_ROOT\\${cleanScheme}\\shell\\open\\command" /ve`,
+      { encoding: 'utf8' }
+    );
+    
+    // 実行ファイルパスを抽出
+    const matches = commandStdout.match(/"([^"]+\.exe)"|([^\s]+\.exe)/i);
+    if (matches) {
+      const exePath = matches[1] || matches[2];
+      // 環境変数を展開
+      const expandedPath = exePath.replace(/%([^%]+)%/g, (_, envVar) => {
+        return process.env[envVar] || _;
+      });
+      
+      if (fs.existsSync(expandedPath)) {
+        return expandedPath;
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    // レジストリエントリが存在しない場合はエラーになるが、これは正常
     return null;
   }
 }
@@ -177,18 +270,31 @@ async function loadCachedIcons(items: any[], faviconsFolder: string, iconsFolder
         if (fs.existsSync(exeIconPath)) {
           iconPath = exeIconPath;
         }
-      } else if ((item.type === 'file' || item.type === 'customUri') && item.path) {
-        // ファイルまたはURIの場合、拡張子ベースのアイコンをチェック
-        let fileExtension: string;
-        
-        if (item.path.includes('://')) {
-          // URIスキーマの場合
-          fileExtension = extractExtensionFromUri(item.path);
-        } else {
-          // 通常のファイルパスの場合
-          fileExtension = path.extname(item.path).toLowerCase();
+      } else if (item.type === 'customUri' && item.path) {
+        // カスタムURIの場合、まずスキーマベースのアイコンをチェック
+        const schemeMatch = item.path.match(/^([^:]+):/);
+        if (schemeMatch) {
+          const scheme = schemeMatch[1];
+          const uriIconPath = path.join(iconsFolder, `uri_${scheme}_icon.png`);
+          if (fs.existsSync(uriIconPath)) {
+            iconPath = uriIconPath;
+          }
         }
         
+        // スキーマベースのアイコンがない場合、拡張子ベースのアイコンをチェック
+        if (!iconPath) {
+          const fileExtension = extractExtensionFromUri(item.path);
+          if (fileExtension) {
+            const extensionName = fileExtension.replace('.', '');
+            const extensionIconPath = path.join(extensionsFolder, `ext_${extensionName}_icon.png`);
+            if (fs.existsSync(extensionIconPath)) {
+              iconPath = extensionIconPath;
+            }
+          }
+        }
+      } else if (item.type === 'file' && item.path) {
+        // ファイルの場合、拡張子ベースのアイコンをチェック
+        const fileExtension = path.extname(item.path).toLowerCase();
         if (fileExtension) {
           const extensionName = fileExtension.replace('.', '');
           const extensionIconPath = path.join(extensionsFolder, `ext_${extensionName}_icon.png`);
@@ -222,6 +328,10 @@ export function setupIconHandlers(faviconsFolder: string, iconsFolder: string, e
   
   ipcMain.handle('extract-file-icon-by-extension', async (_event, filePath: string) => {
     return await extractFileIconByExtension(filePath, extensionsFolder);
+  });
+  
+  ipcMain.handle('extract-custom-uri-icon', async (_event, uri: string) => {
+    return await extractCustomUriIcon(uri, iconsFolder);
   });
   
   ipcMain.handle('load-cached-icons', async (_event, items: any[]) => {
