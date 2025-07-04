@@ -1,33 +1,17 @@
 import { ipcMain } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
+import { FaviconService } from '../services/faviconService';
+
+// FaviconServiceのインスタンスを保持
+let faviconService: FaviconService;
 
 async function fetchFavicon(url: string, faviconsFolder: string): Promise<string | null> {
-  try {
-    const domain = new URL(url).hostname;
-    const faviconPath = path.join(faviconsFolder, `${domain}_favicon_32.png`);
-    
-    // ファビコンがすでにキャッシュされているか確認
-    if (fs.existsSync(faviconPath)) {
-      const cachedFavicon = fs.readFileSync(faviconPath);
-      const base64 = cachedFavicon.toString('base64');
-      return `data:image/png;base64,${base64}`;
-    }
-    
-    // 新しいファビコンを取得
-    const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
-    const response = await fetch(faviconUrl);
-    const buffer = await response.arrayBuffer();
-    const base64 = Buffer.from(buffer).toString('base64');
-    
-    // キャッシュに保存
-    fs.writeFileSync(faviconPath, Buffer.from(buffer));
-    
-    return `data:image/png;base64,${base64}`;
-  } catch (error) {
-    console.error('ファビコンの取得に失敗しました:', error);
-    return null;
+  if (!faviconService) {
+    faviconService = new FaviconService(faviconsFolder);
   }
+  
+  return await faviconService.fetchFavicon(url);
 }
 
 async function extractIcon(filePath: string, faviconsFolder: string): Promise<string | null> {
@@ -173,9 +157,14 @@ async function loadCachedIcons(items: any[], faviconsFolder: string): Promise<Re
       // URLの場合、キャッシュされたファビコンをチェック
       if (item.type === 'url' && item.path && item.path.includes('://')) {
         const domain = new URL(item.path).hostname;
-        const faviconPath = path.join(faviconsFolder, `${domain}_favicon_32.png`);
-        if (fs.existsSync(faviconPath)) {
-          iconPath = faviconPath;
+        // 新しい64pxファイルを優先的にチェック
+        const faviconPath64 = path.join(faviconsFolder, `${domain}_favicon_64.png`);
+        const faviconPath32 = path.join(faviconsFolder, `${domain}_favicon_32.png`);
+        
+        if (fs.existsSync(faviconPath64)) {
+          iconPath = faviconPath64;
+        } else if (fs.existsSync(faviconPath32)) {
+          iconPath = faviconPath32;
         }
       } else if (item.type === 'app' && item.path && item.path.endsWith('.exe')) {
         // .exeファイルの場合、アイコンをチェック

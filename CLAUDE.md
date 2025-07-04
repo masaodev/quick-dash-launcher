@@ -86,7 +86,10 @@ dir,C:\folder\path  // フォルダから全ショートカットをインポー
 
 ### アイコン処理
 - ウェブサイト: ファビコンを`%APPDATA%/quickdashlauncher/config/favicons/`にキャッシュ
-- アプリケーション: `@bitdisaster/exe-icon-extractor`と`extract-file-icon`を使用してアイコン抽出
+  - 新しい`FaviconService`クラスでHTMLメタタグを解析し、複数ソースから取得
+  - デフォルト64px（高解像度対応）、既存の32pxキャッシュとの互換性維持
+  - 詳細は[ファビコン実装仕様](docs/favicon-implementation.md)を参照
+- アプリケーション: `extract-file-icon`を使用してアイコン抽出
 - URIスキーマ: ファイル拡張子ベースのアイコン取得（ms-excel:// → .xlsx）
 - デフォルト: 絵文字アイコン（📄ファイル、📁フォルダ、🌐ウェブ、🚀アプリ）
 
@@ -139,6 +142,7 @@ Viteベースのビルドシステムを使用:
 作業開始時に必ず以下のドキュメントを確認してください：
 
 - `CLAUDE.md` - プロジェクトの包括的なドキュメント（プロジェクト概要、アーキテクチャ、実装詳細、ビルドシステム、制限事項等）
+- `docs/favicon-implementation.md` - ファビコン取得システムの詳細な技術仕様
 
 ### 更新ルール
 
