@@ -8,10 +8,11 @@ export const CONFIG_FOLDER = path.join(app.getPath('userData'), 'config');
 export const ICONS_FOLDER = path.join(CONFIG_FOLDER, 'icons');
 export const FAVICONS_FOLDER = path.join(CONFIG_FOLDER, 'favicons');
 export const SCHEMES_FOLDER = path.join(ICONS_FOLDER, 'schemes');
+export const EXTENSIONS_FOLDER = path.join(ICONS_FOLDER, 'extensions');
 export const BACKUP_FOLDER = path.join(CONFIG_FOLDER, 'backup');
 
 export function ensureDirectories(): void {
-  const dirs = [CONFIG_FOLDER, ICONS_FOLDER, FAVICONS_FOLDER, SCHEMES_FOLDER, BACKUP_FOLDER];
+  const dirs = [CONFIG_FOLDER, ICONS_FOLDER, FAVICONS_FOLDER, SCHEMES_FOLDER, EXTENSIONS_FOLDER, BACKUP_FOLDER];
   dirs.forEach(dir => {
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });

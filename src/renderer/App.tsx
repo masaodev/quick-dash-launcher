@@ -135,45 +135,39 @@ const App: React.FC = () => {
   };
 
   const handleFetchFavicon = async () => {
-    const items = activeTab === 'main' ? mainItems : tempItems;
-    const filteredItems = filterItems(items, searchQuery);
-    const selectedItem = filteredItems[selectedIndex];
+    console.log('すべてのURLアイテムのファビコンを取得開始');
     
-    if (selectedItem) {
-      console.log('ファビコン取得対象アイテム:', selectedItem);
-      let icon: string | null = null;
-      
-      if (selectedItem.type === 'url') {
-        // Fetch favicon for URLs
-        console.log('URLのファビコンを取得中:', selectedItem.path);
-        icon = await window.electronAPI.fetchFavicon(selectedItem.path);
-        console.log('取得したファビコン:', icon ? 'あり' : 'なし');
-      } else if (selectedItem.type === 'app' && selectedItem.path.endsWith('.exe')) {
-        // Extract icon for Windows executables
-        console.log('EXEアイコンを取得中:', selectedItem.path);
-        icon = await window.electronAPI.extractIcon(selectedItem.path);
-      } else if (selectedItem.type === 'file' || selectedItem.type === 'uri') {
-        // Extract icon based on file extension
-        console.log('ファイルアイコンを取得中:', selectedItem.path);
-        icon = await window.electronAPI.extractFileIconByExtension(selectedItem.path);
-      }
-      
-      if (icon) {
-        console.log('アイコンを更新します');
-        // Update the icon in the current items list
-        const updateItems = activeTab === 'main' ? setMainItems : setTempItems;
-        const currentItemsList = activeTab === 'main' ? mainItems : tempItems;
-        
-        updateItems(currentItemsList.map(item => 
-          item.path === selectedItem.path ? { ...item, icon } : item
-        ));
-      } else {
-        console.log('アイコンの取得に失敗しました');
-      }
-    } else {
-      console.log('選択されたアイテムがありません');
-    }
+    // Function to fetch favicons for URL items
+    const fetchFaviconsForItems = async (items: LauncherItem[]) => {
+      const itemsWithFavicons = await Promise.all(
+        items.map(async (item) => {
+          if (item.type === 'url' && !item.icon) {
+            try {
+              console.log('ファビコン取得中:', item.path);
+              const icon = await window.electronAPI.fetchFavicon(item.path);
+              return { ...item, icon: icon || undefined };
+            } catch (error) {
+              console.error(`Failed to fetch favicon for ${item.path}:`, error);
+              return item;
+            }
+          }
+          return item;
+        })
+      );
+      return itemsWithFavicons;
+    };
+    
+    // Fetch favicons for both main and temp items
+    const [mainWithFavicons, tempWithFavicons] = await Promise.all([
+      fetchFaviconsForItems(mainItems),
+      fetchFaviconsForItems(tempItems)
+    ]);
+    
+    setMainItems(mainWithFavicons);
+    setTempItems(tempWithFavicons);
+    console.log('ファビコン取得完了');
   };
+
 
   const handleExtractAllIcons = async () => {
     // Load icons for all items
@@ -184,16 +178,14 @@ const App: React.FC = () => {
             try {
               let icon: string | null = null;
               
-              if (item.type === 'url') {
-                // Fetch favicon for URLs
-                icon = await window.electronAPI.fetchFavicon(item.path);
-              } else if (item.type === 'app' && item.path.endsWith('.exe')) {
+              if (item.type === 'app' && item.path.endsWith('.exe')) {
                 // Extract icon for Windows executables
                 icon = await window.electronAPI.extractIcon(item.path);
               } else if (item.type === 'file' || item.type === 'uri') {
                 // Extract icon based on file extension
                 icon = await window.electronAPI.extractFileIconByExtension(item.path);
               }
+              // Skip URLs - favicons should only be fetched via the favicon button
               
               return { ...item, icon: icon || undefined };
             } catch (error) {

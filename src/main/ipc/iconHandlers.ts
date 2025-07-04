@@ -14,7 +14,7 @@ async function fetchFavicon(url: string, faviconsFolder: string): Promise<string
   return await faviconService.fetchFavicon(url);
 }
 
-async function extractIcon(filePath: string, faviconsFolder: string): Promise<string | null> {
+async function extractIcon(filePath: string, iconsFolder: string): Promise<string | null> {
   try {
     // ファイルが存在するか確認
     if (!fs.existsSync(filePath)) {
@@ -24,7 +24,7 @@ async function extractIcon(filePath: string, faviconsFolder: string): Promise<st
     
     // キャッシュ用ファイル名を生成
     const iconName = path.basename(filePath, path.extname(filePath)) + '_icon.png';
-    const iconPath = path.join(faviconsFolder, iconName);
+    const iconPath = path.join(iconsFolder, iconName);
     
     // アイコンがすでにキャッシュされているか確認
     if (fs.existsSync(iconPath)) {
@@ -53,7 +53,7 @@ async function extractIcon(filePath: string, faviconsFolder: string): Promise<st
   }
 }
 
-async function extractFileIconByExtension(filePath: string, faviconsFolder: string): Promise<string | null> {
+async function extractFileIconByExtension(filePath: string, extensionsFolder: string): Promise<string | null> {
   try {
     let fileExtension: string;
     
@@ -72,7 +72,7 @@ async function extractFileIconByExtension(filePath: string, faviconsFolder: stri
     // 拡張子ベースのキャッシュファイル名を生成
     const extensionName = fileExtension.replace('.', '');
     const iconName = `ext_${extensionName}_icon.png`;
-    const iconPath = path.join(faviconsFolder, iconName);
+    const iconPath = path.join(extensionsFolder, iconName);
     
     // アイコンがすでにキャッシュされているか確認
     if (fs.existsSync(iconPath)) {
@@ -147,7 +147,7 @@ function createTempFileForExtension(extension: string): string {
   return tempFilePath;
 }
 
-async function loadCachedIcons(items: any[], faviconsFolder: string): Promise<Record<string, string>> {
+async function loadCachedIcons(items: any[], faviconsFolder: string, iconsFolder: string, extensionsFolder: string): Promise<Record<string, string>> {
   const iconCache: Record<string, string> = {};
   
   for (const item of items) {
@@ -169,7 +169,7 @@ async function loadCachedIcons(items: any[], faviconsFolder: string): Promise<Re
       } else if (item.type === 'app' && item.path && item.path.endsWith('.exe')) {
         // .exeファイルの場合、アイコンをチェック
         const iconName = path.basename(item.path, '.exe') + '_icon.png';
-        const exeIconPath = path.join(faviconsFolder, iconName);
+        const exeIconPath = path.join(iconsFolder, iconName);
         if (fs.existsSync(exeIconPath)) {
           iconPath = exeIconPath;
         }
@@ -187,7 +187,7 @@ async function loadCachedIcons(items: any[], faviconsFolder: string): Promise<Re
         
         if (fileExtension) {
           const extensionName = fileExtension.replace('.', '');
-          const extensionIconPath = path.join(faviconsFolder, `ext_${extensionName}_icon.png`);
+          const extensionIconPath = path.join(extensionsFolder, `ext_${extensionName}_icon.png`);
           if (fs.existsSync(extensionIconPath)) {
             iconPath = extensionIconPath;
           }
@@ -207,20 +207,20 @@ async function loadCachedIcons(items: any[], faviconsFolder: string): Promise<Re
   return iconCache;
 }
 
-export function setupIconHandlers(faviconsFolder: string) {
+export function setupIconHandlers(faviconsFolder: string, iconsFolder: string, extensionsFolder: string) {
   ipcMain.handle('fetch-favicon', async (_event, url: string) => {
     return await fetchFavicon(url, faviconsFolder);
   });
   
   ipcMain.handle('extract-icon', async (_event, filePath: string) => {
-    return await extractIcon(filePath, faviconsFolder);
+    return await extractIcon(filePath, iconsFolder);
   });
   
   ipcMain.handle('extract-file-icon-by-extension', async (_event, filePath: string) => {
-    return await extractFileIconByExtension(filePath, faviconsFolder);
+    return await extractFileIconByExtension(filePath, extensionsFolder);
   });
   
   ipcMain.handle('load-cached-icons', async (_event, items: any[]) => {
-    return await loadCachedIcons(items, faviconsFolder);
+    return await loadCachedIcons(items, faviconsFolder, iconsFolder, extensionsFolder);
   });
 }

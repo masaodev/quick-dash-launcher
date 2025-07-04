@@ -4,6 +4,8 @@ import { setupIPCHandlers } from './ipc';
 import { 
   CONFIG_FOLDER, 
   FAVICONS_FOLDER,
+  ICONS_FOLDER,
+  EXTENSIONS_FOLDER,
   ensureDirectories,
   createDefaultDataFile,
   backupDataFiles
@@ -37,7 +39,7 @@ app.whenReady().then(() => {
   registerGlobalShortcut();
   
   // レンダラープロセスとの通信用IPCハンドラーを設定
-  setupIPCHandlers(CONFIG_FOLDER, FAVICONS_FOLDER, getMainWindow);
+  setupIPCHandlers(CONFIG_FOLDER, FAVICONS_FOLDER, ICONS_FOLDER, EXTENSIONS_FOLDER, getMainWindow);
 });
 
 app.on('window-all-closed', () => {

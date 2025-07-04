@@ -22,7 +22,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
       <button
         className="action-button"
         onClick={onFetchFavicon}
-        title="ファビコンを取得"
+        title="ファビコン取得"
       >
         🌐
       </button>
