@@ -14,6 +14,8 @@ export interface ElectronAPI {
   extractCustomUriIcon: (uri: string) => Promise<string | null>;
   loadCachedIcons: (items: LauncherItem[]) => Promise<Record<string, string>>;
   onWindowShown: (callback: () => void) => void;
+  getWindowPinState: () => Promise<boolean>;
+  setWindowPinState: (isPinned: boolean) => Promise<void>;
 }
 
 declare global {

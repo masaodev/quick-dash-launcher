@@ -14,7 +14,9 @@ import {
   createWindow,
   createTray,
   registerGlobalShortcut,
-  getMainWindow
+  getMainWindow,
+  getWindowPinState,
+  setWindowPinState
 } from './windowManager';
 
 // const store = new Store(); // 将来の使用のために予約
@@ -39,7 +41,7 @@ app.whenReady().then(() => {
   registerGlobalShortcut();
   
   // レンダラープロセスとの通信用IPCハンドラーを設定
-  setupIPCHandlers(CONFIG_FOLDER, FAVICONS_FOLDER, ICONS_FOLDER, EXTENSIONS_FOLDER, getMainWindow);
+  setupIPCHandlers(CONFIG_FOLDER, FAVICONS_FOLDER, ICONS_FOLDER, EXTENSIONS_FOLDER, getMainWindow, getWindowPinState, setWindowPinState);
 });
 
 app.on('window-all-closed', () => {

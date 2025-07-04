@@ -6,6 +6,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 QuickDashLauncherは、グローバルホットキー（Ctrl+Alt+W）でWebサイト、アプリケーション、フォルダ、ファイルに素早くアクセスできるWindows用ランチャーアプリケーション（Electron + React + TypeScript）です。
 
+### 主要機能
+- **グローバルホットキー**: Ctrl+Alt+Wで即座にランチャーを呼び出し
+- **ウィンドウ固定化**: 📌ボタンでウィンドウを固定し、フォーカスアウトしても非表示にならない
+- **アイコン表示**: アプリケーション、ファイル、URLのアイコンを自動取得・表示
+- **タブ切り替え**: メインタブと一時タブでアイテムを分類管理
+- **リアルタイム検索**: 入力に応じてアイテムをリアルタイムフィルタリング
+
 ## ビルドコマンド
 
 ```bash

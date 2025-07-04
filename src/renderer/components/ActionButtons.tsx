@@ -7,6 +7,8 @@ interface ActionButtonsProps {
   onReload: () => void;
   onOpenConfigFolder: () => void;
   onOpenDataFile: () => void;
+  onTogglePin: () => void;
+  isPinned: boolean;
 }
 
 const ActionButtons: React.FC<ActionButtonsProps> = ({
@@ -16,6 +18,8 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   onReload,
   onOpenConfigFolder,
   onOpenDataFile,
+  onTogglePin,
+  isPinned,
 }) => {
   return (
     <div className="action-buttons">
@@ -60,6 +64,13 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         title="設定ファイルを開く"
       >
         ⚙
+      </button>
+      <button
+        className={`action-button ${isPinned ? 'pinned' : ''}`}
+        onClick={onTogglePin}
+        title={isPinned ? "固定解除" : "ウィンドウを固定"}
+      >
+        📌
       </button>
     </div>
   );

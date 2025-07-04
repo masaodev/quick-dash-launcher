@@ -4,6 +4,7 @@ import { HOTKEY } from './appHelpers';
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
+let isPinned: boolean = false;
 
 export function createWindow(): BrowserWindow {
   mainWindow = new BrowserWindow({
@@ -30,7 +31,7 @@ export function createWindow(): BrowserWindow {
   // mainWindow.webContents.openDevTools({ mode: 'detach' });
 
   mainWindow.on('blur', () => {
-    if (mainWindow && !mainWindow.webContents.isDevToolsOpened()) {
+    if (mainWindow && !mainWindow.webContents.isDevToolsOpened() && !isPinned) {
       mainWindow.hide();
     }
   });
@@ -106,4 +107,12 @@ export function registerGlobalShortcut(): void {
 
 export function getMainWindow(): BrowserWindow | null {
   return mainWindow;
+}
+
+export function getWindowPinState(): boolean {
+  return isPinned;
+}
+
+export function setWindowPinState(pinState: boolean): void {
+  isPinned = pinState;
 }

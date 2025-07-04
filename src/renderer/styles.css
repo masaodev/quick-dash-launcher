@@ -73,6 +73,17 @@ body {
   background-color: #e0e0e0;
 }
 
+.action-button.pinned {
+  background-color: #0078d4;
+  color: white;
+  border-color: #0078d4;
+}
+
+.action-button.pinned:hover {
+  background-color: #106ebe;
+  border-color: #106ebe;
+}
+
 .tab-control {
   display: flex;
   background-color: #f8f8f8;

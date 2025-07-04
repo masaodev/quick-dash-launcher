@@ -13,6 +13,7 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'main' | 'temp'>('main');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isCtrlPressed, setIsCtrlPressed] = useState(false);
+  const [isPinned, setIsPinned] = useState(false);
   
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -24,6 +25,13 @@ const App: React.FC = () => {
       setSelectedIndex(0);
       searchInputRef.current?.focus();
     });
+
+    // Load initial pin state
+    const loadPinState = async () => {
+      const pinState = await window.electronAPI.getWindowPinState();
+      setIsPinned(pinState);
+    };
+    loadPinState();
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Control') {
@@ -216,6 +224,12 @@ const App: React.FC = () => {
     setTempItems(tempWithIcons);
   };
 
+  const handleTogglePin = async () => {
+    const newPinState = !isPinned;
+    await window.electronAPI.setWindowPinState(newPinState);
+    setIsPinned(newPinState);
+  };
+
   const currentItems = activeTab === 'main' ? mainItems : tempItems;
   const filteredItems = filterItems(currentItems, searchQuery);
 
@@ -235,6 +249,8 @@ const App: React.FC = () => {
           onReload={loadItems}
           onOpenConfigFolder={() => window.electronAPI.openConfigFolder()}
           onOpenDataFile={() => window.electronAPI.openDataFile()}
+          onTogglePin={handleTogglePin}
+          isPinned={isPinned}
         />
       </div>
       

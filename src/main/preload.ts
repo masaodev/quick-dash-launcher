@@ -17,4 +17,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onWindowShown: (callback: () => void) => {
     ipcRenderer.on('window-shown', callback);
   },
+  getWindowPinState: () => ipcRenderer.invoke('get-window-pin-state'),
+  setWindowPinState: (isPinned: boolean) => ipcRenderer.invoke('set-window-pin-state', isPinned),
 });

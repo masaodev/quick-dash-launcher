@@ -3,16 +3,20 @@ import { setupDataHandlers } from './dataHandlers';
 import { setupItemHandlers } from './itemHandlers';
 import { setupConfigHandlers } from './configHandlers';
 import { setupIconHandlers } from './iconHandlers';
+import { setupWindowHandlers } from './windowHandlers';
 
 export function setupIPCHandlers(
   configFolder: string,
   faviconsFolder: string,
   iconsFolder: string,
   extensionsFolder: string,
-  getMainWindow: () => BrowserWindow | null
+  getMainWindow: () => BrowserWindow | null,
+  getWindowPinState: () => boolean,
+  setWindowPinState: (pinState: boolean) => void
 ) {
   setupDataHandlers(configFolder);
   setupItemHandlers(getMainWindow);
   setupConfigHandlers(configFolder);
   setupIconHandlers(faviconsFolder, iconsFolder, extensionsFolder);
+  setupWindowHandlers(getWindowPinState, setWindowPinState);
 }
