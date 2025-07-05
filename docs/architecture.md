@@ -22,14 +22,15 @@ IPCハンドラーは機能ごとに分離（`src/main/ipc/`）:
 - `open-parent-folder`: エクスプローラーでアイテムを表示
 - `fetch-favicon`: ウェブサイトのファビコンをダウンロード
 - `extract-icon`: アプリケーションアイコンを抽出
-- `extract-custom-uri-icon`: **新機能** カスタムURIスキーマのハンドラーアプリアイコンを抽出
+- `extract-custom-uri-icon`: カスタムURIスキーマのハンドラーアプリアイコンを抽出
 - `extract-file-icon-by-extension`: ファイル拡張子ベースのアイコン抽出
 - `load-cached-icons`: キャッシュされたアイコンを一括読み込み
 - `get-window-pin-state`: ウィンドウ固定状態を取得
 - `set-window-pin-state`: ウィンドウ固定状態を設定
-- `register-items`: **新機能** アイテムをデータファイルに登録
+- `register-items`: アイテムをデータファイルに登録
 - `is-directory`: パスがディレクトリかどうかを判定
 - `getPathForFile`: **プリロードAPI** ドラッグ&ドロップされたファイルのパスを取得
+- `quit-app`: アプリケーションを終了
 
 ## データフロー
 1. メインプロセスが`%APPDATA%/quickdashlauncher/config/`からデータファイルを読み込む

@@ -20,6 +20,7 @@ export interface ElectronAPI {
   registerItems: (items: RegisterItem[]) => Promise<void>;
   isDirectory: (filePath: string) => Promise<boolean>;
   getPathForFile: (file: File) => string;
+  quitApp: () => Promise<void>;
 }
 
 declare global {

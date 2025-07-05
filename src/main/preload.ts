@@ -22,4 +22,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   registerItems: (items: any[]) => ipcRenderer.invoke('register-items', items),
   isDirectory: (filePath: string) => ipcRenderer.invoke('is-directory', filePath),
   getPathForFile: (file: File) => webUtils.getPathForFile(file),
+  quitApp: () => ipcRenderer.invoke('quit-app'),
 });

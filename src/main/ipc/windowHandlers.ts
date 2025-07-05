@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron';
+import { ipcMain, app } from 'electron';
 
 export function setupWindowHandlers(
   getWindowPinState: () => boolean,
@@ -10,5 +10,9 @@ export function setupWindowHandlers(
 
   ipcMain.handle('set-window-pin-state', (event, isPinned: boolean) => {
     setWindowPinState(isPinned);
+  });
+
+  ipcMain.handle('quit-app', () => {
+    app.quit();
   });
 }

@@ -1,4 +1,5 @@
 import React from 'react';
+import SettingsDropdown from './SettingsDropdown';
 
 interface ActionButtonsProps {
   onFetchFavicon: () => void;
@@ -54,33 +55,18 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         🔄
       </button>
       <button
-        className="action-button"
-        onClick={onOpenConfigFolder}
-        title="設定フォルダを開く"
-      >
-        📁
-      </button>
-      <button
-        className="action-button"
-        onClick={onOpenDataFile}
-        title="設定ファイルを開く"
-      >
-        ⚙
-      </button>
-      <button
         className={`action-button ${isPinned ? 'pinned' : ''}`}
         onClick={onTogglePin}
         title={isPinned ? "固定解除" : "ウィンドウを固定"}
       >
         📌
       </button>
-      <button
-        className="action-button"
-        onClick={onExportJson}
-        title="JSON出力"
-      >
-        📋
-      </button>
+      <SettingsDropdown
+        onOpenConfigFolder={onOpenConfigFolder}
+        onOpenDataFile={onOpenDataFile}
+        onExportJson={onExportJson}
+        onQuitApp={() => window.electronAPI.quitApp()}
+      />
     </div>
   );
 };
