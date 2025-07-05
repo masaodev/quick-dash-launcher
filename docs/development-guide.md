@@ -14,7 +14,7 @@
 // コメント行は//で開始
 表示名,URLまたはパス
 アプリ名,C:\path\to\app.exe,オプション引数
-dir,C:\folder\path  // フォルダから全ショートカットをインポート
+dir,C:\folder\path  // フォルダからファイル・フォルダをインポート
 アプリ名,C:\path\to\shortcut.lnk  // 直接指定されたショートカットも自動解析
 ```
 

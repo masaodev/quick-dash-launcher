@@ -20,12 +20,6 @@ function parseDirOptions(parts: string[]): DirOptions {
     types: 'both'
   };
 
-  // 後方互換性: オプションがない場合は.lnkファイルのみ（従来の動作）
-  if (parts.length === 1) {
-    options.types = 'file';
-    options.filter = '*.lnk';
-  }
-
   // オプションを解析
   for (let i = 1; i < parts.length; i++) {
     const option = parts[i].trim();
@@ -110,34 +104,6 @@ function processShortcutToCSV(filePath: string, prefix?: string): string | null 
   return null;
 }
 
-async function scanDirectoryForShortcuts(dirPath: string): Promise<string[]> {
-  const results: string[] = [];
-  
-  try {
-    const files = fs.readdirSync(dirPath);
-    
-    for (const file of files) {
-      const filePath = path.join(dirPath, file);
-      
-      // ディレクトリはスキップ
-      if (fs.statSync(filePath).isDirectory()) {
-        continue;
-      }
-      
-      // .lnkファイル（Windowsショートカット）を処理
-      if (path.extname(file).toLowerCase() === '.lnk') {
-        const processedShortcut = processShortcutToCSV(filePath);
-        if (processedShortcut) {
-          results.push(processedShortcut);
-        }
-      }
-    }
-  } catch (error) {
-    console.error(`Error reading directory ${dirPath}:`, error);
-  }
-  
-  return results;
-}
 
 // 拡張されたディレクトリスキャン関数
 async function scanDirectory(dirPath: string, options: DirOptions, currentDepth = 0): Promise<string[]> {
@@ -242,15 +208,9 @@ async function loadDataFiles(configFolder: string): Promise<DataFile[]> {
               // オプションを解析
               const options = parseDirOptions(parts);
               
-              // 後方互換性: オプションがない場合は従来の動作
-              if (parts.length === 1) {
-                const shortcuts = await scanDirectoryForShortcuts(dirPath);
-                processedLines.push(...shortcuts);
-              } else {
-                // 新しい拡張スキャン
-                const items = await scanDirectory(dirPath, options);
-                processedLines.push(...items);
-              }
+              // ディレクトリをスキャン
+              const items = await scanDirectory(dirPath, options);
+              processedLines.push(...items);
             } catch (error) {
               console.error(`Error scanning directory ${dirPath}:`, error);
             }
