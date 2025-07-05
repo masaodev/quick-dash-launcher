@@ -17,6 +17,7 @@ export interface RegisterItem {
   targetTab: 'main' | 'temp';
   folderProcessing?: 'folder' | 'expand';
   icon?: string;
+  itemCategory: 'item' | 'dir';
   // DIRディレクティブオプション
   dirOptions?: {
     depth: number;
@@ -78,7 +79,8 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onRegist
         type: itemType,
         args: args || undefined,
         targetTab: 'main',
-        folderProcessing: itemType === 'folder' ? 'folder' : undefined
+        folderProcessing: itemType === 'folder' ? 'folder' : undefined,
+        itemCategory: 'item'
       };
     } else if (line.type === 'directive') {
       // DIRディレクティブの場合：dir,パス,オプション
@@ -124,7 +126,8 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onRegist
         type: 'folder',
         targetTab: 'main',
         folderProcessing: 'expand',
-        dirOptions
+        dirOptions,
+        itemCategory: 'dir'
       };
     } else {
       // その他の場合
@@ -132,7 +135,8 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onRegist
         name: line.content || '',
         path: line.content || '',
         type: 'file',
-        targetTab: 'main'
+        targetTab: 'main',
+        itemCategory: 'item'
       };
     }
   };
@@ -179,6 +183,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onRegist
         targetTab: 'main',
         folderProcessing: itemType === 'folder' ? 'folder' : undefined,
         icon,
+        itemCategory: 'item',
         dirOptions: itemType === 'folder' ? {
           depth: 0,
           types: 'both',
@@ -254,6 +259,27 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onRegist
     const newItems = [...items];
     newItems[index] = { ...newItems[index], [field]: value };
     
+    // アイテム種別が変更された場合の処理
+    if (field === 'itemCategory') {
+      if (value === 'dir') {
+        // DIR選択時：フォルダ処理を展開に設定し、DIRオプションを初期化
+        newItems[index].folderProcessing = 'expand';
+        if (!newItems[index].dirOptions) {
+          newItems[index].dirOptions = {
+            depth: 0,
+            types: 'both',
+            filter: undefined,
+            exclude: undefined,
+            prefix: undefined
+          };
+        }
+      } else {
+        // アイテム選択時：フォルダ処理とDIRオプションをクリア
+        delete newItems[index].folderProcessing;
+        delete newItems[index].dirOptions;
+      }
+    }
+    
     // パスが変更された場合、アイテムタイプを再検出
     if (field === 'path' && editingItem) {
       const newType = await detectItemType(value);
@@ -316,16 +342,28 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onRegist
                     {item.icon && (
                       <img src={item.icon} alt="" className="item-icon" />
                     )}
-                    <span className="item-type">{item.type}</span>
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>種別:</label>
+                    <select
+                      value={item.itemCategory}
+                      onChange={(e) => handleItemChange(index, 'itemCategory', e.target.value as 'item' | 'dir')}
+                    >
+                      <option value="item">アイテム</option>
+                      <option value="dir">DIR</option>
+                    </select>
                   </div>
                   
                   <div className="form-group">
                     <label>名前:</label>
                     <input
                       type="text"
-                      value={item.name}
+                      value={item.itemCategory === 'dir' ? '-' : item.name}
                       onChange={(e) => handleItemChange(index, 'name', e.target.value)}
                       placeholder="表示名を入力"
+                      readOnly={item.itemCategory === 'dir'}
+                      className={item.itemCategory === 'dir' ? "readonly" : ""}
                     />
                   </div>
                   
@@ -352,20 +390,9 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onRegist
                     </div>
                   )}
                   
-                  {item.type === 'folder' && (
+                  {item.itemCategory === 'dir' && (
                     <>
-                      <div className="form-group">
-                        <label>フォルダ処理:</label>
-                        <select
-                          value={item.folderProcessing}
-                          onChange={(e) => handleItemChange(index, 'folderProcessing', e.target.value as 'folder' | 'expand')}
-                        >
-                          <option value="folder">フォルダ自体を登録</option>
-                          <option value="expand">フォルダ内容を展開 (dir,)</option>
-                        </select>
-                      </div>
-                      
-                      {item.folderProcessing === 'expand' && item.dirOptions && (
+                      {item.dirOptions && (
                         <div className="dir-options">
                           <div className="form-group">
                             <label>階層深度:</label>

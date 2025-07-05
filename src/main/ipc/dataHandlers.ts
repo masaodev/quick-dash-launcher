@@ -335,6 +335,7 @@ interface RegisterItem {
   targetTab: 'main' | 'temp';
   folderProcessing?: 'folder' | 'expand';
   icon?: string;
+  itemCategory: 'item' | 'dir';
   // DIRディレクティブオプション
   dirOptions?: {
     depth: number;
@@ -360,7 +361,7 @@ async function registerItems(configFolder: string, items: RegisterItem[]): Promi
     }
     
     const newLines = mainItems.map(item => {
-      if (item.type === 'folder' && item.folderProcessing === 'expand') {
+      if (item.itemCategory === 'dir') {
         let dirLine = `dir,${item.path}`;
         
         // DIRディレクティブオプションを追加
@@ -421,7 +422,7 @@ async function registerItems(configFolder: string, items: RegisterItem[]): Promi
     }
     
     const newLines = tempItems.map(item => {
-      if (item.type === 'folder' && item.folderProcessing === 'expand') {
+      if (item.itemCategory === 'dir') {
         let dirLine = `dir,${item.path}`;
         
         // DIRディレクティブオプションを追加

@@ -39,14 +39,11 @@ const EditModeView: React.FC<EditModeViewProps> = ({
 
   const convertRegisterItemToRawDataLine = (item: RegisterItem, originalLine: RawDataLine): RawDataLine => {
     let newContent = '';
+    let newType: RawDataLine['type'] = originalLine.type;
     
-    if (originalLine.type === 'item') {
-      // アイテム行の場合：名前,パス,引数,元パス の形式
-      const args = item.args || '';
-      const originalPath = originalLine.content.split(',')[3] || item.path;
-      newContent = `${item.name},${item.path},${args},${originalPath}`;
-    } else if (originalLine.type === 'directive') {
+    if (item.itemCategory === 'dir') {
       // DIRディレクティブの場合
+      newType = 'directive';
       if (item.dirOptions) {
         const options = [];
         if (item.dirOptions.depth !== 0) options.push(`depth=${item.dirOptions.depth}`);
@@ -61,13 +58,17 @@ const EditModeView: React.FC<EditModeViewProps> = ({
         newContent = `dir,${item.path}`;
       }
     } else {
-      // その他の場合（コメント、空行など）
-      newContent = item.name || item.path || '';
+      // アイテム行の場合：名前,パス,引数,元パス の形式
+      newType = 'item';
+      const args = item.args || '';
+      const originalPath = originalLine.content.split(',')[3] || item.path;
+      newContent = `${item.name},${item.path},${args},${originalPath}`;
     }
     
     return {
       ...originalLine,
-      content: newContent
+      content: newContent,
+      type: newType
     };
   };
 
