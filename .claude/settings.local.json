@@ -12,7 +12,9 @@
       "Bash(npx tsc:*)",
       "Bash(powershell.exe -Command:*)",
       "Bash(mkdir:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": []
   }

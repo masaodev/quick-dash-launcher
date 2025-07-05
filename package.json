@@ -36,8 +36,10 @@
     "wait-on": "^8.0.3"
   },
   "dependencies": {
+    "@types/minimatch": "^5.1.2",
     "electron-store": "^10.1.0",
     "extract-file-icon": "^0.3.2",
+    "minimatch": "^10.0.3",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },

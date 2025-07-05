@@ -136,3 +136,17 @@ Viteベースのビルドシステムを使用:
     - ソート前にbackupフォルダへ自動バックアップ（タイムスタンプ付き）
     - dirディレクティブ行はファイル先頭に維持
     - CSV形式の適切な解析（カンマや引用符を含むパスに対応）
+17. 拡張DIRディレクティブ機能
+    - 基本構文: `dir,パス[,オプション...]`
+    - 対応オプション:
+      - `depth=数値`: サブディレクトリを辿る深さ（0=現在のみ、-1=無制限）
+      - `types=file|folder|both`: 取得するタイプ（デフォルト: both）
+      - `filter=パターン`: ファイル/フォルダー名のフィルター（例: *.txt）
+      - `exclude=パターン`: 除外パターン（例: temp*）
+      - `prefix=文字列`: 展開されるアイテムの表示名に付けるプレフィックス
+    - 後方互換性: オプションなしの場合は従来通り.lnkファイルのみ
+    - 使用例:
+      - `dir,C:\Users\Desktop,types=file,filter=*.exe`
+      - `dir,C:\Users\Desktop,depth=2,types=folder`
+      - `dir,C:\Users\Desktop,depth=1,filter=*.txt,exclude=temp*`
+      - `dir,C:\Projects,prefix=仕事,depth=1,types=file`（「仕事: ファイル名」として表示）

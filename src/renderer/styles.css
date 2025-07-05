@@ -404,3 +404,20 @@ body {
   background-color: #106ebe;
   border-color: #106ebe;
 }
+
+/* DIRディレクティブオプション */
+.dir-options {
+  margin-left: 20px;
+  padding: 10px;
+  background-color: #f5f5f5;
+  border-left: 3px solid #0078d4;
+  border-radius: 4px;
+}
+
+.dir-options .form-group {
+  margin-bottom: 10px;
+}
+
+.dir-options .form-group:last-child {
+  margin-bottom: 0;
+}

@@ -1,15 +1,93 @@
 import { ipcMain, shell } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
+import { minimatch } from 'minimatch';
 import { DataFile } from '../../common/types';
 
-function processShortcutToCSV(filePath: string): string | null {
+// DIRディレクティブのオプション型定義
+interface DirOptions {
+  depth: number;
+  types: 'file' | 'folder' | 'both';
+  filter?: string;
+  exclude?: string;
+  prefix?: string;
+}
+
+// DIRディレクティブのオプションを解析
+function parseDirOptions(parts: string[]): DirOptions {
+  const options: DirOptions = {
+    depth: 0,
+    types: 'both'
+  };
+
+  // 後方互換性: オプションがない場合は.lnkファイルのみ（従来の動作）
+  if (parts.length === 1) {
+    options.types = 'file';
+    options.filter = '*.lnk';
+  }
+
+  // オプションを解析
+  for (let i = 1; i < parts.length; i++) {
+    const option = parts[i].trim();
+    const [key, value] = option.split('=').map(s => s.trim());
+
+    switch (key) {
+      case 'depth':
+        options.depth = parseInt(value, 10);
+        break;
+      case 'types':
+        if (value === 'file' || value === 'folder' || value === 'both') {
+          options.types = value;
+        }
+        break;
+      case 'filter':
+        options.filter = value;
+        break;
+      case 'exclude':
+        options.exclude = value;
+        break;
+      case 'prefix':
+        options.prefix = value;
+        break;
+    }
+  }
+
+  return options;
+}
+
+// ファイル/フォルダーをCSV形式に変換
+function processItemToCSV(itemPath: string, itemType: 'file' | 'folder', prefix?: string): string {
+  let displayName = path.basename(itemPath);
+  
+  // プレフィックスが指定されている場合は追加
+  if (prefix) {
+    displayName = `${prefix}: ${displayName}`;
+  }
+  
+  const extension = path.extname(itemPath).toLowerCase();
+  
+  // 実行可能ファイルの場合
+  if (itemType === 'file' && (extension === '.exe' || extension === '.bat' || extension === '.cmd')) {
+    return `${displayName},${itemPath},,${itemPath}`;
+  }
+  
+  // フォルダーまたはその他のファイル
+  return `${displayName},${itemPath},,${itemPath}`;
+}
+
+function processShortcutToCSV(filePath: string, prefix?: string): string | null {
   try {
     // Electron のネイティブ機能を使用してショートカットを読み取り
     const shortcutDetails = shell.readShortcutLink(filePath);
     
     if (shortcutDetails && shortcutDetails.target) {
-      const displayName = path.basename(filePath, '.lnk');
+      let displayName = path.basename(filePath, '.lnk');
+      
+      // プレフィックスが指定されている場合は追加
+      if (prefix) {
+        displayName = `${prefix}: ${displayName}`;
+      }
+      
       let line = `${displayName},${shortcutDetails.target}`;
       
       // 引数が存在する場合は追加
@@ -61,6 +139,83 @@ async function scanDirectoryForShortcuts(dirPath: string): Promise<string[]> {
   return results;
 }
 
+// 拡張されたディレクトリスキャン関数
+async function scanDirectory(dirPath: string, options: DirOptions, currentDepth = 0): Promise<string[]> {
+  const results: string[] = [];
+  
+  // 深さ制限チェック
+  if (options.depth !== -1 && currentDepth > options.depth) {
+    return results;
+  }
+  
+  try {
+    const items = fs.readdirSync(dirPath);
+    
+    for (const item of items) {
+      const itemPath = path.join(dirPath, item);
+      
+      // エラーハンドリング: アクセスできないファイル/フォルダーをスキップ
+      let stat;
+      try {
+        stat = fs.statSync(itemPath);
+      } catch (error) {
+        console.warn(`Cannot access ${itemPath}:`, error);
+        continue;
+      }
+      
+      const isDirectory = stat.isDirectory();
+      const itemName = path.basename(itemPath);
+      
+      // 除外パターンチェック
+      if (options.exclude && minimatch(itemName, options.exclude)) {
+        continue;
+      }
+      
+      // フィルターパターンチェック
+      if (options.filter && !minimatch(itemName, options.filter)) {
+        // サブディレクトリの場合は、中身をスキャンする可能性があるのでスキップしない
+        if (!isDirectory) {
+          continue;
+        }
+      }
+      
+      // タイプによる処理
+      if (isDirectory) {
+        // フォルダーを結果に含める
+        if (options.types === 'folder' || options.types === 'both') {
+          // フィルターがない、またはフィルターにマッチする場合のみ追加
+          if (!options.filter || minimatch(itemName, options.filter)) {
+            results.push(processItemToCSV(itemPath, 'folder', options.prefix));
+          }
+        }
+        
+        // サブディレクトリをスキャン
+        if (currentDepth < options.depth || options.depth === -1) {
+          const subResults = await scanDirectory(itemPath, options, currentDepth + 1);
+          results.push(...subResults);
+        }
+      } else {
+        // ファイルを結果に含める
+        if (options.types === 'file' || options.types === 'both') {
+          // .lnkファイルの場合は特別処理
+          if (path.extname(itemPath).toLowerCase() === '.lnk') {
+            const processedShortcut = processShortcutToCSV(itemPath, options.prefix);
+            if (processedShortcut) {
+              results.push(processedShortcut);
+            }
+          } else {
+            results.push(processItemToCSV(itemPath, 'file', options.prefix));
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error(`Error scanning directory ${dirPath}:`, error);
+  }
+  
+  return results;
+}
+
 
 async function loadDataFiles(configFolder: string): Promise<DataFile[]> {
   const files: DataFile[] = [];
@@ -78,11 +233,24 @@ async function loadDataFiles(configFolder: string): Promise<DataFile[]> {
       for (const line of lines) {
         const trimmedLine = line.trim();
         if (trimmedLine.startsWith('dir,')) {
-          const dirPath = trimmedLine.substring(4).trim();
+          // DIRディレクティブを解析
+          const parts = trimmedLine.substring(4).split(',').map(s => s.trim());
+          const dirPath = parts[0];
+          
           if (fs.existsSync(dirPath) && fs.statSync(dirPath).isDirectory()) {
             try {
-              const shortcuts = await scanDirectoryForShortcuts(dirPath);
-              processedLines.push(...shortcuts);
+              // オプションを解析
+              const options = parseDirOptions(parts);
+              
+              // 後方互換性: オプションがない場合は従来の動作
+              if (parts.length === 1) {
+                const shortcuts = await scanDirectoryForShortcuts(dirPath);
+                processedLines.push(...shortcuts);
+              } else {
+                // 新しい拡張スキャン
+                const items = await scanDirectory(dirPath, options);
+                processedLines.push(...items);
+              }
             } catch (error) {
               console.error(`Error scanning directory ${dirPath}:`, error);
             }
@@ -125,6 +293,14 @@ interface RegisterItem {
   targetTab: 'main' | 'temp';
   folderProcessing?: 'folder' | 'expand';
   icon?: string;
+  // DIRディレクティブオプション
+  dirOptions?: {
+    depth: number;
+    types: 'file' | 'folder' | 'both';
+    filter?: string;
+    exclude?: string;
+    prefix?: string;
+  };
 }
 
 async function registerItems(configFolder: string, items: RegisterItem[]): Promise<void> {
@@ -143,7 +319,43 @@ async function registerItems(configFolder: string, items: RegisterItem[]): Promi
     
     const newLines = mainItems.map(item => {
       if (item.type === 'folder' && item.folderProcessing === 'expand') {
-        return `dir,${item.path}`;
+        let dirLine = `dir,${item.path}`;
+        
+        // DIRディレクティブオプションを追加
+        if (item.dirOptions) {
+          const options: string[] = [];
+          
+          // depth
+          if (item.dirOptions.depth !== 0) {
+            options.push(`depth=${item.dirOptions.depth}`);
+          }
+          
+          // types
+          if (item.dirOptions.types !== 'both') {
+            options.push(`types=${item.dirOptions.types}`);
+          }
+          
+          // filter
+          if (item.dirOptions.filter) {
+            options.push(`filter=${item.dirOptions.filter}`);
+          }
+          
+          // exclude
+          if (item.dirOptions.exclude) {
+            options.push(`exclude=${item.dirOptions.exclude}`);
+          }
+          
+          // prefix
+          if (item.dirOptions.prefix) {
+            options.push(`prefix=${item.dirOptions.prefix}`);
+          }
+          
+          if (options.length > 0) {
+            dirLine += ',' + options.join(',');
+          }
+        }
+        
+        return dirLine;
       } else {
         let line = `${item.name},${item.path}`;
         if (item.args) {
@@ -168,7 +380,43 @@ async function registerItems(configFolder: string, items: RegisterItem[]): Promi
     
     const newLines = tempItems.map(item => {
       if (item.type === 'folder' && item.folderProcessing === 'expand') {
-        return `dir,${item.path}`;
+        let dirLine = `dir,${item.path}`;
+        
+        // DIRディレクティブオプションを追加
+        if (item.dirOptions) {
+          const options: string[] = [];
+          
+          // depth
+          if (item.dirOptions.depth !== 0) {
+            options.push(`depth=${item.dirOptions.depth}`);
+          }
+          
+          // types
+          if (item.dirOptions.types !== 'both') {
+            options.push(`types=${item.dirOptions.types}`);
+          }
+          
+          // filter
+          if (item.dirOptions.filter) {
+            options.push(`filter=${item.dirOptions.filter}`);
+          }
+          
+          // exclude
+          if (item.dirOptions.exclude) {
+            options.push(`exclude=${item.dirOptions.exclude}`);
+          }
+          
+          // prefix
+          if (item.dirOptions.prefix) {
+            options.push(`prefix=${item.dirOptions.prefix}`);
+          }
+          
+          if (options.length > 0) {
+            dirLine += ',' + options.join(',');
+          }
+        }
+        
+        return dirLine;
       } else {
         let line = `${item.name},${item.path}`;
         if (item.args) {

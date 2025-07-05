@@ -16,6 +16,14 @@ export interface RegisterItem {
   targetTab: 'main' | 'temp';
   folderProcessing?: 'folder' | 'expand';
   icon?: string;
+  // DIRディレクティブオプション
+  dirOptions?: {
+    depth: number;
+    types: 'file' | 'folder' | 'both';
+    filter?: string;
+    exclude?: string;
+    prefix?: string;
+  };
 }
 
 const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onRegister, droppedPaths }) => {
@@ -70,7 +78,14 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onRegist
         type: itemType,
         targetTab: 'main',
         folderProcessing: itemType === 'folder' ? 'folder' : undefined,
-        icon
+        icon,
+        dirOptions: itemType === 'folder' ? {
+          depth: 0,
+          types: 'both',
+          filter: undefined,
+          exclude: undefined,
+          prefix: undefined
+        } : undefined
       });
     }
 
@@ -205,16 +220,93 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onRegist
                   )}
                   
                   {item.type === 'folder' && (
-                    <div className="form-group">
-                      <label>フォルダ処理:</label>
-                      <select
-                        value={item.folderProcessing}
-                        onChange={(e) => handleItemChange(index, 'folderProcessing', e.target.value as 'folder' | 'expand')}
-                      >
-                        <option value="folder">フォルダ自体を登録</option>
-                        <option value="expand">フォルダ内容を展開 (dir,)</option>
-                      </select>
-                    </div>
+                    <>
+                      <div className="form-group">
+                        <label>フォルダ処理:</label>
+                        <select
+                          value={item.folderProcessing}
+                          onChange={(e) => handleItemChange(index, 'folderProcessing', e.target.value as 'folder' | 'expand')}
+                        >
+                          <option value="folder">フォルダ自体を登録</option>
+                          <option value="expand">フォルダ内容を展開 (dir,)</option>
+                        </select>
+                      </div>
+                      
+                      {item.folderProcessing === 'expand' && item.dirOptions && (
+                        <div className="dir-options">
+                          <div className="form-group">
+                            <label>階層深度:</label>
+                            <select
+                              value={item.dirOptions.depth}
+                              onChange={(e) => {
+                                const newDirOptions = { ...item.dirOptions!, depth: parseInt(e.target.value) };
+                                handleItemChange(index, 'dirOptions', newDirOptions);
+                              }}
+                            >
+                              <option value="0">現在のフォルダのみ</option>
+                              <option value="1">1階層下まで</option>
+                              <option value="2">2階層下まで</option>
+                              <option value="3">3階層下まで</option>
+                              <option value="-1">無制限</option>
+                            </select>
+                          </div>
+                          
+                          <div className="form-group">
+                            <label>取得タイプ:</label>
+                            <select
+                              value={item.dirOptions.types}
+                              onChange={(e) => {
+                                const newDirOptions = { ...item.dirOptions!, types: e.target.value as 'file' | 'folder' | 'both' };
+                                handleItemChange(index, 'dirOptions', newDirOptions);
+                              }}
+                            >
+                              <option value="file">ファイルのみ</option>
+                              <option value="folder">フォルダーのみ</option>
+                              <option value="both">ファイルとフォルダー</option>
+                            </select>
+                          </div>
+                          
+                          <div className="form-group">
+                            <label>フィルター (例: *.txt):</label>
+                            <input
+                              type="text"
+                              value={item.dirOptions.filter || ''}
+                              onChange={(e) => {
+                                const newDirOptions = { ...item.dirOptions!, filter: e.target.value || undefined };
+                                handleItemChange(index, 'dirOptions', newDirOptions);
+                              }}
+                              placeholder="ワイルドカードパターン"
+                            />
+                          </div>
+                          
+                          <div className="form-group">
+                            <label>除外パターン (例: temp*):</label>
+                            <input
+                              type="text"
+                              value={item.dirOptions.exclude || ''}
+                              onChange={(e) => {
+                                const newDirOptions = { ...item.dirOptions!, exclude: e.target.value || undefined };
+                                handleItemChange(index, 'dirOptions', newDirOptions);
+                              }}
+                              placeholder="除外するパターン"
+                            />
+                          </div>
+                          
+                          <div className="form-group">
+                            <label>プレフィックス (例: 仕事):</label>
+                            <input
+                              type="text"
+                              value={item.dirOptions.prefix || ''}
+                              onChange={(e) => {
+                                const newDirOptions = { ...item.dirOptions!, prefix: e.target.value || undefined };
+                                handleItemChange(index, 'dirOptions', newDirOptions);
+                              }}
+                              placeholder="アイテム名の前に付ける文字"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
                   
                   <div className="form-group">
