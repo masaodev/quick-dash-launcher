@@ -30,7 +30,7 @@ export function parseDataFiles(dataFiles: DataFile[]): {
         return;
       }
 
-      const [name, itemPath, ...args] = parts;
+      const [name, itemPath, argsField, originalPathField] = parts;
       
       // Skip duplicates
       if (seenPaths.has(itemPath)) {
@@ -42,7 +42,8 @@ export function parseDataFiles(dataFiles: DataFile[]): {
         name,
         path: itemPath,
         type: detectItemType(itemPath),
-        args: args.length > 0 ? args.join(' ') : undefined,
+        args: argsField && argsField.trim() ? argsField : undefined,
+        originalPath: originalPathField && originalPathField.trim() ? originalPathField : undefined,
       };
 
       items.push(item);

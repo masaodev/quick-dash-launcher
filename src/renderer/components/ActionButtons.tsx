@@ -8,6 +8,7 @@ interface ActionButtonsProps {
   onOpenConfigFolder: () => void;
   onOpenDataFile: () => void;
   onTogglePin: () => void;
+  onExportJson: () => void;
   isPinned: boolean;
 }
 
@@ -19,6 +20,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   onOpenConfigFolder,
   onOpenDataFile,
   onTogglePin,
+  onExportJson,
   isPinned,
 }) => {
   return (
@@ -71,6 +73,13 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         title={isPinned ? "固定解除" : "ウィンドウを固定"}
       >
         📌
+      </button>
+      <button
+        className="action-button"
+        onClick={onExportJson}
+        title="JSON出力"
+      >
+        📋
       </button>
     </div>
   );

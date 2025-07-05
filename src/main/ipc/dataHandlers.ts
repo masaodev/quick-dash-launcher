@@ -30,7 +30,13 @@ async function scanDirectoryForShortcuts(dirPath: string): Promise<string[]> {
             // 引数が存在する場合は追加
             if (shortcutDetails.args && shortcutDetails.args.trim()) {
               line += `,${shortcutDetails.args}`;
+            } else {
+              // 引数が空の場合でも空のフィールドを追加
+              line += ',';
             }
+            
+            // 元のショートカットファイルのパスを追加
+            line += `,${filePath}`;
             
             results.push(line);
           }

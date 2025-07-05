@@ -230,6 +230,28 @@ const App: React.FC = () => {
     setIsPinned(newPinState);
   };
 
+  const handleExportJson = () => {
+    const exportData = {
+      mainItems,
+      tempItems,
+      exportTimestamp: new Date().toISOString(),
+      totalItems: mainItems.length + tempItems.length
+    };
+    
+    const jsonString = JSON.stringify(exportData, null, 2);
+    
+    // Create a temporary element to copy to clipboard
+    const textarea = document.createElement('textarea');
+    textarea.value = jsonString;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+    
+    console.log('JSON data copied to clipboard:', exportData);
+    alert('LauncherItemのJSONデータがクリップボードにコピーされました');
+  };
+
   const currentItems = activeTab === 'main' ? mainItems : tempItems;
   const filteredItems = filterItems(currentItems, searchQuery);
 
@@ -250,6 +272,7 @@ const App: React.FC = () => {
           onOpenConfigFolder={() => window.electronAPI.openConfigFolder()}
           onOpenDataFile={() => window.electronAPI.openDataFile()}
           onTogglePin={handleTogglePin}
+          onExportJson={handleExportJson}
           isPinned={isPinned}
         />
       </div>

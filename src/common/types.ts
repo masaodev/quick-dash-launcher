@@ -4,6 +4,7 @@ export interface LauncherItem {
   type: 'url' | 'file' | 'folder' | 'app' | 'customUri';
   icon?: string;
   args?: string;
+  originalPath?: string;
 }
 
 export interface DataFile {
