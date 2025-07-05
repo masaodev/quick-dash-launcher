@@ -442,11 +442,13 @@ body {
   padding: 12px 16px;
   background-color: #f8f8f8;
   border-bottom: 2px solid #0078d4;
+  -webkit-app-region: drag;
 }
 
 .edit-mode-info {
   flex: 0 0 auto;
   margin-right: 16px;
+  -webkit-app-region: no-drag;
 }
 
 .editing-files {
@@ -458,6 +460,7 @@ body {
 .edit-mode-search {
   flex: 1;
   max-width: 300px;
+  -webkit-app-region: no-drag;
 }
 
 .edit-mode-search .search-input {
@@ -467,6 +470,7 @@ body {
   border: 1px solid #ccc;
   border-radius: 4px;
   outline: none;
+  -webkit-app-region: no-drag;
 }
 
 .edit-mode-search .search-input:focus {
@@ -477,6 +481,7 @@ body {
 .edit-mode-actions {
   display: flex;
   gap: 8px;
+  -webkit-app-region: no-drag;
 }
 
 .edit-mode-actions button {
@@ -487,6 +492,7 @@ body {
   background-color: white;
   cursor: pointer;
   transition: all 0.2s;
+  -webkit-app-region: no-drag;
 }
 
 .edit-mode-actions button:hover:not(:disabled) {
