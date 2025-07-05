@@ -28,12 +28,57 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
   const handleCellEdit = (line: RawDataLine) => {
     const cellKey = getLineKey(line);
     setEditingCell(cellKey);
-    setEditingValue(line.content);
+    setEditingValue(getExecutionPart(line));
   };
 
   const handleCellSave = (line: RawDataLine) => {
-    if (editingValue !== line.content) {
-      const updatedLine = { ...line, content: editingValue };
+    const currentExecutionPart = getExecutionPart(line);
+    if (editingValue !== currentExecutionPart) {
+      let newContent = line.content;
+      
+      if (line.type === 'item') {
+        // アイテム行の場合：パスと引数を更新
+        const parts = line.content.split(',');
+        const name = parts[0] || '';
+        const originalPath = parts[3] || '';
+        
+        // 実行部分をパスと引数に分解
+        const trimmedValue = editingValue.trim();
+        const spaceIndex = trimmedValue.indexOf(' ');
+        
+        if (spaceIndex > 0) {
+          // スペースがある場合：パスと引数に分ける
+          const pathPart = trimmedValue.substring(0, spaceIndex);
+          const argsPart = trimmedValue.substring(spaceIndex + 1);
+          newContent = `${name},${pathPart},${argsPart},${originalPath}`;
+        } else {
+          // スペースがない場合：パスのみ
+          newContent = `${name},${trimmedValue},,${originalPath}`;
+        }
+      } else if (line.type === 'directive') {
+        // DIRディレクティブの場合：フォルダパスとオプションを更新
+        const parts = line.content.split(',');
+        const directive = parts[0] || 'dir';
+        
+        // 実行部分をパスとオプションに分解
+        const trimmedValue = editingValue.trim();
+        const spaceIndex = trimmedValue.indexOf(' ');
+        
+        if (spaceIndex > 0) {
+          // スペースがある場合：パスとオプションに分ける
+          const pathPart = trimmedValue.substring(0, spaceIndex);
+          const optionsPart = trimmedValue.substring(spaceIndex + 1);
+          newContent = `${directive},${pathPart},${optionsPart}`;
+        } else {
+          // スペースがない場合：パスのみ
+          newContent = `${directive},${trimmedValue}`;
+        }
+      } else {
+        // コメント行や空行の場合：そのまま更新
+        newContent = editingValue;
+      }
+      
+      const updatedLine = { ...line, content: newContent };
       onLineEdit(updatedLine);
     }
     setEditingCell(null);
@@ -148,6 +193,25 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
     }
   };
 
+  const getExecutionPart = (line: RawDataLine) => {
+    if (line.type === 'item') {
+      // アイテム行の場合：パス＋引数の組み合わせ
+      const parts = line.content.split(',');
+      const pathPart = parts[1]?.trim() || '';
+      const argsPart = parts[2]?.trim() || '';
+      return argsPart ? `${pathPart} ${argsPart}` : pathPart;
+    } else if (line.type === 'directive') {
+      // DIRディレクティブの場合：フォルダパス＋オプション
+      const parts = line.content.split(',');
+      const pathPart = parts[1]?.trim() || '';
+      const options = parts.slice(2).join(',').trim();
+      return options ? `${pathPart} ${options}` : pathPart;
+    } else {
+      // コメント行や空行の場合：元の内容を表示
+      return line.content || (line.type === 'empty' ? '(空行)' : '');
+    }
+  };
+
   const renderEditableCell = (line: RawDataLine) => {
     const cellKey = getLineKey(line);
     const isEditing = editingCell === cellKey;
@@ -172,7 +236,7 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
         onClick={() => handleCellEdit(line)}
         title="クリックして編集"
       >
-        {line.content || (line.type === 'empty' ? '(空行)' : '')}
+        {getExecutionPart(line)}
       </div>
     );
   };
@@ -216,7 +280,7 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
             <th className="line-number-column">#</th>
             <th className="type-column">種類</th>
             <th className="name-column">名称</th>
-            <th className="content-column">内容</th>
+            <th className="content-column">実行部分</th>
             <th className="actions-column">操作</th>
           </tr>
         </thead>

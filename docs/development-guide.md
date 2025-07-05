@@ -106,6 +106,11 @@ Viteベースのビルドシステムを使用:
 - **TabControl.tsx**: メイン/一時タブの切り替え
 - **ItemList.tsx**: アイテムリスト表示
 - **RegisterModal.tsx**: ドラッグ&ドロップ登録用モーダル
+- **EditableRawItemList.tsx**: 編集モード用のデータ編集テーブル
+  - 実行部分列でパス＋引数を統合表示・編集
+  - アイテム行：パス＋引数の組み合わせ（例：`notepad.exe`, `https://github.com/`）
+  - DIRディレクティブ：フォルダパス＋オプション（例：`C:\Users\Documents filter:*.txt`）
+  - 編集時の自動CSV形式変換機能
 
 ### 設定メニュー
 設定関連機能は⚙ボタンクリックで表示されるドロップダウンメニューに集約:
