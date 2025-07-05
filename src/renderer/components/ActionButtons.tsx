@@ -10,6 +10,7 @@ interface ActionButtonsProps {
   onOpenDataFile: () => void;
   onTogglePin: () => void;
   onExportJson: () => void;
+  onSortDataFiles: () => void;
   isPinned: boolean;
 }
 
@@ -22,6 +23,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   onOpenDataFile,
   onTogglePin,
   onExportJson,
+  onSortDataFiles,
   isPinned,
 }) => {
   return (
@@ -65,6 +67,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         onOpenConfigFolder={onOpenConfigFolder}
         onOpenDataFile={onOpenDataFile}
         onExportJson={onExportJson}
+        onSortDataFiles={onSortDataFiles}
         onQuitApp={() => window.electronAPI.quitApp()}
       />
     </div>

@@ -23,4 +23,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   isDirectory: (filePath: string) => ipcRenderer.invoke('is-directory', filePath),
   getPathForFile: (file: File) => webUtils.getPathForFile(file),
   quitApp: () => ipcRenderer.invoke('quit-app'),
+  sortDataFiles: () => ipcRenderer.invoke('sort-data-files'),
 });

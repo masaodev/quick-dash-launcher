@@ -191,6 +191,118 @@ function isDirectory(filePath: string): boolean {
   }
 }
 
+async function sortDataFiles(configFolder: string): Promise<void> {
+  const dataFiles = ['data.txt', 'data2.txt', 'tempdata.txt'];
+  const backupFolder = path.join(configFolder, 'backup');
+  
+  // Ensure backup folder exists
+  if (!fs.existsSync(backupFolder)) {
+    fs.mkdirSync(backupFolder, { recursive: true });
+  }
+  
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').split('.')[0];
+  
+  for (const fileName of dataFiles) {
+    const filePath = path.join(configFolder, fileName);
+    
+    if (!fs.existsSync(filePath)) {
+      continue;
+    }
+    
+    try {
+      // Read file content
+      const content = fs.readFileSync(filePath, 'utf8');
+      const lines = content.split('\n');
+      
+      // Separate dir directives and regular entries
+      const dirLines: string[] = [];
+      const regularLines: string[] = [];
+      
+      for (const line of lines) {
+        const trimmedLine = line.trim();
+        if (!trimmedLine || trimmedLine.startsWith('//')) {
+          // Keep empty lines and comments as is
+          regularLines.push(line);
+        } else if (trimmedLine.startsWith('dir,')) {
+          dirLines.push(line);
+        } else {
+          regularLines.push(line);
+        }
+      }
+      
+      // Sort regular entries by path (second field)
+      const sortedRegularLines = regularLines.sort((a, b) => {
+        const partsA = parseCSVLine(a.trim());
+        const partsB = parseCSVLine(b.trim());
+        
+        // If either line doesn't have a path, maintain original order
+        if (partsA.length < 2 || partsB.length < 2) {
+          return 0;
+        }
+        
+        const pathA = partsA[1].toLowerCase();
+        const pathB = partsB[1].toLowerCase();
+        
+        return pathA.localeCompare(pathB, 'ja');
+      });
+      
+      // Create backup
+      const backupPath = path.join(backupFolder, `${fileName}_${timestamp}`);
+      fs.copyFileSync(filePath, backupPath);
+      
+      // Combine dir lines at the top, then sorted regular lines
+      const sortedContent = [...dirLines, ...sortedRegularLines]
+        .filter(line => line.trim() !== '')
+        .join('\n');
+      
+      // Write sorted content back to file
+      fs.writeFileSync(filePath, sortedContent, 'utf8');
+      
+      console.log(`Sorted ${fileName} successfully. Backup saved to ${backupPath}`);
+    } catch (error) {
+      console.error(`Error sorting ${fileName}:`, error);
+      throw error;
+    }
+  }
+}
+
+function parseCSVLine(line: string): string[] {
+  const result: string[] = [];
+  let current = '';
+  let inQuotes = false;
+  let i = 0;
+
+  while (i < line.length) {
+    const char = line[i];
+    const nextChar = line[i + 1];
+
+    if (char === '"') {
+      if (inQuotes && nextChar === '"') {
+        // Escaped quote
+        current += '"';
+        i += 2;
+        continue;
+      }
+      inQuotes = !inQuotes;
+      i++;
+    } else if (char === ',' && !inQuotes) {
+      result.push(current.trim());
+      current = '';
+      i++;
+    } else {
+      current += char;
+      i++;
+    }
+  }
+
+  // Add the last field
+  if (current || inQuotes) {
+    result.push(current.trim());
+  }
+
+  return result;
+}
+
 export function setupDataHandlers(configFolder: string) {
   ipcMain.handle('get-config-folder', () => configFolder);
   
@@ -208,5 +320,9 @@ export function setupDataHandlers(configFolder: string) {
   
   ipcMain.handle('is-directory', async (_event, filePath: string) => {
     return isDirectory(filePath);
+  });
+  
+  ipcMain.handle('sort-data-files', async () => {
+    return await sortDataFiles(configFolder);
   });
 }

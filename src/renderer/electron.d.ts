@@ -21,6 +21,7 @@ export interface ElectronAPI {
   isDirectory: (filePath: string) => Promise<boolean>;
   getPathForFile: (file: File) => string;
   quitApp: () => Promise<void>;
+  sortDataFiles: () => Promise<void>;
 }
 
 declare global {

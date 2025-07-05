@@ -4,6 +4,7 @@ interface SettingsDropdownProps {
   onOpenConfigFolder: () => void;
   onOpenDataFile: () => void;
   onExportJson: () => void;
+  onSortDataFiles: () => void;
   onQuitApp: () => void;
 }
 
@@ -11,6 +12,7 @@ const SettingsDropdown: React.FC<SettingsDropdownProps> = ({
   onOpenConfigFolder,
   onOpenDataFile,
   onExportJson,
+  onSortDataFiles,
   onQuitApp,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -65,6 +67,12 @@ const SettingsDropdown: React.FC<SettingsDropdownProps> = ({
             onClick={() => handleMenuItemClick(onExportJson)}
           >
             📋 JSON出力
+          </button>
+          <button
+            className="dropdown-item"
+            onClick={() => handleMenuItemClick(onSortDataFiles)}
+          >
+            🔤 データファイルを並べ替え
           </button>
           <div className="dropdown-divider"></div>
           <button

@@ -29,6 +29,7 @@ IPCハンドラーは機能ごとに分離（`src/main/ipc/`）:
 - `set-window-pin-state`: ウィンドウ固定状態を設定
 - `register-items`: アイテムをデータファイルに登録
 - `is-directory`: パスがディレクトリかどうかを判定
+- `sort-data-files`: データファイルをパスの昇順でソート
 - `getPathForFile`: **プリロードAPI** ドラッグ&ドロップされたファイルのパスを取得
 - `quit-app`: アプリケーションを終了
 

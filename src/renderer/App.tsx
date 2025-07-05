@@ -313,6 +313,18 @@ const App: React.FC = () => {
     alert('LauncherItemのJSONデータがクリップボードにコピーされました');
   };
 
+  const handleSortDataFiles = async () => {
+    try {
+      await window.electronAPI.sortDataFiles();
+      alert('データファイルをパスの昇順で並べ替えました。\nバックアップは backup フォルダに保存されています。');
+      // Reload items to reflect the sorted data
+      loadItems();
+    } catch (error) {
+      console.error('Error sorting data files:', error);
+      alert('データファイルの並べ替え中にエラーが発生しました。');
+    }
+  };
+
   const handleRegisterItems = async (items: RegisterItem[]) => {
     await window.electronAPI.registerItems(items);
     loadItems(); // Reload items after registration
@@ -339,6 +351,7 @@ const App: React.FC = () => {
           onOpenDataFile={() => window.electronAPI.openDataFile()}
           onTogglePin={handleTogglePin}
           onExportJson={handleExportJson}
+          onSortDataFiles={handleSortDataFiles}
           isPinned={isPinned}
         />
       </div>
