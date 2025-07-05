@@ -162,9 +162,17 @@ const EditModeView: React.FC<EditModeViewProps> = ({
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
   }, []);
 
+  const getFileNames = () => {
+    const fileSet = new Set(rawLines.map(line => line.sourceFile));
+    return Array.from(fileSet).join(', ');
+  };
+
   return (
     <div className="edit-mode-view" onKeyDown={handleKeyDown} tabIndex={0}>
       <div className="edit-mode-header">
+        <div className="edit-mode-info">
+          <span className="editing-files">編集中: {getFileNames()}</span>
+        </div>
         <div className="edit-mode-search">
           <input
             type="text"

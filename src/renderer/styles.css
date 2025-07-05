@@ -443,6 +443,17 @@ body {
   border-bottom: 2px solid #0078d4;
 }
 
+.edit-mode-info {
+  flex: 0 0 auto;
+  margin-right: 16px;
+}
+
+.editing-files {
+  font-weight: 600;
+  color: #0078d4;
+  font-size: 14px;
+}
+
 .edit-mode-search {
   flex: 1;
   max-width: 300px;
@@ -638,6 +649,13 @@ body {
 .editable-cell.readonly {
   cursor: not-allowed;
   opacity: 0.6;
+}
+
+.readonly-cell {
+  text-align: center;
+  color: #6c757d;
+  font-style: italic;
+  padding: 4px 8px;
 }
 
 .edit-input {
@@ -936,20 +954,18 @@ body {
   padding: 4px 6px !important;
 }
 
-.raw-items-table .content-column {
-  width: 50%;
-  min-width: 200px;
-  word-break: break-all;
+.raw-items-table .name-column {
+  width: 20%;
+  min-width: 120px;
+  word-break: break-word;
   padding: 4px 8px !important;
 }
 
-.raw-items-table .source-column {
-  width: 12%;
-  min-width: 80px;
-  font-family: monospace;
-  font-size: 11px;
-  text-align: center;
-  padding: 4px 6px !important;
+.raw-items-table .content-column {
+  width: 55%;
+  min-width: 200px;
+  word-break: break-all;
+  padding: 4px 8px !important;
 }
 
 .raw-items-table .actions-column {

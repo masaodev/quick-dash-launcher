@@ -45,6 +45,37 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
     setEditingValue('');
   };
 
+  const handleNameEdit = (line: RawDataLine) => {
+    const parts = line.content.split(',');
+    const name = parts[0]?.trim() || '';
+    const cellKey = `${getLineKey(line)}_name`;
+    setEditingCell(cellKey);
+    setEditingValue(name);
+  };
+
+  const handleNameSave = (line: RawDataLine) => {
+    const parts = line.content.split(',');
+    parts[0] = editingValue.trim();
+    const newContent = parts.join(',');
+    
+    if (newContent !== line.content) {
+      const updatedLine = { ...line, content: newContent };
+      onLineEdit(updatedLine);
+    }
+    setEditingCell(null);
+    setEditingValue('');
+  };
+
+  const handleNameKeyDown = (e: React.KeyboardEvent, line: RawDataLine) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleNameSave(line);
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      handleCellCancel();
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent, line: RawDataLine) => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -72,6 +103,48 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
       case 'comment': return 'コメント';
       case 'empty': return '空行';
       default: return '不明';
+    }
+  };
+
+  const renderNameCell = (line: RawDataLine) => {
+    if (line.type === 'item') {
+      // アイテム行の場合、CSV形式から名前を抽出
+      const parts = line.content.split(',');
+      const name = parts[0]?.trim() || '';
+      
+      const cellKey = `${getLineKey(line)}_name`;
+      const isEditing = editingCell === cellKey;
+
+      if (isEditing) {
+        return (
+          <input
+            type="text"
+            value={editingValue}
+            onChange={(e) => setEditingValue(e.target.value)}
+            onBlur={() => handleNameSave(line)}
+            onKeyDown={(e) => handleNameKeyDown(e, line)}
+            className="edit-input"
+            autoFocus
+          />
+        );
+      }
+
+      return (
+        <div
+          className="editable-cell"
+          onClick={() => handleNameEdit(line)}
+          title="クリックして名称を編集"
+        >
+          {name || '(名称なし)'}
+        </div>
+      );
+    } else {
+      // DIRディレクティブなどは名称編集不可
+      return (
+        <div className="readonly-cell">
+          -
+        </div>
+      );
     }
   };
 
@@ -142,8 +215,8 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
             </th>
             <th className="line-number-column">#</th>
             <th className="type-column">種類</th>
+            <th className="name-column">名称</th>
             <th className="content-column">内容</th>
-            <th className="source-column">ファイル</th>
             <th className="actions-column">操作</th>
           </tr>
         </thead>
@@ -171,11 +244,11 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
                   <span className="type-icon">{getLineTypeIcon(line.type)}</span>
                   <span className="type-name">{getLineTypeDisplayName(line.type)}</span>
                 </td>
+                <td className="name-column">
+                  {renderNameCell(line)}
+                </td>
                 <td className="content-column">
                   {renderEditableCell(line)}
-                </td>
-                <td className="source-column">
-                  <span className="source-info">{line.sourceFile}</span>
                 </td>
                 <td className="actions-column">
                   <div className="action-buttons">
