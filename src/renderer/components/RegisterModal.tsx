@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { LauncherItem } from '../../common/types';
+import { LauncherItem, RawDataLine } from '../../common/types';
 
 interface RegisterModalProps {
   isOpen: boolean;
   onClose: () => void;
   onRegister: (items: RegisterItem[]) => void;
   droppedPaths: string[];
+  editingItem?: RawDataLine | null;
 }
 
 export interface RegisterItem {
@@ -26,16 +27,115 @@ export interface RegisterItem {
   };
 }
 
-const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onRegister, droppedPaths }) => {
+const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onRegister, droppedPaths, editingItem }) => {
   const [items, setItems] = useState<RegisterItem[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (isOpen && droppedPaths && droppedPaths.length > 0) {
-      console.log('RegisterModal opened with paths:', droppedPaths);
-      initializeItems();
+    if (isOpen) {
+      if (editingItem) {
+        console.log('RegisterModal opened in edit mode:', editingItem);
+        initializeFromEditingItem();
+      } else if (droppedPaths && droppedPaths.length > 0) {
+        console.log('RegisterModal opened with paths:', droppedPaths);
+        initializeItems();
+      }
     }
-  }, [isOpen, droppedPaths]);
+  }, [isOpen, droppedPaths, editingItem]);
+
+  const initializeFromEditingItem = async () => {
+    setLoading(true);
+    
+    try {
+      if (!editingItem) {
+        console.error('No editing item provided');
+        return;
+      }
+      
+      const item = await convertRawDataLineToRegisterItem(editingItem);
+      setItems([item]);
+    } catch (error) {
+      console.error('Error initializing from editing item:', error);
+      alert('編集アイテムの初期化中にエラーが発生しました: ' + error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const convertRawDataLineToRegisterItem = async (line: RawDataLine): Promise<RegisterItem> => {
+    if (line.type === 'item') {
+      // アイテム行の場合：名前,パス,引数,元パス
+      const parts = line.content.split(',');
+      const name = parts[0]?.trim() || '';
+      const path = parts[1]?.trim() || '';
+      const args = parts[2]?.trim() || '';
+      
+      const itemType = await detectItemType(path);
+      
+      return {
+        name,
+        path,
+        type: itemType,
+        args: args || undefined,
+        targetTab: 'main',
+        folderProcessing: itemType === 'folder' ? 'folder' : undefined
+      };
+    } else if (line.type === 'directive') {
+      // DIRディレクティブの場合：dir,パス,オプション
+      const parts = line.content.split(',');
+      const path = parts[1]?.trim() || '';
+      const optionsStr = parts.slice(2).join(',').trim();
+      
+      // オプションを解析
+      const dirOptions = {
+        depth: 0,
+        types: 'both' as const,
+        filter: undefined as string | undefined,
+        exclude: undefined as string | undefined,
+        prefix: undefined as string | undefined
+      };
+      
+      if (optionsStr) {
+        const options = optionsStr.split(',');
+        for (const option of options) {
+          const [key, value] = option.split('=');
+          if (key && value) {
+            const trimmedKey = key.trim();
+            const trimmedValue = value.trim();
+            
+            if (trimmedKey === 'depth') {
+              dirOptions.depth = parseInt(trimmedValue) || 0;
+            } else if (trimmedKey === 'types') {
+              dirOptions.types = trimmedValue as 'file' | 'folder' | 'both';
+            } else if (trimmedKey === 'filter') {
+              dirOptions.filter = trimmedValue;
+            } else if (trimmedKey === 'exclude') {
+              dirOptions.exclude = trimmedValue;
+            } else if (trimmedKey === 'prefix') {
+              dirOptions.prefix = trimmedValue;
+            }
+          }
+        }
+      }
+      
+      return {
+        name: path,
+        path,
+        type: 'folder',
+        targetTab: 'main',
+        folderProcessing: 'expand',
+        dirOptions
+      };
+    } else {
+      // その他の場合
+      return {
+        name: line.content || '',
+        path: line.content || '',
+        type: 'file',
+        targetTab: 'main'
+      };
+    }
+  };
 
   const initializeItems = async () => {
     setLoading(true);
@@ -150,9 +250,41 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onRegist
     return ext ? basename.slice(0, -ext.length) : basename;
   };
 
-  const handleItemChange = (index: number, field: keyof RegisterItem, value: any) => {
+  const handleItemChange = async (index: number, field: keyof RegisterItem, value: any) => {
     const newItems = [...items];
     newItems[index] = { ...newItems[index], [field]: value };
+    
+    // パスが変更された場合、アイテムタイプを再検出
+    if (field === 'path' && editingItem) {
+      const newType = await detectItemType(value);
+      newItems[index].type = newType;
+      
+      // タイプに応じてデフォルト値を設定
+      if (newType === 'folder') {
+        if (!newItems[index].folderProcessing) {
+          newItems[index].folderProcessing = 'folder';
+        }
+        if (!newItems[index].dirOptions) {
+          newItems[index].dirOptions = {
+            depth: 0,
+            types: 'both',
+            filter: undefined,
+            exclude: undefined,
+            prefix: undefined
+          };
+        }
+      } else {
+        // フォルダでない場合はフォルダ関連の設定をクリア
+        delete newItems[index].folderProcessing;
+        delete newItems[index].dirOptions;
+      }
+      
+      // appタイプでない場合は引数をクリア
+      if (newType !== 'app') {
+        delete newItems[index].args;
+      }
+    }
+    
     setItems(newItems);
   };
 
@@ -171,7 +303,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onRegist
   return (
     <div className="modal-overlay" onClick={handleCancel}>
       <div className="modal-content register-modal" onClick={(e) => e.stopPropagation()}>
-        <h2>アイテムの登録</h2>
+        <h2>{editingItem ? 'アイテムの編集' : 'アイテムの登録'}</h2>
         
         {loading ? (
           <div className="loading">アイテム情報を読み込み中...</div>
@@ -202,8 +334,9 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onRegist
                     <input
                       type="text"
                       value={item.path}
-                      readOnly
-                      className="readonly"
+                      readOnly={!editingItem}
+                      className={editingItem ? "" : "readonly"}
+                      onChange={(e) => editingItem ? handleItemChange(index, 'path', e.target.value) : undefined}
                     />
                   </div>
                   
@@ -327,7 +460,9 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onRegist
             
             <div className="modal-actions">
               <button onClick={handleCancel}>キャンセル</button>
-              <button onClick={handleRegister} className="primary">登録</button>
+              <button onClick={handleRegister} className="primary">
+                {editingItem ? '更新' : '登録'}
+              </button>
             </div>
           </>
         )}

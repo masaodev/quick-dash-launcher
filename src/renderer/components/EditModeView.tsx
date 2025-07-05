@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { RawDataLine } from '../../common/types';
 import EditableRawItemList from './EditableRawItemList';
+import RegisterModal, { RegisterItem } from './RegisterModal';
 
 interface EditModeViewProps {
   rawLines: RawDataLine[];
@@ -20,6 +21,8 @@ const EditModeView: React.FC<EditModeViewProps> = ({
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [editedLines, setEditedLines] = useState<Map<string, RawDataLine>>(new Map());
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<RawDataLine | null>(null);
 
   const handleLineEdit = (line: RawDataLine) => {
     const lineKey = `${line.sourceFile}_${line.lineNumber}`;
@@ -27,6 +30,55 @@ const EditModeView: React.FC<EditModeViewProps> = ({
     newEditedLines.set(lineKey, line);
     setEditedLines(newEditedLines);
     setHasUnsavedChanges(true);
+  };
+
+  const handleEditItem = (line: RawDataLine) => {
+    setEditingItem(line);
+    setIsRegisterModalOpen(true);
+  };
+
+  const convertRegisterItemToRawDataLine = (item: RegisterItem, originalLine: RawDataLine): RawDataLine => {
+    let newContent = '';
+    
+    if (originalLine.type === 'item') {
+      // アイテム行の場合：名前,パス,引数,元パス の形式
+      const args = item.args || '';
+      const originalPath = originalLine.content.split(',')[3] || item.path;
+      newContent = `${item.name},${item.path},${args},${originalPath}`;
+    } else if (originalLine.type === 'directive') {
+      // DIRディレクティブの場合
+      if (item.dirOptions) {
+        const options = [];
+        if (item.dirOptions.depth !== 0) options.push(`depth=${item.dirOptions.depth}`);
+        if (item.dirOptions.types !== 'both') options.push(`types=${item.dirOptions.types}`);
+        if (item.dirOptions.filter) options.push(`filter=${item.dirOptions.filter}`);
+        if (item.dirOptions.exclude) options.push(`exclude=${item.dirOptions.exclude}`);
+        if (item.dirOptions.prefix) options.push(`prefix=${item.dirOptions.prefix}`);
+        
+        const optionsStr = options.join(',');
+        newContent = optionsStr ? `dir,${item.path},${optionsStr}` : `dir,${item.path}`;
+      } else {
+        newContent = `dir,${item.path}`;
+      }
+    } else {
+      // その他の場合（コメント、空行など）
+      newContent = item.name || item.path || '';
+    }
+    
+    return {
+      ...originalLine,
+      content: newContent
+    };
+  };
+
+  const handleUpdateItem = (items: RegisterItem[]) => {
+    if (editingItem && items.length > 0) {
+      const updatedItem = items[0];
+      const updatedLine = convertRegisterItemToRawDataLine(updatedItem, editingItem);
+      handleLineEdit(updatedLine);
+    }
+    setIsRegisterModalOpen(false);
+    setEditingItem(null);
   };
 
   const handleLineSelect = (line: RawDataLine, selected: boolean) => {
@@ -204,6 +256,7 @@ const EditModeView: React.FC<EditModeViewProps> = ({
         onSelectAll={handleSelectAll}
         onAddLine={handleAddLine}
         onDeleteLines={handleDeleteLines}
+        onEditClick={handleEditItem}
       />
 
       <div className="edit-mode-status">
@@ -219,6 +272,17 @@ const EditModeView: React.FC<EditModeViewProps> = ({
           </span>
         )}
       </div>
+
+      <RegisterModal
+        isOpen={isRegisterModalOpen}
+        onClose={() => {
+          setIsRegisterModalOpen(false);
+          setEditingItem(null);
+        }}
+        onRegister={handleUpdateItem}
+        droppedPaths={editingItem ? [editingItem.content] : []}
+        editingItem={editingItem}
+      />
     </div>
   );
 };

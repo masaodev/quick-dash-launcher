@@ -618,7 +618,7 @@ body {
 }
 
 .actions-column {
-  width: 70px;
+  width: 90px;
   text-align: center;
   padding: 4px 6px !important;
 }
@@ -714,7 +714,11 @@ body {
   padding: 0;
 }
 
-.edit-button {
+.cell-edit-button {
+  color: #28a745;
+}
+
+.detail-edit-button {
   color: #0078d4;
 }
 

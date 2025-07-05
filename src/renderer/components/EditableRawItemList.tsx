@@ -9,6 +9,7 @@ interface EditableRawItemListProps {
   onSelectAll: (selected: boolean) => void;
   onAddLine: () => void;
   onDeleteLines: (lines: RawDataLine[]) => void;
+  onEditClick: (line: RawDataLine) => void;
 }
 
 const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
@@ -18,7 +19,8 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
   onLineSelect,
   onSelectAll,
   onAddLine,
-  onDeleteLines
+  onDeleteLines,
+  onEditClick
 }) => {
   const [editingCell, setEditingCell] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState('');
@@ -28,12 +30,12 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
   const handleCellEdit = (line: RawDataLine) => {
     const cellKey = getLineKey(line);
     setEditingCell(cellKey);
-    setEditingValue(getExecutionPart(line));
+    setEditingValue(getPathAndArgs(line));
   };
 
   const handleCellSave = (line: RawDataLine) => {
-    const currentExecutionPart = getExecutionPart(line);
-    if (editingValue !== currentExecutionPart) {
+    const currentPathAndArgs = getPathAndArgs(line);
+    if (editingValue !== currentPathAndArgs) {
       let newContent = line.content;
       
       if (line.type === 'item') {
@@ -42,7 +44,7 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
         const name = parts[0] || '';
         const originalPath = parts[3] || '';
         
-        // 実行部分をパスと引数に分解
+        // パスと引数に分解
         const trimmedValue = editingValue.trim();
         const spaceIndex = trimmedValue.indexOf(' ');
         
@@ -60,7 +62,7 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
         const parts = line.content.split(',');
         const directive = parts[0] || 'dir';
         
-        // 実行部分をパスとオプションに分解
+        // パスとオプションに分解
         const trimmedValue = editingValue.trim();
         const spaceIndex = trimmedValue.indexOf(' ');
         
@@ -178,9 +180,9 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
         <div
           className="editable-cell"
           onClick={() => handleNameEdit(line)}
-          title="クリックして名称を編集"
+          title="クリックして名前を編集"
         >
-          {name || '(名称なし)'}
+          {name || '(名前なし)'}
         </div>
       );
     } else {
@@ -193,7 +195,7 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
     }
   };
 
-  const getExecutionPart = (line: RawDataLine) => {
+  const getPathAndArgs = (line: RawDataLine) => {
     if (line.type === 'item') {
       // アイテム行の場合：パス＋引数の組み合わせ
       const parts = line.content.split(',');
@@ -236,7 +238,7 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
         onClick={() => handleCellEdit(line)}
         title="クリックして編集"
       >
-        {getExecutionPart(line)}
+        {getPathAndArgs(line)}
       </div>
     );
   };
@@ -279,8 +281,8 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
             </th>
             <th className="line-number-column">#</th>
             <th className="type-column">種類</th>
-            <th className="name-column">名称</th>
-            <th className="content-column">実行部分</th>
+            <th className="name-column">名前</th>
+            <th className="content-column">パスと引数</th>
             <th className="actions-column">操作</th>
           </tr>
         </thead>
@@ -317,9 +319,16 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
                 <td className="actions-column">
                   <div className="action-buttons">
                     <button
-                      className="edit-button"
+                      className="cell-edit-button"
                       onClick={() => handleCellEdit(line)}
-                      title="編集"
+                      title="セル編集"
+                    >
+                      📝
+                    </button>
+                    <button
+                      className="detail-edit-button"
+                      onClick={() => onEditClick(line)}
+                      title="詳細編集"
                     >
                       ✏️
                     </button>
