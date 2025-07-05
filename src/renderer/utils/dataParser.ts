@@ -11,8 +11,9 @@ export function parseDataFiles(dataFiles: DataFile[]): {
   dataFiles.forEach(file => {
     const lines = file.content.split('\n');
     const items = file.name === 'tempdata.txt' ? tempItems : mainItems;
+    const sourceFile = file.name as 'data.txt' | 'data2.txt' | 'tempdata.txt';
 
-    lines.forEach(line => {
+    lines.forEach((line, index) => {
       line = line.trim();
       
       // Skip empty lines and comments
@@ -44,6 +45,10 @@ export function parseDataFiles(dataFiles: DataFile[]): {
         type: detectItemType(itemPath),
         args: argsField && argsField.trim() ? argsField : undefined,
         originalPath: originalPathField && originalPathField.trim() ? originalPathField : undefined,
+        sourceFile,
+        lineNumber: index + 1,
+        isDirExpanded: false,
+        isEdited: false,
       };
 
       items.push(item);

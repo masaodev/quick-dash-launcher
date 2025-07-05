@@ -4,6 +4,7 @@ import { setupItemHandlers } from './itemHandlers';
 import { setupConfigHandlers } from './configHandlers';
 import { setupIconHandlers } from './iconHandlers';
 import { setupWindowHandlers } from './windowHandlers';
+import { registerEditHandlers } from './editHandlers';
 
 export function setupIPCHandlers(
   configFolder: string,
@@ -19,4 +20,5 @@ export function setupIPCHandlers(
   setupConfigHandlers(configFolder);
   setupIconHandlers(faviconsFolder, iconsFolder, extensionsFolder);
   setupWindowHandlers(getWindowPinState, setWindowPinState);
+  registerEditHandlers(configFolder);
 }

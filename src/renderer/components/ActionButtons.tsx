@@ -11,7 +11,9 @@ interface ActionButtonsProps {
   onTogglePin: () => void;
   onExportJson: () => void;
   onSortDataFiles: () => void;
+  onToggleEditMode: () => void;
   isPinned: boolean;
+  isEditMode: boolean;
 }
 
 const ActionButtons: React.FC<ActionButtonsProps> = ({
@@ -24,7 +26,9 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   onTogglePin,
   onExportJson,
   onSortDataFiles,
+  onToggleEditMode,
   isPinned,
+  isEditMode,
 }) => {
   return (
     <div className="action-buttons">
@@ -68,7 +72,9 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         onOpenDataFile={onOpenDataFile}
         onExportJson={onExportJson}
         onSortDataFiles={onSortDataFiles}
+        onToggleEditMode={onToggleEditMode}
         onQuitApp={() => window.electronAPI.quitApp()}
+        isEditMode={isEditMode}
       />
     </div>
   );

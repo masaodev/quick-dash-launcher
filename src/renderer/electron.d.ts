@@ -1,4 +1,4 @@
-import { LauncherItem, DataFile } from '../common/types';
+import { LauncherItem, DataFile, RawDataLine } from '../common/types';
 import { RegisterItem } from './components/RegisterModal';
 
 export interface ElectronAPI {
@@ -22,6 +22,22 @@ export interface ElectronAPI {
   getPathForFile: (file: File) => string;
   quitApp: () => Promise<void>;
   sortDataFiles: () => Promise<void>;
+  updateItem: (request: {
+    sourceFile: 'data.txt' | 'data2.txt' | 'tempdata.txt';
+    lineNumber: number;
+    newItem: LauncherItem;
+  }) => Promise<{ success: boolean }>;
+  deleteItems: (requests: {
+    sourceFile: 'data.txt' | 'data2.txt' | 'tempdata.txt';
+    lineNumber: number;
+  }[]) => Promise<{ success: boolean }>;
+  batchUpdateItems: (requests: {
+    sourceFile: 'data.txt' | 'data2.txt' | 'tempdata.txt';
+    lineNumber: number;
+    newItem: LauncherItem;
+  }[]) => Promise<{ success: boolean }>;
+  loadRawDataFiles: () => Promise<RawDataLine[]>;
+  saveRawDataFiles: (rawLines: RawDataLine[]) => Promise<void>;
 }
 
 declare global {

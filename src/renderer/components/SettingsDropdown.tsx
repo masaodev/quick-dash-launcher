@@ -5,7 +5,9 @@ interface SettingsDropdownProps {
   onOpenDataFile: () => void;
   onExportJson: () => void;
   onSortDataFiles: () => void;
+  onToggleEditMode: () => void;
   onQuitApp: () => void;
+  isEditMode: boolean;
 }
 
 const SettingsDropdown: React.FC<SettingsDropdownProps> = ({
@@ -13,7 +15,9 @@ const SettingsDropdown: React.FC<SettingsDropdownProps> = ({
   onOpenDataFile,
   onExportJson,
   onSortDataFiles,
+  onToggleEditMode,
   onQuitApp,
+  isEditMode,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -73,6 +77,13 @@ const SettingsDropdown: React.FC<SettingsDropdownProps> = ({
             onClick={() => handleMenuItemClick(onSortDataFiles)}
           >
             🔤 データファイルを並べ替え
+          </button>
+          <div className="dropdown-divider"></div>
+          <button
+            className="dropdown-item"
+            onClick={() => handleMenuItemClick(onToggleEditMode)}
+          >
+            {isEditMode ? '📋 通常モード' : '✏️ 編集モード'}
           </button>
           <div className="dropdown-divider"></div>
           <button

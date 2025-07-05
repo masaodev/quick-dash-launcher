@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { LauncherItem } from '../common/types';
+import { LauncherItem, RawDataLine } from '../common/types';
 import SearchBox from './components/SearchBox';
 import ItemList from './components/ItemList';
 import TabControl from './components/TabControl';
 import ActionButtons from './components/ActionButtons';
 import RegisterModal, { RegisterItem } from './components/RegisterModal';
+import EditModeView from './components/EditModeView';
 import { parseDataFiles, filterItems } from './utils/dataParser';
 
 const App: React.FC = () => {
@@ -18,6 +19,8 @@ const App: React.FC = () => {
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [droppedPaths, setDroppedPaths] = useState<string[]>([]);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [rawLines, setRawLines] = useState<RawDataLine[]>([]);
   
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -144,6 +147,11 @@ const App: React.FC = () => {
     setTempItems(tempWithIcons);
   };
 
+  const loadRawData = async () => {
+    const rawData = await window.electronAPI.loadRawDataFiles();
+    setRawLines(rawData);
+  };
+
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     setSelectedIndex(0);
@@ -175,6 +183,12 @@ const App: React.FC = () => {
         setSelectedIndex(prev => 
           prev < filteredItems.length - 1 ? prev + 1 : 0
         );
+        break;
+      case 'e':
+        if (e.ctrlKey) {
+          e.preventDefault();
+          setIsEditMode(prev => !prev);
+        }
         break;
     }
   };
@@ -330,57 +344,142 @@ const App: React.FC = () => {
     loadItems(); // Reload items after registration
   };
 
+  const handleToggleEditMode = async () => {
+    if (!isEditMode) {
+      // 編集モードに入る時は生データを読み込み
+      await loadRawData();
+    }
+    setIsEditMode(prev => !prev);
+    setSearchQuery(''); // Clear search when entering edit mode
+    setSelectedIndex(0);
+  };
+
+  const handleItemUpdate = async (item: LauncherItem) => {
+    try {
+      await window.electronAPI.updateItem({
+        sourceFile: item.sourceFile!,
+        lineNumber: item.lineNumber!,
+        newItem: item
+      });
+      await loadItems(); // Reload items after update
+    } catch (error) {
+      console.error('Error updating item:', error);
+      alert('アイテムの更新中にエラーが発生しました。');
+    }
+  };
+
+  const handleItemsDelete = async (items: LauncherItem[]) => {
+    try {
+      const deleteRequests = items.map(item => ({
+        sourceFile: item.sourceFile!,
+        lineNumber: item.lineNumber!
+      }));
+      await window.electronAPI.deleteItems(deleteRequests);
+      await loadItems(); // Reload items after deletion
+    } catch (error) {
+      console.error('Error deleting items:', error);
+      alert('アイテムの削除中にエラーが発生しました。');
+    }
+  };
+
+  const handleBatchUpdate = async (items: LauncherItem[]) => {
+    try {
+      const updateRequests = items.map(item => ({
+        sourceFile: item.sourceFile!,
+        lineNumber: item.lineNumber!,
+        newItem: item
+      }));
+      await window.electronAPI.batchUpdateItems(updateRequests);
+      await loadItems(); // Reload items after batch update
+    } catch (error) {
+      console.error('Error batch updating items:', error);
+      alert('アイテムの一括更新中にエラーが発生しました。');
+    }
+  };
+
+  const handleRawDataSave = async (updatedRawLines: RawDataLine[]) => {
+    try {
+      await window.electronAPI.saveRawDataFiles(updatedRawLines);
+      setRawLines(updatedRawLines);
+      // 通常モードのデータも更新
+      await loadItems();
+    } catch (error) {
+      console.error('Error saving raw data:', error);
+      alert('データの保存中にエラーが発生しました。');
+    }
+  };
+
+  const handleExitEditMode = () => {
+    setIsEditMode(false);
+    setSearchQuery('');
+    setSelectedIndex(0);
+  };
+
   const currentItems = activeTab === 'main' ? mainItems : tempItems;
   const filteredItems = filterItems(currentItems, searchQuery);
 
   return (
-    <div className={`app ${isDraggingOver ? 'dragging-over' : ''}`} onKeyDown={handleKeyDown}>
-      <div className="header">
-        <SearchBox
-          ref={searchInputRef}
-          value={searchQuery}
-          onChange={handleSearch}
-          onKeyDown={handleKeyDown}
+    <div className={`app ${isDraggingOver ? 'dragging-over' : ''} ${isEditMode ? 'edit-mode' : ''}`} onKeyDown={handleKeyDown}>
+      {isEditMode ? (
+        <EditModeView
+          rawLines={rawLines}
+          onRawDataSave={handleRawDataSave}
+          onExitEditMode={handleExitEditMode}
+          searchQuery={searchQuery}
+          onSearchChange={handleSearch}
         />
-        <ActionButtons
-          onFetchFavicon={handleFetchFavicon}
-          onExtractAllIcons={handleExtractAllIcons}
-          onAddTemp={handleAddTemp}
-          onReload={loadItems}
-          onOpenConfigFolder={() => window.electronAPI.openConfigFolder()}
-          onOpenDataFile={() => window.electronAPI.openDataFile()}
-          onTogglePin={handleTogglePin}
-          onExportJson={handleExportJson}
-          onSortDataFiles={handleSortDataFiles}
-          isPinned={isPinned}
-        />
-      </div>
-      
-      <TabControl activeTab={activeTab} onTabChange={setActiveTab} />
-      
-      <ItemList
-        items={filteredItems}
-        selectedIndex={selectedIndex}
-        onItemClick={handleItemClick}
-        onItemSelect={setSelectedIndex}
-      />
-      
-      <RegisterModal
-        isOpen={isRegisterModalOpen}
-        onClose={() => {
-          setIsRegisterModalOpen(false);
-          setDroppedPaths([]);
-        }}
-        onRegister={handleRegisterItems}
-        droppedPaths={droppedPaths}
-      />
-      
-      {isDraggingOver && (
-        <div className="drag-overlay">
-          <div className="drag-message">
-            ファイルをドロップして登録
+      ) : (
+        <>
+          <div className="header">
+            <SearchBox
+              ref={searchInputRef}
+              value={searchQuery}
+              onChange={handleSearch}
+              onKeyDown={handleKeyDown}
+            />
+            <ActionButtons
+              onFetchFavicon={handleFetchFavicon}
+              onExtractAllIcons={handleExtractAllIcons}
+              onAddTemp={handleAddTemp}
+              onReload={loadItems}
+              onOpenConfigFolder={() => window.electronAPI.openConfigFolder()}
+              onOpenDataFile={() => window.electronAPI.openDataFile()}
+              onTogglePin={handleTogglePin}
+              onExportJson={handleExportJson}
+              onSortDataFiles={handleSortDataFiles}
+              onToggleEditMode={handleToggleEditMode}
+              isPinned={isPinned}
+              isEditMode={isEditMode}
+            />
           </div>
-        </div>
+          
+          <TabControl activeTab={activeTab} onTabChange={setActiveTab} />
+          
+          <ItemList
+            items={filteredItems}
+            selectedIndex={selectedIndex}
+            onItemClick={handleItemClick}
+            onItemSelect={setSelectedIndex}
+          />
+          
+          <RegisterModal
+            isOpen={isRegisterModalOpen}
+            onClose={() => {
+              setIsRegisterModalOpen(false);
+              setDroppedPaths([]);
+            }}
+            onRegister={handleRegisterItems}
+            droppedPaths={droppedPaths}
+          />
+          
+          {isDraggingOver && (
+            <div className="drag-overlay">
+              <div className="drag-message">
+                ファイルをドロップして登録
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

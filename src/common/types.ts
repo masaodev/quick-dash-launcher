@@ -5,9 +5,20 @@ export interface LauncherItem {
   icon?: string;
   args?: string;
   originalPath?: string;
+  sourceFile?: 'data.txt' | 'data2.txt' | 'tempdata.txt';
+  lineNumber?: number;
+  isDirExpanded?: boolean;
+  isEdited?: boolean;
 }
 
 export interface DataFile {
   name: string;
   content: string;
+}
+
+export interface RawDataLine {
+  lineNumber: number;
+  content: string;
+  type: 'directive' | 'item' | 'comment' | 'empty';
+  sourceFile: 'data.txt' | 'data2.txt' | 'tempdata.txt';
 }

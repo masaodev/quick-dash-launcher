@@ -2,7 +2,7 @@ import { ipcMain, shell } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import { minimatch } from 'minimatch';
-import { DataFile } from '../../common/types';
+import { DataFile, RawDataLine } from '../../common/types';
 
 // DIRディレクティブのオプション型定義
 interface DirOptions {
@@ -238,6 +238,88 @@ async function loadDataFiles(configFolder: string): Promise<DataFile[]> {
   }
   
   return files;
+}
+
+// 生データを読み込む（DIRディレクティブ展開なし）
+async function loadRawDataFiles(configFolder: string): Promise<RawDataLine[]> {
+  const rawLines: RawDataLine[] = [];
+  const dataFiles = ['data.txt', 'data2.txt', 'tempdata.txt'] as const;
+  
+  for (const fileName of dataFiles) {
+    const filePath = path.join(configFolder, fileName);
+    if (fs.existsSync(filePath)) {
+      const content = fs.readFileSync(filePath, 'utf8');
+      const lines = content.split('\n');
+      
+      lines.forEach((line, index) => {
+        const lineType = detectLineType(line);
+        rawLines.push({
+          lineNumber: index + 1,
+          content: line,
+          type: lineType,
+          sourceFile: fileName
+        });
+      });
+    }
+  }
+  
+  return rawLines;
+}
+
+// 行のタイプを判定
+function detectLineType(line: string): RawDataLine['type'] {
+  const trimmedLine = line.trim();
+  
+  if (!trimmedLine) {
+    return 'empty';
+  }
+  
+  if (trimmedLine.startsWith('//')) {
+    return 'comment';
+  }
+  
+  if (trimmedLine.startsWith('dir,')) {
+    return 'directive';
+  }
+  
+  return 'item';
+}
+
+// 生データを保存
+async function saveRawDataFiles(configFolder: string, rawLines: RawDataLine[]): Promise<void> {
+  // ファイル別にグループ化
+  const fileGroups = new Map<string, RawDataLine[]>();
+  rawLines.forEach(line => {
+    if (!fileGroups.has(line.sourceFile)) {
+      fileGroups.set(line.sourceFile, []);
+    }
+    fileGroups.get(line.sourceFile)!.push(line);
+  });
+  
+  // 各ファイルを保存
+  for (const [fileName, lines] of fileGroups) {
+    const filePath = path.join(configFolder, fileName);
+    
+    // バックアップを作成
+    if (fs.existsSync(filePath)) {
+      const backupFolder = path.join(configFolder, 'backup');
+      if (!fs.existsSync(backupFolder)) {
+        fs.mkdirSync(backupFolder, { recursive: true });
+      }
+      
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const backupFileName = `${path.parse(fileName).name}_${timestamp}${path.parse(fileName).ext}`;
+      const backupPath = path.join(backupFolder, backupFileName);
+      fs.copyFileSync(filePath, backupPath);
+    }
+    
+    // 行番号でソートして内容を結合
+    const sortedLines = lines.sort((a, b) => a.lineNumber - b.lineNumber);
+    const content = sortedLines.map(line => line.content).join('\n');
+    
+    // ファイルに書き込み
+    fs.writeFileSync(filePath, content, 'utf8');
+  }
 }
 
 async function saveTempData(configFolder: string, content: string): Promise<void> {
@@ -532,5 +614,13 @@ export function setupDataHandlers(configFolder: string) {
   
   ipcMain.handle('sort-data-files', async () => {
     return await sortDataFiles(configFolder);
+  });
+  
+  ipcMain.handle('load-raw-data-files', async () => {
+    return await loadRawDataFiles(configFolder);
+  });
+  
+  ipcMain.handle('save-raw-data-files', async (_event, rawLines: RawDataLine[]) => {
+    return await saveRawDataFiles(configFolder, rawLines);
   });
 }

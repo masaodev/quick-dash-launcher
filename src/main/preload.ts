@@ -24,4 +24,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getPathForFile: (file: File) => webUtils.getPathForFile(file),
   quitApp: () => ipcRenderer.invoke('quit-app'),
   sortDataFiles: () => ipcRenderer.invoke('sort-data-files'),
+  updateItem: (request: any) => ipcRenderer.invoke('update-item', request),
+  deleteItems: (requests: any[]) => ipcRenderer.invoke('delete-items', requests),
+  batchUpdateItems: (requests: any[]) => ipcRenderer.invoke('batch-update-items', requests),
+  loadRawDataFiles: () => ipcRenderer.invoke('load-raw-data-files'),
+  saveRawDataFiles: (rawLines: any[]) => ipcRenderer.invoke('save-raw-data-files', rawLines),
 });
