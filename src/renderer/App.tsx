@@ -349,9 +349,12 @@ const App: React.FC = () => {
       // 編集モードに入る時は生データを読み込み
       await loadRawData();
     }
-    setIsEditMode(prev => !prev);
+    const newEditMode = !isEditMode;
+    setIsEditMode(newEditMode);
     setSearchQuery(''); // Clear search when entering edit mode
     setSelectedIndex(0);
+    // メインプロセスに編集モードの状態を通知
+    await window.electronAPI.setEditMode(newEditMode);
   };
 
   const handleItemUpdate = async (item: LauncherItem) => {
@@ -409,10 +412,12 @@ const App: React.FC = () => {
     }
   };
 
-  const handleExitEditMode = () => {
+  const handleExitEditMode = async () => {
     setIsEditMode(false);
     setSearchQuery('');
     setSelectedIndex(0);
+    // メインプロセスに編集モードの状態を通知
+    await window.electronAPI.setEditMode(false);
   };
 
   const currentItems = activeTab === 'main' ? mainItems : tempItems;

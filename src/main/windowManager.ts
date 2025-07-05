@@ -5,6 +5,8 @@ import { HOTKEY } from './appHelpers';
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 let isPinned: boolean = false;
+let isEditMode: boolean = false;
+let normalWindowBounds: { width: number; height: number } | null = null;
 
 export function createWindow(): BrowserWindow {
   mainWindow = new BrowserWindow({
@@ -31,7 +33,7 @@ export function createWindow(): BrowserWindow {
   // mainWindow.webContents.openDevTools({ mode: 'detach' });
 
   mainWindow.on('blur', () => {
-    if (mainWindow && !mainWindow.webContents.isDevToolsOpened() && !isPinned) {
+    if (mainWindow && !mainWindow.webContents.isDevToolsOpened() && !isPinned && !isEditMode) {
       mainWindow.hide();
     }
   });
@@ -120,4 +122,28 @@ export function getWindowPinState(): boolean {
 
 export function setWindowPinState(pinState: boolean): void {
   isPinned = pinState;
+}
+
+export function setEditMode(editMode: boolean): void {
+  isEditMode = editMode;
+  
+  if (mainWindow) {
+    if (editMode) {
+      // 編集モードに入る時：現在のサイズを保存してから大きくする
+      const currentBounds = mainWindow.getBounds();
+      normalWindowBounds = { width: currentBounds.width, height: currentBounds.height };
+      mainWindow.setSize(1000, 700);
+      mainWindow.center();
+    } else {
+      // 通常モードに戻る時：元のサイズに戻す
+      if (normalWindowBounds) {
+        mainWindow.setSize(normalWindowBounds.width, normalWindowBounds.height);
+        mainWindow.center();
+      }
+    }
+  }
+}
+
+export function getEditMode(): boolean {
+  return isEditMode;
 }

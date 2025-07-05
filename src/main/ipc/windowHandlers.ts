@@ -2,7 +2,9 @@ import { ipcMain, app } from 'electron';
 
 export function setupWindowHandlers(
   getWindowPinState: () => boolean,
-  setWindowPinState: (pinState: boolean) => void
+  setWindowPinState: (pinState: boolean) => void,
+  setEditMode: (editMode: boolean) => void,
+  getEditMode: () => boolean
 ) {
   ipcMain.handle('get-window-pin-state', () => {
     return getWindowPinState();
@@ -14,5 +16,13 @@ export function setupWindowHandlers(
 
   ipcMain.handle('quit-app', () => {
     app.quit();
+  });
+
+  ipcMain.handle('set-edit-mode', (event, editMode: boolean) => {
+    setEditMode(editMode);
+  });
+
+  ipcMain.handle('get-edit-mode', () => {
+    return getEditMode();
   });
 }

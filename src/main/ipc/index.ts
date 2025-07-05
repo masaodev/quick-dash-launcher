@@ -13,12 +13,14 @@ export function setupIPCHandlers(
   extensionsFolder: string,
   getMainWindow: () => BrowserWindow | null,
   getWindowPinState: () => boolean,
-  setWindowPinState: (pinState: boolean) => void
+  setWindowPinState: (pinState: boolean) => void,
+  setEditMode: (editMode: boolean) => void,
+  getEditMode: () => boolean
 ) {
   setupDataHandlers(configFolder);
   setupItemHandlers(getMainWindow);
   setupConfigHandlers(configFolder);
   setupIconHandlers(faviconsFolder, iconsFolder, extensionsFolder);
-  setupWindowHandlers(getWindowPinState, setWindowPinState);
+  setupWindowHandlers(getWindowPinState, setWindowPinState, setEditMode, getEditMode);
   registerEditHandlers(configFolder);
 }

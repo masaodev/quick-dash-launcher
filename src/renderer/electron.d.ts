@@ -38,6 +38,8 @@ export interface ElectronAPI {
   }[]) => Promise<{ success: boolean }>;
   loadRawDataFiles: () => Promise<RawDataLine[]>;
   saveRawDataFiles: (rawLines: RawDataLine[]) => Promise<void>;
+  setEditMode: (editMode: boolean) => Promise<void>;
+  getEditMode: () => Promise<boolean>;
 }
 
 declare global {
