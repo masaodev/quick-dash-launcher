@@ -4,6 +4,7 @@ import SearchBox from './components/SearchBox';
 import ItemList from './components/ItemList';
 import TabControl from './components/TabControl';
 import ActionButtons from './components/ActionButtons';
+import RegisterModal, { RegisterItem } from './components/RegisterModal';
 import { parseDataFiles, filterItems } from './utils/dataParser';
 
 const App: React.FC = () => {
@@ -14,6 +15,9 @@ const App: React.FC = () => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isCtrlPressed, setIsCtrlPressed] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
+  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+  const [droppedPaths, setDroppedPaths] = useState<string[]>([]);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
   
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -48,9 +52,66 @@ const App: React.FC = () => {
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
 
+    // Setup drag and drop event listeners
+    const handleDragOver = (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDraggingOver(true);
+    };
+
+    const handleDragLeave = (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDraggingOver(false);
+    };
+
+    const handleDrop = async (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDraggingOver(false);
+
+      // Check if we have files
+      if (!e.dataTransfer?.files || e.dataTransfer.files.length === 0) {
+        return;
+      }
+
+      const paths: string[] = [];
+      const files = e.dataTransfer.files;
+      
+      // Use webUtils.getPathForFile() through the preload API
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        try {
+          const filePath = window.electronAPI.getPathForFile(file);
+          console.log(`Got path for ${file.name}: ${filePath}`);
+          if (filePath) {
+            paths.push(filePath);
+          }
+        } catch (error) {
+          console.error(`Error getting path for ${file.name}:`, error);
+        }
+      }
+      
+      console.log('Final paths:', paths);
+      
+      if (paths.length > 0) {
+        setDroppedPaths(paths);
+        setIsRegisterModalOpen(true);
+      } else {
+        alert('ファイルパスを取得できませんでした。\nファイルを直接エクスプローラーからドラッグしてください。');
+      }
+    };
+
+    document.addEventListener('dragover', handleDragOver);
+    document.addEventListener('dragleave', handleDragLeave);
+    document.addEventListener('drop', handleDrop);
+
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
+      document.removeEventListener('dragover', handleDragOver);
+      document.removeEventListener('dragleave', handleDragLeave);
+      document.removeEventListener('drop', handleDrop);
     };
   }, []);
 
@@ -252,11 +313,16 @@ const App: React.FC = () => {
     alert('LauncherItemのJSONデータがクリップボードにコピーされました');
   };
 
+  const handleRegisterItems = async (items: RegisterItem[]) => {
+    await window.electronAPI.registerItems(items);
+    loadItems(); // Reload items after registration
+  };
+
   const currentItems = activeTab === 'main' ? mainItems : tempItems;
   const filteredItems = filterItems(currentItems, searchQuery);
 
   return (
-    <div className="app" onKeyDown={handleKeyDown}>
+    <div className={`app ${isDraggingOver ? 'dragging-over' : ''}`} onKeyDown={handleKeyDown}>
       <div className="header">
         <SearchBox
           ref={searchInputRef}
@@ -285,6 +351,24 @@ const App: React.FC = () => {
         onItemClick={handleItemClick}
         onItemSelect={setSelectedIndex}
       />
+      
+      <RegisterModal
+        isOpen={isRegisterModalOpen}
+        onClose={() => {
+          setIsRegisterModalOpen(false);
+          setDroppedPaths([]);
+        }}
+        onRegister={handleRegisterItems}
+        droppedPaths={droppedPaths}
+      />
+      
+      {isDraggingOver && (
+        <div className="drag-overlay">
+          <div className="drag-message">
+            ファイルをドロップして登録
+          </div>
+        </div>
+      )}
     </div>
   );
 };

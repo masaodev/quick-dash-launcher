@@ -1,4 +1,5 @@
 import { LauncherItem, DataFile } from '../common/types';
+import { RegisterItem } from './components/RegisterModal';
 
 export interface ElectronAPI {
   getConfigFolder: () => Promise<string>;
@@ -16,6 +17,9 @@ export interface ElectronAPI {
   onWindowShown: (callback: () => void) => void;
   getWindowPinState: () => Promise<boolean>;
   setWindowPinState: (isPinned: boolean) => Promise<void>;
+  registerItems: (items: RegisterItem[]) => Promise<void>;
+  isDirectory: (filePath: string) => Promise<boolean>;
+  getPathForFile: (file: File) => string;
 }
 
 declare global {

@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, webUtils } from 'electron';
 import { LauncherItem } from '../common/types';
 
 contextBridge.exposeInMainWorld('electronAPI', {
@@ -19,4 +19,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   getWindowPinState: () => ipcRenderer.invoke('get-window-pin-state'),
   setWindowPinState: (isPinned: boolean) => ipcRenderer.invoke('set-window-pin-state', isPinned),
+  registerItems: (items: any[]) => ipcRenderer.invoke('register-items', items),
+  isDirectory: (filePath: string) => ipcRenderer.invoke('is-directory', filePath),
+  getPathForFile: (file: File) => webUtils.getPathForFile(file),
 });

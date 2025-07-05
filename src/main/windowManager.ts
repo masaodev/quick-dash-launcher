@@ -49,6 +49,11 @@ export function createWindow(): BrowserWindow {
     }
   });
 
+  // Enable webSecurity for file drag and drop
+  mainWindow.webContents.session.webRequest.onBeforeRequest((details, callback) => {
+    callback({ cancel: false });
+  });
+
   return mainWindow;
 }
 

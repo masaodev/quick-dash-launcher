@@ -9,7 +9,7 @@
 ## IPCハンドラー構造
 IPCハンドラーは機能ごとに分離（`src/main/ipc/`）:
 - `configHandlers.ts`: 設定フォルダーへのアクセス
-- `dataHandlers.ts`: データファイルの読み込み・保存
+- `dataHandlers.ts`: データファイルの読み込み・保存、アイテム登録
 - `itemHandlers.ts`: アイテムの起動・フォルダー表示
 - `iconHandlers.ts`: ファビコン取得・アイコン抽出
 - `windowHandlers.ts`: ウィンドウ固定化制御
@@ -27,6 +27,9 @@ IPCハンドラーは機能ごとに分離（`src/main/ipc/`）:
 - `load-cached-icons`: キャッシュされたアイコンを一括読み込み
 - `get-window-pin-state`: ウィンドウ固定状態を取得
 - `set-window-pin-state`: ウィンドウ固定状態を設定
+- `register-items`: **新機能** アイテムをデータファイルに登録
+- `is-directory`: パスがディレクトリかどうかを判定
+- `getPathForFile`: **プリロードAPI** ドラッグ&ドロップされたファイルのパスを取得
 
 ## データフロー
 1. メインプロセスが`%APPDATA%/quickdashlauncher/config/`からデータファイルを読み込む

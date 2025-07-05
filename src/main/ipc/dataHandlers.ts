@@ -117,6 +117,80 @@ async function saveTempData(configFolder: string, content: string): Promise<void
   fs.writeFileSync(tempDataPath, content, 'utf8');
 }
 
+interface RegisterItem {
+  name: string;
+  path: string;
+  type: 'url' | 'file' | 'folder' | 'app' | 'customUri';
+  args?: string;
+  targetTab: 'main' | 'temp';
+  folderProcessing?: 'folder' | 'expand';
+  icon?: string;
+}
+
+async function registerItems(configFolder: string, items: RegisterItem[]): Promise<void> {
+  // Group items by target tab
+  const mainItems = items.filter(item => item.targetTab === 'main');
+  const tempItems = items.filter(item => item.targetTab === 'temp');
+  
+  // Process main items
+  if (mainItems.length > 0) {
+    const dataPath = path.join(configFolder, 'data.txt');
+    let existingContent = '';
+    
+    if (fs.existsSync(dataPath)) {
+      existingContent = fs.readFileSync(dataPath, 'utf8');
+    }
+    
+    const newLines = mainItems.map(item => {
+      if (item.type === 'folder' && item.folderProcessing === 'expand') {
+        return `dir,${item.path}`;
+      } else {
+        let line = `${item.name},${item.path}`;
+        if (item.args) {
+          line += `,${item.args}`;
+        }
+        return line;
+      }
+    });
+    
+    const updatedContent = existingContent ? existingContent.trim() + '\n' + newLines.join('\n') : newLines.join('\n');
+    fs.writeFileSync(dataPath, updatedContent.trim(), 'utf8');
+  }
+  
+  // Process temp items
+  if (tempItems.length > 0) {
+    const tempDataPath = path.join(configFolder, 'tempdata.txt');
+    let existingContent = '';
+    
+    if (fs.existsSync(tempDataPath)) {
+      existingContent = fs.readFileSync(tempDataPath, 'utf8');
+    }
+    
+    const newLines = tempItems.map(item => {
+      if (item.type === 'folder' && item.folderProcessing === 'expand') {
+        return `dir,${item.path}`;
+      } else {
+        let line = `${item.name},${item.path}`;
+        if (item.args) {
+          line += `,${item.args}`;
+        }
+        return line;
+      }
+    });
+    
+    const updatedContent = existingContent ? existingContent.trim() + '\n' + newLines.join('\n') : newLines.join('\n');
+    fs.writeFileSync(tempDataPath, updatedContent.trim(), 'utf8');
+  }
+}
+
+function isDirectory(filePath: string): boolean {
+  try {
+    return fs.statSync(filePath).isDirectory();
+  } catch {
+    return false;
+  }
+}
+
 export function setupDataHandlers(configFolder: string) {
   ipcMain.handle('get-config-folder', () => configFolder);
   
@@ -126,5 +200,13 @@ export function setupDataHandlers(configFolder: string) {
   
   ipcMain.handle('save-temp-data', async (_event, content: string) => {
     return await saveTempData(configFolder, content);
+  });
+  
+  ipcMain.handle('register-items', async (_event, items: RegisterItem[]) => {
+    return await registerItems(configFolder, items);
+  });
+  
+  ipcMain.handle('is-directory', async (_event, filePath: string) => {
+    return isDirectory(filePath);
   });
 }
