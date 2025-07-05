@@ -77,8 +77,8 @@ function detectItemType(itemPath: string): LauncherItem['type'] {
   const lastDot = itemPath.lastIndexOf('.');
   const ext = lastDot !== -1 ? itemPath.substring(lastDot).toLowerCase() : '';
   
-  // Executables
-  if (ext === '.exe' || ext === '.bat' || ext === '.cmd' || ext === '.com') {
+  // Executables and shortcuts
+  if (ext === '.exe' || ext === '.bat' || ext === '.cmd' || ext === '.com' || ext === '.lnk') {
     return 'app';
   }
 

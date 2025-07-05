@@ -3,6 +3,35 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { DataFile } from '../../common/types';
 
+function processShortcutToCSV(filePath: string): string | null {
+  try {
+    // Electron のネイティブ機能を使用してショートカットを読み取り
+    const shortcutDetails = shell.readShortcutLink(filePath);
+    
+    if (shortcutDetails && shortcutDetails.target) {
+      const displayName = path.basename(filePath, '.lnk');
+      let line = `${displayName},${shortcutDetails.target}`;
+      
+      // 引数が存在する場合は追加
+      if (shortcutDetails.args && shortcutDetails.args.trim()) {
+        line += `,${shortcutDetails.args}`;
+      } else {
+        // 引数が空の場合でも空のフィールドを追加
+        line += ',';
+      }
+      
+      // 元のショートカットファイルのパスを追加
+      line += `,${filePath}`;
+      
+      return line;
+    }
+  } catch (error) {
+    console.error(`Error reading shortcut ${filePath}:`, error);
+  }
+  
+  return null;
+}
+
 async function scanDirectoryForShortcuts(dirPath: string): Promise<string[]> {
   const results: string[] = [];
   
@@ -19,29 +48,9 @@ async function scanDirectoryForShortcuts(dirPath: string): Promise<string[]> {
       
       // .lnkファイル（Windowsショートカット）を処理
       if (path.extname(file).toLowerCase() === '.lnk') {
-        try {
-          // Electron のネイティブ機能を使用してショートカットを読み取り
-          const shortcutDetails = shell.readShortcutLink(filePath);
-          
-          if (shortcutDetails && shortcutDetails.target) {
-            const displayName = path.basename(file, '.lnk');
-            let line = `${displayName},${shortcutDetails.target}`;
-            
-            // 引数が存在する場合は追加
-            if (shortcutDetails.args && shortcutDetails.args.trim()) {
-              line += `,${shortcutDetails.args}`;
-            } else {
-              // 引数が空の場合でも空のフィールドを追加
-              line += ',';
-            }
-            
-            // 元のショートカットファイルのパスを追加
-            line += `,${filePath}`;
-            
-            results.push(line);
-          }
-        } catch (error) {
-          console.error(`Error reading shortcut ${filePath}:`, error);
+        const processedShortcut = processShortcutToCSV(filePath);
+        if (processedShortcut) {
+          results.push(processedShortcut);
         }
       }
     }
@@ -51,6 +60,7 @@ async function scanDirectoryForShortcuts(dirPath: string): Promise<string[]> {
   
   return results;
 }
+
 
 async function loadDataFiles(configFolder: string): Promise<DataFile[]> {
   const files: DataFile[] = [];
@@ -78,6 +88,18 @@ async function loadDataFiles(configFolder: string): Promise<DataFile[]> {
             }
           }
         } else {
+          // 直接指定された.lnkファイルを処理
+          const parts = trimmedLine.split(',');
+          if (parts.length >= 2) {
+            const itemPath = parts[1].trim();
+            if (itemPath.toLowerCase().endsWith('.lnk') && fs.existsSync(itemPath)) {
+              const processedShortcut = processShortcutToCSV(itemPath);
+              if (processedShortcut) {
+                processedLines.push(processedShortcut);
+                continue;
+              }
+            }
+          }
           processedLines.push(line);
         }
       }
