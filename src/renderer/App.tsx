@@ -14,7 +14,6 @@ const App: React.FC = () => {
   const [tempItems, setTempItems] = useState<LauncherItem[]>([]);
   const [activeTab, setActiveTab] = useState<'main' | 'temp'>('main');
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [isCtrlPressed, setIsCtrlPressed] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [droppedPaths, setDroppedPaths] = useState<string[]>([]);
@@ -40,20 +39,6 @@ const App: React.FC = () => {
     };
     loadPinState();
 
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Control') {
-        setIsCtrlPressed(true);
-      }
-    };
-
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.key === 'Control') {
-        setIsCtrlPressed(false);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
 
     // Setup drag and drop event listeners
     const handleDragOver = (e: DragEvent) => {
@@ -110,19 +95,12 @@ const App: React.FC = () => {
     document.addEventListener('drop', handleDrop);
 
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
       document.removeEventListener('dragover', handleDragOver);
       document.removeEventListener('dragleave', handleDragLeave);
       document.removeEventListener('drop', handleDrop);
     };
   }, []);
 
-  useEffect(() => {
-    if (isCtrlPressed) {
-      setActiveTab(prev => prev === 'main' ? 'temp' : 'main');
-    }
-  }, [isCtrlPressed]);
 
   const loadItems = async () => {
     const dataFiles = await window.electronAPI.loadDataFiles();
