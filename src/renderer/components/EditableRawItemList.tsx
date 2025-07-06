@@ -42,7 +42,6 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
         // アイテム行の場合：パスと引数を更新
         const parts = line.content.split(',');
         const name = parts[0] || '';
-        const originalPath = parts[3] || '';
         
         // パスと引数に分解
         const trimmedValue = editingValue.trim();
@@ -52,10 +51,15 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
           // スペースがある場合：パスと引数に分ける
           const pathPart = trimmedValue.substring(0, spaceIndex);
           const argsPart = trimmedValue.substring(spaceIndex + 1);
-          newContent = `${name},${pathPart},${argsPart},${originalPath}`;
+          newContent = `${name},${pathPart},${argsPart}`;
         } else {
           // スペースがない場合：パスのみ
-          newContent = `${name},${trimmedValue},,${originalPath}`;
+          newContent = `${name},${trimmedValue}`;
+        }
+        
+        // 元パスが存在する場合は追加
+        if (parts.length > 3 && parts[3]) {
+          newContent += `,${parts[3]}`;
         }
       } else if (line.type === 'directive') {
         // DIRディレクティブの場合：フォルダパスとオプションを更新

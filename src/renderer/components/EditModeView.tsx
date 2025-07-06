@@ -23,6 +23,7 @@ const EditModeView: React.FC<EditModeViewProps> = ({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<RawDataLine | null>(null);
+  const [workingLines, setWorkingLines] = useState<RawDataLine[]>(rawLines);
 
   const handleLineEdit = (line: RawDataLine) => {
     const lineKey = `${line.sourceFile}_${line.lineNumber}`;
@@ -95,7 +96,7 @@ const EditModeView: React.FC<EditModeViewProps> = ({
 
   const handleSelectAll = (selected: boolean) => {
     if (selected) {
-      const allLines = new Set(rawLines.map(line => `${line.sourceFile}_${line.lineNumber}`));
+      const allLines = new Set(workingLines.map(line => `${line.sourceFile}_${line.lineNumber}`));
       setSelectedItems(allLines);
     } else {
       setSelectedItems(new Set());
@@ -103,7 +104,7 @@ const EditModeView: React.FC<EditModeViewProps> = ({
   };
 
   const handleDeleteLines = (linesToDelete: RawDataLine[]) => {
-    const updatedLines = rawLines.filter(line => 
+    const updatedLines = workingLines.filter(line => 
       !linesToDelete.some(deleteThisLine => 
         line.sourceFile === deleteThisLine.sourceFile && 
         line.lineNumber === deleteThisLine.lineNumber
@@ -112,34 +113,39 @@ const EditModeView: React.FC<EditModeViewProps> = ({
     
     // 行番号を振り直し
     const reorderedLines = reorderLineNumbers(updatedLines);
-    onRawDataSave(reorderedLines);
+    setWorkingLines(reorderedLines);
     setSelectedItems(new Set());
+    setHasUnsavedChanges(true);
   };
 
   const handleAddLine = () => {
     const newLine: RawDataLine = {
-      lineNumber: rawLines.length + 1,
+      lineNumber: workingLines.length + 1,
       content: '',
       type: 'empty',
       sourceFile: 'data.txt' // デフォルトでdata.txtに追加
     };
     
-    const updatedLines = [...rawLines, newLine];
+    const updatedLines = [...workingLines, newLine];
     const reorderedLines = reorderLineNumbers(updatedLines);
-    onRawDataSave(reorderedLines);
+    setWorkingLines(reorderedLines);
+    setHasUnsavedChanges(true);
   };
 
   const handleSaveChanges = () => {
-    if (editedLines.size === 0) return;
+    if (!hasUnsavedChanges) return;
     
-    const updatedLines = rawLines.map(line => {
+    // editedLinesの変更をworkingLinesに反映
+    const updatedLines = workingLines.map(line => {
       const lineKey = `${line.sourceFile}_${line.lineNumber}`;
       return editedLines.get(lineKey) || line;
     });
     
+    // 全件書き戻し
     onRawDataSave(updatedLines);
     setEditedLines(new Map());
     setHasUnsavedChanges(false);
+    setWorkingLines(updatedLines);
   };
 
   // 行番号を振り直す関数
@@ -182,7 +188,7 @@ const EditModeView: React.FC<EditModeViewProps> = ({
     if (e.key === 'Escape') {
       handleExitEditMode();
     } else if (e.key === 'Delete' && selectedItems.size > 0) {
-      const selectedLines = rawLines.filter(line => selectedItems.has(`${line.sourceFile}_${line.lineNumber}`));
+      const selectedLines = workingLines.filter(line => selectedItems.has(`${line.sourceFile}_${line.lineNumber}`));
       handleDeleteLines(selectedLines);
     } else if (e.ctrlKey && e.key === 's') {
       e.preventDefault();
@@ -190,7 +196,7 @@ const EditModeView: React.FC<EditModeViewProps> = ({
     }
   };
 
-  const mergedLines = rawLines.map(line => {
+  const mergedLines = workingLines.map(line => {
     const lineKey = `${line.sourceFile}_${line.lineNumber}`;
     const editedLine = editedLines.get(lineKey);
     return editedLine || line;
@@ -215,8 +221,15 @@ const EditModeView: React.FC<EditModeViewProps> = ({
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
   }, []);
 
+  // rawLinesが変更されたらworkingLinesも更新
+  useEffect(() => {
+    setWorkingLines(rawLines);
+    setEditedLines(new Map());
+    setHasUnsavedChanges(false);
+  }, [rawLines]);
+
   const getFileNames = () => {
-    const fileSet = new Set(rawLines.map(line => line.sourceFile));
+    const fileSet = new Set(workingLines.map(line => line.sourceFile));
     return Array.from(fileSet).join(', ');
   };
 
@@ -281,7 +294,7 @@ const EditModeView: React.FC<EditModeViewProps> = ({
           setEditingItem(null);
         }}
         onRegister={handleUpdateItem}
-        droppedPaths={editingItem ? [editingItem.content] : []}
+        droppedPaths={[]}
         editingItem={editingItem}
       />
     </div>

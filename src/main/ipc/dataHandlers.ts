@@ -193,7 +193,7 @@ async function loadDataFiles(configFolder: string): Promise<DataFile[]> {
       let content = fs.readFileSync(filePath, 'utf8');
       
       // dirディレクティブを処理
-      const lines = content.split('\n');
+      const lines = content.split(/\r\n|\n|\r/);
       const processedLines: string[] = [];
       
       for (const line of lines) {
@@ -232,7 +232,7 @@ async function loadDataFiles(configFolder: string): Promise<DataFile[]> {
         }
       }
       
-      content = processedLines.join('\n');
+      content = processedLines.join('\r\n');
       files.push({ name: fileName, content });
     }
   }
@@ -249,7 +249,8 @@ async function loadRawDataFiles(configFolder: string): Promise<RawDataLine[]> {
     const filePath = path.join(configFolder, fileName);
     if (fs.existsSync(filePath)) {
       const content = fs.readFileSync(filePath, 'utf8');
-      const lines = content.split('\n');
+      // 改行コードを正規化（CRLF、LF、CRのいずれにも対応）
+      const lines = content.split(/\r\n|\n|\r/);
       
       lines.forEach((line, index) => {
         const lineType = detectLineType(line);
@@ -315,7 +316,7 @@ async function saveRawDataFiles(configFolder: string, rawLines: RawDataLine[]): 
     
     // 行番号でソートして内容を結合
     const sortedLines = lines.sort((a, b) => a.lineNumber - b.lineNumber);
-    const content = sortedLines.map(line => line.content).join('\n');
+    const content = sortedLines.map(line => line.content).join('\r\n');
     
     // ファイルに書き込み
     fs.writeFileSync(filePath, content, 'utf8');
@@ -408,7 +409,7 @@ async function registerItems(configFolder: string, items: RegisterItem[]): Promi
       }
     });
     
-    const updatedContent = existingContent ? existingContent.trim() + '\n' + newLines.join('\n') : newLines.join('\n');
+    const updatedContent = existingContent ? existingContent.trim() + '\r\n' + newLines.join('\r\n') : newLines.join('\r\n');
     fs.writeFileSync(dataPath, updatedContent.trim(), 'utf8');
   }
   
@@ -469,7 +470,7 @@ async function registerItems(configFolder: string, items: RegisterItem[]): Promi
       }
     });
     
-    const updatedContent = existingContent ? existingContent.trim() + '\n' + newLines.join('\n') : newLines.join('\n');
+    const updatedContent = existingContent ? existingContent.trim() + '\r\n' + newLines.join('\r\n') : newLines.join('\r\n');
     fs.writeFileSync(tempDataPath, updatedContent.trim(), 'utf8');
   }
 }
@@ -503,7 +504,7 @@ async function sortDataFiles(configFolder: string): Promise<void> {
     try {
       // Read file content
       const content = fs.readFileSync(filePath, 'utf8');
-      const lines = content.split('\n');
+      const lines = content.split(/\r\n|\n|\r/);
       
       // Separate dir directives and regular entries
       const dirLines: string[] = [];
@@ -544,7 +545,7 @@ async function sortDataFiles(configFolder: string): Promise<void> {
       // Combine dir lines at the top, then sorted regular lines
       const sortedContent = [...dirLines, ...sortedRegularLines]
         .filter(line => line.trim() !== '')
-        .join('\n');
+        .join('\r\n');
       
       // Write sorted content back to file
       fs.writeFileSync(filePath, sortedContent, 'utf8');
