@@ -10,6 +10,7 @@ interface EditableRawItemListProps {
   onAddLine: () => void;
   onDeleteLines: (lines: RawDataLine[]) => void;
   onEditClick: (line: RawDataLine) => void;
+  onSort: (sortedLines: RawDataLine[]) => void;
 }
 
 const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
@@ -20,12 +21,42 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
   onSelectAll,
   onAddLine,
   onDeleteLines,
-  onEditClick
+  onEditClick,
+  onSort
 }) => {
   const [editingCell, setEditingCell] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState('');
 
   const getLineKey = (line: RawDataLine) => `${line.sourceFile}_${line.lineNumber}`;
+
+  const handleSort = () => {
+    const sortedLines = [...rawLines].sort((a, b) => {
+      // 第1キー: 種類でソート
+      const typeOrder = { directive: 0, item: 1, comment: 2, empty: 3 };
+      const typeA = typeOrder[a.type] ?? 99;
+      const typeB = typeOrder[b.type] ?? 99;
+      
+      if (typeA !== typeB) {
+        return typeA - typeB;
+      }
+      
+      // 第2キー: パスと引数でソート
+      const pathAndArgsA = getPathAndArgs(a).toLowerCase();
+      const pathAndArgsB = getPathAndArgs(b).toLowerCase();
+      
+      if (pathAndArgsA !== pathAndArgsB) {
+        return pathAndArgsA.localeCompare(pathAndArgsB);
+      }
+      
+      // 第3キー: 名前でソート
+      const nameA = a.type === 'item' ? (a.content.split(',')[0]?.trim() || '').toLowerCase() : '';
+      const nameB = b.type === 'item' ? (b.content.split(',')[0]?.trim() || '').toLowerCase() : '';
+      
+      return nameA.localeCompare(nameB);
+    });
+    
+    onSort(sortedLines);
+  };
 
   const handleCellEdit = (line: RawDataLine) => {
     const cellKey = getLineKey(line);
@@ -267,6 +298,13 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
           disabled={selectedItems.size === 0}
         >
           🗑️ 選択行を削除 ({selectedItems.size})
+        </button>
+        <button 
+          onClick={handleSort}
+          className="sort-button"
+          title="種類→パスと引数→名前の順で整列"
+        >
+          🔤 整列
         </button>
       </div>
 

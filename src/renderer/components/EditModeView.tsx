@@ -141,11 +141,14 @@ const EditModeView: React.FC<EditModeViewProps> = ({
       return editedLines.get(lineKey) || line;
     });
     
+    // 行番号を振り直して保存
+    const reorderedLines = reorderLineNumbers(updatedLines);
+    
     // 全件書き戻し
-    onRawDataSave(updatedLines);
+    onRawDataSave(reorderedLines);
     setEditedLines(new Map());
     setHasUnsavedChanges(false);
-    setWorkingLines(updatedLines);
+    setWorkingLines(reorderedLines);
   };
 
   // 行番号を振り直す関数
@@ -172,6 +175,11 @@ const EditModeView: React.FC<EditModeViewProps> = ({
     }
     
     return reorderedLines;
+  };
+
+  const handleSort = (sortedLines: RawDataLine[]) => {
+    setWorkingLines(sortedLines);
+    setHasUnsavedChanges(true);
   };
 
   const handleExitEditMode = () => {
@@ -271,6 +279,7 @@ const EditModeView: React.FC<EditModeViewProps> = ({
         onAddLine={handleAddLine}
         onDeleteLines={handleDeleteLines}
         onEditClick={handleEditItem}
+        onSort={handleSort}
       />
 
       <div className="edit-mode-status">
