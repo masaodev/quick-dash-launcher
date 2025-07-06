@@ -779,7 +779,8 @@ body {
 }
 
 .add-line-button,
-.delete-lines-button {
+.delete-lines-button,
+.sort-button {
   padding: 8px 16px;
   font-size: 14px;
   border: 1px solid #ccc;
@@ -814,6 +815,17 @@ body {
 .delete-lines-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.sort-button {
+  background-color: #6c757d;
+  color: white;
+  border-color: #6c757d;
+}
+
+.sort-button:hover {
+  background-color: #5a6268;
+  border-color: #5a6268;
 }
 
 .raw-items-table {

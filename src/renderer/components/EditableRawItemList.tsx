@@ -29,7 +29,25 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
 
   const getLineKey = (line: RawDataLine) => `${line.sourceFile}_${line.lineNumber}`;
 
-  const handleSort = () => {
+  const removeDuplicates = (lines: RawDataLine[]) => {
+    const seen = new Set<string>();
+    const deduplicated: RawDataLine[] = [];
+    
+    for (const line of lines) {
+      // 重複判定キー：行タイプ + 内容の完全一致
+      const key = `${line.type}:${line.content}`;
+      
+      if (!seen.has(key)) {
+        seen.add(key);
+        deduplicated.push(line);
+      }
+    }
+    
+    return deduplicated;
+  };
+
+  const handleSortAndDeduplicate = async () => {
+    // 整列処理
     const sortedLines = [...rawLines].sort((a, b) => {
       // 第1キー: 種類でソート
       const typeOrder = { directive: 0, item: 1, comment: 2, empty: 3 };
@@ -55,7 +73,24 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
       return nameA.localeCompare(nameB);
     });
     
-    onSort(sortedLines);
+    // 重複削除処理
+    const deduplicatedLines = removeDuplicates(sortedLines);
+    const duplicateCount = sortedLines.length - deduplicatedLines.length;
+    
+    // 重複が見つかった場合は確認ダイアログを表示
+    if (duplicateCount > 0) {
+      const confirmed = window.confirm(
+        `整列処理が完了しました。\n\n${duplicateCount}件の重複行が見つかりました。\n重複行を削除しますか？`
+      );
+      
+      if (confirmed) {
+        onSort(deduplicatedLines);
+      } else {
+        onSort(sortedLines);
+      }
+    } else {
+      onSort(sortedLines);
+    }
   };
 
   const handleCellEdit = (line: RawDataLine) => {
@@ -300,11 +335,11 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
           🗑️ 選択行を削除 ({selectedItems.size})
         </button>
         <button 
-          onClick={handleSort}
+          onClick={handleSortAndDeduplicate}
           className="sort-button"
-          title="種類→パスと引数→名前の順で整列"
+          title="種類→パスと引数→名前の順で整列し、重複行を削除"
         >
-          🔤 整列
+          🔤 整列・重複削除
         </button>
       </div>
 
