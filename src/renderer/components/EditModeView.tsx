@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { RawDataLine } from '../../common/types';
+import { RawDataLine, SimpleBookmarkItem } from '../../common/types';
 import EditableRawItemList from './EditableRawItemList';
 import RegisterModal, { RegisterItem } from './RegisterModal';
+import BookmarkImportModal from './BookmarkImportModal';
 
 interface EditModeViewProps {
   rawLines: RawDataLine[];
@@ -24,6 +25,7 @@ const EditModeView: React.FC<EditModeViewProps> = ({
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<RawDataLine | null>(null);
   const [workingLines, setWorkingLines] = useState<RawDataLine[]>(rawLines);
+  const [isBookmarkModalOpen, setIsBookmarkModalOpen] = useState(false);
 
   const handleLineEdit = (line: RawDataLine) => {
     const lineKey = `${line.sourceFile}_${line.lineNumber}`;
@@ -182,6 +184,22 @@ const EditModeView: React.FC<EditModeViewProps> = ({
     setHasUnsavedChanges(true);
   };
 
+  const handleBookmarkImport = (bookmarks: SimpleBookmarkItem[]) => {
+    // 選択されたブックマークを新規行として追加
+    const newLines: RawDataLine[] = bookmarks.map((bookmark, index) => ({
+      lineNumber: workingLines.length + index + 1,
+      content: `${bookmark.name},${bookmark.url}`,
+      type: 'item' as const,
+      sourceFile: 'data.txt' as const
+    }));
+    
+    const updatedLines = [...workingLines, ...newLines];
+    const reorderedLines = reorderLineNumbers(updatedLines);
+    setWorkingLines(reorderedLines);
+    setHasUnsavedChanges(true);
+    setIsBookmarkModalOpen(false);
+  };
+
   const handleExitEditMode = () => {
     if (hasUnsavedChanges) {
       if (window.confirm('未保存の変更があります。編集モードを終了しますか？')) {
@@ -257,6 +275,9 @@ const EditModeView: React.FC<EditModeViewProps> = ({
           />
         </div>
         <div className="edit-mode-actions">
+          <button onClick={() => setIsBookmarkModalOpen(true)} className="import-bookmark-button">
+            ブックマークをインポート
+          </button>
           <button onClick={handleExitEditMode} className="exit-edit-button">
             通常モードに戻る
           </button>
@@ -305,6 +326,12 @@ const EditModeView: React.FC<EditModeViewProps> = ({
         onRegister={handleUpdateItem}
         droppedPaths={[]}
         editingItem={editingItem}
+      />
+
+      <BookmarkImportModal
+        isOpen={isBookmarkModalOpen}
+        onClose={() => setIsBookmarkModalOpen(false)}
+        onImport={handleBookmarkImport}
       />
     </div>
   );

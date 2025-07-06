@@ -31,4 +31,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   saveRawDataFiles: (rawLines: any[]) => ipcRenderer.invoke('save-raw-data-files', rawLines),
   setEditMode: (editMode: boolean) => ipcRenderer.invoke('set-edit-mode', editMode),
   getEditMode: () => ipcRenderer.invoke('get-edit-mode'),
+  selectBookmarkFile: () => ipcRenderer.invoke('select-bookmark-file'),
+  parseBookmarkFile: (filePath: string) => ipcRenderer.invoke('parse-bookmark-file', filePath),
 });

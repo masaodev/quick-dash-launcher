@@ -22,3 +22,10 @@ export interface RawDataLine {
   type: 'directive' | 'item' | 'comment' | 'empty';
   sourceFile: 'data.txt' | 'data2.txt' | 'tempdata.txt';
 }
+
+export interface SimpleBookmarkItem {
+  id: string;
+  name: string;
+  url: string;
+  checked: boolean;
+}

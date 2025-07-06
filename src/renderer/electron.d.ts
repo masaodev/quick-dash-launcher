@@ -1,4 +1,4 @@
-import { LauncherItem, DataFile, RawDataLine } from '../common/types';
+import { LauncherItem, DataFile, RawDataLine, SimpleBookmarkItem } from '../common/types';
 import { RegisterItem } from './components/RegisterModal';
 
 export interface ElectronAPI {
@@ -40,6 +40,8 @@ export interface ElectronAPI {
   saveRawDataFiles: (rawLines: RawDataLine[]) => Promise<void>;
   setEditMode: (editMode: boolean) => Promise<void>;
   getEditMode: () => Promise<boolean>;
+  selectBookmarkFile: () => Promise<string | null>;
+  parseBookmarkFile: (filePath: string) => Promise<SimpleBookmarkItem[]>;
 }
 
 declare global {

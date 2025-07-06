@@ -985,3 +985,254 @@ body {
   text-align: center;
   padding: 4px 6px !important;
 }
+
+/* ブックマークインポートモーダルのスタイル */
+.bookmark-import-modal {
+  width: 90%;
+  max-width: 900px;
+  height: 80vh;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+.bookmark-import-modal .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.bookmark-import-modal .modal-header h2 {
+  margin: 0;
+  font-size: 20px;
+  color: #333;
+}
+
+.bookmark-import-modal .close-button {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #666;
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+}
+
+.bookmark-import-modal .close-button:hover {
+  color: #333;
+}
+
+.bookmark-import-controls {
+  padding: 16px 24px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.file-select-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.select-file-button {
+  padding: 8px 16px;
+  background-color: #2196F3;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.select-file-button:hover:not(:disabled) {
+  background-color: #1976D2;
+}
+
+.select-file-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.file-name {
+  color: #666;
+  font-size: 14px;
+}
+
+.search-section {
+  margin-bottom: 12px;
+}
+
+.search-section .search-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.bookmark-import-modal .bookmark-bulk-actions {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.bookmark-import-modal .bookmark-filtered-actions,
+.bookmark-import-modal .bookmark-all-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.bookmark-import-modal .bookmark-action-button {
+  padding: 6px 12px;
+  background-color: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  display: inline-block;
+  text-align: center;
+  white-space: nowrap;
+  font-family: inherit;
+  line-height: 1.4;
+  transition: background-color 0.2s;
+}
+
+.bookmark-import-modal .bookmark-action-button:hover {
+  background-color: #e0e0e0;
+}
+
+.bookmark-list-container {
+  flex: 1;
+  overflow-y: auto;
+  margin: 0;
+  border: 1px solid #e0e0e0;
+  background-color: #fafafa;
+}
+
+.bookmark-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  background-color: white;
+  table-layout: fixed;
+}
+
+.bookmark-table thead {
+  position: sticky;
+  top: 0;
+  background-color: #f5f5f5;
+  z-index: 1;
+}
+
+.bookmark-table th {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 2px solid #ddd;
+  font-weight: 600;
+}
+
+.bookmark-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #eee;
+  vertical-align: top;
+  line-height: 1.4;
+}
+
+.bookmark-table tbody tr:hover {
+  background-color: #f9f9f9;
+}
+
+.bookmark-table tbody tr.selected {
+  background-color: #e3f2fd;
+}
+
+.bookmark-table .checkbox-column {
+  width: 50px;
+  text-align: center;
+}
+
+.bookmark-table .name-column {
+  width: 40%;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  max-width: 0;
+  white-space: normal;
+}
+
+.bookmark-table .url-column {
+  width: 60%;
+  color: #666;
+  font-size: 13px;
+  word-break: break-all;
+  overflow-wrap: break-word;
+  max-width: 0;
+  white-space: normal;
+}
+
+.bookmark-import-modal .modal-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.status-info {
+  color: #666;
+  font-size: 14px;
+}
+
+.bookmark-import-modal .bookmark-modal-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.bookmark-import-modal .bookmark-cancel-button {
+  padding: 8px 20px;
+  background-color: #f5f5f5;
+  color: #333;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-family: inherit;
+  transition: background-color 0.2s;
+}
+
+.bookmark-import-modal .bookmark-cancel-button:hover {
+  background-color: #e0e0e0;
+}
+
+.bookmark-import-modal .bookmark-import-button {
+  padding: 8px 20px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-family: inherit;
+  transition: background-color 0.2s;
+}
+
+.bookmark-import-modal .bookmark-import-button:hover:not(:disabled) {
+  background-color: #45a049;
+}
+
+.bookmark-import-modal .bookmark-import-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.edit-mode-actions .import-bookmark-button {
+  background-color: #2196F3 !important;
+  color: white !important;
+  border-color: #2196F3 !important;
+}
+
+.edit-mode-actions .import-bookmark-button:hover:not(:disabled) {
+  background-color: #1976D2 !important;
+  border-color: #1976D2 !important;
+}

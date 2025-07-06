@@ -1,8 +1,8 @@
-import { ipcMain, shell } from 'electron';
+import { ipcMain, shell, dialog } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import { minimatch } from 'minimatch';
-import { DataFile, RawDataLine } from '../../common/types';
+import { DataFile, RawDataLine, SimpleBookmarkItem } from '../../common/types';
 
 // DIRディレクティブのオプション型定義
 interface DirOptions {
@@ -624,5 +624,56 @@ export function setupDataHandlers(configFolder: string) {
   
   ipcMain.handle('save-raw-data-files', async (_event, rawLines: RawDataLine[]) => {
     return await saveRawDataFiles(configFolder, rawLines);
+  });
+  
+  ipcMain.handle('select-bookmark-file', async () => {
+    const result = await dialog.showOpenDialog({
+      title: 'ブックマークファイルを選択',
+      filters: [
+        { name: 'HTML Files', extensions: ['html', 'htm'] },
+        { name: 'All Files', extensions: ['*'] }
+      ],
+      properties: ['openFile']
+    });
+    
+    if (!result.canceled && result.filePaths.length > 0) {
+      return result.filePaths[0];
+    }
+    return null;
+  });
+  
+  ipcMain.handle('parse-bookmark-file', async (_event, filePath: string) => {
+    try {
+      const htmlContent = fs.readFileSync(filePath, 'utf8');
+      
+      // 簡易的なHTMLパーサーでブックマークを抽出
+      const bookmarks: SimpleBookmarkItem[] = [];
+      
+      // <A>タグを正規表現で抽出
+      const linkRegex = /<A\s+[^>]*HREF="([^"]*)"[^>]*>([^<]*)<\/A>/gi;
+      let match;
+      let index = 0;
+      
+      while ((match = linkRegex.exec(htmlContent)) !== null) {
+        const url = match[1];
+        const name = match[2].trim();
+        
+        // URLが有効な場合のみ追加
+        if (url && name && (url.startsWith('http://') || url.startsWith('https://'))) {
+          bookmarks.push({
+            id: `bookmark-${index}`,
+            name: name,
+            url: url,
+            checked: false
+          });
+          index++;
+        }
+      }
+      
+      return bookmarks;
+    } catch (error) {
+      console.error('Error parsing bookmark file:', error);
+      throw error;
+    }
   });
 }
