@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+
 import { LauncherItem, RawDataLine } from '../../common/types';
 
 interface RegisterModalProps {
@@ -28,7 +29,13 @@ export interface RegisterItem {
   };
 }
 
-const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onRegister, droppedPaths, editingItem }) => {
+const RegisterModal: React.FC<RegisterModalProps> = ({
+  isOpen,
+  onClose,
+  onRegister,
+  droppedPaths,
+  editingItem,
+}) => {
   const [items, setItems] = useState<RegisterItem[]>([]);
   const [loading, setLoading] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
@@ -42,39 +49,41 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onRegist
         console.log('RegisterModal opened with paths:', droppedPaths);
         initializeItems();
       }
-      
+
       // モーダルが開いたときの処理
       document.body.style.overflow = 'hidden';
-      
+
       // フォーカスをモーダルに設定
       if (modalRef.current) {
         modalRef.current.focus();
       }
-      
+
       // キーイベントの制御：capture phaseで全てのキーイベントを捕捉
       const handleKeyDown = (event: KeyboardEvent) => {
         // モーダル内でのキーイベントかどうかを確認
         const modal = modalRef.current;
         if (!modal) return;
-        
+
         // モーダル内の要素がフォーカスされているかチェック
         const isModalFocused = modal.contains(document.activeElement);
-        
+
         if (event.key === 'Escape') {
           event.preventDefault();
           event.stopPropagation();
           event.stopImmediatePropagation();
           handleCancel();
           return;
-        } 
-        
+        }
+
         if (event.key === 'Tab') {
           const focusableElements = modal.querySelectorAll(
             'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
           );
           const firstFocusableElement = focusableElements[0] as HTMLElement;
-          const lastFocusableElement = focusableElements[focusableElements.length - 1] as HTMLElement;
-          
+          const lastFocusableElement = focusableElements[
+            focusableElements.length - 1
+          ] as HTMLElement;
+
           if (event.shiftKey) {
             // Shift+Tab: 逆方向
             if (document.activeElement === firstFocusableElement) {
@@ -94,35 +103,48 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onRegist
           }
           return;
         }
-        
+
         // モーダル内でのキーイベントの場合、背景への伝播を完全に阻止
         if (isModalFocused) {
           // 現在フォーカスされている要素がinput/textareaの場合のみ、特定のキーを許可
           const activeElement = document.activeElement as HTMLElement;
-          const isInputField = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
-          
+          const isInputField =
+            activeElement &&
+            (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
+
           if (isInputField) {
             // input/textareaでの通常の編集キー（文字入力、Backspace、Delete、矢印キー、Ctrl+A、Ctrl+C、Ctrl+V、Ctrl+X）は許可
-            if (event.key.length === 1 || 
-                ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key) ||
-                (event.ctrlKey && ['a', 'c', 'v', 'x', 'z', 'y'].includes(event.key))) {
+            if (
+              event.key.length === 1 ||
+              [
+                'Backspace',
+                'Delete',
+                'ArrowLeft',
+                'ArrowRight',
+                'ArrowUp',
+                'ArrowDown',
+                'Home',
+                'End',
+              ].includes(event.key) ||
+              (event.ctrlKey && ['a', 'c', 'v', 'x', 'z', 'y'].includes(event.key))
+            ) {
               // これらのキーは許可するが、背景への伝播は阻止
               event.stopPropagation();
               event.stopImmediatePropagation();
               return;
             }
           }
-          
+
           // その他の全てのキーイベントを阻止
           event.preventDefault();
           event.stopPropagation();
           event.stopImmediatePropagation();
         }
       };
-      
+
       // capture phaseでキーイベントを捕捉
       document.addEventListener('keydown', handleKeyDown, true);
-      
+
       return () => {
         document.removeEventListener('keydown', handleKeyDown, true);
         document.body.style.overflow = 'auto';
@@ -135,13 +157,13 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onRegist
 
   const initializeFromEditingItem = async () => {
     setLoading(true);
-    
+
     try {
       if (!editingItem) {
         console.error('No editing item provided');
         return;
       }
-      
+
       const item = await convertRawDataLineToRegisterItem(editingItem);
       setItems([item]);
     } catch (error) {
@@ -159,9 +181,9 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onRegist
       const name = parts[0]?.trim() || '';
       const path = parts[1]?.trim() || '';
       const args = parts[2]?.trim() || '';
-      
+
       const itemType = await detectItemType(path);
-      
+
       return {
         name,
         path,
@@ -169,23 +191,23 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onRegist
         args: args || undefined,
         targetTab: 'main',
         folderProcessing: itemType === 'folder' ? 'folder' : undefined,
-        itemCategory: 'item'
+        itemCategory: 'item',
       };
     } else if (line.type === 'directive') {
       // DIRディレクティブの場合：dir,パス,オプション
       const parts = line.content.split(',');
       const path = parts[1]?.trim() || '';
       const optionsStr = parts.slice(2).join(',').trim();
-      
+
       // オプションを解析
       const dirOptions = {
         depth: 0,
         types: 'both' as const,
         filter: undefined as string | undefined,
         exclude: undefined as string | undefined,
-        prefix: undefined as string | undefined
+        prefix: undefined as string | undefined,
       };
-      
+
       if (optionsStr) {
         const options = optionsStr.split(',');
         for (const option of options) {
@@ -193,7 +215,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onRegist
           if (key && value) {
             const trimmedKey = key.trim();
             const trimmedValue = value.trim();
-            
+
             if (trimmedKey === 'depth') {
               dirOptions.depth = parseInt(trimmedValue) || 0;
             } else if (trimmedKey === 'types') {
@@ -208,7 +230,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onRegist
           }
         }
       }
-      
+
       return {
         name: path,
         path,
@@ -216,7 +238,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onRegist
         targetTab: 'main',
         folderProcessing: 'expand',
         dirOptions,
-        itemCategory: 'dir'
+        itemCategory: 'dir',
       };
     } else {
       // その他の場合
@@ -225,7 +247,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onRegist
         path: line.content || '',
         type: 'file',
         targetTab: 'main',
-        itemCategory: 'item'
+        itemCategory: 'item',
       };
     }
   };
@@ -239,7 +261,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onRegist
         console.error('No dropped paths provided');
         return;
       }
-      
+
       for (const filePath of droppedPaths) {
         if (!filePath) {
           console.warn('Skipping undefined path');
@@ -250,38 +272,41 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onRegist
         console.log('Detected item type:', itemType);
         const name = extractDefaultName(filePath);
         console.log('Extracted name:', name);
-      
-      let icon: string | undefined;
-      try {
-        if (itemType === 'app' || itemType === 'file') {
-          icon = await window.electronAPI.extractIcon(filePath);
-        } else if (itemType === 'customUri') {
-          icon = await window.electronAPI.extractCustomUriIcon(filePath);
-          if (!icon) {
-            icon = await window.electronAPI.extractFileIconByExtension(filePath);
-          }
-        }
-      } catch (error) {
-        console.error('Failed to extract icon:', error);
-      }
 
-      newItems.push({
-        name,
-        path: filePath,
-        type: itemType,
-        targetTab: 'main',
-        folderProcessing: itemType === 'folder' ? 'folder' : undefined,
-        icon,
-        itemCategory: 'item',
-        dirOptions: itemType === 'folder' ? {
-          depth: 0,
-          types: 'both',
-          filter: undefined,
-          exclude: undefined,
-          prefix: undefined
-        } : undefined
-      });
-    }
+        let icon: string | undefined;
+        try {
+          if (itemType === 'app' || itemType === 'file') {
+            icon = await window.electronAPI.extractIcon(filePath);
+          } else if (itemType === 'customUri') {
+            icon = await window.electronAPI.extractCustomUriIcon(filePath);
+            if (!icon) {
+              icon = await window.electronAPI.extractFileIconByExtension(filePath);
+            }
+          }
+        } catch (error) {
+          console.error('Failed to extract icon:', error);
+        }
+
+        newItems.push({
+          name,
+          path: filePath,
+          type: itemType,
+          targetTab: 'main',
+          folderProcessing: itemType === 'folder' ? 'folder' : undefined,
+          icon,
+          itemCategory: 'item',
+          dirOptions:
+            itemType === 'folder'
+              ? {
+                  depth: 0,
+                  types: 'both',
+                  filter: undefined,
+                  exclude: undefined,
+                  prefix: undefined,
+                }
+              : undefined,
+        });
+      }
 
       setItems(newItems);
     } catch (error) {
@@ -315,7 +340,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onRegist
     // File extensions
     const lastDot = itemPath.lastIndexOf('.');
     const ext = lastDot !== -1 ? itemPath.substring(lastDot).toLowerCase() : '';
-    
+
     // Executables and shortcuts
     if (ext === '.exe' || ext === '.bat' || ext === '.cmd' || ext === '.com' || ext === '.lnk') {
       return 'app';
@@ -335,7 +360,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onRegist
         return filePath;
       }
     }
-    
+
     // For files and folders, extract the last part of the path
     const parts = filePath.split(/[\\/]/);
     const basename = parts[parts.length - 1] || filePath;
@@ -347,7 +372,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onRegist
   const handleItemChange = async (index: number, field: keyof RegisterItem, value: any) => {
     const newItems = [...items];
     newItems[index] = { ...newItems[index], [field]: value };
-    
+
     // アイテム種別が変更された場合の処理
     if (field === 'itemCategory') {
       if (value === 'dir') {
@@ -359,7 +384,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onRegist
             types: 'both',
             filter: undefined,
             exclude: undefined,
-            prefix: undefined
+            prefix: undefined,
           };
         }
       } else {
@@ -368,12 +393,12 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onRegist
         delete newItems[index].dirOptions;
       }
     }
-    
+
     // パスが変更された場合、アイテムタイプを再検出
     if (field === 'path' && editingItem) {
       const newType = await detectItemType(value);
       newItems[index].type = newType;
-      
+
       // タイプに応じてデフォルト値を設定
       if (newType === 'folder') {
         if (!newItems[index].folderProcessing) {
@@ -385,7 +410,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onRegist
             types: 'both',
             filter: undefined,
             exclude: undefined,
-            prefix: undefined
+            prefix: undefined,
           };
         }
       } else {
@@ -393,13 +418,13 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onRegist
         delete newItems[index].folderProcessing;
         delete newItems[index].dirOptions;
       }
-      
+
       // appタイプでない場合は引数をクリア
       if (newType !== 'app') {
         delete newItems[index].args;
       }
     }
-    
+
     setItems(newItems);
   };
 
@@ -417,14 +442,14 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onRegist
 
   return (
     <div className="modal-overlay" onClick={(e) => e.stopPropagation()}>
-      <div 
-        className="modal-content register-modal" 
+      <div
+        className="modal-content register-modal"
         onClick={(e) => e.stopPropagation()}
         ref={modalRef}
         tabIndex={-1}
       >
         <h2>{editingItem ? 'アイテムの編集' : 'アイテムの登録'}</h2>
-        
+
         {loading ? (
           <div className="loading">アイテム情報を読み込み中...</div>
         ) : (
@@ -433,22 +458,22 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onRegist
               {items.map((item, index) => (
                 <div key={index} className="register-item">
                   <div className="item-header">
-                    {item.icon && (
-                      <img src={item.icon} alt="" className="item-icon" />
-                    )}
+                    {item.icon && <img src={item.icon} alt="" className="item-icon" />}
                   </div>
-                  
+
                   <div className="form-group">
                     <label>種別:</label>
                     <select
                       value={item.itemCategory}
-                      onChange={(e) => handleItemChange(index, 'itemCategory', e.target.value as 'item' | 'dir')}
+                      onChange={(e) =>
+                        handleItemChange(index, 'itemCategory', e.target.value as 'item' | 'dir')
+                      }
                     >
                       <option value="item">アイテム</option>
                       <option value="dir">DIR</option>
                     </select>
                   </div>
-                  
+
                   <div className="form-group">
                     <label>名前:</label>
                     <input
@@ -457,21 +482,23 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onRegist
                       onChange={(e) => handleItemChange(index, 'name', e.target.value)}
                       placeholder="表示名を入力"
                       readOnly={item.itemCategory === 'dir'}
-                      className={item.itemCategory === 'dir' ? "readonly" : ""}
+                      className={item.itemCategory === 'dir' ? 'readonly' : ''}
                     />
                   </div>
-                  
+
                   <div className="form-group">
                     <label>パス:</label>
                     <input
                       type="text"
                       value={item.path}
                       readOnly={!editingItem}
-                      className={editingItem ? "" : "readonly"}
-                      onChange={(e) => editingItem ? handleItemChange(index, 'path', e.target.value) : undefined}
+                      className={editingItem ? '' : 'readonly'}
+                      onChange={(e) =>
+                        editingItem ? handleItemChange(index, 'path', e.target.value) : undefined
+                      }
                     />
                   </div>
-                  
+
                   {item.type === 'app' && (
                     <div className="form-group">
                       <label>引数 (オプション):</label>
@@ -483,7 +510,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onRegist
                       />
                     </div>
                   )}
-                  
+
                   {item.itemCategory === 'dir' && (
                     <>
                       {item.dirOptions && (
@@ -493,7 +520,10 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onRegist
                             <select
                               value={item.dirOptions.depth}
                               onChange={(e) => {
-                                const newDirOptions = { ...item.dirOptions!, depth: parseInt(e.target.value) };
+                                const newDirOptions = {
+                                  ...item.dirOptions!,
+                                  depth: parseInt(e.target.value),
+                                };
                                 handleItemChange(index, 'dirOptions', newDirOptions);
                               }}
                             >
@@ -504,13 +534,16 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onRegist
                               <option value="-1">無制限</option>
                             </select>
                           </div>
-                          
+
                           <div className="form-group">
                             <label>取得タイプ:</label>
                             <select
                               value={item.dirOptions.types}
                               onChange={(e) => {
-                                const newDirOptions = { ...item.dirOptions!, types: e.target.value as 'file' | 'folder' | 'both' };
+                                const newDirOptions = {
+                                  ...item.dirOptions!,
+                                  types: e.target.value as 'file' | 'folder' | 'both',
+                                };
                                 handleItemChange(index, 'dirOptions', newDirOptions);
                               }}
                             >
@@ -519,40 +552,49 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onRegist
                               <option value="both">ファイルとフォルダー</option>
                             </select>
                           </div>
-                          
+
                           <div className="form-group">
                             <label>フィルター (例: *.txt):</label>
                             <input
                               type="text"
                               value={item.dirOptions.filter || ''}
                               onChange={(e) => {
-                                const newDirOptions = { ...item.dirOptions!, filter: e.target.value || undefined };
+                                const newDirOptions = {
+                                  ...item.dirOptions!,
+                                  filter: e.target.value || undefined,
+                                };
                                 handleItemChange(index, 'dirOptions', newDirOptions);
                               }}
                               placeholder="ワイルドカードパターン"
                             />
                           </div>
-                          
+
                           <div className="form-group">
                             <label>除外パターン (例: temp*):</label>
                             <input
                               type="text"
                               value={item.dirOptions.exclude || ''}
                               onChange={(e) => {
-                                const newDirOptions = { ...item.dirOptions!, exclude: e.target.value || undefined };
+                                const newDirOptions = {
+                                  ...item.dirOptions!,
+                                  exclude: e.target.value || undefined,
+                                };
                                 handleItemChange(index, 'dirOptions', newDirOptions);
                               }}
                               placeholder="除外するパターン"
                             />
                           </div>
-                          
+
                           <div className="form-group">
                             <label>プレフィックス (例: 仕事):</label>
                             <input
                               type="text"
                               value={item.dirOptions.prefix || ''}
                               onChange={(e) => {
-                                const newDirOptions = { ...item.dirOptions!, prefix: e.target.value || undefined };
+                                const newDirOptions = {
+                                  ...item.dirOptions!,
+                                  prefix: e.target.value || undefined,
+                                };
                                 handleItemChange(index, 'dirOptions', newDirOptions);
                               }}
                               placeholder="アイテム名の前に付ける文字"
@@ -562,23 +604,25 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onRegist
                       )}
                     </>
                   )}
-                  
+
                   <div className="form-group">
                     <label>保存先:</label>
                     <select
                       value={item.targetTab}
-                      onChange={(e) => handleItemChange(index, 'targetTab', e.target.value as 'main' | 'temp')}
+                      onChange={(e) =>
+                        handleItemChange(index, 'targetTab', e.target.value as 'main' | 'temp')
+                      }
                     >
                       <option value="main">メインタブ</option>
                       <option value="temp">一時タブ</option>
                     </select>
                   </div>
-                  
+
                   {items.length > 1 && <hr />}
                 </div>
               ))}
             </div>
-            
+
             <div className="modal-actions">
               <button onClick={handleCancel}>キャンセル</button>
               <button onClick={handleRegister} className="primary">

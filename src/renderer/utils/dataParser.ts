@@ -8,14 +8,14 @@ export function parseDataFiles(dataFiles: DataFile[]): {
   const tempItems: LauncherItem[] = [];
   const seenPaths = new Set<string>();
 
-  dataFiles.forEach(file => {
+  dataFiles.forEach((file) => {
     const lines = file.content.split('\n');
     const items = file.name === 'tempdata.txt' ? tempItems : mainItems;
     const sourceFile = file.name as 'data.txt' | 'data2.txt' | 'tempdata.txt';
 
     lines.forEach((line, index) => {
       line = line.trim();
-      
+
       // Skip empty lines and comments
       if (!line || line.startsWith('//')) {
         return;
@@ -32,7 +32,7 @@ export function parseDataFiles(dataFiles: DataFile[]): {
       }
 
       const [name, itemPath, argsField, originalPathField] = parts;
-      
+
       // Skip duplicates
       if (seenPaths.has(itemPath)) {
         return;
@@ -81,7 +81,7 @@ function detectItemType(itemPath: string): LauncherItem['type'] {
   // File extensions
   const lastDot = itemPath.lastIndexOf('.');
   const ext = lastDot !== -1 ? itemPath.substring(lastDot).toLowerCase() : '';
-  
+
   // Executables and shortcuts
   if (ext === '.exe' || ext === '.bat' || ext === '.cmd' || ext === '.com' || ext === '.lnk') {
     return 'app';
@@ -138,10 +138,13 @@ export function filterItems(items: LauncherItem[], query: string): LauncherItem[
     return items;
   }
 
-  const keywords = query.toLowerCase().split(/\s+/).filter(k => k.length > 0);
+  const keywords = query
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((k) => k.length > 0);
 
-  return items.filter(item => {
+  return items.filter((item) => {
     const itemText = item.name.toLowerCase();
-    return keywords.every(keyword => itemText.includes(keyword));
+    return keywords.every((keyword) => itemText.includes(keyword));
   });
 }

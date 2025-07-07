@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+
 import { SimpleBookmarkItem } from '../../common/types';
 
 interface BookmarkImportModalProps {
@@ -15,11 +16,13 @@ const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({ isOpen, onClo
   const [fileName, setFileName] = useState<string | null>(null);
 
   // フィルタリングされたブックマーク
-  const filteredBookmarks = bookmarks.filter(bookmark => {
+  const filteredBookmarks = bookmarks.filter((bookmark) => {
     if (!searchQuery) return true;
     const searchLower = searchQuery.toLowerCase();
-    return bookmark.name.toLowerCase().includes(searchLower) ||
-           bookmark.url.toLowerCase().includes(searchLower);
+    return (
+      bookmark.name.toLowerCase().includes(searchLower) ||
+      bookmark.url.toLowerCase().includes(searchLower)
+    );
   });
 
   // ファイル選択
@@ -27,7 +30,7 @@ const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({ isOpen, onClo
     try {
       setLoading(true);
       const filePath = await window.electronAPI.selectBookmarkFile();
-      
+
       if (filePath) {
         setFileName(filePath.split(/[\\\/]/).pop() || filePath);
         const parsedBookmarks = await window.electronAPI.parseBookmarkFile(filePath);
@@ -45,7 +48,7 @@ const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({ isOpen, onClo
 
   // 個別選択
   const handleToggleBookmark = (id: string) => {
-    setSelectedIds(prev => {
+    setSelectedIds((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(id)) {
         newSet.delete(id);
@@ -58,23 +61,23 @@ const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({ isOpen, onClo
 
   // 表示中のアイテムを全て選択
   const handleSelectFiltered = () => {
-    const filteredIds = filteredBookmarks.map(b => b.id);
-    setSelectedIds(prev => new Set([...prev, ...filteredIds]));
+    const filteredIds = filteredBookmarks.map((b) => b.id);
+    setSelectedIds((prev) => new Set([...prev, ...filteredIds]));
   };
 
   // 表示中のアイテムを全て解除
   const handleDeselectFiltered = () => {
-    const filteredIds = filteredBookmarks.map(b => b.id);
-    setSelectedIds(prev => {
+    const filteredIds = filteredBookmarks.map((b) => b.id);
+    setSelectedIds((prev) => {
       const newSet = new Set(prev);
-      filteredIds.forEach(id => newSet.delete(id));
+      filteredIds.forEach((id) => newSet.delete(id));
       return newSet;
     });
   };
 
   // 全て選択
   const handleSelectAll = () => {
-    const allIds = bookmarks.map(b => b.id);
+    const allIds = bookmarks.map((b) => b.id);
     setSelectedIds(new Set(allIds));
   };
 
@@ -85,12 +88,12 @@ const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({ isOpen, onClo
 
   // インポート実行
   const handleImport = () => {
-    const selectedBookmarks = bookmarks.filter(b => selectedIds.has(b.id));
+    const selectedBookmarks = bookmarks.filter((b) => selectedIds.has(b.id));
     if (selectedBookmarks.length === 0) {
       alert('インポートするブックマークを選択してください');
       return;
     }
-    
+
     onImport(selectedBookmarks);
     handleClose();
   };
@@ -105,14 +108,17 @@ const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({ isOpen, onClo
   };
 
   // キーボードショートカット
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (!isOpen) return;
-    
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      handleClose();
-    }
-  }, [isOpen]);
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (!isOpen) return;
+
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        handleClose();
+      }
+    },
+    [isOpen]
+  );
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
@@ -124,14 +130,16 @@ const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({ isOpen, onClo
   // 選択されたアイテム数（全体）
   const selectedCount = selectedIds.size;
   // フィルタリングされたアイテムのうち選択されている数
-  const filteredSelectedCount = filteredBookmarks.filter(b => selectedIds.has(b.id)).length;
+  const filteredSelectedCount = filteredBookmarks.filter((b) => selectedIds.has(b.id)).length;
 
   return (
     <div className="modal-overlay" onClick={handleClose}>
       <div className="modal-content bookmark-import-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>ブックマークをインポート</h2>
-          <button className="close-button" onClick={handleClose}>✕</button>
+          <button className="close-button" onClick={handleClose}>
+            ✕
+          </button>
         </div>
 
         <div className="bookmark-import-controls">
@@ -187,7 +195,7 @@ const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({ isOpen, onClo
                 </tr>
               </thead>
               <tbody>
-                {filteredBookmarks.map(bookmark => (
+                {filteredBookmarks.map((bookmark) => (
                   <tr key={bookmark.id} className={selectedIds.has(bookmark.id) ? 'selected' : ''}>
                     <td className="checkbox-column">
                       <input
@@ -218,8 +226,8 @@ const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({ isOpen, onClo
             <button onClick={handleClose} className="bookmark-cancel-button">
               キャンセル
             </button>
-            <button 
-              onClick={handleImport} 
+            <button
+              onClick={handleImport}
               className="bookmark-import-button"
               disabled={selectedCount === 0}
             >

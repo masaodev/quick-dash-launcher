@@ -1,5 +1,7 @@
-import { BrowserWindow, globalShortcut, Tray, Menu, nativeImage, app } from 'electron';
 import * as path from 'path';
+
+import { BrowserWindow, globalShortcut, Tray, Menu, nativeImage, app } from 'electron';
+
 import { HOTKEY } from './appHelpers';
 
 let mainWindow: BrowserWindow | null = null;
@@ -28,7 +30,7 @@ export function createWindow(): BrowserWindow {
   } else {
     mainWindow.loadFile(path.join(__dirname, '../index.html'));
   }
-  
+
   // デバッグ用：開発者ツールを開く
   // mainWindow.webContents.openDevTools({ mode: 'detach' });
 
@@ -62,9 +64,9 @@ export function createWindow(): BrowserWindow {
 export function createTray(): void {
   const iconPath = path.join(__dirname, '../../assets/icon.png');
   const icon = nativeImage.createFromPath(iconPath);
-  
+
   tray = new Tray(icon);
-  
+
   const contextMenu = Menu.buildFromTemplate([
     {
       label: '表示',
@@ -126,7 +128,7 @@ export function setWindowPinState(pinState: boolean): void {
 
 export function setEditMode(editMode: boolean): void {
   isEditMode = editMode;
-  
+
   if (mainWindow) {
     if (editMode) {
       // 編集モードに入る時：現在のサイズを保存してから大きくする

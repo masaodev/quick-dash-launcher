@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron';
+
 import { LauncherItem } from '../common/types';
 
 contextBridge.exposeInMainWorld('electronAPI', {
@@ -11,7 +12,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openDataFile: () => ipcRenderer.invoke('open-data-file'),
   fetchFavicon: (url: string) => ipcRenderer.invoke('fetch-favicon', url),
   extractIcon: (filePath: string) => ipcRenderer.invoke('extract-icon', filePath),
-  extractFileIconByExtension: (filePath: string) => ipcRenderer.invoke('extract-file-icon-by-extension', filePath),
+  extractFileIconByExtension: (filePath: string) =>
+    ipcRenderer.invoke('extract-file-icon-by-extension', filePath),
   extractCustomUriIcon: (uri: string) => ipcRenderer.invoke('extract-custom-uri-icon', uri),
   loadCachedIcons: (items: LauncherItem[]) => ipcRenderer.invoke('load-cached-icons', items),
   onWindowShown: (callback: () => void) => {

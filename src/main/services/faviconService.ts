@@ -1,5 +1,6 @@
 import * as path from 'path';
 import * as fs from 'fs';
+
 import { net } from 'electron';
 
 interface FaviconSource {
@@ -19,23 +20,26 @@ export class FaviconService {
   async fetchFavicon(url: string): Promise<string | null> {
     try {
       const domain = new URL(url).hostname;
-      const faviconPath = path.join(this.faviconsFolder, `${domain}_favicon_${this.defaultSize}.png`);
-      
+      const faviconPath = path.join(
+        this.faviconsFolder,
+        `${domain}_favicon_${this.defaultSize}.png`
+      );
+
       // キャッシュをチェック
       if (fs.existsSync(faviconPath)) {
         const cachedFavicon = fs.readFileSync(faviconPath);
         return `data:image/png;base64,${cachedFavicon.toString('base64')}`;
       }
-      
+
       // 複数の方法でファビコンを取得
       const faviconData = await this.tryMultipleSources(url);
-      
+
       if (faviconData) {
         // キャッシュに保存
         fs.writeFileSync(faviconPath, faviconData);
         return `data:image/png;base64,${faviconData.toString('base64')}`;
       }
-      
+
       return null;
     } catch (error) {
       console.error('ファビコンの取得に失敗しました:', error);
@@ -45,7 +49,7 @@ export class FaviconService {
 
   private async tryMultipleSources(url: string): Promise<Buffer | null> {
     const sources = await this.getFaviconSources(url);
-    
+
     // 各ソースを順番に試す
     for (const source of sources) {
       try {
@@ -57,14 +61,14 @@ export class FaviconService {
         console.log(`ファビコンソース ${source.url} の取得に失敗:`, error);
       }
     }
-    
+
     return null;
   }
 
   private async getFaviconSources(url: string): Promise<FaviconSource[]> {
     const sources: FaviconSource[] = [];
     const origin = new URL(url).origin;
-    
+
     // 1. HTMLを解析してメタタグからファビコンを探す
     try {
       const htmlSources = await this.parseHtmlForFavicons(url);
@@ -72,7 +76,7 @@ export class FaviconService {
     } catch (error) {
       console.log('HTML解析をスキップ:', error);
     }
-    
+
     // 2. 標準的な場所を確認
     sources.push(
       { url: `${origin}/favicon.ico`, size: 32 },
@@ -82,46 +86,46 @@ export class FaviconService {
       { url: `${origin}/icon.png`, size: 32 },
       { url: `${origin}/logo.png`, size: 64 }
     );
-    
+
     return sources;
   }
 
   private async parseHtmlForFavicons(url: string): Promise<FaviconSource[]> {
     const sources: FaviconSource[] = [];
-    
+
     try {
       const html = await this.fetchHtml(url);
       const origin = new URL(url).origin;
-      
+
       // ファビコン関連のメタタグを解析（より多くのパターンに対応）
       const iconPatterns = [
         // 標準的なfaviconタグ
         /<link[^>]+rel=["'](?:icon|shortcut icon)["'][^>]+href=["']([^"']+)["']/gi,
         /<link[^>]+href=["']([^"']+)["'][^>]+rel=["'](?:icon|shortcut icon)["']/gi,
-        
+
         // Apple touch icons
         /<link[^>]+rel=["']apple-touch-icon(?:-precomposed)?["'][^>]+href=["']([^"']+)["']/gi,
         /<link[^>]+href=["']([^"']+)["'][^>]+rel=["']apple-touch-icon(?:-precomposed)?["']/gi,
-        
+
         // サイズ指定のあるアイコン
         /<link[^>]+rel=["']icon["'][^>]+sizes=["']([^"']+)["'][^>]+href=["']([^"']+)["']/gi,
         /<link[^>]+href=["']([^"']+)["'][^>]+sizes=["']([^"']+)["'][^>]+rel=["']icon["']/gi,
-        
+
         // OGP画像
         /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/gi,
         /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/gi,
-        
+
         // マニフェストファイル
-        /<link[^>]+rel=["']manifest["'][^>]+href=["']([^"']+)["']/gi
+        /<link[^>]+rel=["']manifest["'][^>]+href=["']([^"']+)["']/gi,
       ];
-      
+
       // 見つかったアイコンURLを収集
       const foundUrls = new Set<string>();
-      
+
       for (const pattern of iconPatterns) {
         let match;
         pattern.lastIndex = 0; // 正規表現のインデックスをリセット
-        
+
         while ((match = pattern.exec(html)) !== null) {
           // サイズ指定のあるパターンの処理
           if (pattern.source.includes('sizes')) {
@@ -154,7 +158,7 @@ export class FaviconService {
           }
         }
       }
-      
+
       // 優先度の高い順にソート（apple-touch-iconを優先）
       sources.sort((a, b) => {
         if (a.url.includes('apple-touch-icon')) return -1;
@@ -162,21 +166,23 @@ export class FaviconService {
         if (a.size && b.size) return b.size - a.size;
         return 0;
       });
-      
     } catch (error) {
       console.error('HTML解析エラー:', error);
     }
-    
+
     return sources;
   }
 
   private async fetchHtml(url: string): Promise<string> {
     return new Promise((resolve, reject) => {
       const request = net.request(url);
-      request.setHeader('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
-      
+      request.setHeader(
+        'User-Agent',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      );
+
       let data = '';
-      
+
       request.on('response', (response) => {
         response.on('data', (chunk) => {
           data += chunk.toString();
@@ -186,16 +192,16 @@ export class FaviconService {
             resolve(data);
           }
         });
-        
+
         response.on('end', () => {
           resolve(data);
         });
       });
-      
+
       request.on('error', (error) => {
         reject(error);
       });
-      
+
       request.end();
     });
   }
@@ -203,30 +209,33 @@ export class FaviconService {
   private async downloadFavicon(url: string): Promise<Buffer | null> {
     return new Promise((resolve, reject) => {
       const request = net.request(url);
-      request.setHeader('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
-      
+      request.setHeader(
+        'User-Agent',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      );
+
       const chunks: Buffer[] = [];
-      
+
       request.on('response', (response) => {
         if (response.statusCode !== 200) {
           reject(new Error(`HTTP ${response.statusCode}`));
           return;
         }
-        
+
         response.on('data', (chunk) => {
           chunks.push(chunk);
         });
-        
+
         response.on('end', () => {
           const buffer = Buffer.concat(chunks);
           resolve(buffer);
         });
       });
-      
+
       request.on('error', (error) => {
         reject(error);
       });
-      
+
       request.end();
     });
   }

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+
 import { RawDataLine } from '../../common/types';
 
 interface EditableRawItemListProps {
@@ -22,7 +23,7 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
   onAddLine,
   onDeleteLines,
   onEditClick,
-  onSort
+  onSort,
 }) => {
   const [editingCell, setEditingCell] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState('');
@@ -32,17 +33,17 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
   const removeDuplicates = (lines: RawDataLine[]) => {
     const seen = new Set<string>();
     const deduplicated: RawDataLine[] = [];
-    
+
     for (const line of lines) {
       // 重複判定キー：行タイプ + 内容の完全一致
       const key = `${line.type}:${line.content}`;
-      
+
       if (!seen.has(key)) {
         seen.add(key);
         deduplicated.push(line);
       }
     }
-    
+
     return deduplicated;
   };
 
@@ -53,36 +54,36 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
       const typeOrder = { directive: 0, item: 1, comment: 2, empty: 3 };
       const typeA = typeOrder[a.type] ?? 99;
       const typeB = typeOrder[b.type] ?? 99;
-      
+
       if (typeA !== typeB) {
         return typeA - typeB;
       }
-      
+
       // 第2キー: パスと引数でソート
       const pathAndArgsA = getPathAndArgs(a).toLowerCase();
       const pathAndArgsB = getPathAndArgs(b).toLowerCase();
-      
+
       if (pathAndArgsA !== pathAndArgsB) {
         return pathAndArgsA.localeCompare(pathAndArgsB);
       }
-      
+
       // 第3キー: 名前でソート
       const nameA = a.type === 'item' ? (a.content.split(',')[0]?.trim() || '').toLowerCase() : '';
       const nameB = b.type === 'item' ? (b.content.split(',')[0]?.trim() || '').toLowerCase() : '';
-      
+
       return nameA.localeCompare(nameB);
     });
-    
+
     // 重複削除処理
     const deduplicatedLines = removeDuplicates(sortedLines);
     const duplicateCount = sortedLines.length - deduplicatedLines.length;
-    
+
     // 重複が見つかった場合は確認ダイアログを表示
     if (duplicateCount > 0) {
       const confirmed = window.confirm(
         `整列処理が完了しました。\n\n${duplicateCount}件の重複行が見つかりました。\n重複行を削除しますか？`
       );
-      
+
       if (confirmed) {
         onSort(deduplicatedLines);
       } else {
@@ -103,16 +104,16 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
     const currentPathAndArgs = getPathAndArgs(line);
     if (editingValue !== currentPathAndArgs) {
       let newContent = line.content;
-      
+
       if (line.type === 'item') {
         // アイテム行の場合：パスと引数を更新
         const parts = line.content.split(',');
         const name = parts[0] || '';
-        
+
         // パスと引数に分解
         const trimmedValue = editingValue.trim();
         const spaceIndex = trimmedValue.indexOf(' ');
-        
+
         if (spaceIndex > 0) {
           // スペースがある場合：パスと引数に分ける
           const pathPart = trimmedValue.substring(0, spaceIndex);
@@ -122,7 +123,7 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
           // スペースがない場合：パスのみ
           newContent = `${name},${trimmedValue}`;
         }
-        
+
         // 元パスが存在する場合は追加
         if (parts.length > 3 && parts[3]) {
           newContent += `,${parts[3]}`;
@@ -131,11 +132,11 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
         // DIRディレクティブの場合：フォルダパスとオプションを更新
         const parts = line.content.split(',');
         const directive = parts[0] || 'dir';
-        
+
         // パスとオプションに分解
         const trimmedValue = editingValue.trim();
         const spaceIndex = trimmedValue.indexOf(' ');
-        
+
         if (spaceIndex > 0) {
           // スペースがある場合：パスとオプションに分ける
           const pathPart = trimmedValue.substring(0, spaceIndex);
@@ -149,7 +150,7 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
         // コメント行や空行の場合：そのまま更新
         newContent = editingValue;
       }
-      
+
       const updatedLine = { ...line, content: newContent };
       onLineEdit(updatedLine);
     }
@@ -174,7 +175,7 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
     const parts = line.content.split(',');
     parts[0] = editingValue.trim();
     const newContent = parts.join(',');
-    
+
     if (newContent !== line.content) {
       const updatedLine = { ...line, content: newContent };
       onLineEdit(updatedLine);
@@ -205,21 +206,31 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
 
   const getLineTypeIcon = (type: RawDataLine['type']) => {
     switch (type) {
-      case 'directive': return '🗂️';
-      case 'item': return '📄';
-      case 'comment': return '💬';
-      case 'empty': return '⬜';
-      default: return '❓';
+      case 'directive':
+        return '🗂️';
+      case 'item':
+        return '📄';
+      case 'comment':
+        return '💬';
+      case 'empty':
+        return '⬜';
+      default:
+        return '❓';
     }
   };
 
   const getLineTypeDisplayName = (type: RawDataLine['type']) => {
     switch (type) {
-      case 'directive': return 'DIR';
-      case 'item': return 'アイテム';
-      case 'comment': return 'コメント';
-      case 'empty': return '空行';
-      default: return '不明';
+      case 'directive':
+        return 'DIR';
+      case 'item':
+        return 'アイテム';
+      case 'comment':
+        return 'コメント';
+      case 'empty':
+        return '空行';
+      default:
+        return '不明';
     }
   };
 
@@ -228,7 +239,7 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
       // アイテム行の場合、CSV形式から名前を抽出
       const parts = line.content.split(',');
       const name = parts[0]?.trim() || '';
-      
+
       const cellKey = `${getLineKey(line)}_name`;
       const isEditing = editingCell === cellKey;
 
@@ -257,11 +268,7 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
       );
     } else {
       // DIRディレクティブなどは名称編集不可
-      return (
-        <div className="readonly-cell">
-          -
-        </div>
-      );
+      return <div className="readonly-cell">-</div>;
     }
   };
 
@@ -303,18 +310,15 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
     }
 
     return (
-      <div
-        className="editable-cell"
-        onClick={() => handleCellEdit(line)}
-        title="クリックして編集"
-      >
+      <div className="editable-cell" onClick={() => handleCellEdit(line)} title="クリックして編集">
         {getPathAndArgs(line)}
       </div>
     );
   };
 
-  const allSelected = rawLines.length > 0 && rawLines.every(line => selectedItems.has(getLineKey(line)));
-  const someSelected = rawLines.some(line => selectedItems.has(getLineKey(line)));
+  const allSelected =
+    rawLines.length > 0 && rawLines.every((line) => selectedItems.has(getLineKey(line)));
+  const someSelected = rawLines.some((line) => selectedItems.has(getLineKey(line)));
 
   return (
     <div className="editable-raw-item-list">
@@ -322,10 +326,13 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
         <button onClick={onAddLine} className="add-line-button">
           ➕ 行を追加
         </button>
-        <button 
+        <button
           onClick={() => {
-            const selectedLines = rawLines.filter(line => selectedItems.has(getLineKey(line)));
-            if (selectedLines.length > 0 && window.confirm(`${selectedLines.length}行を削除しますか？`)) {
+            const selectedLines = rawLines.filter((line) => selectedItems.has(getLineKey(line)));
+            if (
+              selectedLines.length > 0 &&
+              window.confirm(`${selectedLines.length}行を削除しますか？`)
+            ) {
               onDeleteLines(selectedLines);
             }
           }}
@@ -334,7 +341,7 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
         >
           🗑️ 選択行を削除 ({selectedItems.size})
         </button>
-        <button 
+        <button
           onClick={handleSortAndDeduplicate}
           className="sort-button"
           title="種類→パスと引数→名前の順で整列し、重複行を削除"
@@ -350,7 +357,7 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
               <input
                 type="checkbox"
                 checked={allSelected}
-                ref={input => {
+                ref={(input) => {
                   if (input) input.indeterminate = someSelected && !allSelected;
                 }}
                 onChange={(e) => onSelectAll(e.target.checked)}
@@ -367,10 +374,10 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
           {rawLines.map((line) => {
             const lineKey = getLineKey(line);
             const isSelected = selectedItems.has(lineKey);
-            
+
             return (
-              <tr 
-                key={lineKey} 
+              <tr
+                key={lineKey}
                 className={`raw-item-row ${isSelected ? 'selected' : ''} ${line.type}`}
               >
                 <td className="checkbox-column">
@@ -380,19 +387,13 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
                     onChange={(e) => onLineSelect(line, e.target.checked)}
                   />
                 </td>
-                <td className="line-number-column">
-                  {line.lineNumber}
-                </td>
+                <td className="line-number-column">{line.lineNumber}</td>
                 <td className="type-column">
                   <span className="type-icon">{getLineTypeIcon(line.type)}</span>
                   <span className="type-name">{getLineTypeDisplayName(line.type)}</span>
                 </td>
-                <td className="name-column">
-                  {renderNameCell(line)}
-                </td>
-                <td className="content-column">
-                  {renderEditableCell(line)}
-                </td>
+                <td className="name-column">{renderNameCell(line)}</td>
+                <td className="content-column">{renderEditableCell(line)}</td>
                 <td className="actions-column">
                   <div className="action-buttons">
                     <button
@@ -427,12 +428,8 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
           })}
         </tbody>
       </table>
-      
-      {rawLines.length === 0 && (
-        <div className="no-items">
-          データファイルに行がありません
-        </div>
-      )}
+
+      {rawLines.length === 0 && <div className="no-items">データファイルに行がありません</div>}
     </div>
   );
 };

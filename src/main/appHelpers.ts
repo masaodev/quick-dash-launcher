@@ -1,5 +1,6 @@
 import * as path from 'path';
 import * as fs from 'fs';
+
 import { app } from 'electron';
 
 // パス定数
@@ -12,8 +13,15 @@ export const EXTENSIONS_FOLDER = path.join(ICONS_FOLDER, 'extensions');
 export const BACKUP_FOLDER = path.join(CONFIG_FOLDER, 'backup');
 
 export function ensureDirectories(): void {
-  const dirs = [CONFIG_FOLDER, ICONS_FOLDER, FAVICONS_FOLDER, SCHEMES_FOLDER, EXTENSIONS_FOLDER, BACKUP_FOLDER];
-  dirs.forEach(dir => {
+  const dirs = [
+    CONFIG_FOLDER,
+    ICONS_FOLDER,
+    FAVICONS_FOLDER,
+    SCHEMES_FOLDER,
+    EXTENSIONS_FOLDER,
+    BACKUP_FOLDER,
+  ];
+  dirs.forEach((dir) => {
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
@@ -41,8 +49,8 @@ Google マップ,https://www.google.co.jp/maps
 export function backupDataFiles(): void {
   const timestamp = new Date().toISOString().replace(/:/g, '-').substring(0, 19);
   const files = ['data.txt', 'data2.txt', 'tempdata.txt'];
-  
-  files.forEach(file => {
+
+  files.forEach((file) => {
     const sourcePath = path.join(CONFIG_FOLDER, file);
     if (fs.existsSync(sourcePath)) {
       const backupPath = path.join(BACKUP_FOLDER, `${file}.${timestamp}`);

@@ -1,4 +1,5 @@
 import React from 'react';
+
 import SettingsDropdown from './SettingsDropdown';
 
 interface ActionButtonsProps {
@@ -32,38 +33,22 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
 }) => {
   return (
     <div className="action-buttons">
-      <button
-        className="action-button"
-        onClick={onFetchFavicon}
-        title="ファビコン取得"
-      >
+      <button className="action-button" onClick={onFetchFavicon} title="ファビコン取得">
         🌐
       </button>
-      <button
-        className="action-button"
-        onClick={onExtractAllIcons}
-        title="全アイコンを抽出"
-      >
+      <button className="action-button" onClick={onExtractAllIcons} title="全アイコンを抽出">
         🎨
       </button>
-      <button
-        className="action-button"
-        onClick={onAddTemp}
-        title="一時タブに追加"
-      >
+      <button className="action-button" onClick={onAddTemp} title="一時タブに追加">
         ✔️
       </button>
-      <button
-        className="action-button"
-        onClick={onReload}
-        title="リロード"
-      >
+      <button className="action-button" onClick={onReload} title="リロード">
         🔄
       </button>
       <button
         className={`action-button ${isPinned ? 'pinned' : ''}`}
         onClick={onTogglePin}
-        title={isPinned ? "固定解除" : "ウィンドウを固定"}
+        title={isPinned ? '固定解除' : 'ウィンドウを固定'}
       >
         📌
       </button>

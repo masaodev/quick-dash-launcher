@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+
 import { RawDataLine, SimpleBookmarkItem } from '../../common/types';
+
 import EditableRawItemList from './EditableRawItemList';
 import RegisterModal, { RegisterItem } from './RegisterModal';
 import BookmarkImportModal from './BookmarkImportModal';
@@ -17,7 +19,7 @@ const EditModeView: React.FC<EditModeViewProps> = ({
   onRawDataSave,
   onExitEditMode,
   searchQuery,
-  onSearchChange
+  onSearchChange,
 }) => {
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [editedLines, setEditedLines] = useState<Map<string, RawDataLine>>(new Map());
@@ -40,10 +42,13 @@ const EditModeView: React.FC<EditModeViewProps> = ({
     setIsRegisterModalOpen(true);
   };
 
-  const convertRegisterItemToRawDataLine = (item: RegisterItem, originalLine: RawDataLine): RawDataLine => {
+  const convertRegisterItemToRawDataLine = (
+    item: RegisterItem,
+    originalLine: RawDataLine
+  ): RawDataLine => {
     let newContent = '';
     let newType: RawDataLine['type'] = originalLine.type;
-    
+
     if (item.itemCategory === 'dir') {
       // DIRディレクティブの場合
       newType = 'directive';
@@ -54,7 +59,7 @@ const EditModeView: React.FC<EditModeViewProps> = ({
         if (item.dirOptions.filter) options.push(`filter=${item.dirOptions.filter}`);
         if (item.dirOptions.exclude) options.push(`exclude=${item.dirOptions.exclude}`);
         if (item.dirOptions.prefix) options.push(`prefix=${item.dirOptions.prefix}`);
-        
+
         const optionsStr = options.join(',');
         newContent = optionsStr ? `dir,${item.path},${optionsStr}` : `dir,${item.path}`;
       } else {
@@ -67,11 +72,11 @@ const EditModeView: React.FC<EditModeViewProps> = ({
       const originalPath = originalLine.content.split(',')[3] || item.path;
       newContent = `${item.name},${item.path},${args},${originalPath}`;
     }
-    
+
     return {
       ...originalLine,
       content: newContent,
-      type: newType
+      type: newType,
     };
   };
 
@@ -98,7 +103,7 @@ const EditModeView: React.FC<EditModeViewProps> = ({
 
   const handleSelectAll = (selected: boolean) => {
     if (selected) {
-      const allLines = new Set(workingLines.map(line => `${line.sourceFile}_${line.lineNumber}`));
+      const allLines = new Set(workingLines.map((line) => `${line.sourceFile}_${line.lineNumber}`));
       setSelectedItems(allLines);
     } else {
       setSelectedItems(new Set());
@@ -106,13 +111,15 @@ const EditModeView: React.FC<EditModeViewProps> = ({
   };
 
   const handleDeleteLines = (linesToDelete: RawDataLine[]) => {
-    const updatedLines = workingLines.filter(line => 
-      !linesToDelete.some(deleteThisLine => 
-        line.sourceFile === deleteThisLine.sourceFile && 
-        line.lineNumber === deleteThisLine.lineNumber
-      )
+    const updatedLines = workingLines.filter(
+      (line) =>
+        !linesToDelete.some(
+          (deleteThisLine) =>
+            line.sourceFile === deleteThisLine.sourceFile &&
+            line.lineNumber === deleteThisLine.lineNumber
+        )
     );
-    
+
     // 行番号を振り直し
     const reorderedLines = reorderLineNumbers(updatedLines);
     setWorkingLines(reorderedLines);
@@ -125,9 +132,9 @@ const EditModeView: React.FC<EditModeViewProps> = ({
       lineNumber: workingLines.length + 1,
       content: '',
       type: 'empty',
-      sourceFile: 'data.txt' // デフォルトでdata.txtに追加
+      sourceFile: 'data.txt', // デフォルトでdata.txtに追加
     };
-    
+
     const updatedLines = [...workingLines, newLine];
     const reorderedLines = reorderLineNumbers(updatedLines);
     setWorkingLines(reorderedLines);
@@ -136,16 +143,16 @@ const EditModeView: React.FC<EditModeViewProps> = ({
 
   const handleSaveChanges = () => {
     if (!hasUnsavedChanges) return;
-    
+
     // editedLinesの変更をworkingLinesに反映
-    const updatedLines = workingLines.map(line => {
+    const updatedLines = workingLines.map((line) => {
       const lineKey = `${line.sourceFile}_${line.lineNumber}`;
       return editedLines.get(lineKey) || line;
     });
-    
+
     // 行番号を振り直して保存
     const reorderedLines = reorderLineNumbers(updatedLines);
-    
+
     // 全件書き戻し
     onRawDataSave(reorderedLines);
     setEditedLines(new Map());
@@ -156,26 +163,26 @@ const EditModeView: React.FC<EditModeViewProps> = ({
   // 行番号を振り直す関数
   const reorderLineNumbers = (lines: RawDataLine[]): RawDataLine[] => {
     const fileGroups = new Map<string, RawDataLine[]>();
-    
+
     // ファイル別にグループ化
-    lines.forEach(line => {
+    lines.forEach((line) => {
       if (!fileGroups.has(line.sourceFile)) {
         fileGroups.set(line.sourceFile, []);
       }
       fileGroups.get(line.sourceFile)!.push(line);
     });
-    
+
     // 各ファイル内で行番号を振り直し
     const reorderedLines: RawDataLine[] = [];
     for (const [_fileName, fileLines] of fileGroups) {
       fileLines.forEach((line, index) => {
         reorderedLines.push({
           ...line,
-          lineNumber: index + 1
+          lineNumber: index + 1,
         });
       });
     }
-    
+
     return reorderedLines;
   };
 
@@ -190,9 +197,9 @@ const EditModeView: React.FC<EditModeViewProps> = ({
       lineNumber: workingLines.length + index + 1,
       content: `${bookmark.name},${bookmark.url}`,
       type: 'item' as const,
-      sourceFile: 'data.txt' as const
+      sourceFile: 'data.txt' as const,
     }));
-    
+
     const updatedLines = [...workingLines, ...newLines];
     const reorderedLines = reorderLineNumbers(updatedLines);
     setWorkingLines(reorderedLines);
@@ -214,7 +221,9 @@ const EditModeView: React.FC<EditModeViewProps> = ({
     if (e.key === 'Escape') {
       handleExitEditMode();
     } else if (e.key === 'Delete' && selectedItems.size > 0) {
-      const selectedLines = workingLines.filter(line => selectedItems.has(`${line.sourceFile}_${line.lineNumber}`));
+      const selectedLines = workingLines.filter((line) =>
+        selectedItems.has(`${line.sourceFile}_${line.lineNumber}`)
+      );
       handleDeleteLines(selectedLines);
     } else if (e.ctrlKey && e.key === 's') {
       e.preventDefault();
@@ -222,17 +231,20 @@ const EditModeView: React.FC<EditModeViewProps> = ({
     }
   };
 
-  const mergedLines = workingLines.map(line => {
+  const mergedLines = workingLines.map((line) => {
     const lineKey = `${line.sourceFile}_${line.lineNumber}`;
     const editedLine = editedLines.get(lineKey);
     return editedLine || line;
   });
 
-  const filteredLines = mergedLines.filter(line => {
+  const filteredLines = mergedLines.filter((line) => {
     if (!searchQuery) return true;
-    const keywords = searchQuery.toLowerCase().split(/\s+/).filter(k => k.length > 0);
+    const keywords = searchQuery
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((k) => k.length > 0);
     const lineText = line.content.toLowerCase();
-    return keywords.every(keyword => lineText.includes(keyword));
+    return keywords.every((keyword) => lineText.includes(keyword));
   });
 
   useEffect(() => {
@@ -255,7 +267,7 @@ const EditModeView: React.FC<EditModeViewProps> = ({
   }, [rawLines]);
 
   const getFileNames = () => {
-    const fileSet = new Set(workingLines.map(line => line.sourceFile));
+    const fileSet = new Set(workingLines.map((line) => line.sourceFile));
     return Array.from(fileSet).join(', ');
   };
 
@@ -281,8 +293,8 @@ const EditModeView: React.FC<EditModeViewProps> = ({
           <button onClick={handleExitEditMode} className="exit-edit-button">
             通常モードに戻る
           </button>
-          <button 
-            onClick={handleSaveChanges} 
+          <button
+            onClick={handleSaveChanges}
             className="save-changes-button"
             disabled={!hasUnsavedChanges}
           >
@@ -307,14 +319,8 @@ const EditModeView: React.FC<EditModeViewProps> = ({
         <span className="selection-count">
           {selectedItems.size > 0 ? `${selectedItems.size}行を選択中` : ''}
         </span>
-        <span className="total-count">
-          合計: {filteredLines.length}行
-        </span>
-        {hasUnsavedChanges && (
-          <span className="unsaved-changes">
-            未保存の変更があります
-          </span>
-        )}
+        <span className="total-count">合計: {filteredLines.length}行</span>
+        {hasUnsavedChanges && <span className="unsaved-changes">未保存の変更があります</span>}
       </div>
 
       <RegisterModal

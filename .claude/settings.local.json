@@ -16,7 +16,9 @@
       "Bash(npm install:*)",
       "Bash(npm run build:*)",
       "Bash(echo:*)",
-      "Bash(printf:*)"
+      "Bash(printf:*)",
+      "WebFetch(domain:eslint.org)",
+      "Bash(npm run lint)"
     ],
     "deny": []
   }

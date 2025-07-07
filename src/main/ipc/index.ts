@@ -1,4 +1,5 @@
 import { BrowserWindow } from 'electron';
+
 import { setupDataHandlers } from './dataHandlers';
 import { setupItemHandlers } from './itemHandlers';
 import { setupConfigHandlers } from './configHandlers';

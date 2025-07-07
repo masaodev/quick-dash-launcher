@@ -45,51 +45,29 @@ const SettingsDropdown: React.FC<SettingsDropdownProps> = ({
 
   return (
     <div className="settings-dropdown" ref={dropdownRef}>
-      <button
-        className="action-button"
-        onClick={() => setIsOpen(!isOpen)}
-        title="設定"
-      >
+      <button className="action-button" onClick={() => setIsOpen(!isOpen)} title="設定">
         ⚙
       </button>
       {isOpen && (
         <div className="dropdown-menu">
-          <button
-            className="dropdown-item"
-            onClick={() => handleMenuItemClick(onOpenConfigFolder)}
-          >
+          <button className="dropdown-item" onClick={() => handleMenuItemClick(onOpenConfigFolder)}>
             📁 設定フォルダを開く
           </button>
-          <button
-            className="dropdown-item"
-            onClick={() => handleMenuItemClick(onOpenDataFile)}
-          >
+          <button className="dropdown-item" onClick={() => handleMenuItemClick(onOpenDataFile)}>
             📄 設定ファイルを開く
           </button>
-          <button
-            className="dropdown-item"
-            onClick={() => handleMenuItemClick(onExportJson)}
-          >
+          <button className="dropdown-item" onClick={() => handleMenuItemClick(onExportJson)}>
             📋 JSON出力
           </button>
-          <button
-            className="dropdown-item"
-            onClick={() => handleMenuItemClick(onSortDataFiles)}
-          >
+          <button className="dropdown-item" onClick={() => handleMenuItemClick(onSortDataFiles)}>
             🔤 データファイルを並べ替え
           </button>
           <div className="dropdown-divider"></div>
-          <button
-            className="dropdown-item"
-            onClick={() => handleMenuItemClick(onToggleEditMode)}
-          >
+          <button className="dropdown-item" onClick={() => handleMenuItemClick(onToggleEditMode)}>
             {isEditMode ? '📋 通常モード' : '✏️ 編集モード'}
           </button>
           <div className="dropdown-divider"></div>
-          <button
-            className="dropdown-item"
-            onClick={() => handleMenuItemClick(onQuitApp)}
-          >
+          <button className="dropdown-item" onClick={() => handleMenuItemClick(onQuitApp)}>
             🚪 アプリを終了
           </button>
         </div>
