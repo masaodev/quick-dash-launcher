@@ -32,7 +32,7 @@ const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({ isOpen, onClo
       const filePath = await window.electronAPI.selectBookmarkFile();
 
       if (filePath) {
-        setFileName(filePath.split(/[\\\/]/).pop() || filePath);
+        setFileName(filePath.split(/[\\/]/).pop() || filePath);
         const parsedBookmarks = await window.electronAPI.parseBookmarkFile(filePath);
         setBookmarks(parsedBookmarks);
         setSelectedIds(new Set());

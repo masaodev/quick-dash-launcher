@@ -2,10 +2,13 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import * as os from 'os';
 
 import { ipcMain } from 'electron';
 
 import { FaviconService } from '../services/faviconService';
+
+const extractFileIcon = require('extract-file-icon');
 
 // FaviconServiceのインスタンスを保持
 let faviconService: FaviconService;
@@ -40,7 +43,6 @@ async function extractIcon(filePath: string, iconsFolder: string): Promise<strin
     }
 
     // アイコンを抽出
-    const extractFileIcon = require('extract-file-icon');
     const iconBuffer = extractFileIcon(filePath, 32);
 
     if (iconBuffer && iconBuffer.length > 0) {
@@ -87,7 +89,6 @@ async function extractCustomUriIcon(uri: string, iconsFolder: string): Promise<s
     }
 
     // ハンドラーアプリケーションからアイコンを抽出
-    const extractFileIcon = require('extract-file-icon');
     const iconBuffer = extractFileIcon(handlerPath, 32);
 
     if (iconBuffer && iconBuffer.length > 0) {
@@ -142,7 +143,6 @@ async function extractFileIconByExtension(
 
     try {
       // extract-file-iconを使用してアイコンを取得
-      const extractFileIcon = require('extract-file-icon');
       const iconBuffer = extractFileIcon(tempFilePath, 32);
 
       if (iconBuffer && iconBuffer.length > 0) {
@@ -177,9 +177,12 @@ async function getUriSchemeHandler(scheme: string): Promise<string | null> {
     const cleanScheme = scheme.replace(/[:\\/]/g, '');
 
     // レジストリからスキーマハンドラーを取得
-    const { stdout } = await execAsync(`reg query "HKEY_CLASSES_ROOT\\${cleanScheme}" /ve`, {
-      encoding: 'utf8',
-    });
+    const { stdout: _stdout } = await execAsync(
+      `reg query "HKEY_CLASSES_ROOT\\${cleanScheme}" /ve`,
+      {
+        encoding: 'utf8',
+      }
+    );
 
     // レジストリから実行ファイルパスを取得
     const { stdout: commandStdout } = await execAsync(
@@ -202,7 +205,7 @@ async function getUriSchemeHandler(scheme: string): Promise<string | null> {
     }
 
     return null;
-  } catch (error) {
+  } catch (_error) {
     // レジストリエントリが存在しない場合はエラーになるが、これは正常
     return null;
   }
@@ -237,7 +240,6 @@ function extractExtensionFromUri(uri: string): string {
 }
 
 function createTempFileForExtension(extension: string): string {
-  const os = require('os');
   const tempDir = os.tmpdir();
   const tempFileName = `temp_icon_extract_${Date.now()}.${extension}`;
   const tempFilePath = path.join(tempDir, tempFileName);
@@ -248,8 +250,13 @@ function createTempFileForExtension(extension: string): string {
   return tempFilePath;
 }
 
+interface IconItem {
+  type: string;
+  path: string;
+}
+
 async function loadCachedIcons(
-  items: any[],
+  items: IconItem[],
   faviconsFolder: string,
   iconsFolder: string,
   extensionsFolder: string
@@ -347,7 +354,7 @@ export function setupIconHandlers(
     return await extractCustomUriIcon(uri, iconsFolder);
   });
 
-  ipcMain.handle('load-cached-icons', async (_event, items: any[]) => {
+  ipcMain.handle('load-cached-icons', async (_event, items: IconItem[]) => {
     return await loadCachedIcons(items, faviconsFolder, iconsFolder, extensionsFolder);
   });
 }

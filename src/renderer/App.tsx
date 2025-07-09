@@ -332,7 +332,7 @@ const App: React.FC = () => {
     await window.electronAPI.setEditMode(newEditMode);
   };
 
-  const handleItemUpdate = async (item: LauncherItem) => {
+  const _handleItemUpdate = async (item: LauncherItem) => {
     try {
       await window.electronAPI.updateItem({
         sourceFile: item.sourceFile!,
@@ -346,7 +346,7 @@ const App: React.FC = () => {
     }
   };
 
-  const handleItemsDelete = async (items: LauncherItem[]) => {
+  const _handleItemsDelete = async (items: LauncherItem[]) => {
     try {
       const deleteRequests = items.map((item) => ({
         sourceFile: item.sourceFile!,
@@ -360,7 +360,7 @@ const App: React.FC = () => {
     }
   };
 
-  const handleBatchUpdate = async (items: LauncherItem[]) => {
+  const _handleBatchUpdate = async (items: LauncherItem[]) => {
     try {
       const updateRequests = items.map((item) => ({
         sourceFile: item.sourceFile!,

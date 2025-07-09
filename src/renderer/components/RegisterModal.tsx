@@ -369,7 +369,11 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     return ext ? basename.slice(0, -ext.length) : basename;
   };
 
-  const handleItemChange = async (index: number, field: keyof RegisterItem, value: any) => {
+  const handleItemChange = async (
+    index: number,
+    field: keyof RegisterItem,
+    value: string | boolean
+  ) => {
     const newItems = [...items];
     newItems[index] = { ...newItems[index], [field]: value };
 
