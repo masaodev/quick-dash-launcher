@@ -33,11 +33,12 @@ export function parseDataFiles(dataFiles: DataFile[]): {
 
       const [name, itemPath, argsField, originalPathField] = parts;
 
-      // Skip duplicates
-      if (seenPaths.has(itemPath)) {
+      // Skip duplicates - check path + args combination
+      const uniqueKey = argsField ? `${itemPath}|${argsField}` : itemPath;
+      if (seenPaths.has(uniqueKey)) {
         return;
       }
-      seenPaths.add(itemPath);
+      seenPaths.add(uniqueKey);
 
       const item: LauncherItem = {
         name,
