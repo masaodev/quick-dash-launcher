@@ -3,6 +3,7 @@ import * as path from 'path';
 import { BrowserWindow, globalShortcut, Tray, Menu, nativeImage, app } from 'electron';
 
 import { HOTKEY } from './appHelpers';
+import { windowLogger } from '@common/logger';
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
@@ -110,7 +111,7 @@ export function registerGlobalShortcut(): void {
   });
 
   if (!ret) {
-    console.log('ホットキーの登録に失敗しました');
+    windowLogger.warn('ホットキーの登録に失敗しました');
   }
 }
 

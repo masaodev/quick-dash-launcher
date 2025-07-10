@@ -7,6 +7,7 @@ import * as os from 'os';
 import { ipcMain } from 'electron';
 
 import { FaviconService } from '../services/faviconService';
+import { iconLogger } from '@common/logger';
 
 const extractFileIcon = require('extract-file-icon');
 
@@ -27,7 +28,7 @@ async function extractIcon(filePath: string, iconsFolder: string): Promise<strin
   try {
     // ファイルが存在するか確認
     if (!fs.existsSync(filePath)) {
-      console.error('ファイルが見つかりません:', filePath);
+      iconLogger.error('ファイルが見つかりません', { filePath });
       return null;
     }
 
@@ -56,7 +57,7 @@ async function extractIcon(filePath: string, iconsFolder: string): Promise<strin
 
     return null;
   } catch (error) {
-    console.error('アイコンの抽出に失敗しました:', error);
+    iconLogger.error('アイコンの抽出に失敗しました', { error });
     return null;
   }
 }
@@ -102,7 +103,7 @@ async function extractCustomUriIcon(uri: string, iconsFolder: string): Promise<s
 
     return null;
   } catch (error) {
-    console.error('カスタムURIアイコンの抽出に失敗しました:', error);
+    iconLogger.error('カスタムURIアイコンの抽出に失敗しました', { error });
     return null;
   }
 }
@@ -122,7 +123,7 @@ async function extractFileIconByExtension(
     }
 
     if (!fileExtension) {
-      console.log('拡張子がありません:', filePath);
+      iconLogger.info('拡張子がありません', { filePath });
       return null;
     }
 
@@ -162,7 +163,7 @@ async function extractFileIconByExtension(
 
     return null;
   } catch (error) {
-    console.error('拡張子ベースのアイコン抽出に失敗しました:', error);
+    iconLogger.error('拡張子ベースのアイコン抽出に失敗しました', { error });
     return null;
   }
 }
@@ -234,7 +235,7 @@ function extractExtensionFromUri(uri: string): string {
     const extensionMatch = fileName.match(/\.[^.]+$/);
     return extensionMatch ? extensionMatch[0].toLowerCase() : '';
   } catch (error) {
-    console.error('URIから拡張子の抽出に失敗:', error);
+    iconLogger.error('URIから拡張子の抽出に失敗', { error });
     return '';
   }
 }
@@ -326,7 +327,7 @@ async function loadCachedIcons(
         iconCache[item.path] = `data:image/png;base64,${base64}`;
       }
     } catch (error) {
-      console.error(`Failed to load cached icon for ${item.path}:`, error);
+      iconLogger.error('キャッシュされたアイコンの読み込みに失敗', { path: item.path, error });
     }
   }
 

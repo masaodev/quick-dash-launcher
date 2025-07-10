@@ -3,6 +3,8 @@ import * as fs from 'fs';
 
 import { net } from 'electron';
 
+import { faviconLogger } from '@common/logger';
+
 interface FaviconSource {
   url: string;
   size?: number;
@@ -42,7 +44,7 @@ export class FaviconService {
 
       return null;
     } catch (error) {
-      console.error('ファビコンの取得に失敗しました:', error);
+      faviconLogger.error('ファビコンの取得に失敗しました', { error });
       return null;
     }
   }
@@ -58,7 +60,7 @@ export class FaviconService {
           return data;
         }
       } catch (error) {
-        console.log(`ファビコンソース ${source.url} の取得に失敗:`, error);
+        faviconLogger.info('ファビコンソースの取得に失敗', { url: source.url, error });
       }
     }
 
@@ -74,7 +76,7 @@ export class FaviconService {
       const htmlSources = await this.parseHtmlForFavicons(url);
       sources.push(...htmlSources);
     } catch (error) {
-      console.log('HTML解析をスキップ:', error);
+      faviconLogger.info('HTML解析をスキップ', { error });
     }
 
     // 2. 標準的な場所を確認
@@ -147,7 +149,7 @@ export class FaviconService {
             const manifestUrl = this.resolveUrl(match[1], origin);
             if (manifestUrl) {
               // 今はマニフェストの解析はスキップ
-              console.log('マニフェストファイル検出:', manifestUrl);
+              faviconLogger.info('マニフェストファイル検出', { manifestUrl });
             }
           } else {
             const iconUrl = this.resolveUrl(match[1], origin);
@@ -167,7 +169,7 @@ export class FaviconService {
         return 0;
       });
     } catch (error) {
-      console.error('HTML解析エラー:', error);
+      faviconLogger.error('HTML解析エラー', { error });
     }
 
     return sources;
@@ -252,7 +254,7 @@ export class FaviconService {
         return new URL(url, base).href;
       }
     } catch (error) {
-      console.error('URL解決エラー:', error);
+      faviconLogger.error('URL解決エラー', { error });
       return null;
     }
   }

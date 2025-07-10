@@ -4,6 +4,7 @@ import * as path from 'path';
 import { ipcMain } from 'electron';
 
 import { LauncherItem } from '../../common/types';
+import { editLogger } from '@common/logger';
 
 interface UpdateItemRequest {
   sourceFile: 'data.txt' | 'data2.txt' | 'tempdata.txt';
@@ -99,7 +100,7 @@ export async function deleteItems(
     const filePath = path.join(configFolder, sourceFile);
 
     if (!fs.existsSync(filePath)) {
-      console.warn(`File ${sourceFile} does not exist, skipping`);
+      editLogger.warn('ファイルが存在しません、スキップします', { sourceFile });
       continue;
     }
 
@@ -143,7 +144,7 @@ export async function batchUpdateItems(
     const filePath = path.join(configFolder, sourceFile);
 
     if (!fs.existsSync(filePath)) {
-      console.warn(`File ${sourceFile} does not exist, skipping`);
+      editLogger.warn('ファイルが存在しません、スキップします', { sourceFile });
       continue;
     }
 
@@ -173,7 +174,7 @@ export function registerEditHandlers(configFolder: string): void {
       await updateItem(configFolder, request);
       return { success: true };
     } catch (error) {
-      console.error('Error updating item:', error);
+      editLogger.error('アイテムの更新に失敗', { error });
       throw error;
     }
   });
@@ -183,7 +184,7 @@ export function registerEditHandlers(configFolder: string): void {
       await deleteItems(configFolder, requests);
       return { success: true };
     } catch (error) {
-      console.error('Error deleting items:', error);
+      editLogger.error('アイテムの削除に失敗', { error });
       throw error;
     }
   });
@@ -193,7 +194,7 @@ export function registerEditHandlers(configFolder: string): void {
       await batchUpdateItems(configFolder, requests);
       return { success: true };
     } catch (error) {
-      console.error('Error batch updating items:', error);
+      editLogger.error('アイテムの一括更新に失敗', { error });
       throw error;
     }
   });

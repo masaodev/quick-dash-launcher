@@ -5,6 +5,7 @@ import { ipcMain, shell, dialog } from 'electron';
 import { minimatch } from 'minimatch';
 
 import { DataFile, RawDataLine, SimpleBookmarkItem } from '../../common/types';
+import { dataLogger } from '@common/logger';
 
 // DIRディレクティブのオプション型定義
 interface DirOptions {
@@ -103,7 +104,7 @@ function processShortcutToCSV(filePath: string, prefix?: string): string | null 
       return line;
     }
   } catch (error) {
-    console.error(`Error reading shortcut ${filePath}:`, error);
+    dataLogger.error('ショートカットの読み込みに失敗', { filePath, error });
   }
 
   return null;
@@ -133,7 +134,7 @@ async function scanDirectory(
       try {
         stat = fs.statSync(itemPath);
       } catch (error) {
-        console.warn(`Cannot access ${itemPath}:`, error);
+        dataLogger.warn('アイテムにアクセスできません', { itemPath, error });
         continue;
       }
 
@@ -184,7 +185,7 @@ async function scanDirectory(
       }
     }
   } catch (error) {
-    console.error(`Error scanning directory ${dirPath}:`, error);
+    dataLogger.error('ディレクトリのスキャンに失敗', { dirPath, error });
   }
 
   return results;
@@ -222,7 +223,7 @@ async function loadDataFiles(configFolder: string): Promise<DataFile[]> {
               const items = await scanDirectory(dirPath, options);
               processedLines.push(...items);
             } catch (error) {
-              console.error(`Error scanning directory ${dirPath}:`, error);
+              dataLogger.error('ディレクトリのスキャンに失敗', { dirPath, error });
             }
           }
         } else {
@@ -564,9 +565,9 @@ async function sortDataFiles(configFolder: string): Promise<void> {
       // Write sorted content back to file
       fs.writeFileSync(filePath, sortedContent, 'utf8');
 
-      console.log(`Sorted ${fileName} successfully. Backup saved to ${backupPath}`);
+      dataLogger.info('データファイルのソートが完了', { fileName, backupPath });
     } catch (error) {
-      console.error(`Error sorting ${fileName}:`, error);
+      dataLogger.error('データファイルのソートに失敗', { fileName, error });
       throw error;
     }
   }
@@ -686,7 +687,7 @@ export function setupDataHandlers(configFolder: string) {
 
       return bookmarks;
     } catch (error) {
-      console.error('Error parsing bookmark file:', error);
+      dataLogger.error('ブックマークファイルのパースに失敗', { error });
       throw error;
     }
   });

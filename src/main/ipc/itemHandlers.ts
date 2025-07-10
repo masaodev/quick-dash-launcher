@@ -1,13 +1,14 @@
 import { ipcMain, shell, BrowserWindow } from 'electron';
 
 import { LauncherItem } from '../../common/types';
+import { itemLogger } from '@common/logger';
 
 async function openItem(item: LauncherItem, mainWindow: BrowserWindow | null): Promise<void> {
   try {
-    console.log(`アイテムを起動中: ${item.name} (${item.type})`);
-    console.log(`パス: ${item.path}`);
+    itemLogger.info('アイテムを起動中', { name: item.name, type: item.type });
+    itemLogger.info('パス', { path: item.path });
     if (item.args) {
-      console.log(`引数: ${item.args}`);
+      itemLogger.info('引数', { args: item.args });
     }
 
     if (item.type === 'url') {
@@ -29,8 +30,8 @@ async function openItem(item: LauncherItem, mainWindow: BrowserWindow | null): P
       mainWindow.hide();
     }
   } catch (error) {
-    console.error('アイテムの起動に失敗しました:', error);
-    console.error('失敗したアイテム:', {
+    itemLogger.error('アイテムの起動に失敗しました', { error });
+    itemLogger.error('失敗したアイテム', {
       name: item.name,
       type: item.type,
       path: item.path,
@@ -52,7 +53,7 @@ async function openParentFolder(
       mainWindow.hide();
     }
   } catch (error) {
-    console.error('親フォルダの表示に失敗しました:', error);
+    itemLogger.error('親フォルダの表示に失敗しました', { error });
   }
 }
 
