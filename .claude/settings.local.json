@@ -9,16 +9,22 @@
       "WebFetch(domain:github.com)",
       "Bash(npm run start:*)",
       "Bash(npm search \"icon extractor windows\")",
-      "Bash(npx tsc:*)",
+      "Bash(npx tsc:*)",,
       "Bash(rg:*)"
-    ],
-    "deny": [
+      "Bash(powershell.exe -Command:*)",
+      "Bash(mkdir:*)",
+      "Bash(grep:*)",
       "Bash(npm install:*)",
       "Bash(npm run build:*)",
-      "Bash(npm run dev:*)",
-      "Bash(npm uninstall:*)",
-      "Bash(npm cache clean:*)",
-      "Bash(npm:*)"
-    ]
+      "Bash(echo:*)",
+      "Bash(printf:*)",
+      "WebFetch(domain:eslint.org)",
+      "Bash(npm run lint)",
+      "Bash(npm run lint:*)",
+      "Bash(beep:*)",
+      "Bash(mv:*)",
+      "Bash(rg:*)"
+    ],
+    "deny": []
   }
 }

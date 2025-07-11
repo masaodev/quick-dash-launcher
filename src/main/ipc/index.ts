@@ -1,17 +1,27 @@
 import { BrowserWindow } from 'electron';
+
 import { setupDataHandlers } from './dataHandlers';
 import { setupItemHandlers } from './itemHandlers';
 import { setupConfigHandlers } from './configHandlers';
 import { setupIconHandlers } from './iconHandlers';
+import { setupWindowHandlers } from './windowHandlers';
+import { registerEditHandlers } from './editHandlers';
 
 export function setupIPCHandlers(
   configFolder: string,
   faviconsFolder: string,
   iconsFolder: string,
-  getMainWindow: () => BrowserWindow | null
+  extensionsFolder: string,
+  getMainWindow: () => BrowserWindow | null,
+  getWindowPinState: () => boolean,
+  setWindowPinState: (pinState: boolean) => void,
+  setEditMode: (editMode: boolean) => void,
+  getEditMode: () => boolean
 ) {
   setupDataHandlers(configFolder);
   setupItemHandlers(getMainWindow);
   setupConfigHandlers(configFolder);
-  setupIconHandlers(faviconsFolder, iconsFolder);
+  setupIconHandlers(faviconsFolder, iconsFolder, extensionsFolder);
+  setupWindowHandlers(getWindowPinState, setWindowPinState, setEditMode, getEditMode);
+  registerEditHandlers(configFolder);
 }

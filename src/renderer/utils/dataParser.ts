@@ -1,5 +1,25 @@
 import { LauncherItem, DataFile } from '../../common/types';
 
+/**
+ * データファイルの配列を解析し、ランチャーアイテムとして使用可能な形式に変換する
+ * 重複チェック、データの検証、ソート処理を行い、メインアイテムと一時アイテムに分類する
+ *
+ * @param dataFiles - 解析対象のデータファイル配列（data.txt、data2.txt、tempdata.txt）
+ * @returns メインアイテムと一時アイテムに分類されたランチャーアイテム
+ * @returns mainItems - data.txtとdata2.txtから生成されたアイテム
+ * @returns tempItems - tempdata.txtから生成されたアイテム
+ *
+ * @example
+ * ```typescript
+ * const dataFiles = [
+ *   { name: 'data.txt', content: 'Google,https://google.com' },
+ *   { name: 'tempdata.txt', content: 'Temp Item,C:\\temp\\file.txt' }
+ * ];
+ * const { mainItems, tempItems } = parseDataFiles(dataFiles);
+ * console.log(`メインアイテム: ${mainItems.length}個`);
+ * console.log(`一時アイテム: ${tempItems.length}個`);
+ * ```
+ */
 export function parseDataFiles(dataFiles: DataFile[]): {
   mainItems: LauncherItem[];
   tempItems: LauncherItem[];
@@ -8,14 +28,21 @@ export function parseDataFiles(dataFiles: DataFile[]): {
   const tempItems: LauncherItem[] = [];
   const seenPaths = new Set<string>();
 
-  dataFiles.forEach(file => {
+  dataFiles.forEach((file) => {
     const lines = file.content.split('\n');
     const items = file.name === 'tempdata.txt' ? tempItems : mainItems;
+    const sourceFile = file.name as 'data.txt' | 'data2.txt' | 'tempdata.txt';
 
-    lines.forEach(line => {
+    lines.forEach((line, index) => {
       line = line.trim();
-      
-      if (shouldSkipLine(line)) {
+
+      // Skip empty lines and comments
+      if (!line || line.startsWith('//')) {
+        return;
+      }
+
+      // Skip dir directives (already processed in main process)
+      if (line.startsWith('dir,')) {
         return;
       }
 
@@ -24,19 +51,25 @@ export function parseDataFiles(dataFiles: DataFile[]): {
         return;
       }
 
-      const [name, itemPath, ...args] = parts;
-      
-      // Skip duplicates
-      if (seenPaths.has(itemPath)) {
+      const [name, itemPath, argsField, originalPathField] = parts;
+
+      // Skip duplicates - check path + args combination
+      const uniqueKey = argsField ? `${itemPath}|${argsField}` : itemPath;
+      if (seenPaths.has(uniqueKey)) {
         return;
       }
-      seenPaths.add(itemPath);
+      seenPaths.add(uniqueKey);
 
       const item: LauncherItem = {
         name,
         path: itemPath,
         type: detectItemType(itemPath),
-        args: args.length > 0 ? args.join(' ') : undefined,
+        args: argsField && argsField.trim() ? argsField : undefined,
+        originalPath: originalPathField && originalPathField.trim() ? originalPathField : undefined,
+        sourceFile,
+        lineNumber: index + 1,
+        isDirExpanded: false,
+        isEdited: false,
       };
 
       items.push(item);
@@ -57,8 +90,10 @@ function shouldSkipLine(line: string): boolean {
 function detectItemType(itemPath: string): LauncherItem['type'] {
   if (itemPath.includes('://')) {
     const scheme = itemPath.split('://')[0];
-    const webSchemes = ['http', 'https', 'ftp'];
-    return webSchemes.includes(scheme) ? 'url' : 'uri';
+    if (!['http', 'https', 'ftp'].includes(scheme)) {
+      return 'customUri';
+    }
+    return 'url';
   }
 
   // Shell paths
@@ -66,10 +101,12 @@ function detectItemType(itemPath: string): LauncherItem['type'] {
     return 'folder';
   }
 
-  const ext = getFileExtension(itemPath);
-  
-  const executableExtensions = ['.exe', '.bat', '.cmd', '.com'];
-  if (executableExtensions.includes(ext)) {
+  // File extensions
+  const lastDot = itemPath.lastIndexOf('.');
+  const ext = lastDot !== -1 ? itemPath.substring(lastDot).toLowerCase() : '';
+
+  // Executables and shortcuts
+  if (ext === '.exe' || ext === '.bat' || ext === '.cmd' || ext === '.com' || ext === '.lnk') {
     return 'app';
   }
 
@@ -82,11 +119,22 @@ function detectItemType(itemPath: string): LauncherItem['type'] {
   return 'file';
 }
 
-function getFileExtension(path: string): string {
-  const lastDot = path.lastIndexOf('.');
-  return lastDot !== -1 ? path.substring(lastDot).toLowerCase() : '';
-}
-
+/**
+ * CSV形式の行を解析し、フィールドの配列に変換する
+ * ダブルクォートで囲まれたフィールドや、エスケープされたクォートを正しく処理する
+ *
+ * @param line - 解析対象のCSV行（カンマ区切りの文字列）
+ * @returns 解析されたフィールドの配列（各フィールドはトリムされる）
+ *
+ * @example
+ * ```typescript
+ * const fields = parseCSVLine('名前,"パス,引数","引数"');
+ * // ['名前', 'パス,引数', '引数']
+ *
+ * const fieldsWithEscape = parseCSVLine('名前,"パス""引用符"""');
+ * // ['名前', 'パス"引用符"']
+ * ```
+ */
 function parseCSVLine(line: string): string[] {
   const result: string[] = [];
   let current = '';
@@ -129,10 +177,13 @@ export function filterItems(items: LauncherItem[], query: string): LauncherItem[
     return items;
   }
 
-  const keywords = query.toLowerCase().split(/\s+/).filter(k => k.length > 0);
+  const keywords = query
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((k) => k.length > 0);
 
-  return items.filter(item => {
+  return items.filter((item) => {
     const itemText = item.name.toLowerCase();
-    return keywords.every(keyword => itemText.includes(keyword));
+    return keywords.every((keyword) => itemText.includes(keyword));
   });
 }

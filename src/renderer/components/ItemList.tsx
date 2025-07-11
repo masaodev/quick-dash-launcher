@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+
 import { LauncherItem } from '../../common/types';
 
 interface ItemListProps {
@@ -8,12 +9,7 @@ interface ItemListProps {
   onItemSelect: (index: number) => void;
 }
 
-const ItemList: React.FC<ItemListProps> = ({
-  items,
-  selectedIndex,
-  onItemClick,
-  onItemSelect,
-}) => {
+const ItemList: React.FC<ItemListProps> = ({ items, selectedIndex, onItemClick, onItemSelect }) => {
   const listRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
 
@@ -37,7 +33,7 @@ const ItemList: React.FC<ItemListProps> = ({
         return '⚙️';
       case 'file':
         return '📄';
-      case 'uri':
+      case 'customUri':
         return '🔗';
       default:
         return '❓';
@@ -49,7 +45,9 @@ const ItemList: React.FC<ItemListProps> = ({
       {items.map((item, index) => (
         <div
           key={`${item.name}-${index}`}
-          ref={(el) => { itemRefs.current[index] = el; }}
+          ref={(el) => {
+            itemRefs.current[index] = el;
+          }}
           className={`item ${index === selectedIndex ? 'selected' : ''}`}
           onClick={() => {
             onItemSelect(index);
