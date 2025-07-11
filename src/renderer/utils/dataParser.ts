@@ -1,5 +1,25 @@
 import { LauncherItem, DataFile } from '../../common/types';
 
+/**
+ * データファイルの配列を解析し、ランチャーアイテムとして使用可能な形式に変換する
+ * 重複チェック、データの検証、ソート処理を行い、メインアイテムと一時アイテムに分類する
+ * 
+ * @param dataFiles - 解析対象のデータファイル配列（data.txt、data2.txt、tempdata.txt）
+ * @returns メインアイテムと一時アイテムに分類されたランチャーアイテム
+ * @returns mainItems - data.txtとdata2.txtから生成されたアイテム
+ * @returns tempItems - tempdata.txtから生成されたアイテム
+ * 
+ * @example
+ * ```typescript
+ * const dataFiles = [
+ *   { name: 'data.txt', content: 'Google,https://google.com' },
+ *   { name: 'tempdata.txt', content: 'Temp Item,C:\\temp\\file.txt' }
+ * ];
+ * const { mainItems, tempItems } = parseDataFiles(dataFiles);
+ * console.log(`メインアイテム: ${mainItems.length}個`);
+ * console.log(`一時アイテム: ${tempItems.length}個`);
+ * ```
+ */
 export function parseDataFiles(dataFiles: DataFile[]): {
   mainItems: LauncherItem[];
   tempItems: LauncherItem[];
@@ -97,6 +117,22 @@ function detectItemType(itemPath: string): LauncherItem['type'] {
   return 'file';
 }
 
+/**
+ * CSV形式の行を解析し、フィールドの配列に変換する
+ * ダブルクォートで囲まれたフィールドや、エスケープされたクォートを正しく処理する
+ * 
+ * @param line - 解析対象のCSV行（カンマ区切りの文字列）
+ * @returns 解析されたフィールドの配列（各フィールドはトリムされる）
+ * 
+ * @example
+ * ```typescript
+ * const fields = parseCSVLine('名前,"パス,引数","引数"');
+ * // ['名前', 'パス,引数', '引数']
+ * 
+ * const fieldsWithEscape = parseCSVLine('名前,"パス""引用符"""');
+ * // ['名前', 'パス"引用符"']
+ * ```
+ */
 function parseCSVLine(line: string): string[] {
   const result: string[] = [];
   let current = '';

@@ -17,6 +17,17 @@ interface DirOptions {
 }
 
 // DIRディレクティブのオプションを解析
+/**
+ * DIRディレクティブの文字列オプションを解析してDirOptionsオブジェクトに変換する
+ * カンマ区切りのオプション文字列（depth=2, filter=*.pdf等）を解析し、構造化されたオプションに変換する
+ * 
+ * @param parts - カンマ区切りのオプション文字列配列（最初の要素はディレクトリパス）
+ * @returns 解析されたDirOptionsオブジェクト
+ * 
+ * @example
+ * const options = parseDirOptions(['C:\\docs', 'depth=2', 'filter=*.pdf', 'prefix=Doc: ']);
+ * // { depth: 2, types: 'both', filter: '*.pdf', prefix: 'Doc: ' }
+ */
 function parseDirOptions(parts: string[]): DirOptions {
   const options: DirOptions = {
     depth: 0,
@@ -75,6 +86,25 @@ function processItemToCSV(itemPath: string, itemType: 'file' | 'folder', prefix?
   return `${displayName},${itemPath},,${itemPath}`;
 }
 
+/**
+ * ショートカットファイル（.lnk）を解析してCSV形式の行データに変換する
+ * Electronのネイティブ機能を使用してショートカットの詳細を読み取り、
+ * 表示名、ターゲットパス、引数、元のファイルパスを含むCSV行を生成する
+ * 
+ * @param filePath - 解析対象のショートカットファイルのパス
+ * @param prefix - 表示名に追加するプレフィックス（オプション）
+ * @returns CSV形式の行データ。解析に失敗した場合はnull
+ * @throws Error ショートカットファイルの読み込みに失敗した場合（ログに記録され、nullを返す）
+ * 
+ * @example
+ * ```typescript
+ * const csvLine = processShortcutToCSV('C:\\Users\\Desktop\\MyApp.lnk', 'デスクトップ');
+ * // 'デスクトップ: MyApp,C:\\Program Files\\MyApp\\app.exe,,C:\\Users\\Desktop\\MyApp.lnk'
+ * 
+ * const csvLineWithArgs = processShortcutToCSV('C:\\shortcut.lnk');
+ * // 'MyApp,C:\\Program Files\\MyApp\\app.exe,--config=default,C:\\shortcut.lnk'
+ * ```
+ */
 function processShortcutToCSV(filePath: string, prefix?: string): string | null {
   try {
     // Electron のネイティブ機能を使用してショートカットを読み取り
@@ -111,6 +141,28 @@ function processShortcutToCSV(filePath: string, prefix?: string): string | null 
 }
 
 // 拡張されたディレクトリスキャン関数
+/**
+ * 指定されたディレクトリを再帰的にスキャンし、指定されたオプションに基づいてファイル/フォルダを抽出する
+ * DIRディレクティブで使用される主要な機能で、深度制限、タイプフィルター、パターンマッチングに対応
+ * 
+ * @param dirPath - スキャン対象のディレクトリパス
+ * @param options - スキャンオプション（深度、タイプ、フィルター等）
+ * @param options.depth - スキャンする最大深度（-1は無制限）
+ * @param options.type - 対象タイプ（'file', 'dir', 'all'）
+ * @param options.filter - ファイル名のフィルターパターン（minimatch形式）
+ * @param options.prefix - 各アイテム名に付加するプレフィックス
+ * @param currentDepth - 現在の再帰深度（内部使用、初期値は0）
+ * @returns CSV形式でフォーマットされたアイテムリストの配列
+ * @throws ディレクトリアクセス権限エラー、ファイルシステムエラー
+ * 
+ * @example
+ * const items = await scanDirectory('/home/user/documents', {
+ *   depth: 2,
+ *   type: 'file',
+ *   filter: '*.pdf',
+ *   prefix: 'Doc: '
+ * });
+ */
 async function scanDirectory(
   dirPath: string,
   options: DirOptions,
@@ -191,6 +243,18 @@ async function scanDirectory(
   return results;
 }
 
+/**
+ * 設定フォルダからデータファイル（data.txt, data2.txt, tempdata.txt）を読み込み、DIRディレクティブを展開する
+ * 各ファイルを順次読み込み、DIRディレクティブが含まれている場合は自動的にディレクトリスキャンを実行して展開する
+ * 
+ * @param configFolder - 設定フォルダのパス
+ * @returns 処理済みのデータファイル配列（ファイル名、内容、種別を含む）
+ * @throws ファイル読み込みエラー、DIRディレクティブ処理エラー
+ * 
+ * @example
+ * const dataFiles = await loadDataFiles('/path/to/config');
+ * // [{ fileName: 'data.txt', content: '...', type: 'main' }, ...]
+ */
 async function loadDataFiles(configFolder: string): Promise<DataFile[]> {
   const files: DataFile[] = [];
   const dataFiles = ['data.txt', 'data2.txt', 'tempdata.txt'];
@@ -358,6 +422,28 @@ interface RegisterItem {
   };
 }
 
+/**
+ * 複数のアイテムを設定ファイルに登録する（メインタブ/一時タブ対応）
+ * 通常のアイテムとDIRディレクティブの両方に対応し、既存のファイル内容に追記する形で保存する
+ * 
+ * @param configFolder - 設定フォルダのパス
+ * @param items - 登録するアイテムの配列
+ * @param items[].name - アイテム名
+ * @param items[].type - アイテムタイプ（'file', 'app', 'url', 'folder'）
+ * @param items[].path - アイテムのパスまたはURL
+ * @param items[].args - コマンドライン引数（オプション）
+ * @param items[].targetTab - 対象タブ（'main' | 'temp'）
+ * @param items[].itemCategory - アイテムカテゴリ（'item' | 'dir'）
+ * @param items[].dirOptions - DIRディレクティブオプション（DIRアイテムの場合）
+ * @returns 処理完了のPromise
+ * @throws ファイル書き込みエラー、DIRオプション処理エラー
+ * 
+ * @example
+ * await registerItems('/path/to/config', [
+ *   { name: 'VSCode', type: 'app', path: 'code.exe', targetTab: 'main', itemCategory: 'item' },
+ *   { name: 'Documents', type: 'folder', path: '/docs', targetTab: 'main', itemCategory: 'dir', dirOptions: {...} }
+ * ]);
+ */
 async function registerItems(configFolder: string, items: RegisterItem[]): Promise<void> {
   // Group items by target tab
   const mainItems = items.filter((item) => item.targetTab === 'main');
@@ -498,6 +584,19 @@ function isDirectory(filePath: string): boolean {
   }
 }
 
+/**
+ * データファイルを種類別に分離してパス順にソートし、バックアップを作成する
+ * 各データファイル（data.txt, data2.txt, tempdata.txt）を読み込み、アイテムを種類→パス→名前の順でソートして保存する
+ * 処理前に自動的にバックアップファイルを作成し、データの安全性を確保する
+ * 
+ * @param configFolder - 設定フォルダのパス
+ * @returns 処理完了のPromise
+ * @throws ファイル操作エラー、バックアップ作成エラー
+ * 
+ * @example
+ * await sortDataFiles('/path/to/config');
+ * // data.txt, data2.txt, tempdata.txtがソートされ、backup/フォルダにバックアップが作成される
+ */
 async function sortDataFiles(configFolder: string): Promise<void> {
   const dataFiles = ['data.txt', 'data2.txt', 'tempdata.txt'];
   const backupFolder = path.join(configFolder, 'backup');

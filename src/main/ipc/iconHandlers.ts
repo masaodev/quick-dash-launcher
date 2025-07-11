@@ -16,6 +16,14 @@ let faviconService: FaviconService;
 
 const execAsync = promisify(exec);
 
+/**
+ * 指定されたURLのファビコンを取得する（FaviconServiceへの委譲）
+ * FaviconServiceのインスタンスを管理し、ファビコンの取得処理を実行する
+ * 
+ * @param url - ファビコンを取得するURL
+ * @param faviconsFolder - ファビコンキャッシュフォルダのパス
+ * @returns base64エンコードされたファビコンデータURL、失敗時はnull
+ */
 async function fetchFavicon(url: string, faviconsFolder: string): Promise<string | null> {
   if (!faviconService) {
     faviconService = new FaviconService(faviconsFolder);
@@ -24,6 +32,14 @@ async function fetchFavicon(url: string, faviconsFolder: string): Promise<string
   return await faviconService.fetchFavicon(url);
 }
 
+/**
+ * 実行ファイルからアイコンを抽出してキャッシュに保存する
+ * extract-file-iconライブラリを使用してWindowsの実行ファイルからアイコンを抽出し、PNGとしてキャッシュする
+ * 
+ * @param filePath - アイコンを抽出するファイルのパス
+ * @param iconsFolder - アイコンキャッシュフォルダのパス
+ * @returns base64エンコードされたアイコンデータURL、失敗時はnull
+ */
 async function extractIcon(filePath: string, iconsFolder: string): Promise<string | null> {
   try {
     // ファイルが存在するか確認
@@ -108,6 +124,20 @@ async function extractCustomUriIcon(uri: string, iconsFolder: string): Promise<s
   }
 }
 
+/**
+ * ファイル拡張子に基づいてアイコンを抽出し、キャッシュに保存する
+ * URIスキーマやファイルパスから拡張子を取得し、関連付けられたアプリケーションのアイコンを取得する
+ * レジストリ検索やサンプルファイル作成による高度なアイコン抽出機能を提供する
+ * 
+ * @param filePath - ファイルパスまたはURI（http://example.com/file.pdfなど）
+ * @param extensionsFolder - 拡張子アイコンキャッシュフォルダのパス
+ * @returns base64エンコードされたアイコンデータURL、失敗時はnull
+ * @throws アイコン抽出エラー、一時ファイル作成エラー
+ * 
+ * @example
+ * const iconUrl = await extractFileIconByExtension('document.pdf', '/cache/extensions');
+ * // 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...'
+ */
 async function extractFileIconByExtension(
   filePath: string,
   extensionsFolder: string
@@ -256,6 +286,24 @@ interface IconItem {
   path: string;
 }
 
+/**
+ * 複数のアイテムのキャッシュされたアイコンを一括で読み込む
+ * 各アイテムのタイプに応じて適切なキャッシュフォルダからアイコンを検索し、base64形式で返す
+ * URL（ファビコン）、実行ファイル（直接アイコン）、拡張子ベース（関連付け）の3つの方法に対応
+ * 
+ * @param items - アイコンを読み込むアイテムの配列
+ * @param faviconsFolder - ファビコンキャッシュフォルダのパス
+ * @param iconsFolder - アイコンキャッシュフォルダのパス
+ * @param extensionsFolder - 拡張子アイコンキャッシュフォルダのパス
+ * @returns パス（またはURL）をキーとするアイコンデータのマップ
+ * 
+ * @example
+ * const icons = await loadCachedIcons(
+ *   [{ path: 'code.exe', type: 'app' }, { path: 'https://google.com', type: 'url' }],
+ *   '/cache/favicons', '/cache/icons', '/cache/extensions'
+ * );
+ * // { 'code.exe': 'data:image/png;base64,...', 'https://google.com': 'data:image/png;base64,...' }
+ */
 async function loadCachedIcons(
   items: IconItem[],
   faviconsFolder: string,

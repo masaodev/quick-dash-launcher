@@ -11,6 +11,20 @@ let isPinned: boolean = false;
 let isEditMode: boolean = false;
 let normalWindowBounds: { width: number; height: number } | null = null;
 
+/**
+ * アプリケーションのメインウィンドウを作成し、初期設定を行う
+ * 常に最前面に表示され、フレームレスで中央に配置される
+ * フォーカス喪失時の自動非表示やESCキーでの終了など、ランチャーアプリとしての動作を設定
+ * 
+ * @returns 作成されたBrowserWindowインスタンス
+ * @throws Error ウィンドウの作成やコンテンツの読み込みに失敗した場合
+ * 
+ * @example
+ * ```typescript
+ * const window = createWindow();
+ * window.show();
+ * ```
+ */
 export function createWindow(): BrowserWindow {
   mainWindow = new BrowserWindow({
     width: 479,
@@ -127,6 +141,22 @@ export function setWindowPinState(pinState: boolean): void {
   isPinned = pinState;
 }
 
+/**
+ * アプリケーションの編集モードを設定し、それに応じてウィンドウサイズを調整する
+ * 編集モード時はウィンドウサイズを拡大し、通常モード時は元のサイズに戻す
+ * 編集モード中はフォーカス喪失時に自動非表示されないように制御される
+ * 
+ * @param editMode - 編集モードのON/OFF（true: 編集モード、false: 通常モード）
+ * 
+ * @example
+ * ```typescript
+ * // 編集モードを有効にする
+ * setEditMode(true);
+ * 
+ * // 編集モードを無効にする
+ * setEditMode(false);
+ * ```
+ */
 export function setEditMode(editMode: boolean): void {
   isEditMode = editMode;
 
