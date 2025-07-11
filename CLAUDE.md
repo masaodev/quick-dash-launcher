@@ -46,6 +46,8 @@ powershell.exe -Command "npm run dist"
 - **[開発ガイド](docs/development-guide.md)** - 実装詳細、ビルドシステム、デバッグ、テスト
 - **[DIRディレクティブ仕様](docs/dir-directive.md)** - DIRディレクティブの詳細な使用方法とオプション
 - **[ファビコン実装仕様](docs/favicon-implementation.md)** - ファビコン取得システムの技術仕様
+- **[コードレビューレポート](docs/code-review-report.md)** - コード品質分析とレビュー結果
+- **[画面一覧](docs/screen-list.md)** - アプリケーションの画面構成とUI仕様
 
 ## 主な技術スタック
 
@@ -74,6 +76,8 @@ powershell.exe -Command "npm run dist"
 - `docs/development-guide.md` - 開発ガイド（実装詳細、ビルドシステム、デバッグ、テスト）
 - `docs/dir-directive.md` - DIRディレクティブの詳細な使用方法とオプション
 - `docs/favicon-implementation.md` - ファビコン取得システムの詳細な技術仕様
+- `docs/code-review-report.md` - コード品質分析とレビュー結果
+- `docs/screen-list.md` - アプリケーションの画面構成とUI仕様
 
 ### 更新ルール
 
