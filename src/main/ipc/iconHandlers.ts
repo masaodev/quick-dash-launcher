@@ -5,9 +5,9 @@ import { promisify } from 'util';
 import * as os from 'os';
 
 import { ipcMain } from 'electron';
+import { iconLogger } from '@common/logger';
 
 import { FaviconService } from '../services/faviconService';
-import { iconLogger } from '@common/logger';
 
 const extractFileIcon = require('extract-file-icon');
 
@@ -208,12 +208,9 @@ async function getUriSchemeHandler(scheme: string): Promise<string | null> {
     const cleanScheme = scheme.replace(/[:\\/]/g, '');
 
     // レジストリからスキーマハンドラーを取得
-    const { stdout: _stdout } = await execAsync(
-      `reg query "HKEY_CLASSES_ROOT\\${cleanScheme}" /ve`,
-      {
-        encoding: 'utf8',
-      }
-    );
+    await execAsync(`reg query "HKEY_CLASSES_ROOT\\${cleanScheme}" /ve`, {
+      encoding: 'utf8',
+    });
 
     // レジストリから実行ファイルパスを取得
     const { stdout: commandStdout } = await execAsync(
@@ -236,7 +233,7 @@ async function getUriSchemeHandler(scheme: string): Promise<string | null> {
     }
 
     return null;
-  } catch (_error) {
+  } catch {
     // レジストリエントリが存在しない場合はエラーになるが、これは正常
     return null;
   }

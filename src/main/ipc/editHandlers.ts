@@ -2,9 +2,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import { ipcMain } from 'electron';
+import { editLogger } from '@common/logger';
 
 import { LauncherItem } from '../../common/types';
-import { editLogger } from '@common/logger';
 
 interface UpdateItemRequest {
   sourceFile: 'data.txt' | 'data2.txt' | 'tempdata.txt';

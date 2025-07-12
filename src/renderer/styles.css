@@ -1050,7 +1050,7 @@ body {
 
 .select-file-button {
   padding: 8px 16px;
-  background-color: #2196F3;
+  background-color: #2196f3;
   color: white;
   border: none;
   border-radius: 4px;
@@ -1059,7 +1059,7 @@ body {
 }
 
 .select-file-button:hover:not(:disabled) {
-  background-color: #1976D2;
+  background-color: #1976d2;
 }
 
 .select-file-button:disabled {
@@ -1219,7 +1219,7 @@ body {
 
 .bookmark-import-modal .bookmark-import-button {
   padding: 8px 20px;
-  background-color: #4CAF50;
+  background-color: #4caf50;
   color: white;
   border: none;
   border-radius: 4px;
@@ -1239,12 +1239,12 @@ body {
 }
 
 .edit-mode-actions .import-bookmark-button {
-  background-color: #2196F3 !important;
+  background-color: #2196f3 !important;
   color: white !important;
-  border-color: #2196F3 !important;
+  border-color: #2196f3 !important;
 }
 
 .edit-mode-actions .import-bookmark-button:hover:not(:disabled) {
-  background-color: #1976D2 !important;
-  border-color: #1976D2 !important;
+  background-color: #1976d2 !important;
+  border-color: #1976d2 !important;
 }

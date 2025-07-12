@@ -1,7 +1,7 @@
 import { ipcMain, shell, BrowserWindow } from 'electron';
+import { itemLogger } from '@common/logger';
 
 import { LauncherItem } from '../../common/types';
-import { itemLogger } from '@common/logger';
 
 async function openItem(item: LauncherItem, mainWindow: BrowserWindow | null): Promise<void> {
   try {

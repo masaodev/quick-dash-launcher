@@ -2,7 +2,6 @@ import * as path from 'path';
 import * as fs from 'fs';
 
 import { net } from 'electron';
-
 import { faviconLogger } from '@common/logger';
 
 interface FaviconSource {
@@ -22,11 +21,11 @@ export class FaviconService {
   /**
    * 指定されたURLのファビコンを取得し、Base64エンコードされたデータURLとして返す
    * キャッシュが存在する場合はキャッシュから読み込み、なければ複数のソースから取得を試みる
-   * 
+   *
    * @param url - ファビコンを取得するWebサイトのURL
    * @returns ファビコンのBase64データURL。取得に失敗した場合はnull
    * @throws Error ファビコンの取得処理中にエラーが発生した場合（ログに記録され、nullを返す）
-   * 
+   *
    * @example
    * ```typescript
    * const faviconService = new FaviconService();
@@ -113,11 +112,11 @@ export class FaviconService {
    * 指定されたURLのHTMLを解析し、ファビコンとして使用可能な画像URLを抽出する
    * 標準的なファビコンタグ、Apple Touch Icons、OGP画像、マニフェストファイルなど
    * 複数のパターンに対応し、サイズ情報も含めて解析する
-   * 
+   *
    * @param url - 解析対象のWebサイトのURL
    * @returns ファビコンソースの配列（優先度の高い順でソート済み）
    * @throws Error HTMLの取得や解析中にエラーが発生した場合（ログに記録され、空の配列を返す）
-   * 
+   *
    * @example
    * ```typescript
    * const sources = await faviconService.parseHtmlForFavicons('https://example.com');

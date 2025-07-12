@@ -17,10 +17,10 @@ const logger = pino({
       options: {
         colorize: true,
         translateTime: 'yyyy-mm-dd HH:MM:ss',
-        ignore: 'pid,hostname'
-      }
-    }
-  })
+        ignore: 'pid,hostname',
+      },
+    },
+  }),
 });
 
 export default logger;
