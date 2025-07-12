@@ -11,16 +11,8 @@ const logger = pino({
   name: 'QuickDashLauncher',
   level: logLevel,
   timestamp: pino.stdTimeFunctions.isoTime,
-  ...(isDevelopment && {
-    transport: {
-      target: 'pino-pretty',
-      options: {
-        colorize: true,
-        translateTime: 'yyyy-mm-dd HH:MM:ss',
-        ignore: 'pid,hostname',
-      },
-    },
-  }),
+  // Electronのメインプロセスではworkerベースのtransportを避ける
+  // 代わりにシンプルなコンソール出力を使用
 });
 
 export default logger;

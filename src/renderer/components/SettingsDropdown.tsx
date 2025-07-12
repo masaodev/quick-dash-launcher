@@ -7,6 +7,7 @@ interface SettingsDropdownProps {
   onSortDataFiles: () => void;
   onToggleEditMode: () => void;
   onQuitApp: () => void;
+  onOpenSettings: () => void;
   isEditMode: boolean;
 }
 
@@ -17,6 +18,7 @@ const SettingsDropdown: React.FC<SettingsDropdownProps> = ({
   onSortDataFiles,
   onToggleEditMode,
   onQuitApp,
+  onOpenSettings,
   isEditMode,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -50,6 +52,10 @@ const SettingsDropdown: React.FC<SettingsDropdownProps> = ({
       </button>
       {isOpen && (
         <div className="dropdown-menu">
+          <button className="dropdown-item" onClick={() => handleMenuItemClick(onOpenSettings)}>
+            ⚙️ 設定
+          </button>
+          <div className="dropdown-divider"></div>
           <button className="dropdown-item" onClick={() => handleMenuItemClick(onOpenConfigFolder)}>
             📁 設定フォルダを開く
           </button>

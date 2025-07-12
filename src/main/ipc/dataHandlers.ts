@@ -14,6 +14,7 @@ interface DirOptions {
   filter?: string;
   exclude?: string;
   prefix?: string;
+  suffix?: string;
 }
 
 // DIRディレクティブのオプションを解析
@@ -57,6 +58,9 @@ function parseDirOptions(parts: string[]): DirOptions {
       case 'prefix':
         options.prefix = value;
         break;
+      case 'suffix':
+        options.suffix = value;
+        break;
     }
   }
 
@@ -64,12 +68,17 @@ function parseDirOptions(parts: string[]): DirOptions {
 }
 
 // ファイル/フォルダーをCSV形式に変換
-function processItemToCSV(itemPath: string, itemType: 'file' | 'folder', prefix?: string): string {
+function processItemToCSV(itemPath: string, itemType: 'file' | 'folder', prefix?: string, suffix?: string): string {
   let displayName = path.basename(itemPath);
 
   // プレフィックスが指定されている場合は追加
   if (prefix) {
     displayName = `${prefix}: ${displayName}`;
+  }
+
+  // サフィックスが指定されている場合は追加
+  if (suffix) {
+    displayName = `${displayName} (${suffix})`;
   }
 
   const extension = path.extname(itemPath).toLowerCase();
@@ -105,7 +114,7 @@ function processItemToCSV(itemPath: string, itemType: 'file' | 'folder', prefix?
  * // 'MyApp,C:\\Program Files\\MyApp\\app.exe,--config=default,C:\\shortcut.lnk'
  * ```
  */
-function processShortcutToCSV(filePath: string, prefix?: string): string | null {
+function processShortcutToCSV(filePath: string, prefix?: string, suffix?: string): string | null {
   try {
     // Electron のネイティブ機能を使用してショートカットを読み取り
     const shortcutDetails = shell.readShortcutLink(filePath);
@@ -116,6 +125,11 @@ function processShortcutToCSV(filePath: string, prefix?: string): string | null 
       // プレフィックスが指定されている場合は追加
       if (prefix) {
         displayName = `${prefix}: ${displayName}`;
+      }
+
+      // サフィックスが指定されている場合は追加
+      if (suffix) {
+        displayName = `${displayName} (${suffix})`;
       }
 
       let line = `${displayName},${shortcutDetails.target}`;
@@ -212,7 +226,7 @@ async function scanDirectory(
         if (options.types === 'folder' || options.types === 'both') {
           // フィルターがない、またはフィルターにマッチする場合のみ追加
           if (!options.filter || minimatch(itemName, options.filter)) {
-            results.push(processItemToCSV(itemPath, 'folder', options.prefix));
+            results.push(processItemToCSV(itemPath, 'folder', options.prefix, options.suffix));
           }
         }
 
@@ -226,12 +240,12 @@ async function scanDirectory(
         if (options.types === 'file' || options.types === 'both') {
           // .lnkファイルの場合は特別処理
           if (path.extname(itemPath).toLowerCase() === '.lnk') {
-            const processedShortcut = processShortcutToCSV(itemPath, options.prefix);
+            const processedShortcut = processShortcutToCSV(itemPath, options.prefix, options.suffix);
             if (processedShortcut) {
               results.push(processedShortcut);
             }
           } else {
-            results.push(processItemToCSV(itemPath, 'file', options.prefix));
+            results.push(processItemToCSV(itemPath, 'file', options.prefix, options.suffix));
           }
         }
       }
@@ -419,6 +433,7 @@ interface RegisterItem {
     filter?: string;
     exclude?: string;
     prefix?: string;
+    suffix?: string;
   };
 }
 
@@ -491,6 +506,11 @@ async function registerItems(configFolder: string, items: RegisterItem[]): Promi
             options.push(`prefix=${item.dirOptions.prefix}`);
           }
 
+          // suffix
+          if (item.dirOptions.suffix) {
+            options.push(`suffix=${item.dirOptions.suffix}`);
+          }
+
           if (options.length > 0) {
             dirLine += ',' + options.join(',');
           }
@@ -552,6 +572,11 @@ async function registerItems(configFolder: string, items: RegisterItem[]): Promi
           // prefix
           if (item.dirOptions.prefix) {
             options.push(`prefix=${item.dirOptions.prefix}`);
+          }
+
+          // suffix
+          if (item.dirOptions.suffix) {
+            options.push(`suffix=${item.dirOptions.suffix}`);
           }
 
           if (options.length > 0) {

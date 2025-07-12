@@ -65,3 +65,26 @@ export interface SimpleBookmarkItem {
   /** インポート時の選択状態 */
   checked: boolean;
 }
+
+/**
+ * アプリケーションの設定を管理するインターフェース
+ * electron-storeを使用して永続化される
+ */
+export interface AppSettings {
+  /** グローバルホットキー（デフォルト: 'Ctrl+Alt+W'） */
+  hotkey: string;
+  /** ウィンドウの初期幅（デフォルト: 600） */
+  windowWidth: number;
+  /** ウィンドウの初期高さ（デフォルト: 400） */
+  windowHeight: number;
+  /** 編集モード時のウィンドウ幅（デフォルト: 1000） */
+  editModeWidth: number;
+  /** 編集モード時のウィンドウ高さ（デフォルト: 700） */
+  editModeHeight: number;
+  /** アプリの自動起動設定 */
+  autoLaunch: boolean;
+  /** アイコンの表示サイズ（デフォルト: 24） */
+  iconSize: number;
+  /** ウィンドウの最大表示アイテム数（デフォルト: 10） */
+  maxVisibleItems: number;
+}

@@ -4,6 +4,8 @@ import * as fs from 'fs';
 import { app } from 'electron';
 
 // パス定数
+// 注意: HOTKEYは下位互換性のために残していますが、
+// 実際のホットキーはSettingsServiceから動的に取得されます
 export const HOTKEY = 'Ctrl+Alt+W';
 export const CONFIG_FOLDER = path.join(app.getPath('userData'), 'config');
 export const ICONS_FOLDER = path.join(CONFIG_FOLDER, 'icons');

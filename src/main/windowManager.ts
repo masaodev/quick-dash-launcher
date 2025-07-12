@@ -2,8 +2,8 @@ import * as path from 'path';
 
 import { BrowserWindow, globalShortcut, Tray, Menu, nativeImage, app } from 'electron';
 import { windowLogger } from '@common/logger';
-
-import { HOTKEY } from './appHelpers';
+import { HotkeyService } from './services/hotkeyService.js';
+import { SettingsService } from './services/settingsService.js';
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
@@ -25,10 +25,14 @@ let normalWindowBounds: { width: number; height: number } | null = null;
  * window.show();
  * ```
  */
-export function createWindow(): BrowserWindow {
+export async function createWindow(): Promise<BrowserWindow> {
+  const settingsService = await SettingsService.getInstance();
+  const windowWidth = await settingsService.get('windowWidth');
+  const windowHeight = await settingsService.get('windowHeight');
+
   mainWindow = new BrowserWindow({
-    width: 479,
-    height: 506,
+    width: windowWidth,
+    height: windowHeight,
     center: true,
     alwaysOnTop: true,
     frame: false,
@@ -111,21 +115,16 @@ export function createTray(): void {
   });
 }
 
-export function registerGlobalShortcut(): void {
-  const ret = globalShortcut.register(HOTKEY, () => {
-    if (mainWindow) {
-      if (mainWindow.isVisible()) {
-        mainWindow.hide();
-      } else {
-        mainWindow.show();
-        mainWindow.focus();
-        mainWindow.webContents.send('window-shown');
-      }
+export async function registerGlobalShortcut(): Promise<void> {
+  try {
+    const hotkeyService = HotkeyService.getInstance(() => mainWindow);
+    const success = await hotkeyService.registerHotkey();
+    
+    if (!success) {
+      windowLogger.warn('ホットキーの登録に失敗しました');
     }
-  });
-
-  if (!ret) {
-    windowLogger.warn('ホットキーの登録に失敗しました');
+  } catch (error) {
+    windowLogger.error('ホットキーサービスの初期化に失敗しました:', error);
   }
 }
 
@@ -157,20 +156,30 @@ export function setWindowPinState(pinState: boolean): void {
  * setEditMode(false);
  * ```
  */
-export function setEditMode(editMode: boolean): void {
+export async function setEditMode(editMode: boolean): Promise<void> {
   isEditMode = editMode;
 
   if (mainWindow) {
+    const settingsService = await SettingsService.getInstance();
+    
     if (editMode) {
       // 編集モードに入る時：現在のサイズを保存してから大きくする
       const currentBounds = mainWindow.getBounds();
       normalWindowBounds = { width: currentBounds.width, height: currentBounds.height };
-      mainWindow.setSize(1000, 700);
+      const editWidth = await settingsService.get('editModeWidth');
+      const editHeight = await settingsService.get('editModeHeight');
+      mainWindow.setSize(editWidth, editHeight);
       mainWindow.center();
     } else {
       // 通常モードに戻る時：元のサイズに戻す
       if (normalWindowBounds) {
         mainWindow.setSize(normalWindowBounds.width, normalWindowBounds.height);
+        mainWindow.center();
+      } else {
+        // normalWindowBoundsが無い場合は設定値を使用
+        const normalWidth = await settingsService.get('windowWidth');
+        const normalHeight = await settingsService.get('windowHeight');
+        mainWindow.setSize(normalWidth, normalHeight);
         mainWindow.center();
       }
     }

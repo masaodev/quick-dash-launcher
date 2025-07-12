@@ -8,6 +8,7 @@ import TabControl from './components/TabControl';
 import ActionButtons from './components/ActionButtons';
 import RegisterModal, { RegisterItem } from './components/RegisterModal';
 import EditModeView from './components/EditModeView';
+import { SettingsModal } from './components/SettingsModal';
 import { parseDataFiles, filterItems } from './utils/dataParser';
 
 const App: React.FC = () => {
@@ -22,6 +23,7 @@ const App: React.FC = () => {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [rawLines, setRawLines] = useState<RawDataLine[]>([]);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -395,6 +397,10 @@ const App: React.FC = () => {
     await window.electronAPI.setEditMode(false);
   };
 
+  const handleOpenSettings = () => {
+    setIsSettingsModalOpen(true);
+  };
+
   const currentItems = activeTab === 'main' ? mainItems : tempItems;
   const filteredItems = filterItems(currentItems, searchQuery);
 
@@ -431,6 +437,7 @@ const App: React.FC = () => {
               onExportJson={handleExportJson}
               onSortDataFiles={handleSortDataFiles}
               onToggleEditMode={handleToggleEditMode}
+              onOpenSettings={handleOpenSettings}
               isPinned={isPinned}
               isEditMode={isEditMode}
             />
@@ -453,6 +460,11 @@ const App: React.FC = () => {
             }}
             onRegister={handleRegisterItems}
             droppedPaths={droppedPaths}
+          />
+
+          <SettingsModal
+            isOpen={isSettingsModalOpen}
+            onClose={() => setIsSettingsModalOpen(false)}
           />
 
           {isDraggingOver && (

@@ -1,0 +1,235 @@
+import { AppSettings } from '../../common/types.js';
+import logger from '../../common/logger.js';
+
+// electron-storeを動的にインポート
+let Store: any = null;
+
+/**
+ * アプリケーション設定を管理するサービスクラス
+ * electron-storeを使用して設定の永続化を行う
+ */
+export class SettingsService {
+  private store: any;
+  private static instance: SettingsService;
+
+  /**
+   * デフォルト設定値
+   */
+  private static readonly DEFAULT_SETTINGS: AppSettings = {
+    hotkey: 'Ctrl+Alt+W',
+    windowWidth: 600,
+    windowHeight: 400,
+    editModeWidth: 1000,
+    editModeHeight: 700,
+    autoLaunch: false,
+    iconSize: 24,
+    maxVisibleItems: 10,
+  };
+
+  /**
+   * electron-storeのスキーマ定義
+   */
+  private static readonly SCHEMA = {
+    hotkey: {
+      type: 'string',
+      default: SettingsService.DEFAULT_SETTINGS.hotkey,
+      pattern: '^(Ctrl|Alt|Shift|CmdOrCtrl|Command|Cmd)\\+(Ctrl|Alt|Shift|CmdOrCtrl|Command|Cmd|[A-Z0-9])*(\\+[A-Z0-9])*$',
+    },
+    windowWidth: {
+      type: 'number',
+      minimum: 400,
+      maximum: 2000,
+      default: SettingsService.DEFAULT_SETTINGS.windowWidth,
+    },
+    windowHeight: {
+      type: 'number',
+      minimum: 300,
+      maximum: 1200,
+      default: SettingsService.DEFAULT_SETTINGS.windowHeight,
+    },
+    editModeWidth: {
+      type: 'number',
+      minimum: 800,
+      maximum: 2000,
+      default: SettingsService.DEFAULT_SETTINGS.editModeWidth,
+    },
+    editModeHeight: {
+      type: 'number',
+      minimum: 600,
+      maximum: 1200,
+      default: SettingsService.DEFAULT_SETTINGS.editModeHeight,
+    },
+    autoLaunch: {
+      type: 'boolean',
+      default: SettingsService.DEFAULT_SETTINGS.autoLaunch,
+    },
+    iconSize: {
+      type: 'number',
+      minimum: 16,
+      maximum: 48,
+      default: SettingsService.DEFAULT_SETTINGS.iconSize,
+    },
+    maxVisibleItems: {
+      type: 'number',
+      minimum: 5,
+      maximum: 50,
+      default: SettingsService.DEFAULT_SETTINGS.maxVisibleItems,
+    },
+  } as const;
+
+  private constructor() {
+    // electron-storeは後で非同期に初期化
+    this.store = null;
+  }
+
+  /**
+   * electron-storeを非同期で初期化
+   */
+  private async initializeStore(): Promise<void> {
+    if (this.store) return; // 既に初期化済み
+
+    try {
+      if (!Store) {
+        // electron-storeを動的にインポート
+        Store = (await eval('import("electron-store")')).default;
+      }
+      
+      this.store = new Store({
+        name: 'settings',
+        defaults: SettingsService.DEFAULT_SETTINGS,
+      });
+      
+      logger.info('SettingsService initialized successfully');
+    } catch (error) {
+      logger.error('Failed to initialize SettingsService:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * SettingsServiceのシングルトンインスタンスを取得
+   */
+  public static async getInstance(): Promise<SettingsService> {
+    if (!SettingsService.instance) {
+      SettingsService.instance = new SettingsService();
+      await SettingsService.instance.initializeStore();
+    }
+    return SettingsService.instance;
+  }
+
+  /**
+   * 設定値を取得
+   * @param key 設定キー
+   * @returns 設定値
+   */
+  public async get<K extends keyof AppSettings>(key: K): Promise<AppSettings[K]> {
+    await this.initializeStore();
+    try {
+      return this.store.get(key);
+    } catch (error) {
+      logger.error(`Failed to get setting ${key}:`, error);
+      return SettingsService.DEFAULT_SETTINGS[key];
+    }
+  }
+
+  /**
+   * 設定値を設定
+   * @param key 設定キー
+   * @param value 設定値
+   */
+  public async set<K extends keyof AppSettings>(key: K, value: AppSettings[K]): Promise<void> {
+    await this.initializeStore();
+    try {
+      this.store.set(key, value);
+      logger.info(`Setting ${key} updated to:`, value);
+    } catch (error) {
+      logger.error(`Failed to set setting ${key}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 複数の設定値を一括設定
+   * @param settings 設定オブジェクト
+   */
+  public async setMultiple(settings: Partial<AppSettings>): Promise<void> {
+    await this.initializeStore();
+    try {
+      Object.entries(settings).forEach(([key, value]) => {
+        if (value !== undefined) {
+          this.store.set(key as keyof AppSettings, value);
+        }
+      });
+      logger.info('Multiple settings updated:', settings);
+    } catch (error) {
+      logger.error('Failed to set multiple settings:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 全設定を取得
+   * @returns 全設定オブジェクト
+   */
+  public async getAll(): Promise<AppSettings> {
+    await this.initializeStore();
+    try {
+      return this.store.store;
+    } catch (error) {
+      logger.error('Failed to get all settings:', error);
+      return SettingsService.DEFAULT_SETTINGS;
+    }
+  }
+
+  /**
+   * 設定をデフォルト値にリセット
+   */
+  public async reset(): Promise<void> {
+    await this.initializeStore();
+    try {
+      this.store.clear();
+      logger.info('Settings reset to defaults');
+    } catch (error) {
+      logger.error('Failed to reset settings:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * ホットキーの妥当性を検証
+   * @param hotkey 検証するホットキー文字列
+   * @returns 妥当性の結果
+   */
+  public validateHotkey(hotkey: string): { isValid: boolean; reason?: string } {
+    if (!hotkey || typeof hotkey !== 'string') {
+      return { isValid: false, reason: 'ホットキーが指定されていません' };
+    }
+
+    // 基本的なパターンチェック
+    const pattern = /^(Ctrl|Alt|Shift|CmdOrCtrl|Command|Cmd)\+(Ctrl|Alt|Shift|CmdOrCtrl|Command|Cmd|[A-Z0-9])+(\+[A-Z0-9])*$/;
+    if (!pattern.test(hotkey)) {
+      return { isValid: false, reason: 'ホットキーの形式が正しくありません' };
+    }
+
+    // 修飾キーが最低1つ含まれているかチェック
+    const modifiers = ['Ctrl', 'Alt', 'Shift', 'CmdOrCtrl', 'Command', 'Cmd'];
+    const hasModifier = modifiers.some((modifier) => hotkey.includes(modifier));
+    if (!hasModifier) {
+      return { isValid: false, reason: '修飾キー（Ctrl、Alt、Shift等）が必要です' };
+    }
+
+    return { isValid: true };
+  }
+
+  /**
+   * 設定ファイルのパスを取得
+   * @returns 設定ファイルのフルパス
+   */
+  public async getConfigPath(): Promise<string> {
+    await this.initializeStore();
+    return this.store.path;
+  }
+}
+
+// デフォルトエクスポート
+export default SettingsService;
