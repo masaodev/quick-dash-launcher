@@ -16,6 +16,7 @@ dir,<ディレクトリパス>[,オプション1=値1][,オプション2=値2]..
 - **filter**: なし（全てのアイテムを対象）
 - **exclude**: なし（除外なし）
 - **prefix**: なし（プレフィックスなし）
+- **suffix**: なし（サフィックスなし）
 
 ## オプション
 
@@ -63,6 +64,17 @@ dir,C:\DevTools,prefix=Dev
 # 結果: "Dev: ToolName"
 ```
 
+### suffix
+インポートされるアイテムの表示名に付けるサフィックスを指定します。
+
+```
+dir,C:\Projects,suffix=Dev
+# 結果: "ProjectName (Dev)"
+
+dir,C:\Tools,prefix=Work,suffix=Tool
+# 結果: "Work: ToolName (Tool)"
+```
+
 ## 使用例
 
 ### 基本的な使用
@@ -107,12 +119,23 @@ dir,C:\WorkProjects,prefix=Work
 dir,C:\Tools,filter=*.exe,prefix=Tool
 ```
 
+### サフィックスの追加
+```
+// " (Dev)" サフィックスを追加
+dir,C:\Projects,suffix=Dev
+
+// プレフィックスとサフィックスの組み合わせ
+dir,C:\Tools,prefix=Work,suffix=Tool
+# 結果: "Work: ToolName (Tool)"
+```
+
 ### 複雑な組み合わせ
 ```
 // Projectsフォルダから、node_modulesを除外し、
 // .jsと.tsファイルのみを2階層下まで検索し、
-// "Src: "プレフィックスを追加
-dir,C:\Projects,depth=2,types=file,filter=*.{js,ts},exclude=node_modules,prefix=Src
+// "Src: "プレフィックスと" (Dev)"サフィックスを追加
+dir,C:\Projects,depth=2,types=file,filter=*.{js,ts},exclude=node_modules,prefix=Src,suffix=Dev
+# 結果: "Src: filename.js (Dev)"
 ```
 
 ## 特殊な処理
