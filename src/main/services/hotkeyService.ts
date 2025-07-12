@@ -10,7 +10,7 @@ import { SettingsService } from './settingsService.js';
  */
 export class HotkeyService {
   private static instance: HotkeyService;
-  private settingsService: SettingsService;
+  private settingsService!: SettingsService;
   private currentHotkey: string | null = null;
   private getMainWindow: () => BrowserWindow | null;
 
