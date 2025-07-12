@@ -1,29 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(rm:*)",
-      "Bash(node:*)",
-      "Bash(find:*)",
-      "Bash(ls:*)",
-      "WebFetch(domain:www.electronjs.org)",
-      "WebFetch(domain:github.com)",
-      "Bash(npm run start:*)",
-      "Bash(npm search \"icon extractor windows\")",
-      "Bash(npx tsc:*)",,
-      "Bash(rg:*)"
-      "Bash(powershell.exe -Command:*)",
       "Bash(mkdir:*)",
-      "Bash(grep:*)",
-      "Bash(npm install:*)",
-      "Bash(npm run build:*)",
-      "Bash(echo:*)",
-      "Bash(printf:*)",
-      "WebFetch(domain:eslint.org)",
-      "Bash(npm run lint)",
-      "Bash(npm run lint:*)",
-      "Bash(beep:*)",
-      "Bash(mv:*)",
-      "Bash(rg:*)"
+      "Bash(mv:*)"
     ],
     "deny": []
   }
