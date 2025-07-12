@@ -334,49 +334,6 @@ const App: React.FC = () => {
     await window.electronAPI.setEditMode(newEditMode);
   };
 
-  const _handleItemUpdate = async (item: LauncherItem) => {
-    try {
-      await window.electronAPI.updateItem({
-        sourceFile: item.sourceFile!,
-        lineNumber: item.lineNumber!,
-        newItem: item,
-      });
-      await loadItems(); // Reload items after update
-    } catch (error) {
-      console.error('Error updating item:', error);
-      alert('アイテムの更新中にエラーが発生しました。');
-    }
-  };
-
-  const _handleItemsDelete = async (items: LauncherItem[]) => {
-    try {
-      const deleteRequests = items.map((item) => ({
-        sourceFile: item.sourceFile!,
-        lineNumber: item.lineNumber!,
-      }));
-      await window.electronAPI.deleteItems(deleteRequests);
-      await loadItems(); // Reload items after deletion
-    } catch (error) {
-      console.error('Error deleting items:', error);
-      alert('アイテムの削除中にエラーが発生しました。');
-    }
-  };
-
-  const _handleBatchUpdate = async (items: LauncherItem[]) => {
-    try {
-      const updateRequests = items.map((item) => ({
-        sourceFile: item.sourceFile!,
-        lineNumber: item.lineNumber!,
-        newItem: item,
-      }));
-      await window.electronAPI.batchUpdateItems(updateRequests);
-      await loadItems(); // Reload items after batch update
-    } catch (error) {
-      console.error('Error batch updating items:', error);
-      alert('アイテムの一括更新中にエラーが発生しました。');
-    }
-  };
-
   const handleRawDataSave = async (updatedRawLines: RawDataLine[]) => {
     try {
       await window.electronAPI.saveRawDataFiles(updatedRawLines);

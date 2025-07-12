@@ -58,11 +58,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   parseBookmarkFile: (filePath: string) => ipcRenderer.invoke('parse-bookmark-file', filePath),
   // Settings API
   getSettings: (key?: keyof AppSettings) => ipcRenderer.invoke('settings:get', key),
-  setSetting: (key: keyof AppSettings, value: any) => ipcRenderer.invoke('settings:set', key, value),
-  setMultipleSettings: (settings: Partial<AppSettings>) => ipcRenderer.invoke('settings:set-multiple', settings),
+  setSetting: (key: keyof AppSettings, value: AppSettings[keyof AppSettings]) =>
+    ipcRenderer.invoke('settings:set', key, value),
+  setMultipleSettings: (settings: Partial<AppSettings>) =>
+    ipcRenderer.invoke('settings:set-multiple', settings),
   resetSettings: () => ipcRenderer.invoke('settings:reset'),
   validateHotkey: (hotkey: string) => ipcRenderer.invoke('settings:validate-hotkey', hotkey),
   getSettingsConfigPath: () => ipcRenderer.invoke('settings:get-config-path'),
   changeHotkey: (newHotkey: string) => ipcRenderer.invoke('settings:change-hotkey', newHotkey),
-  checkHotkeyAvailability: (hotkey: string) => ipcRenderer.invoke('settings:check-hotkey-availability', hotkey),
+  checkHotkeyAvailability: (hotkey: string) =>
+    ipcRenderer.invoke('settings:check-hotkey-availability', hotkey),
 });

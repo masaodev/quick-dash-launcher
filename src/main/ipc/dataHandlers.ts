@@ -68,7 +68,12 @@ function parseDirOptions(parts: string[]): DirOptions {
 }
 
 // ファイル/フォルダーをCSV形式に変換
-function processItemToCSV(itemPath: string, itemType: 'file' | 'folder', prefix?: string, suffix?: string): string {
+function processItemToCSV(
+  itemPath: string,
+  itemType: 'file' | 'folder',
+  prefix?: string,
+  suffix?: string
+): string {
   let displayName = path.basename(itemPath);
 
   // プレフィックスが指定されている場合は追加
@@ -240,7 +245,11 @@ async function scanDirectory(
         if (options.types === 'file' || options.types === 'both') {
           // .lnkファイルの場合は特別処理
           if (path.extname(itemPath).toLowerCase() === '.lnk') {
-            const processedShortcut = processShortcutToCSV(itemPath, options.prefix, options.suffix);
+            const processedShortcut = processShortcutToCSV(
+              itemPath,
+              options.prefix,
+              options.suffix
+            );
             if (processedShortcut) {
               results.push(processedShortcut);
             }

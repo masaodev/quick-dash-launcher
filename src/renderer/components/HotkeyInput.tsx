@@ -38,23 +38,25 @@ export const HotkeyInput: React.FC<HotkeyInputProps> = ({
     event.stopPropagation();
 
     const key = normalizeKey(event.key);
-    
+
     // 修飾キーかチェック
     const modifiers = ['Ctrl', 'Alt', 'Shift', 'CmdOrCtrl'];
     const isModifier = modifiers.includes(key);
 
     if (isModifier) {
-      setCurrentKeys(prev => new Set([...prev, key]));
+      setCurrentKeys((prev) => new Set([...prev, key]));
     } else if (key.length === 1 && key.match(/[A-Za-z0-9]/)) {
       // 英数字キーの場合
       const upperKey = key.toUpperCase();
-      setCurrentKeys(prev => new Set([...prev, upperKey]));
-    } else if (['F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12'].includes(key)) {
+      setCurrentKeys((prev) => new Set([...prev, upperKey]));
+    } else if (
+      ['F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12'].includes(key)
+    ) {
       // ファンクションキーの場合
-      setCurrentKeys(prev => new Set([...prev, key]));
+      setCurrentKeys((prev) => new Set([...prev, key]));
     } else if (['Space', 'Enter', 'Tab', 'Escape', 'Delete', 'Backspace'].includes(key)) {
       // 特殊キーの場合
-      setCurrentKeys(prev => new Set([...prev, key]));
+      setCurrentKeys((prev) => new Set([...prev, key]));
     }
   };
 
@@ -67,8 +69,10 @@ export const HotkeyInput: React.FC<HotkeyInputProps> = ({
     // キーが3つ以上組み合わされている場合、ホットキーとして確定
     if (currentKeys.size >= 2) {
       const keysArray = Array.from(currentKeys);
-      const modifiers = keysArray.filter(k => ['Ctrl', 'Alt', 'Shift', 'CmdOrCtrl'].includes(k));
-      const nonModifiers = keysArray.filter(k => !['Ctrl', 'Alt', 'Shift', 'CmdOrCtrl'].includes(k));
+      const modifiers = keysArray.filter((k) => ['Ctrl', 'Alt', 'Shift', 'CmdOrCtrl'].includes(k));
+      const nonModifiers = keysArray.filter(
+        (k) => !['Ctrl', 'Alt', 'Shift', 'CmdOrCtrl'].includes(k)
+      );
 
       if (modifiers.length > 0 && nonModifiers.length > 0) {
         const hotkey = [...modifiers, ...nonModifiers].join('+');
@@ -91,7 +95,7 @@ export const HotkeyInput: React.FC<HotkeyInputProps> = ({
     try {
       const result = await window.electronAPI.validateHotkey(hotkey);
       onValidationChange(result.isValid, result.reason);
-    } catch (error) {
+    } catch {
       onValidationChange(false, 'ホットキーの検証に失敗しました');
     }
   };
@@ -138,12 +142,8 @@ export const HotkeyInput: React.FC<HotkeyInputProps> = ({
       />
       {isRecording && (
         <div className="hotkey-recording-indicator">
-          録画中... 
-          <button
-            type="button"
-            className="cancel-recording"
-            onClick={stopRecording}
-          >
+          録画中...
+          <button type="button" className="cancel-recording" onClick={stopRecording}>
             キャンセル
           </button>
         </div>

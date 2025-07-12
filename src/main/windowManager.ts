@@ -1,7 +1,8 @@
 import * as path from 'path';
 
-import { BrowserWindow, globalShortcut, Tray, Menu, nativeImage, app } from 'electron';
+import { BrowserWindow, Tray, Menu, nativeImage, app } from 'electron';
 import { windowLogger } from '@common/logger';
+
 import { HotkeyService } from './services/hotkeyService.js';
 import { SettingsService } from './services/settingsService.js';
 
@@ -119,7 +120,7 @@ export async function registerGlobalShortcut(): Promise<void> {
   try {
     const hotkeyService = HotkeyService.getInstance(() => mainWindow);
     const success = await hotkeyService.registerHotkey();
-    
+
     if (!success) {
       windowLogger.warn('ホットキーの登録に失敗しました');
     }
@@ -161,7 +162,7 @@ export async function setEditMode(editMode: boolean): Promise<void> {
 
   if (mainWindow) {
     const settingsService = await SettingsService.getInstance();
-    
+
     if (editMode) {
       // 編集モードに入る時：現在のサイズを保存してから大きくする
       const currentBounds = mainWindow.getBounds();

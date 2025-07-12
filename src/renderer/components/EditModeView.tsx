@@ -174,7 +174,7 @@ const EditModeView: React.FC<EditModeViewProps> = ({
 
     // 各ファイル内で行番号を振り直し
     const reorderedLines: RawDataLine[] = [];
-    for (const [_fileName, fileLines] of fileGroups) {
+    for (const [, fileLines] of fileGroups) {
       fileLines.forEach((line, index) => {
         reorderedLines.push({
           ...line,

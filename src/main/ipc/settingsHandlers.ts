@@ -1,4 +1,5 @@
 import { ipcMain } from 'electron';
+
 import { AppSettings } from '../../common/types.js';
 import { SettingsService } from '../services/settingsService.js';
 import { HotkeyService } from '../services/hotkeyService.js';
@@ -8,7 +9,6 @@ import logger from '../../common/logger.js';
  * 設定関連のIPCハンドラーを登録
  */
 export function setupSettingsHandlers(): void {
-
   // 設定値を取得
   ipcMain.handle('settings:get', async (event, key?: keyof AppSettings) => {
     try {
@@ -29,17 +29,20 @@ export function setupSettingsHandlers(): void {
   });
 
   // 設定値を設定
-  ipcMain.handle('settings:set', async (event, key: keyof AppSettings, value: any) => {
-    try {
-      const settingsService = await SettingsService.getInstance();
-      await settingsService.set(key, value);
-      logger.info(`Settings set request: ${key} = ${value}`);
-      return true;
-    } catch (error) {
-      logger.error(`Failed to set setting ${key}:`, error);
-      throw error;
+  ipcMain.handle(
+    'settings:set',
+    async (_event, key: keyof AppSettings, value: AppSettings[keyof AppSettings]) => {
+      try {
+        const settingsService = await SettingsService.getInstance();
+        await settingsService.set(key, value);
+        logger.info(`Settings set request: ${key} = ${value}`);
+        return true;
+      } catch (error) {
+        logger.error(`Failed to set setting ${key}:`, error);
+        throw error;
+      }
     }
-  });
+  );
 
   // 複数の設定値を一括設定
   ipcMain.handle('settings:set-multiple', async (event, settings: Partial<AppSettings>) => {
@@ -55,7 +58,7 @@ export function setupSettingsHandlers(): void {
   });
 
   // 設定をリセット
-  ipcMain.handle('settings:reset', async (event) => {
+  ipcMain.handle('settings:reset', async (_event) => {
     try {
       const settingsService = await SettingsService.getInstance();
       await settingsService.reset();
@@ -81,7 +84,7 @@ export function setupSettingsHandlers(): void {
   });
 
   // 設定ファイルのパスを取得
-  ipcMain.handle('settings:get-config-path', async (event) => {
+  ipcMain.handle('settings:get-config-path', async (_event) => {
     try {
       const settingsService = await SettingsService.getInstance();
       const path = await settingsService.getConfigPath();

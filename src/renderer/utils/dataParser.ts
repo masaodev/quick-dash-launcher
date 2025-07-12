@@ -83,10 +83,6 @@ export function parseDataFiles(dataFiles: DataFile[]): {
   return { mainItems, tempItems };
 }
 
-function shouldSkipLine(line: string): boolean {
-  return !line || line.startsWith('//') || line.startsWith('dir,');
-}
-
 function detectItemType(itemPath: string): LauncherItem['type'] {
   if (itemPath.includes('://')) {
     const scheme = itemPath.split('://')[0];

@@ -11,6 +11,11 @@ export default defineConfig({
       {
         entry: 'src/main/main.ts',
         vite: {
+          resolve: {
+            alias: {
+              '@common': resolve(process.cwd(), './src/common')
+            }
+          },
           build: {
             outDir: 'dist/main',
             lib: {
@@ -35,6 +40,11 @@ export default defineConfig({
           options.reload();
         },
         vite: {
+          resolve: {
+            alias: {
+              '@common': resolve(process.cwd(), './src/common')
+            }
+          },
           build: {
             outDir: 'dist/main',
             lib: {

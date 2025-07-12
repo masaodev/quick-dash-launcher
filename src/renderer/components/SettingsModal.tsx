@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+
 import { AppSettings } from '../../common/types';
+
 import { HotkeyInput } from './HotkeyInput';
 import '../styles/SettingsModal.css';
 
@@ -47,10 +49,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
   }, [settings, editedSettings]);
 
   // 設定項目の変更ハンドラ
-  const handleSettingChange = <K extends keyof AppSettings>(
-    key: K,
-    value: AppSettings[K]
-  ) => {
+  const handleSettingChange = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
     if (editedSettings) {
       setEditedSettings({
         ...editedSettings,
@@ -253,19 +252,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
         </div>
 
         <div className="settings-modal-footer">
-          <button
-            className="reset-button"
-            onClick={handleReset}
-            disabled={isLoading}
-          >
+          <button className="reset-button" onClick={handleReset} disabled={isLoading}>
             リセット
           </button>
           <div className="button-group">
-            <button
-              className="cancel-button"
-              onClick={handleCancel}
-              disabled={isLoading}
-            >
+            <button className="cancel-button" onClick={handleCancel} disabled={isLoading}>
               キャンセル
             </button>
             <button

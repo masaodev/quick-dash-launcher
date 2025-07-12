@@ -1,6 +1,8 @@
 import { globalShortcut, BrowserWindow } from 'electron';
-import { SettingsService } from './settingsService.js';
+
 import logger from '../../common/logger.js';
+
+import { SettingsService } from './settingsService.js';
 
 /**
  * ホットキー管理サービス
@@ -169,7 +171,7 @@ export class HotkeyService {
   public async changeHotkey(newHotkey: string): Promise<boolean> {
     try {
       await this.initializeSettingsService();
-      
+
       // バリデーション
       const validation = this.settingsService.validateHotkey(newHotkey);
       if (!validation.isValid) {
@@ -191,7 +193,7 @@ export class HotkeyService {
       if (success) {
         logger.info(`Hotkey changed successfully to: ${newHotkey}`);
       }
-      
+
       return success;
     } catch (error) {
       logger.error(`Error changing hotkey to ${newHotkey}:`, error);

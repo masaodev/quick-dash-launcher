@@ -2,14 +2,14 @@ import { AppSettings } from '../../common/types.js';
 import logger from '../../common/logger.js';
 
 // electron-storeを動的にインポート
-let Store: any = null;
+let Store: typeof import('electron-store').default | null = null;
 
 /**
  * アプリケーション設定を管理するサービスクラス
  * electron-storeを使用して設定の永続化を行う
  */
 export class SettingsService {
-  private store: any;
+  private store: import('electron-store').default | null;
   private static instance: SettingsService;
 
   /**
@@ -33,7 +33,8 @@ export class SettingsService {
     hotkey: {
       type: 'string',
       default: SettingsService.DEFAULT_SETTINGS.hotkey,
-      pattern: '^(Ctrl|Alt|Shift|CmdOrCtrl|Command|Cmd)\\+(Ctrl|Alt|Shift|CmdOrCtrl|Command|Cmd|[A-Z0-9])*(\\+[A-Z0-9])*$',
+      pattern:
+        '^(Ctrl|Alt|Shift|CmdOrCtrl|Command|Cmd)\\+(Ctrl|Alt|Shift|CmdOrCtrl|Command|Cmd|[A-Z0-9])*(\\+[A-Z0-9])*$',
     },
     windowWidth: {
       type: 'number',
@@ -93,12 +94,12 @@ export class SettingsService {
         // electron-storeを動的にインポート
         Store = (await eval('import("electron-store")')).default;
       }
-      
+
       this.store = new Store({
         name: 'settings',
         defaults: SettingsService.DEFAULT_SETTINGS,
       });
-      
+
       logger.info('SettingsService initialized successfully');
     } catch (error) {
       logger.error('Failed to initialize SettingsService:', error);
@@ -206,7 +207,8 @@ export class SettingsService {
     }
 
     // 基本的なパターンチェック
-    const pattern = /^(Ctrl|Alt|Shift|CmdOrCtrl|Command|Cmd)\+(Ctrl|Alt|Shift|CmdOrCtrl|Command|Cmd|[A-Z0-9])+(\+[A-Z0-9])*$/;
+    const pattern =
+      /^(Ctrl|Alt|Shift|CmdOrCtrl|Command|Cmd)\+(Ctrl|Alt|Shift|CmdOrCtrl|Command|Cmd|[A-Z0-9])+(\+[A-Z0-9])*$/;
     if (!pattern.test(hotkey)) {
       return { isValid: false, reason: 'ホットキーの形式が正しくありません' };
     }
