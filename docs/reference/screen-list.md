@@ -38,8 +38,9 @@ QuickDashLauncher
 | **メインウィンドウ（通常モード）** | `src/renderer/App.tsx` | ウィンドウ | 起動時のデフォルト状態 | 検索ボックス、アイテム一覧、アクションボタン、タブ切り替え |
 | **メインウィンドウ（編集モード）** | `src/renderer/App.tsx` | ウィンドウ | Ctrl+E または設定メニューから | 生データ編集、ウィンドウサイズ拡大（1000x700px）、固定表示 |
 | **アイテム登録・編集モーダル** | `src/renderer/components/RegisterModal.tsx` | モーダル | ファイルドラッグ&ドロップ時<br>編集モードで詳細編集時 | アイテム登録・編集、DIRオプション設定、保存先選択 |
-| **ブックマークインポートモーダル** | `src/renderer/components/BookmarkImportModal.tsx` | モーダル | 編集モードでインポートボタンクリック時 | ブックマークHTMLファイルのインポート、検索・選択 |
+| **ブックマークインポートモーダル** | `src/renderer/components/BookmarkImportModal.tsx` | モーダル | 編集モードでインポートボタンクリック時 | ブックマークHTMLファイルのインポート、検索・選択<br>📋 [詳細仕様書](../screens/bookmark-import-modal.md) |
 | **設定ドロップダウン** | `src/renderer/components/SettingsDropdown.tsx` | ドロップダウン | ⚙ボタンクリック時 | 設定メニュー（フォルダ開く、編集モード切り替えなど） |
+| **アプリケーション設定モーダル** | `src/renderer/components/SettingsModal.tsx` | モーダル | 設定ドロップダウンから「設定」選択時 | ホットキー変更、ウィンドウサイズ設定、その他アプリケーション設定 |
 
 ## コンポーネント一覧
 
@@ -51,6 +52,7 @@ QuickDashLauncher
 | **ItemList** | `src/renderer/components/ItemList.tsx` | メインウィンドウ（通常モード） | 通常モード時 | アイテム一覧表示、選択・実行 |
 | **EditModeView** | `src/renderer/components/EditModeView.tsx` | メインウィンドウ（編集モード） | 編集モード時 | 編集モードのメインビュー、ヘッダー・ステータスバー |
 | **EditableRawItemList** | `src/renderer/components/EditableRawItemList.tsx` | EditModeView | 編集モード時 | 編集可能リスト、セル編集、整列・削除 |
+| **SettingsModal** | `src/renderer/components/SettingsModal.tsx` | メインウィンドウ | 設定メニューから「設定」選択時 | アプリケーション設定、ホットキー変更、ウィンドウサイズ設定 |
 | **ドラッグオーバーレイ** | `src/renderer/App.tsx` | メインウィンドウ | ファイルドラッグ中 | 「ドロップして追加」メッセージ表示 |
 
 ## 画面遷移
@@ -61,7 +63,8 @@ QuickDashLauncher
 2. **Ctrl+Alt+W** → アプリ表示/非表示切り替え
 3. **ドラッグ&ドロップ** → RegisterModal表示
 4. **⚙ボタン** → SettingsDropdown表示
-5. **Ctrl+E または 編集モード選択** → 編集モード切り替え
+5. **設定メニューから「設定」** → SettingsModal表示
+6. **Ctrl+E または 編集モード選択** → 編集モード切り替え
 
 ### 編集モード時の画面遷移
 
@@ -114,6 +117,7 @@ QuickDashLauncher
 3. **中優先度**: 機能モーダル
    - RegisterModal（登録・編集）
    - BookmarkImportModal（ブックマークインポート）
+   - SettingsModal（アプリケーション設定）
    
 4. **低優先度**: UI要素
    - SettingsDropdown（設定メニュー）
