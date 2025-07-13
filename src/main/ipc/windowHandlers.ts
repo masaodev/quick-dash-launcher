@@ -10,7 +10,7 @@ export function setupWindowHandlers(
     return getWindowPinState();
   });
 
-  ipcMain.handle('set-window-pin-state', (event, isPinned: boolean) => {
+  ipcMain.handle('set-window-pin-state', (_event, isPinned: boolean) => {
     setWindowPinState(isPinned);
   });
 
@@ -18,7 +18,7 @@ export function setupWindowHandlers(
     app.quit();
   });
 
-  ipcMain.handle('set-edit-mode', async (event, editMode: boolean) => {
+  ipcMain.handle('set-edit-mode', async (_event, editMode: boolean) => {
     await setEditMode(editMode);
   });
 

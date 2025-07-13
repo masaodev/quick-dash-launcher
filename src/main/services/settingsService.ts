@@ -1,4 +1,4 @@
-import { AppSettings } from '../../common/types.js';
+import type { AppSettings } from '../../common/types.js';
 import logger from '../../common/logger.js';
 
 // electron-storeを動的にインポート
@@ -9,7 +9,7 @@ let Store: typeof import('electron-store').default | null = null;
  * electron-storeを使用して設定の永続化を行う
  */
 export class SettingsService {
-  private store: import('electron-store').default | null = null;
+  private store: any | null = null;
   private static instance: SettingsService;
 
   /**
@@ -29,6 +29,7 @@ export class SettingsService {
   /**
    * electron-storeのスキーマ定義
    */
+  // @ts-ignore - スキーマ定義（将来の拡張用）
   private static readonly SCHEMA = {
     hotkey: {
       type: 'string',
@@ -95,9 +96,9 @@ export class SettingsService {
         Store = (await eval('import("electron-store")')).default;
       }
 
-      this.store = new Store({
+      this.store = new (Store as any)({
         name: 'settings',
-        defaults: SettingsService.DEFAULT_SETTINGS,
+        defaults: SettingsService.DEFAULT_SETTINGS
       });
 
       logger.info('SettingsService initialized successfully');
@@ -125,8 +126,9 @@ export class SettingsService {
    */
   public async get<K extends keyof AppSettings>(key: K): Promise<AppSettings[K]> {
     await this.initializeStore();
+    if (!this.store) throw new Error('Store not initialized');
     try {
-      return this.store!.get(key);
+      return this.store.get(key);
     } catch (error) {
       logger.error(`Failed to get setting ${key}:`, error);
       return SettingsService.DEFAULT_SETTINGS[key];
@@ -140,8 +142,9 @@ export class SettingsService {
    */
   public async set<K extends keyof AppSettings>(key: K, value: AppSettings[K]): Promise<void> {
     await this.initializeStore();
+    if (!this.store) throw new Error('Store not initialized');
     try {
-      this.store!.set(key, value);
+      this.store.set(key, value);
       logger.info(`Setting ${key} updated to:`, value);
     } catch (error) {
       logger.error(`Failed to set setting ${key}:`, error);
@@ -155,10 +158,11 @@ export class SettingsService {
    */
   public async setMultiple(settings: Partial<AppSettings>): Promise<void> {
     await this.initializeStore();
+    if (!this.store) throw new Error('Store not initialized');
     try {
       Object.entries(settings).forEach(([key, value]) => {
         if (value !== undefined) {
-          this.store!.set(key as keyof AppSettings, value);
+          this.store!.set(key, value);
         }
       });
       logger.info('Multiple settings updated:', settings);
@@ -174,8 +178,9 @@ export class SettingsService {
    */
   public async getAll(): Promise<AppSettings> {
     await this.initializeStore();
+    if (!this.store) throw new Error('Store not initialized');
     try {
-      return this.store!.store;
+      return this.store.store;
     } catch (error) {
       logger.error('Failed to get all settings:', error);
       return SettingsService.DEFAULT_SETTINGS;
@@ -187,8 +192,9 @@ export class SettingsService {
    */
   public async reset(): Promise<void> {
     await this.initializeStore();
+    if (!this.store) throw new Error('Store not initialized');
     try {
-      this.store!.clear();
+      this.store.clear();
       logger.info('Settings reset to defaults');
     } catch (error) {
       logger.error('Failed to reset settings:', error);
@@ -229,7 +235,8 @@ export class SettingsService {
    */
   public async getConfigPath(): Promise<string> {
     await this.initializeStore();
-    return this.store!.path;
+    if (!this.store) throw new Error('Store not initialized');
+    return this.store.path;
   }
 }
 

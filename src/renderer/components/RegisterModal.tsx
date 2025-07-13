@@ -41,25 +41,29 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
   const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (isOpen) {
-      if (editingItem) {
-        console.log('RegisterModal opened in edit mode:', editingItem);
-        initializeFromEditingItem();
-      } else if (droppedPaths && droppedPaths.length > 0) {
-        console.log('RegisterModal opened with paths:', droppedPaths);
-        initializeItems();
-      }
+    if (!isOpen) {
+      // モーダルが閉じられたときの処理
+      document.body.style.overflow = 'auto';
+      return;
+    }
+    
+    // モーダルが開いたとき
+    if (editingItem) {
+      console.log('RegisterModal opened in edit mode:', editingItem);
+      initializeFromEditingItem();
+    } else if (droppedPaths && droppedPaths.length > 0) {
+      console.log('RegisterModal opened with paths:', droppedPaths);
+      initializeItems();
+    }
 
-      // モーダルが開いたときの処理
-      document.body.style.overflow = 'hidden';
+    // モーダルが開いたときの処理
+    document.body.style.overflow = 'hidden';
 
-      // フォーカスをモーダルに設定
-      if (modalRef.current) {
-        modalRef.current.focus();
-      }
+    // フォーカスをモーダルに設定
+    modalRef.current?.focus();
 
-      // キーイベントの制御：capture phaseで全てのキーイベントを捕捉
-      const handleKeyDown = (event: KeyboardEvent) => {
+    // キーイベントの制御：capture phaseで全てのキーイベントを捕捉
+    const handleKeyDown = (event: KeyboardEvent) => {
         // モーダル内でのキーイベントかどうかを確認
         const modal = modalRef.current;
         if (!modal) return;
@@ -145,14 +149,10 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
       // capture phaseでキーイベントを捕捉
       document.addEventListener('keydown', handleKeyDown, true);
 
-      return () => {
-        document.removeEventListener('keydown', handleKeyDown, true);
-        document.body.style.overflow = 'auto';
-      };
-    } else {
-      // モーダルが閉じられたときの処理
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown, true);
       document.body.style.overflow = 'auto';
-    }
+    };
   }, [isOpen, droppedPaths, editingItem]);
 
   const initializeFromEditingItem = async () => {
@@ -219,7 +219,10 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
             if (trimmedKey === 'depth') {
               dirOptions.depth = parseInt(trimmedValue) || 0;
             } else if (trimmedKey === 'types') {
-              dirOptions.types = trimmedValue as 'file' | 'folder' | 'both';
+              const validTypes = ['file', 'folder', 'both'] as const;
+              if (validTypes.includes(trimmedValue as any)) {
+                dirOptions.types = trimmedValue as typeof dirOptions.types;
+              }
             } else if (trimmedKey === 'filter') {
               dirOptions.filter = trimmedValue;
             } else if (trimmedKey === 'exclude') {
@@ -276,11 +279,11 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
         let icon: string | undefined;
         try {
           if (itemType === 'app' || itemType === 'file') {
-            icon = await window.electronAPI.extractIcon(filePath);
+            icon = (await window.electronAPI.extractIcon(filePath)) ?? undefined;
           } else if (itemType === 'customUri') {
-            icon = await window.electronAPI.extractCustomUriIcon(filePath);
+            icon = (await window.electronAPI.extractCustomUriIcon(filePath)) ?? undefined;
             if (!icon) {
-              icon = await window.electronAPI.extractFileIconByExtension(filePath);
+              icon = (await window.electronAPI.extractFileIconByExtension(filePath)) ?? undefined;
             }
           }
         } catch (error) {
@@ -400,7 +403,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
 
     // パスが変更された場合、アイテムタイプを再検出
     if (field === 'path' && editingItem) {
-      const newType = await detectItemType(value);
+      const newType = await detectItemType(value as string);
       newItems[index].type = newType;
 
       // タイプに応じてデフォルト値を設定
@@ -528,7 +531,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                                   ...item.dirOptions!,
                                   depth: parseInt(e.target.value),
                                 };
-                                handleItemChange(index, 'dirOptions', newDirOptions);
+                                handleItemChange(index, 'dirOptions', newDirOptions as any);
                               }}
                             >
                               <option value="0">現在のフォルダのみ</option>
@@ -548,7 +551,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                                   ...item.dirOptions!,
                                   types: e.target.value as 'file' | 'folder' | 'both',
                                 };
-                                handleItemChange(index, 'dirOptions', newDirOptions);
+                                handleItemChange(index, 'dirOptions', newDirOptions as any);
                               }}
                             >
                               <option value="file">ファイルのみ</option>
@@ -567,7 +570,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                                   ...item.dirOptions!,
                                   filter: e.target.value || undefined,
                                 };
-                                handleItemChange(index, 'dirOptions', newDirOptions);
+                                handleItemChange(index, 'dirOptions', newDirOptions as any);
                               }}
                               placeholder="ワイルドカードパターン"
                             />
@@ -583,7 +586,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                                   ...item.dirOptions!,
                                   exclude: e.target.value || undefined,
                                 };
-                                handleItemChange(index, 'dirOptions', newDirOptions);
+                                handleItemChange(index, 'dirOptions', newDirOptions as any);
                               }}
                               placeholder="除外するパターン"
                             />
@@ -599,7 +602,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                                   ...item.dirOptions!,
                                   prefix: e.target.value || undefined,
                                 };
-                                handleItemChange(index, 'dirOptions', newDirOptions);
+                                handleItemChange(index, 'dirOptions', newDirOptions as any);
                               }}
                               placeholder="アイテム名の前に付ける文字"
                             />

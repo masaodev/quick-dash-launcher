@@ -16,7 +16,7 @@ export function setupIPCHandlers(
   getMainWindow: () => BrowserWindow | null,
   getWindowPinState: () => boolean,
   setWindowPinState: (pinState: boolean) => void,
-  setEditMode: (editMode: boolean) => void,
+  setEditMode: (editMode: boolean) => Promise<void>,
   getEditMode: () => boolean
 ) {
   setupDataHandlers(configFolder);

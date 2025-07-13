@@ -1,6 +1,6 @@
 import { ipcMain } from 'electron';
 
-import { AppSettings } from '../../common/types.js';
+import type { AppSettings } from '../../common/types.js';
 import { SettingsService } from '../services/settingsService.js';
 import { HotkeyService } from '../services/hotkeyService.js';
 import logger from '../../common/logger.js';
@@ -10,7 +10,7 @@ import logger from '../../common/logger.js';
  */
 export function setupSettingsHandlers(): void {
   // 設定値を取得
-  ipcMain.handle('settings:get', async (event, key?: keyof AppSettings) => {
+  ipcMain.handle('settings:get', async (_event, key?: keyof AppSettings) => {
     try {
       const settingsService = await SettingsService.getInstance();
       if (key) {
@@ -45,7 +45,7 @@ export function setupSettingsHandlers(): void {
   );
 
   // 複数の設定値を一括設定
-  ipcMain.handle('settings:set-multiple', async (event, settings: Partial<AppSettings>) => {
+  ipcMain.handle('settings:set-multiple', async (_event, settings: Partial<AppSettings>) => {
     try {
       const settingsService = await SettingsService.getInstance();
       await settingsService.setMultiple(settings);
@@ -71,7 +71,7 @@ export function setupSettingsHandlers(): void {
   });
 
   // ホットキーの妥当性を検証
-  ipcMain.handle('settings:validate-hotkey', async (event, hotkey: string) => {
+  ipcMain.handle('settings:validate-hotkey', async (_event, hotkey: string) => {
     try {
       const settingsService = await SettingsService.getInstance();
       const result = settingsService.validateHotkey(hotkey);
@@ -97,7 +97,7 @@ export function setupSettingsHandlers(): void {
   });
 
   // ホットキーを変更
-  ipcMain.handle('settings:change-hotkey', async (event, newHotkey: string) => {
+  ipcMain.handle('settings:change-hotkey', async (_event, newHotkey: string) => {
     try {
       const hotkeyService = HotkeyService.getInstance();
       const success = await hotkeyService.changeHotkey(newHotkey);
@@ -110,7 +110,7 @@ export function setupSettingsHandlers(): void {
   });
 
   // ホットキーの利用可能性をチェック
-  ipcMain.handle('settings:check-hotkey-availability', async (event, hotkey: string) => {
+  ipcMain.handle('settings:check-hotkey-availability', async (_event, hotkey: string) => {
     try {
       const hotkeyService = HotkeyService.getInstance();
       const isAvailable = hotkeyService.isHotkeyAvailable(hotkey);

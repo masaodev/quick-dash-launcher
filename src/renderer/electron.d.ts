@@ -23,6 +23,10 @@ export interface ElectronAPI {
   getPathForFile: (file: File) => string;
   quitApp: () => Promise<void>;
   sortDataFiles: () => Promise<void>;
+  getSettings: () => Promise<any>;
+  setMultipleSettings: (settings: any) => Promise<void>;
+  resetSettings: () => Promise<void>;
+  validateHotkey: (hotkey: string) => Promise<{ isValid: boolean; reason?: string }>;
   updateItem: (request: {
     sourceFile: 'data.txt' | 'data2.txt' | 'tempdata.txt';
     lineNumber: number;

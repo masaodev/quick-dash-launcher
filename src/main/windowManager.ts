@@ -74,7 +74,7 @@ export async function createWindow(): Promise<BrowserWindow> {
   });
 
   // Enable webSecurity for file drag and drop
-  mainWindow.webContents.session.webRequest.onBeforeRequest((details, callback) => {
+  mainWindow.webContents.session.webRequest.onBeforeRequest((_details, callback) => {
     callback({ cancel: false });
   });
 
