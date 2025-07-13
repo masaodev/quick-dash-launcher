@@ -8,8 +8,9 @@
     "preview": "vite preview",
     "start": "npm run build && electron .",
     "dist": "npm run build && electron-builder",
-    "lint": "eslint 'src/**/*.{ts,tsx}'",
-    "lint:fix": "eslint 'src/**/*.{ts,tsx}' --fix",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "type-check": "tsc --noEmit",
     "format": "prettier --write 'src/**/*.{ts,tsx,css}'"
   },
   "keywords": [

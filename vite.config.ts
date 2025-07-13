@@ -1,8 +1,9 @@
+import { resolve } from 'path';
+
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import electron from 'vite-plugin-electron';
 import renderer from 'vite-plugin-electron-renderer';
-import { resolve } from 'path';
 
 export default defineConfig({
   plugins: [
@@ -13,26 +14,26 @@ export default defineConfig({
         vite: {
           resolve: {
             alias: {
-              '@common': resolve(process.cwd(), './src/common')
-            }
+              '@common': resolve(process.cwd(), './src/common'),
+            },
           },
           build: {
             outDir: 'dist/main',
             lib: {
               entry: 'src/main/main.ts',
               formats: ['cjs'],
-              fileName: () => 'main.js'
+              fileName: () => 'main.js',
             },
             rollupOptions: {
               external: ['electron', 'electron-store'],
               output: {
                 format: 'cjs',
                 inlineDynamicImports: true,
-                entryFileNames: '[name].js'
-              }
-            }
-          }
-        }
+                entryFileNames: '[name].js',
+              },
+            },
+          },
+        },
       },
       {
         entry: 'src/main/preload.ts',
@@ -42,40 +43,40 @@ export default defineConfig({
         vite: {
           resolve: {
             alias: {
-              '@common': resolve(process.cwd(), './src/common')
-            }
+              '@common': resolve(process.cwd(), './src/common'),
+            },
           },
           build: {
             outDir: 'dist/main',
             lib: {
               entry: 'src/main/preload.ts',
               formats: ['cjs'],
-              fileName: () => 'preload.js'
+              fileName: () => 'preload.js',
             },
             rollupOptions: {
               external: ['electron'],
               output: {
                 format: 'cjs',
                 inlineDynamicImports: true,
-                entryFileNames: '[name].js'
-              }
-            }
-          }
-        }
-      }
+                entryFileNames: '[name].js',
+              },
+            },
+          },
+        },
+      },
     ]),
-    renderer()
+    renderer(),
   ],
   build: {
     outDir: 'dist',
-    emptyOutDir: false
+    emptyOutDir: false,
   },
   server: {
-    port: 9000
+    port: 9000,
   },
   resolve: {
     alias: {
-      '@common': resolve(process.cwd(), './src/common')
-    }
-  }
+      '@common': resolve(process.cwd(), './src/common'),
+    },
+  },
 });
