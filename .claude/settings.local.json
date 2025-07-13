@@ -8,7 +8,11 @@
       "Bash(powershell.exe -Command:*)",
       "Bash(find:*)",
       "Bash(npm run lint:*)",
-      "Bash(npm run format:*)"
+      "Bash(npm run format:*)",
+      "Bash(gh issue view:*)",
+      "Bash(gh issue comment:*)",
+      "Bash(gh issue close:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": []
   }

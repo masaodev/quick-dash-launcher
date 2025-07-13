@@ -7,7 +7,6 @@ import ItemList from './components/ItemList';
 import TabControl from './components/TabControl';
 import ActionButtons from './components/ActionButtons';
 import RegisterModal, { RegisterItem } from './components/RegisterModal';
-import { SettingsModal } from './components/SettingsModal';
 import { parseDataFiles, filterItems } from './utils/dataParser';
 
 const App: React.FC = () => {
@@ -20,7 +19,6 @@ const App: React.FC = () => {
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [droppedPaths, setDroppedPaths] = useState<string[]>([]);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
-  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -321,7 +319,7 @@ const App: React.FC = () => {
 
 
   const handleOpenSettings = () => {
-    setIsSettingsModalOpen(true);
+    window.electronAPI.toggleEditWindow();
   };
 
   const currentItems = activeTab === 'main' ? mainItems : tempItems;
@@ -376,10 +374,6 @@ const App: React.FC = () => {
             droppedPaths={droppedPaths}
           />
 
-          <SettingsModal
-            isOpen={isSettingsModalOpen}
-            onClose={() => setIsSettingsModalOpen(false)}
-          />
 
           {isDraggingOver && (
             <div className="drag-overlay">

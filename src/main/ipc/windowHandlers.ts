@@ -1,5 +1,5 @@
 import { ipcMain, app } from 'electron';
-import { showEditWindow, hideEditWindow, toggleEditWindow, isEditWindowShown } from '../editWindowManager.js';
+import { showAdminWindow, hideAdminWindow, toggleAdminWindow, isAdminWindowShown } from '../adminWindowManager.js';
 
 export function setupWindowHandlers(
   getWindowPinState: () => boolean,
@@ -27,20 +27,20 @@ export function setupWindowHandlers(
     return getEditMode();
   });
 
-  // 編集ウィンドウ関連のIPCハンドラー
+  // 管理ウィンドウ関連のIPCハンドラー
   ipcMain.handle('show-edit-window', async () => {
-    await showEditWindow();
+    await showAdminWindow();
   });
 
   ipcMain.handle('hide-edit-window', () => {
-    hideEditWindow();
+    hideAdminWindow();
   });
 
   ipcMain.handle('toggle-edit-window', async () => {
-    await toggleEditWindow();
+    await toggleAdminWindow();
   });
 
   ipcMain.handle('is-edit-window-shown', () => {
-    return isEditWindowShown();
+    return isAdminWindowShown();
   });
 }

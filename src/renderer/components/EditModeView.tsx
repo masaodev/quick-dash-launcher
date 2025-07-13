@@ -292,7 +292,7 @@ const EditModeView: React.FC<EditModeViewProps> = ({
             ブックマークをインポート
           </button>
           <button onClick={handleExitEditMode} className="exit-edit-button">
-            通常モードに戻る
+            ウィンドウを閉じる
           </button>
           <button
             onClick={handleSaveChanges}
