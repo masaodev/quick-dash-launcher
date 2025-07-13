@@ -26,6 +26,7 @@ export interface RegisterItem {
     filter?: string;
     exclude?: string;
     prefix?: string;
+    suffix?: string;
   };
 }
 
@@ -204,6 +205,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
         filter: undefined as string | undefined,
         exclude: undefined as string | undefined,
         prefix: undefined as string | undefined,
+        suffix: undefined as string | undefined,
       };
 
       if (optionsStr) {
@@ -227,6 +229,8 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
               dirOptions.exclude = trimmedValue;
             } else if (trimmedKey === 'prefix') {
               dirOptions.prefix = trimmedValue;
+            } else if (trimmedKey === 'suffix') {
+              dirOptions.suffix = trimmedValue;
             }
           }
         }
@@ -304,6 +308,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                   filter: undefined,
                   exclude: undefined,
                   prefix: undefined,
+                  suffix: undefined,
                 }
               : undefined,
         });
@@ -373,10 +378,14 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
   const handleItemChange = async (
     index: number,
     field: keyof RegisterItem,
-    value: string | boolean
+    value: string | boolean | RegisterItem['dirOptions']
   ) => {
     const newItems = [...items];
-    newItems[index] = { ...newItems[index], [field]: value };
+    if (field === 'dirOptions') {
+      newItems[index] = { ...newItems[index], dirOptions: value as RegisterItem['dirOptions'] };
+    } else {
+      newItems[index] = { ...newItems[index], [field]: value };
+    }
 
     // アイテム種別が変更された場合の処理
     if (field === 'itemCategory') {
@@ -390,6 +399,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
             filter: undefined,
             exclude: undefined,
             prefix: undefined,
+            suffix: undefined,
           };
         }
       } else {
@@ -416,6 +426,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
             filter: undefined,
             exclude: undefined,
             prefix: undefined,
+            suffix: undefined,
           };
         }
       } else {
@@ -529,7 +540,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                                   ...item.dirOptions!,
                                   depth: parseInt(e.target.value),
                                 };
-                                handleItemChange(index, 'dirOptions', newDirOptions as any);
+                                handleItemChange(index, 'dirOptions', newDirOptions);
                               }}
                             >
                               <option value="0">現在のフォルダのみ</option>
@@ -549,7 +560,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                                   ...item.dirOptions!,
                                   types: e.target.value as 'file' | 'folder' | 'both',
                                 };
-                                handleItemChange(index, 'dirOptions', newDirOptions as any);
+                                handleItemChange(index, 'dirOptions', newDirOptions);
                               }}
                             >
                               <option value="file">ファイルのみ</option>
@@ -568,7 +579,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                                   ...item.dirOptions!,
                                   filter: e.target.value || undefined,
                                 };
-                                handleItemChange(index, 'dirOptions', newDirOptions as any);
+                                handleItemChange(index, 'dirOptions', newDirOptions);
                               }}
                               placeholder="ワイルドカードパターン"
                             />
@@ -584,7 +595,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                                   ...item.dirOptions!,
                                   exclude: e.target.value || undefined,
                                 };
-                                handleItemChange(index, 'dirOptions', newDirOptions as any);
+                                handleItemChange(index, 'dirOptions', newDirOptions);
                               }}
                               placeholder="除外するパターン"
                             />
@@ -600,9 +611,25 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                                   ...item.dirOptions!,
                                   prefix: e.target.value || undefined,
                                 };
-                                handleItemChange(index, 'dirOptions', newDirOptions as any);
+                                handleItemChange(index, 'dirOptions', newDirOptions);
                               }}
                               placeholder="アイテム名の前に付ける文字"
+                            />
+                          </div>
+
+                          <div className="form-group">
+                            <label>サフィックス (例: Dev):</label>
+                            <input
+                              type="text"
+                              value={item.dirOptions.suffix || ''}
+                              onChange={(e) => {
+                                const newDirOptions = {
+                                  ...item.dirOptions!,
+                                  suffix: e.target.value || undefined,
+                                };
+                                handleItemChange(index, 'dirOptions', newDirOptions);
+                              }}
+                              placeholder="アイテム名の後に付ける文字"
                             />
                           </div>
                         </div>

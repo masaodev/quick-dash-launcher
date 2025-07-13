@@ -59,6 +59,7 @@ const EditModeView: React.FC<EditModeViewProps> = ({
         if (item.dirOptions.filter) options.push(`filter=${item.dirOptions.filter}`);
         if (item.dirOptions.exclude) options.push(`exclude=${item.dirOptions.exclude}`);
         if (item.dirOptions.prefix) options.push(`prefix=${item.dirOptions.prefix}`);
+        if (item.dirOptions.suffix) options.push(`suffix=${item.dirOptions.suffix}`);
 
         const optionsStr = options.join(',');
         newContent = optionsStr ? `dir,${item.path},${optionsStr}` : `dir,${item.path}`;
