@@ -122,7 +122,6 @@ const result = await window.api.channelName(args);
 - 📁 設定フォルダを開く
 - 📄 設定ファイルを開く
 - 📋 JSON出力（クリップボードにコピー）
-- 🔤 データファイルを並べ替え（パスの昇順でソート）
 - ─── (区切り線)
 - 🚪 アプリを終了
 
@@ -153,7 +152,6 @@ const result = await window.api.channelName(args);
   - `loadRawDataFiles`: 生データファイルの読み込み
   - `saveRawDataFiles`: 生データファイルの保存（CRLF統一）
   - `loadDataFiles`: DIRディレクティブ展開時の読み込み
-  - `sortDataFiles`: ファイルソート時の読み込み・保存
   - `registerItems`: 新規アイテム登録時の保存
 
 ### CSVフォーマットの処理

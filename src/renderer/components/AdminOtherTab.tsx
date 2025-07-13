@@ -9,17 +9,6 @@ const AdminOtherTab: React.FC = () => {
     window.electronAPI.openDataFile();
   };
 
-  const handleSortDataFiles = async () => {
-    try {
-      await window.electronAPI.sortDataFiles();
-      alert(
-        'データファイルをパスの昇順で並べ替えました。\nバックアップは backup フォルダに保存されています。'
-      );
-    } catch (error) {
-      console.error('Error sorting data files:', error);
-      alert('データファイルの並べ替え中にエラーが発生しました。');
-    }
-  };
 
   const handleQuitApp = () => {
     if (confirm('アプリケーションを終了しますか？')) {
@@ -42,9 +31,6 @@ const AdminOtherTab: React.FC = () => {
             </button>
             <button onClick={handleOpenDataFile} className="action-button">
               📄 データファイルを開く
-            </button>
-            <button onClick={handleSortDataFiles} className="action-button">
-              🔤 データファイルを整列
             </button>
           </div>
         </div>

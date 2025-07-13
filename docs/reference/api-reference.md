@@ -16,8 +16,6 @@ QuickDashLauncherで使用される主要なAPIの一覧です。
 ### registerItems()
 新しいアイテムをデータファイルに登録する
 
-### sortDataFiles()
-データファイルをパスの昇順でソートする
 
 ## アイコン関連 API
 

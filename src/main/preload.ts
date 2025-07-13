@@ -44,7 +44,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   isDirectory: (filePath: string) => ipcRenderer.invoke('is-directory', filePath),
   getPathForFile: (file: File) => webUtils.getPathForFile(file),
   quitApp: () => ipcRenderer.invoke('quit-app'),
-  sortDataFiles: () => ipcRenderer.invoke('sort-data-files'),
   updateItem: (request: UpdateItemRequest) => ipcRenderer.invoke('update-item', request),
   deleteItems: (requests: DeleteItemRequest[]) => ipcRenderer.invoke('delete-items', requests),
   batchUpdateItems: (requests: UpdateItemRequest[]) =>

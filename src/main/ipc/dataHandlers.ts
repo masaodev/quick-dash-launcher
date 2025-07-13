@@ -618,93 +618,6 @@ function isDirectory(filePath: string): boolean {
   }
 }
 
-/**
- * データファイルを種類別に分離してパス順にソートし、バックアップを作成する
- * 各データファイル（data.txt, data2.txt, tempdata.txt）を読み込み、アイテムを種類→パス→名前の順でソートして保存する
- * 処理前に自動的にバックアップファイルを作成し、データの安全性を確保する
- *
- * @param configFolder - 設定フォルダのパス
- * @returns 処理完了のPromise
- * @throws ファイル操作エラー、バックアップ作成エラー
- *
- * @example
- * await sortDataFiles('/path/to/config');
- * // data.txt, data2.txt, tempdata.txtがソートされ、backup/フォルダにバックアップが作成される
- */
-async function sortDataFiles(configFolder: string): Promise<void> {
-  const dataFiles = ['data.txt', 'data2.txt', 'tempdata.txt'];
-  const backupFolder = path.join(configFolder, 'backup');
-
-  // Ensure backup folder exists
-  if (!fs.existsSync(backupFolder)) {
-    fs.mkdirSync(backupFolder, { recursive: true });
-  }
-
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').split('.')[0];
-
-  for (const fileName of dataFiles) {
-    const filePath = path.join(configFolder, fileName);
-
-    if (!fs.existsSync(filePath)) {
-      continue;
-    }
-
-    try {
-      // Read file content
-      const content = fs.readFileSync(filePath, 'utf8');
-      const lines = content.split(/\r\n|\n|\r/);
-
-      // Separate dir directives and regular entries
-      const dirLines: string[] = [];
-      const regularLines: string[] = [];
-
-      for (const line of lines) {
-        const trimmedLine = line.trim();
-        if (!trimmedLine || trimmedLine.startsWith('//')) {
-          // Keep empty lines and comments as is
-          regularLines.push(line);
-        } else if (trimmedLine.startsWith('dir,')) {
-          dirLines.push(line);
-        } else {
-          regularLines.push(line);
-        }
-      }
-
-      // Sort regular entries by path (second field)
-      const sortedRegularLines = regularLines.sort((a, b) => {
-        const partsA = parseCSVLine(a.trim());
-        const partsB = parseCSVLine(b.trim());
-
-        // If either line doesn't have a path, maintain original order
-        if (partsA.length < 2 || partsB.length < 2) {
-          return 0;
-        }
-
-        const pathA = partsA[1].toLowerCase();
-        const pathB = partsB[1].toLowerCase();
-
-        return pathA.localeCompare(pathB, 'ja');
-      });
-
-      // Create backup
-      const backupPath = path.join(backupFolder, `${fileName}_${timestamp}`);
-      fs.copyFileSync(filePath, backupPath);
-
-      // Combine dir lines at the top, then sorted regular lines
-      const sortedContent = [...dirLines, ...sortedRegularLines]
-        .filter((line) => line.trim() !== '')
-        .join('\r\n');
-
-      // Write sorted content back to file
-      fs.writeFileSync(filePath, sortedContent, 'utf8');
-
-      dataLogger.info('データファイルのソートが完了', { fileName, backupPath });
-    } catch (error) {
-      dataLogger.error('データファイルのソートに失敗', { fileName, error });
-      throw error;
-    }
-  }
-}
 
 function parseCSVLine(line: string): string[] {
   const result: string[] = [];
@@ -762,9 +675,6 @@ export function setupDataHandlers(configFolder: string) {
     return isDirectory(filePath);
   });
 
-  ipcMain.handle('sort-data-files', async () => {
-    return await sortDataFiles(configFolder);
-  });
 
   ipcMain.handle('load-raw-data-files', async () => {
     return await loadRawDataFiles(configFolder);
