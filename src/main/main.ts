@@ -21,6 +21,7 @@ import {
   setEditMode,
   getEditMode,
 } from './windowManager';
+import { closeEditWindow } from './editWindowManager';
 
 // const store = new Store(); // 将来の使用のために予約
 
@@ -65,4 +66,5 @@ app.on('window-all-closed', () => {
 
 app.on('will-quit', () => {
   globalShortcut.unregisterAll();
+  closeEditWindow(); // 編集ウィンドウを確実に閉じる
 });

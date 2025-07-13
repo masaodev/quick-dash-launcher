@@ -7,7 +7,6 @@ import ItemList from './components/ItemList';
 import TabControl from './components/TabControl';
 import ActionButtons from './components/ActionButtons';
 import RegisterModal, { RegisterItem } from './components/RegisterModal';
-import EditModeView from './components/EditModeView';
 import { SettingsModal } from './components/SettingsModal';
 import { parseDataFiles, filterItems } from './utils/dataParser';
 
@@ -21,8 +20,6 @@ const App: React.FC = () => {
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [droppedPaths, setDroppedPaths] = useState<string[]>([]);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [rawLines, setRawLines] = useState<RawDataLine[]>([]);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -129,10 +126,6 @@ const App: React.FC = () => {
     setTempItems(tempWithIcons);
   };
 
-  const loadRawData = async () => {
-    const rawData = await window.electronAPI.loadRawDataFiles();
-    setRawLines(rawData);
-  };
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -165,7 +158,7 @@ const App: React.FC = () => {
       case 'e':
         if (e.ctrlKey) {
           e.preventDefault();
-          setIsEditMode((prev) => !prev);
+          window.electronAPI.toggleEditWindow();
         }
         break;
     }
@@ -322,37 +315,10 @@ const App: React.FC = () => {
   };
 
   const handleToggleEditMode = async () => {
-    if (!isEditMode) {
-      // 編集モードに入る時は生データを読み込み
-      await loadRawData();
-    }
-    const newEditMode = !isEditMode;
-    setIsEditMode(newEditMode);
-    setSearchQuery(''); // Clear search when entering edit mode
-    setSelectedIndex(0);
-    // メインプロセスに編集モードの状態を通知
-    await window.electronAPI.setEditMode(newEditMode);
+    await window.electronAPI.toggleEditWindow();
   };
 
-  const handleRawDataSave = async (updatedRawLines: RawDataLine[]) => {
-    try {
-      await window.electronAPI.saveRawDataFiles(updatedRawLines);
-      setRawLines(updatedRawLines);
-      // 通常モードのデータも更新
-      await loadItems();
-    } catch (error) {
-      console.error('Error saving raw data:', error);
-      alert('データの保存中にエラーが発生しました。');
-    }
-  };
 
-  const handleExitEditMode = async () => {
-    setIsEditMode(false);
-    setSearchQuery('');
-    setSelectedIndex(0);
-    // メインプロセスに編集モードの状態を通知
-    await window.electronAPI.setEditMode(false);
-  };
 
   const handleOpenSettings = () => {
     setIsSettingsModalOpen(true);
@@ -363,19 +329,10 @@ const App: React.FC = () => {
 
   return (
     <div
-      className={`app ${isDraggingOver ? 'dragging-over' : ''} ${isEditMode ? 'edit-mode' : ''}`}
+      className={`app ${isDraggingOver ? 'dragging-over' : ''}`}
       onKeyDown={handleKeyDown}
     >
-      {isEditMode ? (
-        <EditModeView
-          rawLines={rawLines}
-          onRawDataSave={handleRawDataSave}
-          onExitEditMode={handleExitEditMode}
-          searchQuery={searchQuery}
-          onSearchChange={handleSearch}
-        />
-      ) : (
-        <>
+      <>
           <div className="header">
             <SearchBox
               ref={searchInputRef}
@@ -396,7 +353,7 @@ const App: React.FC = () => {
               onToggleEditMode={handleToggleEditMode}
               onOpenSettings={handleOpenSettings}
               isPinned={isPinned}
-              isEditMode={isEditMode}
+              isEditMode={false}
             />
           </div>
 
@@ -430,7 +387,6 @@ const App: React.FC = () => {
             </div>
           )}
         </>
-      )}
     </div>
   );
 };

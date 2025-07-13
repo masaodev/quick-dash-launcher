@@ -70,6 +70,12 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: false,
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'index.html'),
+        edit: resolve(__dirname, 'edit.html'),
+      },
+    },
   },
   server: {
     port: 9000,

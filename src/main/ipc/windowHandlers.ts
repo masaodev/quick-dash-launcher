@@ -1,4 +1,5 @@
 import { ipcMain, app } from 'electron';
+import { showEditWindow, hideEditWindow, toggleEditWindow, isEditWindowShown } from '../editWindowManager.js';
 
 export function setupWindowHandlers(
   getWindowPinState: () => boolean,
@@ -24,5 +25,22 @@ export function setupWindowHandlers(
 
   ipcMain.handle('get-edit-mode', () => {
     return getEditMode();
+  });
+
+  // 編集ウィンドウ関連のIPCハンドラー
+  ipcMain.handle('show-edit-window', async () => {
+    await showEditWindow();
+  });
+
+  ipcMain.handle('hide-edit-window', () => {
+    hideEditWindow();
+  });
+
+  ipcMain.handle('toggle-edit-window', async () => {
+    await toggleEditWindow();
+  });
+
+  ipcMain.handle('is-edit-window-shown', () => {
+    return isEditWindowShown();
   });
 }

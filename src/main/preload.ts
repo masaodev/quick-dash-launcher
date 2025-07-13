@@ -68,4 +68,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   changeHotkey: (newHotkey: string) => ipcRenderer.invoke('settings:change-hotkey', newHotkey),
   checkHotkeyAvailability: (hotkey: string) =>
     ipcRenderer.invoke('settings:check-hotkey-availability', hotkey),
+  // 編集ウィンドウ関連API
+  showEditWindow: () => ipcRenderer.invoke('show-edit-window'),
+  hideEditWindow: () => ipcRenderer.invoke('hide-edit-window'),
+  toggleEditWindow: () => ipcRenderer.invoke('toggle-edit-window'),
+  isEditWindowShown: () => ipcRenderer.invoke('is-edit-window-shown'),
 });
