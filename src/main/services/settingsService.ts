@@ -26,59 +26,6 @@ export class SettingsService {
     maxVisibleItems: 10,
   };
 
-  /**
-   * electron-storeのスキーマ定義
-   */
-  // @ts-ignore - スキーマ定義（将来の拡張用）
-  private static readonly SCHEMA = {
-    hotkey: {
-      type: 'string',
-      default: SettingsService.DEFAULT_SETTINGS.hotkey,
-      pattern:
-        '^(Ctrl|Alt|Shift|CmdOrCtrl|Command|Cmd)\\+(Ctrl|Alt|Shift|CmdOrCtrl|Command|Cmd|[A-Z0-9])*(\\+[A-Z0-9])*$',
-    },
-    windowWidth: {
-      type: 'number',
-      minimum: 400,
-      maximum: 2000,
-      default: SettingsService.DEFAULT_SETTINGS.windowWidth,
-    },
-    windowHeight: {
-      type: 'number',
-      minimum: 300,
-      maximum: 1200,
-      default: SettingsService.DEFAULT_SETTINGS.windowHeight,
-    },
-    editModeWidth: {
-      type: 'number',
-      minimum: 800,
-      maximum: 2000,
-      default: SettingsService.DEFAULT_SETTINGS.editModeWidth,
-    },
-    editModeHeight: {
-      type: 'number',
-      minimum: 600,
-      maximum: 1200,
-      default: SettingsService.DEFAULT_SETTINGS.editModeHeight,
-    },
-    autoLaunch: {
-      type: 'boolean',
-      default: SettingsService.DEFAULT_SETTINGS.autoLaunch,
-    },
-    iconSize: {
-      type: 'number',
-      minimum: 16,
-      maximum: 48,
-      default: SettingsService.DEFAULT_SETTINGS.iconSize,
-    },
-    maxVisibleItems: {
-      type: 'number',
-      minimum: 5,
-      maximum: 50,
-      default: SettingsService.DEFAULT_SETTINGS.maxVisibleItems,
-    },
-  } as const;
-
   private constructor() {
     // electron-storeは後で非同期に初期化
     this.store = null;
@@ -98,7 +45,7 @@ export class SettingsService {
 
       this.store = new (Store as any)({
         name: 'settings',
-        defaults: SettingsService.DEFAULT_SETTINGS
+        defaults: SettingsService.DEFAULT_SETTINGS,
       });
 
       logger.info('SettingsService initialized successfully');

@@ -46,7 +46,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
       document.body.style.overflow = 'auto';
       return;
     }
-    
+
     // モーダルが開いたとき
     if (editingItem) {
       console.log('RegisterModal opened in edit mode:', editingItem);
@@ -64,90 +64,88 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
 
     // キーイベントの制御：capture phaseで全てのキーイベントを捕捉
     const handleKeyDown = (event: KeyboardEvent) => {
-        // モーダル内でのキーイベントかどうかを確認
-        const modal = modalRef.current;
-        if (!modal) return;
+      // モーダル内でのキーイベントかどうかを確認
+      const modal = modalRef.current;
+      if (!modal) return;
 
-        // モーダル内の要素がフォーカスされているかチェック
-        const isModalFocused = modal.contains(document.activeElement);
+      // モーダル内の要素がフォーカスされているかチェック
+      const isModalFocused = modal.contains(document.activeElement);
 
-        if (event.key === 'Escape') {
-          event.preventDefault();
-          event.stopPropagation();
-          event.stopImmediatePropagation();
-          handleCancel();
-          return;
-        }
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        handleCancel();
+        return;
+      }
 
-        if (event.key === 'Tab') {
-          const focusableElements = modal.querySelectorAll(
-            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-          );
-          const firstFocusableElement = focusableElements[0] as HTMLElement;
-          const lastFocusableElement = focusableElements[
-            focusableElements.length - 1
-          ] as HTMLElement;
+      if (event.key === 'Tab') {
+        const focusableElements = modal.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        const firstFocusableElement = focusableElements[0] as HTMLElement;
+        const lastFocusableElement = focusableElements[focusableElements.length - 1] as HTMLElement;
 
-          if (event.shiftKey) {
-            // Shift+Tab: 逆方向
-            if (document.activeElement === firstFocusableElement) {
-              lastFocusableElement.focus();
-              event.preventDefault();
-              event.stopPropagation();
-              event.stopImmediatePropagation();
-            }
-          } else {
-            // Tab: 順方向
-            if (document.activeElement === lastFocusableElement) {
-              firstFocusableElement.focus();
-              event.preventDefault();
-              event.stopPropagation();
-              event.stopImmediatePropagation();
-            }
+        if (event.shiftKey) {
+          // Shift+Tab: 逆方向
+          if (document.activeElement === firstFocusableElement) {
+            lastFocusableElement.focus();
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
           }
-          return;
-        }
-
-        // モーダル内でのキーイベントの場合、背景への伝播を完全に阻止
-        if (isModalFocused) {
-          // 現在フォーカスされている要素がinput/textareaの場合のみ、特定のキーを許可
-          const activeElement = document.activeElement as HTMLElement;
-          const isInputField =
-            activeElement &&
-            (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
-
-          if (isInputField) {
-            // input/textareaでの通常の編集キー（文字入力、Backspace、Delete、矢印キー、Ctrl+A、Ctrl+C、Ctrl+V、Ctrl+X）は許可
-            if (
-              event.key.length === 1 ||
-              [
-                'Backspace',
-                'Delete',
-                'ArrowLeft',
-                'ArrowRight',
-                'ArrowUp',
-                'ArrowDown',
-                'Home',
-                'End',
-              ].includes(event.key) ||
-              (event.ctrlKey && ['a', 'c', 'v', 'x', 'z', 'y'].includes(event.key))
-            ) {
-              // これらのキーは許可するが、背景への伝播は阻止
-              event.stopPropagation();
-              event.stopImmediatePropagation();
-              return;
-            }
+        } else {
+          // Tab: 順方向
+          if (document.activeElement === lastFocusableElement) {
+            firstFocusableElement.focus();
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
           }
-
-          // その他の全てのキーイベントを阻止
-          event.preventDefault();
-          event.stopPropagation();
-          event.stopImmediatePropagation();
         }
-      };
+        return;
+      }
 
-      // capture phaseでキーイベントを捕捉
-      document.addEventListener('keydown', handleKeyDown, true);
+      // モーダル内でのキーイベントの場合、背景への伝播を完全に阻止
+      if (isModalFocused) {
+        // 現在フォーカスされている要素がinput/textareaの場合のみ、特定のキーを許可
+        const activeElement = document.activeElement as HTMLElement;
+        const isInputField =
+          activeElement &&
+          (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
+
+        if (isInputField) {
+          // input/textareaでの通常の編集キー（文字入力、Backspace、Delete、矢印キー、Ctrl+A、Ctrl+C、Ctrl+V、Ctrl+X）は許可
+          if (
+            event.key.length === 1 ||
+            [
+              'Backspace',
+              'Delete',
+              'ArrowLeft',
+              'ArrowRight',
+              'ArrowUp',
+              'ArrowDown',
+              'Home',
+              'End',
+            ].includes(event.key) ||
+            (event.ctrlKey && ['a', 'c', 'v', 'x', 'z', 'y'].includes(event.key))
+          ) {
+            // これらのキーは許可するが、背景への伝播は阻止
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+            return;
+          }
+        }
+
+        // その他の全てのキーイベントを阻止
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+      }
+    };
+
+    // capture phaseでキーイベントを捕捉
+    document.addEventListener('keydown', handleKeyDown, true);
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown, true);
