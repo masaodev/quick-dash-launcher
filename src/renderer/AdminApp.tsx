@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 
 import { RawDataLine, AppSettings } from '../common/types';
 
-import EditModeView from './components/EditModeView';
 import AdminTabContainer from './components/AdminTabContainer';
 
 const AdminApp: React.FC = () => {

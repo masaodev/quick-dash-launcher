@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-import { LauncherItem, RawDataLine } from '../common/types';
+import { LauncherItem } from '../common/types';
 
 import SearchBox from './components/SearchBox';
 import ItemList from './components/ItemList';
@@ -123,7 +123,6 @@ const App: React.FC = () => {
     setMainItems(mainWithIcons);
     setTempItems(tempWithIcons);
   };
-
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -316,8 +315,6 @@ const App: React.FC = () => {
     await window.electronAPI.toggleEditWindow();
   };
 
-
-
   const handleOpenSettings = () => {
     window.electronAPI.toggleEditWindow();
   };
@@ -326,61 +323,57 @@ const App: React.FC = () => {
   const filteredItems = filterItems(currentItems, searchQuery);
 
   return (
-    <div
-      className={`app ${isDraggingOver ? 'dragging-over' : ''}`}
-      onKeyDown={handleKeyDown}
-    >
+    <div className={`app ${isDraggingOver ? 'dragging-over' : ''}`} onKeyDown={handleKeyDown}>
       <>
-          <div className="header">
-            <SearchBox
-              ref={searchInputRef}
-              value={searchQuery}
-              onChange={handleSearch}
-              onKeyDown={handleKeyDown}
-            />
-            <ActionButtons
-              onFetchFavicon={handleFetchFavicon}
-              onExtractAllIcons={handleExtractAllIcons}
-              onAddTemp={handleAddTemp}
-              onReload={loadItems}
-              onOpenConfigFolder={() => window.electronAPI.openConfigFolder()}
-              onOpenDataFile={() => window.electronAPI.openDataFile()}
-              onTogglePin={handleTogglePin}
-              onExportJson={handleExportJson}
-              onSortDataFiles={handleSortDataFiles}
-              onToggleEditMode={handleToggleEditMode}
-              onOpenSettings={handleOpenSettings}
-              isPinned={isPinned}
-              isEditMode={false}
-            />
+        <div className="header">
+          <SearchBox
+            ref={searchInputRef}
+            value={searchQuery}
+            onChange={handleSearch}
+            onKeyDown={handleKeyDown}
+          />
+          <ActionButtons
+            onFetchFavicon={handleFetchFavicon}
+            onExtractAllIcons={handleExtractAllIcons}
+            onAddTemp={handleAddTemp}
+            onReload={loadItems}
+            onOpenConfigFolder={() => window.electronAPI.openConfigFolder()}
+            onOpenDataFile={() => window.electronAPI.openDataFile()}
+            onTogglePin={handleTogglePin}
+            onExportJson={handleExportJson}
+            onSortDataFiles={handleSortDataFiles}
+            onToggleEditMode={handleToggleEditMode}
+            onOpenSettings={handleOpenSettings}
+            isPinned={isPinned}
+            isEditMode={false}
+          />
+        </div>
+
+        <TabControl activeTab={activeTab} onTabChange={setActiveTab} />
+
+        <ItemList
+          items={filteredItems}
+          selectedIndex={selectedIndex}
+          onItemClick={handleItemClick}
+          onItemSelect={setSelectedIndex}
+        />
+
+        <RegisterModal
+          isOpen={isRegisterModalOpen}
+          onClose={() => {
+            setIsRegisterModalOpen(false);
+            setDroppedPaths([]);
+          }}
+          onRegister={handleRegisterItems}
+          droppedPaths={droppedPaths}
+        />
+
+        {isDraggingOver && (
+          <div className="drag-overlay">
+            <div className="drag-message">ファイルをドロップして登録</div>
           </div>
-
-          <TabControl activeTab={activeTab} onTabChange={setActiveTab} />
-
-          <ItemList
-            items={filteredItems}
-            selectedIndex={selectedIndex}
-            onItemClick={handleItemClick}
-            onItemSelect={setSelectedIndex}
-          />
-
-          <RegisterModal
-            isOpen={isRegisterModalOpen}
-            onClose={() => {
-              setIsRegisterModalOpen(false);
-              setDroppedPaths([]);
-            }}
-            onRegister={handleRegisterItems}
-            droppedPaths={droppedPaths}
-          />
-
-
-          {isDraggingOver && (
-            <div className="drag-overlay">
-              <div className="drag-message">ファイルをドロップして登録</div>
-            </div>
-          )}
-        </>
+        )}
+      </>
     </div>
   );
 };

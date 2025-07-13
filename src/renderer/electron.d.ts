@@ -1,4 +1,10 @@
-import { LauncherItem, DataFile, RawDataLine, SimpleBookmarkItem } from '../common/types';
+import {
+  LauncherItem,
+  DataFile,
+  RawDataLine,
+  SimpleBookmarkItem,
+  AppSettings,
+} from '../common/types';
 
 import { RegisterItem } from './components/RegisterModal';
 
@@ -23,8 +29,8 @@ export interface ElectronAPI {
   getPathForFile: (file: File) => string;
   quitApp: () => Promise<void>;
   sortDataFiles: () => Promise<void>;
-  getSettings: () => Promise<any>;
-  setMultipleSettings: (settings: any) => Promise<void>;
+  getSettings: () => Promise<AppSettings>;
+  setMultipleSettings: (settings: Partial<AppSettings>) => Promise<void>;
   resetSettings: () => Promise<void>;
   validateHotkey: (hotkey: string) => Promise<{ isValid: boolean; reason?: string }>;
   updateItem: (request: {
@@ -51,6 +57,10 @@ export interface ElectronAPI {
   getEditMode: () => Promise<boolean>;
   selectBookmarkFile: () => Promise<string | null>;
   parseBookmarkFile: (filePath: string) => Promise<SimpleBookmarkItem[]>;
+  showEditWindow: () => Promise<void>;
+  hideEditWindow: () => Promise<void>;
+  toggleEditWindow: () => Promise<void>;
+  isEditWindowShown: () => Promise<boolean>;
 }
 
 declare global {

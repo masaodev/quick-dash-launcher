@@ -99,7 +99,7 @@ export async function showAdminWindow(): Promise<void> {
     if (!adminWindow || adminWindow.isDestroyed()) {
       await createAdminWindow();
     }
-    
+
     if (adminWindow) {
       adminWindow.show();
       adminWindow.focus();

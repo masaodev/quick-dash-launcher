@@ -9,7 +9,7 @@ let Store: typeof import('electron-store').default | null = null;
  * electron-storeを使用して設定の永続化を行う
  */
 export class SettingsService {
-  private store: any | null = null;
+  private store: import('electron-store').default | null = null;
   private static instance: SettingsService;
 
   /**
@@ -43,7 +43,7 @@ export class SettingsService {
         Store = (await eval('import("electron-store")')).default;
       }
 
-      this.store = new (Store as any)({
+      this.store = new Store({
         name: 'settings',
         defaults: SettingsService.DEFAULT_SETTINGS,
       });

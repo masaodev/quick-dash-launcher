@@ -19,7 +19,7 @@ const SettingsDropdown: React.FC<SettingsDropdownProps> = ({
   onToggleEditMode,
   onQuitApp,
   onOpenSettings,
-  isEditMode,
+  isEditMode: _isEditMode,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);

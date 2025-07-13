@@ -1,5 +1,11 @@
 import { ipcMain, app } from 'electron';
-import { showAdminWindow, hideAdminWindow, toggleAdminWindow, isAdminWindowShown } from '../adminWindowManager.js';
+
+import {
+  showAdminWindow,
+  hideAdminWindow,
+  toggleAdminWindow,
+  isAdminWindowShown,
+} from '../adminWindowManager.js';
 
 export function setupWindowHandlers(
   getWindowPinState: () => boolean,

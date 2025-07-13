@@ -101,9 +101,7 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
             onSearchChange={onSearchChange}
           />
         )}
-        {activeTab === 'other' && (
-          <AdminOtherTab />
-        )}
+        {activeTab === 'other' && <AdminOtherTab />}
       </div>
     </div>
   );

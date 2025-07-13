@@ -218,9 +218,9 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave, onUnsavedCh
           リセット
         </button>
         <div className="button-group">
-          <button 
-            className="revert-button" 
-            onClick={handleRevert} 
+          <button
+            className="revert-button"
+            onClick={handleRevert}
             disabled={isLoading || !hasChanges}
           >
             元に戻す

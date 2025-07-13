@@ -220,7 +220,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
               dirOptions.depth = parseInt(trimmedValue) || 0;
             } else if (trimmedKey === 'types') {
               const validTypes = ['file', 'folder', 'both'] as const;
-              if (validTypes.includes(trimmedValue as any)) {
+              if (validTypes.includes(trimmedValue as 'file' | 'folder' | 'both')) {
                 dirOptions.types = trimmedValue as typeof dirOptions.types;
               }
             } else if (trimmedKey === 'filter') {

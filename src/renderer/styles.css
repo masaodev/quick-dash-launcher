@@ -1378,8 +1378,8 @@ body {
   font-size: 14px;
 }
 
-.setting-item input[type="number"],
-.setting-item input[type="text"] {
+.setting-item input[type='number'],
+.setting-item input[type='text'] {
   padding: 8px;
   border: 1px solid #ccc;
   border-radius: 4px;
@@ -1387,7 +1387,7 @@ body {
   font-size: 14px;
 }
 
-.setting-item input[type="checkbox"] {
+.setting-item input[type='checkbox'] {
   margin-right: 8px;
 }
 
