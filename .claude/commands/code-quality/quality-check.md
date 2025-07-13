@@ -1,6 +1,6 @@
 ---
-description: "コードの保守性・可読性を総合的にチェック"
-allowed-tools: ["Bash", "Grep", "Read", "Glob"]
+description: 'コードの保守性・可読性を総合的にチェック'
+allowed-tools: ['Bash', 'Grep', 'Read', 'Glob']
 ---
 
 # Quality Check
@@ -10,13 +10,16 @@ allowed-tools: ["Bash", "Grep", "Read", "Glob"]
 ## 実行内容
 
 1. **ESLintによるコード規約チェック**
+
    ```bash
    !npm run lint
    ```
 
 2. **TypeScriptの型チェック**
+
    ```bash
-   !npx tsc --noEmit
+   !npm run type-check
+
    ```
 
 3. **未使用のインポートやエクスポートの検出**
