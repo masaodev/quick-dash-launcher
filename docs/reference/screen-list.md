@@ -45,7 +45,7 @@ QuickDashLauncher
 
 | 画面名 | ファイル | 種類 | 表示条件 | 主要機能 |
 |--------|----------|------|----------|----------|
-| **メインウィンドウ** | `src/renderer/App.tsx` | ウィンドウ | 起動時のデフォルト状態 | 検索ボックス、アイテム一覧、アクションボタン、タブ切り替え |
+| **メインウィンドウ** | `src/renderer/App.tsx` | ウィンドウ | 起動時のデフォルト状態 | 検索ボックス、アイテム一覧、アクションボタン、タブ切り替え<br>📋 [詳細仕様書](../screens/main-window.md) |
 | **管理ウィンドウ** | `src/renderer/AdminApp.tsx` | ウィンドウ | Ctrl+E または設定メニューから | 生データ編集、アプリケーション設定、サイズ1000x700px、独立ウィンドウ |
 | **アイテム登録・編集モーダル** | `src/renderer/components/RegisterModal.tsx` | モーダル | ファイルドラッグ&ドロップ時<br>編集モードで詳細編集時 | アイテム登録・編集、DIRオプション設定、保存先選択 |
 | **ブックマークインポートモーダル** | `src/renderer/components/BookmarkImportModal.tsx` | モーダル | 管理ウィンドウでインポートボタンクリック時 | ブックマークHTMLファイルのインポート、検索・選択<br>📋 [詳細仕様書](../screens/bookmark-import-modal.md) |
