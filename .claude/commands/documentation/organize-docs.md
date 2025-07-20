@@ -1,3 +1,8 @@
+---
+description: "プロジェクトドキュメントを体系的に整理"
+allowed-tools: ["Read", "Write", "Edit", "MultiEdit", "Glob", "LS"]
+---
+
 # /organize-docs
 
 プロジェクトのドキュメントを体系的に整理し、ファイルサイズを適切に管理するスラッシュコマンドです。

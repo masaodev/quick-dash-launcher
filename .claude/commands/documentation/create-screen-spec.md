@@ -1,3 +1,8 @@
+---
+description: "指定されたコンポーネントの画面仕様書を作成"
+allowed-tools: ["Read", "Write", "Glob", "Edit"]
+---
+
 # /create-screen-spec
 
 指定されたコンポーネントの画面仕様書を作成するスラッシュコマンドです。

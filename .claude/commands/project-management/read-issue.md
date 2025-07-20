@@ -1,3 +1,8 @@
+---
+description: "GitHub Issueを読み込んで対応方針を分析"
+allowed-tools: ["Bash", "Read"]
+---
+
 # /read-issue
 
 GitHubのissueを読み込んで対応方針を分析するカスタムコマンド。
