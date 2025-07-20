@@ -13,7 +13,7 @@ export interface LauncherItem {
   icon?: string;
   /** 実行時のコマンドライン引数（オプション） */
   args?: string;
-  /** DIRディレクティブ展開前の元のパス（オプション） */
+  /** ショートカットファイル（.lnk）の元のパス（オプション） */
   originalPath?: string;
   /** アイテムの元データファイル */
   sourceFile?: 'data.txt' | 'data2.txt' | 'tempdata.txt';
