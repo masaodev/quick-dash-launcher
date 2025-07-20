@@ -11,6 +11,7 @@ QuickDashLauncher
 │   ├── ActionButtons（アクションボタン群・設定メニュー統合）
 │   ├── TabControl（タブ切り替え）
 │   ├── ItemList（アイテム一覧）
+│   ├── IconProgressBar（アイコン取得進捗表示）※条件付き
 │   ├── RegisterModal（登録モーダル）※条件付き
 │   └── ドラッグオーバーレイ ※条件付き
 │
@@ -60,6 +61,7 @@ QuickDashLauncher
 | **ActionButtons** | `src/renderer/components/ActionButtons.tsx` | メインウィンドウ | 常時表示 | ファビコン取得、アイコン抽出、リロード、固定、設定メニュー統合 |
 | **TabControl** | `src/renderer/components/TabControl.tsx` | メインウィンドウ | 常時表示 | メインタブ・一時タブの切り替え |
 | **ItemList** | `src/renderer/components/ItemList.tsx` | メインウィンドウ | 常時表示 | アイテム一覧表示、選択・実行 |
+| **IconProgressBar** | `src/renderer/components/IconProgressBar.tsx` | メインウィンドウ | アイコン取得処理中 | 進捗状況リアルタイム表示、完了後3秒で自動非表示 |
 | **ドラッグオーバーレイ** | `src/renderer/App.tsx` | メインウィンドウ | ファイルドラッグ中 | 「ドロップして追加」メッセージ表示 |
 
 ### 管理ウィンドウコンポーネント
@@ -111,6 +113,17 @@ QuickDashLauncher
 | Escape | アプリを隠す<br>管理ウィンドウを隠す | メインウィンドウ（非固定時）<br>管理ウィンドウ |
 
 ## 特殊な表示条件
+
+### IconProgressBar（アイコン取得進捗表示）
+- **表示条件**: ファビコン取得ボタンまたはアイコン抽出ボタンの処理中
+- **表示位置**: メインウィンドウ下部（ItemListの下）
+- **表示内容**: 
+  - プログレスバーと進捗率
+  - 処理種別（「ファビコン取得中」/「アイコン抽出中」）
+  - 進捗数値（例：12/35）
+  - 現在処理中のアイテム
+  - エラー件数、経過時間、推定残り時間
+- **非表示条件**: 処理完了後3秒で自動非表示
 
 ### ドラッグオーバーレイ
 - **表示条件**: ファイル/フォルダをメインウィンドウ上にドラッグ中

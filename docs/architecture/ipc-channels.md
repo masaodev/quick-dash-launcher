@@ -47,6 +47,12 @@ QuickDashLauncherで使用される主要なIPCチャンネルの仕様です。
 ### `load-cached-icons`
 キャッシュされたアイコンを一括読み込み
 
+### `fetch-favicons-with-progress`
+複数URLのファビコンを逐次取得し、進捗状況をリアルタイム通知
+
+### `extract-icons-with-progress`
+複数アイテムのアイコンを逐次抽出し、進捗状況をリアルタイム通知
+
 ## ウィンドウ制御
 
 ### `get-window-pin-state`
@@ -80,6 +86,41 @@ QuickDashLauncherで使用される主要なIPCチャンネルの仕様です。
 
 ### `getPathForFile`
 ドラッグ&ドロップされたファイルのパスを取得
+
+### `onIconProgress`
+アイコン取得進捗イベントリスナー
+
+```typescript
+onIconProgress(eventType: 'start' | 'update' | 'complete', callback: (data: IconProgress) => void)
+```
+
+#### 進捗イベント
+
+**icon-progress-start**
+- アイコン取得処理の開始を通知
+- 処理種別（favicon/icon）と総数を含む
+
+**icon-progress-update**
+- アイコン取得処理の進捗更新を通知
+- 現在の処理数、処理中アイテム、エラー数を含む
+
+**icon-progress-complete**
+- アイコン取得処理の完了を通知
+- 最終的な処理結果とエラー数を含む
+
+#### IconProgress型定義
+
+```typescript
+interface IconProgress {
+  type: 'favicon' | 'icon';           // 処理の種別
+  current: number;                    // 現在処理完了したアイテム数
+  total: number;                      // 処理対象の総アイテム数
+  currentItem: string;                // 現在処理中のアイテム名またはURL
+  errors: number;                     // エラーが発生したアイテム数
+  startTime: number;                  // 処理開始時刻（ミリ秒）
+  isComplete: boolean;                // 処理が完了したかどうか
+}
+```
 
 ## システム制御
 

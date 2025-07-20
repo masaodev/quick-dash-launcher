@@ -31,6 +31,12 @@ QuickDashLauncherで使用される主要なAPIの一覧です。
 ### loadCachedIcons()
 キャッシュされたアイコンを一括読み込みする
 
+### fetchFaviconsWithProgress()
+複数URLのファビコンを逐次取得し、進捗状況をリアルタイム通知する
+
+### extractIconsWithProgress()
+複数アイテムのアイコンを逐次抽出し、進捗状況をリアルタイム通知する
+
 ## ウィンドウ制御 API
 
 ### WindowManager.setWindowPinState()
@@ -75,6 +81,72 @@ interface RawDataLine {
   content: string;
   line: number;
 }
+```
+
+### IconProgress
+アイコン取得処理の進捗状況を表すインターフェース
+```typescript
+interface IconProgress {
+  type: 'favicon' | 'icon';           // 処理の種別
+  current: number;                    // 現在処理完了したアイテム数
+  total: number;                      // 処理対象の総アイテム数
+  currentItem: string;                // 現在処理中のアイテム名またはURL
+  errors: number;                     // エラーが発生したアイテム数
+  startTime: number;                  // 処理開始時刻（ミリ秒）
+  isComplete: boolean;                // 処理が完了したかどうか
+}
+```
+
+### IconProgressState
+アイコン取得進捗状態の管理用インターフェース
+```typescript
+interface IconProgressState {
+  isActive: boolean;                  // 進捗処理がアクティブかどうか
+  progress: IconProgress | null;      // 現在の進捗情報
+}
+```
+
+## React カスタムフック
+
+### useIconProgress()
+アイコン取得進捗状態を管理するカスタムフック
+
+```typescript
+const useIconProgress = () => {
+  const [progressState, setProgressState] = useState<IconProgressState>({
+    isActive: false,
+    progress: null,
+  });
+
+  // IPCイベントリスナーを自動設定
+  // 進捗開始、更新、完了イベントを処理
+  // 完了後3秒で自動的に非表示
+
+  const resetProgress = () => void;
+
+  return {
+    progressState,    // 現在の進捗状態
+    resetProgress,    // 進捗状態をリセット
+  };
+};
+```
+
+#### 使用例
+```typescript
+import { useIconProgress } from './hooks/useIconProgress';
+
+const App: React.FC = () => {
+  const { progressState } = useIconProgress();
+
+  return (
+    <div>
+      {/* 他のコンポーネント */}
+      {progressState.isActive && progressState.progress && (
+        <IconProgressBar progress={progressState.progress} />
+      )}
+    </div>
+  );
+};
 ```
 
 ## 依存関係とライブラリ使用例
