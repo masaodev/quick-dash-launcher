@@ -40,6 +40,10 @@ release/
 coverage/
 .nyc_output/
 
+# Test results
+test-results/
+playwright-report/
+
 # Temporary files
 *.tmp
 *.temp

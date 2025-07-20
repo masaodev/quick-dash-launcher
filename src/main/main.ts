@@ -41,8 +41,20 @@ app.whenReady().then(async () => {
   // システムトレイアイコンとコンテキストメニューを作成
   createTray();
 
+  // テスト環境の場合、ウィンドウを自動表示
+  if (process.env.SHOW_WINDOW_ON_STARTUP === '1') {
+    const mainWindow = getMainWindow();
+    if (mainWindow) {
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  }
+
   // グローバルホットキーを登録（設定から読み込み）
-  await registerGlobalShortcut();
+  // テスト環境ではホットキーを無効化
+  if (process.env.DISABLE_GLOBAL_HOTKEY !== '1') {
+    await registerGlobalShortcut();
+  }
 
   // レンダラープロセスとの通信用IPCハンドラーを設定
   setupIPCHandlers(

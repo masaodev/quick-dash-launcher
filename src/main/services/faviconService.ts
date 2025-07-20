@@ -8,6 +8,7 @@ interface FaviconSource {
   url: string;
   size?: number;
   type?: string;
+  isOgImage?: boolean;
 }
 
 export class FaviconService {
@@ -144,7 +145,7 @@ export class FaviconService {
         /<link[^>]+rel=["']icon["'][^>]+sizes=["']([^"']+)["'][^>]+href=["']([^"']+)["']/gi,
         /<link[^>]+href=["']([^"']+)["'][^>]+sizes=["']([^"']+)["'][^>]+rel=["']icon["']/gi,
 
-        // OGP画像
+        // OGP画像（最後の手段として使用）
         /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/gi,
         /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/gi,
 
@@ -170,7 +171,10 @@ export class FaviconService {
               const sizes = match[1] || match[2];
               if (sizes && sizes.includes('x')) {
                 const size = parseInt(sizes.split('x')[0]);
-                sources.push({ url: iconUrl, size });
+                // 大きすぎるアイコン（300px以上）は除外
+                if (size < 300) {
+                  sources.push({ url: iconUrl, size });
+                }
               } else {
                 sources.push({ url: iconUrl });
               }
@@ -186,17 +190,36 @@ export class FaviconService {
             const iconUrl = this.resolveUrl(match[1], origin);
             if (iconUrl && !foundUrls.has(iconUrl)) {
               foundUrls.add(iconUrl);
-              sources.push({ url: iconUrl });
+              // OGP画像かどうかを判定
+              const isOgImage = pattern.source.includes('og:image');
+              sources.push({ url: iconUrl, isOgImage });
             }
           }
         }
       }
 
-      // 優先度の高い順にソート（apple-touch-iconを優先）
+      // 優先度の高い順にソート
       sources.sort((a, b) => {
-        if (a.url.includes('apple-touch-icon')) return -1;
-        if (b.url.includes('apple-touch-icon')) return 1;
-        if (a.size && b.size) return b.size - a.size;
+        // OGP画像は最後の手段として最低優先度
+        if (a.isOgImage && !b.isOgImage) return 1;
+        if (!a.isOgImage && b.isOgImage) return -1;
+        
+        // apple-touch-iconを高優先度に
+        if (a.url.includes('apple-touch-icon') && !b.url.includes('apple-touch-icon')) return -1;
+        if (!a.url.includes('apple-touch-icon') && b.url.includes('apple-touch-icon')) return 1;
+        
+        // 標準的なrel="icon"を優先
+        if (a.url.includes('favicon') && !b.url.includes('favicon')) return -1;
+        if (!a.url.includes('favicon') && b.url.includes('favicon')) return 1;
+        
+        // サイズが指定されている場合は適度なサイズ（64px前後）を優先
+        if (a.size && b.size) {
+          const idealSize = 64;
+          const aDiff = Math.abs(a.size - idealSize);
+          const bDiff = Math.abs(b.size - idealSize);
+          return aDiff - bDiff;
+        }
+        
         return 0;
       });
     } catch (error) {
