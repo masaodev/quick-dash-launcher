@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "dist/main/main.js",
   "scripts": {
-    "dev": "vite",
+    "dev": "cross-env NODE_ENV=development ELECTRON_IS_DEV=1 vite",
     "build": "vite build",
     "preview": "vite preview",
     "start": "npm run build && electron .",
