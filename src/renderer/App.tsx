@@ -226,9 +226,15 @@ const App: React.FC = () => {
             try {
               let icon: string | null = null;
 
-              if (item.type === 'app' && item.path.endsWith('.exe')) {
-                // Extract icon for Windows executables
-                icon = await window.electronAPI.extractIcon(item.path);
+              if (item.type === 'app') {
+                // ショートカットから展開されたアイテムの場合、元のショートカットファイルからアイコンを抽出
+                if (item.originalPath && item.originalPath.endsWith('.lnk')) {
+                  icon = await window.electronAPI.extractIcon(item.originalPath);
+                }
+                // 通常のアプリケーションファイル（.exe）またはショートカットファイル（.lnk）の場合
+                else if (item.path.endsWith('.exe') || item.path.endsWith('.lnk')) {
+                  icon = await window.electronAPI.extractIcon(item.path);
+                }
               } else if (item.type === 'customUri') {
                 // First try to extract icon from URI scheme handler
                 icon = await window.electronAPI.extractCustomUriIcon(item.path);
@@ -291,7 +297,6 @@ const App: React.FC = () => {
     console.log('JSON data copied to clipboard:', exportData);
     alert('LauncherItemのJSONデータがクリップボードにコピーされました');
   };
-
 
   const handleRegisterItems = async (items: RegisterItem[]) => {
     await window.electronAPI.registerItems(items);

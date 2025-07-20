@@ -10,11 +10,23 @@ import { iconLogger } from '@common/logger';
 import { FaviconService } from '../services/faviconService';
 
 const extractFileIcon = require('extract-file-icon');
+const { shell } = require('electron');
 
 // FaviconServiceのインスタンスを保持
 let faviconService: FaviconService;
 
 const execAsync = promisify(exec);
+
+/**
+ * 環境変数を展開する共通関数
+ * @param path 環境変数を含む可能性があるパス
+ * @returns 環境変数が展開されたパス
+ */
+function expandEnvironmentVariables(path: string): string {
+  return path.replace(/%([^%]+)%/g, (_, envVar) => {
+    return process.env[envVar] || _;
+  });
+}
 
 /**
  * 指定されたURLのファビコンを取得する（FaviconServiceへの委譲）
@@ -33,6 +45,103 @@ async function fetchFavicon(url: string, faviconsFolder: string): Promise<string
 }
 
 /**
+ * ショートカットファイル(.lnk)からカスタムアイコンを抽出してキャッシュに保存する
+ * 最初に.lnkファイル自体からアイコンを抽出し、失敗した場合はターゲットファイルからの抽出にフォールバックする
+ *
+ * @param lnkPath - ショートカットファイルのパス
+ * @param iconsFolder - アイコンキャッシュフォルダのパス
+ * @returns base64エンコードされたアイコンデータURL、失敗時はnull
+ */
+async function extractShortcutIcon(lnkPath: string, iconsFolder: string): Promise<string | null> {
+  try {
+    // ファイルが存在するか確認
+    if (!fs.existsSync(lnkPath)) {
+      iconLogger.error(`ショートカットファイルが見つかりません: ${lnkPath}`);
+      return null;
+    }
+
+    // ショートカット専用のキャッシュファイル名を生成
+    const shortcutName = path.basename(lnkPath, '.lnk');
+    const lnkIconName = `${shortcutName}_lnk_icon.png`;
+    const lnkIconPath = path.join(iconsFolder, lnkIconName);
+
+    // ショートカットのアイコンがすでにキャッシュされているか確認
+    if (fs.existsSync(lnkIconPath)) {
+      const cachedIcon = fs.readFileSync(lnkIconPath);
+      const base64 = cachedIcon.toString('base64');
+      iconLogger.info(`ショートカットのキャッシュアイコンを使用: ${lnkPath} -> ${lnkIconPath}`);
+      return `data:image/png;base64,${base64}`;
+    }
+
+    // 1. ショートカットの詳細を取得してカスタムアイコンパスをチェック
+    iconLogger.info(`ショートカットの詳細情報を取得: ${lnkPath}`);
+    
+    const shortcutDetails = shell.readShortcutLink(lnkPath);
+    
+    // カスタムアイコンが設定されている場合、そのアイコンファイルを直接読み込み
+    if (shortcutDetails.icon) {
+      // 環境変数を展開
+      const expandedIconPath = expandEnvironmentVariables(shortcutDetails.icon);
+      
+      if (fs.existsSync(expandedIconPath)) {
+        iconLogger.info(`カスタムアイコンファイルを発見: ${expandedIconPath}`);
+        
+        try {
+          // アイコンファイル（.ico）を直接読み込み
+          if (expandedIconPath.toLowerCase().endsWith('.ico')) {
+            // ICOファイルをPNGに変換するため、extract-file-iconでアイコンファイルから抽出
+            const extractedIconBuffer = extractFileIcon(expandedIconPath, 32);
+            
+            if (extractedIconBuffer && extractedIconBuffer.length > 0) {
+              // ショートカット専用キャッシュに保存
+              fs.writeFileSync(lnkIconPath, extractedIconBuffer);
+              
+              const base64 = extractedIconBuffer.toString('base64');
+              iconLogger.info(`カスタムアイコンファイルからアイコンを抽出成功: ${expandedIconPath}`);
+              return `data:image/png;base64,${base64}`;
+            }
+          }
+        } catch (error) {
+          iconLogger.error(`カスタムアイコンファイルの読み込みエラー`, { iconPath: expandedIconPath, error });
+        }
+      } else {
+        iconLogger.warn(`カスタムアイコンファイルが見つからない: ${expandedIconPath}`);
+      }
+    }
+
+    // 2. フォールバック：.lnkファイル自体からアイコンを抽出を試行
+    iconLogger.info(`ショートカットファイル自体からアイコン抽出を開始: ${lnkPath}`);
+    const shortcutIconBuffer = extractFileIcon(lnkPath, 32);
+
+    if (shortcutIconBuffer && shortcutIconBuffer.length > 0) {
+      // ショートカット専用キャッシュに保存
+      fs.writeFileSync(lnkIconPath, shortcutIconBuffer);
+      
+      const base64 = shortcutIconBuffer.toString('base64');
+      iconLogger.info(`ショートカットファイルからアイコンを抽出成功: ${lnkPath}`);
+      return `data:image/png;base64,${base64}`;
+    }
+
+    // 3. 最終フォールバック：ターゲットファイルからアイコンを抽出
+    iconLogger.info(`ショートカットファイルからの抽出に失敗、ターゲットからの抽出を試行: ${lnkPath}`);
+    
+    if (shortcutDetails && shortcutDetails.target && fs.existsSync(shortcutDetails.target)) {
+      const targetIcon = await extractIcon(shortcutDetails.target, iconsFolder);
+      if (targetIcon) {
+        iconLogger.info(`ターゲットファイルからアイコンを抽出成功: ${lnkPath} -> ${shortcutDetails.target}`);
+        return targetIcon;
+      }
+    }
+
+    iconLogger.warn(`ショートカットとターゲットの両方からアイコン抽出に失敗: ${lnkPath}`);
+    return null;
+  } catch (error) {
+    iconLogger.error(`ショートカットアイコンの抽出に失敗しました: ${lnkPath}`, { error });
+    return null;
+  }
+}
+
+/**
  * 実行ファイルからアイコンを抽出してキャッシュに保存する
  * extract-file-iconライブラリを使用してWindowsの実行ファイルからアイコンを抽出し、PNGとしてキャッシュする
  *
@@ -44,8 +153,14 @@ async function extractIcon(filePath: string, iconsFolder: string): Promise<strin
   try {
     // ファイルが存在するか確認
     if (!fs.existsSync(filePath)) {
-      iconLogger.error('ファイルが見つかりません', { filePath });
+      iconLogger.error(`ファイルが見つかりません: ${filePath}`);
       return null;
+    }
+
+    // .lnkファイルの場合は専用関数を使用
+    if (filePath.toLowerCase().endsWith('.lnk')) {
+      iconLogger.info(`ショートカットファイルを検出、専用処理を実行: ${filePath}`);
+      return await extractShortcutIcon(filePath, iconsFolder);
     }
 
     // キャッシュ用ファイル名を生成
@@ -73,7 +188,7 @@ async function extractIcon(filePath: string, iconsFolder: string): Promise<strin
 
     return null;
   } catch (error) {
-    iconLogger.error('アイコンの抽出に失敗しました', { error });
+    iconLogger.error(`アイコンの抽出に失敗しました: ${filePath}`, { error });
     return null;
   }
 }
@@ -119,7 +234,7 @@ async function extractCustomUriIcon(uri: string, iconsFolder: string): Promise<s
 
     return null;
   } catch (error) {
-    iconLogger.error('カスタムURIアイコンの抽出に失敗しました', { error });
+    iconLogger.error(`カスタムURIアイコンの抽出に失敗しました: ${uri}`, { error });
     return null;
   }
 }
@@ -153,7 +268,7 @@ async function extractFileIconByExtension(
     }
 
     if (!fileExtension) {
-      iconLogger.info('拡張子がありません', { filePath });
+      iconLogger.info(`拡張子がありません: ${filePath}`);
       return null;
     }
 
@@ -193,7 +308,7 @@ async function extractFileIconByExtension(
 
     return null;
   } catch (error) {
-    iconLogger.error('拡張子ベースのアイコン抽出に失敗しました', { error });
+    iconLogger.error(`拡張子ベースのアイコン抽出に失敗しました: ${filePath}`, { error });
     return null;
   }
 }
@@ -223,9 +338,7 @@ async function getUriSchemeHandler(scheme: string): Promise<string | null> {
     if (matches) {
       const exePath = matches[1] || matches[2];
       // 環境変数を展開
-      const expandedPath = exePath.replace(/%([^%]+)%/g, (_, envVar) => {
-        return process.env[envVar] || _;
-      });
+      const expandedPath = expandEnvironmentVariables(exePath);
 
       if (fs.existsSync(expandedPath)) {
         return expandedPath;
@@ -262,7 +375,7 @@ function extractExtensionFromUri(uri: string): string {
     const extensionMatch = fileName.match(/\.[^.]+$/);
     return extensionMatch ? extensionMatch[0].toLowerCase() : '';
   } catch (error) {
-    iconLogger.error('URIから拡張子の抽出に失敗', { error });
+    iconLogger.error(`URIから拡張子の抽出に失敗: ${uri}`, { error });
     return '';
   }
 }
@@ -281,6 +394,7 @@ function createTempFileForExtension(extension: string): string {
 interface IconItem {
   type: string;
   path: string;
+  originalPath?: string;
 }
 
 /**
@@ -324,6 +438,24 @@ async function loadCachedIcons(
           iconPath = faviconPath64;
         } else if (fs.existsSync(faviconPath32)) {
           iconPath = faviconPath32;
+        }
+      } else if (item.type === 'app' && 
+                 ((item.originalPath && item.originalPath.endsWith('.lnk')) || 
+                  (item.path && item.path.endsWith('.lnk')))) {
+        // ショートカットファイルの場合（展開済みアイテムまたは直接指定）
+        // 元のショートカットパスを優先、なければ現在のパスを使用
+        const shortcutPath = (item.originalPath && item.originalPath.endsWith('.lnk')) 
+          ? item.originalPath 
+          : item.path;
+        
+        const shortcutName = path.basename(shortcutPath, '.lnk');
+        const lnkIconPath = path.join(iconsFolder, `${shortcutName}_lnk_icon.png`);
+        const exeIconPath = path.join(iconsFolder, `${shortcutName}_icon.png`);
+        
+        if (fs.existsSync(lnkIconPath)) {
+          iconPath = lnkIconPath;
+        } else if (fs.existsSync(exeIconPath)) {
+          iconPath = exeIconPath;
         }
       } else if (item.type === 'app' && item.path && item.path.endsWith('.exe')) {
         // .exeファイルの場合、アイコンをチェック
@@ -372,7 +504,7 @@ async function loadCachedIcons(
         iconCache[item.path] = `data:image/png;base64,${base64}`;
       }
     } catch (error) {
-      iconLogger.error('キャッシュされたアイコンの読み込みに失敗', { path: item.path, error });
+      iconLogger.error(`キャッシュされたアイコンの読み込みに失敗: ${item.path}`, { error });
     }
   }
 
