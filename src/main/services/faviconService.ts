@@ -72,8 +72,17 @@ export class FaviconService {
     // 各ソースを順番に試す
     for (const source of sources) {
       try {
+        faviconLogger.info('ファビコンダウンロードを試行', { 
+          url: source.url, 
+          size: source.size, 
+          isOgImage: source.isOgImage 
+        });
         const data = await this.downloadFavicon(source.url);
         if (data && data.length > 0) {
+          faviconLogger.info('ファビコンダウンロード成功', { 
+            url: source.url, 
+            dataSize: data.length 
+          });
           return data;
         }
       } catch (error) {
@@ -198,6 +207,16 @@ export class FaviconService {
         }
       }
 
+      // デバッグ用：取得したソースをログ出力
+      faviconLogger.info('HTMLから取得したファビコンソース', { 
+        url, 
+        sources: sources.map(s => ({ 
+          url: s.url, 
+          size: s.size, 
+          isOgImage: s.isOgImage 
+        })) 
+      });
+
       // 優先度の高い順にソート
       sources.sort((a, b) => {
         // OGP画像は最後の手段として最低優先度
@@ -221,6 +240,16 @@ export class FaviconService {
         }
         
         return 0;
+      });
+
+      // デバッグ用：ソート後のソースをログ出力
+      faviconLogger.info('ソート後のファビコンソース', { 
+        url, 
+        sortedSources: sources.map(s => ({ 
+          url: s.url, 
+          size: s.size, 
+          isOgImage: s.isOgImage 
+        })) 
       });
     } catch (error) {
       faviconLogger.error('HTML解析エラー', { error });

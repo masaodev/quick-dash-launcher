@@ -7,7 +7,9 @@ import ItemList from './components/ItemList';
 import TabControl from './components/TabControl';
 import ActionButtons from './components/ActionButtons';
 import RegisterModal, { RegisterItem } from './components/RegisterModal';
+import IconProgressBar from './components/IconProgressBar';
 import { parseDataFiles, filterItems } from './utils/dataParser';
+import { useIconProgress } from './hooks/useIconProgress';
 
 const App: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -21,6 +23,7 @@ const App: React.FC = () => {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const { progressState } = useIconProgress();
 
   useEffect(() => {
     loadItems();
@@ -186,88 +189,67 @@ const App: React.FC = () => {
   const handleFetchFavicon = async () => {
     console.log('すべてのURLアイテムのファビコンを取得開始');
 
-    // Function to fetch favicons for URL items
-    const fetchFaviconsForItems = async (items: LauncherItem[]) => {
-      const itemsWithFavicons = await Promise.all(
-        items.map(async (item) => {
-          if (item.type === 'url' && !item.icon) {
-            try {
-              console.log('ファビコン取得中:', item.path);
-              const icon = await window.electronAPI.fetchFavicon(item.path);
-              return { ...item, icon: icon || undefined };
-            } catch (error) {
-              console.error(`Failed to fetch favicon for ${item.path}:`, error);
-              return item;
-            }
-          }
-          return item;
-        })
-      );
-      return itemsWithFavicons;
+    // Extract URL items that don't have icons
+    const mainUrls = mainItems.filter(item => item.type === 'url' && !item.icon).map(item => item.path);
+    const tempUrls = tempItems.filter(item => item.type === 'url' && !item.icon).map(item => item.path);
+    const allUrls = [...mainUrls, ...tempUrls];
+
+    if (allUrls.length === 0) {
+      console.log('取得対象のURLアイテムがありません');
+      return;
+    }
+
+    // Use progress-enabled favicon fetching
+    const results = await window.electronAPI.fetchFaviconsWithProgress(allUrls);
+
+    // Apply fetched favicons to items
+    const updateItemsWithFavicons = (items: LauncherItem[]) => {
+      return items.map(item => {
+        if (item.type === 'url' && results[item.path]) {
+          return { ...item, icon: results[item.path] || undefined };
+        }
+        return item;
+      });
     };
 
-    // Fetch favicons for both main and temp items
-    const [mainWithFavicons, tempWithFavicons] = await Promise.all([
-      fetchFaviconsForItems(mainItems),
-      fetchFaviconsForItems(tempItems),
-    ]);
-
-    setMainItems(mainWithFavicons);
-    setTempItems(tempWithFavicons);
+    setMainItems(updateItemsWithFavicons(mainItems));
+    setTempItems(updateItemsWithFavicons(tempItems));
     console.log('ファビコン取得完了');
   };
 
   const handleExtractAllIcons = async () => {
-    // Load icons for all items
-    const loadIconsForItems = async (items: LauncherItem[]) => {
-      const itemsWithIcons = await Promise.all(
-        items.map(async (item) => {
-          if (!item.icon) {
-            try {
-              let icon: string | null = null;
+    console.log('すべてのアイコン抽出を開始');
 
-              if (item.type === 'app') {
-                // ショートカットから展開されたアイテムの場合、元のショートカットファイルからアイコンを抽出
-                if (item.originalPath && item.originalPath.endsWith('.lnk')) {
-                  icon = await window.electronAPI.extractIcon(item.originalPath);
-                }
-                // 通常のアプリケーションファイル（.exe）またはショートカットファイル（.lnk）の場合
-                else if (item.path.endsWith('.exe') || item.path.endsWith('.lnk')) {
-                  icon = await window.electronAPI.extractIcon(item.path);
-                }
-              } else if (item.type === 'customUri') {
-                // First try to extract icon from URI scheme handler
-                icon = await window.electronAPI.extractCustomUriIcon(item.path);
-                // If scheme handler icon failed, fall back to file extension
-                if (!icon) {
-                  icon = await window.electronAPI.extractFileIconByExtension(item.path);
-                }
-              } else if (item.type === 'file') {
-                // Extract icon based on file extension
-                icon = await window.electronAPI.extractFileIconByExtension(item.path);
-              }
-              // Skip URLs - favicons should only be fetched via the favicon button
+    // Extract items that don't have icons (excluding URLs)
+    const mainIconItems = mainItems.filter(item => 
+      !item.icon && item.type !== 'url'
+    );
+    const tempIconItems = tempItems.filter(item => 
+      !item.icon && item.type !== 'url'
+    );
+    const allIconItems = [...mainIconItems, ...tempIconItems];
 
-              return { ...item, icon: icon || undefined };
-            } catch (error) {
-              console.error(`Failed to extract icon for ${item.path}:`, error);
-              return item;
-            }
-          }
-          return item;
-        })
-      );
-      return itemsWithIcons;
+    if (allIconItems.length === 0) {
+      console.log('抽出対象のアイテムがありません');
+      return;
+    }
+
+    // Use progress-enabled icon extraction
+    const results = await window.electronAPI.extractIconsWithProgress(allIconItems);
+
+    // Apply extracted icons to items
+    const updateItemsWithIcons = (items: LauncherItem[]) => {
+      return items.map(item => {
+        if (item.type !== 'url' && results[item.path]) {
+          return { ...item, icon: results[item.path] || undefined };
+        }
+        return item;
+      });
     };
 
-    // Load icons for both main and temp items
-    const [mainWithIcons, tempWithIcons] = await Promise.all([
-      loadIconsForItems(mainItems),
-      loadIconsForItems(tempItems),
-    ]);
-
-    setMainItems(mainWithIcons);
-    setTempItems(tempWithIcons);
+    setMainItems(updateItemsWithIcons(mainItems));
+    setTempItems(updateItemsWithIcons(tempItems));
+    console.log('アイコン抽出完了');
   };
 
   const handleTogglePin = async () => {
@@ -348,6 +330,10 @@ const App: React.FC = () => {
           onItemClick={handleItemClick}
           onItemSelect={setSelectedIndex}
         />
+
+        {progressState.isActive && progressState.progress && (
+          <IconProgressBar progress={progressState.progress} />
+        )}
 
         <RegisterModal
           isOpen={isRegisterModalOpen}

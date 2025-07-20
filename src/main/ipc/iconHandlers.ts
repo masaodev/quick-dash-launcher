@@ -4,8 +4,9 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import * as os from 'os';
 
-import { ipcMain } from 'electron';
+import { ipcMain, BrowserWindow } from 'electron';
 import { iconLogger } from '@common/logger';
+import { IconProgress } from '../../common/types';
 
 import { FaviconService } from '../services/faviconService';
 
@@ -15,7 +16,19 @@ const { shell } = require('electron');
 // FaviconServiceのインスタンスを保持
 let faviconService: FaviconService;
 
+// メインウィンドウへの参照を保持
+let mainWindow: BrowserWindow | null = null;
+
 const execAsync = promisify(exec);
+
+/**
+ * 進捗状況をレンダラープロセスに送信する
+ */
+function sendProgressUpdate(eventType: 'start' | 'update' | 'complete', progress: IconProgress) {
+  if (mainWindow) {
+    mainWindow.webContents.send(`icon-progress-${eventType}`, progress);
+  }
+}
 
 /**
  * 環境変数を展開する共通関数
@@ -521,11 +534,187 @@ async function loadCachedIcons(
   return iconCache;
 }
 
+/**
+ * 複数のURLのファビコンを逐次取得し、進捗状況を報告する
+ */
+async function fetchFaviconsWithProgress(urls: string[], faviconsFolder: string): Promise<Record<string, string | null>> {
+  const results: Record<string, string | null> = {};
+  const total = urls.length;
+  let current = 0;
+  let errors = 0;
+  const startTime = Date.now();
+
+  // 進捗開始を通知
+  sendProgressUpdate('start', {
+    type: 'favicon',
+    current: 0,
+    total,
+    currentItem: '',
+    errors: 0,
+    startTime,
+    isComplete: false,
+  });
+
+  for (const url of urls) {
+    try {
+      // 現在の処理アイテムを通知
+      sendProgressUpdate('update', {
+        type: 'favicon',
+        current,
+        total,
+        currentItem: url,
+        errors,
+        startTime,
+        isComplete: false,
+      });
+
+      const favicon = await fetchFavicon(url, faviconsFolder);
+      results[url] = favicon;
+      
+      current++;
+      
+      // 進捗更新を通知
+      sendProgressUpdate('update', {
+        type: 'favicon',
+        current,
+        total,
+        currentItem: url,
+        errors,
+        startTime,
+        isComplete: false,
+      });
+
+    } catch (error) {
+      iconLogger.error(`ファビコン取得エラー: ${url}`, { error });
+      results[url] = null;
+      errors++;
+      current++;
+    }
+  }
+
+  // 進捗完了を通知
+  sendProgressUpdate('complete', {
+    type: 'favicon',
+    current,
+    total,
+    currentItem: '',
+    errors,
+    startTime,
+    isComplete: true,
+  });
+
+  return results;
+}
+
+/**
+ * 複数のアイテムのアイコンを逐次抽出し、進捗状況を報告する
+ */
+async function extractIconsWithProgress(
+  items: IconItem[], 
+  iconsFolder: string, 
+  extensionsFolder: string
+): Promise<Record<string, string | null>> {
+  const results: Record<string, string | null> = {};
+  const total = items.length;
+  let current = 0;
+  let errors = 0;
+  const startTime = Date.now();
+
+  // 進捗開始を通知
+  sendProgressUpdate('start', {
+    type: 'icon',
+    current: 0,
+    total,
+    currentItem: '',
+    errors: 0,
+    startTime,
+    isComplete: false,
+  });
+
+  for (const item of items) {
+    try {
+      // 現在の処理アイテムを通知
+      sendProgressUpdate('update', {
+        type: 'icon',
+        current,
+        total,
+        currentItem: item.path,
+        errors,
+        startTime,
+        isComplete: false,
+      });
+
+      let icon: string | null = null;
+
+      if (item.type === 'app') {
+        // ショートカットから展開されたアイテムの場合、元のショートカットファイルからアイコンを抽出
+        if (item.originalPath && item.originalPath.endsWith('.lnk')) {
+          icon = await extractIcon(item.originalPath, iconsFolder);
+        }
+        // 通常のアプリケーションファイル（.exe）またはショートカットファイル（.lnk）の場合
+        else if (item.path.endsWith('.exe') || item.path.endsWith('.lnk')) {
+          icon = await extractIcon(item.path, iconsFolder);
+        }
+      } else if (item.type === 'customUri') {
+        // First try to extract icon from URI scheme handler
+        icon = await extractCustomUriIcon(item.path, iconsFolder);
+        // If scheme handler icon failed, fall back to file extension
+        if (!icon) {
+          icon = await extractFileIconByExtension(item.path, extensionsFolder);
+        }
+      } else if (item.type === 'file') {
+        // Extract icon based on file extension
+        icon = await extractFileIconByExtension(item.path, extensionsFolder);
+      }
+      // Skip URLs - favicons should only be fetched via the favicon button
+
+      results[item.path] = icon;
+      current++;
+      
+      // 進捗更新を通知
+      sendProgressUpdate('update', {
+        type: 'icon',
+        current,
+        total,
+        currentItem: item.path,
+        errors,
+        startTime,
+        isComplete: false,
+      });
+
+    } catch (error) {
+      iconLogger.error(`アイコン抽出エラー: ${item.path}`, { error });
+      results[item.path] = null;
+      errors++;
+      current++;
+    }
+  }
+
+  // 進捗完了を通知
+  sendProgressUpdate('complete', {
+    type: 'icon',
+    current,
+    total,
+    currentItem: '',
+    errors,
+    startTime,
+    isComplete: true,
+  });
+
+  return results;
+}
+
 export function setupIconHandlers(
   faviconsFolder: string,
   iconsFolder: string,
-  extensionsFolder: string
+  extensionsFolder: string,
+  getMainWindow?: () => BrowserWindow | null
 ) {
+  // メインウィンドウの参照を設定
+  if (getMainWindow) {
+    mainWindow = getMainWindow();
+  }
+
   ipcMain.handle('fetch-favicon', async (_event, url: string) => {
     return await fetchFavicon(url, faviconsFolder);
   });
@@ -544,5 +733,14 @@ export function setupIconHandlers(
 
   ipcMain.handle('load-cached-icons', async (_event, items: IconItem[]) => {
     return await loadCachedIcons(items, faviconsFolder, iconsFolder, extensionsFolder);
+  });
+
+  // 新しい一括処理API
+  ipcMain.handle('fetch-favicons-with-progress', async (_event, urls: string[]) => {
+    return await fetchFaviconsWithProgress(urls, faviconsFolder);
+  });
+
+  ipcMain.handle('extract-icons-with-progress', async (_event, items: IconItem[]) => {
+    return await extractIconsWithProgress(items, iconsFolder, extensionsFolder);
   });
 }

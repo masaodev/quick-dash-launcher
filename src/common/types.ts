@@ -88,3 +88,35 @@ export interface AppSettings {
   /** ウィンドウの最大表示アイテム数（デフォルト: 10） */
   maxVisibleItems: number;
 }
+
+/**
+ * アイコン取得処理の進捗状況を表すインターフェース
+ * リアルタイムでの進捗表示と処理状況の追跡に使用される
+ */
+export interface IconProgress {
+  /** 処理の種別（ファビコン取得またはアイコン抽出） */
+  type: 'favicon' | 'icon';
+  /** 現在処理完了したアイテム数 */
+  current: number;
+  /** 処理対象の総アイテム数 */
+  total: number;
+  /** 現在処理中のアイテム名またはURL */
+  currentItem: string;
+  /** エラーが発生したアイテム数 */
+  errors: number;
+  /** 処理開始時刻（ミリ秒） */
+  startTime: number;
+  /** 処理が完了したかどうか */
+  isComplete: boolean;
+}
+
+/**
+ * アイコン取得進捗状態の管理用インターフェース
+ * React コンポーネント内での状態管理に使用される
+ */
+export interface IconProgressState {
+  /** 進捗処理がアクティブかどうか */
+  isActive: boolean;
+  /** 現在の進捗情報 */
+  progress: IconProgress | null;
+}

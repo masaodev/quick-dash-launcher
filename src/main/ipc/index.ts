@@ -22,7 +22,7 @@ export function setupIPCHandlers(
   setupDataHandlers(configFolder);
   setupItemHandlers(getMainWindow);
   setupConfigHandlers(configFolder);
-  setupIconHandlers(faviconsFolder, iconsFolder, extensionsFolder);
+  setupIconHandlers(faviconsFolder, iconsFolder, extensionsFolder, getMainWindow);
   setupWindowHandlers(getWindowPinState, setWindowPinState, setEditMode, getEditMode);
   registerEditHandlers(configFolder);
   setupSettingsHandlers();
