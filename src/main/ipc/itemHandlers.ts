@@ -5,22 +5,30 @@ import { LauncherItem } from '../../common/types';
 
 async function openItem(item: LauncherItem, mainWindow: BrowserWindow | null): Promise<void> {
   try {
-    itemLogger.info('アイテムを起動中', { name: item.name, type: item.type });
-    itemLogger.info('パス', { path: item.path });
-    if (item.args) {
-      itemLogger.info('引数', { args: item.args });
-    }
+    itemLogger.info('アイテムを起動中', { 
+      name: item.name, 
+      type: item.type,
+      path: item.path,
+      args: item.args || 'なし',
+      originalPath: item.originalPath || 'なし'
+    });
 
     if (item.type === 'url') {
       await shell.openExternal(item.path);
     } else if (item.type === 'file' || item.type === 'folder') {
       await shell.openPath(item.path);
     } else if (item.type === 'app') {
-      if (item.args) {
+      // .lnkファイルで元のパスが存在する場合は、それを使用
+      const launchPath = item.originalPath && item.originalPath.endsWith('.lnk') ? item.originalPath : item.path;
+      
+      // .lnkファイルの場合は引数があってもshell.openPathを使用
+      if (launchPath.endsWith('.lnk')) {
+        await shell.openPath(launchPath);
+      } else if (item.args) {
         const { spawn } = await import('child_process');
-        spawn(item.path, item.args.split(' '), { detached: true });
+        spawn(launchPath, item.args.split(' '), { detached: true });
       } else {
-        await shell.openPath(item.path);
+        await shell.openPath(launchPath);
       }
     } else if (item.type === 'customUri') {
       await shell.openExternal(item.path);
@@ -30,12 +38,16 @@ async function openItem(item: LauncherItem, mainWindow: BrowserWindow | null): P
       mainWindow.hide();
     }
   } catch (error) {
-    itemLogger.error('アイテムの起動に失敗しました', { error });
-    itemLogger.error('失敗したアイテム', {
-      name: item.name,
-      type: item.type,
-      path: item.path,
-      args: item.args || 'なし',
+    itemLogger.error('アイテムの起動に失敗しました', { 
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      item: {
+        name: item.name,
+        type: item.type,
+        path: item.path,
+        args: item.args || 'なし',
+        originalPath: item.originalPath || 'なし'
+      }
     });
   }
 }
