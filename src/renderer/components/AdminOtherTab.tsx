@@ -9,7 +9,6 @@ const AdminOtherTab: React.FC = () => {
     window.electronAPI.openDataFile();
   };
 
-
   const handleQuitApp = () => {
     if (confirm('アプリケーションを終了しますか？')) {
       window.electronAPI.quitApp();

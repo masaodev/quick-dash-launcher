@@ -618,44 +618,6 @@ function isDirectory(filePath: string): boolean {
   }
 }
 
-
-function parseCSVLine(line: string): string[] {
-  const result: string[] = [];
-  let current = '';
-  let inQuotes = false;
-  let i = 0;
-
-  while (i < line.length) {
-    const char = line[i];
-    const nextChar = line[i + 1];
-
-    if (char === '"') {
-      if (inQuotes && nextChar === '"') {
-        // Escaped quote
-        current += '"';
-        i += 2;
-        continue;
-      }
-      inQuotes = !inQuotes;
-      i++;
-    } else if (char === ',' && !inQuotes) {
-      result.push(current.trim());
-      current = '';
-      i++;
-    } else {
-      current += char;
-      i++;
-    }
-  }
-
-  // Add the last field
-  if (current || inQuotes) {
-    result.push(current.trim());
-  }
-
-  return result;
-}
-
 export function setupDataHandlers(configFolder: string) {
   ipcMain.handle('get-config-folder', () => configFolder);
 
@@ -674,7 +636,6 @@ export function setupDataHandlers(configFolder: string) {
   ipcMain.handle('is-directory', async (_event, filePath: string) => {
     return isDirectory(filePath);
   });
-
 
   ipcMain.handle('load-raw-data-files', async () => {
     return await loadRawDataFiles(configFolder);

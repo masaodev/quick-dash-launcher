@@ -75,34 +75,39 @@ async function extractShortcutIcon(lnkPath: string, iconsFolder: string): Promis
 
     // 1. ショートカットの詳細を取得してカスタムアイコンパスをチェック
     iconLogger.info(`ショートカットの詳細情報を取得: ${lnkPath}`);
-    
+
     const shortcutDetails = shell.readShortcutLink(lnkPath);
-    
+
     // カスタムアイコンが設定されている場合、そのアイコンファイルを直接読み込み
     if (shortcutDetails.icon) {
       // 環境変数を展開
       const expandedIconPath = expandEnvironmentVariables(shortcutDetails.icon);
-      
+
       if (fs.existsSync(expandedIconPath)) {
         iconLogger.info(`カスタムアイコンファイルを発見: ${expandedIconPath}`);
-        
+
         try {
           // アイコンファイル（.ico）を直接読み込み
           if (expandedIconPath.toLowerCase().endsWith('.ico')) {
             // ICOファイルをPNGに変換するため、extract-file-iconでアイコンファイルから抽出
             const extractedIconBuffer = extractFileIcon(expandedIconPath, 32);
-            
+
             if (extractedIconBuffer && extractedIconBuffer.length > 0) {
               // ショートカット専用キャッシュに保存
               fs.writeFileSync(lnkIconPath, extractedIconBuffer);
-              
+
               const base64 = extractedIconBuffer.toString('base64');
-              iconLogger.info(`カスタムアイコンファイルからアイコンを抽出成功: ${expandedIconPath}`);
+              iconLogger.info(
+                `カスタムアイコンファイルからアイコンを抽出成功: ${expandedIconPath}`
+              );
               return `data:image/png;base64,${base64}`;
             }
           }
         } catch (error) {
-          iconLogger.error(`カスタムアイコンファイルの読み込みエラー`, { iconPath: expandedIconPath, error });
+          iconLogger.error(`カスタムアイコンファイルの読み込みエラー`, {
+            iconPath: expandedIconPath,
+            error,
+          });
         }
       } else {
         iconLogger.warn(`カスタムアイコンファイルが見つからない: ${expandedIconPath}`);
@@ -116,19 +121,23 @@ async function extractShortcutIcon(lnkPath: string, iconsFolder: string): Promis
     if (shortcutIconBuffer && shortcutIconBuffer.length > 0) {
       // ショートカット専用キャッシュに保存
       fs.writeFileSync(lnkIconPath, shortcutIconBuffer);
-      
+
       const base64 = shortcutIconBuffer.toString('base64');
       iconLogger.info(`ショートカットファイルからアイコンを抽出成功: ${lnkPath}`);
       return `data:image/png;base64,${base64}`;
     }
 
     // 3. 最終フォールバック：ターゲットファイルからアイコンを抽出
-    iconLogger.info(`ショートカットファイルからの抽出に失敗、ターゲットからの抽出を試行: ${lnkPath}`);
-    
+    iconLogger.info(
+      `ショートカットファイルからの抽出に失敗、ターゲットからの抽出を試行: ${lnkPath}`
+    );
+
     if (shortcutDetails && shortcutDetails.target && fs.existsSync(shortcutDetails.target)) {
       const targetIcon = await extractIcon(shortcutDetails.target, iconsFolder);
       if (targetIcon) {
-        iconLogger.info(`ターゲットファイルからアイコンを抽出成功: ${lnkPath} -> ${shortcutDetails.target}`);
+        iconLogger.info(
+          `ターゲットファイルからアイコンを抽出成功: ${lnkPath} -> ${shortcutDetails.target}`
+        );
         return targetIcon;
       }
     }
@@ -439,19 +448,20 @@ async function loadCachedIcons(
         } else if (fs.existsSync(faviconPath32)) {
           iconPath = faviconPath32;
         }
-      } else if (item.type === 'app' && 
-                 ((item.originalPath && item.originalPath.endsWith('.lnk')) || 
-                  (item.path && item.path.endsWith('.lnk')))) {
+      } else if (
+        item.type === 'app' &&
+        ((item.originalPath && item.originalPath.endsWith('.lnk')) ||
+          (item.path && item.path.endsWith('.lnk')))
+      ) {
         // ショートカットファイルの場合（展開済みアイテムまたは直接指定）
         // 元のショートカットパスを優先、なければ現在のパスを使用
-        const shortcutPath = (item.originalPath && item.originalPath.endsWith('.lnk')) 
-          ? item.originalPath 
-          : item.path;
-        
+        const shortcutPath =
+          item.originalPath && item.originalPath.endsWith('.lnk') ? item.originalPath : item.path;
+
         const shortcutName = path.basename(shortcutPath, '.lnk');
         const lnkIconPath = path.join(iconsFolder, `${shortcutName}_lnk_icon.png`);
         const exeIconPath = path.join(iconsFolder, `${shortcutName}_icon.png`);
-        
+
         if (fs.existsSync(lnkIconPath)) {
           iconPath = lnkIconPath;
         } else if (fs.existsSync(exeIconPath)) {

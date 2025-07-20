@@ -11,7 +11,7 @@ let Store: typeof ElectronStore | null = null;
  * electron-storeを使用して設定の永続化を行う
  */
 export class SettingsService {
-  private store: InstanceType<typeof ElectronStore<AppSettings>> | null = null;
+  private store: any = null;
   private static instance: SettingsService;
 
   /**
