@@ -291,9 +291,6 @@ const EditModeView: React.FC<EditModeViewProps> = ({
           <button onClick={() => setIsBookmarkModalOpen(true)} className="import-bookmark-button">
             ブックマークをインポート
           </button>
-          <button onClick={handleExitEditMode} className="exit-edit-button">
-            ウィンドウを閉じる
-          </button>
           <button
             onClick={handleSaveChanges}
             className="save-changes-button"
