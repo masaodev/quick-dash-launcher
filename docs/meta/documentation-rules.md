@@ -12,6 +12,7 @@
 - `docs/features/icon-system.md` - アイコン処理システムの詳細仕様
 - `docs/features/dir-directive.md` - DIRディレクティブの詳細な使用方法とオプション
 - `docs/features/edit-mode.md` - 編集モードの詳細な操作方法
+- `docs/features/css-design-system.md` - CSS変数ベースの統一されたスタイル管理システム
 - `docs/architecture/overview.md` - アーキテクチャ詳細（プロセス構造、IPC、データフロー）
 - `docs/reference/screen-list.md` - アプリケーションの画面構成とUI仕様
 - `docs/meta/code-review-report.md` - コード品質分析とレビュー結果

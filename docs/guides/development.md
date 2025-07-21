@@ -91,6 +91,43 @@ const result = await window.api.channelName(args);
 - インターフェースは`I`プレフィックスを使用
 - 型は`src/common/types.ts`で一元管理
 
+### CSS開発パターン
+
+#### デザインシステムの使用
+QuickDashLauncherではCSS変数ベースの統一されたデザインシステムを採用しています。
+
+**基本ルール:**
+- ハードコード値の使用禁止（色、サイズ、間隔など）
+- 必ずvariables.cssで定義された変数を使用
+- 共通クラス（common.css）を積極的に活用
+
+**新しいコンポーネントのスタイル作成手順:**
+1. `src/renderer/styles/components/`に新しいCSSファイルを作成
+2. CSS変数のみを使用してスタイルを記述
+3. 共通クラスで対応できる部分は再利用
+4. コンポーネントファイルでCSSをインポート
+
+```css
+/* 良い例 */
+.my-component {
+  padding: var(--spacing-lg);
+  background-color: var(--bg-section);
+  border: var(--border-light);
+  color: var(--text-primary);
+}
+
+/* 悪い例 */
+.my-component {
+  padding: 16px;
+  background-color: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  color: #333;
+}
+```
+
+**詳細情報:**
+- [CSSデザインシステム](../features/css-design-system.md) - 完全なガイドラインと使用方法
+
 ### パフォーマンス最適化パターン
 
 #### アイコンのキャッシュ
@@ -164,6 +201,7 @@ const result = await window.api.channelName(args);
 ## 関連ドキュメント
 
 - [編集モード詳細ガイド](../features/edit-mode.md) - 編集モードの操作方法と技術実装
+- [CSSデザインシステム](../features/css-design-system.md) - 統一されたスタイル管理システム
 - [ビルドとデプロイ](build-and-deploy.md) - ビルドシステムと配布方法
 - [テストチェックリスト](testing.md) - 手動テストの手順
 - [アイコンシステム](../features/icon-system.md) - アイコン取得・管理システム
