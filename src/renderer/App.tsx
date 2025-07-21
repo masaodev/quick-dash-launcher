@@ -225,16 +225,16 @@ const App: React.FC = () => {
     await handleFetchFavicon(true);
   };
 
-  const handleExtractAllIcons = async () => {
-    console.log('すべてのアイコン抽出を開始');
+  const handleExtractAllIcons = async (forceAll: boolean = false) => {
+    console.log(forceAll ? 'すべてのアイテムのアイコンを強制抽出開始' : 'アイコンなしアイテムのアイコン抽出を開始');
 
-    // Extract items that don't have icons (excluding URLs)
-    const mainIconItems = mainItems.filter(item => 
-      !item.icon && item.type !== 'url'
-    );
-    const tempIconItems = tempItems.filter(item => 
-      !item.icon && item.type !== 'url'
-    );
+    // Extract items based on forceAll flag (excluding URLs)
+    const mainIconItems = forceAll
+      ? mainItems.filter(item => item.type !== 'url')
+      : mainItems.filter(item => !item.icon && item.type !== 'url');
+    const tempIconItems = forceAll
+      ? tempItems.filter(item => item.type !== 'url')
+      : tempItems.filter(item => !item.icon && item.type !== 'url');
     const allIconItems = [...mainIconItems, ...tempIconItems];
 
     if (allIconItems.length === 0) {
@@ -258,6 +258,37 @@ const App: React.FC = () => {
     setMainItems(updateItemsWithIcons(mainItems));
     setTempItems(updateItemsWithIcons(tempItems));
     console.log('アイコン抽出完了');
+  };
+
+  const handleExtractAllIconsForced = async () => {
+    await handleExtractAllIcons(true);
+  };
+
+  const handleRefreshAll = async () => {
+    console.log('すべての更新を開始');
+    
+    // 1. データファイルの再読み込み
+    await loadItems();
+    
+    // 2. 全ファビコン強制取得
+    await handleFetchFavicon(true);
+    
+    // 3. 全アイコン強制抽出
+    await handleExtractAllIcons(true);
+    
+    console.log('すべての更新が完了');
+  };
+
+  const handleFetchMissingIcons = async () => {
+    console.log('未取得アイコンの取得を開始');
+    
+    // ファビコン取得（未取得のみ）
+    await handleFetchFavicon(false);
+    
+    // アイコン抽出（未取得のみ）
+    await handleExtractAllIcons(false);
+    
+    console.log('未取得アイコンの取得が完了');
   };
 
   const handleTogglePin = async () => {
@@ -315,11 +346,10 @@ const App: React.FC = () => {
             onKeyDown={handleKeyDown}
           />
           <ActionButtons
-            onFetchFavicon={handleFetchFavicon}
-            onFetchAllFavicons={handleFetchAllFavicons}
-            onExtractAllIcons={handleExtractAllIcons}
-            onAddTemp={handleAddTemp}
             onReload={loadItems}
+            onFetchMissingIcons={handleFetchMissingIcons}
+            onRefreshAll={handleRefreshAll}
+            onAddTemp={handleAddTemp}
             onOpenConfigFolder={() => window.electronAPI.openConfigFolder()}
             onOpenDataFile={() => window.electronAPI.openDataFile()}
             onTogglePin={handleTogglePin}

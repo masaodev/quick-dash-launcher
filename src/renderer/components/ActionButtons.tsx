@@ -1,13 +1,13 @@
 import React from 'react';
 
 import SettingsDropdown from './SettingsDropdown';
+import RefreshActionsDropdown from './RefreshActionsDropdown';
 
 interface ActionButtonsProps {
-  onFetchFavicon: () => void;
-  onFetchAllFavicons: () => void;
-  onExtractAllIcons: () => void;
-  onAddTemp: () => void;
   onReload: () => void;
+  onFetchMissingIcons: () => void;
+  onRefreshAll: () => void;
+  onAddTemp: () => void;
   onOpenConfigFolder: () => void;
   onOpenDataFile: () => void;
   onTogglePin: () => void;
@@ -19,11 +19,10 @@ interface ActionButtonsProps {
 }
 
 const ActionButtons: React.FC<ActionButtonsProps> = ({
-  onFetchFavicon,
-  onFetchAllFavicons,
-  onExtractAllIcons,
-  onAddTemp,
   onReload,
+  onFetchMissingIcons,
+  onRefreshAll,
+  onAddTemp,
   onOpenConfigFolder,
   onOpenDataFile,
   onTogglePin,
@@ -35,20 +34,13 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
 }) => {
   return (
     <div className="action-buttons">
-      <button className="action-button" onClick={onFetchFavicon} title="ファビコン取得（アイコンなしのみ）">
-        🌐
-      </button>
-      <button className="action-button" onClick={onFetchAllFavicons} title="全ファビコン強制取得">
-        🔄🌐
-      </button>
-      <button className="action-button" onClick={onExtractAllIcons} title="全アイコンを抽出">
-        🎨
-      </button>
+      <RefreshActionsDropdown
+        onReload={onReload}
+        onFetchMissingIcons={onFetchMissingIcons}
+        onRefreshAll={onRefreshAll}
+      />
       <button className="action-button" onClick={onAddTemp} title="一時タブに追加">
         ✔️
-      </button>
-      <button className="action-button" onClick={onReload} title="リロード">
-        🔄
       </button>
       <button
         className={`action-button ${isPinned ? 'pinned' : ''}`}
