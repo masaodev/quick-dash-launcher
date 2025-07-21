@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import '../styles/HotkeyInput.css';
+import '../styles/components/HotkeyInput.css';
 
 interface HotkeyInputProps {
   value: string;

@@ -1,3 +1,7 @@
+/* CSS変数とグローバルリセット */
+@import './variables.css';
+@import './common.css';
+
 /* グローバルリセットとベーススタイル */
 * {
   box-sizing: border-box;
@@ -6,9 +10,9 @@
 }
 
 body {
-  font-family: 'Meiryo', 'メイリオ', sans-serif;
-  font-size: 14px;
-  background-color: #f0f0f0;
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  background-color: var(--bg-body);
   overflow: hidden;
   user-select: none;
 }
@@ -17,23 +21,23 @@ body {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: #ffffff;
+  background-color: var(--bg-app);
 }
 
 /* Scrollbar styling */
 *::-webkit-scrollbar {
-  width: 8px;
+  width: var(--scrollbar-width);
 }
 
 *::-webkit-scrollbar-track {
-  background: #f0f0f0;
+  background: var(--bg-body);
 }
 
 *::-webkit-scrollbar-thumb {
-  background: #ccc;
-  border-radius: 4px;
+  background: var(--color-gray-500);
+  border-radius: var(--border-radius);
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background: #999;
+  background: var(--color-gray-600);
 }

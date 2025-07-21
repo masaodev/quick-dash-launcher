@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { AppSettings } from '../../common/types';
 
 import { HotkeyInput } from './HotkeyInput';
-import '../styles/SettingsModal.css';
+import '../styles/components/SettingsModal.css';
 
 interface SettingsModalProps {
   isOpen: boolean;

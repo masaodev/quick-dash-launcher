@@ -2,31 +2,31 @@
 .item-list {
   flex: 1;
   overflow-y: auto;
-  padding: 4px;
+  padding: var(--spacing-xs);
 }
 
 .item {
   display: flex;
   align-items: center;
-  padding: 6px 8px;
+  padding: var(--spacing-xs) var(--spacing-sm);
   cursor: pointer;
-  border-radius: 4px;
-  transition: background-color 0.1s;
+  border-radius: var(--border-radius);
+  transition: var(--transition-fast);
 }
 
 .item:hover {
-  background-color: #f0f0f0;
+  background-color: var(--bg-hover);
 }
 
 .item.selected {
-  background-color: #0078d4;
-  color: white;
+  background-color: var(--color-primary);
+  color: var(--color-white);
 }
 
 .item-icon {
-  width: 24px;
-  height: 24px;
-  margin-right: 8px;
+  width: var(--icon-size-md);
+  height: var(--icon-size-md);
+  margin-right: var(--spacing-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -58,20 +58,20 @@
   right: 0;
   bottom: 0;
   background-color: rgba(0, 120, 212, 0.1);
-  border: 3px dashed #0078d4;
+  border: 3px dashed var(--color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
   pointer-events: none;
-  z-index: 1000;
+  z-index: var(--z-modal);
 }
 
 .drag-message {
-  font-size: 18px;
-  color: #0078d4;
+  font-size: var(--font-size-xl);
+  color: var(--color-primary);
   font-weight: bold;
-  background-color: white;
-  padding: 12px 24px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background-color: var(--color-white);
+  padding: var(--spacing-md) var(--spacing-2xl);
+  border-radius: var(--border-radius-xl);
+  box-shadow: var(--shadow);
 }

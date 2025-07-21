@@ -1,0 +1,87 @@
+.hotkey-input-container {
+  position: relative;
+  width: 100%;
+}
+
+.hotkey-input {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: var(--border-normal);
+  border-radius: var(--border-radius);
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  background-color: var(--color-white);
+  cursor: pointer;
+  transition: var(--transition-normal);
+}
+
+.hotkey-input:hover {
+  border-color: var(--color-primary);
+}
+
+.hotkey-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: var(--focus-ring-wide);
+}
+
+.hotkey-input.recording {
+  border-color: var(--color-danger-light);
+  background-color: var(--bg-danger-light);
+  box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.25);
+  animation: pulse 1s infinite;
+}
+
+.hotkey-input.disabled {
+  background-color: var(--bg-input-disabled);
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+
+.hotkey-input.disabled:hover {
+  border-color: var(--color-gray-500);
+}
+
+.hotkey-recording-indicator {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background-color: var(--color-danger-light);
+  color: var(--color-white);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-xs);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: var(--z-dropdown);
+}
+
+.cancel-recording {
+  background: none;
+  border: none;
+  color: var(--color-white);
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: var(--font-size-xs);
+  padding: 0;
+  margin-left: var(--spacing-sm);
+}
+
+.cancel-recording:hover {
+  color: var(--text-light-hover);
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(255, 107, 107, 0.15);
+  }
+  100% {
+    box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.25);
+  }
+}

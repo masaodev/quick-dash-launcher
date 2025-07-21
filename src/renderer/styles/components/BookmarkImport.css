@@ -12,152 +12,152 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 24px;
-  border-bottom: 1px solid #e0e0e0;
+  padding: var(--spacing-xl) var(--spacing-2xl);
+  border-bottom: var(--border-light);
 }
 
 .bookmark-import-modal .modal-header h2 {
   margin: 0;
-  font-size: 20px;
-  color: #333;
+  font-size: var(--font-size-2xl);
+  color: var(--text-primary);
 }
 
 .bookmark-import-modal .close-button {
   background: none;
   border: none;
-  font-size: 24px;
-  color: #666;
+  font-size: var(--font-size-3xl);
+  color: var(--text-muted);
   cursor: pointer;
-  padding: 4px 8px;
+  padding: var(--spacing-xs) var(--spacing-sm);
   line-height: 1;
 }
 
 .bookmark-import-modal .close-button:hover {
-  color: #333;
+  color: var(--text-primary);
 }
 
 .bookmark-import-controls {
-  padding: 16px 24px;
-  border-bottom: 1px solid #e0e0e0;
+  padding: var(--spacing-lg) var(--spacing-2xl);
+  border-bottom: var(--border-light);
 }
 
 .file-select-section {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 12px;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
 }
 
 .select-file-button {
-  padding: 8px 16px;
-  background-color: #2196f3;
-  color: white;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background-color: var(--color-info);
+  color: var(--color-white);
   border: none;
-  border-radius: 4px;
+  border-radius: var(--border-radius);
   cursor: pointer;
-  font-size: 14px;
+  font-size: var(--font-size-base);
 }
 
 .select-file-button:hover:not(:disabled) {
-  background-color: #1976d2;
+  background-color: var(--color-info-hover);
 }
 
 .select-file-button:disabled {
-  background-color: #ccc;
+  background-color: var(--color-gray-400);
   cursor: not-allowed;
 }
 
 .file-name {
-  color: #666;
-  font-size: 14px;
+  color: var(--text-muted);
+  font-size: var(--font-size-base);
 }
 
 .search-section {
-  margin-bottom: 12px;
+  margin-bottom: var(--spacing-md);
 }
 
 .search-section .search-input {
   width: 100%;
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: var(--border-normal);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-base);
 }
 
 .bookmark-import-modal .bookmark-bulk-actions {
   display: flex;
-  gap: 20px;
+  gap: var(--spacing-xl);
   align-items: center;
 }
 
 .bookmark-import-modal .bookmark-filtered-actions,
 .bookmark-import-modal .bookmark-all-actions {
   display: flex;
-  gap: 8px;
+  gap: var(--spacing-sm);
 }
 
 .bookmark-import-modal .bookmark-action-button {
-  padding: 6px 12px;
-  background-color: #f5f5f5;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  padding: var(--spacing-xs) var(--spacing-md);
+  background-color: var(--color-gray-200);
+  border: var(--border-normal);
+  border-radius: var(--border-radius);
   cursor: pointer;
-  font-size: 13px;
+  font-size: var(--font-size-sm);
   display: inline-block;
   text-align: center;
   white-space: nowrap;
   font-family: inherit;
   line-height: 1.4;
-  transition: background-color 0.2s;
+  transition: var(--transition-normal);
 }
 
 .bookmark-import-modal .bookmark-action-button:hover {
-  background-color: #e0e0e0;
+  background-color: var(--bg-hover);
 }
 
 .bookmark-list-container {
   flex: 1;
   overflow-y: auto;
   margin: 0;
-  border: 1px solid #e0e0e0;
-  background-color: #fafafa;
+  border: var(--border-light);
+  background-color: var(--bg-table-container);
 }
 
 .bookmark-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
-  background-color: white;
+  font-size: var(--font-size-base);
+  background-color: var(--color-white);
   table-layout: fixed;
 }
 
 .bookmark-table thead {
   position: sticky;
   top: 0;
-  background-color: #f5f5f5;
+  background-color: var(--color-gray-200);
   z-index: 1;
 }
 
 .bookmark-table th {
-  padding: 10px;
+  padding: var(--spacing-sm);
   text-align: left;
-  border-bottom: 2px solid #ddd;
+  border-bottom: 2px solid var(--color-gray-400);
   font-weight: 600;
 }
 
 .bookmark-table td {
-  padding: 8px 10px;
-  border-bottom: 1px solid #eee;
+  padding: var(--spacing-sm) var(--spacing-sm);
+  border-bottom: var(--border-light);
   vertical-align: top;
   line-height: 1.4;
 }
 
 .bookmark-table tbody tr:hover {
-  background-color: #f9f9f9;
+  background-color: var(--bg-hover);
 }
 
 .bookmark-table tbody tr.selected {
-  background-color: #e3f2fd;
+  background-color: var(--bg-selected);
 }
 
 .bookmark-table .checkbox-column {
@@ -175,8 +175,8 @@
 
 .bookmark-table .url-column {
   width: 60%;
-  color: #666;
-  font-size: 13px;
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
   word-break: break-all;
   overflow-wrap: break-word;
   max-width: 0;
@@ -187,53 +187,53 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 24px;
-  border-top: 1px solid #e0e0e0;
+  padding: var(--spacing-lg) var(--spacing-2xl);
+  border-top: var(--border-light);
 }
 
 .status-info {
-  color: #666;
-  font-size: 14px;
+  color: var(--text-muted);
+  font-size: var(--font-size-base);
 }
 
 .bookmark-import-modal .bookmark-modal-actions {
   display: flex;
-  gap: 10px;
+  gap: var(--spacing-sm);
 }
 
 .bookmark-import-modal .bookmark-cancel-button {
-  padding: 8px 20px;
-  background-color: #f5f5f5;
-  color: #333;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  padding: var(--spacing-sm) var(--spacing-xl);
+  background-color: var(--color-gray-200);
+  color: var(--text-primary);
+  border: var(--border-normal);
+  border-radius: var(--border-radius);
   cursor: pointer;
-  font-size: 14px;
+  font-size: var(--font-size-base);
   font-family: inherit;
-  transition: background-color 0.2s;
+  transition: var(--transition-normal);
 }
 
 .bookmark-import-modal .bookmark-cancel-button:hover {
-  background-color: #e0e0e0;
+  background-color: var(--bg-hover);
 }
 
 .bookmark-import-modal .bookmark-import-button {
-  padding: 8px 20px;
-  background-color: #4caf50;
-  color: white;
+  padding: var(--spacing-sm) var(--spacing-xl);
+  background-color: var(--color-success);
+  color: var(--color-white);
   border: none;
-  border-radius: 4px;
+  border-radius: var(--border-radius);
   cursor: pointer;
-  font-size: 14px;
+  font-size: var(--font-size-base);
   font-family: inherit;
-  transition: background-color 0.2s;
+  transition: var(--transition-normal);
 }
 
 .bookmark-import-modal .bookmark-import-button:hover:not(:disabled) {
-  background-color: #45a049;
+  background-color: var(--color-success-hover);
 }
 
 .bookmark-import-modal .bookmark-import-button:disabled {
-  background-color: #ccc;
+  background-color: var(--color-gray-400);
   cursor: not-allowed;
 }
