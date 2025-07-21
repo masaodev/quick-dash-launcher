@@ -187,15 +187,19 @@ const App: React.FC = () => {
   };
 
   const handleFetchFavicon = async (forceAll: boolean = false) => {
-    console.log(forceAll ? 'すべてのURLアイテムのファビコンを強制取得開始' : 'アイコンなしURLアイテムのファビコンを取得開始');
+    console.log(
+      forceAll
+        ? 'すべてのURLアイテムのファビコンを強制取得開始'
+        : 'アイコンなしURLアイテムのファビコンを取得開始'
+    );
 
     // Extract URL items based on forceAll flag
-    const mainUrls = forceAll 
-      ? mainItems.filter(item => item.type === 'url').map(item => item.path)
-      : mainItems.filter(item => item.type === 'url' && !item.icon).map(item => item.path);
+    const mainUrls = forceAll
+      ? mainItems.filter((item) => item.type === 'url').map((item) => item.path)
+      : mainItems.filter((item) => item.type === 'url' && !item.icon).map((item) => item.path);
     const tempUrls = forceAll
-      ? tempItems.filter(item => item.type === 'url').map(item => item.path)
-      : tempItems.filter(item => item.type === 'url' && !item.icon).map(item => item.path);
+      ? tempItems.filter((item) => item.type === 'url').map((item) => item.path)
+      : tempItems.filter((item) => item.type === 'url' && !item.icon).map((item) => item.path);
     const allUrls = [...mainUrls, ...tempUrls];
 
     if (allUrls.length === 0) {
@@ -208,7 +212,7 @@ const App: React.FC = () => {
 
     // Apply fetched favicons to items
     const updateItemsWithFavicons = (items: LauncherItem[]) => {
-      return items.map(item => {
+      return items.map((item) => {
         if (item.type === 'url' && results[item.path]) {
           return { ...item, icon: results[item.path] || undefined };
         }
@@ -221,20 +225,20 @@ const App: React.FC = () => {
     console.log('ファビコン取得完了');
   };
 
-  const handleFetchAllFavicons = async () => {
-    await handleFetchFavicon(true);
-  };
-
   const handleExtractAllIcons = async (forceAll: boolean = false) => {
-    console.log(forceAll ? 'すべてのアイテムのアイコンを強制抽出開始' : 'アイコンなしアイテムのアイコン抽出を開始');
+    console.log(
+      forceAll
+        ? 'すべてのアイテムのアイコンを強制抽出開始'
+        : 'アイコンなしアイテムのアイコン抽出を開始'
+    );
 
     // Extract items based on forceAll flag (excluding URLs)
     const mainIconItems = forceAll
-      ? mainItems.filter(item => item.type !== 'url')
-      : mainItems.filter(item => !item.icon && item.type !== 'url');
+      ? mainItems.filter((item) => item.type !== 'url')
+      : mainItems.filter((item) => !item.icon && item.type !== 'url');
     const tempIconItems = forceAll
-      ? tempItems.filter(item => item.type !== 'url')
-      : tempItems.filter(item => !item.icon && item.type !== 'url');
+      ? tempItems.filter((item) => item.type !== 'url')
+      : tempItems.filter((item) => !item.icon && item.type !== 'url');
     const allIconItems = [...mainIconItems, ...tempIconItems];
 
     if (allIconItems.length === 0) {
@@ -247,7 +251,7 @@ const App: React.FC = () => {
 
     // Apply extracted icons to items
     const updateItemsWithIcons = (items: LauncherItem[]) => {
-      return items.map(item => {
+      return items.map((item) => {
         if (item.type !== 'url' && results[item.path]) {
           return { ...item, icon: results[item.path] || undefined };
         }
@@ -260,34 +264,30 @@ const App: React.FC = () => {
     console.log('アイコン抽出完了');
   };
 
-  const handleExtractAllIconsForced = async () => {
-    await handleExtractAllIcons(true);
-  };
-
   const handleRefreshAll = async () => {
     console.log('すべての更新を開始');
-    
+
     // 1. データファイルの再読み込み
     await loadItems();
-    
+
     // 2. 全ファビコン強制取得
     await handleFetchFavicon(true);
-    
+
     // 3. 全アイコン強制抽出
     await handleExtractAllIcons(true);
-    
+
     console.log('すべての更新が完了');
   };
 
   const handleFetchMissingIcons = async () => {
     console.log('未取得アイコンの取得を開始');
-    
+
     // ファビコン取得（未取得のみ）
     await handleFetchFavicon(false);
-    
+
     // アイコン抽出（未取得のみ）
     await handleExtractAllIcons(false);
-    
+
     console.log('未取得アイコンの取得が完了');
   };
 

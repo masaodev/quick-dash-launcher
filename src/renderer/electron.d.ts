@@ -4,6 +4,7 @@ import {
   RawDataLine,
   SimpleBookmarkItem,
   AppSettings,
+  IconProgress,
 } from '../common/types';
 
 import { RegisterItem } from './components/RegisterModal';
@@ -21,6 +22,14 @@ export interface ElectronAPI {
   extractFileIconByExtension: (filePath: string) => Promise<string | null>;
   extractCustomUriIcon: (uri: string) => Promise<string | null>;
   loadCachedIcons: (items: LauncherItem[]) => Promise<Record<string, string>>;
+  // 進捗付きアイコン取得API
+  fetchFaviconsWithProgress: (urls: string[]) => Promise<Record<string, string | null>>;
+  extractIconsWithProgress: (items: LauncherItem[]) => Promise<Record<string, string | null>>;
+  // 進捗イベントリスナー
+  onIconProgress: (
+    eventType: 'start' | 'update' | 'complete',
+    callback: (data: IconProgress) => void
+  ) => void;
   onWindowShown: (callback: () => void) => void;
   getWindowPinState: () => Promise<boolean>;
   setWindowPinState: (isPinned: boolean) => Promise<void>;

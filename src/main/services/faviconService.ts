@@ -72,16 +72,16 @@ export class FaviconService {
     // 各ソースを順番に試す
     for (const source of sources) {
       try {
-        faviconLogger.info('ファビコンダウンロードを試行', { 
-          url: source.url, 
-          size: source.size, 
-          isOgImage: source.isOgImage 
+        faviconLogger.info('ファビコンダウンロードを試行', {
+          url: source.url,
+          size: source.size,
+          isOgImage: source.isOgImage,
         });
         const data = await this.downloadFavicon(source.url);
         if (data && data.length > 0) {
-          faviconLogger.info('ファビコンダウンロード成功', { 
-            url: source.url, 
-            dataSize: data.length 
+          faviconLogger.info('ファビコンダウンロード成功', {
+            url: source.url,
+            dataSize: data.length,
           });
           return data;
         }
@@ -208,13 +208,13 @@ export class FaviconService {
       }
 
       // デバッグ用：取得したソースをログ出力
-      faviconLogger.info('HTMLから取得したファビコンソース', { 
-        url, 
-        sources: sources.map(s => ({ 
-          url: s.url, 
-          size: s.size, 
-          isOgImage: s.isOgImage 
-        })) 
+      faviconLogger.info('HTMLから取得したファビコンソース', {
+        url,
+        sources: sources.map((s) => ({
+          url: s.url,
+          size: s.size,
+          isOgImage: s.isOgImage,
+        })),
       });
 
       // 優先度の高い順にソート
@@ -222,15 +222,15 @@ export class FaviconService {
         // OGP画像は最後の手段として最低優先度
         if (a.isOgImage && !b.isOgImage) return 1;
         if (!a.isOgImage && b.isOgImage) return -1;
-        
+
         // apple-touch-iconを高優先度に
         if (a.url.includes('apple-touch-icon') && !b.url.includes('apple-touch-icon')) return -1;
         if (!a.url.includes('apple-touch-icon') && b.url.includes('apple-touch-icon')) return 1;
-        
+
         // 標準的なrel="icon"を優先
         if (a.url.includes('favicon') && !b.url.includes('favicon')) return -1;
         if (!a.url.includes('favicon') && b.url.includes('favicon')) return 1;
-        
+
         // サイズが指定されている場合は適度なサイズ（64px前後）を優先
         if (a.size && b.size) {
           const idealSize = 64;
@@ -238,18 +238,18 @@ export class FaviconService {
           const bDiff = Math.abs(b.size - idealSize);
           return aDiff - bDiff;
         }
-        
+
         return 0;
       });
 
       // デバッグ用：ソート後のソースをログ出力
-      faviconLogger.info('ソート後のファビコンソース', { 
-        url, 
-        sortedSources: sources.map(s => ({ 
-          url: s.url, 
-          size: s.size, 
-          isOgImage: s.isOgImage 
-        })) 
+      faviconLogger.info('ソート後のファビコンソース', {
+        url,
+        sortedSources: sources.map((s) => ({
+          url: s.url,
+          size: s.size,
+          isOgImage: s.isOgImage,
+        })),
       });
     } catch (error) {
       faviconLogger.error('HTML解析エラー', { error });

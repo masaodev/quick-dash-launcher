@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { IconProgress } from '../../common/types';
 import '../styles/components/IconProgress.css';
 
@@ -8,7 +9,7 @@ interface IconProgressBarProps {
 
 const IconProgressBar: React.FC<IconProgressBarProps> = ({ progress }) => {
   const progressPercentage = progress.total > 0 ? (progress.current / progress.total) * 100 : 0;
-  
+
   const formatElapsedTime = (startTime: number): string => {
     const elapsed = Math.floor((Date.now() - startTime) / 1000);
     return `${elapsed}秒`;
@@ -16,13 +17,13 @@ const IconProgressBar: React.FC<IconProgressBarProps> = ({ progress }) => {
 
   const formatEstimatedTime = (startTime: number, current: number, total: number): string => {
     if (current === 0) return '計算中...';
-    
+
     const elapsed = Date.now() - startTime;
     const avgTimePerItem = elapsed / current;
     const remaining = total - current;
     const estimatedMs = avgTimePerItem * remaining;
     const estimatedSeconds = Math.ceil(estimatedMs / 1000);
-    
+
     if (estimatedSeconds < 60) {
       return `約${estimatedSeconds}秒`;
     } else {
@@ -58,9 +59,7 @@ const IconProgressBar: React.FC<IconProgressBarProps> = ({ progress }) => {
           </span>
         </div>
         <div className="progress-stats">
-          {progress.errors > 0 && (
-            <span className="error-count">エラー: {progress.errors}件</span>
-          )}
+          {progress.errors > 0 && <span className="error-count">エラー: {progress.errors}件</span>}
           <span className="elapsed-time">経過: {formatElapsedTime(progress.startTime)}</span>
           {progress.current > 0 && !progress.isComplete && (
             <span className="estimated-time">
@@ -69,25 +68,18 @@ const IconProgressBar: React.FC<IconProgressBarProps> = ({ progress }) => {
           )}
         </div>
       </div>
-      
+
       <div className="progress-bar-container">
         <div className="progress-bar-track">
-          <div 
-            className="progress-bar-fill" 
-            style={{ width: `${progressPercentage}%` }}
-          />
+          <div className="progress-bar-fill" style={{ width: `${progressPercentage}%` }} />
         </div>
-        <div className="progress-percentage">
-          {Math.round(progressPercentage)}%
-        </div>
+        <div className="progress-percentage">{Math.round(progressPercentage)}%</div>
       </div>
-      
+
       {progress.currentItem && !progress.isComplete && (
-        <div className="current-item">
-          処理中: {truncateItemName(progress.currentItem)}
-        </div>
+        <div className="current-item">処理中: {truncateItemName(progress.currentItem)}</div>
       )}
-      
+
       {progress.isComplete && (
         <div className="completion-message">
           {progress.type === 'favicon' ? 'ファビコン取得完了' : 'アイコン抽出完了'}

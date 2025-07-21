@@ -45,7 +45,10 @@ const RefreshActionsDropdown: React.FC<RefreshActionsDropdownProps> = ({
           <button className="dropdown-item" onClick={() => handleMenuItemClick(onReload)}>
             📋 データ再読み込み
           </button>
-          <button className="dropdown-item" onClick={() => handleMenuItemClick(onFetchMissingIcons)}>
+          <button
+            className="dropdown-item"
+            onClick={() => handleMenuItemClick(onFetchMissingIcons)}
+          >
             🎨 アイコン取得
           </button>
           <div className="dropdown-divider"></div>

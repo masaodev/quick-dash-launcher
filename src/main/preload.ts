@@ -36,10 +36,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
   extractCustomUriIcon: (uri: string) => ipcRenderer.invoke('extract-custom-uri-icon', uri),
   loadCachedIcons: (items: LauncherItem[]) => ipcRenderer.invoke('load-cached-icons', items),
   // 進捗付きアイコン取得API
-  fetchFaviconsWithProgress: (urls: string[]) => ipcRenderer.invoke('fetch-favicons-with-progress', urls),
-  extractIconsWithProgress: (items: LauncherItem[]) => ipcRenderer.invoke('extract-icons-with-progress', items),
+  fetchFaviconsWithProgress: (urls: string[]) =>
+    ipcRenderer.invoke('fetch-favicons-with-progress', urls),
+  extractIconsWithProgress: (items: LauncherItem[]) =>
+    ipcRenderer.invoke('extract-icons-with-progress', items),
   // 進捗イベントリスナー
-  onIconProgress: (eventType: 'start' | 'update' | 'complete', callback: (data: IconProgress) => void) => {
+  onIconProgress: (
+    eventType: 'start' | 'update' | 'complete',
+    callback: (data: IconProgress) => void
+  ) => {
     ipcRenderer.on(`icon-progress-${eventType}`, (_event, data) => callback(data));
   },
   onWindowShown: (callback: () => void) => {

@@ -1,5 +1,4 @@
 import pino from 'pino';
-import util from 'util';
 
 // 開発環境かどうかを判定
 const isDevelopment = process.env.NODE_ENV === 'development';
@@ -8,34 +7,38 @@ const isDevelopment = process.env.NODE_ENV === 'development';
 const logLevel = isDevelopment ? 'debug' : 'info';
 
 // Electronメインプロセス用の安全なシリアライゼーション関数
-const safeStringify = (obj: any, space?: number): string => {
+const safeStringify = (obj: unknown, space?: number): string => {
   const seen = new WeakSet();
-  return JSON.stringify(obj, (key, value) => {
-    if (typeof value === 'object' && value !== null) {
-      if (seen.has(value)) {
-        return '[Circular]';
+  return JSON.stringify(
+    obj,
+    (_key, value) => {
+      if (typeof value === 'object' && value !== null) {
+        if (seen.has(value)) {
+          return '[Circular]';
+        }
+        seen.add(value);
       }
-      seen.add(value);
-    }
-    if (value instanceof Error) {
-      return {
-        name: value.name,
-        message: value.message,
-        stack: value.stack,
-        code: (value as any).code,
-        errno: (value as any).errno,
-        syscall: (value as any).syscall,
-        path: (value as any).path,
-      };
-    }
-    if (typeof value === 'function') {
-      return '[Function]';
-    }
-    if (typeof value === 'undefined') {
-      return '[Undefined]';
-    }
-    return value;
-  }, space);
+      if (value instanceof Error) {
+        return {
+          name: value.name,
+          message: value.message,
+          stack: value.stack,
+          code: (value as any).code,
+          errno: (value as any).errno,
+          syscall: (value as any).syscall,
+          path: (value as any).path,
+        };
+      }
+      if (typeof value === 'function') {
+        return '[Function]';
+      }
+      if (typeof value === 'undefined') {
+        return '[Undefined]';
+      }
+      return value;
+    },
+    space
+  );
 };
 
 // Electronメインプロセス向けのPino設定
@@ -46,7 +49,7 @@ const logger = pino({
   // Electronメインプロセス用の包括的なシリアライザー
   serializers: {
     err: pino.stdSerializers.err,
-    error: (error: any) => {
+    error: (error: unknown) => {
       if (error instanceof Error) {
         return {
           name: error.name,
@@ -63,7 +66,7 @@ const logger = pino({
   },
   // Electronメインプロセス向けのカスタムログフォーマッター
   hooks: {
-    logMethod(this: pino.Logger, args: any[], method: any) {
+    logMethod(this: pino.Logger, args: unknown[], method: pino.LogFn) {
       // 2つの引数でメッセージとオブジェクトが渡された場合の処理
       if (args.length === 2 && typeof args[0] === 'string' && typeof args[1] === 'object') {
         const [message, data] = args;
@@ -76,8 +79,8 @@ const logger = pino({
         return method.call(this, safeData);
       }
       // 通常の処理
-      return method.apply(this, args);
-    }
+      return method.apply(this, args as [msg: string, ...args: unknown[]]);
+    },
   },
   // Electronのメインプロセスではworkerベースのtransportを避ける
   // 代わりにシンプルなコンソール出力を使用

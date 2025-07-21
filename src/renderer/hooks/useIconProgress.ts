@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+
 import { IconProgress, IconProgressState } from '../../common/types';
 
 export const useIconProgress = () => {
@@ -21,7 +22,7 @@ export const useIconProgress = () => {
     };
 
     const handleProgressUpdate = (data: IconProgress) => {
-      setProgressState(prevState => ({
+      setProgressState((_prevState) => ({
         isActive: true,
         progress: data,
       }));

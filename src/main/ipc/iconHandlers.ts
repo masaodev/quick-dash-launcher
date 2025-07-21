@@ -6,8 +6,8 @@ import * as os from 'os';
 
 import { ipcMain, BrowserWindow } from 'electron';
 import { iconLogger } from '@common/logger';
-import { IconProgress } from '../../common/types';
 
+import { IconProgress } from '../../common/types';
 import { FaviconService } from '../services/faviconService';
 
 const extractFileIcon = require('extract-file-icon');
@@ -537,7 +537,10 @@ async function loadCachedIcons(
 /**
  * 複数のURLのファビコンを逐次取得し、進捗状況を報告する
  */
-async function fetchFaviconsWithProgress(urls: string[], faviconsFolder: string): Promise<Record<string, string | null>> {
+async function fetchFaviconsWithProgress(
+  urls: string[],
+  faviconsFolder: string
+): Promise<Record<string, string | null>> {
   const results: Record<string, string | null> = {};
   const total = urls.length;
   let current = 0;
@@ -570,9 +573,9 @@ async function fetchFaviconsWithProgress(urls: string[], faviconsFolder: string)
 
       const favicon = await fetchFavicon(url, faviconsFolder);
       results[url] = favicon;
-      
+
       current++;
-      
+
       // 進捗更新を通知
       sendProgressUpdate('update', {
         type: 'favicon',
@@ -583,7 +586,6 @@ async function fetchFaviconsWithProgress(urls: string[], faviconsFolder: string)
         startTime,
         isComplete: false,
       });
-
     } catch (error) {
       iconLogger.error(`ファビコン取得エラー: ${url}`, { error });
       results[url] = null;
@@ -610,8 +612,8 @@ async function fetchFaviconsWithProgress(urls: string[], faviconsFolder: string)
  * 複数のアイテムのアイコンを逐次抽出し、進捗状況を報告する
  */
 async function extractIconsWithProgress(
-  items: IconItem[], 
-  iconsFolder: string, 
+  items: IconItem[],
+  iconsFolder: string,
   extensionsFolder: string
 ): Promise<Record<string, string | null>> {
   const results: Record<string, string | null> = {};
@@ -670,7 +672,7 @@ async function extractIconsWithProgress(
 
       results[item.path] = icon;
       current++;
-      
+
       // 進捗更新を通知
       sendProgressUpdate('update', {
         type: 'icon',
@@ -681,7 +683,6 @@ async function extractIconsWithProgress(
         startTime,
         isComplete: false,
       });
-
     } catch (error) {
       iconLogger.error(`アイコン抽出エラー: ${item.path}`, { error });
       results[item.path] = null;
