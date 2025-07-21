@@ -16,7 +16,8 @@
       "Bash(gh issue edit:*)",
       "Bash(npm run lint:*)",
       "Bash(npm run format:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(npm run dev:*)"
     ],
     "deny": []
   }

@@ -151,7 +151,7 @@ QuickDashLauncherではCSS変数ベースの統一されたデザインシステ
 - **EditableRawItemList.tsx**: 編集モード用のデータ編集テーブル
   - パスと引数列でパス＋引数を統合表示・編集
   - アイテム行：パス＋引数の組み合わせ（例：`notepad.exe`, `https://github.com/`）
-  - DIRディレクティブ：フォルダパス＋オプション（例：`C:\Users\Documents filter:*.txt`）
+  - フォルダ取込ディレクティブ：フォルダパス＋オプション（例：`C:\Users\Documents filter:*.txt`）
   - 編集時の自動CSV形式変換機能
 
 ### 設定メニュー
@@ -188,14 +188,14 @@ QuickDashLauncherではCSS変数ベースの統一されたデザインシステ
 - **対象関数**:
   - `loadRawDataFiles`: 生データファイルの読み込み
   - `saveRawDataFiles`: 生データファイルの保存（CRLF統一）
-  - `loadDataFiles`: DIRディレクティブ展開時の読み込み
+  - `loadDataFiles`: フォルダ取込ディレクティブ展開時の読み込み
   - `registerItems`: 新規アイテム登録時の保存
 
 ### CSVフォーマットの処理
 - **アイテム行**: `名前,パス[,引数][,元パス]`
   - 引数と元パスは省略可能
   - セル編集時は必要なフィールドのみ出力（末尾の無駄なカンマを防止）
-- **DIRディレクティブ**: `dir,パス[,オプション...]`
+- **フォルダ取込ディレクティブ**: `dir,パス[,オプション...]`
   - オプションはカンマ区切りで複数指定可能
 
 ## 関連ドキュメント
@@ -205,4 +205,4 @@ QuickDashLauncherではCSS変数ベースの統一されたデザインシステ
 - [ビルドとデプロイ](build-and-deploy.md) - ビルドシステムと配布方法
 - [テストチェックリスト](testing.md) - 手動テストの手順
 - [アイコンシステム](../features/icon-system.md) - アイコン取得・管理システム
-- [DIRディレクティブ](../features/dir-directive.md) - フォルダ内容のインポート機能
+- [フォルダ取込ディレクティブ](../features/dir-directive.md) - フォルダ内容のインポート機能

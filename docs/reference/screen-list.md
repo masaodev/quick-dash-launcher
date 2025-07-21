@@ -52,7 +52,7 @@ QuickDashLauncher
 |--------|----------|------|----------|----------|
 | **メインウィンドウ** | `src/renderer/App.tsx` | ウィンドウ | 起動時のデフォルト状態 | 検索ボックス、アイテム一覧、アクションボタン、タブ切り替え<br>📋 [詳細仕様書](../screens/main-window.md) |
 | **管理ウィンドウ** | `src/renderer/AdminApp.tsx` | ウィンドウ | Ctrl+E または設定メニューから | 生データ編集、アプリケーション設定、サイズ1000x700px、独立ウィンドウ |
-| **アイテム登録・編集モーダル** | `src/renderer/components/RegisterModal.tsx` | モーダル | ファイルドラッグ&ドロップ時<br>アイテム管理で詳細編集時 | アイテム登録・編集、DIRオプション設定、保存先選択 |
+| **アイテム登録・編集モーダル** | `src/renderer/components/RegisterModal.tsx` | モーダル | ファイルドラッグ&ドロップ時<br>アイテム管理で詳細編集時 | アイテム登録・編集、フォルダ取込オプション設定、保存先選択 |
 | **ブックマークインポートモーダル** | `src/renderer/components/BookmarkImportModal.tsx` | モーダル | 管理ウィンドウでインポートボタンクリック時 | ブックマークHTMLファイルのインポート、検索・選択<br>📋 [詳細仕様書](../screens/bookmark-import-modal.md) |
 
 ## コンポーネント一覧
@@ -83,7 +83,7 @@ QuickDashLauncher
 
 | コンポーネント名 | ファイル | 使用箇所 | 表示条件 | 主要機能 |
 |------------------|----------|----------|----------|----------|
-| **RegisterModal** | `src/renderer/components/RegisterModal.tsx` | メインウィンドウ<br>管理ウィンドウ | モーダル表示時 | アイテム登録・編集、DIRオプション設定、保存先選択 |
+| **RegisterModal** | `src/renderer/components/RegisterModal.tsx` | メインウィンドウ<br>管理ウィンドウ | モーダル表示時 | アイテム登録・編集、フォルダ取込オプション設定、保存先選択 |
 | **BookmarkImportModal** | `src/renderer/components/BookmarkImportModal.tsx` | 管理ウィンドウ | インポートボタンクリック時 | ブックマークHTMLファイルのインポート、検索・選択 |
 
 ## 画面遷移

@@ -73,7 +73,7 @@ function handleError(error: unknown): void {
 #### 1.3 コードの重複と複雑性
 
 **現状の問題点：**
-- DIRオプション処理が2箇所で重複（src/main/ipc/dataHandlers.ts）
+- フォルダ取込オプション処理が2箇所で重複（src/main/ipc/dataHandlers.ts）
 - 関数が長すぎる（scanDirectory: 113行、registerItems: 131行）
 - マジックナンバーがハードコーディングされている
 

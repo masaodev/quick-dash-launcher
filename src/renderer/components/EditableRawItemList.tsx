@@ -66,7 +66,7 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
           newContent += `,${parts[3]}`;
         }
       } else if (line.type === 'directive') {
-        // DIRディレクティブの場合：フォルダパスとオプションを更新
+        // フォルダ取込ディレクティブの場合：フォルダパスとオプションを更新
         const parts = line.content.split(',');
         const directive = parts[0] || 'dir';
 
@@ -204,7 +204,7 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
         </div>
       );
     } else {
-      // DIRディレクティブなどは名称編集不可
+      // フォルダ取込ディレクティブなどは名称編集不可
       return <div className="readonly-cell">-</div>;
     }
   };
@@ -217,7 +217,7 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
       const argsPart = parts[2]?.trim() || '';
       return argsPart ? `${pathPart} ${argsPart}` : pathPart;
     } else if (line.type === 'directive') {
-      // DIRディレクティブの場合：フォルダパス＋オプション
+      // フォルダ取込ディレクティブの場合：フォルダパス＋オプション
       const parts = line.content.split(',');
       const pathPart = parts[1]?.trim() || '';
       const options = parts.slice(2).join(',').trim();

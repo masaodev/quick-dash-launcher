@@ -7,7 +7,7 @@ import { dataLogger } from '@common/logger';
 
 import { DataFile, RawDataLine, SimpleBookmarkItem } from '../../common/types';
 
-// DIRディレクティブのオプション型定義
+// フォルダ取込ディレクティブのオプション型定義
 interface DirOptions {
   depth: number;
   types: 'file' | 'folder' | 'both';
@@ -17,9 +17,9 @@ interface DirOptions {
   suffix?: string;
 }
 
-// DIRディレクティブのオプションを解析
+// フォルダ取込ディレクティブのオプションを解析
 /**
- * DIRディレクティブの文字列オプションを解析してDirOptionsオブジェクトに変換する
+ * フォルダ取込ディレクティブの文字列オプションを解析してDirOptionsオブジェクトに変換する
  * カンマ区切りのオプション文字列（depth=2, filter=*.pdf等）を解析し、構造化されたオプションに変換する
  *
  * @param parts - カンマ区切りのオプション文字列配列（最初の要素はディレクトリパス）
@@ -162,7 +162,7 @@ function processShortcutToCSV(filePath: string, prefix?: string, suffix?: string
 // 拡張されたディレクトリスキャン関数
 /**
  * 指定されたディレクトリを再帰的にスキャンし、指定されたオプションに基づいてファイル/フォルダを抽出する
- * DIRディレクティブで使用される主要な機能で、深度制限、タイプフィルター、パターンマッチングに対応
+ * フォルダ取込ディレクティブで使用される主要な機能で、深度制限、タイプフィルター、パターンマッチングに対応
  *
  * @param dirPath - スキャン対象のディレクトリパス
  * @param options - スキャンオプション（深度、タイプ、フィルター等）
@@ -267,12 +267,12 @@ async function scanDirectory(
 }
 
 /**
- * 設定フォルダからデータファイル（data.txt, data2.txt, tempdata.txt）を読み込み、DIRディレクティブを展開する
- * 各ファイルを順次読み込み、DIRディレクティブが含まれている場合は自動的にディレクトリスキャンを実行して展開する
+ * 設定フォルダからデータファイル（data.txt, data2.txt, tempdata.txt）を読み込み、フォルダ取込ディレクティブを展開する
+ * 各ファイルを順次読み込み、フォルダ取込ディレクティブが含まれている場合は自動的にディレクトリスキャンを実行して展開する
  *
  * @param configFolder - 設定フォルダのパス
  * @returns 処理済みのデータファイル配列（ファイル名、内容、種別を含む）
- * @throws ファイル読み込みエラー、DIRディレクティブ処理エラー
+ * @throws ファイル読み込みエラー、フォルダ取込ディレクティブ処理エラー
  *
  * @example
  * const dataFiles = await loadDataFiles('/path/to/config');
@@ -294,7 +294,7 @@ async function loadDataFiles(configFolder: string): Promise<DataFile[]> {
       for (const line of lines) {
         const trimmedLine = line.trim();
         if (trimmedLine.startsWith('dir,')) {
-          // DIRディレクティブを解析
+          // フォルダ取込ディレクティブを解析
           const parts = trimmedLine
             .substring(4)
             .split(',')
@@ -338,7 +338,7 @@ async function loadDataFiles(configFolder: string): Promise<DataFile[]> {
   return files;
 }
 
-// 生データを読み込む（DIRディレクティブ展開なし）
+// 生データを読み込む（フォルダ取込ディレクティブ展開なし）
 async function loadRawDataFiles(configFolder: string): Promise<RawDataLine[]> {
   const rawLines: RawDataLine[] = [];
   const dataFiles = ['data.txt', 'data2.txt', 'tempdata.txt'] as const;
@@ -435,7 +435,7 @@ interface RegisterItem {
   folderProcessing?: 'folder' | 'expand';
   icon?: string;
   itemCategory: 'item' | 'dir';
-  // DIRディレクティブオプション
+  // フォルダ取込ディレクティブオプション
   dirOptions?: {
     depth: number;
     types: 'file' | 'folder' | 'both';
@@ -448,7 +448,7 @@ interface RegisterItem {
 
 /**
  * 複数のアイテムを設定ファイルに登録する（メインタブ/一時タブ対応）
- * 通常のアイテムとDIRディレクティブの両方に対応し、既存のファイル内容に追記する形で保存する
+ * 通常のアイテムとフォルダ取込ディレクティブの両方に対応し、既存のファイル内容に追記する形で保存する
  *
  * @param configFolder - 設定フォルダのパス
  * @param items - 登録するアイテムの配列
@@ -458,9 +458,9 @@ interface RegisterItem {
  * @param items[].args - コマンドライン引数（オプション）
  * @param items[].targetTab - 対象タブ（'main' | 'temp'）
  * @param items[].itemCategory - アイテムカテゴリ（'item' | 'dir'）
- * @param items[].dirOptions - DIRディレクティブオプション（DIRアイテムの場合）
+ * @param items[].dirOptions - フォルダ取込ディレクティブオプション（フォルダ取込アイテムの場合）
  * @returns 処理完了のPromise
- * @throws ファイル書き込みエラー、DIRオプション処理エラー
+ * @throws ファイル書き込みエラー、フォルダ取込オプション処理エラー
  *
  * @example
  * await registerItems('/path/to/config', [
@@ -486,7 +486,7 @@ async function registerItems(configFolder: string, items: RegisterItem[]): Promi
       if (item.itemCategory === 'dir') {
         let dirLine = `dir,${item.path}`;
 
-        // DIRディレクティブオプションを追加
+        // フォルダ取込ディレクティブオプションを追加
         if (item.dirOptions) {
           const options: string[] = [];
 
@@ -554,7 +554,7 @@ async function registerItems(configFolder: string, items: RegisterItem[]): Promi
       if (item.itemCategory === 'dir') {
         let dirLine = `dir,${item.path}`;
 
-        // DIRディレクティブオプションを追加
+        // フォルダ取込ディレクティブオプションを追加
         if (item.dirOptions) {
           const options: string[] = [];
 
