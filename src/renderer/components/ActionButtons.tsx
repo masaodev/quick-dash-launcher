@@ -4,6 +4,7 @@ import SettingsDropdown from './SettingsDropdown';
 
 interface ActionButtonsProps {
   onFetchFavicon: () => void;
+  onFetchAllFavicons: () => void;
   onExtractAllIcons: () => void;
   onAddTemp: () => void;
   onReload: () => void;
@@ -19,6 +20,7 @@ interface ActionButtonsProps {
 
 const ActionButtons: React.FC<ActionButtonsProps> = ({
   onFetchFavicon,
+  onFetchAllFavicons,
   onExtractAllIcons,
   onAddTemp,
   onReload,
@@ -33,8 +35,11 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
 }) => {
   return (
     <div className="action-buttons">
-      <button className="action-button" onClick={onFetchFavicon} title="ファビコン取得">
+      <button className="action-button" onClick={onFetchFavicon} title="ファビコン取得（アイコンなしのみ）">
         🌐
+      </button>
+      <button className="action-button" onClick={onFetchAllFavicons} title="全ファビコン強制取得">
+        🔄🌐
       </button>
       <button className="action-button" onClick={onExtractAllIcons} title="全アイコンを抽出">
         🎨

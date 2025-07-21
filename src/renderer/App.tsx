@@ -186,12 +186,16 @@ const App: React.FC = () => {
     }
   };
 
-  const handleFetchFavicon = async () => {
-    console.log('すべてのURLアイテムのファビコンを取得開始');
+  const handleFetchFavicon = async (forceAll: boolean = false) => {
+    console.log(forceAll ? 'すべてのURLアイテムのファビコンを強制取得開始' : 'アイコンなしURLアイテムのファビコンを取得開始');
 
-    // Extract URL items that don't have icons
-    const mainUrls = mainItems.filter(item => item.type === 'url' && !item.icon).map(item => item.path);
-    const tempUrls = tempItems.filter(item => item.type === 'url' && !item.icon).map(item => item.path);
+    // Extract URL items based on forceAll flag
+    const mainUrls = forceAll 
+      ? mainItems.filter(item => item.type === 'url').map(item => item.path)
+      : mainItems.filter(item => item.type === 'url' && !item.icon).map(item => item.path);
+    const tempUrls = forceAll
+      ? tempItems.filter(item => item.type === 'url').map(item => item.path)
+      : tempItems.filter(item => item.type === 'url' && !item.icon).map(item => item.path);
     const allUrls = [...mainUrls, ...tempUrls];
 
     if (allUrls.length === 0) {
@@ -215,6 +219,10 @@ const App: React.FC = () => {
     setMainItems(updateItemsWithFavicons(mainItems));
     setTempItems(updateItemsWithFavicons(tempItems));
     console.log('ファビコン取得完了');
+  };
+
+  const handleFetchAllFavicons = async () => {
+    await handleFetchFavicon(true);
   };
 
   const handleExtractAllIcons = async () => {
@@ -308,6 +316,7 @@ const App: React.FC = () => {
           />
           <ActionButtons
             onFetchFavicon={handleFetchFavicon}
+            onFetchAllFavicons={handleFetchAllFavicons}
             onExtractAllIcons={handleExtractAllIcons}
             onAddTemp={handleAddTemp}
             onReload={loadItems}
