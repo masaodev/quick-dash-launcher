@@ -7,13 +7,13 @@ import { editLogger } from '@common/logger';
 import { LauncherItem } from '../../common/types';
 
 interface UpdateItemRequest {
-  sourceFile: 'data.txt' | 'data2.txt' | 'tempdata.txt';
+  sourceFile: 'data.txt' | 'data2.txt';
   lineNumber: number;
   newItem: LauncherItem;
 }
 
 interface DeleteItemRequest {
-  sourceFile: 'data.txt' | 'data2.txt' | 'tempdata.txt';
+  sourceFile: 'data.txt' | 'data2.txt';
   lineNumber: number;
 }
 

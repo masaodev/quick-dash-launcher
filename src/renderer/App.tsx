@@ -4,7 +4,6 @@ import { LauncherItem } from '../common/types';
 
 import SearchBox from './components/SearchBox';
 import ItemList from './components/ItemList';
-import TabControl from './components/TabControl';
 import ActionButtons from './components/ActionButtons';
 import RegisterModal, { RegisterItem } from './components/RegisterModal';
 import IconProgressBar from './components/IconProgressBar';
@@ -14,8 +13,6 @@ import { useIconProgress } from './hooks/useIconProgress';
 const App: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [mainItems, setMainItems] = useState<LauncherItem[]>([]);
-  const [tempItems, setTempItems] = useState<LauncherItem[]>([]);
-  const [activeTab, setActiveTab] = useState<'main' | 'temp'>('main');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isPinned, setIsPinned] = useState(false);
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
@@ -106,11 +103,10 @@ const App: React.FC = () => {
 
   const loadItems = async () => {
     const dataFiles = await window.electronAPI.loadDataFiles();
-    const { mainItems: main, tempItems: temp } = parseDataFiles(dataFiles);
+    const { mainItems: main } = parseDataFiles(dataFiles);
 
     // Load cached icons
-    const allItems = [...main, ...temp];
-    const iconCache = await window.electronAPI.loadCachedIcons(allItems);
+    const iconCache = await window.electronAPI.loadCachedIcons(main);
 
     // Apply cached icons to items
     const mainWithIcons = main.map((item) => ({
@@ -118,13 +114,7 @@ const App: React.FC = () => {
       icon: iconCache[item.path] || item.icon,
     }));
 
-    const tempWithIcons = temp.map((item) => ({
-      ...item,
-      icon: iconCache[item.path] || item.icon,
-    }));
-
     setMainItems(mainWithIcons);
-    setTempItems(tempWithIcons);
   };
 
   const handleSearch = (query: string) => {
@@ -133,8 +123,7 @@ const App: React.FC = () => {
   };
 
   const handleKeyDown = async (e: React.KeyboardEvent) => {
-    const items = activeTab === 'main' ? mainItems : tempItems;
-    const filteredItems = filterItems(items, searchQuery);
+    const filteredItems = filterItems(mainItems, searchQuery);
 
     switch (e.key) {
       case 'Enter':
@@ -168,23 +157,6 @@ const App: React.FC = () => {
     await window.electronAPI.openItem(item);
   };
 
-  const handleAddTemp = async () => {
-    if (searchQuery.trim()) {
-      const newItem: LauncherItem = {
-        name: searchQuery,
-        path: searchQuery,
-        type: searchQuery.includes('://') ? 'url' : 'file',
-      };
-
-      const updatedItems = [...tempItems, newItem];
-      setTempItems(updatedItems);
-
-      const tempDataContent = updatedItems.map((item) => `${item.name},${item.path}`).join('\n');
-
-      await window.electronAPI.saveTempData(tempDataContent);
-      setSearchQuery('');
-    }
-  };
 
   const handleFetchFavicon = async (forceAll: boolean = false) => {
     console.log(
@@ -194,13 +166,9 @@ const App: React.FC = () => {
     );
 
     // Extract URL items based on forceAll flag
-    const mainUrls = forceAll
+    const allUrls = forceAll
       ? mainItems.filter((item) => item.type === 'url').map((item) => item.path)
       : mainItems.filter((item) => item.type === 'url' && !item.icon).map((item) => item.path);
-    const tempUrls = forceAll
-      ? tempItems.filter((item) => item.type === 'url').map((item) => item.path)
-      : tempItems.filter((item) => item.type === 'url' && !item.icon).map((item) => item.path);
-    const allUrls = [...mainUrls, ...tempUrls];
 
     if (allUrls.length === 0) {
       console.log('取得対象のURLアイテムがありません');
@@ -221,7 +189,6 @@ const App: React.FC = () => {
     };
 
     setMainItems(updateItemsWithFavicons(mainItems));
-    setTempItems(updateItemsWithFavicons(tempItems));
     console.log('ファビコン取得完了');
   };
 
@@ -233,13 +200,9 @@ const App: React.FC = () => {
     );
 
     // Extract items based on forceAll flag (excluding URLs)
-    const mainIconItems = forceAll
+    const allIconItems = forceAll
       ? mainItems.filter((item) => item.type !== 'url')
       : mainItems.filter((item) => !item.icon && item.type !== 'url');
-    const tempIconItems = forceAll
-      ? tempItems.filter((item) => item.type !== 'url')
-      : tempItems.filter((item) => !item.icon && item.type !== 'url');
-    const allIconItems = [...mainIconItems, ...tempIconItems];
 
     if (allIconItems.length === 0) {
       console.log('抽出対象のアイテムがありません');
@@ -260,7 +223,6 @@ const App: React.FC = () => {
     };
 
     setMainItems(updateItemsWithIcons(mainItems));
-    setTempItems(updateItemsWithIcons(tempItems));
     console.log('アイコン抽出完了');
   };
 
@@ -300,9 +262,8 @@ const App: React.FC = () => {
   const handleExportJson = () => {
     const exportData = {
       mainItems,
-      tempItems,
       exportTimestamp: new Date().toISOString(),
-      totalItems: mainItems.length + tempItems.length,
+      totalItems: mainItems.length,
     };
 
     const jsonString = JSON.stringify(exportData, null, 2);
@@ -332,8 +293,7 @@ const App: React.FC = () => {
     await window.electronAPI.openEditWindowWithTab('edit');
   };
 
-  const currentItems = activeTab === 'main' ? mainItems : tempItems;
-  const filteredItems = filterItems(currentItems, searchQuery);
+  const filteredItems = filterItems(mainItems, searchQuery);
 
   return (
     <div className={`app ${isDraggingOver ? 'dragging-over' : ''}`} onKeyDown={handleKeyDown}>
@@ -349,7 +309,6 @@ const App: React.FC = () => {
             onReload={loadItems}
             onFetchMissingIcons={handleFetchMissingIcons}
             onRefreshAll={handleRefreshAll}
-            onAddTemp={handleAddTemp}
             onOpenConfigFolder={() => window.electronAPI.openConfigFolder()}
             onOpenDataFile={() => window.electronAPI.openDataFile()}
             onTogglePin={handleTogglePin}
@@ -361,7 +320,6 @@ const App: React.FC = () => {
           />
         </div>
 
-        <TabControl activeTab={activeTab} onTabChange={setActiveTab} />
 
         <ItemList
           items={filteredItems}

@@ -115,31 +115,3 @@
   margin: var(--spacing-xs) 0;
 }
 
-/* タブコントロール */
-.tab-control {
-  display: flex;
-  background-color: var(--bg-header);
-  border-bottom: 2px solid var(--color-gray-400);
-}
-
-.tab {
-  flex: 1;
-  padding: var(--spacing-sm);
-  background-color: transparent;
-  border: none;
-  cursor: pointer;
-  font-size: var(--font-size-base);
-  font-family: inherit;
-  transition: var(--transition-normal);
-  color: var(--text-primary);
-}
-
-.tab:hover {
-  background-color: var(--bg-hover);
-}
-
-.tab.active {
-  background-color: var(--color-white);
-  border-bottom: 2px solid var(--color-primary);
-  margin-bottom: -2px;
-}

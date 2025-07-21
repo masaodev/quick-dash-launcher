@@ -2,36 +2,34 @@ import { LauncherItem, DataFile } from '../../common/types';
 
 /**
  * データファイルの配列を解析し、ランチャーアイテムとして使用可能な形式に変換する
- * 重複チェック、データの検証、ソート処理を行い、メインアイテムと一時アイテムに分類する
+ * 重複チェック、データの検証、ソート処理を行う
  *
- * @param dataFiles - 解析対象のデータファイル配列（data.txt、data2.txt、tempdata.txt）
- * @returns メインアイテムと一時アイテムに分類されたランチャーアイテム
- * @returns mainItems - data.txtとdata2.txtから生成されたアイテム
- * @returns tempItems - tempdata.txtから生成されたアイテム
+ * @param dataFiles - 解析対象のデータファイル配列（data.txt、data2.txt）
+ * @returns メインアイテムの配列
  *
  * @example
  * ```typescript
  * const dataFiles = [
- *   { name: 'data.txt', content: 'Google,https://google.com' },
- *   { name: 'tempdata.txt', content: 'Temp Item,C:\\temp\\file.txt' }
+ *   { name: 'data.txt', content: 'Google,https://google.com' }
  * ];
- * const { mainItems, tempItems } = parseDataFiles(dataFiles);
+ * const { mainItems } = parseDataFiles(dataFiles);
  * console.log(`メインアイテム: ${mainItems.length}個`);
- * console.log(`一時アイテム: ${tempItems.length}個`);
  * ```
  */
 export function parseDataFiles(dataFiles: DataFile[]): {
   mainItems: LauncherItem[];
-  tempItems: LauncherItem[];
 } {
   const mainItems: LauncherItem[] = [];
-  const tempItems: LauncherItem[] = [];
   const seenPaths = new Set<string>();
 
   dataFiles.forEach((file) => {
+    // Skip tempdata.txt files
+    if (file.name === 'tempdata.txt') {
+      return;
+    }
+    
     const lines = file.content.split('\n');
-    const items = file.name === 'tempdata.txt' ? tempItems : mainItems;
-    const sourceFile = file.name as 'data.txt' | 'data2.txt' | 'tempdata.txt';
+    const sourceFile = file.name as 'data.txt' | 'data2.txt';
 
     lines.forEach((line, index) => {
       line = line.trim();
@@ -72,15 +70,14 @@ export function parseDataFiles(dataFiles: DataFile[]): {
         isEdited: false,
       };
 
-      items.push(item);
+      mainItems.push(item);
     });
   });
 
   // Sort items by name
   mainItems.sort((a, b) => a.name.localeCompare(b.name, 'ja'));
-  tempItems.sort((a, b) => a.name.localeCompare(b.name, 'ja'));
 
-  return { mainItems, tempItems };
+  return { mainItems };
 }
 
 function detectItemType(itemPath: string): LauncherItem['type'] {

@@ -35,8 +35,37 @@
 3. ウィンドウサイズとフォーカス制御を自動調整
 4. レンダラーが編集モード状態を取得 → `get-edit-mode`
 
+## 管理ウィンドウ制御
+
+### 実装場所
+- **メインプロセス**: `src/main/adminWindowManager.ts`
+- **レンダラー**: `src/renderer/AdminApp.tsx`
+
+### タブ指定での表示機能
+
+1. **メニューからのタブ指定**
+   - 「基本設定」メニュー → `openEditWindowWithTab('settings')`
+   - 「アイテム管理」メニュー → `openEditWindowWithTab('edit')`
+
+2. **タブ変更の通信フロー**
+   - メインプロセスから`set-active-tab`イベントを送信
+   - AdminAppがイベントを受信してタブを切り替え
+
+3. **初期タブのリセット**
+   - ウィンドウが非表示になるたびに初期タブをリセット
+   - 次回開く際は指定されたタブが正しく表示される
+
+### 管理ウィンドウのIPC通信
+
+- `show-edit-window`: 管理ウィンドウを表示
+- `hide-edit-window`: 管理ウィンドウを非表示
+- `toggle-edit-window`: 表示/非表示を切り替え
+- `open-edit-window-with-tab`: 指定タブで開く
+- `get-initial-tab`: 初期タブを取得
+- `set-active-tab`: アクティブタブを変更（イベント）
+
 ## 関連ドキュメント
 
 - [アーキテクチャ概要](overview.md) - システム全体の構造
 - [IPCチャンネル詳細](ipc-channels.md) - ウィンドウ制御関連のIPCチャンネル
-- [編集モード](../features/edit-mode.md) - 編集モード時のウィンドウ制御
+- [アプリケーション設定](../features/app-settings.md) - 設定画面へのアクセス方法

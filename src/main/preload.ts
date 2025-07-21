@@ -6,25 +6,23 @@ interface RegisterItem {
   filePath: string;
   displayName: string;
   itemType: 'url' | 'file' | 'folder' | 'app' | 'customUri';
-  category: 'main' | 'temp';
   fullArgs?: string;
 }
 
 interface UpdateItemRequest {
-  sourceFile: 'data.txt' | 'data2.txt' | 'tempdata.txt';
+  sourceFile: 'data.txt' | 'data2.txt';
   lineNumber: number;
   newItem: LauncherItem;
 }
 
 interface DeleteItemRequest {
-  sourceFile: 'data.txt' | 'data2.txt' | 'tempdata.txt';
+  sourceFile: 'data.txt' | 'data2.txt';
   lineNumber: number;
 }
 
 contextBridge.exposeInMainWorld('electronAPI', {
   getConfigFolder: () => ipcRenderer.invoke('get-config-folder'),
   loadDataFiles: () => ipcRenderer.invoke('load-data-files'),
-  saveTempData: (content: string) => ipcRenderer.invoke('save-temp-data', content),
   openItem: (item: LauncherItem) => ipcRenderer.invoke('open-item', item),
   openParentFolder: (item: LauncherItem) => ipcRenderer.invoke('open-parent-folder', item),
   openConfigFolder: () => ipcRenderer.invoke('open-config-folder'),

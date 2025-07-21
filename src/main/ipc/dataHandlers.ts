@@ -267,7 +267,7 @@ async function scanDirectory(
 }
 
 /**
- * 設定フォルダからデータファイル（data.txt, data2.txt, tempdata.txt）を読み込み、フォルダ取込ディレクティブを展開する
+ * 設定フォルダからデータファイル（data.txt, data2.txt）を読み込み、フォルダ取込ディレクティブを展開する
  * 各ファイルを順次読み込み、フォルダ取込ディレクティブが含まれている場合は自動的にディレクトリスキャンを実行して展開する
  *
  * @param configFolder - 設定フォルダのパス
@@ -280,7 +280,7 @@ async function scanDirectory(
  */
 async function loadDataFiles(configFolder: string): Promise<DataFile[]> {
   const files: DataFile[] = [];
-  const dataFiles = ['data.txt', 'data2.txt', 'tempdata.txt'];
+  const dataFiles = ['data.txt', 'data2.txt'];
 
   for (const fileName of dataFiles) {
     const filePath = path.join(configFolder, fileName);
@@ -341,7 +341,7 @@ async function loadDataFiles(configFolder: string): Promise<DataFile[]> {
 // 生データを読み込む（フォルダ取込ディレクティブ展開なし）
 async function loadRawDataFiles(configFolder: string): Promise<RawDataLine[]> {
   const rawLines: RawDataLine[] = [];
-  const dataFiles = ['data.txt', 'data2.txt', 'tempdata.txt'] as const;
+  const dataFiles = ['data.txt', 'data2.txt'] as const;
 
   for (const fileName of dataFiles) {
     const filePath = path.join(configFolder, fileName);
@@ -421,17 +421,12 @@ async function saveRawDataFiles(configFolder: string, rawLines: RawDataLine[]): 
   }
 }
 
-async function saveTempData(configFolder: string, content: string): Promise<void> {
-  const tempDataPath = path.join(configFolder, 'tempdata.txt');
-  fs.writeFileSync(tempDataPath, content, 'utf8');
-}
 
 interface RegisterItem {
   name: string;
   path: string;
   type: 'url' | 'file' | 'folder' | 'app' | 'customUri';
   args?: string;
-  targetTab: 'main' | 'temp';
   folderProcessing?: 'folder' | 'expand';
   icon?: string;
   itemCategory: 'item' | 'dir';
@@ -469,12 +464,8 @@ interface RegisterItem {
  * ]);
  */
 async function registerItems(configFolder: string, items: RegisterItem[]): Promise<void> {
-  // Group items by target tab
-  const mainItems = items.filter((item) => item.targetTab === 'main');
-  const tempItems = items.filter((item) => item.targetTab === 'temp');
-
-  // Process main items
-  if (mainItems.length > 0) {
+  // Process items
+  if (items.length > 0) {
     const dataPath = path.join(configFolder, 'data.txt');
     let existingContent = '';
 
@@ -482,7 +473,7 @@ async function registerItems(configFolder: string, items: RegisterItem[]): Promi
       existingContent = fs.readFileSync(dataPath, 'utf8');
     }
 
-    const newLines = mainItems.map((item) => {
+    const newLines = items.map((item) => {
       if (item.itemCategory === 'dir') {
         let dirLine = `dir,${item.path}`;
 
@@ -540,74 +531,6 @@ async function registerItems(configFolder: string, items: RegisterItem[]): Promi
       : newLines.join('\r\n');
     fs.writeFileSync(dataPath, updatedContent.trim(), 'utf8');
   }
-
-  // Process temp items
-  if (tempItems.length > 0) {
-    const tempDataPath = path.join(configFolder, 'tempdata.txt');
-    let existingContent = '';
-
-    if (fs.existsSync(tempDataPath)) {
-      existingContent = fs.readFileSync(tempDataPath, 'utf8');
-    }
-
-    const newLines = tempItems.map((item) => {
-      if (item.itemCategory === 'dir') {
-        let dirLine = `dir,${item.path}`;
-
-        // フォルダ取込ディレクティブオプションを追加
-        if (item.dirOptions) {
-          const options: string[] = [];
-
-          // depth
-          if (item.dirOptions.depth !== 0) {
-            options.push(`depth=${item.dirOptions.depth}`);
-          }
-
-          // types
-          if (item.dirOptions.types !== 'both') {
-            options.push(`types=${item.dirOptions.types}`);
-          }
-
-          // filter
-          if (item.dirOptions.filter) {
-            options.push(`filter=${item.dirOptions.filter}`);
-          }
-
-          // exclude
-          if (item.dirOptions.exclude) {
-            options.push(`exclude=${item.dirOptions.exclude}`);
-          }
-
-          // prefix
-          if (item.dirOptions.prefix) {
-            options.push(`prefix=${item.dirOptions.prefix}`);
-          }
-
-          // suffix
-          if (item.dirOptions.suffix) {
-            options.push(`suffix=${item.dirOptions.suffix}`);
-          }
-
-          if (options.length > 0) {
-            dirLine += ',' + options.join(',');
-          }
-        }
-
-        return dirLine;
-      } else {
-        let line = `${item.name},${item.path}`;
-        if (item.args) {
-          line += `,${item.args}`;
-        }
-        return line;
-      }
-    });
-
-    const updatedContent = existingContent
-      ? existingContent.trim() + '\r\n' + newLines.join('\r\n')
-      : newLines.join('\r\n');
-    fs.writeFileSync(tempDataPath, updatedContent.trim(), 'utf8');
-  }
 }
 
 function isDirectory(filePath: string): boolean {
@@ -625,9 +548,6 @@ export function setupDataHandlers(configFolder: string) {
     return await loadDataFiles(configFolder);
   });
 
-  ipcMain.handle('save-temp-data', async (_event, content: string) => {
-    return await saveTempData(configFolder, content);
-  });
 
   ipcMain.handle('register-items', async (_event, items: RegisterItem[]) => {
     return await registerItems(configFolder, items);

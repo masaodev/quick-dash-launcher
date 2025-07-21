@@ -16,7 +16,7 @@ export interface LauncherItem {
   /** ショートカットファイル（.lnk）の元のパス（オプション） */
   originalPath?: string;
   /** アイテムの元データファイル */
-  sourceFile?: 'data.txt' | 'data2.txt' | 'tempdata.txt';
+  sourceFile?: 'data.txt' | 'data2.txt';
   /** データファイル内の行番号（編集機能で使用） */
   lineNumber?: number;
   /** フォルダ取込ディレクティブによって展開されたアイテムかどうか */
@@ -26,11 +26,11 @@ export interface LauncherItem {
 }
 
 /**
- * データファイル（data.txt、data2.txt、tempdata.txt）の内容を表すインターフェース
+ * データファイル（data.txt、data2.txt）の内容を表すインターフェース
  * フォルダ取込ディレクティブの展開処理などで使用される
  */
 export interface DataFile {
-  /** ファイル名（data.txt、data2.txt、tempdata.txtのいずれか） */
+  /** ファイル名（data.txt、data2.txtのいずれか） */
   name: string;
   /** ファイルの内容（フォルダ取込ディレクティブ展開後） */
   content: string;
@@ -48,7 +48,7 @@ export interface RawDataLine {
   /** 行の種別（フォルダ取込ディレクティブ、アイテム、コメント、空行） */
   type: 'directive' | 'item' | 'comment' | 'empty';
   /** この行が含まれる元のデータファイル */
-  sourceFile: 'data.txt' | 'data2.txt' | 'tempdata.txt';
+  sourceFile: 'data.txt' | 'data2.txt';
 }
 
 /**

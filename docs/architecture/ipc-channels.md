@@ -67,6 +67,30 @@ QuickDashLauncherで使用される主要なIPCチャンネルの仕様です。
 ### `get-edit-mode`
 編集モードの状態を取得
 
+### `show-edit-window`
+管理ウィンドウを表示
+
+### `hide-edit-window`
+管理ウィンドウを非表示
+
+### `toggle-edit-window`
+管理ウィンドウの表示/非表示を切り替え
+
+### `is-edit-window-shown`
+管理ウィンドウの表示状態を取得
+
+### `open-edit-window-with-tab`
+指定されたタブで管理ウィンドウを開く
+- パラメータ: `tab: 'settings' | 'edit' | 'other'`
+
+### `get-initial-tab`
+管理ウィンドウの初期表示タブを取得
+
+### `set-active-tab` (レンダラーイベント)
+管理ウィンドウのアクティブタブを変更
+- メインプロセスからレンダラーへの一方向通信
+- パラメータ: `tab: 'settings' | 'edit' | 'other'`
+
 ## 編集モード専用
 
 ### `load-raw-data-files`
@@ -92,6 +116,13 @@ QuickDashLauncherで使用される主要なIPCチャンネルの仕様です。
 
 ```typescript
 onIconProgress(eventType: 'start' | 'update' | 'complete', callback: (data: IconProgress) => void)
+```
+
+### `onSetActiveTab`
+管理ウィンドウのタブ変更イベントリスナー
+
+```typescript
+onSetActiveTab(callback: (tab: 'settings' | 'edit' | 'other') => void)
 ```
 
 #### 進捗イベント

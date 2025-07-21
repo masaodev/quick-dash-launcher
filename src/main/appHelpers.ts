@@ -50,7 +50,7 @@ Google マップ,https://www.google.co.jp/maps
 
 export function backupDataFiles(): void {
   const timestamp = new Date().toISOString().replace(/:/g, '-').substring(0, 19);
-  const files = ['data.txt', 'data2.txt', 'tempdata.txt'];
+  const files = ['data.txt', 'data2.txt'];
 
   files.forEach((file) => {
     const sourcePath = path.join(CONFIG_FOLDER, file);

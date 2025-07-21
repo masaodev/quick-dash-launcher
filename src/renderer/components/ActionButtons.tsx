@@ -7,7 +7,6 @@ interface ActionButtonsProps {
   onReload: () => void;
   onFetchMissingIcons: () => void;
   onRefreshAll: () => void;
-  onAddTemp: () => void;
   onOpenConfigFolder: () => void;
   onOpenDataFile: () => void;
   onTogglePin: () => void;
@@ -22,7 +21,6 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   onReload,
   onFetchMissingIcons,
   onRefreshAll,
-  onAddTemp,
   onOpenConfigFolder,
   onOpenDataFile,
   onTogglePin,
@@ -39,9 +37,6 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         onFetchMissingIcons={onFetchMissingIcons}
         onRefreshAll={onRefreshAll}
       />
-      <button className="action-button" onClick={onAddTemp} title="一時タブに追加">
-        ✔️
-      </button>
       <button
         className={`action-button ${isPinned ? 'pinned' : ''}`}
         onClick={onTogglePin}
