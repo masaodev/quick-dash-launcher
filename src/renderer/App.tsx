@@ -324,12 +324,12 @@ const App: React.FC = () => {
     loadItems(); // Reload items after registration
   };
 
-  const handleToggleEditMode = async () => {
-    await window.electronAPI.toggleEditWindow();
+  const handleOpenBasicSettings = async () => {
+    await window.electronAPI.openEditWindowWithTab('settings');
   };
 
-  const handleOpenSettings = () => {
-    window.electronAPI.toggleEditWindow();
+  const handleOpenItemManagement = async () => {
+    await window.electronAPI.openEditWindowWithTab('edit');
   };
 
   const currentItems = activeTab === 'main' ? mainItems : tempItems;
@@ -354,8 +354,8 @@ const App: React.FC = () => {
             onOpenDataFile={() => window.electronAPI.openDataFile()}
             onTogglePin={handleTogglePin}
             onExportJson={handleExportJson}
-            onToggleEditMode={handleToggleEditMode}
-            onOpenSettings={handleOpenSettings}
+            onOpenBasicSettings={handleOpenBasicSettings}
+            onOpenItemManagement={handleOpenItemManagement}
             isPinned={isPinned}
             isEditMode={false}
           />

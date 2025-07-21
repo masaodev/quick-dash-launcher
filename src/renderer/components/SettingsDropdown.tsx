@@ -4,9 +4,9 @@ interface SettingsDropdownProps {
   onOpenConfigFolder: () => void;
   onOpenDataFile: () => void;
   onExportJson: () => void;
-  onToggleEditMode: () => void;
+  onOpenBasicSettings: () => void;
+  onOpenItemManagement: () => void;
   onQuitApp: () => void;
-  onOpenSettings: () => void;
   isEditMode: boolean;
 }
 
@@ -14,9 +14,9 @@ const SettingsDropdown: React.FC<SettingsDropdownProps> = ({
   onOpenConfigFolder,
   onOpenDataFile,
   onExportJson,
-  onToggleEditMode,
+  onOpenBasicSettings,
+  onOpenItemManagement,
   onQuitApp,
-  onOpenSettings,
   isEditMode: _isEditMode,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -50,8 +50,11 @@ const SettingsDropdown: React.FC<SettingsDropdownProps> = ({
       </button>
       {isOpen && (
         <div className="dropdown-menu">
-          <button className="dropdown-item" onClick={() => handleMenuItemClick(onOpenSettings)}>
-            ⚙️ アイテム管理
+          <button className="dropdown-item" onClick={() => handleMenuItemClick(onOpenBasicSettings)}>
+            ⚙️ 基本設定
+          </button>
+          <button className="dropdown-item" onClick={() => handleMenuItemClick(onOpenItemManagement)}>
+            ✏️ アイテム管理
           </button>
           <div className="dropdown-divider"></div>
           <button className="dropdown-item" onClick={() => handleMenuItemClick(onOpenConfigFolder)}>
@@ -62,10 +65,6 @@ const SettingsDropdown: React.FC<SettingsDropdownProps> = ({
           </button>
           <button className="dropdown-item" onClick={() => handleMenuItemClick(onExportJson)}>
             📋 JSON出力
-          </button>
-          <div className="dropdown-divider"></div>
-          <button className="dropdown-item" onClick={() => handleMenuItemClick(onToggleEditMode)}>
-            ✏️ アイテム管理ウィンドウ
           </button>
           <div className="dropdown-divider"></div>
           <button className="dropdown-item" onClick={() => handleMenuItemClick(onQuitApp)}>

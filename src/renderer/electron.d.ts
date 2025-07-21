@@ -31,6 +31,7 @@ export interface ElectronAPI {
     callback: (data: IconProgress) => void
   ) => void;
   onWindowShown: (callback: () => void) => void;
+  onSetActiveTab: (callback: (tab: 'settings' | 'edit' | 'other') => void) => void;
   getWindowPinState: () => Promise<boolean>;
   setWindowPinState: (isPinned: boolean) => Promise<void>;
   registerItems: (items: RegisterItem[]) => Promise<void>;
@@ -69,6 +70,8 @@ export interface ElectronAPI {
   hideEditWindow: () => Promise<void>;
   toggleEditWindow: () => Promise<void>;
   isEditWindowShown: () => Promise<boolean>;
+  openEditWindowWithTab: (tab: 'settings' | 'edit' | 'other') => Promise<void>;
+  getInitialTab: () => Promise<'settings' | 'edit' | 'other'>;
 }
 
 declare global {

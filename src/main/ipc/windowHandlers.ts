@@ -5,6 +5,8 @@ import {
   hideAdminWindow,
   toggleAdminWindow,
   isAdminWindowShown,
+  showAdminWindowWithTab,
+  getInitialTab,
 } from '../adminWindowManager.js';
 
 export function setupWindowHandlers(
@@ -48,5 +50,13 @@ export function setupWindowHandlers(
 
   ipcMain.handle('is-edit-window-shown', () => {
     return isAdminWindowShown();
+  });
+
+  ipcMain.handle('open-edit-window-with-tab', async (_event, tab: 'settings' | 'edit' | 'other') => {
+    await showAdminWindowWithTab(tab);
+  });
+
+  ipcMain.handle('get-initial-tab', () => {
+    return getInitialTab();
   });
 }

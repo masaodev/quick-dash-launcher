@@ -13,7 +13,22 @@ const AdminApp: React.FC = () => {
 
   useEffect(() => {
     loadData();
+    loadInitialTab();
+
+    // タブ変更イベントをリッスン
+    window.electronAPI.onSetActiveTab((tab) => {
+      setActiveTab(tab);
+    });
   }, []);
+
+  const loadInitialTab = async () => {
+    try {
+      const initialTab = await window.electronAPI.getInitialTab();
+      setActiveTab(initialTab);
+    } catch (error) {
+      console.error('Failed to get initial tab:', error);
+    }
+  };
 
   const loadData = async () => {
     try {

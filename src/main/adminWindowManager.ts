@@ -7,6 +7,7 @@ import { SettingsService } from './services/settingsService.js';
 
 let adminWindow: BrowserWindow | null = null;
 let isAdminWindowVisible: boolean = false;
+let initialTab: 'settings' | 'edit' | 'other' = 'settings';
 
 /**
  * 管理ウィンドウを作成し、初期設定を行う
@@ -112,12 +113,27 @@ export async function showAdminWindow(): Promise<void> {
 }
 
 /**
+ * 指定されたタブで管理ウィンドウを表示する
+ * 存在しない場合は新しく作成してから表示する
+ */
+export async function showAdminWindowWithTab(tab: 'settings' | 'edit' | 'other'): Promise<void> {
+  initialTab = tab;
+  await showAdminWindow();
+  
+  // ウィンドウが表示された後、タブを設定するメッセージを送信
+  if (adminWindow && !adminWindow.isDestroyed()) {
+    adminWindow.webContents.send('set-active-tab', tab);
+  }
+}
+
+/**
  * 管理ウィンドウを非表示にする
  */
 export function hideAdminWindow(): void {
   if (adminWindow && !adminWindow.isDestroyed()) {
     adminWindow.hide();
     isAdminWindowVisible = false;
+    resetInitialTab();
     windowLogger.info('管理ウィンドウを非表示にしました');
   }
 }
@@ -161,4 +177,19 @@ export function getAdminWindow(): BrowserWindow | null {
  */
 export function isAdminWindowShown(): boolean {
   return isAdminWindowVisible;
+}
+
+/**
+ * 初期表示タブを取得する
+ * @returns 初期表示するタブ
+ */
+export function getInitialTab(): 'settings' | 'edit' | 'other' {
+  return initialTab;
+}
+
+/**
+ * 初期表示タブをリセットする
+ */
+export function resetInitialTab(): void {
+  initialTab = 'settings';
 }
