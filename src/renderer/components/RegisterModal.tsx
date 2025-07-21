@@ -486,7 +486,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                       }
                     >
                       <option value="item">アイテム</option>
-                      <option value="dir">DIR</option>
+                      <option value="dir">フォルダ取込</option>
                     </select>
                   </div>
 

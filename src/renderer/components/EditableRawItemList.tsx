@@ -159,7 +159,7 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
   const getLineTypeDisplayName = (type: RawDataLine['type']) => {
     switch (type) {
       case 'directive':
-        return 'DIR';
+        return 'フォルダ取込';
       case 'item':
         return 'アイテム';
       case 'comment':
