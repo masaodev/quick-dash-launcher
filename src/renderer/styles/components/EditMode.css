@@ -81,6 +81,71 @@
   cursor: not-allowed;
 }
 
+/* 操作ボタン群のスタイル */
+.edit-mode-operations {
+  display: flex;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background-color: var(--bg-header);
+  border-bottom: 1px solid var(--color-border);
+  -webkit-app-region: no-drag;
+}
+
+.edit-mode-operations button {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-sm);
+  border: var(--border-normal);
+  border-radius: var(--border-radius);
+  background-color: var(--color-white);
+  cursor: pointer;
+  transition: var(--transition-normal);
+  font-family: var(--font-family);
+  -webkit-app-region: no-drag;
+}
+
+.edit-mode-operations button:hover:not(:disabled) {
+  background-color: var(--bg-hover);
+}
+
+.edit-mode-operations button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 個別ボタンのスタイル */
+.edit-mode-operations .add-line-button {
+  background-color: var(--color-success) !important;
+  color: var(--color-white) !important;
+  border-color: var(--color-success) !important;
+}
+
+.edit-mode-operations .add-line-button:hover:not(:disabled) {
+  background-color: var(--color-success-hover) !important;
+  border-color: var(--color-success-hover) !important;
+}
+
+.edit-mode-operations .delete-lines-button {
+  background-color: var(--color-danger) !important;
+  color: var(--color-white) !important;
+  border-color: var(--color-danger) !important;
+}
+
+.edit-mode-operations .delete-lines-button:hover:not(:disabled) {
+  background-color: var(--color-danger-hover) !important;
+  border-color: var(--color-danger-hover) !important;
+}
+
+.edit-mode-operations .sort-button {
+  background-color: var(--color-secondary) !important;
+  color: var(--color-white) !important;
+  border-color: var(--color-secondary) !important;
+}
+
+.edit-mode-operations .sort-button:hover:not(:disabled) {
+  background-color: var(--color-secondary-hover) !important;
+  border-color: var(--color-secondary-hover) !important;
+}
+
 .exit-edit-button {
   background-color: var(--color-secondary) !important;
   color: var(--color-white) !important;
@@ -349,61 +414,6 @@
   padding: var(--spacing-lg);
 }
 
-.raw-list-header {
-  display: flex;
-  gap: var(--spacing-sm);
-  margin-bottom: var(--spacing-lg);
-}
-
-.add-line-button,
-.delete-lines-button,
-.sort-button {
-  padding: var(--spacing-sm) var(--spacing-lg);
-  font-size: var(--font-size-base);
-  border: var(--border-normal);
-  border-radius: var(--border-radius);
-  background-color: var(--color-white);
-  cursor: pointer;
-  transition: var(--transition-normal);
-}
-
-.add-line-button {
-  background-color: var(--color-success);
-  color: var(--color-white);
-  border-color: var(--color-success);
-}
-
-.add-line-button:hover {
-  background-color: var(--color-success-hover);
-  border-color: var(--color-success-hover);
-}
-
-.delete-lines-button {
-  background-color: var(--color-danger);
-  color: var(--color-white);
-  border-color: var(--color-danger);
-}
-
-.delete-lines-button:hover:not(:disabled) {
-  background-color: var(--color-danger-hover);
-  border-color: var(--color-danger-hover);
-}
-
-.delete-lines-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.sort-button {
-  background-color: var(--color-secondary);
-  color: var(--color-white);
-  border-color: var(--color-secondary);
-}
-
-.sort-button:hover {
-  background-color: var(--color-secondary-hover);
-  border-color: var(--color-secondary-hover);
-}
 
 .raw-items-table {
   width: 100%;

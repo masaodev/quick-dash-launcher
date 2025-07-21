@@ -30,69 +30,6 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
 
   const getLineKey = (line: RawDataLine) => `${line.sourceFile}_${line.lineNumber}`;
 
-  const removeDuplicates = (lines: RawDataLine[]) => {
-    const seen = new Set<string>();
-    const deduplicated: RawDataLine[] = [];
-
-    for (const line of lines) {
-      // 重複判定キー：行タイプ + 内容の完全一致
-      const key = `${line.type}:${line.content}`;
-
-      if (!seen.has(key)) {
-        seen.add(key);
-        deduplicated.push(line);
-      }
-    }
-
-    return deduplicated;
-  };
-
-  const handleSortAndDeduplicate = async () => {
-    // 整列処理
-    const sortedLines = [...rawLines].sort((a, b) => {
-      // 第1キー: 種類でソート
-      const typeOrder = { directive: 0, item: 1, comment: 2, empty: 3 };
-      const typeA = typeOrder[a.type] ?? 99;
-      const typeB = typeOrder[b.type] ?? 99;
-
-      if (typeA !== typeB) {
-        return typeA - typeB;
-      }
-
-      // 第2キー: パスと引数でソート
-      const pathAndArgsA = getPathAndArgs(a).toLowerCase();
-      const pathAndArgsB = getPathAndArgs(b).toLowerCase();
-
-      if (pathAndArgsA !== pathAndArgsB) {
-        return pathAndArgsA.localeCompare(pathAndArgsB);
-      }
-
-      // 第3キー: 名前でソート
-      const nameA = a.type === 'item' ? (a.content.split(',')[0]?.trim() || '').toLowerCase() : '';
-      const nameB = b.type === 'item' ? (b.content.split(',')[0]?.trim() || '').toLowerCase() : '';
-
-      return nameA.localeCompare(nameB);
-    });
-
-    // 重複削除処理
-    const deduplicatedLines = removeDuplicates(sortedLines);
-    const duplicateCount = sortedLines.length - deduplicatedLines.length;
-
-    // 重複が見つかった場合は確認ダイアログを表示
-    if (duplicateCount > 0) {
-      const confirmed = window.confirm(
-        `整列処理が完了しました。\n\n${duplicateCount}件の重複行が見つかりました。\n重複行を削除しますか？`
-      );
-
-      if (confirmed) {
-        onSort(deduplicatedLines);
-      } else {
-        onSort(sortedLines);
-      }
-    } else {
-      onSort(sortedLines);
-    }
-  };
 
   const handleCellEdit = (line: RawDataLine) => {
     const cellKey = getLineKey(line);
@@ -322,33 +259,6 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
 
   return (
     <div className="editable-raw-item-list">
-      <div className="raw-list-header">
-        <button onClick={onAddLine} className="add-line-button">
-          ➕ 行を追加
-        </button>
-        <button
-          onClick={() => {
-            const selectedLines = rawLines.filter((line) => selectedItems.has(getLineKey(line)));
-            if (
-              selectedLines.length > 0 &&
-              window.confirm(`${selectedLines.length}行を削除しますか？`)
-            ) {
-              onDeleteLines(selectedLines);
-            }
-          }}
-          className="delete-lines-button"
-          disabled={selectedItems.size === 0}
-        >
-          🗑️ 選択行を削除 ({selectedItems.size})
-        </button>
-        <button
-          onClick={handleSortAndDeduplicate}
-          className="sort-button"
-          title="種類→パスと引数→名前の順で整列し、重複行を削除"
-        >
-          🔤 整列・重複削除
-        </button>
-      </div>
 
       <table className="raw-items-table">
         <thead>

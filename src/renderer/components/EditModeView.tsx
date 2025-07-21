@@ -301,6 +301,102 @@ const EditModeView: React.FC<EditModeViewProps> = ({
         </div>
       </div>
 
+      <div className="edit-mode-operations">
+        <button onClick={handleAddLine} className="add-line-button">
+          ➕ 行を追加
+        </button>
+        <button
+          onClick={() => {
+            const selectedLines = filteredLines.filter((line) => {
+              const lineKey = `${line.sourceFile}_${line.lineNumber}`;
+              return selectedItems.has(lineKey);
+            });
+            if (
+              selectedLines.length > 0 &&
+              window.confirm(`${selectedLines.length}行を削除しますか？`)
+            ) {
+              handleDeleteLines(selectedLines);
+            }
+          }}
+          className="delete-lines-button"
+          disabled={selectedItems.size === 0}
+        >
+          🗑️ 選択行を削除 ({selectedItems.size})
+        </button>
+        <button
+          onClick={() => {
+            // 整列処理: EditableRawItemListからロジックを移植
+            const removeDuplicates = (lines: RawDataLine[]) => {
+              const seen = new Set<string>();
+              const deduplicated: RawDataLine[] = [];
+          
+              for (const line of lines) {
+                const key = `${line.type}:${line.content}`;
+                if (!seen.has(key)) {
+                  seen.add(key);
+                  deduplicated.push(line);
+                }
+              }
+              return deduplicated;
+            };
+
+            const getPathAndArgs = (line: RawDataLine) => {
+              if (line.type === 'item') {
+                const parts = line.content.split(',');
+                const pathPart = parts[1]?.trim() || '';
+                const argsPart = parts[2]?.trim() || '';
+                return argsPart ? `${pathPart} ${argsPart}` : pathPart;
+              } else if (line.type === 'directive') {
+                const parts = line.content.split(',');
+                const pathPart = parts[1]?.trim() || '';
+                const options = parts.slice(2).join(',').trim();
+                return options ? `${pathPart} ${options}` : pathPart;
+              } else {
+                return line.content || (line.type === 'empty' ? '(空行)' : '');
+              }
+            };
+
+            const sortedLines = [...filteredLines].sort((a, b) => {
+              const typeOrder = { directive: 0, item: 1, comment: 2, empty: 3 };
+              const typeA = typeOrder[a.type] ?? 99;
+              const typeB = typeOrder[b.type] ?? 99;
+
+              if (typeA !== typeB) {
+                return typeA - typeB;
+              }
+
+              const pathAndArgsA = getPathAndArgs(a).toLowerCase();
+              const pathAndArgsB = getPathAndArgs(b).toLowerCase();
+
+              if (pathAndArgsA !== pathAndArgsB) {
+                return pathAndArgsA.localeCompare(pathAndArgsB);
+              }
+
+              const nameA = a.type === 'item' ? (a.content.split(',')[0]?.trim() || '').toLowerCase() : '';
+              const nameB = b.type === 'item' ? (b.content.split(',')[0]?.trim() || '').toLowerCase() : '';
+
+              return nameA.localeCompare(nameB);
+            });
+
+            const deduplicatedLines = removeDuplicates(sortedLines);
+            const duplicateCount = sortedLines.length - deduplicatedLines.length;
+
+            if (duplicateCount > 0) {
+              const confirmed = window.confirm(
+                `整列処理が完了しました。\n\n${duplicateCount}件の重複行が見つかりました。\n重複行を削除しますか？`
+              );
+              handleSort(confirmed ? deduplicatedLines : sortedLines);
+            } else {
+              handleSort(sortedLines);
+            }
+          }}
+          className="sort-button"
+          title="種類→パスと引数→名前の順で整列し、重複行を削除"
+        >
+          🔤 整列・重複削除
+        </button>
+      </div>
+
       <EditableRawItemList
         rawLines={filteredLines}
         selectedItems={selectedItems}
