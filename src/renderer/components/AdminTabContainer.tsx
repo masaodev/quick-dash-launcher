@@ -70,7 +70,7 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
             className={`tab-button ${activeTab === 'edit' ? 'active' : ''}`}
             onClick={() => handleTabChange('edit')}
           >
-            ✏️ 編集モード
+            ✏️ アイテム管理
           </button>
           <button
             className={`tab-button ${activeTab === 'other' ? 'active' : ''}`}

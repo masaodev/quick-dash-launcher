@@ -12,7 +12,11 @@
       "Bash(gh issue view:*)",
       "Bash(gh issue comment:*)",
       "Bash(gh issue close:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(gh issue edit:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npm run format:*)",
+      "Bash(node:*)"
     ],
     "deny": []
   }

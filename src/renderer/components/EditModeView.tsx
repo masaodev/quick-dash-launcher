@@ -210,7 +210,7 @@ const EditModeView: React.FC<EditModeViewProps> = ({
 
   const handleExitEditMode = () => {
     if (hasUnsavedChanges) {
-      if (window.confirm('未保存の変更があります。編集モードを終了しますか？')) {
+      if (window.confirm('未保存の変更があります。アイテム管理を終了しますか？')) {
         onExitEditMode();
       }
     } else {

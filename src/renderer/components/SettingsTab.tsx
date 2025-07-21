@@ -137,7 +137,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave, onUnsavedCh
           </div>
           <div className="setting-row">
             <div className="setting-item">
-              <label htmlFor="editModeWidth">編集モード時の幅:</label>
+              <label htmlFor="editModeWidth">アイテム管理時の幅:</label>
               <input
                 id="editModeWidth"
                 type="number"
@@ -150,7 +150,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave, onUnsavedCh
               <span className="unit">px</span>
             </div>
             <div className="setting-item">
-              <label htmlFor="editModeHeight">編集モード時の高さ:</label>
+              <label htmlFor="editModeHeight">アイテム管理時の高さ:</label>
               <input
                 id="editModeHeight"
                 type="number"

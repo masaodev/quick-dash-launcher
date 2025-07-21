@@ -51,7 +51,7 @@ const SettingsDropdown: React.FC<SettingsDropdownProps> = ({
       {isOpen && (
         <div className="dropdown-menu">
           <button className="dropdown-item" onClick={() => handleMenuItemClick(onOpenSettings)}>
-            ⚙️ 設定・管理
+            ⚙️ アイテム管理
           </button>
           <div className="dropdown-divider"></div>
           <button className="dropdown-item" onClick={() => handleMenuItemClick(onOpenConfigFolder)}>
@@ -65,7 +65,7 @@ const SettingsDropdown: React.FC<SettingsDropdownProps> = ({
           </button>
           <div className="dropdown-divider"></div>
           <button className="dropdown-item" onClick={() => handleMenuItemClick(onToggleEditMode)}>
-            ✏️ 設定・管理ウィンドウ
+            ✏️ アイテム管理ウィンドウ
           </button>
           <div className="dropdown-divider"></div>
           <button className="dropdown-item" onClick={() => handleMenuItemClick(onQuitApp)}>

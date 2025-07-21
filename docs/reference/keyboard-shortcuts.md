@@ -38,9 +38,9 @@ QuickDashLauncherで使用可能なキーボードショートカット一覧で
 
 | キー | 動作 |
 |------|------|
-| `Ctrl+E` | 編集モードの開始/終了 |
+| `Ctrl+E` | アイテム管理の開始/終了 |
 
-## 編集モード
+## アイテム管理
 
 ### データ編集
 
@@ -86,6 +86,6 @@ QuickDashLauncherで使用可能なキーボードショートカット一覧で
 
 ## 関連ドキュメント
 
-- [編集モード](../features/edit-mode.md) - 編集モードの詳細操作
+- [アイテム管理](../features/item-management.md) - アイテム管理の詳細操作
 - [アプリケーション設定](../features/app-settings.md) - ホットキーのカスタマイズ方法
 - [開発ガイド](../guides/development.md) - 基本的な操作方法
