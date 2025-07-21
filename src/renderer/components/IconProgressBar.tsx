@@ -1,5 +1,6 @@
 import React from 'react';
 import { IconProgress } from '../../common/types';
+import '../styles/components/IconProgress.css';
 
 interface IconProgressBarProps {
   progress: IconProgress;

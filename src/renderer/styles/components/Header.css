@@ -1,0 +1,142 @@
+/* ヘッダー関連のスタイル */
+.header {
+  display: flex;
+  padding: 8px;
+  background-color: #f8f8f8;
+  border-bottom: 1px solid #e0e0e0;
+  gap: 8px;
+  -webkit-app-region: drag;
+}
+
+.search-box {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 15px;
+  font-family: 'Meiryo', 'メイリオ', sans-serif;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  outline: none;
+  -webkit-app-region: no-drag;
+}
+
+.search-box:focus {
+  border-color: #0078d4;
+  box-shadow: 0 0 0 1px #0078d4;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.action-button {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  -webkit-app-region: no-drag;
+}
+
+.action-button:hover {
+  background-color: #f0f0f0;
+  border-color: #999;
+}
+
+.action-button:active {
+  background-color: #e0e0e0;
+}
+
+.action-button.pinned {
+  background-color: #0078d4;
+  color: white;
+  border-color: #0078d4;
+}
+
+.action-button.pinned:hover {
+  background-color: #106ebe;
+  border-color: #106ebe;
+}
+
+/* Settings Dropdown */
+.settings-dropdown {
+  position: relative;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  min-width: 220px;
+  z-index: 1000;
+}
+
+.dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 8px 16px;
+  text-align: left;
+  background: none;
+  border: none;
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  white-space: nowrap;
+}
+
+.dropdown-item:hover {
+  background-color: #f0f0f0;
+}
+
+.dropdown-item:first-child {
+  border-radius: 3px 3px 0 0;
+}
+
+.dropdown-item:last-child {
+  border-radius: 0 0 3px 3px;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background-color: #e0e0e0;
+  margin: 4px 0;
+}
+
+/* タブコントロール */
+.tab-control {
+  display: flex;
+  background-color: #f8f8f8;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.tab {
+  flex: 1;
+  padding: 8px;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.tab:hover {
+  background-color: #f0f0f0;
+}
+
+.tab.active {
+  background-color: #fff;
+  border-bottom: 2px solid #0078d4;
+  margin-bottom: -2px;
+}

@@ -1,0 +1,68 @@
+/* RegisterModal関連のスタイル */
+.register-modal {
+  padding: 24px;
+}
+
+.register-modal h2 {
+  margin-bottom: 20px;
+  font-size: 20px;
+  color: #333;
+}
+
+.register-items {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 20px;
+}
+
+.register-item {
+  margin-bottom: 20px;
+  padding: 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background-color: #f8f8f8;
+}
+
+.item-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.item-header .item-icon {
+  width: 32px;
+  height: 32px;
+  margin-right: 12px;
+}
+
+.item-type {
+  background-color: #0078d4;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.register-item hr {
+  margin: 16px 0;
+  border: none;
+  border-top: 1px solid #e0e0e0;
+}
+
+/* DIRディレクティブオプション */
+.dir-options {
+  margin-left: 20px;
+  padding: 10px;
+  background-color: #f5f5f5;
+  border-left: 3px solid #0078d4;
+  border-radius: 4px;
+}
+
+.dir-options .form-group {
+  margin-bottom: 10px;
+}
+
+.dir-options .form-group:last-child {
+  margin-bottom: 0;
+}
