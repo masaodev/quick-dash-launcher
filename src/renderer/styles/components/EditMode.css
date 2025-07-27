@@ -411,7 +411,9 @@
 .editable-raw-item-list {
   flex: 1;
   overflow: auto;
-  padding: var(--spacing-lg);
+  padding: 0 var(--spacing-lg) var(--spacing-lg);
+  position: relative;
+  border-radius: var(--border-radius-xl);
 }
 
 
@@ -419,8 +421,6 @@
   width: 100%;
   border-collapse: collapse;
   background-color: var(--color-white);
-  border-radius: var(--border-radius-xl);
-  overflow: hidden;
   box-shadow: var(--shadow-sm);
   table-layout: fixed;
 }
@@ -432,13 +432,18 @@
   border-bottom: var(--border-light);
 }
 
+.raw-items-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
 .raw-items-table th {
   background-color: var(--color-gray-100);
   font-weight: bold;
   color: var(--text-primary);
-  position: sticky;
-  top: 0;
-  z-index: 1;
+  z-index: 100;
+  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.1);
 }
 
 .raw-item-row {
