@@ -38,7 +38,7 @@ powershell.exe -Command "npm run dist"
 
 ### ⚙️ 機能詳細
 - **[アイコンシステム](docs/features/icon-system.md)** - アイコン取得・管理システム
-- **[フォルダ取込ディレクティブ](docs/features/dir-directive.md)** - フォルダ内容のインポート機能
+- **[フォルダ取込アイテム](docs/features/folder-import-item.md)** - フォルダ内容のインポート機能
 - **[アイテム管理](docs/features/item-management.md)** - 生データ編集機能の詳細
 - **[アプリケーション設定](docs/features/app-settings.md)** - ホットキー・ウィンドウサイズ等の設定
 - **[CSSデザインシステム](docs/features/css-design-system.md)** - 統一されたスタイル管理システム

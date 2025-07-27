@@ -19,7 +19,7 @@ export interface LauncherItem {
   sourceFile?: 'data.txt' | 'data2.txt';
   /** データファイル内の行番号（編集機能で使用） */
   lineNumber?: number;
-  /** フォルダ取込ディレクティブによって展開されたアイテムかどうか */
+  /** フォルダ取込アイテムによって展開されたアイテムかどうか */
   isDirExpanded?: boolean;
   /** 編集モードで変更されたかどうか */
   isEdited?: boolean;
@@ -27,7 +27,7 @@ export interface LauncherItem {
 
 /**
  * データファイル（data.txt、data2.txt）の内容を表すインターフェース
- * フォルダ取込ディレクティブの展開処理などで使用される
+ * フォルダ取込アイテムの展開処理などで使用される
  */
 export interface DataFile {
   /** ファイル名（data.txt、data2.txtのいずれか） */
@@ -45,7 +45,7 @@ export interface RawDataLine {
   lineNumber: number;
   /** 行の内容（改行文字は含まない） */
   content: string;
-  /** 行の種別（フォルダ取込ディレクティブ、アイテム、コメント、空行） */
+  /** 行の種別（フォルダ取込アイテム、アイテム、コメント、空行） */
   type: 'directive' | 'item' | 'comment' | 'empty';
   /** この行が含まれる元のデータファイル */
   sourceFile: 'data.txt' | 'data2.txt';

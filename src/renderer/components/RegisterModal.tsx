@@ -19,7 +19,7 @@ export interface RegisterItem {
   folderProcessing?: 'folder' | 'expand';
   icon?: string;
   itemCategory: 'item' | 'dir';
-  // フォルダ取込ディレクティブオプション
+  // フォルダ取込アイテムオプション
   dirOptions?: {
     depth: number;
     types: 'file' | 'folder' | 'both';
@@ -193,7 +193,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
         itemCategory: 'item',
       };
     } else if (line.type === 'directive') {
-      // フォルダ取込ディレクティブの場合：dir,パス,オプション
+      // フォルダ取込アイテムの場合：dir,パス,オプション
       const parts = line.content.split(',');
       const path = parts[1]?.trim() || '';
       const optionsStr = parts.slice(2).join(',').trim();
@@ -390,7 +390,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     // アイテム種別が変更された場合の処理
     if (field === 'itemCategory') {
       if (value === 'dir') {
-        // フォルダ取込選択時：フォルダ処理を展開に設定し、フォルダ取込オプションを初期化
+        // フォルダ取込選択時：フォルダ処理を展開に設定し、フォルダ取込アイテムオプションを初期化
         newItems[index].folderProcessing = 'expand';
         if (!newItems[index].dirOptions) {
           newItems[index].dirOptions = {
@@ -403,7 +403,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
           };
         }
       } else {
-        // アイテム選択時：フォルダ処理とフォルダ取込オプションをクリア
+        // アイテム選択時：フォルダ処理とフォルダ取込アイテムオプションをクリア
         delete newItems[index].folderProcessing;
         delete newItems[index].dirOptions;
       }

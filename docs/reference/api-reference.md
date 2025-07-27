@@ -5,7 +5,7 @@ QuickDashLauncherで使用される主要なAPIの一覧です。
 ## データファイル関連 API
 
 ### loadDataFiles()
-全てのdata*.txtファイルを読み込み、フォルダ取込ディレクティブを展開してパースする
+全てのdata*.txtファイルを読み込み、フォルダ取込アイテムを展開してパースする
 
 ### loadRawDataFiles()
 生データファイルを展開せずに読み込む（編集モード用）

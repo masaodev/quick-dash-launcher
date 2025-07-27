@@ -102,7 +102,7 @@ QuickDashLauncherで使用される主要なIPCチャンネルの仕様です。
 ## 削除済みチャンネル
 
 以下のチャンネルは実装が削除されました：
-- `update-item`: 個別アイテムの更新
+- `update-item`: 単一アイテムの更新
 - `delete-items`: 複数アイテムの削除
 - `batch-update-items`: 複数アイテムの一括更新
 

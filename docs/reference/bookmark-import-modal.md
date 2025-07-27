@@ -126,7 +126,7 @@ const filteredBookmarks = bookmarks.filter((bookmark) => {
 ### 4.7. チェックボックス選択時
 
 #### 処理内容
-- **操作**: 個別アイテムのチェックボックスクリック
+- **操作**: 単一アイテムのチェックボックスクリック
 - **処理**: `selectedIds`のSetに対してID追加/削除
 - **実装**: 
   ```typescript

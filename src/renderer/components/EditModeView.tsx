@@ -50,7 +50,7 @@ const EditModeView: React.FC<EditModeViewProps> = ({
     let newType: RawDataLine['type'] = originalLine.type;
 
     if (item.itemCategory === 'dir') {
-      // フォルダ取込ディレクティブの場合
+      // フォルダ取込アイテムの場合
       newType = 'directive';
       if (item.dirOptions) {
         const options = [];
