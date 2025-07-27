@@ -9,7 +9,6 @@ import AdminOtherTab from './AdminOtherTab';
 interface AdminTabContainerProps {
   activeTab: 'settings' | 'edit' | 'other';
   onTabChange: (tab: 'settings' | 'edit' | 'other') => void;
-  onClose: () => void;
   settings: AppSettings | null;
   onSettingsSave: (settings: AppSettings) => Promise<void>;
   rawLines: RawDataLine[];
@@ -21,7 +20,6 @@ interface AdminTabContainerProps {
 const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
   activeTab,
   onTabChange,
-  onClose,
   settings,
   onSettingsSave,
   rawLines,
@@ -42,18 +40,9 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
     }
   };
 
-  const handleClose = () => {
-    if (hasUnsavedChanges) {
-      if (confirm('未保存の変更があります。ウィンドウを閉じますか？')) {
-        onClose();
-      }
-    } else {
-      onClose();
-    }
-  };
 
   const handleExitEditMode = () => {
-    onClose();
+    window.electronAPI.hideEditWindow();
   };
 
   return (
@@ -79,9 +68,6 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
             📊 その他
           </button>
         </div>
-        <button className="close-button" onClick={handleClose} title="ウィンドウを閉じる">
-          ×
-        </button>
       </div>
 
       <div className="admin-content">

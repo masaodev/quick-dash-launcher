@@ -52,22 +52,6 @@
   border-bottom: 2px solid var(--color-primary);
 }
 
-.admin-header .close-button {
-  padding: var(--spacing-xs) var(--spacing-sm);
-  border: none;
-  background-color: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-  font-size: var(--font-size-2xl);
-  border-radius: var(--border-radius);
-  transition: var(--transition-normal);
-  -webkit-app-region: no-drag;
-}
-
-.admin-header .close-button:hover {
-  background-color: var(--color-danger-alt);
-  color: var(--color-white);
-}
 
 .admin-content {
   flex: 1;

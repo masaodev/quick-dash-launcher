@@ -67,10 +67,6 @@ const AdminApp: React.FC = () => {
     }
   };
 
-  const handleCloseWindow = () => {
-    // 管理ウィンドウを閉じる
-    window.electronAPI.hideEditWindow();
-  };
 
   const handleSearchChange = (query: string) => {
     setSearchQuery(query);
@@ -89,7 +85,6 @@ const AdminApp: React.FC = () => {
       <AdminTabContainer
         activeTab={activeTab}
         onTabChange={setActiveTab}
-        onClose={handleCloseWindow}
         settings={settings}
         onSettingsSave={handleSettingsSave}
         rawLines={rawLines}
