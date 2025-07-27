@@ -1,4 +1,4 @@
-import { ipcMain, app } from 'electron';
+import { ipcMain, app, clipboard } from 'electron';
 
 import {
   showAdminWindow,
@@ -58,5 +58,14 @@ export function setupWindowHandlers(
 
   ipcMain.handle('get-initial-tab', () => {
     return getInitialTab();
+  });
+
+  ipcMain.handle('copy-to-clipboard', (_event, text: string) => {
+    try {
+      clipboard.writeText(text);
+      return true;
+    } catch (error) {
+      return false;
+    }
   });
 }

@@ -7,8 +7,6 @@ interface ActionButtonsProps {
   onReload: () => void;
   onFetchMissingIcons: () => void;
   onRefreshAll: () => void;
-  onOpenConfigFolder: () => void;
-  onOpenDataFile: () => void;
   onTogglePin: () => void;
   onExportJson: () => void;
   onOpenBasicSettings: () => void;
@@ -21,8 +19,6 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   onReload,
   onFetchMissingIcons,
   onRefreshAll,
-  onOpenConfigFolder,
-  onOpenDataFile,
   onTogglePin,
   onExportJson,
   onOpenBasicSettings,
@@ -45,11 +41,9 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         📌
       </button>
       <SettingsDropdown
-        onOpenConfigFolder={onOpenConfigFolder}
-        onOpenDataFile={onOpenDataFile}
-        onExportJson={onExportJson}
         onOpenBasicSettings={onOpenBasicSettings}
         onOpenItemManagement={onOpenItemManagement}
+        onExportJson={onExportJson}
         onQuitApp={() => window.electronAPI.quitApp()}
         isEditMode={isEditMode}
       />

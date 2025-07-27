@@ -259,7 +259,7 @@ const App: React.FC = () => {
     setIsPinned(newPinState);
   };
 
-  const handleExportJson = () => {
+  const handleExportJson = async () => {
     const exportData = {
       mainItems,
       exportTimestamp: new Date().toISOString(),
@@ -268,16 +268,12 @@ const App: React.FC = () => {
 
     const jsonString = JSON.stringify(exportData, null, 2);
 
-    // Create a temporary element to copy to clipboard
-    const textarea = document.createElement('textarea');
-    textarea.value = jsonString;
-    document.body.appendChild(textarea);
-    textarea.select();
-    document.execCommand('copy');
-    document.body.removeChild(textarea);
-
-    console.log('JSON data copied to clipboard:', exportData);
-    alert('LauncherItemのJSONデータがクリップボードにコピーされました');
+    try {
+      await window.electronAPI.copyToClipboard(jsonString);
+      alert('LauncherItemのJSONデータがクリップボードにコピーされました');
+    } catch (err) {
+      alert('クリップボードへのコピーに失敗しました');
+    }
   };
 
   const handleRegisterItems = async (items: RegisterItem[]) => {
@@ -309,8 +305,6 @@ const App: React.FC = () => {
             onReload={loadItems}
             onFetchMissingIcons={handleFetchMissingIcons}
             onRefreshAll={handleRefreshAll}
-            onOpenConfigFolder={() => window.electronAPI.openConfigFolder()}
-            onOpenDataFile={() => window.electronAPI.openDataFile()}
             onTogglePin={handleTogglePin}
             onExportJson={handleExportJson}
             onOpenBasicSettings={handleOpenBasicSettings}

@@ -87,4 +87,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   isEditWindowShown: () => ipcRenderer.invoke('is-edit-window-shown'),
   openEditWindowWithTab: (tab: 'settings' | 'edit' | 'other') => ipcRenderer.invoke('open-edit-window-with-tab', tab),
   getInitialTab: () => ipcRenderer.invoke('get-initial-tab'),
+  copyToClipboard: (text: string) => ipcRenderer.invoke('copy-to-clipboard', text),
 });

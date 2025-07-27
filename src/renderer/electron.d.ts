@@ -71,6 +71,7 @@ export interface ElectronAPI {
   isEditWindowShown: () => Promise<boolean>;
   openEditWindowWithTab: (tab: 'settings' | 'edit' | 'other') => Promise<void>;
   getInitialTab: () => Promise<'settings' | 'edit' | 'other'>;
+  copyToClipboard: (text: string) => Promise<boolean>;
 }
 
 declare global {

@@ -1,21 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 
 interface SettingsDropdownProps {
-  onOpenConfigFolder: () => void;
-  onOpenDataFile: () => void;
-  onExportJson: () => void;
   onOpenBasicSettings: () => void;
   onOpenItemManagement: () => void;
+  onExportJson: () => void;
   onQuitApp: () => void;
   isEditMode: boolean;
 }
 
 const SettingsDropdown: React.FC<SettingsDropdownProps> = ({
-  onOpenConfigFolder,
-  onOpenDataFile,
-  onExportJson,
   onOpenBasicSettings,
   onOpenItemManagement,
+  onExportJson,
   onQuitApp,
   isEditMode: _isEditMode,
 }) => {
@@ -55,13 +51,6 @@ const SettingsDropdown: React.FC<SettingsDropdownProps> = ({
           </button>
           <button className="dropdown-item" onClick={() => handleMenuItemClick(onOpenItemManagement)}>
             ✏️ アイテム管理
-          </button>
-          <div className="dropdown-divider"></div>
-          <button className="dropdown-item" onClick={() => handleMenuItemClick(onOpenConfigFolder)}>
-            📁 設定フォルダを開く
-          </button>
-          <button className="dropdown-item" onClick={() => handleMenuItemClick(onOpenDataFile)}>
-            📄 設定ファイルを開く
           </button>
           <button className="dropdown-item" onClick={() => handleMenuItemClick(onExportJson)}>
             📋 JSON出力
