@@ -10,6 +10,10 @@ on:
     tags:
       - 'v*'
 
+# 権限設定（リリース作成とファイルアップロードに必要）
+permissions:
+  contents: write
+
 jobs:
   release:
     # Windows環境で実行（Electronアプリのビルドに必要）
