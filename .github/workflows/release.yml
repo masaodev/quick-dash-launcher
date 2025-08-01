@@ -51,15 +51,6 @@ jobs:
         run: dir release
         shell: cmd
 
-      # コミット履歴から更新内容を自動生成
-      - name: Generate changelog
-        id: changelog
-        uses: requarks/changelog-action@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ github.ref_name }}
-          writeToFile: false
-
       # GitHub Releaseの作成と成果物のアップロード
       - name: Create Release and Upload Assets
         uses: softprops/action-gh-release@v2
@@ -69,10 +60,15 @@ jobs:
           name: Release ${{ github.ref_name }}
           body: |
             ## 更新内容
-            ${{ steps.changelog.outputs.changes }}
+            QuickDashLauncher ${{ github.ref_name }} のリリースです。
 
             ## インストール方法
             下記の `QuickDashLauncher-Setup-${{ steps.get_version.outputs.VERSION }}.exe` をダウンロードして実行してください。
+
+            ## 機能
+            - Ctrl+Alt+Wでグローバルランチャー起動
+            - Webサイト、アプリケーション、フォルダへの素早いアクセス
+            - フォルダ取込機能でファイル一覧の自動取得
           draft: false
           prerelease: false
           files: |
