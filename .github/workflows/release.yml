@@ -1,0 +1,108 @@
+# リリース自動化ワークフロー
+# タグがプッシュされたときに、Windowsインストーラーを自動ビルドし、
+# GitHub Releasesに公開するワークフロー
+
+name: Release
+
+# トリガー条件: v*形式のタグがプッシュされたとき（例: v1.0.0）
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    # Windows環境で実行（Electronアプリのビルドに必要）
+    runs-on: windows-latest
+
+    steps:
+      # リポジトリのコードをチェックアウト
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Node.js環境のセットアップ（バージョン20を使用）
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # 依存関係のインストール（package-lock.jsonを使用した確実なインストール）
+      - name: Install dependencies
+        run: npm ci
+
+      # アプリケーションのビルド（TypeScriptのコンパイル等）
+      - name: Build application
+        run: npm run build
+
+      # Windowsインストーラーの作成（electron-builderを使用）
+      - name: Build Windows installer
+        run: npm run dist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # タグ名からバージョン番号を抽出（v1.0.0 → 1.0.0）
+      - name: Get version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+        shell: bash
+
+      # コミット履歴から更新内容を自動生成
+      - name: Generate changelog
+        id: changelog
+        uses: requarks/changelog-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ github.ref_name }}
+          writeToFile: false
+
+      # GitHub Releaseの作成
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: Release ${{ github.ref_name }}
+          body: |
+            ## 更新内容
+            ${{ steps.changelog.outputs.changes }}
+
+            ## インストール方法
+            下記の `QuickDashLauncher-Setup-${{ steps.get_version.outputs.VERSION }}.exe` をダウンロードして実行してください。
+          draft: false
+          prerelease: false
+
+      # インストーラー（.exe）をリリースにアップロード
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./release/QuickDashLauncher Setup ${{ steps.get_version.outputs.VERSION }}.exe
+          asset_name: QuickDashLauncher-Setup-${{ steps.get_version.outputs.VERSION }}.exe
+          asset_content_type: application/vnd.microsoft.portable-executable
+
+      # 差分更新用のblockmapファイルをアップロード
+      - name: Upload blockmap
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./release/QuickDashLauncher Setup ${{ steps.get_version.outputs.VERSION }}.exe.blockmap
+          asset_name: QuickDashLauncher-Setup-${{ steps.get_version.outputs.VERSION }}.exe.blockmap
+          asset_content_type: application/octet-stream
+
+      # 自動更新用の設定ファイルをアップロード
+      - name: Upload latest.yml
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./release/latest.yml
+          asset_name: latest.yml
+          asset_content_type: text/yaml
