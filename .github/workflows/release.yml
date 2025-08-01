@@ -36,16 +36,20 @@ jobs:
         run: npm run build
 
       # Windowsインストーラーの作成（electron-builderを使用）
+      # 注意: publish: neverで自動公開を無効化（GitHub Actionsで制御するため）
       - name: Build Windows installer
-        run: npm run dist
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run dist -- --publish never
 
       # タグ名からバージョン番号を抽出（v1.0.0 → 1.0.0）
       - name: Get version from tag
         id: get_version
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
         shell: bash
+
+      # ビルド結果のファイルを確認（デバッグ用）
+      - name: List release directory
+        run: dir release
+        shell: cmd
 
       # コミット履歴から更新内容を自動生成
       - name: Generate changelog
@@ -56,15 +60,13 @@ jobs:
           tag: ${{ github.ref_name }}
           writeToFile: false
 
-      # GitHub Releaseの作成
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # GitHub Releaseの作成と成果物のアップロード
+      - name: Create Release and Upload Assets
+        uses: softprops/action-gh-release@v2
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           tag_name: ${{ github.ref_name }}
-          release_name: Release ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
           body: |
             ## 更新内容
             ${{ steps.changelog.outputs.changes }}
@@ -73,36 +75,7 @@ jobs:
             下記の `QuickDashLauncher-Setup-${{ steps.get_version.outputs.VERSION }}.exe` をダウンロードして実行してください。
           draft: false
           prerelease: false
-
-      # インストーラー（.exe）をリリースにアップロード
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./release/QuickDashLauncher Setup ${{ steps.get_version.outputs.VERSION }}.exe
-          asset_name: QuickDashLauncher-Setup-${{ steps.get_version.outputs.VERSION }}.exe
-          asset_content_type: application/vnd.microsoft.portable-executable
-
-      # 差分更新用のblockmapファイルをアップロード
-      - name: Upload blockmap
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./release/QuickDashLauncher Setup ${{ steps.get_version.outputs.VERSION }}.exe.blockmap
-          asset_name: QuickDashLauncher-Setup-${{ steps.get_version.outputs.VERSION }}.exe.blockmap
-          asset_content_type: application/octet-stream
-
-      # 自動更新用の設定ファイルをアップロード
-      - name: Upload latest.yml
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./release/latest.yml
-          asset_name: latest.yml
-          asset_content_type: text/yaml
+          files: |
+            release/*.exe
+            release/*.exe.blockmap
+            release/latest.yml
