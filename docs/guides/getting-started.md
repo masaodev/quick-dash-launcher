@@ -106,6 +106,6 @@ dir,C:\Scripts,filter=*.ps1,prefix=Script
 
 - [開発ガイド](development.md) - 詳細な開発情報
 - [ビルドとデプロイ](build-and-deploy.md) - ビルドシステムとデプロイ方法
-- [編集モード](../features/edit-mode.md) - 編集モードの使い方
+- [アイテム管理](../features/item-management.md) - 編集モードの使い方
 - [アイコンシステム](../features/icon-system.md) - アイコン機能の詳細
 - [アプリケーション設定](../features/app-settings.md) - ホットキーや表示設定のカスタマイズ

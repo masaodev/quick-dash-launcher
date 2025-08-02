@@ -200,7 +200,7 @@ QuickDashLauncherではCSS変数ベースの統一されたデザインシステ
 
 ## 関連ドキュメント
 
-- [編集モード詳細ガイド](../features/edit-mode.md) - 編集モードの操作方法と技術実装
+- [アイテム管理詳細ガイド](../features/item-management.md) - 編集モードの操作方法と技術実装
 - [CSSデザインシステム](../features/css-design-system.md) - 統一されたスタイル管理システム
 - [ビルドとデプロイ](build-and-deploy.md) - ビルドシステムと配布方法
 - [テストチェックリスト](testing.md) - 手動テストの手順

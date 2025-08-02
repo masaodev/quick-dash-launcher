@@ -80,5 +80,5 @@ IconProgress {
 
 - [アーキテクチャ概要](overview.md) - システム全体の構造
 - [IPCチャンネル詳細](ipc-channels.md) - 各IPCチャンネルの仕様
-- [編集モード](../features/edit-mode.md) - 編集モードの詳細仕様
+- [アイテム管理](../features/item-management.md) - 編集モードの詳細仕様
 - [アイコンシステム](../features/icon-system.md) - アイコン取得・管理システム
