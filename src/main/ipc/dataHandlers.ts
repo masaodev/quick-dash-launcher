@@ -430,7 +430,7 @@ interface RegisterItem {
   folderProcessing?: 'folder' | 'expand';
   icon?: string;
   itemCategory: 'item' | 'dir';
-  // フォルダ取込ディレクティブオプション
+  // フォルダ取込アイテムオプション
   dirOptions?: {
     depth: number;
     types: 'file' | 'folder' | 'both';

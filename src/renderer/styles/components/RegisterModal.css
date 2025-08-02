@@ -50,7 +50,7 @@
   border-top: var(--border-light);
 }
 
-/* DIRディレクティブオプション */
+/* フォルダ取込オプション */
 .dir-options {
   margin-left: var(--spacing-xl);
   padding: var(--spacing-sm);
