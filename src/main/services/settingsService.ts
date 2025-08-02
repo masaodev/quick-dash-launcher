@@ -1,4 +1,4 @@
-import type ElectronStore from 'electron-store';
+import ElectronStore from 'electron-store';
 
 import type { AppSettings } from '../../common/types.js';
 import logger from '../../common/logger.js';
@@ -11,7 +11,8 @@ let Store: typeof ElectronStore | null = null;
  * electron-storeを使用して設定の永続化を行う
  */
 export class SettingsService {
-  private store: InstanceType<typeof ElectronStore> | null = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private store: any | null = null;
   private static instance: SettingsService;
 
   /**

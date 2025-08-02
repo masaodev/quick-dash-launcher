@@ -20,10 +20,10 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
   onLineEdit,
   onLineSelect,
   onSelectAll,
-  _onAddLine,
+  _onAddLine, // 未使用（将来の機能拡張用）
   onDeleteLines,
   onEditClick,
-  _onSort,
+  _onSort, // 未使用（将来の機能拡張用）
 }) => {
   const [editingCell, setEditingCell] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState('');

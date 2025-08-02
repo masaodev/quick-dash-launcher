@@ -53,11 +53,15 @@ export default defineConfig({
     testTimeout: 10000,
 
     // レポーター設定
-    reporter: ['verbose', 'html'],
+    reporters: ['verbose', 'html'],
 
     // 並列実行設定
-    threads: true,
-    maxThreads: 4,
+    pool: 'threads',
+    poolOptions: {
+      threads: {
+        maxThreads: 4,
+      },
+    },
   },
 
   resolve: {

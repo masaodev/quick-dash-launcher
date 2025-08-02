@@ -75,8 +75,8 @@ test.describe('QuickDashLauncher - アプリケーション起動テスト', () 
     // Electronのセキュリティ設定をチェック
     const hasNodeIntegration = await mainWindow
       .evaluate(() => {
-        // @ts-expect-error - Node.js関連のAPIがレンダラープロセスで利用できないことを確認
-        return typeof window.require !== 'undefined';
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return typeof (window as any).require !== 'undefined';
       })
       .catch(() => false);
 
