@@ -329,7 +329,7 @@ const EditModeView: React.FC<EditModeViewProps> = ({
             const removeDuplicates = (lines: RawDataLine[]) => {
               const seen = new Set<string>();
               const deduplicated: RawDataLine[] = [];
-          
+
               for (const line of lines) {
                 const key = `${line.type}:${line.content}`;
                 if (!seen.has(key)) {
@@ -372,8 +372,10 @@ const EditModeView: React.FC<EditModeViewProps> = ({
                 return pathAndArgsA.localeCompare(pathAndArgsB);
               }
 
-              const nameA = a.type === 'item' ? (a.content.split(',')[0]?.trim() || '').toLowerCase() : '';
-              const nameB = b.type === 'item' ? (b.content.split(',')[0]?.trim() || '').toLowerCase() : '';
+              const nameA =
+                a.type === 'item' ? (a.content.split(',')[0]?.trim() || '').toLowerCase() : '';
+              const nameB =
+                b.type === 'item' ? (b.content.split(',')[0]?.trim() || '').toLowerCase() : '';
 
               return nameA.localeCompare(nameB);
             });
@@ -403,10 +405,10 @@ const EditModeView: React.FC<EditModeViewProps> = ({
         onLineEdit={handleLineEdit}
         onLineSelect={handleLineSelect}
         onSelectAll={handleSelectAll}
-        onAddLine={handleAddLine}
+        _onAddLine={handleAddLine}
         onDeleteLines={handleDeleteLines}
         onEditClick={handleEditItem}
-        onSort={handleSort}
+        _onSort={handleSort}
       />
 
       <div className="edit-mode-status">

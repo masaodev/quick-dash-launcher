@@ -8,10 +8,10 @@ interface EditableRawItemListProps {
   onLineEdit: (line: RawDataLine) => void;
   onLineSelect: (line: RawDataLine, selected: boolean) => void;
   onSelectAll: (selected: boolean) => void;
-  onAddLine: () => void;
+  _onAddLine: () => void;
   onDeleteLines: (lines: RawDataLine[]) => void;
   onEditClick: (line: RawDataLine) => void;
-  onSort: (sortedLines: RawDataLine[]) => void;
+  _onSort: (sortedLines: RawDataLine[]) => void;
 }
 
 const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
@@ -20,16 +20,15 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
   onLineEdit,
   onLineSelect,
   onSelectAll,
-  onAddLine,
+  _onAddLine,
   onDeleteLines,
   onEditClick,
-  onSort,
+  _onSort,
 }) => {
   const [editingCell, setEditingCell] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState('');
 
   const getLineKey = (line: RawDataLine) => `${line.sourceFile}_${line.lineNumber}`;
-
 
   const handleCellEdit = (line: RawDataLine) => {
     const cellKey = getLineKey(line);
@@ -259,7 +258,6 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
 
   return (
     <div className="editable-raw-item-list">
-
       <table className="raw-items-table">
         <thead>
           <tr>

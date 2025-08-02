@@ -51,20 +51,20 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
   };
 
   const getAdjustedPosition = () => {
-    const menuWidth = 160; 
-    const menuHeight = 40; 
-    
+    const menuWidth = 160;
+    const menuHeight = 40;
+
     let adjustedX = position.x;
     let adjustedY = position.y;
-    
+
     if (position.x + menuWidth > window.innerWidth) {
       adjustedX = position.x - menuWidth;
     }
-    
+
     if (position.y + menuHeight > window.innerHeight) {
       adjustedY = position.y - menuHeight;
     }
-    
+
     return { x: Math.max(0, adjustedX), y: Math.max(0, adjustedY) };
   };
 

@@ -46,10 +46,16 @@ const SettingsDropdown: React.FC<SettingsDropdownProps> = ({
       </button>
       {isOpen && (
         <div className="dropdown-menu">
-          <button className="dropdown-item" onClick={() => handleMenuItemClick(onOpenBasicSettings)}>
+          <button
+            className="dropdown-item"
+            onClick={() => handleMenuItemClick(onOpenBasicSettings)}
+          >
             ⚙️ 基本設定
           </button>
-          <button className="dropdown-item" onClick={() => handleMenuItemClick(onOpenItemManagement)}>
+          <button
+            className="dropdown-item"
+            onClick={() => handleMenuItemClick(onOpenItemManagement)}
+          >
             ✏️ アイテム管理
           </button>
           <button className="dropdown-item" onClick={() => handleMenuItemClick(onExportJson)}>

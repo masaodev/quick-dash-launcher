@@ -40,7 +40,6 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
     }
   };
 
-
   const handleExitEditMode = () => {
     window.electronAPI.hideEditWindow();
   };

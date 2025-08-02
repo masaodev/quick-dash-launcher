@@ -119,7 +119,7 @@ export async function showAdminWindow(): Promise<void> {
 export async function showAdminWindowWithTab(tab: 'settings' | 'edit' | 'other'): Promise<void> {
   initialTab = tab;
   await showAdminWindow();
-  
+
   // ウィンドウが表示された後、タブを設定するメッセージを送信
   if (adminWindow && !adminWindow.isDestroyed()) {
     adminWindow.webContents.send('set-active-tab', tab);
