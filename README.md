@@ -17,14 +17,14 @@ QuickDashLauncherは、グローバルホットキー（Ctrl+Alt+W）でWebサ�
 - Node.js 18以降（開発時）
 
 ### リリース版のインストール
-1. [Releases](https://github.com/yourusername/quick-dash-launcher/releases)から最新版をダウンロード
+1. [Releases](https://github.com/masaodev/quick-dash-launcher/releases)から最新版をダウンロード
 2. インストーラー（.exe）を実行
 3. インストール完了後、自動的に起動します
 
 ### ソースからのビルド
 ```bash
 # リポジトリのクローン
-git clone https://github.com/yourusername/quick-dash-launcher.git
+git clone https://github.com/masaodev/quick-dash-launcher.git
 cd quick-dash-launcher
 
 # 依存関係のインストール
