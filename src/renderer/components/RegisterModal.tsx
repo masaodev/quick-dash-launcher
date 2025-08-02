@@ -193,7 +193,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
         itemCategory: 'item',
       };
     } else if (line.type === 'directive') {
-      // フォルダ取込アイテムの場合：dir,パス,オプション
+      // フォルダ取込アイテム行の場合：dir,パス,オプション
       const parts = line.content.split(',');
       const path = parts[1]?.trim() || '';
       const optionsStr = parts.slice(2).join(',').trim();

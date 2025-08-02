@@ -39,7 +39,7 @@ export function parseDataFiles(dataFiles: DataFile[]): {
         return;
       }
 
-      // Skip dir directives (already processed in main process)
+      // フォルダ取込アイテムはメインプロセスで処理済みのためスキップ
       if (line.startsWith('dir,')) {
         return;
       }

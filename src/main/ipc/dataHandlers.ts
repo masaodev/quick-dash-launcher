@@ -287,7 +287,7 @@ async function loadDataFiles(configFolder: string): Promise<DataFile[]> {
     if (fs.existsSync(filePath)) {
       let content = fs.readFileSync(filePath, 'utf8');
 
-      // dirディレクティブを処理
+      // フォルダ取込アイテムを処理
       const lines = content.split(/\r\n|\n|\r/);
       const processedLines: string[] = [];
 
