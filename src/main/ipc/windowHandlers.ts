@@ -1,4 +1,5 @@
 import { ipcMain, app, clipboard } from 'electron';
+import type { WindowPinMode } from '@common/types';
 
 import {
   showAdminWindow,
@@ -13,8 +14,20 @@ export function setupWindowHandlers(
   getWindowPinState: () => boolean,
   setWindowPinState: (pinState: boolean) => void,
   setEditMode: (editMode: boolean) => Promise<void>,
-  getEditMode: () => boolean
+  getEditMode: () => boolean,
+  getWindowPinMode: () => WindowPinMode,
+  cycleWindowPinMode: () => WindowPinMode
 ) {
+  // 新しい3段階モード用のIPCハンドラー
+  ipcMain.handle('get-window-pin-mode', () => {
+    return getWindowPinMode();
+  });
+
+  ipcMain.handle('cycle-window-pin-mode', () => {
+    return cycleWindowPinMode();
+  });
+
+  // 旧APIとの互換性のためのIPCハンドラー（非推奨）
   ipcMain.handle('get-window-pin-state', () => {
     return getWindowPinState();
   });

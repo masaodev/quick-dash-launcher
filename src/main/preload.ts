@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron';
 
-import { LauncherItem, RawDataLine, AppSettings, IconProgress } from '../common/types';
+import { LauncherItem, RawDataLine, AppSettings, IconProgress, WindowPinMode } from '../common/types';
 
 interface RegisterItem {
   filePath: string;
@@ -51,6 +51,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onSetActiveTab: (callback: (tab: 'settings' | 'edit' | 'other') => void) => {
     ipcRenderer.on('set-active-tab', (_event, tab) => callback(tab));
   },
+  // 新しい3段階ピンモードAPI
+  getWindowPinMode: () => ipcRenderer.invoke('get-window-pin-mode'),
+  cycleWindowPinMode: () => ipcRenderer.invoke('cycle-window-pin-mode'),
+  // 旧APIとの互換性（非推奨）
   getWindowPinState: () => ipcRenderer.invoke('get-window-pin-state'),
   setWindowPinState: (isPinned: boolean) => ipcRenderer.invoke('set-window-pin-state', isPinned),
   registerItems: (items: RegisterItem[]) => ipcRenderer.invoke('register-items', items),

@@ -54,6 +54,41 @@
   background-color: var(--color-gray-400);
 }
 
+/* 3段階ピンモードのスタイル */
+.action-button.pin-normal {
+  background-color: var(--color-white);
+  color: var(--text-primary);
+  border-color: var(--color-gray-400);
+}
+
+.action-button.pin-normal:hover {
+  background-color: var(--bg-hover);
+  border-color: var(--color-gray-600);
+}
+
+.action-button.pin-always-on-top {
+  background-color: #dc3545; /* 赤色 */
+  color: var(--color-white);
+  border-color: #dc3545;
+}
+
+.action-button.pin-always-on-top:hover {
+  background-color: #c82333;
+  border-color: #c82333;
+}
+
+.action-button.pin-stay-visible {
+  background-color: var(--color-primary); /* 青色 */
+  color: var(--color-white);
+  border-color: var(--color-primary);
+}
+
+.action-button.pin-stay-visible:hover {
+  background-color: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+}
+
+/* 旧スタイルとの互換性（非推奨） */
 .action-button.pinned {
   background-color: var(--color-primary);
   color: var(--color-white);
