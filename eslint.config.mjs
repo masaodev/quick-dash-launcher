@@ -25,9 +25,67 @@ export default [
     ]
   },
   
-  // TypeScript + React設定
+  // テストファイル設定
   {
-    files: ['**/*.{js,jsx,ts,tsx}'],
+    files: ['tests/**/*.{js,jsx,ts,tsx}'],
+    languageOptions: {
+      parser: tsParser,
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+        ...globals.es2021
+      },
+      parserOptions: {
+        ecmaFeatures: {
+          jsx: true
+        },
+        project: './tsconfig.json'
+      }
+    },
+    plugins: {
+      '@typescript-eslint': tsPlugin,
+      'react': reactPlugin,
+      'import': importPlugin,
+      'prettier': prettierPlugin
+    },
+    rules: {
+      // TypeScript推奨ルール
+      ...tsPlugin.configs.recommended.rules,
+      
+      // React推奨ルール（テストファイルではreact-hooksを無効化）
+      ...reactPlugin.configs.recommended.rules,
+      ...reactPlugin.configs['jsx-runtime'].rules,
+      
+      // カスタムルール
+      '@typescript-eslint/explicit-module-boundary-types': 'off',
+      '@typescript-eslint/no-unused-vars': ['warn', { 
+        argsIgnorePattern: '^_', 
+        varsIgnorePattern: '^_',
+        caughtErrorsIgnorePattern: '^_',
+        destructuredArrayIgnorePattern: '^_'
+      }],
+      '@typescript-eslint/no-var-requires': 'off',
+      '@typescript-eslint/no-require-imports': 'off',
+      'import/order': ['error', {
+        groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
+        'newlines-between': 'always'
+      }],
+      
+      // Prettier統合
+      'prettier/prettier': 'error'
+    },
+    settings: {
+      react: {
+        version: 'detect'
+      }
+    }
+  },
+  
+  // TypeScript + React設定（メインコード）
+  {
+    files: ['src/**/*.{js,jsx,ts,tsx}'],
     languageOptions: {
       parser: tsParser,
       ecmaVersion: 'latest',
@@ -65,7 +123,12 @@ export default [
       
       // カスタムルール
       '@typescript-eslint/explicit-module-boundary-types': 'off',
-      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': ['warn', { 
+        argsIgnorePattern: '^_', 
+        varsIgnorePattern: '^_',
+        caughtErrorsIgnorePattern: '^_',
+        destructuredArrayIgnorePattern: '^_'
+      }],
       '@typescript-eslint/no-var-requires': 'off',
       '@typescript-eslint/no-require-imports': 'off',
       'import/order': ['error', {

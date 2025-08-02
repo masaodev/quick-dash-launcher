@@ -2,7 +2,7 @@ import '@testing-library/jest-dom';
 
 // React Testing Libraryのクリーンアップを自動化
 import { cleanup } from '@testing-library/react';
-import { afterEach } from 'vitest';
+import { afterEach, beforeAll, afterAll, vi } from 'vitest';
 
 afterEach(() => {
   cleanup();
@@ -11,7 +11,7 @@ afterEach(() => {
 // モックオブジェクトの設定
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
-  value: vi.fn().mockImplementation(query => ({
+  value: vi.fn().mockImplementation((query) => ({
     matches: false,
     media: query,
     onchange: null,
@@ -34,7 +34,7 @@ global.window = Object.assign(global.window || {}, {
 // console.errorを一時的に無効化（React 18の厳格モードでの警告を抑制）
 const originalError = console.error;
 beforeAll(() => {
-  console.error = (...args: any[]) => {
+  console.error = (...args: unknown[]) => {
     if (
       typeof args[0] === 'string' &&
       args[0].includes('Warning: ReactDOM.render is no longer supported')

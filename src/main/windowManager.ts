@@ -56,7 +56,12 @@ export async function createWindow(): Promise<BrowserWindow> {
   // mainWindow.webContents.openDevTools({ mode: 'detach' });
 
   mainWindow.on('blur', () => {
-    if (mainWindow && !mainWindow.webContents.isDevToolsOpened() && shouldHideOnBlur() && !isEditMode) {
+    if (
+      mainWindow &&
+      !mainWindow.webContents.isDevToolsOpened() &&
+      shouldHideOnBlur() &&
+      !isEditMode
+    ) {
       mainWindow.hide();
     }
   });
@@ -161,7 +166,7 @@ export function cycleWindowPinMode(): WindowPinMode {
   const currentIndex = modes.indexOf(windowPinMode);
   const nextIndex = (currentIndex + 1) % modes.length;
   const nextMode = modes[nextIndex];
-  
+
   setWindowPinMode(nextMode);
   return nextMode;
 }

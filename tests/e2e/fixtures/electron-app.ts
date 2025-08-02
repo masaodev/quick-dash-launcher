@@ -1,6 +1,7 @@
+import path from 'path';
+
 import { test as base, _electron as electron } from '@playwright/test';
 import type { ElectronApplication, Page } from 'playwright';
-import path from 'path';
 
 // Electronアプリとメインウィンドウを提供するフィクスチャの型定義
 type ElectronFixtures = {
@@ -10,17 +11,17 @@ type ElectronFixtures = {
 
 /**
  * Electronアプリケーション用のPlaywrightフィクスチャ
- * 
+ *
  * このフィクスチャは以下を提供します：
  * - electronApp: Electronアプリケーションインスタンス
  * - mainWindow: メインウィンドウページ
  */
 export const test = base.extend<ElectronFixtures>({
   // Electronアプリケーションを起動するフィクスチャ
-  electronApp: async ({}, use) => {
+  electronApp: async (_, use) => {
     // アプリケーションのメインファイルパス
     const electronAppPath = path.join(process.cwd(), 'dist', 'main', 'main.js');
-    
+
     // テスト用のElectronアプリケーション設定
     const electronApp = await electron.launch({
       args: [electronAppPath],
@@ -49,10 +50,10 @@ export const test = base.extend<ElectronFixtures>({
   mainWindow: async ({ electronApp }, use) => {
     // 最初のウィンドウを取得（メインウィンドウ）
     const mainWindow = await electronApp.firstWindow();
-    
+
     // ウィンドウが完全に読み込まれるまで待機
     await mainWindow.waitForLoadState('domcontentloaded');
-    
+
     // テストでメインウィンドウを使用
     await use(mainWindow);
   },

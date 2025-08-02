@@ -1,6 +1,7 @@
 import React from 'react';
 
 import type { WindowPinMode } from '../../common/types';
+
 import SettingsDropdown from './SettingsDropdown';
 import RefreshActionsDropdown from './RefreshActionsDropdown';
 
@@ -59,11 +60,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         onFetchMissingIcons={onFetchMissingIcons}
         onRefreshAll={onRefreshAll}
       />
-      <button
-        className={pinConfig.className}
-        onClick={onTogglePin}
-        title={pinConfig.title}
-      >
+      <button className={pinConfig.className} onClick={onTogglePin} title={pinConfig.title}>
         {pinConfig.emoji}
       </button>
       <SettingsDropdown

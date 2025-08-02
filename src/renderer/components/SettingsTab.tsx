@@ -165,7 +165,6 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave, onUnsavedCh
           </div>
         </div>
 
-
         <div className="settings-section">
           <h3>システム</h3>
           <div className="setting-item">

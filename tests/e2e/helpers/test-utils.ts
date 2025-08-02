@@ -10,9 +10,9 @@ export class TestUtils {
    * 指定されたセレクタの要素が表示されるまで待機
    */
   async waitForElement(selector: string, timeout = 5000): Promise<void> {
-    await this.page.waitForSelector(selector, { 
-      state: 'visible', 
-      timeout 
+    await this.page.waitForSelector(selector, {
+      state: 'visible',
+      timeout,
     });
   }
 
@@ -34,9 +34,9 @@ export class TestUtils {
    * スクリーンショットを撮影（テスト名付き）
    */
   async takeScreenshot(name: string): Promise<void> {
-    await this.page.screenshot({ 
+    await this.page.screenshot({
       path: `test-results/screenshots/${name}.png`,
-      fullPage: true 
+      fullPage: true,
     });
   }
 
@@ -51,7 +51,7 @@ export class TestUtils {
    * 指定された要素のテキストを取得
    */
   async getElementText(selector: string): Promise<string> {
-    return await this.page.textContent(selector) || '';
+    return (await this.page.textContent(selector)) || '';
   }
 
   /**
@@ -71,7 +71,8 @@ export class TestUtils {
    * 検索ボックスに文字を入力
    */
   async searchFor(query: string): Promise<void> {
-    const searchInput = 'input[type="text"], input[placeholder*="検索"], input[placeholder*="search"]';
+    const searchInput =
+      'input[type="text"], input[placeholder*="検索"], input[placeholder*="search"]';
     await this.waitForElement(searchInput);
     await this.fillInput(searchInput, query);
   }

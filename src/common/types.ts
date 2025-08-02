@@ -121,7 +121,7 @@ export interface IconProgressState {
  * ウィンドウの固定モードを表す列挙型
  * 3段階のモードを循環的に切り替え可能
  */
-export type WindowPinMode = 
-  | 'normal'        // 通常モード: フォーカスが外れたら非表示、最上面ではない
-  | 'alwaysOnTop'   // 常に最上面モード: 常に最上面に表示、フォーカスが外れても非表示にならない
-  | 'stayVisible';  // 表示固定モード: 最上面ではないが、フォーカスが外れても非表示にならない
+export type WindowPinMode =
+  | 'normal' // 通常モード: フォーカスが外れたら非表示、最上面ではない
+  | 'alwaysOnTop' // 常に最上面モード: 常に最上面に表示、フォーカスが外れても非表示にならない
+  | 'stayVisible'; // 表示固定モード: 最上面ではないが、フォーカスが外れても非表示にならない

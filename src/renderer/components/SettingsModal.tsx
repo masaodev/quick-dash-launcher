@@ -203,7 +203,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
             </div>
           </div>
 
-
           <div className="settings-section">
             <h3>システム</h3>
             <div className="setting-item">

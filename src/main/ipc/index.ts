@@ -26,7 +26,14 @@ export function setupIPCHandlers(
   setupItemHandlers(getMainWindow);
   setupConfigHandlers(configFolder);
   setupIconHandlers(faviconsFolder, iconsFolder, extensionsFolder, getMainWindow);
-  setupWindowHandlers(getWindowPinState, setWindowPinState, setEditMode, getEditMode, getWindowPinMode, cycleWindowPinMode);
+  setupWindowHandlers(
+    getWindowPinState,
+    setWindowPinState,
+    setEditMode,
+    getEditMode,
+    getWindowPinMode,
+    cycleWindowPinMode
+  );
   registerEditHandlers(configFolder);
   setupSettingsHandlers();
 }
