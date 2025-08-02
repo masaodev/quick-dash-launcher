@@ -276,6 +276,16 @@ const App: React.FC = () => {
     }
   };
 
+  const handleCopyPath = async (item: LauncherItem) => {
+    try {
+      await window.electronAPI.copyToClipboard(item.path);
+      console.log(`パスをコピーしました: ${item.path}`);
+    } catch (err) {
+      console.error('パスのコピーに失敗しました:', err);
+      alert('パスのコピーに失敗しました');
+    }
+  };
+
   const handleRegisterItems = async (items: RegisterItem[]) => {
     await window.electronAPI.registerItems(items);
     loadItems(); // Reload items after registration
@@ -320,6 +330,7 @@ const App: React.FC = () => {
           selectedIndex={selectedIndex}
           onItemClick={handleItemClick}
           onItemSelect={setSelectedIndex}
+          onCopyPath={handleCopyPath}
         />
 
         {progressState.isActive && progressState.progress && (

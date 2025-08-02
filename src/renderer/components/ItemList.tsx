@@ -1,17 +1,28 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import { LauncherItem } from '../../common/types';
+import ContextMenu from './ContextMenu';
 
 interface ItemListProps {
   items: LauncherItem[];
   selectedIndex: number;
   onItemClick: (item: LauncherItem) => void;
   onItemSelect: (index: number) => void;
+  onCopyPath?: (item: LauncherItem) => void;
 }
 
-const ItemList: React.FC<ItemListProps> = ({ items, selectedIndex, onItemClick, onItemSelect }) => {
+const ItemList: React.FC<ItemListProps> = ({ items, selectedIndex, onItemClick, onItemSelect, onCopyPath }) => {
   const listRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [contextMenu, setContextMenu] = useState<{
+    isVisible: boolean;
+    position: { x: number; y: number };
+    item: LauncherItem | null;
+  }>({
+    isVisible: false,
+    position: { x: 0, y: 0 },
+    item: null,
+  });
 
   useEffect(() => {
     // Scroll selected item into view
@@ -40,6 +51,31 @@ const ItemList: React.FC<ItemListProps> = ({ items, selectedIndex, onItemClick, 
     }
   };
 
+  const handleContextMenu = (event: React.MouseEvent, item: LauncherItem) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    setContextMenu({
+      isVisible: true,
+      position: { x: event.clientX, y: event.clientY },
+      item: item,
+    });
+  };
+
+  const handleCloseContextMenu = () => {
+    setContextMenu({
+      isVisible: false,
+      position: { x: 0, y: 0 },
+      item: null,
+    });
+  };
+
+  const handleCopyPath = (item: LauncherItem) => {
+    if (onCopyPath) {
+      onCopyPath(item);
+    }
+  };
+
   return (
     <div className="item-list" ref={listRef}>
       {items.map((item, index) => (
@@ -54,6 +90,7 @@ const ItemList: React.FC<ItemListProps> = ({ items, selectedIndex, onItemClick, 
             onItemClick(item);
           }}
           onMouseEnter={() => onItemSelect(index)}
+          onContextMenu={(e) => handleContextMenu(e, item)}
         >
           <span className="item-icon">
             {item.icon ? (
@@ -65,6 +102,13 @@ const ItemList: React.FC<ItemListProps> = ({ items, selectedIndex, onItemClick, 
           <span className="item-name">{item.name}</span>
         </div>
       ))}
+      <ContextMenu
+        isVisible={contextMenu.isVisible}
+        position={contextMenu.position}
+        item={contextMenu.item}
+        onClose={handleCloseContextMenu}
+        onCopyPath={handleCopyPath}
+      />
     </div>
   );
 };
