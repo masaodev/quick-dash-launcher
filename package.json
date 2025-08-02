@@ -28,8 +28,8 @@
     "hotkey",
     "windows"
   ],
-  "author": "",
-  "license": "ISC",
+  "author": "masaodev",
+  "license": "MIT",
   "description": "Quick access launcher for Windows with global hotkey support",
   "devDependencies": {
     "@eslint/js": "^9.30.1",
