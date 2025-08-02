@@ -32,7 +32,7 @@ export interface LauncherItem {
 export interface DataFile {
   /** ファイル名（data.txt、data2.txtのいずれか） */
   name: string;
-  /** ファイルの内容（フォルダ取込ディレクティブ展開後） */
+  /** ファイルの内容（フォルダ取込アイテム展開後） */
   content: string;
 }
 
