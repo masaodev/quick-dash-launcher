@@ -203,37 +203,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
             </div>
           </div>
 
-          <div className="settings-section">
-            <h3>表示設定</h3>
-            <div className="setting-row">
-              <div className="setting-item">
-                <label htmlFor="iconSize">アイコンサイズ:</label>
-                <input
-                  id="iconSize"
-                  type="number"
-                  min="16"
-                  max="48"
-                  value={editedSettings.iconSize}
-                  onChange={(e) => handleSettingChange('iconSize', parseInt(e.target.value))}
-                  disabled={isLoading}
-                />
-                <span className="unit">px</span>
-              </div>
-              <div className="setting-item">
-                <label htmlFor="maxVisibleItems">最大表示アイテム数:</label>
-                <input
-                  id="maxVisibleItems"
-                  type="number"
-                  min="5"
-                  max="50"
-                  value={editedSettings.maxVisibleItems}
-                  onChange={(e) => handleSettingChange('maxVisibleItems', parseInt(e.target.value))}
-                  disabled={isLoading}
-                />
-                <span className="unit">個</span>
-              </div>
-            </div>
-          </div>
 
           <div className="settings-section">
             <h3>システム</h3>

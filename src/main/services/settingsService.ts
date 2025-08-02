@@ -24,8 +24,6 @@ export class SettingsService {
     editModeWidth: 1000,
     editModeHeight: 700,
     autoLaunch: false,
-    iconSize: 24,
-    maxVisibleItems: 10,
   };
 
   private constructor() {

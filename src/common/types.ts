@@ -83,10 +83,6 @@ export interface AppSettings {
   editModeHeight: number;
   /** アプリの自動起動設定 */
   autoLaunch: boolean;
-  /** アイコンの表示サイズ（デフォルト: 24） */
-  iconSize: number;
-  /** ウィンドウの最大表示アイテム数（デフォルト: 10） */
-  maxVisibleItems: number;
 }
 
 /**
