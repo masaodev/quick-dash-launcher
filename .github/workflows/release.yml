@@ -67,7 +67,12 @@ jobs:
             QuickDashLauncher ${{ github.ref_name }} のリリースです。
 
             ## インストール方法
-            下記の `QuickDashLauncher-Setup-${{ steps.get_version.outputs.VERSION }}.exe` をダウンロードして実行してください。
+            
+            ### インストーラー版
+            `QuickDashLauncher-Setup-${{ steps.get_version.outputs.VERSION }}.exe` をダウンロードして実行してください。
+            
+            ### ポータブル版
+            `QuickDashLauncher-${{ steps.get_version.outputs.VERSION }}.exe` をダウンロードして任意の場所に配置してください。インストール不要で直接実行できます。
 
             ## 機能
             - Ctrl+Alt+Wでグローバルランチャー起動
