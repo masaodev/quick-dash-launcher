@@ -67,7 +67,6 @@ const AdminApp: React.FC = () => {
     }
   };
 
-
   const handleSearchChange = (query: string) => {
     setSearchQuery(query);
   };

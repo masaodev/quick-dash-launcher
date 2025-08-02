@@ -157,7 +157,6 @@ const App: React.FC = () => {
     await window.electronAPI.openItem(item);
   };
 
-
   const handleFetchFavicon = async (forceAll: boolean = false) => {
     console.log(
       forceAll
@@ -271,7 +270,7 @@ const App: React.FC = () => {
     try {
       await window.electronAPI.copyToClipboard(jsonString);
       alert('LauncherItemのJSONデータがクリップボードにコピーされました');
-    } catch (err) {
+    } catch (_err) {
       alert('クリップボードへのコピーに失敗しました');
     }
   };
@@ -323,7 +322,6 @@ const App: React.FC = () => {
             isEditMode={false}
           />
         </div>
-
 
         <ItemList
           items={filteredItems}

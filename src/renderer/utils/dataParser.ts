@@ -27,7 +27,7 @@ export function parseDataFiles(dataFiles: DataFile[]): {
     if (file.name === 'tempdata.txt') {
       return;
     }
-    
+
     const lines = file.content.split('\n');
     const sourceFile = file.name as 'data.txt' | 'data2.txt';
 

@@ -1,5 +1,13 @@
 import pino from 'pino';
 
+// Node.jsエラーオブジェクトの型定義
+interface NodeError extends Error {
+  code?: string;
+  errno?: number;
+  syscall?: string;
+  path?: string;
+}
+
 // 開発環境かどうかを判定
 const isDevelopment = process.env.NODE_ENV === 'development';
 
@@ -23,10 +31,10 @@ const safeStringify = (obj: unknown, space?: number): string => {
           name: value.name,
           message: value.message,
           stack: value.stack,
-          code: (value as any).code,
-          errno: (value as any).errno,
-          syscall: (value as any).syscall,
-          path: (value as any).path,
+          code: (value as NodeError).code,
+          errno: (value as NodeError).errno,
+          syscall: (value as NodeError).syscall,
+          path: (value as NodeError).path,
         };
       }
       if (typeof value === 'function') {
@@ -55,10 +63,10 @@ const logger = pino({
           name: error.name,
           message: error.message,
           stack: error.stack,
-          code: (error as any).code,
-          errno: (error as any).errno,
-          syscall: (error as any).syscall,
-          path: (error as any).path,
+          code: (error as NodeError).code,
+          errno: (error as NodeError).errno,
+          syscall: (error as NodeError).syscall,
+          path: (error as NodeError).path,
         };
       }
       return error;

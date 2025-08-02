@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 import { LauncherItem } from '../../common/types';
+
 import ContextMenu from './ContextMenu';
 
 interface ItemListProps {
@@ -11,7 +12,13 @@ interface ItemListProps {
   onCopyPath?: (item: LauncherItem) => void;
 }
 
-const ItemList: React.FC<ItemListProps> = ({ items, selectedIndex, onItemClick, onItemSelect, onCopyPath }) => {
+const ItemList: React.FC<ItemListProps> = ({
+  items,
+  selectedIndex,
+  onItemClick,
+  onItemSelect,
+  onCopyPath,
+}) => {
   const listRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [contextMenu, setContextMenu] = useState<{

@@ -421,7 +421,6 @@ async function saveRawDataFiles(configFolder: string, rawLines: RawDataLine[]): 
   }
 }
 
-
 interface RegisterItem {
   name: string;
   path: string;
@@ -547,7 +546,6 @@ export function setupDataHandlers(configFolder: string) {
   ipcMain.handle('load-data-files', async () => {
     return await loadDataFiles(configFolder);
   });
-
 
   ipcMain.handle('register-items', async (_event, items: RegisterItem[]) => {
     return await registerItems(configFolder, items);

@@ -52,9 +52,12 @@ export function setupWindowHandlers(
     return isAdminWindowShown();
   });
 
-  ipcMain.handle('open-edit-window-with-tab', async (_event, tab: 'settings' | 'edit' | 'other') => {
-    await showAdminWindowWithTab(tab);
-  });
+  ipcMain.handle(
+    'open-edit-window-with-tab',
+    async (_event, tab: 'settings' | 'edit' | 'other') => {
+      await showAdminWindowWithTab(tab);
+    }
+  );
 
   ipcMain.handle('get-initial-tab', () => {
     return getInitialTab();
@@ -64,7 +67,7 @@ export function setupWindowHandlers(
     try {
       clipboard.writeText(text);
       return true;
-    } catch (error) {
+    } catch (_error) {
       return false;
     }
   });
