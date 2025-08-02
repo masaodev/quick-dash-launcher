@@ -19,6 +19,15 @@ npm run start           # ビルドして実行
 npm run dist            # Windowsインストーラーの作成
 ```
 
+## コード品質チェックコマンド
+
+```bash
+npm run lint            # ESLintによるコード品質チェック
+npm run lint:fix        # ESLintエラーの自動修正
+npm run type-check      # TypeScriptの型チェック
+npm run format          # Prettierによるコード整形
+```
+
 ### WSL2環境でのビルド
 
 WSL2環境からビルドするときは、Windows上でビルドさせるために、PowerShellを使ってください：
@@ -26,6 +35,24 @@ WSL2環境からビルドするときは、Windows上でビルドさせるため
 ```bash
 powershell.exe -Command "npm run build"
 powershell.exe -Command "npm run dist"
+```
+
+## テストコマンド
+
+### 単体テスト（Vitest）
+```bash
+npm run test            # インタラクティブテスト実行
+npm run test:unit       # 単体テスト実行（ワンショット）
+npm run test:ui         # テストUIを開く
+npm run test:coverage   # カバレッジレポート付きでテスト実行
+```
+
+### E2Eテスト（Playwright + Electron）
+```bash
+npm run test:e2e        # E2Eテスト実行（ヘッドレス）
+npm run test:e2e:ui     # PlaywrightのテストUIを開く
+npm run test:e2e:debug  # デバッグモードでE2Eテスト実行
+npm run test:e2e:headed # ヘッド付きでE2Eテスト実行
 ```
 
 ## 詳細ドキュメント
@@ -64,7 +91,37 @@ powershell.exe -Command "npm run dist"
 - **WSL2環境でのビルド時**: PowerShellコマンドを使用
 - **テストフレームワーク**: Playwright（E2E）+ Vitest（ユニット）導入済み
 
+### 開発時の重要な注意事項
+
+- **IPCチャンネル**: メインプロセスとレンダラープロセス間の通信は機能別に分離
+- **カスタムURIスキーマ**: obsidian://, ms-excel://, vscode://等の非HTTP URIスキーマに対応
+- **ドラッグ&ドロップ**: ファイル・フォルダのドロップでアイテム登録機能
+- **アイコンシステム**: ファビコン取得、アプリアイコン抽出、カスタムURIアイコン処理
+- **ウィンドウ制御**: フレームレス、常に最前面、ピン留め機能
+
 詳細は **[プロジェクト概要](docs/guides/project-overview.md)** を参照してください。
+
+## アーキテクチャ概要
+
+### IPCハンドラー構造
+メインプロセスのIPC通信は機能別に分離され、`src/main/ipc/`に配置：
+- **dataHandlers**: データファイル読み書き
+- **itemHandlers**: アイテム実行・起動
+- **configHandlers**: 設定ファイル管理
+- **iconHandlers**: アイコン取得・キャッシュ
+- **windowHandlers**: ウィンドウ表示制御
+- **editHandlers**: 編集モード管理
+- **settingsHandlers**: アプリ設定管理
+
+### デザインシステム
+CSS変数ベースの統一されたデザインシステムを採用（`src/renderer/styles/variables.css`）：
+- ハードコード値の使用禁止
+- 統一されたカラーパレット、フォントサイズ、間隔の管理
+
+### TypeScript設定
+- **パスエイリアス**: `@common/*` → `./src/common/*`
+- **共有型定義**: `src/common/types.ts`でメイン・レンダラープロセス間の型を共有
+- **厳密な型チェック**: `strict: true`で型安全性を確保
 
 ## ドキュメント管理
 
