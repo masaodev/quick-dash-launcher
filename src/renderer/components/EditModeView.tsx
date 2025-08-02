@@ -130,13 +130,13 @@ const EditModeView: React.FC<EditModeViewProps> = ({
 
   const handleAddLine = () => {
     const newLine: RawDataLine = {
-      lineNumber: workingLines.length + 1,
+      lineNumber: 1,
       content: '',
       type: 'empty',
       sourceFile: 'data.txt', // デフォルトでdata.txtに追加
     };
 
-    const updatedLines = [...workingLines, newLine];
+    const updatedLines = [newLine, ...workingLines];
     const reorderedLines = reorderLineNumbers(updatedLines);
     setWorkingLines(reorderedLines);
     setHasUnsavedChanges(true);
@@ -195,13 +195,13 @@ const EditModeView: React.FC<EditModeViewProps> = ({
   const handleBookmarkImport = (bookmarks: SimpleBookmarkItem[]) => {
     // 選択されたブックマークを新規行として追加
     const newLines: RawDataLine[] = bookmarks.map((bookmark, index) => ({
-      lineNumber: workingLines.length + index + 1,
+      lineNumber: index + 1,
       content: `${bookmark.name},${bookmark.url}`,
       type: 'item' as const,
       sourceFile: 'data.txt' as const,
     }));
 
-    const updatedLines = [...workingLines, ...newLines];
+    const updatedLines = [...newLines, ...workingLines];
     const reorderedLines = reorderLineNumbers(updatedLines);
     setWorkingLines(reorderedLines);
     setHasUnsavedChanges(true);
