@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-import { LauncherItem } from '../common/types';
+import { LauncherItem, WindowPinMode } from '../common/types';
 
 import SearchBox from './components/SearchBox';
 import ItemList from './components/ItemList';
@@ -14,7 +14,7 @@ const App: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [mainItems, setMainItems] = useState<LauncherItem[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [isPinned, setIsPinned] = useState(false);
+  const [windowPinMode, setWindowPinMode] = useState<WindowPinMode>('normal');
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [droppedPaths, setDroppedPaths] = useState<string[]>([]);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
@@ -31,10 +31,10 @@ const App: React.FC = () => {
       searchInputRef.current?.focus();
     });
 
-    // Load initial pin state
+    // Load initial pin mode
     const loadPinState = async () => {
-      const pinState = await window.electronAPI.getWindowPinState();
-      setIsPinned(pinState);
+      const pinMode = await window.electronAPI.getWindowPinMode();
+      setWindowPinMode(pinMode);
     };
     loadPinState();
 
@@ -253,9 +253,8 @@ const App: React.FC = () => {
   };
 
   const handleTogglePin = async () => {
-    const newPinState = !isPinned;
-    await window.electronAPI.setWindowPinState(newPinState);
-    setIsPinned(newPinState);
+    const newPinMode = await window.electronAPI.cycleWindowPinMode();
+    setWindowPinMode(newPinMode);
   };
 
   const handleExportJson = async () => {
@@ -318,7 +317,7 @@ const App: React.FC = () => {
             onExportJson={handleExportJson}
             onOpenBasicSettings={handleOpenBasicSettings}
             onOpenItemManagement={handleOpenItemManagement}
-            isPinned={isPinned}
+            windowPinMode={windowPinMode}
             isEditMode={false}
           />
         </div>

@@ -2,19 +2,20 @@ import * as path from 'path';
 
 import { BrowserWindow, Tray, Menu, nativeImage, app } from 'electron';
 import { windowLogger } from '@common/logger';
+import type { WindowPinMode } from '@common/types';
 
 import { HotkeyService } from './services/hotkeyService.js';
 import { SettingsService } from './services/settingsService.js';
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
-let isPinned: boolean = false;
+let windowPinMode: WindowPinMode = 'normal';
 let isEditMode: boolean = false;
 let normalWindowBounds: { width: number; height: number } | null = null;
 
 /**
  * アプリケーションのメインウィンドウを作成し、初期設定を行う
- * 常に最前面に表示され、フレームレスで中央に配置される
+ * 初期状態では通常モード（非最前面）で、フレームレスで中央に配置される
  * フォーカス喪失時の自動非表示やESCキーでの終了など、ランチャーアプリとしての動作を設定
  *
  * @returns 作成されたBrowserWindowインスタンス
@@ -35,7 +36,7 @@ export async function createWindow(): Promise<BrowserWindow> {
     width: windowWidth,
     height: windowHeight,
     center: true,
-    alwaysOnTop: true,
+    alwaysOnTop: false,
     frame: false,
     show: false,
     webPreferences: {
@@ -55,7 +56,7 @@ export async function createWindow(): Promise<BrowserWindow> {
   // mainWindow.webContents.openDevTools({ mode: 'detach' });
 
   mainWindow.on('blur', () => {
-    if (mainWindow && !mainWindow.webContents.isDevToolsOpened() && !isPinned && !isEditMode) {
+    if (mainWindow && !mainWindow.webContents.isDevToolsOpened() && shouldHideOnBlur() && !isEditMode) {
       mainWindow.hide();
     }
   });
@@ -133,12 +134,72 @@ export function getMainWindow(): BrowserWindow | null {
   return mainWindow;
 }
 
+/**
+ * 現在のウィンドウピンモードを取得する
+ * @returns 現在のWindowPinMode
+ */
+export function getWindowPinMode(): WindowPinMode {
+  return windowPinMode;
+}
+
+/**
+ * ウィンドウピンモードを設定し、ウィンドウの動作を更新する
+ * @param mode 設定するWindowPinMode
+ */
+export function setWindowPinMode(mode: WindowPinMode): void {
+  windowPinMode = mode;
+  updateWindowBehavior();
+}
+
+/**
+ * 次のピンモードに循環的に切り替える
+ * normal -> alwaysOnTop -> stayVisible -> normal
+ * @returns 切り替え後のWindowPinMode
+ */
+export function cycleWindowPinMode(): WindowPinMode {
+  const modes: WindowPinMode[] = ['normal', 'alwaysOnTop', 'stayVisible'];
+  const currentIndex = modes.indexOf(windowPinMode);
+  const nextIndex = (currentIndex + 1) % modes.length;
+  const nextMode = modes[nextIndex];
+  
+  setWindowPinMode(nextMode);
+  return nextMode;
+}
+
+/**
+ * 現在のピンモードに基づいてウィンドウの動作を更新する
+ */
+function updateWindowBehavior(): void {
+  if (!mainWindow) return;
+
+  switch (windowPinMode) {
+    case 'normal':
+      mainWindow.setAlwaysOnTop(false);
+      break;
+    case 'alwaysOnTop':
+      mainWindow.setAlwaysOnTop(true);
+      break;
+    case 'stayVisible':
+      mainWindow.setAlwaysOnTop(false);
+      break;
+  }
+}
+
+/**
+ * フォーカス喪失時にウィンドウを非表示にするかどうかを判定する
+ * @returns true: 非表示にする, false: 非表示にしない
+ */
+function shouldHideOnBlur(): boolean {
+  return windowPinMode === 'normal';
+}
+
+// 旧APIとの互換性のための関数（非推奨）
 export function getWindowPinState(): boolean {
-  return isPinned;
+  return windowPinMode !== 'normal';
 }
 
 export function setWindowPinState(pinState: boolean): void {
-  isPinned = pinState;
+  setWindowPinMode(pinState ? 'alwaysOnTop' : 'normal');
 }
 
 /**

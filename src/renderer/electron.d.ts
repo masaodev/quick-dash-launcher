@@ -5,6 +5,7 @@ import {
   SimpleBookmarkItem,
   AppSettings,
   IconProgress,
+  WindowPinMode,
 } from '../common/types';
 
 import { RegisterItem } from './components/RegisterModal';
@@ -31,6 +32,10 @@ export interface ElectronAPI {
   ) => void;
   onWindowShown: (callback: () => void) => void;
   onSetActiveTab: (callback: (tab: 'settings' | 'edit' | 'other') => void) => void;
+  // 新しい3段階ピンモードAPI
+  getWindowPinMode: () => Promise<WindowPinMode>;
+  cycleWindowPinMode: () => Promise<WindowPinMode>;
+  // 旧APIとの互換性（非推奨）
   getWindowPinState: () => Promise<boolean>;
   setWindowPinState: (isPinned: boolean) => Promise<void>;
   registerItems: (items: RegisterItem[]) => Promise<void>;

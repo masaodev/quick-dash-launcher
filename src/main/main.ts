@@ -20,6 +20,8 @@ import {
   setWindowPinState,
   setEditMode,
   getEditMode,
+  getWindowPinMode,
+  cycleWindowPinMode,
 } from './windowManager';
 import { closeAdminWindow } from './adminWindowManager';
 
@@ -66,7 +68,9 @@ app.whenReady().then(async () => {
     getWindowPinState,
     setWindowPinState,
     setEditMode,
-    getEditMode
+    getEditMode,
+    getWindowPinMode,
+    cycleWindowPinMode
   );
 });
 
