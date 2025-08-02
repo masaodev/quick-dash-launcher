@@ -32,329 +32,121 @@ src/renderer/styles/
 
 ## CSS変数システム
 
-### 1. カラーパレット
+### カラーパレット
 
-#### 基本色
+基本色とグレースケール、用途別の色が定義されています：
+
 ```css
+/* 基本色 */
 --color-primary: #0078d4;           /* メインカラー */
 --color-primary-hover: #106ebe;     /* プライマリホバー */
 --color-success: #28a745;           /* 成功・確定 */
 --color-danger: #dc3545;            /* 危険・削除 */
---color-warning: #ffc107;           /* 警告 */
---color-info: #2196f3;              /* 情報 */
---color-secondary: #6c757d;         /* セカンダリ */
-```
 
-#### グレースケール
-```css
+/* グレースケール */
 --color-white: #ffffff;
---color-gray-100: #f8f8f8;          /* 極薄グレー */
---color-gray-200: #f5f5f5;          /* 薄グレー */
---color-gray-300: #f0f0f0;          /* ライトグレー */
---color-gray-400: #e0e0e0;          /* ミディアムグレー */
---color-gray-500: #ccc;             /* グレー */
---color-gray-600: #999;             /* ダークグレー */
---color-gray-700: #666;             /* より濃いグレー */
---color-gray-800: #555;             /* 濃いグレー */
---color-gray-900: #333;             /* 最も濃いグレー */
-```
+--color-gray-50: #f8f9fa;
+--color-gray-900: #212529;
+--color-black: #000000;
 
-#### 背景色
-```css
+/* 用途別カラー */
 --bg-app: #ffffff;                  /* アプリケーション背景 */
---bg-header: #f8f8f8;               /* ヘッダー背景 */
---bg-section: #f9f9f9;              /* セクション背景 */
---bg-selected: #e7f3ff;             /* 選択状態 */
---bg-hover: #f0f0f0;                /* ホバー状態 */
---bg-input-disabled: #f5f5f5;       /* 無効化入力フィールド */
+--text-primary: #212529;            /* 主要テキスト */
+--border-light: 1px solid #dee2e6;  /* 軽いボーダー */
 ```
 
-#### テキストカラー
+### スペーシングとサイズ
+
+一貫した間隔とサイズのシステム：
+
 ```css
---text-primary: #333;               /* メインテキスト */
---text-secondary: #555;             /* サブテキスト */
---text-muted: #666;                 /* 補助テキスト */
---text-disabled: #999;              /* 無効化テキスト */
---text-error: #e74c3c;              /* エラーメッセージ */
+/* スペーシング */
+--spacing-xs: 4px;
+--spacing-sm: 8px;
+--spacing-md: 16px;
+--spacing-lg: 24px;
+--spacing-xl: 32px;
+
+/* フォントサイズ */
+--font-size-xs: 11px;
+--font-size-sm: 12px;
+--font-size-base: 14px;
+--font-size-lg: 16px;
+--font-size-xl: 18px;
+
+/* ボーダー半径 */
+--border-radius-sm: 2px;
+--border-radius-base: 4px;
+--border-radius-lg: 8px;
 ```
 
-### 2. スペーシング
+### その他のスタイル定義
 
 ```css
---spacing-xs: 4px;                  /* 最小間隔 */
---spacing-sm: 8px;                  /* 小間隔 */
---spacing-md: 12px;                 /* 中間隔 */
---spacing-lg: 16px;                 /* 大間隔 */
---spacing-xl: 20px;                 /* 特大間隔 */
---spacing-2xl: 24px;                /* 超大間隔 */
---spacing-3xl: 32px;                /* 最大間隔 */
-```
+/* シャドウ */
+--shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+--shadow-base: 0 2px 4px rgba(0, 0, 0, 0.1);
+--shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.15);
 
-### 3. タイポグラフィ
+/* フォント */
+--font-family-base: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+--font-family-mono: Consolas, Monaco, 'Courier New', monospace;
 
-```css
---font-family: 'Meiryo', 'メイリオ', sans-serif;
---font-family-mono: monospace;
-
---font-size-xs: 11px;               /* 極小フォント */
---font-size-sm: 12px;               /* 小フォント */
---font-size-base: 14px;             /* 基本フォント */
---font-size-lg: 15px;               /* 大フォント */
---font-size-xl: 16px;               /* 特大フォント */
---font-size-2xl: 18px;              /* 見出し小 */
---font-size-3xl: 20px;              /* 見出し大 */
-```
-
-### 4. ボーダー・角丸
-
-```css
---border-light: 1px solid #e0e0e0;  /* 薄ボーダー */
---border-normal: 1px solid #ccc;    /* 通常ボーダー */
---border-dark: 1px solid #999;      /* 濃ボーダー */
-
---border-radius-sm: 3px;            /* 小角丸 */
---border-radius: 4px;               /* 標準角丸 */
---border-radius-lg: 6px;            /* 大角丸 */
---border-radius-xl: 8px;            /* 特大角丸 */
-```
-
-### 5. シャドウ・エフェクト
-
-```css
---shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);      /* 軽いシャドウ */
---shadow: 0 2px 8px rgba(0, 0, 0, 0.15);        /* 通常シャドウ */
---shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.15);    /* 大シャドウ */
---shadow-xl: 0 4px 16px rgba(0, 0, 0, 0.2);     /* 特大シャドウ */
-
---focus-ring: 0 0 0 1px var(--color-primary);    /* フォーカスリング */
---transition-normal: all 0.2s;                   /* 標準トランジション */
+/* アニメーション */
+--transition-fast: 150ms ease-in-out;
+--transition-base: 200ms ease-in-out;
+--transition-slow: 300ms ease-in-out;
 ```
 
 ## 共通ユーティリティクラス
 
-### ボタンクラス
+### ボタンスタイル
 
-#### .btn-base
-基本的なボタンスタイル
 ```css
-.btn-base {
-  padding: var(--spacing-sm) var(--spacing-lg);
-  font-size: var(--font-size-base);
-  border: var(--border-normal);
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  transition: var(--transition-normal);
-}
+.btn-base               /* 基本ボタンスタイル */
+.btn-primary            /* プライマリボタン */
+.btn-success            /* 成功ボタン */
+.btn-danger             /* 削除・危険ボタン */
+.btn-icon               /* アイコンボタン */
 ```
 
-#### .btn-primary / .btn-secondary / .btn-danger
-状態別ボタンスタイル
+### テキストスタイル
 
-### レイアウトクラス
-
-#### .flex-center
-中央配置フレックスボックス
 ```css
-.flex-center {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+.text-secondary         /* セカンダリテキスト */
+.text-muted             /* ミューテッドテキスト */
+.text-danger            /* エラーテキスト */
+.text-success           /* 成功テキスト */
+.text-center            /* 中央揃え */
+.text-ellipsis          /* テキスト省略 */
 ```
 
-#### .flex-between
-両端配置フレックスボックス
+### レイアウト
+
 ```css
-.flex-between {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
+.flex-center            /* Flexbox中央揃え */
+.flex-between           /* 両端揃え */
+.flex-wrap              /* フレックスラップ */
+.gap-sm                 /* 小さい間隔 */
+.gap-md                 /* 中間隔 */
+.gap-lg                 /* 大きい間隔 */
 ```
 
-### フォームクラス
+### その他
 
-#### .form-base
-基本的な入力フィールドスタイル
 ```css
-.form-base {
-  padding: var(--spacing-sm) var(--spacing-md);
-  border: var(--border-normal);
-  border-radius: var(--border-radius);
-  font-size: var(--font-size-base);
-}
+.scrollable             /* スクロール可能エリア */
+.no-select              /* テキスト選択無効 */
+.hidden                 /* 非表示 */
+.disabled               /* 無効状態 */
 ```
 
 ## 使用方法
 
-### 1. 新しいコンポーネントの作成
+詳細な使用方法とベストプラクティスについては、[CSSデザインシステム使用ガイド](css-design-guide.md)を参照してください。
 
-新しいコンポーネントを作成する際は：
+## 関連ドキュメント
 
-1. `src/renderer/styles/components/` にCSSファイルを作成
-2. CSS変数を使用してスタイルを定義
-3. 可能な限り共通クラスを活用
-4. コンポーネントファイルでCSSをインポート
-
-```tsx
-// MyComponent.tsx
-import React from 'react';
-import '../styles/components/MyComponent.css';
-
-const MyComponent = () => {
-  return (
-    <div className="my-component">
-      <button className="btn-base btn-primary">
-        アクション
-      </button>
-    </div>
-  );
-};
-```
-
-```css
-/* MyComponent.css */
-.my-component {
-  padding: var(--spacing-lg);
-  background-color: var(--bg-section);
-  border: var(--border-light);
-  border-radius: var(--border-radius-xl);
-}
-
-.my-component .custom-element {
-  color: var(--text-secondary);
-  font-size: var(--font-size-sm);
-  margin-bottom: var(--spacing-md);
-}
-```
-
-### 2. 色の変更
-
-デザインシステム全体の色を変更する場合：
-
-1. `variables.css` の該当する変数を編集
-2. 変更は全コンポーネントに自動適用
-
-```css
-/* variables.css */
-:root {
-  --color-primary: #0066cc; /* 青を変更 */
-  --color-success: #22c55e; /* 緑を変更 */
-}
-```
-
-### 3. 新しい変数の追加
-
-新しいスタイル値が必要な場合：
-
-1. `variables.css` に新しい変数を追加
-2. 既存のパターンに従った命名規則を使用
-
-```css
-/* variables.css */
-:root {
-  /* 新しいカラーバリエーション */
-  --color-accent: #ff6b35;
-  --color-accent-hover: #e55a2b;
-  
-  /* 新しいスペーシング */
-  --spacing-4xl: 48px;
-  
-  /* 新しいフォントウェイト */
-  --font-weight-medium: 500;
-  --font-weight-bold: 700;
-}
-```
-
-## ベストプラクティス
-
-### 1. 命名規則
-
-- **変数名**: `--category-property-variant` 形式
-  - 例: `--color-primary-hover`, `--spacing-lg`, `--border-radius-xl`
-- **クラス名**: BEM記法またはシンプルなケバブケース
-  - 例: `.btn-primary`, `.modal-overlay`, `.form-group`
-
-### 2. 値の使用優先順位
-
-1. **CSS変数を最優先**: 必ずvariables.cssの変数を使用
-2. **共通クラスを活用**: 既存のユーティリティクラスがないか確認
-3. **ハードコード値は禁止**: 直接的な色指定やサイズ指定は避ける
-
-### 3. レスポンシブ対応
-
-メディアクエリも変数化して統一：
-
-```css
-/* variables.css */
-:root {
-  --breakpoint-sm: 640px;
-  --breakpoint-md: 768px;
-  --breakpoint-lg: 1024px;
-}
-
-/* 使用例 */
-@media (max-width: var(--breakpoint-sm)) {
-  .responsive-element {
-    font-size: var(--font-size-sm);
-    padding: var(--spacing-sm);
-  }
-}
-```
-
-### 4. ダークモード準備
-
-将来のダークモード対応を考慮した変数設計：
-
-```css
-/* variables.css */
-:root {
-  --theme-bg-primary: var(--bg-app);
-  --theme-text-primary: var(--text-primary);
-}
-
-/* ダークモード用（将来実装時） */
-[data-theme="dark"] {
-  --theme-bg-primary: #1a1a1a;
-  --theme-text-primary: #ffffff;
-}
-```
-
-## トラブルシューティング
-
-### よくある問題
-
-1. **スタイルが適用されない**
-   - CSS変数が正しく定義されているか確認
-   - import文の順序を確認（variables.css → common.css → component.css）
-
-2. **色が意図したものと違う**
-   - ブラウザの開発者ツールで実際の変数値を確認
-   - カスケードの優先順位を確認
-
-3. **レスポンシブ対応がうまくいかない**
-   - メディアクエリの書き方を確認
-   - ブレークポイント変数を使用しているか確認
-
-### デバッグ方法
-
-```css
-/* デバッグ用クラス */
-.debug-vars {
-  --debug-primary: var(--color-primary);
-  --debug-spacing: var(--spacing-lg);
-}
-
-/* ブラウザ開発者ツールでComputed Styleを確認 */
-```
-
-## まとめ
-
-このCSSデザインシステムにより、QuickDashLauncherは：
-
-- **一貫したUI体験**を提供
-- **効率的な開発プロセス**を実現
-- **容易なメンテナンス**を可能にする
-- **将来の機能拡張**に柔軟に対応
-
-新しい機能や修正を行う際は、このドキュメントを参照して統一されたスタイルを維持してください。
+- [CSSデザインシステム使用ガイド](css-design-guide.md) - 実装方法とベストプラクティス
+- [開発ガイド](../guides/development.md) - 全体的な開発ガイドライン
+- [画面構成](../reference/screen-list.md) - UI仕様とスタイル適用例

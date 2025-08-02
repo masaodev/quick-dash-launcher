@@ -1,14 +1,8 @@
-# QuickDashLauncher コードレビュー報告書
+# コード品質の課題と改善案
 
-## 概要
+## 1. アーキテクチャとコード品質の課題
 
-QuickDashLauncher（Electron + React + TypeScript製のWindowsランチャーアプリケーション）のコードベースを包括的に分析し、現在の課題と改善提案をまとめました。
-
-## 主要な課題
-
-### 1. アーキテクチャとコード品質の課題
-
-#### 1.1 TypeScript型安全性の問題
+### 1.1 TypeScript型安全性の問題
 
 **現状の問題点：**
 - `extract-file-icon`モジュールがrequireで読み込まれており、型定義が存在しない
@@ -35,7 +29,7 @@ declare module 'extract-file-icon' {
 }
 ```
 
-#### 1.2 エラーハンドリングの不統一
+### 1.2 エラーハンドリングの不統一
 
 **現状の問題点：**
 - エラー処理方法が統一されていない（console.error、console.warn、throw、無視など）
@@ -70,7 +64,7 @@ function handleError(error: unknown): void {
 }
 ```
 
-#### 1.3 コードの重複と複雑性
+### 1.3 コードの重複と複雑性
 
 **現状の問題点：**
 - フォルダ取込オプション処理が2箇所で重複（src/main/ipc/dataHandlers.ts）
@@ -109,9 +103,9 @@ class DirectoryScanner {
 }
 ```
 
-### 2. パフォーマンスの課題
+## 2. パフォーマンスの課題
 
-#### 2.1 メモリ管理の問題
+### 2.1 メモリ管理の問題
 
 **現状の問題点：**
 - イベントリスナーの解放漏れの可能性
@@ -141,7 +135,7 @@ async function parseFaviconStream(url: string): Promise<string | null> {
 }
 ```
 
-#### 2.2 非効率な処理
+### 2.2 非効率な処理
 
 **現状の問題点：**
 - 同期的なファイルI/O操作（readFileSync、writeFileSync）
@@ -175,69 +169,9 @@ const FilteredItems = React.memo(({ items, query }: Props) => {
 });
 ```
 
-### 3. セキュリティの課題
+## 3. 開発体験とメンテナンス性
 
-#### 3.1 コマンドインジェクションの脆弱性
-
-**現状の問題点：**
-- `exec`を使用したレジストリクエリ（src/main/ipc/iconHandlers.ts）
-- ユーザー入力のサニタイズが不完全
-
-**改善案：**
-```typescript
-// execFileを使用した安全な実装
-import { execFile } from 'child_process';
-import { promisify } from 'util';
-
-const execFileAsync = promisify(execFile);
-
-async function queryRegistry(scheme: string): Promise<string | null> {
-  try {
-    const { stdout } = await execFileAsync('reg', [
-      'query',
-      `HKEY_CLASSES_ROOT\\${scheme}`,
-      '/ve'
-    ]);
-    return stdout;
-  } catch (error) {
-    return null;
-  }
-}
-```
-
-#### 3.2 入力検証の不足
-
-**現状の問題点：**
-- ファイルパスの検証が不十分
-- URLの検証が簡易的すぎる
-- ディレクトリトラバーサル攻撃の可能性
-
-**改善案：**
-```typescript
-// 入力検証ライブラリの導入
-import { z } from 'zod';
-
-const FilePathSchema = z.string().refine(
-  (path) => {
-    // パスの正規化
-    const normalized = path.normalize(path);
-    // 親ディレクトリへの参照をチェック
-    return !normalized.includes('..');
-  },
-  { message: 'Invalid file path' }
-);
-
-const URLSchema = z.string().url();
-
-// 使用例
-function validateFilePath(path: string): string {
-  return FilePathSchema.parse(path);
-}
-```
-
-### 4. 開発体験とメンテナンス性の課題
-
-#### 4.1 テストの完全な欠如
+### 3.1 テストの完全な欠如
 
 **現状の問題点：**
 - ユニットテスト、統合テスト、E2Eテストが存在しない
@@ -263,26 +197,7 @@ function validateFilePath(path: string): string {
 }
 ```
 
-```typescript
-// テストの例
-describe('ItemList', () => {
-  it('should filter items based on search query', () => {
-    const items = [
-      { id: '1', name: 'VSCode', type: 'app' },
-      { id: '2', name: 'Chrome', type: 'app' }
-    ];
-    
-    const { getByText, queryByText } = render(
-      <ItemList items={items} query="code" />
-    );
-    
-    expect(getByText('VSCode')).toBeInTheDocument();
-    expect(queryByText('Chrome')).not.toBeInTheDocument();
-  });
-});
-```
-
-#### 4.2 ドキュメントの不足
+### 3.2 ドキュメントの不足
 
 **現状の問題点：**
 - JSDocコメントがない
@@ -317,59 +232,8 @@ async function scanDirectory(
 }
 ```
 
-## 優先順位付き改善ロードマップ
+## 関連ドキュメント
 
-### フェーズ1: 緊急対応（1-2週間）
-
-1. **セキュリティ脆弱性の修正**
-   - コマンドインジェクション対策
-   - 入力検証の強化
-
-2. **重大なバグ修正**
-   - メモリリークの可能性がある箇所の修正
-   - エラーハンドリングの改善
-
-### フェーズ2: 基盤整備（2-4週間）
-
-1. **テスト環境の構築**
-   - Jest + React Testing Libraryの設定
-   - 基本的なユニットテストの追加
-
-2. **型安全性の向上**
-   - any型の排除
-   - 外部ライブラリの型定義追加
-
-3. **ビルドシステムの改善**
-   - 環境変数管理の導入
-   - 開発/本番環境の分離
-
-### フェーズ3: コード品質向上（1-2ヶ月）
-
-1. **アーキテクチャの改善**
-   - ビジネスロジックの分離
-   - サービス層の導入
-
-2. **パフォーマンス最適化**
-   - React最適化（memo化、仮想スクロール）
-   - 非同期処理への移行
-
-3. **ドキュメント整備**
-   - JSDocコメントの追加
-   - 開発者ガイドの作成
-
-### フェーズ4: 継続的改善（継続的）
-
-1. **CI/CDパイプラインの構築**
-2. **E2Eテストの追加**
-3. **パフォーマンスモニタリング**
-4. **定期的なコードレビュー**
-
-## まとめ
-
-QuickDashLauncherは機能的には充実していますが、コード品質、セキュリティ、保守性の面で改善の余地があります。特に以下の3点は早急な対応が必要です：
-
-1. **セキュリティ脆弱性の修正**
-2. **テスト環境の構築**
-3. **型安全性の向上**
-
-これらの改善を段階的に実施することで、より堅牢で保守しやすいアプリケーションに進化させることができます。
+- [コードレビュー要約](code-review-summary.md) - レビュー全体の要約
+- [セキュリティの課題と対策](security-issues.md) - セキュリティ脆弱性の詳細
+- [開発ガイド](../guides/development.md) - 実装詳細とコード品質ガイドライン
