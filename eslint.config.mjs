@@ -72,6 +72,8 @@ export default [
         groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
         'newlines-between': 'always'
       }],
+      'import/no-duplicates': 'error',
+      'no-console': ['warn', { allow: ['warn', 'error'] }],
       
       // Prettier統合
       'prettier/prettier': 'error'
@@ -135,6 +137,8 @@ export default [
         groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
         'newlines-between': 'always'
       }],
+      'import/no-duplicates': 'error',
+      'no-console': ['warn', { allow: ['warn', 'error'] }],
       
       // Prettier統合
       'prettier/prettier': 'error'
