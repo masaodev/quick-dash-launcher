@@ -62,6 +62,35 @@ QuickDashLauncherで使用される主要なAPIの一覧です。
 ### isDirectory()
 指定されたパスがディレクトリかどうかを判定する
 
+## クリップボード関連 API
+
+### copyToClipboard()
+テキストをクリップボードにコピーする
+
+**パラメータ:**
+- `text: string` - コピーするテキスト
+
+**戻り値:**
+- `Promise<boolean>` - コピー成功時true、失敗時false
+
+**使用例:**
+```typescript
+// アイテムのパスをクリップボードにコピー
+try {
+  const success = await window.electronAPI.copyToClipboard(item.path);
+  if (success) {
+    console.log('パスをコピーしました');
+  }
+} catch (error) {
+  console.error('コピーに失敗しました:', error);
+}
+```
+
+**実装詳細:**
+- メインプロセスで`clipboard.writeText()`を使用
+- エラーハンドリングを含む
+- コンテキストメニューの「パスをコピー」機能で使用
+
 ## データ型定義
 
 ### LauncherItem
