@@ -256,3 +256,7 @@ export async function setEditMode(editMode: boolean): Promise<void> {
 export function getEditMode(): boolean {
   return isEditMode;
 }
+
+export function getTray(): Tray | null {
+  return tray;
+}
