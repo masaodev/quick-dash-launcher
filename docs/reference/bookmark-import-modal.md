@@ -4,7 +4,7 @@
 
 - [画面一覧](screen-list.md) - 全画面構成の概要
 - [メインウィンドウ](main-window.md) - メイン画面の詳細仕様
-- [編集モード](../features/edit-mode.md) - 編集機能の詳細
+- [アイテム管理](../features/item-management.md) - 編集機能の詳細
 
 ## 1. 概要
 
