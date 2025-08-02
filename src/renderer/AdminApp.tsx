@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 import { RawDataLine, AppSettings } from '../common/types';
 
+import { debugInfo } from './utils/debug';
 import AdminTabContainer from './components/AdminTabContainer';
 
 const AdminApp: React.FC = () => {
@@ -51,7 +52,7 @@ const AdminApp: React.FC = () => {
     try {
       await window.electronAPI.saveRawDataFiles(newRawLines);
       setRawLines(newRawLines);
-      console.log('Raw data files saved successfully');
+      debugInfo('Raw data files saved successfully');
     } catch (error) {
       console.error('Failed to save raw data files:', error);
     }
@@ -61,7 +62,7 @@ const AdminApp: React.FC = () => {
     try {
       await window.electronAPI.setMultipleSettings(newSettings);
       setSettings(newSettings);
-      console.log('Settings saved successfully');
+      debugInfo('Settings saved successfully');
     } catch (error) {
       console.error('Failed to save settings:', error);
     }

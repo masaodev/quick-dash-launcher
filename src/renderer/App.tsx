@@ -8,6 +8,7 @@ import ActionButtons from './components/ActionButtons';
 import RegisterModal, { RegisterItem } from './components/RegisterModal';
 import IconProgressBar from './components/IconProgressBar';
 import { parseDataFiles, filterItems } from './utils/dataParser';
+import { debugLog, debugInfo, logWarn } from './utils/debug';
 import { useIconProgress } from './hooks/useIconProgress';
 
 const App: React.FC = () => {
@@ -69,7 +70,7 @@ const App: React.FC = () => {
         const file = files[i];
         try {
           const filePath = window.electronAPI.getPathForFile(file);
-          console.log(`Got path for ${file.name}: ${filePath}`);
+          debugLog(`Got path for ${file.name}: ${filePath}`);
           if (filePath) {
             paths.push(filePath);
           }
@@ -78,7 +79,7 @@ const App: React.FC = () => {
         }
       }
 
-      console.log('Final paths:', paths);
+      debugLog('Final paths:', paths);
 
       if (paths.length > 0) {
         setDroppedPaths(paths);
@@ -158,7 +159,7 @@ const App: React.FC = () => {
   };
 
   const handleFetchFavicon = async (forceAll: boolean = false) => {
-    console.log(
+    debugInfo(
       forceAll
         ? 'すべてのURLアイテムのファビコンを強制取得開始'
         : 'アイコンなしURLアイテムのファビコンを取得開始'
@@ -170,7 +171,7 @@ const App: React.FC = () => {
       : mainItems.filter((item) => item.type === 'url' && !item.icon).map((item) => item.path);
 
     if (allUrls.length === 0) {
-      console.log('取得対象のURLアイテムがありません');
+      debugInfo('取得対象のURLアイテムがありません');
       return;
     }
 
@@ -188,11 +189,11 @@ const App: React.FC = () => {
     };
 
     setMainItems(updateItemsWithFavicons(mainItems));
-    console.log('ファビコン取得完了');
+    debugInfo('ファビコン取得完了');
   };
 
   const handleExtractAllIcons = async (forceAll: boolean = false) => {
-    console.log(
+    debugInfo(
       forceAll
         ? 'すべてのアイテムのアイコンを強制抽出開始'
         : 'アイコンなしアイテムのアイコン抽出を開始'
@@ -204,7 +205,7 @@ const App: React.FC = () => {
       : mainItems.filter((item) => !item.icon && item.type !== 'url');
 
     if (allIconItems.length === 0) {
-      console.log('抽出対象のアイテムがありません');
+      debugInfo('抽出対象のアイテムがありません');
       return;
     }
 
@@ -222,11 +223,11 @@ const App: React.FC = () => {
     };
 
     setMainItems(updateItemsWithIcons(mainItems));
-    console.log('アイコン抽出完了');
+    debugInfo('アイコン抽出完了');
   };
 
   const handleRefreshAll = async () => {
-    console.log('すべての更新を開始');
+    debugInfo('すべての更新を開始');
 
     // 1. データファイルの再読み込み
     await loadItems();
@@ -237,11 +238,11 @@ const App: React.FC = () => {
     // 3. 全アイコン強制抽出
     await handleExtractAllIcons(true);
 
-    console.log('すべての更新が完了');
+    debugInfo('すべての更新が完了');
   };
 
   const handleFetchMissingIcons = async () => {
-    console.log('未取得アイコンの取得を開始');
+    debugInfo('未取得アイコンの取得を開始');
 
     // ファビコン取得（未取得のみ）
     await handleFetchFavicon(false);
@@ -249,7 +250,7 @@ const App: React.FC = () => {
     // アイコン抽出（未取得のみ）
     await handleExtractAllIcons(false);
 
-    console.log('未取得アイコンの取得が完了');
+    debugInfo('未取得アイコンの取得が完了');
   };
 
   const handleTogglePin = async () => {
@@ -277,7 +278,7 @@ const App: React.FC = () => {
   const handleCopyPath = async (item: LauncherItem) => {
     try {
       await window.electronAPI.copyToClipboard(item.path);
-      console.log(`パスをコピーしました: ${item.path}`);
+      logWarn(`パスをコピーしました: ${item.path}`);
     } catch (err) {
       console.error('パスのコピーに失敗しました:', err);
       alert('パスのコピーに失敗しました');

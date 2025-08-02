@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 
 import { LauncherItem, RawDataLine } from '../../common/types';
+import { debugInfo } from '../utils/debug';
 
 interface RegisterModalProps {
   isOpen: boolean;
@@ -50,10 +51,10 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
 
     // モーダルが開いたとき
     if (editingItem) {
-      console.log('RegisterModal opened in edit mode:', editingItem);
+      debugInfo('RegisterModal opened in edit mode:', editingItem);
       initializeFromEditingItem();
     } else if (droppedPaths && droppedPaths.length > 0) {
-      console.log('RegisterModal opened with paths:', droppedPaths);
+      debugInfo('RegisterModal opened with paths:', droppedPaths);
       initializeItems();
     }
 
@@ -272,11 +273,11 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
           console.warn('Skipping undefined path');
           continue;
         }
-        console.log('Processing dropped path:', filePath);
+        debugInfo('Processing dropped path:', filePath);
         const itemType = await detectItemType(filePath);
-        console.log('Detected item type:', itemType);
+        debugInfo('Detected item type:', itemType);
         const name = extractDefaultName(filePath);
-        console.log('Extracted name:', name);
+        debugInfo('Extracted name:', name);
 
         let icon: string | undefined;
         try {
