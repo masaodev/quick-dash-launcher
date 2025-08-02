@@ -160,7 +160,7 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
       case 'directive':
         return 'フォルダ取込';
       case 'item':
-        return 'アイテム';
+        return '単一アイテム';
       case 'comment':
         return 'コメント';
       case 'empty':

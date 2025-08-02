@@ -486,7 +486,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                         handleItemChange(index, 'itemCategory', e.target.value as 'item' | 'dir')
                       }
                     >
-                      <option value="item">アイテム</option>
+                      <option value="item">単一アイテム</option>
                       <option value="dir">フォルダ取込</option>
                     </select>
                   </div>
