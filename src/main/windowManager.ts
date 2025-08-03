@@ -39,6 +39,7 @@ export async function createWindow(): Promise<BrowserWindow> {
     alwaysOnTop: false,
     frame: false,
     show: false,
+    icon: path.join(__dirname, '../../assets/icon.ico'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -88,7 +89,7 @@ export async function createWindow(): Promise<BrowserWindow> {
 }
 
 export function createTray(): void {
-  const iconPath = path.join(__dirname, '../../assets/icon.svg');
+  const iconPath = path.join(__dirname, '../../assets/icon.ico');
   const icon = nativeImage.createFromPath(iconPath);
 
   tray = new Tray(icon);

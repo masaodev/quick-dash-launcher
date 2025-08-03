@@ -29,6 +29,9 @@ import { closeAdminWindow } from './adminWindowManager';
 // const store = new Store(); // 将来の使用のために予約
 
 app.whenReady().then(async () => {
+  // アプリケーションのApp User Model IDを設定（Windows用）
+  app.setAppUserModelId('com.example.quick-dash-launcher');
+
   // 必要なディレクトリ（config, icons, favicons, schemes, backup）を作成
   ensureDirectories();
 
