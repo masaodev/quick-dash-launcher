@@ -143,6 +143,10 @@
   transform: scale(1.2);
 }
 
+.setting-item.indent {
+  margin-left: var(--spacing-2xl);
+}
+
 .unit {
   font-size: var(--font-size-xs);
   color: var(--text-muted);

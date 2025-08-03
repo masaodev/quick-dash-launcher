@@ -5,6 +5,7 @@ import { ipcMain } from 'electron';
 import { editLogger } from '@common/logger';
 
 import { LauncherItem } from '../../common/types';
+import { BackupService } from '../services/backupService.js';
 
 interface UpdateItemRequest {
   sourceFile: 'data.txt' | 'data2.txt';
@@ -17,20 +18,10 @@ interface DeleteItemRequest {
   lineNumber: number;
 }
 
-function createBackup(configFolder: string, fileName: string): void {
+async function createBackup(configFolder: string, fileName: string): Promise<void> {
   const filePath = path.join(configFolder, fileName);
-  const backupFolder = path.join(configFolder, 'backup');
-
-  if (!fs.existsSync(backupFolder)) {
-    fs.mkdirSync(backupFolder, { recursive: true });
-  }
-
-  if (fs.existsSync(filePath)) {
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const backupFileName = `${path.parse(fileName).name}_${timestamp}${path.parse(fileName).ext}`;
-    const backupPath = path.join(backupFolder, backupFileName);
-    fs.copyFileSync(filePath, backupPath);
-  }
+  const backupService = await BackupService.getInstance();
+  await backupService.createBackup(filePath);
 }
 
 function formatItemToCSV(item: LauncherItem): string {
@@ -65,7 +56,7 @@ export async function updateItem(configFolder: string, request: UpdateItemReques
   }
 
   // Create backup
-  createBackup(configFolder, sourceFile);
+  await createBackup(configFolder, sourceFile);
 
   // Read file contents
   const content = fs.readFileSync(filePath, 'utf8');

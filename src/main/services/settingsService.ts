@@ -25,6 +25,11 @@ export class SettingsService {
     editModeWidth: 1000,
     editModeHeight: 700,
     autoLaunch: false,
+    backupEnabled: true,
+    backupOnStart: true,
+    backupOnEdit: true,
+    backupInterval: 5,
+    backupRetention: 20,
   };
 
   private constructor() {

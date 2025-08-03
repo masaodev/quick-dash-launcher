@@ -9,8 +9,8 @@ import {
   EXTENSIONS_FOLDER,
   ensureDirectories,
   createDefaultDataFile,
-  backupDataFiles,
 } from './appHelpers';
+import { BackupService } from './services/backupService.js';
 import {
   createWindow,
   createTray,
@@ -38,8 +38,9 @@ app.whenReady().then(async () => {
   // 初回起動時にデフォルトのdata.txtファイルを作成
   createDefaultDataFile();
 
-  // 既存のデータファイルをタイムスタンプ付きでバックアップ
-  backupDataFiles();
+  // 既存のデータファイルをタイムスタンプ付きでバックアップ（設定に基づく）
+  const backupService = await BackupService.getInstance();
+  await backupService.backupDataFiles(CONFIG_FOLDER);
 
   // メインウィンドウを作成（設定サイズ、フレームレス、常に最前面）
   await createWindow();
