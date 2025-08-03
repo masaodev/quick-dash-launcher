@@ -83,11 +83,11 @@ export interface AppSettings {
   editModeHeight: number;
   /** アプリの自動起動設定 */
   autoLaunch: boolean;
-  /** バックアップ機能の有効/無効（デフォルト: true） */
+  /** バックアップ機能の有効/無効（デフォルト: false） */
   backupEnabled: boolean;
-  /** アプリ起動時のバックアップ（デフォルト: true） */
+  /** アプリ起動時のバックアップ（デフォルト: false） */
   backupOnStart: boolean;
-  /** データ編集時のバックアップ（デフォルト: true） */
+  /** データ編集時のバックアップ（デフォルト: false） */
   backupOnEdit: boolean;
   /** 最小バックアップ間隔（分）（デフォルト: 5） */
   backupInterval: number;
