@@ -16,7 +16,11 @@ export function setupWindowHandlers(
   setEditMode: (editMode: boolean) => Promise<void>,
   getEditMode: () => boolean,
   getWindowPinMode: () => WindowPinMode,
-  cycleWindowPinMode: () => WindowPinMode
+  cycleWindowPinMode: () => WindowPinMode,
+  setModalMode: (
+    isModal: boolean,
+    requiredSize?: { width: number; height: number }
+  ) => Promise<void>
 ) {
   // 新しい3段階モード用のIPCハンドラー
   ipcMain.handle('get-window-pin-mode', () => {
@@ -84,4 +88,11 @@ export function setupWindowHandlers(
       return false;
     }
   });
+
+  ipcMain.handle(
+    'set-modal-mode',
+    async (_event, isModal: boolean, requiredSize?: { width: number; height: number }) => {
+      await setModalMode(isModal, requiredSize);
+    }
+  );
 }

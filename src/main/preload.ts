@@ -99,4 +99,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('open-edit-window-with-tab', tab),
   getInitialTab: () => ipcRenderer.invoke('get-initial-tab'),
   copyToClipboard: (text: string) => ipcRenderer.invoke('copy-to-clipboard', text),
+  setModalMode: (isModal: boolean, requiredSize?: { width: number; height: number }) =>
+    ipcRenderer.invoke('set-modal-mode', isModal, requiredSize),
 });
