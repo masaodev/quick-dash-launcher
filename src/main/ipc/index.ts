@@ -20,7 +20,11 @@ export function setupIPCHandlers(
   setEditMode: (editMode: boolean) => Promise<void>,
   getEditMode: () => boolean,
   getWindowPinMode: () => WindowPinMode,
-  cycleWindowPinMode: () => WindowPinMode
+  cycleWindowPinMode: () => WindowPinMode,
+  setModalMode: (
+    isModal: boolean,
+    requiredSize?: { width: number; height: number }
+  ) => Promise<void>
 ) {
   setupDataHandlers(configFolder);
   setupItemHandlers(getMainWindow);
@@ -32,7 +36,8 @@ export function setupIPCHandlers(
     setEditMode,
     getEditMode,
     getWindowPinMode,
-    cycleWindowPinMode
+    cycleWindowPinMode,
+    setModalMode
   );
   registerEditHandlers(configFolder);
   setupSettingsHandlers();

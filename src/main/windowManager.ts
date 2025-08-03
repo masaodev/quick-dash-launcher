@@ -257,6 +257,38 @@ export function getEditMode(): boolean {
   return isEditMode;
 }
 
+/**
+ * モーダルモードの切り替え
+ * モーダル表示時は必要に応じてウィンドウサイズを拡大し、閉じる時は元のサイズに戻す
+ */
+export async function setModalMode(
+  isModal: boolean,
+  requiredSize?: { width: number; height: number }
+): Promise<void> {
+  if (mainWindow) {
+    if (isModal && requiredSize) {
+      // モーダル表示時：現在のサイズを保存し、必要な場合のみ拡大
+      const currentBounds = mainWindow.getBounds();
+      normalWindowBounds = { width: currentBounds.width, height: currentBounds.height };
+
+      // 必要サイズと現在サイズを比較し、必要な場合のみ拡大
+      if (currentBounds.width < requiredSize.width || currentBounds.height < requiredSize.height) {
+        mainWindow.setSize(
+          Math.max(currentBounds.width, requiredSize.width),
+          Math.max(currentBounds.height, requiredSize.height)
+        );
+        mainWindow.center();
+      }
+    } else {
+      // モーダルを閉じる時：元のサイズに復元
+      if (normalWindowBounds) {
+        mainWindow.setSize(normalWindowBounds.width, normalWindowBounds.height);
+        mainWindow.center();
+      }
+    }
+  }
+}
+
 export function getTray(): Tray | null {
   return tray;
 }

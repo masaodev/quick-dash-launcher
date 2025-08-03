@@ -46,6 +46,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     if (!isOpen) {
       // モーダルが閉じられたときの処理
       document.body.style.overflow = 'auto';
+      window.electronAPI.setModalMode(false);
       return;
     }
 
@@ -154,6 +155,19 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
       document.body.style.overflow = 'auto';
     };
   }, [isOpen, droppedPaths, editingItem]);
+
+  // アイテムの内容が変更されたときにモーダルサイズを調整
+  useEffect(() => {
+    if (!isOpen || items.length === 0) return;
+
+    // 必要サイズを計算
+    const hasFolderItem = items.some((item) => item.itemCategory === 'dir');
+    const requiredWidth = hasFolderItem ? 900 : 800;
+    const requiredHeight = hasFolderItem ? 700 : 600;
+
+    // モーダルモードを有効化し、必要サイズを設定
+    window.electronAPI.setModalMode(true, { width: requiredWidth, height: requiredHeight });
+  }, [isOpen, items]);
 
   const initializeFromEditingItem = async () => {
     setLoading(true);

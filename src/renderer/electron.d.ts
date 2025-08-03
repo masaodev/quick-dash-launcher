@@ -77,6 +77,10 @@ export interface ElectronAPI {
   openEditWindowWithTab: (tab: 'settings' | 'edit' | 'other') => Promise<void>;
   getInitialTab: () => Promise<'settings' | 'edit' | 'other'>;
   copyToClipboard: (text: string) => Promise<boolean>;
+  setModalMode: (
+    isModal: boolean,
+    requiredSize?: { width: number; height: number }
+  ) => Promise<void>;
 }
 
 declare global {
