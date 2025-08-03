@@ -9,6 +9,7 @@ import {
   showAdminWindowWithTab,
   getInitialTab,
 } from '../adminWindowManager.js';
+import { getTray } from '../windowManager.js';
 
 export function setupWindowHandlers(
   getWindowPinState: () => boolean,
@@ -41,7 +42,11 @@ export function setupWindowHandlers(
   });
 
   ipcMain.handle('quit-app', () => {
-    app.quit();
+    const tray = getTray();
+    if (tray) {
+      tray.destroy();
+    }
+    app.exit(0);
   });
 
   ipcMain.handle('set-edit-mode', async (_event, editMode: boolean) => {

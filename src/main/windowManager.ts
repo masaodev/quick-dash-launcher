@@ -288,3 +288,7 @@ export async function setModalMode(
     }
   }
 }
+
+export function getTray(): Tray | null {
+  return tray;
+}
