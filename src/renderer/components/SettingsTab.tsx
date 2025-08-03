@@ -18,6 +18,11 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave, onUnsavedCh
   const [isLoading, setIsLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
+  // settingsプロパティが変更されたときにeditedSettingsを更新
+  useEffect(() => {
+    setEditedSettings(settings);
+  }, [settings]);
+
   // 変更検知
   useEffect(() => {
     const changed = JSON.stringify(settings) !== JSON.stringify(editedSettings);
@@ -178,6 +183,81 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave, onUnsavedCh
               起動時に自動実行
             </label>
           </div>
+        </div>
+
+        <div className="settings-section">
+          <h3>バックアップ</h3>
+          <div className="setting-item">
+            <label>
+              <input
+                type="checkbox"
+                checked={editedSettings.backupEnabled}
+                onChange={(e) => handleSettingChange('backupEnabled', e.target.checked)}
+                disabled={isLoading}
+              />
+              バックアップ機能を有効にする
+            </label>
+          </div>
+
+          {editedSettings.backupEnabled && (
+            <>
+              <div className="setting-item indent">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={editedSettings.backupOnStart}
+                    onChange={(e) => handleSettingChange('backupOnStart', e.target.checked)}
+                    disabled={isLoading}
+                  />
+                  アプリ起動時にバックアップを作成
+                </label>
+              </div>
+
+              <div className="setting-item indent">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={editedSettings.backupOnEdit}
+                    onChange={(e) => handleSettingChange('backupOnEdit', e.target.checked)}
+                    disabled={isLoading}
+                  />
+                  データ編集時にバックアップを作成
+                </label>
+              </div>
+
+              <div className="setting-item indent">
+                <label htmlFor="backupInterval">最小バックアップ間隔:</label>
+                <input
+                  id="backupInterval"
+                  type="number"
+                  min="1"
+                  max="60"
+                  value={editedSettings.backupInterval}
+                  onChange={(e) =>
+                    handleSettingChange('backupInterval', parseInt(e.target.value))
+                  }
+                  disabled={isLoading}
+                />
+                <span className="unit">分</span>
+              </div>
+
+              <div className="setting-item indent">
+                <label htmlFor="backupRetention">バックアップ保存件数:</label>
+                <input
+                  id="backupRetention"
+                  type="number"
+                  min="1"
+                  max="100"
+                  value={editedSettings.backupRetention}
+                  onChange={(e) =>
+                    handleSettingChange('backupRetention', parseInt(e.target.value))
+                  }
+                  disabled={isLoading}
+                />
+                <span className="unit">件</span>
+              </div>
+            </>
+          )}
         </div>
       </div>
 

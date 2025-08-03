@@ -6,6 +6,7 @@ import { minimatch } from 'minimatch';
 import { dataLogger } from '@common/logger';
 
 import { DataFile, RawDataLine, SimpleBookmarkItem } from '../../common/types';
+import { BackupService } from '../services/backupService.js';
 
 // フォルダ取込アイテムのオプション型定義
 interface DirOptions {
@@ -399,17 +400,10 @@ async function saveRawDataFiles(configFolder: string, rawLines: RawDataLine[]): 
   for (const [fileName, lines] of fileGroups) {
     const filePath = path.join(configFolder, fileName);
 
-    // バックアップを作成
+    // バックアップを作成（設定に基づく）
     if (fs.existsSync(filePath)) {
-      const backupFolder = path.join(configFolder, 'backup');
-      if (!fs.existsSync(backupFolder)) {
-        fs.mkdirSync(backupFolder, { recursive: true });
-      }
-
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const backupFileName = `${path.parse(fileName).name}_${timestamp}${path.parse(fileName).ext}`;
-      const backupPath = path.join(backupFolder, backupFileName);
-      fs.copyFileSync(filePath, backupPath);
+      const backupService = await BackupService.getInstance();
+      await backupService.createBackup(filePath);
     }
 
     // 行番号でソートして内容を結合
