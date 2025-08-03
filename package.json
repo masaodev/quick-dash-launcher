@@ -87,7 +87,9 @@
       "dist/**/*",
       "assets/**/*"
     ],
+    "icon": "assets/icon.png",
     "win": {
+      "icon": "assets/icon.ico",
       "target": [
         {
           "target": "nsis",

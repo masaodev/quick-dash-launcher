@@ -88,7 +88,7 @@ export async function createWindow(): Promise<BrowserWindow> {
 }
 
 export function createTray(): void {
-  const iconPath = path.join(__dirname, '../../assets/icon.png');
+  const iconPath = path.join(__dirname, '../../assets/icon.svg');
   const icon = nativeImage.createFromPath(iconPath);
 
   tray = new Tray(icon);
