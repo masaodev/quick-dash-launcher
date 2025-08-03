@@ -161,7 +161,6 @@ QuickDashLauncher
 3. **中優先度**: 機能モーダル
    - RegisterModal（登録・編集）
    - BookmarkImportModal（ブックマークインポート）
-   - SettingsModal（アプリケーション設定）
    
 4. **低優先度**: UI要素
    - SettingsDropdown（設定メニュー）

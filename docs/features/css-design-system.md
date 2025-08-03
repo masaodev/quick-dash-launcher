@@ -26,8 +26,7 @@ src/renderer/styles/
     ├── IconProgress.css         # アイコン進捗バー
     ├── ItemList.css             # アイテムリスト
     ├── Modal.css                # モーダル共通
-    ├── RegisterModal.css        # 登録モーダル
-    └── SettingsModal.css        # 設定モーダル
+    └── RegisterModal.css        # 登録モーダル
 ```
 
 ## CSS変数システム
