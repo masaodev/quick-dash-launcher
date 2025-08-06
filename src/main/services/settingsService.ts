@@ -46,7 +46,8 @@ export class SettingsService {
     try {
       if (!Store) {
         // electron-storeを動的にインポート
-        Store = (await eval('import("electron-store")')).default;
+        const module = await import('electron-store');
+        Store = module.default;
       }
 
       this.store = new Store!<AppSettings>({
