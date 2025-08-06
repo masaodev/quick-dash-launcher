@@ -233,9 +233,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave, onUnsavedCh
                   min="1"
                   max="60"
                   value={editedSettings.backupInterval}
-                  onChange={(e) =>
-                    handleSettingChange('backupInterval', parseInt(e.target.value))
-                  }
+                  onChange={(e) => handleSettingChange('backupInterval', parseInt(e.target.value))}
                   disabled={isLoading}
                 />
                 <span className="unit">分</span>
@@ -249,9 +247,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave, onUnsavedCh
                   min="1"
                   max="100"
                   value={editedSettings.backupRetention}
-                  onChange={(e) =>
-                    handleSettingChange('backupRetention', parseInt(e.target.value))
-                  }
+                  onChange={(e) => handleSettingChange('backupRetention', parseInt(e.target.value))}
                   disabled={isLoading}
                 />
                 <span className="unit">件</span>

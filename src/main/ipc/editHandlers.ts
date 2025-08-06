@@ -1,9 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-import { ipcMain } from 'electron';
 import { editLogger } from '@common/logger';
 
+import { createSafeIpcHandler } from '../utils/ipcWrapper';
 import { LauncherItem } from '../../common/types';
 import { BackupService } from '../services/backupService.js';
 
@@ -160,33 +160,30 @@ export async function batchUpdateItems(
 
 // Register IPC handlers
 export function registerEditHandlers(configFolder: string): void {
-  ipcMain.handle('update-item', async (_event, request: UpdateItemRequest) => {
-    try {
+  createSafeIpcHandler(
+    'update-item',
+    async (request: UpdateItemRequest) => {
       await updateItem(configFolder, request);
       return { success: true };
-    } catch (error) {
-      editLogger.error('アイテムの更新に失敗', { error });
-      throw error;
-    }
-  });
+    },
+    'アイテムの更新'
+  );
 
-  ipcMain.handle('delete-items', async (_event, requests: DeleteItemRequest[]) => {
-    try {
+  createSafeIpcHandler(
+    'delete-items',
+    async (requests: DeleteItemRequest[]) => {
       await deleteItems(configFolder, requests);
       return { success: true };
-    } catch (error) {
-      editLogger.error('アイテムの削除に失敗', { error });
-      throw error;
-    }
-  });
+    },
+    'アイテムの削除'
+  );
 
-  ipcMain.handle('batch-update-items', async (_event, requests: UpdateItemRequest[]) => {
-    try {
+  createSafeIpcHandler(
+    'batch-update-items',
+    async (requests: UpdateItemRequest[]) => {
       await batchUpdateItems(configFolder, requests);
       return { success: true };
-    } catch (error) {
-      editLogger.error('アイテムの一括更新に失敗', { error });
-      throw error;
-    }
-  });
+    },
+    'アイテムの一括更新'
+  );
 }

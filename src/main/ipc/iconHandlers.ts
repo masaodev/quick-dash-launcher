@@ -6,8 +6,9 @@ import * as os from 'os';
 
 import { ipcMain, BrowserWindow } from 'electron';
 import { iconLogger } from '@common/logger';
+import { FileUtils } from '@common/utils/fileUtils';
 
-import { IconProgress } from '../../common/types';
+import { ProgressManager } from '../utils/progressManager';
 import { FaviconService } from '../services/faviconService';
 
 const extractFileIcon = require('extract-file-icon');
@@ -20,15 +21,6 @@ let faviconService: FaviconService;
 let mainWindow: BrowserWindow | null = null;
 
 const execAsync = promisify(exec);
-
-/**
- * 進捗状況をレンダラープロセスに送信する
- */
-function sendProgressUpdate(eventType: 'start' | 'update' | 'complete', progress: IconProgress) {
-  if (mainWindow) {
-    mainWindow.webContents.send(`icon-progress-${eventType}`, progress);
-  }
-}
 
 /**
  * 環境変数を展開する共通関数
@@ -68,7 +60,7 @@ async function fetchFavicon(url: string, faviconsFolder: string): Promise<string
 async function extractShortcutIcon(lnkPath: string, iconsFolder: string): Promise<string | null> {
   try {
     // ファイルが存在するか確認
-    if (!fs.existsSync(lnkPath)) {
+    if (!FileUtils.exists(lnkPath)) {
       iconLogger.error(`ショートカットファイルが見つかりません: ${lnkPath}`);
       return null;
     }
@@ -79,11 +71,10 @@ async function extractShortcutIcon(lnkPath: string, iconsFolder: string): Promis
     const lnkIconPath = path.join(iconsFolder, lnkIconName);
 
     // ショートカットのアイコンがすでにキャッシュされているか確認
-    if (fs.existsSync(lnkIconPath)) {
-      const cachedIcon = fs.readFileSync(lnkIconPath);
-      const base64 = cachedIcon.toString('base64');
+    const cachedIcon = FileUtils.readCachedBinaryAsBase64(lnkIconPath);
+    if (cachedIcon) {
       iconLogger.info(`ショートカットのキャッシュアイコンを使用: ${lnkPath} -> ${lnkIconPath}`);
-      return `data:image/png;base64,${base64}`;
+      return cachedIcon;
     }
 
     // 1. ショートカットの詳細を取得してカスタムアイコンパスをチェック
@@ -96,7 +87,7 @@ async function extractShortcutIcon(lnkPath: string, iconsFolder: string): Promis
       // 環境変数を展開
       const expandedIconPath = expandEnvironmentVariables(shortcutDetails.icon);
 
-      if (fs.existsSync(expandedIconPath)) {
+      if (FileUtils.exists(expandedIconPath)) {
         iconLogger.info(`カスタムアイコンファイルを発見: ${expandedIconPath}`);
 
         try {
@@ -107,7 +98,7 @@ async function extractShortcutIcon(lnkPath: string, iconsFolder: string): Promis
 
             if (extractedIconBuffer && extractedIconBuffer.length > 0) {
               // ショートカット専用キャッシュに保存
-              fs.writeFileSync(lnkIconPath, extractedIconBuffer);
+              FileUtils.writeBinaryFile(lnkIconPath, extractedIconBuffer);
 
               const base64 = extractedIconBuffer.toString('base64');
               iconLogger.info(
@@ -133,7 +124,7 @@ async function extractShortcutIcon(lnkPath: string, iconsFolder: string): Promis
 
     if (shortcutIconBuffer && shortcutIconBuffer.length > 0) {
       // ショートカット専用キャッシュに保存
-      fs.writeFileSync(lnkIconPath, shortcutIconBuffer);
+      FileUtils.writeBinaryFile(lnkIconPath, shortcutIconBuffer);
 
       const base64 = shortcutIconBuffer.toString('base64');
       iconLogger.info(`ショートカットファイルからアイコンを抽出成功: ${lnkPath}`);
@@ -145,7 +136,7 @@ async function extractShortcutIcon(lnkPath: string, iconsFolder: string): Promis
       `ショートカットファイルからの抽出に失敗、ターゲットからの抽出を試行: ${lnkPath}`
     );
 
-    if (shortcutDetails && shortcutDetails.target && fs.existsSync(shortcutDetails.target)) {
+    if (shortcutDetails && shortcutDetails.target && FileUtils.exists(shortcutDetails.target)) {
       const targetIcon = await extractIcon(shortcutDetails.target, iconsFolder);
       if (targetIcon) {
         iconLogger.info(
@@ -174,7 +165,7 @@ async function extractShortcutIcon(lnkPath: string, iconsFolder: string): Promis
 async function extractIcon(filePath: string, iconsFolder: string): Promise<string | null> {
   try {
     // ファイルが存在するか確認
-    if (!fs.existsSync(filePath)) {
+    if (!FileUtils.exists(filePath)) {
       iconLogger.error(`ファイルが見つかりません: ${filePath}`);
       return null;
     }
@@ -190,10 +181,9 @@ async function extractIcon(filePath: string, iconsFolder: string): Promise<strin
     const iconPath = path.join(iconsFolder, iconName);
 
     // アイコンがすでにキャッシュされているか確認
-    if (fs.existsSync(iconPath)) {
-      const cachedIcon = fs.readFileSync(iconPath);
-      const base64 = cachedIcon.toString('base64');
-      return `data:image/png;base64,${base64}`;
+    const cachedIcon = FileUtils.readCachedBinaryAsBase64(iconPath);
+    if (cachedIcon) {
+      return cachedIcon;
     }
 
     // アイコンを抽出
@@ -543,67 +533,28 @@ async function fetchFaviconsWithProgress(
 ): Promise<Record<string, string | null>> {
   const results: Record<string, string | null> = {};
   const total = urls.length;
-  let current = 0;
-  let errors = 0;
-  const startTime = Date.now();
+  const progress = new ProgressManager('favicon', total, mainWindow);
 
-  // 進捗開始を通知
-  sendProgressUpdate('start', {
-    type: 'favicon',
-    current: 0,
-    total,
-    currentItem: '',
-    errors: 0,
-    startTime,
-    isComplete: false,
-  });
+  progress.start();
 
   for (const url of urls) {
     try {
-      // 現在の処理アイテムを通知
-      sendProgressUpdate('update', {
-        type: 'favicon',
-        current,
-        total,
-        currentItem: url,
-        errors,
-        startTime,
-        isComplete: false,
-      });
-
       const favicon = await fetchFavicon(url, faviconsFolder);
       results[url] = favicon;
 
-      current++;
-
-      // 進捗更新を通知
-      sendProgressUpdate('update', {
-        type: 'favicon',
-        current,
-        total,
-        currentItem: url,
-        errors,
-        startTime,
-        isComplete: false,
-      });
+      if (favicon) {
+        progress.update(url);
+      } else {
+        progress.update(url, true); // エラーカウントを増加
+      }
     } catch (error) {
       iconLogger.error(`ファビコン取得エラー: ${url}`, { error });
       results[url] = null;
-      errors++;
-      current++;
+      progress.update(url, true); // エラーカウントを増加
     }
   }
 
-  // 進捗完了を通知
-  sendProgressUpdate('complete', {
-    type: 'favicon',
-    current,
-    total,
-    currentItem: '',
-    errors,
-    startTime,
-    isComplete: true,
-  });
+  progress.complete();
 
   return results;
 }
@@ -618,34 +569,12 @@ async function extractIconsWithProgress(
 ): Promise<Record<string, string | null>> {
   const results: Record<string, string | null> = {};
   const total = items.length;
-  let current = 0;
-  let errors = 0;
-  const startTime = Date.now();
+  const progress = new ProgressManager('icon', total, mainWindow);
 
-  // 進捗開始を通知
-  sendProgressUpdate('start', {
-    type: 'icon',
-    current: 0,
-    total,
-    currentItem: '',
-    errors: 0,
-    startTime,
-    isComplete: false,
-  });
+  progress.start();
 
   for (const item of items) {
     try {
-      // 現在の処理アイテムを通知
-      sendProgressUpdate('update', {
-        type: 'icon',
-        current,
-        total,
-        currentItem: item.path,
-        errors,
-        startTime,
-        isComplete: false,
-      });
-
       let icon: string | null = null;
 
       if (item.type === 'app') {
@@ -671,36 +600,20 @@ async function extractIconsWithProgress(
       // Skip URLs - favicons should only be fetched via the favicon button
 
       results[item.path] = icon;
-      current++;
 
-      // 進捗更新を通知
-      sendProgressUpdate('update', {
-        type: 'icon',
-        current,
-        total,
-        currentItem: item.path,
-        errors,
-        startTime,
-        isComplete: false,
-      });
+      if (icon) {
+        progress.update(item.path);
+      } else {
+        progress.update(item.path, true); // エラーカウントを増加
+      }
     } catch (error) {
       iconLogger.error(`アイコン抽出エラー: ${item.path}`, { error });
       results[item.path] = null;
-      errors++;
-      current++;
+      progress.update(item.path, true); // エラーカウントを増加
     }
   }
 
-  // 進捗完了を通知
-  sendProgressUpdate('complete', {
-    type: 'icon',
-    current,
-    total,
-    currentItem: '',
-    errors,
-    startTime,
-    isComplete: true,
-  });
+  progress.complete();
 
   return results;
 }

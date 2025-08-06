@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import logger from '@common/logger';
+import { FileUtils } from '@common/utils/fileUtils';
 
 import { BACKUP_FOLDER } from '../appHelpers';
 
@@ -82,21 +83,18 @@ export class BackupService {
       return false;
     }
 
-    if (!fs.existsSync(sourcePath)) {
+    if (!FileUtils.exists(sourcePath)) {
       logger.warn('バックアップ元ファイルが存在しません', { sourcePath });
       return false;
     }
 
-    if (!fs.existsSync(backupFolder)) {
-      fs.mkdirSync(backupFolder, { recursive: true });
-    }
+    FileUtils.ensureDirectory(backupFolder);
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
     const backupFileName = `${path.parse(fileName).name}_${timestamp}${path.parse(fileName).ext}`;
     const backupPath = path.join(backupFolder, backupFileName);
 
-    try {
-      fs.copyFileSync(sourcePath, backupPath);
+    if (FileUtils.safeCopyFile(sourcePath, backupPath)) {
       this.lastBackupTime.set(fileName, Date.now());
       logger.info('バックアップを作成しました', { sourcePath, backupPath });
 
@@ -104,8 +102,8 @@ export class BackupService {
       await this.cleanupOldBackups(fileName, backupFolder);
 
       return true;
-    } catch (error) {
-      logger.error('バックアップの作成に失敗しました', { error, sourcePath });
+    } else {
+      logger.error('バックアップの作成に失敗しました', { sourcePath });
       return false;
     }
   }
@@ -130,22 +128,19 @@ export class BackupService {
 
     for (const file of files) {
       const sourcePath = path.join(configFolder, file);
-      if (fs.existsSync(sourcePath)) {
+      if (FileUtils.exists(sourcePath)) {
         const timestamp = new Date().toISOString().replace(/:/g, '-').substring(0, 19);
         const backupPath = path.join(backupFolder, `${file}.${timestamp}`);
 
-        try {
-          if (!fs.existsSync(backupFolder)) {
-            fs.mkdirSync(backupFolder, { recursive: true });
-          }
-          fs.copyFileSync(sourcePath, backupPath);
+        FileUtils.ensureDirectory(backupFolder);
+        if (FileUtils.safeCopyFile(sourcePath, backupPath)) {
           this.lastBackupTime.set(file, Date.now());
           logger.info('起動時バックアップを作成しました', { file, backupPath });
 
           // 古いバックアップの削除
           await this.cleanupOldBackups(file, backupFolder);
-        } catch (error) {
-          logger.error('起動時バックアップの作成に失敗しました', { error, file });
+        } else {
+          logger.error('起動時バックアップの作成に失敗しました', { file });
         }
       }
     }

@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import { ipcMain, shell, dialog } from 'electron';
 import { minimatch } from 'minimatch';
 import { dataLogger } from '@common/logger';
+import { FileUtils } from '@common/utils/fileUtils';
 
 import { DataFile, RawDataLine, SimpleBookmarkItem } from '../../common/types';
 import { BackupService } from '../services/backupService.js';
@@ -285,9 +286,8 @@ async function loadDataFiles(configFolder: string): Promise<DataFile[]> {
 
   for (const fileName of dataFiles) {
     const filePath = path.join(configFolder, fileName);
-    if (fs.existsSync(filePath)) {
-      let content = fs.readFileSync(filePath, 'utf8');
-
+    const content = FileUtils.safeReadTextFile(filePath);
+    if (content !== null) {
       // フォルダ取込アイテムを処理
       const lines = content.split(/\r\n|\n|\r/);
       const processedLines: string[] = [];
@@ -302,7 +302,7 @@ async function loadDataFiles(configFolder: string): Promise<DataFile[]> {
             .map((s) => s.trim());
           const dirPath = parts[0];
 
-          if (fs.existsSync(dirPath) && fs.statSync(dirPath).isDirectory()) {
+          if (FileUtils.exists(dirPath) && FileUtils.isDirectory(dirPath)) {
             try {
               // オプションを解析
               const options = parseDirOptions(parts);
@@ -319,7 +319,7 @@ async function loadDataFiles(configFolder: string): Promise<DataFile[]> {
           const parts = trimmedLine.split(',');
           if (parts.length >= 2) {
             const itemPath = parts[1].trim();
-            if (itemPath.toLowerCase().endsWith('.lnk') && fs.existsSync(itemPath)) {
+            if (itemPath.toLowerCase().endsWith('.lnk') && FileUtils.exists(itemPath)) {
               const processedShortcut = processShortcutToCSV(itemPath);
               if (processedShortcut) {
                 processedLines.push(processedShortcut);
@@ -331,8 +331,8 @@ async function loadDataFiles(configFolder: string): Promise<DataFile[]> {
         }
       }
 
-      content = processedLines.join('\r\n');
-      files.push({ name: fileName, content });
+      const processedContent = processedLines.join('\r\n');
+      files.push({ name: fileName, content: processedContent });
     }
   }
 
@@ -346,8 +346,8 @@ async function loadRawDataFiles(configFolder: string): Promise<RawDataLine[]> {
 
   for (const fileName of dataFiles) {
     const filePath = path.join(configFolder, fileName);
-    if (fs.existsSync(filePath)) {
-      const content = fs.readFileSync(filePath, 'utf8');
+    const content = FileUtils.safeReadTextFile(filePath);
+    if (content !== null) {
       // 改行コードを正規化（CRLF、LF、CRのいずれにも対応）
       const lines = content.split(/\r\n|\n|\r/);
 
@@ -401,7 +401,7 @@ async function saveRawDataFiles(configFolder: string, rawLines: RawDataLine[]): 
     const filePath = path.join(configFolder, fileName);
 
     // バックアップを作成（設定に基づく）
-    if (fs.existsSync(filePath)) {
+    if (FileUtils.exists(filePath)) {
       const backupService = await BackupService.getInstance();
       await backupService.createBackup(filePath);
     }
@@ -411,7 +411,7 @@ async function saveRawDataFiles(configFolder: string, rawLines: RawDataLine[]): 
     const content = sortedLines.map((line) => line.content).join('\r\n');
 
     // ファイルに書き込み
-    fs.writeFileSync(filePath, content, 'utf8');
+    FileUtils.safeWriteTextFile(filePath, content);
   }
 }
 
@@ -460,11 +460,7 @@ async function registerItems(configFolder: string, items: RegisterItem[]): Promi
   // Process items
   if (items.length > 0) {
     const dataPath = path.join(configFolder, 'data.txt');
-    let existingContent = '';
-
-    if (fs.existsSync(dataPath)) {
-      existingContent = fs.readFileSync(dataPath, 'utf8');
-    }
+    const existingContent = FileUtils.safeReadTextFile(dataPath) || '';
 
     const newLines = items.map((item) => {
       if (item.itemCategory === 'dir') {
@@ -522,16 +518,12 @@ async function registerItems(configFolder: string, items: RegisterItem[]): Promi
     const updatedContent = existingContent
       ? existingContent.trim() + '\r\n' + newLines.join('\r\n')
       : newLines.join('\r\n');
-    fs.writeFileSync(dataPath, updatedContent.trim(), 'utf8');
+    FileUtils.safeWriteTextFile(dataPath, updatedContent.trim());
   }
 }
 
 function isDirectory(filePath: string): boolean {
-  try {
-    return fs.statSync(filePath).isDirectory();
-  } catch {
-    return false;
-  }
+  return FileUtils.isDirectory(filePath);
 }
 
 export function setupDataHandlers(configFolder: string) {
@@ -575,7 +567,10 @@ export function setupDataHandlers(configFolder: string) {
 
   ipcMain.handle('parse-bookmark-file', async (_event, filePath: string) => {
     try {
-      const htmlContent = fs.readFileSync(filePath, 'utf8');
+      const htmlContent = FileUtils.safeReadTextFile(filePath);
+      if (!htmlContent) {
+        throw new Error('ファイルの読み込みに失敗しました');
+      }
 
       // 簡易的なHTMLパーサーでブックマークを抽出
       const bookmarks: SimpleBookmarkItem[] = [];
