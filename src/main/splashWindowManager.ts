@@ -20,8 +20,7 @@ export async function createSplashWindow(): Promise<BrowserWindow> {
     resizable: false,
     maximizable: false,
     minimizable: false,
-    show: false,
-    icon: path.join(__dirname, '../../assets/icon.ico'),
+    show: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -30,12 +29,20 @@ export async function createSplashWindow(): Promise<BrowserWindow> {
   });
 
   // スプラッシュ画面のHTMLを読み込み
-  if (process.env.NODE_ENV === 'development') {
-    // 開発環境では専用のエントリーポイントを使用
-    await splashWindow.loadURL('http://localhost:9000/splash.html');
-  } else {
-    // プロダクション環境では静的ファイルを読み込み
-    await splashWindow.loadFile(path.join(__dirname, '../splash.html'));
+  try {
+    if (process.env.NODE_ENV === 'development') {
+      // 開発環境では専用のエントリーポイントを使用
+      windowLogger.info('開発環境: http://localhost:9000/splash.html を読み込み中...');
+      await splashWindow.loadURL('http://localhost:9000/splash.html');
+    } else {
+      // プロダクション環境では静的ファイルを読み込み
+      const filePath = path.join(__dirname, '../splash.html');
+      windowLogger.info(`本番環境: ${filePath} を読み込み中...`);
+      await splashWindow.loadFile(filePath);
+    }
+    windowLogger.info('スプラッシュウィンドウのHTMLを読み込み完了');
+  } catch (error) {
+    windowLogger.error('スプラッシュウィンドウのHTML読み込みエラー:', error);
   }
 
   splashWindow.on('closed', () => {
@@ -43,13 +50,10 @@ export async function createSplashWindow(): Promise<BrowserWindow> {
     windowLogger.info('スプラッシュウィンドウが閉じられました');
   });
 
-  // ウィンドウの準備が完了したら表示
-  splashWindow.once('ready-to-show', () => {
-    if (splashWindow) {
-      splashWindow.show();
-      windowLogger.info('スプラッシュウィンドウを表示しました');
-    }
-  });
+  // フォーカスを当てて確実に見えるようにする
+  splashWindow.focus();
+  splashWindow.moveTop();
+  windowLogger.info('スプラッシュウィンドウを表示しました');
 
   return splashWindow;
 }
