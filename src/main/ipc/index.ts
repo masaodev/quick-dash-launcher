@@ -8,6 +8,7 @@ import { setupIconHandlers } from './iconHandlers';
 import { setupWindowHandlers } from './windowHandlers';
 import { registerEditHandlers } from './editHandlers';
 import { setupSettingsHandlers } from './settingsHandlers';
+import { setupSplashHandlers } from './splashHandlers';
 
 export function setupIPCHandlers(
   configFolder: string,
@@ -41,4 +42,5 @@ export function setupIPCHandlers(
   );
   registerEditHandlers(configFolder);
   setupSettingsHandlers();
+  setupSplashHandlers();
 }

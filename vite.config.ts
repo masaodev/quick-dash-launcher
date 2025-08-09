@@ -74,6 +74,7 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, 'index.html'),
         admin: resolve(__dirname, 'admin.html'),
+        splash: resolve(__dirname, 'splash.html'),
       },
     },
   },
