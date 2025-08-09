@@ -83,10 +83,7 @@ app.whenReady().then(async () => {
     setModalMode
   );
 
-  // スプラッシュウィンドウを閉じる（メインウィンドウとIPCハンドラーの準備が完了したため）
-  setTimeout(() => {
-    closeSplashWindow();
-  }, 1500); // 1.5秒後にスプラッシュを閉じる
+  // スプラッシュウィンドウはReactコンポーネントの完了信号(splash-ready)で閉じられる
 });
 
 app.on('window-all-closed', () => {
