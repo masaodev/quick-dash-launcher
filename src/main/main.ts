@@ -25,12 +25,16 @@ import {
   setModalMode,
 } from './windowManager';
 import { closeAdminWindow } from './adminWindowManager';
+import { createSplashWindow, closeSplashWindow } from './splashWindowManager';
 
 // const store = new Store(); // 将来の使用のために予約
 
 app.whenReady().then(async () => {
   // アプリケーションのApp User Model IDを設定（Windows用）
   app.setAppUserModelId('com.example.quick-dash-launcher');
+
+  // スプラッシュウィンドウを表示
+  await createSplashWindow();
 
   // 必要なディレクトリ（config, icons, favicons, schemes, backup）を作成
   ensureDirectories();
@@ -78,6 +82,8 @@ app.whenReady().then(async () => {
     cycleWindowPinMode,
     setModalMode
   );
+
+  // スプラッシュウィンドウはReactコンポーネントの完了信号(splash-ready)で閉じられる
 });
 
 app.on('window-all-closed', () => {
@@ -89,4 +95,5 @@ app.on('window-all-closed', () => {
 app.on('will-quit', () => {
   globalShortcut.unregisterAll();
   closeAdminWindow(); // 管理ウィンドウを確実に閉じる
+  closeSplashWindow(); // スプラッシュウィンドウを確実に閉じる
 });
