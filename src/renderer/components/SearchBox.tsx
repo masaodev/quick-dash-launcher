@@ -1,4 +1,4 @@
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useRef, useImperativeHandle } from 'react';
 
 interface SearchBoxProps {
   value: string;
@@ -8,17 +8,38 @@ interface SearchBoxProps {
 
 const SearchBox = forwardRef<HTMLInputElement, SearchBoxProps>(
   ({ value, onChange, onKeyDown }, ref) => {
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    useImperativeHandle(ref, () => inputRef.current!);
+
+    const handleClear = () => {
+      onChange('');
+      inputRef.current?.focus();
+    };
+
     return (
-      <input
-        ref={ref}
-        type="text"
-        className="search-box"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onKeyDown={onKeyDown}
-        placeholder="検索..."
-        autoFocus
-      />
+      <div className="search-box-container">
+        <input
+          ref={inputRef}
+          type="text"
+          className="search-box"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={onKeyDown}
+          placeholder="検索..."
+          autoFocus
+        />
+        {value && (
+          <button
+            className="search-clear-button"
+            onClick={handleClear}
+            type="button"
+            aria-label="検索をクリア"
+          >
+            ×
+          </button>
+        )}
+      </div>
     );
   }
 );

@@ -61,7 +61,7 @@ QuickDashLauncher
 
 | コンポーネント名 | ファイル | 親画面 | 表示条件 | 主要機能 |
 |------------------|----------|--------|----------|----------|
-| **SearchBox** | `src/renderer/components/SearchBox.tsx` | メインウィンドウ | 常時表示 | リアルタイム検索、キーボードショートカット |
+| **SearchBox** | `src/renderer/components/SearchBox.tsx` | メインウィンドウ | 常時表示 | リアルタイム検索、キーボードショートカット、クリアボタン |
 | **ActionButtons** | `src/renderer/components/ActionButtons.tsx` | メインウィンドウ | 常時表示 | ファビコン取得、アイコン抽出、リロード、固定、設定メニュー統合 |
 | **TabControl** | `src/renderer/components/TabControl.tsx` | メインウィンドウ | 常時表示 | メインタブ・一時タブの切り替え |
 | **ItemList** | `src/renderer/components/ItemList.tsx` | メインウィンドウ | 常時表示 | アイテム一覧表示、選択・実行 |

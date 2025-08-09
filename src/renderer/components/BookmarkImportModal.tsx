@@ -153,13 +153,25 @@ const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({ isOpen, onClo
           {bookmarks.length > 0 && (
             <>
               <div className="search-section">
-                <input
-                  type="text"
-                  placeholder="名前またはURLで検索..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="search-input"
-                />
+                <div className="search-input-container">
+                  <input
+                    type="text"
+                    placeholder="名前またはURLで検索..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="search-input"
+                  />
+                  {searchQuery && (
+                    <button
+                      className="search-clear-button"
+                      onClick={() => setSearchQuery('')}
+                      type="button"
+                      aria-label="検索をクリア"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div className="bookmark-bulk-actions">

@@ -19,6 +19,7 @@ export default [
       'dist/',
       'build/',
       'release/',
+      'html/',
       '*.min.js',
       'src/common/types.js',
       'src/common/types.js.map'
