@@ -46,6 +46,7 @@ export interface ElectronAPI {
   setMultipleSettings: (settings: Partial<AppSettings>) => Promise<void>;
   resetSettings: () => Promise<void>;
   validateHotkey: (hotkey: string) => Promise<{ isValid: boolean; reason?: string }>;
+  changeHotkey: (newHotkey: string) => Promise<boolean>;
   updateItem: (request: {
     sourceFile: 'data.txt' | 'data2.txt';
     lineNumber: number;

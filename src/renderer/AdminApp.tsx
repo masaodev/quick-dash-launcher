@@ -60,11 +60,28 @@ const AdminApp: React.FC = () => {
 
   const handleSettingsSave = async (newSettings: AppSettings) => {
     try {
+      // 現在の設定と比較してホットキーが変更されたかチェック
+      const isHotkeyChanged = settings && settings.hotkey !== newSettings.hotkey;
+      
+      // 設定ファイルを更新
       await window.electronAPI.setMultipleSettings(newSettings);
+      
+      // ホットキーが変更された場合は即座に反映
+      if (isHotkeyChanged) {
+        const success = await window.electronAPI.changeHotkey(newSettings.hotkey);
+        if (!success) {
+          console.error('Failed to register new hotkey:', newSettings.hotkey);
+          alert(`新しいホットキー「${newSettings.hotkey}」の登録に失敗しました。他のアプリで使用されている可能性があります。`);
+          return;
+        }
+        debugInfo(`Hotkey changed successfully to: ${newSettings.hotkey}`);
+      }
+      
       setSettings(newSettings);
       debugInfo('Settings saved successfully');
     } catch (error) {
       console.error('Failed to save settings:', error);
+      alert('設定の保存に失敗しました。');
     }
   };
 
