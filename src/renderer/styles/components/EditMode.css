@@ -304,7 +304,7 @@
 }
 
 .actions-column {
-  width: 90px;
+  width: 130px;
   text-align: center;
   padding: var(--spacing-xs) 6px !important;
 }
@@ -620,8 +620,8 @@
 }
 
 .raw-items-table .actions-column {
-  width: 10%;
-  min-width: 70px;
+  width: 15%;
+  min-width: 110px;
   text-align: center;
   padding: 4px 6px !important;
 }

@@ -22,7 +22,7 @@ export class SettingsService {
     hotkey: 'Ctrl+Alt+W',
     windowWidth: 600,
     windowHeight: 400,
-    editModeWidth: 1000,
+    editModeWidth: 1200,
     editModeHeight: 700,
     autoLaunch: false,
     backupEnabled: false,
