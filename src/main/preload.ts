@@ -103,4 +103,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('set-modal-mode', isModal, requiredSize),
   // スプラッシュスクリーン関連API
   splashReady: () => ipcRenderer.invoke('splash-ready'),
+  // カスタムアイコン関連API
+  selectCustomIconFile: () => ipcRenderer.invoke('select-custom-icon-file'),
+  saveCustomIcon: (sourceFilePath: string, itemIdentifier: string) =>
+    ipcRenderer.invoke('save-custom-icon', sourceFilePath, itemIdentifier),
+  deleteCustomIcon: (customIconFileName: string) =>
+    ipcRenderer.invoke('delete-custom-icon', customIconFileName),
+  getCustomIcon: (customIconFileName: string) =>
+    ipcRenderer.invoke('get-custom-icon', customIconFileName),
 });

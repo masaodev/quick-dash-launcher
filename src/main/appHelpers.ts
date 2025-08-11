@@ -10,6 +10,7 @@ export const HOTKEY = 'Ctrl+Alt+W';
 export const CONFIG_FOLDER = path.join(app.getPath('userData'), 'config');
 export const ICONS_FOLDER = path.join(CONFIG_FOLDER, 'icons');
 export const FAVICONS_FOLDER = path.join(CONFIG_FOLDER, 'favicons');
+export const CUSTOM_ICONS_FOLDER = path.join(CONFIG_FOLDER, 'custom-icons');
 export const SCHEMES_FOLDER = path.join(ICONS_FOLDER, 'schemes');
 export const EXTENSIONS_FOLDER = path.join(ICONS_FOLDER, 'extensions');
 export const BACKUP_FOLDER = path.join(CONFIG_FOLDER, 'backup');
@@ -19,6 +20,7 @@ export function ensureDirectories(): void {
     CONFIG_FOLDER,
     ICONS_FOLDER,
     FAVICONS_FOLDER,
+    CUSTOM_ICONS_FOLDER,
     SCHEMES_FOLDER,
     EXTENSIONS_FOLDER,
     BACKUP_FOLDER,

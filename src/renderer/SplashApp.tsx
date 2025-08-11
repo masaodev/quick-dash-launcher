@@ -19,25 +19,25 @@ const SplashApp: React.FC<SplashAppProps> = ({ onReady }) => {
       { delay: 1100, text: '初期化完了', progress: 100 },
     ];
 
-    let timeouts: NodeJS.Timeout[] = [];
+    let timeouts: ReturnType<typeof setTimeout>[] = [];
 
     steps.forEach((step) => {
       const timeout = setTimeout(() => {
         setLoadingText(step.text);
         setProgress(step.progress);
-        
+
         if (step.progress === 100 && onReady) {
           setTimeout(() => {
             onReady();
           }, 300);
         }
       }, step.delay);
-      
+
       timeouts.push(timeout);
     });
 
     return () => {
-      timeouts.forEach(timeout => clearTimeout(timeout));
+      timeouts.forEach((timeout) => clearTimeout(timeout));
     };
   }, [onReady]);
 
@@ -46,13 +46,10 @@ const SplashApp: React.FC<SplashAppProps> = ({ onReady }) => {
       <div className="app-logo">Q</div>
       <h1 className="app-title">QuickDashLauncher</h1>
       <p className="app-subtitle">素早いアクセスを実現するランチャーアプリ</p>
-      
+
       <div className="loading-container">
         <div className="loading-bar">
-          <div 
-            className="loading-progress" 
-            style={{ width: `${progress}%`, animation: 'none' }}
-          />
+          <div className="loading-progress" style={{ width: `${progress}%`, animation: 'none' }} />
         </div>
         <div className="loading-text">
           {loadingText}

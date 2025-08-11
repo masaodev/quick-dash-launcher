@@ -19,6 +19,7 @@ export interface RegisterItem {
   targetTab: 'main' | 'temp';
   folderProcessing?: 'folder' | 'expand';
   icon?: string;
+  customIcon?: string;
   itemCategory: 'item' | 'dir';
   // フォルダ取込アイテムオプション
   dirOptions?: {
@@ -40,6 +41,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
 }) => {
   const [items, setItems] = useState<RegisterItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [customIconPreviews, setCustomIconPreviews] = useState<{ [index: number]: string }>({});
   const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -180,6 +182,11 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
 
       const item = await convertRawDataLineToRegisterItem(editingItem);
       setItems([item]);
+
+      // カスタムアイコンのプレビューを読み込み
+      if (item.customIcon) {
+        await loadCustomIconPreview(0, item.customIcon);
+      }
     } catch (error) {
       console.error('Error initializing from editing item:', error);
       alert('編集アイテムの初期化中にエラーが発生しました: ' + error);
@@ -205,6 +212,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
         args: args || undefined,
         targetTab: 'main',
         folderProcessing: itemType === 'folder' ? 'folder' : undefined,
+        customIcon: line.customIcon,
         itemCategory: 'item',
       };
     } else if (line.type === 'directive') {
@@ -390,6 +398,72 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     return ext ? basename.slice(0, -ext.length) : basename;
   };
 
+  // カスタムアイコンを選択
+  const handleSelectCustomIcon = async (index: number) => {
+    try {
+      const selectedFilePath = await window.electronAPI.selectCustomIconFile();
+      if (selectedFilePath) {
+        const item = items[index];
+        const itemIdentifier = item.path;
+        const customIconFileName = await window.electronAPI.saveCustomIcon(
+          selectedFilePath,
+          itemIdentifier
+        );
+
+        // アイテムのcustomIconを更新
+        const newItems = [...items];
+        newItems[index] = { ...newItems[index], customIcon: customIconFileName };
+        setItems(newItems);
+
+        // プレビュー用にアイコンを取得
+        const iconData = await window.electronAPI.getCustomIcon(customIconFileName);
+        if (iconData) {
+          setCustomIconPreviews((prev) => ({ ...prev, [index]: iconData }));
+        }
+      }
+    } catch (error) {
+      console.error('カスタムアイコン選択エラー:', error);
+      alert('カスタムアイコンの選択に失敗しました: ' + error);
+    }
+  };
+
+  // カスタムアイコンを削除
+  const handleDeleteCustomIcon = async (index: number) => {
+    try {
+      const item = items[index];
+      if (item.customIcon) {
+        await window.electronAPI.deleteCustomIcon(item.customIcon);
+
+        // アイテムのcustomIconを削除
+        const newItems = [...items];
+        newItems[index] = { ...newItems[index], customIcon: undefined };
+        setItems(newItems);
+
+        // プレビューも削除
+        setCustomIconPreviews((prev) => {
+          const newPreviews = { ...prev };
+          delete newPreviews[index];
+          return newPreviews;
+        });
+      }
+    } catch (error) {
+      console.error('カスタムアイコン削除エラー:', error);
+      alert('カスタムアイコンの削除に失敗しました: ' + error);
+    }
+  };
+
+  // 編集モードでカスタムアイコンのプレビューを読み込み
+  const loadCustomIconPreview = async (index: number, customIconFileName: string) => {
+    try {
+      const iconData = await window.electronAPI.getCustomIcon(customIconFileName);
+      if (iconData) {
+        setCustomIconPreviews((prev) => ({ ...prev, [index]: iconData }));
+      }
+    } catch (error) {
+      console.error('カスタムアイコンプレビュー読み込みエラー:', error);
+    }
+  };
+
   const handleItemChange = async (
     index: number,
     field: keyof RegisterItem,
@@ -490,6 +564,40 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                 <div key={index} className="register-item">
                   <div className="item-header">
                     {item.icon && <img src={item.icon} alt="" className="item-icon" />}
+                  </div>
+
+                  {/* カスタムアイコン設定 */}
+                  <div className="form-group">
+                    <label>カスタムアイコン:</label>
+                    <div className="custom-icon-section">
+                      {customIconPreviews[index] ? (
+                        <div className="custom-icon-preview">
+                          <img
+                            src={customIconPreviews[index]}
+                            alt="カスタムアイコン"
+                            className="custom-icon-img"
+                          />
+                          <button
+                            type="button"
+                            className="delete-icon-btn"
+                            onClick={() => handleDeleteCustomIcon(index)}
+                          >
+                            削除
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="no-custom-icon">
+                          <span>カスタムアイコン未設定</span>
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        className="select-icon-btn"
+                        onClick={() => handleSelectCustomIcon(index)}
+                      >
+                        ファイルから選択
+                      </button>
+                    </div>
                   </div>
 
                   <div className="form-group">

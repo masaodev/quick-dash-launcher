@@ -1,6 +1,6 @@
 import * as path from 'path';
 
-import { BrowserWindow, Menu } from 'electron';
+import { BrowserWindow } from 'electron';
 import { windowLogger } from '@common/logger';
 
 import { SettingsService } from './services/settingsService.js';
@@ -55,7 +55,7 @@ export async function createAdminWindow(): Promise<BrowserWindow> {
 
   // メニューバーを確実に非表示にする
   adminWindow.setMenuBarVisibility(false);
-  
+
   // メニューを完全に削除（Altキーでも表示されないようにする）
   adminWindow.setMenu(null);
 

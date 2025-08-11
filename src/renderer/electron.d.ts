@@ -81,6 +81,13 @@ export interface ElectronAPI {
     isModal: boolean,
     requiredSize?: { width: number; height: number }
   ) => Promise<void>;
+  // カスタムアイコン関連API
+  selectCustomIconFile: () => Promise<string | null>;
+  saveCustomIcon: (sourceFilePath: string, itemIdentifier: string) => Promise<string>;
+  deleteCustomIcon: (customIconFileName: string) => Promise<void>;
+  getCustomIcon: (customIconFileName: string) => Promise<string | null>;
+  // スプラッシュスクリーン関連API
+  splashReady: () => Promise<boolean>;
 }
 
 declare global {

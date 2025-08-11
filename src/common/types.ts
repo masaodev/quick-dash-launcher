@@ -49,6 +49,8 @@ export interface RawDataLine {
   type: 'directive' | 'item' | 'comment' | 'empty';
   /** この行が含まれる元のデータファイル */
   sourceFile: 'data.txt' | 'data2.txt';
+  /** カスタムアイコンのファイル名（custom-iconsフォルダ内の相対パス、オプション） */
+  customIcon?: string;
 }
 
 /**
