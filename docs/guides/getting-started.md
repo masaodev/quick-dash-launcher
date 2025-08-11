@@ -22,7 +22,7 @@ QuickDashLauncherは、グローバルホットキー（Ctrl+Alt+W）でWebサ�
 
 - **フロントエンド**: React + TypeScript + Vite
 - **バックエンド**: Electron (メインプロセス)
-- **開発環境**: WSL2 + PowerShell（ビルド時）
+- **開発環境**: Windows
 - **パッケージング**: electron-builder
 
 ## セットアップ
@@ -31,7 +31,7 @@ QuickDashLauncherは、グローバルホットキー（Ctrl+Alt+W）でWebサ�
 
 - Node.js (最新LTS版推奨)
 - npm
-- Windows環境（WSL2も対応）
+- Windows環境
 
 ### インストール
 
@@ -99,8 +99,7 @@ dir,C:\Scripts,filter=*.ps1,prefix=Script
 ## 制約事項
 
 1. **Windows専用アプリケーション** - クロスプラットフォーム非対応
-2. **WSL2環境でのビルド時**: PowerShellコマンドを使用する必要がある
-3. **テストフレームワーク未導入** - 手動テストのみ実施
+2. **テストフレームワーク**: Playwright（E2E）+ Vitest（ユニット）導入済み
 
 ## 次のステップ
 

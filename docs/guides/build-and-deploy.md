@@ -11,15 +11,6 @@ npm run start           # ビルドして実行
 npm run dist            # Windowsインストーラーの作成
 ```
 
-## WSL2環境でのビルド
-
-WSL2環境からビルドするときは、Windows上でビルドさせるために、PowerShellを使ってください：
-
-```bash
-powershell.exe -Command "npm run build"
-powershell.exe -Command "npm run dist"
-```
-
 ## ビルドシステム
 
 Viteベースのビルドシステムを使用:
@@ -37,35 +28,9 @@ Viteベースのビルドシステムを使用:
 ## 重要な制約事項
 
 1. **Windows専用アプリケーション** - クロスプラットフォーム非対応
-2. **WSL2環境でのビルド時**: PowerShellコマンドを使用する必要がある
-3. **テストフレームワーク未導入** - 手動テストのみ実施
+2. **テストフレームワーク**: Playwright（E2E）+ Vitest（ユニット）導入済み
 
 ## トラブルシューティング
-
-### WSL2環境での問題
-
-#### ビルドエラー
-**問題**: WSL2でnpm run buildが失敗する
-**原因**: WindowsネイティブのモジュールがLinux環境で動作しない
-**解決策**: PowerShell経由でコマンドを実行
-```bash
-powershell.exe -Command "npm run build"
-powershell.exe -Command "npm run dist"
-```
-
-#### Rollupモジュールエラー（WSL2環境）
-**問題**: `Cannot find module @rollup/rollup-linux-x64-gnu`エラーが発生
-**原因**: WSL2でnpmの依存関係が正しくインストールされない
-**解決策**: 
-1. PowerShell経由でビルドを実行:
-   ```bash
-   powershell.exe -Command "npm run build"
-   ```
-2. または、node_modulesとpackage-lock.jsonを削除して再インストール:
-   ```bash
-   rm -rf node_modules package-lock.json
-   npm install
-   ```
 
 ### ビルド関連の問題
 

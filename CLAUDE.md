@@ -28,15 +28,6 @@ npm run type-check      # TypeScriptの型チェック
 npm run format          # Prettierによるコード整形
 ```
 
-### WSL2環境でのビルド
-
-WSL2環境からビルドするときは、Windows上でビルドさせるために、PowerShellを使ってください：
-
-```bash
-powershell.exe -Command "npm run build"
-powershell.exe -Command "npm run dist"
-```
-
 ## テストコマンド
 
 ### 単体テスト（Vitest）
@@ -88,7 +79,6 @@ npm run test:e2e:headed # ヘッド付きでE2Eテスト実行
 ## 技術スタック・制約事項
 
 - **Windows専用アプリケーション**（React + TypeScript + Vite + Electron）
-- **WSL2環境でのビルド時**: PowerShellコマンドを使用
 - **テストフレームワーク**: Playwright（E2E）+ Vitest（ユニット）導入済み
 
 ### 開発時の重要な注意事項

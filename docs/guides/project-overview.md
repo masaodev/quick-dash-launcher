@@ -19,14 +19,13 @@ QuickDashLauncherは、グローバルホットキー（Ctrl+Alt+W）でWebサ�
 - **フロントエンド**: React + TypeScript + Vite
 - **バックエンド**: Electron (メインプロセス)
 - **スタイリング**: CSS変数ベースのデザインシステム
-- **開発環境**: WSL2 + PowerShell（ビルド時）
+- **開発環境**: Windows
 - **パッケージング**: electron-builder
 
 ## 重要な制約事項
 
 1. **Windows専用アプリケーション** - クロスプラットフォーム非対応
-2. **WSL2環境でのビルド時**: PowerShellコマンドを使用する必要がある
-3. **テストフレームワーク**: Playwright（E2E）+ Vitest（ユニット）を導入済み
+2. **テストフレームワーク**: Playwright（E2E）+ Vitest（ユニット）を導入済み
 
 ## 関連ドキュメント
 
