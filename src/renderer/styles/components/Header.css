@@ -8,9 +8,17 @@
   -webkit-app-region: drag;
 }
 
-.search-box {
+.search-box-container {
   flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-box {
+  width: 100%;
   padding: var(--spacing-sm) var(--spacing-md);
+  padding-right: calc(var(--spacing-md) + 24px); /* クリアボタン分の余白 */
   font-size: var(--font-size-lg);
   font-family: var(--font-family);
   border: var(--border-normal);
@@ -23,6 +31,35 @@
 .search-box:focus {
   border-color: var(--color-primary);
   box-shadow: var(--focus-ring);
+}
+
+.search-clear-button {
+  position: absolute;
+  right: var(--spacing-sm);
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: var(--border-radius-sm);
+  font-size: 20px;
+  line-height: 1;
+  color: var(--color-gray-600);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-normal);
+  -webkit-app-region: no-drag;
+}
+
+.search-clear-button:hover {
+  background-color: var(--bg-hover);
+  color: var(--color-gray-800);
+}
+
+.search-clear-button:active {
+  background-color: var(--color-gray-400);
 }
 
 .action-buttons {
@@ -62,8 +99,9 @@
 }
 
 .action-button.pin-normal:hover {
-  background-color: var(--bg-hover);
-  border-color: var(--color-gray-600);
+  background-color: #e3f2fd !important;  /* 薄い青色 */
+  border-color: #42a5f5;
+  box-shadow: 0 2px 8px rgba(66, 165, 245, 0.3);
 }
 
 .action-button.pin-always-on-top {
@@ -73,8 +111,10 @@
 }
 
 .action-button.pin-always-on-top:hover {
-  background-color: #c82333;
-  border-color: #c82333;
+  background-color: #ff6b6b !important;  /* 明るい赤に変更 */
+  border-color: #ff6b6b;
+  box-shadow: 0 2px 8px rgba(220, 53, 69, 0.4);
+  transform: scale(1.05);
 }
 
 .action-button.pin-stay-visible {
@@ -84,8 +124,17 @@
 }
 
 .action-button.pin-stay-visible:hover {
-  background-color: var(--color-primary-hover);
-  border-color: var(--color-primary-hover);
+  background-color: #42a5f5 !important;  /* 明るい青に変更 */
+  border-color: #42a5f5;
+  box-shadow: 0 2px 8px rgba(0, 120, 212, 0.4);
+  transform: scale(1.05);
+}
+
+/* アクティブ状態のフィードバック */
+.action-button.pin-normal:active,
+.action-button.pin-always-on-top:active,
+.action-button.pin-stay-visible:active {
+  transform: scale(0.95);
 }
 
 /* 旧スタイルとの互換性（非推奨） */

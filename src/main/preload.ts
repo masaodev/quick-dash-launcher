@@ -101,4 +101,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   copyToClipboard: (text: string) => ipcRenderer.invoke('copy-to-clipboard', text),
   setModalMode: (isModal: boolean, requiredSize?: { width: number; height: number }) =>
     ipcRenderer.invoke('set-modal-mode', isModal, requiredSize),
+  // スプラッシュスクリーン関連API
+  splashReady: () => ipcRenderer.invoke('splash-ready'),
 });

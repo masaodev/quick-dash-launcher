@@ -279,13 +279,25 @@ const EditModeView: React.FC<EditModeViewProps> = ({
           <span className="editing-files">編集中: {getFileNames()}</span>
         </div>
         <div className="edit-mode-search">
-          <input
-            type="text"
-            placeholder="行の内容を検索..."
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="search-input"
-          />
+          <div className="search-input-container">
+            <input
+              type="text"
+              placeholder="行の内容を検索..."
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="search-input"
+            />
+            {searchQuery && (
+              <button
+                className="search-clear-button"
+                onClick={() => onSearchChange('')}
+                type="button"
+                aria-label="検索をクリア"
+              >
+                ×
+              </button>
+            )}
+          </div>
         </div>
         <div className="edit-mode-actions">
           <button onClick={() => setIsBookmarkModalOpen(true)} className="import-bookmark-button">

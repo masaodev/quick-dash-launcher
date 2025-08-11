@@ -184,6 +184,66 @@ src/renderer/styles/
 }
 ```
 
+#### 検索ボックスパターン
+クリアボタン付き検索入力欄の共通パターン
+
+```css
+/* コンテナ */
+.search-input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* 入力フィールド */
+.search-input {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  padding-right: calc(var(--spacing-md) + 24px); /* クリアボタン分の余白 */
+  font-size: var(--font-size-base);
+  border: var(--border-normal);
+  border-radius: var(--border-radius);
+  outline: none;
+  transition: var(--transition-normal);
+}
+
+.search-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: var(--focus-ring);
+}
+
+/* クリアボタン */
+.search-clear-button {
+  position: absolute;
+  right: var(--spacing-sm);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: var(--border-radius-sm);
+  font-size: 20px;
+  line-height: 1;
+  color: var(--color-gray-600);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-normal);
+}
+
+.search-clear-button:hover {
+  background-color: var(--bg-hover);
+  color: var(--color-gray-800);
+}
+
+.search-clear-button:active {
+  background-color: var(--color-gray-400);
+}
+```
+
 ## 使用方法
 
 ### 1. 新しいコンポーネントの作成
