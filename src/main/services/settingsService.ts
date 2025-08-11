@@ -168,7 +168,7 @@ export class SettingsService {
 
     // 基本的なパターンチェック
     const pattern =
-      /^(Ctrl|Alt|Shift|CmdOrCtrl|Command|Cmd)\+(Ctrl|Alt|Shift|CmdOrCtrl|Command|Cmd|[A-Z0-9])+(\+[A-Z0-9])*$/;
+      /^(Ctrl|Alt|Shift|CmdOrCtrl|Command|Cmd)\+(Ctrl|Alt|Shift|CmdOrCtrl|Command|Cmd|[A-Z0-9]|Space|Enter|Tab|Escape|Delete|Backspace|F[1-9]|F1[0-2])+(\+([A-Z0-9]|Space|Enter|Tab|Escape|Delete|Backspace|F[1-9]|F1[0-2]))*$/;
     if (!pattern.test(hotkey)) {
       return { isValid: false, reason: 'ホットキーの形式が正しくありません' };
     }
