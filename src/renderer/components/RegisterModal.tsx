@@ -49,10 +49,16 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
       // モーダルが閉じられたときの処理
       document.body.style.overflow = 'auto';
       window.electronAPI.setModalMode(false);
+      // カスタムアイコンプレビューをクリア
+      setCustomIconPreviews({});
+      setItems([]);
       return;
     }
 
-    // モーダルが開いたとき
+    // モーダルが開いたとき、まず前回の状態をクリア
+    setCustomIconPreviews({});
+    setItems([]);
+    
     if (editingItem) {
       debugInfo('RegisterModal opened in edit mode:', editingItem);
       initializeFromEditingItem();
