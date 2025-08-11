@@ -67,11 +67,17 @@ const EditModeView: React.FC<EditModeViewProps> = ({
         newContent = `dir,${item.path}`;
       }
     } else {
-      // アイテム行の場合：名前,パス,引数,元パス の形式
+      // アイテム行の場合：名前,パス,引数,カスタムアイコン の形式
       newType = 'item';
       const args = item.args || '';
-      const originalPath = originalLine.content.split(',')[3] || item.path;
-      newContent = `${item.name},${item.path},${args},${originalPath}`;
+      const customIcon = item.customIcon || '';
+
+      // カスタムアイコンが設定されている場合は4番目のフィールドに追加
+      if (customIcon) {
+        newContent = `${item.name},${item.path},${args},${customIcon}`;
+      } else {
+        newContent = `${item.name},${item.path},${args}`;
+      }
     }
 
     return {

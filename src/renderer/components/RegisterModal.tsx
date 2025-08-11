@@ -197,11 +197,12 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
 
   const convertRawDataLineToRegisterItem = async (line: RawDataLine): Promise<RegisterItem> => {
     if (line.type === 'item') {
-      // アイテム行の場合：名前,パス,引数,元パス
+      // アイテム行の場合：名前,パス,引数,カスタムアイコン
       const parts = line.content.split(',');
       const name = parts[0]?.trim() || '';
       const path = parts[1]?.trim() || '';
       const args = parts[2]?.trim() || '';
+      const customIcon = parts[3]?.trim() || '';
 
       const itemType = await detectItemType(path);
 
@@ -212,7 +213,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
         args: args || undefined,
         targetTab: 'main',
         folderProcessing: itemType === 'folder' ? 'folder' : undefined,
-        customIcon: line.customIcon,
+        customIcon: customIcon || line.customIcon,
         itemCategory: 'item',
       };
     } else if (line.type === 'directive') {

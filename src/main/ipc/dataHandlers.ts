@@ -353,11 +353,33 @@ async function loadRawDataFiles(configFolder: string): Promise<RawDataLine[]> {
 
       lines.forEach((line, index) => {
         const lineType = detectLineType(line);
+        let customIcon: string | undefined = undefined;
+
+        // アイテム行の場合、customIconフィールドを抽出
+        if (lineType === 'item') {
+          try {
+            const parts = line.split(',');
+            // 4番目のフィールドがcustomIconフィールド
+            if (parts.length >= 4 && parts[3].trim()) {
+              customIcon = parts[3].trim();
+              // ダブルクォートで囲まれている場合は除去
+              if (customIcon.startsWith('"') && customIcon.endsWith('"')) {
+                customIcon = customIcon.slice(1, -1);
+                // エスケープされたダブルクォートを元に戻す
+                customIcon = customIcon.replace(/""/g, '"');
+              }
+            }
+          } catch {
+            // エラーが発生した場合はcustomIconをundefinedのまま
+          }
+        }
+
         rawLines.push({
           lineNumber: index + 1,
           content: line,
           type: lineType,
           sourceFile: fileName,
+          customIcon,
         });
       });
     }
@@ -422,6 +444,7 @@ interface RegisterItem {
   args?: string;
   folderProcessing?: 'folder' | 'expand';
   icon?: string;
+  customIcon?: string;
   itemCategory: 'item' | 'dir';
   // フォルダ取込アイテムオプション
   dirOptions?: {
@@ -508,9 +531,19 @@ async function registerItems(configFolder: string, items: RegisterItem[]): Promi
         return dirLine;
       } else {
         let line = `${item.name},${item.path}`;
+
+        // 引数フィールドを追加
         if (item.args) {
           line += `,${item.args}`;
+        } else {
+          line += ',';
         }
+
+        // カスタムアイコンフィールドを追加
+        if (item.customIcon) {
+          line += `,${item.customIcon}`;
+        }
+
         return line;
       }
     });

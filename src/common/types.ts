@@ -11,6 +11,8 @@ export interface LauncherItem {
   type: 'url' | 'file' | 'folder' | 'app' | 'customUri';
   /** アイテムのアイコン（base64エンコードされたデータURL、オプション） */
   icon?: string;
+  /** カスタムアイコンのファイル名（custom-iconsフォルダ内の相対パス、オプション） */
+  customIcon?: string;
   /** 実行時のコマンドライン引数（オプション） */
   args?: string;
   /** ショートカットファイル（.lnk）の元のパス（オプション） */

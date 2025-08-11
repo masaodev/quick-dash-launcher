@@ -34,14 +34,16 @@ function formatItemToCSV(item: LauncherItem): string {
 
   let csvLine = `${escapeCSV(item.name)},${escapeCSV(item.path)}`;
 
+  // 引数フィールドを追加
   if (item.args && item.args.trim()) {
     csvLine += `,${escapeCSV(item.args)}`;
   } else {
     csvLine += ',';
   }
 
-  if (item.originalPath && item.originalPath.trim()) {
-    csvLine += `,${escapeCSV(item.originalPath)}`;
+  // カスタムアイコンフィールドを追加
+  if (item.customIcon && item.customIcon.trim()) {
+    csvLine += `,${escapeCSV(item.customIcon)}`;
   }
 
   return csvLine;

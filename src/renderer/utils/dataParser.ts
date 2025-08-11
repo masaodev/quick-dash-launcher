@@ -49,7 +49,7 @@ export function parseDataFiles(dataFiles: DataFile[]): {
         return;
       }
 
-      const [name, itemPath, argsField, originalPathField] = parts;
+      const [name, itemPath, argsField, customIconField] = parts;
 
       // Skip duplicates - check path + args combination
       const uniqueKey = argsField ? `${itemPath}|${argsField}` : itemPath;
@@ -63,7 +63,7 @@ export function parseDataFiles(dataFiles: DataFile[]): {
         path: itemPath,
         type: detectItemType(itemPath),
         args: argsField && argsField.trim() ? argsField : undefined,
-        originalPath: originalPathField && originalPathField.trim() ? originalPathField : undefined,
+        customIcon: customIconField && customIconField.trim() ? customIconField : undefined,
         sourceFile,
         lineNumber: index + 1,
         isDirExpanded: false,
