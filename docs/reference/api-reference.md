@@ -98,8 +98,8 @@ try {
 interface LauncherItem {
   name: string;
   path: string;
-  argument?: string;
-  originalPath?: string;
+  args?: string;
+  customIcon?: string;
 }
 ```
 

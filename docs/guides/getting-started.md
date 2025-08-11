@@ -58,7 +58,7 @@ QuickDashLauncherでは、データファイル（data.txt、data2.txt）内の�
 
 **記述形式:**
 ```
-表示名,実行先[,引数1][,引数2][,引数3]...
+表示名,実行先[,引数][,カスタムアイコン]
 ```
 
 **例:**
@@ -67,13 +67,15 @@ Notepad++,C:\Program Files\Notepad++\notepad++.exe
 GitHub,https://github.com
 プロジェクトフォルダ,C:\Users\Documents\Projects
 重要な資料,C:\Users\Documents\important.pdf
-Visual Studio,C:\Program Files\Microsoft Visual Studio\devenv.exe,/rootsuffix,Exp
-PowerShell,powershell.exe,-ExecutionPolicy,Bypass,-File,script.ps1
+Visual Studio,C:\Program Files\Microsoft Visual Studio\devenv.exe,/rootsuffix Exp
+PowerShell,powershell.exe,-ExecutionPolicy Bypass -File script.ps1
+Netflix,https://www.netflix.com/browse,,7439edeb.png
 ```
 
 - 実行先の内容（URL、実行ファイル、フォルダ等）による区別はなし
 - システムが自動的にタイプを判定して適切に処理
-- 第3項目以降は実行時の引数（複数設定可能）
+- 第3項目は実行時の引数（オプション）
+- 第4項目はカスタムアイコンのファイル名（オプション）
 
 ### **2. フォルダ取込アイテム**
 指定フォルダの内容を動的にインポートする機能
