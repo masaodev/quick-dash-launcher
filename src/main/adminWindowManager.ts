@@ -1,6 +1,6 @@
 import * as path from 'path';
 
-import { BrowserWindow } from 'electron';
+import { BrowserWindow, Menu } from 'electron';
 import { windowLogger } from '@common/logger';
 
 import { SettingsService } from './services/settingsService.js';
@@ -36,6 +36,7 @@ export async function createAdminWindow(): Promise<BrowserWindow> {
     center: true,
     alwaysOnTop: false, // 管理ウィンドウは必ずしも最前面にしない
     frame: true, // 管理ウィンドウは通常のフレームを持つ
+    autoHideMenuBar: true, // メニューバーを自動的に非表示にする
     show: false,
     title: 'QuickDashLauncher - 設定・管理',
     webPreferences: {
@@ -51,6 +52,12 @@ export async function createAdminWindow(): Promise<BrowserWindow> {
   } else {
     adminWindow.loadFile(path.join(__dirname, '../admin.html'));
   }
+
+  // メニューバーを確実に非表示にする
+  adminWindow.setMenuBarVisibility(false);
+  
+  // メニューを完全に削除（Altキーでも表示されないようにする）
+  adminWindow.setMenu(null);
 
   // デバッグ用：開発者ツールを開く（必要に応じてコメントアウト）
   // adminWindow.webContents.openDevTools({ mode: 'detach' });
