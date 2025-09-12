@@ -1,6 +1,6 @@
 {
   "name": "quick-dash-launcher",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "main": "dist/main/main.js",
   "scripts": {
     "dev": "cross-env NODE_ENV=development ELECTRON_IS_DEV=1 vite",
@@ -93,11 +93,15 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         },
         {
           "target": "portable",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ]
     },
