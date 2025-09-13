@@ -254,7 +254,6 @@ const EditModeView: React.FC<EditModeViewProps> = ({
     return keywords.every((keyword) => lineText.includes(keyword));
   });
 
-
   // rawLinesが変更されたらworkingLinesも更新
   useEffect(() => {
     setWorkingLines(rawLines);
@@ -363,7 +362,7 @@ const EditModeView: React.FC<EditModeViewProps> = ({
               }
             };
 
-            const sortedLines = [...filteredLines].sort((a, b) => {
+            const sortedLines = [...mergedLines].sort((a, b) => {
               const typeOrder = { directive: 0, item: 1, comment: 2, empty: 3 };
               const typeA = typeOrder[a.type] ?? 99;
               const typeB = typeOrder[b.type] ?? 99;

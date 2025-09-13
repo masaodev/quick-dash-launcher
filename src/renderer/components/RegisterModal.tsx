@@ -58,7 +58,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     // モーダルが開いたとき、まず前回の状態をクリア
     setCustomIconPreviews({});
     setItems([]);
-    
+
     if (editingItem) {
       debugInfo('RegisterModal opened in edit mode:', editingItem);
       initializeFromEditingItem();
