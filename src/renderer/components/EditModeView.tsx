@@ -254,17 +254,6 @@ const EditModeView: React.FC<EditModeViewProps> = ({
     return keywords.every((keyword) => lineText.includes(keyword));
   });
 
-  useEffect(() => {
-    const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.key === 'a') {
-        e.preventDefault();
-        handleSelectAll(true);
-      }
-    };
-
-    window.addEventListener('keydown', handleGlobalKeyDown);
-    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, []);
 
   // rawLinesが変更されたらworkingLinesも更新
   useEffect(() => {
