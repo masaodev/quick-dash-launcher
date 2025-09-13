@@ -57,6 +57,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onSetActiveTab: (callback: (tab: 'settings' | 'edit' | 'other') => void) => {
     ipcRenderer.on('set-active-tab', (_event, tab) => callback(tab));
   },
+  onDataChanged: (callback: () => void) => {
+    ipcRenderer.on('data-changed', callback);
+  },
   // 新しい3段階ピンモードAPI
   getWindowPinMode: (): Promise<WindowPinMode> => ipcRenderer.invoke('get-window-pin-mode'),
   cycleWindowPinMode: () => ipcRenderer.invoke('cycle-window-pin-mode'),

@@ -95,6 +95,12 @@ const App: React.FC = () => {
     document.addEventListener('dragleave', handleDragLeave);
     document.addEventListener('drop', handleDrop);
 
+    // データ変更通知のリスナーを設定
+    window.electronAPI.onDataChanged(() => {
+      debugLog('データ変更通知を受信、データを再読み込みします');
+      loadItems();
+    });
+
     return () => {
       document.removeEventListener('dragover', handleDragOver);
       document.removeEventListener('dragleave', handleDragLeave);

@@ -1,7 +1,7 @@
 import * as path from 'path';
 import * as fs from 'fs';
 
-import { ipcMain, shell, dialog } from 'electron';
+import { ipcMain, shell, dialog, BrowserWindow } from 'electron';
 import { minimatch } from 'minimatch';
 import { dataLogger } from '@common/logger';
 import { FileUtils } from '@common/utils/fileUtils';
@@ -559,6 +559,17 @@ function isDirectory(filePath: string): boolean {
   return FileUtils.isDirectory(filePath);
 }
 
+// データ変更を全ウィンドウに通知する関数
+function notifyDataChanged() {
+  const allWindows = BrowserWindow.getAllWindows();
+  allWindows.forEach((window) => {
+    if (!window.isDestroyed()) {
+      window.webContents.send('data-changed');
+    }
+  });
+  dataLogger.info('データ変更通知を送信しました', { windowCount: allWindows.length });
+}
+
 export function setupDataHandlers(configFolder: string) {
   ipcMain.handle('get-config-folder', () => configFolder);
 
@@ -567,7 +578,9 @@ export function setupDataHandlers(configFolder: string) {
   });
 
   ipcMain.handle('register-items', async (_event, items: RegisterItem[]) => {
-    return await registerItems(configFolder, items);
+    await registerItems(configFolder, items);
+    notifyDataChanged();
+    return;
   });
 
   ipcMain.handle('is-directory', async (_event, filePath: string) => {
@@ -579,7 +592,9 @@ export function setupDataHandlers(configFolder: string) {
   });
 
   ipcMain.handle('save-raw-data-files', async (_event, rawLines: RawDataLine[]) => {
-    return await saveRawDataFiles(configFolder, rawLines);
+    await saveRawDataFiles(configFolder, rawLines);
+    notifyDataChanged();
+    return;
   });
 
   ipcMain.handle('select-bookmark-file', async () => {

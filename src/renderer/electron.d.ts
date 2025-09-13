@@ -32,6 +32,7 @@ export interface ElectronAPI {
   ) => void;
   onWindowShown: (callback: () => void) => void;
   onSetActiveTab: (callback: (tab: 'settings' | 'edit' | 'other') => void) => void;
+  onDataChanged: (callback: () => void) => void;
   // 新しい3段階ピンモードAPI
   getWindowPinMode: () => Promise<WindowPinMode>;
   cycleWindowPinMode: () => Promise<WindowPinMode>;
