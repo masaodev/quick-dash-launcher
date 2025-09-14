@@ -6,6 +6,7 @@ import {
   AppSettings,
   IconProgress,
   WindowPinMode,
+  SearchHistoryEntry,
 } from '../common/types';
 
 interface RegisterItem {
@@ -29,7 +30,7 @@ interface DeleteItemRequest {
 contextBridge.exposeInMainWorld('electronAPI', {
   getConfigFolder: () => ipcRenderer.invoke('get-config-folder'),
   loadDataFiles: () => ipcRenderer.invoke('load-data-files'),
-  openItem: (item: LauncherItem) => ipcRenderer.invoke('open-item', item),
+  openItem: (item: LauncherItem, searchQuery?: string) => ipcRenderer.invoke('open-item', item, searchQuery),
   openParentFolder: (item: LauncherItem) => ipcRenderer.invoke('open-parent-folder', item),
   openConfigFolder: () => ipcRenderer.invoke('open-config-folder'),
   openDataFile: () => ipcRenderer.invoke('open-data-file'),
@@ -114,4 +115,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('delete-custom-icon', customIconFileName),
   getCustomIcon: (customIconFileName: string) =>
     ipcRenderer.invoke('get-custom-icon', customIconFileName),
+  // 検索履歴関連API
+  loadSearchHistory: () => ipcRenderer.invoke('load-search-history'),
+  saveSearchHistory: (entries: SearchHistoryEntry[]) => ipcRenderer.invoke('save-search-history', entries),
+  addSearchHistoryEntry: (query: string) => ipcRenderer.invoke('add-search-history-entry', query),
+  clearSearchHistory: () => ipcRenderer.invoke('clear-search-history'),
 });

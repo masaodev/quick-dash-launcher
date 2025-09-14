@@ -10,6 +10,7 @@ import IconProgressBar from './components/IconProgressBar';
 import { parseDataFiles, filterItems } from './utils/dataParser';
 import { debugLog, debugInfo, logWarn } from './utils/debug';
 import { useIconProgress } from './hooks/useIconProgress';
+import { useSearchHistory } from './hooks/useSearchHistory';
 
 const App: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -22,6 +23,13 @@ const App: React.FC = () => {
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const { progressState } = useIconProgress();
+  const { 
+    historyState, 
+    navigateToPrevious, 
+    navigateToNext, 
+    resetNavigation, 
+    addHistoryEntry 
+  } = useSearchHistory();
 
   useEffect(() => {
     loadItems();
@@ -127,10 +135,28 @@ const App: React.FC = () => {
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     setSelectedIndex(0);
+    // ユーザーが手動で入力を変更した場合は履歴ナビゲーションをリセット
+    resetNavigation();
   };
 
   const handleKeyDown = async (e: React.KeyboardEvent) => {
     const filteredItems = filterItems(mainItems, searchQuery);
+
+    // 検索履歴のナビゲーション（Ctrl + 上下矢印）
+    if (e.ctrlKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const newQuery = e.key === 'ArrowUp' 
+        ? navigateToPrevious() 
+        : navigateToNext();
+        
+      if (newQuery !== null) {
+        setSearchQuery(newQuery);
+        setSelectedIndex(0);
+      }
+      return;
+    }
 
     switch (e.key) {
       case 'Enter':
@@ -138,18 +164,23 @@ const App: React.FC = () => {
         if (e.shiftKey && filteredItems[selectedIndex]) {
           await window.electronAPI.openParentFolder(filteredItems[selectedIndex]);
         } else if (filteredItems[selectedIndex]) {
-          await window.electronAPI.openItem(filteredItems[selectedIndex]);
+          // 検索クエリと一緒にアイテムを実行（履歴に記録される）
+          await window.electronAPI.openItem(filteredItems[selectedIndex], searchQuery);
         }
         break;
       case 'ArrowUp':
-        e.preventDefault();
-        e.stopPropagation();
-        setSelectedIndex((prev) => (prev > 0 ? prev - 1 : filteredItems.length - 1));
+        if (!e.ctrlKey) { // Ctrlキーが押されていない場合のみメニュー選択
+          e.preventDefault();
+          e.stopPropagation();
+          setSelectedIndex((prev) => (prev > 0 ? prev - 1 : filteredItems.length - 1));
+        }
         break;
       case 'ArrowDown':
-        e.preventDefault();
-        e.stopPropagation();
-        setSelectedIndex((prev) => (prev < filteredItems.length - 1 ? prev + 1 : 0));
+        if (!e.ctrlKey) { // Ctrlキーが押されていない場合のみメニュー選択
+          e.preventDefault();
+          e.stopPropagation();
+          setSelectedIndex((prev) => (prev < filteredItems.length - 1 ? prev + 1 : 0));
+        }
         break;
       case 'e':
         if (e.ctrlKey) {
@@ -161,7 +192,8 @@ const App: React.FC = () => {
   };
 
   const handleItemClick = async (item: LauncherItem) => {
-    await window.electronAPI.openItem(item);
+    // クリック時も検索クエリを履歴に記録
+    await window.electronAPI.openItem(item, searchQuery);
   };
 
   const handleFetchFavicon = async (forceAll: boolean = false) => {

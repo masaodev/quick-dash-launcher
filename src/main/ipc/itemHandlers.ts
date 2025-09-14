@@ -88,11 +88,29 @@ async function openParentFolder(
 }
 
 export function setupItemHandlers(getMainWindow: () => BrowserWindow | null) {
-  ipcMain.handle('open-item', async (_event, item: LauncherItem) => {
+  ipcMain.handle('open-item', async (_event, item: LauncherItem, searchQuery?: string) => {
+    // 検索クエリが提供された場合は履歴に追加
+    if (searchQuery && searchQuery.trim()) {
+      const { ipcMain: ipc } = await import('electron');
+      // 検索履歴エントリーを追加
+      ipc.emit('internal-add-history', searchQuery.trim());
+    }
+
     await openItem(item, getMainWindow());
   });
 
   ipcMain.handle('open-parent-folder', async (_event, item: LauncherItem) => {
     await openParentFolder(item, getMainWindow());
+  });
+
+  // 内部的な履歴追加イベント
+  ipcMain.on('internal-add-history', async (query: string) => {
+    try {
+      // 検索履歴エントリーを追加するIPCハンドラーを呼び出す
+      const { ipcMain: ipc } = await import('electron');
+      ipc.emit('add-search-history-entry-internal', query);
+    } catch (error) {
+      itemLogger.error('検索履歴の追加に失敗しました', { error, query });
+    }
   });
 }
