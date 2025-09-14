@@ -15,6 +15,7 @@ IPCハンドラーは機能ごとに分離（`src/main/ipc/`）:
 - `itemHandlers.ts`: アイテムの起動・フォルダー表示
 - `iconHandlers.ts`: ファビコン取得・アイコン抽出
 - `windowHandlers.ts`: ウィンドウ固定化制御
+- `historyHandlers.ts`: 検索履歴の読み書き・管理
 
 ## データ処理システム
 
