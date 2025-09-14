@@ -24,7 +24,7 @@ import {
   cycleWindowPinMode,
   setModalMode,
 } from './windowManager';
-import { closeAdminWindow } from './adminWindowManager';
+import { closeAdminWindow, setAppQuitting } from './adminWindowManager';
 import { createSplashWindow, closeSplashWindow } from './splashWindowManager';
 
 // const store = new Store(); // 将来の使用のために予約
@@ -90,6 +90,11 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
   }
+});
+
+app.on('before-quit', () => {
+  // 管理ウィンドウの終了フラグを設定
+  setAppQuitting(true);
 });
 
 app.on('will-quit', () => {
