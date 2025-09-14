@@ -139,3 +139,25 @@ export type WindowPinMode =
   | 'normal' // 通常モード: フォーカスが外れたら非表示、最上面ではない
   | 'alwaysOnTop' // 常に最上面モード: 常に最上面に表示、フォーカスが外れても非表示にならない
   | 'stayVisible'; // 表示固定モード: 最上面ではないが、フォーカスが外れても非表示にならない
+
+/**
+ * 検索履歴のエントリーを表すインターフェース
+ * ユーザーが実行時に入力した検索クエリと実行日時を保持する
+ */
+export interface SearchHistoryEntry {
+  /** 検索クエリ文字列 */
+  query: string;
+  /** 実行日時（ISO文字列形式） */
+  timestamp: string;
+}
+
+/**
+ * 検索履歴の状態管理用インターフェース
+ * キーボードナビゲーションでの履歴巡回に使用される
+ */
+export interface SearchHistoryState {
+  /** 履歴エントリーのリスト（最新が先頭） */
+  entries: SearchHistoryEntry[];
+  /** 現在選択中の履歴インデックス（-1は履歴を使用していない状態） */
+  currentIndex: number;
+}

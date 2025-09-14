@@ -6,6 +6,7 @@ import {
   AppSettings,
   IconProgress,
   WindowPinMode,
+  SearchHistoryEntry,
 } from '../common/types';
 
 interface RegisterItem {
@@ -114,4 +115,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('delete-custom-icon', customIconFileName),
   getCustomIcon: (customIconFileName: string) =>
     ipcRenderer.invoke('get-custom-icon', customIconFileName),
+  // 検索履歴関連API
+  loadSearchHistory: () => ipcRenderer.invoke('load-search-history'),
+  saveSearchHistory: (entries: SearchHistoryEntry[]) => ipcRenderer.invoke('save-search-history', entries),
+  addSearchHistoryEntry: (query: string) => ipcRenderer.invoke('add-search-history-entry', query),
+  clearSearchHistory: () => ipcRenderer.invoke('clear-search-history'),
 });
