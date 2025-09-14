@@ -68,6 +68,7 @@ npm run test:e2e:headed # ヘッド付きでE2Eテスト実行
 - **[ウィンドウ制御](docs/architecture/window-control.md)** - ウィンドウ管理システム
 
 ### 📚 リファレンス
+- **[データファイル形式仕様](docs/reference/data-file-format.md)** - data.txtファイル形式の完全仕様
 - **[APIリファレンス](docs/reference/api-reference.md)** - 主要API一覧
 - **[キーボードショートカット](docs/reference/keyboard-shortcuts.md)** - ショートカット一覧
 - **[画面構成](docs/reference/screen-list.md)** - UI仕様
