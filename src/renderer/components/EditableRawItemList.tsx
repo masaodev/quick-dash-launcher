@@ -214,12 +214,14 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
       const parts = line.content.split(',');
       const pathPart = parts[1]?.trim() || '';
       const argsPart = parts[2]?.trim() || '';
+      if (!pathPart) return '(パスなし)';
       return argsPart ? `${pathPart} ${argsPart}` : pathPart;
     } else if (line.type === 'directive') {
       // フォルダ取込アイテムの場合：フォルダパス＋オプション
       const parts = line.content.split(',');
       const pathPart = parts[1]?.trim() || '';
       const options = parts.slice(2).join(',').trim();
+      if (!pathPart) return '(フォルダパスなし)';
       return options ? `${pathPart} ${options}` : pathPart;
     } else {
       // コメント行や空行の場合：元の内容を表示
@@ -227,9 +229,59 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
     }
   };
 
+  const handleTypeSelection = (line: RawDataLine, newType: 'item' | 'directive') => {
+    let newContent = '';
+
+    if (newType === 'item') {
+      // 単一アイテムの場合：名前,パス,引数の形式（名前とパスは空で初期化）
+      newContent = ',';
+    } else if (newType === 'directive') {
+      // フォルダ取り込みの場合：dir,パスの形式（パスは空で初期化）
+      newContent = 'dir,';
+    }
+
+    const updatedLine = {
+      ...line,
+      content: newContent,
+      type: newType
+    };
+    onLineEdit(updatedLine);
+  };
+
+  const renderTypeCell = (line: RawDataLine) => {
+    if (line.type === 'empty') {
+      return (
+        <div className="type-selection">
+          <button
+            className="type-select-button item-button"
+            onClick={() => handleTypeSelection(line, 'item')}
+            title="単一アイテムとして設定"
+          >
+            📄 単一アイテム
+          </button>
+          <button
+            className="type-select-button folder-button"
+            onClick={() => handleTypeSelection(line, 'directive')}
+            title="フォルダ取り込みとして設定"
+          >
+            🗂️ フォルダ取り込み
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <>
+        <span className="type-icon">{getLineTypeIcon(line.type)}</span>
+        <span className="type-name">{getLineTypeDisplayName(line.type)}</span>
+      </>
+    );
+  };
+
   const renderEditableCell = (line: RawDataLine) => {
     const cellKey = getLineKey(line);
     const isEditing = editingCell === cellKey;
+    const isEmptyLine = line.type === 'empty';
 
     if (isEditing) {
       return (
@@ -242,6 +294,15 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
           className="edit-input"
           autoFocus
         />
+      );
+    }
+
+    if (isEmptyLine) {
+      // 空行の場合は編集不可として表示
+      return (
+        <div className="readonly-cell" title="空行の場合は編集できません。まず種類を選択してください。">
+          (まず種類を選択してください)
+        </div>
       );
     }
 
@@ -297,8 +358,7 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
                 </td>
                 <td className="line-number-column">{line.lineNumber}</td>
                 <td className="type-column">
-                  <span className="type-icon">{getLineTypeIcon(line.type)}</span>
-                  <span className="type-name">{getLineTypeDisplayName(line.type)}</span>
+                  {renderTypeCell(line)}
                 </td>
                 <td className="name-column">{renderNameCell(line)}</td>
                 <td className="content-column">{renderEditableCell(line)}</td>
@@ -308,6 +368,7 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
                       className="cell-edit-button"
                       onClick={() => handleCellEdit(line)}
                       title="セル編集"
+                      disabled={line.type === 'empty'}
                     >
                       📝
                     </button>
@@ -315,6 +376,7 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
                       className="detail-edit-button"
                       onClick={() => onEditClick(line)}
                       title="詳細編集"
+                      disabled={line.type === 'empty'}
                     >
                       ✏️
                     </button>

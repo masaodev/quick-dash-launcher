@@ -74,7 +74,7 @@ QuickDashLauncher
 |------------------|----------|--------|----------|----------|
 | **AdminTabContainer** | `src/renderer/components/AdminTabContainer.tsx` | 管理ウィンドウ | 管理ウィンドウ表示時 | タブ管理、画面切り替え |
 | **EditModeView** | `src/renderer/components/EditModeView.tsx` | AdminTabContainer | アイテム管理タブ選択時 | アイテム管理のメインビュー、ヘッダー・ステータスバー |
-| **EditableRawItemList** | `src/renderer/components/EditableRawItemList.tsx` | EditModeView | アイテム管理タブ選択時 | 編集可能リスト、セル編集、整列・削除 |
+| **EditableRawItemList** | `src/renderer/components/EditableRawItemList.tsx` | EditModeView | アイテム管理タブ選択時 | 編集可能リスト、セル編集、整列・削除、空行種類選択 |
 | **SettingsTab** | `src/renderer/components/SettingsTab.tsx` | AdminTabContainer | 設定タブ選択時 | アプリケーション設定、ホットキー・ウィンドウサイズ設定 |
 | **HotkeyInput** | `src/renderer/components/HotkeyInput.tsx` | SettingsTab | 設定タブ選択時 | ホットキー入力・変更コンポーネント |
 | **AdminOtherTab** | `src/renderer/components/AdminOtherTab.tsx` | AdminTabContainer | その他タブ選択時 | 追加機能・管理ツール |
