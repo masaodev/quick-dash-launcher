@@ -8,6 +8,7 @@ import { SettingsService } from './services/settingsService.js';
 let adminWindow: BrowserWindow | null = null;
 let isAdminWindowVisible: boolean = false;
 let initialTab: 'settings' | 'edit' | 'other' = 'settings';
+let isAppQuitting: boolean = false;
 
 /**
  * 管理ウィンドウを作成し、初期設定を行う
@@ -63,11 +64,13 @@ export async function createAdminWindow(): Promise<BrowserWindow> {
   // adminWindow.webContents.openDevTools({ mode: 'detach' });
 
   adminWindow.on('close', (event) => {
-    // ウィンドウを完全に閉じずに非表示にする
-    event.preventDefault();
-    if (adminWindow) {
-      adminWindow.hide();
-      isAdminWindowVisible = false;
+    // アプリケーション終了時以外はウィンドウを完全に閉じずに非表示にする
+    if (!isAppQuitting) {
+      event.preventDefault();
+      if (adminWindow) {
+        adminWindow.hide();
+        isAdminWindowVisible = false;
+      }
     }
   });
 
@@ -199,4 +202,12 @@ export function getInitialTab(): 'settings' | 'edit' | 'other' {
  */
 export function resetInitialTab(): void {
   initialTab = 'settings';
+}
+
+/**
+ * アプリケーション終了フラグを設定する
+ * @param quitting アプリケーションが終了中かどうか
+ */
+export function setAppQuitting(quitting: boolean): void {
+  isAppQuitting = quitting;
 }

@@ -46,7 +46,7 @@ export function setupWindowHandlers(
     if (tray) {
       tray.destroy();
     }
-    app.exit(0);
+    app.quit();
   });
 
   ipcMain.handle('set-edit-mode', async (_event, editMode: boolean) => {

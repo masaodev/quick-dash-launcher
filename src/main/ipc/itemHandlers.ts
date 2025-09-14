@@ -1,5 +1,6 @@
 import { ipcMain, shell, BrowserWindow } from 'electron';
 import { itemLogger } from '@common/logger';
+import { exec } from 'child_process';
 
 import { LauncherItem } from '../../common/types';
 
@@ -26,8 +27,24 @@ async function openItem(item: LauncherItem, mainWindow: BrowserWindow | null): P
       if (launchPath.endsWith('.lnk')) {
         await shell.openPath(launchPath);
       } else if (item.args) {
-        const { spawn } = await import('child_process');
-        spawn(launchPath, item.args.split(' '), { detached: true });
+        // Windowsでは start コマンドを使って完全に独立したプロセスとして起動
+        if (process.platform === 'win32') {
+          // startコマンドを使って新しいウィンドウで実行
+          const command = `start "" "${launchPath}" ${item.args}`;
+          exec(command, { windowsHide: false }, (error) => {
+            if (error) {
+              itemLogger.error('アイテムの起動に失敗しました (start command)', { error: error.message });
+            }
+          });
+        } else {
+          // Unix系OSの場合は従来通りspawnを使用
+          const { spawn } = await import('child_process');
+          const child = spawn(launchPath, item.args.split(' '), {
+            detached: true,
+            stdio: 'ignore'
+          });
+          child.unref();
+        }
       } else {
         await shell.openPath(launchPath);
       }
