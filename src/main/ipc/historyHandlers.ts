@@ -34,10 +34,4 @@ export function setupHistoryHandlers(configFolder: string) {
     if (!searchHistoryService) return;
     searchHistoryService.clearHistory();
   });
-
-  // 内部的な履歴追加イベント（itemHandlersから呼ばれる）
-  ipcMain.on('add-search-history-entry-internal', async (query: string) => {
-    if (!searchHistoryService) return;
-    searchHistoryService.addHistoryEntry(query);
-  });
 }

@@ -164,8 +164,12 @@ const App: React.FC = () => {
         if (e.shiftKey && filteredItems[selectedIndex]) {
           await window.electronAPI.openParentFolder(filteredItems[selectedIndex]);
         } else if (filteredItems[selectedIndex]) {
-          // 検索クエリと一緒にアイテムを実行（履歴に記録される）
-          await window.electronAPI.openItem(filteredItems[selectedIndex], searchQuery);
+          // 検索クエリがある場合は履歴に追加（フロントエンド側で即座に）
+          if (searchQuery.trim()) {
+            await addHistoryEntry(searchQuery.trim());
+          }
+          // アイテムを実行（検索クエリはバックエンドに送らない）
+          await window.electronAPI.openItem(filteredItems[selectedIndex]);
         }
         break;
       case 'ArrowUp':
@@ -192,8 +196,12 @@ const App: React.FC = () => {
   };
 
   const handleItemClick = async (item: LauncherItem) => {
-    // クリック時も検索クエリを履歴に記録
-    await window.electronAPI.openItem(item, searchQuery);
+    // 検索クエリがある場合は履歴に追加（フロントエンド側で即座に）
+    if (searchQuery.trim()) {
+      await addHistoryEntry(searchQuery.trim());
+    }
+    // アイテムを実行
+    await window.electronAPI.openItem(item);
   };
 
   const handleFetchFavicon = async (forceAll: boolean = false) => {
