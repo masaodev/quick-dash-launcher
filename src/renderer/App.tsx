@@ -23,13 +23,8 @@ const App: React.FC = () => {
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const { progressState } = useIconProgress();
-  const { 
-    historyState, 
-    navigateToPrevious, 
-    navigateToNext, 
-    resetNavigation, 
-    addHistoryEntry 
-  } = useSearchHistory();
+  const { historyState, navigateToPrevious, navigateToNext, resetNavigation, addHistoryEntry } =
+    useSearchHistory();
 
   useEffect(() => {
     loadItems();
@@ -146,11 +141,9 @@ const App: React.FC = () => {
     if (e.ctrlKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
       e.preventDefault();
       e.stopPropagation();
-      
-      const newQuery = e.key === 'ArrowUp' 
-        ? navigateToPrevious() 
-        : navigateToNext();
-        
+
+      const newQuery = e.key === 'ArrowUp' ? navigateToPrevious() : navigateToNext();
+
       if (newQuery !== null) {
         setSearchQuery(newQuery);
         setSelectedIndex(0);
@@ -173,14 +166,16 @@ const App: React.FC = () => {
         }
         break;
       case 'ArrowUp':
-        if (!e.ctrlKey) { // Ctrlキーが押されていない場合のみメニュー選択
+        if (!e.ctrlKey) {
+          // Ctrlキーが押されていない場合のみメニュー選択
           e.preventDefault();
           e.stopPropagation();
           setSelectedIndex((prev) => (prev > 0 ? prev - 1 : filteredItems.length - 1));
         }
         break;
       case 'ArrowDown':
-        if (!e.ctrlKey) { // Ctrlキーが押されていない場合のみメニュー選択
+        if (!e.ctrlKey) {
+          // Ctrlキーが押されていない場合のみメニュー選択
           e.preventDefault();
           e.stopPropagation();
           setSelectedIndex((prev) => (prev < filteredItems.length - 1 ? prev + 1 : 0));

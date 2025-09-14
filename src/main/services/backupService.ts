@@ -67,6 +67,79 @@ export class BackupService {
   }
 
   /**
+   * 起動時バックアップ用：指定ファイルの最新のバックアップファイルパスを取得
+   * @param baseFileName 元のファイル名（拡張子付き）
+   * @param backupFolder バックアップフォルダのパス
+   * @returns 最新のバックアップファイルパス、存在しない場合はnull
+   */
+  private getLatestStartupBackupFile(baseFileName: string, backupFolder: string): string | null {
+    if (!FileUtils.exists(backupFolder)) {
+      return null;
+    }
+
+    try {
+      const files = fs
+        .readdirSync(backupFolder)
+        .filter((file) => {
+          // 起動時バックアップのファイル名パターン: fileName.timestamp
+          const pattern = new RegExp(
+            `^${baseFileName}\\.\\d{4}-\\d{2}-\\d{2}T\\d{2}-\\d{2}-\\d{2}$`
+          );
+          return pattern.test(file);
+        })
+        .map((file) => ({
+          name: file,
+          path: path.join(backupFolder, file),
+          mtime: fs.statSync(path.join(backupFolder, file)).mtime.getTime(),
+        }))
+        .sort((a, b) => b.mtime - a.mtime); // 新しい順にソート
+
+      return files.length > 0 ? files[0].path : null;
+    } catch (error) {
+      logger.error('起動時バックアップファイルの検索に失敗しました', { error, baseFileName });
+      return null;
+    }
+  }
+
+  /**
+   * 指定ファイルの最新のバックアップファイルパスを取得
+   * @param baseFileName 元のファイル名（拡張子付き）
+   * @param backupFolder バックアップフォルダのパス
+   * @returns 最新のバックアップファイルパス、存在しない場合はnull
+   */
+  private getLatestBackupFile(baseFileName: string, backupFolder: string): string | null {
+    if (!FileUtils.exists(backupFolder)) {
+      return null;
+    }
+
+    const baseName = path.parse(baseFileName).name;
+    const extension = path.parse(baseFileName).ext;
+
+    try {
+      const files = fs
+        .readdirSync(backupFolder)
+        .filter((file) => {
+          // ファイル名のパターンマッチング: baseName_timestamp.ext
+          const pattern = new RegExp(
+            `^${baseName}_\\d{4}-\\d{2}-\\d{2}T\\d{2}-\\d{2}-\\d{2}${extension}$`
+          );
+          return pattern.test(file);
+        })
+        .map((file) => ({
+          name: file,
+          path: path.join(backupFolder, file),
+          mtime: fs.statSync(path.join(backupFolder, file)).mtime.getTime(),
+        }))
+        .sort((a, b) => b.mtime - a.mtime); // 新しい順にソート
+
+      return files.length > 0 ? files[0].path : null;
+    } catch (error) {
+      logger.error('バックアップファイルの検索に失敗しました', { error, baseFileName });
+      return null;
+    }
+  }
+
+  /**
    * バックアップを実行
    * @param sourcePath バックアップ元ファイルのパス
    * @param backupFolder バックアップ先フォルダ
@@ -89,6 +162,16 @@ export class BackupService {
     }
 
     FileUtils.ensureDirectory(backupFolder);
+
+    // 直近のバックアップファイルと内容を比較
+    const latestBackupPath = this.getLatestBackupFile(fileName, backupFolder);
+    if (latestBackupPath && FileUtils.areFilesEqual(sourcePath, latestBackupPath)) {
+      logger.info('ファイル内容が直近のバックアップと同一のため、バックアップをスキップしました', {
+        sourcePath,
+        latestBackupPath,
+      });
+      return false;
+    }
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
     const backupFileName = `${path.parse(fileName).name}_${timestamp}${path.parse(fileName).ext}`;
@@ -129,6 +212,20 @@ export class BackupService {
     for (const file of files) {
       const sourcePath = path.join(configFolder, file);
       if (FileUtils.exists(sourcePath)) {
+        // 直近のバックアップファイルと内容を比較
+        const latestBackupPath = this.getLatestStartupBackupFile(file, backupFolder);
+        if (latestBackupPath && FileUtils.areFilesEqual(sourcePath, latestBackupPath)) {
+          logger.info(
+            'ファイル内容が直近の起動時バックアップと同一のため、バックアップをスキップしました',
+            {
+              file,
+              sourcePath,
+              latestBackupPath,
+            }
+          );
+          continue;
+        }
+
         const timestamp = new Date().toISOString().replace(/:/g, '-').substring(0, 19);
         const backupPath = path.join(backupFolder, `${file}.${timestamp}`);
 

@@ -1,4 +1,5 @@
 import * as path from 'path';
+
 import { FileUtils } from '@common/utils/fileUtils';
 import { SearchHistoryEntry } from '@common/types';
 
@@ -38,7 +39,9 @@ export class SearchHistoryService {
     }
 
     // 最新が先頭になるようにソート
-    return entries.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    return entries.sort(
+      (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
   }
 
   /**
@@ -51,7 +54,7 @@ export class SearchHistoryService {
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
       .slice(0, this.maxHistoryCount);
 
-    const lines = sortedEntries.map(entry => `${entry.query},${entry.timestamp}`);
+    const lines = sortedEntries.map((entry) => `${entry.query},${entry.timestamp}`);
     const content = lines.join('\r\n');
 
     FileUtils.safeWriteTextFile(this.historyFilePath, content);
@@ -69,7 +72,7 @@ export class SearchHistoryService {
     const timestamp = new Date().toISOString();
 
     // 既存の同一クエリを削除
-    const filteredEntries = entries.filter(entry => entry.query !== query.trim());
+    const filteredEntries = entries.filter((entry) => entry.query !== query.trim());
 
     // 新しいエントリーを先頭に追加
     filteredEntries.unshift({ query: query.trim(), timestamp });

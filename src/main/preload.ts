@@ -117,7 +117,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('get-custom-icon', customIconFileName),
   // 検索履歴関連API
   loadSearchHistory: () => ipcRenderer.invoke('load-search-history'),
-  saveSearchHistory: (entries: SearchHistoryEntry[]) => ipcRenderer.invoke('save-search-history', entries),
+  saveSearchHistory: (entries: SearchHistoryEntry[]) =>
+    ipcRenderer.invoke('save-search-history', entries),
   addSearchHistoryEntry: (query: string) => ipcRenderer.invoke('add-search-history-entry', query),
   clearSearchHistory: () => ipcRenderer.invoke('clear-search-history'),
 });

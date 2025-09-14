@@ -1,6 +1,7 @@
+import { exec } from 'child_process';
+
 import { ipcMain, shell, BrowserWindow } from 'electron';
 import { itemLogger } from '@common/logger';
-import { exec } from 'child_process';
 
 import { LauncherItem } from '../../common/types';
 
@@ -33,7 +34,9 @@ async function openItem(item: LauncherItem, mainWindow: BrowserWindow | null): P
           const command = `start "" "${launchPath}" ${item.args}`;
           exec(command, { windowsHide: false }, (error) => {
             if (error) {
-              itemLogger.error('アイテムの起動に失敗しました (start command)', { error: error.message });
+              itemLogger.error('アイテムの起動に失敗しました (start command)', {
+                error: error.message,
+              });
             }
           });
         } else {
@@ -41,7 +44,7 @@ async function openItem(item: LauncherItem, mainWindow: BrowserWindow | null): P
           const { spawn } = await import('child_process');
           const child = spawn(launchPath, item.args.split(' '), {
             detached: true,
-            stdio: 'ignore'
+            stdio: 'ignore',
           });
           child.unref();
         }

@@ -126,4 +126,33 @@ export class FileUtils {
   static exists(filePath: string): boolean {
     return fs.existsSync(filePath);
   }
+
+  /**
+   * 2つのファイルの内容が同じかどうかを比較する
+   * @param filePath1 - 比較対象のファイルパス1
+   * @param filePath2 - 比較対象のファイルパス2
+   * @returns ファイル内容が同じ場合はtrue、異なる場合やエラー時はfalse
+   */
+  static areFilesEqual(filePath1: string, filePath2: string): boolean {
+    try {
+      // どちらかのファイルが存在しない場合
+      if (!fs.existsSync(filePath1) || !fs.existsSync(filePath2)) {
+        return false;
+      }
+
+      // ファイルサイズを比較（高速な事前チェック）
+      const stat1 = fs.statSync(filePath1);
+      const stat2 = fs.statSync(filePath2);
+      if (stat1.size !== stat2.size) {
+        return false;
+      }
+
+      // ファイル内容を比較
+      const content1 = fs.readFileSync(filePath1, 'utf8');
+      const content2 = fs.readFileSync(filePath2, 'utf8');
+      return content1 === content2;
+    } catch (_error) {
+      return false;
+    }
+  }
 }

@@ -1,6 +1,7 @@
 import { ipcMain } from 'electron';
-import { SearchHistoryService } from '../services/searchHistoryService';
 import { SearchHistoryEntry } from '@common/types';
+
+import { SearchHistoryService } from '../services/searchHistoryService';
 
 let searchHistoryService: SearchHistoryService | null = null;
 
@@ -18,10 +19,13 @@ export function setupHistoryHandlers(configFolder: string) {
   });
 
   // 検索履歴の保存
-  ipcMain.handle('save-search-history', async (_event, entries: SearchHistoryEntry[]): Promise<void> => {
-    if (!searchHistoryService) return;
-    searchHistoryService.saveHistory(entries);
-  });
+  ipcMain.handle(
+    'save-search-history',
+    async (_event, entries: SearchHistoryEntry[]): Promise<void> => {
+      if (!searchHistoryService) return;
+      searchHistoryService.saveHistory(entries);
+    }
+  );
 
   // 検索履歴エントリーの追加
   ipcMain.handle('add-search-history-entry', async (_event, query: string): Promise<void> => {

@@ -15,7 +15,7 @@ export function useSearchHistory() {
   const loadHistory = useCallback(async () => {
     try {
       const entries = await window.electronAPI.loadSearchHistory();
-      setHistoryState(prevState => ({
+      setHistoryState((prevState) => ({
         ...prevState,
         entries,
         currentIndex: -1, // 履歴ナビゲーションをリセット
@@ -32,12 +32,13 @@ export function useSearchHistory() {
 
   // 前の履歴項目に移動（Ctrl + ↑）
   const navigateToPrevious = useCallback((): string | null => {
-    setHistoryState(prevState => {
+    setHistoryState((prevState) => {
       if (prevState.entries.length === 0) return prevState;
 
-      const newIndex = prevState.currentIndex < prevState.entries.length - 1
-        ? prevState.currentIndex + 1
-        : prevState.entries.length - 1;
+      const newIndex =
+        prevState.currentIndex < prevState.entries.length - 1
+          ? prevState.currentIndex + 1
+          : prevState.entries.length - 1;
 
       return {
         ...prevState,
@@ -46,16 +47,19 @@ export function useSearchHistory() {
     });
 
     // 現在の履歴エントリーのクエリを返す
-    const currentEntry = historyState.entries[historyState.currentIndex >= 0 
-      ? Math.min(historyState.currentIndex + 1, historyState.entries.length - 1)
-      : 0];
-    
+    const currentEntry =
+      historyState.entries[
+        historyState.currentIndex >= 0
+          ? Math.min(historyState.currentIndex + 1, historyState.entries.length - 1)
+          : 0
+      ];
+
     return currentEntry?.query || null;
   }, [historyState.entries, historyState.currentIndex]);
 
   // 次の履歴項目に移動（Ctrl + ↓）
   const navigateToNext = useCallback((): string | null => {
-    setHistoryState(prevState => {
+    setHistoryState((prevState) => {
       if (prevState.entries.length === 0 || prevState.currentIndex <= 0) {
         return {
           ...prevState,
@@ -82,24 +86,27 @@ export function useSearchHistory() {
 
   // 履歴ナビゲーションをリセット
   const resetNavigation = useCallback(() => {
-    setHistoryState(prevState => ({
+    setHistoryState((prevState) => ({
       ...prevState,
       currentIndex: -1,
     }));
   }, []);
 
   // 新しい検索履歴エントリーを追加
-  const addHistoryEntry = useCallback(async (query: string) => {
-    if (!query.trim()) return;
+  const addHistoryEntry = useCallback(
+    async (query: string) => {
+      if (!query.trim()) return;
 
-    try {
-      await window.electronAPI.addSearchHistoryEntry(query);
-      // 履歴を再ロードしてUIを更新
-      await loadHistory();
-    } catch (error) {
-      console.error('検索履歴の追加に失敗しました:', error);
-    }
-  }, [loadHistory]);
+      try {
+        await window.electronAPI.addSearchHistoryEntry(query);
+        // 履歴を再ロードしてUIを更新
+        await loadHistory();
+      } catch (error) {
+        console.error('検索履歴の追加に失敗しました:', error);
+      }
+    },
+    [loadHistory]
+  );
 
   // 検索履歴をクリア
   const clearHistory = useCallback(async () => {
