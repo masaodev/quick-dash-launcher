@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 import { RawDataLine, SimpleBookmarkItem } from '../../common/types';
 
@@ -110,8 +110,10 @@ const EditModeView: React.FC<EditModeViewProps> = ({
 
   const handleSelectAll = (selected: boolean) => {
     if (selected) {
-      const allLines = new Set(workingLines.map((line) => `${line.sourceFile}_${line.lineNumber}`));
-      setSelectedItems(allLines);
+      const visibleLines = new Set(
+        filteredLines.map((line) => `${line.sourceFile}_${line.lineNumber}`)
+      );
+      setSelectedItems(visibleLines);
     } else {
       setSelectedItems(new Set());
     }
@@ -261,6 +263,20 @@ const EditModeView: React.FC<EditModeViewProps> = ({
     setHasUnsavedChanges(false);
   }, [rawLines]);
 
+  // 検索クエリが変更されたら、非表示になった行の選択状態をクリア
+  useEffect(() => {
+    const filteredKeys = new Set(filteredLines.map((line) => `${line.sourceFile}_${line.lineNumber}`));
+    setSelectedItems(prevSelected => {
+      const newSelectedItems = new Set([...prevSelected].filter((key) => filteredKeys.has(key)));
+
+      // 変更があった場合のみ新しいSetを返す
+      if (newSelectedItems.size !== prevSelected.size) {
+        return newSelectedItems;
+      }
+      return prevSelected;
+    });
+  }, [searchQuery, workingLines]);
+
   const getFileNames = () => {
     const fileSet = new Set(workingLines.map((line) => line.sourceFile));
     return Array.from(fileSet).join(', ');
@@ -327,7 +343,7 @@ const EditModeView: React.FC<EditModeViewProps> = ({
           className="delete-lines-button"
           disabled={selectedItems.size === 0}
         >
-          🗑️ 選択行を削除 ({selectedItems.size})
+          🗑️ 選択行を削除 ({filteredLines.filter(line => selectedItems.has(`${line.sourceFile}_${line.lineNumber}`)).length})
         </button>
         <button
           onClick={() => {
@@ -419,7 +435,12 @@ const EditModeView: React.FC<EditModeViewProps> = ({
 
       <div className="edit-mode-status">
         <span className="selection-count">
-          {selectedItems.size > 0 ? `${selectedItems.size}行を選択中` : ''}
+          {(() => {
+            const visibleSelectedCount = filteredLines.filter(line =>
+              selectedItems.has(`${line.sourceFile}_${line.lineNumber}`)
+            ).length;
+            return visibleSelectedCount > 0 ? `${visibleSelectedCount}行を選択中` : '';
+          })()}
         </span>
         <span className="total-count">合計: {filteredLines.length}行</span>
         {hasUnsavedChanges && <span className="unsaved-changes">未保存の変更があります</span>}
