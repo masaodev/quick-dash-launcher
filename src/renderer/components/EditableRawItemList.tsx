@@ -365,14 +365,6 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
                 <td className="actions-column">
                   <div className="action-buttons">
                     <button
-                      className="cell-edit-button"
-                      onClick={() => handleCellEdit(line)}
-                      title="セル編集"
-                      disabled={line.type === 'empty'}
-                    >
-                      📝
-                    </button>
-                    <button
                       className="detail-edit-button"
                       onClick={() => onEditClick(line)}
                       title="詳細編集"
