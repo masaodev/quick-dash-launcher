@@ -33,59 +33,66 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
   const handleCellEdit = (line: RawDataLine) => {
     const cellKey = getLineKey(line);
     setEditingCell(cellKey);
-    const pathAndArgs = getPathAndArgs(line);
+
+    // パスのみを取得（引数は編集しない）
+    let pathOnly = '';
+    if (line.type === 'item') {
+      const parts = line.content.split(',');
+      pathOnly = parts[1]?.trim() || '';
+    } else if (line.type === 'directive') {
+      const parts = line.content.split(',');
+      pathOnly = parts[1]?.trim() || '';
+    } else {
+      // コメント行や空行の場合：元の内容を表示
+      pathOnly = line.content || '';
+    }
+
     // プレースホルダーテキストの場合は空文字列をセット
-    if (pathAndArgs === '(パスなし)' || pathAndArgs === '(フォルダパスなし)') {
+    if (!pathOnly) {
       setEditingValue('');
     } else {
-      setEditingValue(pathAndArgs);
+      setEditingValue(pathOnly);
     }
   };
 
   const handleCellSave = (line: RawDataLine) => {
-    const currentPathAndArgs = getPathAndArgs(line);
-    if (editingValue !== currentPathAndArgs) {
+    // 現在のパスと編集後のパスを比較
+    const parts = line.content.split(',');
+    let currentPath = '';
+    if (line.type === 'item' || line.type === 'directive') {
+      currentPath = parts[1]?.trim() || '';
+    } else {
+      currentPath = line.content;
+    }
+
+    const trimmedValue = editingValue.trim();
+
+    if (trimmedValue !== currentPath) {
       let newContent = line.content;
 
       if (line.type === 'item') {
-        // アイテム行の場合：パスと引数を更新
-        const parts = line.content.split(',');
+        // アイテム行の場合：パスのみ更新、引数とカスタムアイコンは保持
         const name = parts[0] || '';
+        const existingArgs = parts[2] || ''; // 既存の引数を保持
+        const existingCustomIcon = parts[3] || ''; // 既存のカスタムアイコンを保持
 
-        // パスと引数に分解
-        const trimmedValue = editingValue.trim();
-        const spaceIndex = trimmedValue.indexOf(' ');
-
-        if (spaceIndex > 0) {
-          // スペースがある場合：パスと引数に分ける
-          const pathPart = trimmedValue.substring(0, spaceIndex);
-          const argsPart = trimmedValue.substring(spaceIndex + 1);
-          newContent = `${name},${pathPart},${argsPart}`;
+        // 新しいパスで再構築（引数とカスタムアイコンは保持）
+        if (existingCustomIcon) {
+          newContent = `${name},${trimmedValue},${existingArgs},${existingCustomIcon}`;
+        } else if (existingArgs) {
+          newContent = `${name},${trimmedValue},${existingArgs}`;
         } else {
-          // スペースがない場合：パスのみ
           newContent = `${name},${trimmedValue}`;
         }
-
-        // 元パスが存在する場合は追加
-        if (parts.length > 3 && parts[3]) {
-          newContent += `,${parts[3]}`;
-        }
       } else if (line.type === 'directive') {
-        // フォルダ取込アイテムの場合：フォルダパスとオプションを更新
-        const parts = line.content.split(',');
+        // フォルダ取込アイテムの場合：パスのみ更新、オプションは保持
         const directive = parts[0] || 'dir';
+        const existingOptions = parts.slice(2).join(','); // 既存のオプションを保持
 
-        // パスとオプションに分解
-        const trimmedValue = editingValue.trim();
-        const spaceIndex = trimmedValue.indexOf(' ');
-
-        if (spaceIndex > 0) {
-          // スペースがある場合：パスとオプションに分ける
-          const pathPart = trimmedValue.substring(0, spaceIndex);
-          const optionsPart = trimmedValue.substring(spaceIndex + 1);
-          newContent = `${directive},${pathPart},${optionsPart}`;
+        // 新しいパスで再構築（オプションは保持）
+        if (existingOptions) {
+          newContent = `${directive},${trimmedValue},${existingOptions}`;
         } else {
-          // スペースがない場合：パスのみ
           newContent = `${directive},${trimmedValue}`;
         }
       } else {
@@ -316,7 +323,11 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
     }
 
     return (
-      <div className="editable-cell" onClick={() => handleCellEdit(line)} title="クリックして編集">
+      <div
+        className="editable-cell"
+        onClick={() => handleCellEdit(line)}
+        title="クリックしてパスを編集できます。引数を変更する場合は✏️ボタンから詳細編集を開いてください"
+      >
         {getPathAndArgs(line)}
       </div>
     );
@@ -344,7 +355,7 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
             <th className="line-number-column">#</th>
             <th className="type-column">種類</th>
             <th className="name-column">名前</th>
-            <th className="content-column">パスと引数</th>
+            <th className="content-column">パスと引数 (パスのみ編集可、引数編集は✏️から)</th>
             <th className="actions-column">操作</th>
           </tr>
         </thead>
