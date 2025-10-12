@@ -64,6 +64,14 @@ const ItemList: React.FC<ItemListProps> = ({
     }
   };
 
+  const getFullPath = (item: LauncherItem): string => {
+    // pathとargsを結合して完全なコマンドラインを返す
+    if (item.args) {
+      return `${item.path} ${item.args}`;
+    }
+    return item.path;
+  };
+
   const handleContextMenu = (event: React.MouseEvent, item: LauncherItem) => {
     event.preventDefault();
     event.stopPropagation();
@@ -122,6 +130,7 @@ const ItemList: React.FC<ItemListProps> = ({
           }}
           onMouseEnter={() => onItemSelect(index)}
           onContextMenu={(e) => handleContextMenu(e, item)}
+          title={getFullPath(item)}
         >
           <span className="item-icon">
             {item.icon ? (

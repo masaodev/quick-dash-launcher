@@ -46,6 +46,11 @@
   text-overflow: ellipsis;
 }
 
+/* ツールチップ付きアイテムのカーソル表示 */
+.item[title]:hover {
+  cursor: pointer;
+}
+
 /* Drag and Drop Overlay */
 .app.dragging-over {
   position: relative;
