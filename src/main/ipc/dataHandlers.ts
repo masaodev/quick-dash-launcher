@@ -202,6 +202,7 @@ function processItem(
  * @param filePath - 解析対象のショートカットファイルのパス
  * @param sourceFile - ソースファイル名
  * @param lineNumber - 行番号（オプション）
+ * @param displayName - 表示名（オプション、未指定の場合はファイル名から自動生成）
  * @param prefix - 表示名に追加するプレフィックス（オプション）
  * @param suffix - 表示名に追加するサフィックス（オプション）
  * @returns LauncherItemオブジェクト。解析に失敗した場合はnull
@@ -209,14 +210,15 @@ function processItem(
  *
  * @example
  * ```typescript
- * const item = processShortcut('C:\\Users\\Desktop\\MyApp.lnk', 'data.txt', 10, 'デスクトップ');
- * // { name: 'デスクトップ: MyApp', path: 'C:\\Program Files\\MyApp\\app.exe', type: 'app', ... }
+ * const item = processShortcut('C:\\Users\\Desktop\\MyApp.lnk', 'data.txt', 10, 'マイアプリ', 'デスクトップ');
+ * // { name: 'デスクトップ: マイアプリ', path: 'C:\\Program Files\\MyApp\\app.exe', type: 'app', ... }
  * ```
  */
 function processShortcut(
   filePath: string,
   sourceFile: 'data.txt' | 'data2.txt',
   lineNumber?: number,
+  displayName?: string,
   prefix?: string,
   suffix?: string
 ): LauncherItem | null {
@@ -225,22 +227,31 @@ function processShortcut(
     const shortcutDetails = shell.readShortcutLink(filePath);
 
     if (shortcutDetails && shortcutDetails.target) {
-      let displayName = path.basename(filePath, '.lnk');
+      // 表示名が指定されていない場合はファイル名から自動生成
+      let name = displayName || path.basename(filePath, '.lnk');
 
       // プレフィックスが指定されている場合は追加
       if (prefix) {
-        displayName = `${prefix}: ${displayName}`;
+        name = `${prefix}: ${name}`;
       }
 
       // サフィックスが指定されている場合は追加
       if (suffix) {
-        displayName = `${displayName} (${suffix})`;
+        name = `${name} (${suffix})`;
+      }
+
+      // ターゲットパスの存在確認とディレクトリ判定
+      let targetType: LauncherItem['type'];
+      if (FileUtils.exists(shortcutDetails.target) && FileUtils.isDirectory(shortcutDetails.target)) {
+        targetType = 'folder';
+      } else {
+        targetType = detectItemType(shortcutDetails.target);
       }
 
       return {
-        name: displayName,
+        name: name,
         path: shortcutDetails.target,
-        type: detectItemType(shortcutDetails.target),
+        type: targetType,
         args: shortcutDetails.args && shortcutDetails.args.trim() ? shortcutDetails.args : undefined,
         originalPath: filePath,
         sourceFile,
@@ -430,9 +441,10 @@ async function loadDataFiles(configFolder: string): Promise<LauncherItem[]> {
       // Handle .lnk files
       const parts = parseCSVLine(trimmedLine);
       if (parts.length >= 2) {
+        const displayName = parts[0];
         const itemPath = parts[1];
         if (itemPath.toLowerCase().endsWith('.lnk') && FileUtils.exists(itemPath)) {
-          const item = processShortcut(itemPath, fileName, lineIndex + 1);
+          const item = processShortcut(itemPath, fileName, lineIndex + 1, displayName);
           if (item) {
             const uniqueKey = item.args
               ? `${item.name}|${item.path}|${item.args}`
