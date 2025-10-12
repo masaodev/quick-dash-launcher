@@ -33,7 +33,13 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
   const handleCellEdit = (line: RawDataLine) => {
     const cellKey = getLineKey(line);
     setEditingCell(cellKey);
-    setEditingValue(getPathAndArgs(line));
+    const pathAndArgs = getPathAndArgs(line);
+    // プレースホルダーテキストの場合は空文字列をセット
+    if (pathAndArgs === '(パスなし)' || pathAndArgs === '(フォルダパスなし)') {
+      setEditingValue('');
+    } else {
+      setEditingValue(pathAndArgs);
+    }
   };
 
   const handleCellSave = (line: RawDataLine) => {
