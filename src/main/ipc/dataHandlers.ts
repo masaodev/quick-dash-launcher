@@ -6,7 +6,7 @@ import { minimatch } from 'minimatch';
 import { dataLogger } from '@common/logger';
 import { FileUtils } from '@common/utils/fileUtils';
 
-import { DataFile, RawDataLine, SimpleBookmarkItem } from '../../common/types';
+import { DataFile, RawDataLine, SimpleBookmarkItem, LauncherItem } from '../../common/types';
 import { BackupService } from '../services/backupService.js';
 
 // フォルダ取込アイテムのオプション型定義
@@ -17,6 +17,88 @@ interface DirOptions {
   exclude?: string;
   prefix?: string;
   suffix?: string;
+}
+
+/**
+ * CSV形式の行を解析し、フィールドの配列に変換する
+ * ダブルクォートで囲まれたフィールドや、エスケープされたクォートを正しく処理する
+ *
+ * @param line - 解析対象のCSV行（カンマ区切りの文字列）
+ * @returns 解析されたフィールドの配列（各フィールドはトリムされる）
+ */
+function parseCSVLine(line: string): string[] {
+  const result: string[] = [];
+  let current = '';
+  let inQuotes = false;
+  let i = 0;
+
+  while (i < line.length) {
+    const char = line[i];
+    const nextChar = line[i + 1];
+
+    if (char === '"') {
+      if (inQuotes && nextChar === '"') {
+        // Escaped quote
+        current += '"';
+        i += 2;
+        continue;
+      }
+      inQuotes = !inQuotes;
+      i++;
+    } else if (char === ',' && !inQuotes) {
+      result.push(current.trim());
+      current = '';
+      i++;
+    } else {
+      current += char;
+      i++;
+    }
+  }
+
+  // Add the last field
+  if (current || inQuotes) {
+    result.push(current.trim());
+  }
+
+  return result;
+}
+
+/**
+ * アイテムのパスからタイプを検出する
+ *
+ * @param itemPath - アイテムのパス
+ * @returns アイテムタイプ
+ */
+function detectItemType(itemPath: string): LauncherItem['type'] {
+  if (itemPath.includes('://')) {
+    const scheme = itemPath.split('://')[0];
+    if (!['http', 'https', 'ftp'].includes(scheme)) {
+      return 'customUri';
+    }
+    return 'url';
+  }
+
+  // Shell paths
+  if (itemPath.startsWith('shell:')) {
+    return 'folder';
+  }
+
+  // File extensions
+  const lastDot = itemPath.lastIndexOf('.');
+  const ext = lastDot !== -1 ? itemPath.substring(lastDot).toLowerCase() : '';
+
+  // Executables and shortcuts
+  if (ext === '.exe' || ext === '.bat' || ext === '.cmd' || ext === '.com' || ext === '.lnk') {
+    return 'app';
+  }
+
+  // Check if it's likely a directory
+  if (!ext || itemPath.endsWith('/') || itemPath.endsWith('\\')) {
+    return 'folder';
+  }
+
+  // Default to file
+  return 'file';
 }
 
 // フォルダ取込アイテムのオプションを解析
@@ -269,74 +351,142 @@ async function scanDirectory(
 }
 
 /**
- * 設定フォルダからデータファイル（data.txt, data2.txt）を読み込み、フォルダ取込アイテムを展開する
- * 各ファイルを順次読み込み、フォルダ取込アイテムが含まれている場合は自動的にディレクトリスキャンを実行して展開する
+ * 設定フォルダからデータファイル（data.txt, data2.txt）を読み込み、LauncherItem配列に変換する
+ * フォルダ取込アイテムの展開、.lnkファイルの解析、CSV行のパース、重複チェック、ソートを全て実行する
  *
  * @param configFolder - 設定フォルダのパス
- * @returns 処理済みのデータファイル配列（ファイル名、内容、種別を含む）
+ * @returns LauncherItem配列
  * @throws ファイル読み込みエラー、フォルダ取込アイテム処理エラー
  *
  * @example
- * const dataFiles = await loadDataFiles('/path/to/config');
- * // [{ fileName: 'data.txt', content: '...', type: 'main' }, ...]
+ * const items = await loadDataFiles('/path/to/config');
+ * // [{ name: 'Google', path: 'https://google.com', type: 'url', ... }, ...]
  */
-async function loadDataFiles(configFolder: string): Promise<DataFile[]> {
-  const files: DataFile[] = [];
-  const dataFiles = ['data.txt', 'data2.txt'];
+async function loadDataFiles(configFolder: string): Promise<LauncherItem[]> {
+  const items: LauncherItem[] = [];
+  const seenPaths = new Set<string>();
+  const dataFiles = ['data.txt', 'data2.txt'] as const;
 
   for (const fileName of dataFiles) {
     const filePath = path.join(configFolder, fileName);
     const content = FileUtils.safeReadTextFile(filePath);
-    if (content !== null) {
-      // フォルダ取込アイテムを処理
-      const lines = content.split(/\r\n|\n|\r/);
-      const processedLines: string[] = [];
+    if (content === null) continue;
 
-      for (const line of lines) {
-        const trimmedLine = line.trim();
-        if (trimmedLine.startsWith('dir,')) {
-          // フォルダ取込アイテムを解析
-          const parts = trimmedLine
-            .substring(4)
-            .split(',')
-            .map((s) => s.trim());
-          const dirPath = parts[0];
+    const lines = content.split(/\r\n|\n|\r/);
 
-          if (FileUtils.exists(dirPath) && FileUtils.isDirectory(dirPath)) {
-            try {
-              // オプションを解析
-              const options = parseDirOptions(parts);
+    for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+      const line = lines[lineIndex];
+      const trimmedLine = line.trim();
 
-              // ディレクトリをスキャン
-              const items = await scanDirectory(dirPath, options);
-              processedLines.push(...items);
-            } catch (error) {
-              dataLogger.error('ディレクトリのスキャンに失敗', { dirPath, error });
-            }
-          }
-        } else {
-          // 直接指定された.lnkファイルを処理
-          const parts = trimmedLine.split(',');
-          if (parts.length >= 2) {
-            const itemPath = parts[1].trim();
-            if (itemPath.toLowerCase().endsWith('.lnk') && FileUtils.exists(itemPath)) {
-              const processedShortcut = processShortcutToCSV(itemPath);
-              if (processedShortcut) {
-                processedLines.push(processedShortcut);
-                continue;
+      // Skip empty lines and comments
+      if (!trimmedLine || trimmedLine.startsWith('//')) {
+        continue;
+      }
+
+      // Handle フォルダ取込アイテム
+      if (trimmedLine.startsWith('dir,')) {
+        const parts = trimmedLine.substring(4).split(',').map((s) => s.trim());
+        const dirPath = parts[0];
+
+        if (FileUtils.exists(dirPath) && FileUtils.isDirectory(dirPath)) {
+          try {
+            const options = parseDirOptions(parts);
+            const csvLines = await scanDirectory(dirPath, options);
+
+            // Parse CSV lines into LauncherItems
+            for (const csvLine of csvLines) {
+              const item = parseCSVLineToItem(csvLine, fileName);
+              if (item) {
+                const uniqueKey = item.args ? `${item.name}|${item.path}|${item.args}` : `${item.name}|${item.path}`;
+                if (!seenPaths.has(uniqueKey)) {
+                  seenPaths.add(uniqueKey);
+                  item.isDirExpanded = true;
+                  items.push(item);
+                }
               }
             }
+          } catch (error) {
+            dataLogger.error('ディレクトリのスキャンに失敗', { dirPath, error });
           }
-          processedLines.push(line);
+        }
+        continue;
+      }
+
+      // Handle .lnk files
+      const parts = parseCSVLine(trimmedLine);
+      if (parts.length >= 2) {
+        const itemPath = parts[1];
+        if (itemPath.toLowerCase().endsWith('.lnk') && FileUtils.exists(itemPath)) {
+          const processedShortcut = processShortcutToCSV(itemPath);
+          if (processedShortcut) {
+            const item = parseCSVLineToItem(processedShortcut, fileName, lineIndex + 1);
+            if (item) {
+              const uniqueKey = item.args ? `${item.name}|${item.path}|${item.args}` : `${item.name}|${item.path}`;
+              if (!seenPaths.has(uniqueKey)) {
+                seenPaths.add(uniqueKey);
+                items.push(item);
+              }
+            }
+            continue;
+          }
         }
       }
 
-      const processedContent = processedLines.join('\r\n');
-      files.push({ name: fileName, content: processedContent });
+      // Parse normal item
+      const item = parseCSVLineToItem(trimmedLine, fileName, lineIndex + 1);
+      if (item) {
+        const uniqueKey = item.args ? `${item.name}|${item.path}|${item.args}` : `${item.name}|${item.path}`;
+        if (!seenPaths.has(uniqueKey)) {
+          seenPaths.add(uniqueKey);
+          items.push(item);
+        }
+      }
     }
   }
 
-  return files;
+  // Sort items by name
+  items.sort((a, b) => a.name.localeCompare(b.name, 'ja'));
+
+  return items;
+}
+
+/**
+ * CSV行をLauncherItemに変換する
+ *
+ * @param line - CSV行
+ * @param sourceFile - ソースファイル名
+ * @param lineNumber - 行番号（オプション）
+ * @returns LauncherItemまたはnull
+ */
+function parseCSVLineToItem(
+  line: string,
+  sourceFile: 'data.txt' | 'data2.txt',
+  lineNumber?: number
+): LauncherItem | null {
+  const parts = parseCSVLine(line);
+  if (parts.length < 2) {
+    return null;
+  }
+
+  const [name, itemPath, argsField, customIconField] = parts;
+
+  if (!name || !itemPath) {
+    return null;
+  }
+
+  const item: LauncherItem = {
+    name,
+    path: itemPath,
+    type: detectItemType(itemPath),
+    args: argsField && argsField.trim() ? argsField : undefined,
+    customIcon: customIconField && customIconField.trim() ? customIconField : undefined,
+    sourceFile,
+    lineNumber: lineNumber,
+    isDirExpanded: false,
+    isEdited: false,
+  };
+
+  return item;
 }
 
 // 生データを読み込む（フォルダ取込アイテム展開なし）

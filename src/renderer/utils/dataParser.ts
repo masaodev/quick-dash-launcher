@@ -1,168 +1,17 @@
-import { LauncherItem, DataFile } from '../../common/types';
+import { LauncherItem } from '../../common/types';
 
 /**
- * データファイルの配列を解析し、ランチャーアイテムとして使用可能な形式に変換する
- * 重複チェック、データの検証、ソート処理を行う
+ * LauncherItem配列をそのまま返す（後方互換性のため）
+ * メインプロセスで既に完全にパース済みのため、この関数は不要だがApp.tsxとの互換性のために残す
  *
- * @param dataFiles - 解析対象のデータファイル配列（data.txt、data2.txt）
- * @returns メインアイテムの配列
- *
- * @example
- * ```typescript
- * const dataFiles = [
- *   { name: 'data.txt', content: 'Google,https://google.com' }
- * ];
- * const { mainItems } = parseDataFiles(dataFiles);
- * console.log(`メインアイテム: ${mainItems.length}個`);
- * ```
+ * @deprecated メインプロセスで完全にパース済みのため、この関数は不要です
+ * @param items - LauncherItem配列
+ * @returns そのまま返す
  */
-export function parseDataFiles(dataFiles: DataFile[]): {
+export function parseDataFiles(items: LauncherItem[]): {
   mainItems: LauncherItem[];
 } {
-  const mainItems: LauncherItem[] = [];
-  const seenPaths = new Set<string>();
-
-  dataFiles.forEach((file) => {
-    // Skip tempdata.txt files
-    if (file.name === 'tempdata.txt') {
-      return;
-    }
-
-    const lines = file.content.split('\n');
-    const sourceFile = file.name as 'data.txt' | 'data2.txt';
-
-    lines.forEach((line, index) => {
-      line = line.trim();
-
-      // Skip empty lines and comments
-      if (!line || line.startsWith('//')) {
-        return;
-      }
-
-      // フォルダ取込アイテムはメインプロセスで処理済みのためスキップ
-      if (line.startsWith('dir,')) {
-        return;
-      }
-
-      const parts = parseCSVLine(line);
-      if (parts.length < 2) {
-        return;
-      }
-
-      const [name, itemPath, argsField, customIconField] = parts;
-
-      // Skip duplicates - check name + path + args combination
-      const uniqueKey = argsField ? `${name}|${itemPath}|${argsField}` : `${name}|${itemPath}`;
-      if (seenPaths.has(uniqueKey)) {
-        return;
-      }
-      seenPaths.add(uniqueKey);
-
-      const item: LauncherItem = {
-        name,
-        path: itemPath,
-        type: detectItemType(itemPath),
-        args: argsField && argsField.trim() ? argsField : undefined,
-        customIcon: customIconField && customIconField.trim() ? customIconField : undefined,
-        sourceFile,
-        lineNumber: index + 1,
-        isDirExpanded: false,
-        isEdited: false,
-      };
-
-      mainItems.push(item);
-    });
-  });
-
-  // Sort items by name
-  mainItems.sort((a, b) => a.name.localeCompare(b.name, 'ja'));
-
-  return { mainItems };
-}
-
-function detectItemType(itemPath: string): LauncherItem['type'] {
-  if (itemPath.includes('://')) {
-    const scheme = itemPath.split('://')[0];
-    if (!['http', 'https', 'ftp'].includes(scheme)) {
-      return 'customUri';
-    }
-    return 'url';
-  }
-
-  // Shell paths
-  if (itemPath.startsWith('shell:')) {
-    return 'folder';
-  }
-
-  // File extensions
-  const lastDot = itemPath.lastIndexOf('.');
-  const ext = lastDot !== -1 ? itemPath.substring(lastDot).toLowerCase() : '';
-
-  // Executables and shortcuts
-  if (ext === '.exe' || ext === '.bat' || ext === '.cmd' || ext === '.com' || ext === '.lnk') {
-    return 'app';
-  }
-
-  // Check if it's likely a directory
-  if (!ext || itemPath.endsWith('/') || itemPath.endsWith('\\')) {
-    return 'folder';
-  }
-
-  // Default to file
-  return 'file';
-}
-
-/**
- * CSV形式の行を解析し、フィールドの配列に変換する
- * ダブルクォートで囲まれたフィールドや、エスケープされたクォートを正しく処理する
- *
- * @param line - 解析対象のCSV行（カンマ区切りの文字列）
- * @returns 解析されたフィールドの配列（各フィールドはトリムされる）
- *
- * @example
- * ```typescript
- * const fields = parseCSVLine('名前,"パス,引数","引数"');
- * // ['名前', 'パス,引数', '引数']
- *
- * const fieldsWithEscape = parseCSVLine('名前,"パス""引用符"""');
- * // ['名前', 'パス"引用符"']
- * ```
- */
-function parseCSVLine(line: string): string[] {
-  const result: string[] = [];
-  let current = '';
-  let inQuotes = false;
-  let i = 0;
-
-  while (i < line.length) {
-    const char = line[i];
-    const nextChar = line[i + 1];
-
-    if (char === '"') {
-      if (inQuotes && nextChar === '"') {
-        // Escaped quote
-        current += '"';
-        i += 2;
-        continue;
-      }
-      inQuotes = !inQuotes;
-      i++;
-    } else if (char === ',' && !inQuotes) {
-      result.push(current.trim());
-      current = '';
-      i++;
-    } else {
-      current += char;
-      i++;
-    }
-  }
-
-  // Add the last field
-  if (current || inQuotes) {
-    result.push(current.trim());
-  }
-
-  return result;
+  return { mainItems: items };
 }
 
 export function filterItems(items: LauncherItem[], query: string): LauncherItem[] {

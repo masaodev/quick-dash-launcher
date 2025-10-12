@@ -29,7 +29,7 @@ interface DeleteItemRequest {
 
 contextBridge.exposeInMainWorld('electronAPI', {
   getConfigFolder: () => ipcRenderer.invoke('get-config-folder'),
-  loadDataFiles: () => ipcRenderer.invoke('load-data-files'),
+  loadDataFiles: (): Promise<LauncherItem[]> => ipcRenderer.invoke('load-data-files'),
   openItem: (item: LauncherItem) => ipcRenderer.invoke('open-item', item),
   openParentFolder: (item: LauncherItem) => ipcRenderer.invoke('open-parent-folder', item),
   openConfigFolder: () => ipcRenderer.invoke('open-config-folder'),
