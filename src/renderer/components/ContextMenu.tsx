@@ -9,6 +9,7 @@ interface ContextMenuProps {
   onClose: () => void;
   onCopyPath: (item: LauncherItem) => void;
   onCopyParentPath: (item: LauncherItem) => void;
+  onOpenParentFolder: (item: LauncherItem) => void;
   onCopyShortcutPath?: (item: LauncherItem) => void;
   onCopyShortcutParentPath?: (item: LauncherItem) => void;
 }
@@ -20,6 +21,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
   onClose,
   onCopyPath,
   onCopyParentPath,
+  onOpenParentFolder,
   onCopyShortcutPath,
   onCopyShortcutParentPath,
 }) => {
@@ -77,12 +79,53 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
     }
   };
 
+  const handleOpenParentFolder = () => {
+    if (item) {
+      onOpenParentFolder(item);
+      onClose();
+    }
+  };
+
   // ショートカットアイテムかどうかを判定
   const isShortcutItem = item?.originalPath?.toLowerCase().endsWith('.lnk');
 
+  // パスを取得するヘルパー関数
+  const getFullPath = (): string => {
+    if (!item) return '';
+    if (item.args) {
+      return `${item.path} ${item.args}`;
+    }
+    return item.path;
+  };
+
+  const getParentPath = (): string => {
+    if (!item) return '';
+    const path = item.path;
+    const lastSlash = Math.max(path.lastIndexOf('\\'), path.lastIndexOf('/'));
+    if (lastSlash > 0) {
+      return path.substring(0, lastSlash);
+    }
+    return '';
+  };
+
+  const getShortcutPath = (): string => {
+    return item?.originalPath || '';
+  };
+
+  const getShortcutParentPath = (): string => {
+    if (!item?.originalPath) return '';
+    const path = item.originalPath;
+    const lastSlash = Math.max(path.lastIndexOf('\\'), path.lastIndexOf('/'));
+    if (lastSlash > 0) {
+      return path.substring(0, lastSlash);
+    }
+    return '';
+  };
+
   const getAdjustedPosition = () => {
     const menuWidth = 200;
-    const menuHeight = isShortcutItem ? 160 : 80;
+    // メニュー項目数に応じて高さを調整（基本3項目 + ショートカットで+2項目）
+    const menuHeight = isShortcutItem ? 200 : 120;
 
     let adjustedX = position.x;
     let adjustedY = position.y;
@@ -104,6 +147,9 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
 
   const adjustedPosition = getAdjustedPosition();
 
+  // URLやカスタムURIには親フォルダーが存在しない
+  const hasParentFolder = item?.type !== 'url' && item?.type !== 'customUri';
+
   return (
     <div
       ref={menuRef}
@@ -115,24 +161,36 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
         zIndex: 1000,
       }}
     >
-      <div className="context-menu-item" onClick={handleCopyPath}>
+      <div className="context-menu-item" onClick={handleCopyPath} title={getFullPath()}>
         <span className="context-menu-icon">📋</span>
         <span>パスをコピー</span>
       </div>
-      <div className="context-menu-item" onClick={handleCopyParentPath}>
-        <span className="context-menu-icon">📁</span>
-        <span>親フォルダーのパスをコピー</span>
-      </div>
+      {hasParentFolder && (
+        <>
+          <div className="context-menu-item" onClick={handleCopyParentPath} title={getParentPath()}>
+            <span className="context-menu-icon">📁</span>
+            <span>親フォルダーのパスをコピー</span>
+          </div>
+          <div className="context-menu-item" onClick={handleOpenParentFolder} title={getParentPath()}>
+            <span className="context-menu-icon">📂</span>
+            <span>親フォルダーを開く</span>
+          </div>
+        </>
+      )}
       {isShortcutItem && onCopyShortcutPath && (
-        <div className="context-menu-item" onClick={handleCopyShortcutPath}>
+        <div className="context-menu-item" onClick={handleCopyShortcutPath} title={getShortcutPath()}>
           <span className="context-menu-icon">🔗</span>
           <span>ショートカットのパスをコピー</span>
         </div>
       )}
       {isShortcutItem && onCopyShortcutParentPath && (
-        <div className="context-menu-item" onClick={handleCopyShortcutParentPath}>
+        <div
+          className="context-menu-item"
+          onClick={handleCopyShortcutParentPath}
+          title={getShortcutParentPath()}
+        >
           <span className="context-menu-icon">📂</span>
-          <span>ショートカットの親フォルダーをコピー</span>
+          <span>ショートカットの親フォルダーのパスをコピー</span>
         </div>
       )}
     </div>

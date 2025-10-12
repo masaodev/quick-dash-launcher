@@ -396,6 +396,15 @@ const App: React.FC = () => {
     }
   };
 
+  const handleOpenParentFolder = async (item: LauncherItem) => {
+    try {
+      await window.electronAPI.openParentFolder(item);
+    } catch (err) {
+      console.error('親フォルダーを開くのに失敗しました:', err);
+      alert('親フォルダーを開くのに失敗しました');
+    }
+  };
+
   const handleRegisterItems = async (items: RegisterItem[]) => {
     await window.electronAPI.registerItems(items);
     loadItems(); // Reload items after registration
@@ -441,6 +450,7 @@ const App: React.FC = () => {
           onItemSelect={setSelectedIndex}
           onCopyPath={handleCopyPath}
           onCopyParentPath={handleCopyParentPath}
+          onOpenParentFolder={handleOpenParentFolder}
           onCopyShortcutPath={handleCopyShortcutPath}
           onCopyShortcutParentPath={handleCopyShortcutParentPath}
         />

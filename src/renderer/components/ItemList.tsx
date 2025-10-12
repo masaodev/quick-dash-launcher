@@ -11,6 +11,7 @@ interface ItemListProps {
   onItemSelect: (index: number) => void;
   onCopyPath?: (item: LauncherItem) => void;
   onCopyParentPath?: (item: LauncherItem) => void;
+  onOpenParentFolder?: (item: LauncherItem) => void;
   onCopyShortcutPath?: (item: LauncherItem) => void;
   onCopyShortcutParentPath?: (item: LauncherItem) => void;
 }
@@ -22,6 +23,7 @@ const ItemList: React.FC<ItemListProps> = ({
   onItemSelect,
   onCopyPath,
   onCopyParentPath,
+  onOpenParentFolder,
   onCopyShortcutPath,
   onCopyShortcutParentPath,
 }) => {
@@ -115,6 +117,12 @@ const ItemList: React.FC<ItemListProps> = ({
     }
   };
 
+  const handleOpenParentFolder = (item: LauncherItem) => {
+    if (onOpenParentFolder) {
+      onOpenParentFolder(item);
+    }
+  };
+
   return (
     <div className="item-list" ref={listRef}>
       {items.map((item, index) => (
@@ -149,6 +157,7 @@ const ItemList: React.FC<ItemListProps> = ({
         onClose={handleCloseContextMenu}
         onCopyPath={handleCopyPath}
         onCopyParentPath={handleCopyParentPath}
+        onOpenParentFolder={handleOpenParentFolder}
         onCopyShortcutPath={handleCopyShortcutPath}
         onCopyShortcutParentPath={handleCopyShortcutParentPath}
       />

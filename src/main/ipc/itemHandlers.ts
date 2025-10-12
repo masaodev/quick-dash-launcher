@@ -78,7 +78,14 @@ async function openParentFolder(
   mainWindow: BrowserWindow | null
 ): Promise<void> {
   try {
-    if (item.type === 'file' || item.type === 'folder') {
+    itemLogger.info('親フォルダーを開く', {
+      name: item.name,
+      type: item.type,
+      path: item.path,
+      originalPath: item.originalPath || 'なし',
+    });
+
+    if (item.type === 'file' || item.type === 'folder' || item.type === 'app') {
       await shell.showItemInFolder(item.path);
     }
 
@@ -86,7 +93,14 @@ async function openParentFolder(
       mainWindow.hide();
     }
   } catch (error) {
-    itemLogger.error('親フォルダの表示に失敗しました', { error });
+    itemLogger.error('親フォルダの表示に失敗しました', {
+      error: error instanceof Error ? error.message : String(error),
+      item: {
+        name: item.name,
+        type: item.type,
+        path: item.path,
+      },
+    });
   }
 }
 
