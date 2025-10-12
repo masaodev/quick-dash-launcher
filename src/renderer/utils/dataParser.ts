@@ -51,8 +51,8 @@ export function parseDataFiles(dataFiles: DataFile[]): {
 
       const [name, itemPath, argsField, customIconField] = parts;
 
-      // Skip duplicates - check path + args combination
-      const uniqueKey = argsField ? `${itemPath}|${argsField}` : itemPath;
+      // Skip duplicates - check name + path + args combination
+      const uniqueKey = argsField ? `${name}|${itemPath}|${argsField}` : `${name}|${itemPath}`;
       if (seenPaths.has(uniqueKey)) {
         return;
       }
