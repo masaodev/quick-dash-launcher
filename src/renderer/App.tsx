@@ -355,6 +355,45 @@ const App: React.FC = () => {
     }
   };
 
+  const handleCopyShortcutPath = async (item: LauncherItem) => {
+    try {
+      if (!item.originalPath) {
+        alert('ショートカットのパスが見つかりません');
+        return;
+      }
+
+      await window.electronAPI.copyToClipboard(item.originalPath);
+      logWarn(`ショートカットのパスをコピーしました: ${item.originalPath}`);
+    } catch (err) {
+      console.error('ショートカットのパスのコピーに失敗しました:', err);
+      alert('ショートカットのパスのコピーに失敗しました');
+    }
+  };
+
+  const handleCopyShortcutParentPath = async (item: LauncherItem) => {
+    try {
+      if (!item.originalPath) {
+        alert('ショートカットのパスが見つかりません');
+        return;
+      }
+
+      // Get parent directory path of the shortcut file
+      const path = item.originalPath;
+      const lastSlash = Math.max(path.lastIndexOf('\\'), path.lastIndexOf('/'));
+
+      if (lastSlash > 0) {
+        const parentPath = path.substring(0, lastSlash);
+        await window.electronAPI.copyToClipboard(parentPath);
+        logWarn(`ショートカットの親フォルダーのパスをコピーしました: ${parentPath}`);
+      } else {
+        alert('ショートカットの親フォルダーのパスを取得できませんでした');
+      }
+    } catch (err) {
+      console.error('ショートカットの親フォルダーのパスのコピーに失敗しました:', err);
+      alert('ショートカットの親フォルダーのパスのコピーに失敗しました');
+    }
+  };
+
   const handleRegisterItems = async (items: RegisterItem[]) => {
     await window.electronAPI.registerItems(items);
     loadItems(); // Reload items after registration
@@ -400,6 +439,8 @@ const App: React.FC = () => {
           onItemSelect={setSelectedIndex}
           onCopyPath={handleCopyPath}
           onCopyParentPath={handleCopyParentPath}
+          onCopyShortcutPath={handleCopyShortcutPath}
+          onCopyShortcutParentPath={handleCopyShortcutParentPath}
         />
 
         {progressState.isActive && progressState.progress && (

@@ -11,6 +11,8 @@ interface ItemListProps {
   onItemSelect: (index: number) => void;
   onCopyPath?: (item: LauncherItem) => void;
   onCopyParentPath?: (item: LauncherItem) => void;
+  onCopyShortcutPath?: (item: LauncherItem) => void;
+  onCopyShortcutParentPath?: (item: LauncherItem) => void;
 }
 
 const ItemList: React.FC<ItemListProps> = ({
@@ -20,6 +22,8 @@ const ItemList: React.FC<ItemListProps> = ({
   onItemSelect,
   onCopyPath,
   onCopyParentPath,
+  onCopyShortcutPath,
+  onCopyShortcutParentPath,
 }) => {
   const listRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -91,6 +95,18 @@ const ItemList: React.FC<ItemListProps> = ({
     }
   };
 
+  const handleCopyShortcutPath = (item: LauncherItem) => {
+    if (onCopyShortcutPath) {
+      onCopyShortcutPath(item);
+    }
+  };
+
+  const handleCopyShortcutParentPath = (item: LauncherItem) => {
+    if (onCopyShortcutParentPath) {
+      onCopyShortcutParentPath(item);
+    }
+  };
+
   return (
     <div className="item-list" ref={listRef}>
       {items.map((item, index) => (
@@ -124,6 +140,8 @@ const ItemList: React.FC<ItemListProps> = ({
         onClose={handleCloseContextMenu}
         onCopyPath={handleCopyPath}
         onCopyParentPath={handleCopyParentPath}
+        onCopyShortcutPath={handleCopyShortcutPath}
+        onCopyShortcutParentPath={handleCopyShortcutParentPath}
       />
     </div>
   );

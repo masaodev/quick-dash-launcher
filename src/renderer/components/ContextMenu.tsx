@@ -9,6 +9,8 @@ interface ContextMenuProps {
   onClose: () => void;
   onCopyPath: (item: LauncherItem) => void;
   onCopyParentPath: (item: LauncherItem) => void;
+  onCopyShortcutPath?: (item: LauncherItem) => void;
+  onCopyShortcutParentPath?: (item: LauncherItem) => void;
 }
 
 const ContextMenu: React.FC<ContextMenuProps> = ({
@@ -18,6 +20,8 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
   onClose,
   onCopyPath,
   onCopyParentPath,
+  onCopyShortcutPath,
+  onCopyShortcutParentPath,
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -59,9 +63,26 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
     }
   };
 
+  const handleCopyShortcutPath = () => {
+    if (item && onCopyShortcutPath) {
+      onCopyShortcutPath(item);
+      onClose();
+    }
+  };
+
+  const handleCopyShortcutParentPath = () => {
+    if (item && onCopyShortcutParentPath) {
+      onCopyShortcutParentPath(item);
+      onClose();
+    }
+  };
+
+  // ショートカットアイテムかどうかを判定
+  const isShortcutItem = item?.originalPath?.toLowerCase().endsWith('.lnk');
+
   const getAdjustedPosition = () => {
     const menuWidth = 200;
-    const menuHeight = 80;
+    const menuHeight = isShortcutItem ? 160 : 80;
 
     let adjustedX = position.x;
     let adjustedY = position.y;
@@ -102,6 +123,18 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
         <span className="context-menu-icon">📁</span>
         <span>親フォルダーのパスをコピー</span>
       </div>
+      {isShortcutItem && onCopyShortcutPath && (
+        <div className="context-menu-item" onClick={handleCopyShortcutPath}>
+          <span className="context-menu-icon">🔗</span>
+          <span>ショートカットのパスをコピー</span>
+        </div>
+      )}
+      {isShortcutItem && onCopyShortcutParentPath && (
+        <div className="context-menu-item" onClick={handleCopyShortcutParentPath}>
+          <span className="context-menu-icon">📂</span>
+          <span>ショートカットの親フォルダーをコピー</span>
+        </div>
+      )}
     </div>
   );
 };
