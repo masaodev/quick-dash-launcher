@@ -52,19 +52,41 @@ dir,ディレクトリパス[,オプション1=値1][,オプション2=値2]...
 - **カスタムURIスキーマ**: `obsidian://`, `vscode://`, `ms-excel://` など
 - **ショートカットファイル**: `C:\path\to\shortcut.lnk`
 
+### 引数フィールドの注意事項
+
+引数フィールド（第3フィールド）には特別な記述ルールがあります：
+
+#### 基本ルール
+- **スペースを含まない引数**: そのまま記述
+- **スペースを含む引数**: フィールド全体をダブルクォートで囲み、内部のダブルクォートは `""` でエスケープ
+
+#### エスケープ方法
+引数にスペースやダブルクォートが含まれる場合:
+```
+表示名,実行ファイル,"引数全体をダブルクォートで囲む ""内部のクォート"" はダブルで"
+```
+
 ### 使用例
+
 ```
 // 基本的なアプリケーション
 Notepad,C:\Windows\System32\notepad.exe
 
-// 引数付きアプリケーション
+// 引数付きアプリケーション（スペースなし）
 VSCode,C:\Program Files\Microsoft VS Code\Code.exe,--new-window
 
 // カスタムアイコン付き
 MyApp,C:\MyApp\app.exe,,custom-icon.png
 
+// Windows Terminal（スペースを含む引数 - 正しい記述）
+Git Bash,wt.exe,"-p ""Git Bash"""
+PowerShell,wt.exe,-p PowerShell
+
 // 引数とカスタムアイコン両方
-Terminal,wt.exe,-p "Windows PowerShell",terminal.ico
+Terminal,wt.exe,-p PowerShell,terminal.ico
+
+// 複数の引数（スペースを含む）
+VSCode Project,C:\Program Files\Microsoft VS Code\Code.exe,"--new-window ""C:\Projects\MyProject"""
 
 // Webサイト
 Google,https://www.google.com
@@ -77,6 +99,16 @@ Obsidian Vault,obsidian://open?vault=MyVault
 
 // ショートカットファイル（自動解析）
 Desktop App,C:\Users\Username\Desktop\MyApp.lnk
+```
+
+#### よくある間違い
+```
+// ❌ 間違い: 引数内のダブルクォートをそのまま記述
+Command Prompt,wt.exe,-p "Command Prompt"
+// → "Command Prompt" が2つのフィールドに分割されてしまう
+
+// ✅ 正しい: フィールド全体を囲み、内部のダブルクォートをエスケープ
+Command Prompt,wt.exe,"-p ""Command Prompt"""
 ```
 
 ## フォルダ取込アイテム行の詳細
