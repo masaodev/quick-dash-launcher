@@ -151,13 +151,25 @@ function parseDirOptions(parts: string[]): DirOptions {
   return options;
 }
 
-// ファイル/フォルダーをCSV形式に変換
-function processItemToCSV(
+/**
+ * ファイル/フォルダーをLauncherItemに変換する
+ *
+ * @param itemPath - アイテムのパス
+ * @param itemType - アイテムタイプ（'file' | 'folder'）
+ * @param sourceFile - ソースファイル名
+ * @param lineNumber - 行番号（オプション）
+ * @param prefix - 表示名に追加するプレフィックス（オプション）
+ * @param suffix - 表示名に追加するサフィックス（オプション）
+ * @returns LauncherItemオブジェクト
+ */
+function processItem(
   itemPath: string,
   itemType: 'file' | 'folder',
+  sourceFile: 'data.txt' | 'data2.txt',
+  lineNumber?: number,
   prefix?: string,
   suffix?: string
-): string {
+): LauncherItem {
   let displayName = path.basename(itemPath);
 
   // プレフィックスが指定されている場合は追加
@@ -170,40 +182,44 @@ function processItemToCSV(
     displayName = `${displayName} (${suffix})`;
   }
 
-  const extension = path.extname(itemPath).toLowerCase();
-
-  // 実行可能ファイルの場合
-  if (
-    itemType === 'file' &&
-    (extension === '.exe' || extension === '.bat' || extension === '.cmd')
-  ) {
-    return `${displayName},${itemPath},,${itemPath}`;
-  }
-
-  // フォルダーまたはその他のファイル
-  return `${displayName},${itemPath},,${itemPath}`;
+  return {
+    name: displayName,
+    path: itemPath,
+    type: itemType === 'folder' ? 'folder' : detectItemType(itemPath),
+    originalPath: itemPath,
+    sourceFile,
+    lineNumber,
+    isDirExpanded: false,
+    isEdited: false,
+  };
 }
 
 /**
- * ショートカットファイル（.lnk）を解析してCSV形式の行データに変換する
+ * ショートカットファイル（.lnk）を解析してLauncherItemに変換する
  * Electronのネイティブ機能を使用してショートカットの詳細を読み取り、
- * 表示名、ターゲットパス、引数、元のファイルパスを含むCSV行を生成する
+ * LauncherItemオブジェクトを生成する
  *
  * @param filePath - 解析対象のショートカットファイルのパス
+ * @param sourceFile - ソースファイル名
+ * @param lineNumber - 行番号（オプション）
  * @param prefix - 表示名に追加するプレフィックス（オプション）
- * @returns CSV形式の行データ。解析に失敗した場合はnull
+ * @param suffix - 表示名に追加するサフィックス（オプション）
+ * @returns LauncherItemオブジェクト。解析に失敗した場合はnull
  * @throws Error ショートカットファイルの読み込みに失敗した場合（ログに記録され、nullを返す）
  *
  * @example
  * ```typescript
- * const csvLine = processShortcutToCSV('C:\\Users\\Desktop\\MyApp.lnk', 'デスクトップ');
- * // 'デスクトップ: MyApp,C:\\Program Files\\MyApp\\app.exe,,C:\\Users\\Desktop\\MyApp.lnk'
- *
- * const csvLineWithArgs = processShortcutToCSV('C:\\shortcut.lnk');
- * // 'MyApp,C:\\Program Files\\MyApp\\app.exe,--config=default,C:\\shortcut.lnk'
+ * const item = processShortcut('C:\\Users\\Desktop\\MyApp.lnk', 'data.txt', 10, 'デスクトップ');
+ * // { name: 'デスクトップ: MyApp', path: 'C:\\Program Files\\MyApp\\app.exe', type: 'app', ... }
  * ```
  */
-function processShortcutToCSV(filePath: string, prefix?: string, suffix?: string): string | null {
+function processShortcut(
+  filePath: string,
+  sourceFile: 'data.txt' | 'data2.txt',
+  lineNumber?: number,
+  prefix?: string,
+  suffix?: string
+): LauncherItem | null {
   try {
     // Electron のネイティブ機能を使用してショートカットを読み取り
     const shortcutDetails = shell.readShortcutLink(filePath);
@@ -221,20 +237,17 @@ function processShortcutToCSV(filePath: string, prefix?: string, suffix?: string
         displayName = `${displayName} (${suffix})`;
       }
 
-      let line = `${displayName},${shortcutDetails.target}`;
-
-      // 引数が存在する場合は追加
-      if (shortcutDetails.args && shortcutDetails.args.trim()) {
-        line += `,${shortcutDetails.args}`;
-      } else {
-        // 引数が空の場合でも空のフィールドを追加
-        line += ',';
-      }
-
-      // 元のショートカットファイルのパスを追加
-      line += `,${filePath}`;
-
-      return line;
+      return {
+        name: displayName,
+        path: shortcutDetails.target,
+        type: detectItemType(shortcutDetails.target),
+        args: shortcutDetails.args && shortcutDetails.args.trim() ? shortcutDetails.args : undefined,
+        originalPath: filePath,
+        sourceFile,
+        lineNumber,
+        isDirExpanded: false,
+        isEdited: false,
+      };
     }
   } catch (error) {
     dataLogger.error('ショートカットの読み込みに失敗', { filePath, error });
@@ -243,35 +256,32 @@ function processShortcutToCSV(filePath: string, prefix?: string, suffix?: string
   return null;
 }
 
-// 拡張されたディレクトリスキャン関数
 /**
  * 指定されたディレクトリを再帰的にスキャンし、指定されたオプションに基づいてファイル/フォルダを抽出する
  * フォルダ取込アイテムで使用される主要な機能で、深度制限、タイプフィルター、パターンマッチングに対応
  *
  * @param dirPath - スキャン対象のディレクトリパス
  * @param options - スキャンオプション（深度、タイプ、フィルター等）
- * @param options.depth - スキャンする最大深度（-1は無制限）
- * @param options.type - 対象タイプ（'file', 'dir', 'all'）
- * @param options.filter - ファイル名のフィルターパターン（minimatch形式）
- * @param options.prefix - 各アイテム名に付加するプレフィックス
+ * @param sourceFile - ソースファイル名
  * @param currentDepth - 現在の再帰深度（内部使用、初期値は0）
- * @returns CSV形式でフォーマットされたアイテムリストの配列
+ * @returns LauncherItem配列
  * @throws ディレクトリアクセス権限エラー、ファイルシステムエラー
  *
  * @example
  * const items = await scanDirectory('/home/user/documents', {
  *   depth: 2,
- *   type: 'file',
+ *   types: 'file',
  *   filter: '*.pdf',
  *   prefix: 'Doc: '
- * });
+ * }, 'data.txt');
  */
 async function scanDirectory(
   dirPath: string,
   options: DirOptions,
+  sourceFile: 'data.txt' | 'data2.txt',
   currentDepth = 0
-): Promise<string[]> {
-  const results: string[] = [];
+): Promise<LauncherItem[]> {
+  const results: LauncherItem[] = [];
 
   // 深さ制限チェック
   if (options.depth !== -1 && currentDepth > options.depth) {
@@ -315,13 +325,15 @@ async function scanDirectory(
         if (options.types === 'folder' || options.types === 'both') {
           // フィルターがない、またはフィルターにマッチする場合のみ追加
           if (!options.filter || minimatch(itemName, options.filter)) {
-            results.push(processItemToCSV(itemPath, 'folder', options.prefix, options.suffix));
+            results.push(
+              processItem(itemPath, 'folder', sourceFile, undefined, options.prefix, options.suffix)
+            );
           }
         }
 
         // サブディレクトリをスキャン
         if (currentDepth < options.depth || options.depth === -1) {
-          const subResults = await scanDirectory(itemPath, options, currentDepth + 1);
+          const subResults = await scanDirectory(itemPath, options, sourceFile, currentDepth + 1);
           results.push(...subResults);
         }
       } else {
@@ -329,8 +341,10 @@ async function scanDirectory(
         if (options.types === 'file' || options.types === 'both') {
           // .lnkファイルの場合は特別処理
           if (path.extname(itemPath).toLowerCase() === '.lnk') {
-            const processedShortcut = processShortcutToCSV(
+            const processedShortcut = processShortcut(
               itemPath,
+              sourceFile,
+              undefined,
               options.prefix,
               options.suffix
             );
@@ -338,7 +352,9 @@ async function scanDirectory(
               results.push(processedShortcut);
             }
           } else {
-            results.push(processItemToCSV(itemPath, 'file', options.prefix, options.suffix));
+            results.push(
+              processItem(itemPath, 'file', sourceFile, undefined, options.prefix, options.suffix)
+            );
           }
         }
       }
@@ -391,18 +407,17 @@ async function loadDataFiles(configFolder: string): Promise<LauncherItem[]> {
         if (FileUtils.exists(dirPath) && FileUtils.isDirectory(dirPath)) {
           try {
             const options = parseDirOptions(parts);
-            const csvLines = await scanDirectory(dirPath, options);
+            const scannedItems = await scanDirectory(dirPath, options, fileName);
 
-            // Parse CSV lines into LauncherItems
-            for (const csvLine of csvLines) {
-              const item = parseCSVLineToItem(csvLine, fileName);
-              if (item) {
-                const uniqueKey = item.args ? `${item.name}|${item.path}|${item.args}` : `${item.name}|${item.path}`;
-                if (!seenPaths.has(uniqueKey)) {
-                  seenPaths.add(uniqueKey);
-                  item.isDirExpanded = true;
-                  items.push(item);
-                }
+            // Add scanned items with duplicate check
+            for (const item of scannedItems) {
+              const uniqueKey = item.args
+                ? `${item.name}|${item.path}|${item.args}`
+                : `${item.name}|${item.path}`;
+              if (!seenPaths.has(uniqueKey)) {
+                seenPaths.add(uniqueKey);
+                item.isDirExpanded = true;
+                items.push(item);
               }
             }
           } catch (error) {
@@ -417,15 +432,14 @@ async function loadDataFiles(configFolder: string): Promise<LauncherItem[]> {
       if (parts.length >= 2) {
         const itemPath = parts[1];
         if (itemPath.toLowerCase().endsWith('.lnk') && FileUtils.exists(itemPath)) {
-          const processedShortcut = processShortcutToCSV(itemPath);
-          if (processedShortcut) {
-            const item = parseCSVLineToItem(processedShortcut, fileName, lineIndex + 1);
-            if (item) {
-              const uniqueKey = item.args ? `${item.name}|${item.path}|${item.args}` : `${item.name}|${item.path}`;
-              if (!seenPaths.has(uniqueKey)) {
-                seenPaths.add(uniqueKey);
-                items.push(item);
-              }
+          const item = processShortcut(itemPath, fileName, lineIndex + 1);
+          if (item) {
+            const uniqueKey = item.args
+              ? `${item.name}|${item.path}|${item.args}`
+              : `${item.name}|${item.path}`;
+            if (!seenPaths.has(uniqueKey)) {
+              seenPaths.add(uniqueKey);
+              items.push(item);
             }
             continue;
           }
