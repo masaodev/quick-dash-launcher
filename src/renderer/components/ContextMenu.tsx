@@ -8,6 +8,7 @@ interface ContextMenuProps {
   item: LauncherItem | null;
   onClose: () => void;
   onCopyPath: (item: LauncherItem) => void;
+  onCopyParentPath: (item: LauncherItem) => void;
 }
 
 const ContextMenu: React.FC<ContextMenuProps> = ({
@@ -16,6 +17,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
   item,
   onClose,
   onCopyPath,
+  onCopyParentPath,
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -50,9 +52,16 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
     }
   };
 
+  const handleCopyParentPath = () => {
+    if (item) {
+      onCopyParentPath(item);
+      onClose();
+    }
+  };
+
   const getAdjustedPosition = () => {
-    const menuWidth = 160;
-    const menuHeight = 40;
+    const menuWidth = 200;
+    const menuHeight = 80;
 
     let adjustedX = position.x;
     let adjustedY = position.y;
@@ -88,6 +97,10 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
       <div className="context-menu-item" onClick={handleCopyPath}>
         <span className="context-menu-icon">📋</span>
         <span>パスをコピー</span>
+      </div>
+      <div className="context-menu-item" onClick={handleCopyParentPath}>
+        <span className="context-menu-icon">📁</span>
+        <span>親フォルダーのパスをコピー</span>
       </div>
     </div>
   );

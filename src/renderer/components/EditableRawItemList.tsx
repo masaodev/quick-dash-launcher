@@ -243,7 +243,7 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
     const updatedLine = {
       ...line,
       content: newContent,
-      type: newType
+      type: newType,
     };
     onLineEdit(updatedLine);
   };
@@ -300,7 +300,10 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
     if (isEmptyLine) {
       // 空行の場合は編集不可として表示
       return (
-        <div className="readonly-cell" title="空行の場合は編集できません。まず種類を選択してください。">
+        <div
+          className="readonly-cell"
+          title="空行の場合は編集できません。まず種類を選択してください。"
+        >
           (まず種類を選択してください)
         </div>
       );
@@ -357,9 +360,7 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
                   />
                 </td>
                 <td className="line-number-column">{line.lineNumber}</td>
-                <td className="type-column">
-                  {renderTypeCell(line)}
-                </td>
+                <td className="type-column">{renderTypeCell(line)}</td>
                 <td className="name-column">{renderNameCell(line)}</td>
                 <td className="content-column">{renderEditableCell(line)}</td>
                 <td className="actions-column">

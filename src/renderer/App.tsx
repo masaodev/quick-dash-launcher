@@ -326,6 +326,35 @@ const App: React.FC = () => {
     }
   };
 
+  const handleCopyParentPath = async (item: LauncherItem) => {
+    try {
+      let parentPath = '';
+
+      // URL types don't have a parent path
+      if (item.type === 'url' || item.type === 'customUri') {
+        alert('URLおよびカスタムURIには親フォルダーがありません');
+        return;
+      }
+
+      // Get parent directory path
+      const path = item.path;
+      const lastSlash = Math.max(path.lastIndexOf('\\'), path.lastIndexOf('/'));
+
+      if (lastSlash > 0) {
+        parentPath = path.substring(0, lastSlash);
+      } else {
+        alert('親フォルダーのパスを取得できませんでした');
+        return;
+      }
+
+      await window.electronAPI.copyToClipboard(parentPath);
+      logWarn(`親フォルダーのパスをコピーしました: ${parentPath}`);
+    } catch (err) {
+      console.error('親フォルダーのパスのコピーに失敗しました:', err);
+      alert('親フォルダーのパスのコピーに失敗しました');
+    }
+  };
+
   const handleRegisterItems = async (items: RegisterItem[]) => {
     await window.electronAPI.registerItems(items);
     loadItems(); // Reload items after registration
@@ -370,6 +399,7 @@ const App: React.FC = () => {
           onItemClick={handleItemClick}
           onItemSelect={setSelectedIndex}
           onCopyPath={handleCopyPath}
+          onCopyParentPath={handleCopyParentPath}
         />
 
         {progressState.isActive && progressState.progress && (

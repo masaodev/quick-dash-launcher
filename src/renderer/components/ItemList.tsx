@@ -10,6 +10,7 @@ interface ItemListProps {
   onItemClick: (item: LauncherItem) => void;
   onItemSelect: (index: number) => void;
   onCopyPath?: (item: LauncherItem) => void;
+  onCopyParentPath?: (item: LauncherItem) => void;
 }
 
 const ItemList: React.FC<ItemListProps> = ({
@@ -18,6 +19,7 @@ const ItemList: React.FC<ItemListProps> = ({
   onItemClick,
   onItemSelect,
   onCopyPath,
+  onCopyParentPath,
 }) => {
   const listRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -83,6 +85,12 @@ const ItemList: React.FC<ItemListProps> = ({
     }
   };
 
+  const handleCopyParentPath = (item: LauncherItem) => {
+    if (onCopyParentPath) {
+      onCopyParentPath(item);
+    }
+  };
+
   return (
     <div className="item-list" ref={listRef}>
       {items.map((item, index) => (
@@ -115,6 +123,7 @@ const ItemList: React.FC<ItemListProps> = ({
         item={contextMenu.item}
         onClose={handleCloseContextMenu}
         onCopyPath={handleCopyPath}
+        onCopyParentPath={handleCopyParentPath}
       />
     </div>
   );

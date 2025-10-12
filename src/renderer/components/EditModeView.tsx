@@ -265,8 +265,10 @@ const EditModeView: React.FC<EditModeViewProps> = ({
 
   // 検索クエリが変更されたら、非表示になった行の選択状態をクリア
   useEffect(() => {
-    const filteredKeys = new Set(filteredLines.map((line) => `${line.sourceFile}_${line.lineNumber}`));
-    setSelectedItems(prevSelected => {
+    const filteredKeys = new Set(
+      filteredLines.map((line) => `${line.sourceFile}_${line.lineNumber}`)
+    );
+    setSelectedItems((prevSelected) => {
       const newSelectedItems = new Set([...prevSelected].filter((key) => filteredKeys.has(key)));
 
       // 変更があった場合のみ新しいSetを返す
@@ -343,7 +345,13 @@ const EditModeView: React.FC<EditModeViewProps> = ({
           className="delete-lines-button"
           disabled={selectedItems.size === 0}
         >
-          🗑️ 選択行を削除 ({filteredLines.filter(line => selectedItems.has(`${line.sourceFile}_${line.lineNumber}`)).length})
+          🗑️ 選択行を削除 (
+          {
+            filteredLines.filter((line) =>
+              selectedItems.has(`${line.sourceFile}_${line.lineNumber}`)
+            ).length
+          }
+          )
         </button>
         <button
           onClick={() => {
@@ -436,7 +444,7 @@ const EditModeView: React.FC<EditModeViewProps> = ({
       <div className="edit-mode-status">
         <span className="selection-count">
           {(() => {
-            const visibleSelectedCount = filteredLines.filter(line =>
+            const visibleSelectedCount = filteredLines.filter((line) =>
               selectedItems.has(`${line.sourceFile}_${line.lineNumber}`)
             ).length;
             return visibleSelectedCount > 0 ? `${visibleSelectedCount}行を選択中` : '';
