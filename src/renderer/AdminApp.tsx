@@ -20,6 +20,12 @@ const AdminApp: React.FC = () => {
     window.electronAPI.onSetActiveTab((tab) => {
       setActiveTab(tab);
     });
+
+    // データ変更通知のリスナーを設定
+    window.electronAPI.onDataChanged(() => {
+      debugInfo('データ変更通知を受信、データを再読み込みします');
+      loadData();
+    });
   }, []);
 
   const loadInitialTab = async () => {
