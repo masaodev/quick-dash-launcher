@@ -318,8 +318,10 @@ const App: React.FC = () => {
 
   const handleCopyPath = async (item: LauncherItem) => {
     try {
-      await window.electronAPI.copyToClipboard(item.path);
-      logWarn(`パスをコピーしました: ${item.path}`);
+      // 引数がある場合は結合してコピー
+      const fullCommand = item.args ? `${item.path} ${item.args}` : item.path;
+      await window.electronAPI.copyToClipboard(fullCommand);
+      logWarn(`パスをコピーしました: ${fullCommand}`);
     } catch (err) {
       console.error('パスのコピーに失敗しました:', err);
       alert('パスのコピーに失敗しました');

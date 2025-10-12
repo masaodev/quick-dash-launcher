@@ -289,9 +289,22 @@
 
 #### 処理フロー
 1. 選択中のアイテムのパス（ファイルパス・URL等）を取得
-2. `window.electronAPI.copyToClipboard`でクリップボードにコピー
-3. 成功通知を表示
-4. メニューを閉じる
+2. 引数が設定されている場合は、パスと引数を結合して完全なコマンドラインを生成
+3. `window.electronAPI.copyToClipboard`でクリップボードにコピー
+4. 成功通知を表示
+5. メニューを閉じる
+
+#### コピー例
+- **引数なし**: `C:\Windows\System32\notepad.exe`
+- **引数あり**: `C:\Program Files\Microsoft VS Code\Code.exe --new-window`
+  - パス: `C:\Program Files\Microsoft VS Code\Code.exe`
+  - 引数: `--new-window`
+  - コピー内容: `C:\Program Files\Microsoft VS Code\Code.exe --new-window`
+
+#### 動作の詳細
+- 引数が設定されていないアイテムの場合は、パスのみをコピー
+- 引数が設定されているアイテムの場合は、パスと引数をスペースで結合した完全なコマンドラインをコピー
+- ターミナルやバッチファイルなどにそのまま貼り付けて使用可能
 
 #### エラーハンドリング
 - コピー失敗時はアラート表示
