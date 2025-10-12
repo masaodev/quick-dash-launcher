@@ -19,6 +19,8 @@ export default defineConfig({
           },
           build: {
             outDir: 'dist/main',
+            sourcemap: true,
+            minify: false,
             lib: {
               entry: 'src/main/main.ts',
               formats: ['cjs'],
@@ -48,6 +50,8 @@ export default defineConfig({
           },
           build: {
             outDir: 'dist/main',
+            sourcemap: true,
+            minify: false,
             lib: {
               entry: 'src/main/preload.ts',
               formats: ['cjs'],
