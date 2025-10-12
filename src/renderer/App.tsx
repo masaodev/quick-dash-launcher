@@ -23,7 +23,7 @@ const App: React.FC = () => {
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const { progressState } = useIconProgress();
-  const { historyState, navigateToPrevious, navigateToNext, resetNavigation, addHistoryEntry } =
+  const { navigateToPrevious, navigateToNext, resetNavigation, addHistoryEntry } =
     useSearchHistory();
 
   useEffect(() => {

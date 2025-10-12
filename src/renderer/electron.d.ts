@@ -1,6 +1,5 @@
 import {
   LauncherItem,
-  DataFile,
   RawDataLine,
   SimpleBookmarkItem,
   AppSettings,

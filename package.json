@@ -1,6 +1,6 @@
 {
   "name": "quick-dash-launcher",
-  "version": "0.2.2",
+  "version": "0.2.4",
   "main": "dist/main/main.js",
   "scripts": {
     "dev": "cross-env NODE_ENV=development ELECTRON_IS_DEV=1 vite",

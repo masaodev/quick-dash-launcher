@@ -171,14 +171,22 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
             <span className="context-menu-icon">📁</span>
             <span>親フォルダーのパスをコピー</span>
           </div>
-          <div className="context-menu-item" onClick={handleOpenParentFolder} title={getParentPath()}>
+          <div
+            className="context-menu-item"
+            onClick={handleOpenParentFolder}
+            title={getParentPath()}
+          >
             <span className="context-menu-icon">📂</span>
             <span>親フォルダーを開く</span>
           </div>
         </>
       )}
       {isShortcutItem && onCopyShortcutPath && (
-        <div className="context-menu-item" onClick={handleCopyShortcutPath} title={getShortcutPath()}>
+        <div
+          className="context-menu-item"
+          onClick={handleCopyShortcutPath}
+          title={getShortcutPath()}
+        >
           <span className="context-menu-icon">🔗</span>
           <span>ショートカットのパスをコピー</span>
         </div>

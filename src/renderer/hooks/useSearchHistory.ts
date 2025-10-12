@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { SearchHistoryEntry, SearchHistoryState } from '@common/types';
+import { SearchHistoryState } from '@common/types';
 
 /**
  * 検索履歴の管理を行うカスタムフック

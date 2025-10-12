@@ -6,7 +6,7 @@ import { minimatch } from 'minimatch';
 import { dataLogger } from '@common/logger';
 import { FileUtils } from '@common/utils/fileUtils';
 
-import { DataFile, RawDataLine, SimpleBookmarkItem, LauncherItem } from '../../common/types';
+import { RawDataLine, SimpleBookmarkItem, LauncherItem } from '../../common/types';
 import { BackupService } from '../services/backupService.js';
 
 // フォルダ取込アイテムのオプション型定義
@@ -251,7 +251,10 @@ function processShortcut(
 
       // ターゲットパスの存在確認とディレクトリ判定
       let targetType: LauncherItem['type'];
-      if (FileUtils.exists(shortcutDetails.target) && FileUtils.isDirectory(shortcutDetails.target)) {
+      if (
+        FileUtils.exists(shortcutDetails.target) &&
+        FileUtils.isDirectory(shortcutDetails.target)
+      ) {
         targetType = 'folder';
       } else {
         targetType = detectItemType(shortcutDetails.target);
@@ -261,7 +264,8 @@ function processShortcut(
         name: name,
         path: shortcutDetails.target,
         type: targetType,
-        args: shortcutDetails.args && shortcutDetails.args.trim() ? shortcutDetails.args : undefined,
+        args:
+          shortcutDetails.args && shortcutDetails.args.trim() ? shortcutDetails.args : undefined,
         originalPath: filePath,
         sourceFile,
         lineNumber,
@@ -421,7 +425,10 @@ async function loadDataFiles(configFolder: string): Promise<LauncherItem[]> {
 
       // Handle フォルダ取込アイテム
       if (trimmedLine.startsWith('dir,')) {
-        const parts = trimmedLine.substring(4).split(',').map((s) => s.trim());
+        const parts = trimmedLine
+          .substring(4)
+          .split(',')
+          .map((s) => s.trim());
         const dirPath = parts[0];
 
         if (FileUtils.exists(dirPath) && FileUtils.isDirectory(dirPath)) {
@@ -470,7 +477,9 @@ async function loadDataFiles(configFolder: string): Promise<LauncherItem[]> {
       // Parse normal item
       const item = parseCSVLineToItem(trimmedLine, fileName, lineIndex + 1);
       if (item) {
-        const uniqueKey = item.args ? `${item.name}|${item.path}|${item.args}` : `${item.name}|${item.path}`;
+        const uniqueKey = item.args
+          ? `${item.name}|${item.path}|${item.args}`
+          : `${item.name}|${item.path}`;
         if (!seenPaths.has(uniqueKey)) {
           seenPaths.add(uniqueKey);
           items.push(item);
