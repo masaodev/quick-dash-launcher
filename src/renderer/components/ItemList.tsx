@@ -1,13 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
 
-import { LauncherItem } from '../../common/types';
+import { LauncherItem, GroupItem, AppItem } from '../../common/types';
 
 import ContextMenu from './ContextMenu';
 
 interface ItemListProps {
-  items: LauncherItem[];
+  items: AppItem[];
+  allItems: AppItem[]; // グループ実行時の参照解決用
   selectedIndex: number;
   onItemClick: (item: LauncherItem) => void;
+  onGroupExecute: (group: GroupItem) => void;
   onItemSelect: (index: number) => void;
   onCopyPath?: (item: LauncherItem) => void;
   onCopyParentPath?: (item: LauncherItem) => void;
@@ -18,8 +20,10 @@ interface ItemListProps {
 
 const ItemList: React.FC<ItemListProps> = ({
   items,
+  allItems,
   selectedIndex,
   onItemClick,
+  onGroupExecute,
   onItemSelect,
   onCopyPath,
   onCopyParentPath,
@@ -49,7 +53,7 @@ const ItemList: React.FC<ItemListProps> = ({
     }
   }, [selectedIndex]);
 
-  const getDefaultIcon = (item: LauncherItem) => {
+  const getDefaultIcon = (item: AppItem) => {
     switch (item.type) {
       case 'url':
         return '🌐';
@@ -61,6 +65,8 @@ const ItemList: React.FC<ItemListProps> = ({
         return '📄';
       case 'customUri':
         return '🔗';
+      case 'group':
+        return '📦';
       default:
         return '❓';
     }
@@ -74,14 +80,19 @@ const ItemList: React.FC<ItemListProps> = ({
     return item.path;
   };
 
-  const handleContextMenu = (event: React.MouseEvent, item: LauncherItem) => {
+  const handleContextMenu = (event: React.MouseEvent, item: AppItem) => {
     event.preventDefault();
     event.stopPropagation();
+
+    // グループアイテムの場合はコンテキストメニューを表示しない
+    if (item.type === 'group') {
+      return;
+    }
 
     setContextMenu({
       isVisible: true,
       position: { x: event.clientX, y: event.clientY },
-      item: item,
+      item: item as LauncherItem,
     });
   };
 
@@ -125,31 +136,39 @@ const ItemList: React.FC<ItemListProps> = ({
 
   return (
     <div className="item-list" ref={listRef}>
-      {items.map((item, index) => (
-        <div
-          key={`${item.name}-${index}`}
-          ref={(el) => {
-            itemRefs.current[index] = el;
-          }}
-          className={`item ${index === selectedIndex ? 'selected' : ''}`}
-          onClick={() => {
-            onItemSelect(index);
-            onItemClick(item);
-          }}
-          onMouseEnter={() => onItemSelect(index)}
-          onContextMenu={(e) => handleContextMenu(e, item)}
-          title={getFullPath(item)}
-        >
-          <span className="item-icon">
-            {item.icon ? (
-              <img src={item.icon} alt="" width="24" height="24" />
-            ) : (
-              getDefaultIcon(item)
-            )}
-          </span>
-          <span className="item-name">{item.name}</span>
-        </div>
-      ))}
+      {items.map((item, index) => {
+        const isGroup = item.type === 'group';
+        const groupItem = isGroup ? (item as GroupItem) : null;
+
+        return (
+          <div
+            key={`${item.name}-${index}`}
+            ref={(el) => {
+              itemRefs.current[index] = el;
+            }}
+            className={`item ${index === selectedIndex ? 'selected' : ''} ${isGroup ? 'group-item' : ''}`}
+            onClick={() => {
+              onItemSelect(index);
+              if (isGroup && groupItem) {
+                onGroupExecute(groupItem);
+              } else {
+                onItemClick(item as LauncherItem);
+              }
+            }}
+            onMouseEnter={() => onItemSelect(index)}
+            onContextMenu={(e) => handleContextMenu(e, item)}
+            title={isGroup ? `グループ: ${groupItem?.itemNames.join(', ')}` : getFullPath(item as LauncherItem)}
+          >
+            <span className="item-icon">{getDefaultIcon(item)}</span>
+            <span className="item-name">
+              {item.name}
+              {isGroup && groupItem && (
+                <span className="group-count"> ({groupItem.itemNames.length}個)</span>
+              )}
+            </span>
+          </div>
+        );
+      })}
       <ContextMenu
         isVisible={contextMenu.isVisible}
         position={contextMenu.position}

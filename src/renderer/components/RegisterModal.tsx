@@ -20,7 +20,7 @@ export interface RegisterItem {
   folderProcessing?: 'folder' | 'expand';
   icon?: string;
   customIcon?: string;
-  itemCategory: 'item' | 'dir';
+  itemCategory: 'item' | 'dir' | 'group';
   // フォルダ取込アイテムオプション
   dirOptions?: {
     depth: number;
@@ -30,6 +30,8 @@ export interface RegisterItem {
     prefix?: string;
     suffix?: string;
   };
+  // グループアイテムオプション
+  groupItemNames?: string[];
 }
 
 const RegisterModal: React.FC<RegisterModalProps> = ({
@@ -42,6 +44,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
   const [items, setItems] = useState<RegisterItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [customIconPreviews, setCustomIconPreviews] = useState<{ [index: number]: string }>({});
+  const [groupItemNamesInput, setGroupItemNamesInput] = useState<{ [index: number]: string }>({});
   const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -189,6 +192,11 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
       const item = await convertRawDataLineToRegisterItem(editingItem);
       setItems([item]);
 
+      // グループアイテムの場合、入力用のテキストをセット
+      if (item.itemCategory === 'group' && item.groupItemNames) {
+        setGroupItemNamesInput({ 0: item.groupItemNames.join(', ') });
+      }
+
       // カスタムアイコンのプレビューを読み込み
       if (item.customIcon) {
         await loadCustomIconPreview(0, item.customIcon);
@@ -223,58 +231,77 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
         itemCategory: 'item',
       };
     } else if (line.type === 'directive') {
-      // フォルダ取込アイテム行の場合：dir,パス,オプション
-      const parts = line.content.split(',');
-      const path = parts[1]?.trim() || '';
-      const optionsStr = parts.slice(2).join(',').trim();
+      // ディレクティブの種類を判定
+      const trimmedContent = line.content.trim();
 
-      // オプションを解析
-      const dirOptions = {
-        depth: 0,
-        types: 'both' as const,
-        filter: undefined as string | undefined,
-        exclude: undefined as string | undefined,
-        prefix: undefined as string | undefined,
-        suffix: undefined as string | undefined,
-      };
+      if (trimmedContent.startsWith('group,')) {
+        // グループアイテム行の場合：group,グループ名,アイテム1,アイテム2,...
+        const parts = line.content.split(',');
+        const groupName = parts[1]?.trim() || '';
+        const itemNames = parts.slice(2).map((name) => name.trim()).filter((name) => name);
 
-      if (optionsStr) {
-        const options = optionsStr.split(',');
-        for (const option of options) {
-          const [key, value] = option.split('=');
-          if (key && value) {
-            const trimmedKey = key.trim();
-            const trimmedValue = value.trim();
+        return {
+          name: groupName,
+          path: '', // グループはパス不要
+          type: 'app', // ダミー値
+          targetTab: 'main',
+          itemCategory: 'group',
+          groupItemNames: itemNames,
+        };
+      } else {
+        // フォルダ取込アイテム行の場合：dir,パス,オプション
+        const parts = line.content.split(',');
+        const path = parts[1]?.trim() || '';
+        const optionsStr = parts.slice(2).join(',').trim();
 
-            if (trimmedKey === 'depth') {
-              dirOptions.depth = parseInt(trimmedValue) || 0;
-            } else if (trimmedKey === 'types') {
-              const validTypes = ['file', 'folder', 'both'] as const;
-              if (validTypes.includes(trimmedValue as 'file' | 'folder' | 'both')) {
-                dirOptions.types = trimmedValue as typeof dirOptions.types;
+        // オプションを解析
+        const dirOptions = {
+          depth: 0,
+          types: 'both' as const,
+          filter: undefined as string | undefined,
+          exclude: undefined as string | undefined,
+          prefix: undefined as string | undefined,
+          suffix: undefined as string | undefined,
+        };
+
+        if (optionsStr) {
+          const options = optionsStr.split(',');
+          for (const option of options) {
+            const [key, value] = option.split('=');
+            if (key && value) {
+              const trimmedKey = key.trim();
+              const trimmedValue = value.trim();
+
+              if (trimmedKey === 'depth') {
+                dirOptions.depth = parseInt(trimmedValue) || 0;
+              } else if (trimmedKey === 'types') {
+                const validTypes = ['file', 'folder', 'both'] as const;
+                if (validTypes.includes(trimmedValue as 'file' | 'folder' | 'both')) {
+                  dirOptions.types = trimmedValue as typeof dirOptions.types;
+                }
+              } else if (trimmedKey === 'filter') {
+                dirOptions.filter = trimmedValue;
+              } else if (trimmedKey === 'exclude') {
+                dirOptions.exclude = trimmedValue;
+              } else if (trimmedKey === 'prefix') {
+                dirOptions.prefix = trimmedValue;
+              } else if (trimmedKey === 'suffix') {
+                dirOptions.suffix = trimmedValue;
               }
-            } else if (trimmedKey === 'filter') {
-              dirOptions.filter = trimmedValue;
-            } else if (trimmedKey === 'exclude') {
-              dirOptions.exclude = trimmedValue;
-            } else if (trimmedKey === 'prefix') {
-              dirOptions.prefix = trimmedValue;
-            } else if (trimmedKey === 'suffix') {
-              dirOptions.suffix = trimmedValue;
             }
           }
         }
-      }
 
-      return {
-        name: path,
-        path,
-        type: 'folder',
-        targetTab: 'main',
-        folderProcessing: 'expand',
-        dirOptions,
-        itemCategory: 'dir',
-      };
+        return {
+          name: path,
+          path,
+          type: 'folder',
+          targetTab: 'main',
+          folderProcessing: 'expand',
+          dirOptions,
+          itemCategory: 'dir',
+        };
+      }
     } else {
       // その他の場合
       return {
@@ -479,6 +506,13 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     const newItems = [...items];
     if (field === 'dirOptions') {
       newItems[index] = { ...newItems[index], dirOptions: value as RegisterItem['dirOptions'] };
+    } else if (field === 'groupItemNames') {
+      // groupItemNamesの場合は文字列をパース
+      const itemNames = (value as string)
+        .split(',')
+        .map((name) => name.trim())
+        .filter((name) => name);
+      newItems[index] = { ...newItems[index], groupItemNames: itemNames };
     } else {
       newItems[index] = { ...newItems[index], [field]: value };
     }
@@ -498,10 +532,38 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
             suffix: undefined,
           };
         }
-      } else {
-        // アイテム選択時：フォルダ処理とフォルダ取込アイテムオプションをクリア
+        // グループオプションをクリア
+        delete newItems[index].groupItemNames;
+        // グループ入力テキストもクリア
+        setGroupItemNamesInput((prev) => {
+          const newInput = { ...prev };
+          delete newInput[index];
+          return newInput;
+        });
+      } else if (value === 'group') {
+        // グループ選択時：グループアイテムオプションを初期化
+        if (!newItems[index].groupItemNames) {
+          newItems[index].groupItemNames = [];
+        }
+        // グループ入力テキストを初期化
+        setGroupItemNamesInput((prev) => ({
+          ...prev,
+          [index]: newItems[index].groupItemNames?.join(', ') || '',
+        }));
+        // フォルダ取込オプションをクリア
         delete newItems[index].folderProcessing;
         delete newItems[index].dirOptions;
+      } else {
+        // 単一アイテム選択時：両方クリア
+        delete newItems[index].folderProcessing;
+        delete newItems[index].dirOptions;
+        delete newItems[index].groupItemNames;
+        // グループ入力テキストもクリア
+        setGroupItemNamesInput((prev) => {
+          const newInput = { ...prev };
+          delete newInput[index];
+          return newInput;
+        });
       }
     }
 
@@ -541,7 +603,19 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
   };
 
   const handleRegister = () => {
-    onRegister(items);
+    // 保存前に、入力中のグループアイテム名を配列に変換
+    const finalItems = items.map((item, index) => {
+      if (item.itemCategory === 'group' && groupItemNamesInput[index] !== undefined) {
+        const itemNames = groupItemNamesInput[index]
+          .split(',')
+          .map((name) => name.trim())
+          .filter((name) => name);
+        return { ...item, groupItemNames: itemNames };
+      }
+      return item;
+    });
+
+    onRegister(finalItems);
     onClose();
   };
 
@@ -612,11 +686,12 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                     <select
                       value={item.itemCategory}
                       onChange={(e) =>
-                        handleItemChange(index, 'itemCategory', e.target.value as 'item' | 'dir')
+                        handleItemChange(index, 'itemCategory', e.target.value as 'item' | 'dir' | 'group')
                       }
                     >
                       <option value="item">単一アイテム</option>
                       <option value="dir">フォルダ取込</option>
+                      <option value="group">グループ</option>
                     </select>
                   </div>
 
@@ -626,26 +701,28 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                       type="text"
                       value={item.itemCategory === 'dir' ? '-' : item.name}
                       onChange={(e) => handleItemChange(index, 'name', e.target.value)}
-                      placeholder="表示名を入力"
+                      placeholder={item.itemCategory === 'group' ? 'グループ名を入力' : '表示名を入力'}
                       readOnly={item.itemCategory === 'dir'}
                       className={item.itemCategory === 'dir' ? 'readonly' : ''}
                     />
                   </div>
 
-                  <div className="form-group">
-                    <label>パス:</label>
-                    <input
-                      type="text"
-                      value={item.path}
-                      readOnly={!editingItem}
-                      className={editingItem ? '' : 'readonly'}
-                      onChange={(e) =>
-                        editingItem ? handleItemChange(index, 'path', e.target.value) : undefined
-                      }
-                    />
-                  </div>
+                  {item.itemCategory !== 'group' && (
+                    <div className="form-group">
+                      <label>パス:</label>
+                      <input
+                        type="text"
+                        value={item.path}
+                        readOnly={!editingItem}
+                        className={editingItem ? '' : 'readonly'}
+                        onChange={(e) =>
+                          editingItem ? handleItemChange(index, 'path', e.target.value) : undefined
+                        }
+                      />
+                    </div>
+                  )}
 
-                  {item.type === 'app' && (
+                  {item.type === 'app' && item.itemCategory !== 'group' && (
                     <div className="form-group">
                       <label>引数 (オプション):</label>
                       <input
@@ -765,6 +842,37 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                         </div>
                       )}
                     </>
+                  )}
+
+                  {item.itemCategory === 'group' && (
+                    <div className="form-group">
+                      <label>アイテム名リスト (カンマ区切り):</label>
+                      <textarea
+                        value={groupItemNamesInput[index] ?? (item.groupItemNames?.join(', ') || '')}
+                        onChange={(e) => {
+                          // 入力値をそのまま一時stateに保存
+                          setGroupItemNamesInput((prev) => ({
+                            ...prev,
+                            [index]: e.target.value,
+                          }));
+                        }}
+                        onBlur={(e) => {
+                          // フォーカスを失ったタイミングで配列に変換してitemに反映
+                          const itemNames = e.target.value
+                            .split(',')
+                            .map((name) => name.trim())
+                            .filter((name) => name);
+                          const newItems = [...items];
+                          newItems[index] = { ...newItems[index], groupItemNames: itemNames };
+                          setItems(newItems);
+                        }}
+                        placeholder="例: Visual Studio Code, Slack, Chrome"
+                        rows={3}
+                      />
+                      <small>
+                        既存のアイテム名をカンマ区切りで入力してください。グループ実行時に順番に起動されます。
+                      </small>
+                    </div>
                   )}
 
                   <div className="form-group">

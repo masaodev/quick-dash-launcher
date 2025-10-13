@@ -6,15 +6,18 @@ import {
   IconProgress,
   WindowPinMode,
   SearchHistoryEntry,
+  GroupItem,
+  AppItem,
 } from '../common/types';
 
 import { RegisterItem } from './components/RegisterModal';
 
 export interface ElectronAPI {
   getConfigFolder: () => Promise<string>;
-  loadDataFiles: () => Promise<LauncherItem[]>;
+  loadDataFiles: () => Promise<AppItem[]>;
   openItem: (item: LauncherItem) => Promise<void>;
   openParentFolder: (item: LauncherItem) => Promise<void>;
+  executeGroup: (group: GroupItem, allItems: AppItem[]) => Promise<void>;
   openConfigFolder: () => Promise<void>;
   openDataFile: () => Promise<void>;
   fetchFavicon: (url: string) => Promise<string | null>;

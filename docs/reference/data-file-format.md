@@ -16,12 +16,13 @@ QuickDashLauncherのデータファイル（data.txt、data2.txt）の完全な�
 ## 基本構文
 
 ### 行の種類
-データファイルには以下の4種類の行が存在します：
+データファイルには以下の5種類の行が存在します：
 
 1. **コメント行** (`//` で開始)
 2. **空行** (空白文字のみまたは完全に空)
 3. **単一アイテム行** (通常のアイテム定義)
 4. **フォルダ取込アイテム行** (`dir,` で開始)
+5. **グループアイテム行** (`group,` で開始)
 
 ### 基本フォーマット
 ```
@@ -29,6 +30,7 @@ QuickDashLauncherのデータファイル（data.txt、data2.txt）の完全な�
 <空行>
 表示名,パスまたはURL[,引数][,カスタムアイコン]
 dir,ディレクトリパス[,オプション1=値1][,オプション2=値2]...
+group,グループ名,アイテム名1,アイテム名2,アイテム名3,...
 ```
 
 ## 単一アイテム行の詳細
@@ -193,6 +195,70 @@ dir,C:\Source,depth=2,types=file,filter=*.{js,ts},exclude=node_modules,prefix=Sr
 [prefix: ]basename[ (suffix)],filepath,,filepath
 ```
 
+## グループアイテム行の詳細
+
+### 基本構文
+```
+group,グループ名,アイテム名1,アイテム名2,アイテム名3,...
+```
+
+### フィールド構成
+
+| フィールド | 位置 | 必須 | 説明 |
+|------------|------|------|------|
+| **グループ名** | 1 | ✓ | グループの表示名 |
+| **アイテム名1〜N** | 2〜 | ✓ | 既存アイテムの名前（参照） |
+
+### 動作仕様
+
+グループアイテムは、複数の既存アイテムをまとめて一括起動する機能です：
+
+1. **参照解決**: グループ内のアイテム名は、データファイル内の既存アイテム名を参照します
+2. **順次実行**: グループ実行時、リストされたアイテムを順番に起動します
+3. **実行間隔**: 各アイテムの起動間隔は500ms（固定）です
+4. **エラー処理**: 存在しないアイテム名は警告ログを出力してスキップします
+
+### 使用例
+
+```
+// 個別アイテムの定義
+Visual Studio Code,code.exe
+Slack,slack://
+Chrome,chrome.exe,--new-window https://localhost:3000
+開発フォルダ,C:\dev
+Zoom,zoom://
+Teams,teams://
+議事録フォルダ,C:\meetings
+Google,https://google.com
+GitHub,https://github.com
+
+// グループ定義（既存アイテム名を参照）
+group,開発環境,Visual Studio Code,Slack,Chrome,開発フォルダ
+group,会議準備,Zoom,Teams,議事録フォルダ
+group,Web閲覧,Google,GitHub
+```
+
+### 表示形式
+
+グループアイテムは、アイテムリストに以下のように表示されます：
+
+- **アイコン**: 📦（デフォルト）
+- **表示名**: `グループ名 (N個)`
+- **ツールチップ**: `グループ: アイテム名1, アイテム名2, ...`
+
+### 設計上の利点
+
+- **DRY原則**: アイテム情報の重複がありません
+- **保守性**: アイテムのパス変更時は個別定義のみ修正すればOK
+- **可読性**: グループ定義が非常に簡潔
+- **一貫性**: 既存アイテムと完全に同じ動作を保証
+
+### エラーハンドリング
+
+- **存在しないアイテム名**: 警告ログを出力し、該当アイテムをスキップ
+- **部分的な参照エラー**: エラーがあっても残りのアイテムは実行継続
+- **循環参照**: グループ内でグループは参照できません（LauncherItemのみ）
+
 ## 特殊処理
 
 ### ショートカットファイルの自動解析
@@ -258,6 +324,24 @@ interface LauncherItem {
   isDirExpanded?: boolean;   // フォルダ取込アイテム展開フラグ
   isEdited?: boolean;        // 編集フラグ
 }
+```
+
+### GroupItem
+```typescript
+interface GroupItem {
+  name: string;              // グループの表示名
+  type: 'group';             // アイテムタイプ（常に'group'）
+  itemNames: string[];       // グループ内で参照するアイテム名のリスト
+  sourceFile?: 'data.txt' | 'data2.txt';
+  lineNumber?: number;       // 元ファイルの行番号
+  isEdited?: boolean;        // 編集フラグ
+}
+```
+
+### AppItem
+```typescript
+// LauncherItemとGroupItemの統合型
+type AppItem = LauncherItem | GroupItem;
 ```
 
 ## 関連ドキュメント

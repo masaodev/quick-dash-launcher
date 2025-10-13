@@ -46,6 +46,34 @@
   text-overflow: ellipsis;
 }
 
+/* グループアイテムのスタイル */
+.item.group-item {
+  border-left: 3px solid var(--color-info);
+  background-color: var(--bg-info-light);
+}
+
+.item.group-item:hover {
+  background-color: var(--color-info-light);
+  border-left-color: var(--color-info-hover);
+}
+
+.item.group-item.selected {
+  background-color: var(--color-info);
+  border-left-color: var(--color-info-hover);
+  color: var(--color-white);
+}
+
+.item.group-item .group-count {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  margin-left: var(--spacing-xs);
+  font-weight: normal;
+}
+
+.item.group-item.selected .group-count {
+  color: rgba(255, 255, 255, 0.9);
+}
+
 /* ツールチップ付きアイテムのカーソル表示 */
 .item[title]:hover {
   cursor: pointer;

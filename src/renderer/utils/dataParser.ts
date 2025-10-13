@@ -1,20 +1,14 @@
-import { LauncherItem } from '../../common/types';
+import { AppItem } from '../../common/types';
 
 /**
- * LauncherItem配列をそのまま返す（後方互換性のため）
- * メインプロセスで既に完全にパース済みのため、この関数は不要だがApp.tsxとの互換性のために残す
+ * アイテムをクエリでフィルタリングする
+ * 複数キーワードのAND検索に対応
  *
- * @deprecated メインプロセスで完全にパース済みのため、この関数は不要です
- * @param items - LauncherItem配列
- * @returns そのまま返す
+ * @param items - フィルタリング対象のアイテム配列
+ * @param query - 検索クエリ（スペース区切りで複数キーワード指定可能）
+ * @returns フィルタリングされたアイテム配列
  */
-export function parseDataFiles(items: LauncherItem[]): {
-  mainItems: LauncherItem[];
-} {
-  return { mainItems: items };
-}
-
-export function filterItems(items: LauncherItem[], query: string): LauncherItem[] {
+export function filterItems(items: AppItem[], query: string): AppItem[] {
   if (!query) {
     return items;
   }

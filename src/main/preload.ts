@@ -7,6 +7,8 @@ import {
   IconProgress,
   WindowPinMode,
   SearchHistoryEntry,
+  GroupItem,
+  AppItem,
 } from '../common/types';
 
 interface RegisterItem {
@@ -29,9 +31,11 @@ interface DeleteItemRequest {
 
 contextBridge.exposeInMainWorld('electronAPI', {
   getConfigFolder: () => ipcRenderer.invoke('get-config-folder'),
-  loadDataFiles: (): Promise<LauncherItem[]> => ipcRenderer.invoke('load-data-files'),
+  loadDataFiles: (): Promise<AppItem[]> => ipcRenderer.invoke('load-data-files'),
   openItem: (item: LauncherItem) => ipcRenderer.invoke('open-item', item),
   openParentFolder: (item: LauncherItem) => ipcRenderer.invoke('open-parent-folder', item),
+  executeGroup: (group: GroupItem, allItems: AppItem[]) =>
+    ipcRenderer.invoke('execute-group', group, allItems),
   openConfigFolder: () => ipcRenderer.invoke('open-config-folder'),
   openDataFile: () => ipcRenderer.invoke('open-data-file'),
   fetchFavicon: (url: string) => ipcRenderer.invoke('fetch-favicon', url),

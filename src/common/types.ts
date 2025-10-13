@@ -28,6 +28,25 @@ export interface LauncherItem {
 }
 
 /**
+ * 複数のアイテムをまとめて一括起動するためのグループアイテム
+ * 既存のアイテム名を参照して、順次実行する
+ */
+export interface GroupItem {
+  /** グループの表示名 */
+  name: string;
+  /** アイテムタイプ（常に'group'） */
+  type: 'group';
+  /** グループ内で参照するアイテム名のリスト */
+  itemNames: string[];
+  /** アイテムの元データファイル */
+  sourceFile?: 'data.txt' | 'data2.txt';
+  /** データファイル内の行番号（編集機能で使用） */
+  lineNumber?: number;
+  /** 編集モードで変更されたかどうか */
+  isEdited?: boolean;
+}
+
+/**
  * データファイル（data.txt、data2.txt）の内容を表すインターフェース
  * フォルダ取込アイテムの展開処理などで使用される
  */
@@ -161,3 +180,9 @@ export interface SearchHistoryState {
   /** 現在選択中の履歴インデックス（-1は履歴を使用していない状態） */
   currentIndex: number;
 }
+
+/**
+ * アプリケーションで扱うすべてのアイテムの統合型
+ * 通常のLauncherItemとGroupItemの両方を扱える
+ */
+export type AppItem = LauncherItem | GroupItem;

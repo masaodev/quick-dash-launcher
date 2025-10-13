@@ -66,6 +66,11 @@ const EditModeView: React.FC<EditModeViewProps> = ({
       } else {
         newContent = `dir,${item.path}`;
       }
+    } else if (item.itemCategory === 'group') {
+      // グループアイテムの場合：group,グループ名,アイテム1,アイテム2,...
+      newType = 'directive';
+      const itemNames = item.groupItemNames || [];
+      newContent = `group,${item.name},${itemNames.join(',')}`;
     } else {
       // アイテム行の場合：名前,パス,引数,カスタムアイコン の形式
       newType = 'item';
