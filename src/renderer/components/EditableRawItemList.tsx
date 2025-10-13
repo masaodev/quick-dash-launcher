@@ -30,6 +30,15 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
 
   const getLineKey = (line: RawDataLine) => `${line.sourceFile}_${line.lineNumber}`;
 
+  // ディレクティブの種類を判定
+  const isGroupDirective = (line: RawDataLine): boolean => {
+    return line.type === 'directive' && line.content.trim().startsWith('group,');
+  };
+
+  const isDirDirective = (line: RawDataLine): boolean => {
+    return line.type === 'directive' && line.content.trim().startsWith('dir,');
+  };
+
   const handleCellEdit = (line: RawDataLine) => {
     const cellKey = getLineKey(line);
     setEditingCell(cellKey);
@@ -40,8 +49,16 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
       const parts = line.content.split(',');
       pathOnly = parts[1]?.trim() || '';
     } else if (line.type === 'directive') {
-      const parts = line.content.split(',');
-      pathOnly = parts[1]?.trim() || '';
+      if (isGroupDirective(line)) {
+        // グループの場合：アイテム名のリスト（カンマ区切り）
+        const parts = line.content.split(',');
+        const itemNames = parts.slice(2).map((name) => name.trim()).filter((name) => name);
+        pathOnly = itemNames.join(', ');
+      } else {
+        // フォルダ取込の場合：フォルダパス
+        const parts = line.content.split(',');
+        pathOnly = parts[1]?.trim() || '';
+      }
     } else {
       // コメント行や空行の場合：元の内容を表示
       pathOnly = line.content || '';
@@ -60,7 +77,13 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
     const parts = line.content.split(',');
     let currentPath = '';
     if (line.type === 'item' || line.type === 'directive') {
-      currentPath = parts[1]?.trim() || '';
+      if (isGroupDirective(line)) {
+        // グループの場合：アイテム名のリスト
+        const itemNames = parts.slice(2).map((name) => name.trim()).filter((name) => name);
+        currentPath = itemNames.join(', ');
+      } else {
+        currentPath = parts[1]?.trim() || '';
+      }
     } else {
       currentPath = line.content;
     }
@@ -85,15 +108,26 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
           newContent = `${name},${trimmedValue}`;
         }
       } else if (line.type === 'directive') {
-        // フォルダ取込アイテムの場合：パスのみ更新、オプションは保持
-        const directive = parts[0] || 'dir';
-        const existingOptions = parts.slice(2).join(','); // 既存のオプションを保持
-
-        // 新しいパスで再構築（オプションは保持）
-        if (existingOptions) {
-          newContent = `${directive},${trimmedValue},${existingOptions}`;
+        if (isGroupDirective(line)) {
+          // グループの場合：アイテム名リストを更新
+          const groupName = parts[1] || '';
+          // カンマ区切りのアイテム名リストをパース
+          const newItemNames = trimmedValue
+            .split(',')
+            .map((name) => name.trim())
+            .filter((name) => name);
+          newContent = `group,${groupName},${newItemNames.join(',')}`;
         } else {
-          newContent = `${directive},${trimmedValue}`;
+          // フォルダ取込アイテムの場合：パスのみ更新、オプションは保持
+          const directive = parts[0] || 'dir';
+          const existingOptions = parts.slice(2).join(','); // 既存のオプションを保持
+
+          // 新しいパスで再構築（オプションは保持）
+          if (existingOptions) {
+            newContent = `${directive},${trimmedValue},${existingOptions}`;
+          } else {
+            newContent = `${directive},${trimmedValue}`;
+          }
         }
       } else {
         // コメント行や空行の場合：そのまま更新
@@ -114,7 +148,13 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
 
   const handleNameEdit = (line: RawDataLine) => {
     const parts = line.content.split(',');
-    const name = parts[0]?.trim() || '';
+    let name = '';
+    if (line.type === 'item') {
+      name = parts[0]?.trim() || '';
+    } else if (isGroupDirective(line)) {
+      // group,グループ名,アイテム1,アイテム2,...
+      name = parts[1]?.trim() || '';
+    }
     const cellKey = `${getLineKey(line)}_name`;
     setEditingCell(cellKey);
     setEditingValue(name);
@@ -122,10 +162,18 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
 
   const handleNameSave = (line: RawDataLine) => {
     const parts = line.content.split(',');
-    parts[0] = editingValue.trim();
-    const newContent = parts.join(',');
+    let newContent = '';
 
-    if (newContent !== line.content) {
+    if (line.type === 'item') {
+      parts[0] = editingValue.trim();
+      newContent = parts.join(',');
+    } else if (isGroupDirective(line)) {
+      // group,グループ名,アイテム1,アイテム2,...
+      parts[1] = editingValue.trim();
+      newContent = parts.join(',');
+    }
+
+    if (newContent && newContent !== line.content) {
       const updatedLine = { ...line, content: newContent };
       onLineEdit(updatedLine);
     }
@@ -153,10 +201,17 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
     }
   };
 
-  const getLineTypeIcon = (type: RawDataLine['type']) => {
-    switch (type) {
-      case 'directive':
+  const getLineTypeIcon = (line: RawDataLine) => {
+    if (line.type === 'directive') {
+      if (isGroupDirective(line)) {
+        return '📦';
+      } else if (isDirDirective(line)) {
         return '🗂️';
+      }
+      return '🗂️'; // デフォルトはフォルダ取込
+    }
+
+    switch (line.type) {
       case 'item':
         return '📄';
       case 'comment':
@@ -168,10 +223,17 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
     }
   };
 
-  const getLineTypeDisplayName = (type: RawDataLine['type']) => {
-    switch (type) {
-      case 'directive':
+  const getLineTypeDisplayName = (line: RawDataLine) => {
+    if (line.type === 'directive') {
+      if (isGroupDirective(line)) {
+        return 'グループ';
+      } else if (isDirDirective(line)) {
         return 'フォルダ取込';
+      }
+      return 'ディレクティブ'; // デフォルト
+    }
+
+    switch (line.type) {
       case 'item':
         return '単一アイテム';
       case 'comment':
@@ -184,10 +246,16 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
   };
 
   const renderNameCell = (line: RawDataLine) => {
-    if (line.type === 'item') {
-      // アイテム行の場合、CSV形式から名前を抽出
+    if (line.type === 'item' || isGroupDirective(line)) {
+      // アイテム行またはグループ行の場合、CSV形式から名前を抽出
       const parts = line.content.split(',');
-      const name = parts[0]?.trim() || '';
+      let name = '';
+      if (line.type === 'item') {
+        name = parts[0]?.trim() || '';
+      } else if (isGroupDirective(line)) {
+        // group,グループ名,アイテム1,アイテム2,...
+        name = parts[1]?.trim() || '';
+      }
 
       const cellKey = `${getLineKey(line)}_name`;
       const isEditing = editingCell === cellKey;
@@ -230,27 +298,45 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
       if (!pathPart) return '(パスなし)';
       return argsPart ? `${pathPart} ${argsPart}` : pathPart;
     } else if (line.type === 'directive') {
-      // フォルダ取込アイテムの場合：フォルダパス＋オプション
-      const parts = line.content.split(',');
-      const pathPart = parts[1]?.trim() || '';
-      const options = parts.slice(2).join(',').trim();
-      if (!pathPart) return '(フォルダパスなし)';
-      return options ? `${pathPart} ${options}` : pathPart;
+      if (isGroupDirective(line)) {
+        // グループアイテムの場合：アイテム名のリスト
+        // group,グループ名,アイテム1,アイテム2,...
+        const parts = line.content.split(',');
+        const itemNames = parts.slice(2).map((name) => name.trim()).filter((name) => name);
+        if (itemNames.length === 0) return '(アイテムなし)';
+        return itemNames.join(', ');
+      } else {
+        // フォルダ取込アイテムの場合：フォルダパス＋オプション
+        const parts = line.content.split(',');
+        const pathPart = parts[1]?.trim() || '';
+        const options = parts.slice(2).join(',').trim();
+        if (!pathPart) return '(フォルダパスなし)';
+        return options ? `${pathPart} ${options}` : pathPart;
+      }
     } else {
       // コメント行や空行の場合：元の内容を表示
       return line.content || (line.type === 'empty' ? '(空行)' : '');
     }
   };
 
-  const handleTypeSelection = (line: RawDataLine, newType: 'item' | 'directive') => {
+  const handleTypeSelection = (
+    line: RawDataLine,
+    newType: 'item' | 'directive',
+    directiveType?: 'dir' | 'group'
+  ) => {
     let newContent = '';
 
     if (newType === 'item') {
       // 単一アイテムの場合：名前,パス,引数の形式（名前とパスは空で初期化）
       newContent = ',';
     } else if (newType === 'directive') {
-      // フォルダ取り込みの場合：dir,パスの形式（パスは空で初期化）
-      newContent = 'dir,';
+      if (directiveType === 'group') {
+        // グループの場合：group,グループ名,アイテム名1,アイテム名2,...の形式（グループ名は空で初期化）
+        newContent = 'group,';
+      } else {
+        // フォルダ取り込みの場合：dir,パスの形式（パスは空で初期化）
+        newContent = 'dir,';
+      }
     }
 
     const updatedLine = {
@@ -274,10 +360,17 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
           </button>
           <button
             className="type-select-button folder-button"
-            onClick={() => handleTypeSelection(line, 'directive')}
+            onClick={() => handleTypeSelection(line, 'directive', 'dir')}
             title="フォルダ取り込みとして設定"
           >
             🗂️ フォルダ取り込み
+          </button>
+          <button
+            className="type-select-button group-button"
+            onClick={() => handleTypeSelection(line, 'directive', 'group')}
+            title="グループとして設定"
+          >
+            📦 グループ
           </button>
         </div>
       );
@@ -285,8 +378,8 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
 
     return (
       <>
-        <span className="type-icon">{getLineTypeIcon(line.type)}</span>
-        <span className="type-name">{getLineTypeDisplayName(line.type)}</span>
+        <span className="type-icon">{getLineTypeIcon(line)}</span>
+        <span className="type-name">{getLineTypeDisplayName(line)}</span>
       </>
     );
   };
@@ -322,12 +415,16 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
       );
     }
 
+    // ツールチップテキストを動的に生成
+    let tooltipText = '';
+    if (isGroupDirective(line)) {
+      tooltipText = 'クリックしてアイテム名リストを編集できます（カンマ区切りで入力）';
+    } else {
+      tooltipText = 'クリックしてパスを編集できます。引数を変更する場合は✏️ボタンから詳細編集を開いてください';
+    }
+
     return (
-      <div
-        className="editable-cell"
-        onClick={() => handleCellEdit(line)}
-        title="クリックしてパスを編集できます。引数を変更する場合は✏️ボタンから詳細編集を開いてください"
-      >
+      <div className="editable-cell" onClick={() => handleCellEdit(line)} title={tooltipText}>
         {getPathAndArgs(line)}
       </div>
     );

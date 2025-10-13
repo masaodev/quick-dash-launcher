@@ -6,7 +6,7 @@ import { minimatch } from 'minimatch';
 import { dataLogger } from '@common/logger';
 import { FileUtils } from '@common/utils/fileUtils';
 
-import { RawDataLine, SimpleBookmarkItem, LauncherItem } from '../../common/types';
+import { RawDataLine, SimpleBookmarkItem, LauncherItem, GroupItem, AppItem } from '../../common/types';
 import { BackupService } from '../services/backupService.js';
 
 // フォルダ取込アイテムのオプション型定義
@@ -391,19 +391,19 @@ async function scanDirectory(
 }
 
 /**
- * 設定フォルダからデータファイル（data.txt, data2.txt）を読み込み、LauncherItem配列に変換する
+ * 設定フォルダからデータファイル（data.txt, data2.txt）を読み込み、AppItem配列に変換する
  * フォルダ取込アイテムの展開、.lnkファイルの解析、CSV行のパース、重複チェック、ソートを全て実行する
  *
  * @param configFolder - 設定フォルダのパス
- * @returns LauncherItem配列
+ * @returns AppItem配列（LauncherItemとGroupItemの両方を含む）
  * @throws ファイル読み込みエラー、フォルダ取込アイテム処理エラー
  *
  * @example
  * const items = await loadDataFiles('/path/to/config');
  * // [{ name: 'Google', path: 'https://google.com', type: 'url', ... }, ...]
  */
-async function loadDataFiles(configFolder: string): Promise<LauncherItem[]> {
-  const items: LauncherItem[] = [];
+async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
+  const items: AppItem[] = [];
   const seenPaths = new Set<string>();
   const dataFiles = ['data.txt', 'data2.txt'] as const;
 
@@ -449,6 +449,28 @@ async function loadDataFiles(configFolder: string): Promise<LauncherItem[]> {
             }
           } catch (error) {
             dataLogger.error('ディレクトリのスキャンに失敗', { dirPath, error });
+          }
+        }
+        continue;
+      }
+
+      // Handle グループアイテム
+      if (trimmedLine.startsWith('group,')) {
+        const parts = parseCSVLine(trimmedLine.substring(6)); // 'group,'を除去
+        if (parts.length >= 2) {
+          const groupName = parts[0];
+          const itemNames = parts.slice(1).filter((name) => name.trim());
+
+          if (groupName && itemNames.length > 0) {
+            const groupItem: GroupItem = {
+              name: groupName,
+              type: 'group',
+              itemNames: itemNames,
+              sourceFile: fileName,
+              lineNumber: lineIndex + 1,
+              isEdited: false,
+            };
+            items.push(groupItem);
           }
         }
         continue;
@@ -594,7 +616,7 @@ function detectLineType(line: string): RawDataLine['type'] {
     return 'comment';
   }
 
-  if (trimmedLine.startsWith('dir,')) {
+  if (trimmedLine.startsWith('dir,') || trimmedLine.startsWith('group,')) {
     return 'directive';
   }
 

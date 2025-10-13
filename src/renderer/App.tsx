@@ -1,20 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-import { LauncherItem, WindowPinMode } from '../common/types';
+import { LauncherItem, GroupItem, AppItem, WindowPinMode } from '../common/types';
 
 import SearchBox from './components/SearchBox';
 import ItemList from './components/ItemList';
 import ActionButtons from './components/ActionButtons';
 import RegisterModal, { RegisterItem } from './components/RegisterModal';
 import IconProgressBar from './components/IconProgressBar';
-import { parseDataFiles, filterItems } from './utils/dataParser';
+import { filterItems } from './utils/dataParser';
 import { debugLog, debugInfo, logWarn } from './utils/debug';
 import { useIconProgress } from './hooks/useIconProgress';
 import { useSearchHistory } from './hooks/useSearchHistory';
 
 const App: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [mainItems, setMainItems] = useState<LauncherItem[]>([]);
+  const [mainItems, setMainItems] = useState<AppItem[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [windowPinMode, setWindowPinMode] = useState<WindowPinMode>('normal');
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
@@ -112,19 +112,24 @@ const App: React.FC = () => {
   }, []);
 
   const loadItems = async () => {
-    const dataFiles = await window.electronAPI.loadDataFiles();
-    const { mainItems: main } = parseDataFiles(dataFiles);
+    const items = await window.electronAPI.loadDataFiles();
 
-    // Load cached icons
-    const iconCache = await window.electronAPI.loadCachedIcons(main);
+    // Load cached icons (LauncherItemのみ)
+    const launcherItems = items.filter((item) => item.type !== 'group') as LauncherItem[];
+    const iconCache = await window.electronAPI.loadCachedIcons(launcherItems);
 
     // Apply cached icons to items
-    const mainWithIcons = main.map((item) => ({
-      ...item,
-      icon: iconCache[item.path] || item.icon,
-    }));
+    const itemsWithIcons = items.map((item) => {
+      if (item.type === 'group') {
+        return item;
+      }
+      return {
+        ...item,
+        icon: iconCache[(item as LauncherItem).path] || ('icon' in item ? item.icon : undefined),
+      };
+    });
 
-    setMainItems(mainWithIcons);
+    setMainItems(itemsWithIcons);
   };
 
   const handleSearch = (query: string) => {
@@ -154,15 +159,20 @@ const App: React.FC = () => {
     switch (e.key) {
       case 'Enter':
         e.stopPropagation();
-        if (e.shiftKey && filteredItems[selectedIndex]) {
-          await window.electronAPI.openParentFolder(filteredItems[selectedIndex]);
+        if (e.shiftKey && filteredItems[selectedIndex] && filteredItems[selectedIndex].type !== 'group') {
+          await window.electronAPI.openParentFolder(filteredItems[selectedIndex] as LauncherItem);
         } else if (filteredItems[selectedIndex]) {
           // 検索クエリがある場合は履歴に追加（フロントエンド側で即座に）
           if (searchQuery.trim()) {
             await addHistoryEntry(searchQuery.trim());
           }
           // アイテムを実行（検索クエリはバックエンドに送らない）
-          await window.electronAPI.openItem(filteredItems[selectedIndex]);
+          const item = filteredItems[selectedIndex];
+          if (item.type === 'group') {
+            await window.electronAPI.executeGroup(item as GroupItem, mainItems);
+          } else {
+            await window.electronAPI.openItem(item as LauncherItem);
+          }
         }
         break;
       case 'ArrowUp':
@@ -199,6 +209,15 @@ const App: React.FC = () => {
     await window.electronAPI.openItem(item);
   };
 
+  const handleGroupExecute = async (group: GroupItem) => {
+    // 検索クエリがある場合は履歴に追加
+    if (searchQuery.trim()) {
+      await addHistoryEntry(searchQuery.trim());
+    }
+    // グループを実行
+    await window.electronAPI.executeGroup(group, mainItems);
+  };
+
   const handleFetchFavicon = async (forceAll: boolean = false) => {
     debugInfo(
       forceAll
@@ -206,10 +225,10 @@ const App: React.FC = () => {
         : 'アイコンなしURLアイテムのファビコンを取得開始'
     );
 
-    // Extract URL items based on forceAll flag
+    // Extract URL items based on forceAll flag (グループアイテムを除外)
     const allUrls = forceAll
-      ? mainItems.filter((item) => item.type === 'url').map((item) => item.path)
-      : mainItems.filter((item) => item.type === 'url' && !item.icon).map((item) => item.path);
+      ? mainItems.filter((item) => item.type === 'url').map((item) => (item as LauncherItem).path)
+      : mainItems.filter((item) => item.type === 'url' && !('icon' in item && item.icon)).map((item) => (item as LauncherItem).path);
 
     if (allUrls.length === 0) {
       debugInfo('取得対象のURLアイテムがありません');
@@ -220,10 +239,10 @@ const App: React.FC = () => {
     const results = await window.electronAPI.fetchFaviconsWithProgress(allUrls);
 
     // Apply fetched favicons to items
-    const updateItemsWithFavicons = (items: LauncherItem[]) => {
+    const updateItemsWithFavicons = (items: AppItem[]) => {
       return items.map((item) => {
-        if (item.type === 'url' && results[item.path]) {
-          return { ...item, icon: results[item.path] || undefined };
+        if (item.type === 'url' && results[(item as LauncherItem).path]) {
+          return { ...item, icon: results[(item as LauncherItem).path] || undefined };
         }
         return item;
       });
@@ -240,10 +259,10 @@ const App: React.FC = () => {
         : 'アイコンなしアイテムのアイコン抽出を開始'
     );
 
-    // Extract items based on forceAll flag (excluding URLs)
+    // Extract items based on forceAll flag (excluding URLs and groups)
     const allIconItems = forceAll
-      ? mainItems.filter((item) => item.type !== 'url')
-      : mainItems.filter((item) => !item.icon && item.type !== 'url');
+      ? mainItems.filter((item) => item.type !== 'url' && item.type !== 'group') as LauncherItem[]
+      : mainItems.filter((item) => item.type !== 'url' && item.type !== 'group' && !('icon' in item && item.icon)) as LauncherItem[];
 
     if (allIconItems.length === 0) {
       debugInfo('抽出対象のアイテムがありません');
@@ -254,10 +273,10 @@ const App: React.FC = () => {
     const results = await window.electronAPI.extractIconsWithProgress(allIconItems);
 
     // Apply extracted icons to items
-    const updateItemsWithIcons = (items: LauncherItem[]) => {
+    const updateItemsWithIcons = (items: AppItem[]) => {
       return items.map((item) => {
-        if (item.type !== 'url' && results[item.path]) {
-          return { ...item, icon: results[item.path] || undefined };
+        if (item.type !== 'url' && item.type !== 'group' && results[(item as LauncherItem).path]) {
+          return { ...item, icon: results[(item as LauncherItem).path] || undefined };
         }
         return item;
       });
@@ -445,8 +464,10 @@ const App: React.FC = () => {
 
         <ItemList
           items={filteredItems}
+          allItems={mainItems}
           selectedIndex={selectedIndex}
           onItemClick={handleItemClick}
+          onGroupExecute={handleGroupExecute}
           onItemSelect={setSelectedIndex}
           onCopyPath={handleCopyPath}
           onCopyParentPath={handleCopyParentPath}
