@@ -8,6 +8,7 @@ import * as crypto from 'crypto';
 import { ipcMain, BrowserWindow, dialog } from 'electron';
 import { iconLogger } from '@common/logger';
 import { FileUtils } from '@common/utils/fileUtils';
+import { PathUtils } from '@common/utils/pathUtils';
 
 import { ProgressManager } from '../utils/progressManager';
 import { FaviconService } from '../services/faviconService';
@@ -23,6 +24,17 @@ let faviconService: FaviconService;
 let mainWindow: BrowserWindow | null = null;
 
 const execAsync = promisify(exec);
+
+/**
+ * バッファをBase64エンコードされたデータURLに変換する
+ * @param buffer 変換するバッファ
+ * @param mimeType MIMEタイプ（デフォルト: 'image/png'）
+ * @returns base64エンコードされたデータURL
+ */
+function bufferToBase64DataUrl(buffer: Buffer, mimeType = 'image/png'): string {
+  const base64 = buffer.toString('base64');
+  return `data:${mimeType};base64,${base64}`;
+}
 
 /**
  * 環境変数を展開する共通関数
@@ -102,11 +114,10 @@ async function extractShortcutIcon(lnkPath: string, iconsFolder: string): Promis
               // ショートカット専用キャッシュに保存
               FileUtils.writeBinaryFile(lnkIconPath, extractedIconBuffer);
 
-              const base64 = extractedIconBuffer.toString('base64');
               iconLogger.info(
                 `カスタムアイコンファイルからアイコンを抽出成功: ${expandedIconPath}`
               );
-              return `data:image/png;base64,${base64}`;
+              return bufferToBase64DataUrl(extractedIconBuffer);
             }
           }
         } catch (error) {
@@ -128,9 +139,8 @@ async function extractShortcutIcon(lnkPath: string, iconsFolder: string): Promis
       // ショートカット専用キャッシュに保存
       FileUtils.writeBinaryFile(lnkIconPath, shortcutIconBuffer);
 
-      const base64 = shortcutIconBuffer.toString('base64');
       iconLogger.info(`ショートカットファイルからアイコンを抽出成功: ${lnkPath}`);
-      return `data:image/png;base64,${base64}`;
+      return bufferToBase64DataUrl(shortcutIconBuffer);
     }
 
     // 3. 最終フォールバック：ターゲットファイルからアイコンを抽出
@@ -173,7 +183,7 @@ async function extractIcon(filePath: string, iconsFolder: string): Promise<strin
     }
 
     // .lnkファイルの場合は専用関数を使用
-    if (filePath.toLowerCase().endsWith('.lnk')) {
+    if (PathUtils.isShortcutFile(filePath)) {
       iconLogger.info(`ショートカットファイルを検出、専用処理を実行: ${filePath}`);
       return await extractShortcutIcon(filePath, iconsFolder);
     }
@@ -196,8 +206,7 @@ async function extractIcon(filePath: string, iconsFolder: string): Promise<strin
       fs.writeFileSync(iconPath, iconBuffer);
 
       // base64データURLに変換
-      const base64 = iconBuffer.toString('base64');
-      return `data:image/png;base64,${base64}`;
+      return bufferToBase64DataUrl(iconBuffer);
     }
 
     return null;
@@ -224,8 +233,7 @@ async function extractCustomUriIcon(uri: string, iconsFolder: string): Promise<s
     // アイコンがすでにキャッシュされているか確認
     if (fs.existsSync(iconPath)) {
       const cachedIcon = fs.readFileSync(iconPath);
-      const base64 = cachedIcon.toString('base64');
-      return `data:image/png;base64,${base64}`;
+      return bufferToBase64DataUrl(cachedIcon);
     }
 
     // レジストリからハンドラーアプリケーションを取得
@@ -242,8 +250,7 @@ async function extractCustomUriIcon(uri: string, iconsFolder: string): Promise<s
       fs.writeFileSync(iconPath, iconBuffer);
 
       // base64データURLに変換
-      const base64 = iconBuffer.toString('base64');
-      return `data:image/png;base64,${base64}`;
+      return bufferToBase64DataUrl(iconBuffer);
     }
 
     return null;
@@ -294,8 +301,7 @@ async function extractFileIconByExtension(
     // アイコンがすでにキャッシュされているか確認
     if (fs.existsSync(iconPath)) {
       const cachedIcon = fs.readFileSync(iconPath);
-      const base64 = cachedIcon.toString('base64');
-      return `data:image/png;base64,${base64}`;
+      return bufferToBase64DataUrl(cachedIcon);
     }
 
     // 拡張子に対応するダミーファイルを作成してアイコンを取得
@@ -310,8 +316,7 @@ async function extractFileIconByExtension(
         fs.writeFileSync(iconPath, iconBuffer);
 
         // base64データURLに変換
-        const base64 = iconBuffer.toString('base64');
-        return `data:image/png;base64,${base64}`;
+        return bufferToBase64DataUrl(iconBuffer);
       }
     } finally {
       // 一時ファイルを削除
@@ -466,13 +471,13 @@ async function loadCachedIcons(
           }
         } else if (
           item.type === 'app' &&
-          ((item.originalPath && item.originalPath.endsWith('.lnk')) ||
-            (item.path && item.path.endsWith('.lnk')))
+          (PathUtils.isShortcutFile(item.originalPath) || PathUtils.isShortcutFile(item.path))
         ) {
           // ショートカットファイルの場合（展開済みアイテムまたは直接指定）
           // 元のショートカットパスを優先、なければ現在のパスを使用
-          const shortcutPath =
-            item.originalPath && item.originalPath.endsWith('.lnk') ? item.originalPath : item.path;
+          const shortcutPath = PathUtils.isShortcutFile(item.originalPath)
+            ? item.originalPath!
+            : item.path;
 
           const shortcutName = path.basename(shortcutPath, '.lnk');
           const lnkIconPath = path.join(iconsFolder, `${shortcutName}_lnk_icon.png`);
@@ -530,8 +535,7 @@ async function loadCachedIcons(
 
       if (iconPath) {
         const iconBuffer = fs.readFileSync(iconPath);
-        const base64 = iconBuffer.toString('base64');
-        iconCache[item.path] = `data:image/png;base64,${base64}`;
+        iconCache[item.path] = bufferToBase64DataUrl(iconBuffer);
       }
     } catch (error) {
       iconLogger.error(`キャッシュされたアイコンの読み込みに失敗: ${item.path}`, { error });
@@ -596,11 +600,11 @@ async function extractIconsWithProgress(
 
       if (item.type === 'app') {
         // ショートカットから展開されたアイテムの場合、元のショートカットファイルからアイコンを抽出
-        if (item.originalPath && item.originalPath.endsWith('.lnk')) {
-          icon = await extractIcon(item.originalPath, iconsFolder);
+        if (PathUtils.isShortcutFile(item.originalPath)) {
+          icon = await extractIcon(item.originalPath!, iconsFolder);
         }
         // 通常のアプリケーションファイル（.exe）またはショートカットファイル（.lnk）の場合
-        else if (item.path.endsWith('.exe') || item.path.endsWith('.lnk')) {
+        else if (item.path.endsWith('.exe') || PathUtils.isShortcutFile(item.path)) {
           icon = await extractIcon(item.path, iconsFolder);
         }
       } else if (item.type === 'customUri') {

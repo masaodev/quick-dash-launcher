@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 
 import { LauncherItem } from '../../common/types';
+import { PathUtils } from '@common/utils/pathUtils';
 
 interface ContextMenuProps {
   isVisible: boolean;
@@ -87,25 +88,15 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
   };
 
   // ショートカットアイテムかどうかを判定
-  const isShortcutItem = item?.originalPath?.toLowerCase().endsWith('.lnk');
+  const isShortcutItem = item ? PathUtils.isShortcutItem(item) : false;
 
   // パスを取得するヘルパー関数
   const getFullPath = (): string => {
-    if (!item) return '';
-    if (item.args) {
-      return `${item.path} ${item.args}`;
-    }
-    return item.path;
+    return item ? PathUtils.getFullPath(item) : '';
   };
 
   const getParentPath = (): string => {
-    if (!item) return '';
-    const path = item.path;
-    const lastSlash = Math.max(path.lastIndexOf('\\'), path.lastIndexOf('/'));
-    if (lastSlash > 0) {
-      return path.substring(0, lastSlash);
-    }
-    return '';
+    return item ? PathUtils.getParentPath(item.path) : '';
   };
 
   const getShortcutPath = (): string => {
@@ -113,13 +104,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
   };
 
   const getShortcutParentPath = (): string => {
-    if (!item?.originalPath) return '';
-    const path = item.originalPath;
-    const lastSlash = Math.max(path.lastIndexOf('\\'), path.lastIndexOf('/'));
-    if (lastSlash > 0) {
-      return path.substring(0, lastSlash);
-    }
-    return '';
+    return item?.originalPath ? PathUtils.getParentPath(item.originalPath) : '';
   };
 
   const getAdjustedPosition = () => {

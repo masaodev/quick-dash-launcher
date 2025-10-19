@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 import { LauncherItem, GroupItem, AppItem } from '../../common/types';
+import { PathUtils } from '@common/utils/pathUtils';
 
 import ContextMenu from './ContextMenu';
 
@@ -72,13 +73,6 @@ const ItemList: React.FC<ItemListProps> = ({
     }
   };
 
-  const getFullPath = (item: LauncherItem): string => {
-    // pathとargsを結合して完全なコマンドラインを返す
-    if (item.args) {
-      return `${item.path} ${item.args}`;
-    }
-    return item.path;
-  };
 
   const handleContextMenu = (event: React.MouseEvent, item: AppItem) => {
     event.preventDefault();
@@ -157,7 +151,7 @@ const ItemList: React.FC<ItemListProps> = ({
             }}
             onMouseEnter={() => onItemSelect(index)}
             onContextMenu={(e) => handleContextMenu(e, item)}
-            title={isGroup ? `グループ: ${groupItem?.itemNames.join(', ')}` : getFullPath(item as LauncherItem)}
+            title={isGroup ? `グループ: ${groupItem?.itemNames.join(', ')}` : PathUtils.getFullPath(item as LauncherItem)}
           >
             <span className="item-icon">
               {!isGroup && (item as LauncherItem).icon ? (
