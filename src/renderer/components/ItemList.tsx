@@ -159,7 +159,13 @@ const ItemList: React.FC<ItemListProps> = ({
             onContextMenu={(e) => handleContextMenu(e, item)}
             title={isGroup ? `グループ: ${groupItem?.itemNames.join(', ')}` : getFullPath(item as LauncherItem)}
           >
-            <span className="item-icon">{getDefaultIcon(item)}</span>
+            <span className="item-icon">
+              {!isGroup && (item as LauncherItem).icon ? (
+                <img src={(item as LauncherItem).icon} alt="" width="24" height="24" />
+              ) : (
+                getDefaultIcon(item)
+              )}
+            </span>
             <span className="item-name">
               {item.name}
               {isGroup && groupItem && (
