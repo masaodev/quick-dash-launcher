@@ -48,11 +48,12 @@ npm run test:e2e:headed # ヘッド付きでE2Eテスト実行
 
 ## 詳細ドキュメント
 
-### 📖 ガイド類
+### 📖 開発者向けガイド
 - **[はじめに](docs/guides/getting-started.md)** - プロジェクトの基本情報とセットアップ
 - **[開発ガイド](docs/guides/development.md)** - 実装詳細とコード品質ガイドライン
 - **[ビルドとデプロイ](docs/guides/build-and-deploy.md)** - ビルドシステムと配布方法
 - **[テストチェックリスト](docs/guides/testing.md)** - 手動テストの手順
+- **[GitHub ワークフロー](docs/guides/github-workflow.md)** - Git操作とPRフロー
 
 ### 📖 ユーザーマニュアル
 - **[アイコンシステム](docs/manual/icon-system.md)** - アイコン取得・管理システム
@@ -61,22 +62,17 @@ npm run test:e2e:headed # ヘッド付きでE2Eテスト実行
 - **[アイテム管理](docs/manual/item-management.md)** - 生データ編集機能の詳細
 - **[アプリケーション設定](docs/manual/app-settings.md)** - ホットキー・ウィンドウサイズ等の設定
 
-### 🏗️ アーキテクチャ
-- **[システム概要](docs/reference/architecture/overview.md)** - プロセス構造とデータ処理
-- **[IPCチャンネル](docs/reference/architecture/ipc-channels.md)** - プロセス間通信の仕様
-- **[データフロー](docs/reference/architecture/data-flow.md)** - データ処理の流れ
-- **[ウィンドウ制御](docs/reference/architecture/window-control.md)** - ウィンドウ管理システム
-- **[CSSデザインシステム](docs/reference/architecture/css-design-system.md)** - 統一されたスタイル管理システム
-
-### 📚 リファレンス
+### 📚 リファレンス（仕様書）
 - **[データファイル形式仕様](docs/reference/data-file-format.md)** - data.txtファイル形式の完全仕様
 - **[アプリケーション設定仕様](docs/reference/settings-specification.md)** - 設定項目の完全仕様
 - **[アイコン仕様](docs/reference/icon-specification.md)** - アイコン処理の完全仕様
 - **[キーボードショートカット](docs/reference/keyboard-shortcuts.md)** - ショートカット一覧
 - **[画面構成](docs/reference/screens/screen-list.md)** - UI仕様
-
-### 📝 開発プロセス
-- **[GitHub ワークフロー](docs/guides/github-workflow.md)** - Git操作とPRフロー
+- **[システム概要](docs/reference/architecture/overview.md)** - プロセス構造とデータ処理
+- **[IPCチャンネル](docs/reference/architecture/ipc-channels.md)** - プロセス間通信の仕様
+- **[データフロー](docs/reference/architecture/data-flow.md)** - データ処理の流れ
+- **[ウィンドウ制御](docs/reference/architecture/window-control.md)** - ウィンドウ管理システム
+- **[CSSデザインシステム](docs/reference/architecture/css-design-system.md)** - 統一されたスタイル管理システム
 
 ## 技術スタック・制約事項
 
