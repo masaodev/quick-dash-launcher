@@ -369,6 +369,7 @@ async function scanDirectory(
               itemPath,
               sourceFile,
               undefined,
+              undefined,
               options.prefix,
               options.suffix
             );
