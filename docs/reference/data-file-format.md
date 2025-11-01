@@ -349,4 +349,3 @@ type AppItem = LauncherItem | GroupItem;
 - **[アイテム管理](../features/item-management.md)** - データファイルの編集機能
 - **[フォルダ取込アイテム](../features/folder-import-item.md)** - フォルダ取込機能の詳細
 - **[開発ガイド](../guides/development.md)** - 開発時の注意事項
-- **[APIリファレンス](api-reference.md)** - データ処理API一覧
