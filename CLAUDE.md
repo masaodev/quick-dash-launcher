@@ -48,6 +48,8 @@ npm run test:e2e:headed # ヘッド付きでE2Eテスト実行
 
 ## 詳細ドキュメント
 
+ドキュメント構成の詳細は **[ドキュメント構成ガイド](docs/README.md)** を参照してください。
+
 ### 📖 開発者向けガイド
 - **[はじめに](docs/guides/getting-started.md)** - プロジェクトの基本情報とセットアップ
 - **[開発ガイド](docs/guides/development.md)** - 実装詳細とコード品質ガイドライン
@@ -74,43 +76,15 @@ npm run test:e2e:headed # ヘッド付きでE2Eテスト実行
 - **[ウィンドウ制御](docs/reference/architecture/window-control.md)** - ウィンドウ管理システム
 - **[CSSデザインシステム](docs/reference/architecture/css-design-system.md)** - 統一されたスタイル管理システム
 
-## 技術スタック・制約事項
+## 技術スタック・開発時の注意事項
 
-- **Windows専用アプリケーション**（React + TypeScript + Vite + Electron）
-- **テストフレームワーク**: Playwright（E2E）+ Vitest（ユニット）導入済み
+### プラットフォーム・フレームワーク
+- **Windows専用アプリケーション**（Electron + React + TypeScript + Vite）
+- **テストフレームワーク**: Vitest（単体）、Playwright（E2E）
 
-### 開発時の重要な注意事項
+### 開発時の重要な制約
+- **カスタムURIスキーマ対応**: `obsidian://`, `ms-excel://`, `vscode://` 等の非HTTPスキーマに対応
+- **パスエイリアス**: `@common/*` で共通型定義にアクセス（`src/common/types.ts`）
+- **CSSデザインシステム**: CSS変数ベース（`src/renderer/styles/variables.css`）。ハードコード値の使用禁止
 
-- **IPCチャンネル**: メインプロセスとレンダラープロセス間の通信は機能別に分離
-- **カスタムURIスキーマ**: obsidian://, ms-excel://, vscode://等の非HTTP URIスキーマに対応
-- **ドラッグ&ドロップ**: ファイル・フォルダのドロップでアイテム登録機能
-- **アイコンシステム**: ファビコン取得、アプリアイコン抽出、カスタムURIアイコン処理
-- **ウィンドウ制御**: フレームレス、常に最前面、ピン留め機能
-
-詳細は **[プロジェクト概要](docs/guides/project-overview.md)** を参照してください。
-
-## アーキテクチャ概要
-
-### IPCハンドラー構造
-メインプロセスのIPC通信は機能別に分離され、`src/main/ipc/`に配置：
-- **dataHandlers**: データファイル読み書き
-- **itemHandlers**: アイテム実行・起動
-- **configHandlers**: 設定ファイル管理
-- **iconHandlers**: アイコン取得・キャッシュ
-- **windowHandlers**: ウィンドウ表示制御
-- **editHandlers**: 編集モード管理
-- **settingsHandlers**: アプリ設定管理
-
-### デザインシステム
-CSS変数ベースの統一されたデザインシステムを採用（`src/renderer/styles/variables.css`）：
-- ハードコード値の使用禁止
-- 統一されたカラーパレット、フォントサイズ、間隔の管理
-
-### TypeScript設定
-- **パスエイリアス**: `@common/*` → `./src/common/*`
-- **共有型定義**: `src/common/types.ts`でメイン・レンダラープロセス間の型を共有
-- **厳密な型チェック**: `strict: true`で型安全性を確保
-
-## ドキュメント管理
-
-このプロジェクトは体系的なドキュメント管理を採用しています。詳細は[ドキュメント構成ガイド](docs/README.md)を参照してください。
+詳細なアーキテクチャは **[システム概要](docs/reference/architecture/overview.md)** を参照してください。
