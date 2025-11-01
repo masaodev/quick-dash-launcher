@@ -11,7 +11,6 @@ docs/
 ├── reference/           # 仕様書・リファレンス
 │   ├── architecture/    # アーキテクチャ
 │   └── screens/         # 画面仕様書
-├── meta/                # メタ情報
 └── templates/           # テンプレート
 ```
 
@@ -29,6 +28,7 @@ docs/
 - ビルド・デプロイ手順
 - テスト手順
 - コード品質ガイドライン
+- Git/GitHubワークフロー
 
 **例**:
 - `getting-started.md` - プロジェクトのセットアップ
@@ -36,6 +36,7 @@ docs/
 - `build-and-deploy.md` - ビルドとデプロイ
 - `testing.md` - テストチェックリスト
 - `project-overview.md` - プロジェクト概要
+- `github-workflow.md` - Git操作とPRフロー
 
 ---
 
@@ -135,23 +136,6 @@ docs/
 
 ---
 
-### 📝 meta/ - メタ情報
-
-**目的**: ドキュメント管理やプロジェクト運営に関する情報
-
-**記載内容**:
-- ドキュメント管理ルール
-- コードレビューレポート
-- Git運用ルール
-- 開発プロセス
-
-**例**:
-- `documentation-rules.md` - ドキュメント管理ルール
-- `code-review-report.md` - コード品質レポート
-- `git-workflow.md` - Git運用ルール
-
----
-
 ### 📄 templates/ - テンプレート
 
 **目的**: 新規ドキュメント作成時のテンプレート
@@ -209,7 +193,9 @@ docs/
 
 ### 4. 更新ルール
 
-詳細は [ドキュメント管理ルール](meta/documentation-rules.md) を参照してください。
+- ドキュメントは常に最新の状態に保つ
+- 機能追加・変更時は関連ドキュメントも更新
+- 古い情報は削除または更新
 
 ---
 

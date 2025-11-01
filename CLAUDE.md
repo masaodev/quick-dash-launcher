@@ -75,9 +75,8 @@ npm run test:e2e:headed # ヘッド付きでE2Eテスト実行
 - **[キーボードショートカット](docs/reference/keyboard-shortcuts.md)** - ショートカット一覧
 - **[画面構成](docs/reference/screens/screen-list.md)** - UI仕様
 
-### 📝 メタ情報
-- **[ドキュメント管理ルール](docs/meta/documentation-rules.md)** - ドキュメント更新のルール
-- **[コードレビューレポート](docs/meta/code-review-report.md)** - コード品質分析
+### 📝 開発プロセス
+- **[GitHub ワークフロー](docs/guides/github-workflow.md)** - Git操作とPRフロー
 
 ## 技術スタック・制約事項
 
@@ -118,4 +117,4 @@ CSS変数ベースの統一されたデザインシステムを採用（`src/ren
 
 ## ドキュメント管理
 
-このプロジェクトは体系的なドキュメント管理を採用しています。詳細なドキュメント管理ルールについては[ドキュメント管理ルール](docs/meta/documentation-rules.md)を参照してください。
+このプロジェクトは体系的なドキュメント管理を採用しています。詳細は[ドキュメント構成ガイド](docs/README.md)を参照してください。
