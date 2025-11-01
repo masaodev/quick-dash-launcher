@@ -68,4 +68,4 @@
 
 - [アーキテクチャ概要](overview.md) - システム全体の構造
 - [IPCチャンネル詳細](ipc-channels.md) - ウィンドウ制御関連のIPCチャンネル
-- [アプリケーション設定](../features/app-settings.md) - 設定画面へのアクセス方法
+- [アプリケーション設定](../manual/app-settings.md) - 設定画面へのアクセス方法

@@ -92,7 +92,7 @@ dir,C:\Projects,depth=1,types=file
 dir,C:\Scripts,filter=*.ps1,prefix=Script
 ```
 
-詳細な仕様については [フォルダ取込アイテム仕様](../features/folder-import-item.md) を参照してください。
+詳細な仕様については [フォルダ取込アイテム仕様](../manual/folder-import-item.md) を参照してください。
 
 ### **主な違い**
 - **単一アイテム**: 1行 = 1つのランチャーアイテム
@@ -107,6 +107,6 @@ dir,C:\Scripts,filter=*.ps1,prefix=Script
 
 - [開発ガイド](development.md) - 詳細な開発情報
 - [ビルドとデプロイ](build-and-deploy.md) - ビルドシステムとデプロイ方法
-- [アイテム管理](../features/item-management.md) - 編集モードの使い方
-- [アイコンシステム](../features/icon-system.md) - アイコン機能の詳細
-- [アプリケーション設定](../features/app-settings.md) - ホットキーや表示設定のカスタマイズ
+- [アイテム管理](../manual/item-management.md) - 編集モードの使い方
+- [アイコンシステム](../manual/icon-system.md) - アイコン機能の詳細
+- [アプリケーション設定](../manual/app-settings.md) - ホットキーや表示設定のカスタマイズ

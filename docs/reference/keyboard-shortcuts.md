@@ -97,6 +97,6 @@ QuickDashLauncherで使用可能なキーボードショートカット一覧で
 
 ## 関連ドキュメント
 
-- [アイテム管理](../features/item-management.md) - アイテム管理の詳細操作
-- [アプリケーション設定](../features/app-settings.md) - ホットキーのカスタマイズ方法
+- [アイテム管理](../manual/item-management.md) - アイテム管理の詳細操作
+- [アプリケーション設定](../manual/app-settings.md) - ホットキーのカスタマイズ方法
 - [開発ガイド](../guides/development.md) - 基本的な操作方法

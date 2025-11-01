@@ -4,7 +4,7 @@
 
 - [画面一覧](./screen-list.md) - 全画面構成の概要
 - [ブックマークインポートモーダル](./bookmark-import-modal.md) - インポート機能詳細
-- [アイテム管理](../../features/item-management.md) - 編集機能の詳細
+- [アイテム管理](../../manual/item-management.md) - 編集機能の詳細
 
 ## 1. 概要
 

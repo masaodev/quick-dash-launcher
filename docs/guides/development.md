@@ -130,7 +130,7 @@ QuickDashLauncherではCSS変数ベースの統一されたデザインシステ
 ```
 
 **詳細情報:**
-- [CSSデザインシステム](../features/css-design-system.md) - 完全なガイドラインと使用方法
+- [CSSデザインシステム](../reference/architecture/css-design-system.md) - 完全なガイドラインと使用方法
 
 ### パフォーマンス最適化パターン
 
@@ -229,9 +229,9 @@ QuickDashLauncherではCSS変数ベースの統一されたデザインシステ
 
 ## 関連ドキュメント
 
-- [アイテム管理詳細ガイド](../features/item-management.md) - 編集モードの操作方法と技術実装
-- [CSSデザインシステム](../features/css-design-system.md) - 統一されたスタイル管理システム
+- [アイテム管理詳細ガイド](../manual/item-management.md) - 編集モードの操作方法と技術実装
+- [CSSデザインシステム](../reference/architecture/css-design-system.md) - 統一されたスタイル管理システム
 - [ビルドとデプロイ](build-and-deploy.md) - ビルドシステムと配布方法
 - [テストチェックリスト](testing.md) - 手動テストの手順
-- [アイコンシステム](../features/icon-system.md) - アイコン取得・管理システム
-- [フォルダ取込アイテム](../features/folder-import-item.md) - フォルダ内容のインポート機能
+- [アイコンシステム](../manual/icon-system.md) - アイコン取得・管理システム
+- [フォルダ取込アイテム](../manual/folder-import-item.md) - フォルダ内容のインポート機能

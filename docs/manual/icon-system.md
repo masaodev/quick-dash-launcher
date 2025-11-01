@@ -68,9 +68,10 @@ if (fs.existsSync(faviconPath64)) {
 
 ## 関連ドキュメント
 
-- [ファビコン取得システム](icon-favicon.md) - ファビコン取得の詳細仕様
-- [カスタムURIアイコン](icon-custom-uri.md) - カスタムURIスキーマのアイコン取得
-- [アイコン進捗表示](icon-progress.md) - 進捗表示機能の詳細
+- **[アイコン仕様](../reference/icon-specification.md)** - アイコン処理の詳細仕様
+- **[ファビコン取得システム](icon-favicon.md)** - ファビコン取得の使い方
+- **[カスタムURIアイコン](icon-custom-uri.md)** - カスタムURIアイコンの使い方
+- **[アイコン進捗表示](icon-progress.md)** - 進捗表示機能の詳細
 
 ## トラブルシューティング
 

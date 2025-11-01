@@ -85,36 +85,9 @@ Ctrl+Eでアイテム管理に切り替えて、データファイル（data.txt
   - **✏️**: 詳細編集ボタン（RegisterModal使用）
   - **🗑️**: 削除ボタン
 
-## 技術実装
-
-### データ型とAPI
-- **RawDataLine型**: 生データ行を表現する新しいデータ型
-- **loadRawDataFiles/saveRawDataFiles**: 生データの読み込み・保存API
-
-### 主要コンポーネント
-- **EditableRawItemList**: 編集可能テーブルコンポーネント
-  - `onEditClick`プロパティで詳細編集機能を実装
-  - セル直接クリックと詳細編集ボタンの2つの編集方法を提供
-  - `onSort`プロパティで整列機能を実装（種類→パスと引数→名前の順）
-- **EditModeView**: アイテム管理専用のビューコンポーネント
-  - RegisterModalの状態管理（`isRegisterModalOpen`, `editingItem`）
-  - RawDataLine ⇔ RegisterItem の相互変換処理
-  - **workingLines状態**: 編集中の一時的なデータを保持（削除・追加・編集を即座に反映せずに管理）
-  - **全件書き戻し方式**: 保存時にworkingLines全体をファイルに書き込み
-  - **handleSort関数**: 整列処理でworkingLinesの順序を変更し、未保存状態フラグを設定
-- **RegisterModal**: 単一アイテムモードとアイテム管理の両方に対応
-  - `editingItem`プロパティでアイテム管理判定
-  - 既存アイテムの事前入力機能
-  - **itemCategoryプロパティ**: 'item' | 'dir' | 'group' でアイテム種別を管理
-  - **条件付きUI表示**:
-    - フォルダ取込アイテム選択時のみフォルダ取込オプション表示、名前フィールド制御
-    - グループ選択時はパス・引数フィールド非表示、アイテム名リストフィールド表示
-  - **動的種別変更**: アイテム種別変更時の自動フィールド初期化・クリア
-  - **グループ入力管理**: カンマを含むテキストを自由に入力できるよう、別のstateで一時的に管理
-
 ## 関連ドキュメント
 
-- [開発ガイド](../guides/development.md) - 基本的な開発情報
-- [フォルダ取込アイテム](folder-import-item.md) - フォルダ内容インポート機能
-- [グループ起動機能](group-launch.md) - グループ機能の詳細
-- [画面構成](../reference/screen-list.md) - アイテム管理画面の詳細仕様
+- **[データファイル形式仕様](../reference/data-file-format.md)** - データファイルの詳細仕様
+- **[フォルダ取込アイテム](folder-import-item.md)** - フォルダ内容インポート機能
+- **[グループ起動機能](group-launch.md)** - グループ機能の詳細
+- **[画面構成](../reference/screens/screen-list.md)** - アイテム管理画面の詳細仕様

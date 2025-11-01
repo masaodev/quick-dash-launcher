@@ -9,11 +9,11 @@
 - `CLAUDE.md` - プロジェクトの包括的なドキュメント（プロジェクト概要、ビルドコマンド、参照先）
 - `docs/guides/getting-started.md` - プロジェクトの基本的な使い方とセットアップ
 - `docs/guides/development.md` - 開発ガイド（実装詳細、ビルドシステム、デバッグ、テスト）
-- `docs/features/icon-system.md` - アイコン処理システムの詳細仕様
-- `docs/features/folder-import-item.md` - フォルダ取込アイテムの詳細な使用方法とオプション
-- `docs/features/edit-mode.md` - 編集モードの詳細な操作方法
-- `docs/features/css-design-system.md` - CSS変数ベースの統一されたスタイル管理システム
-- `docs/architecture/overview.md` - アーキテクチャ詳細（プロセス構造、IPC、データフロー）
+- `docs/manual/icon-system.md` - アイコン処理システムの詳細仕様
+- `docs/manual/folder-import-item.md` - フォルダ取込アイテムの詳細な使用方法とオプション
+- `docs/manual/edit-mode.md` - 編集モードの詳細な操作方法
+- `docs/reference/architecture/css-design-system.md` - CSS変数ベースの統一されたスタイル管理システム
+- `docs/reference/architecture/overview.md` - アーキテクチャ詳細（プロセス構造、IPC、データフロー）
 - `docs/reference/screens/screen-list.md` - アプリケーションの画面構成とUI仕様
 - `docs/meta/code-review-report.md` - コード品質分析とレビュー結果
 
@@ -74,8 +74,8 @@
 - **100-150行を目安**: 各ドキュメントは適切なサイズに保つ
 - **カテゴリ別の分割**:
   - `docs/guides/` - ガイド類（使い方、開発方法等）
-  - `docs/features/` - 機能詳細
-  - `docs/architecture/` - アーキテクチャ詳細
+  - `docs/manual/` - 機能詳細
+  - `docs/reference/architecture/` - アーキテクチャ詳細
   - `docs/reference/` - リファレンス情報
   - `docs/meta/` - メタ情報（レビューレポート、このドキュメント等）
 - **概要ファイルにはリンクのみ**: 詳細は個別ファイルへの参照を使用

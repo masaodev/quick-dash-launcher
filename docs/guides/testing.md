@@ -106,5 +106,5 @@
 ## 関連ドキュメント
 
 - [開発ガイド](development.md) - 基本的な開発情報
-- [アイテム管理](../features/item-management.md) - 編集モードのテスト項目
+- [アイテム管理](../manual/item-management.md) - 編集モードのテスト項目
 - [ビルドとデプロイ](build-and-deploy.md) - ビルド後のテスト手順
