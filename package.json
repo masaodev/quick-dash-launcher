@@ -4,6 +4,8 @@
   "main": "dist/main/main.js",
   "scripts": {
     "dev": "cross-env NODE_ENV=development ELECTRON_IS_DEV=1 vite",
+    "dev:custom": "cross-env QUICK_DASH_CONFIG_DIR=./tests/fixtures/test-config NODE_ENV=development ELECTRON_IS_DEV=1 vite",
+    "dev:test": "cross-env QUICK_DASH_CONFIG_DIR=./tests/fixtures/dev-config NODE_ENV=development ELECTRON_IS_DEV=1 vite",
     "build": "vite build",
     "preview": "vite preview",
     "start": "npm run build && electron .",

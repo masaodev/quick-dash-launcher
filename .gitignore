@@ -50,6 +50,22 @@ html/
 temp/
 tmp/
 
+# Test config directories (local working directories at project root)
+# ルートレベルの作業用設定フォルダのみを除外
+/test-config/
+/dev-config/
+/*-config/
+
+# tests/fixtures/ 内のテンプレートは保持（除外しない）
+# ルートレベルのみ除外しているため、tests/fixtures/*-config/ は自動的に追跡される
+
+# ただし、フィクスチャ内で自動生成されるファイルは除外
+tests/fixtures/*/settings.json
+tests/fixtures/*/icons/
+tests/fixtures/*/favicons/
+tests/fixtures/*/custom-icons/
+tests/fixtures/*/backup/
+
 # Cache
 .cache/
 .parcel-cache/

@@ -12,7 +12,7 @@ import { PathUtils } from '@common/utils/pathUtils';
 
 import { ProgressManager } from '../utils/progressManager';
 import { FaviconService } from '../services/faviconService';
-import { CUSTOM_ICONS_FOLDER } from '../appHelpers';
+import PathManager from '../config/pathManager.js';
 
 const extractFileIcon = require('extract-file-icon');
 const { shell } = require('electron');
@@ -449,7 +449,10 @@ async function loadCachedIcons(
       // カスタムアイコンを最優先でチェック
       const itemWithCustomIcon = item as IconItem & { customIcon?: string };
       if (itemWithCustomIcon.customIcon) {
-        const customIconPath = path.join(CUSTOM_ICONS_FOLDER, itemWithCustomIcon.customIcon);
+        const customIconPath = path.join(
+          PathManager.getCustomIconsFolder(),
+          itemWithCustomIcon.customIcon
+        );
         if (fs.existsSync(customIconPath)) {
           iconPath = customIconPath;
         }
@@ -711,7 +714,7 @@ async function saveCustomIcon(sourceFilePath: string, itemIdentifier: string): P
     // アイテム識別子からハッシュ値を生成してファイル名を決定
     const hash = crypto.createHash('md5').update(itemIdentifier).digest('hex').substring(0, 8);
     const customIconFileName = `${hash}.png`;
-    const customIconPath = path.join(CUSTOM_ICONS_FOLDER, customIconFileName);
+    const customIconPath = path.join(PathManager.getCustomIconsFolder(), customIconFileName);
 
     // 画像をリサイズして保存
     await resizeAndSaveImage(sourceFilePath, customIconPath);
@@ -730,7 +733,10 @@ async function saveCustomIcon(sourceFilePath: string, itemIdentifier: string): P
  */
 async function deleteCustomIcon(customIconFileName: string): Promise<void> {
   try {
-    const customIconPath = path.join(CUSTOM_ICONS_FOLDER, customIconFileName);
+    const customIconPath = path.join(
+      PathManager.getCustomIconsFolder(),
+      customIconFileName
+    );
 
     if (fs.existsSync(customIconPath)) {
       await fs.promises.unlink(customIconPath);
@@ -749,7 +755,10 @@ async function deleteCustomIcon(customIconFileName: string): Promise<void> {
  */
 async function getCustomIcon(customIconFileName: string): Promise<string | null> {
   try {
-    const customIconPath = path.join(CUSTOM_ICONS_FOLDER, customIconFileName);
+    const customIconPath = path.join(
+      PathManager.getCustomIconsFolder(),
+      customIconFileName
+    );
     return FileUtils.readCachedBinaryAsBase64(customIconPath);
   } catch (error) {
     iconLogger.error('カスタムアイコン取得エラー:', error);

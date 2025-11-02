@@ -2,14 +2,8 @@ import { app, globalShortcut } from 'electron';
 
 // import Store from 'electron-store'; // 将来の使用のために予約
 import { setupIPCHandlers } from './ipc';
-import {
-  CONFIG_FOLDER,
-  FAVICONS_FOLDER,
-  ICONS_FOLDER,
-  EXTENSIONS_FOLDER,
-  ensureDirectories,
-  createDefaultDataFile,
-} from './appHelpers';
+import { createDefaultDataFile } from './appHelpers';
+import PathManager from './config/pathManager.js';
 import { BackupService } from './services/backupService.js';
 import {
   createWindow,
@@ -37,14 +31,14 @@ app.whenReady().then(async () => {
   await createSplashWindow();
 
   // 必要なディレクトリ（config, icons, favicons, schemes, backup）を作成
-  ensureDirectories();
+  PathManager.ensureDirectories();
 
   // 初回起動時にデフォルトのdata.txtファイルを作成
   createDefaultDataFile();
 
   // 既存のデータファイルをタイムスタンプ付きでバックアップ（設定に基づく）
   const backupService = await BackupService.getInstance();
-  await backupService.backupDataFiles(CONFIG_FOLDER);
+  await backupService.backupDataFiles(PathManager.getConfigFolder());
 
   // メインウィンドウを作成（設定サイズ、フレームレス、常に最前面）
   await createWindow();
@@ -69,10 +63,10 @@ app.whenReady().then(async () => {
 
   // レンダラープロセスとの通信用IPCハンドラーを設定
   setupIPCHandlers(
-    CONFIG_FOLDER,
-    FAVICONS_FOLDER,
-    ICONS_FOLDER,
-    EXTENSIONS_FOLDER,
+    PathManager.getConfigFolder(),
+    PathManager.getFaviconsFolder(),
+    PathManager.getIconsFolder(),
+    PathManager.getExtensionsFolder(),
     getMainWindow,
     getWindowPinState,
     setWindowPinState,

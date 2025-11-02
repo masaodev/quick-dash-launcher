@@ -1,0 +1,26 @@
+// 開発用サンプルデータ
+// このファイルは開発時の動作確認に使用します
+
+// よく使う開発ツール
+GitHub リポジトリ,https://github.com/
+npm ドキュメント,https://docs.npmjs.com/
+React ドキュメント,https://react.dev/
+TypeScript ドキュメント,https://www.typescriptlang.org/docs/
+Electron ドキュメント,https://www.electronjs.org/docs/latest/
+
+// ローカル開発環境
+プロジェクトフォルダ,C:\Users\daido\git\masao\github\quick-dash-launcher
+VS Code,code.exe
+
+// 開発用ツール
+Git Bash,C:\Program Files\Git\git-bash.exe
+PowerShell,powershell.exe
+コマンドプロンプト,cmd.exe
+
+// デバッグ用フォルダ
+ログフォルダ,%APPDATA%\quick-dash-launcher\logs
+設定フォルダ,%APPDATA%\quick-dash-launcher\config
+
+// 参考サイト
+Stack Overflow,https://stackoverflow.com/
+MDN Web Docs,https://developer.mozilla.org/

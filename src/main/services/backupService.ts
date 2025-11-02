@@ -4,7 +4,7 @@ import * as path from 'path';
 import logger from '@common/logger';
 import { FileUtils } from '@common/utils/fileUtils';
 
-import { BACKUP_FOLDER } from '../appHelpers';
+import PathManager from '../config/pathManager.js';
 
 import { SettingsService } from './settingsService.js';
 
@@ -147,7 +147,7 @@ export class BackupService {
    */
   public async createBackup(
     sourcePath: string,
-    backupFolder: string = BACKUP_FOLDER
+    backupFolder: string = PathManager.getBackupFolder()
   ): Promise<boolean> {
     const fileName = path.basename(sourcePath);
     const context = 'edit'; // デフォルトは編集時として扱う

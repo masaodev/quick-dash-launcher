@@ -18,9 +18,12 @@ type ElectronFixtures = {
  */
 export const test = base.extend<ElectronFixtures>({
   // Electronアプリケーションを起動するフィクスチャ
-  electronApp: async (_, use) => {
+  electronApp: async ({}, use) => {
     // アプリケーションのメインファイルパス
     const electronAppPath = path.join(process.cwd(), 'dist', 'main', 'main.js');
+
+    // テスト用の設定フォルダパス（tests/fixtures/e2e-config）
+    const testConfigDir = path.join(process.cwd(), 'tests', 'fixtures', 'e2e-config');
 
     // テスト用のElectronアプリケーション設定
     const electronApp = await electron.launch({
@@ -34,6 +37,8 @@ export const test = base.extend<ElectronFixtures>({
         DISABLE_GLOBAL_HOTKEY: '1',
         // テスト実行時はウィンドウを自動表示
         SHOW_WINDOW_ON_STARTUP: '1',
+        // テスト用の設定パスを指定（本番環境の設定に影響しない）
+        QUICK_DASH_CONFIG_DIR: testConfigDir,
       },
       // Electronアプリのコンソール出力をテストコンソールに転送
       executablePath: undefined, // システムにインストールされたElectronを使用

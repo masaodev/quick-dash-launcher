@@ -1,0 +1,23 @@
+// E2Eテスト用サンプルデータ
+// このファイルはE2Eテスト実行時に使用する既知のテストデータです
+
+// 基本的なWebサイトテスト
+GitHub,https://github.com/
+Google,https://google.com/
+Wikipedia,https://wikipedia.org/
+
+// アプリケーションテスト
+メモ帳,notepad.exe
+電卓,calc.exe
+
+// フォルダテスト
+デスクトップ,shell:Desktop
+ドキュメント,shell:Documents
+
+// カスタムURIスキーマテスト
+VS Code,vscode://
+
+// 検索テスト用（複数のアイテムで検索機能をテスト）
+Test Item 1,https://example.com/1
+Test Item 2,https://example.com/2
+Test Item 3,https://example.com/3

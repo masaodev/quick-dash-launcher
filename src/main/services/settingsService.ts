@@ -2,6 +2,7 @@ import ElectronStore from 'electron-store';
 
 import type { AppSettings } from '../../common/types.js';
 import logger from '../../common/logger.js';
+import PathManager from '../config/pathManager.js';
 
 // electron-storeを動的にインポート
 let Store: typeof ElectronStore | null = null;
@@ -50,12 +51,16 @@ export class SettingsService {
         Store = module.default;
       }
 
+      // PathManagerから設定フォルダを取得
+      const configFolder = PathManager.getConfigFolder();
+
       this.store = new Store!<AppSettings>({
         name: 'settings',
+        cwd: configFolder, // カスタムパスを指定
         defaults: SettingsService.DEFAULT_SETTINGS,
       });
 
-      logger.info('SettingsService initialized successfully');
+      logger.info(`SettingsService initialized successfully at ${configFolder}`);
     } catch (error) {
       logger.error('Failed to initialize SettingsService:', error);
       throw error;

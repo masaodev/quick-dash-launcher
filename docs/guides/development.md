@@ -85,6 +85,44 @@ const result = await window.api.channelName(args);
 - `app.isPackaged`を使用して環境を判定
 - パスは常に絶対パスで処理
 
+#### 設定ファイルの場所の管理
+設定ファイルやアイコンキャッシュなどの保存場所は`PathManager`クラスで一元管理されています。
+
+**デフォルトの動作:**
+- Windows: `%APPDATA%\quick-dash-launcher\config`
+- 環境変数 `QUICK_DASH_CONFIG_DIR` で任意の場所に変更可能
+
+**テスト時のパス管理:**
+```typescript
+import { PathTestHelper } from '../../src/test/helpers/pathTestHelper';
+
+describe('My Test', () => {
+  let pathHelper: PathTestHelper;
+
+  beforeEach(() => {
+    pathHelper = new PathTestHelper();
+    pathHelper.setup('my-test'); // 一時フォルダを作成
+  });
+
+  afterEach(() => {
+    pathHelper.cleanup(); // 一時フォルダを削除
+  });
+
+  it('should work', () => {
+    // テストコード
+  });
+});
+```
+
+**開発時のカスタムパス使用:**
+```bash
+# 開発用の設定を別フォルダで管理
+QUICK_DASH_CONFIG_DIR=./dev-config npm run dev
+
+# 本番環境の設定をテスト
+QUICK_DASH_CONFIG_DIR=./prod-config npm run dev
+```
+
 ### React + TypeScript パターン
 
 #### 状態管理
