@@ -37,6 +37,8 @@ export const test = base.extend<ElectronFixtures>({
         DISABLE_GLOBAL_HOTKEY: '1',
         // テスト実行時はウィンドウを自動表示
         SHOW_WINDOW_ON_STARTUP: '1',
+        // テスト実行時はスプラッシュウィンドウをスキップ
+        SKIP_SPLASH_WINDOW: '1',
         // テスト用の設定パスを指定（本番環境の設定に影響しない）
         QUICK_DASH_CONFIG_DIR: testConfigDir,
       },

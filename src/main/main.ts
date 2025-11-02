@@ -27,8 +27,10 @@ app.whenReady().then(async () => {
   // アプリケーションのApp User Model IDを設定（Windows用）
   app.setAppUserModelId('com.example.quick-dash-launcher');
 
-  // スプラッシュウィンドウを表示
-  await createSplashWindow();
+  // スプラッシュウィンドウを表示（E2Eテスト環境ではスキップ）
+  if (process.env.SKIP_SPLASH_WINDOW !== '1') {
+    await createSplashWindow();
+  }
 
   // 必要なディレクトリ（config, icons, favicons, schemes, backup）を作成
   PathManager.ensureDirectories();
