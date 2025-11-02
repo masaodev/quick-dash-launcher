@@ -23,6 +23,10 @@ export interface LauncherItem {
   lineNumber?: number;
   /** フォルダ取込アイテムによって展開されたアイテムかどうか */
   isDirExpanded?: boolean;
+  /** フォルダ取込アイテムから展開された場合の元ディレクトリパス */
+  expandedFrom?: string;
+  /** フォルダ取込アイテムから展開された場合のオプション情報（人間が読める形式） */
+  expandedOptions?: string;
   /** 編集モードで変更されたかどうか */
   isEdited?: boolean;
 }

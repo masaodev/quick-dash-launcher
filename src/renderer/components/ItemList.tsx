@@ -73,6 +73,60 @@ const ItemList: React.FC<ItemListProps> = ({
     }
   };
 
+  const getTooltipText = (item: AppItem): string => {
+    if (item.type === 'group') {
+      const groupItem = item as GroupItem;
+      const lines: string[] = [];
+      lines.push(`グループ: ${groupItem.itemNames.join(', ')}`);
+
+      // 空行
+      lines.push('');
+
+      // ソースファイル情報
+      if (groupItem.sourceFile) {
+        lines.push(`データ元: ${groupItem.sourceFile}`);
+      }
+
+      // 行番号情報
+      if (groupItem.lineNumber) {
+        lines.push(`行番号: ${groupItem.lineNumber}`);
+      }
+
+      return lines.join('\n');
+    }
+
+    const launcherItem = item as LauncherItem;
+    const lines: string[] = [];
+
+    // パス情報（最初に表示）
+    lines.push(PathUtils.getFullPath(launcherItem));
+
+    // 空行を追加してメタ情報を分離
+    lines.push('');
+
+    // ソースファイル情報
+    if (launcherItem.sourceFile) {
+      lines.push(`データ元: ${launcherItem.sourceFile}`);
+    }
+
+    // 行番号情報
+    if (launcherItem.lineNumber) {
+      lines.push(`行番号: ${launcherItem.lineNumber}`);
+    }
+
+    // 取込元情報（フォルダ取込から展開されたアイテムの場合）
+    if (launcherItem.expandedFrom) {
+      lines.push(`取込元: ${launcherItem.expandedFrom}`);
+    }
+
+    // フォルダ取込オプション情報
+    if (launcherItem.expandedOptions) {
+      lines.push(`設定: ${launcherItem.expandedOptions}`);
+    }
+
+    return lines.join('\n');
+  };
+
 
   const handleContextMenu = (event: React.MouseEvent, item: AppItem) => {
     event.preventDefault();
@@ -151,7 +205,7 @@ const ItemList: React.FC<ItemListProps> = ({
             }}
             onMouseEnter={() => onItemSelect(index)}
             onContextMenu={(e) => handleContextMenu(e, item)}
-            title={isGroup ? `グループ: ${groupItem?.itemNames.join(', ')}` : PathUtils.getFullPath(item as LauncherItem)}
+            title={getTooltipText(item)}
           >
             <span className="item-icon">
               {!isGroup && (item as LauncherItem).icon ? (

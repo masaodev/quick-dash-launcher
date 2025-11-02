@@ -322,6 +322,8 @@ interface LauncherItem {
   sourceFile?: 'data.txt' | 'data2.txt';
   lineNumber?: number;       // 元ファイルの行番号
   isDirExpanded?: boolean;   // フォルダ取込アイテム展開フラグ
+  expandedFrom?: string;     // フォルダ取込元ディレクトリパス
+  expandedOptions?: string;  // フォルダ取込オプション（人間が読める形式）
   isEdited?: boolean;        // 編集フラグ
 }
 ```

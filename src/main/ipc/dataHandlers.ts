@@ -161,6 +161,53 @@ function parseDirOptions(parts: string[]): DirOptions {
 }
 
 /**
+ * DirOptionsを人間が読める形式の文字列に変換する
+ *
+ * @param options - DirOptionsオブジェクト
+ * @returns 人間が読める形式の文字列（例：「深さ:2, タイプ:file, フィルター:*.pdf」）
+ */
+function formatDirOptions(options: DirOptions): string {
+  const parts: string[] = [];
+
+  // 深さ
+  if (options.depth === -1) {
+    parts.push('深さ:無制限');
+  } else {
+    parts.push(`深さ:${options.depth}`);
+  }
+
+  // タイプ
+  const typeLabels: Record<typeof options.types, string> = {
+    file: 'ファイルのみ',
+    folder: 'フォルダのみ',
+    both: 'ファイルとフォルダ',
+  };
+  parts.push(`タイプ:${typeLabels[options.types]}`);
+
+  // フィルター
+  if (options.filter) {
+    parts.push(`フィルター:${options.filter}`);
+  }
+
+  // 除外
+  if (options.exclude) {
+    parts.push(`除外:${options.exclude}`);
+  }
+
+  // プレフィックス
+  if (options.prefix) {
+    parts.push(`接頭辞:${options.prefix}`);
+  }
+
+  // サフィックス
+  if (options.suffix) {
+    parts.push(`接尾辞:${options.suffix}`);
+  }
+
+  return parts.join(', ');
+}
+
+/**
  * ファイル/フォルダーをLauncherItemに変換する
  *
  * @param itemPath - アイテムのパス
@@ -169,6 +216,8 @@ function parseDirOptions(parts: string[]): DirOptions {
  * @param lineNumber - 行番号（オプション）
  * @param prefix - 表示名に追加するプレフィックス（オプション）
  * @param suffix - 表示名に追加するサフィックス（オプション）
+ * @param expandedFrom - フォルダ取込の元となるディレクトリパス（オプション）
+ * @param expandedOptions - フォルダ取込オプション情報（人間が読める形式、オプション）
  * @returns LauncherItemオブジェクト
  */
 function processItem(
@@ -177,7 +226,9 @@ function processItem(
   sourceFile: 'data.txt' | 'data2.txt',
   lineNumber?: number,
   prefix?: string,
-  suffix?: string
+  suffix?: string,
+  expandedFrom?: string,
+  expandedOptions?: string
 ): LauncherItem {
   let displayName = path.basename(itemPath);
 
@@ -198,7 +249,9 @@ function processItem(
     originalPath: itemPath,
     sourceFile,
     lineNumber,
-    isDirExpanded: false,
+    isDirExpanded: expandedFrom ? true : false,
+    expandedFrom,
+    expandedOptions,
     isEdited: false,
   };
 }
@@ -214,6 +267,8 @@ function processItem(
  * @param displayName - 表示名（オプション、未指定の場合はファイル名から自動生成）
  * @param prefix - 表示名に追加するプレフィックス（オプション）
  * @param suffix - 表示名に追加するサフィックス（オプション）
+ * @param expandedFrom - フォルダ取込の元となるディレクトリパス（オプション）
+ * @param expandedOptions - フォルダ取込オプション情報（人間が読める形式、オプション）
  * @returns LauncherItemオブジェクト。解析に失敗した場合はnull
  * @throws Error ショートカットファイルの読み込みに失敗した場合（ログに記録され、nullを返す）
  *
@@ -229,7 +284,9 @@ function processShortcut(
   lineNumber?: number,
   displayName?: string,
   prefix?: string,
-  suffix?: string
+  suffix?: string,
+  expandedFrom?: string,
+  expandedOptions?: string
 ): LauncherItem | null {
   try {
     // Electron のネイティブ機能を使用してショートカットを読み取り
@@ -269,7 +326,9 @@ function processShortcut(
         originalPath: filePath,
         sourceFile,
         lineNumber,
-        isDirExpanded: false,
+        isDirExpanded: expandedFrom ? true : false,
+        expandedFrom,
+        expandedOptions,
         isEdited: false,
       };
     }
@@ -287,6 +346,9 @@ function processShortcut(
  * @param dirPath - スキャン対象のディレクトリパス
  * @param options - スキャンオプション（深度、タイプ、フィルター等）
  * @param sourceFile - ソースファイル名
+ * @param rootDirPath - フォルダ取込の元となるルートディレクトリパス（オプション）
+ * @param optionsText - フォルダ取込オプション情報（人間が読める形式、オプション）
+ * @param lineNumber - データファイル内の行番号（オプション）
  * @param currentDepth - 現在の再帰深度（内部使用、初期値は0）
  * @returns LauncherItem配列
  * @throws ディレクトリアクセス権限エラー、ファイルシステムエラー
@@ -297,12 +359,15 @@ function processShortcut(
  *   types: 'file',
  *   filter: '*.pdf',
  *   prefix: 'Doc: '
- * }, 'data.txt');
+ * }, 'data.txt', '/home/user/documents', '深さ:2, タイプ:ファイルのみ', 15);
  */
 async function scanDirectory(
   dirPath: string,
   options: DirOptions,
   sourceFile: 'data.txt' | 'data2.txt',
+  rootDirPath?: string,
+  optionsText?: string,
+  lineNumber?: number,
   currentDepth = 0
 ): Promise<LauncherItem[]> {
   const results: LauncherItem[] = [];
@@ -350,14 +415,14 @@ async function scanDirectory(
           // フィルターがない、またはフィルターにマッチする場合のみ追加
           if (!options.filter || minimatch(itemName, options.filter)) {
             results.push(
-              processItem(itemPath, 'folder', sourceFile, undefined, options.prefix, options.suffix)
+              processItem(itemPath, 'folder', sourceFile, lineNumber, options.prefix, options.suffix, rootDirPath, optionsText)
             );
           }
         }
 
         // サブディレクトリをスキャン
         if (currentDepth < options.depth || options.depth === -1) {
-          const subResults = await scanDirectory(itemPath, options, sourceFile, currentDepth + 1);
+          const subResults = await scanDirectory(itemPath, options, sourceFile, rootDirPath, optionsText, lineNumber, currentDepth + 1);
           results.push(...subResults);
         }
       } else {
@@ -368,17 +433,19 @@ async function scanDirectory(
             const processedShortcut = processShortcut(
               itemPath,
               sourceFile,
-              undefined,
+              lineNumber,
               undefined,
               options.prefix,
-              options.suffix
+              options.suffix,
+              rootDirPath,
+              optionsText
             );
             if (processedShortcut) {
               results.push(processedShortcut);
             }
           } else {
             results.push(
-              processItem(itemPath, 'file', sourceFile, undefined, options.prefix, options.suffix)
+              processItem(itemPath, 'file', sourceFile, lineNumber, options.prefix, options.suffix, rootDirPath, optionsText)
             );
           }
         }
@@ -435,7 +502,8 @@ async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
         if (FileUtils.exists(dirPath) && FileUtils.isDirectory(dirPath)) {
           try {
             const options = parseDirOptions(parts);
-            const scannedItems = await scanDirectory(dirPath, options, fileName);
+            const optionsText = formatDirOptions(options);
+            const scannedItems = await scanDirectory(dirPath, options, fileName, dirPath, optionsText, lineIndex + 1);
 
             // Add scanned items with duplicate check
             for (const item of scannedItems) {
@@ -444,7 +512,6 @@ async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
                 : `${item.name}|${item.path}`;
               if (!seenPaths.has(uniqueKey)) {
                 seenPaths.add(uniqueKey);
-                item.isDirExpanded = true;
                 items.push(item);
               }
             }

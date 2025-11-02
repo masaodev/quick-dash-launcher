@@ -88,3 +88,19 @@ npm run test:e2e:headed # ヘッド付きでE2Eテスト実行
 - **CSSデザインシステム**: CSS変数ベース（`src/renderer/styles/variables.css`）。ハードコード値の使用禁止
 
 詳細なアーキテクチャは **[システム概要](docs/reference/architecture/overview.md)** を参照してください。
+
+## ドキュメント更新
+
+機能追加・変更時のドキュメント更新は、**`documentation-updater`サブエージェント**を使用してください。
+
+```
+Task tool with subagent_type="documentation-updater"
+```
+
+このサブエージェントは以下を自動的に実行します：
+- 変更内容の分析
+- 関連ドキュメントの特定
+- 複数ドキュメントの一括更新
+- ドキュメント間の整合性確認
+
+詳細は `.claude/agents/documentation-updater.md` を参照してください。
