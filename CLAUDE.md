@@ -110,6 +110,23 @@ afterEach(() => {
 });
 ```
 
+## コード品質チェック
+
+**コミット・プッシュ前**には、**`quality-checker`サブエージェント**で品質チェックを実行してください。
+
+```
+Task tool with subagent_type="quality-checker"
+```
+
+このサブエージェントは以下を自動的に実行します：
+- TypeScript型チェック・ESLint実行
+- コード複雑度・命名規則・重複コードの検出
+- セキュリティリスクの確認
+- プロジェクト固有の品質基準チェック
+- 優先度付きレポート生成
+
+詳細は `.claude/agents/quality-checker.md` を参照してください。
+
 ## ドキュメント更新
 
 機能追加・変更時のドキュメント更新は、**`documentation-updater`サブエージェント**を使用してください。
