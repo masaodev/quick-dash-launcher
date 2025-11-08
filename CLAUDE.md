@@ -13,8 +13,8 @@ QuickDashLauncherは、グローバルホットキー（Ctrl+Alt+W）でWebサ�
 ```bash
 npm install              # 依存関係のインストール
 npm run dev             # 開発モード（Viteデベロップメントサーバー、ホットリロード付き）
-npm run dev:custom      # テスト用設定（tests/fixtures/test-config）で開発モード起動
-npm run dev:test        # 開発用設定（tests/fixtures/dev-config）で開発モード起動
+npm run dev:custom      # カスタム設定（tests/fixtures/test-config）で開発モード起動
+npm run dev:test        # テスト用設定（tests/fixtures/dev-config）で開発モード起動
 npm run build           # 全コンポーネントのビルド（Vite使用）
 npm run preview         # ビルド済みアプリケーションのプレビュー
 npm run start           # ビルドして実行

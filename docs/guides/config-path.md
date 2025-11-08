@@ -59,10 +59,10 @@ $env:QUICK_DASH_CONFIG_DIR = "D:\MyApps\quick-dash-config"
 よく使う設定パスは`package.json`に事前定義されています：
 
 ```bash
-# カスタム設定（./test-config）で起動
+# カスタム設定（tests/fixtures/test-config）で起動
 npm run dev:custom
 
-# テスト用設定（./dev-config）で起動
+# テスト用設定（tests/fixtures/dev-config）で起動
 npm run dev:test
 
 # デフォルト設定で起動

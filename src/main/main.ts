@@ -1,6 +1,5 @@
 import { app, globalShortcut } from 'electron';
 
-// import Store from 'electron-store'; // 将来の使用のために予約
 import { setupIPCHandlers } from './ipc';
 import { createDefaultDataFile } from './appHelpers';
 import PathManager from './config/pathManager.js';
@@ -22,8 +21,6 @@ import {
 } from './windowManager';
 import { closeAdminWindow, setAppQuitting } from './adminWindowManager';
 import { createSplashWindow, closeSplashWindow } from './splashWindowManager';
-
-// const store = new Store(); // 将来の使用のために予約
 
 // 初回起動判定用のグローバル変数
 let isFirstLaunch = false;

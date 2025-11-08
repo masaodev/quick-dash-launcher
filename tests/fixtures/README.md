@@ -23,10 +23,10 @@ tests/fixtures/
 ### 1. 開発モードでの起動（package.jsonコマンド使用）
 
 ```bash
-# テスト用設定で起動
+# カスタム設定で起動
 npm run dev:custom
 
-# 開発用設定で起動
+# テスト用設定で起動
 npm run dev:test
 ```
 

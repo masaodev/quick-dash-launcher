@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 import { RawDataLine, AppSettings } from '../common/types';
 
-import { debugInfo } from './utils/debug';
+import { debugInfo, logError } from './utils/debug';
 import AdminTabContainer from './components/AdminTabContainer';
 
 const AdminApp: React.FC = () => {
@@ -33,7 +33,7 @@ const AdminApp: React.FC = () => {
       const initialTab = await window.electronAPI.getInitialTab();
       setActiveTab(initialTab);
     } catch (error) {
-      console.error('Failed to get initial tab:', error);
+      logError('Failed to get initial tab:', error);
     }
   };
 
@@ -48,7 +48,7 @@ const AdminApp: React.FC = () => {
       setSettings(settingsData);
       setRawLines(rawData);
     } catch (error) {
-      console.error('Failed to load data:', error);
+      logError('Failed to load data:', error);
     } finally {
       setIsLoading(false);
     }
@@ -60,7 +60,7 @@ const AdminApp: React.FC = () => {
       setRawLines(newRawLines);
       debugInfo('Raw data files saved successfully');
     } catch (error) {
-      console.error('Failed to save raw data files:', error);
+      logError('Failed to save raw data files:', error);
     }
   };
 
@@ -76,7 +76,7 @@ const AdminApp: React.FC = () => {
       if (isHotkeyChanged) {
         const success = await window.electronAPI.changeHotkey(newSettings.hotkey);
         if (!success) {
-          console.error('Failed to register new hotkey:', newSettings.hotkey);
+          logError('Failed to register new hotkey:', newSettings.hotkey);
           alert(
             `新しいホットキー「${newSettings.hotkey}」の登録に失敗しました。他のアプリで使用されている可能性があります。`
           );
@@ -88,7 +88,7 @@ const AdminApp: React.FC = () => {
       setSettings(newSettings);
       debugInfo('Settings saved successfully');
     } catch (error) {
-      console.error('Failed to save settings:', error);
+      logError('Failed to save settings:', error);
       alert('設定の保存に失敗しました。');
     }
   };
