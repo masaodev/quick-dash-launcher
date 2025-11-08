@@ -6,7 +6,13 @@ import { minimatch } from 'minimatch';
 import { dataLogger } from '@common/logger';
 import { FileUtils } from '@common/utils/fileUtils';
 
-import { RawDataLine, SimpleBookmarkItem, LauncherItem, GroupItem, AppItem } from '../../common/types';
+import {
+  RawDataLine,
+  SimpleBookmarkItem,
+  LauncherItem,
+  GroupItem,
+  AppItem,
+} from '../../common/types';
 import { BackupService } from '../services/backupService.js';
 
 // フォルダ取込アイテムのオプション型定義
@@ -415,14 +421,31 @@ async function scanDirectory(
           // フィルターがない、またはフィルターにマッチする場合のみ追加
           if (!options.filter || minimatch(itemName, options.filter)) {
             results.push(
-              processItem(itemPath, 'folder', sourceFile, lineNumber, options.prefix, options.suffix, rootDirPath, optionsText)
+              processItem(
+                itemPath,
+                'folder',
+                sourceFile,
+                lineNumber,
+                options.prefix,
+                options.suffix,
+                rootDirPath,
+                optionsText
+              )
             );
           }
         }
 
         // サブディレクトリをスキャン
         if (currentDepth < options.depth || options.depth === -1) {
-          const subResults = await scanDirectory(itemPath, options, sourceFile, rootDirPath, optionsText, lineNumber, currentDepth + 1);
+          const subResults = await scanDirectory(
+            itemPath,
+            options,
+            sourceFile,
+            rootDirPath,
+            optionsText,
+            lineNumber,
+            currentDepth + 1
+          );
           results.push(...subResults);
         }
       } else {
@@ -445,7 +468,16 @@ async function scanDirectory(
             }
           } else {
             results.push(
-              processItem(itemPath, 'file', sourceFile, lineNumber, options.prefix, options.suffix, rootDirPath, optionsText)
+              processItem(
+                itemPath,
+                'file',
+                sourceFile,
+                lineNumber,
+                options.prefix,
+                options.suffix,
+                rootDirPath,
+                optionsText
+              )
             );
           }
         }
@@ -503,7 +535,14 @@ async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
           try {
             const options = parseDirOptions(parts);
             const optionsText = formatDirOptions(options);
-            const scannedItems = await scanDirectory(dirPath, options, fileName, dirPath, optionsText, lineIndex + 1);
+            const scannedItems = await scanDirectory(
+              dirPath,
+              options,
+              fileName,
+              dirPath,
+              optionsText,
+              lineIndex + 1
+            );
 
             // Add scanned items with duplicate check
             for (const item of scannedItems) {

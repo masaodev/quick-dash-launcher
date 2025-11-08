@@ -2,6 +2,21 @@
 
 QuickDashLauncherのデータ処理フローを説明します。
 
+## 初回起動フロー
+
+1. アプリケーション起動時（`main.ts`）でホットキー設定の有無をチェック
+   - `hotkey`が空の場合: 初回起動と判定し、`isFirstLaunch = true`を設定
+   - `hotkey`に値がある場合: 通常起動
+2. レンダラープロセスで`settings:is-first-launch` IPCを呼び出して初回起動かチェック
+   - 初回起動の場合: 初回設定画面（`FirstLaunchSetup`）を表示
+   - 通常起動の場合: メインウィンドウを表示
+3. 初回設定画面でユーザーがホットキーを設定
+4. 設定完了時:
+   - `settings:set-multiple` IPCでホットキーを含む設定を保存
+   - ホットキーが設定されると自動的に初回起動モードが解除される
+   - `settings:change-hotkey` IPCでホットキーをグローバル登録
+5. 初回設定画面を非表示、メインウィンドウに遷移
+
 ## 通常モード（表示・起動）
 
 1. メインプロセスが`%APPDATA%/quickdashlauncher/config/`からデータファイルを読み込む

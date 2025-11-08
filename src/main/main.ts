@@ -5,6 +5,7 @@ import { setupIPCHandlers } from './ipc';
 import { createDefaultDataFile } from './appHelpers';
 import PathManager from './config/pathManager.js';
 import { BackupService } from './services/backupService.js';
+import { SettingsService } from './services/settingsService.js';
 import {
   createWindow,
   createTray,
@@ -17,23 +18,42 @@ import {
   getWindowPinMode,
   cycleWindowPinMode,
   setModalMode,
+  setFirstLaunchMode,
 } from './windowManager';
 import { closeAdminWindow, setAppQuitting } from './adminWindowManager';
 import { createSplashWindow, closeSplashWindow } from './splashWindowManager';
 
 // const store = new Store(); // 将来の使用のために予約
 
+// 初回起動判定用のグローバル変数
+let isFirstLaunch = false;
+
+/**
+ * 初回起動かどうかを取得
+ */
+export function getIsFirstLaunch(): boolean {
+  return isFirstLaunch;
+}
+
 app.whenReady().then(async () => {
+  // 設定フォルダを先に作成
+  PathManager.ensureDirectories();
+
+  // 初回起動判定: ホットキーが設定されているかどうかで判定
+  const settingsService = await SettingsService.getInstance();
+  const hotkey = await settingsService.get('hotkey');
+  isFirstLaunch = !hotkey || hotkey.trim() === '';
+
   // アプリケーションのApp User Model IDを設定（Windows用）
   app.setAppUserModelId('com.example.quick-dash-launcher');
+
+  // 初回起動モードを設定（初回起動時はフォーカス喪失やEscapeで閉じないようにする）
+  setFirstLaunchMode(isFirstLaunch);
 
   // スプラッシュウィンドウを表示（E2Eテスト環境ではスキップ）
   if (process.env.SKIP_SPLASH_WINDOW !== '1') {
     await createSplashWindow();
   }
-
-  // 必要なディレクトリ（config, icons, favicons, schemes, backup）を作成
-  PathManager.ensureDirectories();
 
   // 初回起動時にデフォルトのdata.txtファイルを作成
   createDefaultDataFile();
@@ -76,7 +96,8 @@ app.whenReady().then(async () => {
     getEditMode,
     getWindowPinMode,
     cycleWindowPinMode,
-    setModalMode
+    setModalMode,
+    setFirstLaunchMode
   );
 
   // スプラッシュウィンドウはReactコンポーネントの完了信号(splash-ready)で閉じられる

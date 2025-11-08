@@ -1,4 +1,5 @@
 import path from 'path';
+import fs from 'fs';
 
 import { test as base, _electron as electron } from '@playwright/test';
 import type { ElectronApplication, Page } from 'playwright';
@@ -10,11 +11,16 @@ type ElectronFixtures = {
 };
 
 /**
- * Electronアプリケーション用のPlaywrightフィクスチャ
+ * 初回起動テスト用のElectronアプリケーションフィクスチャ
  *
  * このフィクスチャは以下を提供します：
  * - electronApp: Electronアプリケーションインスタンス
  * - mainWindow: メインウィンドウページ
+ *
+ * 通常のフィクスチャとの違い：
+ * - 専用の設定フォルダ（first-launch-config）を使用して他のテストと分離
+ * - テスト前に設定ファイル（settings.json）を削除して初回起動状態を再現
+ * - テスト後も設定ファイルを削除して次回のテストに備える
  */
 export const test = base.extend<ElectronFixtures>({
   // Electronアプリケーションを起動するフィクスチャ
@@ -23,8 +29,20 @@ export const test = base.extend<ElectronFixtures>({
     // アプリケーションのメインファイルパス
     const electronAppPath = path.join(process.cwd(), 'dist', 'main', 'main.js');
 
-    // テスト用の設定フォルダパス（tests/fixtures/e2e-config）
-    const testConfigDir = path.join(process.cwd(), 'tests', 'fixtures', 'e2e-config');
+    // 初回起動テスト専用の設定フォルダパス（他のテストと分離）
+    const testConfigDir = path.join(process.cwd(), 'tests', 'fixtures', 'first-launch-config');
+
+    // テスト用の設定フォルダが存在しない場合は作成
+    if (!fs.existsSync(testConfigDir)) {
+      fs.mkdirSync(testConfigDir, { recursive: true });
+    }
+
+    const settingsFilePath = path.join(testConfigDir, 'settings.json');
+
+    // 既存の設定ファイルが存在する場合は削除（初回起動状態を再現）
+    if (fs.existsSync(settingsFilePath)) {
+      fs.unlinkSync(settingsFilePath);
+    }
 
     // テスト用のElectronアプリケーション設定
     const electronApp = await electron.launch({
@@ -52,6 +70,11 @@ export const test = base.extend<ElectronFixtures>({
 
     // テスト完了後にアプリケーションを終了
     await electronApp.close();
+
+    // テスト完了後、次回の初回起動テストのために設定ファイルを削除
+    if (fs.existsSync(settingsFilePath)) {
+      fs.unlinkSync(settingsFilePath);
+    }
   },
 
   // メインウィンドウを取得するフィクスチャ

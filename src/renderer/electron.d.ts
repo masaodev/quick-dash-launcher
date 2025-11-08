@@ -51,6 +51,7 @@ export interface ElectronAPI {
   resetSettings: () => Promise<void>;
   validateHotkey: (hotkey: string) => Promise<{ isValid: boolean; reason?: string }>;
   changeHotkey: (newHotkey: string) => Promise<boolean>;
+  isFirstLaunch: () => Promise<boolean>;
   updateItem: (request: {
     sourceFile: 'data.txt' | 'data2.txt';
     lineNumber: number;

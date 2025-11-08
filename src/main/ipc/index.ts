@@ -26,7 +26,8 @@ export function setupIPCHandlers(
   setModalMode: (
     isModal: boolean,
     requiredSize?: { width: number; height: number }
-  ) => Promise<void>
+  ) => Promise<void>,
+  setFirstLaunchMode: (isFirstLaunch: boolean) => void
 ) {
   setupDataHandlers(configFolder);
   setupItemHandlers(getMainWindow);
@@ -42,7 +43,7 @@ export function setupIPCHandlers(
     setModalMode
   );
   registerEditHandlers(configFolder);
-  setupSettingsHandlers();
-  setupSplashHandlers();
+  setupSettingsHandlers(setFirstLaunchMode);
+  setupSplashHandlers(getMainWindow);
   setupHistoryHandlers(configFolder);
 }

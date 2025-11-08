@@ -20,7 +20,7 @@ export class SettingsService {
    * デフォルト設定値
    */
   private static readonly DEFAULT_SETTINGS: AppSettings = {
-    hotkey: 'Ctrl+Alt+W',
+    hotkey: '', // 初回起動時は空、初回設定画面で設定される
     windowWidth: 600,
     windowHeight: 400,
     editModeWidth: 1200,

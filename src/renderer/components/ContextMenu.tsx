@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
+import { PathUtils } from '@common/utils/pathUtils';
 
 import { LauncherItem } from '../../common/types';
-import { PathUtils } from '@common/utils/pathUtils';
 
 interface ContextMenuProps {
   isVisible: boolean;

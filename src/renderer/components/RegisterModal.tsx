@@ -238,7 +238,10 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
         // グループアイテム行の場合：group,グループ名,アイテム1,アイテム2,...
         const parts = line.content.split(',');
         const groupName = parts[1]?.trim() || '';
-        const itemNames = parts.slice(2).map((name) => name.trim()).filter((name) => name);
+        const itemNames = parts
+          .slice(2)
+          .map((name) => name.trim())
+          .filter((name) => name);
 
         return {
           name: groupName,
@@ -686,7 +689,11 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                     <select
                       value={item.itemCategory}
                       onChange={(e) =>
-                        handleItemChange(index, 'itemCategory', e.target.value as 'item' | 'dir' | 'group')
+                        handleItemChange(
+                          index,
+                          'itemCategory',
+                          e.target.value as 'item' | 'dir' | 'group'
+                        )
                       }
                     >
                       <option value="item">単一アイテム</option>
@@ -701,7 +708,9 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                       type="text"
                       value={item.itemCategory === 'dir' ? '-' : item.name}
                       onChange={(e) => handleItemChange(index, 'name', e.target.value)}
-                      placeholder={item.itemCategory === 'group' ? 'グループ名を入力' : '表示名を入力'}
+                      placeholder={
+                        item.itemCategory === 'group' ? 'グループ名を入力' : '表示名を入力'
+                      }
                       readOnly={item.itemCategory === 'dir'}
                       className={item.itemCategory === 'dir' ? 'readonly' : ''}
                     />
@@ -848,7 +857,9 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                     <div className="form-group">
                       <label>アイテム名リスト (カンマ区切り):</label>
                       <textarea
-                        value={groupItemNamesInput[index] ?? (item.groupItemNames?.join(', ') || '')}
+                        value={
+                          groupItemNamesInput[index] ?? (item.groupItemNames?.join(', ') || '')
+                        }
                         onChange={(e) => {
                           // 入力値をそのまま一時stateに保存
                           setGroupItemNamesInput((prev) => ({

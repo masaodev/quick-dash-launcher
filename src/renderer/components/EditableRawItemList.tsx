@@ -52,7 +52,10 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
       if (isGroupDirective(line)) {
         // グループの場合：アイテム名のリスト（カンマ区切り）
         const parts = line.content.split(',');
-        const itemNames = parts.slice(2).map((name) => name.trim()).filter((name) => name);
+        const itemNames = parts
+          .slice(2)
+          .map((name) => name.trim())
+          .filter((name) => name);
         pathOnly = itemNames.join(', ');
       } else {
         // フォルダ取込の場合：フォルダパス
@@ -79,7 +82,10 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
     if (line.type === 'item' || line.type === 'directive') {
       if (isGroupDirective(line)) {
         // グループの場合：アイテム名のリスト
-        const itemNames = parts.slice(2).map((name) => name.trim()).filter((name) => name);
+        const itemNames = parts
+          .slice(2)
+          .map((name) => name.trim())
+          .filter((name) => name);
         currentPath = itemNames.join(', ');
       } else {
         currentPath = parts[1]?.trim() || '';
@@ -302,7 +308,10 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
         // グループアイテムの場合：アイテム名のリスト
         // group,グループ名,アイテム1,アイテム2,...
         const parts = line.content.split(',');
-        const itemNames = parts.slice(2).map((name) => name.trim()).filter((name) => name);
+        const itemNames = parts
+          .slice(2)
+          .map((name) => name.trim())
+          .filter((name) => name);
         if (itemNames.length === 0) return '(アイテムなし)';
         return itemNames.join(', ');
       } else {
@@ -420,7 +429,8 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
     if (isGroupDirective(line)) {
       tooltipText = 'クリックしてアイテム名リストを編集できます（カンマ区切りで入力）';
     } else {
-      tooltipText = 'クリックしてパスを編集できます。引数を変更する場合は✏️ボタンから詳細編集を開いてください';
+      tooltipText =
+        'クリックしてパスを編集できます。引数を変更する場合は✏️ボタンから詳細編集を開いてください';
     }
 
     return (

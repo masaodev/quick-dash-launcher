@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { PathUtils } from '@common/utils/pathUtils';
 
 import { LauncherItem, GroupItem, AppItem } from '../../common/types';
-import { PathUtils } from '@common/utils/pathUtils';
 
 import ContextMenu from './ContextMenu';
 
@@ -21,7 +21,7 @@ interface ItemListProps {
 
 const ItemList: React.FC<ItemListProps> = ({
   items,
-  allItems,
+  allItems: _allItems,
   selectedIndex,
   onItemClick,
   onGroupExecute,
@@ -126,7 +126,6 @@ const ItemList: React.FC<ItemListProps> = ({
 
     return lines.join('\n');
   };
-
 
   const handleContextMenu = (event: React.MouseEvent, item: AppItem) => {
     event.preventDefault();

@@ -21,10 +21,11 @@ QuickDashLauncherの設定項目の完全な仕様です。
 
 | 項目 | 値 |
 |------|-----|
-| **キー** | `globalHotkey` |
+| **キー** | `hotkey` |
 | **型** | `string` |
-| **デフォルト値** | `Ctrl+Alt+W` |
+| **デフォルト値** | `''` (空文字列) |
 | **形式** | `<修飾キー>+<修飾キー>+<キー>` |
+| **初回起動時** | 初回設定画面でユーザーが設定 |
 
 #### 対応可能なキー
 
@@ -142,6 +143,25 @@ Ctrl+Alt+0
 | **範囲** | `1` ～ `100` (件) |
 | **説明** | 各ファイルごとの最大保存件数。上限を超えると古いバックアップから削除 |
 
+### 初回起動判定
+
+初回起動かどうかは、`hotkey`設定項目が空文字列または未設定かどうかで判定されます。
+
+#### 判定ロジック
+- **`hotkey`が空または未設定**: 初回起動と判定 → 初回設定画面を表示
+- **`hotkey`に値がある**: 通常起動と判定 → メインウィンドウを表示
+
+#### 実装詳細
+```typescript
+// src/main/main.ts
+const hotkey = await settingsService.get('hotkey');
+isFirstLaunch = !hotkey || hotkey.trim() === '';
+```
+
+#### 開発者向け情報
+- 以前のバージョンでは`firstLaunchCompleted`フラグを使用していましたが、v0.2.9以降は`hotkey`の有無で判定するように変更されました
+- 初回設定画面をスキップしたい場合は、`hotkey`に任意の値を設定してください
+
 ### バックアップファイル
 
 #### 保存場所
@@ -192,21 +212,21 @@ data2_2024-01-01T12-00-00.txt
 
 ```json
 {
-  "globalHotkey": "Ctrl+Alt+W",
+  "hotkey": "Ctrl+Alt+W",
   "windowWidth": 600,
   "windowHeight": 400,
-  "editWindowWidth": 1000,
-  "editWindowHeight": 700,
+  "editModeWidth": 1200,
+  "editModeHeight": 700,
   "autoLaunch": false,
-  "backup": {
-    "enabled": false,
-    "onStartup": false,
-    "onEdit": false,
-    "minInterval": 5,
-    "maxCount": 20
-  }
+  "backupEnabled": false,
+  "backupOnStart": false,
+  "backupOnEdit": false,
+  "backupInterval": 5,
+  "backupRetention": 20
 }
 ```
+
+**注**: 初回起動時は`hotkey`が空文字列（`""`）で保存されています。
 
 ## 関連ドキュメント
 

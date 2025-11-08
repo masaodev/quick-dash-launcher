@@ -64,6 +64,12 @@ export class HotkeyService {
       // 現在のホットキーを解除
       this.unregisterCurrentHotkey();
 
+      // ホットキーが空の場合はスキップ（初回起動時など）
+      if (!hotkey || hotkey.trim() === '') {
+        logger.info('ホットキーが未設定のため、登録をスキップしました');
+        return true;
+      }
+
       // 新しいホットキーを登録
       const success = globalShortcut.register(hotkey, () => {
         this.handleHotkeyPressed();

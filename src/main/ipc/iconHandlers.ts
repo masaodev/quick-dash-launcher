@@ -733,10 +733,7 @@ async function saveCustomIcon(sourceFilePath: string, itemIdentifier: string): P
  */
 async function deleteCustomIcon(customIconFileName: string): Promise<void> {
   try {
-    const customIconPath = path.join(
-      PathManager.getCustomIconsFolder(),
-      customIconFileName
-    );
+    const customIconPath = path.join(PathManager.getCustomIconsFolder(), customIconFileName);
 
     if (fs.existsSync(customIconPath)) {
       await fs.promises.unlink(customIconPath);
@@ -755,10 +752,7 @@ async function deleteCustomIcon(customIconFileName: string): Promise<void> {
  */
 async function getCustomIcon(customIconFileName: string): Promise<string | null> {
   try {
-    const customIconPath = path.join(
-      PathManager.getCustomIconsFolder(),
-      customIconFileName
-    );
+    const customIconPath = path.join(PathManager.getCustomIconsFolder(), customIconFileName);
     return FileUtils.readCachedBinaryAsBase64(customIconPath);
   } catch (error) {
     iconLogger.error('カスタムアイコン取得エラー:', error);

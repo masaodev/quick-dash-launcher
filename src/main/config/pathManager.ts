@@ -30,9 +30,7 @@ export class PathManager {
 
       // セキュリティチェック: 危険なパスを拒否
       if (this.isUnsafePath(customPath)) {
-        logger.warn(
-          `Unsafe config path detected: ${customPath}. Using default path instead.`,
-        );
+        logger.warn(`Unsafe config path detected: ${customPath}. Using default path instead.`);
         return path.join(app.getPath('userData'), 'config');
       }
 
@@ -168,7 +166,8 @@ export class PathManager {
     return unsafePaths.some((unsafePath) => {
       const normalizedUnsafe = path.normalize(unsafePath).toLowerCase();
       return (
-        normalizedPath === normalizedUnsafe || normalizedPath.startsWith(normalizedUnsafe + path.sep)
+        normalizedPath === normalizedUnsafe ||
+        normalizedPath.startsWith(normalizedUnsafe + path.sep)
       );
     });
   }

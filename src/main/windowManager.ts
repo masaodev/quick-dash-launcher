@@ -11,6 +11,7 @@ let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 let windowPinMode: WindowPinMode = 'normal';
 let isEditMode: boolean = false;
+let isFirstLaunchMode: boolean = false;
 let normalWindowBounds: { width: number; height: number } | null = null;
 
 /**
@@ -61,7 +62,8 @@ export async function createWindow(): Promise<BrowserWindow> {
       mainWindow &&
       !mainWindow.webContents.isDevToolsOpened() &&
       shouldHideOnBlur() &&
-      !isEditMode
+      !isEditMode &&
+      !isFirstLaunchMode
     ) {
       mainWindow.hide();
     }
@@ -74,7 +76,8 @@ export async function createWindow(): Promise<BrowserWindow> {
   mainWindow.webContents.on('before-input-event', (event, input) => {
     if (input.key === 'Escape' && input.type === 'keyDown') {
       event.preventDefault();
-      if (mainWindow) {
+      // 初回起動モードの場合はEscapeキーで閉じない
+      if (mainWindow && !isFirstLaunchMode) {
         mainWindow.hide();
       }
     }
@@ -292,4 +295,22 @@ export async function setModalMode(
 
 export function getTray(): Tray | null {
   return tray;
+}
+
+/**
+ * 初回起動モードを設定する
+ * 初回起動モードではフォーカスが外れても、Escapeキーを押してもウィンドウが閉じない
+ * @param isFirstLaunch 初回起動モードかどうか
+ */
+export function setFirstLaunchMode(isFirstLaunch: boolean): void {
+  isFirstLaunchMode = isFirstLaunch;
+  windowLogger.info(`初回起動モード: ${isFirstLaunch ? '有効' : '無効'}`);
+}
+
+/**
+ * 初回起動モードの状態を取得する
+ * @returns 初回起動モードかどうか
+ */
+export function getFirstLaunchMode(): boolean {
+  return isFirstLaunchMode;
 }

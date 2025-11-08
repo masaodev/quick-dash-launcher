@@ -1,9 +1,11 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as path from 'path';
 import * as fs from 'fs';
 
-import PathManager from './pathManager.js';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+
 import { PathTestHelper } from '../../test/helpers/pathTestHelper.js';
+
+import PathManager from './pathManager.js';
 
 describe('PathManager', () => {
   let pathHelper: PathTestHelper;
@@ -43,7 +45,7 @@ describe('PathManager', () => {
 
   describe('ディレクトリ作成', () => {
     it('必要なディレクトリがすべて作成される', () => {
-      const configFolder = pathHelper.setup('ensure-dir-test');
+      pathHelper.setup('ensure-dir-test');
 
       // すでにsetup()でensureDirectories()が呼ばれているが、再度呼んでも問題ない
       PathManager.ensureDirectories();

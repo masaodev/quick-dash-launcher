@@ -3,12 +3,19 @@ import { ipcMain } from 'electron';
 import type { AppSettings } from '../../common/types.js';
 import { SettingsService } from '../services/settingsService.js';
 import { HotkeyService } from '../services/hotkeyService.js';
+import { getIsFirstLaunch } from '../main.js';
 import logger from '../../common/logger.js';
 
 /**
  * 設定関連のIPCハンドラーを登録
  */
-export function setupSettingsHandlers(): void {
+export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boolean) => void): void {
+  // 初回起動かどうかを取得
+  ipcMain.handle('settings:is-first-launch', async () => {
+    const isFirstLaunch = getIsFirstLaunch();
+    logger.info(`Is first launch request: ${isFirstLaunch}`);
+    return isFirstLaunch;
+  });
   // 設定値を取得
   ipcMain.handle('settings:get', async (_event, key?: keyof AppSettings) => {
     try {
@@ -50,6 +57,13 @@ export function setupSettingsHandlers(): void {
       const settingsService = await SettingsService.getInstance();
       await settingsService.setMultiple(settings);
       logger.info('Settings set multiple request:', settings);
+
+      // ホットキーが設定された場合、初回起動モードを解除
+      if (settings.hotkey && settings.hotkey.trim() !== '' && setFirstLaunchMode) {
+        setFirstLaunchMode(false);
+        logger.info('初回起動モードを解除しました（ホットキーが設定されたため）');
+      }
+
       return true;
     } catch (error) {
       logger.error('Failed to set multiple settings:', error);

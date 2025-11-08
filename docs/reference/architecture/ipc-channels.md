@@ -4,6 +4,42 @@ QuickDashLauncherで使用される主要なIPCチャンネルの仕様です。
 
 ## 設定・ファイル関連
 
+### `settings:is-first-launch`
+初回起動かどうかを取得
+- 戻り値: `boolean`
+- 判定基準: `hotkey`が空文字列または未設定の場合に`true`
+
+### `settings:get`
+アプリケーション設定を取得
+- パラメータ: `key?: keyof AppSettings` (省略時は全設定を取得)
+- 戻り値: 指定されたキーの値、または全設定
+
+### `settings:set`
+設定値を設定
+- パラメータ: `key: keyof AppSettings`, `value: AppSettings[keyof AppSettings]`
+
+### `settings:set-multiple`
+複数の設定項目を一括更新
+- パラメータ: `settings: Partial<AppSettings>`
+- 備考: ホットキーが設定された場合、初回起動モードを自動解除
+
+### `settings:reset`
+設定をデフォルト値にリセット
+
+### `settings:validate-hotkey`
+ホットキーの妥当性を検証
+- パラメータ: `hotkey: string`
+- 戻り値: `{ isValid: boolean, reason?: string }`
+
+### `settings:get-config-path`
+設定ファイルのパスを取得
+- 戻り値: `string` (設定ファイルのフルパス)
+
+### `settings:change-hotkey`
+グローバルホットキーを変更
+- パラメータ: `newHotkey: string`
+- 戻り値: `boolean` (成功/失敗)
+
 ### `get-config-folder`
 ユーザーデータディレクトリパスを返す
 

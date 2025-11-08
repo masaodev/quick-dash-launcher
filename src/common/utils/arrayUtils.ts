@@ -18,10 +18,7 @@ export class ArrayUtils {
    * const grouped = ArrayUtils.groupByProperty(items, 'file');
    * // Map { 'a.txt' => [{file: 'a.txt', data: 1}, {file: 'a.txt', data: 3}], 'b.txt' => [...] }
    */
-  static groupByProperty<T>(
-    items: T[],
-    keyProperty: keyof T
-  ): Map<string | number, T[]> {
+  static groupByProperty<T>(items: T[], keyProperty: keyof T): Map<string | number, T[]> {
     const groups = new Map<string | number, T[]>();
 
     items.forEach((item) => {

@@ -7,6 +7,7 @@ import ItemList from './components/ItemList';
 import ActionButtons from './components/ActionButtons';
 import RegisterModal, { RegisterItem } from './components/RegisterModal';
 import IconProgressBar from './components/IconProgressBar';
+import { FirstLaunchSetup } from './components/FirstLaunchSetup';
 import { filterItems } from './utils/dataParser';
 import { debugLog, debugInfo, logWarn } from './utils/debug';
 import { useIconProgress } from './hooks/useIconProgress';
@@ -20,6 +21,7 @@ const App: React.FC = () => {
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [droppedPaths, setDroppedPaths] = useState<string[]>([]);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const { progressState } = useIconProgress();
@@ -27,6 +29,13 @@ const App: React.FC = () => {
     useSearchHistory();
 
   useEffect(() => {
+    // 初回起動チェック: 設定ファイルの存在を確認
+    const checkFirstLaunch = async () => {
+      const isFirst = await window.electronAPI.isFirstLaunch();
+      setIsFirstLaunch(isFirst);
+    };
+    checkFirstLaunch();
+
     loadItems();
 
     window.electronAPI.onWindowShown(() => {
@@ -159,7 +168,11 @@ const App: React.FC = () => {
     switch (e.key) {
       case 'Enter':
         e.stopPropagation();
-        if (e.shiftKey && filteredItems[selectedIndex] && filteredItems[selectedIndex].type !== 'group') {
+        if (
+          e.shiftKey &&
+          filteredItems[selectedIndex] &&
+          filteredItems[selectedIndex].type !== 'group'
+        ) {
           await window.electronAPI.openParentFolder(filteredItems[selectedIndex] as LauncherItem);
         } else if (filteredItems[selectedIndex]) {
           // 検索クエリがある場合は履歴に追加（フロントエンド側で即座に）
@@ -228,7 +241,9 @@ const App: React.FC = () => {
     // Extract URL items based on forceAll flag (グループアイテムを除外)
     const allUrls = forceAll
       ? mainItems.filter((item) => item.type === 'url').map((item) => (item as LauncherItem).path)
-      : mainItems.filter((item) => item.type === 'url' && !('icon' in item && item.icon)).map((item) => (item as LauncherItem).path);
+      : mainItems
+          .filter((item) => item.type === 'url' && !('icon' in item && item.icon))
+          .map((item) => (item as LauncherItem).path);
 
     if (allUrls.length === 0) {
       debugInfo('取得対象のURLアイテムがありません');
@@ -261,8 +276,10 @@ const App: React.FC = () => {
 
     // Extract items based on forceAll flag (excluding URLs and groups)
     const allIconItems = forceAll
-      ? mainItems.filter((item) => item.type !== 'url' && item.type !== 'group') as LauncherItem[]
-      : mainItems.filter((item) => item.type !== 'url' && item.type !== 'group' && !('icon' in item && item.icon)) as LauncherItem[];
+      ? (mainItems.filter((item) => item.type !== 'url' && item.type !== 'group') as LauncherItem[])
+      : (mainItems.filter(
+          (item) => item.type !== 'url' && item.type !== 'group' && !('icon' in item && item.icon)
+        ) as LauncherItem[]);
 
     if (allIconItems.length === 0) {
       debugInfo('抽出対象のアイテムがありません');
@@ -437,7 +454,33 @@ const App: React.FC = () => {
     await window.electronAPI.openEditWindowWithTab('edit');
   };
 
+  const handleFirstLaunchComplete = async (hotkey: string) => {
+    try {
+      // ホットキーを設定（設定ファイルが自動的に作成される）
+      await window.electronAPI.setMultipleSettings({
+        hotkey,
+      });
+      await window.electronAPI.changeHotkey(hotkey);
+
+      // 初回起動画面を閉じる
+      setIsFirstLaunch(false);
+    } catch (error) {
+      console.error('初回設定の保存に失敗しました:', error);
+      alert('設定の保存に失敗しました。');
+    }
+  };
+
   const filteredItems = filterItems(mainItems, searchQuery);
+
+  // 初回起動チェック中はローディング表示
+  if (isFirstLaunch === null) {
+    return <div className="app">読み込み中...</div>;
+  }
+
+  // 初回起動の場合は設定画面を表示
+  if (isFirstLaunch) {
+    return <FirstLaunchSetup onComplete={handleFirstLaunchComplete} />;
+  }
 
   return (
     <div className={`app ${isDraggingOver ? 'dragging-over' : ''}`} onKeyDown={handleKeyDown}>
