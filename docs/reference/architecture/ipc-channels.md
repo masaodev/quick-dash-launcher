@@ -43,6 +43,15 @@ QuickDashLauncherで使用される主要なIPCチャンネルの仕様です。
 ### `get-config-folder`
 ユーザーデータディレクトリパスを返す
 
+### `get-app-info`
+アプリケーション情報を取得
+- 戻り値: `AppInfo` (バージョン、名前、説明、作者、ライセンス、GitHubリポジトリURL)
+- package.jsonから動的に取得
+
+### `open-external-url`
+外部URLをデフォルトブラウザで開く
+- パラメータ: `url: string`
+
 ### `load-data-files`
 全てのdata*.txtファイルを読み込み、パース
 
