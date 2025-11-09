@@ -1,11 +1,13 @@
 import * as path from 'path';
 
-import { BrowserWindow, Tray, Menu, nativeImage, app } from 'electron';
+import { BrowserWindow, Tray, Menu, nativeImage, app, shell } from 'electron';
 import { windowLogger } from '@common/logger';
 import type { WindowPinMode } from '@common/types';
 
 import { HotkeyService } from './services/hotkeyService.js';
 import { SettingsService } from './services/settingsService.js';
+import { showAdminWindowWithTab } from './adminWindowManager.js';
+import PathManager from './config/pathManager.js';
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
@@ -91,15 +93,29 @@ export async function createWindow(): Promise<BrowserWindow> {
   return mainWindow;
 }
 
-export function createTray(): void {
+export async function createTray(): Promise<void> {
   const iconPath = path.join(__dirname, '../../assets/icon.ico');
   const icon = nativeImage.createFromPath(iconPath);
 
   tray = new Tray(icon);
 
+  // package.jsonからバージョンを取得
+  const packageJson = await import('../../package.json');
+  const version = packageJson.version || '0.0.0';
+
+  // 設定サービスからホットキーを取得
+  const settingsService = await SettingsService.getInstance();
+  const hotkey = await settingsService.get('hotkey');
+  const hotkeyLabel = hotkey ? ` (${hotkey})` : '';
+
   const contextMenu = Menu.buildFromTemplate([
     {
-      label: '表示',
+      label: `QuickDashLauncher v${version}`,
+      enabled: false,
+    },
+    { type: 'separator' },
+    {
+      label: `表示${hotkeyLabel}`,
       click: () => {
         if (mainWindow) {
           mainWindow.show();
@@ -107,6 +123,28 @@ export function createTray(): void {
         }
       },
     },
+    {
+      label: '設定...',
+      click: async () => {
+        await showAdminWindowWithTab('settings');
+      },
+    },
+    { type: 'separator' },
+    {
+      label: 'データフォルダを開く',
+      click: async () => {
+        const configFolder = PathManager.getConfigFolder();
+        await shell.openPath(configFolder);
+      },
+    },
+    { type: 'separator' },
+    {
+      label: 'ヘルプ',
+      click: async () => {
+        await shell.openExternal('https://github.com/masaodev/quick-dash-launcher');
+      },
+    },
+    { type: 'separator' },
     {
       label: '終了',
       click: () => {

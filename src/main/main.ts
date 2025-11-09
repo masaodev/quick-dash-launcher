@@ -63,7 +63,7 @@ app.whenReady().then(async () => {
   await createWindow();
 
   // システムトレイアイコンとコンテキストメニューを作成
-  createTray();
+  await createTray();
 
   // テスト環境の場合、ウィンドウを自動表示
   if (process.env.SHOW_WINDOW_ON_STARTUP === '1') {

@@ -335,7 +335,6 @@ const App: React.FC = () => {
     setWindowPinMode(newPinMode);
   };
 
-
   const handleCopyPath = async (item: LauncherItem) => {
     try {
       // 引数がある場合は結合してコピー
