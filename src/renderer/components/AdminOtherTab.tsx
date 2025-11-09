@@ -1,6 +1,17 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { AppInfo } from '@common/types';
 
 const AdminOtherTab: React.FC = () => {
+  const [appInfo, setAppInfo] = useState<AppInfo | null>(null);
+
+  useEffect(() => {
+    const loadAppInfo = async () => {
+      const info = await window.electronAPI.getAppInfo();
+      setAppInfo(info);
+    };
+    loadAppInfo();
+  }, []);
+
   const handleOpenConfigFolder = () => {
     window.electronAPI.openConfigFolder();
   };
@@ -15,8 +26,10 @@ const AdminOtherTab: React.FC = () => {
     }
   };
 
-  const getVersionInfo = () => {
-    return process.env.NODE_ENV === 'development' ? 'Development' : 'Production';
+  const handleOpenGitHub = () => {
+    if (appInfo?.repository) {
+      window.electronAPI.openExternalUrl(appInfo.repository);
+    }
   };
 
   return (
@@ -35,20 +48,15 @@ const AdminOtherTab: React.FC = () => {
         </div>
 
         <div className="section">
-          <h3>システム情報</h3>
-          <div className="info-grid">
-            <div className="info-item">
-              <label>バージョン:</label>
-              <span>1.0.0</span>
+          <h3>アプリケーション情報</h3>
+          <div className="app-info-row">
+            <div className="info-text">
+              バージョン: {appInfo?.version || '読込中...'} ・ ライセンス:{' '}
+              {appInfo?.license || '読込中...'}
             </div>
-            <div className="info-item">
-              <label>ビルド:</label>
-              <span>{getVersionInfo()}</span>
-            </div>
-            <div className="info-item">
-              <label>プラットフォーム:</label>
-              <span>Windows</span>
-            </div>
+            <button onClick={handleOpenGitHub} className="link-button" disabled={!appInfo}>
+              🔗 GitHubリポジトリ
+            </button>
           </div>
         </div>
 
