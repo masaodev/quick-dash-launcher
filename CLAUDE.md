@@ -67,6 +67,7 @@ npm run test:e2e:headed # ヘッド付きでE2Eテスト実行
 - **[フォルダ取込アイテム](docs/manual/folder-import-item.md)** - フォルダ内容のインポート機能
 - **[アイテム管理](docs/manual/item-management.md)** - 生データ編集機能の詳細
 - **[アプリケーション設定](docs/manual/app-settings.md)** - ホットキー・ウィンドウサイズ等の設定
+- **[システムトレイメニュー](docs/manual/system-tray.md)** - タスクトレイからのアクセス方法
 
 ### 📚 リファレンス（仕様書）
 - **[データファイル形式仕様](docs/reference/data-file-format.md)** - data.txtファイル形式の完全仕様

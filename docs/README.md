@@ -64,6 +64,7 @@ docs/
 - `folder-import-item.md` - フォルダ取込の使い方
 - `item-management.md` - アイテム管理画面の操作方法
 - `app-settings.md` - アプリケーション設定の使い方
+- `system-tray.md` - システムトレイメニューの使い方
 
 ---
 
