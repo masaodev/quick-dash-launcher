@@ -3,7 +3,6 @@ import React, { useState, useEffect, useRef } from 'react';
 interface SettingsDropdownProps {
   onOpenBasicSettings: () => void;
   onOpenItemManagement: () => void;
-  onExportJson: () => void;
   onQuitApp: () => void;
   isEditMode: boolean;
 }
@@ -11,7 +10,6 @@ interface SettingsDropdownProps {
 const SettingsDropdown: React.FC<SettingsDropdownProps> = ({
   onOpenBasicSettings,
   onOpenItemManagement,
-  onExportJson,
   onQuitApp,
   isEditMode: _isEditMode,
 }) => {
@@ -57,9 +55,6 @@ const SettingsDropdown: React.FC<SettingsDropdownProps> = ({
             onClick={() => handleMenuItemClick(onOpenItemManagement)}
           >
             ✏️ アイテム管理
-          </button>
-          <button className="dropdown-item" onClick={() => handleMenuItemClick(onExportJson)}>
-            📋 JSON出力
           </button>
           <div className="dropdown-divider"></div>
           <button className="dropdown-item" onClick={() => handleMenuItemClick(onQuitApp)}>

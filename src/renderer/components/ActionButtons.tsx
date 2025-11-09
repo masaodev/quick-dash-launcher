@@ -10,7 +10,6 @@ interface ActionButtonsProps {
   onFetchMissingIcons: () => void;
   onRefreshAll: () => void;
   onTogglePin: () => void;
-  onExportJson: () => void;
   onOpenBasicSettings: () => void;
   onOpenItemManagement: () => void;
   windowPinMode: WindowPinMode;
@@ -22,7 +21,6 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   onFetchMissingIcons,
   onRefreshAll,
   onTogglePin,
-  onExportJson,
   onOpenBasicSettings,
   onOpenItemManagement,
   windowPinMode,
@@ -66,7 +64,6 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
       <SettingsDropdown
         onOpenBasicSettings={onOpenBasicSettings}
         onOpenItemManagement={onOpenItemManagement}
-        onExportJson={onExportJson}
         onQuitApp={() => window.electronAPI.quitApp()}
         isEditMode={isEditMode}
       />

@@ -335,22 +335,6 @@ const App: React.FC = () => {
     setWindowPinMode(newPinMode);
   };
 
-  const handleExportJson = async () => {
-    const exportData = {
-      mainItems,
-      exportTimestamp: new Date().toISOString(),
-      totalItems: mainItems.length,
-    };
-
-    const jsonString = JSON.stringify(exportData, null, 2);
-
-    try {
-      await window.electronAPI.copyToClipboard(jsonString);
-      alert('LauncherItemのJSONデータがクリップボードにコピーされました');
-    } catch (_err) {
-      alert('クリップボードへのコピーに失敗しました');
-    }
-  };
 
   const handleCopyPath = async (item: LauncherItem) => {
     try {
@@ -497,7 +481,6 @@ const App: React.FC = () => {
             onFetchMissingIcons={handleFetchMissingIcons}
             onRefreshAll={handleRefreshAll}
             onTogglePin={handleTogglePin}
-            onExportJson={handleExportJson}
             onOpenBasicSettings={handleOpenBasicSettings}
             onOpenItemManagement={handleOpenItemManagement}
             windowPinMode={windowPinMode}
