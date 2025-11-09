@@ -12,7 +12,7 @@ interface FirstLaunchSetupProps {
  * ユーザーがグローバルホットキーをカスタマイズできるようにする
  */
 export const FirstLaunchSetup: React.FC<FirstLaunchSetupProps> = ({ onComplete }) => {
-  const [hotkey, setHotkey] = useState<string>('Ctrl+Alt+W');
+  const [hotkey, setHotkey] = useState<string>('Alt+Space');
   const [hotkeyValidation, setHotkeyValidation] = useState<{ isValid: boolean; reason?: string }>({
     isValid: true,
   });
@@ -49,7 +49,7 @@ export const FirstLaunchSetup: React.FC<FirstLaunchSetupProps> = ({ onComplete }
         <p className="first-launch-description">
           アプリを起動するためのグローバルホットキーを設定してください。
           <br />
-          デフォルトは Ctrl+Alt+W です。他のアプリと競合する場合は変更できます。
+          デフォルトは Alt+Space です。他のアプリと競合する場合は変更できます。
         </p>
 
         <div className="hotkey-setup-section">
@@ -61,7 +61,7 @@ export const FirstLaunchSetup: React.FC<FirstLaunchSetupProps> = ({ onComplete }
             onChange={handleHotkeyChange}
             onValidationChange={handleHotkeyValidation}
             disabled={isLoading}
-            placeholder="Ctrl+Alt+W"
+            placeholder="Alt+Space"
           />
           {!hotkeyValidation.isValid && (
             <div className="validation-error">{hotkeyValidation.reason}</div>
@@ -69,7 +69,7 @@ export const FirstLaunchSetup: React.FC<FirstLaunchSetupProps> = ({ onComplete }
           <p className="hotkey-hint">
             修飾キー（Ctrl、Alt、Shift等）と通常キーを組み合わせてください。
             <br />
-            例: Ctrl+Alt+W、Ctrl+Shift+L など
+            例: Alt+Space、Ctrl+Alt+W、Ctrl+Shift+L など
           </p>
         </div>
 

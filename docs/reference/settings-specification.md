@@ -45,6 +45,7 @@ QuickDashLauncherの設定項目の完全な仕様です。
 #### 組み合わせ例
 
 ```
+Alt+Space
 Ctrl+Alt+Q
 Ctrl+Shift+L
 Alt+F1
@@ -212,7 +213,7 @@ data2_2024-01-01T12-00-00.txt
 
 ```json
 {
-  "hotkey": "Ctrl+Alt+W",
+  "hotkey": "Alt+Space",
   "windowWidth": 600,
   "windowHeight": 400,
   "editModeWidth": 1200,
@@ -226,7 +227,7 @@ data2_2024-01-01T12-00-00.txt
 }
 ```
 
-**注**: 初回起動時は`hotkey`が空文字列（`""`）で保存されています。
+**注**: 初回起動時は`hotkey`が空文字列（`""`）で保存されています。初回設定画面で設定すると、デフォルトでは`"Alt+Space"`が設定されます。
 
 ## 関連ドキュメント
 
