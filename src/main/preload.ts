@@ -9,6 +9,7 @@ import {
   SearchHistoryEntry,
   GroupItem,
   AppItem,
+  AppInfo,
 } from '../common/types';
 
 interface RegisterItem {
@@ -126,4 +127,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('save-search-history', entries),
   addSearchHistoryEntry: (query: string) => ipcRenderer.invoke('add-search-history-entry', query),
   clearSearchHistory: () => ipcRenderer.invoke('clear-search-history'),
+  // アプリ情報関連API
+  getAppInfo: (): Promise<AppInfo> => ipcRenderer.invoke('get-app-info'),
+  openExternalUrl: (url: string) => ipcRenderer.invoke('open-external-url', url),
 });

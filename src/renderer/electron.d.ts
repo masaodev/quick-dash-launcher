@@ -8,6 +8,7 @@ import {
   SearchHistoryEntry,
   GroupItem,
   AppItem,
+  AppInfo,
 } from '../common/types';
 
 import { RegisterItem } from './components/RegisterModal';
@@ -99,6 +100,9 @@ export interface ElectronAPI {
   saveSearchHistory: (entries: SearchHistoryEntry[]) => Promise<void>;
   addSearchHistoryEntry: (query: string) => Promise<void>;
   clearSearchHistory: () => Promise<void>;
+  // アプリ情報関連API
+  getAppInfo: () => Promise<AppInfo>;
+  openExternalUrl: (url: string) => Promise<void>;
 }
 
 declare global {
