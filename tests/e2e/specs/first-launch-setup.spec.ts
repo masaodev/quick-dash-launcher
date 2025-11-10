@@ -65,7 +65,7 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
 
     // デフォルトのホットキーが表示されていることを確認
     const hotkeyValue = await mainWindow.inputValue('.hotkey-input');
-    expect(hotkeyValue).toBe('Ctrl+Alt+W');
+    expect(hotkeyValue).toBe('Alt+Space');
   });
 
   test('完了ボタンが表示されている', async ({ mainWindow }) => {

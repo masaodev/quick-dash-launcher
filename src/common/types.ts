@@ -98,7 +98,7 @@ export interface SimpleBookmarkItem {
  * electron-storeを使用して永続化される
  */
 export interface AppSettings {
-  /** グローバルホットキー（デフォルト: 'Ctrl+Alt+W'） */
+  /** グローバルホットキー（デフォルト: 'Alt+Space'） */
   hotkey: string;
   /** ウィンドウの初期幅（デフォルト: 600） */
   windowWidth: number;

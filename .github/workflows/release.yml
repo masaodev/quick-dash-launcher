@@ -75,7 +75,7 @@ jobs:
             `QuickDashLauncher-${{ steps.get_version.outputs.VERSION }}.exe` をダウンロードして任意の場所に配置してください。インストール不要で直接実行できます。
 
             ## 機能
-            - Ctrl+Alt+Wでグローバルランチャー起動
+            - Alt+Spaceでグローバルランチャー起動（デフォルト、設定で変更可能）
             - Webサイト、アプリケーション、フォルダへの素早いアクセス
             - フォルダ取込機能でファイル一覧の自動取得
           draft: false

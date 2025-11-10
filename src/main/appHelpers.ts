@@ -4,7 +4,7 @@ import PathManager from './config/pathManager.js';
 
 // ホットキーのデフォルト値
 // 注意: 実際のホットキーはSettingsServiceから動的に取得されます
-export const HOTKEY = 'Ctrl+Alt+W';
+export const HOTKEY = 'Alt+Space';
 
 /**
  * デフォルトのdata.txtファイルを作成

@@ -102,7 +102,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave, onUnsavedCh
               onChange={(hotkey) => handleSettingChange('hotkey', hotkey)}
               onValidationChange={handleHotkeyValidation}
               disabled={isLoading}
-              placeholder="Ctrl+Alt+W"
+              placeholder="Alt+Space"
             />
             {!hotkeyValidation.isValid && (
               <div className="validation-error">{hotkeyValidation.reason}</div>
