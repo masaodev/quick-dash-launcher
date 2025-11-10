@@ -207,6 +207,7 @@ const App: React.FC = () => {
       case 'e':
         if (e.ctrlKey) {
           e.preventDefault();
+          e.stopPropagation();
           window.electronAPI.toggleEditWindow();
         }
         break;
