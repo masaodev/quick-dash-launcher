@@ -132,13 +132,14 @@ export interface IconProgressResult {
   success: boolean;
   /** エラーメッセージ（失敗時のみ） */
   errorMessage?: string;
+  /** 処理の種別（ファビコン取得またはアイコン抽出） */
+  type: 'favicon' | 'icon';
 }
 
 /**
- * アイコン取得処理の進捗状況を表すインターフェース
- * リアルタイムでの進捗表示と処理状況の追跡に使用される
+ * 単一フェーズの進捗情報
  */
-export interface IconProgress {
+export interface IconPhaseProgress {
   /** 処理の種別（ファビコン取得またはアイコン抽出） */
   type: 'favicon' | 'icon';
   /** 現在処理完了したアイテム数 */
@@ -155,6 +156,23 @@ export interface IconProgress {
   isComplete: boolean;
   /** 処理結果の詳細リスト */
   results?: IconProgressResult[];
+}
+
+/**
+ * アイコン取得処理の統合進捗状況を表すインターフェース
+ * 複数フェーズ（ファビコン取得 + アイコン抽出）の進捗を一括管理する
+ */
+export interface IconProgress {
+  /** 現在のフェーズ番号（1から開始） */
+  currentPhase: number;
+  /** 総フェーズ数 */
+  totalPhases: number;
+  /** 各フェーズの進捗情報 */
+  phases: IconPhaseProgress[];
+  /** 全体の処理が完了したかどうか */
+  isComplete: boolean;
+  /** 全体の処理開始時刻（ミリ秒） */
+  startTime: number;
 }
 
 /**

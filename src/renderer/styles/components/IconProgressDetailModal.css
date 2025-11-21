@@ -158,16 +158,37 @@
   gap: var(--spacing-xs);
 }
 
+.result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
 .result-name {
   color: var(--text-primary);
   font-size: var(--font-size-sm);
   word-break: break-all;
+  flex: 1;
+  user-select: text;
+  cursor: text;
+}
+
+.result-type-badge {
+  font-size: var(--font-size-xs);
+  padding: 2px 8px;
+  border-radius: var(--border-radius);
+  background-color: var(--color-info);
+  color: white;
+  white-space: nowrap;
 }
 
 .result-error {
   color: var(--color-danger);
   font-size: var(--font-size-xs);
   font-style: italic;
+  user-select: text;
+  cursor: text;
 }
 
 .modal-actions {

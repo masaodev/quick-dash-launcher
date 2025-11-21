@@ -49,46 +49,74 @@ QuickDashLauncherのデータ処理フローを説明します。
 
 ## アイコン取得と進捗表示フロー
 
-### ファビコン取得フロー
-1. ユーザーが🌐ファビコン取得ボタンをクリック
-2. `App.tsx`でURL型アイテムのフィルタリング（`item.type === 'url' && !item.icon`）
-3. フィルタリングされたURLリストを`fetchFaviconsWithProgress`IPCに送信
-4. メインプロセスで逐次処理開始、進捗イベント送信開始
-   - `icon-progress-start`: 処理開始通知（処理種別、総数）
-   - `icon-progress-update`: 各アイテム処理前後の進捗更新通知
-   - `icon-progress-complete`: 処理完了通知（最終結果、エラー数）
-5. レンダラープロセスで`useIconProgress`フックが進捗イベントを受信
-6. `IconProgressBar`コンポーネントがリアルタイム進捗表示
-7. 取得結果をレンダラーに返却、`mainItems`と`tempItems`を更新
-8. 完了後3秒で進捗バーが自動非表示
+### 統合アイコン取得フロー
+1. ユーザーがメインウィンドウの🔄ドロップダウンメニューから「🎨 アイコン取得」を選択
+2. `App.tsx`の`handleFetchMissingIcons`が実行される
+3. **アイテムのフィルタリング:**
+   - URL型アイテム: `item.type === 'url' && !item.icon`
+   - 非URL型アイテム: `!item.icon && item.type !== 'url' && item.type !== 'folder' && item.type !== 'group'`
+4. **統合API呼び出し:**
+   - `fetchIconsCombined`IPCに両方のリストを送信
+   - メインプロセスで`CombinedProgressManager`を使用して複数フェーズを管理
+5. **フェーズ1: ファビコン取得**
+   - URL型アイテムを逐次処理
+   - 各アイテム処理後に進捗イベント送信
+   - タイムアウト設定: HTMLダウンロード10秒、ファビコンダウンロード5秒
+6. **フェーズ2: アイコン抽出**
+   - 非URL型アイテムを逐次処理
+   - 各アイテム処理後に進捗イベント送信
+     - app型: ショートカット（.lnk）または実行ファイル（.exe）からアイコン抽出
+     - customUri型: レジストリからスキーマハンドラーアプリを特定しアイコン抽出
+     - file型: 拡張子ベースでシステム関連付けアイコンを抽出
+7. **進捗表示:**
+   - `icon-progress-start`: 処理開始通知（統合進捗情報）
+   - `icon-progress-update`: 各アイテム処理後の進捗更新通知（フェーズ別）
+   - `icon-progress-complete`: 処理完了通知（全フェーズの最終結果とエラー詳細）
+8. レンダラープロセスで`useIconProgress`フックが進捗イベントを受信
+9. `IconProgressBar`コンポーネントが統合進捗を表示
+   - 基本表示: 全体進捗とフェーズ情報
+   - 詳細モーダル: クリックでフェーズ別詳細とエラー一覧を表示
+10. 取得結果をレンダラーに返却、`mainItems`と`tempItems`を更新
+11. 完了後3秒で進捗バーが自動非表示
 
-### アイコン抽出フロー
-1. ユーザーが🎨全アイコンを抽出ボタンをクリック
-2. `App.tsx`で非URL型アイテムのフィルタリング（`!item.icon && item.type !== 'url'`）
-3. フィルタリングされたアイテムリストを`extractIconsWithProgress`IPCに送信
-4. メインプロセスで逐次処理開始、進捗イベント送信
-   - app型: ショートカット（.lnk）または実行ファイル（.exe）からアイコン抽出
-   - customUri型: レジストリからスキーマハンドラーアプリを特定しアイコン抽出
-   - file型: 拡張子ベースでシステム関連付けアイコンを抽出
-5. レンダラープロセスで進捗表示（ファビコン取得と同様のフロー）
-6. 抽出結果をレンダラーに返却、アイテムリストを更新
+**注:** フォルダとグループアイテムは処理対象から除外されます。
 
 ### 進捗データ構造
 ```typescript
 IconProgress {
+  currentPhase: number,            // 現在のフェーズ番号（1から開始）
+  totalPhases: number,             // 総フェーズ数
+  phases: IconPhaseProgress[],     // 各フェーズの進捗情報
+  isComplete: boolean,             // 全体の処理が完了したかどうか
+  startTime: number                // 全体の処理開始時刻
+}
+
+IconPhaseProgress {
   type: 'favicon' | 'icon',        // 処理種別
   current: number,                 // 現在完了数
   total: number,                   // 総数
   currentItem: string,             // 処理中アイテム（URL/パス）
   errors: number,                  // エラー数
-  startTime: number,               // 開始時刻
-  isComplete: boolean              // 完了フラグ
+  startTime: number,               // フェーズ開始時刻
+  isComplete: boolean,             // フェーズ完了フラグ
+  results?: IconProgressResult[]   // 処理結果の詳細リスト
+}
+
+IconProgressResult {
+  itemName: string,                // アイテム名またはURL
+  success: boolean,                // 成功したかどうか
+  errorMessage?: string,           // エラーメッセージ（失敗時のみ）
+  type: 'favicon' | 'icon'         // 処理の種別
 }
 ```
 
 ### 進捗表示UI仕様
 - **表示位置**: メインウィンドウ下部（ItemListの下）
-- **表示内容**: プログレスバー、進捗数値、経過時間、推定残り時間、エラー数
+- **基本表示**: 統合進捗バー（全体進捗、現在フェーズ、プログレスバー）
+- **詳細モーダル**: クリックでフェーズ別の詳細情報とエラー一覧を表示
+  - フェーズごとの進捗（処理済み数、成功・失敗件数）
+  - エラー一覧（アイテム名、エラーメッセージ）
+  - テキスト選択可能（エラー情報のコピー）
 - **非表示条件**: 処理完了後3秒で自動非表示
 - **操作性**: 非モーダル設計により、進捗表示中も他の操作が継続可能
 

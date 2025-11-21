@@ -45,11 +45,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('extract-file-icon-by-extension', filePath),
   extractCustomUriIcon: (uri: string) => ipcRenderer.invoke('extract-custom-uri-icon', uri),
   loadCachedIcons: (items: LauncherItem[]) => ipcRenderer.invoke('load-cached-icons', items),
-  // 進捗付きアイコン取得API
-  fetchFaviconsWithProgress: (urls: string[]) =>
-    ipcRenderer.invoke('fetch-favicons-with-progress', urls),
-  extractIconsWithProgress: (items: LauncherItem[]) =>
-    ipcRenderer.invoke('extract-icons-with-progress', items),
+  // 統合進捗付きアイコン取得API
+  fetchIconsCombined: (urls: string[], items: LauncherItem[]) =>
+    ipcRenderer.invoke('fetch-icons-combined', urls, items),
   // 進捗イベントリスナー
   onIconProgress: (
     eventType: 'start' | 'update' | 'complete',

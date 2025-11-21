@@ -10,14 +10,10 @@ export const useIconProgress = () => {
 
   useEffect(() => {
     // IPCイベントリスナーを設定
-    const handleProgressStart = (data: Omit<IconProgress, 'current' | 'isComplete'>) => {
+    const handleProgressStart = (data: IconProgress) => {
       setProgressState({
         isActive: true,
-        progress: {
-          ...data,
-          current: 0,
-          isComplete: false,
-        },
+        progress: data,
       });
     };
 

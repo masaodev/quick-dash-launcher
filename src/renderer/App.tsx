@@ -232,95 +232,42 @@ const App: React.FC = () => {
     await window.electronAPI.executeGroup(group, mainItems);
   };
 
-  const handleFetchFavicon = async (forceAll: boolean = false) => {
-    debugInfo(
-      forceAll
-        ? 'すべてのURLアイテムのファビコンを強制取得開始'
-        : 'アイコンなしURLアイテムのファビコンを取得開始'
-    );
-
-    // Extract URL items based on forceAll flag (グループアイテムを除外)
-    const allUrls = forceAll
-      ? mainItems.filter((item) => item.type === 'url').map((item) => (item as LauncherItem).path)
-      : mainItems
-          .filter((item) => item.type === 'url' && !('icon' in item && item.icon))
-          .map((item) => (item as LauncherItem).path);
-
-    if (allUrls.length === 0) {
-      debugInfo('取得対象のURLアイテムがありません');
-      return;
-    }
-
-    // Use progress-enabled favicon fetching
-    const results = await window.electronAPI.fetchFaviconsWithProgress(allUrls);
-
-    // Apply fetched favicons to items
-    const updateItemsWithFavicons = (items: AppItem[]) => {
-      return items.map((item) => {
-        if (item.type === 'url' && results[(item as LauncherItem).path]) {
-          return { ...item, icon: results[(item as LauncherItem).path] || undefined };
-        }
-        return item;
-      });
-    };
-
-    setMainItems(updateItemsWithFavicons(mainItems));
-    debugInfo('ファビコン取得完了');
-  };
-
-  const handleExtractAllIcons = async (forceAll: boolean = false) => {
-    debugInfo(
-      forceAll
-        ? 'すべてのアイテムのアイコンを強制抽出開始'
-        : 'アイコンなしアイテムのアイコン抽出を開始'
-    );
-
-    // Extract items based on forceAll flag (excluding URLs, groups, and folders)
-    const allIconItems = forceAll
-      ? (mainItems.filter(
-          (item) => item.type !== 'url' && item.type !== 'group' && item.type !== 'folder'
-        ) as LauncherItem[])
-      : (mainItems.filter(
-          (item) =>
-            item.type !== 'url' &&
-            item.type !== 'group' &&
-            item.type !== 'folder' &&
-            !('icon' in item && item.icon)
-        ) as LauncherItem[]);
-
-    if (allIconItems.length === 0) {
-      debugInfo('抽出対象のアイテムがありません');
-      return;
-    }
-
-    // Use progress-enabled icon extraction
-    const results = await window.electronAPI.extractIconsWithProgress(allIconItems);
-
-    // Apply extracted icons to items
-    const updateItemsWithIcons = (items: AppItem[]) => {
-      return items.map((item) => {
-        if (item.type !== 'url' && item.type !== 'group' && results[(item as LauncherItem).path]) {
-          return { ...item, icon: results[(item as LauncherItem).path] || undefined };
-        }
-        return item;
-      });
-    };
-
-    setMainItems(updateItemsWithIcons(mainItems));
-    debugInfo('アイコン抽出完了');
-  };
-
   const handleRefreshAll = async () => {
     debugInfo('すべての更新を開始');
 
     // 1. データファイルの再読み込み
     await loadItems();
 
-    // 2. 全ファビコン強制取得
-    await handleFetchFavicon(true);
+    // 2. 統合プログレスAPIで全アイコン取得（強制）
+    const allUrls = mainItems
+      .filter((item) => item.type === 'url')
+      .map((item) => (item as LauncherItem).path);
 
-    // 3. 全アイコン強制抽出
-    await handleExtractAllIcons(true);
+    const allIconItems = mainItems.filter(
+      (item) => item.type !== 'url' && item.type !== 'group' && item.type !== 'folder'
+    ) as LauncherItem[];
+
+    if (allUrls.length > 0 || allIconItems.length > 0) {
+      const results = await window.electronAPI.fetchIconsCombined(allUrls, allIconItems);
+
+      // 取得したアイコンをアイテムに適用
+      const updateItemsWithIcons = (items: AppItem[]) => {
+        return items.map((item) => {
+          if (item.type === 'url' && results.favicons[(item as LauncherItem).path]) {
+            return { ...item, icon: results.favicons[(item as LauncherItem).path] || undefined };
+          } else if (
+            item.type !== 'url' &&
+            item.type !== 'group' &&
+            results.icons[(item as LauncherItem).path]
+          ) {
+            return { ...item, icon: results.icons[(item as LauncherItem).path] || undefined };
+          }
+          return item;
+        });
+      };
+
+      setMainItems(updateItemsWithIcons(mainItems));
+    }
 
     debugInfo('すべての更新が完了');
   };
@@ -328,12 +275,46 @@ const App: React.FC = () => {
   const handleFetchMissingIcons = async () => {
     debugInfo('未取得アイコンの取得を開始');
 
-    // ファビコン取得（未取得のみ）
-    await handleFetchFavicon(false);
+    // 統合プログレスAPIを使用
+    // URLアイテムの抽出（アイコン未設定のみ）
+    const urls = mainItems
+      .filter((item) => item.type === 'url' && !('icon' in item && item.icon))
+      .map((item) => (item as LauncherItem).path);
 
-    // アイコン抽出（未取得のみ）
-    await handleExtractAllIcons(false);
+    // EXE/ファイル/カスタムURIアイテムの抽出（アイコン未設定のみ、フォルダとグループを除外）
+    const iconItems = mainItems.filter(
+      (item) =>
+        item.type !== 'url' &&
+        item.type !== 'group' &&
+        item.type !== 'folder' &&
+        !('icon' in item && item.icon)
+    ) as LauncherItem[];
 
+    if (urls.length === 0 && iconItems.length === 0) {
+      debugInfo('取得対象のアイテムがありません');
+      return;
+    }
+
+    // 統合APIを呼び出し
+    const results = await window.electronAPI.fetchIconsCombined(urls, iconItems);
+
+    // 取得したアイコンをアイテムに適用
+    const updateItemsWithIcons = (items: AppItem[]) => {
+      return items.map((item) => {
+        if (item.type === 'url' && results.favicons[(item as LauncherItem).path]) {
+          return { ...item, icon: results.favicons[(item as LauncherItem).path] || undefined };
+        } else if (
+          item.type !== 'url' &&
+          item.type !== 'group' &&
+          results.icons[(item as LauncherItem).path]
+        ) {
+          return { ...item, icon: results.icons[(item as LauncherItem).path] || undefined };
+        }
+        return item;
+      });
+    };
+
+    setMainItems(updateItemsWithIcons(mainItems));
     debugInfo('未取得アイコンの取得が完了');
   };
 

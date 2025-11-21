@@ -97,6 +97,8 @@ uri_{schema}_icon.png
 |------|------|
 | **デフォルト解像度** | 64px |
 | **HTML読み込みサイズ** | 最初の5KBのみ（効率化） |
+| **HTMLダウンロードタイムアウト** | 10秒 |
+| **ファビコンダウンロードタイムアウト** | 5秒 |
 | **エラーハンドリング** | 各ソースで失敗しても次のソースを試行 |
 | **キャッシュ命名規則** | `{domain}_favicon_{size}.png` |
 
@@ -229,7 +231,169 @@ MyApp,C:\MyApp\app.exe,,custom-icon.png
 
 詳細は **[データファイル形式仕様](data-file-format.md#カスタムアイコンの処理)** を参照してください。
 
+## アイコン取得API
+
+### fetchIconsCombined
+
+ファビコンとアイコンを統合的に一括取得する統合API。
+
+**シグネチャ:**
+```typescript
+async function fetchIconsCombined(
+  urls: string[],
+  items: IconItem[],
+  faviconsFolder: string,
+  iconsFolder: string,
+  extensionsFolder: string
+): Promise<{
+  favicons: Record<string, string | null>;
+  icons: Record<string, string | null>;
+}>
+```
+
+**パラメータ:**
+- `urls`: ファビコンを取得するURL配列
+- `items`: アイコンを抽出するアイテム配列
+- `faviconsFolder`: ファビコン保存先ディレクトリ
+- `iconsFolder`: アイコン保存先ディレクトリ
+- `extensionsFolder`: 拡張子アイコン保存先ディレクトリ
+
+**戻り値:**
+- `favicons`: URLをキーとするファビコンパスのマップ
+- `icons`: アイテムIDをキーとするアイコンパスのマップ
+
+**特徴:**
+- ファビコン取得とアイコン抽出を順次実行
+- `CombinedProgressManager`を使用して統合進捗管理
+- 各フェーズの進捗をリアルタイム通知
+- エラー発生時も処理を継続し、詳細を記録
+
+### CombinedProgressManager
+
+複数フェーズの進捗を統合管理するクラス。
+
+**コンストラクタ:**
+```typescript
+constructor(
+  phaseTypes: ('favicon' | 'icon')[],
+  phaseTotals: number[],
+  window: BrowserWindow | null
+)
+```
+
+**パラメータ:**
+- `phaseTypes`: 各フェーズの種別配列
+- `phaseTotals`: 各フェーズの総アイテム数配列
+- `window`: 進捗イベントを送信するウィンドウ
+
+**メソッド:**
+- `start()`: 処理開始イベントを送信
+- `startPhase(phaseIndex: number)`: 指定フェーズの開始
+- `updateItem(phaseIndex: number, itemName: string, success: boolean, errorMessage?: string)`: アイテム処理結果の記録
+- `completePhase(phaseIndex: number)`: フェーズ完了
+- `complete()`: 全体完了イベントを送信
+
+## アイコン進捗型定義
+
+### IconProgressResult
+
+個別のアイコン処理結果を表す型。
+
+```typescript
+interface IconProgressResult {
+  /** アイテム名またはURL */
+  itemName: string;
+  /** 成功したかどうか */
+  success: boolean;
+  /** エラーメッセージ（失敗時のみ） */
+  errorMessage?: string;
+  /** 処理の種別（ファビコン取得またはアイコン抽出） */
+  type: 'favicon' | 'icon';
+}
+```
+
+**変更点（v1.x.x）:**
+- `type`フィールドを追加：処理種別を識別可能に
+
+### IconPhaseProgress
+
+単一フェーズの進捗情報を表す型。
+
+```typescript
+interface IconPhaseProgress {
+  /** 処理の種別（ファビコン取得またはアイコン抽出） */
+  type: 'favicon' | 'icon';
+  /** 現在処理完了したアイテム数 */
+  current: number;
+  /** 処理対象の総アイテム数 */
+  total: number;
+  /** 現在処理中のアイテム名またはURL */
+  currentItem: string;
+  /** エラーが発生したアイテム数 */
+  errors: number;
+  /** 処理開始時刻（ミリ秒） */
+  startTime: number;
+  /** 処理が完了したかどうか */
+  isComplete: boolean;
+  /** 処理結果の詳細リスト */
+  results?: IconProgressResult[];
+}
+```
+
+**新規追加（v1.x.x）:**
+複数フェーズの進捗を管理するために新規追加された型。
+
+### IconProgress
+
+アイコン取得処理の統合進捗状況を表す型。
+
+```typescript
+interface IconProgress {
+  /** 現在のフェーズ番号（1から開始） */
+  currentPhase: number;
+  /** 総フェーズ数 */
+  totalPhases: number;
+  /** 各フェーズの進捗情報 */
+  phases: IconPhaseProgress[];
+  /** 全体の処理が完了したかどうか */
+  isComplete: boolean;
+  /** 全体の処理開始時刻（ミリ秒） */
+  startTime: number;
+}
+```
+
+**変更点（v1.x.x）:**
+- 単一フェーズから複数フェーズ管理に変更
+- `type`, `current`, `total`, `currentItem`, `errors`は`phases`配列内に移動
+- `currentPhase`, `totalPhases`, `phases`フィールドを追加
+
+### IconProgressState
+
+React コンポーネント内での進捗状態管理用の型。
+
+```typescript
+interface IconProgressState {
+  /** 進捗処理がアクティブかどうか */
+  isActive: boolean;
+  /** 現在の進捗情報 */
+  progress: IconProgress | null;
+}
+```
+
+## 削除されたAPI
+
+以下のAPIは統合APIに置き換えられ、削除されました：
+
+### fetchFaviconsWithProgress（削除）
+
+**理由:** `fetchIconsCombined`に統合され、複数フェーズの進捗を一元管理するため。
+
+### extractIconsWithProgress（削除）
+
+**理由:** `fetchIconsCombined`に統合され、複数フェーズの進捗を一元管理するため。
+
 ## 関連ドキュメント
 
 - **[アイコンシステム](../manual/icon-system.md)** - アイコンシステムの使い方
+- **[アイコン進捗表示](../manual/icon-progress.md)** - 統合進捗表示の詳細
 - **[データファイル形式仕様](data-file-format.md)** - カスタムアイコンの指定方法

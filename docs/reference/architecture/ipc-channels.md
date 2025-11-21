@@ -92,11 +92,17 @@ QuickDashLauncherで使用される主要なIPCチャンネルの仕様です。
 ### `load-cached-icons`
 キャッシュされたアイコンを一括読み込み
 
-### `fetch-favicons-with-progress`
-複数URLのファビコンを逐次取得し、進捗状況をリアルタイム通知
+### `fetch-icons-combined`
+ファビコンとアイコンを統合的に一括取得する統合API
+- パラメータ: `urls: string[]`, `items: IconItem[]`
+- 戻り値: `{ favicons: Record<string, string | null>, icons: Record<string, string | null> }`
+- 特徴: 複数フェーズ（ファビコン取得 + アイコン抽出）の進捗を統合管理
 
-### `extract-icons-with-progress`
-複数アイテムのアイコンを逐次抽出し、進捗状況をリアルタイム通知
+### `fetch-favicons-with-progress` (削除)
+**削除理由:** `fetch-icons-combined`に統合されました
+
+### `extract-icons-with-progress` (削除)
+**削除理由:** `fetch-icons-combined`に統合されました
 
 ## ウィンドウ制御
 
@@ -174,29 +180,50 @@ onSetActiveTab(callback: (tab: 'settings' | 'edit' | 'other') => void)
 
 **icon-progress-start**
 - アイコン取得処理の開始を通知
-- 処理種別（favicon/icon）と総数を含む
+- 統合進捗情報（複数フェーズ）を含む
 
 **icon-progress-update**
 - アイコン取得処理の進捗更新を通知
-- 現在の処理数、処理中アイテム、エラー数を含む
+- 現在のフェーズ、各フェーズの処理数、エラー数を含む
 
 **icon-progress-complete**
 - アイコン取得処理の完了を通知
-- 最終的な処理結果とエラー数を含む
+- 最終的な処理結果（全フェーズ）とエラー数を含む
 
-#### IconProgress型定義
+#### IconProgress型定義（更新版）
 
 ```typescript
 interface IconProgress {
+  currentPhase: number;               // 現在のフェーズ番号（1から開始）
+  totalPhases: number;                // 総フェーズ数
+  phases: IconPhaseProgress[];        // 各フェーズの進捗情報
+  isComplete: boolean;                // 全体の処理が完了したかどうか
+  startTime: number;                  // 全体の処理開始時刻（ミリ秒）
+}
+
+interface IconPhaseProgress {
   type: 'favicon' | 'icon';           // 処理の種別
   current: number;                    // 現在処理完了したアイテム数
   total: number;                      // 処理対象の総アイテム数
   currentItem: string;                // 現在処理中のアイテム名またはURL
   errors: number;                     // エラーが発生したアイテム数
-  startTime: number;                  // 処理開始時刻（ミリ秒）
-  isComplete: boolean;                // 処理が完了したかどうか
+  startTime: number;                  // フェーズ開始時刻（ミリ秒）
+  isComplete: boolean;                // フェーズが完了したかどうか
+  results?: IconProgressResult[];     // 処理結果の詳細リスト
+}
+
+interface IconProgressResult {
+  itemName: string;                   // アイテム名またはURL
+  success: boolean;                   // 成功したかどうか
+  errorMessage?: string;              // エラーメッセージ（失敗時のみ）
+  type: 'favicon' | 'icon';           // 処理の種別
 }
 ```
+
+**変更点（v1.x.x）:**
+- `IconProgress`を単一フェーズから複数フェーズ管理に変更
+- `IconPhaseProgress`型を新規追加
+- `IconProgressResult`に`type`フィールドを追加
 
 ## システム制御
 

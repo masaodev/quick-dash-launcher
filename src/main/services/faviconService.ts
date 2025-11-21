@@ -14,6 +14,8 @@ interface FaviconSource {
 export class FaviconService {
   private faviconsFolder: string;
   private defaultSize: number = 64; // デフォルトサイズを64pxに
+  private htmlDownloadTimeout: number = 10000; // HTMLダウンロードのタイムアウト（10秒）
+  private faviconDownloadTimeout: number = 5000; // ファビコンダウンロードのタイムアウト（5秒）
 
   constructor(faviconsFolder: string) {
     this.faviconsFolder = faviconsFolder;
@@ -267,24 +269,44 @@ export class FaviconService {
       );
 
       let data = '';
+      let isResolved = false;
+
+      // タイムアウト設定
+      const timeoutId = setTimeout(() => {
+        if (!isResolved) {
+          isResolved = true;
+          request.abort();
+          reject(new Error(`HTMLダウンロードがタイムアウトしました: ${url}`));
+        }
+      }, this.htmlDownloadTimeout);
 
       request.on('response', (response) => {
         response.on('data', (chunk) => {
           data += chunk.toString();
           // 最初の5KBだけ読み込む（ファビコンタグは通常ヘッダー部分にある）
           if (data.length > 5000) {
+            clearTimeout(timeoutId);
+            isResolved = true;
             request.abort();
             resolve(data);
           }
         });
 
         response.on('end', () => {
-          resolve(data);
+          if (!isResolved) {
+            clearTimeout(timeoutId);
+            isResolved = true;
+            resolve(data);
+          }
         });
       });
 
       request.on('error', (error) => {
-        reject(error);
+        if (!isResolved) {
+          clearTimeout(timeoutId);
+          isResolved = true;
+          reject(error);
+        }
       });
 
       request.end();
@@ -300,9 +322,21 @@ export class FaviconService {
       );
 
       const chunks: Buffer[] = [];
+      let isResolved = false;
+
+      // タイムアウト設定
+      const timeoutId = setTimeout(() => {
+        if (!isResolved) {
+          isResolved = true;
+          request.abort();
+          reject(new Error(`ファビコンダウンロードがタイムアウトしました: ${url}`));
+        }
+      }, this.faviconDownloadTimeout);
 
       request.on('response', (response) => {
         if (response.statusCode !== 200) {
+          clearTimeout(timeoutId);
+          isResolved = true;
           reject(new Error(`HTTP ${response.statusCode}`));
           return;
         }
@@ -312,13 +346,21 @@ export class FaviconService {
         });
 
         response.on('end', () => {
-          const buffer = Buffer.concat(chunks);
-          resolve(buffer);
+          if (!isResolved) {
+            clearTimeout(timeoutId);
+            isResolved = true;
+            const buffer = Buffer.concat(chunks);
+            resolve(buffer);
+          }
         });
       });
 
       request.on('error', (error) => {
-        reject(error);
+        if (!isResolved) {
+          clearTimeout(timeoutId);
+          isResolved = true;
+          reject(error);
+        }
       });
 
       request.end();

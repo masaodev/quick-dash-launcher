@@ -12,7 +12,6 @@ interface IconProgressBarProps {
 
 const IconProgressBar: React.FC<IconProgressBarProps> = ({ progress, onClose }) => {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const progressPercentage = progress.total > 0 ? (progress.current / progress.total) * 100 : 0;
 
   const formatElapsedTime = (startTime: number): string => {
     const elapsed = Math.floor((Date.now() - startTime) / 1000);
@@ -37,34 +36,34 @@ const IconProgressBar: React.FC<IconProgressBarProps> = ({ progress, onClose }) 
     }
   };
 
-  const getTypeDisplayName = (type: string, isComplete: boolean): string => {
-    if (isComplete) {
-      switch (type) {
-        case 'favicon':
-          return 'ファビコン取得完了';
-        case 'icon':
-          return 'アイコン抽出完了';
-        default:
-          return '処理完了';
-      }
-    } else {
-      switch (type) {
-        case 'favicon':
-          return 'ファビコン取得中';
-        case 'icon':
-          return 'アイコン抽出中';
-        default:
-          return '処理中';
-      }
+  const getPhaseDisplayName = (type: string): string => {
+    switch (type) {
+      case 'favicon':
+        return 'ファビコン取得';
+      case 'icon':
+        return 'アイコン抽出';
+      default:
+        return '処理';
     }
   };
 
-  const truncateItemName = (itemName: string, maxLength = 30): string => {
-    if (itemName.length <= maxLength) return itemName;
-    return itemName.substring(0, maxLength) + '...';
-  };
+  // 現在のフェーズを取得
+  const currentPhase = progress.phases[progress.currentPhase - 1];
 
-  const successCount = progress.current - progress.errors;
+  // 全体の進捗率を計算
+  const totalItems = progress.phases.reduce((sum, phase) => sum + phase.total, 0);
+  const completedItems = progress.phases.reduce((sum, phase) => sum + phase.current, 0);
+  const overallPercentage = totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
+
+  // 全体の成功数とエラー数を計算
+  const totalSuccess = progress.phases.reduce(
+    (sum, phase) => sum + (phase.current - phase.errors),
+    0
+  );
+  const totalErrors = progress.phases.reduce((sum, phase) => sum + phase.errors, 0);
+
+  // 全結果を統合
+  const allResults = progress.phases.flatMap((phase) => phase.results || []);
 
   return (
     <>
@@ -72,26 +71,31 @@ const IconProgressBar: React.FC<IconProgressBarProps> = ({ progress, onClose }) 
         <div className="progress-header">
           <div className="progress-info">
             <span className="progress-type">
-              {getTypeDisplayName(progress.type, progress.isComplete)}
+              {progress.isComplete
+                ? 'アイコン取得完了'
+                : `フェーズ ${progress.currentPhase}/${progress.totalPhases}: ${getPhaseDisplayName(currentPhase?.type || '')}`}
             </span>
             <div className="progress-counts">
-              <span className="success-count">成功: {successCount}件</span>
-              {progress.errors > 0 && (
-                <span className="error-count">エラー: {progress.errors}件</span>
-              )}
-              <span className="total-count">全体: {progress.total}件</span>
+              <span className="success-count">成功: {totalSuccess}件</span>
+              {totalErrors > 0 && <span className="error-count">エラー: {totalErrors}件</span>}
+              <span className="total-count">全体: {totalItems}件</span>
             </div>
           </div>
           <div className="progress-stats">
             <span className="elapsed-time">経過: {formatElapsedTime(progress.startTime)}</span>
-            {progress.current > 0 && !progress.isComplete && (
+            {currentPhase && currentPhase.current > 0 && !progress.isComplete && (
               <span className="estimated-time">
-                残り: {formatEstimatedTime(progress.startTime, progress.current, progress.total)}
+                残り:{' '}
+                {formatEstimatedTime(
+                  currentPhase.startTime,
+                  currentPhase.current,
+                  currentPhase.total
+                )}
               </span>
             )}
           </div>
           <div className="progress-actions">
-            {progress.isComplete && progress.results && progress.results.length > 0 && (
+            {progress.isComplete && allResults.length > 0 && (
               <button
                 className="progress-detail-btn"
                 onClick={() => setIsDetailModalOpen(true)}
@@ -108,21 +112,25 @@ const IconProgressBar: React.FC<IconProgressBarProps> = ({ progress, onClose }) 
 
         <div className="progress-bar-container">
           <div className="progress-bar-track">
-            <div className="progress-bar-fill" style={{ width: `${progressPercentage}%` }} />
+            <div className="progress-bar-fill" style={{ width: `${overallPercentage}%` }} />
           </div>
-          <div className="progress-percentage">{Math.round(progressPercentage)}%</div>
+          <div className="progress-percentage">{Math.round(overallPercentage)}%</div>
         </div>
 
-        {progress.currentItem && !progress.isComplete && (
-          <div className="current-item">処理中: {truncateItemName(progress.currentItem)}</div>
+        {currentPhase && currentPhase.currentItem && !progress.isComplete && (
+          <div className="current-item">
+            処理中:{' '}
+            {currentPhase.currentItem.length > 50
+              ? currentPhase.currentItem.substring(0, 50) + '...'
+              : currentPhase.currentItem}
+          </div>
         )}
       </div>
 
       <IconProgressDetailModal
         isOpen={isDetailModalOpen}
         onClose={() => setIsDetailModalOpen(false)}
-        type={progress.type}
-        results={progress.results || []}
+        results={allResults}
       />
     </>
   );

@@ -26,9 +26,11 @@ export interface ElectronAPI {
   extractFileIconByExtension: (filePath: string) => Promise<string | null>;
   extractCustomUriIcon: (uri: string) => Promise<string | null>;
   loadCachedIcons: (items: LauncherItem[]) => Promise<Record<string, string>>;
-  // 進捗付きアイコン取得API
-  fetchFaviconsWithProgress: (urls: string[]) => Promise<Record<string, string | null>>;
-  extractIconsWithProgress: (items: LauncherItem[]) => Promise<Record<string, string | null>>;
+  // 統合進捗付きアイコン取得API
+  fetchIconsCombined: (
+    urls: string[],
+    items: LauncherItem[]
+  ) => Promise<{ favicons: Record<string, string | null>; icons: Record<string, string | null> }>;
   // 進捗イベントリスナー
   onIconProgress: (
     eventType: 'start' | 'update' | 'complete',

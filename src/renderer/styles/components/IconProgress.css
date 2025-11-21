@@ -151,3 +151,65 @@
   text-align: center;
   padding: var(--spacing-xs) 0;
 }
+
+/* フェーズ別詳細表示 */
+.phase-details {
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.phase-item {
+  padding: var(--spacing-sm);
+  border-radius: var(--border-radius);
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  opacity: 0.6;
+  transition: all 0.3s ease;
+}
+
+.phase-item.active {
+  opacity: 1;
+  border-color: var(--color-primary);
+  background-color: var(--bg-section);
+}
+
+.phase-item.completed {
+  opacity: 0.8;
+  border-color: var(--color-success);
+}
+
+.phase-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-xs);
+}
+
+.phase-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+}
+
+.phase-stats {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+.phase-progress-mini {
+  height: 4px;
+  background-color: var(--color-gray-400);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+}
+
+.phase-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-info-light), var(--color-info));
+  border-radius: var(--border-radius);
+  transition: width 0.3s ease;
+}

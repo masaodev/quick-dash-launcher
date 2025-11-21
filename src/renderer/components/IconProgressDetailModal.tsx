@@ -6,14 +6,12 @@ import '../styles/components/IconProgressDetailModal.css';
 interface IconProgressDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
-  type: 'favicon' | 'icon';
   results: IconProgressResult[];
 }
 
 const IconProgressDetailModal: React.FC<IconProgressDetailModalProps> = ({
   isOpen,
   onClose,
-  type,
   results,
 }) => {
   const [filter, setFilter] = useState<'all' | 'success' | 'error'>('all');
@@ -40,15 +38,11 @@ const IconProgressDetailModal: React.FC<IconProgressDetailModalProps> = ({
   const filteredResults =
     filter === 'all' ? results : filter === 'success' ? successResults : errorResults;
 
-  const getTypeDisplayName = (): string => {
-    return type === 'favicon' ? 'ファビコン取得' : 'アイコン抽出';
-  };
-
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content icon-detail-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>{getTypeDisplayName()}結果</h2>
+          <h2>アイコン取得結果</h2>
           <button className="modal-close-btn" onClick={onClose} aria-label="閉じる">
             ×
           </button>
