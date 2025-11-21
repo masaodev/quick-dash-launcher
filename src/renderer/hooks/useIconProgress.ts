@@ -37,13 +37,7 @@ export const useIconProgress = () => {
         },
       });
 
-      // 完了後3秒で自動的に非表示にする
-      setTimeout(() => {
-        setProgressState({
-          isActive: false,
-          progress: null,
-        });
-      }, 3000);
+      // 自動的に閉じない（ユーザーが×ボタンで手動で閉じる）
     };
 
     // IPCイベントリスナーを登録

@@ -569,12 +569,13 @@ async function fetchFaviconsWithProgress(
       if (favicon) {
         progress.update(url);
       } else {
-        progress.update(url, true); // エラーカウントを増加
+        progress.update(url, true, 'ファビコンが見つかりませんでした');
       }
     } catch (error) {
       iconLogger.error(`ファビコン取得エラー: ${url}`, { error });
       results[url] = null;
-      progress.update(url, true); // エラーカウントを増加
+      const errorMsg = error instanceof Error ? error.message : 'ファビコン取得に失敗しました';
+      progress.update(url, true, errorMsg);
     }
   }
 
@@ -628,12 +629,13 @@ async function extractIconsWithProgress(
       if (icon) {
         progress.update(item.path);
       } else {
-        progress.update(item.path, true); // エラーカウントを増加
+        progress.update(item.path, true, 'アイコンが見つかりませんでした');
       }
     } catch (error) {
       iconLogger.error(`アイコン抽出エラー: ${item.path}`, { error });
       results[item.path] = null;
-      progress.update(item.path, true); // エラーカウントを増加
+      const errorMsg = error instanceof Error ? error.message : 'アイコン抽出に失敗しました';
+      progress.update(item.path, true, errorMsg);
     }
   }
 

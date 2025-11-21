@@ -1,5 +1,5 @@
 import { BrowserWindow } from 'electron';
-import { IconProgress } from '@common/types';
+import { IconProgress, IconProgressResult } from '@common/types';
 
 /**
  * 進捗報告機能の共通クラス
@@ -10,6 +10,7 @@ export class ProgressManager {
   private current = 0;
   private errors = 0;
   private readonly startTime: number;
+  private results: IconProgressResult[] = [];
 
   constructor(
     private type: 'favicon' | 'icon',
@@ -23,6 +24,7 @@ export class ProgressManager {
    * 進捗開始を通知
    */
   start(): void {
+    this.results = [];
     this.sendProgressUpdate('start', {
       type: this.type,
       current: 0,
@@ -31,6 +33,7 @@ export class ProgressManager {
       errors: 0,
       startTime: this.startTime,
       isComplete: false,
+      results: [],
     });
   }
 
@@ -38,11 +41,19 @@ export class ProgressManager {
    * 進捗更新を通知
    * @param currentItem - 現在処理中のアイテム名
    * @param incrementErrors - エラーカウントを増加させるかどうか
+   * @param errorMessage - エラーメッセージ（エラー時のみ）
    */
-  update(currentItem: string, incrementErrors = false): void {
+  update(currentItem: string, incrementErrors = false, errorMessage?: string): void {
     if (incrementErrors) {
       this.errors++;
     }
+
+    // 結果を記録
+    this.results.push({
+      itemName: currentItem,
+      success: !incrementErrors,
+      errorMessage: incrementErrors ? errorMessage : undefined,
+    });
 
     this.sendProgressUpdate('update', {
       type: this.type,
@@ -52,6 +63,7 @@ export class ProgressManager {
       errors: this.errors,
       startTime: this.startTime,
       isComplete: false,
+      results: this.results,
     });
 
     this.current++;
@@ -69,6 +81,7 @@ export class ProgressManager {
       errors: this.errors,
       startTime: this.startTime,
       isComplete: true,
+      results: this.results,
     });
   }
 

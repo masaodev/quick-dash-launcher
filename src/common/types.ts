@@ -123,6 +123,18 @@ export interface AppSettings {
 }
 
 /**
+ * アイコン処理結果の詳細情報
+ */
+export interface IconProgressResult {
+  /** アイテム名またはURL */
+  itemName: string;
+  /** 成功したかどうか */
+  success: boolean;
+  /** エラーメッセージ（失敗時のみ） */
+  errorMessage?: string;
+}
+
+/**
  * アイコン取得処理の進捗状況を表すインターフェース
  * リアルタイムでの進捗表示と処理状況の追跡に使用される
  */
@@ -141,6 +153,8 @@ export interface IconProgress {
   startTime: number;
   /** 処理が完了したかどうか */
   isComplete: boolean;
+  /** 処理結果の詳細リスト */
+  results?: IconProgressResult[];
 }
 
 /**

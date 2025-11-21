@@ -24,7 +24,7 @@ const App: React.FC = () => {
   const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const { progressState } = useIconProgress();
+  const { progressState, resetProgress } = useIconProgress();
   const { navigateToPrevious, navigateToNext, resetNavigation, addHistoryEntry } =
     useSearchHistory();
 
@@ -503,7 +503,7 @@ const App: React.FC = () => {
         />
 
         {progressState.isActive && progressState.progress && (
-          <IconProgressBar progress={progressState.progress} />
+          <IconProgressBar progress={progressState.progress} onClose={resetProgress} />
         )}
 
         <RegisterModal
