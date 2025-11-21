@@ -110,6 +110,8 @@
   /* フォーカスリング */
   --focus-ring: 0 0 0 1px var(--color-primary);
   --focus-ring-wide: 0 0 0 2px rgba(0, 122, 204, 0.25);
+  --focus-ring-danger: 0 0 0 2px rgba(255, 107, 107, 0.25);
+  --focus-ring-danger-wide: 0 0 0 4px rgba(255, 107, 107, 0.15);
 
   /* トランジション */
   --transition-fast: all 0.1s;

@@ -28,7 +28,7 @@
 .hotkey-input.recording {
   border-color: var(--color-danger-light);
   background-color: var(--bg-danger-light);
-  box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.25);
+  box-shadow: var(--focus-ring-danger);
   animation: pulse 1s infinite;
 }
 
@@ -76,12 +76,12 @@
 
 @keyframes pulse {
   0% {
-    box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.25);
+    box-shadow: var(--focus-ring-danger);
   }
   50% {
-    box-shadow: 0 0 0 4px rgba(255, 107, 107, 0.15);
+    box-shadow: var(--focus-ring-danger-wide);
   }
   100% {
-    box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.25);
+    box-shadow: var(--focus-ring-danger);
   }
 }

@@ -99,21 +99,21 @@
 }
 
 .action-button.pin-normal:hover {
-  background-color: #e3f2fd !important;  /* 薄い青色 */
-  border-color: #42a5f5;
-  box-shadow: 0 2px 8px rgba(66, 165, 245, 0.3);
+  background-color: var(--bg-info-light) !important;
+  border-color: var(--color-info-light);
+  box-shadow: var(--shadow);
 }
 
 .action-button.pin-always-on-top {
-  background-color: #dc3545; /* 赤色 */
+  background-color: var(--color-danger);
   color: var(--color-white);
-  border-color: #dc3545;
+  border-color: var(--color-danger);
 }
 
 .action-button.pin-always-on-top:hover {
-  background-color: #ff6b6b !important;  /* 明るい赤に変更 */
-  border-color: #ff6b6b;
-  box-shadow: 0 2px 8px rgba(220, 53, 69, 0.4);
+  background-color: var(--color-danger-light) !important;
+  border-color: var(--color-danger-light);
+  box-shadow: var(--shadow);
   transform: scale(1.05);
 }
 
@@ -124,9 +124,9 @@
 }
 
 .action-button.pin-stay-visible:hover {
-  background-color: #42a5f5 !important;  /* 明るい青に変更 */
-  border-color: #42a5f5;
-  box-shadow: 0 2px 8px rgba(0, 120, 212, 0.4);
+  background-color: var(--color-info-light) !important;
+  border-color: var(--color-info-light);
+  box-shadow: var(--shadow);
   transform: scale(1.05);
 }
 
