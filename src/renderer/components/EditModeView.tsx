@@ -252,6 +252,10 @@ const EditModeView: React.FC<EditModeViewProps> = ({
   });
 
   const filteredLines = mergedLines.filter((line) => {
+    // コメント行を非表示
+    if (line.type === 'comment') return false;
+
+    // 検索クエリによるフィルタリング
     if (!searchQuery) return true;
     const keywords = searchQuery
       .toLowerCase()
@@ -391,6 +395,7 @@ const EditModeView: React.FC<EditModeViewProps> = ({
               }
             };
 
+            // コメント行も含めた全データを整列（コメント行を保持するため）
             const sortedLines = [...mergedLines].sort((a, b) => {
               const typeOrder = { directive: 0, item: 1, comment: 2, empty: 3 };
               const typeA = typeOrder[a.type] ?? 99;
