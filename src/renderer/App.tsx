@@ -275,11 +275,17 @@ const App: React.FC = () => {
         : 'アイコンなしアイテムのアイコン抽出を開始'
     );
 
-    // Extract items based on forceAll flag (excluding URLs and groups)
+    // Extract items based on forceAll flag (excluding URLs, groups, and folders)
     const allIconItems = forceAll
-      ? (mainItems.filter((item) => item.type !== 'url' && item.type !== 'group') as LauncherItem[])
+      ? (mainItems.filter(
+          (item) => item.type !== 'url' && item.type !== 'group' && item.type !== 'folder'
+        ) as LauncherItem[])
       : (mainItems.filter(
-          (item) => item.type !== 'url' && item.type !== 'group' && !('icon' in item && item.icon)
+          (item) =>
+            item.type !== 'url' &&
+            item.type !== 'group' &&
+            item.type !== 'folder' &&
+            !('icon' in item && item.icon)
         ) as LauncherItem[]);
 
     if (allIconItems.length === 0) {
