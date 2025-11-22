@@ -92,7 +92,14 @@ const IconProgressDetailModal: React.FC<IconProgressDetailModalProps> = ({
               <div key={index} className={`result-item ${result.success ? 'success' : 'error'}`}>
                 <div className="result-icon">{result.success ? '✓' : '✗'}</div>
                 <div className="result-content">
-                  <div className="result-name">{result.itemName}</div>
+                  <div className="result-name">
+                    {result.itemName.split('\n').map((line, i) => (
+                      <React.Fragment key={i}>
+                        {line}
+                        {i < result.itemName.split('\n').length - 1 && <br />}
+                      </React.Fragment>
+                    ))}
+                  </div>
                   {result.errorMessage && <div className="result-error">{result.errorMessage}</div>}
                 </div>
               </div>

@@ -241,16 +241,14 @@ const App: React.FC = () => {
     const loadedItems = await loadItems();
 
     // 2. 統合プログレスAPIで全アイコン取得（強制）
-    const allUrls = loadedItems
-      .filter((item) => item.type === 'url')
-      .map((item) => (item as LauncherItem).path);
+    const allUrlItems = loadedItems.filter((item) => item.type === 'url') as LauncherItem[];
 
     const allIconItems = loadedItems.filter(
       (item) => item.type !== 'url' && item.type !== 'group' && item.type !== 'folder'
     ) as LauncherItem[];
 
-    if (allUrls.length > 0 || allIconItems.length > 0) {
-      const results = await window.electronAPI.fetchIconsCombined(allUrls, allIconItems);
+    if (allUrlItems.length > 0 || allIconItems.length > 0) {
+      const results = await window.electronAPI.fetchIconsCombined(allUrlItems, allIconItems);
 
       // 取得したアイコンをアイテムに適用
       const updateItemsWithIcons = (items: AppItem[]) => {
@@ -279,9 +277,9 @@ const App: React.FC = () => {
 
     // 統合プログレスAPIを使用
     // URLアイテムの抽出（アイコン未設定のみ）
-    const urls = mainItems
-      .filter((item) => item.type === 'url' && !('icon' in item && item.icon))
-      .map((item) => (item as LauncherItem).path);
+    const urlItems = mainItems.filter(
+      (item) => item.type === 'url' && !('icon' in item && item.icon)
+    ) as LauncherItem[];
 
     // EXE/ファイル/カスタムURIアイテムの抽出（アイコン未設定のみ、フォルダとグループを除外）
     const iconItems = mainItems.filter(
@@ -292,13 +290,13 @@ const App: React.FC = () => {
         !('icon' in item && item.icon)
     ) as LauncherItem[];
 
-    if (urls.length === 0 && iconItems.length === 0) {
+    if (urlItems.length === 0 && iconItems.length === 0) {
       debugInfo('取得対象のアイテムがありません');
       return;
     }
 
     // 統合APIを呼び出し
-    const results = await window.electronAPI.fetchIconsCombined(urls, iconItems);
+    const results = await window.electronAPI.fetchIconsCombined(urlItems, iconItems);
 
     // 取得したアイコンをアイテムに適用
     const updateItemsWithIcons = (items: AppItem[]) => {

@@ -28,7 +28,7 @@ export interface ElectronAPI {
   loadCachedIcons: (items: LauncherItem[]) => Promise<Record<string, string>>;
   // 統合進捗付きアイコン取得API
   fetchIconsCombined: (
-    urls: string[],
+    urlItems: LauncherItem[],
     items: LauncherItem[]
   ) => Promise<{ favicons: Record<string, string | null>; icons: Record<string, string | null> }>;
   // 進捗イベントリスナー

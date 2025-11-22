@@ -215,6 +215,55 @@ reg query "HKEY_CLASSES_ROOT\obsidian\shell\open\command" /ve
 3. Windowsレジストリから拡張子に関連付けられたアイコンを取得
 4. `extensions/`フォルダにキャッシュ
 
+### パス解決機能
+
+アイコン抽出時には、以下の高度なパス解決機能を提供します：
+
+#### 1. ファイル名のみ指定時のPATH解決
+
+ファイル名のみが指定され、パスが含まれない場合（`\`や`/`を含まない）、Windows環境変数`PATH`から実行ファイルを検索します。
+
+**処理フロー:**
+1. ファイルの存在確認（指定されたパスで直接アクセス）
+2. ファイルが見つからない場合、Windows `where` コマンドを実行
+3. 検索結果の最初のパスを使用してアイコンを抽出
+
+**例:**
+```
+入力: notepad.exe
+検索: where "notepad.exe"
+結果: C:\Windows\System32\notepad.exe
+→ 解決されたパスからアイコンを抽出
+```
+
+**制限事項:**
+- Windows専用機能（`where`コマンド使用）
+- PATH環境変数に含まれるディレクトリのみが検索対象
+
+#### 2. シンボリックリンクの解決
+
+シンボリックリンク（またはジャンクション）が指定された場合、実際のターゲットファイルを解決してアイコンを抽出します。
+
+**処理フロー:**
+1. `fs.lstatSync()`でファイル属性を確認
+2. シンボリックリンクの場合、`fs.readlinkSync()`でターゲットパスを取得
+3. 解決されたターゲットパスからアイコンを抽出
+
+**例:**
+```
+入力: C:\Users\AppData\Local\Microsoft\WindowsApps\Code.exe（シンボリックリンク）
+解決: C:\Program Files\Microsoft VS Code\Code.exe
+→ 実際のEXEファイルからアイコンを抽出
+```
+
+**WindowsAppsフォルダ対応:**
+- Windows 10/11の`WindowsApps`フォルダは特殊な権限設定のため、`fs.realpathSync()`では権限エラーが発生する
+- `fs.readlinkSync()`を使用することで、権限エラーを回避してシンボリックリンクを解決
+
+**制限事項:**
+- リンクターゲットが存在しない場合、元のパスでアイコン抽出を試行
+- 解決に失敗した場合でも処理を継続（エラー時は元のパスを使用）
+
 ## カスタムアイコン
 
 ユーザーが手動で指定するカスタムアイコン機能もサポートします。
@@ -282,6 +331,7 @@ async function fetchIconsCombined(
 - ファビコン取得とアイコン抽出を順次実行
 - `CombinedProgressManager`を使用して統合進捗管理
 - 各フェーズの進捗をリアルタイム通知
+- アイテム名とパス/URLを両方表示（改行区切り）
 - エラー発生時も処理を継続し、詳細を記録
 
 ### CombinedProgressManager
@@ -305,9 +355,9 @@ constructor(
 **メソッド:**
 - `start()`: 処理開始イベントを送信
 - `startPhase(phaseIndex: number)`: 指定フェーズの開始
-- `updateItem(phaseIndex: number, itemName: string, success: boolean, errorMessage?: string)`: アイテム処理結果の記録
-- `completePhase(phaseIndex: number)`: フェーズ完了
-- `complete()`: 全体完了イベントを送信
+- `update(displayText: string, isError?: boolean, errorMessage?: string)`: アイテム処理結果の記録（displayTextは「名前\nパス」形式）
+- `completePhase()`: 現在のフェーズ完了
+- `completeAll()`: 全体完了イベントを送信
 
 ## アイコン進捗型定義
 
