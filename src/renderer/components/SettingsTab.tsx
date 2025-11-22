@@ -7,16 +7,14 @@ import { HotkeyInput } from './HotkeyInput';
 interface SettingsTabProps {
   settings: AppSettings;
   onSave: (settings: AppSettings) => Promise<void>;
-  onUnsavedChanges: (hasChanges: boolean) => void;
 }
 
-const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave, onUnsavedChanges }) => {
+const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
   const [editedSettings, setEditedSettings] = useState<AppSettings>(settings);
   const [hotkeyValidation, setHotkeyValidation] = useState<{ isValid: boolean; reason?: string }>({
     isValid: true,
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
   const [dataFiles, setDataFiles] = useState<string[]>([]);
   const [_configFolder, setConfigFolder] = useState<string>('');
 
@@ -24,13 +22,6 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave, onUnsavedCh
   useEffect(() => {
     setEditedSettings(settings);
   }, [settings]);
-
-  // 変更検知
-  useEffect(() => {
-    const changed = JSON.stringify(settings) !== JSON.stringify(editedSettings);
-    setHasChanges(changed);
-    onUnsavedChanges(changed);
-  }, [settings, editedSettings, onUnsavedChanges]);
 
   // データファイルリストとconfigフォルダパスをロード
   useEffect(() => {
@@ -47,36 +38,29 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave, onUnsavedCh
     loadDataFilesInfo();
   }, []);
 
-  // 設定項目の変更ハンドラ
-  const handleSettingChange = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
-    setEditedSettings({
+  // 設定項目の変更ハンドラ（即座に保存）
+  const handleSettingChange = async <K extends keyof AppSettings>(
+    key: K,
+    value: AppSettings[K]
+  ) => {
+    const newSettings = {
       ...editedSettings,
       [key]: value,
-    });
+    };
+    setEditedSettings(newSettings);
+
+    // 即座に保存
+    try {
+      await onSave(newSettings);
+    } catch (error) {
+      console.error('設定の保存に失敗しました:', error);
+      alert('設定の保存に失敗しました。');
+    }
   };
 
   // ホットキーバリデーション結果の処理
   const handleHotkeyValidation = (isValid: boolean, reason?: string) => {
     setHotkeyValidation({ isValid, reason });
-  };
-
-  // 設定保存
-  const handleSave = async () => {
-    if (!hotkeyValidation.isValid) {
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      await onSave(editedSettings);
-      setHasChanges(false);
-      onUnsavedChanges(false);
-    } catch (error) {
-      console.error('設定の保存に失敗しました:', error);
-      alert('設定の保存に失敗しました。');
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   // 設定リセット
@@ -95,13 +79,6 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave, onUnsavedCh
       alert('設定のリセットに失敗しました。');
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  // 変更を元に戻す
-  const handleRevert = () => {
-    if (hasChanges && confirm('変更を元に戻しますか？')) {
-      setEditedSettings(settings);
     }
   };
 
@@ -141,6 +118,19 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave, onUnsavedCh
       console.error('データファイルの追加に失敗しました:', error);
       alert('データファイルの追加に失敗しました。');
     }
+  };
+
+  // デフォルトのタブ名を生成（data.txt→メイン, data2.txt→サブ1, data3.txt→サブ2, ...）
+  const getDefaultTabName = (fileName: string): string => {
+    if (fileName === 'data.txt') {
+      return 'メイン';
+    }
+    const match = fileName.match(/^data(\d+)\.txt$/);
+    if (match) {
+      const num = parseInt(match[1]);
+      return `サブ${num - 1}`;
+    }
+    return fileName;
   };
 
   // タブ名を変更
@@ -403,7 +393,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave, onUnsavedCh
                             value={editedSettings.dataFileTabNames?.[fileName] || ''}
                             onChange={(e) => handleTabNameChange(fileName, e.target.value)}
                             className="tab-name-input"
-                            placeholder={fileName}
+                            placeholder={getDefaultTabName(fileName)}
                             disabled={isLoading}
                           />
                         </div>
@@ -458,22 +448,6 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave, onUnsavedCh
         <button className="reset-button" onClick={handleReset} disabled={isLoading}>
           リセット
         </button>
-        <div className="button-group">
-          <button
-            className="revert-button"
-            onClick={handleRevert}
-            disabled={isLoading || !hasChanges}
-          >
-            元に戻す
-          </button>
-          <button
-            className="save-button"
-            onClick={handleSave}
-            disabled={isLoading || !hasChanges || !hotkeyValidation.isValid}
-          >
-            保存
-          </button>
-        </div>
       </div>
     </div>
   );

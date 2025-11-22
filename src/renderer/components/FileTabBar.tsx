@@ -16,9 +16,22 @@ interface FileTabBarProps {
  * 複数のdata*.txtファイルをタブで切り替え可能にする
  */
 const FileTabBar: React.FC<FileTabBarProps> = ({ dataFiles, activeTab, tabNames, onTabClick }) => {
-  // タブに表示する名前を取得（カスタム名がなければファイル名をそのまま表示）
+  // デフォルトのタブ名を生成（data.txt→メイン, data2.txt→サブ1, data3.txt→サブ2, ...）
+  const getDefaultTabName = (fileName: string): string => {
+    if (fileName === 'data.txt') {
+      return 'メイン';
+    }
+    const match = fileName.match(/^data(\d+)\.txt$/);
+    if (match) {
+      const num = parseInt(match[1]);
+      return `サブ${num - 1}`;
+    }
+    return fileName;
+  };
+
+  // タブに表示する名前を取得（カスタム名 > デフォルト名 > ファイル名）
   const getTabLabel = (fileName: string): string => {
-    return tabNames[fileName] || fileName;
+    return tabNames[fileName] || getDefaultTabName(fileName);
   };
 
   return (

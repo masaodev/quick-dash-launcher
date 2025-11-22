@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 import { RawDataLine, AppSettings } from '../../common/types';
 
@@ -27,17 +27,8 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
   searchQuery,
   onSearchChange,
 }) => {
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-
   const handleTabChange = (newTab: 'settings' | 'edit' | 'other') => {
-    if (hasUnsavedChanges) {
-      if (confirm('未保存の変更があります。タブを切り替えますか？')) {
-        setHasUnsavedChanges(false);
-        onTabChange(newTab);
-      }
-    } else {
-      onTabChange(newTab);
-    }
+    onTabChange(newTab);
   };
 
   const handleExitEditMode = () => {
@@ -71,11 +62,7 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
 
       <div className="admin-content">
         {activeTab === 'settings' && settings && (
-          <SettingsTab
-            settings={settings}
-            onSave={onSettingsSave}
-            onUnsavedChanges={setHasUnsavedChanges}
-          />
+          <SettingsTab settings={settings} onSave={onSettingsSave} />
         )}
         {activeTab === 'edit' && (
           <EditModeView
