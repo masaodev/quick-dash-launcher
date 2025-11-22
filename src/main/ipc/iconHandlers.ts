@@ -176,19 +176,38 @@ async function extractShortcutIcon(lnkPath: string, iconsFolder: string): Promis
  */
 async function extractIcon(filePath: string, iconsFolder: string): Promise<string | null> {
   try {
-    // ファイルが存在するか確認
+    let resolvedPath = filePath;
+
+    // ファイルが存在するか確認、存在しない場合はパスを解決
     if (!FileUtils.exists(filePath)) {
-      iconLogger.error(`ファイルが見つかりません: ${filePath}`);
-      return null;
+      // .exeファイルでパスが含まれていない場合、whereコマンドで検索
+      if (filePath.toLowerCase().endsWith('.exe') && !filePath.includes('\\') && !filePath.includes('/')) {
+        try {
+          const { stdout } = await execAsync(`where ${filePath}`, { encoding: 'utf8' });
+          const paths = stdout.trim().split('\n');
+          if (paths.length > 0 && paths[0].trim()) {
+            resolvedPath = paths[0].trim();
+            iconLogger.info(`実行ファイルのパスを解決: ${filePath} -> ${resolvedPath}`);
+          }
+        } catch (error) {
+          iconLogger.warn(`whereコマンドで実行ファイルが見つかりませんでした: ${filePath}`);
+        }
+      }
+
+      // 解決後もファイルが存在しない場合はエラー
+      if (!FileUtils.exists(resolvedPath)) {
+        iconLogger.error(`ファイルが見つかりません: ${filePath}`);
+        return null;
+      }
     }
 
     // .lnkファイルの場合は専用関数を使用
-    if (PathUtils.isShortcutFile(filePath)) {
-      iconLogger.info(`ショートカットファイルを検出、専用処理を実行: ${filePath}`);
-      return await extractShortcutIcon(filePath, iconsFolder);
+    if (PathUtils.isShortcutFile(resolvedPath)) {
+      iconLogger.info(`ショートカットファイルを検出、専用処理を実行: ${resolvedPath}`);
+      return await extractShortcutIcon(resolvedPath, iconsFolder);
     }
 
-    // キャッシュ用ファイル名を生成
+    // キャッシュ用ファイル名を生成（元のfilePathを使用してキャッシュキーを生成）
     const iconName = path.basename(filePath, path.extname(filePath)) + '_icon.png';
     const iconPath = path.join(iconsFolder, iconName);
 
@@ -198,8 +217,8 @@ async function extractIcon(filePath: string, iconsFolder: string): Promise<strin
       return cachedIcon;
     }
 
-    // アイコンを抽出
-    const iconBuffer = extractFileIcon(filePath, 32);
+    // アイコンを抽出（解決済みパスを使用）
+    const iconBuffer = extractFileIcon(resolvedPath, 32);
 
     if (iconBuffer && iconBuffer.length > 0) {
       // キャッシュに保存
@@ -209,6 +228,7 @@ async function extractIcon(filePath: string, iconsFolder: string): Promise<strin
       return bufferToBase64DataUrl(iconBuffer);
     }
 
+    iconLogger.warn(`アイコンが抽出できませんでした: ${filePath}`);
     return null;
   } catch (error) {
     iconLogger.error(`アイコンの抽出に失敗しました: ${filePath}`, { error });
