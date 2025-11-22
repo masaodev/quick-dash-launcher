@@ -84,6 +84,10 @@ const AdminOtherTab: React.FC = () => {
               <span>アイテムを選択</span>
             </div>
             <div className="shortcut-item">
+              <kbd>Tab / Shift + Tab</kbd>
+              <span>タブを切り替え（タブ表示有効時）</span>
+            </div>
+            <div className="shortcut-item">
               <kbd>Esc</kbd>
               <span>ウィンドウを閉じる</span>
             </div>
