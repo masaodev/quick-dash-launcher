@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 
-import { AppSettings } from '../../common/types';
+import { AppSettings, DataFileTab } from '../../common/types';
 
 import { HotkeyInput } from './HotkeyInput';
 
@@ -57,41 +57,22 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
 
   // 設定に基づいてデータファイルリストを生成（設定ファイル基準）
   useEffect(() => {
-    const tabNames = editedSettings.dataFileTabNames || {};
-    const fileNames = Object.keys(tabNames);
+    const tabs = editedSettings.dataFileTabs || [];
+    const fileNames = tabs.map((tab) => tab.file);
 
     // data.txtが設定に含まれていない場合は追加
     if (!fileNames.includes('data.txt')) {
-      const updatedTabNames = {
-        ...tabNames,
-        'data.txt': getDefaultTabName('data.txt'),
-      };
-      handleSettingChange('dataFileTabNames', updatedTabNames);
+      const updatedTabs = [{ file: 'data.txt', name: getDefaultTabName('data.txt') }, ...tabs];
+      handleSettingChange('dataFileTabs', updatedTabs);
       return; // 設定更新後に再度このuseEffectが呼ばれるのでここで終了
     }
 
     setDataFiles(fileNames);
-  }, [editedSettings.dataFileTabNames, getDefaultTabName, handleSettingChange]);
+  }, [editedSettings.dataFileTabs, getDefaultTabName, handleSettingChange]);
 
-  // タブ順序に基づいてファイルをソート
+  // dataFileTabsの順序でファイルをソート（配列の順序がそのまま表示順序）
   const getSortedDataFiles = (): string[] => {
-    const tabOrder = editedSettings.tabOrder || [];
-
-    // tabOrderに含まれていないファイルも含める
-    const orderedFiles: string[] = [];
-    const remainingFiles = [...dataFiles];
-
-    // tabOrderに従って並べる
-    tabOrder.forEach((fileName) => {
-      const index = remainingFiles.indexOf(fileName);
-      if (index !== -1) {
-        orderedFiles.push(fileName);
-        remainingFiles.splice(index, 1);
-      }
-    });
-
-    // tabOrderに含まれていないファイルを末尾に追加
-    return [...orderedFiles, ...remainingFiles];
+    return dataFiles; // dataFilesは既にdataFileTabsの順序で生成されている
   };
 
   // ホットキーバリデーション結果の処理
@@ -153,21 +134,21 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
     }
 
     // 設定に追加（物理ファイルの存在に関わらず実行）
-    const updatedTabNames = {
-      ...(editedSettings.dataFileTabNames || {}),
-      [fileName]: getDefaultTabName(fileName),
+    const newTab: DataFileTab = {
+      file: fileName,
+      name: getDefaultTabName(fileName),
     };
+    const updatedTabs = [...(editedSettings.dataFileTabs || []), newTab];
 
-    await handleSettingChange('dataFileTabNames', updatedTabNames);
+    await handleSettingChange('dataFileTabs', updatedTabs);
   };
 
   // タブ名を変更
   const handleTabNameChange = (fileName: string, tabName: string) => {
-    const updatedTabNames = {
-      ...(editedSettings.dataFileTabNames || {}),
-      [fileName]: tabName,
-    };
-    handleSettingChange('dataFileTabNames', updatedTabNames);
+    const updatedTabs = (editedSettings.dataFileTabs || []).map((tab) =>
+      tab.file === fileName ? { ...tab, name: tabName } : tab
+    );
+    handleSettingChange('dataFileTabs', updatedTabs);
   };
 
   // データファイルを削除
@@ -185,18 +166,14 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
       // 物理ファイルを削除
       const result = await window.electronAPI.deleteDataFile(fileName);
       if (result.success) {
-        // 設定からも削除
-        const updatedTabNames = { ...(editedSettings.dataFileTabNames || {}) };
-        delete updatedTabNames[fileName];
+        // 設定から削除
+        const updatedTabs = (editedSettings.dataFileTabs || []).filter(
+          (tab) => tab.file !== fileName
+        );
 
-        // tabOrderからも削除
-        const updatedTabOrder = (editedSettings.tabOrder || []).filter((f) => f !== fileName);
-
-        // 両方を更新
         const newSettings = {
           ...editedSettings,
-          dataFileTabNames: updatedTabNames,
-          tabOrder: updatedTabOrder,
+          dataFileTabs: updatedTabs,
         };
         setEditedSettings(newSettings);
 
@@ -217,30 +194,30 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
 
   // タブを上に移動
   const handleMoveUp = (fileName: string) => {
-    const sortedFiles = getSortedDataFiles();
-    const index = sortedFiles.indexOf(fileName);
+    const tabs = editedSettings.dataFileTabs || [];
+    const index = tabs.findIndex((tab) => tab.file === fileName);
 
     if (index <= 0) return; // 最初の要素または見つからない場合は何もしない
 
     // 配列を入れ替え
-    const newOrder = [...sortedFiles];
-    [newOrder[index - 1], newOrder[index]] = [newOrder[index], newOrder[index - 1]];
+    const newTabs = [...tabs];
+    [newTabs[index - 1], newTabs[index]] = [newTabs[index], newTabs[index - 1]];
 
-    handleSettingChange('tabOrder', newOrder);
+    handleSettingChange('dataFileTabs', newTabs);
   };
 
   // タブを下に移動
   const handleMoveDown = (fileName: string) => {
-    const sortedFiles = getSortedDataFiles();
-    const index = sortedFiles.indexOf(fileName);
+    const tabs = editedSettings.dataFileTabs || [];
+    const index = tabs.findIndex((tab) => tab.file === fileName);
 
-    if (index < 0 || index >= sortedFiles.length - 1) return; // 最後の要素または見つからない場合は何もしない
+    if (index < 0 || index >= tabs.length - 1) return; // 最後の要素または見つからない場合は何もしない
 
     // 配列を入れ替え
-    const newOrder = [...sortedFiles];
-    [newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]];
+    const newTabs = [...tabs];
+    [newTabs[index], newTabs[index + 1]] = [newTabs[index + 1], newTabs[index]];
 
-    handleSettingChange('tabOrder', newOrder);
+    handleSettingChange('dataFileTabs', newTabs);
   };
 
   return (
@@ -486,7 +463,11 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                         <div className="column-tabname">
                           <input
                             type="text"
-                            value={editedSettings.dataFileTabNames?.[fileName] || ''}
+                            value={
+                              (editedSettings.dataFileTabs || []).find(
+                                (tab) => tab.file === fileName
+                              )?.name || ''
+                            }
                             onChange={(e) => handleTabNameChange(fileName, e.target.value)}
                             className="tab-name-input"
                             placeholder={getDefaultTabName(fileName)}

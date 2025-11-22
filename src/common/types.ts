@@ -124,10 +124,18 @@ export interface AppSettings {
   showDataFileTabs: boolean;
   /** デフォルトで表示するタブ（タブ表示ON時のみ有効、デフォルト: 'data.txt'） */
   defaultFileTab: string;
-  /** データファイルごとのタブ名設定（例: { 'data.txt': 'メイン', 'data2.txt': 'サブ' }） */
-  dataFileTabNames: Record<string, string>;
-  /** タブの表示順序（例: ['data.txt', 'data2.txt', 'data3.txt']） */
-  tabOrder: string[];
+  /** データファイルタブの設定（ファイル名、タブ名、表示順序） */
+  dataFileTabs: Array<{ file: string; name: string }>;
+}
+
+/**
+ * データファイルタブの設定項目
+ */
+export interface DataFileTab {
+  /** データファイル名（例: 'data.txt', 'data2.txt'） */
+  file: string;
+  /** タブに表示する名前（例: 'メイン', 'サブ1'） */
+  name: string;
 }
 
 /**

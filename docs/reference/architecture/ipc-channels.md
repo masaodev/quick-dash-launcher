@@ -238,7 +238,7 @@ onSettingsChanged(callback: () => void)
 ```typescript
 window.electronAPI.onSettingsChanged(async () => {
   const settings = await window.electronAPI.getSettings();
-  setTabNames(settings.dataFileTabNames || {});
+  setDataFileTabs(settings.dataFileTabs || [{ file: 'data.txt', name: 'メイン' }]);
   // その他の設定を反映
 });
 ```

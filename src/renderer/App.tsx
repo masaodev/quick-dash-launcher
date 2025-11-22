@@ -1,6 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-import { LauncherItem, GroupItem, AppItem, WindowPinMode, RawDataLine } from '../common/types';
+import {
+  LauncherItem,
+  GroupItem,
+  AppItem,
+  WindowPinMode,
+  RawDataLine,
+  DataFileTab,
+} from '../common/types';
 
 import SearchBox from './components/SearchBox';
 import ItemList from './components/ItemList';
@@ -29,8 +36,7 @@ const App: React.FC = () => {
   const [showDataFileTabs, setShowDataFileTabs] = useState(false);
   const [dataFiles, setDataFiles] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<string>('data.txt');
-  const [tabNames, setTabNames] = useState<Record<string, string>>({});
-  const [tabOrder, setTabOrder] = useState<string[]>([]);
+  const [dataFileTabs, setDataFileTabs] = useState<DataFileTab[]>([]);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const { progressState, resetProgress } = useIconProgress();
@@ -127,12 +133,11 @@ const App: React.FC = () => {
       debugLog('設定変更通知を受信、タブ設定を再読み込みします');
       const settings = await window.electronAPI.getSettings();
       setShowDataFileTabs(settings.showDataFileTabs);
-      setTabNames(settings.dataFileTabNames || {});
-      setTabOrder(settings.tabOrder || []);
+      setDataFileTabs(settings.dataFileTabs || []);
 
       // 設定からデータファイルリストを再生成（設定ファイルベース）
-      const tabNamesObj = settings.dataFileTabNames || {};
-      const files = Object.keys(tabNamesObj);
+      const tabs = settings.dataFileTabs || [];
+      const files = tabs.map((tab) => tab.file);
 
       // data.txtが含まれていない場合は追加
       if (!files.includes('data.txt')) {
@@ -180,8 +185,7 @@ const App: React.FC = () => {
         const settings = await window.electronAPI.getSettings();
 
         setShowDataFileTabs(settings.showDataFileTabs);
-        setTabNames(settings.dataFileTabNames || {});
-        setTabOrder(settings.tabOrder || []);
+        setDataFileTabs(settings.dataFileTabs || []);
 
         // デフォルトタブを設定
         if (settings.defaultFileTab) {
@@ -189,8 +193,8 @@ const App: React.FC = () => {
         }
 
         // 設定からデータファイルリストを生成（設定ファイルベース）
-        const tabNamesObj = settings.dataFileTabNames || {};
-        const files = Object.keys(tabNamesObj);
+        const tabs = settings.dataFileTabs || [];
+        const files = tabs.map((tab) => tab.file);
 
         // data.txtが含まれていない場合は追加
         if (!files.includes('data.txt')) {
@@ -745,17 +749,9 @@ const App: React.FC = () => {
     setSelectedIndex(0); // タブ切り替え時は選択インデックスをリセット
   };
 
-  // タブ順序に基づいてデータファイルをソート
+  // dataFileTabsの順序でデータファイルをソート（配列の順序がそのまま表示順序）
   const getSortedDataFiles = (): string[] => {
-    if (tabOrder.length === 0) {
-      // タブ順序が設定されていない場合はファイル名順
-      return [...dataFiles].sort();
-    }
-    // タブ順序に従ってソート
-    const sorted = tabOrder.filter((fileName) => dataFiles.includes(fileName));
-    // タブ順序に含まれていないファイルを末尾に追加
-    const remaining = dataFiles.filter((fileName) => !tabOrder.includes(fileName)).sort();
-    return [...sorted, ...remaining];
+    return dataFiles; // dataFilesは既にdataFileTabsの順序で生成されている
   };
 
   // アクティブなタブに基づいてアイテムをフィルタリング
@@ -809,7 +805,7 @@ const App: React.FC = () => {
           <FileTabBar
             dataFiles={getSortedDataFiles()}
             activeTab={activeTab}
-            tabNames={tabNames}
+            tabNames={Object.fromEntries(dataFileTabs.map((tab) => [tab.file, tab.name]))}
             onTabClick={handleTabClick}
           />
         )}

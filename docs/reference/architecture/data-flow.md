@@ -170,20 +170,29 @@ HistoryEntry {
   ```typescript
   window.electronAPI.onSettingsChanged(async () => {
     const settings = await window.electronAPI.getSettings();
-    setTabNames(settings.dataFileTabNames || {});
+    setDataFileTabs(settings.dataFileTabs || [{ file: 'data.txt', name: 'メイン' }]);
     // その他の設定を反映
   });
   ```
 
-### タブ名の即座更新
-1. 管理ウィンドウでタブ名入力欄にテキストを入力
-2. `handleTabNameChange`が実行され、`dataFileTabNames`を更新
+### タブ名と順序の即座更新
+1. 管理ウィンドウでタブ名入力欄にテキストを入力、または▲▼ボタンで順序を変更
+2. `handleTabNameChange`または`handleTabOrderChange`が実行され、`dataFileTabs`配列を更新
 3. `settings:set-multiple` IPCで設定保存
 4. `settings-changed`イベントがメインウィンドウに送信
-5. メインウィンドウのタブ名がリアルタイムに更新される
+5. メインウィンドウのタブ名と順序がリアルタイムに更新される
+
+### データ構造
+```typescript
+interface DataFileTab {
+  file: string;  // データファイル名（例: 'data.txt', 'data2.txt'）
+  name: string;  // タブに表示する名前（例: 'メイン', 'サブ1'）
+}
+```
+配列の順序がそのままタブ表示順序になります。
 
 ### デフォルトタブ名
-タブ名が未設定の場合、わかりやすいデフォルト名が表示されます：
+タブ名（`name`フィールド）が空文字列の場合、わかりやすいデフォルト名が表示されます：
 - `data.txt` → 「メイン」
 - `data2.txt` → 「サブ1」
 - `data3.txt` → 「サブ2」

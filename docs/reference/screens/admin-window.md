@@ -517,7 +517,7 @@ Google,https://google.com
 2. `window.electronAPI.createDataFile(fileName)`を実行
 3. ファイル作成成功時：
    - 物理ファイル（data2.txt等）が作成されます
-   - 設定の`dataFileTabNames`に新しいファイル名が自動的に登録されます
+   - 設定の`dataFileTabs`配列に新しいエントリ`{ file, name }`が自動的に追加されます
    - テーブルに新しい行が追加表示される
 4. ファイル作成失敗時：
    - エラーメッセージをアラート表示
@@ -525,7 +525,7 @@ Google,https://google.com
 ##### タブ名を入力・変更
 1. 各ファイルのタブ名入力欄にテキストを入力
 2. `handleTabNameChange(fileName, tabName)`を実行
-3. `dataFileTabNames`オブジェクトを更新
+3. `dataFileTabs`配列内の対応するエントリを更新
 4. **即座保存**: 設定が自動的に保存され、`settings-changed`イベントが送信される
 5. メインウィンドウのタブ名がリアルタイムに更新される
 
@@ -542,8 +542,7 @@ Google,https://google.com
    - 確認ダイアログ表示：「{fileName}を削除しますか？\nファイル内のデータは完全に失われます。」
    - OKの場合：
      - `window.electronAPI.deleteDataFile(fileName)`を実行して物理ファイルを削除
-     - 設定の`dataFileTabNames`から該当エントリを削除
-     - 設定の`tabOrder`から該当エントリを削除
+     - 設定の`dataFileTabs`配列から該当エントリを削除
      - 更新された設定を保存
    - 削除成功時：テーブルが更新される
    - 削除失敗時：エラーメッセージをアラート表示
@@ -571,9 +570,10 @@ Google,https://google.com
 **v1.0.0以降**: タブ表示は設定ファイルベースで動作します：
 
 - **変更前**: 物理ファイル（data.txt, data2.txt等）の存在をベースにタブ表示
-- **変更後**: 設定ファイル（settings.json）の`dataFileTabNames`をベースにタブ表示
-- **自動作成**: 設定に登録されているが物理ファイルが存在しない場合は、自動的にファイルを作成
-- **削除時の挙動**: ファイル削除時は、物理ファイル・`dataFileTabNames`・`tabOrder`の3箇所から削除
+- **変更後**: 設定ファイル（settings.json）の`dataFileTabs`配列をベースにタブ表示
+- **自動作成**: `dataFileTabs`配列に登録されているが物理ファイルが存在しない場合は、自動的にファイルを作成
+- **削除時の挙動**: ファイル削除時は、物理ファイルと`dataFileTabs`配列の両方から削除
+- **順序管理**: `dataFileTabs`配列の順序がそのままタブ表示順序（別途`tabOrder`配列は不要）
 
 ### 4.26. データファイル選択ドロップダウンを変更
 

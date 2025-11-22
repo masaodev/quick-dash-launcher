@@ -122,7 +122,11 @@ const AdminApp: React.FC = () => {
         onRawDataSave={handleRawDataSave}
         searchQuery={searchQuery}
         onSearchChange={handleSearchChange}
-        tabNames={settings?.dataFileTabNames || {}}
+        tabNames={
+          settings?.dataFileTabs
+            ? Object.fromEntries(settings.dataFileTabs.map((tab) => [tab.file, tab.name]))
+            : {}
+        }
       />
     </div>
   );
