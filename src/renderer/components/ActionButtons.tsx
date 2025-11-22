@@ -8,6 +8,7 @@ import RefreshActionsDropdown from './RefreshActionsDropdown';
 interface ActionButtonsProps {
   onReload: () => void;
   onFetchMissingIcons: () => void;
+  onFetchMissingIconsCurrentTab: () => void;
   onRefreshAll: () => void;
   onTogglePin: () => void;
   onOpenBasicSettings: () => void;
@@ -20,6 +21,7 @@ interface ActionButtonsProps {
 const ActionButtons: React.FC<ActionButtonsProps> = ({
   onReload,
   onFetchMissingIcons,
+  onFetchMissingIconsCurrentTab,
   onRefreshAll,
   onTogglePin,
   onOpenBasicSettings,
@@ -65,6 +67,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
       <RefreshActionsDropdown
         onReload={onReload}
         onFetchMissingIcons={onFetchMissingIcons}
+        onFetchMissingIconsCurrentTab={onFetchMissingIconsCurrentTab}
         onRefreshAll={onRefreshAll}
       />
       <button className={pinConfig.className} onClick={onTogglePin} title={pinConfig.title}>
