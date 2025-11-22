@@ -1,0 +1,13 @@
+// 最小限のアイテムセット - 基本動作確認用
+// シンプルな構成で基本機能をテストする
+
+// Webサイト
+Google,https://google.com/
+GitHub,https://github.com/
+
+// アプリケーション
+メモ帳,notepad.exe
+電卓,calc.exe
+
+// フォルダ
+デスクトップ,shell:Desktop

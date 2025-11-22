@@ -1,0 +1,20 @@
+{
+	"hotkey": "Alt+Space",
+	"windowWidth": 650,
+	"windowHeight": 450,
+	"editModeWidth": 1200,
+	"editModeHeight": 700,
+	"autoLaunch": false,
+	"backupEnabled": false,
+	"backupOnStart": false,
+	"backupOnEdit": false,
+	"backupInterval": 5,
+	"backupRetention": 20,
+	"showDataFileTabs": true,
+	"defaultFileTab": "data.txt",
+	"dataFileTabs": [
+		{ "file": "data.txt", "name": "仕事" },
+		{ "file": "data2.txt", "name": "プライベート" },
+		{ "file": "data3.txt", "name": "学習" }
+	]
+}

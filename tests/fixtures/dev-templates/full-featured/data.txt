@@ -1,0 +1,35 @@
+// 全機能を網羅したサンプルデータ - デモ・機能確認用
+// すべての機能を試せる包括的なセット
+
+// ========== Webサイト ==========
+Google,https://google.com/
+GitHub,https://github.com/
+Stack Overflow,https://stackoverflow.com/
+Qiita,https://qiita.com/
+YouTube,https://youtube.com/
+Twitter,https://twitter.com/
+
+// ========== 開発ツール ==========
+VS Code,vscode://
+Visual Studio,devenv.exe
+
+// ========== Windowsアプリ ==========
+メモ帳,notepad.exe
+電卓,calc.exe
+ペイント,mspaint.exe
+タスクマネージャー,taskmgr.exe
+エクスプローラー,explorer.exe
+
+// ========== フォルダ ==========
+デスクトップ,shell:Desktop
+ドキュメント,shell:Documents
+ダウンロード,shell:Downloads
+ピクチャ,shell:Pictures
+
+// ========== カスタムURIスキーマ ==========
+Obsidian,obsidian://
+
+// ========== グループ起動 ==========
+開発環境,GROUP:VS Code,GitHub,Stack Overflow
+作業開始,GROUP:メモ帳,電卓,エクスプローラー
+ブラウザセット,GROUP:Google,GitHub,YouTube

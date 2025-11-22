@@ -1,0 +1,9 @@
+// サブタブ2 - 学習用アイテム
+
+// 学習系Webサイト
+MDN,https://developer.mozilla.org/
+TypeScript Docs,https://www.typescriptlang.org/docs/
+React Docs,https://react.dev/
+
+// ツール
+エクスプローラー,explorer.exe

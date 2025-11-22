@@ -1,0 +1,18 @@
+{
+	"hotkey": "Alt+Space",
+	"windowWidth": 700,
+	"windowHeight": 500,
+	"editModeWidth": 1200,
+	"editModeHeight": 700,
+	"autoLaunch": false,
+	"backupEnabled": false,
+	"backupOnStart": false,
+	"backupOnEdit": false,
+	"backupInterval": 5,
+	"backupRetention": 20,
+	"showDataFileTabs": false,
+	"defaultFileTab": "data.txt",
+	"dataFileTabs": [
+		{ "file": "data.txt", "name": "メイン" }
+	]
+}
