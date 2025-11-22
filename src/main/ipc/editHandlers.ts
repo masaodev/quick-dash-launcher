@@ -62,7 +62,7 @@ export async function updateItem(configFolder: string, request: UpdateItemReques
 
   // Read file contents
   const content = fs.readFileSync(filePath, 'utf8');
-  const lines = content.split('\n');
+  const lines = content.split(/\r\n|\n|\r/);
 
   if (lineNumber < 1 || lineNumber > lines.length) {
     throw new Error(`Invalid line number: ${lineNumber}`);
@@ -72,7 +72,7 @@ export async function updateItem(configFolder: string, request: UpdateItemReques
   lines[lineNumber - 1] = formatItemToCSV(newItem);
 
   // Write back to file
-  fs.writeFileSync(filePath, lines.join('\n'), 'utf8');
+  fs.writeFileSync(filePath, lines.join('\r\n'), 'utf8');
 }
 
 export async function updateRawLine(
@@ -91,7 +91,7 @@ export async function updateRawLine(
 
   // Read file contents
   const content = fs.readFileSync(filePath, 'utf8');
-  const lines = content.split('\n');
+  const lines = content.split(/\r\n|\n|\r/);
 
   if (lineNumber < 1 || lineNumber > lines.length) {
     throw new Error(`Invalid line number: ${lineNumber}`);
@@ -101,7 +101,7 @@ export async function updateRawLine(
   lines[lineNumber - 1] = newContent;
 
   // Write back to file
-  fs.writeFileSync(filePath, lines.join('\n'), 'utf8');
+  fs.writeFileSync(filePath, lines.join('\r\n'), 'utf8');
 }
 
 export async function deleteItems(
@@ -131,7 +131,7 @@ export async function deleteItems(
 
     // Read file contents
     const content = fs.readFileSync(filePath, 'utf8');
-    const lines = content.split('\n');
+    const lines = content.split(/\r\n|\n|\r/);
 
     // Sort line numbers in descending order to avoid index shifting issues
     const sortedRequests = fileRequests.sort((a, b) => b.lineNumber - a.lineNumber);
@@ -144,7 +144,7 @@ export async function deleteItems(
     }
 
     // Write back to file
-    fs.writeFileSync(filePath, lines.join('\n'), 'utf8');
+    fs.writeFileSync(filePath, lines.join('\r\n'), 'utf8');
   }
 }
 
@@ -175,7 +175,7 @@ export async function batchUpdateItems(
 
     // Read file contents
     const content = fs.readFileSync(filePath, 'utf8');
-    const lines = content.split('\n');
+    const lines = content.split(/\r\n|\n|\r/);
 
     // Apply all updates for this file
     for (const request of fileRequests) {
@@ -185,7 +185,7 @@ export async function batchUpdateItems(
     }
 
     // Write back to file
-    fs.writeFileSync(filePath, lines.join('\n'), 'utf8');
+    fs.writeFileSync(filePath, lines.join('\r\n'), 'utf8');
   }
 }
 

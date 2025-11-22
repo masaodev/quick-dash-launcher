@@ -66,6 +66,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   onDataChanged: (callback: () => void) => {
     ipcRenderer.on('data-changed', callback);
+    return () => {
+      ipcRenderer.removeListener('data-changed', callback);
+    };
+  },
+  onSettingsChanged: (callback: () => void) => {
+    ipcRenderer.on('settings-changed', callback);
+    return () => {
+      ipcRenderer.removeListener('settings-changed', callback);
+    };
   },
   // 新しい3段階ピンモードAPI
   getWindowPinMode: (): Promise<WindowPinMode> => ipcRenderer.invoke('get-window-pin-mode'),
