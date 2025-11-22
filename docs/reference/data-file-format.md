@@ -50,6 +50,8 @@ group,グループ名,アイテム名1,アイテム名2,アイテム名3,...
 ### サポートされるパス種類
 - **ファイルパス**: `C:\path\to\file.exe`
 - **フォルダパス**: `C:\path\to\folder`
+  - パス中にドット（`.`）が含まれるフォルダ名も正しく認識されます（例: `C:\Projects\ver.0.39`）
+  - 拡張子の判定はファイル名部分のみから行われます
 - **HTTP/HTTPS URL**: `https://example.com`
 - **カスタムURIスキーマ**: `obsidian://`, `vscode://`, `ms-excel://` など
 - **ショートカットファイル**: `C:\path\to\shortcut.lnk`

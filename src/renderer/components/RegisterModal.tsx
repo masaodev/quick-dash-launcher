@@ -352,7 +352,18 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
 
         let icon: string | undefined;
         try {
-          if (itemType === 'app' || itemType === 'file') {
+          if (itemType === 'app') {
+            // .bat/.cmd/.comファイルは拡張子ベースのアイコン取得を使用
+            if (
+              filePath.endsWith('.bat') ||
+              filePath.endsWith('.cmd') ||
+              filePath.endsWith('.com')
+            ) {
+              icon = (await window.electronAPI.extractFileIconByExtension(filePath)) ?? undefined;
+            } else {
+              icon = (await window.electronAPI.extractIcon(filePath)) ?? undefined;
+            }
+          } else if (itemType === 'file') {
             icon = (await window.electronAPI.extractIcon(filePath)) ?? undefined;
           } else if (itemType === 'customUri') {
             icon = (await window.electronAPI.extractCustomUriIcon(filePath)) ?? undefined;

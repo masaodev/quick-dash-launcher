@@ -612,6 +612,13 @@ async function fetchIconsCombined(
             icon = await extractIcon(item.originalPath!, iconsFolder);
           } else if (item.path.endsWith('.exe') || PathUtils.isShortcutFile(item.path)) {
             icon = await extractIcon(item.path, iconsFolder);
+          } else if (
+            item.path.endsWith('.bat') ||
+            item.path.endsWith('.cmd') ||
+            item.path.endsWith('.com')
+          ) {
+            // .bat/.cmd/.comファイルは拡張子ベースのアイコン取得を使用
+            icon = await extractFileIconByExtension(item.path, extensionsFolder);
           }
         } else if (item.type === 'customUri') {
           icon = await extractCustomUriIcon(item.path, iconsFolder);

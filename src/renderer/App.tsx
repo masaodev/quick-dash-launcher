@@ -121,7 +121,7 @@ const App: React.FC = () => {
     };
   }, []);
 
-  const loadItems = async () => {
+  const loadItems = async (): Promise<AppItem[]> => {
     const items = await window.electronAPI.loadDataFiles();
 
     // Load cached icons (LauncherItemのみ)
@@ -140,6 +140,7 @@ const App: React.FC = () => {
     });
 
     setMainItems(itemsWithIcons);
+    return itemsWithIcons;
   };
 
   const handleSearch = (query: string) => {
@@ -237,14 +238,14 @@ const App: React.FC = () => {
     debugInfo('すべての更新を開始');
 
     // 1. データファイルの再読み込み
-    await loadItems();
+    const loadedItems = await loadItems();
 
     // 2. 統合プログレスAPIで全アイコン取得（強制）
-    const allUrls = mainItems
+    const allUrls = loadedItems
       .filter((item) => item.type === 'url')
       .map((item) => (item as LauncherItem).path);
 
-    const allIconItems = mainItems.filter(
+    const allIconItems = loadedItems.filter(
       (item) => item.type !== 'url' && item.type !== 'group' && item.type !== 'folder'
     ) as LauncherItem[];
 
@@ -267,7 +268,7 @@ const App: React.FC = () => {
         });
       };
 
-      setMainItems(updateItemsWithIcons(mainItems));
+      setMainItems(updateItemsWithIcons(loadedItems));
     }
 
     debugInfo('すべての更新が完了');

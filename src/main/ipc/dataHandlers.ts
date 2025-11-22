@@ -98,9 +98,11 @@ function detectItemType(itemPath: string): LauncherItem['type'] {
     return 'folder';
   }
 
-  // File extensions
-  const lastDot = itemPath.lastIndexOf('.');
-  const ext = lastDot !== -1 ? itemPath.substring(lastDot).toLowerCase() : '';
+  // File extensions - ファイル名部分のみから拡張子を取得
+  const lastSlash = Math.max(itemPath.lastIndexOf('/'), itemPath.lastIndexOf('\\'));
+  const fileName = lastSlash !== -1 ? itemPath.substring(lastSlash + 1) : itemPath;
+  const lastDot = fileName.lastIndexOf('.');
+  const ext = lastDot !== -1 ? fileName.substring(lastDot).toLowerCase() : '';
 
   // Executables and shortcuts
   if (ext === '.exe' || ext === '.bat' || ext === '.cmd' || ext === '.com' || ext === '.lnk') {
