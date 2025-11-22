@@ -15,6 +15,7 @@ interface AdminTabContainerProps {
   onRawDataSave: (rawLines: RawDataLine[]) => Promise<void>;
   searchQuery: string;
   onSearchChange: (query: string) => void;
+  tabNames: Record<string, string>;
 }
 
 const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
@@ -26,6 +27,7 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
   onRawDataSave,
   searchQuery,
   onSearchChange,
+  tabNames,
 }) => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
@@ -84,6 +86,7 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
             onExitEditMode={handleExitEditMode}
             searchQuery={searchQuery}
             onSearchChange={onSearchChange}
+            tabNames={tabNames}
           />
         )}
         {activeTab === 'other' && <AdminOtherTab />}

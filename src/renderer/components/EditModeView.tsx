@@ -12,6 +12,7 @@ interface EditModeViewProps {
   onExitEditMode: () => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
+  tabNames: Record<string, string>;
 }
 
 const EditModeView: React.FC<EditModeViewProps> = ({
@@ -20,6 +21,7 @@ const EditModeView: React.FC<EditModeViewProps> = ({
   onExitEditMode,
   searchQuery,
   onSearchChange,
+  tabNames,
 }) => {
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [editedLines, setEditedLines] = useState<Map<string, RawDataLine>>(new Map());
@@ -255,6 +257,15 @@ const EditModeView: React.FC<EditModeViewProps> = ({
     return editedLine || line;
   });
 
+  // タブ名とファイル名を併記する関数
+  const getFileDisplayLabel = (fileName: string): string => {
+    const tabName = tabNames[fileName];
+    if (tabName && tabName !== fileName) {
+      return `${tabName} (${fileName})`;
+    }
+    return fileName;
+  };
+
   const filteredLines = mergedLines.filter((line) => {
     // 選択されたデータファイルでフィルタリング
     if (line.sourceFile !== selectedDataFile) return false;
@@ -326,7 +337,7 @@ const EditModeView: React.FC<EditModeViewProps> = ({
           >
             {dataFiles.map((fileName) => (
               <option key={fileName} value={fileName}>
-                {fileName}
+                {getFileDisplayLabel(fileName)}
               </option>
             ))}
           </select>
