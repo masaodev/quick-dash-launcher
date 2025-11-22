@@ -217,6 +217,27 @@ const App: React.FC = () => {
   const handleKeyDown = async (e: React.KeyboardEvent) => {
     const filteredItems = filterItems(mainItems, searchQuery);
 
+    // タブ切り替え (Tab/Shift+Tab)
+    if (e.key === 'Tab' && showDataFileTabs && dataFiles.length > 1) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const sortedFiles = getSortedDataFiles();
+      const currentIndex = sortedFiles.indexOf(activeTab);
+
+      if (e.shiftKey) {
+        // Shift+Tab: 前のタブへ
+        const newIndex = currentIndex > 0 ? currentIndex - 1 : sortedFiles.length - 1;
+        setActiveTab(sortedFiles[newIndex]);
+      } else {
+        // Tab: 次のタブへ
+        const newIndex = currentIndex < sortedFiles.length - 1 ? currentIndex + 1 : 0;
+        setActiveTab(sortedFiles[newIndex]);
+      }
+      setSelectedIndex(0); // タブ切り替え時は選択インデックスをリセット
+      return;
+    }
+
     // 検索履歴のナビゲーション（Ctrl + 上下矢印）
     if (e.ctrlKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
       e.preventDefault();
