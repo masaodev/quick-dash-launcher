@@ -117,7 +117,7 @@ const App: React.FC = () => {
     document.addEventListener('drop', handleDrop);
 
     // データ変更通知のリスナーを設定
-    window.electronAPI.onDataChanged(async () => {
+    const cleanupDataChanged = window.electronAPI.onDataChanged(async () => {
       debugLog('データ変更通知を受信、データを再読み込みします');
       // データファイルリストを再取得してアクティブタブの存在を確認
       const files = await window.electronAPI.getDataFiles();
@@ -138,10 +138,29 @@ const App: React.FC = () => {
       loadItems();
     });
 
+    // 設定変更通知のリスナーを設定
+    const cleanupSettingsChanged = window.electronAPI.onSettingsChanged(async () => {
+      debugLog('設定変更通知を受信、タブ設定を再読み込みします');
+      const settings = await window.electronAPI.getSettings();
+      setShowDataFileTabs(settings.showDataFileTabs);
+      setTabNames(settings.dataFileTabNames || {});
+      setTabOrder(settings.tabOrder || []);
+
+      // デフォルトタブが変更されていたら反映
+      if (settings.defaultFileTab && settings.defaultFileTab !== activeTab) {
+        const files = await window.electronAPI.getDataFiles();
+        if (files.includes(settings.defaultFileTab)) {
+          setActiveTab(settings.defaultFileTab);
+        }
+      }
+    });
+
     return () => {
       document.removeEventListener('dragover', handleDragOver);
       document.removeEventListener('dragleave', handleDragLeave);
       document.removeEventListener('drop', handleDrop);
+      cleanupDataChanged();
+      cleanupSettingsChanged();
     };
   }, []);
 

@@ -25,6 +25,16 @@ QuickDashLauncherで使用される主要なIPCチャンネルの仕様です。
 
 ### `settings:reset`
 設定をデフォルト値にリセット
+- リセット後、`settings-changed`イベントを全ウィンドウに送信
+
+### `settings-changed` (イベント)
+設定変更を全ウィンドウに通知
+- **方向**: メインプロセス → レンダラープロセス（全ウィンドウ）
+- **パラメータ**: なし
+- **発生タイミング**:
+  - `settings:set-multiple`実行時
+  - `settings:reset`実行時
+- **用途**: メインウィンドウでの設定の即座反映（タブ名更新など）
 
 ### `settings:validate-hotkey`
 ホットキーの妥当性を検証
@@ -213,6 +223,25 @@ QuickDashLauncherで使用される主要なIPCチャンネルの仕様です。
 
 ### `getPathForFile`
 ドラッグ&ドロップされたファイルのパスを取得
+
+### `onSettingsChanged`
+設定変更イベントリスナー
+- **方向**: メインプロセス → レンダラープロセス
+- **パラメータ**: `callback: () => void`
+- **用途**: メインウィンドウで設定変更を検知し、タブ名などを即座に更新
+
+```typescript
+onSettingsChanged(callback: () => void)
+```
+
+**使用例:**
+```typescript
+window.electronAPI.onSettingsChanged(async () => {
+  const settings = await window.electronAPI.getSettings();
+  setTabNames(settings.dataFileTabNames || {});
+  // その他の設定を反映
+});
+```
 
 ### `onIconProgress`
 アイコン取得進捗イベントリスナー

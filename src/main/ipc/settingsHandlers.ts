@@ -1,10 +1,20 @@
-import { ipcMain } from 'electron';
+import { ipcMain, BrowserWindow } from 'electron';
 
 import type { AppSettings } from '../../common/types.js';
 import { SettingsService } from '../services/settingsService.js';
 import { HotkeyService } from '../services/hotkeyService.js';
 import { getIsFirstLaunch } from '../main.js';
 import logger from '../../common/logger.js';
+
+/**
+ * すべてのウィンドウに設定変更を通知
+ */
+function notifySettingsChanged() {
+  const allWindows = BrowserWindow.getAllWindows();
+  allWindows.forEach((window) => {
+    window.webContents.send('settings-changed');
+  });
+}
 
 /**
  * 設定関連のIPCハンドラーを登録
@@ -64,6 +74,9 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
         logger.info('初回起動モードを解除しました（ホットキーが設定されたため）');
       }
 
+      // すべてのウィンドウに設定変更を通知
+      notifySettingsChanged();
+
       return true;
     } catch (error) {
       logger.error('Failed to set multiple settings:', error);
@@ -77,6 +90,10 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
       const settingsService = await SettingsService.getInstance();
       await settingsService.reset();
       logger.info('Settings reset request');
+
+      // すべてのウィンドウに設定変更を通知
+      notifySettingsChanged();
+
       return true;
     } catch (error) {
       logger.error('Failed to reset settings:', error);

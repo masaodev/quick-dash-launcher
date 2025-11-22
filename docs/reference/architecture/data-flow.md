@@ -143,9 +143,57 @@ HistoryEntry {
 }
 ```
 
+## 設定の即座反映フロー
+
+**v1.0.0以降**: すべての設定変更が「保存」ボタンなしで即座に反映されます。
+
+### 設定変更の処理フロー
+1. ユーザーが管理ウィンドウの基本設定タブで設定を変更（例: タブ名、ホットキー、ウィンドウサイズ）
+2. `handleSettingChange`関数が実行される
+3. 新しい設定値で`settings:set-multiple` IPCを呼び出し
+4. メインプロセスの`settingsHandlers.ts`で設定をJSON保存
+5. **設定変更通知**: `notifySettingsChanged()`が実行され、`settings-changed`イベントを全ウィンドウに送信
+6. メインウィンドウの`onSettingsChanged`リスナーが設定変更を検知
+7. 設定を再読み込みして画面に反映（タブ名更新など）
+
+### 対象設定項目
+- グローバルホットキー
+- ウィンドウサイズ（通常時・編集時）
+- 自動起動設定
+- バックアップ設定（有効/無効、タイミング、間隔、保存件数）
+- タブ表示設定（表示/非表示、タブ名、デフォルトタブ、タブ順序）
+
+### 即座反映の技術詳細
+- **IPCイベント**: `settings-changed` - メインプロセスから全レンダラープロセスへブロードキャスト
+- **プリロードAPI**: `onSettingsChanged(callback)` - レンダラーでのイベント購読
+- **使用例**:
+  ```typescript
+  window.electronAPI.onSettingsChanged(async () => {
+    const settings = await window.electronAPI.getSettings();
+    setTabNames(settings.dataFileTabNames || {});
+    // その他の設定を反映
+  });
+  ```
+
+### タブ名の即座更新
+1. 管理ウィンドウでタブ名入力欄にテキストを入力
+2. `handleTabNameChange`が実行され、`dataFileTabNames`を更新
+3. `settings:set-multiple` IPCで設定保存
+4. `settings-changed`イベントがメインウィンドウに送信
+5. メインウィンドウのタブ名がリアルタイムに更新される
+
+### デフォルトタブ名
+タブ名が未設定の場合、わかりやすいデフォルト名が表示されます：
+- `data.txt` → 「メイン」
+- `data2.txt` → 「サブ1」
+- `data3.txt` → 「サブ2」
+- `data4.txt` → 「サブ3」（以降同様）
+
 ## 関連ドキュメント
 
 - [アーキテクチャ概要](overview.md) - システム全体の構造
 - [IPCチャンネル詳細](ipc-channels.md) - 各IPCチャンネルの仕様
-- [アイテム管理](../manual/item-management.md) - 編集モードの詳細仕様
-- [アイコンシステム](../manual/icon-system.md) - アイコン取得・管理システム
+- [アイテム管理](../../manual/item-management.md) - 編集モードの詳細仕様
+- [アイコンシステム](../../manual/icon-system.md) - アイコン取得・管理システム
+- [アプリケーション設定](../../manual/app-settings.md) - 設定方法とトラブルシューティング
+- [アプリケーション設定仕様](../settings-specification.md) - 設定項目の完全仕様
