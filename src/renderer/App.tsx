@@ -358,7 +358,7 @@ const App: React.FC = () => {
   };
 
   const handleFetchMissingIcons = async () => {
-    debugInfo('未取得アイコンの取得を開始');
+    debugInfo('未取得アイコンの取得を開始（全タブ）');
 
     // 統合プログレスAPIを使用
     // URLアイテムの抽出（アイコン未設定のみ）
@@ -400,7 +400,58 @@ const App: React.FC = () => {
     };
 
     setMainItems(updateItemsWithIcons(mainItems));
-    debugInfo('未取得アイコンの取得が完了');
+    debugInfo('未取得アイコンの取得が完了（全タブ）');
+  };
+
+  const handleFetchMissingIconsCurrentTab = async () => {
+    debugInfo('未取得アイコンの取得を開始（現在のタブ）');
+
+    // 現在のタブのアイテムのみをフィルタリング
+    const currentTabItems = showDataFileTabs
+      ? mainItems.filter((item) => item.sourceFile === activeTab)
+      : mainItems.filter((item) => item.sourceFile === 'data.txt');
+
+    // 統合プログレスAPIを使用
+    // URLアイテムの抽出（アイコン未設定のみ）
+    const urlItems = currentTabItems.filter(
+      (item) => item.type === 'url' && !('icon' in item && item.icon)
+    ) as LauncherItem[];
+
+    // EXE/ファイル/カスタムURIアイテムの抽出（アイコン未設定のみ、フォルダとグループを除外）
+    const iconItems = currentTabItems.filter(
+      (item) =>
+        item.type !== 'url' &&
+        item.type !== 'group' &&
+        item.type !== 'folder' &&
+        !('icon' in item && item.icon)
+    ) as LauncherItem[];
+
+    if (urlItems.length === 0 && iconItems.length === 0) {
+      debugInfo('取得対象のアイテムがありません（現在のタブ）');
+      return;
+    }
+
+    // 統合APIを呼び出し
+    const results = await window.electronAPI.fetchIconsCombined(urlItems, iconItems);
+
+    // 取得したアイコンをアイテムに適用
+    const updateItemsWithIcons = (items: AppItem[]) => {
+      return items.map((item) => {
+        if (item.type === 'url' && results.favicons[(item as LauncherItem).path]) {
+          return { ...item, icon: results.favicons[(item as LauncherItem).path] || undefined };
+        } else if (
+          item.type !== 'url' &&
+          item.type !== 'group' &&
+          results.icons[(item as LauncherItem).path]
+        ) {
+          return { ...item, icon: results.icons[(item as LauncherItem).path] || undefined };
+        }
+        return item;
+      });
+    };
+
+    setMainItems(updateItemsWithIcons(mainItems));
+    debugInfo('未取得アイコンの取得が完了（現在のタブ）');
   };
 
   const handleTogglePin = async () => {
@@ -693,6 +744,7 @@ const App: React.FC = () => {
           <ActionButtons
             onReload={loadItems}
             onFetchMissingIcons={handleFetchMissingIcons}
+            onFetchMissingIconsCurrentTab={handleFetchMissingIconsCurrentTab}
             onRefreshAll={handleRefreshAll}
             onTogglePin={handleTogglePin}
             onOpenBasicSettings={handleOpenBasicSettings}

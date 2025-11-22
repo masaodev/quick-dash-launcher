@@ -3,12 +3,14 @@ import React, { useState, useEffect, useRef } from 'react';
 interface RefreshActionsDropdownProps {
   onReload: () => void;
   onFetchMissingIcons: () => void;
+  onFetchMissingIconsCurrentTab: () => void;
   onRefreshAll: () => void;
 }
 
 const RefreshActionsDropdown: React.FC<RefreshActionsDropdownProps> = ({
   onReload,
   onFetchMissingIcons,
+  onFetchMissingIconsCurrentTab,
   onRefreshAll,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -47,9 +49,15 @@ const RefreshActionsDropdown: React.FC<RefreshActionsDropdownProps> = ({
           </button>
           <button
             className="dropdown-item"
+            onClick={() => handleMenuItemClick(onFetchMissingIconsCurrentTab)}
+          >
+            🎨 アイコン取得（現在のタブ）
+          </button>
+          <button
+            className="dropdown-item"
             onClick={() => handleMenuItemClick(onFetchMissingIcons)}
           >
-            🎨 アイコン取得
+            🎨 アイコン取得（全タブ）
           </button>
           <div className="dropdown-divider"></div>
           <button className="dropdown-item" onClick={() => handleMenuItemClick(onRefreshAll)}>
