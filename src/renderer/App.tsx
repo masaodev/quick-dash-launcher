@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-import { LauncherItem, GroupItem, AppItem, WindowPinMode } from '../common/types';
+import { LauncherItem, GroupItem, AppItem, WindowPinMode, RawDataLine } from '../common/types';
 
 import SearchBox from './components/SearchBox';
 import ItemList from './components/ItemList';
@@ -20,6 +20,7 @@ const App: React.FC = () => {
   const [windowPinMode, setWindowPinMode] = useState<WindowPinMode>('normal');
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [droppedPaths, setDroppedPaths] = useState<string[]>([]);
+  const [editingItem, setEditingItem] = useState<RawDataLine | null>(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
 
@@ -413,8 +414,53 @@ const App: React.FC = () => {
   };
 
   const handleRegisterItems = async (items: RegisterItem[]) => {
-    await window.electronAPI.registerItems(items);
-    loadItems(); // Reload items after registration
+    if (editingItem && items.length === 1) {
+      // 編集モードの場合
+      const item = items[0];
+
+      // フォルダ取込ディレクティブの編集の場合
+      if (editingItem.type === 'directive' && item.itemCategory === 'dir') {
+        // ディレクティブ形式でRawDataLineを更新
+        let newContent = `dir,${item.path}`;
+        if (item.dirOptions) {
+          const opts = item.dirOptions;
+          const optParts = [];
+          optParts.push(`depth=${opts.depth}`);
+          optParts.push(`types=${opts.types}`);
+          if (opts.filter) optParts.push(`filter=${opts.filter}`);
+          if (opts.exclude) optParts.push(`exclude=${opts.exclude}`);
+          if (opts.prefix) optParts.push(`prefix=${opts.prefix}`);
+          if (opts.suffix) optParts.push(`suffix=${opts.suffix}`);
+          newContent += ',' + optParts.join(',');
+        }
+
+        // RawDataLineとして更新（editHandlersのupdateRawLineを使用する必要がある）
+        await window.electronAPI.updateRawLine({
+          sourceFile: editingItem.sourceFile,
+          lineNumber: editingItem.lineNumber,
+          newContent: newContent,
+        });
+      } else {
+        // 通常のアイテムの編集
+        const newItem: LauncherItem = {
+          name: item.name,
+          path: item.path,
+          type: item.type,
+          args: item.args,
+          customIcon: item.customIcon,
+        };
+
+        await window.electronAPI.updateItem({
+          sourceFile: editingItem.sourceFile,
+          lineNumber: editingItem.lineNumber,
+          newItem: newItem,
+        });
+      }
+    } else {
+      // 新規登録モード
+      await window.electronAPI.registerItems(items);
+    }
+    loadItems(); // Reload items after registration/update
   };
 
   const handleOpenBasicSettings = async () => {
@@ -423,6 +469,73 @@ const App: React.FC = () => {
 
   const handleOpenItemManagement = async () => {
     await window.electronAPI.openEditWindowWithTab('edit');
+  };
+
+  const handleOpenRegisterModal = () => {
+    setEditingItem(null);
+    setIsRegisterModalOpen(true);
+  };
+
+  const handleEditItem = async (item: LauncherItem) => {
+    // LauncherItemからRawDataLineを構築
+    const rawDataLine: RawDataLine = await convertLauncherItemToRawDataLine(item);
+    setEditingItem(rawDataLine);
+    setIsRegisterModalOpen(true);
+  };
+
+  const convertLauncherItemToRawDataLine = async (item: LauncherItem): Promise<RawDataLine> => {
+    // フォルダ取込から展開されたアイテムの場合
+    if (item.isDirExpanded && item.expandedFrom && item.lineNumber && item.sourceFile) {
+      // 元のディレクティブ行を直接読み込む
+      try {
+        const rawLines = await window.electronAPI.loadRawDataFiles();
+        const originalLine = rawLines.find(
+          (line) => line.sourceFile === item.sourceFile && line.lineNumber === item.lineNumber
+        );
+
+        if (originalLine) {
+          // 元の行が見つかった場合はそれを使用
+          return originalLine;
+        }
+      } catch (err) {
+        console.error('元のディレクティブ行の読み込みに失敗しました:', err);
+      }
+
+      // フォールバック: expandedOptionsを使用（ただし正確ではない可能性がある）
+      let content = `dir,${item.expandedFrom}`;
+      if (item.expandedOptions) {
+        content += `,${item.expandedOptions}`;
+      }
+
+      return {
+        lineNumber: item.lineNumber || 1,
+        content: content,
+        type: 'directive',
+        sourceFile: item.sourceFile || 'data.txt',
+        customIcon: undefined,
+      };
+    }
+
+    // 通常のアイテムの場合
+    const parts = [item.name, item.path];
+    if (item.args) {
+      parts.push(item.args);
+    }
+    if (item.customIcon) {
+      // 引数がない場合は空文字を追加
+      if (!item.args) {
+        parts.push('');
+      }
+      parts.push(item.customIcon);
+    }
+
+    return {
+      lineNumber: item.lineNumber || 1,
+      content: parts.join(','),
+      type: 'item',
+      sourceFile: item.sourceFile || 'data.txt',
+      customIcon: item.customIcon,
+    };
   };
 
   const handleFirstLaunchComplete = async (hotkey: string) => {
@@ -470,6 +583,7 @@ const App: React.FC = () => {
             onTogglePin={handleTogglePin}
             onOpenBasicSettings={handleOpenBasicSettings}
             onOpenItemManagement={handleOpenItemManagement}
+            onOpenRegisterModal={handleOpenRegisterModal}
             windowPinMode={windowPinMode}
             isEditMode={false}
           />
@@ -487,6 +601,7 @@ const App: React.FC = () => {
           onOpenParentFolder={handleOpenParentFolder}
           onCopyShortcutPath={handleCopyShortcutPath}
           onCopyShortcutParentPath={handleCopyShortcutParentPath}
+          onEditItem={handleEditItem}
         />
 
         {progressState.isActive && progressState.progress && (
@@ -498,9 +613,11 @@ const App: React.FC = () => {
           onClose={() => {
             setIsRegisterModalOpen(false);
             setDroppedPaths([]);
+            setEditingItem(null);
           }}
           onRegister={handleRegisterItems}
           droppedPaths={droppedPaths}
+          editingItem={editingItem}
         />
 
         {isDraggingOver && (

@@ -26,6 +26,12 @@ const AdminApp: React.FC = () => {
       debugInfo('データ変更通知を受信、データを再読み込みします');
       loadData();
     });
+
+    // ウィンドウ表示時のリスナーを設定
+    window.electronAPI.onWindowShown(() => {
+      debugInfo('ウィンドウが表示されました、データを再読み込みします');
+      loadData();
+    });
   }, []);
 
   const loadInitialTab = async () => {

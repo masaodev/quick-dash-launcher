@@ -13,6 +13,7 @@ interface ContextMenuProps {
   onOpenParentFolder: (item: LauncherItem) => void;
   onCopyShortcutPath?: (item: LauncherItem) => void;
   onCopyShortcutParentPath?: (item: LauncherItem) => void;
+  onEditItem?: (item: LauncherItem) => void | Promise<void>;
 }
 
 const ContextMenu: React.FC<ContextMenuProps> = ({
@@ -25,6 +26,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
   onOpenParentFolder,
   onCopyShortcutPath,
   onCopyShortcutParentPath,
+  onEditItem,
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -87,6 +89,13 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
     }
   };
 
+  const handleEditItem = () => {
+    if (item && onEditItem) {
+      onEditItem(item);
+      onClose();
+    }
+  };
+
   // ショートカットアイテムかどうかを判定
   const isShortcutItem = item ? PathUtils.isShortcutItem(item) : false;
 
@@ -109,8 +118,9 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
 
   const getAdjustedPosition = () => {
     const menuWidth = 200;
-    // メニュー項目数に応じて高さを調整（基本3項目 + ショートカットで+2項目）
-    const menuHeight = isShortcutItem ? 200 : 120;
+    // メニュー項目数に応じて高さを調整（編集+基本3項目 + ショートカットで+2項目）
+    const baseHeight = onEditItem ? 160 : 120;
+    const menuHeight = isShortcutItem ? baseHeight + 80 : baseHeight;
 
     let adjustedX = position.x;
     let adjustedY = position.y;
@@ -146,6 +156,12 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
         zIndex: 1000,
       }}
     >
+      {onEditItem && (
+        <div className="context-menu-item" onClick={handleEditItem}>
+          <span className="context-menu-icon">✏️</span>
+          <span>編集</span>
+        </div>
+      )}
       <div className="context-menu-item" onClick={handleCopyPath} title={getFullPath()}>
         <span className="context-menu-icon">📋</span>
         <span>パスをコピー</span>

@@ -12,6 +12,7 @@ interface ActionButtonsProps {
   onTogglePin: () => void;
   onOpenBasicSettings: () => void;
   onOpenItemManagement: () => void;
+  onOpenRegisterModal: () => void;
   windowPinMode: WindowPinMode;
   isEditMode: boolean;
 }
@@ -23,6 +24,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   onTogglePin,
   onOpenBasicSettings,
   onOpenItemManagement,
+  onOpenRegisterModal,
   windowPinMode,
   isEditMode,
 }) => {
@@ -53,6 +55,13 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   const pinConfig = getPinButtonConfig(windowPinMode);
   return (
     <div className="action-buttons">
+      <button
+        className="action-button register-item"
+        onClick={onOpenRegisterModal}
+        title="アイテムを登録"
+      >
+        ➕
+      </button>
       <RefreshActionsDropdown
         onReload={onReload}
         onFetchMissingIcons={onFetchMissingIcons}

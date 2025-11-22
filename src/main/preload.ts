@@ -75,6 +75,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getPathForFile: (file: File) => webUtils.getPathForFile(file),
   quitApp: () => ipcRenderer.invoke('quit-app'),
   updateItem: (request: UpdateItemRequest) => ipcRenderer.invoke('update-item', request),
+  updateRawLine: (request: {
+    sourceFile: 'data.txt' | 'data2.txt';
+    lineNumber: number;
+    newContent: string;
+  }) => ipcRenderer.invoke('update-raw-line', request),
   deleteItems: (requests: DeleteItemRequest[]) => ipcRenderer.invoke('delete-items', requests),
   batchUpdateItems: (requests: UpdateItemRequest[]) =>
     ipcRenderer.invoke('batch-update-items', requests),

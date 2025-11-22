@@ -14,6 +14,7 @@ let tray: Tray | null = null;
 let windowPinMode: WindowPinMode = 'normal';
 let isEditMode: boolean = false;
 let isFirstLaunchMode: boolean = false;
+let isModalMode: boolean = false;
 let normalWindowBounds: { width: number; height: number } | null = null;
 
 /**
@@ -65,7 +66,8 @@ export async function createWindow(): Promise<BrowserWindow> {
       !mainWindow.webContents.isDevToolsOpened() &&
       shouldHideOnBlur() &&
       !isEditMode &&
-      !isFirstLaunchMode
+      !isFirstLaunchMode &&
+      !isModalMode
     ) {
       mainWindow.hide();
     }
@@ -302,11 +304,14 @@ export function getEditMode(): boolean {
 /**
  * モーダルモードの切り替え
  * モーダル表示時は必要に応じてウィンドウサイズを拡大し、閉じる時は元のサイズに戻す
+ * モーダル表示中はフォーカス喪失時に自動非表示されないように制御される
  */
 export async function setModalMode(
   isModal: boolean,
   requiredSize?: { width: number; height: number }
 ): Promise<void> {
+  isModalMode = isModal;
+
   if (mainWindow) {
     if (isModal && requiredSize) {
       // モーダル表示時：現在のサイズを保存し、必要な場合のみ拡大

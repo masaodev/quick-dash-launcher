@@ -150,12 +150,31 @@ QuickDashLauncherで使用される主要なIPCチャンネルの仕様です。
 ### `save-raw-data-files`
 生データファイルを直接保存（編集モード用）
 
-## 削除済みチャンネル
+### `update-item`
+単一アイテムをCSV形式で更新
+- パラメータ: `{ sourceFile: 'data.txt' | 'data2.txt', lineNumber: number, newItem: LauncherItem }`
+- 戻り値: `{ success: boolean }`
+- 用途: メインウィンドウからのアイテム編集時に使用
+- バックアップ: 更新前に自動バックアップを作成
 
-以下のチャンネルは実装が削除されました：
-- `update-item`: 単一アイテムの更新
-- `delete-items`: 複数アイテムの削除
-- `batch-update-items`: 複数アイテムの一括更新
+### `update-raw-line`
+生データファイルの指定行を直接更新（フォルダ取込ディレクティブ編集用）
+- パラメータ: `{ sourceFile: 'data.txt' | 'data2.txt', lineNumber: number, newContent: string }`
+- 戻り値: `{ success: boolean }`
+- 用途: フォルダ取込ディレクティブの編集時に元の行を直接更新
+- バックアップ: 更新前に自動バックアップを作成
+
+### `delete-items`
+複数アイテムを一括削除
+- パラメータ: `DeleteItemRequest[]` (各要素: `{ sourceFile, lineNumber }`)
+- 戻り値: `{ success: boolean }`
+- バックアップ: 削除前に自動バックアップを作成
+
+### `batch-update-items`
+複数アイテムを一括更新
+- パラメータ: `UpdateItemRequest[]` (各要素: `{ sourceFile, lineNumber, newItem }`)
+- 戻り値: `{ success: boolean }`
+- バックアップ: 更新前に自動バックアップを作成
 
 ## プリロードAPI
 

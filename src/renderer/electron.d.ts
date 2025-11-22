@@ -60,6 +60,11 @@ export interface ElectronAPI {
     lineNumber: number;
     newItem: LauncherItem;
   }) => Promise<{ success: boolean }>;
+  updateRawLine: (request: {
+    sourceFile: 'data.txt' | 'data2.txt';
+    lineNumber: number;
+    newContent: string;
+  }) => Promise<{ success: boolean }>;
   deleteItems: (
     requests: {
       sourceFile: 'data.txt' | 'data2.txt';

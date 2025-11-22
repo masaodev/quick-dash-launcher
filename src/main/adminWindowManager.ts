@@ -130,9 +130,10 @@ export async function showAdminWindowWithTab(tab: 'settings' | 'edit' | 'other')
   initialTab = tab;
   await showAdminWindow();
 
-  // ウィンドウが表示された後、タブを設定するメッセージを送信
+  // ウィンドウが表示された後、タブを設定するメッセージとウィンドウ表示イベントを送信
   if (adminWindow && !adminWindow.isDestroyed()) {
     adminWindow.webContents.send('set-active-tab', tab);
+    adminWindow.webContents.send('window-shown');
   }
 }
 

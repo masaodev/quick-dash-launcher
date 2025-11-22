@@ -68,6 +68,18 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     } else if (droppedPaths && droppedPaths.length > 0) {
       debugInfo('RegisterModal opened with paths:', droppedPaths);
       initializeItems();
+    } else {
+      // ボタンから開かれた場合：空のテンプレートアイテムを1つ作成
+      debugInfo('RegisterModal opened manually: creating empty template');
+      setItems([
+        {
+          name: '',
+          path: '',
+          type: 'app',
+          targetTab: 'main',
+          itemCategory: 'item',
+        },
+      ]);
     }
 
     // モーダルが開いたときの処理
@@ -174,7 +186,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     // 必要サイズを計算
     const hasFolderItem = items.some((item) => item.itemCategory === 'dir');
     const requiredWidth = hasFolderItem ? 900 : 800;
-    const requiredHeight = hasFolderItem ? 700 : 600;
+    const requiredHeight = hasFolderItem ? 1000 : 1000;
 
     // モーダルモードを有効化し、必要サイズを設定
     window.electronAPI.setModalMode(true, { width: requiredWidth, height: requiredHeight });
@@ -571,7 +583,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     }
 
     // パスが変更された場合、アイテムタイプを再検出
-    if (field === 'path' && editingItem) {
+    if (field === 'path' && (value as string).trim()) {
       const newType = await detectItemType(value as string);
       newItems[index].type = newType;
 
@@ -594,11 +606,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
         // フォルダでない場合はフォルダ関連の設定をクリア
         delete newItems[index].folderProcessing;
         delete newItems[index].dirOptions;
-      }
-
-      // appタイプでない場合は引数をクリア
-      if (newType !== 'app') {
-        delete newItems[index].args;
       }
     }
 
@@ -650,40 +657,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                     {item.icon && <img src={item.icon} alt="" className="item-icon" />}
                   </div>
 
-                  {/* カスタムアイコン設定 */}
-                  <div className="form-group">
-                    <label>カスタムアイコン:</label>
-                    <div className="custom-icon-section">
-                      {customIconPreviews[index] ? (
-                        <div className="custom-icon-preview">
-                          <img
-                            src={customIconPreviews[index]}
-                            alt="カスタムアイコン"
-                            className="custom-icon-img"
-                          />
-                          <button
-                            type="button"
-                            className="delete-icon-btn"
-                            onClick={() => handleDeleteCustomIcon(index)}
-                          >
-                            削除
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="no-custom-icon">
-                          <span>カスタムアイコン未設定</span>
-                        </div>
-                      )}
-                      <button
-                        type="button"
-                        className="select-icon-btn"
-                        onClick={() => handleSelectCustomIcon(index)}
-                      >
-                        ファイルから選択
-                      </button>
-                    </div>
-                  </div>
-
                   <div className="form-group">
                     <label>種別:</label>
                     <select
@@ -702,19 +675,19 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                     </select>
                   </div>
 
-                  <div className="form-group">
-                    <label>名前:</label>
-                    <input
-                      type="text"
-                      value={item.itemCategory === 'dir' ? '-' : item.name}
-                      onChange={(e) => handleItemChange(index, 'name', e.target.value)}
-                      placeholder={
-                        item.itemCategory === 'group' ? 'グループ名を入力' : '表示名を入力'
-                      }
-                      readOnly={item.itemCategory === 'dir'}
-                      className={item.itemCategory === 'dir' ? 'readonly' : ''}
-                    />
-                  </div>
+                  {item.itemCategory !== 'dir' && (
+                    <div className="form-group">
+                      <label>名前:</label>
+                      <input
+                        type="text"
+                        value={item.name}
+                        onChange={(e) => handleItemChange(index, 'name', e.target.value)}
+                        placeholder={
+                          item.itemCategory === 'group' ? 'グループ名を入力' : '表示名を入力'
+                        }
+                      />
+                    </div>
+                  )}
 
                   {item.itemCategory !== 'group' && (
                     <div className="form-group">
@@ -722,23 +695,22 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                       <input
                         type="text"
                         value={item.path}
-                        readOnly={!editingItem}
-                        className={editingItem ? '' : 'readonly'}
-                        onChange={(e) =>
-                          editingItem ? handleItemChange(index, 'path', e.target.value) : undefined
-                        }
+                        readOnly={!!droppedPaths && droppedPaths.length > 0}
+                        className={droppedPaths && droppedPaths.length > 0 ? 'readonly' : ''}
+                        onChange={(e) => handleItemChange(index, 'path', e.target.value)}
+                        placeholder="ファイルパス、URL、またはカスタムURIを入力"
                       />
                     </div>
                   )}
 
-                  {item.type === 'app' && item.itemCategory !== 'group' && (
+                  {item.itemCategory === 'item' && (
                     <div className="form-group">
                       <label>引数 (オプション):</label>
                       <input
                         type="text"
                         value={item.args || ''}
                         onChange={(e) => handleItemChange(index, 'args', e.target.value)}
-                        placeholder="コマンドライン引数"
+                        placeholder="コマンドライン引数（実行ファイルやアプリの場合のみ有効）"
                       />
                     </div>
                   )}
@@ -898,6 +870,42 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                       <option value="temp">一時タブ</option>
                     </select>
                   </div>
+
+                  {/* カスタムアイコン設定 */}
+                  {item.itemCategory !== 'dir' && (
+                    <div className="form-group">
+                      <label>カスタムアイコン:</label>
+                      <div className="custom-icon-section">
+                        {customIconPreviews[index] ? (
+                          <div className="custom-icon-preview">
+                            <img
+                              src={customIconPreviews[index]}
+                              alt="カスタムアイコン"
+                              className="custom-icon-img"
+                            />
+                            <button
+                              type="button"
+                              className="delete-icon-btn"
+                              onClick={() => handleDeleteCustomIcon(index)}
+                            >
+                              削除
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="no-custom-icon">
+                            <span>カスタムアイコン未設定</span>
+                          </div>
+                        )}
+                        <button
+                          type="button"
+                          className="select-icon-btn"
+                          onClick={() => handleSelectCustomIcon(index)}
+                        >
+                          ファイルから選択
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                   {items.length > 1 && <hr />}
                 </div>

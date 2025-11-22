@@ -75,6 +75,35 @@ export async function updateItem(configFolder: string, request: UpdateItemReques
   fs.writeFileSync(filePath, lines.join('\n'), 'utf8');
 }
 
+export async function updateRawLine(
+  configFolder: string,
+  request: { sourceFile: 'data.txt' | 'data2.txt'; lineNumber: number; newContent: string }
+): Promise<void> {
+  const { sourceFile, lineNumber, newContent } = request;
+  const filePath = path.join(configFolder, sourceFile);
+
+  if (!fs.existsSync(filePath)) {
+    throw new Error(`File ${sourceFile} does not exist`);
+  }
+
+  // Create backup
+  await createBackup(configFolder, sourceFile);
+
+  // Read file contents
+  const content = fs.readFileSync(filePath, 'utf8');
+  const lines = content.split('\n');
+
+  if (lineNumber < 1 || lineNumber > lines.length) {
+    throw new Error(`Invalid line number: ${lineNumber}`);
+  }
+
+  // Update the specific line with raw content
+  lines[lineNumber - 1] = newContent;
+
+  // Write back to file
+  fs.writeFileSync(filePath, lines.join('\n'), 'utf8');
+}
+
 export async function deleteItems(
   configFolder: string,
   requests: DeleteItemRequest[]
@@ -169,6 +198,19 @@ export function registerEditHandlers(configFolder: string): void {
       return { success: true };
     },
     'アイテムの更新'
+  );
+
+  createSafeIpcHandler(
+    'update-raw-line',
+    async (request: {
+      sourceFile: 'data.txt' | 'data2.txt';
+      lineNumber: number;
+      newContent: string;
+    }) => {
+      await updateRawLine(configFolder, request);
+      return { success: true };
+    },
+    '生データ行の更新'
   );
 
   createSafeIpcHandler(
