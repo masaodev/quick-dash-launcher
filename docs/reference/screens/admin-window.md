@@ -403,13 +403,14 @@ Google,https://google.com
 #### 処理フロー
 1. 編集対象の行を取得
 2. RegisterModalを開く
-3. 行の内容をRegisterItemに変換してモーダルに渡す
-4. ユーザーがモーダルで編集
-5. 保存時：
+3. 設定から`dataFileTabs`を読み込み、保存先選択肢を構築
+4. 行の内容をRegisterItemに変換してモーダルに渡す
+5. ユーザーがモーダルで編集（保存先タブの変更も可能）
+6. 保存時：
    - RegisterItemをRawDataLineに変換
    - editedLinesに記録
    - 未保存変更フラグをセット
-6. モーダルを閉じる
+7. モーダルを閉じる
 
 #### RegisterItemへの変換
 - **アイテム行**: 名前、パス、引数、カスタムアイコンに分割
