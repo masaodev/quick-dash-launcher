@@ -31,6 +31,10 @@ export class SettingsService {
     backupOnEdit: false,
     backupInterval: 5,
     backupRetention: 20,
+    showDataFileTabs: false, // タブ表示OFF（デフォルト）
+    defaultFileTab: 'data.txt', // デフォルトタブ
+    dataFileTabNames: {}, // タブ名のカスタマイズ（空=ファイル名をそのまま表示）
+    tabOrder: [], // タブ順序（空=ファイル名順）
   };
 
   private constructor() {

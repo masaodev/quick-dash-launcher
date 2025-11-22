@@ -1,6 +1,7 @@
 /* CSS変数とグローバルリセット */
 @import './variables.css';
 @import './common.css';
+@import './components/FileTabBar.css';
 
 /* グローバルリセットとベーススタイル */
 * {

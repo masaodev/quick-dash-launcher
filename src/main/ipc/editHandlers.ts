@@ -8,13 +8,13 @@ import { LauncherItem } from '../../common/types';
 import { BackupService } from '../services/backupService.js';
 
 interface UpdateItemRequest {
-  sourceFile: 'data.txt' | 'data2.txt';
+  sourceFile: string;
   lineNumber: number;
   newItem: LauncherItem;
 }
 
 interface DeleteItemRequest {
-  sourceFile: 'data.txt' | 'data2.txt';
+  sourceFile: string;
   lineNumber: number;
 }
 
@@ -77,7 +77,7 @@ export async function updateItem(configFolder: string, request: UpdateItemReques
 
 export async function updateRawLine(
   configFolder: string,
-  request: { sourceFile: 'data.txt' | 'data2.txt'; lineNumber: number; newContent: string }
+  request: { sourceFile: string; lineNumber: number; newContent: string }
 ): Promise<void> {
   const { sourceFile, lineNumber, newContent } = request;
   const filePath = path.join(configFolder, sourceFile);
@@ -202,11 +202,7 @@ export function registerEditHandlers(configFolder: string): void {
 
   createSafeIpcHandler(
     'update-raw-line',
-    async (request: {
-      sourceFile: 'data.txt' | 'data2.txt';
-      lineNumber: number;
-      newContent: string;
-    }) => {
+    async (request: { sourceFile: string; lineNumber: number; newContent: string }) => {
       await updateRawLine(configFolder, request);
       return { success: true };
     },

@@ -7,6 +7,7 @@ import ItemList from './components/ItemList';
 import ActionButtons from './components/ActionButtons';
 import RegisterModal, { RegisterItem } from './components/RegisterModal';
 import IconProgressBar from './components/IconProgressBar';
+import FileTabBar from './components/FileTabBar';
 import { FirstLaunchSetup } from './components/FirstLaunchSetup';
 import { filterItems } from './utils/dataParser';
 import { debugLog, debugInfo, logWarn } from './utils/debug';
@@ -23,6 +24,13 @@ const App: React.FC = () => {
   const [editingItem, setEditingItem] = useState<RawDataLine | null>(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
+
+  // タブ表示関連の状態
+  const [showDataFileTabs, setShowDataFileTabs] = useState(false);
+  const [dataFiles, setDataFiles] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState<string>('data.txt');
+  const [tabNames, setTabNames] = useState<Record<string, string>>({});
+  const [tabOrder, setTabOrder] = useState<string[]>([]);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const { progressState, resetProgress } = useIconProgress();
@@ -109,8 +117,24 @@ const App: React.FC = () => {
     document.addEventListener('drop', handleDrop);
 
     // データ変更通知のリスナーを設定
-    window.electronAPI.onDataChanged(() => {
+    window.electronAPI.onDataChanged(async () => {
       debugLog('データ変更通知を受信、データを再読み込みします');
+      // データファイルリストを再取得してアクティブタブの存在を確認
+      const files = await window.electronAPI.getDataFiles();
+      setDataFiles(files);
+
+      // アクティブタブが削除されていた場合のフォールバック
+      setActiveTab((prevTab) => {
+        if (!files.includes(prevTab)) {
+          if (files.includes('data.txt')) {
+            return 'data.txt';
+          } else if (files.length > 0) {
+            return files[0];
+          }
+        }
+        return prevTab;
+      });
+
       loadItems();
     });
 
@@ -119,6 +143,46 @@ const App: React.FC = () => {
       document.removeEventListener('dragleave', handleDragLeave);
       document.removeEventListener('drop', handleDrop);
     };
+  }, []);
+
+  // タブ表示設定とデータファイルリストをロード
+  useEffect(() => {
+    const loadTabSettings = async () => {
+      try {
+        const settings = await window.electronAPI.getSettings();
+
+        setShowDataFileTabs(settings.showDataFileTabs);
+        setTabNames(settings.dataFileTabNames || {});
+        setTabOrder(settings.tabOrder || []);
+
+        // デフォルトタブを設定
+        if (settings.defaultFileTab) {
+          setActiveTab(settings.defaultFileTab);
+        }
+
+        // データファイルリストを取得
+        const files = await window.electronAPI.getDataFiles();
+        setDataFiles(files);
+
+        // タブ表示がOFFの場合は、data.txtのみ表示
+        if (!settings.showDataFileTabs) {
+          setActiveTab('data.txt');
+        } else {
+          // アクティブタブが存在するか確認、存在しない場合はdata.txtにフォールバック
+          const defaultTab = settings.defaultFileTab || 'data.txt';
+          if (files.includes(defaultTab)) {
+            setActiveTab(defaultTab);
+          } else if (files.includes('data.txt')) {
+            setActiveTab('data.txt');
+          } else if (files.length > 0) {
+            setActiveTab(files[0]);
+          }
+        }
+      } catch (error) {
+        console.error('タブ設定のロードに失敗しました:', error);
+      }
+    };
+    loadTabSettings();
   }, []);
 
   const loadItems = async (): Promise<AppItem[]> => {
@@ -553,7 +617,37 @@ const App: React.FC = () => {
     }
   };
 
-  const filteredItems = filterItems(mainItems, searchQuery);
+  // タブクリックハンドラ
+  const handleTabClick = (fileName: string) => {
+    setActiveTab(fileName);
+    setSelectedIndex(0); // タブ切り替え時は選択インデックスをリセット
+  };
+
+  // タブ順序に基づいてデータファイルをソート
+  const getSortedDataFiles = (): string[] => {
+    if (tabOrder.length === 0) {
+      // タブ順序が設定されていない場合はファイル名順
+      return [...dataFiles].sort();
+    }
+    // タブ順序に従ってソート
+    const sorted = tabOrder.filter((fileName) => dataFiles.includes(fileName));
+    // タブ順序に含まれていないファイルを末尾に追加
+    const remaining = dataFiles.filter((fileName) => !tabOrder.includes(fileName)).sort();
+    return [...sorted, ...remaining];
+  };
+
+  // アクティブなタブに基づいてアイテムをフィルタリング
+  const getTabFilteredItems = (): AppItem[] => {
+    if (!showDataFileTabs) {
+      // タブ表示OFF: data.txtのみ表示
+      return mainItems.filter((item) => item.sourceFile === 'data.txt');
+    }
+    // タブ表示ON: アクティブなタブのアイテムのみ表示
+    return mainItems.filter((item) => item.sourceFile === activeTab);
+  };
+
+  const tabFilteredItems = getTabFilteredItems();
+  const filteredItems = filterItems(tabFilteredItems, searchQuery);
 
   // 初回起動チェック中はローディング表示
   if (isFirstLaunch === null) {
@@ -587,6 +681,15 @@ const App: React.FC = () => {
             isEditMode={false}
           />
         </div>
+
+        {showDataFileTabs && dataFiles.length > 1 && (
+          <FileTabBar
+            dataFiles={getSortedDataFiles()}
+            activeTab={activeTab}
+            tabNames={tabNames}
+            onTabClick={handleTabClick}
+          />
+        )}
 
         <ItemList
           items={filteredItems}

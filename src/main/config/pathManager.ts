@@ -99,6 +99,38 @@ export class PathManager {
   }
 
   /**
+   * 設定フォルダ内のすべてのdata*.txtファイルを取得
+   * @returns データファイル名の配列（例: ['data.txt', 'data2.txt', 'data3.txt']）
+   */
+  static getDataFiles(): string[] {
+    const configFolder = this.getConfigFolder();
+
+    try {
+      if (!fs.existsSync(configFolder)) {
+        logger.warn(`Config folder does not exist: ${configFolder}`);
+        return [];
+      }
+
+      // 設定フォルダ内のファイル一覧を取得
+      const files = fs.readdirSync(configFolder);
+
+      // data*.txt パターンにマッチするファイルをフィルタリング
+      const dataFiles = files
+        .filter((file) => {
+          // data で始まり .txt で終わるファイル
+          return file.startsWith('data') && file.endsWith('.txt');
+        })
+        .sort(); // ファイル名順にソート
+
+      logger.info(`Found ${dataFiles.length} data files: ${dataFiles.join(', ')}`);
+      return dataFiles;
+    } catch (error) {
+      logger.error(`Failed to read data files from ${configFolder}`, error);
+      return [];
+    }
+  }
+
+  /**
    * 必要なディレクトリを作成
    */
   static ensureDirectories(): void {

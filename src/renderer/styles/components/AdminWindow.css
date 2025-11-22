@@ -355,3 +355,202 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* データファイル管理 */
+.data-file-manager {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-sm);
+}
+
+.data-file-table {
+  display: flex;
+  flex-direction: column;
+  border: var(--border-normal);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  background-color: var(--bg-primary);
+}
+
+.data-file-table-header {
+  display: grid;
+  grid-template-columns: 200px 1fr 80px;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--color-gray-200);
+  border-bottom: var(--border-normal);
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.data-file-table-row {
+  display: grid;
+  grid-template-columns: 200px 1fr 80px;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-bottom: var(--border-light);
+  align-items: center;
+  transition: var(--transition-normal);
+}
+
+.data-file-table-row:last-child {
+  border-bottom: none;
+}
+
+.data-file-table-row:hover:not(.adding) {
+  background-color: var(--bg-hover);
+}
+
+.data-file-table-row.adding {
+  background-color: var(--color-primary-50);
+}
+
+.column-filename {
+  display: flex;
+  align-items: center;
+}
+
+.column-tabname {
+  display: flex;
+  align-items: center;
+}
+
+.column-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+}
+
+.data-file-name {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.tab-name-input {
+  width: 100%;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: var(--border-normal);
+  border-radius: var(--border-radius-sm);
+  font-family: inherit;
+  font-size: var(--font-size-base);
+  outline: none;
+  background-color: var(--bg-primary);
+}
+
+.tab-name-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: var(--focus-ring);
+}
+
+.tab-name-input:disabled {
+  background-color: var(--color-gray-100);
+  cursor: not-allowed;
+}
+
+.placeholder-text {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.delete-file-button {
+  padding: 2px 6px;
+  background: transparent;
+  border: none;
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  font-size: 16px;
+  transition: var(--transition-normal);
+  opacity: 0.6;
+}
+
+.delete-file-button:hover {
+  opacity: 1;
+  background-color: var(--color-red-100);
+}
+
+.data-file-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.add-file-button,
+.open-config-button {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: var(--border-normal);
+  border-radius: var(--border-radius);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: var(--font-size-base);
+  transition: var(--transition-normal);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.add-file-button:hover,
+.open-config-button:hover {
+  background-color: var(--bg-hover);
+  border-color: var(--color-primary);
+}
+
+.add-file-button {
+  flex: 1;
+}
+
+/* ファイル名入力フィールド */
+.file-name-input {
+  flex: 1;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: var(--border-normal);
+  border-radius: var(--border-radius-sm);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-base);
+  outline: none;
+}
+
+.file-name-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: var(--focus-ring);
+}
+
+.add-file-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.confirm-button,
+.cancel-button {
+  padding: 4px 8px;
+  border: none;
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  transition: var(--transition-normal);
+}
+
+.confirm-button {
+  background-color: var(--color-green-500);
+  color: white;
+}
+
+.confirm-button:hover {
+  background-color: var(--color-green-600);
+}
+
+.cancel-button {
+  background-color: var(--color-gray-400);
+  color: white;
+}
+
+.cancel-button:hover {
+  background-color: var(--color-gray-500);
+}

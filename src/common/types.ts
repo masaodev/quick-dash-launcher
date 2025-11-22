@@ -18,7 +18,7 @@ export interface LauncherItem {
   /** ショートカットファイル（.lnk）の元のパス（オプション） */
   originalPath?: string;
   /** アイテムの元データファイル */
-  sourceFile?: 'data.txt' | 'data2.txt';
+  sourceFile?: string;
   /** データファイル内の行番号（編集機能で使用） */
   lineNumber?: number;
   /** フォルダ取込アイテムによって展開されたアイテムかどうか */
@@ -43,7 +43,7 @@ export interface GroupItem {
   /** グループ内で参照するアイテム名のリスト */
   itemNames: string[];
   /** アイテムの元データファイル */
-  sourceFile?: 'data.txt' | 'data2.txt';
+  sourceFile?: string;
   /** データファイル内の行番号（編集機能で使用） */
   lineNumber?: number;
   /** 編集モードで変更されたかどうか */
@@ -73,7 +73,7 @@ export interface RawDataLine {
   /** 行の種別（フォルダ取込アイテム、アイテム、コメント、空行） */
   type: 'directive' | 'item' | 'comment' | 'empty';
   /** この行が含まれる元のデータファイル */
-  sourceFile: 'data.txt' | 'data2.txt';
+  sourceFile: string;
   /** カスタムアイコンのファイル名（custom-iconsフォルダ内の相対パス、オプション） */
   customIcon?: string;
 }
@@ -120,6 +120,14 @@ export interface AppSettings {
   backupInterval: number;
   /** バックアップファイルの保存件数上限（デフォルト: 20） */
   backupRetention: number;
+  /** タブ表示の有効/無効（デフォルト: false） */
+  showDataFileTabs: boolean;
+  /** デフォルトで表示するタブ（タブ表示ON時のみ有効、デフォルト: 'data.txt'） */
+  defaultFileTab: string;
+  /** データファイルごとのタブ名設定（例: { 'data.txt': 'メイン', 'data2.txt': 'サブ' }） */
+  dataFileTabNames: Record<string, string>;
+  /** タブの表示順序（例: ['data.txt', 'data2.txt', 'data3.txt']） */
+  tabOrder: string[];
 }
 
 /**

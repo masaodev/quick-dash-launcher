@@ -29,6 +29,10 @@ const EditModeView: React.FC<EditModeViewProps> = ({
   const [workingLines, setWorkingLines] = useState<RawDataLine[]>(rawLines);
   const [isBookmarkModalOpen, setIsBookmarkModalOpen] = useState(false);
 
+  // データファイル選択用の状態
+  const [dataFiles, setDataFiles] = useState<string[]>([]);
+  const [selectedDataFile, setSelectedDataFile] = useState<string>('data.txt');
+
   const handleLineEdit = (line: RawDataLine) => {
     const lineKey = `${line.sourceFile}_${line.lineNumber}`;
     const newEditedLines = new Map(editedLines);
@@ -252,6 +256,9 @@ const EditModeView: React.FC<EditModeViewProps> = ({
   });
 
   const filteredLines = mergedLines.filter((line) => {
+    // 選択されたデータファイルでフィルタリング
+    if (line.sourceFile !== selectedDataFile) return false;
+
     // コメント行を非表示
     if (line.type === 'comment') return false;
 
@@ -264,6 +271,22 @@ const EditModeView: React.FC<EditModeViewProps> = ({
     const lineText = line.content.toLowerCase();
     return keywords.every((keyword) => lineText.includes(keyword));
   });
+
+  // 初期化時にデータファイルリストをロード
+  useEffect(() => {
+    const loadDataFiles = async () => {
+      try {
+        const files = await window.electronAPI.getDataFiles();
+        setDataFiles(files);
+        if (files.length > 0 && !files.includes(selectedDataFile)) {
+          setSelectedDataFile(files[0]);
+        }
+      } catch (error) {
+        console.error('データファイルリストの取得に失敗しました:', error);
+      }
+    };
+    loadDataFiles();
+  }, []);
 
   // rawLinesが変更されたらworkingLinesも更新
   useEffect(() => {
@@ -288,16 +311,25 @@ const EditModeView: React.FC<EditModeViewProps> = ({
     });
   }, [searchQuery, workingLines]);
 
-  const getFileNames = () => {
-    const fileSet = new Set(workingLines.map((line) => line.sourceFile));
-    return Array.from(fileSet).join(', ');
-  };
-
   return (
     <div className="edit-mode-view" onKeyDown={handleKeyDown} tabIndex={0}>
       <div className="edit-mode-header">
         <div className="edit-mode-info">
-          <span className="editing-files">編集中: {getFileNames()}</span>
+          <label htmlFor="data-file-selector" className="file-selector-label">
+            データファイル:
+          </label>
+          <select
+            id="data-file-selector"
+            value={selectedDataFile}
+            onChange={(e) => setSelectedDataFile(e.target.value)}
+            className="data-file-selector"
+          >
+            {dataFiles.map((fileName) => (
+              <option key={fileName} value={fileName}>
+                {fileName}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="edit-mode-search">
           <div className="search-input-container">

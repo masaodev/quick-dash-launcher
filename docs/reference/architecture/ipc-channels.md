@@ -142,6 +142,33 @@ QuickDashLauncherで使用される主要なIPCチャンネルの仕様です。
 - メインプロセスからレンダラーへの一方向通信
 - パラメータ: `tab: 'settings' | 'edit' | 'other'`
 
+## データファイル管理
+
+### `get-data-files`
+設定フォルダ内のすべてのdata*.txtファイルを取得
+- パラメータ: なし
+- 戻り値: `string[]` - データファイル名の配列（例: `['data.txt', 'data2.txt', 'data3.txt']`）
+- 用途: タブ表示機能、管理ウィンドウのファイル選択、設定画面のファイル一覧表示
+
+### `create-data-file`
+新しいデータファイルを作成
+- パラメータ: `fileName: string` - 作成するファイル名（例: `'data3.txt'`）
+- 戻り値: `{ success: boolean, error?: string }`
+- 用途: 設定画面でのデータファイル追加機能
+- 動作:
+  - 指定されたファイル名で空のデータファイルを作成
+  - ファイルが既に存在する場合はエラーを返す
+  - 作成後、`data-changed`イベントは発生しない（手動で再読み込みが必要）
+
+### `delete-data-file`
+データファイルを削除
+- パラメータ: `fileName: string` - 削除するファイル名（例: `'data3.txt'`）
+- 戻り値: `{ success: boolean, error?: string }`
+- 用途: 設定画面でのデータファイル削除機能
+- 制限事項:
+  - `data.txt`は削除不可（必須ファイル）
+  - 削除後、`data-changed`イベントは発生しない（手動で再読み込みが必要）
+
 ## 編集モード専用
 
 ### `load-raw-data-files`
@@ -152,14 +179,20 @@ QuickDashLauncherで使用される主要なIPCチャンネルの仕様です。
 
 ### `update-item`
 単一アイテムをCSV形式で更新
-- パラメータ: `{ sourceFile: 'data.txt' | 'data2.txt', lineNumber: number, newItem: LauncherItem }`
+- パラメータ: `{ sourceFile: string, lineNumber: number, newItem: LauncherItem }`
+  - `sourceFile`: データファイル名（例: `'data.txt'`, `'data2.txt'`, `'data3.txt'`）
+  - `lineNumber`: 更新する行番号（1始まり）
+  - `newItem`: 新しいアイテムデータ
 - 戻り値: `{ success: boolean }`
 - 用途: メインウィンドウからのアイテム編集時に使用
 - バックアップ: 更新前に自動バックアップを作成
 
 ### `update-raw-line`
 生データファイルの指定行を直接更新（フォルダ取込ディレクティブ編集用）
-- パラメータ: `{ sourceFile: 'data.txt' | 'data2.txt', lineNumber: number, newContent: string }`
+- パラメータ: `{ sourceFile: string, lineNumber: number, newContent: string }`
+  - `sourceFile`: データファイル名（例: `'data.txt'`, `'data2.txt'`, `'data3.txt'`）
+  - `lineNumber`: 更新する行番号（1始まり）
+  - `newContent`: 新しい行の内容（生データ文字列）
 - 戻り値: `{ success: boolean }`
 - 用途: フォルダ取込ディレクティブの編集時に元の行を直接更新
 - バックアップ: 更新前に自動バックアップを作成

@@ -231,7 +231,7 @@ function formatDirOptions(options: DirOptions): string {
 function processItem(
   itemPath: string,
   itemType: 'file' | 'folder',
-  sourceFile: 'data.txt' | 'data2.txt',
+  sourceFile: string,
   lineNumber?: number,
   prefix?: string,
   suffix?: string,
@@ -288,7 +288,7 @@ function processItem(
  */
 function processShortcut(
   filePath: string,
-  sourceFile: 'data.txt' | 'data2.txt',
+  sourceFile: string,
   lineNumber?: number,
   displayName?: string,
   prefix?: string,
@@ -372,7 +372,7 @@ function processShortcut(
 async function scanDirectory(
   dirPath: string,
   options: DirOptions,
-  sourceFile: 'data.txt' | 'data2.txt',
+  sourceFile: string,
   rootDirPath?: string,
   optionsText?: string,
   lineNumber?: number,
@@ -507,7 +507,9 @@ async function scanDirectory(
 async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
   const items: AppItem[] = [];
   const seenPaths = new Set<string>();
-  const dataFiles = ['data.txt', 'data2.txt'] as const;
+  // 動的にデータファイルリストを取得
+  const { PathManager } = await import('../config/pathManager.js');
+  const dataFiles = PathManager.getDataFiles();
 
   for (const fileName of dataFiles) {
     const filePath = path.join(configFolder, fileName);
@@ -635,7 +637,7 @@ async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
  */
 function parseCSVLineToItem(
   line: string,
-  sourceFile: 'data.txt' | 'data2.txt',
+  sourceFile: string,
   lineNumber?: number
 ): LauncherItem | null {
   const parts = parseCSVLine(line);
@@ -667,7 +669,9 @@ function parseCSVLineToItem(
 // 生データを読み込む（フォルダ取込アイテム展開なし）
 async function loadRawDataFiles(configFolder: string): Promise<RawDataLine[]> {
   const rawLines: RawDataLine[] = [];
-  const dataFiles = ['data.txt', 'data2.txt'] as const;
+  // 動的にデータファイルリストを取得
+  const { PathManager } = await import('../config/pathManager.js');
+  const dataFiles = PathManager.getDataFiles();
 
   for (const fileName of dataFiles) {
     const filePath = path.join(configFolder, fileName);
@@ -897,6 +901,57 @@ function notifyDataChanged() {
 
 export function setupDataHandlers(configFolder: string) {
   ipcMain.handle('get-config-folder', () => configFolder);
+
+  ipcMain.handle('get-data-files', async () => {
+    const { PathManager } = await import('../config/pathManager.js');
+    return PathManager.getDataFiles();
+  });
+
+  ipcMain.handle('create-data-file', async (_event, fileName: string) => {
+    const fs = await import('fs/promises');
+    const path = await import('path');
+    const filePath = path.join(configFolder, fileName);
+
+    dataLogger.info(`create-data-file called: ${fileName} at ${filePath}`);
+
+    // ファイルが既に存在する場合はエラー
+    try {
+      await fs.access(filePath);
+      dataLogger.warn(`File already exists: ${filePath}`);
+      return { success: false, error: 'ファイルは既に存在します' };
+    } catch {
+      // ファイルが存在しない場合は作成
+      try {
+        await fs.writeFile(filePath, `# ${fileName}\n`, 'utf-8');
+        dataLogger.info(`File created successfully: ${filePath}`);
+        // notifyDataChanged(); // 設定の再読み込みを防ぐため削除
+        return { success: true };
+      } catch (error) {
+        dataLogger.error(`Failed to create file: ${filePath}`, error);
+        return { success: false, error: `ファイルの作成に失敗しました: ${error}` };
+      }
+    }
+  });
+
+  ipcMain.handle('delete-data-file', async (_event, fileName: string) => {
+    const fs = await import('fs/promises');
+    const path = await import('path');
+
+    // data.txtは削除不可
+    if (fileName === 'data.txt') {
+      return { success: false, error: 'data.txtは削除できません' };
+    }
+
+    const filePath = path.join(configFolder, fileName);
+
+    try {
+      await fs.unlink(filePath);
+      // notifyDataChanged(); // 設定の再読み込みを防ぐため削除
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: `ファイルの削除に失敗しました: ${error}` };
+    }
+  });
 
   ipcMain.handle('load-data-files', async () => {
     return await loadDataFiles(configFolder);

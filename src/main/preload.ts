@@ -20,18 +20,21 @@ interface RegisterItem {
 }
 
 interface UpdateItemRequest {
-  sourceFile: 'data.txt' | 'data2.txt';
+  sourceFile: string;
   lineNumber: number;
   newItem: LauncherItem;
 }
 
 interface DeleteItemRequest {
-  sourceFile: 'data.txt' | 'data2.txt';
+  sourceFile: string;
   lineNumber: number;
 }
 
 contextBridge.exposeInMainWorld('electronAPI', {
   getConfigFolder: () => ipcRenderer.invoke('get-config-folder'),
+  getDataFiles: (): Promise<string[]> => ipcRenderer.invoke('get-data-files'),
+  createDataFile: (fileName: string) => ipcRenderer.invoke('create-data-file', fileName),
+  deleteDataFile: (fileName: string) => ipcRenderer.invoke('delete-data-file', fileName),
   loadDataFiles: (): Promise<AppItem[]> => ipcRenderer.invoke('load-data-files'),
   openItem: (item: LauncherItem) => ipcRenderer.invoke('open-item', item),
   openParentFolder: (item: LauncherItem) => ipcRenderer.invoke('open-parent-folder', item),
@@ -75,11 +78,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getPathForFile: (file: File) => webUtils.getPathForFile(file),
   quitApp: () => ipcRenderer.invoke('quit-app'),
   updateItem: (request: UpdateItemRequest) => ipcRenderer.invoke('update-item', request),
-  updateRawLine: (request: {
-    sourceFile: 'data.txt' | 'data2.txt';
-    lineNumber: number;
-    newContent: string;
-  }) => ipcRenderer.invoke('update-raw-line', request),
+  updateRawLine: (request: { sourceFile: string; lineNumber: number; newContent: string }) =>
+    ipcRenderer.invoke('update-raw-line', request),
   deleteItems: (requests: DeleteItemRequest[]) => ipcRenderer.invoke('delete-items', requests),
   batchUpdateItems: (requests: UpdateItemRequest[]) =>
     ipcRenderer.invoke('batch-update-items', requests),

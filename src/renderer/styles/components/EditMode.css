@@ -24,12 +24,43 @@
   flex: 0 0 auto;
   margin-right: var(--spacing-lg);
   -webkit-app-region: no-drag;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
 }
 
 .editing-files {
   font-weight: 600;
   color: var(--color-primary);
   font-size: var(--font-size-base);
+}
+
+.file-selector-label {
+  font-weight: 500;
+  color: var(--text-primary);
+  font-size: var(--font-size-base);
+  white-space: nowrap;
+}
+
+.data-file-selector {
+  padding: 4px 8px;
+  font-size: var(--font-size-base);
+  border: var(--border-normal);
+  border-radius: var(--border-radius);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  cursor: pointer;
+  outline: none;
+  transition: var(--transition-normal);
+}
+
+.data-file-selector:hover {
+  border-color: var(--color-primary);
+}
+
+.data-file-selector:focus {
+  border-color: var(--color-primary);
+  box-shadow: var(--focus-ring);
 }
 
 .edit-mode-search {

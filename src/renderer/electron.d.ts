@@ -15,6 +15,9 @@ import { RegisterItem } from './components/RegisterModal';
 
 export interface ElectronAPI {
   getConfigFolder: () => Promise<string>;
+  getDataFiles: () => Promise<string[]>;
+  createDataFile: (fileName: string) => Promise<{ success: boolean; error?: string }>;
+  deleteDataFile: (fileName: string) => Promise<{ success: boolean; error?: string }>;
   loadDataFiles: () => Promise<AppItem[]>;
   openItem: (item: LauncherItem) => Promise<void>;
   openParentFolder: (item: LauncherItem) => Promise<void>;
@@ -56,24 +59,24 @@ export interface ElectronAPI {
   changeHotkey: (newHotkey: string) => Promise<boolean>;
   isFirstLaunch: () => Promise<boolean>;
   updateItem: (request: {
-    sourceFile: 'data.txt' | 'data2.txt';
+    sourceFile: string;
     lineNumber: number;
     newItem: LauncherItem;
   }) => Promise<{ success: boolean }>;
   updateRawLine: (request: {
-    sourceFile: 'data.txt' | 'data2.txt';
+    sourceFile: string;
     lineNumber: number;
     newContent: string;
   }) => Promise<{ success: boolean }>;
   deleteItems: (
     requests: {
-      sourceFile: 'data.txt' | 'data2.txt';
+      sourceFile: string;
       lineNumber: number;
     }[]
   ) => Promise<{ success: boolean }>;
   batchUpdateItems: (
     requests: {
-      sourceFile: 'data.txt' | 'data2.txt';
+      sourceFile: string;
       lineNumber: number;
       newItem: LauncherItem;
     }[]
