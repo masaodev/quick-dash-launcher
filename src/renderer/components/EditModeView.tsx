@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-
-import { RawDataLine, SimpleBookmarkItem } from '../../common/types';
+import { RawDataLine, SimpleBookmarkItem } from '@common/types';
 
 import EditableRawItemList from './EditableRawItemList';
 import RegisterModal, { RegisterItem } from './RegisterModal';
@@ -257,13 +256,11 @@ const EditModeView: React.FC<EditModeViewProps> = ({
     return editedLine || line;
   });
 
-  // タブ名とファイル名を併記する関数
+  // タブ名を優先表示する関数
   const getFileDisplayLabel = (fileName: string): string => {
     const tabName = tabNames[fileName];
-    if (tabName && tabName !== fileName) {
-      return `${tabName} (${fileName})`;
-    }
-    return fileName;
+    // タブ名が設定されていればタブ名を表示、なければファイル名
+    return tabName || fileName;
   };
 
   const filteredLines = mergedLines.filter((line) => {
@@ -283,21 +280,17 @@ const EditModeView: React.FC<EditModeViewProps> = ({
     return keywords.every((keyword) => lineText.includes(keyword));
   });
 
-  // 初期化時にデータファイルリストをロード
+  // tabNamesからデータファイルリストを生成
   useEffect(() => {
-    const loadDataFiles = async () => {
-      try {
-        const files = await window.electronAPI.getDataFiles();
-        setDataFiles(files);
-        if (files.length > 0 && !files.includes(selectedDataFile)) {
-          setSelectedDataFile(files[0]);
-        }
-      } catch (error) {
-        console.error('データファイルリストの取得に失敗しました:', error);
+    const files = Object.keys(tabNames);
+    if (files.length > 0) {
+      setDataFiles(files);
+      if (!files.includes(selectedDataFile)) {
+        setSelectedDataFile(files[0]);
       }
-    };
-    loadDataFiles();
-  }, []);
+    }
+    // selectedDataFileは意図的に依存配列から除外（tabNames変更時のみ実行したい）
+  }, [tabNames]);
 
   // rawLinesが変更されたらworkingLinesも更新
   useEffect(() => {
@@ -327,7 +320,7 @@ const EditModeView: React.FC<EditModeViewProps> = ({
       <div className="edit-mode-header">
         <div className="edit-mode-info">
           <label htmlFor="data-file-selector" className="file-selector-label">
-            データファイル:
+            タブ名:
           </label>
           <select
             id="data-file-selector"

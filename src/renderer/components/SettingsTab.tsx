@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-
-import { AppSettings, DataFileTab } from '../../common/types';
+import { AppSettings, DataFileTab } from '@common/types';
 
 import { HotkeyInput } from './HotkeyInput';
 
@@ -63,12 +62,22 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
     // data.txtが設定に含まれていない場合は追加
     if (!fileNames.includes('data.txt')) {
       const updatedTabs = [{ file: 'data.txt', name: getDefaultTabName('data.txt') }, ...tabs];
-      handleSettingChange('dataFileTabs', updatedTabs);
+      const newSettings = {
+        ...editedSettings,
+        dataFileTabs: updatedTabs,
+      };
+      setEditedSettings(newSettings);
+
+      // 即座に保存
+      onSave(newSettings).catch((error) => {
+        console.error('設定の保存に失敗しました:', error);
+        alert('設定の保存に失敗しました。');
+      });
       return; // 設定更新後に再度このuseEffectが呼ばれるのでここで終了
     }
 
     setDataFiles(fileNames);
-  }, [editedSettings.dataFileTabs, getDefaultTabName, handleSettingChange]);
+  }, [editedSettings, getDefaultTabName, onSave]);
 
   // dataFileTabsの順序でファイルをソート（配列の順序がそのまま表示順序）
   const getSortedDataFiles = (): string[] => {
@@ -398,20 +407,16 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                 onChange={(e) => handleSettingChange('showDataFileTabs', e.target.checked)}
                 disabled={isLoading}
               />
-              複数データファイルをタブで表示
+              複数タブを表示
             </label>
-            <div className="setting-description">
-              ONにすると、メインウィンドウに各データファイル（data.txt、data2.txt等）のタブが表示されます。
-              OFFの場合はdata.txtのみ表示されます。
-            </div>
           </div>
 
           {editedSettings.showDataFileTabs && (
             <>
               <div className="setting-item indent">
-                <label>データファイル管理:</label>
+                <label>タブ管理:</label>
                 <div className="setting-description">
-                  複数のデータファイルを作成して、タブで切り替えることができます。各ファイルにカスタムタブ名を設定できます。
+                  複数のタブを作成して切り替えることができます。各タブにカスタムタブ名を設定できます。
                 </div>
                 <div className="data-file-manager">
                   <div className="data-file-actions">
