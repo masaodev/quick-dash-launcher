@@ -176,8 +176,9 @@ async function extractShortcutIcon(lnkPath: string, iconsFolder: string): Promis
  */
 async function extractIcon(filePath: string, iconsFolder: string): Promise<string | null> {
   try {
-    // ファイルが存在するか確認
     let resolvedPath = filePath;
+
+    // ファイルが存在するか確認、存在しない場合はパスを解決
     if (!FileUtils.exists(filePath)) {
       // ファイルが見つからない場合、PATHから検索を試みる
       if (process.platform === 'win32' && !filePath.includes('\\') && !filePath.includes('/')) {
@@ -226,7 +227,7 @@ async function extractIcon(filePath: string, iconsFolder: string): Promise<strin
       });
     }
 
-    // キャッシュ用ファイル名を生成
+    // キャッシュ用ファイル名を生成（元のfilePathを使用してキャッシュキーを生成）
     const iconName = path.basename(filePath, path.extname(filePath)) + '_icon.png';
     const iconPath = path.join(iconsFolder, iconName);
 
@@ -247,6 +248,7 @@ async function extractIcon(filePath: string, iconsFolder: string): Promise<strin
       return bufferToBase64DataUrl(iconBuffer);
     }
 
+    iconLogger.warn(`アイコンが抽出できませんでした: ${filePath}`);
     return null;
   } catch (error) {
     iconLogger.error(`アイコンの抽出に失敗しました: ${filePath}`, { error });
