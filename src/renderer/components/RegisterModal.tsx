@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-import { LauncherItem, RawDataLine } from '../../common/types';
+import { LauncherItem, RawDataLine, DataFileTab } from '../../common/types';
 import { debugInfo } from '../utils/debug';
 
 interface RegisterModalProps {
@@ -16,7 +16,7 @@ export interface RegisterItem {
   path: string;
   type: LauncherItem['type'];
   args?: string;
-  targetTab: 'main' | 'temp';
+  targetTab: string; // データファイル名（例: 'data.txt', 'data2.txt'）
   folderProcessing?: 'folder' | 'expand';
   icon?: string;
   customIcon?: string;
@@ -45,6 +45,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [customIconPreviews, setCustomIconPreviews] = useState<{ [index: number]: string }>({});
   const [groupItemNamesInput, setGroupItemNamesInput] = useState<{ [index: number]: string }>({});
+  const [availableTabs, setAvailableTabs] = useState<DataFileTab[]>([]);
   const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -57,6 +58,13 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
       setItems([]);
       return;
     }
+
+    // 設定からタブ一覧を取得
+    const loadAvailableTabs = async () => {
+      const settings = await window.electronAPI.getSettings();
+      setAvailableTabs(settings.dataFileTabs);
+    };
+    loadAvailableTabs();
 
     // モーダルが開いたとき、まず前回の状態をクリア
     setCustomIconPreviews({});
@@ -71,12 +79,13 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     } else {
       // ボタンから開かれた場合：空のテンプレートアイテムを1つ作成
       debugInfo('RegisterModal opened manually: creating empty template');
+      const defaultTab = availableTabs.length > 0 ? availableTabs[0].file : 'data.txt';
       setItems([
         {
           name: '',
           path: '',
           type: 'app',
-          targetTab: 'main',
+          targetTab: defaultTab,
           itemCategory: 'item',
         },
       ]);
@@ -222,6 +231,9 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
   };
 
   const convertRawDataLineToRegisterItem = async (line: RawDataLine): Promise<RegisterItem> => {
+    const defaultTab =
+      line.sourceFile || (availableTabs.length > 0 ? availableTabs[0].file : 'data.txt');
+
     if (line.type === 'item') {
       // アイテム行の場合：名前,パス,引数,カスタムアイコン
       const parts = line.content.split(',');
@@ -237,7 +249,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
         path,
         type: itemType,
         args: args || undefined,
-        targetTab: 'main',
+        targetTab: defaultTab,
         folderProcessing: itemType === 'folder' ? 'folder' : undefined,
         customIcon: customIcon || line.customIcon,
         itemCategory: 'item',
@@ -259,7 +271,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
           name: groupName,
           path: '', // グループはパス不要
           type: 'app', // ダミー値
-          targetTab: 'main',
+          targetTab: defaultTab,
           itemCategory: 'group',
           groupItemNames: itemNames,
         };
@@ -311,7 +323,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
           name: path,
           path,
           type: 'folder',
-          targetTab: 'main',
+          targetTab: defaultTab,
           folderProcessing: 'expand',
           dirOptions,
           itemCategory: 'dir',
@@ -323,7 +335,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
         name: line.content || '',
         path: line.content || '',
         type: 'file',
-        targetTab: 'main',
+        targetTab: defaultTab,
         itemCategory: 'item',
       };
     }
@@ -332,6 +344,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
   const initializeItems = async () => {
     setLoading(true);
     const newItems: RegisterItem[] = [];
+    const defaultTab = availableTabs.length > 0 ? availableTabs[0].file : 'data.txt';
 
     try {
       if (!droppedPaths || droppedPaths.length === 0) {
@@ -379,7 +392,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
           name,
           path: filePath,
           type: itemType,
-          targetTab: 'main',
+          targetTab: defaultTab,
           folderProcessing: itemType === 'folder' ? 'folder' : undefined,
           icon,
           itemCategory: 'item',
@@ -873,12 +886,13 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                     <label>保存先:</label>
                     <select
                       value={item.targetTab}
-                      onChange={(e) =>
-                        handleItemChange(index, 'targetTab', e.target.value as 'main' | 'temp')
-                      }
+                      onChange={(e) => handleItemChange(index, 'targetTab', e.target.value)}
                     >
-                      <option value="main">メインタブ</option>
-                      <option value="temp">一時タブ</option>
+                      {availableTabs.map((tab) => (
+                        <option key={tab.file} value={tab.file}>
+                          {tab.name}
+                        </option>
+                      ))}
                     </select>
                   </div>
 

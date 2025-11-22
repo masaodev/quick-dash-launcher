@@ -771,10 +771,11 @@ interface RegisterItem {
   path: string;
   type: 'url' | 'file' | 'folder' | 'app' | 'customUri';
   args?: string;
+  targetTab: string; // データファイル名（例: 'data.txt', 'data2.txt'）
   folderProcessing?: 'folder' | 'expand';
   icon?: string;
   customIcon?: string;
-  itemCategory: 'item' | 'dir';
+  itemCategory: 'item' | 'dir' | 'group';
   // フォルダ取込アイテムオプション
   dirOptions?: {
     depth: number;
@@ -784,37 +785,53 @@ interface RegisterItem {
     prefix?: string;
     suffix?: string;
   };
+  // グループアイテムオプション
+  groupItemNames?: string[];
 }
 
 /**
- * 複数のアイテムを設定ファイルに登録する（メインタブ/一時タブ対応）
- * 単一アイテムとフォルダ取込アイテムの両方に対応し、既存のファイル内容に追記する形で保存する
+ * 複数のアイテムを設定ファイルに登録する（各タブ対応）
+ * 単一アイテム、フォルダ取込アイテム、グループアイテムに対応し、targetTabで指定されたデータファイルに追記する
  *
  * @param configFolder - 設定フォルダのパス
  * @param items - 登録するアイテムの配列
  * @param items[].name - アイテム名
- * @param items[].type - アイテムタイプ（'file', 'app', 'url', 'folder'）
+ * @param items[].type - アイテムタイプ（'file', 'app', 'url', 'folder', 'customUri'）
  * @param items[].path - アイテムのパスまたはURL
+ * @param items[].targetTab - 保存先データファイル名（例: 'data.txt', 'data2.txt'）
  * @param items[].args - コマンドライン引数（オプション）
- * @param items[].targetTab - 対象タブ（'main' | 'temp'）
- * @param items[].itemCategory - アイテムカテゴリ（'item' | 'dir'）
+ * @param items[].customIcon - カスタムアイコンファイル名（オプション）
+ * @param items[].itemCategory - アイテムカテゴリ（'item' | 'dir' | 'group'）
  * @param items[].dirOptions - フォルダ取込アイテムオプション（フォルダ取込アイテムの場合）
+ * @param items[].groupItemNames - グループ内のアイテム名リスト（グループアイテムの場合）
  * @returns 処理完了のPromise
  * @throws ファイル書き込みエラー、フォルダ取込オプション処理エラー
  *
  * @example
  * await registerItems('/path/to/config', [
- *   { name: 'VSCode', type: 'app', path: 'code.exe', targetTab: 'main', itemCategory: 'item' },
- *   { name: 'Documents', type: 'folder', path: '/docs', targetTab: 'main', itemCategory: 'dir', dirOptions: {...} }
+ *   { name: 'VSCode', type: 'app', path: 'code.exe', targetTab: 'data.txt', itemCategory: 'item' },
+ *   { name: 'Documents', type: 'folder', path: '/docs', targetTab: 'data2.txt', itemCategory: 'dir', dirOptions: {...} },
+ *   { name: 'DevTools', type: 'app', path: '', targetTab: 'data.txt', itemCategory: 'group', groupItemNames: ['VSCode', 'Chrome'] }
  * ]);
  */
 async function registerItems(configFolder: string, items: RegisterItem[]): Promise<void> {
-  // Process items
-  if (items.length > 0) {
-    const dataPath = path.join(configFolder, 'data.txt');
+  // targetTab ごとにアイテムをグループ化
+  const itemsByTab = new Map<string, RegisterItem[]>();
+
+  for (const item of items) {
+    const targetFile = item.targetTab || 'data.txt';
+    if (!itemsByTab.has(targetFile)) {
+      itemsByTab.set(targetFile, []);
+    }
+    itemsByTab.get(targetFile)!.push(item);
+  }
+
+  // 各ファイルに書き込み
+  for (const [targetFile, targetItems] of itemsByTab) {
+    const dataPath = path.join(configFolder, targetFile);
     const existingContent = FileUtils.safeReadTextFile(dataPath) || '';
 
-    const newLines = items.map((item) => {
+    const newLines = targetItems.map((item) => {
       if (item.itemCategory === 'dir') {
         let dirLine = `dir,${item.path}`;
 
@@ -858,6 +875,13 @@ async function registerItems(configFolder: string, items: RegisterItem[]): Promi
         }
 
         return dirLine;
+      } else if (item.itemCategory === 'group') {
+        // グループアイテムの場合
+        let groupLine = `group,${item.name}`;
+        if (item.groupItemNames && item.groupItemNames.length > 0) {
+          groupLine += ',' + item.groupItemNames.join(',');
+        }
+        return groupLine;
       } else {
         let line = `${item.name},${item.path}`;
 

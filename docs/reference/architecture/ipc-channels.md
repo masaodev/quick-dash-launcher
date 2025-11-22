@@ -70,6 +70,25 @@ QuickDashLauncherで使用される主要なIPCチャンネルの仕様です。
 
 ### `register-items`
 アイテムをデータファイルに登録
+- パラメータ: `RegisterItem[]`
+  - `RegisterItem`型:
+    - `name: string` - アイテム名
+    - `path: string` - パス
+    - `type: LauncherItem['type']` - アイテムタイプ
+    - `args?: string` - 引数（オプション）
+    - `targetTab: string` - 保存先データファイル名（例: `'data.txt'`, `'data2.txt'`）
+    - `itemCategory: 'item' | 'dir' | 'group'` - アイテムカテゴリ
+    - `folderProcessing?: 'folder' | 'expand'` - フォルダ処理タイプ（オプション）
+    - `icon?: string` - アイコンパス（オプション）
+    - `customIcon?: string` - カスタムアイコンパス（オプション）
+    - `dirOptions?: DirOptions` - フォルダ取込アイテムオプション（オプション）
+    - `groupItemNames?: string[]` - グループアイテム名リスト（オプション）
+- 戻り値: `void`
+- 処理内容:
+  - `targetTab`ごとにアイテムをグループ化
+  - 各データファイル（例: data.txt, data2.txt）に対応するアイテムを書き込み
+  - アイテムカテゴリに応じて異なる形式で保存（通常アイテム、フォルダ取込ディレクティブ、グループ）
+  - 保存後、`data-changed`イベントを全ウィンドウに送信
 
 ### `sort-data-files`
 データファイルをパスの昇順でソート
