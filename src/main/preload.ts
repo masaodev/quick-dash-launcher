@@ -46,8 +46,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   extractCustomUriIcon: (uri: string) => ipcRenderer.invoke('extract-custom-uri-icon', uri),
   loadCachedIcons: (items: LauncherItem[]) => ipcRenderer.invoke('load-cached-icons', items),
   // 統合進捗付きアイコン取得API
-  fetchIconsCombined: (urls: string[], items: LauncherItem[]) =>
-    ipcRenderer.invoke('fetch-icons-combined', urls, items),
+  fetchIconsCombined: (urlItems: LauncherItem[], items: LauncherItem[]) =>
+    ipcRenderer.invoke('fetch-icons-combined', urlItems, items),
   // 進捗イベントリスナー
   onIconProgress: (
     eventType: 'start' | 'update' | 'complete',

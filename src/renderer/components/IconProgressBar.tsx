@@ -120,9 +120,12 @@ const IconProgressBar: React.FC<IconProgressBarProps> = ({ progress, onClose }) 
         {currentPhase && currentPhase.currentItem && !progress.isComplete && (
           <div className="current-item">
             処理中:{' '}
-            {currentPhase.currentItem.length > 50
-              ? currentPhase.currentItem.substring(0, 50) + '...'
-              : currentPhase.currentItem}
+            {currentPhase.currentItem.split('\n').map((line, i) => (
+              <React.Fragment key={i}>
+                {line.length > 80 ? line.substring(0, 80) + '...' : line}
+                {i < currentPhase.currentItem.split('\n').length - 1 && <br />}
+              </React.Fragment>
+            ))}
           </div>
         )}
       </div>

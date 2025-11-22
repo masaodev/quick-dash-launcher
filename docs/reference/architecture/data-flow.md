@@ -70,11 +70,12 @@ QuickDashLauncherのデータ処理フローを説明します。
      - file型: 拡張子ベースでシステム関連付けアイコンを抽出
 7. **進捗表示:**
    - `icon-progress-start`: 処理開始通知（統合進捗情報）
-   - `icon-progress-update`: 各アイテム処理後の進捗更新通知（フェーズ別）
+   - `icon-progress-update`: 各アイテム処理後の進捗更新通知（フェーズ別、アイテム名とパス/URLを含む）
    - `icon-progress-complete`: 処理完了通知（全フェーズの最終結果とエラー詳細）
 8. レンダラープロセスで`useIconProgress`フックが進捗イベントを受信
 9. `IconProgressBar`コンポーネントが統合進捗を表示
    - 基本表示: 全体進捗とフェーズ情報
+   - 処理中アイテム表示: アイテム名とパス/URLを両方表示（改行区切り）
    - 詳細モーダル: クリックでフェーズ別詳細とエラー一覧を表示
 10. 取得結果をレンダラーに返却、`mainItems`と`tempItems`を更新
 11. 完了後3秒で進捗バーが自動非表示
@@ -95,7 +96,7 @@ IconPhaseProgress {
   type: 'favicon' | 'icon',        // 処理種別
   current: number,                 // 現在完了数
   total: number,                   // 総数
-  currentItem: string,             // 処理中アイテム（URL/パス）
+  currentItem: string,             // 処理中アイテム（アイテム名\nパス/URL形式）
   errors: number,                  // エラー数
   startTime: number,               // フェーズ開始時刻
   isComplete: boolean,             // フェーズ完了フラグ
@@ -103,7 +104,7 @@ IconPhaseProgress {
 }
 
 IconProgressResult {
-  itemName: string,                // アイテム名またはURL
+  itemName: string,                // アイテム識別情報（アイテム名\nパス/URL形式）
   success: boolean,                // 成功したかどうか
   errorMessage?: string,           // エラーメッセージ（失敗時のみ）
   type: 'favicon' | 'icon'         // 処理の種別
@@ -113,9 +114,10 @@ IconProgressResult {
 ### 進捗表示UI仕様
 - **表示位置**: メインウィンドウ下部（ItemListの下）
 - **基本表示**: 統合進捗バー（全体進捗、現在フェーズ、プログレスバー）
+  - 処理中アイテム表示: アイテム名とパス/URLを両方表示（改行区切り、80文字超で省略）
 - **詳細モーダル**: クリックでフェーズ別の詳細情報とエラー一覧を表示
   - フェーズごとの進捗（処理済み数、成功・失敗件数）
-  - エラー一覧（アイテム名、エラーメッセージ）
+  - エラー一覧（アイテム識別情報とエラーメッセージ、改行区切り）
   - テキスト選択可能（エラー情報のコピー）
 - **非表示条件**: 処理完了後3秒で自動非表示
 - **操作性**: 非モーダル設計により、進捗表示中も他の操作が継続可能
