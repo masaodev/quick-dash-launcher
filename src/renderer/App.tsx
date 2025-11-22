@@ -119,9 +119,30 @@ const App: React.FC = () => {
     // データ変更通知のリスナーを設定
     const cleanupDataChanged = window.electronAPI.onDataChanged(async () => {
       debugLog('データ変更通知を受信、データを再読み込みします');
-      // データファイルリストを再取得してアクティブタブの存在を確認
-      const files = await window.electronAPI.getDataFiles();
+      loadItems();
+    });
+
+    // 設定変更通知のリスナーを設定
+    const cleanupSettingsChanged = window.electronAPI.onSettingsChanged(async () => {
+      debugLog('設定変更通知を受信、タブ設定を再読み込みします');
+      const settings = await window.electronAPI.getSettings();
+      setShowDataFileTabs(settings.showDataFileTabs);
+      setTabNames(settings.dataFileTabNames || {});
+      setTabOrder(settings.tabOrder || []);
+
+      // 設定からデータファイルリストを再生成（設定ファイルベース）
+      const tabNamesObj = settings.dataFileTabNames || {};
+      const files = Object.keys(tabNamesObj);
+
+      // data.txtが含まれていない場合は追加
+      if (!files.includes('data.txt')) {
+        files.unshift('data.txt');
+      }
+
       setDataFiles(files);
+
+      // 物理ファイルが存在しない場合は自動作成
+      await ensureDataFilesExist(files);
 
       // アクティブタブが削除されていた場合のフォールバック
       setActiveTab((prevTab) => {
@@ -135,20 +156,8 @@ const App: React.FC = () => {
         return prevTab;
       });
 
-      loadItems();
-    });
-
-    // 設定変更通知のリスナーを設定
-    const cleanupSettingsChanged = window.electronAPI.onSettingsChanged(async () => {
-      debugLog('設定変更通知を受信、タブ設定を再読み込みします');
-      const settings = await window.electronAPI.getSettings();
-      setShowDataFileTabs(settings.showDataFileTabs);
-      setTabNames(settings.dataFileTabNames || {});
-      setTabOrder(settings.tabOrder || []);
-
       // デフォルトタブが変更されていたら反映
       if (settings.defaultFileTab && settings.defaultFileTab !== activeTab) {
-        const files = await window.electronAPI.getDataFiles();
         if (files.includes(settings.defaultFileTab)) {
           setActiveTab(settings.defaultFileTab);
         }
@@ -179,9 +188,19 @@ const App: React.FC = () => {
           setActiveTab(settings.defaultFileTab);
         }
 
-        // データファイルリストを取得
-        const files = await window.electronAPI.getDataFiles();
+        // 設定からデータファイルリストを生成（設定ファイルベース）
+        const tabNamesObj = settings.dataFileTabNames || {};
+        const files = Object.keys(tabNamesObj);
+
+        // data.txtが含まれていない場合は追加
+        if (!files.includes('data.txt')) {
+          files.unshift('data.txt');
+        }
+
         setDataFiles(files);
+
+        // 物理ファイルが存在しない場合は自動作成
+        await ensureDataFilesExist(files);
 
         // タブ表示がOFFの場合は、data.txtのみ表示
         if (!settings.showDataFileTabs) {
@@ -203,6 +222,18 @@ const App: React.FC = () => {
     };
     loadTabSettings();
   }, []);
+
+  // 設定に登録されているファイルが物理的に存在するか確認し、存在しない場合は作成
+  const ensureDataFilesExist = async (fileNames: string[]) => {
+    for (const fileName of fileNames) {
+      try {
+        // ファイルが存在するか確認（実際には作成APIを呼ぶだけで、既存ファイルは上書きされない）
+        await window.electronAPI.createDataFile(fileName);
+      } catch (error) {
+        console.error(`${fileName}の作成/確認に失敗しました:`, error);
+      }
+    }
+  };
 
   const loadItems = async (): Promise<AppItem[]> => {
     const items = await window.electronAPI.loadDataFiles();

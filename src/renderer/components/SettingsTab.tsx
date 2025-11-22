@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 import { AppSettings } from '../../common/types';
 
@@ -16,46 +16,82 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [dataFiles, setDataFiles] = useState<string[]>([]);
-  const [_configFolder, setConfigFolder] = useState<string>('');
+
+  // デフォルトのタブ名を生成（data.txt→メイン, data2.txt→サブ1, data3.txt→サブ2, ...）
+  const getDefaultTabName = useCallback((fileName: string): string => {
+    if (fileName === 'data.txt') {
+      return 'メイン';
+    }
+    const match = fileName.match(/^data(\d+)\.txt$/);
+    if (match) {
+      const num = parseInt(match[1]);
+      return `サブ${num - 1}`;
+    }
+    return fileName;
+  }, []);
 
   // settingsプロパティが変更されたときにeditedSettingsを更新
   useEffect(() => {
     setEditedSettings(settings);
   }, [settings]);
 
-  // データファイルリストとconfigフォルダパスをロード
-  useEffect(() => {
-    const loadDataFilesInfo = async () => {
+  // 設定項目の変更ハンドラ（即座に保存）をメモ化
+  const handleSettingChange = useCallback(
+    async <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
+      const newSettings = {
+        ...editedSettings,
+        [key]: value,
+      };
+      setEditedSettings(newSettings);
+
+      // 即座に保存
       try {
-        const files = await window.electronAPI.getDataFiles();
-        const folder = await window.electronAPI.getConfigFolder();
-        setDataFiles(files);
-        setConfigFolder(folder);
+        await onSave(newSettings);
       } catch (error) {
-        console.error('データファイル情報の取得に失敗しました:', error);
+        console.error('設定の保存に失敗しました:', error);
+        alert('設定の保存に失敗しました。');
       }
-    };
-    loadDataFilesInfo();
-  }, []);
+    },
+    [editedSettings, onSave]
+  );
 
-  // 設定項目の変更ハンドラ（即座に保存）
-  const handleSettingChange = async <K extends keyof AppSettings>(
-    key: K,
-    value: AppSettings[K]
-  ) => {
-    const newSettings = {
-      ...editedSettings,
-      [key]: value,
-    };
-    setEditedSettings(newSettings);
+  // 設定に基づいてデータファイルリストを生成（設定ファイル基準）
+  useEffect(() => {
+    const tabNames = editedSettings.dataFileTabNames || {};
+    const fileNames = Object.keys(tabNames);
 
-    // 即座に保存
-    try {
-      await onSave(newSettings);
-    } catch (error) {
-      console.error('設定の保存に失敗しました:', error);
-      alert('設定の保存に失敗しました。');
+    // data.txtが設定に含まれていない場合は追加
+    if (!fileNames.includes('data.txt')) {
+      const updatedTabNames = {
+        ...tabNames,
+        'data.txt': getDefaultTabName('data.txt'),
+      };
+      handleSettingChange('dataFileTabNames', updatedTabNames);
+      return; // 設定更新後に再度このuseEffectが呼ばれるのでここで終了
     }
+
+    setDataFiles(fileNames);
+  }, [editedSettings.dataFileTabNames, getDefaultTabName, handleSettingChange]);
+
+  // タブ順序に基づいてファイルをソート
+  const getSortedDataFiles = (): string[] => {
+    const tabOrder = editedSettings.tabOrder || [];
+
+    // tabOrderに含まれていないファイルも含める
+    const orderedFiles: string[] = [];
+    const remainingFiles = [...dataFiles];
+
+    // tabOrderに従って並べる
+    tabOrder.forEach((fileName) => {
+      const index = remainingFiles.indexOf(fileName);
+      if (index !== -1) {
+        orderedFiles.push(fileName);
+        remainingFiles.splice(index, 1);
+      }
+    });
+
+    // tabOrderに含まれていないファイルを末尾に追加
+    return [...orderedFiles, ...remainingFiles];
   };
 
   // ホットキーバリデーション結果の処理
@@ -92,11 +128,14 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
     }
   };
 
-  // 行追加（即座にファイルを作成）
+  // 行追加（物理ファイル作成 + 設定に追加）
   const handleAddNewFile = async () => {
     // 次のファイル名を自動決定
     const existingNumbers = dataFiles
       .map((file) => {
+        if (file === 'data.txt') {
+          return 1; // data.txt は番号1として扱う
+        }
         const match = file.match(/^data(\d+)\.txt$/i); // 大文字小文字を区別しない
         return match ? parseInt(match[1]) : null;
       })
@@ -106,31 +145,20 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
     const fileName = `data${nextNumber}.txt`;
 
     try {
-      const result = await window.electronAPI.createDataFile(fileName);
-      if (result.success) {
-        // リストを更新
-        const updatedFiles = await window.electronAPI.getDataFiles();
-        setDataFiles(updatedFiles);
-      } else {
-        alert(result.error || 'ファイルの作成に失敗しました。');
-      }
-    } catch (error) {
-      console.error('データファイルの追加に失敗しました:', error);
-      alert('データファイルの追加に失敗しました。');
+      // 物理ファイルを作成（既存の場合はエラーになるが無視）
+      await window.electronAPI.createDataFile(fileName);
+    } catch (_error) {
+      // ファイル作成エラーは無視（既存ファイルの場合）
+      console.warn(`${fileName}は既に存在する可能性があります`);
     }
-  };
 
-  // デフォルトのタブ名を生成（data.txt→メイン, data2.txt→サブ1, data3.txt→サブ2, ...）
-  const getDefaultTabName = (fileName: string): string => {
-    if (fileName === 'data.txt') {
-      return 'メイン';
-    }
-    const match = fileName.match(/^data(\d+)\.txt$/);
-    if (match) {
-      const num = parseInt(match[1]);
-      return `サブ${num - 1}`;
-    }
-    return fileName;
+    // 設定に追加（物理ファイルの存在に関わらず実行）
+    const updatedTabNames = {
+      ...(editedSettings.dataFileTabNames || {}),
+      [fileName]: getDefaultTabName(fileName),
+    };
+
+    await handleSettingChange('dataFileTabNames', updatedTabNames);
   };
 
   // タブ名を変更
@@ -149,16 +177,35 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
       return;
     }
 
-    if (!confirm(`${fileName}を削除しますか？\nファイル内のデータは完全に失われます。`)) {
+    if (!confirm(`${fileName}を削除しますか？\n設定とファイル内のデータは完全に失われます。`)) {
       return;
     }
 
     try {
+      // 物理ファイルを削除
       const result = await window.electronAPI.deleteDataFile(fileName);
       if (result.success) {
-        // リストを更新
-        const updatedFiles = await window.electronAPI.getDataFiles();
-        setDataFiles(updatedFiles);
+        // 設定からも削除
+        const updatedTabNames = { ...(editedSettings.dataFileTabNames || {}) };
+        delete updatedTabNames[fileName];
+
+        // tabOrderからも削除
+        const updatedTabOrder = (editedSettings.tabOrder || []).filter((f) => f !== fileName);
+
+        // 両方を更新
+        const newSettings = {
+          ...editedSettings,
+          dataFileTabNames: updatedTabNames,
+          tabOrder: updatedTabOrder,
+        };
+        setEditedSettings(newSettings);
+
+        try {
+          await onSave(newSettings);
+        } catch (error) {
+          console.error('設定の保存に失敗しました:', error);
+          alert('設定の保存に失敗しました。');
+        }
       } else {
         alert(result.error || 'ファイルの削除に失敗しました。');
       }
@@ -166,6 +213,34 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
       console.error('データファイルの削除に失敗しました:', error);
       alert('データファイルの削除に失敗しました。');
     }
+  };
+
+  // タブを上に移動
+  const handleMoveUp = (fileName: string) => {
+    const sortedFiles = getSortedDataFiles();
+    const index = sortedFiles.indexOf(fileName);
+
+    if (index <= 0) return; // 最初の要素または見つからない場合は何もしない
+
+    // 配列を入れ替え
+    const newOrder = [...sortedFiles];
+    [newOrder[index - 1], newOrder[index]] = [newOrder[index], newOrder[index - 1]];
+
+    handleSettingChange('tabOrder', newOrder);
+  };
+
+  // タブを下に移動
+  const handleMoveDown = (fileName: string) => {
+    const sortedFiles = getSortedDataFiles();
+    const index = sortedFiles.indexOf(fileName);
+
+    if (index < 0 || index >= sortedFiles.length - 1) return; // 最後の要素または見つからない場合は何もしない
+
+    // 配列を入れ替え
+    const newOrder = [...sortedFiles];
+    [newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]];
+
+    handleSettingChange('tabOrder', newOrder);
   };
 
   return (
@@ -377,13 +452,34 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
 
                   <div className="data-file-table">
                     <div className="data-file-table-header">
+                      <div className="column-order">順序</div>
                       <div className="column-filename">ファイル名</div>
                       <div className="column-tabname">タブ名</div>
                       <div className="column-actions">操作</div>
                     </div>
 
-                    {dataFiles.map((fileName) => (
+                    {getSortedDataFiles().map((fileName, index) => (
                       <div key={fileName} className="data-file-table-row">
+                        <div className="column-order">
+                          <button
+                            type="button"
+                            onClick={() => handleMoveUp(fileName)}
+                            className="move-button"
+                            disabled={index === 0 || isLoading}
+                            title="上へ移動"
+                          >
+                            ▲
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleMoveDown(fileName)}
+                            className="move-button"
+                            disabled={index === getSortedDataFiles().length - 1 || isLoading}
+                            title="下へ移動"
+                          >
+                            ▼
+                          </button>
+                        </div>
                         <div className="column-filename">
                           <span className="data-file-name">{fileName}</span>
                         </div>
@@ -416,27 +512,8 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
               </div>
 
               <div className="setting-item indent">
-                <label htmlFor="defaultFileTab">デフォルトタブ:</label>
-                <input
-                  id="defaultFileTab"
-                  type="text"
-                  value={editedSettings.defaultFileTab}
-                  onChange={(e) => handleSettingChange('defaultFileTab', e.target.value)}
-                  disabled={isLoading}
-                  placeholder="data.txt"
-                />
                 <div className="setting-description">
-                  アプリ起動時に最初に表示するタブのファイル名を指定します。
-                </div>
-              </div>
-
-              <div className="setting-item indent">
-                <label>タブの表示順序:</label>
-                <div className="setting-description">
-                  タブの並び順を変更できます。未設定の場合はファイル名順で表示されます。
-                </div>
-                <div className="tab-order-editor">
-                  <div className="tab-name-note">※ タブ順序の編集機能は今後実装予定です</div>
+                  上記のテーブルの「順序」列にある▲▼ボタンで、タブの表示順序を変更できます。
                 </div>
               </div>
             </>
