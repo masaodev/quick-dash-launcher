@@ -21,8 +21,8 @@ export default defineConfig({
   // 失敗したテストのリトライ回数
   retries: process.env.CI ? 2 : 0,
 
-  // ワーカー数（CI環境では1、ローカルでは不定）
-  workers: process.env.CI ? 1 : undefined,
+  // ワーカー数（CI環境では1、ローカルでは2に制限してリソース競合を防ぐ）
+  workers: process.env.CI ? 1 : 2,
 
   // レポーター設定
   reporter: [
@@ -33,25 +33,25 @@ export default defineConfig({
 
   // 全テストでの共通設定
   use: {
-    // トレース設定（すべてのテストで記録、スクリーンショット・スナップショット含む）
+    // トレース設定（失敗時のみ記録に変更してパフォーマンス改善）
     trace: {
-      mode: 'on',
+      mode: 'retain-on-failure',
       screenshots: true,
       snapshots: true,
       sources: true,
     },
 
-    // スクリーンショット（全テストで撮影）
-    screenshot: 'on',
+    // スクリーンショット（失敗時のみに変更してパフォーマンス改善）
+    screenshot: 'only-on-failure',
 
-    // ビデオ録画（全テストで録画）
-    video: 'on',
+    // ビデオ録画（失敗時のみに変更してパフォーマンス改善）
+    video: 'retain-on-failure',
 
     // アクションのタイムアウト
     actionTimeout: 10000,
 
     // ナビゲーションのタイムアウト
-    navigationTimeout: 30000,
+    navigationTimeout: 5000,
   },
 
   // プロジェクト設定

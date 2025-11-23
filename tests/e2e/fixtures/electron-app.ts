@@ -65,13 +65,27 @@ export const test = base.extend<ElectronFixtures>({
     // テストでアプリケーションを使用
     await use(electronApp);
 
-    // トレースを停止して保存（テスト名を含むパスに保存）
-    await context.tracing.stop({
-      path: path.join(process.cwd(), 'test-results', 'traces', `trace-${Date.now()}.zip`),
-    });
+    // トレースを停止して保存（アプリが既に終了している場合はスキップ）
+    try {
+      // アプリケーションがまだ実行中か確認
+      if (!electronApp.process()?.killed) {
+        await context.tracing.stop({
+          path: path.join(process.cwd(), 'test-results', 'traces', `trace-${Date.now()}.zip`),
+        });
+      }
+    } catch (error) {
+      // トレース停止でエラーが発生しても続行
+      console.warn('トレース停止中にエラーが発生しましたが、続行します:', error);
+    }
 
-    // テスト完了後にアプリケーションを終了
-    await electronApp.close();
+    // テスト完了後にアプリケーションを終了（まだ実行中の場合のみ）
+    try {
+      if (!electronApp.process()?.killed) {
+        await electronApp.close();
+      }
+    } catch (error) {
+      console.warn('アプリケーション終了中にエラーが発生しましたが、続行します:', error);
+    }
 
     // テンプレートから復元して次のテストのために初期状態に戻す
     configHelper.restoreDataFromTemplate('base');

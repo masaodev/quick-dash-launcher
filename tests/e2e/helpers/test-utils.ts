@@ -218,7 +218,12 @@ export class TestUtils {
    * @param name スクリーンショットの名前
    */
   async attachScreenshot(testInfo: TestInfo, name: string): Promise<void> {
-    const screenshot = await this.page.screenshot();
-    await testInfo.attach(name, { body: screenshot, contentType: 'image/png' });
+    try {
+      const screenshot = await this.page.screenshot({ timeout: 5000 });
+      await testInfo.attach(name, { body: screenshot, contentType: 'image/png' });
+    } catch (error) {
+      // スクリーンショット撮影に失敗してもテストは続行
+      console.warn(`スクリーンショット撮影に失敗しました (${name}):`, error);
+    }
   }
 }

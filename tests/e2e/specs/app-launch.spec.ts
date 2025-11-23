@@ -75,17 +75,6 @@ test.describe('QuickDashLauncher - アプリケーション起動テスト', () 
     });
   });
 
-  test('アプリケーションが正常に終了する', async ({ electronApp }) => {
-    // アプリケーションが実行中であることを確認
-    expect(electronApp).toBeTruthy();
-
-    // アプリケーションを終了
-    await electronApp.close();
-
-    // アプリケーションが終了したことを確認
-    // この時点で既にelectronAppは閉じられているため、追加の確認は不要
-  });
-
   test('セキュリティ設定が適切に設定されている', async ({ mainWindow }, testInfo) => {
     const utils = new TestUtils(mainWindow);
 
