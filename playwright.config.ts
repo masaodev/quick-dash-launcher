@@ -33,10 +33,10 @@ export default defineConfig({
 
   // 全テストでの共通設定
   use: {
-    // トレース設定（初回リトライ時のみ）
-    trace: 'on-first-retry',
+    // トレース設定（すべてのテストで記録）
+    trace: 'on',
 
-    // スクリーンショット（失敗時のみ）
+    // スクリーンショット（失敗時のみ撮影）
     screenshot: 'only-on-failure',
 
     // ビデオ録画（失敗時のみ）

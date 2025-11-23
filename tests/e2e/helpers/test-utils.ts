@@ -1,4 +1,4 @@
-import type { Page } from 'playwright';
+import type { Page, TestInfo } from '@playwright/test';
 
 /**
  * テスト用のユーティリティ関数
@@ -108,5 +108,117 @@ export class TestUtils {
    */
   async wait(milliseconds: number): Promise<void> {
     await this.page.waitForTimeout(milliseconds);
+  }
+
+  /**
+   * 登録モーダルを開く（プラスボタンをクリック）
+   */
+  async openRegisterModal(): Promise<void> {
+    const registerButton = this.page.locator('.action-button.register-item');
+    await registerButton.click();
+    await this.page.waitForSelector('.register-modal', { state: 'visible' });
+  }
+
+  /**
+   * 登録モーダルが表示されているか確認
+   */
+  async isRegisterModalVisible(): Promise<boolean> {
+    try {
+      await this.page.waitForSelector('.register-modal', { timeout: 1000, state: 'visible' });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * 登録モーダルのフィールドに入力
+   */
+  async fillRegisterForm(data: {
+    name?: string;
+    path?: string;
+    args?: string;
+    targetTab?: string;
+  }): Promise<void> {
+    if (data.name !== undefined) {
+      const nameInput = this.page.locator('.register-modal input[placeholder*="表示名"]').first();
+      await nameInput.fill(data.name);
+    }
+
+    if (data.path !== undefined) {
+      const pathInput = this.page
+        .locator('.register-modal input[placeholder*="パス"], input[placeholder*="URL"]')
+        .first();
+      await pathInput.fill(data.path);
+    }
+
+    if (data.args !== undefined) {
+      const argsInput = this.page.locator('.register-modal input[placeholder*="引数"]').first();
+      await argsInput.fill(data.args);
+    }
+
+    if (data.targetTab !== undefined) {
+      const tabSelect = this.page.locator('.register-modal select').first();
+      await tabSelect.selectOption({ label: data.targetTab });
+    }
+  }
+
+  /**
+   * 登録モーダルの登録ボタンをクリック
+   */
+  async clickRegisterButton(): Promise<void> {
+    const registerButton = this.page.locator('.register-modal button.primary').first();
+    await registerButton.click();
+    // モーダルが閉じるまで待機
+    await this.page.waitForSelector('.register-modal', { state: 'hidden', timeout: 5000 });
+  }
+
+  /**
+   * 登録モーダルのキャンセルボタンをクリック
+   */
+  async clickCancelButton(): Promise<void> {
+    const cancelButton = this.page
+      .locator('.register-modal button')
+      .filter({ hasText: 'キャンセル' })
+      .first();
+    await cancelButton.click();
+    // モーダルが閉じるまで待機
+    await this.page.waitForSelector('.register-modal', { state: 'hidden', timeout: 5000 });
+  }
+
+  /**
+   * アイテムを右クリックして編集メニューを開く
+   */
+  async rightClickItem(itemName: string): Promise<void> {
+    const item = this.page.locator('.item', { hasText: itemName });
+    await item.click({ button: 'right' });
+  }
+
+  /**
+   * 右クリックメニューから編集を選択
+   */
+  async selectEditFromContextMenu(): Promise<void> {
+    const editMenuItem = this.page.locator('.context-menu-item', { hasText: '編集' }).first();
+    await editMenuItem.click();
+    await this.page.waitForSelector('.register-modal', { state: 'visible' });
+  }
+
+  /**
+   * アイテムを右クリックして編集モーダルを開く（統合メソッド）
+   */
+  async editItemByRightClick(itemName: string): Promise<void> {
+    await this.rightClickItem(itemName);
+    await this.wait(300);
+    await this.selectEditFromContextMenu();
+  }
+
+  /**
+   * スクリーンショットを撮影してtestInfoに添付
+   * @param testInfo テスト情報
+   * @param name スクリーンショットの名前
+   */
+  async attachScreenshot(testInfo: TestInfo, name: string): Promise<void> {
+    const screenshot = await this.page.screenshot();
+    await testInfo.attach(name, { body: screenshot, contentType: 'image/png' });
   }
 }
