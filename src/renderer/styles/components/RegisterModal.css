@@ -132,3 +132,24 @@
 .select-icon-btn:hover {
   background-color: var(--color-primary-hover);
 }
+
+/* エラー表示スタイル */
+.form-group input.error,
+.form-group textarea.error {
+  border-color: var(--color-danger);
+  background-color: var(--bg-danger-light);
+}
+
+.form-group input.error:focus,
+.form-group textarea.error:focus {
+  border-color: var(--color-danger);
+  box-shadow: var(--focus-ring-danger);
+}
+
+.error-message {
+  display: block;
+  color: var(--color-danger);
+  font-size: var(--font-size-sm);
+  margin-top: var(--spacing-xs);
+  font-weight: 500;
+}

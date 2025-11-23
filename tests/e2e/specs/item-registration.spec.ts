@@ -80,7 +80,9 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
     });
   });
 
-  test('登録モーダルでキャンセルボタンを押すとモーダルが閉じる', async ({ mainWindow }, testInfo) => {
+  test('登録モーダルでキャンセルボタンを押すとモーダルが閉じる', async ({
+    mainWindow,
+  }, testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('登録モーダルを開く', async () => {
@@ -253,8 +255,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
     });
   });
 
-  // アプリ側にバリデーションロジックが未実装のため、このテストはスキップ
-  test.skip('空の名前では登録できない', async ({ mainWindow }) => {
+  test('空の名前では登録できない', async ({ mainWindow }) => {
     const utils = new TestUtils(mainWindow);
     let countBefore: number;
 
@@ -284,6 +285,13 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       expect(isVisible).toBe(true);
     });
 
+    await test.step('エラーメッセージが表示されていることを確認', async () => {
+      const errorMessage = mainWindow.locator('.error-message');
+      await expect(errorMessage.first()).toBeVisible();
+      const errorText = await errorMessage.first().textContent();
+      expect(errorText).toContain('名前を入力してください');
+    });
+
     await test.step('キャンセルしてモーダルを閉じる', async () => {
       await utils.clickCancelButton();
     });
@@ -295,8 +303,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
     });
   });
 
-  // アプリ側にバリデーションロジックが未実装のため、このテストはスキップ
-  test.skip('空のパスでは登録できない', async ({ mainWindow }) => {
+  test('空のパスでは登録できない', async ({ mainWindow }) => {
     const utils = new TestUtils(mainWindow);
     let countBefore: number;
 
@@ -326,6 +333,13 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       expect(isVisible).toBe(true);
     });
 
+    await test.step('エラーメッセージが表示されていることを確認', async () => {
+      const errorMessage = mainWindow.locator('.error-message');
+      await expect(errorMessage.first()).toBeVisible();
+      const errorText = await errorMessage.first().textContent();
+      expect(errorText).toContain('パスを入力してください');
+    });
+
     await test.step('キャンセルしてモーダルを閉じる', async () => {
       await utils.clickCancelButton();
     });
@@ -343,7 +357,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
     const utils = new TestUtils(mainWindow);
 
     await test.step('登録前のdata.txtの内容を取得', async () => {
-      const dataBefore = configHelper.readData();
+      const _dataBefore = configHelper.readData();
     });
 
     await test.step('登録モーダルを開く', async () => {
@@ -366,7 +380,6 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
     });
 
     await test.step('data.txtに保存されていることを確認', async () => {
-      const dataBefore = configHelper.readData();
       const dataAfter = configHelper.readData();
       expect(dataAfter).toContain('テスト保存,https://test-save.com');
     });
@@ -583,8 +596,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
     });
   });
 
-  // アプリ側にバリデーションロジックが未実装のため、このテストはスキップ
-  test.skip('編集時に名前を空にすると保存できない', async ({ mainWindow }) => {
+  test('編集時に名前を空にすると保存できない', async ({ mainWindow }) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('GitHubアイテムを右クリックして編集モーダルを開く', async () => {
@@ -608,13 +620,19 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       expect(isVisible).toBe(true);
     });
 
+    await test.step('エラーメッセージが表示されていることを確認', async () => {
+      const errorMessage = mainWindow.locator('.error-message');
+      await expect(errorMessage.first()).toBeVisible();
+      const errorText = await errorMessage.first().textContent();
+      expect(errorText).toContain('名前を入力してください');
+    });
+
     await test.step('キャンセルしてモーダルを閉じる', async () => {
       await utils.clickCancelButton();
     });
   });
 
-  // アプリ側にバリデーションロジックが未実装のため、このテストはスキップ
-  test.skip('編集時にパスを空にすると保存できない', async ({ mainWindow }) => {
+  test('編集時にパスを空にすると保存できない', async ({ mainWindow }) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('GitHubアイテムを右クリックして編集モーダルを開く', async () => {
@@ -638,6 +656,13 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       expect(isVisible).toBe(true);
     });
 
+    await test.step('エラーメッセージが表示されていることを確認', async () => {
+      const errorMessage = mainWindow.locator('.error-message');
+      await expect(errorMessage.first()).toBeVisible();
+      const errorText = await errorMessage.first().textContent();
+      expect(errorText).toContain('パスを入力してください');
+    });
+
     await test.step('キャンセルしてモーダルを閉じる', async () => {
       await utils.clickCancelButton();
     });
@@ -647,7 +672,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
     const utils = new TestUtils(mainWindow);
 
     await test.step('編集前のdata.txtの内容を取得', async () => {
-      const dataBefore = configHelper.readData();
+      const _dataBefore = configHelper.readData();
       await utils.attachScreenshot(testInfo, '編集前');
     });
 

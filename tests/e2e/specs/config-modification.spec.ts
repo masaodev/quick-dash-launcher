@@ -1,7 +1,8 @@
+import path from 'path';
+
 import { test, expect } from '../fixtures/electron-app';
 import { TestUtils } from '../helpers/test-utils';
 import { ConfigFileHelper } from '../helpers/config-file-helper';
-import path from 'path';
 
 test.describe('QuickDashLauncher - 設定ファイル変更テスト', () => {
   let configHelper: ConfigFileHelper;
@@ -47,7 +48,9 @@ test.describe('QuickDashLauncher - 設定ファイル変更テスト', () => {
     });
   });
 
-  test('data.txtからアイテムを削除してリロード後に非表示になる', async ({ mainWindow }, testInfo) => {
+  test('data.txtからアイテムを削除してリロード後に非表示になる', async ({
+    mainWindow,
+  }, testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('ページの読み込み完了を待機', async () => {
@@ -142,7 +145,7 @@ test.describe('QuickDashLauncher - 設定ファイル変更テスト', () => {
 
   // ==================== settings.json 変更テスト ====================
 
-  test('settings.jsonのホットキー設定が反映される', async ({ electronApp }) => {
+  test('settings.jsonのホットキー設定が反映される', async () => {
     // カスタムホットキー設定を読み込み
     configHelper.loadSettingsTemplate('custom-hotkey');
 
@@ -151,7 +154,7 @@ test.describe('QuickDashLauncher - 設定ファイル変更テスト', () => {
     expect(settings.hotkey).toBe('Ctrl+Shift+L');
   });
 
-  test('settings.jsonのウィンドウサイズ設定を変更できる', async ({ mainWindow }) => {
+  test('settings.jsonのウィンドウサイズ設定を変更できる', async () => {
     // ウィンドウサイズを更新
     configHelper.updateSettings({
       windowWidth: 800,
@@ -223,12 +226,13 @@ test.describe('QuickDashLauncher - 設定ファイル変更テスト', () => {
     expect(settings.windowHeight).toBe(500);
   });
 
-  // このテストは旧方式のバックアップ機能をテストしていますが、
-  // 現在はテンプレートからの復元方式に変更されたためスキップします
-  test.skip('バックアップ・復元が正しく動作する', async () => {
+  test('バックアップ・復元が正しく動作する', async () => {
     // 元のデータを読み込み
     const originalData = configHelper.readData();
     const originalSettings = configHelper.readSettings();
+
+    // バックアップを作成
+    configHelper.backupAll();
 
     // データと設定を変更
     configHelper.addItem('一時アイテム', 'https://temp.com');

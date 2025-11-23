@@ -46,6 +46,9 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
   const [customIconPreviews, setCustomIconPreviews] = useState<{ [index: number]: string }>({});
   const [groupItemNamesInput, setGroupItemNamesInput] = useState<{ [index: number]: string }>({});
   const [availableTabs, setAvailableTabs] = useState<DataFileTab[]>([]);
+  const [errors, setErrors] = useState<{
+    [index: number]: { name?: string; path?: string; groupItemNames?: string };
+  }>({});
   const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -56,6 +59,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
       // カスタムアイコンプレビューをクリア
       setCustomIconPreviews({});
       setItems([]);
+      setErrors({});
       return;
     }
 
@@ -556,6 +560,19 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
       newItems[index] = { ...newItems[index], [field]: value };
     }
 
+    // 入力変更時に該当フィールドのエラーをクリア
+    if (field === 'name' || field === 'path') {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        if (newErrors[index]) {
+          const updatedError = { ...newErrors[index] };
+          delete updatedError[field];
+          newErrors[index] = updatedError;
+        }
+        return newErrors;
+      });
+    }
+
     // アイテム種別が変更された場合の処理
     if (field === 'itemCategory') {
       if (value === 'dir') {
@@ -637,6 +654,47 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
   };
 
   const handleRegister = () => {
+    // バリデーション：名前とパスの必須チェック
+    const newErrors: typeof errors = {};
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      newErrors[i] = {};
+
+      // グループ以外は名前が必須
+      if (item.itemCategory !== 'dir' && !item.name.trim()) {
+        newErrors[i].name = '名前を入力してください';
+      }
+
+      // グループ以外はパスが必須
+      if (item.itemCategory !== 'group' && !item.path.trim()) {
+        newErrors[i].path = 'パスを入力してください';
+      }
+
+      // グループの場合はアイテム名リストが必須
+      if (item.itemCategory === 'group') {
+        const itemNames = groupItemNamesInput[i]
+          ? groupItemNamesInput[i]
+              .split(',')
+              .map((name) => name.trim())
+              .filter((name) => name)
+          : item.groupItemNames || [];
+        if (itemNames.length === 0) {
+          newErrors[i].groupItemNames = 'グループアイテム名を入力してください';
+        }
+      }
+    }
+
+    // エラーがある場合は登録しない
+    setErrors(newErrors);
+    const hasErrors = Object.values(newErrors).some((e) =>
+      Object.values(e).some((msg) => msg !== undefined)
+    );
+
+    if (hasErrors) {
+      return;
+    }
+
     // 保存前に、入力中のグループアイテム名を配列に変換
     const finalItems = items.map((item, index) => {
       if (item.itemCategory === 'group' && groupItemNamesInput[index] !== undefined) {
@@ -705,11 +763,15 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                       <input
                         type="text"
                         value={item.name}
+                        className={errors[index]?.name ? 'error' : ''}
                         onChange={(e) => handleItemChange(index, 'name', e.target.value)}
                         placeholder={
                           item.itemCategory === 'group' ? 'グループ名を入力' : '表示名を入力'
                         }
                       />
+                      {errors[index]?.name && (
+                        <span className="error-message">{errors[index].name}</span>
+                      )}
                     </div>
                   )}
 
@@ -720,10 +782,19 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                         type="text"
                         value={item.path}
                         readOnly={!!droppedPaths && droppedPaths.length > 0}
-                        className={droppedPaths && droppedPaths.length > 0 ? 'readonly' : ''}
+                        className={
+                          errors[index]?.path
+                            ? 'error'
+                            : droppedPaths && droppedPaths.length > 0
+                              ? 'readonly'
+                              : ''
+                        }
                         onChange={(e) => handleItemChange(index, 'path', e.target.value)}
                         placeholder="ファイルパス、URL、またはカスタムURIを入力"
                       />
+                      {errors[index]?.path && (
+                        <span className="error-message">{errors[index].path}</span>
+                      )}
                     </div>
                   )}
 
@@ -856,12 +927,23 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                         value={
                           groupItemNamesInput[index] ?? (item.groupItemNames?.join(', ') || '')
                         }
+                        className={errors[index]?.groupItemNames ? 'error' : ''}
                         onChange={(e) => {
                           // 入力値をそのまま一時stateに保存
                           setGroupItemNamesInput((prev) => ({
                             ...prev,
                             [index]: e.target.value,
                           }));
+                          // エラーをクリア
+                          setErrors((prev) => {
+                            const newErrors = { ...prev };
+                            if (newErrors[index]) {
+                              const updatedError = { ...newErrors[index] };
+                              delete updatedError.groupItemNames;
+                              newErrors[index] = updatedError;
+                            }
+                            return newErrors;
+                          });
                         }}
                         onBlur={(e) => {
                           // フォーカスを失ったタイミングで配列に変換してitemに反映
@@ -876,6 +958,9 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                         placeholder="例: Visual Studio Code, Slack, Chrome"
                         rows={3}
                       />
+                      {errors[index]?.groupItemNames && (
+                        <span className="error-message">{errors[index].groupItemNames}</span>
+                      )}
                       <small>
                         既存のアイテム名をカンマ区切りで入力してください。グループ実行時に順番に起動されます。
                       </small>
