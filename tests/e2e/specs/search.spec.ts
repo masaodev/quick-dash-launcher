@@ -2,15 +2,15 @@ import { test, expect } from '../fixtures/electron-app';
 import { TestUtils } from '../helpers/test-utils';
 
 test.describe('QuickDashLauncher - 検索機能テスト', () => {
-  test('検索ボックスが表示されている', async ({ mainWindow }, testInfo) => {
+  test('検索ボックスが表示され、検索によってアイテムが絞り込まれる', async ({
+    mainWindow,
+  }, testInfo) => {
     const utils = new TestUtils(mainWindow);
+    let initialCount: number;
 
-    await test.step('ページの読み込み完了を待機', async () => {
+    await test.step('ページ読み込みと検索ボックスの確認', async () => {
       await utils.waitForPageLoad();
-      await utils.attachScreenshot(testInfo, '初期状態');
-    });
 
-    await test.step('検索ボックスの存在とフォーカスを確認', async () => {
       // 検索ボックスが存在することを確認
       const hasSearchBox = await utils.elementExists('input[type="text"]');
       expect(hasSearchBox).toBe(true);
@@ -18,18 +18,9 @@ test.describe('QuickDashLauncher - 検索機能テスト', () => {
       // 検索ボックスにフォーカスがあることを確認
       const searchBox = mainWindow.locator('input[type="text"]').first();
       await expect(searchBox).toBeFocused();
-    });
-  });
 
-  test('検索語を入力してアイテムが絞り込まれる', async ({ mainWindow }, testInfo) => {
-    const utils = new TestUtils(mainWindow);
-
-    await test.step('ページの読み込み完了を待機', async () => {
-      await utils.waitForPageLoad();
       await utils.attachScreenshot(testInfo, '初期状態');
     });
-
-    let initialCount: number;
 
     await test.step('検索前の全アイテム数を取得', async () => {
       const allItems = mainWindow.locator('.item, [class*="item"]');
@@ -37,13 +28,10 @@ test.describe('QuickDashLauncher - 検索機能テスト', () => {
       expect(initialCount).toBeGreaterThan(0);
     });
 
-    await test.step('"GitHub"で検索', async () => {
+    await test.step('"GitHub"で検索して絞り込みを確認', async () => {
       await utils.searchFor('GitHub');
       await utils.wait(300);
-      await utils.attachScreenshot(testInfo, '検索後');
-    });
 
-    await test.step('検索結果が絞り込まれることを確認', async () => {
       // 検索後のアイテム数を取得
       const filteredItems = mainWindow.locator('.item, [class*="item"]:visible');
       const filteredCount = await filteredItems.count();
@@ -55,18 +43,19 @@ test.describe('QuickDashLauncher - 検索機能テスト', () => {
       // GitHubを含むアイテムが表示されていることを確認
       const hasGitHub = await mainWindow.locator('text=GitHub').isVisible();
       expect(hasGitHub).toBe(true);
+
+      await utils.attachScreenshot(testInfo, '検索後');
     });
   });
 
   test('検索語をクリアすると全アイテムが表示される', async ({ mainWindow }, testInfo) => {
     const utils = new TestUtils(mainWindow);
+    let initialCount: number;
 
     await test.step('ページの読み込み完了を待機', async () => {
       await utils.waitForPageLoad();
       await utils.attachScreenshot(testInfo, '初期状態');
     });
-
-    let initialCount: number;
 
     await test.step('検索前の全アイテム数を取得', async () => {
       const allItems = mainWindow.locator('.item, [class*="item"]');
@@ -95,13 +84,12 @@ test.describe('QuickDashLauncher - 検索機能テスト', () => {
 
   test('複数キーワードでAND検索ができる', async ({ mainWindow }, testInfo) => {
     const utils = new TestUtils(mainWindow);
+    let initialCount: number;
 
     await test.step('ページの読み込み完了を待機', async () => {
       await utils.waitForPageLoad();
       await utils.attachScreenshot(testInfo, '初期状態');
     });
-
-    let initialCount: number;
 
     await test.step('検索前の全アイテム数を取得', async () => {
       const allItems = mainWindow.locator('.item, [class*="item"]');

@@ -24,31 +24,7 @@ test.describe('QuickDashLauncher - 設定ファイル変更テスト', () => {
 
   // ==================== data.txt 変更テスト ====================
 
-  test('data.txtにアイテムを追加してリロード後に表示される', async ({ mainWindow }, testInfo) => {
-    const utils = new TestUtils(mainWindow);
-
-    await test.step('ページの読み込み完了を待機', async () => {
-      await utils.waitForPageLoad();
-      await utils.attachScreenshot(testInfo, '初期状態');
-    });
-
-    await test.step('新しいアイテムを追加', async () => {
-      configHelper.addItem('新規サイト', 'https://example.com');
-    });
-
-    await test.step('アプリをリロード', async () => {
-      await mainWindow.reload();
-      await utils.waitForPageLoad();
-      await utils.attachScreenshot(testInfo, 'リロード後');
-    });
-
-    await test.step('追加したアイテムが表示されることを確認', async () => {
-      const item = mainWindow.locator('.item', { hasText: '新規サイト' });
-      await expect(item).toBeVisible();
-    });
-  });
-
-  test('data.txtからアイテムを削除してリロード後に非表示になる', async ({
+  test('data.txtの変更(追加・削除・更新)がリロード後に反映される', async ({
     mainWindow,
   }, testInfo) => {
     const utils = new TestUtils(mainWindow);
@@ -58,144 +34,136 @@ test.describe('QuickDashLauncher - 設定ファイル変更テスト', () => {
       await utils.attachScreenshot(testInfo, '初期状態');
     });
 
-    await test.step('GitHubが表示されていることを確認', async () => {
-      const githubBefore = mainWindow.locator('.item', { hasText: 'GitHub' });
-      await expect(githubBefore).toBeVisible();
-    });
+    await test.step('data.txtにアイテムを追加してリロード後に表示される', async () => {
+      configHelper.addItem('新規サイト', 'https://example.com');
 
-    await test.step('GitHubを削除', async () => {
-      configHelper.removeItem('GitHub');
-    });
-
-    await test.step('アプリをリロード', async () => {
       await mainWindow.reload();
       await utils.waitForPageLoad();
-      await utils.attachScreenshot(testInfo, 'リロード後');
+      await utils.attachScreenshot(testInfo, 'アイテム追加後リロード');
+
+      const item = mainWindow.locator('.item', { hasText: '新規サイト' });
+      await expect(item).toBeVisible();
     });
 
-    await test.step('削除したアイテムが表示されないことを確認', async () => {
+    await test.step('data.txtからアイテムを削除してリロード後に非表示になる', async () => {
+      // GitHubが表示されていることを確認
+      const githubBefore = mainWindow.locator('.item', { hasText: 'GitHub' });
+      await expect(githubBefore).toBeVisible();
+
+      // GitHubを削除
+      configHelper.removeItem('GitHub');
+
+      await mainWindow.reload();
+      await utils.waitForPageLoad();
+      await utils.attachScreenshot(testInfo, 'アイテム削除後リロード');
+
+      // 削除したアイテムが表示されないことを確認
       const githubAfter = mainWindow.locator('.item', { hasText: 'GitHub' });
       await expect(githubAfter).not.toBeVisible();
     });
-  });
 
-  test('data.txtのアイテムを更新してリロード後に反映される', async ({ mainWindow }, testInfo) => {
-    const utils = new TestUtils(mainWindow);
+    await test.step('data.txtのアイテムを更新してリロード後に反映される', async () => {
+      configHelper.updateItem('Google', 'DuckDuckGo', 'https://duckduckgo.com');
 
-    await test.step('ページの読み込み完了を待機', async () => {
-      await utils.waitForPageLoad();
-      await utils.attachScreenshot(testInfo, '初期状態');
-    });
-
-    await test.step('GitHubアイテムを更新', async () => {
-      configHelper.updateItem('GitHub', 'GitLab', 'https://gitlab.com');
-    });
-
-    await test.step('アプリをリロード', async () => {
       await mainWindow.reload();
       await utils.waitForPageLoad();
-      await utils.attachScreenshot(testInfo, 'リロード後');
-    });
+      await utils.attachScreenshot(testInfo, 'アイテム更新後リロード');
 
-    await test.step('古いアイテムが表示されず、新しいアイテムが表示されることを確認', async () => {
       // 古いアイテムが表示されないことを確認
-      const oldItem = mainWindow.locator('.item', { hasText: 'GitHub' });
+      const oldItem = mainWindow.locator('.item', { hasText: 'Google' });
       await expect(oldItem).not.toBeVisible();
 
       // 新しいアイテムが表示されることを確認
-      const newItem = mainWindow.locator('.item', { hasText: 'GitLab' });
+      const newItem = mainWindow.locator('.item', { hasText: 'DuckDuckGo' });
       await expect(newItem).toBeVisible();
     });
-  });
 
-  test('テンプレートからdata.txtを読み込んで表示される', async ({ mainWindow }) => {
-    const utils = new TestUtils(mainWindow);
+    await test.step('テンプレートからdata.txtを読み込んで表示される', async () => {
+      // 基本テンプレートを読み込み
+      configHelper.loadDataTemplate('base');
 
-    // 基本テンプレートを読み込み
-    configHelper.loadDataTemplate('base');
+      await mainWindow.reload();
+      await utils.waitForPageLoad();
 
-    // アプリをリロード
-    await mainWindow.reload();
-    await utils.waitForPageLoad();
+      // 基本テンプレートに含まれるアイテムが表示されることを確認
+      const knownItems = ['GitHub', 'Google', 'Wikipedia', 'メモ帳', '電卓'];
 
-    // 基本テンプレートに含まれるアイテムが表示されることを確認
-    const knownItems = ['GitHub', 'Google', 'Wikipedia', 'メモ帳', '電卓'];
+      for (const itemName of knownItems) {
+        const item = mainWindow.locator('.item', { hasText: itemName });
+        await expect(item).toBeVisible();
+      }
+    });
 
-    for (const itemName of knownItems) {
-      const item = mainWindow.locator('.item', { hasText: itemName });
-      await expect(item).toBeVisible();
-    }
-  });
+    await test.step('空のdata.txtでアイテムが表示されない', async () => {
+      // 空テンプレートを読み込み
+      configHelper.loadDataTemplate('empty');
 
-  test('空のdata.txtでアイテムが表示されない', async ({ mainWindow }) => {
-    const utils = new TestUtils(mainWindow);
+      await mainWindow.reload();
+      await utils.waitForPageLoad();
+      await utils.attachScreenshot(testInfo, '空のdata.txt読み込み後');
 
-    // 空テンプレートを読み込み
-    configHelper.loadDataTemplate('empty');
-
-    // アプリをリロード
-    await mainWindow.reload();
-    await utils.waitForPageLoad();
-
-    // アイテムが表示されないことを確認
-    const items = mainWindow.locator('.item');
-    const itemCount = await items.count();
-    expect(itemCount).toBe(0);
+      // アイテムが表示されないことを確認
+      const items = mainWindow.locator('.item');
+      const itemCount = await items.count();
+      expect(itemCount).toBe(0);
+    });
   });
 
   // ==================== settings.json 変更テスト ====================
 
-  test('settings.jsonのホットキー設定が反映される', async () => {
-    // カスタムホットキー設定を読み込み
-    configHelper.loadSettingsTemplate('custom-hotkey');
+  test('settings.jsonの各種設定変更ができる', async () => {
+    await test.step('ホットキー設定が反映される', async () => {
+      // カスタムホットキー設定を読み込み
+      configHelper.loadSettingsTemplate('custom-hotkey');
 
-    // 設定が更新されたことを確認（ファイルから読み込み）
-    const settings = configHelper.readSettings();
-    expect(settings.hotkey).toBe('Ctrl+Shift+L');
-  });
-
-  test('settings.jsonのウィンドウサイズ設定を変更できる', async () => {
-    // ウィンドウサイズを更新
-    configHelper.updateSettings({
-      windowWidth: 800,
-      windowHeight: 600,
+      // 設定が更新されたことを確認（ファイルから読み込み）
+      const settings = configHelper.readSettings();
+      expect(settings.hotkey).toBe('Ctrl+Shift+L');
     });
 
-    // 設定が更新されたことを確認
-    const settings = configHelper.readSettings();
-    expect(settings.windowWidth).toBe(800);
-    expect(settings.windowHeight).toBe(600);
-  });
+    await test.step('ウィンドウサイズ設定を変更できる', async () => {
+      // ウィンドウサイズを更新
+      configHelper.updateSettings({
+        windowWidth: 800,
+        windowHeight: 600,
+      });
 
-  test('settings.jsonのバックアップ設定を有効化できる', async () => {
-    // バックアップ設定テンプレートを読み込み
-    configHelper.loadSettingsTemplate('with-backup');
+      // 設定が更新されたことを確認
+      const settings = configHelper.readSettings();
+      expect(settings.windowWidth).toBe(800);
+      expect(settings.windowHeight).toBe(600);
+    });
 
-    // 設定が更新されたことを確認
-    const settings = configHelper.readSettings();
-    expect(settings.backupEnabled).toBe(true);
-    expect(settings.backupOnStart).toBe(true);
-    expect(settings.backupOnEdit).toBe(true);
-    expect(settings.backupInterval).toBe(3);
-    expect(settings.backupRetention).toBe(10);
-  });
+    await test.step('バックアップ設定を有効化できる', async () => {
+      // バックアップ設定テンプレートを読み込み
+      configHelper.loadSettingsTemplate('with-backup');
 
-  test('settings.jsonの個別設定項目を更新できる', async () => {
-    // 個別設定を更新
-    configHelper.updateSetting('autoLaunch', true);
+      // 設定が更新されたことを確認
+      const settings = configHelper.readSettings();
+      expect(settings.backupEnabled).toBe(true);
+      expect(settings.backupOnStart).toBe(true);
+      expect(settings.backupOnEdit).toBe(true);
+      expect(settings.backupInterval).toBe(3);
+      expect(settings.backupRetention).toBe(10);
+    });
 
-    // 設定が更新されたことを確認
-    const settings = configHelper.readSettings();
-    expect(settings.autoLaunch).toBe(true);
-  });
+    await test.step('個別設定項目を更新できる', async () => {
+      // 個別設定を更新
+      configHelper.updateSetting('autoLaunch', true);
 
-  test('settings.jsonを削除すると初回起動状態になる', async () => {
-    // settings.jsonを削除
-    configHelper.deleteSettings();
+      // 設定が更新されたことを確認
+      const settings = configHelper.readSettings();
+      expect(settings.autoLaunch).toBe(true);
+    });
 
-    // ファイルが存在しないことを確認
-    const exists = configHelper.fileExists('settings.json');
-    expect(exists).toBe(false);
+    await test.step('settings.jsonを削除すると初回起動状態になる', async () => {
+      // settings.jsonを削除
+      configHelper.deleteSettings();
+
+      // ファイルが存在しないことを確認
+      const exists = configHelper.fileExists('settings.json');
+      expect(exists).toBe(false);
+    });
   });
 
   // ==================== 複合テスト ====================

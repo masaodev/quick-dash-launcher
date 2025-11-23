@@ -2,7 +2,9 @@ import { test, expect } from '../fixtures/electron-app';
 import { TestUtils } from '../helpers/test-utils';
 
 test.describe('QuickDashLauncher - アイテム表示・選択テスト', () => {
-  test('data.txtから読み込んだアイテムが表示される', async ({ mainWindow }, testInfo) => {
+  test('data.txtから読み込んだアイテムが表示され、アイコンとラベルが正しく表示される', async ({
+    mainWindow,
+  }, testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('ページの読み込み完了を待機', async () => {
@@ -23,16 +25,6 @@ test.describe('QuickDashLauncher - アイテム表示・選択テスト', () => 
       // E2Eテスト用data.txtには最低でも7個のアイテムがあることを確認
       // (GitHub, Google, Wikipedia, メモ帳, 電卓, デスクトップ, ドキュメント)
       expect(itemCount).toBeGreaterThanOrEqual(7);
-      await utils.attachScreenshot(testInfo, 'アイテム表示確認');
-    });
-  });
-
-  test('各アイテムにアイコンとラベルが表示される', async ({ mainWindow }, testInfo) => {
-    const utils = new TestUtils(mainWindow);
-
-    await test.step('ページの読み込み完了を待機', async () => {
-      await utils.waitForPageLoad();
-      await utils.attachScreenshot(testInfo, '初期状態');
     });
 
     await test.step('最初のアイテムのアイコンとラベルを確認', async () => {
@@ -52,16 +44,8 @@ test.describe('QuickDashLauncher - アイテム表示・選択テスト', () => 
       const nameText = await name.textContent();
       expect(nameText).toBeTruthy();
       expect(nameText?.length).toBeGreaterThan(0);
+
       await utils.attachScreenshot(testInfo, 'アイコン・ラベル確認');
-    });
-  });
-
-  test('特定のアイテムが正しく表示される', async ({ mainWindow }, testInfo) => {
-    const utils = new TestUtils(mainWindow);
-
-    await test.step('ページの読み込み完了を待機', async () => {
-      await utils.waitForPageLoad();
-      await utils.attachScreenshot(testInfo, '初期状態');
     });
 
     await test.step('既知のアイテムが表示されることを確認', async () => {
@@ -76,15 +60,14 @@ test.describe('QuickDashLauncher - アイテム表示・選択テスト', () => 
     });
   });
 
-  test('キーボード（↓キー）でアイテム選択が移動する', async ({ mainWindow }, testInfo) => {
+  test('キーボード（矢印キー）でアイテム選択が移動する', async ({ mainWindow }, testInfo) => {
     const utils = new TestUtils(mainWindow);
+    let firstItemText: string | null;
 
     await test.step('ページの読み込み完了を待機', async () => {
       await utils.waitForPageLoad();
       await utils.attachScreenshot(testInfo, '初期状態');
     });
-
-    let firstItemText: string | null;
 
     await test.step('最初のアイテムが選択されていることを確認', async () => {
       const firstItem = mainWindow.locator('.item.selected').first();
@@ -98,9 +81,7 @@ test.describe('QuickDashLauncher - アイテム表示・選択テスト', () => 
       await utils.sendShortcut('ArrowDown');
       await utils.wait(100);
       await utils.attachScreenshot(testInfo, '↓キー押下後');
-    });
 
-    await test.step('選択が移動したことを確認', async () => {
       const selectedItem = mainWindow.locator('.item.selected');
       await expect(selectedItem).toBeVisible();
 
@@ -108,19 +89,8 @@ test.describe('QuickDashLauncher - アイテム表示・選択テスト', () => 
       const selectedItemText = await selectedItem.textContent();
       expect(selectedItemText).not.toBe(firstItemText);
     });
-  });
 
-  test('キーボード（↑キー）でアイテム選択が移動する', async ({ mainWindow }, testInfo) => {
-    const utils = new TestUtils(mainWindow);
-
-    await test.step('ページの読み込み完了を待機', async () => {
-      await utils.waitForPageLoad();
-      await utils.attachScreenshot(testInfo, '初期状態');
-    });
-
-    await test.step('↓キーを数回押して選択を下に移動', async () => {
-      await utils.sendShortcut('ArrowDown');
-      await utils.wait(100);
+    await test.step('さらに↓キーを押して選択を移動', async () => {
       await utils.sendShortcut('ArrowDown');
       await utils.wait(100);
       await utils.attachScreenshot(testInfo, '↓キー2回押下後');
@@ -133,13 +103,11 @@ test.describe('QuickDashLauncher - アイテム表示・選択テスト', () => 
       currentItemText = await currentItem.textContent();
     });
 
-    await test.step('↑キーを押す', async () => {
+    await test.step('↑キーを押して選択が上に移動することを確認', async () => {
       await utils.sendShortcut('ArrowUp');
       await utils.wait(100);
       await utils.attachScreenshot(testInfo, '↑キー押下後');
-    });
 
-    await test.step('選択が上に移動したことを確認', async () => {
       const selectedItem = mainWindow.locator('.item.selected');
       await expect(selectedItem).toBeVisible();
 
