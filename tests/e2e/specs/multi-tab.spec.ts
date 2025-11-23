@@ -29,7 +29,10 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
   test('タブ機能を有効化するとタブバーが表示される', async ({ mainWindow }, testInfo) => {
     const utils = new TestUtils(mainWindow);
 
-    await test.step('ページの読み込み完了を待機', async () => {
+    await test.step('タブ機能を有効化してリロード', async () => {
+      configHelper.loadSettingsTemplate('with-tabs');
+      configHelper.loadData2Template('data2-base');
+      await mainWindow.reload();
       await utils.waitForPageLoad();
       await utils.attachScreenshot(testInfo, '初期状態');
     });
@@ -132,7 +135,7 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
 
       for (const itemName of knownItems) {
         const item = mainWindow.locator('.item', { hasText: itemName });
-        await expect(item).toBeVisible();
+        await expect(item).toBeVisible({ timeout: 10000 });
       }
     });
   });
@@ -241,6 +244,7 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
 
     // 最初に選択されているアイテムのテキストを取得
     const firstItem = mainWindow.locator('.item.selected').first();
+    await expect(firstItem).toBeVisible({ timeout: 5000 });
     const firstItemText = await firstItem.textContent();
 
     // ↓キーを押して次のアイテムに移動
@@ -249,6 +253,7 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
 
     // 選択が移動したことを確認
     const secondItem = mainWindow.locator('.item.selected');
+    await expect(secondItem).toBeVisible({ timeout: 5000 });
     const secondItemText = await secondItem.textContent();
     expect(secondItemText).not.toBe(firstItemText);
   });

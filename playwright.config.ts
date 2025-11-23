@@ -22,7 +22,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
 
   // ワーカー数（CI環境では1、ローカルでは2に制限してリソース競合を防ぐ）
-  workers: process.env.CI ? 1 : 2,
+  workers: process.env.CI ? 1 : 1,
 
   // レポーター設定
   reporter: [
