@@ -15,11 +15,11 @@ export function createDefaultDataFile(): void {
     const defaultContent = `// Webサイト
 GitHub,https://github.com/
 Google マップ,https://www.google.co.jp/maps
-
+//
 // ローカルフォルダ
 デスクトップ,shell:Desktop
 ダウンロード,shell:Downloads
-
+//
 // アプリケーション
 メモ帳,notepad.exe
 `;
