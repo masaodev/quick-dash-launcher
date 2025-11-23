@@ -54,6 +54,30 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
     [editedSettings, onSave]
   );
 
+  // 数値入力の変更ハンドラ（ローカル状態のみ更新）
+  const handleNumberInputChange = useCallback(
+    <K extends keyof AppSettings>(key: K, value: string) => {
+      const numValue = parseInt(value);
+      if (!isNaN(numValue)) {
+        setEditedSettings((prev) => ({
+          ...prev,
+          [key]: numValue,
+        }));
+      }
+    },
+    []
+  );
+
+  // 数値入力のフォーカス喪失ハンドラ（保存処理）
+  const handleNumberInputBlur = useCallback(async () => {
+    try {
+      await onSave(editedSettings);
+    } catch (error) {
+      console.error('設定の保存に失敗しました:', error);
+      alert('設定の保存に失敗しました。');
+    }
+  }, [editedSettings, onSave]);
+
   // 設定に基づいてデータファイルリストを生成（設定ファイル基準）
   useEffect(() => {
     const tabs = editedSettings.dataFileTabs || [];
@@ -262,7 +286,8 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                 min="400"
                 max="2000"
                 value={editedSettings.windowWidth}
-                onChange={(e) => handleSettingChange('windowWidth', parseInt(e.target.value))}
+                onChange={(e) => handleNumberInputChange('windowWidth', e.target.value)}
+                onBlur={handleNumberInputBlur}
                 disabled={isLoading}
               />
               <span className="unit">px</span>
@@ -275,7 +300,8 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                 min="300"
                 max="1200"
                 value={editedSettings.windowHeight}
-                onChange={(e) => handleSettingChange('windowHeight', parseInt(e.target.value))}
+                onChange={(e) => handleNumberInputChange('windowHeight', e.target.value)}
+                onBlur={handleNumberInputBlur}
                 disabled={isLoading}
               />
               <span className="unit">px</span>
@@ -290,7 +316,8 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                 min="800"
                 max="2000"
                 value={editedSettings.editModeWidth}
-                onChange={(e) => handleSettingChange('editModeWidth', parseInt(e.target.value))}
+                onChange={(e) => handleNumberInputChange('editModeWidth', e.target.value)}
+                onBlur={handleNumberInputBlur}
                 disabled={isLoading}
               />
               <span className="unit">px</span>
@@ -303,7 +330,8 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                 min="600"
                 max="1200"
                 value={editedSettings.editModeHeight}
-                onChange={(e) => handleSettingChange('editModeHeight', parseInt(e.target.value))}
+                onChange={(e) => handleNumberInputChange('editModeHeight', e.target.value)}
+                onBlur={handleNumberInputBlur}
                 disabled={isLoading}
               />
               <span className="unit">px</span>
@@ -374,7 +402,8 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                   min="1"
                   max="60"
                   value={editedSettings.backupInterval}
-                  onChange={(e) => handleSettingChange('backupInterval', parseInt(e.target.value))}
+                  onChange={(e) => handleNumberInputChange('backupInterval', e.target.value)}
+                  onBlur={handleNumberInputBlur}
                   disabled={isLoading}
                 />
                 <span className="unit">分</span>
@@ -388,7 +417,8 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                   min="1"
                   max="100"
                   value={editedSettings.backupRetention}
-                  onChange={(e) => handleSettingChange('backupRetention', parseInt(e.target.value))}
+                  onChange={(e) => handleNumberInputChange('backupRetention', e.target.value)}
+                  onBlur={handleNumberInputBlur}
                   disabled={isLoading}
                 />
                 <span className="unit">件</span>

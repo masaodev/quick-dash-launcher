@@ -1,4 +1,4 @@
-import type { Page, TestInfo } from '@playwright/test';
+import type { Page, TestInfo, ElectronApplication } from '@playwright/test';
 
 /**
  * テスト用のユーティリティ関数
@@ -225,5 +225,48 @@ export class TestUtils {
       // スクリーンショット撮影に失敗してもテストは続行
       console.warn(`スクリーンショット撮影に失敗しました (${name}):`, error);
     }
+  }
+
+  /**
+   * 設定ドロップダウンを開いて指定タブをクリック
+   * @private
+   */
+  private async openSettingsDropdownAndClick(tab: 'settings' | 'edit' | 'other'): Promise<void> {
+    // 設定ボタン（⚙）をクリック
+    const settingsButton = this.page
+      .locator('.settings-dropdown')
+      .locator('button', { hasText: '⚙' });
+    await settingsButton.click();
+    await this.wait(200);
+
+    // ドロップダウンから選択
+    const menuText = tab === 'settings' ? '基本設定' : tab === 'edit' ? 'アイテム管理' : 'その他';
+    const menuItem = this.page.locator('.dropdown-item', { hasText: menuText });
+    await menuItem.click();
+  }
+
+  /**
+   * 管理ウィンドウを開く
+   * @param electronApp Electronアプリケーションインスタンス
+   * @param tab 開くタブ ('settings' | 'edit' | 'other')
+   * @returns 新しく開かれた管理ウィンドウのPageオブジェクト
+   */
+  async openAdminWindow(
+    electronApp: ElectronApplication,
+    tab: 'settings' | 'edit' | 'other' = 'settings'
+  ): Promise<Page> {
+    const [adminWindow] = await Promise.all([
+      electronApp.waitForEvent('window', {
+        predicate: async (window) => {
+          const title = await window.title();
+          return title.includes('設定・管理');
+        },
+        timeout: 10000,
+      }),
+      this.openSettingsDropdownAndClick(tab),
+    ]);
+
+    await adminWindow.waitForLoadState('domcontentloaded');
+    return adminWindow;
   }
 }
