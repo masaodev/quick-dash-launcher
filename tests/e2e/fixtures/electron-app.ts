@@ -2,6 +2,7 @@ import path from 'path';
 
 import { test as base, _electron as electron } from '@playwright/test';
 import type { ElectronApplication, Page } from 'playwright';
+
 import { ConfigFileHelper } from '../helpers/config-file-helper';
 
 // Electronアプリとメインウィンドウを提供するフィクスチャの型定義

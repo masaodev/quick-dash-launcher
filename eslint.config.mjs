@@ -20,6 +20,8 @@ export default [
       'build/',
       'release/',
       'html/',
+      'test-results/',
+      'coverage/',
       '*.min.js',
       'src/common/types.js',
       'src/common/types.js.map'

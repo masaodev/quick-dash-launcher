@@ -1,7 +1,8 @@
+import path from 'path';
+
 import { test, expect } from '../fixtures/electron-app';
 import { TestUtils } from '../helpers/test-utils';
 import { ConfigFileHelper } from '../helpers/config-file-helper';
-import path from 'path';
 
 test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
   let configHelper: ConfigFileHelper;
@@ -112,7 +113,9 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
 
   // ==================== サブタブのアイテム表示テスト ====================
 
-  test('サブタブに切り替えるとdata2.txtのアイテムが表示される', async ({ mainWindow }, testInfo) => {
+  test('サブタブに切り替えるとdata2.txtのアイテムが表示される', async ({
+    mainWindow,
+  }, testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('タブ機能を有効化してリロード', async () => {

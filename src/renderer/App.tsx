@@ -607,43 +607,58 @@ const App: React.FC = () => {
       // 編集モードの場合
       const item = items[0];
 
-      // フォルダ取込ディレクティブの編集の場合
-      if (editingItem.type === 'directive' && item.itemCategory === 'dir') {
-        // ディレクティブ形式でRawDataLineを更新
-        let newContent = `dir,${item.path}`;
-        if (item.dirOptions) {
-          const opts = item.dirOptions;
-          const optParts = [];
-          optParts.push(`depth=${opts.depth}`);
-          optParts.push(`types=${opts.types}`);
-          if (opts.filter) optParts.push(`filter=${opts.filter}`);
-          if (opts.exclude) optParts.push(`exclude=${opts.exclude}`);
-          if (opts.prefix) optParts.push(`prefix=${opts.prefix}`);
-          if (opts.suffix) optParts.push(`suffix=${opts.suffix}`);
-          newContent += ',' + optParts.join(',');
-        }
+      // タブ（保存先）が変更されたかチェック
+      const isTabChanged = item.targetTab !== editingItem.sourceFile;
 
-        // RawDataLineとして更新（editHandlersのupdateRawLineを使用する必要がある）
-        await window.electronAPI.updateRawLine({
-          sourceFile: editingItem.sourceFile,
-          lineNumber: editingItem.lineNumber,
-          newContent: newContent,
-        });
+      if (isTabChanged) {
+        // タブが変更された場合：元のタブから削除 + 新しいタブに登録
+        await window.electronAPI.deleteItems([
+          {
+            sourceFile: editingItem.sourceFile,
+            lineNumber: editingItem.lineNumber,
+          },
+        ]);
+        await window.electronAPI.registerItems([item]);
       } else {
-        // 通常のアイテムの編集
-        const newItem: LauncherItem = {
-          name: item.name,
-          path: item.path,
-          type: item.type,
-          args: item.args,
-          customIcon: item.customIcon,
-        };
+        // タブが変更されていない場合：従来の更新処理
+        // フォルダ取込ディレクティブの編集の場合
+        if (editingItem.type === 'directive' && item.itemCategory === 'dir') {
+          // ディレクティブ形式でRawDataLineを更新
+          let newContent = `dir,${item.path}`;
+          if (item.dirOptions) {
+            const opts = item.dirOptions;
+            const optParts = [];
+            optParts.push(`depth=${opts.depth}`);
+            optParts.push(`types=${opts.types}`);
+            if (opts.filter) optParts.push(`filter=${opts.filter}`);
+            if (opts.exclude) optParts.push(`exclude=${opts.exclude}`);
+            if (opts.prefix) optParts.push(`prefix=${opts.prefix}`);
+            if (opts.suffix) optParts.push(`suffix=${opts.suffix}`);
+            newContent += ',' + optParts.join(',');
+          }
 
-        await window.electronAPI.updateItem({
-          sourceFile: editingItem.sourceFile,
-          lineNumber: editingItem.lineNumber,
-          newItem: newItem,
-        });
+          // RawDataLineとして更新（editHandlersのupdateRawLineを使用する必要がある）
+          await window.electronAPI.updateRawLine({
+            sourceFile: editingItem.sourceFile,
+            lineNumber: editingItem.lineNumber,
+            newContent: newContent,
+          });
+        } else {
+          // 通常のアイテムの編集
+          const newItem: LauncherItem = {
+            name: item.name,
+            path: item.path,
+            type: item.type,
+            args: item.args,
+            customIcon: item.customIcon,
+          };
+
+          await window.electronAPI.updateItem({
+            sourceFile: editingItem.sourceFile,
+            lineNumber: editingItem.lineNumber,
+            newItem: newItem,
+          });
+        }
       }
     } else {
       // 新規登録モード

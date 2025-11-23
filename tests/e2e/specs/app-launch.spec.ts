@@ -75,7 +75,7 @@ test.describe('QuickDashLauncher - アプリケーション起動テスト', () 
     });
   });
 
-  test('テスト環境の特別な設定が機能している', async ({ electronApp }, testInfo) => {
+  test('テスト環境の特別な設定が機能している', async ({ electronApp }) => {
     await test.step('グローバルホットキーが無効化されていることを確認', async () => {
       // テスト環境では環境変数DISABLE_GLOBAL_HOTKEY=1が設定されているため
       // グローバルホットキーは登録されない
