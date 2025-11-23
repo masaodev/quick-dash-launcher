@@ -17,14 +17,21 @@ QuickDashLauncherで使用される主要なIPCチャンネルの仕様です。
 ### `settings:set`
 設定値を設定
 - パラメータ: `key: keyof AppSettings`, `value: AppSettings[keyof AppSettings]`
+- 特別な処理:
+  - `autoLaunch`: 設定変更時に`AutoLaunchService.setAutoLaunch()`を呼び出し、Windowsレジストリに即座に反映
 
 ### `settings:set-multiple`
 複数の設定項目を一括更新
 - パラメータ: `settings: Partial<AppSettings>`
-- 備考: ホットキーが設定された場合、初回起動モードを自動解除
+- 特別な処理:
+  - ホットキーが設定された場合、初回起動モードを自動解除
+  - `autoLaunch`が含まれている場合、`AutoLaunchService.setAutoLaunch()`を呼び出し、Windowsレジストリに即座に反映
+- 処理完了後、`settings-changed`イベントを全ウィンドウに送信
 
 ### `settings:reset`
 設定をデフォルト値にリセット
+- 特別な処理:
+  - `AutoLaunchService.setAutoLaunch(false)`を呼び出し、自動起動を無効化
 - リセット後、`settings-changed`イベントを全ウィンドウに送信
 
 ### `settings-changed` (イベント)

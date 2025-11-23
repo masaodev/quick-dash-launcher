@@ -24,6 +24,31 @@ Viteベースのビルドシステムを使用:
 - **パッケージングツール**: electron-builder
 - **出力先**: `release/`ディレクトリ
 - **Windows専用**: クロスプラットフォーム非対応
+- **App ID**: `net.masaodev.quick-dash-launcher`（masaodev.netドメイン所有者のため）
+
+### App ID（アプリケーション識別子）
+
+QuickDashLauncherのApp IDは`net.masaodev.quick-dash-launcher`です。
+
+**設定箇所**:
+- `package.json`: `build.appId`
+- `src/main/main.ts`: `app.setAppUserModelId()`
+
+**v0.2.10での変更**:
+- **変更前**: `com.example.quick-dash-launcher`
+- **変更後**: `net.masaodev.quick-dash-launcher`
+- **理由**: masaodev.netドメインを保有しているため、正式なリバースドメイン形式のApp IDに変更
+
+**影響範囲**:
+- Windowsレジストリの自動起動設定パス
+- Windowsタスクバーでのアプリケーション識別
+- インストールディレクトリ構造
+
+**既存インストール版との互換性**:
+- App ID変更により、旧版（v0.2.9以前）と新版（v0.2.10以降）は別アプリケーションとして認識されます
+- 設定ファイルは共有されません（別のディレクトリに保存されます）
+- 新版をインストールしても、旧版の設定は引き継がれません
+- 旧版をアンインストールしてから新版をインストールすることを推奨します
 
 ## 重要な制約事項
 

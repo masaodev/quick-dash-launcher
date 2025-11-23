@@ -5,6 +5,7 @@ import { createDefaultDataFile } from './appHelpers';
 import PathManager from './config/pathManager.js';
 import { BackupService } from './services/backupService.js';
 import { SettingsService } from './services/settingsService.js';
+import { AutoLaunchService } from './services/autoLaunchService.js';
 import {
   createWindow,
   createTray,
@@ -42,7 +43,12 @@ app.whenReady().then(async () => {
   isFirstLaunch = !hotkey || hotkey.trim() === '';
 
   // アプリケーションのApp User Model IDを設定（Windows用）
-  app.setAppUserModelId('com.example.quick-dash-launcher');
+  app.setAppUserModelId('net.masaodev.quick-dash-launcher');
+
+  // 自動起動設定を適用（設定ファイルの値をシステムに反映）
+  const autoLaunchService = AutoLaunchService.getInstance();
+  const autoLaunchEnabled = await settingsService.get('autoLaunch');
+  await autoLaunchService.setAutoLaunch(autoLaunchEnabled);
 
   // 初回起動モードを設定（初回起動時はフォーカス喪失やEscapeで閉じないようにする）
   setFirstLaunchMode(isFirstLaunch);

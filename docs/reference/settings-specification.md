@@ -98,6 +98,44 @@ Ctrl+Alt+0
 | **型** | `boolean` |
 | **デフォルト値** | `false` |
 | **説明** | Windowsログイン時に自動起動 |
+| **実装** | `AutoLaunchService` |
+| **登録先** | Windowsレジストリ `HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run` |
+
+##### 実装詳細
+
+**設定反映タイミング**:
+- 設定変更時に即座にシステムに反映されます
+- `settingsHandlers.ts`で`autoLaunch`設定の変更を検知し、`AutoLaunchService.setAutoLaunch()`を呼び出します
+
+**NSISインストーラー版**:
+- `Update.exe`経由でアプリケーションを起動します
+- Electron標準API `app.setLoginItemSettings()`を使用
+- 設定内容:
+  ```typescript
+  app.setLoginItemSettings({
+    openAtLogin: enabled,
+    path: updateExe,
+    args: ['--processStart', `"${exeName}"`],
+  });
+  ```
+
+**ポータブル版**:
+- 実行ファイルを直接指定して起動します
+- 設定内容:
+  ```typescript
+  app.setLoginItemSettings({
+    openAtLogin: enabled,
+    path: process.execPath,
+  });
+  ```
+
+**開発環境**:
+- `app.isPackaged`が`false`の場合、自動起動設定をスキップします
+- 設定画面での変更は受け付けますが、実際のシステム登録は行われません
+
+**ステータス確認**:
+- `app.getLoginItemSettings()`で現在の登録状態を確認できます
+- 開発環境では常に`false`を返します
 
 ### バックアップ設定
 

@@ -58,9 +58,32 @@ dir,C:\folder\path  // フォルダ取込アイテム
 
 ### Electronアプリケーション パターン
 
+#### サービスクラスの設計
+メインプロセスの主要機能はサービスクラスで実装されています（`src/main/services/`）:
+
+- **SettingsService**: アプリケーション設定の読み書き・管理
+- **HotkeyService**: グローバルホットキーの登録・変更
+- **BackupService**: データファイルの自動バックアップ
+- **AutoLaunchService**: Windows起動時の自動起動設定
+
+**設計パターン:**
+- すべてシングルトンパターンで実装
+- `getInstance()`メソッドでインスタンスを取得
+- 各サービスは単一責任の原則に従う
+- IPCハンドラーから呼び出される
+
+**使用例:**
+```typescript
+// AutoLaunchServiceの使用例
+const autoLaunchService = AutoLaunchService.getInstance();
+await autoLaunchService.setAutoLaunch(true); // 自動起動を有効化
+const status = autoLaunchService.getAutoLaunchStatus(); // 現在の状態を取得
+```
+
 #### IPCハンドラーの構造化
 - 機能ごとにハンドラーを分離（`src/main/ipc/`）
 - 各ハンドラーは単一責任の原則に従う
+- サービスクラスを呼び出して処理を実行
 - 型安全性のため`src/common/types.ts`で共有型を定義
 
 #### プロセス間通信のベストプラクティス

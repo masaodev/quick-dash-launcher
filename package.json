@@ -96,7 +96,7 @@
     "react-dom": "^19.1.0"
   },
   "build": {
-    "appId": "com.example.quick-dash-launcher",
+    "appId": "net.masaodev.quick-dash-launcher",
     "productName": "QuickDashLauncher",
     "directories": {
       "output": "release"

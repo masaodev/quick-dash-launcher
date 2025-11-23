@@ -175,11 +175,27 @@
 
 #### 処理フロー
 1. チェック状態を反転
-2. **即座保存**: 設定が自動的に保存され、`settings-changed`イベントが送信される
+2. `handleSettingChange('autoLaunch', checked)`を実行
+3. **即座保存**: 設定が自動的に保存され、`settings-changed`イベントが送信される
+4. `settingsHandlers.ts`が`autoLaunch`設定の変更を検知
+5. `AutoLaunchService.setAutoLaunch(enabled)`を呼び出し、システム登録を実行
 
 #### 動作
 - **有効**: Windowsログイン時にアプリケーションが自動起動
+  - NSISインストーラー版: `Update.exe`経由で起動
+  - ポータブル版: 実行ファイルを直接起動
+  - Windowsレジストリに登録される
 - **無効**: 手動で起動する必要がある
+  - Windowsレジストリから登録解除される
+
+#### システム登録の詳細
+- **登録先**: `HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run`
+- **実装**: Electron標準API `app.setLoginItemSettings()`を使用
+- **開発環境**: パッケージ化されていないため、設定は保存されますが実際の登録はスキップされます
+
+#### 確認方法
+- Windowsのタスクマネージャー → スタートアップタブで登録状態を確認できます
+- 設定が正しく反映されているか確認する際に便利です
 
 ### 4.5. バックアップ設定を変更
 

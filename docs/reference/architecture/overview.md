@@ -7,9 +7,20 @@
 - **プリロードスクリプト** (`src/main/preload.ts`): レンダラーに限定的なAPIを公開するセキュアブリッジ
 - **共通型定義** (`src/common/types.ts`): プロセス間で共有される型定義
 
+## サービスクラス構造
+
+アプリケーションの主要機能はサービスクラスで実装（`src/main/services/`）:
+- `SettingsService`: アプリケーション設定の読み書き・管理
+- `HotkeyService`: グローバルホットキーの登録・変更
+- `BackupService`: データファイルの自動バックアップ
+- `AutoLaunchService`: Windows起動時の自動起動設定
+
+すべてシングルトンパターンで実装され、`getInstance()`で取得します。
+
 ## IPCハンドラー構造
 
 IPCハンドラーは機能ごとに分離（`src/main/ipc/`）:
+- `settingsHandlers.ts`: アプリケーション設定の取得・更新（AutoLaunchServiceと連携）
 - `configHandlers.ts`: 設定フォルダーへのアクセス
 - `dataHandlers.ts`: データファイルの読み込み・保存、アイテム登録
 - `itemHandlers.ts`: アイテムの起動・フォルダー表示

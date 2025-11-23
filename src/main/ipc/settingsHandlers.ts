@@ -3,6 +3,7 @@ import { ipcMain, BrowserWindow } from 'electron';
 import type { AppSettings } from '../../common/types.js';
 import { SettingsService } from '../services/settingsService.js';
 import { HotkeyService } from '../services/hotkeyService.js';
+import { AutoLaunchService } from '../services/autoLaunchService.js';
 import { getIsFirstLaunch } from '../main.js';
 import logger from '../../common/logger.js';
 
@@ -53,6 +54,13 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
         const settingsService = await SettingsService.getInstance();
         await settingsService.set(key, value);
         logger.info(`Settings set request: ${key} = ${value}`);
+
+        // autoLaunch設定の場合、システムの自動起動設定を更新
+        if (key === 'autoLaunch') {
+          const autoLaunchService = AutoLaunchService.getInstance();
+          await autoLaunchService.setAutoLaunch(value as boolean);
+        }
+
         return true;
       } catch (error) {
         logger.error(`Failed to set setting ${key}:`, error);
@@ -74,6 +82,12 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
         logger.info('初回起動モードを解除しました（ホットキーが設定されたため）');
       }
 
+      // autoLaunch設定が含まれている場合、システムの自動起動設定を更新
+      if (settings.autoLaunch !== undefined) {
+        const autoLaunchService = AutoLaunchService.getInstance();
+        await autoLaunchService.setAutoLaunch(settings.autoLaunch);
+      }
+
       // すべてのウィンドウに設定変更を通知
       notifySettingsChanged();
 
@@ -90,6 +104,10 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
       const settingsService = await SettingsService.getInstance();
       await settingsService.reset();
       logger.info('Settings reset request');
+
+      // 自動起動もリセット（デフォルトはfalse）
+      const autoLaunchService = AutoLaunchService.getInstance();
+      await autoLaunchService.setAutoLaunch(false);
 
       // すべてのウィンドウに設定変更を通知
       notifySettingsChanged();
