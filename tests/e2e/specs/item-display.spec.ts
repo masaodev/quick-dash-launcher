@@ -17,9 +17,9 @@ test.describe('QuickDashLauncher - アイテム表示・選択テスト', () => 
     const itemCount = await items.count();
     expect(itemCount).toBeGreaterThan(0);
 
-    // E2Eテスト用data.txtには最低でも10個程度のアイテムがあることを確認
-    // (GitHub, Google, Wikipedia, メモ帳, 電卓, デスクトップ, ドキュメント, VS Code, Test Item 1-3)
-    expect(itemCount).toBeGreaterThanOrEqual(10);
+    // E2Eテスト用data.txtには最低でも7個のアイテムがあることを確認
+    // (GitHub, Google, Wikipedia, メモ帳, 電卓, デスクトップ, ドキュメント)
+    expect(itemCount).toBeGreaterThanOrEqual(7);
   });
 
   test('各アイテムにアイコンとラベルが表示される', async ({ mainWindow }) => {

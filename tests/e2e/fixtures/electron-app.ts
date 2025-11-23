@@ -27,9 +27,10 @@ export const test = base.extend<ElectronFixtures>({
     // テスト用の設定フォルダパス（tests/fixtures/e2e/default）
     const testConfigDir = path.join(process.cwd(), 'tests', 'fixtures', 'e2e', 'default');
 
-    // ConfigFileHelperでバックアップ
+    // ConfigFileHelperでテンプレートから復元して初期状態を保証
     const configHelper = new ConfigFileHelper(testConfigDir);
-    configHelper.backupAll();
+    configHelper.restoreDataFromTemplate('base');
+    configHelper.restoreData2FromTemplate('data2-base');
 
     // テスト用のElectronアプリケーション設定
     const electronApp = await electron.launch({
@@ -71,8 +72,9 @@ export const test = base.extend<ElectronFixtures>({
     // テスト完了後にアプリケーションを終了
     await electronApp.close();
 
-    // 設定ファイルを復元
-    configHelper.restoreAll();
+    // テンプレートから復元して次のテストのために初期状態に戻す
+    configHelper.restoreDataFromTemplate('base');
+    configHelper.restoreData2FromTemplate('data2-base');
   },
 
   // メインウィンドウを取得するフィクスチャ

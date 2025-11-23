@@ -77,17 +77,24 @@ test.describe('QuickDashLauncher - 検索機能テスト', () => {
     // ページの読み込み完了を待機
     await utils.waitForPageLoad();
 
-    // スペース区切りで複数キーワードを入力
-    await utils.searchFor('Test Item');
+    // 検索前の全アイテム数を取得
+    const allItems = mainWindow.locator('.item, [class*="item"]');
+    const initialCount = await allItems.count();
+
+    // スペース区切りで複数キーワードを入力（実際に存在するアイテムの一部を検索）
+    await utils.searchFor('Git Hub');
     await utils.wait(300);
 
     // 結果が絞り込まれることを確認
     const filteredItems = mainWindow.locator('.item, [class*="item"]:visible');
     const filteredCount = await filteredItems.count();
-    expect(filteredCount).toBeGreaterThan(0);
 
-    // "Test Item"を含むアイテムが表示されていることを確認（複数存在するのでfirst()を使用）
-    const testItemElement = mainWindow.locator('text=/Test Item/i').first();
-    await expect(testItemElement).toBeVisible();
+    // GitHubアイテムがマッチするはず
+    expect(filteredCount).toBeGreaterThan(0);
+    expect(filteredCount).toBeLessThanOrEqual(initialCount);
+
+    // GitHubアイテムが表示されていることを確認
+    const githubElement = mainWindow.locator('.item', { hasText: 'GitHub' });
+    await expect(githubElement).toBeVisible();
   });
 });

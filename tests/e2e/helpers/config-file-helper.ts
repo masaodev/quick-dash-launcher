@@ -10,8 +10,54 @@ import type { AppSettings } from '@common/types';
 export class ConfigFileHelper {
   private dataBackupPath: string | null = null;
   private settingsBackupPath: string | null = null;
+  private isTempDir: boolean = false;
 
   constructor(private configDir: string) {}
+
+  /**
+   * テンプレートから一時ディレクトリを作成して初期化
+   * @param testName テスト名（ディレクトリ名に使用）
+   * @returns 作成された一時ディレクトリのパス
+   */
+  static createTempConfigDir(testName: string): ConfigFileHelper {
+    const tempDir = path.join(process.cwd(), 'tests', 'fixtures', 'e2e', '.temp', testName);
+
+    // 既存のディレクトリがあれば削除
+    if (fs.existsSync(tempDir)) {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
+
+    // 一時ディレクトリを作成
+    fs.mkdirSync(tempDir, { recursive: true });
+
+    // テンプレートからdata.txtをコピー
+    const dataTemplate = path.join(
+      process.cwd(),
+      'tests',
+      'fixtures',
+      'templates',
+      'data',
+      'base.txt'
+    );
+    const dataTarget = path.join(tempDir, 'data.txt');
+
+    if (fs.existsSync(dataTemplate)) {
+      fs.copyFileSync(dataTemplate, dataTarget);
+    }
+
+    const helper = new ConfigFileHelper(tempDir);
+    helper.isTempDir = true;
+    return helper;
+  }
+
+  /**
+   * 一時ディレクトリを削除
+   */
+  cleanup(): void {
+    if (this.isTempDir && fs.existsSync(this.configDir)) {
+      fs.rmSync(this.configDir, { recursive: true, force: true });
+    }
+  }
 
   // ==================== バックアップ・復元 ====================
 
@@ -177,6 +223,14 @@ export class ConfigFileHelper {
     }
   }
 
+  /**
+   * テンプレートからdata.txtを強制的に復元（テスト前の初期化用）
+   * @param templateName テンプレート名（デフォルト: 'base'）
+   */
+  restoreDataFromTemplate(templateName: string = 'base'): void {
+    this.loadDataTemplate(templateName);
+  }
+
   // ==================== data2.txt 操作（サブタブ用） ====================
 
   /**
@@ -239,6 +293,14 @@ export class ConfigFileHelper {
     if (fs.existsSync(dataFilePath)) {
       fs.unlinkSync(dataFilePath);
     }
+  }
+
+  /**
+   * テンプレートからdata2.txtを強制的に復元（テスト前の初期化用）
+   * @param templateName テンプレート名（デフォルト: 'data2-base'）
+   */
+  restoreData2FromTemplate(templateName: string = 'data2-base'): void {
+    this.loadData2Template(templateName);
   }
 
   // ==================== settings.json 操作 ====================

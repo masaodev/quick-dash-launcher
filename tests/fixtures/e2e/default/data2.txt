@@ -1,1 +1,11 @@
-// data2.txt
+// data2.txt用基本テンプレート - サブタブのテストデータ
+// サブタブ機能のテストで使用
+
+// Webサイト（サブタブ用）
+Stack Overflow,https://stackoverflow.com/
+Reddit,https://reddit.com/
+YouTube,https://youtube.com/
+
+// アプリケーション（サブタブ用）
+ペイント,mspaint.exe
+エクスプローラー,explorer.exe

@@ -42,6 +42,8 @@ coverage/
 test-results/
 playwright-report/
 html/
+test-output.log
+*-output.log
 
 # Temporary files
 *.tmp

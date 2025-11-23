@@ -10,16 +10,18 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
     const configDir = path.join(process.cwd(), 'tests', 'fixtures', 'e2e', 'default');
     configHelper = new ConfigFileHelper(configDir);
 
-    // 元データと設定をバックアップ
-    configHelper.backupAll();
+    // テンプレートから強制的に復元して初期状態を保証
+    configHelper.restoreDataFromTemplate('base');
+    configHelper.restoreData2FromTemplate('data2-base');
+
+    // マルチタブ機能を有効化
+    configHelper.loadSettingsTemplate('with-tabs');
   });
 
   test.afterEach(async () => {
-    // データと設定を復元
-    configHelper.restoreAll();
-
-    // data2.txtが作成されていた場合は削除
-    configHelper.deleteData2();
+    // テンプレートから復元して次のテストのために初期状態に戻す
+    configHelper.restoreDataFromTemplate('base');
+    configHelper.restoreData2FromTemplate('data2-base');
   });
 
   // ==================== タブ表示・切り替えテスト ====================
@@ -27,12 +29,7 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
   test('タブ機能を有効化するとタブバーが表示される', async ({ mainWindow }) => {
     const utils = new TestUtils(mainWindow);
 
-    // タブ機能を有効化
-    configHelper.loadSettingsTemplate('with-tabs');
-    configHelper.loadData2Template('data2-base');
-
-    // アプリをリロード
-    await mainWindow.reload();
+    // ページの読み込み完了を待機
     await utils.waitForPageLoad();
 
     // タブバーが表示されることを確認
