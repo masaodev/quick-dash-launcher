@@ -153,3 +153,20 @@ Task tool with subagent_type="documentation-updater"
 - ドキュメント間の整合性確認
 
 詳細は `.claude/agents/documentation-updater.md` を参照してください。
+
+## E2Eテスト実行
+
+E2Eテストの実行と失敗分析は、**`e2e-test-runner`サブエージェント**を使用してください。
+
+```
+Task tool with subagent_type="e2e-test-runner"
+```
+
+このサブエージェントは以下を自動的に実行します：
+- Playwright E2Eテストの実行
+- テスト失敗時の詳細分析（スクリーンショット・トレース解析）
+- 失敗原因の特定と修正案の提示
+- デバッグ推奨アクションの提供
+- 構造化されたテストレポート生成
+
+詳細は `.claude/agents/e2e-test-runner.md` を参照してください。
