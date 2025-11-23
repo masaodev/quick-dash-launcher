@@ -47,7 +47,8 @@ tests/e2e/
     ├── item-display.spec.ts
     ├── item-registration.spec.ts
     ├── multi-tab.spec.ts
-    └── search.spec.ts
+    ├── search.spec.ts
+    └── settings-tab.spec.ts
 ```
 
 ## 設定ファイル
@@ -77,11 +78,28 @@ Playwrightの設定ファイル。以下の主要設定が含まれています�
 
 テストで共通的に使用するユーティリティメソッドを提供：
 
+#### 基本操作
 - `waitForPageLoad()` - ページ読み込み待機
+- `waitForElement()` - 要素の表示待機
+- `clickByText()` - テキストで要素をクリック
+- `fillInput()` - 入力フィールドに値を設定
+- `wait()` - 指定時間待機
+
+#### モーダル操作
 - `openRegisterModal()` - 登録モーダルを開く
 - `fillRegisterForm()` - フォーム入力
-- `attachScreenshot()` - スクリーンショット撮影
-- その他多数
+- `clickRegisterButton()` - 登録ボタンをクリック
+- `clickCancelButton()` - キャンセルボタンをクリック
+
+#### アイテム編集
+- `rightClickItem()` - アイテムを右クリック
+- `editItemByRightClick()` - 右クリックで編集モーダルを開く
+
+#### 複数ウィンドウ操作
+- `openAdminWindow()` - 管理ウィンドウを開く
+
+#### スクリーンショット
+- `attachScreenshot()` - スクリーンショット撮影してtestInfoに添付
 
 ### ConfigFileHelper
 
@@ -89,7 +107,10 @@ Playwrightの設定ファイル。以下の主要設定が含まれています�
 
 - `readData()` - data.txtの読み込み
 - `writeData()` - data.txtの書き込み
+- `readSettings()` - settings.jsonの読み込み
 - `restoreDataFromTemplate()` - テンプレートから復元
+- `restoreSettingsFromTemplate()` - 設定テンプレートから復元
+- `deleteData2()` - data2.txtの削除
 - その他設定ファイル操作
 
 詳細は [フィクスチャガイド](./fixtures-guide.md) を参照してください。
@@ -212,6 +233,52 @@ test('テスト名', async ({ mainWindow }, testInfo) => {
   });
 });
 ```
+
+### 複数ウィンドウのテストパターン
+
+管理ウィンドウ（設定タブなど）は別ウィンドウとして開かれるため、`electronApp.waitForEvent('window')`を使用して新しいウィンドウを取得します。
+
+```typescript
+import { test, expect } from '../fixtures/electron-app';
+import { TestUtils } from '../helpers/test-utils';
+
+test('管理ウィンドウのテスト', async ({ electronApp, mainWindow }, testInfo) => {
+  const utils = new TestUtils(mainWindow);
+
+  // 管理ウィンドウを開く（設定タブ）
+  const adminWindow = await utils.openAdminWindow(electronApp, 'settings');
+
+  try {
+    const adminUtils = new TestUtils(adminWindow);
+
+    await test.step('管理ウィンドウの操作', async () => {
+      await adminUtils.wait(500);
+      await adminUtils.attachScreenshot(testInfo, '管理ウィンドウ表示');
+
+      // 設定変更などの操作
+      const settingsTab = adminWindow.locator('.settings-tab');
+      await expect(settingsTab).toBeVisible();
+    });
+  } finally {
+    // テスト後は必ずウィンドウをクローズ
+    await adminWindow.close();
+  }
+});
+```
+
+#### openAdminWindowのパラメータ
+
+- `electronApp`: ElectronApplicationインスタンス（フィクスチャから取得）
+- `tab`: 開くタブ（`'settings'` | `'edit'` | `'other'`）
+
+このメソッドは以下の処理を行います：
+
+1. メインウィンドウの設定ドロップダウンをクリック
+2. 指定されたタブメニューを選択
+3. `electronApp.waitForEvent('window')`で新しいウィンドウを待機
+4. ウィンドウタイトルが「設定・管理」であることを確認
+5. ウィンドウのDOMコンテンツ読み込みを待機
+6. Pageオブジェクトを返す
 
 ### フィクスチャの使用
 

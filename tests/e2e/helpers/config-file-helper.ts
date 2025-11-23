@@ -378,6 +378,14 @@ export class ConfigFileHelper {
     }
   }
 
+  /**
+   * テンプレートからsettings.jsonを強制的に復元（テスト前の初期化用）
+   * @param templateName テンプレート名（デフォルト: 'base'）
+   */
+  restoreSettingsFromTemplate(templateName: string = 'base'): void {
+    this.loadSettingsTemplate(templateName);
+  }
+
   // ==================== ユーティリティ ====================
 
   /**

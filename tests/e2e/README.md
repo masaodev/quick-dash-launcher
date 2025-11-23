@@ -33,7 +33,8 @@ tests/e2e/
     ├── item-display.spec.ts
     ├── item-registration.spec.ts
     ├── multi-tab.spec.ts
-    └── search.spec.ts
+    ├── search.spec.ts
+    └── settings-tab.spec.ts
 ```
 
 ## トレース・レポート
