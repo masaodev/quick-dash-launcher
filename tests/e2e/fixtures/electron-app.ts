@@ -31,6 +31,7 @@ export const test = base.extend<ElectronFixtures>({
     const configHelper = new ConfigFileHelper(testConfigDir);
     configHelper.restoreDataFromTemplate('base');
     configHelper.restoreData2FromTemplate('data2-base');
+    configHelper.loadSettingsTemplate('default');
 
     // テスト用のElectronアプリケーション設定
     const electronApp = await electron.launch({
@@ -75,6 +76,7 @@ export const test = base.extend<ElectronFixtures>({
     // テンプレートから復元して次のテストのために初期状態に戻す
     configHelper.restoreDataFromTemplate('base');
     configHelper.restoreData2FromTemplate('data2-base');
+    configHelper.loadSettingsTemplate('default');
   },
 
   // メインウィンドウを取得するフィクスチャ
