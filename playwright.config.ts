@@ -33,14 +33,14 @@ export default defineConfig({
 
   // 全テストでの共通設定
   use: {
-    // トレース設定（すべてのテストで記録）
+    // トレース設定（すべてのテストで記録、スクリーンショット含む）
     trace: 'on',
 
-    // スクリーンショット（失敗時のみ撮影）
-    screenshot: 'only-on-failure',
+    // スクリーンショット（全テストで撮影）
+    screenshot: 'on',
 
-    // ビデオ録画（失敗時のみ）
-    video: 'retain-on-failure',
+    // ビデオ録画（全テストで録画）
+    video: 'on',
 
     // アクションのタイムアウト
     actionTimeout: 10000,

@@ -164,7 +164,8 @@ export class ConfigFileHelper {
       process.cwd(),
       'tests',
       'fixtures',
-      'data-templates',
+      'templates',
+      'data',
       `${templateName}.txt`
     );
     const dataFilePath = path.join(this.configDir, 'data.txt');
@@ -217,7 +218,8 @@ export class ConfigFileHelper {
       process.cwd(),
       'tests',
       'fixtures',
-      'data-templates',
+      'templates',
+      'data',
       `${templateName}.txt`
     );
     const dataFilePath = path.join(this.configDir, 'data2.txt');
@@ -291,7 +293,8 @@ export class ConfigFileHelper {
       process.cwd(),
       'tests',
       'fixtures',
-      'settings-templates',
+      'templates',
+      'settings',
       `${templateName}.json`
     );
     const settingsFilePath = path.join(this.configDir, 'settings.json');

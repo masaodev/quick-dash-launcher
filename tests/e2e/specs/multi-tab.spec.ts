@@ -7,7 +7,7 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
   let configHelper: ConfigFileHelper;
 
   test.beforeEach(async () => {
-    const configDir = path.join(process.cwd(), 'tests', 'fixtures', 'e2e-config');
+    const configDir = path.join(process.cwd(), 'tests', 'fixtures', 'e2e', 'default');
     configHelper = new ConfigFileHelper(configDir);
 
     // 元データと設定をバックアップ

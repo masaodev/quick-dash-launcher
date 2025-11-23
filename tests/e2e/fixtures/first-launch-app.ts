@@ -18,7 +18,7 @@ type ElectronFixtures = {
  * - mainWindow: メインウィンドウページ
  *
  * 通常のフィクスチャとの違い：
- * - 専用の設定フォルダ（first-launch-config）を使用して他のテストと分離
+ * - 専用の設定フォルダ（e2e/first-launch）を使用して他のテストと分離
  * - テスト前に設定ファイル（settings.json）を削除して初回起動状態を再現
  * - テスト後も設定ファイルを削除して次回のテストに備える
  */
@@ -30,7 +30,7 @@ export const test = base.extend<ElectronFixtures>({
     const electronAppPath = path.join(process.cwd(), 'dist', 'main', 'main.js');
 
     // 初回起動テスト専用の設定フォルダパス（他のテストと分離）
-    const testConfigDir = path.join(process.cwd(), 'tests', 'fixtures', 'first-launch-config');
+    const testConfigDir = path.join(process.cwd(), 'tests', 'fixtures', 'e2e', 'first-launch');
 
     // テスト用の設定フォルダが存在しない場合は作成
     if (!fs.existsSync(testConfigDir)) {

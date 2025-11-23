@@ -2,6 +2,7 @@ import path from 'path';
 
 import { test as base, _electron as electron } from '@playwright/test';
 import type { ElectronApplication, Page } from 'playwright';
+import { ConfigFileHelper } from '../helpers/config-file-helper';
 
 // Electronアプリとメインウィンドウを提供するフィクスチャの型定義
 type ElectronFixtures = {
@@ -23,8 +24,12 @@ export const test = base.extend<ElectronFixtures>({
     // アプリケーションのメインファイルパス
     const electronAppPath = path.join(process.cwd(), 'dist', 'main', 'main.js');
 
-    // テスト用の設定フォルダパス（tests/fixtures/e2e-config）
-    const testConfigDir = path.join(process.cwd(), 'tests', 'fixtures', 'e2e-config');
+    // テスト用の設定フォルダパス（tests/fixtures/e2e/default）
+    const testConfigDir = path.join(process.cwd(), 'tests', 'fixtures', 'e2e', 'default');
+
+    // ConfigFileHelperでバックアップ
+    const configHelper = new ConfigFileHelper(testConfigDir);
+    configHelper.backupAll();
 
     // テスト用のElectronアプリケーション設定
     const electronApp = await electron.launch({
@@ -47,11 +52,27 @@ export const test = base.extend<ElectronFixtures>({
       executablePath: undefined, // システムにインストールされたElectronを使用
     });
 
+    // Electronアプリのcontextを取得してトレースを開始
+    const context = electronApp.context();
+    await context.tracing.start({
+      screenshots: true,
+      snapshots: true,
+      sources: true,
+    });
+
     // テストでアプリケーションを使用
     await use(electronApp);
 
+    // トレースを停止して保存（テスト名を含むパスに保存）
+    await context.tracing.stop({
+      path: path.join(process.cwd(), 'test-results', 'traces', `trace-${Date.now()}.zip`),
+    });
+
     // テスト完了後にアプリケーションを終了
     await electronApp.close();
+
+    // 設定ファイルを復元
+    configHelper.restoreAll();
   },
 
   // メインウィンドウを取得するフィクスチャ
