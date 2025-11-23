@@ -1,40 +1,30 @@
-# Test Fixtures - テスト・開発用設定テンプレート
+# テストフィクスチャ - 概要
 
-このディレクトリには、開発・テスト時に使用する設定ファイルのテンプレートが含まれています。
+テストや開発時に使用する設定ファイルのテンプレート集です。
 
 ## ディレクトリ構成
 
 ```
 tests/fixtures/
-├── README.md               # このファイル
-├── test-config/            # 単体テスト用設定テンプレート
-│   └── data.txt           # 単体テスト用サンプルデータ
-├── dev-config/             # 開発用設定テンプレート
-│   └── data.txt           # 開発用サンプルデータ
-├── dev-templates/          # 開発用テンプレート集（手動実行用）⭐ NEW
-│   ├── QUICKSTART.md      # クイックスタートガイド
-│   ├── minimal/           # 最小限のアイテムセット
-│   ├── full-featured/     # 全機能を含むセット
-│   ├── multi-tab/         # マルチタブ機能のデモ
-│   ├── with-groups/       # グループ起動のデモ
-│   ├── large-dataset/     # 大量データでのパフォーマンステスト
-│   └── empty/             # 空データセット
-├── data-templates/         # E2Eテスト用データテンプレート
-│   └── (base.txt, with-group.txt, etc.)
-├── settings-templates/     # E2Eテスト用設定テンプレート
-│   └── (default.json, with-tabs.json, etc.)
-├── e2e-config/             # E2Eテスト用設定テンプレート
-│   ├── README.md          # E2Eテスト用設定の説明
-│   └── data.txt           # E2Eテスト用サンプルデータ
-└── first-launch-config/    # 初回起動E2Eテスト専用設定
-    └── data.txt           # 初回起動テスト用サンプルデータ
+├── README.md                    # このファイル
+├── templates/                   # E2Eテスト用テンプレート
+│   ├── data/                   # データファイルテンプレート
+│   └── settings/               # 設定ファイルテンプレート
+├── dev/                        # 開発用テンプレート（手動実行用）
+│   ├── minimal/               # 最小限のアイテムセット
+│   ├── full-featured/         # 全機能を含むセット
+│   ├── multi-tab/            # マルチタブ機能のデモ
+│   ├── with-groups/          # グループ起動のデモ
+│   ├── large-dataset/        # 大量データでのパフォーマンステスト
+│   └── empty/                # 空データセット
+├── e2e/                        # E2Eテスト用設定
+│   └── default/
+└── first-launch/               # 初回起動テスト専用設定
 ```
 
-## 🚀 クイックスタート
+## クイックスタート
 
-### 開発用テンプレートで手動実行（推奨）⭐ NEW
-
-開発時に汎用的なテンプレートを使って素早くテストできます：
+### 開発時に使う
 
 ```bash
 # 最小限のセットで起動
@@ -48,27 +38,11 @@ npm run dev:tabs
 
 # グループ起動のデモ
 npm run dev:groups
-
-# 大量データでパフォーマンステスト
-npm run dev:large
-
-# 空データで初期状態確認
-npm run dev:empty
 ```
 
-📖 詳しい使い方は **[dev-templates/QUICKSTART.md](./dev-templates/QUICKSTART.md)** をご覧ください。
+詳細は [dev/README.md](./dev/README.md) を参照してください。
 
-### 従来の開発モードでの起動
-
-```bash
-# カスタム設定で起動
-npm run dev:custom
-
-# テスト用設定で起動
-npm run dev:test
-```
-
-### 2. テスト実行時
+### テスト実行時
 
 各テストは自動的に対応する設定フォルダを使用します：
 
@@ -78,14 +52,15 @@ npm run dev:test
 npm run test:unit
 
 # E2Eテスト（Playwright）
-# → tests/fixtures/e2e-config を使用（通常テスト）
-# → tests/fixtures/first-launch-config を使用（初回起動テスト）
+# → tests/fixtures/e2e/default を使用
 npm run test:e2e
 ```
 
-**注:** 初回起動テストは専用の`first-launch-config`フォルダを使用することで、他のE2Eテストと分離されています。これにより、並列実行時の競合を防いでいます。
+## 詳細ドキュメント
 
-## 参考資料
+より詳しい情報は以下を参照してください：
 
-- [設定パス変更ガイド](../../docs/guides/config-path.md)
-- [開発ガイド](../../docs/guides/development.md)
+- **[フィクスチャガイド](../../docs/testing/fixtures-guide.md)** - フィクスチャの詳細な使い方、テンプレート一覧
+- **[Git管理詳細](../../docs/testing/git-management.md)** - Git管理方針、コミット対象/除外ファイル
+- **[開発用テンプレート](./dev/README.md)** - 開発用テンプレートの詳細
+- **[テストドキュメント](../../docs/testing/README.md)** - テスト全般のドキュメント

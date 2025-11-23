@@ -1,6 +1,6 @@
-# テストチェックリスト
+# 手動テストチェックリスト
 
-手動テストで確認すべき項目です。
+新機能の追加や大きな変更を行った場合、リリース前に手動で確認すべき項目です。
 
 ## 初回起動機能
 
@@ -126,8 +126,16 @@
       - `group,開発環境,Visual Studio Code,Slack,Chrome`
       - `group,会議準備,Zoom,Teams,議事録フォルダ`
 
+## E2Eテストとの対応
+
+多くの機能は自動E2Eテストで検証されています。詳細は以下を参照してください：
+
+- [E2Eテストガイド](./e2e-guide.md)
+- [E2Eテスト仕様](../../tests/e2e/README.md)
+
 ## 関連ドキュメント
 
-- [開発ガイド](development.md) - 基本的な開発情報
+- [開発ガイド](../guides/development.md) - 基本的な開発情報
 - [アイテム管理](../manual/item-management.md) - 編集モードのテスト項目
-- [ビルドとデプロイ](build-and-deploy.md) - ビルド後のテスト手順
+- [ビルドとデプロイ](../guides/build-and-deploy.md) - ビルド後のテスト手順
+- [E2Eテストガイド](./e2e-guide.md) - E2Eテストの実行方法
