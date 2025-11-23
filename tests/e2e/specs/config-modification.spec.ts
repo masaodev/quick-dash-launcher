@@ -23,66 +23,86 @@ test.describe('QuickDashLauncher - 設定ファイル変更テスト', () => {
 
   // ==================== data.txt 変更テスト ====================
 
-  test('data.txtにアイテムを追加してリロード後に表示される', async ({ mainWindow }) => {
+  test('data.txtにアイテムを追加してリロード後に表示される', async ({ mainWindow }, testInfo) => {
     const utils = new TestUtils(mainWindow);
 
-    // ページの読み込み完了を待機
-    await utils.waitForPageLoad();
+    await test.step('ページの読み込み完了を待機', async () => {
+      await utils.waitForPageLoad();
+      await utils.attachScreenshot(testInfo, '初期状態');
+    });
 
-    // 新しいアイテムを追加
-    configHelper.addItem('新規サイト', 'https://example.com');
+    await test.step('新しいアイテムを追加', async () => {
+      configHelper.addItem('新規サイト', 'https://example.com');
+    });
 
-    // アプリをリロード
-    await mainWindow.reload();
-    await utils.waitForPageLoad();
+    await test.step('アプリをリロード', async () => {
+      await mainWindow.reload();
+      await utils.waitForPageLoad();
+      await utils.attachScreenshot(testInfo, 'リロード後');
+    });
 
-    // 追加したアイテムが表示されることを確認
-    const item = mainWindow.locator('.item', { hasText: '新規サイト' });
-    await expect(item).toBeVisible();
+    await test.step('追加したアイテムが表示されることを確認', async () => {
+      const item = mainWindow.locator('.item', { hasText: '新規サイト' });
+      await expect(item).toBeVisible();
+    });
   });
 
-  test('data.txtからアイテムを削除してリロード後に非表示になる', async ({ mainWindow }) => {
+  test('data.txtからアイテムを削除してリロード後に非表示になる', async ({ mainWindow }, testInfo) => {
     const utils = new TestUtils(mainWindow);
 
-    // ページの読み込み完了を待機
-    await utils.waitForPageLoad();
+    await test.step('ページの読み込み完了を待機', async () => {
+      await utils.waitForPageLoad();
+      await utils.attachScreenshot(testInfo, '初期状態');
+    });
 
-    // GitHubが表示されていることを確認
-    const githubBefore = mainWindow.locator('.item', { hasText: 'GitHub' });
-    await expect(githubBefore).toBeVisible();
+    await test.step('GitHubが表示されていることを確認', async () => {
+      const githubBefore = mainWindow.locator('.item', { hasText: 'GitHub' });
+      await expect(githubBefore).toBeVisible();
+    });
 
-    // GitHubを削除
-    configHelper.removeItem('GitHub');
+    await test.step('GitHubを削除', async () => {
+      configHelper.removeItem('GitHub');
+    });
 
-    // アプリをリロード
-    await mainWindow.reload();
-    await utils.waitForPageLoad();
+    await test.step('アプリをリロード', async () => {
+      await mainWindow.reload();
+      await utils.waitForPageLoad();
+      await utils.attachScreenshot(testInfo, 'リロード後');
+    });
 
-    // 削除したアイテムが表示されないことを確認
-    const githubAfter = mainWindow.locator('.item', { hasText: 'GitHub' });
-    await expect(githubAfter).not.toBeVisible();
+    await test.step('削除したアイテムが表示されないことを確認', async () => {
+      const githubAfter = mainWindow.locator('.item', { hasText: 'GitHub' });
+      await expect(githubAfter).not.toBeVisible();
+    });
   });
 
-  test('data.txtのアイテムを更新してリロード後に反映される', async ({ mainWindow }) => {
+  test('data.txtのアイテムを更新してリロード後に反映される', async ({ mainWindow }, testInfo) => {
     const utils = new TestUtils(mainWindow);
 
-    // ページの読み込み完了を待機
-    await utils.waitForPageLoad();
+    await test.step('ページの読み込み完了を待機', async () => {
+      await utils.waitForPageLoad();
+      await utils.attachScreenshot(testInfo, '初期状態');
+    });
 
-    // GitHubアイテムを更新
-    configHelper.updateItem('GitHub', 'GitLab', 'https://gitlab.com');
+    await test.step('GitHubアイテムを更新', async () => {
+      configHelper.updateItem('GitHub', 'GitLab', 'https://gitlab.com');
+    });
 
-    // アプリをリロード
-    await mainWindow.reload();
-    await utils.waitForPageLoad();
+    await test.step('アプリをリロード', async () => {
+      await mainWindow.reload();
+      await utils.waitForPageLoad();
+      await utils.attachScreenshot(testInfo, 'リロード後');
+    });
 
-    // 古いアイテムが表示されないことを確認
-    const oldItem = mainWindow.locator('.item', { hasText: 'GitHub' });
-    await expect(oldItem).not.toBeVisible();
+    await test.step('古いアイテムが表示されず、新しいアイテムが表示されることを確認', async () => {
+      // 古いアイテムが表示されないことを確認
+      const oldItem = mainWindow.locator('.item', { hasText: 'GitHub' });
+      await expect(oldItem).not.toBeVisible();
 
-    // 新しいアイテムが表示されることを確認
-    const newItem = mainWindow.locator('.item', { hasText: 'GitLab' });
-    await expect(newItem).toBeVisible();
+      // 新しいアイテムが表示されることを確認
+      const newItem = mainWindow.locator('.item', { hasText: 'GitLab' });
+      await expect(newItem).toBeVisible();
+    });
   });
 
   test('テンプレートからdata.txtを読み込んで表示される', async ({ mainWindow }) => {

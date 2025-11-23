@@ -26,20 +26,25 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
 
   // ==================== タブ表示・切り替えテスト ====================
 
-  test('タブ機能を有効化するとタブバーが表示される', async ({ mainWindow }) => {
+  test('タブ機能を有効化するとタブバーが表示される', async ({ mainWindow }, testInfo) => {
     const utils = new TestUtils(mainWindow);
 
-    // ページの読み込み完了を待機
-    await utils.waitForPageLoad();
+    await test.step('ページの読み込み完了を待機', async () => {
+      await utils.waitForPageLoad();
+      await utils.attachScreenshot(testInfo, '初期状態');
+    });
 
-    // タブバーが表示されることを確認
-    const tabBar = mainWindow.locator('.file-tab-bar');
-    await expect(tabBar).toBeVisible();
+    await test.step('タブバーとタブボタンの表示確認', async () => {
+      // タブバーが表示されることを確認
+      const tabBar = mainWindow.locator('.file-tab-bar');
+      await expect(tabBar).toBeVisible();
 
-    // タブボタンが存在することを確認
-    const tabs = mainWindow.locator('.file-tab');
-    const tabCount = await tabs.count();
-    expect(tabCount).toBeGreaterThan(0);
+      // タブボタンが存在することを確認
+      const tabs = mainWindow.locator('.file-tab');
+      const tabCount = await tabs.count();
+      expect(tabCount).toBeGreaterThan(0);
+      await utils.attachScreenshot(testInfo, 'タブバー表示確認');
+    });
   });
 
   test('メインタブとサブタブが表示される', async ({ mainWindow }) => {
@@ -78,52 +83,58 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
     await expect(mainTab).toBeVisible();
   });
 
-  test('サブタブをクリックすると切り替わる', async ({ mainWindow }) => {
+  test('サブタブをクリックすると切り替わる', async ({ mainWindow }, testInfo) => {
     const utils = new TestUtils(mainWindow);
 
-    // タブ機能を有効化
-    configHelper.loadSettingsTemplate('with-tabs');
-    configHelper.loadData2Template('data2-base');
+    await test.step('タブ機能を有効化してリロード', async () => {
+      configHelper.loadSettingsTemplate('with-tabs');
+      configHelper.loadData2Template('data2-base');
+      await mainWindow.reload();
+      await utils.waitForPageLoad();
+      await utils.attachScreenshot(testInfo, 'タブ機能有効化後');
+    });
 
-    // アプリをリロード
-    await mainWindow.reload();
-    await utils.waitForPageLoad();
+    await test.step('サブ1タブをクリック', async () => {
+      const subTab1 = mainWindow.locator('.file-tab', { hasText: 'サブ1' });
+      await subTab1.click();
+      await utils.wait(300);
+      await utils.attachScreenshot(testInfo, 'サブタブクリック後');
+    });
 
-    // サブ1タブをクリック
-    const subTab1 = mainWindow.locator('.file-tab', { hasText: 'サブ1' });
-    await subTab1.click();
-    await utils.wait(300);
-
-    // サブ1タブがアクティブになったことを確認
-    const activeTab = mainWindow.locator('.file-tab.active', { hasText: 'サブ1' });
-    await expect(activeTab).toBeVisible();
+    await test.step('サブ1タブがアクティブになったことを確認', async () => {
+      const activeTab = mainWindow.locator('.file-tab.active', { hasText: 'サブ1' });
+      await expect(activeTab).toBeVisible();
+    });
   });
 
   // ==================== サブタブのアイテム表示テスト ====================
 
-  test('サブタブに切り替えるとdata2.txtのアイテムが表示される', async ({ mainWindow }) => {
+  test('サブタブに切り替えるとdata2.txtのアイテムが表示される', async ({ mainWindow }, testInfo) => {
     const utils = new TestUtils(mainWindow);
 
-    // タブ機能を有効化してdata2.txtを作成
-    configHelper.loadSettingsTemplate('with-tabs');
-    configHelper.loadData2Template('data2-base');
+    await test.step('タブ機能を有効化してリロード', async () => {
+      configHelper.loadSettingsTemplate('with-tabs');
+      configHelper.loadData2Template('data2-base');
+      await mainWindow.reload();
+      await utils.waitForPageLoad();
+      await utils.attachScreenshot(testInfo, '初期状態（メインタブ）');
+    });
 
-    // アプリをリロード
-    await mainWindow.reload();
-    await utils.waitForPageLoad();
+    await test.step('サブ1タブをクリック', async () => {
+      const subTab1 = mainWindow.locator('.file-tab', { hasText: 'サブ1' });
+      await subTab1.click();
+      await utils.wait(500);
+      await utils.attachScreenshot(testInfo, 'サブタブ切り替え後');
+    });
 
-    // サブ1タブをクリック
-    const subTab1 = mainWindow.locator('.file-tab', { hasText: 'サブ1' });
-    await subTab1.click();
-    await utils.wait(500);
+    await test.step('data2.txtのアイテムが表示されることを確認', async () => {
+      const knownItems = ['Stack Overflow', 'Reddit', 'YouTube'];
 
-    // data2.txtに含まれるアイテムが表示されることを確認
-    const knownItems = ['Stack Overflow', 'Reddit', 'YouTube'];
-
-    for (const itemName of knownItems) {
-      const item = mainWindow.locator('.item', { hasText: itemName });
-      await expect(item).toBeVisible();
-    }
+      for (const itemName of knownItems) {
+        const item = mainWindow.locator('.item', { hasText: itemName });
+        await expect(item).toBeVisible();
+      }
+    });
   });
 
   test('サブタブに切り替えるとメインタブのアイテムは表示されない', async ({ mainWindow }) => {

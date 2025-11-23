@@ -33,8 +33,13 @@ export default defineConfig({
 
   // 全テストでの共通設定
   use: {
-    // トレース設定（すべてのテストで記録、スクリーンショット含む）
-    trace: 'on',
+    // トレース設定（すべてのテストで記録、スクリーンショット・スナップショット含む）
+    trace: {
+      mode: 'on',
+      screenshots: true,
+      snapshots: true,
+      sources: true,
+    },
 
     // スクリーンショット（全テストで撮影）
     screenshot: 'on',
