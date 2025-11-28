@@ -8,7 +8,7 @@ test.describe('QuickDashLauncher - アイテムのタブ変更テスト', () => 
   let configHelper: ConfigFileHelper;
 
   test.beforeEach(async ({ mainWindow }) => {
-    const configDir = path.join(process.cwd(), 'tests', 'fixtures', 'e2e', 'default');
+    const configDir = path.join(process.cwd(), 'tests', 'e2e', 'configs', 'default');
     configHelper = new ConfigFileHelper(configDir);
 
     // テンプレートから強制的に復元して初期状態を保証

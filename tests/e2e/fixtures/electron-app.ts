@@ -25,8 +25,8 @@ export const test = base.extend<ElectronFixtures>({
     // アプリケーションのメインファイルパス
     const electronAppPath = path.join(process.cwd(), 'dist', 'main', 'main.js');
 
-    // テスト用の設定フォルダパス（tests/fixtures/e2e/default）
-    const testConfigDir = path.join(process.cwd(), 'tests', 'fixtures', 'e2e', 'default');
+    // テスト用の設定フォルダパス（tests/e2e/configs/default）
+    const testConfigDir = path.join(process.cwd(), 'tests', 'e2e', 'configs', 'default');
 
     // ConfigFileHelperでテンプレートから復元して初期状態を保証
     const configHelper = new ConfigFileHelper(testConfigDir);

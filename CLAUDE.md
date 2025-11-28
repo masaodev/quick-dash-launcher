@@ -13,15 +13,17 @@ QuickDashLauncherは、グローバルホットキー（Alt+Space）でWebサイ
 ```bash
 npm install              # 依存関係のインストール
 npm run dev             # 開発モード（Viteデベロップメントサーバー、ホットリロード付き）
-npm run dev:custom      # カスタム設定（tests/fixtures/test-config）で開発モード起動
-npm run dev:test        # テスト用設定（tests/fixtures/dev-config）で開発モード起動
+npm run dev:minimal     # 最小限のセットで開発モード起動
+npm run dev:full        # フル機能セットで開発モード起動
+npm run dev:tabs        # タブ機能デモで開発モード起動
+npm run dev:groups      # グループ起動デモで開発モード起動
 npm run build           # 全コンポーネントのビルド（Vite使用）
 npm run preview         # ビルド済みアプリケーションのプレビュー
 npm run start           # ビルドして実行
 npm run dist            # Windowsインストーラーの作成
 ```
 
-**注:** `tests/fixtures/`ディレクトリには、テスト・開発用の設定テンプレートが含まれています。詳細は[tests/fixtures/README.md](tests/fixtures/README.md)を参照してください。
+**注:** `tests/dev/`ディレクトリには、開発用の設定テンプレートが含まれています。詳細は[tests/dev/README.md](tests/dev/README.md)を参照してください。
 
 ## コード品質チェックコマンド
 

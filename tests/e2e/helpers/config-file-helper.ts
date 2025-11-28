@@ -20,7 +20,7 @@ export class ConfigFileHelper {
    * @returns 作成された一時ディレクトリのパス
    */
   static createTempConfigDir(testName: string): ConfigFileHelper {
-    const tempDir = path.join(process.cwd(), 'tests', 'fixtures', 'e2e', '.temp', testName);
+    const tempDir = path.join(process.cwd(), 'tests', 'e2e', 'configs', '.temp', testName);
 
     // 既存のディレクトリがあれば削除
     if (fs.existsSync(tempDir)) {
@@ -34,7 +34,7 @@ export class ConfigFileHelper {
     const dataTemplate = path.join(
       process.cwd(),
       'tests',
-      'fixtures',
+      'e2e',
       'templates',
       'data',
       'base.txt'
@@ -209,7 +209,7 @@ export class ConfigFileHelper {
     const templatePath = path.join(
       process.cwd(),
       'tests',
-      'fixtures',
+      'e2e',
       'templates',
       'data',
       `${templateName}.txt`
@@ -271,7 +271,7 @@ export class ConfigFileHelper {
     const templatePath = path.join(
       process.cwd(),
       'tests',
-      'fixtures',
+      'e2e',
       'templates',
       'data',
       `${templateName}.txt`
@@ -354,7 +354,7 @@ export class ConfigFileHelper {
     const templatePath = path.join(
       process.cwd(),
       'tests',
-      'fixtures',
+      'e2e',
       'templates',
       'settings',
       `${templateName}.json`

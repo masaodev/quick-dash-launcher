@@ -30,7 +30,7 @@ export const test = base.extend<ElectronFixtures>({
     const electronAppPath = path.join(process.cwd(), 'dist', 'main', 'main.js');
 
     // 初回起動テスト専用の設定フォルダパス（他のテストと分離）
-    const testConfigDir = path.join(process.cwd(), 'tests', 'fixtures', 'e2e', 'first-launch');
+    const testConfigDir = path.join(process.cwd(), 'tests', 'e2e', 'configs', 'first-launch');
 
     // テスト用の設定フォルダが存在しない場合は作成
     if (!fs.existsSync(testConfigDir)) {
