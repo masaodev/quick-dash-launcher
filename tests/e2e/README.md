@@ -20,22 +20,45 @@ npx playwright test -g "アイテムの名前を編集できる"
 
 ```
 tests/e2e/
-├── fixtures/              # テスト用フィクスチャ
-│   ├── e2e/              # E2E用設定ファイル
-│   └── electron-app.ts   # Electronアプリフィクスチャ
-├── helpers/              # ヘルパークラス
-│   ├── config-file-helper.ts
-│   └── test-utils.ts
-└── specs/                # テスト仕様
+├── configs/              # テスト実行時の一時ディレクトリ（Git管理外）
+│   ├── .gitignore       # 全ファイルを除外
+│   ├── .gitkeep         # ディレクトリ維持用
+│   └── .temp/           # テスト失敗時のデバッグ用（自動生成）
+├── fixtures/            # テストフィクスチャ（TypeScriptコード）
+│   ├── electron-app.ts      # 通常のElectronアプリフィクスチャ
+│   └── first-launch-app.ts  # 初回起動用フィクスチャ
+├── helpers/             # ヘルパークラス
+│   ├── config-file-helper.ts  # 設定ファイル操作ヘルパー
+│   └── test-utils.ts          # テストユーティリティ
+├── templates/           # テスト用テンプレート（目的別）
+│   ├── base/            # 基本テンプレート
+│   ├── with-tabs/       # タブ機能テスト用
+│   ├── empty/           # 空データテスト用
+│   ├── with-groups/     # グループ機能テスト用
+│   ├── with-backup/     # バックアップ機能テスト用
+│   ├── custom-hotkey/   # カスタムホットキーテスト用
+│   ├── with-folder-import/  # フォルダ取込テスト用
+│   └── first-launch/    # 初回起動テスト用
+└── specs/               # テスト仕様
     ├── app-launch.spec.ts
     ├── config-modification.spec.ts
     ├── first-launch-setup.spec.ts
     ├── item-display.spec.ts
     ├── item-registration.spec.ts
+    ├── item-tab-change.spec.ts
     ├── multi-tab.spec.ts
     ├── search.spec.ts
     └── settings-tab.spec.ts
 ```
+
+## テンプレートシステム
+
+E2Eテストでは目的別のテンプレートを使用します：
+
+- **templates/**配下に目的別のフォルダがあり、各フォルダに`data.txt`, `data2.txt`, `settings.json`などが含まれます
+- テスト実行時に`configs/.temp/`配下に一時ディレクトリが自動作成されます
+- テンプレートから設定ファイルがコピーされます
+- テスト成功時は自動削除、失敗時はデバッグ用に残されます
 
 ## トレース・レポート
 

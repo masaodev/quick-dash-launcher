@@ -7,6 +7,7 @@ import { ConfigFileHelper } from '../helpers/config-file-helper';
 
 // Electronアプリとメインウィンドウを提供するフィクスチャの型定義
 type ElectronFixtures = {
+  configHelper: ConfigFileHelper;
   electronApp: ElectronApplication;
   mainWindow: Page;
 };
@@ -15,24 +16,33 @@ type ElectronFixtures = {
  * Electronアプリケーション用のPlaywrightフィクスチャ
  *
  * このフィクスチャは以下を提供します：
+ * - configHelper: 設定ファイル操作ヘルパー
  * - electronApp: Electronアプリケーションインスタンス
  * - mainWindow: メインウィンドウページ
+ *
+ * 一時ディレクトリを使用してテストを実行し、成功時のみクリーンアップします。
  */
 export const test = base.extend<ElectronFixtures>({
-  // Electronアプリケーションを起動するフィクスチャ
+  // 設定ファイルヘルパーフィクスチャ（一時ディレクトリを作成）
   // eslint-disable-next-line no-empty-pattern
-  electronApp: async ({}, use) => {
+  configHelper: async ({}, use, testInfo) => {
+    // 一時ディレクトリを作成してbaseテンプレートを読み込み
+    const configHelper = ConfigFileHelper.createTempConfigDir(testInfo.testId, 'base');
+    await use(configHelper);
+
+    // テスト成功時のみクリーンアップ（失敗時はデバッグ用に残す）
+    if (testInfo.status === 'passed') {
+      configHelper.cleanup();
+    }
+  },
+
+  // Electronアプリケーションを起動するフィクスチャ
+  electronApp: async ({ configHelper }, use) => {
     // アプリケーションのメインファイルパス
     const electronAppPath = path.join(process.cwd(), 'dist', 'main', 'main.js');
 
-    // テスト用の設定フォルダパス（tests/e2e/configs/default）
-    const testConfigDir = path.join(process.cwd(), 'tests', 'e2e', 'configs', 'default');
-
-    // ConfigFileHelperでテンプレートから復元して初期状態を保証
-    const configHelper = new ConfigFileHelper(testConfigDir);
-    configHelper.restoreDataFromTemplate('base');
-    configHelper.restoreData2FromTemplate('data2-base');
-    configHelper.loadSettingsTemplate('default');
+    // 一時ディレクトリのパスを取得
+    const testConfigDir = configHelper.getConfigDir();
 
     // テスト用のElectronアプリケーション設定
     const electronApp = await electron.launch({
@@ -87,11 +97,6 @@ export const test = base.extend<ElectronFixtures>({
     } catch (error) {
       console.warn('アプリケーション終了中にエラーが発生しましたが、続行します:', error);
     }
-
-    // テンプレートから復元して次のテストのために初期状態に戻す
-    configHelper.restoreDataFromTemplate('base');
-    configHelper.restoreData2FromTemplate('data2-base');
-    configHelper.loadSettingsTemplate('default');
   },
 
   // メインウィンドウを取得するフィクスチャ
@@ -99,13 +104,9 @@ export const test = base.extend<ElectronFixtures>({
     // 最初のウィンドウを取得（メインウィンドウ）
     const mainWindow = await electronApp.firstWindow();
 
-    // ウィンドウが完全に読み込まれるまで待機
-    await mainWindow.waitForLoadState('domcontentloaded');
-
-    // テストでメインウィンドウを使用
+    // テストでウィンドウを使用
     await use(mainWindow);
   },
 });
 
-// expectをそのまま再エクスポート
 export { expect } from '@playwright/test';

@@ -1,24 +1,10 @@
-import path from 'path';
-
 import { test, expect } from '../fixtures/electron-app';
 import { TestUtils } from '../helpers/test-utils';
-import { ConfigFileHelper } from '../helpers/config-file-helper';
 
 test.describe('QuickDashLauncher - 設定ファイル変更テスト', () => {
-  let configHelper: ConfigFileHelper;
-
-  test.beforeEach(async () => {
-    const configDir = path.join(process.cwd(), 'tests', 'e2e', 'configs', 'default');
-    configHelper = new ConfigFileHelper(configDir);
-
-    // テンプレートから強制的に復元して初期状態を保証
-    configHelper.restoreDataFromTemplate('base');
-    configHelper.deleteData2(); // data2.txtは削除
-  });
-
-  test.afterEach(async () => {
-    // テンプレートから復元して次のテストのために初期状態に戻す
-    configHelper.restoreDataFromTemplate('base');
+  test.beforeEach(async ({ configHelper }) => {
+    // baseテンプレートは既に読み込まれている
+    // data2.txtは削除（このテストでは使用しない）
     configHelper.deleteData2();
   });
 
@@ -26,6 +12,7 @@ test.describe('QuickDashLauncher - 設定ファイル変更テスト', () => {
 
   test('data.txtの変更(追加・削除・更新)がリロード後に反映される', async ({
     mainWindow,
+    configHelper,
   }, testInfo) => {
     const utils = new TestUtils(mainWindow);
 
@@ -80,7 +67,7 @@ test.describe('QuickDashLauncher - 設定ファイル変更テスト', () => {
 
     await test.step('テンプレートからdata.txtを読み込んで表示される', async () => {
       // 基本テンプレートを読み込み
-      configHelper.loadDataTemplate('base');
+      configHelper.loadTemplateFile('base', 'data.txt');
 
       await mainWindow.reload();
       await utils.waitForPageLoad();
@@ -96,7 +83,7 @@ test.describe('QuickDashLauncher - 設定ファイル変更テスト', () => {
 
     await test.step('空のdata.txtでアイテムが表示されない', async () => {
       // 空テンプレートを読み込み
-      configHelper.loadDataTemplate('empty');
+      configHelper.loadTemplateFile('empty', 'data.txt');
 
       await mainWindow.reload();
       await utils.waitForPageLoad();
@@ -111,10 +98,10 @@ test.describe('QuickDashLauncher - 設定ファイル変更テスト', () => {
 
   // ==================== settings.json 変更テスト ====================
 
-  test('settings.jsonの各種設定変更ができる', async () => {
+  test('settings.jsonの各種設定変更ができる', async ({ configHelper }) => {
     await test.step('ホットキー設定が反映される', async () => {
       // カスタムホットキー設定を読み込み
-      configHelper.loadSettingsTemplate('custom-hotkey');
+      configHelper.loadTemplateFile('custom-hotkey', 'settings.json');
 
       // 設定が更新されたことを確認（ファイルから読み込み）
       const settings = configHelper.readSettings();
@@ -136,7 +123,7 @@ test.describe('QuickDashLauncher - 設定ファイル変更テスト', () => {
 
     await test.step('バックアップ設定を有効化できる', async () => {
       // バックアップ設定テンプレートを読み込み
-      configHelper.loadSettingsTemplate('with-backup');
+      configHelper.loadTemplateFile('with-backup', 'settings.json');
 
       // 設定が更新されたことを確認
       const settings = configHelper.readSettings();
@@ -168,7 +155,7 @@ test.describe('QuickDashLauncher - 設定ファイル変更テスト', () => {
 
   // ==================== 複合テスト ====================
 
-  test('data.txtとsettings.jsonの両方を変更して反映される', async ({ mainWindow }) => {
+  test('data.txtとsettings.jsonの両方を変更して反映される', async ({ mainWindow, configHelper }) => {
     const utils = new TestUtils(mainWindow);
 
     // data.txtにアイテムを追加
@@ -194,7 +181,7 @@ test.describe('QuickDashLauncher - 設定ファイル変更テスト', () => {
     expect(settings.windowHeight).toBe(500);
   });
 
-  test('バックアップ・復元が正しく動作する', async () => {
+  test('バックアップ・復元が正しく動作する', async ({ configHelper }) => {
     // 元のデータを読み込み
     const originalData = configHelper.readData();
     const originalSettings = configHelper.readSettings();

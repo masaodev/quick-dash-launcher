@@ -17,9 +17,13 @@ export class ConfigFileHelper {
   /**
    * テンプレートから一時ディレクトリを作成して初期化
    * @param testName テスト名（ディレクトリ名に使用）
+   * @param templateName テンプレート名（デフォルト: 'base'）
    * @returns 作成された一時ディレクトリのパス
    */
-  static createTempConfigDir(testName: string): ConfigFileHelper {
+  static createTempConfigDir(
+    testName: string,
+    templateName: string = 'base'
+  ): ConfigFileHelper {
     const tempDir = path.join(process.cwd(), 'tests', 'e2e', 'configs', '.temp', testName);
 
     // 既存のディレクトリがあれば削除
@@ -30,23 +34,10 @@ export class ConfigFileHelper {
     // 一時ディレクトリを作成
     fs.mkdirSync(tempDir, { recursive: true });
 
-    // テンプレートからdata.txtをコピー
-    const dataTemplate = path.join(
-      process.cwd(),
-      'tests',
-      'e2e',
-      'templates',
-      'data',
-      'base.txt'
-    );
-    const dataTarget = path.join(tempDir, 'data.txt');
-
-    if (fs.existsSync(dataTemplate)) {
-      fs.copyFileSync(dataTemplate, dataTarget);
-    }
-
+    // ヘルパーインスタンスを作成してテンプレートを読み込み
     const helper = new ConfigFileHelper(tempDir);
     helper.isTempDir = true;
+    helper.loadTemplate(templateName);
     return helper;
   }
 
@@ -131,6 +122,79 @@ export class ConfigFileHelper {
     }
 
     this.settingsBackupPath = null;
+  }
+
+  // ==================== テンプレート読み込み（新API） ====================
+
+  /**
+   * テンプレートフォルダから全ファイルを読み込み
+   * @param templateName テンプレート名（例: 'base', 'with-tabs'）
+   *
+   * テンプレートフォルダ内の以下のファイルを自動的にコピー：
+   * - data.txt → configDir/data.txt
+   * - data2.txt → configDir/data2.txt（存在する場合）
+   * - data3.txt以降 → configDir/data*.txt（存在する場合）
+   * - settings.json → configDir/settings.json（存在する場合）
+   */
+  loadTemplate(templateName: string): void {
+    const templateDir = path.join(
+      process.cwd(),
+      'tests',
+      'e2e',
+      'templates',
+      templateName
+    );
+
+    if (!fs.existsSync(templateDir)) {
+      throw new Error(`Template directory not found: ${templateDir}`);
+    }
+
+    // data.txt をコピー
+    const dataTemplate = path.join(templateDir, 'data.txt');
+    const dataTarget = path.join(this.configDir, 'data.txt');
+    if (fs.existsSync(dataTemplate)) {
+      fs.copyFileSync(dataTemplate, dataTarget);
+    }
+
+    // data2.txt〜data9.txt をコピー（存在する場合）
+    for (let i = 2; i <= 9; i++) {
+      const dataFile = `data${i}.txt`;
+      const dataTemplate = path.join(templateDir, dataFile);
+      const dataTarget = path.join(this.configDir, dataFile);
+      if (fs.existsSync(dataTemplate)) {
+        fs.copyFileSync(dataTemplate, dataTarget);
+      }
+    }
+
+    // settings.json をコピー（存在する場合）
+    const settingsTemplate = path.join(templateDir, 'settings.json');
+    const settingsTarget = path.join(this.configDir, 'settings.json');
+    if (fs.existsSync(settingsTemplate)) {
+      fs.copyFileSync(settingsTemplate, settingsTarget);
+    }
+  }
+
+  /**
+   * テンプレートフォルダから特定のファイルのみ読み込み
+   * @param templateName テンプレート名（例: 'base', 'with-tabs'）
+   * @param fileName ファイル名（例: 'data.txt', 'settings.json'）
+   */
+  loadTemplateFile(templateName: string, fileName: string): void {
+    const templatePath = path.join(
+      process.cwd(),
+      'tests',
+      'e2e',
+      'templates',
+      templateName,
+      fileName
+    );
+    const targetPath = path.join(this.configDir, fileName);
+
+    if (fs.existsSync(templatePath)) {
+      fs.copyFileSync(templatePath, targetPath);
+    } else {
+      throw new Error(`Template file not found: ${templatePath}`);
+    }
   }
 
   // ==================== data.txt 操作 ====================

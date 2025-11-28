@@ -18,13 +18,25 @@ tests/
 ├── e2e/                        # E2Eテスト関連
 │   ├── specs/                # テストスペック
 │   ├── helpers/              # テストヘルパー
-│   ├── fixtures/             # テストフィクスチャ（コード）
-│   ├── configs/              # E2Eテスト用設定
-│   │   ├── default/         # 通常のE2Eテスト用
-│   │   └── first-launch/    # 初回起動テスト専用
-│   └── templates/            # E2Eテスト用テンプレート
-│       ├── data/            # データファイルテンプレート
-│       └── settings/        # 設定ファイルテンプレート
+│   ├── fixtures/             # テストフィクスチャ（TypeScriptコード）
+│   ├── configs/              # E2Eテスト実行時の一時ディレクトリ（Git管理外）
+│   │   ├── .gitignore        # 全ファイルを除外
+│   │   ├── .gitkeep          # ディレクトリ維持用
+│   │   └── .temp/            # テスト失敗時のデバッグ用（自動生成）
+│   └── templates/            # E2Eテスト用テンプレート（目的別）
+│       ├── base/             # 基本テンプレート
+│       │   ├── data.txt
+│       │   └── settings.json
+│       ├── with-tabs/        # タブ機能テスト用
+│       │   ├── data.txt
+│       │   ├── data2.txt
+│       │   └── settings.json
+│       ├── empty/            # 空データテスト用
+│       ├── with-groups/      # グループ機能テスト用
+│       ├── with-backup/      # バックアップ機能テスト用
+│       ├── custom-hotkey/    # カスタムホットキーテスト用
+│       ├── with-folder-import/  # フォルダ取込テスト用
+│       └── first-launch/     # 初回起動テスト用
 └── unit/                       # 単体テスト
     ├── components/
     └── utils/
@@ -52,7 +64,7 @@ npm run dev:groups
 
 ### テスト実行時
 
-各テストは自動的に対応する設定フォルダを使用します：
+各テストは自動的に一時ディレクトリを作成して使用します：
 
 ```bash
 # 単体テスト（Vitest）
@@ -60,7 +72,9 @@ npm run dev:groups
 npm run test:unit
 
 # E2Eテスト（Playwright）
-# → tests/e2e/configs/default を使用
+# → tests/e2e/configs/.temp/ 配下に一時ディレクトリを自動作成
+# → テンプレートから設定ファイルをコピー
+# → テスト成功時は自動削除、失敗時はデバッグ用に残す
 npm run test:e2e
 ```
 

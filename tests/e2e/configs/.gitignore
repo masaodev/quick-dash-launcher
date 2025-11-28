@@ -1,43 +1,12 @@
-# E2Eテスト用設定ファイル.gitignore
-# tests/e2e/configs/ 内で自動生成されるファイルやテスト実行時の一時ファイルを除外
+# E2Eテスト用configs/ - 一時ディレクトリとして扱う
+# テスト実行時に一時ディレクトリ内に設定ファイルが自動生成されます
 
-# ==================== 自動生成ファイル ====================
+# configs/配下のすべてのファイルとディレクトリを除外
+*
 
-# settings.json（テスト実行時に自動生成されるため除外）
-*/settings.json
+# ただし、.gitkeepとこの.gitignore自体は追跡する
+!.gitignore
+!.gitkeep
 
-# アイコン関連フォルダ（テスト実行時に自動生成）
-*/icons/
-*/favicons/
-*/custom-icons/
-
-# バックアップフォルダ（テスト実行時に自動生成）
-*/backup/
-**/backup/
-
-# ==================== テスト実行時の一時ファイル ====================
-
-# 一時ディレクトリ
+# .temp/ 配下のすべて（失敗したテストの一時ディレクトリ）を除外
 .temp/
-
-# ConfigFileHelperのバックアップファイル
-*/.data.txt.backup
-*/.settings.json.backup
-
-# その他の一時ファイル
-*/*.tmp
-*/*.temp
-
-# data3.txt以降（data2.txtまでは管理対象、data3.txt以降は除外）
-*/data3.txt
-*/data4.txt
-*/data5.txt
-*/data6.txt
-*/data7.txt
-*/data8.txt
-*/data9.txt
-
-# ==================== 管理対象ファイル ====================
-# 以下のファイルは明示的に管理対象とする：
-# - data.txt, data2.txt（各設定フォルダのテンプレート）
-# - README.md（説明ファイル）

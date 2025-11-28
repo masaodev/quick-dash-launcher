@@ -1,11 +1,13 @@
 import path from 'path';
-import fs from 'fs';
 
 import { test as base, _electron as electron } from '@playwright/test';
 import type { ElectronApplication, Page } from 'playwright';
 
+import { ConfigFileHelper } from '../helpers/config-file-helper';
+
 // Electronアプリとメインウィンドウを提供するフィクスチャの型定義
 type ElectronFixtures = {
+  configHelper: ConfigFileHelper;
   electronApp: ElectronApplication;
   mainWindow: Page;
 };
@@ -14,35 +16,36 @@ type ElectronFixtures = {
  * 初回起動テスト用のElectronアプリケーションフィクスチャ
  *
  * このフィクスチャは以下を提供します：
+ * - configHelper: 設定ファイル操作ヘルパー
  * - electronApp: Electronアプリケーションインスタンス
  * - mainWindow: メインウィンドウページ
  *
  * 通常のフィクスチャとの違い：
- * - 専用の設定フォルダ（e2e/first-launch）を使用して他のテストと分離
- * - テスト前に設定ファイル（settings.json）を削除して初回起動状態を再現
- * - テスト後も設定ファイルを削除して次回のテストに備える
+ * - first-launchテンプレートを使用（settings.jsonなし）
+ * - 一時ディレクトリを使用してテストを実行
+ * - テスト成功時のみクリーンアップ
  */
 export const test = base.extend<ElectronFixtures>({
-  // Electronアプリケーションを起動するフィクスチャ
+  // 設定ファイルヘルパーフィクスチャ（一時ディレクトリを作成）
   // eslint-disable-next-line no-empty-pattern
-  electronApp: async ({}, use) => {
+  configHelper: async ({}, use, testInfo) => {
+    // 一時ディレクトリを作成してfirst-launchテンプレートを読み込み
+    const configHelper = ConfigFileHelper.createTempConfigDir(testInfo.testId, 'first-launch');
+    await use(configHelper);
+
+    // テスト成功時のみクリーンアップ（失敗時はデバッグ用に残す）
+    if (testInfo.status === 'passed') {
+      configHelper.cleanup();
+    }
+  },
+
+  // Electronアプリケーションを起動するフィクスチャ
+  electronApp: async ({ configHelper }, use) => {
     // アプリケーションのメインファイルパス
     const electronAppPath = path.join(process.cwd(), 'dist', 'main', 'main.js');
 
-    // 初回起動テスト専用の設定フォルダパス（他のテストと分離）
-    const testConfigDir = path.join(process.cwd(), 'tests', 'e2e', 'configs', 'first-launch');
-
-    // テスト用の設定フォルダが存在しない場合は作成
-    if (!fs.existsSync(testConfigDir)) {
-      fs.mkdirSync(testConfigDir, { recursive: true });
-    }
-
-    const settingsFilePath = path.join(testConfigDir, 'settings.json');
-
-    // 既存の設定ファイルが存在する場合は削除（初回起動状態を再現）
-    if (fs.existsSync(settingsFilePath)) {
-      fs.unlinkSync(settingsFilePath);
-    }
+    // 一時ディレクトリのパスを取得
+    const testConfigDir = configHelper.getConfigDir();
 
     // テスト用のElectronアプリケーション設定
     const electronApp = await electron.launch({
@@ -70,11 +73,6 @@ export const test = base.extend<ElectronFixtures>({
 
     // テスト完了後にアプリケーションを終了
     await electronApp.close();
-
-    // テスト完了後、次回の初回起動テストのために設定ファイルを削除
-    if (fs.existsSync(settingsFilePath)) {
-      fs.unlinkSync(settingsFilePath);
-    }
   },
 
   // メインウィンドウを取得するフィクスチャ

@@ -1,29 +1,15 @@
-import path from 'path';
-
 import { test, expect } from '../fixtures/electron-app';
-import { ConfigFileHelper } from '../helpers/config-file-helper';
 import { TestUtils } from '../helpers/test-utils';
 
 test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', () => {
-  let configHelper: ConfigFileHelper;
-
-  test.beforeEach(async ({ mainWindow }) => {
-    const configDir = path.join(process.cwd(), 'tests', 'e2e', 'configs', 'default');
-    configHelper = new ConfigFileHelper(configDir);
-
-    // テンプレートから強制的に復元して初期状態を保証
-    configHelper.restoreDataFromTemplate('base');
-    configHelper.deleteData2(); // data2.txtは削除
+  test.beforeEach(async ({ configHelper, mainWindow }) => {
+    // baseテンプレートは既に読み込まれている
+    // data2.txtは削除（このテストでは使用しない）
+    configHelper.deleteData2();
 
     // ページの読み込み完了を待機
     const utils = new TestUtils(mainWindow);
     await utils.waitForPageLoad();
-  });
-
-  test.afterEach(async () => {
-    // テンプレートから復元して次のテストのために初期状態に戻す
-    configHelper.restoreDataFromTemplate('base');
-    configHelper.deleteData2();
   });
 
   // ==================== 登録モーダル表示テスト ====================
@@ -91,7 +77,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
 
   // ==================== アイテム登録テスト ====================
 
-  test('新規アイテムを登録できる', async ({ mainWindow }, testInfo) => {
+  test('新規アイテムを登録できる', async ({ mainWindow, configHelper }, testInfo) => {
     const utils = new TestUtils(mainWindow);
     let countBefore: number;
 
@@ -302,7 +288,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
     });
   });
 
-  test('アイテムを編集できる', async ({ mainWindow }, testInfo) => {
+  test('アイテムを編集できる', async ({ mainWindow, configHelper }, testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('アイテムの名前を編集できる', async () => {
@@ -377,7 +363,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
     });
   });
 
-  test('編集時の不正入力とキャンセル', async ({ mainWindow }, testInfo) => {
+  test('編集時の不正入力とキャンセル', async ({ mainWindow, configHelper }, testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('編集時に名前を空にすると保存できない', async () => {

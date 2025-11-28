@@ -1,35 +1,19 @@
-import path from 'path';
-
 import { test, expect } from '../fixtures/electron-app';
-import { ConfigFileHelper } from '../helpers/config-file-helper';
 import { TestUtils } from '../helpers/test-utils';
 
 test.describe('QuickDashLauncher - アイテムのタブ変更テスト', () => {
-  let configHelper: ConfigFileHelper;
-
-  test.beforeEach(async ({ mainWindow }) => {
-    const configDir = path.join(process.cwd(), 'tests', 'e2e', 'configs', 'default');
-    configHelper = new ConfigFileHelper(configDir);
-
-    // テンプレートから強制的に復元して初期状態を保証
-    configHelper.restoreDataFromTemplate('base');
-    configHelper.restoreData2FromTemplate('data2-base');
-    configHelper.loadSettingsTemplate('with-tabs');
+  test.beforeEach(async ({ configHelper, mainWindow }) => {
+    // マルチタブ機能を有効化
+    configHelper.loadTemplate('with-tabs');
 
     // ページの読み込み完了を待機
     const utils = new TestUtils(mainWindow);
-    await mainWindow.reload();
     await utils.waitForPageLoad();
-  });
-
-  test.afterEach(async () => {
-    // テンプレートから復元して次のテストのために初期状態に戻す
-    configHelper.restoreDataFromTemplate('base');
-    configHelper.restoreData2FromTemplate('data2-base');
   });
 
   test('アイテムの編集で保存先タブを変更すると別のタブに移動する', async ({
     mainWindow,
+    configHelper,
   }, testInfo) => {
     const utils = new TestUtils(mainWindow);
 

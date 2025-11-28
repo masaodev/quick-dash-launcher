@@ -1,28 +1,10 @@
-import path from 'path';
-
 import { test, expect } from '../fixtures/electron-app';
 import { TestUtils } from '../helpers/test-utils';
-import { ConfigFileHelper } from '../helpers/config-file-helper';
 
 test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
-  let configHelper: ConfigFileHelper;
-
-  test.beforeEach(async () => {
-    const configDir = path.join(process.cwd(), 'tests', 'e2e', 'configs', 'default');
-    configHelper = new ConfigFileHelper(configDir);
-
-    // テンプレートから強制的に復元して初期状態を保証
-    configHelper.restoreDataFromTemplate('base');
-    configHelper.restoreData2FromTemplate('data2-base');
-
+  test.beforeEach(async ({ configHelper }) => {
     // マルチタブ機能を有効化
-    configHelper.loadSettingsTemplate('with-tabs');
-  });
-
-  test.afterEach(async () => {
-    // テンプレートから復元して次のテストのために初期状態に戻す
-    configHelper.restoreDataFromTemplate('base');
-    configHelper.restoreData2FromTemplate('data2-base');
+    configHelper.loadTemplate('with-tabs');
   });
 
   // ==================== タブ表示・切り替えテスト ====================
@@ -30,10 +12,7 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
   test('タブ機能を有効化するとタブバーが表示される', async ({ mainWindow }, testInfo) => {
     const utils = new TestUtils(mainWindow);
 
-    await test.step('タブ機能を有効化してリロード', async () => {
-      configHelper.loadSettingsTemplate('with-tabs');
-      configHelper.loadData2Template('data2-base');
-      await mainWindow.reload();
+    await test.step('初期状態を確認', async () => {
       await utils.waitForPageLoad();
       await utils.attachScreenshot(testInfo, '初期状態');
     });
@@ -54,12 +33,6 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
   test('メインタブとサブタブが表示される', async ({ mainWindow }) => {
     const utils = new TestUtils(mainWindow);
 
-    // タブ機能を有効化してdata2.txtを作成
-    configHelper.loadSettingsTemplate('with-tabs');
-    configHelper.loadData2Template('data2-base');
-
-    // アプリをリロード
-    await mainWindow.reload();
     await utils.waitForPageLoad();
 
     // メインタブが存在することを確認
@@ -74,12 +47,6 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
   test('デフォルトではメインタブがアクティブになっている', async ({ mainWindow }) => {
     const utils = new TestUtils(mainWindow);
 
-    // タブ機能を有効化
-    configHelper.loadSettingsTemplate('with-tabs');
-    configHelper.loadData2Template('data2-base');
-
-    // アプリをリロード
-    await mainWindow.reload();
     await utils.waitForPageLoad();
 
     // メインタブがアクティブであることを確認
@@ -91,9 +58,6 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('タブ機能を有効化してリロード', async () => {
-      configHelper.loadSettingsTemplate('with-tabs');
-      configHelper.loadData2Template('data2-base');
-      await mainWindow.reload();
       await utils.waitForPageLoad();
       await utils.attachScreenshot(testInfo, 'タブ機能有効化後');
     });
@@ -119,9 +83,6 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('タブ機能を有効化してリロード', async () => {
-      configHelper.loadSettingsTemplate('with-tabs');
-      configHelper.loadData2Template('data2-base');
-      await mainWindow.reload();
       await utils.waitForPageLoad();
       await utils.attachScreenshot(testInfo, '初期状態（メインタブ）');
     });
@@ -146,12 +107,6 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
   test('サブタブに切り替えるとメインタブのアイテムは表示されない', async ({ mainWindow }) => {
     const utils = new TestUtils(mainWindow);
 
-    // タブ機能を有効化
-    configHelper.loadSettingsTemplate('with-tabs');
-    configHelper.loadData2Template('data2-base');
-
-    // アプリをリロード
-    await mainWindow.reload();
     await utils.waitForPageLoad();
 
     // メインタブのアイテムが表示されていることを確認
@@ -175,12 +130,6 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
   test('メインタブに戻るとdata.txtのアイテムが表示される', async ({ mainWindow }) => {
     const utils = new TestUtils(mainWindow);
 
-    // タブ機能を有効化
-    configHelper.loadSettingsTemplate('with-tabs');
-    configHelper.loadData2Template('data2-base');
-
-    // アプリをリロード
-    await mainWindow.reload();
     await utils.waitForPageLoad();
 
     // サブ1タブに切り替え
@@ -211,12 +160,6 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
   test('サブタブのアイテムを選択できる', async ({ mainWindow }) => {
     const utils = new TestUtils(mainWindow);
 
-    // タブ機能を有効化
-    configHelper.loadSettingsTemplate('with-tabs');
-    configHelper.loadData2Template('data2-base');
-
-    // アプリをリロード
-    await mainWindow.reload();
     await utils.waitForPageLoad();
 
     // サブ1タブに切り替え
@@ -232,12 +175,6 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
   test('サブタブのアイテムをキーボードで選択できる', async ({ mainWindow }) => {
     const utils = new TestUtils(mainWindow);
 
-    // タブ機能を有効化
-    configHelper.loadSettingsTemplate('with-tabs');
-    configHelper.loadData2Template('data2-base');
-
-    // アプリをリロード
-    await mainWindow.reload();
     await utils.waitForPageLoad();
 
     // サブ1タブに切り替え
@@ -264,12 +201,6 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
   test('サブタブのアイテムを検索できる', async ({ mainWindow }) => {
     const utils = new TestUtils(mainWindow);
 
-    // タブ機能を有効化
-    configHelper.loadSettingsTemplate('with-tabs');
-    configHelper.loadData2Template('data2-base');
-
-    // アプリをリロード
-    await mainWindow.reload();
     await utils.waitForPageLoad();
 
     // サブ1タブに切り替え
@@ -296,12 +227,8 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
     await expect(redditItem).toBeVisible();
   });
 
-  test('サブタブで新しいアイテムを追加して表示される', async ({ mainWindow }) => {
+  test('サブタブで新しいアイテムを追加して表示される', async ({ mainWindow, configHelper }) => {
     const utils = new TestUtils(mainWindow);
-
-    // タブ機能を有効化
-    configHelper.loadSettingsTemplate('with-tabs');
-    configHelper.loadData2Template('data2-base');
 
     // data2.txtに新しいアイテムを追加
     configHelper.addItemToData2('新規サブアイテム', 'https://example-sub.com');
@@ -325,12 +252,6 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
   test('各タブのデータは独立している', async ({ mainWindow }) => {
     const utils = new TestUtils(mainWindow);
 
-    // タブ機能を有効化
-    configHelper.loadSettingsTemplate('with-tabs');
-    configHelper.loadData2Template('data2-base');
-
-    // アプリをリロード
-    await mainWindow.reload();
     await utils.waitForPageLoad();
 
     // メインタブのアイテム数を確認
@@ -353,12 +274,6 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
   test('タブを切り替えても検索状態はリセットされる', async ({ mainWindow }) => {
     const utils = new TestUtils(mainWindow);
 
-    // タブ機能を有効化
-    configHelper.loadSettingsTemplate('with-tabs');
-    configHelper.loadData2Template('data2-base');
-
-    // アプリをリロード
-    await mainWindow.reload();
     await utils.waitForPageLoad();
 
     // メインタブで検索

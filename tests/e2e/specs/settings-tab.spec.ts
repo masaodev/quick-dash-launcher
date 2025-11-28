@@ -1,8 +1,5 @@
-import path from 'path';
-
 import { test, expect } from '../fixtures/electron-app';
 import { TestUtils } from '../helpers/test-utils';
-import { ConfigFileHelper } from '../helpers/config-file-helper';
 
 /**
  * 設定タブE2Eテスト
@@ -11,27 +8,14 @@ import { ConfigFileHelper } from '../helpers/config-file-helper';
  * electronApp.waitForEvent('window')を使用して新しいウィンドウを取得します。
  */
 test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
-  let configHelper: ConfigFileHelper;
-
-  test.beforeEach(async ({ mainWindow }) => {
-    const configDir = path.join(process.cwd(), 'tests', 'fixtures', 'e2e', 'default');
-    configHelper = new ConfigFileHelper(configDir);
-
-    // テンプレートから強制的に復元して初期状態を保証
-    configHelper.restoreDataFromTemplate('base');
-    configHelper.restoreSettingsFromTemplate('base');
+  test.beforeEach(async ({ configHelper, mainWindow }) => {
+    // baseテンプレートは既に読み込まれている
+    // data2.txtは削除（このテストでは使用しない）
     configHelper.deleteData2();
 
     // ページの読み込み完了を待機
     const utils = new TestUtils(mainWindow);
     await utils.waitForPageLoad();
-  });
-
-  test.afterEach(async () => {
-    // テンプレートから復元して次のテストのために初期状態に戻す
-    configHelper.restoreDataFromTemplate('base');
-    configHelper.restoreSettingsFromTemplate('base');
-    configHelper.deleteData2();
   });
 
   // ==================== 設定タブ表示テスト ====================
@@ -131,7 +115,7 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
 
   // ==================== チェックボックス設定テスト ====================
 
-  test('チェックボックス設定を変更できる', async ({ electronApp, mainWindow }, testInfo) => {
+  test('チェックボックス設定を変更できる', async ({ electronApp, mainWindow, configHelper }, testInfo) => {
     const utils = new TestUtils(mainWindow);
     const adminWindow = await utils.openAdminWindow(electronApp, 'settings');
 
@@ -185,6 +169,7 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
   test('複数タブの表示・追加・カスタマイズができる', async ({
     electronApp,
     mainWindow,
+    configHelper,
   }, testInfo) => {
     const utils = new TestUtils(mainWindow);
     const adminWindow = await utils.openAdminWindow(electronApp, 'settings');
