@@ -268,9 +268,17 @@ const App: React.FC = () => {
     resetNavigation();
   };
 
-  const handleKeyDown = async (e: React.KeyboardEvent) => {
-    const filteredItems = filterItems(mainItems, searchQuery);
+  // アクティブなタブに基づいてアイテムをフィルタリング（コンポーネントレベル）
+  const getTabFilteredItemsForKeyHandler = (): AppItem[] => {
+    if (!showDataFileTabs) {
+      // タブ表示OFF: data.txtのみ表示
+      return mainItems.filter((item) => item.sourceFile === 'data.txt');
+    }
+    // タブ表示ON: アクティブなタブのアイテムのみ表示
+    return mainItems.filter((item) => item.sourceFile === activeTab);
+  };
 
+  const handleKeyDown = async (e: React.KeyboardEvent) => {
     // タブ切り替え (Tab/Shift+Tab)
     if (e.key === 'Tab' && showDataFileTabs && dataFiles.length > 1) {
       e.preventDefault();
@@ -291,6 +299,10 @@ const App: React.FC = () => {
       setSelectedIndex(0); // タブ切り替え時は選択インデックスをリセット
       return;
     }
+
+    // 各キー処理で最新のfilteredItemsを計算
+    const tabFilteredItems = getTabFilteredItemsForKeyHandler();
+    const filteredItems = filterItems(tabFilteredItems, searchQuery);
 
     // 検索履歴のナビゲーション（Ctrl + 上下矢印）
     if (e.ctrlKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
@@ -316,17 +328,8 @@ const App: React.FC = () => {
         ) {
           await window.electronAPI.openParentFolder(filteredItems[selectedIndex] as LauncherItem);
         } else if (filteredItems[selectedIndex]) {
-          // 検索クエリがある場合は履歴に追加（フロントエンド側で即座に）
-          if (searchQuery.trim()) {
-            await addHistoryEntry(searchQuery.trim());
-          }
-          // アイテムを実行（検索クエリはバックエンドに送らない）
-          const item = filteredItems[selectedIndex];
-          if (item.type === 'group') {
-            await window.electronAPI.executeGroup(item as GroupItem, mainItems);
-          } else {
-            await window.electronAPI.openItem(item as LauncherItem);
-          }
+          // 統一ハンドラを使用
+          await handleExecuteItem(filteredItems[selectedIndex]);
         }
         break;
       case 'ArrowUp':
@@ -355,22 +358,22 @@ const App: React.FC = () => {
     }
   };
 
-  const handleItemClick = async (item: LauncherItem) => {
-    // 検索クエリがある場合は履歴に追加（フロントエンド側で即座に）
-    if (searchQuery.trim()) {
-      await addHistoryEntry(searchQuery.trim());
-    }
-    // アイテムを実行
-    await window.electronAPI.openItem(item);
-  };
-
-  const handleGroupExecute = async (group: GroupItem) => {
+  /**
+   * アイテム実行の統一ハンドラ
+   * グループ判定、検索履歴追加、アイテム起動を一元管理
+   */
+  const handleExecuteItem = async (item: AppItem) => {
     // 検索クエリがある場合は履歴に追加
     if (searchQuery.trim()) {
       await addHistoryEntry(searchQuery.trim());
     }
-    // グループを実行
-    await window.electronAPI.executeGroup(group, mainItems);
+
+    // グループかどうかで処理を分岐
+    if (item.type === 'group') {
+      await window.electronAPI.executeGroup(item as GroupItem, mainItems);
+    } else {
+      await window.electronAPI.openItem(item as LauncherItem);
+    }
   };
 
   const handleRefreshAll = async () => {
@@ -829,8 +832,7 @@ const App: React.FC = () => {
           items={filteredItems}
           allItems={mainItems}
           selectedIndex={selectedIndex}
-          onItemClick={handleItemClick}
-          onGroupExecute={handleGroupExecute}
+          onItemExecute={handleExecuteItem}
           onItemSelect={setSelectedIndex}
           onCopyPath={handleCopyPath}
           onCopyParentPath={handleCopyParentPath}

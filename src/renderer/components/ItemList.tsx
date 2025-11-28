@@ -9,8 +9,7 @@ interface ItemListProps {
   items: AppItem[];
   allItems: AppItem[]; // グループ実行時の参照解決用
   selectedIndex: number;
-  onItemClick: (item: LauncherItem) => void;
-  onGroupExecute: (group: GroupItem) => void;
+  onItemExecute: (item: AppItem) => void; // 統一ハンドラ
   onItemSelect: (index: number) => void;
   onCopyPath?: (item: LauncherItem) => void;
   onCopyParentPath?: (item: LauncherItem) => void;
@@ -24,8 +23,7 @@ const ItemList: React.FC<ItemListProps> = ({
   items,
   allItems: _allItems,
   selectedIndex,
-  onItemClick,
-  onGroupExecute,
+  onItemExecute,
   onItemSelect,
   onCopyPath,
   onCopyParentPath,
@@ -187,7 +185,6 @@ const ItemList: React.FC<ItemListProps> = ({
     <div className="item-list" ref={listRef}>
       {items.map((item, index) => {
         const isGroup = item.type === 'group';
-        const groupItem = isGroup ? (item as GroupItem) : null;
 
         return (
           <div
@@ -198,11 +195,7 @@ const ItemList: React.FC<ItemListProps> = ({
             className={`item ${index === selectedIndex ? 'selected' : ''} ${isGroup ? 'group-item' : ''}`}
             onClick={() => {
               onItemSelect(index);
-              if (isGroup && groupItem) {
-                onGroupExecute(groupItem);
-              } else {
-                onItemClick(item as LauncherItem);
-              }
+              onItemExecute(item);
             }}
             onMouseEnter={() => onItemSelect(index)}
             onContextMenu={(e) => handleContextMenu(e, item)}
@@ -217,8 +210,8 @@ const ItemList: React.FC<ItemListProps> = ({
             </span>
             <span className="item-name">
               {item.name}
-              {isGroup && groupItem && (
-                <span className="group-count"> ({groupItem.itemNames.length}個)</span>
+              {isGroup && (
+                <span className="group-count"> ({(item as GroupItem).itemNames.length}個)</span>
               )}
             </span>
           </div>
