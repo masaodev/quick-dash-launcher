@@ -17,18 +17,17 @@ import IconProgressBar from './components/IconProgressBar';
 import FileTabBar from './components/FileTabBar';
 import { FirstLaunchSetup } from './components/FirstLaunchSetup';
 import { filterItems } from './utils/dataParser';
-import { debugLog, debugInfo, logWarn } from './utils/debug';
+import { debugLog, debugInfo } from './utils/debug';
 import { useIconProgress } from './hooks/useIconProgress';
 import { useSearchHistory } from './hooks/useSearchHistory';
+import { useRegisterModal } from './hooks/useRegisterModal';
+import { useItemActions } from './hooks/useItemActions';
 
 const App: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [mainItems, setMainItems] = useState<AppItem[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [windowPinMode, setWindowPinMode] = useState<WindowPinMode>('normal');
-  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
-  const [droppedPaths, setDroppedPaths] = useState<string[]>([]);
-  const [editingItem, setEditingItem] = useState<RawDataLine | null>(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
 
@@ -42,6 +41,22 @@ const App: React.FC = () => {
   const { progressState, resetProgress } = useIconProgress();
   const { navigateToPrevious, navigateToNext, resetNavigation, addHistoryEntry } =
     useSearchHistory();
+  const {
+    isRegisterModalOpen,
+    droppedPaths,
+    editingItem,
+    openRegisterModal,
+    openEditModal,
+    openWithDroppedPaths,
+    closeModal,
+  } = useRegisterModal();
+  const {
+    handleCopyPath,
+    handleCopyParentPath,
+    handleCopyShortcutPath,
+    handleCopyShortcutParentPath,
+    handleOpenParentFolder,
+  } = useItemActions();
 
   useEffect(() => {
     // 初回起動チェック: 設定ファイルの存在を確認
@@ -109,8 +124,7 @@ const App: React.FC = () => {
       debugLog('Final paths:', paths);
 
       if (paths.length > 0) {
-        setDroppedPaths(paths);
-        setIsRegisterModalOpen(true);
+        openWithDroppedPaths(paths);
       } else {
         alert(
           'ファイルパスを取得できませんでした。\nファイルを直接エクスプローラーからドラッグしてください。'
@@ -516,95 +530,6 @@ const App: React.FC = () => {
     setWindowPinMode(newPinMode);
   };
 
-  const handleCopyPath = async (item: LauncherItem) => {
-    try {
-      // 引数がある場合は結合してコピー
-      const fullCommand = item.args ? `${item.path} ${item.args}` : item.path;
-      await window.electronAPI.copyToClipboard(fullCommand);
-      logWarn(`パスをコピーしました: ${fullCommand}`);
-    } catch (err) {
-      console.error('パスのコピーに失敗しました:', err);
-      alert('パスのコピーに失敗しました');
-    }
-  };
-
-  const handleCopyParentPath = async (item: LauncherItem) => {
-    try {
-      let parentPath = '';
-
-      // URL types don't have a parent path
-      if (item.type === 'url' || item.type === 'customUri') {
-        alert('URLおよびカスタムURIには親フォルダーがありません');
-        return;
-      }
-
-      // Get parent directory path
-      const path = item.path;
-      const lastSlash = Math.max(path.lastIndexOf('\\'), path.lastIndexOf('/'));
-
-      if (lastSlash > 0) {
-        parentPath = path.substring(0, lastSlash);
-      } else {
-        alert('親フォルダーのパスを取得できませんでした');
-        return;
-      }
-
-      await window.electronAPI.copyToClipboard(parentPath);
-      logWarn(`親フォルダーのパスをコピーしました: ${parentPath}`);
-    } catch (err) {
-      console.error('親フォルダーのパスのコピーに失敗しました:', err);
-      alert('親フォルダーのパスのコピーに失敗しました');
-    }
-  };
-
-  const handleCopyShortcutPath = async (item: LauncherItem) => {
-    try {
-      if (!item.originalPath) {
-        alert('ショートカットのパスが見つかりません');
-        return;
-      }
-
-      await window.electronAPI.copyToClipboard(item.originalPath);
-      logWarn(`ショートカットのパスをコピーしました: ${item.originalPath}`);
-    } catch (err) {
-      console.error('ショートカットのパスのコピーに失敗しました:', err);
-      alert('ショートカットのパスのコピーに失敗しました');
-    }
-  };
-
-  const handleCopyShortcutParentPath = async (item: LauncherItem) => {
-    try {
-      if (!item.originalPath) {
-        alert('ショートカットのパスが見つかりません');
-        return;
-      }
-
-      // Get parent directory path of the shortcut file
-      const path = item.originalPath;
-      const lastSlash = Math.max(path.lastIndexOf('\\'), path.lastIndexOf('/'));
-
-      if (lastSlash > 0) {
-        const parentPath = path.substring(0, lastSlash);
-        await window.electronAPI.copyToClipboard(parentPath);
-        logWarn(`ショートカットの親フォルダーのパスをコピーしました: ${parentPath}`);
-      } else {
-        alert('ショートカットの親フォルダーのパスを取得できませんでした');
-      }
-    } catch (err) {
-      console.error('ショートカットの親フォルダーのパスのコピーに失敗しました:', err);
-      alert('ショートカットの親フォルダーのパスのコピーに失敗しました');
-    }
-  };
-
-  const handleOpenParentFolder = async (item: LauncherItem) => {
-    try {
-      await window.electronAPI.openParentFolder(item);
-    } catch (err) {
-      console.error('親フォルダーを開くのに失敗しました:', err);
-      alert('親フォルダーを開くのに失敗しました');
-    }
-  };
-
   const handleRegisterItems = async (items: RegisterItem[]) => {
     if (editingItem && items.length === 1) {
       // 編集モードの場合
@@ -679,15 +604,13 @@ const App: React.FC = () => {
   };
 
   const handleOpenRegisterModal = () => {
-    setEditingItem(null);
-    setIsRegisterModalOpen(true);
+    openRegisterModal();
   };
 
   const handleEditItem = async (item: LauncherItem) => {
     // LauncherItemからRawDataLineを構築
     const rawDataLine: RawDataLine = await convertLauncherItemToRawDataLine(item);
-    setEditingItem(rawDataLine);
-    setIsRegisterModalOpen(true);
+    openEditModal(rawDataLine);
   };
 
   const convertLauncherItemToRawDataLine = async (item: LauncherItem): Promise<RawDataLine> => {
@@ -848,11 +771,7 @@ const App: React.FC = () => {
 
         <RegisterModal
           isOpen={isRegisterModalOpen}
-          onClose={() => {
-            setIsRegisterModalOpen(false);
-            setDroppedPaths([]);
-            setEditingItem(null);
-          }}
+          onClose={closeModal}
           onRegister={handleRegisterItems}
           droppedPaths={droppedPaths}
           editingItem={editingItem}
