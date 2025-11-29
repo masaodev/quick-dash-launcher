@@ -129,6 +129,7 @@ const AdminApp: React.FC = () => {
               )
             : {}
         }
+        dataFileTabs={settings?.dataFileTabs || []}
       />
     </div>
   );

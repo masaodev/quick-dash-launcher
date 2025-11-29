@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { RawDataLine, SimpleBookmarkItem } from '@common/types';
+import { RawDataLine, SimpleBookmarkItem, DataFileTab } from '@common/types';
 
 import EditableRawItemList from './EditableRawItemList';
 import RegisterModal, { RegisterItem } from './RegisterModal';
@@ -12,6 +12,7 @@ interface EditModeViewProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
   tabNames: Record<string, string>;
+  dataFileTabs: DataFileTab[];
 }
 
 const EditModeView: React.FC<EditModeViewProps> = ({
@@ -21,6 +22,7 @@ const EditModeView: React.FC<EditModeViewProps> = ({
   searchQuery,
   onSearchChange,
   tabNames,
+  dataFileTabs,
 }) => {
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [editedLines, setEditedLines] = useState<Map<string, RawDataLine>>(new Map());
@@ -30,8 +32,8 @@ const EditModeView: React.FC<EditModeViewProps> = ({
   const [workingLines, setWorkingLines] = useState<RawDataLine[]>(rawLines);
   const [isBookmarkModalOpen, setIsBookmarkModalOpen] = useState(false);
 
-  // データファイル選択用の状態
-  const [dataFiles, setDataFiles] = useState<string[]>([]);
+  // タブとファイル選択用の状態
+  const [selectedTabIndex, setSelectedTabIndex] = useState<number>(0);
   const [selectedDataFile, setSelectedDataFile] = useState<string>('data.txt');
 
   const handleLineEdit = (line: RawDataLine) => {
@@ -256,11 +258,38 @@ const EditModeView: React.FC<EditModeViewProps> = ({
     return editedLine || line;
   });
 
-  // タブ名を優先表示する関数
-  const getFileDisplayLabel = (fileName: string): string => {
-    const tabName = tabNames[fileName];
-    // タブ名が設定されていればタブ名を表示、なければファイル名
-    return tabName || fileName;
+  // タブ変更時の未保存チェック
+  const handleTabChange = (newTabIndex: number) => {
+    if (hasUnsavedChanges) {
+      if (
+        window.confirm(
+          '未保存の変更があります。タブを切り替えると変更が失われます。続行しますか？'
+        )
+      ) {
+        setSelectedTabIndex(newTabIndex);
+        setHasUnsavedChanges(false);
+        setEditedLines(new Map());
+      }
+    } else {
+      setSelectedTabIndex(newTabIndex);
+    }
+  };
+
+  // ファイル変更時の未保存チェック
+  const handleFileChange = (newFile: string) => {
+    if (hasUnsavedChanges) {
+      if (
+        window.confirm(
+          '未保存の変更があります。ファイルを切り替えると変更が失われます。続行しますか？'
+        )
+      ) {
+        setSelectedDataFile(newFile);
+        setHasUnsavedChanges(false);
+        setEditedLines(new Map());
+      }
+    } else {
+      setSelectedDataFile(newFile);
+    }
   };
 
   const filteredLines = mergedLines.filter((line) => {
@@ -280,17 +309,24 @@ const EditModeView: React.FC<EditModeViewProps> = ({
     return keywords.every((keyword) => lineText.includes(keyword));
   });
 
-  // tabNamesからデータファイルリストを生成
+  // タブ変更時にファイルを自動選択
   useEffect(() => {
-    const files = Object.keys(tabNames);
-    if (files.length > 0) {
-      setDataFiles(files);
-      if (!files.includes(selectedDataFile)) {
-        setSelectedDataFile(files[0]);
+    if (dataFileTabs.length > 0 && selectedTabIndex < dataFileTabs.length) {
+      const currentTab = dataFileTabs[selectedTabIndex];
+      if (currentTab.files && currentTab.files.length > 0) {
+        // タブのdefaultFileまたは最初のファイルを選択
+        const defaultFile = currentTab.defaultFile || currentTab.files[0];
+        setSelectedDataFile(defaultFile);
       }
     }
-    // selectedDataFileは意図的に依存配列から除外（tabNames変更時のみ実行したい）
-  }, [tabNames]);
+  }, [selectedTabIndex, dataFileTabs]);
+
+  // dataFileTabsが変更されたら最初のタブを選択
+  useEffect(() => {
+    if (dataFileTabs.length > 0) {
+      setSelectedTabIndex(0);
+    }
+  }, [dataFileTabs]);
 
   // rawLinesが変更されたらworkingLinesも更新
   useEffect(() => {
@@ -315,25 +351,49 @@ const EditModeView: React.FC<EditModeViewProps> = ({
     });
   }, [searchQuery, workingLines]);
 
+  // 現在選択されているタブの情報を取得
+  const currentTab = dataFileTabs[selectedTabIndex];
+  const currentTabName = currentTab?.name || 'メイン';
+  const currentTabFiles = currentTab?.files || ['data.txt'];
+
   return (
     <div className="edit-mode-view" onKeyDown={handleKeyDown} tabIndex={0}>
       <div className="edit-mode-header">
         <div className="edit-mode-info">
-          <label htmlFor="data-file-selector" className="file-selector-label">
-            タブ名:
+          <label htmlFor="tab-selector" className="tab-selector-label">
+            タブ:
           </label>
           <select
-            id="data-file-selector"
-            value={selectedDataFile}
-            onChange={(e) => setSelectedDataFile(e.target.value)}
-            className="data-file-selector"
+            id="tab-selector"
+            value={selectedTabIndex}
+            onChange={(e) => handleTabChange(Number(e.target.value))}
+            className="tab-selector"
           >
-            {dataFiles.map((fileName) => (
-              <option key={fileName} value={fileName}>
-                {getFileDisplayLabel(fileName)}
+            {dataFileTabs.map((tab, index) => (
+              <option key={index} value={index}>
+                {tab.name}
               </option>
             ))}
           </select>
+          {currentTabFiles.length > 1 && (
+            <>
+              <label htmlFor="file-selector" className="file-selector-label">
+                ファイル:
+              </label>
+              <select
+                id="file-selector"
+                value={selectedDataFile}
+                onChange={(e) => handleFileChange(e.target.value)}
+                className="file-selector"
+              >
+                {currentTabFiles.map((fileName) => (
+                  <option key={fileName} value={fileName}>
+                    {fileName}
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
         </div>
         <div className="edit-mode-search">
           <div className="search-input-container">

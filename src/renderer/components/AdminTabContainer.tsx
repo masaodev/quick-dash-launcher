@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { RawDataLine, AppSettings } from '../../common/types';
+import { RawDataLine, AppSettings, DataFileTab } from '../../common/types';
 
 import SettingsTab from './SettingsTab';
 import EditModeView from './EditModeView';
@@ -16,6 +16,7 @@ interface AdminTabContainerProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
   tabNames: Record<string, string>;
+  dataFileTabs: DataFileTab[];
 }
 
 const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
@@ -28,6 +29,7 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
   searchQuery,
   onSearchChange,
   tabNames,
+  dataFileTabs,
 }) => {
   const handleTabChange = (newTab: 'settings' | 'edit' | 'other') => {
     onTabChange(newTab);
@@ -74,6 +76,7 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
             searchQuery={searchQuery}
             onSearchChange={onSearchChange}
             tabNames={tabNames}
+            dataFileTabs={dataFileTabs}
           />
         )}
         {activeTab === 'other' && <AdminOtherTab />}
