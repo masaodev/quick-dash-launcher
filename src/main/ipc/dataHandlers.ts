@@ -5,6 +5,7 @@ import { ipcMain, shell, dialog, BrowserWindow } from 'electron';
 import { minimatch } from 'minimatch';
 import { dataLogger } from '@common/logger';
 import { FileUtils } from '@common/utils/fileUtils';
+import { parseCSVLine } from '@common/utils/csvParser';
 
 import {
   RawDataLine,
@@ -23,59 +24,6 @@ interface DirOptions {
   exclude?: string;
   prefix?: string;
   suffix?: string;
-}
-
-/**
- * CSV形式の行を解析し、フィールドの配列に変換する
- * ダブルクォートで囲まれたフィールドや、エスケープされたクォートを正しく処理する
- * フィールドが先頭からダブルクォートで囲まれていない場合、内部のダブルクォートはそのまま保持される
- *
- * @param line - 解析対象のCSV行（カンマ区切りの文字列）
- * @returns 解析されたフィールドの配列（各フィールドはトリムされる）
- */
-function parseCSVLine(line: string): string[] {
-  const result: string[] = [];
-  let current = '';
-  let inQuotes = false;
-  let fieldStartsWithQuote = false;
-  let i = 0;
-
-  while (i < line.length) {
-    const char = line[i];
-    const nextChar = line[i + 1];
-
-    // フィールドの開始位置を判定
-    if (current === '' && char !== ' ' && char !== '\t') {
-      fieldStartsWithQuote = char === '"';
-    }
-
-    if (char === '"' && fieldStartsWithQuote) {
-      // フィールドがダブルクォートで開始している場合のみCSVルールを適用
-      if (inQuotes && nextChar === '"') {
-        // Escaped quote
-        current += '"';
-        i += 2;
-        continue;
-      }
-      inQuotes = !inQuotes;
-      i++;
-    } else if (char === ',' && !inQuotes) {
-      result.push(current.trim());
-      current = '';
-      fieldStartsWithQuote = false;
-      i++;
-    } else {
-      current += char;
-      i++;
-    }
-  }
-
-  // Add the last field
-  if (current || inQuotes) {
-    result.push(current.trim());
-  }
-
-  return result;
 }
 
 /**

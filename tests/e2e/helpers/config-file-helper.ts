@@ -20,10 +20,7 @@ export class ConfigFileHelper {
    * @param templateName テンプレート名（デフォルト: 'base'）
    * @returns 作成された一時ディレクトリのパス
    */
-  static createTempConfigDir(
-    testName: string,
-    templateName: string = 'base'
-  ): ConfigFileHelper {
+  static createTempConfigDir(testName: string, templateName: string = 'base'): ConfigFileHelper {
     const tempDir = path.join(process.cwd(), 'tests', 'e2e', 'configs', '.temp', testName);
 
     // 既存のディレクトリがあれば削除
@@ -137,13 +134,7 @@ export class ConfigFileHelper {
    * - settings.json → configDir/settings.json（存在する場合）
    */
   loadTemplate(templateName: string): void {
-    const templateDir = path.join(
-      process.cwd(),
-      'tests',
-      'e2e',
-      'templates',
-      templateName
-    );
+    const templateDir = path.join(process.cwd(), 'tests', 'e2e', 'templates', templateName);
 
     if (!fs.existsSync(templateDir)) {
       throw new Error(`Template directory not found: ${templateDir}`);

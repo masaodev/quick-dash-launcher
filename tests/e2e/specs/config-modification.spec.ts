@@ -155,7 +155,10 @@ test.describe('QuickDashLauncher - 設定ファイル変更テスト', () => {
 
   // ==================== 複合テスト ====================
 
-  test('data.txtとsettings.jsonの両方を変更して反映される', async ({ mainWindow, configHelper }) => {
+  test('data.txtとsettings.jsonの両方を変更して反映される', async ({
+    mainWindow,
+    configHelper,
+  }) => {
     const utils = new TestUtils(mainWindow);
 
     // data.txtにアイテムを追加

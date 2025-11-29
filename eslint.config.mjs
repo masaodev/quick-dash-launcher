@@ -56,15 +56,16 @@ export default [
     rules: {
       // TypeScript推奨ルール
       ...tsPlugin.configs.recommended.rules,
-      
+
       // React推奨ルール（テストファイルではreact-hooksを無効化）
       ...reactPlugin.configs.recommended.rules,
       ...reactPlugin.configs['jsx-runtime'].rules,
-      
+
       // カスタムルール
       '@typescript-eslint/explicit-module-boundary-types': 'off',
-      '@typescript-eslint/no-unused-vars': ['warn', { 
-        argsIgnorePattern: '^_', 
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-unused-vars': ['warn', {
+        argsIgnorePattern: '^_',
         varsIgnorePattern: '^_',
         caughtErrorsIgnorePattern: '^_',
         destructuredArrayIgnorePattern: '^_'
@@ -77,7 +78,7 @@ export default [
       }],
       'import/no-duplicates': 'error',
       'no-console': ['warn', { allow: ['warn', 'error'] }],
-      
+
       // Prettier統合
       'prettier/prettier': 'error'
     },
@@ -117,19 +118,20 @@ export default [
     rules: {
       // TypeScript推奨ルール
       ...tsPlugin.configs.recommended.rules,
-      
+
       // React推奨ルール
       ...reactPlugin.configs.recommended.rules,
       ...reactPlugin.configs['jsx-runtime'].rules,
-      
+
       // React Hooks推奨ルール
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'off',
-      
+
       // カスタムルール
       '@typescript-eslint/explicit-module-boundary-types': 'off',
-      '@typescript-eslint/no-unused-vars': ['warn', { 
-        argsIgnorePattern: '^_', 
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-unused-vars': ['warn', {
+        argsIgnorePattern: '^_',
         varsIgnorePattern: '^_',
         caughtErrorsIgnorePattern: '^_',
         destructuredArrayIgnorePattern: '^_'
@@ -142,7 +144,7 @@ export default [
       }],
       'import/no-duplicates': 'error',
       'no-console': ['warn', { allow: ['warn', 'error'] }],
-      
+
       // Prettier統合
       'prettier/prettier': 'error'
     },

@@ -115,7 +115,11 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
 
   // ==================== チェックボックス設定テスト ====================
 
-  test('チェックボックス設定を変更できる', async ({ electronApp, mainWindow, configHelper }, testInfo) => {
+  test('チェックボックス設定を変更できる', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }, testInfo) => {
     const utils = new TestUtils(mainWindow);
     const adminWindow = await utils.openAdminWindow(electronApp, 'settings');
 

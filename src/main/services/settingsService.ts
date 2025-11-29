@@ -12,6 +12,11 @@ let Store: typeof ElectronStore | null = null;
  * electron-storeを使用して設定の永続化を行う
  */
 export class SettingsService {
+  /**
+   * electron-storeのインスタンス
+   * Note: 動的インポートのため、TypeScript型定義との互換性の問題で`any`を使用
+   * 実行時は new Store<AppSettings>() で正しく型付けされたインスタンスが作成される
+   */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private store: any | null = null;
   private static instance: SettingsService;

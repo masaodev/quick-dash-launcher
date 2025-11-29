@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { AppSettings, DataFileTab } from '@common/types';
 
+import { logWarn } from '../utils/debug';
+
 import { HotkeyInput } from './HotkeyInput';
 
 interface SettingsTabProps {
@@ -163,7 +165,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
       await window.electronAPI.createDataFile(fileName);
     } catch (_error) {
       // ファイル作成エラーは無視（既存ファイルの場合）
-      console.warn(`${fileName}は既に存在する可能性があります`);
+      logWarn(`${fileName}は既に存在する可能性があります`);
     }
 
     // 設定に追加（物理ファイルの存在に関わらず実行）

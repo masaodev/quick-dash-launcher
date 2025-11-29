@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 
 import { LauncherItem, RawDataLine, DataFileTab } from '../../common/types';
-import { debugInfo } from '../utils/debug';
+import { debugInfo, logWarn } from '../utils/debug';
 
 interface RegisterModalProps {
   isOpen: boolean;
@@ -358,7 +358,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
 
       for (const filePath of droppedPaths) {
         if (!filePath) {
-          console.warn('Skipping undefined path');
+          logWarn('Skipping undefined path');
           continue;
         }
         debugInfo('Processing dropped path:', filePath);
