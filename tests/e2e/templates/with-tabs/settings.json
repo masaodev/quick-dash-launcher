@@ -13,8 +13,8 @@
 	"showDataFileTabs": true,
 	"defaultFileTab": "data.txt",
 	"dataFileTabs": [
-		{ "file": "data.txt", "name": "メイン" },
-		{ "file": "data2.txt", "name": "サブ1" },
-		{ "file": "data3.txt", "name": "サブ2" }
+		{ "files": ["data.txt"], "name": "メイン" },
+		{ "files": ["data2.txt"], "name": "サブ1" },
+		{ "files": ["data3.txt"], "name": "サブ2" }
 	]
 }

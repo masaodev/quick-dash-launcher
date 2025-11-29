@@ -13,6 +13,6 @@
 	"showDataFileTabs": false,
 	"defaultFileTab": "data.txt",
 	"dataFileTabs": [
-		{ "file": "data.txt", "name": "メイン" }
+		{ "files": ["data.txt"], "name": "メイン" }
 	]
 }
