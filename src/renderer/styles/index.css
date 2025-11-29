@@ -3,6 +3,7 @@
 @import './common.css';
 @import './components/FileTabBar.css';
 @import './components/ItemCountDisplay.css';
+@import './components/GroupItemSelectorModal.css';
 
 /* グローバルリセットとベーススタイル */
 * {

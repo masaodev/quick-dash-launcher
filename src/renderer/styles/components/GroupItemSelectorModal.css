@@ -1,0 +1,97 @@
+/* GroupItemSelectorModal関連のスタイル */
+.group-item-selector-modal {
+  max-width: 500px;
+  width: 90%;
+  max-height: 600px;
+  display: flex;
+  flex-direction: column;
+  padding: var(--spacing-xl);
+}
+
+.group-item-selector-modal h3 {
+  margin-bottom: var(--spacing-lg);
+  font-size: var(--font-size-xl);
+  color: var(--text-primary);
+}
+
+.search-box {
+  margin-bottom: var(--spacing-md);
+}
+
+.search-box input {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: var(--border-light);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-base);
+  transition: border-color var(--transition-fast);
+}
+
+.search-box input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: var(--focus-ring);
+}
+
+.item-list {
+  flex: 1;
+  overflow-y: auto;
+  border: var(--border-light);
+  border-radius: var(--border-radius);
+  background-color: var(--bg-secondary);
+  max-height: 400px;
+}
+
+.item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-sm) var(--spacing-md);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+  border-bottom: 1px solid var(--color-gray-300);
+}
+
+.item-row:last-child {
+  border-bottom: none;
+}
+
+.item-row:hover:not(.excluded) {
+  background-color: var(--bg-hover);
+}
+
+.item-row.excluded {
+  background-color: var(--bg-disabled);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.item-name {
+  flex: 1;
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+}
+
+.item-row.excluded .item-name {
+  color: var(--text-disabled);
+}
+
+.excluded-label {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  font-style: italic;
+  padding: 2px var(--spacing-xs);
+  background-color: var(--color-gray-400);
+  border-radius: var(--border-radius-sm);
+}
+
+.no-items {
+  padding: var(--spacing-xl);
+  text-align: center;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.group-item-selector-modal .modal-actions {
+  margin-top: var(--spacing-lg);
+}
