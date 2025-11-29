@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 
 import { LauncherItem, RawDataLine, DataFileTab } from '../../common/types';
 import { debugInfo, logWarn } from '../utils/debug';
+import GroupItemSelectorModal from './GroupItemSelectorModal';
 
 interface RegisterModalProps {
   isOpen: boolean;
@@ -52,6 +53,8 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
   const [errors, setErrors] = useState<{
     [index: number]: { name?: string; path?: string; groupItemNames?: string };
   }>({});
+  const [selectorModalOpen, setSelectorModalOpen] = useState(false);
+  const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -220,11 +223,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
 
       const item = await convertRawDataLineToRegisterItem(editingItem, tabs);
       setItems([item]);
-
-      // グループアイテムの場合、入力用のテキストをセット
-      if (item.itemCategory === 'group' && item.groupItemNames) {
-        setGroupItemNamesInput({ 0: item.groupItemNames.join(', ') });
-      }
 
       // カスタムアイコンのプレビューを読み込み
       if (item.customIcon) {
@@ -606,11 +604,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
         if (!newItems[index].groupItemNames) {
           newItems[index].groupItemNames = [];
         }
-        // グループ入力テキストを初期化
-        setGroupItemNamesInput((prev) => ({
-          ...prev,
-          [index]: newItems[index].groupItemNames?.join(', ') || '',
-        }));
         // フォルダ取込オプションをクリア
         delete newItems[index].folderProcessing;
         delete newItems[index].dirOptions;
@@ -619,12 +612,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
         delete newItems[index].folderProcessing;
         delete newItems[index].dirOptions;
         delete newItems[index].groupItemNames;
-        // グループ入力テキストもクリア
-        setGroupItemNamesInput((prev) => {
-          const newInput = { ...prev };
-          delete newInput[index];
-          return newInput;
-        });
       }
     }
 
@@ -678,14 +665,9 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
 
       // グループの場合はアイテム名リストが必須
       if (item.itemCategory === 'group') {
-        const itemNames = groupItemNamesInput[i]
-          ? groupItemNamesInput[i]
-              .split(',')
-              .map((name) => name.trim())
-              .filter((name) => name)
-          : item.groupItemNames || [];
+        const itemNames = item.groupItemNames || [];
         if (itemNames.length === 0) {
-          newErrors[i].groupItemNames = 'グループアイテム名を入力してください';
+          newErrors[i].groupItemNames = 'グループアイテムを追加してください';
         }
       }
     }
@@ -700,19 +682,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
       return;
     }
 
-    // 保存前に、入力中のグループアイテム名を配列に変換
-    const finalItems = items.map((item, index) => {
-      if (item.itemCategory === 'group' && groupItemNamesInput[index] !== undefined) {
-        const itemNames = groupItemNamesInput[index]
-          .split(',')
-          .map((name) => name.trim())
-          .filter((name) => name);
-        return { ...item, groupItemNames: itemNames };
-      }
-      return item;
-    });
-
-    onRegister(finalItems);
+    onRegister(items);
     onClose();
   };
 
@@ -721,17 +691,57 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     onClose();
   };
 
+  const handleAddGroupItem = (index: number) => {
+    setEditingItemIndex(index);
+    setSelectorModalOpen(true);
+  };
+
+  const handleSelectGroupItem = (itemName: string) => {
+    if (editingItemIndex === null) return;
+
+    const newItems = [...items];
+    const currentGroupItemNames = newItems[editingItemIndex].groupItemNames || [];
+    newItems[editingItemIndex] = {
+      ...newItems[editingItemIndex],
+      groupItemNames: [...currentGroupItemNames, itemName],
+    };
+    setItems(newItems);
+
+    // エラーをクリア
+    setErrors((prev) => {
+      const newErrors = { ...prev };
+      if (newErrors[editingItemIndex]) {
+        const updatedError = { ...newErrors[editingItemIndex] };
+        delete updatedError.groupItemNames;
+        newErrors[editingItemIndex] = updatedError;
+      }
+      return newErrors;
+    });
+  };
+
+  const handleRemoveGroupItem = (itemIndex: number, groupItemNameIndex: number) => {
+    const newItems = [...items];
+    const currentGroupItemNames = newItems[itemIndex].groupItemNames || [];
+    const updatedGroupItemNames = currentGroupItemNames.filter((_, i) => i !== groupItemNameIndex);
+    newItems[itemIndex] = {
+      ...newItems[itemIndex],
+      groupItemNames: updatedGroupItemNames,
+    };
+    setItems(newItems);
+  };
+
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={(e) => e.stopPropagation()}>
-      <div
-        className="modal-content register-modal"
-        onClick={(e) => e.stopPropagation()}
-        ref={modalRef}
-        tabIndex={-1}
-      >
-        <h2>{editingItem ? 'アイテムの編集' : 'アイテムの登録'}</h2>
+    <>
+      <div className="modal-overlay" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="modal-content register-modal"
+          onClick={(e) => e.stopPropagation()}
+          ref={modalRef}
+          tabIndex={-1}
+        >
+          <h2>{editingItem ? 'アイテムの編集' : 'アイテムの登録'}</h2>
 
         {loading ? (
           <div className="loading">アイテム情報を読み込み中...</div>
@@ -927,47 +937,40 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
 
                   {item.itemCategory === 'group' && (
                     <div className="form-group">
-                      <label>アイテム名リスト (カンマ区切り):</label>
-                      <textarea
-                        value={
-                          groupItemNamesInput[index] ?? (item.groupItemNames?.join(', ') || '')
-                        }
-                        className={errors[index]?.groupItemNames ? 'error' : ''}
-                        onChange={(e) => {
-                          // 入力値をそのまま一時stateに保存
-                          setGroupItemNamesInput((prev) => ({
-                            ...prev,
-                            [index]: e.target.value,
-                          }));
-                          // エラーをクリア
-                          setErrors((prev) => {
-                            const newErrors = { ...prev };
-                            if (newErrors[index]) {
-                              const updatedError = { ...newErrors[index] };
-                              delete updatedError.groupItemNames;
-                              newErrors[index] = updatedError;
-                            }
-                            return newErrors;
-                          });
-                        }}
-                        onBlur={(e) => {
-                          // フォーカスを失ったタイミングで配列に変換してitemに反映
-                          const itemNames = e.target.value
-                            .split(',')
-                            .map((name) => name.trim())
-                            .filter((name) => name);
-                          const newItems = [...items];
-                          newItems[index] = { ...newItems[index], groupItemNames: itemNames };
-                          setItems(newItems);
-                        }}
-                        placeholder="例: Visual Studio Code, Slack, Chrome"
-                        rows={3}
-                      />
+                      <label>グループアイテムリスト:</label>
+                      <div className="group-item-list">
+                        {item.groupItemNames && item.groupItemNames.length > 0 ? (
+                          <div className="group-items">
+                            {item.groupItemNames.map((itemName, nameIndex) => (
+                              <div key={nameIndex} className="group-item-row">
+                                <span className="group-item-name">{itemName}</span>
+                                <button
+                                  type="button"
+                                  className="remove-group-item-btn"
+                                  onClick={() => handleRemoveGroupItem(index, nameIndex)}
+                                  title="削除"
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="no-group-items">アイテムが追加されていません</div>
+                        )}
+                        <button
+                          type="button"
+                          className="add-group-item-btn"
+                          onClick={() => handleAddGroupItem(index)}
+                        >
+                          + アイテムを追加
+                        </button>
+                      </div>
                       {errors[index]?.groupItemNames && (
                         <span className="error-message">{errors[index].groupItemNames}</span>
                       )}
                       <small>
-                        既存のアイテム名をカンマ区切りで入力してください。グループ実行時に順番に起動されます。
+                        同じファイル内の既存アイテムから選択してください。グループ実行時に順番に起動されます。
                       </small>
                     </div>
                   )}
@@ -1078,8 +1081,23 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
             </div>
           </>
         )}
+        </div>
       </div>
-    </div>
+
+      {/* グループアイテム選択モーダル */}
+      {editingItemIndex !== null && (
+        <GroupItemSelectorModal
+          isOpen={selectorModalOpen}
+          onClose={() => {
+            setSelectorModalOpen(false);
+            setEditingItemIndex(null);
+          }}
+          onSelect={handleSelectGroupItem}
+          targetFile={items[editingItemIndex]?.targetFile || items[editingItemIndex]?.targetTab}
+          excludeNames={items[editingItemIndex]?.groupItemNames || []}
+        />
+      )}
+    </>
   );
 };
 
