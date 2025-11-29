@@ -34,7 +34,7 @@ const App: React.FC = () => {
 
   // タブ表示関連の状態
   const [showDataFileTabs, setShowDataFileTabs] = useState(false);
-  const [dataFiles, setDataFiles] = useState<string[]>([]);
+  const [dataFiles, setDataFiles] = useState<string[]>([]); // 後方互換性のため保持
   const [activeTab, setActiveTab] = useState<string>('data.txt');
   const [dataFileTabs, setDataFileTabs] = useState<DataFileTab[]>([]);
 
@@ -306,22 +306,32 @@ const App: React.FC = () => {
 
   const handleKeyDown = async (e: React.KeyboardEvent) => {
     // タブ切り替え (Tab/Shift+Tab)
-    if (e.key === 'Tab' && showDataFileTabs && dataFiles.length > 1) {
+    if (e.key === 'Tab' && showDataFileTabs && dataFileTabs.length > 1) {
       e.preventDefault();
       e.stopPropagation();
 
-      const sortedFiles = getSortedDataFiles();
-      const currentIndex = sortedFiles.indexOf(activeTab);
+      // 現在のアクティブタブが属するタブグループのインデックスを探す
+      const currentTabIndex = dataFileTabs.findIndex((tab) => tab.files.includes(activeTab));
 
+      if (currentTabIndex === -1) {
+        // 見つからない場合は最初のタブへ
+        const firstTab = dataFileTabs[0];
+        setActiveTab(firstTab.defaultFile || firstTab.files[0]);
+        setSelectedIndex(0);
+        return;
+      }
+
+      let newTabIndex: number;
       if (e.shiftKey) {
         // Shift+Tab: 前のタブへ
-        const newIndex = currentIndex > 0 ? currentIndex - 1 : sortedFiles.length - 1;
-        setActiveTab(sortedFiles[newIndex]);
+        newTabIndex = currentTabIndex > 0 ? currentTabIndex - 1 : dataFileTabs.length - 1;
       } else {
         // Tab: 次のタブへ
-        const newIndex = currentIndex < sortedFiles.length - 1 ? currentIndex + 1 : 0;
-        setActiveTab(sortedFiles[newIndex]);
+        newTabIndex = currentTabIndex < dataFileTabs.length - 1 ? currentTabIndex + 1 : 0;
       }
+
+      const newTab = dataFileTabs[newTabIndex];
+      setActiveTab(newTab.defaultFile || newTab.files[0]);
       setSelectedIndex(0); // タブ切り替え時は選択インデックスをリセット
       return;
     }
@@ -728,11 +738,6 @@ const App: React.FC = () => {
     setSelectedIndex(0); // タブ切り替え時は選択インデックスをリセット
   };
 
-  // dataFileTabsの順序でデータファイルをソート（配列の順序がそのまま表示順序）
-  const getSortedDataFiles = (): string[] => {
-    return dataFiles; // dataFilesは既にdataFileTabsの順序で生成されている
-  };
-
   // アクティブなタブに基づいてアイテムをフィルタリング
   const getTabFilteredItems = (): AppItem[] => {
     if (!showDataFileTabs) {
@@ -787,17 +792,13 @@ const App: React.FC = () => {
           />
         </div>
 
-        {showDataFileTabs && dataFiles.length > 1 && (
+        {showDataFileTabs && dataFileTabs.length > 1 && (
           <FileTabBar
-            dataFiles={getSortedDataFiles()}
+            dataFileTabs={dataFileTabs}
             activeTab={activeTab}
-            tabNames={Object.fromEntries(
-              dataFileTabs.flatMap((tab) => tab.files.map((file) => [file, tab.name]))
-            )}
             onTabClick={handleTabClick}
             allItems={mainItems}
             searchQuery={searchQuery}
-            dataFileTabs={dataFileTabs}
           />
         )}
 

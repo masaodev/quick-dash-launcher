@@ -546,4 +546,208 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
       await utils.attachScreenshot(testInfo, 'メインタブに戻る');
     });
   });
+
+  // ==================== 複数ファイル統合タブテスト ====================
+
+  test('1つのタブに複数のデータファイルを紐づけた場合、タブが1つだけ表示される', async ({
+    mainWindow,
+    configHelper,
+  }, testInfo) => {
+    // 複数ファイル統合タブのテンプレートをロード
+    configHelper.loadTemplate('with-multi-file-tabs');
+
+    const utils = new TestUtils(mainWindow);
+
+    await test.step('ページロードと初期確認', async () => {
+      await utils.waitForPageLoad();
+      await utils.attachScreenshot(testInfo, '初期状態');
+    });
+
+    await test.step('タブが2つのみ表示されることを確認', async () => {
+      const tabs = mainWindow.locator('.file-tab');
+      const tabCount = await tabs.count();
+      expect(tabCount).toBe(2);
+
+      await utils.attachScreenshot(testInfo, 'タブ数確認');
+    });
+
+    await test.step('統合タブとサブ1タブが表示されることを確認', async () => {
+      const unifiedTab = mainWindow.locator('.file-tab', { hasText: '統合タブ' });
+      await expect(unifiedTab).toBeVisible();
+
+      const subTab = mainWindow.locator('.file-tab', { hasText: 'サブ1' });
+      await expect(subTab).toBeVisible();
+
+      await utils.attachScreenshot(testInfo, 'タブ名確認');
+    });
+  });
+
+  test('統合タブには複数ファイルのアイテムが全て表示される', async ({
+    mainWindow,
+    configHelper,
+  }, testInfo) => {
+    configHelper.loadTemplate('with-multi-file-tabs');
+
+    const utils = new TestUtils(mainWindow);
+
+    await test.step('ページロードと統合タブの確認', async () => {
+      await utils.waitForPageLoad();
+
+      // 統合タブがアクティブであることを確認
+      const unifiedTab = mainWindow.locator('.file-tab.active', { hasText: '統合タブ' });
+      await expect(unifiedTab).toBeVisible();
+
+      await utils.attachScreenshot(testInfo, '統合タブがアクティブ');
+    });
+
+    await test.step('data.txtのアイテムが表示されることを確認', async () => {
+      const knownDataItems = ['GitHub', 'Google', 'Wikipedia'];
+
+      for (const itemName of knownDataItems) {
+        const item = mainWindow.locator('.item', { hasText: itemName });
+        await expect(item).toBeVisible({ timeout: 5000 });
+      }
+    });
+
+    await test.step('data3.txtのアイテムも表示されることを確認', async () => {
+      const knownData3Items = ['Qiita', 'Zenn', 'note'];
+
+      for (const itemName of knownData3Items) {
+        const item = mainWindow.locator('.item', { hasText: itemName });
+        await expect(item).toBeVisible({ timeout: 5000 });
+      }
+
+      await utils.attachScreenshot(testInfo, '統合タブのアイテム確認');
+    });
+  });
+
+  test('統合タブのアイテム数は複数ファイルの合計が表示される', async ({
+    mainWindow,
+    configHelper,
+  }, testInfo) => {
+    configHelper.loadTemplate('with-multi-file-tabs');
+
+    const utils = new TestUtils(mainWindow);
+
+    await test.step('ページロードと統合タブの確認', async () => {
+      await utils.waitForPageLoad();
+      await utils.attachScreenshot(testInfo, '初期状態');
+    });
+
+    await test.step('統合タブのアイテム数を確認', async () => {
+      const unifiedTab = mainWindow.locator('.file-tab', { hasText: '統合タブ' });
+      const tabCount = unifiedTab.locator('.file-tab-count');
+      const countText = (await tabCount.textContent()) || '';
+
+      // アイテム数が表示されていることを確認
+      expect(countText).toMatch(/\(\d+\)/);
+
+      // 実際のアイテム数を取得
+      const allItems = mainWindow.locator('.item');
+      const actualCount = await allItems.count();
+
+      // タブに表示されているアイテム数と実際のアイテム数が一致することを確認
+      const displayedCount = parseInt(countText.match(/\((\d+)\)/)?.[1] || '0');
+      expect(displayedCount).toBe(actualCount);
+
+      await utils.attachScreenshot(testInfo, 'アイテム数確認');
+    });
+  });
+
+  test('統合タブから別のタブに切り替えると、統合タブのアイテムは表示されない', async ({
+    mainWindow,
+    configHelper,
+  }, testInfo) => {
+    configHelper.loadTemplate('with-multi-file-tabs');
+
+    const utils = new TestUtils(mainWindow);
+
+    await test.step('統合タブの初期状態を確認', async () => {
+      await utils.waitForPageLoad();
+
+      // data.txtのアイテムが表示されていることを確認
+      const githubItem = mainWindow.locator('.item', { hasText: 'GitHub' });
+      await expect(githubItem).toBeVisible();
+
+      // data3.txtのアイテムも表示されていることを確認
+      const qiitaItem = mainWindow.locator('.item', { hasText: 'Qiita' });
+      await expect(qiitaItem).toBeVisible();
+
+      await utils.attachScreenshot(testInfo, '統合タブ初期状態');
+    });
+
+    await test.step('サブ1タブに切り替え', async () => {
+      const subTab = mainWindow.locator('.file-tab', { hasText: 'サブ1' });
+      await subTab.click();
+      await utils.wait(500);
+
+      await utils.attachScreenshot(testInfo, 'サブ1タブに切り替え');
+    });
+
+    await test.step('統合タブのアイテムが表示されないことを確認', async () => {
+      // data.txtのアイテムが表示されないことを確認
+      const githubItem = mainWindow.locator('.item', { hasText: 'GitHub' });
+      await expect(githubItem).not.toBeVisible();
+
+      // data3.txtのアイテムも表示されないことを確認
+      const qiitaItem = mainWindow.locator('.item', { hasText: 'Qiita' });
+      await expect(qiitaItem).not.toBeVisible();
+
+      // data2.txtのアイテムが表示されることを確認
+      const redditItem = mainWindow.locator('.item', { hasText: 'Reddit' });
+      await expect(redditItem).toBeVisible();
+
+      await utils.attachScreenshot(testInfo, 'サブ1タブのアイテム確認');
+    });
+  });
+
+  test('統合タブで検索すると複数ファイルのアイテムが検索対象になる', async ({
+    mainWindow,
+    configHelper,
+  }, testInfo) => {
+    configHelper.loadTemplate('with-multi-file-tabs');
+
+    const utils = new TestUtils(mainWindow);
+
+    await test.step('統合タブで検索前の状態を確認', async () => {
+      await utils.waitForPageLoad();
+
+      // 統合タブがアクティブであることを確認
+      const unifiedTab = mainWindow.locator('.file-tab.active', { hasText: '統合タブ' });
+      await expect(unifiedTab).toBeVisible();
+
+      // 検索前の全アイテム数を取得
+      const allItems = mainWindow.locator('.item');
+      const initialCount = await allItems.count();
+      expect(initialCount).toBeGreaterThan(0);
+
+      await utils.attachScreenshot(testInfo, '検索前');
+    });
+
+    await test.step('data.txtのアイテムで検索', async () => {
+      await utils.searchFor('GitHub');
+      await utils.wait(300);
+
+      // GitHubアイテムが表示されることを確認（data.txtのアイテム）
+      const githubItem = mainWindow.locator('.item', { hasText: 'GitHub' });
+      await expect(githubItem).toBeVisible();
+
+      await utils.attachScreenshot(testInfo, 'data.txtアイテム検索結果');
+    });
+
+    await test.step('検索をクリアしてdata3.txtのアイテムで検索', async () => {
+      const searchBox = mainWindow.locator('input[type="text"]').first();
+      await searchBox.clear();
+      await utils.wait(100);
+
+      await utils.searchFor('Qiita');
+      await utils.wait(300);
+
+      // Qiitaアイテムが表示されることを確認（data3.txtのアイテム）
+      const qiitaItem = mainWindow.locator('.item', { hasText: 'Qiita' });
+      await expect(qiitaItem).toBeVisible();
+
+      await utils.attachScreenshot(testInfo, 'data3.txtアイテム検索結果');
+    });
+  });
 });
