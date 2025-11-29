@@ -66,38 +66,38 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
       return;
     }
 
-    // 設定からタブ一覧を取得
-    const loadAvailableTabs = async () => {
+    // 設定からタブ一覧を取得してから、アイテムを初期化
+    const loadAvailableTabsAndInitialize = async () => {
       const settings = await window.electronAPI.getSettings();
       setAvailableTabs(settings.dataFileTabs);
+
+      // モーダルが開いたとき、まず前回の状態をクリア
+      setCustomIconPreviews({});
+      setItems([]);
+
+      if (editingItem) {
+        debugInfo('RegisterModal opened in edit mode:', editingItem);
+        initializeFromEditingItem(settings.dataFileTabs);
+      } else if (droppedPaths && droppedPaths.length > 0) {
+        debugInfo('RegisterModal opened with paths:', droppedPaths);
+        initializeItems(settings.dataFileTabs);
+      } else {
+        // ボタンから開かれた場合：空のテンプレートアイテムを1つ作成
+        debugInfo('RegisterModal opened manually: creating empty template');
+        const defaultTab =
+          currentTab || (settings.dataFileTabs.length > 0 ? settings.dataFileTabs[0].files[0] : 'data.txt');
+        setItems([
+          {
+            name: '',
+            path: '',
+            type: 'app',
+            targetTab: defaultTab,
+            itemCategory: 'item',
+          },
+        ]);
+      }
     };
-    loadAvailableTabs();
-
-    // モーダルが開いたとき、まず前回の状態をクリア
-    setCustomIconPreviews({});
-    setItems([]);
-
-    if (editingItem) {
-      debugInfo('RegisterModal opened in edit mode:', editingItem);
-      initializeFromEditingItem();
-    } else if (droppedPaths && droppedPaths.length > 0) {
-      debugInfo('RegisterModal opened with paths:', droppedPaths);
-      initializeItems();
-    } else {
-      // ボタンから開かれた場合：空のテンプレートアイテムを1つ作成
-      debugInfo('RegisterModal opened manually: creating empty template');
-      const defaultTab =
-        currentTab || (availableTabs.length > 0 ? availableTabs[0].files[0] : 'data.txt');
-      setItems([
-        {
-          name: '',
-          path: '',
-          type: 'app',
-          targetTab: defaultTab,
-          itemCategory: 'item',
-        },
-      ]);
-    }
+    loadAvailableTabsAndInitialize();
 
     // モーダルが開いたときの処理
     document.body.style.overflow = 'hidden';
@@ -209,7 +209,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     window.electronAPI.setModalMode(true, { width: requiredWidth, height: requiredHeight });
   }, [isOpen, items]);
 
-  const initializeFromEditingItem = async () => {
+  const initializeFromEditingItem = async (tabs: DataFileTab[]) => {
     setLoading(true);
 
     try {
@@ -218,7 +218,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
         return;
       }
 
-      const item = await convertRawDataLineToRegisterItem(editingItem);
+      const item = await convertRawDataLineToRegisterItem(editingItem, tabs);
       setItems([item]);
 
       // グループアイテムの場合、入力用のテキストをセット
@@ -238,9 +238,9 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     }
   };
 
-  const convertRawDataLineToRegisterItem = async (line: RawDataLine): Promise<RegisterItem> => {
+  const convertRawDataLineToRegisterItem = async (line: RawDataLine, tabs: DataFileTab[]): Promise<RegisterItem> => {
     const defaultTab =
-      line.sourceFile || (availableTabs.length > 0 ? availableTabs[0].files[0] : 'data.txt');
+      line.sourceFile || (tabs.length > 0 ? tabs[0].files[0] : 'data.txt');
 
     if (line.type === 'item') {
       // アイテム行の場合：名前,パス,引数,カスタムアイコン
@@ -349,11 +349,11 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     }
   };
 
-  const initializeItems = async () => {
+  const initializeItems = async (tabs: DataFileTab[]) => {
     setLoading(true);
     const newItems: RegisterItem[] = [];
     const defaultTab =
-      currentTab || (availableTabs.length > 0 ? availableTabs[0].files[0] : 'data.txt');
+      currentTab || (tabs.length > 0 ? tabs[0].files[0] : 'data.txt');
 
     try {
       if (!droppedPaths || droppedPaths.length === 0) {
@@ -980,14 +980,20 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                         const selectedTab = availableTabs.find((tab) =>
                           tab.files.includes(e.target.value)
                         );
-                        handleItemChange(index, 'targetTab', e.target.value);
+
+                        // targetTabとtargetFileを同時に更新
+                        const newItems = [...items];
+                        newItems[index] = { ...newItems[index], targetTab: e.target.value };
+
                         // タブに複数ファイルがある場合、デフォルトファイルまたは最初のファイルを設定
                         if (selectedTab && selectedTab.files.length > 1) {
                           const defaultFile = selectedTab.defaultFile || selectedTab.files[0];
-                          handleItemChange(index, 'targetFile', defaultFile);
+                          newItems[index] = { ...newItems[index], targetFile: defaultFile };
                         } else if (selectedTab && selectedTab.files.length === 1) {
-                          handleItemChange(index, 'targetFile', selectedTab.files[0]);
+                          newItems[index] = { ...newItems[index], targetFile: selectedTab.files[0] };
                         }
+
+                        setItems(newItems);
                       }}
                     >
                       {availableTabs.map((tab) => (

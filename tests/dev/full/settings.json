@@ -14,7 +14,7 @@
 	"defaultFileTab": "data.txt",
 	"dataFileTabs": [
 		{
-			"file": "data.txt",
+			"files": ["data.txt"],
 			"name": "メイン"
 		}
 	]
