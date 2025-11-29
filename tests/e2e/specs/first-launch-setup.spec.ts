@@ -129,4 +129,101 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
       expect(hasNodeIntegration).toBe(false);
     });
   });
+
+  test('完了ボタンをクリックするとsettings.jsonに設定が保存される', async ({
+    configHelper,
+    mainWindow,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+
+    // ページの読み込み完了を待機
+    await utils.waitForPageLoad();
+
+    // 完了ボタンをクリック前の設定を確認（初期状態またはデフォルト設定）
+    const settingsBefore = configHelper.readSettings();
+    // 初回起動時は globalHotkey が未設定または空のはず
+    expect(settingsBefore.globalHotkey || '').toBe('');
+
+    // 完了ボタンをクリック
+    await utils.waitForElement('.complete-button');
+    await mainWindow.click('.complete-button');
+
+    // 少し待機（ファイル作成・更新の時間を確保）
+    await utils.wait(1000);
+
+    // settings.jsonが存在し、設定が保存されたことを確認
+    expect(configHelper.fileExists('settings.json')).toBe(true);
+
+    // 設定ファイルの内容を確認
+    const settingsAfter = configHelper.readSettings();
+    expect(settingsAfter.globalHotkey).toBe('Alt+Space');
+    expect(settingsAfter.isFirstLaunch).toBe(false);
+  });
+
+  test('完了ボタンをクリックすると設定ファイルに正しい内容が保存される', async ({
+    configHelper,
+    mainWindow,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+
+    // ページの読み込み完了を待機
+    await utils.waitForPageLoad();
+
+    // デフォルトのホットキー値を確認
+    const hotkeyValue = await mainWindow.inputValue('.hotkey-input');
+    expect(hotkeyValue).toBe('Alt+Space');
+
+    // 完了ボタンをクリック
+    await mainWindow.click('.complete-button');
+
+    // 少し待機（ファイル作成の時間を確保）
+    await utils.wait(1000);
+
+    // 設定ファイルの内容を確認
+    const settings = configHelper.readSettings();
+
+    // ホットキーが正しく保存されていることを確認
+    expect(settings.globalHotkey).toBe('Alt+Space');
+
+    // 初回起動フラグが設定されていることを確認
+    expect(settings.isFirstLaunch).toBe(false);
+  });
+
+  test('ホットキーを変更してから完了ボタンをクリックすると変更内容が保存される', async ({
+    configHelper,
+    mainWindow,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+
+    // ページの読み込み完了を待機
+    await utils.waitForPageLoad();
+
+    // ホットキー入力フィールドを取得
+    const hotkeyInput = mainWindow.locator('.hotkey-input');
+
+    // フィールドをフォーカス
+    await hotkeyInput.click();
+
+    // Ctrl+Shift+Aを入力
+    await mainWindow.keyboard.press('Control+Shift+A');
+
+    // 少し待機（入力が反映されるのを待つ）
+    await utils.wait(500);
+
+    // 変更されたホットキー値を確認
+    const hotkeyValue = await hotkeyInput.inputValue();
+    expect(hotkeyValue).toBe('Ctrl+Shift+A');
+
+    // 完了ボタンをクリック
+    await mainWindow.click('.complete-button');
+
+    // 少し待機（ファイル作成の時間を確保）
+    await utils.wait(1000);
+
+    // 設定ファイルの内容を確認
+    const settings = configHelper.readSettings();
+
+    // 変更したホットキーが保存されていることを確認
+    expect(settings.globalHotkey).toBe('Ctrl+Shift+A');
+  });
 });
