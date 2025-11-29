@@ -1,16 +1,18 @@
 import fs from 'fs';
 import path from 'path';
 
-import { app } from 'electron';
+import { app, shell } from 'electron';
 
 import logger from '../../common/logger.js';
 
 /**
  * 自動起動機能を管理するサービスクラス
  * Windows起動時にアプリケーションを自動的に起動する機能を提供
+ * スタートアップフォルダーにショートカットを作成する方式を使用
  */
 export class AutoLaunchService {
   private static instance: AutoLaunchService;
+  private readonly SHORTCUT_NAME = 'QuickDashLauncher.lnk';
 
   private constructor() {}
 
@@ -25,6 +27,34 @@ export class AutoLaunchService {
   }
 
   /**
+   * スタートアップフォルダーのパスを取得
+   * @returns スタートアップフォルダーのフルパス
+   */
+  private getStartupFolderPath(): string {
+    // %APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup
+    const appDataPath = process.env.APPDATA;
+    if (!appDataPath) {
+      throw new Error('APPDATA environment variable is not set');
+    }
+    return path.join(
+      appDataPath,
+      'Microsoft',
+      'Windows',
+      'Start Menu',
+      'Programs',
+      'Startup'
+    );
+  }
+
+  /**
+   * ショートカットファイルのフルパスを取得
+   * @returns ショートカットファイルのフルパス
+   */
+  private getShortcutPath(): string {
+    return path.join(this.getStartupFolderPath(), this.SHORTCUT_NAME);
+  }
+
+  /**
    * 自動起動設定を更新
    * @param enabled 自動起動を有効にする場合true
    */
@@ -35,42 +65,38 @@ export class AutoLaunchService {
       return;
     }
 
-    try {
-      if (process.platform === 'win32') {
-        // Windows用の実装
-        const appFolder = path.dirname(process.execPath);
-        const exeName = path.basename(process.execPath);
-        const updateExe = path.resolve(appFolder, '..', 'Update.exe');
+    // Windows専用機能
+    if (process.platform !== 'win32') {
+      logger.warn('Auto launch is only supported on Windows');
+      return;
+    }
 
-        // Update.exeの存在確認（NSISインストーラー版かどうか）
-        if (fs.existsSync(updateExe)) {
-          // NSISインストーラー版の場合、Update.exe経由で起動
-          logger.info(`Using NSIS installer path: ${updateExe}`);
-          app.setLoginItemSettings({
-            openAtLogin: enabled,
-            path: updateExe,
-            args: ['--processStart', `"${exeName}"`],
-          });
+    try {
+      const shortcutPath = this.getShortcutPath();
+
+      if (enabled) {
+        // ショートカットを作成
+        const success = shell.writeShortcutLink(shortcutPath, 'create', {
+          target: process.execPath,
+          description: 'QuickDashLauncher - Quick access launcher with global hotkey',
+          appUserModelId: 'net.masaodev.quick-dash-launcher',
+        });
+
+        if (success) {
+          logger.info(`Auto launch enabled: shortcut created at ${shortcutPath}`);
         } else {
-          // ポータブル版または直接実行の場合
-          logger.info(`Using portable mode path: ${process.execPath}`);
-          app.setLoginItemSettings({
-            openAtLogin: enabled,
-            path: process.execPath,
-          });
+          logger.error('Failed to create startup shortcut');
+          throw new Error('Failed to create startup shortcut');
         }
       } else {
-        // Windows以外のプラットフォーム（将来の拡張用）
-        app.setLoginItemSettings({
-          openAtLogin: enabled,
-        });
+        // ショートカットを削除
+        if (fs.existsSync(shortcutPath)) {
+          fs.unlinkSync(shortcutPath);
+          logger.info(`Auto launch disabled: shortcut removed from ${shortcutPath}`);
+        } else {
+          logger.info('Auto launch already disabled: shortcut does not exist');
+        }
       }
-
-      // 設定の確認ログ
-      const settings = app.getLoginItemSettings();
-      logger.info(
-        `Auto launch ${enabled ? 'enabled' : 'disabled'} (actual: ${settings.openAtLogin})`
-      );
     } catch (error) {
       logger.error('Failed to set auto launch:', error);
       throw error;
@@ -87,8 +113,18 @@ export class AutoLaunchService {
       return false;
     }
 
-    const settings = app.getLoginItemSettings();
-    return settings.openAtLogin;
+    // Windows専用機能
+    if (process.platform !== 'win32') {
+      return false;
+    }
+
+    try {
+      const shortcutPath = this.getShortcutPath();
+      return fs.existsSync(shortcutPath);
+    } catch (error) {
+      logger.error('Failed to get auto launch status:', error);
+      return false;
+    }
   }
 }
 
