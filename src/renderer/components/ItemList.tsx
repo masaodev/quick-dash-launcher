@@ -183,6 +183,12 @@ const ItemList: React.FC<ItemListProps> = ({
     }
   };
 
+  const handleOpenShortcutParentFolder = (item: LauncherItem) => {
+    if (onOpenShortcutParentFolder) {
+      onOpenShortcutParentFolder(item);
+    }
+  };
+
   return (
     <div className="item-list" ref={listRef}>
       {items.map((item, index) => {

@@ -98,9 +98,9 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
     }
   };
 
-  const handleEditItem = () => {
+  const handleEditItem = async () => {
     if (item && onEditItem) {
-      onEditItem(item);
+      await Promise.resolve(onEditItem(item));
       onClose();
     }
   };

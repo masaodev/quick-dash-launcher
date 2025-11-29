@@ -7,6 +7,7 @@ import { TestUtils } from '../helpers/test-utils';
 test.describe('QuickDashLauncher - コンテキストメニュー機能テスト', () => {
   let shortcutPath: string;
 
+
   test.beforeEach(async ({ configHelper, mainWindow }) => {
     // with-shortcutsテンプレートを使用
     configHelper.loadTemplate('with-shortcuts');
@@ -15,25 +16,33 @@ test.describe('QuickDashLauncher - コンテキストメニュー機能テスト
     const testDir = configHelper.getConfigDir();
     shortcutPath = path.join(testDir, 'test-shortcut.lnk');
 
-    // Windowsのショートカットファイルを作成する代わりに、
-    // data.txtのプレースホルダーを実際のパスに置き換え
+    // 実際の.lnkファイルを作成（notepad.exeへのショートカット）
+    const { execSync } = require('child_process');
+    const psScriptPath = path.join(testDir, 'create-shortcut.ps1');
+    const psScriptContent = `
+$WshShell = New-Object -ComObject WScript.Shell
+$Shortcut = $WshShell.CreateShortcut("${shortcutPath}")
+$Shortcut.TargetPath = "notepad.exe"
+$Shortcut.Save()
+`;
+    fs.writeFileSync(psScriptPath, psScriptContent, 'utf-8');
+
+    try {
+      execSync(`powershell -ExecutionPolicy Bypass -File "${psScriptPath}"`, { encoding: 'utf-8' });
+    } catch (error) {
+      console.error('ショートカット作成エラー:', error);
+      throw error;
+    }
+
+    if (!fs.existsSync(shortcutPath)) {
+      throw new Error(`ショートカットファイルが作成されませんでした: ${shortcutPath}`);
+    }
+
     const dataPath = configHelper.getDataPath();
     let dataContent = fs.readFileSync(dataPath, 'utf-8');
     dataContent = dataContent.replace('TEST_SHORTCUT_PATH', shortcutPath);
     fs.writeFileSync(dataPath, dataContent, 'utf-8');
 
-    // 実際の.lnkファイルを作成（notepad.exeへのショートカット）
-    // PowerShellを使ってショートカットを作成
-    const { execSync } = require('child_process');
-    const psScript = `
-      $WshShell = New-Object -ComObject WScript.Shell
-      $Shortcut = $WshShell.CreateShortcut("${shortcutPath.replace(/\\/g, '\\\\')}")
-      $Shortcut.TargetPath = "notepad.exe"
-      $Shortcut.Save()
-    `;
-    execSync(`powershell -Command "${psScript}"`, { encoding: 'utf-8' });
-
-    // ページの読み込み完了を待機とリロード（ショートカットを読み込むため）
     const utils = new TestUtils(mainWindow);
     await utils.waitForPageLoad();
     await mainWindow.reload();
@@ -41,12 +50,18 @@ test.describe('QuickDashLauncher - コンテキストメニュー機能テスト
   });
 
   test.afterEach(async () => {
-    // ショートカットファイルをクリーンアップ
     if (shortcutPath && fs.existsSync(shortcutPath)) {
       fs.unlinkSync(shortcutPath);
     }
+    const psScriptPath = path.join(path.dirname(shortcutPath), 'create-shortcut.ps1');
+    if (fs.existsSync(psScriptPath)) {
+      try {
+        fs.unlinkSync(psScriptPath);
+      } catch (err) {
+        // Ignore cleanup errors
+      }
+    }
   });
-
   // ==================== 基本的なコンテキストメニュー表示 ====================
 
   test('右クリックでコンテキストメニューが表示される', async ({ mainWindow }, testInfo) => {
