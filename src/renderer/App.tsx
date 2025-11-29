@@ -56,6 +56,7 @@ const App: React.FC = () => {
     handleCopyShortcutPath,
     handleCopyShortcutParentPath,
     handleOpenParentFolder,
+    handleOpenShortcutParentFolder,
   } = useItemActions();
 
   useEffect(() => {
@@ -762,6 +763,7 @@ const App: React.FC = () => {
           onOpenParentFolder={handleOpenParentFolder}
           onCopyShortcutPath={handleCopyShortcutPath}
           onCopyShortcutParentPath={handleCopyShortcutParentPath}
+          onOpenShortcutParentFolder={handleOpenShortcutParentFolder}
           onEditItem={handleEditItem}
         />
 

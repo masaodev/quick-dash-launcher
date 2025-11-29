@@ -1,0 +1,8 @@
+{
+  "hotKey": "Alt+Space",
+  "windowSize": {
+    "width": 600,
+    "height": 400
+  },
+  "maxResults": 50
+}

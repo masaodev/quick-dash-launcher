@@ -109,11 +109,36 @@ export const useItemActions = () => {
     }
   };
 
+  /**
+   * ショートカットのリンク先の親フォルダをエクスプローラーで開く
+   */
+  const handleOpenShortcutParentFolder = async (item: LauncherItem) => {
+    try {
+      if (!item.originalPath) {
+        alert('ショートカットのパスが見つかりません');
+        return;
+      }
+
+      // リンク先のパスで一時的なアイテムを作成してopenParentFolderを使用
+      const tempItem: LauncherItem = {
+        ...item,
+        path: item.originalPath,
+      };
+
+      await window.electronAPI.openParentFolder(tempItem);
+      logWarn(`リンク先の親フォルダーを開きました: ${item.originalPath}`);
+    } catch (err) {
+      console.error('リンク先の親フォルダーを開くのに失敗しました:', err);
+      alert('リンク先の親フォルダーを開くのに失敗しました');
+    }
+  };
+
   return {
     handleCopyPath,
     handleCopyParentPath,
     handleCopyShortcutPath,
     handleCopyShortcutParentPath,
     handleOpenParentFolder,
+    handleOpenShortcutParentFolder,
   };
 };

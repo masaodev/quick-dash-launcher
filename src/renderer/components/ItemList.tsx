@@ -16,6 +16,7 @@ interface ItemListProps {
   onOpenParentFolder?: (item: LauncherItem) => void;
   onCopyShortcutPath?: (item: LauncherItem) => void;
   onCopyShortcutParentPath?: (item: LauncherItem) => void;
+  onOpenShortcutParentFolder?: (item: LauncherItem) => void;
   onEditItem?: (item: LauncherItem) => void | Promise<void>;
 }
 
@@ -30,6 +31,7 @@ const ItemList: React.FC<ItemListProps> = ({
   onOpenParentFolder,
   onCopyShortcutPath,
   onCopyShortcutParentPath,
+  onOpenShortcutParentFolder,
   onEditItem,
 }) => {
   const listRef = useRef<HTMLDivElement>(null);
@@ -227,6 +229,7 @@ const ItemList: React.FC<ItemListProps> = ({
         onOpenParentFolder={handleOpenParentFolder}
         onCopyShortcutPath={handleCopyShortcutPath}
         onCopyShortcutParentPath={handleCopyShortcutParentPath}
+        onOpenShortcutParentFolder={onOpenShortcutParentFolder}
         onEditItem={onEditItem}
       />
     </div>

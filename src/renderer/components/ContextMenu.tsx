@@ -13,6 +13,7 @@ interface ContextMenuProps {
   onOpenParentFolder: (item: LauncherItem) => void;
   onCopyShortcutPath?: (item: LauncherItem) => void;
   onCopyShortcutParentPath?: (item: LauncherItem) => void;
+  onOpenShortcutParentFolder?: (item: LauncherItem) => void;
   onEditItem?: (item: LauncherItem) => void | Promise<void>;
 }
 
@@ -26,6 +27,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
   onOpenParentFolder,
   onCopyShortcutPath,
   onCopyShortcutParentPath,
+  onOpenShortcutParentFolder,
   onEditItem,
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
@@ -89,6 +91,13 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
     }
   };
 
+  const handleOpenShortcutParentFolder = () => {
+    if (item && onOpenShortcutParentFolder) {
+      onOpenShortcutParentFolder(item);
+      onClose();
+    }
+  };
+
   const handleEditItem = () => {
     if (item && onEditItem) {
       onEditItem(item);
@@ -118,9 +127,9 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
 
   const getAdjustedPosition = () => {
     const menuWidth = 200;
-    // メニュー項目数に応じて高さを調整（編集+基本3項目 + ショートカットで+2項目）
-    const baseHeight = onEditItem ? 160 : 120;
-    const menuHeight = isShortcutItem ? baseHeight + 80 : baseHeight;
+    // メニュー項目数に応じて高さを調整（編集+基本3項目 + ショートカットで+3項目 + 区切り線2本）
+    const baseHeight = onEditItem ? 200 : 160;
+    const menuHeight = isShortcutItem ? baseHeight + 140 : baseHeight;
 
     let adjustedX = position.x;
     let adjustedY = position.y;
@@ -157,10 +166,13 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
       }}
     >
       {onEditItem && (
-        <div className="context-menu-item" onClick={handleEditItem}>
-          <span className="context-menu-icon">✏️</span>
-          <span>編集</span>
-        </div>
+        <>
+          <div className="context-menu-item" onClick={handleEditItem}>
+            <span className="context-menu-icon">✏️</span>
+            <span>編集</span>
+          </div>
+          <div className="context-menu-divider" />
+        </>
       )}
       <div className="context-menu-item" onClick={handleCopyPath} title={getFullPath()}>
         <span className="context-menu-icon">📋</span>
@@ -169,7 +181,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
       {hasParentFolder && (
         <>
           <div className="context-menu-item" onClick={handleCopyParentPath} title={getParentPath()}>
-            <span className="context-menu-icon">📁</span>
+            <span className="context-menu-icon">📋</span>
             <span>親フォルダーのパスをコピー</span>
           </div>
           <div
@@ -182,25 +194,40 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
           </div>
         </>
       )}
-      {isShortcutItem && onCopyShortcutPath && (
-        <div
-          className="context-menu-item"
-          onClick={handleCopyShortcutPath}
-          title={getShortcutPath()}
-        >
-          <span className="context-menu-icon">🔗</span>
-          <span>ショートカットのパスをコピー</span>
-        </div>
-      )}
-      {isShortcutItem && onCopyShortcutParentPath && (
-        <div
-          className="context-menu-item"
-          onClick={handleCopyShortcutParentPath}
-          title={getShortcutParentPath()}
-        >
-          <span className="context-menu-icon">📂</span>
-          <span>ショートカットの親フォルダーのパスをコピー</span>
-        </div>
+      {isShortcutItem && (
+        <>
+          <div className="context-menu-divider" />
+          {onCopyShortcutPath && (
+            <div
+              className="context-menu-item"
+              onClick={handleCopyShortcutPath}
+              title={getShortcutPath()}
+            >
+              <span className="context-menu-icon">📋</span>
+              <span>リンク先のパスをコピー</span>
+            </div>
+          )}
+          {onCopyShortcutParentPath && (
+            <div
+              className="context-menu-item"
+              onClick={handleCopyShortcutParentPath}
+              title={getShortcutParentPath()}
+            >
+              <span className="context-menu-icon">📋</span>
+              <span>リンク先の親フォルダーのパスをコピー</span>
+            </div>
+          )}
+          {onOpenShortcutParentFolder && (
+            <div
+              className="context-menu-item"
+              onClick={handleOpenShortcutParentFolder}
+              title={getShortcutParentPath()}
+            >
+              <span className="context-menu-icon">📂</span>
+              <span>リンク先の親フォルダーを開く</span>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

@@ -37,3 +37,9 @@
   justify-content: center;
   flex-shrink: 0;
 }
+
+.context-menu-divider {
+  height: 1px;
+  background-color: var(--border-color);
+  margin: var(--spacing-xs) 0;
+}
