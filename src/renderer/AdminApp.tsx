@@ -122,13 +122,6 @@ const AdminApp: React.FC = () => {
         onRawDataSave={handleRawDataSave}
         searchQuery={searchQuery}
         onSearchChange={handleSearchChange}
-        tabNames={
-          settings?.dataFileTabs
-            ? Object.fromEntries(
-                settings.dataFileTabs.flatMap((tab) => tab.files.map((file) => [file, tab.name]))
-              )
-            : {}
-        }
         dataFileTabs={settings?.dataFileTabs || []}
       />
     </div>

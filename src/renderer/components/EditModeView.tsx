@@ -11,7 +11,6 @@ interface EditModeViewProps {
   onExitEditMode: () => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
-  tabNames: Record<string, string>;
   dataFileTabs: DataFileTab[];
 }
 
@@ -21,7 +20,6 @@ const EditModeView: React.FC<EditModeViewProps> = ({
   onExitEditMode,
   searchQuery,
   onSearchChange,
-  tabNames,
   dataFileTabs,
 }) => {
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
@@ -262,9 +260,7 @@ const EditModeView: React.FC<EditModeViewProps> = ({
   const handleTabChange = (newTabIndex: number) => {
     if (hasUnsavedChanges) {
       if (
-        window.confirm(
-          '未保存の変更があります。タブを切り替えると変更が失われます。続行しますか？'
-        )
+        window.confirm('未保存の変更があります。タブを切り替えると変更が失われます。続行しますか？')
       ) {
         setSelectedTabIndex(newTabIndex);
         setHasUnsavedChanges(false);
@@ -353,7 +349,6 @@ const EditModeView: React.FC<EditModeViewProps> = ({
 
   // 現在選択されているタブの情報を取得
   const currentTab = dataFileTabs[selectedTabIndex];
-  const currentTabName = currentTab?.name || 'メイン';
   const currentTabFiles = currentTab?.files || ['data.txt'];
 
   return (

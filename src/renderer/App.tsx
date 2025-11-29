@@ -155,7 +155,9 @@ const App: React.FC = () => {
       const tabs = settings.dataFileTabs || [];
       // 全タブの全ファイルを統合してユニークなリストを作成
       const allFiles = tabs.flatMap((tab) => tab.files || []);
-      const files = Array.from(new Set(allFiles)).filter((file) => file && typeof file === 'string');
+      const files = Array.from(new Set(allFiles)).filter(
+        (file) => file && typeof file === 'string'
+      );
 
       // data.txtが含まれていない場合は追加
       if (!files.includes('data.txt')) {
@@ -214,7 +216,9 @@ const App: React.FC = () => {
         const tabs = settings.dataFileTabs || [];
         // 全タブの全ファイルを統合してユニークなリストを作成
         const allFiles = tabs.flatMap((tab) => tab.files || []);
-        const files = Array.from(new Set(allFiles)).filter((file) => file && typeof file === 'string');
+        const files = Array.from(new Set(allFiles)).filter(
+          (file) => file && typeof file === 'string'
+        );
 
         // data.txtが含まれていない場合は追加
         if (!files.includes('data.txt')) {

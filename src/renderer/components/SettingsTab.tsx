@@ -257,8 +257,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                 return null;
               }
               // デフォルトファイルが削除された場合は、最初のファイルを設定
-              const newDefaultFile =
-                tab.defaultFile === fileName ? newFiles[0] : tab.defaultFile;
+              const newDefaultFile = tab.defaultFile === fileName ? newFiles[0] : tab.defaultFile;
               return { ...tab, files: newFiles, defaultFile: newDefaultFile };
             }
             return tab;
@@ -646,9 +645,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                 />
                 <div className="option-content">
                   <div className="option-title">画面中央</div>
-                  <div className="option-description">
-                    常に画面の中央にウィンドウを表示します
-                  </div>
+                  <div className="option-description">常に画面の中央にウィンドウを表示します</div>
                 </div>
               </label>
               <label className="position-option">
@@ -939,7 +936,9 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                                   {fileName !== tab.defaultFile && (
                                     <button
                                       type="button"
-                                      onClick={() => handleSetDefaultFile(fileModalTabIndex, fileName)}
+                                      onClick={() =>
+                                        handleSetDefaultFile(fileModalTabIndex, fileName)
+                                      }
                                       className="btn-secondary-small"
                                       disabled={isLoading}
                                     >
