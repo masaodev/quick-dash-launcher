@@ -26,7 +26,6 @@ export default defineConfig({
 
   // レポーター設定
   reporter: [
-    ['html', { outputFolder: 'test-results/html-report' }],
     ['list'],
     process.env.CI ? ['github'] : ['dot'],
   ],
