@@ -786,6 +786,7 @@ const App: React.FC = () => {
           onRegister={handleRegisterItems}
           droppedPaths={droppedPaths}
           editingItem={editingItem}
+          currentTab={activeTab}
         />
 
         {isDraggingOver && (

@@ -431,4 +431,113 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       expect(dataAfter).toBe(dataBefore);
     });
   });
+
+  // ==================== マルチタブでのアイテム登録テスト ====================
+
+  test('現在開いているタブがデフォルトの登録先になる', async ({
+    mainWindow,
+    configHelper,
+  }, testInfo) => {
+    const utils = new TestUtils(mainWindow);
+
+    await test.step('マルチタブ機能を有効化', async () => {
+      configHelper.loadTemplate('with-tabs');
+      await mainWindow.reload();
+      await utils.waitForPageLoad();
+      await utils.attachScreenshot(testInfo, 'マルチタブ有効化');
+    });
+
+    await test.step('メインタブで登録モーダルを開く', async () => {
+      // メインタブがアクティブであることを確認
+      const mainTab = mainWindow.locator('.file-tab.active', { hasText: 'メイン' });
+      await expect(mainTab).toBeVisible();
+
+      await utils.openRegisterModal();
+      await utils.attachScreenshot(testInfo, 'メインタブで登録モーダル表示');
+    });
+
+    await test.step('デフォルトの保存先がメインタブ（data.txt）になっている', async () => {
+      // 保存先セレクトボックスの値を確認
+      const targetTabSelect = mainWindow.locator('.register-modal select').last();
+      const selectedValue = await targetTabSelect.inputValue();
+      expect(selectedValue).toBe('data.txt');
+
+      await utils.clickCancelButton();
+    });
+
+    await test.step('サブタブに切り替え', async () => {
+      const subTab1 = mainWindow.locator('.file-tab', { hasText: 'サブ1' });
+      await subTab1.click();
+      await utils.wait(300);
+      await utils.attachScreenshot(testInfo, 'サブタブに切り替え');
+    });
+
+    await test.step('サブタブで登録モーダルを開く', async () => {
+      // サブタブがアクティブであることを確認
+      const subTab1 = mainWindow.locator('.file-tab.active', { hasText: 'サブ1' });
+      await expect(subTab1).toBeVisible();
+
+      await utils.openRegisterModal();
+      await utils.attachScreenshot(testInfo, 'サブタブで登録モーダル表示');
+    });
+
+    await test.step('デフォルトの保存先がサブタブ（data2.txt）になっている', async () => {
+      // 保存先セレクトボックスの値を確認
+      const targetTabSelect = mainWindow.locator('.register-modal select').last();
+      const selectedValue = await targetTabSelect.inputValue();
+      expect(selectedValue).toBe('data2.txt');
+
+      await utils.clickCancelButton();
+    });
+
+    await test.step('サブタブでアイテムを登録', async () => {
+      await utils.openRegisterModal();
+      await utils.fillRegisterForm({
+        name: 'サブタブ登録テスト',
+        path: 'https://sub-tab-test.com',
+      });
+      await utils.clickRegisterButton();
+      await utils.wait(500);
+      await utils.attachScreenshot(testInfo, 'サブタブでアイテム登録完了');
+    });
+
+    await test.step('登録したアイテムがサブタブ（data2.txt）に保存される', async () => {
+      // data2.txtの内容を確認
+      const data2Content = configHelper.readData2();
+      expect(data2Content).toContain('サブタブ登録テスト,https://sub-tab-test.com');
+
+      // data.txtには保存されていないことを確認
+      const dataContent = configHelper.readData();
+      expect(dataContent).not.toContain('サブタブ登録テスト');
+    });
+
+    await test.step('サブタブで登録したアイテムが表示される', async () => {
+      await mainWindow.reload();
+      await utils.waitForPageLoad();
+
+      // サブタブに切り替え
+      const subTab1 = mainWindow.locator('.file-tab', { hasText: 'サブ1' });
+      await subTab1.click();
+      await utils.wait(300);
+
+      // 登録したアイテムが表示されることを確認
+      const item = mainWindow.locator('.item', { hasText: 'サブタブ登録テスト' });
+      await expect(item).toBeVisible();
+
+      await utils.attachScreenshot(testInfo, 'サブタブでアイテム表示確認');
+    });
+
+    await test.step('メインタブには登録したアイテムが表示されない', async () => {
+      // メインタブに戻る
+      const mainTab = mainWindow.locator('.file-tab', { hasText: 'メイン' });
+      await mainTab.click();
+      await utils.wait(300);
+
+      // サブタブで登録したアイテムが表示されないことを確認
+      const item = mainWindow.locator('.item', { hasText: 'サブタブ登録テスト' });
+      await expect(item).not.toBeVisible();
+
+      await utils.attachScreenshot(testInfo, 'メインタブでアイテム非表示確認');
+    });
+  });
 });

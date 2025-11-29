@@ -9,6 +9,7 @@ interface RegisterModalProps {
   onRegister: (items: RegisterItem[]) => void;
   droppedPaths: string[];
   editingItem?: RawDataLine | null;
+  currentTab?: string; // 現在開いているタブ
 }
 
 export interface RegisterItem {
@@ -40,6 +41,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
   onRegister,
   droppedPaths,
   editingItem,
+  currentTab,
 }) => {
   const [items, setItems] = useState<RegisterItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -83,7 +85,8 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     } else {
       // ボタンから開かれた場合：空のテンプレートアイテムを1つ作成
       debugInfo('RegisterModal opened manually: creating empty template');
-      const defaultTab = availableTabs.length > 0 ? availableTabs[0].file : 'data.txt';
+      const defaultTab =
+        currentTab || (availableTabs.length > 0 ? availableTabs[0].file : 'data.txt');
       setItems([
         {
           name: '',
@@ -348,7 +351,8 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
   const initializeItems = async () => {
     setLoading(true);
     const newItems: RegisterItem[] = [];
-    const defaultTab = availableTabs.length > 0 ? availableTabs[0].file : 'data.txt';
+    const defaultTab =
+      currentTab || (availableTabs.length > 0 ? availableTabs[0].file : 'data.txt');
 
     try {
       if (!droppedPaths || droppedPaths.length === 0) {
