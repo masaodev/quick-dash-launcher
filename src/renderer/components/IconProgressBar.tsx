@@ -13,8 +13,9 @@ interface IconProgressBarProps {
 const IconProgressBar: React.FC<IconProgressBarProps> = ({ progress, onClose }) => {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
-  const formatElapsedTime = (startTime: number): string => {
-    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+  const formatElapsedTime = (startTime: number, completedTime?: number): string => {
+    const endTime = completedTime ?? Date.now();
+    const elapsed = Math.floor((endTime - startTime) / 1000);
     return `${elapsed}秒`;
   };
 
@@ -82,7 +83,9 @@ const IconProgressBar: React.FC<IconProgressBarProps> = ({ progress, onClose }) 
             </div>
           </div>
           <div className="progress-stats">
-            <span className="elapsed-time">経過: {formatElapsedTime(progress.startTime)}</span>
+            <span className="elapsed-time">
+              経過: {formatElapsedTime(progress.startTime, progress.completedTime)}
+            </span>
             {currentPhase && currentPhase.current > 0 && !progress.isComplete && (
               <span className="estimated-time">
                 残り:{' '}

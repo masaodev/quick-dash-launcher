@@ -227,14 +227,14 @@ export class CombinedProgressManager {
 
     this.currentPhaseIndex = this.phases.length;
 
-    this.sendCombinedProgress(true);
+    this.sendCombinedProgress(true, Date.now());
   }
 
   /**
    * 統合進捗状況をレンダラープロセスに送信する
    * @private
    */
-  private sendCombinedProgress(isComplete = false): void {
+  private sendCombinedProgress(isComplete = false, completedTime?: number): void {
     if (!this.mainWindow) {
       return;
     }
@@ -245,6 +245,7 @@ export class CombinedProgressManager {
       phases: this.phases,
       isComplete: isComplete || this.currentPhaseIndex >= this.phases.length,
       startTime: this.globalStartTime,
+      completedTime: completedTime,
     };
 
     const eventType = progress.isComplete

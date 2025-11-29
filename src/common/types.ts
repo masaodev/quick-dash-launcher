@@ -178,6 +178,8 @@ export interface IconProgress {
   isComplete: boolean;
   /** 全体の処理開始時刻（ミリ秒） */
   startTime: number;
+  /** 全体の処理完了時刻（ミリ秒、完了時のみ設定） */
+  completedTime?: number;
 }
 
 /**
