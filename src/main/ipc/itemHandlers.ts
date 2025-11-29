@@ -20,18 +20,15 @@ async function openItem(item: LauncherItem, mainWindow: BrowserWindow | null): P
     } else if (item.type === 'file' || item.type === 'folder') {
       await shell.openPath(item.path);
     } else if (item.type === 'app') {
-      // .lnkファイルで元のパスが存在する場合は、それを使用
-      const launchPath =
-        item.originalPath && item.originalPath.endsWith('.lnk') ? item.originalPath : item.path;
-
+      // ショートカットファイル（.lnk）の場合、pathがショートカットファイル自身のパスになる
       // .lnkファイルの場合は引数があってもshell.openPathを使用
-      if (launchPath.endsWith('.lnk')) {
-        await shell.openPath(launchPath);
+      if (item.path.endsWith('.lnk')) {
+        await shell.openPath(item.path);
       } else if (item.args) {
         // Windowsでは start コマンドを使って完全に独立したプロセスとして起動
         if (process.platform === 'win32') {
           // startコマンドを使って新しいウィンドウで実行
-          const command = `start "" "${launchPath}" ${item.args}`;
+          const command = `start "" "${item.path}" ${item.args}`;
           exec(command, { windowsHide: false }, (error) => {
             if (error) {
               itemLogger.error('アイテムの起動に失敗しました (start command)', {
@@ -42,14 +39,14 @@ async function openItem(item: LauncherItem, mainWindow: BrowserWindow | null): P
         } else {
           // Unix系OSの場合は従来通りspawnを使用
           const { spawn } = await import('child_process');
-          const child = spawn(launchPath, item.args.split(' '), {
+          const child = spawn(item.path, item.args.split(' '), {
             detached: true,
             stdio: 'ignore',
           });
           child.unref();
         }
       } else {
-        await shell.openPath(launchPath);
+        await shell.openPath(item.path);
       }
     } else if (item.type === 'customUri') {
       await shell.openExternal(item.path);

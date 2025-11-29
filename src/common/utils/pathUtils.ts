@@ -34,11 +34,11 @@ export class PathUtils {
   }
 
   /**
-   * アイテムがショートカットファイルかどうかを判定（originalPathをチェック）
+   * アイテムがショートカットファイルかどうかを判定（pathをチェック）
    * @param item ランチャーアイテム
    * @returns ショートカットファイルの場合はtrue
    */
   static isShortcutItem(item: LauncherItem): boolean {
-    return this.isShortcutFile(item.originalPath);
+    return this.isShortcutFile(item.path);
   }
 }

@@ -15,7 +15,7 @@ export interface LauncherItem {
   customIcon?: string;
   /** 実行時のコマンドライン引数（オプション） */
   args?: string;
-  /** ショートカットファイル（.lnk）の元のパス（オプション） */
+  /** ショートカットファイル（.lnk）のリンク先のパス（オプション） */
   originalPath?: string;
   /** アイテムの元データファイル */
   sourceFile?: string;

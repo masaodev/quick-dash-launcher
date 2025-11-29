@@ -202,7 +202,6 @@ function processItem(
     name: displayName,
     path: itemPath,
     type: itemType === 'folder' ? 'folder' : detectItemType(itemPath),
-    originalPath: itemPath,
     sourceFile,
     lineNumber,
     isDirExpanded: expandedFrom ? true : false,
@@ -275,11 +274,11 @@ function processShortcut(
 
       return {
         name: name,
-        path: shortcutDetails.target,
+        path: filePath,
         type: targetType,
         args:
           shortcutDetails.args && shortcutDetails.args.trim() ? shortcutDetails.args : undefined,
-        originalPath: filePath,
+        originalPath: shortcutDetails.target,
         sourceFile,
         lineNumber,
         isDirExpanded: expandedFrom ? true : false,
