@@ -1,8 +1,8 @@
 import * as path from 'path';
 
-import { BrowserWindow, Tray, Menu, nativeImage, app, shell } from 'electron';
+import { BrowserWindow, Tray, Menu, nativeImage, app, shell, screen } from 'electron';
 import { windowLogger } from '@common/logger';
-import type { WindowPinMode } from '@common/types';
+import type { WindowPinMode, WindowPositionMode } from '@common/types';
 
 import { HotkeyService } from './services/hotkeyService.js';
 import { SettingsService } from './services/settingsService.js';
@@ -77,6 +77,11 @@ export async function createWindow(): Promise<BrowserWindow> {
     mainWindow = null;
   });
 
+  // ウィンドウ移動時に位置を保存（fixedモードの場合のみ）
+  mainWindow.on('moved', () => {
+    void saveWindowPosition();
+  });
+
   mainWindow.webContents.on('before-input-event', (event, input) => {
     if (input.key === 'Escape' && input.type === 'keyDown') {
       event.preventDefault();
@@ -120,9 +125,14 @@ export async function createTray(): Promise<void> {
       label: `表示${hotkeyLabel}`,
       click: () => {
         if (mainWindow) {
-          mainWindow.show();
-          mainWindow.focus();
+          void showMainWindow();
         }
+      },
+    },
+    {
+      label: '画面中央に表示',
+      click: () => {
+        showWindowAtCenter();
       },
     },
     {
@@ -348,4 +358,122 @@ export function getTray(): Tray | null {
 export function setFirstLaunchMode(isFirstLaunch: boolean): void {
   isFirstLaunchMode = isFirstLaunch;
   windowLogger.info(`初回起動モード: ${isFirstLaunch ? '有効' : '無効'}`);
+}
+
+/**
+ * ウィンドウを指定されたモードに応じた位置に配置する
+ * @param mode ウィンドウ表示位置モード ('center' | 'cursor' | 'fixed')
+ */
+export async function setWindowPosition(mode?: WindowPositionMode): Promise<void> {
+  if (!mainWindow) return;
+
+  const settingsService = await SettingsService.getInstance();
+  const positionMode = mode || (await settingsService.get('windowPositionMode'));
+
+  switch (positionMode) {
+    case 'center':
+      mainWindow.center();
+      windowLogger.info('ウィンドウを画面中央に配置しました');
+      break;
+
+    case 'cursor': {
+      const cursorPoint = screen.getCursorScreenPoint();
+      const bounds = mainWindow.getBounds();
+
+      // カーソル位置を中心にウィンドウを配置
+      const x = cursorPoint.x - Math.floor(bounds.width / 2);
+      const y = cursorPoint.y - Math.floor(bounds.height / 2);
+
+      // 画面外に出ないように調整
+      const display = screen.getDisplayNearestPoint(cursorPoint);
+      const displayBounds = display.workArea;
+
+      const adjustedX = Math.max(
+        displayBounds.x,
+        Math.min(x, displayBounds.x + displayBounds.width - bounds.width)
+      );
+      const adjustedY = Math.max(
+        displayBounds.y,
+        Math.min(y, displayBounds.y + displayBounds.height - bounds.height)
+      );
+
+      mainWindow.setPosition(adjustedX, adjustedY);
+      windowLogger.info(`ウィンドウをカーソル位置に配置しました: (${adjustedX}, ${adjustedY})`);
+      break;
+    }
+
+    case 'fixed': {
+      const savedX = await settingsService.get('windowPositionX');
+      const savedY = await settingsService.get('windowPositionY');
+
+      // 保存された位置が有効かチェック（初回は0,0なので中央に配置）
+      if (savedX === 0 && savedY === 0) {
+        mainWindow.center();
+        // 中央配置後の位置を保存
+        const bounds = mainWindow.getBounds();
+        await settingsService.set('windowPositionX', bounds.x);
+        await settingsService.set('windowPositionY', bounds.y);
+        windowLogger.info('初回起動: ウィンドウを画面中央に配置し、位置を保存しました');
+      } else {
+        mainWindow.setPosition(savedX, savedY);
+        windowLogger.info(`ウィンドウを固定位置に配置しました: (${savedX}, ${savedY})`);
+      }
+      break;
+    }
+  }
+}
+
+/**
+ * ウィンドウを画面中央に表示する（タスクトレイメニュー用）
+ * このメソッドは設定に関係なく強制的に画面中央に表示します
+ */
+export function showWindowAtCenter(): void {
+  if (!mainWindow) return;
+
+  mainWindow.center();
+  mainWindow.show();
+  mainWindow.focus();
+  windowLogger.info('ウィンドウを画面中央に表示しました（タスクトレイメニュー）');
+}
+
+/**
+ * 現在のウィンドウ位置を保存する（fixedモード時のみ）
+ */
+export async function saveWindowPosition(): Promise<void> {
+  if (!mainWindow) return;
+
+  const settingsService = await SettingsService.getInstance();
+  const positionMode = await settingsService.get('windowPositionMode');
+
+  // fixedモードの場合のみ位置を保存
+  if (positionMode === 'fixed') {
+    const bounds = mainWindow.getBounds();
+    await settingsService.set('windowPositionX', bounds.x);
+    await settingsService.set('windowPositionY', bounds.y);
+    windowLogger.info(`ウィンドウ位置を保存しました: (${bounds.x}, ${bounds.y})`);
+  }
+}
+
+/**
+ * メインウィンドウを表示する（ホットキー用）
+ * 設定されたモードに応じてウィンドウ位置を設定してから表示します
+ */
+export async function showMainWindow(): Promise<void> {
+  if (!mainWindow) return;
+
+  await setWindowPosition();
+  mainWindow.show();
+  mainWindow.focus();
+  mainWindow.webContents.send('window-shown');
+  windowLogger.info('メインウィンドウを表示しました');
+}
+
+/**
+ * メインウィンドウを非表示にする（ホットキー用）
+ */
+export function hideMainWindow(): void {
+  if (!mainWindow) return;
+
+  mainWindow.hide();
+  windowLogger.info('メインウィンドウを非表示にしました');
 }

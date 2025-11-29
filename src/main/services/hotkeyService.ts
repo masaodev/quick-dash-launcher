@@ -1,6 +1,7 @@
 import { globalShortcut, BrowserWindow } from 'electron';
 
 import logger from '../../common/logger.js';
+import { showMainWindow, hideMainWindow } from '../windowManager.js';
 
 import { SettingsService } from './settingsService.js';
 
@@ -156,11 +157,10 @@ export class HotkeyService {
       const mainWindow = this.getMainWindow();
       if (mainWindow) {
         if (mainWindow.isVisible()) {
-          mainWindow.hide();
+          hideMainWindow();
         } else {
-          mainWindow.show();
-          mainWindow.focus();
-          mainWindow.webContents.send('window-shown');
+          // 非同期関数だが、awaitせずに呼び出す（表示処理は並行実行）
+          void showMainWindow();
         }
       }
     } catch (error) {

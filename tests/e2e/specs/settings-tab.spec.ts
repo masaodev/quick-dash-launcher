@@ -44,25 +44,39 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
 
       await test.step('各セクションが表示されていることを確認', async () => {
         // ホットキーセクション
-        const hotkeySection = adminWindow.locator('.settings-section', { hasText: 'ホットキー' });
+        const hotkeySection = adminWindow
+          .locator('.settings-section')
+          .filter({ has: adminWindow.locator('h3', { hasText: 'ホットキー' }) });
         await expect(hotkeySection).toBeVisible();
 
         // ウィンドウサイズセクション
-        const windowSizeSection = adminWindow.locator('.settings-section', {
-          hasText: 'ウィンドウサイズ',
-        });
+        const windowSizeSection = adminWindow
+          .locator('.settings-section')
+          .filter({ has: adminWindow.locator('h3', { hasText: 'ウィンドウサイズ' }) });
         await expect(windowSizeSection).toBeVisible();
 
+        // ウィンドウ表示位置セクション
+        const windowPositionSection = adminWindow
+          .locator('.settings-section')
+          .filter({ has: adminWindow.locator('h3', { hasText: 'ウィンドウ表示位置' }) });
+        await expect(windowPositionSection).toBeVisible();
+
         // システムセクション
-        const systemSection = adminWindow.locator('.settings-section', { hasText: 'システム' });
+        const systemSection = adminWindow
+          .locator('.settings-section')
+          .filter({ has: adminWindow.locator('h3', { hasText: 'システム' }) });
         await expect(systemSection).toBeVisible();
 
         // バックアップセクション
-        const backupSection = adminWindow.locator('.settings-section', { hasText: 'バックアップ' });
+        const backupSection = adminWindow
+          .locator('.settings-section')
+          .filter({ has: adminWindow.locator('h3', { hasText: 'バックアップ' }) });
         await expect(backupSection).toBeVisible();
 
         // タブ表示セクション
-        const tabSection = adminWindow.locator('.settings-section', { hasText: 'タブ表示' });
+        const tabSection = adminWindow
+          .locator('.settings-section')
+          .filter({ has: adminWindow.locator('h3', { hasText: 'タブ表示' }) });
         await expect(tabSection).toBeVisible();
       });
     } finally {
