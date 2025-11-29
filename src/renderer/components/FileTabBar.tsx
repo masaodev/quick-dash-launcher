@@ -4,75 +4,64 @@ import { AppItem, DataFileTab } from '../../common/types';
 import { filterItems } from '../utils/dataParser';
 
 interface FileTabBarProps {
-  /** 利用可能なデータファイル名のリスト */
-  dataFiles: string[];
+  /** データファイルタブの設定（タブグループのリスト） */
+  dataFileTabs: DataFileTab[];
   /** 現在アクティブなタブ（ファイル名） */
   activeTab: string;
-  /** タブ名のカスタマイズマッピング */
-  tabNames: Record<string, string>;
-  /** タブクリック時のハンドラ */
+  /** タブクリック時のハンドラ（タブグループの最初のファイル名を渡す） */
   onTabClick: (fileName: string) => void;
   /** 全アイテム（各タブのアイテム数計算用） */
   allItems: AppItem[];
   /** 検索クエリ（フィルタリング用） */
   searchQuery: string;
-  /** データファイルタブの設定 */
-  dataFileTabs: DataFileTab[];
 }
 
 /**
  * メインウィンドウのデータファイルタブバーコンポーネント
  * 複数のdata*.txtファイルをタブで切り替え可能にする
+ * 1つのタブに複数のデータファイルを紐付けることが可能
  */
 const FileTabBar: React.FC<FileTabBarProps> = ({
-  dataFiles,
+  dataFileTabs,
   activeTab,
-  tabNames,
   onTabClick,
   allItems,
   searchQuery,
-  dataFileTabs,
 }) => {
-  // デフォルトのタブ名を生成（data.txt→メイン, data2.txt→サブ1, data3.txt→サブ2, ...）
-  const getDefaultTabName = (fileName: string): string => {
-    if (fileName === 'data.txt') {
-      return 'メイン';
-    }
-    const match = fileName.match(/^data(\d+)\.txt$/);
-    if (match) {
-      const num = parseInt(match[1]);
-      return `サブ${num - 1}`;
-    }
-    return fileName;
-  };
-
-  // タブに表示する名前を取得（カスタム名 > デフォルト名 > ファイル名）
-  const getTabLabel = (fileName: string): string => {
-    return tabNames[fileName] || getDefaultTabName(fileName);
-  };
-
-  // 各タブのアイテム数を計算
-  const getTabItemCount = (fileName: string): number => {
+  // 各タブグループのアイテム数を計算
+  const getTabItemCount = (tabConfig: DataFileTab): number => {
     // タブに紐付く全ファイルのアイテムを取得
-    const tabConfig = dataFileTabs.find((tab) => tab.files.includes(fileName));
-    const filesInTab = tabConfig ? tabConfig.files : [fileName];
-    const tabItems = allItems.filter((item) => filesInTab.includes(item.sourceFile || ''));
+    const tabItems = allItems.filter((item) => tabConfig.files.includes(item.sourceFile || ''));
     const filteredTabItems = filterItems(tabItems, searchQuery);
     return filteredTabItems.length;
   };
 
+  // タブグループがアクティブかどうかを判定
+  const isTabActive = (tabConfig: DataFileTab): boolean => {
+    return tabConfig.files.includes(activeTab);
+  };
+
+  // タブグループの代表ファイル名を取得（クリック時に使用）
+  const getRepresentativeFile = (tabConfig: DataFileTab): string => {
+    // defaultFileが設定されていればそれを使用、なければ最初のファイル
+    return tabConfig.defaultFile || tabConfig.files[0] || 'data.txt';
+  };
+
   return (
     <div className="file-tab-bar">
-      {dataFiles.map((fileName) => {
-        const count = getTabItemCount(fileName);
+      {dataFileTabs.map((tabConfig, index) => {
+        const count = getTabItemCount(tabConfig);
+        const representativeFile = getRepresentativeFile(tabConfig);
+        const filesTitle = tabConfig.files.join(', '); // ツールチップに全ファイル名を表示
+
         return (
           <button
-            key={fileName}
-            className={`file-tab ${activeTab === fileName ? 'active' : ''}`}
-            onClick={() => onTabClick(fileName)}
-            title={fileName}
+            key={`tab-${index}-${representativeFile}`}
+            className={`file-tab ${isTabActive(tabConfig) ? 'active' : ''}`}
+            onClick={() => onTabClick(representativeFile)}
+            title={filesTitle}
           >
-            <span className="file-tab-label">{getTabLabel(fileName)}</span>
+            <span className="file-tab-label">{tabConfig.name}</span>
             <span className="file-tab-count">({count})</span>
           </button>
         );

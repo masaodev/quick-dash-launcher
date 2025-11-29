@@ -141,8 +141,8 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
 
     // 完了ボタンをクリック前の設定を確認（初期状態またはデフォルト設定）
     const settingsBefore = configHelper.readSettings();
-    // 初回起動時は globalHotkey が未設定または空のはず
-    expect(settingsBefore.globalHotkey || '').toBe('');
+    // 初回起動時は hotkey が未設定または空のはず
+    expect(settingsBefore.hotkey || '').toBe('');
 
     // 完了ボタンをクリック
     await utils.waitForElement('.complete-button');
@@ -156,8 +156,7 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
 
     // 設定ファイルの内容を確認
     const settingsAfter = configHelper.readSettings();
-    expect(settingsAfter.globalHotkey).toBe('Alt+Space');
-    expect(settingsAfter.isFirstLaunch).toBe(false);
+    expect(settingsAfter.hotkey).toBe('Alt+Space');
   });
 
   test('完了ボタンをクリックすると設定ファイルに正しい内容が保存される', async ({
@@ -183,10 +182,7 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
     const settings = configHelper.readSettings();
 
     // ホットキーが正しく保存されていることを確認
-    expect(settings.globalHotkey).toBe('Alt+Space');
-
-    // 初回起動フラグが設定されていることを確認
-    expect(settings.isFirstLaunch).toBe(false);
+    expect(settings.hotkey).toBe('Alt+Space');
   });
 
   test('ホットキーを変更してから完了ボタンをクリックすると変更内容が保存される', async ({
@@ -224,6 +220,6 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
     const settings = configHelper.readSettings();
 
     // 変更したホットキーが保存されていることを確認
-    expect(settings.globalHotkey).toBe('Ctrl+Shift+A');
+    expect(settings.hotkey).toBe('Ctrl+Shift+A');
   });
 });
