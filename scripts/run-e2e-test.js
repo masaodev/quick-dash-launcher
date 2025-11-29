@@ -15,34 +15,24 @@ if (!testName) {
   console.error('Error: Test name is required');
   console.log('\nUsage: npm run test:e2e:single <test-name>');
   console.log('\nAvailable tests:');
-  console.log('  - app-launch');
   console.log('  - first-launch');
-  console.log('  - search');
-  console.log('  - item-display');
-  console.log('  - item-tab');
+  console.log('  - basic-ui');
   console.log('  - item-register');
   console.log('  - multi-tab');
-  console.log('  - config');
   console.log('  - settings');
   console.log('  - context-menu');
-  console.log('  - item-count');
-  console.log('\nExample: npm run test:e2e:single app-launch');
+  console.log('\nExample: npm run test:e2e:single first-launch');
   process.exit(1);
 }
 
 // テスト名からファイル名へのマッピング
 const testMap = {
-  'app-launch': 'app-launch.spec.ts',
   'first-launch': 'first-launch-setup.spec.ts',
-  'search': 'search.spec.ts',
-  'item-display': 'item-display.spec.ts',
-  'item-tab': 'item-tab-change.spec.ts',
+  'basic-ui': 'basic-ui.spec.ts',
   'item-register': 'item-registration.spec.ts',
   'multi-tab': 'multi-tab.spec.ts',
-  'config': 'config-modification.spec.ts',
   'settings': 'settings-tab.spec.ts',
   'context-menu': 'context-menu.spec.ts',
-  'item-count': 'item-count-display.spec.ts',
 };
 
 const testFile = testMap[testName];

@@ -13,8 +13,17 @@
 	"showDataFileTabs": true,
 	"defaultFileTab": "data.txt",
 	"dataFileTabs": [
-		{ "file": "data.txt", "name": "仕事" },
-		{ "file": "data2.txt", "name": "プライベート" },
-		{ "file": "data3.txt", "name": "学習" }
+		{
+			"file": "data.txt",
+			"name": "仕事"
+		},
+		{
+			"file": "data2.txt",
+			"name": "プライベート"
+		},
+		{
+			"file": "data3.txt",
+			"name": "学習"
+		}
 	]
 }

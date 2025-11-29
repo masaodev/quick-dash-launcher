@@ -54,22 +54,17 @@ npm run test:e2e:headed # ヘッド付きでE2Eテスト実行
 # 特定のテストのみ実行
 npm run test:e2e:single <test-name>
 
-# 例: アプリ起動テストのみ実行
-npm run test:e2e:single app-launch
+# 例: 初回起動テストのみ実行
+npm run test:e2e:single first-launch
 ```
 
 **利用可能なテスト名:**
-- `app-launch` - アプリケーション起動
 - `first-launch` - 初回起動セットアップ
-- `search` - 検索機能
-- `item-display` - アイテム表示
-- `item-tab` - タブ切り替え
-- `item-register` - アイテム登録
-- `multi-tab` - マルチタブ
-- `config` - 設定変更
+- `basic-ui` - 基本UI（アイテム表示・選択・検索）
+- `item-register` - アイテム登録・編集
+- `multi-tab` - マルチタブ機能
 - `settings` - 設定タブ
 - `context-menu` - コンテキストメニュー
-- `item-count` - アイテム数表示
 
 ## 詳細ドキュメント
 

@@ -28,6 +28,21 @@ export default [
     ]
   },
   
+  // スクリプトファイル設定（Node.js専用）
+  {
+    files: ['scripts/**/*.js'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      globals: {
+        ...globals.node
+      }
+    },
+    rules: {
+      'no-console': 'off'
+    }
+  },
+
   // テストファイル設定
   {
     files: ['tests/**/*.{js,jsx,ts,tsx}'],

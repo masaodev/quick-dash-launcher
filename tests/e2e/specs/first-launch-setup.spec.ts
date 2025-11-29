@@ -110,4 +110,23 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
     const titleStillExists = await utils.elementExists('.first-launch-title');
     expect(titleStillExists).toBe(true);
   });
+
+  test('セキュリティ設定が適切に設定されている', async ({ mainWindow }, testInfo) => {
+    const utils = new TestUtils(mainWindow);
+
+    await test.step('Electronのセキュリティ設定をチェック', async () => {
+      await utils.attachScreenshot(testInfo, '初期状態');
+
+      // Electronのセキュリティ設定をチェック
+      const hasNodeIntegration = await mainWindow
+        .evaluate(() => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          return typeof (window as any).require !== 'undefined';
+        })
+        .catch(() => false);
+
+      // セキュリティのため、レンダラープロセスでNode.jsのAPIは利用できないはず
+      expect(hasNodeIntegration).toBe(false);
+    });
+  });
 });

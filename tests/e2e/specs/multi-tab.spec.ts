@@ -299,4 +299,251 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
     // ここでは検索ボックスの値が取得できることだけを確認
     expect(searchValueAfter).toBeDefined();
   });
+
+  // ==================== アイテムのタブ変更テスト ====================
+
+  test('アイテムの編集で保存先タブを変更すると別のタブに移動する', async ({
+    mainWindow,
+    configHelper,
+  }, testInfo) => {
+    const utils = new TestUtils(mainWindow);
+
+    await test.step('メインタブにアイテムが存在することを確認', async () => {
+      // ページの読み込み完了を待機
+      await utils.waitForPageLoad();
+
+      // メインタブがアクティブであることを確認
+      const mainTab = mainWindow.locator('.file-tab.active', { hasText: 'メイン' });
+      await expect(mainTab).toBeVisible();
+
+      // GitHubアイテムが表示されていることを確認
+      const githubItem = mainWindow.locator('.item', { hasText: 'GitHub' });
+      await expect(githubItem).toBeVisible();
+
+      await utils.attachScreenshot(testInfo, '初期状態（メインタブ）');
+    });
+
+    await test.step('GitHubアイテムを右クリックして編集モーダルを開く', async () => {
+      await utils.editItemByRightClick('GitHub');
+      await utils.wait(300);
+
+      const isModalVisible = await utils.isRegisterModalVisible();
+      expect(isModalVisible).toBe(true);
+
+      await utils.attachScreenshot(testInfo, '編集モーダル表示');
+    });
+
+    await test.step('保存先をサブ1タブに変更して更新', async () => {
+      // 保存先セレクトボックスを直接操作してdata2.txtを選択
+      const tabSelect = mainWindow.locator('.register-modal select').last();
+      await tabSelect.selectOption({ value: 'data2.txt' });
+
+      await utils.wait(300);
+      await utils.attachScreenshot(testInfo, '保存先変更後');
+
+      // 更新ボタンをクリック
+      await utils.clickRegisterButton();
+      await utils.wait(500);
+
+      await utils.attachScreenshot(testInfo, '更新後');
+    });
+
+    await test.step('メインタブからGitHubアイテムが消えたことを確認', async () => {
+      // ページをリロード
+      await mainWindow.reload();
+      await utils.waitForPageLoad();
+
+      // メインタブがアクティブであることを確認
+      const mainTab = mainWindow.locator('.file-tab.active', { hasText: 'メイン' });
+      await expect(mainTab).toBeVisible();
+
+      // GitHubアイテムが表示されなくなったことを確認
+      const githubItem = mainWindow.locator('.item', { hasText: 'GitHub' });
+      await expect(githubItem).not.toBeVisible({ timeout: 3000 });
+
+      await utils.attachScreenshot(testInfo, 'メインタブ確認');
+    });
+
+    await test.step('サブ1タブに切り替えてGitHubアイテムが存在することを確認', async () => {
+      // サブ1タブをクリック
+      const subTab1 = mainWindow.locator('.file-tab', { hasText: 'サブ1' });
+      await subTab1.click();
+      await utils.wait(500);
+
+      // サブ1タブがアクティブになったことを確認
+      const activeTab = mainWindow.locator('.file-tab.active', { hasText: 'サブ1' });
+      await expect(activeTab).toBeVisible();
+
+      // GitHubアイテムがサブ1タブに表示されることを確認
+      const githubItem = mainWindow.locator('.item', { hasText: 'GitHub' });
+      await expect(githubItem).toBeVisible({ timeout: 5000 });
+
+      await utils.attachScreenshot(testInfo, 'サブ1タブ確認');
+    });
+
+    await test.step('data.txtとdata2.txtの内容を確認', async () => {
+      // data.txtにGitHubが含まれていないことを確認
+      const dataContent = configHelper.readData();
+      expect(dataContent).not.toContain('GitHub');
+
+      // data2.txtにGitHubが含まれていることを確認
+      const data2Content = configHelper.readData2();
+      expect(data2Content).toContain('GitHub');
+    });
+  });
+
+  // ==================== タブ表示時のアイテム数表示テスト ====================
+
+  test('タブ表示ON時、各タブにアイテム数が表示される', async ({ mainWindow }, testInfo) => {
+    const utils = new TestUtils(mainWindow);
+
+    await test.step('マルチタブ機能を有効化', async () => {
+      await utils.waitForPageLoad();
+
+      // タブバーが表示されることを確認
+      const tabBar = mainWindow.locator('.file-tab-bar');
+      await expect(tabBar).toBeVisible();
+
+      await utils.attachScreenshot(testInfo, 'タブ表示ON初期状態');
+    });
+
+    await test.step('メインタブにアイテム数が表示される', async () => {
+      const mainTab = mainWindow.locator('.file-tab', { hasText: 'メイン' });
+      await expect(mainTab).toBeVisible();
+
+      // タブ内のアイテム数表示を確認
+      const mainTabCount = mainTab.locator('.file-tab-count');
+      await expect(mainTabCount).toBeVisible();
+
+      const countText = await mainTabCount.textContent();
+      expect(countText).toMatch(/\(\d+\)/);
+
+      await utils.attachScreenshot(testInfo, 'メインタブのアイテム数');
+    });
+
+    await test.step('サブ1タブにアイテム数が表示される', async () => {
+      const subTab = mainWindow.locator('.file-tab', { hasText: 'サブ1' });
+      await expect(subTab).toBeVisible();
+
+      // タブ内のアイテム数表示を確認
+      const subTabCount = subTab.locator('.file-tab-count');
+      await expect(subTabCount).toBeVisible();
+
+      const countText = await subTabCount.textContent();
+      expect(countText).toMatch(/\(\d+\)/);
+
+      await utils.attachScreenshot(testInfo, 'サブ1タブのアイテム数');
+    });
+  });
+
+  test('タブ表示ON時、検索によって全タブのアイテム数が動的に更新される', async ({
+    mainWindow,
+  }, testInfo) => {
+    const utils = new TestUtils(mainWindow);
+
+    await test.step('マルチタブ機能を有効化', async () => {
+      await utils.waitForPageLoad();
+      await utils.attachScreenshot(testInfo, '初期状態');
+    });
+
+    let mainTabInitialCount: string;
+    let subTabInitialCount: string;
+
+    await test.step('各タブの初期アイテム数を取得', async () => {
+      const mainTab = mainWindow.locator('.file-tab', { hasText: 'メイン' });
+      const mainTabCount = mainTab.locator('.file-tab-count');
+      mainTabInitialCount = (await mainTabCount.textContent()) || '';
+
+      const subTab = mainWindow.locator('.file-tab', { hasText: 'サブ1' });
+      const subTabCount = subTab.locator('.file-tab-count');
+      subTabInitialCount = (await subTabCount.textContent()) || '';
+
+      expect(mainTabInitialCount).toMatch(/\(\d+\)/);
+      expect(subTabInitialCount).toMatch(/\(\d+\)/);
+    });
+
+    await test.step('検索を実行して各タブのアイテム数が更新されることを確認', async () => {
+      await utils.searchFor('GitHub');
+      await utils.wait(300);
+
+      const mainTab = mainWindow.locator('.file-tab', { hasText: 'メイン' });
+      const mainTabCount = mainTab.locator('.file-tab-count');
+      const mainTabFiltered = (await mainTabCount.textContent()) || '';
+
+      const subTab = mainWindow.locator('.file-tab', { hasText: 'サブ1' });
+      const subTabCount = subTab.locator('.file-tab-count');
+      const subTabFiltered = (await subTabCount.textContent()) || '';
+
+      // 各タブのアイテム数が初期値と異なる（または同じ場合もある）ことを確認
+      expect(mainTabFiltered).toMatch(/\(\d+\)/);
+      expect(subTabFiltered).toMatch(/\(\d+\)/);
+
+      await utils.attachScreenshot(testInfo, '検索後の各タブアイテム数');
+    });
+
+    await test.step('検索をクリアして各タブのアイテム数が元に戻ることを確認', async () => {
+      const searchBox = mainWindow.locator('input[type="text"]').first();
+      await searchBox.clear();
+      await utils.wait(300);
+
+      const mainTab = mainWindow.locator('.file-tab', { hasText: 'メイン' });
+      const mainTabCount = mainTab.locator('.file-tab-count');
+      const mainTabRestored = (await mainTabCount.textContent()) || '';
+
+      const subTab = mainWindow.locator('.file-tab', { hasText: 'サブ1' });
+      const subTabCount = subTab.locator('.file-tab-count');
+      const subTabRestored = (await subTabCount.textContent()) || '';
+
+      // アイテム数が初期値に戻ることを確認
+      expect(mainTabRestored).toBe(mainTabInitialCount);
+      expect(subTabRestored).toBe(subTabInitialCount);
+
+      await utils.attachScreenshot(testInfo, 'クリア後の各タブアイテム数');
+    });
+  });
+
+  test('タブ切り替え時、各タブのアイテム数は維持される', async ({ mainWindow }, testInfo) => {
+    const utils = new TestUtils(mainWindow);
+
+    await test.step('マルチタブ機能を有効化', async () => {
+      await utils.waitForPageLoad();
+      await utils.attachScreenshot(testInfo, '初期状態');
+    });
+
+    let mainTabCount: string;
+    let subTabCount: string;
+
+    await test.step('メインタブのアイテム数を取得', async () => {
+      const mainTab = mainWindow.locator('.file-tab', { hasText: 'メイン' });
+      const count = mainTab.locator('.file-tab-count');
+      mainTabCount = (await count.textContent()) || '';
+      expect(mainTabCount).toMatch(/\(\d+\)/);
+    });
+
+    await test.step('サブ1タブに切り替え', async () => {
+      const subTab = mainWindow.locator('.file-tab', { hasText: 'サブ1' });
+      await subTab.click();
+      await utils.wait(300);
+
+      const count = subTab.locator('.file-tab-count');
+      subTabCount = (await count.textContent()) || '';
+      expect(subTabCount).toMatch(/\(\d+\)/);
+
+      await utils.attachScreenshot(testInfo, 'サブ1タブに切り替え');
+    });
+
+    await test.step('メインタブに戻り、アイテム数が変わっていないことを確認', async () => {
+      const mainTab = mainWindow.locator('.file-tab', { hasText: 'メイン' });
+      await mainTab.click();
+      await utils.wait(300);
+
+      const count = mainTab.locator('.file-tab-count');
+      const currentCount = (await count.textContent()) || '';
+
+      // アイテム数が変わっていないことを確認
+      expect(currentCount).toBe(mainTabCount);
+
+      await utils.attachScreenshot(testInfo, 'メインタブに戻る');
+    });
+  });
 });
