@@ -272,14 +272,15 @@ Ctrl+Alt+0
 |------|-----|
 | **キー** | `dataFileTabs` |
 | **型** | `DataFileTab[]` (配列) |
-| **デフォルト値** | `[{ file: 'data.txt', name: 'メイン' }]` |
-| **説明** | データファイルのタブ名と表示順序を管理 |
+| **デフォルト値** | `[{ files: ['data.txt'], name: 'メイン' }]` |
+| **説明** | データファイルのタブ名と表示順序を管理。1つのタブで複数のデータファイルを統合表示可能 |
 
 **型定義:**
 ```typescript
 interface DataFileTab {
-  file: string;  // データファイル名（例: 'data.txt', 'data2.txt'）
-  name: string;  // タブに表示する名前（例: 'メイン', 'サブ1'）
+  files: string[];  // データファイル名のリスト（例: ['data.txt'], ['data2.txt', 'data3.txt']）
+  name: string;     // タブに表示する名前（例: 'メイン', 'サブ1'）
+  defaultFile?: string;  // アイテム登録時のデフォルト保存先ファイル（オプション、未設定の場合はfiles[0]を使用）
 }
 ```
 
@@ -287,9 +288,9 @@ interface DataFileTab {
 ```json
 {
   "dataFileTabs": [
-    { "file": "data.txt", "name": "仕事用" },
-    { "file": "data2.txt", "name": "プライベート" },
-    { "file": "data3.txt", "name": "学習" }
+    { "files": ["data.txt"], "name": "仕事用" },
+    { "files": ["data2.txt", "data3.txt"], "name": "プライベート" },
+    { "files": ["data4.txt"], "name": "学習" }
   ]
 }
 ```
@@ -297,9 +298,14 @@ interface DataFileTab {
 **動作仕様:**
 - **配列の順序 = 表示順序**: 配列内の要素の順序がそのままタブの表示順序になります
 - **タブ表示の基準**: `dataFileTabs`配列に含まれるファイル名のみがタブとして表示されます
+- **1タブで複数ファイル統合表示**: 1つのタブ（`DataFileTab`要素）に複数のデータファイルを関連付けて統合表示できます
+  - 例: `{ files: ["data2.txt", "data3.txt"], name: "プライベート" }` の場合、「プライベート」タブでdata2.txtとdata3.txtの両方のアイテムを表示
 - **物理ファイルとの関係**:
   - 配列に含まれているファイル名の物理ファイルが存在しない場合、自動的に作成されます
   - 物理ファイルが存在しても、`dataFileTabs`配列に含まれていない場合はタブに表示されません
+- **デフォルト保存先**:
+  - `defaultFile`フィールドが設定されている場合、アイテム登録時のデフォルト保存先として使用されます
+  - `defaultFile`が未設定の場合は、`files[0]`（最初のファイル）がデフォルト保存先になります
 - **デフォルトタブ名**:
   - `name`フィールドが空文字列の場合、ファイル名に応じたデフォルト名が表示されます
     - `data.txt` → 「メイン」
@@ -319,8 +325,11 @@ interface DataFileTab {
 **アイテム登録時の保存先選択**:
 - アイテム登録モーダル（➕ボタン、ドラッグ&ドロップ、編集）で保存先を選択する際、`dataFileTabs`配列の内容が選択肢として表示されます
 - 選択肢の表示順序は配列の順序と同じです
-- 新規登録時のデフォルト保存先は配列の最初のタブ（`dataFileTabs[0]`）です
+- 新規登録時のデフォルト保存先:
+  - タブの`defaultFile`が設定されている場合: そのファイル
+  - `defaultFile`が未設定の場合: `files[0]`（タブの最初のファイル）
 - 編集時のデフォルト保存先は、アイテムが現在保存されているデータファイルです
+- 1つのタブに複数ファイルが関連付けられている場合、保存先選択ドロップダウンには個別のファイル名も表示されます
 
 **アイテム管理画面での利用（v1.0.0以降の変更）**:
 - アイテム管理タブの「タブ名:」ドロップダウンでは、この配列に基づいて選択肢が生成されます
@@ -410,8 +419,8 @@ data2_2024-01-01T12-00-00.txt
   "showDataFileTabs": false,
   "defaultFileTab": "data.txt",
   "dataFileTabs": [
-    { "file": "data.txt", "name": "仕事用" },
-    { "file": "data2.txt", "name": "プライベート" }
+    { "files": ["data.txt"], "name": "仕事用" },
+    { "files": ["data2.txt", "data3.txt"], "name": "プライベート", "defaultFile": "data2.txt" }
   ],
   "windowPositionMode": "center",
   "windowPositionX": 0,
