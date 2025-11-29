@@ -756,9 +756,9 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                         )
                       }
                     >
-                      <option value="item">単一アイテム</option>
-                      <option value="dir">フォルダ取込</option>
-                      <option value="group">グループ</option>
+                      <option value="item">📄 単一アイテム</option>
+                      <option value="dir">🗂️ フォルダ取込</option>
+                      <option value="group">📦 グループ</option>
                     </select>
                   </div>
 
