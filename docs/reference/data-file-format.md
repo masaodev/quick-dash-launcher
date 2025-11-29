@@ -208,8 +208,11 @@ dir,C:\Source,depth=2,types=file,filter=*.{js,ts},exclude=node_modules,prefix=Sr
 
 #### ショートカットファイル（.lnk）
 ```
-[prefix: ]basename[ (suffix)],targetpath,args,shortcutpath
+[prefix: ]basename[ (suffix)],shortcutpath,args,targetpath
 ```
+- **フィールド2（path）**: ショートカットファイル自身のパス
+- **フィールド3（args）**: ショートカットに設定された引数
+- **フィールド4（originalPath）**: リンク先のパス
 
 #### 実行可能ファイル（.exe, .bat, .cmd）
 ```
@@ -294,8 +297,14 @@ group,Web閲覧,Google,GitHub
 MyApp.lnk → target: C:\Program Files\MyApp\app.exe, args: --config=default
 
 // 生成される行
-MyApp,C:\Program Files\MyApp\app.exe,--config=default,C:\path\to\MyApp.lnk
+MyApp,C:\path\to\MyApp.lnk,--config=default,C:\Program Files\MyApp\app.exe
 ```
+
+**フィールド構成:**
+- **フィールド1（表示名）**: ショートカットファイル名（拡張子除く）
+- **フィールド2（path）**: ショートカットファイル自身のパス（例: `C:\path\to\MyApp.lnk`）
+- **フィールド3（args）**: ショートカットに設定された引数
+- **フィールド4（originalPath）**: リンク先のパス（例: `C:\Program Files\MyApp\app.exe`）
 
 ### カスタムアイコンの処理
 カスタムアイコンフィールドに値が設定されている場合：

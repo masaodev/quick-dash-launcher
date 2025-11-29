@@ -329,10 +329,13 @@
   - パス: `C:\Program Files\Microsoft VS Code\Code.exe`
   - 引数: `--new-window`
   - コピー内容: `C:\Program Files\Microsoft VS Code\Code.exe --new-window`
+- **ショートカットファイル**: `C:\Users\Username\Desktop\MyApp.lnk`
+  - ショートカットファイル自身のパスをコピー
 
 #### 動作の詳細
 - 引数が設定されていないアイテムの場合は、パスのみをコピー
 - 引数が設定されているアイテムの場合は、パスと引数をスペースで結合した完全なコマンドラインをコピー
+- ショートカットファイルの場合は、ショートカットファイル自身のパス（.lnkファイル）をコピー
 - ターミナルやバッチファイルなどにそのまま貼り付けて使用可能
 
 #### エラーハンドリング
