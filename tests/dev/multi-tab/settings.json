@@ -14,15 +14,15 @@
 	"defaultFileTab": "data.txt",
 	"dataFileTabs": [
 		{
-			"file": "data.txt",
+			"files": ["data.txt"],
 			"name": "仕事"
 		},
 		{
-			"file": "data2.txt",
+			"files": ["data2.txt"],
 			"name": "プライベート"
 		},
 		{
-			"file": "data3.txt",
+			"files": ["data3.txt"],
 			"name": "学習"
 		}
 	]
