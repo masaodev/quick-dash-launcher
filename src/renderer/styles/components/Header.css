@@ -198,3 +198,15 @@
   background-color: var(--color-gray-400);
   margin: var(--spacing-xs) 0;
 }
+
+/* 検索情報バー（タブ表示OFF時のアイテム数表示用） */
+.search-info-bar {
+  padding: 0 var(--spacing-lg);
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  height: 24px;
+  display: flex;
+  align-items: center;
+  background-color: var(--bg-header);
+  border-bottom: var(--border-light);
+}

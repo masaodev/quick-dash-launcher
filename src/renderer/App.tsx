@@ -15,6 +15,7 @@ import ActionButtons from './components/ActionButtons';
 import RegisterModal, { RegisterItem } from './components/RegisterModal';
 import IconProgressBar from './components/IconProgressBar';
 import FileTabBar from './components/FileTabBar';
+import ItemCountDisplay from './components/ItemCountDisplay';
 import { FirstLaunchSetup } from './components/FirstLaunchSetup';
 import { filterItems } from './utils/dataParser';
 import { debugLog, debugInfo } from './utils/debug';
@@ -749,7 +750,15 @@ const App: React.FC = () => {
             activeTab={activeTab}
             tabNames={Object.fromEntries(dataFileTabs.map((tab) => [tab.file, tab.name]))}
             onTabClick={handleTabClick}
+            allItems={mainItems}
+            searchQuery={searchQuery}
           />
+        )}
+
+        {!showDataFileTabs && (
+          <div className="search-info-bar">
+            <ItemCountDisplay count={filteredItems.length} />
+          </div>
         )}
 
         <ItemList

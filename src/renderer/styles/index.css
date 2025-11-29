@@ -2,6 +2,7 @@
 @import './variables.css';
 @import './common.css';
 @import './components/FileTabBar.css';
+@import './components/ItemCountDisplay.css';
 
 /* グローバルリセットとベーススタイル */
 * {

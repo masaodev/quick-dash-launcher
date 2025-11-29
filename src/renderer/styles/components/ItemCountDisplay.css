@@ -1,0 +1,9 @@
+/* ItemCountDisplay.css - アイテム数表示コンポーネントのスタイル */
+
+.item-count-display {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  white-space: nowrap;
+  padding: 0 var(--spacing-md);
+  line-height: var(--line-height-normal);
+}
