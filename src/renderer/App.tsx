@@ -705,7 +705,8 @@ const App: React.FC = () => {
     try {
       // ホットキーを設定（設定ファイルが自動的に作成される）
       await window.electronAPI.setMultipleSettings({
-        hotkey,
+        globalHotkey: hotkey,
+        isFirstLaunch: false,
       });
       await window.electronAPI.changeHotkey(hotkey);
 
