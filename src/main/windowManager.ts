@@ -349,4 +349,3 @@ export function setFirstLaunchMode(isFirstLaunch: boolean): void {
   isFirstLaunchMode = isFirstLaunch;
   windowLogger.info(`初回起動モード: ${isFirstLaunch ? '有効' : '無効'}`);
 }
-

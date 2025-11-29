@@ -69,4 +69,3 @@ export function closeSplashWindow(): void {
     splashWindow = null;
   }
 }
-

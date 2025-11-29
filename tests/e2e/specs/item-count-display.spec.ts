@@ -95,9 +95,7 @@ test.describe('QuickDashLauncher - アイテム数表示機能テスト (タブ�
     configHelper.loadTemplate('with-tabs');
   });
 
-  test('タブ表示ON時、各タブにアイテム数が表示される', async ({
-    mainWindow,
-  }, testInfo) => {
+  test('タブ表示ON時、各タブにアイテム数が表示される', async ({ mainWindow }, testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('マルチタブ機能を有効化', async () => {
@@ -205,9 +203,7 @@ test.describe('QuickDashLauncher - アイテム数表示機能テスト (タブ�
     });
   });
 
-  test('タブ切り替え時、各タブのアイテム数は維持される', async ({
-    mainWindow,
-  }, testInfo) => {
+  test('タブ切り替え時、各タブのアイテム数は維持される', async ({ mainWindow }, testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('マルチタブ機能を有効化', async () => {

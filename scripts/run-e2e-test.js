@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-env node */
 
 /**
  * E2Eテストを個別に実行するためのヘルパースクリプト
@@ -7,7 +8,6 @@
  */
 
 const { execSync } = require('child_process');
-const path = require('path');
 
 const testName = process.argv[2];
 
