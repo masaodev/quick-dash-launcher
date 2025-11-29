@@ -265,36 +265,6 @@ export class ConfigFileHelper {
     this.writeData(updated.join('\n'));
   }
 
-  /**
-   * テンプレートからdata.txtを読み込み
-   * @param templateName テンプレート名（例: 'base', 'with-group'）
-   */
-  loadDataTemplate(templateName: string): void {
-    const templatePath = path.join(
-      process.cwd(),
-      'tests',
-      'e2e',
-      'templates',
-      'data',
-      `${templateName}.txt`
-    );
-    const dataFilePath = path.join(this.configDir, 'data.txt');
-
-    if (fs.existsSync(templatePath)) {
-      fs.copyFileSync(templatePath, dataFilePath);
-    } else {
-      throw new Error(`Template not found: ${templatePath}`);
-    }
-  }
-
-  /**
-   * テンプレートからdata.txtを強制的に復元（テスト前の初期化用）
-   * @param templateName テンプレート名（デフォルト: 'base'）
-   */
-  restoreDataFromTemplate(templateName: string = 'base'): void {
-    this.loadDataTemplate(templateName);
-  }
-
   // ==================== data2.txt 操作（サブタブ用） ====================
 
   /**
@@ -328,28 +298,6 @@ export class ConfigFileHelper {
   }
 
   /**
-   * テンプレートからdata2.txtを読み込み
-   * @param templateName テンプレート名（例: 'data2-base'）
-   */
-  loadData2Template(templateName: string): void {
-    const templatePath = path.join(
-      process.cwd(),
-      'tests',
-      'e2e',
-      'templates',
-      'data',
-      `${templateName}.txt`
-    );
-    const dataFilePath = path.join(this.configDir, 'data2.txt');
-
-    if (fs.existsSync(templatePath)) {
-      fs.copyFileSync(templatePath, dataFilePath);
-    } else {
-      throw new Error(`Template not found: ${templatePath}`);
-    }
-  }
-
-  /**
    * data2.txtを削除
    */
   deleteData2(): void {
@@ -357,14 +305,6 @@ export class ConfigFileHelper {
     if (fs.existsSync(dataFilePath)) {
       fs.unlinkSync(dataFilePath);
     }
-  }
-
-  /**
-   * テンプレートからdata2.txtを強制的に復元（テスト前の初期化用）
-   * @param templateName テンプレート名（デフォルト: 'data2-base'）
-   */
-  restoreData2FromTemplate(templateName: string = 'data2-base'): void {
-    this.loadData2Template(templateName);
   }
 
   // ==================== settings.json 操作 ====================
@@ -411,28 +351,6 @@ export class ConfigFileHelper {
   }
 
   /**
-   * テンプレートからsettings.jsonを読み込み
-   * @param templateName テンプレート名（例: 'default', 'custom-hotkey'）
-   */
-  loadSettingsTemplate(templateName: string): void {
-    const templatePath = path.join(
-      process.cwd(),
-      'tests',
-      'e2e',
-      'templates',
-      'settings',
-      `${templateName}.json`
-    );
-    const settingsFilePath = path.join(this.configDir, 'settings.json');
-
-    if (fs.existsSync(templatePath)) {
-      fs.copyFileSync(templatePath, settingsFilePath);
-    } else {
-      throw new Error(`Template not found: ${templatePath}`);
-    }
-  }
-
-  /**
    * settings.jsonを削除（初回起動状態を再現）
    */
   deleteSettings(): void {
@@ -440,14 +358,6 @@ export class ConfigFileHelper {
     if (fs.existsSync(settingsFilePath)) {
       fs.unlinkSync(settingsFilePath);
     }
-  }
-
-  /**
-   * テンプレートからsettings.jsonを強制的に復元（テスト前の初期化用）
-   * @param templateName テンプレート名（デフォルト: 'base'）
-   */
-  restoreSettingsFromTemplate(templateName: string = 'base'): void {
-    this.loadSettingsTemplate(templateName);
   }
 
   // ==================== ユーティリティ ====================
