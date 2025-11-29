@@ -153,7 +153,9 @@ const App: React.FC = () => {
 
       // 設定からデータファイルリストを再生成（設定ファイルベース）
       const tabs = settings.dataFileTabs || [];
-      const files = tabs.map((tab) => tab.file);
+      // 全タブの全ファイルを統合してユニークなリストを作成
+      const allFiles = tabs.flatMap((tab) => tab.files || []);
+      const files = Array.from(new Set(allFiles)).filter((file) => file && typeof file === 'string');
 
       // data.txtが含まれていない場合は追加
       if (!files.includes('data.txt')) {
@@ -210,7 +212,9 @@ const App: React.FC = () => {
 
         // 設定からデータファイルリストを生成（設定ファイルベース）
         const tabs = settings.dataFileTabs || [];
-        const files = tabs.map((tab) => tab.file);
+        // 全タブの全ファイルを統合してユニークなリストを作成
+        const allFiles = tabs.flatMap((tab) => tab.files || []);
+        const files = Array.from(new Set(allFiles)).filter((file) => file && typeof file === 'string');
 
         // data.txtが含まれていない場合は追加
         if (!files.includes('data.txt')) {
@@ -245,7 +249,9 @@ const App: React.FC = () => {
 
   // 設定に登録されているファイルが物理的に存在するか確認し、存在しない場合は作成
   const ensureDataFilesExist = async (fileNames: string[]) => {
-    for (const fileName of fileNames) {
+    // undefined や空文字列をフィルタリング
+    const validFileNames = fileNames.filter((name) => name && typeof name === 'string');
+    for (const fileName of validFileNames) {
       try {
         // ファイルが存在するか確認（実際には作成APIを呼ぶだけで、既存ファイルは上書きされない）
         await window.electronAPI.createDataFile(fileName);
@@ -480,9 +486,20 @@ const App: React.FC = () => {
     debugInfo('未取得アイコンの取得を開始（現在のタブ）');
 
     // 現在のタブのアイテムのみをフィルタリング
-    const currentTabItems = showDataFileTabs
-      ? mainItems.filter((item) => item.sourceFile === activeTab)
-      : mainItems.filter((item) => item.sourceFile === 'data.txt');
+    let currentTabItems: AppItem[];
+    if (!showDataFileTabs) {
+      currentTabItems = mainItems.filter((item) => item.sourceFile === 'data.txt');
+    } else {
+      // アクティブなタブに紐付く全ファイルのアイテムを取得
+      const activeTabConfig = dataFileTabs.find((tab) => tab.files.includes(activeTab));
+      if (activeTabConfig) {
+        currentTabItems = mainItems.filter((item) =>
+          activeTabConfig.files.includes(item.sourceFile || '')
+        );
+      } else {
+        currentTabItems = mainItems.filter((item) => item.sourceFile === activeTab);
+      }
+    }
 
     // 統合プログレスAPIを使用
     // URLアイテムの抽出（アイコン未設定のみ）
@@ -717,7 +734,14 @@ const App: React.FC = () => {
       // タブ表示OFF: data.txtのみ表示
       return mainItems.filter((item) => item.sourceFile === 'data.txt');
     }
-    // タブ表示ON: アクティブなタブのアイテムのみ表示
+    // タブ表示ON: アクティブなタブに紐付く全ファイルのアイテムを表示
+    // アクティブなタブの設定を検索
+    const activeTabConfig = dataFileTabs.find((tab) => tab.files.includes(activeTab));
+    if (activeTabConfig) {
+      // タブに紐付く全ファイルのアイテムを取得
+      return mainItems.filter((item) => activeTabConfig.files.includes(item.sourceFile || ''));
+    }
+    // フォールバック: アクティブタブと一致するファイルのアイテムのみ
     return mainItems.filter((item) => item.sourceFile === activeTab);
   };
 
@@ -762,10 +786,13 @@ const App: React.FC = () => {
           <FileTabBar
             dataFiles={getSortedDataFiles()}
             activeTab={activeTab}
-            tabNames={Object.fromEntries(dataFileTabs.map((tab) => [tab.file, tab.name]))}
+            tabNames={Object.fromEntries(
+              dataFileTabs.flatMap((tab) => tab.files.map((file) => [file, tab.name]))
+            )}
             onTabClick={handleTabClick}
             allItems={mainItems}
             searchQuery={searchQuery}
+            dataFileTabs={dataFileTabs}
           />
         )}
 

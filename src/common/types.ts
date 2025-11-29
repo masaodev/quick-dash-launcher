@@ -113,8 +113,8 @@ export interface AppSettings {
   showDataFileTabs: boolean;
   /** デフォルトで表示するタブ（タブ表示ON時のみ有効、デフォルト: 'data.txt'） */
   defaultFileTab: string;
-  /** データファイルタブの設定（ファイル名、タブ名、表示順序） */
-  dataFileTabs: Array<{ file: string; name: string }>;
+  /** データファイルタブの設定（ファイル名リスト、タブ名、表示順序） */
+  dataFileTabs: DataFileTab[];
   /** ウィンドウ表示位置モード（デフォルト: 'center'） */
   windowPositionMode: WindowPositionMode;
   /** 固定位置のX座標（windowPositionMode='fixed'時に使用、デフォルト: 0） */
@@ -127,10 +127,12 @@ export interface AppSettings {
  * データファイルタブの設定項目
  */
 export interface DataFileTab {
-  /** データファイル名（例: 'data.txt', 'data2.txt'） */
-  file: string;
+  /** データファイル名のリスト（例: ['data.txt'], ['data2.txt', 'data3.txt']） */
+  files: string[];
   /** タブに表示する名前（例: 'メイン', 'サブ1'） */
   name: string;
+  /** アイテム登録時のデフォルト保存先ファイル（オプション、未設定の場合はfiles[0]を使用） */
+  defaultFile?: string;
 }
 
 /**

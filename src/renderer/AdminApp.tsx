@@ -124,7 +124,9 @@ const AdminApp: React.FC = () => {
         onSearchChange={handleSearchChange}
         tabNames={
           settings?.dataFileTabs
-            ? Object.fromEntries(settings.dataFileTabs.map((tab) => [tab.file, tab.name]))
+            ? Object.fromEntries(
+                settings.dataFileTabs.flatMap((tab) => tab.files.map((file) => [file, tab.name]))
+              )
             : {}
         }
       />

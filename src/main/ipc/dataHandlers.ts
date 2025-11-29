@@ -718,7 +718,8 @@ interface RegisterItem {
   path: string;
   type: 'url' | 'file' | 'folder' | 'app' | 'customUri';
   args?: string;
-  targetTab: string; // データファイル名（例: 'data.txt', 'data2.txt'）
+  targetTab: string; // データファイル名（例: 'data.txt', 'data2.txt'）※複数ファイルタブの場合はfiles[0]を指定
+  targetFile?: string; // 実際の保存先ファイル（タブに複数ファイルがある場合に使用）
   folderProcessing?: 'folder' | 'expand';
   icon?: string;
   customIcon?: string;
@@ -762,11 +763,12 @@ interface RegisterItem {
  * ]);
  */
 async function registerItems(configFolder: string, items: RegisterItem[]): Promise<void> {
-  // targetTab ごとにアイテムをグループ化
+  // targetFile (または targetTab) ごとにアイテムをグループ化
   const itemsByTab = new Map<string, RegisterItem[]>();
 
   for (const item of items) {
-    const targetFile = item.targetTab || 'data.txt';
+    // targetFileが指定されていればそれを使用、なければtargetTabを使用
+    const targetFile = item.targetFile || item.targetTab || 'data.txt';
     if (!itemsByTab.has(targetFile)) {
       itemsByTab.set(targetFile, []);
     }

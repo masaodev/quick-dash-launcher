@@ -17,6 +17,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [dataFiles, setDataFiles] = useState<string[]>([]);
+  const [fileModalTabIndex, setFileModalTabIndex] = useState<number | null>(null); // ファイル管理モーダルを開いているタブのインデックス
 
   // デフォルトのタブ名を生成（data.txt→メイン, data2.txt→サブ1, data3.txt→サブ2, ...）
   const getDefaultTabName = useCallback((fileName: string): string => {
@@ -83,11 +84,16 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
   // 設定に基づいてデータファイルリストを生成（設定ファイル基準）
   useEffect(() => {
     const tabs = editedSettings.dataFileTabs || [];
-    const fileNames = tabs.map((tab) => tab.file);
+    // 全タブの全ファイルを統合してユニークなリストを作成
+    const allFiles = tabs.flatMap((tab) => tab.files);
+    const fileNames = Array.from(new Set(allFiles));
 
     // data.txtが設定に含まれていない場合は追加
     if (!fileNames.includes('data.txt')) {
-      const updatedTabs = [{ file: 'data.txt', name: getDefaultTabName('data.txt') }, ...tabs];
+      const updatedTabs = [
+        { files: ['data.txt'], name: getDefaultTabName('data.txt'), defaultFile: 'data.txt' },
+        ...tabs,
+      ];
       const newSettings = {
         ...editedSettings,
         dataFileTabs: updatedTabs,
@@ -170,8 +176,9 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
 
     // 設定に追加（物理ファイルの存在に関わらず実行）
     const newTab: DataFileTab = {
-      file: fileName,
+      files: [fileName],
       name: getDefaultTabName(fileName),
+      defaultFile: fileName,
     };
     const updatedTabs = [...(editedSettings.dataFileTabs || []), newTab];
 
@@ -181,7 +188,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
   // タブ名を変更（ローカル状態のみ更新）
   const handleTabNameChange = (fileName: string, tabName: string) => {
     const updatedTabs = (editedSettings.dataFileTabs || []).map((tab) =>
-      tab.file === fileName ? { ...tab, name: tabName } : tab
+      tab.files.includes(fileName) ? { ...tab, name: tabName } : tab
     );
     setEditedSettings((prev) => ({
       ...prev,
@@ -214,10 +221,23 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
       // 物理ファイルを削除
       const result = await window.electronAPI.deleteDataFile(fileName);
       if (result.success) {
-        // 設定から削除
-        const updatedTabs = (editedSettings.dataFileTabs || []).filter(
-          (tab) => tab.file !== fileName
-        );
+        // 設定から削除：ファイルが含まれるタブを見つけて、そのファイルを削除
+        const updatedTabs = (editedSettings.dataFileTabs || [])
+          .map((tab) => {
+            if (tab.files.includes(fileName)) {
+              const newFiles = tab.files.filter((f) => f !== fileName);
+              // タブから全ファイルが削除された場合はタブごと削除
+              if (newFiles.length === 0) {
+                return null;
+              }
+              // デフォルトファイルが削除された場合は、最初のファイルを設定
+              const newDefaultFile =
+                tab.defaultFile === fileName ? newFiles[0] : tab.defaultFile;
+              return { ...tab, files: newFiles, defaultFile: newDefaultFile };
+            }
+            return tab;
+          })
+          .filter((tab): tab is DataFileTab => tab !== null);
 
         const newSettings = {
           ...editedSettings,
@@ -243,7 +263,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
   // タブを上に移動
   const handleMoveUp = (fileName: string) => {
     const tabs = editedSettings.dataFileTabs || [];
-    const index = tabs.findIndex((tab) => tab.file === fileName);
+    const index = tabs.findIndex((tab) => tab.files.includes(fileName));
 
     if (index <= 0) return; // 最初の要素または見つからない場合は何もしない
 
@@ -257,7 +277,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
   // タブを下に移動
   const handleMoveDown = (fileName: string) => {
     const tabs = editedSettings.dataFileTabs || [];
-    const index = tabs.findIndex((tab) => tab.file === fileName);
+    const index = tabs.findIndex((tab) => tab.files.includes(fileName));
 
     if (index < 0 || index >= tabs.length - 1) return; // 最後の要素または見つからない場合は何もしない
 
@@ -266,6 +286,235 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
     [newTabs[index], newTabs[index + 1]] = [newTabs[index + 1], newTabs[index]];
 
     handleSettingChange('dataFileTabs', newTabs);
+  };
+
+  // タブを上に移動（インデックスベース）
+  const handleMoveTabUp = (tabIndex: number) => {
+    const tabs = editedSettings.dataFileTabs || [];
+    if (tabIndex <= 0) return;
+
+    const newTabs = [...tabs];
+    [newTabs[tabIndex - 1], newTabs[tabIndex]] = [newTabs[tabIndex], newTabs[tabIndex - 1]];
+
+    handleSettingChange('dataFileTabs', newTabs);
+  };
+
+  // タブを下に移動（インデックスベース）
+  const handleMoveTabDown = (tabIndex: number) => {
+    const tabs = editedSettings.dataFileTabs || [];
+    if (tabIndex < 0 || tabIndex >= tabs.length - 1) return;
+
+    const newTabs = [...tabs];
+    [newTabs[tabIndex], newTabs[tabIndex + 1]] = [newTabs[tabIndex + 1], newTabs[tabIndex]];
+
+    handleSettingChange('dataFileTabs', newTabs);
+  };
+
+  // タブ名を変更（インデックスベース）
+  const handleTabNameChangeByIndex = (tabIndex: number, tabName: string) => {
+    const updatedTabs = [...(editedSettings.dataFileTabs || [])];
+    if (tabIndex >= 0 && tabIndex < updatedTabs.length) {
+      updatedTabs[tabIndex] = { ...updatedTabs[tabIndex], name: tabName };
+      setEditedSettings((prev) => ({
+        ...prev,
+        dataFileTabs: updatedTabs,
+      }));
+    }
+  };
+
+  // タブを削除（インデックスベース）
+  const handleDeleteTab = async (tabIndex: number) => {
+    const tabs = editedSettings.dataFileTabs || [];
+    if (tabIndex < 0 || tabIndex >= tabs.length) return;
+
+    const tab = tabs[tabIndex];
+    // data.txtを含むタブは削除不可
+    if (tab.files.includes('data.txt')) {
+      alert('data.txtを含むタブは削除できません。');
+      return;
+    }
+
+    if (
+      !confirm(
+        `タブ「${tab.name}」を削除しますか？\nこのタブに含まれる全てのファイルも削除されます。`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      // タブに含まれる全ファイルを削除
+      for (const fileName of tab.files) {
+        await window.electronAPI.deleteDataFile(fileName);
+      }
+
+      // タブを削除
+      const updatedTabs = tabs.filter((_, index) => index !== tabIndex);
+      await handleSettingChange('dataFileTabs', updatedTabs);
+    } catch (error) {
+      console.error('タブの削除に失敗しました:', error);
+      alert('タブの削除に失敗しました。');
+    }
+  };
+
+  // タブにファイルを追加
+  const handleAddFileToTab = async (tabIndex: number, fileName: string) => {
+    const tabs = editedSettings.dataFileTabs || [];
+    if (tabIndex < 0 || tabIndex >= tabs.length) return;
+
+    const tab = tabs[tabIndex];
+    if (tab.files.includes(fileName)) {
+      alert('このファイルは既にタブに含まれています。');
+      return;
+    }
+
+    const updatedTabs = [...tabs];
+    updatedTabs[tabIndex] = {
+      ...tab,
+      files: [...tab.files, fileName],
+    };
+
+    await handleSettingChange('dataFileTabs', updatedTabs);
+  };
+
+  // タブからファイルを削除
+  const handleRemoveFileFromTab = async (tabIndex: number, fileName: string) => {
+    const tabs = editedSettings.dataFileTabs || [];
+    if (tabIndex < 0 || tabIndex >= tabs.length) return;
+
+    const tab = tabs[tabIndex];
+
+    // data.txtは削除不可
+    if (fileName === 'data.txt') {
+      alert('data.txtは削除できません。');
+      return;
+    }
+
+    // タブに最低1つのファイルが必要
+    if (tab.files.length === 1) {
+      alert('タブには最低1つのファイルが必要です。タブごと削除してください。');
+      return;
+    }
+
+    if (!confirm(`${fileName}をタブから削除しますか？\nファイル自体も削除されます。`)) {
+      return;
+    }
+
+    try {
+      // 物理ファイルを削除
+      await window.electronAPI.deleteDataFile(fileName);
+
+      // タブからファイルを削除
+      const newFiles = tab.files.filter((f) => f !== fileName);
+      const newDefaultFile = tab.defaultFile === fileName ? newFiles[0] : tab.defaultFile;
+
+      const updatedTabs = [...tabs];
+      updatedTabs[tabIndex] = {
+        ...tab,
+        files: newFiles,
+        defaultFile: newDefaultFile,
+      };
+
+      await handleSettingChange('dataFileTabs', updatedTabs);
+    } catch (error) {
+      console.error('ファイルの削除に失敗しました:', error);
+      alert('ファイルの削除に失敗しました。');
+    }
+  };
+
+  // デフォルトファイルを設定
+  const handleSetDefaultFile = async (tabIndex: number, fileName: string) => {
+    const tabs = editedSettings.dataFileTabs || [];
+    if (tabIndex < 0 || tabIndex >= tabs.length) return;
+
+    const updatedTabs = [...tabs];
+    updatedTabs[tabIndex] = {
+      ...updatedTabs[tabIndex],
+      defaultFile: fileName,
+    };
+
+    await handleSettingChange('dataFileTabs', updatedTabs);
+  };
+
+  // 新規ファイルを作成してタブに追加
+  const handleCreateAndAddFileToTab = async (tabIndex: number) => {
+    // 次のファイル名を自動決定
+    const existingNumbers = dataFiles
+      .map((file) => {
+        if (file === 'data.txt') {
+          return 1;
+        }
+        const match = file.match(/^data(\d+)\.txt$/i);
+        return match ? parseInt(match[1]) : null;
+      })
+      .filter((n): n is number => n !== null);
+
+    const nextNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 2;
+    const fileName = `data${nextNumber}.txt`;
+
+    try {
+      // 物理ファイルを作成
+      const result = await window.electronAPI.createDataFile(fileName);
+      if (!result.success) {
+        alert(result.error || 'ファイルの作成に失敗しました。');
+        return;
+      }
+
+      // タブにファイルを追加
+      await handleAddFileToTab(tabIndex, fileName);
+    } catch (error) {
+      console.error('ファイルの作成に失敗しました:', error);
+      alert('ファイルの作成に失敗しました。');
+    }
+  };
+
+  // 新規タブを追加
+  const handleAddTab = async () => {
+    // 新しいファイルを作成
+    const existingNumbers = dataFiles
+      .map((file) => {
+        if (file === 'data.txt') {
+          return 1;
+        }
+        const match = file.match(/^data(\d+)\.txt$/i);
+        return match ? parseInt(match[1]) : null;
+      })
+      .filter((n): n is number => n !== null);
+
+    const nextNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 2;
+    const fileName = `data${nextNumber}.txt`;
+
+    try {
+      // 物理ファイルを作成
+      const result = await window.electronAPI.createDataFile(fileName);
+      if (!result.success) {
+        alert(result.error || 'ファイルの作成に失敗しました。');
+        return;
+      }
+
+      // 新しいタブを追加
+      const newTab: DataFileTab = {
+        files: [fileName],
+        name: getDefaultTabName(fileName),
+        defaultFile: fileName,
+      };
+      const updatedTabs = [...(editedSettings.dataFileTabs || []), newTab];
+
+      await handleSettingChange('dataFileTabs', updatedTabs);
+    } catch (error) {
+      console.error('タブの追加に失敗しました:', error);
+      alert('タブの追加に失敗しました。');
+    }
+  };
+
+  // ファイル管理モーダルを開く
+  const openFileModal = (tabIndex: number) => {
+    setFileModalTabIndex(tabIndex);
+  };
+
+  // ファイル管理モーダルを閉じる
+  const closeFileModal = () => {
+    setFileModalTabIndex(null);
   };
 
   return (
@@ -518,8 +767,8 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                 </div>
                 <div className="data-file-manager">
                   <div className="data-file-actions">
-                    <button type="button" onClick={handleAddNewFile} className="add-file-button">
-                      ➕ 行追加
+                    <button type="button" onClick={handleAddTab} className="add-file-button">
+                      ➕ 新規タブを追加
                     </button>
                     <button
                       type="button"
@@ -533,75 +782,211 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                   <div className="data-file-table">
                     <div className="data-file-table-header">
                       <div className="column-order">順序</div>
-                      <div className="column-filename">ファイル名</div>
                       <div className="column-tabname">タブ名</div>
-                      <div className="column-actions">操作</div>
+                      <div className="column-delete">削除</div>
+                      <div className="column-files">ファイル管理</div>
                     </div>
 
-                    {getSortedDataFiles().map((fileName, index) => (
-                      <div key={fileName} className="data-file-table-row">
-                        <div className="column-order">
-                          <button
-                            type="button"
-                            onClick={() => handleMoveUp(fileName)}
-                            className="move-button"
-                            disabled={index === 0 || isLoading}
-                            title="上へ移動"
-                          >
-                            ▲
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleMoveDown(fileName)}
-                            className="move-button"
-                            disabled={index === getSortedDataFiles().length - 1 || isLoading}
-                            title="下へ移動"
-                          >
-                            ▼
-                          </button>
-                        </div>
-                        <div className="column-filename">
-                          <span className="data-file-name">{fileName}</span>
-                        </div>
-                        <div className="column-tabname">
-                          <input
-                            type="text"
-                            value={
-                              (editedSettings.dataFileTabs || []).find(
-                                (tab) => tab.file === fileName
-                              )?.name || ''
-                            }
-                            onChange={(e) => handleTabNameChange(fileName, e.target.value)}
-                            onBlur={handleTabNameBlur}
-                            className="tab-name-input"
-                            placeholder={getDefaultTabName(fileName)}
-                            disabled={isLoading}
-                          />
-                        </div>
-                        <div className="column-actions">
-                          {fileName !== 'data.txt' && (
+                    {(editedSettings.dataFileTabs || []).map((tab, tabIndex) => {
+                      const hasDataTxt = tab.files.includes('data.txt');
+                      return (
+                        <div key={tabIndex} className="data-file-table-row">
+                          <div className="column-order">
                             <button
                               type="button"
-                              onClick={() => handleDeleteDataFile(fileName)}
-                              className="delete-file-button"
-                              title="削除"
+                              onClick={() => handleMoveTabUp(tabIndex)}
+                              className="move-button"
+                              disabled={tabIndex === 0 || isLoading}
+                              title="上へ移動"
                             >
-                              🗑️
+                              ▲
                             </button>
-                          )}
+                            <button
+                              type="button"
+                              onClick={() => handleMoveTabDown(tabIndex)}
+                              className="move-button"
+                              disabled={
+                                tabIndex === (editedSettings.dataFileTabs || []).length - 1 ||
+                                isLoading
+                              }
+                              title="下へ移動"
+                            >
+                              ▼
+                            </button>
+                          </div>
+                          <div className="column-tabname">
+                            <input
+                              type="text"
+                              value={tab.name}
+                              onChange={(e) => handleTabNameChangeByIndex(tabIndex, e.target.value)}
+                              className="tab-name-input"
+                              placeholder={`タブ ${tabIndex + 1}`}
+                              disabled={isLoading}
+                            />
+                          </div>
+                          <div className="column-delete">
+                            {!hasDataTxt && (
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteTab(tabIndex)}
+                                className="delete-tab-button-text"
+                                title="タブを削除"
+                                disabled={isLoading}
+                              >
+                                🗑️ 削除
+                              </button>
+                            )}
+                          </div>
+                          <div className="column-files">
+                            <button
+                              type="button"
+                              onClick={() => openFileModal(tabIndex)}
+                              className="manage-files-button"
+                              title="ファイルを管理"
+                              disabled={isLoading}
+                            >
+                              📁 ({tab.files.length}個)
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               </div>
 
               <div className="setting-item indent">
                 <div className="setting-description">
-                  上記のテーブルの「順序」列にある▲▼ボタンで、タブの表示順序を変更できます。
+                  「📁 ファイル管理」ボタンでタブに関連付けるファイルを管理できます。
                 </div>
               </div>
             </>
+          )}
+
+          {/* ファイル管理モーダル */}
+          {fileModalTabIndex !== null && (
+            <div className="modal-overlay" onClick={closeFileModal}>
+              <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-header">
+                  <h3>
+                    「{(editedSettings.dataFileTabs || [])[fileModalTabIndex]?.name || 'タブ'}」の
+                    ファイル管理
+                  </h3>
+                  <button type="button" onClick={closeFileModal} className="modal-close-button">
+                    ✕
+                  </button>
+                </div>
+
+                <div className="modal-body">
+                  {(() => {
+                    const tab = (editedSettings.dataFileTabs || [])[fileModalTabIndex];
+                    if (!tab) return null;
+
+                    const allExistingFiles = dataFiles;
+                    const availableFiles = allExistingFiles.filter(
+                      (file: string) => !tab.files.includes(file)
+                    );
+
+                    return (
+                      <>
+                        <div className="modal-section">
+                          <h4>関連ファイル一覧</h4>
+                          <div className="file-list">
+                            {tab.files.map((fileName) => (
+                              <div key={fileName} className="file-list-item">
+                                <div className="file-info">
+                                  <span className="file-name">{fileName}</span>
+                                  {fileName === tab.defaultFile && (
+                                    <span className="default-badge-small">⭐ デフォルト</span>
+                                  )}
+                                </div>
+                                <div className="file-actions">
+                                  {fileName !== tab.defaultFile && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSetDefaultFile(fileModalTabIndex, fileName)}
+                                      className="btn-secondary-small"
+                                      disabled={isLoading}
+                                    >
+                                      デフォルトに設定
+                                    </button>
+                                  )}
+                                  {tab.files.length > 1 && (
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        handleRemoveFileFromTab(fileModalTabIndex, fileName)
+                                      }
+                                      className="btn-danger-small"
+                                      disabled={isLoading}
+                                    >
+                                      削除
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="modal-section">
+                          <h4>ファイルを追加</h4>
+                          <div className="add-file-section">
+                            {availableFiles.length > 0 && (
+                              <div className="add-existing-file-group">
+                                <select
+                                  className="file-select-modal"
+                                  defaultValue=""
+                                  onChange={(e) => {
+                                    if (e.target.value) {
+                                      handleAddFileToTab(fileModalTabIndex, e.target.value);
+                                      e.target.value = '';
+                                    }
+                                  }}
+                                  disabled={isLoading}
+                                >
+                                  <option value="">既存ファイルを選択...</option>
+                                  {availableFiles.map((file: string) => (
+                                    <option key={file} value={file}>
+                                      {file}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => handleCreateAndAddFileToTab(fileModalTabIndex)}
+                              className="btn-primary"
+                              disabled={isLoading}
+                            >
+                              ➕ 新規ファイルを作成して追加
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="modal-info">
+                          <p>
+                            <strong>デフォルトファイル:</strong>{' '}
+                            新規アイテムを登録する際の保存先ファイルです。
+                          </p>
+                          <p>
+                            <strong>関連ファイル:</strong>{' '}
+                            このタブで表示されるアイテムの元となるファイルです。
+                          </p>
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+
+                <div className="modal-footer">
+                  <button type="button" onClick={closeFileModal} className="btn-primary">
+                    閉じる
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
         </div>
       </div>
