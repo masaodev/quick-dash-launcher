@@ -632,9 +632,8 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
         <div className="settings-section">
           <h3>ウィンドウ表示位置</h3>
           <div className="setting-item">
-            <label htmlFor="windowPositionMode">表示位置:</label>
-            <div className="radio-group">
-              <label className="radio-label">
+            <div className="position-options">
+              <label className="position-option">
                 <input
                   type="radio"
                   name="windowPositionMode"
@@ -645,9 +644,14 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                   }
                   disabled={isLoading}
                 />
-                画面中央
+                <div className="option-content">
+                  <div className="option-title">画面中央</div>
+                  <div className="option-description">
+                    常に画面の中央にウィンドウを表示します
+                  </div>
+                </div>
               </label>
-              <label className="radio-label">
+              <label className="position-option">
                 <input
                   type="radio"
                   name="windowPositionMode"
@@ -658,9 +662,14 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                   }
                   disabled={isLoading}
                 />
-                マウスカーソルの位置
+                <div className="option-content">
+                  <div className="option-title">マウスカーソルの位置</div>
+                  <div className="option-description">
+                    マウスカーソルの近くにウィンドウを表示します
+                  </div>
+                </div>
               </label>
-              <label className="radio-label">
+              <label className="position-option">
                 <input
                   type="radio"
                   name="windowPositionMode"
@@ -671,14 +680,14 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                   }
                   disabled={isLoading}
                 />
-                固定位置（手動で移動した位置を記憶）
+                <div className="option-content">
+                  <div className="option-title">固定位置</div>
+                  <div className="option-description">
+                    手動で移動した位置を記憶して、次回も同じ位置に表示します
+                  </div>
+                </div>
               </label>
             </div>
-          </div>
-          <div className="setting-description">
-            ホットキーでウィンドウを表示する際の位置を設定します。
-            <br />
-            「固定位置」を選択した場合、ウィンドウを手動で移動すると、その位置が記憶されます。
           </div>
         </div>
 
