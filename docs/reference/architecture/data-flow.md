@@ -45,7 +45,13 @@ QuickDashLauncherのデータ処理フローを説明します。
 7. ユーザーが行の追加・削除・編集を実行
 8. `save-raw-data-files`で変更内容をファイルに直接書き込み
 9. 行番号の再採番とファイルバックアップを自動実行
-10. 編集モード終了時にウィンドウサイズを元のサイズ（479x506px）に復元
+10. **メイン画面への自動反映**: 以下の編集操作は即座にメインウィンドウに通知される
+   - `update-item`: アイテム更新時に`notifyDataChanged()`を呼び出し
+   - `update-raw-line`: 生データ行更新時に`notifyDataChanged()`を呼び出し
+   - `delete-items`: アイテム削除時に`notifyDataChanged()`を呼び出し
+   - `batch-update-items`: 一括更新時に`notifyDataChanged()`を呼び出し
+   - メインウィンドウは`data-changed`イベントを受信してデータを再読み込み
+11. 編集モード終了時にウィンドウサイズを元のサイズ（479x506px）に復元
 
 ## アイコン取得と進捗表示フロー
 
@@ -89,7 +95,8 @@ IconProgress {
   totalPhases: number,             // 総フェーズ数
   phases: IconPhaseProgress[],     // 各フェーズの進捗情報
   isComplete: boolean,             // 全体の処理が完了したかどうか
-  startTime: number                // 全体の処理開始時刻
+  startTime: number,               // 全体の処理開始時刻
+  completedTime?: number           // 全体の処理完了時刻（完了後のみ設定）
 }
 
 IconPhaseProgress {
