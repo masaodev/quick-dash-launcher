@@ -95,6 +95,22 @@ Google,https://www.google.com
 
 詳細な開発情報は[CLAUDE.md](./CLAUDE.md)を参照してください。
 
+### テストの実行
+
+```bash
+# 単体テスト
+npm run test
+
+# E2Eテスト（全て）
+npm run test:e2e
+
+# 特定のE2Eテストのみ実行
+npm run test:e2e:single <test-name>
+
+# 例: アプリ起動テストのみ
+npm run test:e2e:single app-launch
+```
+
 ## ライセンス
 
 このプロジェクトは MIT ライセンスの下で公開されています。詳細は [LICENSE](./LICENSE) ファイルを参照してください。

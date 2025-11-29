@@ -25,7 +25,8 @@
     "test:e2e": "npm run build && playwright test",
     "test:e2e:ui": "npm run build && playwright test --ui",
     "test:e2e:debug": "npm run build && playwright test --debug",
-    "test:e2e:headed": "npm run build && playwright test --headed"
+    "test:e2e:headed": "npm run build && playwright test --headed",
+    "test:e2e:single": "node scripts/run-e2e-test.js"
   },
   "keywords": [
     "launcher",

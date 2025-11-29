@@ -50,7 +50,26 @@ npm run test:e2e        # E2Eテスト実行（ヘッドレス）
 npm run test:e2e:ui     # PlaywrightのテストUIを開く
 npm run test:e2e:debug  # デバッグモードでE2Eテスト実行
 npm run test:e2e:headed # ヘッド付きでE2Eテスト実行
+
+# 特定のテストのみ実行
+npm run test:e2e:single <test-name>
+
+# 例: アプリ起動テストのみ実行
+npm run test:e2e:single app-launch
 ```
+
+**利用可能なテスト名:**
+- `app-launch` - アプリケーション起動
+- `first-launch` - 初回起動セットアップ
+- `search` - 検索機能
+- `item-display` - アイテム表示
+- `item-tab` - タブ切り替え
+- `item-register` - アイテム登録
+- `multi-tab` - マルチタブ
+- `config` - 設定変更
+- `settings` - 設定タブ
+- `context-menu` - コンテキストメニュー
+- `item-count` - アイテム数表示
 
 ## 詳細ドキュメント
 
