@@ -21,6 +21,30 @@ QuickDashLauncherの設定項目の完全な仕様です。
 
 ## 設定項目一覧
 
+### 設定項目クイックリファレンス
+
+すべての設定項目の概要です。詳細は各セクションを参照してください。
+
+| キー | 型 | デフォルト値 | 説明 |
+|------|-----|-------------|------|
+| `hotkey` | `string` | `''` | グローバルホットキー |
+| `windowWidth` | `number` | `600` | 通常時のウィンドウ幅 (px) |
+| `windowHeight` | `number` | `400` | 通常時のウィンドウ高さ (px) |
+| `editModeWidth` | `number` | `1200` | アイテム管理時のウィンドウ幅 (px) |
+| `editModeHeight` | `number` | `700` | アイテム管理時のウィンドウ高さ (px) |
+| `autoLaunch` | `boolean` | `false` | Windows起動時に自動起動 |
+| `backupEnabled` | `boolean` | `false` | バックアップ機能の有効/無効 |
+| `backupOnStart` | `boolean` | `false` | アプリ起動時にバックアップ作成 |
+| `backupOnEdit` | `boolean` | `false` | データ編集時にバックアップ作成 |
+| `backupInterval` | `number` | `5` | 最小バックアップ間隔（分） |
+| `backupRetention` | `number` | `20` | バックアップ保存件数上限 |
+| `showDataFileTabs` | `boolean` | `false` | タブ表示の有効/無効 |
+| `defaultFileTab` | `string` | `'data.txt'` | デフォルトで表示するタブ |
+| `dataFileTabs` | `DataFileTab[]` | `[{ files: ['data.txt'], name: 'メイン', defaultFile: 'data.txt' }]` | タブ設定 |
+| `windowPositionMode` | `WindowPositionMode` | `'center'` | ウィンドウ表示位置モード |
+| `windowPositionX` | `number` | `0` | 固定位置のX座標 |
+| `windowPositionY` | `number` | `0` | 固定位置のY座標 |
+
 ### グローバルホットキー
 
 | 項目 | 値 |
@@ -80,10 +104,10 @@ Ctrl+Alt+0
 
 | 項目 | 値 |
 |------|-----|
-| **幅キー** | `editWindowWidth` |
-| **高さキー** | `editWindowHeight` |
+| **幅キー** | `editModeWidth` |
+| **高さキー** | `editModeHeight` |
 | **型** | `number` |
-| **幅デフォルト** | `1000` |
+| **幅デフォルト** | `1200` |
 | **高さデフォルト** | `700` |
 | **幅範囲** | `800` ～ `2000` (px) |
 | **高さ範囲** | `600` ～ `1200` (px) |
@@ -192,7 +216,7 @@ Ctrl+Alt+0
 
 | 項目 | 値 |
 |------|-----|
-| **キー** | `backup.enabled` |
+| **キー** | `backupEnabled` |
 | **型** | `boolean` |
 | **デフォルト値** | `false` |
 | **説明** | バックアップ機能全体のON/OFF |
@@ -201,7 +225,7 @@ Ctrl+Alt+0
 
 | 項目 | 値 |
 |------|-----|
-| **キー** | `backup.onStartup` |
+| **キー** | `backupOnStart` |
 | **型** | `boolean` |
 | **デフォルト値** | `false` |
 | **説明** | アプリ起動時に`data.txt`と`data2.txt`をバックアップ |
@@ -210,7 +234,7 @@ Ctrl+Alt+0
 
 | 項目 | 値 |
 |------|-----|
-| **キー** | `backup.onEdit` |
+| **キー** | `backupOnEdit` |
 | **型** | `boolean` |
 | **デフォルト値** | `false` |
 | **説明** | アイテム管理や生データ編集でデータ変更時にバックアップを作成 |
@@ -219,7 +243,7 @@ Ctrl+Alt+0
 
 | 項目 | 値 |
 |------|-----|
-| **キー** | `backup.minInterval` |
+| **キー** | `backupInterval` |
 | **型** | `number` |
 | **デフォルト値** | `5` |
 | **範囲** | `1` ～ `60` (分) |
@@ -229,7 +253,7 @@ Ctrl+Alt+0
 
 | 項目 | 値 |
 |------|-----|
-| **キー** | `backup.maxCount` |
+| **キー** | `backupRetention` |
 | **型** | `number` |
 | **デフォルト値** | `20` |
 | **範囲** | `1` ～ `100` (件) |
@@ -272,16 +296,25 @@ Ctrl+Alt+0
 |------|-----|
 | **キー** | `dataFileTabs` |
 | **型** | `DataFileTab[]` (配列) |
-| **デフォルト値** | `[{ files: ['data.txt'], name: 'メイン' }]` |
+| **デフォルト値** | `[{ files: ['data.txt'], name: 'メイン', defaultFile: 'data.txt' }]` |
 | **説明** | データファイルのタブ名と表示順序を管理。1つのタブで複数のデータファイルを統合表示可能 |
 
 **型定義:**
 ```typescript
 interface DataFileTab {
-  files: string[];  // データファイル名のリスト（例: ['data.txt'], ['data2.txt', 'data3.txt']）
-  name: string;     // タブに表示する名前（例: 'メイン', 'サブ1'）
-  defaultFile?: string;  // アイテム登録時のデフォルト保存先ファイル（オプション、未設定の場合はfiles[0]を使用）
+  files: string[];       // データファイル名のリスト（配列）
+                         // 1つのタブに複数ファイルを関連付けて統合表示可能
+                         // 例: ['data.txt'] → 単一ファイル
+                         //     ['data2.txt', 'data3.txt'] → 複数ファイルを統合表示
+  name: string;          // タブに表示する名前（例: 'メイン', 'サブ1', 'プライベート'）
+  defaultFile?: string;  // アイテム登録時のデフォルト保存先ファイル（オプション）
+                         // 未設定の場合はfiles[0]（最初のファイル）を使用
 }
+```
+
+**デフォルト値:**
+```typescript
+[{ files: ['data.txt'], name: 'メイン', defaultFile: 'data.txt' }]
 ```
 
 **設定例:**
@@ -396,10 +429,10 @@ data2_2024-01-01T12-00-00.txt
 |---------|-------|-------|
 | `windowWidth` | 400 | 2000 |
 | `windowHeight` | 300 | 1200 |
-| `editWindowWidth` | 800 | 2000 |
-| `editWindowHeight` | 600 | 1200 |
-| `backup.minInterval` | 1 | 60 |
-| `backup.maxCount` | 1 | 100 |
+| `editModeWidth` | 800 | 2000 |
+| `editModeHeight` | 600 | 1200 |
+| `backupInterval` | 1 | 60 |
+| `backupRetention` | 1 | 100 |
 
 ## 設定ファイルのサンプル
 
@@ -419,7 +452,7 @@ data2_2024-01-01T12-00-00.txt
   "showDataFileTabs": false,
   "defaultFileTab": "data.txt",
   "dataFileTabs": [
-    { "files": ["data.txt"], "name": "仕事用" },
+    { "files": ["data.txt"], "name": "仕事用", "defaultFile": "data.txt" },
     { "files": ["data2.txt", "data3.txt"], "name": "プライベート", "defaultFile": "data2.txt" }
   ],
   "windowPositionMode": "center",
@@ -431,6 +464,7 @@ data2_2024-01-01T12-00-00.txt
 **注**:
 - 初回起動時は`hotkey`が空文字列（`""`）で保存されています。初回設定画面で設定すると、デフォルトでは`"Alt+Space"`が設定されます。
 - タブ表示関連の設定は、`showDataFileTabs`が`true`の場合のみ有効です。
+- `dataFileTabs`の例では、2番目のタブ「プライベート」に複数のファイル（`data2.txt`と`data3.txt`）を関連付けて統合表示しています。
 - **v1.0.0以降**: すべての設定変更は自動保存され、「保存」ボタンは不要です。
 
 ## 関連ドキュメント
