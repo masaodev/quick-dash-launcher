@@ -17,7 +17,8 @@ export interface RegisterItem {
   path: string;
   type: LauncherItem['type'];
   args?: string;
-  targetTab: string; // データファイル名（例: 'data.txt', 'data2.txt'）
+  targetTab: string; // データファイル名（例: 'data.txt', 'data2.txt'）※複数ファイルタブの場合はfiles[0]を指定
+  targetFile?: string; // 実際の保存先ファイル（タブに複数ファイルがある場合に使用）
   folderProcessing?: 'folder' | 'expand';
   icon?: string;
   customIcon?: string;
@@ -86,7 +87,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
       // ボタンから開かれた場合：空のテンプレートアイテムを1つ作成
       debugInfo('RegisterModal opened manually: creating empty template');
       const defaultTab =
-        currentTab || (availableTabs.length > 0 ? availableTabs[0].file : 'data.txt');
+        currentTab || (availableTabs.length > 0 ? availableTabs[0].files[0] : 'data.txt');
       setItems([
         {
           name: '',
@@ -239,7 +240,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
 
   const convertRawDataLineToRegisterItem = async (line: RawDataLine): Promise<RegisterItem> => {
     const defaultTab =
-      line.sourceFile || (availableTabs.length > 0 ? availableTabs[0].file : 'data.txt');
+      line.sourceFile || (availableTabs.length > 0 ? availableTabs[0].files[0] : 'data.txt');
 
     if (line.type === 'item') {
       // アイテム行の場合：名前,パス,引数,カスタムアイコン
@@ -352,7 +353,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     setLoading(true);
     const newItems: RegisterItem[] = [];
     const defaultTab =
-      currentTab || (availableTabs.length > 0 ? availableTabs[0].file : 'data.txt');
+      currentTab || (availableTabs.length > 0 ? availableTabs[0].files[0] : 'data.txt');
 
     try {
       if (!droppedPaths || droppedPaths.length === 0) {
@@ -972,18 +973,55 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                   )}
 
                   <div className="form-group">
-                    <label>保存先:</label>
+                    <label>保存先タブ:</label>
                     <select
                       value={item.targetTab}
-                      onChange={(e) => handleItemChange(index, 'targetTab', e.target.value)}
+                      onChange={(e) => {
+                        const selectedTab = availableTabs.find((tab) =>
+                          tab.files.includes(e.target.value)
+                        );
+                        handleItemChange(index, 'targetTab', e.target.value);
+                        // タブに複数ファイルがある場合、デフォルトファイルまたは最初のファイルを設定
+                        if (selectedTab && selectedTab.files.length > 1) {
+                          const defaultFile = selectedTab.defaultFile || selectedTab.files[0];
+                          handleItemChange(index, 'targetFile', defaultFile);
+                        } else if (selectedTab && selectedTab.files.length === 1) {
+                          handleItemChange(index, 'targetFile', selectedTab.files[0]);
+                        }
+                      }}
                     >
                       {availableTabs.map((tab) => (
-                        <option key={tab.file} value={tab.file}>
+                        <option key={tab.files[0]} value={tab.files[0]}>
                           {tab.name}
                         </option>
                       ))}
                     </select>
                   </div>
+
+                  {/* タブに複数ファイルがある場合、保存先ファイルを選択 */}
+                  {(() => {
+                    const selectedTab = availableTabs.find((tab) =>
+                      tab.files.includes(item.targetTab)
+                    );
+                    return (
+                      selectedTab &&
+                      selectedTab.files.length > 1 && (
+                        <div className="form-group">
+                          <label>保存先ファイル:</label>
+                          <select
+                            value={item.targetFile || selectedTab.files[0]}
+                            onChange={(e) => handleItemChange(index, 'targetFile', e.target.value)}
+                          >
+                            {selectedTab.files.map((file) => (
+                              <option key={file} value={file}>
+                                {file}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )
+                    );
+                  })()}
 
                   {/* カスタムアイコン設定 */}
                   {item.itemCategory !== 'dir' && (

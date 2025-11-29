@@ -38,7 +38,7 @@ export class SettingsService {
     backupRetention: 20,
     showDataFileTabs: false, // タブ表示OFF（デフォルト）
     defaultFileTab: 'data.txt', // デフォルトタブ
-    dataFileTabs: [{ file: 'data.txt', name: 'メイン' }], // データファイルタブの設定
+    dataFileTabs: [{ files: ['data.txt'], name: 'メイン', defaultFile: 'data.txt' }], // データファイルタブの設定
     windowPositionMode: 'center', // ウィンドウ表示位置モード（デフォルト: 画面中央）
     windowPositionX: 0, // 固定位置のX座標
     windowPositionY: 0, // 固定位置のY座標
@@ -150,7 +150,34 @@ export class SettingsService {
     await this.initializeStore();
     if (!this.store) throw new Error('Store not initialized');
     try {
-      return this.store.store as AppSettings;
+      const settings = this.store.store as AppSettings;
+
+      // マイグレーション: 旧形式（file: string）を新形式（files: string[]）に変換
+      if (settings.dataFileTabs && settings.dataFileTabs.length > 0) {
+        const needsMigration = settings.dataFileTabs.some(
+          (tab: any) => 'file' in tab && !('files' in tab)
+        );
+
+        if (needsMigration) {
+          logger.info('Migrating dataFileTabs from old format to new format');
+          const migratedTabs = settings.dataFileTabs.map((tab: any) => {
+            if ('file' in tab && !('files' in tab)) {
+              return {
+                files: [tab.file],
+                name: tab.name,
+                defaultFile: tab.file,
+              };
+            }
+            return tab;
+          });
+
+          settings.dataFileTabs = migratedTabs;
+          await this.setMultiple({ dataFileTabs: migratedTabs });
+          logger.info('Settings migrated successfully');
+        }
+      }
+
+      return settings;
     } catch (error) {
       logger.error('Failed to get all settings:', error);
       return SettingsService.DEFAULT_SETTINGS;

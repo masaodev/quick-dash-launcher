@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { AppItem } from '../../common/types';
+import { AppItem, DataFileTab } from '../../common/types';
 import { filterItems } from '../utils/dataParser';
 
 interface FileTabBarProps {
@@ -16,6 +16,8 @@ interface FileTabBarProps {
   allItems: AppItem[];
   /** 検索クエリ（フィルタリング用） */
   searchQuery: string;
+  /** データファイルタブの設定 */
+  dataFileTabs: DataFileTab[];
 }
 
 /**
@@ -29,6 +31,7 @@ const FileTabBar: React.FC<FileTabBarProps> = ({
   onTabClick,
   allItems,
   searchQuery,
+  dataFileTabs,
 }) => {
   // デフォルトのタブ名を生成（data.txt→メイン, data2.txt→サブ1, data3.txt→サブ2, ...）
   const getDefaultTabName = (fileName: string): string => {
@@ -50,7 +53,10 @@ const FileTabBar: React.FC<FileTabBarProps> = ({
 
   // 各タブのアイテム数を計算
   const getTabItemCount = (fileName: string): number => {
-    const tabItems = allItems.filter((item) => item.sourceFile === fileName);
+    // タブに紐付く全ファイルのアイテムを取得
+    const tabConfig = dataFileTabs.find((tab) => tab.files.includes(fileName));
+    const filesInTab = tabConfig ? tabConfig.files : [fileName];
+    const tabItems = allItems.filter((item) => filesInTab.includes(item.sourceFile || ''));
     const filteredTabItems = filterItems(tabItems, searchQuery);
     return filteredTabItems.length;
   };
