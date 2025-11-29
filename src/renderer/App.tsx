@@ -609,9 +609,23 @@ const App: React.FC = () => {
     openRegisterModal();
   };
 
-  const handleEditItem = async (item: LauncherItem) => {
+  const handleEditItem = async (item: AppItem) => {
+    // グループアイテムの場合
+    if (item.type === 'group') {
+      const groupItem = item as GroupItem;
+      const rawDataLine: RawDataLine = {
+        lineNumber: groupItem.lineNumber || 1,
+        content: `group,${groupItem.name},${groupItem.itemNames.join(',')}`,
+        type: 'directive',
+        sourceFile: groupItem.sourceFile || 'data.txt',
+        customIcon: undefined,
+      };
+      openEditModal(rawDataLine);
+      return;
+    }
+
     // LauncherItemからRawDataLineを構築
-    const rawDataLine: RawDataLine = await convertLauncherItemToRawDataLine(item);
+    const rawDataLine: RawDataLine = await convertLauncherItemToRawDataLine(item as LauncherItem);
     openEditModal(rawDataLine);
   };
 

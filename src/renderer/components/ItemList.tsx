@@ -17,7 +17,7 @@ interface ItemListProps {
   onCopyShortcutPath?: (item: LauncherItem) => void;
   onCopyShortcutParentPath?: (item: LauncherItem) => void;
   onOpenShortcutParentFolder?: (item: LauncherItem) => void;
-  onEditItem?: (item: LauncherItem) => void | Promise<void>;
+  onEditItem?: (item: AppItem) => void | Promise<void>;
 }
 
 const ItemList: React.FC<ItemListProps> = ({
@@ -39,7 +39,7 @@ const ItemList: React.FC<ItemListProps> = ({
   const [contextMenu, setContextMenu] = useState<{
     isVisible: boolean;
     position: { x: number; y: number };
-    item: LauncherItem | null;
+    item: AppItem | null;
   }>({
     isVisible: false,
     position: { x: 0, y: 0 },
@@ -133,15 +133,10 @@ const ItemList: React.FC<ItemListProps> = ({
     event.preventDefault();
     event.stopPropagation();
 
-    // グループアイテムの場合はコンテキストメニューを表示しない
-    if (item.type === 'group') {
-      return;
-    }
-
     setContextMenu({
       isVisible: true,
       position: { x: event.clientX, y: event.clientY },
-      item: item as LauncherItem,
+      item: item,
     });
   };
 
