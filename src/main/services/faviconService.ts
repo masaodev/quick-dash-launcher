@@ -88,7 +88,16 @@ export class FaviconService {
           return data;
         }
       } catch (error) {
-        faviconLogger.info('ファビコンソースの取得に失敗', { url: source.url, error });
+        // エラーの種類を判定してメッセージを分ける
+        let errorMessage = 'ファビコンソースの取得に失敗';
+        if (error instanceof Error) {
+          if (error.message.includes('タイムアウト')) {
+            errorMessage = 'ファビコンダウンロードがタイムアウト';
+          } else if (error.message.startsWith('HTTP ')) {
+            errorMessage = `HTTPエラー (${error.message})`;
+          }
+        }
+        faviconLogger.info(errorMessage, { url: source.url, error });
       }
     }
 
@@ -104,7 +113,14 @@ export class FaviconService {
       const htmlSources = await this.parseHtmlForFavicons(url);
       sources.push(...htmlSources);
     } catch (error) {
-      faviconLogger.info('HTML解析をスキップ', { error });
+      // エラーの種類を判定してメッセージを分ける
+      let errorMessage = 'HTML解析をスキップ';
+      if (error instanceof Error) {
+        if (error.message.includes('タイムアウト')) {
+          errorMessage = 'HTMLダウンロードがタイムアウト（標準的なファビコンソースを試行）';
+        }
+      }
+      faviconLogger.info(errorMessage, { error });
     }
 
     // 2. 標準的な場所を確認
