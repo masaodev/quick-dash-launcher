@@ -176,13 +176,26 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
     await handleSettingChange('dataFileTabs', updatedTabs);
   };
 
-  // タブ名を変更
+  // タブ名を変更（ローカル状態のみ更新）
   const handleTabNameChange = (fileName: string, tabName: string) => {
     const updatedTabs = (editedSettings.dataFileTabs || []).map((tab) =>
       tab.file === fileName ? { ...tab, name: tabName } : tab
     );
-    handleSettingChange('dataFileTabs', updatedTabs);
+    setEditedSettings((prev) => ({
+      ...prev,
+      dataFileTabs: updatedTabs,
+    }));
   };
+
+  // タブ名のフォーカス喪失ハンドラ（保存処理）
+  const handleTabNameBlur = useCallback(async () => {
+    try {
+      await onSave(editedSettings);
+    } catch (error) {
+      console.error('設定の保存に失敗しました:', error);
+      alert('設定の保存に失敗しました。');
+    }
+  }, [editedSettings, onSave]);
 
   // データファイルを削除
   const handleDeleteDataFile = async (fileName: string) => {
@@ -504,6 +517,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                               )?.name || ''
                             }
                             onChange={(e) => handleTabNameChange(fileName, e.target.value)}
+                            onBlur={handleTabNameBlur}
                             className="tab-name-input"
                             placeholder={getDefaultTabName(fileName)}
                             disabled={isLoading}
