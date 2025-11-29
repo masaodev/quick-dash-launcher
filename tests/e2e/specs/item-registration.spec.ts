@@ -1,3 +1,5 @@
+import type { Page } from '@playwright/test';
+
 import { test, expect } from '../fixtures/electron-app';
 import { TestUtils } from '../helpers/test-utils';
 
@@ -538,6 +540,72 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       await expect(item).not.toBeVisible();
 
       await utils.attachScreenshot(testInfo, 'メインタブでアイテム非表示確認');
+    });
+  });
+
+  // ==================== データ同期テスト ====================
+
+  test('メイン画面で登録したアイテムが管理画面に反映される', async ({
+    mainWindow,
+    electronApp,
+  }, testInfo) => {
+    const utils = new TestUtils(mainWindow);
+
+    await test.step('メイン画面で新規アイテムを登録', async () => {
+      await utils.attachScreenshot(testInfo, '登録前の状態');
+      await utils.openRegisterModal();
+      await utils.fillRegisterForm({
+        name: '同期テストアイテム',
+        path: 'https://sync-test.com',
+      });
+      await utils.clickRegisterButton();
+      await utils.wait(500);
+      await utils.attachScreenshot(testInfo, 'アイテム登録完了');
+
+      // メイン画面でアイテムが表示されることを確認
+      await mainWindow.reload();
+      await utils.waitForPageLoad();
+      const item = mainWindow.locator('.item', { hasText: '同期テストアイテム' });
+      await expect(item).toBeVisible();
+      await utils.attachScreenshot(testInfo, 'メイン画面でアイテム確認');
+    });
+
+    let adminWindow: Page | null = null;
+
+    await test.step('管理画面を開く', async () => {
+      adminWindow = await utils.openAdminWindow(electronApp, 'edit');
+      const adminUtils = new TestUtils(adminWindow);
+
+      // ページ読み込み完了を待機
+      await adminUtils.waitForPageLoad();
+      await adminUtils.wait(1000);
+      await adminUtils.attachScreenshot(testInfo, '管理画面オープン');
+
+      // アイテム管理タブがアクティブであることを確認
+      const editTab = adminWindow.locator('.tab-button.active', { hasText: 'アイテム管理' });
+      await expect(editTab).toBeVisible();
+    });
+
+    await test.step('管理画面で登録したアイテムが表示されることを確認', async () => {
+      if (!adminWindow) {
+        throw new Error('管理画面が見つかりません');
+      }
+
+      const adminUtils = new TestUtils(adminWindow);
+
+      // 登録したアイテムが表示されていることを確認
+      const itemRow = adminWindow.locator('.raw-item-row', { hasText: '同期テストアイテム' });
+      await expect(itemRow).toBeVisible({ timeout: 10000 });
+
+      // アイテムの内容を確認
+      const itemContent = await itemRow.textContent();
+      expect(itemContent).toContain('同期テストアイテム');
+      expect(itemContent).toContain('https://sync-test.com');
+
+      await adminUtils.attachScreenshot(testInfo, '管理画面でアイテム確認');
+
+      // 管理画面を閉じる
+      await adminWindow.close();
     });
   });
 });

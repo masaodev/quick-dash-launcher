@@ -861,7 +861,7 @@ function isDirectory(filePath: string): boolean {
 }
 
 // データ変更を全ウィンドウに通知する関数
-function notifyDataChanged() {
+export function notifyDataChanged() {
   const allWindows = BrowserWindow.getAllWindows();
   allWindows.forEach((window) => {
     if (!window.isDestroyed()) {

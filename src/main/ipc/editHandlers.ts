@@ -3,9 +3,11 @@ import * as path from 'path';
 
 import { editLogger } from '@common/logger';
 
-import { createSafeIpcHandler } from '../utils/ipcWrapper';
 import { LauncherItem } from '../../common/types';
+import { createSafeIpcHandler } from '../utils/ipcWrapper';
 import { BackupService } from '../services/backupService.js';
+
+import { notifyDataChanged } from './dataHandlers.js';
 
 interface UpdateItemRequest {
   sourceFile: string;
@@ -195,6 +197,7 @@ export function registerEditHandlers(configFolder: string): void {
     'update-item',
     async (request: UpdateItemRequest) => {
       await updateItem(configFolder, request);
+      notifyDataChanged();
       return { success: true };
     },
     'アイテムの更新'
@@ -204,6 +207,7 @@ export function registerEditHandlers(configFolder: string): void {
     'update-raw-line',
     async (request: { sourceFile: string; lineNumber: number; newContent: string }) => {
       await updateRawLine(configFolder, request);
+      notifyDataChanged();
       return { success: true };
     },
     '生データ行の更新'
@@ -213,6 +217,7 @@ export function registerEditHandlers(configFolder: string): void {
     'delete-items',
     async (requests: DeleteItemRequest[]) => {
       await deleteItems(configFolder, requests);
+      notifyDataChanged();
       return { success: true };
     },
     'アイテムの削除'
@@ -222,6 +227,7 @@ export function registerEditHandlers(configFolder: string): void {
     'batch-update-items',
     async (requests: UpdateItemRequest[]) => {
       await batchUpdateItems(configFolder, requests);
+      notifyDataChanged();
       return { success: true };
     },
     'アイテムの一括更新'
