@@ -39,6 +39,9 @@ export class SettingsService {
     showDataFileTabs: false, // タブ表示OFF（デフォルト）
     defaultFileTab: 'data.txt', // デフォルトタブ
     dataFileTabs: [{ file: 'data.txt', name: 'メイン' }], // データファイルタブの設定
+    windowPositionMode: 'center', // ウィンドウ表示位置モード（デフォルト: 画面中央）
+    windowPositionX: 0, // 固定位置のX座標
+    windowPositionY: 0, // 固定位置のY座標
   };
 
   private constructor() {

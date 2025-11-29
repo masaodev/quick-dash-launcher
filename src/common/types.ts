@@ -115,6 +115,12 @@ export interface AppSettings {
   defaultFileTab: string;
   /** データファイルタブの設定（ファイル名、タブ名、表示順序） */
   dataFileTabs: Array<{ file: string; name: string }>;
+  /** ウィンドウ表示位置モード（デフォルト: 'center'） */
+  windowPositionMode: WindowPositionMode;
+  /** 固定位置のX座標（windowPositionMode='fixed'時に使用、デフォルト: 0） */
+  windowPositionX: number;
+  /** 固定位置のY座標（windowPositionMode='fixed'時に使用、デフォルト: 0） */
+  windowPositionY: number;
 }
 
 /**
@@ -201,6 +207,14 @@ export type WindowPinMode =
   | 'normal' // 通常モード: フォーカスが外れたら非表示、最上面ではない
   | 'alwaysOnTop' // 常に最上面モード: 常に最上面に表示、フォーカスが外れても非表示にならない
   | 'stayVisible'; // 表示固定モード: 最上面ではないが、フォーカスが外れても非表示にならない
+
+/**
+ * ウィンドウの表示位置モードを表す列挙型
+ */
+export type WindowPositionMode =
+  | 'center' // 画面中央に表示
+  | 'cursor' // マウスカーソルの位置に表示
+  | 'fixed'; // 固定位置に表示（手動で移動した位置を記憶）
 
 /**
  * 検索履歴のエントリーを表すインターフェース

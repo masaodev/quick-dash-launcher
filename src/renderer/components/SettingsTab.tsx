@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { AppSettings, DataFileTab } from '@common/types';
+import { AppSettings, DataFileTab, WindowPositionMode } from '@common/types';
 
 import { logWarn } from '../utils/debug';
 
@@ -351,6 +351,59 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
               />
               <span className="unit">px</span>
             </div>
+          </div>
+        </div>
+
+        <div className="settings-section">
+          <h3>ウィンドウ表示位置</h3>
+          <div className="setting-item">
+            <label htmlFor="windowPositionMode">表示位置:</label>
+            <div className="radio-group">
+              <label className="radio-label">
+                <input
+                  type="radio"
+                  name="windowPositionMode"
+                  value="center"
+                  checked={editedSettings.windowPositionMode === 'center'}
+                  onChange={(e) =>
+                    handleSettingChange('windowPositionMode', e.target.value as WindowPositionMode)
+                  }
+                  disabled={isLoading}
+                />
+                画面中央
+              </label>
+              <label className="radio-label">
+                <input
+                  type="radio"
+                  name="windowPositionMode"
+                  value="cursor"
+                  checked={editedSettings.windowPositionMode === 'cursor'}
+                  onChange={(e) =>
+                    handleSettingChange('windowPositionMode', e.target.value as WindowPositionMode)
+                  }
+                  disabled={isLoading}
+                />
+                マウスカーソルの位置
+              </label>
+              <label className="radio-label">
+                <input
+                  type="radio"
+                  name="windowPositionMode"
+                  value="fixed"
+                  checked={editedSettings.windowPositionMode === 'fixed'}
+                  onChange={(e) =>
+                    handleSettingChange('windowPositionMode', e.target.value as WindowPositionMode)
+                  }
+                  disabled={isLoading}
+                />
+                固定位置（手動で移動した位置を記憶）
+              </label>
+            </div>
+          </div>
+          <div className="setting-description">
+            ホットキーでウィンドウを表示する際の位置を設定します。
+            <br />
+            「固定位置」を選択した場合、ウィンドウを手動で移動すると、その位置が記憶されます。
           </div>
         </div>
 
