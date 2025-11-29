@@ -50,16 +50,6 @@ export interface GroupItem {
   isEdited?: boolean;
 }
 
-/**
- * データファイル（data.txt、data2.txt）の内容を表すインターフェース
- * フォルダ取込アイテムの展開処理などで使用される
- */
-export interface DataFile {
-  /** ファイル名（data.txt、data2.txtのいずれか） */
-  name: string;
-  /** ファイルの内容（フォルダ取込アイテム展開後） */
-  content: string;
-}
 
 /**
  * 生データ編集モードで使用される、データファイルの1行を表すインターフェース

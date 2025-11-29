@@ -175,14 +175,6 @@ export async function toggleAdminWindow(): Promise<void> {
 }
 
 /**
- * 管理ウィンドウのインスタンスを取得する
- * @returns 管理ウィンドウのBrowserWindowインスタンス（存在しない場合はnull）
- */
-export function getAdminWindow(): BrowserWindow | null {
-  return adminWindow;
-}
-
-/**
  * 管理ウィンドウの表示状態を取得する
  * @returns 管理ウィンドウが表示されている場合はtrue
  */

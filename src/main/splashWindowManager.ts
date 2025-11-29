@@ -60,13 +60,6 @@ export async function createSplashWindow(): Promise<BrowserWindow> {
 }
 
 /**
- * スプラッシュウィンドウを取得する
- */
-export function getSplashWindow(): BrowserWindow | null {
-  return splashWindow;
-}
-
-/**
  * スプラッシュウィンドウを閉じる
  */
 export function closeSplashWindow(): void {
@@ -77,9 +70,3 @@ export function closeSplashWindow(): void {
   }
 }
 
-/**
- * スプラッシュウィンドウが表示中かどうかを確認
- */
-export function isSplashWindowVisible(): boolean {
-  return splashWindow !== null && !splashWindow.isDestroyed() && splashWindow.isVisible();
-}

@@ -2,10 +2,6 @@ import * as fs from 'fs';
 
 import PathManager from './config/pathManager.js';
 
-// ホットキーのデフォルト値
-// 注意: 実際のホットキーはSettingsServiceから動的に取得されます
-export const HOTKEY = 'Alt+Space';
-
 /**
  * デフォルトのdata.txtファイルを作成
  */

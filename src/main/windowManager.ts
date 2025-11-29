@@ -350,10 +350,3 @@ export function setFirstLaunchMode(isFirstLaunch: boolean): void {
   windowLogger.info(`初回起動モード: ${isFirstLaunch ? '有効' : '無効'}`);
 }
 
-/**
- * 初回起動モードの状態を取得する
- * @returns 初回起動モードかどうか
- */
-export function getFirstLaunchMode(): boolean {
-  return isFirstLaunchMode;
-}

@@ -1,9 +1,24 @@
+import path from 'path';
+
 import { test, expect } from '../fixtures/electron-app';
 import { TestUtils } from '../helpers/test-utils';
+import { ConfigFileHelper } from '../helpers/config-file-helper';
 
-// タブ表示OFF時のテスト
-test.describe('QuickDashLauncher - アイテム数表示機能テスト（タブOFF）', () => {
-  // fixtureのbeforeEachで'base'テンプレートが読み込まれる（showDataFileTabs: false）
+test.describe('QuickDashLauncher - アイテム数表示機能テスト', () => {
+  let configHelper: ConfigFileHelper;
+
+  test.beforeEach(async () => {
+    const configDir = path.join(process.cwd(), 'tests', 'fixtures', 'e2e', 'default');
+    configHelper = new ConfigFileHelper(configDir);
+
+    // テンプレートから強制的に復元して初期状態を保証
+    configHelper.loadTemplate('base');
+  });
+
+  test.afterEach(async () => {
+    // テンプレートから復元して次のテストのために初期状態に戻す
+    configHelper.loadTemplate('base');
+  });
 
   // ==================== タブ表示OFF時のアイテム数表示テスト ====================
 
@@ -13,7 +28,9 @@ test.describe('QuickDashLauncher - アイテム数表示機能テスト（タブ
     const utils = new TestUtils(mainWindow);
 
     await test.step('ページ読み込みとタブ表示OFF確認', async () => {
-      // beforeEachでbaseテンプレートを読み込み済み（showDataFileTabs: false）
+      // タブ機能を無効化（defaultはshowDataFileTabs: false）
+      configHelper.loadTemplateFile('default', 'settings.json');
+      await mainWindow.reload();
       await utils.waitForPageLoad();
 
       // タブバーが表示されていないことを確認
@@ -46,7 +63,8 @@ test.describe('QuickDashLauncher - アイテム数表示機能テスト（タブ
     const utils = new TestUtils(mainWindow);
 
     await test.step('ページ読み込み', async () => {
-      // beforeEachでbaseテンプレートを読み込み済み
+      configHelper.loadTemplateFile('default', 'settings.json');
+      await mainWindow.reload();
       await utils.waitForPageLoad();
       await utils.attachScreenshot(testInfo, '初期状態');
     });
@@ -89,21 +107,18 @@ test.describe('QuickDashLauncher - アイテム数表示機能テスト（タブ
       await utils.attachScreenshot(testInfo, 'クリア後のアイテム数');
     });
   });
-});
-
-// タブ表示ON時のテスト
-test.describe('QuickDashLauncher - アイテム数表示機能テスト（タブON）', () => {
-  test.beforeEach(async ({ configHelper }) => {
-    // マルチタブ機能を有効化
-    configHelper.loadTemplate('with-tabs');
-  });
 
   // ==================== タブ表示ON時のアイテム数表示テスト ====================
 
-  test('タブ表示ON時、各タブにアイテム数が表示される', async ({ mainWindow }, testInfo) => {
+  test('タブ表示ON時、各タブにアイテム数が表示される', async ({
+    mainWindow,
+  }, testInfo) => {
     const utils = new TestUtils(mainWindow);
 
-    await test.step('ページ読み込みとタブ表示ON確認', async () => {
+    await test.step('マルチタブ機能を有効化', async () => {
+      configHelper.loadTemplateFile('with-tabs', 'settings.json');
+      configHelper.loadTemplateFile('data2-base', 'data2.txt');
+      await mainWindow.reload();
       await utils.waitForPageLoad();
 
       // タブバーが表示されることを確認
@@ -147,7 +162,10 @@ test.describe('QuickDashLauncher - アイテム数表示機能テスト（タブ
   }, testInfo) => {
     const utils = new TestUtils(mainWindow);
 
-    await test.step('ページ読み込み', async () => {
+    await test.step('マルチタブ機能を有効化', async () => {
+      configHelper.loadTemplateFile('with-tabs', 'settings.json');
+      configHelper.loadTemplateFile('data2-base', 'data2.txt');
+      await mainWindow.reload();
       await utils.waitForPageLoad();
       await utils.attachScreenshot(testInfo, '初期状態');
     });
@@ -208,10 +226,15 @@ test.describe('QuickDashLauncher - アイテム数表示機能テスト（タブ
     });
   });
 
-  test('タブ切り替え時、各タブのアイテム数は維持される', async ({ mainWindow }, testInfo) => {
+  test('タブ切り替え時、各タブのアイテム数は維持される', async ({
+    mainWindow,
+  }, testInfo) => {
     const utils = new TestUtils(mainWindow);
 
-    await test.step('ページ読み込み', async () => {
+    await test.step('マルチタブ機能を有効化', async () => {
+      configHelper.loadTemplateFile('with-tabs', 'settings.json');
+      configHelper.loadTemplateFile('data2-base', 'data2.txt');
+      await mainWindow.reload();
       await utils.waitForPageLoad();
       await utils.attachScreenshot(testInfo, '初期状態');
     });
