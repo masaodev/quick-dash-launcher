@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-import { RawDataLine } from '../../common/types';
+import { LauncherItem, AppItem } from '../../common/types';
 import { debugInfo } from '../utils/debug';
 
 interface GroupItemSelectorModalProps {
@@ -18,8 +18,8 @@ const GroupItemSelectorModal: React.FC<GroupItemSelectorModalProps> = ({
   targetFile,
   excludeNames,
 }) => {
-  const [availableItems, setAvailableItems] = useState<string[]>([]);
-  const [filteredItems, setFilteredItems] = useState<string[]>([]);
+  const [availableItems, setAvailableItems] = useState<LauncherItem[]>([]);
+  const [filteredItems, setFilteredItems] = useState<LauncherItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const modalRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -100,7 +100,7 @@ const GroupItemSelectorModal: React.FC<GroupItemSelectorModalProps> = ({
       setFilteredItems(availableItems);
     } else {
       const query = searchQuery.toLowerCase();
-      const filtered = availableItems.filter((name) => name.toLowerCase().includes(query));
+      const filtered = availableItems.filter((item) => item.name.toLowerCase().includes(query));
       setFilteredItems(filtered);
     }
   }, [searchQuery, availableItems]);
@@ -108,21 +108,38 @@ const GroupItemSelectorModal: React.FC<GroupItemSelectorModalProps> = ({
   const loadAvailableItems = async () => {
     try {
       debugInfo('Loading available items for file:', targetFile);
-      const rawLines: RawDataLine[] = await window.electronAPI.loadRawDataFiles();
+      const allItems: AppItem[] = await window.electronAPI.loadDataFiles();
 
-      // 対象ファイルのアイテムのみを抽出
-      const itemsInFile = rawLines
-        .filter((line: RawDataLine) => line.sourceFile === targetFile && line.type === 'item')
-        .map((line: RawDataLine) => {
-          // アイテム名を抽出（カンマ区切りの最初の要素）
-          const parts = line.content.split(',');
-          return parts[0]?.trim() || '';
-        })
-        .filter((name: string) => name !== ''); // 空の名前を除外
+      // 対象ファイルのLauncherItemのみを抽出（グループアイテムとフォルダ取込展開アイテムは除外）
+      const itemsInFile = allItems.filter((item: AppItem) => {
+        // グループアイテムは除外
+        if (item.type === 'group') {
+          return false;
+        }
+        const launcherItem = item as LauncherItem;
 
-      debugInfo('Available items:', itemsInFile);
-      setAvailableItems(itemsInFile);
-      setFilteredItems(itemsInFile);
+        // フォルダ取込アイテムから展開されたアイテムは除外
+        if (launcherItem.isDirExpanded) {
+          return false;
+        }
+
+        // 対象ファイルのアイテムのみ
+        return launcherItem.sourceFile === targetFile;
+      }) as LauncherItem[];
+
+      // アイコンを読み込む
+      const iconCache = await window.electronAPI.loadCachedIcons(itemsInFile);
+      const itemsWithIcons = itemsInFile.map((item) => ({
+        ...item,
+        icon: iconCache[item.path] || item.icon,
+      }));
+
+      debugInfo(
+        'Available items:',
+        itemsWithIcons.map((item) => item.name)
+      );
+      setAvailableItems(itemsWithIcons);
+      setFilteredItems(itemsWithIcons);
     } catch (error) {
       console.error('Error loading available items:', error);
     }
@@ -135,6 +152,23 @@ const GroupItemSelectorModal: React.FC<GroupItemSelectorModalProps> = ({
 
   const isExcluded = (itemName: string) => {
     return excludeNames.includes(itemName);
+  };
+
+  const getDefaultIcon = (item: LauncherItem) => {
+    switch (item.type) {
+      case 'url':
+        return '🌐';
+      case 'folder':
+        return '📁';
+      case 'app':
+        return '⚙️';
+      case 'file':
+        return '📄';
+      case 'customUri':
+        return '🔗';
+      default:
+        return '❓';
+    }
   };
 
   if (!isOpen) return null;
@@ -165,15 +199,22 @@ const GroupItemSelectorModal: React.FC<GroupItemSelectorModalProps> = ({
               {searchQuery ? '検索結果がありません' : 'このファイルにはアイテムがありません'}
             </div>
           ) : (
-            filteredItems.map((itemName, index) => {
-              const excluded = isExcluded(itemName);
+            filteredItems.map((item, index) => {
+              const excluded = isExcluded(item.name);
               return (
                 <div
                   key={index}
                   className={`item-row ${excluded ? 'excluded' : ''}`}
-                  onClick={() => !excluded && handleSelectItem(itemName)}
+                  onClick={() => !excluded && handleSelectItem(item.name)}
                 >
-                  <span className="item-name">{itemName}</span>
+                  <span className="item-icon">
+                    {item.icon ? (
+                      <img src={item.icon} alt="" width="24" height="24" />
+                    ) : (
+                      getDefaultIcon(item)
+                    )}
+                  </span>
+                  <span className="item-name">{item.name}</span>
                   {excluded && <span className="excluded-label">追加済み</span>}
                 </div>
               );

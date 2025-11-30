@@ -107,6 +107,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
             path: '',
             type: 'app',
             targetTab: defaultTab,
+            targetFile: defaultTab,
             itemCategory: 'item',
           },
         ]);
@@ -417,6 +418,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
           path: filePath,
           type: itemType,
           targetTab: defaultTab,
+          targetFile: defaultTab,
           folderProcessing: itemType === 'folder' ? 'folder' : undefined,
           icon,
           itemCategory: 'item',
