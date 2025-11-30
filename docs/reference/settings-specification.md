@@ -40,7 +40,7 @@ QuickDashLauncherの設定項目の完全な仕様です。
 | `backupRetention` | `number` | `20` | バックアップ保存件数上限 |
 | `showDataFileTabs` | `boolean` | `false` | タブ表示の有効/無効 |
 | `defaultFileTab` | `string` | `'data.txt'` | デフォルトで表示するタブ |
-| `dataFileTabs` | `DataFileTab[]` | `[{ files: ['data.txt'], name: 'メイン', defaultFile: 'data.txt' }]` | タブ設定 |
+| `dataFileTabs` | `DataFileTab[]` | `[{ files: ['data.txt'], name: 'メイン' }]` | タブ設定 |
 | `windowPositionMode` | `WindowPositionMode` | `'center'` | ウィンドウ表示位置モード |
 | `windowPositionX` | `number` | `0` | 固定位置のX座標 |
 | `windowPositionY` | `number` | `0` | 固定位置のY座標 |
@@ -296,7 +296,7 @@ Ctrl+Alt+0
 |------|-----|
 | **キー** | `dataFileTabs` |
 | **型** | `DataFileTab[]` (配列) |
-| **デフォルト値** | `[{ files: ['data.txt'], name: 'メイン', defaultFile: 'data.txt' }]` |
+| **デフォルト値** | `[{ files: ['data.txt'], name: 'メイン' }]` |
 | **説明** | データファイルのタブ名と表示順序を管理。1つのタブで複数のデータファイルを統合表示可能 |
 
 **型定義:**
@@ -307,14 +307,14 @@ interface DataFileTab {
                          // 例: ['data.txt'] → 単一ファイル
                          //     ['data2.txt', 'data3.txt'] → 複数ファイルを統合表示
   name: string;          // タブに表示する名前（例: 'メイン', 'サブ1', 'プライベート'）
-  defaultFile?: string;  // アイテム登録時のデフォルト保存先ファイル（オプション）
-                         // 未設定の場合はfiles[0]（最初のファイル）を使用
+  
+                         
 }
 ```
 
 **デフォルト値:**
 ```typescript
-[{ files: ['data.txt'], name: 'メイン', defaultFile: 'data.txt' }]
+[{ files: ['data.txt'], name: 'メイン' }]
 ```
 
 **設定例:**
@@ -337,8 +337,7 @@ interface DataFileTab {
   - 配列に含まれているファイル名の物理ファイルが存在しない場合、自動的に作成されます
   - 物理ファイルが存在しても、`dataFileTabs`配列に含まれていない場合はタブに表示されません
 - **デフォルト保存先**:
-  - `defaultFile`フィールドが設定されている場合、アイテム登録時のデフォルト保存先として使用されます
-  - `defaultFile`が未設定の場合は、`files[0]`（最初のファイル）がデフォルト保存先になります
+  - アイテム登録時のデフォルト保存先は、タブの最初のファイル（`files[0]`）が使用されます
 - **デフォルトタブ名**:
   - `name`フィールドが空文字列の場合、ファイル名に応じたデフォルト名が表示されます
     - `data.txt` → 「メイン」
@@ -359,8 +358,7 @@ interface DataFileTab {
 - アイテム登録モーダル（➕ボタン、ドラッグ&ドロップ、編集）で保存先を選択する際、`dataFileTabs`配列の内容が選択肢として表示されます
 - 選択肢の表示順序は配列の順序と同じです
 - 新規登録時のデフォルト保存先:
-  - タブの`defaultFile`が設定されている場合: そのファイル
-  - `defaultFile`が未設定の場合: `files[0]`（タブの最初のファイル）
+  - タブの最初のファイル（`files[0]`）が使用されます
 - 編集時のデフォルト保存先は、アイテムが現在保存されているデータファイルです
 - 1つのタブに複数ファイルが関連付けられている場合、保存先選択ドロップダウンには個別のファイル名も表示されます
 
@@ -452,8 +450,8 @@ data2_2024-01-01T12-00-00.txt
   "showDataFileTabs": false,
   "defaultFileTab": "data.txt",
   "dataFileTabs": [
-    { "files": ["data.txt"], "name": "仕事用", "defaultFile": "data.txt" },
-    { "files": ["data2.txt", "data3.txt"], "name": "プライベート", "defaultFile": "data2.txt" }
+    { "files": ["data.txt"], "name": "仕事用" },
+    { "files": ["data2.txt", "data3.txt"], "name": "プライベート" }
   ],
   "windowPositionMode": "center",
   "windowPositionX": 0,

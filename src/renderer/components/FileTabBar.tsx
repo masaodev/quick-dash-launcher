@@ -43,8 +43,8 @@ const FileTabBar: React.FC<FileTabBarProps> = ({
 
   // タブグループの代表ファイル名を取得（クリック時に使用）
   const getRepresentativeFile = (tabConfig: DataFileTab): string => {
-    // defaultFileが設定されていればそれを使用、なければ最初のファイル
-    return tabConfig.defaultFile || tabConfig.files[0] || 'data.txt';
+    // 最初のファイルを使用
+    return tabConfig.files[0] || 'data.txt';
   };
 
   return (

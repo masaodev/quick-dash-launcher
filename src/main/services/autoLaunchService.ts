@@ -36,14 +36,7 @@ export class AutoLaunchService {
     if (!appDataPath) {
       throw new Error('APPDATA environment variable is not set');
     }
-    return path.join(
-      appDataPath,
-      'Microsoft',
-      'Windows',
-      'Start Menu',
-      'Programs',
-      'Startup'
-    );
+    return path.join(appDataPath, 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Startup');
   }
 
   /**
