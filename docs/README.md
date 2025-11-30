@@ -11,6 +11,7 @@ docs/
 ├── reference/           # 仕様書・リファレンス
 │   ├── architecture/    # アーキテクチャ
 │   └── screens/         # 画面仕様書
+├── testing/             # テスト関連ドキュメント
 └── templates/           # テンプレート
 ```
 
@@ -34,7 +35,7 @@ docs/
 - `getting-started.md` - プロジェクトのセットアップ
 - `development.md` - 開発ガイドと実装詳細
 - `build-and-deploy.md` - ビルドとデプロイ
-- `testing.md` - テストチェックリスト
+- `manual-checklist.md` - テストチェックリスト（testing/ディレクトリに移動）
 - `project-overview.md` - プロジェクト概要
 - `github-workflow.md` - Git操作とPRフロー
 
@@ -134,6 +135,28 @@ docs/
 - `screen-list.md` - 画面一覧（インデックス）
 - `main-window.md` - メインウィンドウ仕様
 - `bookmark-import-modal.md` - ブックマークインポート仕様
+
+---
+
+### 🧪 testing/ - テスト関連ドキュメント
+
+**目的**: テストの実行方法、フィクスチャ、管理方針を説明
+
+**対象読者**: 開発者
+
+**記載内容**:
+- 手動テストのチェックリスト
+- E2Eテスト（Playwright）の実行方法
+- 単体テスト（Vitest）の実行方法
+- テストフィクスチャの使い方
+- Git管理方針
+
+**例**:
+- `README.md` - テストドキュメントの概要
+- `manual-checklist.md` - 手動テストチェックリスト
+- `e2e-guide.md` - E2Eテストガイド
+- `fixtures-guide.md` - フィクスチャガイド
+- `git-management.md` - Git管理方針
 
 ---
 
