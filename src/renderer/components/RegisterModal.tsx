@@ -49,7 +49,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
   const [items, setItems] = useState<RegisterItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [customIconPreviews, setCustomIconPreviews] = useState<{ [index: number]: string }>({});
-  const [groupItemNamesInput, setGroupItemNamesInput] = useState<{ [index: number]: string }>({});
+  const [_groupItemNamesInput, setGroupItemNamesInput] = useState<{ [index: number]: string }>({});
   const [availableTabs, setAvailableTabs] = useState<DataFileTab[]>([]);
   const [errors, setErrors] = useState<{
     [index: number]: { name?: string; path?: string; groupItemNames?: string };
@@ -260,6 +260,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
         type: itemType,
         args: args || undefined,
         targetTab: defaultTab,
+        targetFile: line.sourceFile,
         folderProcessing: itemType === 'folder' ? 'folder' : undefined,
         customIcon: customIcon || line.customIcon,
         itemCategory: 'item',
@@ -282,6 +283,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
           path: '', // グループはパス不要
           type: 'app', // ダミー値
           targetTab: defaultTab,
+          targetFile: line.sourceFile,
           itemCategory: 'group',
           groupItemNames: itemNames,
         };
@@ -334,6 +336,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
           path,
           type: 'folder',
           targetTab: defaultTab,
+          targetFile: line.sourceFile,
           folderProcessing: 'expand',
           dirOptions,
           itemCategory: 'dir',
@@ -346,6 +349,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
         path: line.content || '',
         type: 'file',
         targetTab: defaultTab,
+        targetFile: line.sourceFile,
         itemCategory: 'item',
       };
     }

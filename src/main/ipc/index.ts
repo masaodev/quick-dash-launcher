@@ -30,7 +30,7 @@ export function setupIPCHandlers(
   setFirstLaunchMode: (isFirstLaunch: boolean) => void
 ) {
   setupDataHandlers(configFolder);
-  setupItemHandlers(getMainWindow);
+  setupItemHandlers(getMainWindow, getWindowPinMode);
   setupConfigHandlers(configFolder);
   setupIconHandlers(faviconsFolder, iconsFolder, extensionsFolder, getMainWindow);
   setupWindowHandlers(

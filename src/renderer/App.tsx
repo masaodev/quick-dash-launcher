@@ -34,7 +34,7 @@ const App: React.FC = () => {
 
   // タブ表示関連の状態
   const [showDataFileTabs, setShowDataFileTabs] = useState(false);
-  const [dataFiles, setDataFiles] = useState<string[]>([]); // 後方互換性のため保持
+  const [_dataFiles, setDataFiles] = useState<string[]>([]); // 後方互換性のため保持
   const [activeTab, setActiveTab] = useState<string>('data.txt');
   const [dataFileTabs, setDataFileTabs] = useState<DataFileTab[]>([]);
 
@@ -568,11 +568,13 @@ const App: React.FC = () => {
       // 編集モードの場合
       const item = items[0];
 
-      // タブ（保存先）が変更されたかチェック
-      const isTabChanged = item.targetTab !== editingItem.sourceFile;
+      // 保存先ファイルが変更されたかチェック
+      // targetFileが指定されている場合はそれを優先、なければtargetTabを使用
+      const targetFile = item.targetFile || item.targetTab;
+      const isFileChanged = targetFile !== editingItem.sourceFile;
 
-      if (isTabChanged) {
-        // タブが変更された場合：元のタブから削除 + 新しいタブに登録
+      if (isFileChanged) {
+        // ファイルが変更された場合：元のファイルから削除 + 新しいファイルに登録
         await window.electronAPI.deleteItems([
           {
             sourceFile: editingItem.sourceFile,
@@ -581,7 +583,7 @@ const App: React.FC = () => {
         ]);
         await window.electronAPI.registerItems([item]);
       } else {
-        // タブが変更されていない場合：従来の更新処理
+        // ファイルが変更されていない場合：従来の更新処理
         // フォルダ取込ディレクティブの編集の場合
         if (editingItem.type === 'directive' && item.itemCategory === 'dir') {
           // ディレクティブ形式でRawDataLineを更新
