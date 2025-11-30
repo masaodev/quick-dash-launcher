@@ -219,6 +219,22 @@ QuickDashLauncherではCSS変数ベースの統一されたデザインシステ
   - フォルダ取込アイテム：フォルダパス＋オプション（例：`C:\Users\Documents filter:*.txt`）
   - 編集時の自動CSV形式変換機能
 
+### ダイアログコンポーネント
+ネイティブダイアログ（`window.alert()`, `window.confirm()`, `dialog.showOpenDialog()`）の代替として、カスタムReactコンポーネントを使用しています。
+
+- **AlertDialog.tsx**: 通知・警告・エラー表示
+  - 4つのタイプ: `info`, `error`, `warning`, `success`
+  - ESCキーとEnterキーで閉じる
+  - `data-testid`属性によるE2Eテスト対応
+- **ConfirmDialog.tsx**: ユーザー確認ダイアログ
+  - ESCキー（キャンセル）とEnterキー（確認）のサポート
+  - `danger`モード: 破壊的操作時の警告スタイル
+  - カスタマイズ可能なボタンテキスト
+- **FilePickerDialog.tsx**: ファイル選択ダイアログ
+  - Electronの`dialog.showOpenDialog()`をラップ
+  - ファイルタイプフィルター（HTML、Image）
+  - 統一されたUIでのファイル選択
+
 ### 設定メニュー
 設定関連機能は⚙ボタンクリックで表示されるドロップダウンメニューに集約:
 - ⚙️ 基本設定

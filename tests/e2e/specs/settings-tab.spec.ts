@@ -414,5 +414,4 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
       await adminWindow.close();
     }
   });
-
 });

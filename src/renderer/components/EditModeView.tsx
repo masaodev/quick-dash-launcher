@@ -4,6 +4,7 @@ import { RawDataLine, SimpleBookmarkItem, DataFileTab } from '@common/types';
 import EditableRawItemList from './EditableRawItemList';
 import RegisterModal, { RegisterItem } from './RegisterModal';
 import BookmarkImportModal from './BookmarkImportModal';
+import ConfirmDialog from './ConfirmDialog';
 
 interface EditModeViewProps {
   rawLines: RawDataLine[];
@@ -33,6 +34,19 @@ const EditModeView: React.FC<EditModeViewProps> = ({
   // タブとファイル選択用の状態
   const [selectedTabIndex, setSelectedTabIndex] = useState<number>(0);
   const [selectedDataFile, setSelectedDataFile] = useState<string>('data.txt');
+
+  // ConfirmDialog状態管理
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    message: string;
+    onConfirm: () => void;
+    danger?: boolean;
+  }>({
+    isOpen: false,
+    message: '',
+    onConfirm: () => {},
+    danger: false,
+  });
 
   const handleLineEdit = (line: RawDataLine) => {
     const lineKey = `${line.sourceFile}_${line.lineNumber}`;
@@ -228,9 +242,15 @@ const EditModeView: React.FC<EditModeViewProps> = ({
 
   const handleExitEditMode = () => {
     if (hasUnsavedChanges) {
-      if (window.confirm('未保存の変更があります。アイテム管理を終了しますか？')) {
-        onExitEditMode();
-      }
+      setConfirmDialog({
+        isOpen: true,
+        message: '未保存の変更があります。アイテム管理を終了しますか？',
+        onConfirm: () => {
+          setConfirmDialog({ ...confirmDialog, isOpen: false });
+          onExitEditMode();
+        },
+        danger: true,
+      });
     } else {
       onExitEditMode();
     }
@@ -259,13 +279,17 @@ const EditModeView: React.FC<EditModeViewProps> = ({
   // タブ変更時の未保存チェック
   const handleTabChange = (newTabIndex: number) => {
     if (hasUnsavedChanges) {
-      if (
-        window.confirm('未保存の変更があります。タブを切り替えると変更が失われます。続行しますか？')
-      ) {
-        setSelectedTabIndex(newTabIndex);
-        setHasUnsavedChanges(false);
-        setEditedLines(new Map());
-      }
+      setConfirmDialog({
+        isOpen: true,
+        message: '未保存の変更があります。タブを切り替えると変更が失われます。続行しますか？',
+        onConfirm: () => {
+          setConfirmDialog({ ...confirmDialog, isOpen: false });
+          setSelectedTabIndex(newTabIndex);
+          setHasUnsavedChanges(false);
+          setEditedLines(new Map());
+        },
+        danger: true,
+      });
     } else {
       setSelectedTabIndex(newTabIndex);
     }
@@ -274,15 +298,17 @@ const EditModeView: React.FC<EditModeViewProps> = ({
   // ファイル変更時の未保存チェック
   const handleFileChange = (newFile: string) => {
     if (hasUnsavedChanges) {
-      if (
-        window.confirm(
-          '未保存の変更があります。ファイルを切り替えると変更が失われます。続行しますか？'
-        )
-      ) {
-        setSelectedDataFile(newFile);
-        setHasUnsavedChanges(false);
-        setEditedLines(new Map());
-      }
+      setConfirmDialog({
+        isOpen: true,
+        message: '未保存の変更があります。ファイルを切り替えると変更が失われます。続行しますか？',
+        onConfirm: () => {
+          setConfirmDialog({ ...confirmDialog, isOpen: false });
+          setSelectedDataFile(newFile);
+          setHasUnsavedChanges(false);
+          setEditedLines(new Map());
+        },
+        danger: true,
+      });
     } else {
       setSelectedDataFile(newFile);
     }
@@ -434,11 +460,16 @@ const EditModeView: React.FC<EditModeViewProps> = ({
               const lineKey = `${line.sourceFile}_${line.lineNumber}`;
               return selectedItems.has(lineKey);
             });
-            if (
-              selectedLines.length > 0 &&
-              window.confirm(`${selectedLines.length}行を削除しますか？`)
-            ) {
-              handleDeleteLines(selectedLines);
+            if (selectedLines.length > 0) {
+              setConfirmDialog({
+                isOpen: true,
+                message: `${selectedLines.length}行を削除しますか？`,
+                onConfirm: () => {
+                  setConfirmDialog({ ...confirmDialog, isOpen: false });
+                  handleDeleteLines(selectedLines);
+                },
+                danger: true,
+              });
             }
           }}
           className="delete-lines-button"
@@ -514,10 +545,18 @@ const EditModeView: React.FC<EditModeViewProps> = ({
             const duplicateCount = sortedLines.length - deduplicatedLines.length;
 
             if (duplicateCount > 0) {
-              const confirmed = window.confirm(
-                `整列処理が完了しました。\n\n${duplicateCount}件の重複行が見つかりました。\n重複行を削除しますか？`
-              );
-              handleSort(confirmed ? deduplicatedLines : sortedLines);
+              // 重複がある場合、まず整列だけ実行してからダイアログを表示
+              handleSort(sortedLines);
+              setConfirmDialog({
+                isOpen: true,
+                message: `整列処理が完了しました。\n\n${duplicateCount}件の重複行が見つかりました。\n重複行を削除しますか？`,
+                onConfirm: () => {
+                  setConfirmDialog({ ...confirmDialog, isOpen: false });
+                  // 重複削除後の行で再度整列
+                  handleSort(deduplicatedLines);
+                },
+                danger: false,
+              });
             } else {
               handleSort(sortedLines);
             }
@@ -569,6 +608,14 @@ const EditModeView: React.FC<EditModeViewProps> = ({
         isOpen={isBookmarkModalOpen}
         onClose={() => setIsBookmarkModalOpen(false)}
         onImport={handleBookmarkImport}
+      />
+
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        onClose={() => setConfirmDialog({ ...confirmDialog, isOpen: false })}
+        onConfirm={confirmDialog.onConfirm}
+        message={confirmDialog.message}
+        danger={confirmDialog.danger}
       />
     </div>
   );

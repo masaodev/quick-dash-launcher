@@ -4,6 +4,7 @@ import { LauncherItem, RawDataLine, DataFileTab } from '../../common/types';
 import { debugInfo, logWarn } from '../utils/debug';
 
 import GroupItemSelectorModal from './GroupItemSelectorModal';
+import FilePickerDialog from './FilePickerDialog';
 
 interface RegisterModalProps {
   isOpen: boolean;
@@ -57,6 +58,15 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
   const [selectorModalOpen, setSelectorModalOpen] = useState(false);
   const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
+
+  // FilePickerDialog状態管理
+  const [filePickerState, setFilePickerState] = useState<{
+    isOpen: boolean;
+    itemIndex: number | null;
+  }>({
+    isOpen: false,
+    itemIndex: null,
+  });
 
   useEffect(() => {
     if (!isOpen) {
@@ -485,28 +495,33 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     return ext ? basename.slice(0, -ext.length) : basename;
   };
 
-  // カスタムアイコンを選択
-  const handleSelectCustomIcon = async (index: number) => {
+  // カスタムアイコン選択ダイアログを開く
+  const handleSelectCustomIcon = (index: number) => {
+    setFilePickerState({
+      isOpen: true,
+      itemIndex: index,
+    });
+  };
+
+  // カスタムアイコンファイルが選択されたときの処理
+  const handleCustomIconFileSelected = async (filePath: string) => {
+    if (filePickerState.itemIndex === null) return;
+
     try {
-      const selectedFilePath = await window.electronAPI.selectCustomIconFile();
-      if (selectedFilePath) {
-        const item = items[index];
-        const itemIdentifier = item.path;
-        const customIconFileName = await window.electronAPI.saveCustomIcon(
-          selectedFilePath,
-          itemIdentifier
-        );
+      const index = filePickerState.itemIndex;
+      const item = items[index];
+      const itemIdentifier = item.path;
+      const customIconFileName = await window.electronAPI.saveCustomIcon(filePath, itemIdentifier);
 
-        // アイテムのcustomIconを更新
-        const newItems = [...items];
-        newItems[index] = { ...newItems[index], customIcon: customIconFileName };
-        setItems(newItems);
+      // アイテムのcustomIconを更新
+      const newItems = [...items];
+      newItems[index] = { ...newItems[index], customIcon: customIconFileName };
+      setItems(newItems);
 
-        // プレビュー用にアイコンを取得
-        const iconData = await window.electronAPI.getCustomIcon(customIconFileName);
-        if (iconData) {
-          setCustomIconPreviews((prev) => ({ ...prev, [index]: iconData }));
-        }
+      // プレビュー用にアイコンを取得
+      const iconData = await window.electronAPI.getCustomIcon(customIconFileName);
+      if (iconData) {
+        setCustomIconPreviews((prev) => ({ ...prev, [index]: iconData }));
       }
     } catch (error) {
       console.error('カスタムアイコン選択エラー:', error);
@@ -1106,6 +1121,16 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
           excludeNames={items[editingItemIndex]?.groupItemNames || []}
         />
       )}
+
+      {/* カスタムアイコンファイル選択ダイアログ */}
+      <FilePickerDialog
+        isOpen={filePickerState.isOpen}
+        onClose={() => setFilePickerState({ isOpen: false, itemIndex: null })}
+        onFileSelect={handleCustomIconFileSelected}
+        title="カスタムアイコンを選択"
+        fileTypes="image"
+        description="アイコンとして使用する画像ファイルを選択してください。"
+      />
     </>
   );
 };

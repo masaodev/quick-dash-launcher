@@ -17,6 +17,7 @@ import IconProgressBar from './components/IconProgressBar';
 import FileTabBar from './components/FileTabBar';
 import ItemCountDisplay from './components/ItemCountDisplay';
 import { FirstLaunchSetup } from './components/FirstLaunchSetup';
+import AlertDialog from './components/AlertDialog';
 import { filterItems } from './utils/dataParser';
 import { debugLog, debugInfo } from './utils/debug';
 import { useIconProgress } from './hooks/useIconProgress';
@@ -31,6 +32,17 @@ const App: React.FC = () => {
   const [windowPinMode, setWindowPinMode] = useState<WindowPinMode>('normal');
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
+
+  // AlertDialog状態管理
+  const [alertDialog, setAlertDialog] = useState<{
+    isOpen: boolean;
+    message: string;
+    type?: 'info' | 'error' | 'warning' | 'success';
+  }>({
+    isOpen: false,
+    message: '',
+    type: 'info',
+  });
 
   // タブ表示関連の状態
   const [showDataFileTabs, setShowDataFileTabs] = useState(false);
@@ -146,9 +158,12 @@ const App: React.FC = () => {
       if (paths.length > 0) {
         openWithDroppedPaths(paths);
       } else {
-        alert(
-          'ファイルパスを取得できませんでした。\nファイルを直接エクスプローラーからドラッグしてください。'
-        );
+        setAlertDialog({
+          isOpen: true,
+          message:
+            'ファイルパスを取得できませんでした。\nファイルを直接エクスプローラーからドラッグしてください。',
+          type: 'error',
+        });
       }
     };
 
@@ -747,7 +762,11 @@ const App: React.FC = () => {
       setIsFirstLaunch(false);
     } catch (error) {
       console.error('初回設定の保存に失敗しました:', error);
-      alert('設定の保存に失敗しました。');
+      setAlertDialog({
+        isOpen: true,
+        message: '設定の保存に失敗しました。',
+        type: 'error',
+      });
     }
   };
 
@@ -860,6 +879,13 @@ const App: React.FC = () => {
             <div className="drag-message">ファイルをドロップして登録</div>
           </div>
         )}
+
+        <AlertDialog
+          isOpen={alertDialog.isOpen}
+          onClose={() => setAlertDialog({ ...alertDialog, isOpen: false })}
+          message={alertDialog.message}
+          type={alertDialog.type}
+        />
       </>
     </div>
   );

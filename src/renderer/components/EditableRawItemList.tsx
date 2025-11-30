@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 
 import { RawDataLine } from '../../common/types';
 
+import ConfirmDialog from './ConfirmDialog';
+
 interface EditableRawItemListProps {
   rawLines: RawDataLine[];
   selectedItems: Set<string>;
@@ -27,6 +29,19 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
 }) => {
   const [editingCell, setEditingCell] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState('');
+
+  // ConfirmDialog状態管理
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    message: string;
+    onConfirm: () => void;
+    danger?: boolean;
+  }>({
+    isOpen: false,
+    message: '',
+    onConfirm: () => {},
+    danger: false,
+  });
 
   const getLineKey = (line: RawDataLine) => `${line.sourceFile}_${line.lineNumber}`;
 
@@ -500,9 +515,15 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
                     <button
                       className="delete-button"
                       onClick={() => {
-                        if (window.confirm(`行 ${line.lineNumber} を削除しますか？`)) {
-                          onDeleteLines([line]);
-                        }
+                        setConfirmDialog({
+                          isOpen: true,
+                          message: `行 ${line.lineNumber} を削除しますか？`,
+                          onConfirm: () => {
+                            setConfirmDialog({ ...confirmDialog, isOpen: false });
+                            onDeleteLines([line]);
+                          },
+                          danger: true,
+                        });
                       }}
                       title="削除"
                     >
@@ -517,6 +538,14 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
       </table>
 
       {rawLines.length === 0 && <div className="no-items">データファイルに行がありません</div>}
+
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        onClose={() => setConfirmDialog({ ...confirmDialog, isOpen: false })}
+        onConfirm={confirmDialog.onConfirm}
+        message={confirmDialog.message}
+        danger={confirmDialog.danger}
+      />
     </div>
   );
 };
