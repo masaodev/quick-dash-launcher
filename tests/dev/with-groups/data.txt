@@ -18,16 +18,16 @@ VS Code,vscode://
 // ========== グループアイテム ==========
 
 // 開発環境を一括起動
-開発環境スタート,GROUP:VS Code,GitHub,Stack Overflow,メモ帳
+group,開発環境スタート,VS Code,GitHub,Stack Overflow,メモ帳
 
 // Web開発用
-Web開発セット,GROUP:VS Code,MDN,GitHub,Google
+group,Web開発セット,VS Code,MDN,GitHub,Google
 
 // ドキュメント作成用
-ドキュメント作成,GROUP:メモ帳,エクスプローラー,電卓
+group,ドキュメント作成,メモ帳,エクスプローラー,電卓
 
 // 調査・学習用
-調査セット,GROUP:Google,Stack Overflow,Qiita,MDN
+group,調査セット,Google,Stack Overflow,Qiita,MDN
 
 // すべてのブラウザを開く
-全ブラウザ,GROUP:GitHub,Google,Stack Overflow,Qiita,MDN
+group,全ブラウザ,GitHub,Google,Stack Overflow,Qiita,MDN
