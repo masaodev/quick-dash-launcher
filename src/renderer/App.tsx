@@ -738,8 +738,10 @@ const App: React.FC = () => {
   const handleFirstLaunchComplete = async (hotkey: string) => {
     try {
       // ホットキーを設定（設定ファイルが自動的に作成される）
+      // dataFileTabsも明示的に設定して、data.txtタブが含まれるようにする
       await window.electronAPI.setMultipleSettings({
         hotkey: hotkey,
+        dataFileTabs: [{ files: ['data.txt'], name: 'メイン' }],
       });
       await window.electronAPI.changeHotkey(hotkey);
 
