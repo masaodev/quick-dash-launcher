@@ -276,10 +276,20 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         const githubRow = adminWindow.locator('.raw-item-row', { hasText: 'GitHub' });
         const deleteButton = githubRow.locator('button.delete-button');
 
-        // confirmダイアログを受け入れる
-        adminWindow.on('dialog', (dialog) => dialog.accept());
+        // 削除ボタンをクリック（カスタムConfirmDialogが表示される）
         await deleteButton.click();
         await adminUtils.wait(300);
+
+        // カスタムConfirmDialogの確認ボタンをクリック
+        const confirmButton = adminWindow.locator('[data-testid="confirm-dialog-confirm-button"]');
+        await expect(confirmButton).toBeVisible();
+        await confirmButton.click();
+        await adminUtils.wait(300);
+
+        // ダイアログが閉じたことを確認
+        const confirmDialog = adminWindow.locator('.confirm-dialog');
+        await expect(confirmDialog).not.toBeVisible();
+
         await adminUtils.attachScreenshot(testInfo, '削除後');
 
         // GitHubアイテムが表示されなくなったことを確認
@@ -330,10 +340,20 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
       await test.step('選択したアイテムを削除ボタンをクリック', async () => {
         const deleteSelectedButton = adminWindow.locator('button.delete-lines-button');
 
-        // confirmダイアログを受け入れる
-        adminWindow.on('dialog', (dialog) => dialog.accept());
+        // 削除ボタンをクリック（カスタムConfirmDialogが表示される）
         await deleteSelectedButton.click();
         await adminUtils.wait(300);
+
+        // カスタムConfirmDialogの確認ボタンをクリック
+        const confirmButton = adminWindow.locator('[data-testid="confirm-dialog-confirm-button"]');
+        await expect(confirmButton).toBeVisible();
+        await confirmButton.click();
+        await adminUtils.wait(300);
+
+        // ダイアログが閉じたことを確認
+        const confirmDialog = adminWindow.locator('.confirm-dialog');
+        await expect(confirmDialog).not.toBeVisible();
+
         await adminUtils.attachScreenshot(testInfo, '一括削除後');
 
         // アイテムが削除されたことを確認
@@ -380,10 +400,20 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
       await test.step('整列ボタンをクリック', async () => {
         const sortButton = adminWindow.locator('button.sort-button');
 
-        // confirmダイアログを受け入れる（重複削除の確認）
-        adminWindow.on('dialog', (dialog) => dialog.accept());
+        // 整列ボタンをクリック
         await sortButton.click();
         await adminUtils.wait(500);
+
+        // 重複削除の確認ダイアログが表示された場合は閉じる
+        const confirmDialog = adminWindow.locator('.confirm-dialog');
+        const isDialogVisible = await confirmDialog.isVisible().catch(() => false);
+        if (isDialogVisible) {
+          // OKボタンをクリックして重複削除を実行
+          const confirmButton = adminWindow.locator('[data-testid="confirm-dialog-confirm-button"]');
+          await confirmButton.click();
+          await adminUtils.wait(300);
+        }
+
         await adminUtils.attachScreenshot(testInfo, '整列後');
 
         // 未保存状態になったことを確認
