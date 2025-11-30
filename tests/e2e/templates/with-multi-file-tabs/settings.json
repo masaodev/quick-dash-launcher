@@ -15,8 +15,7 @@
 	"dataFileTabs": [
 		{
 			"files": ["data.txt", "data3.txt"],
-			"name": "統合タブ",
-			"defaultFile": "data.txt"
+			"name": "統合タブ"
 		},
 		{
 			"files": ["data2.txt"],

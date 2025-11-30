@@ -131,8 +131,6 @@ export interface DataFileTab {
   files: string[];
   /** タブに表示する名前（例: 'メイン', 'サブ1'） */
   name: string;
-  /** アイテム登録時のデフォルト保存先ファイル（オプション、未設定の場合はfiles[0]を使用） */
-  defaultFile?: string;
 }
 
 /**

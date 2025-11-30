@@ -991,11 +991,8 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                           const newItems = [...items];
                           newItems[index] = { ...newItems[index], targetTab: e.target.value };
 
-                          // タブに複数ファイルがある場合、デフォルトファイルまたは最初のファイルを設定
-                          if (selectedTab && selectedTab.files.length > 1) {
-                            const defaultFile = selectedTab.defaultFile || selectedTab.files[0];
-                            newItems[index] = { ...newItems[index], targetFile: defaultFile };
-                          } else if (selectedTab && selectedTab.files.length === 1) {
+                          // タブに複数ファイルがある場合、最初のファイルを設定
+                          if (selectedTab && selectedTab.files.length > 0) {
                             newItems[index] = {
                               ...newItems[index],
                               targetFile: selectedTab.files[0],

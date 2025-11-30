@@ -256,7 +256,6 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
         const secondTab = settings.dataFileTabs?.[1];
         expect(secondTab).toBeDefined();
         expect(secondTab?.files).toBeDefined();
-        expect(secondTab?.defaultFile).toBeDefined();
       });
     } finally {
       await adminWindow.close();
@@ -346,7 +345,6 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
         const secondTab = settings.dataFileTabs?.[1];
         expect(secondTab).toBeDefined();
         expect(secondTab?.files.length).toBeGreaterThanOrEqual(2);
-        expect(secondTab?.defaultFile).toBeDefined();
       });
     } finally {
       await adminWindow.close();
@@ -431,9 +429,9 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
       const settings = configHelper.readSettings();
       settings.showDataFileTabs = true;
       settings.dataFileTabs = [
-        { files: ['data.txt'], name: 'メイン1', defaultFile: 'data.txt' },
-        { files: ['data.txt', 'data2.txt'], name: 'メイン2', defaultFile: 'data.txt' },
-        { files: ['data2.txt'], name: 'サブ1', defaultFile: 'data2.txt' },
+        { files: ['data.txt'], name: 'メイン1' },
+        { files: ['data.txt', 'data2.txt'], name: 'メイン2' },
+        { files: ['data2.txt'], name: 'サブ1' },
       ];
       configHelper.writeSettings(settings);
     });

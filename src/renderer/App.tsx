@@ -316,7 +316,7 @@ const App: React.FC = () => {
       if (currentTabIndex === -1) {
         // 見つからない場合は最初のタブへ
         const firstTab = dataFileTabs[0];
-        setActiveTab(firstTab.defaultFile || firstTab.files[0]);
+        setActiveTab(firstTab.files[0]);
         setSelectedIndex(0);
         return;
       }
@@ -331,7 +331,7 @@ const App: React.FC = () => {
       }
 
       const newTab = dataFileTabs[newTabIndex];
-      setActiveTab(newTab.defaultFile || newTab.files[0]);
+      setActiveTab(newTab.files[0]);
       setSelectedIndex(0); // タブ切り替え時は選択インデックスをリセット
       return;
     }
