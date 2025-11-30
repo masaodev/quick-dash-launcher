@@ -89,7 +89,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
     const fileNames = Array.from(new Set(allFiles));
 
     setDataFiles(fileNames);
-  }, [editedSettings, getDefaultTabName, onSave]);
+  }, [editedSettings, getDefaultTabName]);
 
   // dataFileTabsの順序でファイルをソート（配列の順序がそのまま表示順序）
   const getSortedDataFiles = (): string[] => {
