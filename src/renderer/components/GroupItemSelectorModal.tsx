@@ -107,12 +107,16 @@ const GroupItemSelectorModal: React.FC<GroupItemSelectorModalProps> = ({
 
   const loadAvailableItems = async () => {
     try {
-      debugInfo('Loading available items for file:', targetFile);
+      // targetFileが未定義の場合はデフォルトファイルを使用
+      const effectiveTargetFile = targetFile || 'data.txt';
+      debugInfo('Loading available items for file:', effectiveTargetFile);
       const rawLines: RawDataLine[] = await window.electronAPI.loadRawDataFiles();
 
       // 対象ファイルのアイテムのみを抽出
       const itemsInFile = rawLines
-        .filter((line: RawDataLine) => line.sourceFile === targetFile && line.type === 'item')
+        .filter(
+          (line: RawDataLine) => line.sourceFile === effectiveTargetFile && line.type === 'item'
+        )
         .map((line: RawDataLine) => {
           // アイテム名を抽出（カンマ区切りの最初の要素）
           const parts = line.content.split(',');

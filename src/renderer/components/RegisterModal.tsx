@@ -107,6 +107,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
             path: '',
             type: 'app',
             targetTab: defaultTab,
+            targetFile: defaultTab, // グループアイテム選択時に必要
             itemCategory: 'item',
           },
         ]);
