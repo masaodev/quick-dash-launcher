@@ -639,6 +639,17 @@ const App: React.FC = () => {
             lineNumber: editingItem.lineNumber,
             newContent: newContent,
           });
+        } else if (editingItem.type === 'directive' && item.itemCategory === 'group') {
+          // グループアイテムの編集の場合
+          const itemNames = item.groupItemNames || [];
+          const newContent = `group,${item.name},${itemNames.join(',')}`;
+
+          // RawDataLineとして更新
+          await window.electronAPI.updateRawLine({
+            sourceFile: editingItem.sourceFile,
+            lineNumber: editingItem.lineNumber,
+            newContent: newContent,
+          });
         } else {
           // 通常のアイテムの編集
           const newItem: LauncherItem = {

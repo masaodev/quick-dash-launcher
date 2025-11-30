@@ -4,8 +4,13 @@
 // 個別アイテム
 GitHub,https://github.com/
 Google,https://google.com/
+Wikipedia,https://wikipedia.org/
+Stack Overflow,https://stackoverflow.com/
+VS Code,vscode://
 メモ帳,notepad.exe
+エクスプローラー,explorer.exe
 
 // グループアイテム（複数アイテムを一括起動）
-開発環境,GROUP:GitHub,メモ帳
-ブラウザセット,GROUP:GitHub,Google
+group,開発環境スタート,VS Code,GitHub,Stack Overflow,メモ帳
+group,Web開発セット,VS Code,GitHub,Google
+group,ドキュメント作成,メモ帳,エクスプローラー

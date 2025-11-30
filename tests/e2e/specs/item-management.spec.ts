@@ -233,12 +233,12 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
       });
 
       await test.step('モーダルで名前と引数を編集', async () => {
-        const nameInput = adminWindow.locator('.register-modal input[placeholder*="表示名"]').first();
+        const nameInput = adminWindow
+          .locator('.register-modal input[placeholder*="表示名"]')
+          .first();
         await nameInput.fill('GitHub詳細編集');
 
-        const argsInput = adminWindow
-          .locator('.register-modal input[placeholder*="引数"]')
-          .first();
+        const argsInput = adminWindow.locator('.register-modal input[placeholder*="引数"]').first();
         await argsInput.fill('--test-args');
         await adminUtils.wait(300);
         await adminUtils.attachScreenshot(testInfo, 'モーダル編集後');
@@ -409,7 +409,9 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         const isDialogVisible = await confirmDialog.isVisible().catch(() => false);
         if (isDialogVisible) {
           // OKボタンをクリックして重複削除を実行
-          const confirmButton = adminWindow.locator('[data-testid="confirm-dialog-confirm-button"]');
+          const confirmButton = adminWindow.locator(
+            '[data-testid="confirm-dialog-confirm-button"]'
+          );
           await confirmButton.click();
           await adminUtils.wait(300);
         }

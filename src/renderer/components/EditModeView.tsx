@@ -115,7 +115,24 @@ const EditModeView: React.FC<EditModeViewProps> = ({
     if (editingItem && items.length > 0) {
       const updatedItem = items[0];
       const updatedLine = convertRegisterItemToRawDataLine(updatedItem, editingItem);
-      handleLineEdit(updatedLine);
+
+      // workingLinesを更新して即座に保存
+      const updatedLines = workingLines.map((line) => {
+        if (
+          line.sourceFile === updatedLine.sourceFile &&
+          line.lineNumber === updatedLine.lineNumber
+        ) {
+          return updatedLine;
+        }
+        return line;
+      });
+
+      // 即座にファイルに保存
+      onRawDataSave(updatedLines);
+
+      // 状態をクリア
+      setEditedLines(new Map());
+      setHasUnsavedChanges(false);
     }
     setIsRegisterModalOpen(false);
     setEditingItem(null);

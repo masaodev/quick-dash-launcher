@@ -14,8 +14,13 @@
 	"defaultFileTab": "data.txt",
 	"dataFileTabs": [
 		{
-			"files": ["data.txt"],
+			"files": [
+				"data.txt"
+			],
 			"name": "メイン"
 		}
-	]
+	],
+	"windowPositionMode": "center",
+	"windowPositionX": 0,
+	"windowPositionY": 0
 }
