@@ -18,6 +18,7 @@ if (!testName) {
   console.log('  - first-launch');
   console.log('  - basic-ui');
   console.log('  - item-register');
+  console.log('  - item-management');
   console.log('  - multi-tab');
   console.log('  - settings');
   console.log('  - context-menu');
@@ -30,6 +31,7 @@ const testMap = {
   'first-launch': 'first-launch-setup.spec.ts',
   'basic-ui': 'basic-ui.spec.ts',
   'item-register': 'item-registration.spec.ts',
+  'item-management': 'item-management.spec.ts',
   'multi-tab': 'multi-tab.spec.ts',
   'settings': 'settings-tab.spec.ts',
   'context-menu': 'context-menu.spec.ts',

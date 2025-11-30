@@ -62,6 +62,7 @@ npm run test:e2e:single first-launch
 - `first-launch` - 初回起動セットアップ
 - `basic-ui` - 基本UI（アイテム表示・選択・検索）
 - `item-register` - アイテム登録・編集
+- `item-management` - アイテム管理（管理画面での編集・削除・整列）
 - `multi-tab` - マルチタブ機能
 - `settings` - 設定タブ
 - `context-menu` - コンテキストメニュー

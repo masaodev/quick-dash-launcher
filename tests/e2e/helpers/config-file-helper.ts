@@ -188,13 +188,15 @@ export class ConfigFileHelper {
     }
   }
 
-  // ==================== data.txt 操作 ====================
+  // ==================== データファイル操作（汎用） ====================
 
   /**
-   * data.txtの内容を読み込み
+   * 指定したデータファイルの内容を読み込み
+   * @param fileName ファイル名（例: 'data.txt', 'data2.txt', 'data3.txt'）
+   * @returns ファイルの内容（存在しない場合は空文字列）
    */
-  readData(): string {
-    const dataFilePath = path.join(this.configDir, 'data.txt');
+  readDataFile(fileName: string): string {
+    const dataFilePath = path.join(this.configDir, fileName);
     if (!fs.existsSync(dataFilePath)) {
       return '';
     }
@@ -202,22 +204,68 @@ export class ConfigFileHelper {
   }
 
   /**
+   * 指定したデータファイルに内容を上書き
+   * @param fileName ファイル名（例: 'data.txt', 'data2.txt', 'data3.txt'）
+   * @param content ファイルの内容
+   */
+  writeDataFile(fileName: string, content: string): void {
+    const dataFilePath = path.join(this.configDir, fileName);
+    fs.writeFileSync(dataFilePath, content, 'utf8');
+  }
+
+  /**
+   * 指定したデータファイルにアイテムを追加
+   * @param fileName ファイル名（例: 'data.txt', 'data2.txt', 'data3.txt'）
+   * @param name アイテム名
+   * @param target アイテムのパス・URL
+   */
+  addItemToFile(fileName: string, name: string, target: string): void {
+    const content = this.readDataFile(fileName);
+    const newContent = content.trim() + `\n${name},${target}\n`;
+    this.writeDataFile(fileName, newContent);
+  }
+
+  /**
+   * 指定したデータファイルを削除
+   * @param fileName ファイル名（例: 'data2.txt', 'data3.txt'）
+   * @note data.txtは削除できません（必須ファイルのため）
+   */
+  deleteDataFile(fileName: string): void {
+    if (fileName === 'data.txt') {
+      throw new Error('data.txt is required and cannot be deleted');
+    }
+    const dataFilePath = path.join(this.configDir, fileName);
+    if (fs.existsSync(dataFilePath)) {
+      fs.unlinkSync(dataFilePath);
+    }
+  }
+
+  // ==================== data.txt 操作（後方互換性のため残す） ====================
+
+  /**
+   * data.txtの内容を読み込み
+   * @deprecated readDataFile('data.txt')を使用してください
+   */
+  readData(): string {
+    return this.readDataFile('data.txt');
+  }
+
+  /**
    * data.txtの内容を上書き
+   * @deprecated writeDataFile('data.txt', content)を使用してください
    */
   writeData(content: string): void {
-    const dataFilePath = path.join(this.configDir, 'data.txt');
-    fs.writeFileSync(dataFilePath, content, 'utf8');
+    this.writeDataFile('data.txt', content);
   }
 
   /**
    * data.txtにアイテムを追加
    * @param name アイテム名
    * @param target アイテムのパス・URL
+   * @deprecated addItemToFile('data.txt', name, target)を使用してください
    */
   addItem(name: string, target: string): void {
-    const content = this.readData();
-    const newContent = content.trim() + `\n${name},${target}\n`;
-    this.writeData(newContent);
+    this.addItemToFile('data.txt', name, target);
   }
 
   /**
@@ -256,46 +304,74 @@ export class ConfigFileHelper {
     this.writeData(updated.join('\n'));
   }
 
-  // ==================== data2.txt 操作（サブタブ用） ====================
+  // ==================== data2.txt/data3.txt 操作（後方互換性のため残す） ====================
 
   /**
    * data2.txtの内容を読み込み
+   * @deprecated readDataFile('data2.txt')を使用してください
    */
   readData2(): string {
-    const dataFilePath = path.join(this.configDir, 'data2.txt');
-    if (!fs.existsSync(dataFilePath)) {
-      return '';
-    }
-    return fs.readFileSync(dataFilePath, 'utf8');
+    return this.readDataFile('data2.txt');
   }
 
   /**
    * data2.txtの内容を上書き
+   * @deprecated writeDataFile('data2.txt', content)を使用してください
    */
   writeData2(content: string): void {
-    const dataFilePath = path.join(this.configDir, 'data2.txt');
-    fs.writeFileSync(dataFilePath, content, 'utf8');
+    this.writeDataFile('data2.txt', content);
   }
 
   /**
    * data2.txtにアイテムを追加
    * @param name アイテム名
    * @param target アイテムのパス・URL
+   * @deprecated addItemToFile('data2.txt', name, target)を使用してください
    */
   addItemToData2(name: string, target: string): void {
-    const content = this.readData2();
-    const newContent = content.trim() + `\n${name},${target}\n`;
-    this.writeData2(newContent);
+    this.addItemToFile('data2.txt', name, target);
   }
 
   /**
    * data2.txtを削除
+   * @deprecated deleteDataFile('data2.txt')を使用してください
    */
   deleteData2(): void {
-    const dataFilePath = path.join(this.configDir, 'data2.txt');
-    if (fs.existsSync(dataFilePath)) {
-      fs.unlinkSync(dataFilePath);
-    }
+    this.deleteDataFile('data2.txt');
+  }
+
+  /**
+   * data3.txtの内容を読み込み
+   * @deprecated readDataFile('data3.txt')を使用してください
+   */
+  readData3(): string {
+    return this.readDataFile('data3.txt');
+  }
+
+  /**
+   * data3.txtの内容を上書き
+   * @deprecated writeDataFile('data3.txt', content)を使用してください
+   */
+  writeData3(content: string): void {
+    this.writeDataFile('data3.txt', content);
+  }
+
+  /**
+   * data3.txtにアイテムを追加
+   * @param name アイテム名
+   * @param target アイテムのパス・URL
+   * @deprecated addItemToFile('data3.txt', name, target)を使用してください
+   */
+  addItemToData3(name: string, target: string): void {
+    this.addItemToFile('data3.txt', name, target);
+  }
+
+  /**
+   * data3.txtを削除
+   * @deprecated deleteDataFile('data3.txt')を使用してください
+   */
+  deleteData3(): void {
+    this.deleteDataFile('data3.txt');
   }
 
   // ==================== settings.json 操作 ====================
