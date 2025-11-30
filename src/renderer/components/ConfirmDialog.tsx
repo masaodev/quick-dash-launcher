@@ -1,0 +1,88 @@
+import React, { useEffect } from 'react';
+
+import '../styles/components/ConfirmDialog.css';
+
+interface ConfirmDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  title?: string;
+  message: string;
+  confirmText?: string;
+  cancelText?: string;
+  danger?: boolean;
+}
+
+const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
+  isOpen,
+  onClose,
+  onConfirm,
+  title = '確認',
+  message,
+  confirmText = 'OK',
+  cancelText = 'キャンセル',
+  danger = false,
+}) => {
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    const handleEnter = (e: KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        onConfirm();
+      }
+    };
+
+    window.addEventListener('keydown', handleEscape);
+    window.addEventListener('keydown', handleEnter);
+
+    return () => {
+      window.removeEventListener('keydown', handleEscape);
+      window.removeEventListener('keydown', handleEnter);
+    };
+  }, [isOpen, onClose, onConfirm]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal-overlay" onClick={onClose} data-testid="confirm-dialog-overlay">
+      <div
+        className={`modal-content confirm-dialog ${danger ? 'confirm-danger' : ''}`}
+        onClick={(e) => e.stopPropagation()}
+        data-testid="confirm-dialog"
+      >
+        <div className="confirm-header">
+          <h2>{title}</h2>
+        </div>
+
+        <div className="confirm-body">
+          <p>{message}</p>
+        </div>
+
+        <div className="modal-actions">
+          <button
+            className="cancel-button"
+            onClick={onClose}
+            data-testid="confirm-dialog-cancel-button"
+          >
+            {cancelText}
+          </button>
+          <button
+            className={danger ? 'danger-button' : 'primary'}
+            onClick={onConfirm}
+            data-testid="confirm-dialog-confirm-button"
+          >
+            {confirmText}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ConfirmDialog;

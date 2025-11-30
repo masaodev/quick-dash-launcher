@@ -4,6 +4,7 @@ import { RawDataLine, AppSettings } from '../common/types';
 
 import { debugInfo, logError } from './utils/debug';
 import AdminTabContainer from './components/AdminTabContainer';
+import AlertDialog from './components/AlertDialog';
 
 const AdminApp: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'settings' | 'edit' | 'other'>('settings');
@@ -11,6 +12,17 @@ const AdminApp: React.FC = () => {
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // AlertDialog状態管理
+  const [alertDialog, setAlertDialog] = useState<{
+    isOpen: boolean;
+    message: string;
+    type?: 'info' | 'error' | 'warning' | 'success';
+  }>({
+    isOpen: false,
+    message: '',
+    type: 'info',
+  });
 
   useEffect(() => {
     loadData();
@@ -83,9 +95,11 @@ const AdminApp: React.FC = () => {
         const success = await window.electronAPI.changeHotkey(newSettings.hotkey);
         if (!success) {
           logError('Failed to register new hotkey:', newSettings.hotkey);
-          alert(
-            `新しいホットキー「${newSettings.hotkey}」の登録に失敗しました。他のアプリで使用されている可能性があります。`
-          );
+          setAlertDialog({
+            isOpen: true,
+            message: `新しいホットキー「${newSettings.hotkey}」の登録に失敗しました。他のアプリで使用されている可能性があります。`,
+            type: 'error',
+          });
           return;
         }
         debugInfo(`Hotkey changed successfully to: ${newSettings.hotkey}`);
@@ -95,7 +109,11 @@ const AdminApp: React.FC = () => {
       debugInfo('Settings saved successfully');
     } catch (error) {
       logError('Failed to save settings:', error);
-      alert('設定の保存に失敗しました。');
+      setAlertDialog({
+        isOpen: true,
+        message: '設定の保存に失敗しました。',
+        type: 'error',
+      });
     }
   };
 
@@ -123,6 +141,13 @@ const AdminApp: React.FC = () => {
         searchQuery={searchQuery}
         onSearchChange={handleSearchChange}
         dataFileTabs={settings?.dataFileTabs || []}
+      />
+
+      <AlertDialog
+        isOpen={alertDialog.isOpen}
+        onClose={() => setAlertDialog({ ...alertDialog, isOpen: false })}
+        message={alertDialog.message}
+        type={alertDialog.type}
       />
     </div>
   );

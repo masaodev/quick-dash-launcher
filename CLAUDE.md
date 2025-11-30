@@ -66,6 +66,8 @@ npm run test:e2e:single first-launch
 - `multi-tab` - マルチタブ機能
 - `settings` - 設定タブ
 - `context-menu` - コンテキストメニュー
+- `alert-dialog` - AlertDialog（通知ダイアログ）
+- `confirm-dialog` - ConfirmDialog（確認ダイアログ）
 
 ## 詳細ドキュメント
 

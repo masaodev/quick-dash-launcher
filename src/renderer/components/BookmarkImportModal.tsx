@@ -2,6 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 
 import { SimpleBookmarkItem } from '../../common/types';
 
+import AlertDialog from './AlertDialog';
+import FilePickerDialog from './FilePickerDialog';
+
 interface BookmarkImportModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -15,6 +18,20 @@ const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({ isOpen, onClo
   const [loading, setLoading] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
 
+  // AlertDialog状態管理
+  const [alertDialog, setAlertDialog] = useState<{
+    isOpen: boolean;
+    message: string;
+    type?: 'info' | 'error' | 'warning' | 'success';
+  }>({
+    isOpen: false,
+    message: '',
+    type: 'info',
+  });
+
+  // FilePickerDialog状態管理
+  const [isFilePickerOpen, setIsFilePickerOpen] = useState(false);
+
   // フィルタリングされたブックマーク
   const filteredBookmarks = bookmarks.filter((bookmark) => {
     if (!searchQuery) return true;
@@ -25,22 +42,27 @@ const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({ isOpen, onClo
     );
   });
 
-  // ファイル選択
-  const handleSelectFile = async () => {
+  // ファイル選択ダイアログを開く
+  const handleSelectFile = () => {
+    setIsFilePickerOpen(true);
+  };
+
+  // ファイルが選択されたときの処理
+  const handleFileSelected = async (filePath: string) => {
     try {
       setLoading(true);
-      const filePath = await window.electronAPI.selectBookmarkFile();
-
-      if (filePath) {
-        setFileName(filePath.split(/[\\/]/).pop() || filePath);
-        const parsedBookmarks = await window.electronAPI.parseBookmarkFile(filePath);
-        setBookmarks(parsedBookmarks);
-        setSelectedIds(new Set());
-        setSearchQuery('');
-      }
+      setFileName(filePath.split(/[\\/]/).pop() || filePath);
+      const parsedBookmarks = await window.electronAPI.parseBookmarkFile(filePath);
+      setBookmarks(parsedBookmarks);
+      setSelectedIds(new Set());
+      setSearchQuery('');
     } catch (error) {
       console.error('Error selecting bookmark file:', error);
-      alert('ブックマークファイルの読み込みに失敗しました');
+      setAlertDialog({
+        isOpen: true,
+        message: 'ブックマークファイルの読み込みに失敗しました',
+        type: 'error',
+      });
     } finally {
       setLoading(false);
     }
@@ -90,7 +112,11 @@ const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({ isOpen, onClo
   const handleImport = () => {
     const selectedBookmarks = bookmarks.filter((b) => selectedIds.has(b.id));
     if (selectedBookmarks.length === 0) {
-      alert('インポートするブックマークを選択してください');
+      setAlertDialog({
+        isOpen: true,
+        message: 'インポートするブックマークを選択してください',
+        type: 'warning',
+      });
       return;
     }
 
@@ -248,6 +274,22 @@ const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({ isOpen, onClo
           </div>
         </div>
       </div>
+
+      <AlertDialog
+        isOpen={alertDialog.isOpen}
+        onClose={() => setAlertDialog({ ...alertDialog, isOpen: false })}
+        message={alertDialog.message}
+        type={alertDialog.type}
+      />
+
+      <FilePickerDialog
+        isOpen={isFilePickerOpen}
+        onClose={() => setIsFilePickerOpen(false)}
+        onFileSelect={handleFileSelected}
+        title="ブックマークファイルを選択"
+        fileTypes="html"
+        description="ブラウザからエクスポートしたブックマークHTMLファイルを選択してください。"
+      />
     </div>
   );
 };

@@ -4,6 +4,7 @@ import { AppSettings, DataFileTab, WindowPositionMode } from '@common/types';
 import { logWarn } from '../utils/debug';
 
 import { HotkeyInput } from './HotkeyInput';
+import AlertDialog from './AlertDialog';
 
 interface SettingsTabProps {
   settings: AppSettings;
@@ -18,6 +19,17 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [dataFiles, setDataFiles] = useState<string[]>([]);
   const [fileModalTabIndex, setFileModalTabIndex] = useState<number | null>(null); // ファイル管理モーダルを開いているタブのインデックス
+
+  // AlertDialog状態管理
+  const [alertDialog, setAlertDialog] = useState<{
+    isOpen: boolean;
+    message: string;
+    type?: 'info' | 'error' | 'warning' | 'success';
+  }>({
+    isOpen: false,
+    message: '',
+    type: 'info',
+  });
 
   // デフォルトのタブ名を生成（data.txt→メイン, data2.txt→サブ1, data3.txt→サブ2, ...）
   const getDefaultTabName = useCallback((fileName: string): string => {
@@ -51,7 +63,11 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
         await onSave(newSettings);
       } catch (error) {
         console.error('設定の保存に失敗しました:', error);
-        alert('設定の保存に失敗しました。');
+        setAlertDialog({
+          isOpen: true,
+          message: '設定の保存に失敗しました。',
+          type: 'error',
+        });
       }
     },
     [editedSettings, onSave]
@@ -77,7 +93,11 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
       await onSave(editedSettings);
     } catch (error) {
       console.error('設定の保存に失敗しました:', error);
-      alert('設定の保存に失敗しました。');
+      setAlertDialog({
+        isOpen: true,
+        message: '設定の保存に失敗しました。',
+        type: 'error',
+      });
     }
   }, [editedSettings, onSave]);
 
@@ -114,7 +134,11 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
       setEditedSettings(resetSettings);
     } catch (error) {
       console.error('設定のリセットに失敗しました:', error);
-      alert('設定のリセットに失敗しました。');
+      setAlertDialog({
+        isOpen: true,
+        message: '設定のリセットに失敗しました。',
+        type: 'error',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -126,7 +150,11 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
       await window.electronAPI.openConfigFolder();
     } catch (error) {
       console.error('設定フォルダを開くのに失敗しました:', error);
-      alert('設定フォルダを開くのに失敗しました。');
+      setAlertDialog({
+        isOpen: true,
+        message: '設定フォルダを開くのに失敗しました。',
+        type: 'error',
+      });
     }
   };
 
@@ -181,14 +209,22 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
       await onSave(editedSettings);
     } catch (error) {
       console.error('設定の保存に失敗しました:', error);
-      alert('設定の保存に失敗しました。');
+      setAlertDialog({
+        isOpen: true,
+        message: '設定の保存に失敗しました。',
+        type: 'error',
+      });
     }
   }, [editedSettings, onSave]);
 
   // データファイルを削除
   const handleDeleteDataFile = async (fileName: string) => {
     if (fileName === 'data.txt') {
-      alert('data.txtは削除できません。');
+      setAlertDialog({
+        isOpen: true,
+        message: 'data.txtは削除できません。',
+        type: 'warning',
+      });
       return;
     }
 
@@ -225,14 +261,26 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
           await onSave(newSettings);
         } catch (error) {
           console.error('設定の保存に失敗しました:', error);
-          alert('設定の保存に失敗しました。');
+          setAlertDialog({
+            isOpen: true,
+            message: '設定の保存に失敗しました。',
+            type: 'error',
+          });
         }
       } else {
-        alert(result.error || 'ファイルの削除に失敗しました。');
+        setAlertDialog({
+          isOpen: true,
+          message: result.error || 'ファイルの削除に失敗しました。',
+          type: 'error',
+        });
       }
     } catch (error) {
       console.error('データファイルの削除に失敗しました:', error);
-      alert('データファイルの削除に失敗しました。');
+      setAlertDialog({
+        isOpen: true,
+        message: 'データファイルの削除に失敗しました。',
+        type: 'error',
+      });
     }
   };
 
@@ -306,7 +354,11 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
     const tab = tabs[tabIndex];
     // data.txtを含むタブは削除不可
     if (tab.files.includes('data.txt')) {
-      alert('data.txtを含むタブは削除できません。');
+      setAlertDialog({
+        isOpen: true,
+        message: 'data.txtを含むタブは削除できません。',
+        type: 'warning',
+      });
       return;
     }
 
@@ -329,7 +381,11 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
       await handleSettingChange('dataFileTabs', updatedTabs);
     } catch (error) {
       console.error('タブの削除に失敗しました:', error);
-      alert('タブの削除に失敗しました。');
+      setAlertDialog({
+        isOpen: true,
+        message: 'タブの削除に失敗しました。',
+        type: 'error',
+      });
     }
   };
 
@@ -340,7 +396,11 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
 
     const tab = tabs[tabIndex];
     if (tab.files.includes(fileName)) {
-      alert('このファイルは既にタブに含まれています。');
+      setAlertDialog({
+        isOpen: true,
+        message: 'このファイルは既にタブに含まれています。',
+        type: 'warning',
+      });
       return;
     }
 
@@ -362,13 +422,21 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
 
     // data.txtは削除不可
     if (fileName === 'data.txt') {
-      alert('data.txtは削除できません。');
+      setAlertDialog({
+        isOpen: true,
+        message: 'data.txtは削除できません。',
+        type: 'warning',
+      });
       return;
     }
 
     // タブに最低1つのファイルが必要
     if (tab.files.length === 1) {
-      alert('タブには最低1つのファイルが必要です。タブごと削除してください。');
+      setAlertDialog({
+        isOpen: true,
+        message: 'タブには最低1つのファイルが必要です。タブごと削除してください。',
+        type: 'warning',
+      });
       return;
     }
 
@@ -392,7 +460,11 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
       await handleSettingChange('dataFileTabs', updatedTabs);
     } catch (error) {
       console.error('ファイルの削除に失敗しました:', error);
-      alert('ファイルの削除に失敗しました。');
+      setAlertDialog({
+        isOpen: true,
+        message: 'ファイルの削除に失敗しました。',
+        type: 'error',
+      });
     }
   };
 
@@ -416,7 +488,11 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
       // 物理ファイルを作成
       const result = await window.electronAPI.createDataFile(fileName);
       if (!result.success) {
-        alert(result.error || 'ファイルの作成に失敗しました。');
+        setAlertDialog({
+          isOpen: true,
+          message: result.error || 'ファイルの作成に失敗しました。',
+          type: 'error',
+        });
         return;
       }
 
@@ -424,7 +500,11 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
       await handleAddFileToTab(tabIndex, fileName);
     } catch (error) {
       console.error('ファイルの作成に失敗しました:', error);
-      alert('ファイルの作成に失敗しました。');
+      setAlertDialog({
+        isOpen: true,
+        message: 'ファイルの作成に失敗しました。',
+        type: 'error',
+      });
     }
   };
 
@@ -448,7 +528,11 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
       // 物理ファイルを作成
       const result = await window.electronAPI.createDataFile(fileName);
       if (!result.success) {
-        alert(result.error || 'ファイルの作成に失敗しました。');
+        setAlertDialog({
+          isOpen: true,
+          message: result.error || 'ファイルの作成に失敗しました。',
+          type: 'error',
+        });
         return;
       }
 
@@ -462,7 +546,11 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
       await handleSettingChange('dataFileTabs', updatedTabs);
     } catch (error) {
       console.error('タブの追加に失敗しました:', error);
-      alert('タブの追加に失敗しました。');
+      setAlertDialog({
+        isOpen: true,
+        message: 'タブの追加に失敗しました。',
+        type: 'error',
+      });
     }
   };
 
@@ -945,6 +1033,13 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
           リセット
         </button>
       </div>
+
+      <AlertDialog
+        isOpen={alertDialog.isOpen}
+        onClose={() => setAlertDialog({ ...alertDialog, isOpen: false })}
+        message={alertDialog.message}
+        type={alertDialog.type}
+      />
     </div>
   );
 };

@@ -1,0 +1,36 @@
+/* ConfirmDialog スタイル */
+
+.confirm-dialog {
+  max-width: 450px;
+}
+
+.confirm-header {
+  margin-bottom: 1rem;
+}
+
+.confirm-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.confirm-body {
+  margin-bottom: 1.5rem;
+}
+
+.confirm-body p {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+/* Danger mode styling */
+.confirm-dialog.confirm-danger .confirm-header h2 {
+  color: var(--color-danger);
+}
+
+.confirm-dialog.confirm-danger .confirm-body p {
+  color: var(--text-color);
+}

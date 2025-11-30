@@ -28,6 +28,10 @@ npx playwright test tests/e2e/specs/item-registration.spec.ts
 
 # 特定のテストケースを実行
 npx playwright test -g "アイテムの名前を編集できる"
+
+# ダイアログコンポーネントのテストを実行
+npx playwright test tests/e2e/specs/alert-dialog.spec.ts
+npx playwright test tests/e2e/specs/confirm-dialog.spec.ts
 ```
 
 ## テストファイル構成
@@ -41,8 +45,10 @@ tests/e2e/
 │   ├── config-file-helper.ts
 │   └── test-utils.ts
 └── specs/                # テスト仕様
+    ├── alert-dialog.spec.ts
     ├── app-launch.spec.ts
     ├── config-modification.spec.ts
+    ├── confirm-dialog.spec.ts
     ├── first-launch-setup.spec.ts
     ├── item-display.spec.ts
     ├── item-registration.spec.ts

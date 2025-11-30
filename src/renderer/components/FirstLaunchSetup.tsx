@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 
 import { HotkeyInput } from './HotkeyInput';
+import AlertDialog from './AlertDialog';
 import '../styles/components/FirstLaunchSetup.css';
 
 interface FirstLaunchSetupProps {
@@ -17,6 +18,17 @@ export const FirstLaunchSetup: React.FC<FirstLaunchSetupProps> = ({ onComplete }
     isValid: true,
   });
   const [isLoading, setIsLoading] = useState(false);
+
+  // AlertDialog状態管理
+  const [alertDialog, setAlertDialog] = useState<{
+    isOpen: boolean;
+    message: string;
+    type?: 'info' | 'error' | 'warning' | 'success';
+  }>({
+    isOpen: false,
+    message: '',
+    type: 'info',
+  });
 
   const handleHotkeyChange = (newHotkey: string) => {
     setHotkey(newHotkey);
@@ -36,7 +48,11 @@ export const FirstLaunchSetup: React.FC<FirstLaunchSetupProps> = ({ onComplete }
       onComplete(hotkey);
     } catch (error) {
       console.error('初回設定の保存に失敗しました:', error);
-      alert('設定の保存に失敗しました。');
+      setAlertDialog({
+        isOpen: true,
+        message: '設定の保存に失敗しました。',
+        type: 'error',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -84,6 +100,13 @@ export const FirstLaunchSetup: React.FC<FirstLaunchSetupProps> = ({ onComplete }
           </button>
         </div>
       </div>
+
+      <AlertDialog
+        isOpen={alertDialog.isOpen}
+        onClose={() => setAlertDialog({ ...alertDialog, isOpen: false })}
+        message={alertDialog.message}
+        type={alertDialog.type}
+      />
     </div>
   );
 };

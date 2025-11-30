@@ -19,8 +19,11 @@ src/renderer/styles/
 ├── common.css                   # 共通ユーティリティクラス
 └── components/                  # コンポーネント別スタイル
     ├── AdminWindow.css          # 管理ウィンドウ
+    ├── AlertDialog.css          # 通知ダイアログ
     ├── BookmarkImport.css       # ブックマークインポート
+    ├── ConfirmDialog.css        # 確認ダイアログ
     ├── EditMode.css             # 編集モード
+    ├── FilePickerDialog.css     # ファイル選択ダイアログ
     ├── Header.css               # ヘッダー
     ├── HotkeyInput.css          # ホットキー入力
     ├── IconProgress.css         # アイコン進捗バー

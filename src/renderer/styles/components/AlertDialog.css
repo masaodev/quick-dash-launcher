@@ -1,0 +1,55 @@
+/* AlertDialog Styles */
+
+.alert-dialog {
+  max-width: 500px;
+  width: 90%;
+  padding: var(--spacing-xl);
+}
+
+.alert-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.alert-icon {
+  font-size: var(--font-size-2xl);
+  line-height: 1;
+}
+
+.alert-header h2 {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.alert-body {
+  margin-bottom: var(--spacing-lg);
+}
+
+.alert-body p {
+  margin: 0;
+  font-size: var(--font-size-base);
+  color: var(--text-secondary);
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+/* Type-specific styles */
+.alert-dialog.alert-error .alert-header h2 {
+  color: var(--color-danger);
+}
+
+.alert-dialog.alert-warning .alert-header h2 {
+  color: var(--color-warning);
+}
+
+.alert-dialog.alert-success .alert-header h2 {
+  color: var(--color-success);
+}
+
+.alert-dialog.alert-info .alert-header h2 {
+  color: var(--color-primary);
+}

@@ -40,8 +40,10 @@ tests/e2e/
 │   ├── with-folder-import/  # フォルダ取込テスト用
 │   └── first-launch/    # 初回起動テスト用
 └── specs/               # テスト仕様
+    ├── alert-dialog.spec.ts
     ├── app-launch.spec.ts
     ├── config-modification.spec.ts
+    ├── confirm-dialog.spec.ts
     ├── first-launch-setup.spec.ts
     ├── item-display.spec.ts
     ├── item-registration.spec.ts
