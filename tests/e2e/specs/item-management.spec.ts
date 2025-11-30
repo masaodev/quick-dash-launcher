@@ -244,11 +244,23 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         await adminUtils.attachScreenshot(testInfo, 'モーダル編集後');
       });
 
-      await test.step('更新ボタンをクリック', async () => {
+      await test.step('モーダルの更新ボタンをクリック', async () => {
         const updateButton = adminWindow.locator('.register-modal button.primary').first();
         await updateButton.click();
+        await adminUtils.wait(500);
+        await adminUtils.attachScreenshot(testInfo, 'モーダル更新後');
+
+        // モーダルが閉じたことを確認
+        const modal = adminWindow.locator('.register-modal');
+        await expect(modal).not.toBeVisible();
+      });
+
+      await test.step('管理画面の変更を保存ボタンをクリック', async () => {
+        // モーダルで更新した内容は未保存状態なので、保存ボタンをクリック
+        const saveButton = adminWindow.locator('button.save-changes-button');
+        await saveButton.click();
         await adminUtils.wait(800);
-        await adminUtils.attachScreenshot(testInfo, '更新後');
+        await adminUtils.attachScreenshot(testInfo, '保存後');
 
         // data.txtに保存されたことを確認
         const dataContent = configHelper.readData();
