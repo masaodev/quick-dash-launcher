@@ -88,49 +88,6 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
     const allFiles = tabs.flatMap((tab) => tab.files);
     const fileNames = Array.from(new Set(allFiles));
 
-    // data.txtが設定に含まれていない場合は追加
-    if (!fileNames.includes('data.txt')) {
-      const updatedTabs = [{ files: ['data.txt'], name: getDefaultTabName('data.txt') }, ...tabs];
-      const newSettings = {
-        ...editedSettings,
-        dataFileTabs: updatedTabs,
-      };
-      setEditedSettings(newSettings);
-
-      // 即座に保存
-      onSave(newSettings).catch((error) => {
-        console.error('設定の保存に失敗しました:', error);
-        alert('設定の保存に失敗しました。');
-      });
-      return; // 設定更新後に再度このuseEffectが呼ばれるのでここで終了
-    }
-
-    // data.txtを含むタブが複数ある場合は最初の1つだけを残す
-    const dataTxtTabs = tabs.filter((tab) => tab.files.includes('data.txt'));
-    if (dataTxtTabs.length > 1) {
-      const updatedTabs = tabs.filter((tab, index) => {
-        // data.txtを含むタブの場合、最初の1つだけを残す
-        if (tab.files.includes('data.txt')) {
-          const firstDataTxtIndex = tabs.findIndex((t) => t.files.includes('data.txt'));
-          return index === firstDataTxtIndex;
-        }
-        return true;
-      });
-
-      const newSettings = {
-        ...editedSettings,
-        dataFileTabs: updatedTabs,
-      };
-      setEditedSettings(newSettings);
-
-      // 即座に保存
-      onSave(newSettings).catch((error) => {
-        console.error('設定の保存に失敗しました:', error);
-        alert('設定の保存に失敗しました。');
-      });
-      return; // 設定更新後に再度このuseEffectが呼ばれるのでここで終了
-    }
-
     setDataFiles(fileNames);
   }, [editedSettings, getDefaultTabName, onSave]);
 
