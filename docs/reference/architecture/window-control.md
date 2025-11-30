@@ -1,18 +1,67 @@
 # ウィンドウ制御システム
 
-## ウィンドウ固定化機能
+## ウィンドウピン留めモード機能
 
-- **実装場所**: `src/main/windowManager.ts`
-- **状態管理**: メインプロセスで`isPinned`フラグを管理
-- **制御ロジック**: 固定中はウィンドウのblurイベントで非表示にならない
+### 概要
+
+ウィンドウの表示動作を3段階で制御する機能です。📌ボタンをクリックするたびに、`normal` → `alwaysOnTop` → `stayVisible` → `normal` と循環的に切り替わります。
+
+### ピン留めモードの種類
+
+**通常モード (`normal`)**
+- フォーカスが外れると自動的に非表示になります
+- アイテム起動後も自動的に非表示になります
+- 最上面には表示されません（`alwaysOnTop: false`）
+- デフォルトモードです
+
+**常に最上面モード (`alwaysOnTop`)**
+- 常に最上面に表示されます（`alwaysOnTop: true`）
+- フォーカスが外れても非表示になりません
+- アイテム起動後も表示されたままです
+
+**表示固定モード (`stayVisible`)**
+- 最上面には表示されません（`alwaysOnTop: false`）
+- フォーカスが外れても非表示になりません
+- アイテム起動後も表示されたままです
+
+### 実装詳細
+
+- **実装場所**: `src/main/windowManager.ts`, `src/main/ipc/itemHandlers.ts`
+- **状態管理**: メインプロセスで`windowPinMode: WindowPinMode`を管理
+- **型定義**: `src/common/types.ts`で`WindowPinMode`型を定義
+- **制御ロジック**:
+  - ピン留めモードに応じてウィンドウのblurイベントで非表示制御
+  - アイテム起動時、`normal`モードの場合のみウィンドウを非表示
 - **UI制御**: レンダラーで固定ボタン（📌）の状態を管理
+
+### アイテム起動時の動作制御
+
+アイテム起動時のウィンドウ非表示動作は、ピン留めモードによって制御されます：
+
+**実装場所**: `src/main/ipc/itemHandlers.ts`
+
+```typescript
+// setupItemHandlers内で、ピンモードに応じて非表示を制御
+ipcMain.handle('open-item', async (_event, item: LauncherItem) => {
+  const shouldHide = getWindowPinMode() === 'normal';
+  await openItem(item, getMainWindow(), shouldHide);
+});
+```
+
+- `normal`モード: `shouldHide = true` → ウィンドウを非表示
+- `alwaysOnTop`/`stayVisible`モード: `shouldHide = false` → ウィンドウを表示したまま
+
+この動作は以下の操作すべてに適用されます：
+- 個別アイテムの起動 (`open-item`)
+- 親フォルダを開く (`open-parent-folder`)
+- グループアイテムの実行 (`execute-group`)
 
 ## ウィンドウ表示制御
 
 - **グローバルホットキー**: 設定したホットキー（デフォルト: `Alt+Space`）でウィンドウ表示/非表示
-- **フォーカスアウト**: 固定されていない場合、フォーカスを失うと自動的に非表示
+- **フォーカスアウト**: `normal`モードの場合、フォーカスを失うと自動的に非表示
 - **編集モード時のフォーカス制御**: 編集モード中はフォーカスアウトでもウィンドウが非表示にならない
-- **Escapeキー**: 固定状態に関係なく、Escapeキーで非表示可能
+- **Escapeキー**: ピン留めモードに関係なく、Escapeキーで非表示可能
 - **システムトレイ**: ダブルクリックでウィンドウ表示、右クリックでメニュー表示
 
 ### ウィンドウ表示位置制御
@@ -85,10 +134,18 @@
 
 ## IPC通信フロー
 
-1. レンダラーが固定ボタンクリック → `set-window-pin-state`
-2. メインプロセスが固定状態を更新 → `windowManager.setWindowPinState()`
-3. レンダラーが固定状態を取得 → `get-window-pin-state`
-4. blur イベントで固定状態と編集モード状態をチェック → 非固定かつ非編集モード時のみ非表示
+### ピン留めモードの切り替え
+
+1. レンダラーが📌ボタンクリック → `cycle-window-pin-mode`
+2. メインプロセスがピンモードを循環的に切り替え → `windowManager.cycleWindowPinMode()`
+3. レンダラーが新しいピンモードを取得 → `get-window-pin-mode`
+4. UIが新しいモードに応じて更新される
+
+### ウィンドウ非表示の判定
+
+- **blur イベント**: `shouldHideOnBlur()`で判定 → `normal`モード時のみ非表示
+- **アイテム起動時**: `getWindowPinMode() === 'normal'`で判定 → `normal`モード時のみ非表示
+- **編集モード時**: `isEditMode`フラグで判定 → 編集モード中は非表示にしない
 
 ## 編集モードのウィンドウ制御
 
