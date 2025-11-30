@@ -39,7 +39,7 @@ export interface ElectronAPI {
     eventType: 'start' | 'update' | 'complete',
     callback: (data: IconProgress) => void
   ) => void;
-  onWindowShown: (callback: () => void) => void;
+  onWindowShown: (callback: (startTime?: number) => void) => void;
   onSetActiveTab: (callback: (tab: 'settings' | 'edit' | 'other') => void) => void;
   onDataChanged: (callback: () => void) => () => void;
   onSettingsChanged: (callback: () => void) => () => void;
@@ -99,6 +99,8 @@ export interface ElectronAPI {
     isModal: boolean,
     requiredSize?: { width: number; height: number }
   ) => Promise<void>;
+  // パフォーマンス計測API
+  logPerformanceTiming: (label: string, duration: number) => Promise<void>;
   // カスタムアイコン関連API
   selectCustomIconFile: () => Promise<string | null>;
   saveCustomIcon: (sourceFilePath: string, itemIdentifier: string) => Promise<string>;
