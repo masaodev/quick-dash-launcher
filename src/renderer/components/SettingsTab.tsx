@@ -90,10 +90,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
 
     // data.txtが設定に含まれていない場合は追加
     if (!fileNames.includes('data.txt')) {
-      const updatedTabs = [
-        { files: ['data.txt'], name: getDefaultTabName('data.txt'), defaultFile: 'data.txt' },
-        ...tabs,
-      ];
+      const updatedTabs = [{ files: ['data.txt'], name: getDefaultTabName('data.txt') }, ...tabs];
       const newSettings = {
         ...editedSettings,
         dataFileTabs: updatedTabs,
@@ -204,7 +201,6 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
     const newTab: DataFileTab = {
       files: [fileName],
       name: getDefaultTabName(fileName),
-      defaultFile: fileName,
     };
     const updatedTabs = [...(editedSettings.dataFileTabs || []), newTab];
 
@@ -256,9 +252,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
               if (newFiles.length === 0) {
                 return null;
               }
-              // デフォルトファイルが削除された場合は、最初のファイルを設定
-              const newDefaultFile = tab.defaultFile === fileName ? newFiles[0] : tab.defaultFile;
-              return { ...tab, files: newFiles, defaultFile: newDefaultFile };
+              return { ...tab, files: newFiles };
             }
             return tab;
           })
@@ -431,13 +425,11 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
 
       // タブからファイルを削除
       const newFiles = tab.files.filter((f) => f !== fileName);
-      const newDefaultFile = tab.defaultFile === fileName ? newFiles[0] : tab.defaultFile;
 
       const updatedTabs = [...tabs];
       updatedTabs[tabIndex] = {
         ...tab,
         files: newFiles,
-        defaultFile: newDefaultFile,
       };
 
       await handleSettingChange('dataFileTabs', updatedTabs);
@@ -445,20 +437,6 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
       console.error('ファイルの削除に失敗しました:', error);
       alert('ファイルの削除に失敗しました。');
     }
-  };
-
-  // デフォルトファイルを設定
-  const handleSetDefaultFile = async (tabIndex: number, fileName: string) => {
-    const tabs = editedSettings.dataFileTabs || [];
-    if (tabIndex < 0 || tabIndex >= tabs.length) return;
-
-    const updatedTabs = [...tabs];
-    updatedTabs[tabIndex] = {
-      ...updatedTabs[tabIndex],
-      defaultFile: fileName,
-    };
-
-    await handleSettingChange('dataFileTabs', updatedTabs);
   };
 
   // 新規ファイルを作成してタブに追加
@@ -521,7 +499,6 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
       const newTab: DataFileTab = {
         files: [fileName],
         name: getDefaultTabName(fileName),
-        defaultFile: fileName,
       };
       const updatedTabs = [...(editedSettings.dataFileTabs || []), newTab];
 
@@ -928,23 +905,8 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                               <div key={fileName} className="file-list-item">
                                 <div className="file-info">
                                   <span className="file-name">{fileName}</span>
-                                  {fileName === tab.defaultFile && (
-                                    <span className="default-badge-small">⭐ デフォルト</span>
-                                  )}
                                 </div>
                                 <div className="file-actions">
-                                  {fileName !== tab.defaultFile && (
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        handleSetDefaultFile(fileModalTabIndex, fileName)
-                                      }
-                                      className="btn-secondary-small"
-                                      disabled={isLoading}
-                                    >
-                                      デフォルトに設定
-                                    </button>
-                                  )}
                                   {tab.files.length > 1 && (
                                     <button
                                       type="button"
@@ -1000,10 +962,6 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                         </div>
 
                         <div className="modal-info">
-                          <p>
-                            <strong>デフォルトファイル:</strong>{' '}
-                            新規アイテムを登録する際の保存先ファイルです。
-                          </p>
                           <p>
                             <strong>関連ファイル:</strong>{' '}
                             このタブで表示されるアイテムの元となるファイルです。

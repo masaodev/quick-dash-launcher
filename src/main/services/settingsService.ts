@@ -38,7 +38,7 @@ export class SettingsService {
     backupRetention: 20,
     showDataFileTabs: false, // タブ表示OFF（デフォルト）
     defaultFileTab: 'data.txt', // デフォルトタブ
-    dataFileTabs: [{ files: ['data.txt'], name: 'メイン', defaultFile: 'data.txt' }], // データファイルタブの設定
+    dataFileTabs: [{ files: ['data.txt'], name: 'メイン' }], // データファイルタブの設定
     windowPositionMode: 'center', // ウィンドウ表示位置モード（デフォルト: 画面中央）
     windowPositionX: 0, // 固定位置のX座標
     windowPositionY: 0, // 固定位置のY座標

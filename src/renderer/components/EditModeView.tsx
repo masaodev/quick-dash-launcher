@@ -310,9 +310,8 @@ const EditModeView: React.FC<EditModeViewProps> = ({
     if (dataFileTabs.length > 0 && selectedTabIndex < dataFileTabs.length) {
       const currentTab = dataFileTabs[selectedTabIndex];
       if (currentTab.files && currentTab.files.length > 0) {
-        // タブのdefaultFileまたは最初のファイルを選択
-        const defaultFile = currentTab.defaultFile || currentTab.files[0];
-        setSelectedDataFile(defaultFile);
+        // タブの最初のファイルを選択
+        setSelectedDataFile(currentTab.files[0]);
       }
     }
   }, [selectedTabIndex, dataFileTabs]);

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 
 import { LauncherItem, RawDataLine, DataFileTab } from '../../common/types';
 import { debugInfo, logWarn } from '../utils/debug';
+
 import GroupItemSelectorModal from './GroupItemSelectorModal';
 
 interface RegisterModalProps {
@@ -88,7 +89,8 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
         // ボタンから開かれた場合：空のテンプレートアイテムを1つ作成
         debugInfo('RegisterModal opened manually: creating empty template');
         const defaultTab =
-          currentTab || (settings.dataFileTabs.length > 0 ? settings.dataFileTabs[0].files[0] : 'data.txt');
+          currentTab ||
+          (settings.dataFileTabs.length > 0 ? settings.dataFileTabs[0].files[0] : 'data.txt');
         setItems([
           {
             name: '',
@@ -236,9 +238,11 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     }
   };
 
-  const convertRawDataLineToRegisterItem = async (line: RawDataLine, tabs: DataFileTab[]): Promise<RegisterItem> => {
-    const defaultTab =
-      line.sourceFile || (tabs.length > 0 ? tabs[0].files[0] : 'data.txt');
+  const convertRawDataLineToRegisterItem = async (
+    line: RawDataLine,
+    tabs: DataFileTab[]
+  ): Promise<RegisterItem> => {
+    const defaultTab = line.sourceFile || (tabs.length > 0 ? tabs[0].files[0] : 'data.txt');
 
     if (line.type === 'item') {
       // アイテム行の場合：名前,パス,引数,カスタムアイコン
@@ -350,8 +354,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
   const initializeItems = async (tabs: DataFileTab[]) => {
     setLoading(true);
     const newItems: RegisterItem[] = [];
-    const defaultTab =
-      currentTab || (tabs.length > 0 ? tabs[0].files[0] : 'data.txt');
+    const defaultTab = currentTab || (tabs.length > 0 ? tabs[0].files[0] : 'data.txt');
 
     try {
       if (!droppedPaths || droppedPaths.length === 0) {
@@ -743,344 +746,346 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
         >
           <h2>{editingItem ? 'アイテムの編集' : 'アイテムの登録'}</h2>
 
-        {loading ? (
-          <div className="loading">アイテム情報を読み込み中...</div>
-        ) : (
-          <>
-            <div className="register-items">
-              {items.map((item, index) => (
-                <div key={index} className="register-item">
-                  <div className="item-header">
-                    {item.icon && <img src={item.icon} alt="" className="item-icon" />}
-                  </div>
+          {loading ? (
+            <div className="loading">アイテム情報を読み込み中...</div>
+          ) : (
+            <>
+              <div className="register-items">
+                {items.map((item, index) => (
+                  <div key={index} className="register-item">
+                    <div className="item-header">
+                      {item.icon && <img src={item.icon} alt="" className="item-icon" />}
+                    </div>
 
-                  <div className="form-group">
-                    <label>種別:</label>
-                    <select
-                      value={item.itemCategory}
-                      onChange={(e) =>
-                        handleItemChange(
-                          index,
-                          'itemCategory',
-                          e.target.value as 'item' | 'dir' | 'group'
-                        )
-                      }
-                    >
-                      <option value="item">📄 単一アイテム</option>
-                      <option value="dir">🗂️ フォルダ取込</option>
-                      <option value="group">📦 グループ</option>
-                    </select>
-                  </div>
-
-                  {item.itemCategory !== 'dir' && (
                     <div className="form-group">
-                      <label>名前:</label>
-                      <input
-                        type="text"
-                        value={item.name}
-                        className={errors[index]?.name ? 'error' : ''}
-                        onChange={(e) => handleItemChange(index, 'name', e.target.value)}
-                        placeholder={
-                          item.itemCategory === 'group' ? 'グループ名を入力' : '表示名を入力'
+                      <label>種別:</label>
+                      <select
+                        value={item.itemCategory}
+                        onChange={(e) =>
+                          handleItemChange(
+                            index,
+                            'itemCategory',
+                            e.target.value as 'item' | 'dir' | 'group'
+                          )
                         }
-                      />
-                      {errors[index]?.name && (
-                        <span className="error-message">{errors[index].name}</span>
-                      )}
+                      >
+                        <option value="item">📄 単一アイテム</option>
+                        <option value="dir">🗂️ フォルダ取込</option>
+                        <option value="group">📦 グループ</option>
+                      </select>
                     </div>
-                  )}
 
-                  {item.itemCategory !== 'group' && (
-                    <div className="form-group">
-                      <label>パス:</label>
-                      <input
-                        type="text"
-                        value={item.path}
-                        readOnly={!!droppedPaths && droppedPaths.length > 0}
-                        className={
-                          errors[index]?.path
-                            ? 'error'
-                            : droppedPaths && droppedPaths.length > 0
-                              ? 'readonly'
-                              : ''
-                        }
-                        onChange={(e) => handleItemChange(index, 'path', e.target.value)}
-                        placeholder="ファイルパス、URL、またはカスタムURIを入力"
-                      />
-                      {errors[index]?.path && (
-                        <span className="error-message">{errors[index].path}</span>
-                      )}
-                    </div>
-                  )}
-
-                  {item.itemCategory === 'item' && (
-                    <div className="form-group">
-                      <label>引数 (オプション):</label>
-                      <input
-                        type="text"
-                        value={item.args || ''}
-                        onChange={(e) => handleItemChange(index, 'args', e.target.value)}
-                        placeholder="コマンドライン引数（実行ファイルやアプリの場合のみ有効）"
-                      />
-                    </div>
-                  )}
-
-                  {item.itemCategory === 'dir' && (
-                    <>
-                      {item.dirOptions && (
-                        <div className="dir-options">
-                          <div className="form-group">
-                            <label>階層深度:</label>
-                            <select
-                              value={item.dirOptions.depth}
-                              onChange={(e) => {
-                                const newDirOptions = {
-                                  ...item.dirOptions!,
-                                  depth: parseInt(e.target.value),
-                                };
-                                handleItemChange(index, 'dirOptions', newDirOptions);
-                              }}
-                            >
-                              <option value="0">現在のフォルダのみ</option>
-                              <option value="1">1階層下まで</option>
-                              <option value="2">2階層下まで</option>
-                              <option value="3">3階層下まで</option>
-                              <option value="-1">無制限</option>
-                            </select>
-                          </div>
-
-                          <div className="form-group">
-                            <label>取得タイプ:</label>
-                            <select
-                              value={item.dirOptions.types}
-                              onChange={(e) => {
-                                const newDirOptions = {
-                                  ...item.dirOptions!,
-                                  types: e.target.value as 'file' | 'folder' | 'both',
-                                };
-                                handleItemChange(index, 'dirOptions', newDirOptions);
-                              }}
-                            >
-                              <option value="file">ファイルのみ</option>
-                              <option value="folder">フォルダーのみ</option>
-                              <option value="both">ファイルとフォルダー</option>
-                            </select>
-                          </div>
-
-                          <div className="form-group">
-                            <label>フィルター (例: *.txt):</label>
-                            <input
-                              type="text"
-                              value={item.dirOptions.filter || ''}
-                              onChange={(e) => {
-                                const newDirOptions = {
-                                  ...item.dirOptions!,
-                                  filter: e.target.value || undefined,
-                                };
-                                handleItemChange(index, 'dirOptions', newDirOptions);
-                              }}
-                              placeholder="ワイルドカードパターン"
-                            />
-                          </div>
-
-                          <div className="form-group">
-                            <label>除外パターン (例: temp*):</label>
-                            <input
-                              type="text"
-                              value={item.dirOptions.exclude || ''}
-                              onChange={(e) => {
-                                const newDirOptions = {
-                                  ...item.dirOptions!,
-                                  exclude: e.target.value || undefined,
-                                };
-                                handleItemChange(index, 'dirOptions', newDirOptions);
-                              }}
-                              placeholder="除外するパターン"
-                            />
-                          </div>
-
-                          <div className="form-group">
-                            <label>プレフィックス (例: 仕事):</label>
-                            <input
-                              type="text"
-                              value={item.dirOptions.prefix || ''}
-                              onChange={(e) => {
-                                const newDirOptions = {
-                                  ...item.dirOptions!,
-                                  prefix: e.target.value || undefined,
-                                };
-                                handleItemChange(index, 'dirOptions', newDirOptions);
-                              }}
-                              placeholder="アイテム名の前に付ける文字"
-                            />
-                          </div>
-
-                          <div className="form-group">
-                            <label>サフィックス (例: Dev):</label>
-                            <input
-                              type="text"
-                              value={item.dirOptions.suffix || ''}
-                              onChange={(e) => {
-                                const newDirOptions = {
-                                  ...item.dirOptions!,
-                                  suffix: e.target.value || undefined,
-                                };
-                                handleItemChange(index, 'dirOptions', newDirOptions);
-                              }}
-                              placeholder="アイテム名の後に付ける文字"
-                            />
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  )}
-
-                  {item.itemCategory === 'group' && (
-                    <div className="form-group">
-                      <label>グループアイテムリスト:</label>
-                      <div className="group-item-list">
-                        {item.groupItemNames && item.groupItemNames.length > 0 ? (
-                          <div className="group-items">
-                            {item.groupItemNames.map((itemName, nameIndex) => (
-                              <div key={nameIndex} className="group-item-row">
-                                <span className="group-item-name">{itemName}</span>
-                                <button
-                                  type="button"
-                                  className="remove-group-item-btn"
-                                  onClick={() => handleRemoveGroupItem(index, nameIndex)}
-                                  title="削除"
-                                >
-                                  ×
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="no-group-items">アイテムが追加されていません</div>
+                    {item.itemCategory !== 'dir' && (
+                      <div className="form-group">
+                        <label>名前:</label>
+                        <input
+                          type="text"
+                          value={item.name}
+                          className={errors[index]?.name ? 'error' : ''}
+                          onChange={(e) => handleItemChange(index, 'name', e.target.value)}
+                          placeholder={
+                            item.itemCategory === 'group' ? 'グループ名を入力' : '表示名を入力'
+                          }
+                        />
+                        {errors[index]?.name && (
+                          <span className="error-message">{errors[index].name}</span>
                         )}
-                        <button
-                          type="button"
-                          className="add-group-item-btn"
-                          onClick={() => handleAddGroupItem(index)}
-                        >
-                          + アイテムを追加
-                        </button>
                       </div>
-                      {errors[index]?.groupItemNames && (
-                        <span className="error-message">{errors[index].groupItemNames}</span>
-                      )}
-                      <small>
-                        同じファイル内の既存アイテムから選択してください。グループ実行時に順番に起動されます。
-                      </small>
-                    </div>
-                  )}
+                    )}
 
-                  <div className="form-group">
-                    <label>保存先タブ:</label>
-                    <select
-                      value={item.targetTab}
-                      onChange={(e) => {
-                        const selectedTab = availableTabs.find((tab) =>
-                          tab.files.includes(e.target.value)
-                        );
+                    {item.itemCategory !== 'group' && (
+                      <div className="form-group">
+                        <label>パス:</label>
+                        <input
+                          type="text"
+                          value={item.path}
+                          readOnly={!!droppedPaths && droppedPaths.length > 0}
+                          className={
+                            errors[index]?.path
+                              ? 'error'
+                              : droppedPaths && droppedPaths.length > 0
+                                ? 'readonly'
+                                : ''
+                          }
+                          onChange={(e) => handleItemChange(index, 'path', e.target.value)}
+                          placeholder="ファイルパス、URL、またはカスタムURIを入力"
+                        />
+                        {errors[index]?.path && (
+                          <span className="error-message">{errors[index].path}</span>
+                        )}
+                      </div>
+                    )}
 
-                        // targetTabとtargetFileを同時に更新
-                        const newItems = [...items];
-                        newItems[index] = { ...newItems[index], targetTab: e.target.value };
+                    {item.itemCategory === 'item' && (
+                      <div className="form-group">
+                        <label>引数 (オプション):</label>
+                        <input
+                          type="text"
+                          value={item.args || ''}
+                          onChange={(e) => handleItemChange(index, 'args', e.target.value)}
+                          placeholder="コマンドライン引数（実行ファイルやアプリの場合のみ有効）"
+                        />
+                      </div>
+                    )}
 
-                        // タブに複数ファイルがある場合、デフォルトファイルまたは最初のファイルを設定
-                        if (selectedTab && selectedTab.files.length > 1) {
-                          const defaultFile = selectedTab.defaultFile || selectedTab.files[0];
-                          newItems[index] = { ...newItems[index], targetFile: defaultFile };
-                        } else if (selectedTab && selectedTab.files.length === 1) {
-                          newItems[index] = { ...newItems[index], targetFile: selectedTab.files[0] };
-                        }
+                    {item.itemCategory === 'dir' && (
+                      <>
+                        {item.dirOptions && (
+                          <div className="dir-options">
+                            <div className="form-group">
+                              <label>階層深度:</label>
+                              <select
+                                value={item.dirOptions.depth}
+                                onChange={(e) => {
+                                  const newDirOptions = {
+                                    ...item.dirOptions!,
+                                    depth: parseInt(e.target.value),
+                                  };
+                                  handleItemChange(index, 'dirOptions', newDirOptions);
+                                }}
+                              >
+                                <option value="0">現在のフォルダのみ</option>
+                                <option value="1">1階層下まで</option>
+                                <option value="2">2階層下まで</option>
+                                <option value="3">3階層下まで</option>
+                                <option value="-1">無制限</option>
+                              </select>
+                            </div>
 
-                        setItems(newItems);
-                      }}
-                    >
-                      {availableTabs.map((tab) => (
-                        <option key={tab.files[0]} value={tab.files[0]}>
-                          {tab.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                            <div className="form-group">
+                              <label>取得タイプ:</label>
+                              <select
+                                value={item.dirOptions.types}
+                                onChange={(e) => {
+                                  const newDirOptions = {
+                                    ...item.dirOptions!,
+                                    types: e.target.value as 'file' | 'folder' | 'both',
+                                  };
+                                  handleItemChange(index, 'dirOptions', newDirOptions);
+                                }}
+                              >
+                                <option value="file">ファイルのみ</option>
+                                <option value="folder">フォルダーのみ</option>
+                                <option value="both">ファイルとフォルダー</option>
+                              </select>
+                            </div>
 
-                  {/* タブに複数ファイルがある場合、保存先ファイルを選択 */}
-                  {(() => {
-                    const selectedTab = availableTabs.find((tab) =>
-                      tab.files.includes(item.targetTab)
-                    );
-                    return (
-                      selectedTab &&
-                      selectedTab.files.length > 1 && (
-                        <div className="form-group">
-                          <label>保存先ファイル:</label>
-                          <select
-                            value={item.targetFile || selectedTab.files[0]}
-                            onChange={(e) => handleItemChange(index, 'targetFile', e.target.value)}
+                            <div className="form-group">
+                              <label>フィルター (例: *.txt):</label>
+                              <input
+                                type="text"
+                                value={item.dirOptions.filter || ''}
+                                onChange={(e) => {
+                                  const newDirOptions = {
+                                    ...item.dirOptions!,
+                                    filter: e.target.value || undefined,
+                                  };
+                                  handleItemChange(index, 'dirOptions', newDirOptions);
+                                }}
+                                placeholder="ワイルドカードパターン"
+                              />
+                            </div>
+
+                            <div className="form-group">
+                              <label>除外パターン (例: temp*):</label>
+                              <input
+                                type="text"
+                                value={item.dirOptions.exclude || ''}
+                                onChange={(e) => {
+                                  const newDirOptions = {
+                                    ...item.dirOptions!,
+                                    exclude: e.target.value || undefined,
+                                  };
+                                  handleItemChange(index, 'dirOptions', newDirOptions);
+                                }}
+                                placeholder="除外するパターン"
+                              />
+                            </div>
+
+                            <div className="form-group">
+                              <label>プレフィックス (例: 仕事):</label>
+                              <input
+                                type="text"
+                                value={item.dirOptions.prefix || ''}
+                                onChange={(e) => {
+                                  const newDirOptions = {
+                                    ...item.dirOptions!,
+                                    prefix: e.target.value || undefined,
+                                  };
+                                  handleItemChange(index, 'dirOptions', newDirOptions);
+                                }}
+                                placeholder="アイテム名の前に付ける文字"
+                              />
+                            </div>
+
+                            <div className="form-group">
+                              <label>サフィックス (例: Dev):</label>
+                              <input
+                                type="text"
+                                value={item.dirOptions.suffix || ''}
+                                onChange={(e) => {
+                                  const newDirOptions = {
+                                    ...item.dirOptions!,
+                                    suffix: e.target.value || undefined,
+                                  };
+                                  handleItemChange(index, 'dirOptions', newDirOptions);
+                                }}
+                                placeholder="アイテム名の後に付ける文字"
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    {item.itemCategory === 'group' && (
+                      <div className="form-group">
+                        <label>グループアイテムリスト:</label>
+                        <div className="group-item-list">
+                          {item.groupItemNames && item.groupItemNames.length > 0 ? (
+                            <div className="group-items">
+                              {item.groupItemNames.map((itemName, nameIndex) => (
+                                <div key={nameIndex} className="group-item-row">
+                                  <span className="group-item-name">{itemName}</span>
+                                  <button
+                                    type="button"
+                                    className="remove-group-item-btn"
+                                    onClick={() => handleRemoveGroupItem(index, nameIndex)}
+                                    title="削除"
+                                  >
+                                    ×
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="no-group-items">アイテムが追加されていません</div>
+                          )}
+                          <button
+                            type="button"
+                            className="add-group-item-btn"
+                            onClick={() => handleAddGroupItem(index)}
                           >
-                            {selectedTab.files.map((file) => (
-                              <option key={file} value={file}>
-                                {file}
-                              </option>
-                            ))}
-                          </select>
+                            + アイテムを追加
+                          </button>
                         </div>
-                      )
-                    );
-                  })()}
-
-                  {/* カスタムアイコン設定 */}
-                  {item.itemCategory !== 'dir' && (
-                    <div className="form-group">
-                      <label>カスタムアイコン:</label>
-                      <div className="custom-icon-section">
-                        {customIconPreviews[index] ? (
-                          <div className="custom-icon-preview">
-                            <img
-                              src={customIconPreviews[index]}
-                              alt="カスタムアイコン"
-                              className="custom-icon-img"
-                            />
-                            <button
-                              type="button"
-                              className="delete-icon-btn"
-                              onClick={() => handleDeleteCustomIcon(index)}
-                            >
-                              削除
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="no-custom-icon">
-                            <span>カスタムアイコン未設定</span>
-                          </div>
+                        {errors[index]?.groupItemNames && (
+                          <span className="error-message">{errors[index].groupItemNames}</span>
                         )}
-                        <button
-                          type="button"
-                          className="select-icon-btn"
-                          onClick={() => handleSelectCustomIcon(index)}
-                        >
-                          ファイルから選択
-                        </button>
+                        <small>
+                          同じファイル内の既存アイテムから選択してください。グループ実行時に順番に起動されます。
+                        </small>
                       </div>
+                    )}
+
+                    <div className="form-group">
+                      <label>保存先タブ:</label>
+                      <select
+                        value={item.targetTab}
+                        onChange={(e) => {
+                          const selectedTab = availableTabs.find((tab) =>
+                            tab.files.includes(e.target.value)
+                          );
+
+                          // targetTabとtargetFileを同時に更新
+                          const newItems = [...items];
+                          newItems[index] = { ...newItems[index], targetTab: e.target.value };
+
+                          // タブに複数ファイルがある場合、最初のファイルを設定
+                          if (selectedTab && selectedTab.files.length > 0) {
+                            newItems[index] = {
+                              ...newItems[index],
+                              targetFile: selectedTab.files[0],
+                            };
+                          }
+
+                          setItems(newItems);
+                        }}
+                      >
+                        {availableTabs.map((tab) => (
+                          <option key={tab.files[0]} value={tab.files[0]}>
+                            {tab.name}
+                          </option>
+                        ))}
+                      </select>
                     </div>
-                  )}
 
-                  {items.length > 1 && <hr />}
-                </div>
-              ))}
-            </div>
+                    {/* タブに複数ファイルがある場合、保存先ファイルを選択 */}
+                    {(() => {
+                      const selectedTab = availableTabs.find((tab) =>
+                        tab.files.includes(item.targetTab)
+                      );
+                      return (
+                        selectedTab &&
+                        selectedTab.files.length > 1 && (
+                          <div className="form-group">
+                            <label>保存先ファイル:</label>
+                            <select
+                              value={item.targetFile || selectedTab.files[0]}
+                              onChange={(e) =>
+                                handleItemChange(index, 'targetFile', e.target.value)
+                              }
+                            >
+                              {selectedTab.files.map((file) => (
+                                <option key={file} value={file}>
+                                  {file}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        )
+                      );
+                    })()}
 
-            <div className="modal-actions">
-              <button onClick={handleCancel}>キャンセル</button>
-              <button onClick={handleRegister} className="primary">
-                {editingItem ? '更新' : '登録'}
-              </button>
-            </div>
-          </>
-        )}
+                    {/* カスタムアイコン設定 */}
+                    {item.itemCategory !== 'dir' && (
+                      <div className="form-group">
+                        <label>カスタムアイコン:</label>
+                        <div className="custom-icon-section">
+                          {customIconPreviews[index] ? (
+                            <div className="custom-icon-preview">
+                              <img
+                                src={customIconPreviews[index]}
+                                alt="カスタムアイコン"
+                                className="custom-icon-img"
+                              />
+                              <button
+                                type="button"
+                                className="delete-icon-btn"
+                                onClick={() => handleDeleteCustomIcon(index)}
+                              >
+                                削除
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="no-custom-icon">
+                              <span>カスタムアイコン未設定</span>
+                            </div>
+                          )}
+                          <button
+                            type="button"
+                            className="select-icon-btn"
+                            onClick={() => handleSelectCustomIcon(index)}
+                          >
+                            ファイルから選択
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {items.length > 1 && <hr />}
+                  </div>
+                ))}
+              </div>
+
+              <div className="modal-actions">
+                <button onClick={handleCancel}>キャンセル</button>
+                <button onClick={handleRegister} className="primary">
+                  {editingItem ? '更新' : '登録'}
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
