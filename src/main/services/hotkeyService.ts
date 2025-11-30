@@ -159,8 +159,10 @@ export class HotkeyService {
         if (mainWindow.isVisible()) {
           hideMainWindow();
         } else {
+          // パフォーマンス計測のため、開始時刻を記録（Date.now()を使用してプロセス間で共通のタイムライン）
+          const startTime = Date.now();
           // 非同期関数だが、awaitせずに呼び出す（表示処理は並行実行）
-          void showMainWindow();
+          void showMainWindow(startTime);
         }
       }
     } catch (error) {

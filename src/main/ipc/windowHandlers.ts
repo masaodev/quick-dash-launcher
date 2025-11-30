@@ -1,5 +1,6 @@
 import { ipcMain, app, clipboard } from 'electron';
 import type { WindowPinMode } from '@common/types';
+import { windowLogger } from '@common/logger';
 
 import {
   showAdminWindow,
@@ -100,4 +101,9 @@ export function setupWindowHandlers(
       await setModalMode(isModal, requiredSize);
     }
   );
+
+  // パフォーマンス計測のIPCハンドラー
+  ipcMain.handle('log-performance-timing', (_event, label: string, duration: number) => {
+    windowLogger.info(`[Performance] ${label}: ${duration.toFixed(2)}ms`);
+  });
 }

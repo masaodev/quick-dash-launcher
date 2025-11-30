@@ -58,8 +58,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   ) => {
     ipcRenderer.on(`icon-progress-${eventType}`, (_event, data) => callback(data));
   },
-  onWindowShown: (callback: () => void) => {
-    ipcRenderer.on('window-shown', callback);
+  onWindowShown: (callback: (startTime?: number) => void) => {
+    ipcRenderer.on('window-shown', (_event, startTime) => callback(startTime));
   },
   onSetActiveTab: (callback: (tab: 'settings' | 'edit' | 'other') => void) => {
     ipcRenderer.on('set-active-tab', (_event, tab) => callback(tab));
@@ -123,6 +123,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   copyToClipboard: (text: string) => ipcRenderer.invoke('copy-to-clipboard', text),
   setModalMode: (isModal: boolean, requiredSize?: { width: number; height: number }) =>
     ipcRenderer.invoke('set-modal-mode', isModal, requiredSize),
+  // パフォーマンス計測API
+  logPerformanceTiming: (label: string, duration: number) =>
+    ipcRenderer.invoke('log-performance-timing', label, duration),
   // スプラッシュスクリーン関連API
   splashReady: () => ipcRenderer.invoke('splash-ready'),
   // カスタムアイコン関連API

@@ -70,7 +70,25 @@ const App: React.FC = () => {
 
     loadItems();
 
-    window.electronAPI.onWindowShown(() => {
+    window.electronAPI.onWindowShown((startTime) => {
+      // パフォーマンス計測：レンダリング完了後に測定
+      if (startTime !== undefined) {
+        const logTiming = (label: string) => {
+          const duration = Date.now() - startTime;
+          window.electronAPI.logPerformanceTiming(label, duration);
+        };
+
+        logTiming('renderer-received');
+
+        requestAnimationFrame(() => {
+          logTiming('before-animation-frame');
+
+          // 次のフレームで実際の描画完了を確認
+          requestAnimationFrame(() => {
+            logTiming('window-show-complete');
+          });
+        });
+      }
       setSearchQuery('');
       setSelectedIndex(0);
       searchInputRef.current?.focus();

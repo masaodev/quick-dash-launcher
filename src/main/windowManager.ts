@@ -3,6 +3,7 @@ import * as path from 'path';
 import { BrowserWindow, Tray, Menu, nativeImage, app, shell, screen } from 'electron';
 import { windowLogger } from '@common/logger';
 import type { WindowPinMode, WindowPositionMode } from '@common/types';
+import { PerformanceTimer } from '@common/performanceTimer';
 
 import { HotkeyService } from './services/hotkeyService.js';
 import { SettingsService } from './services/settingsService.js';
@@ -456,14 +457,24 @@ export async function saveWindowPosition(): Promise<void> {
 /**
  * メインウィンドウを表示する（ホットキー用）
  * 設定されたモードに応じてウィンドウ位置を設定してから表示します
+ * @param startTime パフォーマンス計測用の開始時刻（Date.now()の値）
  */
-export async function showMainWindow(): Promise<void> {
+export async function showMainWindow(startTime?: number): Promise<void> {
   if (!mainWindow) return;
 
+  const timer = new PerformanceTimer(startTime, (msg) => windowLogger.info(msg));
+  timer.log(`hotkey-pressed: 0.00ms (start: ${startTime})`);
+
   await setWindowPosition();
+  timer.log('position-set');
+
   mainWindow.show();
+  timer.log('window-shown');
+
   mainWindow.focus();
-  mainWindow.webContents.send('window-shown');
+  timer.log('window-focused');
+
+  mainWindow.webContents.send('window-shown', startTime);
   windowLogger.info('メインウィンドウを表示しました');
 }
 
