@@ -131,6 +131,11 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
       const isModalFocused = modal.contains(document.activeElement);
 
       if (event.key === 'Escape') {
+        // GroupItemSelectorModalが表示されている場合は、そちらに任せる
+        const groupSelectorModal = document.querySelector('.group-item-selector-modal');
+        if (groupSelectorModal) {
+          return;
+        }
         event.preventDefault();
         event.stopPropagation();
         event.stopImmediatePropagation();
@@ -679,7 +684,8 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
 
       // グループ以外は名前が必須
       if (item.itemCategory !== 'dir' && !item.name.trim()) {
-        newErrors[i].name = '名前を入力してください';
+        newErrors[i].name =
+          item.itemCategory === 'group' ? 'グループ名を入力してください' : '名前を入力してください';
       }
 
       // グループ以外はパスが必須
@@ -964,10 +970,10 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                         <label>グループアイテムリスト:</label>
                         <div className="group-item-list">
                           {item.groupItemNames && item.groupItemNames.length > 0 ? (
-                            <div className="group-items">
+                            <div className="selected-items">
                               {item.groupItemNames.map((itemName, nameIndex) => (
-                                <div key={nameIndex} className="group-item-row">
-                                  <span className="group-item-name">{itemName}</span>
+                                <div key={nameIndex} className="item-chip">
+                                  <span>{itemName}</span>
                                   <button
                                     type="button"
                                     className="remove-group-item-btn"
