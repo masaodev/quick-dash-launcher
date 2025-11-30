@@ -3,9 +3,13 @@ import { exec } from 'child_process';
 import { ipcMain, shell, BrowserWindow } from 'electron';
 import { itemLogger } from '@common/logger';
 
-import { LauncherItem, GroupItem, AppItem } from '../../common/types';
+import { LauncherItem, GroupItem, AppItem, WindowPinMode } from '../../common/types';
 
-async function openItem(item: LauncherItem, mainWindow: BrowserWindow | null): Promise<void> {
+async function openItem(
+  item: LauncherItem,
+  mainWindow: BrowserWindow | null,
+  shouldHideWindow: boolean
+): Promise<void> {
   try {
     itemLogger.info('アイテムを起動中', {
       name: item.name,
@@ -52,7 +56,7 @@ async function openItem(item: LauncherItem, mainWindow: BrowserWindow | null): P
       await shell.openExternal(item.path);
     }
 
-    if (mainWindow) {
+    if (mainWindow && shouldHideWindow) {
       mainWindow.hide();
     }
   } catch (error) {
@@ -72,7 +76,8 @@ async function openItem(item: LauncherItem, mainWindow: BrowserWindow | null): P
 
 async function openParentFolder(
   item: LauncherItem,
-  mainWindow: BrowserWindow | null
+  mainWindow: BrowserWindow | null,
+  shouldHideWindow: boolean
 ): Promise<void> {
   try {
     itemLogger.info('親フォルダーを開く', {
@@ -86,7 +91,7 @@ async function openParentFolder(
       await shell.showItemInFolder(item.path);
     }
 
-    if (mainWindow) {
+    if (mainWindow && shouldHideWindow) {
       mainWindow.hide();
     }
   } catch (error) {
@@ -108,11 +113,13 @@ async function openParentFolder(
  * @param group - 実行するグループアイテム
  * @param allItems - すべてのアイテムリスト（参照解決用）
  * @param mainWindow - メインウィンドウ（非表示処理用）
+ * @param shouldHideWindow - ウィンドウを非表示にするかどうか
  */
 async function executeGroup(
   group: GroupItem,
   allItems: AppItem[],
-  mainWindow: BrowserWindow | null
+  mainWindow: BrowserWindow | null,
+  shouldHideWindow: boolean
 ): Promise<void> {
   itemLogger.info('グループを実行中', {
     groupName: group.name,
@@ -147,7 +154,7 @@ async function executeGroup(
 
     try {
       // 個別アイテムを実行（ウィンドウは非表示にしない）
-      await openItem(item, null);
+      await openItem(item, null, false);
       successCount++;
       itemLogger.info('グループアイテムを実行しました', {
         groupName: group.name,
@@ -178,21 +185,27 @@ async function executeGroup(
   });
 
   // すべてのアイテム実行後にウィンドウを非表示
-  if (mainWindow) {
+  if (mainWindow && shouldHideWindow) {
     mainWindow.hide();
   }
 }
 
-export function setupItemHandlers(getMainWindow: () => BrowserWindow | null) {
+export function setupItemHandlers(
+  getMainWindow: () => BrowserWindow | null,
+  getWindowPinMode: () => WindowPinMode
+) {
   ipcMain.handle('open-item', async (_event, item: LauncherItem) => {
-    await openItem(item, getMainWindow());
+    const shouldHide = getWindowPinMode() === 'normal';
+    await openItem(item, getMainWindow(), shouldHide);
   });
 
   ipcMain.handle('open-parent-folder', async (_event, item: LauncherItem) => {
-    await openParentFolder(item, getMainWindow());
+    const shouldHide = getWindowPinMode() === 'normal';
+    await openParentFolder(item, getMainWindow(), shouldHide);
   });
 
   ipcMain.handle('execute-group', async (_event, group: GroupItem, allItems: AppItem[]) => {
-    await executeGroup(group, allItems, getMainWindow());
+    const shouldHide = getWindowPinMode() === 'normal';
+    await executeGroup(group, allItems, getMainWindow(), shouldHide);
   });
 }
