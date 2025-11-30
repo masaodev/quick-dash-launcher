@@ -251,7 +251,7 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
         const settings = configHelper.readSettings();
         expect(settings.showDataFileTabs).toBe(true);
         expect(settings.dataFileTabs).toBeDefined();
-        expect(settings.dataFileTabs.length).toBeGreaterThanOrEqual(2);
+        expect(settings.dataFileTabs?.length).toBeGreaterThanOrEqual(2);
         // タブ名が保存されたことを確認（デフォルト名でも可）
         const secondTab = settings.dataFileTabs?.[1];
         expect(secondTab).toBeDefined();

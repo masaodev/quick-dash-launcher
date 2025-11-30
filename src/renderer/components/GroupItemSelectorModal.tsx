@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+
 import { RawDataLine } from '../../common/types';
 import { debugInfo } from '../utils/debug';
 
