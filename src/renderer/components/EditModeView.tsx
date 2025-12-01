@@ -182,7 +182,7 @@ const EditModeView: React.FC<EditModeViewProps> = ({
       lineNumber: 1,
       content: '',
       type: 'empty',
-      sourceFile: 'data.txt', // デフォルトでdata.txtに追加
+      sourceFile: selectedDataFile, // 現在選択中のファイルに追加
     };
 
     const updatedLines = [newLine, ...workingLines];
@@ -247,7 +247,7 @@ const EditModeView: React.FC<EditModeViewProps> = ({
       lineNumber: index + 1,
       content: `${bookmark.name},${bookmark.url}`,
       type: 'item' as const,
-      sourceFile: 'data.txt' as const,
+      sourceFile: selectedDataFile, // 現在選択中のファイルにインポート
     }));
 
     const updatedLines = [...newLines, ...workingLines];

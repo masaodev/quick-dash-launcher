@@ -2,6 +2,8 @@
 
 .file-picker-dialog {
   max-width: 500px;
+  width: 90%;
+  padding: var(--spacing-xl);
 }
 
 .file-picker-header {
@@ -30,7 +32,7 @@
 
 .browse-button {
   padding: 0.75rem 1.5rem;
-  background-color: var(--primary-color);
+  background-color: var(--color-primary);
   color: white;
   border: none;
   border-radius: var(--border-radius);
@@ -41,9 +43,24 @@
 }
 
 .browse-button:hover {
-  background-color: var(--primary-hover);
+  background-color: var(--color-primary-hover);
 }
 
 .browse-button:active {
   transform: translateY(1px);
+}
+
+.file-picker-dialog .cancel-button {
+  padding: 0.5rem 1.5rem;
+  background-color: var(--color-gray-400);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.2s;
+}
+
+.file-picker-dialog .cancel-button:hover {
+  background-color: var(--color-gray-500);
 }
