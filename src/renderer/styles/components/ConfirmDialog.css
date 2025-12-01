@@ -38,7 +38,7 @@
 }
 
 /* Button styles */
-.confirm-dialog .cancel-button {
+.confirm-dialog .modal-actions .cancel-button {
   padding: 0.5rem 1.5rem;
   background-color: var(--color-gray-400);
   color: white;
@@ -49,7 +49,7 @@
   transition: background-color 0.2s;
 }
 
-.confirm-dialog .cancel-button:hover {
+.confirm-dialog .modal-actions .cancel-button:hover {
   background-color: var(--color-gray-500);
 }
 
