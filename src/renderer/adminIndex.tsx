@@ -9,6 +9,9 @@ import './styles/components/Modal.css';
 import './styles/components/RegisterModal.css';
 import './styles/components/BookmarkImport.css';
 import './styles/components/IconProgress.css';
+import './styles/components/FilePickerDialog.css';
+import './styles/components/AlertDialog.css';
+import './styles/components/ConfirmDialog.css';
 
 const root = ReactDOM.createRoot(document.getElementById('admin-root') as HTMLElement);
 

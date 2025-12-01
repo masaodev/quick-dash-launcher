@@ -3,7 +3,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { SimpleBookmarkItem } from '../../common/types';
 
 import AlertDialog from './AlertDialog';
-import FilePickerDialog from './FilePickerDialog';
 
 interface BookmarkImportModalProps {
   isOpen: boolean;
@@ -29,9 +28,6 @@ const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({ isOpen, onClo
     type: 'info',
   });
 
-  // FilePickerDialog状態管理
-  const [isFilePickerOpen, setIsFilePickerOpen] = useState(false);
-
   // フィルタリングされたブックマーク
   const filteredBookmarks = bookmarks.filter((bookmark) => {
     if (!searchQuery) return true;
@@ -43,13 +39,11 @@ const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({ isOpen, onClo
   });
 
   // ファイル選択ダイアログを開く
-  const handleSelectFile = () => {
-    setIsFilePickerOpen(true);
-  };
-
-  // ファイルが選択されたときの処理
-  const handleFileSelected = async (filePath: string) => {
+  const handleSelectFile = async () => {
     try {
+      const filePath = await window.electronAPI.selectBookmarkFile();
+      if (!filePath) return; // ユーザーがキャンセルした場合
+
       setLoading(true);
       setFileName(filePath.split(/[\\/]/).pop() || filePath);
       const parsedBookmarks = await window.electronAPI.parseBookmarkFile(filePath);
@@ -170,6 +164,9 @@ const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({ isOpen, onClo
 
         <div className="bookmark-import-controls">
           <div className="file-select-section">
+            <p className="file-select-description">
+              ブラウザからエクスポートしたブックマークHTMLファイルを選択してください。
+            </p>
             <button onClick={handleSelectFile} className="select-file-button" disabled={loading}>
               {loading ? '読み込み中...' : 'ファイルを選択'}
             </button>
@@ -280,15 +277,6 @@ const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({ isOpen, onClo
         onClose={() => setAlertDialog({ ...alertDialog, isOpen: false })}
         message={alertDialog.message}
         type={alertDialog.type}
-      />
-
-      <FilePickerDialog
-        isOpen={isFilePickerOpen}
-        onClose={() => setIsFilePickerOpen(false)}
-        onFileSelect={handleFileSelected}
-        title="ブックマークファイルを選択"
-        fileTypes="html"
-        description="ブラウザからエクスポートしたブックマークHTMLファイルを選択してください。"
       />
     </div>
   );

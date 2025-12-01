@@ -43,9 +43,17 @@
 
 .file-select-section {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   gap: var(--spacing-sm);
   margin-bottom: var(--spacing-md);
+}
+
+.file-select-description {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
 }
 
 .select-file-button {
