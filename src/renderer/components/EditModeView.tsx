@@ -502,7 +502,21 @@ const EditModeView: React.FC<EditModeViewProps> = ({
         </button>
         <button
           onClick={() => {
-            // 整列処理: EditableRawItemListからロジックを移植
+            // 現在選択中のタブに属するファイルを特定
+            const currentTab = dataFileTabs[selectedTabIndex];
+            const currentTabFiles = new Set(currentTab.files);
+
+            // 現在のタブの行のみフィルタリング
+            const currentTabLines = mergedLines.filter(line =>
+              currentTabFiles.has(line.sourceFile)
+            );
+
+            // 他のタブの行
+            const otherTabLines = mergedLines.filter(line =>
+              !currentTabFiles.has(line.sourceFile)
+            );
+
+            // 重複削除関数
             const removeDuplicates = (lines: RawDataLine[]) => {
               const seen = new Set<string>();
               const deduplicated: RawDataLine[] = [];
@@ -533,8 +547,8 @@ const EditModeView: React.FC<EditModeViewProps> = ({
               }
             };
 
-            // コメント行も含めた全データを整列（コメント行を保持するため）
-            const sortedLines = [...mergedLines].sort((a, b) => {
+            // 現在のタブの行のみを整列
+            const sortedLines = [...currentTabLines].sort((a, b) => {
               const typeOrder = { directive: 0, item: 1, comment: 2, empty: 3 };
               const typeA = typeOrder[a.type] ?? 99;
               const typeB = typeOrder[b.type] ?? 99;
@@ -562,26 +576,32 @@ const EditModeView: React.FC<EditModeViewProps> = ({
             const duplicateCount = sortedLines.length - deduplicatedLines.length;
 
             if (duplicateCount > 0) {
-              // 重複がある場合、まず整列だけ実行してからダイアログを表示
-              handleSort(sortedLines);
+              // 整列後、他タブの行と結合して保存
+              const allLinesSorted = [...otherTabLines, ...sortedLines];
+              handleSort(allLinesSorted);
+
+              // 重複削除の確認ダイアログを表示
               setConfirmDialog({
                 isOpen: true,
-                message: `整列処理が完了しました。\n\n${duplicateCount}件の重複行が見つかりました。\n重複行を削除しますか？`,
+                message: `整列処理が完了しました（対象: ${currentTab.name}タブ）。\n\n${duplicateCount}件の重複行が見つかりました。\n重複行を削除しますか？`,
                 onConfirm: () => {
                   setConfirmDialog({ ...confirmDialog, isOpen: false });
-                  // 重複削除後の行で再度整列
-                  handleSort(deduplicatedLines);
+                  // 重複削除後、他タブの行と結合して保存
+                  const allLinesDedup = [...otherTabLines, ...deduplicatedLines];
+                  handleSort(allLinesDedup);
                 },
                 danger: false,
               });
             } else {
-              handleSort(sortedLines);
+              // 整列後、他タブの行と結合して保存
+              const allLinesSorted = [...otherTabLines, ...sortedLines];
+              handleSort(allLinesSorted);
             }
           }}
           className="sort-button"
-          title="種類→パスと引数→名前の順で整列し、重複行を削除"
+          title={`種類→パスと引数→名前の順で整列し、${dataFileTabs[selectedTabIndex].name}タブ内の重複行を削除`}
         >
-          🔤 整列・重複削除
+          🔤 整列・重複削除（{dataFileTabs[selectedTabIndex].name}タブのみ）
         </button>
       </div>
 
