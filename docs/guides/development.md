@@ -23,6 +23,56 @@
 dir,C:\folder\path  // フォルダ取込アイテム
 ```
 
+### データ読み込みと重複排除
+
+#### タブ単位の重複排除（v0.4.2以降）
+
+データ読み込み処理（`src/main/ipc/dataHandlers.ts`の`loadDataFiles()`関数）では、タブ単位で重複排除が行われます。
+
+**実装方法：**
+1. `SettingsService`から`dataFileTabs`設定を読み込む
+2. `sourceFile → tabIndex` のマップを作成
+3. 各データファイル処理時に、そのファイルが属するタブIndexを取得
+4. タブ別の`Set<string>`で重複チェック
+5. 重複判定キー: `${name}|${path}|${args}`
+
+**重複排除ルール：**
+- **同一タブ内**: 重複するアイテムは1つのみ読み込む
+- **異なるタブ間**: 重複するアイテムを両方とも読み込む
+- **タブに属さないファイル**: 独立したタブ（tabIndex = -1）として扱う
+
+**実装例：**
+```typescript
+// sourceFile → tabIndex のマップを作成
+const fileToTabMap = new Map<string, number>();
+dataFileTabs.forEach((tab, index) => {
+  tab.files.forEach(fileName => {
+    fileToTabMap.set(fileName, index);
+  });
+});
+
+// タブ別の重複チェック
+const seenPathsByTab = new Map<number, Set<string>>();
+for (const fileName of dataFiles) {
+  const tabIndex = fileToTabMap.get(fileName) ?? -1;
+  if (!seenPathsByTab.has(tabIndex)) {
+    seenPathsByTab.set(tabIndex, new Set<string>());
+  }
+  const seenPaths = seenPathsByTab.get(tabIndex)!;
+  // 重複チェック...
+}
+```
+
+#### 管理画面の重複削除
+
+管理画面（`EditModeView.tsx`）の整列・重複削除機能は、選択中のタブのみを対象に処理します：
+
+1. 現在選択中のタブに属するファイルを特定
+2. そのタブの行のみを抽出して整列・重複削除
+3. 保存時に他タブの行と結合
+
+これにより、タブ間で独立した重複管理が可能になります。
+
 ### アイテムタイプの検出
 - URL: `://`を含む
 - カスタムURI: 非http(s)スキーマ（obsidian://, ms-excel://）

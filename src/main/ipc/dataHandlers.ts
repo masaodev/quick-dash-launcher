@@ -15,6 +15,7 @@ import {
   AppItem,
 } from '../../common/types';
 import { BackupService } from '../services/backupService.js';
+import { SettingsService } from '../services/settingsService.js';
 
 // フォルダ取込アイテムのオプション型定義
 interface DirOptions {
@@ -453,12 +454,47 @@ async function scanDirectory(
  */
 async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
   const items: AppItem[] = [];
-  const seenPaths = new Set<string>();
+
+  // タブ設定を読み込んで、sourceFile → tabIndex のマップを作成
+  let fileToTabMap: Map<string, number>;
+  try {
+    const settingsService = await SettingsService.getInstance();
+    const dataFileTabs = await settingsService.get('dataFileTabs');
+
+    // sourceFile → tabIndex のマップを作成
+    fileToTabMap = new Map<string, number>();
+    dataFileTabs.forEach((tab, index) => {
+      tab.files.forEach(fileName => {
+        fileToTabMap.set(fileName, index);
+      });
+    });
+
+    dataLogger.info('タブ設定を読み込みました', {
+      tabCount: dataFileTabs.length,
+      mappedFiles: Array.from(fileToTabMap.keys())
+    });
+  } catch (error) {
+    dataLogger.warn('タブ設定の読み込みに失敗。全ファイルを独立したタブとして扱います', { error });
+    fileToTabMap = new Map<string, number>();
+  }
+
+  // タブ別の重複チェック用Set
+  const seenPathsByTab = new Map<number, Set<string>>();
+
   // 動的にデータファイルリストを取得
   const { PathManager } = await import('../config/pathManager.js');
   const dataFiles = PathManager.getDataFiles();
 
   for (const fileName of dataFiles) {
+    // 現在のファイルが属するタブインデックスを取得
+    const tabIndex = fileToTabMap.get(fileName) ?? -1; // タブに属さない場合は-1
+
+    // このタブ用のSetを初期化
+    if (!seenPathsByTab.has(tabIndex)) {
+      seenPathsByTab.set(tabIndex, new Set<string>());
+    }
+    const seenPaths = seenPathsByTab.get(tabIndex)!;
+
     const filePath = path.join(configFolder, fileName);
     const content = FileUtils.safeReadTextFile(filePath);
     if (content === null) continue;
@@ -495,7 +531,7 @@ async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
               lineIndex + 1
             );
 
-            // Add scanned items with duplicate check
+            // Add scanned items with duplicate check (per tab)
             for (const item of scannedItems) {
               const uniqueKey = item.args
                 ? `${item.name}|${item.path}|${item.args}`
@@ -503,6 +539,13 @@ async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
               if (!seenPaths.has(uniqueKey)) {
                 seenPaths.add(uniqueKey);
                 items.push(item);
+              } else {
+                dataLogger.debug('タブ内で重複するアイテムをスキップ', {
+                  tabIndex,
+                  fileName,
+                  itemName: item.name,
+                  uniqueKey
+                });
               }
             }
           } catch (error) {
@@ -548,6 +591,13 @@ async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
             if (!seenPaths.has(uniqueKey)) {
               seenPaths.add(uniqueKey);
               items.push(item);
+            } else {
+              dataLogger.debug('タブ内で重複するアイテムをスキップ', {
+                tabIndex,
+                fileName,
+                itemName: item.name,
+                uniqueKey
+              });
             }
             continue;
           }
@@ -563,6 +613,13 @@ async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
         if (!seenPaths.has(uniqueKey)) {
           seenPaths.add(uniqueKey);
           items.push(item);
+        } else {
+          dataLogger.debug('タブ内で重複するアイテムをスキップ', {
+            tabIndex,
+            fileName,
+            itemName: item.name,
+            uniqueKey
+          });
         }
       }
     }
@@ -570,6 +627,17 @@ async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
 
   // Sort items by name
   items.sort((a, b) => a.name.localeCompare(b.name, 'ja'));
+
+  // 統計情報をログ出力
+  const itemCountByTab = new Map<number, number>();
+  items.forEach(item => {
+    const tabIndex = fileToTabMap.get(item.sourceFile || '') ?? -1;
+    itemCountByTab.set(tabIndex, (itemCountByTab.get(tabIndex) || 0) + 1);
+  });
+  dataLogger.info('データ読み込み完了（タブ別統計）', {
+    totalItems: items.length,
+    itemCountByTab: Object.fromEntries(itemCountByTab)
+  });
 
   return items;
 }
