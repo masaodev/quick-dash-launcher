@@ -2,6 +2,8 @@
 
 .confirm-dialog {
   max-width: 450px;
+  width: 90%;
+  padding: var(--spacing-xl);
 }
 
 .confirm-header {

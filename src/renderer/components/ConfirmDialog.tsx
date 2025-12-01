@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 
+import '../styles/components/Modal.css';
 import '../styles/components/ConfirmDialog.css';
 
 interface ConfirmDialogProps {
