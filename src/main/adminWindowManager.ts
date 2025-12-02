@@ -87,13 +87,11 @@ export async function createAdminWindow(): Promise<BrowserWindow> {
     isAdminWindowVisible = false;
   });
 
+  // Escapeキーでの閉じる処理は無効化（誤操作防止）
   adminWindow.webContents.on('before-input-event', (event, input) => {
     if (input.key === 'Escape' && input.type === 'keyDown') {
       event.preventDefault();
-      if (adminWindow) {
-        adminWindow.hide();
-        isAdminWindowVisible = false;
-      }
+      // Escapeキーでは閉じない（編集作業中の誤操作を防止）
     }
   });
 

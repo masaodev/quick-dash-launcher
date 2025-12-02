@@ -85,8 +85,19 @@ export async function createWindow(): Promise<BrowserWindow> {
   mainWindow.webContents.on('before-input-event', (event, input) => {
     if (input.key === 'Escape' && input.type === 'keyDown') {
       event.preventDefault();
-      // 初回起動モードの場合はEscapeキーで閉じない
-      if (mainWindow && !isFirstLaunchMode) {
+      // 以下の場合はEscapeキーで閉じない
+      // - 初回起動モード
+      // - 編集モード
+      // - モーダルモード
+      // - ピン留めモードがalwaysOnTopまたはstayVisible
+      const shouldNotHide =
+        isFirstLaunchMode ||
+        isEditMode ||
+        isModalMode ||
+        windowPinMode === 'alwaysOnTop' ||
+        windowPinMode === 'stayVisible';
+
+      if (mainWindow && !shouldNotHide) {
         mainWindow.hide();
       }
     }
@@ -480,9 +491,27 @@ export async function showMainWindow(startTime?: number): Promise<void> {
 
 /**
  * メインウィンドウを非表示にする（ホットキー用）
+ * ピン留めモード、編集モード、モーダルモード、初回起動モード時は非表示にしない
  */
 export function hideMainWindow(): void {
   if (!mainWindow) return;
+
+  // 以下の場合はホットキーでも閉じない
+  // - 初回起動モード
+  // - 編集モード
+  // - モーダルモード
+  // - ピン留めモードがalwaysOnTopまたはstayVisible
+  const shouldNotHide =
+    isFirstLaunchMode ||
+    isEditMode ||
+    isModalMode ||
+    windowPinMode === 'alwaysOnTop' ||
+    windowPinMode === 'stayVisible';
+
+  if (shouldNotHide) {
+    windowLogger.info('現在のモードではホットキーで非表示にできません');
+    return;
+  }
 
   mainWindow.hide();
   windowLogger.info('メインウィンドウを非表示にしました');

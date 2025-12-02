@@ -59,9 +59,20 @@ ipcMain.handle('open-item', async (_event, item: LauncherItem) => {
 ## ウィンドウ表示制御
 
 - **グローバルホットキー**: 設定したホットキー（デフォルト: `Alt+Space`）でウィンドウ表示/非表示
+  - **非表示制限**: 以下の場合はホットキーでも非表示にできません
+    - 初回起動モード
+    - 編集モード
+    - モーダルモード
+    - ピン留めモードが`alwaysOnTop`または`stayVisible`の場合
+  - **実装場所**: `src/main/windowManager.ts:492-518`
 - **フォーカスアウト**: `normal`モードの場合、フォーカスを失うと自動的に非表示
 - **編集モード時のフォーカス制御**: 編集モード中はフォーカスアウトでもウィンドウが非表示にならない
-- **Escapeキー**: ピン留めモードに関係なく、Escapeキーで非表示可能
+- **Escapeキー**: 以下の場合を**除き**、Escapeキーで非表示可能
+  - 初回起動モード
+  - 編集モード
+  - モーダルモード
+  - ピン留めモードが`alwaysOnTop`または`stayVisible`の場合
+  - **実装場所**: `src/main/windowManager.ts:85-104`
 - **システムトレイ**: ダブルクリックでウィンドウ表示、右クリックでメニュー表示
 
 ### ウィンドウ表示位置制御
@@ -179,6 +190,26 @@ ipcMain.handle('open-item', async (_event, item: LauncherItem) => {
 3. **初期タブのリセット**
    - ウィンドウが非表示になるたびに初期タブをリセット
    - 次回開く際は指定されたタブが正しく表示される
+
+### 管理ウィンドウのEscapeキー動作
+
+**実装場所**: `src/main/adminWindowManager.ts:90-96`
+
+管理ウィンドウでは、編集作業中の誤操作を防止するため、**Escapeキーで閉じる機能を無効化**しています。
+
+```typescript
+adminWindow.webContents.on('before-input-event', (event, input) => {
+  if (input.key === 'Escape' && input.type === 'keyDown') {
+    event.preventDefault();
+    // Escapeキーでは閉じない（編集作業中の誤操作を防止）
+  }
+});
+```
+
+管理ウィンドウを閉じるには、以下の方法を使用します：
+- ウィンドウ右上の閉じるボタン（×）をクリック
+- 再度Ctrl+Eを押してトグル
+- 設定メニューから「閉じる」を選択
 
 ### 管理ウィンドウのIPC通信
 
