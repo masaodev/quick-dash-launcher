@@ -333,7 +333,14 @@ const App: React.FC = () => {
       // タブ表示OFF: data.txtのみ表示
       return mainItems.filter((item) => item.sourceFile === 'data.txt');
     }
-    // タブ表示ON: アクティブなタブのアイテムのみ表示
+    // タブ表示ON: アクティブなタブに紐付く全ファイルのアイテムを表示
+    // アクティブなタブの設定を検索
+    const activeTabConfig = dataFileTabs.find((tab) => tab.files.includes(activeTab));
+    if (activeTabConfig) {
+      // タブに紐付く全ファイルのアイテムを取得
+      return mainItems.filter((item) => activeTabConfig.files.includes(item.sourceFile || ''));
+    }
+    // フォールバック: アクティブタブと一致するファイルのアイテムのみ
     return mainItems.filter((item) => item.sourceFile === activeTab);
   };
 

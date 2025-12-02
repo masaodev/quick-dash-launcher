@@ -13,3 +13,4 @@ Wikipedia,https://wikipedia.org/
 // フォルダ
 デスクトップ,shell:Desktop
 ドキュメント,shell:Documents
+ダウンロード,shell:Downloads

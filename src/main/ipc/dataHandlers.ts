@@ -464,14 +464,14 @@ async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
     // sourceFile → tabIndex のマップを作成
     fileToTabMap = new Map<string, number>();
     dataFileTabs.forEach((tab, index) => {
-      tab.files.forEach(fileName => {
+      tab.files.forEach((fileName) => {
         fileToTabMap.set(fileName, index);
       });
     });
 
     dataLogger.info('タブ設定を読み込みました', {
       tabCount: dataFileTabs.length,
-      mappedFiles: Array.from(fileToTabMap.keys())
+      mappedFiles: Array.from(fileToTabMap.keys()),
     });
   } catch (error) {
     dataLogger.warn('タブ設定の読み込みに失敗。全ファイルを独立したタブとして扱います', { error });
@@ -544,7 +544,7 @@ async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
                   tabIndex,
                   fileName,
                   itemName: item.name,
-                  uniqueKey
+                  uniqueKey,
                 });
               }
             }
@@ -596,7 +596,7 @@ async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
                 tabIndex,
                 fileName,
                 itemName: item.name,
-                uniqueKey
+                uniqueKey,
               });
             }
             continue;
@@ -618,7 +618,7 @@ async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
             tabIndex,
             fileName,
             itemName: item.name,
-            uniqueKey
+            uniqueKey,
           });
         }
       }
@@ -630,13 +630,13 @@ async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
 
   // 統計情報をログ出力
   const itemCountByTab = new Map<number, number>();
-  items.forEach(item => {
+  items.forEach((item) => {
     const tabIndex = fileToTabMap.get(item.sourceFile || '') ?? -1;
     itemCountByTab.set(tabIndex, (itemCountByTab.get(tabIndex) || 0) + 1);
   });
   dataLogger.info('データ読み込み完了（タブ別統計）', {
     totalItems: items.length,
-    itemCountByTab: Object.fromEntries(itemCountByTab)
+    itemCountByTab: Object.fromEntries(itemCountByTab),
   });
 
   return items;

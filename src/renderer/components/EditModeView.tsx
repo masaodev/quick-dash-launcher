@@ -507,13 +507,13 @@ const EditModeView: React.FC<EditModeViewProps> = ({
             const currentTabFiles = new Set(currentTab.files);
 
             // 現在のタブの行のみフィルタリング
-            const currentTabLines = mergedLines.filter(line =>
+            const currentTabLines = mergedLines.filter((line) =>
               currentTabFiles.has(line.sourceFile)
             );
 
             // 他のタブの行
-            const otherTabLines = mergedLines.filter(line =>
-              !currentTabFiles.has(line.sourceFile)
+            const otherTabLines = mergedLines.filter(
+              (line) => !currentTabFiles.has(line.sourceFile)
             );
 
             // 重複削除関数

@@ -750,4 +750,204 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
       await utils.attachScreenshot(testInfo, 'data3.txtアイテム検索結果');
     });
   });
+
+  // ==================== 統合タブのキーボード操作テスト ====================
+
+  test('統合タブで矢印キーによる選択が正しく循環する', async ({
+    mainWindow,
+    configHelper,
+  }, testInfo) => {
+    configHelper.loadTemplate('with-multi-file-tabs');
+
+    const utils = new TestUtils(mainWindow);
+
+    await test.step('統合タブがアクティブであることを確認', async () => {
+      await utils.waitForPageLoad();
+
+      const unifiedTab = mainWindow.locator('.file-tab.active', { hasText: '統合タブ' });
+      await expect(unifiedTab).toBeVisible();
+
+      await utils.attachScreenshot(testInfo, '初期状態');
+    });
+
+    let firstItemText: string | null;
+    let lastItemText: string | null;
+
+    await test.step('最初のアイテムが選択されていることを確認', async () => {
+      const firstItem = mainWindow.locator('.item.selected').first();
+      await expect(firstItem).toBeVisible();
+      firstItemText = await firstItem.textContent();
+
+      await utils.attachScreenshot(testInfo, '最初のアイテム選択');
+    });
+
+    await test.step('↑キーを押して最後のアイテムに移動することを確認', async () => {
+      await utils.sendShortcut('ArrowUp');
+      await utils.wait(100);
+
+      const selectedItem = mainWindow.locator('.item.selected');
+      await expect(selectedItem).toBeVisible();
+      lastItemText = await selectedItem.textContent();
+
+      // 最初のアイテムとは異なることを確認（循環して最後のアイテムに移動）
+      expect(lastItemText).not.toBe(firstItemText);
+
+      await utils.attachScreenshot(testInfo, '↑キーで最後のアイテムに移動');
+    });
+
+    await test.step('↓キーを押して最初のアイテムに戻ることを確認', async () => {
+      await utils.sendShortcut('ArrowDown');
+      await utils.wait(100);
+
+      const selectedItem = mainWindow.locator('.item.selected');
+      await expect(selectedItem).toBeVisible();
+      const currentItemText = await selectedItem.textContent();
+
+      // 最初のアイテムに戻ることを確認
+      expect(currentItemText).toBe(firstItemText);
+
+      await utils.attachScreenshot(testInfo, '↓キーで最初のアイテムに戻る');
+    });
+  });
+
+  test('統合タブで矢印キーで選択したアイテムをEnterキーで開ける', async ({
+    mainWindow,
+    configHelper,
+  }, testInfo) => {
+    configHelper.loadTemplate('with-multi-file-tabs');
+
+    const utils = new TestUtils(mainWindow);
+
+    await test.step('統合タブがアクティブであることを確認', async () => {
+      await utils.waitForPageLoad();
+
+      const unifiedTab = mainWindow.locator('.file-tab.active', { hasText: '統合タブ' });
+      await expect(unifiedTab).toBeVisible();
+
+      await utils.attachScreenshot(testInfo, '初期状態');
+    });
+
+    let selectedItemText: string | null;
+
+    await test.step('↓キーで2番目のアイテムに移動', async () => {
+      await utils.sendShortcut('ArrowDown');
+      await utils.wait(100);
+
+      const selectedItem = mainWindow.locator('.item.selected');
+      await expect(selectedItem).toBeVisible();
+      selectedItemText = await selectedItem.textContent();
+
+      await utils.attachScreenshot(testInfo, '2番目のアイテム選択');
+    });
+
+    await test.step('Enterキーを押してアイテムを開く（エラーが発生しないことを確認）', async () => {
+      // Enterキーを押す（実際にアプリやURLが開くが、テストでは開けないのでエラーにならないことのみ確認）
+      await utils.sendShortcut('Enter');
+      await utils.wait(300);
+
+      // エラーダイアログが表示されていないことを確認
+      const alertDialog = mainWindow.locator('.alert-dialog');
+      await expect(alertDialog).not.toBeVisible();
+
+      await utils.attachScreenshot(testInfo, 'Enterキー押下後');
+    });
+  });
+
+  test('統合タブで複数回矢印キーを押して選択を移動し、Enterキーで開ける', async ({
+    mainWindow,
+    configHelper,
+  }, testInfo) => {
+    configHelper.loadTemplate('with-multi-file-tabs');
+
+    const utils = new TestUtils(mainWindow);
+
+    await test.step('統合タブがアクティブであることを確認', async () => {
+      await utils.waitForPageLoad();
+
+      const unifiedTab = mainWindow.locator('.file-tab.active', { hasText: '統合タブ' });
+      await expect(unifiedTab).toBeVisible();
+
+      await utils.attachScreenshot(testInfo, '初期状態');
+    });
+
+    await test.step('↓キーを5回押して5番目のアイテムに移動', async () => {
+      for (let i = 0; i < 5; i++) {
+        await utils.sendShortcut('ArrowDown');
+        await utils.wait(50);
+      }
+
+      const selectedItem = mainWindow.locator('.item.selected');
+      await expect(selectedItem).toBeVisible();
+
+      await utils.attachScreenshot(testInfo, '5番目のアイテム選択');
+    });
+
+    await test.step('Enterキーを押してアイテムを開く', async () => {
+      await utils.sendShortcut('Enter');
+      await utils.wait(300);
+
+      // エラーダイアログが表示されていないことを確認
+      const alertDialog = mainWindow.locator('.alert-dialog');
+      await expect(alertDialog).not.toBeVisible();
+
+      await utils.attachScreenshot(testInfo, 'Enterキー押下後');
+    });
+  });
+
+  test('統合タブでdata.txtとdata3.txtのアイテムをまたいで矢印キーで移動できる', async ({
+    mainWindow,
+    configHelper,
+  }, testInfo) => {
+    configHelper.loadTemplate('with-multi-file-tabs');
+
+    const utils = new TestUtils(mainWindow);
+
+    await test.step('統合タブの全アイテム数を確認', async () => {
+      await utils.waitForPageLoad();
+
+      // 統合タブがアクティブであることを確認
+      const unifiedTab = mainWindow.locator('.file-tab.active', { hasText: '統合タブ' });
+      await expect(unifiedTab).toBeVisible();
+
+      // 全アイテム数を取得（data.txt: 8個 + data3.txt: 3個 = 11個）
+      const allItems = mainWindow.locator('.item');
+      const itemCount = await allItems.count();
+      expect(itemCount).toBe(11);
+
+      await utils.attachScreenshot(testInfo, '初期状態');
+    });
+
+    await test.step('↓キーを11回押して全アイテムを巡回', async () => {
+      const visitedItems: string[] = [];
+
+      for (let i = 0; i < 11; i++) {
+        const selectedItem = mainWindow.locator('.item.selected');
+        const itemText = await selectedItem.textContent();
+        if (itemText) {
+          visitedItems.push(itemText);
+        }
+
+        await utils.sendShortcut('ArrowDown');
+        await utils.wait(50);
+      }
+
+      // 11個の異なるアイテムを訪問したことを確認
+      const uniqueItems = new Set(visitedItems);
+      expect(uniqueItems.size).toBe(11);
+
+      await utils.attachScreenshot(testInfo, '全アイテム巡回後');
+    });
+
+    await test.step('最初のアイテムに戻っていることを確認', async () => {
+      const selectedItem = mainWindow.locator('.item.selected');
+      const firstItem = mainWindow.locator('.item').first();
+      const selectedText = await selectedItem.textContent();
+      const firstText = await firstItem.textContent();
+
+      // 選択されているアイテムが最初のアイテムであることを確認
+      expect(selectedText).toBe(firstText);
+
+      await utils.attachScreenshot(testInfo, '最初のアイテムに戻る');
+    });
+  });
 });
