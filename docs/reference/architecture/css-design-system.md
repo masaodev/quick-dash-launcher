@@ -152,6 +152,43 @@ src/renderer/styles/
 #### .btn-primary / .btn-secondary / .btn-danger
 状態別ボタンスタイル
 
+#### .btn-sm / .btn-lg
+サイズバリエーション
+```css
+.btn-sm {
+  padding: var(--spacing-xs) var(--spacing-md);
+  font-size: var(--font-size-sm);
+  height: 28px;
+}
+
+.btn-lg {
+  padding: var(--spacing-md) var(--spacing-xl);
+  font-size: var(--font-size-lg);
+}
+```
+
+**注意**: サイズバリエーションは `-sm` / `-lg` サフィックスで統一されています。`-small` や `-large` は使用しません。
+
+#### .action-btn
+32x32ピクセルの正方形アクションボタン（ヘッダーのアイコンボタン用）
+```css
+.action-btn {
+  width: var(--button-height);
+  height: var(--button-height);
+  border: var(--border-normal);
+  background-color: var(--color-white);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: var(--font-size-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-normal);
+}
+```
+
+**用途**: 登録ボタン、設定ボタン、更新ボタン、ピン留めボタンなど
+
 ### レイアウトクラス
 
 #### .flex-center
@@ -334,8 +371,27 @@ const MyComponent = () => {
 
 - **変数名**: `--category-property-variant` 形式
   - 例: `--color-primary-hover`, `--spacing-lg`, `--border-radius-xl`
-- **クラス名**: BEM記法またはシンプルなケバブケース
-  - 例: `.btn-primary`, `.modal-overlay`, `.form-group`
+- **クラス名**: シンプルなケバブケース（ハイフン区切り）
+  - 例: `.btn-primary`, `.modal-overlay`, `.form-group`, `.action-btn`
+
+#### 命名規則の統一ガイドライン
+
+プロジェクト全体で以下の命名パターンに統一されています：
+
+**ボタンクラス**:
+- 基本形: `.btn-{variant}` （例: `.btn-primary`, `.btn-danger`）
+- サイズバリエーション: `.btn-{variant}-sm` または `.btn-{variant}-lg`
+  - ✅ 正: `.btn-danger-sm`, `.btn-primary-lg`
+  - ❌ 誤: `.btn-danger-small`, `.btn-primary-large`
+
+**アクションボタン**:
+- 統一形: `.action-btn` （32x32ピクセルの正方形ボタン）
+  - ✅ 正: `.action-btn`
+  - ❌ 誤: `.action-button`
+
+**コンポーネント要素**:
+- パターン: `.{component}-{element}` （例: `.modal-overlay`, `.item-icon`）
+- 状態クラス: `.{component}.{state}` （例: `.item.selected`, `.btn-primary.disabled`）
 
 ### 2. 値の使用優先順位
 
@@ -409,6 +465,28 @@ const MyComponent = () => {
 
 /* ブラウザ開発者ツールでComputed Styleを確認 */
 ```
+
+## 命名規則の変更履歴
+
+### Phase 4.2 (2025-12) - CSS命名規則の統一
+
+プロジェクト全体のCSS命名規則を調査し、不整合を修正しました。
+
+**修正内容**:
+
+1. **アクションボタンの統一**
+   - 変更前: `Header.css`で `.action-button` を使用
+   - 変更後: `.action-btn` に統一（`common.css`の命名規則に合わせる）
+   - 影響範囲: 4つのコンポーネント（ActionButtons, SettingsDropdown, RefreshActionsDropdown, AdminOtherTab）
+
+2. **サイズバリエーションの統一**
+   - 変更前: `AdminWindow.css`で `.btn-secondary-small`, `.btn-danger-small` を使用
+   - 変更後: `.btn-secondary-sm`, `.btn-danger-sm` に統一（`common.css`の`.btn-sm`に合わせる）
+   - 影響範囲: 1つのコンポーネント（SettingsTab）
+
+**結果**: 全てのCSSクラス名が一貫したハイフン区切り命名規則に統一され、保守性が向上しました。
+
+---
 
 ## まとめ
 
