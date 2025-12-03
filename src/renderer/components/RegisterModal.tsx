@@ -9,6 +9,7 @@ import { useModalInitializer } from '../hooks/useModalInitializer';
 
 import GroupItemSelectorModal from './GroupItemSelectorModal';
 import FilePickerDialog from './FilePickerDialog';
+import DirOptionsEditor from './DirOptionsEditor';
 
 interface RegisterModalProps {
   isOpen: boolean;
@@ -51,11 +52,8 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
   } = useCustomIcon();
 
   // モーダル初期化フック
-  const {
-    initializeFromEditingItem,
-    initializeFromDroppedPaths,
-    createEmptyTemplateItem,
-  } = useModalInitializer();
+  const { initializeFromEditingItem, initializeFromDroppedPaths, createEmptyTemplateItem } =
+    useModalInitializer();
 
   useEffect(() => {
     if (!isOpen) {
@@ -81,13 +79,21 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
       if (editingItem) {
         debugInfo('RegisterModal opened in edit mode:', editingItem);
         setLoading(true);
-        const items = await initializeFromEditingItem(editingItem, settings.dataFileTabs, loadCustomIconPreview);
+        const items = await initializeFromEditingItem(
+          editingItem,
+          settings.dataFileTabs,
+          loadCustomIconPreview
+        );
         setItems(items);
         setLoading(false);
       } else if (droppedPaths && droppedPaths.length > 0) {
         debugInfo('RegisterModal opened with paths:', droppedPaths);
         setLoading(true);
-        const items = await initializeFromDroppedPaths(droppedPaths, currentTab, settings.dataFileTabs);
+        const items = await initializeFromDroppedPaths(
+          droppedPaths,
+          currentTab,
+          settings.dataFileTabs
+        );
         setItems(items);
         setLoading(false);
       } else {
@@ -213,7 +219,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     // モーダルモードを有効化し、必要サイズを設定
     window.electronAPI.setModalMode(true, { width: requiredWidth, height: requiredHeight });
   }, [isOpen, items]);
-
 
   // カスタムアイコン選択時のコールバック
   const onCustomIconSelected = async (filePath: string) => {
@@ -520,113 +525,12 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                     )}
 
                     {item.itemCategory === 'dir' && (
-                      <>
-                        {item.dirOptions && (
-                          <div className="dir-options">
-                            <div className="form-group">
-                              <label>階層深度:</label>
-                              <select
-                                value={item.dirOptions.depth}
-                                onChange={(e) => {
-                                  const newDirOptions = {
-                                    ...item.dirOptions!,
-                                    depth: parseInt(e.target.value),
-                                  };
-                                  handleItemChange(index, 'dirOptions', newDirOptions);
-                                }}
-                              >
-                                <option value="0">現在のフォルダのみ</option>
-                                <option value="1">1階層下まで</option>
-                                <option value="2">2階層下まで</option>
-                                <option value="3">3階層下まで</option>
-                                <option value="-1">無制限</option>
-                              </select>
-                            </div>
-
-                            <div className="form-group">
-                              <label>取得タイプ:</label>
-                              <select
-                                value={item.dirOptions.types}
-                                onChange={(e) => {
-                                  const newDirOptions = {
-                                    ...item.dirOptions!,
-                                    types: e.target.value as 'file' | 'folder' | 'both',
-                                  };
-                                  handleItemChange(index, 'dirOptions', newDirOptions);
-                                }}
-                              >
-                                <option value="file">ファイルのみ</option>
-                                <option value="folder">フォルダーのみ</option>
-                                <option value="both">ファイルとフォルダー</option>
-                              </select>
-                            </div>
-
-                            <div className="form-group">
-                              <label>フィルター (例: *.txt):</label>
-                              <input
-                                type="text"
-                                value={item.dirOptions.filter || ''}
-                                onChange={(e) => {
-                                  const newDirOptions = {
-                                    ...item.dirOptions!,
-                                    filter: e.target.value || undefined,
-                                  };
-                                  handleItemChange(index, 'dirOptions', newDirOptions);
-                                }}
-                                placeholder="ワイルドカードパターン"
-                              />
-                            </div>
-
-                            <div className="form-group">
-                              <label>除外パターン (例: temp*):</label>
-                              <input
-                                type="text"
-                                value={item.dirOptions.exclude || ''}
-                                onChange={(e) => {
-                                  const newDirOptions = {
-                                    ...item.dirOptions!,
-                                    exclude: e.target.value || undefined,
-                                  };
-                                  handleItemChange(index, 'dirOptions', newDirOptions);
-                                }}
-                                placeholder="除外するパターン"
-                              />
-                            </div>
-
-                            <div className="form-group">
-                              <label>プレフィックス (例: 仕事):</label>
-                              <input
-                                type="text"
-                                value={item.dirOptions.prefix || ''}
-                                onChange={(e) => {
-                                  const newDirOptions = {
-                                    ...item.dirOptions!,
-                                    prefix: e.target.value || undefined,
-                                  };
-                                  handleItemChange(index, 'dirOptions', newDirOptions);
-                                }}
-                                placeholder="アイテム名の前に付ける文字"
-                              />
-                            </div>
-
-                            <div className="form-group">
-                              <label>サフィックス (例: Dev):</label>
-                              <input
-                                type="text"
-                                value={item.dirOptions.suffix || ''}
-                                onChange={(e) => {
-                                  const newDirOptions = {
-                                    ...item.dirOptions!,
-                                    suffix: e.target.value || undefined,
-                                  };
-                                  handleItemChange(index, 'dirOptions', newDirOptions);
-                                }}
-                                placeholder="アイテム名の後に付ける文字"
-                              />
-                            </div>
-                          </div>
-                        )}
-                      </>
+                      <DirOptionsEditor
+                        dirOptions={item.dirOptions}
+                        onChange={(newDirOptions) =>
+                          handleItemChange(index, 'dirOptions', newDirOptions)
+                        }
+                      />
                     )}
 
                     {item.itemCategory === 'group' && (

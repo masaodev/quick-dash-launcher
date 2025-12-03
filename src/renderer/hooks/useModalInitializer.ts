@@ -150,7 +150,10 @@ export function useModalInitializer() {
   /**
    * 空のテンプレートアイテムを作成
    */
-  const createEmptyTemplateItem = (currentTab: string | undefined, tabs: DataFileTab[]): RegisterItem[] => {
+  const createEmptyTemplateItem = (
+    currentTab: string | undefined,
+    tabs: DataFileTab[]
+  ): RegisterItem[] => {
     const defaultTab = currentTab || (tabs.length > 0 ? tabs[0].files[0] : 'data.txt');
     return [
       {
