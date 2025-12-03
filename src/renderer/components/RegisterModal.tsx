@@ -1,11 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { type RegisterItem } from '@common/utils/dataConverters';
-import { detectItemType } from '@common/utils/itemTypeDetector';
 
-import { RawDataLine, DataFileTab } from '../../common/types';
-import { debugInfo } from '../utils/debug';
+import { RawDataLine } from '../../common/types';
 import { useCustomIcon } from '../hooks/useCustomIcon';
-import { useModalInitializer } from '../hooks/useModalInitializer';
+import { useRegisterForm } from '../hooks/useRegisterForm';
 
 import GroupItemSelectorModal from './GroupItemSelectorModal';
 import FilePickerDialog from './FilePickerDialog';
@@ -28,15 +26,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
   editingItem,
   currentTab,
 }) => {
-  const [items, setItems] = useState<RegisterItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [_groupItemNamesInput, setGroupItemNamesInput] = useState<{ [index: number]: string }>({});
-  const [availableTabs, setAvailableTabs] = useState<DataFileTab[]>([]);
-  const [errors, setErrors] = useState<{
-    [index: number]: { name?: string; path?: string; groupItemNames?: string };
-  }>({});
-  const [selectorModalOpen, setSelectorModalOpen] = useState(false);
-  const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
   // カスタムアイコン管理フック
@@ -51,9 +40,33 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     clearCustomIconPreviews,
   } = useCustomIcon();
 
-  // モーダル初期化フック
-  const { initializeFromEditingItem, initializeFromDroppedPaths, createEmptyTemplateItem } =
-    useModalInitializer();
+  // フォーム状態管理フック
+  const {
+    items,
+    loading,
+    errors,
+    availableTabs,
+    selectorModalOpen,
+    editingItemIndex,
+    handleItemChange,
+    validateAndRegister,
+    handleCancel,
+    handleAddGroupItem,
+    handleSelectGroupItem,
+    handleRemoveGroupItem,
+    updateItem,
+    handleTargetTabChange,
+    setEditingItemIndex,
+    setSelectorModalOpen,
+  } = useRegisterForm(
+    isOpen,
+    editingItem,
+    droppedPaths,
+    currentTab,
+    loadCustomIconPreview,
+    onClose,
+    onRegister
+  );
 
   useEffect(() => {
     if (!isOpen) {
@@ -62,48 +75,8 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
       window.electronAPI.setModalMode(false);
       // カスタムアイコンプレビューをクリア
       clearCustomIconPreviews();
-      setItems([]);
-      setErrors({});
       return;
     }
-
-    // 設定からタブ一覧を取得してから、アイテムを初期化
-    const loadAvailableTabsAndInitialize = async () => {
-      const settings = await window.electronAPI.getSettings();
-      setAvailableTabs(settings.dataFileTabs);
-
-      // モーダルが開いたとき、まず前回の状態をクリア
-      clearCustomIconPreviews();
-      setItems([]);
-
-      if (editingItem) {
-        debugInfo('RegisterModal opened in edit mode:', editingItem);
-        setLoading(true);
-        const items = await initializeFromEditingItem(
-          editingItem,
-          settings.dataFileTabs,
-          loadCustomIconPreview
-        );
-        setItems(items);
-        setLoading(false);
-      } else if (droppedPaths && droppedPaths.length > 0) {
-        debugInfo('RegisterModal opened with paths:', droppedPaths);
-        setLoading(true);
-        const items = await initializeFromDroppedPaths(
-          droppedPaths,
-          currentTab,
-          settings.dataFileTabs
-        );
-        setItems(items);
-        setLoading(false);
-      } else {
-        // ボタンから開かれた場合：空のテンプレートアイテムを1つ作成
-        debugInfo('RegisterModal opened manually: creating empty template');
-        const items = createEmptyTemplateItem(currentTab, settings.dataFileTabs);
-        setItems(items);
-      }
-    };
-    loadAvailableTabsAndInitialize();
 
     // モーダルが開いたときの処理
     document.body.style.overflow = 'hidden';
@@ -224,9 +197,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
   const onCustomIconSelected = async (filePath: string) => {
     const item = items[filePickerState.itemIndex!];
     await handleCustomIconFileSelected(filePath, item.path, (index, customIconFileName) => {
-      const newItems = [...items];
-      newItems[index] = { ...newItems[index], customIcon: customIconFileName };
-      setItems(newItems);
+      updateItem(index, { customIcon: customIconFileName });
     });
   };
 
@@ -235,198 +206,9 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     const item = items[index];
     if (item.customIcon) {
       await deleteCustomIcon(index, item.customIcon, (idx) => {
-        const newItems = [...items];
-        newItems[idx] = { ...newItems[idx], customIcon: undefined };
-        setItems(newItems);
+        updateItem(idx, { customIcon: undefined });
       });
     }
-  };
-
-  const handleItemChange = async (
-    index: number,
-    field: keyof RegisterItem,
-    value: string | boolean | RegisterItem['dirOptions']
-  ) => {
-    const newItems = [...items];
-    if (field === 'dirOptions') {
-      newItems[index] = { ...newItems[index], dirOptions: value as RegisterItem['dirOptions'] };
-    } else if (field === 'groupItemNames') {
-      // groupItemNamesの場合は文字列をパース
-      const itemNames = (value as string)
-        .split(',')
-        .map((name) => name.trim())
-        .filter((name) => name);
-      newItems[index] = { ...newItems[index], groupItemNames: itemNames };
-    } else {
-      newItems[index] = { ...newItems[index], [field]: value };
-    }
-
-    // 入力変更時に該当フィールドのエラーをクリア
-    if (field === 'name' || field === 'path') {
-      setErrors((prev) => {
-        const newErrors = { ...prev };
-        if (newErrors[index]) {
-          const updatedError = { ...newErrors[index] };
-          delete updatedError[field];
-          newErrors[index] = updatedError;
-        }
-        return newErrors;
-      });
-    }
-
-    // アイテム種別が変更された場合の処理
-    if (field === 'itemCategory') {
-      if (value === 'dir') {
-        // フォルダ取込選択時：フォルダ処理を展開に設定し、フォルダ取込アイテムオプションを初期化
-        newItems[index].folderProcessing = 'expand';
-        if (!newItems[index].dirOptions) {
-          newItems[index].dirOptions = {
-            depth: 0,
-            types: 'both',
-            filter: undefined,
-            exclude: undefined,
-            prefix: undefined,
-            suffix: undefined,
-          };
-        }
-        // グループオプションをクリア
-        delete newItems[index].groupItemNames;
-        // グループ入力テキストもクリア
-        setGroupItemNamesInput((prev) => {
-          const newInput = { ...prev };
-          delete newInput[index];
-          return newInput;
-        });
-      } else if (value === 'group') {
-        // グループ選択時：グループアイテムオプションを初期化
-        if (!newItems[index].groupItemNames) {
-          newItems[index].groupItemNames = [];
-        }
-        // フォルダ取込オプションをクリア
-        delete newItems[index].folderProcessing;
-        delete newItems[index].dirOptions;
-      } else {
-        // 単一アイテム選択時：両方クリア
-        delete newItems[index].folderProcessing;
-        delete newItems[index].dirOptions;
-        delete newItems[index].groupItemNames;
-      }
-    }
-
-    // パスが変更された場合、アイテムタイプを再検出
-    if (field === 'path' && (value as string).trim()) {
-      const newType = await detectItemType(value as string);
-      newItems[index].type = newType;
-
-      // タイプに応じてデフォルト値を設定
-      if (newType === 'folder') {
-        if (!newItems[index].folderProcessing) {
-          newItems[index].folderProcessing = 'folder';
-        }
-        if (!newItems[index].dirOptions) {
-          newItems[index].dirOptions = {
-            depth: 0,
-            types: 'both',
-            filter: undefined,
-            exclude: undefined,
-            prefix: undefined,
-            suffix: undefined,
-          };
-        }
-      } else {
-        // フォルダでない場合はフォルダ関連の設定をクリア
-        delete newItems[index].folderProcessing;
-        delete newItems[index].dirOptions;
-      }
-    }
-
-    setItems(newItems);
-  };
-
-  const handleRegister = () => {
-    // バリデーション：名前とパスの必須チェック
-    const newErrors: typeof errors = {};
-
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
-      newErrors[i] = {};
-
-      // グループ以外は名前が必須
-      if (item.itemCategory !== 'dir' && !item.name.trim()) {
-        newErrors[i].name =
-          item.itemCategory === 'group' ? 'グループ名を入力してください' : '名前を入力してください';
-      }
-
-      // グループ以外はパスが必須
-      if (item.itemCategory !== 'group' && !item.path.trim()) {
-        newErrors[i].path = 'パスを入力してください';
-      }
-
-      // グループの場合はアイテム名リストが必須
-      if (item.itemCategory === 'group') {
-        const itemNames = item.groupItemNames || [];
-        if (itemNames.length === 0) {
-          newErrors[i].groupItemNames = 'グループアイテムを追加してください';
-        }
-      }
-    }
-
-    // エラーがある場合は登録しない
-    setErrors(newErrors);
-    const hasErrors = Object.values(newErrors).some((e) =>
-      Object.values(e).some((msg) => msg !== undefined)
-    );
-
-    if (hasErrors) {
-      return;
-    }
-
-    onRegister(items);
-    onClose();
-  };
-
-  const handleCancel = () => {
-    setItems([]);
-    onClose();
-  };
-
-  const handleAddGroupItem = (index: number) => {
-    setEditingItemIndex(index);
-    setSelectorModalOpen(true);
-  };
-
-  const handleSelectGroupItem = (itemName: string) => {
-    if (editingItemIndex === null) return;
-
-    const newItems = [...items];
-    const currentGroupItemNames = newItems[editingItemIndex].groupItemNames || [];
-    newItems[editingItemIndex] = {
-      ...newItems[editingItemIndex],
-      groupItemNames: [...currentGroupItemNames, itemName],
-    };
-    setItems(newItems);
-
-    // エラーをクリア
-    setErrors((prev) => {
-      const newErrors = { ...prev };
-      if (newErrors[editingItemIndex]) {
-        const updatedError = { ...newErrors[editingItemIndex] };
-        delete updatedError.groupItemNames;
-        newErrors[editingItemIndex] = updatedError;
-      }
-      return newErrors;
-    });
-  };
-
-  const handleRemoveGroupItem = (itemIndex: number, groupItemNameIndex: number) => {
-    const newItems = [...items];
-    const currentGroupItemNames = newItems[itemIndex].groupItemNames || [];
-    const updatedGroupItemNames = currentGroupItemNames.filter((_, i) => i !== groupItemNameIndex);
-    newItems[itemIndex] = {
-      ...newItems[itemIndex],
-      groupItemNames: updatedGroupItemNames,
-    };
-    setItems(newItems);
   };
 
   if (!isOpen) return null;
@@ -577,25 +359,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                       <label>保存先タブ:</label>
                       <select
                         value={item.targetTab}
-                        onChange={(e) => {
-                          const selectedTab = availableTabs.find((tab) =>
-                            tab.files.includes(e.target.value)
-                          );
-
-                          // targetTabとtargetFileを同時に更新
-                          const newItems = [...items];
-                          newItems[index] = { ...newItems[index], targetTab: e.target.value };
-
-                          // タブに複数ファイルがある場合、最初のファイルを設定
-                          if (selectedTab && selectedTab.files.length > 0) {
-                            newItems[index] = {
-                              ...newItems[index],
-                              targetFile: selectedTab.files[0],
-                            };
-                          }
-
-                          setItems(newItems);
-                        }}
+                        onChange={(e) => handleTargetTabChange(index, e.target.value)}
                       >
                         {availableTabs.map((tab) => (
                           <option key={tab.files[0]} value={tab.files[0]}>
@@ -675,7 +439,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
 
               <div className="modal-actions">
                 <button onClick={handleCancel}>キャンセル</button>
-                <button onClick={handleRegister} className="primary">
+                <button onClick={validateAndRegister} className="primary">
                   {editingItem ? '更新' : '登録'}
                 </button>
               </div>
