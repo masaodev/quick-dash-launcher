@@ -958,7 +958,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                                       onClick={() =>
                                         handleRemoveFileFromTab(fileModalTabIndex, fileName)
                                       }
-                                      className="btn-danger-small"
+                                      className="btn-danger-sm"
                                       disabled={isLoading}
                                     >
                                       削除

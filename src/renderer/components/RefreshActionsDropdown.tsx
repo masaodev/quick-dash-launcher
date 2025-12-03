@@ -39,7 +39,7 @@ const RefreshActionsDropdown: React.FC<RefreshActionsDropdownProps> = ({
 
   return (
     <div className="settings-dropdown" ref={dropdownRef}>
-      <button className="action-button" onClick={() => setIsOpen(!isOpen)} title="更新・取得">
+      <button className="action-btn" onClick={() => setIsOpen(!isOpen)} title="更新・取得">
         🔄
       </button>
       {isOpen && (

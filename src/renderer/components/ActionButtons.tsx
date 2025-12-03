@@ -35,19 +35,19 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
     switch (mode) {
       case 'normal':
         return {
-          className: 'action-button pin-normal',
+          className: 'action-btn pin-normal',
           title: '通常モード → 常に最上面モード',
           emoji: '📌',
         };
       case 'alwaysOnTop':
         return {
-          className: 'action-button pin-always-on-top',
+          className: 'action-btn pin-always-on-top',
           title: '常に最上面モード → 表示固定モード',
           emoji: '📌',
         };
       case 'stayVisible':
         return {
-          className: 'action-button pin-stay-visible',
+          className: 'action-btn pin-stay-visible',
           title: '表示固定モード → 通常モード',
           emoji: '📌',
         };
@@ -58,7 +58,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   return (
     <div className="action-buttons">
       <button
-        className="action-button register-item"
+        className="action-btn register-item"
         onClick={onOpenRegisterModal}
         title="アイテムを登録"
       >

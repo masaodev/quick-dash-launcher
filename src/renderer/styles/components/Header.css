@@ -67,7 +67,7 @@
   gap: var(--spacing-xs);
 }
 
-.action-button {
+.action-btn {
   width: var(--button-height);
   height: var(--button-height);
   border: var(--border-normal);
@@ -82,48 +82,48 @@
   -webkit-app-region: no-drag;
 }
 
-.action-button:hover {
+.action-btn:hover {
   background-color: var(--bg-hover);
   border-color: var(--color-gray-600);
 }
 
-.action-button:active {
+.action-btn:active {
   background-color: var(--color-gray-400);
 }
 
 /* 3段階ピンモードのスタイル */
-.action-button.pin-normal {
+.action-btn.pin-normal {
   background-color: var(--color-white);
   color: var(--text-primary);
   border-color: var(--color-gray-400);
 }
 
-.action-button.pin-normal:hover {
+.action-btn.pin-normal:hover {
   background-color: var(--bg-info-light) !important;
   border-color: var(--color-info-light);
   box-shadow: var(--shadow);
 }
 
-.action-button.pin-always-on-top {
+.action-btn.pin-always-on-top {
   background-color: var(--color-danger);
   color: var(--color-white);
   border-color: var(--color-danger);
 }
 
-.action-button.pin-always-on-top:hover {
+.action-btn.pin-always-on-top:hover {
   background-color: var(--color-danger-light) !important;
   border-color: var(--color-danger-light);
   box-shadow: var(--shadow);
   transform: scale(1.05);
 }
 
-.action-button.pin-stay-visible {
+.action-btn.pin-stay-visible {
   background-color: var(--color-primary); /* 青色 */
   color: var(--color-white);
   border-color: var(--color-primary);
 }
 
-.action-button.pin-stay-visible:hover {
+.action-btn.pin-stay-visible:hover {
   background-color: var(--color-info-light) !important;
   border-color: var(--color-info-light);
   box-shadow: var(--shadow);
@@ -131,20 +131,20 @@
 }
 
 /* アクティブ状態のフィードバック */
-.action-button.pin-normal:active,
-.action-button.pin-always-on-top:active,
-.action-button.pin-stay-visible:active {
+.action-btn.pin-normal:active,
+.action-btn.pin-always-on-top:active,
+.action-btn.pin-stay-visible:active {
   transform: scale(0.95);
 }
 
 /* 旧スタイルとの互換性（非推奨） */
-.action-button.pinned {
+.action-btn.pinned {
   background-color: var(--color-primary);
   color: var(--color-white);
   border-color: var(--color-primary);
 }
 
-.action-button.pinned:hover {
+.action-btn.pinned:hover {
   background-color: var(--color-primary-hover);
   border-color: var(--color-primary-hover);
 }

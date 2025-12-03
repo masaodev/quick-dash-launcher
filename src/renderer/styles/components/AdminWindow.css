@@ -1331,7 +1331,7 @@
   gap: var(--spacing-xs);
 }
 
-.btn-secondary-small {
+.btn-secondary-sm {
   padding: 4px 12px;
   background-color: var(--color-gray-200);
   color: var(--text-primary);
@@ -1344,16 +1344,16 @@
   white-space: nowrap;
 }
 
-.btn-secondary-small:hover:not(:disabled) {
+.btn-secondary-sm:hover:not(:disabled) {
   background-color: var(--color-gray-300);
 }
 
-.btn-secondary-small:disabled {
+.btn-secondary-sm:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.btn-danger-small {
+.btn-danger-sm {
   padding: 4px 12px;
   background-color: var(--color-danger-light);
   color: var(--color-white);
@@ -1366,11 +1366,11 @@
   white-space: nowrap;
 }
 
-.btn-danger-small:hover:not(:disabled) {
+.btn-danger-sm:hover:not(:disabled) {
   background-color: var(--color-danger-light-hover);
 }
 
-.btn-danger-small:disabled {
+.btn-danger-sm:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
