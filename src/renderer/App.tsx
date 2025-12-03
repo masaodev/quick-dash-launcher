@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { convertLauncherItemToRawDataLine, type RegisterItem } from '@common/utils/dataConverters';
 
 import {
   LauncherItem,
@@ -12,7 +13,7 @@ import {
 import SearchBox from './components/SearchBox';
 import ItemList from './components/ItemList';
 import ActionButtons from './components/ActionButtons';
-import RegisterModal, { RegisterItem } from './components/RegisterModal';
+import RegisterModal from './components/RegisterModal';
 import IconProgressBar from './components/IconProgressBar';
 import FileTabBar from './components/FileTabBar';
 import ItemCountDisplay from './components/ItemCountDisplay';
@@ -709,63 +710,11 @@ const App: React.FC = () => {
     }
 
     // LauncherItemからRawDataLineを構築
-    const rawDataLine: RawDataLine = await convertLauncherItemToRawDataLine(item as LauncherItem);
+    const rawDataLine: RawDataLine = await convertLauncherItemToRawDataLine(
+      item as LauncherItem,
+      window.electronAPI.loadRawDataFiles
+    );
     openEditModal(rawDataLine);
-  };
-
-  const convertLauncherItemToRawDataLine = async (item: LauncherItem): Promise<RawDataLine> => {
-    // フォルダ取込から展開されたアイテムの場合
-    if (item.isDirExpanded && item.expandedFrom && item.lineNumber && item.sourceFile) {
-      // 元のディレクティブ行を直接読み込む
-      try {
-        const rawLines = await window.electronAPI.loadRawDataFiles();
-        const originalLine = rawLines.find(
-          (line) => line.sourceFile === item.sourceFile && line.lineNumber === item.lineNumber
-        );
-
-        if (originalLine) {
-          // 元の行が見つかった場合はそれを使用
-          return originalLine;
-        }
-      } catch (err) {
-        console.error('元のディレクティブ行の読み込みに失敗しました:', err);
-      }
-
-      // フォールバック: expandedOptionsを使用（ただし正確ではない可能性がある）
-      let content = `dir,${item.expandedFrom}`;
-      if (item.expandedOptions) {
-        content += `,${item.expandedOptions}`;
-      }
-
-      return {
-        lineNumber: item.lineNumber || 1,
-        content: content,
-        type: 'directive',
-        sourceFile: item.sourceFile || 'data.txt',
-        customIcon: undefined,
-      };
-    }
-
-    // 通常のアイテムの場合
-    const parts = [item.name, item.path];
-    if (item.args) {
-      parts.push(item.args);
-    }
-    if (item.customIcon) {
-      // 引数がない場合は空文字を追加
-      if (!item.args) {
-        parts.push('');
-      }
-      parts.push(item.customIcon);
-    }
-
-    return {
-      lineNumber: item.lineNumber || 1,
-      content: parts.join(','),
-      type: 'item',
-      sourceFile: item.sourceFile || 'data.txt',
-      customIcon: item.customIcon,
-    };
   };
 
   const handleFirstLaunchComplete = async (hotkey: string) => {

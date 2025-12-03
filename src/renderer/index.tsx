@@ -10,7 +10,11 @@ import './styles/components/Modal.css';
 import './styles/components/RegisterModal.css';
 import './styles/components/BookmarkImport.css';
 
-const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);
+const rootElement = document.getElementById('root');
+if (!rootElement) {
+  throw new Error('Root element not found');
+}
+const root = ReactDOM.createRoot(rootElement);
 
 root.render(
   <React.StrictMode>

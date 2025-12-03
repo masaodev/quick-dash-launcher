@@ -8,17 +8,26 @@ import PathManager from '../config/pathManager.js';
 let Store: typeof ElectronStore | null = null;
 
 /**
+ * electron-storeのインスタンス型
+ * 動的インポートの型定義問題を解決するための型定義
+ */
+type StoreInstance = {
+  get<K extends keyof AppSettings>(key: K): AppSettings[K];
+  set<K extends keyof AppSettings>(key: K, value: AppSettings[K]): void;
+  store: AppSettings;
+  clear(): void;
+  path: string;
+};
+
+/**
  * アプリケーション設定を管理するサービスクラス
  * electron-storeを使用して設定の永続化を行う
  */
 export class SettingsService {
   /**
    * electron-storeのインスタンス
-   * Note: 動的インポートのため、TypeScript型定義との互換性の問題で`any`を使用
-   * 実行時は new Store<AppSettings>() で正しく型付けされたインスタンスが作成される
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private store: any | null = null;
+  private store: StoreInstance | null = null;
   private static instance: SettingsService;
 
   /**
@@ -69,7 +78,7 @@ export class SettingsService {
         name: 'settings',
         cwd: configFolder, // カスタムパスを指定
         defaults: SettingsService.DEFAULT_SETTINGS,
-      });
+      }) as unknown as StoreInstance;
 
       logger.info(`SettingsService initialized successfully at ${configFolder}`);
     } catch (error) {
@@ -98,7 +107,7 @@ export class SettingsService {
     await this.initializeStore();
     if (!this.store) throw new Error('Store not initialized');
     try {
-      return this.store.get(key) as AppSettings[K];
+      return this.store.get(key);
     } catch (error) {
       logger.error(`Failed to get setting ${key}:`, error);
       return SettingsService.DEFAULT_SETTINGS[key];
@@ -114,7 +123,7 @@ export class SettingsService {
     await this.initializeStore();
     if (!this.store) throw new Error('Store not initialized');
     try {
-      this.store.set(key as string, value);
+      this.store.set(key, value);
       logger.info(`Setting ${key} updated to:`, value);
     } catch (error) {
       logger.error(`Failed to set setting ${key}:`, error);
@@ -131,8 +140,8 @@ export class SettingsService {
     if (!this.store) throw new Error('Store not initialized');
     try {
       Object.entries(settings).forEach(([key, value]) => {
-        if (value !== undefined) {
-          this.store!.set(key as string, value);
+        if (value !== undefined && this.store) {
+          this.store.set(key as keyof AppSettings, value);
         }
       });
       logger.info('Multiple settings updated:', settings);
@@ -150,7 +159,7 @@ export class SettingsService {
     await this.initializeStore();
     if (!this.store) throw new Error('Store not initialized');
     try {
-      return this.store.store as AppSettings;
+      return this.store.store;
     } catch (error) {
       logger.error('Failed to get all settings:', error);
       return SettingsService.DEFAULT_SETTINGS;
@@ -206,7 +215,7 @@ export class SettingsService {
   public async getConfigPath(): Promise<string> {
     await this.initializeStore();
     if (!this.store) throw new Error('Store not initialized');
-    return this.store.path as string;
+    return this.store.path;
   }
 }
 

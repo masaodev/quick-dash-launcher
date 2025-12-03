@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { isGroupDirective, isDirDirective } from '@common/utils/directiveUtils';
 
 import { RawDataLine } from '../../common/types';
 
@@ -44,15 +45,6 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
   });
 
   const getLineKey = (line: RawDataLine) => `${line.sourceFile}_${line.lineNumber}`;
-
-  // ディレクティブの種類を判定
-  const isGroupDirective = (line: RawDataLine): boolean => {
-    return line.type === 'directive' && line.content.trim().startsWith('group,');
-  };
-
-  const isDirDirective = (line: RawDataLine): boolean => {
-    return line.type === 'directive' && line.content.trim().startsWith('dir,');
-  };
 
   const handleCellEdit = (line: RawDataLine) => {
     const cellKey = getLineKey(line);

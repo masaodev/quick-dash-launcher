@@ -6,6 +6,8 @@ import { minimatch } from 'minimatch';
 import { dataLogger } from '@common/logger';
 import { FileUtils } from '@common/utils/fileUtils';
 import { parseCSVLine } from '@common/utils/csvParser';
+import { parseDirOptionsFromString, type DirOptions } from '@common/utils/dataConverters';
+import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 
 import {
   RawDataLine,
@@ -16,106 +18,6 @@ import {
 } from '../../common/types';
 import { BackupService } from '../services/backupService.js';
 import { SettingsService } from '../services/settingsService.js';
-
-// フォルダ取込アイテムのオプション型定義
-interface DirOptions {
-  depth: number;
-  types: 'file' | 'folder' | 'both';
-  filter?: string;
-  exclude?: string;
-  prefix?: string;
-  suffix?: string;
-}
-
-/**
- * アイテムのパスからタイプを検出する
- *
- * @param itemPath - アイテムのパス
- * @returns アイテムタイプ
- */
-function detectItemType(itemPath: string): LauncherItem['type'] {
-  if (itemPath.includes('://')) {
-    const scheme = itemPath.split('://')[0];
-    if (!['http', 'https', 'ftp'].includes(scheme)) {
-      return 'customUri';
-    }
-    return 'url';
-  }
-
-  // Shell paths
-  if (itemPath.startsWith('shell:')) {
-    return 'folder';
-  }
-
-  // File extensions - ファイル名部分のみから拡張子を取得
-  const lastSlash = Math.max(itemPath.lastIndexOf('/'), itemPath.lastIndexOf('\\'));
-  const fileName = lastSlash !== -1 ? itemPath.substring(lastSlash + 1) : itemPath;
-  const lastDot = fileName.lastIndexOf('.');
-  const ext = lastDot !== -1 ? fileName.substring(lastDot).toLowerCase() : '';
-
-  // Executables and shortcuts
-  if (ext === '.exe' || ext === '.bat' || ext === '.cmd' || ext === '.com' || ext === '.lnk') {
-    return 'app';
-  }
-
-  // Check if it's likely a directory
-  if (!ext || itemPath.endsWith('/') || itemPath.endsWith('\\')) {
-    return 'folder';
-  }
-
-  // Default to file
-  return 'file';
-}
-
-// フォルダ取込アイテムのオプションを解析
-/**
- * フォルダ取込アイテムの文字列オプションを解析してDirOptionsオブジェクトに変換する
- * カンマ区切りのオプション文字列（depth=2, filter=*.pdf等）を解析し、構造化されたオプションに変換する
- *
- * @param parts - カンマ区切りのオプション文字列配列（最初の要素はディレクトリパス）
- * @returns 解析されたDirOptionsオブジェクト
- *
- * @example
- * const options = parseDirOptions(['C:\\docs', 'depth=2', 'filter=*.pdf', 'prefix=Doc: ']);
- * // { depth: 2, types: 'both', filter: '*.pdf', prefix: 'Doc: ' }
- */
-function parseDirOptions(parts: string[]): DirOptions {
-  const options: DirOptions = {
-    depth: 0,
-    types: 'both',
-  };
-
-  // オプションを解析
-  for (let i = 1; i < parts.length; i++) {
-    const option = parts[i].trim();
-    const [key, value] = option.split('=').map((s) => s.trim());
-
-    switch (key) {
-      case 'depth':
-        options.depth = parseInt(value, 10);
-        break;
-      case 'types':
-        if (value === 'file' || value === 'folder' || value === 'both') {
-          options.types = value;
-        }
-        break;
-      case 'filter':
-        options.filter = value;
-        break;
-      case 'exclude':
-        options.exclude = value;
-        break;
-      case 'prefix':
-        options.prefix = value;
-        break;
-      case 'suffix':
-        options.suffix = value;
-        break;
-    }
-  }
-
-  return options;
-}
 
 /**
  * DirOptionsを人間が読める形式の文字列に変換する
@@ -202,7 +104,7 @@ function processItem(
   return {
     name: displayName,
     path: itemPath,
-    type: itemType === 'folder' ? 'folder' : detectItemType(itemPath),
+    type: itemType === 'folder' ? 'folder' : detectItemTypeSync(itemPath),
     sourceFile,
     lineNumber,
     isDirExpanded: expandedFrom ? true : false,
@@ -270,7 +172,7 @@ function processShortcut(
       ) {
         targetType = 'folder';
       } else {
-        targetType = detectItemType(shortcutDetails.target);
+        targetType = detectItemTypeSync(shortcutDetails.target);
       }
 
       return {
@@ -493,7 +395,10 @@ async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
     if (!seenPathsByTab.has(tabIndex)) {
       seenPathsByTab.set(tabIndex, new Set<string>());
     }
-    const seenPaths = seenPathsByTab.get(tabIndex)!;
+    const seenPaths = seenPathsByTab.get(tabIndex);
+    if (!seenPaths) {
+      throw new Error(`Failed to get seenPaths for tab index: ${tabIndex}`);
+    }
 
     const filePath = path.join(configFolder, fileName);
     const content = FileUtils.safeReadTextFile(filePath);
@@ -520,7 +425,8 @@ async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
 
         if (FileUtils.exists(dirPath) && FileUtils.isDirectory(dirPath)) {
           try {
-            const options = parseDirOptions(parts);
+            const optionsStr = parts.slice(1).join(',');
+            const options = parseDirOptionsFromString(optionsStr);
             const optionsText = formatDirOptions(options);
             const scannedItems = await scanDirectory(
               dirPath,
@@ -669,7 +575,7 @@ function parseCSVLineToItem(
   const item: LauncherItem = {
     name,
     path: itemPath,
-    type: detectItemType(itemPath),
+    type: detectItemTypeSync(itemPath),
     args: argsField && argsField.trim() ? argsField : undefined,
     customIcon: customIconField && customIconField.trim() ? customIconField : undefined,
     sourceFile,
@@ -759,7 +665,11 @@ async function saveRawDataFiles(configFolder: string, rawLines: RawDataLine[]): 
     if (!fileGroups.has(line.sourceFile)) {
       fileGroups.set(line.sourceFile, []);
     }
-    fileGroups.get(line.sourceFile)!.push(line);
+    const group = fileGroups.get(line.sourceFile);
+    if (!group) {
+      throw new Error(`Failed to get file group for: ${line.sourceFile}`);
+    }
+    group.push(line);
   });
 
   // 各ファイルを保存
@@ -840,7 +750,11 @@ async function registerItems(configFolder: string, items: RegisterItem[]): Promi
     if (!itemsByTab.has(targetFile)) {
       itemsByTab.set(targetFile, []);
     }
-    itemsByTab.get(targetFile)!.push(item);
+    const group = itemsByTab.get(targetFile);
+    if (!group) {
+      throw new Error(`Failed to get items group for: ${targetFile}`);
+    }
+    group.push(item);
   }
 
   // 各ファイルに書き込み

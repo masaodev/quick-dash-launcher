@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { RawDataLine, SimpleBookmarkItem, DataFileTab } from '@common/types';
+import { convertRegisterItemToRawDataLine, type RegisterItem } from '@common/utils/dataConverters';
 
 import EditableRawItemList from './EditableRawItemList';
-import RegisterModal, { RegisterItem } from './RegisterModal';
+import RegisterModal from './RegisterModal';
 import BookmarkImportModal from './BookmarkImportModal';
 import ConfirmDialog from './ConfirmDialog';
 
@@ -59,56 +60,6 @@ const EditModeView: React.FC<EditModeViewProps> = ({
   const handleEditItem = (line: RawDataLine) => {
     setEditingItem(line);
     setIsRegisterModalOpen(true);
-  };
-
-  const convertRegisterItemToRawDataLine = (
-    item: RegisterItem,
-    originalLine: RawDataLine
-  ): RawDataLine => {
-    let newContent = '';
-    let newType: RawDataLine['type'] = originalLine.type;
-
-    if (item.itemCategory === 'dir') {
-      // フォルダ取込アイテムの場合
-      newType = 'directive';
-      if (item.dirOptions) {
-        const options = [];
-        if (item.dirOptions.depth !== 0) options.push(`depth=${item.dirOptions.depth}`);
-        if (item.dirOptions.types !== 'both') options.push(`types=${item.dirOptions.types}`);
-        if (item.dirOptions.filter) options.push(`filter=${item.dirOptions.filter}`);
-        if (item.dirOptions.exclude) options.push(`exclude=${item.dirOptions.exclude}`);
-        if (item.dirOptions.prefix) options.push(`prefix=${item.dirOptions.prefix}`);
-        if (item.dirOptions.suffix) options.push(`suffix=${item.dirOptions.suffix}`);
-
-        const optionsStr = options.join(',');
-        newContent = optionsStr ? `dir,${item.path},${optionsStr}` : `dir,${item.path}`;
-      } else {
-        newContent = `dir,${item.path}`;
-      }
-    } else if (item.itemCategory === 'group') {
-      // グループアイテムの場合：group,グループ名,アイテム1,アイテム2,...
-      newType = 'directive';
-      const itemNames = item.groupItemNames || [];
-      newContent = `group,${item.name},${itemNames.join(',')}`;
-    } else {
-      // アイテム行の場合：名前,パス,引数,カスタムアイコン の形式
-      newType = 'item';
-      const args = item.args || '';
-      const customIcon = item.customIcon || '';
-
-      // カスタムアイコンが設定されている場合は4番目のフィールドに追加
-      if (customIcon) {
-        newContent = `${item.name},${item.path},${args},${customIcon}`;
-      } else {
-        newContent = `${item.name},${item.path},${args}`;
-      }
-    }
-
-    return {
-      ...originalLine,
-      content: newContent,
-      type: newType,
-    };
   };
 
   const handleUpdateItem = (items: RegisterItem[]) => {
@@ -219,7 +170,11 @@ const EditModeView: React.FC<EditModeViewProps> = ({
       if (!fileGroups.has(line.sourceFile)) {
         fileGroups.set(line.sourceFile, []);
       }
-      fileGroups.get(line.sourceFile)!.push(line);
+      const group = fileGroups.get(line.sourceFile);
+      if (!group) {
+        throw new Error(`Failed to get file group for: ${line.sourceFile}`);
+      }
+      group.push(line);
     });
 
     // 各ファイル内で行番号を振り直し

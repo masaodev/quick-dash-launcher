@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { convertRawDataLineToRegisterItem, type RegisterItem } from '@common/utils/dataConverters';
+import { detectItemType } from '@common/utils/itemTypeDetector';
 
-import { LauncherItem, RawDataLine, DataFileTab } from '../../common/types';
+import { RawDataLine, DataFileTab } from '../../common/types';
 import { debugInfo, logWarn } from '../utils/debug';
 
 import GroupItemSelectorModal from './GroupItemSelectorModal';
@@ -13,30 +15,6 @@ interface RegisterModalProps {
   droppedPaths: string[];
   editingItem?: RawDataLine | null;
   currentTab?: string; // 現在開いているタブ
-}
-
-export interface RegisterItem {
-  name: string;
-  path: string;
-  type: LauncherItem['type'];
-  args?: string;
-  targetTab: string; // データファイル名（例: 'data.txt', 'data2.txt'）※複数ファイルタブの場合はfiles[0]を指定
-  targetFile?: string; // 実際の保存先ファイル（タブに複数ファイルがある場合に使用）
-  folderProcessing?: 'folder' | 'expand';
-  icon?: string;
-  customIcon?: string;
-  itemCategory: 'item' | 'dir' | 'group';
-  // フォルダ取込アイテムオプション
-  dirOptions?: {
-    depth: number;
-    types: 'file' | 'folder' | 'both';
-    filter?: string;
-    exclude?: string;
-    prefix?: string;
-    suffix?: string;
-  };
-  // グループアイテムオプション
-  groupItemNames?: string[];
 }
 
 const RegisterModal: React.FC<RegisterModalProps> = ({
@@ -239,7 +217,9 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
         return;
       }
 
-      const item = await convertRawDataLineToRegisterItem(editingItem, tabs);
+      const item = await convertRawDataLineToRegisterItem(editingItem, tabs, (path) =>
+        detectItemType(path, window.electronAPI.isDirectory)
+      );
       setItems([item]);
 
       // カスタムアイコンのプレビューを読み込み
@@ -251,123 +231,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
       alert('編集アイテムの初期化中にエラーが発生しました: ' + error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const convertRawDataLineToRegisterItem = async (
-    line: RawDataLine,
-    tabs: DataFileTab[]
-  ): Promise<RegisterItem> => {
-    const defaultTab = line.sourceFile || (tabs.length > 0 ? tabs[0].files[0] : 'data.txt');
-
-    if (line.type === 'item') {
-      // アイテム行の場合：名前,パス,引数,カスタムアイコン
-      const parts = line.content.split(',');
-      const name = parts[0]?.trim() || '';
-      const path = parts[1]?.trim() || '';
-      const args = parts[2]?.trim() || '';
-      const customIcon = parts[3]?.trim() || '';
-
-      const itemType = await detectItemType(path);
-
-      return {
-        name,
-        path,
-        type: itemType,
-        args: args || undefined,
-        targetTab: defaultTab,
-        targetFile: line.sourceFile,
-        folderProcessing: itemType === 'folder' ? 'folder' : undefined,
-        customIcon: customIcon || line.customIcon,
-        itemCategory: 'item',
-      };
-    } else if (line.type === 'directive') {
-      // ディレクティブの種類を判定
-      const trimmedContent = line.content.trim();
-
-      if (trimmedContent.startsWith('group,')) {
-        // グループアイテム行の場合：group,グループ名,アイテム1,アイテム2,...
-        const parts = line.content.split(',');
-        const groupName = parts[1]?.trim() || '';
-        const itemNames = parts
-          .slice(2)
-          .map((name) => name.trim())
-          .filter((name) => name);
-
-        return {
-          name: groupName,
-          path: '', // グループはパス不要
-          type: 'app', // ダミー値
-          targetTab: defaultTab,
-          targetFile: line.sourceFile,
-          itemCategory: 'group',
-          groupItemNames: itemNames,
-        };
-      } else {
-        // フォルダ取込アイテム行の場合：dir,パス,オプション
-        const parts = line.content.split(',');
-        const path = parts[1]?.trim() || '';
-        const optionsStr = parts.slice(2).join(',').trim();
-
-        // オプションを解析
-        const dirOptions = {
-          depth: 0,
-          types: 'both' as const,
-          filter: undefined as string | undefined,
-          exclude: undefined as string | undefined,
-          prefix: undefined as string | undefined,
-          suffix: undefined as string | undefined,
-        };
-
-        if (optionsStr) {
-          const options = optionsStr.split(',');
-          for (const option of options) {
-            const [key, value] = option.split('=');
-            if (key && value) {
-              const trimmedKey = key.trim();
-              const trimmedValue = value.trim();
-
-              if (trimmedKey === 'depth') {
-                dirOptions.depth = parseInt(trimmedValue) || 0;
-              } else if (trimmedKey === 'types') {
-                const validTypes = ['file', 'folder', 'both'] as const;
-                if (validTypes.includes(trimmedValue as 'file' | 'folder' | 'both')) {
-                  dirOptions.types = trimmedValue as typeof dirOptions.types;
-                }
-              } else if (trimmedKey === 'filter') {
-                dirOptions.filter = trimmedValue;
-              } else if (trimmedKey === 'exclude') {
-                dirOptions.exclude = trimmedValue;
-              } else if (trimmedKey === 'prefix') {
-                dirOptions.prefix = trimmedValue;
-              } else if (trimmedKey === 'suffix') {
-                dirOptions.suffix = trimmedValue;
-              }
-            }
-          }
-        }
-
-        return {
-          name: path,
-          path,
-          type: 'folder',
-          targetTab: defaultTab,
-          targetFile: line.sourceFile,
-          folderProcessing: 'expand',
-          dirOptions,
-          itemCategory: 'dir',
-        };
-      }
-    } else {
-      // その他の場合
-      return {
-        name: line.content || '',
-        path: line.content || '',
-        type: 'file',
-        targetTab: defaultTab,
-        targetFile: line.sourceFile,
-        itemCategory: 'item',
-      };
     }
   };
 
@@ -388,7 +251,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
           continue;
         }
         debugInfo('Processing dropped path:', filePath);
-        const itemType = await detectItemType(filePath);
+        const itemType = await detectItemType(filePath, window.electronAPI.isDirectory);
         debugInfo('Detected item type:', itemType);
         const name = extractDefaultName(filePath);
         debugInfo('Extracted name:', name);
@@ -448,39 +311,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     } finally {
       setLoading(false);
     }
-  };
-
-  const detectItemType = async (itemPath: string): Promise<LauncherItem['type']> => {
-    // URLs
-    if (itemPath.includes('://')) {
-      const scheme = itemPath.split('://')[0];
-      if (!['http', 'https', 'ftp'].includes(scheme)) {
-        return 'customUri';
-      }
-      return 'url';
-    }
-
-    // Check if it's a directory
-    try {
-      const isDirectory = await window.electronAPI.isDirectory(itemPath);
-      if (isDirectory) {
-        return 'folder';
-      }
-    } catch (error) {
-      console.error('Error checking if directory:', error);
-    }
-
-    // File extensions
-    const lastDot = itemPath.lastIndexOf('.');
-    const ext = lastDot !== -1 ? itemPath.substring(lastDot).toLowerCase() : '';
-
-    // Executables and shortcuts
-    if (ext === '.exe' || ext === '.bat' || ext === '.cmd' || ext === '.com' || ext === '.lnk') {
-      return 'app';
-    }
-
-    // Default to file
-    return 'file';
   };
 
   const extractDefaultName = (filePath: string): string => {

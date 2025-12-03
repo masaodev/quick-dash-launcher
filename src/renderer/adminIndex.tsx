@@ -13,7 +13,11 @@ import './styles/components/FilePickerDialog.css';
 import './styles/components/AlertDialog.css';
 import './styles/components/ConfirmDialog.css';
 
-const root = ReactDOM.createRoot(document.getElementById('admin-root') as HTMLElement);
+const rootElement = document.getElementById('admin-root');
+if (!rootElement) {
+  throw new Error('Admin root element not found');
+}
+const root = ReactDOM.createRoot(rootElement);
 
 root.render(
   <React.StrictMode>

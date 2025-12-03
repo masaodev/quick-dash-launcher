@@ -116,7 +116,11 @@ export async function deleteItems(
     if (!fileGroups.has(request.sourceFile)) {
       fileGroups.set(request.sourceFile, []);
     }
-    fileGroups.get(request.sourceFile)!.push(request);
+    const group = fileGroups.get(request.sourceFile);
+    if (!group) {
+      throw new Error(`Failed to get file group for: ${request.sourceFile}`);
+    }
+    group.push(request);
   });
 
   // Process each file
@@ -160,7 +164,11 @@ export async function batchUpdateItems(
     if (!fileGroups.has(request.sourceFile)) {
       fileGroups.set(request.sourceFile, []);
     }
-    fileGroups.get(request.sourceFile)!.push(request);
+    const group = fileGroups.get(request.sourceFile);
+    if (!group) {
+      throw new Error(`Failed to get file group for: ${request.sourceFile}`);
+    }
+    group.push(request);
   });
 
   // Process each file

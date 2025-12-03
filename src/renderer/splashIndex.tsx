@@ -4,7 +4,11 @@ import ReactDOM from 'react-dom/client';
 import SplashApp from './SplashApp';
 import './styles/splash.css';
 
-const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);
+const rootElement = document.getElementById('root');
+if (!rootElement) {
+  throw new Error('Root element not found');
+}
+const root = ReactDOM.createRoot(rootElement);
 
 const handleReady = () => {
   // Notify main process that splash screen has completed
