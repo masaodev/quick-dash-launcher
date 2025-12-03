@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { convertRawDataLineToRegisterItem, type RegisterItem } from '@common/utils/dataConverters';
+import { type RegisterItem } from '@common/utils/dataConverters';
 import { detectItemType } from '@common/utils/itemTypeDetector';
 
 import { RawDataLine, DataFileTab } from '../../common/types';
-import { debugInfo, logWarn } from '../utils/debug';
+import { debugInfo } from '../utils/debug';
+import { useCustomIcon } from '../hooks/useCustomIcon';
+import { useModalInitializer } from '../hooks/useModalInitializer';
 
 import GroupItemSelectorModal from './GroupItemSelectorModal';
 import FilePickerDialog from './FilePickerDialog';
@@ -27,7 +29,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
 }) => {
   const [items, setItems] = useState<RegisterItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [customIconPreviews, setCustomIconPreviews] = useState<{ [index: number]: string }>({});
   const [_groupItemNamesInput, setGroupItemNamesInput] = useState<{ [index: number]: string }>({});
   const [availableTabs, setAvailableTabs] = useState<DataFileTab[]>([]);
   const [errors, setErrors] = useState<{
@@ -37,14 +38,24 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
   const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
-  // FilePickerDialog状態管理
-  const [filePickerState, setFilePickerState] = useState<{
-    isOpen: boolean;
-    itemIndex: number | null;
-  }>({
-    isOpen: false,
-    itemIndex: null,
-  });
+  // カスタムアイコン管理フック
+  const {
+    customIconPreviews,
+    filePickerState,
+    openCustomIconPicker,
+    closeCustomIconPicker,
+    handleCustomIconFileSelected,
+    deleteCustomIcon,
+    loadCustomIconPreview,
+    clearCustomIconPreviews,
+  } = useCustomIcon();
+
+  // モーダル初期化フック
+  const {
+    initializeFromEditingItem,
+    initializeFromDroppedPaths,
+    createEmptyTemplateItem,
+  } = useModalInitializer();
 
   useEffect(() => {
     if (!isOpen) {
@@ -52,7 +63,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
       document.body.style.overflow = 'auto';
       window.electronAPI.setModalMode(false);
       // カスタムアイコンプレビューをクリア
-      setCustomIconPreviews({});
+      clearCustomIconPreviews();
       setItems([]);
       setErrors({});
       return;
@@ -64,31 +75,26 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
       setAvailableTabs(settings.dataFileTabs);
 
       // モーダルが開いたとき、まず前回の状態をクリア
-      setCustomIconPreviews({});
+      clearCustomIconPreviews();
       setItems([]);
 
       if (editingItem) {
         debugInfo('RegisterModal opened in edit mode:', editingItem);
-        initializeFromEditingItem(settings.dataFileTabs);
+        setLoading(true);
+        const items = await initializeFromEditingItem(editingItem, settings.dataFileTabs, loadCustomIconPreview);
+        setItems(items);
+        setLoading(false);
       } else if (droppedPaths && droppedPaths.length > 0) {
         debugInfo('RegisterModal opened with paths:', droppedPaths);
-        initializeItems(settings.dataFileTabs);
+        setLoading(true);
+        const items = await initializeFromDroppedPaths(droppedPaths, currentTab, settings.dataFileTabs);
+        setItems(items);
+        setLoading(false);
       } else {
         // ボタンから開かれた場合：空のテンプレートアイテムを1つ作成
         debugInfo('RegisterModal opened manually: creating empty template');
-        const defaultTab =
-          currentTab ||
-          (settings.dataFileTabs.length > 0 ? settings.dataFileTabs[0].files[0] : 'data.txt');
-        setItems([
-          {
-            name: '',
-            path: '',
-            type: 'app',
-            targetTab: defaultTab,
-            targetFile: defaultTab,
-            itemCategory: 'item',
-          },
-        ]);
+        const items = createEmptyTemplateItem(currentTab, settings.dataFileTabs);
+        setItems(items);
       }
     };
     loadAvailableTabsAndInitialize();
@@ -208,198 +214,26 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     window.electronAPI.setModalMode(true, { width: requiredWidth, height: requiredHeight });
   }, [isOpen, items]);
 
-  const initializeFromEditingItem = async (tabs: DataFileTab[]) => {
-    setLoading(true);
 
-    try {
-      if (!editingItem) {
-        console.error('No editing item provided');
-        return;
-      }
-
-      const item = await convertRawDataLineToRegisterItem(editingItem, tabs, (path) =>
-        detectItemType(path, window.electronAPI.isDirectory)
-      );
-      setItems([item]);
-
-      // カスタムアイコンのプレビューを読み込み
-      if (item.customIcon) {
-        await loadCustomIconPreview(0, item.customIcon);
-      }
-    } catch (error) {
-      console.error('Error initializing from editing item:', error);
-      alert('編集アイテムの初期化中にエラーが発生しました: ' + error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const initializeItems = async (tabs: DataFileTab[]) => {
-    setLoading(true);
-    const newItems: RegisterItem[] = [];
-    const defaultTab = currentTab || (tabs.length > 0 ? tabs[0].files[0] : 'data.txt');
-
-    try {
-      if (!droppedPaths || droppedPaths.length === 0) {
-        console.error('No dropped paths provided');
-        return;
-      }
-
-      for (const filePath of droppedPaths) {
-        if (!filePath) {
-          logWarn('Skipping undefined path');
-          continue;
-        }
-        debugInfo('Processing dropped path:', filePath);
-        const itemType = await detectItemType(filePath, window.electronAPI.isDirectory);
-        debugInfo('Detected item type:', itemType);
-        const name = extractDefaultName(filePath);
-        debugInfo('Extracted name:', name);
-
-        let icon: string | undefined;
-        try {
-          if (itemType === 'app') {
-            // .bat/.cmd/.comファイルは拡張子ベースのアイコン取得を使用
-            if (
-              filePath.endsWith('.bat') ||
-              filePath.endsWith('.cmd') ||
-              filePath.endsWith('.com')
-            ) {
-              icon = (await window.electronAPI.extractFileIconByExtension(filePath)) ?? undefined;
-            } else {
-              icon = (await window.electronAPI.extractIcon(filePath)) ?? undefined;
-            }
-          } else if (itemType === 'file') {
-            icon = (await window.electronAPI.extractIcon(filePath)) ?? undefined;
-          } else if (itemType === 'customUri') {
-            icon = (await window.electronAPI.extractCustomUriIcon(filePath)) ?? undefined;
-            if (!icon) {
-              icon = (await window.electronAPI.extractFileIconByExtension(filePath)) ?? undefined;
-            }
-          }
-        } catch (error) {
-          console.error('Failed to extract icon:', error);
-        }
-
-        newItems.push({
-          name,
-          path: filePath,
-          type: itemType,
-          targetTab: defaultTab,
-          targetFile: defaultTab,
-          folderProcessing: itemType === 'folder' ? 'folder' : undefined,
-          icon,
-          itemCategory: 'item',
-          dirOptions:
-            itemType === 'folder'
-              ? {
-                  depth: 0,
-                  types: 'both',
-                  filter: undefined,
-                  exclude: undefined,
-                  prefix: undefined,
-                  suffix: undefined,
-                }
-              : undefined,
-        });
-      }
-
-      setItems(newItems);
-    } catch (error) {
-      console.error('Error initializing items:', error);
-      alert('アイテムの初期化中にエラーが発生しました: ' + error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const extractDefaultName = (filePath: string): string => {
-    if (filePath.includes('://')) {
-      // For URLs, extract domain name
-      try {
-        const url = new URL(filePath);
-        return url.hostname.replace('www.', '');
-      } catch {
-        return filePath;
-      }
-    }
-
-    // For files and folders, extract the last part of the path
-    const parts = filePath.split(/[\\/]/);
-    const basename = parts[parts.length - 1] || filePath;
-    const lastDot = basename.lastIndexOf('.');
-    const ext = lastDot !== -1 ? basename.substring(lastDot) : '';
-    return ext ? basename.slice(0, -ext.length) : basename;
-  };
-
-  // カスタムアイコン選択ダイアログを開く
-  const handleSelectCustomIcon = (index: number) => {
-    setFilePickerState({
-      isOpen: true,
-      itemIndex: index,
-    });
-  };
-
-  // カスタムアイコンファイルが選択されたときの処理
-  const handleCustomIconFileSelected = async (filePath: string) => {
-    if (filePickerState.itemIndex === null) return;
-
-    try {
-      const index = filePickerState.itemIndex;
-      const item = items[index];
-      const itemIdentifier = item.path;
-      const customIconFileName = await window.electronAPI.saveCustomIcon(filePath, itemIdentifier);
-
-      // アイテムのcustomIconを更新
+  // カスタムアイコン選択時のコールバック
+  const onCustomIconSelected = async (filePath: string) => {
+    const item = items[filePickerState.itemIndex!];
+    await handleCustomIconFileSelected(filePath, item.path, (index, customIconFileName) => {
       const newItems = [...items];
       newItems[index] = { ...newItems[index], customIcon: customIconFileName };
       setItems(newItems);
-
-      // プレビュー用にアイコンを取得
-      const iconData = await window.electronAPI.getCustomIcon(customIconFileName);
-      if (iconData) {
-        setCustomIconPreviews((prev) => ({ ...prev, [index]: iconData }));
-      }
-    } catch (error) {
-      console.error('カスタムアイコン選択エラー:', error);
-      alert('カスタムアイコンの選択に失敗しました: ' + error);
-    }
+    });
   };
 
-  // カスタムアイコンを削除
-  const handleDeleteCustomIcon = async (index: number) => {
-    try {
-      const item = items[index];
-      if (item.customIcon) {
-        await window.electronAPI.deleteCustomIcon(item.customIcon);
-
-        // アイテムのcustomIconを削除
+  // カスタムアイコン削除時のコールバック
+  const onCustomIconDeleted = async (index: number) => {
+    const item = items[index];
+    if (item.customIcon) {
+      await deleteCustomIcon(index, item.customIcon, (idx) => {
         const newItems = [...items];
-        newItems[index] = { ...newItems[index], customIcon: undefined };
+        newItems[idx] = { ...newItems[idx], customIcon: undefined };
         setItems(newItems);
-
-        // プレビューも削除
-        setCustomIconPreviews((prev) => {
-          const newPreviews = { ...prev };
-          delete newPreviews[index];
-          return newPreviews;
-        });
-      }
-    } catch (error) {
-      console.error('カスタムアイコン削除エラー:', error);
-      alert('カスタムアイコンの削除に失敗しました: ' + error);
-    }
-  };
-
-  // 編集モードでカスタムアイコンのプレビューを読み込み
-  const loadCustomIconPreview = async (index: number, customIconFileName: string) => {
-    try {
-      const iconData = await window.electronAPI.getCustomIcon(customIconFileName);
-      if (iconData) {
-        setCustomIconPreviews((prev) => ({ ...prev, [index]: iconData }));
-      }
-    } catch (error) {
-      console.error('カスタムアイコンプレビュー読み込みエラー:', error);
+      });
     }
   };
 
@@ -909,7 +743,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                               <button
                                 type="button"
                                 className="delete-icon-btn"
-                                onClick={() => handleDeleteCustomIcon(index)}
+                                onClick={() => onCustomIconDeleted(index)}
                               >
                                 削除
                               </button>
@@ -922,7 +756,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                           <button
                             type="button"
                             className="select-icon-btn"
-                            onClick={() => handleSelectCustomIcon(index)}
+                            onClick={() => openCustomIconPicker(index)}
                           >
                             ファイルから選択
                           </button>
@@ -963,8 +797,8 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
       {/* カスタムアイコンファイル選択ダイアログ */}
       <FilePickerDialog
         isOpen={filePickerState.isOpen}
-        onClose={() => setFilePickerState({ isOpen: false, itemIndex: null })}
-        onFileSelect={handleCustomIconFileSelected}
+        onClose={closeCustomIconPicker}
+        onFileSelect={onCustomIconSelected}
         title="カスタムアイコンを選択"
         fileTypes="image"
         description="アイコンとして使用する画像ファイルを選択してください。"
