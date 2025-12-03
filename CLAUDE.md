@@ -110,6 +110,7 @@ npm run test:e2e:single first-launch
 - **カスタムURIスキーマ対応**: `obsidian://`, `ms-excel://`, `vscode://` 等の非HTTPスキーマに対応
 - **パスエイリアス**: `@common/*` で共通型定義にアクセス（`src/common/types.ts`）
 - **CSSデザインシステム**: CSS変数ベース（`src/renderer/styles/variables.css`）。ハードコード値の使用禁止
+  - 詳細な命名規則・ベストプラクティスは **[CSSデザインシステム](docs/reference/architecture/css-design-system.md)** を参照
 - **設定ファイルパス**: `PathManager`クラスで一元管理。環境変数`QUICK_DASH_CONFIG_DIR`でカスタマイズ可能
 
 詳細なアーキテクチャは **[システム概要](docs/reference/architecture/overview.md)** を参照してください。

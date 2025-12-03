@@ -211,6 +211,8 @@ QUICK_DASH_CONFIG_DIR=./prod-config npm run dev
 #### デザインシステムの使用
 QuickDashLauncherではCSS変数ベースの統一されたデザインシステムを採用しています。
 
+詳細な命名規則・ベストプラクティスは **[CSSデザインシステム](../reference/architecture/css-design-system.md)** を参照してください。
+
 **基本ルール:**
 - ハードコード値の使用禁止（色、サイズ、間隔など）
 - 必ずvariables.cssで定義された変数を使用
