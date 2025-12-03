@@ -566,10 +566,8 @@ const EditModeView: React.FC<EditModeViewProps> = ({
         onLineEdit={handleLineEdit}
         onLineSelect={handleLineSelect}
         onSelectAll={handleSelectAll}
-        _onAddLine={handleAddLine}
         onDeleteLines={handleDeleteLines}
         onEditClick={handleEditItem}
-        _onSort={handleSort}
       />
 
       <div className="edit-mode-status">

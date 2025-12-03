@@ -11,10 +11,8 @@ interface EditableRawItemListProps {
   onLineEdit: (line: RawDataLine) => void;
   onLineSelect: (line: RawDataLine, selected: boolean) => void;
   onSelectAll: (selected: boolean) => void;
-  _onAddLine: () => void;
   onDeleteLines: (lines: RawDataLine[]) => void;
   onEditClick: (line: RawDataLine) => void;
-  _onSort: (sortedLines: RawDataLine[]) => void;
 }
 
 const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
@@ -23,10 +21,8 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
   onLineEdit,
   onLineSelect,
   onSelectAll,
-  _onAddLine, // 未使用（将来の機能拡張用）
   onDeleteLines,
   onEditClick,
-  _onSort, // 未使用（将来の機能拡張用）
 }) => {
   const [editingCell, setEditingCell] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState('');
