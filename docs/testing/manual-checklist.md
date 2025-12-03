@@ -130,12 +130,11 @@
 
 多くの機能は自動E2Eテストで検証されています。詳細は以下を参照してください：
 
-- [E2Eテストガイド](./e2e-guide.md)
+- [テストガイド](./README.md) - E2Eテストの実行方法
 - [E2Eテスト仕様](../../tests/e2e/README.md)
 
 ## 関連ドキュメント
 
-- [開発ガイド](../guides/development.md) - 基本的な開発情報
-- [アイテム管理](../manual/item-management.md) - 編集モードのテスト項目
-- [ビルドとデプロイ](../guides/build-and-deploy.md) - ビルド後のテスト手順
-- [E2Eテストガイド](./e2e-guide.md) - E2Eテストの実行方法
+- [開発ガイド](../setup/development.md) - 基本的な開発情報
+- [アイテム管理](../features/item-management.md) - 編集モードのテスト項目
+- [ビルドとデプロイ](../setup/build-deploy.md) - ビルド後のテスト手順

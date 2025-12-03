@@ -2,10 +2,9 @@
 
 ## 関連ドキュメント
 
-- [画面一覧](./screen-list.md) - 全画面構成の概要
+- [画面一覧](./README.md) - 全画面構成の概要
 - [メインウィンドウ](./main-window.md) - メイン画面の詳細
-- [アプリケーション設定](../../manual/app-settings.md) - 設定方法とトラブルシューティング
-- [アプリケーション設定仕様](../settings-specification.md) - 設定項目の完全仕様
+- [アプリケーション設定](../features/settings.md) - 設定方法とトラブルシューティング
 
 ## 1. 概要
 

@@ -435,6 +435,6 @@ type AppItem = LauncherItem | GroupItem;
 
 ## 関連ドキュメント
 
-- **[アイテム管理](../manual/item-management.md)** - データファイルの編集機能
-- **[フォルダ取込アイテム](../manual/folder-import-item.md)** - フォルダ取込機能の詳細
-- **[開発ガイド](../guides/development.md)** - 開発時の注意事項
+- **[アイテム管理](../features/item-management.md)** - データファイルの編集機能
+- **[フォルダ取込](../features/folder-import.md)** - フォルダ取込機能の詳細
+- **[開発ガイド](../setup/development.md)** - 開発時の注意事項

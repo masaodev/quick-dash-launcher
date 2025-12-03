@@ -13,7 +13,7 @@
 ### データファイル形式
 
 データファイル（data.txt、data2.txt）の詳細な形式仕様については、専用ドキュメントを参照してください：
-**[データファイル形式仕様](../reference/data-file-format.md)**
+**[データファイル形式仕様](../architecture/data-format.md)**
 
 **基本例:**
 ```
@@ -211,7 +211,7 @@ QUICK_DASH_CONFIG_DIR=./prod-config npm run dev
 #### デザインシステムの使用
 QuickDashLauncherではCSS変数ベースの統一されたデザインシステムを採用しています。
 
-詳細な命名規則・ベストプラクティスは **[CSSデザインシステム](../reference/architecture/css-design-system.md)** を参照してください。
+詳細な命名規則・ベストプラクティスは **[CSSデザインシステム](../architecture/css-design.md)** を参照してください。
 
 **基本ルール:**
 - ハードコード値の使用禁止（色、サイズ、間隔など）
@@ -243,7 +243,7 @@ QuickDashLauncherではCSS変数ベースの統一されたデザインシステ
 ```
 
 **詳細情報:**
-- [CSSデザインシステム](../reference/architecture/css-design-system.md) - 完全なガイドラインと使用方法
+- [CSSデザインシステム](../architecture/css-design.md) - 完全なガイドラインと使用方法
 
 ### パフォーマンス最適化パターン
 
@@ -357,9 +357,9 @@ QuickDashLauncherではCSS変数ベースの統一されたデザインシステ
 
 ## 関連ドキュメント
 
-- [アイテム管理詳細ガイド](../manual/item-management.md) - 編集モードの操作方法と技術実装
-- [CSSデザインシステム](../reference/architecture/css-design-system.md) - 統一されたスタイル管理システム
-- [ビルドとデプロイ](build-and-deploy.md) - ビルドシステムと配布方法
-- [テストチェックリスト](testing.md) - 手動テストの手順
-- [アイコンシステム](../manual/icon-system.md) - アイコン取得・管理システム
-- [フォルダ取込アイテム](../manual/folder-import-item.md) - フォルダ内容のインポート機能
+- [アイテム管理](../features/item-management.md) - 編集モードの操作方法と技術実装
+- [CSSデザインシステム](../architecture/css-design.md) - 統一されたスタイル管理システム
+- [ビルドとデプロイ](build-deploy.md) - ビルドシステムと配布方法
+- [テストガイド](../testing/README.md) - テストの実行方法
+- [アイコンシステム](../features/icons.md) - アイコン取得・管理システム
+- [フォルダ取込](../features/folder-import.md) - フォルダ内容のインポート機能

@@ -2,9 +2,9 @@
 
 ## 関連ドキュメント
 
-- [画面一覧](./screen-list.md) - 全画面構成の概要
+- [画面一覧](./README.md) - 全画面構成の概要
 - [ブックマークインポートモーダル](./bookmark-import-modal.md) - インポート機能詳細
-- [アイテム管理](../../manual/item-management.md) - 編集機能の詳細
+- [アイテム管理](../features/item-management.md) - 編集機能の詳細
 
 ## 1. 概要
 
@@ -832,7 +832,7 @@ C:\Work\projects\myproject\readme.pdf
 - **デフォルトタブ**: `defaultFileTab` - 起動時のアクティブタブ
 - **タブ設定**: `dataFileTabs` - 各タブの名前と表示順序を管理する配列
 
-詳細は **[アプリケーション設定](../../manual/app-settings.md#タブ表示設定)** を参照してください。
+詳細は **[アプリケーション設定](../features/settings.md#タブ表示設定)** を参照してください。
 
 ### 4.24. Tab/Shift+Tabキー押下
 
@@ -882,7 +882,7 @@ C:\Work\projects\myproject\readme.pdf
 - **タブ表示設定**: `showDataFileTabs` - Tabキーによるタブ切り替えの有効/無効
 - **タブ順序**: `tabOrder` - Tabキーでの循環順序
 
-詳細は **[アプリケーション設定](../../manual/app-settings.md#タブ表示設定)** を参照してください。
+詳細は **[アプリケーション設定](../features/settings.md#タブ表示設定)** を参照してください。
 
 ### 4.25. Escapeキー押下
 

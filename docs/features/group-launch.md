@@ -78,7 +78,7 @@ group,業務開始,Outlook,Teams,社内ポータル,タイムカード
 
 ## データファイル形式
 
-グループアイテムの詳細な構文と動作仕様については、**[データファイル形式仕様 - グループアイテム行の詳細](../reference/data-file-format.md#グループアイテム行の詳細)** を参照してください。
+グループアイテムの詳細な構文と動作仕様については、**[データファイル形式仕様 - グループアイテム行の詳細](../architecture/data-format.md#グループアイテム行の詳細)** を参照してください。
 
 ## UI表示
 
@@ -331,7 +331,7 @@ group,業務開始,Outlook,Teams  # さらに短く
 
 ## 関連ドキュメント
 
-- **[データファイル形式仕様](../reference/data-file-format.md)** - グループの詳細な構文仕様
+- **[データファイル形式仕様](../architecture/data-format.md)** - グループの詳細な構文仕様
 - **[アイテム管理](item-management.md)** - グループ編集方法の詳細
-- **[テストチェックリスト](../guides/testing.md)** - グループ機能のテスト項目
-- **[開発ガイド](../guides/development.md)** - 実装詳細
+- **[テストガイド](../testing/README.md)** - テスト方法
+- **[開発ガイド](../setup/development.md)** - 実装詳細

@@ -108,4 +108,4 @@ npm rebuild extract-file-icon
 ## 関連ドキュメント
 
 - [開発ガイド](development.md) - 基本的な開発情報
-- [テストチェックリスト](testing.md) - ビルド後のテスト手順
+- [テストガイド](../testing/README.md) - テストの実行方法

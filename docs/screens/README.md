@@ -36,6 +36,5 @@ QuickDashLauncher
 - [メインウィンドウ仕様書](./main-window.md) - メイン画面の詳細な仕様
 - [管理ウィンドウ仕様書](./admin-window.md) - 設定・管理画面の詳細な仕様
 - [ブックマークインポートモーダル仕様書](./bookmark-import-modal.md) - インポート機能の詳細
-- [アイテム管理](../../manual/item-management.md) - 編集機能の詳細
-- [キーボードショートカット](../keyboard-shortcuts.md) - ショートカット完全リスト
-- [画面仕様書テンプレート](../../templates/screen-specification-template.md) - 新規画面仕様書作成時のテンプレート
+- [アイテム管理](../features/item-management.md) - 編集機能の詳細
+- [キーボードショートカット](../features/keyboard-shortcuts.md) - ショートカット完全リスト

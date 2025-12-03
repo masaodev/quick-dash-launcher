@@ -333,5 +333,4 @@ interface IconProgressResult {
 
 ## 関連ドキュメント
 
-- [アーキテクチャ概要](overview.md) - システム全体の構造
-- [データフロー](data-flow.md) - IPCを使ったデータ処理フロー
+- [アーキテクチャ概要](overview.md) - システム全体の構造とデータフロー

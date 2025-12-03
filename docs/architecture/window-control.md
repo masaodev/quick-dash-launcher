@@ -141,7 +141,7 @@ ipcMain.handle('open-item', async (_event, item: LauncherItem) => {
 5. **ヘルプ**: GitHubリポジトリをブラウザで開く（`shell.openExternal`使用）
 6. **終了**: アプリケーションを終了（`app.quit()`）
 
-詳細は [システムトレイメニュー](../../manual/system-tray.md) を参照してください。
+詳細は [アプリケーション設定](../features/settings.md#システムトレイメニュー) を参照してください。
 
 ## IPC通信フロー
 
@@ -224,4 +224,4 @@ adminWindow.webContents.on('before-input-event', (event, input) => {
 
 - [アーキテクチャ概要](overview.md) - システム全体の構造
 - [IPCチャンネル詳細](ipc-channels.md) - ウィンドウ制御関連のIPCチャンネル
-- [アプリケーション設定](../manual/app-settings.md) - 設定画面へのアクセス方法
+- [アプリケーション設定](../features/settings.md) - 設定画面へのアクセス方法

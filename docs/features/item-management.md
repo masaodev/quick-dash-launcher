@@ -213,7 +213,7 @@ Ctrl+Eでアイテム管理に切り替えて、データファイル（data.txt
 
 ## 関連ドキュメント
 
-- **[データファイル形式仕様](../reference/data-file-format.md)** - データファイルの詳細仕様
-- **[フォルダ取込アイテム](folder-import-item.md)** - フォルダ内容インポート機能
+- **[データファイル形式仕様](../architecture/data-format.md)** - データファイルの詳細仕様
+- **[フォルダ取込](folder-import.md)** - フォルダ内容インポート機能
 - **[グループ起動機能](group-launch.md)** - グループ機能の詳細
-- **[画面構成](../reference/screens/screen-list.md)** - アイテム管理画面の詳細仕様
+- **[画面一覧](../screens/README.md)** - アイテム管理画面の詳細仕様
