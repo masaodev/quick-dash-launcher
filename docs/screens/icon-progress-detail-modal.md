@@ -78,9 +78,8 @@ interface IconProgressResult {
 - ヘッダーの「×」ボタン、フッターの「閉じる」ボタン、またはオーバーレイをクリック
 
 #### 処理フロー
-1. `onClose()`コールバックを実行
-2. モーダルを閉じる
-3. ウィンドウサイズを元に戻す（`setModalMode(false)`）
+1. モーダルを閉じる
+2. ウィンドウサイズを元に戻す
 
 ### 4.2. フィルターボタンをクリック
 
@@ -92,12 +91,9 @@ interface IconProgressResult {
 2. フィルター適用後の結果を表示
 
 #### フィルターロジック
-```typescript
-const filteredResults =
-  filter === 'all' ? results :
-  filter === 'success' ? successResults :
-  errorResults;
-```
+- 「すべて」: 全結果を表示
+- 「成功」: 成功結果のみ表示
+- 「エラー」: エラー結果のみ表示
 
 #### ボタン表示
 各ボタンには件数が表示されます:
@@ -109,20 +105,7 @@ const filteredResults =
 
 ### モーダル表示時のサイズ調整
 
-モーダルが開かれたとき、十分な結果を表示できるようウィンドウサイズが拡大されます。
-
-```typescript
-useEffect(() => {
-  if (isOpen) {
-    window.electronAPI.setModalMode(true, { width: 800, height: 700 });
-  }
-  return () => {
-    if (isOpen) {
-      window.electronAPI.setModalMode(false);
-    }
-  };
-}, [isOpen]);
-```
+モーダルが開かれたとき、十分な結果を表示できるようウィンドウサイズが自動的に拡大されます。
 
 | 状態 | 幅 | 高さ |
 |------|-----|------|
@@ -170,16 +153,7 @@ useEffect(() => {
 
 ### アイテム名の改行対応
 
-アイテム名に改行が含まれる場合、適切に表示されます:
-
-```tsx
-{result.itemName.split('\n').map((line, i) => (
-  <React.Fragment key={i}>
-    {line}
-    {i < result.itemName.split('\n').length - 1 && <br />}
-  </React.Fragment>
-))}
-```
+アイテム名に改行が含まれる場合、適切に改行して表示されます。
 
 ## 9. 使用例
 

@@ -99,9 +99,8 @@
 - 「✏️ 編集」をクリック
 
 #### 処理フロー
-1. `onEditItem(item)`コールバックを実行
-2. メニューを閉じる
-3. 親コンポーネントでRegisterModalが開かれる
+1. メニューを閉じる
+2. 登録・編集モーダルが開かれる
 
 ### 5.2. パスをコピー
 
@@ -109,10 +108,9 @@
 - 「📋 パスをコピー」をクリック
 
 #### 処理フロー
-1. `PathUtils.getFullPath(item)`でフルパスを取得
-2. `onCopyPath(item)`コールバックを実行
+1. アイテムのフルパスを取得
+2. クリップボードにコピー
 3. メニューを閉じる
-4. 親コンポーネントでクリップボードにコピー
 
 #### ツールチップ
 - メニュー項目のtitle属性にフルパスを表示
@@ -123,8 +121,8 @@
 - 「📋 親フォルダーのパスをコピー」をクリック
 
 #### 処理フロー
-1. `PathUtils.getParentPath(item.path)`で親フォルダーパスを取得
-2. `onCopyParentPath(item)`コールバックを実行
+1. 親フォルダーのパスを取得
+2. クリップボードにコピー
 3. メニューを閉じる
 
 #### 表示条件
@@ -136,9 +134,8 @@
 - 「📂 親フォルダーを開く」をクリック
 
 #### 処理フロー
-1. `onOpenParentFolder(item)`コールバックを実行
+1. 親フォルダーをエクスプローラーで開く
 2. メニューを閉じる
-3. 親コンポーネントでエクスプローラーを起動
 
 ### 5.5. リンク先のパスをコピー（ショートカット）
 
@@ -146,8 +143,8 @@
 - 「📋 リンク先のパスをコピー」をクリック
 
 #### 処理フロー
-1. `item.originalPath`からリンク先パスを取得
-2. `onCopyShortcutPath(item)`コールバックを実行
+1. リンク先パスを取得
+2. クリップボードにコピー
 3. メニューを閉じる
 
 #### 表示条件
@@ -160,8 +157,8 @@
 - 「📋 リンク先の親フォルダーのパスをコピー」をクリック
 
 #### 処理フロー
-1. `PathUtils.getParentPath(item.originalPath)`でパスを取得
-2. `onCopyShortcutParentPath(item)`コールバックを実行
+1. リンク先の親フォルダーのパスを取得
+2. クリップボードにコピー
 3. メニューを閉じる
 
 ### 5.7. リンク先の親フォルダーを開く（ショートカット）
@@ -170,34 +167,15 @@
 - 「📂 リンク先の親フォルダーを開く」をクリック
 
 #### 処理フロー
-1. `onOpenShortcutParentFolder(item)`コールバックを実行
+1. リンク先の親フォルダーをエクスプローラーで開く
 2. メニューを閉じる
 
 ## 6. 位置調整
 
 メニューは画面からはみ出さないよう自動調整されます。
 
-```typescript
-const getAdjustedPosition = () => {
-  const menuWidth = 200;
-  const menuHeight = // アイテムタイプに応じて計算
-
-  let adjustedX = position.x;
-  let adjustedY = position.y;
-
-  // 右端からはみ出す場合、左に移動
-  if (position.x + menuWidth > window.innerWidth) {
-    adjustedX = position.x - menuWidth;
-  }
-
-  // 下端からはみ出す場合、上に移動
-  if (position.y + menuHeight > window.innerHeight) {
-    adjustedY = position.y - menuHeight;
-  }
-
-  return { x: Math.max(0, adjustedX), y: Math.max(0, adjustedY) };
-};
-```
+- 右端からはみ出す場合、左に移動
+- 下端からはみ出す場合、上に移動
 
 ### メニューの高さ計算
 
@@ -242,20 +220,14 @@ const getAdjustedPosition = () => {
 
 ### ショートカット判定
 
-```typescript
-const isShortcutItem = PathUtils.isShortcutItem(item as LauncherItem);
-```
-
 - `originalPath`プロパティが存在するアイテムがショートカットと判定される
 
 ### 親フォルダー有無判定
 
-```typescript
-const hasParentFolder =
-  item?.type !== 'url' &&
-  item?.type !== 'customUri' &&
-  item?.type !== 'group';
-```
+- 以下のタイプには親フォルダー関連の項目は表示されない:
+  - URLアイテム
+  - カスタムURIアイテム
+  - グループアイテム
 
 ## 11. 区切り線の表示ルール
 

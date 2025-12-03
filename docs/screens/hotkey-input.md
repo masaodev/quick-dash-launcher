@@ -198,18 +198,11 @@ const keyMap: { [key: string]: string } = {
 };
 ```
 
-## 11. Electron APIとの連携
+## 11. バリデーション
 
-### バリデーションAPI
+### バリデーション内容
 
-```typescript
-window.electronAPI.validateHotkey(hotkey: string): Promise<{
-  isValid: boolean;
-  reason?: string;
-}>
-```
-
-このAPIは以下をチェックします:
+ホットキー入力時に以下の項目がチェックされます:
 - Electronがサポートするキー組み合わせか
 - 他のアプリケーションと競合しないか
 - システムで予約されたキーでないか

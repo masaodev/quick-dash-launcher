@@ -104,32 +104,17 @@
 #### 種別変更時の初期化処理
 
 **フォルダ取込に変更時:**
-```typescript
-newItems[index].folderProcessing = 'expand';
-newItems[index].dirOptions = {
-  depth: 0,
-  types: 'both',
-  filter: undefined,
-  exclude: undefined,
-  prefix: undefined,
-  suffix: undefined,
-};
-delete newItems[index].groupItemNames;
-```
+- フォルダ処理モードを「展開」に設定
+- フォルダ取込オプションをデフォルト値で初期化
+- グループ関連の情報をクリア
 
 **グループに変更時:**
-```typescript
-newItems[index].groupItemNames = [];
-delete newItems[index].folderProcessing;
-delete newItems[index].dirOptions;
-```
+- グループアイテムリストを空で初期化
+- フォルダ取込関連の情報をクリア
 
 **単一アイテムに変更時:**
-```typescript
-delete newItems[index].folderProcessing;
-delete newItems[index].dirOptions;
-delete newItems[index].groupItemNames;
-```
+- フォルダ取込関連の情報をクリア
+- グループ関連の情報をクリア
 
 ### 4.2. 名前を入力
 
@@ -138,7 +123,7 @@ delete newItems[index].groupItemNames;
 
 #### 処理フロー
 1. 入力値を取得
-2. アイテムの`name`プロパティを更新
+2. アイテムの名前を更新
 3. 入力時にエラー状態をクリア
 
 #### プレースホルダー
@@ -157,8 +142,8 @@ delete newItems[index].groupItemNames;
 
 #### 処理フロー
 1. 入力値を取得
-2. アイテムの`path`プロパティを更新
-3. `detectItemType()`でアイテムタイプを自動検出
+2. アイテムのパスを更新
+3. アイテムタイプを自動検出
 4. タイプに応じてデフォルト値を設定
 5. 入力時にエラー状態をクリア
 
@@ -172,16 +157,8 @@ delete newItems[index].groupItemNames;
 | `obsidian://` などカスタムURI | `custom-uri` |
 
 #### フォルダ検出時の追加処理
-```typescript
-if (newType === 'folder') {
-  newItems[index].folderProcessing = 'folder';
-  newItems[index].dirOptions = {
-    depth: 0, types: 'both',
-    filter: undefined, exclude: undefined,
-    prefix: undefined, suffix: undefined,
-  };
-}
-```
+- フォルダ処理モードを「フォルダを開く」に設定
+- フォルダ取込オプションをデフォルト値で初期化
 
 #### プレースホルダー
 - 「ファイルパス、URL、またはカスタムURIを入力」
@@ -200,7 +177,7 @@ if (newType === 'folder') {
 
 #### 処理フロー
 1. 入力値を取得
-2. アイテムの`args`プロパティを更新
+2. アイテムの引数を更新
 
 #### プレースホルダー
 - 「コマンドライン引数（実行ファイルやアプリの場合のみ有効）」
@@ -214,9 +191,8 @@ if (newType === 'folder') {
 - DirOptionsEditorコンポーネントでオプションを編集
 
 #### 処理フロー
-1. DirOptionsEditorがオプション変更を通知
-2. `handleItemChange(index, 'dirOptions', newDirOptions)`を実行
-3. アイテムの`dirOptions`プロパティを更新
+1. DirOptionsEditorでオプションを変更
+2. アイテムのフォルダ取込オプションを更新
 
 #### 設定可能なオプション
 | オプション | 説明 | デフォルト |
@@ -238,9 +214,8 @@ if (newType === 'folder') {
 
 #### 処理フロー
 1. 削除対象のインデックスを取得
-2. `handleRemoveGroupItem(itemIndex, groupItemNameIndex)`を実行
-3. `groupItemNames`配列から対象を削除
-4. UIを更新
+2. グループアイテムリストから対象を削除
+3. UIを更新
 
 #### 表示内容
 - 選択されたアイテム名がチップ形式で表示
@@ -254,11 +229,10 @@ if (newType === 'folder') {
 
 #### 処理フロー
 1. 編集中のアイテムインデックスを記録
-2. GroupItemSelectorModalを開く
+2. グループアイテム選択モーダルを開く
 3. ユーザーがアイテムを選択
-4. `handleSelectGroupItem(itemName)`で選択アイテムを追加
-5. `groupItemNames`配列に追加
-6. エラー状態をクリア
+4. 選択アイテムをグループに追加
+5. エラー状態をクリア
 
 #### GroupItemSelectorModalへの引数
 - `targetFile`: 保存先ファイル（同じファイル内のアイテムのみ選択可能）
@@ -274,14 +248,13 @@ if (newType === 'folder') {
 
 #### 処理フロー
 1. 選択したタブを取得
-2. `handleTargetTabChange(index, targetTab)`を実行
-3. アイテムの`targetTab`プロパティを更新
-4. タブに複数ファイルがある場合、最初のファイルを`targetFile`に設定
+2. 保存先タブを更新
+3. タブに複数ファイルがある場合、最初のファイルを保存先ファイルに設定
 
 #### 選択肢の生成
-- 設定ファイルの`dataFileTabs`配列から取得
-- 各タブの名前（`tab.name`）を表示
-- 値は`tab.files[0]`（タブの最初のファイル）
+- 設定ファイルのタブ情報から取得
+- 各タブの名前を表示
+- タブの最初のファイルが保存先となる
 
 ### 4.9. 保存先ファイルを変更
 
@@ -293,8 +266,7 @@ if (newType === 'folder') {
 
 #### 処理フロー
 1. 選択したファイルを取得
-2. `handleItemChange(index, 'targetFile', value)`を実行
-3. アイテムの`targetFile`プロパティを更新
+2. 保存先ファイルを更新
 
 ### 4.10. カスタムアイコンを設定
 
@@ -303,18 +275,16 @@ if (newType === 'folder') {
 - 「削除」ボタンでカスタムアイコンを削除
 
 #### 処理フロー（選択時）
-1. `openCustomIconPicker(index)`でFilePickerDialogを開く
+1. ファイル選択ダイアログを開く
 2. ユーザーが画像ファイルを選択
-3. `handleCustomIconFileSelected()`でアイコンを保存
-4. `window.electronAPI.saveCustomIcon(filePath, itemPath)`でアイコンをコピー
-5. プレビュー用にアイコンを読み込み
-6. アイテムの`customIcon`プロパティを更新
+3. アイコンファイルを設定フォルダにコピー
+4. プレビュー用にアイコンを読み込み
+5. アイテムのカスタムアイコンを更新
 
 #### 処理フロー（削除時）
-1. `onCustomIconDeleted(index)`を実行
-2. `window.electronAPI.deleteCustomIcon(customIconFileName)`でファイルを削除
-3. プレビューをクリア
-4. アイテムの`customIcon`プロパティをクリア
+1. アイコンファイルを削除
+2. プレビューをクリア
+3. アイテムのカスタムアイコンをクリア
 
 #### FilePickerDialogの設定
 - タイトル: 「カスタムアイコンを選択」
@@ -330,10 +300,8 @@ if (newType === 'folder') {
 - 「キャンセル」ボタンをクリック、またはEscapeキーを押下
 
 #### 処理フロー
-1. `handleCancel()`を実行
-2. アイテム状態をクリア
-3. `onClose()`コールバックを呼び出し
-4. モーダルを閉じる
+1. アイテム状態をクリア
+2. モーダルを閉じる
 
 #### 注意
 - 編集中の内容は保存されずに破棄される
@@ -360,8 +328,8 @@ if (newType === 'folder') {
 
 #### 登録処理フロー
 1. バリデーション成功
-2. `onRegister(items)`コールバックを呼び出し
-3. `onClose()`でモーダルを閉じる
+2. 登録/更新処理を実行
+3. モーダルを閉じる
 
 ## 6. 初期化処理
 
@@ -420,43 +388,36 @@ if (newType === 'folder') {
 | `GroupItemSelectorModal` | グループメンバーの選択 | 追加ボタンクリック時 |
 | `FilePickerDialog` | カスタムアイコンファイルの選択 | アイコン選択時 |
 
-## 9. カスタムフック
+## 9. 内部機能
 
-### useRegisterForm
+### フォーム状態管理
 
-フォーム状態の管理を担当するカスタムフック。
+**管理される状態:**
+- 編集中のアイテム配列
+- 読み込み中フラグ
+- バリデーションエラー
+- 利用可能なタブ一覧
+- グループアイテム選択モーダルの表示状態
+- 編集中のアイテムインデックス
 
-**主な状態:**
-- `items`: 編集中のアイテム配列
-- `loading`: 読み込み中フラグ
-- `errors`: バリデーションエラー
-- `availableTabs`: 利用可能なタブ一覧
-- `selectorModalOpen`: GroupItemSelectorModalの表示状態
-- `editingItemIndex`: 編集中のアイテムインデックス
+**提供される機能:**
+- アイテムの値を変更
+- バリデーションと登録
+- キャンセル処理
+- グループアイテムの追加・選択・削除
+- 保存先タブの変更
 
-**主な関数:**
-- `handleItemChange()`: アイテムの値を変更
-- `validateAndRegister()`: バリデーションと登録
-- `handleCancel()`: キャンセル処理
-- `handleAddGroupItem()`: グループアイテム追加
-- `handleSelectGroupItem()`: グループアイテム選択
-- `handleRemoveGroupItem()`: グループアイテム削除
-- `handleTargetTabChange()`: 保存先タブ変更
+### カスタムアイコン管理
 
-### useCustomIcon
+**管理される状態:**
+- アイコンプレビューのBase64データ
+- ファイル選択ダイアログの状態
 
-カスタムアイコンの管理を担当するカスタムフック。
-
-**主な状態:**
-- `customIconPreviews`: アイコンプレビューのbase64データ
-- `filePickerState`: FilePickerDialogの状態
-
-**主な関数:**
-- `openCustomIconPicker()`: アイコン選択ダイアログを開く
-- `closeCustomIconPicker()`: ダイアログを閉じる
-- `handleCustomIconFileSelected()`: ファイル選択時の処理
-- `deleteCustomIcon()`: カスタムアイコンを削除
-- `loadCustomIconPreview()`: プレビューを読み込み
+**提供される機能:**
+- アイコン選択ダイアログを開く/閉じる
+- ファイル選択時の処理
+- カスタムアイコンの削除
+- プレビューの読み込み
 
 ## 10. エラーハンドリング
 

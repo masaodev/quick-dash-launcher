@@ -56,20 +56,19 @@
 ### 4.1. ファイル選択ボタン押下時
 
 #### 処理フロー
-1. **ローディング状態開始**: `setLoading(true)`
-2. **ファイル選択ダイアログ表示**: `window.electronAPI.selectBookmarkFile()`
+1. **ローディング状態開始**: 「読み込み中...」表示
+2. **ファイル選択ダイアログ表示**:
    - タイトル: 「ブックマークファイルを選択」
    - フィルター: HTML Files (*.html, *.htm), All Files (*.*)
    - プロパティ: openFile
 3. **ファイル選択時処理**:
-   - ファイル名を状態に保存: `setFileName(path.basename(filePath))`
-   - ブックマーク解析実行: `window.electronAPI.parseBookmarkFile(filePath)`
-   - 解析結果を状態に保存: `setBookmarks(parsedBookmarks)`
-   - 選択状態初期化: `setSelectedIds(new Set())`、`setSearchQuery('')`
-4. **エラーハンドリング**: 
-   - コンソールエラー出力 + 「ブックマークファイルの読み込みに失敗しました」アラート表示
-   - ローディング状態は必ず`finally`ブロックで解除
-5. **ローディング状態終了**: `setLoading(false)` (finally)
+   - ファイル名を表示
+   - ブックマーク解析を実行
+   - 解析結果をリストに表示
+   - 選択状態を初期化
+4. **エラーハンドリング**:
+   - 「ブックマークファイルの読み込みに失敗しました」アラート表示
+5. **ローディング状態終了**
 
 #### ブックマーク解析仕様
 - **解析対象**: HTMLファイル内の`<A>`タグ
@@ -79,70 +78,40 @@
 ### 4.2. 検索入力欄変更時
 
 #### フィルタリング条件
-- **対象フィールド**: `name`（ブックマーク名）、`url`（ブックマークURL）
+- **対象フィールド**: ブックマーク名、ブックマークURL
 - **検索方式**: 部分一致（大文字小文字区別なし）
 - **リアルタイム更新**: 入力と同時にフィルタリング実行
 - **クリア機能**: テキスト入力時に「×」ボタンで検索クリア
-
-#### フィルタリングロジック
-```typescript
-const filteredBookmarks = bookmarks.filter((bookmark) => {
-  if (!searchQuery) return true;
-  const searchLower = searchQuery.toLowerCase();
-  return (
-    bookmark.name.toLowerCase().includes(searchLower) ||
-    bookmark.url.toLowerCase().includes(searchLower)
-  );
-});
-```
 
 ### 4.3. 表示中を選択ボタン押下時
 
 #### 処理内容
 - **対象**: フィルタリング後のアイテム
-- **処理**: フィルタ後のIDを`selectedIds`に追加
-- **実装**: `setSelectedIds(prev => new Set([...prev, ...filteredBookmarks.map(b => b.id)]))`
+- **動作**: フィルタ後のアイテムを選択状態に追加
 
 ### 4.4. 表示中を解除ボタン押下時
 
 #### 処理内容
 - **対象**: フィルタリング後のアイテム
-- **処理**: フィルタ後のIDを`selectedIds`から削除
-- **実装**: `setSelectedIds(prev => new Set([...prev].filter(id => !filteredBookmarks.some(b => b.id === id))))`
+- **動作**: フィルタ後のアイテムの選択を解除
 
 ### 4.5. 全て選択ボタン押下時
 
 #### 処理内容
 - **対象**: 全ブックマーク
-- **処理**: 全IDで`selectedIds`を置き換え
-- **実装**: `setSelectedIds(new Set(bookmarks.map(b => b.id)))`
+- **動作**: 全アイテムを選択状態にする
 
 ### 4.6. 全て解除ボタン押下時
 
 #### 処理内容
 - **対象**: 全ブックマーク
-- **処理**: `selectedIds`をクリア
-- **実装**: `setSelectedIds(new Set())`
+- **動作**: 全アイテムの選択を解除
 
 ### 4.7. チェックボックス選択時
 
 #### 処理内容
 - **操作**: 単一アイテムのチェックボックスクリック
-- **処理**: `selectedIds`のSetに対してID追加/削除
-- **実装**: 
-  ```typescript
-  const handleToggleSelection = (id: string) => {
-    setSelectedIds(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(id)) {
-        newSet.delete(id);
-      } else {
-        newSet.add(id);
-      }
-      return newSet;
-    });
-  };
-  ```
+- **動作**: 選択状態をトグル（選択中なら解除、未選択なら選択）
 
 ### 4.8. インポートボタン押下時
 
@@ -153,19 +122,19 @@ const filteredBookmarks = bookmarks.filter((bookmark) => {
 - **選択件数0の場合**: 「インポートするブックマークを選択してください」アラート表示
 
 #### インポート処理フロー
-1. **選択ブックマーク抽出**: `selectedIds`に含まれるブックマークを抽出
-2. **コールバック実行**: `onImport(selectedBookmarks)`
-3. **モーダル閉じる**: `handleClose()`実行
+1. **選択ブックマーク抽出**: 選択されたブックマークを抽出
+2. **インポート実行**: 選択されたブックマークを親画面に渡す
+3. **モーダル閉じる**: モーダルを閉じる
 
 ### 4.9. キャンセルボタン押下時
 
 #### 処理内容
-- **モーダル閉じる**: `handleClose()`実行
+- **モーダル閉じる**: モーダルを閉じる
 - **状態リセット**: 親コンポーネント側で状態初期化
 
 ### 4.10. 閉じるボタン押下時
 
 #### 処理内容
-- **モーダル閉じる**: `handleClose()`実行
+- **モーダル閉じる**: モーダルを閉じる
 - **状態リセット**: 親コンポーネント側で状態初期化
 

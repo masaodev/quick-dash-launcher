@@ -75,11 +75,8 @@
 4. フィルタリング結果を表示
 
 #### フィルタリングロジック
-```typescript
-const filtered = availableItems.filter((item) =>
-  item.name.toLowerCase().includes(query.toLowerCase())
-);
-```
+- アイテム名に検索文字列が含まれるかをチェック
+- 大文字小文字を区別しない
 
 #### プレースホルダー
 - 「アイテム名で検索...」
@@ -95,8 +92,8 @@ const filtered = availableItems.filter((item) =>
 #### 処理フロー
 1. クリックしたアイテムが選択可能かチェック
 2. 選択可能な場合：
-   - `onSelect(itemName)`コールバックを実行
-   - `onClose()`でモーダルを閉じる
+   - 選択したアイテム名を返す
+   - モーダルを閉じる
 3. 選択不可（追加済み）の場合：
    - 何も実行しない
 
@@ -106,39 +103,24 @@ const filtered = availableItems.filter((item) =>
 - 「キャンセル」ボタンをクリック、またはEscapeキーを押下、またはオーバーレイをクリック
 
 #### 処理フロー
-1. `onClose()`コールバックを実行
-2. モーダルを閉じる
+1. モーダルを閉じる
 
 ## 7. 初期化処理
 
 ### モーダルオープン時の処理
 
 1. 検索クエリをクリア
-2. `loadAvailableItems()`でアイテム一覧を読み込み
+2. アイテム一覧を読み込み
 3. フォーカスをモーダルに設定
 4. 検索ボックスにフォーカス移動
 
 ### アイテム読み込み処理
 
-```typescript
-const loadAvailableItems = async () => {
-  const allItems = await window.electronAPI.loadDataFiles();
-
-  // 対象ファイルのアイテムのみ抽出
-  const itemsInFile = allItems.filter((item) => {
-    // グループアイテムは除外
-    if (item.type === 'group') return false;
-    // フォルダ取込から展開されたアイテムは除外
-    if (item.isDirExpanded) return false;
-    // 対象ファイルのアイテムのみ
-    return item.sourceFile === targetFile;
-  });
-
-  // アイコンを読み込み
-  const iconCache = await window.electronAPI.loadCachedIcons(itemsInFile);
-  // ...
-};
-```
+- データファイルから全アイテムを読み込み
+- 対象ファイルのアイテムのみ抽出
+- グループアイテムは除外
+- フォルダ取込から展開されたアイテムは除外
+- アイコンを読み込み
 
 ### 除外対象
 
@@ -196,13 +178,6 @@ const loadAvailableItems = async () => {
 ## 11. エラーハンドリング
 
 ### アイテム読み込みエラー
-```typescript
-try {
-  // アイテム読み込み処理
-} catch (error) {
-  console.error('Error loading available items:', error);
-}
-```
 
 - エラー時はコンソールにログ出力
 - UIへのエラー表示は現在未実装

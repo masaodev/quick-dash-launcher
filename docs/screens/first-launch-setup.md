@@ -55,7 +55,7 @@
 - ホットキー入力欄をクリックし、キー組み合わせを入力
 
 #### 処理フロー
-1. `HotkeyInput`コンポーネントでキー入力を受け付け
+1. ホットキー入力コンポーネントでキー入力を受け付け
 2. リアルタイムでホットキー文字列を生成（例: `Ctrl+Alt+Q`）
 3. バリデーションを実行:
    - 修飾キーの有無チェック
@@ -81,10 +81,9 @@
 1. ホットキーのバリデーション状態を確認
 2. バリデーション失敗時は処理を中止
 3. バリデーション成功時:
-   - `onComplete`ハンドラーを実行（入力されたホットキーを渡す）
-   - `setSetting`IPCを呼び出して`hotkey`を保存
-   - `registerGlobalShortcut`IPCを呼び出してホットキーを即座に登録
-   - `isFirstLaunch`ステートを`false`に更新
+   - 入力されたホットキーを設定ファイルに保存
+   - グローバルホットキーを即座に登録
+   - 初回起動モードを終了
 4. 初回設定画面を非表示
 5. メインウィンドウに遷移
 
@@ -98,31 +97,21 @@
 ### 4.3. 初回起動チェック
 
 #### アクション
-- アプリケーション起動時（メインプロセスとレンダラープロセスで判定）
+- アプリケーション起動時に自動判定
 
-#### 処理フロー（メインプロセス）
-1. `main.ts`の`app.whenReady()`で設定サービスを初期化
-2. `hotkey`設定を取得
-3. `hotkey`が空文字列または未設定の場合:
-   - `isFirstLaunch`を`true`に設定
-   - `setFirstLaunchMode(true)`で初回起動モードを有効化
-4. `hotkey`に値がある場合:
-   - `isFirstLaunch`を`false`に設定
-   - 通常モードで起動
-
-#### 処理フロー（レンダラープロセス）
-1. `App.tsx`の`useEffect`で初回起動チェック
-2. `isFirstLaunch`IPCを呼び出してメインプロセスの判定結果を取得
-3. `true`の場合:
-   - `isFirstLaunch`ステートを`true`に設定
+#### 処理フロー
+1. 設定サービスを初期化
+2. ホットキー設定を取得
+3. ホットキーが空または未設定の場合:
+   - 初回起動モードを有効化
    - 初回設定画面を表示
-4. `false`の場合:
-   - `isFirstLaunch`ステートを`false`に設定
+4. ホットキーに値がある場合:
+   - 通常モードで起動
    - メインウィンドウを表示
 
 #### 表示判定
-- **初回起動**: `hotkey`が空または未設定 → 初回設定画面
-- **2回目以降**: `hotkey`に値がある → メインウィンドウ
+- **初回起動**: ホットキーが空または未設定 → 初回設定画面
+- **2回目以降**: ホットキーに値がある → メインウィンドウ
 
 ### 4.4. ESCキー/フォーカス喪失の無視
 
@@ -143,35 +132,18 @@
 
 ## 6. データフロー
 
-### 初回起動時（メインプロセス）
-```
-main.ts: app.whenReady()
-  → SettingsService.getInstance()
-  → settingsService.get('hotkey')
-  → hotkey === '' → isFirstLaunch = true
-  → setFirstLaunchMode(true)
-  → スプラッシュウィンドウ表示
-  → メインウィンドウ作成（非表示）
-```
+### 初回起動時
+1. アプリケーション起動
+2. 設定ファイルからホットキーを読み込み
+3. ホットキーが空の場合 → 初回起動モード有効化
+4. スプラッシュウィンドウを表示後、初回設定画面を表示
 
-### 初回起動時（レンダラープロセス）
-```
-App.tsx: useEffect()
-  → electronAPI.isFirstLaunch()
-  → isFirstLaunch === true
-  → setIsFirstLaunch(true)
-  → FirstLaunchSetup表示
-```
-
-### 設定完了ボタン押下時
-```
-FirstLaunchSetup: onComplete(hotkey)
-  → electronAPI.setSetting('hotkey', hotkey)
-  → SettingsService: set('hotkey', hotkey)
-  → electronAPI.registerGlobalShortcut()
-  → App.tsx: setIsFirstLaunch(false)
-  → メインウィンドウ表示
-```
+### 設定完了時
+1. 「設定を完了」ボタン押下
+2. ホットキーを設定ファイルに保存
+3. グローバルホットキーを登録
+4. 初回起動モードを終了
+5. メインウィンドウを表示
 
 ## 7. UI仕様
 
@@ -195,9 +167,9 @@ FirstLaunchSetup: onComplete(hotkey)
 - **再利用**: 管理ウィンドウの設定タブでも使用
 - **機能**: キー入力、リアルタイムバリデーション、エラー表示
 
-### App.tsx
+### メインアプリケーション
 - **役割**: 初回起動判定と画面切り替え
-- **状態管理**: `isFirstLaunch`ステート
+- **状態管理**: 初回起動フラグ
 - **条件分岐**: 初回設定画面とメインウィンドウの表示制御
 
 ## 9. 設定値

@@ -77,7 +77,7 @@ interface DirOptions {
 
 #### 処理フロー
 1. 選択値を数値に変換
-2. `onChange({ ...dirOptions, depth: value })`を実行
+2. 階層深度の設定を更新
 
 ### 4.2. 取得タイプを変更
 
@@ -94,7 +94,7 @@ interface DirOptions {
 
 #### 処理フロー
 1. 選択値を取得
-2. `onChange({ ...dirOptions, types: value })`を実行
+2. 取得タイプの設定を更新
 
 ### 4.3. フィルターを入力
 
@@ -109,8 +109,8 @@ interface DirOptions {
 
 #### 処理フロー
 1. 入力値を取得
-2. 空文字の場合は`undefined`に変換
-3. `onChange({ ...dirOptions, filter: value || undefined })`を実行
+2. 空文字の場合は設定なしとして扱う
+3. フィルター設定を更新
 
 #### 使用例
 - `*.txt` - テキストファイルのみ
@@ -130,8 +130,8 @@ interface DirOptions {
 
 #### 処理フロー
 1. 入力値を取得
-2. 空文字の場合は`undefined`に変換
-3. `onChange({ ...dirOptions, exclude: value || undefined })`を実行
+2. 空文字の場合は設定なしとして扱う
+3. 除外パターン設定を更新
 
 #### 使用例
 - `temp*` - tempで始まるファイルを除外
@@ -151,8 +151,8 @@ interface DirOptions {
 
 #### 処理フロー
 1. 入力値を取得
-2. 空文字の場合は`undefined`に変換
-3. `onChange({ ...dirOptions, prefix: value || undefined })`を実行
+2. 空文字の場合は設定なしとして扱う
+3. プレフィックス設定を更新
 
 #### 使用例
 - `仕事` → 「仕事: ファイル名」として表示
@@ -171,8 +171,8 @@ interface DirOptions {
 
 #### 処理フロー
 1. 入力値を取得
-2. 空文字の場合は`undefined`に変換
-3. `onChange({ ...dirOptions, suffix: value || undefined })`を実行
+2. 空文字の場合は設定なしとして扱う
+3. サフィックス設定を更新
 
 #### 使用例
 - `_Dev` → 「ファイル名_Dev」として表示
