@@ -70,6 +70,7 @@ npm run test:e2e:single first-launch
 - `context-menu` - コンテキストメニュー
 - `alert-dialog` - AlertDialog（通知ダイアログ）
 - `confirm-dialog` - ConfirmDialog（確認ダイアログ）
+- `group-item-register` - グループアイテム登録
 
 ## ドキュメント
 

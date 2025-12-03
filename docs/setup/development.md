@@ -115,6 +115,8 @@ for (const fileName of dataFiles) {
 - **HotkeyService**: グローバルホットキーの登録・変更
 - **BackupService**: データファイルの自動バックアップ
 - **AutoLaunchService**: Windows起動時の自動起動設定
+- **FaviconService**: ファビコン・アイコンの取得・キャッシュ管理
+- **SearchHistoryService**: 検索履歴の保存・読み込み
 
 **設計パターン:**
 - すべてシングルトンパターンで実装
@@ -248,7 +250,7 @@ QuickDashLauncherではCSS変数ベースの統一されたデザインシステ
 ### パフォーマンス最適化パターン
 
 #### アイコンのキャッシュ
-- ファビコンは`%APPDATA%/quickdashlauncher/config/favicons/`にキャッシュ
+- ファビコンは`%APPDATA%/quick-dash-launcher/config/favicons/`にキャッシュ
 - ダウンロード前にキャッシュの存在を確認
 
 #### 検索の最適化
@@ -262,7 +264,7 @@ QuickDashLauncherではCSS変数ベースの統一されたデザインシステ
 - **SearchBox.tsx**: 検索入力フィールド
 - **ActionButtons.tsx**: アクションボタンコンテナ
 - **SettingsDropdown.tsx**: 設定関連機能のドロップダウンメニュー
-- **TabControl.tsx**: メイン/一時タブの切り替え
+- **FileTabBar.tsx**: ファイルタブの切り替え
 - **ItemList.tsx**: アイテムリスト表示
 - **RegisterModal.tsx**: ドラッグ&ドロップ登録用モーダル
 - **EditableRawItemList.tsx**: 編集モード用のデータ編集テーブル

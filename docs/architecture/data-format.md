@@ -391,7 +391,7 @@ interface RawDataLine {
   lineNumber: number;        // 行番号（1から開始）
   content: string;           // 行の内容（改行文字除く）
   type: 'directive' | 'item' | 'comment' | 'empty';
-  sourceFile: 'data.txt' | 'data2.txt';
+  sourceFile: string;        // 元データファイル名（例: 'data.txt', 'data2.txt', 'data3.txt'...）
   customIcon?: string;       // カスタムアイコンファイル名
 }
 ```
@@ -406,7 +406,7 @@ interface LauncherItem {
   customIcon?: string;       // カスタムアイコンファイル名
   args?: string;             // コマンドライン引数
   originalPath?: string;     // ショートカットの元パス
-  sourceFile?: 'data.txt' | 'data2.txt';
+  sourceFile?: string;       // 元データファイル名
   lineNumber?: number;       // 元ファイルの行番号
   isDirExpanded?: boolean;   // フォルダ取込アイテム展開フラグ
   expandedFrom?: string;     // フォルダ取込元ディレクトリパス
@@ -421,7 +421,7 @@ interface GroupItem {
   name: string;              // グループの表示名
   type: 'group';             // アイテムタイプ（常に'group'）
   itemNames: string[];       // グループ内で参照するアイテム名のリスト
-  sourceFile?: 'data.txt' | 'data2.txt';
+  sourceFile?: string;       // 元データファイル名
   lineNumber?: number;       // 元ファイルの行番号
   isEdited?: boolean;        // 編集フラグ
 }

@@ -64,7 +64,7 @@ ipcMain.handle('open-item', async (_event, item: LauncherItem) => {
     - 編集モード
     - モーダルモード
     - ピン留めモードが`alwaysOnTop`または`stayVisible`の場合
-  - **実装場所**: `src/main/windowManager.ts:492-518`
+  - **実装場所**: `src/main/windowManager.ts:487-509`（`hideMainWindow`関数）
 - **フォーカスアウト**: `normal`モードの場合、フォーカスを失うと自動的に非表示
 - **編集モード時のフォーカス制御**: 編集モード中はフォーカスアウトでもウィンドウが非表示にならない
 - **Escapeキー**: 以下の場合を**除き**、Escapeキーで非表示可能
@@ -134,12 +134,13 @@ ipcMain.handle('open-item', async (_event, item: LauncherItem) => {
 
 システムトレイアイコンを右クリックすると、以下のメニューが表示されます：
 
-1. **バージョン情報**: `QuickDashLauncher v0.2.8` - 現在のバージョンを表示（選択不可）
+1. **バージョン情報**: `QuickDashLauncher vX.X.X` - 現在のバージョンを動的に表示（選択不可）
 2. **表示**: メインウィンドウを表示（設定されているホットキーも表示）
-3. **設定...**: 管理ウィンドウの設定タブを開く（`showAdminWindowWithTab('settings')`を呼び出し）
-4. **データフォルダを開く**: 設定・データフォルダをエクスプローラーで開く（`shell.openPath`使用）
-5. **ヘルプ**: GitHubリポジトリをブラウザで開く（`shell.openExternal`使用）
-6. **終了**: アプリケーションを終了（`app.quit()`）
+3. **画面中央に表示**: 設定に関係なく強制的に画面中央に表示（`showWindowAtCenter()`を呼び出し）
+4. **設定...**: 管理ウィンドウの設定タブを開く（`showAdminWindowWithTab('settings')`を呼び出し）
+5. **データフォルダを開く**: 設定・データフォルダをエクスプローラーで開く（`shell.openPath`使用）
+6. **ヘルプ**: GitHubリポジトリをブラウザで開く（`shell.openExternal`使用）
+7. **終了**: アプリケーションを終了（`app.quit()`）
 
 詳細は [アプリケーション設定](../features/settings.md#システムトレイメニュー) を参照してください。
 

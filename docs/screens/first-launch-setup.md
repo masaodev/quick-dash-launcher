@@ -183,7 +183,7 @@ FirstLaunchSetup: onComplete(hotkey)
 ### スタイル
 - **背景色**: メインウィンドウと同一
 - **フォント**: システムフォント
-- **ボタン配置**: 下部に左右2つ並び（左: デフォルト、右: 設定完了）
+- **ボタン配置**: 下部中央に「設定を完了」ボタン1つ
 
 ### スタイルファイル
 - `src/renderer/styles/components/FirstLaunchSetup.css`

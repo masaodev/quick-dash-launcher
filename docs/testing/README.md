@@ -51,13 +51,14 @@ tests/e2e/
 ├── helpers/      # ヘルパークラス
 └── specs/        # テスト仕様
     ├── alert-dialog.spec.ts
-    ├── app-launch.spec.ts
+    ├── basic-ui.spec.ts
     ├── confirm-dialog.spec.ts
+    ├── context-menu.spec.ts
     ├── first-launch-setup.spec.ts
-    ├── item-display.spec.ts
+    ├── group-item-registration.spec.ts
+    ├── item-management.spec.ts
     ├── item-registration.spec.ts
     ├── multi-tab.spec.ts
-    ├── search.spec.ts
     └── settings-tab.spec.ts
 ```
 

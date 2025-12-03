@@ -40,16 +40,30 @@ src/renderer/styles/
 ```css
 --color-primary: #0078d4;           /* メインカラー */
 --color-primary-hover: #106ebe;     /* プライマリホバー */
+--color-primary-dark: #1976d2;      /* プライマリダーク */
+
 --color-success: #28a745;           /* 成功・確定 */
+--color-success-hover: #218838;     /* 成功ホバー */
+--color-success-light: #4caf50;     /* 成功ライト */
+
 --color-danger: #dc3545;            /* 危険・削除 */
+--color-danger-hover: #c82333;      /* 危険ホバー */
+--color-danger-light: #ff6b6b;      /* 危険ライト */
+
 --color-warning: #ffc107;           /* 警告 */
+
 --color-info: #2196f3;              /* 情報 */
+--color-info-hover: #1976d2;        /* 情報ホバー */
+--color-info-light: #42a5f5;        /* 情報ライト */
+
 --color-secondary: #6c757d;         /* セカンダリ */
+--color-secondary-hover: #5a6268;   /* セカンダリホバー */
 ```
 
 #### グレースケール
 ```css
 --color-white: #ffffff;
+--color-gray-50: #fafafa;           /* 最も薄いグレー */
 --color-gray-100: #f8f8f8;          /* 極薄グレー */
 --color-gray-200: #f5f5f5;          /* 薄グレー */
 --color-gray-300: #f0f0f0;          /* ライトグレー */
@@ -63,12 +77,19 @@ src/renderer/styles/
 
 #### 背景色
 ```css
+--bg-body: #f0f0f0;                 /* ページ全体の背景 */
 --bg-app: #ffffff;                  /* アプリケーション背景 */
 --bg-header: #f8f8f8;               /* ヘッダー背景 */
 --bg-section: #f9f9f9;              /* セクション背景 */
 --bg-selected: #e7f3ff;             /* 選択状態 */
 --bg-hover: #f0f0f0;                /* ホバー状態 */
 --bg-input-disabled: #f5f5f5;       /* 無効化入力フィールド */
+--bg-edited: #fff3cd;               /* 編集済みの行 */
+--bg-readonly: #f5f5f5;             /* 読み取り専用 */
+--bg-warning-light: #fff3cd;        /* 警告（薄） */
+--bg-danger-light: #fff5f5;         /* 危険（薄） */
+--bg-info-light: #e3f2fd;           /* 情報（薄） */
+--bg-table-container: #fafafa;      /* テーブルコンテナ */
 ```
 
 #### テキストカラー
@@ -78,6 +99,8 @@ src/renderer/styles/
 --text-muted: #666;                 /* 補助テキスト */
 --text-disabled: #999;              /* 無効化テキスト */
 --text-error: #e74c3c;              /* エラーメッセージ */
+--text-success: #388e3c;            /* 成功テキスト */
+--text-info: #6c757d;               /* 情報テキスト */
 ```
 
 ### 2. スペーシング
@@ -98,6 +121,7 @@ src/renderer/styles/
 --font-family: 'Meiryo', 'メイリオ', sans-serif;
 --font-family-mono: monospace;
 
+--font-size-xxs: 10px;              /* 最小フォント */
 --font-size-xs: 11px;               /* 極小フォント */
 --font-size-sm: 12px;               /* 小フォント */
 --font-size-base: 14px;             /* 基本フォント */
@@ -105,6 +129,10 @@ src/renderer/styles/
 --font-size-xl: 16px;               /* 特大フォント */
 --font-size-2xl: 18px;              /* 見出し小 */
 --font-size-3xl: 20px;              /* 見出し大 */
+
+--line-height-tight: 1;             /* 密な行間 */
+--line-height-normal: 1.4;          /* 通常の行間 */
+--line-height-relaxed: 1.6;         /* ゆったりした行間 */
 ```
 
 ### 4. ボーダー・角丸
@@ -128,8 +156,29 @@ src/renderer/styles/
 --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.15);    /* 大シャドウ */
 --shadow-xl: 0 4px 16px rgba(0, 0, 0, 0.2);     /* 特大シャドウ */
 
---focus-ring: 0 0 0 1px var(--color-primary);    /* フォーカスリング */
+--focus-ring: 0 0 0 1px var(--color-primary);                /* フォーカスリング */
+--focus-ring-wide: 0 0 0 2px rgba(0, 122, 204, 0.25);        /* 広いフォーカスリング */
+--focus-ring-danger: 0 0 0 2px rgba(255, 107, 107, 0.25);    /* 危険フォーカスリング */
+
+--transition-fast: all 0.1s;                     /* 高速トランジション */
 --transition-normal: all 0.2s;                   /* 標準トランジション */
+--transition-slow: all 0.3s;                     /* 低速トランジション */
+--transition-width: width 0.3s ease;             /* 幅のトランジション */
+```
+
+### 6. Z-インデックス・寸法
+
+```css
+/* Z-インデックス */
+--z-dropdown: 1000;                 /* ドロップダウンメニュー */
+--z-modal: 2000;                    /* モーダル */
+
+/* 寸法 */
+--input-height: 32px;               /* 入力フィールドの高さ */
+--button-height: 32px;              /* ボタンの高さ */
+--icon-size-sm: 24px;               /* 小アイコン */
+--icon-size: 32px;                  /* 標準アイコン */
+--scrollbar-width: 8px;             /* スクロールバーの幅 */
 ```
 
 ## 共通ユーティリティクラス

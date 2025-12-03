@@ -1,8 +1,8 @@
 # IPCチャンネル詳細
 
-QuickDashLauncherで使用される主要なIPCチャンネルの仕様です。
+QuickDashLauncherで使用される全IPCチャンネルの仕様です。
 
-## 設定・ファイル関連
+## 設定関連
 
 ### `settings:is-first-launch`
 初回起動かどうかを取得
@@ -12,36 +12,30 @@ QuickDashLauncherで使用される主要なIPCチャンネルの仕様です。
 ### `settings:get`
 アプリケーション設定を取得
 - パラメータ: `key?: keyof AppSettings` (省略時は全設定を取得)
-- 戻り値: 指定されたキーの値、または全設定
+- 戻り値: 指定されたキーの値、または全設定オブジェクト
 
 ### `settings:set`
 設定値を設定
 - パラメータ: `key: keyof AppSettings`, `value: AppSettings[keyof AppSettings]`
+- 戻り値: `boolean`
 - 特別な処理:
-  - `autoLaunch`: 設定変更時に`AutoLaunchService.setAutoLaunch()`を呼び出し、Windowsレジストリに即座に反映
+  - `autoLaunch`: Windowsレジストリに即座に反映
 
 ### `settings:set-multiple`
 複数の設定項目を一括更新
 - パラメータ: `settings: Partial<AppSettings>`
+- 戻り値: `boolean`
 - 特別な処理:
   - ホットキーが設定された場合、初回起動モードを自動解除
-  - `autoLaunch`が含まれている場合、`AutoLaunchService.setAutoLaunch()`を呼び出し、Windowsレジストリに即座に反映
+  - `autoLaunch`が含まれている場合、Windowsレジストリに即座に反映
 - 処理完了後、`settings-changed`イベントを全ウィンドウに送信
 
 ### `settings:reset`
 設定をデフォルト値にリセット
+- 戻り値: `boolean`
 - 特別な処理:
-  - `AutoLaunchService.setAutoLaunch(false)`を呼び出し、自動起動を無効化
+  - 自動起動を無効化（`AutoLaunchService.setAutoLaunch(false)`）
 - リセット後、`settings-changed`イベントを全ウィンドウに送信
-
-### `settings-changed` (イベント)
-設定変更を全ウィンドウに通知
-- **方向**: メインプロセス → レンダラープロセス（全ウィンドウ）
-- **パラメータ**: なし
-- **発生タイミング**:
-  - `settings:set-multiple`実行時
-  - `settings:reset`実行時
-- **用途**: メインウィンドウでの設定の即座反映（タブ名更新など）
 
 ### `settings:validate-hotkey`
 ホットキーの妥当性を検証
@@ -57,241 +51,282 @@ QuickDashLauncherで使用される主要なIPCチャンネルの仕様です。
 - パラメータ: `newHotkey: string`
 - 戻り値: `boolean` (成功/失敗)
 
-### `get-config-folder`
-ユーザーデータディレクトリパスを返す
+### `settings:check-hotkey-availability`
+ホットキーの利用可能性をチェック
+- パラメータ: `hotkey: string`
+- 戻り値: `boolean` (利用可能かどうか)
 
-### `get-app-info`
-アプリケーション情報を取得
-- 戻り値: `AppInfo` (バージョン、名前、説明、作者、ライセンス、GitHubリポジトリURL)
-- package.jsonから動的に取得
-
-### `open-external-url`
-外部URLをデフォルトブラウザで開く
-- パラメータ: `url: string`
-
-### `load-data-files`
-全てのdata*.txtファイルを読み込み、パース
-
-### `save-temp-data`
-一時アイテムを保存
-
-### `register-items`
-アイテムをデータファイルに登録
-- パラメータ: `RegisterItem[]`
-  - `RegisterItem`型:
-    - `name: string` - アイテム名
-    - `path: string` - パス
-    - `type: LauncherItem['type']` - アイテムタイプ
-    - `args?: string` - 引数（オプション）
-    - `targetTab: string` - 保存先データファイル名（例: `'data.txt'`, `'data2.txt'`）
-    - `itemCategory: 'item' | 'dir' | 'group'` - アイテムカテゴリ
-    - `folderProcessing?: 'folder' | 'expand'` - フォルダ処理タイプ（オプション）
-    - `icon?: string` - アイコンパス（オプション）
-    - `customIcon?: string` - カスタムアイコンパス（オプション）
-    - `dirOptions?: DirOptions` - フォルダ取込アイテムオプション（オプション）
-    - `groupItemNames?: string[]` - グループアイテム名リスト（オプション）
-- 戻り値: `void`
-- 処理内容:
-  - `targetTab`ごとにアイテムをグループ化
-  - 各データファイル（例: data.txt, data2.txt）に対応するアイテムを書き込み
-  - アイテムカテゴリに応じて異なる形式で保存（通常アイテム、フォルダ取込ディレクティブ、グループ）
-  - 保存後、`data-changed`イベントを全ウィンドウに送信
-
-### `sort-data-files`
-データファイルをパスの昇順でソート
-
-### `is-directory`
-パスがディレクトリかどうかを判定
-
-## アイテム操作
-
-### `open-item`
-ファイル/URL/アプリを起動
-
-### `open-parent-folder`
-エクスプローラーでアイテムを表示
-
-## アイコン関連
-
-### `fetch-favicon`
-ウェブサイトのファビコンをダウンロード
-
-### `extract-icon`
-アプリケーションアイコンを抽出
-
-### `extract-custom-uri-icon`
-カスタムURIスキーマのハンドラーアプリアイコンを抽出
-
-### `extract-file-icon-by-extension`
-ファイル拡張子ベースのアイコン抽出
-
-### `load-cached-icons`
-キャッシュされたアイコンを一括読み込み
-
-### `fetch-icons-combined`
-ファビコンとアイコンを統合的に一括取得する統合API
-- パラメータ: `urls: string[]`, `items: IconItem[]`
-- 戻り値: `{ favicons: Record<string, string | null>, icons: Record<string, string | null> }`
-- 特徴: 複数フェーズ（ファビコン取得 + アイコン抽出）の進捗を統合管理
-
-### `fetch-favicons-with-progress` (削除)
-**削除理由:** `fetch-icons-combined`に統合されました
-
-### `extract-icons-with-progress` (削除)
-**削除理由:** `fetch-icons-combined`に統合されました
+### `settings-changed` (イベント)
+設定変更を全ウィンドウに通知
+- **方向**: メインプロセス → レンダラープロセス（全ウィンドウ）
+- **パラメータ**: なし
+- **発生タイミング**:
+  - `settings:set-multiple`実行時
+  - `settings:reset`実行時
 
 ## ウィンドウ制御
 
+### `get-window-pin-mode`
+ウィンドウピン留めモードを取得
+- 戻り値: `WindowPinMode` (`'normal' | 'alwaysOnTop' | 'stayVisible'`)
+
+### `cycle-window-pin-mode`
+ウィンドウピン留めモードを循環切り替え
+- 戻り値: `WindowPinMode` (新しいモード)
+- 順序: `normal` → `alwaysOnTop` → `stayVisible` → `normal`
+
 ### `set-edit-mode`
 編集モードの状態を設定（ウィンドウサイズとフォーカス制御用）
+- パラメータ: `editMode: boolean`
+- 戻り値: なし
 
 ### `get-edit-mode`
 編集モードの状態を取得
+- 戻り値: `boolean`
 
 ### `show-edit-window`
 管理ウィンドウを表示
+- 戻り値: なし
 
 ### `hide-edit-window`
 管理ウィンドウを非表示
+- 戻り値: なし
 
 ### `toggle-edit-window`
 管理ウィンドウの表示/非表示を切り替え
+- 戻り値: なし
 
 ### `is-edit-window-shown`
 管理ウィンドウの表示状態を取得
+- 戻り値: `boolean`
 
 ### `open-edit-window-with-tab`
 指定されたタブで管理ウィンドウを開く
 - パラメータ: `tab: 'settings' | 'edit' | 'other'`
+- 戻り値: なし
 
 ### `get-initial-tab`
 管理ウィンドウの初期表示タブを取得
+- 戻り値: `'settings' | 'edit' | 'other'`
 
-### `set-active-tab` (レンダラーイベント)
+### `set-active-tab` (イベント)
 管理ウィンドウのアクティブタブを変更
-- メインプロセスからレンダラーへの一方向通信
-- パラメータ: `tab: 'settings' | 'edit' | 'other'`
+- **方向**: メインプロセス → レンダラープロセス
+- **パラメータ**: `tab: 'settings' | 'edit' | 'other'`
+
+### `set-modal-mode`
+モーダルモードを設定（ウィンドウの自動非表示を制御）
+- パラメータ: `isModal: boolean`, `requiredSize?: { width: number; height: number }`
+- 戻り値: なし
+- 用途: ダイアログ表示中のウィンドウ制御
+
+### `copy-to-clipboard`
+テキストをクリップボードにコピー
+- パラメータ: `text: string`
+- 戻り値: `boolean` (成功/失敗)
+
+### `log-performance-timing`
+パフォーマンス計測情報をログ出力
+- パラメータ: `label: string`, `duration: number`
+- 戻り値: なし
+
+### `quit-app`
+アプリケーションを終了
+- 処理: トレイアイコン破棄後、`app.quit()`を呼び出し
 
 ## データファイル管理
 
+### `get-config-folder`
+設定フォルダのパスを取得
+- 戻り値: `string`
+
 ### `get-data-files`
 設定フォルダ内のすべてのdata*.txtファイルを取得
-- パラメータ: なし
-- 戻り値: `string[]` - データファイル名の配列（例: `['data.txt', 'data2.txt', 'data3.txt']`）
-- 用途: タブ表示機能、管理ウィンドウのファイル選択、設定画面のファイル一覧表示
+- 戻り値: `string[]` (例: `['data.txt', 'data2.txt', 'data3.txt']`)
 
 ### `create-data-file`
 新しいデータファイルを作成
-- パラメータ: `fileName: string` - 作成するファイル名（例: `'data3.txt'`）
+- パラメータ: `fileName: string`
 - 戻り値: `{ success: boolean, error?: string }`
-- 用途: 設定画面でのデータファイル追加機能
-- 動作:
-  - 指定されたファイル名で空のデータファイルを作成
-  - ファイルが既に存在する場合はエラーを返す
-  - 作成後、`data-changed`イベントは発生しない（手動で再読み込みが必要）
+- 動作: 空のファイルを作成。既存の場合はエラー
 
 ### `delete-data-file`
 データファイルを削除
-- パラメータ: `fileName: string` - 削除するファイル名（例: `'data3.txt'`）
+- パラメータ: `fileName: string`
 - 戻り値: `{ success: boolean, error?: string }`
-- 用途: 設定画面でのデータファイル削除機能
-- 制限事項:
-  - `data.txt`は削除不可（必須ファイル）
-  - 削除後、`data-changed`イベントは発生しない（手動で再読み込みが必要）
+- 制限: `data.txt`は削除不可
+
+### `load-data-files`
+全てのdata*.txtファイルを読み込み、パース
+- 戻り値: `AppItem[]` (LauncherItemとGroupItemの配列)
+- 処理内容:
+  - フォルダ取込ディレクティブの展開
+  - .lnkファイルの解析
+  - タブ単位の重複チェック
+  - 名前順ソート
+
+### `register-items`
+アイテムをデータファイルに登録
+- パラメータ: `RegisterItem[]`
+  - `name: string` - アイテム名
+  - `path: string` - パス
+  - `type: LauncherItem['type']` - アイテムタイプ
+  - `args?: string` - 引数
+  - `targetTab: string` - 保存先データファイル名
+  - `targetFile?: string` - 実際の保存先ファイル
+  - `itemCategory: 'item' | 'dir' | 'group'` - アイテムカテゴリ
+  - `folderProcessing?: 'folder' | 'expand'` - フォルダ処理タイプ
+  - `icon?: string` - アイコンパス
+  - `customIcon?: string` - カスタムアイコンパス
+  - `dirOptions?: DirOptions` - フォルダ取込オプション
+  - `groupItemNames?: string[]` - グループアイテム名リスト
+- 戻り値: なし
+- 処理完了後、`data-changed`イベントを全ウィンドウに送信
+
+### `is-directory`
+パスがディレクトリかどうかを判定
+- パラメータ: `filePath: string`
+- 戻り値: `boolean`
+
+### `data-changed` (イベント)
+データ変更を全ウィンドウに通知
+- **方向**: メインプロセス → レンダラープロセス（全ウィンドウ）
+- **発生タイミング**: データファイルの登録・更新・削除時
 
 ## 編集モード専用
 
 ### `load-raw-data-files`
 生データファイルを展開せずに読み込み（編集モード用）
+- 戻り値: `RawDataLine[]`
 
 ### `save-raw-data-files`
 生データファイルを直接保存（編集モード用）
+- パラメータ: `rawLines: RawDataLine[]`
+- 戻り値: なし
+- 処理完了後、`data-changed`イベントを全ウィンドウに送信
+- バックアップ: 保存前に自動作成
 
 ### `update-item`
 単一アイテムをCSV形式で更新
 - パラメータ: `{ sourceFile: string, lineNumber: number, newItem: LauncherItem }`
-  - `sourceFile`: データファイル名（例: `'data.txt'`, `'data2.txt'`, `'data3.txt'`）
-  - `lineNumber`: 更新する行番号（1始まり）
-  - `newItem`: 新しいアイテムデータ
 - 戻り値: `{ success: boolean }`
-- 用途: メインウィンドウからのアイテム編集時に使用
-- バックアップ: 更新前に自動バックアップを作成
+- バックアップ: 更新前に自動作成
+- 処理完了後、`data-changed`イベントを全ウィンドウに送信
 
 ### `update-raw-line`
 生データファイルの指定行を直接更新（フォルダ取込ディレクティブ編集用）
 - パラメータ: `{ sourceFile: string, lineNumber: number, newContent: string }`
-  - `sourceFile`: データファイル名（例: `'data.txt'`, `'data2.txt'`, `'data3.txt'`）
-  - `lineNumber`: 更新する行番号（1始まり）
-  - `newContent`: 新しい行の内容（生データ文字列）
 - 戻り値: `{ success: boolean }`
-- 用途: フォルダ取込ディレクティブの編集時に元の行を直接更新
-- バックアップ: 更新前に自動バックアップを作成
+- バックアップ: 更新前に自動作成
+- 処理完了後、`data-changed`イベントを全ウィンドウに送信
 
 ### `delete-items`
 複数アイテムを一括削除
 - パラメータ: `DeleteItemRequest[]` (各要素: `{ sourceFile, lineNumber }`)
 - 戻り値: `{ success: boolean }`
-- バックアップ: 削除前に自動バックアップを作成
+- バックアップ: 削除前に自動作成
+- 処理完了後、`data-changed`イベントを全ウィンドウに送信
 
 ### `batch-update-items`
 複数アイテムを一括更新
 - パラメータ: `UpdateItemRequest[]` (各要素: `{ sourceFile, lineNumber, newItem }`)
 - 戻り値: `{ success: boolean }`
-- バックアップ: 更新前に自動バックアップを作成
+- バックアップ: 更新前に自動作成
+- 処理完了後、`data-changed`イベントを全ウィンドウに送信
 
-## プリロードAPI
+## アイテム操作
 
-### `getPathForFile`
-ドラッグ&ドロップされたファイルのパスを取得
+### `open-item`
+ファイル/URL/アプリを起動
+- パラメータ: `item: LauncherItem`
+- 戻り値: なし
+- 動作: ピンモードが`normal`の場合、起動後にウィンドウを非表示
 
-### `onSettingsChanged`
-設定変更イベントリスナー
-- **方向**: メインプロセス → レンダラープロセス
-- **パラメータ**: `callback: () => void`
-- **用途**: メインウィンドウで設定変更を検知し、タブ名などを即座に更新
+### `open-parent-folder`
+エクスプローラーでアイテムの親フォルダを表示
+- パラメータ: `item: LauncherItem`
+- 戻り値: なし
+- 動作: ピンモードが`normal`の場合、表示後にウィンドウを非表示
 
-```typescript
-onSettingsChanged(callback: () => void)
-```
+### `execute-group`
+グループアイテムを実行
+- パラメータ: `group: GroupItem`, `allItems: AppItem[]`
+- 戻り値: なし
+- 動作: グループ内のアイテムを500ms間隔で順次起動
+- ピンモードが`normal`の場合、全アイテム実行後にウィンドウを非表示
 
-**使用例:**
-```typescript
-window.electronAPI.onSettingsChanged(async () => {
-  const settings = await window.electronAPI.getSettings();
-  setDataFileTabs(settings.dataFileTabs || [{ file: 'data.txt', name: 'メイン' }]);
-  // その他の設定を反映
-});
-```
+## アイコン関連
 
-### `onIconProgress`
-アイコン取得進捗イベントリスナー
+### `fetch-favicon`
+ウェブサイトのファビコンをダウンロード
+- パラメータ: `url: string`
+- 戻り値: `string | null` (base64エンコードされたデータURL)
 
-```typescript
-onIconProgress(eventType: 'start' | 'update' | 'complete', callback: (data: IconProgress) => void)
-```
+### `extract-icon`
+アプリケーション/ショートカットファイルからアイコンを抽出
+- パラメータ: `filePath: string`
+- 戻り値: `string | null` (base64エンコードされたデータURL)
+- 対応形式: .exe, .lnk（ショートカット）
 
-### `onSetActiveTab`
-管理ウィンドウのタブ変更イベントリスナー
+### `extract-custom-uri-icon`
+カスタムURIスキーマのハンドラーアプリアイコンを抽出
+- パラメータ: `uri: string`
+- 戻り値: `string | null` (base64エンコードされたデータURL)
+- 動作: レジストリからスキーマハンドラーを検索
 
-```typescript
-onSetActiveTab(callback: (tab: 'settings' | 'edit' | 'other') => void)
-```
+### `extract-file-icon-by-extension`
+ファイル拡張子ベースのアイコン抽出
+- パラメータ: `filePath: string`
+- 戻り値: `string | null` (base64エンコードされたデータURL)
+- 動作: URIからの拡張子抽出にも対応
 
-#### 進捗イベント
+### `load-cached-icons`
+キャッシュされたアイコンを一括読み込み
+- パラメータ: `items: IconItem[]`
+- 戻り値: `Record<string, string>` (パスをキーとするアイコンデータのマップ)
 
-**icon-progress-start**
-- アイコン取得処理の開始を通知
+### `fetch-icons-combined`
+ファビコンとアイコンを統合的に一括取得
+- パラメータ: `urlItems: IconItem[]`, `items: IconItem[]`
+- 戻り値: `{ favicons: Record<string, string | null>, icons: Record<string, string | null> }`
+- 特徴: 複数フェーズ（ファビコン取得 + アイコン抽出）の進捗を統合管理
+
+### `select-custom-icon-file`
+カスタムアイコンファイル選択ダイアログを表示
+- 戻り値: `string | null` (選択されたファイルパス)
+- 対応形式: PNG, JPG, JPEG, ICO, SVG
+
+### `save-custom-icon`
+カスタムアイコンを保存
+- パラメータ: `sourceFilePath: string`, `itemIdentifier: string`
+- 戻り値: `string` (保存されたカスタムアイコンのファイル名)
+- 制限: 最大5MBまで
+
+### `delete-custom-icon`
+カスタムアイコンを削除
+- パラメータ: `customIconFileName: string`
+- 戻り値: なし
+
+### `get-custom-icon`
+カスタムアイコンを取得
+- パラメータ: `customIconFileName: string`
+- 戻り値: `string | null` (base64エンコードされたデータURL)
+
+### 進捗イベント
+
+#### `icon-progress-start`
+アイコン取得処理の開始を通知
 - 統合進捗情報（複数フェーズ）を含む
 
-**icon-progress-update**
-- アイコン取得処理の進捗更新を通知
+#### `icon-progress-update`
+アイコン取得処理の進捗更新を通知
 - 現在のフェーズ、各フェーズの処理数、エラー数を含む
 
-**icon-progress-complete**
-- アイコン取得処理の完了を通知
+#### `icon-progress-complete`
+アイコン取得処理の完了を通知
 - 最終的な処理結果（全フェーズ）とエラー数を含む
 
-#### IconProgress型定義（更新版）
+### IconProgress型定義
 
 ```typescript
 interface IconProgress {
@@ -321,16 +356,103 @@ interface IconProgressResult {
 }
 ```
 
-**変更点（v1.x.x）:**
-- `IconProgress`を単一フェーズから複数フェーズ管理に変更
-- `IconPhaseProgress`型を新規追加
-- `IconProgressResult`に`type`フィールドを追加
+## ブックマーク関連
 
-## システム制御
+### `select-bookmark-file`
+ブックマークファイル選択ダイアログを表示
+- 戻り値: `string | null` (選択されたファイルパス)
+- 対応形式: HTML, HTM
 
-### `quit-app`
-アプリケーションを終了
+### `parse-bookmark-file`
+ブックマークファイルをパース
+- パラメータ: `filePath: string`
+- 戻り値: `SimpleBookmarkItem[]`
+- パース方法: HTMLの`<A>`タグからURL/名前を抽出
+
+## 検索履歴関連
+
+### `load-search-history`
+検索履歴を読み込み
+- 戻り値: `SearchHistoryEntry[]`
+
+### `save-search-history`
+検索履歴を保存
+- パラメータ: `entries: SearchHistoryEntry[]`
+- 戻り値: なし
+
+### `add-search-history-entry`
+検索履歴エントリーを追加
+- パラメータ: `query: string`
+- 戻り値: なし
+
+### `clear-search-history`
+検索履歴をクリア
+- 戻り値: なし
+
+## その他
+
+### `open-config-folder`
+設定フォルダをエクスプローラーで開く
+- 戻り値: なし
+
+### `open-data-file`
+data.txtをデフォルトアプリケーションで開く
+- 戻り値: なし
+
+### `get-app-info`
+アプリケーション情報を取得
+- 戻り値: `AppInfo`
+  - `version: string`
+  - `name: string`
+  - `description: string`
+  - `author: string`
+  - `license: string`
+  - `repository: string`
+- 情報源: package.json
+
+### `open-external-url`
+外部URLをデフォルトブラウザで開く
+- パラメータ: `url: string`
+- 戻り値: なし
+
+### `getPathForFile` (プリロードAPI)
+ドラッグ&ドロップされたファイルのパスを取得
+- パラメータ: `file: File`
+- 戻り値: `string`
+
+## プリロードAPIイベントリスナー
+
+### `onSettingsChanged`
+設定変更イベントリスナー
+```typescript
+onSettingsChanged(callback: () => void)
+```
+
+### `onDataChanged`
+データ変更イベントリスナー
+```typescript
+onDataChanged(callback: () => void)
+```
+
+### `onIconProgress`
+アイコン取得進捗イベントリスナー
+```typescript
+onIconProgress(eventType: 'start' | 'update' | 'complete', callback: (data: IconProgress) => void)
+```
+
+### `onSetActiveTab`
+管理ウィンドウのタブ変更イベントリスナー
+```typescript
+onSetActiveTab(callback: (tab: 'settings' | 'edit' | 'other') => void)
+```
+
+### `onWindowShown`
+ウィンドウ表示イベントリスナー
+```typescript
+onWindowShown(callback: () => void)
+```
 
 ## 関連ドキュメント
 
 - [アーキテクチャ概要](overview.md) - システム全体の構造とデータフロー
+- [ウィンドウ制御](window-control.md) - ウィンドウ管理の詳細

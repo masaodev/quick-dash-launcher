@@ -184,14 +184,21 @@ WindowsAppsフォルダ等のシンボリックリンクを自動解決してア
 
 ユーザーが手動で指定するカスタムアイコン機能もサポートします。
 
-**保存場所:** `custom-icons/`（プロジェクトルートからの相対パス）
+**保存場所:** `%APPDATA%/quick-dash-launcher/config/custom-icons/`
+
+**ファイル名形式:** `{MD5ハッシュ}.png`（アイテム識別子からMD5ハッシュを生成）
 
 **対応形式:** `.png`, `.jpg`, `.jpeg`, `.ico`, `.svg`
+
+**設定方法:**
+1. アイテム管理画面でアイテムを選択
+2. コンテキストメニューから「カスタムアイコンを設定」を選択
+3. 画像ファイルを選択
 
 **データファイル指定方法:**
 ```
 表示名,パス,引数,カスタムアイコンファイル名
-MyApp,C:\MyApp\app.exe,,custom-icon.png
+MyApp,C:\MyApp\app.exe,,{hash}.png
 ```
 
 詳細は[データファイル形式仕様](../architecture/data-format.md#カスタムアイコンの処理)を参照。

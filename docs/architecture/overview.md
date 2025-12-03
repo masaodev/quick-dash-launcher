@@ -23,6 +23,8 @@ QuickDashLauncherのアーキテクチャ概要とデータフローを説明し
 | `HotkeyService` | グローバルホットキーの登録・変更 |
 | `BackupService` | データファイルの自動バックアップ |
 | `AutoLaunchService` | Windows起動時の自動起動設定 |
+| `FaviconService` | ファビコン・アイコンの取得・キャッシュ管理 |
+| `SearchHistoryService` | 検索履歴の保存・読み込み |
 
 すべてシングルトンパターンで実装され、`getInstance()`で取得します。
 
@@ -34,13 +36,15 @@ IPCハンドラーは機能ごとに分離（`src/main/ipc/`）:
 
 | ハンドラー | 役割 |
 |-----------|------|
-| `settingsHandlers.ts` | 設定の取得・更新 |
-| `configHandlers.ts` | 設定フォルダーへのアクセス |
-| `dataHandlers.ts` | データファイルの読み込み・保存 |
-| `itemHandlers.ts` | アイテムの起動・フォルダー表示 |
-| `iconHandlers.ts` | ファビコン取得・アイコン抽出 |
-| `windowHandlers.ts` | ウィンドウ固定化制御 |
+| `settingsHandlers.ts` | 設定の取得・更新・ホットキー変更 |
+| `configHandlers.ts` | 設定フォルダーへのアクセス・外部URL開く |
+| `dataHandlers.ts` | データファイルの読み込み・保存・ブックマーク解析 |
+| `itemHandlers.ts` | アイテムの起動・フォルダー表示・グループ実行 |
+| `iconHandlers.ts` | ファビコン取得・アイコン抽出・カスタムアイコン管理 |
+| `windowHandlers.ts` | ウィンドウ固定化・編集モード・モーダルモード制御 |
 | `historyHandlers.ts` | 検索履歴の読み書き |
+| `editHandlers.ts` | アイテム編集（更新・削除・一括更新） |
+| `splashHandlers.ts` | スプラッシュウィンドウ制御 |
 
 詳細は[IPCチャンネル](ipc-channels.md)を参照。
 
