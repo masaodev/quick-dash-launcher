@@ -142,12 +142,6 @@ QuickDashLauncherで使用される主要なIPCチャンネルの仕様です。
 
 ## ウィンドウ制御
 
-### `get-window-pin-state`
-ウィンドウ固定状態を取得
-
-### `set-window-pin-state`
-ウィンドウ固定状態を設定
-
 ### `set-edit-mode`
 編集モードの状態を設定（ウィンドウサイズとフォーカス制御用）
 

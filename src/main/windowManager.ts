@@ -263,15 +263,6 @@ function shouldHideOnBlur(): boolean {
   return windowPinMode === 'normal';
 }
 
-// 旧APIとの互換性のための関数（非推奨）
-export function getWindowPinState(): boolean {
-  return windowPinMode !== 'normal';
-}
-
-export function setWindowPinState(pinState: boolean): void {
-  setWindowPinMode(pinState ? 'alwaysOnTop' : 'normal');
-}
-
 /**
  * アプリケーションの編集モードを設定し、それに応じてウィンドウサイズを調整する
  * 編集モード時はウィンドウサイズを拡大し、通常モード時は元のサイズに戻す

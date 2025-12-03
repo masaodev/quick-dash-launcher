@@ -20,7 +20,8 @@
       "Bash(npm run dev:*)",
       "Bash(gh run view:*)",
       "Bash(gh run list:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(grep:*)"
     ],
     "deny": []
   }

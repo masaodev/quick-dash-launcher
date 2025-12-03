@@ -13,8 +13,6 @@ import {
 import { getTray } from '../windowManager.js';
 
 export function setupWindowHandlers(
-  getWindowPinState: () => boolean,
-  setWindowPinState: (pinState: boolean) => void,
   setEditMode: (editMode: boolean) => Promise<void>,
   getEditMode: () => boolean,
   getWindowPinMode: () => WindowPinMode,
@@ -24,22 +22,13 @@ export function setupWindowHandlers(
     requiredSize?: { width: number; height: number }
   ) => Promise<void>
 ) {
-  // 新しい3段階モード用のIPCハンドラー
+  // 3段階ピンモード用のIPCハンドラー
   ipcMain.handle('get-window-pin-mode', () => {
     return getWindowPinMode();
   });
 
   ipcMain.handle('cycle-window-pin-mode', () => {
     return cycleWindowPinMode();
-  });
-
-  // 旧APIとの互換性のためのIPCハンドラー（非推奨）
-  ipcMain.handle('get-window-pin-state', () => {
-    return getWindowPinState();
-  });
-
-  ipcMain.handle('set-window-pin-state', (_event, isPinned: boolean) => {
-    setWindowPinState(isPinned);
   });
 
   ipcMain.handle('quit-app', () => {

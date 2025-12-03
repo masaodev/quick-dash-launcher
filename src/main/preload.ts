@@ -76,12 +76,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.removeListener('settings-changed', callback);
     };
   },
-  // 新しい3段階ピンモードAPI
+  // 3段階ピンモードAPI
   getWindowPinMode: (): Promise<WindowPinMode> => ipcRenderer.invoke('get-window-pin-mode'),
   cycleWindowPinMode: () => ipcRenderer.invoke('cycle-window-pin-mode'),
-  // 旧APIとの互換性（非推奨）
-  getWindowPinState: () => ipcRenderer.invoke('get-window-pin-state'),
-  setWindowPinState: (isPinned: boolean) => ipcRenderer.invoke('set-window-pin-state', isPinned),
   registerItems: (items: RegisterItem[]) => ipcRenderer.invoke('register-items', items),
   isDirectory: (filePath: string) => ipcRenderer.invoke('is-directory', filePath),
   getPathForFile: (file: File) => webUtils.getPathForFile(file),

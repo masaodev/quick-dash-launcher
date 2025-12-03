@@ -43,12 +43,9 @@ export interface ElectronAPI {
   onSetActiveTab: (callback: (tab: 'settings' | 'edit' | 'other') => void) => void;
   onDataChanged: (callback: () => void) => () => void;
   onSettingsChanged: (callback: () => void) => () => void;
-  // 新しい3段階ピンモードAPI
+  // 3段階ピンモードAPI
   getWindowPinMode: () => Promise<WindowPinMode>;
   cycleWindowPinMode: () => Promise<WindowPinMode>;
-  // 旧APIとの互換性（非推奨）
-  getWindowPinState: () => Promise<boolean>;
-  setWindowPinState: (isPinned: boolean) => Promise<void>;
   registerItems: (items: RegisterItem[]) => Promise<void>;
   isDirectory: (filePath: string) => Promise<boolean>;
   getPathForFile: (file: File) => string;
