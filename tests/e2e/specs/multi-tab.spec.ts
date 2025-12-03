@@ -231,7 +231,7 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
     const utils = new TestUtils(mainWindow);
 
     // data2.txtに新しいアイテムを追加
-    configHelper.addItemToData2('新規サブアイテム', 'https://example-sub.com');
+    configHelper.addItemToFile('data2.txt', '新規サブアイテム', 'https://example-sub.com');
 
     // アプリをリロード
     await mainWindow.reload();
@@ -383,11 +383,11 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
 
     await test.step('data.txtとdata2.txtの内容を確認', async () => {
       // data.txtにGitHubが含まれていないことを確認
-      const dataContent = configHelper.readData();
+      const dataContent = configHelper.readDataFile('data.txt');
       expect(dataContent).not.toContain('GitHub');
 
       // data2.txtにGitHubが含まれていることを確認
-      const data2Content = configHelper.readData2();
+      const data2Content = configHelper.readDataFile('data2.txt');
       expect(data2Content).toContain('GitHub');
     });
   });

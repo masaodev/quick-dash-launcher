@@ -7,7 +7,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
   test.beforeEach(async ({ configHelper, mainWindow }) => {
     // baseテンプレートは既に読み込まれている
     // data2.txtは削除（このテストでは使用しない）
-    configHelper.deleteData2();
+    configHelper.deleteDataFile('data2.txt');
 
     // ページの読み込み完了を待機
     const utils = new TestUtils(mainWindow);
@@ -147,7 +147,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       await expect(newItem).toBeVisible();
 
       // data.txtに引数が保存されていることを確認
-      const dataContent = configHelper.readData();
+      const dataContent = configHelper.readDataFile('data.txt');
       expect(dataContent).toContain('notepad.exe');
       expect(dataContent).toContain('C:\\test.txt');
     });
@@ -161,7 +161,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       await utils.clickRegisterButton();
       await utils.wait(500);
 
-      const dataAfter = configHelper.readData();
+      const dataAfter = configHelper.readDataFile('data.txt');
       expect(dataAfter).toContain('テスト保存,https://test-save.com');
     });
 
@@ -324,7 +324,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       await utils.clickRegisterButton();
       await utils.wait(500);
 
-      const dataContent = configHelper.readData();
+      const dataContent = configHelper.readDataFile('data.txt');
       expect(dataContent).toContain('https://github.com/new-path');
     });
 
@@ -351,7 +351,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       await utils.wait(500);
       await utils.attachScreenshot(testInfo, '引数編集後');
 
-      const dataContent = configHelper.readData();
+      const dataContent = configHelper.readDataFile('data.txt');
       expect(dataContent).toContain('C:\\edited.txt');
     });
 
@@ -417,7 +417,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
     });
 
     await test.step('編集をキャンセルするとアイテムは変更されない', async () => {
-      const dataBefore = configHelper.readData();
+      const dataBefore = configHelper.readDataFile('data.txt');
       await utils.attachScreenshot(testInfo, '編集前');
 
       await utils.editItemByRightClick('GitHub');
@@ -429,7 +429,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       await utils.attachScreenshot(testInfo, 'キャンセル後');
 
       // data.txtが変更されていないことを確認
-      const dataAfter = configHelper.readData();
+      const dataAfter = configHelper.readDataFile('data.txt');
       expect(dataAfter).toBe(dataBefore);
     });
   });
@@ -505,11 +505,11 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
 
     await test.step('登録したアイテムがサブタブ（data2.txt）に保存される', async () => {
       // data2.txtの内容を確認
-      const data2Content = configHelper.readData2();
+      const data2Content = configHelper.readDataFile('data2.txt');
       expect(data2Content).toContain('サブタブ登録テスト,https://sub-tab-test.com');
 
       // data.txtには保存されていないことを確認
-      const dataContent = configHelper.readData();
+      const dataContent = configHelper.readDataFile('data.txt');
       expect(dataContent).not.toContain('サブタブ登録テスト');
     });
 

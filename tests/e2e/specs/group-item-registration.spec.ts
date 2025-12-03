@@ -157,7 +157,7 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
     });
 
     await test.step('登録したグループがdata.txtに保存される', async () => {
-      const dataContent = configHelper.readData();
+      const dataContent = configHelper.readDataFile('data.txt');
       expect(dataContent).toContain('group,テストグループ,GitHub,Google');
     });
 
@@ -317,7 +317,7 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
     });
 
     await test.step('編集がdata.txtに保存される', async () => {
-      const dataContent = configHelper.readData();
+      const dataContent = configHelper.readDataFile('data.txt');
       expect(dataContent).toContain('開発環境スタート編集');
       expect(dataContent).toContain('Wikipedia');
     });
@@ -327,7 +327,7 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
     const utils = new TestUtils(mainWindow);
 
     await test.step('グループアイテムを編集してキャンセル', async () => {
-      const dataBefore = configHelper.readData();
+      const dataBefore = configHelper.readDataFile('data.txt');
       await utils.attachScreenshot(testInfo, '編集前');
 
       await utils.editItemByRightClick('開発環境スタート');
@@ -342,7 +342,7 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
       await utils.attachScreenshot(testInfo, 'キャンセル後');
 
       // data.txtが変更されていないことを確認
-      const dataAfter = configHelper.readData();
+      const dataAfter = configHelper.readDataFile('data.txt');
       expect(dataAfter).toBe(dataBefore);
     });
   });
@@ -570,7 +570,7 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
         await adminUtils.attachScreenshot(testInfo, '更新後');
 
         // data.txtに保存されたことを確認
-        const dataContent = configHelper.readData();
+        const dataContent = configHelper.readDataFile('data.txt');
         expect(dataContent).toContain('開発環境スタート管理画面編集');
       });
 
@@ -632,7 +632,7 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
         await saveButton.click();
         await adminUtils.wait(800);
 
-        const dataContent = configHelper.readData();
+        const dataContent = configHelper.readDataFile('data.txt');
         expect(dataContent).not.toContain('開発環境スタート');
       });
 

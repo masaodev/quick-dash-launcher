@@ -7,7 +7,7 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
   test.beforeEach(async ({ configHelper, mainWindow }) => {
     // baseテンプレートは既に読み込まれている
     // data2.txtは削除（このテストでは使用しない）
-    configHelper.deleteData2();
+    configHelper.deleteDataFile('data2.txt');
 
     // ページの読み込み完了を待機
     const utils = new TestUtils(mainWindow);
@@ -156,7 +156,7 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         await adminUtils.attachScreenshot(testInfo, '保存後');
 
         // data.txtに保存されたことを確認
-        const dataContent = configHelper.readData();
+        const dataContent = configHelper.readDataFile('data.txt');
         expect(dataContent).toContain('新規アイテム,https://new-item.com');
       });
     } finally {
@@ -199,7 +199,7 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         await saveButton.click();
         await adminUtils.wait(800);
 
-        const dataContent = configHelper.readData();
+        const dataContent = configHelper.readDataFile('data.txt');
         expect(dataContent).toContain('GitHub編集後');
       });
     } finally {
@@ -251,7 +251,7 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         await adminUtils.attachScreenshot(testInfo, '更新後');
 
         // data.txtに保存されたことを確認
-        const dataContent = configHelper.readData();
+        const dataContent = configHelper.readDataFile('data.txt');
         expect(dataContent).toContain('GitHub詳細編集');
         expect(dataContent).toContain('--test-args');
       });
@@ -302,7 +302,7 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         await saveButton.click();
         await adminUtils.wait(800);
 
-        const dataContent = configHelper.readData();
+        const dataContent = configHelper.readDataFile('data.txt');
         expect(dataContent).not.toContain('GitHub');
       });
     } finally {
@@ -369,7 +369,7 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         await saveButton.click();
         await adminUtils.wait(800);
 
-        const dataContent = configHelper.readData();
+        const dataContent = configHelper.readDataFile('data.txt');
         expect(dataContent).not.toContain('GitHub');
         expect(dataContent).not.toContain('Google');
       });
@@ -580,7 +580,7 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         await adminUtils.wait(800);
 
         // data2.txtに保存されたことを確認
-        const data2Content = configHelper.readData2();
+        const data2Content = configHelper.readDataFile('data2.txt');
         expect(data2Content).toContain('Reddit編集');
       });
     } finally {
@@ -635,7 +635,7 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         await saveButton.click();
         await adminUtils.wait(800);
 
-        const dataContent = configHelper.readData();
+        const dataContent = configHelper.readDataFile('data.txt');
         expect(dataContent).toContain('dir,C:\\TestFolder');
       });
     } finally {
@@ -743,7 +743,7 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         await adminUtils.wait(800);
 
         // data.txtに保存されたことを確認
-        const dataContent = configHelper.readData();
+        const dataContent = configHelper.readDataFile('data.txt');
         expect(dataContent).toContain('GitHub統合タブ');
       });
     } finally {
@@ -805,7 +805,7 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         await adminUtils.wait(800);
 
         // data2.txtに保存されたことを確認
-        const data2Content = configHelper.readData2();
+        const data2Content = configHelper.readDataFile('data2.txt');
         expect(data2Content).toContain('Reddit複数ファイルタブ');
       });
 
@@ -892,7 +892,7 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         expect(data3Content).toContain('新規data3アイテム,https://example3.com');
 
         // data.txtには保存されていないことを確認
-        const dataContent = configHelper.readData();
+        const dataContent = configHelper.readDataFile('data.txt');
         expect(dataContent).not.toContain('新規data3アイテム');
       });
     } finally {
