@@ -1,8 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 
-import SplashApp from './SplashApp';
-import './styles/splash.css';
+import SplashApp from '../SplashApp';
+import '../styles/splash.css';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
