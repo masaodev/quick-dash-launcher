@@ -137,18 +137,6 @@
   transform: scale(0.95);
 }
 
-/* 旧スタイルとの互換性（非推奨） */
-.action-btn.pinned {
-  background-color: var(--color-primary);
-  color: var(--color-white);
-  border-color: var(--color-primary);
-}
-
-.action-btn.pinned:hover {
-  background-color: var(--color-primary-hover);
-  border-color: var(--color-primary-hover);
-}
-
 /* Settings Dropdown */
 .settings-dropdown {
   position: relative;
