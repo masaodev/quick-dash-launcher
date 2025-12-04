@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 
 import { RawDataLine, AppSettings } from '../common/types';
 
@@ -36,13 +36,13 @@ const AdminApp: React.FC = () => {
     // データ変更通知のリスナーを設定
     window.electronAPI.onDataChanged(() => {
       debugInfo('データ変更通知を受信、データを再読み込みします');
-      loadData();
+      loadData(false); // ローディング表示なしで再読み込み
     });
 
     // ウィンドウ表示時のリスナーを設定
     window.electronAPI.onWindowShown(() => {
       debugInfo('ウィンドウが表示されました、データを再読み込みします');
-      loadData();
+      loadData(false); // ローディング表示なしで再読み込み
     });
   }, []);
 
@@ -55,9 +55,11 @@ const AdminApp: React.FC = () => {
     }
   };
 
-  const loadData = async () => {
+  const loadData = async (showLoading = true) => {
     try {
-      setIsLoading(true);
+      if (showLoading) {
+        setIsLoading(true);
+      }
       // 設定とデータを並行して読み込み
       const [settingsData, rawData] = await Promise.all([
         window.electronAPI.getSettings(),
@@ -68,7 +70,9 @@ const AdminApp: React.FC = () => {
     } catch (error) {
       logError('Failed to load data:', error);
     } finally {
-      setIsLoading(false);
+      if (showLoading) {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -121,6 +125,11 @@ const AdminApp: React.FC = () => {
     setSearchQuery(query);
   };
 
+  // dataFileTabsをメモ化して、内容が変わらない限り参照を保持
+  const dataFileTabs = useMemo(() => {
+    return settings?.dataFileTabs || [];
+  }, [JSON.stringify(settings?.dataFileTabs)]);
+
   if (isLoading) {
     return (
       <div className="loading-container">
@@ -140,7 +149,7 @@ const AdminApp: React.FC = () => {
         onRawDataSave={handleRawDataSave}
         searchQuery={searchQuery}
         onSearchChange={handleSearchChange}
-        dataFileTabs={settings?.dataFileTabs || []}
+        dataFileTabs={dataFileTabs}
       />
 
       <AlertDialog
