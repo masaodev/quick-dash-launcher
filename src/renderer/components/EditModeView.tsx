@@ -314,12 +314,12 @@ const EditModeView: React.FC<EditModeViewProps> = ({
     }
   }, [selectedTabIndex, dataFileTabs]);
 
-  // dataFileTabsが変更されたら最初のタブを選択
+  // 初回マウント時のみ最初のタブを選択
   useEffect(() => {
     if (dataFileTabs.length > 0) {
       setSelectedTabIndex(0);
     }
-  }, [dataFileTabs]);
+  }, []);
 
   // rawLinesが変更されたらworkingLinesも更新
   useEffect(() => {
