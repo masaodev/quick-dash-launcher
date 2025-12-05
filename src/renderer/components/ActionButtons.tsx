@@ -57,11 +57,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   const pinConfig = getPinButtonConfig(windowPinMode);
   return (
     <div className="action-buttons">
-      <button
-        className="action-btn register-item"
-        onClick={onOpenRegisterModal}
-        title="アイテムを登録"
-      >
+      <button className="action-btn" onClick={onOpenRegisterModal} title="アイテムを登録">
         ➕
       </button>
       <RefreshActionsDropdown

@@ -40,7 +40,7 @@ const SettingsDropdown: React.FC<SettingsDropdownProps> = ({
   return (
     <div className="settings-dropdown" ref={dropdownRef}>
       <button className="action-btn" onClick={() => setIsOpen(!isOpen)} title="設定">
-        ⚙
+        ⚙️
       </button>
       {isOpen && (
         <div className="dropdown-menu">
