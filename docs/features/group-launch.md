@@ -93,7 +93,7 @@ group,業務開始,Outlook,Teams,社内ポータル,タイムカード
   - 例: `開発環境 (4個)`
 - **ツールチップ**: マウスホバーで詳細情報を表示
   - グループに含まれるアイテム名の一覧
-  - データ元ファイル名（data.txt または data2.txt）
+  - データファイル名（data.txt または data2.txt）
   - データファイル内の行番号
 
 ### ツールチップの表示例
@@ -103,7 +103,7 @@ group,業務開始,Outlook,Teams,社内ポータル,タイムカード
 ```
 グループ: Visual Studio Code, Slack, Chrome, 開発フォルダ
 
-データ元: data.txt
+データファイル: data.txt
 行番号: 25
 ```
 

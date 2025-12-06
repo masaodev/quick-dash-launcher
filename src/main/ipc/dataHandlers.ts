@@ -73,7 +73,7 @@ function formatDirOptions(options: DirOptions): string {
  *
  * @param itemPath - アイテムのパス
  * @param itemType - アイテムタイプ（'file' | 'folder'）
- * @param sourceFile - ソースファイル名
+ * @param sourceFile - データファイル名
  * @param lineNumber - 行番号（オプション）
  * @param prefix - 表示名に追加するプレフィックス（オプション）
  * @param suffix - 表示名に追加するサフィックス（オプション）
@@ -122,7 +122,7 @@ function processItem(
  * LauncherItemオブジェクトを生成する
  *
  * @param filePath - 解析対象のショートカットファイルのパス
- * @param sourceFile - ソースファイル名
+ * @param sourceFile - データファイル名
  * @param lineNumber - 行番号（オプション）
  * @param displayName - 表示名（オプション、未指定の場合はファイル名から自動生成）
  * @param prefix - 表示名に追加するプレフィックス（オプション）
@@ -205,7 +205,7 @@ function processShortcut(
  *
  * @param dirPath - スキャン対象のディレクトリパス
  * @param options - スキャンオプション（深度、タイプ、フィルター等）
- * @param sourceFile - ソースファイル名
+ * @param sourceFile - データファイル名
  * @param rootDirPath - フォルダ取込の元となるルートディレクトリパス（オプション）
  * @param optionsText - フォルダ取込オプション情報（人間が読める形式、オプション）
  * @param lineNumber - データファイル内の行番号（オプション）
@@ -359,13 +359,13 @@ async function scanDirectory(
 async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
   const items: AppItem[] = [];
 
-  // タブ設定を読み込んで、sourceFile → tabIndex のマップを作成
+  // タブ設定を読み込んで、データファイル → tabIndex のマップを作成
   let fileToTabMap: Map<string, number>;
   try {
     const settingsService = await SettingsService.getInstance();
     const dataFileTabs = await settingsService.get('dataFileTabs');
 
-    // sourceFile → tabIndex のマップを作成
+    // データファイル → tabIndex のマップを作成
     fileToTabMap = new Map<string, number>();
     dataFileTabs.forEach((tab, index) => {
       tab.files.forEach((fileName) => {
@@ -548,7 +548,7 @@ async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
  * CSV行をLauncherItemに変換する
  *
  * @param line - CSV行
- * @param sourceFile - ソースファイル名
+ * @param sourceFile - データファイル名
  * @param lineNumber - 行番号（オプション）
  * @returns LauncherItemまたはnull
  */
@@ -849,7 +849,10 @@ async function parseBrowserBookmarks(filePath: string): Promise<SimpleBookmarkIt
       }
     }
 
-    dataLogger.info({ filePath, bookmarkCount: bookmarks.length }, 'ブラウザブックマークをパースしました');
+    dataLogger.info(
+      { filePath, bookmarkCount: bookmarks.length },
+      'ブラウザブックマークをパースしました'
+    );
 
     return bookmarks;
   } catch (error) {

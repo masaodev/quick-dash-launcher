@@ -86,7 +86,7 @@ const ItemList: React.FC<ItemListProps> = ({
 
       // ソースファイル情報
       if (groupItem.sourceFile) {
-        lines.push(`データ元: ${groupItem.sourceFile}`);
+        lines.push(`データファイル: ${groupItem.sourceFile}`);
       }
 
       // 行番号情報
@@ -108,7 +108,7 @@ const ItemList: React.FC<ItemListProps> = ({
 
     // ソースファイル情報
     if (launcherItem.sourceFile) {
-      lines.push(`データ元: ${launcherItem.sourceFile}`);
+      lines.push(`データファイル: ${launcherItem.sourceFile}`);
     }
 
     // 行番号情報
