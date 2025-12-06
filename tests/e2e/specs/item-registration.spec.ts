@@ -90,9 +90,6 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       });
       await utils.clickRegisterButton();
 
-      await mainWindow.reload();
-      await utils.waitForPageLoad();
-
       // アイテム数が増えていることを確認
       const itemsAfter = mainWindow.locator('.item');
       const countAfter = await itemsAfter.count();
@@ -111,9 +108,6 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       });
       await utils.clickRegisterButton();
 
-      await mainWindow.reload();
-      await utils.waitForPageLoad();
-
       const newItem = mainWindow.locator('.item', { hasText: 'マイアプリ' });
       await expect(newItem).toBeVisible();
     });
@@ -126,9 +120,6 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
         args: 'C:\\test.txt',
       });
       await utils.clickRegisterButton();
-
-      await mainWindow.reload();
-      await utils.waitForPageLoad();
 
       // 新しいアイテムが表示されていることを確認
       const newItem = mainWindow.locator('.item', { hasText: 'メモ帳（引数あり）' });
@@ -159,9 +150,6 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
         path: 'https://reload-test.com',
       });
       await utils.clickRegisterButton();
-
-      await mainWindow.reload();
-      await utils.waitForPageLoad();
 
       const item = mainWindow.locator('.item', { hasText: 'リロードテスト' });
       await expect(item).toBeVisible();
@@ -275,9 +263,6 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       });
       await utils.clickRegisterButton();
 
-      await mainWindow.reload();
-      await utils.waitForPageLoad();
-
       // 編集後のアイテムが表示されていることを確認
       const editedItem = mainWindow.locator('.item', { hasText: 'EditedGitHub' });
       await expect(editedItem).toBeVisible();
@@ -309,9 +294,6 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       });
       await utils.clickRegisterButton();
 
-      await mainWindow.reload();
-      await utils.waitForPageLoad();
-
       // 登録したアイテムを右クリックして編集
       await utils.editItemByRightClick('引数テスト');
       await utils.fillRegisterForm({
@@ -323,10 +305,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       expect(dataContent).toContain('C:\\edited.txt');
     });
 
-    await test.step('編集したアイテムがリロード後も反映される', async () => {
-      await mainWindow.reload();
-      await utils.waitForPageLoad();
-
+    await test.step('編集したアイテムが反映される', async () => {
       const item = mainWindow.locator('.item', { hasText: 'EditedGitHub' });
       await expect(item).toBeVisible();
     });
@@ -467,9 +446,6 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
     });
 
     await test.step('サブタブで登録したアイテムが表示される', async () => {
-      await mainWindow.reload();
-      await utils.waitForPageLoad();
-
       // サブタブに切り替え
       const subTab1 = mainWindow.locator('.file-tab', { hasText: 'サブ1' });
       await subTab1.click();
@@ -507,8 +483,6 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       await utils.clickRegisterButton();
 
       // メイン画面でアイテムが表示されることを確認
-      await mainWindow.reload();
-      await utils.waitForPageLoad();
       const item = mainWindow.locator('.item', { hasText: '同期テストアイテム' });
       await expect(item).toBeVisible();
     });

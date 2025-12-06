@@ -128,9 +128,6 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
       const isVisible = await utils.isRegisterModalVisible();
       expect(isVisible).toBe(false);
 
-      await mainWindow.reload();
-      await utils.waitForPageLoad();
-
       // 新しいグループアイテムが表示されていることを確認
       const newGroup = mainWindow.locator('.item', { hasText: 'テストグループ' });
       await expect(newGroup).toBeVisible();
@@ -141,10 +138,7 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
       expect(dataContent).toContain('group,テストグループ,GitHub,Google');
     });
 
-    await test.step('登録したグループがリロード後も表示される', async () => {
-      await mainWindow.reload();
-      await utils.waitForPageLoad();
-
+    await test.step('登録したグループが表示される', async () => {
       const group = mainWindow.locator('.item', { hasText: 'テストグループ' });
       await expect(group).toBeVisible();
     });
@@ -265,9 +259,6 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
 
     await test.step('編集を保存', async () => {
       await utils.clickRegisterButton();
-
-      await mainWindow.reload();
-      await utils.waitForPageLoad();
 
       // 編集後のグループアイテムが表示されていることを確認
       const editedGroup = mainWindow.locator('.item', { hasText: '開発環境スタート編集' });

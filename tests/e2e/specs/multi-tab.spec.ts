@@ -318,10 +318,6 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
     });
 
     await test.step('メインタブからGitHubアイテムが消えたことを確認', async () => {
-      // ページをリロード
-      await mainWindow.reload();
-      await utils.waitForPageLoad();
-
       // メインタブがアクティブであることを確認
       const mainTab = mainWindow.locator('.file-tab.active', { hasText: 'メイン' });
       await expect(mainTab).toBeVisible();
