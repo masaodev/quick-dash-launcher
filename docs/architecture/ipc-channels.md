@@ -358,6 +358,25 @@ interface IconProgressResult {
 
 ## ブックマーク関連
 
+### `detect-installed-browsers`
+インストール済みのブラウザ（Chrome/Edge）を検出
+- 戻り値: `BrowserInfo[]` (ブラウザ情報の配列)
+- 検出対象: Chrome, Edge
+- 検出場所: `%LOCALAPPDATA%\Google\Chrome\User Data`, `%LOCALAPPDATA%\Microsoft\Edge\User Data`
+- プロファイル検出: 各ブラウザの`User Data`配下のプロファイルフォルダを検索
+- プロファイル名取得: 各プロファイルの`Preferences`ファイルから`profile.name`を取得
+- セキュリティ: `LOCALAPPDATA`配下のみアクセス許可、パストラバーサル対策
+
+### `parse-browser-bookmarks`
+ブラウザのブックマークJSONファイルをパース
+- パラメータ: `filePath: string` (ブックマークJSONファイルのパス)
+- 戻り値: `SimpleBookmarkItem[]`
+- 解析対象: Chrome/EdgeのブックマークJSON形式
+- ファイルサイズ上限: 50MB
+- セキュリティチェック: `LOCALAPPDATA`配下のみアクセス許可、パストラバーサル対策
+- JSON構造: `{ "roots": { "bookmark_bar": {...}, "other": {...}, "synced": {...} } }`
+- 抽出ロジック: `roots`配下を再帰的に走査し、`type: "url"`のノードを抽出
+
 ### `select-bookmark-file`
 ブックマークファイル選択ダイアログを表示
 - 戻り値: `string | null` (選択されたファイルパス)
@@ -393,10 +412,6 @@ interface IconProgressResult {
 
 ### `open-config-folder`
 設定フォルダをエクスプローラーで開く
-- 戻り値: なし
-
-### `open-data-file`
-data.txtをデフォルトアプリケーションで開く
 - 戻り値: なし
 
 ### `get-app-info`
