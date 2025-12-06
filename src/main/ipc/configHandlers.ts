@@ -8,11 +8,6 @@ export function setupConfigHandlers(configFolder: string) {
     await shell.openPath(configFolder);
   });
 
-  ipcMain.handle('open-data-file', async () => {
-    const dataPath = path.join(configFolder, 'data.txt');
-    await shell.openPath(dataPath);
-  });
-
   ipcMain.handle('get-app-info', async () => {
     try {
       // package.jsonのパスを取得（productionとdevelopmentで異なる）

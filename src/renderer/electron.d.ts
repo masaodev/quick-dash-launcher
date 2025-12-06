@@ -24,7 +24,6 @@ export interface ElectronAPI {
   openParentFolder: (item: LauncherItem) => Promise<void>;
   executeGroup: (group: GroupItem, allItems: AppItem[]) => Promise<void>;
   openConfigFolder: () => Promise<void>;
-  openDataFile: () => Promise<void>;
   fetchFavicon: (url: string) => Promise<string | null>;
   extractIcon: (filePath: string) => Promise<string | null>;
   extractFileIconByExtension: (filePath: string) => Promise<string | null>;

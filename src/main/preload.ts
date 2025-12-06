@@ -42,7 +42,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   executeGroup: (group: GroupItem, allItems: AppItem[]) =>
     ipcRenderer.invoke('execute-group', group, allItems),
   openConfigFolder: () => ipcRenderer.invoke('open-config-folder'),
-  openDataFile: () => ipcRenderer.invoke('open-data-file'),
   fetchFavicon: (url: string) => ipcRenderer.invoke('fetch-favicon', url),
   extractIcon: (filePath: string) => ipcRenderer.invoke('extract-icon', filePath),
   extractFileIconByExtension: (filePath: string) =>

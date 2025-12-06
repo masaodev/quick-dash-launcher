@@ -16,10 +16,6 @@ const AdminOtherTab: React.FC = () => {
     window.electronAPI.openConfigFolder();
   };
 
-  const handleOpenDataFile = () => {
-    window.electronAPI.openDataFile();
-  };
-
   const handleQuitApp = () => {
     if (confirm('アプリケーションを終了しますか？')) {
       window.electronAPI.quitApp();
@@ -38,11 +34,8 @@ const AdminOtherTab: React.FC = () => {
         <div className="section">
           <h3>ファイル管理</h3>
           <div className="action-buttons">
-            <button onClick={handleOpenConfigFolder} className="action-btn">
+            <button onClick={handleOpenConfigFolder} className="section-action-button">
               📁 設定フォルダを開く
-            </button>
-            <button onClick={handleOpenDataFile} className="action-btn">
-              📄 データファイルを開く
             </button>
           </div>
         </div>
