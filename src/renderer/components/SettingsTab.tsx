@@ -873,6 +873,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                               type="text"
                               value={tab.name}
                               onChange={(e) => handleTabNameChangeByIndex(tabIndex, e.target.value)}
+                              onBlur={handleTabNameBlur}
                               className="tab-name-input"
                               placeholder={`タブ ${tabIndex + 1}`}
                               disabled={isLoading}
