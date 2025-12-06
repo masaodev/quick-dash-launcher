@@ -15,6 +15,8 @@ import {
   LauncherItem,
   GroupItem,
   AppItem,
+  BrowserInfo,
+  BrowserProfile,
 } from '../../common/types';
 import { BackupService } from '../services/backupService.js';
 import { SettingsService } from '../services/settingsService.js';
@@ -657,6 +659,217 @@ function detectLineType(line: string): RawDataLine['type'] {
   return 'item';
 }
 
+/**
+ * プロファイルフォルダからプロファイル名を取得する
+ * @param profilePath - プロファイルフォルダのパス
+ * @returns プロファイル名
+ */
+async function getProfileName(profilePath: string): Promise<string> {
+  const prefsPath = path.join(profilePath, 'Preferences');
+  try {
+    const content = await fs.promises.readFile(prefsPath, 'utf-8');
+    const prefs = JSON.parse(content);
+    return prefs.profile?.name || path.basename(profilePath);
+  } catch {
+    return path.basename(profilePath);
+  }
+}
+
+/**
+ * ブラウザのユーザーデータフォルダからプロファイルを検出する
+ * @param userDataPath - ユーザーデータフォルダのパス
+ * @returns プロファイル情報の配列
+ */
+async function detectProfiles(userDataPath: string): Promise<BrowserProfile[]> {
+  const profiles: BrowserProfile[] = [];
+
+  try {
+    const entries = await fs.promises.readdir(userDataPath, { withFileTypes: true });
+
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue;
+
+      // Default または Profile N のフォルダを検出
+      const isProfileFolder = entry.name === 'Default' || /^Profile \d+$/.test(entry.name);
+
+      if (!isProfileFolder) continue;
+
+      const profilePath = path.join(userDataPath, entry.name);
+      const bookmarkPath = path.join(profilePath, 'Bookmarks');
+
+      // Bookmarksファイルが存在するか確認
+      if (!fs.existsSync(bookmarkPath)) continue;
+
+      const profileName = await getProfileName(profilePath);
+
+      profiles.push({
+        id: entry.name,
+        name: profileName,
+        bookmarkPath: bookmarkPath,
+      });
+    }
+  } catch (error) {
+    dataLogger.warn('プロファイルの検出に失敗', { userDataPath, error });
+  }
+
+  return profiles;
+}
+
+/**
+ * インストール済みのブラウザ（Chrome/Edge）を検出する
+ * @returns ブラウザ情報の配列
+ */
+async function detectInstalledBrowsers(): Promise<BrowserInfo[]> {
+  const localAppData = process.env.LOCALAPPDATA;
+  if (!localAppData) {
+    dataLogger.warn('LOCALAPPDATA環境変数が設定されていません');
+    return [];
+  }
+
+  const browsers: BrowserInfo[] = [];
+
+  // Chrome検出
+  const chromeUserData = path.join(localAppData, 'Google', 'Chrome', 'User Data');
+  if (fs.existsSync(chromeUserData)) {
+    const profiles = await detectProfiles(chromeUserData);
+    browsers.push({
+      id: 'chrome',
+      name: 'Google Chrome',
+      installed: profiles.length > 0,
+      profiles: profiles,
+    });
+  } else {
+    browsers.push({
+      id: 'chrome',
+      name: 'Google Chrome',
+      installed: false,
+      profiles: [],
+    });
+  }
+
+  // Edge検出
+  const edgeUserData = path.join(localAppData, 'Microsoft', 'Edge', 'User Data');
+  if (fs.existsSync(edgeUserData)) {
+    const profiles = await detectProfiles(edgeUserData);
+    browsers.push({
+      id: 'edge',
+      name: 'Microsoft Edge',
+      installed: profiles.length > 0,
+      profiles: profiles,
+    });
+  } else {
+    browsers.push({
+      id: 'edge',
+      name: 'Microsoft Edge',
+      installed: false,
+      profiles: [],
+    });
+  }
+
+  dataLogger.info('ブラウザを検出しました', {
+    browsers: browsers.map((b) => ({
+      id: b.id,
+      installed: b.installed,
+      profileCount: b.profiles.length,
+    })),
+  });
+
+  return browsers;
+}
+
+/**
+ * ブックマークファイルのパスが許可されたパスかどうかを検証する
+ * @param filePath - 検証するファイルパス
+ * @returns 許可されたパスならtrue
+ */
+function isValidBookmarkPath(filePath: string): boolean {
+  const localAppData = process.env.LOCALAPPDATA;
+  if (!localAppData) return false;
+
+  const normalizedPath = path.normalize(filePath);
+  const allowedPaths = [
+    path.join(localAppData, 'Google', 'Chrome', 'User Data'),
+    path.join(localAppData, 'Microsoft', 'Edge', 'User Data'),
+  ];
+
+  return allowedPaths.some((allowed) => normalizedPath.startsWith(allowed));
+}
+
+/**
+ * ブラウザのブックマークJSONファイルをパースしてSimpleBookmarkItemの配列に変換する
+ * @param filePath - ブックマークファイルのパス
+ * @returns SimpleBookmarkItemの配列
+ */
+async function parseBrowserBookmarks(filePath: string): Promise<SimpleBookmarkItem[]> {
+  // セキュリティチェック：許可されたパス内かどうか確認
+  if (!isValidBookmarkPath(filePath)) {
+    throw new Error('許可されていないファイルパスです');
+  }
+
+  try {
+    const content = await fs.promises.readFile(filePath, 'utf-8');
+
+    // ファイルサイズチェック（50MB上限）
+    if (content.length > 50 * 1024 * 1024) {
+      throw new Error('ファイルサイズが大きすぎます');
+    }
+
+    const data = JSON.parse(content);
+
+    // 構造の検証
+    if (!data.roots || typeof data.roots !== 'object') {
+      throw new Error('無効なブックマークファイル形式です');
+    }
+
+    const bookmarks: SimpleBookmarkItem[] = [];
+    let index = 0;
+
+    // 再帰的にブックマークを抽出
+    function traverse(node: Record<string, unknown>) {
+      if (node.type === 'url' && typeof node.url === 'string' && typeof node.name === 'string') {
+        const url = node.url;
+        // http/https のみ許可
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+          bookmarks.push({
+            id: `browser-bookmark-${index++}`,
+            name: (node.name as string).trim() || url,
+            url: url,
+            checked: false,
+          });
+        }
+      }
+      if (node.children && Array.isArray(node.children)) {
+        for (const child of node.children) {
+          traverse(child as Record<string, unknown>);
+        }
+      }
+    }
+
+    // roots内の各ノードを探索
+    for (const key of ['bookmark_bar', 'other', 'synced']) {
+      if (data.roots[key]) {
+        traverse(data.roots[key] as Record<string, unknown>);
+      }
+    }
+
+    dataLogger.info('ブラウザブックマークをパースしました', {
+      filePath,
+      bookmarkCount: bookmarks.length,
+    });
+
+    return bookmarks;
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      (error.message.includes('EBUSY') || error.message.includes('EACCES'))
+    ) {
+      throw new Error('ブラウザが起動中です。ブラウザを閉じてから再試行してください。');
+    }
+    dataLogger.error('ブラウザブックマークのパースに失敗', { filePath, error });
+    throw error;
+  }
+}
+
 // 生データを保存
 async function saveRawDataFiles(configFolder: string, rawLines: RawDataLine[]): Promise<void> {
   // ファイル別にグループ化
@@ -984,5 +1197,14 @@ export function setupDataHandlers(configFolder: string) {
       dataLogger.error('ブックマークファイルのパースに失敗', { error });
       throw error;
     }
+  });
+
+  // ブラウザブックマーク直接インポートAPI
+  ipcMain.handle('detect-installed-browsers', async () => {
+    return await detectInstalledBrowsers();
+  });
+
+  ipcMain.handle('parse-browser-bookmarks', async (_event, filePath: string) => {
+    return await parseBrowserBookmarks(filePath);
   });
 }

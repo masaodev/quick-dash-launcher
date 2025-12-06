@@ -9,6 +9,7 @@ import {
   GroupItem,
   AppItem,
   AppInfo,
+  BrowserInfo,
 } from '../common/types';
 
 import { RegisterItem } from './components/RegisterModal';
@@ -85,6 +86,9 @@ export interface ElectronAPI {
   getEditMode: () => Promise<boolean>;
   selectBookmarkFile: () => Promise<string | null>;
   parseBookmarkFile: (filePath: string) => Promise<SimpleBookmarkItem[]>;
+  // ブラウザブックマーク直接インポートAPI
+  detectInstalledBrowsers: () => Promise<BrowserInfo[]>;
+  parseBrowserBookmarks: (filePath: string) => Promise<SimpleBookmarkItem[]>;
   showEditWindow: () => Promise<void>;
   hideEditWindow: () => Promise<void>;
   toggleEditWindow: () => Promise<void>;
