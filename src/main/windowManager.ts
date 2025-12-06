@@ -380,9 +380,11 @@ export async function setWindowPosition(mode?: WindowPositionMode): Promise<void
       const cursorPoint = screen.getCursorScreenPoint();
       const bounds = mainWindow.getBounds();
 
-      // カーソル位置を中心にウィンドウを配置
-      const x = cursorPoint.x - Math.floor(bounds.width / 2);
-      const y = cursorPoint.y - Math.floor(bounds.height / 2);
+      // カーソル位置がテキストボックス付近に来るようにウィンドウを配置
+      const offsetX = 100; // 左端からテキストボックスまでの距離
+      const offsetY = 40; // 上端からテキストボックスまでの距離
+      const x = cursorPoint.x - offsetX;
+      const y = cursorPoint.y - offsetY;
 
       // 画面外に出ないように調整
       const display = screen.getDisplayNearestPoint(cursorPoint);
