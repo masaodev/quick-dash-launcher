@@ -12,6 +12,7 @@ import FileTabBar from './components/FileTabBar';
 import ItemCountDisplay from './components/ItemCountDisplay';
 import { FirstLaunchSetup } from './components/FirstLaunchSetup';
 import AlertDialog from './components/AlertDialog';
+import ConfirmDialog from './components/ConfirmDialog';
 import { filterItems } from './utils/dataParser';
 import { debugLog } from './utils/debug';
 import { useIconProgress } from './hooks/useIconProgress';
@@ -39,6 +40,15 @@ const App: React.FC = () => {
     isOpen: false,
     message: '',
     type: 'info',
+  });
+
+  // 削除確認ダイアログ状態管理
+  const [deleteConfirmDialog, setDeleteConfirmDialog] = useState<{
+    isOpen: boolean;
+    item: RawDataLine | null;
+  }>({
+    isOpen: false,
+    item: null,
   });
 
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -285,6 +295,46 @@ const App: React.FC = () => {
     loadItems(); // Reload items after registration/update
   };
 
+  // アイテム削除ハンドラー（RegisterModalから呼び出される）
+  const handleDeleteItemFromModal = (item: RawDataLine) => {
+    setDeleteConfirmDialog({
+      isOpen: true,
+      item: item,
+    });
+  };
+
+  // 削除確認後の実行ハンドラー
+  const handleConfirmDelete = async () => {
+    const itemToDelete = deleteConfirmDialog.item;
+    if (!itemToDelete) return;
+
+    try {
+      await window.electronAPI.deleteItems([
+        {
+          sourceFile: itemToDelete.sourceFile,
+          lineNumber: itemToDelete.lineNumber,
+        },
+      ]);
+
+      // モーダルを閉じる
+      closeModal();
+
+      // 削除ダイアログを閉じる
+      setDeleteConfirmDialog({ isOpen: false, item: null });
+
+      // データ再読み込み
+      loadItems();
+    } catch (error) {
+      console.error('Failed to delete item:', error);
+      setAlertDialog({
+        isOpen: true,
+        message: 'アイテムの削除に失敗しました。',
+        type: 'error',
+      });
+      setDeleteConfirmDialog({ isOpen: false, item: null });
+    }
+  };
+
   const handleOpenBasicSettings = async () => {
     await window.electronAPI.openEditWindowWithTab('settings');
   };
@@ -430,6 +480,7 @@ const App: React.FC = () => {
           droppedPaths={droppedPaths}
           editingItem={editingItem}
           currentTab={activeTab}
+          onDelete={handleDeleteItemFromModal}
         />
 
         {isDraggingOver && (
@@ -443,6 +494,22 @@ const App: React.FC = () => {
           onClose={() => setAlertDialog({ ...alertDialog, isOpen: false })}
           message={alertDialog.message}
           type={alertDialog.type}
+        />
+
+        <ConfirmDialog
+          isOpen={deleteConfirmDialog.isOpen}
+          onClose={() => setDeleteConfirmDialog({ isOpen: false, item: null })}
+          onConfirm={handleConfirmDelete}
+          message={
+            deleteConfirmDialog.item
+              ? `「${
+                  deleteConfirmDialog.item.type === 'item'
+                    ? deleteConfirmDialog.item.content.split(',')[0]
+                    : deleteConfirmDialog.item.content
+                }」を削除してもよろしいですか？`
+              : ''
+          }
+          danger={true}
         />
       </>
     </div>

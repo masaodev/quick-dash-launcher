@@ -16,6 +16,7 @@ interface RegisterModalProps {
   droppedPaths: string[];
   editingItem?: RawDataLine | null;
   currentTab?: string; // 現在開いているタブ
+  onDelete?: (item: RawDataLine) => void; // 削除ハンドラー
 }
 
 const RegisterModal: React.FC<RegisterModalProps> = ({
@@ -25,6 +26,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
   droppedPaths,
   editingItem,
   currentTab,
+  onDelete,
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -208,6 +210,13 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
       await deleteCustomIcon(index, item.customIcon, (idx) => {
         updateItem(idx, { customIcon: undefined });
       });
+    }
+  };
+
+  // アイテム削除ハンドラー
+  const handleDelete = () => {
+    if (editingItem && onDelete) {
+      onDelete(editingItem);
     }
   };
 
@@ -438,10 +447,17 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
               </div>
 
               <div className="modal-actions">
-                <button onClick={handleCancel}>キャンセル</button>
-                <button onClick={validateAndRegister} className="primary">
-                  {editingItem ? '更新' : '登録'}
-                </button>
+                {editingItem && onDelete && (
+                  <button onClick={handleDelete} className="danger">
+                    削除
+                  </button>
+                )}
+                <div className="modal-actions-right">
+                  <button onClick={handleCancel}>キャンセル</button>
+                  <button onClick={validateAndRegister} className="primary">
+                    {editingItem ? '更新' : '登録'}
+                  </button>
+                </div>
               </div>
             </>
           )}
