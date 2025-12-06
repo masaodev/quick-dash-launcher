@@ -849,7 +849,10 @@ async function parseBrowserBookmarks(filePath: string): Promise<SimpleBookmarkIt
       }
     }
 
-    dataLogger.info({ filePath, bookmarkCount: bookmarks.length }, 'ブラウザブックマークをパースしました');
+    dataLogger.info(
+      { filePath, bookmarkCount: bookmarks.length },
+      'ブラウザブックマークをパースしました'
+    );
 
     return bookmarks;
   } catch (error) {

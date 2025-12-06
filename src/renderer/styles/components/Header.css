@@ -9,6 +9,23 @@
   -webkit-app-region: drag;
 }
 
+/* ドラッグハンドル */
+.drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 40px;
+  padding: 0;
+  color: var(--color-gray-800);
+  font-size: var(--font-size-xl);
+  font-weight: bold;
+  cursor: move;
+  user-select: none;
+  margin-left: calc(var(--spacing-sm) * -0.5);
+  margin-right: calc(var(--spacing-sm) * -0.5);
+}
+
 .search-box-container {
   flex: 1;
   position: relative;
