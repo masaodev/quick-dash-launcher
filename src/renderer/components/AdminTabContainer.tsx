@@ -60,6 +60,7 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
             📊 その他
           </button>
         </div>
+        <div className="drag-handle">⋮⋮</div>
       </div>
 
       <div className="admin-content">
