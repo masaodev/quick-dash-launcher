@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { RawDataLine, SimpleBookmarkItem, DataFileTab } from '@common/types';
 import { convertRegisterItemToRawDataLine, type RegisterItem } from '@common/utils/dataConverters';
 
@@ -48,6 +48,12 @@ const EditModeView: React.FC<EditModeViewProps> = ({
     onConfirm: () => {},
     danger: false,
   });
+
+  // ドロップダウン状態管理
+  const [isTabDropdownOpen, setIsTabDropdownOpen] = useState(false);
+  const [isFileDropdownOpen, setIsFileDropdownOpen] = useState(false);
+  const tabDropdownRef = useRef<HTMLDivElement>(null);
+  const fileDropdownRef = useRef<HTMLDivElement>(null);
 
   const handleLineEdit = (line: RawDataLine) => {
     const lineKey = `${line.sourceFile}_${line.lineNumber}`;
@@ -286,6 +292,17 @@ const EditModeView: React.FC<EditModeViewProps> = ({
     }
   };
 
+  // ドロップダウンメニューアイテムクリック時の処理
+  const handleTabMenuItemClick = (newTabIndex: number) => {
+    setIsTabDropdownOpen(false);
+    handleTabChange(newTabIndex);
+  };
+
+  const handleFileMenuItemClick = (newFile: string) => {
+    setIsFileDropdownOpen(false);
+    handleFileChange(newFile);
+  };
+
   const filteredLines = mergedLines.filter((line) => {
     // 選択されたデータファイルでフィルタリング
     if (line.sourceFile !== selectedDataFile) return false;
@@ -344,6 +361,26 @@ const EditModeView: React.FC<EditModeViewProps> = ({
     });
   }, [searchQuery, workingLines]);
 
+  // ドロップダウンのクリック外判定
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (tabDropdownRef.current && !tabDropdownRef.current.contains(event.target as Node)) {
+        setIsTabDropdownOpen(false);
+      }
+      if (fileDropdownRef.current && !fileDropdownRef.current.contains(event.target as Node)) {
+        setIsFileDropdownOpen(false);
+      }
+    };
+
+    if (isTabDropdownOpen || isFileDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isTabDropdownOpen, isFileDropdownOpen]);
+
   // 現在選択されているタブの情報を取得
   const currentTab = dataFileTabs[selectedTabIndex];
   const currentTabFiles = currentTab?.files || ['data.txt'];
@@ -352,39 +389,55 @@ const EditModeView: React.FC<EditModeViewProps> = ({
     <div className="edit-mode-view" onKeyDown={handleKeyDown} tabIndex={0}>
       <div className="edit-mode-header">
         <div className="edit-mode-info">
-          <label htmlFor="tab-selector" className="tab-selector-label">
-            タブ:
-          </label>
-          <select
-            id="tab-selector"
-            value={selectedTabIndex}
-            onChange={(e) => handleTabChange(Number(e.target.value))}
-            className="tab-selector"
-          >
-            {dataFileTabs.map((tab, index) => (
-              <option key={index} value={index}>
-                {tab.name}
-              </option>
-            ))}
-          </select>
-          {currentTabFiles.length > 1 && (
-            <>
-              <label htmlFor="file-selector" className="file-selector-label">
-                ファイル:
-              </label>
-              <select
-                id="file-selector"
-                value={selectedDataFile}
-                onChange={(e) => handleFileChange(e.target.value)}
-                className="file-selector"
-              >
-                {currentTabFiles.map((fileName) => (
-                  <option key={fileName} value={fileName}>
-                    {fileName}
-                  </option>
+          <div className="tab-dropdown" ref={tabDropdownRef}>
+            <label className="dropdown-label">タブ:</label>
+            <button
+              className="dropdown-trigger-btn"
+              onClick={() => setIsTabDropdownOpen(!isTabDropdownOpen)}
+              title={currentTab?.name || 'タブ選択'}
+            >
+              <span className="dropdown-trigger-text">{currentTab?.name || 'タブ選択'}</span>
+              <span className="dropdown-trigger-icon">{isTabDropdownOpen ? '▲' : '▼'}</span>
+            </button>
+            {isTabDropdownOpen && (
+              <div className="dropdown-menu">
+                {dataFileTabs.map((tab, index) => (
+                  <button
+                    key={index}
+                    className={`dropdown-item ${selectedTabIndex === index ? 'selected' : ''}`}
+                    onClick={() => handleTabMenuItemClick(index)}
+                  >
+                    {tab.name}
+                  </button>
                 ))}
-              </select>
-            </>
+              </div>
+            )}
+          </div>
+          {currentTabFiles.length > 1 && (
+            <div className="file-dropdown" ref={fileDropdownRef}>
+              <label className="dropdown-label">ファイル:</label>
+              <button
+                className="dropdown-trigger-btn"
+                onClick={() => setIsFileDropdownOpen(!isFileDropdownOpen)}
+                title={selectedDataFile}
+              >
+                <span className="dropdown-trigger-text">{selectedDataFile}</span>
+                <span className="dropdown-trigger-icon">{isFileDropdownOpen ? '▲' : '▼'}</span>
+              </button>
+              {isFileDropdownOpen && (
+                <div className="dropdown-menu">
+                  {currentTabFiles.map((fileName) => (
+                    <button
+                      key={fileName}
+                      className={`dropdown-item ${selectedDataFile === fileName ? 'selected' : ''}`}
+                      onClick={() => handleFileMenuItemClick(fileName)}
+                    >
+                      {fileName}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
         </div>
         <div className="edit-mode-search">
