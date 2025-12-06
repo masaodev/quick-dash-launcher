@@ -7,6 +7,8 @@
 
 import type { RawDataLine, LauncherItem, DataFileTab } from '../types';
 
+import { parseCSVLine, escapeCSV } from './csvParser';
+
 /**
  * フォルダ取込アイテムのオプション型定義
  */
@@ -144,11 +146,12 @@ export async function convertRawDataLineToRegisterItem(
 
   if (line.type === 'item') {
     // アイテム行の場合：名前,パス,引数,カスタムアイコン
-    const parts = line.content.split(',');
-    const name = parts[0]?.trim() || '';
-    const path = parts[1]?.trim() || '';
-    const args = parts[2]?.trim() || '';
-    const customIcon = parts[3]?.trim() || '';
+    // CSVエスケープを正しく処理するためparseCSVLineを使用
+    const parts = parseCSVLine(line.content);
+    const name = parts[0] || '';
+    const path = parts[1] || '';
+    const args = parts[2] || '';
+    const customIcon = parts[3] || '';
 
     const itemType = await detectItemType(path);
 
@@ -169,12 +172,11 @@ export async function convertRawDataLineToRegisterItem(
 
     if (trimmedContent.startsWith('group,')) {
       // グループアイテム行の場合：group,グループ名,アイテム1,アイテム2,...
-      const parts = line.content.split(',');
-      const groupName = parts[1]?.trim() || '';
-      const itemNames = parts
-        .slice(2)
-        .map((name) => name.trim())
-        .filter((name) => name);
+      // CSVエスケープを正しく処理するためparseCSVLineを使用
+      const parts = parseCSVLine(line.content);
+      // parts[0] = 'group', parts[1] = グループ名, parts[2+] = アイテム名
+      const groupName = parts[1] || '';
+      const itemNames = parts.slice(2).filter((name) => name);
 
       return {
         name: groupName,
@@ -187,9 +189,12 @@ export async function convertRawDataLineToRegisterItem(
       };
     } else {
       // フォルダ取込アイテム行の場合：dir,パス,オプション
-      const parts = line.content.split(',');
-      const path = parts[1]?.trim() || '';
-      const optionsStr = parts.slice(2).join(',').trim();
+      // CSVエスケープを正しく処理するためparseCSVLineを使用
+      const parts = parseCSVLine(line.content);
+      // parts[0] = 'dir', parts[1] = パス, parts[2+] = オプション
+      const path = parts[1] || '';
+      // オプションはカンマ区切りで再結合（parseDirOptionsFromStringが期待する形式）
+      const optionsStr = parts.slice(2).join(',');
 
       const dirOptions = parseDirOptionsFromString(optionsStr);
 
@@ -247,14 +252,15 @@ export function convertRegisterItemToRawDataLine(
     newContent = `group,${item.name},${itemNames.join(',')}`;
   } else {
     // アイテム行の場合：名前,パス,引数,カスタムアイコン の形式
+    // CSVエスケープを適用
     newType = 'item';
     const args = item.args || '';
     const customIcon = item.customIcon || '';
 
     if (customIcon) {
-      newContent = `${item.name},${item.path},${args},${customIcon}`;
+      newContent = `${escapeCSV(item.name)},${escapeCSV(item.path)},${escapeCSV(args)},${escapeCSV(customIcon)}`;
     } else {
-      newContent = `${item.name},${item.path},${args}`;
+      newContent = `${escapeCSV(item.name)},${escapeCSV(item.path)},${escapeCSV(args)}`;
     }
   }
 
@@ -307,15 +313,16 @@ export async function convertLauncherItemToRawDataLine(
   }
 
   // 通常のアイテムの場合
-  const parts = [item.name, item.path];
+  // CSVエスケープを適用
+  const parts = [escapeCSV(item.name), escapeCSV(item.path)];
   if (item.args) {
-    parts.push(item.args);
+    parts.push(escapeCSV(item.args));
   }
   if (item.customIcon) {
     if (!item.args) {
       parts.push('');
     }
-    parts.push(item.customIcon);
+    parts.push(escapeCSV(item.customIcon));
   }
 
   return {

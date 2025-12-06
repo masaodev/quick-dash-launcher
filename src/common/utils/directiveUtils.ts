@@ -6,6 +6,7 @@
 
 import type { RawDataLine } from '../types';
 
+import { parseCSVLine } from './csvParser';
 import { parseDirOptionsFromString, type DirOptions } from './dataConverters';
 
 /**
@@ -51,12 +52,11 @@ export function parseGroupDirective(line: RawDataLine): {
   groupName: string;
   itemNames: string[];
 } {
-  const parts = line.content.split(',');
-  const groupName = parts[1]?.trim() || '';
-  const itemNames = parts
-    .slice(2)
-    .map((name) => name.trim())
-    .filter((name) => name);
+  // CSVエスケープを正しく処理するためparseCSVLineを使用
+  const parts = parseCSVLine(line.content);
+  // parts[0] = 'group', parts[1] = グループ名, parts[2+] = アイテム名
+  const groupName = parts[1] || '';
+  const itemNames = parts.slice(2).filter((name) => name);
 
   return { groupName, itemNames };
 }
@@ -79,9 +79,12 @@ export function parseDirDirective(line: RawDataLine): {
   dirPath: string;
   options: DirOptions;
 } {
-  const parts = line.content.split(',');
-  const dirPath = parts[1]?.trim() || '';
-  const optionsStr = parts.slice(2).join(',').trim();
+  // CSVエスケープを正しく処理するためparseCSVLineを使用
+  const parts = parseCSVLine(line.content);
+  // parts[0] = 'dir', parts[1] = パス, parts[2+] = オプション
+  const dirPath = parts[1] || '';
+  // オプションはカンマ区切りで再結合（parseDirOptionsFromStringが期待する形式）
+  const optionsStr = parts.slice(2).join(',');
 
   const options = parseDirOptionsFromString(optionsStr);
 

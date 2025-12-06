@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { RawDataLine, SimpleBookmarkItem, DataFileTab } from '@common/types';
+import { parseCSVLine } from '@common/utils/csvParser';
 import { convertRegisterItemToRawDataLine, type RegisterItem } from '@common/utils/dataConverters';
 
 import EditableRawItemList from './EditableRawItemList';
@@ -488,14 +489,16 @@ const EditModeView: React.FC<EditModeViewProps> = ({
 
             const getPathAndArgs = (line: RawDataLine) => {
               if (line.type === 'item') {
-                const parts = line.content.split(',');
-                const pathPart = parts[1]?.trim() || '';
-                const argsPart = parts[2]?.trim() || '';
+                // CSVエスケープを正しく処理するためparseCSVLineを使用
+                const parts = parseCSVLine(line.content);
+                const pathPart = parts[1] || '';
+                const argsPart = parts[2] || '';
                 return argsPart ? `${pathPart} ${argsPart}` : pathPart;
               } else if (line.type === 'directive') {
-                const parts = line.content.split(',');
-                const pathPart = parts[1]?.trim() || '';
-                const options = parts.slice(2).join(',').trim();
+                // CSVエスケープを正しく処理するためparseCSVLineを使用
+                const parts = parseCSVLine(line.content);
+                const pathPart = parts[1] || '';
+                const options = parts.slice(2).join(',');
                 return options ? `${pathPart} ${options}` : pathPart;
               } else {
                 return line.content || (line.type === 'empty' ? '(空行)' : '');
@@ -519,10 +522,11 @@ const EditModeView: React.FC<EditModeViewProps> = ({
                 return pathAndArgsA.localeCompare(pathAndArgsB);
               }
 
+              // CSVエスケープを正しく処理するためparseCSVLineを使用
               const nameA =
-                a.type === 'item' ? (a.content.split(',')[0]?.trim() || '').toLowerCase() : '';
+                a.type === 'item' ? (parseCSVLine(a.content)[0] || '').toLowerCase() : '';
               const nameB =
-                b.type === 'item' ? (b.content.split(',')[0]?.trim() || '').toLowerCase() : '';
+                b.type === 'item' ? (parseCSVLine(b.content)[0] || '').toLowerCase() : '';
 
               return nameA.localeCompare(nameB);
             });

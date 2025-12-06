@@ -4,6 +4,38 @@
  */
 
 /**
+ * CSVフィールドをエスケープする
+ *
+ * カンマを含む場合のみダブルクォートで囲み、内部のダブルクォートをエスケープする。
+ * ダブルクォートのみを含む場合はエスケープしない（parseCSVLineがそのまま保持するため）。
+ *
+ * @param value - エスケープ対象の値
+ * @returns エスケープされた値
+ *
+ * @example
+ * ```typescript
+ * escapeCSV('hello')
+ * // => 'hello'
+ *
+ * escapeCSV('a,b')
+ * // => '"a,b"'
+ *
+ * escapeCSV('a "test" b')
+ * // => 'a "test" b'  (ダブルクォートのみはエスケープしない)
+ *
+ * escapeCSV('a "test", b')
+ * // => '"a ""test"", b"'  (カンマを含むのでエスケープ)
+ * ```
+ */
+export function escapeCSV(value: string): string {
+  if (value.includes(',')) {
+    // カンマを含む場合はダブルクォートで囲み、内部のダブルクォートをエスケープ
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return value;
+}
+
+/**
  * CSV行を解析してフィールドの配列に分割する
  *
  * 以下のCSV仕様をサポート:

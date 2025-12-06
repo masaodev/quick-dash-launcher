@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import { editLogger } from '@common/logger';
+import { escapeCSV } from '@common/utils/csvParser';
 
 import { LauncherItem } from '../../common/types';
 import { createSafeIpcHandler } from '../utils/ipcWrapper';
@@ -27,13 +28,6 @@ async function createBackup(configFolder: string, fileName: string): Promise<voi
 }
 
 function formatItemToCSV(item: LauncherItem): string {
-  const escapeCSV = (value: string): string => {
-    if (value.includes(',') || value.includes('"') || value.includes('\n')) {
-      return `"${value.replace(/"/g, '""')}"`;
-    }
-    return value;
-  };
-
   let csvLine = `${escapeCSV(item.name)},${escapeCSV(item.path)}`;
 
   // 引数フィールドを追加
