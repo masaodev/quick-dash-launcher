@@ -17,7 +17,7 @@ export interface LauncherItem {
   args?: string;
   /** ショートカットファイル（.lnk）のリンク先のパス（オプション） */
   originalPath?: string;
-  /** アイテムの元データファイル */
+  /** 元のデータファイル */
   sourceFile?: string;
   /** データファイル内の行番号（編集機能で使用） */
   lineNumber?: number;
@@ -42,7 +42,7 @@ export interface GroupItem {
   type: 'group';
   /** グループ内で参照するアイテム名のリスト */
   itemNames: string[];
-  /** アイテムの元データファイル */
+  /** 元のデータファイル */
   sourceFile?: string;
   /** データファイル内の行番号（編集機能で使用） */
   lineNumber?: number;
@@ -52,7 +52,7 @@ export interface GroupItem {
 
 /**
  * 生データ編集モードで使用される、データファイルの1行を表すインターフェース
- * 編集機能で各行の種別や元ファイルを管理するために使用される
+ * 編集機能で各行の種別や元のデータファイルを管理するために使用される
  */
 export interface RawDataLine {
   /** データファイル内の行番号（1から開始） */
@@ -61,7 +61,7 @@ export interface RawDataLine {
   content: string;
   /** 行の種別（フォルダ取込アイテム、アイテム、コメント、空行） */
   type: 'directive' | 'item' | 'comment' | 'empty';
-  /** この行が含まれる元のデータファイル */
+  /** 元のデータファイル */
   sourceFile: string;
   /** カスタムアイコンのファイル名（custom-iconsフォルダ内の相対パス、オプション） */
   customIcon?: string;

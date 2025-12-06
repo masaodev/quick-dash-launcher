@@ -21,7 +21,8 @@
       "Bash(gh run view:*)",
       "Bash(gh run list:*)",
       "Bash(git push:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "WebSearch"
     ],
     "deny": []
   }

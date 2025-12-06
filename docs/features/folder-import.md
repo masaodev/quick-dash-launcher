@@ -91,7 +91,7 @@ dir,C:\Projects,depth=2,types=file,filter=*.{js,ts},exclude=node_modules,prefix=
 ```
 C:\Work\projects\myproject\readme.pdf
 
-データ元: data.txt
+データファイル: data.txt
 行番号: 15
 取込元: C:\Work\projects
 設定: 深さ:2, タイプ:ファイルのみ, フィルター:*.pdf

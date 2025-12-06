@@ -35,32 +35,115 @@
   font-size: var(--font-size-base);
 }
 
-.file-selector-label {
+/* タグ・ファイルドロップダウンコンテナ */
+.edit-mode-info .tab-dropdown,
+.edit-mode-info .file-dropdown {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+/* ドロップダウンラベル */
+.edit-mode-info .dropdown-label {
   font-weight: 500;
   color: var(--text-primary);
   font-size: var(--font-size-base);
   white-space: nowrap;
 }
 
-.data-file-selector {
-  padding: 4px 8px;
+/* トリガーボタン */
+.edit-mode-info .dropdown-trigger-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  min-width: 150px;
+  height: var(--input-height);
   font-size: var(--font-size-base);
+  font-family: var(--font-family);
   border: var(--border-normal);
   border-radius: var(--border-radius);
-  background-color: var(--bg-primary);
+  background-color: var(--color-white);
   color: var(--text-primary);
   cursor: pointer;
   outline: none;
   transition: var(--transition-normal);
+  -webkit-app-region: no-drag;
 }
 
-.data-file-selector:hover {
+.edit-mode-info .dropdown-trigger-btn:hover {
   border-color: var(--color-primary);
+  background-color: var(--bg-hover);
 }
 
-.data-file-selector:focus {
+.edit-mode-info .dropdown-trigger-btn:focus {
   border-color: var(--color-primary);
   box-shadow: var(--focus-ring);
+}
+
+/* トリガーボタン内要素 */
+.edit-mode-info .dropdown-trigger-text {
+  flex: 1;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.edit-mode-info .dropdown-trigger-icon {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  line-height: 1;
+}
+
+/* ドロップダウンメニュー */
+.edit-mode-info .dropdown-menu {
+  position: absolute;
+  top: calc(100% + var(--spacing-xs));
+  left: 0;
+  background-color: var(--color-white);
+  border: var(--border-normal);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  min-width: 200px;
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: var(--z-dropdown);
+}
+
+/* メニューアイテム */
+.edit-mode-info .dropdown-item {
+  display: block;
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  text-align: left;
+  background: none;
+  border: none;
+  font-size: var(--font-size-base);
+  font-family: inherit;
+  cursor: pointer;
+  transition: var(--transition-normal);
+  white-space: nowrap;
+  color: var(--text-primary);
+}
+
+.edit-mode-info .dropdown-item:hover {
+  background-color: var(--bg-hover);
+}
+
+.edit-mode-info .dropdown-item.selected {
+  background-color: var(--bg-selected);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.edit-mode-info .dropdown-item:first-child {
+  border-radius: var(--border-radius-sm) var(--border-radius-sm) 0 0;
+}
+
+.edit-mode-info .dropdown-item:last-child {
+  border-radius: 0 0 var(--border-radius-sm) var(--border-radius-sm);
 }
 
 .edit-mode-search {

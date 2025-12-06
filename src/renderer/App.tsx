@@ -436,6 +436,7 @@ const App: React.FC = () => {
             windowPinMode={windowPinMode}
             isEditMode={false}
           />
+          <div className="drag-handle">⋮⋮</div>
         </div>
 
         {showDataFileTabs && dataFileTabs.length > 1 && (

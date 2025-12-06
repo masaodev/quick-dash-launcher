@@ -269,7 +269,7 @@ export function convertRegisterItemToRawDataLine(
  * LauncherItemをRawDataLineに変換する
  *
  * @param item - 変換元のLauncherItem
- * @param loadRawDataFiles - 生データファイルをロードする関数
+ * @param loadRawDataFiles - データファイルをロードする関数
  * @returns 変換されたRawDataLine
  */
 export async function convertLauncherItemToRawDataLine(

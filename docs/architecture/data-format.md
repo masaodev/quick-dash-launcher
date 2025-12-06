@@ -407,7 +407,7 @@ interface LauncherItem {
   args?: string;             // コマンドライン引数
   originalPath?: string;     // ショートカットの元パス
   sourceFile?: string;       // 元データファイル名
-  lineNumber?: number;       // 元ファイルの行番号
+  lineNumber?: number;       // データファイル内の行番号
   isDirExpanded?: boolean;   // フォルダ取込アイテム展開フラグ
   expandedFrom?: string;     // フォルダ取込元ディレクトリパス
   expandedOptions?: string;  // フォルダ取込オプション（人間が読める形式）
@@ -422,7 +422,7 @@ interface GroupItem {
   type: 'group';             // アイテムタイプ（常に'group'）
   itemNames: string[];       // グループ内で参照するアイテム名のリスト
   sourceFile?: string;       // 元データファイル名
-  lineNumber?: number;       // 元ファイルの行番号
+  lineNumber?: number;       // データファイル内の行番号
   isEdited?: boolean;        // 編集フラグ
 }
 ```
