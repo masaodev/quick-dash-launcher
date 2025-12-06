@@ -196,7 +196,7 @@ export async function registerGlobalShortcut(): Promise<void> {
       windowLogger.warn('ホットキーの登録に失敗しました');
     }
   } catch (error) {
-    windowLogger.error('ホットキーサービスの初期化に失敗しました:', error);
+    windowLogger.error({ error }, 'ホットキーサービスの初期化に失敗しました');
   }
 }
 

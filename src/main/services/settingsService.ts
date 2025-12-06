@@ -82,7 +82,7 @@ export class SettingsService {
 
       logger.info(`SettingsService initialized successfully at ${configFolder}`);
     } catch (error) {
-      logger.error('Failed to initialize SettingsService:', error);
+      logger.error({ error }, 'Failed to initialize SettingsService');
       throw error;
     }
   }
@@ -109,7 +109,7 @@ export class SettingsService {
     try {
       return this.store.get(key);
     } catch (error) {
-      logger.error(`Failed to get setting ${key}:`, error);
+      logger.error({ error, key }, 'Failed to get setting');
       return SettingsService.DEFAULT_SETTINGS[key];
     }
   }
@@ -124,9 +124,9 @@ export class SettingsService {
     if (!this.store) throw new Error('Store not initialized');
     try {
       this.store.set(key, value);
-      logger.info(`Setting ${key} updated to:`, value);
+      logger.info({ key, value }, 'Setting updated');
     } catch (error) {
-      logger.error(`Failed to set setting ${key}:`, error);
+      logger.error({ error, key }, 'Failed to set setting');
       throw error;
     }
   }
@@ -144,9 +144,9 @@ export class SettingsService {
           this.store.set(key as keyof AppSettings, value);
         }
       });
-      logger.info('Multiple settings updated:', settings);
+      logger.info({ settings }, 'Multiple settings updated');
     } catch (error) {
-      logger.error('Failed to set multiple settings:', error);
+      logger.error({ error }, 'Failed to set multiple settings');
       throw error;
     }
   }
@@ -161,7 +161,7 @@ export class SettingsService {
     try {
       return this.store.store;
     } catch (error) {
-      logger.error('Failed to get all settings:', error);
+      logger.error({ error }, 'Failed to get all settings');
       return SettingsService.DEFAULT_SETTINGS;
     }
   }
@@ -176,7 +176,7 @@ export class SettingsService {
       this.store.clear();
       logger.info('Settings reset to defaults');
     } catch (error) {
-      logger.error('Failed to reset settings:', error);
+      logger.error({ error }, 'Failed to reset settings');
       throw error;
     }
   }

@@ -128,7 +128,7 @@ export async function deleteItems(
     const filePath = path.join(configFolder, sourceFile);
 
     if (!fs.existsSync(filePath)) {
-      editLogger.warn('ファイルが存在しません、スキップします', { sourceFile });
+      editLogger.warn({ sourceFile }, 'ファイルが存在しません、スキップします');
       continue;
     }
 
@@ -176,7 +176,7 @@ export async function batchUpdateItems(
     const filePath = path.join(configFolder, sourceFile);
 
     if (!fs.existsSync(filePath)) {
-      editLogger.warn('ファイルが存在しません、スキップします', { sourceFile });
+      editLogger.warn({ sourceFile }, 'ファイルが存在しません、スキップします');
       continue;
     }
 

@@ -74,7 +74,7 @@ const logger = pino({
   },
   // Electronメインプロセス向けのカスタムログフォーマッター
   hooks: {
-    logMethod(this: pino.Logger, args: unknown[], method: pino.LogFn) {
+    logMethod(this: pino.Logger, args: Parameters<pino.LogFn>, method: pino.LogFn) {
       // 2つの引数でメッセージとオブジェクトが渡された場合の処理
       if (args.length === 2 && typeof args[0] === 'string' && typeof args[1] === 'object') {
         const [message, data] = args;
@@ -86,8 +86,8 @@ const logger = pino({
         const safeData = JSON.parse(safeStringify(args[0]));
         return method.call(this, safeData);
       }
-      // 通常の処理
-      return method.apply(this, args as [msg: string, ...args: unknown[]]);
+      // 通常の処理（pino v10の型に合わせてキャスト）
+      return method.apply(this, args as Parameters<pino.LogFn>);
     },
   },
   // Electronのメインプロセスではworkerベースのtransportを避ける

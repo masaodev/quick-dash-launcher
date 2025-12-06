@@ -59,7 +59,7 @@ export class BackupService {
     const intervalMs = backupInterval * 60 * 1000; // 分をミリ秒に変換
 
     if (now - lastBackup < intervalMs) {
-      logger.info(`バックアップをスキップ: 最小間隔（${backupInterval}分）未満`, { fileName });
+      logger.info({ fileName, backupInterval }, 'バックアップをスキップ: 最小間隔未満');
       return false;
     }
 
@@ -96,7 +96,7 @@ export class BackupService {
 
       return files.length > 0 ? files[0].path : null;
     } catch (error) {
-      logger.error('起動時バックアップファイルの検索に失敗しました', { error, baseFileName });
+      logger.error({ error, baseFileName }, '起動時バックアップファイルの検索に失敗しました');
       return null;
     }
   }
@@ -134,7 +134,7 @@ export class BackupService {
 
       return files.length > 0 ? files[0].path : null;
     } catch (error) {
-      logger.error('バックアップファイルの検索に失敗しました', { error, baseFileName });
+      logger.error({ error, baseFileName }, 'バックアップファイルの検索に失敗しました');
       return null;
     }
   }
@@ -157,7 +157,7 @@ export class BackupService {
     }
 
     if (!FileUtils.exists(sourcePath)) {
-      logger.warn('バックアップ元ファイルが存在しません', { sourcePath });
+      logger.warn({ sourcePath }, 'バックアップ元ファイルが存在しません');
       return false;
     }
 
@@ -166,10 +166,10 @@ export class BackupService {
     // 直近のバックアップファイルと内容を比較
     const latestBackupPath = this.getLatestBackupFile(fileName, backupFolder);
     if (latestBackupPath && FileUtils.areFilesEqual(sourcePath, latestBackupPath)) {
-      logger.info('ファイル内容が直近のバックアップと同一のため、バックアップをスキップしました', {
-        sourcePath,
-        latestBackupPath,
-      });
+      logger.info(
+        { sourcePath, latestBackupPath },
+        'ファイル内容が直近のバックアップと同一のため、バックアップをスキップしました'
+      );
       return false;
     }
 
@@ -179,14 +179,14 @@ export class BackupService {
 
     if (FileUtils.safeCopyFile(sourcePath, backupPath)) {
       this.lastBackupTime.set(fileName, Date.now());
-      logger.info('バックアップを作成しました', { sourcePath, backupPath });
+      logger.info({ sourcePath, backupPath }, 'バックアップを作成しました');
 
       // 古いバックアップの削除
       await this.cleanupOldBackups(fileName, backupFolder);
 
       return true;
     } else {
-      logger.error('バックアップの作成に失敗しました', { sourcePath });
+      logger.error({ sourcePath }, 'バックアップの作成に失敗しました');
       return false;
     }
   }
@@ -216,12 +216,8 @@ export class BackupService {
         const latestBackupPath = this.getLatestStartupBackupFile(file, backupFolder);
         if (latestBackupPath && FileUtils.areFilesEqual(sourcePath, latestBackupPath)) {
           logger.info(
-            'ファイル内容が直近の起動時バックアップと同一のため、バックアップをスキップしました',
-            {
-              file,
-              sourcePath,
-              latestBackupPath,
-            }
+            { file, sourcePath, latestBackupPath },
+            'ファイル内容が直近の起動時バックアップと同一のため、バックアップをスキップしました'
           );
           continue;
         }
@@ -232,12 +228,12 @@ export class BackupService {
         FileUtils.ensureDirectory(backupFolder);
         if (FileUtils.safeCopyFile(sourcePath, backupPath)) {
           this.lastBackupTime.set(file, Date.now());
-          logger.info('起動時バックアップを作成しました', { file, backupPath });
+          logger.info({ file, backupPath }, '起動時バックアップを作成しました');
 
           // 古いバックアップの削除
           await this.cleanupOldBackups(file, backupFolder);
         } else {
-          logger.error('起動時バックアップの作成に失敗しました', { file });
+          logger.error({ file }, '起動時バックアップの作成に失敗しました');
         }
       }
     }
@@ -278,11 +274,11 @@ export class BackupService {
         const filesToDelete = files.slice(backupRetention);
         for (const file of filesToDelete) {
           fs.unlinkSync(file.path);
-          logger.info('古いバックアップファイルを削除しました', { file: file.name });
+          logger.info({ file: file.name }, '古いバックアップファイルを削除しました');
         }
       }
     } catch (error) {
-      logger.error('バックアップファイルのクリーンアップに失敗しました', { error, baseFileName });
+      logger.error({ error, baseFileName }, 'バックアップファイルのクリーンアップに失敗しました');
     }
   }
 }

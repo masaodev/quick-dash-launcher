@@ -11,13 +11,16 @@ async function openItem(
   shouldHideWindow: boolean
 ): Promise<void> {
   try {
-    itemLogger.info('アイテムを起動中', {
-      name: item.name,
-      type: item.type,
-      path: item.path,
-      args: item.args || 'なし',
-      originalPath: item.originalPath || 'なし',
-    });
+    itemLogger.info(
+      {
+        name: item.name,
+        type: item.type,
+        path: item.path,
+        args: item.args || 'なし',
+        originalPath: item.originalPath || 'なし',
+      },
+      'アイテムを起動中'
+    );
 
     if (item.type === 'url') {
       await shell.openExternal(item.path);
@@ -35,9 +38,10 @@ async function openItem(
           const command = `start "" "${item.path}" ${item.args}`;
           exec(command, { windowsHide: false }, (error) => {
             if (error) {
-              itemLogger.error('アイテムの起動に失敗しました (start command)', {
-                error: error.message,
-              });
+              itemLogger.error(
+                { error: error.message },
+                'アイテムの起動に失敗しました (start command)'
+              );
             }
           });
         } else {
@@ -60,17 +64,20 @@ async function openItem(
       mainWindow.hide();
     }
   } catch (error) {
-    itemLogger.error('アイテムの起動に失敗しました', {
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-      item: {
-        name: item.name,
-        type: item.type,
-        path: item.path,
-        args: item.args || 'なし',
-        originalPath: item.originalPath || 'なし',
+    itemLogger.error(
+      {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        item: {
+          name: item.name,
+          type: item.type,
+          path: item.path,
+          args: item.args || 'なし',
+          originalPath: item.originalPath || 'なし',
+        },
       },
-    });
+      'アイテムの起動に失敗しました'
+    );
   }
 }
 
@@ -80,12 +87,15 @@ async function openParentFolder(
   shouldHideWindow: boolean
 ): Promise<void> {
   try {
-    itemLogger.info('親フォルダーを開く', {
-      name: item.name,
-      type: item.type,
-      path: item.path,
-      originalPath: item.originalPath || 'なし',
-    });
+    itemLogger.info(
+      {
+        name: item.name,
+        type: item.type,
+        path: item.path,
+        originalPath: item.originalPath || 'なし',
+      },
+      '親フォルダーを開く'
+    );
 
     if (item.type === 'file' || item.type === 'folder' || item.type === 'app') {
       await shell.showItemInFolder(item.path);
@@ -95,14 +105,13 @@ async function openParentFolder(
       mainWindow.hide();
     }
   } catch (error) {
-    itemLogger.error('親フォルダの表示に失敗しました', {
-      error: error instanceof Error ? error.message : String(error),
-      item: {
-        name: item.name,
-        type: item.type,
-        path: item.path,
+    itemLogger.error(
+      {
+        error: error instanceof Error ? error.message : String(error),
+        item: { name: item.name, type: item.type, path: item.path },
       },
-    });
+      '親フォルダの表示に失敗しました'
+    );
   }
 }
 
@@ -121,11 +130,10 @@ async function executeGroup(
   mainWindow: BrowserWindow | null,
   shouldHideWindow: boolean
 ): Promise<void> {
-  itemLogger.info('グループを実行中', {
-    groupName: group.name,
-    itemCount: group.itemNames.length,
-    itemNames: group.itemNames,
-  });
+  itemLogger.info(
+    { groupName: group.name, itemCount: group.itemNames.length, itemNames: group.itemNames },
+    'グループを実行中'
+  );
 
   // アイテム名からLauncherItemを検索するマップを作成
   const itemMap = new Map<string, LauncherItem>();
@@ -144,10 +152,7 @@ async function executeGroup(
     const item = itemMap.get(itemName);
 
     if (!item) {
-      itemLogger.warn('グループ内のアイテムが見つかりません', {
-        groupName: group.name,
-        itemName: itemName,
-      });
+      itemLogger.warn({ groupName: group.name, itemName }, 'グループ内のアイテムが見つかりません');
       errorCount++;
       continue;
     }
@@ -156,18 +161,19 @@ async function executeGroup(
       // 個別アイテムを実行（ウィンドウは非表示にしない）
       await openItem(item, null, false);
       successCount++;
-      itemLogger.info('グループアイテムを実行しました', {
-        groupName: group.name,
-        itemName: itemName,
-        index: i + 1,
-        total: group.itemNames.length,
-      });
+      itemLogger.info(
+        { groupName: group.name, itemName, index: i + 1, total: group.itemNames.length },
+        'グループアイテムを実行しました'
+      );
     } catch (error) {
-      itemLogger.error('グループアイテムの実行に失敗しました', {
-        groupName: group.name,
-        itemName: itemName,
-        error: error instanceof Error ? error.message : String(error),
-      });
+      itemLogger.error(
+        {
+          groupName: group.name,
+          itemName,
+          error: error instanceof Error ? error.message : String(error),
+        },
+        'グループアイテムの実行に失敗しました'
+      );
       errorCount++;
     }
 
@@ -177,12 +183,15 @@ async function executeGroup(
     }
   }
 
-  itemLogger.info('グループ実行完了', {
-    groupName: group.name,
-    total: group.itemNames.length,
-    success: successCount,
-    error: errorCount,
-  });
+  itemLogger.info(
+    {
+      groupName: group.name,
+      total: group.itemNames.length,
+      success: successCount,
+      error: errorCount,
+    },
+    'グループ実行完了'
+  );
 
   // すべてのアイテム実行後にウィンドウを非表示
   if (mainWindow && shouldHideWindow) {

@@ -91,7 +91,7 @@ export class AutoLaunchService {
         }
       }
     } catch (error) {
-      logger.error('Failed to set auto launch:', error);
+      logger.error({ error }, 'Failed to set auto launch');
       throw error;
     }
   }
@@ -115,7 +115,7 @@ export class AutoLaunchService {
       const shortcutPath = this.getShortcutPath();
       return fs.existsSync(shortcutPath);
     } catch (error) {
-      logger.error('Failed to get auto launch status:', error);
+      logger.error({ error }, 'Failed to get auto launch status');
       return false;
     }
   }
