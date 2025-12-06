@@ -200,6 +200,11 @@ export function useRegisterForm(
           item.itemCategory === 'group' ? 'グループ名を入力してください' : '名前を入力してください';
       }
 
+      // グループ名にカンマが含まれている場合はエラー
+      if (item.itemCategory === 'group' && item.name.includes(',')) {
+        newErrors[i].name = 'グループ名にカンマ(,)は使用できません';
+      }
+
       // グループ以外はパスが必須
       if (item.itemCategory !== 'group' && !item.path.trim()) {
         newErrors[i].path = 'パスを入力してください';

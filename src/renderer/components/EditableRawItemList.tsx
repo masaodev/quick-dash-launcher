@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { parseCSVLine, escapeCSV } from '@common/utils/csvParser';
 import { isGroupDirective, isDirDirective } from '@common/utils/directiveUtils';
 
 import { RawDataLine } from '../../common/types';
@@ -49,21 +50,23 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
     // パスのみを取得（引数は編集しない）
     let pathOnly = '';
     if (line.type === 'item') {
-      const parts = line.content.split(',');
-      pathOnly = parts[1]?.trim() || '';
+      // CSVエスケープを正しく処理するためparseCSVLineを使用
+      const parts = parseCSVLine(line.content);
+      pathOnly = parts[1] || '';
     } else if (line.type === 'directive') {
       if (isGroupDirective(line)) {
         // グループの場合：アイテム名のリスト（カンマ区切り）
-        const parts = line.content.split(',');
-        const itemNames = parts
-          .slice(2)
-          .map((name) => name.trim())
-          .filter((name) => name);
+        // CSVエスケープを正しく処理するためparseCSVLineを使用
+        const parts = parseCSVLine(line.content);
+        // parts[0] = 'group', parts[1] = グループ名, parts[2+] = アイテム名
+        const itemNames = parts.slice(2).filter((name) => name);
         pathOnly = itemNames.join(', ');
       } else {
         // フォルダ取込の場合：フォルダパス
-        const parts = line.content.split(',');
-        pathOnly = parts[1]?.trim() || '';
+        // CSVエスケープを正しく処理するためparseCSVLineを使用
+        const parts = parseCSVLine(line.content);
+        // parts[0] = 'dir', parts[1] = パス
+        pathOnly = parts[1] || '';
       }
     } else {
       // コメント行や空行の場合：元の内容を表示
@@ -80,18 +83,17 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
 
   const handleCellSave = (line: RawDataLine) => {
     // 現在のパスと編集後のパスを比較
-    const parts = line.content.split(',');
+    // CSVエスケープを正しく処理するためparseCSVLineを使用
+    const parts = parseCSVLine(line.content);
     let currentPath = '';
     if (line.type === 'item' || line.type === 'directive') {
       if (isGroupDirective(line)) {
         // グループの場合：アイテム名のリスト
-        const itemNames = parts
-          .slice(2)
-          .map((name) => name.trim())
-          .filter((name) => name);
+        // parts[0] = 'group', parts[1] = グループ名, parts[2+] = アイテム名
+        const itemNames = parts.slice(2).filter((name) => name);
         currentPath = itemNames.join(', ');
       } else {
-        currentPath = parts[1]?.trim() || '';
+        currentPath = parts[1] || '';
       }
     } else {
       currentPath = line.content;
@@ -109,16 +111,18 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
         const existingCustomIcon = parts[3] || ''; // 既存のカスタムアイコンを保持
 
         // 新しいパスで再構築（引数とカスタムアイコンは保持）
+        // CSVエスケープを適用
         if (existingCustomIcon) {
-          newContent = `${name},${trimmedValue},${existingArgs},${existingCustomIcon}`;
+          newContent = `${escapeCSV(name)},${escapeCSV(trimmedValue)},${escapeCSV(existingArgs)},${escapeCSV(existingCustomIcon)}`;
         } else if (existingArgs) {
-          newContent = `${name},${trimmedValue},${existingArgs}`;
+          newContent = `${escapeCSV(name)},${escapeCSV(trimmedValue)},${escapeCSV(existingArgs)}`;
         } else {
-          newContent = `${name},${trimmedValue}`;
+          newContent = `${escapeCSV(name)},${escapeCSV(trimmedValue)}`;
         }
       } else if (line.type === 'directive') {
         if (isGroupDirective(line)) {
           // グループの場合：アイテム名リストを更新
+          // グループ名・アイテム名にはカンマは許可されていない（バリデーションで防止）
           const groupName = parts[1] || '';
           // カンマ区切りのアイテム名リストをパース
           const newItemNames = trimmedValue
@@ -129,13 +133,15 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
         } else {
           // フォルダ取込アイテムの場合：パスのみ更新、オプションは保持
           const directive = parts[0] || 'dir';
-          const existingOptions = parts.slice(2).join(','); // 既存のオプションを保持
+          // オプションはカンマ区切りで再結合
+          const existingOptions = parts.slice(2).join(',');
 
           // 新しいパスで再構築（オプションは保持）
+          // パスにカンマが含まれる場合はCSVエスケープを適用
           if (existingOptions) {
-            newContent = `${directive},${trimmedValue},${existingOptions}`;
+            newContent = `${directive},${escapeCSV(trimmedValue)},${existingOptions}`;
           } else {
-            newContent = `${directive},${trimmedValue}`;
+            newContent = `${directive},${escapeCSV(trimmedValue)}`;
           }
         }
       } else {
@@ -156,13 +162,15 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
   };
 
   const handleNameEdit = (line: RawDataLine) => {
-    const parts = line.content.split(',');
+    // CSVエスケープを正しく処理するためparseCSVLineを使用
+    const parts = parseCSVLine(line.content);
     let name = '';
     if (line.type === 'item') {
-      name = parts[0]?.trim() || '';
+      name = parts[0] || '';
     } else if (isGroupDirective(line)) {
       // group,グループ名,アイテム1,アイテム2,...
-      name = parts[1]?.trim() || '';
+      // parts[0] = 'group', parts[1] = グループ名
+      name = parts[1] || '';
     }
     const cellKey = `${getLineKey(line)}_name`;
     setEditingCell(cellKey);
@@ -170,16 +178,30 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
   };
 
   const handleNameSave = (line: RawDataLine) => {
-    const parts = line.content.split(',');
+    // CSVエスケープを正しく処理するためparseCSVLineを使用
+    const parts = parseCSVLine(line.content);
     let newContent = '';
 
     if (line.type === 'item') {
-      parts[0] = editingValue.trim();
-      newContent = parts.join(',');
+      const newName = editingValue.trim();
+      const path = parts[1] || '';
+      const args = parts[2] || '';
+      const customIcon = parts[3] || '';
+
+      // CSVエスケープを適用して再構築
+      if (customIcon) {
+        newContent = `${escapeCSV(newName)},${escapeCSV(path)},${escapeCSV(args)},${escapeCSV(customIcon)}`;
+      } else if (args) {
+        newContent = `${escapeCSV(newName)},${escapeCSV(path)},${escapeCSV(args)}`;
+      } else {
+        newContent = `${escapeCSV(newName)},${escapeCSV(path)}`;
+      }
     } else if (isGroupDirective(line)) {
       // group,グループ名,アイテム1,アイテム2,...
-      parts[1] = editingValue.trim();
-      newContent = parts.join(',');
+      // グループ名にはカンマは許可されていない（バリデーションで防止）
+      const newGroupName = editingValue.trim();
+      const itemNames = parts.slice(2);
+      newContent = `group,${newGroupName},${itemNames.join(',')}`;
     }
 
     if (newContent && newContent !== line.content) {
@@ -257,13 +279,15 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
   const renderNameCell = (line: RawDataLine) => {
     if (line.type === 'item' || isGroupDirective(line)) {
       // アイテム行またはグループ行の場合、CSV形式から名前を抽出
-      const parts = line.content.split(',');
+      // CSVエスケープを正しく処理するためparseCSVLineを使用
+      const parts = parseCSVLine(line.content);
       let name = '';
       if (line.type === 'item') {
-        name = parts[0]?.trim() || '';
+        name = parts[0] || '';
       } else if (isGroupDirective(line)) {
         // group,グループ名,アイテム1,アイテム2,...
-        name = parts[1]?.trim() || '';
+        // parts[0] = 'group', parts[1] = グループ名
+        name = parts[1] || '';
       }
 
       const cellKey = `${getLineKey(line)}_name`;
@@ -301,27 +325,29 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
   const getPathAndArgs = (line: RawDataLine) => {
     if (line.type === 'item') {
       // アイテム行の場合：パス＋引数の組み合わせ
-      const parts = line.content.split(',');
-      const pathPart = parts[1]?.trim() || '';
-      const argsPart = parts[2]?.trim() || '';
+      // CSVエスケープを正しく処理するためparseCSVLineを使用
+      const parts = parseCSVLine(line.content);
+      const pathPart = parts[1] || '';
+      const argsPart = parts[2] || '';
       if (!pathPart) return '(パスなし)';
       return argsPart ? `${pathPart} ${argsPart}` : pathPart;
     } else if (line.type === 'directive') {
       if (isGroupDirective(line)) {
         // グループアイテムの場合：アイテム名のリスト
         // group,グループ名,アイテム1,アイテム2,...
-        const parts = line.content.split(',');
-        const itemNames = parts
-          .slice(2)
-          .map((name) => name.trim())
-          .filter((name) => name);
+        // CSVエスケープを正しく処理するためparseCSVLineを使用
+        const parts = parseCSVLine(line.content);
+        // parts[0] = 'group', parts[1] = グループ名, parts[2+] = アイテム名
+        const itemNames = parts.slice(2).filter((name) => name);
         if (itemNames.length === 0) return '(アイテムなし)';
         return itemNames.join(', ');
       } else {
         // フォルダ取込アイテムの場合：フォルダパス＋オプション
-        const parts = line.content.split(',');
-        const pathPart = parts[1]?.trim() || '';
-        const options = parts.slice(2).join(',').trim();
+        // CSVエスケープを正しく処理するためparseCSVLineを使用
+        const parts = parseCSVLine(line.content);
+        // parts[0] = 'dir', parts[1] = パス, parts[2+] = オプション
+        const pathPart = parts[1] || '';
+        const options = parts.slice(2).join(',');
         if (!pathPart) return '(フォルダパスなし)';
         return options ? `${pathPart} ${options}` : pathPart;
       }
