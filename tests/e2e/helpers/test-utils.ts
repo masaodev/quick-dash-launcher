@@ -269,4 +269,58 @@ export class TestUtils {
     await adminWindow.waitForLoadState('domcontentloaded');
     return adminWindow;
   }
+
+  // ==================== Phase 1: 最適化ヘルパーメソッド ====================
+
+  /**
+   * 要素が表示されるまで待機（waitForElementのエイリアス）
+   */
+  async waitForVisible(selector: string, timeout = 5000): Promise<void> {
+    await this.waitForElement(selector, timeout);
+  }
+
+  /**
+   * 要素が有効になるまで待機
+   */
+  async waitForEnabled(selector: string, timeout = 5000): Promise<void> {
+    await this.page.waitForSelector(selector, { state: 'attached', timeout });
+    await this.page.locator(selector).waitFor({ state: 'attached', timeout });
+  }
+
+  /**
+   * 保存完了を待機
+   * @param expectedText 保存されたアイテムの名前（オプション）
+   * @param timeout タイムアウト時間
+   */
+  async waitForSave(expectedText?: string, timeout = 5000): Promise<void> {
+    // IPC通信の最小限の待機
+    await this.wait(200);
+
+    if (expectedText) {
+      // 指定されたテキストを含むアイテムが表示されるまで待機
+      await this.page.waitForSelector(`.item:has-text("${expectedText}")`, {
+        state: 'visible',
+        timeout,
+      });
+    }
+  }
+
+  /**
+   * フォーム入力 + 送信を統合
+   * @param data フォームデータ
+   */
+  async fillAndSubmitRegisterForm(data: {
+    name?: string;
+    path?: string;
+    args?: string;
+    targetTab?: string;
+  }): Promise<void> {
+    await this.fillRegisterForm(data);
+    await this.clickRegisterButton();
+
+    // 保存完了を待機
+    if (data.name) {
+      await this.waitForSave(data.name);
+    }
+  }
 }

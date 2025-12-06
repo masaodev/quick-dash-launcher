@@ -20,9 +20,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
     const utils = new TestUtils(mainWindow);
 
     await test.step('プラスボタンをクリックすると登録モーダルが開く', async () => {
-      await utils.attachScreenshot(testInfo, '初期状態');
       await utils.openRegisterModal();
-      await utils.attachScreenshot(testInfo, 'モーダル表示');
 
       const isVisible = await utils.isRegisterModalVisible();
       expect(isVisible).toBe(true);
@@ -49,13 +47,10 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
         .filter({ hasText: 'キャンセル' })
         .first();
       await expect(cancelButton).toBeVisible();
-
-      await utils.attachScreenshot(testInfo, 'フィールド確認完了');
     });
 
     await test.step('キャンセルボタンを押すとモーダルが閉じる', async () => {
       await utils.clickCancelButton();
-      await utils.wait(300);
 
       const isVisible = await utils.isRegisterModalVisible();
       expect(isVisible).toBe(false);
@@ -70,7 +65,6 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
 
       // ESCキーを押す
       await mainWindow.keyboard.press('Escape');
-      await utils.wait(500);
 
       isVisible = await utils.isRegisterModalVisible();
       expect(isVisible).toBe(false);
@@ -86,7 +80,6 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
     await test.step('登録前のアイテム数を取得', async () => {
       const itemsBefore = mainWindow.locator('.item');
       countBefore = await itemsBefore.count();
-      await utils.attachScreenshot(testInfo, '登録前の状態');
     });
 
     await test.step('新しいWebサイトアイテムを登録できる', async () => {
@@ -96,11 +89,9 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
         path: 'https://example.com',
       });
       await utils.clickRegisterButton();
-      await utils.wait(500);
 
       await mainWindow.reload();
       await utils.waitForPageLoad();
-      await utils.attachScreenshot(testInfo, 'Webサイト登録後');
 
       // アイテム数が増えていることを確認
       const itemsAfter = mainWindow.locator('.item');
@@ -119,7 +110,6 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
         path: 'notepad.exe',
       });
       await utils.clickRegisterButton();
-      await utils.wait(500);
 
       await mainWindow.reload();
       await utils.waitForPageLoad();
@@ -136,11 +126,9 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
         args: 'C:\\test.txt',
       });
       await utils.clickRegisterButton();
-      await utils.wait(500);
 
       await mainWindow.reload();
       await utils.waitForPageLoad();
-      await utils.attachScreenshot(testInfo, '引数付きアイテム登録後');
 
       // 新しいアイテムが表示されていることを確認
       const newItem = mainWindow.locator('.item', { hasText: 'メモ帳（引数あり）' });
@@ -159,7 +147,6 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
         path: 'https://test-save.com',
       });
       await utils.clickRegisterButton();
-      await utils.wait(500);
 
       const dataAfter = configHelper.readDataFile('data.txt');
       expect(dataAfter).toContain('テスト保存,https://test-save.com');
@@ -172,11 +159,9 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
         path: 'https://reload-test.com',
       });
       await utils.clickRegisterButton();
-      await utils.wait(500);
 
       await mainWindow.reload();
       await utils.waitForPageLoad();
-      await utils.attachScreenshot(testInfo, 'リロード後も表示確認');
 
       const item = mainWindow.locator('.item', { hasText: 'リロードテスト' });
       await expect(item).toBeVisible();
@@ -200,7 +185,6 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
 
       const registerButton = mainWindow.locator('.register-modal button.primary').first();
       await registerButton.click();
-      await utils.wait(500);
 
       // モーダルが閉じていない（エラーで登録できない）
       const isVisible = await utils.isRegisterModalVisible();
@@ -213,7 +197,6 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       expect(errorText).toContain('名前を入力してください');
 
       await utils.clickCancelButton();
-      await utils.attachScreenshot(testInfo, '空の名前エラー確認');
     });
 
     await test.step('空のパスでは登録できない', async () => {
@@ -224,7 +207,6 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
 
       const registerButton = mainWindow.locator('.register-modal button.primary').first();
       await registerButton.click();
-      await utils.wait(500);
 
       // モーダルが閉じていない（エラーで登録できない）
       const isVisible = await utils.isRegisterModalVisible();
@@ -237,7 +219,6 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       expect(errorText).toContain('パスを入力してください');
 
       await utils.clickCancelButton();
-      await utils.attachScreenshot(testInfo, '空のパスエラー確認');
     });
 
     await test.step('アイテム数が変わっていないことを確認', async () => {
@@ -253,10 +234,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
     const utils = new TestUtils(mainWindow);
 
     await test.step('アイテムを右クリックすると編集メニューが表示される', async () => {
-      await utils.attachScreenshot(testInfo, '初期状態');
       await utils.rightClickItem('GitHub');
-      await utils.wait(300);
-      await utils.attachScreenshot(testInfo, '右クリックメニュー表示');
 
       const editMenuItem = mainWindow.locator('.context-menu-item', { hasText: '編集' });
       await expect(editMenuItem).toBeVisible();
@@ -264,7 +242,6 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
 
     await test.step('編集メニューから編集を選択すると登録モーダルが開く', async () => {
       await utils.editItemByRightClick('GitHub');
-      await utils.attachScreenshot(testInfo, '編集モーダル表示');
 
       const isVisible = await utils.isRegisterModalVisible();
       expect(isVisible).toBe(true);
@@ -283,8 +260,6 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       const pathValue = await pathInput.inputValue();
       expect(pathValue.startsWith('https://github.com')).toBe(true);
 
-      await utils.attachScreenshot(testInfo, '既存値確認完了');
-
       // モーダルを閉じる
       await utils.clickCancelButton();
     });
@@ -294,17 +269,14 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
     const utils = new TestUtils(mainWindow);
 
     await test.step('アイテムの名前を編集できる', async () => {
-      await utils.attachScreenshot(testInfo, '編集前');
       await utils.editItemByRightClick('GitHub');
       await utils.fillRegisterForm({
         name: 'EditedGitHub',
       });
       await utils.clickRegisterButton();
-      await utils.wait(500);
 
       await mainWindow.reload();
       await utils.waitForPageLoad();
-      await utils.attachScreenshot(testInfo, '名前編集後リロード');
 
       // 編集後のアイテムが表示されていることを確認
       const editedItem = mainWindow.locator('.item', { hasText: 'EditedGitHub' });
@@ -322,7 +294,6 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
         path: 'https://github.com/new-path',
       });
       await utils.clickRegisterButton();
-      await utils.wait(500);
 
       const dataContent = configHelper.readDataFile('data.txt');
       expect(dataContent).toContain('https://github.com/new-path');
@@ -337,7 +308,6 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
         args: 'C:\\original.txt',
       });
       await utils.clickRegisterButton();
-      await utils.wait(500);
 
       await mainWindow.reload();
       await utils.waitForPageLoad();
@@ -348,8 +318,6 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
         args: 'C:\\edited.txt',
       });
       await utils.clickRegisterButton();
-      await utils.wait(500);
-      await utils.attachScreenshot(testInfo, '引数編集後');
 
       const dataContent = configHelper.readDataFile('data.txt');
       expect(dataContent).toContain('C:\\edited.txt');
@@ -358,7 +326,6 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
     await test.step('編集したアイテムがリロード後も反映される', async () => {
       await mainWindow.reload();
       await utils.waitForPageLoad();
-      await utils.attachScreenshot(testInfo, 'リロード後も編集反映確認');
 
       const item = mainWindow.locator('.item', { hasText: 'EditedGitHub' });
       await expect(item).toBeVisible();
@@ -376,7 +343,6 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
 
       const registerButton = mainWindow.locator('.register-modal button.primary').first();
       await registerButton.click();
-      await utils.wait(500);
 
       // モーダルが閉じていない（エラーで保存できない）
       const isVisible = await utils.isRegisterModalVisible();
@@ -389,7 +355,6 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       expect(errorText).toContain('名前を入力してください');
 
       await utils.clickCancelButton();
-      await utils.attachScreenshot(testInfo, '空の名前エラー確認');
     });
 
     await test.step('編集時にパスを空にすると保存できない', async () => {
@@ -400,7 +365,6 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
 
       const registerButton = mainWindow.locator('.register-modal button.primary').first();
       await registerButton.click();
-      await utils.wait(500);
 
       // モーダルが閉じていない（エラーで保存できない）
       const isVisible = await utils.isRegisterModalVisible();
@@ -413,20 +377,16 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       expect(errorText).toContain('パスを入力してください');
 
       await utils.clickCancelButton();
-      await utils.attachScreenshot(testInfo, '空のパスエラー確認');
     });
 
     await test.step('編集をキャンセルするとアイテムは変更されない', async () => {
       const dataBefore = configHelper.readDataFile('data.txt');
-      await utils.attachScreenshot(testInfo, '編集前');
 
       await utils.editItemByRightClick('GitHub');
       await utils.fillRegisterForm({
         name: 'キャンセルテスト',
       });
       await utils.clickCancelButton();
-      await utils.wait(500);
-      await utils.attachScreenshot(testInfo, 'キャンセル後');
 
       // data.txtが変更されていないことを確認
       const dataAfter = configHelper.readDataFile('data.txt');
@@ -446,7 +406,6 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       configHelper.loadTemplate('with-tabs');
       await mainWindow.reload();
       await utils.waitForPageLoad();
-      await utils.attachScreenshot(testInfo, 'マルチタブ有効化');
     });
 
     await test.step('メインタブで登録モーダルを開く', async () => {
@@ -455,7 +414,6 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       await expect(mainTab).toBeVisible();
 
       await utils.openRegisterModal();
-      await utils.attachScreenshot(testInfo, 'メインタブで登録モーダル表示');
     });
 
     await test.step('デフォルトの保存先がメインタブ（data.txt）になっている', async () => {
@@ -470,8 +428,6 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
     await test.step('サブタブに切り替え', async () => {
       const subTab1 = mainWindow.locator('.file-tab', { hasText: 'サブ1' });
       await subTab1.click();
-      await utils.wait(300);
-      await utils.attachScreenshot(testInfo, 'サブタブに切り替え');
     });
 
     await test.step('サブタブで登録モーダルを開く', async () => {
@@ -480,7 +436,6 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       await expect(subTab1).toBeVisible();
 
       await utils.openRegisterModal();
-      await utils.attachScreenshot(testInfo, 'サブタブで登録モーダル表示');
     });
 
     await test.step('デフォルトの保存先がサブタブ（data2.txt）になっている', async () => {
@@ -499,8 +454,6 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
         path: 'https://sub-tab-test.com',
       });
       await utils.clickRegisterButton();
-      await utils.wait(500);
-      await utils.attachScreenshot(testInfo, 'サブタブでアイテム登録完了');
     });
 
     await test.step('登録したアイテムがサブタブ（data2.txt）に保存される', async () => {
@@ -520,26 +473,20 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       // サブタブに切り替え
       const subTab1 = mainWindow.locator('.file-tab', { hasText: 'サブ1' });
       await subTab1.click();
-      await utils.wait(300);
 
       // 登録したアイテムが表示されることを確認
       const item = mainWindow.locator('.item', { hasText: 'サブタブ登録テスト' });
       await expect(item).toBeVisible();
-
-      await utils.attachScreenshot(testInfo, 'サブタブでアイテム表示確認');
     });
 
     await test.step('メインタブには登録したアイテムが表示されない', async () => {
       // メインタブに戻る
       const mainTab = mainWindow.locator('.file-tab', { hasText: 'メイン' });
       await mainTab.click();
-      await utils.wait(300);
 
       // サブタブで登録したアイテムが表示されないことを確認
       const item = mainWindow.locator('.item', { hasText: 'サブタブ登録テスト' });
       await expect(item).not.toBeVisible();
-
-      await utils.attachScreenshot(testInfo, 'メインタブでアイテム非表示確認');
     });
   });
 
@@ -552,22 +499,18 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
     const utils = new TestUtils(mainWindow);
 
     await test.step('メイン画面で新規アイテムを登録', async () => {
-      await utils.attachScreenshot(testInfo, '登録前の状態');
       await utils.openRegisterModal();
       await utils.fillRegisterForm({
         name: '同期テストアイテム',
         path: 'https://sync-test.com',
       });
       await utils.clickRegisterButton();
-      await utils.wait(500);
-      await utils.attachScreenshot(testInfo, 'アイテム登録完了');
 
       // メイン画面でアイテムが表示されることを確認
       await mainWindow.reload();
       await utils.waitForPageLoad();
       const item = mainWindow.locator('.item', { hasText: '同期テストアイテム' });
       await expect(item).toBeVisible();
-      await utils.attachScreenshot(testInfo, 'メイン画面でアイテム確認');
     });
 
     let adminWindow: Page | null = null;
@@ -578,8 +521,6 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
 
       // ページ読み込み完了を待機
       await adminUtils.waitForPageLoad();
-      await adminUtils.wait(1000);
-      await adminUtils.attachScreenshot(testInfo, '管理画面オープン');
 
       // アイテム管理タブがアクティブであることを確認
       const editTab = adminWindow.locator('.tab-button.active', { hasText: 'アイテム管理' });
@@ -601,8 +542,6 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       const itemContent = await itemRow.textContent();
       expect(itemContent).toContain('同期テストアイテム');
       expect(itemContent).toContain('https://sync-test.com');
-
-      await adminUtils.attachScreenshot(testInfo, '管理画面でアイテム確認');
 
       // 管理画面を閉じる
       await adminWindow.close();

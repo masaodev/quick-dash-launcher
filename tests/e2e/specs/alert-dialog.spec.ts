@@ -9,7 +9,6 @@ test.describe('AlertDialog', () => {
 
     await test.step('アプリケーションが正常に起動している', async () => {
       await utils.waitForPageLoad();
-      await utils.attachScreenshot(testInfo, 'アプリ起動');
     });
 
     await test.step('アイテム登録モーダルを開く', async () => {
@@ -23,9 +22,7 @@ test.describe('AlertDialog', () => {
       const settingsButton = mainWindow.locator('[title="基本設定"]');
       if ((await settingsButton.count()) > 0) {
         await settingsButton.click();
-        await mainWindow.waitForTimeout(500);
       }
-      await utils.attachScreenshot(testInfo, '設定画面表示');
     });
 
     await test.step('タブ表示を有効にする', async () => {
@@ -38,7 +35,6 @@ test.describe('AlertDialog', () => {
         const isChecked = await checkbox.isChecked();
         if (!isChecked) {
           await checkbox.check();
-          await mainWindow.waitForTimeout(1000);
         }
       }
     });
@@ -48,19 +44,15 @@ test.describe('AlertDialog', () => {
       const manageFileButtons = mainWindow.locator('button[title="ファイルを管理"]');
       if ((await manageFileButtons.count()) > 0) {
         await manageFileButtons.first().click();
-        await mainWindow.waitForTimeout(500);
-        await utils.attachScreenshot(testInfo, 'ファイル管理モーダル表示');
 
         // data.txtの削除ボタンをクリック（これは警告を表示するはず）
         const fileDeleteButtons = mainWindow.locator('.file-actions button:has-text("削除")');
         if ((await fileDeleteButtons.count()) > 0) {
           await fileDeleteButtons.first().click();
-          await mainWindow.waitForTimeout(500);
 
           // AlertDialogが表示されることを確認
           const alertDialog = mainWindow.locator('[data-testid="alert-dialog"]');
           await expect(alertDialog).toBeVisible({ timeout: 2000 });
-          await utils.attachScreenshot(testInfo, 'AlertDialog表示');
 
           // メッセージ内容を確認
           const message = alertDialog.locator('.alert-body p');
@@ -69,7 +61,6 @@ test.describe('AlertDialog', () => {
           // OKボタンで閉じる
           const okButton = mainWindow.locator('[data-testid="alert-dialog-ok-button"]');
           await okButton.click();
-          await mainWindow.waitForTimeout(300);
 
           // ダイアログが閉じたことを確認
           await expect(alertDialog).not.toBeVisible();
@@ -90,7 +81,6 @@ test.describe('AlertDialog', () => {
       const settingsButton = mainWindow.locator('[title="基本設定"]');
       if ((await settingsButton.count()) > 0) {
         await settingsButton.click();
-        await mainWindow.waitForTimeout(500);
       }
 
       const checkbox = mainWindow
@@ -101,31 +91,25 @@ test.describe('AlertDialog', () => {
         const isChecked = await checkbox.isChecked();
         if (!isChecked) {
           await checkbox.check();
-          await mainWindow.waitForTimeout(1000);
         }
       }
 
       const manageFileButtons = mainWindow.locator('button[title="ファイルを管理"]');
       if ((await manageFileButtons.count()) > 0) {
         await manageFileButtons.first().click();
-        await mainWindow.waitForTimeout(500);
 
         const fileDeleteButtons = mainWindow.locator('.file-actions button:has-text("削除")');
         if ((await fileDeleteButtons.count()) > 0) {
           await fileDeleteButtons.first().click();
-          await mainWindow.waitForTimeout(500);
 
           const alertDialog = mainWindow.locator('[data-testid="alert-dialog"]');
           await expect(alertDialog).toBeVisible({ timeout: 2000 });
-          await utils.attachScreenshot(testInfo, 'ESCキーテスト前');
 
           // ESCキーを押す
           await mainWindow.keyboard.press('Escape');
-          await mainWindow.waitForTimeout(300);
 
           // ダイアログが閉じたことを確認
           await expect(alertDialog).not.toBeVisible();
-          await utils.attachScreenshot(testInfo, 'ESCキーでダイアログ閉鎖');
         }
       }
     });

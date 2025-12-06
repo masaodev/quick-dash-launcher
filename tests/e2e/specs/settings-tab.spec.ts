@@ -26,18 +26,15 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
   }, testInfo) => {
     const utils = new TestUtils(mainWindow);
 
-    await test.step('初期状態を確認', async () => {
-      await utils.attachScreenshot(testInfo, '初期状態');
-    });
+    await test.step('初期状態を確認', async () => {});
 
+    await utils.wait(300);
     const adminWindow = await utils.openAdminWindow(electronApp, 'settings');
 
     try {
       const adminUtils = new TestUtils(adminWindow);
 
       await test.step('設定タブが表示されていることを確認', async () => {
-        await adminUtils.wait(500);
-        await adminUtils.attachScreenshot(testInfo, '設定タブ表示');
         const settingsTab = adminWindow.locator('.settings-tab');
         await expect(settingsTab).toBeVisible();
       });
@@ -91,9 +88,7 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
     const adminWindow = await utils.openAdminWindow(electronApp, 'settings');
 
     try {
-      await test.step('設定タブに切り替え', async () => {
-        await new TestUtils(adminWindow).wait(500);
-      });
+      await test.step('設定タブに切り替え', async () => {});
 
       await test.step('ホットキー入力フィールドの確認', async () => {
         const hotkeyInput = adminWindow.locator('.hotkey-input').first();
@@ -140,10 +135,7 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
     try {
       const adminUtils = new TestUtils(adminWindow);
 
-      await test.step('設定タブに切り替え', async () => {
-        await adminUtils.wait(500);
-        await adminUtils.attachScreenshot(testInfo, '設定タブ表示');
-      });
+      await test.step('設定タブに切り替え', async () => {});
 
       await test.step('自動起動設定をON/OFFできる', async () => {
         const autoLaunchLabel = adminWindow.locator('label', { hasText: '起動時に自動実行' });
@@ -151,8 +143,6 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
         const initialState = await autoLaunchCheckbox.isChecked();
 
         await autoLaunchLabel.click();
-        await adminUtils.wait(300);
-        await adminUtils.attachScreenshot(testInfo, '自動起動設定変更後');
 
         const settings = configHelper.readSettings();
         expect(settings.autoLaunch).toBeDefined();
@@ -164,8 +154,6 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
           hasText: 'バックアップ機能を有効にする',
         });
         await backupLabel.click();
-        await adminUtils.wait(300);
-        await adminUtils.attachScreenshot(testInfo, 'バックアップ機能有効化');
 
         // バックアップオプションが表示されることを確認
         const backupOnStartLabel = adminWindow.locator('label', {
@@ -195,16 +183,11 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
     try {
       const adminUtils = new TestUtils(adminWindow);
 
-      await test.step('設定タブに切り替え', async () => {
-        await adminUtils.wait(500);
-        await adminUtils.attachScreenshot(testInfo, '設定タブ表示');
-      });
+      await test.step('設定タブに切り替え', async () => {});
 
       await test.step('複数タブ表示を有効化', async () => {
         const showTabsLabel = adminWindow.locator('label', { hasText: '複数タブを表示' });
         await showTabsLabel.click();
-        await adminUtils.wait(500);
-        await adminUtils.attachScreenshot(testInfo, '複数タブ表示有効化');
 
         // タブ管理セクションが表示されることを確認
         const tabManagement = adminWindow.locator('.data-file-manager');
@@ -224,8 +207,6 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
       await test.step('新しいタブを追加', async () => {
         const addButton = adminWindow.locator('button', { hasText: '新規タブを追加' });
         await addButton.click();
-        await adminUtils.wait(500);
-        await adminUtils.attachScreenshot(testInfo, 'タブ追加後');
 
         // 新しいタブ行が追加されたことを確認
         const fileRows = adminWindow.locator('.data-file-table-row');
@@ -241,13 +222,10 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
         await tabNameInput.fill('カスタムタブ');
         // フォーカスを外すためにEnterキーを押す
         await tabNameInput.press('Enter');
-        await adminUtils.wait(800); // 保存処理の完了を待つ
-        await adminUtils.attachScreenshot(testInfo, 'タブ名変更後');
       });
 
       await test.step('settings.jsonに保存されたことを確認', async () => {
         // 設定の再読み込みを待つ
-        await adminUtils.wait(200);
         const settings = configHelper.readSettings();
         expect(settings.showDataFileTabs).toBe(true);
         expect(settings.dataFileTabs).toBeDefined();
@@ -278,14 +256,11 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
       await test.step('複数タブ表示を有効化', async () => {
         const showTabsLabel = adminWindow.locator('label', { hasText: '複数タブを表示' });
         await showTabsLabel.click();
-        await adminUtils.wait(500);
       });
 
       await test.step('新規タブを追加', async () => {
         const addButton = adminWindow.locator('button', { hasText: '新規タブを追加' });
         await addButton.click();
-        await adminUtils.wait(500);
-        await adminUtils.attachScreenshot(testInfo, '新規タブ追加後');
       });
 
       await test.step('ファイル管理モーダルを開く', async () => {
@@ -293,8 +268,6 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
         const secondRow = adminWindow.locator('.data-file-table-row').nth(1);
         const manageFilesButton = secondRow.locator('button', { hasText: /📁/ });
         await manageFilesButton.click();
-        await adminUtils.wait(500);
-        await adminUtils.attachScreenshot(testInfo, 'ファイル管理モーダル表示');
 
         // モーダルが表示されることを確認
         const modal = adminWindow.locator('.modal-overlay');
@@ -306,8 +279,6 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
           hasText: '新規ファイルを作成して追加',
         });
         await createButton.click();
-        await adminUtils.wait(500);
-        await adminUtils.attachScreenshot(testInfo, '新規ファイル追加後');
 
         // ファイルリストに2つのファイルが表示されることを確認
         const fileListItems = adminWindow.locator('.file-list-item');
@@ -325,8 +296,6 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
 
         if (await setDefaultButton.isVisible()) {
           await setDefaultButton.click();
-          await adminUtils.wait(500);
-          await adminUtils.attachScreenshot(testInfo, 'デフォルトファイル変更後');
 
           // デフォルトバッジが表示されることを確認
           const defaultBadge = secondFileItem.locator('.default-badge-small');
@@ -337,7 +306,6 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
       await test.step('モーダルを閉じる', async () => {
         const closeButton = adminWindow.locator('.modal-footer button', { hasText: '閉じる' });
         await closeButton.click();
-        await adminUtils.wait(300);
       });
 
       await test.step('settings.jsonに複数ファイルが保存されたことを確認', async () => {
@@ -364,10 +332,7 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
     try {
       const adminUtils = new TestUtils(adminWindow);
 
-      await test.step('設定タブに切り替え', async () => {
-        await adminUtils.wait(500);
-        await adminUtils.attachScreenshot(testInfo, '設定タブ表示');
-      });
+      await test.step('設定タブに切り替え', async () => {});
 
       await test.step('ウィンドウ表示位置セクションが表示される', async () => {
         const positionSection = adminWindow
@@ -384,8 +349,6 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
       await test.step('マウスカーソルの位置を選択できる', async () => {
         const cursorLabel = adminWindow.locator('label', { hasText: 'マウスカーソルの位置' });
         await cursorLabel.click();
-        await adminUtils.wait(300);
-        await adminUtils.attachScreenshot(testInfo, 'カーソル位置選択後');
 
         const cursorRadio = adminWindow.locator('input[name="windowPositionMode"][value="cursor"]');
         await expect(cursorRadio).toBeChecked();
@@ -400,8 +363,6 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
           hasText: /固定位置.*手動で移動した位置を記憶/,
         });
         await fixedLabel.click();
-        await adminUtils.wait(300);
-        await adminUtils.attachScreenshot(testInfo, '固定位置選択後');
 
         const fixedRadio = adminWindow.locator('input[name="windowPositionMode"][value="fixed"]');
         await expect(fixedRadio).toBeChecked();

@@ -14,7 +14,6 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
 
     await test.step('初期状態を確認', async () => {
       await utils.waitForPageLoad();
-      await utils.attachScreenshot(testInfo, '初期状態');
     });
 
     await test.step('タブバーとタブボタンの表示確認', async () => {
@@ -26,7 +25,6 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
       const tabs = mainWindow.locator('.file-tab');
       const tabCount = await tabs.count();
       expect(tabCount).toBeGreaterThan(0);
-      await utils.attachScreenshot(testInfo, 'タブバー表示確認');
     });
   });
 
@@ -59,14 +57,11 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
 
     await test.step('タブ機能を有効化してリロード', async () => {
       await utils.waitForPageLoad();
-      await utils.attachScreenshot(testInfo, 'タブ機能有効化後');
     });
 
     await test.step('サブ1タブをクリック', async () => {
       const subTab1 = mainWindow.locator('.file-tab', { hasText: 'サブ1' });
       await subTab1.click();
-      await utils.wait(300);
-      await utils.attachScreenshot(testInfo, 'サブタブクリック後');
     });
 
     await test.step('サブ1タブがアクティブになったことを確認', async () => {
@@ -84,14 +79,11 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
 
     await test.step('タブ機能を有効化してリロード', async () => {
       await utils.waitForPageLoad();
-      await utils.attachScreenshot(testInfo, '初期状態（メインタブ）');
     });
 
     await test.step('サブ1タブをクリック', async () => {
       const subTab1 = mainWindow.locator('.file-tab', { hasText: 'サブ1' });
       await subTab1.click();
-      await utils.wait(500);
-      await utils.attachScreenshot(testInfo, 'サブタブ切り替え後');
     });
 
     await test.step('data2.txtのアイテムが表示されることを確認', async () => {
@@ -116,7 +108,6 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
     // サブ1タブをクリック
     const subTab1 = mainWindow.locator('.file-tab', { hasText: 'サブ1' });
     await subTab1.click();
-    await utils.wait(500);
 
     // メインタブのアイテムが表示されなくなることを確認
     const githubAfter = mainWindow.locator('.item', { hasText: 'GitHub' });
@@ -135,12 +126,10 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
     // サブ1タブに切り替え
     const subTab1 = mainWindow.locator('.file-tab', { hasText: 'サブ1' });
     await subTab1.click();
-    await utils.wait(500);
 
     // メインタブに戻る
     const mainTab = mainWindow.locator('.file-tab', { hasText: 'メイン' });
     await mainTab.click();
-    await utils.wait(500);
 
     // data.txtのアイテムが表示されることを確認
     const knownItems = ['GitHub', 'Google', 'Wikipedia'];
@@ -165,7 +154,6 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
     // サブ1タブに切り替え
     const subTab1 = mainWindow.locator('.file-tab', { hasText: 'サブ1' });
     await subTab1.click();
-    await utils.wait(500);
 
     // 最初のアイテムが選択されていることを確認
     const selectedItem = mainWindow.locator('.item.selected');
@@ -180,7 +168,6 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
     // サブ1タブに切り替え
     const subTab1 = mainWindow.locator('.file-tab', { hasText: 'サブ1' });
     await subTab1.click();
-    await utils.wait(500);
 
     // 最初に選択されているアイテムのテキストを取得
     const firstItem = mainWindow.locator('.item.selected').first();
@@ -189,7 +176,6 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
 
     // ↓キーを押して次のアイテムに移動
     await utils.sendShortcut('ArrowDown');
-    await utils.wait(100);
 
     // 選択が移動したことを確認
     const secondItem = mainWindow.locator('.item.selected');
@@ -206,7 +192,6 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
     // サブ1タブに切り替え
     const subTab1 = mainWindow.locator('.file-tab', { hasText: 'サブ1' });
     await subTab1.click();
-    await utils.wait(500);
 
     // 検索前の全アイテム数を取得
     const allItems = mainWindow.locator('.item');
@@ -215,7 +200,6 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
 
     // "Reddit"で検索
     await utils.searchFor('Reddit');
-    await utils.wait(300);
 
     // 検索結果が絞り込まれることを確認
     const filteredItems = mainWindow.locator('.item:visible');
@@ -240,7 +224,6 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
     // サブ1タブに切り替え
     const subTab1 = mainWindow.locator('.file-tab', { hasText: 'サブ1' });
     await subTab1.click();
-    await utils.wait(500);
 
     // 追加したアイテムが表示されることを確認
     const newItem = mainWindow.locator('.item', { hasText: '新規サブアイテム' });
@@ -261,7 +244,6 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
     // サブ1タブに切り替え
     const subTab1 = mainWindow.locator('.file-tab', { hasText: 'サブ1' });
     await subTab1.click();
-    await utils.wait(500);
 
     // サブタブのアイテム数を確認
     const subItems = mainWindow.locator('.item');
@@ -278,7 +260,6 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
 
     // メインタブで検索
     await utils.searchFor('GitHub');
-    await utils.wait(300);
 
     // 検索ボックスに文字が入っていることを確認
     const searchBox = mainWindow.locator('input[type="text"]').first();
@@ -288,7 +269,6 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
     // サブ1タブに切り替え
     const subTab1 = mainWindow.locator('.file-tab', { hasText: 'サブ1' });
     await subTab1.click();
-    await utils.wait(500);
 
     // 検索ボックスがクリアされていることを確認
     // （実装によってはクリアされないかもしれないので、その場合はこのテストは失敗する）
@@ -319,18 +299,13 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
       // GitHubアイテムが表示されていることを確認
       const githubItem = mainWindow.locator('.item', { hasText: 'GitHub' });
       await expect(githubItem).toBeVisible();
-
-      await utils.attachScreenshot(testInfo, '初期状態（メインタブ）');
     });
 
     await test.step('GitHubアイテムを右クリックして編集モーダルを開く', async () => {
       await utils.editItemByRightClick('GitHub');
-      await utils.wait(300);
 
       const isModalVisible = await utils.isRegisterModalVisible();
       expect(isModalVisible).toBe(true);
-
-      await utils.attachScreenshot(testInfo, '編集モーダル表示');
     });
 
     await test.step('保存先をサブ1タブに変更して更新', async () => {
@@ -338,14 +313,8 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
       const tabSelect = mainWindow.locator('.register-modal select').last();
       await tabSelect.selectOption({ value: 'data2.txt' });
 
-      await utils.wait(300);
-      await utils.attachScreenshot(testInfo, '保存先変更後');
-
       // 更新ボタンをクリック
       await utils.clickRegisterButton();
-      await utils.wait(500);
-
-      await utils.attachScreenshot(testInfo, '更新後');
     });
 
     await test.step('メインタブからGitHubアイテムが消えたことを確認', async () => {
@@ -360,15 +329,12 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
       // GitHubアイテムが表示されなくなったことを確認
       const githubItem = mainWindow.locator('.item', { hasText: 'GitHub' });
       await expect(githubItem).not.toBeVisible({ timeout: 3000 });
-
-      await utils.attachScreenshot(testInfo, 'メインタブ確認');
     });
 
     await test.step('サブ1タブに切り替えてGitHubアイテムが存在することを確認', async () => {
       // サブ1タブをクリック
       const subTab1 = mainWindow.locator('.file-tab', { hasText: 'サブ1' });
       await subTab1.click();
-      await utils.wait(500);
 
       // サブ1タブがアクティブになったことを確認
       const activeTab = mainWindow.locator('.file-tab.active', { hasText: 'サブ1' });
@@ -377,8 +343,6 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
       // GitHubアイテムがサブ1タブに表示されることを確認
       const githubItem = mainWindow.locator('.item', { hasText: 'GitHub' });
       await expect(githubItem).toBeVisible({ timeout: 5000 });
-
-      await utils.attachScreenshot(testInfo, 'サブ1タブ確認');
     });
 
     await test.step('data.txtとdata2.txtの内容を確認', async () => {
@@ -403,8 +367,6 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
       // タブバーが表示されることを確認
       const tabBar = mainWindow.locator('.file-tab-bar');
       await expect(tabBar).toBeVisible();
-
-      await utils.attachScreenshot(testInfo, 'タブ表示ON初期状態');
     });
 
     await test.step('メインタブにアイテム数が表示される', async () => {
@@ -417,8 +379,6 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
 
       const countText = await mainTabCount.textContent();
       expect(countText).toMatch(/\(\d+\)/);
-
-      await utils.attachScreenshot(testInfo, 'メインタブのアイテム数');
     });
 
     await test.step('サブ1タブにアイテム数が表示される', async () => {
@@ -431,8 +391,6 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
 
       const countText = await subTabCount.textContent();
       expect(countText).toMatch(/\(\d+\)/);
-
-      await utils.attachScreenshot(testInfo, 'サブ1タブのアイテム数');
     });
   });
 
@@ -443,7 +401,6 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
 
     await test.step('マルチタブ機能を有効化', async () => {
       await utils.waitForPageLoad();
-      await utils.attachScreenshot(testInfo, '初期状態');
     });
 
     let mainTabInitialCount: string;
@@ -464,7 +421,6 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
 
     await test.step('検索を実行して各タブのアイテム数が更新されることを確認', async () => {
       await utils.searchFor('GitHub');
-      await utils.wait(300);
 
       const mainTab = mainWindow.locator('.file-tab', { hasText: 'メイン' });
       const mainTabCount = mainTab.locator('.file-tab-count');
@@ -477,14 +433,11 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
       // 各タブのアイテム数が初期値と異なる（または同じ場合もある）ことを確認
       expect(mainTabFiltered).toMatch(/\(\d+\)/);
       expect(subTabFiltered).toMatch(/\(\d+\)/);
-
-      await utils.attachScreenshot(testInfo, '検索後の各タブアイテム数');
     });
 
     await test.step('検索をクリアして各タブのアイテム数が元に戻ることを確認', async () => {
       const searchBox = mainWindow.locator('input[type="text"]').first();
       await searchBox.clear();
-      await utils.wait(300);
 
       const mainTab = mainWindow.locator('.file-tab', { hasText: 'メイン' });
       const mainTabCount = mainTab.locator('.file-tab-count');
@@ -497,8 +450,6 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
       // アイテム数が初期値に戻ることを確認
       expect(mainTabRestored).toBe(mainTabInitialCount);
       expect(subTabRestored).toBe(subTabInitialCount);
-
-      await utils.attachScreenshot(testInfo, 'クリア後の各タブアイテム数');
     });
   });
 
@@ -507,7 +458,6 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
 
     await test.step('マルチタブ機能を有効化', async () => {
       await utils.waitForPageLoad();
-      await utils.attachScreenshot(testInfo, '初期状態');
     });
 
     let mainTabCount: string;
@@ -523,27 +473,21 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
     await test.step('サブ1タブに切り替え', async () => {
       const subTab = mainWindow.locator('.file-tab', { hasText: 'サブ1' });
       await subTab.click();
-      await utils.wait(300);
 
       const count = subTab.locator('.file-tab-count');
       subTabCount = (await count.textContent()) || '';
       expect(subTabCount).toMatch(/\(\d+\)/);
-
-      await utils.attachScreenshot(testInfo, 'サブ1タブに切り替え');
     });
 
     await test.step('メインタブに戻り、アイテム数が変わっていないことを確認', async () => {
       const mainTab = mainWindow.locator('.file-tab', { hasText: 'メイン' });
       await mainTab.click();
-      await utils.wait(300);
 
       const count = mainTab.locator('.file-tab-count');
       const currentCount = (await count.textContent()) || '';
 
       // アイテム数が変わっていないことを確認
       expect(currentCount).toBe(mainTabCount);
-
-      await utils.attachScreenshot(testInfo, 'メインタブに戻る');
     });
   });
 
@@ -560,15 +504,12 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
 
     await test.step('ページロードと初期確認', async () => {
       await utils.waitForPageLoad();
-      await utils.attachScreenshot(testInfo, '初期状態');
     });
 
     await test.step('タブが2つのみ表示されることを確認', async () => {
       const tabs = mainWindow.locator('.file-tab');
       const tabCount = await tabs.count();
       expect(tabCount).toBe(2);
-
-      await utils.attachScreenshot(testInfo, 'タブ数確認');
     });
 
     await test.step('統合タブとサブ1タブが表示されることを確認', async () => {
@@ -577,8 +518,6 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
 
       const subTab = mainWindow.locator('.file-tab', { hasText: 'サブ1' });
       await expect(subTab).toBeVisible();
-
-      await utils.attachScreenshot(testInfo, 'タブ名確認');
     });
   });
 
@@ -596,8 +535,6 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
       // 統合タブがアクティブであることを確認
       const unifiedTab = mainWindow.locator('.file-tab.active', { hasText: '統合タブ' });
       await expect(unifiedTab).toBeVisible();
-
-      await utils.attachScreenshot(testInfo, '統合タブがアクティブ');
     });
 
     await test.step('data.txtのアイテムが表示されることを確認', async () => {
@@ -616,8 +553,6 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
         const item = mainWindow.locator('.item', { hasText: itemName });
         await expect(item).toBeVisible({ timeout: 5000 });
       }
-
-      await utils.attachScreenshot(testInfo, '統合タブのアイテム確認');
     });
   });
 
@@ -631,7 +566,6 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
 
     await test.step('ページロードと統合タブの確認', async () => {
       await utils.waitForPageLoad();
-      await utils.attachScreenshot(testInfo, '初期状態');
     });
 
     await test.step('統合タブのアイテム数を確認', async () => {
@@ -649,8 +583,6 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
       // タブに表示されているアイテム数と実際のアイテム数が一致することを確認
       const displayedCount = parseInt(countText.match(/\((\d+)\)/)?.[1] || '0');
       expect(displayedCount).toBe(actualCount);
-
-      await utils.attachScreenshot(testInfo, 'アイテム数確認');
     });
   });
 
@@ -672,16 +604,11 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
       // data3.txtのアイテムも表示されていることを確認
       const qiitaItem = mainWindow.locator('.item', { hasText: 'Qiita' });
       await expect(qiitaItem).toBeVisible();
-
-      await utils.attachScreenshot(testInfo, '統合タブ初期状態');
     });
 
     await test.step('サブ1タブに切り替え', async () => {
       const subTab = mainWindow.locator('.file-tab', { hasText: 'サブ1' });
       await subTab.click();
-      await utils.wait(500);
-
-      await utils.attachScreenshot(testInfo, 'サブ1タブに切り替え');
     });
 
     await test.step('統合タブのアイテムが表示されないことを確認', async () => {
@@ -696,8 +623,6 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
       // data2.txtのアイテムが表示されることを確認
       const redditItem = mainWindow.locator('.item', { hasText: 'Reddit' });
       await expect(redditItem).toBeVisible();
-
-      await utils.attachScreenshot(testInfo, 'サブ1タブのアイテム確認');
     });
   });
 
@@ -720,34 +645,25 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
       const allItems = mainWindow.locator('.item');
       const initialCount = await allItems.count();
       expect(initialCount).toBeGreaterThan(0);
-
-      await utils.attachScreenshot(testInfo, '検索前');
     });
 
     await test.step('data.txtのアイテムで検索', async () => {
       await utils.searchFor('GitHub');
-      await utils.wait(300);
 
       // GitHubアイテムが表示されることを確認（data.txtのアイテム）
       const githubItem = mainWindow.locator('.item', { hasText: 'GitHub' });
       await expect(githubItem).toBeVisible();
-
-      await utils.attachScreenshot(testInfo, 'data.txtアイテム検索結果');
     });
 
     await test.step('検索をクリアしてdata3.txtのアイテムで検索', async () => {
       const searchBox = mainWindow.locator('input[type="text"]').first();
       await searchBox.clear();
-      await utils.wait(100);
 
       await utils.searchFor('Qiita');
-      await utils.wait(300);
 
       // Qiitaアイテムが表示されることを確認（data3.txtのアイテム）
       const qiitaItem = mainWindow.locator('.item', { hasText: 'Qiita' });
       await expect(qiitaItem).toBeVisible();
-
-      await utils.attachScreenshot(testInfo, 'data3.txtアイテム検索結果');
     });
   });
 
@@ -766,8 +682,6 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
 
       const unifiedTab = mainWindow.locator('.file-tab.active', { hasText: '統合タブ' });
       await expect(unifiedTab).toBeVisible();
-
-      await utils.attachScreenshot(testInfo, '初期状態');
     });
 
     let firstItemText: string | null;
@@ -777,13 +691,10 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
       const firstItem = mainWindow.locator('.item.selected').first();
       await expect(firstItem).toBeVisible();
       firstItemText = await firstItem.textContent();
-
-      await utils.attachScreenshot(testInfo, '最初のアイテム選択');
     });
 
     await test.step('↑キーを押して最後のアイテムに移動することを確認', async () => {
       await utils.sendShortcut('ArrowUp');
-      await utils.wait(100);
 
       const selectedItem = mainWindow.locator('.item.selected');
       await expect(selectedItem).toBeVisible();
@@ -791,13 +702,10 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
 
       // 最初のアイテムとは異なることを確認（循環して最後のアイテムに移動）
       expect(lastItemText).not.toBe(firstItemText);
-
-      await utils.attachScreenshot(testInfo, '↑キーで最後のアイテムに移動');
     });
 
     await test.step('↓キーを押して最初のアイテムに戻ることを確認', async () => {
       await utils.sendShortcut('ArrowDown');
-      await utils.wait(100);
 
       const selectedItem = mainWindow.locator('.item.selected');
       await expect(selectedItem).toBeVisible();
@@ -805,8 +713,6 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
 
       // 最初のアイテムに戻ることを確認
       expect(currentItemText).toBe(firstItemText);
-
-      await utils.attachScreenshot(testInfo, '↓キーで最初のアイテムに戻る');
     });
   });
 
@@ -823,33 +729,25 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
 
       const unifiedTab = mainWindow.locator('.file-tab.active', { hasText: '統合タブ' });
       await expect(unifiedTab).toBeVisible();
-
-      await utils.attachScreenshot(testInfo, '初期状態');
     });
 
     let selectedItemText: string | null;
 
     await test.step('↓キーで2番目のアイテムに移動', async () => {
       await utils.sendShortcut('ArrowDown');
-      await utils.wait(100);
 
       const selectedItem = mainWindow.locator('.item.selected');
       await expect(selectedItem).toBeVisible();
       selectedItemText = await selectedItem.textContent();
-
-      await utils.attachScreenshot(testInfo, '2番目のアイテム選択');
     });
 
     await test.step('Enterキーを押してアイテムを開く（エラーが発生しないことを確認）', async () => {
       // Enterキーを押す（実際にアプリやURLが開くが、テストでは開けないのでエラーにならないことのみ確認）
       await utils.sendShortcut('Enter');
-      await utils.wait(300);
 
       // エラーダイアログが表示されていないことを確認
       const alertDialog = mainWindow.locator('.alert-dialog');
       await expect(alertDialog).not.toBeVisible();
-
-      await utils.attachScreenshot(testInfo, 'Enterキー押下後');
     });
   });
 
@@ -866,31 +764,23 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
 
       const unifiedTab = mainWindow.locator('.file-tab.active', { hasText: '統合タブ' });
       await expect(unifiedTab).toBeVisible();
-
-      await utils.attachScreenshot(testInfo, '初期状態');
     });
 
     await test.step('↓キーを5回押して5番目のアイテムに移動', async () => {
       for (let i = 0; i < 5; i++) {
         await utils.sendShortcut('ArrowDown');
-        await utils.wait(50);
       }
 
       const selectedItem = mainWindow.locator('.item.selected');
       await expect(selectedItem).toBeVisible();
-
-      await utils.attachScreenshot(testInfo, '5番目のアイテム選択');
     });
 
     await test.step('Enterキーを押してアイテムを開く', async () => {
       await utils.sendShortcut('Enter');
-      await utils.wait(300);
 
       // エラーダイアログが表示されていないことを確認
       const alertDialog = mainWindow.locator('.alert-dialog');
       await expect(alertDialog).not.toBeVisible();
-
-      await utils.attachScreenshot(testInfo, 'Enterキー押下後');
     });
   });
 
@@ -913,8 +803,6 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
       const allItems = mainWindow.locator('.item');
       const itemCount = await allItems.count();
       expect(itemCount).toBe(11);
-
-      await utils.attachScreenshot(testInfo, '初期状態');
     });
 
     await test.step('↓キーを11回押して全アイテムを巡回', async () => {
@@ -928,14 +816,11 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
         }
 
         await utils.sendShortcut('ArrowDown');
-        await utils.wait(50);
       }
 
       // 11個の異なるアイテムを訪問したことを確認
       const uniqueItems = new Set(visitedItems);
       expect(uniqueItems.size).toBe(11);
-
-      await utils.attachScreenshot(testInfo, '全アイテム巡回後');
     });
 
     await test.step('最初のアイテムに戻っていることを確認', async () => {
@@ -946,8 +831,6 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
 
       // 選択されているアイテムが最初のアイテムであることを確認
       expect(selectedText).toBe(firstText);
-
-      await utils.attachScreenshot(testInfo, '最初のアイテムに戻る');
     });
   });
 });

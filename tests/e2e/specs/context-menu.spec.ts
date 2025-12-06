@@ -67,10 +67,7 @@ $Shortcut.Save()
     const utils = new TestUtils(mainWindow);
 
     await test.step('通常のアイテムを右クリックするとメニューが表示される', async () => {
-      await utils.attachScreenshot(testInfo, '初期状態');
       await utils.rightClickItem('Google');
-      await utils.wait(300);
-      await utils.attachScreenshot(testInfo, 'コンテキストメニュー表示');
 
       const contextMenu = mainWindow.locator('.context-menu');
       await expect(contextMenu).toBeVisible();
@@ -90,8 +87,6 @@ $Shortcut.Save()
 
     await test.step('Webサイトアイテムには親フォルダメニューが表示されない', async () => {
       await utils.rightClickItem('Google');
-      await utils.wait(300);
-      await utils.attachScreenshot(testInfo, 'Webサイトのメニュー');
 
       const editItem = mainWindow.locator('.context-menu-item', { hasText: '編集' });
       const copyPathItem = mainWindow.locator('.context-menu-item', { hasText: 'パスをコピー' });
@@ -112,8 +107,6 @@ $Shortcut.Save()
 
     await test.step('アプリケーションアイテムには親フォルダメニューが表示される', async () => {
       await utils.rightClickItem('メモ帳');
-      await utils.wait(300);
-      await utils.attachScreenshot(testInfo, 'アプリケーションのメニュー');
 
       const copyParentPathItem = mainWindow.locator('.context-menu-item', {
         hasText: '親フォルダーのパスをコピー',
@@ -133,10 +126,7 @@ $Shortcut.Save()
     const utils = new TestUtils(mainWindow);
 
     await test.step('ショートカットを右クリックするとメニューが表示される', async () => {
-      await utils.attachScreenshot(testInfo, '初期状態');
       await utils.rightClickItem('テストショートカット');
-      await utils.wait(300);
-      await utils.attachScreenshot(testInfo, 'ショートカットメニュー表示');
 
       const contextMenu = mainWindow.locator('.context-menu');
       await expect(contextMenu).toBeVisible();
@@ -186,8 +176,6 @@ $Shortcut.Save()
     });
 
     await test.step('アイコンが正しく表示される', async () => {
-      await utils.attachScreenshot(testInfo, 'アイコン確認');
-
       // 編集アイコン
       const editIcon = mainWindow.locator('.context-menu-item:has-text("編集") .context-menu-icon');
       await expect(editIcon).toContainText('✏️');
@@ -215,14 +203,11 @@ $Shortcut.Save()
 
     await test.step('Escapeキーでメニューが閉じる', async () => {
       await utils.rightClickItem('メモ帳');
-      await utils.wait(300);
 
       let contextMenu = mainWindow.locator('.context-menu');
       await expect(contextMenu).toBeVisible();
 
       await mainWindow.keyboard.press('Escape');
-      await utils.wait(300);
-      await utils.attachScreenshot(testInfo, 'Escapeキーで閉じた後');
 
       contextMenu = mainWindow.locator('.context-menu');
       const count = await contextMenu.count();
@@ -231,15 +216,13 @@ $Shortcut.Save()
 
     await test.step('メニュー外をクリックするとメニューが閉じる', async () => {
       await utils.rightClickItem('メモ帳');
-      await utils.wait(300);
 
       let contextMenu = mainWindow.locator('.context-menu');
       await expect(contextMenu).toBeVisible();
 
-      // メニュー外をクリック
-      await mainWindow.click('body', { position: { x: 10, y: 10 } });
-      await utils.wait(300);
-      await utils.attachScreenshot(testInfo, 'メニュー外クリックで閉じた後');
+      // メニュー外をクリック（検索ボックスをクリック）
+      const searchBox = mainWindow.locator('input[type="text"]').first();
+      await searchBox.click();
 
       contextMenu = mainWindow.locator('.context-menu');
       const count = await contextMenu.count();
@@ -254,8 +237,6 @@ $Shortcut.Save()
 
     await test.step('編集メニューが表示され、クリック可能である', async () => {
       await utils.rightClickItem('Google');
-      await utils.wait(300);
-      await utils.attachScreenshot(testInfo, 'コンテキストメニュー表示');
 
       // 編集メニューが存在するか確認
       const editItem = mainWindow.locator('.context-menu-item', { hasText: '編集' });
@@ -263,13 +244,11 @@ $Shortcut.Save()
 
       // 編集メニューをクリック
       await editItem.click();
-      await utils.wait(500);
 
       // メニューが閉じたことを確認
       const contextMenu = mainWindow.locator('.context-menu');
       const menuCount = await contextMenu.count();
       expect(menuCount).toBe(0);
-      await utils.attachScreenshot(testInfo, '編集メニュークリック後');
     });
   });
 
@@ -278,21 +257,17 @@ $Shortcut.Save()
 
     await test.step('パスをコピーメニューをクリックするとメニューが閉じる', async () => {
       await utils.rightClickItem('メモ帳');
-      await utils.wait(500);
-      await utils.attachScreenshot(testInfo, 'メニュー表示');
 
       // 「パスをコピー」メニュー項目を探す（:has-text()で部分一致）
       const copyPathItem = mainWindow
         .locator('.context-menu-item:has-text("パスをコピー")')
         .first();
       await copyPathItem.click();
-      await utils.wait(500);
 
       // メニューが閉じたことを確認
       const contextMenu = mainWindow.locator('.context-menu');
       const count = await contextMenu.count();
       expect(count).toBe(0);
-      await utils.attachScreenshot(testInfo, 'パスコピー後');
     });
   });
 
@@ -303,7 +278,6 @@ $Shortcut.Save()
       // ショートカットアイテムが存在するか確認
       const items = mainWindow.locator('.item');
       const itemCount = await items.count();
-      await utils.attachScreenshot(testInfo, `アイテム一覧（${itemCount}件）`);
 
       // アイテム名をすべて出力（デバッグ用）
       for (let i = 0; i < itemCount; i++) {
@@ -321,8 +295,6 @@ $Shortcut.Save()
 
       if (shortcutCount > 0) {
         await shortcutItem.click({ button: 'right' });
-        await utils.wait(500);
-        await utils.attachScreenshot(testInfo, 'ショートカットメニュー表示');
 
         // リンク先の親フォルダーを開くメニューが存在するか確認
         const openShortcutParentFolderItem = mainWindow.locator('.context-menu-item').filter({
@@ -335,18 +307,12 @@ $Shortcut.Save()
 
           // メニューをクリック
           await openShortcutParentFolderItem.first().click();
-          await utils.wait(500);
 
           // メニューが閉じたことを確認
           const contextMenu = mainWindow.locator('.context-menu');
           const contextCount = await contextMenu.count();
           expect(contextCount).toBe(0);
-          await utils.attachScreenshot(testInfo, 'メニュー閉じた後');
-        } else {
-          await utils.attachScreenshot(testInfo, 'メニュー項目なし');
         }
-      } else {
-        await utils.attachScreenshot(testInfo, 'ショートカットアイテムなし');
       }
     });
   });
@@ -359,8 +325,6 @@ $Shortcut.Save()
     await test.step('メニューが画面内に収まるように調整される', async () => {
       // アイテムを右クリック
       await utils.rightClickItem('Google');
-      await utils.wait(300);
-      await utils.attachScreenshot(testInfo, 'メニュー位置確認');
 
       const contextMenu = mainWindow.locator('.context-menu');
       await expect(contextMenu).toBeVisible();

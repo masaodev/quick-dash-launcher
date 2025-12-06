@@ -11,7 +11,6 @@ test.describe('QuickDashLauncher - 基本UI機能テスト', () => {
 
     await test.step('ページの読み込み完了を待機', async () => {
       await utils.waitForPageLoad();
-      await utils.attachScreenshot(testInfo, '初期状態');
     });
 
     await test.step('アイテムリストとアイテムの表示確認', async () => {
@@ -46,8 +45,6 @@ test.describe('QuickDashLauncher - 基本UI機能テスト', () => {
       const nameText = await name.textContent();
       expect(nameText).toBeTruthy();
       expect(nameText?.length).toBeGreaterThan(0);
-
-      await utils.attachScreenshot(testInfo, 'アイコン・ラベル確認');
     });
 
     await test.step('既知のアイテムが表示されることを確認', async () => {
@@ -58,7 +55,6 @@ test.describe('QuickDashLauncher - 基本UI機能テスト', () => {
         const item = mainWindow.locator('.item', { hasText: itemName });
         await expect(item).toBeVisible();
       }
-      await utils.attachScreenshot(testInfo, '既知アイテム確認');
     });
   });
 
@@ -70,7 +66,6 @@ test.describe('QuickDashLauncher - 基本UI機能テスト', () => {
 
     await test.step('ページの読み込み完了を待機', async () => {
       await utils.waitForPageLoad();
-      await utils.attachScreenshot(testInfo, '初期状態');
     });
 
     await test.step('最初のアイテムが選択されていることを確認', async () => {
@@ -83,8 +78,6 @@ test.describe('QuickDashLauncher - 基本UI機能テスト', () => {
 
     await test.step('↓キーを押して選択を移動', async () => {
       await utils.sendShortcut('ArrowDown');
-      await utils.wait(100);
-      await utils.attachScreenshot(testInfo, '↓キー押下後');
 
       const selectedItem = mainWindow.locator('.item.selected');
       await expect(selectedItem).toBeVisible();
@@ -96,8 +89,6 @@ test.describe('QuickDashLauncher - 基本UI機能テスト', () => {
 
     await test.step('さらに↓キーを押して選択を移動', async () => {
       await utils.sendShortcut('ArrowDown');
-      await utils.wait(100);
-      await utils.attachScreenshot(testInfo, '↓キー2回押下後');
     });
 
     let currentItemText: string | null;
@@ -109,8 +100,6 @@ test.describe('QuickDashLauncher - 基本UI機能テスト', () => {
 
     await test.step('↑キーを押して選択が上に移動することを確認', async () => {
       await utils.sendShortcut('ArrowUp');
-      await utils.wait(100);
-      await utils.attachScreenshot(testInfo, '↑キー押下後');
 
       const selectedItem = mainWindow.locator('.item.selected');
       await expect(selectedItem).toBeVisible();
@@ -126,14 +115,11 @@ test.describe('QuickDashLauncher - 基本UI機能テスト', () => {
 
     await test.step('ページの読み込み完了を待機', async () => {
       await utils.waitForPageLoad();
-      await utils.attachScreenshot(testInfo, '初期状態');
     });
 
     await test.step('2番目のアイテムにマウスホバー', async () => {
       const secondItem = mainWindow.locator('.item').nth(1);
       await secondItem.hover();
-      await utils.wait(100);
-      await utils.attachScreenshot(testInfo, 'ホバー後');
     });
 
     await test.step('ホバーしたアイテムが選択されていることを確認', async () => {
@@ -160,8 +146,6 @@ test.describe('QuickDashLauncher - 基本UI機能テスト', () => {
       // 検索ボックスにフォーカスがあることを確認
       const searchBox = mainWindow.locator('input[type="text"]').first();
       await expect(searchBox).toBeFocused();
-
-      await utils.attachScreenshot(testInfo, '初期状態');
     });
 
     await test.step('検索前の全アイテム数を取得', async () => {
@@ -172,7 +156,6 @@ test.describe('QuickDashLauncher - 基本UI機能テスト', () => {
 
     await test.step('"GitHub"で検索して絞り込みを確認', async () => {
       await utils.searchFor('GitHub');
-      await utils.wait(300);
 
       // 検索後のアイテム数を取得
       const filteredItems = mainWindow.locator('.item, [class*="item"]:visible');
@@ -185,8 +168,6 @@ test.describe('QuickDashLauncher - 基本UI機能テスト', () => {
       // GitHubを含むアイテムが表示されていることを確認
       const hasGitHub = await mainWindow.locator('text=GitHub').isVisible();
       expect(hasGitHub).toBe(true);
-
-      await utils.attachScreenshot(testInfo, '検索後');
     });
   });
 
@@ -196,7 +177,6 @@ test.describe('QuickDashLauncher - 基本UI機能テスト', () => {
 
     await test.step('ページの読み込み完了を待機', async () => {
       await utils.waitForPageLoad();
-      await utils.attachScreenshot(testInfo, '初期状態');
     });
 
     await test.step('検索前の全アイテム数を取得', async () => {
@@ -206,15 +186,11 @@ test.describe('QuickDashLauncher - 基本UI機能テスト', () => {
 
     await test.step('検索を実行', async () => {
       await utils.searchFor('Test');
-      await utils.wait(300);
-      await utils.attachScreenshot(testInfo, '検索実行後');
     });
 
     await test.step('検索ボックスをクリア', async () => {
       const searchBox = mainWindow.locator('input[type="text"]').first();
       await searchBox.clear();
-      await utils.wait(300);
-      await utils.attachScreenshot(testInfo, 'クリア後');
     });
 
     await test.step('全アイテムが再び表示されることを確認', async () => {
@@ -230,7 +206,6 @@ test.describe('QuickDashLauncher - 基本UI機能テスト', () => {
 
     await test.step('ページの読み込み完了を待機', async () => {
       await utils.waitForPageLoad();
-      await utils.attachScreenshot(testInfo, '初期状態');
     });
 
     await test.step('検索前の全アイテム数を取得', async () => {
@@ -241,8 +216,6 @@ test.describe('QuickDashLauncher - 基本UI機能テスト', () => {
     await test.step('複数キーワードで検索', async () => {
       // スペース区切りで複数キーワードを入力（実際に存在するアイテムの一部を検索）
       await utils.searchFor('Git Hub');
-      await utils.wait(300);
-      await utils.attachScreenshot(testInfo, 'AND検索実行後');
     });
 
     await test.step('検索結果を確認', async () => {
@@ -274,8 +247,6 @@ test.describe('QuickDashLauncher - 基本UI機能テスト', () => {
       // タブバーが表示されていないことを確認
       const tabBar = mainWindow.locator('.file-tab-bar');
       await expect(tabBar).not.toBeVisible();
-
-      await utils.attachScreenshot(testInfo, 'タブ表示OFF初期状態');
     });
 
     await test.step('検索情報バーとアイテム数が表示される', async () => {
@@ -290,8 +261,6 @@ test.describe('QuickDashLauncher - 基本UI機能テスト', () => {
       // アイテム数が「〇〇件」形式で表示されることを確認
       const countText = await itemCount.textContent();
       expect(countText).toMatch(/\d+件/);
-
-      await utils.attachScreenshot(testInfo, 'アイテム数表示確認');
     });
   });
 
@@ -302,7 +271,6 @@ test.describe('QuickDashLauncher - 基本UI機能テスト', () => {
 
     await test.step('ページ読み込み', async () => {
       await utils.waitForPageLoad();
-      await utils.attachScreenshot(testInfo, '初期状態');
     });
 
     let initialCount: string;
@@ -315,7 +283,6 @@ test.describe('QuickDashLauncher - 基本UI機能テスト', () => {
 
     await test.step('検索を実行してアイテム数が減少することを確認', async () => {
       await utils.searchFor('GitHub');
-      await utils.wait(300);
 
       const itemCount = mainWindow.locator('.item-count-display');
       const filteredCount = (await itemCount.textContent()) || '';
@@ -325,22 +292,17 @@ test.describe('QuickDashLauncher - 基本UI機能テスト', () => {
       const filteredNum = parseInt(filteredCount.match(/\d+/)?.[0] || '0');
       expect(filteredNum).toBeLessThan(initialNum);
       expect(filteredNum).toBeGreaterThan(0);
-
-      await utils.attachScreenshot(testInfo, '検索後のアイテム数');
     });
 
     await test.step('検索をクリアしてアイテム数が元に戻ることを確認', async () => {
       const searchBox = mainWindow.locator('input[type="text"]').first();
       await searchBox.clear();
-      await utils.wait(300);
 
       const itemCount = mainWindow.locator('.item-count-display');
       const restoredCount = (await itemCount.textContent()) || '';
 
       // アイテム数が初期値に戻ることを確認
       expect(restoredCount).toBe(initialCount);
-
-      await utils.attachScreenshot(testInfo, 'クリア後のアイテム数');
     });
   });
 });

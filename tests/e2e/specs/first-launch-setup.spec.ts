@@ -9,7 +9,6 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
       expect(electronApp).toBeTruthy();
       expect(mainWindow).toBeTruthy();
       await utils.waitForPageLoad();
-      await utils.attachScreenshot(testInfo, '初回起動画面');
     });
 
     await test.step('初回設定画面のタイトルが表示されていることを確認', async () => {
@@ -27,7 +26,6 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
 
     await test.step('ページの読み込み完了を待機', async () => {
       await utils.waitForPageLoad();
-      await utils.attachScreenshot(testInfo, '初期状態');
     });
 
     await test.step('必要な要素が表示されていることを確認', async () => {
@@ -54,8 +52,6 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
       // 完了ボタンが表示されていることを確認
       const completeButtonExists = await utils.elementExists('.complete-button');
       expect(completeButtonExists).toBe(true);
-
-      await utils.attachScreenshot(testInfo, '全要素確認');
     });
   });
 
@@ -65,7 +61,6 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
     await test.step('ページの読み込み完了を待機', async () => {
       await utils.waitForPageLoad();
       await utils.waitForElement('.hotkey-input');
-      await utils.attachScreenshot(testInfo, '初期状態');
     });
 
     await test.step('デフォルトのホットキーが表示されていることを確認', async () => {
@@ -103,9 +98,6 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
     // ESCキーを押す
     await mainWindow.keyboard.press('Escape');
 
-    // 少し待機
-    await utils.wait(500);
-
     // 初回設定画面が依然として表示されていることを確認
     const titleStillExists = await utils.elementExists('.first-launch-title');
     expect(titleStillExists).toBe(true);
@@ -115,8 +107,6 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('Electronのセキュリティ設定をチェック', async () => {
-      await utils.attachScreenshot(testInfo, '初期状態');
-
       // Electronのセキュリティ設定をチェック
       const hasNodeIntegration = await mainWindow
         .evaluate(() => {
@@ -148,9 +138,6 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
     await utils.waitForElement('.complete-button');
     await mainWindow.click('.complete-button');
 
-    // 少し待機（ファイル作成・更新の時間を確保）
-    await utils.wait(1000);
-
     // settings.jsonが存在し、設定が保存されたことを確認
     expect(configHelper.fileExists('settings.json')).toBe(true);
 
@@ -174,9 +161,6 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
 
     // 完了ボタンをクリック
     await mainWindow.click('.complete-button');
-
-    // 少し待機（ファイル作成の時間を確保）
-    await utils.wait(1000);
 
     // 設定ファイルの内容を確認
     const settings = configHelper.readSettings();
@@ -203,18 +187,12 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
     // Ctrl+Shift+Aを入力
     await mainWindow.keyboard.press('Control+Shift+A');
 
-    // 少し待機（入力が反映されるのを待つ）
-    await utils.wait(500);
-
     // 変更されたホットキー値を確認
     const hotkeyValue = await hotkeyInput.inputValue();
     expect(hotkeyValue).toBe('Ctrl+Shift+A');
 
     // 完了ボタンをクリック
     await mainWindow.click('.complete-button');
-
-    // 少し待機（ファイル作成の時間を確保）
-    await utils.wait(1000);
 
     // 設定ファイルの内容を確認
     const settings = configHelper.readSettings();
