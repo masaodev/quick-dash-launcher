@@ -115,6 +115,10 @@ export interface BrowserInfo {
  * electron-storeを使用して永続化される
  */
 export interface AppSettings {
+  /** この設定ファイルを作成したアプリバージョン（初回作成時のみ記録） */
+  createdWithVersion?: string;
+  /** この設定ファイルを最後に更新したアプリバージョン */
+  updatedWithVersion?: string;
   /** グローバルホットキー（デフォルト: 'Alt+Space'） */
   hotkey: string;
   /** ウィンドウの初期幅（デフォルト: 600） */
