@@ -43,7 +43,7 @@ export async function createSplashWindow(): Promise<BrowserWindow> {
     }
     windowLogger.info('スプラッシュウィンドウのHTMLを読み込み完了');
   } catch (error) {
-    windowLogger.error('スプラッシュウィンドウのHTML読み込みエラー:', error);
+    windowLogger.error({ error }, 'スプラッシュウィンドウのHTML読み込みエラー');
   }
 
   splashWindow.on('closed', () => {

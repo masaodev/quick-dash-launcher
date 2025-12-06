@@ -41,7 +41,7 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
         return allSettings;
       }
     } catch (error) {
-      logger.error('Failed to get settings:', error);
+      logger.error({ error }, 'Failed to get settings');
       throw error;
     }
   });
@@ -63,7 +63,7 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
 
         return true;
       } catch (error) {
-        logger.error(`Failed to set setting ${key}:`, error);
+        logger.error({ error, key }, 'Failed to set setting');
         throw error;
       }
     }
@@ -74,7 +74,7 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
     try {
       const settingsService = await SettingsService.getInstance();
       await settingsService.setMultiple(settings);
-      logger.info('Settings set multiple request:', settings);
+      logger.info({ settings }, 'Settings set multiple request');
 
       // ホットキーが設定された場合、初回起動モードを解除
       if (settings.hotkey && settings.hotkey.trim() !== '' && setFirstLaunchMode) {
@@ -93,7 +93,7 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
 
       return true;
     } catch (error) {
-      logger.error('Failed to set multiple settings:', error);
+      logger.error({ error }, 'Failed to set multiple settings');
       throw error;
     }
   });
@@ -114,7 +114,7 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
 
       return true;
     } catch (error) {
-      logger.error('Failed to reset settings:', error);
+      logger.error({ error }, 'Failed to reset settings');
       throw error;
     }
   });
@@ -127,7 +127,7 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
       logger.info(`Hotkey validation request: ${hotkey} = ${result.isValid}`);
       return result;
     } catch (error) {
-      logger.error('Failed to validate hotkey:', error);
+      logger.error({ error }, 'Failed to validate hotkey');
       throw error;
     }
   });
@@ -140,7 +140,7 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
       logger.info(`Settings config path request: ${path}`);
       return path;
     } catch (error) {
-      logger.error('Failed to get config path:', error);
+      logger.error({ error }, 'Failed to get config path');
       throw error;
     }
   });
@@ -153,7 +153,7 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
       logger.info(`Hotkey change request: ${newHotkey} = ${success ? 'success' : 'failed'}`);
       return success;
     } catch (error) {
-      logger.error(`Failed to change hotkey to ${newHotkey}:`, error);
+      logger.error({ error, newHotkey }, 'Failed to change hotkey');
       throw error;
     }
   });
@@ -166,7 +166,7 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
       logger.info(`Hotkey availability check: ${hotkey} = ${isAvailable}`);
       return isAvailable;
     } catch (error) {
-      logger.error(`Failed to check hotkey availability ${hotkey}:`, error);
+      logger.error({ error, hotkey }, 'Failed to check hotkey availability');
       throw error;
     }
   });

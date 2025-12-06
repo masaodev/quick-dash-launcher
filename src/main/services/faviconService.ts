@@ -63,7 +63,7 @@ export class FaviconService {
 
       return null;
     } catch (error) {
-      faviconLogger.error('ファビコンの取得に失敗しました', { error });
+      faviconLogger.error({ error }, 'ファビコンの取得に失敗しました');
       return null;
     }
   }
@@ -74,17 +74,16 @@ export class FaviconService {
     // 各ソースを順番に試す
     for (const source of sources) {
       try {
-        faviconLogger.info('ファビコンダウンロードを試行', {
-          url: source.url,
-          size: source.size,
-          isOgImage: source.isOgImage,
-        });
+        faviconLogger.info(
+          { url: source.url, size: source.size, isOgImage: source.isOgImage },
+          'ファビコンダウンロードを試行'
+        );
         const data = await this.downloadFavicon(source.url);
         if (data && data.length > 0) {
-          faviconLogger.info('ファビコンダウンロード成功', {
-            url: source.url,
-            dataSize: data.length,
-          });
+          faviconLogger.info(
+            { url: source.url, dataSize: data.length },
+            'ファビコンダウンロード成功'
+          );
           return data;
         }
       } catch (error) {
@@ -97,7 +96,7 @@ export class FaviconService {
             errorMessage = `HTTPエラー (${error.message})`;
           }
         }
-        faviconLogger.info(errorMessage, { url: source.url, error });
+        faviconLogger.info({ url: source.url, error }, errorMessage);
       }
     }
 
@@ -120,7 +119,7 @@ export class FaviconService {
           errorMessage = 'HTMLダウンロードがタイムアウト（標準的なファビコンソースを試行）';
         }
       }
-      faviconLogger.info(errorMessage, { error });
+      faviconLogger.info({ error }, errorMessage);
     }
 
     // 2. 標準的な場所を確認
@@ -211,7 +210,7 @@ export class FaviconService {
             const manifestUrl = this.resolveUrl(match[1], origin);
             if (manifestUrl) {
               // 今はマニフェストの解析はスキップ
-              faviconLogger.info('マニフェストファイル検出', { manifestUrl });
+              faviconLogger.info({ manifestUrl }, 'マニフェストファイル検出');
             }
           } else {
             const iconUrl = this.resolveUrl(match[1], origin);
@@ -226,14 +225,17 @@ export class FaviconService {
       }
 
       // デバッグ用：取得したソースをログ出力
-      faviconLogger.info('HTMLから取得したファビコンソース', {
-        url,
-        sources: sources.map((s) => ({
-          url: s.url,
-          size: s.size,
-          isOgImage: s.isOgImage,
-        })),
-      });
+      faviconLogger.info(
+        {
+          url,
+          sources: sources.map((s) => ({
+            url: s.url,
+            size: s.size,
+            isOgImage: s.isOgImage,
+          })),
+        },
+        'HTMLから取得したファビコンソース'
+      );
 
       // 優先度の高い順にソート
       sources.sort((a, b) => {
@@ -261,16 +263,19 @@ export class FaviconService {
       });
 
       // デバッグ用：ソート後のソースをログ出力
-      faviconLogger.info('ソート後のファビコンソース', {
-        url,
-        sortedSources: sources.map((s) => ({
-          url: s.url,
-          size: s.size,
-          isOgImage: s.isOgImage,
-        })),
-      });
+      faviconLogger.info(
+        {
+          url,
+          sortedSources: sources.map((s) => ({
+            url: s.url,
+            size: s.size,
+            isOgImage: s.isOgImage,
+          })),
+        },
+        'ソート後のファビコンソース'
+      );
     } catch (error) {
-      faviconLogger.error('HTML解析エラー', { error });
+      faviconLogger.error({ error }, 'HTML解析エラー');
     }
 
     return sources;
@@ -395,7 +400,7 @@ export class FaviconService {
         return new URL(url, base).href;
       }
     } catch (error) {
-      faviconLogger.error('URL解決エラー', { error });
+      faviconLogger.error({ error }, 'URL解決エラー');
       return null;
     }
   }

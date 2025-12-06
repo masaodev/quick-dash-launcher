@@ -50,7 +50,7 @@ export class HotkeyService {
       const hotkey = await this.settingsService.get('hotkey');
       return this.setHotkey(hotkey);
     } catch (error) {
-      logger.error('Failed to register hotkey from settings:', error);
+      logger.error({ error }, 'Failed to register hotkey from settings');
       return false;
     }
   }
@@ -85,7 +85,7 @@ export class HotkeyService {
         return false;
       }
     } catch (error) {
-      logger.error(`Error registering hotkey ${hotkey}:`, error);
+      logger.error({ error, hotkey }, 'Error registering hotkey');
       return false;
     }
   }
@@ -99,7 +99,7 @@ export class HotkeyService {
         globalShortcut.unregister(this.currentHotkey);
         logger.info(`Hotkey unregistered: ${this.currentHotkey}`);
       } catch (error) {
-        logger.error(`Error unregistering hotkey ${this.currentHotkey}:`, error);
+        logger.error({ error, hotkey: this.currentHotkey }, 'Error unregistering hotkey');
       }
       this.currentHotkey = null;
     }
@@ -114,7 +114,7 @@ export class HotkeyService {
       this.currentHotkey = null;
       logger.info('All hotkeys unregistered');
     } catch (error) {
-      logger.error('Error unregistering all hotkeys:', error);
+      logger.error({ error }, 'Error unregistering all hotkeys');
     }
   }
 
@@ -137,7 +137,7 @@ export class HotkeyService {
       }
       return false;
     } catch (error) {
-      logger.error(`Error checking hotkey availability ${hotkey}:`, error);
+      logger.error({ error, hotkey }, 'Error checking hotkey availability');
       return false;
     }
   }
@@ -166,7 +166,7 @@ export class HotkeyService {
         }
       }
     } catch (error) {
-      logger.error('Error handling hotkey press:', error);
+      logger.error({ error }, 'Error handling hotkey press');
     }
   }
 
@@ -204,7 +204,7 @@ export class HotkeyService {
 
       return success;
     } catch (error) {
-      logger.error(`Error changing hotkey to ${newHotkey}:`, error);
+      logger.error({ error, newHotkey }, 'Error changing hotkey');
       return false;
     }
   }

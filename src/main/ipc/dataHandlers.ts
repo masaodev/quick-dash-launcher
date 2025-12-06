@@ -193,7 +193,7 @@ function processShortcut(
       };
     }
   } catch (error) {
-    dataLogger.error('ショートカットの読み込みに失敗', { filePath, error });
+    dataLogger.error({ filePath, error }, 'ショートカットの読み込みに失敗');
   }
 
   return null;
@@ -248,7 +248,7 @@ async function scanDirectory(
       try {
         stat = fs.statSync(itemPath);
       } catch (error) {
-        dataLogger.warn('アイテムにアクセスできません', { itemPath, error });
+        dataLogger.warn({ itemPath, error }, 'アイテムにアクセスできません');
         continue;
       }
 
@@ -338,7 +338,7 @@ async function scanDirectory(
       }
     }
   } catch (error) {
-    dataLogger.error('ディレクトリのスキャンに失敗', { dirPath, error });
+    dataLogger.error({ dirPath, error }, 'ディレクトリのスキャンに失敗');
   }
 
   return results;
@@ -373,12 +373,12 @@ async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
       });
     });
 
-    dataLogger.info('タブ設定を読み込みました', {
-      tabCount: dataFileTabs.length,
-      mappedFiles: Array.from(fileToTabMap.keys()),
-    });
+    dataLogger.info(
+      { tabCount: dataFileTabs.length, mappedFiles: Array.from(fileToTabMap.keys()) },
+      'タブ設定を読み込みました'
+    );
   } catch (error) {
-    dataLogger.warn('タブ設定の読み込みに失敗。全ファイルを独立したタブとして扱います', { error });
+    dataLogger.warn({ error }, 'タブ設定の読み込みに失敗。全ファイルを独立したタブとして扱います');
     fileToTabMap = new Map<string, number>();
   }
 
@@ -448,16 +448,14 @@ async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
                 seenPaths.add(uniqueKey);
                 items.push(item);
               } else {
-                dataLogger.debug('タブ内で重複するアイテムをスキップ', {
-                  tabIndex,
-                  fileName,
-                  itemName: item.name,
-                  uniqueKey,
-                });
+                dataLogger.debug(
+                  { tabIndex, fileName, itemName: item.name, uniqueKey },
+                  'タブ内で重複するアイテムをスキップ'
+                );
               }
             }
           } catch (error) {
-            dataLogger.error('ディレクトリのスキャンに失敗', { dirPath, error });
+            dataLogger.error({ dirPath, error }, 'ディレクトリのスキャンに失敗');
           }
         }
         continue;
@@ -500,12 +498,10 @@ async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
               seenPaths.add(uniqueKey);
               items.push(item);
             } else {
-              dataLogger.debug('タブ内で重複するアイテムをスキップ', {
-                tabIndex,
-                fileName,
-                itemName: item.name,
-                uniqueKey,
-              });
+              dataLogger.debug(
+                { tabIndex, fileName, itemName: item.name, uniqueKey },
+                'タブ内で重複するアイテムをスキップ'
+              );
             }
             continue;
           }
@@ -522,12 +518,10 @@ async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
           seenPaths.add(uniqueKey);
           items.push(item);
         } else {
-          dataLogger.debug('タブ内で重複するアイテムをスキップ', {
-            tabIndex,
-            fileName,
-            itemName: item.name,
-            uniqueKey,
-          });
+          dataLogger.debug(
+            { tabIndex, fileName, itemName: item.name, uniqueKey },
+            'タブ内で重複するアイテムをスキップ'
+          );
         }
       }
     }
@@ -542,10 +536,10 @@ async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
     const tabIndex = fileToTabMap.get(item.sourceFile || '') ?? -1;
     itemCountByTab.set(tabIndex, (itemCountByTab.get(tabIndex) || 0) + 1);
   });
-  dataLogger.info('データ読み込み完了（タブ別統計）', {
-    totalItems: items.length,
-    itemCountByTab: Object.fromEntries(itemCountByTab),
-  });
+  dataLogger.info(
+    { totalItems: items.length, itemCountByTab: Object.fromEntries(itemCountByTab) },
+    'データ読み込み完了（タブ別統計）'
+  );
 
   return items;
 }
@@ -709,7 +703,7 @@ async function detectProfiles(userDataPath: string): Promise<BrowserProfile[]> {
       });
     }
   } catch (error) {
-    dataLogger.warn('プロファイルの検出に失敗', { userDataPath, error });
+    dataLogger.warn({ userDataPath, error }, 'プロファイルの検出に失敗');
   }
 
   return profiles;
@@ -766,13 +760,16 @@ async function detectInstalledBrowsers(): Promise<BrowserInfo[]> {
     });
   }
 
-  dataLogger.info('ブラウザを検出しました', {
-    browsers: browsers.map((b) => ({
-      id: b.id,
-      installed: b.installed,
-      profileCount: b.profiles.length,
-    })),
-  });
+  dataLogger.info(
+    {
+      browsers: browsers.map((b) => ({
+        id: b.id,
+        installed: b.installed,
+        profileCount: b.profiles.length,
+      })),
+    },
+    'ブラウザを検出しました'
+  );
 
   return browsers;
 }
@@ -852,10 +849,7 @@ async function parseBrowserBookmarks(filePath: string): Promise<SimpleBookmarkIt
       }
     }
 
-    dataLogger.info('ブラウザブックマークをパースしました', {
-      filePath,
-      bookmarkCount: bookmarks.length,
-    });
+    dataLogger.info({ filePath, bookmarkCount: bookmarks.length }, 'ブラウザブックマークをパースしました');
 
     return bookmarks;
   } catch (error) {
@@ -865,7 +859,7 @@ async function parseBrowserBookmarks(filePath: string): Promise<SimpleBookmarkIt
     ) {
       throw new Error('ブラウザが起動中です。ブラウザを閉じてから再試行してください。');
     }
-    dataLogger.error('ブラウザブックマークのパースに失敗', { filePath, error });
+    dataLogger.error({ filePath, error }, 'ブラウザブックマークのパースに失敗');
     throw error;
   }
 }
@@ -1064,7 +1058,7 @@ export function notifyDataChanged() {
       window.webContents.send('data-changed');
     }
   });
-  dataLogger.info('データ変更通知を送信しました', { windowCount: allWindows.length });
+  dataLogger.info({ windowCount: allWindows.length }, 'データ変更通知を送信しました');
 }
 
 export function setupDataHandlers(configFolder: string) {
@@ -1095,7 +1089,7 @@ export function setupDataHandlers(configFolder: string) {
         // notifyDataChanged(); // 設定の再読み込みを防ぐため削除
         return { success: true };
       } catch (error) {
-        dataLogger.error(`Failed to create file: ${filePath}`, error);
+        dataLogger.error({ error, filePath }, 'Failed to create file');
         return { success: false, error: `ファイルの作成に失敗しました: ${error}` };
       }
     }
@@ -1194,7 +1188,7 @@ export function setupDataHandlers(configFolder: string) {
 
       return bookmarks;
     } catch (error) {
-      dataLogger.error('ブックマークファイルのパースに失敗', { error });
+      dataLogger.error({ error }, 'ブックマークファイルのパースに失敗');
       throw error;
     }
   });

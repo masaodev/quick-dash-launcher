@@ -125,7 +125,7 @@ export class PathManager {
       logger.info(`Found ${dataFiles.length} data files: ${dataFiles.join(', ')}`);
       return dataFiles;
     } catch (error) {
-      logger.error(`Failed to read data files from ${configFolder}`, error);
+      logger.error({ error, configFolder }, 'Failed to read data files');
       return [];
     }
   }
@@ -150,7 +150,7 @@ export class PathManager {
           fs.mkdirSync(dir, { recursive: true });
           logger.info(`Created directory: ${dir}`);
         } catch (error) {
-          logger.error(`Failed to create directory: ${dir}`, error);
+          logger.error({ error, dir }, 'Failed to create directory');
           throw error;
         }
       }
@@ -224,7 +224,7 @@ export class PathManager {
 
       return true;
     } catch (error) {
-      logger.error(`Config folder is not writable: ${configFolder}`, error);
+      logger.error({ error, configFolder }, 'Config folder is not writable');
       return false;
     }
   }

@@ -94,7 +94,7 @@ export class SettingsService {
 
       logger.info(`SettingsService initialized successfully at ${configFolder}`);
     } catch (error) {
-      logger.error('Failed to initialize SettingsService:', error);
+      logger.error({ error }, 'Failed to initialize SettingsService');
       throw error;
     }
   }
@@ -121,7 +121,7 @@ export class SettingsService {
     try {
       return this.store.get(key);
     } catch (error) {
-      logger.error(`Failed to get setting ${key}:`, error);
+      logger.error({ error, key }, 'Failed to get setting');
       return SettingsService.DEFAULT_SETTINGS[key];
     }
   }
@@ -137,9 +137,9 @@ export class SettingsService {
     try {
       this.store.set(key, value);
       await this.updateVersionIfNeeded(key);
-      logger.info(`Setting ${key} updated to:`, value);
+      logger.info({ key, value }, 'Setting updated');
     } catch (error) {
-      logger.error(`Failed to set setting ${key}:`, error);
+      logger.error({ error, key }, 'Failed to set setting');
       throw error;
     }
   }
@@ -169,13 +169,13 @@ export class SettingsService {
         const currentVersion = this.store.get('updatedWithVersion');
         if (currentVersion !== version) {
           this.store.set('updatedWithVersion', version);
-          logger.info(`Settings file updated with version: ${version}`);
+          logger.info({ version }, 'Settings file updated with version');
         }
       }
 
-      logger.info('Multiple settings updated:', settings);
+      logger.info({ settings }, 'Multiple settings updated');
     } catch (error) {
-      logger.error('Failed to set multiple settings:', error);
+      logger.error({ error }, 'Failed to set multiple settings');
       throw error;
     }
   }
@@ -190,7 +190,7 @@ export class SettingsService {
     try {
       return this.store.store;
     } catch (error) {
-      logger.error('Failed to get all settings:', error);
+      logger.error({ error }, 'Failed to get all settings');
       return SettingsService.DEFAULT_SETTINGS;
     }
   }
@@ -205,7 +205,7 @@ export class SettingsService {
       this.store.clear();
       logger.info('Settings reset to defaults');
     } catch (error) {
-      logger.error('Failed to reset settings:', error);
+      logger.error({ error }, 'Failed to reset settings');
       throw error;
     }
   }
@@ -245,7 +245,7 @@ export class SettingsService {
       const packageJson = await import('../../../package.json');
       return packageJson.version || '0.0.0';
     } catch (error) {
-      logger.error('Failed to get app version:', error);
+      logger.error({ error }, 'Failed to get app version');
       return '0.0.0';
     }
   }
@@ -261,9 +261,9 @@ export class SettingsService {
       const version = await this.getAppVersion();
       this.store.set('createdWithVersion', version);
       this.store.set('updatedWithVersion', version);
-      logger.info(`Settings file created with version: ${version}`);
+      logger.info({ version }, 'Settings file created with version');
     } catch (error) {
-      logger.error('Failed to set createdWithVersion:', error);
+      logger.error({ error }, 'Failed to set createdWithVersion');
     }
   }
 
@@ -285,7 +285,7 @@ export class SettingsService {
         logger.info(`Settings file updated with version: ${version}`);
       }
     } catch (error) {
-      logger.error('Failed to update updatedWithVersion:', error);
+      logger.error({ error }, 'Failed to update updatedWithVersion');
     }
   }
 

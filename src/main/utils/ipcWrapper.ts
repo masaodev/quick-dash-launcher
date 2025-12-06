@@ -15,7 +15,7 @@ export function createSafeIpcHandler<T extends unknown[], R>(
     try {
       return await handler(...args);
     } catch (error) {
-      logger.error(`${loggerContext}に失敗`, { channel, error });
+      logger.error({ channel, error }, `${loggerContext}に失敗`);
       throw error;
     }
   });
@@ -34,7 +34,7 @@ export function createSafeIpcHandlerSync<T extends unknown[], R>(
     try {
       return handler(...args);
     } catch (error) {
-      logger.error(`${loggerContext}に失敗`, { channel, error });
+      logger.error({ channel, error }, `${loggerContext}に失敗`);
       throw error;
     }
   });

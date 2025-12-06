@@ -121,10 +121,10 @@ async function extractShortcutIcon(lnkPath: string, iconsFolder: string): Promis
             }
           }
         } catch (error) {
-          iconLogger.error(`カスタムアイコンファイルの読み込みエラー`, {
-            iconPath: expandedIconPath,
-            error,
-          });
+          iconLogger.error(
+            { iconPath: expandedIconPath, error },
+            'カスタムアイコンファイルの読み込みエラー'
+          );
         }
       } else {
         iconLogger.warn(`カスタムアイコンファイルが見つからない: ${expandedIconPath}`);
@@ -161,7 +161,7 @@ async function extractShortcutIcon(lnkPath: string, iconsFolder: string): Promis
     iconLogger.warn(`ショートカットとターゲットの両方からアイコン抽出に失敗: ${lnkPath}`);
     return null;
   } catch (error) {
-    iconLogger.error(`ショートカットアイコンの抽出に失敗しました: ${lnkPath}`, { error });
+    iconLogger.error({ lnkPath, error }, 'ショートカットアイコンの抽出に失敗しました');
     return null;
   }
 }
@@ -191,7 +191,7 @@ async function extractIcon(filePath: string, iconsFolder: string): Promise<strin
             iconLogger.info(`PATHからファイルを解決: ${filePath} -> ${resolvedPath}`);
           }
         } catch (error) {
-          iconLogger.error(`PATHからファイルを解決できません: ${filePath}`, { error });
+          iconLogger.error({ filePath, error }, 'PATHからファイルを解決できません');
         }
       }
 
@@ -200,7 +200,7 @@ async function extractIcon(filePath: string, iconsFolder: string): Promise<strin
       try {
         fs.lstatSync(resolvedPath);
       } catch (error) {
-        iconLogger.error(`ファイルが見つかりません: ${filePath}`, { error });
+        iconLogger.error({ filePath, error }, 'ファイルが見つかりません');
         return null;
       }
     }
@@ -222,9 +222,7 @@ async function extractIcon(filePath: string, iconsFolder: string): Promise<strin
         iconLogger.info(`シンボリックリンクを解決: ${resolvedPath} -> ${actualFilePath}`);
       }
     } catch (error) {
-      iconLogger.warn(`シンボリックリンクの解決に失敗、元のパスを使用: ${resolvedPath}`, {
-        error,
-      });
+      iconLogger.warn({ resolvedPath, error }, 'シンボリックリンクの解決に失敗、元のパスを使用');
     }
 
     // キャッシュ用ファイル名を生成（元のfilePathを使用してキャッシュキーを生成）
@@ -251,7 +249,7 @@ async function extractIcon(filePath: string, iconsFolder: string): Promise<strin
     iconLogger.warn(`アイコンが抽出できませんでした: ${filePath}`);
     return null;
   } catch (error) {
-    iconLogger.error(`アイコンの抽出に失敗しました: ${filePath}`, { error });
+    iconLogger.error({ filePath, error }, 'アイコンの抽出に失敗しました');
     return null;
   }
 }
@@ -295,7 +293,7 @@ async function extractCustomUriIcon(uri: string, iconsFolder: string): Promise<s
 
     return null;
   } catch (error) {
-    iconLogger.error(`カスタムURIアイコンの抽出に失敗しました: ${uri}`, { error });
+    iconLogger.error({ uri, error }, 'カスタムURIアイコンの抽出に失敗しました');
     return null;
   }
 }
@@ -367,7 +365,7 @@ async function extractFileIconByExtension(
 
     return null;
   } catch (error) {
-    iconLogger.error(`拡張子ベースのアイコン抽出に失敗しました: ${filePath}`, { error });
+    iconLogger.error({ filePath, error }, '拡張子ベースのアイコン抽出に失敗しました');
     return null;
   }
 }
@@ -434,7 +432,7 @@ function extractExtensionFromUri(uri: string): string {
     const extensionMatch = fileName.match(/\.[^.]+$/);
     return extensionMatch ? extensionMatch[0].toLowerCase() : '';
   } catch (error) {
-    iconLogger.error(`URIから拡張子の抽出に失敗: ${uri}`, { error });
+    iconLogger.error({ uri, error }, 'URIから拡張子の抽出に失敗');
     return '';
   }
 }
@@ -582,7 +580,7 @@ async function loadCachedIcons(
         iconCache[item.path] = bufferToBase64DataUrl(iconBuffer);
       }
     } catch (error) {
-      iconLogger.error(`キャッシュされたアイコンの読み込みに失敗: ${item.path}`, { error });
+      iconLogger.error({ itemPath: item.path, error }, 'キャッシュされたアイコンの読み込みに失敗');
     }
   }
 
@@ -635,7 +633,7 @@ async function fetchIconsCombined(
           progress.update(displayText, true, 'ファビコンが見つかりませんでした');
         }
       } catch (error) {
-        iconLogger.error(`ファビコン取得エラー: ${urlItem.path}`, { error });
+        iconLogger.error({ url: urlItem.path, error }, 'ファビコン取得エラー');
         faviconResults[urlItem.path] = null;
         const errorMsg = error instanceof Error ? error.message : 'ファビコン取得に失敗しました';
         const displayText = urlItem.name ? `${urlItem.name}\n${urlItem.path}` : urlItem.path;
@@ -685,7 +683,7 @@ async function fetchIconsCombined(
           progress.update(displayText, true, 'アイコンが見つかりませんでした');
         }
       } catch (error) {
-        iconLogger.error(`アイコン抽出エラー: ${item.path}`, { error });
+        iconLogger.error({ itemPath: item.path, error }, 'アイコン抽出エラー');
         iconResults[item.path] = null;
         const errorMsg = error instanceof Error ? error.message : 'アイコン抽出に失敗しました';
         const displayText = item.name ? `${item.name}\n${item.path}` : item.path;
@@ -722,7 +720,7 @@ async function selectCustomIconFile(): Promise<string | null> {
 
     return result.filePaths[0];
   } catch (error) {
-    iconLogger.error('カスタムアイコンファイル選択エラー:', error);
+    iconLogger.error({ error }, 'カスタムアイコンファイル選択エラー');
     return null;
   }
 }
@@ -745,7 +743,7 @@ async function resizeAndSaveImage(
     await fs.promises.copyFile(inputPath, outputPath);
     iconLogger.info(`カスタムアイコンを保存: ${inputPath} -> ${outputPath}`);
   } catch (error) {
-    iconLogger.error('画像のリサイズ・保存エラー:', error);
+    iconLogger.error({ error }, '画像のリサイズ・保存エラー');
     throw error;
   }
 }
@@ -781,7 +779,7 @@ async function saveCustomIcon(sourceFilePath: string, itemIdentifier: string): P
     iconLogger.info(`カスタムアイコンを保存: ${itemIdentifier} -> ${customIconFileName}`);
     return customIconFileName;
   } catch (error) {
-    iconLogger.error('カスタムアイコン保存エラー:', error);
+    iconLogger.error({ error }, 'カスタムアイコン保存エラー');
     throw error;
   }
 }
@@ -799,7 +797,7 @@ async function deleteCustomIcon(customIconFileName: string): Promise<void> {
       iconLogger.info(`カスタムアイコンを削除: ${customIconFileName}`);
     }
   } catch (error) {
-    iconLogger.error('カスタムアイコン削除エラー:', error);
+    iconLogger.error({ error }, 'カスタムアイコン削除エラー');
     throw error;
   }
 }
@@ -814,7 +812,7 @@ async function getCustomIcon(customIconFileName: string): Promise<string | null>
     const customIconPath = path.join(PathManager.getCustomIconsFolder(), customIconFileName);
     return FileUtils.readCachedBinaryAsBase64(customIconPath);
   } catch (error) {
-    iconLogger.error('カスタムアイコン取得エラー:', error);
+    iconLogger.error({ error }, 'カスタムアイコン取得エラー');
     return null;
   }
 }

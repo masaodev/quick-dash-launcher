@@ -123,7 +123,7 @@ export async function showAdminWindow(): Promise<void> {
       windowLogger.info('管理ウィンドウを表示しました');
     }
   } catch (error) {
-    windowLogger.error('管理ウィンドウの表示に失敗しました:', error);
+    windowLogger.error({ error }, '管理ウィンドウの表示に失敗しました');
   }
 }
 
