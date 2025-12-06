@@ -233,3 +233,31 @@
   margin-top: var(--spacing-xs);
   font-weight: 500;
 }
+
+/* モーダルアクションボタンのレイアウト調整 */
+.modal-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding-top: var(--spacing-lg);
+  border-top: var(--border-light);
+}
+
+.modal-actions-right {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-left: auto;
+}
+
+/* 削除ボタン（dangerスタイル） */
+.modal-actions button.danger {
+  background-color: var(--color-danger);
+  color: var(--color-white);
+  border-color: var(--color-danger);
+}
+
+.modal-actions button.danger:hover {
+  background-color: var(--color-danger-hover);
+  border-color: var(--color-danger-hover);
+}
