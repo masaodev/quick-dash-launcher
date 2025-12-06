@@ -294,7 +294,7 @@
   gap: var(--spacing-sm);
 }
 
-.action-button {
+.section-action-button {
   padding: var(--spacing-sm) var(--spacing-lg);
   border: var(--border-normal);
   border-radius: var(--border-radius);
@@ -309,7 +309,7 @@
   gap: var(--spacing-sm);
 }
 
-.action-button:hover {
+.section-action-button:hover {
   background-color: var(--bg-hover);
   border-color: var(--color-primary);
 }

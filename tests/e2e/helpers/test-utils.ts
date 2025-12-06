@@ -114,7 +114,7 @@ export class TestUtils {
    * 登録モーダルを開く（プラスボタンをクリック）
    */
   async openRegisterModal(): Promise<void> {
-    const registerButton = this.page.locator('.action-button.register-item');
+    const registerButton = this.page.locator('.action-btn[title="アイテムを登録"]');
     await registerButton.click();
     await this.page.waitForSelector('.register-modal', { state: 'visible' });
   }

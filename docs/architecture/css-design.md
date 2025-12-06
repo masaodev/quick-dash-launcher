@@ -434,9 +434,8 @@ const MyComponent = () => {
   - ❌ 誤: `.btn-danger-small`, `.btn-primary-large`
 
 **アクションボタン**:
-- 統一形: `.action-btn` （32x32ピクセルの正方形ボタン）
-  - ✅ 正: `.action-btn`
-  - ❌ 誤: `.action-button`
+- `.action-btn` : 32x32ピクセルの正方形アイコンボタン（メインウィンドウヘッダー用）
+- `.section-action-button` : 横長テキスト付きボタン（管理ウィンドウのセクション内用）
 
 **コンポーネント要素**:
 - パターン: `.{component}-{element}` （例: `.modal-overlay`, `.item-icon`）
@@ -523,10 +522,10 @@ const MyComponent = () => {
 
 **修正内容**:
 
-1. **アクションボタンの統一**
-   - 変更前: `Header.css`で `.action-button` を使用
-   - 変更後: `.action-btn` に統一（`common.css`の命名規則に合わせる）
-   - 影響範囲: 4つのコンポーネント（ActionButtons, SettingsDropdown, RefreshActionsDropdown, AdminOtherTab）
+1. **アクションボタンの命名整理**
+   - `.action-btn` : 32x32正方形アイコンボタン（メインウィンドウヘッダー用、`common.css`で定義）
+   - `.section-action-button` : 横長テキストボタン（管理ウィンドウ用、`AdminWindow.css`で定義）
+   - 紛らわしかった `.action-button` は削除済み
 
 2. **サイズバリエーションの統一**
    - 変更前: `AdminWindow.css`で `.btn-secondary-small`, `.btn-danger-small` を使用
