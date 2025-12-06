@@ -703,7 +703,7 @@ async function detectProfiles(userDataPath: string): Promise<BrowserProfile[]> {
       });
     }
   } catch (error) {
-    dataLogger.warn('プロファイルの検出に失敗', { userDataPath, error });
+    dataLogger.warn({ userDataPath, error }, 'プロファイルの検出に失敗');
   }
 
   return profiles;
@@ -760,13 +760,16 @@ async function detectInstalledBrowsers(): Promise<BrowserInfo[]> {
     });
   }
 
-  dataLogger.info('ブラウザを検出しました', {
-    browsers: browsers.map((b) => ({
-      id: b.id,
-      installed: b.installed,
-      profileCount: b.profiles.length,
-    })),
-  });
+  dataLogger.info(
+    {
+      browsers: browsers.map((b) => ({
+        id: b.id,
+        installed: b.installed,
+        profileCount: b.profiles.length,
+      })),
+    },
+    'ブラウザを検出しました'
+  );
 
   return browsers;
 }
@@ -846,10 +849,7 @@ async function parseBrowserBookmarks(filePath: string): Promise<SimpleBookmarkIt
       }
     }
 
-    dataLogger.info('ブラウザブックマークをパースしました', {
-      filePath,
-      bookmarkCount: bookmarks.length,
-    });
+    dataLogger.info({ filePath, bookmarkCount: bookmarks.length }, 'ブラウザブックマークをパースしました');
 
     return bookmarks;
   } catch (error) {
@@ -859,7 +859,7 @@ async function parseBrowserBookmarks(filePath: string): Promise<SimpleBookmarkIt
     ) {
       throw new Error('ブラウザが起動中です。ブラウザを閉じてから再試行してください。');
     }
-    dataLogger.error('ブラウザブックマークのパースに失敗', { filePath, error });
+    dataLogger.error({ filePath, error }, 'ブラウザブックマークのパースに失敗');
     throw error;
   }
 }
