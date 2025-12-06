@@ -44,6 +44,8 @@ QuickDashLauncherの動作をカスタマイズするための設定機能を説
 
 | キー | 型 | デフォルト | 説明 |
 |------|-----|-----------|------|
+| `createdWithVersion` | `string?` | `undefined` | 設定ファイルを作成したアプリバージョン（新規作成時のみ自動記録） |
+| `updatedWithVersion` | `string?` | `undefined` | 設定ファイルを最後に更新したアプリバージョン（更新時に自動記録） |
 | `hotkey` | `string` | `''` | グローバルホットキー |
 | `windowWidth` | `number` | `600` | 通常時のウィンドウ幅 |
 | `windowHeight` | `number` | `400` | 通常時のウィンドウ高さ |
@@ -110,7 +112,7 @@ Alt+F1
 | モード | 説明 |
 |-------|------|
 | `center`（画面中央） | 常に画面中央に表示（デフォルト） |
-| `cursor`（マウス位置） | カーソル位置を中心に表示。マルチモニター対応 |
+| `cursor`（マウス位置） | マウスカーソルの位置が検索入力欄付近に来るように表示。マルチモニター対応 |
 | `fixed`（固定位置） | 手動で移動した位置を記憶 |
 
 **固定位置のリセット:** システムトレイメニュー →「画面中央に表示」
@@ -221,6 +223,8 @@ $env:QUICK_DASH_CONFIG_DIR = "D:\MyApps\quick-dash-config"
 
 ```json
 {
+  "createdWithVersion": "0.4.3",
+  "updatedWithVersion": "0.4.3",
   "hotkey": "Alt+Space",
   "windowWidth": 600,
   "windowHeight": 400,

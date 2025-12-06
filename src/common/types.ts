@@ -83,10 +83,42 @@ export interface SimpleBookmarkItem {
 }
 
 /**
+ * ブラウザのプロファイル情報
+ * Chrome/Edgeの各プロファイルを表す
+ */
+export interface BrowserProfile {
+  /** プロファイルID（フォルダ名: 'Default', 'Profile 1' 等） */
+  id: string;
+  /** プロファイルの表示名（Preferencesから取得） */
+  name: string;
+  /** ブックマークファイルの絶対パス */
+  bookmarkPath: string;
+}
+
+/**
+ * インストール済みブラウザの情報
+ * ブラウザの検出結果とプロファイル一覧を保持
+ */
+export interface BrowserInfo {
+  /** ブラウザの識別子 */
+  id: 'chrome' | 'edge';
+  /** ブラウザの表示名 */
+  name: string;
+  /** インストールされているかどうか */
+  installed: boolean;
+  /** 検出されたプロファイルのリスト */
+  profiles: BrowserProfile[];
+}
+
+/**
  * アプリケーションの設定を管理するインターフェース
  * electron-storeを使用して永続化される
  */
 export interface AppSettings {
+  /** この設定ファイルを作成したアプリバージョン（初回作成時のみ記録） */
+  createdWithVersion?: string;
+  /** この設定ファイルを最後に更新したアプリバージョン */
+  updatedWithVersion?: string;
   /** グローバルホットキー（デフォルト: 'Alt+Space'） */
   hotkey: string;
   /** ウィンドウの初期幅（デフォルト: 600） */

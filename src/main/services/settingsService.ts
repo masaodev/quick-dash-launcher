@@ -1,3 +1,6 @@
+import fs from 'node:fs';
+import path from 'node:path';
+
 import ElectronStore from 'electron-store';
 
 import type { AppSettings } from '../../common/types.js';
@@ -74,11 +77,20 @@ export class SettingsService {
       // PathManagerから設定フォルダを取得
       const configFolder = PathManager.getConfigFolder();
 
+      // 設定ファイルが既に存在するかチェック（新規作成判定用）
+      const settingsFilePath = path.join(configFolder, 'settings.json');
+      const isNewFile = !fs.existsSync(settingsFilePath);
+
       this.store = new Store!<AppSettings>({
         name: 'settings',
         cwd: configFolder, // カスタムパスを指定
         defaults: SettingsService.DEFAULT_SETTINGS,
       }) as unknown as StoreInstance;
+
+      // 新規作成時のみバージョンを記録
+      if (isNewFile) {
+        await this.setCreatedWithVersion();
+      }
 
       logger.info(`SettingsService initialized successfully at ${configFolder}`);
     } catch (error) {
@@ -124,6 +136,7 @@ export class SettingsService {
     if (!this.store) throw new Error('Store not initialized');
     try {
       this.store.set(key, value);
+      await this.updateVersionIfNeeded(key);
       logger.info({ key, value }, 'Setting updated');
     } catch (error) {
       logger.error({ error, key }, 'Failed to set setting');
@@ -139,11 +152,27 @@ export class SettingsService {
     await this.initializeStore();
     if (!this.store) throw new Error('Store not initialized');
     try {
+      // バージョン情報以外のキーがあるかチェック
+      const hasNonVersionKey = Object.keys(settings).some(
+        (key) => key !== 'createdWithVersion' && key !== 'updatedWithVersion'
+      );
+
       Object.entries(settings).forEach(([key, value]) => {
         if (value !== undefined && this.store) {
           this.store.set(key as keyof AppSettings, value);
         }
       });
+
+      // バージョン情報以外の更新があった場合のみ更新バージョンを記録
+      if (hasNonVersionKey) {
+        const version = await this.getAppVersion();
+        const currentVersion = this.store.get('updatedWithVersion');
+        if (currentVersion !== version) {
+          this.store.set('updatedWithVersion', version);
+          logger.info({ version }, 'Settings file updated with version');
+        }
+      }
+
       logger.info({ settings }, 'Multiple settings updated');
     } catch (error) {
       logger.error({ error }, 'Failed to set multiple settings');
@@ -206,6 +235,58 @@ export class SettingsService {
     }
 
     return { isValid: true };
+  }
+
+  /**
+   * 現在のアプリバージョンを取得
+   */
+  private async getAppVersion(): Promise<string> {
+    try {
+      const packageJson = await import('../../../package.json');
+      return packageJson.version || '0.0.0';
+    } catch (error) {
+      logger.error({ error }, 'Failed to get app version');
+      return '0.0.0';
+    }
+  }
+
+  /**
+   * 設定ファイルに作成時のアプリバージョンを記録
+   * 新規作成時のみ呼び出される
+   */
+  private async setCreatedWithVersion(): Promise<void> {
+    if (!this.store) return;
+
+    try {
+      const version = await this.getAppVersion();
+      this.store.set('createdWithVersion', version);
+      this.store.set('updatedWithVersion', version);
+      logger.info({ version }, 'Settings file created with version');
+    } catch (error) {
+      logger.error({ error }, 'Failed to set createdWithVersion');
+    }
+  }
+
+  /**
+   * 設定ファイルの更新バージョンを記録
+   */
+  private async updateVersionIfNeeded(key: keyof AppSettings): Promise<void> {
+    // バージョン情報フィールド自体の更新時は記録しない（無限ループ防止）
+    if (key === 'createdWithVersion' || key === 'updatedWithVersion') {
+      return;
+    }
+    if (!this.store) return;
+
+    try {
+      const version = await this.getAppVersion();
+      const currentVersion = this.store.get('updatedWithVersion');
+      if (currentVersion !== version) {
+        this.store.set('updatedWithVersion', version);
+        logger.info(`Settings file updated with version: ${version}`);
+      }
+    } catch (error) {
+      logger.error({ error }, 'Failed to update updatedWithVersion');
+    }
   }
 
   /**

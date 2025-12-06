@@ -10,6 +10,7 @@ import {
   GroupItem,
   AppItem,
   AppInfo,
+  BrowserInfo,
 } from '../common/types';
 
 interface RegisterItem {
@@ -96,6 +97,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getEditMode: () => ipcRenderer.invoke('get-edit-mode'),
   selectBookmarkFile: () => ipcRenderer.invoke('select-bookmark-file'),
   parseBookmarkFile: (filePath: string) => ipcRenderer.invoke('parse-bookmark-file', filePath),
+  // ブラウザブックマーク直接インポートAPI
+  detectInstalledBrowsers: (): Promise<BrowserInfo[]> =>
+    ipcRenderer.invoke('detect-installed-browsers'),
+  parseBrowserBookmarks: (filePath: string) =>
+    ipcRenderer.invoke('parse-browser-bookmarks', filePath),
   // Settings API
   getSettings: (key?: keyof AppSettings) => ipcRenderer.invoke('settings:get', key),
   setSetting: (key: keyof AppSettings, value: AppSettings[keyof AppSettings]) =>
