@@ -60,9 +60,6 @@ export async function createAdminWindow(): Promise<BrowserWindow> {
   // メニューを完全に削除（Altキーでも表示されないようにする）
   adminWindow.setMenu(null);
 
-  // デバッグ用：開発者ツールを開く（必要に応じてコメントアウト）
-  // adminWindow.webContents.openDevTools({ mode: 'detach' });
-
   adminWindow.on('close', (event) => {
     // アプリケーション終了時以外はウィンドウを完全に閉じずに非表示にする
     if (!isAppQuitting) {
@@ -87,11 +84,21 @@ export async function createAdminWindow(): Promise<BrowserWindow> {
     isAdminWindowVisible = false;
   });
 
-  // Escapeキーでの閉じる処理は無効化（誤操作防止）
+  // キーボードショートカット処理
   adminWindow.webContents.on('before-input-event', (event, input) => {
+    // Escapeキーでの閉じる処理は無効化（誤操作防止）
     if (input.key === 'Escape' && input.type === 'keyDown') {
       event.preventDefault();
-      // Escapeキーでは閉じない（編集作業中の誤操作を防止）
+    }
+    // Ctrl+Shift+I で開発者ツールを開く（開発モードのみ）
+    if (
+      process.env.NODE_ENV === 'development' &&
+      input.type === 'keyDown' &&
+      input.control &&
+      input.shift &&
+      input.key.toLowerCase() === 'i'
+    ) {
+      adminWindow?.webContents.toggleDevTools();
     }
   });
 
