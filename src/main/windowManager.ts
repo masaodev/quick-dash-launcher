@@ -54,8 +54,6 @@ export async function createWindow(): Promise<BrowserWindow> {
 
   if (process.env.NODE_ENV === 'development') {
     mainWindow.loadURL('http://localhost:9000');
-    // デバッグ用：開発者ツールを開く
-    mainWindow.webContents.openDevTools({ mode: 'detach' });
   } else {
     mainWindow.loadFile(path.join(__dirname, '../index.html'));
   }
