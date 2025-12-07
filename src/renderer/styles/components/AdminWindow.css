@@ -243,12 +243,12 @@
 }
 
 .reset-button {
-  background-color: var(--color-danger-light);
+  background-color: var(--color-danger);
   color: var(--color-white);
 }
 
 .reset-button:hover:not(:disabled) {
-  background-color: var(--color-danger-light-hover);
+  background-color: var(--color-danger-hover);
 }
 
 .revert-button {
@@ -262,12 +262,12 @@
 }
 
 .save-button {
-  background-color: var(--color-success-light);
+  background-color: var(--color-success);
   color: var(--color-white);
 }
 
 .save-button:hover:not(:disabled) {
-  background-color: var(--color-success-light-hover);
+  background-color: var(--color-success-hover);
 }
 
 .reset-button:disabled,
