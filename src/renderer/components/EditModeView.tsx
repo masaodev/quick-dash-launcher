@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { RawDataLine, SimpleBookmarkItem, DataFileTab } from '@common/types';
 import { convertRegisterItemToRawDataLine, type RegisterItem } from '@common/utils/dataConverters';
+import { parseCSVLine } from '@common/utils/csvParser';
 
 import EditableRawItemList from './EditableRawItemList';
 import RegisterModal from './RegisterModal';
@@ -541,13 +542,13 @@ const EditModeView: React.FC<EditModeViewProps> = ({
 
             const getPathAndArgs = (line: RawDataLine) => {
               if (line.type === 'item') {
-                const parts = line.content.split(',');
-                const pathPart = parts[1]?.trim() || '';
-                const argsPart = parts[2]?.trim() || '';
+                const parts = parseCSVLine(line.content);
+                const pathPart = parts[1] || '';
+                const argsPart = parts[2] || '';
                 return argsPart ? `${pathPart} ${argsPart}` : pathPart;
               } else if (line.type === 'directive') {
-                const parts = line.content.split(',');
-                const pathPart = parts[1]?.trim() || '';
+                const parts = parseCSVLine(line.content);
+                const pathPart = parts[1] || '';
                 const options = parts.slice(2).join(',').trim();
                 return options ? `${pathPart} ${options}` : pathPart;
               } else {
@@ -573,9 +574,9 @@ const EditModeView: React.FC<EditModeViewProps> = ({
               }
 
               const nameA =
-                a.type === 'item' ? (a.content.split(',')[0]?.trim() || '').toLowerCase() : '';
+                a.type === 'item' ? (parseCSVLine(a.content)[0] || '').toLowerCase() : '';
               const nameB =
-                b.type === 'item' ? (b.content.split(',')[0]?.trim() || '').toLowerCase() : '';
+                b.type === 'item' ? (parseCSVLine(b.content)[0] || '').toLowerCase() : '';
 
               return nameA.localeCompare(nameB);
             });

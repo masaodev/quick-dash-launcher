@@ -7,6 +7,7 @@
 import type { RawDataLine } from '../types';
 
 import { parseDirOptionsFromString, type DirOptions } from './dataConverters';
+import { parseCSVLine } from './csvParser';
 
 /**
  * グループディレクティブかどうかを判定する
@@ -51,12 +52,9 @@ export function parseGroupDirective(line: RawDataLine): {
   groupName: string;
   itemNames: string[];
 } {
-  const parts = line.content.split(',');
-  const groupName = parts[1]?.trim() || '';
-  const itemNames = parts
-    .slice(2)
-    .map((name) => name.trim())
-    .filter((name) => name);
+  const parts = parseCSVLine(line.content);
+  const groupName = parts[1] || '';
+  const itemNames = parts.slice(2).filter((name) => name);
 
   return { groupName, itemNames };
 }
@@ -79,8 +77,8 @@ export function parseDirDirective(line: RawDataLine): {
   dirPath: string;
   options: DirOptions;
 } {
-  const parts = line.content.split(',');
-  const dirPath = parts[1]?.trim() || '';
+  const parts = parseCSVLine(line.content);
+  const dirPath = parts[1] || '';
   const optionsStr = parts.slice(2).join(',').trim();
 
   const options = parseDirOptionsFromString(optionsStr);

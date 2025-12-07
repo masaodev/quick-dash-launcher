@@ -5,7 +5,7 @@ import { ipcMain, shell, dialog, BrowserWindow } from 'electron';
 import { minimatch } from 'minimatch';
 import { dataLogger } from '@common/logger';
 import { FileUtils } from '@common/utils/fileUtils';
-import { parseCSVLine } from '@common/utils/csvParser';
+import { parseCSVLine, escapeCSV } from '@common/utils/csvParser';
 import { parseDirOptionsFromString, type DirOptions } from '@common/utils/dataConverters';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 
@@ -419,15 +419,12 @@ async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
 
       // Handle フォルダ取込アイテム
       if (trimmedLine.startsWith('dir,')) {
-        const parts = trimmedLine
-          .substring(4)
-          .split(',')
-          .map((s) => s.trim());
-        const dirPath = parts[0];
+        const parts = parseCSVLine(trimmedLine);
+        const dirPath = parts[1];
 
         if (FileUtils.exists(dirPath) && FileUtils.isDirectory(dirPath)) {
           try {
-            const optionsStr = parts.slice(1).join(',');
+            const optionsStr = parts.slice(2).join(',');
             const options = parseDirOptionsFromString(optionsStr);
             const optionsText = formatDirOptions(options);
             const scannedItems = await scanDirectory(
@@ -602,18 +599,13 @@ async function loadRawDataFiles(configFolder: string): Promise<RawDataLine[]> {
         let customIcon: string | undefined = undefined;
 
         // アイテム行の場合、customIconフィールドを抽出
+        // CSVエスケープを正しく処理するためparseCSVLineを使用
         if (lineType === 'item') {
           try {
-            const parts = line.split(',');
+            const parts = parseCSVLine(line);
             // 4番目のフィールドがcustomIconフィールド
-            if (parts.length >= 4 && parts[3].trim()) {
-              customIcon = parts[3].trim();
-              // ダブルクォートで囲まれている場合は除去
-              if (customIcon.startsWith('"') && customIcon.endsWith('"')) {
-                customIcon = customIcon.slice(1, -1);
-                // エスケープされたダブルクォートを元に戻す
-                customIcon = customIcon.replace(/""/g, '"');
-              }
+            if (parts.length >= 4 && parts[3]) {
+              customIcon = parts[3];
             }
           } catch {
             // エラーが発生した場合はcustomIconをundefinedのまま
@@ -1024,18 +1016,18 @@ async function registerItems(configFolder: string, items: RegisterItem[]): Promi
         }
         return groupLine;
       } else {
-        let line = `${item.name},${item.path}`;
+        let line = `${escapeCSV(item.name)},${escapeCSV(item.path)}`;
 
         // 引数フィールドを追加
         if (item.args) {
-          line += `,${item.args}`;
+          line += `,${escapeCSV(item.args)}`;
         } else {
           line += ',';
         }
 
         // カスタムアイコンフィールドを追加
         if (item.customIcon) {
-          line += `,${item.customIcon}`;
+          line += `,${escapeCSV(item.customIcon)}`;
         }
 
         return line;

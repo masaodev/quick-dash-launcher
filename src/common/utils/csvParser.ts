@@ -4,6 +4,41 @@
  */
 
 /**
+ * CSVフィールドをエスケープする
+ *
+ * ダブルクォートまたはカンマを含む場合、内部のダブルクォートを倍増し、
+ * 全体をダブルクォートで囲む。それ以外はそのまま返す。
+ *
+ * @param value - エスケープ対象の値
+ * @returns エスケープされた値
+ *
+ * @example
+ * ```typescript
+ * escapeCSV('hello')
+ * // => 'hello'
+ *
+ * escapeCSV('a,b')
+ * // => '"a,b"'
+ *
+ * escapeCSV('a "test" b')
+ * // => '"a ""test"" b"'  (ダブルクォートを含むのでエスケープ)
+ *
+ * escapeCSV('a "test", b')
+ * // => '"a ""test"", b"'  (カンマとダブルクォートを含むのでエスケープ)
+ *
+ * escapeCSV('"test"')
+ * // => '"""test"""'  (外側のダブルクォートも保持される)
+ * ```
+ */
+export function escapeCSV(value: string): string {
+  // ダブルクォートまたはカンマを含む場合のみエスケープ
+  if (value.includes('"') || value.includes(',')) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return value;
+}
+
+/**
  * CSV行を解析してフィールドの配列に分割する
  *
  * 以下のCSV仕様をサポート:
@@ -38,8 +73,8 @@ export function parseCSVLine(line: string): string[] {
     const char = line[i];
     const nextChar = line[i + 1];
 
-    // フィールドの開始位置を判定
-    if (current === '' && char !== ' ' && char !== '\t') {
+    // フィールドの開始位置を判定（ダブルクォート内部では再設定しない）
+    if (current === '' && !inQuotes && char !== ' ' && char !== '\t') {
       fieldStartsWithQuote = char === '"';
     }
 
