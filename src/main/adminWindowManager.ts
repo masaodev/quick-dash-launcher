@@ -40,6 +40,7 @@ export async function createAdminWindow(): Promise<BrowserWindow> {
     autoHideMenuBar: true, // メニューバーを自動的に非表示にする
     show: false,
     title: 'QuickDashLauncher - 設定・管理',
+    icon: path.join(__dirname, '../../assets/icon.ico'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
