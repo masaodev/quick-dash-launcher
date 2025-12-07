@@ -416,7 +416,7 @@ const EditModeView: React.FC<EditModeViewProps> = ({
           </div>
           {currentTabFiles.length > 1 && (
             <div className="file-dropdown" ref={fileDropdownRef}>
-              <label className="dropdown-label">ファイル:</label>
+              <label className="dropdown-label">データファイル:</label>
               <button
                 className="dropdown-trigger-btn"
                 onClick={() => setIsFileDropdownOpen(!isFileDropdownOpen)}
