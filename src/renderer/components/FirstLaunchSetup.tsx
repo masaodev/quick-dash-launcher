@@ -5,7 +5,7 @@ import AlertDialog from './AlertDialog';
 import '../styles/components/FirstLaunchSetup.css';
 
 interface FirstLaunchSetupProps {
-  onComplete: (hotkey: string) => void;
+  onComplete: (hotkey: string, autoLaunch: boolean) => void;
 }
 
 /**
@@ -18,6 +18,7 @@ export const FirstLaunchSetup: React.FC<FirstLaunchSetupProps> = ({ onComplete }
     isValid: true,
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [autoLaunch, setAutoLaunch] = useState<boolean>(false);
 
   // AlertDialog状態管理
   const [alertDialog, setAlertDialog] = useState<{
@@ -45,7 +46,7 @@ export const FirstLaunchSetup: React.FC<FirstLaunchSetupProps> = ({ onComplete }
 
     try {
       setIsLoading(true);
-      onComplete(hotkey);
+      onComplete(hotkey, autoLaunch);
     } catch (error) {
       console.error('初回設定の保存に失敗しました:', error);
       setAlertDialog({
@@ -63,15 +64,16 @@ export const FirstLaunchSetup: React.FC<FirstLaunchSetupProps> = ({ onComplete }
       <div className="first-launch-content">
         <h1 className="first-launch-title">QuickDash Launcherへようこそ</h1>
         <p className="first-launch-description">
-          アプリを起動するためのグローバルホットキーを設定してください。
-          <br />
-          デフォルトは Alt+Space です。他のアプリと競合する場合は変更できます。
+          初回起動時の設定を行います。
         </p>
 
         <div className="hotkey-setup-section">
           <label htmlFor="hotkey-input" className="hotkey-label">
             グローバルホットキー
           </label>
+          <p className="section-description">
+            アプリを起動するためのキーです（デフォルト: Alt+Space）
+          </p>
           <HotkeyInput
             value={hotkey}
             onChange={handleHotkeyChange}
@@ -87,6 +89,20 @@ export const FirstLaunchSetup: React.FC<FirstLaunchSetupProps> = ({ onComplete }
             <br />
             例: Alt+Space、Ctrl+Alt+W、Ctrl+Shift+L など
           </p>
+        </div>
+
+        <div className="auto-launch-setup-section">
+          <label className="auto-launch-checkbox-label">
+            <input
+              type="checkbox"
+              checked={autoLaunch}
+              onChange={(e) => setAutoLaunch(e.target.checked)}
+              disabled={isLoading}
+              className="auto-launch-checkbox"
+            />
+            起動時に自動実行
+          </label>
+          <p className="auto-launch-hint">Windowsログイン時に自動的に起動します</p>
         </div>
 
         <div className="first-launch-actions">

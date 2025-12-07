@@ -34,8 +34,9 @@ let normalWindowBounds: { width: number; height: number } | null = null;
  */
 export async function createWindow(): Promise<BrowserWindow> {
   const settingsService = await SettingsService.getInstance();
-  const windowWidth = await settingsService.get('windowWidth');
-  const windowHeight = await settingsService.get('windowHeight');
+  // 初回起動時は大きめのウィンドウサイズを使用
+  const windowWidth = isFirstLaunchMode ? 700 : await settingsService.get('windowWidth');
+  const windowHeight = isFirstLaunchMode ? 600 : await settingsService.get('windowHeight');
 
   mainWindow = new BrowserWindow({
     width: windowWidth,

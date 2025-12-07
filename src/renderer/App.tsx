@@ -370,12 +370,13 @@ const App: React.FC = () => {
     openEditModal(rawDataLine);
   };
 
-  const handleFirstLaunchComplete = async (hotkey: string) => {
+  const handleFirstLaunchComplete = async (hotkey: string, autoLaunch: boolean) => {
     try {
       // ホットキーを設定（設定ファイルが自動的に作成される）
       // dataFileTabsも明示的に設定して、data.txtタブが含まれるようにする
       await window.electronAPI.setMultipleSettings({
         hotkey: hotkey,
+        autoLaunch: autoLaunch,
         dataFileTabs: [{ files: ['data.txt'], name: 'メイン' }],
       });
       await window.electronAPI.changeHotkey(hotkey);
