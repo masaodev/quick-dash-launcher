@@ -85,6 +85,17 @@
   border-color: var(--color-gray-600);
 }
 
+.btn-info {
+  background-color: var(--color-info);
+  color: var(--color-white);
+  border-color: var(--color-info);
+}
+
+.btn-info:hover:not(:disabled) {
+  background-color: var(--color-info-hover);
+  border-color: var(--color-info-hover);
+}
+
 .btn-sm {
   padding: var(--spacing-xs) var(--spacing-md);
   font-size: var(--font-size-sm);

@@ -138,8 +138,8 @@
 }
 
 .action-btn.pin-always-on-top:hover {
-  background-color: var(--color-danger-light) !important;
-  border-color: var(--color-danger-light);
+  background-color: var(--color-danger-alt) !important;
+  border-color: var(--color-danger-alt);
   box-shadow: var(--shadow);
   transform: scale(1.05);
 }

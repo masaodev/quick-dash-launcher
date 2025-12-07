@@ -809,3 +809,13 @@
   color: var(--color-white);
   border-color: var(--color-secondary);
 }
+
+.type-select-button.group-button {
+  border-color: var(--color-info);
+}
+
+.type-select-button.group-button:hover {
+  background-color: var(--color-info);
+  color: var(--color-white);
+  border-color: var(--color-info);
+}
