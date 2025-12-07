@@ -633,6 +633,26 @@
   padding: var(--spacing-xs) 6px !important;
 }
 
+.icon-column {
+  width: 32px;
+  text-align: center;
+  padding: var(--spacing-xs) 4px !important;
+}
+
+.icon-column .item-icon-image {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  vertical-align: middle;
+}
+
+.icon-column .folder-emoji {
+  font-size: 20px;
+  line-height: 24px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
 .type-icon {
   margin-right: 4px;
   font-size: 14px;

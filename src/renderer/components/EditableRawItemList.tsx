@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { parseCSVLine, escapeCSV } from '@common/utils/csvParser';
 import { isGroupDirective, isDirDirective } from '@common/utils/directiveUtils';
+import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 
-import { RawDataLine } from '../../common/types';
+import { RawDataLine, LauncherItem } from '../../common/types';
 
 import ConfirmDialog from './ConfirmDialog';
 
@@ -28,6 +29,9 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
   const [editingCell, setEditingCell] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState('');
 
+  // アイコンキャッシュ: Map<行番号, base64データURL>
+  const [itemIcons, setItemIcons] = useState<Map<number, string>>(new Map());
+
   // ConfirmDialog状態管理
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean;
@@ -40,6 +44,59 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
     onConfirm: () => {},
     danger: false,
   });
+
+  // すべてのアイテムアイコンを取得（ファビコン + 自動取得 + カスタム）
+  useEffect(() => {
+    const loadIcons = async () => {
+      // rawLinesからLauncherItemsに変換（type='item'のみ、パスが空でない行のみ）
+      const launcherItems = rawLines
+        .filter((line) => line.type === 'item')
+        .map((line) => {
+          const parts = parseCSVLine(line.content);
+          const name = parts[0] || '';
+          const path = parts[1] || '';
+
+          // パスが空の場合は除外
+          if (!path) return null;
+
+          // LauncherItemに変換（typeはdetectItemTypeSyncで判定）
+          return {
+            name,
+            path,
+            type: detectItemTypeSync(path),
+          } as LauncherItem;
+        })
+        .filter((item): item is LauncherItem => item !== null);
+
+      // loadCachedIcons()でアイコンを一括取得（Main Windowと同じAPI）
+      const iconCache = await window.electronAPI.loadCachedIcons(launcherItems);
+
+      // パス→アイコンのMapを作成
+      const pathToIconMap = new Map<string, string>();
+      Object.entries(iconCache).forEach(([path, iconData]) => {
+        if (iconData) {
+          pathToIconMap.set(path, iconData);
+        }
+      });
+
+      // 行番号→アイコンのMapに変換（既存のitemIcons stateと互換性を保つ）
+      const lineNumberToIconMap = new Map<number, string>();
+      rawLines.forEach((line) => {
+        if (line.type === 'item') {
+          const parts = parseCSVLine(line.content);
+          const path = parts[1] || '';
+          const iconData = pathToIconMap.get(path);
+          if (iconData) {
+            lineNumberToIconMap.set(line.lineNumber, iconData);
+          }
+        }
+      });
+
+      setItemIcons(lineNumberToIconMap);
+    };
+
+    loadIcons();
+  }, [rawLines]);
 
   const getLineKey = (line: RawDataLine) => `${line.sourceFile}_${line.lineNumber}`;
 
@@ -404,6 +461,24 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
     );
   };
 
+  const renderIconCell = (line: RawDataLine) => {
+    // 単一アイテムの場合のみアイコンを表示
+    if (line.type === 'item') {
+      const iconData = itemIcons.get(line.lineNumber);
+      if (iconData) {
+        return <img src={iconData} alt="" className="item-icon-image" />;
+      }
+
+      // アイコンがない場合、パスから型を判定してフォルダなら絵文字表示
+      const parts = parseCSVLine(line.content);
+      const path = parts[1] || '';
+      if (path && detectItemTypeSync(path) === 'folder') {
+        return <span className="folder-emoji">📁</span>;
+      }
+    }
+    return null;
+  };
+
   const renderEditableCell = (line: RawDataLine) => {
     const cellKey = getLineKey(line);
     const isEditing = editingCell === cellKey;
@@ -472,6 +547,7 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
             </th>
             <th className="line-number-column">#</th>
             <th className="type-column">種類</th>
+            <th className="icon-column"></th>
             <th className="name-column">名前</th>
             <th className="content-column">パスと引数 (パスのみ編集可、引数編集は✏️から)</th>
             <th className="actions-column">操作</th>
@@ -496,6 +572,7 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
                 </td>
                 <td className="line-number-column">{line.lineNumber}</td>
                 <td className="type-column">{renderTypeCell(line)}</td>
+                <td className="icon-column">{renderIconCell(line)}</td>
                 <td className="name-column">{renderNameCell(line)}</td>
                 <td className="content-column">{renderEditableCell(line)}</td>
                 <td className="actions-column">
