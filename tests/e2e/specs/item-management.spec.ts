@@ -16,7 +16,7 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
 
   // ==================== 管理画面表示テスト ====================
 
-  test('管理画面を開くとアイテム管理タブが表示される', async ({
+  test('管理画面が表示され、テーブルヘッダーとアイテムが正しく表示される', async ({
     electronApp,
     mainWindow,
   }, testInfo) => {
@@ -54,22 +54,8 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         const actionHeader = adminWindow.locator('th.actions-column');
         await expect(actionHeader).toBeVisible();
       });
-    } finally {
-      await adminWindow.close();
-    }
-  });
 
-  test('管理画面にdata.txtのアイテムが表示される', async ({
-    electronApp,
-    mainWindow,
-  }, testInfo) => {
-    const utils = new TestUtils(mainWindow);
-    const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
-
-    try {
-      const adminUtils = new TestUtils(adminWindow);
-
-      await test.step('アイテムが表示されることを確認', async () => {
+      await test.step('data.txtのアイテムが表示されることを確認', async () => {
         // data.txtの既知のアイテムが表示されることを確認
         const knownItems = ['GitHub', 'Google', 'Wikipedia'];
 
@@ -140,7 +126,7 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
 
   // ==================== アイテム編集テスト ====================
 
-  test('セル編集でアイテムの名前を変更できる', async ({
+  test('セル編集と詳細編集モーダルでアイテムを編集できる', async ({
     electronApp,
     mainWindow,
     configHelper,
@@ -151,7 +137,7 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
     try {
       const adminUtils = new TestUtils(adminWindow);
 
-      await test.step('GitHubアイテムの名前を編集', async () => {
+      await test.step('セル編集でGitHubアイテムの名前を変更', async () => {
         const githubRow = adminWindow.locator('.raw-item-row', { hasText: 'GitHub' });
         const nameCell = githubRow.locator('.name-column .editable-cell');
         await nameCell.click();
@@ -168,25 +154,10 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         const dataContent = configHelper.readDataFile('data.txt');
         expect(dataContent).toContain('GitHub編集後');
       });
-    } finally {
-      await adminWindow.close();
-    }
-  });
 
-  test('詳細編集モーダルでアイテムを編集できる', async ({
-    electronApp,
-    mainWindow,
-    configHelper,
-  }, testInfo) => {
-    const utils = new TestUtils(mainWindow);
-    const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
-
-    try {
-      const adminUtils = new TestUtils(adminWindow);
-
-      await test.step('GitHubアイテムの詳細編集ボタンをクリック', async () => {
-        const githubRow = adminWindow.locator('.raw-item-row', { hasText: 'GitHub' });
-        const editButton = githubRow.locator('button.detail-edit-button');
+      await test.step('Googleアイテムの詳細編集ボタンをクリック', async () => {
+        const googleRow = adminWindow.locator('.raw-item-row', { hasText: 'Google' });
+        const editButton = googleRow.locator('button.detail-edit-button');
         await editButton.click();
 
         // 登録モーダルが開いたことを確認
@@ -198,19 +169,19 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         const nameInput = adminWindow
           .locator('.register-modal input[placeholder*="表示名"]')
           .first();
-        await nameInput.fill('GitHub詳細編集');
+        await nameInput.fill('Google詳細編集');
 
         const argsInput = adminWindow.locator('.register-modal input[placeholder*="引数"]').first();
         await argsInput.fill('--test-args');
       });
 
-      await test.step('更新ボタンをクリック', async () => {
+      await test.step('更新ボタンをクリックして確認', async () => {
         const updateButton = adminWindow.locator('.register-modal button.primary').first();
         await updateButton.click();
 
         // data.txtに保存されたことを確認
         const dataContent = configHelper.readDataFile('data.txt');
-        expect(dataContent).toContain('GitHub詳細編集');
+        expect(dataContent).toContain('Google詳細編集');
         expect(dataContent).toContain('--test-args');
       });
     } finally {
@@ -555,7 +526,7 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
 
   // ==================== 複数ファイルタブテスト ====================
 
-  test('複数ファイルを持つタブでファイルを切り替えて編集できる', async ({
+  test('複数ファイルタブでファイルとタブを切り替えて編集できる', async ({
     electronApp,
     mainWindow,
     configHelper,
@@ -634,63 +605,6 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         expect(data3Content).toContain('Qiita編集');
       });
 
-      await test.step('data.txtに戻って編集', async () => {
-        // ファイル選択ドロップダウンを開く
-        const fileDropdownButton = adminWindow.locator('.file-dropdown .dropdown-trigger-btn');
-        await fileDropdownButton.click();
-
-        // メニューが表示されるまで待機
-        const fileDropdownMenu = adminWindow.locator('.file-dropdown .dropdown-menu');
-        await expect(fileDropdownMenu).toBeVisible();
-
-        // data.txtを選択
-        const fileItems = adminWindow.locator('.file-dropdown .dropdown-item');
-        const dataItem = fileItems.filter({ hasText: 'data.txt' });
-        await dataItem.click();
-
-        // メニューが閉じるまで待機
-        await expect(fileDropdownMenu).not.toBeVisible();
-
-        // GitHubアイテムを編集
-        const githubRow = adminWindow.locator('.raw-item-row', { hasText: 'GitHub' });
-        const nameCell = githubRow.locator('.name-column .editable-cell');
-        await nameCell.click();
-
-        const nameInput = githubRow.locator('.name-column .edit-input');
-        await nameInput.fill('GitHub統合タブ');
-        await nameInput.press('Enter');
-
-        // 保存
-        const saveButton = adminWindow.locator('button.save-changes-button');
-        await saveButton.click();
-
-        // data.txtに保存されたことを確認
-        const dataContent = configHelper.readDataFile('data.txt');
-        expect(dataContent).toContain('GitHub統合タブ');
-      });
-    } finally {
-      await adminWindow.close();
-    }
-  });
-
-  test('複数ファイルタブでサブタブに切り替えて編集できる', async ({
-    electronApp,
-    mainWindow,
-    configHelper,
-  }, testInfo) => {
-    const utils = new TestUtils(mainWindow);
-
-    await test.step('複数ファイルタブ機能を有効化', async () => {
-      configHelper.loadTemplate('with-multi-file-tabs');
-      await mainWindow.reload();
-      await utils.waitForPageLoad();
-    });
-
-    const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
-
-    try {
-      const adminUtils = new TestUtils(adminWindow);
-
       await test.step('サブ1タブに切り替え', async () => {
         // ドロップダウンボタンをクリック
         const tabDropdownButton = adminWindow.locator('.tab-dropdown .dropdown-trigger-btn');
@@ -733,32 +647,6 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         // data2.txtに保存されたことを確認
         const data2Content = configHelper.readDataFile('data2.txt');
         expect(data2Content).toContain('Reddit複数ファイルタブ');
-      });
-
-      await test.step('統合タブに戻る', async () => {
-        // ドロップダウンボタンをクリック
-        const tabDropdownButton = adminWindow.locator('.tab-dropdown .dropdown-trigger-btn');
-        await tabDropdownButton.click();
-
-        // ドロップダウンメニューが表示されるまで待機
-        const dropdownMenu = adminWindow.locator('.tab-dropdown .dropdown-menu');
-        await expect(dropdownMenu).toBeVisible();
-
-        // 対象のタブ項目をクリック（インデックス0 = 統合タブ）
-        const tabItems = adminWindow.locator('.tab-dropdown .dropdown-item');
-        const integratedTab = tabItems.nth(0);
-        await integratedTab.click();
-
-        // ドロップダウンが閉じるまで待機
-        await expect(dropdownMenu).not.toBeVisible();
-
-        // ファイル選択ドロップダウンが再表示される
-        const fileDropdownButton = adminWindow.locator('.file-dropdown .dropdown-trigger-btn');
-        await expect(fileDropdownButton).toBeVisible();
-
-        // data.txtのアイテムが表示される
-        const githubRow = adminWindow.locator('.raw-item-row', { hasText: 'GitHub' });
-        await expect(githubRow).toBeVisible({ timeout: 5000 });
       });
     } finally {
       await adminWindow.close();

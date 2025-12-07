@@ -2,12 +2,14 @@ import { test, expect } from '../fixtures/electron-app';
 import { TestUtils } from '../helpers/test-utils';
 
 test.describe('QuickDashLauncher - 基本UI機能テスト', () => {
-  // ==================== アイテム表示テスト ====================
+  // ==================== アイテム表示・選択テスト ====================
 
-  test('data.txtから読み込んだアイテムが表示され、アイコンとラベルが正しく表示される', async ({
+  test('アイテム一覧が正しく表示され、キーボード・マウスで選択できる', async ({
     mainWindow,
   }, testInfo) => {
     const utils = new TestUtils(mainWindow);
+    let firstItemText: string | null;
+    let currentItemText: string | null;
 
     await test.step('ページの読み込み完了を待機', async () => {
       await utils.waitForPageLoad();
@@ -24,12 +26,10 @@ test.describe('QuickDashLauncher - 基本UI機能テスト', () => {
       expect(itemCount).toBeGreaterThan(0);
 
       // E2Eテスト用data.txtには最低でも7個のアイテムがあることを確認
-      // (GitHub, Google, Wikipedia, メモ帳, 電卓, デスクトップ, ドキュメント)
       expect(itemCount).toBeGreaterThanOrEqual(7);
     });
 
     await test.step('最初のアイテムのアイコンとラベルを確認', async () => {
-      // 最初のアイテムを取得
       const firstItem = mainWindow.locator('.item').first();
       await expect(firstItem).toBeVisible();
 
@@ -48,89 +48,51 @@ test.describe('QuickDashLauncher - 基本UI機能テスト', () => {
     });
 
     await test.step('既知のアイテムが表示されることを確認', async () => {
-      // E2Eテスト用data.txtに含まれる既知のアイテムが表示されることを確認
       const knownItems = ['GitHub', 'Google', 'メモ帳', '電卓'];
-
       for (const itemName of knownItems) {
         const item = mainWindow.locator('.item', { hasText: itemName });
         await expect(item).toBeVisible();
       }
     });
-  });
 
-  // ==================== アイテム選択テスト ====================
-
-  test('キーボード（矢印キー）でアイテム選択が移動する', async ({ mainWindow }, testInfo) => {
-    const utils = new TestUtils(mainWindow);
-    let firstItemText: string | null;
-
-    await test.step('ページの読み込み完了を待機', async () => {
-      await utils.waitForPageLoad();
-    });
-
-    await test.step('最初のアイテムが選択されていることを確認', async () => {
+    await test.step('キーボード（矢印キー）でアイテム選択が移動する', async () => {
+      // 最初のアイテムが選択されていることを確認
       const firstItem = mainWindow.locator('.item.selected').first();
       await expect(firstItem).toBeVisible();
-
-      // 最初に選択されているアイテムのテキストを取得
       firstItemText = await firstItem.textContent();
-    });
 
-    await test.step('↓キーを押して選択を移動', async () => {
+      // ↓キーを押して選択を移動
       await utils.sendShortcut('ArrowDown');
-
       const selectedItem = mainWindow.locator('.item.selected');
       await expect(selectedItem).toBeVisible();
 
       // 選択されたアイテムのテキストが最初と異なることを確認
       const selectedItemText = await selectedItem.textContent();
       expect(selectedItemText).not.toBe(firstItemText);
-    });
 
-    await test.step('さらに↓キーを押して選択を移動', async () => {
+      // さらに↓キーを押して選択を移動
       await utils.sendShortcut('ArrowDown');
-    });
-
-    let currentItemText: string | null;
-
-    await test.step('現在選択されているアイテムのテキストを取得', async () => {
       const currentItem = mainWindow.locator('.item.selected');
       currentItemText = await currentItem.textContent();
-    });
 
-    await test.step('↑キーを押して選択が上に移動することを確認', async () => {
+      // ↑キーを押して選択が上に移動することを確認
       await utils.sendShortcut('ArrowUp');
-
-      const selectedItem = mainWindow.locator('.item.selected');
-      await expect(selectedItem).toBeVisible();
-
-      // 選択されたアイテムのテキストが異なることを確認
-      const selectedItemText = await selectedItem.textContent();
-      expect(selectedItemText).not.toBe(currentItemText);
-    });
-  });
-
-  test('マウスホバーでアイテム選択が変わる', async ({ mainWindow }, testInfo) => {
-    const utils = new TestUtils(mainWindow);
-
-    await test.step('ページの読み込み完了を待機', async () => {
-      await utils.waitForPageLoad();
+      const backSelectedItem = mainWindow.locator('.item.selected');
+      await expect(backSelectedItem).toBeVisible();
+      const backSelectedItemText = await backSelectedItem.textContent();
+      expect(backSelectedItemText).not.toBe(currentItemText);
     });
 
-    await test.step('2番目のアイテムにマウスホバー', async () => {
+    await test.step('マウスホバーでアイテム選択が変わる', async () => {
       const secondItem = mainWindow.locator('.item').nth(1);
       await secondItem.hover();
-    });
-
-    await test.step('ホバーしたアイテムが選択されていることを確認', async () => {
-      const secondItem = mainWindow.locator('.item').nth(1);
       await expect(secondItem).toHaveClass(/selected/);
     });
   });
 
   // ==================== 検索機能テスト ====================
 
-  test('検索ボックスが表示され、検索によってアイテムが絞り込まれる', async ({
+  test('検索ボックスでアイテムを絞り込み、クリアで全件表示できる', async ({
     mainWindow,
   }, testInfo) => {
     const utils = new TestUtils(mainWindow);
@@ -161,7 +123,7 @@ test.describe('QuickDashLauncher - 基本UI機能テスト', () => {
       const filteredItems = mainWindow.locator('.item, [class*="item"]:visible');
       const filteredCount = await filteredItems.count();
 
-      // 絞り込まれていることを確認（アイテム数が減っている）
+      // 絞り込まれていることを確認
       expect(filteredCount).toBeLessThan(initialCount);
       expect(filteredCount).toBeGreaterThan(0);
 
@@ -169,31 +131,12 @@ test.describe('QuickDashLauncher - 基本UI機能テスト', () => {
       const hasGitHub = await mainWindow.locator('text=GitHub').isVisible();
       expect(hasGitHub).toBe(true);
     });
-  });
 
-  test('検索語をクリアすると全アイテムが表示される', async ({ mainWindow }, testInfo) => {
-    const utils = new TestUtils(mainWindow);
-    let initialCount: number;
-
-    await test.step('ページの読み込み完了を待機', async () => {
-      await utils.waitForPageLoad();
-    });
-
-    await test.step('検索前の全アイテム数を取得', async () => {
-      const allItems = mainWindow.locator('.item, [class*="item"]');
-      initialCount = await allItems.count();
-    });
-
-    await test.step('検索を実行', async () => {
-      await utils.searchFor('Test');
-    });
-
-    await test.step('検索ボックスをクリア', async () => {
+    await test.step('検索ボックスをクリアして全アイテムが表示される', async () => {
       const searchBox = mainWindow.locator('input[type="text"]').first();
       await searchBox.clear();
-    });
 
-    await test.step('全アイテムが再び表示されることを確認', async () => {
+      // 全アイテムが再び表示されることを確認
       const allItems = mainWindow.locator('.item, [class*="item"]');
       const restoredCount = await allItems.count();
       expect(restoredCount).toBe(initialCount);
@@ -214,7 +157,7 @@ test.describe('QuickDashLauncher - 基本UI機能テスト', () => {
     });
 
     await test.step('複数キーワードで検索', async () => {
-      // スペース区切りで複数キーワードを入力（実際に存在するアイテムの一部を検索）
+      // スペース区切りで複数キーワードを入力
       await utils.searchFor('Git Hub');
     });
 
@@ -223,7 +166,6 @@ test.describe('QuickDashLauncher - 基本UI機能テスト', () => {
       const filteredItems = mainWindow.locator('.item, [class*="item"]:visible');
       const filteredCount = await filteredItems.count();
 
-      // GitHubアイテムがマッチするはず
       expect(filteredCount).toBeGreaterThan(0);
       expect(filteredCount).toBeLessThanOrEqual(initialCount);
 
@@ -235,10 +177,11 @@ test.describe('QuickDashLauncher - 基本UI機能テスト', () => {
 
   // ==================== アイテム数表示テスト（タブ表示OFF時） ====================
 
-  test('タブ表示OFF時、検索ボックス下にアイテム数が表示される', async ({
+  test('検索ボックス下にアイテム数が表示され、検索で動的に更新される', async ({
     mainWindow,
   }, testInfo) => {
     const utils = new TestUtils(mainWindow);
+    let initialCount: string;
 
     await test.step('ページ読み込みとタブ表示OFF確認', async () => {
       // デフォルトテンプレート（base）を使用（showDataFileTabs: false）
@@ -262,18 +205,6 @@ test.describe('QuickDashLauncher - 基本UI機能テスト', () => {
       const countText = await itemCount.textContent();
       expect(countText).toMatch(/\d+件/);
     });
-  });
-
-  test('タブ表示OFF時、検索によってアイテム数が動的に更新される', async ({
-    mainWindow,
-  }, testInfo) => {
-    const utils = new TestUtils(mainWindow);
-
-    await test.step('ページ読み込み', async () => {
-      await utils.waitForPageLoad();
-    });
-
-    let initialCount: string;
 
     await test.step('初期アイテム数を取得', async () => {
       const itemCount = mainWindow.locator('.item-count-display');

@@ -2,7 +2,10 @@ import { test, expect } from '../fixtures/first-launch-app';
 import { TestUtils } from '../helpers/test-utils';
 
 test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
-  test('初回起動時に設定画面が自動表示される', async ({ electronApp, mainWindow }, testInfo) => {
+  test('初回起動時に設定画面が自動表示され、必要な要素が全て表示される', async ({
+    electronApp,
+    mainWindow,
+  }, testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('アプリケーションが起動していることを確認', async () => {
@@ -15,20 +18,11 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
       const titleExists = await utils.elementExists('.first-launch-title');
       expect(titleExists).toBe(true);
 
-      // タイトルのテキストを確認
       const titleText = await utils.getElementText('.first-launch-title');
       expect(titleText).toContain('QuickDash Launcher');
     });
-  });
 
-  test('初回設定画面に必要な要素が表示されている', async ({ mainWindow }, testInfo) => {
-    const utils = new TestUtils(mainWindow);
-
-    await test.step('ページの読み込み完了を待機', async () => {
-      await utils.waitForPageLoad();
-    });
-
-    await test.step('必要な要素が表示されていることを確認', async () => {
+    await test.step('必要な要素が全て表示されていることを確認', async () => {
       // 説明文が表示されていることを確認
       const descriptionExists = await utils.elementExists('.first-launch-description');
       expect(descriptionExists).toBe(true);
@@ -53,36 +47,16 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
       const completeButtonExists = await utils.elementExists('.complete-button');
       expect(completeButtonExists).toBe(true);
     });
-  });
 
-  test('デフォルトのホットキーが入力されている', async ({ mainWindow }, testInfo) => {
-    const utils = new TestUtils(mainWindow);
-
-    await test.step('ページの読み込み完了を待機', async () => {
-      await utils.waitForPageLoad();
+    await test.step('デフォルトのホットキーが入力され、完了ボタンが有効であることを確認', async () => {
       await utils.waitForElement('.hotkey-input');
-    });
-
-    await test.step('デフォルトのホットキーが表示されていることを確認', async () => {
       const hotkeyValue = await mainWindow.inputValue('.hotkey-input');
       expect(hotkeyValue).toBe('Alt+Space');
+
+      // デフォルトのホットキーが valid なので、完了ボタンが有効
+      const isDisabled = await mainWindow.isDisabled('.complete-button');
+      expect(isDisabled).toBe(false);
     });
-  });
-
-  test('完了ボタンが表示されている', async ({ mainWindow }) => {
-    const utils = new TestUtils(mainWindow);
-
-    // ページの読み込み完了を待機
-    await utils.waitForPageLoad();
-
-    // 完了ボタンが有効であることを確認（デフォルト値が valid）
-    await utils.waitForElement('.complete-button');
-    const buttonExists = await utils.elementExists('.complete-button');
-    expect(buttonExists).toBe(true);
-
-    // デフォルトのホットキーが valid なので、完了ボタンが有効
-    const isDisabled = await mainWindow.isDisabled('.complete-button');
-    expect(isDisabled).toBe(false);
   });
 
   test('初回設定画面はESCキーを押しても閉じない', async ({ mainWindow }) => {
@@ -120,53 +94,38 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
     });
   });
 
-  test('完了ボタンをクリックするとsettings.jsonに設定が保存される', async ({
+  test('デフォルト設定で完了するとsettings.jsonに正しく保存される', async ({
     configHelper,
     mainWindow,
   }) => {
     const utils = new TestUtils(mainWindow);
 
-    // ページの読み込み完了を待機
-    await utils.waitForPageLoad();
+    await test.step('ページの読み込み完了を待機', async () => {
+      await utils.waitForPageLoad();
+    });
 
-    // 完了ボタンをクリック前の設定を確認（初期状態またはデフォルト設定）
-    const settingsBefore = configHelper.readSettings();
-    // 初回起動時は hotkey が未設定または空のはず
-    expect(settingsBefore.hotkey || '').toBe('');
+    await test.step('完了ボタンをクリック前の設定を確認', async () => {
+      const settingsBefore = configHelper.readSettings();
+      // 初回起動時は hotkey が未設定または空のはず
+      expect(settingsBefore.hotkey || '').toBe('');
 
-    // 完了ボタンをクリック
-    await utils.waitForElement('.complete-button');
-    await mainWindow.click('.complete-button');
+      // デフォルトのホットキー値を確認
+      const hotkeyValue = await mainWindow.inputValue('.hotkey-input');
+      expect(hotkeyValue).toBe('Alt+Space');
+    });
 
-    // settings.jsonが存在し、設定が保存されたことを確認
-    expect(configHelper.fileExists('settings.json')).toBe(true);
+    await test.step('完了ボタンをクリックして設定を保存', async () => {
+      await utils.waitForElement('.complete-button');
+      await mainWindow.click('.complete-button');
 
-    // 設定ファイルの内容を確認
-    const settingsAfter = configHelper.readSettings();
-    expect(settingsAfter.hotkey).toBe('Alt+Space');
-  });
+      // settings.jsonが存在し、設定が保存されたことを確認
+      expect(configHelper.fileExists('settings.json')).toBe(true);
+    });
 
-  test('完了ボタンをクリックすると設定ファイルに正しい内容が保存される', async ({
-    configHelper,
-    mainWindow,
-  }) => {
-    const utils = new TestUtils(mainWindow);
-
-    // ページの読み込み完了を待機
-    await utils.waitForPageLoad();
-
-    // デフォルトのホットキー値を確認
-    const hotkeyValue = await mainWindow.inputValue('.hotkey-input');
-    expect(hotkeyValue).toBe('Alt+Space');
-
-    // 完了ボタンをクリック
-    await mainWindow.click('.complete-button');
-
-    // 設定ファイルの内容を確認
-    const settings = configHelper.readSettings();
-
-    // ホットキーが正しく保存されていることを確認
-    expect(settings.hotkey).toBe('Alt+Space');
+    await test.step('設定ファイルに正しい内容が保存されていることを確認', async () => {
+      const settings = configHelper.readSettings();
+      expect(settings.hotkey).toBe('Alt+Space');
+    });
   });
 
   test('ホットキーを変更してから完了ボタンをクリックすると変更内容が保存される', async ({
