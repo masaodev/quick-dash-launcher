@@ -26,6 +26,10 @@
   color: var(--color-white);
 }
 
+.item.selected .item-name {
+  color: var(--color-white);
+}
+
 .item-icon {
   width: var(--icon-size-sm);
   height: var(--icon-size-sm);

@@ -22,6 +22,7 @@ export async function createSplashWindow(): Promise<BrowserWindow> {
     maximizable: false,
     minimizable: false,
     show: true,
+    icon: path.join(__dirname, '../../assets/icon.ico'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
