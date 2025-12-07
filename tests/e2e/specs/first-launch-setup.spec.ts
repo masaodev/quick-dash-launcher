@@ -5,7 +5,7 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
   test('初回起動時に設定画面が自動表示され、必要な要素が全て表示される', async ({
     electronApp,
     mainWindow,
-  }, testInfo) => {
+  }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('アプリケーションが起動していることを確認', async () => {
@@ -77,8 +77,8 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
     expect(titleStillExists).toBe(true);
   });
 
-  test('セキュリティ設定が適切に設定されている', async ({ mainWindow }, testInfo) => {
-    const utils = new TestUtils(mainWindow);
+  test('セキュリティ設定が適切に設定されている', async ({ mainWindow }, _testInfo) => {
+    const _utils = new TestUtils(mainWindow);
 
     await test.step('Electronのセキュリティ設定をチェック', async () => {
       // Electronのセキュリティ設定をチェック

@@ -1,5 +1,3 @@
-import type { Page } from '@playwright/test';
-
 import { test, expect } from '../fixtures/electron-app';
 import { TestUtils } from '../helpers/test-utils';
 
@@ -16,8 +14,8 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
 
   // ==================== グループアイテム表示テスト ====================
 
-  test('グループアイテムが正しく表示される', async ({ mainWindow }, testInfo) => {
-    const utils = new TestUtils(mainWindow);
+  test('グループアイテムが正しく表示される', async ({ mainWindow }, _testInfo) => {
+    const _utils = new TestUtils(mainWindow);
 
     await test.step('グループアイテムが表示されることを確認', async () => {
       // data.txtに含まれるグループアイテムが表示されることを確認
@@ -42,7 +40,7 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
 
   // ==================== グループアイテム新規登録テスト ====================
 
-  test('新規グループアイテムを登録できる', async ({ mainWindow, configHelper }, testInfo) => {
+  test('新規グループアイテムを登録できる', async ({ mainWindow, configHelper }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('登録モーダルを開く', async () => {
@@ -144,7 +142,7 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
     });
   });
 
-  test('グループアイテム登録時のバリデーション', async ({ mainWindow }, testInfo) => {
+  test('グループアイテム登録時のバリデーション', async ({ mainWindow }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('グループ名が空では登録できない', async () => {
@@ -204,7 +202,7 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
 
   // ==================== グループアイテム編集テスト ====================
 
-  test('グループアイテムを編集できる', async ({ mainWindow, configHelper }, testInfo) => {
+  test('グループアイテムを編集できる', async ({ mainWindow, configHelper }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('グループアイテムを右クリックして編集', async () => {
@@ -272,7 +270,10 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
     });
   });
 
-  test('グループアイテム編集をキャンセルできる', async ({ mainWindow, configHelper }, testInfo) => {
+  test('グループアイテム編集をキャンセルできる', async ({
+    mainWindow,
+    configHelper,
+  }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('グループアイテムを編集してキャンセル', async () => {
@@ -294,7 +295,7 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
 
   // ==================== グループアイテム選択モーダルテスト ====================
 
-  test('グループアイテム選択モーダルの機能', async ({ mainWindow }, testInfo) => {
+  test('グループアイテム選択モーダルの機能', async ({ mainWindow }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('登録モーダルを開いてグループを選択', async () => {
@@ -364,7 +365,7 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
     });
   });
 
-  test('既に追加済みのアイテムは選択不可になる', async ({ mainWindow }, testInfo) => {
+  test('既に追加済みのアイテムは選択不可になる', async ({ mainWindow }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('グループを作成してアイテムを追加', async () => {
@@ -435,12 +436,12 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
     electronApp,
     mainWindow,
     configHelper,
-  }, testInfo) => {
+  }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
     const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
 
     try {
-      const adminUtils = new TestUtils(adminWindow);
+      const _adminUtils = new TestUtils(adminWindow);
 
       await test.step('管理画面を開く', async () => {
         // アイテム管理タブがアクティブであることを確認
@@ -500,12 +501,12 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
     electronApp,
     mainWindow,
     configHelper,
-  }, testInfo) => {
+  }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
     const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
 
     try {
-      const adminUtils = new TestUtils(adminWindow);
+      const _adminUtils = new TestUtils(adminWindow);
 
       await test.step('グループアイテムを削除', async () => {
         const groupRow = adminWindow.locator('.raw-item-row', { hasText: '開発環境スタート' });

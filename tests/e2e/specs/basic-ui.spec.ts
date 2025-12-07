@@ -6,7 +6,7 @@ test.describe('QuickDashLauncher - 基本UI機能テスト', () => {
 
   test('アイテム一覧が正しく表示され、キーボード・マウスで選択できる', async ({
     mainWindow,
-  }, testInfo) => {
+  }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
     let firstItemText: string | null;
     let currentItemText: string | null;
@@ -94,7 +94,7 @@ test.describe('QuickDashLauncher - 基本UI機能テスト', () => {
 
   test('検索ボックスでアイテムを絞り込み、クリアで全件表示できる', async ({
     mainWindow,
-  }, testInfo) => {
+  }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
     let initialCount: number;
 
@@ -143,7 +143,7 @@ test.describe('QuickDashLauncher - 基本UI機能テスト', () => {
     });
   });
 
-  test('複数キーワードでAND検索ができる', async ({ mainWindow }, testInfo) => {
+  test('複数キーワードでAND検索ができる', async ({ mainWindow }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
     let initialCount: number;
 
@@ -179,7 +179,7 @@ test.describe('QuickDashLauncher - 基本UI機能テスト', () => {
 
   test('検索ボックス下にアイテム数が表示され、検索で動的に更新される', async ({
     mainWindow,
-  }, testInfo) => {
+  }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
     let initialCount: string;
 

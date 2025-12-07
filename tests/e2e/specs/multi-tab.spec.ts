@@ -9,7 +9,7 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
 
   // ==================== タブ表示・切り替えテスト ====================
 
-  test('タブ機能を有効化するとタブバーが表示される', async ({ mainWindow }, testInfo) => {
+  test('タブ機能を有効化するとタブバーが表示される', async ({ mainWindow }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('初期状態を確認', async () => {
@@ -52,7 +52,7 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
     await expect(mainTab).toBeVisible();
   });
 
-  test('サブタブをクリックすると切り替わる', async ({ mainWindow }, testInfo) => {
+  test('サブタブをクリックすると切り替わる', async ({ mainWindow }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('タブ機能を有効化してリロード', async () => {
@@ -74,7 +74,7 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
 
   test('サブタブに切り替えるとdata2.txtのアイテムが表示される', async ({
     mainWindow,
-  }, testInfo) => {
+  }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('タブ機能を有効化してリロード', async () => {
@@ -285,7 +285,7 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
   test('アイテムの編集で保存先タブを変更すると別のタブに移動する', async ({
     mainWindow,
     configHelper,
-  }, testInfo) => {
+  }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('メインタブにアイテムが存在することを確認', async () => {
@@ -354,7 +354,7 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
 
   // ==================== タブ表示時のアイテム数表示テスト ====================
 
-  test('タブ表示ON時、各タブにアイテム数が表示される', async ({ mainWindow }, testInfo) => {
+  test('タブ表示ON時、各タブにアイテム数が表示される', async ({ mainWindow }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('マルチタブ機能を有効化', async () => {
@@ -392,7 +392,7 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
 
   test('タブ表示ON時、検索によって全タブのアイテム数が動的に更新される', async ({
     mainWindow,
-  }, testInfo) => {
+  }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('マルチタブ機能を有効化', async () => {
@@ -449,7 +449,7 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
     });
   });
 
-  test('タブ切り替え時、各タブのアイテム数は維持される', async ({ mainWindow }, testInfo) => {
+  test('タブ切り替え時、各タブのアイテム数は維持される', async ({ mainWindow }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('マルチタブ機能を有効化', async () => {
@@ -492,7 +492,7 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
   test('1つのタブに複数のデータファイルを紐づけた場合、タブが1つだけ表示される', async ({
     mainWindow,
     configHelper,
-  }, testInfo) => {
+  }, _testInfo) => {
     // 複数ファイル統合タブのテンプレートをロード
     configHelper.loadTemplate('with-multi-file-tabs');
 
@@ -520,7 +520,7 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
   test('統合タブには複数ファイルのアイテムが全て表示される', async ({
     mainWindow,
     configHelper,
-  }, testInfo) => {
+  }, _testInfo) => {
     configHelper.loadTemplate('with-multi-file-tabs');
 
     const utils = new TestUtils(mainWindow);
@@ -555,7 +555,7 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
   test('統合タブのアイテム数は複数ファイルの合計が表示される', async ({
     mainWindow,
     configHelper,
-  }, testInfo) => {
+  }, _testInfo) => {
     configHelper.loadTemplate('with-multi-file-tabs');
 
     const utils = new TestUtils(mainWindow);
@@ -585,7 +585,7 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
   test('統合タブから別のタブに切り替えると、統合タブのアイテムは表示されない', async ({
     mainWindow,
     configHelper,
-  }, testInfo) => {
+  }, _testInfo) => {
     configHelper.loadTemplate('with-multi-file-tabs');
 
     const utils = new TestUtils(mainWindow);
@@ -625,7 +625,7 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
   test('統合タブで検索すると複数ファイルのアイテムが検索対象になる', async ({
     mainWindow,
     configHelper,
-  }, testInfo) => {
+  }, _testInfo) => {
     configHelper.loadTemplate('with-multi-file-tabs');
 
     const utils = new TestUtils(mainWindow);
@@ -668,7 +668,7 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
   test('統合タブで矢印キーによる選択が正しく循環する', async ({
     mainWindow,
     configHelper,
-  }, testInfo) => {
+  }, _testInfo) => {
     configHelper.loadTemplate('with-multi-file-tabs');
 
     const utils = new TestUtils(mainWindow);
@@ -715,7 +715,7 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
   test('統合タブで矢印キーで選択したアイテムをEnterキーで開ける', async ({
     mainWindow,
     configHelper,
-  }, testInfo) => {
+  }, _testInfo) => {
     configHelper.loadTemplate('with-multi-file-tabs');
 
     const utils = new TestUtils(mainWindow);
@@ -727,14 +727,14 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
       await expect(unifiedTab).toBeVisible();
     });
 
-    let selectedItemText: string | null;
+    let _selectedItemText: string | null;
 
     await test.step('↓キーで2番目のアイテムに移動', async () => {
       await utils.sendShortcut('ArrowDown');
 
       const selectedItem = mainWindow.locator('.item.selected');
       await expect(selectedItem).toBeVisible();
-      selectedItemText = await selectedItem.textContent();
+      _selectedItemText = await selectedItem.textContent();
     });
 
     await test.step('Enterキーを押してアイテムを開く（エラーが発生しないことを確認）', async () => {
@@ -750,7 +750,7 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
   test('統合タブで複数回矢印キーを押して選択を移動し、Enterキーで開ける', async ({
     mainWindow,
     configHelper,
-  }, testInfo) => {
+  }, _testInfo) => {
     configHelper.loadTemplate('with-multi-file-tabs');
 
     const utils = new TestUtils(mainWindow);
@@ -783,7 +783,7 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
   test('統合タブでdata.txtとdata3.txtのアイテムをまたいで矢印キーで移動できる', async ({
     mainWindow,
     configHelper,
-  }, testInfo) => {
+  }, _testInfo) => {
     configHelper.loadTemplate('with-multi-file-tabs');
 
     const utils = new TestUtils(mainWindow);

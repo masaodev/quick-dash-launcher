@@ -23,7 +23,7 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
   test('設定タブが表示され、各セクションが存在する', async ({
     electronApp,
     mainWindow,
-  }, testInfo) => {
+  }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('初期状態を確認', async () => {});
@@ -32,7 +32,7 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
     const adminWindow = await utils.openAdminWindow(electronApp, 'settings');
 
     try {
-      const adminUtils = new TestUtils(adminWindow);
+      const _adminUtils = new TestUtils(adminWindow);
 
       await test.step('設定タブが表示されていることを確認', async () => {
         const settingsTab = adminWindow.locator('.settings-tab');
@@ -128,12 +128,12 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
     electronApp,
     mainWindow,
     configHelper,
-  }, testInfo) => {
+  }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
     const adminWindow = await utils.openAdminWindow(electronApp, 'settings');
 
     try {
-      const adminUtils = new TestUtils(adminWindow);
+      const _adminUtils = new TestUtils(adminWindow);
 
       await test.step('設定タブに切り替え', async () => {});
 
@@ -176,12 +176,12 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
     electronApp,
     mainWindow,
     configHelper,
-  }, testInfo) => {
+  }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
     const adminWindow = await utils.openAdminWindow(electronApp, 'settings');
 
     try {
-      const adminUtils = new TestUtils(adminWindow);
+      const _adminUtils = new TestUtils(adminWindow);
 
       await test.step('設定タブに切り替え', async () => {});
 
@@ -246,12 +246,12 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
     electronApp,
     mainWindow,
     configHelper,
-  }, testInfo) => {
+  }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
     const adminWindow = await utils.openAdminWindow(electronApp, 'settings');
 
     try {
-      const adminUtils = new TestUtils(adminWindow);
+      const _adminUtils = new TestUtils(adminWindow);
 
       await test.step('複数タブ表示を有効化', async () => {
         const showTabsLabel = adminWindow.locator('label', { hasText: '複数タブを表示' });
@@ -325,12 +325,12 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
     electronApp,
     mainWindow,
     configHelper,
-  }, testInfo) => {
+  }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
     const adminWindow = await utils.openAdminWindow(electronApp, 'settings');
 
     try {
-      const adminUtils = new TestUtils(adminWindow);
+      const _adminUtils = new TestUtils(adminWindow);
 
       await test.step('設定タブに切り替え', async () => {});
 

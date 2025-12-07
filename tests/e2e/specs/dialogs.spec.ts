@@ -2,7 +2,7 @@ import { test, expect } from '../fixtures/electron-app';
 import { TestUtils } from '../helpers/test-utils';
 
 test.describe('AlertDialog', () => {
-  test('data.txt削除試行時に警告ダイアログが表示される', async ({ mainWindow }, testInfo) => {
+  test('data.txt削除試行時に警告ダイアログが表示される', async ({ mainWindow }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('アプリケーションが正常に起動している', async () => {
@@ -57,7 +57,7 @@ test.describe('AlertDialog', () => {
     });
   });
 
-  test('ESCキーで閉じる', async ({ mainWindow }, testInfo) => {
+  test('ESCキーで閉じる', async ({ mainWindow }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('アプリケーションが正常に起動している', async () => {
@@ -104,7 +104,7 @@ test.describe('AlertDialog', () => {
 });
 
 test.describe('ConfirmDialog', () => {
-  test('行削除時に確認ダイアログが表示される', async ({ mainWindow }, testInfo) => {
+  test('行削除時に確認ダイアログが表示される', async ({ mainWindow }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('アプリケーションが正常に起動している', async () => {
@@ -143,7 +143,7 @@ test.describe('ConfirmDialog', () => {
     });
   });
 
-  test('ESCキーで閉じる', async ({ mainWindow }, testInfo) => {
+  test('ESCキーで閉じる', async ({ mainWindow }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('アプリケーションが正常に起動している', async () => {
@@ -176,7 +176,7 @@ test.describe('ConfirmDialog', () => {
     });
   });
 
-  test('ENTERキーで確認実行される', async ({ mainWindow }, testInfo) => {
+  test('ENTERキーで確認実行される', async ({ mainWindow }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('アプリケーションが正常に起動している', async () => {

@@ -63,7 +63,7 @@ $Shortcut.Save()
   });
   // ==================== 基本的なコンテキストメニュー表示 ====================
 
-  test('右クリックでコンテキストメニューが表示される', async ({ mainWindow }, testInfo) => {
+  test('右クリックでコンテキストメニューが表示される', async ({ mainWindow }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('通常のアイテムを右クリックするとメニューが表示される', async () => {
@@ -82,7 +82,7 @@ $Shortcut.Save()
     });
   });
 
-  test('通常のアイテムのメニュー構成', async ({ mainWindow }, testInfo) => {
+  test('通常のアイテムのメニュー構成', async ({ mainWindow }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('Webサイトアイテムには親フォルダメニューが表示されない', async () => {
@@ -122,7 +122,7 @@ $Shortcut.Save()
 
   // ==================== ショートカットアイテムのメニュー ====================
 
-  test('ショートカットアイテムのメニュー構成', async ({ mainWindow }, testInfo) => {
+  test('ショートカットアイテムのメニュー構成', async ({ mainWindow }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('ショートカットを右クリックするとメニューが表示される', async () => {
@@ -198,7 +198,7 @@ $Shortcut.Save()
 
   // ==================== メニュー操作 ====================
 
-  test('メニューを閉じる操作', async ({ mainWindow }, testInfo) => {
+  test('メニューを閉じる操作', async ({ mainWindow }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('Escapeキーでメニューが閉じる', async () => {
@@ -232,7 +232,7 @@ $Shortcut.Save()
 
   // ==================== メニュー項目の機能テスト ====================
 
-  test('編集メニューの動作', async ({ mainWindow }, testInfo) => {
+  test('編集メニューの動作', async ({ mainWindow }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('編集メニューが表示され、クリック可能である', async () => {
@@ -252,7 +252,7 @@ $Shortcut.Save()
     });
   });
 
-  test('パスをコピーメニューの動作', async ({ mainWindow }, testInfo) => {
+  test('パスをコピーメニューの動作', async ({ mainWindow }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('パスをコピーメニューをクリックするとメニューが閉じる', async () => {
@@ -272,7 +272,7 @@ $Shortcut.Save()
   });
 
   test('ショートカットのリンク先の親フォルダーを開くメニュー', async ({ mainWindow }, testInfo) => {
-    const utils = new TestUtils(mainWindow);
+    const _utils = new TestUtils(mainWindow);
 
     await test.step('ショートカットアイテムを探す', async () => {
       // ショートカットアイテムが存在するか確認
@@ -319,7 +319,7 @@ $Shortcut.Save()
 
   // ==================== メニュー位置の調整 ====================
 
-  test('メニュー位置の自動調整', async ({ mainWindow }, testInfo) => {
+  test('メニュー位置の自動調整', async ({ mainWindow }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('メニューが画面内に収まるように調整される', async () => {

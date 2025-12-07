@@ -16,7 +16,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
 
   // ==================== 登録モーダル表示テスト ====================
 
-  test('登録モーダルの表示と基本操作', async ({ mainWindow }, testInfo) => {
+  test('登録モーダルの表示と基本操作', async ({ mainWindow }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('プラスボタンをクリックすると登録モーダルが開く', async () => {
@@ -73,7 +73,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
 
   // ==================== アイテム登録テスト ====================
 
-  test('新規アイテムを登録できる', async ({ mainWindow, configHelper }, testInfo) => {
+  test('新規アイテムを登録できる', async ({ mainWindow, configHelper }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
     let countBefore: number;
 
@@ -156,7 +156,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
     });
   });
 
-  test('不正な入力では登録できない', async ({ mainWindow }, testInfo) => {
+  test('不正な入力では登録できない', async ({ mainWindow }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
     let countBefore: number;
 
@@ -218,7 +218,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
 
   // ==================== アイテム編集テスト ====================
 
-  test('編集モーダルの表示と初期値', async ({ mainWindow }, testInfo) => {
+  test('編集モーダルの表示と初期値', async ({ mainWindow }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('アイテムを右クリックすると編集メニューが表示される', async () => {
@@ -253,7 +253,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
     });
   });
 
-  test('アイテムを編集できる', async ({ mainWindow, configHelper }, testInfo) => {
+  test('アイテムを編集できる', async ({ mainWindow, configHelper }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('アイテムの名前を編集できる', async () => {
@@ -311,7 +311,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
     });
   });
 
-  test('編集時の不正入力とキャンセル', async ({ mainWindow, configHelper }, testInfo) => {
+  test('編集時の不正入力とキャンセル', async ({ mainWindow, configHelper }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('編集時に名前を空にすると保存できない', async () => {
@@ -378,7 +378,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
   test('現在開いているタブがデフォルトの登録先になる', async ({
     mainWindow,
     configHelper,
-  }, testInfo) => {
+  }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('マルチタブ機能を有効化', async () => {
@@ -471,7 +471,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
   test('メイン画面で登録したアイテムが管理画面に反映される', async ({
     mainWindow,
     electronApp,
-  }, testInfo) => {
+  }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('メイン画面で新規アイテムを登録', async () => {
@@ -506,7 +506,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
         throw new Error('管理画面が見つかりません');
       }
 
-      const adminUtils = new TestUtils(adminWindow);
+      const _adminUtils = new TestUtils(adminWindow);
 
       // 登録したアイテムが表示されていることを確認
       const itemRow = adminWindow.locator('.raw-item-row', { hasText: '同期テストアイテム' });

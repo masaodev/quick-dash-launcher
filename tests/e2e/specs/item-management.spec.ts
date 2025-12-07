@@ -1,5 +1,3 @@
-import type { Page } from '@playwright/test';
-
 import { test, expect } from '../fixtures/electron-app';
 import { TestUtils } from '../helpers/test-utils';
 
@@ -71,12 +69,12 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
 
   // ==================== アイテム追加テスト ====================
 
-  test('新規アイテムを追加できる', async ({ electronApp, mainWindow, configHelper }, testInfo) => {
+  test('新規アイテムを追加できる', async ({ electronApp, mainWindow, configHelper }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
     const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
 
     try {
-      const adminUtils = new TestUtils(adminWindow);
+      const _adminUtils = new TestUtils(adminWindow);
 
       await test.step('行を追加ボタンをクリック', async () => {
         const addButton = adminWindow.locator('button.add-line-button');
@@ -130,12 +128,12 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
     electronApp,
     mainWindow,
     configHelper,
-  }, testInfo) => {
+  }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
     const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
 
     try {
-      const adminUtils = new TestUtils(adminWindow);
+      const _adminUtils = new TestUtils(adminWindow);
 
       await test.step('セル編集でGitHubアイテムの名前を変更', async () => {
         const githubRow = adminWindow.locator('.raw-item-row', { hasText: 'GitHub' });
@@ -191,12 +189,12 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
 
   // ==================== アイテム削除テスト ====================
 
-  test('アイテムを削除できる', async ({ electronApp, mainWindow, configHelper }, testInfo) => {
+  test('アイテムを削除できる', async ({ electronApp, mainWindow, configHelper }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
     const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
 
     try {
-      const adminUtils = new TestUtils(adminWindow);
+      const _adminUtils = new TestUtils(adminWindow);
 
       await test.step('GitHubアイテムを削除', async () => {
         const githubRow = adminWindow.locator('.raw-item-row', { hasText: 'GitHub' });
@@ -235,12 +233,12 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
     electronApp,
     mainWindow,
     configHelper,
-  }, testInfo) => {
+  }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
     const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
 
     try {
-      const adminUtils = new TestUtils(adminWindow);
+      const _adminUtils = new TestUtils(adminWindow);
 
       await test.step('GitHubとGoogleをチェック', async () => {
         const githubRow = adminWindow.locator('.raw-item-row', { hasText: 'GitHub' });
@@ -290,12 +288,12 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
 
   // ==================== データ整列テスト ====================
 
-  test('整列ボタンでアイテムを整列できる', async ({ electronApp, mainWindow }, testInfo) => {
+  test('整列ボタンでアイテムを整列できる', async ({ electronApp, mainWindow }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
     const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
 
     try {
-      const adminUtils = new TestUtils(adminWindow);
+      const _adminUtils = new TestUtils(adminWindow);
 
       await test.step('整列前のアイテム順序を確認', async () => {
         // アイテム行を取得
@@ -332,12 +330,12 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
 
   // ==================== 検索機能テスト ====================
 
-  test('検索ボックスでアイテムを絞り込みできる', async ({ electronApp, mainWindow }, testInfo) => {
+  test('検索ボックスでアイテムを絞り込みできる', async ({ electronApp, mainWindow }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
     const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
 
     try {
-      const adminUtils = new TestUtils(adminWindow);
+      const _adminUtils = new TestUtils(adminWindow);
 
       await test.step('検索前の全アイテム数を確認', async () => {
         const allRows = adminWindow.locator('.raw-item-row');
@@ -373,12 +371,12 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
   test('管理画面でアイテムを編集するとメイン画面に即座に反映される', async ({
     electronApp,
     mainWindow,
-  }, testInfo) => {
+  }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
     const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
 
     try {
-      const adminUtils = new TestUtils(adminWindow);
+      const _adminUtils = new TestUtils(adminWindow);
 
       await test.step('管理画面でGitHubアイテムの名前を編集', async () => {
         const githubRow = adminWindow.locator('.raw-item-row', { hasText: 'GitHub' });
@@ -427,7 +425,7 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
     const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
 
     try {
-      const adminUtils = new TestUtils(adminWindow);
+      const _adminUtils = new TestUtils(adminWindow);
 
       await test.step('タブ選択ドロップダウンが表示されることを確認', async () => {
         const tabDropdownButton = adminWindow.locator('.tab-dropdown .dropdown-trigger-btn');
@@ -484,12 +482,12 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
     electronApp,
     mainWindow,
     configHelper,
-  }, testInfo) => {
+  }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
     const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
 
     try {
-      const adminUtils = new TestUtils(adminWindow);
+      const _adminUtils = new TestUtils(adminWindow);
 
       await test.step('行を追加', async () => {
         const addButton = adminWindow.locator('button.add-line-button');
@@ -543,7 +541,7 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
     const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
 
     try {
-      const adminUtils = new TestUtils(adminWindow);
+      const _adminUtils = new TestUtils(adminWindow);
 
       await test.step('タブとファイル選択ドロップダウンが表示される', async () => {
         // タブ選択ドロップダウン（カスタム）
@@ -657,7 +655,7 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
     electronApp,
     mainWindow,
     configHelper,
-  }, testInfo) => {
+  }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('複数ファイルタブ機能を有効化', async () => {
@@ -669,7 +667,7 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
     const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
 
     try {
-      const adminUtils = new TestUtils(adminWindow);
+      const _adminUtils = new TestUtils(adminWindow);
 
       await test.step('data3.txtに切り替え', async () => {
         // ファイル選択ドロップダウンを開く

@@ -112,7 +112,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
   }, [editedSettings, getDefaultTabName]);
 
   // dataFileTabsの順序でファイルをソート（配列の順序がそのまま表示順序）
-  const getSortedDataFiles = (): string[] => {
+  const _getSortedDataFiles = (): string[] => {
     return dataFiles; // dataFilesは既にdataFileTabsの順序で生成されている
   };
 
@@ -159,7 +159,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
   };
 
   // 行追加（物理ファイル作成 + 設定に追加）
-  const handleAddNewFile = async () => {
+  const _handleAddNewFile = async () => {
     // 次のファイル名を自動決定
     const existingNumbers = dataFiles
       .map((file) => {
@@ -193,7 +193,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
   };
 
   // タブ名を変更（ローカル状態のみ更新）
-  const handleTabNameChange = (fileName: string, tabName: string) => {
+  const _handleTabNameChange = (fileName: string, tabName: string) => {
     const updatedTabs = (editedSettings.dataFileTabs || []).map((tab) =>
       tab.files.includes(fileName) ? { ...tab, name: tabName } : tab
     );
@@ -218,7 +218,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
   }, [editedSettings, onSave]);
 
   // データファイルを削除
-  const handleDeleteDataFile = async (fileName: string) => {
+  const _handleDeleteDataFile = async (fileName: string) => {
     if (fileName === 'data.txt') {
       setAlertDialog({
         isOpen: true,
@@ -285,7 +285,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
   };
 
   // タブを上に移動
-  const handleMoveUp = (fileName: string) => {
+  const _handleMoveUp = (fileName: string) => {
     const tabs = editedSettings.dataFileTabs || [];
     const index = tabs.findIndex((tab) => tab.files.includes(fileName));
 
@@ -299,7 +299,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
   };
 
   // タブを下に移動
-  const handleMoveDown = (fileName: string) => {
+  const _handleMoveDown = (fileName: string) => {
     const tabs = editedSettings.dataFileTabs || [];
     const index = tabs.findIndex((tab) => tab.files.includes(fileName));
 
