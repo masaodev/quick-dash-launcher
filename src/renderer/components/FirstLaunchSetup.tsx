@@ -63,9 +63,7 @@ export const FirstLaunchSetup: React.FC<FirstLaunchSetupProps> = ({ onComplete }
     <div className="first-launch-setup">
       <div className="first-launch-content">
         <h1 className="first-launch-title">QuickDash Launcherへようこそ</h1>
-        <p className="first-launch-description">
-          初回起動時の設定を行います。
-        </p>
+        <p className="first-launch-description">初回起動時の設定を行います。</p>
 
         <div className="hotkey-setup-section">
           <label htmlFor="hotkey-input" className="hotkey-label">
