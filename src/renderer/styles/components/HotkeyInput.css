@@ -26,7 +26,7 @@
 }
 
 .hotkey-input.recording {
-  border-color: var(--color-danger-light);
+  border-color: var(--color-danger);
   background-color: var(--bg-danger-light);
   box-shadow: var(--focus-ring-danger);
   animation: pulse 1s infinite;
@@ -49,7 +49,7 @@
   right: 0;
   margin-top: var(--spacing-xs);
   padding: var(--spacing-xs) var(--spacing-sm);
-  background-color: var(--color-danger-light);
+  background-color: var(--color-danger);
   color: var(--color-white);
   border-radius: var(--border-radius);
   font-size: var(--font-size-xs);

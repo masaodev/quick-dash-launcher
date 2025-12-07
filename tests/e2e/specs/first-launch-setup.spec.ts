@@ -159,4 +159,80 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
     // 変更したホットキーが保存されていることを確認
     expect(settings.hotkey).toBe('Ctrl+Shift+A');
   });
+
+  test('自動起動設定のチェックボックスが表示されている', async ({ mainWindow }) => {
+    const utils = new TestUtils(mainWindow);
+
+    await utils.waitForPageLoad();
+
+    const sectionExists = await utils.elementExists('.auto-launch-setup-section');
+    expect(sectionExists).toBe(true);
+
+    const checkboxExists = await utils.elementExists('.auto-launch-checkbox');
+    expect(checkboxExists).toBe(true);
+
+    const hintExists = await utils.elementExists('.auto-launch-hint');
+    expect(hintExists).toBe(true);
+  });
+
+  test('自動起動のデフォルト値はfalse（無効）である', async ({ mainWindow }) => {
+    const utils = new TestUtils(mainWindow);
+
+    await utils.waitForPageLoad();
+    await utils.waitForElement('.auto-launch-checkbox');
+
+    const isChecked = await mainWindow.isChecked('.auto-launch-checkbox');
+    expect(isChecked).toBe(false);
+  });
+
+  test('自動起動のチェックボックスをクリックして状態を変更できる', async ({ mainWindow }) => {
+    const utils = new TestUtils(mainWindow);
+
+    await utils.waitForPageLoad();
+
+    let isChecked = await mainWindow.isChecked('.auto-launch-checkbox');
+    expect(isChecked).toBe(false);
+
+    await mainWindow.click('.auto-launch-checkbox');
+
+    isChecked = await mainWindow.isChecked('.auto-launch-checkbox');
+    expect(isChecked).toBe(true);
+  });
+
+  test('自動起動を有効にして完了すると設定ファイルに保存される', async ({
+    configHelper,
+    mainWindow,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+
+    await utils.waitForPageLoad();
+
+    await mainWindow.click('.auto-launch-checkbox');
+
+    const isChecked = await mainWindow.isChecked('.auto-launch-checkbox');
+    expect(isChecked).toBe(true);
+
+    await mainWindow.click('.complete-button');
+
+    const settings = configHelper.readSettings();
+    expect(settings.autoLaunch).toBe(true);
+    expect(settings.hotkey).toBe('Alt+Space');
+  });
+
+  test('自動起動を無効のまま完了すると設定ファイルにfalseが保存される', async ({
+    configHelper,
+    mainWindow,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+
+    await utils.waitForPageLoad();
+
+    const isChecked = await mainWindow.isChecked('.auto-launch-checkbox');
+    expect(isChecked).toBe(false);
+
+    await mainWindow.click('.complete-button');
+
+    const settings = configHelper.readSettings();
+    expect(settings.autoLaunch).toBe(false);
+  });
 });
