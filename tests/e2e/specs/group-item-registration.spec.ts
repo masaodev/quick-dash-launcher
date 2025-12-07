@@ -337,7 +337,7 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
 
     await test.step('検索をクリアすると全アイテムが表示される', async () => {
       const searchInput = mainWindow.locator('.group-item-selector-modal input[type="text"]');
-      await searchInput.clear();
+      await searchInput.fill('');
 
       const allItems = mainWindow.locator('.group-item-selector-modal .item-row');
       const count = await allItems.count();

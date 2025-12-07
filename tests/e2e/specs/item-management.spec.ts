@@ -459,13 +459,26 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
       const adminUtils = new TestUtils(adminWindow);
 
       await test.step('タブ選択ドロップダウンが表示されることを確認', async () => {
-        const tabSelect = adminWindow.locator('select').first();
-        await expect(tabSelect).toBeVisible();
+        const tabDropdownButton = adminWindow.locator('.tab-dropdown .dropdown-trigger-btn');
+        await expect(tabDropdownButton).toBeVisible();
       });
 
       await test.step('サブ1タブに切り替え', async () => {
-        const tabSelect = adminWindow.locator('select').first();
-        await tabSelect.selectOption({ value: '1' }); // インデックス1 = サブ1タブ
+        // ドロップダウンボタンをクリック
+        const tabDropdownButton = adminWindow.locator('.tab-dropdown .dropdown-trigger-btn');
+        await tabDropdownButton.click();
+
+        // ドロップダウンメニューが表示されるまで待機
+        const dropdownMenu = adminWindow.locator('.tab-dropdown .dropdown-menu');
+        await expect(dropdownMenu).toBeVisible();
+
+        // 対象のタブ項目をクリック（インデックス1 = サブ1タブ）
+        const tabItems = adminWindow.locator('.tab-dropdown .dropdown-item');
+        const subTab1 = tabItems.nth(1);
+        await subTab1.click();
+
+        // ドロップダウンが閉じるまで待機
+        await expect(dropdownMenu).not.toBeVisible();
 
         // data2.txtのアイテムが表示されることを確認
         const redditRow = adminWindow.locator('.raw-item-row', { hasText: 'Reddit' });
@@ -562,13 +575,13 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
       const adminUtils = new TestUtils(adminWindow);
 
       await test.step('タブとファイル選択ドロップダウンが表示される', async () => {
-        // タブ選択ドロップダウン
-        const tabSelect = adminWindow.locator('select').first();
-        await expect(tabSelect).toBeVisible();
+        // タブ選択ドロップダウン（カスタム）
+        const tabDropdownButton = adminWindow.locator('.tab-dropdown .dropdown-trigger-btn');
+        await expect(tabDropdownButton).toBeVisible();
 
         // ファイル選択ドロップダウン（統合タブは複数ファイルを持つ）
-        const fileSelect = adminWindow.locator('select').nth(1);
-        await expect(fileSelect).toBeVisible();
+        const fileDropdownButton = adminWindow.locator('.file-dropdown .dropdown-trigger-btn');
+        await expect(fileDropdownButton).toBeVisible();
       });
 
       await test.step('data.txtのアイテムが表示される', async () => {
@@ -578,9 +591,21 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
       });
 
       await test.step('data3.txtに切り替え', async () => {
-        // ファイル選択ドロップダウンでdata3.txtを選択
-        const fileSelect = adminWindow.locator('select').nth(1);
-        await fileSelect.selectOption({ label: 'data3.txt' });
+        // ファイル選択ドロップダウンを開く
+        const fileDropdownButton = adminWindow.locator('.file-dropdown .dropdown-trigger-btn');
+        await fileDropdownButton.click();
+
+        // メニューが表示されるまで待機
+        const fileDropdownMenu = adminWindow.locator('.file-dropdown .dropdown-menu');
+        await expect(fileDropdownMenu).toBeVisible();
+
+        // data3.txtを選択
+        const fileItems = adminWindow.locator('.file-dropdown .dropdown-item');
+        const data3Item = fileItems.filter({ hasText: 'data3.txt' });
+        await data3Item.click();
+
+        // メニューが閉じるまで待機
+        await expect(fileDropdownMenu).not.toBeVisible();
 
         // data3.txtのアイテムが表示されることを確認
         const qiitaRow = adminWindow.locator('.raw-item-row', { hasText: 'Qiita' });
@@ -610,9 +635,21 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
       });
 
       await test.step('data.txtに戻って編集', async () => {
-        // data.txtに戻る
-        const fileSelect = adminWindow.locator('select').nth(1);
-        await fileSelect.selectOption({ label: 'data.txt' });
+        // ファイル選択ドロップダウンを開く
+        const fileDropdownButton = adminWindow.locator('.file-dropdown .dropdown-trigger-btn');
+        await fileDropdownButton.click();
+
+        // メニューが表示されるまで待機
+        const fileDropdownMenu = adminWindow.locator('.file-dropdown .dropdown-menu');
+        await expect(fileDropdownMenu).toBeVisible();
+
+        // data.txtを選択
+        const fileItems = adminWindow.locator('.file-dropdown .dropdown-item');
+        const dataItem = fileItems.filter({ hasText: 'data.txt' });
+        await dataItem.click();
+
+        // メニューが閉じるまで待機
+        await expect(fileDropdownMenu).not.toBeVisible();
 
         // GitHubアイテムを編集
         const githubRow = adminWindow.locator('.raw-item-row', { hasText: 'GitHub' });
@@ -655,14 +692,25 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
       const adminUtils = new TestUtils(adminWindow);
 
       await test.step('サブ1タブに切り替え', async () => {
-        // タブ選択ドロップダウンでサブ1を選択
-        const tabSelect = adminWindow.locator('select').first();
-        await tabSelect.selectOption({ value: '1' }); // インデックス1 = サブ1タブ
+        // ドロップダウンボタンをクリック
+        const tabDropdownButton = adminWindow.locator('.tab-dropdown .dropdown-trigger-btn');
+        await tabDropdownButton.click();
+
+        // ドロップダウンメニューが表示されるまで待機
+        const dropdownMenu = adminWindow.locator('.tab-dropdown .dropdown-menu');
+        await expect(dropdownMenu).toBeVisible();
+
+        // 対象のタブ項目をクリック（インデックス1 = サブ1タブ）
+        const tabItems = adminWindow.locator('.tab-dropdown .dropdown-item');
+        const subTab1 = tabItems.nth(1);
+        await subTab1.click();
+
+        // ドロップダウンが閉じるまで待機
+        await expect(dropdownMenu).not.toBeVisible();
 
         // サブ1は単一ファイル（data2.txt）なので、ファイル選択ドロップダウンは表示されない
-        const fileSelects = adminWindow.locator('select');
-        const count = await fileSelects.count();
-        expect(count).toBe(1); // タブ選択のみ
+        const fileDropdownButton = adminWindow.locator('.file-dropdown .dropdown-trigger-btn');
+        await expect(fileDropdownButton).not.toBeVisible();
 
         // data2.txtのアイテムが表示される
         const redditRow = adminWindow.locator('.raw-item-row', { hasText: 'Reddit' });
@@ -688,12 +736,25 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
       });
 
       await test.step('統合タブに戻る', async () => {
-        const tabSelect = adminWindow.locator('select').first();
-        await tabSelect.selectOption({ value: '0' }); // インデックス0 = 統合タブ
+        // ドロップダウンボタンをクリック
+        const tabDropdownButton = adminWindow.locator('.tab-dropdown .dropdown-trigger-btn');
+        await tabDropdownButton.click();
+
+        // ドロップダウンメニューが表示されるまで待機
+        const dropdownMenu = adminWindow.locator('.tab-dropdown .dropdown-menu');
+        await expect(dropdownMenu).toBeVisible();
+
+        // 対象のタブ項目をクリック（インデックス0 = 統合タブ）
+        const tabItems = adminWindow.locator('.tab-dropdown .dropdown-item');
+        const integratedTab = tabItems.nth(0);
+        await integratedTab.click();
+
+        // ドロップダウンが閉じるまで待機
+        await expect(dropdownMenu).not.toBeVisible();
 
         // ファイル選択ドロップダウンが再表示される
-        const fileSelect = adminWindow.locator('select').nth(1);
-        await expect(fileSelect).toBeVisible();
+        const fileDropdownButton = adminWindow.locator('.file-dropdown .dropdown-trigger-btn');
+        await expect(fileDropdownButton).toBeVisible();
 
         // data.txtのアイテムが表示される
         const githubRow = adminWindow.locator('.raw-item-row', { hasText: 'GitHub' });
@@ -723,8 +784,21 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
       const adminUtils = new TestUtils(adminWindow);
 
       await test.step('data3.txtに切り替え', async () => {
-        const fileSelect = adminWindow.locator('select').nth(1);
-        await fileSelect.selectOption({ label: 'data3.txt' });
+        // ファイル選択ドロップダウンを開く
+        const fileDropdownButton = adminWindow.locator('.file-dropdown .dropdown-trigger-btn');
+        await fileDropdownButton.click();
+
+        // メニューが表示されるまで待機
+        const fileDropdownMenu = adminWindow.locator('.file-dropdown .dropdown-menu');
+        await expect(fileDropdownMenu).toBeVisible();
+
+        // data3.txtを選択
+        const fileItems = adminWindow.locator('.file-dropdown .dropdown-item');
+        const data3Item = fileItems.filter({ hasText: 'data3.txt' });
+        await data3Item.click();
+
+        // メニューが閉じるまで待機
+        await expect(fileDropdownMenu).not.toBeVisible();
       });
 
       await test.step('data3.txtに新規アイテムを追加', async () => {
