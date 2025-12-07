@@ -404,6 +404,35 @@ export async function setWindowPosition(mode?: WindowPositionMode): Promise<void
       break;
     }
 
+    case 'cursorMonitorCenter': {
+      const cursorPoint = screen.getCursorScreenPoint();
+      const bounds = mainWindow.getBounds();
+
+      // カーソルがあるモニターを特定
+      const display = screen.getDisplayNearestPoint(cursorPoint);
+      const displayBounds = display.workArea;
+
+      // モニターの中央座標を計算
+      const x = displayBounds.x + Math.floor((displayBounds.width - bounds.width) / 2);
+      const y = displayBounds.y + Math.floor((displayBounds.height - bounds.height) / 2);
+
+      // 画面外に出ないように調整（安全性チェック）
+      const adjustedX = Math.max(
+        displayBounds.x,
+        Math.min(x, displayBounds.x + displayBounds.width - bounds.width)
+      );
+      const adjustedY = Math.max(
+        displayBounds.y,
+        Math.min(y, displayBounds.y + displayBounds.height - bounds.height)
+      );
+
+      mainWindow.setPosition(adjustedX, adjustedY);
+      windowLogger.info(
+        `ウィンドウをカーソルのモニター中央に配置しました: (${adjustedX}, ${adjustedY})`
+      );
+      break;
+    }
+
     case 'fixed': {
       const savedX = await settingsService.get('windowPositionX');
       const savedY = await settingsService.get('windowPositionY');

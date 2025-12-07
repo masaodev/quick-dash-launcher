@@ -341,13 +341,31 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
         await expect(positionSection).toBeVisible();
       });
 
-      await test.step('デフォルトは画面中央が選択されている', async () => {
+      await test.step('デフォルトは画面中央（固定）が選択されている', async () => {
         const centerRadio = adminWindow.locator('input[name="windowPositionMode"][value="center"]');
         await expect(centerRadio).toBeChecked();
       });
 
-      await test.step('マウスカーソルの位置を選択できる', async () => {
-        const cursorLabel = adminWindow.locator('label', { hasText: 'マウスカーソルの位置' });
+      await test.step('画面中央（自動切替）を選択できる', async () => {
+        const cursorMonitorCenterLabel = adminWindow.locator('label', {
+          hasText: /画面中央（自動切替）.*マウスカーソルがあるモニター/,
+        });
+        await cursorMonitorCenterLabel.click();
+
+        const cursorMonitorCenterRadio = adminWindow.locator(
+          'input[name="windowPositionMode"][value="cursorMonitorCenter"]'
+        );
+        await expect(cursorMonitorCenterRadio).toBeChecked();
+
+        // settings.jsonに保存されたことを確認
+        const settings = configHelper.readSettings();
+        expect(settings.windowPositionMode).toBe('cursorMonitorCenter');
+      });
+
+      await test.step('カーソル付近を選択できる', async () => {
+        const cursorLabel = adminWindow.locator('label', {
+          hasText: /カーソル付近.*マウスカーソルの近く/,
+        });
         await cursorLabel.click();
 
         const cursorRadio = adminWindow.locator('input[name="windowPositionMode"][value="cursor"]');
@@ -358,9 +376,9 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
         expect(settings.windowPositionMode).toBe('cursor');
       });
 
-      await test.step('固定位置を選択できる', async () => {
+      await test.step('固定位置（手動設定）を選択できる', async () => {
         const fixedLabel = adminWindow.locator('label', {
-          hasText: /固定位置.*手動で移動した位置を記憶/,
+          hasText: /固定位置（手動設定）.*ウィンドウを移動した位置/,
         });
         await fixedLabel.click();
 

@@ -666,8 +666,28 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                   disabled={isLoading}
                 />
                 <div className="option-content">
-                  <div className="option-title">画面中央</div>
-                  <div className="option-description">常に画面の中央にウィンドウを表示します</div>
+                  <div className="option-title">画面中央（固定）</div>
+                  <div className="option-description">
+                    常にプライマリモニターの中央にウィンドウを表示します
+                  </div>
+                </div>
+              </label>
+              <label className="position-option">
+                <input
+                  type="radio"
+                  name="windowPositionMode"
+                  value="cursorMonitorCenter"
+                  checked={editedSettings.windowPositionMode === 'cursorMonitorCenter'}
+                  onChange={(e) =>
+                    handleSettingChange('windowPositionMode', e.target.value as WindowPositionMode)
+                  }
+                  disabled={isLoading}
+                />
+                <div className="option-content">
+                  <div className="option-title">画面中央（自動切替）</div>
+                  <div className="option-description">
+                    マウスカーソルがあるモニターの中央にウィンドウを表示します（マルチモニター推奨）
+                  </div>
                 </div>
               </label>
               <label className="position-option">
@@ -682,9 +702,9 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                   disabled={isLoading}
                 />
                 <div className="option-content">
-                  <div className="option-title">マウスカーソルの位置</div>
+                  <div className="option-title">カーソル付近</div>
                   <div className="option-description">
-                    マウスカーソルの近くにウィンドウを表示します
+                    マウスカーソルの近くにウィンドウを表示します（検索入力がしやすい位置）
                   </div>
                 </div>
               </label>
@@ -700,9 +720,9 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                   disabled={isLoading}
                 />
                 <div className="option-content">
-                  <div className="option-title">固定位置</div>
+                  <div className="option-title">固定位置（手動設定）</div>
                   <div className="option-description">
-                    手動で移動した位置を記憶して、次回も同じ位置に表示します
+                    ウィンドウを移動した位置を記憶して、次回も同じ位置に表示します
                   </div>
                 </div>
               </label>

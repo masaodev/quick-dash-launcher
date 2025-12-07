@@ -246,6 +246,7 @@ export type WindowPinMode =
 export type WindowPositionMode =
   | 'center' // 画面中央に表示
   | 'cursor' // マウスカーソルの位置に表示
+  | 'cursorMonitorCenter' // カーソルのモニター中央に表示
   | 'fixed'; // 固定位置に表示（手動で移動した位置を記憶）
 
 /**
