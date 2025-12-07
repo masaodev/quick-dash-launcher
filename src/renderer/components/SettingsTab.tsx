@@ -1,10 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { AppSettings, DataFileTab, WindowPositionMode } from '@common/types';
+import React, { useState, useEffect } from 'react';
+import { AppSettings, WindowPositionMode } from '@common/types';
 
-import { logWarn } from '../utils/debug';
+import { useDialogManager } from '../hooks/useDialogManager';
+import { useSettingsManager } from '../hooks/useSettingsManager';
+import { useTabManager } from '../hooks/useTabManager';
 
-import { HotkeyInput } from './HotkeyInput';
 import AlertDialog from './AlertDialog';
+import { HotkeyInput } from './HotkeyInput';
 
 interface SettingsTabProps {
   settings: AppSettings;
@@ -13,93 +15,56 @@ interface SettingsTabProps {
 
 const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
   const [editedSettings, setEditedSettings] = useState<AppSettings>(settings);
-  const [hotkeyValidation, setHotkeyValidation] = useState<{ isValid: boolean; reason?: string }>({
-    isValid: true,
-  });
-  const [isLoading, setIsLoading] = useState(false);
   const [dataFiles, setDataFiles] = useState<string[]>([]);
-  const [fileModalTabIndex, setFileModalTabIndex] = useState<number | null>(null); // ファイル管理モーダルを開いているタブのインデックス
-
-  // AlertDialog状態管理
-  const [alertDialog, setAlertDialog] = useState<{
-    isOpen: boolean;
-    message: string;
-    type?: 'info' | 'error' | 'warning' | 'success';
-  }>({
-    isOpen: false,
-    message: '',
-    type: 'info',
-  });
-
-  // デフォルトのタブ名を生成（data.txt→メイン, data2.txt→サブ1, data3.txt→サブ2, ...）
-  const getDefaultTabName = useCallback((fileName: string): string => {
-    if (fileName === 'data.txt') {
-      return 'メイン';
-    }
-    const match = fileName.match(/^data(\d+)\.txt$/);
-    if (match) {
-      const num = parseInt(match[1]);
-      return `サブ${num - 1}`;
-    }
-    return fileName;
-  }, []);
 
   // settingsプロパティが変更されたときにeditedSettingsを更新
   useEffect(() => {
     setEditedSettings(settings);
   }, [settings]);
 
-  // 設定項目の変更ハンドラ（即座に保存）をメモ化
-  const handleSettingChange = useCallback(
-    async <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
-      const newSettings = {
-        ...editedSettings,
-        [key]: value,
-      };
-      setEditedSettings(newSettings);
+  // カスタムフック: ダイアログ管理
+  const { alertDialog, showAlert, closeAlert } = useDialogManager();
 
-      // 即座に保存
-      try {
-        await onSave(newSettings);
-      } catch (error) {
-        console.error('設定の保存に失敗しました:', error);
-        setAlertDialog({
-          isOpen: true,
-          message: '設定の保存に失敗しました。',
-          type: 'error',
-        });
-      }
-    },
-    [editedSettings, onSave]
-  );
+  // カスタムフック: 基本設定管理
+  const {
+    hotkeyValidation,
+    isLoading,
+    handleSettingChange,
+    handleNumberInputChange,
+    handleNumberInputBlur,
+    handleHotkeyValidation,
+    handleReset,
+    handleOpenConfigFolder,
+  } = useSettingsManager({
+    settings,
+    editedSettings,
+    setEditedSettings,
+    onSave,
+    showAlert,
+  });
 
-  // 数値入力の変更ハンドラ（ローカル状態のみ更新）
-  const handleNumberInputChange = useCallback(
-    <K extends keyof AppSettings>(key: K, value: string) => {
-      const numValue = parseInt(value);
-      if (!isNaN(numValue)) {
-        setEditedSettings((prev) => ({
-          ...prev,
-          [key]: numValue,
-        }));
-      }
-    },
-    []
-  );
-
-  // 数値入力のフォーカス喪失ハンドラ（保存処理）
-  const handleNumberInputBlur = useCallback(async () => {
-    try {
-      await onSave(editedSettings);
-    } catch (error) {
-      console.error('設定の保存に失敗しました:', error);
-      setAlertDialog({
-        isOpen: true,
-        message: '設定の保存に失敗しました。',
-        type: 'error',
-      });
-    }
-  }, [editedSettings, onSave]);
+  // カスタムフック: タブ管理
+  const {
+    fileModalTabIndex,
+    getDefaultTabName,
+    handleTabNameBlur,
+    handleMoveTabUp,
+    handleMoveTabDown,
+    handleTabNameChangeByIndex,
+    handleDeleteTab,
+    handleAddFileToTab,
+    handleRemoveFileFromTab,
+    handleCreateAndAddFileToTab,
+    handleAddTab,
+    openFileModal,
+    closeFileModal,
+  } = useTabManager({
+    editedSettings,
+    setEditedSettings,
+    handleSettingChange,
+    showAlert,
+    dataFiles,
+  });
 
   // 設定に基づいてデータファイルリストを生成（設定ファイル基準）
   useEffect(() => {
@@ -110,459 +75,6 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
 
     setDataFiles(fileNames);
   }, [editedSettings, getDefaultTabName]);
-
-  // dataFileTabsの順序でファイルをソート（配列の順序がそのまま表示順序）
-  const _getSortedDataFiles = (): string[] => {
-    return dataFiles; // dataFilesは既にdataFileTabsの順序で生成されている
-  };
-
-  // ホットキーバリデーション結果の処理
-  const handleHotkeyValidation = (isValid: boolean, reason?: string) => {
-    setHotkeyValidation({ isValid, reason });
-  };
-
-  // 設定リセット
-  const handleReset = async () => {
-    if (!confirm('設定をデフォルト値にリセットしますか？')) {
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      await window.electronAPI.resetSettings();
-      const resetSettings = await window.electronAPI.getSettings();
-      setEditedSettings(resetSettings);
-    } catch (error) {
-      console.error('設定のリセットに失敗しました:', error);
-      setAlertDialog({
-        isOpen: true,
-        message: '設定のリセットに失敗しました。',
-        type: 'error',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // 設定フォルダを開く
-  const handleOpenConfigFolder = async () => {
-    try {
-      await window.electronAPI.openConfigFolder();
-    } catch (error) {
-      console.error('設定フォルダを開くのに失敗しました:', error);
-      setAlertDialog({
-        isOpen: true,
-        message: '設定フォルダを開くのに失敗しました。',
-        type: 'error',
-      });
-    }
-  };
-
-  // 行追加（物理ファイル作成 + 設定に追加）
-  const _handleAddNewFile = async () => {
-    // 次のファイル名を自動決定
-    const existingNumbers = dataFiles
-      .map((file) => {
-        if (file === 'data.txt') {
-          return 1; // data.txt は番号1として扱う
-        }
-        const match = file.match(/^data(\d+)\.txt$/i); // 大文字小文字を区別しない
-        return match ? parseInt(match[1]) : null;
-      })
-      .filter((n): n is number => n !== null);
-
-    const nextNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 2;
-    const fileName = `data${nextNumber}.txt`;
-
-    try {
-      // 物理ファイルを作成（既存の場合はエラーになるが無視）
-      await window.electronAPI.createDataFile(fileName);
-    } catch (_error) {
-      // ファイル作成エラーは無視（既存ファイルの場合）
-      logWarn(`${fileName}は既に存在する可能性があります`);
-    }
-
-    // 設定に追加（物理ファイルの存在に関わらず実行）
-    const newTab: DataFileTab = {
-      files: [fileName],
-      name: getDefaultTabName(fileName),
-    };
-    const updatedTabs = [...(editedSettings.dataFileTabs || []), newTab];
-
-    await handleSettingChange('dataFileTabs', updatedTabs);
-  };
-
-  // タブ名を変更（ローカル状態のみ更新）
-  const _handleTabNameChange = (fileName: string, tabName: string) => {
-    const updatedTabs = (editedSettings.dataFileTabs || []).map((tab) =>
-      tab.files.includes(fileName) ? { ...tab, name: tabName } : tab
-    );
-    setEditedSettings((prev) => ({
-      ...prev,
-      dataFileTabs: updatedTabs,
-    }));
-  };
-
-  // タブ名のフォーカス喪失ハンドラ（保存処理）
-  const handleTabNameBlur = useCallback(async () => {
-    try {
-      await onSave(editedSettings);
-    } catch (error) {
-      console.error('設定の保存に失敗しました:', error);
-      setAlertDialog({
-        isOpen: true,
-        message: '設定の保存に失敗しました。',
-        type: 'error',
-      });
-    }
-  }, [editedSettings, onSave]);
-
-  // データファイルを削除
-  const _handleDeleteDataFile = async (fileName: string) => {
-    if (fileName === 'data.txt') {
-      setAlertDialog({
-        isOpen: true,
-        message: 'data.txtは削除できません。',
-        type: 'warning',
-      });
-      return;
-    }
-
-    if (!confirm(`${fileName}を削除しますか？\n設定とファイル内のデータは完全に失われます。`)) {
-      return;
-    }
-
-    try {
-      // 物理ファイルを削除
-      const result = await window.electronAPI.deleteDataFile(fileName);
-      if (result.success) {
-        // 設定から削除：ファイルが含まれるタブを見つけて、そのファイルを削除
-        const updatedTabs = (editedSettings.dataFileTabs || [])
-          .map((tab) => {
-            if (tab.files.includes(fileName)) {
-              const newFiles = tab.files.filter((f) => f !== fileName);
-              // タブから全ファイルが削除された場合はタブごと削除
-              if (newFiles.length === 0) {
-                return null;
-              }
-              return { ...tab, files: newFiles };
-            }
-            return tab;
-          })
-          .filter((tab): tab is DataFileTab => tab !== null);
-
-        const newSettings = {
-          ...editedSettings,
-          dataFileTabs: updatedTabs,
-        };
-        setEditedSettings(newSettings);
-
-        try {
-          await onSave(newSettings);
-        } catch (error) {
-          console.error('設定の保存に失敗しました:', error);
-          setAlertDialog({
-            isOpen: true,
-            message: '設定の保存に失敗しました。',
-            type: 'error',
-          });
-        }
-      } else {
-        setAlertDialog({
-          isOpen: true,
-          message: result.error || 'ファイルの削除に失敗しました。',
-          type: 'error',
-        });
-      }
-    } catch (error) {
-      console.error('データファイルの削除に失敗しました:', error);
-      setAlertDialog({
-        isOpen: true,
-        message: 'データファイルの削除に失敗しました。',
-        type: 'error',
-      });
-    }
-  };
-
-  // タブを上に移動
-  const _handleMoveUp = (fileName: string) => {
-    const tabs = editedSettings.dataFileTabs || [];
-    const index = tabs.findIndex((tab) => tab.files.includes(fileName));
-
-    if (index <= 0) return; // 最初の要素または見つからない場合は何もしない
-
-    // 配列を入れ替え
-    const newTabs = [...tabs];
-    [newTabs[index - 1], newTabs[index]] = [newTabs[index], newTabs[index - 1]];
-
-    handleSettingChange('dataFileTabs', newTabs);
-  };
-
-  // タブを下に移動
-  const _handleMoveDown = (fileName: string) => {
-    const tabs = editedSettings.dataFileTabs || [];
-    const index = tabs.findIndex((tab) => tab.files.includes(fileName));
-
-    if (index < 0 || index >= tabs.length - 1) return; // 最後の要素または見つからない場合は何もしない
-
-    // 配列を入れ替え
-    const newTabs = [...tabs];
-    [newTabs[index], newTabs[index + 1]] = [newTabs[index + 1], newTabs[index]];
-
-    handleSettingChange('dataFileTabs', newTabs);
-  };
-
-  // タブを上に移動（インデックスベース）
-  const handleMoveTabUp = (tabIndex: number) => {
-    const tabs = editedSettings.dataFileTabs || [];
-    if (tabIndex <= 0) return;
-
-    const newTabs = [...tabs];
-    [newTabs[tabIndex - 1], newTabs[tabIndex]] = [newTabs[tabIndex], newTabs[tabIndex - 1]];
-
-    handleSettingChange('dataFileTabs', newTabs);
-  };
-
-  // タブを下に移動（インデックスベース）
-  const handleMoveTabDown = (tabIndex: number) => {
-    const tabs = editedSettings.dataFileTabs || [];
-    if (tabIndex < 0 || tabIndex >= tabs.length - 1) return;
-
-    const newTabs = [...tabs];
-    [newTabs[tabIndex], newTabs[tabIndex + 1]] = [newTabs[tabIndex + 1], newTabs[tabIndex]];
-
-    handleSettingChange('dataFileTabs', newTabs);
-  };
-
-  // タブ名を変更（インデックスベース）
-  const handleTabNameChangeByIndex = (tabIndex: number, tabName: string) => {
-    const updatedTabs = [...(editedSettings.dataFileTabs || [])];
-    if (tabIndex >= 0 && tabIndex < updatedTabs.length) {
-      updatedTabs[tabIndex] = { ...updatedTabs[tabIndex], name: tabName };
-      setEditedSettings((prev) => ({
-        ...prev,
-        dataFileTabs: updatedTabs,
-      }));
-    }
-  };
-
-  // タブを削除（インデックスベース）
-  const handleDeleteTab = async (tabIndex: number) => {
-    const tabs = editedSettings.dataFileTabs || [];
-    if (tabIndex < 0 || tabIndex >= tabs.length) return;
-
-    const tab = tabs[tabIndex];
-    // data.txtを含むタブは削除不可
-    if (tab.files.includes('data.txt')) {
-      setAlertDialog({
-        isOpen: true,
-        message: 'data.txtを含むタブは削除できません。',
-        type: 'warning',
-      });
-      return;
-    }
-
-    if (
-      !confirm(
-        `タブ「${tab.name}」を削除しますか？\nこのタブに含まれる全てのファイルも削除されます。`
-      )
-    ) {
-      return;
-    }
-
-    try {
-      // タブに含まれる全ファイルを削除
-      for (const fileName of tab.files) {
-        await window.electronAPI.deleteDataFile(fileName);
-      }
-
-      // タブを削除
-      const updatedTabs = tabs.filter((_, index) => index !== tabIndex);
-      await handleSettingChange('dataFileTabs', updatedTabs);
-    } catch (error) {
-      console.error('タブの削除に失敗しました:', error);
-      setAlertDialog({
-        isOpen: true,
-        message: 'タブの削除に失敗しました。',
-        type: 'error',
-      });
-    }
-  };
-
-  // タブにファイルを追加
-  const handleAddFileToTab = async (tabIndex: number, fileName: string) => {
-    const tabs = editedSettings.dataFileTabs || [];
-    if (tabIndex < 0 || tabIndex >= tabs.length) return;
-
-    const tab = tabs[tabIndex];
-    if (tab.files.includes(fileName)) {
-      setAlertDialog({
-        isOpen: true,
-        message: 'このファイルは既にタブに含まれています。',
-        type: 'warning',
-      });
-      return;
-    }
-
-    const updatedTabs = [...tabs];
-    updatedTabs[tabIndex] = {
-      ...tab,
-      files: [...tab.files, fileName],
-    };
-
-    await handleSettingChange('dataFileTabs', updatedTabs);
-  };
-
-  // タブからファイルを削除
-  const handleRemoveFileFromTab = async (tabIndex: number, fileName: string) => {
-    const tabs = editedSettings.dataFileTabs || [];
-    if (tabIndex < 0 || tabIndex >= tabs.length) return;
-
-    const tab = tabs[tabIndex];
-
-    // data.txtは削除不可
-    if (fileName === 'data.txt') {
-      setAlertDialog({
-        isOpen: true,
-        message: 'data.txtは削除できません。',
-        type: 'warning',
-      });
-      return;
-    }
-
-    // タブに最低1つのファイルが必要
-    if (tab.files.length === 1) {
-      setAlertDialog({
-        isOpen: true,
-        message: 'タブには最低1つのファイルが必要です。タブごと削除してください。',
-        type: 'warning',
-      });
-      return;
-    }
-
-    if (!confirm(`${fileName}をタブから削除しますか？\nファイル自体も削除されます。`)) {
-      return;
-    }
-
-    try {
-      // 物理ファイルを削除
-      await window.electronAPI.deleteDataFile(fileName);
-
-      // タブからファイルを削除
-      const newFiles = tab.files.filter((f) => f !== fileName);
-
-      const updatedTabs = [...tabs];
-      updatedTabs[tabIndex] = {
-        ...tab,
-        files: newFiles,
-      };
-
-      await handleSettingChange('dataFileTabs', updatedTabs);
-    } catch (error) {
-      console.error('ファイルの削除に失敗しました:', error);
-      setAlertDialog({
-        isOpen: true,
-        message: 'ファイルの削除に失敗しました。',
-        type: 'error',
-      });
-    }
-  };
-
-  // 新規ファイルを作成してタブに追加
-  const handleCreateAndAddFileToTab = async (tabIndex: number) => {
-    // 次のファイル名を自動決定
-    const existingNumbers = dataFiles
-      .map((file) => {
-        if (file === 'data.txt') {
-          return 1;
-        }
-        const match = file.match(/^data(\d+)\.txt$/i);
-        return match ? parseInt(match[1]) : null;
-      })
-      .filter((n): n is number => n !== null);
-
-    const nextNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 2;
-    const fileName = `data${nextNumber}.txt`;
-
-    try {
-      // 物理ファイルを作成
-      const result = await window.electronAPI.createDataFile(fileName);
-      if (!result.success) {
-        setAlertDialog({
-          isOpen: true,
-          message: result.error || 'ファイルの作成に失敗しました。',
-          type: 'error',
-        });
-        return;
-      }
-
-      // タブにファイルを追加
-      await handleAddFileToTab(tabIndex, fileName);
-    } catch (error) {
-      console.error('ファイルの作成に失敗しました:', error);
-      setAlertDialog({
-        isOpen: true,
-        message: 'ファイルの作成に失敗しました。',
-        type: 'error',
-      });
-    }
-  };
-
-  // 新規タブを追加
-  const handleAddTab = async () => {
-    // 新しいファイルを作成
-    const existingNumbers = dataFiles
-      .map((file) => {
-        if (file === 'data.txt') {
-          return 1;
-        }
-        const match = file.match(/^data(\d+)\.txt$/i);
-        return match ? parseInt(match[1]) : null;
-      })
-      .filter((n): n is number => n !== null);
-
-    const nextNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 2;
-    const fileName = `data${nextNumber}.txt`;
-
-    try {
-      // 物理ファイルを作成
-      const result = await window.electronAPI.createDataFile(fileName);
-      if (!result.success) {
-        setAlertDialog({
-          isOpen: true,
-          message: result.error || 'ファイルの作成に失敗しました。',
-          type: 'error',
-        });
-        return;
-      }
-
-      // 新しいタブを追加
-      const newTab: DataFileTab = {
-        files: [fileName],
-        name: getDefaultTabName(fileName),
-      };
-      const updatedTabs = [...(editedSettings.dataFileTabs || []), newTab];
-
-      await handleSettingChange('dataFileTabs', updatedTabs);
-    } catch (error) {
-      console.error('タブの追加に失敗しました:', error);
-      setAlertDialog({
-        isOpen: true,
-        message: 'タブの追加に失敗しました。',
-        type: 'error',
-      });
-    }
-  };
-
-  // ファイル管理モーダルを開く
-  const openFileModal = (tabIndex: number) => {
-    setFileModalTabIndex(tabIndex);
-  };
-
-  // ファイル管理モーダルを閉じる
-  const closeFileModal = () => {
-    setFileModalTabIndex(null);
-  };
 
   return (
     <div className="settings-tab">
@@ -1057,7 +569,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
 
       <AlertDialog
         isOpen={alertDialog.isOpen}
-        onClose={() => setAlertDialog({ ...alertDialog, isOpen: false })}
+        onClose={closeAlert}
         message={alertDialog.message}
         type={alertDialog.type}
       />
