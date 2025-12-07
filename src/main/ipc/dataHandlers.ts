@@ -1102,6 +1102,10 @@ export function setupDataHandlers(configFolder: string) {
     const filePath = path.join(configFolder, fileName);
 
     try {
+      // 削除前にバックアップを作成（設定に基づく）
+      const backupService = await BackupService.getInstance();
+      await backupService.createBackup(filePath);
+
       await fs.unlink(filePath);
       // notifyDataChanged(); // 設定の再読み込みを防ぐため削除
       return { success: true };

@@ -206,7 +206,8 @@ export class BackupService {
       return;
     }
 
-    const files = ['data.txt', 'data2.txt'];
+    // 動的にdata*.txtファイルを取得
+    const files = PathManager.getDataFiles();
     const backupFolder = path.join(configFolder, 'backup');
 
     for (const file of files) {
