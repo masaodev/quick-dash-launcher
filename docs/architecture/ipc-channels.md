@@ -467,6 +467,20 @@ onSetActiveTab(callback: (tab: 'settings' | 'edit' | 'other') => void)
 onWindowShown(callback: () => void)
 ```
 
+### `onWindowHidden`
+ウィンドウ非表示イベントリスナー
+```typescript
+onWindowHidden(callback: () => void)
+```
+
+### `window-hidden` (イベント)
+ウィンドウ非表示を全ウィンドウに通知
+- **方向**: メインプロセス → レンダラープロセス（全ウィンドウ）
+- **パラメータ**: なし
+- **発生タイミング**:
+  - ウィンドウが非表示になる直前（`hideMainWindow`実行時）
+- **用途**: ウィンドウ非表示時の前処理（タブリセット等）を実行するため
+
 ## 関連ドキュメント
 
 - [アーキテクチャ概要](overview.md) - システム全体の構造とデータフロー
