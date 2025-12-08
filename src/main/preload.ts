@@ -59,7 +59,19 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on(`icon-progress-${eventType}`, (_event, data) => callback(data));
   },
   onWindowShown: (callback: (startTime?: number) => void) => {
-    ipcRenderer.on('window-shown', (_event, startTime) => callback(startTime));
+    const listener = (_event: Electron.IpcRendererEvent, startTime?: number) =>
+      callback(startTime);
+    ipcRenderer.on('window-shown', listener);
+    return () => {
+      ipcRenderer.removeListener('window-shown', listener);
+    };
+  },
+  onWindowHidden: (callback: () => void) => {
+    const listener = () => callback();
+    ipcRenderer.on('window-hidden', listener);
+    return () => {
+      ipcRenderer.removeListener('window-hidden', listener);
+    };
   },
   onSetActiveTab: (callback: (tab: 'settings' | 'edit' | 'other') => void) => {
     ipcRenderer.on('set-active-tab', (_event, tab) => callback(tab));

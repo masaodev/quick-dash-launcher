@@ -19,6 +19,20 @@ let isModalMode: boolean = false;
 let normalWindowBounds: { width: number; height: number } | null = null;
 
 /**
+ * メインウィンドウを非表示にし、レンダラープロセスに通知を送る
+ * window-hiddenイベントを送信してから、実際にウィンドウを非表示にする
+ */
+function hideMainWindowInternal(): void {
+  if (!mainWindow) return;
+
+  // レンダラープロセスに非表示通知を送る
+  mainWindow.webContents.send('window-hidden');
+
+  // ウィンドウを非表示にする
+  mainWindow.hide();
+}
+
+/**
  * アプリケーションのメインウィンドウを作成し、初期設定を行う
  * 初期状態では通常モード（非最前面）で、フレームレスで中央に配置される
  * フォーカス喪失時の自動非表示やESCキーでの終了など、ランチャーアプリとしての動作を設定
@@ -68,7 +82,7 @@ export async function createWindow(): Promise<BrowserWindow> {
       !isFirstLaunchMode &&
       !isModalMode
     ) {
-      mainWindow.hide();
+      hideMainWindowInternal();
     }
   });
 
@@ -97,7 +111,7 @@ export async function createWindow(): Promise<BrowserWindow> {
         windowPinMode === 'stayVisible';
 
       if (mainWindow && !shouldNotHide) {
-        mainWindow.hide();
+        hideMainWindowInternal();
       }
     }
   });
@@ -534,6 +548,6 @@ export function hideMainWindow(): void {
     return;
   }
 
-  mainWindow.hide();
+  hideMainWindowInternal();
   windowLogger.info('メインウィンドウを非表示にしました');
 }

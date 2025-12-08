@@ -39,7 +39,8 @@ export interface ElectronAPI {
     eventType: 'start' | 'update' | 'complete',
     callback: (data: IconProgress) => void
   ) => void;
-  onWindowShown: (callback: (startTime?: number) => void) => void;
+  onWindowShown: (callback: (startTime?: number) => void) => () => void;
+  onWindowHidden: (callback: () => void) => () => void;
   onSetActiveTab: (callback: (tab: 'settings' | 'edit' | 'other') => void) => void;
   onDataChanged: (callback: () => void) => () => void;
   onSettingsChanged: (callback: () => void) => () => void;

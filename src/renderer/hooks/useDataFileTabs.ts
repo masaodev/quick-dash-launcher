@@ -83,11 +83,17 @@ export function useDataFileTabs() {
   };
 
   /**
-   * 設定変更通知リスナーを設定
+   * 設定変更通知リスナーとwindow-hiddenイベントリスナーを設定
    */
   useEffect(() => {
     // 初期ロード
     loadTabSettings();
+
+    // ウィンドウ非表示時にデフォルトタブに戻す（次回表示時に既にリセット済みにするため）
+    const cleanupWindowHidden = window.electronAPI.onWindowHidden(async () => {
+      debugLog('ウィンドウ非表示通知を受信、デフォルトタブに戻します');
+      await resetToDefaultTab();
+    });
 
     // 設定変更通知のリスナーを設定
     const cleanupSettingsChanged = window.electronAPI.onSettingsChanged(async () => {
@@ -135,6 +141,7 @@ export function useDataFileTabs() {
     });
 
     return () => {
+      cleanupWindowHidden();
       cleanupSettingsChanged();
     };
   }, []);
@@ -163,6 +170,46 @@ export function useDataFileTabs() {
     }
     // フォールバック: アクティブタブと一致するファイルのアイテムのみ
     return mainItems.filter((item) => item.sourceFile === activeTab);
+  };
+
+  /**
+   * デフォルトタブに戻す（メイン画面再表示時に呼び出す）
+   */
+  const resetToDefaultTab = async () => {
+    try {
+      const settings = await window.electronAPI.getSettings();
+
+      // タブ表示がOFFの場合はdata.txtに戻す
+      if (!settings.showDataFileTabs) {
+        setActiveTab('data.txt');
+        return;
+      }
+
+      // タブ表示がONの場合はdefaultFileTabに戻す
+      const defaultTab = settings.defaultFileTab || 'data.txt';
+
+      // 設定から最新のファイルリストを再生成（クロージャで古い値を参照しないため）
+      const tabs = settings.dataFileTabs || [];
+      const allFiles = tabs.flatMap((tab) => tab.files || []);
+      const files = Array.from(new Set(allFiles)).filter(
+        (file) => file && typeof file === 'string'
+      );
+
+      // data.txtが含まれていない場合は追加
+      if (!files.includes('data.txt')) {
+        files.unshift('data.txt');
+      }
+
+      if (files.includes(defaultTab)) {
+        setActiveTab(defaultTab);
+      } else if (files.includes('data.txt')) {
+        setActiveTab('data.txt');
+      } else if (files.length > 0) {
+        setActiveTab(files[0]);
+      }
+    } catch (error) {
+      console.error('デフォルトタブへのリセットに失敗しました:', error);
+    }
   };
 
   return {
