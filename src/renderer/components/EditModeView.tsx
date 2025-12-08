@@ -610,7 +610,7 @@ const EditModeView: React.FC<EditModeViewProps> = ({
           className="sort-button"
           title={`種類→パスと引数→名前の順で整列し、${dataFileTabs[selectedTabIndex].name}タブ内の重複行を削除`}
         >
-          🔤 整列・重複削除（{dataFileTabs[selectedTabIndex].name}タブのみ）
+          🔤 整列・重複削除
         </button>
       </div>
 
