@@ -5,6 +5,7 @@ import { itemLogger } from '@common/logger';
 
 import { LauncherItem, GroupItem, AppItem, WindowPinMode } from '@common/types';
 import { GROUP_LAUNCH_DELAY_MS } from '@common/constants';
+import { parseArgs } from '@common/utils/argsParser';
 
 async function openItem(
   item: LauncherItem,
@@ -33,40 +34,23 @@ async function openItem(
       if (item.path.endsWith('.lnk')) {
         await shell.openPath(item.path);
       } else if (item.args) {
-        // 引数を配列として処理（安全性のため）
-        const args = item.args.split(' ').filter((arg) => arg.length > 0);
+        // 引数を配列として処理（ダブルクォートを考慮してパース）
+        const args = parseArgs(item.args);
 
-        if (process.platform === 'win32') {
-          // Windowsではcmd.exeを使ってstartコマンドで起動
-          // spawnを使用してコマンドインジェクションを防止
-          const child = spawn('cmd.exe', ['/c', 'start', '""', item.path, ...args], {
-            detached: true,
-            stdio: 'ignore',
-            windowsHide: false,
-          });
-          child.unref();
+        // spawnを使用してコマンドインジェクションを防止
+        // 直接実行することで、startコマンドの複雑な挙動を回避
+        const child = spawn(item.path, args, {
+          detached: true,
+          stdio: 'ignore',
+        });
+        child.unref();
 
-          child.on('error', (error) => {
-            itemLogger.error(
-              { error: error.message, path: item.path, args: item.args },
-              'アイテムの起動に失敗しました (spawn)'
-            );
-          });
-        } else {
-          // Unix系OSの場合
-          const child = spawn(item.path, args, {
-            detached: true,
-            stdio: 'ignore',
-          });
-          child.unref();
-
-          child.on('error', (error) => {
-            itemLogger.error(
-              { error: error.message, path: item.path, args: item.args },
-              'アイテムの起動に失敗しました (spawn)'
-            );
-          });
-        }
+        child.on('error', (error) => {
+          itemLogger.error(
+            { error: error.message, path: item.path, args: item.args },
+            'アイテムの起動に失敗しました (spawn)'
+          );
+        });
       } else {
         await shell.openPath(item.path);
       }
