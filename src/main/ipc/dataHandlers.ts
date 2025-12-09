@@ -1,348 +1,59 @@
 import * as path from 'path';
 import * as fs from 'fs';
 
-import { ipcMain, shell, dialog, BrowserWindow } from 'electron';
-import { minimatch } from 'minimatch';
+import { ipcMain, BrowserWindow } from 'electron';
 import { dataLogger } from '@common/logger';
 import { FileUtils } from '@common/utils/fileUtils';
 import { parseCSVLine, escapeCSV } from '@common/utils/csvParser';
-import { parseDirOptionsFromString, type DirOptions } from '@common/utils/dataConverters';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
-import { MAX_BOOKMARK_FILE_SIZE } from '@common/constants';
-import {
-  RawDataLine,
-  SimpleBookmarkItem,
-  LauncherItem,
-  GroupItem,
-  AppItem,
-  BrowserInfo,
-  BrowserProfile,
-} from '@common/types';
+import { RawDataLine, LauncherItem, GroupItem, AppItem } from '@common/types';
 
 import { BackupService } from '../services/backupService.js';
 import { SettingsService } from '../services/settingsService.js';
+import { setupBookmarkHandlers } from './bookmarkHandlers.js';
+import {
+  formatDirOptions,
+  processDirectoryItem,
+  processShortcut,
+} from './directoryScanner.js';
 
 /**
- * DirOptionsを人間が読める形式の文字列に変換する
+ * CSV行をLauncherItemに変換する
  *
- * @param options - DirOptionsオブジェクト
- * @returns 人間が読める形式の文字列（例：「深さ:2, タイプ:file, フィルター:*.pdf」）
- */
-function formatDirOptions(options: DirOptions): string {
-  const parts: string[] = [];
-
-  // 深さ
-  if (options.depth === -1) {
-    parts.push('深さ:無制限');
-  } else {
-    parts.push(`深さ:${options.depth}`);
-  }
-
-  // タイプ
-  const typeLabels: Record<typeof options.types, string> = {
-    file: 'ファイルのみ',
-    folder: 'フォルダのみ',
-    both: 'ファイルとフォルダ',
-  };
-  parts.push(`タイプ:${typeLabels[options.types]}`);
-
-  // フィルター
-  if (options.filter) {
-    parts.push(`フィルター:${options.filter}`);
-  }
-
-  // 除外
-  if (options.exclude) {
-    parts.push(`除外:${options.exclude}`);
-  }
-
-  // プレフィックス
-  if (options.prefix) {
-    parts.push(`接頭辞:${options.prefix}`);
-  }
-
-  // サフィックス
-  if (options.suffix) {
-    parts.push(`接尾辞:${options.suffix}`);
-  }
-
-  return parts.join(', ');
-}
-
-/**
- * ファイル/フォルダーをLauncherItemに変換する
- *
- * @param itemPath - アイテムのパス
- * @param itemType - アイテムタイプ（'file' | 'folder'）
+ * @param line - CSV行
  * @param sourceFile - データファイル名
  * @param lineNumber - 行番号（オプション）
- * @param prefix - 表示名に追加するプレフィックス（オプション）
- * @param suffix - 表示名に追加するサフィックス（オプション）
- * @param expandedFrom - フォルダ取込の元となるディレクトリパス（オプション）
- * @param expandedOptions - フォルダ取込オプション情報（人間が読める形式、オプション）
- * @returns LauncherItemオブジェクト
+ * @returns LauncherItemまたはnull
  */
-function processItem(
-  itemPath: string,
-  itemType: 'file' | 'folder',
+function parseCSVLineToItem(
+  line: string,
   sourceFile: string,
-  lineNumber?: number,
-  prefix?: string,
-  suffix?: string,
-  expandedFrom?: string,
-  expandedOptions?: string
-): LauncherItem {
-  let displayName = path.basename(itemPath);
-
-  // プレフィックスが指定されている場合は追加
-  if (prefix) {
-    displayName = `${prefix}: ${displayName}`;
+  lineNumber?: number
+): LauncherItem | null {
+  const parts = parseCSVLine(line);
+  if (parts.length < 2) {
+    return null;
   }
 
-  // サフィックスが指定されている場合は追加
-  if (suffix) {
-    displayName = `${displayName} (${suffix})`;
+  const [name, itemPath, argsField, customIconField] = parts;
+
+  if (!name || !itemPath) {
+    return null;
   }
 
-  return {
-    name: displayName,
+  const item: LauncherItem = {
+    name,
     path: itemPath,
-    type: itemType === 'folder' ? 'folder' : detectItemTypeSync(itemPath),
+    type: detectItemTypeSync(itemPath),
+    args: argsField && argsField.trim() ? argsField : undefined,
+    customIcon: customIconField && customIconField.trim() ? customIconField : undefined,
     sourceFile,
-    lineNumber,
-    isDirExpanded: expandedFrom ? true : false,
-    expandedFrom,
-    expandedOptions,
+    lineNumber: lineNumber,
+    isDirExpanded: false,
     isEdited: false,
   };
-}
 
-/**
- * ショートカットファイル（.lnk）を解析してLauncherItemに変換する
- * Electronのネイティブ機能を使用してショートカットの詳細を読み取り、
- * LauncherItemオブジェクトを生成する
- *
- * @param filePath - 解析対象のショートカットファイルのパス
- * @param sourceFile - データファイル名
- * @param lineNumber - 行番号（オプション）
- * @param displayName - 表示名（オプション、未指定の場合はファイル名から自動生成）
- * @param prefix - 表示名に追加するプレフィックス（オプション）
- * @param suffix - 表示名に追加するサフィックス（オプション）
- * @param expandedFrom - フォルダ取込の元となるディレクトリパス（オプション）
- * @param expandedOptions - フォルダ取込オプション情報（人間が読める形式、オプション）
- * @returns LauncherItemオブジェクト。解析に失敗した場合はnull
- * @throws Error ショートカットファイルの読み込みに失敗した場合（ログに記録され、nullを返す）
- *
- * @example
- * ```typescript
- * const item = processShortcut('C:\\Users\\Desktop\\MyApp.lnk', 'data.txt', 10, 'マイアプリ', 'デスクトップ');
- * // { name: 'デスクトップ: マイアプリ', path: 'C:\\Program Files\\MyApp\\app.exe', type: 'app', ... }
- * ```
- */
-function processShortcut(
-  filePath: string,
-  sourceFile: string,
-  lineNumber?: number,
-  displayName?: string,
-  prefix?: string,
-  suffix?: string,
-  expandedFrom?: string,
-  expandedOptions?: string
-): LauncherItem | null {
-  try {
-    // Electron のネイティブ機能を使用してショートカットを読み取り
-    const shortcutDetails = shell.readShortcutLink(filePath);
-
-    if (shortcutDetails && shortcutDetails.target) {
-      // 表示名が指定されていない場合はファイル名から自動生成
-      let name = displayName || path.basename(filePath, '.lnk');
-
-      // プレフィックスが指定されている場合は追加
-      if (prefix) {
-        name = `${prefix}: ${name}`;
-      }
-
-      // サフィックスが指定されている場合は追加
-      if (suffix) {
-        name = `${name} (${suffix})`;
-      }
-
-      // ターゲットパスの存在確認とディレクトリ判定
-      let targetType: LauncherItem['type'];
-      if (
-        FileUtils.exists(shortcutDetails.target) &&
-        FileUtils.isDirectory(shortcutDetails.target)
-      ) {
-        targetType = 'folder';
-      } else {
-        targetType = detectItemTypeSync(shortcutDetails.target);
-      }
-
-      return {
-        name: name,
-        path: filePath,
-        type: targetType,
-        args:
-          shortcutDetails.args && shortcutDetails.args.trim() ? shortcutDetails.args : undefined,
-        originalPath: shortcutDetails.target,
-        sourceFile,
-        lineNumber,
-        isDirExpanded: expandedFrom ? true : false,
-        expandedFrom,
-        expandedOptions,
-        isEdited: false,
-      };
-    }
-  } catch (error) {
-    dataLogger.error({ filePath, error }, 'ショートカットの読み込みに失敗');
-  }
-
-  return null;
-}
-
-/**
- * 指定されたディレクトリを再帰的にスキャンし、指定されたオプションに基づいてファイル/フォルダを抽出する
- * フォルダ取込アイテムで使用される主要な機能で、深度制限、タイプフィルター、パターンマッチングに対応
- *
- * @param dirPath - スキャン対象のディレクトリパス
- * @param options - スキャンオプション（深度、タイプ、フィルター等）
- * @param sourceFile - データファイル名
- * @param rootDirPath - フォルダ取込の元となるルートディレクトリパス（オプション）
- * @param optionsText - フォルダ取込オプション情報（人間が読める形式、オプション）
- * @param lineNumber - データファイル内の行番号（オプション）
- * @param currentDepth - 現在の再帰深度（内部使用、初期値は0）
- * @returns LauncherItem配列
- * @throws ディレクトリアクセス権限エラー、ファイルシステムエラー
- *
- * @example
- * const items = await scanDirectory('/home/user/documents', {
- *   depth: 2,
- *   types: 'file',
- *   filter: '*.pdf',
- *   prefix: 'Doc: '
- * }, 'data.txt', '/home/user/documents', '深さ:2, タイプ:ファイルのみ', 15);
- */
-async function scanDirectory(
-  dirPath: string,
-  options: DirOptions,
-  sourceFile: string,
-  rootDirPath?: string,
-  optionsText?: string,
-  lineNumber?: number,
-  currentDepth = 0
-): Promise<LauncherItem[]> {
-  const results: LauncherItem[] = [];
-
-  // 深さ制限チェック
-  if (options.depth !== -1 && currentDepth > options.depth) {
-    return results;
-  }
-
-  try {
-    const items = fs.readdirSync(dirPath);
-
-    for (const item of items) {
-      const itemPath = path.join(dirPath, item);
-
-      // エラーハンドリング: アクセスできないファイル/フォルダーをスキップ
-      let stat;
-      try {
-        stat = fs.statSync(itemPath);
-      } catch (error) {
-        dataLogger.warn({ itemPath, error }, 'アイテムにアクセスできません');
-        continue;
-      }
-
-      const isDirectory = stat.isDirectory();
-      const itemName = path.basename(itemPath);
-
-      // 除外パターンチェック
-      if (options.exclude && minimatch(itemName, options.exclude)) {
-        continue;
-      }
-
-      // フィルターパターンチェック
-      if (options.filter && !minimatch(itemName, options.filter)) {
-        // サブディレクトリの場合は、中身をスキャンする可能性があるのでスキップしない
-        if (!isDirectory) {
-          continue;
-        }
-      }
-
-      // タイプによる処理
-      if (isDirectory) {
-        // フォルダーを結果に含める
-        if (options.types === 'folder' || options.types === 'both') {
-          // フィルターがない、またはフィルターにマッチする場合のみ追加
-          if (!options.filter || minimatch(itemName, options.filter)) {
-            results.push(
-              processItem(
-                itemPath,
-                'folder',
-                sourceFile,
-                lineNumber,
-                options.prefix,
-                options.suffix,
-                rootDirPath,
-                optionsText
-              )
-            );
-          }
-        }
-
-        // サブディレクトリをスキャン
-        if (currentDepth < options.depth || options.depth === -1) {
-          const subResults = await scanDirectory(
-            itemPath,
-            options,
-            sourceFile,
-            rootDirPath,
-            optionsText,
-            lineNumber,
-            currentDepth + 1
-          );
-          results.push(...subResults);
-        }
-      } else {
-        // ファイルを結果に含める
-        if (options.types === 'file' || options.types === 'both') {
-          // .lnkファイルの場合は特別処理
-          if (path.extname(itemPath).toLowerCase() === '.lnk') {
-            const processedShortcut = processShortcut(
-              itemPath,
-              sourceFile,
-              lineNumber,
-              undefined,
-              options.prefix,
-              options.suffix,
-              rootDirPath,
-              optionsText
-            );
-            if (processedShortcut) {
-              results.push(processedShortcut);
-            }
-          } else {
-            results.push(
-              processItem(
-                itemPath,
-                'file',
-                sourceFile,
-                lineNumber,
-                options.prefix,
-                options.suffix,
-                rootDirPath,
-                optionsText
-              )
-            );
-          }
-        }
-      }
-    }
-  } catch (error) {
-    dataLogger.error({ dirPath, error }, 'ディレクトリのスキャンに失敗');
-  }
-
-  return results;
+  return item;
 }
 
 /**
@@ -422,38 +133,28 @@ async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
       if (trimmedLine.startsWith('dir,')) {
         const parts = parseCSVLine(trimmedLine);
         const dirPath = parts[1];
+        const optionsStr = parts.slice(2).join(',');
 
-        if (FileUtils.exists(dirPath) && FileUtils.isDirectory(dirPath)) {
-          try {
-            const optionsStr = parts.slice(2).join(',');
-            const options = parseDirOptionsFromString(optionsStr);
-            const optionsText = formatDirOptions(options);
-            const scannedItems = await scanDirectory(
-              dirPath,
-              options,
-              fileName,
-              dirPath,
-              optionsText,
-              lineIndex + 1
+        const scannedItems = await processDirectoryItem(
+          dirPath,
+          optionsStr,
+          fileName,
+          lineIndex + 1
+        );
+
+        // Add scanned items with duplicate check (per tab)
+        for (const item of scannedItems) {
+          const uniqueKey = item.args
+            ? `${item.name}|${item.path}|${item.args}`
+            : `${item.name}|${item.path}`;
+          if (!seenPaths.has(uniqueKey)) {
+            seenPaths.add(uniqueKey);
+            items.push(item);
+          } else {
+            dataLogger.debug(
+              { tabIndex, fileName, itemName: item.name, uniqueKey },
+              'タブ内で重複するアイテムをスキップ'
             );
-
-            // Add scanned items with duplicate check (per tab)
-            for (const item of scannedItems) {
-              const uniqueKey = item.args
-                ? `${item.name}|${item.path}|${item.args}`
-                : `${item.name}|${item.path}`;
-              if (!seenPaths.has(uniqueKey)) {
-                seenPaths.add(uniqueKey);
-                items.push(item);
-              } else {
-                dataLogger.debug(
-                  { tabIndex, fileName, itemName: item.name, uniqueKey },
-                  'タブ内で重複するアイテムをスキップ'
-                );
-              }
-            }
-          } catch (error) {
-            dataLogger.error({ dirPath, error }, 'ディレクトリのスキャンに失敗');
           }
         }
         continue;
@@ -542,45 +243,6 @@ async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
   return items;
 }
 
-/**
- * CSV行をLauncherItemに変換する
- *
- * @param line - CSV行
- * @param sourceFile - データファイル名
- * @param lineNumber - 行番号（オプション）
- * @returns LauncherItemまたはnull
- */
-function parseCSVLineToItem(
-  line: string,
-  sourceFile: string,
-  lineNumber?: number
-): LauncherItem | null {
-  const parts = parseCSVLine(line);
-  if (parts.length < 2) {
-    return null;
-  }
-
-  const [name, itemPath, argsField, customIconField] = parts;
-
-  if (!name || !itemPath) {
-    return null;
-  }
-
-  const item: LauncherItem = {
-    name,
-    path: itemPath,
-    type: detectItemTypeSync(itemPath),
-    args: argsField && argsField.trim() ? argsField : undefined,
-    customIcon: customIconField && customIconField.trim() ? customIconField : undefined,
-    sourceFile,
-    lineNumber: lineNumber,
-    isDirExpanded: false,
-    isEdited: false,
-  };
-
-  return item;
-}
-
 // 生データを読み込む（フォルダ取込アイテム展開なし）
 async function loadRawDataFiles(configFolder: string): Promise<RawDataLine[]> {
   const rawLines: RawDataLine[] = [];
@@ -644,220 +306,6 @@ function detectLineType(line: string): RawDataLine['type'] {
   }
 
   return 'item';
-}
-
-/**
- * プロファイルフォルダからプロファイル名を取得する
- * @param profilePath - プロファイルフォルダのパス
- * @returns プロファイル名
- */
-async function getProfileName(profilePath: string): Promise<string> {
-  const prefsPath = path.join(profilePath, 'Preferences');
-  try {
-    const content = await fs.promises.readFile(prefsPath, 'utf-8');
-    const prefs = JSON.parse(content);
-    return prefs.profile?.name || path.basename(profilePath);
-  } catch {
-    return path.basename(profilePath);
-  }
-}
-
-/**
- * ブラウザのユーザーデータフォルダからプロファイルを検出する
- * @param userDataPath - ユーザーデータフォルダのパス
- * @returns プロファイル情報の配列
- */
-async function detectProfiles(userDataPath: string): Promise<BrowserProfile[]> {
-  const profiles: BrowserProfile[] = [];
-
-  try {
-    const entries = await fs.promises.readdir(userDataPath, { withFileTypes: true });
-
-    for (const entry of entries) {
-      if (!entry.isDirectory()) continue;
-
-      // Default または Profile N のフォルダを検出
-      const isProfileFolder = entry.name === 'Default' || /^Profile \d+$/.test(entry.name);
-
-      if (!isProfileFolder) continue;
-
-      const profilePath = path.join(userDataPath, entry.name);
-      const bookmarkPath = path.join(profilePath, 'Bookmarks');
-
-      // Bookmarksファイルが存在するか確認
-      if (!fs.existsSync(bookmarkPath)) continue;
-
-      const profileName = await getProfileName(profilePath);
-
-      profiles.push({
-        id: entry.name,
-        name: profileName,
-        bookmarkPath: bookmarkPath,
-      });
-    }
-  } catch (error) {
-    dataLogger.warn({ userDataPath, error }, 'プロファイルの検出に失敗');
-  }
-
-  return profiles;
-}
-
-/**
- * インストール済みのブラウザ（Chrome/Edge）を検出する
- * @returns ブラウザ情報の配列
- */
-async function detectInstalledBrowsers(): Promise<BrowserInfo[]> {
-  const localAppData = process.env.LOCALAPPDATA;
-  if (!localAppData) {
-    dataLogger.warn('LOCALAPPDATA環境変数が設定されていません');
-    return [];
-  }
-
-  const browsers: BrowserInfo[] = [];
-
-  // Chrome検出
-  const chromeUserData = path.join(localAppData, 'Google', 'Chrome', 'User Data');
-  if (fs.existsSync(chromeUserData)) {
-    const profiles = await detectProfiles(chromeUserData);
-    browsers.push({
-      id: 'chrome',
-      name: 'Google Chrome',
-      installed: profiles.length > 0,
-      profiles: profiles,
-    });
-  } else {
-    browsers.push({
-      id: 'chrome',
-      name: 'Google Chrome',
-      installed: false,
-      profiles: [],
-    });
-  }
-
-  // Edge検出
-  const edgeUserData = path.join(localAppData, 'Microsoft', 'Edge', 'User Data');
-  if (fs.existsSync(edgeUserData)) {
-    const profiles = await detectProfiles(edgeUserData);
-    browsers.push({
-      id: 'edge',
-      name: 'Microsoft Edge',
-      installed: profiles.length > 0,
-      profiles: profiles,
-    });
-  } else {
-    browsers.push({
-      id: 'edge',
-      name: 'Microsoft Edge',
-      installed: false,
-      profiles: [],
-    });
-  }
-
-  dataLogger.info(
-    {
-      browsers: browsers.map((b) => ({
-        id: b.id,
-        installed: b.installed,
-        profileCount: b.profiles.length,
-      })),
-    },
-    'ブラウザを検出しました'
-  );
-
-  return browsers;
-}
-
-/**
- * ブックマークファイルのパスが許可されたパスかどうかを検証する
- * @param filePath - 検証するファイルパス
- * @returns 許可されたパスならtrue
- */
-function isValidBookmarkPath(filePath: string): boolean {
-  const localAppData = process.env.LOCALAPPDATA;
-  if (!localAppData) return false;
-
-  const normalizedPath = path.normalize(filePath);
-  const allowedPaths = [
-    path.join(localAppData, 'Google', 'Chrome', 'User Data'),
-    path.join(localAppData, 'Microsoft', 'Edge', 'User Data'),
-  ];
-
-  return allowedPaths.some((allowed) => normalizedPath.startsWith(allowed));
-}
-
-/**
- * ブラウザのブックマークJSONファイルをパースしてSimpleBookmarkItemの配列に変換する
- * @param filePath - ブックマークファイルのパス
- * @returns SimpleBookmarkItemの配列
- */
-async function parseBrowserBookmarks(filePath: string): Promise<SimpleBookmarkItem[]> {
-  // セキュリティチェック：許可されたパス内かどうか確認
-  if (!isValidBookmarkPath(filePath)) {
-    throw new Error('許可されていないファイルパスです');
-  }
-
-  try {
-    const content = await fs.promises.readFile(filePath, 'utf-8');
-
-    // ファイルサイズチェック
-    if (content.length > MAX_BOOKMARK_FILE_SIZE) {
-      throw new Error('ファイルサイズが大きすぎます');
-    }
-
-    const data = JSON.parse(content);
-
-    // 構造の検証
-    if (!data.roots || typeof data.roots !== 'object') {
-      throw new Error('無効なブックマークファイル形式です');
-    }
-
-    const bookmarks: SimpleBookmarkItem[] = [];
-    let index = 0;
-
-    // 再帰的にブックマークを抽出
-    function traverse(node: Record<string, unknown>) {
-      if (node.type === 'url' && typeof node.url === 'string' && typeof node.name === 'string') {
-        const url = node.url;
-        // http/https のみ許可
-        if (url.startsWith('http://') || url.startsWith('https://')) {
-          bookmarks.push({
-            id: `browser-bookmark-${index++}`,
-            name: (node.name as string).trim() || url,
-            url: url,
-            checked: false,
-          });
-        }
-      }
-      if (node.children && Array.isArray(node.children)) {
-        for (const child of node.children) {
-          traverse(child as Record<string, unknown>);
-        }
-      }
-    }
-
-    // roots内の各ノードを探索
-    for (const key of ['bookmark_bar', 'other', 'synced']) {
-      if (data.roots[key]) {
-        traverse(data.roots[key] as Record<string, unknown>);
-      }
-    }
-
-    dataLogger.info(
-      { filePath, bookmarkCount: bookmarks.length },
-      'ブラウザブックマークをパースしました'
-    );
-
-    return bookmarks;
-  } catch (error) {
-    if (
-      error instanceof Error &&
-      (error.message.includes('EBUSY') || error.message.includes('EACCES'))
-    ) {
-      throw new Error('ブラウザが起動中です。ブラウザを閉じてから再試行してください。');
-    }
-    dataLogger.error({ filePath, error }, 'ブラウザブックマークのパースに失敗');
-    throw error;
-  }
 }
 
 // 生データを保存
@@ -1058,6 +506,9 @@ export function notifyDataChanged() {
 }
 
 export function setupDataHandlers(configFolder: string) {
+  // ブックマーク関連のハンドラーを登録
+  setupBookmarkHandlers();
+
   ipcMain.handle('get-config-folder', () => configFolder);
 
   ipcMain.handle('get-data-files', async () => {
@@ -1137,68 +588,5 @@ export function setupDataHandlers(configFolder: string) {
     await saveRawDataFiles(configFolder, rawLines);
     notifyDataChanged();
     return;
-  });
-
-  ipcMain.handle('select-bookmark-file', async () => {
-    const result = await dialog.showOpenDialog({
-      title: 'ブックマークファイルを選択',
-      filters: [
-        { name: 'HTML Files', extensions: ['html', 'htm'] },
-        { name: 'All Files', extensions: ['*'] },
-      ],
-      properties: ['openFile'],
-    });
-
-    if (!result.canceled && result.filePaths.length > 0) {
-      return result.filePaths[0];
-    }
-    return null;
-  });
-
-  ipcMain.handle('parse-bookmark-file', async (_event, filePath: string) => {
-    try {
-      const htmlContent = FileUtils.safeReadTextFile(filePath);
-      if (!htmlContent) {
-        throw new Error('ファイルの読み込みに失敗しました');
-      }
-
-      // 簡易的なHTMLパーサーでブックマークを抽出
-      const bookmarks: SimpleBookmarkItem[] = [];
-
-      // <A>タグを正規表現で抽出
-      const linkRegex = /<A\s+[^>]*HREF="([^"]*)"[^>]*>([^<]*)<\/A>/gi;
-      let match;
-      let index = 0;
-
-      while ((match = linkRegex.exec(htmlContent)) !== null) {
-        const url = match[1];
-        const name = match[2].trim();
-
-        // URLが有効な場合のみ追加
-        if (url && name && (url.startsWith('http://') || url.startsWith('https://'))) {
-          bookmarks.push({
-            id: `bookmark-${index}`,
-            name: name,
-            url: url,
-            checked: false,
-          });
-          index++;
-        }
-      }
-
-      return bookmarks;
-    } catch (error) {
-      dataLogger.error({ error }, 'ブックマークファイルのパースに失敗');
-      throw error;
-    }
-  });
-
-  // ブラウザブックマーク直接インポートAPI
-  ipcMain.handle('detect-installed-browsers', async () => {
-    return await detectInstalledBrowsers();
-  });
-
-  ipcMain.handle('parse-browser-bookmarks', async (_event, filePath: string) => {
-    return await parseBrowserBookmarks(filePath);
   });
 }
