@@ -8,6 +8,7 @@ import { FileUtils } from '@common/utils/fileUtils';
 import { parseCSVLine, escapeCSV } from '@common/utils/csvParser';
 import { parseDirOptionsFromString, type DirOptions } from '@common/utils/dataConverters';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
+import { MAX_BOOKMARK_FILE_SIZE } from '@common/constants';
 
 import {
   RawDataLine,
@@ -17,7 +18,7 @@ import {
   AppItem,
   BrowserInfo,
   BrowserProfile,
-} from '../../common/types';
+} from '@common/types';
 import { BackupService } from '../services/backupService.js';
 import { SettingsService } from '../services/settingsService.js';
 
@@ -798,8 +799,8 @@ async function parseBrowserBookmarks(filePath: string): Promise<SimpleBookmarkIt
   try {
     const content = await fs.promises.readFile(filePath, 'utf-8');
 
-    // ファイルサイズチェック（50MB上限）
-    if (content.length > 50 * 1024 * 1024) {
+    // ファイルサイズチェック
+    if (content.length > MAX_BOOKMARK_FILE_SIZE) {
       throw new Error('ファイルサイズが大きすぎます');
     }
 

@@ -1,9 +1,10 @@
-import { exec } from 'child_process';
+import { spawn } from 'child_process';
 
 import { ipcMain, shell, BrowserWindow } from 'electron';
 import { itemLogger } from '@common/logger';
 
-import { LauncherItem, GroupItem, AppItem, WindowPinMode } from '../../common/types';
+import { LauncherItem, GroupItem, AppItem, WindowPinMode } from '@common/types';
+import { GROUP_LAUNCH_DELAY_MS } from '@common/constants';
 
 async function openItem(
   item: LauncherItem,
@@ -32,26 +33,39 @@ async function openItem(
       if (item.path.endsWith('.lnk')) {
         await shell.openPath(item.path);
       } else if (item.args) {
-        // Windowsでは start コマンドを使って完全に独立したプロセスとして起動
+        // 引数を配列として処理（安全性のため）
+        const args = item.args.split(' ').filter((arg) => arg.length > 0);
+
         if (process.platform === 'win32') {
-          // startコマンドを使って新しいウィンドウで実行
-          const command = `start "" "${item.path}" ${item.args}`;
-          exec(command, { windowsHide: false }, (error) => {
-            if (error) {
-              itemLogger.error(
-                { error: error.message },
-                'アイテムの起動に失敗しました (start command)'
-              );
-            }
+          // Windowsではcmd.exeを使ってstartコマンドで起動
+          // spawnを使用してコマンドインジェクションを防止
+          const child = spawn('cmd.exe', ['/c', 'start', '""', item.path, ...args], {
+            detached: true,
+            stdio: 'ignore',
+            windowsHide: false,
+          });
+          child.unref();
+
+          child.on('error', (error) => {
+            itemLogger.error(
+              { error: error.message, path: item.path, args: item.args },
+              'アイテムの起動に失敗しました (spawn)'
+            );
           });
         } else {
-          // Unix系OSの場合は従来通りspawnを使用
-          const { spawn } = await import('child_process');
-          const child = spawn(item.path, item.args.split(' '), {
+          // Unix系OSの場合
+          const child = spawn(item.path, args, {
             detached: true,
             stdio: 'ignore',
           });
           child.unref();
+
+          child.on('error', (error) => {
+            itemLogger.error(
+              { error: error.message, path: item.path, args: item.args },
+              'アイテムの起動に失敗しました (spawn)'
+            );
+          });
         }
       } else {
         await shell.openPath(item.path);
@@ -177,9 +191,9 @@ async function executeGroup(
       errorCount++;
     }
 
-    // 最後のアイテム以外は500ms待機
+    // 最後のアイテム以外は待機
     if (i < group.itemNames.length - 1) {
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, GROUP_LAUNCH_DELAY_MS));
     }
   }
 

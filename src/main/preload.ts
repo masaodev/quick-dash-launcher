@@ -59,8 +59,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on(`icon-progress-${eventType}`, (_event, data) => callback(data));
   },
   onWindowShown: (callback: (startTime?: number) => void) => {
-    const listener = (_event: Electron.IpcRendererEvent, startTime?: number) =>
-      callback(startTime);
+    const listener = (_event: unknown, startTime?: number) => callback(startTime);
     ipcRenderer.on('window-shown', listener);
     return () => {
       ipcRenderer.removeListener('window-shown', listener);
