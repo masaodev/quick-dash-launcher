@@ -9,7 +9,6 @@ import { parseCSVLine, escapeCSV } from '@common/utils/csvParser';
 import { parseDirOptionsFromString, type DirOptions } from '@common/utils/dataConverters';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { MAX_BOOKMARK_FILE_SIZE } from '@common/constants';
-
 import {
   RawDataLine,
   SimpleBookmarkItem,
@@ -19,6 +18,7 @@ import {
   BrowserInfo,
   BrowserProfile,
 } from '@common/types';
+
 import { BackupService } from '../services/backupService.js';
 import { SettingsService } from '../services/settingsService.js';
 

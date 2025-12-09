@@ -2,7 +2,6 @@ import { spawn } from 'child_process';
 
 import { ipcMain, shell, BrowserWindow } from 'electron';
 import { itemLogger } from '@common/logger';
-
 import { LauncherItem, GroupItem, AppItem, WindowPinMode } from '@common/types';
 import { GROUP_LAUNCH_DELAY_MS } from '@common/constants';
 import { parseArgs } from '@common/utils/argsParser';

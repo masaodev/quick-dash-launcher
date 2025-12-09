@@ -42,7 +42,7 @@ coverage/
 test-results/
 playwright-report/
 html/
-test-output.log
+test-output.*
 *-output.log
 test-run.log
 
