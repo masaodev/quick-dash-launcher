@@ -1,5 +1,4 @@
 import * as path from 'path';
-import * as fs from 'fs';
 
 import { ipcMain, BrowserWindow } from 'electron';
 import { dataLogger } from '@common/logger';
@@ -10,12 +9,9 @@ import { RawDataLine, LauncherItem, GroupItem, AppItem } from '@common/types';
 
 import { BackupService } from '../services/backupService.js';
 import { SettingsService } from '../services/settingsService.js';
+
 import { setupBookmarkHandlers } from './bookmarkHandlers.js';
-import {
-  formatDirOptions,
-  processDirectoryItem,
-  processShortcut,
-} from './directoryScanner.js';
+import { processDirectoryItem, processShortcut } from './directoryScanner.js';
 
 /**
  * CSV行をLauncherItemに変換する

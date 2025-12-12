@@ -102,16 +102,24 @@ const App: React.FC = () => {
 
   // handleExecuteItemを定義（useKeyboardShortcutsより前に必要）
   const handleExecuteItem = async (item: AppItem) => {
-    // 検索クエリがある場合は履歴に追加
-    if (searchQuery.trim()) {
-      await addHistoryEntry(searchQuery.trim());
-    }
+    try {
+      // 検索クエリがある場合は履歴に追加
+      if (searchQuery.trim()) {
+        await addHistoryEntry(searchQuery.trim());
+      }
 
-    // グループかどうかで処理を分岐
-    if (item.type === 'group') {
-      await window.electronAPI.executeGroup(item as GroupItem, mainItems);
-    } else {
-      await window.electronAPI.openItem(item as LauncherItem);
+      // グループかどうかで処理を分岐
+      if (item.type === 'group') {
+        await window.electronAPI.executeGroup(item as GroupItem, mainItems);
+      } else {
+        await window.electronAPI.openItem(item as LauncherItem);
+      }
+    } catch (error) {
+      setAlertDialog({
+        isOpen: true,
+        message: `アイテムの実行に失敗しました: ${error instanceof Error ? error.message : String(error)}`,
+        type: 'error',
+      });
     }
   };
 

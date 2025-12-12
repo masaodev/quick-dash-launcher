@@ -349,6 +349,7 @@ export class FaviconService {
       const timeoutId = setTimeout(() => {
         if (!isResolved) {
           isResolved = true;
+          request.removeAllListeners();
           request.abort();
           reject(new Error(`ファビコンダウンロードがタイムアウトしました: ${url}`));
         }
@@ -358,20 +359,36 @@ export class FaviconService {
         if (response.statusCode !== 200) {
           clearTimeout(timeoutId);
           isResolved = true;
+          request.removeAllListeners();
+          response.removeAllListeners();
           reject(new Error(`HTTP ${response.statusCode}`));
           return;
         }
 
         response.on('data', (chunk) => {
-          chunks.push(chunk);
+          if (!isResolved) {
+            chunks.push(chunk);
+          }
         });
 
         response.on('end', () => {
           if (!isResolved) {
             clearTimeout(timeoutId);
             isResolved = true;
+            request.removeAllListeners();
+            response.removeAllListeners();
             const buffer = Buffer.concat(chunks);
             resolve(buffer);
+          }
+        });
+
+        response.on('error', (error) => {
+          if (!isResolved) {
+            clearTimeout(timeoutId);
+            isResolved = true;
+            request.removeAllListeners();
+            response.removeAllListeners();
+            reject(error);
           }
         });
       });
@@ -380,6 +397,7 @@ export class FaviconService {
         if (!isResolved) {
           clearTimeout(timeoutId);
           isResolved = true;
+          request.removeAllListeners();
           reject(error);
         }
       });

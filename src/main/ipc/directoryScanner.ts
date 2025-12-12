@@ -346,16 +346,26 @@ export async function processDirectoryItem(
   sourceFile: string,
   lineNumber: number
 ): Promise<LauncherItem[]> {
-  if (!FileUtils.exists(dirPath) || !FileUtils.isDirectory(dirPath)) {
+  // パスを正規化して絶対パスに変換
+  const normalizedPath = path.normalize(path.resolve(dirPath));
+
+  // パストラバーサル攻撃対策: 正規化後のパスが元のパスと大きく異なる場合は拒否
+  // ただし、相対パスから絶対パスへの変換は許可
+  if (normalizedPath.includes('..')) {
+    dataLogger.warn({ dirPath, normalizedPath }, '不正なパス: ディレクトリトラバーサルの可能性');
+    return [];
+  }
+
+  if (!FileUtils.exists(normalizedPath) || !FileUtils.isDirectory(normalizedPath)) {
     return [];
   }
 
   try {
     const options = parseDirOptionsFromString(optionsStr);
     const optionsText = formatDirOptions(options);
-    return await scanDirectory(dirPath, options, sourceFile, dirPath, optionsText, lineNumber);
+    return await scanDirectory(normalizedPath, options, sourceFile, normalizedPath, optionsText, lineNumber);
   } catch (error) {
-    dataLogger.error({ dirPath, error }, 'ディレクトリのスキャンに失敗');
+    dataLogger.error({ dirPath: normalizedPath, error }, 'ディレクトリのスキャンに失敗');
     return [];
   }
 }
