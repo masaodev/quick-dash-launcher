@@ -13,6 +13,7 @@ import {
   BrowserInfo,
   WorkspaceItem,
   WorkspaceGroup,
+  ExecutionHistoryItem,
 } from '../common/types';
 
 interface RegisterItem {
@@ -193,5 +194,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke('workspace:reorder-groups', groupIds),
     moveItemToGroup: (itemId: string, groupId?: string): Promise<{ success: boolean }> =>
       ipcRenderer.invoke('workspace:move-item-to-group', itemId, groupId),
+    // 実行履歴
+    loadExecutionHistory: (): Promise<ExecutionHistoryItem[]> =>
+      ipcRenderer.invoke('workspace:load-execution-history'),
+    addExecutionHistory: (item: AppItem): Promise<{ success: boolean }> =>
+      ipcRenderer.invoke('workspace:add-execution-history', item),
+    clearExecutionHistory: (): Promise<{ success: boolean }> =>
+      ipcRenderer.invoke('workspace:clear-execution-history'),
   },
 });

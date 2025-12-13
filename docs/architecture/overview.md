@@ -25,6 +25,7 @@ QuickDashLauncherのアーキテクチャ概要とデータフローを説明し
 | `AutoLaunchService` | Windows起動時の自動起動設定 |
 | `FaviconService` | ファビコン・アイコンの取得・キャッシュ管理 |
 | `SearchHistoryService` | 検索履歴の保存・読み込み |
+| `WorkspaceService` | ワークスペースアイテム・グループ・実行履歴の管理 |
 
 すべてシングルトンパターンで実装され、`getInstance()`で取得します。
 
@@ -45,6 +46,7 @@ IPCハンドラーは機能ごとに分離（`src/main/ipc/`）:
 | `historyHandlers.ts` | 検索履歴の読み書き |
 | `editHandlers.ts` | アイテム編集（更新・削除・一括更新） |
 | `splashHandlers.ts` | スプラッシュウィンドウ制御 |
+| `workspaceHandlers.ts` | ワークスペースアイテム・グループ・実行履歴の操作 |
 
 詳細は[IPCチャンネル](ipc-channels.md)を参照。
 
@@ -120,6 +122,15 @@ IPCハンドラーは機能ごとに分離（`src/main/ipc/`）:
 1. 検索実行時にクエリを`history.csv`に保存（最大100件）
 2. Ctrl+↑/↓キーで履歴ナビゲート
 3. 重複クエリは最新時刻で更新
+
+### ワークスペースフロー
+
+1. `Ctrl+Alt+W`でワークスペースウィンドウを表示
+2. メイン画面のアイテムを右クリック → 「ワークスペースに追加」
+3. `WorkspaceService`がアイテムをworkspace.jsonに保存
+4. ワークスペースウィンドウでグループ管理・名前変更・並び替え
+5. アイテム起動時に実行履歴（execution-history.json）に記録（最大10件）
+6. 実行履歴からワークスペースへドラッグ&ドロップでコピー可能
 
 ---
 

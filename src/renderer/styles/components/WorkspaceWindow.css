@@ -199,7 +199,8 @@
 
 /* グループヘッダー */
 .workspace-group-header {
-  padding: var(--spacing-sm) var(--spacing-md);
+  position: relative;
+  padding: var(--spacing-sm) 60px var(--spacing-sm) var(--spacing-md);
   background: linear-gradient(
     135deg,
     var(--group-color, var(--color-primary)),
@@ -232,10 +233,14 @@
 
 /* グループ名 */
 .workspace-group-name {
-  flex: 1;
   font-weight: 600;
   color: var(--text-color);
   font-size: 14px;
+  flex-shrink: 0;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* グループ名編集入力 */
@@ -256,12 +261,17 @@
 
 /* アイテム数バッジ */
 .workspace-group-badge {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
   background-color: rgba(0, 0, 0, 0.3);
   color: white;
   border-radius: 12px;
   padding: 2px 8px;
   font-size: var(--font-size-xs);
   flex-shrink: 0;
+  pointer-events: none; /* クリックイベントを透過 */
 }
 
 /* グループアクション（編集・削除ボタン） */
@@ -318,6 +328,31 @@
   font-weight: 600;
   padding: var(--spacing-xs) var(--spacing-md);
   margin-bottom: var(--spacing-xs);
+}
+
+/* 実行履歴セクション */
+.workspace-execution-history-section {
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--border-color);
+}
+
+/* 実行時刻を右上に絶対配置 */
+.execution-history-item .execution-history-time {
+  position: absolute;
+  top: 4px;
+  right: 8px;
+  font-size: 10px;
+  color: var(--text-tertiary-color);
+  pointer-events: none;
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+/* 実行履歴アイテムカード - 削除ボタンを非表示 */
+.execution-history-item .workspace-item-delete-btn {
+  display: none;
 }
 
 /* グループ追加ボタン */

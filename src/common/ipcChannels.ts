@@ -93,6 +93,11 @@ export const WORKSPACE_DELETE_GROUP = 'workspace:delete-group';
 export const WORKSPACE_REORDER_GROUPS = 'workspace:reorder-groups';
 export const WORKSPACE_MOVE_ITEM_TO_GROUP = 'workspace:move-item-to-group';
 
+// ワークスペース - 実行履歴
+export const WORKSPACE_LOAD_EXECUTION_HISTORY = 'workspace:load-execution-history';
+export const WORKSPACE_ADD_EXECUTION_HISTORY = 'workspace:add-execution-history';
+export const WORKSPACE_CLEAR_EXECUTION_HISTORY = 'workspace:clear-execution-history';
+
 // ワークスペース - イベント
 export const WORKSPACE_CHANGED = 'workspace-changed';
 
@@ -190,6 +195,11 @@ export const IPC_CHANNELS = {
   WORKSPACE_DELETE_GROUP,
   WORKSPACE_REORDER_GROUPS,
   WORKSPACE_MOVE_ITEM_TO_GROUP,
+
+  // ワークスペース - 実行履歴
+  WORKSPACE_LOAD_EXECUTION_HISTORY,
+  WORKSPACE_ADD_EXECUTION_HISTORY,
+  WORKSPACE_CLEAR_EXECUTION_HISTORY,
 } as const;
 
 /**

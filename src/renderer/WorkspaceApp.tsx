@@ -1,40 +1,57 @@
 import React, { useState, useEffect } from 'react';
-import type { WorkspaceItem, WorkspaceGroup } from '@common/types';
+import type { WorkspaceItem, WorkspaceGroup, ExecutionHistoryItem } from '@common/types';
 
 import WorkspaceGroupedList from './components/WorkspaceGroupedList';
 
 const WorkspaceApp: React.FC = () => {
   const [items, setItems] = useState<WorkspaceItem[]>([]);
   const [groups, setGroups] = useState<WorkspaceGroup[]>([]);
+  const [executionHistory, setExecutionHistory] = useState<ExecutionHistoryItem[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
 
   useEffect(() => {
     loadItems();
     loadGroups();
+    loadExecutionHistory();
 
     // ワークスペース変更イベントをリッスン
     const unsubscribe = window.electronAPI.onWorkspaceChanged(() => {
       loadItems();
       loadGroups();
+      loadExecutionHistory();
     });
 
     // ネイティブのドラッグ&ドロップイベントを設定
     const handleNativeDragOver = (e: DragEvent) => {
-      // ファイルがドラッグされている場合のみ反応
-      if (e.dataTransfer?.types && e.dataTransfer.types.includes('Files')) {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDraggingOver(true);
+      // ファイルまたはURLがドラッグされている場合に反応
+      if (e.dataTransfer?.types) {
+        const hasFiles = e.dataTransfer.types.includes('Files');
+        const hasUrl =
+          e.dataTransfer.types.includes('text/uri-list') ||
+          e.dataTransfer.types.includes('text/plain');
+
+        if (hasFiles || hasUrl) {
+          e.preventDefault();
+          e.stopPropagation();
+          setIsDraggingOver(true);
+        }
       }
     };
 
     const handleNativeDragLeave = (e: DragEvent) => {
-      // ファイルがドラッグされている場合のみ反応
-      if (e.dataTransfer?.types && e.dataTransfer.types.includes('Files')) {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDraggingOver(false);
+      // ファイルまたはURLがドラッグされている場合に反応
+      if (e.dataTransfer?.types) {
+        const hasFiles = e.dataTransfer.types.includes('Files');
+        const hasUrl =
+          e.dataTransfer.types.includes('text/uri-list') ||
+          e.dataTransfer.types.includes('text/plain');
+
+        if (hasFiles || hasUrl) {
+          e.preventDefault();
+          e.stopPropagation();
+          setIsDraggingOver(false);
+        }
       }
     };
 
@@ -45,6 +62,7 @@ const WorkspaceApp: React.FC = () => {
 
       console.log('[DEBUG] Native drop event triggered');
 
+      // ファイルのドロップを処理
       if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
         const filePaths: string[] = [];
 
@@ -78,6 +96,53 @@ const WorkspaceApp: React.FC = () => {
           console.log('[DEBUG] No file paths found - files may not be from local filesystem');
         }
       }
+      // URLのドロップを処理
+      else if (e.dataTransfer) {
+        const urlData =
+          e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('text/plain');
+
+        if (urlData) {
+          console.log('[DEBUG] URL data:', urlData);
+
+          // 複数のURLが改行で区切られている場合に対応
+          const urls = urlData
+            .split('\n')
+            .map((url) => url.trim())
+            .filter((url) => url && url.startsWith('http'));
+
+          if (urls.length > 0) {
+            try {
+              console.log('[DEBUG] Adding URLs to workspace:', urls);
+
+              // URLごとにファビコンを取得してアイテムを追加
+              for (const url of urls) {
+                // ファビコンを取得
+                let icon: string | undefined;
+                try {
+                  const fetchedIcon = await window.electronAPI.fetchFavicon(url);
+                  icon = fetchedIcon || undefined;
+                  console.log('[DEBUG] Fetched favicon for URL:', url, 'hasIcon:', !!icon);
+                } catch (error) {
+                  console.warn('Failed to fetch favicon for URL:', url, error);
+                }
+
+                const item = {
+                  name: url,
+                  path: url,
+                  type: 'url' as const,
+                  icon,
+                };
+                await window.electronAPI.workspaceAPI.addItem(item);
+              }
+
+              await loadItems();
+              console.log(`Added ${urls.length} URL(s) from drag & drop`);
+            } catch (error) {
+              console.error('Failed to add URLs from drag & drop:', error);
+            }
+          }
+        }
+      }
     };
 
     // ネイティブイベントリスナーを追加
@@ -108,6 +173,15 @@ const WorkspaceApp: React.FC = () => {
       setGroups(loadedGroups);
     } catch (error) {
       console.error('Failed to load workspace groups:', error);
+    }
+  };
+
+  const loadExecutionHistory = async () => {
+    try {
+      const history = await window.electronAPI.workspaceAPI.loadExecutionHistory();
+      setExecutionHistory(history);
+    } catch (error) {
+      console.error('Failed to load execution history:', error);
     }
   };
 
@@ -234,6 +308,7 @@ const WorkspaceApp: React.FC = () => {
       <WorkspaceGroupedList
         groups={groups}
         items={items}
+        executionHistory={executionHistory}
         onLaunch={handleLaunch}
         onRemoveItem={handleRemove}
         onReorderItems={handleReorder}

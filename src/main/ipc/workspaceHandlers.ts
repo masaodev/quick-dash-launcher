@@ -15,11 +15,18 @@ import {
   WORKSPACE_DELETE_GROUP,
   WORKSPACE_REORDER_GROUPS,
   WORKSPACE_MOVE_ITEM_TO_GROUP,
+  WORKSPACE_LOAD_EXECUTION_HISTORY,
+  WORKSPACE_ADD_EXECUTION_HISTORY,
+  WORKSPACE_CLEAR_EXECUTION_HISTORY,
   WORKSPACE_CHANGED,
 } from '@common/ipcChannels';
 import { parseArgs } from '@common/utils/argsParser';
+import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 
 import { WorkspaceService } from '../services/workspaceService.js';
+import PathManager from '../config/pathManager.js';
+
+import { extractIcon, extractFileIconByExtension, extractCustomUriIcon } from './iconHandlers.js';
 
 /**
  * ワークスペース変更イベントを全てのウィンドウに送信
@@ -68,18 +75,51 @@ export function setupWorkspaceHandlers(): void {
 
   /**
    * ファイルパスからワークスペースにアイテムを追加
+   * アイテムタイプに応じてアイコンを自動取得する
    */
   ipcMain.handle(WORKSPACE_ADD_ITEMS_FROM_PATHS, async (_event, filePaths: string[]) => {
     try {
       const workspaceService = await WorkspaceService.getInstance();
       const addedItems: WorkspaceItem[] = [];
 
+      // アイコンキャッシュフォルダのパスを取得
+      const iconsFolder = PathManager.getIconsFolder();
+      const extensionsFolder = PathManager.getExtensionsFolder();
+
       for (const filePath of filePaths) {
         try {
-          const addedItem = await workspaceService.addItemFromPath(filePath);
+          // アイテムタイプを判定
+          const itemType = detectItemTypeSync(filePath);
+
+          // タイプに応じてアイコンを取得
+          let icon: string | undefined;
+
+          if (itemType === 'app') {
+            // EXE/アプリケーションのアイコンを抽出
+            const extractedIcon = await extractIcon(filePath, iconsFolder);
+            icon = extractedIcon || undefined;
+            logger.info({ path: filePath, hasIcon: !!icon }, 'Extracted app icon for workspace');
+          } else if (itemType === 'file') {
+            // 拡張子ベースのアイコンを取得
+            const extractedIcon = await extractFileIconByExtension(filePath, extensionsFolder);
+            icon = extractedIcon || undefined;
+            logger.info({ path: filePath, hasIcon: !!icon }, 'Extracted file icon for workspace');
+          } else if (itemType === 'customUri') {
+            // カスタムURIのアイコンを取得
+            const extractedIcon = await extractCustomUriIcon(filePath, iconsFolder);
+            icon = extractedIcon || undefined;
+            logger.info(
+              { path: filePath, hasIcon: !!icon },
+              'Extracted custom URI icon for workspace'
+            );
+          }
+          // folder と url タイプはアイコン取得をスキップ（デフォルトアイコンを使用）
+
+          // アイコン付きでアイテムを追加
+          const addedItem = await workspaceService.addItemFromPath(filePath, icon);
           addedItems.push(addedItem);
           logger.info(
-            { id: addedItem.id, name: addedItem.displayName, path: filePath },
+            { id: addedItem.id, name: addedItem.displayName, path: filePath, type: itemType },
             'Added item from path to workspace'
           );
         } catch (error) {
@@ -284,6 +324,56 @@ export function setupWorkspaceHandlers(): void {
       return { success: true };
     } catch (error) {
       logger.error({ error, itemId, groupId }, 'Failed to move item to group');
+      throw error;
+    }
+  });
+
+  // ==================== 実行履歴ハンドラー ====================
+
+  /**
+   * 実行履歴を全て取得
+   */
+  ipcMain.handle(WORKSPACE_LOAD_EXECUTION_HISTORY, async () => {
+    try {
+      const workspaceService = await WorkspaceService.getInstance();
+      const history = await workspaceService.loadExecutionHistory();
+      logger.info({ count: history.length }, 'Loaded execution history');
+      return history;
+    } catch (error) {
+      logger.error({ error }, 'Failed to load execution history');
+      throw error;
+    }
+  });
+
+  /**
+   * アイテム実行を履歴に追加
+   */
+  ipcMain.handle(WORKSPACE_ADD_EXECUTION_HISTORY, async (_event, item: AppItem) => {
+    try {
+      const workspaceService = await WorkspaceService.getInstance();
+      await workspaceService.addExecutionHistory(item);
+      logger.info({ itemName: item.name }, 'Added item to execution history');
+      notifyWorkspaceChanged();
+      return { success: true };
+    } catch (error) {
+      logger.error({ error, itemName: item.name }, 'Failed to add execution history');
+      // エラーでも処理は継続
+      return { success: false };
+    }
+  });
+
+  /**
+   * 実行履歴をクリア
+   */
+  ipcMain.handle(WORKSPACE_CLEAR_EXECUTION_HISTORY, async () => {
+    try {
+      const workspaceService = await WorkspaceService.getInstance();
+      await workspaceService.clearExecutionHistory();
+      logger.info('Cleared execution history');
+      notifyWorkspaceChanged();
+      return { success: true };
+    } catch (error) {
+      logger.error({ error }, 'Failed to clear execution history');
       throw error;
     }
   });

@@ -25,7 +25,7 @@ export async function createWorkspaceWindow(): Promise<BrowserWindow> {
 
   // 画面右端に固定配置
   const { width: screenWidth, height: screenHeight } = screen.getPrimaryDisplay().workAreaSize;
-  const windowWidth = 250;
+  const windowWidth = 380;
   const windowHeight = screenHeight;
 
   workspaceWindow = new BrowserWindow({

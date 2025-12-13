@@ -104,6 +104,25 @@ export interface WorkspaceItem {
 }
 
 /**
+ * 実行履歴アイテム
+ * メインウィンドウで実行されたアイテムの履歴を記録する
+ */
+export interface ExecutionHistoryItem {
+  /** 履歴アイテムの一意識別子（UUID） */
+  id: string;
+  /** アイテム名 */
+  itemName: string;
+  /** アイテムのパス、URL、またはコマンド */
+  itemPath: string;
+  /** アイテムのタイプ */
+  itemType: 'url' | 'file' | 'folder' | 'app' | 'customUri' | 'group';
+  /** アイテムのアイコン（base64エンコードされたデータURL、オプション） */
+  icon?: string;
+  /** 実行日時（timestamp） */
+  executedAt: number;
+}
+
+/**
  * 生データ編集モードで使用される、データファイルの1行を表すインターフェース
  * 編集機能で各行の種別や元のデータファイルを管理するために使用される
  */

@@ -93,9 +93,10 @@ const WorkspaceGroupHeader: React.FC<WorkspaceGroupHeaderProps> = ({
     // アイテムのドロップかグループの並び替えかを判定
     const itemId = e.dataTransfer.getData('itemId');
     const groupId = e.dataTransfer.getData('groupId');
+    const historyItemData = e.dataTransfer.getData('historyItem');
 
-    if (itemId) {
-      // アイテムのドロップ
+    if (itemId || historyItemData) {
+      // アイテムのドロップ（ワークスペースアイテムまたは実行履歴アイテム）
       onDrop(e);
     } else if (groupId) {
       // グループの並び替え

@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { PathUtils } from '@common/utils/pathUtils';
 import type { WorkspaceItem } from '@common/types';
 
 interface WorkspaceContextMenuProps {
@@ -10,6 +11,12 @@ interface WorkspaceContextMenuProps {
   onLaunch: (item: WorkspaceItem) => void;
   onRemove: (id: string) => void;
   onRemoveFromGroup: (item: WorkspaceItem) => void;
+  onCopyPath: (item: WorkspaceItem) => void;
+  onCopyParentPath: (item: WorkspaceItem) => void;
+  onOpenParentFolder: (item: WorkspaceItem) => void;
+  onCopyShortcutPath?: (item: WorkspaceItem) => void;
+  onCopyShortcutParentPath?: (item: WorkspaceItem) => void;
+  onOpenShortcutParentFolder?: (item: WorkspaceItem) => void;
 }
 
 const WorkspaceContextMenu: React.FC<WorkspaceContextMenuProps> = ({
@@ -21,6 +28,12 @@ const WorkspaceContextMenu: React.FC<WorkspaceContextMenuProps> = ({
   onLaunch,
   onRemove,
   onRemoveFromGroup,
+  onCopyPath,
+  onCopyParentPath,
+  onOpenParentFolder,
+  onCopyShortcutPath,
+  onCopyShortcutParentPath,
+  onOpenShortcutParentFolder,
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -76,10 +89,75 @@ const WorkspaceContextMenu: React.FC<WorkspaceContextMenuProps> = ({
     }
   };
 
+  const handleCopyPath = () => {
+    if (item) {
+      onCopyPath(item);
+      onClose();
+    }
+  };
+
+  const handleCopyParentPath = () => {
+    if (item) {
+      onCopyParentPath(item);
+      onClose();
+    }
+  };
+
+  const handleCopyShortcutPath = () => {
+    if (item && onCopyShortcutPath) {
+      onCopyShortcutPath(item);
+      onClose();
+    }
+  };
+
+  const handleCopyShortcutParentPath = () => {
+    if (item && onCopyShortcutParentPath) {
+      onCopyShortcutParentPath(item);
+      onClose();
+    }
+  };
+
+  const handleOpenParentFolder = () => {
+    if (item) {
+      onOpenParentFolder(item);
+      onClose();
+    }
+  };
+
+  const handleOpenShortcutParentFolder = () => {
+    if (item && onOpenShortcutParentFolder) {
+      onOpenShortcutParentFolder(item);
+      onClose();
+    }
+  };
+
+  // ショートカットアイテムかどうかを判定
+  const isShortcutItem = item?.originalPath ? true : false;
+
+  // パスを取得するヘルパー関数
+  const getFullPath = (): string => {
+    return item ? item.path : '';
+  };
+
+  const getParentPath = (): string => {
+    return item ? PathUtils.getParentPath(item.path) : '';
+  };
+
+  const getShortcutPath = (): string => {
+    return item?.originalPath || '';
+  };
+
+  const getShortcutParentPath = (): string => {
+    return item?.originalPath ? PathUtils.getParentPath(item.originalPath) : '';
+  };
+
   const getAdjustedPosition = () => {
-    const menuWidth = 200;
+    const menuWidth = 250;
     const hasGroup = item?.groupId !== undefined;
-    const menuHeight = hasGroup ? 200 : 160; // グループ所属の場合は項目が1つ多い
+    const baseHeight = 240; // 基本項目（名前変更、起動、パスコピー、親フォルダー系、削除）
+    const groupHeight = hasGroup ? 40 : 0; // グループから削除
+    const shortcutHeight = isShortcutItem ? 140 : 0; // ショートカット関連項目
+    const menuHeight = baseHeight + groupHeight + shortcutHeight;
 
     let adjustedX = position.x;
     let adjustedY = position.y;
@@ -101,6 +179,8 @@ const WorkspaceContextMenu: React.FC<WorkspaceContextMenuProps> = ({
 
   const adjustedPosition = getAdjustedPosition();
   const hasGroup = item.groupId !== undefined;
+  // URLやカスタムURIには親フォルダーが存在しない
+  const hasParentFolder = item.type !== 'url' && item.type !== 'customUri';
 
   return (
     <div
@@ -121,6 +201,62 @@ const WorkspaceContextMenu: React.FC<WorkspaceContextMenuProps> = ({
         <span className="context-menu-icon">▶️</span>
         <span>起動</span>
       </div>
+      <div className="context-menu-divider" />
+      <div className="context-menu-item" onClick={handleCopyPath} title={getFullPath()}>
+        <span className="context-menu-icon">📋</span>
+        <span>パスをコピー</span>
+      </div>
+      {hasParentFolder && (
+        <>
+          <div className="context-menu-item" onClick={handleCopyParentPath} title={getParentPath()}>
+            <span className="context-menu-icon">📋</span>
+            <span>親フォルダーのパスをコピー</span>
+          </div>
+          <div
+            className="context-menu-item"
+            onClick={handleOpenParentFolder}
+            title={getParentPath()}
+          >
+            <span className="context-menu-icon">📂</span>
+            <span>親フォルダーを開く</span>
+          </div>
+        </>
+      )}
+      {isShortcutItem && (
+        <>
+          <div className="context-menu-divider" />
+          {onCopyShortcutPath && (
+            <div
+              className="context-menu-item"
+              onClick={handleCopyShortcutPath}
+              title={getShortcutPath()}
+            >
+              <span className="context-menu-icon">📋</span>
+              <span>リンク先のパスをコピー</span>
+            </div>
+          )}
+          {onCopyShortcutParentPath && (
+            <div
+              className="context-menu-item"
+              onClick={handleCopyShortcutParentPath}
+              title={getShortcutParentPath()}
+            >
+              <span className="context-menu-icon">📋</span>
+              <span>リンク先の親フォルダーのパスをコピー</span>
+            </div>
+          )}
+          {onOpenShortcutParentFolder && (
+            <div
+              className="context-menu-item"
+              onClick={handleOpenShortcutParentFolder}
+              title={getShortcutParentPath()}
+            >
+              <span className="context-menu-icon">📂</span>
+              <span>リンク先の親フォルダーを開く</span>
+            </div>
+          )}
+        </>
+      )}
       <div className="context-menu-divider" />
       {hasGroup && (
         <>

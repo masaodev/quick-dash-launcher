@@ -12,6 +12,7 @@ import {
   BrowserInfo,
   WorkspaceItem,
   WorkspaceGroup,
+  ExecutionHistoryItem,
 } from '../common/types';
 
 import { RegisterItem } from './components/RegisterModal';
@@ -136,6 +137,10 @@ export interface ElectronAPI {
     deleteGroup: (id: string, deleteItems: boolean) => Promise<{ success: boolean }>;
     reorderGroups: (groupIds: string[]) => Promise<{ success: boolean }>;
     moveItemToGroup: (itemId: string, groupId?: string) => Promise<{ success: boolean }>;
+    // 実行履歴
+    loadExecutionHistory: () => Promise<ExecutionHistoryItem[]>;
+    addExecutionHistory: (item: AppItem) => Promise<{ success: boolean }>;
+    clearExecutionHistory: () => Promise<{ success: boolean }>;
   };
 }
 

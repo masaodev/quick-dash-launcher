@@ -88,6 +88,43 @@ const WorkspaceItemCard: React.FC<WorkspaceItemCardProps> = ({
     }
   };
 
+  const getTooltipText = (): string => {
+    const lines: string[] = [];
+
+    // パス情報（最初に表示）
+    lines.push(item.path);
+
+    // リンク先（ショートカットの場合）
+    if (item.originalPath) {
+      lines.push(`リンク先: ${item.originalPath}`);
+    }
+
+    // コマンドライン引数
+    if (item.args) {
+      lines.push(`引数: ${item.args}`);
+    }
+
+    // 空行を追加してメタ情報を分離
+    lines.push('');
+
+    // 元のアイテム名
+    if (item.originalName !== item.displayName) {
+      lines.push(`元の名前: ${item.originalName}`);
+    }
+
+    // 追加日時
+    const addedDate = new Date(item.addedAt).toLocaleString('ja-JP', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+    lines.push(`追加日時: ${addedDate}`);
+
+    return lines.join('\n');
+  };
+
   return (
     <div
       className="workspace-item-card"
@@ -99,6 +136,7 @@ const WorkspaceItemCard: React.FC<WorkspaceItemCardProps> = ({
       onDragEnd={onDragEnd}
       onDragOver={onDragOver}
       onDrop={onDrop}
+      title={getTooltipText()}
     >
       <div className="workspace-item-content">
         {item.icon && <img src={item.icon} alt="" className="workspace-item-icon" />}

@@ -4,7 +4,13 @@ import * as path from 'path';
 
 import ElectronStore from 'electron-store';
 
-import type { AppItem, LauncherItem, WorkspaceItem, WorkspaceGroup } from '../../common/types.js';
+import type {
+  AppItem,
+  LauncherItem,
+  WorkspaceItem,
+  WorkspaceGroup,
+  ExecutionHistoryItem,
+} from '../../common/types.js';
 import logger from '../../common/logger.js';
 import PathManager from '../config/pathManager.js';
 import { detectItemTypeSync } from '../../common/utils/itemTypeDetector.js';
@@ -13,7 +19,7 @@ import { detectItemTypeSync } from '../../common/utils/itemTypeDetector.js';
 let Store: typeof ElectronStore | null = null;
 
 /**
- * electron-storeのインスタンス型
+ * electron-storeのインスタンス型（workspace.json用）
  */
 type StoreInstance = {
   get(key: 'items'): WorkspaceItem[];
@@ -26,14 +32,31 @@ type StoreInstance = {
 };
 
 /**
+ * electron-storeのインスタンス型（execution-history.json用）
+ */
+type HistoryStoreInstance = {
+  get(key: 'history'): ExecutionHistoryItem[];
+  set(key: 'history', value: ExecutionHistoryItem[]): void;
+  store: { history: ExecutionHistoryItem[] };
+  clear(): void;
+  path: string;
+};
+
+/**
  * ワークスペースアイテムを管理するサービスクラス
  * electron-storeを使用してworkspace.jsonに永続化を行う
  */
 export class WorkspaceService {
   /**
-   * electron-storeのインスタンス
+   * electron-storeのインスタンス（workspace.json用）
    */
   private store: StoreInstance | null = null;
+
+  /**
+   * electron-storeのインスタンス（execution-history.json用）
+   */
+  private historyStore: HistoryStoreInstance | null = null;
+
   private static instance: WorkspaceService;
 
   /**
@@ -44,16 +67,26 @@ export class WorkspaceService {
     groups: [] as WorkspaceGroup[],
   };
 
+  private static readonly DEFAULT_HISTORY_DATA = {
+    history: [] as ExecutionHistoryItem[],
+  };
+
+  /**
+   * 実行履歴の最大保持件数
+   */
+  private static readonly MAX_HISTORY_ITEMS = 10;
+
   private constructor() {
     // electron-storeは後で非同期に初期化
     this.store = null;
+    this.historyStore = null;
   }
 
   /**
    * electron-storeを非同期で初期化
    */
   private async initializeStore(): Promise<void> {
-    if (this.store) return; // 既に初期化済み
+    if (this.store && this.historyStore) return; // 既に初期化済み
 
     try {
       if (!Store) {
@@ -65,11 +98,23 @@ export class WorkspaceService {
       // PathManagerから設定フォルダを取得
       const configFolder = PathManager.getConfigFolder();
 
-      this.store = new Store!<{ items: WorkspaceItem[]; groups: WorkspaceGroup[] }>({
-        name: 'workspace',
-        cwd: configFolder,
-        defaults: WorkspaceService.DEFAULT_DATA,
-      }) as unknown as StoreInstance;
+      // workspace.jsonを初期化
+      if (!this.store) {
+        this.store = new Store!<{ items: WorkspaceItem[]; groups: WorkspaceGroup[] }>({
+          name: 'workspace',
+          cwd: configFolder,
+          defaults: WorkspaceService.DEFAULT_DATA,
+        }) as unknown as StoreInstance;
+      }
+
+      // execution-history.jsonを初期化
+      if (!this.historyStore) {
+        this.historyStore = new Store!<{ history: ExecutionHistoryItem[] }>({
+          name: 'execution-history',
+          cwd: configFolder,
+          defaults: WorkspaceService.DEFAULT_HISTORY_DATA,
+        }) as unknown as HistoryStoreInstance;
+      }
 
       logger.info(`WorkspaceService initialized successfully at ${configFolder}`);
     } catch (error) {
@@ -573,6 +618,94 @@ export class WorkspaceService {
     } catch (error) {
       logger.error({ error, groupId }, 'Failed to get items by group');
       return [];
+    }
+  }
+
+  // ==================== 実行履歴管理メソッド ====================
+
+  /**
+   * 実行履歴を全て取得
+   * @returns 実行履歴の配列（実行日時の新しい順）
+   */
+  public async loadExecutionHistory(): Promise<ExecutionHistoryItem[]> {
+    await this.initializeStore();
+    if (!this.historyStore) throw new Error('History store not initialized');
+
+    try {
+      const history = this.historyStore.get('history') || [];
+      // 実行日時の新しい順にソート
+      return history.sort((a, b) => b.executedAt - a.executedAt);
+    } catch (error) {
+      logger.error({ error }, 'Failed to load execution history');
+      return [];
+    }
+  }
+
+  /**
+   * アイテム実行を履歴に追加
+   * @param item 実行されたアイテム
+   */
+  public async addExecutionHistory(item: AppItem): Promise<void> {
+    await this.initializeStore();
+    if (!this.historyStore) throw new Error('History store not initialized');
+
+    try {
+      const history = await this.loadExecutionHistory();
+
+      // グループアイテムの場合
+      if (item.type === 'group') {
+        const groupItem = item as { name: string; type: 'group'; itemNames: string[] };
+        const historyItem: ExecutionHistoryItem = {
+          id: randomUUID(),
+          itemName: groupItem.name,
+          itemPath: `[グループ: ${groupItem.itemNames.join(', ')}]`,
+          itemType: 'group',
+          executedAt: Date.now(),
+        };
+        history.unshift(historyItem);
+      }
+      // 通常のアイテムの場合
+      else {
+        const launcherItem = item as LauncherItem;
+        const historyItem: ExecutionHistoryItem = {
+          id: randomUUID(),
+          itemName: launcherItem.name,
+          itemPath: launcherItem.path,
+          itemType: launcherItem.type,
+          icon: launcherItem.icon,
+          executedAt: Date.now(),
+        };
+        history.unshift(historyItem);
+      }
+
+      // 最大件数を超えた分を削除
+      const trimmedHistory = history.slice(0, WorkspaceService.MAX_HISTORY_ITEMS);
+
+      // 保存
+      this.historyStore.set('history', trimmedHistory);
+      logger.info(
+        { itemName: item.name, count: trimmedHistory.length },
+        'Added item to execution history'
+      );
+    } catch (error) {
+      logger.error({ error, itemName: item.name }, 'Failed to add execution history');
+      // エラーでも処理は継続（履歴追加の失敗はアイテム実行を妨げない）
+    }
+  }
+
+  /**
+   * 実行履歴をクリア
+   */
+  public async clearExecutionHistory(): Promise<void> {
+    await this.initializeStore();
+    if (!this.historyStore) throw new Error('History store not initialized');
+
+    try {
+      this.historyStore.set('history', []);
+      logger.info('Cleared execution history');
+    } catch (error) {
+      logger.error({ error }, 'Failed to clear execution history');
+      throw error;
     }
   }
 }
