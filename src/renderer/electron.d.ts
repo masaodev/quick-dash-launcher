@@ -10,6 +10,8 @@ import {
   AppItem,
   AppInfo,
   BrowserInfo,
+  WorkspaceItem,
+  WorkspaceGroup,
 } from '../common/types';
 
 import { RegisterItem } from './components/RegisterModal';
@@ -44,6 +46,7 @@ export interface ElectronAPI {
   onSetActiveTab: (callback: (tab: 'settings' | 'edit' | 'other') => void) => void;
   onDataChanged: (callback: () => void) => () => void;
   onSettingsChanged: (callback: () => void) => () => void;
+  onWorkspaceChanged: (callback: () => void) => () => void;
   // 3段階ピンモードAPI
   getWindowPinMode: () => Promise<WindowPinMode>;
   cycleWindowPinMode: () => Promise<WindowPinMode>;
@@ -117,6 +120,23 @@ export interface ElectronAPI {
   // アプリ情報関連API
   getAppInfo: () => Promise<AppInfo>;
   openExternalUrl: (url: string) => Promise<void>;
+  // ワークスペース関連API
+  workspaceAPI: {
+    loadItems: () => Promise<WorkspaceItem[]>;
+    addItem: (item: AppItem) => Promise<WorkspaceItem>;
+    addItemsFromPaths: (filePaths: string[]) => Promise<WorkspaceItem[]>;
+    removeItem: (id: string) => Promise<{ success: boolean }>;
+    updateDisplayName: (id: string, displayName: string) => Promise<{ success: boolean }>;
+    reorderItems: (itemIds: string[]) => Promise<{ success: boolean }>;
+    launchItem: (item: WorkspaceItem) => Promise<{ success: boolean }>;
+    // グループ管理
+    loadGroups: () => Promise<WorkspaceGroup[]>;
+    createGroup: (name: string, color?: string) => Promise<WorkspaceGroup>;
+    updateGroup: (id: string, updates: Partial<WorkspaceGroup>) => Promise<{ success: boolean }>;
+    deleteGroup: (id: string, deleteItems: boolean) => Promise<{ success: boolean }>;
+    reorderGroups: (groupIds: string[]) => Promise<{ success: boolean }>;
+    moveItemToGroup: (itemId: string, groupId?: string) => Promise<{ success: boolean }>;
+  };
 }
 
 declare global {

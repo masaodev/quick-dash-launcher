@@ -363,7 +363,14 @@ export async function processDirectoryItem(
   try {
     const options = parseDirOptionsFromString(optionsStr);
     const optionsText = formatDirOptions(options);
-    return await scanDirectory(normalizedPath, options, sourceFile, normalizedPath, optionsText, lineNumber);
+    return await scanDirectory(
+      normalizedPath,
+      options,
+      sourceFile,
+      normalizedPath,
+      optionsText,
+      lineNumber
+    );
   } catch (error) {
     dataLogger.error({ dirPath: normalizedPath, error }, 'ディレクトリのスキャンに失敗');
     return [];

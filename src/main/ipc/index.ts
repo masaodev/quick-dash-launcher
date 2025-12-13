@@ -10,6 +10,7 @@ import { registerEditHandlers } from './editHandlers';
 import { setupSettingsHandlers } from './settingsHandlers';
 import { setupSplashHandlers } from './splashHandlers';
 import { setupHistoryHandlers } from './historyHandlers';
+import { setupWorkspaceHandlers } from './workspaceHandlers';
 
 export function setupIPCHandlers(
   configFolder: string,
@@ -36,4 +37,5 @@ export function setupIPCHandlers(
   setupSettingsHandlers(setFirstLaunchMode);
   setupSplashHandlers(getMainWindow);
   setupHistoryHandlers(configFolder);
+  setupWorkspaceHandlers();
 }

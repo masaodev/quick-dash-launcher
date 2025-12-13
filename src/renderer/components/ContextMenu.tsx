@@ -15,6 +15,7 @@ interface ContextMenuProps {
   onCopyShortcutParentPath?: (item: LauncherItem) => void;
   onOpenShortcutParentFolder?: (item: LauncherItem) => void;
   onEditItem?: (item: AppItem) => void | Promise<void>;
+  onAddToWorkspace?: (item: AppItem) => void | Promise<void>;
 }
 
 const ContextMenu: React.FC<ContextMenuProps> = ({
@@ -29,6 +30,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
   onCopyShortcutParentPath,
   onOpenShortcutParentFolder,
   onEditItem,
+  onAddToWorkspace,
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -105,6 +107,13 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
     }
   };
 
+  const handleAddToWorkspace = async () => {
+    if (item && onAddToWorkspace) {
+      await Promise.resolve(onAddToWorkspace(item));
+      onClose();
+    }
+  };
+
   // グループアイテムかどうかを判定
   const isGroupItem = item?.type === 'group';
 
@@ -135,10 +144,10 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
 
   const getAdjustedPosition = () => {
     const menuWidth = 200;
-    // グループアイテムの場合は編集メニューのみ（高さ60px）
-    // 通常アイテムの場合：編集+基本3項目 + ショートカットで+3項目 + 区切り線2本
-    const baseHeight = onEditItem ? 200 : 160;
-    const menuHeight = isGroupItem ? 60 : isShortcutItem ? baseHeight + 140 : baseHeight;
+    // グループアイテムの場合：編集 + ワークスペースに追加（高さ100px）
+    // 通常アイテムの場合：編集+ワークスペースに追加+基本3項目 + ショートカットで+3項目 + 区切り線
+    const baseHeight = onEditItem ? 240 : 200;
+    const menuHeight = isGroupItem ? 100 : isShortcutItem ? baseHeight + 140 : baseHeight;
 
     let adjustedX = position.x;
     let adjustedY = position.y;
@@ -180,6 +189,15 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
           <div className="context-menu-item" onClick={handleEditItem}>
             <span className="context-menu-icon">✏️</span>
             <span>編集</span>
+          </div>
+          {!isGroupItem && <div className="context-menu-divider" />}
+        </>
+      )}
+      {onAddToWorkspace && (
+        <>
+          <div className="context-menu-item" onClick={handleAddToWorkspace}>
+            <span className="context-menu-icon">⭐</span>
+            <span>ワークスペースに追加</span>
           </div>
           {!isGroupItem && <div className="context-menu-divider" />}
         </>

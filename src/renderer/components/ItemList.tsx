@@ -178,6 +178,14 @@ const ItemList: React.FC<ItemListProps> = ({
     }
   };
 
+  const handleAddToWorkspace = async (item: AppItem) => {
+    try {
+      await window.electronAPI.workspaceAPI.addItem(item);
+    } catch (error) {
+      console.error('ワークスペースへの追加に失敗しました:', error);
+    }
+  };
+
   return (
     <div className="item-list" ref={listRef}>
       {items.map((item, index) => {
@@ -226,6 +234,7 @@ const ItemList: React.FC<ItemListProps> = ({
         onCopyShortcutParentPath={handleCopyShortcutParentPath}
         onOpenShortcutParentFolder={onOpenShortcutParentFolder}
         onEditItem={onEditItem}
+        onAddToWorkspace={handleAddToWorkspace}
       />
     </div>
   );

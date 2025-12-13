@@ -76,6 +76,26 @@ export const LOAD_SEARCH_HISTORY_BY_TAB = 'load-search-history-by-tab';
 export const ADD_SEARCH_HISTORY_ENTRY = 'add-search-history-entry';
 export const CLEAR_SEARCH_HISTORY = 'clear-search-history';
 
+// ワークスペース
+export const WORKSPACE_LOAD_ITEMS = 'workspace:load-items';
+export const WORKSPACE_ADD_ITEM = 'workspace:add-item';
+export const WORKSPACE_ADD_ITEMS_FROM_PATHS = 'workspace:add-items-from-paths';
+export const WORKSPACE_REMOVE_ITEM = 'workspace:remove-item';
+export const WORKSPACE_UPDATE_DISPLAY_NAME = 'workspace:update-display-name';
+export const WORKSPACE_REORDER_ITEMS = 'workspace:reorder-items';
+export const WORKSPACE_LAUNCH_ITEM = 'workspace:launch-item';
+
+// ワークスペース - グループ管理
+export const WORKSPACE_LOAD_GROUPS = 'workspace:load-groups';
+export const WORKSPACE_CREATE_GROUP = 'workspace:create-group';
+export const WORKSPACE_UPDATE_GROUP = 'workspace:update-group';
+export const WORKSPACE_DELETE_GROUP = 'workspace:delete-group';
+export const WORKSPACE_REORDER_GROUPS = 'workspace:reorder-groups';
+export const WORKSPACE_MOVE_ITEM_TO_GROUP = 'workspace:move-item-to-group';
+
+// ワークスペース - イベント
+export const WORKSPACE_CHANGED = 'workspace-changed';
+
 /**
  * すべてのIPCチャネル定数をまとめたオブジェクト
  * 型安全な使用のために利用可能
@@ -153,6 +173,23 @@ export const IPC_CHANNELS = {
   LOAD_SEARCH_HISTORY_BY_TAB,
   ADD_SEARCH_HISTORY_ENTRY,
   CLEAR_SEARCH_HISTORY,
+
+  // ワークスペース
+  WORKSPACE_LOAD_ITEMS,
+  WORKSPACE_ADD_ITEM,
+  WORKSPACE_ADD_ITEMS_FROM_PATHS,
+  WORKSPACE_REMOVE_ITEM,
+  WORKSPACE_UPDATE_DISPLAY_NAME,
+  WORKSPACE_REORDER_ITEMS,
+  WORKSPACE_LAUNCH_ITEM,
+
+  // ワークスペース - グループ管理
+  WORKSPACE_LOAD_GROUPS,
+  WORKSPACE_CREATE_GROUP,
+  WORKSPACE_UPDATE_GROUP,
+  WORKSPACE_DELETE_GROUP,
+  WORKSPACE_REORDER_GROUPS,
+  WORKSPACE_MOVE_ITEM_TO_GROUP,
 } as const;
 
 /**

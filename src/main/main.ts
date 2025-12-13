@@ -18,8 +18,13 @@ import {
   setModalMode,
   setFirstLaunchMode,
 } from './windowManager';
-import { closeAdminWindow, setAppQuitting } from './adminWindowManager';
+import { closeAdminWindow, setAppQuitting as setAdminAppQuitting } from './adminWindowManager';
 import { createSplashWindow, closeSplashWindow } from './splashWindowManager';
+import {
+  createWorkspaceWindow,
+  closeWorkspaceWindow,
+  setAppQuitting as setWorkspaceAppQuitting,
+} from './workspaceWindowManager';
 
 // 初回起動判定用のグローバル変数
 let isFirstLaunch = false;
@@ -99,6 +104,10 @@ app.whenReady().then(async () => {
     setFirstLaunchMode
   );
 
+  // ワークスペースウィンドウを作成・表示
+  const workspaceWin = await createWorkspaceWindow();
+  workspaceWin.show();
+
   // スプラッシュウィンドウはReactコンポーネントの完了信号(splash-ready)で閉じられる
 });
 
@@ -109,12 +118,14 @@ app.on('window-all-closed', () => {
 });
 
 app.on('before-quit', () => {
-  // 管理ウィンドウの終了フラグを設定
-  setAppQuitting(true);
+  // 管理ウィンドウとワークスペースウィンドウの終了フラグを設定
+  setAdminAppQuitting(true);
+  setWorkspaceAppQuitting(true);
 });
 
 app.on('will-quit', () => {
   globalShortcut.unregisterAll();
   closeAdminWindow(); // 管理ウィンドウを確実に閉じる
+  closeWorkspaceWindow(); // ワークスペースウィンドウを確実に閉じる
   closeSplashWindow(); // スプラッシュウィンドウを確実に閉じる
 });

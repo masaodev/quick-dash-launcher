@@ -51,6 +51,59 @@ export interface GroupItem {
 }
 
 /**
+ * ワークスペースのグループ
+ * アイテムを論理的にグループ化して整理する
+ */
+export interface WorkspaceGroup {
+  /** グループの一意識別子（UUID） */
+  id: string;
+  /** グループ名 */
+  name: string;
+  /** グループの色（CSS変数名またはカラーコード） */
+  color: string;
+  /** 並び順（0から開始） */
+  order: number;
+  /** 折りたたみ状態（true: 折りたたみ） */
+  collapsed: boolean;
+  /** 作成日時（timestamp） */
+  createdAt: number;
+}
+
+/**
+ * ワークスペースに追加されたアイテム
+ * メイン画面のアイテムを完全にコピーし、独立して管理される
+ * 元のアイテムが変更・削除されても影響を受けない
+ */
+export interface WorkspaceItem {
+  /** アイテムの一意識別子（UUID） */
+  id: string;
+  /** ワークスペース内での表示名（編集可能） */
+  displayName: string;
+  /** 元のアイテム名（参照用） */
+  originalName: string;
+  /** アイテムのパス、URL、またはコマンド */
+  path: string;
+  /** アイテムのタイプ */
+  type: 'url' | 'file' | 'folder' | 'app' | 'customUri';
+  /** アイテムのアイコン（base64エンコードされたデータURL、オプション） */
+  icon?: string;
+  /** カスタムアイコンのファイル名（オプション） */
+  customIcon?: string;
+  /** 実行時のコマンドライン引数（オプション） */
+  args?: string;
+  /** ショートカットファイルのリンク先のパス（オプション） */
+  originalPath?: string;
+  /** 並び順（0から開始） */
+  order: number;
+  /** 追加日時（timestamp） */
+  addedAt: number;
+  /** 所属グループID（未設定の場合はundefined = 未分類） */
+  groupId?: string;
+  /** グループラベル（将来的な拡張用、廃止予定） */
+  label?: string;
+}
+
+/**
  * 生データ編集モードで使用される、データファイルの1行を表すインターフェース
  * 編集機能で各行の種別や元のデータファイルを管理するために使用される
  */
