@@ -6,6 +6,8 @@ import { LauncherItem, GroupItem, AppItem, WindowPinMode } from '@common/types';
 import { GROUP_LAUNCH_DELAY_MS } from '@common/constants';
 import { parseArgs } from '@common/utils/argsParser';
 
+import { WorkspaceService } from '../services/workspaceService.js';
+
 async function openItem(
   item: LauncherItem,
   mainWindow: BrowserWindow | null,
@@ -203,6 +205,18 @@ export function setupItemHandlers(
   ipcMain.handle('open-item', async (_event, item: LauncherItem) => {
     const shouldHide = getWindowPinMode() === 'normal';
     await openItem(item, getMainWindow(), shouldHide);
+
+    // 実行履歴に記録
+    try {
+      const workspaceService = await WorkspaceService.getInstance();
+      await workspaceService.addExecutionHistory(item);
+    } catch (error) {
+      // 履歴記録失敗はエラーログのみ（アイテム起動自体は成功）
+      itemLogger.error(
+        { error: error instanceof Error ? error.message : String(error), itemName: item.name },
+        '実行履歴の記録に失敗しました'
+      );
+    }
   });
 
   ipcMain.handle('open-parent-folder', async (_event, item: LauncherItem) => {
@@ -213,5 +227,17 @@ export function setupItemHandlers(
   ipcMain.handle('execute-group', async (_event, group: GroupItem, allItems: AppItem[]) => {
     const shouldHide = getWindowPinMode() === 'normal';
     await executeGroup(group, allItems, getMainWindow(), shouldHide);
+
+    // 実行履歴に記録
+    try {
+      const workspaceService = await WorkspaceService.getInstance();
+      await workspaceService.addExecutionHistory(group);
+    } catch (error) {
+      // 履歴記録失敗はエラーログのみ（グループ起動自体は成功）
+      itemLogger.error(
+        { error: error instanceof Error ? error.message : String(error), groupName: group.name },
+        'グループ実行履歴の記録に失敗しました'
+      );
+    }
   });
 }

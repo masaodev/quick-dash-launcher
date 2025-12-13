@@ -79,6 +79,7 @@ export default defineConfig({
         main: resolve(__dirname, 'index.html'),
         admin: resolve(__dirname, 'admin.html'),
         splash: resolve(__dirname, 'splash.html'),
+        workspace: resolve(__dirname, 'workspace.html'),
       },
     },
   },

@@ -99,6 +99,14 @@ export class PathManager {
   }
 
   /**
+   * workspace.jsonファイルのパスを取得
+   * @returns workspace.jsonファイルの絶対パス
+   */
+  static getWorkspaceFilePath(): string {
+    return path.join(this.getConfigFolder(), 'workspace.json');
+  }
+
+  /**
    * 設定フォルダ内のすべてのdata*.txtファイルを取得
    * @returns データファイル名の配列（例: ['data.txt', 'data2.txt', 'data3.txt']）
    */

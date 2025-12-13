@@ -174,7 +174,7 @@ async function extractShortcutIcon(lnkPath: string, iconsFolder: string): Promis
  * @param iconsFolder - アイコンキャッシュフォルダのパス
  * @returns base64エンコードされたアイコンデータURL、失敗時はnull
  */
-async function extractIcon(filePath: string, iconsFolder: string): Promise<string | null> {
+export async function extractIcon(filePath: string, iconsFolder: string): Promise<string | null> {
   try {
     let resolvedPath = filePath;
 
@@ -254,7 +254,10 @@ async function extractIcon(filePath: string, iconsFolder: string): Promise<strin
   }
 }
 
-async function extractCustomUriIcon(uri: string, iconsFolder: string): Promise<string | null> {
+export async function extractCustomUriIcon(
+  uri: string,
+  iconsFolder: string
+): Promise<string | null> {
   try {
     // URIスキーマを抽出
     const schemeMatch = uri.match(/^([^:]+):/);
@@ -312,7 +315,7 @@ async function extractCustomUriIcon(uri: string, iconsFolder: string): Promise<s
  * const iconUrl = await extractFileIconByExtension('document.pdf', '/cache/extensions');
  * // 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...'
  */
-async function extractFileIconByExtension(
+export async function extractFileIconByExtension(
   filePath: string,
   extensionsFolder: string
 ): Promise<string | null> {

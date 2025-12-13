@@ -11,6 +11,9 @@ import {
   AppItem,
   AppInfo,
   BrowserInfo,
+  WorkspaceItem,
+  WorkspaceGroup,
+  ExecutionHistoryItem,
 } from '../common/types';
 
 interface RegisterItem {
@@ -87,6 +90,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.removeListener('settings-changed', callback);
     };
   },
+  onWorkspaceChanged: (callback: () => void) => {
+    ipcRenderer.on('workspace-changed', callback);
+    return () => {
+      ipcRenderer.removeListener('workspace-changed', callback);
+    };
+  },
   // 3段階ピンモードAPI
   getWindowPinMode: (): Promise<WindowPinMode> => ipcRenderer.invoke('get-window-pin-mode'),
   cycleWindowPinMode: () => ipcRenderer.invoke('cycle-window-pin-mode'),
@@ -158,4 +167,39 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // アプリ情報関連API
   getAppInfo: (): Promise<AppInfo> => ipcRenderer.invoke('get-app-info'),
   openExternalUrl: (url: string) => ipcRenderer.invoke('open-external-url', url),
+  // ワークスペース関連API
+  workspaceAPI: {
+    loadItems: (): Promise<WorkspaceItem[]> => ipcRenderer.invoke('workspace:load-items'),
+    addItem: (item: AppItem): Promise<WorkspaceItem> =>
+      ipcRenderer.invoke('workspace:add-item', item),
+    addItemsFromPaths: (filePaths: string[]): Promise<WorkspaceItem[]> =>
+      ipcRenderer.invoke('workspace:add-items-from-paths', filePaths),
+    removeItem: (id: string): Promise<{ success: boolean }> =>
+      ipcRenderer.invoke('workspace:remove-item', id),
+    updateDisplayName: (id: string, displayName: string): Promise<{ success: boolean }> =>
+      ipcRenderer.invoke('workspace:update-display-name', id, displayName),
+    reorderItems: (itemIds: string[]): Promise<{ success: boolean }> =>
+      ipcRenderer.invoke('workspace:reorder-items', itemIds),
+    launchItem: (item: WorkspaceItem): Promise<{ success: boolean }> =>
+      ipcRenderer.invoke('workspace:launch-item', item),
+    // グループ管理
+    loadGroups: (): Promise<WorkspaceGroup[]> => ipcRenderer.invoke('workspace:load-groups'),
+    createGroup: (name: string, color?: string): Promise<WorkspaceGroup> =>
+      ipcRenderer.invoke('workspace:create-group', name, color),
+    updateGroup: (id: string, updates: Partial<WorkspaceGroup>): Promise<{ success: boolean }> =>
+      ipcRenderer.invoke('workspace:update-group', id, updates),
+    deleteGroup: (id: string, deleteItems: boolean): Promise<{ success: boolean }> =>
+      ipcRenderer.invoke('workspace:delete-group', id, deleteItems),
+    reorderGroups: (groupIds: string[]): Promise<{ success: boolean }> =>
+      ipcRenderer.invoke('workspace:reorder-groups', groupIds),
+    moveItemToGroup: (itemId: string, groupId?: string): Promise<{ success: boolean }> =>
+      ipcRenderer.invoke('workspace:move-item-to-group', itemId, groupId),
+    // 実行履歴
+    loadExecutionHistory: (): Promise<ExecutionHistoryItem[]> =>
+      ipcRenderer.invoke('workspace:load-execution-history'),
+    addExecutionHistory: (item: AppItem): Promise<{ success: boolean }> =>
+      ipcRenderer.invoke('workspace:add-execution-history', item),
+    clearExecutionHistory: (): Promise<{ success: boolean }> =>
+      ipcRenderer.invoke('workspace:clear-execution-history'),
+  },
 });

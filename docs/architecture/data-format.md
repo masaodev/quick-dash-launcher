@@ -484,8 +484,78 @@ interface GroupItem {
 type AppItem = LauncherItem | GroupItem;
 ```
 
+## ワークスペースデータ
+
+ワークスペース機能で使用されるデータファイルの形式です。
+
+### workspace.json
+
+ワークスペースアイテムとグループを保存するJSONファイル。
+
+**保存場所**: `%APPDATA%/quick-dash-launcher/config/workspace.json`
+
+**形式**:
+```json
+{
+  "items": [
+    {
+      "id": "uuid",
+      "displayName": "表示名",
+      "originalName": "元の名前",
+      "path": "パスまたはURL",
+      "type": "url | file | folder | app | customUri",
+      "icon": "base64エンコードされたアイコン（オプション）",
+      "customIcon": "カスタムアイコンファイル名（オプション）",
+      "args": "引数（オプション）",
+      "originalPath": "ショートカットのリンク先（オプション）",
+      "order": 0,
+      "addedAt": 1234567890,
+      "groupId": "グループID（オプション）"
+    }
+  ],
+  "groups": [
+    {
+      "id": "uuid",
+      "name": "グループ名",
+      "color": "色（CSS変数名またはカラーコード）",
+      "order": 0,
+      "collapsed": false,
+      "createdAt": 1234567890
+    }
+  ]
+}
+```
+
+### execution-history.json
+
+アイテムの実行履歴を保存するJSONファイル（最大10件）。
+
+**保存場所**: `%APPDATA%/quick-dash-launcher/config/execution-history.json`
+
+**形式**:
+```json
+{
+  "history": [
+    {
+      "id": "uuid",
+      "itemName": "アイテム名",
+      "itemPath": "パスまたはURL",
+      "itemType": "url | file | folder | app | customUri | group",
+      "icon": "base64エンコードされたアイコン（オプション）",
+      "executedAt": 1234567890
+    }
+  ]
+}
+```
+
+**特徴**:
+- 最大10件まで保持
+- 古い履歴から自動削除
+- メイン画面でアイテムを起動するたびに自動追加
+
 ## 関連ドキュメント
 
 - **[アイテム管理](../features/item-management.md)** - データファイルの編集機能
 - **[フォルダ取込](../features/folder-import.md)** - フォルダ取込機能の詳細
+- **[ワークスペース](../features/workspace.md)** - ワークスペース機能の使い方
 - **[開発ガイド](../setup/development.md)** - 開発時の注意事項

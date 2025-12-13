@@ -26,6 +26,7 @@ docs/
 - [フォルダ取込](features/folder-import.md)
 - [アプリケーション設定](features/settings.md)
 - [アイテム管理](features/item-management.md)
+- [ワークスペース](features/workspace.md)
 - [キーボードショートカット](features/keyboard-shortcuts.md)
 
 ### アーキテクチャ

@@ -41,6 +41,7 @@ QuickDashLauncher
 | **初回設定画面** | 初回起動時（`hotkey`が空文字列または未設定の場合） | [first-launch-setup.md](./first-launch-setup.md) |
 | **メインウィンドウ** | 起動時デフォルト表示<br>Alt+Spaceで表示/非表示（デフォルト） | [main-window.md](./main-window.md) |
 | **管理ウィンドウ** | Ctrl+E または設定メニューから | [admin-window.md](./admin-window.md) |
+| **ワークスペースウィンドウ** | Ctrl+Alt+W またはシステムトレイメニューから | [workspace-window.md](./workspace-window.md) |
 
 ### モーダル
 
@@ -74,6 +75,7 @@ QuickDashLauncher
 - [初回設定画面仕様書](./first-launch-setup.md) - 初回起動時の設定画面
 - [メインウィンドウ仕様書](./main-window.md) - メイン画面の詳細な仕様
 - [管理ウィンドウ仕様書](./admin-window.md) - 設定・管理画面の詳細な仕様
+- [ワークスペースウィンドウ仕様書](./workspace-window.md) - ワークスペース画面の詳細な仕様
 
 ### モーダル仕様書
 

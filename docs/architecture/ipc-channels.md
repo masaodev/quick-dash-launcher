@@ -481,7 +481,107 @@ onWindowHidden(callback: () => void)
   - ウィンドウが非表示になる直前（`hideMainWindow`実行時）
 - **用途**: ウィンドウ非表示時の前処理（タブリセット等）を実行するため
 
+## ワークスペース関連
+
+### `workspace:load-items`
+ワークスペースアイテムを読み込み
+- 戻り値: `WorkspaceItem[]` (並び順にソート済み)
+
+### `workspace:add-item`
+アイテムをワークスペースに追加
+- パラメータ: `item: AppItem`
+- 戻り値: `WorkspaceItem`
+- 処理完了後、`workspace-changed`イベントを全ウィンドウに送信
+
+### `workspace:add-items-from-paths`
+ファイルパスからアイテムを追加（ドラッグ&ドロップ用）
+- パラメータ: `filePaths: string[]`
+- 戻り値: `WorkspaceItem[]`
+- 処理完了後、`workspace-changed`イベントを全ウィンドウに送信
+
+### `workspace:remove-item`
+ワークスペースからアイテムを削除
+- パラメータ: `itemId: string`
+- 戻り値: `boolean`
+- 処理完了後、`workspace-changed`イベントを全ウィンドウに送信
+
+### `workspace:update-display-name`
+アイテムの表示名を更新
+- パラメータ: `itemId: string`, `newName: string`
+- 戻り値: `boolean`
+- 処理完了後、`workspace-changed`イベントを全ウィンドウに送信
+
+### `workspace:reorder-items`
+アイテムの並び順を更新
+- パラメータ: `itemIds: string[]` (新しい順序)
+- 戻り値: `boolean`
+- 処理完了後、`workspace-changed`イベントを全ウィンドウに送信
+
+### `workspace:launch-item`
+ワークスペースアイテムを起動
+- パラメータ: `item: WorkspaceItem`
+- 戻り値: なし
+- 起動時に実行履歴に自動追加
+
+### `workspace:load-groups`
+ワークスペースグループを読み込み
+- 戻り値: `WorkspaceGroup[]` (並び順にソート済み)
+
+### `workspace:create-group`
+ワークスペースグループを作成
+- パラメータ: `name: string`, `color: string`
+- 戻り値: `WorkspaceGroup`
+- 処理完了後、`workspace-changed`イベントを全ウィンドウに送信
+
+### `workspace:update-group`
+ワークスペースグループを更新
+- パラメータ: `groupId: string`, `updates: Partial<WorkspaceGroup>`
+- 戻り値: `boolean`
+- 処理完了後、`workspace-changed`イベントを全ウィンドウに送信
+
+### `workspace:delete-group`
+ワークスペースグループを削除
+- パラメータ: `groupId: string`
+- 戻り値: `boolean`
+- グループ内のアイテムは未分類に移動
+- 処理完了後、`workspace-changed`イベントを全ウィンドウに送信
+
+### `workspace:reorder-groups`
+グループの並び順を更新
+- パラメータ: `groupIds: string[]` (新しい順序)
+- 戻り値: `boolean`
+- 処理完了後、`workspace-changed`イベントを全ウィンドウに送信
+
+### `workspace:move-item-to-group`
+アイテムをグループに移動
+- パラメータ: `itemId: string`, `groupId: string | null` (nullは未分類)
+- 戻り値: `boolean`
+- 処理完了後、`workspace-changed`イベントを全ウィンドウに送信
+
+### `workspace:load-execution-history`
+実行履歴を読み込み
+- 戻り値: `ExecutionHistoryItem[]` (最新順、最大10件)
+
+### `workspace:add-execution-history`
+実行履歴にアイテムを追加
+- パラメータ: `item: AppItem`
+- 戻り値: なし
+- 最大10件を超えた場合、古いものから削除
+- 処理完了後、`workspace-changed`イベントを全ウィンドウに送信
+
+### `workspace:clear-execution-history`
+実行履歴をクリア
+- 戻り値: なし
+- 処理完了後、`workspace-changed`イベントを全ウィンドウに送信
+
+### `workspace-changed` (イベント)
+ワークスペース変更を全ウィンドウに通知
+- **方向**: メインプロセス → レンダラープロセス（全ウィンドウ）
+- **パラメータ**: なし
+- **発生タイミング**: ワークスペースアイテム・グループ・実行履歴の変更時
+
 ## 関連ドキュメント
 
 - [アーキテクチャ概要](overview.md) - システム全体の構造とデータフロー
 - [ウィンドウ制御](window-control.md) - ウィンドウ管理の詳細
+- [ワークスペース](../features/workspace.md) - ワークスペース機能の使い方
