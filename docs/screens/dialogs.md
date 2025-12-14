@@ -121,6 +121,10 @@
 | `confirmText` | `string` | - | `'OK'` | 確認ボタンのテキスト |
 | `cancelText` | `string` | - | `'キャンセル'` | キャンセルボタンのテキスト |
 | `danger` | `boolean` | - | `false` | 危険な操作として強調表示するか |
+| `showCheckbox` | `boolean` | - | `false` | チェックボックスを表示するか |
+| `checkboxLabel` | `string` | - | `''` | チェックボックスのラベル |
+| `checkboxChecked` | `boolean` | - | `false` | チェックボックスの初期チェック状態 |
+| `onCheckboxChange` | `(checked: boolean) => void` | - | - | チェックボックス状態変更時のコールバック |
 
 ### 画面項目一覧
 
@@ -128,6 +132,7 @@
 |--------|--------|------------|----------|
 | **ヘッダー** | タイトル | 確認ダイアログのタイトル | 常時表示 |
 | **本文** | メッセージ | 確認内容のテキスト | 常時表示 |
+| **本文** | チェックボックス | ユーザーに追加の確認や選択肢を提供 | `showCheckbox={true}`の場合 |
 | **フッター** | キャンセルボタン | ダイアログを閉じて操作をキャンセル | 常時表示 |
 | **フッター** | 確認ボタン | 操作を確定して実行 | 常時表示 |
 
@@ -169,6 +174,22 @@
   cancelText="キャンセル"
   danger={true}
 />
+
+// チェックボックス付き確認ダイアログ
+<ConfirmDialog
+  isOpen={showConfirmWithCheckbox}
+  onClose={() => setShowConfirmWithCheckbox(false)}
+  onConfirm={handleConfirmWithOption}
+  title="削除の確認"
+  message="選択したグループを削除しますか？"
+  confirmText="削除"
+  cancelText="キャンセル"
+  danger={true}
+  showCheckbox={true}
+  checkboxLabel="グループ内のアイテムも削除する"
+  checkboxChecked={deleteGroupItems}
+  onCheckboxChange={setDeleteGroupItems}
+/>
 ```
 
 ### テスト用データ属性
@@ -177,6 +198,7 @@
 |------|---------|
 | `data-testid="confirm-dialog-overlay"` | オーバーレイ |
 | `data-testid="confirm-dialog"` | ダイアログ本体 |
+| `data-testid="confirm-dialog-checkbox"` | チェックボックス（showCheckbox={true}の場合） |
 | `data-testid="confirm-dialog-cancel-button"` | キャンセルボタン |
 | `data-testid="confirm-dialog-confirm-button"` | 確認ボタン |
 
