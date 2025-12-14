@@ -184,25 +184,28 @@
   padding: 0;
   background: transparent;
   border: none;
-  border-radius: var(--border-radius-sm);
+  border-radius: 50%;
   font-size: var(--font-size-3xl);
+  font-weight: bold;
   line-height: 1;
   color: var(--color-gray-600);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: var(--transition-normal);
+  transition: all var(--transition-normal);
   -webkit-app-region: no-drag;
 }
 
 .edit-mode-search .search-clear-button:hover {
-  background-color: var(--bg-hover);
-  color: var(--color-gray-800);
+  background-color: var(--color-gray-600);
+  color: var(--color-white);
+  transform: translateY(-50%) scale(1.1);
 }
 
 .edit-mode-search .search-clear-button:active {
-  background-color: var(--color-gray-400);
+  background-color: var(--color-gray-700);
+  transform: translateY(-50%) scale(0.95);
 }
 
 .edit-mode-actions {

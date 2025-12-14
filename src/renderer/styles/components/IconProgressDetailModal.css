@@ -27,16 +27,28 @@
   border: none;
   color: var(--text-muted);
   font-size: 24px;
+  font-weight: bold;
   line-height: 1;
   cursor: pointer;
   padding: var(--spacing-xs);
-  border-radius: var(--border-radius);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: all 0.2s ease;
 }
 
 .modal-close-btn:hover {
-  background-color: var(--bg-hover);
-  color: var(--text-primary);
+  background-color: var(--color-gray-600);
+  color: var(--color-white);
+  transform: scale(1.1);
+}
+
+.modal-close-btn:active {
+  background-color: var(--color-gray-700);
+  transform: scale(0.95);
 }
 
 .modal-summary {

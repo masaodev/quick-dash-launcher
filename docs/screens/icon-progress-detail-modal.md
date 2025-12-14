@@ -120,7 +120,7 @@ interface IconProgressResult {
 |---------|------|
 | `.icon-detail-modal` | モーダルコンテナ |
 | `.modal-header` | ヘッダーエリア |
-| `.modal-close-btn` | 閉じるボタン |
+| `.modal-close-btn` | 閉じるボタン（×） |
 | `.modal-summary` | サマリー表示エリア |
 | `.summary-item` | サマリー項目 |
 | `.summary-item.success` | 成功件数 |
@@ -138,6 +138,47 @@ interface IconProgressResult {
 | `.result-name` | アイテム名 |
 | `.result-error` | エラーメッセージ |
 | `.no-results` | 空結果メッセージ |
+
+### 閉じるボタン（×）のスタイル
+
+```css
+.modal-close-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 24px;
+  font-weight: bold; /* 太字で視認性向上 */
+  line-height: 1;
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  border-radius: 50%; /* 丸いボタン */
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.modal-close-btn:hover {
+  background-color: var(--color-gray-600);
+  color: var(--color-white);
+  transform: scale(1.1); /* ホバー時に拡大 */
+}
+
+.modal-close-btn:active {
+  background-color: var(--color-gray-700);
+  transform: scale(0.95); /* クリック時に縮小 */
+}
+```
+
+**デザインの特徴:**
+- 丸いボタンデザインで他の×ボタンと統一
+- ホバー時に背景色が変化してスケールアップ
+- クリック時の視覚的フィードバック
+- グレー系の色で削除系ボタンと区別
+
+詳細は **[CSSデザインシステム - 閉じる・削除ボタンクラス](../architecture/css-design.md#閉じる削除ボタンクラス)** を参照してください。
 
 ### 結果アイテムの表示
 

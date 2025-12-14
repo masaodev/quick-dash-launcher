@@ -172,19 +172,32 @@
 }
 
 .remove-group-item-btn {
-  background: none;
+  background-color: transparent;
   border: none;
   color: var(--color-danger);
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-xl);
+  font-weight: bold;
   cursor: pointer;
-  padding: 0 var(--spacing-xs);
+  padding: var(--spacing-xxs) var(--spacing-xs);
   line-height: 1;
-  transition: color var(--transition-fast);
+  border-radius: 50%;
+  transition: all var(--transition-fast);
   flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .remove-group-item-btn:hover {
-  color: var(--color-danger-hover);
+  color: var(--color-white);
+  background-color: var(--color-danger);
+  transform: scale(1.1);
+}
+
+.remove-group-item-btn:active {
+  transform: scale(0.95);
 }
 
 .no-group-items {

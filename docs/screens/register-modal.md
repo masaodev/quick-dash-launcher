@@ -478,6 +478,48 @@
 | `.custom-icon-section` | カスタムアイコンセクション |
 | `.group-item-list` | グループアイテムリスト |
 | `.item-chip` | グループアイテムチップ |
+| `.remove-group-item-btn` | グループアイテム削除ボタン（×） |
 | `.error` | エラー状態の入力欄 |
 | `.error-message` | エラーメッセージ |
 | `.readonly` | 読み取り専用入力欄 |
+
+### グループアイテム削除ボタン（×）のスタイル
+
+```css
+.remove-group-item-btn {
+  background-color: transparent;
+  border: none;
+  color: var(--color-danger);
+  font-size: var(--font-size-xl);
+  font-weight: bold; /* 太字で視認性向上 */
+  cursor: pointer;
+  padding: var(--spacing-xxs) var(--spacing-xs);
+  line-height: 1;
+  border-radius: 50%; /* 丸いボタン */
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.remove-group-item-btn:hover {
+  color: var(--color-white);
+  background-color: var(--color-danger);
+  transform: scale(1.1); /* ホバー時に拡大 */
+}
+
+.remove-group-item-btn:active {
+  transform: scale(0.95); /* クリック時に縮小 */
+}
+```
+
+**デザインの特徴:**
+- 丸いボタンデザインで他の×ボタンと統一
+- 赤色（削除系）で用途を明確化
+- ホバー時に背景が赤色に変化して×が白色になる
+- クリック時の視覚的フィードバック
+
+詳細は **[CSSデザインシステム - 閉じる・削除ボタンクラス](../architecture/css-design.md#閉じる削除ボタンクラス)** を参照してください。

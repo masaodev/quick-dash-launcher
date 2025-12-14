@@ -64,9 +64,75 @@
 - 責務の明確化と再利用性の向上
 - 型安全性の向上（DragItemData型による型安全なドラッグ&ドロップ）
 
-## 3. 関連ドキュメント
+## 3. スタイル
+
+### 主要なCSSクラス
+
+| クラス名 | 説明 |
+|---------|------|
+| `.workspace-window` | ウィンドウコンテナ |
+| `.workspace-header` | ヘッダーエリア |
+| `.workspace-items` | アイテムリストエリア |
+| `.workspace-group` | グループセクション |
+| `.workspace-group-header` | グループヘッダー |
+| `.workspace-item-card` | アイテムカード |
+| `.workspace-item-delete-btn` | アイテム削除ボタン（×） |
+| `.execution-history` | 実行履歴セクション |
+| `.execution-history-item` | 実行履歴アイテムカード |
+
+### アイテム削除ボタン（×）のスタイル
+
+```css
+.workspace-item-delete-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--color-white);
+  background-color: var(--color-danger);
+  color: var(--color-white);
+  border-radius: 50%; /* 丸いボタン */
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: bold; /* 太字で視認性向上 */
+  line-height: 1;
+  opacity: 0; /* 通常時は非表示 */
+  transition: opacity 0.2s ease, background-color 0.2s ease, transform 0.1s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.workspace-item-card:hover .workspace-item-delete-btn {
+  opacity: 1; /* アイテムカードホバー時に表示 */
+}
+
+.workspace-item-delete-btn:hover {
+  background-color: var(--color-danger-hover);
+  transform: scale(1.1); /* ホバー時に拡大 */
+}
+
+.workspace-item-delete-btn:active {
+  background-color: var(--color-danger-hover);
+  transform: scale(0.95); /* クリック時に縮小 */
+}
+```
+
+**デザインの特徴:**
+- 丸いボタンデザインで他の×ボタンと統一
+- 赤色（削除系）で用途を明確化
+- アイテムカードホバー時に表示される（`opacity: 0` → `opacity: 1`）
+- 白い縁取りと影でコントラスト向上
+- ホバー時のスケールアップとクリック時のフィードバック
+
+詳細は **[CSSデザインシステム - 閉じる・削除ボタンクラス](../architecture/css-design.md#閉じる削除ボタンクラス)** を参照してください。
+
+## 4. 関連ドキュメント
 
 - [ワークスペース機能](../features/workspace.md) - 機能の詳細な使い方
 - [データファイル形式](../architecture/data-format.md) - workspace.json/execution-history.json形式
 - [IPC通信](../architecture/ipc-channels.md) - ワークスペース関連のIPCチャンネル
 - [キーボードショートカット](../features/keyboard-shortcuts.md) - 全ショートカット一覧
+- [CSSデザインシステム](../architecture/css-design.md) - スタイルガイドライン
