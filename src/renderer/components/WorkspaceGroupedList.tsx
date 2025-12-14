@@ -18,11 +18,14 @@ interface WorkspaceGroupedListProps {
   onToggleGroup: (groupId: string) => void;
   onUpdateGroup: (groupId: string, updates: Partial<WorkspaceGroup>) => void;
   onDeleteGroup: (groupId: string) => void;
-  onAddGroup: () => void;
   onMoveItemToGroup: (itemId: string, groupId?: string) => void;
   onReorderGroups: (groupIds: string[]) => void;
   editingItemId: string | null;
   setEditingItemId: (id: string | null) => void;
+  uncategorizedCollapsed: boolean;
+  onToggleUncategorized: () => void;
+  historyCollapsed: boolean;
+  onToggleHistory: () => void;
 }
 
 const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
@@ -36,11 +39,14 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
   onToggleGroup,
   onUpdateGroup,
   onDeleteGroup,
-  onAddGroup,
   onMoveItemToGroup,
   onReorderGroups,
   editingItemId,
   setEditingItemId,
+  uncategorizedCollapsed,
+  onToggleUncategorized,
+  historyCollapsed,
+  onToggleHistory,
 }) => {
   const [draggedItemId, setDraggedItemId] = React.useState<string | null>(null);
   const [_draggedGroupId, setDraggedGroupId] = React.useState<string | null>(null);
@@ -287,11 +293,6 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
 
   return (
     <div className="workspace-item-list">
-      {/* グループ追加ボタン */}
-      <button className="workspace-add-group-btn" onClick={onAddGroup}>
-        + グループを追加
-      </button>
-
       {/* グループを表示 */}
       {groups.map((group) => {
         const groupItems = itemsByGroup[group.id] || [];
@@ -341,74 +342,92 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
           onDragOver={handleGroupDragOver}
           onDrop={handleGroupDrop(undefined)}
         >
-          <div className="workspace-uncategorized-header">未分類</div>
-          <div className="workspace-group-items">
-            {uncategorizedItems.map((item) => (
-              <WorkspaceItemCard
-                key={item.id}
-                item={item}
-                isEditing={editingItemId === item.id}
-                onLaunch={onLaunch}
-                onRemove={onRemoveItem}
-                onUpdateDisplayName={onUpdateDisplayName}
-                onStartEdit={() => setEditingItemId(editingItemId === item.id ? null : item.id)}
-                onDragStart={handleItemDragStart(item)}
-                onDragEnd={handleItemDragEnd}
-                onDragOver={handleItemDragOver(item)}
-                onDrop={handleItemDrop(item)}
-                onContextMenu={handleContextMenu(item)}
-              />
-            ))}
+          <div
+            className="workspace-uncategorized-header"
+            onClick={onToggleUncategorized}
+            style={{ cursor: 'pointer' }}
+          >
+            <span className="workspace-collapse-icon">{uncategorizedCollapsed ? '▶' : '▼'}</span>
+            未分類 ({uncategorizedItems.length})
           </div>
+          {!uncategorizedCollapsed && (
+            <div className="workspace-group-items">
+              {uncategorizedItems.map((item) => (
+                <WorkspaceItemCard
+                  key={item.id}
+                  item={item}
+                  isEditing={editingItemId === item.id}
+                  onLaunch={onLaunch}
+                  onRemove={onRemoveItem}
+                  onUpdateDisplayName={onUpdateDisplayName}
+                  onStartEdit={() => setEditingItemId(editingItemId === item.id ? null : item.id)}
+                  onDragStart={handleItemDragStart(item)}
+                  onDragEnd={handleItemDragEnd}
+                  onDragOver={handleItemDragOver(item)}
+                  onDrop={handleItemDrop(item)}
+                  onContextMenu={handleContextMenu(item)}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
 
       {/* 実行履歴セクション */}
       {executionHistory.length > 0 && (
         <div className="workspace-execution-history-section">
-          <div className="workspace-uncategorized-header">実行履歴</div>
-          <div className="workspace-group-items">
-            {executionHistory.map((historyItem) => (
-              <ExecutionHistoryItemCard
-                key={historyItem.id}
-                item={historyItem}
-                onLaunch={(item) => {
-                  // 実行履歴アイテムを外部で起動
-                  if (item.itemType === 'url' || item.itemType === 'customUri') {
-                    window.electronAPI.openExternalUrl(item.itemPath);
-                  } else if (
-                    item.itemType === 'file' ||
-                    item.itemType === 'folder' ||
-                    item.itemType === 'app'
-                  ) {
-                    // LauncherItem形式に変換して起動
-                    window.electronAPI.openItem({
-                      name: item.itemName,
-                      path: item.itemPath,
-                      type: item.itemType,
-                      icon: item.icon,
-                    });
-                  } else if (item.itemType === 'group') {
-                    // グループは再実行しない（履歴としてのみ表示）
-                  }
-                }}
-                onDragStart={(e) => {
-                  // 実行履歴アイテムをワークスペースにコピーできるようにする
-                  e.dataTransfer.effectAllowed = 'copy';
-                  e.dataTransfer.setData('historyItemId', historyItem.id);
-                  e.dataTransfer.setData(
-                    'historyItem',
-                    JSON.stringify({
-                      name: historyItem.itemName,
-                      path: historyItem.itemPath,
-                      type: historyItem.itemType,
-                      icon: historyItem.icon,
-                    })
-                  );
-                }}
-              />
-            ))}
+          <div
+            className="workspace-uncategorized-header"
+            onClick={onToggleHistory}
+            style={{ cursor: 'pointer' }}
+          >
+            <span className="workspace-collapse-icon">{historyCollapsed ? '▶' : '▼'}</span>
+            実行履歴 ({executionHistory.length})
           </div>
+          {!historyCollapsed && (
+            <div className="workspace-group-items">
+              {executionHistory.map((historyItem) => (
+                <ExecutionHistoryItemCard
+                  key={historyItem.id}
+                  item={historyItem}
+                  onLaunch={(item) => {
+                    // 実行履歴アイテムを外部で起動
+                    if (item.itemType === 'url' || item.itemType === 'customUri') {
+                      window.electronAPI.openExternalUrl(item.itemPath);
+                    } else if (
+                      item.itemType === 'file' ||
+                      item.itemType === 'folder' ||
+                      item.itemType === 'app'
+                    ) {
+                      // LauncherItem形式に変換して起動
+                      window.electronAPI.openItem({
+                        name: item.itemName,
+                        path: item.itemPath,
+                        type: item.itemType,
+                        icon: item.icon,
+                      });
+                    } else if (item.itemType === 'group') {
+                      // グループは再実行しない（履歴としてのみ表示）
+                    }
+                  }}
+                  onDragStart={(e) => {
+                    // 実行履歴アイテムをワークスペースにコピーできるようにする
+                    e.dataTransfer.effectAllowed = 'copy';
+                    e.dataTransfer.setData('historyItemId', historyItem.id);
+                    e.dataTransfer.setData(
+                      'historyItem',
+                      JSON.stringify({
+                        name: historyItem.itemName,
+                        path: historyItem.itemPath,
+                        type: historyItem.itemType,
+                        icon: historyItem.icon,
+                      })
+                    );
+                  }}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
 
