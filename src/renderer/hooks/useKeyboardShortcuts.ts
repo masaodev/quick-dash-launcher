@@ -132,6 +132,13 @@ export function useKeyboardShortcuts(
           window.electronAPI.toggleEditWindow();
         }
         break;
+      case 'w':
+        if (e.ctrlKey) {
+          e.preventDefault();
+          e.stopPropagation();
+          window.electronAPI.toggleWorkspaceWindow();
+        }
+        break;
     }
   };
 
