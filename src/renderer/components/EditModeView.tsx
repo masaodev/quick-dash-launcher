@@ -500,29 +500,20 @@ const EditModeView: React.FC<EditModeViewProps> = ({
           }}
           className="delete-lines-button"
           disabled={selectedItems.size === 0}
+          title="選択されている行を削除します"
         >
-          🗑️ 選択行を削除 (
-          {
-            filteredLines.filter((line) =>
-              selectedItems.has(`${line.sourceFile}_${line.lineNumber}`)
-            ).length
-          }
-          )
+          🗑️ 選択行を削除
         </button>
         <button
           onClick={() => {
-            // 現在選択中のタブに属するファイルを特定
-            const currentTab = dataFileTabs[selectedTabIndex];
-            const currentTabFiles = new Set(currentTab.files);
-
-            // 現在のタブの行のみフィルタリング
-            const currentTabLines = mergedLines.filter((line) =>
-              currentTabFiles.has(line.sourceFile)
+            // 現在選択中のデータファイルの行のみフィルタリング
+            const currentDataFileLines = mergedLines.filter(
+              (line) => line.sourceFile === selectedDataFile
             );
 
-            // 他のタブの行
-            const otherTabLines = mergedLines.filter(
-              (line) => !currentTabFiles.has(line.sourceFile)
+            // 他のデータファイルの行
+            const otherDataFileLines = mergedLines.filter(
+              (line) => line.sourceFile !== selectedDataFile
             );
 
             // 重複削除関数
@@ -556,8 +547,8 @@ const EditModeView: React.FC<EditModeViewProps> = ({
               }
             };
 
-            // 現在のタブの行のみを整列
-            const sortedLines = [...currentTabLines].sort((a, b) => {
+            // 現在のデータファイルの行のみを整列
+            const sortedLines = [...currentDataFileLines].sort((a, b) => {
               const typeOrder = { directive: 0, item: 1, comment: 2, empty: 3 };
               const typeA = typeOrder[a.type] ?? 99;
               const typeB = typeOrder[b.type] ?? 99;
@@ -585,32 +576,32 @@ const EditModeView: React.FC<EditModeViewProps> = ({
             const duplicateCount = sortedLines.length - deduplicatedLines.length;
 
             if (duplicateCount > 0) {
-              // 整列後、他タブの行と結合して保存
-              const allLinesSorted = [...otherTabLines, ...sortedLines];
+              // 整列後、他のデータファイルの行と結合して保存
+              const allLinesSorted = [...otherDataFileLines, ...sortedLines];
               handleSort(allLinesSorted);
 
               // 重複削除の確認ダイアログを表示
               setConfirmDialog({
                 isOpen: true,
-                message: `整列処理が完了しました（対象: ${currentTab.name}タブ）。\n\n${duplicateCount}件の重複行が見つかりました。\n重複行を削除しますか？`,
+                message: `整列処理が完了しました。\n\n${duplicateCount}件の重複行が見つかりました。\n重複行を削除しますか？`,
                 onConfirm: () => {
                   setConfirmDialog({ ...confirmDialog, isOpen: false });
-                  // 重複削除後、他タブの行と結合して保存
-                  const allLinesDedup = [...otherTabLines, ...deduplicatedLines];
+                  // 重複削除後、他のデータファイルの行と結合して保存
+                  const allLinesDedup = [...otherDataFileLines, ...deduplicatedLines];
                   handleSort(allLinesDedup);
                 },
                 danger: false,
               });
             } else {
-              // 整列後、他タブの行と結合して保存
-              const allLinesSorted = [...otherTabLines, ...sortedLines];
+              // 整列後、他のデータファイルの行と結合して保存
+              const allLinesSorted = [...otherDataFileLines, ...sortedLines];
               handleSort(allLinesSorted);
             }
           }}
           className="sort-button"
-          title={`種類→パスと引数→名前の順で整列し、${dataFileTabs[selectedTabIndex].name}タブ内の重複行を削除`}
+          title="種類→パスと引数→名前の順で整列し、重複行を削除"
         >
-          🔤 整列・重複削除（{dataFileTabs[selectedTabIndex].name}タブのみ）
+          🔤 整列・重複削除
         </button>
       </div>
 
