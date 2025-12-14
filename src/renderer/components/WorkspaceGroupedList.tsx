@@ -142,7 +142,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
 
   const handleGroupDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'copy';
+    e.dataTransfer.dropEffect = 'move';
   };
 
   const handleGroupDrop = (groupId?: string) => async (e: React.DragEvent) => {

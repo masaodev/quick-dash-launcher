@@ -108,9 +108,6 @@ const WorkspaceGroupHeader: React.FC<WorkspaceGroupHeaderProps> = ({
     <div
       className="workspace-group-header"
       onClick={handleToggle}
-      draggable={!isEditing}
-      onDragStart={handleDragStart}
-      onDragEnd={onGroupDragEnd}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
       style={
@@ -119,8 +116,14 @@ const WorkspaceGroupHeader: React.FC<WorkspaceGroupHeaderProps> = ({
         } as React.CSSProperties
       }
     >
-      {/* 折りたたみアイコン */}
-      <span className={`workspace-group-collapse-icon ${group.collapsed ? 'collapsed' : ''}`}>
+      {/* 折りたたみアイコン（ドラッグハンドル） */}
+      <span
+        className={`workspace-group-collapse-icon ${group.collapsed ? 'collapsed' : ''}`}
+        draggable={!isEditing}
+        onDragStart={handleDragStart}
+        onDragEnd={onGroupDragEnd}
+        onClick={(e) => e.stopPropagation()}
+      >
         ▼
       </span>
 
