@@ -31,7 +31,7 @@ import { extractIcon, extractFileIconByExtension, extractCustomUriIcon } from '.
 /**
  * ワークスペース変更イベントを全てのウィンドウに送信
  */
-function notifyWorkspaceChanged(): void {
+export function notifyWorkspaceChanged(): void {
   const windows = BrowserWindow.getAllWindows();
   windows.forEach((window) => {
     window.webContents.send(WORKSPACE_CHANGED);

@@ -673,6 +673,7 @@ export class WorkspaceService {
           itemPath: launcherItem.path,
           itemType: launcherItem.type,
           icon: launcherItem.icon,
+          args: launcherItem.args,
           executedAt: Date.now(),
         };
         history.unshift(historyItem);

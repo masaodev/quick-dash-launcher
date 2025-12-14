@@ -8,6 +8,8 @@ import { parseArgs } from '@common/utils/argsParser';
 
 import { WorkspaceService } from '../services/workspaceService.js';
 
+import { notifyWorkspaceChanged } from './workspaceHandlers.js';
+
 async function openItem(
   item: LauncherItem,
   mainWindow: BrowserWindow | null,
@@ -210,6 +212,8 @@ export function setupItemHandlers(
     try {
       const workspaceService = await WorkspaceService.getInstance();
       await workspaceService.addExecutionHistory(item);
+      // ワークスペースウィンドウに変更を通知
+      notifyWorkspaceChanged();
     } catch (error) {
       // 履歴記録失敗はエラーログのみ（アイテム起動自体は成功）
       itemLogger.error(
@@ -232,6 +236,8 @@ export function setupItemHandlers(
     try {
       const workspaceService = await WorkspaceService.getInstance();
       await workspaceService.addExecutionHistory(group);
+      // ワークスペースウィンドウに変更を通知
+      notifyWorkspaceChanged();
     } catch (error) {
       // 履歴記録失敗はエラーログのみ（グループ起動自体は成功）
       itemLogger.error(

@@ -67,6 +67,11 @@ const ExecutionHistoryItemCard: React.FC<ExecutionHistoryItemCardProps> = ({
     // パス情報
     lines.push(item.itemPath);
 
+    // 引数情報
+    if (item.args) {
+      lines.push(`引数: ${item.args}`);
+    }
+
     // 空行を追加
     lines.push('');
 

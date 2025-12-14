@@ -142,7 +142,9 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
 
   const handleGroupDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
+    // 実行履歴からのドラッグの場合はcopy、それ以外はmove
+    const hasHistoryItem = e.dataTransfer.types.includes('historyitem');
+    e.dataTransfer.dropEffect = hasHistoryItem ? 'copy' : 'move';
   };
 
   const handleGroupDrop = (groupId?: string) => async (e: React.DragEvent) => {
@@ -405,6 +407,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
                         path: item.itemPath,
                         type: item.itemType,
                         icon: item.icon,
+                        args: item.args,
                       });
                     } else if (item.itemType === 'group') {
                       // グループは再実行しない（履歴としてのみ表示）
@@ -421,6 +424,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
                         path: historyItem.itemPath,
                         type: historyItem.itemType,
                         icon: historyItem.icon,
+                        args: historyItem.args,
                       })
                     );
                   }}
