@@ -1,0 +1,52 @@
+/* カラーピッカードロップダウン */
+.color-picker-dropdown {
+  position: absolute;
+  top: calc(100% + var(--spacing-xxs));
+  right: var(--spacing-xs);
+  background-color: var(--color-white);
+  border: 1px solid var(--color-gray-400);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-lg);
+  padding: var(--spacing-md);
+  z-index: 9999;
+  min-width: 200px;
+}
+
+/* 色グリッドレイアウト（2行×4列） */
+.color-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-sm);
+}
+
+/* 色オプションボタン */
+.color-picker-option {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: var(--transition-normal);
+  background-color: currentColor;
+  padding: 0;
+}
+
+.color-picker-option:hover {
+  border-color: var(--color-gray-600);
+  transform: scale(1.1);
+  box-shadow: var(--shadow);
+}
+
+.color-picker-option:active {
+  transform: scale(0.95);
+}
+
+/* 選択中の色 */
+.color-picker-option.selected {
+  border-color: var(--color-primary);
+  border-width: 3px;
+}
+
+.color-picker-option.selected:hover {
+  border-color: var(--color-primary-hover);
+}

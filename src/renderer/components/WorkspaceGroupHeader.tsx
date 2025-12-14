@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import type { WorkspaceGroup } from '@common/types';
 
+import ColorPicker from './ColorPicker';
+
 interface WorkspaceGroupHeaderProps {
   group: WorkspaceGroup;
   itemCount: number;
@@ -30,6 +32,7 @@ const WorkspaceGroupHeader: React.FC<WorkspaceGroupHeaderProps> = ({
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(group.name);
+  const [isColorPickerOpen, setIsColorPickerOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // 編集モードに入ったときにフォーカス
@@ -74,6 +77,16 @@ const WorkspaceGroupHeader: React.FC<WorkspaceGroupHeaderProps> = ({
     onDelete(group.id);
   };
 
+  const handleColorButtonClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsColorPickerOpen(!isColorPickerOpen);
+  };
+
+  const handleColorSelect = (color: string) => {
+    onUpdate(group.id, { color });
+    setIsColorPickerOpen(false);
+  };
+
   const handleDragStart = (e: React.DragEvent) => {
     // 編集モード中はドラッグを無効化
     if (isEditing) {
@@ -106,7 +119,7 @@ const WorkspaceGroupHeader: React.FC<WorkspaceGroupHeaderProps> = ({
 
   return (
     <div
-      className="workspace-group-header"
+      className={`workspace-group-header ${isColorPickerOpen ? 'color-picker-open' : ''}`}
       onClick={handleToggle}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
@@ -151,6 +164,13 @@ const WorkspaceGroupHeader: React.FC<WorkspaceGroupHeaderProps> = ({
       {/* 編集・削除ボタン */}
       <div className="workspace-group-actions">
         <button
+          className="workspace-group-color-btn"
+          onClick={handleColorButtonClick}
+          title="グループの色を変更"
+        >
+          🎨
+        </button>
+        <button
           className="workspace-group-edit-btn"
           onClick={handleStartEdit}
           title="グループ名を編集"
@@ -165,6 +185,15 @@ const WorkspaceGroupHeader: React.FC<WorkspaceGroupHeaderProps> = ({
           🗑️
         </button>
       </div>
+
+      {/* カラーピッカー（actionsの外に配置） */}
+      {isColorPickerOpen && (
+        <ColorPicker
+          onSelectColor={handleColorSelect}
+          onClose={() => setIsColorPickerOpen(false)}
+          currentColor={group.color}
+        />
+      )}
     </div>
   );
 };
