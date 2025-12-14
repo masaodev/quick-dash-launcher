@@ -104,9 +104,8 @@ app.whenReady().then(async () => {
     setFirstLaunchMode
   );
 
-  // ワークスペースウィンドウを作成・表示
-  const workspaceWin = await createWorkspaceWindow();
-  workspaceWin.show();
+  // ワークスペースウィンドウを作成（起動時は表示しない、ユーザーが手動で起動したときのみ表示）
+  await createWorkspaceWindow();
 
   // スプラッシュウィンドウはReactコンポーネントの完了信号(splash-ready)で閉じられる
 });
