@@ -167,6 +167,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // アプリ情報関連API
   getAppInfo: (): Promise<AppInfo> => ipcRenderer.invoke('get-app-info'),
   openExternalUrl: (url: string) => ipcRenderer.invoke('open-external-url', url),
+  // ワークスペースウィンドウ制御API
+  toggleWorkspaceWindow: () => ipcRenderer.invoke('workspace:toggle-window'),
+  showWorkspaceWindow: () => ipcRenderer.invoke('workspace:show-window'),
+  hideWorkspaceWindow: () => ipcRenderer.invoke('workspace:hide-window'),
   // ワークスペース関連API
   workspaceAPI: {
     loadItems: (): Promise<WorkspaceItem[]> => ipcRenderer.invoke('workspace:load-items'),
@@ -201,5 +205,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke('workspace:add-execution-history', item),
     clearExecutionHistory: (): Promise<{ success: boolean }> =>
       ipcRenderer.invoke('workspace:clear-execution-history'),
+    // ピン留め関連
+    getAlwaysOnTop: (): Promise<boolean> => ipcRenderer.invoke('workspace:get-always-on-top'),
+    toggleAlwaysOnTop: (): Promise<boolean> => ipcRenderer.invoke('workspace:toggle-always-on-top'),
   },
 });

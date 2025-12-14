@@ -6,6 +6,7 @@ import { windowLogger } from '@common/logger';
 let workspaceWindow: BrowserWindow | null = null;
 let isWorkspaceWindowVisible: boolean = false;
 let isAppQuitting: boolean = false;
+let isWorkspacePinned: boolean = false;
 
 /**
  * ワークスペースウィンドウを作成し、初期設定を行う
@@ -176,4 +177,34 @@ export function isWorkspaceWindowShown(): boolean {
  */
 export function setAppQuitting(quitting: boolean): void {
   isAppQuitting = quitting;
+}
+
+/**
+ * ワークスペースウィンドウのピン留め状態を設定する
+ * @param isPinned - true: 最前面に固定、false: 通常モード
+ */
+export function setWorkspaceAlwaysOnTop(isPinned: boolean): void {
+  isWorkspacePinned = isPinned;
+  if (workspaceWindow && !workspaceWindow.isDestroyed()) {
+    workspaceWindow.setAlwaysOnTop(isPinned);
+    windowLogger.info(`ワークスペースウィンドウのピン留め: ${isPinned ? 'ON' : 'OFF'}`);
+  }
+}
+
+/**
+ * ワークスペースウィンドウのピン留め状態をトグルする
+ * @returns 新しいピン留め状態
+ */
+export function toggleWorkspaceAlwaysOnTop(): boolean {
+  const newState = !isWorkspacePinned;
+  setWorkspaceAlwaysOnTop(newState);
+  return newState;
+}
+
+/**
+ * ワークスペースウィンドウの現在のピン留め状態を取得する
+ * @returns 現在のピン留め状態
+ */
+export function getWorkspaceAlwaysOnTop(): boolean {
+  return isWorkspacePinned;
 }

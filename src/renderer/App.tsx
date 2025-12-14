@@ -351,6 +351,10 @@ const App: React.FC = () => {
     await window.electronAPI.openEditWindowWithTab('edit');
   };
 
+  const handleToggleWorkspace = async () => {
+    await window.electronAPI.toggleWorkspaceWindow();
+  };
+
   const handleOpenRegisterModal = () => {
     openRegisterModal();
   };
@@ -441,6 +445,7 @@ const App: React.FC = () => {
             onTogglePin={handleTogglePin}
             onOpenBasicSettings={handleOpenBasicSettings}
             onOpenItemManagement={handleOpenItemManagement}
+            onToggleWorkspace={handleToggleWorkspace}
             onOpenRegisterModal={handleOpenRegisterModal}
             windowPinMode={windowPinMode}
             isEditMode={false}

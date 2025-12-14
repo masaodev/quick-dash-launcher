@@ -15,6 +15,10 @@
   border-bottom: 1px solid var(--border-color);
   background-color: var(--header-background);
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
 }
 
 .workspace-header h1 {
@@ -22,6 +26,47 @@
   font-size: 16px;
   font-weight: 600;
   color: var(--text-color);
+}
+
+/* ピンボタン */
+.workspace-pin-btn {
+  width: 32px;
+  height: 32px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--color-gray-400);
+  background-color: var(--color-white);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-normal);
+  flex-shrink: 0;
+}
+
+.workspace-pin-btn:hover {
+  background-color: var(--bg-hover);
+  border-color: var(--color-gray-600);
+}
+
+/* ピン留め状態のスタイル（赤色） */
+.workspace-pin-btn.pinned {
+  background-color: var(--color-danger);
+  color: var(--color-white);
+  border-color: var(--color-danger);
+}
+
+.workspace-pin-btn.pinned:hover {
+  background-color: var(--color-danger-hover);
+  border-color: var(--color-danger-hover);
+  box-shadow: var(--shadow);
+  transform: scale(1.05);
+}
+
+.workspace-pin-btn:active {
+  transform: scale(0.95);
 }
 
 /* アイテムリスト */

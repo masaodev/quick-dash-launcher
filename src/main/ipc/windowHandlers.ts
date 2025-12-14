@@ -10,6 +10,13 @@ import {
   showAdminWindowWithTab,
   getInitialTab,
 } from '../adminWindowManager.js';
+import {
+  toggleWorkspaceWindow,
+  showWorkspaceWindow,
+  hideWorkspaceWindow,
+  getWorkspaceAlwaysOnTop,
+  toggleWorkspaceAlwaysOnTop,
+} from '../workspaceWindowManager.js';
 import { getTray } from '../windowManager.js';
 
 export function setupWindowHandlers(
@@ -94,5 +101,27 @@ export function setupWindowHandlers(
   // パフォーマンス計測のIPCハンドラー
   ipcMain.handle('log-performance-timing', (_event, label: string, duration: number) => {
     windowLogger.info(`[Performance] ${label}: ${duration.toFixed(2)}ms`);
+  });
+
+  // ワークスペースウィンドウ関連のIPCハンドラー
+  ipcMain.handle('workspace:toggle-window', async () => {
+    await toggleWorkspaceWindow();
+  });
+
+  ipcMain.handle('workspace:show-window', async () => {
+    await showWorkspaceWindow();
+  });
+
+  ipcMain.handle('workspace:hide-window', () => {
+    hideWorkspaceWindow();
+  });
+
+  // ワークスペースウィンドウのピン留め関連ハンドラー
+  ipcMain.handle('workspace:get-always-on-top', () => {
+    return getWorkspaceAlwaysOnTop();
+  });
+
+  ipcMain.handle('workspace:toggle-always-on-top', () => {
+    return toggleWorkspaceAlwaysOnTop();
   });
 }

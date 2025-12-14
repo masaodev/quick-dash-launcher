@@ -13,6 +13,7 @@ interface ActionButtonsProps {
   onTogglePin: () => void;
   onOpenBasicSettings: () => void;
   onOpenItemManagement: () => void;
+  onToggleWorkspace: () => void;
   onOpenRegisterModal: () => void;
   windowPinMode: WindowPinMode;
   isEditMode: boolean;
@@ -26,6 +27,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   onTogglePin,
   onOpenBasicSettings,
   onOpenItemManagement,
+  onToggleWorkspace,
   onOpenRegisterModal,
   windowPinMode,
   isEditMode,
@@ -72,6 +74,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
       <SettingsDropdown
         onOpenBasicSettings={onOpenBasicSettings}
         onOpenItemManagement={onOpenItemManagement}
+        onToggleWorkspace={onToggleWorkspace}
         onQuitApp={() => window.electronAPI.quitApp()}
         isEditMode={isEditMode}
       />

@@ -9,11 +9,19 @@ const WorkspaceApp: React.FC = () => {
   const [executionHistory, setExecutionHistory] = useState<ExecutionHistoryItem[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [isPinned, setIsPinned] = useState(false);
 
   useEffect(() => {
     loadItems();
     loadGroups();
     loadExecutionHistory();
+
+    // ピン状態の初期化
+    const loadPinState = async () => {
+      const pinned = await window.electronAPI.workspaceAPI.getAlwaysOnTop();
+      setIsPinned(pinned);
+    };
+    loadPinState();
 
     // ワークスペース変更イベントをリッスン
     const unsubscribe = window.electronAPI.onWorkspaceChanged(() => {
@@ -60,8 +68,6 @@ const WorkspaceApp: React.FC = () => {
       e.stopPropagation();
       setIsDraggingOver(false);
 
-      console.log('[DEBUG] Native drop event triggered');
-
       // ファイルのドロップを処理
       if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
         const filePaths: string[] = [];
@@ -71,7 +77,6 @@ const WorkspaceApp: React.FC = () => {
           const file = e.dataTransfer.files[i];
           try {
             const filePath = window.electronAPI.getPathForFile(file);
-            console.log('[DEBUG] File:', file.name, 'Path:', filePath);
             if (filePath) {
               filePaths.push(filePath);
             }
@@ -80,20 +85,13 @@ const WorkspaceApp: React.FC = () => {
           }
         }
 
-        console.log('[DEBUG] All file paths:', filePaths);
-
         if (filePaths.length > 0) {
           try {
-            console.log('[DEBUG] Calling addItemsFromPaths');
-            const result = await window.electronAPI.workspaceAPI.addItemsFromPaths(filePaths);
-            console.log('[DEBUG] Result:', result);
+            await window.electronAPI.workspaceAPI.addItemsFromPaths(filePaths);
             await loadItems();
-            console.log(`Added ${filePaths.length} items from drag & drop`);
           } catch (error) {
             console.error('Failed to add items from drag & drop:', error);
           }
-        } else {
-          console.log('[DEBUG] No file paths found - files may not be from local filesystem');
         }
       }
       // URLのドロップを処理
@@ -102,8 +100,6 @@ const WorkspaceApp: React.FC = () => {
           e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('text/plain');
 
         if (urlData) {
-          console.log('[DEBUG] URL data:', urlData);
-
           // 複数のURLが改行で区切られている場合に対応
           const urls = urlData
             .split('\n')
@@ -112,8 +108,6 @@ const WorkspaceApp: React.FC = () => {
 
           if (urls.length > 0) {
             try {
-              console.log('[DEBUG] Adding URLs to workspace:', urls);
-
               // URLごとにファビコンを取得してアイテムを追加
               for (const url of urls) {
                 // ファビコンを取得
@@ -121,7 +115,6 @@ const WorkspaceApp: React.FC = () => {
                 try {
                   const fetchedIcon = await window.electronAPI.fetchFavicon(url);
                   icon = fetchedIcon || undefined;
-                  console.log('[DEBUG] Fetched favicon for URL:', url, 'hasIcon:', !!icon);
                 } catch (error) {
                   console.warn('Failed to fetch favicon for URL:', url, error);
                 }
@@ -136,7 +129,6 @@ const WorkspaceApp: React.FC = () => {
               }
 
               await loadItems();
-              console.log(`Added ${urls.length} URL(s) from drag & drop`);
             } catch (error) {
               console.error('Failed to add URLs from drag & drop:', error);
             }
@@ -300,10 +292,22 @@ const WorkspaceApp: React.FC = () => {
     }
   };
 
+  const handleTogglePin = async () => {
+    const newState = await window.electronAPI.workspaceAPI.toggleAlwaysOnTop();
+    setIsPinned(newState);
+  };
+
   return (
     <div className={`workspace-window ${isDraggingOver ? 'dragging-over' : ''}`}>
       <div className="workspace-header">
         <h1>Workspace</h1>
+        <button
+          className={`workspace-pin-btn ${isPinned ? 'pinned' : ''}`}
+          onClick={handleTogglePin}
+          title={isPinned ? 'ピン留めを解除' : 'ピン留めして最前面に固定'}
+        >
+          📌
+        </button>
       </div>
       <WorkspaceGroupedList
         groups={groups}

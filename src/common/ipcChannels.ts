@@ -85,6 +85,11 @@ export const WORKSPACE_UPDATE_DISPLAY_NAME = 'workspace:update-display-name';
 export const WORKSPACE_REORDER_ITEMS = 'workspace:reorder-items';
 export const WORKSPACE_LAUNCH_ITEM = 'workspace:launch-item';
 
+// ワークスペース - ウィンドウ制御
+export const WORKSPACE_TOGGLE_WINDOW = 'workspace:toggle-window';
+export const WORKSPACE_SHOW_WINDOW = 'workspace:show-window';
+export const WORKSPACE_HIDE_WINDOW = 'workspace:hide-window';
+
 // ワークスペース - グループ管理
 export const WORKSPACE_LOAD_GROUPS = 'workspace:load-groups';
 export const WORKSPACE_CREATE_GROUP = 'workspace:create-group';
@@ -187,6 +192,11 @@ export const IPC_CHANNELS = {
   WORKSPACE_UPDATE_DISPLAY_NAME,
   WORKSPACE_REORDER_ITEMS,
   WORKSPACE_LAUNCH_ITEM,
+
+  // ワークスペース - ウィンドウ制御
+  WORKSPACE_TOGGLE_WINDOW,
+  WORKSPACE_SHOW_WINDOW,
+  WORKSPACE_HIDE_WINDOW,
 
   // ワークスペース - グループ管理
   WORKSPACE_LOAD_GROUPS,

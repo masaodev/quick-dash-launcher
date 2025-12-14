@@ -141,7 +141,14 @@ export interface ElectronAPI {
     loadExecutionHistory: () => Promise<ExecutionHistoryItem[]>;
     addExecutionHistory: (item: AppItem) => Promise<{ success: boolean }>;
     clearExecutionHistory: () => Promise<{ success: boolean }>;
+    // ピン留め関連
+    getAlwaysOnTop: () => Promise<boolean>;
+    toggleAlwaysOnTop: () => Promise<boolean>;
   };
+  // ワークスペースウィンドウ制御API
+  toggleWorkspaceWindow: () => Promise<void>;
+  showWorkspaceWindow: () => Promise<void>;
+  hideWorkspaceWindow: () => Promise<void>;
 }
 
 declare global {

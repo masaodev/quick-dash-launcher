@@ -82,7 +82,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     setDraggedItemId(null);
   };
 
-  const handleItemDragOver = (item: WorkspaceItem) => (e: React.DragEvent) => {
+  const handleItemDragOver = (_item: WorkspaceItem) => (e: React.DragEvent) => {
     e.preventDefault();
     if (draggedItemId) {
       e.dataTransfer.dropEffect = 'move';
@@ -177,7 +177,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     setDraggedGroupId(null);
   };
 
-  const handleGroupDragOverForReorder = (group: WorkspaceGroup) => (e: React.DragEvent) => {
+  const handleGroupDragOverForReorder = (_group: WorkspaceGroup) => (e: React.DragEvent) => {
     e.preventDefault();
     const draggedId = e.dataTransfer.getData('groupId');
     if (draggedId) {
@@ -390,7 +390,6 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
                     });
                   } else if (item.itemType === 'group') {
                     // グループは再実行しない（履歴としてのみ表示）
-                    console.log('グループ実行履歴:', item.itemName);
                   }
                 }}
                 onDragStart={(e) => {
