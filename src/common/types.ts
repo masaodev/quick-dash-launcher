@@ -221,6 +221,8 @@ export interface AppSettings {
   defaultFileTab: string;
   /** データファイルタブの設定（ファイル名リスト、タブ名、表示順序） */
   dataFileTabs: DataFileTab[];
+  /** データファイルの名前定義（物理ファイル名 → データファイル名） */
+  dataFileLabels: Record<string, string>;
   /** ウィンドウ表示位置モード（デフォルト: 'center'） */
   windowPositionMode: WindowPositionMode;
   /** 固定位置のX座標（windowPositionMode='fixed'時に使用、デフォルト: 0） */

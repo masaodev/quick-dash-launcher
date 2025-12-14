@@ -15,6 +15,7 @@ interface EditModeViewProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
   dataFileTabs: DataFileTab[];
+  dataFileLabels?: Record<string, string>;
 }
 
 const EditModeView: React.FC<EditModeViewProps> = ({
@@ -24,7 +25,12 @@ const EditModeView: React.FC<EditModeViewProps> = ({
   searchQuery,
   onSearchChange,
   dataFileTabs,
+  dataFileLabels = {},
 }) => {
+  // データファイル名を取得（設定がない場合は物理ファイル名）
+  const getFileLabel = (fileName: string): string => {
+    return dataFileLabels[fileName] || fileName;
+  };
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [editedLines, setEditedLines] = useState<Map<string, RawDataLine>>(new Map());
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -420,9 +426,9 @@ const EditModeView: React.FC<EditModeViewProps> = ({
               <button
                 className="dropdown-trigger-btn"
                 onClick={() => setIsFileDropdownOpen(!isFileDropdownOpen)}
-                title={selectedDataFile}
+                title={`${getFileLabel(selectedDataFile)} (${selectedDataFile})`}
               >
-                <span className="dropdown-trigger-text">{selectedDataFile}</span>
+                <span className="dropdown-trigger-text">{getFileLabel(selectedDataFile)}</span>
                 <span className="dropdown-trigger-icon">{isFileDropdownOpen ? '▲' : '▼'}</span>
               </button>
               {isFileDropdownOpen && (
@@ -432,8 +438,9 @@ const EditModeView: React.FC<EditModeViewProps> = ({
                       key={fileName}
                       className={`dropdown-item ${selectedDataFile === fileName ? 'selected' : ''}`}
                       onClick={() => handleFileMenuItemClick(fileName)}
+                      title={fileName}
                     >
-                      {fileName}
+                      {getFileLabel(fileName)}
                     </button>
                   ))}
                 </div>

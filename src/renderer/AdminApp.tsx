@@ -130,6 +130,11 @@ const AdminApp: React.FC = () => {
     return settings?.dataFileTabs || [];
   }, [JSON.stringify(settings?.dataFileTabs)]);
 
+  // dataFileLabelsをメモ化して、内容が変わらない限り参照を保持
+  const dataFileLabels = useMemo(() => {
+    return settings?.dataFileLabels || {};
+  }, [JSON.stringify(settings?.dataFileLabels)]);
+
   if (isLoading) {
     return (
       <div className="loading-container">
@@ -150,6 +155,7 @@ const AdminApp: React.FC = () => {
         searchQuery={searchQuery}
         onSearchChange={handleSearchChange}
         dataFileTabs={dataFileTabs}
+        dataFileLabels={dataFileLabels}
       />
 
       <AlertDialog
