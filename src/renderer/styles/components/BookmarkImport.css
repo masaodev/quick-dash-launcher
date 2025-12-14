@@ -37,7 +37,7 @@
 }
 
 .bookmark-import-controls {
-  padding: var(--spacing-lg) var(--spacing-2xl);
+  padding: var(--spacing-lg) var(--spacing-2xl) var(--spacing-md);
   border-bottom: var(--border-light);
 }
 
@@ -106,10 +106,10 @@
 /* プロファイル選択セクション */
 .profile-select-section {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  flex-direction: row;
+  align-items: center;
   gap: var(--spacing-sm);
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
 }
 
 .profile-select-label {
@@ -140,7 +140,6 @@
 }
 
 .load-bookmarks-button {
-  align-self: flex-start;
   padding: var(--spacing-sm) var(--spacing-lg);
   background-color: var(--color-info);
   color: var(--color-white);
@@ -150,6 +149,7 @@
   font-size: var(--font-size-base);
   font-family: inherit;
   transition: var(--transition-normal);
+  white-space: nowrap;
 }
 
 .load-bookmarks-button:hover:not(:disabled) {
@@ -163,17 +163,10 @@
 
 .file-select-section {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  flex-direction: row;
+  align-items: center;
   gap: var(--spacing-sm);
-  margin-bottom: var(--spacing-md);
-}
-
-.file-select-description {
-  margin: 0;
-  color: var(--text-secondary);
-  font-size: var(--font-size-base);
-  line-height: 1.5;
+  margin-bottom: var(--spacing-sm);
 }
 
 .select-file-button {
@@ -184,6 +177,7 @@
   border-radius: var(--border-radius);
   cursor: pointer;
   font-size: var(--font-size-base);
+  white-space: nowrap;
 }
 
 .select-file-button:hover:not(:disabled) {
@@ -197,19 +191,27 @@
 
 .file-name {
   color: var(--text-muted);
-  font-size: var(--font-size-base);
+  font-size: var(--font-size-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.search-section {
-  margin-bottom: var(--spacing-md);
+/* 検索と一括操作を1行にまとめたセクション */
+.search-and-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin-bottom: 0;
 }
 
-.search-section .search-input-container {
+.search-input-container {
   position: relative;
-  width: 100%;
+  flex: 1;
+  min-width: 200px;
 }
 
-.search-section .search-input {
+.search-input {
   width: 100%;
   padding: var(--spacing-sm) var(--spacing-md);
   padding-right: calc(var(--spacing-md) + 24px); /* クリアボタン分の余白 */
@@ -218,7 +220,7 @@
   font-size: var(--font-size-base);
 }
 
-.search-section .search-clear-button {
+.search-clear-button {
   position: absolute;
   right: var(--spacing-sm);
   top: 50%;
@@ -239,19 +241,13 @@
   transition: var(--transition-normal);
 }
 
-.search-section .search-clear-button:hover {
+.search-clear-button:hover {
   background-color: var(--bg-hover);
   color: var(--color-gray-800);
 }
 
-.search-section .search-clear-button:active {
+.search-clear-button:active {
   background-color: var(--color-gray-400);
-}
-
-.bookmark-import-modal .bookmark-bulk-actions {
-  display: flex;
-  gap: var(--spacing-xl);
-  align-items: center;
 }
 
 .bookmark-import-modal .bookmark-filtered-actions,
