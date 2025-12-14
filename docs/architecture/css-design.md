@@ -312,26 +312,111 @@ src/renderer/styles/
   padding: 0;
   background: transparent;
   border: none;
-  border-radius: var(--border-radius-sm);
-  font-size: 20px;
+  border-radius: 50%; /* 丸いボタン */
+  font-size: 18px;
+  font-weight: bold; /* 太字で視認性向上 */
   line-height: 1;
   color: var(--color-gray-600);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: var(--transition-normal);
+  transition: all var(--transition-normal);
 }
 
 .search-clear-button:hover {
-  background-color: var(--bg-hover);
-  color: var(--color-gray-800);
+  background-color: var(--color-gray-600);
+  color: var(--color-white);
+  transform: translateY(-50%) scale(1.1); /* ホバー時に拡大 */
 }
 
 .search-clear-button:active {
-  background-color: var(--color-gray-400);
+  background-color: var(--color-gray-700);
+  transform: translateY(-50%) scale(0.95); /* クリック時に縮小 */
 }
 ```
+
+### 閉じる・削除ボタンクラス
+
+#### .close-btn-base
+×ボタンの基本スタイル（モーダル閉じるボタン、検索クリアボタンなど）
+
+```css
+.close-btn-base {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 20px;
+  font-weight: bold;
+  line-height: 1;
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-normal);
+}
+
+.close-btn-base:hover {
+  background-color: var(--color-gray-600);
+  color: var(--color-white);
+  transform: scale(1.1);
+}
+
+.close-btn-base:active {
+  background-color: var(--color-gray-700);
+  transform: scale(0.95);
+}
+```
+
+#### .delete-btn-base
+削除ボタンの基本スタイル（赤色の危険系ボタン）
+
+```css
+.delete-btn-base {
+  background-color: var(--color-danger);
+  border: 2px solid var(--color-white);
+  color: var(--color-white);
+  font-size: 18px;
+  font-weight: bold;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-normal);
+}
+
+.delete-btn-base:hover {
+  background-color: var(--color-danger-hover);
+  transform: scale(1.1);
+}
+
+.delete-btn-base:active {
+  background-color: var(--color-danger-hover);
+  transform: scale(0.95);
+}
+```
+
+**用途別の実装例:**
+
+| ボタン種類 | クラス名 | 用途 | サイズ | 色 |
+|-----------|---------|------|--------|-----|
+| `.search-clear-button` | 検索クリアボタン | ヘッダー、編集モード、ブックマークインポートの検索欄 | 24x24px | グレー |
+| `.modal-close-btn` | モーダル閉じるボタン | アイコン取得進捗詳細モーダルのヘッダー | 32x32px | グレー |
+| `.progress-close-btn` | 進捗バー閉じるボタン | アイコン取得進捗バー | 28x28px | グレー |
+| `.workspace-item-delete-btn` | ワークスペース削除ボタン | ワークスペースアイテムカード | 24x24px | 赤色（削除系） |
+| `.remove-group-item-btn` | グループアイテム削除ボタン | 登録モーダルのグループアイテムチップ | 20x20px | 赤色（削除系） |
+
+**共通の特徴:**
+- 丸いボタンデザイン（`border-radius: 50%`）
+- 太字の×で視認性向上（`font-weight: bold`）
+- ホバー時に背景色が変化してスケールアップ（`scale(1.1)`）
+- クリック時のフィードバック（`scale(0.95)`に縮小）
+- 削除系は赤色、その他はグレー色で用途を明確化
+- 白い縁取りや影を追加してコントラスト向上（削除ボタン）
 
 ## 使用方法
 
@@ -533,6 +618,32 @@ const MyComponent = () => {
    - 影響範囲: 1つのコンポーネント（SettingsTab）
 
 **結果**: 全てのCSSクラス名が一貫したハイフン区切り命名規則に統一され、保守性が向上しました。
+
+### Phase 4.5 (2025-12-14) - ×ボタンスタイルの統一
+
+全画面の×ボタン（削除ボタン、検索クリアボタン、モーダル閉じるボタン）のスタイルを統一しました。
+
+**修正内容**:
+
+1. **共通デザインパターンの確立**
+   - 丸いボタンデザイン（`border-radius: 50%`）に統一
+   - 太字の×で視認性向上（`font-weight: bold`）
+   - ホバー時に背景色が変化してスケールアップ（`scale(1.1)`）
+   - クリック時のフィードバック（`scale(0.95)`に縮小）
+   - 削除系は赤色、その他はグレー色で用途を明確化
+
+2. **修正したCSSクラス**
+   - `.workspace-item-delete-btn` - ワークスペースアイテムの削除ボタン
+   - `.remove-group-item-btn` - 登録モーダルのグループアイテム削除ボタン
+   - `.search-clear-button` - ヘッダー、編集モード、ブックマークインポートの検索クリアボタン
+   - `.progress-close-btn` - アイコン取得進捗バーの閉じるボタン
+   - `.modal-close-btn` - アイコン取得進捗詳細モーダルの閉じるボタン
+
+3. **影響範囲**
+   - 7つのCSSファイル（WorkspaceWindow.css、RegisterModal.css、Header.css、BookmarkImport.css、EditMode.css、IconProgress.css、IconProgressDetailModal.css）
+   - UX改善: ボタンが押せることをより明確に伝達、操作時の視覚的フィードバックを追加
+
+**結果**: 全画面で統一された×ボタンのデザインパターンが確立され、ユーザビリティが向上しました。
 
 ---
 
