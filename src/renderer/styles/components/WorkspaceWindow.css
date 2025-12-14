@@ -293,10 +293,16 @@
   border-left: 4px solid var(--group-color, var(--color-primary));
   transition: var(--transition-fast);
   user-select: none;
+  z-index: 10;
 }
 
 .workspace-group-header:hover {
   filter: brightness(1.05);
+}
+
+/* カラーピッカーが開いている時は最前面に */
+.workspace-group-header.color-picker-open {
+  z-index: 9998;
 }
 
 /* 折りたたみアイコン */
@@ -355,6 +361,7 @@
 
 /* グループアクション（編集・削除ボタン） */
 .workspace-group-actions {
+  position: relative;
   display: flex;
   gap: var(--spacing-xs);
   opacity: 0;
@@ -365,6 +372,7 @@
   opacity: 1;
 }
 
+.workspace-group-color-btn,
 .workspace-group-edit-btn,
 .workspace-group-delete-btn {
   background: none;
@@ -374,6 +382,10 @@
   padding: 4px;
   border-radius: var(--border-radius);
   transition: background-color 0.2s ease;
+}
+
+.workspace-group-color-btn:hover {
+  background-color: rgba(255, 255, 255, 0.2);
 }
 
 .workspace-group-edit-btn:hover {
