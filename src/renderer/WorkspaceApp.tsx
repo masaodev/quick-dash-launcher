@@ -10,6 +10,8 @@ const WorkspaceApp: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
+  const [uncategorizedCollapsed, setUncategorizedCollapsed] = useState(false);
+  const [historyCollapsed, setHistoryCollapsed] = useState(false);
 
   useEffect(() => {
     loadItems();
@@ -297,17 +299,54 @@ const WorkspaceApp: React.FC = () => {
     setIsPinned(newState);
   };
 
+  const handleExpandAll = async () => {
+    // 全てのグループを展開
+    for (const group of groups) {
+      if (group.collapsed) {
+        await window.electronAPI.workspaceAPI.updateGroup(group.id, { collapsed: false });
+      }
+    }
+    await loadGroups();
+    // 未分類と実行履歴も展開
+    setUncategorizedCollapsed(false);
+    setHistoryCollapsed(false);
+  };
+
+  const handleCollapseAll = async () => {
+    // 全てのグループを閉じる
+    for (const group of groups) {
+      if (!group.collapsed) {
+        await window.electronAPI.workspaceAPI.updateGroup(group.id, { collapsed: true });
+      }
+    }
+    await loadGroups();
+    // 未分類と実行履歴も閉じる
+    setUncategorizedCollapsed(true);
+    setHistoryCollapsed(true);
+  };
+
   return (
     <div className={`workspace-window ${isDraggingOver ? 'dragging-over' : ''}`}>
       <div className="workspace-header">
         <h1>Workspace</h1>
-        <button
-          className={`workspace-pin-btn ${isPinned ? 'pinned' : ''}`}
-          onClick={handleTogglePin}
-          title={isPinned ? 'ピン留めを解除' : 'ピン留めして最前面に固定'}
-        >
-          📌
-        </button>
+        <div className="workspace-header-controls">
+          <button className="workspace-control-btn" onClick={handleExpandAll} title="全て展開">
+            🔽
+          </button>
+          <button className="workspace-control-btn" onClick={handleCollapseAll} title="全て閉じる">
+            🔼
+          </button>
+          <button className="workspace-control-btn" onClick={handleAddGroup} title="グループを追加">
+            ➕
+          </button>
+          <button
+            className={`workspace-pin-btn ${isPinned ? 'pinned' : ''}`}
+            onClick={handleTogglePin}
+            title={isPinned ? 'ピン留めを解除' : 'ピン留めして最前面に固定'}
+          >
+            📌
+          </button>
+        </div>
       </div>
       <WorkspaceGroupedList
         groups={groups}
@@ -320,11 +359,14 @@ const WorkspaceApp: React.FC = () => {
         onToggleGroup={handleToggleGroup}
         onUpdateGroup={handleUpdateGroup}
         onDeleteGroup={handleDeleteGroup}
-        onAddGroup={handleAddGroup}
         onMoveItemToGroup={handleMoveItemToGroup}
         onReorderGroups={handleReorderGroups}
         editingItemId={editingId}
         setEditingItemId={setEditingId}
+        uncategorizedCollapsed={uncategorizedCollapsed}
+        onToggleUncategorized={() => setUncategorizedCollapsed(!uncategorizedCollapsed)}
+        historyCollapsed={historyCollapsed}
+        onToggleHistory={() => setHistoryCollapsed(!historyCollapsed)}
       />
     </div>
   );

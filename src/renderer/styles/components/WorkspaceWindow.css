@@ -28,6 +28,40 @@
   color: var(--text-color);
 }
 
+/* ヘッダーコントロール */
+.workspace-header-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+/* コントロールボタン（全て展開・全て閉じる） */
+.workspace-control-btn {
+  width: 32px;
+  height: 32px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--color-gray-400);
+  background-color: var(--color-white);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-normal);
+  flex-shrink: 0;
+}
+
+.workspace-control-btn:hover {
+  background-color: var(--bg-hover);
+  border-color: var(--color-gray-600);
+}
+
+.workspace-control-btn:active {
+  transform: scale(0.95);
+}
+
 /* ピンボタン */
 .workspace-pin-btn {
   width: 32px;
@@ -373,6 +407,18 @@
   font-weight: 600;
   padding: var(--spacing-xs) var(--spacing-md);
   margin-bottom: var(--spacing-xs);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  user-select: none;
+}
+
+/* 折りたたみアイコン（未分類・実行履歴用） */
+.workspace-collapse-icon {
+  font-size: 10px;
+  transition: transform 0.2s ease;
+  display: inline-block;
+  width: 12px;
 }
 
 /* 実行履歴セクション */
