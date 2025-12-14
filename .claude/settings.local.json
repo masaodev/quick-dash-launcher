@@ -22,7 +22,9 @@
       "Bash(gh run list:*)",
       "Bash(git push:*)",
       "Bash(grep:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(npm run test:unit:*)",
+      "Bash(npm run type-check:*)"
     ],
     "deny": []
   }
