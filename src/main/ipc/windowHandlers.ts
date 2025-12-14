@@ -16,6 +16,7 @@ import {
   hideWorkspaceWindow,
   getWorkspaceAlwaysOnTop,
   toggleWorkspaceAlwaysOnTop,
+  setWorkspaceModalMode,
 } from '../workspaceWindowManager.js';
 import { getTray } from '../windowManager.js';
 
@@ -124,4 +125,12 @@ export function setupWindowHandlers(
   ipcMain.handle('workspace:toggle-always-on-top', () => {
     return toggleWorkspaceAlwaysOnTop();
   });
+
+  // ワークスペースウィンドウのモーダルモード関連ハンドラー
+  ipcMain.handle(
+    'workspace:set-modal-mode',
+    (_event, isModal: boolean, requiredSize?: { width: number; height: number }) => {
+      setWorkspaceModalMode(isModal, requiredSize);
+    }
+  );
 }

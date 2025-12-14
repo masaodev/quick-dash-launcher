@@ -12,6 +12,10 @@ interface ConfirmDialogProps {
   confirmText?: string;
   cancelText?: string;
   danger?: boolean;
+  showCheckbox?: boolean;
+  checkboxLabel?: string;
+  checkboxChecked?: boolean;
+  onCheckboxChange?: (checked: boolean) => void;
 }
 
 const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
@@ -23,6 +27,10 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   confirmText = 'OK',
   cancelText = 'キャンセル',
   danger = false,
+  showCheckbox = false,
+  checkboxLabel = '',
+  checkboxChecked = false,
+  onCheckboxChange,
 }) => {
   useEffect(() => {
     if (!isOpen) return;
@@ -63,6 +71,19 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
 
         <div className="confirm-body">
           <p>{message}</p>
+          {showCheckbox && (
+            <div className="confirm-checkbox-container">
+              <label className="confirm-checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={checkboxChecked}
+                  onChange={(e) => onCheckboxChange?.(e.target.checked)}
+                  data-testid="confirm-dialog-checkbox"
+                />
+                <span>{checkboxLabel}</span>
+              </label>
+            </div>
+          )}
         </div>
 
         <div className="modal-actions">

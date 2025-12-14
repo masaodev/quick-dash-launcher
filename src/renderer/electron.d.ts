@@ -144,6 +144,8 @@ export interface ElectronAPI {
     // ピン留め関連
     getAlwaysOnTop: () => Promise<boolean>;
     toggleAlwaysOnTop: () => Promise<boolean>;
+    // モーダルモード関連
+    setModalMode: (isModal: boolean, requiredSize?: { width: number; height: number }) => void;
   };
   // ワークスペースウィンドウ制御API
   toggleWorkspaceWindow: () => Promise<void>;
