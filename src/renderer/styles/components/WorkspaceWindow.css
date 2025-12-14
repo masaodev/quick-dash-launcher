@@ -273,7 +273,7 @@
 
 /* グループコンテナ */
 .workspace-group {
-  margin-bottom: var(--spacing-sm);
+  margin-bottom: var(--spacing-xs);
 }
 
 /* グループヘッダー */
@@ -396,8 +396,8 @@
 
 /* 未分類セクション */
 .workspace-uncategorized-section {
-  margin-top: var(--spacing-lg);
-  padding-top: var(--spacing-lg);
+  margin-top: var(--spacing-xs);
+  padding-top: var(--spacing-xs);
   border-top: 1px solid var(--border-color);
 }
 
@@ -423,8 +423,8 @@
 
 /* 実行履歴セクション */
 .workspace-execution-history-section {
-  margin-top: var(--spacing-lg);
-  padding-top: var(--spacing-lg);
+  margin-top: var(--spacing-xs);
+  padding-top: var(--spacing-xs);
   border-top: 1px solid var(--border-color);
 }
 
