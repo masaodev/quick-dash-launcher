@@ -9,6 +9,15 @@ interface UseTabManagerProps {
     value: AppSettings[K]
   ) => Promise<void>;
   showAlert: (message: string, type?: 'info' | 'error' | 'warning' | 'success') => void;
+  showConfirm: (
+    message: string,
+    options?: {
+      title?: string;
+      confirmText?: string;
+      cancelText?: string;
+      danger?: boolean;
+    }
+  ) => Promise<boolean>;
   dataFiles: string[];
 }
 
@@ -17,6 +26,7 @@ export function useTabManager({
   setEditedSettings,
   handleSettingChange,
   showAlert,
+  showConfirm,
   dataFiles,
 }: UseTabManagerProps) {
   const [fileModalTabIndex, setFileModalTabIndex] = useState<number | null>(null);
@@ -100,11 +110,16 @@ export function useTabManager({
         return;
       }
 
-      if (
-        !confirm(
-          `タブ「${tab.name}」を削除しますか？\nこのタブに含まれる全てのファイルも削除されます。`
-        )
-      ) {
+      const confirmed = await showConfirm(
+        `タブ「${tab.name}」を削除しますか？\nこのタブに含まれる全てのファイルも削除されます。`,
+        {
+          title: 'タブ削除',
+          confirmText: '削除',
+          danger: true,
+        }
+      );
+
+      if (!confirmed) {
         return;
       }
 
@@ -122,7 +137,7 @@ export function useTabManager({
         showAlert('タブの削除に失敗しました。', 'error');
       }
     },
-    [editedSettings.dataFileTabs, handleSettingChange, showAlert]
+    [editedSettings.dataFileTabs, handleSettingChange, showAlert, showConfirm]
   );
 
   // タブにファイルを追加
@@ -168,7 +183,16 @@ export function useTabManager({
         return;
       }
 
-      if (!confirm(`${fileName}をタブから削除しますか？\nファイル自体も削除されます。`)) {
+      const confirmed = await showConfirm(
+        `${fileName}をタブから削除しますか？\nファイル自体も削除されます。`,
+        {
+          title: 'ファイル削除',
+          confirmText: '削除',
+          danger: true,
+        }
+      );
+
+      if (!confirmed) {
         return;
       }
 
@@ -191,7 +215,7 @@ export function useTabManager({
         showAlert('ファイルの削除に失敗しました。', 'error');
       }
     },
-    [editedSettings.dataFileTabs, handleSettingChange, showAlert]
+    [editedSettings.dataFileTabs, handleSettingChange, showAlert, showConfirm]
   );
 
   // 新規ファイルを作成してタブに追加
@@ -277,6 +301,58 @@ export function useTabManager({
     setFileModalTabIndex(null);
   }, []);
 
+  // データファイル名を取得（表示用）
+  const getFileLabel = useCallback(
+    (fileName: string): string => {
+      const labels = editedSettings.dataFileLabels || {};
+      return labels[fileName] || fileName;
+    },
+    [editedSettings.dataFileLabels]
+  );
+
+  // データファイル名を変更
+  const handleFileLabelChange = useCallback(
+    (fileName: string, label: string) => {
+      const labels = { ...(editedSettings.dataFileLabels || {}) };
+
+      // データファイル名は必須なので、空でも設定する（削除しない）
+      labels[fileName] = label;
+
+      setEditedSettings((prev) => ({
+        ...prev,
+        dataFileLabels: labels,
+      }));
+    },
+    [editedSettings.dataFileLabels, setEditedSettings]
+  );
+
+  // ファイルラベルのBlur時の保存処理
+  const handleFileLabelBlur = useCallback(async () => {
+    // 全ての関連ファイルにデータファイル名が設定されているかチェック
+    const labels = editedSettings.dataFileLabels || {};
+    const allFiles = new Set<string>();
+    editedSettings.dataFileTabs.forEach((tab) => {
+      tab.files.forEach((fileName) => allFiles.add(fileName));
+    });
+
+    const missingLabels = Array.from(allFiles).filter((fileName) => {
+      const label = labels[fileName];
+      return !label || label.trim() === '';
+    });
+
+    if (missingLabels.length > 0) {
+      showAlert('データファイル名は必須です。全てのファイルに名前を設定してください。', 'error');
+      return;
+    }
+
+    try {
+      await handleSettingChange('dataFileLabels', editedSettings.dataFileLabels || {});
+    } catch (error) {
+      console.error('データファイル名の保存に失敗しました:', error);
+      showAlert('データファイル名の保存に失敗しました。', 'error');
+    }
+  }, [editedSettings.dataFileLabels, editedSettings.dataFileTabs, handleSettingChange, showAlert]);
+
   return {
     fileModalTabIndex,
     getDefaultTabName,
@@ -291,5 +367,8 @@ export function useTabManager({
     handleAddTab,
     openFileModal,
     closeFileModal,
+    getFileLabel,
+    handleFileLabelChange,
+    handleFileLabelBlur,
   };
 }

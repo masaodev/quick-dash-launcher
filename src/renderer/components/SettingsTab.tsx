@@ -6,6 +6,7 @@ import { useSettingsManager } from '../hooks/useSettingsManager';
 import { useTabManager } from '../hooks/useTabManager';
 
 import AlertDialog from './AlertDialog';
+import ConfirmDialog from './ConfirmDialog';
 import { HotkeyInput } from './HotkeyInput';
 
 interface SettingsTabProps {
@@ -23,7 +24,15 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
   }, [settings]);
 
   // カスタムフック: ダイアログ管理
-  const { alertDialog, showAlert, closeAlert } = useDialogManager();
+  const {
+    alertDialog,
+    showAlert,
+    closeAlert,
+    confirmDialog,
+    showConfirm,
+    handleConfirm,
+    handleCancelConfirm,
+  } = useDialogManager();
 
   // カスタムフック: 基本設定管理
   const {
@@ -58,11 +67,15 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
     handleAddTab,
     openFileModal,
     closeFileModal,
+    getFileLabel,
+    handleFileLabelChange,
+    handleFileLabelBlur,
   } = useTabManager({
     editedSettings,
     setEditedSettings,
     handleSettingChange,
     showAlert,
+    showConfirm,
     dataFiles,
   });
 
@@ -482,21 +495,38 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                             {tab.files.map((fileName) => (
                               <div key={fileName} className="file-list-item">
                                 <div className="file-info">
-                                  <span className="file-name">{fileName}</span>
+                                  <input
+                                    type="text"
+                                    className="file-data-name-input"
+                                    placeholder="データファイル名（必須）"
+                                    value={
+                                      getFileLabel(fileName) === fileName
+                                        ? ''
+                                        : getFileLabel(fileName)
+                                    }
+                                    onChange={(e) =>
+                                      handleFileLabelChange(fileName, e.target.value)
+                                    }
+                                    onBlur={handleFileLabelBlur}
+                                    disabled={isLoading}
+                                    required
+                                  />
+                                  <span className="file-name-hint">({fileName})</span>
                                 </div>
                                 <div className="file-actions">
-                                  {tab.files.length > 1 && (
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        handleRemoveFileFromTab(fileModalTabIndex, fileName)
-                                      }
-                                      className="btn-danger-sm"
-                                      disabled={isLoading}
-                                    >
-                                      削除
-                                    </button>
-                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleRemoveFileFromTab(fileModalTabIndex, fileName)
+                                    }
+                                    className="btn-danger-sm"
+                                    disabled={isLoading || tab.files.length <= 1}
+                                    title={
+                                      tab.files.length <= 1 ? '最後のファイルは削除できません' : ''
+                                    }
+                                  >
+                                    削除
+                                  </button>
                                 </div>
                               </div>
                             ))}
@@ -572,6 +602,17 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
         onClose={closeAlert}
         message={alertDialog.message}
         type={alertDialog.type}
+      />
+
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        onClose={handleCancelConfirm}
+        onConfirm={handleConfirm}
+        message={confirmDialog.message}
+        title={confirmDialog.title}
+        confirmText={confirmDialog.confirmText}
+        cancelText={confirmDialog.cancelText}
+        danger={confirmDialog.danger}
       />
     </div>
   );

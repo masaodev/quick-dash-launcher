@@ -13,6 +13,7 @@ export function useDataFileTabs() {
   const [dataFiles, setDataFiles] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<string>('data.txt');
   const [dataFileTabs, setDataFileTabs] = useState<DataFileTab[]>([]);
+  const [dataFileLabels, setDataFileLabels] = useState<Record<string, string>>({});
 
   /**
    * 設定に登録されているファイルが物理的に存在するか確認し、存在しない場合は作成
@@ -39,6 +40,7 @@ export function useDataFileTabs() {
 
       setShowDataFileTabs(settings.showDataFileTabs);
       setDataFileTabs(settings.dataFileTabs || []);
+      setDataFileLabels(settings.dataFileLabels || {});
 
       // デフォルトタブを設定
       if (settings.defaultFileTab) {
@@ -217,6 +219,7 @@ export function useDataFileTabs() {
     dataFiles,
     activeTab,
     dataFileTabs,
+    dataFileLabels,
     setActiveTab,
     handleTabClick,
     getTabFilteredItems,

@@ -79,6 +79,7 @@ const App: React.FC = () => {
     dataFiles: _dataFiles,
     activeTab,
     dataFileTabs,
+    dataFileLabels,
     setActiveTab,
     handleTabClick,
     getTabFilteredItems,
@@ -460,6 +461,7 @@ const App: React.FC = () => {
             onTabClick={handleTabClickWrapper}
             allItems={mainItems}
             searchQuery={searchQuery}
+            dataFileLabels={dataFileLabels}
           />
         )}
 

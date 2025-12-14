@@ -14,6 +14,8 @@ interface FileTabBarProps {
   allItems: AppItem[];
   /** 検索クエリ（フィルタリング用） */
   searchQuery: string;
+  /** データファイルのラベル定義（物理ファイル名 → 表示ラベル） */
+  dataFileLabels?: Record<string, string>;
 }
 
 /**
@@ -27,7 +29,13 @@ const FileTabBar: React.FC<FileTabBarProps> = ({
   onTabClick,
   allItems,
   searchQuery,
+  dataFileLabels = {},
 }) => {
+  // データファイル名を取得（設定がない場合は物理ファイル名）
+  const getFileLabel = (fileName: string): string => {
+    return dataFileLabels[fileName] || fileName;
+  };
+
   // 各タブグループのアイテム数を計算
   const getTabItemCount = (tabConfig: DataFileTab): number => {
     // タブに紐付く全ファイルのアイテムを取得
@@ -52,7 +60,13 @@ const FileTabBar: React.FC<FileTabBarProps> = ({
       {dataFileTabs.map((tabConfig, index) => {
         const count = getTabItemCount(tabConfig);
         const representativeFile = getRepresentativeFile(tabConfig);
-        const filesTitle = tabConfig.files.join(', '); // ツールチップに全ファイル名を表示
+        // ツールチップにデータファイル名と物理ファイル名を表示
+        const filesTitle = tabConfig.files
+          .map((fileName) => {
+            const label = getFileLabel(fileName);
+            return label === fileName ? fileName : `${label} (${fileName})`;
+          })
+          .join(', ');
 
         return (
           <button

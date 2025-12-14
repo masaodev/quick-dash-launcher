@@ -16,6 +16,7 @@ interface AdminTabContainerProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
   dataFileTabs: DataFileTab[];
+  dataFileLabels?: Record<string, string>;
 }
 
 const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
@@ -28,6 +29,7 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
   searchQuery,
   onSearchChange,
   dataFileTabs,
+  dataFileLabels = {},
 }) => {
   const handleTabChange = (newTab: 'settings' | 'edit' | 'other') => {
     onTabChange(newTab);
@@ -75,6 +77,7 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
             searchQuery={searchQuery}
             onSearchChange={onSearchChange}
             dataFileTabs={dataFileTabs}
+            dataFileLabels={dataFileLabels}
           />
         )}
         {activeTab === 'other' && <AdminOtherTab />}

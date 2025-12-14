@@ -54,6 +54,7 @@ QuickDashLauncherの動作をカスタマイズするための設定機能を説
 | `autoLaunch` | `boolean` | `false` | Windows起動時に自動起動 |
 | `windowPositionMode` | `string` | `'center'` | 表示位置モード |
 | `showDataFileTabs` | `boolean` | `false` | タブ表示の有効/無効 |
+| `dataFileLabels` | `object` | `{}` | データファイルのラベル定義 |
 | `backupEnabled` | `boolean` | `false` | バックアップ機能 |
 
 ---
@@ -155,6 +156,7 @@ Windowsログイン時にアプリを自動起動（デフォルト: 無効）�
 | `showDataFileTabs` | `false` | タブ表示のON/OFF |
 | `defaultFileTab` | `'data.txt'` | 起動時の表示タブ |
 | `dataFileTabs` | `[{files:['data.txt'],name:'メイン'}]` | タブ設定 |
+| `dataFileLabels` | `{}` | データファイルのラベル定義（ファイル名→表示ラベル） |
 
 **タブ管理機能:**
 - ➕行追加: 新しいタブを作成
@@ -162,6 +164,14 @@ Windowsログイン時にアプリを自動起動（デフォルト: 無効）�
 - 複数ファイル統合: 1つのタブに複数ファイルを関連付け
 - ▲▼ボタン: 表示順序の変更
 - 🗑️ボタン: タブの削除（データファイルは保持）
+- 📁ボタン: ファイル管理モーダルを開く（ファイル追加・削除・ラベル設定）
+
+**ファイルラベル機能:**
+- データファイル（data.txt, data2.txt等）に任意のラベル（別名）を設定可能
+- ラベルはグローバルで、全てのタブで共通
+- 設定方法: 「📁 ファイル管理」ボタンをクリックし、各ファイルの「ラベル（任意）」欄に入力
+- 表示: タブバーと編集モードでラベルが優先表示される（ラベルがない場合はファイル名）
+- ツールチップ: ラベル設定時は「ラベル名 (ファイル名)」形式で表示
 
 **デフォルトタブ名:**
 - data.txt → 「メイン」
@@ -247,6 +257,10 @@ $env:QUICK_DASH_CONFIG_DIR = "D:\MyApps\quick-dash-config"
     { "files": ["data.txt"], "name": "仕事用" },
     { "files": ["data2.txt", "data3.txt"], "name": "プライベート" }
   ],
+  "dataFileLabels": {
+    "data.txt": "メインリスト",
+    "data2.txt": "開発用"
+  },
   "windowPositionMode": "center",
   "windowPositionX": 0,
   "windowPositionY": 0

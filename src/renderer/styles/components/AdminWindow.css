@@ -1322,9 +1322,15 @@
 
 .file-info {
   display: flex;
+  flex-direction: row;
   align-items: center;
   gap: var(--spacing-sm);
   flex: 1;
+}
+
+.file-name-section {
+  display: flex;
+  align-items: center;
 }
 
 .file-list-item .file-name {
@@ -1332,6 +1338,88 @@
   font-size: var(--font-size-base);
   color: var(--text-primary);
   font-weight: 500;
+}
+
+.file-label-section {
+  display: flex;
+  align-items: center;
+}
+
+.file-label-input {
+  flex: 1;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  border: var(--border-normal);
+  border-radius: var(--border-radius);
+  background-color: var(--color-gray-50);
+  color: var(--text-primary);
+  font-family: inherit;
+  transition: var(--transition-normal);
+}
+
+.file-label-input:hover:not(:disabled) {
+  background-color: var(--color-white);
+  border-color: var(--color-primary);
+}
+
+.file-label-input:focus {
+  outline: none;
+  background-color: var(--color-white);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.file-label-input::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.6;
+}
+
+.file-label-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* データファイル名入力欄 */
+.file-data-name-input {
+  flex: 1;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  border: var(--border-normal);
+  border-radius: var(--border-radius);
+  background-color: var(--color-gray-50);
+  color: var(--text-primary);
+  font-family: inherit;
+  transition: var(--transition-normal);
+}
+
+.file-data-name-input:hover:not(:disabled) {
+  background-color: var(--color-white);
+  border-color: var(--color-primary);
+}
+
+.file-data-name-input:focus {
+  outline: none;
+  background-color: var(--color-white);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.file-data-name-input::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.6;
+}
+
+.file-data-name-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 物理ファイル名のヒント表示 */
+.file-name-hint {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  white-space: nowrap;
 }
 
 .default-badge-small {
@@ -1372,7 +1460,7 @@
 
 .btn-danger-sm {
   padding: 4px 12px;
-  background-color: var(--color-danger-light);
+  background-color: var(--color-danger);
   color: var(--color-white);
   border: none;
   border-radius: var(--border-radius);
@@ -1384,7 +1472,7 @@
 }
 
 .btn-danger-sm:hover:not(:disabled) {
-  background-color: var(--color-danger-light-hover);
+  background-color: var(--color-danger-hover);
 }
 
 .btn-danger-sm:disabled {
