@@ -1,18 +1,37 @@
 import React, { useState, useEffect } from 'react';
-import type { WorkspaceItem, WorkspaceGroup, ExecutionHistoryItem } from '@common/types';
 
-import WorkspaceGroupedList from './components/WorkspaceGroupedList';
 import ConfirmDialog from './components/ConfirmDialog';
+import WorkspaceGroupedList from './components/WorkspaceGroupedList';
+import WorkspaceHeader from './components/WorkspaceHeader';
+import { useCollapsibleSections } from './hooks/useCollapsibleSections';
+import { useNativeDragDrop } from './hooks/useNativeDragDrop';
+import { useWorkspaceActions } from './hooks/useWorkspaceActions';
+import { useWorkspaceData } from './hooks/useWorkspaceData';
 
 const WorkspaceApp: React.FC = () => {
-  const [items, setItems] = useState<WorkspaceItem[]>([]);
-  const [groups, setGroups] = useState<WorkspaceGroup[]>([]);
-  const [executionHistory, setExecutionHistory] = useState<ExecutionHistoryItem[]>([]);
+  // データ管理フック
+  const { items, groups, executionHistory, loadItems, loadGroups, loadExecutionHistory } =
+    useWorkspaceData();
+
+  // アクション統合フック
+  const actions = useWorkspaceActions(() => {
+    loadItems();
+    loadGroups();
+    loadExecutionHistory();
+  });
+
+  // ネイティブドラッグ&ドロップフック
+  const { isDraggingOver } = useNativeDragDrop(loadItems);
+
+  // 折りたたみ状態管理フック
+  const { collapsed, toggleSection, expandAll, collapseAll } = useCollapsibleSections({
+    uncategorized: false,
+    history: false,
+  });
+
+  // ローカル状態
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
-  const [uncategorizedCollapsed, setUncategorizedCollapsed] = useState(false);
-  const [historyCollapsed, setHistoryCollapsed] = useState(false);
   const [deleteGroupDialog, setDeleteGroupDialog] = useState<{
     isOpen: boolean;
     groupId: string | null;
@@ -25,143 +44,13 @@ const WorkspaceApp: React.FC = () => {
     deleteItems: false,
   });
 
+  // ピン状態の初期化
   useEffect(() => {
-    loadItems();
-    loadGroups();
-    loadExecutionHistory();
-
-    // ピン状態の初期化
     const loadPinState = async () => {
       const pinned = await window.electronAPI.workspaceAPI.getAlwaysOnTop();
       setIsPinned(pinned);
     };
     loadPinState();
-
-    // ワークスペース変更イベントをリッスン
-    const unsubscribe = window.electronAPI.onWorkspaceChanged(() => {
-      loadItems();
-      loadGroups();
-      loadExecutionHistory();
-    });
-
-    // ネイティブのドラッグ&ドロップイベントを設定
-    const handleNativeDragOver = (e: DragEvent) => {
-      // ファイルまたはURLがドラッグされている場合に反応
-      if (e.dataTransfer?.types) {
-        const hasFiles = e.dataTransfer.types.includes('Files');
-        const hasUrl =
-          e.dataTransfer.types.includes('text/uri-list') ||
-          e.dataTransfer.types.includes('text/plain');
-
-        if (hasFiles || hasUrl) {
-          e.preventDefault();
-          e.stopPropagation();
-          setIsDraggingOver(true);
-        }
-      }
-    };
-
-    const handleNativeDragLeave = (e: DragEvent) => {
-      // ファイルまたはURLがドラッグされている場合に反応
-      if (e.dataTransfer?.types) {
-        const hasFiles = e.dataTransfer.types.includes('Files');
-        const hasUrl =
-          e.dataTransfer.types.includes('text/uri-list') ||
-          e.dataTransfer.types.includes('text/plain');
-
-        if (hasFiles || hasUrl) {
-          e.preventDefault();
-          e.stopPropagation();
-          setIsDraggingOver(false);
-        }
-      }
-    };
-
-    const handleNativeDrop = async (e: DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      setIsDraggingOver(false);
-
-      // ファイルのドロップを処理
-      if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
-        const filePaths: string[] = [];
-
-        // メイン画面と同じ方法でファイルパスを取得
-        for (let i = 0; i < e.dataTransfer.files.length; i++) {
-          const file = e.dataTransfer.files[i];
-          try {
-            const filePath = window.electronAPI.getPathForFile(file);
-            if (filePath) {
-              filePaths.push(filePath);
-            }
-          } catch (error) {
-            console.error(`Error getting path for ${file.name}:`, error);
-          }
-        }
-
-        if (filePaths.length > 0) {
-          try {
-            await window.electronAPI.workspaceAPI.addItemsFromPaths(filePaths);
-            await loadItems();
-          } catch (error) {
-            console.error('Failed to add items from drag & drop:', error);
-          }
-        }
-      }
-      // URLのドロップを処理
-      else if (e.dataTransfer) {
-        const urlData =
-          e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('text/plain');
-
-        if (urlData) {
-          // 複数のURLが改行で区切られている場合に対応
-          const urls = urlData
-            .split('\n')
-            .map((url) => url.trim())
-            .filter((url) => url && url.startsWith('http'));
-
-          if (urls.length > 0) {
-            try {
-              // URLごとにファビコンを取得してアイテムを追加
-              for (const url of urls) {
-                // ファビコンを取得
-                let icon: string | undefined;
-                try {
-                  const fetchedIcon = await window.electronAPI.fetchFavicon(url);
-                  icon = fetchedIcon || undefined;
-                } catch (error) {
-                  console.warn('Failed to fetch favicon for URL:', url, error);
-                }
-
-                const item = {
-                  name: url,
-                  path: url,
-                  type: 'url' as const,
-                  icon,
-                };
-                await window.electronAPI.workspaceAPI.addItem(item);
-              }
-
-              await loadItems();
-            } catch (error) {
-              console.error('Failed to add URLs from drag & drop:', error);
-            }
-          }
-        }
-      }
-    };
-
-    // ネイティブイベントリスナーを追加
-    document.addEventListener('dragover', handleNativeDragOver);
-    document.addEventListener('dragleave', handleNativeDragLeave);
-    document.addEventListener('drop', handleNativeDrop);
-
-    return () => {
-      unsubscribe();
-      document.removeEventListener('dragover', handleNativeDragOver);
-      document.removeEventListener('dragleave', handleNativeDragLeave);
-      document.removeEventListener('drop', handleNativeDrop);
-    };
   }, []);
 
   // グループ削除ダイアログのモーダルモード設定
@@ -173,93 +62,9 @@ const WorkspaceApp: React.FC = () => {
     }
   }, [deleteGroupDialog.isOpen]);
 
-  const loadItems = async () => {
-    try {
-      const loadedItems = await window.electronAPI.workspaceAPI.loadItems();
-      setItems(loadedItems);
-    } catch (error) {
-      console.error('Failed to load workspace items:', error);
-    }
-  };
-
-  const loadGroups = async () => {
-    try {
-      const loadedGroups = await window.electronAPI.workspaceAPI.loadGroups();
-      setGroups(loadedGroups);
-    } catch (error) {
-      console.error('Failed to load workspace groups:', error);
-    }
-  };
-
-  const loadExecutionHistory = async () => {
-    try {
-      const history = await window.electronAPI.workspaceAPI.loadExecutionHistory();
-      setExecutionHistory(history);
-    } catch (error) {
-      console.error('Failed to load execution history:', error);
-    }
-  };
-
-  const handleLaunch = async (item: WorkspaceItem) => {
-    try {
-      await window.electronAPI.workspaceAPI.launchItem(item);
-    } catch (error) {
-      console.error('Failed to launch workspace item:', error);
-    }
-  };
-
-  const handleRemove = async (id: string) => {
-    try {
-      await window.electronAPI.workspaceAPI.removeItem(id);
-      await loadItems();
-    } catch (error) {
-      console.error('Failed to remove workspace item:', error);
-    }
-  };
-
-  const handleReorder = async (itemIds: string[]) => {
-    try {
-      await window.electronAPI.workspaceAPI.reorderItems(itemIds);
-      await loadItems();
-    } catch (error) {
-      console.error('Failed to reorder workspace items:', error);
-    }
-  };
-
-  const handleUpdateDisplayName = async (id: string, displayName: string) => {
-    try {
-      await window.electronAPI.workspaceAPI.updateDisplayName(id, displayName);
-      await loadItems();
-      setEditingId(null);
-    } catch (error) {
-      console.error('Failed to update workspace item display name:', error);
-    }
-  };
-
-  // グループ関連ハンドラー
-  const handleToggleGroup = async (groupId: string) => {
-    try {
-      const group = groups.find((g) => g.id === groupId);
-      if (group) {
-        await window.electronAPI.workspaceAPI.updateGroup(groupId, {
-          collapsed: !group.collapsed,
-        });
-        await loadGroups();
-      }
-    } catch (error) {
-      console.error('Failed to toggle workspace group:', error);
-    }
-  };
-
-  const handleUpdateGroup = async (groupId: string, updates: Partial<WorkspaceGroup>) => {
-    try {
-      await window.electronAPI.workspaceAPI.updateGroup(groupId, updates);
-      await loadGroups();
-    } catch (error) {
-      console.error('Failed to update workspace group:', error);
-    }
-  };
-
+  /**
+   * グループ削除ハンドラー（確認ダイアログ表示）
+   */
   const handleDeleteGroup = async (groupId: string) => {
     try {
       // グループ内のアイテム数を確認
@@ -276,21 +81,22 @@ const WorkspaceApp: React.FC = () => {
         });
       } else {
         // アイテムがない場合は即削除
-        await window.electronAPI.workspaceAPI.deleteGroup(groupId, false);
-        await loadGroups();
-        await loadItems();
+        await actions.handleDeleteGroup(groupId, false);
       }
     } catch (error) {
       console.error('Failed to delete workspace group:', error);
     }
   };
 
+  /**
+   * グループ削除の確定ハンドラー
+   */
   const handleConfirmDeleteGroup = async () => {
     const { groupId, deleteItems } = deleteGroupDialog;
     if (!groupId) return;
 
     try {
-      await window.electronAPI.workspaceAPI.deleteGroup(groupId, deleteItems);
+      await actions.handleDeleteGroup(groupId, deleteItems);
 
       // ダイアログを閉じる
       setDeleteGroupDialog({
@@ -299,48 +105,22 @@ const WorkspaceApp: React.FC = () => {
         itemCount: 0,
         deleteItems: false,
       });
-
-      // データ再読み込み
-      await loadGroups();
-      await loadItems();
     } catch (error) {
       console.error('Failed to delete workspace group:', error);
     }
   };
 
-  const handleAddGroup = async () => {
-    try {
-      const groupNumber = groups.length + 1;
-      await window.electronAPI.workspaceAPI.createGroup(`グループ ${groupNumber}`);
-      await loadGroups();
-    } catch (error) {
-      console.error('Failed to create workspace group:', error);
-    }
-  };
-
-  const handleMoveItemToGroup = async (itemId: string, groupId?: string) => {
-    try {
-      await window.electronAPI.workspaceAPI.moveItemToGroup(itemId, groupId);
-      await loadItems();
-    } catch (error) {
-      console.error('Failed to move item to group:', error);
-    }
-  };
-
-  const handleReorderGroups = async (groupIds: string[]) => {
-    try {
-      await window.electronAPI.workspaceAPI.reorderGroups(groupIds);
-      await loadGroups();
-    } catch (error) {
-      console.error('Failed to reorder workspace groups:', error);
-    }
-  };
-
+  /**
+   * ピン留めトグルハンドラー
+   */
   const handleTogglePin = async () => {
     const newState = await window.electronAPI.workspaceAPI.toggleAlwaysOnTop();
     setIsPinned(newState);
   };
 
+  /**
+   * 全展開ハンドラー
+   */
   const handleExpandAll = async () => {
     // 全てのグループを展開
     for (const group of groups) {
@@ -350,10 +130,12 @@ const WorkspaceApp: React.FC = () => {
     }
     await loadGroups();
     // 未分類と実行履歴も展開
-    setUncategorizedCollapsed(false);
-    setHistoryCollapsed(false);
+    expandAll();
   };
 
+  /**
+   * 全閉じハンドラー
+   */
   const handleCollapseAll = async () => {
     // 全てのグループを閉じる
     for (const group of groups) {
@@ -363,52 +145,40 @@ const WorkspaceApp: React.FC = () => {
     }
     await loadGroups();
     // 未分類と実行履歴も閉じる
-    setUncategorizedCollapsed(true);
-    setHistoryCollapsed(true);
+    collapseAll();
   };
 
   return (
     <div className={`workspace-window ${isDraggingOver ? 'dragging-over' : ''}`}>
-      <div className="workspace-header">
-        <h1>Workspace</h1>
-        <div className="workspace-header-controls">
-          <button className="workspace-control-btn" onClick={handleExpandAll} title="全て展開">
-            🔽
-          </button>
-          <button className="workspace-control-btn" onClick={handleCollapseAll} title="全て閉じる">
-            🔼
-          </button>
-          <button className="workspace-control-btn" onClick={handleAddGroup} title="グループを追加">
-            ➕
-          </button>
-          <button
-            className={`workspace-pin-btn ${isPinned ? 'pinned' : ''}`}
-            onClick={handleTogglePin}
-            title={isPinned ? 'ピン留めを解除' : 'ピン留めして最前面に固定'}
-          >
-            📌
-          </button>
-        </div>
-      </div>
+      <WorkspaceHeader
+        onExpandAll={handleExpandAll}
+        onCollapseAll={handleCollapseAll}
+        onAddGroup={() => actions.handleAddGroup(groups.length)}
+        isPinned={isPinned}
+        onTogglePin={handleTogglePin}
+      />
       <WorkspaceGroupedList
         groups={groups}
         items={items}
         executionHistory={executionHistory}
-        onLaunch={handleLaunch}
-        onRemoveItem={handleRemove}
-        onReorderItems={handleReorder}
-        onUpdateDisplayName={handleUpdateDisplayName}
-        onToggleGroup={handleToggleGroup}
-        onUpdateGroup={handleUpdateGroup}
+        onLaunch={actions.handleLaunch}
+        onRemoveItem={actions.handleRemove}
+        onReorderItems={actions.handleReorder}
+        onUpdateDisplayName={(id: string, displayName: string) => {
+          actions.handleUpdateDisplayName(id, displayName);
+          setEditingId(null);
+        }}
+        onToggleGroup={(groupId: string) => actions.handleToggleGroup(groupId, groups)}
+        onUpdateGroup={actions.handleUpdateGroup}
         onDeleteGroup={handleDeleteGroup}
-        onMoveItemToGroup={handleMoveItemToGroup}
-        onReorderGroups={handleReorderGroups}
+        onMoveItemToGroup={actions.handleMoveItemToGroup}
+        onReorderGroups={actions.handleReorderGroups}
         editingItemId={editingId}
         setEditingItemId={setEditingId}
-        uncategorizedCollapsed={uncategorizedCollapsed}
-        onToggleUncategorized={() => setUncategorizedCollapsed(!uncategorizedCollapsed)}
-        historyCollapsed={historyCollapsed}
-        onToggleHistory={() => setHistoryCollapsed(!historyCollapsed)}
+        uncategorizedCollapsed={collapsed.uncategorized || false}
+        onToggleUncategorized={() => toggleSection('uncategorized')}
+        historyCollapsed={collapsed.history || false}
+        onToggleHistory={() => toggleSection('history')}
       />
       <ConfirmDialog
         isOpen={deleteGroupDialog.isOpen}

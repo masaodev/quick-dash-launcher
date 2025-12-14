@@ -12,6 +12,7 @@ import { PathUtils } from '@common/utils/pathUtils';
 
 import { CombinedProgressManager } from '../utils/progressManager';
 import { FaviconService } from '../services/faviconService';
+import { IconService } from '../services/iconService.js';
 import PathManager from '../config/pathManager.js';
 
 const extractFileIcon = require('extract-file-icon');
@@ -820,6 +821,35 @@ async function getCustomIcon(customIconFileName: string): Promise<string | null>
   }
 }
 
+/**
+ * アイテムタイプに応じて適切なアイコンを取得（IconServiceを使用）
+ * レンダラープロセスから呼び出すための統合API
+ *
+ * @param filePath ファイルパスまたはURL
+ * @param itemType アイテムタイプ
+ * @returns base64エンコードされたアイコンデータURL、取得失敗時はnull
+ */
+async function getIconForItem(
+  filePath: string,
+  itemType: 'url' | 'file' | 'folder' | 'app' | 'customUri'
+): Promise<string | null> {
+  try {
+    const iconsFolder = PathManager.getIconsFolder();
+    const extensionsFolder = PathManager.getExtensionsFolder();
+
+    const icon = await IconService.getIconForItem(
+      filePath,
+      itemType,
+      iconsFolder,
+      extensionsFolder
+    );
+    return icon || null;
+  } catch (error) {
+    iconLogger.error({ error, filePath, itemType }, 'アイコン取得エラー');
+    return null;
+  }
+}
+
 export function setupIconHandlers(
   faviconsFolder: string,
   iconsFolder: string,
@@ -884,4 +914,12 @@ export function setupIconHandlers(
   ipcMain.handle('get-custom-icon', async (_event, customIconFileName: string) => {
     return await getCustomIcon(customIconFileName);
   });
+
+  // IconService統合API
+  ipcMain.handle(
+    'get-icon-for-item',
+    async (_event, filePath: string, itemType: 'url' | 'file' | 'folder' | 'app' | 'customUri') => {
+      return await getIconForItem(filePath, itemType);
+    }
+  );
 }

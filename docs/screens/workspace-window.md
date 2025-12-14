@@ -32,6 +32,38 @@
 | **ウィンドウサイズ** | 幅380px × 画面の高さに合わせて自動調整 |
 | **配置位置** | 画面右端に固定 |
 
+## 2.1. コンポーネント構成
+
+ワークスペースウィンドウはカスタムフックとコンポーネント分離により、保守性と可読性を向上させています。
+
+### 主要コンポーネント
+
+| コンポーネント | ファイル | 役割 |
+|--------------|---------|------|
+| **WorkspaceApp** | `WorkspaceApp.tsx` | メインコンポーネント（444行→216行にリファクタリング） |
+| **WorkspaceHeader** | `components/WorkspaceHeader.tsx` | ヘッダー（タイトル、展開/折りたたみ、ピン留めボタン） |
+| **WorkspaceGroupedList** | `components/WorkspaceGroupedList.tsx` | アイテムリスト（460行→385行にリファクタリング） |
+| **WorkspaceGroupHeader** | `components/WorkspaceGroupHeader.tsx` | グループヘッダー |
+| **ExecutionHistoryItemCard** | `components/ExecutionHistoryItemCard.tsx` | 実行履歴アイテム |
+
+### カスタムフック
+
+| フック | ファイル | 責務 |
+|-------|---------|------|
+| **useWorkspaceData** | `hooks/useWorkspaceData.ts` | データ読み込みと状態管理 |
+| **useWorkspaceActions** | `hooks/useWorkspaceActions.ts` | アクション処理の統合 |
+| **useNativeDragDrop** | `hooks/useNativeDragDrop.ts` | ネイティブドラッグ&ドロップ処理 |
+| **useCollapsibleSections** | `hooks/useCollapsibleSections.ts` | 折りたたみ状態管理 |
+| **useWorkspaceItemGroups** | `hooks/useWorkspaceItemGroups.ts` | アイテムグループ化ロジック |
+| **useWorkspaceContextMenu** | `hooks/useWorkspaceContextMenu.ts` | コンテキストメニュー管理 |
+| **useWorkspaceDragDrop** | `hooks/useWorkspaceDragDrop.ts` | 型安全なドラッグ&ドロップヘルパー |
+
+**リファクタリングの効果:**
+- WorkspaceApp.tsx: 51%のコード削減（444行→216行）
+- WorkspaceGroupedList.tsx: 16%のコード削減（460行→385行）
+- 責務の明確化と再利用性の向上
+- 型安全性の向上（DragItemData型による型安全なドラッグ&ドロップ）
+
 ## 3. 関連ドキュメント
 
 - [ワークスペース機能](../features/workspace.md) - 機能の詳細な使い方

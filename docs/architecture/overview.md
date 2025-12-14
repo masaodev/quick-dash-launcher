@@ -17,17 +17,22 @@ QuickDashLauncherのアーキテクチャ概要とデータフローを説明し
 
 アプリケーションの主要機能は`src/main/services/`のサービスクラスで実装：
 
-| サービス | 役割 |
-|---------|------|
-| `SettingsService` | アプリケーション設定の読み書き・管理 |
-| `HotkeyService` | グローバルホットキーの登録・変更 |
-| `BackupService` | データファイルの自動バックアップ |
-| `AutoLaunchService` | Windows起動時の自動起動設定 |
-| `FaviconService` | ファビコン・アイコンの取得・キャッシュ管理 |
-| `SearchHistoryService` | 検索履歴の保存・読み込み |
-| `WorkspaceService` | ワークスペースアイテム・グループ・実行履歴の管理 |
+| サービス | 役割 | パターン |
+|---------|------|---------|
+| `SettingsService` | アプリケーション設定の読み書き・管理 | シングルトン |
+| `HotkeyService` | グローバルホットキーの登録・変更 | シングルトン |
+| `BackupService` | データファイルの自動バックアップ | シングルトン |
+| `AutoLaunchService` | Windows起動時の自動起動設定 | シングルトン |
+| `FaviconService` | ファビコン・アイコンの取得・キャッシュ管理 | シングルトン |
+| `SearchHistoryService` | 検索履歴の保存・読み込み | シングルトン |
+| `WorkspaceService` | ワークスペースアイテム・グループ・実行履歴の管理 | シングルトン |
+| `IconService` | アイテムタイプに応じた適切なアイコン取得処理 | 静的クラス |
 
-すべてシングルトンパターンで実装され、`getInstance()`で取得します。
+**設計原則:**
+- シングルトンパターン: `getInstance()`で取得
+- 静的クラス: 静的メソッドで直接呼び出し
+- 単一責任の原則に従う
+- 重複したロジックを一箇所に集約（DRY原則）
 
 ---
 

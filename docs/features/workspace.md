@@ -222,6 +222,22 @@
 - **最大グループ数**: 制限なし（推奨: 10グループ程度）
 - **実行履歴**: 最大10件（古いものから自動削除）
 
+### 型安全性
+
+ドラッグ&ドロップ操作は型安全な構造で実装されています：
+
+**DragItemData型**: ドラッグされているアイテムの種別と情報を表現
+- `workspace-item`: ワークスペースアイテム（アイテムID、所属グループID）
+- `history-item`: 実行履歴アイテム（LauncherItem）
+- `group`: グループ（グループID）
+
+**DropTargetData型**: ドロップ先の種別と識別子を表現
+- `group`: グループ（グループID）
+- `item`: アイテム（アイテムID）
+- `uncategorized`: 未分類セクション
+
+詳細は[データファイル形式 - DragItemData/DropTargetData](../architecture/data-format.md#dragitemdata)を参照してください。
+
 ## トラブルシューティング
 
 ### ワークスペースウィンドウが表示されない

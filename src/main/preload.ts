@@ -50,6 +50,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   extractFileIconByExtension: (filePath: string) =>
     ipcRenderer.invoke('extract-file-icon-by-extension', filePath),
   extractCustomUriIcon: (uri: string) => ipcRenderer.invoke('extract-custom-uri-icon', uri),
+  getIconForItem: (filePath: string, itemType: 'url' | 'file' | 'folder' | 'app' | 'customUri') =>
+    ipcRenderer.invoke('get-icon-for-item', filePath, itemType),
   loadCachedIcons: (items: LauncherItem[]) => ipcRenderer.invoke('load-cached-icons', items),
   // 統合進捗付きアイコン取得API
   fetchIconsCombined: (urlItems: LauncherItem[], items: LauncherItem[]) =>

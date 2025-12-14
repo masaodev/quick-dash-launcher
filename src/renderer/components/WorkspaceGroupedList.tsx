@@ -1,6 +1,8 @@
 import React from 'react';
-import { PathUtils } from '@common/utils/pathUtils';
 import type { WorkspaceItem, WorkspaceGroup, ExecutionHistoryItem } from '@common/types';
+
+import { useWorkspaceItemGroups } from '../hooks/useWorkspaceItemGroups';
+import { useWorkspaceContextMenu } from '../hooks/useWorkspaceContextMenu';
 
 import WorkspaceGroupHeader from './WorkspaceGroupHeader';
 import WorkspaceItemCard from './WorkspaceItemCard';
@@ -50,31 +52,19 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
 }) => {
   const [draggedItemId, setDraggedItemId] = React.useState<string | null>(null);
   const [_draggedGroupId, setDraggedGroupId] = React.useState<string | null>(null);
-  const [contextMenu, setContextMenu] = React.useState<{
-    isVisible: boolean;
-    position: { x: number; y: number };
-    item: WorkspaceItem | null;
-  }>({
-    isVisible: false,
-    position: { x: 0, y: 0 },
-    item: null,
-  });
 
-  // グループIDごとにアイテムを分類
-  const itemsByGroup = items.reduce(
-    (acc, item) => {
-      const groupId = item.groupId || 'uncategorized';
-      if (!acc[groupId]) {
-        acc[groupId] = [];
-      }
-      acc[groupId].push(item);
-      return acc;
-    },
-    {} as Record<string, WorkspaceItem[]>
-  );
+  // グループ化ロジック
+  const { itemsByGroup, uncategorizedItems } = useWorkspaceItemGroups(items);
 
-  // 未分類のアイテム
-  const uncategorizedItems = itemsByGroup['uncategorized'] || [];
+  // コンテキストメニュー
+  const {
+    contextMenu,
+    handleContextMenu,
+    handleCloseContextMenu,
+    handleEditFromContextMenu,
+    handleRemoveFromGroup,
+    pathHandlers,
+  } = useWorkspaceContextMenu(onMoveItemToGroup, setEditingItemId);
 
   // ドラッグ&ドロップハンドラー
   const handleItemDragStart = (item: WorkspaceItem) => (e: React.DragEvent) => {
@@ -213,70 +203,6 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
       }
     }
     setDraggedGroupId(null);
-  };
-
-  // コンテキストメニューハンドラー
-  const handleContextMenu = (item: WorkspaceItem) => (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setContextMenu({
-      isVisible: true,
-      position: { x: e.clientX, y: e.clientY },
-      item,
-    });
-  };
-
-  const handleCloseContextMenu = () => {
-    setContextMenu({
-      isVisible: false,
-      position: { x: 0, y: 0 },
-      item: null,
-    });
-  };
-
-  const handleEditFromContextMenu = (item: WorkspaceItem) => {
-    setEditingItemId(item.id);
-  };
-
-  const handleRemoveFromGroup = (item: WorkspaceItem) => {
-    if (item.groupId) {
-      onMoveItemToGroup(item.id, undefined);
-    }
-  };
-
-  // パス操作ハンドラー
-  const handleCopyPath = (item: WorkspaceItem) => {
-    window.electronAPI.copyToClipboard(item.path);
-  };
-
-  const handleCopyParentPath = (item: WorkspaceItem) => {
-    const parentPath = PathUtils.getParentPath(item.path);
-    window.electronAPI.copyToClipboard(parentPath);
-  };
-
-  const handleOpenParentFolder = async (item: WorkspaceItem) => {
-    const parentPath = PathUtils.getParentPath(item.path);
-    await window.electronAPI.openExternalUrl(`file:///${parentPath}`);
-  };
-
-  const handleCopyShortcutPath = (item: WorkspaceItem) => {
-    if (item.originalPath) {
-      window.electronAPI.copyToClipboard(item.originalPath);
-    }
-  };
-
-  const handleCopyShortcutParentPath = (item: WorkspaceItem) => {
-    if (item.originalPath) {
-      const parentPath = PathUtils.getParentPath(item.originalPath);
-      window.electronAPI.copyToClipboard(parentPath);
-    }
-  };
-
-  const handleOpenShortcutParentFolder = async (item: WorkspaceItem) => {
-    if (item.originalPath) {
-      const parentPath = PathUtils.getParentPath(item.originalPath);
-      await window.electronAPI.openExternalUrl(`file:///${parentPath}`);
-    }
   };
 
   // アイテムが1つもない場合
@@ -445,12 +371,12 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
         onLaunch={onLaunch}
         onRemove={onRemoveItem}
         onRemoveFromGroup={handleRemoveFromGroup}
-        onCopyPath={handleCopyPath}
-        onCopyParentPath={handleCopyParentPath}
-        onOpenParentFolder={handleOpenParentFolder}
-        onCopyShortcutPath={handleCopyShortcutPath}
-        onCopyShortcutParentPath={handleCopyShortcutParentPath}
-        onOpenShortcutParentFolder={handleOpenShortcutParentFolder}
+        onCopyPath={pathHandlers.handleCopyPath}
+        onCopyParentPath={pathHandlers.handleCopyParentPath}
+        onOpenParentFolder={pathHandlers.handleOpenParentFolder}
+        onCopyShortcutPath={pathHandlers.handleCopyShortcutPath}
+        onCopyShortcutParentPath={pathHandlers.handleCopyShortcutParentPath}
+        onOpenShortcutParentFolder={pathHandlers.handleOpenShortcutParentFolder}
       />
     </div>
   );

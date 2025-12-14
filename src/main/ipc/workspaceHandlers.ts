@@ -25,8 +25,7 @@ import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 
 import { WorkspaceService } from '../services/workspaceService.js';
 import PathManager from '../config/pathManager.js';
-
-import { extractIcon, extractFileIconByExtension, extractCustomUriIcon } from './iconHandlers.js';
+import { IconService } from '../services/iconService.js';
 
 /**
  * ワークスペース変更イベントを全てのウィンドウに送信
@@ -91,29 +90,17 @@ export function setupWorkspaceHandlers(): void {
           // アイテムタイプを判定
           const itemType = detectItemTypeSync(filePath);
 
-          // タイプに応じてアイコンを取得
-          let icon: string | undefined;
-
-          if (itemType === 'app') {
-            // EXE/アプリケーションのアイコンを抽出
-            const extractedIcon = await extractIcon(filePath, iconsFolder);
-            icon = extractedIcon || undefined;
-            logger.info({ path: filePath, hasIcon: !!icon }, 'Extracted app icon for workspace');
-          } else if (itemType === 'file') {
-            // 拡張子ベースのアイコンを取得
-            const extractedIcon = await extractFileIconByExtension(filePath, extensionsFolder);
-            icon = extractedIcon || undefined;
-            logger.info({ path: filePath, hasIcon: !!icon }, 'Extracted file icon for workspace');
-          } else if (itemType === 'customUri') {
-            // カスタムURIのアイコンを取得
-            const extractedIcon = await extractCustomUriIcon(filePath, iconsFolder);
-            icon = extractedIcon || undefined;
-            logger.info(
-              { path: filePath, hasIcon: !!icon },
-              'Extracted custom URI icon for workspace'
-            );
-          }
-          // folder と url タイプはアイコン取得をスキップ（デフォルトアイコンを使用）
+          // タイプに応じてアイコンを取得（IconServiceを使用）
+          const icon = await IconService.getIconForItem(
+            filePath,
+            itemType,
+            iconsFolder,
+            extensionsFolder
+          );
+          logger.info(
+            { path: filePath, hasIcon: !!icon, type: itemType },
+            'Extracted icon for workspace'
+          );
 
           // アイコン付きでアイテムを追加
           const addedItem = await workspaceService.addItemFromPath(filePath, icon);

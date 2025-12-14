@@ -99,6 +99,13 @@ for (const fileName of dataFiles) {
 3. **関数の統合**: 抽出した共通関数を各箇所で使用するよう修正
 4. **動作確認**: ビルドとテストで機能が維持されることを検証
 
+**IconServiceの例:**
+ワークスペース機能のリファクタリングで、アイコン取得ロジックの重複を削除しました：
+- `workspaceHandlers.ts`: 36行→13行（重複削除）
+- `useModalInitializer.ts`: 24行→14行（重複削除）
+- 60行以上の重複コードを`IconService`に集約
+- アイテムタイプに応じた適切なアイコン取得処理を一箇所で管理
+
 ### パフォーマンス最適化
 - **バンドルサイズ**: 不要なコードの削除でアプリケーションサイズを最適化
 - **処理の一貫性**: 同じデータに対して常に同じ処理を適用
@@ -117,19 +124,30 @@ for (const fileName of dataFiles) {
 - **AutoLaunchService**: Windows起動時の自動起動設定
 - **FaviconService**: ファビコン・アイコンの取得・キャッシュ管理
 - **SearchHistoryService**: 検索履歴の保存・読み込み
+- **WorkspaceService**: ワークスペースアイテム・グループ・実行履歴の管理
+- **IconService**: アイテムタイプに応じた適切なアイコン取得処理
 
 **設計パターン:**
-- すべてシングルトンパターンで実装
-- `getInstance()`メソッドでインスタンスを取得
+- すべてシングルトンパターンで実装（静的クラスの場合もあり）
+- `getInstance()`メソッドでインスタンスを取得（または静的メソッド）
 - 各サービスは単一責任の原則に従う
 - IPCハンドラーから呼び出される
+- 重複したロジックを一箇所に集約（DRY原則）
 
 **使用例:**
 ```typescript
-// AutoLaunchServiceの使用例
+// AutoLaunchServiceの使用例（シングルトン）
 const autoLaunchService = AutoLaunchService.getInstance();
 await autoLaunchService.setAutoLaunch(true); // 自動起動を有効化
 const status = autoLaunchService.getAutoLaunchStatus(); // 現在の状態を取得
+
+// IconServiceの使用例（静的メソッド）
+const icon = await IconService.getIconForItem(
+  filePath,
+  itemType,
+  iconsFolder,
+  extensionsFolder
+);
 ```
 
 #### IPCハンドラーの構造化
@@ -203,10 +221,56 @@ QUICK_DASH_CONFIG_DIR=./prod-config npm run dev
 #### 状態管理
 - 小規模な状態は`useState`で管理
 - グローバル状態は必要に応じてContextを使用
+- 複雑な状態ロジックはカスタムフックに抽出
 
-#### 型定義
+#### カスタムフックによる責務分離
+大きなコンポーネントは、関連する状態とロジックをカスタムフックに分離してください：
+
+**ワークスペース機能の例:**
+```typescript
+// データ管理フック
+const { items, groups, executionHistory, loadItems } = useWorkspaceData();
+
+// アクション統合フック
+const actions = useWorkspaceActions(onDataChanged);
+
+// ドラッグ&ドロップフック
+const { isDraggingOver } = useNativeDragDrop(loadItems);
+```
+
+**カスタムフック作成のガイドライン:**
+- 単一責任の原則に従う（データ管理、アクション処理、UI状態など）
+- 関連するロジックをグループ化
+- 再利用可能な形で設計
+- JSDocで目的と使用例を明記
+
+**参考実装:**
+- `src/renderer/hooks/useWorkspaceData.ts` - データ読み込みと状態管理
+- `src/renderer/hooks/useWorkspaceActions.ts` - アクション処理の統合
+- `src/renderer/hooks/useNativeDragDrop.ts` - ネイティブドラッグ&ドロップ処理
+- `src/renderer/hooks/useCollapsibleSections.ts` - 折りたたみ状態管理
+- `src/renderer/hooks/useWorkspaceItemGroups.ts` - アイテムグループ化ロジック
+- `src/renderer/hooks/useWorkspaceContextMenu.ts` - コンテキストメニュー管理
+- `src/renderer/hooks/useWorkspaceDragDrop.ts` - 型安全なドラッグ&ドロップヘルパー
+
+#### 型定義とガード関数
 - インターフェースは`I`プレフィックスを使用
 - 型は`src/common/types.ts`で一元管理
+- 型アサーションの代わりに型ガード関数を使用（`src/common/utils/typeGuards.ts`）
+
+**型ガード関数の使用例:**
+```typescript
+import { isLauncherItem, isWorkspaceItem, isDragItemData } from '@common/utils/typeGuards';
+
+// 型アサーション（非推奨）
+const item = data as LauncherItem;
+
+// 型ガード関数（推奨）
+if (isLauncherItem(data)) {
+  // ここではdataはLauncherItem型として扱われる
+  console.log(data.path);
+}
+```
 
 ### CSS開発パターン
 
@@ -260,6 +324,8 @@ QuickDashLauncherではCSS変数ベースの統一されたデザインシステ
 ## UIコンポーネント構造
 
 ### 主要コンポーネント
+
+#### メインウィンドウ
 - **App.tsx**: メインアプリケーションコンポーネント
 - **SearchBox.tsx**: 検索入力フィールド
 - **ActionButtons.tsx**: アクションボタンコンテナ
@@ -272,6 +338,16 @@ QuickDashLauncherではCSS変数ベースの統一されたデザインシステ
   - アイテム行：パス＋引数の組み合わせ（例：`notepad.exe`, `https://github.com/`）
   - フォルダ取込アイテム：フォルダパス＋オプション（例：`C:\Users\Documents filter:*.txt`）
   - 編集時の自動CSV形式変換機能
+
+#### ワークスペースウィンドウ
+- **WorkspaceApp.tsx**: ワークスペースアプリケーションコンポーネント（444行→216行にリファクタリング）
+  - カスタムフックによる責務分離でコード量を51%削減
+  - データ管理、アクション処理、ドラッグ&ドロップを個別のフックに分離
+- **WorkspaceHeader.tsx**: ヘッダーコンポーネント（タイトル、展開/折りたたみ、ピン留めボタン）
+- **WorkspaceGroupedList.tsx**: グループ化されたアイテムリスト（460行→385行にリファクタリング）
+  - グループ化ロジックとコンテキストメニュー管理をフックに抽出
+- **WorkspaceGroupHeader.tsx**: グループヘッダー（名前編集、色変更、折りたたみ、削除）
+- **ExecutionHistoryItemCard.tsx**: 実行履歴アイテムカード
 
 ### ダイアログコンポーネント
 ネイティブダイアログ（`window.alert()`, `window.confirm()`, `dialog.showOpenDialog()`）の代替として、カスタムReactコンポーネントを使用しています。

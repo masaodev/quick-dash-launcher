@@ -484,6 +484,36 @@ interface GroupItem {
 type AppItem = LauncherItem | GroupItem;
 ```
 
+### DragItemData
+```typescript
+/**
+ * ドラッグアイテムのデータ型
+ * ドラッグされているアイテムの種別と情報を表す
+ */
+export type DragItemData =
+  | { type: 'workspace-item'; itemId: string; currentGroupId?: string }
+  | { type: 'history-item'; historyItem: LauncherItem }
+  | { type: 'group'; groupId: string };
+```
+
+### DropTargetData
+```typescript
+/**
+ * ドロップターゲットのデータ型
+ * ドロップ先の種別と識別子を表す
+ */
+export interface DropTargetData {
+  /** ドロップ先のタイプ */
+  targetType: 'group' | 'item' | 'uncategorized';
+  /** グループID（targetType='group'の場合） */
+  groupId?: string;
+  /** アイテムID（targetType='item'の場合） */
+  itemId?: string;
+}
+```
+
+**用途**: ワークスペース機能のドラッグ&ドロップで使用される型安全なデータ構造です。
+
 ## ワークスペースデータ
 
 ワークスペース機能で使用されるデータファイルの形式です。

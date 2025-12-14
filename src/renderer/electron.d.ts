@@ -31,6 +31,10 @@ export interface ElectronAPI {
   extractIcon: (filePath: string) => Promise<string | null>;
   extractFileIconByExtension: (filePath: string) => Promise<string | null>;
   extractCustomUriIcon: (uri: string) => Promise<string | null>;
+  getIconForItem: (
+    filePath: string,
+    itemType: 'url' | 'file' | 'folder' | 'app' | 'customUri'
+  ) => Promise<string | null>;
   loadCachedIcons: (items: LauncherItem[]) => Promise<Record<string, string>>;
   // 統合進捗付きアイコン取得API
   fetchIconsCombined: (
