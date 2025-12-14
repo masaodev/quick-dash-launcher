@@ -327,9 +327,6 @@ const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({ isOpen, onClo
           {/* HTML選択時：ファイル選択 */}
           {importSource === 'html' && (
             <div className="file-select-section">
-              <p className="file-select-description">
-                ブラウザからエクスポートしたブックマークHTMLファイルを選択してください。
-              </p>
               <button onClick={handleSelectFile} className="select-file-button" disabled={loading}>
                 {loading ? '読み込み中...' : 'ファイルを選択'}
               </button>
@@ -338,48 +335,43 @@ const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({ isOpen, onClo
           )}
 
           {bookmarks.length > 0 && (
-            <>
-              <div className="search-section">
-                <div className="search-input-container">
-                  <input
-                    type="text"
-                    placeholder="名前またはURLで検索..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="search-input"
-                  />
-                  {searchQuery && (
-                    <button
-                      className="search-clear-button"
-                      onClick={() => setSearchQuery('')}
-                      type="button"
-                      aria-label="検索をクリア"
-                    >
-                      ×
-                    </button>
-                  )}
-                </div>
+            <div className="search-and-actions">
+              <div className="search-input-container">
+                <input
+                  type="text"
+                  placeholder="名前またはURLで検索..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="search-input"
+                />
+                {searchQuery && (
+                  <button
+                    className="search-clear-button"
+                    onClick={() => setSearchQuery('')}
+                    type="button"
+                    aria-label="検索をクリア"
+                  >
+                    ×
+                  </button>
+                )}
               </div>
-
-              <div className="bookmark-bulk-actions">
-                <div className="bookmark-filtered-actions">
-                  <button onClick={handleSelectFiltered} className="bookmark-action-button">
-                    表示中を選択
-                  </button>
-                  <button onClick={handleDeselectFiltered} className="bookmark-action-button">
-                    表示中を解除
-                  </button>
-                </div>
-                <div className="bookmark-all-actions">
-                  <button onClick={handleSelectAll} className="bookmark-action-button">
-                    全て選択
-                  </button>
-                  <button onClick={handleDeselectAll} className="bookmark-action-button">
-                    全て解除
-                  </button>
-                </div>
+              <div className="bookmark-filtered-actions">
+                <button onClick={handleSelectFiltered} className="bookmark-action-button">
+                  表示中を選択
+                </button>
+                <button onClick={handleDeselectFiltered} className="bookmark-action-button">
+                  表示中を解除
+                </button>
               </div>
-            </>
+              <div className="bookmark-all-actions">
+                <button onClick={handleSelectAll} className="bookmark-action-button">
+                  全て選択
+                </button>
+                <button onClick={handleDeselectAll} className="bookmark-action-button">
+                  全て解除
+                </button>
+              </div>
+            </div>
           )}
         </div>
 
