@@ -117,10 +117,18 @@ const WorkspaceGroupHeader: React.FC<WorkspaceGroupHeaderProps> = ({
     }
   };
 
+  // グループ名やボタン部分でのドラッグを無効化
+  const preventDragStart = (e: React.DragEvent) => {
+    e.stopPropagation();
+  };
+
   return (
     <div
       className={`workspace-group-header ${isColorPickerOpen ? 'color-picker-open' : ''}`}
       onClick={handleToggle}
+      draggable={!isEditing}
+      onDragStart={handleDragStart}
+      onDragEnd={onGroupDragEnd}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
       style={
@@ -129,12 +137,9 @@ const WorkspaceGroupHeader: React.FC<WorkspaceGroupHeaderProps> = ({
         } as React.CSSProperties
       }
     >
-      {/* 折りたたみアイコン（ドラッグハンドル） */}
+      {/* 折りたたみアイコン */}
       <span
         className={`workspace-group-collapse-icon ${group.collapsed ? 'collapsed' : ''}`}
-        draggable={!isEditing}
-        onDragStart={handleDragStart}
-        onDragEnd={onGroupDragEnd}
         onClick={(e) => e.stopPropagation()}
       >
         ▼
@@ -151,9 +156,14 @@ const WorkspaceGroupHeader: React.FC<WorkspaceGroupHeaderProps> = ({
           onBlur={handleSaveEdit}
           className="workspace-group-name-input"
           onClick={(e) => e.stopPropagation()}
+          onDragStart={preventDragStart}
         />
       ) : (
-        <span className="workspace-group-name" onDoubleClick={handleStartEdit}>
+        <span
+          className="workspace-group-name"
+          onDoubleClick={handleStartEdit}
+          onDragStart={preventDragStart}
+        >
           {group.name}
         </span>
       )}
@@ -162,7 +172,7 @@ const WorkspaceGroupHeader: React.FC<WorkspaceGroupHeaderProps> = ({
       <span className="workspace-group-badge">{itemCount}個</span>
 
       {/* 編集・削除ボタン */}
-      <div className="workspace-group-actions">
+      <div className="workspace-group-actions" onDragStart={preventDragStart}>
         <button
           className="workspace-group-color-btn"
           onClick={handleColorButtonClick}
