@@ -208,5 +208,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // ピン留め関連
     getAlwaysOnTop: (): Promise<boolean> => ipcRenderer.invoke('workspace:get-always-on-top'),
     toggleAlwaysOnTop: (): Promise<boolean> => ipcRenderer.invoke('workspace:toggle-always-on-top'),
+    // モーダルモード関連
+    setModalMode: (isModal: boolean, requiredSize?: { width: number; height: number }) =>
+      ipcRenderer.invoke('workspace:set-modal-mode', isModal, requiredSize),
   },
 });

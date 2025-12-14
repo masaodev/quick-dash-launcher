@@ -7,6 +7,7 @@ let workspaceWindow: BrowserWindow | null = null;
 let isWorkspaceWindowVisible: boolean = false;
 let isAppQuitting: boolean = false;
 let isWorkspacePinned: boolean = false;
+let normalWorkspaceWindowBounds: { width: number; height: number } | null = null;
 
 /**
  * ワークスペースウィンドウを作成し、初期設定を行う
@@ -207,4 +208,40 @@ export function toggleWorkspaceAlwaysOnTop(): boolean {
  */
 export function getWorkspaceAlwaysOnTop(): boolean {
   return isWorkspacePinned;
+}
+
+/**
+ * ワークスペースウィンドウのモーダルモードの切り替え
+ * モーダル表示時は必要に応じてウィンドウサイズを拡大し、閉じる時は元のサイズに戻す
+ */
+export function setWorkspaceModalMode(
+  isModal: boolean,
+  requiredSize?: { width: number; height: number }
+): void {
+  if (workspaceWindow && !workspaceWindow.isDestroyed()) {
+    if (isModal && requiredSize) {
+      // モーダル表示時：現在のサイズを保存し、必要な場合のみ拡大
+      const currentBounds = workspaceWindow.getBounds();
+      normalWorkspaceWindowBounds = { width: currentBounds.width, height: currentBounds.height };
+
+      // 必要サイズと現在サイズを比較し、必要な場合のみ拡大
+      if (currentBounds.width < requiredSize.width || currentBounds.height < requiredSize.height) {
+        workspaceWindow.setSize(
+          Math.max(currentBounds.width, requiredSize.width),
+          Math.max(currentBounds.height, requiredSize.height)
+        );
+        // ワークスペースウィンドウは画面右端に固定されるため、center()は呼ばない
+      }
+    } else {
+      // モーダルを閉じる時：元のサイズに復元
+      if (normalWorkspaceWindowBounds) {
+        workspaceWindow.setSize(
+          normalWorkspaceWindowBounds.width,
+          normalWorkspaceWindowBounds.height
+        );
+        // ワークスペースウィンドウは画面右端に固定されるため、center()は呼ばない
+        normalWorkspaceWindowBounds = null;
+      }
+    }
+  }
 }

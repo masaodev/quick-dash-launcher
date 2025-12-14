@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { WorkspaceItem, WorkspaceGroup, ExecutionHistoryItem } from '@common/types';
 
 import WorkspaceGroupedList from './components/WorkspaceGroupedList';
+import ConfirmDialog from './components/ConfirmDialog';
 
 const WorkspaceApp: React.FC = () => {
   const [items, setItems] = useState<WorkspaceItem[]>([]);
@@ -12,6 +13,17 @@ const WorkspaceApp: React.FC = () => {
   const [isPinned, setIsPinned] = useState(false);
   const [uncategorizedCollapsed, setUncategorizedCollapsed] = useState(false);
   const [historyCollapsed, setHistoryCollapsed] = useState(false);
+  const [deleteGroupDialog, setDeleteGroupDialog] = useState<{
+    isOpen: boolean;
+    groupId: string | null;
+    itemCount: number;
+    deleteItems: boolean;
+  }>({
+    isOpen: false,
+    groupId: null,
+    itemCount: 0,
+    deleteItems: false,
+  });
 
   useEffect(() => {
     loadItems();
@@ -152,6 +164,15 @@ const WorkspaceApp: React.FC = () => {
     };
   }, []);
 
+  // グループ削除ダイアログのモーダルモード設定
+  useEffect(() => {
+    if (deleteGroupDialog.isOpen) {
+      window.electronAPI.workspaceAPI.setModalMode(true, { width: 600, height: 400 });
+    } else {
+      window.electronAPI.workspaceAPI.setModalMode(false);
+    }
+  }, [deleteGroupDialog.isOpen]);
+
   const loadItems = async () => {
     try {
       const loadedItems = await window.electronAPI.workspaceAPI.loadItems();
@@ -245,20 +266,41 @@ const WorkspaceApp: React.FC = () => {
       const groupItems = items.filter((item) => item.groupId === groupId);
       const hasItems = groupItems.length > 0;
 
-      let deleteItems = false;
-
       if (hasItems) {
         // 確認ダイアログを表示
-        const message =
-          `このグループには${groupItems.length}個のアイテムが含まれています。\n\n` +
-          `OKを押すと、アイテムは未分類に移動します。\n` +
-          `キャンセルを押すと、グループとアイテムの両方が削除されます。`;
-
-        const moveToUncategorized = window.confirm(message);
-        deleteItems = !moveToUncategorized;
+        setDeleteGroupDialog({
+          isOpen: true,
+          groupId: groupId,
+          itemCount: groupItems.length,
+          deleteItems: false,
+        });
+      } else {
+        // アイテムがない場合は即削除
+        await window.electronAPI.workspaceAPI.deleteGroup(groupId, false);
+        await loadGroups();
+        await loadItems();
       }
+    } catch (error) {
+      console.error('Failed to delete workspace group:', error);
+    }
+  };
 
+  const handleConfirmDeleteGroup = async () => {
+    const { groupId, deleteItems } = deleteGroupDialog;
+    if (!groupId) return;
+
+    try {
       await window.electronAPI.workspaceAPI.deleteGroup(groupId, deleteItems);
+
+      // ダイアログを閉じる
+      setDeleteGroupDialog({
+        isOpen: false,
+        groupId: null,
+        itemCount: 0,
+        deleteItems: false,
+      });
+
+      // データ再読み込み
       await loadGroups();
       await loadItems();
     } catch (error) {
@@ -367,6 +409,32 @@ const WorkspaceApp: React.FC = () => {
         onToggleUncategorized={() => setUncategorizedCollapsed(!uncategorizedCollapsed)}
         historyCollapsed={historyCollapsed}
         onToggleHistory={() => setHistoryCollapsed(!historyCollapsed)}
+      />
+      <ConfirmDialog
+        isOpen={deleteGroupDialog.isOpen}
+        onClose={() =>
+          setDeleteGroupDialog({
+            isOpen: false,
+            groupId: null,
+            itemCount: 0,
+            deleteItems: false,
+          })
+        }
+        onConfirm={handleConfirmDeleteGroup}
+        title="グループの削除"
+        message={`「${groups.find((g) => g.id === deleteGroupDialog.groupId)?.name}」を削除してもよろしいですか？\n\nこのグループには${deleteGroupDialog.itemCount}個のアイテムが含まれています。`}
+        confirmText="削除"
+        cancelText="キャンセル"
+        danger={true}
+        showCheckbox={true}
+        checkboxLabel="グループ内のアイテムも削除する"
+        checkboxChecked={deleteGroupDialog.deleteItems}
+        onCheckboxChange={(checked) =>
+          setDeleteGroupDialog({
+            ...deleteGroupDialog,
+            deleteItems: checked,
+          })
+        }
       />
     </div>
   );
