@@ -56,6 +56,8 @@ QuickDashLauncherの動作をカスタマイズするための設定機能を説
 | `showDataFileTabs` | `boolean` | `false` | タブ表示の有効/無効 |
 | `dataFileLabels` | `object` | `{}` | データファイルのラベル定義 |
 | `backupEnabled` | `boolean` | `false` | バックアップ機能 |
+| `workspaceOpacity` | `number` | `100` | ワークスペースウィンドウの不透明度（0-100%） |
+| `workspaceBackgroundTransparent` | `boolean` | `false` | 背景のみを透過するモード |
 
 ---
 
@@ -184,6 +186,36 @@ Windowsログイン時にアプリを自動起動（デフォルト: 無効）�
 
 ---
 
+### ワークスペースウィンドウ
+
+ワークスペースウィンドウの外観をカスタマイズできます。
+
+| 設定 | デフォルト | 説明 |
+|------|-----------|------|
+| `workspaceOpacity` | `100` | ウィンドウの不透明度（0-100%） |
+| `workspaceBackgroundTransparent` | `false` | 背景のみを透過するモード |
+
+**透過度:**
+- スライダーで0-100%の範囲で調整
+- 0%: 完全に透明（ウィンドウが見えなくなるため非推奨）
+- 100%: 完全に不透明（デフォルト）
+- 設定変更は即座にワークスペースウィンドウに反映
+
+**背景のみ透過:**
+- チェックボックスで有効化
+- 有効時: ウィンドウ背景のみが透過され、アイテム・ボタン・テキストは不透明のまま表示
+- 無効時: ウィンドウ全体が透過度設定に従う
+- デスクトップ背景を透かして見たい場合に便利
+
+**サイズ変更:**
+- ワークスペースウィンドウは8方向のカスタムハンドルでリサイズ可能
+- 最小サイズ: 幅300px × 高さ400px
+- ハンドル位置: 4隅（左上、右上、右下、左下）+ 4辺（上、右、下、左）
+
+詳細は[ワークスペース機能 - ウィンドウのカスタマイズ](workspace.md#ウィンドウのカスタマイズ)を参照してください。
+
+---
+
 ## システムトレイメニュー
 
 タスクバー右下の通知領域にアイコンが常駐します。
@@ -263,7 +295,9 @@ $env:QUICK_DASH_CONFIG_DIR = "D:\MyApps\quick-dash-config"
   },
   "windowPositionMode": "center",
   "windowPositionX": 0,
-  "windowPositionY": 0
+  "windowPositionY": 0,
+  "workspaceOpacity": 100,
+  "workspaceBackgroundTransparent": false
 }
 ```
 

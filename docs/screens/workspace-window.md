@@ -15,10 +15,12 @@
 
 ### 主要機能
 - **アイテム管理**: メイン画面からアイテムを追加・削除・名前変更
+- **クリップボードペースト**: Ctrl+VでURL、ファイルパス、ファイルを直接追加
 - **グループ管理**: アイテムをグループに分類して整理
 - **ドラッグ&ドロップ**: アイテムの並び替えやグループ間移動
 - **実行履歴**: 直近10件の実行履歴を表示・再起動
 - **コンテキストメニュー**: 右クリックで各種操作
+- **ウィンドウカスタマイズ**: 透過度調整、サイズ変更、ピン留め
 
 ## 2. 基本情報
 
@@ -28,9 +30,11 @@
 | **コンポーネント名** | `WorkspaceApp` |
 | **スタイル** | `src/renderer/styles/components/WorkspaceWindow.css` |
 | **表示条件** | `Ctrl+Alt+W`または、システムトレイメニューから「ワークスペースを表示」 |
-| **画面タイプ** | ウィンドウ（AlwaysOnTop、フレームレス） |
-| **ウィンドウサイズ** | 幅380px × 画面の高さに合わせて自動調整 |
-| **配置位置** | 画面右端に固定 |
+| **画面タイプ** | ウィンドウ（AlwaysOnTop切り替え可能、フレームレス） |
+| **初期サイズ** | 幅380px × 画面の高さに合わせて自動調整 |
+| **サイズ変更** | 8方向のハンドルで自由にリサイズ可能（最小: 300x400px） |
+| **配置位置** | 画面右端に固定（初期配置）、ドラッグで移動可能 |
+| **透過機能** | 0-100%の透過度調整、背景のみ透過モード |
 
 ## 2.1. コンポーネント構成
 
@@ -53,6 +57,7 @@
 | **useWorkspaceData** | `hooks/useWorkspaceData.ts` | データ読み込みと状態管理 |
 | **useWorkspaceActions** | `hooks/useWorkspaceActions.ts` | アクション処理の統合 |
 | **useNativeDragDrop** | `hooks/useNativeDragDrop.ts` | ネイティブドラッグ&ドロップ処理 |
+| **useClipboardPaste** | `hooks/useClipboardPaste.ts` | クリップボードペースト処理（Ctrl+V） |
 | **useCollapsibleSections** | `hooks/useCollapsibleSections.ts` | 折りたたみ状態管理 |
 | **useWorkspaceItemGroups** | `hooks/useWorkspaceItemGroups.ts` | アイテムグループ化ロジック |
 | **useWorkspaceContextMenu** | `hooks/useWorkspaceContextMenu.ts` | コンテキストメニュー管理 |
@@ -79,6 +84,8 @@
 | `.workspace-item-delete-btn` | アイテム削除ボタン（×） |
 | `.execution-history` | 実行履歴セクション |
 | `.execution-history-item` | 実行履歴アイテムカード |
+| `.workspace-resize-handle` | サイズ変更ハンドル（8方向） |
+| `.background-transparent` | 背景のみ透過モード |
 
 ### アイテム削除ボタン（×）のスタイル
 
@@ -128,6 +135,71 @@
 - ホバー時のスケールアップとクリック時のフィードバック
 
 詳細は **[CSSデザインシステム - 閉じる・削除ボタンクラス](../architecture/css-design.md#閉じる削除ボタンクラス)** を参照してください。
+
+## 3.1. ウィンドウカスタマイズ機能
+
+### 透過機能
+
+ワークスペースウィンドウの透過度を調整できます：
+
+- **透過度**: 0-100%で調整（設定画面のスライダーで変更）
+- **背景のみ透過**: チェックボックスで有効化すると、ウィンドウ背景のみが透過され、アイテムやボタンは不透明のまま表示
+- **即座反映**: 設定変更は即座にワークスペースウィンドウに反映
+
+**実装:**
+- Electronの`setOpacity()`でウィンドウ全体の透過度を設定
+- 背景のみ透過モードでは、`.background-transparent`クラスを追加し、アイテムとボタンに`opacity: 1`を設定
+
+### サイズ変更ハンドル
+
+8方向のカスタムハンドルでウィンドウを自由にリサイズ：
+
+| ハンドル位置 | クラス名 | 動作 |
+|------------|---------|------|
+| 左上 | `.workspace-resize-handle.top-left` | 左辺+上辺を同時に移動 |
+| 上 | `.workspace-resize-handle.top` | 上辺を移動 |
+| 右上 | `.workspace-resize-handle.top-right` | 右辺+上辺を同時に移動 |
+| 右 | `.workspace-resize-handle.right` | 右辺を移動 |
+| 右下 | `.workspace-resize-handle.bottom-right` | 右辺+下辺を同時に移動 |
+| 下 | `.workspace-resize-handle.bottom` | 下辺を移動 |
+| 左下 | `.workspace-resize-handle.bottom-left` | 左辺+下辺を同時に移動 |
+| 左 | `.workspace-resize-handle.left` | 左辺を移動 |
+
+**最小サイズ制約:**
+- 幅: 300px
+- 高さ: 400px
+
+**実装:**
+- `onMouseDown`イベントでドラッグ開始
+- `mousemove`イベントで座標差分を計算し、`workspace:set-position-and-size` IPCチャンネルでウィンドウサイズを更新
+- `mouseup`イベントでドラッグ終了
+
+### ウィンドウ制御ボタン
+
+ヘッダーに配置された制御ボタン：
+
+| ボタン | 機能 | IPCチャンネル |
+|-------|------|-------------|
+| 📌 | ピン留め（常に最前面）のトグル | `workspace:toggle-always-on-top` |
+| × | ウィンドウを非表示 | `workspace:hide-window` |
+
+### クリップボードペースト（Ctrl+V）
+
+`useClipboardPaste`フックでクリップボードからアイテムを追加：
+
+**対応形式:**
+1. **テキスト**: URL、ファイルパス、カスタムURIスキーマ（`obsidian://`等）
+2. **ファイルオブジェクト**: エクスプローラーからCtrl+Cでコピーしたファイル
+
+**処理フロー:**
+1. `keydown`イベント（Ctrl+V）または`paste`イベントを検出
+2. テキストの場合: `navigator.clipboard.readText()`で取得 → `detectItemTypeSync()`で判定 → URLならファビコン取得 → `workspace:add-item` IPCで追加
+3. ファイルオブジェクトの場合: `window.electronAPI.getPathForFile()`でパス取得 → `workspace:add-items-from-paths` IPCで追加
+4. UI更新コールバックを実行
+
+**注意:**
+- Input/Textarea要素内でのペーストはスキップ（通常の入力として処理）
+- テキストペーストの場合、最初の行のみを使用
 
 ## 4. 関連ドキュメント
 
