@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import ConfirmDialog from './components/ConfirmDialog';
 import WorkspaceGroupedList from './components/WorkspaceGroupedList';
 import WorkspaceHeader from './components/WorkspaceHeader';
+import { useClipboardPaste } from './hooks/useClipboardPaste';
 import { useCollapsibleSections } from './hooks/useCollapsibleSections';
 import { useNativeDragDrop } from './hooks/useNativeDragDrop';
 import { useWorkspaceActions } from './hooks/useWorkspaceActions';
@@ -22,6 +23,9 @@ const WorkspaceApp: React.FC = () => {
 
   // ネイティブドラッグ&ドロップフック
   const { isDraggingOver } = useNativeDragDrop(loadItems);
+
+  // クリップボードペースト処理フック
+  useClipboardPaste(loadItems);
 
   // 折りたたみ状態管理フック
   const { collapsed, toggleSection, expandAll, collapseAll } = useCollapsibleSections({
