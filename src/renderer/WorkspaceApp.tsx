@@ -8,6 +8,7 @@ import { useCollapsibleSections } from './hooks/useCollapsibleSections';
 import { useNativeDragDrop } from './hooks/useNativeDragDrop';
 import { useWorkspaceActions } from './hooks/useWorkspaceActions';
 import { useWorkspaceData } from './hooks/useWorkspaceData';
+import { useWorkspaceResize } from './hooks/useWorkspaceResize';
 
 const WorkspaceApp: React.FC = () => {
   // データ管理フック
@@ -32,6 +33,9 @@ const WorkspaceApp: React.FC = () => {
     uncategorized: false,
     history: false,
   });
+
+  // サイズ変更フック
+  const { handleResize } = useWorkspaceResize();
 
   // ローカル状態
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -153,81 +157,6 @@ const WorkspaceApp: React.FC = () => {
   };
 
   /**
-   * サイズ変更ハンドラー
-   */
-  const handleResize = (direction: string) => (e: React.MouseEvent) => {
-    e.preventDefault();
-    const startX = e.screenX;
-    const startY = e.screenY;
-    const startWidth = window.outerWidth;
-    const startHeight = window.outerHeight;
-    const startScreenX = window.screenX;
-    const startScreenY = window.screenY;
-
-    // Debug log
-    // console.log('Resize start:', {
-    //   direction,
-    //   startX,
-    //   startY,
-    //   startWidth,
-    //   startHeight,
-    //   startScreenX,
-    //   startScreenY,
-    // });
-
-    const handleMouseMove = (moveEvent: MouseEvent) => {
-      const deltaX = moveEvent.screenX - startX;
-      const deltaY = moveEvent.screenY - startY;
-
-      let newWidth = startWidth;
-      let newHeight = startHeight;
-      let newX = startScreenX;
-      let newY = startScreenY;
-
-      // 方向に応じてサイズと位置を計算
-      if (direction.includes('right')) {
-        newWidth = Math.max(300, startWidth + deltaX);
-      } else if (direction.includes('left')) {
-        newWidth = Math.max(300, startWidth - deltaX);
-        // 左辺を動かす場合、x座標も調整
-        newX = startScreenX + (startWidth - newWidth);
-      }
-
-      if (direction.includes('bottom')) {
-        newHeight = Math.max(400, startHeight + deltaY);
-      } else if (direction.includes('top')) {
-        newHeight = Math.max(400, startHeight - deltaY);
-        // 上辺を動かす場合、y座標も調整
-        newY = startScreenY + (startHeight - newHeight);
-      }
-
-      // Debug log
-      // console.log('Resize move:', {
-      //   deltaX,
-      //   deltaY,
-      //   newWidth,
-      //   newHeight,
-      //   newX,
-      //   newY,
-      //   currentOuterWidth: window.outerWidth,
-      // });
-
-      // ウィンドウサイズと位置を変更（絶対座標）
-      window.electronAPI.workspaceAPI.setPositionAndSize(newX, newY, newWidth, newHeight);
-    };
-
-    const handleMouseUp = () => {
-      // Debug log
-      // console.log('Resize end');
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-  };
-
-  /**
    * 全展開ハンドラー
    */
   const handleExpandAll = async () => {
@@ -270,27 +199,33 @@ const WorkspaceApp: React.FC = () => {
         onClose={handleClose}
       />
       <WorkspaceGroupedList
-        groups={groups}
-        items={items}
-        executionHistory={executionHistory}
-        onLaunch={actions.handleLaunch}
-        onRemoveItem={actions.handleRemove}
-        onReorderItems={actions.handleReorder}
-        onUpdateDisplayName={(id: string, displayName: string) => {
-          actions.handleUpdateDisplayName(id, displayName);
-          setEditingId(null);
+        data={{
+          groups,
+          items,
+          executionHistory,
         }}
-        onToggleGroup={(groupId: string) => actions.handleToggleGroup(groupId, groups)}
-        onUpdateGroup={actions.handleUpdateGroup}
-        onDeleteGroup={handleDeleteGroup}
-        onMoveItemToGroup={actions.handleMoveItemToGroup}
-        onReorderGroups={actions.handleReorderGroups}
-        editingItemId={editingId}
-        setEditingItemId={setEditingId}
-        uncategorizedCollapsed={collapsed.uncategorized || false}
-        onToggleUncategorized={() => toggleSection('uncategorized')}
-        historyCollapsed={collapsed.history || false}
-        onToggleHistory={() => toggleSection('history')}
+        handlers={{
+          onLaunch: actions.handleLaunch,
+          onRemoveItem: actions.handleRemove,
+          onReorderItems: actions.handleReorder,
+          onUpdateDisplayName: (id: string, displayName: string) => {
+            actions.handleUpdateDisplayName(id, displayName);
+            setEditingId(null);
+          },
+          onToggleGroup: (groupId: string) => actions.handleToggleGroup(groupId, groups),
+          onUpdateGroup: actions.handleUpdateGroup,
+          onDeleteGroup: handleDeleteGroup,
+          onMoveItemToGroup: actions.handleMoveItemToGroup,
+          onReorderGroups: actions.handleReorderGroups,
+        }}
+        ui={{
+          editingItemId: editingId,
+          setEditingItemId: setEditingId,
+          uncategorizedCollapsed: collapsed.uncategorized || false,
+          onToggleUncategorized: () => toggleSection('uncategorized'),
+          historyCollapsed: collapsed.history || false,
+          onToggleHistory: () => toggleSection('history'),
+        }}
       />
       <ConfirmDialog
         isOpen={deleteGroupDialog.isOpen}

@@ -53,14 +53,19 @@
 | **useWorkspaceData** | `hooks/useWorkspaceData.ts` | データ読み込みと状態管理 |
 | **useWorkspaceActions** | `hooks/useWorkspaceActions.ts` | アクション処理の統合 |
 | **useNativeDragDrop** | `hooks/useNativeDragDrop.ts` | ネイティブドラッグ&ドロップ処理 |
+| **useClipboardPaste** | `hooks/useClipboardPaste.ts` | クリップボードからのペースト処理 |
 | **useCollapsibleSections** | `hooks/useCollapsibleSections.ts` | 折りたたみ状態管理 |
 | **useWorkspaceItemGroups** | `hooks/useWorkspaceItemGroups.ts` | アイテムグループ化ロジック |
-| **useWorkspaceContextMenu** | `hooks/useWorkspaceContextMenu.ts` | コンテキストメニュー管理 |
+| **useWorkspaceContextMenu** | `hooks/useWorkspaceContextMenu.ts` | コンテキストメニュー管理（6つのパス操作を1つの関数に統合） |
 | **useWorkspaceDragDrop** | `hooks/useWorkspaceDragDrop.ts` | 型安全なドラッグ&ドロップヘルパー |
+| **useWorkspaceResize** | `hooks/useWorkspaceResize.ts` | ウィンドウのサイズ変更処理（70行の複雑なロジックを分離） |
+| **useFileOperations** | `hooks/useFileOperations.ts` | ファイルとURL操作の共通ユーティリティ（重複コード削減） |
 
 **リファクタリングの効果:**
-- WorkspaceApp.tsx: 51%のコード削減（444行→216行）
-- WorkspaceGroupedList.tsx: 16%のコード削減（460行→385行）
+- **WorkspaceApp.tsx**: 51%のコード削減（444行→216行）- 複雑なロジックをカスタムフックに分離
+- **WorkspaceGroupedList.tsx**: 16%のコード削減（460行→385行）- Props構造を改善（24個→3つのオブジェクト）
+- **useWorkspaceContextMenu**: 6つのパス操作ハンドラーを1つのジェネリック関数`handlePathOperation`に統合
+- **重複コード削減**: useNativeDragDropとuseClipboardPasteの共通ロジックをuseFileOperationsに抽出
 - 責務の明確化と再利用性の向上
 - 型安全性の向上（DragItemData型による型安全なドラッグ&ドロップ）
 
