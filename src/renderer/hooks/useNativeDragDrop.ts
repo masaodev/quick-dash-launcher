@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 
+import { useFileOperations } from './useFileOperations';
+
 /**
  * ワークスペースのネイティブドラッグ&ドロップ処理を管理するカスタムフック
  *
@@ -22,6 +24,7 @@ import { useState, useEffect } from 'react';
  */
 export function useNativeDragDrop(onItemsAdded: () => void) {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const { extractFilePaths, addItemsFromFilePaths, addUrlItem } = useFileOperations();
 
   useEffect(() => {
     /**
@@ -72,29 +75,8 @@ export function useNativeDragDrop(onItemsAdded: () => void) {
 
       // ファイルのドロップを処理
       if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
-        const filePaths: string[] = [];
-
-        // メイン画面と同じ方法でファイルパスを取得
-        for (let i = 0; i < e.dataTransfer.files.length; i++) {
-          const file = e.dataTransfer.files[i];
-          try {
-            const filePath = window.electronAPI.getPathForFile(file);
-            if (filePath) {
-              filePaths.push(filePath);
-            }
-          } catch (error) {
-            console.error(`Error getting path for ${file.name}:`, error);
-          }
-        }
-
-        if (filePaths.length > 0) {
-          try {
-            await window.electronAPI.workspaceAPI.addItemsFromPaths(filePaths);
-            onItemsAdded();
-          } catch (error) {
-            console.error('Failed to add items from drag & drop:', error);
-          }
-        }
+        const filePaths = await extractFilePaths(e.dataTransfer.files);
+        await addItemsFromFilePaths(filePaths, onItemsAdded);
       }
       // URLのドロップを処理
       else if (e.dataTransfer) {
@@ -110,26 +92,10 @@ export function useNativeDragDrop(onItemsAdded: () => void) {
 
           if (urls.length > 0) {
             try {
-              // URLごとにファビコンを取得してアイテムを追加
+              // URLごとにアイテムを追加
               for (const url of urls) {
-                // ファビコンを取得
-                let icon: string | undefined;
-                try {
-                  const fetchedIcon = await window.electronAPI.fetchFavicon(url);
-                  icon = fetchedIcon || undefined;
-                } catch (error) {
-                  console.warn('Failed to fetch favicon for URL:', url, error);
-                }
-
-                const item = {
-                  name: url,
-                  path: url,
-                  type: 'url' as const,
-                  icon,
-                };
-                await window.electronAPI.workspaceAPI.addItem(item);
+                await addUrlItem(url, () => {});
               }
-
               onItemsAdded();
             } catch (error) {
               console.error('Failed to add URLs from drag & drop:', error);
@@ -149,7 +115,7 @@ export function useNativeDragDrop(onItemsAdded: () => void) {
       document.removeEventListener('dragleave', handleNativeDragLeave);
       document.removeEventListener('drop', handleNativeDrop);
     };
-  }, [onItemsAdded]);
+  }, [onItemsAdded, extractFilePaths, addItemsFromFilePaths, addUrlItem]);
 
   return { isDraggingOver };
 }

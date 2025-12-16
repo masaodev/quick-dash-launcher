@@ -248,10 +248,19 @@ const { isDraggingOver } = useNativeDragDrop(loadItems);
 - `src/renderer/hooks/useWorkspaceData.ts` - データ読み込みと状態管理
 - `src/renderer/hooks/useWorkspaceActions.ts` - アクション処理の統合
 - `src/renderer/hooks/useNativeDragDrop.ts` - ネイティブドラッグ&ドロップ処理
+- `src/renderer/hooks/useClipboardPaste.ts` - クリップボードからのペースト処理
 - `src/renderer/hooks/useCollapsibleSections.ts` - 折りたたみ状態管理
 - `src/renderer/hooks/useWorkspaceItemGroups.ts` - アイテムグループ化ロジック
-- `src/renderer/hooks/useWorkspaceContextMenu.ts` - コンテキストメニュー管理
+- `src/renderer/hooks/useWorkspaceContextMenu.ts` - コンテキストメニュー管理（6つのパス操作を1つのジェネリック関数に統合）
 - `src/renderer/hooks/useWorkspaceDragDrop.ts` - 型安全なドラッグ&ドロップヘルパー
+- `src/renderer/hooks/useWorkspaceResize.ts` - ワークスペースウィンドウのサイズ変更処理（70行の複雑なロジックを分離）
+- `src/renderer/hooks/useFileOperations.ts` - ファイルとURL操作の共通ユーティリティ（重複コード削減）
+
+**リファクタリング成果:**
+- **WorkspaceApp.tsx**: 444行→216行（51%削減）- 複雑なロジックをカスタムフックに分離
+- **WorkspaceGroupedList.tsx**: 460行→385行（16%削減）- Props構造を改善（24個→3つのオブジェクト）
+- **useWorkspaceContextMenu**: 6つのパス操作ハンドラーを1つのジェネリック関数`handlePathOperation`に統合
+- **重複コード削減**: useNativeDragDropとuseClipboardPasteの共通ロジックをuseFileOperationsに抽出
 
 #### 型定義とガード関数
 - インターフェースは`I`プレフィックスを使用

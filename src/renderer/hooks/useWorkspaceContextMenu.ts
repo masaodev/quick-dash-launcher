@@ -93,6 +93,39 @@ export function useWorkspaceContextMenu(
   };
 
   /**
+   * ジェネリックなパス操作ハンドラー
+   * @param item ワークスペースアイテム
+   * @param operation 操作タイプ（'copy' | 'open'）
+   * @param pathType パスタイプ（'item' | 'parent'）
+   * @param useOriginalPath ショートカットの実体パスを使用するか
+   */
+  const handlePathOperation = async (
+    item: WorkspaceItem,
+    operation: 'copy' | 'open',
+    pathType: 'item' | 'parent',
+    useOriginalPath: boolean = false
+  ) => {
+    // ベースパスを取得
+    let basePath: string;
+    if (useOriginalPath) {
+      if (!item.originalPath) return;
+      basePath = item.originalPath;
+    } else {
+      basePath = item.path;
+    }
+
+    // パスタイプに応じてパスを決定
+    const targetPath = pathType === 'parent' ? PathUtils.getParentPath(basePath) : basePath;
+
+    // 操作を実行
+    if (operation === 'copy') {
+      window.electronAPI.copyToClipboard(targetPath);
+    } else if (operation === 'open') {
+      await window.electronAPI.openExternalUrl(`file:///${targetPath}`);
+    }
+  };
+
+  /**
    * パス操作ハンドラー群
    */
   const pathHandlers = {
@@ -100,52 +133,42 @@ export function useWorkspaceContextMenu(
      * パスをクリップボードにコピー
      */
     handleCopyPath: (item: WorkspaceItem) => {
-      window.electronAPI.copyToClipboard(item.path);
+      handlePathOperation(item, 'copy', 'item', false);
     },
 
     /**
      * 親フォルダのパスをクリップボードにコピー
      */
     handleCopyParentPath: (item: WorkspaceItem) => {
-      const parentPath = PathUtils.getParentPath(item.path);
-      window.electronAPI.copyToClipboard(parentPath);
+      handlePathOperation(item, 'copy', 'parent', false);
     },
 
     /**
      * 親フォルダをエクスプローラーで開く
      */
     handleOpenParentFolder: async (item: WorkspaceItem) => {
-      const parentPath = PathUtils.getParentPath(item.path);
-      await window.electronAPI.openExternalUrl(`file:///${parentPath}`);
+      await handlePathOperation(item, 'open', 'parent', false);
     },
 
     /**
      * ショートカットの実体パスをクリップボードにコピー
      */
     handleCopyShortcutPath: (item: WorkspaceItem) => {
-      if (item.originalPath) {
-        window.electronAPI.copyToClipboard(item.originalPath);
-      }
+      handlePathOperation(item, 'copy', 'item', true);
     },
 
     /**
      * ショートカットの実体の親フォルダパスをクリップボードにコピー
      */
     handleCopyShortcutParentPath: (item: WorkspaceItem) => {
-      if (item.originalPath) {
-        const parentPath = PathUtils.getParentPath(item.originalPath);
-        window.electronAPI.copyToClipboard(parentPath);
-      }
+      handlePathOperation(item, 'copy', 'parent', true);
     },
 
     /**
      * ショートカットの実体の親フォルダをエクスプローラーで開く
      */
     handleOpenShortcutParentFolder: async (item: WorkspaceItem) => {
-      if (item.originalPath) {
-        const parentPath = PathUtils.getParentPath(item.originalPath);
-        await window.electronAPI.openExternalUrl(`file:///${parentPath}`);
-      }
+      await handlePathOperation(item, 'open', 'parent', true);
     },
   };
 

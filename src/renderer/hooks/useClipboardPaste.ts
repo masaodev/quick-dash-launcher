@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 
+import { useFileOperations } from './useFileOperations';
+
 /**
  * クリップボードペースト処理を管理するカスタムフック
  *
@@ -21,6 +23,8 @@ import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
  * ```
  */
 export function useClipboardPaste(onItemsAdded: () => void) {
+  const { extractFilePaths, addItemsFromFilePaths, fetchFaviconSafely } = useFileOperations();
+
   useEffect(() => {
     /**
      * キーボードイベントハンドラー
@@ -53,12 +57,7 @@ export function useClipboardPaste(onItemsAdded: () => void) {
           // URLの場合、ファビコンを取得
           let icon: string | undefined;
           if (itemType === 'url') {
-            try {
-              const fetchedIcon = await window.electronAPI.fetchFavicon(firstLine);
-              icon = fetchedIcon || undefined;
-            } catch (error) {
-              console.warn('Failed to fetch favicon for pasted URL:', firstLine, error);
-            }
+            icon = await fetchFaviconSafely(firstLine);
           }
 
           // アイテムを追加
@@ -95,26 +94,8 @@ export function useClipboardPaste(onItemsAdded: () => void) {
         e.preventDefault();
 
         try {
-          const filePaths: string[] = [];
-
-          // ファイルパスを取得
-          for (let i = 0; i < e.clipboardData.files.length; i++) {
-            const file = e.clipboardData.files[i];
-            try {
-              const filePath = window.electronAPI.getPathForFile(file);
-              if (filePath) {
-                filePaths.push(filePath);
-              }
-            } catch (error) {
-              console.error(`Error getting path for ${file.name}:`, error);
-            }
-          }
-
-          // ファイルパスが取得できた場合、アイテムを追加
-          if (filePaths.length > 0) {
-            await window.electronAPI.workspaceAPI.addItemsFromPaths(filePaths);
-            onItemsAdded();
-          }
+          const filePaths = await extractFilePaths(e.clipboardData.files);
+          await addItemsFromFilePaths(filePaths, onItemsAdded);
         } catch (error) {
           console.error('Failed to add items from file paste:', error);
         }
@@ -130,5 +111,5 @@ export function useClipboardPaste(onItemsAdded: () => void) {
       document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('paste', handlePaste);
     };
-  }, [onItemsAdded]);
+  }, [onItemsAdded, extractFilePaths, addItemsFromFilePaths, fetchFaviconSafely]);
 }

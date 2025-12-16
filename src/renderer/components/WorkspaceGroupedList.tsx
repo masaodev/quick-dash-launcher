@@ -10,46 +10,58 @@ import ExecutionHistoryItemCard from './ExecutionHistoryItemCard';
 import WorkspaceContextMenu from './WorkspaceContextMenu';
 
 interface WorkspaceGroupedListProps {
-  groups: WorkspaceGroup[];
-  items: WorkspaceItem[];
-  executionHistory: ExecutionHistoryItem[];
-  onLaunch: (item: WorkspaceItem) => void;
-  onRemoveItem: (id: string) => void;
-  onReorderItems: (itemIds: string[]) => void;
-  onUpdateDisplayName: (id: string, displayName: string) => void;
-  onToggleGroup: (groupId: string) => void;
-  onUpdateGroup: (groupId: string, updates: Partial<WorkspaceGroup>) => void;
-  onDeleteGroup: (groupId: string) => void;
-  onMoveItemToGroup: (itemId: string, groupId?: string) => void;
-  onReorderGroups: (groupIds: string[]) => void;
-  editingItemId: string | null;
-  setEditingItemId: (id: string | null) => void;
-  uncategorizedCollapsed: boolean;
-  onToggleUncategorized: () => void;
-  historyCollapsed: boolean;
-  onToggleHistory: () => void;
+  data: {
+    groups: WorkspaceGroup[];
+    items: WorkspaceItem[];
+    executionHistory: ExecutionHistoryItem[];
+  };
+  handlers: {
+    onLaunch: (item: WorkspaceItem) => void;
+    onRemoveItem: (id: string) => void;
+    onReorderItems: (itemIds: string[]) => void;
+    onUpdateDisplayName: (id: string, displayName: string) => void;
+    onToggleGroup: (groupId: string) => void;
+    onUpdateGroup: (groupId: string, updates: Partial<WorkspaceGroup>) => void;
+    onDeleteGroup: (groupId: string) => void;
+    onMoveItemToGroup: (itemId: string, groupId?: string) => void;
+    onReorderGroups: (groupIds: string[]) => void;
+  };
+  ui: {
+    editingItemId: string | null;
+    setEditingItemId: (id: string | null) => void;
+    uncategorizedCollapsed: boolean;
+    onToggleUncategorized: () => void;
+    historyCollapsed: boolean;
+    onToggleHistory: () => void;
+  };
 }
 
-const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
-  groups,
-  items,
-  executionHistory,
-  onLaunch,
-  onRemoveItem,
-  onReorderItems,
-  onUpdateDisplayName,
-  onToggleGroup,
-  onUpdateGroup,
-  onDeleteGroup,
-  onMoveItemToGroup,
-  onReorderGroups,
-  editingItemId,
-  setEditingItemId,
-  uncategorizedCollapsed,
-  onToggleUncategorized,
-  historyCollapsed,
-  onToggleHistory,
-}) => {
+const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handlers, ui }) => {
+  // データの展開
+  const { groups, items, executionHistory } = data;
+
+  // ハンドラーの展開
+  const {
+    onLaunch,
+    onRemoveItem,
+    onReorderItems,
+    onUpdateDisplayName,
+    onToggleGroup,
+    onUpdateGroup,
+    onDeleteGroup,
+    onMoveItemToGroup,
+    onReorderGroups,
+  } = handlers;
+
+  // UI状態の展開
+  const {
+    editingItemId,
+    setEditingItemId,
+    uncategorizedCollapsed,
+    onToggleUncategorized,
+    historyCollapsed,
+    onToggleHistory,
+  } = ui;
   const [draggedItemId, setDraggedItemId] = React.useState<string | null>(null);
   const [_draggedGroupId, setDraggedGroupId] = React.useState<string | null>(null);
 
