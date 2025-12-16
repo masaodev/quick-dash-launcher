@@ -150,6 +150,11 @@ export interface ElectronAPI {
     toggleAlwaysOnTop: () => Promise<boolean>;
     // モーダルモード関連
     setModalMode: (isModal: boolean, requiredSize?: { width: number; height: number }) => void;
+    // サイズ変更関連
+    setSize: (width: number, height: number) => Promise<boolean>;
+    setPositionAndSize: (x: number, y: number, width: number, height: number) => Promise<boolean>;
+    // ウィンドウ制御
+    hideWindow: () => Promise<boolean>;
   };
   // ワークスペースウィンドウ制御API
   toggleWorkspaceWindow: () => Promise<void>;

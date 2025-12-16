@@ -229,6 +229,10 @@ export interface AppSettings {
   windowPositionX: number;
   /** 固定位置のY座標（windowPositionMode='fixed'時に使用、デフォルト: 0） */
   windowPositionY: number;
+  /** ワークスペースウィンドウの不透明度（0-100%、デフォルト: 100） */
+  workspaceOpacity: number;
+  /** ワークスペースウィンドウの背景のみを透過（デフォルト: false） */
+  workspaceBackgroundTransparent: boolean;
 }
 
 /**

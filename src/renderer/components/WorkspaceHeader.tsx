@@ -14,6 +14,8 @@ interface WorkspaceHeaderProps {
   isPinned: boolean;
   /** ピン留めボタンクリック時のハンドラー */
   onTogglePin: () => void;
+  /** ウィンドウを閉じるボタンクリック時のハンドラー */
+  onClose: () => void;
 }
 
 /**
@@ -30,6 +32,7 @@ const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
   onAddGroup,
   isPinned,
   onTogglePin,
+  onClose,
 }) => {
   return (
     <div className="workspace-header">
@@ -50,6 +53,9 @@ const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
           title={isPinned ? 'ピン留めを解除' : 'ピン留めして最前面に固定'}
         >
           📌
+        </button>
+        <button className="workspace-close-btn" onClick={onClose} title="閉じる">
+          ×
         </button>
       </div>
     </div>

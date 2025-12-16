@@ -213,5 +213,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // モーダルモード関連
     setModalMode: (isModal: boolean, requiredSize?: { width: number; height: number }) =>
       ipcRenderer.invoke('workspace:set-modal-mode', isModal, requiredSize),
+    // 透過度関連
+    setOpacity: (opacityPercent: number): Promise<boolean> =>
+      ipcRenderer.invoke('workspace:set-opacity', opacityPercent),
+    getOpacity: (): Promise<number> => ipcRenderer.invoke('workspace:get-opacity'),
+    // サイズ変更関連
+    setSize: (width: number, height: number): Promise<boolean> =>
+      ipcRenderer.invoke('workspace:set-size', width, height),
+    setPositionAndSize: (x: number, y: number, width: number, height: number): Promise<boolean> =>
+      ipcRenderer.invoke('workspace:set-position-and-size', x, y, width, height),
+    // ウィンドウ制御
+    hideWindow: (): Promise<boolean> => ipcRenderer.invoke('workspace:hide-window'),
   },
 });

@@ -3,6 +3,8 @@ import * as path from 'path';
 import { BrowserWindow, screen } from 'electron';
 import { windowLogger } from '@common/logger';
 
+import { SettingsService } from './services/settingsService.js';
+
 let workspaceWindow: BrowserWindow | null = null;
 let isWorkspaceWindowVisible: boolean = false;
 let isAppQuitting: boolean = false;
@@ -30,17 +32,26 @@ export async function createWorkspaceWindow(): Promise<BrowserWindow> {
   const windowWidth = 380;
   const windowHeight = screenHeight;
 
+  // 設定から透過度を取得
+  const settingsService = await SettingsService.getInstance();
+  const opacity = await settingsService.get('workspaceOpacity');
+  const backgroundTransparent = await settingsService.get('workspaceBackgroundTransparent');
+
+  // 背景のみ透過の場合はウィンドウは完全不透明、それ以外は設定値を使用
+  const opacityValue = backgroundTransparent ? 1.0 : Math.max(0, Math.min(100, opacity)) / 100;
+
   workspaceWindow = new BrowserWindow({
     width: windowWidth,
     height: windowHeight,
     x: screenWidth - windowWidth,
     y: 0,
     alwaysOnTop: false,
-    frame: true,
-    autoHideMenuBar: true,
+    frame: false, // フレームレスウィンドウ（ドラッグ可能にするため）
     show: false,
-    title: 'Workspace',
+    resizable: false, // カスタムサイズ変更を使用するため無効化
     icon: path.join(__dirname, '../../assets/icon.ico'),
+    transparent: true, // 透過対応を有効化
+    opacity: opacityValue, // 初期透過度を設定
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -60,6 +71,9 @@ export async function createWorkspaceWindow(): Promise<BrowserWindow> {
 
   // メニューを完全に削除（Altキーでも表示されないようにする）
   workspaceWindow.setMenu(null);
+
+  // 透過ウィンドウでもマウスイベントを受け取るように設定
+  workspaceWindow.setIgnoreMouseEvents(false);
 
   workspaceWindow.on('close', (event) => {
     // アプリケーション終了時以外はウィンドウを完全に閉じずに非表示にする
@@ -244,4 +258,12 @@ export function setWorkspaceModalMode(
       }
     }
   }
+}
+
+/**
+ * ワークスペースウィンドウのインスタンスを取得する
+ * @returns ワークスペースウィンドウのBrowserWindowインスタンス、存在しない場合はnull
+ */
+export function getWorkspaceWindow(): BrowserWindow | null {
+  return workspaceWindow;
 }

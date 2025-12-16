@@ -55,6 +55,8 @@ export class SettingsService {
     windowPositionMode: 'center', // ウィンドウ表示位置モード（デフォルト: 画面中央）
     windowPositionX: 0, // 固定位置のX座標
     windowPositionY: 0, // 固定位置のY座標
+    workspaceOpacity: 100, // ワークスペースウィンドウの不透明度（デフォルト: 100%）
+    workspaceBackgroundTransparent: false, // ワークスペースウィンドウの背景のみを透過（デフォルト: false）
   };
 
   private constructor() {

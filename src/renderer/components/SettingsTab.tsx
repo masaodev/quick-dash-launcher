@@ -344,6 +344,46 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
         </div>
 
         <div className="settings-section">
+          <h3>ワークスペースウィンドウ</h3>
+          <div className="setting-item">
+            <label htmlFor="workspaceOpacity">透過度:</label>
+            <div className="opacity-control">
+              <input
+                id="workspaceOpacity"
+                type="range"
+                min="0"
+                max="100"
+                value={editedSettings.workspaceOpacity}
+                onChange={(e) => handleSettingChange('workspaceOpacity', parseInt(e.target.value))}
+                disabled={isLoading}
+                className="opacity-slider"
+              />
+              <span className="opacity-value">{editedSettings.workspaceOpacity}%</span>
+            </div>
+            <div className="setting-description">
+              ワークスペースウィンドウの透過度を調整します（0%=完全透明、100%=完全不透明）。
+            </div>
+          </div>
+
+          <div className="setting-item">
+            <label>
+              <input
+                type="checkbox"
+                checked={editedSettings.workspaceBackgroundTransparent}
+                onChange={(e) =>
+                  handleSettingChange('workspaceBackgroundTransparent', e.target.checked)
+                }
+                disabled={isLoading}
+              />
+              背景のみを透過（アイテムやグループは通常表示）
+            </label>
+            <div className="setting-description">
+              有効にすると、背景のみが透過され、アイテムやグループは通常通り表示されます。
+            </div>
+          </div>
+        </div>
+
+        <div className="settings-section">
           <h3>タブ表示</h3>
           <div className="setting-item">
             <label>

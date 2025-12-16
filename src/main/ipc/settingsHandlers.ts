@@ -61,6 +61,25 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
           await autoLaunchService.setAutoLaunch(value as boolean);
         }
 
+        // workspaceOpacity または workspaceBackgroundTransparent 設定の場合、ワークスペースウィンドウの透過度を即座に反映
+        if (key === 'workspaceOpacity' || key === 'workspaceBackgroundTransparent') {
+          const { getWorkspaceWindow } = await import('../workspaceWindowManager.js');
+          const workspace = getWorkspaceWindow();
+          if (workspace && !workspace.isDestroyed()) {
+            // 現在の設定を取得
+            const currentSettings = await settingsService.getAll();
+            const backgroundTransparent =
+              key === 'workspaceBackgroundTransparent'
+                ? (value as boolean)
+                : currentSettings.workspaceBackgroundTransparent;
+            const opacity =
+              key === 'workspaceOpacity' ? (value as number) : currentSettings.workspaceOpacity;
+
+            // 背景のみ透過の場合はウィンドウは完全不透明、それ以外は設定値を使用
+            workspace.setOpacity(backgroundTransparent ? 1.0 : opacity / 100);
+          }
+        }
+
         return true;
       } catch (error) {
         logger.error({ error, key }, 'Failed to set setting');
@@ -86,6 +105,26 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
       if (settings.autoLaunch !== undefined) {
         const autoLaunchService = AutoLaunchService.getInstance();
         await autoLaunchService.setAutoLaunch(settings.autoLaunch);
+      }
+
+      // workspaceOpacity設定が含まれている場合、ワークスペースウィンドウの透過度を即座に反映
+      if (
+        settings.workspaceOpacity !== undefined ||
+        settings.workspaceBackgroundTransparent !== undefined
+      ) {
+        const { getWorkspaceWindow } = await import('../workspaceWindowManager.js');
+        const workspace = getWorkspaceWindow();
+        if (workspace && !workspace.isDestroyed()) {
+          // 現在の設定を取得
+          const currentSettings = await settingsService.getAll();
+          const backgroundTransparent =
+            settings.workspaceBackgroundTransparent ??
+            currentSettings.workspaceBackgroundTransparent;
+          const opacity = settings.workspaceOpacity ?? currentSettings.workspaceOpacity;
+
+          // 背景のみ透過の場合はウィンドウは完全不透明、それ以外は設定値を使用
+          workspace.setOpacity(backgroundTransparent ? 1.0 : opacity / 100);
+        }
       }
 
       // すべてのウィンドウに設定変更を通知
