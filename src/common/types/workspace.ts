@@ -95,3 +95,27 @@ export interface DropTargetData {
   /** アイテムID（targetType='item'の場合） */
   itemId?: string;
 }
+
+/**
+ * アーカイブされたワークスペースグループ
+ * WorkspaceGroupを拡張し、アーカイブ関連の情報を追加
+ */
+export interface ArchivedWorkspaceGroup extends WorkspaceGroup {
+  /** アーカイブ日時（timestamp） */
+  archivedAt: number;
+  /** アーカイブ前のorder（復元時の参考用） */
+  originalOrder: number;
+  /** アーカイブ時のアイテム数（表示用） */
+  itemCount: number;
+}
+
+/**
+ * アーカイブされたワークスペースアイテム
+ * WorkspaceItemを拡張し、アーカイブ関連の情報を追加
+ */
+export interface ArchivedWorkspaceItem extends WorkspaceItem {
+  /** アーカイブ日時（timestamp） */
+  archivedAt: number;
+  /** アーカイブグループID（どのグループと一緒にアーカイブされたか） */
+  archivedGroupId: string;
+}

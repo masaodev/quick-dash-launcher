@@ -48,7 +48,7 @@ export interface ElectronAPI {
   ) => void;
   onWindowShown: (callback: (startTime?: number) => void) => () => void;
   onWindowHidden: (callback: () => void) => () => void;
-  onSetActiveTab: (callback: (tab: 'settings' | 'edit' | 'other') => void) => void;
+  onSetActiveTab: (callback: (tab: 'settings' | 'edit' | 'archive' | 'other') => void) => void;
   onDataChanged: (callback: () => void) => () => void;
   onSettingsChanged: (callback: () => void) => () => void;
   onWorkspaceChanged: (callback: () => void) => () => void;
@@ -101,8 +101,8 @@ export interface ElectronAPI {
   hideEditWindow: () => Promise<void>;
   toggleEditWindow: () => Promise<void>;
   isEditWindowShown: () => Promise<boolean>;
-  openEditWindowWithTab: (tab: 'settings' | 'edit' | 'other') => Promise<void>;
-  getInitialTab: () => Promise<'settings' | 'edit' | 'other'>;
+  openEditWindowWithTab: (tab: 'settings' | 'edit' | 'archive' | 'other') => Promise<void>;
+  getInitialTab: () => Promise<'settings' | 'edit' | 'archive' | 'other'>;
   copyToClipboard: (text: string) => Promise<boolean>;
   setModalMode: (
     isModal: boolean,
@@ -141,6 +141,11 @@ export interface ElectronAPI {
     deleteGroup: (id: string, deleteItems: boolean) => Promise<{ success: boolean }>;
     reorderGroups: (groupIds: string[]) => Promise<{ success: boolean }>;
     moveItemToGroup: (itemId: string, groupId?: string) => Promise<{ success: boolean }>;
+    // アーカイブ管理
+    archiveGroup: (groupId: string) => Promise<{ success: boolean }>;
+    loadArchivedGroups: () => Promise<WorkspaceGroup[]>;
+    restoreGroup: (groupId: string) => Promise<{ success: boolean }>;
+    deleteArchivedGroup: (groupId: string) => Promise<{ success: boolean }>;
     // 実行履歴
     loadExecutionHistory: () => Promise<ExecutionHistoryItem[]>;
     addExecutionHistory: (item: AppItem) => Promise<{ success: boolean }>;

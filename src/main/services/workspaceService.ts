@@ -10,6 +10,8 @@ import type {
   WorkspaceItem,
   WorkspaceGroup,
   ExecutionHistoryItem,
+  ArchivedWorkspaceGroup,
+  ArchivedWorkspaceItem,
 } from '../../common/types.js';
 import logger from '../../common/logger.js';
 import PathManager from '../config/pathManager.js';
@@ -43,6 +45,19 @@ type HistoryStoreInstance = {
 };
 
 /**
+ * electron-storeのインスタンス型（workspace-archive.json用）
+ */
+type ArchiveStoreInstance = {
+  get(key: 'groups'): ArchivedWorkspaceGroup[];
+  get(key: 'items'): ArchivedWorkspaceItem[];
+  set(key: 'groups', value: ArchivedWorkspaceGroup[]): void;
+  set(key: 'items', value: ArchivedWorkspaceItem[]): void;
+  store: { groups: ArchivedWorkspaceGroup[]; items: ArchivedWorkspaceItem[] };
+  clear(): void;
+  path: string;
+};
+
+/**
  * ワークスペースアイテムを管理するサービスクラス
  * electron-storeを使用してworkspace.jsonに永続化を行う
  */
@@ -56,6 +71,11 @@ export class WorkspaceService {
    * electron-storeのインスタンス（execution-history.json用）
    */
   private historyStore: HistoryStoreInstance | null = null;
+
+  /**
+   * electron-storeのインスタンス（workspace-archive.json用）
+   */
+  private archiveStore: ArchiveStoreInstance | null = null;
 
   private static instance: WorkspaceService;
 
@@ -71,6 +91,11 @@ export class WorkspaceService {
     history: [] as ExecutionHistoryItem[],
   };
 
+  private static readonly DEFAULT_ARCHIVE_DATA = {
+    groups: [] as ArchivedWorkspaceGroup[],
+    items: [] as ArchivedWorkspaceItem[],
+  };
+
   /**
    * 実行履歴の最大保持件数
    */
@@ -80,13 +105,14 @@ export class WorkspaceService {
     // electron-storeは後で非同期に初期化
     this.store = null;
     this.historyStore = null;
+    this.archiveStore = null;
   }
 
   /**
    * electron-storeを非同期で初期化
    */
   private async initializeStore(): Promise<void> {
-    if (this.store && this.historyStore) return; // 既に初期化済み
+    if (this.store && this.historyStore && this.archiveStore) return; // 既に初期化済み
 
     try {
       if (!Store) {
@@ -114,6 +140,18 @@ export class WorkspaceService {
           cwd: configFolder,
           defaults: WorkspaceService.DEFAULT_HISTORY_DATA,
         }) as unknown as HistoryStoreInstance;
+      }
+
+      // workspace-archive.jsonを初期化
+      if (!this.archiveStore) {
+        this.archiveStore = new Store!<{
+          groups: ArchivedWorkspaceGroup[];
+          items: ArchivedWorkspaceItem[];
+        }>({
+          name: 'workspace-archive',
+          cwd: configFolder,
+          defaults: WorkspaceService.DEFAULT_ARCHIVE_DATA,
+        }) as unknown as ArchiveStoreInstance;
       }
 
       logger.info(`WorkspaceService initialized successfully at ${configFolder}`);
@@ -706,6 +744,213 @@ export class WorkspaceService {
       logger.info('Cleared execution history');
     } catch (error) {
       logger.error({ error }, 'Failed to clear execution history');
+      throw error;
+    }
+  }
+
+  // ==================== アーカイブ管理メソッド ====================
+
+  /**
+   * グループとそのアイテムをアーカイブ
+   * @param groupId アーカイブするグループのID
+   */
+  public async archiveGroup(groupId: string): Promise<void> {
+    await this.initializeStore();
+    if (!this.store) throw new Error('Store not initialized');
+    if (!this.archiveStore) throw new Error('Archive store not initialized');
+
+    try {
+      const groups = await this.loadGroups();
+      const items = await this.loadItems();
+
+      // グループを検索
+      const group = groups.find((g) => g.id === groupId);
+      if (!group) {
+        logger.warn({ groupId }, 'Group not found in workspace');
+        throw new Error(`Group not found: ${groupId}`);
+      }
+
+      // グループ内のアイテムを検索
+      const groupItems = items.filter((item) => item.groupId === groupId);
+
+      // アーカイブデータを作成
+      const archivedGroup: ArchivedWorkspaceGroup = {
+        ...group,
+        archivedAt: Date.now(),
+        originalOrder: group.order,
+        itemCount: groupItems.length,
+      };
+
+      const archivedItems: ArchivedWorkspaceItem[] = groupItems.map((item) => ({
+        ...item,
+        archivedAt: Date.now(),
+        archivedGroupId: groupId,
+      }));
+
+      // アーカイブストアに追加
+      const archivedGroups = this.archiveStore.get('groups') || [];
+      const archivedItemsInStore = this.archiveStore.get('items') || [];
+
+      archivedGroups.push(archivedGroup);
+      archivedItemsInStore.push(...archivedItems);
+
+      this.archiveStore.set('groups', archivedGroups);
+      this.archiveStore.set('items', archivedItemsInStore);
+
+      // ワークスペースから削除
+      const remainingGroups = groups.filter((g) => g.id !== groupId);
+      const remainingItems = items.filter((item) => item.groupId !== groupId);
+
+      this.store.set('groups', remainingGroups);
+      this.store.set('items', remainingItems);
+
+      logger.info(
+        { groupId, groupName: group.name, itemCount: groupItems.length },
+        'Archived group and its items'
+      );
+    } catch (error) {
+      logger.error({ error, groupId }, 'Failed to archive group');
+      throw error;
+    }
+  }
+
+  /**
+   * アーカイブされたグループ一覧を取得
+   * @returns アーカイブされたグループの配列（アーカイブ日時の新しい順）
+   */
+  public async loadArchivedGroups(): Promise<ArchivedWorkspaceGroup[]> {
+    await this.initializeStore();
+    if (!this.archiveStore) throw new Error('Archive store not initialized');
+
+    try {
+      const groups = this.archiveStore.get('groups') || [];
+      // アーカイブ日時の新しい順にソート
+      return groups.sort((a, b) => b.archivedAt - a.archivedAt);
+    } catch (error) {
+      logger.error({ error }, 'Failed to load archived groups');
+      return [];
+    }
+  }
+
+  /**
+   * アーカイブされたグループとそのアイテムを復元
+   * @param groupId 復元するグループのID
+   */
+  public async restoreGroup(groupId: string): Promise<void> {
+    await this.initializeStore();
+    if (!this.store) throw new Error('Store not initialized');
+    if (!this.archiveStore) throw new Error('Archive store not initialized');
+
+    try {
+      const archivedGroups = this.archiveStore.get('groups') || [];
+      const archivedItems = this.archiveStore.get('items') || [];
+
+      // アーカイブからグループを検索
+      const archivedGroup = archivedGroups.find((g) => g.id === groupId);
+      if (!archivedGroup) {
+        logger.warn({ groupId }, 'Archived group not found');
+        throw new Error(`Archived group not found: ${groupId}`);
+      }
+
+      // アーカイブからアイテムを検索
+      const groupArchivedItems = archivedItems.filter((item) => item.archivedGroupId === groupId);
+
+      // 現在のワークスペースデータを取得
+      const groups = await this.loadGroups();
+      const items = await this.loadItems();
+
+      // グループ名の重複チェック
+      let restoredGroupName = archivedGroup.name;
+      const existingNames = groups.map((g) => g.name);
+      if (existingNames.includes(restoredGroupName)) {
+        restoredGroupName = `${restoredGroupName} (復元)`;
+        logger.info(
+          { originalName: archivedGroup.name, newName: restoredGroupName },
+          'Group name was duplicated, added suffix'
+        );
+      }
+
+      // 新しいorder値を計算（末尾に追加）
+      const maxGroupOrder = groups.length > 0 ? Math.max(...groups.map((g) => g.order)) : -1;
+      const maxItemOrder = items.length > 0 ? Math.max(...items.map((i) => i.order)) : -1;
+
+      // グループを復元
+      const restoredGroup: WorkspaceGroup = {
+        id: archivedGroup.id,
+        name: restoredGroupName,
+        color: archivedGroup.color,
+        order: maxGroupOrder + 1,
+        collapsed: archivedGroup.collapsed,
+        createdAt: archivedGroup.createdAt,
+      };
+
+      // アイテムを復元（アーカイブ関連プロパティを削除）
+      const restoredItems: WorkspaceItem[] = groupArchivedItems.map((item, index) => {
+        const { archivedAt: _archivedAt, archivedGroupId: _archivedGroupId, ...workspaceItem } =
+          item;
+        return {
+          ...workspaceItem,
+          order: maxItemOrder + 1 + index,
+        };
+      });
+
+      // ワークスペースに追加
+      groups.push(restoredGroup);
+      items.push(...restoredItems);
+
+      this.store.set('groups', groups);
+      this.store.set('items', items);
+
+      // アーカイブから削除
+      const remainingArchivedGroups = archivedGroups.filter((g) => g.id !== groupId);
+      const remainingArchivedItems = archivedItems.filter(
+        (item) => item.archivedGroupId !== groupId
+      );
+
+      this.archiveStore.set('groups', remainingArchivedGroups);
+      this.archiveStore.set('items', remainingArchivedItems);
+
+      logger.info(
+        { groupId, groupName: restoredGroupName, itemCount: restoredItems.length },
+        'Restored group and its items from archive'
+      );
+    } catch (error) {
+      logger.error({ error, groupId }, 'Failed to restore group from archive');
+      throw error;
+    }
+  }
+
+  /**
+   * アーカイブされたグループとそのアイテムを完全削除
+   * @param groupId 削除するグループのID
+   */
+  public async deleteArchivedGroup(groupId: string): Promise<void> {
+    await this.initializeStore();
+    if (!this.archiveStore) throw new Error('Archive store not initialized');
+
+    try {
+      const archivedGroups = this.archiveStore.get('groups') || [];
+      const archivedItems = this.archiveStore.get('items') || [];
+
+      // グループが存在するか確認
+      const group = archivedGroups.find((g) => g.id === groupId);
+      if (!group) {
+        logger.warn({ groupId }, 'Archived group not found');
+        return;
+      }
+
+      // アーカイブから削除
+      const remainingArchivedGroups = archivedGroups.filter((g) => g.id !== groupId);
+      const remainingArchivedItems = archivedItems.filter(
+        (item) => item.archivedGroupId !== groupId
+      );
+
+      this.archiveStore.set('groups', remainingArchivedGroups);
+      this.archiveStore.set('items', remainingArchivedItems);
+
+      logger.info({ groupId, groupName: group.name }, 'Deleted archived group permanently');
+    } catch (error) {
+      logger.error({ error, groupId }, 'Failed to delete archived group');
       throw error;
     }
   }

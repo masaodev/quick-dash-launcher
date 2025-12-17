@@ -18,6 +18,10 @@ import {
   WORKSPACE_LOAD_EXECUTION_HISTORY,
   WORKSPACE_ADD_EXECUTION_HISTORY,
   WORKSPACE_CLEAR_EXECUTION_HISTORY,
+  WORKSPACE_ARCHIVE_GROUP,
+  WORKSPACE_LOAD_ARCHIVED_GROUPS,
+  WORKSPACE_RESTORE_GROUP,
+  WORKSPACE_DELETE_ARCHIVED_GROUP,
   WORKSPACE_CHANGED,
 } from '@common/ipcChannels';
 import { parseArgs } from '@common/utils/argsParser';
@@ -361,6 +365,71 @@ export function setupWorkspaceHandlers(): void {
       return { success: true };
     } catch (error) {
       logger.error({ error }, 'Failed to clear execution history');
+      throw error;
+    }
+  });
+
+  // ==================== アーカイブ管理ハンドラー ====================
+
+  /**
+   * グループとそのアイテムをアーカイブ
+   */
+  ipcMain.handle(WORKSPACE_ARCHIVE_GROUP, async (_event, groupId: string) => {
+    try {
+      const workspaceService = await WorkspaceService.getInstance();
+      await workspaceService.archiveGroup(groupId);
+      logger.info({ groupId }, 'Archived workspace group');
+      notifyWorkspaceChanged();
+      return { success: true };
+    } catch (error) {
+      logger.error({ error, groupId }, 'Failed to archive workspace group');
+      throw error;
+    }
+  });
+
+  /**
+   * アーカイブされたグループ一覧を取得
+   */
+  ipcMain.handle(WORKSPACE_LOAD_ARCHIVED_GROUPS, async () => {
+    try {
+      const workspaceService = await WorkspaceService.getInstance();
+      const archivedGroups = await workspaceService.loadArchivedGroups();
+      logger.info({ count: archivedGroups.length }, 'Loaded archived groups');
+      return archivedGroups;
+    } catch (error) {
+      logger.error({ error }, 'Failed to load archived groups');
+      throw error;
+    }
+  });
+
+  /**
+   * アーカイブされたグループを復元
+   */
+  ipcMain.handle(WORKSPACE_RESTORE_GROUP, async (_event, groupId: string) => {
+    try {
+      const workspaceService = await WorkspaceService.getInstance();
+      await workspaceService.restoreGroup(groupId);
+      logger.info({ groupId }, 'Restored workspace group from archive');
+      notifyWorkspaceChanged();
+      return { success: true };
+    } catch (error) {
+      logger.error({ error, groupId }, 'Failed to restore workspace group');
+      throw error;
+    }
+  });
+
+  /**
+   * アーカイブされたグループを完全削除
+   */
+  ipcMain.handle(WORKSPACE_DELETE_ARCHIVED_GROUP, async (_event, groupId: string) => {
+    try {
+      const workspaceService = await WorkspaceService.getInstance();
+      await workspaceService.deleteArchivedGroup(groupId);
+      logger.info({ groupId }, 'Deleted archived workspace group permanently');
+      notifyWorkspaceChanged();
+      return { success: true };
+    } catch (error) {
+      logger.error({ error, groupId }, 'Failed to delete archived workspace group');
       throw error;
     }
   });

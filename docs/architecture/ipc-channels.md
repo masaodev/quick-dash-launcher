@@ -102,17 +102,22 @@ QuickDashLauncherで使用される全IPCチャンネルの仕様です。
 
 ### `open-edit-window-with-tab`
 指定されたタブで管理ウィンドウを開く
-- パラメータ: `tab: 'settings' | 'edit' | 'other'`
+- パラメータ: `tab: 'settings' | 'edit' | 'archive' | 'other'`
 - 戻り値: なし
 
 ### `get-initial-tab`
 管理ウィンドウの初期表示タブを取得
-- 戻り値: `'settings' | 'edit' | 'other'`
+- 戻り値: `'settings' | 'edit' | 'archive' | 'other'`
 
 ### `set-active-tab` (イベント)
 管理ウィンドウのアクティブタブを変更
 - **方向**: メインプロセス → レンダラープロセス
-- **パラメータ**: `tab: 'settings' | 'edit' | 'other'`
+- **パラメータ**: `tab: 'settings' | 'edit' | 'archive' | 'other'`
+
+### `admin:show-archive-tab`
+管理ウィンドウをアーカイブタブで開く
+- 戻り値: なし
+- 処理内容: 管理ウィンドウが開いていない場合は開き、アーカイブタブを表示
 
 ### `set-modal-mode`
 モーダルモードを設定（ウィンドウの自動非表示を制御）
@@ -574,11 +579,43 @@ onWindowHidden(callback: () => void)
 - 戻り値: なし
 - 処理完了後、`workspace-changed`イベントを全ウィンドウに送信
 
+### `workspace:archive-group`
+ワークスペースグループをアーカイブ
+- パラメータ: `groupId: string`
+- 戻り値: `boolean`
+- 処理内容:
+  - グループとその中のアイテムをアーカイブに移動
+  - ワークスペースから削除
+- 処理完了後、`workspace-changed`イベントを全ウィンドウに送信
+
+### `workspace:load-archived-groups`
+アーカイブされたグループを読み込み
+- 戻り値: `ArchivedWorkspaceGroup[]` (アーカイブ日時順にソート済み)
+- 各グループにはアイテム数を含む
+
+### `workspace:restore-group`
+アーカイブされたグループを復元
+- パラメータ: `groupId: string`
+- 戻り値: `boolean`
+- 処理内容:
+  - グループとアイテムをワークスペースに復元
+  - アーカイブから削除
+  - 同名グループが存在する場合、グループ名に「(復元)」サフィックスを付加
+- 処理完了後、`workspace-changed`イベントを全ウィンドウに送信
+
+### `workspace:delete-archived-group`
+アーカイブされたグループを完全削除
+- パラメータ: `groupId: string`
+- 戻り値: `boolean`
+- 処理内容:
+  - グループとアイテムをアーカイブから完全削除（復元不可）
+- 処理完了後、`workspace-changed`イベントを全ウィンドウに送信
+
 ### `workspace-changed` (イベント)
 ワークスペース変更を全ウィンドウに通知
 - **方向**: メインプロセス → レンダラープロセス（全ウィンドウ）
 - **パラメータ**: なし
-- **発生タイミング**: ワークスペースアイテム・グループ・実行履歴の変更時
+- **発生タイミング**: ワークスペースアイテム・グループ・実行履歴・アーカイブの変更時
 
 ## 関連ドキュメント
 

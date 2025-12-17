@@ -23,6 +23,7 @@ interface WorkspaceGroupedListProps {
     onToggleGroup: (groupId: string) => void;
     onUpdateGroup: (groupId: string, updates: Partial<WorkspaceGroup>) => void;
     onDeleteGroup: (groupId: string) => void;
+    onArchiveGroup: (groupId: string) => void;
     onMoveItemToGroup: (itemId: string, groupId?: string) => void;
     onReorderGroups: (groupIds: string[]) => void;
   };
@@ -49,6 +50,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
     onToggleGroup,
     onUpdateGroup,
     onDeleteGroup,
+    onArchiveGroup,
     onMoveItemToGroup,
     onReorderGroups,
   } = handlers;
@@ -244,6 +246,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
               onToggle={onToggleGroup}
               onUpdate={onUpdateGroup}
               onDelete={onDeleteGroup}
+              onArchive={onArchiveGroup}
               onDragOver={handleGroupDragOver}
               onDrop={handleGroupDrop(group.id)}
               onGroupDragStart={handleGroupDragStart(group)}

@@ -103,8 +103,17 @@ export const WORKSPACE_LOAD_EXECUTION_HISTORY = 'workspace:load-execution-histor
 export const WORKSPACE_ADD_EXECUTION_HISTORY = 'workspace:add-execution-history';
 export const WORKSPACE_CLEAR_EXECUTION_HISTORY = 'workspace:clear-execution-history';
 
+// ワークスペース - アーカイブ管理
+export const WORKSPACE_ARCHIVE_GROUP = 'workspace:archive-group';
+export const WORKSPACE_LOAD_ARCHIVED_GROUPS = 'workspace:load-archived-groups';
+export const WORKSPACE_RESTORE_GROUP = 'workspace:restore-group';
+export const WORKSPACE_DELETE_ARCHIVED_GROUP = 'workspace:delete-archived-group';
+
 // ワークスペース - イベント
 export const WORKSPACE_CHANGED = 'workspace-changed';
+
+// 管理ウィンドウ
+export const ADMIN_SHOW_ARCHIVE_TAB = 'admin:show-archive-tab';
 
 /**
  * すべてのIPCチャネル定数をまとめたオブジェクト
@@ -210,6 +219,15 @@ export const IPC_CHANNELS = {
   WORKSPACE_LOAD_EXECUTION_HISTORY,
   WORKSPACE_ADD_EXECUTION_HISTORY,
   WORKSPACE_CLEAR_EXECUTION_HISTORY,
+
+  // ワークスペース - アーカイブ管理
+  WORKSPACE_ARCHIVE_GROUP,
+  WORKSPACE_LOAD_ARCHIVED_GROUPS,
+  WORKSPACE_RESTORE_GROUP,
+  WORKSPACE_DELETE_ARCHIVED_GROUP,
+
+  // 管理ウィンドウ
+  ADMIN_SHOW_ARCHIVE_TAB,
 } as const;
 
 /**

@@ -514,6 +514,36 @@ export interface DropTargetData {
 
 **用途**: ワークスペース機能のドラッグ&ドロップで使用される型安全なデータ構造です。
 
+### ArchivedWorkspaceGroup
+```typescript
+/**
+ * アーカイブされたワークスペースグループ
+ * WorkspaceGroupを拡張し、アーカイブ関連の情報を追加
+ */
+export interface ArchivedWorkspaceGroup extends WorkspaceGroup {
+  /** アーカイブ日時（timestamp） */
+  archivedAt: number;
+  /** アーカイブ前のorder（復元時の参考用） */
+  originalOrder: number;
+  /** アーカイブ時のアイテム数（表示用） */
+  itemCount: number;
+}
+```
+
+### ArchivedWorkspaceItem
+```typescript
+/**
+ * アーカイブされたワークスペースアイテム
+ * WorkspaceItemを拡張し、アーカイブ関連の情報を追加
+ */
+export interface ArchivedWorkspaceItem extends WorkspaceItem {
+  /** アーカイブ日時（timestamp） */
+  archivedAt: number;
+  /** アーカイブグループID（どのグループと一緒にアーカイブされたか） */
+  archivedGroupId: string;
+}
+```
+
 ## ワークスペースデータ
 
 ワークスペース機能で使用されるデータファイルの形式です。
@@ -582,6 +612,54 @@ export interface DropTargetData {
 - 最大10件まで保持
 - 古い履歴から自動削除
 - メイン画面でアイテムを起動するたびに自動追加
+
+### workspace-archive.json
+
+アーカイブされたワークスペースグループとアイテムを保存するJSONファイル。
+
+**保存場所**: `%APPDATA%/quick-dash-launcher/config/workspace-archive.json`
+
+**形式**:
+```json
+{
+  "archivedGroups": [
+    {
+      "id": "uuid",
+      "name": "グループ名",
+      "color": "色（CSS変数名またはカラーコード）",
+      "order": 0,
+      "collapsed": false,
+      "createdAt": 1234567890,
+      "archivedAt": 1234567890,
+      "originalOrder": 0,
+      "itemCount": 3
+    }
+  ],
+  "archivedItems": [
+    {
+      "id": "uuid",
+      "displayName": "表示名",
+      "originalName": "元の名前",
+      "path": "パスまたはURL",
+      "type": "url | file | folder | app | customUri",
+      "icon": "base64エンコードされたアイコン（オプション）",
+      "customIcon": "カスタムアイコンファイル名（オプション）",
+      "args": "引数（オプション）",
+      "originalPath": "ショートカットのリンク先（オプション）",
+      "order": 0,
+      "addedAt": 1234567890,
+      "groupId": "グループID",
+      "archivedAt": 1234567890,
+      "archivedGroupId": "アーカイブグループID"
+    }
+  ]
+}
+```
+
+**特徴**:
+- グループ単位でアーカイブ
+- グループとその中のアイテムが一緒に保存される
+- 復元時に同名グループが存在する場合、「(復元)」サフィックスが自動付加される
 
 ## 関連ドキュメント
 

@@ -19,6 +19,7 @@
 - **ドラッグ&ドロップ**: アイテムの並び替えやグループ間移動
 - **実行履歴**: 直近10件の実行履歴を表示・再起動
 - **コンテキストメニュー**: 右クリックで各種操作
+- **アーカイブ**: グループ単位でアーカイブ・復元
 
 ## 2. 基本情報
 
@@ -41,9 +42,9 @@
 | コンポーネント | ファイル | 役割 |
 |--------------|---------|------|
 | **WorkspaceApp** | `WorkspaceApp.tsx` | メインコンポーネント（444行→216行にリファクタリング） |
-| **WorkspaceHeader** | `components/WorkspaceHeader.tsx` | ヘッダー（タイトル、展開/折りたたみ、ピン留めボタン） |
+| **WorkspaceHeader** | `components/WorkspaceHeader.tsx` | ヘッダー（タイトル、展開/折りたたみ、ピン留め、アーカイブボタン） |
 | **WorkspaceGroupedList** | `components/WorkspaceGroupedList.tsx` | アイテムリスト（460行→385行にリファクタリング） |
-| **WorkspaceGroupHeader** | `components/WorkspaceGroupHeader.tsx` | グループヘッダー |
+| **WorkspaceGroupHeader** | `components/WorkspaceGroupHeader.tsx` | グループヘッダー（編集、色変更、アーカイブ、削除ボタン） |
 | **ExecutionHistoryItemCard** | `components/ExecutionHistoryItemCard.tsx` | 実行履歴アイテム |
 
 ### カスタムフック
@@ -80,6 +81,7 @@
 | `.workspace-items` | アイテムリストエリア |
 | `.workspace-group` | グループセクション |
 | `.workspace-group-header` | グループヘッダー |
+| `.workspace-group-header-btn` | グループヘッダーのアクションボタン（編集、色、アーカイブ、削除） |
 | `.workspace-item-card` | アイテムカード |
 | `.workspace-item-delete-btn` | アイテム削除ボタン（×） |
 | `.execution-history` | 実行履歴セクション |

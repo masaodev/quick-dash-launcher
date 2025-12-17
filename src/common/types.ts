@@ -397,3 +397,6 @@ export interface DropTargetData {
   /** アイテムID（targetType='item'の場合） */
   itemId?: string;
 }
+
+// アーカイブ関連の型（workspace.tsから再エクスポート）
+export type { ArchivedWorkspaceGroup, ArchivedWorkspaceItem } from './types/workspace';

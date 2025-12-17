@@ -52,6 +52,15 @@ const WorkspaceApp: React.FC = () => {
     itemCount: 0,
     deleteItems: false,
   });
+  const [archiveGroupDialog, setArchiveGroupDialog] = useState<{
+    isOpen: boolean;
+    groupId: string | null;
+    itemCount: number;
+  }>({
+    isOpen: false,
+    groupId: null,
+    itemCount: 0,
+  });
 
   // ピン状態の初期化
   useEffect(() => {
@@ -92,6 +101,15 @@ const WorkspaceApp: React.FC = () => {
       window.electronAPI.workspaceAPI.setModalMode(false);
     }
   }, [deleteGroupDialog.isOpen]);
+
+  // グループアーカイブダイアログのモーダルモード設定
+  useEffect(() => {
+    if (archiveGroupDialog.isOpen) {
+      window.electronAPI.workspaceAPI.setModalMode(true, { width: 600, height: 400 });
+    } else {
+      window.electronAPI.workspaceAPI.setModalMode(false);
+    }
+  }, [archiveGroupDialog.isOpen]);
 
   /**
    * グループ削除ハンドラー（確認ダイアログ表示）
@@ -142,6 +160,47 @@ const WorkspaceApp: React.FC = () => {
   };
 
   /**
+   * グループアーカイブハンドラー（確認ダイアログ表示）
+   */
+  const handleArchiveGroup = async (groupId: string) => {
+    try {
+      // グループ内のアイテム数を確認
+      const groupItems = items.filter((item) => item.groupId === groupId);
+      const itemCount = groupItems.length;
+
+      // 確認ダイアログを表示
+      setArchiveGroupDialog({
+        isOpen: true,
+        groupId: groupId,
+        itemCount: itemCount,
+      });
+    } catch (error) {
+      console.error('Failed to archive workspace group:', error);
+    }
+  };
+
+  /**
+   * グループアーカイブの確定ハンドラー
+   */
+  const handleConfirmArchiveGroup = async () => {
+    const { groupId } = archiveGroupDialog;
+    if (!groupId) return;
+
+    try {
+      await actions.handleArchiveGroup(groupId);
+
+      // ダイアログを閉じる
+      setArchiveGroupDialog({
+        isOpen: false,
+        groupId: null,
+        itemCount: 0,
+      });
+    } catch (error) {
+      console.error('Failed to archive workspace group:', error);
+    }
+  };
+
+  /**
    * ピン留めトグルハンドラー
    */
   const handleTogglePin = async () => {
@@ -154,6 +213,13 @@ const WorkspaceApp: React.FC = () => {
    */
   const handleClose = () => {
     window.electronAPI.workspaceAPI.hideWindow();
+  };
+
+  /**
+   * アーカイブタブを開くハンドラー
+   */
+  const handleOpenArchive = async () => {
+    await window.electronAPI.openEditWindowWithTab('archive');
   };
 
   /**
@@ -194,6 +260,7 @@ const WorkspaceApp: React.FC = () => {
         onExpandAll={handleExpandAll}
         onCollapseAll={handleCollapseAll}
         onAddGroup={() => actions.handleAddGroup(groups.length)}
+        onOpenArchive={handleOpenArchive}
         isPinned={isPinned}
         onTogglePin={handleTogglePin}
         onClose={handleClose}
@@ -215,6 +282,7 @@ const WorkspaceApp: React.FC = () => {
           onToggleGroup: (groupId: string) => actions.handleToggleGroup(groupId, groups),
           onUpdateGroup: actions.handleUpdateGroup,
           onDeleteGroup: handleDeleteGroup,
+          onArchiveGroup: handleArchiveGroup,
           onMoveItemToGroup: actions.handleMoveItemToGroup,
           onReorderGroups: actions.handleReorderGroups,
         }}
@@ -252,6 +320,22 @@ const WorkspaceApp: React.FC = () => {
             deleteItems: checked,
           })
         }
+      />
+      <ConfirmDialog
+        isOpen={archiveGroupDialog.isOpen}
+        onClose={() =>
+          setArchiveGroupDialog({
+            isOpen: false,
+            groupId: null,
+            itemCount: 0,
+          })
+        }
+        onConfirm={handleConfirmArchiveGroup}
+        title="グループのアーカイブ"
+        message={`「${groups.find((g) => g.id === archiveGroupDialog.groupId)?.name}」をアーカイブしてもよろしいですか？\n\nこのグループには${archiveGroupDialog.itemCount}個のアイテムが含まれています。\nアーカイブしたグループは後で復元できます。`}
+        confirmText="アーカイブ"
+        cancelText="キャンセル"
+        danger={false}
       />
       {/* サイズ変更ハンドル */}
       <div className="workspace-resize-handle top-left" onMouseDown={handleResize('top-left')} />

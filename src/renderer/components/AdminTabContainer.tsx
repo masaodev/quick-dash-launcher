@@ -4,11 +4,12 @@ import { RawDataLine, AppSettings, DataFileTab } from '../../common/types';
 
 import SettingsTab from './SettingsTab';
 import EditModeView from './EditModeView';
+import ArchiveTab from './ArchiveTab';
 import AdminOtherTab from './AdminOtherTab';
 
 interface AdminTabContainerProps {
-  activeTab: 'settings' | 'edit' | 'other';
-  onTabChange: (tab: 'settings' | 'edit' | 'other') => void;
+  activeTab: 'settings' | 'edit' | 'archive' | 'other';
+  onTabChange: (tab: 'settings' | 'edit' | 'archive' | 'other') => void;
   settings: AppSettings | null;
   onSettingsSave: (settings: AppSettings) => Promise<void>;
   rawLines: RawDataLine[];
@@ -31,7 +32,7 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
   dataFileTabs,
   dataFileLabels = {},
 }) => {
-  const handleTabChange = (newTab: 'settings' | 'edit' | 'other') => {
+  const handleTabChange = (newTab: 'settings' | 'edit' | 'archive' | 'other') => {
     onTabChange(newTab);
   };
 
@@ -54,6 +55,12 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
             onClick={() => handleTabChange('edit')}
           >
             ✏️ アイテム管理
+          </button>
+          <button
+            className={`tab-button ${activeTab === 'archive' ? 'active' : ''}`}
+            onClick={() => handleTabChange('archive')}
+          >
+            📦 アーカイブ
           </button>
           <button
             className={`tab-button ${activeTab === 'other' ? 'active' : ''}`}
@@ -80,6 +87,7 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
             dataFileLabels={dataFileLabels}
           />
         )}
+        {activeTab === 'archive' && <ArchiveTab />}
         {activeTab === 'other' && <AdminOtherTab />}
       </div>
     </div>

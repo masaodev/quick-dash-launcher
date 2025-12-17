@@ -1,0 +1,171 @@
+/* アーカイブタブ用スタイル */
+.archive-tab {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-xl);
+  display: flex;
+  flex-direction: column;
+}
+
+.archive-content {
+  flex: 1;
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.archive-header {
+  margin-bottom: var(--spacing-xl);
+}
+
+.archive-header h2 {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  margin: 0 0 var(--spacing-sm) 0;
+}
+
+.archive-description {
+  color: var(--text-muted);
+  font-size: var(--font-size-base);
+  margin: 0;
+}
+
+/* 読み込み中・空状態 */
+.archive-loading,
+.archive-empty {
+  text-align: center;
+  padding: var(--spacing-2xl);
+  color: var(--text-muted);
+  font-size: var(--font-size-lg);
+}
+
+.archive-empty p {
+  margin: 0;
+}
+
+/* アーカイブされたグループリスト */
+.archived-groups-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+/* アーカイブされたグループカード */
+.archived-group-card {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg);
+  background-color: var(--bg-section);
+  border: var(--border-light);
+  border-radius: var(--border-radius-lg);
+  transition: var(--transition-normal);
+}
+
+.archived-group-card:hover {
+  border-color: var(--color-primary-hover);
+  box-shadow: var(--shadow-md);
+}
+
+/* グループカラーバー */
+.archived-group-color {
+  width: 4px;
+  height: 60px;
+  border-radius: var(--border-radius);
+  flex-shrink: 0;
+}
+
+/* グループ情報 */
+.archived-group-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.archived-group-name {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  margin: 0 0 var(--spacing-xs) 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.archived-group-meta {
+  display: flex;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+.archived-date,
+.archived-item-count {
+  display: flex;
+  align-items: center;
+}
+
+/* アクションボタン */
+.archived-group-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  flex-shrink: 0;
+}
+
+.archived-group-restore-btn,
+.archived-group-delete-btn {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: var(--transition-normal);
+  font-family: inherit;
+}
+
+.archived-group-restore-btn {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+}
+
+.archived-group-restore-btn:hover {
+  background-color: var(--color-primary-hover);
+}
+
+.archived-group-restore-btn:active {
+  background-color: var(--color-primary-active);
+}
+
+.archived-group-delete-btn {
+  background-color: var(--color-gray-300);
+  color: var(--text-primary);
+}
+
+.archived-group-delete-btn:hover {
+  background-color: var(--color-danger);
+  color: var(--color-white);
+}
+
+.archived-group-delete-btn:active {
+  background-color: var(--color-danger-active);
+}
+
+/* レスポンシブデザイン */
+@media (max-width: 600px) {
+  .archived-group-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .archived-group-color {
+    width: 100%;
+    height: 4px;
+  }
+
+  .archived-group-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}

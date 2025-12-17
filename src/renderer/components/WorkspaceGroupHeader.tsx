@@ -9,6 +9,7 @@ interface WorkspaceGroupHeaderProps {
   onToggle: (groupId: string) => void;
   onUpdate: (groupId: string, updates: Partial<WorkspaceGroup>) => void;
   onDelete: (groupId: string) => void;
+  onArchive: (groupId: string) => void;
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent) => void;
   onGroupDragStart: (e: React.DragEvent) => void;
@@ -23,6 +24,7 @@ const WorkspaceGroupHeader: React.FC<WorkspaceGroupHeaderProps> = ({
   onToggle,
   onUpdate,
   onDelete,
+  onArchive,
   onDragOver,
   onDrop,
   onGroupDragStart,
@@ -75,6 +77,11 @@ const WorkspaceGroupHeader: React.FC<WorkspaceGroupHeaderProps> = ({
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
     onDelete(group.id);
+  };
+
+  const handleArchive = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onArchive(group.id);
   };
 
   const handleColorButtonClick = (e: React.MouseEvent) => {
@@ -186,6 +193,13 @@ const WorkspaceGroupHeader: React.FC<WorkspaceGroupHeaderProps> = ({
           title="グループ名を編集"
         >
           ✏️
+        </button>
+        <button
+          className="workspace-group-archive-btn"
+          onClick={handleArchive}
+          title="グループをアーカイブ"
+        >
+          📦
         </button>
         <button
           className="workspace-group-delete-btn"

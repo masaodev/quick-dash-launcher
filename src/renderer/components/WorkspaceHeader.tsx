@@ -10,6 +10,8 @@ interface WorkspaceHeaderProps {
   onCollapseAll: () => void;
   /** グループ追加ボタンクリック時のハンドラー */
   onAddGroup: () => void;
+  /** アーカイブボタンクリック時のハンドラー */
+  onOpenArchive: () => void;
   /** ピン留め状態 */
   isPinned: boolean;
   /** ピン留めボタンクリック時のハンドラー */
@@ -30,6 +32,7 @@ const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
   onExpandAll,
   onCollapseAll,
   onAddGroup,
+  onOpenArchive,
   isPinned,
   onTogglePin,
   onClose,
@@ -46,6 +49,9 @@ const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
         </button>
         <button className="workspace-control-btn" onClick={onAddGroup} title="グループを追加">
           ➕
+        </button>
+        <button className="workspace-control-btn" onClick={onOpenArchive} title="アーカイブを開く">
+          📦
         </button>
         <button
           className={`workspace-pin-btn ${isPinned ? 'pinned' : ''}`}

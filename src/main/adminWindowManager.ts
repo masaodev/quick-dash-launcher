@@ -7,7 +7,7 @@ import { SettingsService } from './services/settingsService.js';
 
 let adminWindow: BrowserWindow | null = null;
 let isAdminWindowVisible: boolean = false;
-let initialTab: 'settings' | 'edit' | 'other' = 'settings';
+let initialTab: 'settings' | 'edit' | 'archive' | 'other' = 'settings';
 let isAppQuitting: boolean = false;
 
 /**
@@ -132,7 +132,9 @@ export async function showAdminWindow(): Promise<void> {
  * 指定されたタブで管理ウィンドウを表示する
  * 存在しない場合は新しく作成してから表示する
  */
-export async function showAdminWindowWithTab(tab: 'settings' | 'edit' | 'other'): Promise<void> {
+export async function showAdminWindowWithTab(
+  tab: 'settings' | 'edit' | 'archive' | 'other'
+): Promise<void> {
   initialTab = tab;
   await showAdminWindow();
 
@@ -192,7 +194,7 @@ export function isAdminWindowShown(): boolean {
  * 初期表示タブを取得する
  * @returns 初期表示するタブ
  */
-export function getInitialTab(): 'settings' | 'edit' | 'other' {
+export function getInitialTab(): 'settings' | 'edit' | 'archive' | 'other' {
   return initialTab;
 }
 

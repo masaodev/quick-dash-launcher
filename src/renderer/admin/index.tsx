@@ -5,6 +5,7 @@ import AdminApp from '../AdminApp';
 import '../styles/index.css';
 import '../styles/components/AdminWindow.css';
 import '../styles/components/EditMode.css';
+import '../styles/components/ArchiveTab.css';
 import '../styles/components/Modal.css';
 import '../styles/components/RegisterModal.css';
 import '../styles/components/BookmarkImport.css';

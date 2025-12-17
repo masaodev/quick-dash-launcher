@@ -77,7 +77,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.removeListener('window-hidden', listener);
     };
   },
-  onSetActiveTab: (callback: (tab: 'settings' | 'edit' | 'other') => void) => {
+  onSetActiveTab: (callback: (tab: 'settings' | 'edit' | 'archive' | 'other') => void) => {
     ipcRenderer.on('set-active-tab', (_event, tab) => callback(tab));
   },
   onDataChanged: (callback: () => void) => {
@@ -200,6 +200,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke('workspace:reorder-groups', groupIds),
     moveItemToGroup: (itemId: string, groupId?: string): Promise<{ success: boolean }> =>
       ipcRenderer.invoke('workspace:move-item-to-group', itemId, groupId),
+    // アーカイブ管理
+    archiveGroup: (groupId: string): Promise<{ success: boolean }> =>
+      ipcRenderer.invoke('workspace:archive-group', groupId),
+    loadArchivedGroups: (): Promise<WorkspaceGroup[]> =>
+      ipcRenderer.invoke('workspace:load-archived-groups'),
+    restoreGroup: (groupId: string): Promise<{ success: boolean }> =>
+      ipcRenderer.invoke('workspace:restore-group', groupId),
+    deleteArchivedGroup: (groupId: string): Promise<{ success: boolean }> =>
+      ipcRenderer.invoke('workspace:delete-archived-group', groupId),
     // 実行履歴
     loadExecutionHistory: (): Promise<ExecutionHistoryItem[]> =>
       ipcRenderer.invoke('workspace:load-execution-history'),
