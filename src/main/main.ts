@@ -1,3 +1,5 @@
+import * as path from 'path';
+
 import { app, globalShortcut } from 'electron';
 
 import { setupIPCHandlers } from './ipc';
@@ -34,6 +36,13 @@ let isFirstLaunch = false;
  */
 export function getIsFirstLaunch(): boolean {
   return isFirstLaunch;
+}
+
+// 多重起動時に完全に独立したuserDataを使用
+if (process.env.APP_INSTANCE) {
+  const appName = `${process.env.APP_INSTANCE}-quick-dash-launcher`;
+  const userDataPath = path.join(app.getPath('appData'), appName);
+  app.setPath('userData', userDataPath);
 }
 
 app.whenReady().then(async () => {

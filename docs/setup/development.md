@@ -1,5 +1,97 @@
 # 開発ガイド
 
+## 開発環境のセットアップ
+
+### 多重起動
+
+v0.5.3以降、開発時に複数のインスタンスを同時に起動できるようになりました。これにより、異なる設定やデータで並行開発・比較検証が可能です。
+
+#### 利用可能なインスタンス
+
+| コマンド | ポート | ホットキー | 設定フォルダ | 用途 |
+|---------|--------|-----------|------------|------|
+| `npm run dev` | 9001 | Ctrl+Alt+A | `%APPDATA%\dev-quick-dash-launcher\config` | メイン開発環境 |
+| `npm run dev2` | 9002 | Ctrl+Alt+S | `%APPDATA%\dev2-quick-dash-launcher\config` | 比較検証用 |
+| `npm run dev:test` | 9000 | 設定による | `./tests/dev/full` | テストデータでの動作確認 |
+
+#### 環境変数
+
+インスタンスの動作は以下の環境変数で制御されます：
+
+| 環境変数 | 説明 | 例 |
+|---------|------|-----|
+| `APP_INSTANCE` | インスタンス識別子（userDataパスに使用） | `dev`, `dev2` |
+| `VITE_PORT` | Vite開発サーバーのポート番号 | `9001`, `9002` |
+| `HOTKEY` | グローバルホットキー（設定ファイルを上書き） | `Ctrl+Alt+A`, `Ctrl+Alt+S` |
+| `QUICK_DASH_CONFIG_DIR` | 設定フォルダのパス（絶対パスまたは相対パス） | `./tests/dev/full` |
+
+#### 実装の仕組み
+
+**1. 独立したuserDataパス**
+
+`src/main/main.ts`で、`APP_INSTANCE`環境変数に基づいて各インスタンスが独立したuserDataパスを使用します：
+
+```typescript
+if (process.env.APP_INSTANCE) {
+  const appName = `${process.env.APP_INSTANCE}-quick-dash-launcher`;
+  const userDataPath = path.join(app.getPath('appData'), appName);
+  app.setPath('userData', userDataPath);
+}
+```
+
+**2. ポート番号の環境変数対応**
+
+`vite.config.ts`および各ウィンドウマネージャーで、`VITE_PORT`環境変数からポート番号を読み込みます：
+
+```typescript
+// vite.config.ts
+server: {
+  port: Number(process.env.VITE_PORT) || 9000,
+}
+
+// windowManager.ts, adminWindowManager.ts, etc.
+const port = process.env.VITE_PORT || '9000';
+mainWindow.loadURL(`http://localhost:${port}`);
+```
+
+**3. ホットキーの環境変数上書き**
+
+`src/main/services/hotkeyService.ts`で、`HOTKEY`環境変数が設定されている場合、設定ファイルの値を上書きします：
+
+```typescript
+const envHotkey = process.env.HOTKEY;
+const hotkey = envHotkey || (await this.settingsService.get('hotkey'));
+```
+
+#### カスタムインスタンスの作成
+
+独自のインスタンスを作成する場合は、環境変数を指定して起動します：
+
+**PowerShellの例:**
+```powershell
+# カスタムポート・ホットキーで起動
+$env:APP_INSTANCE="custom"; $env:VITE_PORT="9003"; $env:HOTKEY="Ctrl+Shift+Z"; npm run dev
+
+# 特定のテストデータで起動
+$env:QUICK_DASH_CONFIG_DIR="./tests/dev/minimal"; npm run dev
+```
+
+**Bashの例:**
+```bash
+# カスタムポート・ホットキーで起動
+APP_INSTANCE=custom VITE_PORT=9003 HOTKEY=Ctrl+Shift+Z npm run dev
+
+# 特定のテストデータで起動
+QUICK_DASH_CONFIG_DIR=./tests/dev/minimal npm run dev
+```
+
+#### 注意事項
+
+- 各インスタンスは完全に独立しており、設定・データファイル・キャッシュは共有されません
+- ホットキーは必ず異なる値を指定してください（競合を避けるため）
+- `HOTKEY`環境変数が設定されている場合、設定ファイルの値は無視されます
+- インスタンスを停止する際は、各ターミナルで`Ctrl+C`を押してください
+
 ## 重要な実装詳細
 
 ### ウィンドウの動作
@@ -184,6 +276,12 @@ const result = await window.api.channelName(args);
 **デフォルトの動作:**
 - Windows: `%APPDATA%\quick-dash-launcher\config`
 - 環境変数 `QUICK_DASH_CONFIG_DIR` で任意の場所に変更可能
+
+**多重起動時のuserDataパス:**
+`APP_INSTANCE`環境変数が設定されている場合、インスタンスごとに独立したuserDataパスが使用されます：
+- `npm run dev`: `%APPDATA%\dev-quick-dash-launcher\config`
+- `npm run dev2`: `%APPDATA%\dev2-quick-dash-launcher\config`
+- カスタム: `%APPDATA%\{APP_INSTANCE}-quick-dash-launcher\config`
 
 **テスト時のパス管理:**
 ```typescript

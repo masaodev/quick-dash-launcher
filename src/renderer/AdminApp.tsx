@@ -7,9 +7,7 @@ import AdminTabContainer from './components/AdminTabContainer';
 import AlertDialog from './components/AlertDialog';
 
 const AdminApp: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'settings' | 'edit' | 'archive' | 'other'>(
-    'settings'
-  );
+  const [activeTab, setActiveTab] = useState<'settings' | 'edit' | 'archive' | 'other'>('settings');
   const [rawLines, setRawLines] = useState<RawDataLine[]>([]);
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);

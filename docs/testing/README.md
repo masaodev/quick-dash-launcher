@@ -70,16 +70,17 @@ tests/e2e/
 
 ## テストフィクスチャ
 
-### 開発用テンプレート
+### 開発用インスタンス
+
+v0.5.3以降、開発時に複数のインスタンスを同時に起動できます：
 
 ```bash
-npm run dev:minimal   # 最小限のセット
-npm run dev:full      # 全機能セット
-npm run dev:tabs      # タブ機能デモ
-npm run dev:groups    # グループ起動デモ
-npm run dev:large     # 大量データ（パフォーマンステスト）
-npm run dev:empty     # 空データセット
+npm run dev        # メイン開発環境（ポート9001、ホットキー: Ctrl+Alt+A）
+npm run dev2       # 比較検証用（ポート9002、ホットキー: Ctrl+Alt+S）
+npm run dev:test   # テストデータで起動（全機能を含む）
 ```
+
+詳細は **[開発ガイド - 多重起動](../setup/development.md#多重起動)** を参照してください。
 
 ### テンプレート一覧
 

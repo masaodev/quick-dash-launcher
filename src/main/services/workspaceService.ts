@@ -886,8 +886,11 @@ export class WorkspaceService {
 
       // アイテムを復元（アーカイブ関連プロパティを削除）
       const restoredItems: WorkspaceItem[] = groupArchivedItems.map((item, index) => {
-        const { archivedAt: _archivedAt, archivedGroupId: _archivedGroupId, ...workspaceItem } =
-          item;
+        const {
+          archivedAt: _archivedAt,
+          archivedGroupId: _archivedGroupId,
+          ...workspaceItem
+        } = item;
         return {
           ...workspaceItem,
           order: maxItemOrder + 1 + index,

@@ -43,11 +43,20 @@ export class HotkeyService {
 
   /**
    * 設定からホットキーを読み込んで登録
+   * 環境変数HOTKEYが設定されている場合は、それを優先
    */
   public async registerHotkey(): Promise<boolean> {
     try {
       await this.initializeSettingsService();
-      const hotkey = await this.settingsService.get('hotkey');
+
+      // 環境変数が設定されている場合は優先
+      const envHotkey = process.env.HOTKEY;
+      const hotkey = envHotkey || (await this.settingsService.get('hotkey'));
+
+      if (envHotkey) {
+        logger.info(`Using hotkey from environment variable: ${envHotkey}`);
+      }
+
       return this.setHotkey(hotkey);
     } catch (error) {
       logger.error({ error }, 'Failed to register hotkey from settings');

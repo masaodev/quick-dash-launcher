@@ -84,7 +84,7 @@ export default defineConfig({
     },
   },
   server: {
-    port: 9000,
+    port: Number(process.env.VITE_PORT) || 9000,
   },
   resolve: {
     alias: {

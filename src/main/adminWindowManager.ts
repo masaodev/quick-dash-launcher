@@ -50,7 +50,8 @@ export async function createAdminWindow(): Promise<BrowserWindow> {
 
   // 管理ウィンドウ用のHTMLファイルを読み込み
   if (process.env.NODE_ENV === 'development') {
-    adminWindow.loadURL('http://localhost:9000/admin.html');
+    const port = process.env.VITE_PORT || '9000';
+    adminWindow.loadURL(`http://localhost:${port}/admin.html`);
   } else {
     adminWindow.loadFile(path.join(__dirname, '../admin.html'));
   }
