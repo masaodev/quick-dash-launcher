@@ -8,6 +8,7 @@ import WorkspaceGroupHeader from './WorkspaceGroupHeader';
 import WorkspaceItemCard from './WorkspaceItemCard';
 import ExecutionHistoryItemCard from './ExecutionHistoryItemCard';
 import WorkspaceContextMenu from './WorkspaceContextMenu';
+import WorkspaceGroupContextMenu from './WorkspaceGroupContextMenu';
 
 interface WorkspaceGroupedListProps {
   data: {
@@ -66,6 +67,16 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
   } = ui;
   const [draggedItemId, setDraggedItemId] = React.useState<string | null>(null);
   const [_draggedGroupId, setDraggedGroupId] = React.useState<string | null>(null);
+  const [editingGroupId, setEditingGroupId] = React.useState<string | null>(null);
+  const [groupContextMenu, setGroupContextMenu] = React.useState<{
+    isVisible: boolean;
+    position: { x: number; y: number };
+    group: WorkspaceGroup | null;
+  }>({
+    isVisible: false,
+    position: { x: 0, y: 0 },
+    group: null,
+  });
 
   // グループ化ロジック
   const { itemsByGroup, uncategorizedItems } = useWorkspaceItemGroups(items);
@@ -178,6 +189,33 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
     setDraggedItemId(null);
   };
 
+  // グループコンテキストメニューハンドラー
+  const handleGroupContextMenu = (group: WorkspaceGroup) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setGroupContextMenu({
+      isVisible: true,
+      position: { x: e.clientX, y: e.clientY },
+      group,
+    });
+  };
+
+  const handleCloseGroupContextMenu = () => {
+    setGroupContextMenu({
+      isVisible: false,
+      position: { x: 0, y: 0 },
+      group: null,
+    });
+  };
+
+  const handleRenameGroupFromContextMenu = (group: WorkspaceGroup) => {
+    setEditingGroupId(group.id);
+  };
+
+  const handleChangeGroupColor = (groupId: string, color: string) => {
+    onUpdateGroup(groupId, { color });
+  };
+
   // グループの並び替えハンドラー
   const handleGroupDragStart = (group: WorkspaceGroup) => (e: React.DragEvent) => {
     setDraggedGroupId(group.id);
@@ -243,16 +281,19 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
             <WorkspaceGroupHeader
               group={group}
               itemCount={groupItems.length}
+              isEditing={editingGroupId === group.id}
               onToggle={onToggleGroup}
               onUpdate={onUpdateGroup}
               onDelete={onDeleteGroup}
               onArchive={onArchiveGroup}
+              onStartEdit={() => setEditingGroupId(editingGroupId === group.id ? null : group.id)}
               onDragOver={handleGroupDragOver}
               onDrop={handleGroupDrop(group.id)}
               onGroupDragStart={handleGroupDragStart(group)}
               onGroupDragEnd={handleGroupDragEnd}
               onGroupDragOverForReorder={handleGroupDragOverForReorder(group)}
               onGroupDropForReorder={handleGroupDropForReorder(group)}
+              onContextMenu={handleGroupContextMenu(group)}
             />
             {!group.collapsed && (
               <div className="workspace-group-items">
@@ -376,7 +417,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
         </div>
       )}
 
-      {/* コンテキストメニュー */}
+      {/* アイテムコンテキストメニュー */}
       <WorkspaceContextMenu
         isVisible={contextMenu.isVisible}
         position={contextMenu.position}
@@ -392,6 +433,18 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
         onCopyShortcutPath={pathHandlers.handleCopyShortcutPath}
         onCopyShortcutParentPath={pathHandlers.handleCopyShortcutParentPath}
         onOpenShortcutParentFolder={pathHandlers.handleOpenShortcutParentFolder}
+      />
+
+      {/* グループコンテキストメニュー */}
+      <WorkspaceGroupContextMenu
+        isVisible={groupContextMenu.isVisible}
+        position={groupContextMenu.position}
+        group={groupContextMenu.group}
+        onClose={handleCloseGroupContextMenu}
+        onRename={handleRenameGroupFromContextMenu}
+        onChangeColor={handleChangeGroupColor}
+        onArchive={onArchiveGroup}
+        onDelete={onDeleteGroup}
       />
     </div>
   );
