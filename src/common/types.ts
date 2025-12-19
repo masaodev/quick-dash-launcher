@@ -352,10 +352,38 @@ export interface SearchHistoryState {
 }
 
 /**
- * アプリケーションで扱うすべてのアイテムの統合型
- * 通常のLauncherItemとGroupItemの両方を扱える
+ * ウィンドウ情報を表すインターフェース
+ * ウィンドウ検索機能で使用される
  */
-export type AppItem = LauncherItem | GroupItem;
+export interface WindowInfo {
+  /** ウィンドウハンドル */
+  hwnd: number | bigint;
+  /** ウィンドウタイトル */
+  title: string;
+  /** X座標 */
+  x: number;
+  /** Y座標 */
+  y: number;
+  /** 幅 */
+  width: number;
+  /** 高さ */
+  height: number;
+  /** プロセスID */
+  processId: number;
+  /** 表示状態 */
+  isVisible: boolean;
+}
+
+/**
+ * 検索モードを表す列挙型
+ */
+export type SearchMode = 'normal' | 'window';
+
+/**
+ * アプリケーションで扱うすべてのアイテムの統合型
+ * 通常のLauncherItem、GroupItem、WindowInfoを扱える
+ */
+export type AppItem = LauncherItem | GroupItem | WindowInfo;
 
 /**
  * アプリケーション情報を表すインターフェース

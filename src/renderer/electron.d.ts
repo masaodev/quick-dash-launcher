@@ -13,6 +13,7 @@ import {
   WorkspaceItem,
   WorkspaceGroup,
   ExecutionHistoryItem,
+  WindowInfo,
 } from '../common/types';
 
 import { RegisterItem } from './components/RegisterModal';
@@ -161,6 +162,9 @@ export interface ElectronAPI {
     // ウィンドウ制御
     hideWindow: () => Promise<boolean>;
   };
+  // ウィンドウ検索API
+  getWindowList: () => Promise<WindowInfo[]>;
+  activateWindowByHwnd: (hwnd: number | bigint) => Promise<{ success: boolean; error?: string }>;
   // ワークスペースウィンドウ制御API
   toggleWorkspaceWindow: () => Promise<void>;
   showWorkspaceWindow: () => Promise<void>;

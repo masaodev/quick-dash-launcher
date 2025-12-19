@@ -14,6 +14,7 @@ import {
   WorkspaceItem,
   WorkspaceGroup,
   ExecutionHistoryItem,
+  WindowInfo,
 } from '../common/types';
 
 interface RegisterItem {
@@ -169,6 +170,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // アプリ情報関連API
   getAppInfo: (): Promise<AppInfo> => ipcRenderer.invoke('get-app-info'),
   openExternalUrl: (url: string) => ipcRenderer.invoke('open-external-url', url),
+  // ウィンドウ検索API
+  getWindowList: (): Promise<WindowInfo[]> => ipcRenderer.invoke('get-all-windows'),
+  activateWindowByHwnd: (hwnd: number | bigint): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke('activate-window', hwnd),
   // ワークスペースウィンドウ制御API
   toggleWorkspaceWindow: () => ipcRenderer.invoke('workspace:toggle-window'),
   showWorkspaceWindow: () => ipcRenderer.invoke('workspace:show-window'),

@@ -1,6 +1,7 @@
 import { ipcMain, shell, BrowserWindow } from 'electron';
 import logger from '@common/logger';
 import type { AppItem, WorkspaceItem, WorkspaceGroup } from '@common/types';
+import { isWindowInfo } from '@common/utils/typeGuards';
 import {
   WORKSPACE_LOAD_ITEMS,
   WORKSPACE_ADD_ITEM,
@@ -343,11 +344,13 @@ export function setupWorkspaceHandlers(): void {
     try {
       const workspaceService = await WorkspaceService.getInstance();
       await workspaceService.addExecutionHistory(item);
-      logger.info({ itemName: item.name }, 'Added item to execution history');
+      const itemName = isWindowInfo(item) ? item.title : item.name;
+      logger.info({ itemName }, 'Added item to execution history');
       notifyWorkspaceChanged();
       return { success: true };
     } catch (error) {
-      logger.error({ error, itemName: item.name }, 'Failed to add execution history');
+      const itemName = isWindowInfo(item) ? item.title : item.name;
+      logger.error({ error, itemName }, 'Failed to add execution history');
       // エラーでも処理は継続
       return { success: false };
     }

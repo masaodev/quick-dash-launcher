@@ -1,7 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { convertLauncherItemToRawDataLine, type RegisterItem } from '@common/utils/dataConverters';
 
-import { LauncherItem, GroupItem, AppItem, WindowPinMode, RawDataLine } from '../common/types';
+import {
+  LauncherItem,
+  AppItem,
+  WindowPinMode,
+  RawDataLine,
+  SearchMode,
+  WindowInfo,
+} from '../common/types';
+import { isWindowInfo, isGroupItem } from '../common/utils/typeGuards';
 
 import SearchBox from './components/SearchBox';
 import ItemList from './components/ItemList';
@@ -30,6 +38,8 @@ const App: React.FC = () => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [windowPinMode, setWindowPinMode] = useState<WindowPinMode>('normal');
   const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
+  const [searchMode, setSearchMode] = useState<SearchMode>('normal');
+  const [windowList, setWindowList] = useState<WindowInfo[]>([]);
 
   // AlertDialog状態管理
   const [alertDialog, setAlertDialog] = useState<{
@@ -104,16 +114,31 @@ const App: React.FC = () => {
   // handleExecuteItemを定義（useKeyboardShortcutsより前に必要）
   const handleExecuteItem = async (item: AppItem) => {
     try {
-      // 検索クエリがある場合は履歴に追加
-      if (searchQuery.trim()) {
-        await addHistoryEntry(searchQuery.trim());
-      }
+      if (searchMode === 'window') {
+        // ウィンドウモード
+        const windowItem = item as WindowInfo;
+        const result = await window.electronAPI.activateWindowByHwnd(windowItem.hwnd);
 
-      // グループかどうかで処理を分岐
-      if (item.type === 'group') {
-        await window.electronAPI.executeGroup(item as GroupItem, mainItems);
+        if (!result.success) {
+          setAlertDialog({
+            isOpen: true,
+            message: 'ウィンドウのアクティブ化に失敗しました',
+            type: 'error',
+          });
+        }
       } else {
-        await window.electronAPI.openItem(item as LauncherItem);
+        // 通常モード（既存ロジック）
+        // 検索クエリがある場合は履歴に追加
+        if (searchQuery.trim()) {
+          await addHistoryEntry(searchQuery.trim());
+        }
+
+        // グループかどうかで処理を分岐
+        if (isGroupItem(item)) {
+          await window.electronAPI.executeGroup(item, mainItems);
+        } else {
+          await window.electronAPI.openItem(item as LauncherItem);
+        }
       }
     } catch (error) {
       setAlertDialog({
@@ -137,7 +162,9 @@ const App: React.FC = () => {
     navigateToPrevious,
     navigateToNext,
     setSearchQuery,
-    handleExecuteItem
+    handleExecuteItem,
+    searchMode,
+    windowList
   );
 
   useEffect(() => {
@@ -196,17 +223,19 @@ const App: React.FC = () => {
     const items = await window.electronAPI.loadDataFiles();
 
     // Load cached icons (LauncherItemのみ)
-    const launcherItems = items.filter((item) => item.type !== 'group') as LauncherItem[];
+    const launcherItems = items.filter(
+      (item) => !isWindowInfo(item) && !isGroupItem(item)
+    ) as LauncherItem[];
     const iconCache = await window.electronAPI.loadCachedIcons(launcherItems);
 
     // Apply cached icons to items
     const itemsWithIcons = items.map((item) => {
-      if (item.type === 'group') {
+      if (isWindowInfo(item) || isGroupItem(item)) {
         return item;
       }
       return {
         ...item,
-        icon: iconCache[(item as LauncherItem).path] || ('icon' in item ? item.icon : undefined),
+        icon: iconCache[item.path] || item.icon,
       };
     });
 
@@ -214,11 +243,25 @@ const App: React.FC = () => {
     return itemsWithIcons;
   };
 
-  const handleSearch = (query: string) => {
+  const handleSearch = async (query: string) => {
     setSearchQuery(query);
     setSelectedIndex(0);
     // ユーザーが手動で入力を変更した場合は履歴ナビゲーションをリセット
     resetNavigation();
+
+    // モード切り替え検出
+    const isWindowMode = query.startsWith('<');
+
+    if (isWindowMode && searchMode === 'normal') {
+      // 通常 → ウィンドウモード
+      setSearchMode('window');
+      const windows = await window.electronAPI.getWindowList();
+      setWindowList(windows);
+    } else if (!isWindowMode && searchMode === 'window') {
+      // ウィンドウ → 通常モード
+      setSearchMode('normal');
+      setWindowList([]);
+    }
   };
 
   const handleTogglePin = async () => {
@@ -361,9 +404,14 @@ const App: React.FC = () => {
   };
 
   const handleEditItem = async (item: AppItem) => {
+    // WindowInfoは編集不可
+    if (isWindowInfo(item)) {
+      return;
+    }
+
     // グループアイテムの場合
-    if (item.type === 'group') {
-      const groupItem = item as GroupItem;
+    if (isGroupItem(item)) {
+      const groupItem = item;
       const rawDataLine: RawDataLine = {
         lineNumber: groupItem.lineNumber || 1,
         content: `group,${groupItem.name},${groupItem.itemNames.join(',')}`,
@@ -416,7 +464,8 @@ const App: React.FC = () => {
   };
 
   const tabFilteredItems = getTabFilteredItems(mainItems);
-  const filteredItems = filterItems(tabFilteredItems, searchQuery);
+  const itemsToFilter = searchMode === 'window' ? windowList : tabFilteredItems;
+  const filteredItems = filterItems(itemsToFilter, searchQuery, searchMode);
 
   // 初回起動チェック中はローディング表示
   if (isFirstLaunch === null) {

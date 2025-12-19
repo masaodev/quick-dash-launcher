@@ -6,7 +6,6 @@ import ElectronStore from 'electron-store';
 
 import type {
   AppItem,
-  LauncherItem,
   WorkspaceItem,
   WorkspaceGroup,
   ExecutionHistoryItem,
@@ -16,6 +15,7 @@ import type {
 import logger from '../../common/logger.js';
 import PathManager from '../config/pathManager.js';
 import { detectItemTypeSync } from '../../common/utils/itemTypeDetector.js';
+import { isWindowInfo, isLauncherItem } from '../../common/utils/typeGuards.js';
 
 // electron-storeを動的にインポート
 let Store: typeof ElectronStore | null = null;
@@ -202,12 +202,12 @@ export class WorkspaceService {
     try {
       const items = await this.loadItems();
 
-      // グループアイテムは現状サポートしない（将来的に拡張可能）
-      if (item.type === 'group') {
-        throw new Error('Group items are not supported in workspace yet');
+      // グループアイテムとWindowInfoは現状サポートしない
+      if (isWindowInfo(item) || !isLauncherItem(item)) {
+        throw new Error('Only LauncherItem is supported in workspace');
       }
 
-      const launcherItem = item as LauncherItem;
+      const launcherItem = item;
 
       // 新しいorder値を計算（最大値+1）
       const maxOrder = items.length > 0 ? Math.max(...items.map((i) => i.order)) : -1;
@@ -690,8 +690,14 @@ export class WorkspaceService {
     try {
       const history = await this.loadExecutionHistory();
 
+      // WindowInfoは履歴に追加しない
+      if (isWindowInfo(item)) {
+        logger.info('WindowInfo is not supported in execution history');
+        return;
+      }
+
       // グループアイテムの場合
-      if (item.type === 'group') {
+      if (!isLauncherItem(item)) {
         const groupItem = item as { name: string; type: 'group'; itemNames: string[] };
         const historyItem: ExecutionHistoryItem = {
           id: randomUUID(),
@@ -704,7 +710,7 @@ export class WorkspaceService {
       }
       // 通常のアイテムの場合
       else {
-        const launcherItem = item as LauncherItem;
+        const launcherItem = item;
         const historyItem: ExecutionHistoryItem = {
           id: randomUUID(),
           itemName: launcherItem.name,
@@ -722,12 +728,11 @@ export class WorkspaceService {
 
       // 保存
       this.historyStore.set('history', trimmedHistory);
-      logger.info(
-        { itemName: item.name, count: trimmedHistory.length },
-        'Added item to execution history'
-      );
+      const itemName = isLauncherItem(item) ? item.name : item.name;
+      logger.info({ itemName, count: trimmedHistory.length }, 'Added item to execution history');
     } catch (error) {
-      logger.error({ error, itemName: item.name }, 'Failed to add execution history');
+      const itemName = isWindowInfo(item) ? item.title : item.name;
+      logger.error({ error, itemName }, 'Failed to add execution history');
       // エラーでも処理は継続（履歴追加の失敗はアイテム実行を妨げない）
     }
   }

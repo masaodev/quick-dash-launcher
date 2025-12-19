@@ -4,7 +4,31 @@
  * 型アサーションを安全に置き換えるための型ガード関数を提供します。
  */
 
-import type { AppItem, GroupItem, LauncherItem, WorkspaceItem, DragItemData } from '../types';
+import type {
+  AppItem,
+  GroupItem,
+  LauncherItem,
+  WindowInfo,
+  WorkspaceItem,
+  DragItemData,
+} from '../types';
+
+/**
+ * WindowInfoかどうかを判定する型ガード
+ *
+ * @param item - 判定対象のAppItem
+ * @returns WindowInfoの場合true
+ *
+ * @example
+ * const item: AppItem = getItem();
+ * if (isWindowInfo(item)) {
+ *   // ここではitemはWindowInfo型として扱われる
+ *   console.log(item.hwnd);
+ * }
+ */
+export function isWindowInfo(item: AppItem): item is WindowInfo {
+  return 'hwnd' in item;
+}
 
 /**
  * LauncherItemかどうかを判定する型ガード
@@ -20,7 +44,7 @@ import type { AppItem, GroupItem, LauncherItem, WorkspaceItem, DragItemData } fr
  * }
  */
 export function isLauncherItem(item: AppItem): item is LauncherItem {
-  return item.type !== 'group';
+  return !isWindowInfo(item) && item.type !== 'group';
 }
 
 /**
@@ -37,7 +61,7 @@ export function isLauncherItem(item: AppItem): item is LauncherItem {
  * }
  */
 export function isGroupItem(item: AppItem): item is GroupItem {
-  return item.type === 'group';
+  return !isWindowInfo(item) && item.type === 'group';
 }
 
 /**

@@ -2,6 +2,7 @@ import React from 'react';
 
 import { AppItem, DataFileTab } from '../../common/types';
 import { filterItems } from '../utils/dataParser';
+import { isWindowInfo } from '../../common/utils/typeGuards';
 
 interface FileTabBarProps {
   /** データファイルタブの設定（タブグループのリスト） */
@@ -39,7 +40,9 @@ const FileTabBar: React.FC<FileTabBarProps> = ({
   // 各タブグループのアイテム数を計算
   const getTabItemCount = (tabConfig: DataFileTab): number => {
     // タブに紐付く全ファイルのアイテムを取得
-    const tabItems = allItems.filter((item) => tabConfig.files.includes(item.sourceFile || ''));
+    const tabItems = allItems.filter(
+      (item) => !isWindowInfo(item) && tabConfig.files.includes(item.sourceFile || '')
+    );
     const filteredTabItems = filterItems(tabItems, searchQuery);
     return filteredTabItems.length;
   };

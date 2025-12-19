@@ -486,6 +486,42 @@ onWindowHidden(callback: () => void)
   - ウィンドウが非表示になる直前（`hideMainWindow`実行時）
 - **用途**: ウィンドウ非表示時の前処理（タブリセット等）を実行するため
 
+## ウィンドウ検索関連
+
+### `get-all-windows`
+システム内の開いているウィンドウ一覧を取得
+- 戻り値: `WindowInfo[]`
+- 処理内容:
+  - Win32 API（koffi経由）でシステム内の全ウィンドウを列挙
+  - QuickDashLauncher自身のウィンドウは除外
+  - 表示されていないウィンドウ（`IsWindowVisible = false`）は除外
+  - タイトルのないウィンドウは除外
+- データ型:
+  ```typescript
+  interface WindowInfo {
+    hwnd: number | bigint;    // ウィンドウハンドル
+    title: string;             // ウィンドウタイトル
+    x: number;                 // X座標
+    y: number;                 // Y座標
+    width: number;             // 幅
+    height: number;            // 高さ
+    processId: number;         // プロセスID
+    isVisible: boolean;        // 表示状態
+  }
+  ```
+
+### `activate-window`
+指定されたウィンドウをアクティブ化
+- パラメータ: `hwnd: number | bigint` (ウィンドウハンドル)
+- 戻り値: `{ success: boolean, error?: string }`
+- 処理内容:
+  - 最小化されているウィンドウを復元（ShowWindow SW_RESTORE）
+  - ウィンドウをアクティブ化（SetForegroundWindow）
+  - normalモードの場合、ランチャーウィンドウを自動的に非表示
+- Win32 API使用:
+  - `ShowWindow`: ウィンドウの表示状態を変更
+  - `SetForegroundWindow`: ウィンドウをフォーカス
+
 ## ワークスペース関連
 
 ### `workspace:load-items`
