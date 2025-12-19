@@ -26,7 +26,10 @@ export function setupWindowSearchHandlers(
       const mainHwnd = mainWindow.getNativeWindowHandle();
       const mainHwndValue = mainHwnd.readBigInt64LE(0);
 
-      return windows.filter((win) => win.hwnd !== mainHwndValue);
+      const filteredWindows = windows.filter((win) => win.hwnd !== mainHwndValue);
+
+      // アイコンは既にgetAllWindows()で取得済み
+      return filteredWindows;
     } catch (error) {
       console.error('Failed to get window list:', error);
       return [];

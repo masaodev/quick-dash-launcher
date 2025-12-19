@@ -372,6 +372,10 @@ export interface WindowInfo {
   processId: number;
   /** 表示状態 */
   isVisible: boolean;
+  /** 実行ファイルのパス */
+  executablePath?: string;
+  /** アイコン（base64エンコードされたデータURL） */
+  icon?: string;
 }
 
 /**

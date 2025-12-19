@@ -140,6 +140,9 @@ const App: React.FC = () => {
           await window.electronAPI.openItem(item as LauncherItem);
         }
       }
+
+      // アイテム実行後に検索テキストをクリア
+      setSearchQuery('');
     } catch (error) {
       setAlertDialog({
         isOpen: true,
@@ -199,6 +202,12 @@ const App: React.FC = () => {
       setSearchQuery('');
       setSelectedIndex(0);
       searchInputRef.current?.focus();
+    });
+
+    // ウィンドウが非表示になる際にリセット
+    window.electronAPI.onWindowHidden(() => {
+      setSearchMode('normal'); // 通常モードに戻す
+      setWindowList([]); // ウィンドウリストもクリア
     });
 
     // Load initial pin mode
@@ -503,7 +512,7 @@ const App: React.FC = () => {
           <div className="drag-handle">⋮⋮</div>
         </div>
 
-        {showDataFileTabs && dataFileTabs.length > 1 && (
+        {showDataFileTabs && dataFileTabs.length > 1 && searchMode === 'normal' && (
           <FileTabBar
             dataFileTabs={dataFileTabs}
             activeTab={activeTab}
