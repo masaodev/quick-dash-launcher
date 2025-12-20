@@ -66,7 +66,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
     onToggleUncategorized,
     historyCollapsed,
     onToggleHistory,
-    activeGroupId,
+    activeGroupId: _activeGroupId,
     setActiveGroupId,
   } = ui;
   const [draggedItemId, setDraggedItemId] = React.useState<string | null>(null);
@@ -218,6 +218,28 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
 
   const handleChangeGroupColor = (groupId: string, color: string) => {
     onUpdateGroup(groupId, { color });
+  };
+
+  const handleCopyGroupAsText = (group: WorkspaceGroup) => {
+    const groupItems = itemsByGroup[group.id] || [];
+
+    // テキスト形式に整形（改行はCRLF）
+    let text = `【${group.name}】\r\n`;
+
+    groupItems.forEach((item, index) => {
+      // eslint-disable-next-line no-irregular-whitespace
+      text += `　■${item.displayName}\r\n`;
+      // eslint-disable-next-line no-irregular-whitespace
+      text += `　　${item.path}\r\n`;
+
+      // 最後のアイテム以外は空行を追加
+      if (index < groupItems.length - 1) {
+        text += '\r\n';
+      }
+    });
+
+    // クリップボードにコピー
+    window.electronAPI.copyToClipboard(text);
   };
 
   // グループのトグル処理（折りたたみ/展開とアクティブ化）
@@ -461,6 +483,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
         onChangeColor={handleChangeGroupColor}
         onArchive={onArchiveGroup}
         onDelete={onDeleteGroup}
+        onCopyAsText={handleCopyGroupAsText}
       />
     </div>
   );

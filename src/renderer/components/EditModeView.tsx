@@ -579,7 +579,10 @@ const EditModeView: React.FC<EditModeViewProps> = ({
           >
             🔤 整列・重複削除
           </button>
-          <button onClick={() => setIsBookmarkModalOpen(true)} className="toolbar-button import-bookmark-button">
+          <button
+            onClick={() => setIsBookmarkModalOpen(true)}
+            className="toolbar-button import-bookmark-button"
+          >
             ブックマークをインポート
           </button>
           <div className="toolbar-search">
