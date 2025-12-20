@@ -1,4 +1,4 @@
-import { ipcMain, BrowserWindow } from 'electron';
+import { ipcMain, BrowserWindow, shell } from 'electron';
 import { itemLogger } from '@common/logger';
 import { LauncherItem, GroupItem, AppItem, WindowPinMode } from '@common/types';
 import { GROUP_LAUNCH_DELAY_MS } from '@common/constants';

@@ -12,6 +12,7 @@ interface WorkspaceGroupContextMenuProps {
   onChangeColor: (groupId: string, color: string) => void;
   onArchive: (groupId: string) => void;
   onDelete: (groupId: string) => void;
+  onCopyAsText: (group: WorkspaceGroup) => void;
 }
 
 const WorkspaceGroupContextMenu: React.FC<WorkspaceGroupContextMenuProps> = ({
@@ -23,6 +24,7 @@ const WorkspaceGroupContextMenu: React.FC<WorkspaceGroupContextMenuProps> = ({
   onChangeColor,
   onArchive,
   onDelete,
+  onCopyAsText,
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
   const [showColorPicker, setShowColorPicker] = useState(false);
@@ -89,6 +91,13 @@ const WorkspaceGroupContextMenu: React.FC<WorkspaceGroupContextMenuProps> = ({
     }
   };
 
+  const handleCopyAsText = () => {
+    if (group) {
+      onCopyAsText(group);
+      onClose();
+    }
+  };
+
   const getAdjustedPosition = () => {
     const menuWidth = 250;
     const menuHeight = showColorPicker ? 450 : 200; // カラーピッカー表示時は高さを増やす（12色対応）
@@ -133,6 +142,11 @@ const WorkspaceGroupContextMenu: React.FC<WorkspaceGroupContextMenuProps> = ({
       <div className="context-menu-item" onClick={handleShowColorPicker}>
         <span className="context-menu-icon">🎨</span>
         <span>色を変更</span>
+      </div>
+      <div className="context-menu-divider" />
+      <div className="context-menu-item" onClick={handleCopyAsText}>
+        <span className="context-menu-icon">📋</span>
+        <span>テキストでコピー</span>
       </div>
       <div className="context-menu-divider" />
       <div className="context-menu-item" onClick={handleArchive}>
