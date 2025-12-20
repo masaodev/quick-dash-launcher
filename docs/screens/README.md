@@ -69,6 +69,8 @@ QuickDashLauncher
 | **右クリックメニュー** | アイテムの右クリック操作<br>（パスコピー、フォルダーを開く、編集） | [context-menu.md](./context-menu.md) |
 | **フォルダ取込オプションエディタ** | フォルダ取込アイテムのオプション設定 | [dir-options-editor.md](./dir-options-editor.md) |
 | **ホットキー入力** | グローバルホットキーの設定入力 | [hotkey-input.md](./hotkey-input.md) |
+| **ウィンドウ設定エディター** | ウィンドウ設定（タイトル・位置・サイズ）の編集 | [register-modal.md](./register-modal.md#windowconfigeditor) |
+| **カスタムアイコンエディター** | カスタムアイコンの選択・削除 | [register-modal.md](./register-modal.md#customiconeditor) |
 
 ## 仕様書一覧
 

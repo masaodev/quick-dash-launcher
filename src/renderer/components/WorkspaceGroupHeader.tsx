@@ -7,8 +7,8 @@ interface WorkspaceGroupHeaderProps {
   isEditing: boolean;
   onToggle: (groupId: string) => void;
   onUpdate: (groupId: string, updates: Partial<WorkspaceGroup>) => void;
-  onDelete: (groupId: string) => void;
-  onArchive: (groupId: string) => void;
+  _onDelete: (groupId: string) => void;
+  _onArchive: (groupId: string) => void;
   onStartEdit: () => void;
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent) => void;
@@ -25,8 +25,8 @@ const WorkspaceGroupHeader: React.FC<WorkspaceGroupHeaderProps> = ({
   isEditing,
   onToggle,
   onUpdate,
-  onDelete,
-  onArchive,
+  _onDelete,
+  _onArchive,
   onStartEdit,
   onDragOver,
   onDrop,

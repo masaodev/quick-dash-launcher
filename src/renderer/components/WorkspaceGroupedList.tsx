@@ -66,7 +66,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
     onToggleUncategorized,
     historyCollapsed,
     onToggleHistory,
-    activeGroupId,
+    activeGroupId: _activeGroupId,
     setActiveGroupId,
   } = ui;
   const [draggedItemId, setDraggedItemId] = React.useState<string | null>(null);

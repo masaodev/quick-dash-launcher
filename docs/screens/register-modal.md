@@ -502,10 +502,62 @@
 
 | コンポーネント | 用途 | 表示条件 |
 |---------------|------|----------|
+| `WindowConfigEditor` | ウィンドウ設定の編集（タイトル・位置・サイズ） | 種別が単一アイテム |
+| `CustomIconEditor` | カスタムアイコンの選択・削除 | 種別がフォルダ取込以外 |
 | `DirOptionsEditor` | フォルダ取込オプションの編集 | 種別がフォルダ取込 |
 | `GroupItemSelectorModal` | グループメンバーの選択 | 追加ボタンクリック時 |
 | `FilePickerDialog` | カスタムアイコンファイルの選択 | アイコン選択時 |
 | `WindowSelectorModal` | 実行中ウィンドウの選択 | 「ウィンドウから取得」ボタンクリック時 |
+
+### 子コンポーネント詳細
+
+#### WindowConfigEditor
+
+ウィンドウ設定（タイトル・位置・サイズ）を編集するためのコンポーネントです。
+
+**ファイル:** `src/renderer/components/WindowConfigEditor.tsx`
+
+**Props:**
+```typescript
+interface WindowConfigEditorProps {
+  windowConfig?: WindowConfig;
+  onChange: (windowConfig: WindowConfig) => void;
+  onGetWindowClick: () => void;
+}
+```
+
+**提供する機能:**
+- ウィンドウタイトル入力
+- X座標・Y座標・幅・高さの数値入力
+- 「ウィンドウから取得」ボタン（WindowSelectorModalを開く）
+
+**入力検証:**
+- すべての項目が任意（省略可能）
+- 位置・サイズを指定する場合はタイトルも推奨
+
+#### CustomIconEditor
+
+カスタムアイコンの選択・削除を行うコンポーネントです。
+
+**ファイル:** `src/renderer/components/CustomIconEditor.tsx`
+
+**Props:**
+```typescript
+interface CustomIconEditorProps {
+  customIconPreview?: string;
+  onSelectClick: () => void;
+  onDeleteClick: () => void;
+}
+```
+
+**提供する機能:**
+- アイコンプレビュー表示
+- 「ファイルから選択」ボタン（FilePickerDialogを開く）
+- 「削除」ボタン（カスタムアイコンを削除）
+
+**表示パターン:**
+- アイコンあり: プレビュー画像と削除ボタンを表示
+- アイコンなし: 「カスタムアイコン未設定」メッセージを表示
 
 ### ウィンドウ選択モーダル（WindowSelectorModal）
 

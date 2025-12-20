@@ -9,6 +9,8 @@ import GroupItemSelectorModal from './GroupItemSelectorModal';
 import FilePickerDialog from './FilePickerDialog';
 import DirOptionsEditor from './DirOptionsEditor';
 import WindowSelectorModal from './WindowSelectorModal';
+import WindowConfigEditor from './WindowConfigEditor';
+import CustomIconEditor from './CustomIconEditor';
 
 interface RegisterModalProps {
   isOpen: boolean;
@@ -335,31 +337,15 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                     )}
 
                     {item.itemCategory === 'item' && (
-                      <>
-                        <div className="form-group">
-                          <label>引数 (オプション):</label>
-                          <input
-                            type="text"
-                            value={item.args || ''}
-                            onChange={(e) => handleItemChange(index, 'args', e.target.value)}
-                            placeholder="コマンドライン引数（実行ファイルやアプリの場合のみ有効）"
-                          />
-                        </div>
-
-                        <div className="form-group">
-                          <label>ウィンドウタイトル (オプション):</label>
-                          <input
-                            type="text"
-                            value={item.windowTitle || ''}
-                            onChange={(e) => handleItemChange(index, 'windowTitle', e.target.value)}
-                            placeholder="例: Google Chrome, Visual Studio Code"
-                          />
-                          <small className="field-hint">
-                            設定すると、起動前にこのタイトルのウィンドウを検索します。
-                            見つかればアクティブ化、見つからなければ通常起動します。
-                          </small>
-                        </div>
-                      </>
+                      <div className="form-group">
+                        <label>引数 (オプション):</label>
+                        <input
+                          type="text"
+                          value={item.args || ''}
+                          onChange={(e) => handleItemChange(index, 'args', e.target.value)}
+                          placeholder="コマンドライン引数（実行ファイルやアプリの場合のみ有効）"
+                        />
+                      </div>
                     )}
 
                     {item.itemCategory === 'dir' && (
@@ -454,132 +440,21 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
 
                     {/* カスタムアイコン設定 */}
                     {item.itemCategory !== 'dir' && (
-                      <div className="form-group">
-                        <label>カスタムアイコン:</label>
-                        <div className="custom-icon-section">
-                          {customIconPreviews[index] ? (
-                            <div className="custom-icon-preview">
-                              <img
-                                src={customIconPreviews[index]}
-                                alt="カスタムアイコン"
-                                className="custom-icon-img"
-                              />
-                              <button
-                                type="button"
-                                className="delete-icon-btn"
-                                onClick={() => onCustomIconDeleted(index)}
-                              >
-                                削除
-                              </button>
-                            </div>
-                          ) : (
-                            <div className="no-custom-icon">
-                              <span>カスタムアイコン未設定</span>
-                            </div>
-                          )}
-                          <button
-                            type="button"
-                            className="select-icon-btn"
-                            onClick={() => openCustomIconPicker(index)}
-                          >
-                            ファイルから選択
-                          </button>
-                        </div>
-                      </div>
+                      <CustomIconEditor
+                        customIconPreview={customIconPreviews[index]}
+                        onSelectClick={() => openCustomIconPicker(index)}
+                        onDeleteClick={() => onCustomIconDeleted(index)}
+                      />
                     )}
 
                     {/* ウィンドウ設定セクション */}
-                    <div className="register-field">
-                      <label>ウィンドウ設定（オプション）:</label>
-                      <div className="window-config-section">
-                        <div className="window-config-row">
-                          <label className="window-config-label">ウィンドウタイトル:</label>
-                          <input
-                            type="text"
-                            value={item.windowConfig?.title || ''}
-                            onChange={(e) =>
-                              handleItemChange(index, 'windowConfig', {
-                                ...item.windowConfig,
-                                title: e.target.value,
-                              })
-                            }
-                            placeholder="ウィンドウタイトル（部分一致）"
-                            className="window-config-input"
-                          />
-                        </div>
-                        <div className="window-config-row">
-                          <label className="window-config-label">X座標:</label>
-                          <input
-                            type="number"
-                            value={item.windowConfig?.x ?? ''}
-                            onChange={(e) =>
-                              handleItemChange(index, 'windowConfig', {
-                                ...item.windowConfig,
-                                title: item.windowConfig?.title || '',
-                                x: e.target.value ? parseInt(e.target.value, 10) : undefined,
-                              })
-                            }
-                            placeholder="X座標（省略時は変更なし）"
-                            className="window-config-input-number"
-                          />
-                        </div>
-                        <div className="window-config-row">
-                          <label className="window-config-label">Y座標:</label>
-                          <input
-                            type="number"
-                            value={item.windowConfig?.y ?? ''}
-                            onChange={(e) =>
-                              handleItemChange(index, 'windowConfig', {
-                                ...item.windowConfig,
-                                title: item.windowConfig?.title || '',
-                                y: e.target.value ? parseInt(e.target.value, 10) : undefined,
-                              })
-                            }
-                            placeholder="Y座標（省略時は変更なし）"
-                            className="window-config-input-number"
-                          />
-                        </div>
-                        <div className="window-config-row">
-                          <label className="window-config-label">幅:</label>
-                          <input
-                            type="number"
-                            value={item.windowConfig?.width ?? ''}
-                            onChange={(e) =>
-                              handleItemChange(index, 'windowConfig', {
-                                ...item.windowConfig,
-                                title: item.windowConfig?.title || '',
-                                width: e.target.value ? parseInt(e.target.value, 10) : undefined,
-                              })
-                            }
-                            placeholder="幅（省略時は変更なし）"
-                            className="window-config-input-number"
-                          />
-                        </div>
-                        <div className="window-config-row">
-                          <label className="window-config-label">高さ:</label>
-                          <input
-                            type="number"
-                            value={item.windowConfig?.height ?? ''}
-                            onChange={(e) =>
-                              handleItemChange(index, 'windowConfig', {
-                                ...item.windowConfig,
-                                title: item.windowConfig?.title || '',
-                                height: e.target.value ? parseInt(e.target.value, 10) : undefined,
-                              })
-                            }
-                            placeholder="高さ（省略時は変更なし）"
-                            className="window-config-input-number"
-                          />
-                        </div>
-                        <button
-                          type="button"
-                          className="get-window-btn"
-                          onClick={() => openWindowSelector(index)}
-                        >
-                          ウィンドウから取得
-                        </button>
-                      </div>
-                    </div>
+                    <WindowConfigEditor
+                      windowConfig={item.windowConfig}
+                      onChange={(windowConfig) =>
+                        handleItemChange(index, 'windowConfig', windowConfig)
+                      }
+                      onGetWindowClick={() => openWindowSelector(index)}
+                    />
 
                     {items.length > 1 && <hr />}
                   </div>

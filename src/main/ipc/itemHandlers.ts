@@ -1,15 +1,12 @@
-import { spawn } from 'child_process';
-
-import { ipcMain, shell, BrowserWindow } from 'electron';
+import { ipcMain, BrowserWindow } from 'electron';
 import { itemLogger } from '@common/logger';
 import { LauncherItem, GroupItem, AppItem, WindowPinMode } from '@common/types';
 import { GROUP_LAUNCH_DELAY_MS } from '@common/constants';
-import { parseArgs } from '@common/utils/argsParser';
 import { isLauncherItem } from '@common/utils/typeGuards';
 
 import { WorkspaceService } from '../services/workspaceService.js';
-import { findWindowByTitle } from '../utils/windowMatcher.js';
-import { activateWindow, restoreWindow, setWindowBounds } from '../utils/nativeWindowControl.js';
+import { tryActivateWindow } from '../utils/windowActivator.js';
+import { launchItem } from '../utils/itemLauncher.js';
 
 import { notifyWorkspaceChanged } from './workspaceHandlers.js';
 
@@ -32,101 +29,32 @@ async function openItem(
     );
 
     // ウィンドウ設定が存在する場合、先にウィンドウ検索を試行
-    const windowConfig =
-      item.windowConfig || (item.windowTitle ? { title: item.windowTitle } : undefined);
-    if (windowConfig) {
-      const hwnd = findWindowByTitle(windowConfig.title);
+    const activationResult = tryActivateWindow(
+      item.windowConfig,
+      item.windowTitle,
+      item.name,
+      itemLogger
+    );
 
-      if (hwnd !== null) {
-        itemLogger.info(
-          { name: item.name, windowConfig: JSON.stringify(windowConfig), hwnd: String(hwnd) },
-          'ウィンドウが見つかりました。アクティブ化と位置・サイズ調整を実行します'
-        );
-
-        // 最小化されている場合は復元
-        restoreWindow(hwnd);
-
-        // ウィンドウの位置・サイズを設定（指定されている場合）
-        if (
-          windowConfig.x !== undefined ||
-          windowConfig.y !== undefined ||
-          windowConfig.width !== undefined ||
-          windowConfig.height !== undefined
-        ) {
-          const boundsSuccess = setWindowBounds(hwnd, {
-            x: windowConfig.x,
-            y: windowConfig.y,
-            width: windowConfig.width,
-            height: windowConfig.height,
-          });
-
-          if (!boundsSuccess) {
-            itemLogger.warn(
-              { name: item.name, windowConfig: JSON.stringify(windowConfig) },
-              'ウィンドウの位置・サイズ設定に失敗しました'
-            );
-          }
-        }
-
-        // ウィンドウをアクティブ化
-        const success = activateWindow(hwnd);
-
-        if (success) {
-          // ウィンドウを非表示（必要に応じて）
-          if (mainWindow && shouldHideWindow) {
-            mainWindow.hide();
-          }
-          return; // ウィンドウアクティブ化成功、通常起動をスキップ
-        } else {
-          itemLogger.warn(
-            { name: item.name, windowConfig: JSON.stringify(windowConfig) },
-            'ウィンドウのアクティブ化に失敗。通常起動にフォールバック'
-          );
-          // アクティブ化失敗時は下記の通常起動処理へフォールバック
-        }
-      } else {
-        itemLogger.info(
-          { name: item.name, windowConfig: JSON.stringify(windowConfig) },
-          'ウィンドウが見つかりませんでした。通常起動します'
-        );
-        // ウィンドウが見つからない場合は下記の通常起動処理へフォールバック
+    if (activationResult.activated) {
+      // ウィンドウアクティブ化成功、通常起動をスキップ
+      if (mainWindow && shouldHideWindow) {
+        mainWindow.hide();
       }
+      return;
     }
+    // アクティブ化失敗または未設定の場合は下記の通常起動処理へフォールバック
 
-    // 通常の起動処理（既存のロジックをそのまま維持）
-    if (item.type === 'url') {
-      await shell.openExternal(item.path);
-    } else if (item.type === 'file' || item.type === 'folder') {
-      await shell.openPath(item.path);
-    } else if (item.type === 'app') {
-      // ショートカットファイル（.lnk）の場合、pathがショートカットファイル自身のパスになる
-      // .lnkファイルの場合は引数があってもshell.openPathを使用
-      if (item.path.endsWith('.lnk')) {
-        await shell.openPath(item.path);
-      } else if (item.args) {
-        // 引数を配列として処理（ダブルクォートを考慮してパース）
-        const args = parseArgs(item.args);
-
-        // spawnを使用してコマンドインジェクションを防止
-        // 直接実行することで、startコマンドの複雑な挙動を回避
-        const child = spawn(item.path, args, {
-          detached: true,
-          stdio: 'ignore',
-        });
-        child.unref();
-
-        child.on('error', (error) => {
-          itemLogger.error(
-            { error: error.message, path: item.path, args: item.args },
-            'アイテムの起動に失敗しました (spawn)'
-          );
-        });
-      } else {
-        await shell.openPath(item.path);
-      }
-    } else if (item.type === 'customUri') {
-      await shell.openExternal(item.path);
-    }
+    // 通常の起動処理：共通のlaunchItem関数を使用
+    await launchItem(
+      {
+        type: item.type,
+        path: item.path,
+        args: item.args,
+        name: item.name,
+      },
+      itemLogger
+    );
 
     if (mainWindow && shouldHideWindow) {
       mainWindow.hide();
@@ -144,7 +72,7 @@ async function openItem(
           originalPath: item.originalPath || 'なし',
         },
       },
-      'アイテムの起動に失敗しました'
+      'アイテムの起動処理でエラーが発生しました'
     );
   }
 }

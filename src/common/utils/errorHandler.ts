@@ -104,6 +104,7 @@ export function debugError(message: string, error?: unknown): void {
  */
 export function debugLog(message: string, ...args: unknown[]): void {
   if (process.env.NODE_ENV !== 'production') {
+    // eslint-disable-next-line no-console
     console.log(`[DEBUG] ${message}`, ...args);
   }
 }

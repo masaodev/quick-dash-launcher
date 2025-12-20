@@ -323,19 +323,55 @@ Slack (右半分),slack://,,,"{""title"":""Slack"",""x"":960,""y"":0,""width"":9
 
 ### 実装詳細
 
-**実装場所:**
-- メインプロセス: `src/main/ipc/itemHandlers.ts` - ウィンドウ検索とアクティブ化処理
-- ユーティリティ: `src/main/utils/windowMatcher.ts` - ウィンドウ検索ロジック
-- データ変換: `src/common/utils/windowConfigUtils.ts` - JSON⇔文字列変換
+**アーキテクチャ:**
 
-**Windows API使用:**
-- ウィンドウ位置・サイズ変更: `SetWindowPos`
-- 座標系: 仮想スクリーン座標（マルチモニタ対応）
+アイテム起動時のウィンドウアクティブ化は、以下のモジュール構成で実装されています：
 
-**検索仕様:**
-- 部分一致
-- スペース区切りでAND検索
-- 大文字小文字を区別しない
+| モジュール | 役割 |
+|-----------|------|
+| `src/main/ipc/itemHandlers.ts` | アイテム起動のエントリーポイント |
+| `src/main/ipc/workspaceHandlers.ts` | ワークスペースアイテム起動のエントリーポイント |
+| `src/main/utils/windowActivator.ts` | ウィンドウ検索・アクティブ化・位置サイズ設定の一元管理 |
+| `src/main/utils/itemLauncher.ts` | URL/ファイル/アプリ/カスタムURIの起動処理を統一 |
+| `src/main/utils/windowMatcher.ts` | ウィンドウタイトルによるウィンドウ検索 |
+| `src/main/utils/nativeWindowControl.ts` | ネイティブWindows API経由のウィンドウ制御 |
+| `src/common/utils/windowConfigUtils.ts` | JSON⇔文字列変換、ウィンドウ設定の処理 |
+
+**処理フロー:**
+
+1. **itemHandlers.ts / workspaceHandlers.ts**
+   - アイテム起動リクエストを受信
+   - `tryActivateWindow()` を呼び出してウィンドウアクティブ化を試行
+   - アクティブ化失敗時は `launchItem()` で通常起動
+
+2. **windowActivator.ts**
+   - ウィンドウ設定（WindowConfig）を受け取る
+   - `findWindowByTitle()` でウィンドウを検索
+   - ウィンドウが見つかった場合:
+     - `restoreWindow()` で最小化を解除
+     - `setWindowBounds()` で位置・サイズを設定
+     - `activateWindow()` でウィンドウをアクティブ化
+   - ウィンドウが見つからない場合は通常起動へフォールバック
+
+3. **itemLauncher.ts**
+   - アイテムタイプに応じた起動処理を統一
+   - URL、ファイル、アプリ、カスタムURIをサポート
+   - コマンドインジェクション対策を実装
+
+4. **windowMatcher.ts**
+   - ウィンドウタイトルによる検索
+   - 部分一致、スペース区切りでAND検索
+   - 大文字小文字を区別しない
+
+5. **nativeWindowControl.ts**
+   - Windows API（`SetWindowPos`, `ShowWindow`）を使用
+   - 仮想スクリーン座標系でマルチモニタ対応
+
+**リファクタリング成果（v0.5.4）:**
+- 重複していたウィンドウ制御処理を `windowActivator.ts` に集約
+- 重複していたアイテム起動処理を `itemLauncher.ts` に集約
+- `itemHandlers.ts` と `workspaceHandlers.ts` で共通関数を使用
+- コードの一貫性・保守性・テスタビリティが向上
 
 ### UI機能
 

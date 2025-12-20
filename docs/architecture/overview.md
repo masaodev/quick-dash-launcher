@@ -58,6 +58,25 @@ IPCハンドラーは機能ごとに分離（`src/main/ipc/`）:
 
 ---
 
+## ユーティリティモジュール構造
+
+共通処理は再利用可能なユーティリティモジュールとして実装（`src/main/utils/`）:
+
+| モジュール | 役割 | 使用箇所 |
+|-----------|------|----------|
+| `windowActivator.ts` | ウィンドウ検索・アクティブ化・位置サイズ設定の一元管理 | `itemHandlers.ts`, `workspaceHandlers.ts` |
+| `itemLauncher.ts` | URL/ファイル/アプリ/カスタムURIの起動処理を統一 | `itemHandlers.ts`, `workspaceHandlers.ts` |
+| `windowMatcher.ts` | ウィンドウタイトルによるウィンドウ検索 | `windowActivator.ts` |
+| `nativeWindowControl.ts` | ネイティブWindows API経由のウィンドウ制御 | `windowActivator.ts` |
+
+**設計原則:**
+- **DRY（Don't Repeat Yourself）**: 重複コードを共通関数に集約
+- **単一責任の原則**: 各モジュールは明確に定義された単一の責任を持つ
+- **型安全性**: TypeScriptの型システムを活用した安全な実装
+- **テスタビリティ**: 独立したモジュールとして単体テストが容易
+
+---
+
 ## データ処理システム
 
 ### 設計原則
