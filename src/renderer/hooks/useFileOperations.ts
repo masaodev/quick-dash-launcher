@@ -31,14 +31,16 @@ export function useFileOperations() {
    * ファイルパスのリストからワークスペースにアイテムを追加
    * @param filePaths ファイルパスの配列
    * @param onItemsAdded 追加完了時のコールバック
+   * @param groupId オプションのグループID（指定された場合、そのグループに追加）
    */
   const addItemsFromFilePaths = async (
     filePaths: string[],
-    onItemsAdded: () => void
+    onItemsAdded: () => void,
+    groupId?: string
   ): Promise<void> => {
     if (filePaths.length > 0) {
       try {
-        await window.electronAPI.workspaceAPI.addItemsFromPaths(filePaths);
+        await window.electronAPI.workspaceAPI.addItemsFromPaths(filePaths, groupId);
         onItemsAdded();
       } catch (error) {
         console.error('Failed to add items from file paths:', error);
@@ -65,8 +67,13 @@ export function useFileOperations() {
    * URLをワークスペースに追加
    * @param url URL文字列
    * @param onItemsAdded 追加完了時のコールバック
+   * @param groupId オプションのグループID（指定された場合、そのグループに追加）
    */
-  const addUrlItem = async (url: string, onItemsAdded: () => void): Promise<void> => {
+  const addUrlItem = async (
+    url: string,
+    onItemsAdded: () => void,
+    groupId?: string
+  ): Promise<void> => {
     try {
       // ファビコンを取得
       const icon = await fetchFaviconSafely(url);
@@ -79,7 +86,7 @@ export function useFileOperations() {
         icon,
       };
 
-      await window.electronAPI.workspaceAPI.addItem(item);
+      await window.electronAPI.workspaceAPI.addItem(item, groupId);
       onItemsAdded();
     } catch (error) {
       console.error('Failed to add URL item:', error);

@@ -10,7 +10,7 @@ export interface ColorPaletteItem {
 }
 
 /**
- * グループ色選択用のプリセット色パレット（8色）
+ * グループ色選択用のプリセット色パレット（12色）
  */
 export const GROUP_COLOR_PALETTE: ColorPaletteItem[] = [
   {
@@ -44,5 +44,21 @@ export const GROUP_COLOR_PALETTE: ColorPaletteItem[] = [
   {
     name: 'ティール',
     value: '#00897b',
+  },
+  {
+    name: 'ピンク',
+    value: '#e91e63',
+  },
+  {
+    name: 'インディゴ',
+    value: '#3f51b5',
+  },
+  {
+    name: 'オレンジ',
+    value: '#ff5722',
+  },
+  {
+    name: 'シアン',
+    value: '#00bcd4',
   },
 ];

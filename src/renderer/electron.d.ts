@@ -129,8 +129,8 @@ export interface ElectronAPI {
   // ワークスペース関連API
   workspaceAPI: {
     loadItems: () => Promise<WorkspaceItem[]>;
-    addItem: (item: AppItem) => Promise<WorkspaceItem>;
-    addItemsFromPaths: (filePaths: string[]) => Promise<WorkspaceItem[]>;
+    addItem: (item: AppItem, groupId?: string) => Promise<WorkspaceItem>;
+    addItemsFromPaths: (filePaths: string[], groupId?: string) => Promise<WorkspaceItem[]>;
     removeItem: (id: string) => Promise<{ success: boolean }>;
     updateDisplayName: (id: string, displayName: string) => Promise<{ success: boolean }>;
     reorderItems: (itemIds: string[]) => Promise<{ success: boolean }>;

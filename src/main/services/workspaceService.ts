@@ -193,9 +193,10 @@ export class WorkspaceService {
   /**
    * アイテムをワークスペースに追加
    * @param item 追加するアイテム（LauncherItem or GroupItem）
+   * @param groupId オプションのグループID（指定した場合、そのグループに追加）
    * @returns 追加されたWorkspaceItem
    */
-  public async addItem(item: AppItem): Promise<WorkspaceItem> {
+  public async addItem(item: AppItem, groupId?: string): Promise<WorkspaceItem> {
     await this.initializeStore();
     if (!this.store) throw new Error('Store not initialized');
 
@@ -225,6 +226,7 @@ export class WorkspaceService {
         originalPath: launcherItem.originalPath,
         order: maxOrder + 1,
         addedAt: Date.now(),
+        groupId: groupId, // グループIDを設定
       };
 
       // アイテムを追加
@@ -233,7 +235,7 @@ export class WorkspaceService {
       // 保存
       this.store.set('items', items);
       logger.info(
-        { id: workspaceItem.id, name: workspaceItem.displayName },
+        { id: workspaceItem.id, name: workspaceItem.displayName, groupId },
         'Added item to workspace'
       );
 
@@ -248,9 +250,14 @@ export class WorkspaceService {
    * ファイルパスからワークスペースにアイテムを追加
    * @param filePath 追加するファイルまたはフォルダーのパス
    * @param icon オプションのアイコン（base64エンコードされたデータURL）
+   * @param groupId オプションのグループID（指定した場合、そのグループに追加）
    * @returns 追加されたWorkspaceItem
    */
-  public async addItemFromPath(filePath: string, icon?: string): Promise<WorkspaceItem> {
+  public async addItemFromPath(
+    filePath: string,
+    icon?: string,
+    groupId?: string
+  ): Promise<WorkspaceItem> {
     await this.initializeStore();
     if (!this.store) throw new Error('Store not initialized');
 
@@ -281,6 +288,7 @@ export class WorkspaceService {
         icon: icon,
         order: maxOrder + 1,
         addedAt: Date.now(),
+        groupId: groupId, // グループIDを設定
       };
 
       // アイテムを追加
@@ -289,7 +297,7 @@ export class WorkspaceService {
       // 保存
       this.store.set('items', items);
       logger.info(
-        { id: workspaceItem.id, name: workspaceItem.displayName, path: filePath },
+        { id: workspaceItem.id, name: workspaceItem.displayName, path: filePath, groupId },
         'Added item from path to workspace'
       );
 

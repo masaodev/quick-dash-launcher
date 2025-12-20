@@ -11,6 +11,12 @@ import { useWorkspaceData } from './hooks/useWorkspaceData';
 import { useWorkspaceResize } from './hooks/useWorkspaceResize';
 
 const WorkspaceApp: React.FC = () => {
+  // ローカル状態
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [isPinned, setIsPinned] = useState(false);
+  const [backgroundTransparent, setBackgroundTransparent] = useState(false);
+  const [activeGroupId, setActiveGroupId] = useState<string | undefined>(undefined);
+
   // データ管理フック
   const { items, groups, executionHistory, loadItems, loadGroups, loadExecutionHistory } =
     useWorkspaceData();
@@ -25,8 +31,8 @@ const WorkspaceApp: React.FC = () => {
   // ネイティブドラッグ&ドロップフック
   const { isDraggingOver } = useNativeDragDrop(loadItems);
 
-  // クリップボードペースト処理フック
-  useClipboardPaste(loadItems);
+  // クリップボードペースト処理フック（アクティブグループに追加）
+  useClipboardPaste(loadItems, activeGroupId);
 
   // 折りたたみ状態管理フック
   const { collapsed, toggleSection, expandAll, collapseAll } = useCollapsibleSections({
@@ -36,11 +42,6 @@ const WorkspaceApp: React.FC = () => {
 
   // サイズ変更フック
   const { handleResize } = useWorkspaceResize();
-
-  // ローカル状態
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [isPinned, setIsPinned] = useState(false);
-  const [backgroundTransparent, setBackgroundTransparent] = useState(false);
   const [deleteGroupDialog, setDeleteGroupDialog] = useState<{
     isOpen: boolean;
     groupId: string | null;
@@ -293,6 +294,8 @@ const WorkspaceApp: React.FC = () => {
           onToggleUncategorized: () => toggleSection('uncategorized'),
           historyCollapsed: collapsed.history || false,
           onToggleHistory: () => toggleSection('history'),
+          activeGroupId: activeGroupId,
+          setActiveGroupId: setActiveGroupId,
         }}
       />
       <ConfirmDialog

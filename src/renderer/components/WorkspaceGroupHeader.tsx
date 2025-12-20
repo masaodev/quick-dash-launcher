@@ -153,6 +153,7 @@ const WorkspaceGroupHeader: React.FC<WorkspaceGroupHeaderProps> = ({
           className="workspace-group-name"
           onDoubleClick={handleStartEditClick}
           onDragStart={preventDragStart}
+          title={group.name}
         >
           {group.name}
         </span>
