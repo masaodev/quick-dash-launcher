@@ -367,8 +367,8 @@ html:has(.workspace-window.background-transparent) {
   font-weight: 600;
   color: var(--color-white);
   font-size: 12px;
-  flex-shrink: 0;
-  max-width: 150px;
+  flex: 1;
+  min-width: 0; /* flexアイテムのtext-overflowを有効にするために必要 */
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

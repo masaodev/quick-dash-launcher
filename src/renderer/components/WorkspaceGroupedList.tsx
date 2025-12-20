@@ -35,6 +35,8 @@ interface WorkspaceGroupedListProps {
     onToggleUncategorized: () => void;
     historyCollapsed: boolean;
     onToggleHistory: () => void;
+    activeGroupId?: string;
+    setActiveGroupId: (id: string | undefined) => void;
   };
 }
 
@@ -64,6 +66,8 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
     onToggleUncategorized,
     historyCollapsed,
     onToggleHistory,
+    activeGroupId,
+    setActiveGroupId,
   } = ui;
   const [draggedItemId, setDraggedItemId] = React.useState<string | null>(null);
   const [_draggedGroupId, setDraggedGroupId] = React.useState<string | null>(null);
@@ -216,6 +220,18 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
     onUpdateGroup(groupId, { color });
   };
 
+  // グループのトグル処理（折りたたみ/展開とアクティブ化）
+  const handleGroupToggle = (groupId: string) => {
+    onToggleGroup(groupId);
+    setActiveGroupId(groupId);
+  };
+
+  // 無分類セクションのトグル処理（アクティブグループをクリア）
+  const handleUncategorizedToggle = () => {
+    onToggleUncategorized();
+    setActiveGroupId(undefined);
+  };
+
   // グループの並び替えハンドラー
   const handleGroupDragStart = (group: WorkspaceGroup) => (e: React.DragEvent) => {
     setDraggedGroupId(group.id);
@@ -282,7 +298,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
               group={group}
               itemCount={groupItems.length}
               isEditing={editingGroupId === group.id}
-              onToggle={onToggleGroup}
+              onToggle={handleGroupToggle}
               onUpdate={onUpdateGroup}
               onDelete={onDeleteGroup}
               onArchive={onArchiveGroup}
@@ -328,7 +344,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
         >
           <div
             className="workspace-uncategorized-header"
-            onClick={onToggleUncategorized}
+            onClick={handleUncategorizedToggle}
             style={{ cursor: 'pointer' }}
           >
             <span className="workspace-collapse-icon">{uncategorizedCollapsed ? '▶' : '▼'}</span>

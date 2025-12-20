@@ -64,11 +64,14 @@ export function setupWorkspaceHandlers(): void {
   /**
    * ワークスペースにアイテムを追加
    */
-  ipcMain.handle(WORKSPACE_ADD_ITEM, async (_event, item: AppItem) => {
+  ipcMain.handle(WORKSPACE_ADD_ITEM, async (_event, item: AppItem, groupId?: string) => {
     try {
       const workspaceService = await WorkspaceService.getInstance();
-      const addedItem = await workspaceService.addItem(item);
-      logger.info({ id: addedItem.id, name: addedItem.displayName }, 'Added item to workspace');
+      const addedItem = await workspaceService.addItem(item, groupId);
+      logger.info(
+        { id: addedItem.id, name: addedItem.displayName, groupId },
+        'Added item to workspace'
+      );
       notifyWorkspaceChanged();
       return addedItem;
     } catch (error) {
@@ -81,55 +84,58 @@ export function setupWorkspaceHandlers(): void {
    * ファイルパスからワークスペースにアイテムを追加
    * アイテムタイプに応じてアイコンを自動取得する
    */
-  ipcMain.handle(WORKSPACE_ADD_ITEMS_FROM_PATHS, async (_event, filePaths: string[]) => {
-    try {
-      const workspaceService = await WorkspaceService.getInstance();
-      const addedItems: WorkspaceItem[] = [];
+  ipcMain.handle(
+    WORKSPACE_ADD_ITEMS_FROM_PATHS,
+    async (_event, filePaths: string[], groupId?: string) => {
+      try {
+        const workspaceService = await WorkspaceService.getInstance();
+        const addedItems: WorkspaceItem[] = [];
 
-      // アイコンキャッシュフォルダのパスを取得
-      const iconsFolder = PathManager.getIconsFolder();
-      const extensionsFolder = PathManager.getExtensionsFolder();
+        // アイコンキャッシュフォルダのパスを取得
+        const iconsFolder = PathManager.getIconsFolder();
+        const extensionsFolder = PathManager.getExtensionsFolder();
 
-      for (const filePath of filePaths) {
-        try {
-          // アイテムタイプを判定
-          const itemType = detectItemTypeSync(filePath);
+        for (const filePath of filePaths) {
+          try {
+            // アイテムタイプを判定
+            const itemType = detectItemTypeSync(filePath);
 
-          // タイプに応じてアイコンを取得（IconServiceを使用）
-          const icon = await IconService.getIconForItem(
-            filePath,
-            itemType,
-            iconsFolder,
-            extensionsFolder
-          );
-          logger.info(
-            { path: filePath, hasIcon: !!icon, type: itemType },
-            'Extracted icon for workspace'
-          );
+            // タイプに応じてアイコンを取得（IconServiceを使用）
+            const icon = await IconService.getIconForItem(
+              filePath,
+              itemType,
+              iconsFolder,
+              extensionsFolder
+            );
+            logger.info(
+              { path: filePath, hasIcon: !!icon, type: itemType },
+              'Extracted icon for workspace'
+            );
 
-          // アイコン付きでアイテムを追加
-          const addedItem = await workspaceService.addItemFromPath(filePath, icon);
-          addedItems.push(addedItem);
-          logger.info(
-            { id: addedItem.id, name: addedItem.displayName, path: filePath, type: itemType },
-            'Added item from path to workspace'
-          );
-        } catch (error) {
-          logger.error({ error, path: filePath }, 'Failed to add item from path');
-          // 個別のエラーは記録するが、処理は継続
+            // アイコン付きでアイテムを追加
+            const addedItem = await workspaceService.addItemFromPath(filePath, icon, groupId);
+            addedItems.push(addedItem);
+            logger.info(
+              { id: addedItem.id, name: addedItem.displayName, path: filePath, type: itemType },
+              'Added item from path to workspace'
+            );
+          } catch (error) {
+            logger.error({ error, path: filePath }, 'Failed to add item from path');
+            // 個別のエラーは記録するが、処理は継続
+          }
         }
-      }
 
-      if (addedItems.length > 0) {
-        notifyWorkspaceChanged();
-      }
+        if (addedItems.length > 0) {
+          notifyWorkspaceChanged();
+        }
 
-      return addedItems;
-    } catch (error) {
-      logger.error({ error }, 'Failed to add items from paths to workspace');
-      throw error;
+        return addedItems;
+      } catch (error) {
+        logger.error({ error }, 'Failed to add items from paths to workspace');
+        throw error;
+      }
     }
-  });
+  );
 
   /**
    * ワークスペースからアイテムを削除

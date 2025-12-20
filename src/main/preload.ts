@@ -181,10 +181,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // ワークスペース関連API
   workspaceAPI: {
     loadItems: (): Promise<WorkspaceItem[]> => ipcRenderer.invoke('workspace:load-items'),
-    addItem: (item: AppItem): Promise<WorkspaceItem> =>
-      ipcRenderer.invoke('workspace:add-item', item),
-    addItemsFromPaths: (filePaths: string[]): Promise<WorkspaceItem[]> =>
-      ipcRenderer.invoke('workspace:add-items-from-paths', filePaths),
+    addItem: (item: AppItem, groupId?: string): Promise<WorkspaceItem> =>
+      ipcRenderer.invoke('workspace:add-item', item, groupId),
+    addItemsFromPaths: (filePaths: string[], groupId?: string): Promise<WorkspaceItem[]> =>
+      ipcRenderer.invoke('workspace:add-items-from-paths', filePaths, groupId),
     removeItem: (id: string): Promise<{ success: boolean }> =>
       ipcRenderer.invoke('workspace:remove-item', id),
     updateDisplayName: (id: string, displayName: string): Promise<{ success: boolean }> =>

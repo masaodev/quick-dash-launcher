@@ -91,20 +91,22 @@ const WorkspaceGroupContextMenu: React.FC<WorkspaceGroupContextMenuProps> = ({
 
   const getAdjustedPosition = () => {
     const menuWidth = 250;
-    const menuHeight = showColorPicker ? 400 : 200; // カラーピッカー表示時は高さを増やす
+    const menuHeight = showColorPicker ? 450 : 200; // カラーピッカー表示時は高さを増やす（12色対応）
 
     let adjustedX = position.x;
     let adjustedY = position.y;
 
+    // 右端からはみ出す場合は左側に表示
     if (position.x + menuWidth > window.innerWidth) {
-      adjustedX = position.x - menuWidth;
+      adjustedX = Math.max(0, window.innerWidth - menuWidth);
     }
 
+    // 下端からはみ出す場合は上側に表示
     if (position.y + menuHeight > window.innerHeight) {
-      adjustedY = position.y - menuHeight;
+      adjustedY = Math.max(0, window.innerHeight - menuHeight);
     }
 
-    return { x: Math.max(0, adjustedX), y: Math.max(0, adjustedY) };
+    return { x: adjustedX, y: adjustedY };
   };
 
   if (!isVisible || !group) {
