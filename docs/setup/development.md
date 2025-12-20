@@ -191,12 +191,40 @@ for (const fileName of dataFiles) {
 3. **関数の統合**: 抽出した共通関数を各箇所で使用するよう修正
 4. **動作確認**: ビルドとテストで機能が維持されることを検証
 
-**IconServiceの例:**
+**リファクタリング事例:**
+
+**1. IconServiceの例（アイコン取得ロジックの共通化）:**
 ワークスペース機能のリファクタリングで、アイコン取得ロジックの重複を削除しました：
 - `workspaceHandlers.ts`: 36行→13行（重複削除）
 - `useModalInitializer.ts`: 24行→14行（重複削除）
 - 60行以上の重複コードを`IconService`に集約
 - アイテムタイプに応じた適切なアイコン取得処理を一箇所で管理
+
+**2. ウィンドウ処理とアイテム起動の共通化（v0.5.4）:**
+アイテム起動処理の重複コードを共通ユーティリティに集約しました：
+
+**新規ユーティリティモジュール:**
+- `src/main/utils/windowActivator.ts` - ウィンドウ検索・アクティブ化・位置サイズ設定
+- `src/main/utils/itemLauncher.ts` - URL/ファイル/アプリ/カスタムURIの起動処理
+
+**改善箇所:**
+- `itemHandlers.ts` - アイテム起動処理を共通関数に置き換え
+- `workspaceHandlers.ts` - ワークスペースアイテム起動処理を共通関数に置き換え
+- 重複していた起動ロジックを一箇所で管理
+- ウィンドウ制御処理の一貫性向上
+
+**3. RegisterModalのコンポーネント分割（v0.5.4）:**
+大きなコンポーネントを小さく分割して保守性を向上しました：
+
+**新規コンポーネント:**
+- `src/renderer/components/WindowConfigEditor.tsx` - ウィンドウ設定エディター（115行）
+- `src/renderer/components/CustomIconEditor.tsx` - カスタムアイコンエディター（47行）
+
+**改善内容:**
+- `RegisterModal.tsx` - 642行の大きなコンポーネントを分割
+- ウィンドウ設定とカスタムアイコン編集を独立したコンポーネントに分離
+- 古いウィンドウタイトルフィールド（単独）を削除し、WindowConfigに統合
+- 各コンポーネントが明確な責任を持つように再設計
 
 ### パフォーマンス最適化
 - **バンドルサイズ**: 不要なコードの削除でアプリケーションサイズを最適化
@@ -440,6 +468,8 @@ QuickDashLauncherではCSS変数ベースの統一されたデザインシステ
 - **FileTabBar.tsx**: ファイルタブの切り替え
 - **ItemList.tsx**: アイテムリスト表示
 - **RegisterModal.tsx**: ドラッグ&ドロップ登録用モーダル
+  - **WindowConfigEditor.tsx**: ウィンドウ設定エディター（115行）
+  - **CustomIconEditor.tsx**: カスタムアイコンエディター（47行）
 - **EditableRawItemList.tsx**: 編集モード用のデータ編集テーブル
   - パスと引数列でパス＋引数を統合表示・編集
   - アイテム行：パス＋引数の組み合わせ（例：`notepad.exe`, `https://github.com/`）

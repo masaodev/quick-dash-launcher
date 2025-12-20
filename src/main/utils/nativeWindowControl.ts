@@ -40,6 +40,15 @@ const SetForegroundWindow = user32.func('SetForegroundWindow', 'bool', ['void*']
 const ShowWindow = user32.func('ShowWindow', 'bool', ['void*', 'int']);
 const SendMessageW = user32.func('SendMessageW', 'intptr', ['void*', 'uint32', 'intptr', 'intptr']);
 const GetClassLongPtrW = user32.func('GetClassLongPtrW', 'intptr', ['void*', 'int']);
+const SetWindowPos = user32.func('SetWindowPos', 'bool', [
+  'void*', // hWnd
+  'void*', // hWndInsertAfter
+  'int', // X
+  'int', // Y
+  'int', // cx (width)
+  'int', // cy (height)
+  'uint32', // uFlags
+]);
 
 // Win32 API関数の定義（kernel32.dll）
 const OpenProcess = kernel32.func('OpenProcess', 'void*', ['uint32', 'bool', 'uint32']);
@@ -110,6 +119,12 @@ const GDI_STATUS_MESSAGES: Record<number, string> = {
 // 定数
 const SW_RESTORE = 9;
 const PROCESS_QUERY_LIMITED_INFORMATION = 0x1000;
+
+// SetWindowPos用フラグ
+const SWP_NOSIZE = 0x0001; // サイズ変更をスキップ
+const SWP_NOMOVE = 0x0002; // 位置変更をスキップ
+const SWP_NOZORDER = 0x0004; // Zオーダー変更をスキップ
+const SWP_NOACTIVATE = 0x0010; // アクティブ化しない
 
 // アイコン関連の定数
 const WM_GETICON = 0x007f;
@@ -387,6 +402,79 @@ export function restoreWindow(hwnd: number | bigint): boolean {
     return ShowWindow(hwndNumber, SW_RESTORE);
   } catch (error) {
     console.error(`Error restoring window ${hwnd}:`, error);
+    return false;
+  }
+}
+
+/**
+ * ウィンドウの位置とサイズを変更
+ * 省略されたフィールドは現在の値を維持
+ *
+ * @param hwnd ウィンドウハンドル
+ * @param config 位置・サイズの設定（省略可能なフィールドは変更しない）
+ * @returns 成功したらtrue
+ *
+ * @example
+ * // 位置のみ変更
+ * setWindowBounds(hwnd, { x: 100, y: 100 })
+ *
+ * @example
+ * // サイズのみ変更
+ * setWindowBounds(hwnd, { width: 1920, height: 1080 })
+ *
+ * @example
+ * // 位置とサイズを両方変更
+ * setWindowBounds(hwnd, { x: 100, y: 100, width: 1920, height: 1080 })
+ */
+export function setWindowBounds(
+  hwnd: number | bigint,
+  config: { x?: number; y?: number; width?: number; height?: number }
+): boolean {
+  try {
+    const hwndNumber = typeof hwnd === 'bigint' ? Number(hwnd) : hwnd;
+
+    // フラグの決定
+    let flags = SWP_NOZORDER | SWP_NOACTIVATE;
+
+    // 位置が省略されている場合
+    if (config.x === undefined && config.y === undefined) {
+      flags |= SWP_NOMOVE;
+    }
+
+    // サイズが省略されている場合
+    if (config.width === undefined && config.height === undefined) {
+      flags |= SWP_NOSIZE;
+    }
+
+    // 現在のウィンドウ情報を取得（省略されたフィールドに使用）
+    const rect = { left: 0, top: 0, right: 0, bottom: 0 };
+    const rectSuccess = GetWindowRect(hwndNumber, rect);
+
+    if (!rectSuccess) {
+      console.error(`[setWindowBounds] Failed to get window rect for hwnd=${hwnd}`);
+      return false;
+    }
+
+    // 位置とサイズを決定（省略されている場合は現在の値を使用）
+    const x = config.x ?? rect.left;
+    const y = config.y ?? rect.top;
+    const width = config.width ?? rect.right - rect.left;
+    const height = config.height ?? rect.bottom - rect.top;
+
+    // SetWindowPos を呼び出し（hWndInsertAfter = 0 はZオーダー変更なし）
+    const success = SetWindowPos(hwndNumber, 0, x, y, width, height, flags);
+
+    if (!success) {
+      console.error(
+        `[setWindowBounds] SetWindowPos failed: hwnd=${hwnd}, x=${x}, y=${y}, width=${width}, height=${height}`
+      );
+    }
+
+    return success;
+  } catch (error) {
+    console.error(
+      `[setWindowBounds] Error: hwnd=${hwnd}, config=${JSON.stringify(config)}, error=${error instanceof Error ? error.message : String(error)}`
+    );
     return false;
   }
 }

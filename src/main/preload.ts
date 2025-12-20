@@ -106,6 +106,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   isDirectory: (filePath: string) => ipcRenderer.invoke('is-directory', filePath),
   getPathForFile: (file: File) => webUtils.getPathForFile(file),
   quitApp: () => ipcRenderer.invoke('quit-app'),
+  getAllWindows: (): Promise<WindowInfo[]> => ipcRenderer.invoke('get-all-windows'),
   updateItem: (request: UpdateItemRequest) => ipcRenderer.invoke('update-item', request),
   updateRawLine: (request: { sourceFile: string; lineNumber: number; newContent: string }) =>
     ipcRenderer.invoke('update-raw-line', request),

@@ -253,8 +253,148 @@ adminWindow.webContents.on('before-input-event', (event, input) => {
 - `get-initial-tab`: 初期タブを取得
 - `set-active-tab`: アクティブタブを変更（イベント）
 
+## ウィンドウ位置・サイズ制御
+
+### 概要
+
+アイテムにウィンドウ設定を追加することで、既存ウィンドウのアクティブ化と同時に位置・サイズの制御ができます。
+
+### 機能概要
+
+**基本動作:**
+1. アイテム起動前に、指定されたウィンドウタイトルでウィンドウを検索
+2. ウィンドウが見つかった場合:
+   - ウィンドウをアクティブ化（前面に表示）
+   - 位置・サイズが設定されている場合は、ウィンドウを移動・リサイズ
+   - 通常起動は実行しない
+3. ウィンドウが見つからない場合: 通常通りアイテムを起動
+
+### データ形式
+
+ウィンドウ設定はdata.txtの5番目のフィールドに記述します。
+
+#### 文字列形式（タイトルのみ）
+
+```
+名前,パス,引数,カスタムアイコン,ウィンドウタイトル
+```
+
+**例:**
+```
+VSCode,code.exe,,,Visual Studio Code
+Chrome,chrome.exe,,,Google Chrome
+```
+
+#### JSON形式（位置・サイズ指定）
+
+```
+名前,パス,引数,カスタムアイコン,"{""title"":""ウィンドウタイトル"",""x"":100,""y"":200,""width"":800,""height"":600}"
+```
+
+**JSON構造:**
+```json
+{
+  "title": "ウィンドウタイトル（必須）",
+  "x": 100,      // X座標（省略可能）
+  "y": 200,      // Y座標（省略可能）
+  "width": 800,  // 幅（省略可能）
+  "height": 600  // 高さ（省略可能）
+}
+```
+
+詳細は **[データファイル形式 - ウィンドウ設定](data-format.md#ウィンドウ設定フィールドの記述方法)** を参照してください。
+
+### マルチモニタ対応
+
+座標系は仮想スクリーン座標（Virtual Screen Coordinates）を使用します。
+
+**座標系の仕様:**
+- プライマリモニターの左上が原点 (0, 0)
+- セカンダリモニターは相対位置に配置
+  - 例: プライマリが1920x1080、セカンダリが右側なら X=1920 から開始
+- 負の座標も使用可能（プライマリの左側・上側にモニターがある場合）
+
+**使用例（デュアルモニタ）:**
+```
+Chrome (セカンダリ),chrome.exe,,,"{""title"":""Google Chrome"",""x"":1920,""y"":0,""width"":1920,""height"":1080}"
+VSCode (左半分),code.exe,,,"{""title"":""Visual Studio Code"",""x"":0,""y"":0,""width"":960,""height"":1080}"
+Slack (右半分),slack://,,,"{""title"":""Slack"",""x"":960,""y"":0,""width"":960,""height"":1080}"
+```
+
+### 実装詳細
+
+**アーキテクチャ:**
+
+アイテム起動時のウィンドウアクティブ化は、以下のモジュール構成で実装されています：
+
+| モジュール | 役割 |
+|-----------|------|
+| `src/main/ipc/itemHandlers.ts` | アイテム起動のエントリーポイント |
+| `src/main/ipc/workspaceHandlers.ts` | ワークスペースアイテム起動のエントリーポイント |
+| `src/main/utils/windowActivator.ts` | ウィンドウ検索・アクティブ化・位置サイズ設定の一元管理 |
+| `src/main/utils/itemLauncher.ts` | URL/ファイル/アプリ/カスタムURIの起動処理を統一 |
+| `src/main/utils/windowMatcher.ts` | ウィンドウタイトルによるウィンドウ検索 |
+| `src/main/utils/nativeWindowControl.ts` | ネイティブWindows API経由のウィンドウ制御 |
+| `src/common/utils/windowConfigUtils.ts` | JSON⇔文字列変換、ウィンドウ設定の処理 |
+
+**処理フロー:**
+
+1. **itemHandlers.ts / workspaceHandlers.ts**
+   - アイテム起動リクエストを受信
+   - `tryActivateWindow()` を呼び出してウィンドウアクティブ化を試行
+   - アクティブ化失敗時は `launchItem()` で通常起動
+
+2. **windowActivator.ts**
+   - ウィンドウ設定（WindowConfig）を受け取る
+   - `findWindowByTitle()` でウィンドウを検索
+   - ウィンドウが見つかった場合:
+     - `restoreWindow()` で最小化を解除
+     - `setWindowBounds()` で位置・サイズを設定
+     - `activateWindow()` でウィンドウをアクティブ化
+   - ウィンドウが見つからない場合は通常起動へフォールバック
+
+3. **itemLauncher.ts**
+   - アイテムタイプに応じた起動処理を統一
+   - URL、ファイル、アプリ、カスタムURIをサポート
+   - コマンドインジェクション対策を実装
+
+4. **windowMatcher.ts**
+   - ウィンドウタイトルによる検索
+   - 部分一致、スペース区切りでAND検索
+   - 大文字小文字を区別しない
+
+5. **nativeWindowControl.ts**
+   - Windows API（`SetWindowPos`, `ShowWindow`）を使用
+   - 仮想スクリーン座標系でマルチモニタ対応
+
+**リファクタリング成果（v0.5.4）:**
+- 重複していたウィンドウ制御処理を `windowActivator.ts` に集約
+- 重複していたアイテム起動処理を `itemLauncher.ts` に集約
+- `itemHandlers.ts` と `workspaceHandlers.ts` で共通関数を使用
+- コードの一貫性・保守性・テスタビリティが向上
+
+### UI機能
+
+**アイテム登録・編集画面（RegisterModal）:**
+- ウィンドウ設定セクション
+  - ウィンドウタイトル入力欄
+  - X座標、Y座標、幅、高さの数値入力欄
+  - 「ウィンドウから取得」ボタン
+
+**ウィンドウ選択ダイアログ（WindowSelectorModal）:**
+- 実行中のウィンドウ一覧を表示
+- ウィンドウを選択すると、タイトル・位置・サイズが自動入力される
+
+詳細は **[アイテム登録・編集モーダル - ウィンドウ設定](../screens/register-modal.md#45-ウィンドウ設定を入力)** を参照してください。
+
+### 後方互換性
+
+既存の`windowTitle`文字列形式は引き続きサポートされます。アプリケーション内部では自動的に`WindowConfig`形式に変換されます。
+
 ## 関連ドキュメント
 
 - [アーキテクチャ概要](overview.md) - システム全体の構造
 - [IPCチャンネル詳細](ipc-channels.md) - ウィンドウ制御関連のIPCチャンネル
+- [データファイル形式](data-format.md) - ウィンドウ設定フィールドの仕様
+- [アイテム登録・編集モーダル](../screens/register-modal.md) - ウィンドウ設定のUI
 - [アプリケーション設定](../features/settings.md) - 設定画面へのアクセス方法

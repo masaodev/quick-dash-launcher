@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { type RegisterItem } from '@common/utils/dataConverters';
 import { detectItemType } from '@common/utils/itemTypeDetector';
 
-import { RawDataLine, DataFileTab } from '../../common/types';
+import { RawDataLine, DataFileTab, WindowConfig } from '../../common/types';
 import { debugInfo } from '../utils/debug';
 
 import { useModalInitializer } from './useModalInitializer';
@@ -91,11 +91,13 @@ export function useRegisterForm(
   const handleItemChange = async (
     index: number,
     field: keyof RegisterItem,
-    value: string | boolean | RegisterItem['dirOptions']
+    value: string | boolean | RegisterItem['dirOptions'] | WindowConfig
   ) => {
     const newItems = [...items];
     if (field === 'dirOptions') {
       newItems[index] = { ...newItems[index], dirOptions: value as RegisterItem['dirOptions'] };
+    } else if (field === 'windowConfig') {
+      newItems[index] = { ...newItems[index], windowConfig: value as WindowConfig };
     } else if (field === 'groupItemNames') {
       // groupItemNamesの場合は文字列をパース
       const itemNames = (value as string)

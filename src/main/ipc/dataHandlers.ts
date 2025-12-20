@@ -5,6 +5,7 @@ import { dataLogger } from '@common/logger';
 import { FileUtils } from '@common/utils/fileUtils';
 import { parseCSVLine, escapeCSV } from '@common/utils/csvParser';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
+import { parseWindowConfig } from '@common/utils/windowConfigUtils';
 import { RawDataLine, LauncherItem, GroupItem, AppItem } from '@common/types';
 import { isWindowInfo } from '@common/utils/typeGuards';
 
@@ -32,11 +33,17 @@ function parseCSVLineToItem(
     return null;
   }
 
-  const [name, itemPath, argsField, customIconField, windowTitleField] = parts;
+  const [name, itemPath, argsField, customIconField, windowConfigField] = parts;
 
   if (!name || !itemPath) {
     return null;
   }
+
+  // 第5フィールドをWindowConfigとしてパース（文字列/JSON両対応）
+  const windowConfig =
+    windowConfigField && windowConfigField.trim()
+      ? parseWindowConfig(windowConfigField)
+      : undefined;
 
   const item: LauncherItem = {
     name,
@@ -44,7 +51,9 @@ function parseCSVLineToItem(
     type: detectItemTypeSync(itemPath),
     args: argsField && argsField.trim() ? argsField : undefined,
     customIcon: customIconField && customIconField.trim() ? customIconField : undefined,
-    windowTitle: windowTitleField && windowTitleField.trim() ? windowTitleField : undefined,
+    // 後方互換性のため、windowTitleも設定（deprecatedだが既存コードで使用される可能性）
+    windowTitle: windowConfig?.title,
+    windowConfig: windowConfig ?? undefined,
     sourceFile,
     lineNumber: lineNumber,
     isDirExpanded: false,

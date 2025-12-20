@@ -1,4 +1,4 @@
-import { ipcMain, shell, BrowserWindow } from 'electron';
+import { ipcMain, BrowserWindow } from 'electron';
 import logger from '@common/logger';
 import type { AppItem, WorkspaceItem, WorkspaceGroup } from '@common/types';
 import { isWindowInfo } from '@common/utils/typeGuards';
@@ -25,11 +25,10 @@ import {
   WORKSPACE_DELETE_ARCHIVED_GROUP,
   WORKSPACE_CHANGED,
 } from '@common/ipcChannels';
-import { parseArgs } from '@common/utils/argsParser';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 
-import { findWindowByTitle } from '../utils/windowMatcher.js';
-import { activateWindow, restoreWindow } from '../utils/nativeWindowControl.js';
+import { tryActivateWindow } from '../utils/windowActivator.js';
+import { launchItem } from '../utils/itemLauncher.js';
 import { WorkspaceService } from '../services/workspaceService.js';
 import PathManager from '../config/pathManager.js';
 import { IconService } from '../services/iconService.js';
@@ -192,64 +191,30 @@ export function setupWorkspaceHandlers(): void {
    */
   ipcMain.handle(WORKSPACE_LAUNCH_ITEM, async (_event, item: WorkspaceItem) => {
     try {
-      // ウィンドウタイトルが設定されている場合、先にウィンドウ検索を試行
-      if (item.windowTitle) {
-        const hwnd = findWindowByTitle(item.windowTitle);
+      // ウィンドウ設定が存在する場合、先にウィンドウ検索を試行
+      const activationResult = tryActivateWindow(
+        item.windowConfig,
+        item.windowTitle,
+        item.displayName,
+        logger
+      );
 
-        if (hwnd !== null) {
-          logger.info(
-            { id: item.id, name: item.displayName, windowTitle: item.windowTitle },
-            'Window found for workspace item, activating'
-          );
-
-          // 最小化されている場合は復元
-          restoreWindow(hwnd);
-
-          // ウィンドウをアクティブ化
-          const success = activateWindow(hwnd);
-
-          if (success) {
-            return { success: true };
-          } else {
-            logger.warn(
-              { id: item.id, name: item.displayName },
-              'Failed to activate window, falling back to normal launch'
-            );
-            // アクティブ化失敗時は下記の通常起動処理へフォールバック
-          }
-        } else {
-          logger.info(
-            { id: item.id, name: item.displayName, windowTitle: item.windowTitle },
-            'Window not found for workspace item, launching normally'
-          );
-          // ウィンドウが見つからない場合は下記の通常起動処理へフォールバック
-        }
+      if (activationResult.activated) {
+        // ウィンドウアクティブ化成功
+        return { success: true };
       }
+      // アクティブ化失敗または未設定の場合は下記の通常起動処理へフォールバック
 
-      // WorkspaceItemを起動（通常起動ロジック）
-      if (item.type === 'url') {
-        await shell.openExternal(item.path);
-      } else if (item.type === 'file' || item.type === 'folder') {
-        await shell.openPath(item.path);
-      } else if (item.type === 'app') {
-        // ショートカットファイルの場合
-        if (item.path.endsWith('.lnk')) {
-          await shell.openPath(item.path);
-        } else if (item.args) {
-          // 引数を配列として処理
-          const args = parseArgs(item.args);
-          const { spawn } = await import('child_process');
-          const child = spawn(item.path, args, {
-            detached: true,
-            stdio: 'ignore',
-          });
-          child.unref();
-        } else {
-          await shell.openPath(item.path);
-        }
-      } else if (item.type === 'customUri') {
-        await shell.openExternal(item.path);
-      }
+      // WorkspaceItemを起動：共通のlaunchItem関数を使用
+      await launchItem(
+        {
+          type: item.type,
+          path: item.path,
+          args: item.args,
+          name: item.displayName,
+        },
+        logger
+      );
 
       logger.info(
         { id: item.id, name: item.displayName, path: item.path },

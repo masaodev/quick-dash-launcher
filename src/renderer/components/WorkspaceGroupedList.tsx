@@ -322,8 +322,8 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
               isEditing={editingGroupId === group.id}
               onToggle={handleGroupToggle}
               onUpdate={onUpdateGroup}
-              onDelete={onDeleteGroup}
-              onArchive={onArchiveGroup}
+              _onDelete={onDeleteGroup}
+              _onArchive={onArchiveGroup}
               onStartEdit={() => setEditingGroupId(editingGroupId === group.id ? null : group.id)}
               onDragOver={handleGroupDragOver}
               onDrop={handleGroupDrop(group.id)}

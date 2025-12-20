@@ -274,3 +274,78 @@
   background-color: var(--color-danger-hover);
   border-color: var(--color-danger-hover);
 }
+
+/* ウィンドウ設定セクション */
+.window-config-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  background-color: var(--bg-secondary);
+  border-radius: var(--border-radius);
+  border: var(--border-light);
+}
+
+.window-config-row {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.window-config-label {
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+.window-config-input {
+  padding: var(--spacing-sm);
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-sm);
+  background-color: var(--color-white);
+  color: var(--text-primary);
+  transition: border-color var(--transition-fast);
+}
+
+.window-config-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: var(--focus-ring);
+}
+
+.window-config-input-number {
+  padding: var(--spacing-sm);
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-sm);
+  background-color: var(--color-white);
+  color: var(--text-primary);
+  transition: border-color var(--transition-fast);
+  width: 100%;
+  max-width: 200px;
+}
+
+.window-config-input-number:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: var(--focus-ring);
+}
+
+.get-window-btn {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  border: none;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+  font-size: var(--font-size-sm);
+  align-self: flex-start;
+  margin-top: var(--spacing-xs);
+}
+
+.get-window-btn:hover {
+  background-color: var(--color-primary-hover);
+}
