@@ -495,6 +495,7 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
   }, _testInfo) => {
     // 複数ファイル統合タブのテンプレートをロード
     configHelper.loadTemplate('with-multi-file-tabs');
+    await mainWindow.reload();
 
     const utils = new TestUtils(mainWindow);
 
@@ -522,6 +523,7 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
     configHelper,
   }, _testInfo) => {
     configHelper.loadTemplate('with-multi-file-tabs');
+    await mainWindow.reload();
 
     const utils = new TestUtils(mainWindow);
 
@@ -557,6 +559,7 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
     configHelper,
   }, _testInfo) => {
     configHelper.loadTemplate('with-multi-file-tabs');
+    await mainWindow.reload();
 
     const utils = new TestUtils(mainWindow);
 
@@ -587,6 +590,7 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
     configHelper,
   }, _testInfo) => {
     configHelper.loadTemplate('with-multi-file-tabs');
+    await mainWindow.reload();
 
     const utils = new TestUtils(mainWindow);
 
@@ -627,6 +631,7 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
     configHelper,
   }, _testInfo) => {
     configHelper.loadTemplate('with-multi-file-tabs');
+    await mainWindow.reload();
 
     const utils = new TestUtils(mainWindow);
 
@@ -670,6 +675,7 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
     configHelper,
   }, _testInfo) => {
     configHelper.loadTemplate('with-multi-file-tabs');
+    await mainWindow.reload();
 
     const utils = new TestUtils(mainWindow);
 
@@ -717,6 +723,7 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
     configHelper,
   }, _testInfo) => {
     configHelper.loadTemplate('with-multi-file-tabs');
+    await mainWindow.reload();
 
     const utils = new TestUtils(mainWindow);
 
@@ -752,6 +759,7 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
     configHelper,
   }, _testInfo) => {
     configHelper.loadTemplate('with-multi-file-tabs');
+    await mainWindow.reload();
 
     const utils = new TestUtils(mainWindow);
 
@@ -785,6 +793,7 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
     configHelper,
   }, _testInfo) => {
     configHelper.loadTemplate('with-multi-file-tabs');
+    await mainWindow.reload();
 
     const utils = new TestUtils(mainWindow);
 

@@ -101,8 +101,38 @@ export const test = base.extend<ElectronFixtures>({
 
   // メインウィンドウを取得するフィクスチャ
   mainWindow: async ({ electronApp }, use) => {
-    // 最初のウィンドウを取得（メインウィンドウ）
-    const mainWindow = await electronApp.firstWindow();
+    // メインウィンドウを探す関数
+    const findMainWindow = (windows: Page[]): Page | undefined => {
+      return windows.find((win) => {
+        const url = win.url();
+        return (
+          url.includes('index.html') &&
+          !url.includes('workspace.html') &&
+          !url.includes('admin.html') &&
+          !url.includes('splash.html')
+        );
+      });
+    };
+
+    // メインウィンドウが見つかるまで最大10秒待機（ポーリング）
+    let mainWindow: Page | undefined;
+    const maxAttempts = 20; // 20回 × 500ms = 10秒
+    const delayMs = 500;
+
+    for (let i = 0; i < maxAttempts; i++) {
+      const windows = electronApp.windows();
+      mainWindow = findMainWindow(windows);
+      if (mainWindow) {
+        break;
+      }
+
+      // メインウィンドウが見つからない場合は少し待つ
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+
+    if (!mainWindow) {
+      throw new Error('メインウィンドウが見つかりません');
+    }
 
     // テストでウィンドウを使用
     await use(mainWindow);
