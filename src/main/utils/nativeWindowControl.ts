@@ -82,6 +82,31 @@ const PNG_ENCODER_GUID = Buffer.from([
   0x06, 0xf4, 0x7c, 0x55, 0x04, 0x1a, 0xd3, 0x11, 0x9a, 0x73, 0x00, 0x00, 0xf8, 0x1e, 0xf3, 0x2e,
 ]);
 
+// GDI+ ステータスコードの説明
+const GDI_STATUS_MESSAGES: Record<number, string> = {
+  0: 'Ok',
+  1: 'GenericError',
+  2: 'InvalidParameter',
+  3: 'OutOfMemory',
+  4: 'ObjectBusy',
+  5: 'InsufficientBuffer',
+  6: 'NotImplemented',
+  7: 'Win32Error',
+  8: 'WrongState',
+  9: 'Aborted',
+  10: 'FileNotFound',
+  11: 'ValueOverflow',
+  12: 'AccessDenied',
+  13: 'UnknownImageFormat',
+  14: 'FontFamilyNotFound',
+  15: 'FontStyleNotFound',
+  16: 'NotTrueTypeFont',
+  17: 'UnsupportedGdiplusVersion',
+  18: 'GdiplusNotInitialized',
+  19: 'PropertyNotFound',
+  20: 'PropertyNotSupported',
+};
+
 // 定数
 const SW_RESTORE = 9;
 const PROCESS_QUERY_LIMITED_INFORMATION = 0x1000;
@@ -151,7 +176,10 @@ export function convertIconToBase64(hIcon: bigint | number): string | undefined 
 
     const status = GdiplusStartup(gdiplusToken, startupInput, null);
     if (status !== 0) {
-      console.error(`[convertIconToBase64] GdiplusStartup failed: ${status}`);
+      const statusMsg = GDI_STATUS_MESSAGES[status] || `Unknown(${status})`;
+      console.error(
+        `[convertIconToBase64] GdiplusStartup failed: status=${status} (${statusMsg}), hIcon=${hIcon}`
+      );
       return undefined;
     }
 
@@ -159,7 +187,10 @@ export function convertIconToBase64(hIcon: bigint | number): string | undefined 
     const hIconPtr = typeof hIcon === 'bigint' ? Number(hIcon) : hIcon;
     const createStatus = GdipCreateBitmapFromHICON(hIconPtr, bitmap);
     if (createStatus !== 0 || !bitmap[0]) {
-      console.error(`[convertIconToBase64] GdipCreateBitmapFromHICON failed: ${createStatus}`);
+      const statusMsg = GDI_STATUS_MESSAGES[createStatus] || `Unknown(${createStatus})`;
+      console.error(
+        `[convertIconToBase64] GdipCreateBitmapFromHICON failed: status=${createStatus} (${statusMsg}), hIcon=${hIcon}, bitmap=${bitmap[0] ? 'created' : 'null'}`
+      );
       return undefined;
     }
 
@@ -170,7 +201,10 @@ export function convertIconToBase64(hIcon: bigint | number): string | undefined 
     );
     const saveStatus = GdipSaveImageToFile(bitmap[0], tempFilePath, PNG_ENCODER_GUID, null);
     if (saveStatus !== 0) {
-      console.error(`[convertIconToBase64] GdipSaveImageToFile failed: ${saveStatus}`);
+      const statusMsg = GDI_STATUS_MESSAGES[saveStatus] || `Unknown(${saveStatus})`;
+      console.error(
+        `[convertIconToBase64] GdipSaveImageToFile failed: status=${saveStatus} (${statusMsg}), path=${tempFilePath}`
+      );
       return undefined;
     }
 
@@ -180,7 +214,9 @@ export function convertIconToBase64(hIcon: bigint | number): string | undefined 
 
     return base64;
   } catch (error) {
-    console.error('[convertIconToBase64] Error:', error);
+    console.error(
+      `[convertIconToBase64] Unexpected error: hIcon=${hIcon}, error=${error instanceof Error ? error.message : String(error)}`
+    );
     return undefined;
   } finally {
     // クリーンアップ
@@ -194,7 +230,9 @@ export function convertIconToBase64(hIcon: bigint | number): string | undefined 
       try {
         fs.unlinkSync(tempFilePath);
       } catch (e) {
-        console.error('[convertIconToBase64] Failed to delete temp file:', e);
+        console.error(
+          `[convertIconToBase64] Failed to delete temp file: path=${tempFilePath}, error=${e instanceof Error ? e.message : String(e)}`
+        );
       }
     }
   }
