@@ -102,17 +102,22 @@ QuickDashLauncherで使用される全IPCチャンネルの仕様です。
 
 ### `open-edit-window-with-tab`
 指定されたタブで管理ウィンドウを開く
-- パラメータ: `tab: 'settings' | 'edit' | 'other'`
+- パラメータ: `tab: 'settings' | 'edit' | 'archive' | 'other'`
 - 戻り値: なし
 
 ### `get-initial-tab`
 管理ウィンドウの初期表示タブを取得
-- 戻り値: `'settings' | 'edit' | 'other'`
+- 戻り値: `'settings' | 'edit' | 'archive' | 'other'`
 
 ### `set-active-tab` (イベント)
 管理ウィンドウのアクティブタブを変更
 - **方向**: メインプロセス → レンダラープロセス
-- **パラメータ**: `tab: 'settings' | 'edit' | 'other'`
+- **パラメータ**: `tab: 'settings' | 'edit' | 'archive' | 'other'`
+
+### `admin:show-archive-tab`
+管理ウィンドウをアーカイブタブで開く
+- 戻り値: なし
+- 処理内容: 管理ウィンドウが開いていない場合は開き、アーカイブタブを表示
 
 ### `set-modal-mode`
 モーダルモードを設定（ウィンドウの自動非表示を制御）
@@ -481,6 +486,52 @@ onWindowHidden(callback: () => void)
   - ウィンドウが非表示になる直前（`hideMainWindow`実行時）
 - **用途**: ウィンドウ非表示時の前処理（タブリセット等）を実行するため
 
+## ウィンドウ検索関連
+
+### `get-all-windows`
+システム内の開いているウィンドウ一覧を取得
+- 戻り値: `WindowInfo[]`
+- 処理内容:
+  - Win32 API（koffi経由）でシステム内の全ウィンドウを列挙
+  - QuickDashLauncher自身のウィンドウは除外
+  - 表示されていないウィンドウ（`IsWindowVisible = false`）は除外
+  - タイトルのないウィンドウは除外
+  - 各ウィンドウのアイコンを取得（Windows API + GDI+使用）
+  - 実行ファイルパスを取得（プロセスIDから取得）
+- データ型:
+  ```typescript
+  interface WindowInfo {
+    hwnd: number | bigint;      // ウィンドウハンドル
+    title: string;               // ウィンドウタイトル
+    x: number;                   // X座標
+    y: number;                   // Y座標
+    width: number;               // 幅
+    height: number;              // 高さ
+    processId: number;           // プロセスID
+    isVisible: boolean;          // 表示状態
+    executablePath?: string;     // 実行ファイルパス（取得可能な場合）
+    icon?: string;               // アイコン（base64エンコードされたデータURL）
+  }
+  ```
+- アイコン取得の詳細:
+  - `getWindowIcon()`: ウィンドウハンドルからHICONを取得（WM_GETICON, GCLP_HICONを試行）
+  - `convertIconToBase64()`: HICONをGDI+でPNG base64に変換
+  - `getExecutablePathFromProcessId()`: プロセスIDから実行ファイルパスを取得
+  - メモリリーク対策: GDI+リソース解放、一時ファイル削除、koffi callback解放
+  - エラーハンドリング: GDI+ステータスコード（0-20）の詳細ログ出力で問題診断を支援（詳細は[アイコンシステム](../features/icons.md#gdiエラーハンドリング)を参照）
+
+### `activate-window`
+指定されたウィンドウをアクティブ化
+- パラメータ: `hwnd: number | bigint` (ウィンドウハンドル)
+- 戻り値: `{ success: boolean, error?: string }`
+- 処理内容:
+  - 最小化されているウィンドウを復元（ShowWindow SW_RESTORE）
+  - ウィンドウをアクティブ化（SetForegroundWindow）
+  - normalモードの場合、ランチャーウィンドウを自動的に非表示
+- Win32 API使用:
+  - `ShowWindow`: ウィンドウの表示状態を変更
+  - `SetForegroundWindow`: ウィンドウをフォーカス
+
 ## ワークスペース関連
 
 ### `workspace:load-items`
@@ -574,11 +625,43 @@ onWindowHidden(callback: () => void)
 - 戻り値: なし
 - 処理完了後、`workspace-changed`イベントを全ウィンドウに送信
 
+### `workspace:archive-group`
+ワークスペースグループをアーカイブ
+- パラメータ: `groupId: string`
+- 戻り値: `boolean`
+- 処理内容:
+  - グループとその中のアイテムをアーカイブに移動
+  - ワークスペースから削除
+- 処理完了後、`workspace-changed`イベントを全ウィンドウに送信
+
+### `workspace:load-archived-groups`
+アーカイブされたグループを読み込み
+- 戻り値: `ArchivedWorkspaceGroup[]` (アーカイブ日時順にソート済み)
+- 各グループにはアイテム数を含む
+
+### `workspace:restore-group`
+アーカイブされたグループを復元
+- パラメータ: `groupId: string`
+- 戻り値: `boolean`
+- 処理内容:
+  - グループとアイテムをワークスペースに復元
+  - アーカイブから削除
+  - 同名グループが存在する場合、グループ名に「(復元)」サフィックスを付加
+- 処理完了後、`workspace-changed`イベントを全ウィンドウに送信
+
+### `workspace:delete-archived-group`
+アーカイブされたグループを完全削除
+- パラメータ: `groupId: string`
+- 戻り値: `boolean`
+- 処理内容:
+  - グループとアイテムをアーカイブから完全削除（復元不可）
+- 処理完了後、`workspace-changed`イベントを全ウィンドウに送信
+
 ### `workspace-changed` (イベント)
 ワークスペース変更を全ウィンドウに通知
 - **方向**: メインプロセス → レンダラープロセス（全ウィンドウ）
 - **パラメータ**: なし
-- **発生タイミング**: ワークスペースアイテム・グループ・実行履歴の変更時
+- **発生タイミング**: ワークスペースアイテム・グループ・実行履歴・アーカイブの変更時
 
 ## 関連ドキュメント
 

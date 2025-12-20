@@ -1,6 +1,7 @@
 import { ipcMain, shell, BrowserWindow } from 'electron';
 import logger from '@common/logger';
 import type { AppItem, WorkspaceItem, WorkspaceGroup } from '@common/types';
+import { isWindowInfo } from '@common/utils/typeGuards';
 import {
   WORKSPACE_LOAD_ITEMS,
   WORKSPACE_ADD_ITEM,
@@ -18,6 +19,10 @@ import {
   WORKSPACE_LOAD_EXECUTION_HISTORY,
   WORKSPACE_ADD_EXECUTION_HISTORY,
   WORKSPACE_CLEAR_EXECUTION_HISTORY,
+  WORKSPACE_ARCHIVE_GROUP,
+  WORKSPACE_LOAD_ARCHIVED_GROUPS,
+  WORKSPACE_RESTORE_GROUP,
+  WORKSPACE_DELETE_ARCHIVED_GROUP,
   WORKSPACE_CHANGED,
 } from '@common/ipcChannels';
 import { parseArgs } from '@common/utils/argsParser';
@@ -59,11 +64,14 @@ export function setupWorkspaceHandlers(): void {
   /**
    * ワークスペースにアイテムを追加
    */
-  ipcMain.handle(WORKSPACE_ADD_ITEM, async (_event, item: AppItem) => {
+  ipcMain.handle(WORKSPACE_ADD_ITEM, async (_event, item: AppItem, groupId?: string) => {
     try {
       const workspaceService = await WorkspaceService.getInstance();
-      const addedItem = await workspaceService.addItem(item);
-      logger.info({ id: addedItem.id, name: addedItem.displayName }, 'Added item to workspace');
+      const addedItem = await workspaceService.addItem(item, groupId);
+      logger.info(
+        { id: addedItem.id, name: addedItem.displayName, groupId },
+        'Added item to workspace'
+      );
       notifyWorkspaceChanged();
       return addedItem;
     } catch (error) {
@@ -76,55 +84,58 @@ export function setupWorkspaceHandlers(): void {
    * ファイルパスからワークスペースにアイテムを追加
    * アイテムタイプに応じてアイコンを自動取得する
    */
-  ipcMain.handle(WORKSPACE_ADD_ITEMS_FROM_PATHS, async (_event, filePaths: string[]) => {
-    try {
-      const workspaceService = await WorkspaceService.getInstance();
-      const addedItems: WorkspaceItem[] = [];
+  ipcMain.handle(
+    WORKSPACE_ADD_ITEMS_FROM_PATHS,
+    async (_event, filePaths: string[], groupId?: string) => {
+      try {
+        const workspaceService = await WorkspaceService.getInstance();
+        const addedItems: WorkspaceItem[] = [];
 
-      // アイコンキャッシュフォルダのパスを取得
-      const iconsFolder = PathManager.getIconsFolder();
-      const extensionsFolder = PathManager.getExtensionsFolder();
+        // アイコンキャッシュフォルダのパスを取得
+        const iconsFolder = PathManager.getIconsFolder();
+        const extensionsFolder = PathManager.getExtensionsFolder();
 
-      for (const filePath of filePaths) {
-        try {
-          // アイテムタイプを判定
-          const itemType = detectItemTypeSync(filePath);
+        for (const filePath of filePaths) {
+          try {
+            // アイテムタイプを判定
+            const itemType = detectItemTypeSync(filePath);
 
-          // タイプに応じてアイコンを取得（IconServiceを使用）
-          const icon = await IconService.getIconForItem(
-            filePath,
-            itemType,
-            iconsFolder,
-            extensionsFolder
-          );
-          logger.info(
-            { path: filePath, hasIcon: !!icon, type: itemType },
-            'Extracted icon for workspace'
-          );
+            // タイプに応じてアイコンを取得（IconServiceを使用）
+            const icon = await IconService.getIconForItem(
+              filePath,
+              itemType,
+              iconsFolder,
+              extensionsFolder
+            );
+            logger.info(
+              { path: filePath, hasIcon: !!icon, type: itemType },
+              'Extracted icon for workspace'
+            );
 
-          // アイコン付きでアイテムを追加
-          const addedItem = await workspaceService.addItemFromPath(filePath, icon);
-          addedItems.push(addedItem);
-          logger.info(
-            { id: addedItem.id, name: addedItem.displayName, path: filePath, type: itemType },
-            'Added item from path to workspace'
-          );
-        } catch (error) {
-          logger.error({ error, path: filePath }, 'Failed to add item from path');
-          // 個別のエラーは記録するが、処理は継続
+            // アイコン付きでアイテムを追加
+            const addedItem = await workspaceService.addItemFromPath(filePath, icon, groupId);
+            addedItems.push(addedItem);
+            logger.info(
+              { id: addedItem.id, name: addedItem.displayName, path: filePath, type: itemType },
+              'Added item from path to workspace'
+            );
+          } catch (error) {
+            logger.error({ error, path: filePath }, 'Failed to add item from path');
+            // 個別のエラーは記録するが、処理は継続
+          }
         }
-      }
 
-      if (addedItems.length > 0) {
-        notifyWorkspaceChanged();
-      }
+        if (addedItems.length > 0) {
+          notifyWorkspaceChanged();
+        }
 
-      return addedItems;
-    } catch (error) {
-      logger.error({ error }, 'Failed to add items from paths to workspace');
-      throw error;
+        return addedItems;
+      } catch (error) {
+        logger.error({ error }, 'Failed to add items from paths to workspace');
+        throw error;
+      }
     }
-  });
+  );
 
   /**
    * ワークスペースからアイテムを削除
@@ -339,11 +350,13 @@ export function setupWorkspaceHandlers(): void {
     try {
       const workspaceService = await WorkspaceService.getInstance();
       await workspaceService.addExecutionHistory(item);
-      logger.info({ itemName: item.name }, 'Added item to execution history');
+      const itemName = isWindowInfo(item) ? item.title : item.name;
+      logger.info({ itemName }, 'Added item to execution history');
       notifyWorkspaceChanged();
       return { success: true };
     } catch (error) {
-      logger.error({ error, itemName: item.name }, 'Failed to add execution history');
+      const itemName = isWindowInfo(item) ? item.title : item.name;
+      logger.error({ error, itemName }, 'Failed to add execution history');
       // エラーでも処理は継続
       return { success: false };
     }
@@ -361,6 +374,71 @@ export function setupWorkspaceHandlers(): void {
       return { success: true };
     } catch (error) {
       logger.error({ error }, 'Failed to clear execution history');
+      throw error;
+    }
+  });
+
+  // ==================== アーカイブ管理ハンドラー ====================
+
+  /**
+   * グループとそのアイテムをアーカイブ
+   */
+  ipcMain.handle(WORKSPACE_ARCHIVE_GROUP, async (_event, groupId: string) => {
+    try {
+      const workspaceService = await WorkspaceService.getInstance();
+      await workspaceService.archiveGroup(groupId);
+      logger.info({ groupId }, 'Archived workspace group');
+      notifyWorkspaceChanged();
+      return { success: true };
+    } catch (error) {
+      logger.error({ error, groupId }, 'Failed to archive workspace group');
+      throw error;
+    }
+  });
+
+  /**
+   * アーカイブされたグループ一覧を取得
+   */
+  ipcMain.handle(WORKSPACE_LOAD_ARCHIVED_GROUPS, async () => {
+    try {
+      const workspaceService = await WorkspaceService.getInstance();
+      const archivedGroups = await workspaceService.loadArchivedGroups();
+      logger.info({ count: archivedGroups.length }, 'Loaded archived groups');
+      return archivedGroups;
+    } catch (error) {
+      logger.error({ error }, 'Failed to load archived groups');
+      throw error;
+    }
+  });
+
+  /**
+   * アーカイブされたグループを復元
+   */
+  ipcMain.handle(WORKSPACE_RESTORE_GROUP, async (_event, groupId: string) => {
+    try {
+      const workspaceService = await WorkspaceService.getInstance();
+      await workspaceService.restoreGroup(groupId);
+      logger.info({ groupId }, 'Restored workspace group from archive');
+      notifyWorkspaceChanged();
+      return { success: true };
+    } catch (error) {
+      logger.error({ error, groupId }, 'Failed to restore workspace group');
+      throw error;
+    }
+  });
+
+  /**
+   * アーカイブされたグループを完全削除
+   */
+  ipcMain.handle(WORKSPACE_DELETE_ARCHIVED_GROUP, async (_event, groupId: string) => {
+    try {
+      const workspaceService = await WorkspaceService.getInstance();
+      await workspaceService.deleteArchivedGroup(groupId);
+      logger.info({ groupId }, 'Deleted archived workspace group permanently');
+      notifyWorkspaceChanged();
+      return { success: true };
+    } catch (error) {
+      logger.error({ error, groupId }, 'Failed to delete archived workspace group');
       throw error;
     }
   });

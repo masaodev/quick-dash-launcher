@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 
 import { LauncherItem, AppItem } from '../../common/types';
 import { debugInfo } from '../utils/debug';
+import { isWindowInfo, isGroupItem } from '../../common/utils/typeGuards';
 
 interface GroupItemSelectorModalProps {
   isOpen: boolean;
@@ -112,11 +113,11 @@ const GroupItemSelectorModal: React.FC<GroupItemSelectorModalProps> = ({
 
       // 対象ファイルのLauncherItemのみを抽出（グループアイテムとフォルダ取込展開アイテムは除外）
       const itemsInFile = allItems.filter((item: AppItem) => {
-        // グループアイテムは除外
-        if (item.type === 'group') {
+        // WindowInfoとグループアイテムは除外
+        if (isWindowInfo(item) || isGroupItem(item)) {
           return false;
         }
-        const launcherItem = item as LauncherItem;
+        const launcherItem = item;
 
         // フォルダ取込アイテムから展開されたアイテムは除外
         if (launcherItem.isDirExpanded) {

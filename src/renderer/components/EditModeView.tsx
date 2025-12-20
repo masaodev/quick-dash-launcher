@@ -448,168 +448,171 @@ const EditModeView: React.FC<EditModeViewProps> = ({
             </div>
           )}
         </div>
-        <div className="edit-mode-search">
-          <div className="search-input-container">
-            <input
-              type="text"
-              placeholder="行の内容を検索..."
-              value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="search-input"
-            />
-            {searchQuery && (
-              <button
-                className="search-clear-button"
-                onClick={() => onSearchChange('')}
-                type="button"
-                aria-label="検索をクリア"
-              >
-                ×
-              </button>
-            )}
-          </div>
-        </div>
-        <div className="edit-mode-actions">
-          <button onClick={() => setIsBookmarkModalOpen(true)} className="import-bookmark-button">
-            ブックマークをインポート
+      </div>
+
+      {/* ツールバーエリア */}
+      <div className="edit-mode-toolbar">
+        <div className="toolbar-left">
+          <button onClick={handleAddLine} className="toolbar-button add-line-button">
+            ➕ 行を追加
           </button>
           <button
+            onClick={() => {
+              const selectedLines = filteredLines.filter((line) => {
+                const lineKey = `${line.sourceFile}_${line.lineNumber}`;
+                return selectedItems.has(lineKey);
+              });
+              if (selectedLines.length > 0) {
+                setConfirmDialog({
+                  isOpen: true,
+                  message: `${selectedLines.length}行を削除しますか？`,
+                  onConfirm: () => {
+                    setConfirmDialog({ ...confirmDialog, isOpen: false });
+                    handleDeleteLines(selectedLines);
+                  },
+                  danger: true,
+                });
+              }
+            }}
+            className="toolbar-button delete-lines-button"
+            disabled={selectedItems.size === 0}
+            title="選択されている行を削除します"
+          >
+            🗑️ 選択行を削除
+          </button>
+          <button
+            onClick={() => {
+              // 現在選択中のデータファイルの行のみフィルタリング
+              const currentDataFileLines = mergedLines.filter(
+                (line) => line.sourceFile === selectedDataFile
+              );
+
+              // 他のデータファイルの行
+              const otherDataFileLines = mergedLines.filter(
+                (line) => line.sourceFile !== selectedDataFile
+              );
+
+              // 重複削除関数
+              const removeDuplicates = (lines: RawDataLine[]) => {
+                const seen = new Set<string>();
+                const deduplicated: RawDataLine[] = [];
+
+                for (const line of lines) {
+                  const key = `${line.type}:${line.content}`;
+                  if (!seen.has(key)) {
+                    seen.add(key);
+                    deduplicated.push(line);
+                  }
+                }
+                return deduplicated;
+              };
+
+              const getPathAndArgs = (line: RawDataLine) => {
+                if (line.type === 'item') {
+                  const parts = parseCSVLine(line.content);
+                  const pathPart = parts[1] || '';
+                  const argsPart = parts[2] || '';
+                  return argsPart ? `${pathPart} ${argsPart}` : pathPart;
+                } else if (line.type === 'directive') {
+                  const parts = parseCSVLine(line.content);
+                  const pathPart = parts[1] || '';
+                  const options = parts.slice(2).join(',').trim();
+                  return options ? `${pathPart} ${options}` : pathPart;
+                } else {
+                  return line.content || (line.type === 'empty' ? '(空行)' : '');
+                }
+              };
+
+              // 現在のデータファイルの行のみを整列
+              const sortedLines = [...currentDataFileLines].sort((a, b) => {
+                const typeOrder = { directive: 0, item: 1, comment: 2, empty: 3 };
+                const typeA = typeOrder[a.type] ?? 99;
+                const typeB = typeOrder[b.type] ?? 99;
+
+                if (typeA !== typeB) {
+                  return typeA - typeB;
+                }
+
+                const pathAndArgsA = getPathAndArgs(a).toLowerCase();
+                const pathAndArgsB = getPathAndArgs(b).toLowerCase();
+
+                if (pathAndArgsA !== pathAndArgsB) {
+                  return pathAndArgsA.localeCompare(pathAndArgsB);
+                }
+
+                const nameA =
+                  a.type === 'item' ? (parseCSVLine(a.content)[0] || '').toLowerCase() : '';
+                const nameB =
+                  b.type === 'item' ? (parseCSVLine(b.content)[0] || '').toLowerCase() : '';
+
+                return nameA.localeCompare(nameB);
+              });
+
+              const deduplicatedLines = removeDuplicates(sortedLines);
+              const duplicateCount = sortedLines.length - deduplicatedLines.length;
+
+              if (duplicateCount > 0) {
+                // 整列後、他のデータファイルの行と結合して保存
+                const allLinesSorted = [...otherDataFileLines, ...sortedLines];
+                handleSort(allLinesSorted);
+
+                // 重複削除の確認ダイアログを表示
+                setConfirmDialog({
+                  isOpen: true,
+                  message: `整列処理が完了しました。\n\n${duplicateCount}件の重複行が見つかりました。\n重複行を削除しますか？`,
+                  onConfirm: () => {
+                    setConfirmDialog({ ...confirmDialog, isOpen: false });
+                    // 重複削除後、他のデータファイルの行と結合して保存
+                    const allLinesDedup = [...otherDataFileLines, ...deduplicatedLines];
+                    handleSort(allLinesDedup);
+                  },
+                  danger: false,
+                });
+              } else {
+                // 整列後、他のデータファイルの行と結合して保存
+                const allLinesSorted = [...otherDataFileLines, ...sortedLines];
+                handleSort(allLinesSorted);
+              }
+            }}
+            className="toolbar-button sort-button"
+            title="種類→パスと引数→名前の順で整列し、重複行を削除"
+          >
+            🔤 整列・重複削除
+          </button>
+          <button onClick={() => setIsBookmarkModalOpen(true)} className="toolbar-button import-bookmark-button">
+            ブックマークをインポート
+          </button>
+          <div className="toolbar-search">
+            <div className="search-input-container">
+              <input
+                type="text"
+                placeholder="行の内容を検索..."
+                value={searchQuery}
+                onChange={(e) => onSearchChange(e.target.value)}
+                className="search-input"
+              />
+              {searchQuery && (
+                <button
+                  className="search-clear-button"
+                  onClick={() => onSearchChange('')}
+                  type="button"
+                  aria-label="検索をクリア"
+                >
+                  ×
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="toolbar-right">
+          <button
             onClick={handleSaveChanges}
-            className="save-changes-button"
+            className="toolbar-button save-changes-button"
             disabled={!hasUnsavedChanges}
           >
             変更を保存
           </button>
         </div>
-      </div>
-
-      <div className="edit-mode-operations">
-        <button onClick={handleAddLine} className="add-line-button">
-          ➕ 行を追加
-        </button>
-        <button
-          onClick={() => {
-            const selectedLines = filteredLines.filter((line) => {
-              const lineKey = `${line.sourceFile}_${line.lineNumber}`;
-              return selectedItems.has(lineKey);
-            });
-            if (selectedLines.length > 0) {
-              setConfirmDialog({
-                isOpen: true,
-                message: `${selectedLines.length}行を削除しますか？`,
-                onConfirm: () => {
-                  setConfirmDialog({ ...confirmDialog, isOpen: false });
-                  handleDeleteLines(selectedLines);
-                },
-                danger: true,
-              });
-            }
-          }}
-          className="delete-lines-button"
-          disabled={selectedItems.size === 0}
-          title="選択されている行を削除します"
-        >
-          🗑️ 選択行を削除
-        </button>
-        <button
-          onClick={() => {
-            // 現在選択中のデータファイルの行のみフィルタリング
-            const currentDataFileLines = mergedLines.filter(
-              (line) => line.sourceFile === selectedDataFile
-            );
-
-            // 他のデータファイルの行
-            const otherDataFileLines = mergedLines.filter(
-              (line) => line.sourceFile !== selectedDataFile
-            );
-
-            // 重複削除関数
-            const removeDuplicates = (lines: RawDataLine[]) => {
-              const seen = new Set<string>();
-              const deduplicated: RawDataLine[] = [];
-
-              for (const line of lines) {
-                const key = `${line.type}:${line.content}`;
-                if (!seen.has(key)) {
-                  seen.add(key);
-                  deduplicated.push(line);
-                }
-              }
-              return deduplicated;
-            };
-
-            const getPathAndArgs = (line: RawDataLine) => {
-              if (line.type === 'item') {
-                const parts = parseCSVLine(line.content);
-                const pathPart = parts[1] || '';
-                const argsPart = parts[2] || '';
-                return argsPart ? `${pathPart} ${argsPart}` : pathPart;
-              } else if (line.type === 'directive') {
-                const parts = parseCSVLine(line.content);
-                const pathPart = parts[1] || '';
-                const options = parts.slice(2).join(',').trim();
-                return options ? `${pathPart} ${options}` : pathPart;
-              } else {
-                return line.content || (line.type === 'empty' ? '(空行)' : '');
-              }
-            };
-
-            // 現在のデータファイルの行のみを整列
-            const sortedLines = [...currentDataFileLines].sort((a, b) => {
-              const typeOrder = { directive: 0, item: 1, comment: 2, empty: 3 };
-              const typeA = typeOrder[a.type] ?? 99;
-              const typeB = typeOrder[b.type] ?? 99;
-
-              if (typeA !== typeB) {
-                return typeA - typeB;
-              }
-
-              const pathAndArgsA = getPathAndArgs(a).toLowerCase();
-              const pathAndArgsB = getPathAndArgs(b).toLowerCase();
-
-              if (pathAndArgsA !== pathAndArgsB) {
-                return pathAndArgsA.localeCompare(pathAndArgsB);
-              }
-
-              const nameA =
-                a.type === 'item' ? (parseCSVLine(a.content)[0] || '').toLowerCase() : '';
-              const nameB =
-                b.type === 'item' ? (parseCSVLine(b.content)[0] || '').toLowerCase() : '';
-
-              return nameA.localeCompare(nameB);
-            });
-
-            const deduplicatedLines = removeDuplicates(sortedLines);
-            const duplicateCount = sortedLines.length - deduplicatedLines.length;
-
-            if (duplicateCount > 0) {
-              // 整列後、他のデータファイルの行と結合して保存
-              const allLinesSorted = [...otherDataFileLines, ...sortedLines];
-              handleSort(allLinesSorted);
-
-              // 重複削除の確認ダイアログを表示
-              setConfirmDialog({
-                isOpen: true,
-                message: `整列処理が完了しました。\n\n${duplicateCount}件の重複行が見つかりました。\n重複行を削除しますか？`,
-                onConfirm: () => {
-                  setConfirmDialog({ ...confirmDialog, isOpen: false });
-                  // 重複削除後、他のデータファイルの行と結合して保存
-                  const allLinesDedup = [...otherDataFileLines, ...deduplicatedLines];
-                  handleSort(allLinesDedup);
-                },
-                danger: false,
-              });
-            } else {
-              // 整列後、他のデータファイルの行と結合して保存
-              const allLinesSorted = [...otherDataFileLines, ...sortedLines];
-              handleSort(allLinesSorted);
-            }
-          }}
-          className="sort-button"
-          title="種類→パスと引数→名前の順で整列し、重複行を削除"
-        >
-          🔤 整列・重複削除
-        </button>
       </div>
 
       <EditableRawItemList

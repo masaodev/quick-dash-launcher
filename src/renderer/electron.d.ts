@@ -13,6 +13,7 @@ import {
   WorkspaceItem,
   WorkspaceGroup,
   ExecutionHistoryItem,
+  WindowInfo,
 } from '../common/types';
 
 import { RegisterItem } from './components/RegisterModal';
@@ -48,7 +49,7 @@ export interface ElectronAPI {
   ) => void;
   onWindowShown: (callback: (startTime?: number) => void) => () => void;
   onWindowHidden: (callback: () => void) => () => void;
-  onSetActiveTab: (callback: (tab: 'settings' | 'edit' | 'other') => void) => void;
+  onSetActiveTab: (callback: (tab: 'settings' | 'edit' | 'archive' | 'other') => void) => void;
   onDataChanged: (callback: () => void) => () => void;
   onSettingsChanged: (callback: () => void) => () => void;
   onWorkspaceChanged: (callback: () => void) => () => void;
@@ -101,8 +102,8 @@ export interface ElectronAPI {
   hideEditWindow: () => Promise<void>;
   toggleEditWindow: () => Promise<void>;
   isEditWindowShown: () => Promise<boolean>;
-  openEditWindowWithTab: (tab: 'settings' | 'edit' | 'other') => Promise<void>;
-  getInitialTab: () => Promise<'settings' | 'edit' | 'other'>;
+  openEditWindowWithTab: (tab: 'settings' | 'edit' | 'archive' | 'other') => Promise<void>;
+  getInitialTab: () => Promise<'settings' | 'edit' | 'archive' | 'other'>;
   copyToClipboard: (text: string) => Promise<boolean>;
   setModalMode: (
     isModal: boolean,
@@ -128,8 +129,8 @@ export interface ElectronAPI {
   // ワークスペース関連API
   workspaceAPI: {
     loadItems: () => Promise<WorkspaceItem[]>;
-    addItem: (item: AppItem) => Promise<WorkspaceItem>;
-    addItemsFromPaths: (filePaths: string[]) => Promise<WorkspaceItem[]>;
+    addItem: (item: AppItem, groupId?: string) => Promise<WorkspaceItem>;
+    addItemsFromPaths: (filePaths: string[], groupId?: string) => Promise<WorkspaceItem[]>;
     removeItem: (id: string) => Promise<{ success: boolean }>;
     updateDisplayName: (id: string, displayName: string) => Promise<{ success: boolean }>;
     reorderItems: (itemIds: string[]) => Promise<{ success: boolean }>;
@@ -141,6 +142,11 @@ export interface ElectronAPI {
     deleteGroup: (id: string, deleteItems: boolean) => Promise<{ success: boolean }>;
     reorderGroups: (groupIds: string[]) => Promise<{ success: boolean }>;
     moveItemToGroup: (itemId: string, groupId?: string) => Promise<{ success: boolean }>;
+    // アーカイブ管理
+    archiveGroup: (groupId: string) => Promise<{ success: boolean }>;
+    loadArchivedGroups: () => Promise<WorkspaceGroup[]>;
+    restoreGroup: (groupId: string) => Promise<{ success: boolean }>;
+    deleteArchivedGroup: (groupId: string) => Promise<{ success: boolean }>;
     // 実行履歴
     loadExecutionHistory: () => Promise<ExecutionHistoryItem[]>;
     addExecutionHistory: (item: AppItem) => Promise<{ success: boolean }>;
@@ -156,6 +162,9 @@ export interface ElectronAPI {
     // ウィンドウ制御
     hideWindow: () => Promise<boolean>;
   };
+  // ウィンドウ検索API
+  getWindowList: () => Promise<WindowInfo[]>;
+  activateWindowByHwnd: (hwnd: number | bigint) => Promise<{ success: boolean; error?: string }>;
   // ワークスペースウィンドウ制御API
   toggleWorkspaceWindow: () => Promise<void>;
   showWorkspaceWindow: () => Promise<void>;

@@ -4,12 +4,16 @@
 
 ```bash
 npm install              # 依存関係のインストール
-npm run dev             # 開発モード（Viteデベロップメントサーバー、ホットリロード付き）
+npm run dev             # 開発モード（ポート9001、ホットキー: Ctrl+Alt+A）
+npm run dev2            # 開発モード第2インスタンス（ポート9002、ホットキー: Ctrl+Alt+S）
+npm run dev:test        # テストデータで開発モード起動（全機能を含むテストデータ）
 npm run build           # 全コンポーネントのビルド（Vite使用）
 npm run preview         # ビルド済みアプリケーションのプレビュー
 npm run start           # ビルドして実行
 npm run dist            # Windowsインストーラーの作成
 ```
+
+詳細は **[開発ガイド - 多重起動](development.md#多重起動)** を参照してください。
 
 ## ビルドシステム
 
@@ -17,7 +21,7 @@ Viteベースのビルドシステムを使用:
 - **メインプロセス**: CommonJS形式で`dist/main/`に出力
 - **プリロードスクリプト**: CommonJS形式で`dist/preload/`に出力
 - **レンダラープロセス**: 標準的なViteビルドで`dist/renderer/`に出力
-- **開発サーバー**: ポート9000で実行
+- **開発サーバー**: デフォルトポート9000（環境変数`VITE_PORT`で変更可能）
 
 ## パッケージング
 

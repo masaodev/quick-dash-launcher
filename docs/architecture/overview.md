@@ -52,6 +52,7 @@ IPCハンドラーは機能ごとに分離（`src/main/ipc/`）:
 | `editHandlers.ts` | アイテム編集（更新・削除・一括更新） |
 | `splashHandlers.ts` | スプラッシュウィンドウ制御 |
 | `workspaceHandlers.ts` | ワークスペースアイテム・グループ・実行履歴の操作 |
+| `windowSearchHandlers.ts` | ウィンドウ検索（ウィンドウ一覧取得・アクティブ化） |
 
 詳細は[IPCチャンネル](ipc-channels.md)を参照。
 

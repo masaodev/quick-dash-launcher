@@ -34,8 +34,9 @@ export async function createSplashWindow(): Promise<BrowserWindow> {
   try {
     if (process.env.NODE_ENV === 'development') {
       // 開発環境では専用のエントリーポイントを使用
-      windowLogger.info('開発環境: http://localhost:9000/splash.html を読み込み中...');
-      await splashWindow.loadURL('http://localhost:9000/splash.html');
+      const port = process.env.VITE_PORT || '9000';
+      windowLogger.info(`開発環境: http://localhost:${port}/splash.html を読み込み中...`);
+      await splashWindow.loadURL(`http://localhost:${port}/splash.html`);
     } else {
       // プロダクション環境では静的ファイルを読み込み
       const filePath = path.join(__dirname, '../splash.html');

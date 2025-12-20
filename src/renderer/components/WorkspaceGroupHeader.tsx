@@ -1,38 +1,42 @@
 import React, { useState, useRef, useEffect } from 'react';
 import type { WorkspaceGroup } from '@common/types';
 
-import ColorPicker from './ColorPicker';
-
 interface WorkspaceGroupHeaderProps {
   group: WorkspaceGroup;
   itemCount: number;
+  isEditing: boolean;
   onToggle: (groupId: string) => void;
   onUpdate: (groupId: string, updates: Partial<WorkspaceGroup>) => void;
   onDelete: (groupId: string) => void;
+  onArchive: (groupId: string) => void;
+  onStartEdit: () => void;
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent) => void;
   onGroupDragStart: (e: React.DragEvent) => void;
   onGroupDragEnd: () => void;
   onGroupDragOverForReorder: (e: React.DragEvent) => void;
   onGroupDropForReorder: (e: React.DragEvent) => void;
+  onContextMenu: (e: React.MouseEvent) => void;
 }
 
 const WorkspaceGroupHeader: React.FC<WorkspaceGroupHeaderProps> = ({
   group,
   itemCount,
+  isEditing,
   onToggle,
   onUpdate,
   onDelete,
+  onArchive,
+  onStartEdit,
   onDragOver,
   onDrop,
   onGroupDragStart,
   onGroupDragEnd,
   onGroupDragOverForReorder,
   onGroupDropForReorder,
+  onContextMenu,
 }) => {
-  const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(group.name);
-  const [isColorPickerOpen, setIsColorPickerOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // 編集モードに入ったときにフォーカス
@@ -47,21 +51,21 @@ const WorkspaceGroupHeader: React.FC<WorkspaceGroupHeaderProps> = ({
     onToggle(group.id);
   };
 
-  const handleStartEdit = (e: React.MouseEvent) => {
+  const handleStartEditClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsEditing(true);
+    onStartEdit();
   };
 
   const handleSaveEdit = () => {
     if (editName.trim() && editName !== group.name) {
       onUpdate(group.id, { name: editName.trim() });
     }
-    setIsEditing(false);
+    onStartEdit(); // 編集モードを終了
   };
 
   const handleCancelEdit = () => {
     setEditName(group.name);
-    setIsEditing(false);
+    onStartEdit(); // 編集モードを終了
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -70,21 +74,6 @@ const WorkspaceGroupHeader: React.FC<WorkspaceGroupHeaderProps> = ({
     } else if (e.key === 'Escape') {
       handleCancelEdit();
     }
-  };
-
-  const handleDelete = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onDelete(group.id);
-  };
-
-  const handleColorButtonClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsColorPickerOpen(!isColorPickerOpen);
-  };
-
-  const handleColorSelect = (color: string) => {
-    onUpdate(group.id, { color });
-    setIsColorPickerOpen(false);
   };
 
   const handleDragStart = (e: React.DragEvent) => {
@@ -124,13 +113,14 @@ const WorkspaceGroupHeader: React.FC<WorkspaceGroupHeaderProps> = ({
 
   return (
     <div
-      className={`workspace-group-header ${isColorPickerOpen ? 'color-picker-open' : ''}`}
+      className="workspace-group-header"
       onClick={handleToggle}
       draggable={!isEditing}
       onDragStart={handleDragStart}
       onDragEnd={onGroupDragEnd}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
+      onContextMenu={onContextMenu}
       style={
         {
           '--group-color': group.color,
@@ -161,8 +151,9 @@ const WorkspaceGroupHeader: React.FC<WorkspaceGroupHeaderProps> = ({
       ) : (
         <span
           className="workspace-group-name"
-          onDoubleClick={handleStartEdit}
+          onDoubleClick={handleStartEditClick}
           onDragStart={preventDragStart}
+          title={group.name}
         >
           {group.name}
         </span>
@@ -170,40 +161,6 @@ const WorkspaceGroupHeader: React.FC<WorkspaceGroupHeaderProps> = ({
 
       {/* アイテム数バッジ */}
       <span className="workspace-group-badge">{itemCount}個</span>
-
-      {/* 編集・削除ボタン */}
-      <div className="workspace-group-actions" onDragStart={preventDragStart}>
-        <button
-          className="workspace-group-color-btn"
-          onClick={handleColorButtonClick}
-          title="グループの色を変更"
-        >
-          🎨
-        </button>
-        <button
-          className="workspace-group-edit-btn"
-          onClick={handleStartEdit}
-          title="グループ名を編集"
-        >
-          ✏️
-        </button>
-        <button
-          className="workspace-group-delete-btn"
-          onClick={handleDelete}
-          title="グループを削除"
-        >
-          🗑️
-        </button>
-      </div>
-
-      {/* カラーピッカー（actionsの外に配置） */}
-      {isColorPickerOpen && (
-        <ColorPicker
-          onSelectColor={handleColorSelect}
-          onClose={() => setIsColorPickerOpen(false)}
-          currentColor={group.color}
-        />
-      )}
     </div>
   );
 };

@@ -1,34 +1,35 @@
-# 開発用テンプレート - 手動実行用
+# 開発用テンプレート
 
-開発時に手動で読み込んで実行できるテンプレートファイルです。
+開発時にテストデータとして使用できるテンプレートファイルです。
+
+## 開発用インスタンス（v0.5.3以降）
+
+v0.5.3以降、開発時に複数のインスタンスを同時に起動できるようになりました：
+
+```bash
+npm run dev        # メイン開発環境（ポート9001、ホットキー: Ctrl+Alt+A）
+npm run dev2       # 比較検証用（ポート9002、ホットキー: Ctrl+Alt+S）
+npm run dev:test   # テストデータで起動（全機能を含む）
+```
+
+各インスタンスは完全に独立しており、異なる設定・データファイル・キャッシュを持ちます。
+
+詳細は **[開発ガイド - 多重起動](../../docs/setup/development.md#多重起動)** を参照してください。
 
 ## テンプレート一覧
 
-| コマンド | テンプレート | 説明 | 用途 |
-|---------|------------|------|------|
-| `npm run dev:minimal` | minimal | 最小限のアイテム（5個） | 基本動作確認 |
-| `npm run dev:full` | full-featured | 全機能を含む（30個+グループ） | デモ・機能確認 |
-| `npm run dev:tabs` | multi-tab | 3タブ構成 | タブ機能の確認 |
-| `npm run dev:groups` | with-groups | グループ起動特化 | グループ機能の確認 |
-| `npm run dev:large` | large-dataset | 大量データ（100個以上） | パフォーマンステスト |
-| `npm run dev:empty` | empty | 空データ | 初期状態の確認 |
+このディレクトリには、以下のテンプレートが含まれています：
 
-## 使い方
+| テンプレート | 説明 | 用途 |
+|------------|------|------|
+| `minimal` | 最小限のアイテム（5個） | 基本動作確認 |
+| `full` | 全機能を含む（30個+グループ） | デモ・機能確認 |
+| `multi-tab` | 3タブ構成 | タブ機能の確認 |
+| `with-groups` | グループ起動特化 | グループ機能の確認 |
+| `large-dataset` | 大量データ（100個以上） | パフォーマンステスト |
+| `empty` | 空データ | 初期状態の確認 |
 
-### 最も簡単な方法（推奨）
-
-```bash
-# 最小限のセットで起動
-npm run dev:minimal
-
-# 全機能を試す
-npm run dev:full
-
-# タブ機能を確認
-npm run dev:tabs
-```
-
-### カスタムテンプレートの作成
+## カスタムテンプレートの作成
 
 独自のテンプレートを作成する場合：
 
@@ -41,14 +42,17 @@ mkdir tests/dev/my-custom
 
 # 3. settings.jsonを作成（オプション）
 
-# 4. 起動（PowerShell）
+# 4. 起動
+# PowerShell:
 $env:QUICK_DASH_CONFIG_DIR="./tests/dev/my-custom"; npm run dev
+
+# Bash:
+QUICK_DASH_CONFIG_DIR=./tests/dev/my-custom npm run dev
 ```
 
 ## 詳細ドキュメント
 
 より詳しい情報は以下を参照してください：
 
-- **[フィクスチャガイド](../../docs/testing/fixtures-guide.md)** - 詳細な使い方、全テンプレート一覧
-- **[Git管理詳細](../../docs/testing/git-management.md)** - Git管理方針
+- **[開発ガイド](../../docs/setup/development.md)** - 開発フロー・多重起動の詳細
 - **[テストドキュメント](../../docs/testing/README.md)** - テスト全般のドキュメント

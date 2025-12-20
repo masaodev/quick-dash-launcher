@@ -27,7 +27,7 @@ export default defineConfig({
               fileName: () => 'main.js',
             },
             rollupOptions: {
-              external: ['electron', 'electron-store'],
+              external: ['electron', 'electron-store', 'koffi'],
               output: {
                 format: 'cjs',
                 inlineDynamicImports: true,
@@ -58,7 +58,7 @@ export default defineConfig({
               fileName: () => 'preload.js',
             },
             rollupOptions: {
-              external: ['electron'],
+              external: ['electron', 'koffi'],
               output: {
                 format: 'cjs',
                 inlineDynamicImports: true,
@@ -84,7 +84,7 @@ export default defineConfig({
     },
   },
   server: {
-    port: 9000,
+    port: Number(process.env.VITE_PORT) || 9000,
   },
   resolve: {
     alias: {

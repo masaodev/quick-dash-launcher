@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { PathUtils } from '@common/utils/pathUtils';
 
-import { LauncherItem, GroupItem, AppItem } from '../../common/types';
+import { LauncherItem, GroupItem, AppItem, WindowInfo } from '../../common/types';
 
 import ContextMenu from './ContextMenu';
 
@@ -57,6 +57,11 @@ const ItemList: React.FC<ItemListProps> = ({
   }, [selectedIndex]);
 
   const getDefaultIcon = (item: AppItem) => {
+    // WindowInfoの場合
+    if ('hwnd' in item) {
+      return '🪟';
+    }
+
     switch (item.type) {
       case 'url':
         return '🌐';
@@ -76,6 +81,18 @@ const ItemList: React.FC<ItemListProps> = ({
   };
 
   const getTooltipText = (item: AppItem): string => {
+    // WindowInfoの場合
+    if ('hwnd' in item) {
+      const win = item as WindowInfo;
+      const lines: string[] = [];
+      lines.push(`${win.title}`);
+      lines.push('');
+      lines.push(`位置: (${win.x}, ${win.y})`);
+      lines.push(`サイズ: ${win.width}x${win.height}`);
+      lines.push(`プロセスID: ${win.processId}`);
+      return lines.join('\n');
+    }
+
     if (item.type === 'group') {
       const groupItem = item as GroupItem;
       const lines: string[] = [];
@@ -189,15 +206,19 @@ const ItemList: React.FC<ItemListProps> = ({
   return (
     <div className="item-list" ref={listRef}>
       {items.map((item, index) => {
-        const isGroup = item.type === 'group';
+        const isWindow = 'hwnd' in item;
+        const isGroup = !isWindow && item.type === 'group';
+        const itemName = isWindow
+          ? (item as WindowInfo).title
+          : (item as LauncherItem | GroupItem).name;
 
         return (
           <div
-            key={`${item.name}-${index}`}
+            key={isWindow ? `window-${(item as WindowInfo).hwnd}` : `${itemName}-${index}`}
             ref={(el) => {
               itemRefs.current[index] = el;
             }}
-            className={`item ${index === selectedIndex ? 'selected' : ''} ${isGroup ? 'group-item' : ''}`}
+            className={`item ${index === selectedIndex ? 'selected' : ''} ${isGroup ? 'group-item' : ''} ${isWindow ? 'window-item' : ''}`}
             onClick={() => {
               onItemSelect(index);
               onItemExecute(item);
@@ -207,14 +228,16 @@ const ItemList: React.FC<ItemListProps> = ({
             title={getTooltipText(item)}
           >
             <span className="item-icon">
-              {!isGroup && (item as LauncherItem).icon ? (
+              {!isGroup && !isWindow && (item as LauncherItem).icon ? (
                 <img src={(item as LauncherItem).icon} alt="" width="24" height="24" />
+              ) : isWindow && (item as WindowInfo).icon ? (
+                <img src={(item as WindowInfo).icon} alt="" width="24" height="24" />
               ) : (
                 getDefaultIcon(item)
               )}
             </span>
             <span className="item-name">
-              {item.name}
+              {itemName}
               {isGroup && (
                 <span className="group-count"> ({(item as GroupItem).itemNames.length}個)</span>
               )}

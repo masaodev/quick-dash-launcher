@@ -6,6 +6,7 @@ import { FileUtils } from '@common/utils/fileUtils';
 import { parseCSVLine, escapeCSV } from '@common/utils/csvParser';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { RawDataLine, LauncherItem, GroupItem, AppItem } from '@common/types';
+import { isWindowInfo } from '@common/utils/typeGuards';
 
 import { BackupService } from '../services/backupService.js';
 import { SettingsService } from '../services/settingsService.js';
@@ -223,12 +224,17 @@ async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
   }
 
   // Sort items by name
-  items.sort((a, b) => a.name.localeCompare(b.name, 'ja'));
+  items.sort((a, b) => {
+    const aName = isWindowInfo(a) ? a.title : a.name;
+    const bName = isWindowInfo(b) ? b.title : b.name;
+    return aName.localeCompare(bName, 'ja');
+  });
 
   // 統計情報をログ出力
   const itemCountByTab = new Map<number, number>();
   items.forEach((item) => {
-    const tabIndex = fileToTabMap.get(item.sourceFile || '') ?? -1;
+    const sourceFile = isWindowInfo(item) ? undefined : item.sourceFile;
+    const tabIndex = fileToTabMap.get(sourceFile || '') ?? -1;
     itemCountByTab.set(tabIndex, (itemCountByTab.get(tabIndex) || 0) + 1);
   });
   dataLogger.info(

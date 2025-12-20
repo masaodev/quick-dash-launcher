@@ -11,6 +11,7 @@ import { setupSettingsHandlers } from './settingsHandlers';
 import { setupSplashHandlers } from './splashHandlers';
 import { setupHistoryHandlers } from './historyHandlers';
 import { setupWorkspaceHandlers } from './workspaceHandlers';
+import { setupWindowSearchHandlers } from './windowSearchHandlers';
 
 export function setupIPCHandlers(
   configFolder: string,
@@ -38,4 +39,5 @@ export function setupIPCHandlers(
   setupSplashHandlers(getMainWindow);
   setupHistoryHandlers(configFolder);
   setupWorkspaceHandlers();
+  setupWindowSearchHandlers(getMainWindow, getWindowPinMode);
 }

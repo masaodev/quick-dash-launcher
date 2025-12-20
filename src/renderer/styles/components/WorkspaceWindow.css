@@ -324,13 +324,13 @@ html:has(.workspace-window.background-transparent) {
 
 /* グループコンテナ */
 .workspace-group {
-  margin-bottom: var(--spacing-xs);
+  margin-bottom: 2px;
 }
 
 /* グループヘッダー */
 .workspace-group-header {
   position: relative;
-  padding: var(--spacing-xxs) 45px var(--spacing-xxs) var(--spacing-xs);
+  padding: var(--spacing-sm) 45px var(--spacing-sm) var(--spacing-xs);
   background: linear-gradient(
     135deg,
     var(--group-color, var(--color-primary)),
@@ -351,11 +351,6 @@ html:has(.workspace-window.background-transparent) {
   filter: brightness(1.05);
 }
 
-/* カラーピッカーが開いている時は最前面に */
-.workspace-group-header.color-picker-open {
-  z-index: 9998;
-}
-
 /* 折りたたみアイコン */
 .workspace-group-collapse-icon {
   font-size: var(--font-size-xs);
@@ -372,8 +367,8 @@ html:has(.workspace-window.background-transparent) {
   font-weight: 600;
   color: var(--color-white);
   font-size: 12px;
-  flex-shrink: 0;
-  max-width: 150px;
+  flex: 1;
+  min-width: 0; /* flexアイテムのtext-overflowを有効にするために必要 */
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -408,43 +403,6 @@ html:has(.workspace-window.background-transparent) {
   font-size: var(--font-size-xs);
   flex-shrink: 0;
   pointer-events: none; /* クリックイベントを透過 */
-}
-
-/* グループアクション（編集・削除ボタン） */
-.workspace-group-actions {
-  position: relative;
-  display: flex;
-  gap: var(--spacing-xs);
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.workspace-group-header:hover .workspace-group-actions {
-  opacity: 1;
-}
-
-.workspace-group-color-btn,
-.workspace-group-edit-btn,
-.workspace-group-delete-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 16px;
-  padding: 4px;
-  border-radius: var(--border-radius);
-  transition: background-color 0.2s ease;
-}
-
-.workspace-group-color-btn:hover {
-  background-color: rgba(255, 255, 255, 0.2);
-}
-
-.workspace-group-edit-btn:hover {
-  background-color: rgba(255, 255, 255, 0.2);
-}
-
-.workspace-group-delete-btn:hover {
-  background-color: rgba(255, 0, 0, 0.2);
 }
 
 /* グループ内アイテム */

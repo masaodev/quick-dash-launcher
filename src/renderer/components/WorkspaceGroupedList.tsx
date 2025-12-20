@@ -8,6 +8,7 @@ import WorkspaceGroupHeader from './WorkspaceGroupHeader';
 import WorkspaceItemCard from './WorkspaceItemCard';
 import ExecutionHistoryItemCard from './ExecutionHistoryItemCard';
 import WorkspaceContextMenu from './WorkspaceContextMenu';
+import WorkspaceGroupContextMenu from './WorkspaceGroupContextMenu';
 
 interface WorkspaceGroupedListProps {
   data: {
@@ -23,6 +24,7 @@ interface WorkspaceGroupedListProps {
     onToggleGroup: (groupId: string) => void;
     onUpdateGroup: (groupId: string, updates: Partial<WorkspaceGroup>) => void;
     onDeleteGroup: (groupId: string) => void;
+    onArchiveGroup: (groupId: string) => void;
     onMoveItemToGroup: (itemId: string, groupId?: string) => void;
     onReorderGroups: (groupIds: string[]) => void;
   };
@@ -33,6 +35,8 @@ interface WorkspaceGroupedListProps {
     onToggleUncategorized: () => void;
     historyCollapsed: boolean;
     onToggleHistory: () => void;
+    activeGroupId?: string;
+    setActiveGroupId: (id: string | undefined) => void;
   };
 }
 
@@ -49,6 +53,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
     onToggleGroup,
     onUpdateGroup,
     onDeleteGroup,
+    onArchiveGroup,
     onMoveItemToGroup,
     onReorderGroups,
   } = handlers;
@@ -61,9 +66,21 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
     onToggleUncategorized,
     historyCollapsed,
     onToggleHistory,
+    activeGroupId,
+    setActiveGroupId,
   } = ui;
   const [draggedItemId, setDraggedItemId] = React.useState<string | null>(null);
   const [_draggedGroupId, setDraggedGroupId] = React.useState<string | null>(null);
+  const [editingGroupId, setEditingGroupId] = React.useState<string | null>(null);
+  const [groupContextMenu, setGroupContextMenu] = React.useState<{
+    isVisible: boolean;
+    position: { x: number; y: number };
+    group: WorkspaceGroup | null;
+  }>({
+    isVisible: false,
+    position: { x: 0, y: 0 },
+    group: null,
+  });
 
   // グループ化ロジック
   const { itemsByGroup, uncategorizedItems } = useWorkspaceItemGroups(items);
@@ -176,6 +193,45 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
     setDraggedItemId(null);
   };
 
+  // グループコンテキストメニューハンドラー
+  const handleGroupContextMenu = (group: WorkspaceGroup) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setGroupContextMenu({
+      isVisible: true,
+      position: { x: e.clientX, y: e.clientY },
+      group,
+    });
+  };
+
+  const handleCloseGroupContextMenu = () => {
+    setGroupContextMenu({
+      isVisible: false,
+      position: { x: 0, y: 0 },
+      group: null,
+    });
+  };
+
+  const handleRenameGroupFromContextMenu = (group: WorkspaceGroup) => {
+    setEditingGroupId(group.id);
+  };
+
+  const handleChangeGroupColor = (groupId: string, color: string) => {
+    onUpdateGroup(groupId, { color });
+  };
+
+  // グループのトグル処理（折りたたみ/展開とアクティブ化）
+  const handleGroupToggle = (groupId: string) => {
+    onToggleGroup(groupId);
+    setActiveGroupId(groupId);
+  };
+
+  // 無分類セクションのトグル処理（アクティブグループをクリア）
+  const handleUncategorizedToggle = () => {
+    onToggleUncategorized();
+    setActiveGroupId(undefined);
+  };
+
   // グループの並び替えハンドラー
   const handleGroupDragStart = (group: WorkspaceGroup) => (e: React.DragEvent) => {
     setDraggedGroupId(group.id);
@@ -241,15 +297,19 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
             <WorkspaceGroupHeader
               group={group}
               itemCount={groupItems.length}
-              onToggle={onToggleGroup}
+              isEditing={editingGroupId === group.id}
+              onToggle={handleGroupToggle}
               onUpdate={onUpdateGroup}
               onDelete={onDeleteGroup}
+              onArchive={onArchiveGroup}
+              onStartEdit={() => setEditingGroupId(editingGroupId === group.id ? null : group.id)}
               onDragOver={handleGroupDragOver}
               onDrop={handleGroupDrop(group.id)}
               onGroupDragStart={handleGroupDragStart(group)}
               onGroupDragEnd={handleGroupDragEnd}
               onGroupDragOverForReorder={handleGroupDragOverForReorder(group)}
               onGroupDropForReorder={handleGroupDropForReorder(group)}
+              onContextMenu={handleGroupContextMenu(group)}
             />
             {!group.collapsed && (
               <div className="workspace-group-items">
@@ -284,7 +344,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
         >
           <div
             className="workspace-uncategorized-header"
-            onClick={onToggleUncategorized}
+            onClick={handleUncategorizedToggle}
             style={{ cursor: 'pointer' }}
           >
             <span className="workspace-collapse-icon">{uncategorizedCollapsed ? '▶' : '▼'}</span>
@@ -373,7 +433,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
         </div>
       )}
 
-      {/* コンテキストメニュー */}
+      {/* アイテムコンテキストメニュー */}
       <WorkspaceContextMenu
         isVisible={contextMenu.isVisible}
         position={contextMenu.position}
@@ -389,6 +449,18 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
         onCopyShortcutPath={pathHandlers.handleCopyShortcutPath}
         onCopyShortcutParentPath={pathHandlers.handleCopyShortcutParentPath}
         onOpenShortcutParentFolder={pathHandlers.handleOpenShortcutParentFolder}
+      />
+
+      {/* グループコンテキストメニュー */}
+      <WorkspaceGroupContextMenu
+        isVisible={groupContextMenu.isVisible}
+        position={groupContextMenu.position}
+        group={groupContextMenu.group}
+        onClose={handleCloseGroupContextMenu}
+        onRename={handleRenameGroupFromContextMenu}
+        onChangeColor={handleChangeGroupColor}
+        onArchive={onArchiveGroup}
+        onDelete={onDeleteGroup}
       />
     </div>
   );

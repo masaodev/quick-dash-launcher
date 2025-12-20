@@ -115,6 +115,19 @@ export function useWorkspaceActions(onDataChanged: () => void) {
   };
 
   /**
+   * グループをアーカイブ
+   * @param groupId グループID
+   */
+  const handleArchiveGroup = async (groupId: string) => {
+    try {
+      await window.electronAPI.workspaceAPI.archiveGroup(groupId);
+      onDataChanged();
+    } catch (error) {
+      console.error('Failed to archive workspace group:', error);
+    }
+  };
+
+  /**
    * 新しいグループを追加
    */
   const handleAddGroup = async (groupCount: number) => {
@@ -158,6 +171,7 @@ export function useWorkspaceActions(onDataChanged: () => void) {
     handleToggleGroup,
     handleUpdateGroup,
     handleDeleteGroup,
+    handleArchiveGroup,
     handleAddGroup,
     handleMoveItemToGroup,
     handleReorderGroups,

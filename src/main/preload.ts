@@ -14,6 +14,7 @@ import {
   WorkspaceItem,
   WorkspaceGroup,
   ExecutionHistoryItem,
+  WindowInfo,
 } from '../common/types';
 
 interface RegisterItem {
@@ -77,7 +78,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.removeListener('window-hidden', listener);
     };
   },
-  onSetActiveTab: (callback: (tab: 'settings' | 'edit' | 'other') => void) => {
+  onSetActiveTab: (callback: (tab: 'settings' | 'edit' | 'archive' | 'other') => void) => {
     ipcRenderer.on('set-active-tab', (_event, tab) => callback(tab));
   },
   onDataChanged: (callback: () => void) => {
@@ -169,6 +170,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // アプリ情報関連API
   getAppInfo: (): Promise<AppInfo> => ipcRenderer.invoke('get-app-info'),
   openExternalUrl: (url: string) => ipcRenderer.invoke('open-external-url', url),
+  // ウィンドウ検索API
+  getWindowList: (): Promise<WindowInfo[]> => ipcRenderer.invoke('get-all-windows'),
+  activateWindowByHwnd: (hwnd: number | bigint): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke('activate-window', hwnd),
   // ワークスペースウィンドウ制御API
   toggleWorkspaceWindow: () => ipcRenderer.invoke('workspace:toggle-window'),
   showWorkspaceWindow: () => ipcRenderer.invoke('workspace:show-window'),
@@ -176,10 +181,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // ワークスペース関連API
   workspaceAPI: {
     loadItems: (): Promise<WorkspaceItem[]> => ipcRenderer.invoke('workspace:load-items'),
-    addItem: (item: AppItem): Promise<WorkspaceItem> =>
-      ipcRenderer.invoke('workspace:add-item', item),
-    addItemsFromPaths: (filePaths: string[]): Promise<WorkspaceItem[]> =>
-      ipcRenderer.invoke('workspace:add-items-from-paths', filePaths),
+    addItem: (item: AppItem, groupId?: string): Promise<WorkspaceItem> =>
+      ipcRenderer.invoke('workspace:add-item', item, groupId),
+    addItemsFromPaths: (filePaths: string[], groupId?: string): Promise<WorkspaceItem[]> =>
+      ipcRenderer.invoke('workspace:add-items-from-paths', filePaths, groupId),
     removeItem: (id: string): Promise<{ success: boolean }> =>
       ipcRenderer.invoke('workspace:remove-item', id),
     updateDisplayName: (id: string, displayName: string): Promise<{ success: boolean }> =>
@@ -200,6 +205,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke('workspace:reorder-groups', groupIds),
     moveItemToGroup: (itemId: string, groupId?: string): Promise<{ success: boolean }> =>
       ipcRenderer.invoke('workspace:move-item-to-group', itemId, groupId),
+    // アーカイブ管理
+    archiveGroup: (groupId: string): Promise<{ success: boolean }> =>
+      ipcRenderer.invoke('workspace:archive-group', groupId),
+    loadArchivedGroups: (): Promise<WorkspaceGroup[]> =>
+      ipcRenderer.invoke('workspace:load-archived-groups'),
+    restoreGroup: (groupId: string): Promise<{ success: boolean }> =>
+      ipcRenderer.invoke('workspace:restore-group', groupId),
+    deleteArchivedGroup: (groupId: string): Promise<{ success: boolean }> =>
+      ipcRenderer.invoke('workspace:delete-archived-group', groupId),
     // 実行履歴
     loadExecutionHistory: (): Promise<ExecutionHistoryItem[]> =>
       ipcRenderer.invoke('workspace:load-execution-history'),

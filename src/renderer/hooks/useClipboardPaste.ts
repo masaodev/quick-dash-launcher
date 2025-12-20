@@ -14,15 +14,16 @@ import { useFileOperations } from './useFileOperations';
  * - ファイルオブジェクト（エクスプローラーからCtrl+Cでコピーしたファイル）
  *
  * @param onItemsAdded アイテム追加完了時のコールバック
+ * @param activeGroupId アクティブなグループID（指定された場合、そのグループに追加）
  *
  * @example
  * ```tsx
  * useClipboardPaste(() => {
  *   loadItems(); // アイテムを再読み込み
- * });
+ * }, activeGroupId);
  * ```
  */
-export function useClipboardPaste(onItemsAdded: () => void) {
+export function useClipboardPaste(onItemsAdded: () => void, activeGroupId?: string) {
   const { extractFilePaths, addItemsFromFilePaths, fetchFaviconSafely } = useFileOperations();
 
   useEffect(() => {
@@ -60,7 +61,7 @@ export function useClipboardPaste(onItemsAdded: () => void) {
             icon = await fetchFaviconSafely(firstLine);
           }
 
-          // アイテムを追加
+          // アイテムを追加（アクティブグループに追加）
           const item = {
             name: firstLine,
             path: firstLine,
@@ -68,7 +69,7 @@ export function useClipboardPaste(onItemsAdded: () => void) {
             icon,
           };
 
-          await window.electronAPI.workspaceAPI.addItem(item);
+          await window.electronAPI.workspaceAPI.addItem(item, activeGroupId);
 
           // UI更新のコールバックを実行
           onItemsAdded();
@@ -95,7 +96,7 @@ export function useClipboardPaste(onItemsAdded: () => void) {
 
         try {
           const filePaths = await extractFilePaths(e.clipboardData.files);
-          await addItemsFromFilePaths(filePaths, onItemsAdded);
+          await addItemsFromFilePaths(filePaths, onItemsAdded, activeGroupId);
         } catch (error) {
           console.error('Failed to add items from file paste:', error);
         }
@@ -111,5 +112,5 @@ export function useClipboardPaste(onItemsAdded: () => void) {
       document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('paste', handlePaste);
     };
-  }, [onItemsAdded, extractFilePaths, addItemsFromFilePaths, fetchFaviconSafely]);
+  }, [onItemsAdded, extractFilePaths, addItemsFromFilePaths, fetchFaviconSafely, activeGroupId]);
 }

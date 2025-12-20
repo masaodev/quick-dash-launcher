@@ -320,6 +320,128 @@ interface IconPhaseProgress {
 
 ---
 
+## ウィンドウアイコン取得
+
+ウィンドウ検索機能では、開いているウィンドウから直接アイコンを取得して表示します。
+
+### 取得方法
+
+Windows APIを使用してウィンドウからアイコンハンドル（HICON）を取得し、GDI+でPNG base64に変換します。
+
+**使用API:**
+- `SendMessageW` (WM_GETICON): ウィンドウメッセージでアイコンを取得
+- `GetClassLongPtrW` (GCLP_HICON): クラスアイコンを取得
+- `GetWindowThreadProcessId`: プロセスIDを取得
+- `OpenProcess`: プロセスハンドルを開く
+- `QueryFullProcessImageNameW`: 実行ファイルパスを取得
+
+### アイコン取得の優先順位
+
+| 優先度 | 取得方法 | 説明 |
+|-------|---------|------|
+| 1 | WM_GETICON (ICON_BIG) | 大きいアイコン |
+| 2 | WM_GETICON (ICON_SMALL2) | 小さいアイコン（32px） |
+| 3 | WM_GETICON (ICON_SMALL) | 小さいアイコン（16px） |
+| 4 | GetClassLongPtrW (GCLP_HICON) | クラスアイコン |
+
+### 変換処理
+
+**GDI+ による HICON → PNG base64 変換:**
+1. GDI+を初期化（`GdiplusStartup`）
+2. HICONからビットマップを作成（`GdipCreateBitmapFromHICON`）
+3. 一時ファイルにPNG形式で保存（`GdipSaveImageToFile`）
+4. ファイルを読み込んでbase64エンコード
+5. GDI+リソースを解放（`GdipDisposeImage`, `GdiplusShutdown`）
+6. 一時ファイルを削除
+
+### メモリリーク対策
+
+以下の対策を実装して、メモリリークを防止しています：
+
+1. **GDI+ リソース解放**: `GdipDisposeImage`と`GdiplusShutdown`を必ず実行
+2. **koffi callback 解放**: Windows API呼び出し後のコールバック解放処理
+3. **一時ファイル削除**: 変換後のPNGファイルを確実に削除（try-finallyブロック）
+
+### 実装詳細
+
+**実装ファイル:**
+- `src/main/utils/nativeWindowControl.ts`: `getWindowIcon()`, `convertIconToBase64()`, `getExecutablePathFromProcessId()`
+- `src/main/ipc/windowSearchHandlers.ts`: アイコン取得処理の統合
+- `src/common/types.ts`: `WindowInfo`型に`icon`, `executablePath`フィールドを追加
+
+### 表示
+
+ウィンドウ検索モード（検索欄で`<`を入力）で、各ウィンドウにアイコンが表示されます。アイコンが取得できない場合は、デフォルトの🪟絵文字を表示します。
+
+
+### GDI+エラーハンドリング
+
+ウィンドウアイコン取得処理では、詳細なエラーログを出力してトラブルシューティングを支援します。
+
+#### GDI+ステータスコード一覧
+
+| コード | 説明 | 主な原因 |
+|-------|------|---------|
+| 0 | Ok | 正常終了 |
+| 1 | GenericError | 一般的なエラー |
+| 2 | InvalidParameter | 無効なパラメータ（hIconが無効など） |
+| 3 | OutOfMemory | メモリ不足 |
+| 4 | ObjectBusy | オブジェクトがビジー状態 |
+| 5 | InsufficientBuffer | バッファ不足 |
+| 6 | NotImplemented | 未実装の機能 |
+| 7 | Win32Error | Win32 APIエラー（ファイル保存失敗など） |
+| 8 | WrongState | 不正な状態 |
+| 9 | Aborted | 処理中断 |
+| 10 | FileNotFound | ファイルが見つからない |
+| 11 | ValueOverflow | 値のオーバーフロー |
+| 12 | AccessDenied | アクセス拒否（権限不足） |
+| 13 | UnknownImageFormat | 未知の画像形式 |
+| 14 | FontFamilyNotFound | フォントファミリーが見つからない |
+| 15 | FontStyleNotFound | フォントスタイルが見つからない |
+| 16 | NotTrueTypeFont | TrueTypeフォントではない |
+| 17 | UnsupportedGdiplusVersion | サポートされていないGDI+バージョン |
+| 18 | GdiplusNotInitialized | GDI+が初期化されていない |
+| 19 | PropertyNotFound | プロパティが見つからない |
+| 20 | PropertyNotSupported | サポートされていないプロパティ |
+
+#### エラーログの形式
+
+エラーログには、ステータスコード番号と説明、関連する文脈情報が含まれます：
+
+```
+[convertIconToBase64] GdiplusStartup failed: status=3 (OutOfMemory), hIcon=12345678
+[convertIconToBase64] GdipCreateBitmapFromHICON failed: status=2 (InvalidParameter), hIcon=12345678, bitmap=null
+[convertIconToBase64] GdipSaveImageToFile failed: status=7 (Win32Error), path=C:\Users\...\icon_xxx.png
+[convertIconToBase64] Unexpected error: hIcon=12345678, error=EACCES: permission denied
+```
+
+#### エラーログの読み方
+
+**GdiplusStartup失敗の場合:**
+- `status=3 (OutOfMemory)` → メモリ不足。他のアプリケーションを閉じてメモリを確保
+- `status=17 (UnsupportedGdiplusVersion)` → システム更新が必要
+
+**GdipCreateBitmapFromHICON失敗の場合:**
+- `status=2 (InvalidParameter), bitmap=null` → ウィンドウのアイコンハンドルが無効
+- 一部のアプリケーションは標準的なアイコンを提供しない場合があります
+
+**GdipSaveImageToFile失敗の場合:**
+- `status=7 (Win32Error)` → 一時フォルダへの書き込み権限を確認
+- `status=12 (AccessDenied)` → ユーザー権限の確認が必要
+
+**Unexpected error:**
+- `error=EACCES` → ファイルシステムの権限問題
+- `error=ENOSPC` → ディスク容量不足
+
+#### トラブルシューティングへの活用
+
+エラーログを確認することで、アイコン取得失敗の原因を特定できます：
+
+1. **頻繁に同じステータスコードが出る場合**: システムレベルの問題（メモリ不足、権限問題など）
+2. **特定のアプリケーションでのみ失敗**: そのアプリが標準的なアイコンを提供していない可能性
+3. **一時的なエラー**: 再起動で解決する場合があります
+---
+
 ## トラブルシューティング
 
 ### ファビコンが取得できない場合

@@ -81,6 +81,11 @@ export function setupWindowHandlers(
     }
   );
 
+  // アーカイブタブを開くIPCハンドラー
+  ipcMain.handle('admin:show-archive-tab', async () => {
+    await showAdminWindowWithTab('archive');
+  });
+
   ipcMain.handle('get-initial-tab', () => {
     return getInitialTab();
   });

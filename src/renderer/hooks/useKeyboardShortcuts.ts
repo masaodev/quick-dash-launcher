@@ -1,7 +1,8 @@
 import React from 'react';
 
-import { AppItem, LauncherItem, DataFileTab } from '../../common/types';
+import { AppItem, LauncherItem, DataFileTab, SearchMode, WindowInfo } from '../../common/types';
 import { filterItems } from '../utils/dataParser';
+import { isWindowInfo, isLauncherItem } from '../../common/utils/typeGuards';
 
 /**
  * キーボードショートカット管理フック
@@ -20,7 +21,9 @@ export function useKeyboardShortcuts(
   navigateToPrevious: () => string | null,
   navigateToNext: () => string | null,
   setSearchQuery: (query: string) => void,
-  handleExecuteItem: (item: AppItem) => Promise<void>
+  handleExecuteItem: (item: AppItem) => Promise<void>,
+  searchMode: SearchMode,
+  windowList: WindowInfo[]
 ) {
   /**
    * アクティブなタブに基づいてアイテムをフィルタリング（キーハンドラ用）
@@ -28,24 +31,31 @@ export function useKeyboardShortcuts(
   const getTabFilteredItemsForKeyHandler = (): AppItem[] => {
     if (!showDataFileTabs) {
       // タブ表示OFF: data.txtのみ表示
-      return mainItems.filter((item) => item.sourceFile === 'data.txt');
+      return mainItems.filter((item) => !isWindowInfo(item) && item.sourceFile === 'data.txt');
     }
     // タブ表示ON: アクティブなタブに紐付く全ファイルのアイテムを表示
     // アクティブなタブの設定を検索
     const activeTabConfig = dataFileTabs.find((tab) => tab.files.includes(activeTab));
     if (activeTabConfig) {
       // タブに紐付く全ファイルのアイテムを取得
-      return mainItems.filter((item) => activeTabConfig.files.includes(item.sourceFile || ''));
+      return mainItems.filter(
+        (item) => !isWindowInfo(item) && activeTabConfig.files.includes(item.sourceFile || '')
+      );
     }
     // フォールバック: アクティブタブと一致するファイルのアイテムのみ
-    return mainItems.filter((item) => item.sourceFile === activeTab);
+    return mainItems.filter((item) => !isWindowInfo(item) && item.sourceFile === activeTab);
   };
 
   /**
    * キーボードイベントハンドラ
    */
   const handleKeyDown = async (e: React.KeyboardEvent) => {
-    // タブ切り替え (Tab/Shift+Tab)
+    // タブ切り替え (Tab/Shift+Tab) - ウィンドウモードでは無効化
+    if (e.key === 'Tab' && searchMode === 'window') {
+      e.preventDefault();
+      return;
+    }
+
     if (e.key === 'Tab' && showDataFileTabs && dataFileTabs.length > 1) {
       e.preventDefault();
       e.stopPropagation();
@@ -77,8 +87,9 @@ export function useKeyboardShortcuts(
     }
 
     // 各キー処理で最新のfilteredItemsを計算
-    const tabFilteredItems = getTabFilteredItemsForKeyHandler();
-    const filteredItems = filterItems(tabFilteredItems, searchQuery);
+    const tabFilteredItems =
+      searchMode === 'window' ? windowList : getTabFilteredItemsForKeyHandler();
+    const filteredItems = filterItems(tabFilteredItems, searchQuery, searchMode);
 
     // 検索履歴のナビゲーション（Ctrl + 上下矢印）
     if (e.ctrlKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
@@ -101,7 +112,7 @@ export function useKeyboardShortcuts(
         if (
           e.shiftKey &&
           filteredItems[selectedIndex] &&
-          filteredItems[selectedIndex].type !== 'group'
+          isLauncherItem(filteredItems[selectedIndex])
         ) {
           await window.electronAPI.openParentFolder(filteredItems[selectedIndex] as LauncherItem);
         } else if (filteredItems[selectedIndex]) {

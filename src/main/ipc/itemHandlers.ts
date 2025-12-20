@@ -5,6 +5,7 @@ import { itemLogger } from '@common/logger';
 import { LauncherItem, GroupItem, AppItem, WindowPinMode } from '@common/types';
 import { GROUP_LAUNCH_DELAY_MS } from '@common/constants';
 import { parseArgs } from '@common/utils/argsParser';
+import { isLauncherItem } from '@common/utils/typeGuards';
 
 import { WorkspaceService } from '../services/workspaceService.js';
 
@@ -139,7 +140,7 @@ async function executeGroup(
   // アイテム名からLauncherItemを検索するマップを作成
   const itemMap = new Map<string, LauncherItem>();
   for (const item of allItems) {
-    if (item.type !== 'group') {
+    if (isLauncherItem(item)) {
       itemMap.set(item.name, item);
     }
   }

@@ -81,6 +81,11 @@
   color: rgba(255, 255, 255, 0.9);
 }
 
+/* ウィンドウアイテムのスタイル */
+.item.window-item {
+  border-left: 3px solid var(--color-accent);
+}
+
 /* ツールチップ付きアイテムのカーソル表示 */
 .item[title]:hover {
   cursor: pointer;

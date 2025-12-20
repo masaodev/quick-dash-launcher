@@ -2,6 +2,7 @@ import React from 'react';
 
 import { AppItem, LauncherItem, DataFileTab } from '../../common/types';
 import { debugInfo } from '../utils/debug';
+import { isWindowInfo, isLauncherItem } from '../../common/utils/typeGuards';
 
 /**
  * アイコン取得管理フック
@@ -25,10 +26,12 @@ export function useIconFetcher(
     const loadedItems = await loadItems();
 
     // 2. 統合プログレスAPIで全アイコン取得（強制）
-    const allUrlItems = loadedItems.filter((item) => item.type === 'url') as LauncherItem[];
+    const allUrlItems = loadedItems.filter(
+      (item) => isLauncherItem(item) && item.type === 'url'
+    ) as LauncherItem[];
 
     const allIconItems = loadedItems.filter(
-      (item) => item.type !== 'url' && item.type !== 'group' && item.type !== 'folder'
+      (item) => isLauncherItem(item) && item.type !== 'url' && item.type !== 'folder'
     ) as LauncherItem[];
 
     if (allUrlItems.length > 0 || allIconItems.length > 0) {
@@ -37,14 +40,10 @@ export function useIconFetcher(
       // 取得したアイコンをアイテムに適用
       const updateItemsWithIcons = (items: AppItem[]) => {
         return items.map((item) => {
-          if (item.type === 'url' && results.favicons[(item as LauncherItem).path]) {
-            return { ...item, icon: results.favicons[(item as LauncherItem).path] || undefined };
-          } else if (
-            item.type !== 'url' &&
-            item.type !== 'group' &&
-            results.icons[(item as LauncherItem).path]
-          ) {
-            return { ...item, icon: results.icons[(item as LauncherItem).path] || undefined };
+          if (isLauncherItem(item) && item.type === 'url' && results.favicons[item.path]) {
+            return { ...item, icon: results.favicons[item.path] || undefined };
+          } else if (isLauncherItem(item) && item.type !== 'url' && results.icons[item.path]) {
+            return { ...item, icon: results.icons[item.path] || undefined };
           }
           return item;
         });
@@ -65,14 +64,14 @@ export function useIconFetcher(
     // 統合プログレスAPIを使用
     // URLアイテムの抽出（アイコン未設定のみ）
     const urlItems = mainItems.filter(
-      (item) => item.type === 'url' && !('icon' in item && item.icon)
+      (item) => isLauncherItem(item) && item.type === 'url' && !('icon' in item && item.icon)
     ) as LauncherItem[];
 
-    // EXE/ファイル/カスタムURIアイテムの抽出（アイコン未設定のみ、フォルダとグループを除外）
+    // EXE/ファイル/カスタムURIアイテムの抽出（アイコン未設定のみ、フォルダを除外）
     const iconItems = mainItems.filter(
       (item) =>
+        isLauncherItem(item) &&
         item.type !== 'url' &&
-        item.type !== 'group' &&
         item.type !== 'folder' &&
         !('icon' in item && item.icon)
     ) as LauncherItem[];
@@ -88,14 +87,10 @@ export function useIconFetcher(
     // 取得したアイコンをアイテムに適用
     const updateItemsWithIcons = (items: AppItem[]) => {
       return items.map((item) => {
-        if (item.type === 'url' && results.favicons[(item as LauncherItem).path]) {
-          return { ...item, icon: results.favicons[(item as LauncherItem).path] || undefined };
-        } else if (
-          item.type !== 'url' &&
-          item.type !== 'group' &&
-          results.icons[(item as LauncherItem).path]
-        ) {
-          return { ...item, icon: results.icons[(item as LauncherItem).path] || undefined };
+        if (isLauncherItem(item) && item.type === 'url' && results.favicons[item.path]) {
+          return { ...item, icon: results.favicons[item.path] || undefined };
+        } else if (isLauncherItem(item) && item.type !== 'url' && results.icons[item.path]) {
+          return { ...item, icon: results.icons[item.path] || undefined };
         }
         return item;
       });
@@ -114,30 +109,34 @@ export function useIconFetcher(
     // 現在のタブのアイテムのみをフィルタリング
     let currentTabItems: AppItem[];
     if (!showDataFileTabs) {
-      currentTabItems = mainItems.filter((item) => item.sourceFile === 'data.txt');
+      currentTabItems = mainItems.filter(
+        (item) => !isWindowInfo(item) && item.sourceFile === 'data.txt'
+      );
     } else {
       // アクティブなタブに紐付く全ファイルのアイテムを取得
       const activeTabConfig = dataFileTabs.find((tab) => tab.files.includes(activeTab));
       if (activeTabConfig) {
-        currentTabItems = mainItems.filter((item) =>
-          activeTabConfig.files.includes(item.sourceFile || '')
+        currentTabItems = mainItems.filter(
+          (item) => !isWindowInfo(item) && activeTabConfig.files.includes(item.sourceFile || '')
         );
       } else {
-        currentTabItems = mainItems.filter((item) => item.sourceFile === activeTab);
+        currentTabItems = mainItems.filter(
+          (item) => !isWindowInfo(item) && item.sourceFile === activeTab
+        );
       }
     }
 
     // 統合プログレスAPIを使用
     // URLアイテムの抽出（アイコン未設定のみ）
     const urlItems = currentTabItems.filter(
-      (item) => item.type === 'url' && !('icon' in item && item.icon)
+      (item) => isLauncherItem(item) && item.type === 'url' && !('icon' in item && item.icon)
     ) as LauncherItem[];
 
-    // EXE/ファイル/カスタムURIアイテムの抽出（アイコン未設定のみ、フォルダとグループを除外）
+    // EXE/ファイル/カスタムURIアイテムの抽出（アイコン未設定のみ、フォルダを除外）
     const iconItems = currentTabItems.filter(
       (item) =>
+        isLauncherItem(item) &&
         item.type !== 'url' &&
-        item.type !== 'group' &&
         item.type !== 'folder' &&
         !('icon' in item && item.icon)
     ) as LauncherItem[];
@@ -153,14 +152,10 @@ export function useIconFetcher(
     // 取得したアイコンをアイテムに適用
     const updateItemsWithIcons = (items: AppItem[]) => {
       return items.map((item) => {
-        if (item.type === 'url' && results.favicons[(item as LauncherItem).path]) {
-          return { ...item, icon: results.favicons[(item as LauncherItem).path] || undefined };
-        } else if (
-          item.type !== 'url' &&
-          item.type !== 'group' &&
-          results.icons[(item as LauncherItem).path]
-        ) {
-          return { ...item, icon: results.icons[(item as LauncherItem).path] || undefined };
+        if (isLauncherItem(item) && item.type === 'url' && results.favicons[item.path]) {
+          return { ...item, icon: results.favicons[item.path] || undefined };
+        } else if (isLauncherItem(item) && item.type !== 'url' && results.icons[item.path]) {
+          return { ...item, icon: results.icons[item.path] || undefined };
         }
         return item;
       });

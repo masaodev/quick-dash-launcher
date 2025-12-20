@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { PathUtils } from '@common/utils/pathUtils';
 
 import { AppItem, LauncherItem } from '../../common/types';
+import { isGroupItem, isLauncherItem } from '../../common/utils/typeGuards';
 
 interface ContextMenuProps {
   isVisible: boolean;
@@ -59,43 +60,43 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
   }, [isVisible, onClose]);
 
   const handleCopyPath = () => {
-    if (item && item.type !== 'group') {
-      onCopyPath(item as LauncherItem);
+    if (item && isLauncherItem(item)) {
+      onCopyPath(item);
       onClose();
     }
   };
 
   const handleCopyParentPath = () => {
-    if (item && item.type !== 'group') {
-      onCopyParentPath(item as LauncherItem);
+    if (item && isLauncherItem(item)) {
+      onCopyParentPath(item);
       onClose();
     }
   };
 
   const handleCopyShortcutPath = () => {
-    if (item && item.type !== 'group' && onCopyShortcutPath) {
-      onCopyShortcutPath(item as LauncherItem);
+    if (item && isLauncherItem(item) && onCopyShortcutPath) {
+      onCopyShortcutPath(item);
       onClose();
     }
   };
 
   const handleCopyShortcutParentPath = () => {
-    if (item && item.type !== 'group' && onCopyShortcutParentPath) {
-      onCopyShortcutParentPath(item as LauncherItem);
+    if (item && isLauncherItem(item) && onCopyShortcutParentPath) {
+      onCopyShortcutParentPath(item);
       onClose();
     }
   };
 
   const handleOpenParentFolder = () => {
-    if (item && item.type !== 'group') {
-      onOpenParentFolder(item as LauncherItem);
+    if (item && isLauncherItem(item)) {
+      onOpenParentFolder(item);
       onClose();
     }
   };
 
   const handleOpenShortcutParentFolder = () => {
-    if (item && item.type !== 'group' && onOpenShortcutParentFolder) {
-      onOpenShortcutParentFolder(item as LauncherItem);
+    if (item && isLauncherItem(item) && onOpenShortcutParentFolder) {
+      onOpenShortcutParentFolder(item);
       onClose();
     }
   };
@@ -115,29 +116,26 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
   };
 
   // グループアイテムかどうかを判定
-  const isGroupItem = item?.type === 'group';
+  const isGroup = item ? isGroupItem(item) : false;
 
   // ショートカットアイテムかどうかを判定
-  const isShortcutItem =
-    item && item.type !== 'group' ? PathUtils.isShortcutItem(item as LauncherItem) : false;
+  const isShortcut = item && isLauncherItem(item) ? PathUtils.isShortcutItem(item) : false;
 
   // パスを取得するヘルパー関数
   const getFullPath = (): string => {
-    return item && item.type !== 'group' ? PathUtils.getFullPath(item as LauncherItem) : '';
+    return item && isLauncherItem(item) ? PathUtils.getFullPath(item) : '';
   };
 
   const getParentPath = (): string => {
-    return item && item.type !== 'group' && 'path' in item
-      ? PathUtils.getParentPath(item.path)
-      : '';
+    return item && isLauncherItem(item) && 'path' in item ? PathUtils.getParentPath(item.path) : '';
   };
 
   const getShortcutPath = (): string => {
-    return item && item.type !== 'group' && 'originalPath' in item ? item.originalPath || '' : '';
+    return item && isLauncherItem(item) && 'originalPath' in item ? item.originalPath || '' : '';
   };
 
   const getShortcutParentPath = (): string => {
-    return item && item.type !== 'group' && 'originalPath' in item && item.originalPath
+    return item && isLauncherItem(item) && 'originalPath' in item && item.originalPath
       ? PathUtils.getParentPath(item.originalPath)
       : '';
   };
@@ -147,7 +145,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
     // グループアイテムの場合：編集 + ワークスペースに追加（高さ100px）
     // 通常アイテムの場合：編集+ワークスペースに追加+基本3項目 + ショートカットで+3項目 + 区切り線
     const baseHeight = onEditItem ? 240 : 200;
-    const menuHeight = isGroupItem ? 100 : isShortcutItem ? baseHeight + 140 : baseHeight;
+    const menuHeight = isGroup ? 100 : isShortcut ? baseHeight + 140 : baseHeight;
 
     let adjustedX = position.x;
     let adjustedY = position.y;
@@ -171,7 +169,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
 
   // URLやカスタムURIには親フォルダーが存在しない
   const hasParentFolder =
-    item?.type !== 'url' && item?.type !== 'customUri' && item?.type !== 'group';
+    item && isLauncherItem(item) && item.type !== 'url' && item.type !== 'customUri';
 
   return (
     <div
@@ -190,7 +188,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
             <span className="context-menu-icon">✏️</span>
             <span>編集</span>
           </div>
-          {!isGroupItem && <div className="context-menu-divider" />}
+          {!isGroup && <div className="context-menu-divider" />}
         </>
       )}
       {onAddToWorkspace && (
@@ -199,10 +197,10 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
             <span className="context-menu-icon">⭐</span>
             <span>ワークスペースに追加</span>
           </div>
-          {!isGroupItem && <div className="context-menu-divider" />}
+          {!isGroup && <div className="context-menu-divider" />}
         </>
       )}
-      {!isGroupItem && (
+      {!isGroup && (
         <>
           <div className="context-menu-item" onClick={handleCopyPath} title={getFullPath()}>
             <span className="context-menu-icon">📋</span>
@@ -228,7 +226,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
               </div>
             </>
           )}
-          {isShortcutItem && (
+          {isShortcut && (
             <>
               <div className="context-menu-divider" />
               {onCopyShortcutPath && (

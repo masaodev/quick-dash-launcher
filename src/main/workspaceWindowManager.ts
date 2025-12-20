@@ -61,7 +61,8 @@ export async function createWorkspaceWindow(): Promise<BrowserWindow> {
 
   // ワークスペースウィンドウ用のHTMLファイルを読み込み
   if (process.env.NODE_ENV === 'development') {
-    workspaceWindow.loadURL('http://localhost:9000/workspace.html');
+    const port = process.env.VITE_PORT || '9000';
+    workspaceWindow.loadURL(`http://localhost:${port}/workspace.html`);
   } else {
     workspaceWindow.loadFile(path.join(__dirname, '../workspace.html'));
   }

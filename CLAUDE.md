@@ -12,20 +12,38 @@ QuickDashLauncherは、グローバルホットキー（Alt+Space）でWebサイ
 
 ```bash
 npm install              # 依存関係のインストール
-npm run dev             # 開発モード（Viteデベロップメントサーバー、ホットリロード付き）
-npm run dev:minimal     # 最小限のセットで開発モード起動
-npm run dev:full        # フル機能セットで開発モード起動
-npm run dev:tabs        # タブ機能デモで開発モード起動
-npm run dev:groups      # グループ起動デモで開発モード起動
-npm run dev:large       # 大量データ（パフォーマンステスト用）
-npm run dev:empty       # 空データセット
+npm run dev             # 開発モード（ポート9001、ホットキー: Ctrl+Alt+A）
+npm run dev2            # 開発モード第2インスタンス（ポート9002、ホットキー: Ctrl+Alt+S）
+npm run dev:test        # テストデータで開発モード起動（全機能を含むテストデータ）
 npm run build           # 全コンポーネントのビルド（Vite使用）
 npm run preview         # ビルド済みアプリケーションのプレビュー
 npm run start           # ビルドして実行
 npm run dist            # Windowsインストーラーの作成
 ```
 
-**注:** `tests/dev/`ディレクトリには、開発用の設定テンプレートが含まれています。詳細は[tests/dev/README.md](tests/dev/README.md)を参照してください。
+### 多重起動について
+
+v0.5.3以降、開発時に複数のインスタンスを同時に起動できるようになりました。
+
+**インスタンスごとの分離:**
+- 独立した設定フォルダ（`userData`パス）
+- 異なるViteポート番号
+- 異なるグローバルホットキー
+- 完全に分離されたキャッシュ・データファイル
+
+**使用例:**
+```bash
+# ターミナル1: 開発用メインインスタンス
+npm run dev
+
+# ターミナル2: 並行開発・比較検証用
+npm run dev2
+
+# ターミナル3: テストデータで動作確認
+npm run dev:test
+```
+
+詳細は **[開発ガイド - 多重起動](docs/setup/development.md#多重起動)** を参照してください。
 
 ## コード品質チェックコマンド
 
