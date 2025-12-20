@@ -496,19 +496,28 @@ onWindowHidden(callback: () => void)
   - QuickDashLauncher自身のウィンドウは除外
   - 表示されていないウィンドウ（`IsWindowVisible = false`）は除外
   - タイトルのないウィンドウは除外
+  - 各ウィンドウのアイコンを取得（Windows API + GDI+使用）
+  - 実行ファイルパスを取得（プロセスIDから取得）
 - データ型:
   ```typescript
   interface WindowInfo {
-    hwnd: number | bigint;    // ウィンドウハンドル
-    title: string;             // ウィンドウタイトル
-    x: number;                 // X座標
-    y: number;                 // Y座標
-    width: number;             // 幅
-    height: number;            // 高さ
-    processId: number;         // プロセスID
-    isVisible: boolean;        // 表示状態
+    hwnd: number | bigint;      // ウィンドウハンドル
+    title: string;               // ウィンドウタイトル
+    x: number;                   // X座標
+    y: number;                   // Y座標
+    width: number;               // 幅
+    height: number;              // 高さ
+    processId: number;           // プロセスID
+    isVisible: boolean;          // 表示状態
+    executablePath?: string;     // 実行ファイルパス（取得可能な場合）
+    icon?: string;               // アイコン（base64エンコードされたデータURL）
   }
   ```
+- アイコン取得の詳細:
+  - `getWindowIcon()`: ウィンドウハンドルからHICONを取得（WM_GETICON, GCLP_HICONを試行）
+  - `convertIconToBase64()`: HICONをGDI+でPNG base64に変換
+  - `getExecutablePathFromProcessId()`: プロセスIDから実行ファイルパスを取得
+  - メモリリーク対策: GDI+リソース解放、一時ファイル削除、koffi callback解放
 
 ### `activate-window`
 指定されたウィンドウをアクティブ化

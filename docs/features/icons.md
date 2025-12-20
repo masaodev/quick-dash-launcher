@@ -320,6 +320,61 @@ interface IconPhaseProgress {
 
 ---
 
+## ウィンドウアイコン取得
+
+ウィンドウ検索機能では、開いているウィンドウから直接アイコンを取得して表示します。
+
+### 取得方法
+
+Windows APIを使用してウィンドウからアイコンハンドル（HICON）を取得し、GDI+でPNG base64に変換します。
+
+**使用API:**
+- `SendMessageW` (WM_GETICON): ウィンドウメッセージでアイコンを取得
+- `GetClassLongPtrW` (GCLP_HICON): クラスアイコンを取得
+- `GetWindowThreadProcessId`: プロセスIDを取得
+- `OpenProcess`: プロセスハンドルを開く
+- `QueryFullProcessImageNameW`: 実行ファイルパスを取得
+
+### アイコン取得の優先順位
+
+| 優先度 | 取得方法 | 説明 |
+|-------|---------|------|
+| 1 | WM_GETICON (ICON_BIG) | 大きいアイコン |
+| 2 | WM_GETICON (ICON_SMALL2) | 小さいアイコン（32px） |
+| 3 | WM_GETICON (ICON_SMALL) | 小さいアイコン（16px） |
+| 4 | GetClassLongPtrW (GCLP_HICON) | クラスアイコン |
+
+### 変換処理
+
+**GDI+ による HICON → PNG base64 変換:**
+1. GDI+を初期化（`GdiplusStartup`）
+2. HICONからビットマップを作成（`GdipCreateBitmapFromHICON`）
+3. 一時ファイルにPNG形式で保存（`GdipSaveImageToFile`）
+4. ファイルを読み込んでbase64エンコード
+5. GDI+リソースを解放（`GdipDisposeImage`, `GdiplusShutdown`）
+6. 一時ファイルを削除
+
+### メモリリーク対策
+
+以下の対策を実装して、メモリリークを防止しています：
+
+1. **GDI+ リソース解放**: `GdipDisposeImage`と`GdiplusShutdown`を必ず実行
+2. **koffi callback 解放**: Windows API呼び出し後のコールバック解放処理
+3. **一時ファイル削除**: 変換後のPNGファイルを確実に削除（try-finallyブロック）
+
+### 実装詳細
+
+**実装ファイル:**
+- `src/main/utils/nativeWindowControl.ts`: `getWindowIcon()`, `convertIconToBase64()`, `getExecutablePathFromProcessId()`
+- `src/main/ipc/windowSearchHandlers.ts`: アイコン取得処理の統合
+- `src/common/types.ts`: `WindowInfo`型に`icon`, `executablePath`フィールドを追加
+
+### 表示
+
+ウィンドウ検索モード（検索欄で`<`を入力）で、各ウィンドウにアイコンが表示されます。アイコンが取得できない場合は、デフォルトの🪟絵文字を表示します。
+
+---
+
 ## トラブルシューティング
 
 ### ファビコンが取得できない場合
