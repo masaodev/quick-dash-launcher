@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 
-import { GROUP_COLOR_PALETTE } from '../constants/colorPalette';
+import { GROUP_COLOR_PALETTE } from '../constants';
 
 interface ColorPickerProps {
   /** 色選択時のコールバック */

@@ -569,7 +569,7 @@ interface CustomIconEditorProps {
 |------|------|
 | **ファイル名** | `src/renderer/components/WindowSelectorModal.tsx` |
 | **コンポーネント名** | `WindowSelectorModal` |
-| **スタイル** | `src/renderer/components/WindowSelectorModal.css` |
+| **スタイル** | `src/renderer/styles/components/WindowSelectorModal.css` |
 
 #### 表示内容
 

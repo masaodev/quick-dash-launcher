@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { WindowInfo } from '@common/types';
 
-import './WindowSelectorModal.css';
+import '../styles/components/WindowSelectorModal.css';
 
 interface WindowSelectorModalProps {
   isOpen: boolean;

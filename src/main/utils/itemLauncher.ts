@@ -5,9 +5,9 @@
  */
 
 import { spawn } from 'child_process';
+
 import { shell } from 'electron';
 import { Logger } from 'pino';
-
 import { parseArgs } from '@common/utils/argsParser';
 
 /**

@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 
-import PathManager from './config/pathManager.js';
+import PathManager from '../config/pathManager.js';
 
 /**
  * デフォルトのdata.txtファイルを作成

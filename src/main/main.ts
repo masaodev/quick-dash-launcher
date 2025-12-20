@@ -3,7 +3,7 @@ import * as path from 'path';
 import { app, globalShortcut } from 'electron';
 
 import { setupIPCHandlers } from './ipc';
-import { createDefaultDataFile } from './appHelpers';
+import { createDefaultDataFile } from './utils/appHelpers';
 import PathManager from './config/pathManager.js';
 import { BackupService } from './services/backupService.js';
 import { SettingsService } from './services/settingsService.js';

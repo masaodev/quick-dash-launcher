@@ -3,7 +3,7 @@ import * as path from 'path';
 import { BrowserWindow, Tray, Menu, nativeImage, app, shell, screen } from 'electron';
 import { windowLogger } from '@common/logger';
 import type { WindowPinMode, WindowPositionMode } from '@common/types';
-import { PerformanceTimer } from '@common/performanceTimer';
+import { PerformanceTimer } from '@common/utils/performanceTimer';
 
 import { HotkeyService } from './services/hotkeyService.js';
 import { SettingsService } from './services/settingsService.js';

@@ -3,9 +3,8 @@ import * as fs from 'fs';
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
-import { PathTestHelper } from '../../test/helpers/pathTestHelper.js';
-
-import PathManager from './pathManager.js';
+import { PathTestHelper } from '../../../../src/test/helpers/pathTestHelper.js';
+import PathManager from '../../../../src/main/config/pathManager.js';
 
 describe('PathManager', () => {
   let pathHelper: PathTestHelper;
