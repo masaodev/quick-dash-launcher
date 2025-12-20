@@ -82,3 +82,10 @@ tests/fixtures/dev/*/backup/
 # package-lock.json
 # yarn.lock
 # pnpm-lock.yaml
+
+# TypeScript build output
+# srcディレクトリ内の.jsと.js.mapファイルを除外（ビルド成果物）
+src/**/*.js
+src/**/*.js.map
+# ただし、scriptsフォルダ内の.jsファイルは除外しない（スクリプトファイルとして必要）
+!scripts/**/*.js
