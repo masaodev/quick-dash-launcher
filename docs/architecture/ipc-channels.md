@@ -518,6 +518,7 @@ onWindowHidden(callback: () => void)
   - `convertIconToBase64()`: HICONをGDI+でPNG base64に変換
   - `getExecutablePathFromProcessId()`: プロセスIDから実行ファイルパスを取得
   - メモリリーク対策: GDI+リソース解放、一時ファイル削除、koffi callback解放
+  - エラーハンドリング: GDI+ステータスコード（0-20）の詳細ログ出力で問題診断を支援（詳細は[アイコンシステム](../features/icons.md#gdiエラーハンドリング)を参照）
 
 ### `activate-window`
 指定されたウィンドウをアクティブ化

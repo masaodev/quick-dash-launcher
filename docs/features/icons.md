@@ -373,6 +373,73 @@ Windows APIを使用してウィンドウからアイコンハンドル（HICON�
 
 ウィンドウ検索モード（検索欄で`<`を入力）で、各ウィンドウにアイコンが表示されます。アイコンが取得できない場合は、デフォルトの🪟絵文字を表示します。
 
+
+### GDI+エラーハンドリング
+
+ウィンドウアイコン取得処理では、詳細なエラーログを出力してトラブルシューティングを支援します。
+
+#### GDI+ステータスコード一覧
+
+| コード | 説明 | 主な原因 |
+|-------|------|---------|
+| 0 | Ok | 正常終了 |
+| 1 | GenericError | 一般的なエラー |
+| 2 | InvalidParameter | 無効なパラメータ（hIconが無効など） |
+| 3 | OutOfMemory | メモリ不足 |
+| 4 | ObjectBusy | オブジェクトがビジー状態 |
+| 5 | InsufficientBuffer | バッファ不足 |
+| 6 | NotImplemented | 未実装の機能 |
+| 7 | Win32Error | Win32 APIエラー（ファイル保存失敗など） |
+| 8 | WrongState | 不正な状態 |
+| 9 | Aborted | 処理中断 |
+| 10 | FileNotFound | ファイルが見つからない |
+| 11 | ValueOverflow | 値のオーバーフロー |
+| 12 | AccessDenied | アクセス拒否（権限不足） |
+| 13 | UnknownImageFormat | 未知の画像形式 |
+| 14 | FontFamilyNotFound | フォントファミリーが見つからない |
+| 15 | FontStyleNotFound | フォントスタイルが見つからない |
+| 16 | NotTrueTypeFont | TrueTypeフォントではない |
+| 17 | UnsupportedGdiplusVersion | サポートされていないGDI+バージョン |
+| 18 | GdiplusNotInitialized | GDI+が初期化されていない |
+| 19 | PropertyNotFound | プロパティが見つからない |
+| 20 | PropertyNotSupported | サポートされていないプロパティ |
+
+#### エラーログの形式
+
+エラーログには、ステータスコード番号と説明、関連する文脈情報が含まれます：
+
+```
+[convertIconToBase64] GdiplusStartup failed: status=3 (OutOfMemory), hIcon=12345678
+[convertIconToBase64] GdipCreateBitmapFromHICON failed: status=2 (InvalidParameter), hIcon=12345678, bitmap=null
+[convertIconToBase64] GdipSaveImageToFile failed: status=7 (Win32Error), path=C:\Users\...\icon_xxx.png
+[convertIconToBase64] Unexpected error: hIcon=12345678, error=EACCES: permission denied
+```
+
+#### エラーログの読み方
+
+**GdiplusStartup失敗の場合:**
+- `status=3 (OutOfMemory)` → メモリ不足。他のアプリケーションを閉じてメモリを確保
+- `status=17 (UnsupportedGdiplusVersion)` → システム更新が必要
+
+**GdipCreateBitmapFromHICON失敗の場合:**
+- `status=2 (InvalidParameter), bitmap=null` → ウィンドウのアイコンハンドルが無効
+- 一部のアプリケーションは標準的なアイコンを提供しない場合があります
+
+**GdipSaveImageToFile失敗の場合:**
+- `status=7 (Win32Error)` → 一時フォルダへの書き込み権限を確認
+- `status=12 (AccessDenied)` → ユーザー権限の確認が必要
+
+**Unexpected error:**
+- `error=EACCES` → ファイルシステムの権限問題
+- `error=ENOSPC` → ディスク容量不足
+
+#### トラブルシューティングへの活用
+
+エラーログを確認することで、アイコン取得失敗の原因を特定できます：
+
+1. **頻繁に同じステータスコードが出る場合**: システムレベルの問題（メモリ不足、権限問題など）
+2. **特定のアプリケーションでのみ失敗**: そのアプリが標準的なアイコンを提供していない可能性
+3. **一時的なエラー**: 再起動で解決する場合があります
 ---
 
 ## トラブルシューティング
