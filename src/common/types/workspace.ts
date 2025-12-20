@@ -51,6 +51,12 @@ export interface WorkspaceItem {
   groupId?: string;
   /** グループラベル（将来的な拡張用、廃止予定） */
   label?: string;
+  /** ウィンドウタイトル検索用の文字列（設定時、起動前にウィンドウ検索を実行）
+   * @deprecated windowConfigを使用してください。後方互換性のため残されています
+   */
+  windowTitle?: string;
+  /** ウィンドウ制御設定（ウィンドウ検索・位置・サイズ制御） */
+  windowConfig?: import('./launcher').WindowConfig;
 }
 
 /**

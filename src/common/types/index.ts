@@ -6,7 +6,7 @@
  */
 
 // ランチャー関連の型
-export type { LauncherItem, GroupItem, AppItem } from './launcher';
+export type { WindowConfig, LauncherItem, GroupItem, AppItem } from './launcher';
 
 // ワークスペース関連の型
 export type {
@@ -35,7 +35,10 @@ export type {
 export type { SimpleBookmarkItem, BrowserProfile, BrowserInfo } from './bookmark';
 
 // 検索関連の型
-export type { SearchHistoryEntry, SearchHistoryState } from './search';
+export type { SearchHistoryEntry, SearchHistoryState, SearchMode } from './search';
+
+// ウィンドウ関連の型
+export type { WindowInfo } from './window';
 
 // アプリケーション情報
 export type { AppInfo } from './app';

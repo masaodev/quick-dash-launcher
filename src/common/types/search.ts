@@ -19,3 +19,10 @@ export interface SearchHistoryState {
   /** 現在選択中の履歴インデックス（-1は履歴を使用していない状態） */
   currentIndex: number;
 }
+
+/**
+ * 検索モードを表す型
+ * normal: 通常のアイテム検索モード
+ * window: ウィンドウ検索モード
+ */
+export type SearchMode = 'normal' | 'window';
