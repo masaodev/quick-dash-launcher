@@ -60,6 +60,7 @@ export interface ElectronAPI {
   isDirectory: (filePath: string) => Promise<boolean>;
   getPathForFile: (file: File) => string;
   quitApp: () => Promise<void>;
+  getAllWindows: () => Promise<WindowInfo[]>;
   getSettings: () => Promise<AppSettings>;
   setMultipleSettings: (settings: Partial<AppSettings>) => Promise<void>;
   resetSettings: () => Promise<void>;

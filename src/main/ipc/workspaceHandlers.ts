@@ -29,7 +29,7 @@ import { parseArgs } from '@common/utils/argsParser';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 
 import { findWindowByTitle } from '../utils/windowMatcher.js';
-import { activateWindow, restoreWindow } from '../utils/nativeWindowControl.js';
+import { activateWindow, restoreWindow, setWindowBounds } from '../utils/nativeWindowControl.js';
 import { WorkspaceService } from '../services/workspaceService.js';
 import PathManager from '../config/pathManager.js';
 import { IconService } from '../services/iconService.js';
@@ -192,18 +192,42 @@ export function setupWorkspaceHandlers(): void {
    */
   ipcMain.handle(WORKSPACE_LAUNCH_ITEM, async (_event, item: WorkspaceItem) => {
     try {
-      // ウィンドウタイトルが設定されている場合、先にウィンドウ検索を試行
-      if (item.windowTitle) {
-        const hwnd = findWindowByTitle(item.windowTitle);
+      // ウィンドウ設定が存在する場合、先にウィンドウ検索を試行
+      const windowConfig =
+        item.windowConfig || (item.windowTitle ? { title: item.windowTitle } : undefined);
+      if (windowConfig) {
+        const hwnd = findWindowByTitle(windowConfig.title);
 
         if (hwnd !== null) {
           logger.info(
-            { id: item.id, name: item.displayName, windowTitle: item.windowTitle },
-            'Window found for workspace item, activating'
+            { id: item.id, name: item.displayName, windowConfig: JSON.stringify(windowConfig) },
+            'Window found for workspace item, activating and setting bounds'
           );
 
           // 最小化されている場合は復元
           restoreWindow(hwnd);
+
+          // ウィンドウの位置・サイズを設定（指定されている場合）
+          if (
+            windowConfig.x !== undefined ||
+            windowConfig.y !== undefined ||
+            windowConfig.width !== undefined ||
+            windowConfig.height !== undefined
+          ) {
+            const boundsSuccess = setWindowBounds(hwnd, {
+              x: windowConfig.x,
+              y: windowConfig.y,
+              width: windowConfig.width,
+              height: windowConfig.height,
+            });
+
+            if (!boundsSuccess) {
+              logger.warn(
+                { id: item.id, name: item.displayName, windowConfig: JSON.stringify(windowConfig) },
+                'Failed to set window bounds'
+              );
+            }
+          }
 
           // ウィンドウをアクティブ化
           const success = activateWindow(hwnd);
@@ -219,7 +243,7 @@ export function setupWorkspaceHandlers(): void {
           }
         } else {
           logger.info(
-            { id: item.id, name: item.displayName, windowTitle: item.windowTitle },
+            { id: item.id, name: item.displayName, windowConfig: JSON.stringify(windowConfig) },
             'Window not found for workspace item, launching normally'
           );
           // ウィンドウが見つからない場合は下記の通常起動処理へフォールバック

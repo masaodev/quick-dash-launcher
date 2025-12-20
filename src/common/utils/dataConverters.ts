@@ -8,6 +8,7 @@
 import type { RawDataLine, LauncherItem, DataFileTab } from '../types';
 
 import { parseCSVLine, escapeCSV } from './csvParser';
+import { parseWindowConfig, serializeWindowConfig } from './windowConfigUtils';
 
 /**
  * フォルダ取込アイテムのオプション型定義
@@ -34,7 +35,9 @@ export interface RegisterItem {
   folderProcessing?: 'folder' | 'expand';
   icon?: string;
   customIcon?: string;
+  /** @deprecated windowConfigを使用してください */
   windowTitle?: string;
+  windowConfig?: import('../types').WindowConfig;
   itemCategory: 'item' | 'dir' | 'group';
   dirOptions?: DirOptions;
   groupItemNames?: string[];
@@ -146,13 +149,16 @@ export async function convertRawDataLineToRegisterItem(
   const defaultTab = line.sourceFile || (tabs.length > 0 ? tabs[0].files[0] : 'data.txt');
 
   if (line.type === 'item') {
-    // アイテム行の場合：名前,パス,引数,カスタムアイコン,ウィンドウタイトル
+    // アイテム行の場合：名前,パス,引数,カスタムアイコン,ウィンドウ設定
     const parts = parseCSVLine(line.content);
     const name = parts[0] || '';
     const path = parts[1] || '';
     const args = parts[2] || '';
     const customIcon = parts[3] || '';
-    const windowTitle = parts[4] || '';
+    const windowConfigField = parts[4] || '';
+
+    // ウィンドウ設定をパース
+    const windowConfig = windowConfigField ? parseWindowConfig(windowConfigField) : undefined;
 
     const itemType = await detectItemType(path);
 
@@ -165,7 +171,9 @@ export async function convertRawDataLineToRegisterItem(
       targetFile: line.sourceFile,
       folderProcessing: itemType === 'folder' ? 'folder' : undefined,
       customIcon: customIcon || line.customIcon,
-      windowTitle: windowTitle || undefined,
+      // 後方互換性のため両方設定
+      windowTitle: windowConfig?.title,
+      windowConfig: windowConfig ?? undefined,
       itemCategory: 'item',
     };
   } else if (line.type === 'directive') {
@@ -248,12 +256,12 @@ export function convertRegisterItemToRawDataLine(
     const itemNames = item.groupItemNames || [];
     newContent = `group,${item.name},${itemNames.join(',')}`;
   } else {
-    // アイテム行の場合：名前,パス,引数,カスタムアイコン,ウィンドウタイトル の形式
+    // アイテム行の場合：名前,パス,引数,カスタムアイコン,ウィンドウ設定 の形式
     // CSVエスケープを適用
     newType = 'item';
     const args = item.args || '';
     const customIcon = item.customIcon || '';
-    const windowTitle = item.windowTitle || '';
+    const windowConfigStr = item.windowConfig ? serializeWindowConfig(item.windowConfig) : '';
 
     // 基本フィールド
     newContent = `${escapeCSV(item.name)},${escapeCSV(item.path)}`;
@@ -262,13 +270,13 @@ export function convertRegisterItemToRawDataLine(
     newContent += `,${escapeCSV(args)}`;
 
     // カスタムアイコンフィールド
-    if (customIcon || windowTitle) {
+    if (customIcon || windowConfigStr) {
       newContent += `,${escapeCSV(customIcon)}`;
     }
 
-    // ウィンドウタイトルフィールド
-    if (windowTitle) {
-      newContent += `,${escapeCSV(windowTitle)}`;
+    // ウィンドウ設定フィールド
+    if (windowConfigStr) {
+      newContent += `,${escapeCSV(windowConfigStr)}`;
     }
   }
 

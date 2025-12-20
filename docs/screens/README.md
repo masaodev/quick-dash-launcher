@@ -19,6 +19,7 @@ QuickDashLauncher
 └── モーダル・ダイアログ・コンポーネント
     ├── アイテム登録・編集モーダル
     │   ├── グループアイテム選択モーダル
+    │   ├── ウィンドウ選択モーダル
     │   ├── フォルダ取込オプションエディタ
     │   └── FilePickerDialog
     ├── ブックマークインポートモーダル
@@ -50,6 +51,7 @@ QuickDashLauncher
 | **アイテム登録・編集モーダル** | ファイルドラッグ&ドロップ時<br>➕ボタンクリック時<br>右クリック→「編集」選択時<br>管理画面で✏️ボタンクリック時 | [register-modal.md](./register-modal.md) |
 | **ブックマークインポートモーダル** | 管理ウィンドウでインポートボタンクリック時 | [bookmark-import-modal.md](./bookmark-import-modal.md) |
 | **グループアイテム選択モーダル** | アイテム登録モーダルでグループの「+ アイテムを追加」クリック時 | [group-item-selector-modal.md](./group-item-selector-modal.md) |
+| **ウィンドウ選択モーダル** | アイテム登録モーダルのウィンドウ設定で「ウィンドウから取得」クリック時 | [register-modal.md](./register-modal.md#ウィンドウ選択モーダルwindowselectormodal) |
 | **アイコン取得進捗詳細モーダル** | アイコン一括取得完了後、詳細ボタンクリック時 | [icon-progress-detail-modal.md](./icon-progress-detail-modal.md) |
 
 ### 共通ダイアログ

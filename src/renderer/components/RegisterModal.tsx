@@ -1,13 +1,14 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { type RegisterItem } from '@common/utils/dataConverters';
 
-import { RawDataLine } from '../../common/types';
+import { RawDataLine, WindowInfo } from '../../common/types';
 import { useCustomIcon } from '../hooks/useCustomIcon';
 import { useRegisterForm } from '../hooks/useRegisterForm';
 
 import GroupItemSelectorModal from './GroupItemSelectorModal';
 import FilePickerDialog from './FilePickerDialog';
 import DirOptionsEditor from './DirOptionsEditor';
+import WindowSelectorModal from './WindowSelectorModal';
 
 interface RegisterModalProps {
   isOpen: boolean;
@@ -29,6 +30,10 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
   onDelete,
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
+
+  // ウィンドウ選択ダイアログの状態管理
+  const [windowSelectorOpen, setWindowSelectorOpen] = useState(false);
+  const [windowSelectorItemIndex, setWindowSelectorItemIndex] = useState<number | null>(null);
 
   // カスタムアイコン管理フック
   const {
@@ -211,6 +216,32 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
         updateItem(idx, { customIcon: undefined });
       });
     }
+  };
+
+  // ウィンドウ選択ダイアログを開く
+  const openWindowSelector = (index: number) => {
+    setWindowSelectorItemIndex(index);
+    setWindowSelectorOpen(true);
+  };
+
+  // ウィンドウ選択時のコールバック
+  const onWindowSelected = (window: WindowInfo) => {
+    if (windowSelectorItemIndex === null) return;
+
+    const item = items[windowSelectorItemIndex];
+    if (!item) return;
+
+    // ウィンドウ情報から WindowConfig を作成
+    const windowConfig = {
+      title: window.title,
+      x: window.x,
+      y: window.y,
+      width: window.width,
+      height: window.height,
+    };
+
+    // アイテムに windowConfig を設定
+    handleItemChange(windowSelectorItemIndex, 'windowConfig', windowConfig);
   };
 
   // アイテム削除ハンドラー
@@ -457,6 +488,99 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                       </div>
                     )}
 
+                    {/* ウィンドウ設定セクション */}
+                    <div className="register-field">
+                      <label>ウィンドウ設定（オプション）:</label>
+                      <div className="window-config-section">
+                        <div className="window-config-row">
+                          <label className="window-config-label">ウィンドウタイトル:</label>
+                          <input
+                            type="text"
+                            value={item.windowConfig?.title || ''}
+                            onChange={(e) =>
+                              handleItemChange(index, 'windowConfig', {
+                                ...item.windowConfig,
+                                title: e.target.value,
+                              })
+                            }
+                            placeholder="ウィンドウタイトル（部分一致）"
+                            className="window-config-input"
+                          />
+                        </div>
+                        <div className="window-config-row">
+                          <label className="window-config-label">X座標:</label>
+                          <input
+                            type="number"
+                            value={item.windowConfig?.x ?? ''}
+                            onChange={(e) =>
+                              handleItemChange(index, 'windowConfig', {
+                                ...item.windowConfig,
+                                title: item.windowConfig?.title || '',
+                                x: e.target.value ? parseInt(e.target.value, 10) : undefined,
+                              })
+                            }
+                            placeholder="X座標（省略時は変更なし）"
+                            className="window-config-input-number"
+                          />
+                        </div>
+                        <div className="window-config-row">
+                          <label className="window-config-label">Y座標:</label>
+                          <input
+                            type="number"
+                            value={item.windowConfig?.y ?? ''}
+                            onChange={(e) =>
+                              handleItemChange(index, 'windowConfig', {
+                                ...item.windowConfig,
+                                title: item.windowConfig?.title || '',
+                                y: e.target.value ? parseInt(e.target.value, 10) : undefined,
+                              })
+                            }
+                            placeholder="Y座標（省略時は変更なし）"
+                            className="window-config-input-number"
+                          />
+                        </div>
+                        <div className="window-config-row">
+                          <label className="window-config-label">幅:</label>
+                          <input
+                            type="number"
+                            value={item.windowConfig?.width ?? ''}
+                            onChange={(e) =>
+                              handleItemChange(index, 'windowConfig', {
+                                ...item.windowConfig,
+                                title: item.windowConfig?.title || '',
+                                width: e.target.value ? parseInt(e.target.value, 10) : undefined,
+                              })
+                            }
+                            placeholder="幅（省略時は変更なし）"
+                            className="window-config-input-number"
+                          />
+                        </div>
+                        <div className="window-config-row">
+                          <label className="window-config-label">高さ:</label>
+                          <input
+                            type="number"
+                            value={item.windowConfig?.height ?? ''}
+                            onChange={(e) =>
+                              handleItemChange(index, 'windowConfig', {
+                                ...item.windowConfig,
+                                title: item.windowConfig?.title || '',
+                                height: e.target.value ? parseInt(e.target.value, 10) : undefined,
+                              })
+                            }
+                            placeholder="高さ（省略時は変更なし）"
+                            className="window-config-input-number"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          className="get-window-btn"
+                          onClick={() => openWindowSelector(index)}
+                        >
+                          ウィンドウから取得
+                        </button>
+                      </div>
+                    </div>
+
                     {items.length > 1 && <hr />}
                   </div>
                 ))}
@@ -502,6 +626,13 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
         title="カスタムアイコンを選択"
         fileTypes="image"
         description="アイコンとして使用する画像ファイルを選択してください。"
+      />
+
+      {/* ウィンドウ選択ダイアログ */}
+      <WindowSelectorModal
+        isOpen={windowSelectorOpen}
+        onClose={() => setWindowSelectorOpen(false)}
+        onSelect={onWindowSelected}
       />
     </>
   );

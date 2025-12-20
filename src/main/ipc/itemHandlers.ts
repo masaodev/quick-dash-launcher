@@ -9,7 +9,7 @@ import { isLauncherItem } from '@common/utils/typeGuards';
 
 import { WorkspaceService } from '../services/workspaceService.js';
 import { findWindowByTitle } from '../utils/windowMatcher.js';
-import { activateWindow, restoreWindow } from '../utils/nativeWindowControl.js';
+import { activateWindow, restoreWindow, setWindowBounds } from '../utils/nativeWindowControl.js';
 
 import { notifyWorkspaceChanged } from './workspaceHandlers.js';
 
@@ -26,23 +26,47 @@ async function openItem(
         path: item.path,
         args: item.args || 'なし',
         originalPath: item.originalPath || 'なし',
-        windowTitle: item.windowTitle || 'なし',
+        windowConfig: item.windowConfig ? JSON.stringify(item.windowConfig) : 'なし',
       },
       'アイテムを起動中'
     );
 
-    // ウィンドウタイトルが設定されている場合、先にウィンドウ検索を試行
-    if (item.windowTitle) {
-      const hwnd = findWindowByTitle(item.windowTitle);
+    // ウィンドウ設定が存在する場合、先にウィンドウ検索を試行
+    const windowConfig =
+      item.windowConfig || (item.windowTitle ? { title: item.windowTitle } : undefined);
+    if (windowConfig) {
+      const hwnd = findWindowByTitle(windowConfig.title);
 
       if (hwnd !== null) {
         itemLogger.info(
-          { name: item.name, windowTitle: item.windowTitle, hwnd: String(hwnd) },
-          'ウィンドウが見つかりました。アクティブ化します'
+          { name: item.name, windowConfig: JSON.stringify(windowConfig), hwnd: String(hwnd) },
+          'ウィンドウが見つかりました。アクティブ化と位置・サイズ調整を実行します'
         );
 
         // 最小化されている場合は復元
         restoreWindow(hwnd);
+
+        // ウィンドウの位置・サイズを設定（指定されている場合）
+        if (
+          windowConfig.x !== undefined ||
+          windowConfig.y !== undefined ||
+          windowConfig.width !== undefined ||
+          windowConfig.height !== undefined
+        ) {
+          const boundsSuccess = setWindowBounds(hwnd, {
+            x: windowConfig.x,
+            y: windowConfig.y,
+            width: windowConfig.width,
+            height: windowConfig.height,
+          });
+
+          if (!boundsSuccess) {
+            itemLogger.warn(
+              { name: item.name, windowConfig: JSON.stringify(windowConfig) },
+              'ウィンドウの位置・サイズ設定に失敗しました'
+            );
+          }
+        }
 
         // ウィンドウをアクティブ化
         const success = activateWindow(hwnd);
@@ -55,14 +79,14 @@ async function openItem(
           return; // ウィンドウアクティブ化成功、通常起動をスキップ
         } else {
           itemLogger.warn(
-            { name: item.name, windowTitle: item.windowTitle },
+            { name: item.name, windowConfig: JSON.stringify(windowConfig) },
             'ウィンドウのアクティブ化に失敗。通常起動にフォールバック'
           );
           // アクティブ化失敗時は下記の通常起動処理へフォールバック
         }
       } else {
         itemLogger.info(
-          { name: item.name, windowTitle: item.windowTitle },
+          { name: item.name, windowConfig: JSON.stringify(windowConfig) },
           'ウィンドウが見つかりませんでした。通常起動します'
         );
         // ウィンドウが見つからない場合は下記の通常起動処理へフォールバック

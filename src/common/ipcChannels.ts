@@ -48,6 +48,7 @@ export const HIDE_EDIT_WINDOW = 'hide-edit-window';
 export const TOGGLE_EDIT_WINDOW = 'toggle-edit-window';
 export const IS_EDIT_WINDOW_SHOWN = 'is-edit-window-shown';
 export const GET_INITIAL_TAB = 'get-initial-tab';
+export const GET_ALL_WINDOWS = 'get-all-windows';
 export const COPY_TO_CLIPBOARD = 'copy-to-clipboard';
 export const LOG_PERFORMANCE_TIMING = 'log-performance-timing';
 
