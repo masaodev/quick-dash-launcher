@@ -304,15 +304,31 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                     )}
 
                     {item.itemCategory === 'item' && (
-                      <div className="form-group">
-                        <label>引数 (オプション):</label>
-                        <input
-                          type="text"
-                          value={item.args || ''}
-                          onChange={(e) => handleItemChange(index, 'args', e.target.value)}
-                          placeholder="コマンドライン引数（実行ファイルやアプリの場合のみ有効）"
-                        />
-                      </div>
+                      <>
+                        <div className="form-group">
+                          <label>引数 (オプション):</label>
+                          <input
+                            type="text"
+                            value={item.args || ''}
+                            onChange={(e) => handleItemChange(index, 'args', e.target.value)}
+                            placeholder="コマンドライン引数（実行ファイルやアプリの場合のみ有効）"
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <label>ウィンドウタイトル (オプション):</label>
+                          <input
+                            type="text"
+                            value={item.windowTitle || ''}
+                            onChange={(e) => handleItemChange(index, 'windowTitle', e.target.value)}
+                            placeholder="例: Google Chrome, Visual Studio Code"
+                          />
+                          <small className="field-hint">
+                            設定すると、起動前にこのタイトルのウィンドウを検索します。
+                            見つかればアクティブ化、見つからなければ通常起動します。
+                          </small>
+                        </div>
+                      </>
                     )}
 
                     {item.itemCategory === 'dir' && (

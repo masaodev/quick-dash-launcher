@@ -120,3 +120,23 @@
   border-radius: var(--border-radius-xl);
   box-shadow: var(--shadow);
 }
+
+/* ウィンドウタイトルバッジのスタイル */
+.window-title-badge {
+  margin-left: var(--spacing-xs);
+  font-size: 0.9em;
+  opacity: 0.7;
+  transition: opacity var(--transition-fast);
+}
+
+.window-title-badge:hover {
+  opacity: 1;
+}
+
+/* フィールドヒントのスタイル */
+.field-hint {
+  display: block;
+  margin-top: var(--spacing-xs);
+  font-size: 0.85em;
+  color: var(--text-secondary);
+}

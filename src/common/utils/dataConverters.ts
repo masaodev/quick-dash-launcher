@@ -34,6 +34,7 @@ export interface RegisterItem {
   folderProcessing?: 'folder' | 'expand';
   icon?: string;
   customIcon?: string;
+  windowTitle?: string;
   itemCategory: 'item' | 'dir' | 'group';
   dirOptions?: DirOptions;
   groupItemNames?: string[];
@@ -145,12 +146,13 @@ export async function convertRawDataLineToRegisterItem(
   const defaultTab = line.sourceFile || (tabs.length > 0 ? tabs[0].files[0] : 'data.txt');
 
   if (line.type === 'item') {
-    // アイテム行の場合：名前,パス,引数,カスタムアイコン
+    // アイテム行の場合：名前,パス,引数,カスタムアイコン,ウィンドウタイトル
     const parts = parseCSVLine(line.content);
     const name = parts[0] || '';
     const path = parts[1] || '';
     const args = parts[2] || '';
     const customIcon = parts[3] || '';
+    const windowTitle = parts[4] || '';
 
     const itemType = await detectItemType(path);
 
@@ -163,6 +165,7 @@ export async function convertRawDataLineToRegisterItem(
       targetFile: line.sourceFile,
       folderProcessing: itemType === 'folder' ? 'folder' : undefined,
       customIcon: customIcon || line.customIcon,
+      windowTitle: windowTitle || undefined,
       itemCategory: 'item',
     };
   } else if (line.type === 'directive') {
@@ -245,16 +248,27 @@ export function convertRegisterItemToRawDataLine(
     const itemNames = item.groupItemNames || [];
     newContent = `group,${item.name},${itemNames.join(',')}`;
   } else {
-    // アイテム行の場合：名前,パス,引数,カスタムアイコン の形式
+    // アイテム行の場合：名前,パス,引数,カスタムアイコン,ウィンドウタイトル の形式
     // CSVエスケープを適用
     newType = 'item';
     const args = item.args || '';
     const customIcon = item.customIcon || '';
+    const windowTitle = item.windowTitle || '';
 
-    if (customIcon) {
-      newContent = `${escapeCSV(item.name)},${escapeCSV(item.path)},${escapeCSV(args)},${escapeCSV(customIcon)}`;
-    } else {
-      newContent = `${escapeCSV(item.name)},${escapeCSV(item.path)},${escapeCSV(args)}`;
+    // 基本フィールド
+    newContent = `${escapeCSV(item.name)},${escapeCSV(item.path)}`;
+
+    // 引数フィールド
+    newContent += `,${escapeCSV(args)}`;
+
+    // カスタムアイコンフィールド
+    if (customIcon || windowTitle) {
+      newContent += `,${escapeCSV(customIcon)}`;
+    }
+
+    // ウィンドウタイトルフィールド
+    if (windowTitle) {
+      newContent += `,${escapeCSV(windowTitle)}`;
     }
   }
 

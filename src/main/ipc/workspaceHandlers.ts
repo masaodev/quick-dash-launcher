@@ -28,6 +28,8 @@ import {
 import { parseArgs } from '@common/utils/argsParser';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 
+import { findWindowByTitle } from '../utils/windowMatcher.js';
+import { activateWindow, restoreWindow } from '../utils/nativeWindowControl.js';
 import { WorkspaceService } from '../services/workspaceService.js';
 import PathManager from '../config/pathManager.js';
 import { IconService } from '../services/iconService.js';
@@ -190,7 +192,41 @@ export function setupWorkspaceHandlers(): void {
    */
   ipcMain.handle(WORKSPACE_LAUNCH_ITEM, async (_event, item: WorkspaceItem) => {
     try {
-      // WorkspaceItemを起動
+      // ウィンドウタイトルが設定されている場合、先にウィンドウ検索を試行
+      if (item.windowTitle) {
+        const hwnd = findWindowByTitle(item.windowTitle);
+
+        if (hwnd !== null) {
+          logger.info(
+            { id: item.id, name: item.displayName, windowTitle: item.windowTitle },
+            'Window found for workspace item, activating'
+          );
+
+          // 最小化されている場合は復元
+          restoreWindow(hwnd);
+
+          // ウィンドウをアクティブ化
+          const success = activateWindow(hwnd);
+
+          if (success) {
+            return { success: true };
+          } else {
+            logger.warn(
+              { id: item.id, name: item.displayName },
+              'Failed to activate window, falling back to normal launch'
+            );
+            // アクティブ化失敗時は下記の通常起動処理へフォールバック
+          }
+        } else {
+          logger.info(
+            { id: item.id, name: item.displayName, windowTitle: item.windowTitle },
+            'Window not found for workspace item, launching normally'
+          );
+          // ウィンドウが見つからない場合は下記の通常起動処理へフォールバック
+        }
+      }
+
+      // WorkspaceItemを起動（通常起動ロジック）
       if (item.type === 'url') {
         await shell.openExternal(item.path);
       } else if (item.type === 'file' || item.type === 'folder') {

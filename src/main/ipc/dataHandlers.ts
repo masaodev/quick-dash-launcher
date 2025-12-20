@@ -32,7 +32,7 @@ function parseCSVLineToItem(
     return null;
   }
 
-  const [name, itemPath, argsField, customIconField] = parts;
+  const [name, itemPath, argsField, customIconField, windowTitleField] = parts;
 
   if (!name || !itemPath) {
     return null;
@@ -44,6 +44,7 @@ function parseCSVLineToItem(
     type: detectItemTypeSync(itemPath),
     args: argsField && argsField.trim() ? argsField : undefined,
     customIcon: customIconField && customIconField.trim() ? customIconField : undefined,
+    windowTitle: windowTitleField && windowTitleField.trim() ? windowTitleField : undefined,
     sourceFile,
     lineNumber: lineNumber,
     isDirExpanded: false,
@@ -354,6 +355,7 @@ interface RegisterItem {
   folderProcessing?: 'folder' | 'expand';
   icon?: string;
   customIcon?: string;
+  windowTitle?: string; // ウィンドウタイトル検索用の文字列
   itemCategory: 'item' | 'dir' | 'group';
   // フォルダ取込アイテムオプション
   dirOptions?: {
@@ -479,6 +481,13 @@ async function registerItems(configFolder: string, items: RegisterItem[]): Promi
         // カスタムアイコンフィールドを追加
         if (item.customIcon) {
           line += `,${escapeCSV(item.customIcon)}`;
+        } else {
+          line += ',';
+        }
+
+        // ウィンドウタイトルフィールドを追加
+        if (item.windowTitle) {
+          line += `,${escapeCSV(item.windowTitle)}`;
         }
 
         return line;

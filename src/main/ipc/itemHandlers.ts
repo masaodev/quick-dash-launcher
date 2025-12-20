@@ -8,6 +8,8 @@ import { parseArgs } from '@common/utils/argsParser';
 import { isLauncherItem } from '@common/utils/typeGuards';
 
 import { WorkspaceService } from '../services/workspaceService.js';
+import { findWindowByTitle } from '../utils/windowMatcher.js';
+import { activateWindow, restoreWindow } from '../utils/nativeWindowControl.js';
 
 import { notifyWorkspaceChanged } from './workspaceHandlers.js';
 
@@ -24,10 +26,50 @@ async function openItem(
         path: item.path,
         args: item.args || 'なし',
         originalPath: item.originalPath || 'なし',
+        windowTitle: item.windowTitle || 'なし',
       },
       'アイテムを起動中'
     );
 
+    // ウィンドウタイトルが設定されている場合、先にウィンドウ検索を試行
+    if (item.windowTitle) {
+      const hwnd = findWindowByTitle(item.windowTitle);
+
+      if (hwnd !== null) {
+        itemLogger.info(
+          { name: item.name, windowTitle: item.windowTitle, hwnd: String(hwnd) },
+          'ウィンドウが見つかりました。アクティブ化します'
+        );
+
+        // 最小化されている場合は復元
+        restoreWindow(hwnd);
+
+        // ウィンドウをアクティブ化
+        const success = activateWindow(hwnd);
+
+        if (success) {
+          // ウィンドウを非表示（必要に応じて）
+          if (mainWindow && shouldHideWindow) {
+            mainWindow.hide();
+          }
+          return; // ウィンドウアクティブ化成功、通常起動をスキップ
+        } else {
+          itemLogger.warn(
+            { name: item.name, windowTitle: item.windowTitle },
+            'ウィンドウのアクティブ化に失敗。通常起動にフォールバック'
+          );
+          // アクティブ化失敗時は下記の通常起動処理へフォールバック
+        }
+      } else {
+        itemLogger.info(
+          { name: item.name, windowTitle: item.windowTitle },
+          'ウィンドウが見つかりませんでした。通常起動します'
+        );
+        // ウィンドウが見つからない場合は下記の通常起動処理へフォールバック
+      }
+    }
+
+    // 通常の起動処理（既存のロジックをそのまま維持）
     if (item.type === 'url') {
       await shell.openExternal(item.path);
     } else if (item.type === 'file' || item.type === 'folder') {

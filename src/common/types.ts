@@ -29,6 +29,8 @@ export interface LauncherItem {
   expandedOptions?: string;
   /** 編集モードで変更されたかどうか */
   isEdited?: boolean;
+  /** ウィンドウタイトル検索用の文字列（設定時、起動前にウィンドウ検索を実行） */
+  windowTitle?: string;
 }
 
 /**
@@ -101,6 +103,8 @@ export interface WorkspaceItem {
   groupId?: string;
   /** グループラベル（将来的な拡張用、廃止予定） */
   label?: string;
+  /** ウィンドウタイトル検索用の文字列（設定時、起動前にウィンドウ検索を実行） */
+  windowTitle?: string;
 }
 
 /**

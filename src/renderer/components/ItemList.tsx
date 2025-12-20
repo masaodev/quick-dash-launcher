@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { PathUtils } from '@common/utils/pathUtils';
+import { isLauncherItem } from '@common/utils/typeGuards';
 
 import { LauncherItem, GroupItem, AppItem, WindowInfo } from '../../common/types';
 
@@ -240,6 +241,11 @@ const ItemList: React.FC<ItemListProps> = ({
               {itemName}
               {isGroup && (
                 <span className="group-count"> ({(item as GroupItem).itemNames.length}個)</span>
+              )}
+              {isLauncherItem(item) && item.windowTitle && (
+                <span className="window-title-badge" title={`ウィンドウ検索: ${item.windowTitle}`}>
+                  🔍
+                </span>
               )}
             </span>
           </div>
