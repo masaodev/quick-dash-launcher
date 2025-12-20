@@ -328,21 +328,30 @@ export async function convertLauncherItemToRawDataLine(
     };
   }
 
-  // 通常のアイテムの場合
-  const parts = [item.name, item.path];
-  if (item.args) {
-    parts.push(item.args);
+  // 通常のアイテムの場合：名前,パス,引数,カスタムアイコン,ウィンドウ設定 の形式
+  const args = item.args || '';
+  const customIcon = item.customIcon || '';
+  const windowConfigStr = item.windowConfig ? serializeWindowConfig(item.windowConfig) : '';
+
+  // 基本フィールド
+  let content = `${escapeCSV(item.name)},${escapeCSV(item.path)}`;
+
+  // 引数フィールド
+  content += `,${escapeCSV(args)}`;
+
+  // カスタムアイコンフィールド
+  if (customIcon || windowConfigStr) {
+    content += `,${escapeCSV(customIcon)}`;
   }
-  if (item.customIcon) {
-    if (!item.args) {
-      parts.push('');
-    }
-    parts.push(item.customIcon);
+
+  // ウィンドウ設定フィールド
+  if (windowConfigStr) {
+    content += `,${escapeCSV(windowConfigStr)}`;
   }
 
   return {
     lineNumber: item.lineNumber || 1,
-    content: parts.join(','),
+    content: content,
     type: 'item',
     sourceFile: item.sourceFile || 'data.txt',
     customIcon: item.customIcon,

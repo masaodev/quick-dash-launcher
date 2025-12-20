@@ -340,6 +340,7 @@ const App: React.FC = () => {
             type: item.type,
             args: item.args,
             customIcon: item.customIcon,
+            windowConfig: item.windowConfig,
           };
 
           await window.electronAPI.updateItem({

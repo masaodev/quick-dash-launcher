@@ -5,6 +5,7 @@ import { editLogger } from '@common/logger';
 
 import { LauncherItem } from '../../common/types';
 import { escapeCSV } from '../../common/utils/csvParser';
+import { serializeWindowConfig } from '../../common/utils/windowConfigUtils';
 import { createSafeIpcHandler } from '../utils/ipcWrapper';
 import { BackupService } from '../services/backupService.js';
 
@@ -28,18 +29,24 @@ async function createBackup(configFolder: string, fileName: string): Promise<voi
 }
 
 function formatItemToCSV(item: LauncherItem): string {
+  const args = item.args || '';
+  const customIcon = item.customIcon || '';
+  const windowConfigStr = item.windowConfig ? serializeWindowConfig(item.windowConfig) : '';
+
+  // 基本フィールド：名前,パス
   let csvLine = `${escapeCSV(item.name)},${escapeCSV(item.path)}`;
 
-  // 引数フィールドを追加
-  if (item.args && item.args.trim()) {
-    csvLine += `,${escapeCSV(item.args)}`;
-  } else {
-    csvLine += ',';
+  // 引数フィールド
+  csvLine += `,${escapeCSV(args)}`;
+
+  // カスタムアイコンフィールド
+  if (customIcon || windowConfigStr) {
+    csvLine += `,${escapeCSV(customIcon)}`;
   }
 
-  // カスタムアイコンフィールドを追加
-  if (item.customIcon && item.customIcon.trim()) {
-    csvLine += `,${escapeCSV(item.customIcon)}`;
+  // ウィンドウ設定フィールド
+  if (windowConfigStr) {
+    csvLine += `,${escapeCSV(windowConfigStr)}`;
   }
 
   return csvLine;

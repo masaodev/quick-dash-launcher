@@ -46,8 +46,7 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = ({
             value={windowConfig?.x ?? ''}
             onChange={(e) =>
               onChange({
-                ...windowConfig,
-                title: windowConfig?.title || '',
+                ...(windowConfig || { title: '' }),
                 x: e.target.value ? parseInt(e.target.value, 10) : undefined,
               })
             }
@@ -62,8 +61,7 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = ({
             value={windowConfig?.y ?? ''}
             onChange={(e) =>
               onChange({
-                ...windowConfig,
-                title: windowConfig?.title || '',
+                ...(windowConfig || { title: '' }),
                 y: e.target.value ? parseInt(e.target.value, 10) : undefined,
               })
             }
@@ -78,8 +76,7 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = ({
             value={windowConfig?.width ?? ''}
             onChange={(e) =>
               onChange({
-                ...windowConfig,
-                title: windowConfig?.title || '',
+                ...(windowConfig || { title: '' }),
                 width: e.target.value ? parseInt(e.target.value, 10) : undefined,
               })
             }
@@ -94,8 +91,7 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = ({
             value={windowConfig?.height ?? ''}
             onChange={(e) =>
               onChange({
-                ...windowConfig,
-                title: windowConfig?.title || '',
+                ...(windowConfig || { title: '' }),
                 height: e.target.value ? parseInt(e.target.value, 10) : undefined,
               })
             }

@@ -33,8 +33,8 @@ export function parseWindowConfig(value: string | undefined): WindowConfig | nul
     try {
       const parsed = JSON.parse(trimmed) as Record<string, unknown>;
 
-      // title フィールドが必須
-      if (typeof parsed.title !== 'string' || parsed.title.trim() === '') {
+      // title フィールドの処理（空文字列も許可）
+      if (typeof parsed.title !== 'string') {
         console.warn(
           '[parseWindowConfig] JSON形式のWindowConfigにtitleが含まれていません:',
           trimmed
