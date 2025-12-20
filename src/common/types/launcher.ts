@@ -1,3 +1,22 @@
+import { WindowInfo } from './window';
+
+/**
+ * ウィンドウ制御の設定情報
+ * アイテム起動時のウィンドウ検索・位置・サイズ制御に使用
+ */
+export interface WindowConfig {
+  /** ウィンドウタイトル（検索用、必須） */
+  title: string;
+  /** X座標（仮想スクリーン座標系、省略時は位置変更なし） */
+  x?: number;
+  /** Y座標（仮想スクリーン座標系、省略時は位置変更なし） */
+  y?: number;
+  /** 幅（省略時はサイズ変更なし） */
+  width?: number;
+  /** 高さ（省略時はサイズ変更なし） */
+  height?: number;
+}
+
 /**
  * ランチャーアプリケーションで表示・実行されるアイテムの基本インターフェース
  * ファイル、アプリケーション、URL、フォルダなど様々なタイプのアイテムに対応
@@ -29,6 +48,12 @@ export interface LauncherItem {
   expandedOptions?: string;
   /** 編集モードで変更されたかどうか */
   isEdited?: boolean;
+  /** ウィンドウタイトル検索用の文字列（設定時、起動前にウィンドウ検索を実行）
+   * @deprecated windowConfigを使用してください。後方互換性のため残されています
+   */
+  windowTitle?: string;
+  /** ウィンドウ制御設定（ウィンドウ検索・位置・サイズ制御） */
+  windowConfig?: WindowConfig;
 }
 
 /**
@@ -52,6 +77,6 @@ export interface GroupItem {
 
 /**
  * アプリケーションで扱うすべてのアイテムの統合型
- * 通常のLauncherItemとGroupItemの両方を扱える
+ * 通常のLauncherItem、GroupItem、WindowInfo（ウィンドウ検索結果）を扱える
  */
-export type AppItem = LauncherItem | GroupItem;
+export type AppItem = LauncherItem | GroupItem | WindowInfo;
