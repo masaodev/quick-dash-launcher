@@ -37,6 +37,9 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
   const [windowSelectorOpen, setWindowSelectorOpen] = useState(false);
   const [windowSelectorItemIndex, setWindowSelectorItemIndex] = useState<number | null>(null);
 
+  // オプションセクションの開閉状態管理
+  const [optionsSectionOpen, setOptionsSectionOpen] = useState<boolean[]>([]);
+
   // カスタムアイコン管理フック
   const {
     customIconPreviews,
@@ -76,6 +79,11 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     onClose,
     onRegister
   );
+
+  // items配列の長さが変わったときにオプション開閉状態を初期化
+  useEffect(() => {
+    setOptionsSectionOpen(items.map(() => false));
+  }, [items.length]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -253,6 +261,15 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     }
   };
 
+  // オプションセクションの開閉切り替え
+  const toggleOptionsSection = (index: number) => {
+    setOptionsSectionOpen((prev) => {
+      const newState = [...prev];
+      newState[index] = !newState[index];
+      return newState;
+    });
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -275,6 +292,50 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                   <div key={index} className="register-item">
                     <div className="item-header">
                       {item.icon && <img src={item.icon} alt="" className="item-icon" />}
+                    </div>
+
+                    {/* 保存先タブと保存先ファイルを最上部に配置 */}
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>保存先タブ:</label>
+                        <select
+                          value={item.targetTab}
+                          onChange={(e) => handleTargetTabChange(index, e.target.value)}
+                        >
+                          {availableTabs.map((tab) => (
+                            <option key={tab.files[0]} value={tab.files[0]}>
+                              {tab.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* タブに複数ファイルがある場合、保存先ファイルを選択 */}
+                      {(() => {
+                        const selectedTab = availableTabs.find((tab) =>
+                          tab.files.includes(item.targetTab)
+                        );
+                        return (
+                          selectedTab &&
+                          selectedTab.files.length > 1 && (
+                            <div className="form-group">
+                              <label>保存先ファイル:</label>
+                              <select
+                                value={item.targetFile || selectedTab.files[0]}
+                                onChange={(e) =>
+                                  handleItemChange(index, 'targetFile', e.target.value)
+                                }
+                              >
+                                {selectedTab.files.map((file) => (
+                                  <option key={file} value={file}>
+                                    {file}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          )
+                        );
+                      })()}
                     </div>
 
                     <div className="form-group">
@@ -336,29 +397,8 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                       </div>
                     )}
 
-                    {item.itemCategory === 'item' && (
-                      <div className="form-group">
-                        <label>引数 (オプション):</label>
-                        <input
-                          type="text"
-                          value={item.args || ''}
-                          onChange={(e) => handleItemChange(index, 'args', e.target.value)}
-                          placeholder="コマンドライン引数（実行ファイルやアプリの場合のみ有効）"
-                        />
-                      </div>
-                    )}
-
-                    {item.itemCategory === 'dir' && (
-                      <DirOptionsEditor
-                        dirOptions={item.dirOptions}
-                        onChange={(newDirOptions) =>
-                          handleItemChange(index, 'dirOptions', newDirOptions)
-                        }
-                      />
-                    )}
-
                     {item.itemCategory === 'group' && (
-                      <div className="form-group">
+                      <div className="form-group vertical-layout">
                         <label>グループアイテムリスト:</label>
                         <div className="group-item-list">
                           {item.groupItemNames && item.groupItemNames.length > 0 ? (
@@ -397,64 +437,75 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                       </div>
                     )}
 
-                    <div className="form-group">
-                      <label>保存先タブ:</label>
-                      <select
-                        value={item.targetTab}
-                        onChange={(e) => handleTargetTabChange(index, e.target.value)}
-                      >
-                        {availableTabs.map((tab) => (
-                          <option key={tab.files[0]} value={tab.files[0]}>
-                            {tab.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                    {/* オプション設定（折りたたみ可能） */}
+                    {(item.itemCategory === 'item' || item.itemCategory === 'dir') && (
+                      <div className="options-section">
+                        <button
+                          type="button"
+                          className="options-toggle"
+                          onClick={() => toggleOptionsSection(index)}
+                        >
+                          <span className="toggle-icon">
+                            {optionsSectionOpen[index] ? '▼' : '▶'}
+                          </span>
+                          {item.itemCategory === 'item'
+                            ? 'オプション設定'
+                            : 'フォルダ取り込みオプション'}
+                        </button>
 
-                    {/* タブに複数ファイルがある場合、保存先ファイルを選択 */}
-                    {(() => {
-                      const selectedTab = availableTabs.find((tab) =>
-                        tab.files.includes(item.targetTab)
-                      );
-                      return (
-                        selectedTab &&
-                        selectedTab.files.length > 1 && (
-                          <div className="form-group">
-                            <label>保存先ファイル:</label>
-                            <select
-                              value={item.targetFile || selectedTab.files[0]}
-                              onChange={(e) =>
-                                handleItemChange(index, 'targetFile', e.target.value)
-                              }
-                            >
-                              {selectedTab.files.map((file) => (
-                                <option key={file} value={file}>
-                                  {file}
-                                </option>
-                              ))}
-                            </select>
+                        {optionsSectionOpen[index] && (
+                          <div className="options-content">
+                            {item.itemCategory === 'item' && (
+                              <>
+                                <div className="form-group">
+                                  <label>引数:</label>
+                                  <input
+                                    type="text"
+                                    value={item.args || ''}
+                                    onChange={(e) =>
+                                      handleItemChange(index, 'args', e.target.value)
+                                    }
+                                    placeholder="コマンドライン引数（実行ファイルやアプリの場合のみ有効）"
+                                  />
+                                </div>
+
+                                <CustomIconEditor
+                                  customIconPreview={customIconPreviews[index]}
+                                  onSelectClick={() => openCustomIconPicker(index)}
+                                  onDeleteClick={() => onCustomIconDeleted(index)}
+                                />
+
+                                <WindowConfigEditor
+                                  windowConfig={item.windowConfig}
+                                  onChange={(windowConfig) =>
+                                    handleItemChange(index, 'windowConfig', windowConfig)
+                                  }
+                                  onGetWindowClick={() => openWindowSelector(index)}
+                                />
+                              </>
+                            )}
+
+                            {item.itemCategory === 'dir' && (
+                              <DirOptionsEditor
+                                dirOptions={item.dirOptions}
+                                onChange={(newDirOptions) =>
+                                  handleItemChange(index, 'dirOptions', newDirOptions)
+                                }
+                              />
+                            )}
                           </div>
-                        )
-                      );
-                    })()}
+                        )}
+                      </div>
+                    )}
 
-                    {/* カスタムアイコン設定 */}
-                    {item.itemCategory !== 'dir' && (
+                    {/* グループの場合はカスタムアイコンのみ表示 */}
+                    {item.itemCategory === 'group' && (
                       <CustomIconEditor
                         customIconPreview={customIconPreviews[index]}
                         onSelectClick={() => openCustomIconPicker(index)}
                         onDeleteClick={() => onCustomIconDeleted(index)}
                       />
                     )}
-
-                    {/* ウィンドウ設定セクション */}
-                    <WindowConfigEditor
-                      windowConfig={item.windowConfig}
-                      onChange={(windowConfig) =>
-                        handleItemChange(index, 'windowConfig', windowConfig)
-                      }
-                      onGetWindowClick={() => openWindowSelector(index)}
-                    />
 
                     {items.length > 1 && <hr />}
                   </div>

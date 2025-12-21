@@ -24,18 +24,20 @@ const CustomIconEditor: React.FC<CustomIconEditorProps> = ({
       <label>カスタムアイコン:</label>
       <div className="custom-icon-section">
         {customIconPreview ? (
-          <div className="custom-icon-preview">
-            <img src={customIconPreview} alt="カスタムアイコン" className="custom-icon-img" />
-            <button type="button" className="delete-icon-btn" onClick={onDeleteClick}>
+          <>
+            <img
+              src={customIconPreview}
+              alt="カスタムアイコン"
+              className="custom-icon-img-inline"
+            />
+            <button type="button" className="delete-icon-btn-inline" onClick={onDeleteClick}>
               削除
             </button>
-          </div>
+          </>
         ) : (
-          <div className="no-custom-icon">
-            <span>カスタムアイコン未設定</span>
-          </div>
+          <span className="no-custom-icon-inline">未設定</span>
         )}
-        <button type="button" className="select-icon-btn" onClick={onSelectClick}>
+        <button type="button" className="select-icon-btn-inline" onClick={onSelectClick}>
           ファイルから選択
         </button>
       </div>

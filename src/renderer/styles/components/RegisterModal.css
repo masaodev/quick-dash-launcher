@@ -1,10 +1,10 @@
 /* RegisterModal関連のスタイル */
 .register-modal {
-  padding: var(--spacing-2xl);
+  padding: var(--spacing-xl);
 }
 
 .register-modal h2 {
-  margin-bottom: var(--spacing-xl);
+  margin-bottom: var(--spacing-lg);
   font-size: var(--font-size-2xl);
   color: var(--text-primary);
 }
@@ -12,12 +12,12 @@
 .register-items {
   flex: 1;
   overflow-y: auto;
-  margin-bottom: var(--spacing-xl);
+  margin-bottom: var(--spacing-lg);
 }
 
 .register-item {
-  margin-bottom: var(--spacing-xl);
-  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-md);
   border: var(--border-light);
   border-radius: var(--border-radius);
   background-color: var(--bg-section);
@@ -26,7 +26,60 @@
 .item-header {
   display: flex;
   align-items: center;
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+}
+
+/* フォーム行（横並び） */
+.form-row {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+}
+
+.form-row .form-group {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+/* RegisterModal内のフォームグループのスペース効率化 */
+.register-item .form-group {
+  margin-bottom: var(--spacing-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.register-item .form-group label {
+  margin-bottom: 0;
+  min-width: 120px;
+  flex-shrink: 0;
+}
+
+.register-item .form-group input,
+.register-item .form-group select,
+.register-item .form-group textarea {
+  flex: 1;
+}
+
+.register-item .form-group small {
+  display: block;
+  width: 100%;
+  margin-top: var(--spacing-xs);
+  margin-left: 120px;
+}
+
+/* グループアイテムリストなどの特殊なフォームグループは縦並びを維持 */
+.register-item .form-group.vertical-layout {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.register-item .form-group.vertical-layout label {
+  min-width: auto;
+}
+
+.register-item .form-group.vertical-layout small {
+  margin-left: 0;
 }
 
 .item-header .item-icon {
@@ -52,41 +105,26 @@
 
 /* フォルダ取込オプション */
 .dir-options {
-  margin-left: var(--spacing-xl);
-  padding: var(--spacing-sm);
-  background-color: var(--color-gray-200);
-  border-left: 3px solid var(--color-primary);
-  border-radius: var(--border-radius);
-}
-
-.dir-options .form-group {
-  margin-bottom: var(--spacing-sm);
-}
-
-.dir-options .form-group:last-child {
-  margin-bottom: 0;
-}
-
-/* カスタムアイコン関連のスタイル */
-.custom-icon-section {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
 }
 
-.custom-icon-preview {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-md);
-  padding: var(--spacing-sm);
-  background-color: var(--bg-secondary);
-  border-radius: var(--border-radius);
-  border: var(--border-light);
+.dir-options .form-group {
+  margin-bottom: 0;
 }
 
-.custom-icon-img {
-  width: 64px;
-  height: 64px;
+/* カスタムアイコン関連のスタイル（1行レイアウト） */
+.custom-icon-section {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex: 1;
+}
+
+.custom-icon-img-inline {
+  width: 32px;
+  height: 32px;
   object-fit: contain;
   background-color: var(--color-white);
   border: 1px solid var(--color-gray-300);
@@ -94,43 +132,99 @@
   flex-shrink: 0;
 }
 
-.delete-icon-btn {
+.delete-icon-btn-inline {
   background-color: var(--color-danger);
   color: var(--color-white);
   border: none;
-  padding: var(--spacing-xs) var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-md);
   border-radius: var(--border-radius-sm);
   font-size: var(--font-size-sm);
   cursor: pointer;
   transition: background-color var(--transition-fast);
+  white-space: nowrap;
+  min-width: 60px;
 }
 
-.delete-icon-btn:hover {
+.delete-icon-btn-inline:hover {
   background-color: var(--color-danger-hover);
 }
 
-.no-custom-icon {
-  padding: var(--spacing-sm);
+.no-custom-icon-inline {
   color: var(--text-secondary);
   font-style: italic;
-  background-color: var(--bg-secondary);
-  border-radius: var(--border-radius);
-  border: var(--border-light);
+  font-size: var(--font-size-sm);
 }
 
-.select-icon-btn {
+.select-icon-btn-inline {
   background-color: var(--color-primary);
   color: var(--color-white);
   border: none;
-  padding: var(--spacing-sm) var(--spacing-md);
-  border-radius: var(--border-radius);
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-sm);
   cursor: pointer;
   transition: background-color var(--transition-fast);
-  align-self: flex-start;
+  white-space: nowrap;
+  margin-left: auto;
+  min-width: 120px;
 }
 
-.select-icon-btn:hover {
+.select-icon-btn-inline:hover {
   background-color: var(--color-primary-hover);
+}
+
+/* オプション設定セクション（折りたたみ） */
+.options-section {
+  margin-top: var(--spacing-sm);
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+}
+
+.options-toggle {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--bg-secondary);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+  transition: background-color var(--transition-fast);
+  text-align: left;
+}
+
+.options-toggle:hover {
+  background-color: var(--color-gray-200);
+}
+
+.toggle-icon {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  transition: transform var(--transition-fast);
+  display: inline-block;
+  width: 12px;
+}
+
+.options-content {
+  padding: var(--spacing-md);
+  background-color: var(--bg-primary);
+  border-top: 1px solid var(--color-gray-300);
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 1000px;
+  }
 }
 
 /* グループアイテムリスト */
@@ -280,23 +374,35 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
-  padding: var(--spacing-md);
-  background-color: var(--bg-secondary);
-  border-radius: var(--border-radius);
-  border: var(--border-light);
 }
 
 .window-config-row {
   display: grid;
-  grid-template-columns: 140px 1fr;
+  grid-template-columns: 120px 1fr;
   align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.window-config-row-double {
+  display: flex;
   gap: var(--spacing-md);
+}
+
+.window-config-field {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
 }
 
 .window-config-label {
   font-size: var(--font-size-sm);
   color: var(--text-primary);
   font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  min-width: 60px;
+  width: 60px;
+  flex-shrink: 0;
 }
 
 .window-config-input {
@@ -323,8 +429,8 @@
   background-color: var(--color-white);
   color: var(--text-primary);
   transition: border-color var(--transition-fast);
-  width: 100%;
-  max-width: 200px;
+  flex: 1;
+  min-width: 80px;
 }
 
 .window-config-input-number:focus {
@@ -343,7 +449,6 @@
   transition: background-color var(--transition-fast);
   font-size: var(--font-size-sm);
   align-self: flex-start;
-  margin-top: var(--spacing-xs);
 }
 
 .get-window-btn:hover {
