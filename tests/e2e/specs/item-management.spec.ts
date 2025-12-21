@@ -113,6 +113,11 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         const saveButton = adminWindow.locator('button.save-changes-button');
         await saveButton.click();
 
+        // 保存確認ダイアログのOKボタンをクリック
+        const confirmButton = adminWindow.locator('[data-testid="confirm-dialog-confirm-button"]');
+        await expect(confirmButton).toBeVisible();
+        await confirmButton.click();
+
         // data.txtに保存されたことを確認
         const dataContent = configHelper.readDataFile('data.txt');
         expect(dataContent).toContain('新規アイテム,https://new-item.com');
@@ -148,6 +153,11 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
       await test.step('保存して確認', async () => {
         const saveButton = adminWindow.locator('button.save-changes-button');
         await saveButton.click();
+
+        // 保存確認ダイアログのOKボタンをクリック
+        const confirmButton = adminWindow.locator('[data-testid="confirm-dialog-confirm-button"]');
+        await expect(confirmButton).toBeVisible();
+        await confirmButton.click();
 
         const dataContent = configHelper.readDataFile('data.txt');
         expect(dataContent).toContain('GitHub編集後');
@@ -221,6 +231,11 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         const saveButton = adminWindow.locator('button.save-changes-button');
         await saveButton.click();
 
+        // 保存確認ダイアログのOKボタンをクリック
+        const confirmButton = adminWindow.locator('[data-testid="confirm-dialog-confirm-button"]');
+        await expect(confirmButton).toBeVisible();
+        await confirmButton.click();
+
         const dataContent = configHelper.readDataFile('data.txt');
         expect(dataContent).not.toContain('GitHub');
       });
@@ -277,6 +292,11 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         const saveButton = adminWindow.locator('button.save-changes-button');
         await saveButton.click();
 
+        // 保存確認ダイアログのOKボタンをクリック
+        const confirmButton = adminWindow.locator('[data-testid="confirm-dialog-confirm-button"]');
+        await expect(confirmButton).toBeVisible();
+        await confirmButton.click();
+
         const dataContent = configHelper.readDataFile('data.txt');
         expect(dataContent).not.toContain('GitHub');
         expect(dataContent).not.toContain('Google');
@@ -288,7 +308,11 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
 
   // ==================== データ整列テスト ====================
 
-  test('整列ボタンでアイテムを整列できる', async ({ electronApp, mainWindow }, _testInfo) => {
+  test('保存時のチェックボックスでアイテムを整列・重複削除できる', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
     const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
 
@@ -302,26 +326,38 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         expect(count).toBeGreaterThan(0);
       });
 
-      await test.step('整列ボタンをクリック', async () => {
-        const sortButton = adminWindow.locator('button.sort-button');
+      await test.step('軽微な変更を加える（保存ボタンを有効化するため）', async () => {
+        const githubRow = adminWindow.locator('.raw-item-row', { hasText: 'GitHub' });
+        const nameCell = githubRow.locator('.name-column .editable-cell');
+        await nameCell.click();
 
-        // 整列ボタンをクリック
-        await sortButton.click();
+        const nameInput = githubRow.locator('.name-column .edit-input');
+        await nameInput.fill('GitHub整列テスト');
+        await nameInput.press('Enter');
+      });
 
-        // 重複削除の確認ダイアログが表示された場合は閉じる
-        const confirmDialog = adminWindow.locator('.confirm-dialog');
-        const isDialogVisible = await confirmDialog.isVisible().catch(() => false);
-        if (isDialogVisible) {
-          // OKボタンをクリックして重複削除を実行
-          const confirmButton = adminWindow.locator(
-            '[data-testid="confirm-dialog-confirm-button"]'
-          );
-          await confirmButton.click();
-        }
-
-        // 未保存状態になったことを確認
+      await test.step('保存ボタンをクリックして確認ダイアログを表示', async () => {
         const saveButton = adminWindow.locator('button.save-changes-button');
-        await expect(saveButton).toBeEnabled();
+        await saveButton.click();
+
+        // 保存確認ダイアログが表示されることを確認
+        const confirmDialog = adminWindow.locator('[data-testid="confirm-dialog"]');
+        await expect(confirmDialog).toBeVisible();
+      });
+
+      await test.step('整列・重複削除チェックボックスをオンにして保存', async () => {
+        // チェックボックスをクリック
+        const checkbox = adminWindow.locator('[data-testid="confirm-dialog-checkbox"]');
+        await expect(checkbox).toBeVisible();
+        await checkbox.click();
+
+        // OKボタンをクリック
+        const confirmButton = adminWindow.locator('[data-testid="confirm-dialog-confirm-button"]');
+        await confirmButton.click();
+
+        // 保存されたことを確認
+        const dataContent = configHelper.readDataFile('data.txt');
+        expect(dataContent).toContain('GitHub整列テスト');
       });
     } finally {
       await adminWindow.close();
@@ -390,6 +426,11 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         // 保存
         const saveButton = adminWindow.locator('button.save-changes-button');
         await saveButton.click();
+
+        // 保存確認ダイアログのOKボタンをクリック
+        const confirmButton = adminWindow.locator('[data-testid="confirm-dialog-confirm-button"]');
+        await expect(confirmButton).toBeVisible();
+        await confirmButton.click();
       });
 
       await test.step('メイン画面に変更が反映されたことを確認', async () => {
@@ -467,6 +508,11 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         const saveButton = adminWindow.locator('button.save-changes-button');
         await saveButton.click();
 
+        // 保存確認ダイアログのOKボタンをクリック
+        const confirmButton = adminWindow.locator('[data-testid="confirm-dialog-confirm-button"]');
+        await expect(confirmButton).toBeVisible();
+        await confirmButton.click();
+
         // data2.txtに保存されたことを確認
         const data2Content = configHelper.readDataFile('data2.txt');
         expect(data2Content).toContain('Reddit編集');
@@ -513,6 +559,11 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
       await test.step('保存して確認', async () => {
         const saveButton = adminWindow.locator('button.save-changes-button');
         await saveButton.click();
+
+        // 保存確認ダイアログのOKボタンをクリック
+        const confirmButton = adminWindow.locator('[data-testid="confirm-dialog-confirm-button"]');
+        await expect(confirmButton).toBeVisible();
+        await confirmButton.click();
 
         const dataContent = configHelper.readDataFile('data.txt');
         expect(dataContent).toContain('dir,C:\\TestFolder');
@@ -598,6 +649,11 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         const saveButton = adminWindow.locator('button.save-changes-button');
         await saveButton.click();
 
+        // 保存確認ダイアログのOKボタンをクリック
+        const confirmButton = adminWindow.locator('[data-testid="confirm-dialog-confirm-button"]');
+        await expect(confirmButton).toBeVisible();
+        await confirmButton.click();
+
         // data3.txtに保存されたことを確認
         const data3Content = configHelper.readDataFile('data3.txt');
         expect(data3Content).toContain('Qiita編集');
@@ -641,6 +697,11 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         // 保存
         const saveButton = adminWindow.locator('button.save-changes-button');
         await saveButton.click();
+
+        // 保存確認ダイアログのOKボタンをクリック
+        const confirmButton = adminWindow.locator('[data-testid="confirm-dialog-confirm-button"]');
+        await expect(confirmButton).toBeVisible();
+        await confirmButton.click();
 
         // data2.txtに保存されたことを確認
         const data2Content = configHelper.readDataFile('data2.txt');
@@ -713,6 +774,11 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         // 保存
         const saveButton = adminWindow.locator('button.save-changes-button');
         await saveButton.click();
+
+        // 保存確認ダイアログのOKボタンをクリック
+        const confirmButton = adminWindow.locator('[data-testid="confirm-dialog-confirm-button"]');
+        await expect(confirmButton).toBeVisible();
+        await confirmButton.click();
 
         // data3.txtに保存されたことを確認
         const data3Content = configHelper.readDataFile('data3.txt');

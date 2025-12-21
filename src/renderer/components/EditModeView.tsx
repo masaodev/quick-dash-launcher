@@ -43,17 +43,30 @@ const EditModeView: React.FC<EditModeViewProps> = ({
   const [selectedTabIndex, setSelectedTabIndex] = useState<number>(0);
   const [selectedDataFile, setSelectedDataFile] = useState<string>('data.txt');
 
+  // 保存時の整列・重複削除チェックボックスの状態
+  const [sortAndDedupChecked, setSortAndDedupChecked] = useState(true);
+
   // ConfirmDialog状態管理
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean;
     message: string;
     onConfirm: () => void;
+    title?: string;
+    confirmText?: string;
+    cancelText?: string;
     danger?: boolean;
+    showCheckbox?: boolean;
+    checkboxLabel?: string;
+    checkboxChecked?: boolean;
+    onCheckboxChange?: (checked: boolean) => void;
   }>({
     isOpen: false,
     message: '',
     onConfirm: () => {},
     danger: false,
+    showCheckbox: false,
+    checkboxLabel: '',
+    checkboxChecked: false,
   });
 
   // ドロップダウン状態管理
@@ -158,20 +171,115 @@ const EditModeView: React.FC<EditModeViewProps> = ({
   const handleSaveChanges = () => {
     if (!hasUnsavedChanges) return;
 
-    // editedLinesの変更をworkingLinesに反映
-    const updatedLines = workingLines.map((line) => {
-      const lineKey = `${line.sourceFile}_${line.lineNumber}`;
-      return editedLines.get(lineKey) || line;
+    // 保存時の確認ダイアログを表示
+    setConfirmDialog({
+      isOpen: true,
+      message: '変更を保存しますか？',
+      confirmText: '保存',
+      showCheckbox: true,
+      checkboxLabel: '整列・重複削除を実行',
+      checkboxChecked: sortAndDedupChecked,
+      onCheckboxChange: (checked: boolean) => {
+        setSortAndDedupChecked(checked);
+        // confirmDialogの状態も更新
+        setConfirmDialog((prev) => ({ ...prev, checkboxChecked: checked }));
+      },
+      onConfirm: () => {
+        setConfirmDialog({ ...confirmDialog, isOpen: false });
+
+        // editedLinesの変更をworkingLinesに反映
+        let updatedLines = workingLines.map((line) => {
+          const lineKey = `${line.sourceFile}_${line.lineNumber}`;
+          return editedLines.get(lineKey) || line;
+        });
+
+        // チェックボックスがONの場合、整列・重複削除を実行
+        if (sortAndDedupChecked) {
+          // 現在選択中のデータファイルの行のみフィルタリング
+          const currentDataFileLines = updatedLines.filter(
+            (line) => line.sourceFile === selectedDataFile
+          );
+
+          // 他のデータファイルの行
+          const otherDataFileLines = updatedLines.filter(
+            (line) => line.sourceFile !== selectedDataFile
+          );
+
+          // 重複削除関数
+          const removeDuplicates = (lines: RawDataLine[]) => {
+            const seen = new Set<string>();
+            const deduplicated: RawDataLine[] = [];
+
+            for (const line of lines) {
+              const key = `${line.type}:${line.content}`;
+              if (!seen.has(key)) {
+                seen.add(key);
+                deduplicated.push(line);
+              }
+            }
+            return deduplicated;
+          };
+
+          const getPathAndArgs = (line: RawDataLine) => {
+            if (line.type === 'item') {
+              const parts = parseCSVLine(line.content);
+              const pathPart = parts[1] || '';
+              const argsPart = parts[2] || '';
+              return argsPart ? `${pathPart} ${argsPart}` : pathPart;
+            } else if (line.type === 'directive') {
+              const parts = parseCSVLine(line.content);
+              const pathPart = parts[1] || '';
+              const options = parts.slice(2).join(',').trim();
+              return options ? `${pathPart} ${options}` : pathPart;
+            } else {
+              return line.content || (line.type === 'empty' ? '(空行)' : '');
+            }
+          };
+
+          // 現在のデータファイルの行のみを整列
+          const sortedLines = [...currentDataFileLines].sort((a, b) => {
+            const typeOrder = { directive: 0, item: 1, comment: 2, empty: 3 };
+            const typeA = typeOrder[a.type] ?? 99;
+            const typeB = typeOrder[b.type] ?? 99;
+
+            if (typeA !== typeB) {
+              return typeA - typeB;
+            }
+
+            const pathAndArgsA = getPathAndArgs(a).toLowerCase();
+            const pathAndArgsB = getPathAndArgs(b).toLowerCase();
+
+            if (pathAndArgsA !== pathAndArgsB) {
+              return pathAndArgsA.localeCompare(pathAndArgsB);
+            }
+
+            const nameA = a.type === 'item' ? (parseCSVLine(a.content)[0] || '').toLowerCase() : '';
+            const nameB = b.type === 'item' ? (parseCSVLine(b.content)[0] || '').toLowerCase() : '';
+
+            return nameA.localeCompare(nameB);
+          });
+
+          // 重複削除
+          const deduplicatedLines = removeDuplicates(sortedLines);
+
+          // 他のデータファイルの行と結合
+          updatedLines = [...otherDataFileLines, ...deduplicatedLines];
+        }
+
+        // 行番号を振り直して保存
+        const reorderedLines = reorderLineNumbers(updatedLines);
+
+        // 全件書き戻し
+        onRawDataSave(reorderedLines);
+        setEditedLines(new Map());
+        setHasUnsavedChanges(false);
+        setWorkingLines(reorderedLines);
+
+        // 保存後、チェックボックスをリセット
+        setSortAndDedupChecked(false);
+      },
+      danger: false,
     });
-
-    // 行番号を振り直して保存
-    const reorderedLines = reorderLineNumbers(updatedLines);
-
-    // 全件書き戻し
-    onRawDataSave(reorderedLines);
-    setEditedLines(new Map());
-    setHasUnsavedChanges(false);
-    setWorkingLines(reorderedLines);
   };
 
   // 行番号を振り直す関数
@@ -202,11 +310,6 @@ const EditModeView: React.FC<EditModeViewProps> = ({
     }
 
     return reorderedLines;
-  };
-
-  const handleSort = (sortedLines: RawDataLine[]) => {
-    setWorkingLines(sortedLines);
-    setHasUnsavedChanges(true);
   };
 
   const handleBookmarkImport = (bookmarks: SimpleBookmarkItem[]) => {
@@ -481,105 +584,6 @@ const EditModeView: React.FC<EditModeViewProps> = ({
             🗑️ 選択行を削除
           </button>
           <button
-            onClick={() => {
-              // 現在選択中のデータファイルの行のみフィルタリング
-              const currentDataFileLines = mergedLines.filter(
-                (line) => line.sourceFile === selectedDataFile
-              );
-
-              // 他のデータファイルの行
-              const otherDataFileLines = mergedLines.filter(
-                (line) => line.sourceFile !== selectedDataFile
-              );
-
-              // 重複削除関数
-              const removeDuplicates = (lines: RawDataLine[]) => {
-                const seen = new Set<string>();
-                const deduplicated: RawDataLine[] = [];
-
-                for (const line of lines) {
-                  const key = `${line.type}:${line.content}`;
-                  if (!seen.has(key)) {
-                    seen.add(key);
-                    deduplicated.push(line);
-                  }
-                }
-                return deduplicated;
-              };
-
-              const getPathAndArgs = (line: RawDataLine) => {
-                if (line.type === 'item') {
-                  const parts = parseCSVLine(line.content);
-                  const pathPart = parts[1] || '';
-                  const argsPart = parts[2] || '';
-                  return argsPart ? `${pathPart} ${argsPart}` : pathPart;
-                } else if (line.type === 'directive') {
-                  const parts = parseCSVLine(line.content);
-                  const pathPart = parts[1] || '';
-                  const options = parts.slice(2).join(',').trim();
-                  return options ? `${pathPart} ${options}` : pathPart;
-                } else {
-                  return line.content || (line.type === 'empty' ? '(空行)' : '');
-                }
-              };
-
-              // 現在のデータファイルの行のみを整列
-              const sortedLines = [...currentDataFileLines].sort((a, b) => {
-                const typeOrder = { directive: 0, item: 1, comment: 2, empty: 3 };
-                const typeA = typeOrder[a.type] ?? 99;
-                const typeB = typeOrder[b.type] ?? 99;
-
-                if (typeA !== typeB) {
-                  return typeA - typeB;
-                }
-
-                const pathAndArgsA = getPathAndArgs(a).toLowerCase();
-                const pathAndArgsB = getPathAndArgs(b).toLowerCase();
-
-                if (pathAndArgsA !== pathAndArgsB) {
-                  return pathAndArgsA.localeCompare(pathAndArgsB);
-                }
-
-                const nameA =
-                  a.type === 'item' ? (parseCSVLine(a.content)[0] || '').toLowerCase() : '';
-                const nameB =
-                  b.type === 'item' ? (parseCSVLine(b.content)[0] || '').toLowerCase() : '';
-
-                return nameA.localeCompare(nameB);
-              });
-
-              const deduplicatedLines = removeDuplicates(sortedLines);
-              const duplicateCount = sortedLines.length - deduplicatedLines.length;
-
-              if (duplicateCount > 0) {
-                // 整列後、他のデータファイルの行と結合して保存
-                const allLinesSorted = [...otherDataFileLines, ...sortedLines];
-                handleSort(allLinesSorted);
-
-                // 重複削除の確認ダイアログを表示
-                setConfirmDialog({
-                  isOpen: true,
-                  message: `整列処理が完了しました。\n\n${duplicateCount}件の重複行が見つかりました。\n重複行を削除しますか？`,
-                  onConfirm: () => {
-                    setConfirmDialog({ ...confirmDialog, isOpen: false });
-                    // 重複削除後、他のデータファイルの行と結合して保存
-                    const allLinesDedup = [...otherDataFileLines, ...deduplicatedLines];
-                    handleSort(allLinesDedup);
-                  },
-                  danger: false,
-                });
-              } else {
-                // 整列後、他のデータファイルの行と結合して保存
-                const allLinesSorted = [...otherDataFileLines, ...sortedLines];
-                handleSort(allLinesSorted);
-              }
-            }}
-            className="toolbar-button sort-button"
-            title="種類→パスと引数→名前の順で整列し、重複行を削除"
-          >
-            🔤 整列・重複削除
-          </button>
-          <button
             onClick={() => setIsBookmarkModalOpen(true)}
             className="toolbar-button import-bookmark-button"
           >
@@ -662,8 +666,15 @@ const EditModeView: React.FC<EditModeViewProps> = ({
         isOpen={confirmDialog.isOpen}
         onClose={() => setConfirmDialog({ ...confirmDialog, isOpen: false })}
         onConfirm={confirmDialog.onConfirm}
+        title={confirmDialog.title}
         message={confirmDialog.message}
+        confirmText={confirmDialog.confirmText}
+        cancelText={confirmDialog.cancelText}
         danger={confirmDialog.danger}
+        showCheckbox={confirmDialog.showCheckbox}
+        checkboxLabel={confirmDialog.checkboxLabel}
+        checkboxChecked={confirmDialog.checkboxChecked}
+        onCheckboxChange={confirmDialog.onCheckboxChange}
       />
     </div>
   );

@@ -23,7 +23,7 @@
 
 .confirm-body p {
   margin: 0;
-  color: var(--text-secondary);
+  color: var(--text-color);
   line-height: 1.6;
   white-space: pre-wrap;
 }
