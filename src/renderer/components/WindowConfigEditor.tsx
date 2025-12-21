@@ -22,7 +22,15 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = ({
 }) => {
   return (
     <div className="form-group vertical-layout">
-      <label>ウィンドウ設定（オプション）:</label>
+      <label>ウィンドウ切り替え設定（オプション）:</label>
+      <div className="help-box">
+        <p className="help-title">🔄 既存ウィンドウの再利用機能</p>
+        <p className="help-flow">
+          ① ウィンドウタイトルで既存ウィンドウを検索<br />
+          ② 見つかれば → アクティブ化（位置・サイズも調整）<br />
+          ③ 見つからなければ → パスのアイテムを新規実行
+        </p>
+      </div>
       <div className="window-config-section">
         <div className="window-config-row">
           <label className="window-config-label">ウィンドウタイトル:</label>
