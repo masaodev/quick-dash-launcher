@@ -227,6 +227,8 @@ export class WorkspaceService {
         order: maxOrder + 1,
         addedAt: Date.now(),
         groupId: groupId, // グループIDを設定
+        windowConfig: launcherItem.windowConfig,
+        windowTitle: launcherItem.windowTitle, // 後方互換性のため
       };
 
       // アイテムを追加
