@@ -164,7 +164,7 @@ afterEach(() => {
 
 ## コード品質チェック
 
-**コミット・プッシュ前**には、**`quality-checker`サブエージェント**で品質チェックを実行してください。
+**コミット・プッシュ前**には、品質チェックを実施するかユーザーに確認してください。実施する場合は、**`quality-checker`サブエージェント**を使用してください。
 
 ```
 Task tool with subagent_type="quality-checker"
@@ -181,7 +181,7 @@ Task tool with subagent_type="quality-checker"
 
 ## ドキュメント更新
 
-機能追加・変更時のドキュメント更新は、**`documentation-updater`サブエージェント**を使用してください。
+機能追加・変更時、ドキュメント更新を実施するかユーザーに確認してください。実施する場合は、**`documentation-updater`サブエージェント**を使用してください。
 
 ```
 Task tool with subagent_type="documentation-updater"
@@ -197,7 +197,7 @@ Task tool with subagent_type="documentation-updater"
 
 ## E2Eテスト実行
 
-E2Eテストの実行と失敗分析は、**`e2e-test-runner`サブエージェント**を使用してください。
+コミット・プッシュ前やコード変更後、E2Eテストを実施するかユーザーに確認してください。実施する場合は、**`e2e-test-runner`サブエージェント**を使用してください。
 
 ```
 Task tool with subagent_type="e2e-test-runner"
