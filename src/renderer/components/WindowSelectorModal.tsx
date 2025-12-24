@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { WindowInfo } from '@common/types';
 
 import '../styles/components/WindowSelectorModal.css';
@@ -18,6 +18,7 @@ const WindowSelectorModal: React.FC<WindowSelectorModalProps> = ({ isOpen, onClo
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filterText, setFilterText] = useState('');
+  const modalRef = useRef<HTMLDivElement>(null);
 
   // ウィンドウ一覧を取得
   useEffect(() => {
@@ -40,6 +41,98 @@ const WindowSelectorModal: React.FC<WindowSelectorModalProps> = ({ isOpen, onClo
     fetchWindows();
   }, [isOpen]);
 
+  // キーイベント処理
+  useEffect(() => {
+    if (!isOpen) return;
+
+    // フォーカスをモーダルに設定
+    modalRef.current?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const modal = modalRef.current;
+      if (!modal) return;
+
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        onClose();
+        return;
+      }
+
+      if (event.key === 'Tab') {
+        const focusableElements = modal.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        const firstFocusableElement = focusableElements[0] as HTMLElement;
+        const lastFocusableElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+
+        if (event.shiftKey) {
+          // Shift+Tab: 逆方向
+          if (document.activeElement === firstFocusableElement) {
+            lastFocusableElement.focus();
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+          }
+        } else {
+          // Tab: 順方向
+          if (document.activeElement === lastFocusableElement) {
+            firstFocusableElement.focus();
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+          }
+        }
+        // モーダル内でのTab操作なので、すべての場合で背景への伝播を阻止
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        return;
+      }
+
+      // モーダル内でのキーイベントの場合、背景への伝播を完全に阻止
+      const isModalFocused = modal.contains(document.activeElement);
+      if (isModalFocused) {
+        const activeElement = document.activeElement as HTMLElement;
+        const isInputField =
+          activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
+
+        if (isInputField) {
+          // 入力フィールドでの通常の編集キーは許可
+          if (
+            event.key.length === 1 ||
+            [
+              'Backspace',
+              'Delete',
+              'ArrowLeft',
+              'ArrowRight',
+              'ArrowUp',
+              'ArrowDown',
+              'Home',
+              'End',
+            ].includes(event.key) ||
+            (event.ctrlKey && ['a', 'c', 'v', 'x', 'z', 'y'].includes(event.key))
+          ) {
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+            return;
+          }
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown, true);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown, true);
+    };
+  }, [isOpen, onClose]);
+
   // フィルタリングされたウィンドウ一覧
   const filteredWindows = windows.filter((win) => {
     if (!filterText) return true;
@@ -59,7 +152,12 @@ const WindowSelectorModal: React.FC<WindowSelectorModalProps> = ({ isOpen, onClo
 
   return (
     <div className="window-selector-modal-overlay" onClick={onClose}>
-      <div className="window-selector-modal" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="window-selector-modal"
+        onClick={(e) => e.stopPropagation()}
+        ref={modalRef}
+        tabIndex={-1}
+      >
         <div className="window-selector-header">
           <h3>ウィンドウを選択</h3>
           <button className="close-button" onClick={onClose}>

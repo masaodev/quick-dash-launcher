@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 import { IconProgressResult } from '../../common/types';
 import '../styles/components/IconProgressDetailModal.css';
@@ -15,6 +15,7 @@ const IconProgressDetailModal: React.FC<IconProgressDetailModalProps> = ({
   results,
 }) => {
   const [filter, setFilter] = useState<'all' | 'success' | 'error'>('all');
+  const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -30,6 +31,73 @@ const IconProgressDetailModal: React.FC<IconProgressDetailModalProps> = ({
     };
   }, [isOpen]);
 
+  // キーイベント処理
+  useEffect(() => {
+    if (!isOpen) return;
+
+    // フォーカスをモーダルに設定
+    modalRef.current?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const modal = modalRef.current;
+      if (!modal) return;
+
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        onClose();
+        return;
+      }
+
+      if (event.key === 'Tab') {
+        const focusableElements = modal.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        const firstFocusableElement = focusableElements[0] as HTMLElement;
+        const lastFocusableElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+
+        if (event.shiftKey) {
+          // Shift+Tab: 逆方向
+          if (document.activeElement === firstFocusableElement) {
+            lastFocusableElement.focus();
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+          }
+        } else {
+          // Tab: 順方向
+          if (document.activeElement === lastFocusableElement) {
+            firstFocusableElement.focus();
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+          }
+        }
+        // モーダル内でのTab操作なので、すべての場合で背景への伝播を阻止
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        return;
+      }
+
+      // モーダル内でのキーイベントの場合、背景への伝播を完全に阻止
+      const isModalFocused = modal.contains(document.activeElement);
+      if (isModalFocused) {
+        // このモーダルは読み取り専用なので、すべてのキーを阻止（ただしフィルターボタンはクリック可能）
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown, true);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown, true);
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const successResults = results.filter((r) => r.success);
@@ -40,7 +108,12 @@ const IconProgressDetailModal: React.FC<IconProgressDetailModalProps> = ({
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content icon-detail-modal" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="modal-content icon-detail-modal"
+        onClick={(e) => e.stopPropagation()}
+        ref={modalRef}
+        tabIndex={-1}
+      >
         <div className="modal-header">
           <h2>アイコン取得結果</h2>
           <button className="modal-close-btn" onClick={onClose} aria-label="閉じる">

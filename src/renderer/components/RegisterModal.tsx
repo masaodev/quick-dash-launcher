@@ -147,6 +147,10 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
             event.stopImmediatePropagation();
           }
         }
+        // モーダル内でのTab操作なので、すべての場合で背景への伝播を阻止
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
         return;
       }
 

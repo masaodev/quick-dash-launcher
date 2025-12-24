@@ -141,8 +141,10 @@ const App: React.FC = () => {
         }
       }
 
-      // アイテム実行後に検索テキストをクリア
-      setSearchQuery('');
+      // アイテム実行後に検索テキストをクリア（ピン止めモードでない場合のみ）
+      if (windowPinMode === 'normal') {
+        setSearchQuery('');
+      }
     } catch (error) {
       setAlertDialog({
         isOpen: true,

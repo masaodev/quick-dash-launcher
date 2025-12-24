@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 
 import { SimpleBookmarkItem, BrowserInfo, BrowserProfile } from '../../common/types';
 
@@ -18,6 +18,7 @@ const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({ isOpen, onClo
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
 
   // ブラウザ直接インポート用の状態
   const [importSource, setImportSource] = useState<ImportSource | null>(null);
@@ -215,22 +216,99 @@ const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({ isOpen, onClo
   };
 
   // キーボードショートカット
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if (!isOpen) return;
-
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        handleClose();
-      }
-    },
-    [isOpen]
-  );
-
   useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleKeyDown]);
+    if (!isOpen) return;
+
+    // フォーカスをモーダルに設定
+    modalRef.current?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const modal = modalRef.current;
+      if (!modal) return;
+
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        handleClose();
+        return;
+      }
+
+      if (event.key === 'Tab') {
+        const focusableElements = modal.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        const firstFocusableElement = focusableElements[0] as HTMLElement;
+        const lastFocusableElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+
+        if (event.shiftKey) {
+          // Shift+Tab: 逆方向
+          if (document.activeElement === firstFocusableElement) {
+            lastFocusableElement.focus();
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+          }
+        } else {
+          // Tab: 順方向
+          if (document.activeElement === lastFocusableElement) {
+            firstFocusableElement.focus();
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+          }
+        }
+        // モーダル内でのTab操作なので、すべての場合で背景への伝播を阻止
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        return;
+      }
+
+      // モーダル内でのキーイベントの場合、背景への伝播を完全に阻止
+      const isModalFocused = modal.contains(document.activeElement);
+      if (isModalFocused) {
+        const activeElement = document.activeElement as HTMLElement;
+        const isInputField =
+          activeElement &&
+          (activeElement.tagName === 'INPUT' ||
+            activeElement.tagName === 'TEXTAREA' ||
+            activeElement.tagName === 'SELECT');
+
+        if (isInputField) {
+          // 入力フィールドでの通常の編集キーは許可
+          if (
+            event.key.length === 1 ||
+            [
+              'Backspace',
+              'Delete',
+              'ArrowLeft',
+              'ArrowRight',
+              'ArrowUp',
+              'ArrowDown',
+              'Home',
+              'End',
+            ].includes(event.key) ||
+            (event.ctrlKey && ['a', 'c', 'v', 'x', 'z', 'y'].includes(event.key))
+          ) {
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+            return;
+          }
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown, true);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown, true);
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -247,7 +325,12 @@ const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({ isOpen, onClo
 
   return (
     <div className="modal-overlay" onClick={handleClose}>
-      <div className="modal-content bookmark-import-modal" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="modal-content bookmark-import-modal"
+        onClick={(e) => e.stopPropagation()}
+        ref={modalRef}
+        tabIndex={-1}
+      >
         <div className="modal-header">
           <h2>ブックマークをインポート</h2>
           <button className="close-button" onClick={handleClose}>
