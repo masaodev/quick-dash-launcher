@@ -1,6 +1,13 @@
 import { ipcMain, BrowserWindow, shell } from 'electron';
 import { itemLogger } from '@common/logger';
-import { LauncherItem, GroupItem, AppItem, WindowPinMode } from '@common/types';
+import {
+  LauncherItem,
+  GroupItem,
+  WindowOperationItem,
+  AppItem,
+  WindowPinMode,
+  WindowConfig,
+} from '@common/types';
 import { GROUP_LAUNCH_DELAY_MS } from '@common/constants';
 import { isLauncherItem } from '@common/utils/typeGuards';
 
@@ -239,6 +246,45 @@ export function setupItemHandlers(
         { error: error instanceof Error ? error.message : String(error), groupName: group.name },
         'グループ実行履歴の記録に失敗しました'
       );
+    }
+  });
+
+  ipcMain.handle('execute-window-operation', async (_event, item: WindowOperationItem) => {
+    itemLogger.info(
+      {
+        windowTitle: item.windowTitle,
+        x: item.x,
+        y: item.y,
+        width: item.width,
+        height: item.height,
+        virtualDesktopNumber: item.virtualDesktopNumber,
+        activateWindow: item.activateWindow,
+      },
+      'ウィンドウ操作アイテムを実行中'
+    );
+
+    const windowConfig: WindowConfig = {
+      title: item.windowTitle,
+      x: item.x,
+      y: item.y,
+      width: item.width,
+      height: item.height,
+      virtualDesktopNumber: item.virtualDesktopNumber,
+      activateWindow: item.activateWindow,
+    };
+
+    const result = tryActivateWindow(windowConfig, undefined, item.windowTitle, itemLogger);
+
+    if (!result.windowFound) {
+      itemLogger.warn({ windowTitle: item.windowTitle }, 'ウィンドウが見つかりませんでした');
+    }
+
+    const shouldHide = getWindowPinMode() === 'normal';
+    if (result.activated && shouldHide) {
+      const mainWindow = getMainWindow();
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.hide();
+      }
     }
   });
 }

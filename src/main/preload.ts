@@ -8,6 +8,7 @@ import {
   WindowPinMode,
   SearchHistoryEntry,
   GroupItem,
+  WindowOperationItem,
   AppItem,
   AppInfo,
   BrowserInfo,
@@ -45,6 +46,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openParentFolder: (item: LauncherItem) => ipcRenderer.invoke('open-parent-folder', item),
   executeGroup: (group: GroupItem, allItems: AppItem[]) =>
     ipcRenderer.invoke('execute-group', group, allItems),
+  executeWindowOperation: (item: WindowOperationItem): Promise<void> =>
+    ipcRenderer.invoke('execute-window-operation', item),
   openConfigFolder: () => ipcRenderer.invoke('open-config-folder'),
   fetchFavicon: (url: string) => ipcRenderer.invoke('fetch-favicon', url),
   extractIcon: (filePath: string) => ipcRenderer.invoke('extract-icon', filePath),

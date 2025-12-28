@@ -35,13 +35,14 @@ QuickDashLauncherは複数のデータファイルをサポートしています
 ## 基本構文
 
 ### 行の種類
-データファイルには以下の5種類の行が存在します：
+データファイルには以下の6種類の行が存在します：
 
 1. **コメント行** (`//` で開始)
 2. **空行** (空白文字のみまたは完全に空)
 3. **単一アイテム行** (通常のアイテム定義)
 4. **フォルダ取込アイテム行** (`dir,` で開始)
 5. **グループアイテム行** (`group,` で開始)
+6. **ウィンドウ操作アイテム行** (`window,` で開始)
 
 ### 基本フォーマット
 ```
@@ -50,6 +51,7 @@ QuickDashLauncherは複数のデータファイルをサポートしています
 表示名,パスまたはURL[,引数][,カスタムアイコン]
 dir,ディレクトリパス[,オプション1=値1][,オプション2=値2]...
 group,グループ名,アイテム名1,アイテム名2,アイテム名3,...
+window,ウィンドウタイトル[,x][,y][,width][,height][,virtualDesktopNumber][,activateWindow]
 ```
 
 ## 重複排除ルール
@@ -526,6 +528,122 @@ group,Web閲覧,Google,GitHub
 - **部分的な参照エラー**: エラーがあっても残りのアイテムは実行継続
 - **循環参照**: グループ内でグループは参照できません（LauncherItemのみ）
 
+## ウィンドウ操作アイテム行の詳細
+
+### 基本構文
+```
+window,表示名,ウィンドウタイトル[,x][,y][,width][,height][,virtualDesktopNumber][,activateWindow]
+```
+
+### フィールド構成
+
+| フィールド | 位置 | 必須 | デフォルト値 | 説明 |
+|------------|------|------|-------------|------|
+| **プレフィックス** | 1 | ✓ | - | 常に `window` |
+| **表示名** | 2 | ✓ | - | アイテムリストでの表示名 |
+| **ウィンドウタイトル** | 3 | ✓ | - | ウィンドウタイトル（検索用、部分一致、スペース区切りでAND検索） |
+| **x** | 4 | - | undefined | X座標（仮想スクリーン座標系、省略時は位置変更なし） |
+| **y** | 5 | - | undefined | Y座標（仮想スクリーン座標系、省略時は位置変更なし） |
+| **width** | 6 | - | undefined | 幅（ピクセル単位、省略時はサイズ変更なし） |
+| **height** | 7 | - | undefined | 高さ（ピクセル単位、省略時はサイズ変更なし） |
+| **virtualDesktopNumber** | 8 | - | undefined | 仮想デスクトップ番号（1から開始、省略時は移動なし） |
+| **activateWindow** | 9 | - | true | ウィンドウをアクティブにするか（`true` または `false`） |
+
+### 動作仕様
+
+ウィンドウ操作アイテムは、既存のウィンドウを検索・制御する機能です：
+
+1. **ウィンドウ検索**: `ウィンドウタイトル`で指定されたウィンドウを検索します
+   - 部分一致、スペース区切りでAND検索
+   - 大文字小文字を区別しない
+2. **ウィンドウ発見時**:
+   - ウィンドウを復元（最小化解除）
+   - `virtualDesktopNumber`が指定されていれば仮想デスクトップを移動
+   - `x`, `y`, `width`, `height`が指定されていれば位置・サイズを変更
+   - `activateWindow`が`true`（デフォルト）の場合、ウィンドウをアクティブ化
+   - **通常起動は実行しません**
+3. **ウィンドウ未発見時**: 警告ログを出力し、何も実行しません
+
+### マルチモニタ対応
+
+座標系は仮想スクリーン座標（Virtual Screen Coordinates）を使用します：
+
+- プライマリモニターの左上が原点 (0, 0)
+- セカンダリモニターは相対位置に配置（例: プライマリが1920x1080、セカンダリが右側なら X=1920 から開始）
+- 負の座標も使用可能（プライマリの左側・上側にモニターがある場合）
+
+詳細は **[ウィンドウ制御システム](window-control.md#ウィンドウ位置サイズ制御)** を参照してください。
+
+### 使用例
+
+```
+// 基本的な使用（表示名とウィンドウタイトル）
+window,VSCode,Visual Studio Code
+
+// 位置・サイズ指定
+window,Chrome右半分,Google Chrome,960,0,960,1080
+
+// 仮想デスクトップ指定（デスクトップ2に移動）
+window,開発用Slack,Slack,,,,,2
+
+// アクティブ化無効（位置・サイズ変更のみ）
+window,Terminal,Windows PowerShell,100,100,800,600,,false
+
+// フル指定（位置・サイズ・仮想デスクトップ・アクティブ化）
+window,メインVSCode,Visual Studio Code,960,0,960,1080,1,true
+
+// マルチモニタ - セカンダリモニター（右側）に配置
+window,セカンダリChrome,Google Chrome,1920,0,1920,1080
+
+// 画面左半分に配置
+window,左VSCode,Visual Studio Code,0,0,960,1080
+
+// 画面右半分に配置
+window,右Slack,Slack,960,0,960,1080
+```
+
+### 省略フィールドの記述
+
+途中のフィールドを省略する場合は、カンマを連続して記述します：
+
+```
+// x, y, width, heightを省略してvirtualDesktopNumberのみ指定
+window,開発用Slack,Slack,,,,,2
+
+// x, yを省略してwidth, heightのみ指定
+window,大画面Chrome,Google Chrome,,,1920,1080
+
+// virtualDesktopNumberを省略してactivateWindowのみ指定
+window,Terminal,Windows PowerShell,100,100,800,600,,false
+```
+
+### 表示形式
+
+ウィンドウ操作アイテムは、アイテムリストに以下のように表示されます：
+
+- **アイコン**: 🪟（デフォルト）
+- **表示名**: `🪟 ウィンドウタイトル`
+- **ツールチップ**: ウィンドウタイトル、位置・サイズ、仮想デスクトップ番号などの設定内容
+
+### 設計上の利点
+
+- **アプリケーション起動不要**: 既存ウィンドウのみを制御するため、アプリケーションの起動は不要です
+- **高速な切り替え**: 新規起動よりも高速にウィンドウを表示できます
+- **ウィンドウ配置の自動化**: マルチモニタ環境でのウィンドウ配置を自動化できます
+- **仮想デスクトップ対応**: Windows 10以降の仮想デスクトップ機能を活用できます
+
+### 制約事項
+
+- **グループからの参照**: グループアイテムからは参照できません（LauncherItemのみ）
+- **ワークスペース**: 現時点ではワークスペース機能には対応していません
+- **実行履歴**: 実行履歴には記録されません
+
+### エラーハンドリング
+
+- **ウィンドウ未検出時**: 警告ログを出力し、何も実行しません
+- **無効な座標・サイズ**: 無効な値（負の幅・高さなど）は無視されます
+- **無効なvirtualDesktopNumber**: 1未満の値や存在しないデスクトップ番号は無視されます
+
 ## 特殊処理
 
 ### ショートカットファイルの自動解析
@@ -626,10 +744,28 @@ interface GroupItem {
 }
 ```
 
+### WindowOperationItem
+```typescript
+interface WindowOperationItem {
+  type: 'windowOperation';   // アイテムタイプ（常に'windowOperation'）
+  name: string;              // アイテムリストでの表示名（必須）
+  windowTitle: string;       // ウィンドウタイトル（検索用、必須）
+  x?: number;                // X座標（仮想スクリーン座標系、省略時は位置変更なし）
+  y?: number;                // Y座標（仮想スクリーン座標系、省略時は位置変更なし）
+  width?: number;            // 幅（省略時はサイズ変更なし）
+  height?: number;           // 高さ（省略時はサイズ変更なし）
+  virtualDesktopNumber?: number; // 仮想デスクトップ番号（1から開始、省略時は移動なし）
+  activateWindow?: boolean;  // ウィンドウをアクティブにするかどうか（省略時はtrue）
+  sourceFile?: string;       // 元データファイル名
+  lineNumber?: number;       // データファイル内の行番号
+  isEdited?: boolean;        // 編集フラグ
+}
+```
+
 ### AppItem
 ```typescript
-// LauncherItemとGroupItemの統合型
-type AppItem = LauncherItem | GroupItem;
+// LauncherItem、GroupItem、WindowOperationItemの統合型
+type AppItem = LauncherItem | GroupItem | WindowOperationItem;
 ```
 
 ### DragItemData

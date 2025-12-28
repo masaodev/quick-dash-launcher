@@ -6,7 +6,13 @@
  */
 
 // ランチャー関連の型
-export type { WindowConfig, LauncherItem, GroupItem, AppItem } from './types/launcher';
+export type {
+  WindowConfig,
+  LauncherItem,
+  GroupItem,
+  WindowOperationItem,
+  AppItem,
+} from './types/launcher';
 
 // ワークスペース関連の型
 export type {

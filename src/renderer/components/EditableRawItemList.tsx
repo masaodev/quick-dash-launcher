@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { parseCSVLine, escapeCSV } from '@common/utils/csvParser';
-import { isGroupDirective, isDirDirective } from '@common/utils/directiveUtils';
+import {
+  isGroupDirective,
+  isDirDirective,
+  isWindowOperationDirective,
+} from '@common/utils/directiveUtils';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 
 import { RawDataLine, LauncherItem } from '../../common/types';
@@ -262,6 +266,9 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
     } else if (isGroupDirective(line)) {
       // group,グループ名,アイテム1,アイテム2,...
       name = parts[1] || '';
+    } else if (isWindowOperationDirective(line)) {
+      // window,表示名,ウィンドウタイトル,...
+      name = parts[1] || '';
     }
     const cellKey = `${getLineKey(line)}_name`;
     setEditingCell(cellKey);
@@ -293,6 +300,11 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
       const newGroupName = editingValue.trim();
       const itemNames = parts.slice(2);
       newContent = `group,${newGroupName},${itemNames.join(',')}`;
+    } else if (isWindowOperationDirective(line)) {
+      // window,表示名,ウィンドウタイトル,x,y,width,height,virtualDesktopNumber,activateWindow
+      const newName = editingValue.trim();
+      const restFields = parts.slice(2); // ウィンドウタイトル以降のフィールド
+      newContent = `window,${newName},${restFields.join(',')}`;
     }
 
     if (newContent && newContent !== line.content) {
@@ -329,6 +341,8 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
         return '📦';
       } else if (isDirDirective(line)) {
         return '🗂️';
+      } else if (isWindowOperationDirective(line)) {
+        return '🪟';
       }
       return '🗂️'; // デフォルトはフォルダ取込
     }
@@ -351,6 +365,8 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
         return 'グループ';
       } else if (isDirDirective(line)) {
         return 'フォルダ取込';
+      } else if (isWindowOperationDirective(line)) {
+        return 'ウィンドウ操作';
       }
       return 'ディレクティブ'; // デフォルト
     }
@@ -368,14 +384,17 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
   };
 
   const renderNameCell = (line: RawDataLine) => {
-    if (line.type === 'item' || isGroupDirective(line)) {
-      // アイテム行またはグループ行の場合、CSV形式から名前を抽出
+    if (line.type === 'item' || isGroupDirective(line) || isWindowOperationDirective(line)) {
+      // アイテム行、グループ行、ウィンドウ操作行の場合、CSV形式から名前を抽出
       const parts = parseCSVLine(line.content);
       let name = '';
       if (line.type === 'item') {
         name = parts[0] || '';
       } else if (isGroupDirective(line)) {
         // group,グループ名,アイテム1,アイテム2,...
+        name = parts[1] || '';
+      } else if (isWindowOperationDirective(line)) {
+        // window,表示名,ウィンドウタイトル,...
         name = parts[1] || '';
       }
 
@@ -427,6 +446,20 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
         const itemNames = parts.slice(2).filter((name) => name);
         if (itemNames.length === 0) return '(アイテムなし)';
         return itemNames.join(', ');
+      } else if (isWindowOperationDirective(line)) {
+        // ウィンドウ操作アイテムの場合：ウィンドウタイトル＋設定情報
+        // window,表示名,ウィンドウタイトル,x,y,width,height,virtualDesktopNumber,activateWindow
+        const parts = parseCSVLine(line.content);
+        const windowTitle = parts[2] || '';
+        const settings: string[] = [];
+        if (parts[3]) settings.push(`x:${parts[3]}`);
+        if (parts[4]) settings.push(`y:${parts[4]}`);
+        if (parts[5]) settings.push(`w:${parts[5]}`);
+        if (parts[6]) settings.push(`h:${parts[6]}`);
+        if (parts[7]) settings.push(`desk:${parts[7]}`);
+        if (parts[8]) settings.push(`active:${parts[8]}`);
+        if (!windowTitle) return '(ウィンドウタイトルなし)';
+        return settings.length > 0 ? `${windowTitle} [${settings.join(', ')}]` : windowTitle;
       } else {
         // フォルダ取込アイテムの場合：フォルダパス＋オプション
         const parts = parseCSVLine(line.content);
@@ -444,7 +477,7 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
   const handleTypeSelection = (
     line: RawDataLine,
     newType: 'item' | 'directive',
-    directiveType?: 'dir' | 'group'
+    directiveType?: 'dir' | 'group' | 'window'
   ) => {
     let newContent = '';
 
@@ -455,6 +488,9 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
       if (directiveType === 'group') {
         // グループの場合：group,グループ名,アイテム名1,アイテム名2,...の形式（グループ名は空で初期化）
         newContent = 'group,';
+      } else if (directiveType === 'window') {
+        // ウィンドウ操作の場合：window,ウィンドウタイトルの形式（ウィンドウタイトルは空で初期化）
+        newContent = 'window,';
       } else {
         // フォルダ取り込みの場合：dir,パスの形式（パスは空で初期化）
         newContent = 'dir,';
@@ -493,6 +529,13 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
             title="グループとして設定"
           >
             📦 グループ
+          </button>
+          <button
+            className="type-select-button window-button"
+            onClick={() => handleTypeSelection(line, 'directive', 'window')}
+            title="ウィンドウ操作として設定"
+          >
+            🪟 ウィンドウ操作
           </button>
         </div>
       );

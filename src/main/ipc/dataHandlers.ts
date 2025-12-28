@@ -6,8 +6,9 @@ import { FileUtils } from '@common/utils/fileUtils';
 import { parseCSVLine, escapeCSV } from '@common/utils/csvParser';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { parseWindowConfig } from '@common/utils/windowConfigUtils';
-import { RawDataLine, LauncherItem, GroupItem, AppItem } from '@common/types';
-import { isWindowInfo } from '@common/utils/typeGuards';
+import { RawDataLine, LauncherItem, GroupItem, WindowOperationItem, AppItem } from '@common/types';
+import { isWindowInfo, isWindowOperationItem } from '@common/utils/typeGuards';
+import { parseWindowOperationDirective } from '@common/utils/directiveUtils';
 
 import { BackupService } from '../services/backupService.js';
 import { SettingsService } from '../services/settingsService.js';
@@ -189,6 +190,35 @@ async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
         continue;
       }
 
+      // Handle ウィンドウ操作アイテム
+      if (trimmedLine.startsWith('window,')) {
+        const windowOp = parseWindowOperationDirective({
+          type: 'directive',
+          content: trimmedLine,
+          lineNumber: lineIndex + 1,
+          sourceFile: fileName,
+        });
+
+        const windowOperationItem: WindowOperationItem = {
+          type: 'windowOperation',
+          name: windowOp.name,
+          windowTitle: windowOp.windowTitle,
+          x: windowOp.x,
+          y: windowOp.y,
+          width: windowOp.width,
+          height: windowOp.height,
+          virtualDesktopNumber: windowOp.virtualDesktopNumber,
+          activateWindow: windowOp.activateWindow,
+          sourceFile: fileName,
+          lineNumber: lineIndex + 1,
+          isEdited: false,
+        };
+
+        // ウィンドウ操作アイテムは重複チェック対象外
+        items.push(windowOperationItem);
+        continue;
+      }
+
       // Handle .lnk files
       const parts = parseCSVLine(trimmedLine);
       if (parts.length >= 2) {
@@ -235,8 +265,8 @@ async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
 
   // Sort items by name
   items.sort((a, b) => {
-    const aName = isWindowInfo(a) ? a.title : a.name;
-    const bName = isWindowInfo(b) ? b.title : b.name;
+    const aName = isWindowInfo(a) ? a.title : isWindowOperationItem(a) ? a.name : a.name;
+    const bName = isWindowInfo(b) ? b.title : isWindowOperationItem(b) ? b.name : b.name;
     return aName.localeCompare(bName, 'ja');
   });
 
@@ -313,7 +343,11 @@ function detectLineType(line: string): RawDataLine['type'] {
     return 'comment';
   }
 
-  if (trimmedLine.startsWith('dir,') || trimmedLine.startsWith('group,')) {
+  if (
+    trimmedLine.startsWith('dir,') ||
+    trimmedLine.startsWith('group,') ||
+    trimmedLine.startsWith('window,')
+  ) {
     return 'directive';
   }
 
@@ -365,7 +399,7 @@ interface RegisterItem {
   icon?: string;
   customIcon?: string;
   windowTitle?: string; // ウィンドウタイトル検索用の文字列
-  itemCategory: 'item' | 'dir' | 'group';
+  itemCategory: 'item' | 'dir' | 'group' | 'window';
   // フォルダ取込アイテムオプション
   dirOptions?: {
     depth: number;
@@ -377,6 +411,16 @@ interface RegisterItem {
   };
   // グループアイテムオプション
   groupItemNames?: string[];
+  // ウィンドウ操作アイテムオプション
+  windowOperationConfig?: {
+    windowTitle: string;
+    x?: number;
+    y?: number;
+    width?: number;
+    height?: number;
+    virtualDesktopNumber?: number;
+    activateWindow?: boolean;
+  };
 }
 
 /**
@@ -477,6 +521,26 @@ async function registerItems(configFolder: string, items: RegisterItem[]): Promi
           groupLine += ',' + item.groupItemNames.join(',');
         }
         return groupLine;
+      } else if (item.itemCategory === 'window') {
+        // ウィンドウ操作アイテムの場合
+        const cfg = item.windowOperationConfig;
+        if (!cfg) {
+          throw new Error('windowOperationConfig is required for window items');
+        }
+
+        const fields = [
+          'window',
+          item.name,
+          cfg.windowTitle,
+          cfg.x?.toString() || '',
+          cfg.y?.toString() || '',
+          cfg.width?.toString() || '',
+          cfg.height?.toString() || '',
+          cfg.virtualDesktopNumber?.toString() || '',
+          cfg.activateWindow === undefined ? '' : cfg.activateWindow.toString(),
+        ];
+
+        return fields.join(',');
       } else {
         let line = `${escapeCSV(item.name)},${escapeCSV(item.path)}`;
 

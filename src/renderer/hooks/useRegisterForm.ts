@@ -91,13 +91,23 @@ export function useRegisterForm(
   const handleItemChange = async (
     index: number,
     field: keyof RegisterItem,
-    value: string | boolean | RegisterItem['dirOptions'] | WindowConfig
+    value:
+      | string
+      | boolean
+      | RegisterItem['dirOptions']
+      | WindowConfig
+      | RegisterItem['windowOperationConfig']
   ) => {
     const newItems = [...items];
     if (field === 'dirOptions') {
       newItems[index] = { ...newItems[index], dirOptions: value as RegisterItem['dirOptions'] };
     } else if (field === 'windowConfig') {
       newItems[index] = { ...newItems[index], windowConfig: value as WindowConfig };
+    } else if (field === 'windowOperationConfig') {
+      newItems[index] = {
+        ...newItems[index],
+        windowOperationConfig: value as RegisterItem['windowOperationConfig'],
+      };
     } else if (field === 'groupItemNames') {
       // groupItemNamesの場合は文字列をパース
       const itemNames = (value as string)
@@ -110,12 +120,17 @@ export function useRegisterForm(
     }
 
     // 入力変更時に該当フィールドのエラーをクリア
-    if (field === 'name' || field === 'path') {
+    if (field === 'name' || field === 'path' || field === 'windowOperationConfig') {
       setErrors((prev) => {
         const newErrors = { ...prev };
         if (newErrors[index]) {
           const updatedError = { ...newErrors[index] };
-          delete updatedError[field];
+          if (field === 'windowOperationConfig') {
+            // windowOperationConfigの場合はnameエラーをクリア
+            delete updatedError.name;
+          } else {
+            delete updatedError[field];
+          }
           newErrors[index] = updatedError;
         }
         return newErrors;
@@ -147,11 +162,23 @@ export function useRegisterForm(
         // フォルダ取込オプションをクリア
         delete newItems[index].folderProcessing;
         delete newItems[index].dirOptions;
-      } else {
-        // 単一アイテム選択時：両方クリア
+        // ウィンドウ操作オプションをクリア
+        delete newItems[index].windowOperationConfig;
+      } else if (value === 'window') {
+        // ウィンドウ操作選択時：ウィンドウ操作オプションを初期化
+        if (!newItems[index].windowOperationConfig) {
+          newItems[index].windowOperationConfig = { windowTitle: '' };
+        }
+        // その他のオプションをクリア
         delete newItems[index].folderProcessing;
         delete newItems[index].dirOptions;
         delete newItems[index].groupItemNames;
+      } else {
+        // 単一アイテム選択時：すべてクリア
+        delete newItems[index].folderProcessing;
+        delete newItems[index].dirOptions;
+        delete newItems[index].groupItemNames;
+        delete newItems[index].windowOperationConfig;
       }
     }
 
@@ -196,14 +223,18 @@ export function useRegisterForm(
       const item = items[i];
       newErrors[i] = {};
 
-      // グループ以外は名前が必須
+      // フォルダ取込以外は名前が必須
       if (item.itemCategory !== 'dir' && !item.name.trim()) {
         newErrors[i].name =
-          item.itemCategory === 'group' ? 'グループ名を入力してください' : '名前を入力してください';
+          item.itemCategory === 'group'
+            ? 'グループ名を入力してください'
+            : item.itemCategory === 'window'
+              ? '表示名を入力してください'
+              : '名前を入力してください';
       }
 
-      // グループ以外はパスが必須
-      if (item.itemCategory !== 'group' && !item.path.trim()) {
+      // グループ・ウィンドウ操作以外はパスが必須
+      if (item.itemCategory !== 'group' && item.itemCategory !== 'window' && !item.path.trim()) {
         newErrors[i].path = 'パスを入力してください';
       }
 
@@ -212,6 +243,13 @@ export function useRegisterForm(
         const itemNames = item.groupItemNames || [];
         if (itemNames.length === 0) {
           newErrors[i].groupItemNames = 'グループアイテムを追加してください';
+        }
+      }
+
+      // ウィンドウ操作の場合はウィンドウタイトルが必須
+      if (item.itemCategory === 'window') {
+        if (!item.windowOperationConfig?.windowTitle?.trim()) {
+          newErrors[i].name = 'ウィンドウタイトルを入力してください';
         }
       }
     }

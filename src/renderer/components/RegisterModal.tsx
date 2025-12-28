@@ -245,17 +245,28 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     const item = items[windowSelectorItemIndex];
     if (!item) return;
 
-    // ウィンドウ情報から WindowConfig を作成
-    const windowConfig = {
-      title: window.title,
-      x: window.x,
-      y: window.y,
-      width: window.width,
-      height: window.height,
-    };
-
-    // アイテムに windowConfig を設定
-    handleItemChange(windowSelectorItemIndex, 'windowConfig', windowConfig);
+    // ウィンドウ情報から設定を作成
+    if (item.itemCategory === 'window') {
+      // ウィンドウ操作アイテムの場合
+      const windowOperationConfig = {
+        windowTitle: window.title,
+        x: window.x,
+        y: window.y,
+        width: window.width,
+        height: window.height,
+      };
+      handleItemChange(windowSelectorItemIndex, 'windowOperationConfig', windowOperationConfig);
+    } else {
+      // 単一アイテムの場合
+      const windowConfig = {
+        title: window.title,
+        x: window.x,
+        y: window.y,
+        width: window.width,
+        height: window.height,
+      };
+      handleItemChange(windowSelectorItemIndex, 'windowConfig', windowConfig);
+    }
   };
 
   // アイテム削除ハンドラー
@@ -350,13 +361,14 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                           handleItemChange(
                             index,
                             'itemCategory',
-                            e.target.value as 'item' | 'dir' | 'group'
+                            e.target.value as 'item' | 'dir' | 'group' | 'window'
                           )
                         }
                       >
                         <option value="item">📄 単一アイテム</option>
                         <option value="dir">🗂️ フォルダ取込</option>
                         <option value="group">📦 グループ</option>
+                        <option value="window">🪟 ウィンドウ操作</option>
                       </select>
                     </div>
 
@@ -369,7 +381,11 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                           className={errors[index]?.name ? 'error' : ''}
                           onChange={(e) => handleItemChange(index, 'name', e.target.value)}
                           placeholder={
-                            item.itemCategory === 'group' ? 'グループ名を入力' : '表示名を入力'
+                            item.itemCategory === 'group'
+                              ? 'グループ名を入力'
+                              : item.itemCategory === 'window'
+                                ? 'アイテムリストでの表示名を入力'
+                                : '表示名を入力'
                           }
                         />
                         {errors[index]?.name && (
@@ -378,7 +394,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                       </div>
                     )}
 
-                    {item.itemCategory !== 'group' && (
+                    {item.itemCategory !== 'group' && item.itemCategory !== 'window' && (
                       <div className="form-group">
                         <label>パス:</label>
                         <input
@@ -503,6 +519,45 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                         }
                         onGetWindowClick={() => openWindowSelector(index)}
                       />
+                    )}
+
+                    {/* ウィンドウ操作設定 */}
+                    {item.itemCategory === 'window' && (
+                      <div>
+                        <WindowConfigEditor
+                          windowConfig={
+                            item.windowOperationConfig
+                              ? {
+                                  title: item.windowOperationConfig.windowTitle,
+                                  x: item.windowOperationConfig.x,
+                                  y: item.windowOperationConfig.y,
+                                  width: item.windowOperationConfig.width,
+                                  height: item.windowOperationConfig.height,
+                                  virtualDesktopNumber:
+                                    item.windowOperationConfig.virtualDesktopNumber,
+                                  activateWindow: item.windowOperationConfig.activateWindow,
+                                }
+                              : { title: '' }
+                          }
+                          onChange={(windowConfig) =>
+                            handleItemChange(index, 'windowOperationConfig', {
+                              windowTitle: windowConfig?.title || '',
+                              x: windowConfig?.x,
+                              y: windowConfig?.y,
+                              width: windowConfig?.width,
+                              height: windowConfig?.height,
+                              virtualDesktopNumber: windowConfig?.virtualDesktopNumber,
+                              activateWindow: windowConfig?.activateWindow,
+                            })
+                          }
+                          onGetWindowClick={() => openWindowSelector(index)}
+                        />
+                        {errors[index]?.name && (
+                          <div className="form-group">
+                            <span className="error-message">{errors[index].name}</span>
+                          </div>
+                        )}
+                      </div>
                     )}
 
                     {/* グループの場合はカスタムアイコンのみ表示 */}

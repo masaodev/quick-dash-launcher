@@ -80,7 +80,38 @@ export interface GroupItem {
 }
 
 /**
- * アプリケーションで扱うすべてのアイテムの統合型
- * 通常のLauncherItem、GroupItem、WindowInfo（ウィンドウ検索結果）を扱える
+ * ウィンドウ操作アイテム
+ * 既存のウィンドウを検索・アクティブ化し、位置・サイズを制御する
  */
-export type AppItem = LauncherItem | GroupItem | WindowInfo;
+export interface WindowOperationItem {
+  /** アイテムタイプ（常に'windowOperation'） */
+  type: 'windowOperation';
+  /** アイテムリストでの表示名 */
+  name: string;
+  /** ウィンドウタイトル（検索用、必須） */
+  windowTitle: string;
+  /** X座標（仮想スクリーン座標系、省略時は位置変更なし） */
+  x?: number;
+  /** Y座標（仮想スクリーン座標系、省略時は位置変更なし） */
+  y?: number;
+  /** 幅（省略時はサイズ変更なし） */
+  width?: number;
+  /** 高さ（省略時はサイズ変更なし） */
+  height?: number;
+  /** 仮想デスクトップ番号（1から開始、省略時は移動なし、Windows 10以降） */
+  virtualDesktopNumber?: number;
+  /** ウィンドウをアクティブにするかどうか（省略時はtrue） */
+  activateWindow?: boolean;
+  /** 元のデータファイル */
+  sourceFile?: string;
+  /** データファイル内の行番号（編集機能で使用） */
+  lineNumber?: number;
+  /** 編集モードで変更されたかどうか */
+  isEdited?: boolean;
+}
+
+/**
+ * アプリケーションで扱うすべてのアイテムの統合型
+ * 通常のLauncherItem、GroupItem、WindowOperationItem、WindowInfo（ウィンドウ検索結果）を扱える
+ */
+export type AppItem = LauncherItem | GroupItem | WindowOperationItem | WindowInfo;

@@ -1,4 +1,11 @@
-import { AppItem, SearchMode, WindowInfo, LauncherItem, GroupItem } from '../../common/types';
+import {
+  AppItem,
+  SearchMode,
+  WindowInfo,
+  LauncherItem,
+  GroupItem,
+  WindowOperationItem,
+} from '../../common/types';
 
 /**
  * アイテムをクエリでフィルタリングする
@@ -32,7 +39,19 @@ export function filterItems(
     .filter((k) => k.length > 0);
 
   return items.filter((item) => {
-    const itemText = (item as LauncherItem | GroupItem).name.toLowerCase();
+    // WindowInfo, WindowOperationItem, LauncherItem, GroupItem に対応
+    let itemText: string;
+    if ('hwnd' in item) {
+      // WindowInfo
+      itemText = (item as WindowInfo).title.toLowerCase();
+    } else if (item.type === 'windowOperation') {
+      // WindowOperationItem
+      itemText = (item as WindowOperationItem).name.toLowerCase();
+    } else {
+      // LauncherItem or GroupItem
+      itemText = (item as LauncherItem | GroupItem).name.toLowerCase();
+    }
+
     return keywords.every((keyword) => itemText.includes(keyword));
   });
 }
