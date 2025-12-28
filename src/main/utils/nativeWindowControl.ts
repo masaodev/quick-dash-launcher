@@ -334,7 +334,7 @@ function isAltTabWindow(hwnd: unknown): boolean {
         // クローキングされているウィンドウは除外
         return false;
       }
-    } catch (dwmError) {
+    } catch (_dwmError) {
       // DWM APIが利用できない場合（古いWindows）はスキップ
       // エラーは無視して続行
     }

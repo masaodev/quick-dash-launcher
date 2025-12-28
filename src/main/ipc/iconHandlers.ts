@@ -5,18 +5,16 @@ import { promisify } from 'util';
 import * as os from 'os';
 import * as crypto from 'crypto';
 
-import { ipcMain, BrowserWindow, dialog } from 'electron';
+import { ipcMain, BrowserWindow, dialog, shell } from 'electron';
 import { iconLogger } from '@common/logger';
 import { FileUtils } from '@common/utils/fileUtils';
 import { PathUtils } from '@common/utils/pathUtils';
+import extractFileIcon from 'extract-file-icon';
 
 import { CombinedProgressManager } from '../utils/progressManager';
 import { FaviconService } from '../services/faviconService';
 import { IconService } from '../services/iconService.js';
 import PathManager from '../config/pathManager.js';
-
-const extractFileIcon = require('extract-file-icon');
-const { shell } = require('electron');
 
 // FaviconServiceのインスタンスを保持
 let faviconService: FaviconService;

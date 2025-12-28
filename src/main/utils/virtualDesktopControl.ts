@@ -7,9 +7,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as os from 'os';
 import * as path from 'path';
+import * as fs from 'fs';
 
 import koffi from 'koffi';
 import { app } from 'electron';
+
+// デバッグログヘルパー（開発環境でのみ出力）
+const debugLog = (...args: any[]) => {
+  if (process.env.NODE_ENV === 'development') {
+    console.log(...args);
+  }
+};
 
 // advapi32.dllをロード（レジストリアクセス用）
 const advapi32 = koffi.load('advapi32.dll');
@@ -17,8 +25,8 @@ const advapi32 = koffi.load('advapi32.dll');
 // VirtualDesktopAccessor.dllをロード
 let virtualDesktopAccessor: any = null;
 let MoveWindowToDesktopNumber: any = null;
-let _GetCurrentDesktopNumber: any = null;
-let _GoToDesktopNumber: any = null;
+let _getCurrentDesktopNumber: any = null;
+let _goToDesktopNumber: any = null;
 
 try {
   // DLLのパスを設定（resources/native/VirtualDesktopAccessor.dll）
@@ -34,76 +42,79 @@ try {
   // 注: Rust版DLLとkoffiの互換性問題により、C++版（skottmckayフォーク）を使用
   const dllPath = path.join(basePath, 'resources', 'native', 'VirtualDesktopAccessor.dll');
 
-  console.log('[VirtualDesktopAccessor] DLLパス:', dllPath);
+  debugLog('[VirtualDesktopAccessor] DLLパス:', dllPath);
 
   // ファイルの存在確認
-  const fs = require('fs');
   if (!fs.existsSync(dllPath)) {
     throw new Error(`DLLファイルが見つかりません: ${dllPath}`);
   }
 
-  console.log('[VirtualDesktopAccessor] DLLファイル確認OK');
+  debugLog('[VirtualDesktopAccessor] DLLファイル確認OK');
 
   // DLLをロード（globalオプションでシンボルをグローバルに利用可能にする）
   virtualDesktopAccessor = koffi.load(dllPath, { global: true, lazy: false });
-  console.log('[VirtualDesktopAccessor] DLLロード成功（global: true, lazy: false）');
+  debugLog('[VirtualDesktopAccessor] DLLロード成功（global: true, lazy: false）');
 
   // MoveWindowToDesktopNumber関数を定義
   // BOOL MoveWindowToDesktopNumber(HWND hwnd, int desktop_number)
-  // セグメンテーションフォルト対策：クラシックシンタックスを使用
-  try {
-    // パターン1: クラシックシンタックス + __stdcall + void* (推奨)
-    MoveWindowToDesktopNumber = virtualDesktopAccessor.func(
-      '__stdcall',
-      'MoveWindowToDesktopNumber',
-      'int',
-      ['void *', 'int']
-    );
-    console.log('[VirtualDesktopAccessor] 関数定義成功（classic __stdcall + void*）');
-  } catch (e1) {
-    console.warn('[VirtualDesktopAccessor] classic __stdcall+void*失敗、prototypeを試行:', e1);
-    try {
-      // パターン2: C-likeプロトタイプ + void* (スペース付き)
-      MoveWindowToDesktopNumber = virtualDesktopAccessor.func(
-        'int __stdcall MoveWindowToDesktopNumber(void *hwnd, int desktop_number)'
-      );
-      console.log('[VirtualDesktopAccessor] 関数定義成功（prototype __stdcall + void*）');
-    } catch (e2) {
-      console.warn('[VirtualDesktopAccessor] prototype void*失敗、uintptrを試行:', e2);
-      try {
-        // パターン3: クラシックシンタックス + uintptr
-        MoveWindowToDesktopNumber = virtualDesktopAccessor.func(
-          '__stdcall',
-          'MoveWindowToDesktopNumber',
+  // セグメンテーションフォルト対策：複数パターンをフォールバックで試行
+  const moveWindowPatterns = [
+    {
+      name: 'classic __stdcall + void*',
+      loader: () =>
+        virtualDesktopAccessor.func('__stdcall', 'MoveWindowToDesktopNumber', 'int', [
+          'void *',
           'int',
-          ['uintptr', 'int']
-        );
-        console.log('[VirtualDesktopAccessor] 関数定義成功（classic __stdcall + uintptr）');
-      } catch (e3) {
-        console.warn('[VirtualDesktopAccessor] classic uintptr失敗、prototype uintptrを試行:', e3);
-        // パターン4: C-likeプロトタイプ + uintptr
-        MoveWindowToDesktopNumber = virtualDesktopAccessor.func(
+        ]),
+    },
+    {
+      name: 'prototype __stdcall + void*',
+      loader: () =>
+        virtualDesktopAccessor.func(
+          'int __stdcall MoveWindowToDesktopNumber(void *hwnd, int desktop_number)'
+        ),
+    },
+    {
+      name: 'classic __stdcall + uintptr',
+      loader: () =>
+        virtualDesktopAccessor.func('__stdcall', 'MoveWindowToDesktopNumber', 'int', [
+          'uintptr',
+          'int',
+        ]),
+    },
+    {
+      name: 'prototype __stdcall + uintptr',
+      loader: () =>
+        virtualDesktopAccessor.func(
           'int __stdcall MoveWindowToDesktopNumber(uintptr hwnd, int desktop_number)'
-        );
-        console.log('[VirtualDesktopAccessor] 関数定義成功（prototype __stdcall + uintptr）');
-      }
+        ),
+    },
+  ];
+
+  for (const pattern of moveWindowPatterns) {
+    try {
+      MoveWindowToDesktopNumber = pattern.loader();
+      debugLog(`[VirtualDesktopAccessor] 関数定義成功（${pattern.name}）`);
+      break;
+    } catch (error) {
+      console.warn(`[VirtualDesktopAccessor] ${pattern.name}失敗:`, error);
     }
   }
 
   if (MoveWindowToDesktopNumber) {
-    console.log('[VirtualDesktopAccessor] MoveWindowToDesktopNumber初期化完了');
+    debugLog('[VirtualDesktopAccessor] MoveWindowToDesktopNumber初期化完了');
   }
 
   // GetCurrentDesktopNumber関数を定義（将来の機能拡張用）
   // int GetCurrentDesktopNumber()
   try {
-    _GetCurrentDesktopNumber = virtualDesktopAccessor.func(
+    _getCurrentDesktopNumber = virtualDesktopAccessor.func(
       '__stdcall',
       'GetCurrentDesktopNumber',
       'int',
       []
     );
-    console.log('[VirtualDesktopAccessor] GetCurrentDesktopNumber初期化完了');
+    debugLog('[VirtualDesktopAccessor] GetCurrentDesktopNumber初期化完了');
   } catch (error) {
     console.error('[VirtualDesktopAccessor] GetCurrentDesktopNumber初期化失敗:', error);
   }
@@ -112,10 +123,10 @@ try {
   // void GoToDesktopNumber(int desktop_number)
   // 注: 戻り値はvoid（なし）
   try {
-    _GoToDesktopNumber = virtualDesktopAccessor.func('__stdcall', 'GoToDesktopNumber', 'void', [
+    _goToDesktopNumber = virtualDesktopAccessor.func('__stdcall', 'GoToDesktopNumber', 'void', [
       'int',
     ]);
-    console.log('[VirtualDesktopAccessor] GoToDesktopNumber初期化完了');
+    debugLog('[VirtualDesktopAccessor] GoToDesktopNumber初期化完了');
   } catch (error) {
     console.error('[VirtualDesktopAccessor] GoToDesktopNumber初期化失敗:', error);
   }
@@ -192,10 +203,10 @@ export function isVirtualDesktopSupported(): boolean {
 }
 
 /**
- * レジストリから仮想デスクトップのGUID一覧を取得
- * @returns GUID文字列の配列（失敗時は空配列）
+ * レジストリキーを開く
+ * @returns [成功フラグ, レジストリキーハンドル]
  */
-export function getVirtualDesktopGUIDs(): string[] {
+function _openVirtualDesktopRegistryKey(): [boolean, any] {
   const hKey = [null];
   const openResult = RegOpenKeyExW(
     HKEY_CURRENT_USER,
@@ -207,99 +218,140 @@ export function getVirtualDesktopGUIDs(): string[] {
 
   if (openResult !== 0 || !hKey[0]) {
     console.error('[getVirtualDesktopGUIDs] レジストリキーのオープンに失敗しました');
+    return [false, null];
+  }
+
+  return [true, hKey[0]];
+}
+
+/**
+ * レジストリからデータサイズと型を取得
+ * @param hKey - レジストリキーハンドル
+ * @returns [成功フラグ, データサイズ, データ型]
+ */
+function _queryRegistryDataSize(hKey: any): [boolean, number, number] {
+  const dataType = [0];
+  const dataSize = [0];
+  const sizeQueryResult = RegQueryValueExW(
+    hKey,
+    'VirtualDesktopIDs',
+    null,
+    dataType,
+    null,
+    dataSize
+  );
+
+  debugLog('[getVirtualDesktopGUIDs] サイズクエリ結果:', {
+    result: sizeQueryResult,
+    dataType: dataType[0],
+    dataSize: dataSize[0],
+  });
+
+  if (sizeQueryResult !== 0 || dataSize[0] === 0) {
+    console.warn('[getVirtualDesktopGUIDs] VirtualDesktopIDs値が見つかりません');
+    return [false, 0, 0];
+  }
+
+  if (dataType[0] !== REG_BINARY) {
+    console.error(
+      `[getVirtualDesktopGUIDs] データ型が不正です。期待値: ${REG_BINARY}, 実際: ${dataType[0]}`
+    );
+    return [false, 0, 0];
+  }
+
+  if (dataSize[0] % 16 !== 0) {
+    console.error(`[getVirtualDesktopGUIDs] データサイズが16の倍数ではありません: ${dataSize[0]}`);
+    return [false, 0, 0];
+  }
+
+  return [true, dataSize[0], dataType[0]];
+}
+
+/**
+ * レジストリからバイナリデータを取得
+ * @param hKey - レジストリキーハンドル
+ * @param expectedSize - 期待されるデータサイズ
+ * @returns [成功フラグ, バッファ, 実際のデータサイズ]
+ */
+function _queryRegistryBinaryData(hKey: any, expectedSize: number): [boolean, Buffer, number] {
+  const bufferSize = expectedSize + 16; // 余裕を持たせる
+  const buffer = Buffer.alloc(bufferSize);
+  const actualDataSize = [bufferSize];
+  const actualDataType = [0];
+
+  buffer.fill(0);
+
+  const dataQueryResult = RegQueryValueExW(
+    hKey,
+    'VirtualDesktopIDs',
+    null,
+    actualDataType,
+    buffer,
+    actualDataSize
+  );
+
+  debugLog('[getVirtualDesktopGUIDs] データクエリ結果:', {
+    result: dataQueryResult,
+    actualDataSize: actualDataSize[0],
+    bufferLength: buffer.length,
+    expectedSize: expectedSize,
+  });
+
+  if (dataQueryResult !== 0) {
+    console.error(
+      `[getVirtualDesktopGUIDs] データの読み取りに失敗しました。エラーコード: ${dataQueryResult}`
+    );
+    return [false, buffer, 0];
+  }
+
+  const validDataSize = Math.min(actualDataSize[0], expectedSize);
+  return [true, buffer, validDataSize];
+}
+
+/**
+ * バイナリデータからGUID配列を抽出
+ * @param buffer - バイナリデータ
+ * @param dataSize - データサイズ
+ * @returns GUID文字列の配列
+ */
+function _parseGUIDsFromBuffer(buffer: Buffer, dataSize: number): string[] {
+  const guids: string[] = [];
+  for (let i = 0; i < dataSize; i += 16) {
+    if (i + 16 <= dataSize) {
+      const guidBytes = buffer.subarray(i, i + 16);
+      const guid = _bufferToGuidString(guidBytes);
+      guids.push(guid);
+      debugLog(`[getVirtualDesktopGUIDs] GUID ${guids.length}: ${guid}`);
+    }
+  }
+  debugLog(`[getVirtualDesktopGUIDs] ${guids.length}個のGUIDを取得しました`);
+  return guids;
+}
+
+/**
+ * レジストリから仮想デスクトップのGUID一覧を取得
+ * @returns GUID文字列の配列（失敗時は空配列）
+ */
+export function getVirtualDesktopGUIDs(): string[] {
+  const [openSuccess, hKey] = _openVirtualDesktopRegistryKey();
+  if (!openSuccess) {
     return [];
   }
 
   try {
-    // まずデータサイズを取得
-    const dataType = [0];
-    const dataSize = [0];
-    const sizeQueryResult = RegQueryValueExW(
-      hKey[0],
-      'VirtualDesktopIDs',
-      null,
-      dataType,
-      null,
-      dataSize
-    );
-
-    console.log('[getVirtualDesktopGUIDs] サイズクエリ結果:', {
-      result: sizeQueryResult,
-      dataType: dataType[0],
-      dataSize: dataSize[0],
-    });
-
-    if (sizeQueryResult !== 0 || dataSize[0] === 0) {
-      console.warn('[getVirtualDesktopGUIDs] VirtualDesktopIDs値が見つかりません');
+    const [sizeSuccess, dataSize] = _queryRegistryDataSize(hKey);
+    if (!sizeSuccess) {
       return [];
     }
 
-    if (dataType[0] !== REG_BINARY) {
-      console.error(
-        `[getVirtualDesktopGUIDs] データ型が不正です。期待値: ${REG_BINARY}, 実際: ${dataType[0]}`
-      );
+    const [dataSuccess, buffer, validDataSize] = _queryRegistryBinaryData(hKey, dataSize);
+    if (!dataSuccess) {
       return [];
     }
 
-    // 16バイトの倍数でない場合はエラー
-    if (dataSize[0] % 16 !== 0) {
-      console.error(
-        `[getVirtualDesktopGUIDs] データサイズが16の倍数ではありません: ${dataSize[0]}`
-      );
-      return [];
-    }
-
-    // データを取得（少し大きめのバッファを確保）
-    const bufferSize = dataSize[0] + 16; // 余裕を持たせる
-    const buffer = Buffer.alloc(bufferSize);
-    const actualDataSize = [bufferSize]; // バッファサイズを設定
-    const actualDataType = [0];
-
-    // バッファをゼロで初期化
-    buffer.fill(0);
-
-    const dataQueryResult = RegQueryValueExW(
-      hKey[0],
-      'VirtualDesktopIDs',
-      null,
-      actualDataType,
-      buffer,
-      actualDataSize
-    );
-
-    console.log('[getVirtualDesktopGUIDs] データクエリ結果:', {
-      result: dataQueryResult,
-      actualDataSize: actualDataSize[0],
-      bufferLength: buffer.length,
-      expectedSize: dataSize[0],
-    });
-
-    if (dataQueryResult !== 0) {
-      console.error(
-        `[getVirtualDesktopGUIDs] データの読み取りに失敗しました。エラーコード: ${dataQueryResult}`
-      );
-      return [];
-    }
-
-    // 実際に書き込まれたサイズを使用
-    const validDataSize = Math.min(actualDataSize[0], dataSize[0]);
-
-    // 16バイトずつ区切ってGUIDに変換
-    const guids: string[] = [];
-    for (let i = 0; i < validDataSize; i += 16) {
-      if (i + 16 <= validDataSize) {
-        const guidBytes = buffer.subarray(i, i + 16);
-        // GUIDフォーマット: {xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}
-        const guid = bufferToGuidString(guidBytes);
-        guids.push(guid);
-        console.log(`[getVirtualDesktopGUIDs] GUID ${guids.length}: ${guid}`);
-      }
-    }
-
-    console.log(`[getVirtualDesktopGUIDs] ${guids.length}個のGUIDを取得しました`);
-    return guids;
+    return _parseGUIDsFromBuffer(buffer, validDataSize);
   } finally {
-    RegCloseKey(hKey[0]);
+    RegCloseKey(hKey);
   }
 }
 
@@ -308,7 +360,7 @@ export function getVirtualDesktopGUIDs(): string[] {
  * @param buffer 16バイトのGUIDバイナリ
  * @returns GUID文字列（{xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}形式）
  */
-function bufferToGuidString(buffer: Buffer): string {
+function _bufferToGuidString(buffer: Buffer): string {
   if (buffer.length !== 16) {
     throw new Error('GUIDは16バイトである必要があります');
   }
@@ -454,7 +506,7 @@ export function moveWindowToVirtualDesktop(hwnd: number | bigint, desktopNumber:
     hwndValue = hwnd;
   }
 
-  console.log('[moveWindowToVirtualDesktop] デバッグ情報:', {
+  debugLog('[moveWindowToVirtualDesktop] デバッグ情報:', {
     hwnd: String(hwnd),
     hwndValue: String(hwndValue),
     hwndType: typeof hwndValue,
@@ -463,7 +515,7 @@ export function moveWindowToVirtualDesktop(hwnd: number | bigint, desktopNumber:
   });
 
   try {
-    console.log('[moveWindowToVirtualDesktop] 関数呼び出し前チェック:', {
+    debugLog('[moveWindowToVirtualDesktop] 関数呼び出し前チェック:', {
       MoveWindowToDesktopNumber: typeof MoveWindowToDesktopNumber,
       isFunction: typeof MoveWindowToDesktopNumber === 'function',
     });
@@ -472,7 +524,7 @@ export function moveWindowToVirtualDesktop(hwnd: number | bigint, desktopNumber:
     // この関数はウィンドウを指定デスクトップに移動するが、デスクトップ切り替えは行わない
     const result = MoveWindowToDesktopNumber(hwndValue, desktopIndex);
 
-    console.log('[moveWindowToVirtualDesktop] 実行結果:', result, '型:', typeof result);
+    debugLog('[moveWindowToVirtualDesktop] 実行結果:', result, '型:', typeof result);
 
     // 戻り値の型に応じて処理
     // bool型の場合: true/false
@@ -480,7 +532,7 @@ export function moveWindowToVirtualDesktop(hwnd: number | bigint, desktopNumber:
     const success = typeof result === 'boolean' ? result : result !== 0;
 
     if (success) {
-      console.log('[moveWindowToVirtualDesktop] ウィンドウ移動成功');
+      debugLog('[moveWindowToVirtualDesktop] ウィンドウ移動成功');
       return true;
     } else {
       console.error(`[moveWindowToVirtualDesktop] ウィンドウ移動失敗。戻り値: ${result}`);

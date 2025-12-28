@@ -1,6 +1,11 @@
 import React, { useEffect, useRef } from 'react';
 import { RawDataLine } from '@common/types';
 
+const MENU_DIMENSIONS = {
+  width: 200,
+  height: 150,
+} as const;
+
 interface EditModeContextMenuProps {
   isVisible: boolean;
   position: { x: number; y: number };
@@ -65,18 +70,15 @@ const EditModeContextMenu: React.FC<EditModeContextMenuProps> = ({
 
   // 画面外に出ないように位置を調整
   const getAdjustedPosition = () => {
-    const menuWidth = 200;
-    const menuHeight = 150;
-
     let adjustedX = position.x;
     let adjustedY = position.y;
 
-    if (position.x + menuWidth > window.innerWidth) {
-      adjustedX = position.x - menuWidth;
+    if (position.x + MENU_DIMENSIONS.width > window.innerWidth) {
+      adjustedX = position.x - MENU_DIMENSIONS.width;
     }
 
-    if (position.y + menuHeight > window.innerHeight) {
-      adjustedY = position.y - menuHeight;
+    if (position.y + MENU_DIMENSIONS.height > window.innerHeight) {
+      adjustedY = position.y - MENU_DIMENSIONS.height;
     }
 
     return { x: Math.max(0, adjustedX), y: Math.max(0, adjustedY) };
