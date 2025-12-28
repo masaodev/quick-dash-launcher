@@ -9,6 +9,7 @@ import type { RawDataLine, LauncherItem, DataFileTab } from '../types';
 
 import { parseCSVLine, escapeCSV } from './csvParser';
 import { parseWindowConfig, serializeWindowConfig } from './windowConfigUtils';
+import { parseWindowOperationDirective } from './directiveUtils';
 
 /**
  * フォルダ取込アイテムのオプション型定義
@@ -38,9 +39,18 @@ export interface RegisterItem {
   /** @deprecated windowConfigを使用してください */
   windowTitle?: string;
   windowConfig?: import('../types').WindowConfig;
-  itemCategory: 'item' | 'dir' | 'group';
+  itemCategory: 'item' | 'dir' | 'group' | 'window';
   dirOptions?: DirOptions;
   groupItemNames?: string[];
+  windowOperationConfig?: {
+    windowTitle: string;
+    x?: number;
+    y?: number;
+    width?: number;
+    height?: number;
+    virtualDesktopNumber?: number;
+    activateWindow?: boolean;
+  };
 }
 
 /**
@@ -180,7 +190,28 @@ export async function convertRawDataLineToRegisterItem(
     // ディレクティブの種類を判定
     const trimmedContent = line.content.trim();
 
-    if (trimmedContent.startsWith('group,')) {
+    if (trimmedContent.startsWith('window,')) {
+      // ウィンドウ操作アイテム行の場合：window,表示名,ウィンドウタイトル,x,y,width,height,virtualDesktopNumber,activateWindow
+      const windowOp = parseWindowOperationDirective(line);
+
+      return {
+        name: windowOp.name,
+        path: '',
+        type: 'app',
+        targetTab: defaultTab,
+        targetFile: line.sourceFile,
+        itemCategory: 'window',
+        windowOperationConfig: {
+          windowTitle: windowOp.windowTitle,
+          x: windowOp.x,
+          y: windowOp.y,
+          width: windowOp.width,
+          height: windowOp.height,
+          virtualDesktopNumber: windowOp.virtualDesktopNumber,
+          activateWindow: windowOp.activateWindow,
+        },
+      };
+    } else if (trimmedContent.startsWith('group,')) {
       // グループアイテム行の場合：group,グループ名,アイテム1,アイテム2,...
       const parts = parseCSVLine(line.content);
       const groupName = parts[1] || '';
@@ -255,6 +286,25 @@ export function convertRegisterItemToRawDataLine(
     newType = 'directive';
     const itemNames = item.groupItemNames || [];
     newContent = `group,${item.name},${itemNames.join(',')}`;
+  } else if (item.itemCategory === 'window') {
+    // ウィンドウ操作アイテムの場合：window,表示名,ウィンドウタイトル,x,y,width,height,virtualDesktopNumber,activateWindow
+    newType = 'directive';
+    const cfg = item.windowOperationConfig;
+    if (!cfg) throw new Error('windowOperationConfig is required for window items');
+
+    const fields = [
+      'window',
+      item.name,
+      cfg.windowTitle,
+      cfg.x?.toString() || '',
+      cfg.y?.toString() || '',
+      cfg.width?.toString() || '',
+      cfg.height?.toString() || '',
+      cfg.virtualDesktopNumber?.toString() || '',
+      cfg.activateWindow === undefined ? '' : cfg.activateWindow.toString(),
+    ];
+
+    newContent = fields.join(',');
   } else {
     // アイテム行の場合：名前,パス,引数,カスタムアイコン,ウィンドウ設定 の形式
     // CSVエスケープを適用

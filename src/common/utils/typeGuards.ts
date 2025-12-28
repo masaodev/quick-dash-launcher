@@ -9,6 +9,7 @@ import type {
   GroupItem,
   LauncherItem,
   WindowInfo,
+  WindowOperationItem,
   WorkspaceItem,
   DragItemData,
 } from '../types';
@@ -44,7 +45,7 @@ export function isWindowInfo(item: AppItem): item is WindowInfo {
  * }
  */
 export function isLauncherItem(item: AppItem): item is LauncherItem {
-  return !isWindowInfo(item) && item.type !== 'group';
+  return !isWindowInfo(item) && item.type !== 'group' && item.type !== 'windowOperation';
 }
 
 /**
@@ -62,6 +63,23 @@ export function isLauncherItem(item: AppItem): item is LauncherItem {
  */
 export function isGroupItem(item: AppItem): item is GroupItem {
   return !isWindowInfo(item) && item.type === 'group';
+}
+
+/**
+ * WindowOperationItemかどうかを判定する型ガード
+ *
+ * @param item - 判定対象のAppItem
+ * @returns WindowOperationItemの場合true
+ *
+ * @example
+ * const item: AppItem = getItem();
+ * if (isWindowOperationItem(item)) {
+ *   // ここではitemはWindowOperationItem型として扱われる
+ *   console.log(item.windowTitle);
+ * }
+ */
+export function isWindowOperationItem(item: AppItem): item is WindowOperationItem {
+  return !isWindowInfo(item) && item.type === 'windowOperation';
 }
 
 /**

@@ -8,8 +8,9 @@ import {
   RawDataLine,
   SearchMode,
   WindowInfo,
+  WindowOperationItem,
 } from '../common/types';
-import { isWindowInfo, isGroupItem } from '../common/utils/typeGuards';
+import { isWindowInfo, isGroupItem, isWindowOperationItem } from '../common/utils/typeGuards';
 
 import SearchBox from './components/SearchBox';
 import ItemList from './components/ItemList';
@@ -133,9 +134,11 @@ const App: React.FC = () => {
           await addHistoryEntry(searchQuery.trim());
         }
 
-        // グループかどうかで処理を分岐
+        // アイテムの種類で処理を分岐
         if (isGroupItem(item)) {
           await window.electronAPI.executeGroup(item, mainItems);
+        } else if (isWindowOperationItem(item)) {
+          await window.electronAPI.executeWindowOperation(item);
         } else {
           await window.electronAPI.openItem(item as LauncherItem);
         }
@@ -235,13 +238,13 @@ const App: React.FC = () => {
 
     // Load cached icons (LauncherItemのみ)
     const launcherItems = items.filter(
-      (item) => !isWindowInfo(item) && !isGroupItem(item)
+      (item) => !isWindowInfo(item) && !isGroupItem(item) && !isWindowOperationItem(item)
     ) as LauncherItem[];
     const iconCache = await window.electronAPI.loadCachedIcons(launcherItems);
 
     // Apply cached icons to items
     const itemsWithIcons = items.map((item) => {
-      if (isWindowInfo(item) || isGroupItem(item)) {
+      if (isWindowInfo(item) || isGroupItem(item) || isWindowOperationItem(item)) {
         return item;
       }
       return {
@@ -327,6 +330,29 @@ const App: React.FC = () => {
           // グループアイテムの編集の場合
           const itemNames = item.groupItemNames || [];
           const newContent = `group,${item.name},${itemNames.join(',')}`;
+
+          // RawDataLineとして更新
+          await window.electronAPI.updateRawLine({
+            sourceFile: editingItem.sourceFile,
+            lineNumber: editingItem.lineNumber,
+            newContent: newContent,
+          });
+        } else if (editingItem.type === 'directive' && item.itemCategory === 'window') {
+          // ウィンドウ操作アイテムの編集の場合
+          const cfg = item.windowOperationConfig;
+          if (!cfg) throw new Error('windowOperationConfig is required for window items');
+
+          const fields = [
+            'window',
+            cfg.windowTitle,
+            cfg.x?.toString() || '',
+            cfg.y?.toString() || '',
+            cfg.width?.toString() || '',
+            cfg.height?.toString() || '',
+            cfg.virtualDesktopNumber?.toString() || '',
+            cfg.activateWindow === undefined ? '' : cfg.activateWindow.toString(),
+          ];
+          const newContent = fields.join(',');
 
           // RawDataLineとして更新
           await window.electronAPI.updateRawLine({
@@ -429,6 +455,31 @@ const App: React.FC = () => {
         content: `group,${groupItem.name},${groupItem.itemNames.join(',')}`,
         type: 'directive',
         sourceFile: groupItem.sourceFile || 'data.txt',
+        customIcon: undefined,
+      };
+      openEditModal(rawDataLine);
+      return;
+    }
+
+    // WindowOperationItemの場合
+    if (isWindowOperationItem(item)) {
+      const windowOp = item;
+      const fields = [
+        'window',
+        windowOp.name,
+        windowOp.windowTitle,
+        windowOp.x?.toString() || '',
+        windowOp.y?.toString() || '',
+        windowOp.width?.toString() || '',
+        windowOp.height?.toString() || '',
+        windowOp.virtualDesktopNumber?.toString() || '',
+        windowOp.activateWindow === undefined ? '' : windowOp.activateWindow.toString(),
+      ];
+      const rawDataLine: RawDataLine = {
+        lineNumber: windowOp.lineNumber || 1,
+        content: fields.join(','),
+        type: 'directive',
+        sourceFile: windowOp.sourceFile || 'data.txt',
         customIcon: undefined,
       };
       openEditModal(rawDataLine);

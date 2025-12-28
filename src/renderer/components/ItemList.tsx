@@ -1,8 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { PathUtils } from '@common/utils/pathUtils';
-import { isLauncherItem } from '@common/utils/typeGuards';
+import { isLauncherItem, isWindowOperationItem } from '@common/utils/typeGuards';
 
-import { LauncherItem, GroupItem, AppItem, WindowInfo } from '../../common/types';
+import {
+  LauncherItem,
+  GroupItem,
+  AppItem,
+  WindowInfo,
+  WindowOperationItem,
+} from '../../common/types';
 
 import ContextMenu from './ContextMenu';
 
@@ -76,6 +82,8 @@ const ItemList: React.FC<ItemListProps> = ({
         return '🔗';
       case 'group':
         return '📦';
+      case 'windowOperation':
+        return '🪟';
       default:
         return '❓';
     }
@@ -110,6 +118,51 @@ const ItemList: React.FC<ItemListProps> = ({
       // 行番号情報
       if (groupItem.lineNumber) {
         lines.push(`行番号: ${groupItem.lineNumber}`);
+      }
+
+      return lines.join('\n');
+    }
+
+    // WindowOperationItemの場合
+    if (item.type === 'windowOperation') {
+      const windowOp = item as WindowOperationItem;
+      const lines: string[] = [];
+      lines.push(`ウィンドウタイトル: ${windowOp.windowTitle}`);
+
+      // 空行
+      lines.push('');
+
+      // 位置・サイズ情報
+      if (windowOp.x !== undefined && windowOp.y !== undefined) {
+        lines.push(`位置: (${windowOp.x}, ${windowOp.y})`);
+      }
+      if (windowOp.width !== undefined && windowOp.height !== undefined) {
+        lines.push(`サイズ: ${windowOp.width}x${windowOp.height}`);
+      }
+
+      // 仮想デスクトップ情報
+      if (windowOp.virtualDesktopNumber !== undefined) {
+        lines.push(`仮想デスクトップ: ${windowOp.virtualDesktopNumber}`);
+      }
+
+      // アクティブ化フラグ
+      if (windowOp.activateWindow === false) {
+        lines.push(`アクティブ化: しない`);
+      }
+
+      // 空行（メタ情報との区切り）
+      if (windowOp.sourceFile || windowOp.lineNumber) {
+        lines.push('');
+      }
+
+      // ソースファイル情報
+      if (windowOp.sourceFile) {
+        lines.push(`データファイル: ${windowOp.sourceFile}`);
+      }
+
+      // 行番号情報
+      if (windowOp.lineNumber) {
+        lines.push(`行番号: ${windowOp.lineNumber}`);
       }
 
       return lines.join('\n');
@@ -209,17 +262,26 @@ const ItemList: React.FC<ItemListProps> = ({
       {items.map((item, index) => {
         const isWindow = 'hwnd' in item;
         const isGroup = !isWindow && item.type === 'group';
+        const isWindowOperation = !isWindow && item.type === 'windowOperation';
         const itemName = isWindow
           ? (item as WindowInfo).title
-          : (item as LauncherItem | GroupItem).name;
+          : isWindowOperation
+            ? (item as WindowOperationItem).name
+            : (item as LauncherItem | GroupItem).name;
 
         return (
           <div
-            key={isWindow ? `window-${(item as WindowInfo).hwnd}` : `${itemName}-${index}`}
+            key={
+              isWindow
+                ? `window-${(item as WindowInfo).hwnd}`
+                : isWindowOperation
+                  ? `windowop-${itemName}-${index}`
+                  : `${itemName}-${index}`
+            }
             ref={(el) => {
               itemRefs.current[index] = el;
             }}
-            className={`item ${index === selectedIndex ? 'selected' : ''} ${isGroup ? 'group-item' : ''} ${isWindow ? 'window-item' : ''}`}
+            className={`item ${index === selectedIndex ? 'selected' : ''} ${isGroup ? 'group-item' : ''} ${isWindow ? 'window-item' : ''} ${isWindowOperation ? 'window-operation-item' : ''}`}
             onClick={() => {
               onItemSelect(index);
               onItemExecute(item);
@@ -229,7 +291,7 @@ const ItemList: React.FC<ItemListProps> = ({
             title={getTooltipText(item)}
           >
             <span className="item-icon">
-              {!isGroup && !isWindow && (item as LauncherItem).icon ? (
+              {!isGroup && !isWindow && !isWindowOperation && (item as LauncherItem).icon ? (
                 <img src={(item as LauncherItem).icon} alt="" width="24" height="24" />
               ) : isWindow && (item as WindowInfo).icon ? (
                 <img src={(item as WindowInfo).icon} alt="" width="24" height="24" />

@@ -85,3 +85,60 @@ export function parseDirDirective(line: RawDataLine): {
 
   return { dirPath, options };
 }
+
+/**
+ * ウィンドウ操作ディレクティブかどうかを判定する
+ *
+ * @param line - 判定対象のRawDataLine
+ * @returns ウィンドウ操作ディレクティブの場合true
+ *
+ * @example
+ * const line = { type: 'directive', content: 'window,Chrome,100,100,1920,1080' };
+ * isWindowOperationDirective(line); // true
+ */
+export function isWindowOperationDirective(line: RawDataLine): boolean {
+  return line.type === 'directive' && line.content.trim().startsWith('window,');
+}
+
+/**
+ * ウィンドウ操作ディレクティブを解析する
+ *
+ * @param line - 解析対象のRawDataLine
+ * @returns ウィンドウタイトルと位置・サイズ情報
+ *
+ * @example
+ * const line = { type: 'directive', content: 'window,Chrome,100,100,1920,1080,1,true' };
+ * parseWindowOperationDirective(line);
+ * // {
+ * //   windowTitle: 'Chrome',
+ * //   x: 100,
+ * //   y: 100,
+ * //   width: 1920,
+ * //   height: 1080,
+ * //   virtualDesktopNumber: 1,
+ * //   activateWindow: true
+ * // }
+ */
+export function parseWindowOperationDirective(line: RawDataLine): {
+  name: string;
+  windowTitle: string;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  virtualDesktopNumber?: number;
+  activateWindow?: boolean;
+} {
+  const parts = parseCSVLine(line.content);
+
+  return {
+    name: parts[1] || '',
+    windowTitle: parts[2] || '',
+    x: parts[3] ? parseInt(parts[3], 10) : undefined,
+    y: parts[4] ? parseInt(parts[4], 10) : undefined,
+    width: parts[5] ? parseInt(parts[5], 10) : undefined,
+    height: parts[6] ? parseInt(parts[6], 10) : undefined,
+    virtualDesktopNumber: parts[7] ? parseInt(parts[7], 10) : undefined,
+    activateWindow: parts[8] === undefined ? undefined : parts[8] === 'true',
+  };
+}
