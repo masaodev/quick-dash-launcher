@@ -154,6 +154,45 @@ const EditModeView: React.FC<EditModeViewProps> = ({
     setHasUnsavedChanges(true);
   };
 
+  const handleDuplicateLines = (linesToDuplicate: RawDataLine[]) => {
+    // 1. 複製対象行を行番号でソート（挿入位置を正しく計算するため）
+    const sortedLines = [...linesToDuplicate].sort((a, b) => a.lineNumber - b.lineNumber);
+
+    // 2. 最後の行の次に挿入する位置を特定
+    const lastLine = sortedLines[sortedLines.length - 1];
+    const insertAfterIndex = workingLines.findIndex(
+      (line) => line.sourceFile === lastLine.sourceFile && line.lineNumber === lastLine.lineNumber
+    );
+
+    if (insertAfterIndex === -1) {
+      console.error('挿入位置の特定に失敗しました');
+      return;
+    }
+
+    // 3. 複製行を作成（行番号は仮の値を設定）
+    const duplicatedLines = sortedLines.map((line) => ({
+      ...line,
+      lineNumber: -1, // 後でreorderLineNumbersで振り直される
+    }));
+
+    // 4. workingLinesに挿入
+    const updatedLines = [
+      ...workingLines.slice(0, insertAfterIndex + 1),
+      ...duplicatedLines,
+      ...workingLines.slice(insertAfterIndex + 1),
+    ];
+
+    // 5. 行番号を振り直し
+    const reorderedLines = reorderLineNumbers(updatedLines);
+
+    // 6. 状態を更新
+    setWorkingLines(reorderedLines);
+    setHasUnsavedChanges(true);
+
+    // 7. 選択状態をクリア
+    setSelectedItems(new Set());
+  };
+
   const handleAddLine = () => {
     const newLine: RawDataLine = {
       lineNumber: 1,
@@ -630,6 +669,7 @@ const EditModeView: React.FC<EditModeViewProps> = ({
         onSelectAll={handleSelectAll}
         onDeleteLines={handleDeleteLines}
         onEditClick={handleEditItem}
+        onDuplicateLines={handleDuplicateLines}
       />
 
       <div className="edit-mode-status">

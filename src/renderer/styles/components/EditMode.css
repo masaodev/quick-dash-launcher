@@ -768,6 +768,7 @@
 .raw-item-row {
   height: 40px;
   background-color: var(--color-white);
+  cursor: context-menu;
 }
 
 .raw-item-row:hover {

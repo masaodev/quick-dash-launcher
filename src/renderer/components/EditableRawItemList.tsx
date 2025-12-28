@@ -6,6 +6,7 @@ import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { RawDataLine, LauncherItem } from '../../common/types';
 
 import ConfirmDialog from './ConfirmDialog';
+import EditModeContextMenu from './EditModeContextMenu';
 
 interface EditableRawItemListProps {
   rawLines: RawDataLine[];
@@ -15,6 +16,7 @@ interface EditableRawItemListProps {
   onSelectAll: (selected: boolean) => void;
   onDeleteLines: (lines: RawDataLine[]) => void;
   onEditClick: (line: RawDataLine) => void;
+  onDuplicateLines: (lines: RawDataLine[]) => void;
 }
 
 const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
@@ -25,9 +27,21 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
   onSelectAll,
   onDeleteLines,
   onEditClick,
+  onDuplicateLines,
 }) => {
   const [editingCell, setEditingCell] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState('');
+
+  // コンテキストメニュー状態管理
+  const [contextMenu, setContextMenu] = useState<{
+    isVisible: boolean;
+    position: { x: number; y: number };
+    selectedLines: RawDataLine[];
+  }>({
+    isVisible: false,
+    position: { x: 0, y: 0 },
+    selectedLines: [],
+  });
 
   // アイコンキャッシュ: Map<行番号, base64データURL>
   const [itemIcons, setItemIcons] = useState<Map<number, string>>(new Map());
@@ -99,6 +113,37 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
   }, [rawLines]);
 
   const getLineKey = (line: RawDataLine) => `${line.sourceFile}_${line.lineNumber}`;
+
+  const handleContextMenu = (event: React.MouseEvent, line: RawDataLine) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const lineKey = getLineKey(line);
+    let linesToShow: RawDataLine[];
+
+    // 右クリックした行が選択されていない場合、その行だけを選択
+    if (selectedItems.has(lineKey)) {
+      // 既に選択されている場合、全選択行を対象
+      linesToShow = rawLines.filter((l) => selectedItems.has(getLineKey(l)));
+    } else {
+      // 選択されていない場合、その行のみを対象
+      linesToShow = [line];
+    }
+
+    setContextMenu({
+      isVisible: true,
+      position: { x: event.clientX, y: event.clientY },
+      selectedLines: linesToShow,
+    });
+  };
+
+  const handleCloseContextMenu = () => {
+    setContextMenu({
+      isVisible: false,
+      position: { x: 0, y: 0 },
+      selectedLines: [],
+    });
+  };
 
   const handleCellEdit = (line: RawDataLine) => {
     const cellKey = getLineKey(line);
@@ -562,6 +607,7 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
               <tr
                 key={lineKey}
                 className={`raw-item-row ${isSelected ? 'selected' : ''} ${line.type}`}
+                onContextMenu={(e) => handleContextMenu(e, line)}
               >
                 <td className="checkbox-column">
                   <input
@@ -611,6 +657,16 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
       </table>
 
       {rawLines.length === 0 && <div className="no-items">データファイルに行がありません</div>}
+
+      <EditModeContextMenu
+        isVisible={contextMenu.isVisible}
+        position={contextMenu.position}
+        selectedLines={contextMenu.selectedLines}
+        onClose={handleCloseContextMenu}
+        onDuplicate={onDuplicateLines}
+        onEdit={onEditClick}
+        onDelete={onDeleteLines}
+      />
 
       <ConfirmDialog
         isOpen={confirmDialog.isOpen}
