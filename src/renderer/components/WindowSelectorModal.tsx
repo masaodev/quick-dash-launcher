@@ -96,7 +96,8 @@ const WindowSelectorModal: React.FC<WindowSelectorModalProps> = ({ isOpen, onClo
       if (isModalFocused) {
         const activeElement = document.activeElement as HTMLElement;
         const isInputField =
-          activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
+          activeElement &&
+          (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
 
         if (isInputField) {
           // 入力フィールドでの通常の編集キーは許可

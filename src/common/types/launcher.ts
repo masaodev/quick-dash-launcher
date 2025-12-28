@@ -15,6 +15,10 @@ export interface WindowConfig {
   width?: number;
   /** 高さ（省略時はサイズ変更なし） */
   height?: number;
+  /** 仮想デスクトップ番号（1から開始、省略時は移動なし、Windows 10以降） */
+  virtualDesktopNumber?: number;
+  /** ウィンドウをアクティブにするかどうか（省略時はtrue） */
+  activateWindow?: boolean;
 }
 
 /**

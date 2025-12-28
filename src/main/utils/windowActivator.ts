@@ -9,6 +9,7 @@ import { WindowConfig } from '@common/types';
 
 import { findWindowByTitle } from './windowMatcher.js';
 import { activateWindow, restoreWindow, setWindowBounds } from './nativeWindowControl.js';
+import { moveWindowToVirtualDesktop } from './virtualDesktopControl.js';
 
 /**
  * ウィンドウアクティブ化の結果
@@ -74,6 +75,34 @@ export function tryActivateWindow(
   // 最小化されている場合は復元
   restoreWindow(hwnd);
 
+  // 仮想デスクトップへの移動（指定されている場合）
+  if (effectiveConfig.virtualDesktopNumber !== undefined) {
+    const desktopMoveSuccess = moveWindowToVirtualDesktop(
+      hwnd,
+      effectiveConfig.virtualDesktopNumber
+    );
+
+    if (desktopMoveSuccess) {
+      logger.info(
+        {
+          name: itemName,
+          windowConfig: JSON.stringify(effectiveConfig),
+          desktopNumber: effectiveConfig.virtualDesktopNumber,
+        },
+        '仮想デスクトップに移動しました'
+      );
+    } else {
+      logger.warn(
+        {
+          name: itemName,
+          windowConfig: JSON.stringify(effectiveConfig),
+          desktopNumber: effectiveConfig.virtualDesktopNumber,
+        },
+        '仮想デスクトップへの移動に失敗しました'
+      );
+    }
+  }
+
   // ウィンドウの位置・サイズを設定（指定されている場合）
   if (
     effectiveConfig.x !== undefined ||
@@ -96,7 +125,17 @@ export function tryActivateWindow(
     }
   }
 
-  // ウィンドウをアクティブ化
+  // ウィンドウをアクティブ化（activateWindowがfalseの場合はスキップ）
+  const shouldActivate = effectiveConfig.activateWindow !== false; // undefined または true の場合はアクティブ化
+
+  if (!shouldActivate) {
+    logger.info(
+      { name: itemName, windowConfig: JSON.stringify(effectiveConfig) },
+      'activateWindow=falseのため、ウィンドウのアクティブ化をスキップしました'
+    );
+    return { activated: true, windowFound: true }; // ウィンドウ検索・設定は成功
+  }
+
   const success = activateWindow(hwnd);
 
   if (success) {

@@ -82,7 +82,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
 
   // items配列の長さが変わったときにオプション開閉状態を初期化
   useEffect(() => {
-    setOptionsSectionOpen(items.map(() => false));
+    setOptionsSectionOpen(items.map(() => true));
   }, [items.length]);
 
   useEffect(() => {
@@ -453,7 +453,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                             {optionsSectionOpen[index] ? '▼' : '▶'}
                           </span>
                           {item.itemCategory === 'item'
-                            ? 'オプション設定'
+                            ? 'オプション設定（引数・アイコン）'
                             : 'フォルダ取り込みオプション'}
                         </button>
 
@@ -478,14 +478,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                                   onSelectClick={() => openCustomIconPicker(index)}
                                   onDeleteClick={() => onCustomIconDeleted(index)}
                                 />
-
-                                <WindowConfigEditor
-                                  windowConfig={item.windowConfig}
-                                  onChange={(windowConfig) =>
-                                    handleItemChange(index, 'windowConfig', windowConfig)
-                                  }
-                                  onGetWindowClick={() => openWindowSelector(index)}
-                                />
                               </>
                             )}
 
@@ -500,6 +492,17 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                           </div>
                         )}
                       </div>
+                    )}
+
+                    {/* ウィンドウ切り替え設定（並列に配置） */}
+                    {item.itemCategory === 'item' && (
+                      <WindowConfigEditor
+                        windowConfig={item.windowConfig}
+                        onChange={(windowConfig) =>
+                          handleItemChange(index, 'windowConfig', windowConfig)
+                        }
+                        onGetWindowClick={() => openWindowSelector(index)}
+                      />
                     )}
 
                     {/* グループの場合はカスタムアイコンのみ表示 */}

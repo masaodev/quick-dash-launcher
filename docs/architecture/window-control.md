@@ -387,6 +387,68 @@ Slack (右半分),slack://,,,"{""title"":""Slack"",""x"":960,""y"":0,""width"":9
 
 詳細は **[アイテム登録・編集モーダル - ウィンドウ設定](../screens/register-modal.md#45-ウィンドウ設定を入力)** を参照してください。
 
+### 仮想デスクトップ移動機能
+
+**概要:**
+Windows 10以降で利用可能な仮想デスクトップ機能を使用して、ウィンドウを指定されたデスクトップに移動できます。
+
+**対応OS:**
+- Windows 10（ビルド10240以降）
+- Windows 11
+
+**動作仕様:**
+1. `virtualDesktopNumber`フィールドに移動先のデスクトップ番号を指定（1から開始）
+2. ウィンドウが見つかった場合、位置・サイズ調整の前に仮想デスクトップに移動
+3. **現在のデスクトップは変更されません**（移動前のデスクトップに自動的に戻ります）
+4. デスクトップ番号が範囲外の場合、警告ログを出力して移動をスキップ
+
+**使用例:**
+```
+// デスクトップ2にウィンドウを移動
+VSCode,code.exe,,,"{""title"":""Visual Studio Code"",""virtualDesktopNumber"":2}"
+
+// デスクトップ3に移動し、位置・サイズも調整
+Chrome,chrome.exe,,,"{""title"":""Google Chrome"",""virtualDesktopNumber"":3,""x"":100,""y"":100,""width"":1600,""height"":900}"
+
+// デスクトップ1（左半分）+ デスクトップ2（右半分）で画面分割
+VSCode (Desktop1),code.exe,,,"{""title"":""Visual Studio Code"",""virtualDesktopNumber"":1,""x"":0,""y"":0,""width"":960,""height"":1080}"
+Chrome (Desktop2),chrome.exe,,,"{""title"":""Google Chrome"",""virtualDesktopNumber"":2,""x"":0,""y"":0,""width"":960,""height"":1080}"
+```
+
+**技術実装:**
+- VirtualDesktopAccessor.dll（C++版、skottmckayフォーク）を使用
+- koffiライブラリでネイティブDLL呼び出し
+- レジストリから仮想デスクトップGUID一覧を取得し、番号からGUIDに変換
+
+詳細は **[src/main/utils/virtualDesktopControl.ts](../../src/main/utils/virtualDesktopControl.ts)** を参照してください。
+
+### ウィンドウアクティブ化制御
+
+**概要:**
+ウィンドウをアクティブ化（前面に表示）するかどうかを制御できます。
+
+**動作仕様:**
+- `activateWindow`フィールドで制御（省略時は`true`）
+- `true`: ウィンドウをアクティブ化（前面に表示）【デフォルト】
+- `false`: 位置・サイズ調整や仮想デスクトップ移動のみ実行、アクティブ化しない
+
+**ユースケース:**
+- バックグラウンドでウィンドウを準備したい場合
+- 位置調整のみ行い、現在の作業を中断したくない場合
+- 複数ウィンドウを順次配置する際、最後のウィンドウのみアクティブ化したい場合
+
+**使用例:**
+```
+// 位置・サイズ調整のみ実行（アクティブ化しない）
+Slack (Background),slack://,,,"{""title"":""Slack"",""x"":960,""y"":0,""width"":960,""height"":1080,""activateWindow"":false}"
+
+// 仮想デスクトップ移動のみ実行（アクティブ化しない）
+Teams,teams://,,,"{""title"":""Teams"",""virtualDesktopNumber"":2,""activateWindow"":false}"
+
+// 明示的にアクティブ化を指定（デフォルトと同じ）
+Chrome,chrome.exe,,,"{""title"":""Google Chrome"",""activateWindow"":true}"
+```
+
 ### 後方互換性
 
 既存の`windowTitle`文字列形式は引き続きサポートされます。アプリケーション内部では自動的に`WindowConfig`形式に変換されます。

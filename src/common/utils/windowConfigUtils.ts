@@ -46,11 +46,14 @@ export function parseWindowConfig(value: string | undefined): WindowConfig | nul
         title: parsed.title,
       };
 
-      // オプションフィールドのパース（数値型のみ）
+      // オプションフィールドのパース
       if (typeof parsed.x === 'number') config.x = parsed.x;
       if (typeof parsed.y === 'number') config.y = parsed.y;
       if (typeof parsed.width === 'number') config.width = parsed.width;
       if (typeof parsed.height === 'number') config.height = parsed.height;
+      if (typeof parsed.virtualDesktopNumber === 'number')
+        config.virtualDesktopNumber = parsed.virtualDesktopNumber;
+      if (typeof parsed.activateWindow === 'boolean') config.activateWindow = parsed.activateWindow;
 
       return config;
     } catch (error) {
@@ -85,17 +88,19 @@ export function serializeWindowConfig(config: WindowConfig | undefined): string 
     return '';
   }
 
-  // 位置・サイズ情報がない場合は、文字列形式（後方互換）
+  // 位置・サイズ・仮想デスクトップ・アクティブ化情報がない場合は、文字列形式（後方互換）
   if (
     config.x === undefined &&
     config.y === undefined &&
     config.width === undefined &&
-    config.height === undefined
+    config.height === undefined &&
+    config.virtualDesktopNumber === undefined &&
+    config.activateWindow === undefined
   ) {
     return config.title;
   }
 
-  // 位置・サイズ情報がある場合は、JSON形式
+  // 位置・サイズ・仮想デスクトップ・アクティブ化情報がある場合は、JSON形式
   return JSON.stringify(config);
 }
 
