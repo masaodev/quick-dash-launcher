@@ -27,7 +27,7 @@ export default defineConfig({
               fileName: () => 'main.js',
             },
             rollupOptions: {
-              external: ['electron', 'electron-store', 'koffi'],
+              external: ['electron', 'electron-store', 'koffi', 'extract-file-icon'],
               output: {
                 format: 'cjs',
                 inlineDynamicImports: true,
