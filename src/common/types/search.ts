@@ -24,5 +24,6 @@ export interface SearchHistoryState {
  * 検索モードを表す型
  * normal: 通常のアイテム検索モード
  * window: ウィンドウ検索モード
+ * history: 実行履歴検索モード
  */
-export type SearchMode = 'normal' | 'window';
+export type SearchMode = 'normal' | 'window' | 'history';

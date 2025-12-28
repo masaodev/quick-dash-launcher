@@ -23,7 +23,9 @@ export function useKeyboardShortcuts(
   setSearchQuery: (query: string) => void,
   handleExecuteItem: (item: AppItem) => Promise<void>,
   searchMode: SearchMode,
-  windowList: WindowInfo[]
+  windowList: WindowInfo[],
+  historyItems: AppItem[],
+  toggleSearchMode: () => Promise<void>
 ) {
   /**
    * アクティブなタブに基づいてアイテムをフィルタリング（キーハンドラ用）
@@ -50,13 +52,16 @@ export function useKeyboardShortcuts(
    * キーボードイベントハンドラ
    */
   const handleKeyDown = async (e: React.KeyboardEvent) => {
-    // タブ切り替え (Tab/Shift+Tab) - ウィンドウモードでは無効化
-    if (e.key === 'Tab' && searchMode === 'window') {
+    // Shift+Tab: ウィンドウ検索モード切り替え（最優先）
+    if (e.key === 'Tab' && e.shiftKey) {
       e.preventDefault();
+      e.stopPropagation();
+      await toggleSearchMode();
       return;
     }
 
-    if (e.key === 'Tab' && showDataFileTabs && dataFileTabs.length > 1) {
+    // Tab: タブ切り替え（通常モード時のみ、複数タブがある場合）
+    if (e.key === 'Tab' && searchMode === 'normal' && showDataFileTabs && dataFileTabs.length > 1) {
       e.preventDefault();
       e.stopPropagation();
 
@@ -71,14 +76,8 @@ export function useKeyboardShortcuts(
         return;
       }
 
-      let newTabIndex: number;
-      if (e.shiftKey) {
-        // Shift+Tab: 前のタブへ
-        newTabIndex = currentTabIndex > 0 ? currentTabIndex - 1 : dataFileTabs.length - 1;
-      } else {
-        // Tab: 次のタブへ
-        newTabIndex = currentTabIndex < dataFileTabs.length - 1 ? currentTabIndex + 1 : 0;
-      }
+      // Tab: 次のタブへ
+      const newTabIndex = currentTabIndex < dataFileTabs.length - 1 ? currentTabIndex + 1 : 0;
 
       const newTab = dataFileTabs[newTabIndex];
       setActiveTab(newTab.files[0]);
@@ -86,9 +85,19 @@ export function useKeyboardShortcuts(
       return;
     }
 
+    // ウィンドウモードまたは履歴モードでTabキーが押された場合は無効化
+    if (e.key === 'Tab' && (searchMode === 'window' || searchMode === 'history')) {
+      e.preventDefault();
+      return;
+    }
+
     // 各キー処理で最新のfilteredItemsを計算
     const tabFilteredItems =
-      searchMode === 'window' ? windowList : getTabFilteredItemsForKeyHandler();
+      searchMode === 'window'
+        ? windowList
+        : searchMode === 'history'
+          ? historyItems
+          : getTabFilteredItemsForKeyHandler();
     const filteredItems = filterItems(tabFilteredItems, searchQuery, searchMode);
 
     // 検索履歴のナビゲーション（Ctrl + 上下矢印）

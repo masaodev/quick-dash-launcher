@@ -25,6 +25,7 @@ import { filterItems } from './utils/dataParser';
 import { debugLog } from './utils/debug';
 import { useIconProgress } from './hooks/useIconProgress';
 import { useSearchHistory } from './hooks/useSearchHistory';
+import { useExecutionHistory } from './hooks/useExecutionHistory';
 import { useRegisterModal } from './hooks/useRegisterModal';
 import { useItemActions } from './hooks/useItemActions';
 import { useDataFileTabs } from './hooks/useDataFileTabs';
@@ -65,6 +66,7 @@ const App: React.FC = () => {
   const { progressState, resetProgress } = useIconProgress();
   const { navigateToPrevious, navigateToNext, resetNavigation, addHistoryEntry } =
     useSearchHistory();
+  const { executionHistory, loadHistory: loadExecutionHistory } = useExecutionHistory();
   const {
     isRegisterModalOpen,
     droppedPaths,
@@ -111,6 +113,27 @@ const App: React.FC = () => {
   const { handleRefreshAll, handleFetchMissingIcons, handleFetchMissingIconsCurrentTab } =
     useIconFetcher(mainItems, setMainItems, showDataFileTabs, activeTab, dataFileTabs);
 
+  // 検索モード切り替えハンドラー（順次切り替え: normal → window → history → normal...）
+  const handleToggleSearchMode = async () => {
+    if (searchMode === 'normal') {
+      // 通常モード → ウィンドウ検索モード
+      setSearchMode('window');
+      const windows = await window.electronAPI.getWindowList();
+      setWindowList(windows);
+      setSearchQuery(''); // 検索クエリをクリア
+    } else if (searchMode === 'window') {
+      // ウィンドウ検索モード → 実行履歴検索モード
+      setSearchMode('history');
+      setWindowList([]);
+      setSearchQuery(''); // 検索クエリをクリア
+    } else {
+      // 実行履歴検索モード → 通常モード
+      setSearchMode('normal');
+      setSearchQuery(''); // 検索クエリをクリア
+    }
+    setSelectedIndex(0); // 選択インデックスをリセット
+  };
+
   // handleExecuteItemを定義（useKeyboardShortcutsより前に必要）
   const handleExecuteItem = async (item: AppItem) => {
     try {
@@ -126,6 +149,13 @@ const App: React.FC = () => {
             type: 'error',
           });
         }
+      } else if (searchMode === 'history') {
+        // 履歴モード：選択された履歴アイテムを直接実行
+        if (isGroupItem(item)) {
+          await window.electronAPI.executeGroup(item, mainItems);
+        } else {
+          await window.electronAPI.openItem(item as LauncherItem);
+        }
       } else {
         // 通常モード（既存ロジック）
         // 検索クエリがある場合は履歴に追加
@@ -137,7 +167,14 @@ const App: React.FC = () => {
         if (isGroupItem(item)) {
           await window.electronAPI.executeGroup(item, mainItems);
         } else {
-          await window.electronAPI.openItem(item as LauncherItem);
+          const launcherItem = item as LauncherItem;
+          await window.electronAPI.openItem(launcherItem);
+
+          // 実行履歴に追加
+          await window.electronAPI.workspaceAPI.addExecutionHistory(launcherItem);
+
+          // 実行履歴を再読み込み
+          await loadExecutionHistory();
         }
       }
 
@@ -154,6 +191,18 @@ const App: React.FC = () => {
     }
   };
 
+  // 実行履歴エントリーをAppItem形式に変換（グループは除外）
+  const historyItems: AppItem[] = executionHistory
+    .filter((entry) => entry.itemType !== 'group')
+    .map((entry) => ({
+      name: entry.itemName,
+      path: entry.itemPath,
+      type: entry.itemType as 'url' | 'file' | 'folder' | 'app' | 'customUri',
+      icon: entry.icon,
+      args: entry.args,
+      sourceFile: 'history',
+    }));
+
   // キーボードショートカットフック
   const { handleKeyDown } = useKeyboardShortcuts(
     showDataFileTabs,
@@ -169,7 +218,9 @@ const App: React.FC = () => {
     setSearchQuery,
     handleExecuteItem,
     searchMode,
-    windowList
+    windowList,
+    historyItems,
+    handleToggleSearchMode
   );
 
   useEffect(() => {
@@ -476,7 +527,12 @@ const App: React.FC = () => {
   };
 
   const tabFilteredItems = getTabFilteredItems(mainItems);
-  const itemsToFilter = searchMode === 'window' ? windowList : tabFilteredItems;
+  const itemsToFilter =
+    searchMode === 'window'
+      ? windowList
+      : searchMode === 'history'
+        ? historyItems
+        : tabFilteredItems;
   const filteredItems = filterItems(itemsToFilter, searchQuery, searchMode);
 
   // 初回起動チェック中はローディング表示
@@ -498,6 +554,7 @@ const App: React.FC = () => {
             value={searchQuery}
             onChange={handleSearch}
             onKeyDown={handleKeyDown}
+            searchMode={searchMode}
           />
           <ActionButtons
             onReload={loadItems}
