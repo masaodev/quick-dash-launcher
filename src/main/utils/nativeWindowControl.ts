@@ -9,10 +9,11 @@ import * as os from 'os';
 import { WindowInfo } from '@common/types';
 import koffi from 'koffi';
 
-// user32.dllとkernel32.dll、gdiplus.dllをロード
+// user32.dll、kernel32.dll、gdiplus.dll、dwmapi.dllをロード
 const user32 = koffi.load('user32.dll');
 const kernel32 = koffi.load('kernel32.dll');
 const gdiplus = koffi.load('gdiplus.dll');
+const dwmapi = koffi.load('dwmapi.dll');
 
 // RECT構造体の定義
 const RECT = koffi.struct('RECT', {
@@ -40,6 +41,8 @@ const SetForegroundWindow = user32.func('SetForegroundWindow', 'bool', ['void*']
 const ShowWindow = user32.func('ShowWindow', 'bool', ['void*', 'int']);
 const SendMessageW = user32.func('SendMessageW', 'intptr', ['void*', 'uint32', 'intptr', 'intptr']);
 const GetClassLongPtrW = user32.func('GetClassLongPtrW', 'intptr', ['void*', 'int']);
+const GetWindowLongW = user32.func('GetWindowLongW', 'long', ['void*', 'int']);
+const GetWindow = user32.func('GetWindow', 'void*', ['void*', 'uint32']);
 const SetWindowPos = user32.func('SetWindowPos', 'bool', [
   'void*', // hWnd
   'void*', // hWndInsertAfter
@@ -58,6 +61,14 @@ const QueryFullProcessImageNameW = kernel32.func('QueryFullProcessImageNameW', '
   'uint32',
   'str16',
   koffi.out(koffi.pointer('uint32', 1)),
+]);
+
+// Win32 API関数の定義（dwmapi.dll）
+const DwmGetWindowAttribute = dwmapi.func('DwmGetWindowAttribute', 'long', [
+  'void*', // hwnd
+  'uint32', // dwAttribute
+  koffi.out(koffi.pointer('int', 1)), // pvAttribute
+  'uint32', // cbAttribute
 ]);
 
 // GDI+ API関数の定義
@@ -119,6 +130,13 @@ const GDI_STATUS_MESSAGES: Record<number, string> = {
 // 定数
 const SW_RESTORE = 9;
 const PROCESS_QUERY_LIMITED_INFORMATION = 0x1000;
+
+// Alt+Tabフィルタリング用の定数
+const GWL_EXSTYLE = -20; // 拡張ウィンドウスタイル取得用
+const WS_EX_TOOLWINDOW = 0x00000080; // ツールウィンドウ（タスクバーに表示しない）
+const WS_EX_APPWINDOW = 0x00040000; // アプリウィンドウ（強制的に表示）
+const GW_OWNER = 4; // オーナーウィンドウ取得用
+const DWMWA_CLOAKED = 14; // DWM クローキング状態取得用
 
 // SetWindowPos用フラグ
 const SWP_NOSIZE = 0x0001; // サイズ変更をスキップ
@@ -294,6 +312,58 @@ export function getExecutablePathFromProcessId(processId: number): string | unde
 }
 
 /**
+ * Alt+Tabに表示されるウィンドウかどうかを判定
+ * Windowsの標準動作と同じフィルタリングを行う
+ *
+ * @param hwnd ウィンドウハンドル
+ * @returns Alt+Tabに表示される場合true
+ *
+ * 判定ロジック:
+ * - クローキング（Cloaked）されていない
+ * - WS_EX_TOOLWINDOWを持たない かつ オーナーウィンドウがない（通常のアプリウィンドウ）
+ * - または WS_EX_APPWINDOWを持つ（強制的に表示されるウィンドウ）
+ */
+function isAltTabWindow(hwnd: unknown): boolean {
+  try {
+    // クローキング状態をチェック（Windows Vista以降）
+    const cloakedArr = [0];
+    try {
+      const hr = DwmGetWindowAttribute(hwnd, DWMWA_CLOAKED, cloakedArr, 4);
+      // S_OK (0) の場合、成功
+      if (hr === 0 && cloakedArr[0] !== 0) {
+        // クローキングされているウィンドウは除外
+        return false;
+      }
+    } catch (dwmError) {
+      // DWM APIが利用できない場合（古いWindows）はスキップ
+      // エラーは無視して続行
+    }
+
+    // 拡張ウィンドウスタイルを取得
+    const exStyle = GetWindowLongW(hwnd, GWL_EXSTYLE);
+
+    // オーナーウィンドウを取得
+    const owner = GetWindow(hwnd, GW_OWNER);
+    const hasOwner = owner !== null && koffi.address(owner) !== 0n;
+
+    // 各フラグのチェック
+    const hasToolWindowStyle = !!(exStyle & WS_EX_TOOLWINDOW);
+    const hasAppWindowStyle = !!(exStyle & WS_EX_APPWINDOW);
+
+    // パターンA: ツールウィンドウでなく、オーナーがない（通常のアプリウィンドウ）
+    const isNormalWindow = !hasToolWindowStyle && !hasOwner;
+
+    // パターンB: アプリウィンドウスタイルを持つ（強制表示）
+    const isAppWindow = hasAppWindowStyle;
+
+    return isNormalWindow || isAppWindow;
+  } catch (error) {
+    console.error('[isAltTabWindow] Error:', error);
+    return false;
+  }
+}
+
+/**
  * すべてのウィンドウ情報を取得
  * @returns ウィンドウ情報の配列
  */
@@ -321,6 +391,11 @@ export function getAllWindows(): WindowInfo[] {
 
       if (!title || title.trim() === '') {
         return true; // 空のタイトルはスキップ
+      }
+
+      // Alt+Tabに表示されないウィンドウはスキップ
+      if (!isAltTabWindow(hwnd)) {
+        return true;
       }
 
       // 位置とサイズを取得
