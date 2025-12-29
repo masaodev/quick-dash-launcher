@@ -525,8 +525,13 @@
   gap: var(--spacing-xs);
 }
 
+.window-config-checkbox-row {
+  display: block;
+  margin-bottom: var(--spacing-sm);
+}
+
 .window-config-checkbox-label {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: var(--spacing-sm);
   font-size: var(--font-size-sm);
@@ -536,8 +541,10 @@
 }
 
 .window-config-checkbox {
-  width: 18px;
-  height: 18px;
+  width: 18px !important;
+  height: 18px !important;
+  flex: none !important;
+  margin-right: var(--spacing-sm);
   cursor: pointer;
   accent-color: var(--color-primary);
 }

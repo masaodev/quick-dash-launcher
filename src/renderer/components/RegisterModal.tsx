@@ -551,6 +551,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                             })
                           }
                           onGetWindowClick={() => openWindowSelector(index)}
+                          showToggle={false}
                         />
                         {errors[index]?.name && (
                           <div className="form-group">
