@@ -15,7 +15,11 @@ import type {
 import logger from '../../common/logger.js';
 import PathManager from '../config/pathManager.js';
 import { detectItemTypeSync } from '../../common/utils/itemTypeDetector.js';
-import { isWindowInfo, isLauncherItem, isWindowOperationItem } from '../../common/utils/typeGuards.js';
+import {
+  isWindowInfo,
+  isLauncherItem,
+  isWindowOperationItem,
+} from '../../common/utils/typeGuards.js';
 
 // electron-storeを動的にインポート
 let Store: typeof ElectronStore | null = null;

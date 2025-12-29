@@ -11,6 +11,8 @@ import DirOptionsEditor from './DirOptionsEditor';
 import WindowSelectorModal from './WindowSelectorModal';
 import WindowConfigEditor from './WindowConfigEditor';
 import CustomIconEditor from './CustomIconEditor';
+import UrlConverterMenu from './UrlConverterMenu';
+import '../styles/components/UrlConverterMenu.css';
 
 interface RegisterModalProps {
   isOpen: boolean;
@@ -414,6 +416,12 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                         {errors[index]?.path && (
                           <span className="error-message">{errors[index].path}</span>
                         )}
+                        <UrlConverterMenu
+                          url={item.path}
+                          onConvert={(convertedUrl) =>
+                            handleItemChange(index, 'path', convertedUrl)
+                          }
+                        />
                       </div>
                     )}
 
