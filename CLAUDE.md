@@ -211,3 +211,62 @@ Task tool with subagent_type="e2e-test-runner"
 - 構造化されたテストレポート生成
 
 詳細は `.claude/agents/e2e-test-runner.md` を参照してください。
+
+## カスタムコマンド構成
+
+`.claude/commands/` 配下には、開発ワークフローを効率化するカスタムコマンドが整理されています。
+
+### カテゴリ構成
+
+```
+.claude/commands/
+├── git-workflow/       - Git操作（ブランチ作成、コミット、PR、リリース）
+├── github/             - GitHub連携（Issue作成・参照）
+├── refactoring/        - コード改善（対話型リファクタリング）
+├── routine/            - 定期実行タスク（品質チェック、依存関係確認、テスト）
+└── documentation/      - ドキュメント作成・整理
+```
+
+**合計: 14個のコマンド**（整理により23個→14個に削減）
+
+### 主要コマンド
+
+#### git-workflow/ (3個)
+- `/start-branch` - 新機能開発開始（ブランチ作成）
+- `/commit-pr` - コミット・PR作成（3モード: simple/interactive/full）
+- `/release-version` - バージョンリリース
+
+#### github/ (2個)
+- `/create-issue` - GitHub Issue作成
+- `/read-issue` - Issue読み込み・対応方針分析
+
+#### refactoring/ (1個)
+- `/refactor` - 対話型リファクタリング（命名、複雑度、重複、パス、ファイル分割、コメント）
+
+#### routine/ (6個)
+- `/sync-and-validate` - リモート同期・総合検証
+- `/review-recent-commits` - 直近のコミットを分析し品質・ドキュメント確認
+- `/check-dependencies` - 依存関係更新確認
+- `/audit-security` - セキュリティ監査（npm audit）
+- `/quality-check-all` - 総合品質チェック
+- `/test-e2e-all` - 全E2Eテスト実行
+
+#### documentation/ (2個)
+- `/create-screen-spec` - 画面仕様書作成
+- `/organize-docs` - ドキュメント整理
+
+### コマンド使用ガイド
+
+#### 開発フロー
+1. **新機能開始**: `/start-branch feature/xxx` でブランチ作成
+2. **コード変更**: 機能を実装
+3. **リファクタリング**: `/refactor` で品質改善
+4. **コミット・PR**: `/commit-pr full` で品質チェック付きPR作成
+
+#### 定期メンテナンス
+- `/review-recent-commits` - 週1回、直近のコミット振り返り
+- `/check-dependencies` - 週1回、依存関係確認
+- `/audit-security` - 週1回、セキュリティチェック
+- `/sync-and-validate` - main同期・総合検証
+
+詳細は各コマンドファイルを参照してください。
