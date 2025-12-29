@@ -59,9 +59,9 @@ const SetWindowPos = user32.func('SetWindowPos', 'bool', [
 const OpenProcess = kernel32.func('OpenProcess', 'void*', ['uint32', 'bool', 'uint32']);
 const CloseHandle = kernel32.func('CloseHandle', 'bool', ['void*']);
 const QueryFullProcessImageNameW = kernel32.func('QueryFullProcessImageNameW', 'bool', [
-  'void*',      // hProcess
-  'uint32',     // dwFlags
-  'void*',      // lpExeName (バッファポインタ)
+  'void*', // hProcess
+  'uint32', // dwFlags
+  'void*', // lpExeName (バッファポインタ)
   koffi.inout(koffi.pointer('uint32', 1)), // lpdwSize (入出力)
 ]);
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { PathUtils } from '@common/utils/pathUtils';
-import { isLauncherItem, isWindowOperationItem } from '@common/utils/typeGuards';
+import { isLauncherItem } from '@common/utils/typeGuards';
 
 import {
   LauncherItem,
@@ -106,8 +106,11 @@ const ItemList: React.FC<ItemListProps> = ({
 
       if (win.windowState) {
         const stateText =
-          win.windowState === 'minimized' ? '最小化' :
-          win.windowState === 'maximized' ? '最大化' : '通常';
+          win.windowState === 'minimized'
+            ? '最小化'
+            : win.windowState === 'maximized'
+              ? '最大化'
+              : '通常';
         lines.push(`状態: ${stateText}`);
       }
 
