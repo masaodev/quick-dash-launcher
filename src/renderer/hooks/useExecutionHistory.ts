@@ -22,6 +22,17 @@ export function useExecutionHistory() {
     loadHistory();
   }, [loadHistory]);
 
+  // ワークスペース変更通知のリスナー
+  useEffect(() => {
+    const unsubscribe = window.electronAPI.onWorkspaceChanged(() => {
+      loadHistory();
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [loadHistory]);
+
   return {
     executionHistory,
     loadHistory,

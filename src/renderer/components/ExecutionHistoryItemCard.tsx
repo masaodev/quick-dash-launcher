@@ -47,6 +47,8 @@ const ExecutionHistoryItemCard: React.FC<ExecutionHistoryItemCardProps> = ({
         return '🔗';
       case 'group':
         return '📦';
+      case 'windowOperation':
+        return '🪟';
       default:
         return '📄';
     }

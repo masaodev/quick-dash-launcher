@@ -154,6 +154,8 @@ const App: React.FC = () => {
         // 履歴モード：選択された履歴アイテムを直接実行
         if (isGroupItem(item)) {
           await window.electronAPI.executeGroup(item, mainItems);
+        } else if (isWindowOperationItem(item)) {
+          await window.electronAPI.executeWindowOperation(item);
         } else {
           await window.electronAPI.openItem(item as LauncherItem);
         }
@@ -197,14 +199,34 @@ const App: React.FC = () => {
   // 実行履歴エントリーをAppItem形式に変換（グループは除外）
   const historyItems: AppItem[] = executionHistory
     .filter((entry) => entry.itemType !== 'group')
-    .map((entry) => ({
-      name: entry.itemName,
-      path: entry.itemPath,
-      type: entry.itemType as 'url' | 'file' | 'folder' | 'app' | 'customUri',
-      icon: entry.icon,
-      args: entry.args,
-      sourceFile: 'history',
-    }));
+    .map((entry) => {
+      if (entry.itemType === 'windowOperation') {
+        // [ウィンドウ操作: タイトル] から タイトル を抽出
+        const match = entry.itemPath.match(/^\[ウィンドウ操作: (.+)\]$/);
+        const windowTitle = match ? match[1] : entry.itemPath;
+        return {
+          type: 'windowOperation' as const,
+          name: entry.itemName,
+          windowTitle: windowTitle,
+          x: entry.windowX,
+          y: entry.windowY,
+          width: entry.windowWidth,
+          height: entry.windowHeight,
+          virtualDesktopNumber: entry.virtualDesktopNumber,
+          activateWindow: entry.activateWindow,
+          sourceFile: 'history',
+        } as WindowOperationItem;
+      } else {
+        return {
+          name: entry.itemName,
+          path: entry.itemPath,
+          type: entry.itemType as 'url' | 'file' | 'folder' | 'app' | 'customUri',
+          icon: entry.icon,
+          args: entry.args,
+          sourceFile: 'history',
+        };
+      }
+    });
 
   // キーボードショートカットフック
   const { handleKeyDown } = useKeyboardShortcuts(
