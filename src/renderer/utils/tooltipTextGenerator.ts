@@ -1,0 +1,158 @@
+import type {
+  AppItem,
+  WindowInfo,
+  GroupItem,
+  WindowOperationItem,
+  LauncherItem,
+} from '@common/types';
+import { PathUtils } from '@common/utils/pathUtils';
+
+/**
+ * メタ情報（データファイル、行番号など）を文字列配列に追加
+ * 各ツールチップで共通して使用される処理を集約
+ */
+function appendMetaInfo(
+  lines: string[],
+  sourceFile?: string,
+  lineNumber?: number,
+  expandedFrom?: string,
+  expandedOptions?: string
+): void {
+  // 空行を追加してメタ情報を分離
+  if (sourceFile || lineNumber || expandedFrom || expandedOptions) {
+    lines.push('');
+  }
+
+  if (sourceFile) {
+    lines.push(`データファイル: ${sourceFile}`);
+  }
+  if (lineNumber) {
+    lines.push(`行番号: ${lineNumber}`);
+  }
+  if (expandedFrom) {
+    lines.push(`取込元: ${expandedFrom}`);
+  }
+  if (expandedOptions) {
+    lines.push(`設定: ${expandedOptions}`);
+  }
+}
+
+/**
+ * WindowInfo用のツールチップテキストを生成
+ */
+function getWindowInfoTooltip(win: WindowInfo): string {
+  const lines: string[] = [];
+  lines.push(`ウィンドウタイトル: ${win.title}`);
+
+  if (win.processName) {
+    lines.push(`プロセス名: ${win.processName}`);
+  }
+
+  if (win.executablePath) {
+    lines.push(`実行ファイルパス: ${win.executablePath}`);
+  }
+
+  if (win.windowState) {
+    const stateText =
+      win.windowState === 'minimized'
+        ? '最小化'
+        : win.windowState === 'maximized'
+          ? '最大化'
+          : '通常';
+    lines.push(`状態: ${stateText}`);
+  }
+
+  lines.push('');
+  lines.push(`位置: (${win.x}, ${win.y})`);
+  lines.push(`サイズ: ${win.width}x${win.height}`);
+  lines.push(`プロセスID: ${win.processId}`);
+
+  return lines.join('\n');
+}
+
+/**
+ * GroupItem用のツールチップテキストを生成
+ */
+function getGroupItemTooltip(groupItem: GroupItem): string {
+  const lines: string[] = [];
+  lines.push(`グループ: ${groupItem.itemNames.join(', ')}`);
+
+  appendMetaInfo(lines, groupItem.sourceFile, groupItem.lineNumber);
+
+  return lines.join('\n');
+}
+
+/**
+ * WindowOperationItem用のツールチップテキストを生成
+ */
+function getWindowOperationTooltip(windowOp: WindowOperationItem): string {
+  const lines: string[] = [];
+  lines.push(`ウィンドウタイトル: ${windowOp.windowTitle}`);
+
+  // 空行
+  lines.push('');
+
+  // 位置・サイズ情報
+  if (windowOp.x !== undefined && windowOp.y !== undefined) {
+    lines.push(`位置: (${windowOp.x}, ${windowOp.y})`);
+  }
+  if (windowOp.width !== undefined && windowOp.height !== undefined) {
+    lines.push(`サイズ: ${windowOp.width}x${windowOp.height}`);
+  }
+
+  // 仮想デスクトップ情報
+  if (windowOp.virtualDesktopNumber !== undefined) {
+    lines.push(`仮想デスクトップ: ${windowOp.virtualDesktopNumber}`);
+  }
+
+  // アクティブ化フラグ
+  if (windowOp.activateWindow === false) {
+    lines.push(`アクティブ化: しない`);
+  }
+
+  appendMetaInfo(lines, windowOp.sourceFile, windowOp.lineNumber);
+
+  return lines.join('\n');
+}
+
+/**
+ * LauncherItem用のツールチップテキストを生成
+ */
+function getLauncherItemTooltip(launcherItem: LauncherItem): string {
+  const lines: string[] = [];
+
+  // パス情報（最初に表示）
+  lines.push(PathUtils.getFullPath(launcherItem));
+
+  appendMetaInfo(
+    lines,
+    launcherItem.sourceFile,
+    launcherItem.lineNumber,
+    launcherItem.expandedFrom,
+    launcherItem.expandedOptions
+  );
+
+  return lines.join('\n');
+}
+
+/**
+ * AppItem用のツールチップテキストを生成
+ * アイテムタイプに応じて適切な生成関数を呼び出す
+ */
+export function getTooltipText(item: AppItem): string {
+  // WindowInfoの場合
+  if ('hwnd' in item) {
+    return getWindowInfoTooltip(item as WindowInfo);
+  }
+
+  // タイプ別処理
+  if (item.type === 'group') {
+    return getGroupItemTooltip(item as GroupItem);
+  }
+
+  if (item.type === 'windowOperation') {
+    return getWindowOperationTooltip(item as WindowOperationItem);
+  }
+
+  return getLauncherItemTooltip(item as LauncherItem);
+}

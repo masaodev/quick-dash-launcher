@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { PathUtils } from '@common/utils/pathUtils';
 import { isLauncherItem } from '@common/utils/typeGuards';
 
+import { getTooltipText } from '../utils/tooltipTextGenerator';
 import {
   LauncherItem,
   GroupItem,
@@ -87,136 +87,6 @@ const ItemList: React.FC<ItemListProps> = ({
       default:
         return '❓';
     }
-  };
-
-  const getTooltipText = (item: AppItem): string => {
-    // WindowInfoの場合
-    if ('hwnd' in item) {
-      const win = item as WindowInfo;
-      const lines: string[] = [];
-      lines.push(`ウィンドウタイトル: ${win.title}`);
-
-      if (win.processName) {
-        lines.push(`プロセス名: ${win.processName}`);
-      }
-
-      if (win.executablePath) {
-        lines.push(`実行ファイルパス: ${win.executablePath}`);
-      }
-
-      if (win.windowState) {
-        const stateText =
-          win.windowState === 'minimized'
-            ? '最小化'
-            : win.windowState === 'maximized'
-              ? '最大化'
-              : '通常';
-        lines.push(`状態: ${stateText}`);
-      }
-
-      lines.push('');
-      lines.push(`位置: (${win.x}, ${win.y})`);
-      lines.push(`サイズ: ${win.width}x${win.height}`);
-      lines.push(`プロセスID: ${win.processId}`);
-      return lines.join('\n');
-    }
-
-    if (item.type === 'group') {
-      const groupItem = item as GroupItem;
-      const lines: string[] = [];
-      lines.push(`グループ: ${groupItem.itemNames.join(', ')}`);
-
-      // 空行
-      lines.push('');
-
-      // ソースファイル情報
-      if (groupItem.sourceFile) {
-        lines.push(`データファイル: ${groupItem.sourceFile}`);
-      }
-
-      // 行番号情報
-      if (groupItem.lineNumber) {
-        lines.push(`行番号: ${groupItem.lineNumber}`);
-      }
-
-      return lines.join('\n');
-    }
-
-    // WindowOperationItemの場合
-    if (item.type === 'windowOperation') {
-      const windowOp = item as WindowOperationItem;
-      const lines: string[] = [];
-      lines.push(`ウィンドウタイトル: ${windowOp.windowTitle}`);
-
-      // 空行
-      lines.push('');
-
-      // 位置・サイズ情報
-      if (windowOp.x !== undefined && windowOp.y !== undefined) {
-        lines.push(`位置: (${windowOp.x}, ${windowOp.y})`);
-      }
-      if (windowOp.width !== undefined && windowOp.height !== undefined) {
-        lines.push(`サイズ: ${windowOp.width}x${windowOp.height}`);
-      }
-
-      // 仮想デスクトップ情報
-      if (windowOp.virtualDesktopNumber !== undefined) {
-        lines.push(`仮想デスクトップ: ${windowOp.virtualDesktopNumber}`);
-      }
-
-      // アクティブ化フラグ
-      if (windowOp.activateWindow === false) {
-        lines.push(`アクティブ化: しない`);
-      }
-
-      // 空行（メタ情報との区切り）
-      if (windowOp.sourceFile || windowOp.lineNumber) {
-        lines.push('');
-      }
-
-      // ソースファイル情報
-      if (windowOp.sourceFile) {
-        lines.push(`データファイル: ${windowOp.sourceFile}`);
-      }
-
-      // 行番号情報
-      if (windowOp.lineNumber) {
-        lines.push(`行番号: ${windowOp.lineNumber}`);
-      }
-
-      return lines.join('\n');
-    }
-
-    const launcherItem = item as LauncherItem;
-    const lines: string[] = [];
-
-    // パス情報（最初に表示）
-    lines.push(PathUtils.getFullPath(launcherItem));
-
-    // 空行を追加してメタ情報を分離
-    lines.push('');
-
-    // ソースファイル情報
-    if (launcherItem.sourceFile) {
-      lines.push(`データファイル: ${launcherItem.sourceFile}`);
-    }
-
-    // 行番号情報
-    if (launcherItem.lineNumber) {
-      lines.push(`行番号: ${launcherItem.lineNumber}`);
-    }
-
-    // 取込元情報（フォルダ取込から展開されたアイテムの場合）
-    if (launcherItem.expandedFrom) {
-      lines.push(`取込元: ${launcherItem.expandedFrom}`);
-    }
-
-    // フォルダ取込オプション情報
-    if (launcherItem.expandedOptions) {
-      lines.push(`設定: ${launcherItem.expandedOptions}`);
-    }
-
-    return lines.join('\n');
   };
 
   const handleContextMenu = (event: React.MouseEvent, item: AppItem) => {
