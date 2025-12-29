@@ -286,5 +286,17 @@ export function setupItemHandlers(
         mainWindow.hide();
       }
     }
+
+    // 実行履歴に記録
+    try {
+      const workspaceService = await WorkspaceService.getInstance();
+      await workspaceService.addExecutionHistory(item);
+      notifyWorkspaceChanged();
+    } catch (error) {
+      itemLogger.error(
+        { error: error instanceof Error ? error.message : String(error), itemName: item.name },
+        '実行履歴の記録に失敗しました'
+      );
+    }
   });
 }

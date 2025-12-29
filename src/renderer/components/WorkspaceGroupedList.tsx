@@ -429,6 +429,21 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
                         icon: item.icon,
                         args: item.args,
                       });
+                    } else if (item.itemType === 'windowOperation') {
+                      // [ウィンドウ操作: タイトル] から タイトル を抽出
+                      const match = item.itemPath.match(/^\[ウィンドウ操作: (.+)\]$/);
+                      const windowTitle = match ? match[1] : item.itemPath;
+                      window.electronAPI.executeWindowOperation({
+                        type: 'windowOperation',
+                        name: item.itemName,
+                        windowTitle: windowTitle,
+                        x: item.windowX,
+                        y: item.windowY,
+                        width: item.windowWidth,
+                        height: item.windowHeight,
+                        virtualDesktopNumber: item.virtualDesktopNumber,
+                        activateWindow: item.activateWindow,
+                      });
                     } else if (item.itemType === 'group') {
                       // グループは再実行しない（履歴としてのみ表示）
                     }

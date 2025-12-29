@@ -71,13 +71,25 @@ export interface ExecutionHistoryItem {
   /** アイテムのパス、URL、またはコマンド */
   itemPath: string;
   /** アイテムのタイプ */
-  itemType: 'url' | 'file' | 'folder' | 'app' | 'customUri' | 'group';
+  itemType: 'url' | 'file' | 'folder' | 'app' | 'customUri' | 'group' | 'windowOperation';
   /** アイテムのアイコン（base64エンコードされたデータURL、オプション） */
   icon?: string;
   /** 実行時のコマンドライン引数（オプション） */
   args?: string;
   /** 実行日時（timestamp） */
   executedAt: number;
+  /** ウィンドウ操作：X座標（windowOperation専用、オプション） */
+  windowX?: number;
+  /** ウィンドウ操作：Y座標（windowOperation専用、オプション） */
+  windowY?: number;
+  /** ウィンドウ操作：幅（windowOperation専用、オプション） */
+  windowWidth?: number;
+  /** ウィンドウ操作：高さ（windowOperation専用、オプション） */
+  windowHeight?: number;
+  /** ウィンドウ操作：仮想デスクトップ番号（windowOperation専用、オプション） */
+  virtualDesktopNumber?: number;
+  /** ウィンドウ操作：ウィンドウをアクティブにするか（windowOperation専用、オプション） */
+  activateWindow?: boolean;
 }
 
 /**

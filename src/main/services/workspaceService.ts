@@ -15,7 +15,7 @@ import type {
 import logger from '../../common/logger.js';
 import PathManager from '../config/pathManager.js';
 import { detectItemTypeSync } from '../../common/utils/itemTypeDetector.js';
-import { isWindowInfo, isLauncherItem } from '../../common/utils/typeGuards.js';
+import { isWindowInfo, isLauncherItem, isWindowOperationItem } from '../../common/utils/typeGuards.js';
 
 // electron-storeを動的にインポート
 let Store: typeof ElectronStore | null = null;
@@ -706,9 +706,35 @@ export class WorkspaceService {
         return;
       }
 
+      // ウィンドウ操作アイテムの場合
+      if (isWindowOperationItem(item)) {
+        // 同じ名前のアイテムを履歴から削除
+        const filteredHistory = history.filter((h) => h.itemName !== item.name);
+
+        const historyItem: ExecutionHistoryItem = {
+          id: randomUUID(),
+          itemName: item.name,
+          itemPath: `[ウィンドウ操作: ${item.windowTitle}]`,
+          itemType: 'windowOperation',
+          executedAt: Date.now(),
+          windowX: item.x,
+          windowY: item.y,
+          windowWidth: item.width,
+          windowHeight: item.height,
+          virtualDesktopNumber: item.virtualDesktopNumber,
+          activateWindow: item.activateWindow,
+        };
+        filteredHistory.unshift(historyItem);
+        history.length = 0;
+        history.push(...filteredHistory);
+      }
       // グループアイテムの場合
-      if (!isLauncherItem(item)) {
+      else if (!isLauncherItem(item)) {
         const groupItem = item as { name: string; type: 'group'; itemNames: string[] };
+
+        // 同じ名前のアイテムを履歴から削除
+        const filteredHistory = history.filter((h) => h.itemName !== groupItem.name);
+
         const historyItem: ExecutionHistoryItem = {
           id: randomUUID(),
           itemName: groupItem.name,
@@ -716,11 +742,17 @@ export class WorkspaceService {
           itemType: 'group',
           executedAt: Date.now(),
         };
-        history.unshift(historyItem);
+        filteredHistory.unshift(historyItem);
+        history.length = 0;
+        history.push(...filteredHistory);
       }
       // 通常のアイテムの場合
       else {
         const launcherItem = item;
+
+        // 同じ名前のアイテムを履歴から削除
+        const filteredHistory = history.filter((h) => h.itemName !== launcherItem.name);
+
         const historyItem: ExecutionHistoryItem = {
           id: randomUUID(),
           itemName: launcherItem.name,
@@ -730,7 +762,9 @@ export class WorkspaceService {
           args: launcherItem.args,
           executedAt: Date.now(),
         };
-        history.unshift(historyItem);
+        filteredHistory.unshift(historyItem);
+        history.length = 0;
+        history.push(...filteredHistory);
       }
 
       // 最大件数を超えた分を削除
