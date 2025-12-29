@@ -29,6 +29,8 @@ const EnumWindows = user32.func('EnumWindows', 'bool', [koffi.pointer(EnumWindow
 const GetWindowTextW = user32.func('GetWindowTextW', 'int', ['void*', 'str16', 'int']);
 const GetWindowTextLengthW = user32.func('GetWindowTextLengthW', 'int', ['void*']);
 const IsWindowVisible = user32.func('IsWindowVisible', 'bool', ['void*']);
+const IsIconic = user32.func('IsIconic', 'bool', ['void*']);
+const IsZoomed = user32.func('IsZoomed', 'bool', ['void*']);
 const GetWindowRect = user32.func('GetWindowRect', 'bool', [
   'void*',
   koffi.out(koffi.pointer(RECT, 1)),
@@ -57,10 +59,10 @@ const SetWindowPos = user32.func('SetWindowPos', 'bool', [
 const OpenProcess = kernel32.func('OpenProcess', 'void*', ['uint32', 'bool', 'uint32']);
 const CloseHandle = kernel32.func('CloseHandle', 'bool', ['void*']);
 const QueryFullProcessImageNameW = kernel32.func('QueryFullProcessImageNameW', 'bool', [
-  'void*',
-  'uint32',
-  'str16',
-  koffi.out(koffi.pointer('uint32', 1)),
+  'void*',      // hProcess
+  'uint32',     // dwFlags
+  'void*',      // lpExeName (バッファポインタ)
+  koffi.inout(koffi.pointer('uint32', 1)), // lpdwSize (入出力)
 ]);
 
 // Win32 API関数の定義（dwmapi.dll）
@@ -301,13 +303,57 @@ export function getExecutablePathFromProcessId(processId: number): string | unde
     const path = buffer.toString('utf16le').substring(0, sizeArr[0]);
     return path;
   } catch (error) {
-    console.error(`[getExecutablePath] Error for process ${processId}:`, error);
+    console.error(`[getExecutablePathFromProcessId] Error for process ${processId}:`, error);
     return undefined;
   } finally {
     // プロセスハンドルを必ず閉じる
     if (hProcess && koffi.address(hProcess) !== 0n) {
       CloseHandle(hProcess);
     }
+  }
+}
+
+/**
+ * ウィンドウの状態を取得
+ * @param hwnd ウィンドウハンドル
+ * @returns ウィンドウの状態（'normal' | 'minimized' | 'maximized'）
+ */
+function getWindowState(hwnd: unknown): 'normal' | 'minimized' | 'maximized' {
+  try {
+    // 最小化チェック
+    if (IsIconic(hwnd)) {
+      return 'minimized';
+    }
+    // 最大化チェック
+    if (IsZoomed(hwnd)) {
+      return 'maximized';
+    }
+    // 通常状態
+    return 'normal';
+  } catch (error) {
+    console.error('[getWindowState] Error:', error);
+    return 'normal';
+  }
+}
+
+/**
+ * 実行ファイルパスからプロセス名（ファイル名）を抽出
+ * @param executablePath 実行ファイルのフルパス
+ * @returns プロセス名（ファイル名部分）。パスがない場合はundefined
+ */
+function extractProcessName(executablePath: string | undefined): string | undefined {
+  if (!executablePath) {
+    return undefined;
+  }
+  try {
+    // Windowsパスの区切り文字で分割して最後の要素（ファイル名）を取得
+    const parts = executablePath.split('\\');
+    const fileName = parts[parts.length - 1];
+    // 空文字列の場合はundefinedを返す
+    return fileName && fileName.trim() !== '' ? fileName : undefined;
+  } catch (error) {
+    console.error('[extractProcessName] Error:', error);
+    return undefined;
   }
 }
 
@@ -413,6 +459,12 @@ export function getAllWindows(): WindowInfo[] {
       // 実行ファイルのパスを取得
       const executablePath = getExecutablePathFromProcessId(processId);
 
+      // プロセス名を抽出
+      const processName = extractProcessName(executablePath);
+
+      // ウィンドウの状態を取得
+      const windowState = getWindowState(hwnd);
+
       // ウィンドウからアイコンを取得してbase64に変換
       let icon: string | undefined;
       const hIcon = getWindowIcon(hwnd);
@@ -430,6 +482,8 @@ export function getAllWindows(): WindowInfo[] {
         processId,
         isVisible: true,
         executablePath,
+        processName,
+        windowState,
         icon,
       });
     } catch (error) {

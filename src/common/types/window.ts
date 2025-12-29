@@ -1,4 +1,9 @@
 /**
+ * ウィンドウの状態
+ */
+export type WindowState = 'normal' | 'minimized' | 'maximized';
+
+/**
  * ウィンドウ情報
  * ウィンドウ検索機能で取得されるウィンドウの情報
  */
@@ -21,6 +26,10 @@ export interface WindowInfo {
   isVisible: boolean;
   /** 実行ファイルのパス */
   executablePath?: string;
+  /** プロセス名（実行ファイル名） */
+  processName?: string;
+  /** ウィンドウの状態 */
+  windowState?: WindowState;
   /** アイコン（base64エンコードされたデータURL） */
   icon?: string;
 }

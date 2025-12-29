@@ -94,7 +94,23 @@ const ItemList: React.FC<ItemListProps> = ({
     if ('hwnd' in item) {
       const win = item as WindowInfo;
       const lines: string[] = [];
-      lines.push(`${win.title}`);
+      lines.push(`ウィンドウタイトル: ${win.title}`);
+
+      if (win.processName) {
+        lines.push(`プロセス名: ${win.processName}`);
+      }
+
+      if (win.executablePath) {
+        lines.push(`実行ファイルパス: ${win.executablePath}`);
+      }
+
+      if (win.windowState) {
+        const stateText =
+          win.windowState === 'minimized' ? '最小化' :
+          win.windowState === 'maximized' ? '最大化' : '通常';
+        lines.push(`状態: ${stateText}`);
+      }
+
       lines.push('');
       lines.push(`位置: (${win.x}, ${win.y})`);
       lines.push(`サイズ: ${win.width}x${win.height}`);
@@ -263,8 +279,11 @@ const ItemList: React.FC<ItemListProps> = ({
         const isWindow = 'hwnd' in item;
         const isGroup = !isWindow && item.type === 'group';
         const isWindowOperation = !isWindow && item.type === 'windowOperation';
+        const windowInfo = isWindow ? (item as WindowInfo) : null;
         const itemName = isWindow
-          ? (item as WindowInfo).title
+          ? windowInfo?.processName
+            ? `${windowInfo.title} (${windowInfo.processName})`
+            : windowInfo!.title
           : isWindowOperation
             ? (item as WindowOperationItem).name
             : (item as LauncherItem | GroupItem).name;
