@@ -267,8 +267,18 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
       // group,グループ名,アイテム1,アイテム2,...
       name = parts[1] || '';
     } else if (isWindowOperationDirective(line)) {
-      // window,表示名,ウィンドウタイトル,...
-      name = parts[1] || '';
+      // window,{JSON形式} または 古い形式: window,表示名,ウィンドウタイトル,...
+      // JSON形式の場合はparseWindowOperationDirectiveを使用して解析
+      if (parts[1] && parts[1].trim().startsWith('{')) {
+        try {
+          const config = JSON.parse(parts[1]);
+          name = config.name || '';
+        } catch {
+          name = parts[1] || '';
+        }
+      } else {
+        name = parts[1] || '';
+      }
     }
     const cellKey = `${getLineKey(line)}_name`;
     setEditingCell(cellKey);
@@ -301,10 +311,25 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
       const itemNames = parts.slice(2);
       newContent = `group,${newGroupName},${itemNames.join(',')}`;
     } else if (isWindowOperationDirective(line)) {
-      // window,表示名,ウィンドウタイトル,x,y,width,height,virtualDesktopNumber,activateWindow
+      // window,{JSON形式} または 古い形式: window,表示名,ウィンドウタイトル,...
       const newName = editingValue.trim();
-      const restFields = parts.slice(2); // ウィンドウタイトル以降のフィールド
-      newContent = `window,${newName},${restFields.join(',')}`;
+
+      // JSON形式の場合
+      if (parts[1] && parts[1].trim().startsWith('{')) {
+        try {
+          const config = JSON.parse(parts[1]);
+          config.name = newName;
+          newContent = `window,${escapeCSV(JSON.stringify(config))}`;
+        } catch {
+          // JSONパースに失敗した場合は古い形式として処理
+          const restFields = parts.slice(2);
+          newContent = `window,${newName},${restFields.join(',')}`;
+        }
+      } else {
+        // 古いCSV形式の場合
+        const restFields = parts.slice(2); // ウィンドウタイトル以降のフィールド
+        newContent = `window,${newName},${restFields.join(',')}`;
+      }
     }
 
     if (newContent && newContent !== line.content) {
@@ -394,8 +419,17 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
         // group,グループ名,アイテム1,アイテム2,...
         name = parts[1] || '';
       } else if (isWindowOperationDirective(line)) {
-        // window,表示名,ウィンドウタイトル,...
-        name = parts[1] || '';
+        // window,{JSON形式} または 古い形式: window,表示名,ウィンドウタイトル,...
+        if (parts[1] && parts[1].trim().startsWith('{')) {
+          try {
+            const config = JSON.parse(parts[1]);
+            name = config.name || '';
+          } catch {
+            name = parts[1] || '';
+          }
+        } else {
+          name = parts[1] || '';
+        }
       }
 
       const cellKey = `${getLineKey(line)}_name`;
@@ -448,16 +482,45 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
         return itemNames.join(', ');
       } else if (isWindowOperationDirective(line)) {
         // ウィンドウ操作アイテムの場合：ウィンドウタイトル＋設定情報
-        // window,表示名,ウィンドウタイトル,x,y,width,height,virtualDesktopNumber,activateWindow
+        // window,{JSON形式} または 古い形式: window,表示名,ウィンドウタイトル,x,y,width,height,virtualDesktopNumber,activateWindow
         const parts = parseCSVLine(line.content);
-        const windowTitle = parts[2] || '';
+        let windowTitle = '';
         const settings: string[] = [];
-        if (parts[3]) settings.push(`x:${parts[3]}`);
-        if (parts[4]) settings.push(`y:${parts[4]}`);
-        if (parts[5]) settings.push(`w:${parts[5]}`);
-        if (parts[6]) settings.push(`h:${parts[6]}`);
-        if (parts[7]) settings.push(`desk:${parts[7]}`);
-        if (parts[8]) settings.push(`active:${parts[8]}`);
+
+        // JSON形式の場合
+        if (parts[1] && parts[1].trim().startsWith('{')) {
+          try {
+            const config = JSON.parse(parts[1]);
+            windowTitle = config.windowTitle || '';
+            if (config.x !== undefined) settings.push(`x:${config.x}`);
+            if (config.y !== undefined) settings.push(`y:${config.y}`);
+            if (config.width !== undefined) settings.push(`w:${config.width}`);
+            if (config.height !== undefined) settings.push(`h:${config.height}`);
+            if (config.virtualDesktopNumber !== undefined)
+              settings.push(`desk:${config.virtualDesktopNumber}`);
+            if (config.activateWindow !== undefined)
+              settings.push(`active:${config.activateWindow}`);
+          } catch {
+            // JSONパース失敗時は古い形式として処理
+            windowTitle = parts[2] || '';
+            if (parts[3]) settings.push(`x:${parts[3]}`);
+            if (parts[4]) settings.push(`y:${parts[4]}`);
+            if (parts[5]) settings.push(`w:${parts[5]}`);
+            if (parts[6]) settings.push(`h:${parts[6]}`);
+            if (parts[7]) settings.push(`desk:${parts[7]}`);
+            if (parts[8]) settings.push(`active:${parts[8]}`);
+          }
+        } else {
+          // 古いCSV形式の場合
+          windowTitle = parts[2] || '';
+          if (parts[3]) settings.push(`x:${parts[3]}`);
+          if (parts[4]) settings.push(`y:${parts[4]}`);
+          if (parts[5]) settings.push(`w:${parts[5]}`);
+          if (parts[6]) settings.push(`h:${parts[6]}`);
+          if (parts[7]) settings.push(`desk:${parts[7]}`);
+          if (parts[8]) settings.push(`active:${parts[8]}`);
+        }
+
         if (!windowTitle) return '(ウィンドウタイトルなし)';
         return settings.length > 0 ? `${windowTitle} [${settings.join(', ')}]` : windowTitle;
       } else {

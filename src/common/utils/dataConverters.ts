@@ -191,7 +191,7 @@ export async function convertRawDataLineToRegisterItem(
     const trimmedContent = line.content.trim();
 
     if (trimmedContent.startsWith('window,')) {
-      // ウィンドウ操作アイテム行の場合：window,表示名,ウィンドウタイトル,x,y,width,height,virtualDesktopNumber,activateWindow
+      // ウィンドウ操作アイテム行の場合：window,{JSON形式の設定} または 古い形式: window,表示名,ウィンドウタイトル,x,y,width,height,virtualDesktopNumber,activateWindow
       const windowOp = parseWindowOperationDirective(line);
 
       return {
@@ -290,24 +290,27 @@ export function convertRegisterItemToRawDataLine(
     const escapedItemNames = itemNames.map((name) => escapeCSV(name));
     newContent = `group,${escapeCSV(item.name)},${escapedItemNames.join(',')}`;
   } else if (item.itemCategory === 'window') {
-    // ウィンドウ操作アイテムの場合：window,表示名,ウィンドウタイトル,x,y,width,height,virtualDesktopNumber,activateWindow
+    // ウィンドウ操作アイテムの場合：window,{JSON形式の設定}
     newType = 'directive';
     const cfg = item.windowOperationConfig;
     if (!cfg) throw new Error('windowOperationConfig is required for window items');
 
-    const fields = [
-      'window',
-      escapeCSV(item.name),
-      escapeCSV(cfg.windowTitle),
-      cfg.x?.toString() || '',
-      cfg.y?.toString() || '',
-      cfg.width?.toString() || '',
-      cfg.height?.toString() || '',
-      cfg.virtualDesktopNumber?.toString() || '',
-      cfg.activateWindow === undefined ? '' : cfg.activateWindow.toString(),
-    ];
+    // JSON形式で設定を保存
+    const config: Record<string, string | number | boolean> = {
+      name: item.name,
+      windowTitle: cfg.windowTitle,
+    };
 
-    newContent = fields.join(',');
+    // オプションフィールドは値がある場合のみ追加
+    if (cfg.x !== undefined) config.x = cfg.x;
+    if (cfg.y !== undefined) config.y = cfg.y;
+    if (cfg.width !== undefined) config.width = cfg.width;
+    if (cfg.height !== undefined) config.height = cfg.height;
+    if (cfg.virtualDesktopNumber !== undefined)
+      config.virtualDesktopNumber = cfg.virtualDesktopNumber;
+    if (cfg.activateWindow !== undefined) config.activateWindow = cfg.activateWindow;
+
+    newContent = `window,${escapeCSV(JSON.stringify(config))}`;
   } else {
     // アイテム行の場合：名前,パス,引数,カスタムアイコン,ウィンドウ設定 の形式
     // CSVエスケープを適用

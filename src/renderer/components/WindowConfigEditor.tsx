@@ -64,7 +64,7 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
                 value={windowConfig?.title || ''}
                 onChange={(e) =>
                   onChange({
-                    ...windowConfig,
+                    ...(windowConfig || { title: '' }),
                     title: e.target.value,
                   })
                 }
