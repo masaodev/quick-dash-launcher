@@ -22,7 +22,7 @@ jobs:
     steps:
       # リポジトリのコードをチェックアウト
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # Node.js環境のセットアップ（バージョン20を使用）
       - name: Setup Node.js
