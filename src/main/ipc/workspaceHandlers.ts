@@ -191,6 +191,43 @@ export function setupWorkspaceHandlers(): void {
    */
   ipcMain.handle(WORKSPACE_LAUNCH_ITEM, async (_event, item: WorkspaceItem) => {
     try {
+      // windowOperationタイプの場合
+      if (item.type === 'windowOperation') {
+        // pathから windowTitle を抽出（[ウィンドウ操作: タイトル] 形式）
+        const match = item.path.match(/^\[ウィンドウ操作: (.+)\]$/);
+        const windowTitle = match ? match[1] : item.path;
+
+        // WindowConfigを構築
+        const windowConfig = {
+          title: windowTitle,
+          x: item.windowX,
+          y: item.windowY,
+          width: item.windowWidth,
+          height: item.windowHeight,
+          virtualDesktopNumber: item.virtualDesktopNumber,
+          activateWindow: item.activateWindow,
+        };
+
+        // ウィンドウ操作を実行
+        const activationResult = tryActivateWindow(
+          windowConfig,
+          undefined,
+          item.displayName,
+          logger
+        );
+
+        if (activationResult.activated) {
+          logger.info({ id: item.id, name: item.displayName }, 'Window operation executed');
+          return { success: true };
+        } else {
+          logger.warn(
+            { id: item.id, name: item.displayName, windowTitle },
+            'Window operation failed: Window not found'
+          );
+          throw new Error(`ウィンドウが見つかりませんでした: ${windowTitle}`);
+        }
+      }
+
       // ウィンドウ設定が存在する場合、先にウィンドウ検索を試行
       const activationResult = tryActivateWindow(
         item.windowConfig,

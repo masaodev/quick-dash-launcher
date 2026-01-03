@@ -452,16 +452,31 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
                     // 実行履歴アイテムをワークスペースにコピーできるようにする
                     e.dataTransfer.effectAllowed = 'copy';
                     e.dataTransfer.setData('historyItemId', historyItem.id);
-                    e.dataTransfer.setData(
-                      'historyItem',
-                      JSON.stringify({
-                        name: historyItem.itemName,
-                        path: historyItem.itemPath,
-                        type: historyItem.itemType,
-                        icon: historyItem.icon,
-                        args: historyItem.args,
-                      })
-                    );
+
+                    // windowOperationタイプの場合、ウィンドウ設定情報も含める
+                    const dragData: Record<string, unknown> = {
+                      name: historyItem.itemName,
+                      path: historyItem.itemPath,
+                      type: historyItem.itemType,
+                      icon: historyItem.icon,
+                      args: historyItem.args,
+                    };
+
+                    if (historyItem.itemType === 'windowOperation') {
+                      // itemPathから windowTitle を抽出
+                      const match = historyItem.itemPath.match(/^\[ウィンドウ操作: (.+)\]$/);
+                      const windowTitle = match ? match[1] : historyItem.itemPath;
+
+                      dragData.windowTitle = windowTitle;
+                      dragData.x = historyItem.windowX;
+                      dragData.y = historyItem.windowY;
+                      dragData.width = historyItem.windowWidth;
+                      dragData.height = historyItem.windowHeight;
+                      dragData.virtualDesktopNumber = historyItem.virtualDesktopNumber;
+                      dragData.activateWindow = historyItem.activateWindow;
+                    }
+
+                    e.dataTransfer.setData('historyItem', JSON.stringify(dragData));
                   }}
                 />
               ))}

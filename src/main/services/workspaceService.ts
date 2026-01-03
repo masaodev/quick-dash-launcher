@@ -159,7 +159,7 @@ export class WorkspaceService {
 
   /**
    * アイテムをワークスペースに追加
-   * @param item 追加するアイテム（LauncherItem or GroupItem）
+   * @param item 追加するアイテム（LauncherItem or WindowOperationItem）
    * @param groupId オプションのグループID（指定した場合、そのグループに追加）
    * @returns 追加されたWorkspaceItem
    */
@@ -171,32 +171,77 @@ export class WorkspaceService {
       const items = await this.loadItems();
 
       // グループアイテムとWindowInfoは現状サポートしない
-      if (isWindowInfo(item) || !isLauncherItem(item)) {
-        throw new Error('Only LauncherItem is supported in workspace');
+      if (isWindowInfo(item) || (!isLauncherItem(item) && item.type !== 'windowOperation')) {
+        throw new Error('Only LauncherItem and WindowOperationItem are supported in workspace');
       }
-
-      const launcherItem = item;
 
       // 新しいorder値を計算（最大値+1）
       const maxOrder = items.length > 0 ? Math.max(...items.map((i) => i.order)) : -1;
 
-      // WorkspaceItemを作成
-      const workspaceItem: WorkspaceItem = {
-        id: randomUUID(),
-        displayName: launcherItem.name,
-        originalName: launcherItem.name,
-        path: launcherItem.path,
-        type: launcherItem.type,
-        icon: launcherItem.icon,
-        customIcon: launcherItem.customIcon,
-        args: launcherItem.args,
-        originalPath: launcherItem.originalPath,
-        order: maxOrder + 1,
-        addedAt: Date.now(),
-        groupId: groupId, // グループIDを設定
-        windowConfig: launcherItem.windowConfig,
-        windowTitle: launcherItem.windowTitle, // 後方互換性のため
-      };
+      let workspaceItem: WorkspaceItem;
+
+      // WindowOperationItemの場合
+      if (item.type === 'windowOperation') {
+        const windowOpItem = item as {
+          type: 'windowOperation';
+          name: string;
+          windowTitle: string;
+          x?: number;
+          y?: number;
+          width?: number;
+          height?: number;
+          virtualDesktopNumber?: number;
+          activateWindow?: boolean;
+        };
+
+        workspaceItem = {
+          id: randomUUID(),
+          displayName: windowOpItem.name,
+          originalName: windowOpItem.name,
+          path: `[ウィンドウ操作: ${windowOpItem.windowTitle}]`,
+          type: 'windowOperation',
+          order: maxOrder + 1,
+          addedAt: Date.now(),
+          groupId: groupId,
+          windowX: windowOpItem.x,
+          windowY: windowOpItem.y,
+          windowWidth: windowOpItem.width,
+          windowHeight: windowOpItem.height,
+          virtualDesktopNumber: windowOpItem.virtualDesktopNumber,
+          activateWindow: windowOpItem.activateWindow,
+        };
+      }
+      // LauncherItemの場合
+      else {
+        const launcherItem = item as {
+          name: string;
+          path: string;
+          type: 'url' | 'file' | 'folder' | 'app' | 'customUri';
+          icon?: string;
+          customIcon?: string;
+          args?: string;
+          originalPath?: string;
+          windowConfig?: import('../../common/types/launcher.js').WindowConfig;
+          windowTitle?: string;
+        };
+
+        workspaceItem = {
+          id: randomUUID(),
+          displayName: launcherItem.name,
+          originalName: launcherItem.name,
+          path: launcherItem.path,
+          type: launcherItem.type,
+          icon: launcherItem.icon,
+          customIcon: launcherItem.customIcon,
+          args: launcherItem.args,
+          originalPath: launcherItem.originalPath,
+          order: maxOrder + 1,
+          addedAt: Date.now(),
+          groupId: groupId,
+          windowConfig: launcherItem.windowConfig,
+          windowTitle: launcherItem.windowTitle, // 後方互換性のため
+        };
+      }
 
       // アイテムを追加
       items.push(workspaceItem);

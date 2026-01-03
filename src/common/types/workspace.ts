@@ -34,7 +34,7 @@ export interface WorkspaceItem {
   /** アイテムのパス、URL、またはコマンド */
   path: string;
   /** アイテムのタイプ */
-  type: 'url' | 'file' | 'folder' | 'app' | 'customUri';
+  type: 'url' | 'file' | 'folder' | 'app' | 'customUri' | 'windowOperation';
   /** アイテムのアイコン（base64エンコードされたデータURL、オプション） */
   icon?: string;
   /** カスタムアイコンのファイル名（オプション） */
@@ -57,6 +57,18 @@ export interface WorkspaceItem {
   windowTitle?: string;
   /** ウィンドウ制御設定（ウィンドウ検索・位置・サイズ制御） */
   windowConfig?: import('./launcher').WindowConfig;
+  /** ウィンドウ操作：X座標（windowOperation専用、オプション） */
+  windowX?: number;
+  /** ウィンドウ操作：Y座標（windowOperation専用、オプション） */
+  windowY?: number;
+  /** ウィンドウ操作：幅（windowOperation専用、オプション） */
+  windowWidth?: number;
+  /** ウィンドウ操作：高さ（windowOperation専用、オプション） */
+  windowHeight?: number;
+  /** ウィンドウ操作：仮想デスクトップ番号（windowOperation専用、オプション） */
+  virtualDesktopNumber?: number;
+  /** ウィンドウ操作：ウィンドウをアクティブにするか（windowOperation専用、オプション） */
+  activateWindow?: boolean;
 }
 
 /**

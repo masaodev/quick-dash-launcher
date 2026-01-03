@@ -254,7 +254,9 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                           min="600"
                           max="1200"
                           value={editedSettings.editModeHeight}
-                          onChange={(e) => handleNumberInputChange('editModeHeight', e.target.value)}
+                          onChange={(e) =>
+                            handleNumberInputChange('editModeHeight', e.target.value)
+                          }
                           onBlur={handleNumberInputBlur}
                           disabled={isLoading}
                         />
