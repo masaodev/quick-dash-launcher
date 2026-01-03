@@ -433,9 +433,6 @@ export function useTabManager({
         ...prev,
         dataFileTabs: updatedTabs,
       }));
-
-      // 新規タブを展開状態にする
-      setExpandedTabs((prev) => new Set([...prev, updatedTabs.length - 1]));
     } catch (error) {
       console.error('タブの追加に失敗しました:', error);
       showAlert('タブの追加に失敗しました。', 'error');
@@ -556,13 +553,7 @@ export function useTabManager({
       console.error('タブ設定の保存に失敗しました:', error);
       showAlert('タブ設定の保存に失敗しました。', 'error');
     }
-  }, [
-    editedSettings,
-    pendingFileOperations,
-    handleSettingChange,
-    showAlert,
-    getDefaultFileLabel,
-  ]);
+  }, [editedSettings, pendingFileOperations, handleSettingChange, showAlert, getDefaultFileLabel]);
 
   // タブ管理のキャンセル処理
   const handleCancelTabChanges = useCallback(
