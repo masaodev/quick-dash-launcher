@@ -1,0 +1,61 @@
+# Dependabot設定ファイル
+# 依存関係のセキュリティアップデートとバージョンアップデートを自動化
+
+version: 2
+updates:
+  # npmパッケージの依存関係を管理
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Tokyo"
+    # 同時に開くPR数の上限
+    open-pull-requests-limit: 10
+    # PRのプレフィックス設定
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps-dev"
+      include: "scope"
+    # ラベルを自動付与
+    labels:
+      - "dependencies"
+      - "automated"
+    # バージョニング戦略
+    versioning-strategy: "increase"
+    # グループ化設定: 開発依存関係
+    groups:
+      development-dependencies:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+      # 本番依存関係のメジャーアップデート
+      production-major:
+        dependency-type: "production"
+        update-types:
+          - "major"
+      # 本番依存関係のマイナー・パッチアップデート
+      production-minor-patch:
+        dependency-type: "production"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # GitHub Actionsの依存関係を管理
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Tokyo"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "automated"

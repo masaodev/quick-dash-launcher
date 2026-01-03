@@ -128,4 +128,9 @@
   --icon-size: 32px;
   --scrollbar-width: 8px;
   --font-family-mono: monospace;
+
+  /* メニュー・ドロップダウン */
+  --menu-width-min: 350px;
+  --menu-width-max: 450px;
+  --menu-max-height: 400px;
 }
