@@ -567,7 +567,10 @@ export function useTabManager({
       // 保留中のファイル操作をクリア
       setPendingFileOperations({ filesToCreate: [], filesToDelete: [] });
 
-      showAlert('変更を破棄しました。', 'info');
+      // 確認ダイアログを表示した場合のみアラートを表示
+      if (!skipConfirmation) {
+        showAlert('変更を破棄しました。', 'info');
+      }
     },
     [savedTabsState, setEditedSettings, showConfirm, showAlert]
   );
