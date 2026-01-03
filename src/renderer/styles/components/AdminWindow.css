@@ -110,6 +110,62 @@
   font-size: var(--font-size-base);
 }
 
+/* ウィンドウサイズ用横並びレイアウト */
+.window-size-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.window-size-group {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--spacing-lg);
+}
+
+.window-size-group-title {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--text-primary);
+  min-width: 90px;
+  flex-shrink: 0;
+}
+
+.window-size-inputs {
+  display: flex;
+  gap: var(--spacing-xl);
+  align-items: center;
+}
+
+.window-size-field {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.window-size-field label {
+  font-weight: 500;
+  color: var(--text-secondary);
+  font-size: var(--font-size-base);
+  min-width: 40px;
+}
+
+.window-size-field input[type='number'] {
+  width: 100px;
+  padding: var(--spacing-sm);
+  border: var(--border-normal);
+  border-radius: var(--border-radius);
+  font-family: inherit;
+  font-size: var(--font-size-base);
+}
+
+.window-size-field .unit {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  margin-left: 0;
+}
+
 .setting-item input[type='number'],
 .setting-item input[type='text'] {
   padding: var(--spacing-sm);
