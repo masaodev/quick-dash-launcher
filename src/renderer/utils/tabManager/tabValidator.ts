@@ -48,11 +48,7 @@ export const TabValidator = {
    * ])
    * // => { valid: false, reason: 'data.txtは最低1つのタブに含まれている必要があります...' }
    */
-  canRemoveFileFromTab(
-    fileName: string,
-    tabIndex: number,
-    tabs: DataFileTab[]
-  ): ValidationResult {
+  canRemoveFileFromTab(fileName: string, tabIndex: number, tabs: DataFileTab[]): ValidationResult {
     if (tabIndex < 0 || tabIndex >= tabs.length) {
       return { valid: false, reason: 'タブが見つかりません。' };
     }
@@ -102,11 +98,7 @@ export const TabValidator = {
    *   { name: 'サブ1', files: ['data.txt'] }
    * ]) // => false
    */
-  isFileUsedInOtherTabs(
-    fileName: string,
-    excludeTabIndex: number,
-    tabs: DataFileTab[]
-  ): boolean {
+  isFileUsedInOtherTabs(fileName: string, excludeTabIndex: number, tabs: DataFileTab[]): boolean {
     return tabs.some((t, idx) => idx !== excludeTabIndex && t.files.includes(fileName));
   },
 

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { TabValidator } from '../tabValidator';
 import { DataFileTab } from '@common/types';
+
+import { TabValidator } from '../tabValidator';
 
 describe('TabValidator', () => {
   describe('canDeleteTab', () => {

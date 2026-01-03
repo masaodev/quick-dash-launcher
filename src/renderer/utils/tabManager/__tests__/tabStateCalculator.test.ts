@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
+import { DataFileTab } from '@common/types';
+
 import { TabStateCalculator } from '../tabStateCalculator';
 import type { SavedTabState, PendingFileOperations } from '../tabStateCalculator';
-import { DataFileTab } from '@common/types';
 
 describe('TabStateCalculator', () => {
   describe('hasUnsavedChanges', () => {

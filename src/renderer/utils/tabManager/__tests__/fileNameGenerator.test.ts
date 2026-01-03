@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { FileNameGenerator } from '../fileNameGenerator';
 import { DataFileTab } from '@common/types';
+
+import { FileNameGenerator } from '../fileNameGenerator';
 
 describe('FileNameGenerator', () => {
   describe('getDefaultTabName', () => {

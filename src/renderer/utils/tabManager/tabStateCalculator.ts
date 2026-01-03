@@ -48,8 +48,7 @@ export const TabStateCalculator = {
     currentLabels: Record<string, string>,
     pendingOps: PendingFileOperations
   ): boolean {
-    const hasTabsChange =
-      JSON.stringify(savedState.dataFileTabs) !== JSON.stringify(currentTabs);
+    const hasTabsChange = JSON.stringify(savedState.dataFileTabs) !== JSON.stringify(currentTabs);
     const hasLabelsChange =
       JSON.stringify(savedState.dataFileLabels) !== JSON.stringify(currentLabels);
     const hasPendingOps =
