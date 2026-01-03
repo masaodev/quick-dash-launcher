@@ -277,7 +277,9 @@ export function convertRegisterItemToRawDataLine(
     newType = 'directive';
     if (item.dirOptions) {
       const optionsStr = formatDirOptionsToString(item.dirOptions);
-      newContent = optionsStr ? `dir,${escapeCSV(item.path)},${optionsStr}` : `dir,${escapeCSV(item.path)}`;
+      newContent = optionsStr
+        ? `dir,${escapeCSV(item.path)},${optionsStr}`
+        : `dir,${escapeCSV(item.path)}`;
     } else {
       newContent = `dir,${escapeCSV(item.path)}`;
     }
