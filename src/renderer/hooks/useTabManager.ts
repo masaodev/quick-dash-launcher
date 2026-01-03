@@ -543,29 +543,34 @@ export function useTabManager({
   ]);
 
   // タブ管理のキャンセル処理
-  const handleCancelTabChanges = useCallback(async () => {
-    const confirmed = await showConfirm('未保存の変更を破棄しますか？', {
-      title: 'タブ管理の変更を破棄',
-      confirmText: '破棄',
-      danger: true,
-    });
+  const handleCancelTabChanges = useCallback(
+    async (skipConfirmation = false) => {
+      if (!skipConfirmation) {
+        const confirmed = await showConfirm('未保存の変更を破棄しますか？', {
+          title: 'タブ管理の変更を破棄',
+          confirmText: '破棄',
+          danger: true,
+        });
 
-    if (!confirmed) return;
+        if (!confirmed) return;
+      }
 
-    // 保存済み状態に戻す
-    if (savedTabsState) {
-      setEditedSettings((prev) => ({
-        ...prev,
-        dataFileTabs: savedTabsState.dataFileTabs,
-        dataFileLabels: savedTabsState.dataFileLabels,
-      }));
-    }
+      // 保存済み状態に戻す
+      if (savedTabsState) {
+        setEditedSettings((prev) => ({
+          ...prev,
+          dataFileTabs: savedTabsState.dataFileTabs,
+          dataFileLabels: savedTabsState.dataFileLabels,
+        }));
+      }
 
-    // 保留中のファイル操作をクリア
-    setPendingFileOperations({ filesToCreate: [], filesToDelete: [] });
+      // 保留中のファイル操作をクリア
+      setPendingFileOperations({ filesToCreate: [], filesToDelete: [] });
 
-    showAlert('変更を破棄しました。', 'info');
-  }, [savedTabsState, setEditedSettings, showConfirm, showAlert]);
+      showAlert('変更を破棄しました。', 'info');
+    },
+    [savedTabsState, setEditedSettings, showConfirm, showAlert]
+  );
 
   return {
     fileModalTabIndex,

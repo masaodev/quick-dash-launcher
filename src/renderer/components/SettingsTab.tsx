@@ -107,8 +107,8 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
 
         if (!confirmed) return;
 
-        // 変更を破棄
-        await handleCancelTabChanges();
+        // 変更を破棄（確認済みなのでスキップ）
+        await handleCancelTabChanges(true);
       }
 
       setSelectedCategory(newCategory);
@@ -703,7 +703,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                   <button
                     type="button"
                     className="btn-base btn-secondary"
-                    onClick={handleCancelTabChanges}
+                    onClick={() => handleCancelTabChanges()}
                     disabled={!hasUnsavedTabChanges || isLoading}
                   >
                     ↩️ キャンセル
