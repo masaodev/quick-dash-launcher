@@ -179,6 +179,29 @@ Task tool with subagent_type="quality-checker"
 
 詳細は `.claude/agents/quality-checker.md` を参照してください。
 
+
+## コードレビュー
+
+**大きな変更や重要な機能追加後**、包括的なコードレビューを実施する場合は、**`code-reviewer`サブエージェント**を使用してください。
+
+```
+Task tool with subagent_type="code-reviewer"
+```
+
+このサブエージェントは以下を自動的に実行します：
+- コード品質の総合評価
+- セキュリティ脆弱性の検出
+- デザインパターンとベストプラクティスの確認
+- パフォーマンス最適化の提案
+- 保守性と技術的負債の評価
+- 優先度付きの改善提案
+
+詳細は `.claude/agents/code-reviewer.md` を参照してください。
+
+**quality-checkerとの違い:**
+- **quality-checker**: コミット前の軽量チェック（型・Lint・テスト）
+- **code-reviewer**: 包括的なコードレビュー（設計・セキュリティ・パフォーマンス）
+
 ## ドキュメント更新
 
 機能追加・変更時、ドキュメント更新を実施するかユーザーに確認してください。実施する場合は、**`documentation-updater`サブエージェント**を使用してください。

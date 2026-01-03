@@ -25,7 +25,8 @@ QuickDashLauncherのアーキテクチャ概要とデータフローを説明し
 | `AutoLaunchService` | Windows起動時の自動起動設定 | シングルトン |
 | `FaviconService` | ファビコン・アイコンの取得・キャッシュ管理 | シングルトン |
 | `SearchHistoryService` | 検索履歴の保存・読み込み | シングルトン |
-| `WorkspaceService` | ワークスペースアイテム・グループ・実行履歴の管理 | シングルトン |
+| `WorkspaceService` | ワークスペースアイテム・グループの管理 | シングルトン |
+| `ExecutionHistoryService` | 実行履歴の保存・読み込み・管理 | シングルトン |
 | `IconService` | アイテムタイプに応じた適切なアイコン取得処理 | 静的クラス |
 
 **設計原則:**
@@ -157,7 +158,7 @@ IPCハンドラーは機能ごとに分離（`src/main/ipc/`）:
    - クリップボードからペースト（`Ctrl+V`）- v0.5.1以降
 3. `WorkspaceService`がアイテムをworkspace.jsonに保存
 4. ワークスペースウィンドウでグループ管理・名前変更・並び替え
-5. アイテム起動時に実行履歴（execution-history.json）に記録（最大10件）
+5. アイテム起動時に`ExecutionHistoryService`が実行履歴（execution-history.json）に記録（最大10件）
 6. 実行履歴からワークスペースへドラッグ&ドロップでコピー可能
 
 ---
