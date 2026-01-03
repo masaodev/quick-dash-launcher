@@ -187,10 +187,10 @@ export function useTabManager({
       }
 
       const confirmed = await showConfirm(
-        `タブ「${tab.name}」を削除しますか？\n\n⚠️ このタブに含まれるデータファイル（${tab.files.join(', ')}）は\nディスクから完全に削除されます。この操作は取り消せません。`,
+        `タブ「${tab.name}」を削除しますか？\n\n⚠️ 保存ボタンを押すと、このタブに含まれるデータファイル（${tab.files.join(', ')}）は\nディスクから完全に削除されます。`,
         {
           title: 'タブ削除の確認',
-          confirmText: '完全に削除',
+          confirmText: '削除',
           danger: true,
         }
       );
@@ -317,10 +317,10 @@ export function useTabManager({
       }
 
       const confirmed = await showConfirm(
-        `${fileName} を削除しますか？\n\n⚠️ データファイルはディスクから完全に削除されます。\nこの操作は取り消せません。`,
+        `${fileName} を削除しますか？\n\n⚠️ 保存ボタンを押すと、データファイルはディスクから完全に削除されます。`,
         {
           title: 'データファイル削除の確認',
-          confirmText: '完全に削除',
+          confirmText: '削除',
           danger: true,
         }
       );
