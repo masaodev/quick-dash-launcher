@@ -277,15 +277,16 @@ export function convertRegisterItemToRawDataLine(
     newType = 'directive';
     if (item.dirOptions) {
       const optionsStr = formatDirOptionsToString(item.dirOptions);
-      newContent = optionsStr ? `dir,${item.path},${optionsStr}` : `dir,${item.path}`;
+      newContent = optionsStr ? `dir,${escapeCSV(item.path)},${optionsStr}` : `dir,${escapeCSV(item.path)}`;
     } else {
-      newContent = `dir,${item.path}`;
+      newContent = `dir,${escapeCSV(item.path)}`;
     }
   } else if (item.itemCategory === 'group') {
     // グループアイテムの場合：group,グループ名,アイテム1,アイテム2,...
     newType = 'directive';
     const itemNames = item.groupItemNames || [];
-    newContent = `group,${item.name},${itemNames.join(',')}`;
+    const escapedItemNames = itemNames.map((name) => escapeCSV(name));
+    newContent = `group,${escapeCSV(item.name)},${escapedItemNames.join(',')}`;
   } else if (item.itemCategory === 'window') {
     // ウィンドウ操作アイテムの場合：window,表示名,ウィンドウタイトル,x,y,width,height,virtualDesktopNumber,activateWindow
     newType = 'directive';
@@ -294,8 +295,8 @@ export function convertRegisterItemToRawDataLine(
 
     const fields = [
       'window',
-      item.name,
-      cfg.windowTitle,
+      escapeCSV(item.name),
+      escapeCSV(cfg.windowTitle),
       cfg.x?.toString() || '',
       cfg.y?.toString() || '',
       cfg.width?.toString() || '',
