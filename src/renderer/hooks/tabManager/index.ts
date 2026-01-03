@@ -25,6 +25,7 @@ interface UseTabManagerProps {
       danger?: boolean;
     }
   ) => Promise<boolean>;
+  dataFiles: string[]; // 後方互換性のため（内部では使用しない）
 }
 
 interface UseTabManagerReturn {
@@ -64,6 +65,7 @@ export function useTabManager({
   handleSettingChange,
   showAlert,
   showConfirm,
+  dataFiles: _dataFiles, // 後方互換性のため受け取るが使用しない
 }: UseTabManagerProps): UseTabManagerReturn {
   // 状態管理
   const {
