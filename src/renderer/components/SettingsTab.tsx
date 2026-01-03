@@ -195,64 +195,74 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
             <>
               <div className="settings-section">
                 <h3>ウィンドウサイズ</h3>
-                <div className="setting-row">
-                  <div className="setting-item">
-                    <label htmlFor="windowWidth">通常時の幅:</label>
-                    <input
-                      id="windowWidth"
-                      type="number"
-                      min="400"
-                      max="2000"
-                      value={editedSettings.windowWidth}
-                      onChange={(e) => handleNumberInputChange('windowWidth', e.target.value)}
-                      onBlur={handleNumberInputBlur}
-                      disabled={isLoading}
-                    />
-                    <span className="unit">px</span>
+                <div className="window-size-grid">
+                  <div className="window-size-group">
+                    <div className="window-size-group-title">メイン画面</div>
+                    <div className="window-size-inputs">
+                      <div className="window-size-field">
+                        <label htmlFor="windowWidth">幅:</label>
+                        <input
+                          id="windowWidth"
+                          type="number"
+                          min="400"
+                          max="2000"
+                          value={editedSettings.windowWidth}
+                          onChange={(e) => handleNumberInputChange('windowWidth', e.target.value)}
+                          onBlur={handleNumberInputBlur}
+                          disabled={isLoading}
+                        />
+                        <span className="unit">px</span>
+                      </div>
+                      <div className="window-size-field">
+                        <label htmlFor="windowHeight">高さ:</label>
+                        <input
+                          id="windowHeight"
+                          type="number"
+                          min="300"
+                          max="1200"
+                          value={editedSettings.windowHeight}
+                          onChange={(e) => handleNumberInputChange('windowHeight', e.target.value)}
+                          onBlur={handleNumberInputBlur}
+                          disabled={isLoading}
+                        />
+                        <span className="unit">px</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="setting-item">
-                    <label htmlFor="windowHeight">通常時の高さ:</label>
-                    <input
-                      id="windowHeight"
-                      type="number"
-                      min="300"
-                      max="1200"
-                      value={editedSettings.windowHeight}
-                      onChange={(e) => handleNumberInputChange('windowHeight', e.target.value)}
-                      onBlur={handleNumberInputBlur}
-                      disabled={isLoading}
-                    />
-                    <span className="unit">px</span>
-                  </div>
-                </div>
-                <div className="setting-row">
-                  <div className="setting-item">
-                    <label htmlFor="editModeWidth">アイテム管理時の幅:</label>
-                    <input
-                      id="editModeWidth"
-                      type="number"
-                      min="800"
-                      max="2000"
-                      value={editedSettings.editModeWidth}
-                      onChange={(e) => handleNumberInputChange('editModeWidth', e.target.value)}
-                      onBlur={handleNumberInputBlur}
-                      disabled={isLoading}
-                    />
-                    <span className="unit">px</span>
-                  </div>
-                  <div className="setting-item">
-                    <label htmlFor="editModeHeight">アイテム管理時の高さ:</label>
-                    <input
-                      id="editModeHeight"
-                      type="number"
-                      min="600"
-                      max="1200"
-                      value={editedSettings.editModeHeight}
-                      onChange={(e) => handleNumberInputChange('editModeHeight', e.target.value)}
-                      onBlur={handleNumberInputBlur}
-                      disabled={isLoading}
-                    />
-                    <span className="unit">px</span>
+                  <div className="window-size-group">
+                    <div className="window-size-group-title">管理画面</div>
+                    <div className="window-size-inputs">
+                      <div className="window-size-field">
+                        <label htmlFor="editModeWidth">幅:</label>
+                        <input
+                          id="editModeWidth"
+                          type="number"
+                          min="800"
+                          max="2000"
+                          value={editedSettings.editModeWidth}
+                          onChange={(e) => handleNumberInputChange('editModeWidth', e.target.value)}
+                          onBlur={handleNumberInputBlur}
+                          disabled={isLoading}
+                        />
+                        <span className="unit">px</span>
+                      </div>
+                      <div className="window-size-field">
+                        <label htmlFor="editModeHeight">高さ:</label>
+                        <input
+                          id="editModeHeight"
+                          type="number"
+                          min="600"
+                          max="1200"
+                          value={editedSettings.editModeHeight}
+                          onChange={(e) =>
+                            handleNumberInputChange('editModeHeight', e.target.value)
+                          }
+                          onBlur={handleNumberInputBlur}
+                          disabled={isLoading}
+                        />
+                        <span className="unit">px</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

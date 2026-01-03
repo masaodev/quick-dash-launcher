@@ -1,6 +1,6 @@
 # データファイル形式仕様
 
-QuickDashLauncherのデータファイル（data.txt、data2.txt）の完全な形式仕様です。
+QuickDashLauncherのデータファイル形式の完全な仕様です。
 
 ## ファイル概要
 

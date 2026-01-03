@@ -83,6 +83,8 @@ const WorkspaceItemCard: React.FC<WorkspaceItemCardProps> = ({
         return '📄';
       case 'customUri':
         return '🔗';
+      case 'windowOperation':
+        return '🪟';
       default:
         return '📄';
     }

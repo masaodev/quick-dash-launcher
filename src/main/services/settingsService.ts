@@ -41,7 +41,7 @@ export class SettingsService {
     windowWidth: 600,
     windowHeight: 400,
     editModeWidth: 1200,
-    editModeHeight: 700,
+    editModeHeight: 1000,
     autoLaunch: false,
     backupEnabled: false,
     backupOnStart: false,

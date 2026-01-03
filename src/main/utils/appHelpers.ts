@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import PathManager from '../config/pathManager.js';
 
 /**
- * デフォルトのdata.txtファイルを作成
+ * デフォルトのデータファイルを作成
  */
 export function createDefaultDataFile(): void {
   const dataPath = PathManager.getDataFilePath();
