@@ -586,6 +586,13 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                                 {tab.files.map((fileName) => {
                                   const isDataTxt = fileName === 'data.txt';
                                   const isLastFile = tab.files.length === 1;
+                                  // data.txtが他のタブにも存在するかチェック
+                                  const dataFileExistsInOtherTabs =
+                                    isDataTxt &&
+                                    (editedSettings.dataFileTabs || []).some(
+                                      (t, idx) => idx !== tabIndex && t.files.includes('data.txt')
+                                    );
+                                  const canDelete = !isDataTxt || dataFileExistsInOtherTabs;
 
                                   return (
                                     <div key={fileName} className="data-file-item">
@@ -607,10 +614,10 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                                         <span className="data-file-physical-name">{fileName}</span>
                                       </div>
                                       <div className="data-file-actions">
-                                        {isDataTxt ? (
+                                        {isDataTxt && !dataFileExistsInOtherTabs ? (
                                           <span
                                             className="data-file-default-badge"
-                                            title="既定のデータファイルは削除できません"
+                                            title="data.txtは最低1つのタブに必要です"
                                           >
                                             既定
                                           </span>

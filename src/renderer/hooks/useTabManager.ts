@@ -304,26 +304,40 @@ export function useTabManager({
 
       const tab = tabs[tabIndex];
 
-      // data.txtは削除不可
-      if (fileName === 'data.txt') {
-        showAlert('data.txtは削除できません。', 'warning');
-        return;
-      }
-
       // タブに最低1つのファイルが必要
       if (tab.files.length === 1) {
         showAlert('タブには最低1つのファイルが必要です。タブごと削除してください。', 'warning');
         return;
       }
 
-      const confirmed = await showConfirm(
-        `${fileName} を削除しますか？\n\n⚠️ 保存ボタンを押すと、データファイルはディスクから完全に削除されます。`,
-        {
-          title: 'データファイル削除の確認',
-          confirmText: '削除',
-          danger: true,
+      // data.txtの場合、他のタブにもdata.txtが存在するかチェック
+      if (fileName === 'data.txt') {
+        const otherTabsWithDataTxt = tabs.filter(
+          (t, idx) => idx !== tabIndex && t.files.includes('data.txt')
+        );
+        if (otherTabsWithDataTxt.length === 0) {
+          showAlert(
+            'data.txtは最低1つのタブに含まれている必要があります。\n他のタブにdata.txtを追加してから削除してください。',
+            'warning'
+          );
+          return;
         }
+      }
+
+      // 他のタブでも使用されているかチェック
+      const fileUsedInOtherTabs = tabs.some(
+        (t, idx) => idx !== tabIndex && t.files.includes(fileName)
       );
+
+      const message = fileUsedInOtherTabs
+        ? `${fileName} をこのタブから削除しますか？\n\n他のタブでも使用されているため、ファイル自体は削除されません。`
+        : `${fileName} を削除しますか？\n\n⚠️ 保存ボタンを押すと、データファイルはディスクから完全に削除されます。`;
+
+      const confirmed = await showConfirm(message, {
+        title: fileUsedInOtherTabs ? 'タブから削除' : 'データファイル削除の確認',
+        confirmText: '削除',
+        danger: !fileUsedInOtherTabs,
+      });
 
       if (!confirmed) {
         return;
@@ -344,7 +358,7 @@ export function useTabManager({
           dataFileTabs: updatedTabs,
         }));
 
-        // ファイルを削除予定リストに追加
+        // ファイルを削除予定リストに追加（他のタブで使用されていない場合のみ）
         setPendingFileOperations((prev) => {
           // 作成予定リストにあるファイルの場合は、作成予定リストから削除するだけ
           if (prev.filesToCreate.includes(fileName)) {
@@ -353,11 +367,19 @@ export function useTabManager({
               filesToCreate: prev.filesToCreate.filter((f) => f !== fileName),
             };
           }
-          // 既存ファイルの場合は削除予定リストに追加
-          return {
-            ...prev,
-            filesToDelete: [...prev.filesToDelete, fileName],
-          };
+
+          // 他のタブでも使用されているかチェック
+          const fileUsedInOtherTabs = updatedTabs.some((t) => t.files.includes(fileName));
+
+          // 他のタブで使用されていない場合のみ削除予定リストに追加
+          if (!fileUsedInOtherTabs) {
+            return {
+              ...prev,
+              filesToDelete: [...prev.filesToDelete, fileName],
+            };
+          }
+
+          return prev;
         });
       } catch (error) {
         console.error('ファイルの削除に失敗しました:', error);
