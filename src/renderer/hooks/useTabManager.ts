@@ -556,13 +556,7 @@ export function useTabManager({
       console.error('タブ設定の保存に失敗しました:', error);
       showAlert('タブ設定の保存に失敗しました。', 'error');
     }
-  }, [
-    editedSettings,
-    pendingFileOperations,
-    handleSettingChange,
-    showAlert,
-    getDefaultFileLabel,
-  ]);
+  }, [editedSettings, pendingFileOperations, handleSettingChange, showAlert, getDefaultFileLabel]);
 
   // タブ管理のキャンセル処理
   const handleCancelTabChanges = useCallback(

@@ -599,7 +599,9 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                                       <div className="data-file-icon">📄</div>
                                       <div className="data-file-info">
                                         <div className="data-file-label-row">
-                                          <span className="data-file-label-prefix">データファイル:</span>
+                                          <span className="data-file-label-prefix">
+                                            データファイル:
+                                          </span>
                                           <input
                                             type="text"
                                             className="data-file-label-input"
