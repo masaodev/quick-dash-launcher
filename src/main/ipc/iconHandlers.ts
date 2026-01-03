@@ -25,17 +25,6 @@ let mainWindow: BrowserWindow | null = null;
 const execAsync = promisify(exec);
 
 /**
- * バッファをBase64エンコードされたデータURLに変換する
- * @param buffer 変換するバッファ
- * @param mimeType MIMEタイプ（デフォルト: 'image/png'）
- * @returns base64エンコードされたデータURL
- */
-function bufferToBase64DataUrl(buffer: Buffer, mimeType = 'image/png'): string {
-  const base64 = buffer.toString('base64');
-  return `data:${mimeType};base64,${base64}`;
-}
-
-/**
  * 環境変数を展開する共通関数
  * @param path 環境変数を含む可能性があるパス
  * @returns 環境変数が展開されたパス
@@ -116,7 +105,7 @@ async function extractShortcutIcon(lnkPath: string, iconsFolder: string): Promis
               iconLogger.info(
                 `カスタムアイコンファイルからアイコンを抽出成功: ${expandedIconPath}`
               );
-              return bufferToBase64DataUrl(extractedIconBuffer);
+              return FileUtils.bufferToBase64DataUrl(extractedIconBuffer);
             }
           }
         } catch (error) {
@@ -139,7 +128,7 @@ async function extractShortcutIcon(lnkPath: string, iconsFolder: string): Promis
       FileUtils.writeBinaryFile(lnkIconPath, shortcutIconBuffer);
 
       iconLogger.info(`ショートカットファイルからアイコンを抽出成功: ${lnkPath}`);
-      return bufferToBase64DataUrl(shortcutIconBuffer);
+      return FileUtils.bufferToBase64DataUrl(shortcutIconBuffer);
     }
 
     // 3. 最終フォールバック：ターゲットファイルからアイコンを抽出
@@ -239,10 +228,10 @@ export async function extractIcon(filePath: string, iconsFolder: string): Promis
 
     if (iconBuffer && iconBuffer.length > 0) {
       // キャッシュに保存
-      fs.writeFileSync(iconPath, iconBuffer);
+      FileUtils.writeBinaryFile(iconPath, iconBuffer);
 
       // base64データURLに変換
-      return bufferToBase64DataUrl(iconBuffer);
+      return FileUtils.bufferToBase64DataUrl(iconBuffer);
     }
 
     iconLogger.warn(`アイコンが抽出できませんでした: ${filePath}`);
@@ -271,9 +260,9 @@ export async function extractCustomUriIcon(
     const iconPath = path.join(iconsFolder, iconName);
 
     // アイコンがすでにキャッシュされているか確認
-    if (fs.existsSync(iconPath)) {
-      const cachedIcon = fs.readFileSync(iconPath);
-      return bufferToBase64DataUrl(cachedIcon);
+    const cachedIcon = FileUtils.readCachedBinaryAsBase64(iconPath);
+    if (cachedIcon) {
+      return cachedIcon;
     }
 
     // レジストリからハンドラーアプリケーションを取得
@@ -287,10 +276,10 @@ export async function extractCustomUriIcon(
 
     if (iconBuffer && iconBuffer.length > 0) {
       // キャッシュに保存
-      fs.writeFileSync(iconPath, iconBuffer);
+      FileUtils.writeBinaryFile(iconPath, iconBuffer);
 
       // base64データURLに変換
-      return bufferToBase64DataUrl(iconBuffer);
+      return FileUtils.bufferToBase64DataUrl(iconBuffer);
     }
 
     return null;
@@ -339,9 +328,9 @@ export async function extractFileIconByExtension(
     const iconPath = path.join(extensionsFolder, iconName);
 
     // アイコンがすでにキャッシュされているか確認
-    if (fs.existsSync(iconPath)) {
-      const cachedIcon = fs.readFileSync(iconPath);
-      return bufferToBase64DataUrl(cachedIcon);
+    const cachedIcon = FileUtils.readCachedBinaryAsBase64(iconPath);
+    if (cachedIcon) {
+      return cachedIcon;
     }
 
     // 拡張子に対応するダミーファイルを作成してアイコンを取得
@@ -353,10 +342,10 @@ export async function extractFileIconByExtension(
 
       if (iconBuffer && iconBuffer.length > 0) {
         // キャッシュに保存
-        fs.writeFileSync(iconPath, iconBuffer);
+        FileUtils.writeBinaryFile(iconPath, iconBuffer);
 
         // base64データURLに変換
-        return bufferToBase64DataUrl(iconBuffer);
+        return FileUtils.bufferToBase64DataUrl(iconBuffer);
       }
     } finally {
       // 一時ファイルを削除
@@ -579,7 +568,7 @@ async function loadCachedIcons(
 
       if (iconPath) {
         const iconBuffer = fs.readFileSync(iconPath);
-        iconCache[item.path] = bufferToBase64DataUrl(iconBuffer);
+        iconCache[item.path] = FileUtils.bufferToBase64DataUrl(iconBuffer);
       }
     } catch (error) {
       iconLogger.error({ itemPath: item.path, error }, 'キャッシュされたアイコンの読み込みに失敗');

@@ -155,4 +155,39 @@ export class FileUtils {
       return false;
     }
   }
+
+  /**
+   * バッファをBase64エンコードされたデータURLに変換する
+   *
+   * バイナリデータ（画像ファイルなど）をBase64エンコードし、
+   * ブラウザで直接利用可能なデータURL形式に変換します。
+   * アイコンやファビコンの表示に使用されます。
+   *
+   * @param buffer - 変換するバッファ（画像データなど）
+   * @param mimeType - MIMEタイプ（デフォルト: 'image/png'）
+   *                   画像形式に応じて 'image/jpeg', 'image/svg+xml' などを指定
+   * @returns base64エンコードされたデータURL
+   *          形式: `data:{mimeType};base64,{base64文字列}`
+   *
+   * @example
+   * // PNG画像をデータURLに変換
+   * const imageBuffer = fs.readFileSync('icon.png');
+   * const dataUrl = FileUtils.bufferToBase64DataUrl(imageBuffer);
+   * // => 'data:image/png;base64,iVBORw0KGgo...'
+   *
+   * @example
+   * // JPEG画像をデータURLに変換
+   * const jpegBuffer = fs.readFileSync('photo.jpg');
+   * const jpegDataUrl = FileUtils.bufferToBase64DataUrl(jpegBuffer, 'image/jpeg');
+   * // => 'data:image/jpeg;base64,/9j/4AAQSkZJRg...'
+   *
+   * @example
+   * // SVGをデータURLに変換
+   * const svgBuffer = Buffer.from('<svg>...</svg>');
+   * const svgDataUrl = FileUtils.bufferToBase64DataUrl(svgBuffer, 'image/svg+xml');
+   */
+  static bufferToBase64DataUrl(buffer: Buffer, mimeType = 'image/png'): string {
+    const base64 = buffer.toString('base64');
+    return `data:${mimeType};base64,${base64}`;
+  }
 }
