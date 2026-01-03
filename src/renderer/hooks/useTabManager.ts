@@ -1,4 +1,4 @@
-import { useState, useCallback, Dispatch, SetStateAction } from 'react';
+import { useState, useCallback, useEffect, Dispatch, SetStateAction } from 'react';
 import { AppSettings, DataFileTab } from '@common/types';
 
 interface UseTabManagerProps {
@@ -31,6 +31,27 @@ export function useTabManager({
 }: UseTabManagerProps) {
   const [fileModalTabIndex, setFileModalTabIndex] = useState<number | null>(null);
 
+  // アコーディオン展開状態（タブインデックスのセット）
+  const [expandedTabs, setExpandedTabs] = useState<Set<number>>(new Set());
+
+  // 保存済み状態（キャンセル時に復元するため）
+  const [savedTabsState, setSavedTabsState] = useState<{
+    dataFileTabs: DataFileTab[];
+    dataFileLabels: Record<string, string>;
+  } | null>(null);
+
+  // 保留中のファイル操作
+  const [pendingFileOperations, setPendingFileOperations] = useState<{
+    filesToCreate: string[];
+    filesToDelete: string[];
+  }>({
+    filesToCreate: [],
+    filesToDelete: [],
+  });
+
+  // 未保存変更フラグ
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
   // デフォルトのタブ名を生成（data.txt→メイン, data2.txt→サブ1, data3.txt→サブ2, ...）
   const getDefaultTabName = useCallback((fileName: string): string => {
     if (fileName === 'data.txt') {
@@ -44,15 +65,64 @@ export function useTabManager({
     return fileName;
   }, []);
 
-  // タブ名のBlur時の保存処理
-  const handleTabNameBlur = useCallback(async () => {
-    try {
-      await handleSettingChange('dataFileTabs', editedSettings.dataFileTabs || []);
-    } catch (error) {
-      console.error('タブ名の保存に失敗しました:', error);
-      showAlert('タブ名の保存に失敗しました。', 'error');
-    }
-  }, [editedSettings.dataFileTabs, handleSettingChange, showAlert]);
+  // デフォルトのファイルラベルを生成（紐づくタブ名 + 用データファイル）
+  const getDefaultFileLabel = useCallback(
+    (fileName: string, tabName?: string): string => {
+      // タブ名が指定されていない場合は、ファイルが紐づいている最初のタブ名を取得
+      if (!tabName) {
+        const tabs = editedSettings.dataFileTabs || [];
+        const linkedTab = tabs.find((tab) => tab.files.includes(fileName));
+        tabName = linkedTab ? linkedTab.name : getDefaultTabName(fileName);
+      }
+      return `${tabName}用データファイル`;
+    },
+    [editedSettings.dataFileTabs, getDefaultTabName]
+  );
+
+  // 次に使用可能なファイル名を生成（data2.txt, data3.txt, ...）
+  const getNextAvailableFileName = useCallback((): string => {
+    const allFiles = [...dataFiles, ...pendingFileOperations.filesToCreate];
+    const existingNumbers = allFiles
+      .map((file) => {
+        if (file === 'data.txt') return 1;
+        const match = file.match(/^data(\d+)\.txt$/i);
+        return match ? parseInt(match[1]) : null;
+      })
+      .filter((n): n is number => n !== null);
+
+    const nextNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 2;
+    return `data${nextNumber}.txt`;
+  }, [dataFiles, pendingFileOperations.filesToCreate]);
+
+  // 初回表示時に保存済み状態を記録
+  useEffect(() => {
+    setSavedTabsState({
+      dataFileTabs: editedSettings.dataFileTabs || [],
+      dataFileLabels: editedSettings.dataFileLabels || {},
+    });
+  }, []);
+
+  // 変更検知（editedSettings変更時）
+  useEffect(() => {
+    if (!savedTabsState) return;
+
+    const hasTabsChange =
+      JSON.stringify(savedTabsState.dataFileTabs) !==
+      JSON.stringify(editedSettings.dataFileTabs || []);
+    const hasLabelsChange =
+      JSON.stringify(savedTabsState.dataFileLabels) !==
+      JSON.stringify(editedSettings.dataFileLabels || {});
+    const hasPendingOps =
+      pendingFileOperations.filesToCreate.length > 0 ||
+      pendingFileOperations.filesToDelete.length > 0;
+
+    setHasUnsavedChanges(hasTabsChange || hasLabelsChange || hasPendingOps);
+  }, [
+    editedSettings.dataFileTabs,
+    editedSettings.dataFileLabels,
+    savedTabsState,
+    pendingFileOperations,
+  ]);
 
   // タブを上に移動（インデックスベース）
   const handleMoveTabUp = useCallback(
@@ -63,9 +133,12 @@ export function useTabManager({
       const newTabs = [...tabs];
       [newTabs[tabIndex - 1], newTabs[tabIndex]] = [newTabs[tabIndex], newTabs[tabIndex - 1]];
 
-      handleSettingChange('dataFileTabs', newTabs);
+      setEditedSettings((prev) => ({
+        ...prev,
+        dataFileTabs: newTabs,
+      }));
     },
-    [editedSettings.dataFileTabs, handleSettingChange]
+    [editedSettings.dataFileTabs, setEditedSettings]
   );
 
   // タブを下に移動（インデックスベース）
@@ -77,9 +150,12 @@ export function useTabManager({
       const newTabs = [...tabs];
       [newTabs[tabIndex], newTabs[tabIndex + 1]] = [newTabs[tabIndex + 1], newTabs[tabIndex]];
 
-      handleSettingChange('dataFileTabs', newTabs);
+      setEditedSettings((prev) => ({
+        ...prev,
+        dataFileTabs: newTabs,
+      }));
     },
-    [editedSettings.dataFileTabs, handleSettingChange]
+    [editedSettings.dataFileTabs, setEditedSettings]
   );
 
   // タブ名を変更（インデックスベース）
@@ -111,10 +187,10 @@ export function useTabManager({
       }
 
       const confirmed = await showConfirm(
-        `タブ「${tab.name}」を削除しますか？\nこのタブに含まれる全てのファイルも削除されます。`,
+        `タブ「${tab.name}」を削除しますか？\n\n⚠️ このタブに含まれるデータファイル（${tab.files.join(', ')}）は\nディスクから完全に削除されます。この操作は取り消せません。`,
         {
-          title: 'タブ削除',
-          confirmText: '削除',
+          title: 'タブ削除の確認',
+          confirmText: '完全に削除',
           danger: true,
         }
       );
@@ -124,25 +200,42 @@ export function useTabManager({
       }
 
       try {
-        // タブに含まれる全ファイルを削除
-        for (const fileName of tab.files) {
-          await window.electronAPI.deleteDataFile(fileName);
-        }
-
-        // タブを削除
+        // タブを削除（状態更新のみ）
         const updatedTabs = tabs.filter((_, index) => index !== tabIndex);
-        await handleSettingChange('dataFileTabs', updatedTabs);
+        setEditedSettings((prev) => ({
+          ...prev,
+          dataFileTabs: updatedTabs,
+        }));
+
+        // タブに含まれる全ファイルを削除予定リストに追加
+        setPendingFileOperations((prev) => {
+          const newFilesToDelete = [...prev.filesToDelete];
+          for (const fileName of tab.files) {
+            // 作成予定リストにあるファイルの場合は、作成予定リストから削除するだけ
+            if (prev.filesToCreate.includes(fileName)) {
+              continue;
+            }
+            // 既存ファイルの場合は削除予定リストに追加
+            if (!newFilesToDelete.includes(fileName)) {
+              newFilesToDelete.push(fileName);
+            }
+          }
+          return {
+            filesToCreate: prev.filesToCreate.filter((f) => !tab.files.includes(f)),
+            filesToDelete: newFilesToDelete,
+          };
+        });
       } catch (error) {
         console.error('タブの削除に失敗しました:', error);
         showAlert('タブの削除に失敗しました。', 'error');
       }
     },
-    [editedSettings.dataFileTabs, handleSettingChange, showAlert, showConfirm]
+    [editedSettings.dataFileTabs, setEditedSettings, showAlert, showConfirm]
   );
 
   // タブにファイルを追加
   const handleAddFileToTab = useCallback(
-    async (tabIndex: number, fileName: string) => {
+    (tabIndex: number, fileName: string) => {
       const tabs = editedSettings.dataFileTabs || [];
       if (tabIndex < 0 || tabIndex >= tabs.length) return;
 
@@ -158,9 +251,49 @@ export function useTabManager({
         files: [...tab.files, fileName],
       };
 
-      await handleSettingChange('dataFileTabs', updatedTabs);
+      // ファイルにデフォルトラベルを設定
+      const labels = { ...(editedSettings.dataFileLabels || {}) };
+      const currentLabel = labels[fileName];
+
+      // ラベルが未設定の場合、デフォルトラベルを生成
+      if (!currentLabel || currentLabel.trim() === '' || currentLabel === fileName) {
+        const usedLabels = new Set<string>(
+          Object.values(labels).filter((l) => l && l.trim() !== '')
+        );
+        let newLabel = getDefaultFileLabel(fileName, tab.name);
+
+        // 同じラベルが既に存在する場合は番号を付ける
+        if (usedLabels.has(newLabel)) {
+          let counter = 2;
+          while (usedLabels.has(`${newLabel}${counter}`)) {
+            counter++;
+          }
+          newLabel = `${newLabel}${counter}`;
+        }
+
+        labels[fileName] = newLabel;
+
+        // 設定を更新（状態のみ）
+        setEditedSettings((prev) => ({
+          ...prev,
+          dataFileTabs: updatedTabs,
+          dataFileLabels: labels,
+        }));
+      } else {
+        // ラベルが既に設定されている場合は、タブ設定のみ更新
+        setEditedSettings((prev) => ({
+          ...prev,
+          dataFileTabs: updatedTabs,
+        }));
+      }
     },
-    [editedSettings.dataFileTabs, handleSettingChange, showAlert]
+    [
+      editedSettings.dataFileTabs,
+      editedSettings.dataFileLabels,
+      getDefaultFileLabel,
+      setEditedSettings,
+      showAlert,
+    ]
   );
 
   // タブからファイルを削除
@@ -184,10 +317,10 @@ export function useTabManager({
       }
 
       const confirmed = await showConfirm(
-        `${fileName}をタブから削除しますか？\nファイル自体も削除されます。`,
+        `${fileName} を削除しますか？\n\n⚠️ データファイルはディスクから完全に削除されます。\nこの操作は取り消せません。`,
         {
-          title: 'ファイル削除',
-          confirmText: '削除',
+          title: 'データファイル削除の確認',
+          confirmText: '完全に削除',
           danger: true,
         }
       );
@@ -197,10 +330,7 @@ export function useTabManager({
       }
 
       try {
-        // 物理ファイルを削除
-        await window.electronAPI.deleteDataFile(fileName);
-
-        // タブからファイルを削除
+        // タブからファイルを削除（状態更新のみ）
         const newFiles = tab.files.filter((f) => f !== fileName);
 
         const updatedTabs = [...tabs];
@@ -209,87 +339,111 @@ export function useTabManager({
           files: newFiles,
         };
 
-        await handleSettingChange('dataFileTabs', updatedTabs);
+        setEditedSettings((prev) => ({
+          ...prev,
+          dataFileTabs: updatedTabs,
+        }));
+
+        // ファイルを削除予定リストに追加
+        setPendingFileOperations((prev) => {
+          // 作成予定リストにあるファイルの場合は、作成予定リストから削除するだけ
+          if (prev.filesToCreate.includes(fileName)) {
+            return {
+              ...prev,
+              filesToCreate: prev.filesToCreate.filter((f) => f !== fileName),
+            };
+          }
+          // 既存ファイルの場合は削除予定リストに追加
+          return {
+            ...prev,
+            filesToDelete: [...prev.filesToDelete, fileName],
+          };
+        });
       } catch (error) {
         console.error('ファイルの削除に失敗しました:', error);
         showAlert('ファイルの削除に失敗しました。', 'error');
       }
     },
-    [editedSettings.dataFileTabs, handleSettingChange, showAlert, showConfirm]
+    [editedSettings.dataFileTabs, setEditedSettings, showAlert, showConfirm]
   );
 
   // 新規ファイルを作成してタブに追加
   const handleCreateAndAddFileToTab = useCallback(
-    async (tabIndex: number) => {
-      // 次のファイル名を自動決定
-      const existingNumbers = dataFiles
-        .map((file) => {
-          if (file === 'data.txt') {
-            return 1;
-          }
-          const match = file.match(/^data(\d+)\.txt$/i);
-          return match ? parseInt(match[1]) : null;
-        })
-        .filter((n): n is number => n !== null);
-
-      const nextNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 2;
-      const fileName = `data${nextNumber}.txt`;
+    (tabIndex: number) => {
+      const fileName = getNextAvailableFileName();
 
       try {
-        // 物理ファイルを作成
-        const result = await window.electronAPI.createDataFile(fileName);
-        if (!result.success) {
-          showAlert(result.error || 'ファイルの作成に失敗しました。', 'error');
-          return;
-        }
+        // ファイルを作成予定リストに追加
+        setPendingFileOperations((prev) => ({
+          ...prev,
+          filesToCreate: [...prev.filesToCreate, fileName],
+        }));
 
         // タブにファイルを追加
-        await handleAddFileToTab(tabIndex, fileName);
+        handleAddFileToTab(tabIndex, fileName);
       } catch (error) {
         console.error('ファイルの作成に失敗しました:', error);
         showAlert('ファイルの作成に失敗しました。', 'error');
       }
     },
-    [dataFiles, handleAddFileToTab, showAlert]
+    [getNextAvailableFileName, handleAddFileToTab, showAlert]
   );
 
   // 新規タブを追加
-  const handleAddTab = useCallback(async () => {
-    // 新しいファイルを作成
-    const existingNumbers = dataFiles
-      .map((file) => {
-        if (file === 'data.txt') {
-          return 1;
-        }
-        const match = file.match(/^data(\d+)\.txt$/i);
-        return match ? parseInt(match[1]) : null;
-      })
-      .filter((n): n is number => n !== null);
-
-    const nextNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 2;
-    const fileName = `data${nextNumber}.txt`;
+  const handleAddTab = useCallback(() => {
+    const fileName = getNextAvailableFileName();
 
     try {
-      // 物理ファイルを作成
-      const result = await window.electronAPI.createDataFile(fileName);
-      if (!result.success) {
-        showAlert(result.error || 'ファイルの作成に失敗しました。', 'error');
-        return;
-      }
+      // ファイルを作成予定リストに追加
+      setPendingFileOperations((prev) => ({
+        ...prev,
+        filesToCreate: [...prev.filesToCreate, fileName],
+      }));
 
-      // 新しいタブを追加
+      // 新しいタブを追加（状態更新のみ）
       const newTab: DataFileTab = {
         files: [fileName],
         name: getDefaultTabName(fileName),
       };
       const updatedTabs = [...(editedSettings.dataFileTabs || []), newTab];
 
-      await handleSettingChange('dataFileTabs', updatedTabs);
+      setEditedSettings((prev) => ({
+        ...prev,
+        dataFileTabs: updatedTabs,
+      }));
+
+      // 新規タブを展開状態にする
+      setExpandedTabs((prev) => new Set([...prev, updatedTabs.length - 1]));
     } catch (error) {
       console.error('タブの追加に失敗しました:', error);
       showAlert('タブの追加に失敗しました。', 'error');
     }
-  }, [dataFiles, editedSettings.dataFileTabs, getDefaultTabName, handleSettingChange, showAlert]);
+  }, [
+    getNextAvailableFileName,
+    editedSettings.dataFileTabs,
+    getDefaultTabName,
+    setEditedSettings,
+    showAlert,
+  ]);
+
+  // タブの展開/折りたたみをトグル
+  const toggleTabExpand = useCallback((tabIndex: number) => {
+    setExpandedTabs((prev) => {
+      const next = new Set(prev);
+      if (next.has(tabIndex)) {
+        next.delete(tabIndex);
+      } else {
+        next.add(tabIndex);
+      }
+      return next;
+    });
+  }, []);
+
+  // タブが展開されているかどうか
+  const isTabExpanded = useCallback(
+    (tabIndex: number) => expandedTabs.has(tabIndex),
+    [expandedTabs]
+  );
 
   // ファイル管理モーダルを開く
   const openFileModal = useCallback((tabIndex: number) => {
@@ -326,37 +480,71 @@ export function useTabManager({
     [editedSettings.dataFileLabels, setEditedSettings]
   );
 
-  // ファイルラベルのBlur時の保存処理
-  const handleFileLabelBlur = useCallback(async () => {
-    // 全ての関連ファイルにデータファイル名が設定されているかチェック
-    const labels = editedSettings.dataFileLabels || {};
-    const allFiles = new Set<string>();
-    editedSettings.dataFileTabs.forEach((tab) => {
-      tab.files.forEach((fileName) => allFiles.add(fileName));
-    });
-
-    const missingLabels = Array.from(allFiles).filter((fileName) => {
-      const label = labels[fileName];
-      return !label || label.trim() === '';
-    });
-
-    if (missingLabels.length > 0) {
-      showAlert('データファイル名は必須です。全てのファイルに名前を設定してください。', 'error');
-      return;
-    }
-
+  // タブ管理の保存処理
+  const handleSaveTabChanges = useCallback(async () => {
     try {
-      await handleSettingChange('dataFileLabels', editedSettings.dataFileLabels || {});
+      // 1. 削除予定のファイルを物理削除
+      for (const fileName of pendingFileOperations.filesToDelete) {
+        await window.electronAPI.deleteDataFile(fileName);
+      }
+
+      // 2. 作成予定のファイルを物理作成
+      for (const fileName of pendingFileOperations.filesToCreate) {
+        const result = await window.electronAPI.createDataFile(fileName);
+        if (!result.success) {
+          throw new Error(result.error || `${fileName}の作成に失敗しました`);
+        }
+      }
+
+      // 3. 設定を保存
+      await Promise.all([
+        handleSettingChange('dataFileTabs', editedSettings.dataFileTabs || []),
+        handleSettingChange('dataFileLabels', editedSettings.dataFileLabels || {}),
+      ]);
+
+      // 4. 保存完了後、状態をリセット
+      setSavedTabsState({
+        dataFileTabs: editedSettings.dataFileTabs || [],
+        dataFileLabels: editedSettings.dataFileLabels || {},
+      });
+      setPendingFileOperations({ filesToCreate: [], filesToDelete: [] });
+
+      showAlert('タブ設定を保存しました。', 'success');
     } catch (error) {
-      console.error('データファイル名の保存に失敗しました:', error);
-      showAlert('データファイル名の保存に失敗しました。', 'error');
+      console.error('タブ設定の保存に失敗しました:', error);
+      showAlert('タブ設定の保存に失敗しました。', 'error');
     }
-  }, [editedSettings.dataFileLabels, editedSettings.dataFileTabs, handleSettingChange, showAlert]);
+  }, [editedSettings, pendingFileOperations, handleSettingChange, showAlert]);
+
+  // タブ管理のキャンセル処理
+  const handleCancelTabChanges = useCallback(async () => {
+    const confirmed = await showConfirm('未保存の変更を破棄しますか？', {
+      title: 'タブ管理の変更を破棄',
+      confirmText: '破棄',
+      danger: true,
+    });
+
+    if (!confirmed) return;
+
+    // 保存済み状態に戻す
+    if (savedTabsState) {
+      setEditedSettings((prev) => ({
+        ...prev,
+        dataFileTabs: savedTabsState.dataFileTabs,
+        dataFileLabels: savedTabsState.dataFileLabels,
+      }));
+    }
+
+    // 保留中のファイル操作をクリア
+    setPendingFileOperations({ filesToCreate: [], filesToDelete: [] });
+
+    showAlert('変更を破棄しました。', 'info');
+  }, [savedTabsState, setEditedSettings, showConfirm, showAlert]);
 
   return {
     fileModalTabIndex,
     getDefaultTabName,
-    handleTabNameBlur,
+    getDefaultFileLabel,
     handleMoveTabUp,
     handleMoveTabDown,
     handleTabNameChangeByIndex,
@@ -369,6 +557,10 @@ export function useTabManager({
     closeFileModal,
     getFileLabel,
     handleFileLabelChange,
-    handleFileLabelBlur,
+    hasUnsavedChanges,
+    handleSaveTabChanges,
+    handleCancelTabChanges,
+    toggleTabExpand,
+    isTabExpanded,
   };
 }

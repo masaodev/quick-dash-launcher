@@ -55,13 +55,8 @@ export default defineConfig({
     // レポーター設定
     reporters: ['verbose', 'html'],
 
-    // 並列実行設定
+    // 並列実行設定（デフォルトのスレッド数を使用）
     pool: 'threads',
-    poolOptions: {
-      threads: {
-        maxThreads: 4,
-      },
-    },
   },
 
   resolve: {

@@ -1490,27 +1490,7 @@
   box-shadow: var(--focus-ring);
 }
 
-.btn-primary {
-  padding: var(--spacing-sm) var(--spacing-lg);
-  background-color: var(--color-primary);
-  color: var(--color-white);
-  border: none;
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  font-size: var(--font-size-base);
-  font-family: inherit;
-  transition: var(--transition-normal);
-  font-weight: 500;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background-color: var(--color-primary-dark);
-}
-
-.btn-primary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
+/* .btn-primary と .btn-secondary は common.css で定義 */
 
 .modal-info {
   margin-top: var(--spacing-lg);
@@ -1537,4 +1517,419 @@
   padding: var(--spacing-lg) var(--spacing-xl);
   border-top: var(--border-light);
   gap: var(--spacing-sm);
+}
+
+/* 左右分割レイアウト（SettingsTab用） */
+.settings-with-sidebar {
+  display: flex;
+  gap: var(--spacing-lg);
+  flex: 1;
+  overflow: hidden;
+}
+
+/* 左側メニュー */
+.settings-sidebar {
+  flex: 0 0 200px;
+  border-right: var(--border-light);
+  overflow-y: auto;
+  padding: var(--spacing-lg) 0;
+}
+
+.settings-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* メニューアイテム */
+.settings-menu .menu-item {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  text-align: left;
+  background: none;
+  border: none;
+  border-left: 3px solid transparent;
+  cursor: pointer;
+  transition: var(--transition-normal);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: var(--font-size-base);
+  -webkit-app-region: no-drag;
+}
+
+.settings-menu .menu-item:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.settings-menu .menu-item.active {
+  background-color: var(--color-primary-50);
+  border-left-color: var(--color-primary);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* 右側コンテンツエリア */
+.settings-with-sidebar .settings-content {
+  flex: 1;
+  overflow-y: auto;
+  max-width: 800px;
+  width: 100%;
+}
+
+/* ========================================
+   タブ管理 - アコーディオン型UI
+   ======================================== */
+
+/* コンテナ */
+.tab-accordion-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+}
+
+/* アコーディオンアイテム */
+.tab-accordion-item {
+  border: var(--border-normal);
+  border-radius: var(--border-radius-lg);
+  overflow: hidden;
+  background-color: var(--bg-primary);
+  transition: var(--transition-normal);
+}
+
+.tab-accordion-item:hover {
+  box-shadow: var(--shadow-sm);
+}
+
+.tab-accordion-item.expanded {
+  border-color: var(--color-primary);
+}
+
+/* タブヘッダー */
+.tab-accordion-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background-color: var(--color-gray-100);
+  cursor: pointer;
+  transition: var(--transition-normal);
+}
+
+.tab-accordion-item.expanded .tab-accordion-header {
+  background-color: var(--color-primary-50);
+  border-bottom: var(--border-light);
+}
+
+.tab-accordion-header:hover {
+  background-color: var(--bg-hover);
+}
+
+.tab-accordion-item.expanded .tab-accordion-header:hover {
+  background-color: var(--color-primary-50);
+}
+
+/* 展開ボタン */
+.tab-expand-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  padding: var(--spacing-xs);
+  border-radius: var(--border-radius-sm);
+  transition: var(--transition-normal);
+  flex-shrink: 0;
+}
+
+.tab-expand-button:hover {
+  background-color: var(--color-gray-300);
+  color: var(--text-primary);
+}
+
+/* タブ名ラベル（展開時） */
+.tab-accordion-label {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+/* タブ名（折りたたみ時） */
+.tab-accordion-name {
+  flex: 1;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+/* タブ名入力（展開時） */
+.tab-accordion-name-input {
+  flex: 1;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: var(--border-normal);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  font-family: inherit;
+  background-color: var(--bg-primary);
+}
+
+.tab-accordion-name-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: var(--focus-ring);
+}
+
+/* データファイル数バッジ */
+.tab-file-count {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  background-color: var(--color-gray-200);
+  padding: 2px 8px;
+  border-radius: var(--border-radius);
+}
+
+/* タブコントロール（移動・削除ボタン） */
+.tab-accordion-controls {
+  display: flex;
+  gap: var(--spacing-xs);
+  margin-left: auto;
+}
+
+.tab-delete-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: var(--font-size-base);
+  padding: var(--spacing-xs);
+  border-radius: var(--border-radius-sm);
+  transition: var(--transition-normal);
+  opacity: 0.6;
+}
+
+.tab-delete-button:hover:not(:disabled) {
+  opacity: 1;
+  background-color: var(--bg-danger-light);
+}
+
+.tab-delete-button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* タブコンテンツ（展開時） */
+.tab-accordion-content {
+  padding: var(--spacing-lg);
+  background-color: var(--bg-primary);
+}
+
+/* データファイル一覧 */
+.data-file-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+/* データファイルアイテム */
+.data-file-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background-color: var(--color-gray-50);
+  border-radius: var(--border-radius);
+  border: var(--border-light);
+}
+
+.data-file-icon {
+  font-size: var(--font-size-xl);
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.data-file-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* 表示名ラベル行 */
+.data-file-label-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.data-file-label-prefix {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+/* データファイルラベル入力 */
+.data-file-label-input {
+  width: 100%;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: var(--border-normal);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-base);
+  font-family: inherit;
+  background-color: var(--bg-primary);
+}
+
+.data-file-label-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: var(--focus-ring);
+}
+
+/* 物理ファイル名（小さく表示） */
+.data-file-physical-name {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  font-family: var(--font-family-mono);
+}
+
+/* 注釈 */
+.data-file-note {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* データファイルアクション */
+.data-file-actions {
+  display: flex;
+  align-items: flex-start;
+  flex-shrink: 0;
+}
+
+/* 既定バッジ */
+.data-file-default-badge {
+  font-size: var(--font-size-xs);
+  color: var(--color-warning);
+  background-color: var(--bg-warning-light);
+  padding: 4px 10px;
+  border-radius: var(--border-radius);
+  font-weight: 600;
+}
+
+/* 削除ボタン */
+.data-file-delete-button {
+  padding: var(--spacing-xs) var(--spacing-md);
+  background-color: transparent;
+  color: var(--text-secondary);
+  border: var(--border-normal);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  font-family: inherit;
+  transition: var(--transition-normal);
+}
+
+.data-file-delete-button:hover:not(:disabled) {
+  background-color: var(--bg-danger-light);
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+.data-file-delete-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* データファイル追加セクション */
+.data-file-add-section {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: var(--border-light);
+}
+
+.data-file-select {
+  flex: 1;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: var(--border-normal);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-base);
+  font-family: inherit;
+  background-color: var(--bg-primary);
+  cursor: pointer;
+}
+
+.data-file-select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: var(--focus-ring);
+}
+
+.data-file-create-button {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  border: var(--border-normal);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: var(--font-size-base);
+  font-family: inherit;
+  transition: var(--transition-normal);
+  white-space: nowrap;
+}
+
+.data-file-create-button:hover:not(:disabled) {
+  background-color: var(--bg-hover);
+  border-color: var(--color-primary);
+}
+
+.data-file-create-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 新規タブ追加ボタン */
+.tab-add-button {
+  width: 100%;
+  padding: var(--spacing-md) var(--spacing-lg);
+  background-color: var(--bg-primary);
+  color: var(--text-secondary);
+  border: 2px dashed var(--color-gray-400);
+  border-radius: var(--border-radius-lg);
+  cursor: pointer;
+  font-size: var(--font-size-base);
+  font-family: inherit;
+  transition: var(--transition-normal);
+}
+
+.tab-add-button:hover:not(:disabled) {
+  background-color: var(--color-primary-50);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.tab-add-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* タブ管理の保存/キャンセルボタン */
+.tab-management-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: center;
+  padding: var(--spacing-xl);
+  background-color: var(--bg-section);
+  border-radius: var(--border-radius-xl);
+  border: var(--border-light);
+  margin-top: var(--spacing-lg);
+}
+
+.unsaved-indicator {
+  color: var(--color-warning);
+  font-size: var(--font-size-sm);
+  font-weight: bold;
+  margin-left: auto;
 }
