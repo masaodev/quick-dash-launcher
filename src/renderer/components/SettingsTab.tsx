@@ -597,11 +597,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                                             type="text"
                                             className="data-file-label-input"
                                             placeholder={getDefaultFileLabel(fileName, tab.name)}
-                                            value={
-                                              getFileLabel(fileName) === fileName
-                                                ? getDefaultFileLabel(fileName, tab.name)
-                                                : getFileLabel(fileName)
-                                            }
+                                            value={getFileLabel(fileName)}
                                             onChange={(e) =>
                                               handleFileLabelChange(fileName, e.target.value)
                                             }

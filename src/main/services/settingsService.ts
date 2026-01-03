@@ -51,7 +51,7 @@ export class SettingsService {
     showDataFileTabs: false, // タブ表示OFF（デフォルト）
     defaultFileTab: 'data.txt', // デフォルトタブ
     dataFileTabs: [{ files: ['data.txt'], name: 'メイン' }], // データファイルタブの設定
-    dataFileLabels: {}, // データファイルのラベル定義（デフォルト: 空）
+    dataFileLabels: { 'data.txt': 'メイン用データファイル' }, // データファイルのラベル定義
     windowPositionMode: 'center', // ウィンドウ表示位置モード（デフォルト: 画面中央）
     windowPositionX: 0, // 固定位置のX座標
     windowPositionY: 0, // 固定位置のY座標

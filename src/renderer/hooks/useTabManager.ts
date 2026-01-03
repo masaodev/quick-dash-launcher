@@ -459,9 +459,18 @@ export function useTabManager({
   const getFileLabel = useCallback(
     (fileName: string): string => {
       const labels = editedSettings.dataFileLabels || {};
-      return labels[fileName] || fileName;
+      const label = labels[fileName];
+
+      // ラベルが未設定またはファイル名と同じ場合、デフォルトラベルを返す
+      if (!label || label === fileName) {
+        const tabs = editedSettings.dataFileTabs || [];
+        const linkedTab = tabs.find((tab) => tab.files.includes(fileName));
+        return getDefaultFileLabel(fileName, linkedTab?.name);
+      }
+
+      return label;
     },
-    [editedSettings.dataFileLabels]
+    [editedSettings.dataFileLabels, editedSettings.dataFileTabs, getDefaultFileLabel]
   );
 
   // データファイル名を変更
@@ -496,16 +505,27 @@ export function useTabManager({
         }
       }
 
-      // 3. 設定を保存
+      // 3. デフォルトラベルが未設定のファイルに対して明示的に設定
+      const labels = { ...(editedSettings.dataFileLabels || {}) };
+      const tabs = editedSettings.dataFileTabs || [];
+      tabs.forEach((tab) => {
+        tab.files.forEach((fileName) => {
+          if (!labels[fileName] || labels[fileName] === fileName) {
+            labels[fileName] = getDefaultFileLabel(fileName, tab.name);
+          }
+        });
+      });
+
+      // 4. 設定を保存
       await Promise.all([
-        handleSettingChange('dataFileTabs', editedSettings.dataFileTabs || []),
-        handleSettingChange('dataFileLabels', editedSettings.dataFileLabels || {}),
+        handleSettingChange('dataFileTabs', tabs),
+        handleSettingChange('dataFileLabels', labels),
       ]);
 
-      // 4. 保存完了後、状態をリセット
+      // 5. 保存完了後、状態をリセット
       setSavedTabsState({
-        dataFileTabs: editedSettings.dataFileTabs || [],
-        dataFileLabels: editedSettings.dataFileLabels || {},
+        dataFileTabs: tabs,
+        dataFileLabels: labels,
       });
       setPendingFileOperations({ filesToCreate: [], filesToDelete: [] });
 
@@ -514,7 +534,13 @@ export function useTabManager({
       console.error('タブ設定の保存に失敗しました:', error);
       showAlert('タブ設定の保存に失敗しました。', 'error');
     }
-  }, [editedSettings, pendingFileOperations, handleSettingChange, showAlert]);
+  }, [
+    editedSettings,
+    pendingFileOperations,
+    handleSettingChange,
+    showAlert,
+    getDefaultFileLabel,
+  ]);
 
   // タブ管理のキャンセル処理
   const handleCancelTabChanges = useCallback(async () => {

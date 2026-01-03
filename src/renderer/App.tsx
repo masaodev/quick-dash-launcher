@@ -645,7 +645,7 @@ const App: React.FC = () => {
           <div className="drag-handle">⋮⋮</div>
         </div>
 
-        {showDataFileTabs && dataFileTabs.length > 1 && searchMode === 'normal' && (
+        {showDataFileTabs && searchMode === 'normal' && (
           <FileTabBar
             dataFileTabs={dataFileTabs}
             activeTab={activeTab}
