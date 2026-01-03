@@ -182,7 +182,7 @@ export function useTabManager({
       const tab = tabs[tabIndex];
       // data.txtを含むタブは削除不可
       if (tab.files.includes('data.txt')) {
-        showAlert('data.txtを含むタブは削除できません。', 'warning');
+        showAlert('メインデータファイルを含むタブは削除できません。', 'warning');
         return;
       }
 
@@ -317,7 +317,7 @@ export function useTabManager({
         );
         if (otherTabsWithDataTxt.length === 0) {
           showAlert(
-            'data.txtは最低1つのタブに含まれている必要があります。\n他のタブにdata.txtを追加してから削除してください。',
+            'メインデータファイルは最低1つのタブに含まれている必要があります。\n他のタブにメインデータファイルを追加してから削除してください。',
             'warning'
           );
           return;

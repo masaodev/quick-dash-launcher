@@ -109,7 +109,7 @@ npm run test:e2e:single first-launch
 
 ### アーキテクチャ
 - **[システム概要](docs/architecture/overview.md)** - プロセス構造とデータ処理
-- **[データ形式](docs/architecture/data-format.md)** - data.txtファイル仕様
+- **[データ形式](docs/architecture/data-format.md)** - データファイル形式仕様
 - **[IPC通信](docs/architecture/ipc-channels.md)** - プロセス間通信
 - **[ウィンドウ制御](docs/architecture/window-control.md)** - ウィンドウ管理
 - **[CSSデザイン](docs/architecture/css-design.md)** - スタイル管理
