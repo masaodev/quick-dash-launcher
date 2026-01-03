@@ -51,7 +51,7 @@ QuickDashLauncherは複数のデータファイルをサポートしています
 表示名,パスまたはURL[,引数][,カスタムアイコン]
 dir,ディレクトリパス[,オプション1=値1][,オプション2=値2]...
 group,グループ名,アイテム名1,アイテム名2,アイテム名3,...
-window,ウィンドウタイトル[,x][,y][,width][,height][,virtualDesktopNumber][,activateWindow]
+window,{JSON形式の設定}
 ```
 
 ## 重複排除ルール
@@ -532,22 +532,21 @@ group,Web閲覧,Google,GitHub
 
 ### 基本構文
 ```
-window,表示名,ウィンドウタイトル[,x][,y][,width][,height][,virtualDesktopNumber][,activateWindow]
+window,{JSON形式の設定}
 ```
 
-### フィールド構成
+### JSON設定フィールド
 
-| フィールド | 位置 | 必須 | デフォルト値 | 説明 |
-|------------|------|------|-------------|------|
-| **プレフィックス** | 1 | ✓ | - | 常に `window` |
-| **表示名** | 2 | ✓ | - | アイテムリストでの表示名 |
-| **ウィンドウタイトル** | 3 | ✓ | - | ウィンドウタイトル（検索用、部分一致、スペース区切りでAND検索） |
-| **x** | 4 | - | undefined | X座標（仮想スクリーン座標系、省略時は位置変更なし） |
-| **y** | 5 | - | undefined | Y座標（仮想スクリーン座標系、省略時は位置変更なし） |
-| **width** | 6 | - | undefined | 幅（ピクセル単位、省略時はサイズ変更なし） |
-| **height** | 7 | - | undefined | 高さ（ピクセル単位、省略時はサイズ変更なし） |
-| **virtualDesktopNumber** | 8 | - | undefined | 仮想デスクトップ番号（1から開始、省略時は移動なし） |
-| **activateWindow** | 9 | - | true | ウィンドウをアクティブにするか（`true` または `false`） |
+| フィールド | 必須 | デフォルト値 | 説明 |
+|------------|------|-------------|------|
+| **name** | ✓ | - | アイテムリストでの表示名 |
+| **windowTitle** | ✓ | - | ウィンドウタイトル（検索用、部分一致、スペース区切りでAND検索） |
+| **x** | - | undefined | X座標（仮想スクリーン座標系、省略時は位置変更なし） |
+| **y** | - | undefined | Y座標（仮想スクリーン座標系、省略時は位置変更なし） |
+| **width** | - | undefined | 幅（ピクセル単位、省略時はサイズ変更なし） |
+| **height** | - | undefined | 高さ（ピクセル単位、省略時はサイズ変更なし） |
+| **virtualDesktopNumber** | - | undefined | 仮想デスクトップ番号（1から開始、省略時は移動なし） |
+| **activateWindow** | - | true | ウィンドウをアクティブにするか（`true` または `false`） |
 
 ### 動作仕様
 
@@ -578,44 +577,45 @@ window,表示名,ウィンドウタイトル[,x][,y][,width][,height][,virtualDe
 
 ```
 // 基本的な使用（表示名とウィンドウタイトル）
-window,VSCode,Visual Studio Code
+window,{"name":"VSCode","windowTitle":"Visual Studio Code"}
 
 // 位置・サイズ指定
-window,Chrome右半分,Google Chrome,960,0,960,1080
+window,{"name":"Chrome右半分","windowTitle":"Google Chrome","x":960,"y":0,"width":960,"height":1080}
 
 // 仮想デスクトップ指定（デスクトップ2に移動）
-window,開発用Slack,Slack,,,,,2
+window,{"name":"開発用Slack","windowTitle":"Slack","virtualDesktopNumber":2}
 
 // アクティブ化無効（位置・サイズ変更のみ）
-window,Terminal,Windows PowerShell,100,100,800,600,,false
+window,{"name":"Terminal","windowTitle":"Windows PowerShell","x":100,"y":100,"width":800,"height":600,"activateWindow":false}
 
 // フル指定（位置・サイズ・仮想デスクトップ・アクティブ化）
-window,メインVSCode,Visual Studio Code,960,0,960,1080,1,true
+window,{"name":"メインVSCode","windowTitle":"Visual Studio Code","x":960,"y":0,"width":960,"height":1080,"virtualDesktopNumber":1,"activateWindow":true}
 
 // マルチモニタ - セカンダリモニター（右側）に配置
-window,セカンダリChrome,Google Chrome,1920,0,1920,1080
+window,{"name":"セカンダリChrome","windowTitle":"Google Chrome","x":1920,"y":0,"width":1920,"height":1080}
 
 // 画面左半分に配置
-window,左VSCode,Visual Studio Code,0,0,960,1080
+window,{"name":"左VSCode","windowTitle":"Visual Studio Code","x":0,"y":0,"width":960,"height":1080}
 
 // 画面右半分に配置
-window,右Slack,Slack,960,0,960,1080
+window,{"name":"右Slack","windowTitle":"Slack","x":960,"y":0,"width":960,"height":1080}
 ```
 
-### 省略フィールドの記述
+### 後方互換性
 
-途中のフィールドを省略する場合は、カンマを連続して記述します：
+**v0.5.9以前の旧CSV形式:**
 
 ```
-// x, y, width, heightを省略してvirtualDesktopNumberのみ指定
-window,開発用Slack,Slack,,,,,2
-
-// x, yを省略してwidth, heightのみ指定
-window,大画面Chrome,Google Chrome,,,1920,1080
-
-// virtualDesktopNumberを省略してactivateWindowのみ指定
-window,Terminal,Windows PowerShell,100,100,800,600,,false
+// 旧形式（読み込み時のみサポート、新規保存時は自動的にJSON形式に変換されます）
+window,表示名,ウィンドウタイトル,x,y,width,height,virtualDesktopNumber,activateWindow
 ```
+
+**変更内容（v0.5.9以降）:**
+- **読み込み**: 旧CSV形式のデータファイルも引き続き読み込み可能
+- **保存**: 新規保存時・編集時は自動的にJSON形式で保存
+- **移行**: 既存のCSV形式アイテムを編集・保存すると、自動的にJSON形式に変換されます
+
+この変更により、フィールド順序の誤りによるバグを防ぎ、将来的な拡張性が向上しました。
 
 ### 表示形式
 

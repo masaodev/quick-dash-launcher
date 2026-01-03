@@ -103,21 +103,22 @@ export function isWindowOperationDirective(line: RawDataLine): boolean {
 /**
  * ウィンドウ操作ディレクティブを解析する
  *
+ * 新しいJSON形式と古いCSV形式の両方をサポートします。
+ *
  * @param line - 解析対象のRawDataLine
  * @returns ウィンドウタイトルと位置・サイズ情報
  *
  * @example
- * const line = { type: 'directive', content: 'window,Chrome,100,100,1920,1080,1,true' };
- * parseWindowOperationDirective(line);
- * // {
- * //   windowTitle: 'Chrome',
- * //   x: 100,
- * //   y: 100,
- * //   width: 1920,
- * //   height: 1080,
- * //   virtualDesktopNumber: 1,
- * //   activateWindow: true
- * // }
+ * // 新しいJSON形式
+ * const line1 = { type: 'directive', content: 'window,{"name":"表示名","windowTitle":"Chrome","x":100,"y":100}' };
+ * parseWindowOperationDirective(line1);
+ * // { name: '表示名', windowTitle: 'Chrome', x: 100, y: 100 }
+ *
+ * @example
+ * // 古いCSV形式（後方互換性）
+ * const line2 = { type: 'directive', content: 'window,表示名,Chrome,100,100,1920,1080,1,true' };
+ * parseWindowOperationDirective(line2);
+ * // { name: '表示名', windowTitle: 'Chrome', x: 100, y: 100, width: 1920, height: 1080, virtualDesktopNumber: 1, activateWindow: true }
  */
 export function parseWindowOperationDirective(line: RawDataLine): {
   name: string;
@@ -131,6 +132,27 @@ export function parseWindowOperationDirective(line: RawDataLine): {
 } {
   const parts = parseCSVLine(line.content);
 
+  // 新しいJSON形式かどうかを判定（parts[1]が'{'で始まる場合）
+  if (parts[1] && parts[1].trim().startsWith('{')) {
+    try {
+      const config = JSON.parse(parts[1]);
+      return {
+        name: config.name || '',
+        windowTitle: config.windowTitle || '',
+        x: config.x,
+        y: config.y,
+        width: config.width,
+        height: config.height,
+        virtualDesktopNumber: config.virtualDesktopNumber,
+        activateWindow: config.activateWindow,
+      };
+    } catch (error) {
+      console.error('Failed to parse window operation JSON:', error);
+      // JSONパースに失敗した場合は、古いCSV形式としてフォールバック
+    }
+  }
+
+  // 古いCSV形式（後方互換性）
   return {
     name: parts[1] || '',
     windowTitle: parts[2] || '',
