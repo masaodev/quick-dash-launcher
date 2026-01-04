@@ -335,20 +335,6 @@ const App: React.FC = () => {
     setSelectedIndex(0);
     // ユーザーが手動で入力を変更した場合は履歴ナビゲーションをリセット
     resetNavigation();
-
-    // モード切り替え検出
-    const isWindowMode = query.startsWith('<');
-
-    if (isWindowMode && searchMode === 'normal') {
-      // 通常 → ウィンドウモード
-      setSearchMode('window');
-      const windows = await window.electronAPI.getWindowList();
-      setWindowList(windows);
-    } else if (!isWindowMode && searchMode === 'window') {
-      // ウィンドウ → 通常モード
-      setSearchMode('normal');
-      setWindowList([]);
-    }
   };
 
   const handleTogglePin = async () => {
