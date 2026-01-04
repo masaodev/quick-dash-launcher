@@ -541,20 +541,28 @@ const App: React.FC = () => {
     // WindowOperationItemの場合
     if (isWindowOperationItem(item)) {
       const windowOp = item;
-      const fields = [
-        'window',
-        windowOp.name,
-        windowOp.windowTitle,
-        windowOp.x?.toString() || '',
-        windowOp.y?.toString() || '',
-        windowOp.width?.toString() || '',
-        windowOp.height?.toString() || '',
-        windowOp.virtualDesktopNumber?.toString() || '',
-        windowOp.activateWindow === undefined ? '' : windowOp.activateWindow.toString(),
-      ];
+
+      // JSON形式で設定を構築
+      const config: Record<string, string | number | boolean> = {
+        name: windowOp.name,
+        windowTitle: windowOp.windowTitle,
+      };
+
+      // オプションフィールドは値がある場合のみ追加
+      if (windowOp.x !== undefined) config.x = windowOp.x;
+      if (windowOp.y !== undefined) config.y = windowOp.y;
+      if (windowOp.width !== undefined) config.width = windowOp.width;
+      if (windowOp.height !== undefined) config.height = windowOp.height;
+      if (windowOp.virtualDesktopNumber !== undefined)
+        config.virtualDesktopNumber = windowOp.virtualDesktopNumber;
+      if (windowOp.activateWindow !== undefined) config.activateWindow = windowOp.activateWindow;
+
+      // JSON形式のコンテンツを作成
+      const content = `window,${escapeCSV(JSON.stringify(config))}`;
+
       const rawDataLine: RawDataLine = {
         lineNumber: windowOp.lineNumber || 1,
-        content: fields.join(','),
+        content: content,
         type: 'directive',
         sourceFile: windowOp.sourceFile || 'data.txt',
         customIcon: undefined,
