@@ -1,12 +1,7 @@
 import { describe, it, expect } from 'vitest';
+import type { WindowInfo, GroupItem, WindowOperationItem, LauncherItem } from '@common/types';
 
 import { getTooltipText } from '../../../src/renderer/utils/tooltipTextGenerator';
-import type {
-  WindowInfo,
-  GroupItem,
-  WindowOperationItem,
-  LauncherItem,
-} from '../../../src/common/types';
 
 describe('tooltipTextGenerator', () => {
   describe('WindowInfo', () => {

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-
-import { IconProgress } from '../../common/types';
+import { IconProgress } from '@common/types';
 
 import IconProgressDetailModal from './IconProgressDetailModal';
 import '../styles/components/IconProgress.css';

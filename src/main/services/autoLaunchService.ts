@@ -2,8 +2,7 @@ import fs from 'fs';
 import path from 'path';
 
 import { app, shell } from 'electron';
-
-import logger from '../../common/logger.js';
+import logger from '@common/logger.js';
 
 /**
  * 自動起動機能を管理するサービスクラス

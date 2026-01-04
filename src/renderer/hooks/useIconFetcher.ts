@@ -1,8 +1,8 @@
 import React from 'react';
+import { AppItem, LauncherItem, DataFileTab } from '@common/types';
+import { isWindowInfo, isLauncherItem } from '@common/utils/typeGuards';
 
-import { AppItem, LauncherItem, DataFileTab } from '../../common/types';
 import { debugInfo } from '../utils/debug';
-import { isWindowInfo, isLauncherItem } from '../../common/utils/typeGuards';
 
 /**
  * アイコン取得管理フック

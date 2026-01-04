@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-
-import { SimpleBookmarkItem, BrowserInfo, BrowserProfile } from '../../common/types';
+import { SimpleBookmarkItem, BrowserInfo, BrowserProfile } from '@common/types';
 
 import AlertDialog from './AlertDialog';
 

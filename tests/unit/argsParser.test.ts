@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
-
-import { parseArgs } from '../../src/common/utils/argsParser';
+import { parseArgs } from '@common/utils/argsParser';
 
 describe('parseArgs', () => {
   describe('基本的な引数のパース', () => {

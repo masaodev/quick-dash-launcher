@@ -15,7 +15,7 @@ import {
   WorkspaceGroup,
   ExecutionHistoryItem,
   WindowInfo,
-} from '../common/types';
+} from '@common/types';
 
 import { RegisterItem } from './components/RegisterModal';
 

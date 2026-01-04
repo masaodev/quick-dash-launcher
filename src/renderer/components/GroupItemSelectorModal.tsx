@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { LauncherItem, AppItem } from '@common/types';
+import { isWindowInfo, isGroupItem, isLauncherItem } from '@common/utils/typeGuards';
 
-import { LauncherItem, AppItem } from '../../common/types';
 import { debugInfo } from '../utils/debug';
-import { isWindowInfo, isGroupItem, isLauncherItem } from '../../common/utils/typeGuards';
 
 interface GroupItemSelectorModalProps {
   isOpen: boolean;

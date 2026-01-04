@@ -1,4 +1,5 @@
-import { LauncherItem } from '../../common/types';
+import { LauncherItem } from '@common/types';
+
 import { logWarn } from '../utils/debug';
 
 /**

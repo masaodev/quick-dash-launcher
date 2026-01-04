@@ -1,7 +1,7 @@
 import { convertRawDataLineToRegisterItem, type RegisterItem } from '@common/utils/dataConverters';
 import { detectItemType } from '@common/utils/itemTypeDetector';
+import { RawDataLine, DataFileTab } from '@common/types';
 
-import { RawDataLine, DataFileTab } from '../../common/types';
 import { debugInfo, logWarn } from '../utils/debug';
 
 /**

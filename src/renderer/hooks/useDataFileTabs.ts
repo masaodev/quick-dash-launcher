@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
+import { AppItem, DataFileTab } from '@common/types';
+import { isWindowInfo } from '@common/utils/typeGuards';
 
-import { AppItem, DataFileTab } from '../../common/types';
 import { debugLog } from '../utils/debug';
-import { isWindowInfo } from '../../common/utils/typeGuards';
 
 /**
  * データファイルタブ管理フック

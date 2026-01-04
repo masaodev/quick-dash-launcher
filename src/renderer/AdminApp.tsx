@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-
-import { RawDataLine, AppSettings } from '../common/types';
+import { RawDataLine, AppSettings } from '@common/types';
 
 import { debugInfo, logError } from './utils/debug';
 import AdminTabContainer from './components/AdminTabContainer';

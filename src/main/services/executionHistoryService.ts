@@ -1,15 +1,11 @@
 import { randomUUID } from 'crypto';
 
 import ElectronStore from 'electron-store';
+import type { AppItem, ExecutionHistoryItem } from '@common/types.js';
+import logger from '@common/logger.js';
+import { isWindowInfo, isLauncherItem, isWindowOperationItem } from '@common/utils/typeGuards.js';
 
-import type { AppItem, ExecutionHistoryItem } from '../../common/types.js';
-import logger from '../../common/logger.js';
 import PathManager from '../config/pathManager.js';
-import {
-  isWindowInfo,
-  isLauncherItem,
-  isWindowOperationItem,
-} from '../../common/utils/typeGuards.js';
 
 // electron-storeを動的にインポート
 let Store: typeof ElectronStore | null = null;

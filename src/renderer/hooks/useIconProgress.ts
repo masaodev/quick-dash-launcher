@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-
-import { IconProgress, IconProgressState } from '../../common/types';
+import { IconProgress, IconProgressState } from '@common/types';
 
 export const useIconProgress = () => {
   const [progressState, setProgressState] = useState<IconProgressState>({

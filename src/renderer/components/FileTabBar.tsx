@@ -1,8 +1,8 @@
 import React from 'react';
+import { AppItem, DataFileTab } from '@common/types';
+import { isWindowInfo } from '@common/utils/typeGuards';
 
-import { AppItem, DataFileTab } from '../../common/types';
 import { filterItems } from '../utils/dataParser';
-import { isWindowInfo } from '../../common/utils/typeGuards';
 
 interface FileTabBarProps {
   /** データファイルタブの設定（タブグループのリスト） */

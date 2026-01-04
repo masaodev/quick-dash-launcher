@@ -6,8 +6,7 @@ import {
   isWindowOperationDirective,
 } from '@common/utils/directiveUtils';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
-
-import { RawDataLine, LauncherItem } from '../../common/types';
+import { RawDataLine, LauncherItem } from '@common/types';
 
 import ConfirmDialog from './ConfirmDialog';
 import EditModeContextMenu from './EditModeContextMenu';

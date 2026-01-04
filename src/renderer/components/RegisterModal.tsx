@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { type RegisterItem } from '@common/utils/dataConverters';
+import { RawDataLine, WindowInfo } from '@common/types';
 
-import { RawDataLine, WindowInfo } from '../../common/types';
 import { useCustomIcon } from '../hooks/useCustomIcon';
 import { useRegisterForm } from '../hooks/useRegisterForm';
 

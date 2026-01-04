@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-
-import { findMatchingRule, applyConversionPrefix } from '../../common/urlConversionRules';
-import type { ConversionRule } from '../../common/urlConversionRules';
+import { findMatchingRule, applyConversionPrefix } from '@common/urlConversionRules';
+import type { ConversionRule } from '@common/urlConversionRules';
 
 interface UrlConverterMenuProps {
   /** 現在のURL */

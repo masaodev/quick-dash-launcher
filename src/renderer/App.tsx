@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { convertLauncherItemToRawDataLine, type RegisterItem } from '@common/utils/dataConverters';
-
 import {
   LauncherItem,
   AppItem,
@@ -9,8 +8,8 @@ import {
   SearchMode,
   WindowInfo,
   WindowOperationItem,
-} from '../common/types';
-import { isWindowInfo, isGroupItem, isWindowOperationItem } from '../common/utils/typeGuards';
+} from '@common/types';
+import { isWindowInfo, isGroupItem, isWindowOperationItem } from '@common/utils/typeGuards';
 
 import SearchBox from './components/SearchBox';
 import ItemList from './components/ItemList';

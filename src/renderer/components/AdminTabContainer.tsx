@@ -1,6 +1,5 @@
 import React from 'react';
-
-import { RawDataLine, AppSettings, DataFileTab } from '../../common/types';
+import { RawDataLine, AppSettings, DataFileTab } from '@common/types';
 
 import SettingsTab from './SettingsTab';
 import EditModeView from './EditModeView';
