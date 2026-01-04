@@ -15,7 +15,7 @@ import { app } from 'electron';
 // デバッグログヘルパー（開発環境でのみ出力）
 const debugLog = (...args: any[]) => {
   if (process.env.NODE_ENV === 'development') {
-    console.log(...args);
+    console.warn('[VirtualDesktop]', ...args);
   }
 };
 

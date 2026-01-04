@@ -1,14 +1,20 @@
 /**
  * 型定義の統合エクスポート
  *
- * すべての型定義をドメイン別に整理し、再エクスポートします。
+ * すべての型定義とユーティリティ関数をドメイン別に整理し、再エクスポートします。
  * 既存のコードとの互換性を保つため、このファイルからすべてインポート可能です。
+ *
+ * Note: 型定義はtypes/配下の各ファイルで定義され、types/index.tsでも統合エクスポートされています。
+ * このファイルは後方互換性のため、同じ型定義を再エクスポートしています。
+ * 新しい型を追加する場合は、types/配下の適切なファイルとtypes/index.ts、
+ * そしてこのファイルの3箇所を更新してください。
  */
 
 // ランチャー関連の型
 export type {
   WindowConfig,
   LauncherItem,
+  LauncherItemNew,
   GroupItem,
   WindowOperationItem,
   AppItem,
@@ -17,6 +23,7 @@ export type {
 // ワークスペース関連の型
 export type {
   WorkspaceItem,
+  WorkspaceItemNew,
   WorkspaceGroup,
   ExecutionHistoryItem,
   DragItemData,
@@ -50,3 +57,13 @@ export type { WindowInfo } from './types/window';
 
 // アプリケーション情報
 export type { AppInfo } from './types/app';
+
+// 型ガード関数をエクスポート（新規追加）
+export {
+  isWindowInfo,
+  isLauncherItem,
+  isGroupItem,
+  isWindowOperationItem,
+  isWorkspaceItem,
+  isDragItemData,
+} from './utils/typeGuards';

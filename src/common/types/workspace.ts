@@ -51,8 +51,38 @@ export interface WorkspaceItem {
   groupId?: string;
   /** グループラベル（将来的な拡張用、廃止予定） */
   label?: string;
-  /** ウィンドウタイトル検索用の文字列（設定時、起動前にウィンドウ検索を実行）
-   * @deprecated windowConfigを使用してください。後方互換性のため残されています
+  /**
+   * ウィンドウタイトル検索用の文字列（設定時、起動前にウィンドウ検索を実行）
+   *
+   * @deprecated v0.5.0以降、windowConfigを使用してください。
+   * このプロパティは将来のバージョンで削除される可能性があります。
+   *
+   * @example
+   * // ❌ 非推奨の使い方
+   * const item: WorkspaceItem = {
+   *   id: "uuid-1234",
+   *   displayName: "My App",
+   *   originalName: "My App",
+   *   path: "C:/app.exe",
+   *   type: "app",
+   *   order: 0,
+   *   addedAt: Date.now(),
+   *   windowTitle: "MyApp Window"
+   * };
+   *
+   * // ✅ 推奨の使い方
+   * const item: WorkspaceItem = {
+   *   id: "uuid-1234",
+   *   displayName: "My App",
+   *   originalName: "My App",
+   *   path: "C:/app.exe",
+   *   type: "app",
+   *   order: 0,
+   *   addedAt: Date.now(),
+   *   windowConfig: { title: "MyApp Window", x: 100, y: 100 }
+   * };
+   *
+   * @see {@link WindowConfig} より柔軟なウィンドウ制御が可能です
    */
   windowTitle?: string;
   /** ウィンドウ制御設定（ウィンドウ検索・位置・サイズ制御） */
@@ -70,6 +100,24 @@ export interface WorkspaceItem {
   /** ウィンドウ操作：ウィンドウをアクティブにするか（windowOperation専用、オプション） */
   activateWindow?: boolean;
 }
+
+/**
+ * WorkspaceItem（非推奨プロパティを除外）
+ * windowTitleとlabelを使用しない新しいコードで使用してください
+ *
+ * @example
+ * const item: WorkspaceItemNew = {
+ *   id: "uuid-1234",
+ *   displayName: "My App",
+ *   originalName: "My App",
+ *   path: "C:/app.exe",
+ *   type: "app",
+ *   order: 0,
+ *   addedAt: Date.now(),
+ *   windowConfig: { title: "MyApp Window", x: 100, y: 100 }
+ * };
+ */
+export type WorkspaceItemNew = Omit<WorkspaceItem, 'windowTitle' | 'label'>;
 
 /**
  * 実行履歴アイテム

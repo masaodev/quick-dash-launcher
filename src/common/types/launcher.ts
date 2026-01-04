@@ -52,13 +52,49 @@ export interface LauncherItem {
   expandedOptions?: string;
   /** 編集モードで変更されたかどうか */
   isEdited?: boolean;
-  /** ウィンドウタイトル検索用の文字列（設定時、起動前にウィンドウ検索を実行）
-   * @deprecated windowConfigを使用してください。後方互換性のため残されています
+  /**
+   * ウィンドウタイトル検索用の文字列（設定時、起動前にウィンドウ検索を実行）
+   *
+   * @deprecated v0.5.0以降、windowConfigを使用してください。
+   * このプロパティは将来のバージョンで削除される可能性があります。
+   *
+   * @example
+   * // ❌ 非推奨の使い方
+   * const item: LauncherItem = {
+   *   name: "My App",
+   *   path: "C:/app.exe",
+   *   type: "app",
+   *   windowTitle: "MyApp Window"
+   * };
+   *
+   * // ✅ 推奨の使い方
+   * const item: LauncherItem = {
+   *   name: "My App",
+   *   path: "C:/app.exe",
+   *   type: "app",
+   *   windowConfig: { title: "MyApp Window" }
+   * };
+   *
+   * @see {@link WindowConfig} より柔軟なウィンドウ制御が可能です
    */
   windowTitle?: string;
   /** ウィンドウ制御設定（ウィンドウ検索・位置・サイズ制御） */
   windowConfig?: WindowConfig;
 }
+
+/**
+ * LauncherItem（非推奨プロパティを除外）
+ * windowTitleを使用しない新しいコードで使用してください
+ *
+ * @example
+ * const item: LauncherItemNew = {
+ *   name: "My App",
+ *   path: "C:/app.exe",
+ *   type: "app",
+ *   windowConfig: { title: "MyApp Window", x: 100, y: 100 }
+ * };
+ */
+export type LauncherItemNew = Omit<LauncherItem, 'windowTitle'>;
 
 /**
  * 複数のアイテムをまとめて一括起動するためのグループアイテム

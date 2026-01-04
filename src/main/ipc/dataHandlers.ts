@@ -522,25 +522,28 @@ async function registerItems(configFolder: string, items: RegisterItem[]): Promi
         }
         return groupLine;
       } else if (item.itemCategory === 'window') {
-        // ウィンドウ操作アイテムの場合
+        // ウィンドウ操作アイテムの場合：window,{JSON形式の設定}
         const cfg = item.windowOperationConfig;
         if (!cfg) {
           throw new Error('windowOperationConfig is required for window items');
         }
 
-        const fields = [
-          'window',
-          item.name,
-          cfg.windowTitle,
-          cfg.x?.toString() || '',
-          cfg.y?.toString() || '',
-          cfg.width?.toString() || '',
-          cfg.height?.toString() || '',
-          cfg.virtualDesktopNumber?.toString() || '',
-          cfg.activateWindow === undefined ? '' : cfg.activateWindow.toString(),
-        ];
+        // JSON形式で設定を保存
+        const config: Record<string, string | number | boolean> = {
+          name: item.name,
+          windowTitle: cfg.windowTitle,
+        };
 
-        return fields.join(',');
+        // オプションフィールドは値がある場合のみ追加
+        if (cfg.x !== undefined) config.x = cfg.x;
+        if (cfg.y !== undefined) config.y = cfg.y;
+        if (cfg.width !== undefined) config.width = cfg.width;
+        if (cfg.height !== undefined) config.height = cfg.height;
+        if (cfg.virtualDesktopNumber !== undefined)
+          config.virtualDesktopNumber = cfg.virtualDesktopNumber;
+        if (cfg.activateWindow !== undefined) config.activateWindow = cfg.activateWindow;
+
+        return `window,${escapeCSV(JSON.stringify(config))}`;
       } else {
         let line = `${escapeCSV(item.name)},${escapeCSV(item.path)}`;
 

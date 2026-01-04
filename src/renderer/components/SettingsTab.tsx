@@ -625,7 +625,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                                         <span className="data-file-physical-name">{fileName}</span>
                                       </div>
                                       <div className="data-file-actions">
-                                        {isDataTxt && !dataFileExistsInOtherTabs ? (
+                                        {!canDelete ? (
                                           <span
                                             className="data-file-default-badge"
                                             title="data.txtは最低1つのタブに必要です"

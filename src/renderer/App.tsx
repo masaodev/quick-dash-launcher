@@ -410,21 +410,26 @@ const App: React.FC = () => {
             newContent: newContent,
           });
         } else if (editingItem.type === 'directive' && item.itemCategory === 'window') {
-          // ウィンドウ操作アイテムの編集の場合
+          // ウィンドウ操作アイテムの編集の場合：window,{JSON形式の設定}
           const cfg = item.windowOperationConfig;
           if (!cfg) throw new Error('windowOperationConfig is required for window items');
 
-          const fields = [
-            'window',
-            cfg.windowTitle,
-            cfg.x?.toString() || '',
-            cfg.y?.toString() || '',
-            cfg.width?.toString() || '',
-            cfg.height?.toString() || '',
-            cfg.virtualDesktopNumber?.toString() || '',
-            cfg.activateWindow === undefined ? '' : cfg.activateWindow.toString(),
-          ];
-          const newContent = fields.join(',');
+          // JSON形式で設定を保存
+          const config: Record<string, string | number | boolean> = {
+            name: item.name,
+            windowTitle: cfg.windowTitle,
+          };
+
+          // オプションフィールドは値がある場合のみ追加
+          if (cfg.x !== undefined) config.x = cfg.x;
+          if (cfg.y !== undefined) config.y = cfg.y;
+          if (cfg.width !== undefined) config.width = cfg.width;
+          if (cfg.height !== undefined) config.height = cfg.height;
+          if (cfg.virtualDesktopNumber !== undefined)
+            config.virtualDesktopNumber = cfg.virtualDesktopNumber;
+          if (cfg.activateWindow !== undefined) config.activateWindow = cfg.activateWindow;
+
+          const newContent = `window,${JSON.stringify(config).replace(/"/g, '""')}`;
 
           // RawDataLineとして更新
           await window.electronAPI.updateRawLine({

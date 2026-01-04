@@ -15,7 +15,7 @@ export interface ValidationResult {
 export const TabValidator = {
   /**
    * タブ削除が可能かチェック
-   * @param tab - 削除対象のタブ
+   * @param _tab - 削除対象のタブ（現時点では未使用）
    * @returns バリデーション結果
    *
    * @example
