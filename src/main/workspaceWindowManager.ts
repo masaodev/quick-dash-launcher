@@ -241,20 +241,44 @@ export function setWorkspaceModalMode(
 
       // 必要サイズと現在サイズを比較し、必要な場合のみ拡大
       if (currentBounds.width < requiredSize.width || currentBounds.height < requiredSize.height) {
-        workspaceWindow.setSize(
-          Math.max(currentBounds.width, requiredSize.width),
-          Math.max(currentBounds.height, requiredSize.height)
+        const newWidth = Math.max(currentBounds.width, requiredSize.width);
+        const newHeight = Math.max(currentBounds.height, requiredSize.height);
+
+        // 画面右端に固定するためにx座標を調整
+        const { width: screenWidth } = screen.getPrimaryDisplay().workAreaSize;
+        const newX = screenWidth - newWidth;
+
+        workspaceWindow.setBounds({
+          x: newX,
+          y: currentBounds.y,
+          width: newWidth,
+          height: newHeight,
+        });
+
+        windowLogger.info(
+          `モーダルモードON: サイズを${currentBounds.width}x${currentBounds.height}から${newWidth}x${newHeight}に変更`
         );
-        // ワークスペースウィンドウは画面右端に固定されるため、center()は呼ばない
       }
     } else {
       // モーダルを閉じる時：元のサイズに復元
       if (normalWorkspaceWindowBounds) {
-        workspaceWindow.setSize(
-          normalWorkspaceWindowBounds.width,
-          normalWorkspaceWindowBounds.height
+        const currentBounds = workspaceWindow.getBounds();
+
+        // 画面右端に固定するためにx座標を調整
+        const { width: screenWidth } = screen.getPrimaryDisplay().workAreaSize;
+        const newX = screenWidth - normalWorkspaceWindowBounds.width;
+
+        workspaceWindow.setBounds({
+          x: newX,
+          y: currentBounds.y,
+          width: normalWorkspaceWindowBounds.width,
+          height: normalWorkspaceWindowBounds.height,
+        });
+
+        windowLogger.info(
+          `モーダルモードOFF: サイズを${normalWorkspaceWindowBounds.width}x${normalWorkspaceWindowBounds.height}に復元`
         );
-        // ワークスペースウィンドウは画面右端に固定されるため、center()は呼ばない
+
         normalWorkspaceWindowBounds = null;
       }
     }
