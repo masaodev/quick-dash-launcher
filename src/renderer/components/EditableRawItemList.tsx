@@ -149,6 +149,11 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
   };
 
   const handleCellEdit = (line: RawDataLine) => {
+    // ウィンドウ操作アイテムはパス編集不可（詳細編集のみ）
+    if (isWindowOperationDirective(line)) {
+      return;
+    }
+
     const cellKey = getLineKey(line);
     setEditingCell(cellKey);
 
@@ -656,6 +661,18 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
           title="空行の場合は編集できません。まず種類を選択してください。"
         >
           (まず種類を選択してください)
+        </div>
+      );
+    }
+
+    // ウィンドウ操作アイテムは編集不可
+    if (isWindowOperationDirective(line)) {
+      return (
+        <div
+          className="readonly-cell"
+          title="ウィンドウ操作アイテムは✏️ボタンから詳細編集を開いてください"
+        >
+          {getPathAndArgs(line)}
         </div>
       );
     }
