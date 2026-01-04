@@ -85,8 +85,8 @@ IPCハンドラーは機能ごとに分離（`src/main/ipc/`）:
 
 | モジュール | 役割 |
 |-----------|------|
-| `directiveUtils.ts` | ディレクティブ（group, dir, window）の判定と解析 |
-| `windowOperationMigration.ts` | Windows操作アイテムのCSV形式からJSON形式への変換処理 |
+| `directiveUtils.ts` | ディレクティブ（group, dir, window）の判定と解析。v0.5.10以降、`parseWindowOperationDirective()`はJSON形式専用（CSV形式サポート終了） |
+| `windowOperationMigration.ts` | Windows操作アイテムの旧CSV形式からJSON形式への変換処理（v0.5.10で自動移行機能を実装） |
 | `csvParser.ts` | CSV形式のパース・エスケープ処理 |
 | `dataConverters.ts` | データ形式変換（dirオプション解析等） |
 | `windowConfigUtils.ts` | ウィンドウ設定のJSON⇔文字列変換 |

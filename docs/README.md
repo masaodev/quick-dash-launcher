@@ -24,6 +24,7 @@ docs/
 - [アイコンシステム](features/icons.md)
 - [グループ起動](features/group-launch.md)
 - [フォルダ取込](features/folder-import.md)
+- [ウィンドウ操作](features/window-operation.md)
 - [アプリケーション設定](features/settings.md)
 - [アイテム管理](features/item-management.md)
 - [ワークスペース](features/workspace.md)

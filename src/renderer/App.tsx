@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { convertLauncherItemToRawDataLine, type RegisterItem } from '@common/utils/dataConverters';
+import { escapeCSV } from '@common/utils/csvParser';
 import {
   LauncherItem,
   AppItem,
@@ -429,7 +430,7 @@ const App: React.FC = () => {
             config.virtualDesktopNumber = cfg.virtualDesktopNumber;
           if (cfg.activateWindow !== undefined) config.activateWindow = cfg.activateWindow;
 
-          const newContent = `window,${JSON.stringify(config).replace(/"/g, '""')}`;
+          const newContent = `window,${escapeCSV(JSON.stringify(config))}`;
 
           // RawDataLineとして更新
           await window.electronAPI.updateRawLine({

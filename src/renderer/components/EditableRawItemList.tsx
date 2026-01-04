@@ -4,6 +4,7 @@ import {
   isGroupDirective,
   isDirDirective,
   isWindowOperationDirective,
+  parseWindowOperationConfig,
 } from '@common/utils/directiveUtils';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { RawDataLine, LauncherItem } from '@common/types';
@@ -272,19 +273,15 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
       name = parts[1] || '';
     } else if (isWindowOperationDirective(line)) {
       // window,{JSON形式}
-      if (parts[1] && parts[1].trim().startsWith('{')) {
-        try {
-          const config = JSON.parse(parts[1]);
-          name = config.name || '';
-        } catch (error) {
-          console.error('ウィンドウ操作アイテムのJSON形式が不正です:', error);
-          alert('ウィンドウ操作アイテムのJSON形式が不正です。詳細編集で修正してください。');
-          return;
-        }
-      } else {
-        alert(
-          'ウィンドウ操作アイテムはJSON形式で記述する必要があります。詳細編集で修正してください。'
-        );
+      // parseWindowOperationConfigヘルパーを使用してJSON形式を安全にパース
+      // ヘルパー内で形式検証とエラーハンドリングを一元化しており、
+      // JSON形式でない場合やパースエラー時は詳細なエラーメッセージをスロー
+      try {
+        const config = parseWindowOperationConfig(parts[1] || '');
+        name = config.name || '';
+      } catch (error) {
+        console.error('ウィンドウ操作アイテムのJSON形式が不正です:', error);
+        alert(error instanceof Error ? error.message : 'JSON形式が不正です');
         return;
       }
     }
@@ -332,12 +329,16 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
       }
 
       try {
-        const config = JSON.parse(parts[1]);
+        // parseWindowOperationConfigヘルパーでJSON形式を安全にパース
+        const config = parseWindowOperationConfig(parts[1] || '');
+        // 名前フィールドのみ更新
         config.name = newName;
+        // JSON.stringify()でオブジェクトをJSON文字列に変換し、
+        // escapeCSV()でCSV形式に適合するようにエスケープ（ダブルクォートを二重化）
         newContent = `window,${escapeCSV(JSON.stringify(config))}`;
       } catch (error) {
         console.error('ウィンドウ操作アイテムのJSON形式が不正です:', error);
-        alert('ウィンドウ操作アイテムのJSON形式が不正です。詳細編集で修正してください。');
+        alert(error instanceof Error ? error.message : 'JSON形式が不正です');
         setEditingCell(null);
         setEditingValue('');
         return;
@@ -434,15 +435,10 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
         name = parts[1] || '';
       } else if (isWindowOperationDirective(line)) {
         // window,{JSON形式}
-        if (parts[1] && parts[1].trim().startsWith('{')) {
-          try {
-            const config = JSON.parse(parts[1]);
-            name = config.name || '';
-          } catch {
-            name = '(JSON形式エラー)';
-            hasError = true;
-          }
-        } else {
+        try {
+          const config = parseWindowOperationConfig(parts[1] || '');
+          name = config.name || '';
+        } catch {
           name = '(JSON形式エラー)';
           hasError = true;
         }
@@ -503,12 +499,8 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
         let windowTitle = '';
         const settings: string[] = [];
 
-        if (!parts[1] || !parts[1].trim().startsWith('{')) {
-          return '(JSON形式エラー)';
-        }
-
         try {
-          const config = JSON.parse(parts[1]);
+          const config = parseWindowOperationConfig(parts[1] || '');
           windowTitle = config.windowTitle || '';
           if (config.x !== undefined) settings.push(`x:${config.x}`);
           if (config.y !== undefined) settings.push(`y:${config.y}`);

@@ -10,6 +10,20 @@ import { parseDirOptionsFromString, type DirOptions } from './dataConverters';
 import { parseCSVLine } from './csvParser';
 
 /**
+ * ウィンドウ操作アイテムの設定オブジェクト型定義
+ */
+export interface WindowOperationConfig {
+  name: string;
+  windowTitle: string;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  virtualDesktopNumber?: number;
+  activateWindow?: boolean;
+}
+
+/**
  * グループディレクティブかどうかを判定する
  *
  * @param line - 判定対象のRawDataLine
@@ -101,41 +115,35 @@ export function isWindowOperationDirective(line: RawDataLine): boolean {
 }
 
 /**
- * ウィンドウ操作ディレクティブを解析する
+ * ウィンドウ操作アイテムのJSON設定を安全にパースする
  *
- * JSON形式のみをサポートします。
+ * JSON形式の検証とパースを一元化し、エラーハンドリングを統一します。
+ * App.tsxやEditableRawItemList.tsxなど、複数箇所で使用されるJSON.parseロジックを共通化します。
  *
- * @param line - 解析対象のRawDataLine
- * @returns ウィンドウタイトルと位置・サイズ情報
- * @throws JSON形式でない場合、またはパースに失敗した場合はエラーをスロー
+ * @param configString - パース対象のJSON文字列（CSV形式でエスケープされている場合はparseCSVLineで事前処理が必要）
+ * @returns パースされた設定オブジェクト
+ * @throws {Error} JSON形式でない場合、またはパースに失敗した場合
  *
  * @example
- * // JSON形式
- * const line = { type: 'directive', content: 'window,{"name":"表示名","windowTitle":"Chrome","x":100,"y":100}' };
- * parseWindowOperationDirective(line);
- * // { name: '表示名', windowTitle: 'Chrome', x: 100, y: 100 }
+ * // CSV形式でエスケープされたJSON文字列をparseCSVLineで事前処理
+ * const parts = parseCSVLine('window,"{""name"":""表示名"",""windowTitle"":""Chrome""}"');
+ * const config = parseWindowOperationConfig(parts[1]);
+ * // { name: '表示名', windowTitle: 'Chrome' }
+ *
+ * @example
+ * // 不正なJSON形式の場合はエラーをスロー
+ * parseWindowOperationConfig('{invalid}');
+ * // Error: ウィンドウ操作アイテムのJSON形式が不正です: ...
  */
-export function parseWindowOperationDirective(line: RawDataLine): {
-  name: string;
-  windowTitle: string;
-  x?: number;
-  y?: number;
-  width?: number;
-  height?: number;
-  virtualDesktopNumber?: number;
-  activateWindow?: boolean;
-} {
-  const parts = parseCSVLine(line.content);
-
-  // JSON形式のみサポート
-  if (!parts[1] || !parts[1].trim().startsWith('{')) {
+export function parseWindowOperationConfig(configString: string): WindowOperationConfig {
+  if (!configString || !configString.trim().startsWith('{')) {
     throw new Error(
-      `ウィンドウ操作アイテムはJSON形式で記述する必要があります。形式: window,{"name":"表示名","windowTitle":"ウィンドウタイトル",...}`
+      'ウィンドウ操作アイテムはJSON形式で記述する必要があります。形式: {"name":"表示名","windowTitle":"ウィンドウタイトル",...}'
     );
   }
 
   try {
-    const config = JSON.parse(parts[1]);
+    const config = JSON.parse(configString);
     return {
       name: config.name || '',
       windowTitle: config.windowTitle || '',
@@ -151,4 +159,25 @@ export function parseWindowOperationDirective(line: RawDataLine): {
       `ウィンドウ操作アイテムのJSON形式が不正です: ${error instanceof Error ? error.message : String(error)}`
     );
   }
+}
+
+/**
+ * ウィンドウ操作ディレクティブを解析する
+ *
+ * JSON形式のみをサポートします。
+ *
+ * @param line - 解析対象のRawDataLine
+ * @returns ウィンドウタイトルと位置・サイズ情報
+ * @throws JSON形式でない場合、またはパースに失敗した場合はエラーをスロー
+ *
+ * @example
+ * // JSON形式
+ * const line = { type: 'directive', content: 'window,{"name":"表示名","windowTitle":"Chrome","x":100,"y":100}' };
+ * parseWindowOperationDirective(line);
+ * // { name: '表示名', windowTitle: 'Chrome', x: 100, y: 100 }
+ */
+export function parseWindowOperationDirective(line: RawDataLine): WindowOperationConfig {
+  const parts = parseCSVLine(line.content);
+  // parseWindowOperationConfigヘルパーを使用してJSON形式を安全にパース
+  return parseWindowOperationConfig(parts[1] || '');
 }
