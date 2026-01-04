@@ -252,6 +252,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
       // ウィンドウ操作アイテムの場合
       const windowOperationConfig = {
         windowTitle: window.title,
+        processName: window.processName,
         x: window.x,
         y: window.y,
         width: window.width,
@@ -262,6 +263,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
       // 単一アイテムの場合
       const windowConfig = {
         title: window.title,
+        processName: window.processName,
         x: window.x,
         y: window.y,
         width: window.width,
@@ -537,6 +539,8 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                             item.windowOperationConfig
                               ? {
                                   title: item.windowOperationConfig.windowTitle,
+                                  exactMatch: item.windowOperationConfig.exactMatch,
+                                  processName: item.windowOperationConfig.processName,
                                   x: item.windowOperationConfig.x,
                                   y: item.windowOperationConfig.y,
                                   width: item.windowOperationConfig.width,
@@ -550,6 +554,8 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                           onChange={(windowConfig) =>
                             handleItemChange(index, 'windowOperationConfig', {
                               windowTitle: windowConfig?.title || '',
+                              exactMatch: windowConfig?.exactMatch,
+                              processName: windowConfig?.processName,
                               x: windowConfig?.x,
                               y: windowConfig?.y,
                               width: windowConfig?.width,

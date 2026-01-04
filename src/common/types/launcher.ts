@@ -7,6 +7,10 @@ import { WindowInfo } from './window';
 export interface WindowConfig {
   /** ウィンドウタイトル（検索用、必須） */
   title: string;
+  /** 完全一致で検索するかどうか（省略時はfalse = 部分一致） */
+  exactMatch?: boolean;
+  /** プロセス名で検索（部分一致、省略時は検索なし） */
+  processName?: string;
   /** X座標（仮想スクリーン座標系、省略時は位置変更なし） */
   x?: number;
   /** Y座標（仮想スクリーン座標系、省略時は位置変更なし） */
@@ -126,6 +130,10 @@ export interface WindowOperationItem {
   name: string;
   /** ウィンドウタイトル（検索用、必須） */
   windowTitle: string;
+  /** 完全一致で検索するかどうか（省略時はfalse = 部分一致） */
+  exactMatch?: boolean;
+  /** プロセス名で検索（部分一致、省略時は検索なし） */
+  processName?: string;
   /** X座標（仮想スクリーン座標系、省略時は位置変更なし） */
   x?: number;
   /** Y座標（仮想スクリーン座標系、省略時は位置変更なし） */

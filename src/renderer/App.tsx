@@ -408,6 +408,8 @@ const App: React.FC = () => {
           };
 
           // オプションフィールドは値がある場合のみ追加
+          if (cfg.exactMatch !== undefined) config.exactMatch = cfg.exactMatch;
+          if (cfg.processName !== undefined) config.processName = cfg.processName;
           if (cfg.x !== undefined) config.x = cfg.x;
           if (cfg.y !== undefined) config.y = cfg.y;
           if (cfg.width !== undefined) config.width = cfg.width;
@@ -536,6 +538,8 @@ const App: React.FC = () => {
       };
 
       // オプションフィールドは値がある場合のみ追加
+      if (windowOp.exactMatch !== undefined) config.exactMatch = windowOp.exactMatch;
+      if (windowOp.processName !== undefined) config.processName = windowOp.processName;
       if (windowOp.x !== undefined) config.x = windowOp.x;
       if (windowOp.y !== undefined) config.y = windowOp.y;
       if (windowOp.width !== undefined) config.width = windowOp.width;

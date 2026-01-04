@@ -253,6 +253,8 @@ export function setupItemHandlers(
     itemLogger.info(
       {
         windowTitle: item.windowTitle,
+        exactMatch: item.exactMatch,
+        processName: item.processName,
         x: item.x,
         y: item.y,
         width: item.width,
@@ -265,6 +267,8 @@ export function setupItemHandlers(
 
     const windowConfig: WindowConfig = {
       title: item.windowTitle,
+      exactMatch: item.exactMatch,
+      processName: item.processName,
       x: item.x,
       y: item.y,
       width: item.width,
