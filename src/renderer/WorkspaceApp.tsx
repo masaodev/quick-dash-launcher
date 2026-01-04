@@ -94,23 +94,16 @@ const WorkspaceApp: React.FC = () => {
     };
   }, []);
 
-  // グループ削除ダイアログのモーダルモード設定
+  // モーダルダイアログのモーダルモード設定（統合管理）
   useEffect(() => {
-    if (deleteGroupDialog.isOpen) {
-      window.electronAPI.workspaceAPI.setModalMode(true, { width: 600, height: 400 });
-    } else {
-      window.electronAPI.workspaceAPI.setModalMode(false);
-    }
-  }, [deleteGroupDialog.isOpen]);
+    const isAnyModalOpen = deleteGroupDialog.isOpen || archiveGroupDialog.isOpen;
 
-  // グループアーカイブダイアログのモーダルモード設定
-  useEffect(() => {
-    if (archiveGroupDialog.isOpen) {
+    if (isAnyModalOpen) {
       window.electronAPI.workspaceAPI.setModalMode(true, { width: 600, height: 400 });
     } else {
       window.electronAPI.workspaceAPI.setModalMode(false);
     }
-  }, [archiveGroupDialog.isOpen]);
+  }, [deleteGroupDialog.isOpen, archiveGroupDialog.isOpen]);
 
   /**
    * グループ削除ハンドラー（確認ダイアログ表示）
