@@ -44,7 +44,8 @@ export function findWindowByTitle(
   processName?: string
 ): bigint | null {
   try {
-    const windows = getAllWindows();
+    // ウィンドウ操作アイテムでは、全仮想デスクトップのウィンドウを検索対象にする
+    const windows = getAllWindows({ includeAllVirtualDesktops: true });
 
     // 検索条件を適用してウィンドウを検索
     const matchedWindow = windows.find((win) => {
