@@ -1,11 +1,11 @@
 import { ipcMain, BrowserWindow } from 'electron';
+import type { AppSettings } from '@common/types.js';
+import logger from '@common/logger.js';
 
-import type { AppSettings } from '../../common/types.js';
 import { SettingsService } from '../services/settingsService.js';
 import { HotkeyService } from '../services/hotkeyService.js';
 import { AutoLaunchService } from '../services/autoLaunchService.js';
 import { getIsFirstLaunch } from '../main.js';
-import logger from '../../common/logger.js';
 
 /**
  * すべてのウィンドウに設定変更を通知

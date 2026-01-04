@@ -21,7 +21,7 @@ export const TabValidator = {
    * @example
    * canDeleteTab({ name: 'メイン', files: ['data.txt'] }) // => { valid: true }
    */
-  canDeleteTab(tab: DataFileTab): ValidationResult {
+  canDeleteTab(_tab: DataFileTab): ValidationResult {
     // 現時点では特に制約なし（将来的に追加可能）
     return { valid: true };
   },

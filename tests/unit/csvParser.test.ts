@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
-
-import { parseCSVLine, escapeCSV } from '../../src/common/utils/csvParser';
+import { parseCSVLine, escapeCSV } from '@common/utils/csvParser';
 
 describe('parseCSVLine', () => {
   describe('基本的なCSV解析', () => {

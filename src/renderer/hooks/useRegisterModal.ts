@@ -1,6 +1,5 @@
 import { useState } from 'react';
-
-import { RawDataLine } from '../../common/types';
+import { RawDataLine } from '@common/types';
 
 /**
  * 登録モーダルの状態管理を行うカスタムフック

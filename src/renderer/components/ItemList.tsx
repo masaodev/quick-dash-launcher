@@ -1,14 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { isLauncherItem } from '@common/utils/typeGuards';
+import { LauncherItem, GroupItem, AppItem, WindowInfo, WindowOperationItem } from '@common/types';
 
 import { getTooltipText } from '../utils/tooltipTextGenerator';
-import {
-  LauncherItem,
-  GroupItem,
-  AppItem,
-  WindowInfo,
-  WindowOperationItem,
-} from '../../common/types';
 
 import ContextMenu from './ContextMenu';
 

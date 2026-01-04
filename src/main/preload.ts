@@ -1,5 +1,4 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron';
-
 import {
   LauncherItem,
   RawDataLine,
@@ -16,7 +15,7 @@ import {
   WorkspaceGroup,
   ExecutionHistoryItem,
   WindowInfo,
-} from '../common/types';
+} from '@common/types';
 
 interface RegisterItem {
   filePath: string;

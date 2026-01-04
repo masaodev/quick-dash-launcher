@@ -2,8 +2,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 
 import { app } from 'electron';
-
-import logger from '../../common/logger.js';
+import logger from '@common/logger.js';
 
 /**
  * アプリケーションの設定ファイル・ディレクトリのパスを管理するクラス

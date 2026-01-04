@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { type RegisterItem } from '@common/utils/dataConverters';
 import { detectItemType } from '@common/utils/itemTypeDetector';
+import { RawDataLine, DataFileTab, WindowConfig } from '@common/types';
 
-import { RawDataLine, DataFileTab, WindowConfig } from '../../common/types';
 import { debugInfo } from '../utils/debug';
 
 import { useModalInitializer } from './useModalInitializer';

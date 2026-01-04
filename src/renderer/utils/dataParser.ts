@@ -5,7 +5,7 @@ import {
   LauncherItem,
   GroupItem,
   WindowOperationItem,
-} from '../../common/types';
+} from '@common/types';
 
 /**
  * アイテムをクエリでフィルタリングする

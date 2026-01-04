@@ -1,6 +1,5 @@
 import React from 'react';
-
-import type { WindowPinMode } from '../../common/types';
+import type { WindowPinMode } from '@common/types';
 
 import SettingsDropdown from './SettingsDropdown';
 import RefreshActionsDropdown from './RefreshActionsDropdown';

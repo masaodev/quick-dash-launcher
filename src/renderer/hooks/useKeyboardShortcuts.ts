@@ -1,8 +1,8 @@
 import React from 'react';
+import { AppItem, LauncherItem, DataFileTab, SearchMode, WindowInfo } from '@common/types';
+import { isWindowInfo, isLauncherItem } from '@common/utils/typeGuards';
 
-import { AppItem, LauncherItem, DataFileTab, SearchMode, WindowInfo } from '../../common/types';
 import { filterItems } from '../utils/dataParser';
-import { isWindowInfo, isLauncherItem } from '../../common/utils/typeGuards';
 
 /**
  * キーボードショートカット管理フック

@@ -3,7 +3,6 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import ElectronStore from 'electron-store';
-
 import type {
   AppItem,
   WorkspaceItem,
@@ -11,11 +10,12 @@ import type {
   ExecutionHistoryItem,
   ArchivedWorkspaceGroup,
   ArchivedWorkspaceItem,
-} from '../../common/types.js';
-import logger from '../../common/logger.js';
+} from '@common/types.js';
+import logger from '@common/logger.js';
+import { detectItemTypeSync } from '@common/utils/itemTypeDetector.js';
+import { isWindowInfo, isLauncherItem } from '@common/utils/typeGuards.js';
+
 import PathManager from '../config/pathManager.js';
-import { detectItemTypeSync } from '../../common/utils/itemTypeDetector.js';
-import { isWindowInfo, isLauncherItem } from '../../common/utils/typeGuards.js';
 
 import { ExecutionHistoryService } from './executionHistoryService.js';
 

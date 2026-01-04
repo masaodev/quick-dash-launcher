@@ -1,6 +1,6 @@
 import { globalShortcut, BrowserWindow } from 'electron';
+import logger from '@common/logger.js';
 
-import logger from '../../common/logger.js';
 import { showMainWindow, hideMainWindow } from '../windowManager.js';
 
 import { SettingsService } from './settingsService.js';
