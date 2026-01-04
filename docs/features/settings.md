@@ -47,10 +47,10 @@ QuickDashLauncherの動作をカスタマイズするための設定機能を説
 | `createdWithVersion` | `string?` | `undefined` | 設定ファイルを作成したアプリバージョン（新規作成時のみ自動記録） |
 | `updatedWithVersion` | `string?` | `undefined` | 設定ファイルを最後に更新したアプリバージョン（更新時に自動記録） |
 | `hotkey` | `string` | `''` | グローバルホットキー |
-| `windowWidth` | `number` | `600` | 通常時のウィンドウ幅 |
-| `windowHeight` | `number` | `400` | 通常時のウィンドウ高さ |
-| `editModeWidth` | `number` | `1200` | アイテム管理時の幅 |
-| `editModeHeight` | `number` | `700` | アイテム管理時の高さ |
+| `windowWidth` | `number` | `600` | メイン画面のウィンドウ幅 |
+| `windowHeight` | `number` | `400` | メイン画面のウィンドウ高さ |
+| `editModeWidth` | `number` | `1200` | 管理画面の幅 |
+| `editModeHeight` | `number` | `1000` | 管理画面の高さ |
 | `autoLaunch` | `boolean` | `false` | Windows起動時に自動起動 |
 | `windowPositionMode` | `string` | `'center'` | 表示位置モード |
 | `showDataFileTabs` | `boolean` | `false` | タブ表示の有効/無効 |
@@ -93,8 +93,8 @@ Alt+F1
 
 | 設定 | 幅範囲 | 高さ範囲 | デフォルト |
 |------|-------|---------|-----------|
-| 通常時 | 400-2000px | 300-1200px | 600x400 |
-| アイテム管理時 | 800-2000px | 600-1200px | 1200x700 |
+| メイン画面 | 400-2000px | 300-1200px | 600x400 |
+| 管理画面 | 800-2000px | 600-1200px | 1200x1000 |
 
 ---
 
