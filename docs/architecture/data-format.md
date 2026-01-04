@@ -606,14 +606,31 @@ window,{"name":"右Slack","windowTitle":"Slack","x":960,"y":0,"width":960,"heigh
 **v0.5.9以前の旧CSV形式:**
 
 ```
-// 旧形式（読み込み時のみサポート、新規保存時は自動的にJSON形式に変換されます）
+// 旧形式（v0.5.10以降、アプリケーション起動時に自動的にJSON形式に変換されます）
 window,表示名,ウィンドウタイトル,x,y,width,height,virtualDesktopNumber,activateWindow
 ```
 
-**変更内容（v0.5.9以降）:**
-- **読み込み**: 旧CSV形式のデータファイルも引き続き読み込み可能
-- **保存**: 新規保存時・編集時は自動的にJSON形式で保存
-- **移行**: 既存のCSV形式アイテムを編集・保存すると、自動的にJSON形式に変換されます
+**変更内容:**
+
+| バージョン | 変更内容 |
+|-----------|---------|
+| **v0.5.9** | JSON形式を導入。新規保存時はJSON形式で保存され、旧CSV形式も読み込み可能 |
+| **v0.5.10以降** | アプリケーション起動時に既存のCSV形式データを自動的にJSON形式に変換 |
+
+**自動移行処理（v0.5.10以降）:**
+- アプリケーション起動時に全データファイル（data.txt, data2.txt, ...）をスキャン
+- 旧CSV形式の`window`ディレクティブを検出すると自動的にJSON形式に変換
+- 変換後のファイルを保存（元のファイルは上書きされます）
+- 移行処理はログに記録されます（`%APPDATA%/quick-dash-launcher/logs/data.log`）
+
+**移行例:**
+```
+// 移行前（旧CSV形式）
+window,VSCode,Visual Studio Code,100,100,1920,1080,1,true
+
+// 移行後（JSON形式）
+window,{"name":"VSCode","windowTitle":"Visual Studio Code","x":100,"y":100,"width":1920,"height":1080,"virtualDesktopNumber":1,"activateWindow":true}
+```
 
 この変更により、フィールド順序の誤りによるバグを防ぎ、将来的な拡張性が向上しました。
 

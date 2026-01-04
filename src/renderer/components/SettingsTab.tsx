@@ -602,6 +602,8 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                                     (editedSettings.dataFileTabs || []).some(
                                       (t, idx) => idx !== tabIndex && t.files.includes('data.txt')
                                     );
+                                  // data.txtが他のタブにも存在する場合は削除可能
+                                  const canDelete = dataFileExistsInOtherTabs;
 
                                   return (
                                     <div key={fileName} className="data-file-item">

@@ -4,6 +4,7 @@ import { app, globalShortcut } from 'electron';
 
 import { setupIPCHandlers } from './ipc';
 import { createDefaultDataFile } from './utils/appHelpers';
+import { migrateWindowOperationFormat } from './utils/migrationHelpers';
 import PathManager from './config/pathManager.js';
 import { BackupService } from './services/backupService.js';
 import { SettingsService } from './services/settingsService.js';
@@ -72,6 +73,9 @@ app.whenReady().then(async () => {
 
   // 初回起動時にデフォルトのdata.txtファイルを作成
   createDefaultDataFile();
+
+  // Windows操作アイテムのCSV形式からJSON形式への移行を実行
+  migrateWindowOperationFormat();
 
   // 既存のデータファイルをタイムスタンプ付きでバックアップ（設定に基づく）
   const backupService = await BackupService.getInstance();

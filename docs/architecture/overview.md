@@ -69,12 +69,30 @@ IPCハンドラーは機能ごとに分離（`src/main/ipc/`）:
 | `itemLauncher.ts` | URL/ファイル/アプリ/カスタムURIの起動処理を統一 | `itemHandlers.ts`, `workspaceHandlers.ts` |
 | `windowMatcher.ts` | ウィンドウタイトルによるウィンドウ検索 | `windowActivator.ts` |
 | `nativeWindowControl.ts` | ネイティブWindows API経由のウィンドウ制御 | `windowActivator.ts` |
+| `migrationHelpers.ts` | データファイル形式の自動移行処理 | `main.ts` |
 
 **設計原則:**
 - **DRY（Don't Repeat Yourself）**: 重複コードを共通関数に集約
 - **単一責任の原則**: 各モジュールは明確に定義された単一の責任を持つ
 - **型安全性**: TypeScriptの型システムを活用した安全な実装
 - **テスタビリティ**: 独立したモジュールとして単体テストが容易
+
+---
+
+## 共通ユーティリティ構造
+
+プロセス間で共有されるユーティリティ（`src/common/utils/`）:
+
+| モジュール | 役割 |
+|-----------|------|
+| `directiveUtils.ts` | ディレクティブ（group, dir, window）の判定と解析 |
+| `windowOperationMigration.ts` | Windows操作アイテムのCSV形式からJSON形式への変換処理 |
+| `csvParser.ts` | CSV形式のパース・エスケープ処理 |
+| `dataConverters.ts` | データ形式変換（dirオプション解析等） |
+| `windowConfigUtils.ts` | ウィンドウ設定のJSON⇔文字列変換 |
+| `itemTypeDetector.ts` | パスからアイテムタイプを自動検出 |
+| `pathUtils.ts` | パス操作の共通処理 |
+| `typeGuards.ts` | TypeScript型ガード関数 |
 
 ---
 

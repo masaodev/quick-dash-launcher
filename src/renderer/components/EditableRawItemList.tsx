@@ -266,17 +266,21 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
       // group,グループ名,アイテム1,アイテム2,...
       name = parts[1] || '';
     } else if (isWindowOperationDirective(line)) {
-      // window,{JSON形式} または 古い形式: window,表示名,ウィンドウタイトル,...
-      // JSON形式の場合はparseWindowOperationDirectiveを使用して解析
+      // window,{JSON形式}
       if (parts[1] && parts[1].trim().startsWith('{')) {
         try {
           const config = JSON.parse(parts[1]);
           name = config.name || '';
-        } catch {
-          name = parts[1] || '';
+        } catch (error) {
+          console.error('ウィンドウ操作アイテムのJSON形式が不正です:', error);
+          alert('ウィンドウ操作アイテムのJSON形式が不正です。詳細編集で修正してください。');
+          return;
         }
       } else {
-        name = parts[1] || '';
+        alert(
+          'ウィンドウ操作アイテムはJSON形式で記述する必要があります。詳細編集で修正してください。'
+        );
+        return;
       }
     }
     const cellKey = `${getLineKey(line)}_name`;
@@ -310,24 +314,28 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
       const itemNames = parts.slice(2);
       newContent = `group,${newGroupName},${itemNames.join(',')}`;
     } else if (isWindowOperationDirective(line)) {
-      // window,{JSON形式} または 古い形式: window,表示名,ウィンドウタイトル,...
+      // window,{JSON形式}
       const newName = editingValue.trim();
 
-      // JSON形式の場合
-      if (parts[1] && parts[1].trim().startsWith('{')) {
-        try {
-          const config = JSON.parse(parts[1]);
-          config.name = newName;
-          newContent = `window,${escapeCSV(JSON.stringify(config))}`;
-        } catch {
-          // JSONパースに失敗した場合は古い形式として処理
-          const restFields = parts.slice(2);
-          newContent = `window,${newName},${restFields.join(',')}`;
-        }
-      } else {
-        // 古いCSV形式の場合
-        const restFields = parts.slice(2); // ウィンドウタイトル以降のフィールド
-        newContent = `window,${newName},${restFields.join(',')}`;
+      if (!parts[1] || !parts[1].trim().startsWith('{')) {
+        alert(
+          'ウィンドウ操作アイテムはJSON形式で記述する必要があります。詳細編集で修正してください。'
+        );
+        setEditingCell(null);
+        setEditingValue('');
+        return;
+      }
+
+      try {
+        const config = JSON.parse(parts[1]);
+        config.name = newName;
+        newContent = `window,${escapeCSV(JSON.stringify(config))}`;
+      } catch (error) {
+        console.error('ウィンドウ操作アイテムのJSON形式が不正です:', error);
+        alert('ウィンドウ操作アイテムのJSON形式が不正です。詳細編集で修正してください。');
+        setEditingCell(null);
+        setEditingValue('');
+        return;
       }
     }
 
@@ -412,22 +420,26 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
       // アイテム行、グループ行、ウィンドウ操作行の場合、CSV形式から名前を抽出
       const parts = parseCSVLine(line.content);
       let name = '';
+      let hasError = false;
+
       if (line.type === 'item') {
         name = parts[0] || '';
       } else if (isGroupDirective(line)) {
         // group,グループ名,アイテム1,アイテム2,...
         name = parts[1] || '';
       } else if (isWindowOperationDirective(line)) {
-        // window,{JSON形式} または 古い形式: window,表示名,ウィンドウタイトル,...
+        // window,{JSON形式}
         if (parts[1] && parts[1].trim().startsWith('{')) {
           try {
             const config = JSON.parse(parts[1]);
             name = config.name || '';
           } catch {
-            name = parts[1] || '';
+            name = '(JSON形式エラー)';
+            hasError = true;
           }
         } else {
-          name = parts[1] || '';
+          name = '(JSON形式エラー)';
+          hasError = true;
         }
       }
 
@@ -450,9 +462,9 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
 
       return (
         <div
-          className="editable-cell"
+          className={`editable-cell ${hasError ? 'error' : ''}`}
           onClick={() => handleNameEdit(line)}
-          title="クリックして名前を編集"
+          title={hasError ? 'JSON形式エラー: 詳細編集で修正してください' : 'クリックして名前を編集'}
         >
           {name || '(名前なし)'}
         </div>
@@ -481,43 +493,27 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
         return itemNames.join(', ');
       } else if (isWindowOperationDirective(line)) {
         // ウィンドウ操作アイテムの場合：ウィンドウタイトル＋設定情報
-        // window,{JSON形式} または 古い形式: window,表示名,ウィンドウタイトル,x,y,width,height,virtualDesktopNumber,activateWindow
+        // window,{JSON形式}
         const parts = parseCSVLine(line.content);
         let windowTitle = '';
         const settings: string[] = [];
 
-        // JSON形式の場合
-        if (parts[1] && parts[1].trim().startsWith('{')) {
-          try {
-            const config = JSON.parse(parts[1]);
-            windowTitle = config.windowTitle || '';
-            if (config.x !== undefined) settings.push(`x:${config.x}`);
-            if (config.y !== undefined) settings.push(`y:${config.y}`);
-            if (config.width !== undefined) settings.push(`w:${config.width}`);
-            if (config.height !== undefined) settings.push(`h:${config.height}`);
-            if (config.virtualDesktopNumber !== undefined)
-              settings.push(`desk:${config.virtualDesktopNumber}`);
-            if (config.activateWindow !== undefined)
-              settings.push(`active:${config.activateWindow}`);
-          } catch {
-            // JSONパース失敗時は古い形式として処理
-            windowTitle = parts[2] || '';
-            if (parts[3]) settings.push(`x:${parts[3]}`);
-            if (parts[4]) settings.push(`y:${parts[4]}`);
-            if (parts[5]) settings.push(`w:${parts[5]}`);
-            if (parts[6]) settings.push(`h:${parts[6]}`);
-            if (parts[7]) settings.push(`desk:${parts[7]}`);
-            if (parts[8]) settings.push(`active:${parts[8]}`);
-          }
-        } else {
-          // 古いCSV形式の場合
-          windowTitle = parts[2] || '';
-          if (parts[3]) settings.push(`x:${parts[3]}`);
-          if (parts[4]) settings.push(`y:${parts[4]}`);
-          if (parts[5]) settings.push(`w:${parts[5]}`);
-          if (parts[6]) settings.push(`h:${parts[6]}`);
-          if (parts[7]) settings.push(`desk:${parts[7]}`);
-          if (parts[8]) settings.push(`active:${parts[8]}`);
+        if (!parts[1] || !parts[1].trim().startsWith('{')) {
+          return '(JSON形式エラー)';
+        }
+
+        try {
+          const config = JSON.parse(parts[1]);
+          windowTitle = config.windowTitle || '';
+          if (config.x !== undefined) settings.push(`x:${config.x}`);
+          if (config.y !== undefined) settings.push(`y:${config.y}`);
+          if (config.width !== undefined) settings.push(`w:${config.width}`);
+          if (config.height !== undefined) settings.push(`h:${config.height}`);
+          if (config.virtualDesktopNumber !== undefined)
+            settings.push(`desk:${config.virtualDesktopNumber}`);
+          if (config.activateWindow !== undefined) settings.push(`active:${config.activateWindow}`);
+        } catch {
+          return '(JSON形式エラー)';
         }
 
         if (!windowTitle) return '(ウィンドウタイトルなし)';
@@ -551,8 +547,12 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
         // グループの場合：group,グループ名,アイテム名1,アイテム名2,...の形式（グループ名は空で初期化）
         newContent = 'group,';
       } else if (directiveType === 'window') {
-        // ウィンドウ操作の場合：window,ウィンドウタイトルの形式（ウィンドウタイトルは空で初期化）
-        newContent = 'window,';
+        // ウィンドウ操作の場合：window,{JSON形式}で初期化
+        const initialConfig = {
+          name: '',
+          windowTitle: '',
+        };
+        newContent = `window,${escapeCSV(JSON.stringify(initialConfig))}`;
       } else {
         // フォルダ取り込みの場合：dir,パスの形式（パスは空で初期化）
         newContent = 'dir,';
