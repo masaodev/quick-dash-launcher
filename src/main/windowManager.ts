@@ -1,6 +1,6 @@
 import * as path from 'path';
 
-import { BrowserWindow, Tray, Menu, nativeImage, app, shell, screen } from 'electron';
+import { BrowserWindow, Tray, Menu, nativeImage, app, shell, screen, dialog } from 'electron';
 import { windowLogger } from '@common/logger';
 import type { WindowPinMode, WindowPositionMode } from '@common/types';
 import { PerformanceTimer } from '@common/utils/performanceTimer';
@@ -182,6 +182,37 @@ export async function createTray(): Promise<void> {
       },
     },
     { type: 'separator' },
+    {
+      label: '再起動',
+      click: async () => {
+        // 開発モードかどうかを判定
+        const isDev = process.env.NODE_ENV === 'development' || process.env.ELECTRON_IS_DEV === '1';
+
+        if (isDev) {
+          // 開発モードでは警告ダイアログを表示
+          const result = await dialog.showMessageBox({
+            type: 'warning',
+            title: '再起動（開発モード）',
+            message: '開発モードでは自動再起動をサポートしていません',
+            detail:
+              'アプリを終了後、ターミナルで以下のコマンドを実行してください：\n\n  npm run dev\n\nアプリを終了しますか？',
+            buttons: ['キャンセル', '終了'],
+            defaultId: 0,
+            cancelId: 0,
+          });
+
+          if (result.response === 1) {
+            windowLogger.info('開発モードでの終了を実行します');
+            app.quit();
+          }
+        } else {
+          // 本番モードでは通常の再起動を実行
+          windowLogger.info('本番モードでの再起動を実行します');
+          app.relaunch();
+          app.quit();
+        }
+      },
+    },
     {
       label: '終了',
       click: () => {
