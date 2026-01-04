@@ -246,10 +246,12 @@ export function useRegisterForm(
         }
       }
 
-      // ウィンドウ操作の場合はウィンドウタイトルが必須
+      // ウィンドウ操作の場合はウィンドウタイトルまたはプロセス名が必須
       if (item.itemCategory === 'window') {
-        if (!item.windowOperationConfig?.windowTitle?.trim()) {
-          newErrors[i].name = 'ウィンドウタイトルを入力してください';
+        const hasWindowTitle = item.windowOperationConfig?.windowTitle?.trim();
+        const hasProcessName = item.windowOperationConfig?.processName?.trim();
+        if (!hasWindowTitle && !hasProcessName) {
+          newErrors[i].name = 'ウィンドウタイトルまたはプロセス名を入力してください';
         }
       }
     }

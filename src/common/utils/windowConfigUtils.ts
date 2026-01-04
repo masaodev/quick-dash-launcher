@@ -47,6 +47,8 @@ export function parseWindowConfig(value: string | undefined): WindowConfig | nul
       };
 
       // オプションフィールドのパース
+      if (typeof parsed.exactMatch === 'boolean') config.exactMatch = parsed.exactMatch;
+      if (typeof parsed.processName === 'string') config.processName = parsed.processName;
       if (typeof parsed.x === 'number') config.x = parsed.x;
       if (typeof parsed.y === 'number') config.y = parsed.y;
       if (typeof parsed.width === 'number') config.width = parsed.width;
@@ -88,8 +90,10 @@ export function serializeWindowConfig(config: WindowConfig | undefined): string 
     return '';
   }
 
-  // 位置・サイズ・仮想デスクトップ・アクティブ化情報がない場合は、文字列形式（後方互換）
+  // 位置・サイズ・仮想デスクトップ・アクティブ化・完全一致・プロセス名情報がない場合は、文字列形式（後方互換）
   if (
+    config.exactMatch === undefined &&
+    config.processName === undefined &&
     config.x === undefined &&
     config.y === undefined &&
     config.width === undefined &&

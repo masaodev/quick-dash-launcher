@@ -55,7 +55,11 @@ export function tryActivateWindow(
   }
 
   // ウィンドウタイトルでウィンドウを検索
-  const hwnd = findWindowByTitle(effectiveConfig.title);
+  const hwnd = findWindowByTitle(
+    effectiveConfig.title,
+    effectiveConfig.exactMatch || false,
+    effectiveConfig.processName
+  );
 
   if (hwnd === null) {
     // ウィンドウが見つからない場合

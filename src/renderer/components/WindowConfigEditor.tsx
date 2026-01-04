@@ -54,6 +54,10 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
         </div>
 
         <div className="window-config-section">
+          <button type="button" className="get-window-btn" onClick={onGetWindowClick}>
+            ウィンドウから取得
+          </button>
+
           {/* 1. ウィンドウ検索設定 */}
           <div className="window-config-group">
             <h4 className="window-config-group-title">🔍 ウィンドウ検索</h4>
@@ -72,9 +76,37 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
                 className="window-config-input"
               />
             </div>
-            <button type="button" className="get-window-btn" onClick={onGetWindowClick}>
-              ウィンドウから取得
-            </button>
+            <div className="window-config-checkbox-row">
+              <label className="window-config-checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={windowConfig?.exactMatch || false}
+                  onChange={(e) =>
+                    onChange({
+                      ...(windowConfig || { title: '' }),
+                      exactMatch: e.target.checked || undefined,
+                    })
+                  }
+                  className="window-config-checkbox"
+                />
+                <span>完全一致で検索（ウィンドウタイトルのみ）</span>
+              </label>
+            </div>
+            <div className="window-config-row">
+              <label className="window-config-label">プロセス名:</label>
+              <input
+                type="text"
+                value={windowConfig?.processName || ''}
+                onChange={(e) =>
+                  onChange({
+                    ...(windowConfig || { title: '' }),
+                    processName: e.target.value || undefined,
+                  })
+                }
+                placeholder="プロセス名（部分一致、例: chrome）"
+                className="window-config-input"
+              />
+            </div>
           </div>
 
           {/* 2. ウィンドウが見つかった場合の動作 */}

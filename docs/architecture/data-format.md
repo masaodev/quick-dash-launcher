@@ -721,10 +721,14 @@ interface RawDataLine {
 ```typescript
 interface WindowConfig {
   title: string;             // ウィンドウタイトル（検索用、必須）
+  exactMatch?: boolean;      // 完全一致で検索するか（省略時はfalse = 部分一致）
+  processName?: string;      // プロセス名で検索（部分一致、省略時は検索なし）
   x?: number;                // X座標（仮想スクリーン座標系、省略時は位置変更なし）
   y?: number;                // Y座標（仮想スクリーン座標系、省略時は位置変更なし）
   width?: number;            // 幅（省略時はサイズ変更なし）
   height?: number;           // 高さ（省略時はサイズ変更なし）
+  virtualDesktopNumber?: number; // 仮想デスクトップ番号（1から開始、省略時は移動なし、Windows 10以降）
+  activateWindow?: boolean;  // ウィンドウをアクティブにするかどうか（省略時はtrue）
 }
 ```
 
@@ -767,6 +771,8 @@ interface WindowOperationItem {
   type: 'windowOperation';   // アイテムタイプ（常に'windowOperation'）
   name: string;              // アイテムリストでの表示名（必須）
   windowTitle: string;       // ウィンドウタイトル（検索用、必須）
+  exactMatch?: boolean;      // 完全一致で検索するか（省略時はfalse = 部分一致）
+  processName?: string;      // プロセス名で検索（部分一致、省略時は検索なし）
   x?: number;                // X座標（仮想スクリーン座標系、省略時は位置変更なし）
   y?: number;                // Y座標（仮想スクリーン座標系、省略時は位置変更なし）
   width?: number;            // 幅（省略時はサイズ変更なし）

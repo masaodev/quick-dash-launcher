@@ -44,6 +44,8 @@ export interface RegisterItem {
   groupItemNames?: string[];
   windowOperationConfig?: {
     windowTitle: string;
+    exactMatch?: boolean;
+    processName?: string;
     x?: number;
     y?: number;
     width?: number;
@@ -203,6 +205,8 @@ export async function convertRawDataLineToRegisterItem(
         itemCategory: 'window',
         windowOperationConfig: {
           windowTitle: windowOp.windowTitle,
+          exactMatch: windowOp.exactMatch,
+          processName: windowOp.processName,
           x: windowOp.x,
           y: windowOp.y,
           width: windowOp.width,

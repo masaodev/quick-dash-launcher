@@ -33,12 +33,14 @@ window,"{""name"":""表示名"",""windowTitle"":""ウィンドウタイトル"",
 | フィールド名 | 型 | 説明 |
 |------------|------|------|
 | `name` | string | Quick Dash Launcherで表示される名前 |
-| `windowTitle` | string | 操作対象のウィンドウタイトル（部分一致） |
+| `windowTitle` | string | 操作対象のウィンドウタイトル（部分一致または完全一致） |
 
 #### オプションフィールド
 
 | フィールド名 | 型 | 説明 | デフォルト |
 |------------|------|------|-----------|
+| `exactMatch` | boolean | ウィンドウタイトルの完全一致で検索するか | `false`（部分一致） |
+| `processName` | string | プロセス名で検索（部分一致、例: "chrome"） | 指定なし |
 | `x` | number | ウィンドウのX座標（左端） | 現在位置を維持 |
 | `y` | number | ウィンドウのY座標（上端） | 現在位置を維持 |
 | `width` | number | ウィンドウの幅（ピクセル） | 現在サイズを維持 |
@@ -78,6 +80,30 @@ window,"{""name"":""MS To DO"",""windowTitle"":""Microsoft To Do"",""x"":1273,""
 ```
 
 **動作**: ウィンドウを指定位置に移動するが、サイズは現在のまま維持
+
+#### 完全一致で検索
+
+```
+window,"{""name"":""Google Chrome"",""windowTitle"":""Google Chrome"",""exactMatch"":true}"
+```
+
+**動作**: ウィンドウタイトルが正確に「Google Chrome」であるウィンドウのみを検索（部分一致では「Google Chrome - タブ名」などもマッチするが、完全一致では除外される）
+
+#### プロセス名で検索
+
+```
+window,"{""name"":""Chromeプロセス"",""windowTitle"":"""",""processName"":""chrome""}"
+```
+
+**動作**: プロセス名に「chrome」を含むウィンドウ（例: chrome.exe）を検索してアクティブ化
+
+#### ウィンドウタイトルとプロセス名の複合条件
+
+```
+window,"{""name"":""Chrome開発者ツール"",""windowTitle"":""DevTools"",""processName"":""chrome""}"
+```
+
+**動作**: ウィンドウタイトルに「DevTools」を含み、かつプロセス名に「chrome」を含むウィンドウを検索（AND条件）
 
 ## CSV形式でのエスケープ方法
 
