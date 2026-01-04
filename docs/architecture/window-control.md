@@ -172,7 +172,10 @@ ipcMain.handle('open-item', async (_event, item: LauncherItem) => {
 4. **設定...**: 管理ウィンドウの設定タブを開く（`showAdminWindowWithTab('settings')`を呼び出し）
 5. **データフォルダを開く**: 設定・データフォルダをエクスプローラーで開く（`shell.openPath`使用）
 6. **ヘルプ**: GitHubリポジトリをブラウザで開く（`shell.openExternal`使用）
-7. **終了**: アプリケーションを終了（`app.quit()`）
+7. **再起動**: アプリケーションを再起動（`app.relaunch()` + `app.quit()`）
+   - **開発モード**: 警告ダイアログを表示（自動再起動非対応、手動で`npm run dev`を実行する必要がある）
+   - **本番モード**: 通常の再起動を実行
+8. **終了**: アプリケーションを終了（`app.quit()`）
 
 詳細は [アプリケーション設定](../features/settings.md#システムトレイメニュー) を参照してください。
 
@@ -252,6 +255,42 @@ adminWindow.webContents.on('before-input-event', (event, input) => {
 - `open-edit-window-with-tab`: 指定タブで開く
 - `get-initial-tab`: 初期タブを取得
 - `set-active-tab`: アクティブタブを変更（イベント）
+
+## ワークスペースウィンドウ制御
+
+### 実装場所
+- **メインプロセス**: `src/main/workspaceWindowManager.ts`
+- **レンダラー**: `src/renderer/WorkspaceApp.tsx`
+
+### モーダルモードのウィンドウサイズ制御
+
+ワークスペースウィンドウで各種ダイアログ（グループアイテムセレクター、アーカイブ選択など）が表示される際、必要に応じてウィンドウサイズを自動的に拡大・復元します。
+
+**実装場所**: `src/main/workspaceWindowManager.ts:228-284`（`setWorkspaceModalMode`関数）
+
+**動作フロー:**
+1. **モーダル表示時**: 現在のウィンドウサイズを保存し、必要な場合のみ拡大
+   - モーダルの要求サイズ（`requiredSize`）と現在のサイズを比較
+   - 現在のサイズが小さい場合のみ拡大（不要な場合は変更しない）
+   - ウィンドウの位置を右端に維持（X座標を調整）
+
+2. **モーダルを閉じる時**: 保存した元のサイズに自動復元
+   - `normalWorkspaceWindowBounds`から元のサイズを復元
+   - ウィンドウの位置を右端に維持（X座標を調整）
+   - 元のサイズ情報をクリア（`normalWorkspaceWindowBounds = null`）
+
+**IPC通信:**
+- レンダラーから`set-workspace-modal-mode`イベントで制御
+- パラメータ: `{ isModal: boolean, requiredSize?: { width: number, height: number } }`
+
+**使用例:**
+```typescript
+// モーダル表示時
+window.electron.setWorkspaceModalMode(true, { width: 600, height: 500 });
+
+// モーダルを閉じる時
+window.electron.setWorkspaceModalMode(false);
+```
 
 ## ウィンドウ位置・サイズ制御
 

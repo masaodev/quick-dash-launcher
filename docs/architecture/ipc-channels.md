@@ -663,6 +663,17 @@ onWindowHidden(callback: () => void)
 - **パラメータ**: なし
 - **発生タイミング**: ワークスペースアイテム・グループ・実行履歴・アーカイブの変更時
 
+### `set-workspace-modal-mode`
+ワークスペースウィンドウのモーダルモードを設定（ダイアログ表示時のウィンドウサイズ制御）
+- パラメータ: `isModal: boolean`, `requiredSize?: { width: number; height: number }`
+- 戻り値: なし
+- 処理内容:
+  - モーダル表示時（`isModal: true`）: 現在のウィンドウサイズを保存し、必要な場合のみ拡大
+  - モーダルを閉じる時（`isModal: false`）: 保存した元のサイズに自動復元
+- 実装場所: `src/main/workspaceWindowManager.ts:228-284`（`setWorkspaceModalMode`関数）
+
+詳細は [ワークスペースウィンドウ制御](window-control.md#ワークスペースウィンドウ制御) を参照してください。
+
 ## 関連ドキュメント
 
 - [アーキテクチャ概要](overview.md) - システム全体の構造とデータフロー
