@@ -209,7 +209,7 @@ export function setupWorkspaceHandlers(): void {
         };
 
         // ウィンドウ操作を実行
-        const activationResult = tryActivateWindow(
+        const activationResult = await tryActivateWindow(
           windowConfig,
           undefined,
           item.displayName,
@@ -229,7 +229,7 @@ export function setupWorkspaceHandlers(): void {
       }
 
       // ウィンドウ設定が存在する場合、先にウィンドウ検索を試行
-      const activationResult = tryActivateWindow(
+      const activationResult = await tryActivateWindow(
         item.windowConfig,
         item.windowTitle,
         item.displayName,

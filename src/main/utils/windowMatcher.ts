@@ -28,7 +28,8 @@ import { getAllWindows } from './nativeWindowControl.js';
  */
 export function findWindowByTitle(windowTitle: string): bigint | null {
   try {
-    const windows = getAllWindows();
+    // ウィンドウ操作アイテムでは、全仮想デスクトップのウィンドウを検索対象にする
+    const windows = getAllWindows({ includeAllVirtualDesktops: true });
 
     // スペース区切りでキーワードを分割
     const keywords = windowTitle

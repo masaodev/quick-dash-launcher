@@ -36,7 +36,7 @@ async function openItem(
     );
 
     // ウィンドウ設定が存在する場合、先にウィンドウ検索を試行
-    const activationResult = tryActivateWindow(
+    const activationResult = await tryActivateWindow(
       item.windowConfig,
       item.windowTitle,
       item.name,
@@ -273,7 +273,7 @@ export function setupItemHandlers(
       activateWindow: item.activateWindow,
     };
 
-    const result = tryActivateWindow(windowConfig, undefined, item.windowTitle, itemLogger);
+    const result = await tryActivateWindow(windowConfig, undefined, item.windowTitle, itemLogger);
 
     if (!result.windowFound) {
       itemLogger.warn({ windowTitle: item.windowTitle }, 'ウィンドウが見つかりませんでした');

@@ -362,27 +362,31 @@ function extractProcessName(executablePath: string | undefined): string | undefi
  * Windowsの標準動作と同じフィルタリングを行う
  *
  * @param hwnd ウィンドウハンドル
+ * @param includeAllVirtualDesktops trueの場合、クローキングチェックをスキップ（全仮想デスクトップを含む）
  * @returns Alt+Tabに表示される場合true
  *
  * 判定ロジック:
- * - クローキング（Cloaked）されていない
+ * - クローキング（Cloaked）されていない（includeAllVirtualDesktops=falseの場合のみ）
  * - WS_EX_TOOLWINDOWを持たない かつ オーナーウィンドウがない（通常のアプリウィンドウ）
  * - または WS_EX_APPWINDOWを持つ（強制的に表示されるウィンドウ）
  */
-function isAltTabWindow(hwnd: unknown): boolean {
+function isAltTabWindow(hwnd: unknown, includeAllVirtualDesktops = false): boolean {
   try {
     // クローキング状態をチェック（Windows Vista以降）
-    const cloakedArr = [0];
-    try {
-      const hr = DwmGetWindowAttribute(hwnd, DWMWA_CLOAKED, cloakedArr, 4);
-      // S_OK (0) の場合、成功
-      if (hr === 0 && cloakedArr[0] !== 0) {
-        // クローキングされているウィンドウは除外
-        return false;
+    // includeAllVirtualDesktopsがtrueの場合はスキップ（全仮想デスクトップのウィンドウを含める）
+    if (!includeAllVirtualDesktops) {
+      const cloakedArr = [0];
+      try {
+        const hr = DwmGetWindowAttribute(hwnd, DWMWA_CLOAKED, cloakedArr, 4);
+        // S_OK (0) の場合、成功
+        if (hr === 0 && cloakedArr[0] !== 0) {
+          // クローキングされているウィンドウは除外
+          return false;
+        }
+      } catch (_dwmError) {
+        // DWM APIが利用できない場合（古いWindows）はスキップ
+        // エラーは無視して続行
       }
-    } catch (_dwmError) {
-      // DWM APIが利用できない場合（古いWindows）はスキップ
-      // エラーは無視して続行
     }
 
     // 拡張ウィンドウスタイルを取得
@@ -411,10 +415,13 @@ function isAltTabWindow(hwnd: unknown): boolean {
 
 /**
  * すべてのウィンドウ情報を取得
+ * @param options オプション
+ * @param options.includeAllVirtualDesktops trueの場合、全仮想デスクトップのウィンドウを含める（デフォルト: false）
  * @returns ウィンドウ情報の配列
  */
-export function getAllWindows(): WindowInfo[] {
+export function getAllWindows(options?: { includeAllVirtualDesktops?: boolean }): WindowInfo[] {
   const windows: WindowInfo[] = [];
+  const includeAllVirtualDesktops = options?.includeAllVirtualDesktops ?? false;
 
   // EnumWindows用のコールバック関数
   const callback = koffi.register((hwnd: unknown, _lParam: number): boolean => {
@@ -440,7 +447,7 @@ export function getAllWindows(): WindowInfo[] {
       }
 
       // Alt+Tabに表示されないウィンドウはスキップ
-      if (!isAltTabWindow(hwnd)) {
+      if (!isAltTabWindow(hwnd, includeAllVirtualDesktops)) {
         return true;
       }
 
@@ -605,5 +612,39 @@ export function setWindowBounds(
       `[setWindowBounds] Error: hwnd=${hwnd}, config=${JSON.stringify(config)}, error=${error instanceof Error ? error.message : String(error)}`
     );
     return false;
+  }
+}
+
+/**
+ * ウィンドウの現在の位置とサイズを取得
+ *
+ * @param hwnd ウィンドウハンドル
+ * @returns 位置・サイズ情報。失敗時はnull
+ */
+export function getWindowBounds(
+  hwnd: number | bigint
+): { x: number; y: number; width: number; height: number } | null {
+  try {
+    const hwndNumber = typeof hwnd === 'bigint' ? Number(hwnd) : hwnd;
+
+    const rect = { left: 0, top: 0, right: 0, bottom: 0 };
+    const rectSuccess = GetWindowRect(hwndNumber, rect);
+
+    if (!rectSuccess) {
+      console.error(`[getWindowBounds] Failed to get window rect for hwnd=${hwnd}`);
+      return null;
+    }
+
+    return {
+      x: rect.left,
+      y: rect.top,
+      width: rect.right - rect.left,
+      height: rect.bottom - rect.top,
+    };
+  } catch (error) {
+    console.error(
+      `[getWindowBounds] Error: hwnd=${hwnd}, error=${error instanceof Error ? error.message : String(error)}`
+    );
+    return null;
   }
 }
