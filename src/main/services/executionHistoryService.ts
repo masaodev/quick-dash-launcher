@@ -142,6 +142,8 @@ export class ExecutionHistoryService {
           windowHeight: item.height,
           virtualDesktopNumber: item.virtualDesktopNumber,
           activateWindow: item.activateWindow,
+          exactMatch: item.exactMatch,
+          processName: item.processName,
         };
         filteredHistory.unshift(historyItem);
         history.length = 0;

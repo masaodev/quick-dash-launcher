@@ -437,6 +437,8 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
                         type: 'windowOperation',
                         name: item.itemName,
                         windowTitle: windowTitle,
+                        exactMatch: item.exactMatch,
+                        processName: item.processName,
                         x: item.windowX,
                         y: item.windowY,
                         width: item.windowWidth,
@@ -468,6 +470,8 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
                       const windowTitle = match ? match[1] : historyItem.itemPath;
 
                       dragData.windowTitle = windowTitle;
+                      dragData.exactMatch = historyItem.exactMatch;
+                      dragData.processName = historyItem.processName;
                       dragData.x = historyItem.windowX;
                       dragData.y = historyItem.windowY;
                       dragData.width = historyItem.windowWidth;
