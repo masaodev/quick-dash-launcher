@@ -667,4 +667,3 @@ export function isWindowOnDesktopNumber(hwnd: number | bigint, desktopNumber: nu
     return false;
   }
 }
-

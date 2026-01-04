@@ -525,12 +525,19 @@ onWindowHidden(callback: () => void)
 - パラメータ: `hwnd: number | bigint` (ウィンドウハンドル)
 - 戻り値: `{ success: boolean, error?: string }`
 - 処理内容:
+  - **v0.5.12以降**: 全仮想デスクトップからウィンドウを検索（`includeAllVirtualDesktops: true`）
   - 最小化されているウィンドウを復元（ShowWindow SW_RESTORE）
+  - 位置・サイズ設定がある場合、`SetWindowPos()`で直接設定（最大3回リトライ、100ms間隔）
   - ウィンドウをアクティブ化（SetForegroundWindow）
   - normalモードの場合、ランチャーウィンドウを自動的に非表示
 - Win32 API使用:
   - `ShowWindow`: ウィンドウの表示状態を変更
   - `SetForegroundWindow`: ウィンドウをフォーカス
+  - `SetWindowPos`: ウィンドウの位置・サイズ設定（v0.5.12以降）
+- **v0.5.12以降の拡張機能**:
+  - 別の仮想デスクトップにあるウィンドウに対して、デスクトップを切り替えずに位置・サイズを設定可能
+  - cloaked window（別デスクトップの非表示ウィンドウ）も検索・操作対象
+  - リトライロジックにより確実に設定を反映
 
 ## ワークスペース関連
 

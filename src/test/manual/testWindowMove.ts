@@ -111,12 +111,12 @@ async function testWindowMove(
     console.log('\n[4/6] 位置・サイズを設定中...');
 
     const targetBounds = {
-      x: targetX,
-      y: targetY,
-      width: targetWidth,
-      height: targetHeight,
+      x: targetX ?? originalBounds!.x,
+      y: targetY ?? originalBounds!.y,
+      width: targetWidth ?? originalBounds!.width,
+      height: targetHeight ?? originalBounds!.height,
     };
-    result.details!.targetBounds = targetBounds as any;
+    result.details!.targetBounds = targetBounds;
 
     console.log(
       `目標位置: x=${targetX ?? '変更なし'}, y=${targetY ?? '変更なし'}, w=${targetWidth ?? '変更なし'}, h=${targetHeight ?? '変更なし'}`
@@ -152,15 +152,12 @@ async function testWindowMove(
 
       // 許容誤差（±5ピクセル）
       const tolerance = 5;
-      const xMatch =
-        targetX === undefined || Math.abs(actualBounds.x - targetX) <= tolerance;
-      const yMatch =
-        targetY === undefined || Math.abs(actualBounds.y - targetY) <= tolerance;
+      const xMatch = targetX === undefined || Math.abs(actualBounds.x - targetX) <= tolerance;
+      const yMatch = targetY === undefined || Math.abs(actualBounds.y - targetY) <= tolerance;
       const widthMatch =
         targetWidth === undefined || Math.abs(actualBounds.width - targetWidth) <= tolerance;
       const heightMatch =
-        targetHeight === undefined ||
-        Math.abs(actualBounds.height - targetHeight) <= tolerance;
+        targetHeight === undefined || Math.abs(actualBounds.height - targetHeight) <= tolerance;
 
       result.details!.actualBounds = actualBounds;
 
