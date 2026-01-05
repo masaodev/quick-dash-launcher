@@ -235,6 +235,24 @@ Task tool with subagent_type="e2e-test-runner"
 
 詳細は `.claude/agents/e2e-test-runner.md` を参照してください。
 
+## ドキュメント検証
+
+ドキュメントとコードの整合性を検証する場合は、**`verify-docs`スキル**が自動的に適用されます。
+
+「ドキュメントを検証」「ドキュメントとコードの整合性をチェック」と言うと、このスキルが起動します。
+
+**検証内容:**
+- コマンド・スクリプトが `package.json` と一致しているか
+- ファイルパス・コンポーネント名が実在するか
+- API・IPCチャンネル名が正しいか
+- 機能説明が実装と一致しているか
+
+**実行方法:**
+- 各ドキュメントは `doc-verifier` サブエージェントで並列検証されます
+- 結果はサマリーレポートとして集約されます
+
+詳細は `.claude/skills/verify-docs/SKILL.md` を参照してください。
+
 ## カスタムコマンド構成
 
 `.claude/commands/` 配下には、開発ワークフローを効率化するカスタムコマンドが整理されています。
@@ -250,7 +268,7 @@ Task tool with subagent_type="e2e-test-runner"
 └── documentation/      - ドキュメント作成・整理
 ```
 
-**合計: 15個のコマンド**
+**合計: 14個のコマンド**
 
 ### 主要コマンド
 
@@ -266,14 +284,13 @@ Task tool with subagent_type="e2e-test-runner"
 #### refactoring/ (1個)
 - `/refactor` - 対話型リファクタリング（命名、複雑度、重複、パス、ファイル分割、コメント）
 
-#### routine/ (7個)
+#### routine/ (6個)
 - `/sync-and-validate` - リモート同期・総合検証
 - `/review-recent-commits` - 直近のコミットを分析し品質・ドキュメント確認
 - `/check-dependencies` - 依存関係更新確認
 - `/audit-security` - セキュリティ監査（npm audit）
 - `/quality-check-all` - 総合品質チェック
 - `/test-e2e-all` - 全E2Eテスト実行
-- `/verify-docs` - ドキュメントとコードの整合性検証
 
 #### documentation/ (2個)
 - `/create-screen-spec` - 画面仕様書作成
