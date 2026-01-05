@@ -6,9 +6,7 @@ import WorkspaceHeader from './components/WorkspaceHeader';
 import { useClipboardPaste } from './hooks/useClipboardPaste';
 import { useCollapsibleSections } from './hooks/useCollapsibleSections';
 import { useNativeDragDrop } from './hooks/useNativeDragDrop';
-import { useWorkspaceActions } from './hooks/useWorkspaceActions';
-import { useWorkspaceData } from './hooks/useWorkspaceData';
-import { useWorkspaceResize } from './hooks/useWorkspaceResize';
+import { useWorkspaceActions, useWorkspaceData, useWorkspaceResize } from './hooks/workspace';
 
 const WorkspaceApp: React.FC = () => {
   // ローカル状態

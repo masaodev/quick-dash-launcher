@@ -1,8 +1,7 @@
 import React from 'react';
 import type { WorkspaceItem, WorkspaceGroup, ExecutionHistoryItem } from '@common/types';
 
-import { useWorkspaceItemGroups } from '../hooks/useWorkspaceItemGroups';
-import { useWorkspaceContextMenu } from '../hooks/useWorkspaceContextMenu';
+import { useWorkspaceContextMenu, useWorkspaceItemGroups } from '../hooks/workspace';
 
 import WorkspaceGroupHeader from './WorkspaceGroupHeader';
 import WorkspaceItemCard from './WorkspaceItemCard';
