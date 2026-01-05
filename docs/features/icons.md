@@ -8,10 +8,10 @@ QuickDashLauncherのアイコン処理システムは、様々な種類のアイ
 
 | アイコン種類 | 保存場所 | ファイル名形式 | サイズ |
 |-------------|---------|--------------|-------|
-| **ファビコン** | `%APPDATA%/quickdashlauncher/config/favicons/` | `{domain}_favicon_{size}.png` | 64px（推奨）/ 32px（互換） |
-| **EXEアイコン** | `%APPDATA%/quickdashlauncher/config/icons/` | `{hash}_icon.png` | 32px |
-| **カスタムURIアイコン** | `%APPDATA%/quickdashlauncher/config/icons/` | `uri_{schema}_icon.png` | 32px |
-| **拡張子アイコン** | `%APPDATA%/quickdashlauncher/config/icons/extensions/` | `{extension}_icon.png` | 32px |
+| **ファビコン** | `%APPDATA%/quick-dash-launcher/config/favicons/` | `{domain}_favicon_{size}.png` | 64px（推奨）/ 32px（互換） |
+| **EXEアイコン** | `%APPDATA%/quick-dash-launcher/config/icons/` | `{hash}_icon.png` | 32px |
+| **カスタムURIアイコン** | `%APPDATA%/quick-dash-launcher/config/icons/` | `uri_{schema}_icon.png` | 32px |
+| **拡張子アイコン** | `%APPDATA%/quick-dash-launcher/config/icons/extensions/` | `{extension}_icon.png` | 32px |
 
 ### ファイル名形式の詳細
 
@@ -455,7 +455,7 @@ Windows APIを使用してウィンドウからアイコンハンドル（HICON�
    - CORSポリシー
 
 3. **キャッシュをクリア**
-   - `%APPDATA%/quickdashlauncher/config/favicons/`のファイルを削除
+   - `%APPDATA%/quick-dash-launcher/config/favicons/`のファイルを削除
 
 ### エラーの種類
 

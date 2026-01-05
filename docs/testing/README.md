@@ -50,10 +50,9 @@ tests/e2e/
 ├── fixtures/     # テスト用フィクスチャ
 ├── helpers/      # ヘルパークラス
 └── specs/        # テスト仕様
-    ├── alert-dialog.spec.ts
     ├── basic-ui.spec.ts
-    ├── confirm-dialog.spec.ts
     ├── context-menu.spec.ts
+    ├── dialogs.spec.ts
     ├── first-launch-setup.spec.ts
     ├── group-item-registration.spec.ts
     ├── item-management.spec.ts

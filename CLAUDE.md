@@ -250,7 +250,7 @@ Task tool with subagent_type="e2e-test-runner"
 └── documentation/      - ドキュメント作成・整理
 ```
 
-**合計: 14個のコマンド**（整理により23個→14個に削減）
+**合計: 15個のコマンド**
 
 ### 主要コマンド
 
@@ -266,13 +266,14 @@ Task tool with subagent_type="e2e-test-runner"
 #### refactoring/ (1個)
 - `/refactor` - 対話型リファクタリング（命名、複雑度、重複、パス、ファイル分割、コメント）
 
-#### routine/ (6個)
+#### routine/ (7個)
 - `/sync-and-validate` - リモート同期・総合検証
 - `/review-recent-commits` - 直近のコミットを分析し品質・ドキュメント確認
 - `/check-dependencies` - 依存関係更新確認
 - `/audit-security` - セキュリティ監査（npm audit）
 - `/quality-check-all` - 総合品質チェック
 - `/test-e2e-all` - 全E2Eテスト実行
+- `/verify-docs` - ドキュメントとコードの整合性検証
 
 #### documentation/ (2個)
 - `/create-screen-spec` - 画面仕様書作成
