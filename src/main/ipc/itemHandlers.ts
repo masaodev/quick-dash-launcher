@@ -10,6 +10,12 @@ import {
 } from '@common/types';
 import { GROUP_LAUNCH_DELAY_MS } from '@common/constants';
 import { isLauncherItem } from '@common/utils/typeGuards';
+import {
+  OPEN_ITEM,
+  OPEN_PARENT_FOLDER,
+  EXECUTE_GROUP,
+  EXECUTE_WINDOW_OPERATION,
+} from '@common/ipcChannels.js';
 
 import { WorkspaceService } from '../services/workspaceService.js';
 import { tryActivateWindow } from '../utils/windowActivator.js';
@@ -206,7 +212,7 @@ export function setupItemHandlers(
   getMainWindow: () => BrowserWindow | null,
   getWindowPinMode: () => WindowPinMode
 ) {
-  ipcMain.handle('open-item', async (_event, item: LauncherItem) => {
+  ipcMain.handle(OPEN_ITEM, async (_event, item: LauncherItem) => {
     const shouldHide = getWindowPinMode() === 'normal';
     await openItem(item, getMainWindow(), shouldHide);
 
@@ -225,12 +231,12 @@ export function setupItemHandlers(
     }
   });
 
-  ipcMain.handle('open-parent-folder', async (_event, item: LauncherItem) => {
+  ipcMain.handle(OPEN_PARENT_FOLDER, async (_event, item: LauncherItem) => {
     const shouldHide = getWindowPinMode() === 'normal';
     await openParentFolder(item, getMainWindow(), shouldHide);
   });
 
-  ipcMain.handle('execute-group', async (_event, group: GroupItem, allItems: AppItem[]) => {
+  ipcMain.handle(EXECUTE_GROUP, async (_event, group: GroupItem, allItems: AppItem[]) => {
     const shouldHide = getWindowPinMode() === 'normal';
     await executeGroup(group, allItems, getMainWindow(), shouldHide);
 
@@ -249,7 +255,7 @@ export function setupItemHandlers(
     }
   });
 
-  ipcMain.handle('execute-window-operation', async (_event, item: WindowOperationItem) => {
+  ipcMain.handle(EXECUTE_WINDOW_OPERATION, async (_event, item: WindowOperationItem) => {
     itemLogger.info(
       {
         windowTitle: item.windowTitle,

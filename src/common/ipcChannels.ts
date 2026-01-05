@@ -7,6 +7,7 @@
 export const OPEN_ITEM = 'open-item';
 export const OPEN_PARENT_FOLDER = 'open-parent-folder';
 export const EXECUTE_GROUP = 'execute-group';
+export const EXECUTE_WINDOW_OPERATION = 'execute-window-operation';
 
 // データ操作
 export const LOAD_DATA_FILES = 'load-data-files';
@@ -24,8 +25,10 @@ export const FETCH_FAVICON = 'fetch-favicon';
 export const EXTRACT_ICON = 'extract-icon';
 export const EXTRACT_FILE_ICON_BY_EXTENSION = 'extract-file-icon-by-extension';
 export const EXTRACT_CUSTOM_URI_ICON = 'extract-custom-uri-icon';
+export const GET_ICON_FOR_ITEM = 'get-icon-for-item';
 export const LOAD_CACHED_ICONS = 'load-cached-icons';
 export const LOAD_CACHED_ICONS_BY_ITEMS = 'load-cached-icons-by-items';
+export const FETCH_ICONS_COMBINED = 'fetch-icons-combined';
 export const SELECT_CUSTOM_ICON_FILE = 'select-custom-icon-file';
 export const SAVE_CUSTOM_ICON = 'save-custom-icon';
 export const DELETE_CUSTOM_ICON = 'delete-custom-icon';
@@ -47,10 +50,19 @@ export const SHOW_EDIT_WINDOW = 'show-edit-window';
 export const HIDE_EDIT_WINDOW = 'hide-edit-window';
 export const TOGGLE_EDIT_WINDOW = 'toggle-edit-window';
 export const IS_EDIT_WINDOW_SHOWN = 'is-edit-window-shown';
+export const OPEN_EDIT_WINDOW_WITH_TAB = 'open-edit-window-with-tab';
 export const GET_INITIAL_TAB = 'get-initial-tab';
 export const GET_ALL_WINDOWS = 'get-all-windows';
+export const ACTIVATE_WINDOW = 'activate-window';
 export const COPY_TO_CLIPBOARD = 'copy-to-clipboard';
+export const SET_MODAL_MODE = 'set-modal-mode';
 export const LOG_PERFORMANCE_TIMING = 'log-performance-timing';
+
+// 編集操作
+export const UPDATE_ITEM = 'update-item';
+export const UPDATE_RAW_LINE = 'update-raw-line';
+export const DELETE_ITEMS = 'delete-items';
+export const BATCH_UPDATE_ITEMS = 'batch-update-items';
 
 // 設定
 export const SETTINGS_IS_FIRST_LAUNCH = 'settings:is-first-launch';
@@ -74,6 +86,7 @@ export const SPLASH_READY = 'splash-ready';
 // 検索履歴
 export const LOAD_SEARCH_HISTORY = 'load-search-history';
 export const LOAD_SEARCH_HISTORY_BY_TAB = 'load-search-history-by-tab';
+export const SAVE_SEARCH_HISTORY = 'save-search-history';
 export const ADD_SEARCH_HISTORY_ENTRY = 'add-search-history-entry';
 export const CLEAR_SEARCH_HISTORY = 'clear-search-history';
 
@@ -90,6 +103,13 @@ export const WORKSPACE_LAUNCH_ITEM = 'workspace:launch-item';
 export const WORKSPACE_TOGGLE_WINDOW = 'workspace:toggle-window';
 export const WORKSPACE_SHOW_WINDOW = 'workspace:show-window';
 export const WORKSPACE_HIDE_WINDOW = 'workspace:hide-window';
+export const WORKSPACE_GET_ALWAYS_ON_TOP = 'workspace:get-always-on-top';
+export const WORKSPACE_TOGGLE_ALWAYS_ON_TOP = 'workspace:toggle-always-on-top';
+export const WORKSPACE_SET_SIZE = 'workspace:set-size';
+export const WORKSPACE_SET_POSITION_AND_SIZE = 'workspace:set-position-and-size';
+export const WORKSPACE_SET_MODAL_MODE = 'workspace:set-modal-mode';
+export const WORKSPACE_SET_OPACITY = 'workspace:set-opacity';
+export const WORKSPACE_GET_OPACITY = 'workspace:get-opacity';
 
 // ワークスペース - グループ管理
 export const WORKSPACE_LOAD_GROUPS = 'workspace:load-groups';
@@ -116,6 +136,16 @@ export const WORKSPACE_CHANGED = 'workspace-changed';
 // 管理ウィンドウ
 export const ADMIN_SHOW_ARCHIVE_TAB = 'admin:show-archive-tab';
 
+// イベント（メインプロセスからレンダラーへの通知）
+export const EVENT_WINDOW_SHOWN = 'window-shown';
+export const EVENT_WINDOW_HIDDEN = 'window-hidden';
+export const EVENT_DATA_CHANGED = 'data-changed';
+export const EVENT_SETTINGS_CHANGED = 'settings-changed';
+export const EVENT_SET_ACTIVE_TAB = 'set-active-tab';
+export const EVENT_ICON_PROGRESS_START = 'icon-progress-start';
+export const EVENT_ICON_PROGRESS_UPDATE = 'icon-progress-update';
+export const EVENT_ICON_PROGRESS_COMPLETE = 'icon-progress-complete';
+
 /**
  * すべてのIPCチャネル定数をまとめたオブジェクト
  * 型安全な使用のために利用可能
@@ -125,6 +155,7 @@ export const IPC_CHANNELS = {
   OPEN_ITEM,
   OPEN_PARENT_FOLDER,
   EXECUTE_GROUP,
+  EXECUTE_WINDOW_OPERATION,
 
   // データ操作
   LOAD_DATA_FILES,
@@ -142,8 +173,10 @@ export const IPC_CHANNELS = {
   EXTRACT_ICON,
   EXTRACT_FILE_ICON_BY_EXTENSION,
   EXTRACT_CUSTOM_URI_ICON,
+  GET_ICON_FOR_ITEM,
   LOAD_CACHED_ICONS,
   LOAD_CACHED_ICONS_BY_ITEMS,
+  FETCH_ICONS_COMBINED,
   SELECT_CUSTOM_ICON_FILE,
   SAVE_CUSTOM_ICON,
   DELETE_CUSTOM_ICON,
@@ -165,9 +198,19 @@ export const IPC_CHANNELS = {
   HIDE_EDIT_WINDOW,
   TOGGLE_EDIT_WINDOW,
   IS_EDIT_WINDOW_SHOWN,
+  OPEN_EDIT_WINDOW_WITH_TAB,
   GET_INITIAL_TAB,
+  GET_ALL_WINDOWS,
+  ACTIVATE_WINDOW,
   COPY_TO_CLIPBOARD,
+  SET_MODAL_MODE,
   LOG_PERFORMANCE_TIMING,
+
+  // 編集操作
+  UPDATE_ITEM,
+  UPDATE_RAW_LINE,
+  DELETE_ITEMS,
+  BATCH_UPDATE_ITEMS,
 
   // 設定
   SETTINGS_IS_FIRST_LAUNCH,
@@ -191,6 +234,7 @@ export const IPC_CHANNELS = {
   // 検索履歴
   LOAD_SEARCH_HISTORY,
   LOAD_SEARCH_HISTORY_BY_TAB,
+  SAVE_SEARCH_HISTORY,
   ADD_SEARCH_HISTORY_ENTRY,
   CLEAR_SEARCH_HISTORY,
 
@@ -207,6 +251,13 @@ export const IPC_CHANNELS = {
   WORKSPACE_TOGGLE_WINDOW,
   WORKSPACE_SHOW_WINDOW,
   WORKSPACE_HIDE_WINDOW,
+  WORKSPACE_GET_ALWAYS_ON_TOP,
+  WORKSPACE_TOGGLE_ALWAYS_ON_TOP,
+  WORKSPACE_SET_SIZE,
+  WORKSPACE_SET_POSITION_AND_SIZE,
+  WORKSPACE_SET_MODAL_MODE,
+  WORKSPACE_SET_OPACITY,
+  WORKSPACE_GET_OPACITY,
 
   // ワークスペース - グループ管理
   WORKSPACE_LOAD_GROUPS,
@@ -229,6 +280,19 @@ export const IPC_CHANNELS = {
 
   // 管理ウィンドウ
   ADMIN_SHOW_ARCHIVE_TAB,
+
+  // ワークスペース - イベント
+  WORKSPACE_CHANGED,
+
+  // イベント
+  EVENT_WINDOW_SHOWN,
+  EVENT_WINDOW_HIDDEN,
+  EVENT_DATA_CHANGED,
+  EVENT_SETTINGS_CHANGED,
+  EVENT_SET_ACTIVE_TAB,
+  EVENT_ICON_PROGRESS_START,
+  EVENT_ICON_PROGRESS_UPDATE,
+  EVENT_ICON_PROGRESS_COMPLETE,
 } as const;
 
 /**

@@ -5,6 +5,12 @@ import { editLogger } from '@common/logger';
 import { LauncherItem } from '@common/types';
 import { escapeCSV } from '@common/utils/csvParser';
 import { serializeWindowConfig } from '@common/utils/windowConfigUtils';
+import {
+  UPDATE_ITEM,
+  UPDATE_RAW_LINE,
+  DELETE_ITEMS,
+  BATCH_UPDATE_ITEMS,
+} from '@common/ipcChannels.js';
 
 import { createSafeIpcHandler } from '../utils/ipcWrapper';
 import { BackupService } from '../services/backupService.js';
@@ -307,7 +313,7 @@ export async function batchUpdateItems(
 // Register IPC handlers
 export function registerEditHandlers(configFolder: string): void {
   createSafeIpcHandler(
-    'update-item',
+    UPDATE_ITEM,
     async (request: UpdateItemRequest) => {
       await updateItem(configFolder, request);
       notifyDataChanged();
@@ -317,7 +323,7 @@ export function registerEditHandlers(configFolder: string): void {
   );
 
   createSafeIpcHandler(
-    'update-raw-line',
+    UPDATE_RAW_LINE,
     async (request: { sourceFile: string; lineNumber: number; newContent: string }) => {
       await updateRawLine(configFolder, request);
       notifyDataChanged();
@@ -327,7 +333,7 @@ export function registerEditHandlers(configFolder: string): void {
   );
 
   createSafeIpcHandler(
-    'delete-items',
+    DELETE_ITEMS,
     async (requests: DeleteItemRequest[]) => {
       await deleteItems(configFolder, requests);
       notifyDataChanged();
@@ -337,7 +343,7 @@ export function registerEditHandlers(configFolder: string): void {
   );
 
   createSafeIpcHandler(
-    'batch-update-items',
+    BATCH_UPDATE_ITEMS,
     async (requests: UpdateItemRequest[]) => {
       await batchUpdateItems(configFolder, requests);
       notifyDataChanged();

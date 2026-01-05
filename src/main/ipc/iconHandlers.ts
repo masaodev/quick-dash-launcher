@@ -10,6 +10,19 @@ import { iconLogger } from '@common/logger';
 import { FileUtils } from '@common/utils/fileUtils';
 import { PathUtils } from '@common/utils/pathUtils';
 import extractFileIcon from 'extract-file-icon';
+import {
+  FETCH_FAVICON,
+  EXTRACT_ICON,
+  EXTRACT_FILE_ICON_BY_EXTENSION,
+  EXTRACT_CUSTOM_URI_ICON,
+  LOAD_CACHED_ICONS,
+  FETCH_ICONS_COMBINED,
+  SELECT_CUSTOM_ICON_FILE,
+  SAVE_CUSTOM_ICON,
+  DELETE_CUSTOM_ICON,
+  GET_CUSTOM_ICON,
+  GET_ICON_FOR_ITEM,
+} from '@common/ipcChannels.js';
 
 import { CombinedProgressManager } from '../utils/progressManager';
 import { FaviconService } from '../services/faviconService';
@@ -848,29 +861,29 @@ export function setupIconHandlers(
     mainWindow = getMainWindow();
   }
 
-  ipcMain.handle('fetch-favicon', async (_event, url: string) => {
+  ipcMain.handle(FETCH_FAVICON, async (_event, url: string) => {
     return await fetchFavicon(url, faviconsFolder);
   });
 
-  ipcMain.handle('extract-icon', async (_event, filePath: string) => {
+  ipcMain.handle(EXTRACT_ICON, async (_event, filePath: string) => {
     return await extractIcon(filePath, iconsFolder);
   });
 
-  ipcMain.handle('extract-file-icon-by-extension', async (_event, filePath: string) => {
+  ipcMain.handle(EXTRACT_FILE_ICON_BY_EXTENSION, async (_event, filePath: string) => {
     return await extractFileIconByExtension(filePath, extensionsFolder);
   });
 
-  ipcMain.handle('extract-custom-uri-icon', async (_event, uri: string) => {
+  ipcMain.handle(EXTRACT_CUSTOM_URI_ICON, async (_event, uri: string) => {
     return await extractCustomUriIcon(uri, iconsFolder);
   });
 
-  ipcMain.handle('load-cached-icons', async (_event, items: IconItem[]) => {
+  ipcMain.handle(LOAD_CACHED_ICONS, async (_event, items: IconItem[]) => {
     return await loadCachedIcons(items, faviconsFolder, iconsFolder, extensionsFolder);
   });
 
   // 統合進捗API
   ipcMain.handle(
-    'fetch-icons-combined',
+    FETCH_ICONS_COMBINED,
     async (_event, urlItems: IconItem[], items: IconItem[]) => {
       return await fetchIconsCombined(
         urlItems,
@@ -883,28 +896,28 @@ export function setupIconHandlers(
   );
 
   // カスタムアイコン関連のハンドラー
-  ipcMain.handle('select-custom-icon-file', async () => {
+  ipcMain.handle(SELECT_CUSTOM_ICON_FILE, async () => {
     return await selectCustomIconFile();
   });
 
   ipcMain.handle(
-    'save-custom-icon',
+    SAVE_CUSTOM_ICON,
     async (_event, sourceFilePath: string, itemIdentifier: string) => {
       return await saveCustomIcon(sourceFilePath, itemIdentifier);
     }
   );
 
-  ipcMain.handle('delete-custom-icon', async (_event, customIconFileName: string) => {
+  ipcMain.handle(DELETE_CUSTOM_ICON, async (_event, customIconFileName: string) => {
     return await deleteCustomIcon(customIconFileName);
   });
 
-  ipcMain.handle('get-custom-icon', async (_event, customIconFileName: string) => {
+  ipcMain.handle(GET_CUSTOM_ICON, async (_event, customIconFileName: string) => {
     return await getCustomIcon(customIconFileName);
   });
 
   // IconService統合API
   ipcMain.handle(
-    'get-icon-for-item',
+    GET_ICON_FOR_ITEM,
     async (_event, filePath: string, itemType: 'url' | 'file' | 'folder' | 'app' | 'customUri') => {
       return await getIconForItem(filePath, itemType);
     }

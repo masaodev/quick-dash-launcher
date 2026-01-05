@@ -6,6 +6,12 @@ import { dataLogger } from '@common/logger';
 import { FileUtils } from '@common/utils/fileUtils';
 import { MAX_BOOKMARK_FILE_SIZE } from '@common/constants';
 import { SimpleBookmarkItem, BrowserInfo, BrowserProfile } from '@common/types';
+import {
+  SELECT_BOOKMARK_FILE,
+  PARSE_BOOKMARK_FILE,
+  DETECT_INSTALLED_BROWSERS,
+  PARSE_BROWSER_BOOKMARKS,
+} from '@common/ipcChannels.js';
 
 /**
  * プロファイルフォルダからプロファイル名を取得する
@@ -268,7 +274,7 @@ export function parseBookmarkFile(filePath: string): SimpleBookmarkItem[] {
  * ブックマーク関連のIPCハンドラーを登録する
  */
 export function setupBookmarkHandlers() {
-  ipcMain.handle('select-bookmark-file', async () => {
+  ipcMain.handle(SELECT_BOOKMARK_FILE, async () => {
     const result = await dialog.showOpenDialog({
       title: 'ブックマークファイルを選択',
       filters: [
@@ -284,16 +290,16 @@ export function setupBookmarkHandlers() {
     return null;
   });
 
-  ipcMain.handle('parse-bookmark-file', async (_event, filePath: string) => {
+  ipcMain.handle(PARSE_BOOKMARK_FILE, async (_event, filePath: string) => {
     return parseBookmarkFile(filePath);
   });
 
   // ブラウザブックマーク直接インポートAPI
-  ipcMain.handle('detect-installed-browsers', async () => {
+  ipcMain.handle(DETECT_INSTALLED_BROWSERS, async () => {
     return await detectInstalledBrowsers();
   });
 
-  ipcMain.handle('parse-browser-bookmarks', async (_event, filePath: string) => {
+  ipcMain.handle(PARSE_BROWSER_BOOKMARKS, async (_event, filePath: string) => {
     return await parseBrowserBookmarks(filePath);
   });
 }

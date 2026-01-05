@@ -16,6 +16,124 @@ import {
   ExecutionHistoryItem,
   WindowInfo,
 } from '@common/types';
+import {
+  // データ操作
+  GET_CONFIG_FOLDER,
+  GET_DATA_FILES,
+  CREATE_DATA_FILE,
+  DELETE_DATA_FILE,
+  LOAD_DATA_FILES,
+  LOAD_RAW_DATA_FILES,
+  SAVE_RAW_DATA_FILES,
+  // アイテム操作
+  OPEN_ITEM,
+  OPEN_PARENT_FOLDER,
+  EXECUTE_GROUP,
+  EXECUTE_WINDOW_OPERATION,
+  REGISTER_ITEMS,
+  IS_DIRECTORY,
+  // アイコン操作
+  FETCH_FAVICON,
+  EXTRACT_ICON,
+  EXTRACT_FILE_ICON_BY_EXTENSION,
+  EXTRACT_CUSTOM_URI_ICON,
+  GET_ICON_FOR_ITEM,
+  LOAD_CACHED_ICONS,
+  FETCH_ICONS_COMBINED,
+  SELECT_CUSTOM_ICON_FILE,
+  SAVE_CUSTOM_ICON,
+  DELETE_CUSTOM_ICON,
+  GET_CUSTOM_ICON,
+  // ウィンドウ操作
+  SET_EDIT_MODE,
+  GET_EDIT_MODE,
+  SHOW_EDIT_WINDOW,
+  HIDE_EDIT_WINDOW,
+  TOGGLE_EDIT_WINDOW,
+  IS_EDIT_WINDOW_SHOWN,
+  OPEN_EDIT_WINDOW_WITH_TAB,
+  GET_INITIAL_TAB,
+  GET_WINDOW_PIN_MODE,
+  CYCLE_WINDOW_PIN_MODE,
+  GET_ALL_WINDOWS,
+  ACTIVATE_WINDOW,
+  COPY_TO_CLIPBOARD,
+  SET_MODAL_MODE,
+  QUIT_APP,
+  // 設定操作
+  SETTINGS_GET,
+  SETTINGS_SET,
+  SETTINGS_SET_MULTIPLE,
+  SETTINGS_RESET,
+  SETTINGS_VALIDATE_HOTKEY,
+  SETTINGS_GET_CONFIG_PATH,
+  SETTINGS_CHANGE_HOTKEY,
+  SETTINGS_CHECK_HOTKEY_AVAILABILITY,
+  SETTINGS_IS_FIRST_LAUNCH,
+  OPEN_CONFIG_FOLDER,
+  GET_APP_INFO,
+  OPEN_EXTERNAL_URL,
+  // ブックマーク操作
+  SELECT_BOOKMARK_FILE,
+  PARSE_BOOKMARK_FILE,
+  DETECT_INSTALLED_BROWSERS,
+  PARSE_BROWSER_BOOKMARKS,
+  // 検索履歴
+  LOAD_SEARCH_HISTORY,
+  SAVE_SEARCH_HISTORY,
+  ADD_SEARCH_HISTORY_ENTRY,
+  CLEAR_SEARCH_HISTORY,
+  // 編集操作
+  UPDATE_ITEM,
+  UPDATE_RAW_LINE,
+  DELETE_ITEMS,
+  BATCH_UPDATE_ITEMS,
+  // パフォーマンス
+  LOG_PERFORMANCE_TIMING,
+  // スプラッシュ
+  SPLASH_READY,
+  // イベント
+  EVENT_WINDOW_SHOWN,
+  EVENT_WINDOW_HIDDEN,
+  EVENT_DATA_CHANGED,
+  EVENT_SETTINGS_CHANGED,
+  EVENT_SET_ACTIVE_TAB,
+  EVENT_ICON_PROGRESS_START,
+  EVENT_ICON_PROGRESS_UPDATE,
+  EVENT_ICON_PROGRESS_COMPLETE,
+  // ワークスペース
+  WORKSPACE_TOGGLE_WINDOW,
+  WORKSPACE_SHOW_WINDOW,
+  WORKSPACE_HIDE_WINDOW,
+  WORKSPACE_CHANGED,
+  WORKSPACE_LOAD_ITEMS,
+  WORKSPACE_ADD_ITEM,
+  WORKSPACE_ADD_ITEMS_FROM_PATHS,
+  WORKSPACE_REMOVE_ITEM,
+  WORKSPACE_UPDATE_DISPLAY_NAME,
+  WORKSPACE_REORDER_ITEMS,
+  WORKSPACE_LAUNCH_ITEM,
+  WORKSPACE_LOAD_GROUPS,
+  WORKSPACE_CREATE_GROUP,
+  WORKSPACE_UPDATE_GROUP,
+  WORKSPACE_DELETE_GROUP,
+  WORKSPACE_REORDER_GROUPS,
+  WORKSPACE_MOVE_ITEM_TO_GROUP,
+  WORKSPACE_ARCHIVE_GROUP,
+  WORKSPACE_LOAD_ARCHIVED_GROUPS,
+  WORKSPACE_RESTORE_GROUP,
+  WORKSPACE_DELETE_ARCHIVED_GROUP,
+  WORKSPACE_LOAD_EXECUTION_HISTORY,
+  WORKSPACE_ADD_EXECUTION_HISTORY,
+  WORKSPACE_CLEAR_EXECUTION_HISTORY,
+  WORKSPACE_GET_ALWAYS_ON_TOP,
+  WORKSPACE_TOGGLE_ALWAYS_ON_TOP,
+  WORKSPACE_SET_MODAL_MODE,
+  WORKSPACE_SET_OPACITY,
+  WORKSPACE_GET_OPACITY,
+  WORKSPACE_SET_SIZE,
+  WORKSPACE_SET_POSITION_AND_SIZE,
+} from '@common/ipcChannels.js';
 
 interface RegisterItem {
   filePath: string;
@@ -36,210 +154,215 @@ interface DeleteItemRequest {
 }
 
 contextBridge.exposeInMainWorld('electronAPI', {
-  getConfigFolder: () => ipcRenderer.invoke('get-config-folder'),
-  getDataFiles: (): Promise<string[]> => ipcRenderer.invoke('get-data-files'),
-  createDataFile: (fileName: string) => ipcRenderer.invoke('create-data-file', fileName),
-  deleteDataFile: (fileName: string) => ipcRenderer.invoke('delete-data-file', fileName),
-  loadDataFiles: (): Promise<AppItem[]> => ipcRenderer.invoke('load-data-files'),
-  openItem: (item: LauncherItem) => ipcRenderer.invoke('open-item', item),
-  openParentFolder: (item: LauncherItem) => ipcRenderer.invoke('open-parent-folder', item),
+  getConfigFolder: () => ipcRenderer.invoke(GET_CONFIG_FOLDER),
+  getDataFiles: (): Promise<string[]> => ipcRenderer.invoke(GET_DATA_FILES),
+  createDataFile: (fileName: string) => ipcRenderer.invoke(CREATE_DATA_FILE, fileName),
+  deleteDataFile: (fileName: string) => ipcRenderer.invoke(DELETE_DATA_FILE, fileName),
+  loadDataFiles: (): Promise<AppItem[]> => ipcRenderer.invoke(LOAD_DATA_FILES),
+  openItem: (item: LauncherItem) => ipcRenderer.invoke(OPEN_ITEM, item),
+  openParentFolder: (item: LauncherItem) => ipcRenderer.invoke(OPEN_PARENT_FOLDER, item),
   executeGroup: (group: GroupItem, allItems: AppItem[]) =>
-    ipcRenderer.invoke('execute-group', group, allItems),
+    ipcRenderer.invoke(EXECUTE_GROUP, group, allItems),
   executeWindowOperation: (item: WindowOperationItem): Promise<void> =>
-    ipcRenderer.invoke('execute-window-operation', item),
-  openConfigFolder: () => ipcRenderer.invoke('open-config-folder'),
-  fetchFavicon: (url: string) => ipcRenderer.invoke('fetch-favicon', url),
-  extractIcon: (filePath: string) => ipcRenderer.invoke('extract-icon', filePath),
+    ipcRenderer.invoke(EXECUTE_WINDOW_OPERATION, item),
+  openConfigFolder: () => ipcRenderer.invoke(OPEN_CONFIG_FOLDER),
+  fetchFavicon: (url: string) => ipcRenderer.invoke(FETCH_FAVICON, url),
+  extractIcon: (filePath: string) => ipcRenderer.invoke(EXTRACT_ICON, filePath),
   extractFileIconByExtension: (filePath: string) =>
-    ipcRenderer.invoke('extract-file-icon-by-extension', filePath),
-  extractCustomUriIcon: (uri: string) => ipcRenderer.invoke('extract-custom-uri-icon', uri),
+    ipcRenderer.invoke(EXTRACT_FILE_ICON_BY_EXTENSION, filePath),
+  extractCustomUriIcon: (uri: string) => ipcRenderer.invoke(EXTRACT_CUSTOM_URI_ICON, uri),
   getIconForItem: (filePath: string, itemType: 'url' | 'file' | 'folder' | 'app' | 'customUri') =>
-    ipcRenderer.invoke('get-icon-for-item', filePath, itemType),
-  loadCachedIcons: (items: LauncherItem[]) => ipcRenderer.invoke('load-cached-icons', items),
+    ipcRenderer.invoke(GET_ICON_FOR_ITEM, filePath, itemType),
+  loadCachedIcons: (items: LauncherItem[]) => ipcRenderer.invoke(LOAD_CACHED_ICONS, items),
   // 統合進捗付きアイコン取得API
   fetchIconsCombined: (urlItems: LauncherItem[], items: LauncherItem[]) =>
-    ipcRenderer.invoke('fetch-icons-combined', urlItems, items),
+    ipcRenderer.invoke(FETCH_ICONS_COMBINED, urlItems, items),
   // 進捗イベントリスナー
   onIconProgress: (
     eventType: 'start' | 'update' | 'complete',
     callback: (data: IconProgress) => void
   ) => {
-    ipcRenderer.on(`icon-progress-${eventType}`, (_event, data) => callback(data));
+    const eventMap = {
+      start: EVENT_ICON_PROGRESS_START,
+      update: EVENT_ICON_PROGRESS_UPDATE,
+      complete: EVENT_ICON_PROGRESS_COMPLETE,
+    };
+    ipcRenderer.on(eventMap[eventType], (_event, data) => callback(data));
   },
   onWindowShown: (callback: (startTime?: number) => void) => {
     const listener = (_event: unknown, startTime?: number) => callback(startTime);
-    ipcRenderer.on('window-shown', listener);
+    ipcRenderer.on(EVENT_WINDOW_SHOWN, listener);
     return () => {
-      ipcRenderer.removeListener('window-shown', listener);
+      ipcRenderer.removeListener(EVENT_WINDOW_SHOWN, listener);
     };
   },
   onWindowHidden: (callback: () => void) => {
     const listener = () => callback();
-    ipcRenderer.on('window-hidden', listener);
+    ipcRenderer.on(EVENT_WINDOW_HIDDEN, listener);
     return () => {
-      ipcRenderer.removeListener('window-hidden', listener);
+      ipcRenderer.removeListener(EVENT_WINDOW_HIDDEN, listener);
     };
   },
   onSetActiveTab: (callback: (tab: 'settings' | 'edit' | 'archive' | 'other') => void) => {
-    ipcRenderer.on('set-active-tab', (_event, tab) => callback(tab));
+    ipcRenderer.on(EVENT_SET_ACTIVE_TAB, (_event, tab) => callback(tab));
   },
   onDataChanged: (callback: () => void) => {
-    ipcRenderer.on('data-changed', callback);
+    ipcRenderer.on(EVENT_DATA_CHANGED, callback);
     return () => {
-      ipcRenderer.removeListener('data-changed', callback);
+      ipcRenderer.removeListener(EVENT_DATA_CHANGED, callback);
     };
   },
   onSettingsChanged: (callback: () => void) => {
-    ipcRenderer.on('settings-changed', callback);
+    ipcRenderer.on(EVENT_SETTINGS_CHANGED, callback);
     return () => {
-      ipcRenderer.removeListener('settings-changed', callback);
+      ipcRenderer.removeListener(EVENT_SETTINGS_CHANGED, callback);
     };
   },
   onWorkspaceChanged: (callback: () => void) => {
-    ipcRenderer.on('workspace-changed', callback);
+    ipcRenderer.on(WORKSPACE_CHANGED, callback);
     return () => {
-      ipcRenderer.removeListener('workspace-changed', callback);
+      ipcRenderer.removeListener(WORKSPACE_CHANGED, callback);
     };
   },
   // 3段階ピンモードAPI
-  getWindowPinMode: (): Promise<WindowPinMode> => ipcRenderer.invoke('get-window-pin-mode'),
-  cycleWindowPinMode: () => ipcRenderer.invoke('cycle-window-pin-mode'),
-  registerItems: (items: RegisterItem[]) => ipcRenderer.invoke('register-items', items),
-  isDirectory: (filePath: string) => ipcRenderer.invoke('is-directory', filePath),
+  getWindowPinMode: (): Promise<WindowPinMode> => ipcRenderer.invoke(GET_WINDOW_PIN_MODE),
+  cycleWindowPinMode: () => ipcRenderer.invoke(CYCLE_WINDOW_PIN_MODE),
+  registerItems: (items: RegisterItem[]) => ipcRenderer.invoke(REGISTER_ITEMS, items),
+  isDirectory: (filePath: string) => ipcRenderer.invoke(IS_DIRECTORY, filePath),
   getPathForFile: (file: File) => webUtils.getPathForFile(file),
-  quitApp: () => ipcRenderer.invoke('quit-app'),
-  getAllWindows: (): Promise<WindowInfo[]> => ipcRenderer.invoke('get-all-windows'),
-  updateItem: (request: UpdateItemRequest) => ipcRenderer.invoke('update-item', request),
+  quitApp: () => ipcRenderer.invoke(QUIT_APP),
+  getAllWindows: (): Promise<WindowInfo[]> => ipcRenderer.invoke(GET_ALL_WINDOWS),
+  updateItem: (request: UpdateItemRequest) => ipcRenderer.invoke(UPDATE_ITEM, request),
   updateRawLine: (request: { sourceFile: string; lineNumber: number; newContent: string }) =>
-    ipcRenderer.invoke('update-raw-line', request),
-  deleteItems: (requests: DeleteItemRequest[]) => ipcRenderer.invoke('delete-items', requests),
+    ipcRenderer.invoke(UPDATE_RAW_LINE, request),
+  deleteItems: (requests: DeleteItemRequest[]) => ipcRenderer.invoke(DELETE_ITEMS, requests),
   batchUpdateItems: (requests: UpdateItemRequest[]) =>
-    ipcRenderer.invoke('batch-update-items', requests),
-  loadRawDataFiles: () => ipcRenderer.invoke('load-raw-data-files'),
+    ipcRenderer.invoke(BATCH_UPDATE_ITEMS, requests),
+  loadRawDataFiles: () => ipcRenderer.invoke(LOAD_RAW_DATA_FILES),
   saveRawDataFiles: (rawLines: RawDataLine[]) =>
-    ipcRenderer.invoke('save-raw-data-files', rawLines),
-  setEditMode: (editMode: boolean) => ipcRenderer.invoke('set-edit-mode', editMode),
-  getEditMode: () => ipcRenderer.invoke('get-edit-mode'),
-  selectBookmarkFile: () => ipcRenderer.invoke('select-bookmark-file'),
-  parseBookmarkFile: (filePath: string) => ipcRenderer.invoke('parse-bookmark-file', filePath),
+    ipcRenderer.invoke(SAVE_RAW_DATA_FILES, rawLines),
+  setEditMode: (editMode: boolean) => ipcRenderer.invoke(SET_EDIT_MODE, editMode),
+  getEditMode: () => ipcRenderer.invoke(GET_EDIT_MODE),
+  selectBookmarkFile: () => ipcRenderer.invoke(SELECT_BOOKMARK_FILE),
+  parseBookmarkFile: (filePath: string) => ipcRenderer.invoke(PARSE_BOOKMARK_FILE, filePath),
   // ブラウザブックマーク直接インポートAPI
   detectInstalledBrowsers: (): Promise<BrowserInfo[]> =>
-    ipcRenderer.invoke('detect-installed-browsers'),
+    ipcRenderer.invoke(DETECT_INSTALLED_BROWSERS),
   parseBrowserBookmarks: (filePath: string) =>
-    ipcRenderer.invoke('parse-browser-bookmarks', filePath),
+    ipcRenderer.invoke(PARSE_BROWSER_BOOKMARKS, filePath),
   // Settings API
-  getSettings: (key?: keyof AppSettings) => ipcRenderer.invoke('settings:get', key),
+  getSettings: (key?: keyof AppSettings) => ipcRenderer.invoke(SETTINGS_GET, key),
   setSetting: (key: keyof AppSettings, value: AppSettings[keyof AppSettings]) =>
-    ipcRenderer.invoke('settings:set', key, value),
+    ipcRenderer.invoke(SETTINGS_SET, key, value),
   setMultipleSettings: (settings: Partial<AppSettings>) =>
-    ipcRenderer.invoke('settings:set-multiple', settings),
-  resetSettings: () => ipcRenderer.invoke('settings:reset'),
-  validateHotkey: (hotkey: string) => ipcRenderer.invoke('settings:validate-hotkey', hotkey),
-  getSettingsConfigPath: () => ipcRenderer.invoke('settings:get-config-path'),
-  changeHotkey: (newHotkey: string) => ipcRenderer.invoke('settings:change-hotkey', newHotkey),
+    ipcRenderer.invoke(SETTINGS_SET_MULTIPLE, settings),
+  resetSettings: () => ipcRenderer.invoke(SETTINGS_RESET),
+  validateHotkey: (hotkey: string) => ipcRenderer.invoke(SETTINGS_VALIDATE_HOTKEY, hotkey),
+  getSettingsConfigPath: () => ipcRenderer.invoke(SETTINGS_GET_CONFIG_PATH),
+  changeHotkey: (newHotkey: string) => ipcRenderer.invoke(SETTINGS_CHANGE_HOTKEY, newHotkey),
   checkHotkeyAvailability: (hotkey: string) =>
-    ipcRenderer.invoke('settings:check-hotkey-availability', hotkey),
-  isFirstLaunch: () => ipcRenderer.invoke('settings:is-first-launch'),
+    ipcRenderer.invoke(SETTINGS_CHECK_HOTKEY_AVAILABILITY, hotkey),
+  isFirstLaunch: () => ipcRenderer.invoke(SETTINGS_IS_FIRST_LAUNCH),
   // 編集ウィンドウ関連API
-  showEditWindow: () => ipcRenderer.invoke('show-edit-window'),
-  hideEditWindow: () => ipcRenderer.invoke('hide-edit-window'),
-  toggleEditWindow: () => ipcRenderer.invoke('toggle-edit-window'),
-  isEditWindowShown: () => ipcRenderer.invoke('is-edit-window-shown'),
+  showEditWindow: () => ipcRenderer.invoke(SHOW_EDIT_WINDOW),
+  hideEditWindow: () => ipcRenderer.invoke(HIDE_EDIT_WINDOW),
+  toggleEditWindow: () => ipcRenderer.invoke(TOGGLE_EDIT_WINDOW),
+  isEditWindowShown: () => ipcRenderer.invoke(IS_EDIT_WINDOW_SHOWN),
   openEditWindowWithTab: (tab: 'settings' | 'edit' | 'other') =>
-    ipcRenderer.invoke('open-edit-window-with-tab', tab),
-  getInitialTab: () => ipcRenderer.invoke('get-initial-tab'),
-  copyToClipboard: (text: string) => ipcRenderer.invoke('copy-to-clipboard', text),
+    ipcRenderer.invoke(OPEN_EDIT_WINDOW_WITH_TAB, tab),
+  getInitialTab: () => ipcRenderer.invoke(GET_INITIAL_TAB),
+  copyToClipboard: (text: string) => ipcRenderer.invoke(COPY_TO_CLIPBOARD, text),
   setModalMode: (isModal: boolean, requiredSize?: { width: number; height: number }) =>
-    ipcRenderer.invoke('set-modal-mode', isModal, requiredSize),
+    ipcRenderer.invoke(SET_MODAL_MODE, isModal, requiredSize),
   // パフォーマンス計測API
   logPerformanceTiming: (label: string, duration: number) =>
-    ipcRenderer.invoke('log-performance-timing', label, duration),
+    ipcRenderer.invoke(LOG_PERFORMANCE_TIMING, label, duration),
   // スプラッシュスクリーン関連API
-  splashReady: () => ipcRenderer.invoke('splash-ready'),
+  splashReady: () => ipcRenderer.invoke(SPLASH_READY),
   // カスタムアイコン関連API
-  selectCustomIconFile: () => ipcRenderer.invoke('select-custom-icon-file'),
+  selectCustomIconFile: () => ipcRenderer.invoke(SELECT_CUSTOM_ICON_FILE),
   saveCustomIcon: (sourceFilePath: string, itemIdentifier: string) =>
-    ipcRenderer.invoke('save-custom-icon', sourceFilePath, itemIdentifier),
+    ipcRenderer.invoke(SAVE_CUSTOM_ICON, sourceFilePath, itemIdentifier),
   deleteCustomIcon: (customIconFileName: string) =>
-    ipcRenderer.invoke('delete-custom-icon', customIconFileName),
+    ipcRenderer.invoke(DELETE_CUSTOM_ICON, customIconFileName),
   getCustomIcon: (customIconFileName: string) =>
-    ipcRenderer.invoke('get-custom-icon', customIconFileName),
+    ipcRenderer.invoke(GET_CUSTOM_ICON, customIconFileName),
   // 検索履歴関連API
-  loadSearchHistory: () => ipcRenderer.invoke('load-search-history'),
+  loadSearchHistory: () => ipcRenderer.invoke(LOAD_SEARCH_HISTORY),
   saveSearchHistory: (entries: SearchHistoryEntry[]) =>
-    ipcRenderer.invoke('save-search-history', entries),
-  addSearchHistoryEntry: (query: string) => ipcRenderer.invoke('add-search-history-entry', query),
-  clearSearchHistory: () => ipcRenderer.invoke('clear-search-history'),
+    ipcRenderer.invoke(SAVE_SEARCH_HISTORY, entries),
+  addSearchHistoryEntry: (query: string) => ipcRenderer.invoke(ADD_SEARCH_HISTORY_ENTRY, query),
+  clearSearchHistory: () => ipcRenderer.invoke(CLEAR_SEARCH_HISTORY),
   // アプリ情報関連API
-  getAppInfo: (): Promise<AppInfo> => ipcRenderer.invoke('get-app-info'),
-  openExternalUrl: (url: string) => ipcRenderer.invoke('open-external-url', url),
+  getAppInfo: (): Promise<AppInfo> => ipcRenderer.invoke(GET_APP_INFO),
+  openExternalUrl: (url: string) => ipcRenderer.invoke(OPEN_EXTERNAL_URL, url),
   // ウィンドウ検索API
-  getWindowList: (): Promise<WindowInfo[]> => ipcRenderer.invoke('get-all-windows'),
+  getWindowList: (): Promise<WindowInfo[]> => ipcRenderer.invoke(GET_ALL_WINDOWS),
   activateWindowByHwnd: (hwnd: number | bigint): Promise<{ success: boolean; error?: string }> =>
-    ipcRenderer.invoke('activate-window', hwnd),
+    ipcRenderer.invoke(ACTIVATE_WINDOW, hwnd),
   // ワークスペースウィンドウ制御API
-  toggleWorkspaceWindow: () => ipcRenderer.invoke('workspace:toggle-window'),
-  showWorkspaceWindow: () => ipcRenderer.invoke('workspace:show-window'),
-  hideWorkspaceWindow: () => ipcRenderer.invoke('workspace:hide-window'),
+  toggleWorkspaceWindow: () => ipcRenderer.invoke(WORKSPACE_TOGGLE_WINDOW),
+  showWorkspaceWindow: () => ipcRenderer.invoke(WORKSPACE_SHOW_WINDOW),
+  hideWorkspaceWindow: () => ipcRenderer.invoke(WORKSPACE_HIDE_WINDOW),
   // ワークスペース関連API
   workspaceAPI: {
-    loadItems: (): Promise<WorkspaceItem[]> => ipcRenderer.invoke('workspace:load-items'),
+    loadItems: (): Promise<WorkspaceItem[]> => ipcRenderer.invoke(WORKSPACE_LOAD_ITEMS),
     addItem: (item: AppItem, groupId?: string): Promise<WorkspaceItem> =>
-      ipcRenderer.invoke('workspace:add-item', item, groupId),
+      ipcRenderer.invoke(WORKSPACE_ADD_ITEM, item, groupId),
     addItemsFromPaths: (filePaths: string[], groupId?: string): Promise<WorkspaceItem[]> =>
-      ipcRenderer.invoke('workspace:add-items-from-paths', filePaths, groupId),
+      ipcRenderer.invoke(WORKSPACE_ADD_ITEMS_FROM_PATHS, filePaths, groupId),
     removeItem: (id: string): Promise<{ success: boolean }> =>
-      ipcRenderer.invoke('workspace:remove-item', id),
+      ipcRenderer.invoke(WORKSPACE_REMOVE_ITEM, id),
     updateDisplayName: (id: string, displayName: string): Promise<{ success: boolean }> =>
-      ipcRenderer.invoke('workspace:update-display-name', id, displayName),
+      ipcRenderer.invoke(WORKSPACE_UPDATE_DISPLAY_NAME, id, displayName),
     reorderItems: (itemIds: string[]): Promise<{ success: boolean }> =>
-      ipcRenderer.invoke('workspace:reorder-items', itemIds),
+      ipcRenderer.invoke(WORKSPACE_REORDER_ITEMS, itemIds),
     launchItem: (item: WorkspaceItem): Promise<{ success: boolean }> =>
-      ipcRenderer.invoke('workspace:launch-item', item),
+      ipcRenderer.invoke(WORKSPACE_LAUNCH_ITEM, item),
     // グループ管理
-    loadGroups: (): Promise<WorkspaceGroup[]> => ipcRenderer.invoke('workspace:load-groups'),
+    loadGroups: (): Promise<WorkspaceGroup[]> => ipcRenderer.invoke(WORKSPACE_LOAD_GROUPS),
     createGroup: (name: string, color?: string): Promise<WorkspaceGroup> =>
-      ipcRenderer.invoke('workspace:create-group', name, color),
+      ipcRenderer.invoke(WORKSPACE_CREATE_GROUP, name, color),
     updateGroup: (id: string, updates: Partial<WorkspaceGroup>): Promise<{ success: boolean }> =>
-      ipcRenderer.invoke('workspace:update-group', id, updates),
+      ipcRenderer.invoke(WORKSPACE_UPDATE_GROUP, id, updates),
     deleteGroup: (id: string, deleteItems: boolean): Promise<{ success: boolean }> =>
-      ipcRenderer.invoke('workspace:delete-group', id, deleteItems),
+      ipcRenderer.invoke(WORKSPACE_DELETE_GROUP, id, deleteItems),
     reorderGroups: (groupIds: string[]): Promise<{ success: boolean }> =>
-      ipcRenderer.invoke('workspace:reorder-groups', groupIds),
+      ipcRenderer.invoke(WORKSPACE_REORDER_GROUPS, groupIds),
     moveItemToGroup: (itemId: string, groupId?: string): Promise<{ success: boolean }> =>
-      ipcRenderer.invoke('workspace:move-item-to-group', itemId, groupId),
+      ipcRenderer.invoke(WORKSPACE_MOVE_ITEM_TO_GROUP, itemId, groupId),
     // アーカイブ管理
     archiveGroup: (groupId: string): Promise<{ success: boolean }> =>
-      ipcRenderer.invoke('workspace:archive-group', groupId),
+      ipcRenderer.invoke(WORKSPACE_ARCHIVE_GROUP, groupId),
     loadArchivedGroups: (): Promise<WorkspaceGroup[]> =>
-      ipcRenderer.invoke('workspace:load-archived-groups'),
+      ipcRenderer.invoke(WORKSPACE_LOAD_ARCHIVED_GROUPS),
     restoreGroup: (groupId: string): Promise<{ success: boolean }> =>
-      ipcRenderer.invoke('workspace:restore-group', groupId),
+      ipcRenderer.invoke(WORKSPACE_RESTORE_GROUP, groupId),
     deleteArchivedGroup: (groupId: string): Promise<{ success: boolean }> =>
-      ipcRenderer.invoke('workspace:delete-archived-group', groupId),
+      ipcRenderer.invoke(WORKSPACE_DELETE_ARCHIVED_GROUP, groupId),
     // 実行履歴
     loadExecutionHistory: (): Promise<ExecutionHistoryItem[]> =>
-      ipcRenderer.invoke('workspace:load-execution-history'),
+      ipcRenderer.invoke(WORKSPACE_LOAD_EXECUTION_HISTORY),
     addExecutionHistory: (item: AppItem): Promise<{ success: boolean }> =>
-      ipcRenderer.invoke('workspace:add-execution-history', item),
+      ipcRenderer.invoke(WORKSPACE_ADD_EXECUTION_HISTORY, item),
     clearExecutionHistory: (): Promise<{ success: boolean }> =>
-      ipcRenderer.invoke('workspace:clear-execution-history'),
+      ipcRenderer.invoke(WORKSPACE_CLEAR_EXECUTION_HISTORY),
     // ピン留め関連
-    getAlwaysOnTop: (): Promise<boolean> => ipcRenderer.invoke('workspace:get-always-on-top'),
-    toggleAlwaysOnTop: (): Promise<boolean> => ipcRenderer.invoke('workspace:toggle-always-on-top'),
+    getAlwaysOnTop: (): Promise<boolean> => ipcRenderer.invoke(WORKSPACE_GET_ALWAYS_ON_TOP),
+    toggleAlwaysOnTop: (): Promise<boolean> => ipcRenderer.invoke(WORKSPACE_TOGGLE_ALWAYS_ON_TOP),
     // モーダルモード関連
     setModalMode: (isModal: boolean, requiredSize?: { width: number; height: number }) =>
-      ipcRenderer.invoke('workspace:set-modal-mode', isModal, requiredSize),
+      ipcRenderer.invoke(WORKSPACE_SET_MODAL_MODE, isModal, requiredSize),
     // 透過度関連
     setOpacity: (opacityPercent: number): Promise<boolean> =>
-      ipcRenderer.invoke('workspace:set-opacity', opacityPercent),
-    getOpacity: (): Promise<number> => ipcRenderer.invoke('workspace:get-opacity'),
+      ipcRenderer.invoke(WORKSPACE_SET_OPACITY, opacityPercent),
+    getOpacity: (): Promise<number> => ipcRenderer.invoke(WORKSPACE_GET_OPACITY),
     // サイズ変更関連
     setSize: (width: number, height: number): Promise<boolean> =>
-      ipcRenderer.invoke('workspace:set-size', width, height),
+      ipcRenderer.invoke(WORKSPACE_SET_SIZE, width, height),
     setPositionAndSize: (x: number, y: number, width: number, height: number): Promise<boolean> =>
-      ipcRenderer.invoke('workspace:set-position-and-size', x, y, width, height),
+      ipcRenderer.invoke(WORKSPACE_SET_POSITION_AND_SIZE, x, y, width, height),
     // ウィンドウ制御
-    hideWindow: (): Promise<boolean> => ipcRenderer.invoke('workspace:hide-window'),
+    hideWindow: (): Promise<boolean> => ipcRenderer.invoke(WORKSPACE_HIDE_WINDOW),
   },
 });

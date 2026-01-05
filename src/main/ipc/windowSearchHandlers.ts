@@ -3,6 +3,7 @@
  */
 import { ipcMain, BrowserWindow } from 'electron';
 import type { WindowPinMode, WindowInfo } from '@common/types';
+import { GET_ALL_WINDOWS, ACTIVATE_WINDOW } from '@common/ipcChannels.js';
 
 import { getAllWindows, activateWindow, restoreWindow } from '../utils/nativeWindowControl';
 
@@ -13,7 +14,7 @@ export function setupWindowSearchHandlers(
   /**
    * すべてのウィンドウ情報を取得（QuickDashLauncher自身は除外）
    */
-  ipcMain.handle('get-all-windows', async (): Promise<WindowInfo[]> => {
+  ipcMain.handle(GET_ALL_WINDOWS, async (): Promise<WindowInfo[]> => {
     try {
       const windows = getAllWindows();
 
@@ -43,7 +44,7 @@ export function setupWindowSearchHandlers(
    * - normalモードの場合はランチャーウィンドウを非表示
    */
   ipcMain.handle(
-    'activate-window',
+    ACTIVATE_WINDOW,
     async (_event, hwnd: number | bigint): Promise<{ success: boolean; error?: string }> => {
       try {
         // 最小化されている場合は復元

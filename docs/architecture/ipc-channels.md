@@ -2,6 +2,44 @@
 
 QuickDashLauncherで使用される全IPCチャンネルの仕様です。
 
+## チャンネル名の定数管理
+
+全てのIPCチャンネル名は `src/common/ipcChannels.ts` で定数として一元管理されています。
+
+```typescript
+// 使用例
+import { SETTINGS_GET, OPEN_ITEM } from '@common/ipcChannels.js';
+
+// メインプロセス
+ipcMain.handle(SETTINGS_GET, async (_event, key) => { ... });
+
+// preload.ts
+ipcRenderer.invoke(OPEN_ITEM, item);
+```
+
+### 定数の命名規則
+
+| カテゴリ | プレフィックス | 例 |
+|---------|---------------|-----|
+| 設定 | `SETTINGS_*` | `SETTINGS_GET`, `SETTINGS_SET` |
+| ウィンドウ | - | `SHOW_EDIT_WINDOW`, `GET_WINDOW_PIN_MODE` |
+| アイテム操作 | - | `OPEN_ITEM`, `EXECUTE_GROUP` |
+| データ | - | `LOAD_DATA_FILES`, `GET_DATA_FILES` |
+| アイコン | - | `FETCH_FAVICON`, `EXTRACT_ICON` |
+| ワークスペース | `WORKSPACE_*` | `WORKSPACE_LOAD_ITEMS`, `WORKSPACE_ADD_ITEM` |
+| イベント | `EVENT_*` | `EVENT_DATA_CHANGED`, `EVENT_WINDOW_SHOWN` |
+
+### IPC_CHANNELSオブジェクト
+
+全定数は `IPC_CHANNELS` オブジェクトにも集約されており、動的なチャンネル名参照にも対応しています。
+
+```typescript
+import { IPC_CHANNELS } from '@common/ipcChannels.js';
+
+// 動的参照
+const channel = IPC_CHANNELS.SETTINGS_GET; // 'settings:get'
+```
+
 ## 設定関連
 
 ### `settings:is-first-launch`

@@ -1,5 +1,6 @@
 import { ipcMain, BrowserWindow } from 'electron';
 import { windowLogger } from '@common/logger';
+import { SPLASH_READY } from '@common/ipcChannels.js';
 
 import { closeSplashWindow } from '../splashWindowManager';
 import { getIsFirstLaunch } from '../main';
@@ -10,7 +11,7 @@ import { getIsFirstLaunch } from '../main';
  */
 export function setupSplashHandlers(getMainWindow: () => BrowserWindow | null): void {
   // スプラッシュスクリーンの準備完了通知
-  ipcMain.handle('splash-ready', async () => {
+  ipcMain.handle(SPLASH_READY, async () => {
     windowLogger.info('スプラッシュスクリーンの準備が完了しました');
 
     // 初回起動判定を取得
