@@ -19,9 +19,9 @@
 4. **検索機能**
    - 単一キーワードでの検索
    - 複数キーワードでの検索（AND検索）
-   - E2Eテスト: `tests/e2e/specs/search.spec.ts`
+   - E2Eテスト: `tests/e2e/specs/basic-ui.spec.ts`
 5. **タブ切り替え** - メイン/一時タブの切り替え
-   - E2Eテスト: `tests/e2e/specs/item-display.spec.ts`
+   - E2Eテスト: `tests/e2e/specs/basic-ui.spec.ts`
 6. **アイテム起動**
    - URL
    - ファイル
