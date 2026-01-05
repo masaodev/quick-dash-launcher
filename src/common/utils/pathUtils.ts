@@ -41,4 +41,25 @@ export class PathUtils {
   static isShortcutItem(item: LauncherItem): boolean {
     return this.isShortcutFile(item.path);
   }
+
+  /**
+   * ファイルパスからファイル名を取得
+   * @param filePath ファイルパス
+   * @returns ファイル名
+   */
+  static getFileName(filePath: string): string {
+    const lastSlash = Math.max(filePath.lastIndexOf('\\'), filePath.lastIndexOf('/'));
+    return lastSlash !== -1 ? filePath.substring(lastSlash + 1) : filePath;
+  }
+
+  /**
+   * ファイルパスから拡張子を取得（ドット含む、小文字）
+   * @param filePath ファイルパス
+   * @returns 拡張子（例: '.txt'）、拡張子がない場合は空文字列
+   */
+  static getExtension(filePath: string): string {
+    const fileName = this.getFileName(filePath);
+    const lastDot = fileName.lastIndexOf('.');
+    return lastDot !== -1 ? fileName.substring(lastDot).toLowerCase() : '';
+  }
 }

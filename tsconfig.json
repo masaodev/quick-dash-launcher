@@ -17,7 +17,10 @@
     "noImplicitReturns": true,
     "allowSyntheticDefaultImports": true,
     "paths": {
-      "@common/*": ["./src/common/*"]
+      "@common/*": ["./src/common/*"],
+      "@main/*": ["./src/main/*"],
+      "@renderer/*": ["./src/renderer/*"],
+      "@test/*": ["./src/test/*"]
     }
   },
   "include": ["src/**/*", "vite.config.ts", "vitest.config.ts", "playwright.config.ts", "tests/**/*"],

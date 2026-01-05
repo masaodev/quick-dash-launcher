@@ -15,6 +15,9 @@ export default defineConfig({
           resolve: {
             alias: {
               '@common': resolve(process.cwd(), './src/common'),
+              '@main': resolve(process.cwd(), './src/main'),
+              '@renderer': resolve(process.cwd(), './src/renderer'),
+              '@test': resolve(process.cwd(), './src/test'),
             },
           },
           build: {
@@ -46,6 +49,9 @@ export default defineConfig({
           resolve: {
             alias: {
               '@common': resolve(process.cwd(), './src/common'),
+              '@main': resolve(process.cwd(), './src/main'),
+              '@renderer': resolve(process.cwd(), './src/renderer'),
+              '@test': resolve(process.cwd(), './src/test'),
             },
           },
           build: {
@@ -89,6 +95,9 @@ export default defineConfig({
   resolve: {
     alias: {
       '@common': resolve(process.cwd(), './src/common'),
+      '@main': resolve(process.cwd(), './src/main'),
+      '@renderer': resolve(process.cwd(), './src/renderer'),
+      '@test': resolve(process.cwd(), './src/test'),
     },
   },
 });

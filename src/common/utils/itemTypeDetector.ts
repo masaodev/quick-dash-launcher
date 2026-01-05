@@ -6,6 +6,7 @@
  */
 
 import type { LauncherItem } from '../types';
+import { PathUtils } from './pathUtils';
 
 /**
  * アイテムのパスからタイプを検出する（クライアント側用）
@@ -53,11 +54,8 @@ export async function detectItemType(
     }
   }
 
-  // File extensions - ファイル名部分のみから拡張子を取得
-  const lastSlash = Math.max(itemPath.lastIndexOf('/'), itemPath.lastIndexOf('\\'));
-  const fileName = lastSlash !== -1 ? itemPath.substring(lastSlash + 1) : itemPath;
-  const lastDot = fileName.lastIndexOf('.');
-  const ext = lastDot !== -1 ? fileName.substring(lastDot).toLowerCase() : '';
+  // File extensions - PathUtilsを使用して拡張子を取得
+  const ext = PathUtils.getExtension(itemPath);
 
   // Executables and shortcuts
   if (ext === '.exe' || ext === '.bat' || ext === '.cmd' || ext === '.com' || ext === '.lnk') {
@@ -101,11 +99,8 @@ export function detectItemTypeSync(itemPath: string): LauncherItem['type'] {
     return 'folder';
   }
 
-  // File extensions - ファイル名部分のみから拡張子を取得
-  const lastSlash = Math.max(itemPath.lastIndexOf('/'), itemPath.lastIndexOf('\\'));
-  const fileName = lastSlash !== -1 ? itemPath.substring(lastSlash + 1) : itemPath;
-  const lastDot = fileName.lastIndexOf('.');
-  const ext = lastDot !== -1 ? fileName.substring(lastDot).toLowerCase() : '';
+  // File extensions - PathUtilsを使用して拡張子を取得
+  const ext = PathUtils.getExtension(itemPath);
 
   // Executables and shortcuts
   if (ext === '.exe' || ext === '.bat' || ext === '.cmd' || ext === '.com' || ext === '.lnk') {
