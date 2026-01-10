@@ -46,6 +46,11 @@ if (process.env.APP_INSTANCE) {
   app.setPath('userData', userDataPath);
 }
 
+// 開発モード時にリモートデバッグポートを有効化（Playwright MCP用）
+if (process.env.NODE_ENV === 'development' || process.env.ELECTRON_IS_DEV === '1') {
+  app.commandLine.appendSwitch('--remote-debugging-port', '9222');
+}
+
 app.whenReady().then(async () => {
   // 設定フォルダを先に作成
   PathManager.ensureDirectories();
