@@ -357,6 +357,19 @@
   margin-left: auto;
 }
 
+/* プライマリボタン（primaryスタイル） */
+.modal-actions button.primary {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  border-color: var(--color-primary);
+}
+
+.modal-actions button.primary:hover {
+  background-color: var(--color-primary-hover);
+  color: var(--color-white);
+  border-color: var(--color-primary-hover);
+}
+
 /* 削除ボタン（dangerスタイル） */
 .modal-actions button.danger {
   background-color: var(--color-danger);
@@ -366,7 +379,20 @@
 
 .modal-actions button.danger:hover {
   background-color: var(--color-danger-hover);
+  color: var(--color-white);
   border-color: var(--color-danger-hover);
+}
+
+/* キャンセルボタン */
+.modal-actions button.cancel-button {
+  background-color: var(--color-gray-400);
+  color: var(--color-white);
+  border: none;
+}
+
+.modal-actions button.cancel-button:hover {
+  background-color: var(--color-gray-500);
+  color: var(--color-white);
 }
 
 /* ウィンドウ設定セクション */
@@ -437,6 +463,12 @@
   outline: none;
   border-color: var(--color-primary);
   box-shadow: var(--focus-ring);
+}
+
+.window-config-input-number:disabled {
+  background-color: var(--bg-input-disabled);
+  color: var(--text-disabled);
+  cursor: not-allowed;
 }
 
 .get-window-btn {

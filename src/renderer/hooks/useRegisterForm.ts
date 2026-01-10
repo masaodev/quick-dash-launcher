@@ -24,6 +24,7 @@ export function useRegisterForm(
   const [items, setItems] = useState<RegisterItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [availableTabs, setAvailableTabs] = useState<DataFileTab[]>([]);
+  const [dataFileLabels, setDataFileLabels] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<{
     [index: number]: { name?: string; path?: string; groupItemNames?: string };
   }>({});
@@ -50,6 +51,7 @@ export function useRegisterForm(
     const loadAvailableTabsAndInitialize = async () => {
       const settings = await window.electronAPI.getSettings();
       setAvailableTabs(settings.dataFileTabs);
+      setDataFileLabels(settings.dataFileLabels || {});
 
       // モーダルが開いたとき、まず前回の状態をクリア
       setItems([]);
@@ -360,6 +362,7 @@ export function useRegisterForm(
     loading,
     errors,
     availableTabs,
+    dataFileLabels,
     selectorModalOpen,
     editingItemIndex,
     handleItemChange,

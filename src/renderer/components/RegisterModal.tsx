@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { type RegisterItem } from '@common/utils/dataConverters';
-import { RawDataLine, WindowInfo } from '@common/types';
+import { RawDataLine, WindowInfo, LauncherItem } from '@common/types';
 
 import { useCustomIcon } from '../hooks/useCustomIcon';
 import { useRegisterForm } from '../hooks/useRegisterForm';
@@ -60,6 +60,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     loading,
     errors,
     availableTabs,
+    dataFileLabels,
     selectorModalOpen,
     editingItemIndex,
     handleItemChange,
@@ -84,7 +85,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
 
   // items配列の長さが変わったときにオプション開閉状態を初期化
   useEffect(() => {
-    setOptionsSectionOpen(items.map(() => true));
+    setOptionsSectionOpen(items.map(() => false));
   }, [items.length]);
 
   useEffect(() => {
@@ -289,6 +290,89 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     });
   };
 
+  // RegisterItemをLauncherItemに変換する関数
+  const convertToLauncherItem = (item: RegisterItem): LauncherItem | null => {
+    if (item.itemCategory === 'dir' || item.itemCategory === 'group') {
+      // フォルダ取込とグループは直接実行不可
+      return null;
+    }
+
+    if (item.itemCategory === 'window') {
+      // ウィンドウ操作アイテムは別処理
+      return null;
+    }
+
+    // 単一アイテムの場合
+    return {
+      name: item.name,
+      path: item.path,
+      type: item.type,
+      args: item.args,
+      customIcon: item.customIcon,
+      windowConfig: item.windowConfig,
+    };
+  };
+
+  // 実行ボタンのハンドラー
+  const handleExecute = async () => {
+    if (items.length === 0) return;
+
+    const item = items[0]; // 最初のアイテムを実行
+
+    // ウィンドウが閉じないように、一時的にピンモードを変更
+    const originalPinMode = await window.electronAPI.getWindowPinMode();
+    let pinModeChanged = false;
+
+    try {
+      // ピンモードがnormalの場合、一時的にalwaysOnTopに変更
+      if (originalPinMode === 'normal') {
+        await window.electronAPI.cycleWindowPinMode(); // normal -> alwaysOnTop
+        pinModeChanged = true;
+      }
+
+      if (item.itemCategory === 'window') {
+        // ウィンドウ操作アイテムの場合
+        if (!item.windowOperationConfig) {
+          console.error('ウィンドウ操作設定が不足しています');
+          return;
+        }
+
+        await window.electronAPI.executeWindowOperation({
+          name: item.name,
+          type: 'windowOperation',
+          windowTitle: item.windowOperationConfig.windowTitle,
+          exactMatch: item.windowOperationConfig.exactMatch,
+          processName: item.windowOperationConfig.processName,
+          x: item.windowOperationConfig.x,
+          y: item.windowOperationConfig.y,
+          width: item.windowOperationConfig.width,
+          height: item.windowOperationConfig.height,
+          moveToActiveMonitorCenter: item.windowOperationConfig.moveToActiveMonitorCenter,
+          virtualDesktopNumber: item.windowOperationConfig.virtualDesktopNumber,
+          activateWindow: item.windowOperationConfig.activateWindow,
+        });
+      } else if (item.itemCategory === 'group') {
+        console.log('グループアイテムは実行ボタンからは実行できません');
+        // TODO: 必要に応じてグループ実行にも対応
+      } else if (item.itemCategory === 'dir') {
+        console.log('フォルダ取込アイテムは実行ボタンからは実行できません');
+      } else {
+        // 単一アイテムの場合
+        const launcherItem = convertToLauncherItem(item);
+        if (launcherItem) {
+          await window.electronAPI.openItem(launcherItem);
+        }
+      }
+    } catch (error) {
+      console.error('アイテムの実行に失敗しました:', error);
+    } finally {
+      // 元のピンモードに戻す
+      if (pinModeChanged) {
+        await window.electronAPI.cycleWindowPinMode(); // alwaysOnTop -> normal
+      }
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -347,7 +431,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                               >
                                 {selectedTab.files.map((file) => (
                                   <option key={file} value={file}>
-                                    {file}
+                                    {dataFileLabels[file] || file}
                                   </option>
                                 ))}
                               </select>
@@ -528,6 +612,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                           handleItemChange(index, 'windowConfig', windowConfig)
                         }
                         onGetWindowClick={() => openWindowSelector(index)}
+                        defaultExpanded={false}
                       />
                     )}
 
@@ -569,6 +654,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                           }
                           onGetWindowClick={() => openWindowSelector(index)}
                           showToggle={false}
+                          defaultExpanded={false}
                         />
                         {errors[index]?.name && (
                           <div className="form-group">
@@ -593,13 +679,22 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
               </div>
 
               <div className="modal-actions">
-                {editingItem && onDelete && (
-                  <button onClick={handleDelete} className="danger">
-                    削除
-                  </button>
-                )}
+                {items.length > 0 &&
+                  items[0].itemCategory !== 'dir' &&
+                  items[0].itemCategory !== 'group' && (
+                    <button onClick={handleExecute} className="primary">
+                      ⚡ 試しに実行
+                    </button>
+                  )}
                 <div className="modal-actions-right">
-                  <button onClick={handleCancel}>キャンセル</button>
+                  {editingItem && onDelete && (
+                    <button onClick={handleDelete} className="danger">
+                      削除
+                    </button>
+                  )}
+                  <button onClick={handleCancel} className="cancel-button">
+                    キャンセル
+                  </button>
                   <button onClick={validateAndRegister} className="primary">
                     {editingItem ? '更新' : '登録'}
                   </button>

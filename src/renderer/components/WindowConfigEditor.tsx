@@ -132,11 +132,6 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
                   <span>アクティブモニター（カーソルがあるモニター）の中央に移動</span>
                 </label>
               </div>
-              {windowConfig?.moveToActiveMonitorCenter && (
-                <div className="help-box">
-                  <p className="help-note">💡 X座標・Y座標の指定は無視されます</p>
-                </div>
-              )}
               <div className="window-config-row-double">
                 <div className="window-config-field">
                   <label className="window-config-label">X座標:</label>
