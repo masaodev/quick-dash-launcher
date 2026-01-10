@@ -1,7 +1,7 @@
 {
-	"hotkey": "Ctrl+Alt+W",
-	"windowWidth": 600,
-	"windowHeight": 400,
+	"hotkey": "Ctrl+Alt+T",
+	"windowWidth": 700,
+	"windowHeight": 500,
 	"editModeWidth": 1200,
 	"editModeHeight": 700,
 	"autoLaunch": false,
@@ -10,7 +10,7 @@
 	"backupOnEdit": false,
 	"backupInterval": 5,
 	"backupRetention": 20,
-	"showDataFileTabs": false,
+	"showDataFileTabs": true,
 	"defaultFileTab": "data.txt",
 	"dataFileTabs": [
 		{
@@ -18,9 +18,28 @@
 				"data.txt"
 			],
 			"name": "メイン"
+		},
+		{
+			"files": [
+				"data2.txt"
+			],
+			"name": "仕事"
+		},
+		{
+			"files": [
+				"data3.txt"
+			],
+			"name": "プライベート"
 		}
 	],
+	"dataFileLabels": {
+		"data.txt": "メイン用データファイル",
+		"data2.txt": "仕事用データファイル",
+		"data3.txt": "プライベート用データファイル"
+	},
 	"windowPositionMode": "center",
 	"windowPositionX": 0,
-	"windowPositionY": 0
+	"windowPositionY": 0,
+	"workspaceOpacity": 100,
+	"workspaceBackgroundTransparent": false
 }

@@ -90,6 +90,16 @@ npm run test:e2e:single first-launch
 - `confirm-dialog` - ConfirmDialog（確認ダイアログ）
 - `group-item-register` - グループアイテム登録
 
+### ブラウザ自動操作（Playwright MCP）
+
+Claude Codeから直接QuickDashLauncherの画面を操作できます。
+
+```bash
+npm run dev:test  # リモートデバッグポート有効で起動
+```
+
+詳細は **[ブラウザ自動操作ガイド](docs/testing/browser-automation.md)** を参照してください。
+
 ## ドキュメント
 
 ドキュメント一覧は **[docs/README.md](docs/README.md)** を参照してください。
@@ -119,6 +129,7 @@ npm run test:e2e:single first-launch
 
 ### テスト
 - **[テストガイド](docs/testing/README.md)** - E2E・単体テストの実行方法
+- **[ブラウザ自動操作](docs/testing/browser-automation.md)** - Claude Codeからの画面操作方法
 - **[手動テスト](docs/testing/manual-checklist.md)** - 手動テストチェックリスト
 
 ## 技術スタック・開発時の注意事項

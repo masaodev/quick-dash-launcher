@@ -46,6 +46,9 @@ test-output.*
 *-output.log
 test-run.log
 
+# Playwright MCP
+.playwright-mcp/
+
 # Temporary files
 *.tmp
 *.temp
@@ -72,6 +75,10 @@ tests/fixtures/dev/*/icons/
 tests/fixtures/dev/*/favicons/
 tests/fixtures/dev/*/custom-icons/
 tests/fixtures/dev/*/backup/
+
+# Development test data runtime files
+tests/dev/full/execution-history.json
+tests/dev/full/workspace*.json
 
 # Cache
 .cache/

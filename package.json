@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "cross-env APP_INSTANCE=dev VITE_PORT=9001 HOTKEY=Ctrl+Alt+A NODE_ENV=development ELECTRON_IS_DEV=1 vite",
     "dev2": "cross-env APP_INSTANCE=dev2 VITE_PORT=9002 HOTKEY=Ctrl+Alt+S NODE_ENV=development ELECTRON_IS_DEV=1 vite",
-    "dev:test": "cross-env QUICK_DASH_CONFIG_DIR=./tests/dev/full NODE_ENV=development ELECTRON_IS_DEV=1 vite",
+    "dev:test": "cross-env QUICK_DASH_CONFIG_DIR=./tests/dev/full VITE_PORT=9003 HOTKEY=Ctrl+Alt+T SHOW_WINDOW_ON_STARTUP=1 NODE_ENV=development ELECTRON_IS_DEV=1 vite",
     "build": "vite build",
     "preview": "vite preview",
     "start": "npm run build && electron .",

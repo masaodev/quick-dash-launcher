@@ -119,9 +119,15 @@ async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
 
   // 動的にデータファイルリストを取得
   const { PathManager } = await import('../config/pathManager.js');
-  const dataFiles = PathManager.getDataFiles();
+  const autoDetectedFiles = PathManager.getDataFiles();
 
-  for (const fileName of dataFiles) {
+  // dataFileTabsで明示的に指定されたファイルを収集
+  const explicitFiles = Array.from(fileToTabMap.keys());
+
+  // 両方を結合して重複を排除
+  const allFiles = Array.from(new Set([...explicitFiles, ...autoDetectedFiles]));
+
+  for (const fileName of allFiles) {
     // 現在のファイルが属するタブインデックスを取得
     const tabIndex = fileToTabMap.get(fileName) ?? -1; // タブに属さない場合は-1
 

@@ -65,6 +65,16 @@ tests/e2e/
 
 リリース前の確認項目は [手動テストチェックリスト](./manual-checklist.md) を参照。
 
+### 4. ブラウザ自動操作（Playwright MCP）
+
+Claude Codeから直接QuickDashLauncherを操作してテストできます。
+
+- **セットアップ**: `.mcp.json`でPlaywright MCPサーバーを設定
+- **起動**: `npm run dev:test`でリモートデバッグポート有効化
+- **操作**: Claude Codeから画面の確認・クリック・スクリーンショット撮影が可能
+
+詳細は [ブラウザ自動操作ガイド](./browser-automation.md) を参照。
+
 ---
 
 ## テストフィクスチャ
@@ -251,6 +261,7 @@ echo '{"showDataFileTabs": false}' > tests/e2e/templates/my-test/settings.json
 
 ## 関連ドキュメント
 
+- [ブラウザ自動操作ガイド](./browser-automation.md)
 - [手動テストチェックリスト](./manual-checklist.md)
 - [開発ガイド](../setup/development.md)
 - [tests/e2e/README.md](../../tests/e2e/README.md)
