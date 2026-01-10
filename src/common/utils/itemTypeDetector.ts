@@ -6,6 +6,7 @@
  */
 
 import type { LauncherItem } from '../types';
+
 import { PathUtils } from './pathUtils';
 
 /**

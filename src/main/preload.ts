@@ -239,8 +239,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   batchUpdateItems: (requests: UpdateItemRequest[]) =>
     ipcRenderer.invoke(BATCH_UPDATE_ITEMS, requests),
   loadRawDataFiles: () => ipcRenderer.invoke(LOAD_RAW_DATA_FILES),
-  saveRawDataFiles: (rawLines: RawDataLine[]) =>
-    ipcRenderer.invoke(SAVE_RAW_DATA_FILES, rawLines),
+  saveRawDataFiles: (rawLines: RawDataLine[]) => ipcRenderer.invoke(SAVE_RAW_DATA_FILES, rawLines),
   setEditMode: (editMode: boolean) => ipcRenderer.invoke(SET_EDIT_MODE, editMode),
   getEditMode: () => ipcRenderer.invoke(GET_EDIT_MODE),
   selectBookmarkFile: () => ipcRenderer.invoke(SELECT_BOOKMARK_FILE),
