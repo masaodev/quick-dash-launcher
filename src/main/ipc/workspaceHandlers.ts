@@ -200,12 +200,15 @@ export function setupWorkspaceHandlers(): void {
         // WindowConfigを構築
         const windowConfig = {
           title: windowTitle,
+          exactMatch: item.exactMatch,
+          processName: item.processName,
           x: item.windowX,
           y: item.windowY,
           width: item.windowWidth,
           height: item.windowHeight,
           virtualDesktopNumber: item.virtualDesktopNumber,
           activateWindow: item.activateWindow,
+          moveToActiveMonitorCenter: item.moveToActiveMonitorCenter,
         };
 
         // ウィンドウ操作を実行

@@ -186,12 +186,15 @@ export class WorkspaceService {
           type: 'windowOperation';
           name: string;
           windowTitle: string;
+          exactMatch?: boolean;
+          processName?: string;
           x?: number;
           y?: number;
           width?: number;
           height?: number;
           virtualDesktopNumber?: number;
           activateWindow?: boolean;
+          moveToActiveMonitorCenter?: boolean;
         };
 
         workspaceItem = {
@@ -203,12 +206,15 @@ export class WorkspaceService {
           order: maxOrder + 1,
           addedAt: Date.now(),
           groupId: groupId,
+          exactMatch: windowOpItem.exactMatch,
+          processName: windowOpItem.processName,
           windowX: windowOpItem.x,
           windowY: windowOpItem.y,
           windowWidth: windowOpItem.width,
           windowHeight: windowOpItem.height,
           virtualDesktopNumber: windowOpItem.virtualDesktopNumber,
           activateWindow: windowOpItem.activateWindow,
+          moveToActiveMonitorCenter: windowOpItem.moveToActiveMonitorCenter,
         };
       }
       // LauncherItemの場合

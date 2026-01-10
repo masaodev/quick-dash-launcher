@@ -183,6 +183,20 @@ export class ExecutionHistoryService {
           args: launcherItem.args,
           executedAt: Date.now(),
         };
+
+        // windowConfigが存在する場合、その情報を展開して保存
+        if (launcherItem.windowConfig) {
+          historyItem.exactMatch = launcherItem.windowConfig.exactMatch;
+          historyItem.processName = launcherItem.windowConfig.processName;
+          historyItem.windowX = launcherItem.windowConfig.x;
+          historyItem.windowY = launcherItem.windowConfig.y;
+          historyItem.windowWidth = launcherItem.windowConfig.width;
+          historyItem.windowHeight = launcherItem.windowConfig.height;
+          historyItem.virtualDesktopNumber = launcherItem.windowConfig.virtualDesktopNumber;
+          historyItem.activateWindow = launcherItem.windowConfig.activateWindow;
+          historyItem.moveToActiveMonitorCenter = launcherItem.windowConfig.moveToActiveMonitorCenter;
+        }
+
         filteredHistory.unshift(historyItem);
         history.length = 0;
         history.push(...filteredHistory);

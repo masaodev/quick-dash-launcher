@@ -175,12 +175,44 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
     if (historyItemData) {
       try {
         const historyItem = JSON.parse(historyItemData);
-        // ワークスペースにアイテムを追加
-        const addedItem = await window.electronAPI.workspaceAPI.addItem(historyItem);
-        // グループに移動
-        if (groupId) {
-          await window.electronAPI.workspaceAPI.moveItemToGroup(addedItem.id, groupId);
+
+        // ExecutionHistoryItemをLauncherItem形式に変換
+        const launcherItem: Record<string, unknown> = {
+          name: historyItem.itemName,
+          path: historyItem.itemPath,
+          type: historyItem.itemType,
+          icon: historyItem.icon,
+          args: historyItem.args,
+        };
+
+        // windowConfig情報があれば含める
+        if (
+          historyItem.exactMatch !== undefined ||
+          historyItem.processName !== undefined ||
+          historyItem.windowX !== undefined ||
+          historyItem.windowY !== undefined ||
+          historyItem.windowWidth !== undefined ||
+          historyItem.windowHeight !== undefined ||
+          historyItem.virtualDesktopNumber !== undefined ||
+          historyItem.activateWindow !== undefined ||
+          historyItem.moveToActiveMonitorCenter !== undefined
+        ) {
+          launcherItem.windowConfig = {
+            title: '', // タイトルは不要（プロセス名で検索）
+            exactMatch: historyItem.exactMatch,
+            processName: historyItem.processName,
+            x: historyItem.windowX,
+            y: historyItem.windowY,
+            width: historyItem.windowWidth,
+            height: historyItem.windowHeight,
+            virtualDesktopNumber: historyItem.virtualDesktopNumber,
+            activateWindow: historyItem.activateWindow,
+            moveToActiveMonitorCenter: historyItem.moveToActiveMonitorCenter,
+          };
         }
+
+        // ワークスペースにアイテムを追加（groupIdも渡す）
+        await window.electronAPI.workspaceAPI.addItem(launcherItem, groupId);
       } catch (error) {
         console.error('実行履歴からのアイテム追加に失敗:', error);
       }
@@ -421,13 +453,41 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
                       item.itemType === 'app'
                     ) {
                       // LauncherItem形式に変換して起動
-                      window.electronAPI.openItem({
+                      const launcherItem: Record<string, unknown> = {
                         name: item.itemName,
                         path: item.itemPath,
                         type: item.itemType,
                         icon: item.icon,
                         args: item.args,
-                      });
+                      };
+
+                      // windowConfig情報があれば含める
+                      if (
+                        item.exactMatch !== undefined ||
+                        item.processName !== undefined ||
+                        item.windowX !== undefined ||
+                        item.windowY !== undefined ||
+                        item.windowWidth !== undefined ||
+                        item.windowHeight !== undefined ||
+                        item.virtualDesktopNumber !== undefined ||
+                        item.activateWindow !== undefined ||
+                        item.moveToActiveMonitorCenter !== undefined
+                      ) {
+                        launcherItem.windowConfig = {
+                          title: '', // タイトルは不要（プロセス名で検索）
+                          exactMatch: item.exactMatch,
+                          processName: item.processName,
+                          x: item.windowX,
+                          y: item.windowY,
+                          width: item.windowWidth,
+                          height: item.windowHeight,
+                          virtualDesktopNumber: item.virtualDesktopNumber,
+                          activateWindow: item.activateWindow,
+                          moveToActiveMonitorCenter: item.moveToActiveMonitorCenter,
+                        };
+                      }
+
+                      window.electronAPI.openItem(launcherItem);
                     } else if (item.itemType === 'windowOperation') {
                       // [ウィンドウ操作: タイトル] から タイトル を抽出
                       const match = item.itemPath.match(/^\[ウィンドウ操作: (.+)\]$/);
@@ -454,32 +514,8 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
                     e.dataTransfer.effectAllowed = 'copy';
                     e.dataTransfer.setData('historyItemId', historyItem.id);
 
-                    // windowOperationタイプの場合、ウィンドウ設定情報も含める
-                    const dragData: Record<string, unknown> = {
-                      name: historyItem.itemName,
-                      path: historyItem.itemPath,
-                      type: historyItem.itemType,
-                      icon: historyItem.icon,
-                      args: historyItem.args,
-                    };
-
-                    if (historyItem.itemType === 'windowOperation') {
-                      // itemPathから windowTitle を抽出
-                      const match = historyItem.itemPath.match(/^\[ウィンドウ操作: (.+)\]$/);
-                      const windowTitle = match ? match[1] : historyItem.itemPath;
-
-                      dragData.windowTitle = windowTitle;
-                      dragData.exactMatch = historyItem.exactMatch;
-                      dragData.processName = historyItem.processName;
-                      dragData.x = historyItem.windowX;
-                      dragData.y = historyItem.windowY;
-                      dragData.width = historyItem.windowWidth;
-                      dragData.height = historyItem.windowHeight;
-                      dragData.virtualDesktopNumber = historyItem.virtualDesktopNumber;
-                      dragData.activateWindow = historyItem.activateWindow;
-                    }
-
-                    e.dataTransfer.setData('historyItem', JSON.stringify(dragData));
+                    // 実行履歴アイテムのデータをそのまま渡す（ExecutionHistoryItem形式）
+                    e.dataTransfer.setData('historyItem', JSON.stringify(historyItem));
                   }}
                 />
               ))}

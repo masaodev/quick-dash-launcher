@@ -99,6 +99,12 @@ export interface WorkspaceItem {
   virtualDesktopNumber?: number;
   /** ウィンドウ操作：ウィンドウをアクティブにするか（windowOperation専用、オプション） */
   activateWindow?: boolean;
+  /** ウィンドウ操作：完全一致で検索するか（windowOperation専用、オプション） */
+  exactMatch?: boolean;
+  /** ウィンドウ操作：プロセス名で検索（windowOperation専用、オプション） */
+  processName?: string;
+  /** ウィンドウ操作：アクティブモニターの中央に移動するか（windowOperation専用、オプション） */
+  moveToActiveMonitorCenter?: boolean;
 }
 
 /**
@@ -154,6 +160,8 @@ export interface ExecutionHistoryItem {
   exactMatch?: boolean;
   /** ウィンドウ操作：プロセス名で検索（windowOperation専用、オプション） */
   processName?: string;
+  /** ウィンドウ操作：アクティブモニターの中央に移動するか（windowOperation専用、オプション） */
+  moveToActiveMonitorCenter?: boolean;
 }
 
 /**
