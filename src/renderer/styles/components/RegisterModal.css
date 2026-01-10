@@ -544,7 +544,8 @@
   width: 18px !important;
   height: 18px !important;
   flex: none !important;
-  margin-right: var(--spacing-sm);
+  margin: 0 var(--spacing-xs) 0 0 !important;
+  vertical-align: middle;
   cursor: pointer;
   accent-color: var(--color-primary);
 }
