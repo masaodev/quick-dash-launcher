@@ -19,6 +19,8 @@ export interface WindowConfig {
   width?: number;
   /** 高さ（省略時はサイズ変更なし） */
   height?: number;
+  /** アクティブモニター（マウスカーソルがあるモニター）の中央に移動するかどうか（省略時はfalse） */
+  moveToActiveMonitorCenter?: boolean;
   /** 仮想デスクトップ番号（1から開始、省略時は移動なし、Windows 10以降） */
   virtualDesktopNumber?: number;
   /** ウィンドウをアクティブにするかどうか（省略時はtrue） */
@@ -142,6 +144,8 @@ export interface WindowOperationItem {
   width?: number;
   /** 高さ（省略時はサイズ変更なし） */
   height?: number;
+  /** アクティブモニター（マウスカーソルがあるモニター）の中央に移動するかどうか（省略時はfalse） */
+  moveToActiveMonitorCenter?: boolean;
   /** 仮想デスクトップ番号（1から開始、省略時は移動なし、Windows 10以降） */
   virtualDesktopNumber?: number;
   /** ウィンドウをアクティブにするかどうか（省略時はtrue） */

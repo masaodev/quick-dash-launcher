@@ -50,6 +50,7 @@ export interface RegisterItem {
     y?: number;
     width?: number;
     height?: number;
+    moveToActiveMonitorCenter?: boolean;
     virtualDesktopNumber?: number;
     activateWindow?: boolean;
   };
@@ -211,6 +212,7 @@ export async function convertRawDataLineToRegisterItem(
           y: windowOp.y,
           width: windowOp.width,
           height: windowOp.height,
+          moveToActiveMonitorCenter: windowOp.moveToActiveMonitorCenter,
           virtualDesktopNumber: windowOp.virtualDesktopNumber,
           activateWindow: windowOp.activateWindow,
         },
@@ -310,6 +312,8 @@ export function convertRegisterItemToRawDataLine(
     if (cfg.y !== undefined) config.y = cfg.y;
     if (cfg.width !== undefined) config.width = cfg.width;
     if (cfg.height !== undefined) config.height = cfg.height;
+    if (cfg.moveToActiveMonitorCenter !== undefined)
+      config.moveToActiveMonitorCenter = cfg.moveToActiveMonitorCenter;
     if (cfg.virtualDesktopNumber !== undefined)
       config.virtualDesktopNumber = cfg.virtualDesktopNumber;
     if (cfg.activateWindow !== undefined) config.activateWindow = cfg.activateWindow;

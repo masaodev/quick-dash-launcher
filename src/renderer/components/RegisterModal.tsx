@@ -545,6 +545,8 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                                   y: item.windowOperationConfig.y,
                                   width: item.windowOperationConfig.width,
                                   height: item.windowOperationConfig.height,
+                                  moveToActiveMonitorCenter:
+                                    item.windowOperationConfig.moveToActiveMonitorCenter,
                                   virtualDesktopNumber:
                                     item.windowOperationConfig.virtualDesktopNumber,
                                   activateWindow: item.windowOperationConfig.activateWindow,
@@ -560,6 +562,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                               y: windowConfig?.y,
                               width: windowConfig?.width,
                               height: windowConfig?.height,
+                              moveToActiveMonitorCenter: windowConfig?.moveToActiveMonitorCenter,
                               virtualDesktopNumber: windowConfig?.virtualDesktopNumber,
                               activateWindow: windowConfig?.activateWindow,
                             })

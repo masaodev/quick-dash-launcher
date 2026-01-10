@@ -337,13 +337,34 @@ Chrome,chrome.exe,,,Google Chrome
   "x": 100,      // X座標（省略可能）
   "y": 200,      // Y座標（省略可能）
   "width": 800,  // 幅（省略可能）
-  "height": 600  // 高さ（省略可能）
+  "height": 600, // 高さ（省略可能）
+  "moveToActiveMonitorCenter": true  // アクティブモニター中央に移動（省略可能、デフォルト: false）
 }
 ```
 
 詳細は **[データファイル形式 - ウィンドウ設定](data-format.md#ウィンドウ設定フィールドの記述方法)** を参照してください。
 
-### マルチモニタ対応
+### アクティブモニター中央への移動
+
+`moveToActiveMonitorCenter`フィールドを使用することで、マウスカーソルがあるモニター（アクティブモニター）の中央にウィンドウを自動的に移動できます。
+
+**動作仕様:**
+- `moveToActiveMonitorCenter: true` の場合、マウスカーソルがあるモニターの中央にウィンドウを移動
+- X座標とY座標の指定は無視されます（優先順位: `moveToActiveMonitorCenter` > `x/y座標`）
+- 幅と高さの指定は引き続き有効です
+- タスクバーを除く作業領域（workArea）の中央に配置されます
+- 画面外に出ないように自動調整されます
+
+**使用例:**
+```
+// アクティブモニターの中央に移動（サイズ指定あり）
+VSCode,code.exe,,,"{""title"":""Visual Studio Code"",""moveToActiveMonitorCenter"":true,""width"":1600,""height"":900}"
+
+// アクティブモニターの中央に移動（サイズ指定なし、現在のサイズを維持）
+Chrome,chrome.exe,,,"{""title"":""Google Chrome"",""moveToActiveMonitorCenter"":true}"
+```
+
+### マルチモニタ対応（固定座標指定）
 
 座標系は仮想スクリーン座標（Virtual Screen Coordinates）を使用します。
 
@@ -353,7 +374,7 @@ Chrome,chrome.exe,,,Google Chrome
   - 例: プライマリが1920x1080、セカンダリが右側なら X=1920 から開始
 - 負の座標も使用可能（プライマリの左側・上側にモニターがある場合）
 
-**使用例（デュアルモニタ）:**
+**使用例（デュアルモニタ、固定座標）:**
 ```
 Chrome (セカンダリ),chrome.exe,,,"{""title"":""Google Chrome"",""x"":1920,""y"":0,""width"":1920,""height"":1080}"
 VSCode (左半分),code.exe,,,"{""title"":""Visual Studio Code"",""x"":0,""y"":0,""width"":960,""height"":1080}"

@@ -5,6 +5,7 @@
  */
 
 import { Logger } from 'pino';
+import { screen } from 'electron';
 import { WindowConfig } from '@common/types';
 
 import { findWindowByTitle } from './windowMatcher.js';
@@ -294,8 +295,12 @@ export async function tryActivateWindow(
   // 最小化されている場合は復元
   restoreWindow(hwnd);
 
+  // アクティブモニター中央への移動が必要かチェック
+  const needsActiveMonitorCenter = effectiveConfig.moveToActiveMonitorCenter === true;
+
   // 位置・サイズ設定が必要かチェック
   const needsBoundsChange =
+    needsActiveMonitorCenter ||
     effectiveConfig.x !== undefined ||
     effectiveConfig.y !== undefined ||
     effectiveConfig.width !== undefined ||
@@ -303,12 +308,69 @@ export async function tryActivateWindow(
 
   // ウィンドウの位置・サイズを設定（指定されている場合）
   if (needsBoundsChange) {
-    const targetBounds = {
+    let targetBounds = {
       x: effectiveConfig.x,
       y: effectiveConfig.y,
       width: effectiveConfig.width,
       height: effectiveConfig.height,
     };
+
+    // アクティブモニター中央への移動が指定されている場合、座標を計算
+    if (needsActiveMonitorCenter) {
+      try {
+        const cursorPoint = screen.getCursorScreenPoint();
+        const currentBounds = getWindowBounds(hwnd);
+
+        if (currentBounds) {
+          const display = screen.getDisplayNearestPoint(cursorPoint);
+          const displayBounds = display.workArea;
+
+          // モニターの中央座標を計算
+          const centerX =
+            displayBounds.x + Math.floor((displayBounds.width - currentBounds.width) / 2);
+          const centerY =
+            displayBounds.y + Math.floor((displayBounds.height - currentBounds.height) / 2);
+
+          // 画面外に出ないように調整（安全性チェック）
+          targetBounds.x = Math.max(
+            displayBounds.x,
+            Math.min(centerX, displayBounds.x + displayBounds.width - currentBounds.width)
+          );
+          targetBounds.y = Math.max(
+            displayBounds.y,
+            Math.min(centerY, displayBounds.y + displayBounds.height - currentBounds.height)
+          );
+
+          logger.info(
+            {
+              name: itemName,
+              windowConfig: JSON.stringify(effectiveConfig),
+              calculatedPosition: { x: targetBounds.x, y: targetBounds.y },
+              cursorPoint,
+              displayBounds,
+            },
+            'アクティブモニターの中央座標を計算しました'
+          );
+        } else {
+          logger.warn(
+            {
+              name: itemName,
+              windowConfig: JSON.stringify(effectiveConfig),
+            },
+            'ウィンドウサイズの取得に失敗したため、アクティブモニター中央への移動をスキップします'
+          );
+        }
+      } catch (error) {
+        logger.error(
+          {
+            name: itemName,
+            windowConfig: JSON.stringify(effectiveConfig),
+            error: error instanceof Error ? error.message : String(error),
+          },
+          'アクティブモニター中央座標の計算中にエラーが発生しました。既存の座標処理にフォールバックします'
+        );
+      }
+    }
 
     await setBoundsWithRetry(hwnd, targetBounds, itemName, effectiveConfig, logger);
   }

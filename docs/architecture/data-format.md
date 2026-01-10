@@ -295,14 +295,15 @@ Chrome,chrome.exe,,,Google Chrome
 ```json
 {
   "title": "ウィンドウタイトル（必須）",
-  "exactMatch": false,      // 完全一致で検索（省略可能、既定: false=部分一致）
-  "processName": "",        // プロセス名で絞り込み（省略可能）
-  "activateWindow": true,   // ウィンドウをアクティブ化（省略可能、既定: true）
-  "virtualDesktopNumber": 1, // 仮想デスクトップ番号（省略可能）
-  "x": 100,                 // X座標（省略可能）
-  "y": 200,                 // Y座標（省略可能）
-  "width": 800,             // 幅（省略可能）
-  "height": 600             // 高さ（省略可能）
+  "exactMatch": false,             // 完全一致で検索（省略可能、既定: false=部分一致）
+  "processName": "",               // プロセス名で絞り込み（省略可能）
+  "activateWindow": true,          // ウィンドウをアクティブ化（省略可能、既定: true）
+  "virtualDesktopNumber": 1,       // 仮想デスクトップ番号（省略可能）
+  "x": 100,                        // X座標（省略可能）
+  "y": 200,                        // Y座標（省略可能）
+  "width": 800,                    // 幅（省略可能）
+  "height": 600,                   // 高さ（省略可能）
+  "moveToActiveMonitorCenter": false // アクティブモニター中央に移動（省略可能、既定: false）
 }
 ```
 
@@ -315,10 +316,11 @@ Chrome,chrome.exe,,,Google Chrome
 | `processName` | - | - | プロセス名で検索対象を絞り込み（例: `chrome.exe`） |
 | `activateWindow` | - | `true` | ウィンドウを前面に表示してフォーカス |
 | `virtualDesktopNumber` | - | - | 対象の仮想デスクトップ番号（1から開始） |
-| `x` | - | - | X座標（仮想スクリーン座標系、省略時は位置変更なし） |
-| `y` | - | - | Y座標（仮想スクリーン座標系、省略時は位置変更なし） |
+| `x` | - | - | X座標（仮想スクリーン座標系、省略時は位置変更なし）※`moveToActiveMonitorCenter`がtrueの場合は無視される |
+| `y` | - | - | Y座標（仮想スクリーン座標系、省略時は位置変更なし）※`moveToActiveMonitorCenter`がtrueの場合は無視される |
 | `width` | - | - | 幅（ピクセル単位、省略時はサイズ変更なし） |
 | `height` | - | - | 高さ（ピクセル単位、省略時はサイズ変更なし） |
+| `moveToActiveMonitorCenter` | - | `false` | `true`の場合、マウスカーソルがあるモニターの中央にウィンドウを移動（x/y座標は無視される） |
 
 #### 動作仕様
 
@@ -335,11 +337,13 @@ Chrome,chrome.exe,,,Google Chrome
 
 #### オプションの組み合わせ例
 
-| activateWindow | 位置・サイズ指定 | 動作 |
-|---------------|-----------------|------|
-| true (既定) | なし | ウィンドウをアクティブ化のみ |
-| true | あり | ウィンドウをアクティブ化し、位置・サイズを変更 |
-| false | あり | 位置・サイズのみ変更（アクティブ化しない） |
+| activateWindow | moveToActiveMonitorCenter | 位置・サイズ指定 | 動作 |
+|---------------|--------------------------|-----------------|------|
+| true (既定) | false (既定) | なし | ウィンドウをアクティブ化のみ |
+| true | false | あり | ウィンドウをアクティブ化し、位置・サイズを変更 |
+| true | true | - | ウィンドウをアクティブ化し、アクティブモニター中央に移動（x/y座標は無視） |
+| false | true | - | アクティブモニター中央に移動のみ（アクティブ化しない） |
+| false | false | あり | 位置・サイズのみ変更（アクティブ化しない） |
 
 #### マルチモニタ対応
 

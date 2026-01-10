@@ -53,6 +53,8 @@ export function parseWindowConfig(value: string | undefined): WindowConfig | nul
       if (typeof parsed.y === 'number') config.y = parsed.y;
       if (typeof parsed.width === 'number') config.width = parsed.width;
       if (typeof parsed.height === 'number') config.height = parsed.height;
+      if (typeof parsed.moveToActiveMonitorCenter === 'boolean')
+        config.moveToActiveMonitorCenter = parsed.moveToActiveMonitorCenter;
       if (typeof parsed.virtualDesktopNumber === 'number')
         config.virtualDesktopNumber = parsed.virtualDesktopNumber;
       if (typeof parsed.activateWindow === 'boolean') config.activateWindow = parsed.activateWindow;
@@ -98,6 +100,7 @@ export function serializeWindowConfig(config: WindowConfig | undefined): string 
     config.y === undefined &&
     config.width === undefined &&
     config.height === undefined &&
+    config.moveToActiveMonitorCenter === undefined &&
     config.virtualDesktopNumber === undefined &&
     config.activateWindow === undefined
   ) {

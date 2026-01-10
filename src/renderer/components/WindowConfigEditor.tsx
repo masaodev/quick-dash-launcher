@@ -116,6 +116,27 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
             {/* 2-1. 位置・サイズ調整 */}
             <div className="window-config-subgroup">
               <h5 className="window-config-subgroup-title">📐 位置・サイズ調整</h5>
+              <div className="window-config-checkbox-row">
+                <label className="window-config-checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={windowConfig?.moveToActiveMonitorCenter || false}
+                    onChange={(e) =>
+                      onChange({
+                        ...(windowConfig || { title: '' }),
+                        moveToActiveMonitorCenter: e.target.checked || undefined,
+                      })
+                    }
+                    className="window-config-checkbox"
+                  />
+                  <span>アクティブモニター（カーソルがあるモニター）の中央に移動</span>
+                </label>
+              </div>
+              {windowConfig?.moveToActiveMonitorCenter && (
+                <div className="help-box">
+                  <p className="help-note">💡 X座標・Y座標の指定は無視されます</p>
+                </div>
+              )}
               <div className="window-config-row-double">
                 <div className="window-config-field">
                   <label className="window-config-label">X座標:</label>
@@ -130,6 +151,7 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
                     }
                     placeholder="X座標"
                     className="window-config-input-number"
+                    disabled={windowConfig?.moveToActiveMonitorCenter || false}
                   />
                 </div>
                 <div className="window-config-field">
@@ -145,6 +167,7 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
                     }
                     placeholder="Y座標"
                     className="window-config-input-number"
+                    disabled={windowConfig?.moveToActiveMonitorCenter || false}
                   />
                 </div>
               </div>

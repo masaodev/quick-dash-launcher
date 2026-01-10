@@ -21,6 +21,7 @@ export interface WindowOperationConfig {
   y?: number;
   width?: number;
   height?: number;
+  moveToActiveMonitorCenter?: boolean;
   virtualDesktopNumber?: number;
   activateWindow?: boolean;
 }
@@ -155,6 +156,7 @@ export function parseWindowOperationConfig(configString: string): WindowOperatio
       y: config.y,
       width: config.width,
       height: config.height,
+      moveToActiveMonitorCenter: config.moveToActiveMonitorCenter,
       virtualDesktopNumber: config.virtualDesktopNumber,
       activateWindow: config.activateWindow,
     };
