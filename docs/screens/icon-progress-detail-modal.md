@@ -39,9 +39,10 @@
 
 ```typescript
 interface IconProgressResult {
-  itemName: string;    // アイテム名（複数行の場合あり）
-  success: boolean;    // 成功/失敗
-  errorMessage?: string; // エラーメッセージ（失敗時のみ）
+  itemName: string;              // アイテム名またはURL
+  success: boolean;              // 成功/失敗
+  errorMessage?: string;         // エラーメッセージ（失敗時のみ）
+  type: 'favicon' | 'icon';      // 処理の種別（ファビコン取得またはアイコン抽出）
 }
 ```
 

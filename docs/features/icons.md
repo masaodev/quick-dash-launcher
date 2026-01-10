@@ -290,9 +290,8 @@ constructor(
 
 **メソッド:**
 - `start()`: 処理開始イベントを送信
-- `startPhase(phaseIndex: number)`: 指定フェーズの開始
-- `update(displayText: string, isError?: boolean, errorMessage?: string)`: 進捗更新
-- `completePhase()`: 現在のフェーズ完了
+- `update(currentItem: string, incrementErrors?: boolean, errorMessage?: string)`: 進捗更新
+- `completePhase()`: 現在のフェーズ完了（次のフェーズへ自動的に移行）
 - `completeAll()`: 全体完了イベントを送信
 
 ### 型定義

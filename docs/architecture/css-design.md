@@ -17,19 +17,31 @@ src/renderer/styles/
 ├── index.css                    # グローバルリセット・ベーススタイル
 ├── variables.css                # CSS変数定義（色・サイズ・間隔など）
 ├── common.css                   # 共通ユーティリティクラス
+├── splash.css                   # スプラッシュ画面
 └── components/                  # コンポーネント別スタイル
     ├── AdminWindow.css          # 管理ウィンドウ
     ├── AlertDialog.css          # 通知ダイアログ
+    ├── ArchiveTab.css           # アーカイブタブ
     ├── BookmarkImport.css       # ブックマークインポート
+    ├── ColorPicker.css          # カラーピッカー
     ├── ConfirmDialog.css        # 確認ダイアログ
+    ├── ContextMenu.css          # コンテキストメニュー
     ├── EditMode.css             # 編集モード
     ├── FilePickerDialog.css     # ファイル選択ダイアログ
+    ├── FileTabBar.css           # ファイルタブバー
+    ├── FirstLaunchSetup.css     # 初回起動セットアップ
+    ├── GroupItemSelectorModal.css  # グループアイテム選択モーダル
     ├── Header.css               # ヘッダー
     ├── HotkeyInput.css          # ホットキー入力
     ├── IconProgress.css         # アイコン進捗バー
+    ├── IconProgressDetailModal.css # アイコン進捗詳細モーダル
+    ├── ItemCountDisplay.css     # アイテム数表示
     ├── ItemList.css             # アイテムリスト
     ├── Modal.css                # モーダル共通
-    └── RegisterModal.css        # 登録モーダル
+    ├── RegisterModal.css        # 登録モーダル
+    ├── UrlConverterMenu.css     # URL変換メニュー
+    ├── WindowSelectorModal.css  # ウィンドウ選択モーダル
+    └── WorkspaceWindow.css      # ワークスペースウィンドウ
 ```
 
 ## CSS変数システム

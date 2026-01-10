@@ -43,6 +43,7 @@
 | `onCopyShortcutParentPath` | `(item: LauncherItem) => void` | - | リンク先の親フォルダーパスコピー時のコールバック |
 | `onOpenShortcutParentFolder` | `(item: LauncherItem) => void` | - | リンク先の親フォルダーを開く時のコールバック |
 | `onEditItem` | `(item: AppItem) => void \| Promise<void>` | - | アイテム編集時のコールバック |
+| `onAddToWorkspace` | `(item: AppItem) => void \| Promise<void>` | - | ワークスペースに追加時のコールバック |
 
 ## 4. メニュー項目一覧
 

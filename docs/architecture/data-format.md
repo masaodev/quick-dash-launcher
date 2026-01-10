@@ -295,8 +295,10 @@ Chrome,chrome.exe,,,Google Chrome
 ```json
 {
   "title": "ウィンドウタイトル（必須）",
+  "exactMatch": false,      // 完全一致で検索（省略可能、既定: false=部分一致）
+  "processName": "",        // プロセス名で絞り込み（省略可能）
   "activateWindow": true,   // ウィンドウをアクティブ化（省略可能、既定: true）
-  "switchDesktop": false,   // 仮想デスクトップを移動（省略可能、既定: false）
+  "virtualDesktopNumber": 1, // 仮想デスクトップ番号（省略可能）
   "x": 100,                 // X座標（省略可能）
   "y": 200,                 // Y座標（省略可能）
   "width": 800,             // 幅（省略可能）
@@ -308,9 +310,11 @@ Chrome,chrome.exe,,,Google Chrome
 
 | フィールド | 必須 | 既定値 | 説明 |
 |-----------|------|--------|------|
-| `title` | ✓ | - | ウィンドウ検索用のタイトル文字列（部分一致、大文字小文字を区別しない） |
+| `title` | ✓ | - | ウィンドウ検索用のタイトル文字列（大文字小文字を区別しない） |
+| `exactMatch` | - | `false` | `true`の場合は完全一致、`false`の場合は部分一致で検索 |
+| `processName` | - | - | プロセス名で検索対象を絞り込み（例: `chrome.exe`） |
 | `activateWindow` | - | `true` | ウィンドウを前面に表示してフォーカス |
-| `switchDesktop` | - | `false` | ウィンドウが異なる仮想デスクトップにある場合、そのデスクトップに移動 |
+| `virtualDesktopNumber` | - | - | 対象の仮想デスクトップ番号（1から開始） |
 | `x` | - | - | X座標（仮想スクリーン座標系、省略時は位置変更なし） |
 | `y` | - | - | Y座標（仮想スクリーン座標系、省略時は位置変更なし） |
 | `width` | - | - | 幅（ピクセル単位、省略時はサイズ変更なし） |
@@ -319,23 +323,23 @@ Chrome,chrome.exe,,,Google Chrome
 #### 動作仕様
 
 1. **ウィンドウ検索**: アイテム起動前に、`title`で指定されたウィンドウを検索
-   - 部分一致、スペース区切りでAND検索
+   - `exactMatch`が`false`の場合は部分一致、`true`の場合は完全一致
+   - スペース区切りでAND検索
    - 大文字小文字を区別しない
+   - `processName`が指定されている場合、プロセス名でも絞り込み
 2. **ウィンドウ発見時**:
-   - `switchDesktop`がtrueの場合、ウィンドウの仮想デスクトップに移動
    - `activateWindow`がtrueの場合、ウィンドウをアクティブ化（前面に表示）
    - `x`, `y`, `width`, `height`が指定されている場合は、ウィンドウの位置・サイズを変更
    - 通常起動は実行しない
 3. **ウィンドウ未発見時**: 通常通りアイテムを起動
 
-#### オプションの組み合わせ
+#### オプションの組み合わせ例
 
-| activateWindow | switchDesktop | 動作 |
-|---------------|---------------|------|
-| true (既定) | false (既定) | 現在のデスクトップでウィンドウをアクティブ化（ウィンドウを現在のデスクトップに移動） |
-| true | true | ウィンドウの仮想デスクトップに移動してからアクティブ化 |
-| false | false | ウィンドウの位置・サイズのみ変更（アクティブ化しない） |
-| false | true | ウィンドウの仮想デスクトップに移動（アクティブ化しない） |
+| activateWindow | 位置・サイズ指定 | 動作 |
+|---------------|-----------------|------|
+| true (既定) | なし | ウィンドウをアクティブ化のみ |
+| true | あり | ウィンドウをアクティブ化し、位置・サイズを変更 |
+| false | あり | 位置・サイズのみ変更（アクティブ化しない） |
 
 #### マルチモニタ対応
 
@@ -788,7 +792,7 @@ interface WindowOperationItem {
 ### AppItem
 ```typescript
 // LauncherItem、GroupItem、WindowOperationItemの統合型
-type AppItem = LauncherItem | GroupItem | WindowOperationItem;
+type AppItem = LauncherItem | GroupItem | WindowOperationItem | WindowInfo;
 ```
 
 ### DragItemData

@@ -501,7 +501,7 @@ onIconProgress(eventType: 'start' | 'update' | 'complete', callback: (data: Icon
 ### `onSetActiveTab`
 管理ウィンドウのタブ変更イベントリスナー
 ```typescript
-onSetActiveTab(callback: (tab: 'settings' | 'edit' | 'other') => void)
+onSetActiveTab(callback: (tab: 'settings' | 'edit' | 'archive' | 'other') => void)
 ```
 
 ### `onWindowShown`
@@ -708,7 +708,7 @@ onWindowHidden(callback: () => void)
 - **パラメータ**: なし
 - **発生タイミング**: ワークスペースアイテム・グループ・実行履歴・アーカイブの変更時
 
-### `set-workspace-modal-mode`
+### `workspace:set-modal-mode`
 ワークスペースウィンドウのモーダルモードを設定（ダイアログ表示時のウィンドウサイズ制御）
 - パラメータ: `isModal: boolean`, `requiredSize?: { width: number; height: number }`
 - 戻り値: なし
