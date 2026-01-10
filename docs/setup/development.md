@@ -415,15 +415,15 @@ const { isDraggingOver } = useNativeDragDrop(loadItems);
 - JSDocで目的と使用例を明記
 
 **参考実装:**
-- `src/renderer/hooks/useWorkspaceData.ts` - データ読み込みと状態管理
-- `src/renderer/hooks/useWorkspaceActions.ts` - アクション処理の統合
+- `src/renderer/hooks/workspace/useWorkspaceData.ts` - データ読み込みと状態管理
+- `src/renderer/hooks/workspace/useWorkspaceActions.ts` - アクション処理の統合
 - `src/renderer/hooks/useNativeDragDrop.ts` - ネイティブドラッグ&ドロップ処理
 - `src/renderer/hooks/useClipboardPaste.ts` - クリップボードからのペースト処理
 - `src/renderer/hooks/useCollapsibleSections.ts` - 折りたたみ状態管理
-- `src/renderer/hooks/useWorkspaceItemGroups.ts` - アイテムグループ化ロジック
-- `src/renderer/hooks/useWorkspaceContextMenu.ts` - コンテキストメニュー管理（6つのパス操作を1つのジェネリック関数に統合）
-- `src/renderer/hooks/useWorkspaceDragDrop.ts` - 型安全なドラッグ&ドロップヘルパー
-- `src/renderer/hooks/useWorkspaceResize.ts` - ワークスペースウィンドウのサイズ変更処理（70行の複雑なロジックを分離）
+- `src/renderer/hooks/workspace/useWorkspaceItemGroups.ts` - アイテムグループ化ロジック
+- `src/renderer/hooks/workspace/useWorkspaceContextMenu.ts` - コンテキストメニュー管理（6つのパス操作を1つのジェネリック関数に統合）
+- `src/renderer/hooks/workspace/useWorkspaceDragDrop.ts` - 型安全なドラッグ&ドロップヘルパー
+- `src/renderer/hooks/workspace/useWorkspaceResize.ts` - ワークスペースウィンドウのサイズ変更処理（70行の複雑なロジックを分離）
 - `src/renderer/hooks/useFileOperations.ts` - ファイルとURL操作の共通ユーティリティ（重複コード削減）
 
 **リファクタリング成果:**

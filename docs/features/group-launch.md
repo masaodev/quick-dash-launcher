@@ -171,7 +171,7 @@ group,開発環境,Visual Studio Code,Slack,Chrome
 
 **警告ログ例:**
 ```
-[WARN] Group item not found: Chrome
+[WARN] グループ内のアイテムが見つかりません { groupName: "開発環境", itemName: "Chrome" }
 ```
 
 ### 部分的なエラー

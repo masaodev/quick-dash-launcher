@@ -19,8 +19,8 @@ npm run dist            # Windowsインストーラーの作成
 
 Viteベースのビルドシステムを使用:
 - **メインプロセス**: CommonJS形式で`dist/main/`に出力
-- **プリロードスクリプト**: CommonJS形式で`dist/preload/`に出力
-- **レンダラープロセス**: 標準的なViteビルドで`dist/renderer/`に出力
+- **プリロードスクリプト**: CommonJS形式で`dist/main/preload.js`に出力
+- **レンダラープロセス**: 標準的なViteビルドで`dist/`に出力
 - **開発サーバー**: デフォルトポート9000（環境変数`VITE_PORT`で変更可能）
 
 ## パッケージング
