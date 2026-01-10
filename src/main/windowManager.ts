@@ -12,7 +12,24 @@ import PathManager from './config/pathManager.js';
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
-let windowPinMode: WindowPinMode = 'normal';
+
+// 環境変数WINDOW_PIN_MODEから初期ピンモードを取得（デフォルト: 'normal'）
+function getInitialWindowPinMode(): WindowPinMode {
+  const envMode = process.env.WINDOW_PIN_MODE;
+  const validModes: WindowPinMode[] = ['normal', 'alwaysOnTop', 'stayVisible'];
+
+  if (envMode && validModes.includes(envMode as WindowPinMode)) {
+    return envMode as WindowPinMode;
+  }
+
+  if (envMode) {
+    windowLogger.warn(`無効なWINDOW_PIN_MODE: ${envMode}, デフォルト'normal'を使用`);
+  }
+
+  return 'normal';
+}
+
+let windowPinMode: WindowPinMode = getInitialWindowPinMode();
 let isEditMode: boolean = false;
 let isFirstLaunchMode: boolean = false;
 let isModalMode: boolean = false;
@@ -121,6 +138,12 @@ export async function createWindow(): Promise<BrowserWindow> {
   mainWindow.webContents.session.webRequest.onBeforeRequest((_details, callback) => {
     callback({ cancel: false });
   });
+
+  // 環境変数でピンモードが指定されている場合、ウィンドウ動作を更新
+  if (process.env.WINDOW_PIN_MODE) {
+    updateWindowBehavior();
+    windowLogger.info(`初期ピンモードを設定しました: ${windowPinMode}`);
+  }
 
   return mainWindow;
 }
