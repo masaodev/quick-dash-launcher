@@ -4,7 +4,9 @@ Claude Codeから QuickDashLauncher を操作してテストする方法を説�
 
 ## 概要
 
-Playwright MCPサーバーを使用することで、Claude CodeがQuickDashLauncherの画面を直接操作できます。これにより、以下が可能になります：
+**重要**: QuickDashLauncherをテストする際は、**Electron MCP（electron-playwright）**を使用してください。Chrome MCP（claude-in-chrome）ではElectronアプリケーションを操作できません。
+
+Electron MCP（Playwright MCPサーバー）を使用することで、Claude CodeがQuickDashLauncherの画面を直接操作できます。これにより、以下が可能になります：
 
 - 画面のスナップショット取得・確認
 - ボタンクリック、テキスト入力などのUI操作
@@ -13,7 +15,7 @@ Playwright MCPサーバーを使用することで、Claude CodeがQuickDashLaun
 
 ## セットアップ
 
-### 1. Playwright MCPサーバーのインストール
+### 1. Electron MCPサーバーのセットアップ
 
 プロジェクト内の`.mcp.json`に設定が含まれています：
 

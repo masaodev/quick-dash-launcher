@@ -94,6 +94,8 @@ npm run test:e2e:single first-launch
 
 Claude Codeから直接QuickDashLauncherの画面を操作できます。
 
+**重要**: QuickDashLauncherをテストする際は、**Electron MCP（electron-playwright）**を使用してください。Chrome MCP（claude-in-chrome）ではなく、Electron専用のMCPサーバーが必要です。
+
 ```bash
 npm run dev:test  # リモートデバッグポート有効で起動
 ```
