@@ -332,6 +332,6 @@ group,業務開始,Outlook,Teams  # さらに短く
 ## 関連ドキュメント
 
 - **[データファイル形式仕様](../architecture/data-format.md)** - グループの詳細な構文仕様
-- **[アイテム管理](item-management.md)** - グループ編集方法の詳細
+- **[アイテム管理](../screens/admin-window.md#6-アイテム管理の詳細)** - グループ編集方法の詳細
 - **[テストガイド](../testing/README.md)** - テスト方法
 - **[開発ガイド](../setup/development.md)** - 実装詳細

@@ -141,5 +141,5 @@
 ## 関連ドキュメント
 
 - [開発ガイド](../setup/development.md) - 基本的な開発情報
-- [アイテム管理](../features/item-management.md) - 編集モードのテスト項目
+- [アイテム管理](../screens/admin-window.md#6-アイテム管理の詳細) - 編集モードのテスト項目
 - [ビルドとデプロイ](../setup/build-deploy.md) - ビルド後のテスト手順

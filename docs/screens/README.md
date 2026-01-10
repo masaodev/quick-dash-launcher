@@ -1,6 +1,30 @@
-# QuickDashLauncher 画面一覧
+# QuickDashLauncher 画面仕様
 
-このドキュメントは、QuickDashLauncherアプリケーションの画面構成の概要を示すインデックスです。
+このフォルダは、**QuickDashLauncherの仕様書の主軸**となる画面仕様を管理します。
+
+## このフォルダの役割
+
+### 📋 仕様書の主軸
+
+画面仕様は、以下の理由で仕様書の**中心的なドキュメント**として位置づけられます：
+
+1. **明確な分割基準** - 画面単位で分割されているため、網羅性が高い
+2. **具体的な操作手順** - ユーザーが実際に行う操作をステップごとに記載
+3. **UI仕様の詳細** - レイアウト、ボタン配置、入力項目などを明確に記載
+4. **完全性** - 全ての画面・モーダル・ダイアログを網羅
+
+### 🔗 他ドキュメントとの関係
+
+```
+画面仕様（screens/）← 主軸
+    ↓ 必要に応じて参照
+横断的機能（features/）
+    ↓ 技術詳細が必要な場合に参照
+技術実装（architecture/）
+```
+
+- **features/** へ参照 - 複数画面にまたがる機能の概念説明が必要な場合
+- **architecture/** へ参照 - 技術実装の詳細が必要な場合
 
 ## 執筆ガイド
 
@@ -41,7 +65,7 @@ QuickDashLauncher
 
 **[📊 画面遷移図](./screen-transitions.md)** - すべての画面の遷移フローと関係性を視覚的に表示
 
-## 画面一覧
+## 画面仕様書一覧
 
 ### ウィンドウ
 
@@ -81,33 +105,14 @@ QuickDashLauncher
 | **ウィンドウ設定エディター** | ウィンドウ設定（タイトル・位置・サイズ）の編集 | [register-modal.md](./register-modal.md#windowconfigeditor) |
 | **カスタムアイコンエディター** | カスタムアイコンの選択・削除 | [register-modal.md](./register-modal.md#customiconeditor) |
 
-## 仕様書一覧
-
-### ウィンドウ仕様書
-
-- [初回設定画面仕様書](./first-launch-setup.md) - 初回起動時の設定画面
-- [メインウィンドウ仕様書](./main-window.md) - メイン画面の詳細な仕様
-- [管理ウィンドウ仕様書](./admin-window.md) - 設定・管理画面の詳細な仕様
-- [ワークスペースウィンドウ仕様書](./workspace-window.md) - ワークスペース画面の詳細な仕様
-
-### モーダル仕様書
-
-- [アイテム登録・編集モーダル仕様書](./register-modal.md) - アイテム登録・編集機能
-- [ブックマークインポートモーダル仕様書](./bookmark-import-modal.md) - ブラウザブックマークのインポート機能
-- [グループアイテム選択モーダル仕様書](./group-item-selector-modal.md) - グループアイテムの選択機能
-- [アイコン取得進捗詳細モーダル仕様書](./icon-progress-detail-modal.md) - アイコン一括取得の結果表示
-
-### ダイアログ・コンポーネント仕様書
-
-- [共通ダイアログ仕様書](./dialogs.md) - AlertDialog/ConfirmDialog/FilePickerDialog
-- [右クリックメニュー仕様書](./context-menu.md) - コンテキストメニュー機能
-- [フォルダ取込オプションエディタ仕様書](./dir-options-editor.md) - フォルダ取込オプションの設定
-- [ホットキー入力仕様書](./hotkey-input.md) - ホットキー入力コンポーネント
-
 ## 関連ドキュメント
 
-- [アイテム管理](../features/item-management.md) - 編集機能の詳細
-- [キーボードショートカット](../features/keyboard-shortcuts.md) - ショートカット完全リスト
+### 横断的機能
+- [横断的機能一覧](../features/README.md) - 複数画面にまたがる機能の説明
 - [アイコンシステム](../features/icons.md) - アイコン取得・管理機能
+- [キーボードショートカット](../features/keyboard-shortcuts.md) - ショートカット完全リスト
 - [グループ起動](../features/group-launch.md) - グループ機能の詳細
-- [フォルダ取込](../features/folder-import.md) - フォルダ取込機能の詳細
+- [ワークスペース](../features/workspace.md) - ワークスペース機能全体
+
+### ドキュメント体系
+- [ドキュメント体系](../README.md) - 全体的なドキュメント構成の説明

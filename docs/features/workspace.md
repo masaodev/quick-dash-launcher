@@ -357,7 +357,6 @@
 
 ## 関連ドキュメント
 
-- **[ワークスペースウィンドウ画面仕様](../screens/workspace-window.md)** - 画面の詳細仕様
 - **[データファイル形式](../architecture/data-format.md)** - workspace.json形式
 - **[IPC通信](../architecture/ipc-channels.md)** - ワークスペース関連のIPCチャネル
 - **[キーボードショートカット](keyboard-shortcuts.md)** - 全ショートカット一覧

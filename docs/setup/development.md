@@ -630,9 +630,9 @@ QuickDashLauncherではCSS変数ベースの統一されたデザインシステ
 
 ## 関連ドキュメント
 
-- [アイテム管理](../features/item-management.md) - 編集モードの操作方法と技術実装
+- [アイテム管理](../screens/admin-window.md#6-アイテム管理の詳細) - 編集モードの操作方法と技術実装
 - [CSSデザインシステム](../architecture/css-design.md) - 統一されたスタイル管理システム
 - [ビルドとデプロイ](build-deploy.md) - ビルドシステムと配布方法
 - [テストガイド](../testing/README.md) - テストの実行方法
 - [アイコンシステム](../features/icons.md) - アイコン取得・管理システム
-- [フォルダ取込](../features/folder-import.md) - フォルダ内容のインポート機能
+- [フォルダ取込](../screens/register-modal.md#6-フォルダ取込アイテムの詳細) - フォルダ内容のインポート機能

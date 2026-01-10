@@ -82,7 +82,7 @@ Viteデベロップメントサーバーが起動し、ホットリロード付�
 1. 入力欄をクリックして希望するキー組み合わせを押下（例: `Alt+Space`）
 2. 「設定を完了」ボタンをクリック
 
-詳細は[アプリケーション設定](../features/settings.md)を参照してください。
+詳細は[アプリケーション設定](../screens/admin-window.md#7-設定機能の詳細)を参照してください。
 
 ---
 
@@ -129,7 +129,7 @@ dir,C:\Projects,depth=1,types=file
 dir,C:\Scripts,filter=*.ps1,prefix=Script
 ```
 
-詳細は[フォルダ取込](../features/folder-import.md)を参照。
+詳細は[フォルダ取込](../screens/register-modal.md#6-フォルダ取込アイテムの詳細)を参照。
 
 ### 主な違い
 
@@ -151,6 +151,6 @@ dir,C:\Scripts,filter=*.ps1,prefix=Script
 
 - [開発ガイド](development.md) - 詳細な開発情報
 - [ビルドとデプロイ](build-deploy.md) - ビルドシステムとデプロイ方法
-- [アイテム管理](../features/item-management.md) - 編集モードの使い方
+- [アイテム管理](../screens/admin-window.md#6-アイテム管理の詳細) - 編集モードの使い方
 - [アイコンシステム](../features/icons.md) - アイコン機能の詳細
-- [アプリケーション設定](../features/settings.md) - ホットキーや表示設定
+- [アプリケーション設定](../screens/admin-window.md#7-設定機能の詳細) - ホットキーや表示設定

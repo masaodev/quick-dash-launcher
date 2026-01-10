@@ -8,7 +8,7 @@
 - [共通ダイアログ](./dialogs.md) - AlertDialog/ConfirmDialog/FilePickerDialog
 - [アイコン取得進捗詳細モーダル](./icon-progress-detail-modal.md) - アイコン一括取得の結果表示
 - [ブックマークインポートモーダル](./bookmark-import-modal.md) - インポート機能詳細
-- [アイテム管理](../features/item-management.md) - 編集機能の詳細
+- [アイテム管理](./admin-window.md#6-アイテム管理の詳細) - 編集機能の詳細
 
 ## 1. 概要
 
@@ -912,7 +912,7 @@ Visual Studio Code - myproject
 - **デフォルトタブ**: `defaultFileTab` - 起動時のアクティブタブ
 - **タブ設定**: `dataFileTabs` - 各タブの名前と表示順序を管理する配列
 
-詳細は **[アプリケーション設定](../features/settings.md#タブ表示設定)** を参照してください。
+詳細は **[アプリケーション設定](./admin-window.md#711-タブ表示設定)** を参照してください。
 
 ### 4.24. Tab/Shift+Tabキー押下
 
@@ -960,7 +960,7 @@ Visual Studio Code - myproject
 - **タブ表示設定**: `showDataFileTabs` - Tabキーによるタブ切り替えの有効/無効
 - **タブ順序**: `tabOrder` - Tabキーでの循環順序
 
-詳細は **[アプリケーション設定](../features/settings.md#タブ表示設定)** を参照してください。
+詳細は **[アプリケーション設定](./admin-window.md#711-タブ表示設定)** を参照してください。
 
 ### 4.25. Escapeキー押下
 
@@ -1230,4 +1230,4 @@ interface ExecutionHistoryItem {
 
 #### 関連ドキュメント
 - [キーボードショートカット](../features/keyboard-shortcuts.md) - 検索モード切り替えの詳細
-- [アプリケーション設定](../features/settings.md) - 実行履歴の管理
+- [アプリケーション設定](./admin-window.md#7-設定機能の詳細) - 実行履歴の管理

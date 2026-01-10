@@ -2,47 +2,33 @@
 
 QuickDashLauncherプロジェクトのドキュメント一覧です。
 
-## ディレクトリ構成
+## ドキュメント体系
+
+このプロジェクトのドキュメントは以下の構造で整理されています：
 
 ```
 docs/
 ├── setup/          # セットアップ・開発
-├── features/       # 機能ドキュメント
-├── architecture/   # システム設計
-├── screens/        # 画面仕様
+├── screens/        # 画面仕様（主軸：具体的な操作・UI仕様）
+├── features/       # 横断的機能（補助：複数画面にまたがる機能・概念）
+├── architecture/   # システム設計（技術実装の詳細）
 └── testing/        # テスト関連
 ```
 
+### ドキュメントの役割分担
+
+- **screens/** - 画面単位の具体的な操作とUI仕様（仕様書の主軸）
+- **features/** - 複数画面にまたがる横断的な機能や概念の説明
+- **architecture/** - 開発者向けの技術実装・内部仕様
+- **参照方向** - screens → features → architecture の順に参照
+
 ## クイックリンク
 
-### セットアップ・開発
-- [はじめに](setup/getting-started.md)
-- [開発ガイド](setup/development.md)
-- [ビルド・デプロイ](setup/build-deploy.md)
-
-### 機能ドキュメント
-- [アイコンシステム](features/icons.md)
-- [グループ起動](features/group-launch.md)
-- [フォルダ取込](features/folder-import.md)
-- [ウィンドウ操作](features/window-operation.md)
-- [アプリケーション設定](features/settings.md)
-- [アイテム管理](features/item-management.md)
-- [ワークスペース](features/workspace.md)
-- [キーボードショートカット](features/keyboard-shortcuts.md)
-
-### アーキテクチャ
-- [システム概要](architecture/overview.md)
-- [データ形式](architecture/data-format.md)
-- [IPC通信](architecture/ipc-channels.md)
-- [ウィンドウ制御](architecture/window-control.md)
-- [CSSデザイン](architecture/css-design.md)
-
-### 画面仕様
-- [画面一覧](screens/README.md)
-
-### テスト
-- [テストガイド](testing/README.md)
-- [手動テスト](testing/manual-checklist.md)
+- **[セットアップ・開発](setup/)** - 環境構築・開発フロー・ビルド方法
+- **[画面仕様](screens/)** - 画面単位の操作とUI仕様（仕様書の主軸）
+- **[横断的機能](features/)** - 複数画面にまたがる機能・概念
+- **[アーキテクチャ](architecture/)** - 技術実装の詳細
+- **[テスト](testing/)** - テスト関連
 
 ---
 

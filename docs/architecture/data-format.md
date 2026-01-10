@@ -1013,7 +1013,7 @@ export interface SearchHistoryState {
 
 ## 関連ドキュメント
 
-- **[アイテム管理](../features/item-management.md)** - データファイルの編集機能
-- **[フォルダ取込](../features/folder-import.md)** - フォルダ取込機能の詳細
+- **[アイテム管理](../screens/admin-window.md#6-アイテム管理の詳細)** - データファイルの編集機能
+- **[フォルダ取込](../screens/register-modal.md#6-フォルダ取込アイテムの詳細)** - フォルダ取込機能の詳細
 - **[ワークスペース](../features/workspace.md)** - ワークスペース機能の使い方
 - **[開発ガイド](../setup/development.md)** - 開発時の注意事項

@@ -4,7 +4,7 @@
 
 - [画面一覧](./README.md) - 全画面構成の概要
 - [メインウィンドウ](./main-window.md) - メイン画面の詳細仕様
-- [アイテム管理](../features/item-management.md) - 編集機能の詳細
+- [アイテム管理](./admin-window.md#6-アイテム管理の詳細) - 編集機能の詳細
 - [IPC通信](../architecture/ipc-channels.md) - ブラウザ検出・ブックマーク解析API
 
 ## 1. 概要
