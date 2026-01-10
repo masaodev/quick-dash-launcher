@@ -1,5 +1,10 @@
 import React from 'react';
-import type { WorkspaceItem, WorkspaceGroup, ExecutionHistoryItem } from '@common/types';
+import type {
+  WorkspaceItem,
+  WorkspaceGroup,
+  ExecutionHistoryItem,
+  LauncherItem,
+} from '@common/types';
 
 import { useWorkspaceContextMenu, useWorkspaceItemGroups } from '../hooks/workspace';
 
@@ -177,7 +182,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
         const historyItem = JSON.parse(historyItemData);
 
         // ExecutionHistoryItemをLauncherItem形式に変換
-        const launcherItem: Record<string, unknown> = {
+        const launcherItem: Partial<LauncherItem> = {
           name: historyItem.itemName,
           path: historyItem.itemPath,
           type: historyItem.itemType,
@@ -212,7 +217,8 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
         }
 
         // ワークスペースにアイテムを追加（groupIdも渡す）
-        await window.electronAPI.workspaceAPI.addItem(launcherItem, groupId);
+        // name, path, typeは必ず設定されているため、LauncherItemとして扱える
+        await window.electronAPI.workspaceAPI.addItem(launcherItem as LauncherItem, groupId);
       } catch (error) {
         console.error('実行履歴からのアイテム追加に失敗:', error);
       }
@@ -453,7 +459,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
                       item.itemType === 'app'
                     ) {
                       // LauncherItem形式に変換して起動
-                      const launcherItem: Record<string, unknown> = {
+                      const launcherItem: Partial<LauncherItem> = {
                         name: item.itemName,
                         path: item.itemPath,
                         type: item.itemType,
@@ -487,7 +493,8 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
                         };
                       }
 
-                      window.electronAPI.openItem(launcherItem);
+                      // name, path, typeは必ず設定されているため、LauncherItemとして扱える
+                      window.electronAPI.openItem(launcherItem as LauncherItem);
                     } else if (item.itemType === 'windowOperation') {
                       // [ウィンドウ操作: タイトル] から タイトル を抽出
                       const match = item.itemPath.match(/^\[ウィンドウ操作: (.+)\]$/);
