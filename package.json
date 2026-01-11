@@ -106,6 +106,13 @@
       "dist/**/*",
       "assets/**/*"
     ],
+    "extraResources": [
+      {
+        "from": "resources/native",
+        "to": "resources/native",
+        "filter": ["**/*.dll"]
+      }
+    ],
     "icon": "assets/icon.png",
     "win": {
       "icon": "assets/icon.ico",
