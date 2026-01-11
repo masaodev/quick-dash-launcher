@@ -211,6 +211,9 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   const handleSaveChanges = () => {
     if (!hasUnsavedChanges) return;
 
+    // チェックボックスをデフォルトでONにリセット
+    setSortAndDedupChecked(true);
+
     // 保存時の確認ダイアログを表示
     setConfirmDialog({
       isOpen: true,
@@ -218,7 +221,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
       confirmText: '保存',
       showCheckbox: true,
       checkboxLabel: '整列・重複削除を実行',
-      checkboxChecked: sortAndDedupChecked,
+      checkboxChecked: true,
       onCheckboxChange: (checked: boolean) => {
         setSortAndDedupChecked(checked);
         // confirmDialogの状態も更新
