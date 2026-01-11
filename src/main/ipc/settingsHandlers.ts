@@ -92,6 +92,21 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
           }
         }
 
+        // workspacePositionMode等の設定時、ワークスペース位置を即座に反映
+        if (
+          key === 'workspacePositionMode' ||
+          key === 'workspacePositionX' ||
+          key === 'workspacePositionY'
+        ) {
+          const { getWorkspaceWindow, setWorkspacePosition } = await import(
+            '../workspaceWindowManager.js'
+          );
+          const workspace = getWorkspaceWindow();
+          if (workspace && !workspace.isDestroyed() && workspace.isVisible()) {
+            await setWorkspacePosition();
+          }
+        }
+
         return true;
       } catch (error) {
         logger.error({ error, key }, 'Failed to set setting');
@@ -136,6 +151,21 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
 
           // 背景のみ透過の場合はウィンドウは完全不透明、それ以外は設定値を使用
           workspace.setOpacity(backgroundTransparent ? 1.0 : opacity / 100);
+        }
+      }
+
+      // workspacePositionMode設定が含まれる場合、ワークスペース位置を即座に反映
+      if (
+        settings.workspacePositionMode !== undefined ||
+        settings.workspacePositionX !== undefined ||
+        settings.workspacePositionY !== undefined
+      ) {
+        const { getWorkspaceWindow, setWorkspacePosition } = await import(
+          '../workspaceWindowManager.js'
+        );
+        const workspace = getWorkspaceWindow();
+        if (workspace && !workspace.isDestroyed() && workspace.isVisible()) {
+          await setWorkspacePosition();
         }
       }
 

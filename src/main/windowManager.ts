@@ -569,6 +569,20 @@ export async function showMainWindow(startTime?: number): Promise<void> {
   await setWindowPosition();
   timer.log('position-set');
 
+  // ワークスペース自動表示の処理
+  const settingsService = await SettingsService.getInstance();
+  const autoShowWorkspace = await settingsService.get('autoShowWorkspace');
+
+  if (autoShowWorkspace) {
+    const { isWorkspaceWindowShown, showWorkspaceWindow } = await import(
+      './workspaceWindowManager.js'
+    );
+    if (!isWorkspaceWindowShown()) {
+      await showWorkspaceWindow();
+      timer.log('workspace-auto-shown');
+    }
+  }
+
   mainWindow.show();
   timer.log('window-shown');
 

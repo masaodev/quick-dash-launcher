@@ -2,6 +2,7 @@ import * as path from 'path';
 
 import { BrowserWindow, screen } from 'electron';
 import { windowLogger } from '@common/logger';
+import type { WorkspacePositionMode } from '@common/types';
 
 import { SettingsService } from './services/settingsService.js';
 
@@ -27,8 +28,8 @@ export async function createWorkspaceWindow(): Promise<BrowserWindow> {
     return workspaceWindow;
   }
 
-  // 画面右端に固定配置
-  const { width: screenWidth, height: screenHeight } = screen.getPrimaryDisplay().workAreaSize;
+  // 初期サイズの設定（位置は後で setWorkspacePosition() で設定）
+  const { height: screenHeight } = screen.getPrimaryDisplay().workAreaSize;
   const windowWidth = 380;
   const windowHeight = screenHeight;
 
@@ -43,11 +44,10 @@ export async function createWorkspaceWindow(): Promise<BrowserWindow> {
   workspaceWindow = new BrowserWindow({
     width: windowWidth,
     height: windowHeight,
-    x: screenWidth - windowWidth,
-    y: 0,
+    // x, y は指定しない（後で setWorkspacePosition() で設定）
     alwaysOnTop: false,
     frame: false, // フレームレスウィンドウ（ドラッグ可能にするため）
-    show: false,
+    show: false, // 位置設定後に表示
     resizable: false, // カスタムサイズ変更を使用するため無効化
     icon: path.join(__dirname, '../../assets/icon.ico'),
     transparent: true, // 透過対応を有効化
@@ -118,6 +118,14 @@ export async function createWorkspaceWindow(): Promise<BrowserWindow> {
     }
   });
 
+  // ウィンドウ移動時に位置を保存（fixedモード時のみ）
+  workspaceWindow.on('moved', () => {
+    void saveWorkspacePosition();
+  });
+
+  // 位置を設定
+  await setWorkspacePosition();
+
   windowLogger.info('ワークスペースウィンドウを作成しました');
   return workspaceWindow;
 }
@@ -133,6 +141,9 @@ export async function showWorkspaceWindow(): Promise<void> {
     }
 
     if (workspaceWindow) {
+      // 表示前に位置を設定（設定変更考慮）
+      await setWorkspacePosition();
+
       workspaceWindow.show();
       workspaceWindow.focus();
       isWorkspaceWindowVisible = true;
@@ -282,6 +293,92 @@ export function setWorkspaceModalMode(
         normalWorkspaceWindowBounds = null;
       }
     }
+  }
+}
+
+/**
+ * ワークスペースウィンドウを指定されたモードに応じた位置に配置する
+ * @param mode ワークスペース表示位置モード ('primaryLeft' | 'primaryRight' | 'fixed')
+ */
+export async function setWorkspacePosition(mode?: WorkspacePositionMode): Promise<void> {
+  if (!workspaceWindow || workspaceWindow.isDestroyed()) return;
+
+  const settingsService = await SettingsService.getInstance();
+  const positionMode = mode || (await settingsService.get('workspacePositionMode'));
+
+  const { width: screenWidth, height: screenHeight } = screen.getPrimaryDisplay().workAreaSize;
+  const bounds = workspaceWindow.getBounds();
+
+  switch (positionMode) {
+    case 'primaryLeft':
+      workspaceWindow.setPosition(0, 0);
+      workspaceWindow.setSize(bounds.width, screenHeight);
+      windowLogger.info('ワークスペースをプライマリディスプレイの左端に配置');
+      break;
+
+    case 'primaryRight':
+      workspaceWindow.setPosition(screenWidth - bounds.width, 0);
+      workspaceWindow.setSize(bounds.width, screenHeight);
+      windowLogger.info('ワークスペースをプライマリディスプレイの右端に配置');
+      break;
+
+    case 'fixed': {
+      const savedX = await settingsService.get('workspacePositionX');
+      const savedY = await settingsService.get('workspacePositionY');
+
+      // 初回起動時（0,0）は右端に配置
+      if (savedX === 0 && savedY === 0) {
+        workspaceWindow.setPosition(screenWidth - bounds.width, 0);
+        workspaceWindow.setSize(bounds.width, screenHeight);
+        const newBounds = workspaceWindow.getBounds();
+        await settingsService.set('workspacePositionX', newBounds.x);
+        await settingsService.set('workspacePositionY', newBounds.y);
+        windowLogger.info('初回起動: ワークスペースを右端に配置し位置を保存');
+      } else {
+        // 保存された位置が画面内にあるかチェック
+        const displays = screen.getAllDisplays();
+        const isOnScreen = displays.some((display) => {
+          const wb = display.workArea;
+          return (
+            savedX >= wb.x &&
+            savedX < wb.x + wb.width &&
+            savedY >= wb.y &&
+            savedY < wb.y + wb.height
+          );
+        });
+
+        if (!isOnScreen) {
+          // 画面外の場合は右端にフォールバック
+          windowLogger.warn('保存位置が画面外のため右端に配置');
+          workspaceWindow.setPosition(screenWidth - bounds.width, 0);
+          // 新しい位置を保存
+          const newBounds = workspaceWindow.getBounds();
+          await settingsService.set('workspacePositionX', newBounds.x);
+          await settingsService.set('workspacePositionY', newBounds.y);
+        } else {
+          workspaceWindow.setPosition(savedX, savedY);
+          windowLogger.info(`ワークスペースを固定位置に配置: (${savedX}, ${savedY})`);
+        }
+      }
+      break;
+    }
+  }
+}
+
+/**
+ * 現在のワークスペースウィンドウ位置を保存する（fixedモード時のみ）
+ */
+export async function saveWorkspacePosition(): Promise<void> {
+  if (!workspaceWindow || workspaceWindow.isDestroyed()) return;
+
+  const settingsService = await SettingsService.getInstance();
+  const positionMode = await settingsService.get('workspacePositionMode');
+
+  if (positionMode === 'fixed') {
+    const bounds = workspaceWindow.getBounds();
+    await settingsService.set('workspacePositionX', bounds.x);
+    await settingsService.set('workspacePositionY', bounds.y);
+    windowLogger.info(`ワークスペース位置を保存: (${bounds.x}, ${bounds.y})`);
   }
 }
 

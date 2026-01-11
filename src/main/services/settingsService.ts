@@ -57,6 +57,10 @@ export class SettingsService {
     windowPositionY: 0, // 固定位置のY座標
     workspaceOpacity: 100, // ワークスペースウィンドウの不透明度（デフォルト: 100%）
     workspaceBackgroundTransparent: false, // ワークスペースウィンドウの背景のみを透過（デフォルト: false）
+    autoShowWorkspace: false, // メイン画面表示時にワークスペースを自動表示（デフォルト: false）
+    workspacePositionMode: 'primaryRight', // ワークスペース表示位置モード（デフォルト: 右端）
+    workspacePositionX: 0, // ワークスペース固定位置のX座標
+    workspacePositionY: 0, // ワークスペース固定位置のY座標
   };
 
   private constructor() {

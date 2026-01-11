@@ -19,6 +19,14 @@ export type WindowPositionMode =
   | 'fixed'; // 固定位置に表示（手動で移動した位置を記憶）
 
 /**
+ * ワークスペースの表示位置モードを表す列挙型
+ */
+export type WorkspacePositionMode =
+  | 'primaryLeft' // プライマリディスプレイの左端に配置
+  | 'primaryRight' // プライマリディスプレイの右端に配置
+  | 'fixed'; // 固定位置に表示（手動で移動した位置を記憶）
+
+/**
  * アプリケーションの設定を管理するインターフェース
  * electron-storeを使用して永続化される
  */
@@ -67,4 +75,12 @@ export interface AppSettings {
   workspaceOpacity: number;
   /** ワークスペースウィンドウの背景のみを透過（デフォルト: false） */
   workspaceBackgroundTransparent: boolean;
+  /** メイン画面表示時にワークスペースを自動表示（デフォルト: false） */
+  autoShowWorkspace: boolean;
+  /** ワークスペースウィンドウの表示位置モード（デフォルト: 'primaryRight'） */
+  workspacePositionMode: WorkspacePositionMode;
+  /** 固定位置のX座標（workspacePositionMode='fixed'時に使用、デフォルト: 0） */
+  workspacePositionX: number;
+  /** 固定位置のY座標（workspacePositionMode='fixed'時に使用、デフォルト: 0） */
+  workspacePositionY: number;
 }

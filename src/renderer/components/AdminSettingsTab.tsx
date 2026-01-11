@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { AppSettings, WindowPositionMode } from '@common/types';
+import { AppSettings, WindowPositionMode, WorkspacePositionMode } from '@common/types';
 
 import { useDialogManager } from '../hooks/useDialogManager';
 import { useSettingsManager } from '../hooks/useSettingsManager';
@@ -361,6 +361,94 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
 
               <div className="settings-section">
                 <h3>ワークスペースウィンドウ</h3>
+
+                {/* 自動表示設定 */}
+                <div className="setting-item">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={editedSettings.autoShowWorkspace}
+                      onChange={(e) => handleSettingChange('autoShowWorkspace', e.target.checked)}
+                      disabled={isLoading}
+                    />
+                    メイン画面表示時にワークスペースを自動表示
+                  </label>
+                  <div className="setting-description">
+                    有効にすると、メイン画面を開いたときにワークスペースが非表示なら自動で表示します。
+                  </div>
+                </div>
+
+                {/* 表示位置設定 */}
+                <div className="setting-item">
+                  <label>表示位置:</label>
+                  <div className="position-options">
+                    <label className="position-option">
+                      <input
+                        type="radio"
+                        name="workspacePositionMode"
+                        value="primaryLeft"
+                        checked={editedSettings.workspacePositionMode === 'primaryLeft'}
+                        onChange={(e) =>
+                          handleSettingChange(
+                            'workspacePositionMode',
+                            e.target.value as WorkspacePositionMode
+                          )
+                        }
+                        disabled={isLoading}
+                      />
+                      <div className="option-content">
+                        <div className="option-title">プライマリディスプレイの左端</div>
+                        <div className="option-description">
+                          プライマリモニターの左端にワークスペースを固定配置します
+                        </div>
+                      </div>
+                    </label>
+                    <label className="position-option">
+                      <input
+                        type="radio"
+                        name="workspacePositionMode"
+                        value="primaryRight"
+                        checked={editedSettings.workspacePositionMode === 'primaryRight'}
+                        onChange={(e) =>
+                          handleSettingChange(
+                            'workspacePositionMode',
+                            e.target.value as WorkspacePositionMode
+                          )
+                        }
+                        disabled={isLoading}
+                      />
+                      <div className="option-content">
+                        <div className="option-title">プライマリディスプレイの右端（デフォルト）</div>
+                        <div className="option-description">
+                          プライマリモニターの右端にワークスペースを固定配置します（既存の動作）
+                        </div>
+                      </div>
+                    </label>
+                    <label className="position-option">
+                      <input
+                        type="radio"
+                        name="workspacePositionMode"
+                        value="fixed"
+                        checked={editedSettings.workspacePositionMode === 'fixed'}
+                        onChange={(e) =>
+                          handleSettingChange(
+                            'workspacePositionMode',
+                            e.target.value as WorkspacePositionMode
+                          )
+                        }
+                        disabled={isLoading}
+                      />
+                      <div className="option-content">
+                        <div className="option-title">固定位置（手動設定）</div>
+                        <div className="option-description">
+                          ワークスペースを移動した位置を記憶して、次回も同じ位置に表示します
+                        </div>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                {/* 透過度設定 */}
                 <div className="setting-item">
                   <label htmlFor="workspaceOpacity">透過度:</label>
                   <div className="opacity-control">

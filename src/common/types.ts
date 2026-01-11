@@ -36,7 +36,12 @@ export type {
 export type { RawDataLine, DataFileTab } from './types/data';
 
 // 設定関連の型
-export type { AppSettings, WindowPinMode, WindowPositionMode } from './types/settings';
+export type {
+  AppSettings,
+  WindowPinMode,
+  WindowPositionMode,
+  WorkspacePositionMode,
+} from './types/settings';
 
 // アイコン関連の型
 export type {
