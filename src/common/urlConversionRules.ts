@@ -110,15 +110,8 @@ export const conversionRules: ConversionRule[] = [
 function removeExistingPrefix(url: string): string {
   // Office URIスキーマのパターン（ms-excel:, ms-word:, ms-powerpoint: など）
   // 例: ms-excel:ofe|ofc|u|https://... → https://...
-  const prefixPattern = /^(ms-excel:|ms-word:|ms-powerpoint:)[^|]*\|/;
-
-  let cleanUrl = url;
-  // プレフィックスパターンを繰り返し削除（複数のパイプ記号に対応）
-  while (prefixPattern.test(cleanUrl)) {
-    cleanUrl = cleanUrl.replace(prefixPattern, '');
-  }
-
-  return cleanUrl;
+  // Office URIスキーマから始まり、https?:// の直前までをすべて削除
+  return url.replace(/^(ms-excel:|ms-word:|ms-powerpoint:).*?(?=https?:\/\/)/, '');
 }
 
 /**
