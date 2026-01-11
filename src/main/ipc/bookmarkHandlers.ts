@@ -14,6 +14,44 @@ import {
 } from '@common/ipcChannels.js';
 
 /**
+ * Chromeのプリファレンスファイルの型定義
+ */
+interface ChromePreferences {
+  profile?: {
+    name?: string;
+  };
+}
+
+/**
+ * ブラウザブックマークのノード型定義
+ */
+interface BookmarkNode {
+  type?: string;
+  url?: string;
+  name?: string;
+  children?: unknown[];
+}
+
+/**
+ * ブラウザブックマークファイルのデータ構造
+ */
+interface BookmarkData {
+  roots?: Record<string, unknown>;
+}
+
+/**
+ * オブジェクトがBookmarkNodeかどうかを判定する型ガード
+ */
+function isBookmarkNode(obj: unknown): obj is BookmarkNode {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    (typeof (obj as BookmarkNode).type === 'string' ||
+      typeof (obj as BookmarkNode).children !== 'undefined')
+  );
+}
+
+/**
  * プロファイルフォルダからプロファイル名を取得する
  * @param profilePath - プロファイルフォルダのパス
  * @returns プロファイル名
@@ -22,7 +60,7 @@ async function getProfileName(profilePath: string): Promise<string> {
   const prefsPath = path.join(profilePath, 'Preferences');
   try {
     const content = await fs.promises.readFile(prefsPath, 'utf-8');
-    const prefs = JSON.parse(content);
+    const prefs = JSON.parse(content) as ChromePreferences;
     return prefs.profile?.name || path.basename(profilePath);
   } catch {
     return path.basename(profilePath);
@@ -171,7 +209,7 @@ export async function parseBrowserBookmarks(filePath: string): Promise<SimpleBoo
       throw new Error('ファイルサイズが大きすぎます');
     }
 
-    const data = JSON.parse(content);
+    const data = JSON.parse(content) as BookmarkData;
 
     // 構造の検証
     if (!data.roots || typeof data.roots !== 'object') {
@@ -182,14 +220,16 @@ export async function parseBrowserBookmarks(filePath: string): Promise<SimpleBoo
     let index = 0;
 
     // 再帰的にブックマークを抽出
-    function traverse(node: Record<string, unknown>) {
+    function traverse(node: unknown) {
+      if (!isBookmarkNode(node)) return;
+
       if (node.type === 'url' && typeof node.url === 'string' && typeof node.name === 'string') {
         const url = node.url;
         // http/https のみ許可
         if (url.startsWith('http://') || url.startsWith('https://')) {
           bookmarks.push({
             id: `browser-bookmark-${index++}`,
-            name: (node.name as string).trim() || url,
+            name: node.name.trim() || url,
             url: url,
             checked: false,
           });
@@ -197,7 +237,7 @@ export async function parseBrowserBookmarks(filePath: string): Promise<SimpleBoo
       }
       if (node.children && Array.isArray(node.children)) {
         for (const child of node.children) {
-          traverse(child as Record<string, unknown>);
+          traverse(child);
         }
       }
     }
@@ -205,7 +245,7 @@ export async function parseBrowserBookmarks(filePath: string): Promise<SimpleBoo
     // roots内の各ノードを探索
     for (const key of ['bookmark_bar', 'other', 'synced']) {
       if (data.roots[key]) {
-        traverse(data.roots[key] as Record<string, unknown>);
+        traverse(data.roots[key]);
       }
     }
 
