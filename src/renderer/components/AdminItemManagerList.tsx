@@ -10,7 +10,7 @@ import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { RawDataLine, LauncherItem } from '@common/types';
 
 import ConfirmDialog from './ConfirmDialog';
-import EditModeContextMenu from './EditModeContextMenu';
+import AdminItemManagerContextMenu from './AdminItemManagerContextMenu';
 
 interface EditableRawItemListProps {
   rawLines: RawDataLine[];
@@ -23,7 +23,7 @@ interface EditableRawItemListProps {
   onDuplicateLines: (lines: RawDataLine[]) => void;
 }
 
-const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
+const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
   rawLines,
   selectedItems,
   onLineEdit,
@@ -772,7 +772,7 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
 
       {rawLines.length === 0 && <div className="no-items">データファイルに行がありません</div>}
 
-      <EditModeContextMenu
+      <AdminItemManagerContextMenu
         isVisible={contextMenu.isVisible}
         position={contextMenu.position}
         selectedLines={contextMenu.selectedLines}
@@ -793,4 +793,4 @@ const EditableRawItemList: React.FC<EditableRawItemListProps> = ({
   );
 };
 
-export default EditableRawItemList;
+export default AdminItemManagerList;

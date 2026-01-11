@@ -4,7 +4,7 @@ import { LauncherItem, GroupItem, AppItem, WindowInfo, WindowOperationItem } fro
 
 import { getTooltipText } from '../utils/tooltipTextGenerator';
 
-import ContextMenu from './ContextMenu';
+import LauncherContextMenu from './LauncherContextMenu';
 
 interface ItemListProps {
   items: AppItem[];
@@ -21,7 +21,7 @@ interface ItemListProps {
   onEditItem?: (item: AppItem) => void | Promise<void>;
 }
 
-const ItemList: React.FC<ItemListProps> = ({
+const LauncherItemList: React.FC<ItemListProps> = ({
   items,
   allItems: _allItems,
   selectedIndex,
@@ -199,7 +199,7 @@ const ItemList: React.FC<ItemListProps> = ({
           </div>
         );
       })}
-      <ContextMenu
+      <LauncherContextMenu
         isVisible={contextMenu.isVisible}
         position={contextMenu.position}
         item={contextMenu.item}
@@ -217,4 +217,4 @@ const ItemList: React.FC<ItemListProps> = ({
   );
 };
 
-export default ItemList;
+export default LauncherItemList;

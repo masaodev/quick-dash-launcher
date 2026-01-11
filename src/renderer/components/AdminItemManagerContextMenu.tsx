@@ -16,7 +16,7 @@ interface EditModeContextMenuProps {
   onDelete: (lines: RawDataLine[]) => void;
 }
 
-const EditModeContextMenu: React.FC<EditModeContextMenuProps> = ({
+const AdminItemManagerContextMenu: React.FC<EditModeContextMenuProps> = ({
   isVisible,
   position,
   selectedLines,
@@ -125,4 +125,4 @@ const EditModeContextMenu: React.FC<EditModeContextMenuProps> = ({
   );
 };
 
-export default EditModeContextMenu;
+export default AdminItemManagerContextMenu;

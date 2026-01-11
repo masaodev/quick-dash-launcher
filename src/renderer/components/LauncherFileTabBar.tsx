@@ -24,7 +24,7 @@ interface FileTabBarProps {
  * 複数のdata*.txtファイルをタブで切り替え可能にする
  * 1つのタブに複数のデータファイルを紐付けることが可能
  */
-const FileTabBar: React.FC<FileTabBarProps> = ({
+const LauncherFileTabBar: React.FC<FileTabBarProps> = ({
   dataFileTabs,
   activeTab,
   onTabClick,
@@ -87,4 +87,4 @@ const FileTabBar: React.FC<FileTabBarProps> = ({
   );
 };
 
-export default FileTabBar;
+export default LauncherFileTabBar;

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 
 import { HotkeyInput } from './HotkeyInput';
 import AlertDialog from './AlertDialog';
-import '../styles/components/FirstLaunchSetup.css';
+import '../styles/components/SetupFirstLaunch.css';
 
 interface FirstLaunchSetupProps {
   onComplete: (hotkey: string, autoLaunch: boolean) => void;
@@ -12,7 +12,7 @@ interface FirstLaunchSetupProps {
  * 初回起動時のホットキー設定画面コンポーネント
  * ユーザーがグローバルホットキーをカスタマイズできるようにする
  */
-export const FirstLaunchSetup: React.FC<FirstLaunchSetupProps> = ({ onComplete }) => {
+export const SetupFirstLaunch: React.FC<FirstLaunchSetupProps> = ({ onComplete }) => {
   const [hotkey, setHotkey] = useState<string>('Alt+Space');
   const [hotkeyValidation, setHotkeyValidation] = useState<{ isValid: boolean; reason?: string }>({
     isValid: true,

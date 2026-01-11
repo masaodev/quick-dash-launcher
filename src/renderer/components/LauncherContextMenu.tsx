@@ -18,7 +18,7 @@ interface ContextMenuProps {
   onAddToWorkspace?: (item: AppItem) => void | Promise<void>;
 }
 
-const ContextMenu: React.FC<ContextMenuProps> = ({
+const LauncherContextMenu: React.FC<ContextMenuProps> = ({
   isVisible,
   position,
   item,
@@ -266,4 +266,4 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
   );
 };
 
-export default ContextMenu;
+export default LauncherContextMenu;

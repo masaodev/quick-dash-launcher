@@ -1,7 +1,7 @@
 /* 共通コンポーネント クラス定義 */
 
 /* コンポーネント固有スタイルのインポート */
-@import './components/ContextMenu.css';
+@import './components/LauncherContextMenu.css';
 
 /* =========================
    ボタン共通スタイル

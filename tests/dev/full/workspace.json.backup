@@ -1,0 +1,20 @@
+{
+	"items": [
+		{
+			"id": "99fd6452-0505-4f1b-92c7-671ebdd0428c",
+			"order": 0,
+			"addedAt": 1768054156847,
+			"groupId": "069c654e-5846-4121-9288-169580a755fc"
+		}
+	],
+	"groups": [
+		{
+			"id": "069c654e-5846-4121-9288-169580a755fc",
+			"name": "グループ 1",
+			"color": "var(--color-primary)",
+			"order": 0,
+			"collapsed": false,
+			"createdAt": 1768054149130
+		}
+	]
+}

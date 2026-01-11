@@ -1,0 +1,15 @@
+{
+	"history": [
+		{
+			"id": "a22ba401-a151-4cf5-b284-a28fea66aa69",
+			"itemName": "メモ帳（中央配置）",
+			"itemPath": "notepad.exe",
+			"itemType": "app",
+			"executedAt": 1768054150945,
+			"processName": "Notepad.exe",
+			"windowWidth": 800,
+			"windowHeight": 600,
+			"moveToActiveMonitorCenter": true
+		}
+	]
+}

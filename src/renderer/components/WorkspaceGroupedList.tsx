@@ -10,7 +10,7 @@ import { useWorkspaceContextMenu, useWorkspaceItemGroups } from '../hooks/worksp
 
 import WorkspaceGroupHeader from './WorkspaceGroupHeader';
 import WorkspaceItemCard from './WorkspaceItemCard';
-import ExecutionHistoryItemCard from './ExecutionHistoryItemCard';
+import WorkspaceExecutionHistoryCard from './WorkspaceExecutionHistoryCard';
 import WorkspaceContextMenu from './WorkspaceContextMenu';
 import WorkspaceGroupContextMenu from './WorkspaceGroupContextMenu';
 
@@ -446,7 +446,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
           {!historyCollapsed && (
             <div className="workspace-group-items">
               {executionHistory.map((historyItem) => (
-                <ExecutionHistoryItemCard
+                <WorkspaceExecutionHistoryCard
                   key={historyItem.id}
                   item={historyItem}
                   onLaunch={(item) => {

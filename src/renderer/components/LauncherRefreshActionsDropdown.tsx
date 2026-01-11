@@ -1,19 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-interface SettingsDropdownProps {
-  onOpenBasicSettings: () => void;
-  onOpenItemManagement: () => void;
-  onToggleWorkspace: () => void;
-  onQuitApp: () => void;
-  isEditMode: boolean;
+interface RefreshActionsDropdownProps {
+  onReload: () => void;
+  onFetchMissingIcons: () => void;
+  onFetchMissingIconsCurrentTab: () => void;
+  onRefreshAll: () => void;
 }
 
-const SettingsDropdown: React.FC<SettingsDropdownProps> = ({
-  onOpenBasicSettings,
-  onOpenItemManagement,
-  onToggleWorkspace,
-  onQuitApp,
-  isEditMode: _isEditMode,
+const LauncherRefreshActionsDropdown: React.FC<RefreshActionsDropdownProps> = ({
+  onReload,
+  onFetchMissingIcons,
+  onFetchMissingIconsCurrentTab,
+  onRefreshAll,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -41,29 +39,29 @@ const SettingsDropdown: React.FC<SettingsDropdownProps> = ({
 
   return (
     <div className="settings-dropdown" ref={dropdownRef}>
-      <button className="action-btn" onClick={() => setIsOpen(!isOpen)} title="設定">
-        ⚙️
+      <button className="action-btn" onClick={() => setIsOpen(!isOpen)} title="更新・取得">
+        🔄
       </button>
       {isOpen && (
         <div className="dropdown-menu">
-          <button
-            className="dropdown-item"
-            onClick={() => handleMenuItemClick(onOpenBasicSettings)}
-          >
-            ⚙️ 基本設定
+          <button className="dropdown-item" onClick={() => handleMenuItemClick(onReload)}>
+            📋 データ再読み込み
           </button>
           <button
             className="dropdown-item"
-            onClick={() => handleMenuItemClick(onOpenItemManagement)}
+            onClick={() => handleMenuItemClick(onFetchMissingIconsCurrentTab)}
           >
-            ✏️ アイテム管理
+            🎨 アイコン取得（現在のタブ）
           </button>
-          <button className="dropdown-item" onClick={() => handleMenuItemClick(onToggleWorkspace)}>
-            🗂️ ワークスペースを表示
+          <button
+            className="dropdown-item"
+            onClick={() => handleMenuItemClick(onFetchMissingIcons)}
+          >
+            🎨 アイコン取得（全タブ）
           </button>
           <div className="dropdown-divider"></div>
-          <button className="dropdown-item" onClick={() => handleMenuItemClick(onQuitApp)}>
-            🚪 アプリを終了
+          <button className="dropdown-item" onClick={() => handleMenuItemClick(onRefreshAll)}>
+            🔄 完全リフレッシュ
           </button>
         </div>
       )}
@@ -71,4 +69,4 @@ const SettingsDropdown: React.FC<SettingsDropdownProps> = ({
   );
 };
 
-export default SettingsDropdown;
+export default LauncherRefreshActionsDropdown;

@@ -20,9 +20,9 @@
 
 | 項目 | 内容 |
 |------|------|
-| **ファイル名** | `src/renderer/components/FirstLaunchSetup.tsx` |
-| **スタイルファイル** | `src/renderer/styles/components/FirstLaunchSetup.css` |
-| **コンポーネント名** | `FirstLaunchSetup` |
+| **ファイル名** | `src/renderer/components/SetupFirstLaunch.tsx` |
+| **スタイルファイル** | `src/renderer/styles/components/SetupFirstLaunch.css` |
+| **コンポーネント名** | `SetupFirstLaunch` |
 | **表示条件** | `hotkey`が空文字列または未設定の場合 |
 | **画面タイプ** | フルスクリーン初期設定画面 |
 | **親コンポーネント** | `App.tsx` |
@@ -200,7 +200,7 @@
 - **ボタン配置**: 下部中央に「設定を完了」ボタン1つ
 
 ### スタイルファイル
-- `src/renderer/styles/components/FirstLaunchSetup.css`
+- `src/renderer/styles/components/SetupFirstLaunch.css`
 
 ## 8. 関連コンポーネント
 

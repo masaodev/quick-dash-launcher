@@ -7,7 +7,7 @@ interface ExecutionHistoryItemCardProps {
   onDragStart: (e: React.DragEvent) => void;
 }
 
-const ExecutionHistoryItemCard: React.FC<ExecutionHistoryItemCardProps> = ({
+const WorkspaceExecutionHistoryCard: React.FC<ExecutionHistoryItemCardProps> = ({
   item,
   onLaunch,
   onDragStart,
@@ -110,4 +110,4 @@ const ExecutionHistoryItemCard: React.FC<ExecutionHistoryItemCardProps> = ({
   );
 };
 
-export default ExecutionHistoryItemCard;
+export default WorkspaceExecutionHistoryCard;

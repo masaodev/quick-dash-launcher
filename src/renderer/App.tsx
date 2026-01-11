@@ -12,14 +12,14 @@ import {
 } from '@common/types';
 import { isWindowInfo, isGroupItem, isWindowOperationItem } from '@common/utils/typeGuards';
 
-import SearchBox from './components/SearchBox';
-import ItemList from './components/ItemList';
-import ActionButtons from './components/ActionButtons';
+import LauncherSearchBox from './components/LauncherSearchBox';
+import LauncherItemList from './components/LauncherItemList';
+import LauncherActionButtons from './components/LauncherActionButtons';
 import RegisterModal from './components/RegisterModal';
-import IconProgressBar from './components/IconProgressBar';
-import FileTabBar from './components/FileTabBar';
-import ItemCountDisplay from './components/ItemCountDisplay';
-import { FirstLaunchSetup } from './components/FirstLaunchSetup';
+import LauncherIconProgressBar from './components/LauncherIconProgressBar';
+import LauncherFileTabBar from './components/LauncherFileTabBar';
+import LauncherItemCountDisplay from './components/LauncherItemCountDisplay';
+import { SetupFirstLaunch } from './components/SetupFirstLaunch';
 import AlertDialog from './components/AlertDialog';
 import ConfirmDialog from './components/ConfirmDialog';
 import { filterItems } from './utils/dataParser';
@@ -618,21 +618,21 @@ const App: React.FC = () => {
 
   // 初回起動の場合は設定画面を表示
   if (isFirstLaunch) {
-    return <FirstLaunchSetup onComplete={handleFirstLaunchComplete} />;
+    return <SetupFirstLaunch onComplete={handleFirstLaunchComplete} />;
   }
 
   return (
     <div className={`app ${isDraggingOver ? 'dragging-over' : ''}`} onKeyDown={handleKeyDown}>
       <>
         <div className="header">
-          <SearchBox
+          <LauncherSearchBox
             ref={searchInputRef}
             value={searchQuery}
             onChange={handleSearch}
             onKeyDown={handleKeyDown}
             searchMode={searchMode}
           />
-          <ActionButtons
+          <LauncherActionButtons
             onReload={loadItems}
             onFetchMissingIcons={handleFetchMissingIcons}
             onFetchMissingIconsCurrentTab={handleFetchMissingIconsCurrentTab}
@@ -649,7 +649,7 @@ const App: React.FC = () => {
         </div>
 
         {showDataFileTabs && searchMode === 'normal' && (
-          <FileTabBar
+          <LauncherFileTabBar
             dataFileTabs={dataFileTabs}
             activeTab={activeTab}
             onTabClick={handleTabClickWrapper}
@@ -661,11 +661,11 @@ const App: React.FC = () => {
 
         {!showDataFileTabs && (
           <div className="search-info-bar">
-            <ItemCountDisplay count={filteredItems.length} />
+            <LauncherItemCountDisplay count={filteredItems.length} />
           </div>
         )}
 
-        <ItemList
+        <LauncherItemList
           items={filteredItems}
           allItems={mainItems}
           selectedIndex={selectedIndex}
@@ -681,7 +681,7 @@ const App: React.FC = () => {
         />
 
         {progressState.isActive && progressState.progress && (
-          <IconProgressBar progress={progressState.progress} onClose={resetProgress} />
+          <LauncherIconProgressBar progress={progressState.progress} onClose={resetProgress} />
         )}
 
         <RegisterModal

@@ -125,6 +125,7 @@ npm run dev:test  # リモートデバッグポート有効で起動
 - **[IPC通信](docs/architecture/ipc-channels.md)** - プロセス間通信
 - **[ウィンドウ制御](docs/architecture/window-control.md)** - ウィンドウ管理
 - **[CSSデザイン](docs/architecture/css-design.md)** - スタイル管理
+- **[コンポーネント命名規則](docs/architecture/component-naming.md)** - プレフィックス・サフィックス体系
 
 ### 画面仕様
 - **[画面一覧](docs/screens/README.md)** - 全画面の仕様書インデックス

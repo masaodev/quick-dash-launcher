@@ -7,7 +7,7 @@ interface ArchivedGroupCardProps {
   onDelete: (groupId: string, groupName: string) => void;
 }
 
-const ArchivedGroupCard: React.FC<ArchivedGroupCardProps> = ({ group, onRestore, onDelete }) => {
+const AdminArchiveCard: React.FC<ArchivedGroupCardProps> = ({ group, onRestore, onDelete }) => {
   /**
    * タイムスタンプを日時文字列に変換
    */
@@ -55,4 +55,4 @@ const ArchivedGroupCard: React.FC<ArchivedGroupCardProps> = ({ group, onRestore,
   );
 };
 
-export default ArchivedGroupCard;
+export default AdminArchiveCard;

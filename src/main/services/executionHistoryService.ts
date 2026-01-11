@@ -194,7 +194,8 @@ export class ExecutionHistoryService {
           historyItem.windowHeight = launcherItem.windowConfig.height;
           historyItem.virtualDesktopNumber = launcherItem.windowConfig.virtualDesktopNumber;
           historyItem.activateWindow = launcherItem.windowConfig.activateWindow;
-          historyItem.moveToActiveMonitorCenter = launcherItem.windowConfig.moveToActiveMonitorCenter;
+          historyItem.moveToActiveMonitorCenter =
+            launcherItem.windowConfig.moveToActiveMonitorCenter;
         }
 
         filteredHistory.unshift(historyItem);

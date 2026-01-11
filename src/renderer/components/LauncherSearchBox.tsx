@@ -8,7 +8,7 @@ interface SearchBoxProps {
   searchMode?: SearchMode;
 }
 
-const SearchBox = forwardRef<HTMLInputElement, SearchBoxProps>(
+const LauncherSearchBox = forwardRef<HTMLInputElement, SearchBoxProps>(
   ({ value, onChange, onKeyDown, searchMode = 'normal' }, ref) => {
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -56,6 +56,6 @@ const SearchBox = forwardRef<HTMLInputElement, SearchBoxProps>(
   }
 );
 
-SearchBox.displayName = 'SearchBox';
+LauncherSearchBox.displayName = 'LauncherSearchBox';
 
-export default SearchBox;
+export default LauncherSearchBox;

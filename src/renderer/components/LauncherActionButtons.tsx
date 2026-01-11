@@ -1,8 +1,8 @@
 import React from 'react';
 import type { WindowPinMode } from '@common/types';
 
-import SettingsDropdown from './SettingsDropdown';
-import RefreshActionsDropdown from './RefreshActionsDropdown';
+import LauncherSettingsDropdown from './LauncherSettingsDropdown';
+import LauncherRefreshActionsDropdown from './LauncherRefreshActionsDropdown';
 
 interface ActionButtonsProps {
   onReload: () => void;
@@ -18,7 +18,7 @@ interface ActionButtonsProps {
   isEditMode: boolean;
 }
 
-const ActionButtons: React.FC<ActionButtonsProps> = ({
+const LauncherActionButtons: React.FC<ActionButtonsProps> = ({
   onReload,
   onFetchMissingIcons,
   onFetchMissingIconsCurrentTab,
@@ -61,7 +61,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
       <button className="action-btn" onClick={onOpenRegisterModal} title="アイテムを登録">
         ➕
       </button>
-      <RefreshActionsDropdown
+      <LauncherRefreshActionsDropdown
         onReload={onReload}
         onFetchMissingIcons={onFetchMissingIcons}
         onFetchMissingIconsCurrentTab={onFetchMissingIconsCurrentTab}
@@ -70,7 +70,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
       <button className={pinConfig.className} onClick={onTogglePin} title={pinConfig.title}>
         {pinConfig.emoji}
       </button>
-      <SettingsDropdown
+      <LauncherSettingsDropdown
         onOpenBasicSettings={onOpenBasicSettings}
         onOpenItemManagement={onOpenItemManagement}
         onToggleWorkspace={onToggleWorkspace}
@@ -81,4 +81,4 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   );
 };
 
-export default ActionButtons;
+export default LauncherActionButtons;

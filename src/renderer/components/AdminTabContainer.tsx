@@ -1,9 +1,9 @@
 import React from 'react';
 import { RawDataLine, AppSettings, DataFileTab } from '@common/types';
 
-import SettingsTab from './SettingsTab';
-import EditModeView from './EditModeView';
-import ArchiveTab from './ArchiveTab';
+import AdminSettingsTab from './AdminSettingsTab';
+import AdminItemManagerView from './AdminItemManagerView';
+import AdminArchiveTab from './AdminArchiveTab';
 import AdminOtherTab from './AdminOtherTab';
 
 interface AdminTabContainerProps {
@@ -72,10 +72,10 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
 
       <div className="admin-content">
         {activeTab === 'settings' && settings && (
-          <SettingsTab settings={settings} onSave={onSettingsSave} />
+          <AdminSettingsTab settings={settings} onSave={onSettingsSave} />
         )}
         {activeTab === 'edit' && (
-          <EditModeView
+          <AdminItemManagerView
             rawLines={rawLines}
             onRawDataSave={onRawDataSave}
             onExitEditMode={handleExitEditMode}
@@ -85,7 +85,7 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
             dataFileLabels={dataFileLabels}
           />
         )}
-        {activeTab === 'archive' && <ArchiveTab />}
+        {activeTab === 'archive' && <AdminArchiveTab />}
         {activeTab === 'other' && <AdminOtherTab />}
       </div>
     </div>

@@ -8,8 +8,8 @@ interface ItemCountDisplayProps {
  * アイテム数を表示する専用コンポーネント
  * タブ内やステータスバー等で使用される
  */
-const ItemCountDisplay: React.FC<ItemCountDisplayProps> = ({ count }) => {
+const LauncherItemCountDisplay: React.FC<ItemCountDisplayProps> = ({ count }) => {
   return <span className="item-count-display">{count}件</span>;
 };
 
-export default ItemCountDisplay;
+export default LauncherItemCountDisplay;

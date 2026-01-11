@@ -14,7 +14,7 @@ interface SettingsTabProps {
   onSave: (settings: AppSettings) => Promise<void>;
 }
 
-const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
+const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
   const [editedSettings, setEditedSettings] = useState<AppSettings>(settings);
   const [dataFiles, setDataFiles] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('basic');
@@ -765,4 +765,4 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
   );
 };
 
-export default SettingsTab;
+export default AdminSettingsTab;

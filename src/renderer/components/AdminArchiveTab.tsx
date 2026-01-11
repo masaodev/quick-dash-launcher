@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import type { ArchivedWorkspaceGroup } from '@common/types';
 
-import ArchivedGroupCard from './ArchivedGroupCard';
+import AdminArchiveCard from './AdminArchiveCard';
 
-const ArchiveTab: React.FC = () => {
+const AdminArchiveTab: React.FC = () => {
   const [archivedGroups, setArchivedGroups] = useState<ArchivedWorkspaceGroup[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -86,7 +86,7 @@ const ArchiveTab: React.FC = () => {
         ) : (
           <div className="archived-groups-list">
             {sortedGroups.map((group) => (
-              <ArchivedGroupCard
+              <AdminArchiveCard
                 key={group.id}
                 group={group}
                 onRestore={handleRestore}
@@ -100,4 +100,4 @@ const ArchiveTab: React.FC = () => {
   );
 };
 
-export default ArchiveTab;
+export default AdminArchiveTab;

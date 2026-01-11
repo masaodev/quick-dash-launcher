@@ -2,14 +2,14 @@ import React, { useState } from 'react';
 import { IconProgress } from '@common/types';
 
 import IconProgressDetailModal from './IconProgressDetailModal';
-import '../styles/components/IconProgress.css';
+import '../styles/components/LauncherIconProgress.css';
 
 interface IconProgressBarProps {
   progress: IconProgress;
   onClose: () => void;
 }
 
-const IconProgressBar: React.FC<IconProgressBarProps> = ({ progress, onClose }) => {
+const LauncherIconProgressBar: React.FC<IconProgressBarProps> = ({ progress, onClose }) => {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   const formatElapsedTime = (startTime: number, completedTime?: number): string => {
@@ -141,4 +141,4 @@ const IconProgressBar: React.FC<IconProgressBarProps> = ({ progress, onClose }) 
   );
 };
 
-export default IconProgressBar;
+export default LauncherIconProgressBar;

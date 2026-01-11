@@ -3,7 +3,7 @@ import { RawDataLine, SimpleBookmarkItem, DataFileTab } from '@common/types';
 import { convertRegisterItemToRawDataLine, type RegisterItem } from '@common/utils/dataConverters';
 import { parseCSVLine } from '@common/utils/csvParser';
 
-import EditableRawItemList from './EditableRawItemList';
+import AdminItemManagerList from './AdminItemManagerList';
 import RegisterModal from './RegisterModal';
 import BookmarkImportModal from './BookmarkImportModal';
 import ConfirmDialog from './ConfirmDialog';
@@ -18,7 +18,7 @@ interface EditModeViewProps {
   dataFileLabels?: Record<string, string>;
 }
 
-const EditModeView: React.FC<EditModeViewProps> = ({
+const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   rawLines,
   onRawDataSave,
   onExitEditMode,
@@ -661,7 +661,7 @@ const EditModeView: React.FC<EditModeViewProps> = ({
         </div>
       </div>
 
-      <EditableRawItemList
+      <AdminItemManagerList
         rawLines={filteredLines}
         selectedItems={selectedItems}
         onLineEdit={handleLineEdit}
@@ -720,4 +720,4 @@ const EditModeView: React.FC<EditModeViewProps> = ({
   );
 };
 
-export default EditModeView;
+export default AdminItemManagerView;
