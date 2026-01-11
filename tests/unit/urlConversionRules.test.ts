@@ -3,7 +3,7 @@ import {
   findMatchingRule,
   applyConversionPrefix,
   conversionRules,
-} from '../urlConversionRules';
+} from '@common/urlConversionRules';
 
 describe('urlConversionRules', () => {
   describe('findMatchingRule', () => {
