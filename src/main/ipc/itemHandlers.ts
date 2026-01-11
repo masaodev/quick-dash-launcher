@@ -44,7 +44,7 @@ async function openItem(
     // ウィンドウ設定が存在する場合、先にウィンドウ検索を試行
     const activationResult = await tryActivateWindow(
       item.windowConfig,
-      item.windowTitle,
+      undefined,
       item.name,
       itemLogger
     );

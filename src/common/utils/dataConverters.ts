@@ -5,7 +5,7 @@
  * これらの変換ロジックは以前、複数のコンポーネントに重複していました。
  */
 
-import type { RawDataLine, LauncherItem, DataFileTab } from '../types';
+import type { RawDataLine, LauncherItem, DataFileTab, WindowConfig } from '../types';
 
 import { parseCSVLine, escapeCSV } from './csvParser';
 import { parseWindowConfig, serializeWindowConfig } from './windowConfigUtils';
@@ -36,9 +36,7 @@ export interface RegisterItem {
   folderProcessing?: 'folder' | 'expand';
   icon?: string;
   customIcon?: string;
-  /** @deprecated windowConfigを使用してください */
-  windowTitle?: string;
-  windowConfig?: import('../types').WindowConfig;
+  windowConfig?: WindowConfig;
   itemCategory: 'item' | 'dir' | 'group' | 'window';
   dirOptions?: DirOptions;
   groupItemNames?: string[];
@@ -184,8 +182,6 @@ export async function convertRawDataLineToRegisterItem(
       targetFile: line.sourceFile,
       folderProcessing: itemType === 'folder' ? 'folder' : undefined,
       customIcon: customIcon || line.customIcon,
-      // 後方互換性のため両方設定
-      windowTitle: windowConfig?.title,
       windowConfig: windowConfig ?? undefined,
       itemCategory: 'item',
     };

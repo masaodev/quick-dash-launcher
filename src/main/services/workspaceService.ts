@@ -245,7 +245,6 @@ export class WorkspaceService {
           addedAt: Date.now(),
           groupId: groupId,
           windowConfig: launcherItem.windowConfig,
-          windowTitle: launcherItem.windowTitle, // 後方互換性のため
         };
       }
 
