@@ -5,10 +5,11 @@ import { dataLogger } from '@common/logger';
 import { FileUtils } from '@common/utils/fileUtils';
 import { parseCSVLine, escapeCSV } from '@common/utils/csvParser';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
-import { parseWindowConfig } from '@common/utils/windowConfigUtils';
+import { parseWindowConfig, serializeWindowConfig } from '@common/utils/windowConfigUtils';
 import { RawDataLine, LauncherItem, GroupItem, WindowOperationItem, AppItem } from '@common/types';
 import { isWindowInfo, isWindowOperationItem } from '@common/utils/typeGuards';
 import { parseWindowOperationDirective } from '@common/utils/directiveUtils';
+import { RegisterItem } from '@common/utils/dataConverters';
 import {
   GET_CONFIG_FOLDER,
   GET_DATA_FILES,
@@ -64,8 +65,6 @@ function parseCSVLineToItem(
     type: detectItemTypeSync(itemPath),
     args: argsField && argsField.trim() ? argsField : undefined,
     customIcon: customIconField && customIconField.trim() ? customIconField : undefined,
-    // 後方互換性のため、windowTitleも設定（deprecatedだが既存コードで使用される可能性）
-    windowTitle: windowConfig?.title,
     windowConfig: windowConfig ?? undefined,
     sourceFile,
     lineNumber: lineNumber,
@@ -411,41 +410,6 @@ async function saveRawDataFiles(configFolder: string, rawLines: RawDataLine[]): 
   }
 }
 
-interface RegisterItem {
-  name: string;
-  path: string;
-  type: 'url' | 'file' | 'folder' | 'app' | 'customUri';
-  args?: string;
-  targetTab: string; // データファイル名（例: 'data.txt', 'data2.txt'）※複数ファイルタブの場合はfiles[0]を指定
-  targetFile?: string; // 実際の保存先ファイル（タブに複数ファイルがある場合に使用）
-  folderProcessing?: 'folder' | 'expand';
-  icon?: string;
-  customIcon?: string;
-  windowTitle?: string; // ウィンドウタイトル検索用の文字列
-  itemCategory: 'item' | 'dir' | 'group' | 'window';
-  // フォルダ取込アイテムオプション
-  dirOptions?: {
-    depth: number;
-    types: 'file' | 'folder' | 'both';
-    filter?: string;
-    exclude?: string;
-    prefix?: string;
-    suffix?: string;
-  };
-  // グループアイテムオプション
-  groupItemNames?: string[];
-  // ウィンドウ操作アイテムオプション
-  windowOperationConfig?: {
-    windowTitle: string;
-    x?: number;
-    y?: number;
-    width?: number;
-    height?: number;
-    virtualDesktopNumber?: number;
-    activateWindow?: boolean;
-  };
-}
-
 /**
  * 複数のアイテムを設定ファイルに登録する（各タブ対応）
  * 単一アイテム、フォルダ取込アイテム、グループアイテムに対応し、targetTabで指定されたデータファイルに追記する
@@ -584,9 +548,10 @@ async function registerItems(configFolder: string, items: RegisterItem[]): Promi
           line += ',';
         }
 
-        // ウィンドウタイトルフィールドを追加
-        if (item.windowTitle) {
-          line += `,${escapeCSV(item.windowTitle)}`;
+        // ウィンドウ設定フィールドを追加
+        const windowConfigStr = serializeWindowConfig(item.windowConfig);
+        if (windowConfigStr) {
+          line += `,${escapeCSV(windowConfigStr)}`;
         }
 
         return line;

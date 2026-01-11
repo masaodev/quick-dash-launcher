@@ -191,8 +191,11 @@ const LauncherItemList: React.FC<ItemListProps> = ({
               {isGroup && (
                 <span className="group-count"> ({(item as GroupItem).itemNames.length}個)</span>
               )}
-              {isLauncherItem(item) && item.windowTitle && (
-                <span className="window-title-badge" title={`ウィンドウ検索: ${item.windowTitle}`}>
+              {isLauncherItem(item) && item.windowConfig?.title && (
+                <span
+                  className="window-title-badge"
+                  title={`ウィンドウ検索: ${item.windowConfig.title}`}
+                >
                   🔍
                 </span>
               )}
