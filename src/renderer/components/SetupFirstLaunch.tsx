@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 
 import { HotkeyInput } from './HotkeyInput';
 import AlertDialog from './AlertDialog';
+
 import '../styles/components/SetupFirstLaunch.css';
 import { logError } from '../utils/debug';
 

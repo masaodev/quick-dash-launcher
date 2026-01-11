@@ -1,4 +1,5 @@
 import type { WorkspaceItem, WorkspaceGroup } from '@common/types';
+
 import { logError } from '../../utils/debug';
 
 /**

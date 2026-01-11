@@ -98,9 +98,8 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
           key === 'workspacePositionX' ||
           key === 'workspacePositionY'
         ) {
-          const { getWorkspaceWindow, setWorkspacePosition } = await import(
-            '../workspaceWindowManager.js'
-          );
+          const { getWorkspaceWindow, setWorkspacePosition } =
+            await import('../workspaceWindowManager.js');
           const workspace = getWorkspaceWindow();
           if (workspace && !workspace.isDestroyed() && workspace.isVisible()) {
             await setWorkspacePosition();
@@ -160,9 +159,8 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
         settings.workspacePositionX !== undefined ||
         settings.workspacePositionY !== undefined
       ) {
-        const { getWorkspaceWindow, setWorkspacePosition } = await import(
-          '../workspaceWindowManager.js'
-        );
+        const { getWorkspaceWindow, setWorkspacePosition } =
+          await import('../workspaceWindowManager.js');
         const workspace = getWorkspaceWindow();
         if (workspace && !workspace.isDestroyed() && workspace.isVisible()) {
           await setWorkspacePosition();

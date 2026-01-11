@@ -9,9 +9,10 @@ import {
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { RawDataLine, LauncherItem } from '@common/types';
 
+import { logError } from '../utils/debug';
+
 import ConfirmDialog from './ConfirmDialog';
 import AdminItemManagerContextMenu from './AdminItemManagerContextMenu';
-import { logError } from '../utils/debug';
 
 interface EditableRawItemListProps {
   rawLines: RawDataLine[];

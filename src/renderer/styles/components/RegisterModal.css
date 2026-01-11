@@ -1,6 +1,10 @@
 /* RegisterModal関連のスタイル */
 .register-modal {
   padding: var(--spacing-xl);
+  max-width: 750px;
+  width: 90%;
+  min-height: 800px;
+  max-height: 85vh;
 }
 
 .register-modal h2 {

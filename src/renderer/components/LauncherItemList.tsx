@@ -3,9 +3,9 @@ import { isLauncherItem } from '@common/utils/typeGuards';
 import { LauncherItem, GroupItem, AppItem, WindowInfo, WindowOperationItem } from '@common/types';
 
 import { getTooltipText } from '../utils/tooltipTextGenerator';
+import { logError } from '../utils/debug';
 
 import LauncherContextMenu from './LauncherContextMenu';
-import { logError } from '../utils/debug';
 
 interface ItemListProps {
   items: AppItem[];

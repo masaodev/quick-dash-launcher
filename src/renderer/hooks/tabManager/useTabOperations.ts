@@ -1,7 +1,7 @@
 import { useCallback, Dispatch, SetStateAction } from 'react';
 import { AppSettings } from '@common/types';
-import { logError } from '../../utils/debug';
 
+import { logError } from '../../utils/debug';
 import { TabStateCalculator, PendingFileOperations } from '../../utils/tabManager';
 
 interface UseTabOperationsProps {

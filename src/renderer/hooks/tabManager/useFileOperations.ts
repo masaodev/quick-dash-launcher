@@ -1,7 +1,7 @@
 import { useCallback, Dispatch, SetStateAction } from 'react';
 import { AppSettings, DataFileTab } from '@common/types';
-import { logError } from '../../utils/debug';
 
+import { logError } from '../../utils/debug';
 import {
   FileNameGenerator,
   TabValidator,

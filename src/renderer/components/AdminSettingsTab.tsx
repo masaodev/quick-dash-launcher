@@ -418,7 +418,9 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                         disabled={isLoading}
                       />
                       <div className="option-content">
-                        <div className="option-title">プライマリディスプレイの右端（デフォルト）</div>
+                        <div className="option-title">
+                          プライマリディスプレイの右端（デフォルト）
+                        </div>
                         <div className="option-description">
                           プライマリモニターの右端にワークスペースを固定配置します（既存の動作）
                         </div>

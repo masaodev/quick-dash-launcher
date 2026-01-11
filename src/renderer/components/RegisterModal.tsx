@@ -4,6 +4,7 @@ import { RawDataLine, WindowInfo, LauncherItem } from '@common/types';
 
 import { useCustomIcon } from '../hooks/useCustomIcon';
 import { useRegisterForm } from '../hooks/useRegisterForm';
+import { debugLog, logError } from '../utils/debug';
 
 import GroupItemSelectorModal from './GroupItemSelectorModal';
 import FilePickerDialog from './FilePickerDialog';
@@ -13,7 +14,6 @@ import WindowConfigEditor from './WindowConfigEditor';
 import CustomIconEditor from './CustomIconEditor';
 import UrlConverterMenu from './UrlConverterMenu';
 import '../styles/components/UrlConverterMenu.css';
-import { debugLog, logError } from '../utils/debug';
 
 interface RegisterModalProps {
   isOpen: boolean;
@@ -211,7 +211,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     if (!isOpen || items.length === 0) return;
 
     // 必要サイズを設定
-    const requiredWidth = 1400;
+    const requiredWidth = 850;
     const requiredHeight = 1000;
 
     // モーダルモードを有効化し、必要サイズを設定

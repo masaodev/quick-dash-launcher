@@ -574,9 +574,8 @@ export async function showMainWindow(startTime?: number): Promise<void> {
   const autoShowWorkspace = await settingsService.get('autoShowWorkspace');
 
   if (autoShowWorkspace) {
-    const { isWorkspaceWindowShown, showWorkspaceWindow } = await import(
-      './workspaceWindowManager.js'
-    );
+    const { isWorkspaceWindowShown, showWorkspaceWindow } =
+      await import('./workspaceWindowManager.js');
     if (!isWorkspaceWindowShown()) {
       await showWorkspaceWindow();
       timer.log('workspace-auto-shown');

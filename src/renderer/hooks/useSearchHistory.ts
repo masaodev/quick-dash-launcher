@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { SearchHistoryState } from '@common/types';
+
 import { logError } from '../utils/debug';
 
 /**

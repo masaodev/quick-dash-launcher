@@ -1,5 +1,6 @@
 import { useState, useCallback, Dispatch, SetStateAction } from 'react';
 import { AppSettings } from '@common/types';
+
 import { logError } from '../utils/debug';
 
 interface UseSettingsManagerProps {

@@ -7,13 +7,13 @@ import type {
 } from '@common/types';
 
 import { useWorkspaceContextMenu, useWorkspaceItemGroups } from '../hooks/workspace';
+import { logError } from '../utils/debug';
 
 import WorkspaceGroupHeader from './WorkspaceGroupHeader';
 import WorkspaceItemCard from './WorkspaceItemCard';
 import WorkspaceExecutionHistoryCard from './WorkspaceExecutionHistoryCard';
 import WorkspaceContextMenu from './WorkspaceContextMenu';
 import WorkspaceGroupContextMenu from './WorkspaceGroupContextMenu';
-import { logError } from '../utils/debug';
 
 interface WorkspaceGroupedListProps {
   data: {

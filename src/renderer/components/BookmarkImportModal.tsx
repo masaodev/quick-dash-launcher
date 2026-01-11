@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { SimpleBookmarkItem, BrowserInfo, BrowserProfile } from '@common/types';
 
-import AlertDialog from './AlertDialog';
 import { logError } from '../utils/debug';
+
+import AlertDialog from './AlertDialog';
 
 type ImportSource = 'chrome' | 'edge' | 'html';
 

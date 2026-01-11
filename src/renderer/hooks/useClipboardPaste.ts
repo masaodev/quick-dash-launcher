@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 
-import { useFileOperations } from './useFileOperations';
 import { logError } from '../utils/debug';
+
+import { useFileOperations } from './useFileOperations';
 
 /**
  * クリップボードペースト処理を管理するカスタムフック
