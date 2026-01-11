@@ -55,9 +55,12 @@ export async function launchItem(item: LaunchableItem, logger: Logger): Promise<
       } else if (item.args) {
         // 引数がある場合はspawnを使用してコマンドインジェクションを防止
         const args = parseArgs(item.args);
+        // .cmd/.bat ファイルはシェル経由で実行する必要がある
+        const needsShell = /\.(cmd|bat)$/i.test(item.path);
         const child = spawn(item.path, args, {
           detached: true,
           stdio: 'ignore',
+          shell: needsShell,
         });
         child.unref();
 
