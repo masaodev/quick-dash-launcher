@@ -184,31 +184,42 @@ export function useRegisterForm(
       }
     }
 
-    // パスが変更された場合、アイテムタイプを再検出
-    if (field === 'path' && (value as string).trim()) {
-      const newType = await detectItemType(value as string);
-      newItems[index].type = newType;
+    setItems(newItems);
+  };
 
-      // タイプに応じてデフォルト値を設定
-      if (newType === 'folder') {
-        if (!newItems[index].folderProcessing) {
-          newItems[index].folderProcessing = 'folder';
-        }
-        if (!newItems[index].dirOptions) {
-          newItems[index].dirOptions = {
-            depth: 0,
-            types: 'both',
-            filter: undefined,
-            exclude: undefined,
-            prefix: undefined,
-            suffix: undefined,
-          };
-        }
-      } else {
-        // フォルダでない場合はフォルダ関連の設定をクリア
-        delete newItems[index].folderProcessing;
-        delete newItems[index].dirOptions;
+  /**
+   * パス入力フィールドのフォーカスアウト時の処理
+   * アイテムタイプを再検出し、タイプに応じたデフォルト値を設定
+   */
+  const handlePathBlur = async (index: number) => {
+    const item = items[index];
+    if (!item.path.trim()) {
+      return;
+    }
+
+    const newType = await detectItemType(item.path);
+    const newItems = [...items];
+    newItems[index].type = newType;
+
+    // タイプに応じてデフォルト値を設定
+    if (newType === 'folder') {
+      if (!newItems[index].folderProcessing) {
+        newItems[index].folderProcessing = 'folder';
       }
+      if (!newItems[index].dirOptions) {
+        newItems[index].dirOptions = {
+          depth: 0,
+          types: 'both',
+          filter: undefined,
+          exclude: undefined,
+          prefix: undefined,
+          suffix: undefined,
+        };
+      }
+    } else {
+      // フォルダでない場合はフォルダ関連の設定をクリア
+      delete newItems[index].folderProcessing;
+      delete newItems[index].dirOptions;
     }
 
     setItems(newItems);
@@ -366,6 +377,7 @@ export function useRegisterForm(
     selectorModalOpen,
     editingItemIndex,
     handleItemChange,
+    handlePathBlur,
     validateAndRegister,
     handleCancel,
     handleAddGroupItem,

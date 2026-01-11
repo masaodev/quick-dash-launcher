@@ -65,6 +65,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     selectorModalOpen,
     editingItemIndex,
     handleItemChange,
+    handlePathBlur,
     validateAndRegister,
     handleCancel,
     handleAddGroupItem,
@@ -209,10 +210,9 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
   useEffect(() => {
     if (!isOpen || items.length === 0) return;
 
-    // 必要サイズを計算
-    const hasFolderItem = items.some((item) => item.itemCategory === 'dir');
-    const requiredWidth = hasFolderItem ? 900 : 800;
-    const requiredHeight = hasFolderItem ? 1000 : 1000;
+    // 必要サイズを設定
+    const requiredWidth = 1400;
+    const requiredHeight = 1000;
 
     // モーダルモードを有効化し、必要サイズを設定
     window.electronAPI.setModalMode(true, { width: requiredWidth, height: requiredHeight });
@@ -498,6 +498,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                                 : ''
                           }
                           onChange={(e) => handleItemChange(index, 'path', e.target.value)}
+                          onBlur={() => handlePathBlur(index)}
                           placeholder="ファイルパス、URL、またはカスタムURIを入力"
                         />
                         {errors[index]?.path && (
