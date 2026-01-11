@@ -374,6 +374,10 @@ function detectLineType(line: string): RawDataLine['type'] {
 
 // 生データを保存
 async function saveRawDataFiles(configFolder: string, rawLines: RawDataLine[]): Promise<void> {
+  // 管理対象のファイルリストを取得
+  const { PathManager } = await import('../config/pathManager.js');
+  const dataFiles = PathManager.getDataFiles();
+
   // ファイル別にグループ化
   const fileGroups = new Map<string, RawDataLine[]>();
   rawLines.forEach((line) => {
@@ -387,9 +391,10 @@ async function saveRawDataFiles(configFolder: string, rawLines: RawDataLine[]): 
     group.push(line);
   });
 
-  // 各ファイルを保存
-  for (const [fileName, lines] of fileGroups) {
+  // 管理対象のすべてのファイルを保存（空になったファイルも含む）
+  for (const fileName of dataFiles) {
     const filePath = path.join(configFolder, fileName);
+    const lines = fileGroups.get(fileName) || [];
 
     // バックアップを作成（設定に基づく）
     if (FileUtils.exists(filePath)) {
@@ -397,7 +402,7 @@ async function saveRawDataFiles(configFolder: string, rawLines: RawDataLine[]): 
       await backupService.createBackup(filePath);
     }
 
-    // 行番号でソートして内容を結合
+    // 行番号でソートして内容を結合（空の場合は空文字列）
     const sortedLines = lines.sort((a, b) => a.lineNumber - b.lineNumber);
     const content = sortedLines.map((line) => line.content).join('\r\n');
 
