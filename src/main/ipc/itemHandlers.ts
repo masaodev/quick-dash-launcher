@@ -51,9 +51,6 @@ async function openItem(
 
     if (activationResult.activated) {
       // ウィンドウアクティブ化成功、通常起動をスキップ
-      if (mainWindow && shouldHideWindow) {
-        mainWindow.hide();
-      }
       return;
     }
     // アクティブ化失敗または未設定の場合は下記の通常起動処理へフォールバック
@@ -68,10 +65,6 @@ async function openItem(
       },
       itemLogger
     );
-
-    if (mainWindow && shouldHideWindow) {
-      mainWindow.hide();
-    }
   } catch (error) {
     itemLogger.error(
       {
@@ -108,10 +101,6 @@ async function openParentFolder(
 
     if (item.type === 'file' || item.type === 'folder' || item.type === 'app') {
       await shell.showItemInFolder(item.path);
-    }
-
-    if (mainWindow && shouldHideWindow) {
-      mainWindow.hide();
     }
   } catch (error) {
     itemLogger.error(
@@ -201,11 +190,6 @@ async function executeGroup(
     },
     'グループ実行完了'
   );
-
-  // すべてのアイテム実行後にウィンドウを非表示
-  if (mainWindow && shouldHideWindow) {
-    mainWindow.hide();
-  }
 }
 
 export function setupItemHandlers(
@@ -287,14 +271,6 @@ export function setupItemHandlers(
 
     if (!result.windowFound) {
       itemLogger.warn({ windowTitle: item.windowTitle }, 'ウィンドウが見つかりませんでした');
-    }
-
-    const shouldHide = getWindowPinMode() === 'normal';
-    if (result.activated && shouldHide) {
-      const mainWindow = getMainWindow();
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.hide();
-      }
     }
 
     // 実行履歴に記録
