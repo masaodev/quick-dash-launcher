@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { LauncherItem, AppItem } from '@common/types';
 import { isWindowInfo, isGroupItem, isLauncherItem } from '@common/utils/typeGuards';
 
-import { debugInfo } from '../utils/debug';
+import { debugInfo, logError } from '../utils/debug';
 
 interface GroupItemSelectorModalProps {
   isOpen: boolean;
@@ -173,7 +173,7 @@ const GroupItemSelectorModal: React.FC<GroupItemSelectorModalProps> = ({
       setAvailableItems(itemsWithIcons);
       setFilteredItems(itemsWithIcons);
     } catch (error) {
-      console.error('Error loading available items:', error);
+      logError('Error loading available items:', error);
     }
   };
 

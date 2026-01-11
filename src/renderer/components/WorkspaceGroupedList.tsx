@@ -13,6 +13,7 @@ import WorkspaceItemCard from './WorkspaceItemCard';
 import WorkspaceExecutionHistoryCard from './WorkspaceExecutionHistoryCard';
 import WorkspaceContextMenu from './WorkspaceContextMenu';
 import WorkspaceGroupContextMenu from './WorkspaceGroupContextMenu';
+import { logError } from '../utils/debug';
 
 interface WorkspaceGroupedListProps {
   data: {
@@ -220,7 +221,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
         // name, path, typeは必ず設定されているため、LauncherItemとして扱える
         await window.electronAPI.workspaceAPI.addItem(launcherItem as LauncherItem, groupId);
       } catch (error) {
-        console.error('実行履歴からのアイテム追加に失敗:', error);
+        logError('実行履歴からのアイテム追加に失敗:', error);
       }
     }
     // 既存のワークスペースアイテムの移動

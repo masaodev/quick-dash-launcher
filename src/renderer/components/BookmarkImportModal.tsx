@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { SimpleBookmarkItem, BrowserInfo, BrowserProfile } from '@common/types';
 
 import AlertDialog from './AlertDialog';
+import { logError } from '../utils/debug';
 
 type ImportSource = 'chrome' | 'edge' | 'html';
 
@@ -45,7 +46,7 @@ const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({ isOpen, onClo
           const detectedBrowsers = await window.electronAPI.detectInstalledBrowsers();
           setBrowsers(detectedBrowsers);
         } catch (error) {
-          console.error('Error detecting browsers:', error);
+          logError('Error detecting browsers:', error);
         } finally {
           setLoadingBrowsers(false);
         }
@@ -110,7 +111,7 @@ const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({ isOpen, onClo
         });
       }
     } catch (error) {
-      console.error('Error loading browser bookmarks:', error);
+      logError('Error loading browser bookmarks:', error);
       const errorMessage =
         error instanceof Error ? error.message : 'ブックマークの読み込みに失敗しました';
       setAlertDialog({
@@ -136,7 +137,7 @@ const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({ isOpen, onClo
       setSelectedIds(new Set());
       setSearchQuery('');
     } catch (error) {
-      console.error('Error selecting bookmark file:', error);
+      logError('Error selecting bookmark file:', error);
       setAlertDialog({
         isOpen: true,
         message: 'ブックマークファイルの読み込みに失敗しました',

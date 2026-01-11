@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 
 import '../styles/components/Modal.css';
 import '../styles/components/FilePickerDialog.css';
+import { logError } from '../utils/debug';
 
 interface FilePickerDialogProps {
   isOpen: boolean;
@@ -52,7 +53,7 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
         onClose();
       }
     } catch (error) {
-      console.error('ファイル選択エラー:', error);
+      logError('ファイル選択エラー:', error);
     }
   };
 

@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 
 import { useFileOperations } from './useFileOperations';
+import { logError } from '../utils/debug';
 
 /**
  * クリップボードペースト処理を管理するカスタムフック
@@ -74,7 +75,7 @@ export function useClipboardPaste(onItemsAdded: () => void, activeGroupId?: stri
           // UI更新のコールバックを実行
           onItemsAdded();
         } catch (error) {
-          console.error('Failed to add item from clipboard paste:', error);
+          logError('Failed to add item from clipboard paste:', error);
         }
       }
     };
@@ -98,7 +99,7 @@ export function useClipboardPaste(onItemsAdded: () => void, activeGroupId?: stri
           const filePaths = await extractFilePaths(e.clipboardData.files);
           await addItemsFromFilePaths(filePaths, onItemsAdded, activeGroupId);
         } catch (error) {
-          console.error('Failed to add items from file paste:', error);
+          logError('Failed to add items from file paste:', error);
         }
       }
     };

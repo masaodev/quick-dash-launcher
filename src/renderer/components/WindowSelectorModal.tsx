@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import type { WindowInfo } from '@common/types';
 
 import '../styles/components/WindowSelectorModal.css';
+import { logError } from '../utils/debug';
 
 interface WindowSelectorModalProps {
   isOpen: boolean;
@@ -31,7 +32,7 @@ const WindowSelectorModal: React.FC<WindowSelectorModalProps> = ({ isOpen, onClo
         const allWindows = await window.electronAPI.getAllWindows();
         setWindows(allWindows);
       } catch (err) {
-        console.error('Failed to fetch windows:', err);
+        logError('Failed to fetch windows:', err);
         setError('ウィンドウ一覧の取得に失敗しました');
       } finally {
         setLoading(false);

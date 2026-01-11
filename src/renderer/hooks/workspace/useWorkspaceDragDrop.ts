@@ -1,6 +1,7 @@
 import React from 'react';
 import type { DragItemData } from '@common/types';
 import { isDragItemData } from '@common/utils/typeGuards';
+import { logError } from '../../utils/debug';
 
 /**
  * ワークスペースのドラッグ&ドロップ処理を型安全に管理するカスタムフック
@@ -59,7 +60,7 @@ export function useWorkspaceDragDrop() {
       const parsed: unknown = JSON.parse(jsonData);
       return isDragItemData(parsed) ? parsed : null;
     } catch (error) {
-      console.error('Failed to parse drag data:', error);
+      logError('Failed to parse drag data:', error);
       return null;
     }
   };

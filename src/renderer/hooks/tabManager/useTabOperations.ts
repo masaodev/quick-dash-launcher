@@ -1,5 +1,6 @@
 import { useCallback, Dispatch, SetStateAction } from 'react';
 import { AppSettings } from '@common/types';
+import { logError } from '../../utils/debug';
 
 import { TabStateCalculator, PendingFileOperations } from '../../utils/tabManager';
 
@@ -140,7 +141,7 @@ export function useTabOperations({
           filesToDelete: [...prev.filesToDelete, ...filesToDelete],
         }));
       } catch (error) {
-        console.error('タブの削除に失敗しました:', error);
+        logError('タブの削除に失敗しました:', error);
         showAlert('タブの削除に失敗しました。', 'error');
       }
     },

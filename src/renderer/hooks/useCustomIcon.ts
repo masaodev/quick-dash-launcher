@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { logError } from '../utils/debug';
 
 /**
  * カスタムアイコン管理フック
@@ -51,7 +52,7 @@ export function useCustomIcon() {
         setCustomIconPreviews((prev) => ({ ...prev, [index]: iconData }));
       }
     } catch (error) {
-      console.error('カスタムアイコン選択エラー:', error);
+      logError('カスタムアイコン選択エラー:', error);
       alert('カスタムアイコンの選択に失敗しました: ' + error);
     }
   };
@@ -77,7 +78,7 @@ export function useCustomIcon() {
         return newPreviews;
       });
     } catch (error) {
-      console.error('カスタムアイコン削除エラー:', error);
+      logError('カスタムアイコン削除エラー:', error);
       alert('カスタムアイコンの削除に失敗しました: ' + error);
     }
   };
@@ -92,7 +93,7 @@ export function useCustomIcon() {
         setCustomIconPreviews((prev) => ({ ...prev, [index]: iconData }));
       }
     } catch (error) {
-      console.error('カスタムアイコンプレビュー読み込みエラー:', error);
+      logError('カスタムアイコンプレビュー読み込みエラー:', error);
     }
   };
 

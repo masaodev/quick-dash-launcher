@@ -7,6 +7,7 @@ import { useClipboardPaste } from './hooks/useClipboardPaste';
 import { useCollapsibleSections } from './hooks/useCollapsibleSections';
 import { useNativeDragDrop } from './hooks/useNativeDragDrop';
 import { useWorkspaceActions, useWorkspaceData, useWorkspaceResize } from './hooks/workspace';
+import { logError } from './utils/debug';
 
 const WorkspaceApp: React.FC = () => {
   // ローカル状態
@@ -125,7 +126,7 @@ const WorkspaceApp: React.FC = () => {
         await actions.handleDeleteGroup(groupId, false);
       }
     } catch (error) {
-      console.error('Failed to delete workspace group:', error);
+      logError('Failed to delete workspace group:', error);
     }
   };
 
@@ -147,7 +148,7 @@ const WorkspaceApp: React.FC = () => {
         deleteItems: false,
       });
     } catch (error) {
-      console.error('Failed to delete workspace group:', error);
+      logError('Failed to delete workspace group:', error);
     }
   };
 
@@ -167,7 +168,7 @@ const WorkspaceApp: React.FC = () => {
         itemCount: itemCount,
       });
     } catch (error) {
-      console.error('Failed to archive workspace group:', error);
+      logError('Failed to archive workspace group:', error);
     }
   };
 
@@ -188,7 +189,7 @@ const WorkspaceApp: React.FC = () => {
         itemCount: 0,
       });
     } catch (error) {
-      console.error('Failed to archive workspace group:', error);
+      logError('Failed to archive workspace group:', error);
     }
   };
 

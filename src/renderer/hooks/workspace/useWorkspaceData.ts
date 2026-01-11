@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { WorkspaceItem, WorkspaceGroup, ExecutionHistoryItem } from '@common/types';
+import { logError } from '../../utils/debug';
 
 /**
  * ワークスペースのデータ管理フック
@@ -33,7 +34,7 @@ export function useWorkspaceData() {
       const loadedItems = await window.electronAPI.workspaceAPI.loadItems();
       setItems(loadedItems);
     } catch (error) {
-      console.error('Failed to load workspace items:', error);
+      logError('Failed to load workspace items:', error);
     }
   };
 
@@ -45,7 +46,7 @@ export function useWorkspaceData() {
       const loadedGroups = await window.electronAPI.workspaceAPI.loadGroups();
       setGroups(loadedGroups);
     } catch (error) {
-      console.error('Failed to load workspace groups:', error);
+      logError('Failed to load workspace groups:', error);
     }
   };
 
@@ -57,7 +58,7 @@ export function useWorkspaceData() {
       const history = await window.electronAPI.workspaceAPI.loadExecutionHistory();
       setExecutionHistory(history);
     } catch (error) {
-      console.error('Failed to load execution history:', error);
+      logError('Failed to load execution history:', error);
     }
   };
 

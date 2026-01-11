@@ -1,5 +1,6 @@
 import { useCallback, Dispatch, SetStateAction } from 'react';
 import { AppSettings } from '@common/types';
+import { logError } from '../../utils/debug';
 
 import { FileNameGenerator, SavedTabState, PendingFileOperations } from '../../utils/tabManager';
 
@@ -91,7 +92,7 @@ export function useTabPersistence({
 
       showAlert('タブ設定を保存しました。', 'success');
     } catch (error) {
-      console.error('タブ設定の保存に失敗しました:', error);
+      logError('タブ設定の保存に失敗しました:', error);
       showAlert('タブ設定の保存に失敗しました。', 'error');
     }
   }, [

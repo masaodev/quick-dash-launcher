@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 
 import { useFileOperations } from './useFileOperations';
+import { logError } from '../utils/debug';
 
 /**
  * ワークスペースのネイティブドラッグ&ドロップ処理を管理するカスタムフック
@@ -98,7 +99,7 @@ export function useNativeDragDrop(onItemsAdded: () => void) {
               }
               onItemsAdded();
             } catch (error) {
-              console.error('Failed to add URLs from drag & drop:', error);
+              logError('Failed to add URLs from drag & drop:', error);
             }
           }
         }

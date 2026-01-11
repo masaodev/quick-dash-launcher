@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { HotkeyInput } from './HotkeyInput';
 import AlertDialog from './AlertDialog';
 import '../styles/components/SetupFirstLaunch.css';
+import { logError } from '../utils/debug';
 
 interface FirstLaunchSetupProps {
   onComplete: (hotkey: string, autoLaunch: boolean) => void;
@@ -48,7 +49,7 @@ export const SetupFirstLaunch: React.FC<FirstLaunchSetupProps> = ({ onComplete }
       setIsLoading(true);
       onComplete(hotkey, autoLaunch);
     } catch (error) {
-      console.error('初回設定の保存に失敗しました:', error);
+      logError('初回設定の保存に失敗しました:', error);
       setAlertDialog({
         isOpen: true,
         message: '設定の保存に失敗しました。',

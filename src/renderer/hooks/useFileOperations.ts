@@ -1,3 +1,5 @@
+import { logError, logWarn } from '../utils/debug';
+
 /**
  * ファイルとURL操作の共通ユーティリティフック
  *
@@ -20,7 +22,7 @@ export function useFileOperations() {
           filePaths.push(filePath);
         }
       } catch (error) {
-        console.error(`Error getting path for ${file.name}:`, error);
+        logError(`Error getting path for ${file.name}:`, error);
       }
     }
 
@@ -43,7 +45,7 @@ export function useFileOperations() {
         await window.electronAPI.workspaceAPI.addItemsFromPaths(filePaths, groupId);
         onItemsAdded();
       } catch (error) {
-        console.error('Failed to add items from file paths:', error);
+        logError('Failed to add items from file paths:', error);
       }
     }
   };
@@ -58,7 +60,7 @@ export function useFileOperations() {
       const fetchedIcon = await window.electronAPI.fetchFavicon(url);
       return fetchedIcon || undefined;
     } catch (error) {
-      console.warn('Failed to fetch favicon for URL:', url, error);
+      logWarn('Failed to fetch favicon for URL:', url, error);
       return undefined;
     }
   };
@@ -89,7 +91,7 @@ export function useFileOperations() {
       await window.electronAPI.workspaceAPI.addItem(item, groupId);
       onItemsAdded();
     } catch (error) {
-      console.error('Failed to add URL item:', error);
+      logError('Failed to add URL item:', error);
     }
   };
 

@@ -7,6 +7,7 @@ import AdminItemManagerList from './AdminItemManagerList';
 import RegisterModal from './RegisterModal';
 import BookmarkImportModal from './BookmarkImportModal';
 import ConfirmDialog from './ConfirmDialog';
+import { logError } from '../utils/debug';
 
 interface EditModeViewProps {
   rawLines: RawDataLine[];
@@ -165,7 +166,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     );
 
     if (insertAfterIndex === -1) {
-      console.error('挿入位置の特定に失敗しました');
+      logError('挿入位置の特定に失敗しました');
       return;
     }
 

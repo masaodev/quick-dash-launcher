@@ -23,7 +23,7 @@ import { SetupFirstLaunch } from './components/SetupFirstLaunch';
 import AlertDialog from './components/AlertDialog';
 import ConfirmDialog from './components/ConfirmDialog';
 import { filterItems } from './utils/dataParser';
-import { debugLog } from './utils/debug';
+import { debugLog, logError } from './utils/debug';
 import { useIconProgress } from './hooks/useIconProgress';
 import { useSearchHistory } from './hooks/useSearchHistory';
 import { useExecutionHistory } from './hooks/useExecutionHistory';
@@ -481,7 +481,7 @@ const App: React.FC = () => {
       // データ再読み込み
       loadItems();
     } catch (error) {
-      console.error('Failed to delete item:', error);
+      logError('Failed to delete item:', error);
       setAlertDialog({
         isOpen: true,
         message: 'アイテムの削除に失敗しました。',
@@ -584,7 +584,7 @@ const App: React.FC = () => {
       // 初回起動画面を閉じる
       setIsFirstLaunch(false);
     } catch (error) {
-      console.error('初回設定の保存に失敗しました:', error);
+      logError('初回設定の保存に失敗しました:', error);
       setAlertDialog({
         isOpen: true,
         message: '設定の保存に失敗しました。',

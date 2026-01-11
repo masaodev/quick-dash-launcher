@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { AppItem, DataFileTab } from '@common/types';
 import { isWindowInfo } from '@common/utils/typeGuards';
 
-import { debugLog } from '../utils/debug';
+import { debugLog, logError } from '../utils/debug';
 
 /**
  * データファイルタブ管理フック
@@ -27,7 +27,7 @@ export function useDataFileTabs() {
         // ファイルが存在するか確認（実際には作成APIを呼ぶだけで、既存ファイルは上書きされない）
         await window.electronAPI.createDataFile(fileName);
       } catch (error) {
-        console.error(`${fileName}の作成/確認に失敗しました:`, error);
+        logError(`${fileName}の作成/確認に失敗しました:`, error);
       }
     }
   };
@@ -81,7 +81,7 @@ export function useDataFileTabs() {
         }
       }
     } catch (error) {
-      console.error('タブ設定のロードに失敗しました:', error);
+      logError('タブ設定のロードに失敗しました:', error);
     }
   };
 
@@ -213,7 +213,7 @@ export function useDataFileTabs() {
         setActiveTab(files[0]);
       }
     } catch (error) {
-      console.error('デフォルトタブへのリセットに失敗しました:', error);
+      logError('デフォルトタブへのリセットに失敗しました:', error);
     }
   };
 

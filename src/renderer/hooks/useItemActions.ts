@@ -1,6 +1,6 @@
 import { LauncherItem } from '@common/types';
 
-import { logWarn } from '../utils/debug';
+import { logWarn, logError } from '../utils/debug';
 
 /**
  * アイテムに対する各種アクション（コピー、親フォルダを開く等）を管理するカスタムフック
@@ -16,7 +16,7 @@ export const useItemActions = () => {
       await window.electronAPI.copyToClipboard(fullCommand);
       logWarn(`パスをコピーしました: ${fullCommand}`);
     } catch (err) {
-      console.error('パスのコピーに失敗しました:', err);
+      logError('パスのコピーに失敗しました:', err);
       alert('パスのコピーに失敗しました');
     }
   };
@@ -48,7 +48,7 @@ export const useItemActions = () => {
       await window.electronAPI.copyToClipboard(parentPath);
       logWarn(`親フォルダーのパスをコピーしました: ${parentPath}`);
     } catch (err) {
-      console.error('親フォルダーのパスのコピーに失敗しました:', err);
+      logError('親フォルダーのパスのコピーに失敗しました:', err);
       alert('親フォルダーのパスのコピーに失敗しました');
     }
   };
@@ -66,7 +66,7 @@ export const useItemActions = () => {
       await window.electronAPI.copyToClipboard(item.originalPath);
       logWarn(`ショートカットのパスをコピーしました: ${item.originalPath}`);
     } catch (err) {
-      console.error('ショートカットのパスのコピーに失敗しました:', err);
+      logError('ショートカットのパスのコピーに失敗しました:', err);
       alert('ショートカットのパスのコピーに失敗しました');
     }
   };
@@ -93,7 +93,7 @@ export const useItemActions = () => {
         alert('ショートカットの親フォルダーのパスを取得できませんでした');
       }
     } catch (err) {
-      console.error('ショートカットの親フォルダーのパスのコピーに失敗しました:', err);
+      logError('ショートカットの親フォルダーのパスのコピーに失敗しました:', err);
       alert('ショートカットの親フォルダーのパスのコピーに失敗しました');
     }
   };
@@ -105,7 +105,7 @@ export const useItemActions = () => {
     try {
       await window.electronAPI.openParentFolder(item);
     } catch (err) {
-      console.error('親フォルダーを開くのに失敗しました:', err);
+      logError('親フォルダーを開くのに失敗しました:', err);
       alert('親フォルダーを開くのに失敗しました');
     }
   };
@@ -129,7 +129,7 @@ export const useItemActions = () => {
       await window.electronAPI.openParentFolder(tempItem);
       logWarn(`リンク先の親フォルダーを開きました: ${item.originalPath}`);
     } catch (err) {
-      console.error('リンク先の親フォルダーを開くのに失敗しました:', err);
+      logError('リンク先の親フォルダーを開くのに失敗しました:', err);
       alert('リンク先の親フォルダーを開くのに失敗しました');
     }
   };

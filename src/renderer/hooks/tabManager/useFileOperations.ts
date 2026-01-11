@@ -1,5 +1,6 @@
 import { useCallback, Dispatch, SetStateAction } from 'react';
 import { AppSettings, DataFileTab } from '@common/types';
+import { logError } from '../../utils/debug';
 
 import {
   FileNameGenerator,
@@ -177,7 +178,7 @@ export function useFileOperations({
           return prev;
         });
       } catch (error) {
-        console.error('ファイルの削除に失敗しました:', error);
+        logError('ファイルの削除に失敗しました:', error);
         showAlert('ファイルの削除に失敗しました。', 'error');
       }
     },
@@ -213,7 +214,7 @@ export function useFileOperations({
         // タブにファイルを追加
         handleAddFileToTab(tabIndex, fileName);
       } catch (error) {
-        console.error('ファイルの作成に失敗しました:', error);
+        logError('ファイルの作成に失敗しました:', error);
         showAlert('ファイルの作成に失敗しました。', 'error');
       }
     },
@@ -259,7 +260,7 @@ export function useFileOperations({
       // 新規タブを展開状態にする
       setExpandedTabs((prev) => new Set([...prev, updatedTabs.length - 1]));
     } catch (error) {
-      console.error('タブの追加に失敗しました:', error);
+      logError('タブの追加に失敗しました:', error);
       showAlert('タブの追加に失敗しました。', 'error');
     }
   }, [
