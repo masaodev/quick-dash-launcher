@@ -60,7 +60,7 @@ export function useSettingsManager({
     try {
       await onSave(editedSettings);
     } catch (error) {
-      console.error('設定の保存に失敗しました:', error);
+      logError('設定の保存に失敗しました:', error);
       showAlert('設定の保存に失敗しました。', 'error');
     }
   }, [editedSettings, onSave, showAlert]);

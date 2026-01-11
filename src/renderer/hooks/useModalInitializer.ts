@@ -2,7 +2,7 @@ import { convertRawDataLineToRegisterItem, type RegisterItem } from '@common/uti
 import { detectItemType } from '@common/utils/itemTypeDetector';
 import { RawDataLine, DataFileTab } from '@common/types';
 
-import { debugInfo, logWarn } from '../utils/debug';
+import { debugInfo, logWarn, logError } from '../utils/debug';
 
 /**
  * RegisterModalの初期化ロジックを管理するフック
@@ -42,7 +42,7 @@ export function useModalInitializer() {
   ): Promise<RegisterItem[]> => {
     try {
       if (!editingItem) {
-        console.error('No editing item provided');
+        logError('No editing item provided');
         return [];
       }
 
@@ -57,7 +57,7 @@ export function useModalInitializer() {
 
       return [item];
     } catch (error) {
-      console.error('Error initializing from editing item:', error);
+      logError('Error initializing from editing item:', error);
       alert('編集アイテムの初期化中にエラーが発生しました: ' + error);
       return [];
     }
@@ -76,7 +76,7 @@ export function useModalInitializer() {
 
     try {
       if (!droppedPaths || droppedPaths.length === 0) {
-        console.error('No dropped paths provided');
+        logError('No dropped paths provided');
         return [];
       }
 
@@ -105,7 +105,7 @@ export function useModalInitializer() {
             icon = (await window.electronAPI.getIconForItem(filePath, itemType)) ?? undefined;
           }
         } catch (error) {
-          console.error('Failed to extract icon:', error);
+          logError('Failed to extract icon:', error);
         }
 
         newItems.push({
@@ -133,7 +133,7 @@ export function useModalInitializer() {
 
       return newItems;
     } catch (error) {
-      console.error('Error initializing items:', error);
+      logError('Error initializing items:', error);
       alert('アイテムの初期化中にエラーが発生しました: ' + error);
       return [];
     }
