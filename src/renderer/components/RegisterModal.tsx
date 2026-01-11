@@ -13,6 +13,7 @@ import WindowConfigEditor from './WindowConfigEditor';
 import CustomIconEditor from './CustomIconEditor';
 import UrlConverterMenu from './UrlConverterMenu';
 import '../styles/components/UrlConverterMenu.css';
+import { debugLog, logError } from '../utils/debug';
 
 interface RegisterModalProps {
   isOpen: boolean;
@@ -333,7 +334,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
       if (item.itemCategory === 'window') {
         // ウィンドウ操作アイテムの場合
         if (!item.windowOperationConfig) {
-          console.error('ウィンドウ操作設定が不足しています');
+          logError('ウィンドウ操作設定が不足しています');
           return;
         }
 
@@ -352,10 +353,10 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
           activateWindow: item.windowOperationConfig.activateWindow,
         });
       } else if (item.itemCategory === 'group') {
-        console.log('グループアイテムは実行ボタンからは実行できません');
+        debugLog('グループアイテムは実行ボタンからは実行できません');
         // TODO: 必要に応じてグループ実行にも対応
       } else if (item.itemCategory === 'dir') {
-        console.log('フォルダ取込アイテムは実行ボタンからは実行できません');
+        debugLog('フォルダ取込アイテムは実行ボタンからは実行できません');
       } else {
         // 単一アイテムの場合
         const launcherItem = convertToLauncherItem(item);
@@ -364,7 +365,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
         }
       }
     } catch (error) {
-      console.error('アイテムの実行に失敗しました:', error);
+      logError('アイテムの実行に失敗しました:', error);
     } finally {
       // 元のピンモードに戻す
       if (pinModeChanged) {

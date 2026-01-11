@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ExecutionHistoryItem } from '@common/types';
+import { logError } from '../utils/debug';
 
 /**
  * 実行履歴の管理を行うカスタムフック
@@ -13,7 +14,7 @@ export function useExecutionHistory() {
       const entries = await window.electronAPI.workspaceAPI.loadExecutionHistory();
       setExecutionHistory(entries);
     } catch (error) {
-      console.error('実行履歴の読み込みに失敗しました:', error);
+      logError('実行履歴の読み込みに失敗しました:', error);
     }
   }, []);
 

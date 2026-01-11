@@ -1,4 +1,5 @@
 import type { WorkspaceItem, WorkspaceGroup } from '@common/types';
+import { logError } from '../../utils/debug';
 
 /**
  * ワークスペースのアクションハンドラーを統合管理するカスタムフック
@@ -31,7 +32,7 @@ export function useWorkspaceActions(onDataChanged: () => void) {
     try {
       await window.electronAPI.workspaceAPI.launchItem(item);
     } catch (error) {
-      console.error('Failed to launch workspace item:', error);
+      logError('Failed to launch workspace item:', error);
     }
   };
 
@@ -43,7 +44,7 @@ export function useWorkspaceActions(onDataChanged: () => void) {
       await window.electronAPI.workspaceAPI.removeItem(id);
       onDataChanged();
     } catch (error) {
-      console.error('Failed to remove workspace item:', error);
+      logError('Failed to remove workspace item:', error);
     }
   };
 
@@ -55,7 +56,7 @@ export function useWorkspaceActions(onDataChanged: () => void) {
       await window.electronAPI.workspaceAPI.reorderItems(itemIds);
       onDataChanged();
     } catch (error) {
-      console.error('Failed to reorder workspace items:', error);
+      logError('Failed to reorder workspace items:', error);
     }
   };
 
@@ -67,7 +68,7 @@ export function useWorkspaceActions(onDataChanged: () => void) {
       await window.electronAPI.workspaceAPI.updateDisplayName(id, displayName);
       onDataChanged();
     } catch (error) {
-      console.error('Failed to update workspace item display name:', error);
+      logError('Failed to update workspace item display name:', error);
     }
   };
 
@@ -84,7 +85,7 @@ export function useWorkspaceActions(onDataChanged: () => void) {
         onDataChanged();
       }
     } catch (error) {
-      console.error('Failed to toggle workspace group:', error);
+      logError('Failed to toggle workspace group:', error);
     }
   };
 
@@ -96,7 +97,7 @@ export function useWorkspaceActions(onDataChanged: () => void) {
       await window.electronAPI.workspaceAPI.updateGroup(groupId, updates);
       onDataChanged();
     } catch (error) {
-      console.error('Failed to update workspace group:', error);
+      logError('Failed to update workspace group:', error);
     }
   };
 
@@ -110,7 +111,7 @@ export function useWorkspaceActions(onDataChanged: () => void) {
       await window.electronAPI.workspaceAPI.deleteGroup(groupId, deleteItems);
       onDataChanged();
     } catch (error) {
-      console.error('Failed to delete workspace group:', error);
+      logError('Failed to delete workspace group:', error);
     }
   };
 
@@ -123,7 +124,7 @@ export function useWorkspaceActions(onDataChanged: () => void) {
       await window.electronAPI.workspaceAPI.archiveGroup(groupId);
       onDataChanged();
     } catch (error) {
-      console.error('Failed to archive workspace group:', error);
+      logError('Failed to archive workspace group:', error);
     }
   };
 
@@ -135,7 +136,7 @@ export function useWorkspaceActions(onDataChanged: () => void) {
       await window.electronAPI.workspaceAPI.createGroup(`グループ ${groupCount + 1}`);
       onDataChanged();
     } catch (error) {
-      console.error('Failed to create workspace group:', error);
+      logError('Failed to create workspace group:', error);
     }
   };
 
@@ -147,7 +148,7 @@ export function useWorkspaceActions(onDataChanged: () => void) {
       await window.electronAPI.workspaceAPI.moveItemToGroup(itemId, groupId);
       onDataChanged();
     } catch (error) {
-      console.error('Failed to move item to group:', error);
+      logError('Failed to move item to group:', error);
     }
   };
 
@@ -159,7 +160,7 @@ export function useWorkspaceActions(onDataChanged: () => void) {
       await window.electronAPI.workspaceAPI.reorderGroups(groupIds);
       onDataChanged();
     } catch (error) {
-      console.error('Failed to reorder workspace groups:', error);
+      logError('Failed to reorder workspace groups:', error);
     }
   };
 

@@ -1,5 +1,6 @@
 import { useState, useCallback, Dispatch, SetStateAction } from 'react';
 import { AppSettings } from '@common/types';
+import { logError } from '../utils/debug';
 
 interface UseSettingsManagerProps {
   settings: AppSettings;
@@ -33,7 +34,7 @@ export function useSettingsManager({
       try {
         await onSave(newSettings);
       } catch (error) {
-        console.error('設定の保存に失敗しました:', error);
+        logError('設定の保存に失敗しました:', error);
         showAlert('設定の保存に失敗しました。', 'error');
       }
     },
@@ -81,7 +82,7 @@ export function useSettingsManager({
       const resetSettings = await window.electronAPI.getSettings();
       setEditedSettings(resetSettings);
     } catch (error) {
-      console.error('設定のリセットに失敗しました:', error);
+      logError('設定のリセットに失敗しました:', error);
       showAlert('設定のリセットに失敗しました。', 'error');
     } finally {
       setIsLoading(false);
@@ -93,7 +94,7 @@ export function useSettingsManager({
     try {
       await window.electronAPI.openConfigFolder();
     } catch (error) {
-      console.error('設定フォルダを開くのに失敗しました:', error);
+      logError('設定フォルダを開くのに失敗しました:', error);
       showAlert('設定フォルダを開くのに失敗しました。', 'error');
     }
   }, [showAlert]);

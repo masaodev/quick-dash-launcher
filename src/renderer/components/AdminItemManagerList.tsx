@@ -11,6 +11,7 @@ import { RawDataLine, LauncherItem } from '@common/types';
 
 import ConfirmDialog from './ConfirmDialog';
 import AdminItemManagerContextMenu from './AdminItemManagerContextMenu';
+import { logError } from '../utils/debug';
 
 interface EditableRawItemListProps {
   rawLines: RawDataLine[];
@@ -280,7 +281,7 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
         const config = parseWindowOperationConfig(parts[1] || '');
         name = config.name || '';
       } catch (error) {
-        console.error('ウィンドウ操作アイテムのJSON形式が不正です:', error);
+        logError('ウィンドウ操作アイテムのJSON形式が不正です:', error);
         alert(error instanceof Error ? error.message : 'JSON形式が不正です');
         return;
       }
@@ -337,7 +338,7 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
         // escapeCSV()でCSV形式に適合するようにエスケープ（ダブルクォートを二重化）
         newContent = `window,${escapeCSV(JSON.stringify(config))}`;
       } catch (error) {
-        console.error('ウィンドウ操作アイテムのJSON形式が不正です:', error);
+        logError('ウィンドウ操作アイテムのJSON形式が不正です:', error);
         alert(error instanceof Error ? error.message : 'JSON形式が不正です');
         setEditingCell(null);
         setEditingValue('');

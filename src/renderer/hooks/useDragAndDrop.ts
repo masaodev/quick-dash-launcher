@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-import { debugLog } from '../utils/debug';
+import { debugLog, logError } from '../utils/debug';
 
 /**
  * ドラッグ&ドロップ管理フック
@@ -50,7 +50,7 @@ export function useDragAndDrop(
             paths.push(filePath);
           }
         } catch (error) {
-          console.error(`Error getting path for ${file.name}:`, error);
+          logError(`Error getting path for ${file.name}:`, error);
         }
       }
 

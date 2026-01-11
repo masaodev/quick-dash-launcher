@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { SearchHistoryState } from '@common/types';
+import { logError } from '../utils/debug';
 
 /**
  * 検索履歴の管理を行うカスタムフック
@@ -21,7 +22,7 @@ export function useSearchHistory() {
         currentIndex: -1, // 履歴ナビゲーションをリセット
       }));
     } catch (error) {
-      console.error('検索履歴の読み込みに失敗しました:', error);
+      logError('検索履歴の読み込みに失敗しました:', error);
     }
   }, []);
 
@@ -102,7 +103,7 @@ export function useSearchHistory() {
         // 履歴を再ロードしてUIを更新
         await loadHistory();
       } catch (error) {
-        console.error('検索履歴の追加に失敗しました:', error);
+        logError('検索履歴の追加に失敗しました:', error);
       }
     },
     [loadHistory]
@@ -117,7 +118,7 @@ export function useSearchHistory() {
         currentIndex: -1,
       });
     } catch (error) {
-      console.error('検索履歴のクリアに失敗しました:', error);
+      logError('検索履歴のクリアに失敗しました:', error);
     }
   }, []);
 

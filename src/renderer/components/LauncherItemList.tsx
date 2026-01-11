@@ -5,6 +5,7 @@ import { LauncherItem, GroupItem, AppItem, WindowInfo, WindowOperationItem } fro
 import { getTooltipText } from '../utils/tooltipTextGenerator';
 
 import LauncherContextMenu from './LauncherContextMenu';
+import { logError } from '../utils/debug';
 
 interface ItemListProps {
   items: AppItem[];
@@ -136,7 +137,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
     try {
       await window.electronAPI.workspaceAPI.addItem(item);
     } catch (error) {
-      console.error('ワークスペースへの追加に失敗しました:', error);
+      logError('ワークスペースへの追加に失敗しました:', error);
     }
   };
 
