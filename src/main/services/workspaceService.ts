@@ -13,7 +13,7 @@ import type {
 } from '@common/types.js';
 import logger from '@common/logger.js';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector.js';
-import { isWindowInfo, isLauncherItem, isGroupItem } from '@common/utils/typeGuards.js';
+import { isWindowInfo, isGroupItem } from '@common/utils/typeGuards.js';
 
 import PathManager from '../config/pathManager.js';
 
