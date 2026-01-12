@@ -96,3 +96,4 @@ src/**/*.js
 src/**/*.js.map
 # ただし、scriptsフォルダ内の.jsファイルは除外しない（スクリプトファイルとして必要）
 !scripts/**/*.js
+tmpclaude-*
