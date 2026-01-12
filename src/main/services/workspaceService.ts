@@ -217,16 +217,17 @@ export class WorkspaceService {
       }
       // GroupItemの場合
       else if (isGroupItem(item)) {
+        const itemNames = item.itemNames || [];
         workspaceItem = {
           id: randomUUID(),
           displayName: item.name,
           originalName: item.name,
-          path: `[グループ: ${item.itemNames.length}件]`,
+          path: `[グループ: ${itemNames.length}件]`,
           type: 'group',
           order: maxOrder + 1,
           addedAt: Date.now(),
           groupId: groupId,
-          itemNames: item.itemNames,
+          itemNames: itemNames,
         };
       }
       // LauncherItemの場合
