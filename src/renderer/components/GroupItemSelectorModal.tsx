@@ -1,6 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { LauncherItem, AppItem } from '@common/types';
-import { isWindowInfo, isGroupItem, isLauncherItem } from '@common/utils/typeGuards';
+import {
+  isWindowInfo,
+  isGroupItem,
+  isLauncherItem,
+  isWindowOperationItem,
+} from '@common/utils/typeGuards';
 
 import { debugInfo, logError } from '../utils/debug';
 
@@ -144,10 +149,16 @@ const GroupItemSelectorModal: React.FC<GroupItemSelectorModalProps> = ({
 
       // 対象ファイルのLauncherItemのみを抽出（グループアイテムとフォルダ取込展開アイテムは除外）
       const itemsInFile = allItems.filter((item: AppItem) => {
-        // WindowInfo、グループアイテム、ウィンドウ操作アイテムは除外
-        if (isWindowInfo(item) || isGroupItem(item) || !isLauncherItem(item)) {
+        // WindowInfo、グループアイテムは除外
+        if (isWindowInfo(item) || isGroupItem(item)) {
           return false;
         }
+
+        // LauncherItemまたはWindowOperationItemのみ許可
+        if (!isLauncherItem(item) && !isWindowOperationItem(item)) {
+          return false;
+        }
+
         const launcherItem = item;
 
         // フォルダ取込アイテムから展開されたアイテムは除外
@@ -198,6 +209,8 @@ const GroupItemSelectorModal: React.FC<GroupItemSelectorModalProps> = ({
         return '📄';
       case 'customUri':
         return '🔗';
+      case 'windowOperation':
+        return '🪟';
       default:
         return '❓';
     }

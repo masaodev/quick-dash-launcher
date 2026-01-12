@@ -9,7 +9,7 @@ import {
   WindowConfig,
 } from '@common/types';
 import { GROUP_LAUNCH_DELAY_MS } from '@common/constants';
-import { isLauncherItem } from '@common/utils/typeGuards';
+import { isLauncherItem, isWindowOperationItem } from '@common/utils/typeGuards';
 import {
   OPEN_ITEM,
   OPEN_PARENT_FOLDER,
@@ -133,10 +133,12 @@ async function executeGroup(
     'グループを実行中'
   );
 
-  // アイテム名からLauncherItemを検索するマップを作成
-  const itemMap = new Map<string, LauncherItem>();
+  // アイテム名からLauncherItemまたはWindowOperationItemを検索するマップを作成
+  const itemMap = new Map<string, LauncherItem | WindowOperationItem>();
   for (const item of allItems) {
     if (isLauncherItem(item)) {
+      itemMap.set(item.name, item);
+    } else if (isWindowOperationItem(item)) {
       itemMap.set(item.name, item);
     }
   }
@@ -156,8 +158,39 @@ async function executeGroup(
     }
 
     try {
-      // 個別アイテムを実行（ウィンドウは非表示にしない）
-      await openItem(item, null, false);
+      // アイテムの種類に応じて実行
+      if (isWindowOperationItem(item)) {
+        // ウィンドウ操作アイテムの場合
+        const windowConfig: WindowConfig = {
+          title: item.windowTitle,
+          exactMatch: item.exactMatch,
+          processName: item.processName,
+          x: item.x,
+          y: item.y,
+          width: item.width,
+          height: item.height,
+          virtualDesktopNumber: item.virtualDesktopNumber,
+          activateWindow: item.activateWindow,
+        };
+
+        const result = await tryActivateWindow(
+          windowConfig,
+          undefined,
+          item.windowTitle,
+          itemLogger
+        );
+
+        if (!result.windowFound) {
+          itemLogger.warn(
+            { groupName: group.name, itemName, windowTitle: item.windowTitle },
+            'グループ内のウィンドウ操作アイテム: ウィンドウが見つかりませんでした'
+          );
+        }
+      } else {
+        // 通常のLauncherItemの場合
+        await openItem(item, null, false);
+      }
+
       successCount++;
       itemLogger.info(
         { groupName: group.name, itemName, index: i + 1, total: group.itemNames.length },
