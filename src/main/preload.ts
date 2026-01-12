@@ -56,6 +56,8 @@ import {
   GET_WINDOW_PIN_MODE,
   CYCLE_WINDOW_PIN_MODE,
   GET_ALL_WINDOWS,
+  GET_ALL_WINDOWS_ALL_DESKTOPS,
+  GET_VIRTUAL_DESKTOP_INFO,
   ACTIVATE_WINDOW,
   COPY_TO_CLIPBOARD,
   SET_MODAL_MODE,
@@ -232,6 +234,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getPathForFile: (file: File) => webUtils.getPathForFile(file),
   quitApp: () => ipcRenderer.invoke(QUIT_APP),
   getAllWindows: (): Promise<WindowInfo[]> => ipcRenderer.invoke(GET_ALL_WINDOWS),
+  getAllWindowsAllDesktops: (): Promise<WindowInfo[]> =>
+    ipcRenderer.invoke(GET_ALL_WINDOWS_ALL_DESKTOPS),
+  getVirtualDesktopInfo: (): Promise<{
+    supported: boolean;
+    desktopCount: number;
+    currentDesktop: number;
+  }> => ipcRenderer.invoke(GET_VIRTUAL_DESKTOP_INFO),
   updateItem: (request: UpdateItemRequest) => ipcRenderer.invoke(UPDATE_ITEM, request),
   updateRawLine: (request: { sourceFile: string; lineNumber: number; newContent: string }) =>
     ipcRenderer.invoke(UPDATE_RAW_LINE, request),

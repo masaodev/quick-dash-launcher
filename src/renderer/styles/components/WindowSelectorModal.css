@@ -69,6 +69,46 @@
   padding: var(--spacing-md);
 }
 
+/* 仮想デスクトップタブ */
+.desktop-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: var(--border-light);
+}
+
+.desktop-tab {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: var(--border-normal);
+  border-radius: var(--border-radius-sm);
+  background-color: var(--color-white);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.desktop-tab:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.desktop-tab.active {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-white);
+}
+
+.desktop-tab .tab-count {
+  font-size: var(--font-size-xs);
+  opacity: 0.8;
+}
+
 .filter-section {
   margin-bottom: var(--spacing-md);
 }
@@ -154,6 +194,11 @@
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 200px;
+}
+
+.window-desktop {
+  color: var(--color-primary);
+  font-weight: 500;
 }
 
 .loading-message,

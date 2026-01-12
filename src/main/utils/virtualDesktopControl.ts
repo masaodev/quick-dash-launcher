@@ -27,6 +27,8 @@ let virtualDesktopAccessor: any = null;
 let MoveWindowToDesktopNumber: any = null;
 let _getCurrentDesktopNumber: any = null;
 let _isWindowOnDesktopNumber: any = null;
+let _getWindowDesktopNumber: any = null;
+let _getDesktopCount: any = null;
 
 try {
   // DLLのパスを設定（resources/native/VirtualDesktopAccessor.dll）
@@ -160,6 +162,49 @@ try {
 
   if (_isWindowOnDesktopNumber) {
     debugLog('[VirtualDesktopAccessor] IsWindowOnDesktopNumber初期化完了');
+  }
+
+  // GetWindowDesktopNumber関数を定義
+  // int GetWindowDesktopNumber(HWND hwnd)
+  const getWindowDesktopPatterns = [
+    {
+      name: 'classic __stdcall + void*',
+      loader: () =>
+        virtualDesktopAccessor.func('__stdcall', 'GetWindowDesktopNumber', 'int', ['void *']),
+    },
+    {
+      name: 'prototype __stdcall + void*',
+      loader: () =>
+        virtualDesktopAccessor.func('int __stdcall GetWindowDesktopNumber(void *hwnd)'),
+    },
+    {
+      name: 'classic __stdcall + uintptr',
+      loader: () =>
+        virtualDesktopAccessor.func('__stdcall', 'GetWindowDesktopNumber', 'int', ['uintptr']),
+    },
+  ];
+
+  for (const pattern of getWindowDesktopPatterns) {
+    try {
+      _getWindowDesktopNumber = pattern.loader();
+      debugLog(`[VirtualDesktopAccessor] GetWindowDesktopNumber定義成功（${pattern.name}）`);
+      break;
+    } catch (error) {
+      console.warn(`[VirtualDesktopAccessor] ${pattern.name}失敗:`, error);
+    }
+  }
+
+  if (_getWindowDesktopNumber) {
+    debugLog('[VirtualDesktopAccessor] GetWindowDesktopNumber初期化完了');
+  }
+
+  // GetDesktopCount関数を定義
+  // int GetDesktopCount()
+  try {
+    _getDesktopCount = virtualDesktopAccessor.func('__stdcall', 'GetDesktopCount', 'int', []);
+    debugLog('[VirtualDesktopAccessor] GetDesktopCount初期化完了');
+  } catch (error) {
+    console.warn('[VirtualDesktopAccessor] GetDesktopCount初期化失敗:', error);
   }
 } catch (error) {
   console.error('[VirtualDesktopAccessor] 初期化失敗:', error);
@@ -665,5 +710,68 @@ export function isWindowOnDesktopNumber(hwnd: number | bigint, desktopNumber: nu
   } catch (error) {
     console.error('[isWindowOnDesktopNumber] 例外発生:', error);
     return false;
+  }
+}
+
+/**
+ * ウィンドウが所属する仮想デスクトップ番号を取得
+ * @param hwnd ウィンドウハンドル
+ * @returns デスクトップ番号（1から開始）。失敗時は-1
+ */
+export function getWindowDesktopNumber(hwnd: number | bigint): number {
+  // サポート確認
+  if (!isVirtualDesktopSupported()) {
+    return -1;
+  }
+
+  // DLLロード確認
+  if (!_getWindowDesktopNumber) {
+    return -1;
+  }
+
+  // HWNDの型変換
+  const hwndValue = typeof hwnd === 'bigint' ? hwnd : hwnd;
+
+  try {
+    // GetWindowDesktopNumber呼び出し（0ベースのインデックスを返す）
+    const desktopIndex = _getWindowDesktopNumber(hwndValue);
+
+    if (desktopIndex < 0) {
+      return -1;
+    }
+
+    // 1ベースの番号に変換して返す
+    return desktopIndex + 1;
+  } catch (error) {
+    console.error('[getWindowDesktopNumber] 例外発生:', error);
+    return -1;
+  }
+}
+
+/**
+ * 仮想デスクトップの数を取得
+ * @returns デスクトップ数。失敗時は-1
+ */
+export function getDesktopCount(): number {
+  // サポート確認
+  if (!isVirtualDesktopSupported()) {
+    return -1;
+  }
+
+  // DLLロード確認
+  if (!_getDesktopCount) {
+    // DLLが利用できない場合はレジストリから取得
+    const guids = getVirtualDesktopGUIDs();
+    return guids.length > 0 ? guids.length : -1;
+  }
+
+  try {
+    const count = _getDesktopCount();
+    return count > 0 ? count : -1;
+  } catch (error) {
+    console.error('[getDesktopCount] 例外発生:', error);
+    // フォールバック: レジストリから取得
+    const guids = getVirtualDesktopGUIDs();
+    return guids.length > 0 ? guids.length : -1;
   }
 }

@@ -53,6 +53,8 @@ export const IS_EDIT_WINDOW_SHOWN = 'is-edit-window-shown';
 export const OPEN_EDIT_WINDOW_WITH_TAB = 'open-edit-window-with-tab';
 export const GET_INITIAL_TAB = 'get-initial-tab';
 export const GET_ALL_WINDOWS = 'get-all-windows';
+export const GET_ALL_WINDOWS_ALL_DESKTOPS = 'get-all-windows-all-desktops';
+export const GET_VIRTUAL_DESKTOP_INFO = 'get-virtual-desktop-info';
 export const ACTIVATE_WINDOW = 'activate-window';
 export const COPY_TO_CLIPBOARD = 'copy-to-clipboard';
 export const SET_MODAL_MODE = 'set-modal-mode';
@@ -201,6 +203,8 @@ export const IPC_CHANNELS = {
   OPEN_EDIT_WINDOW_WITH_TAB,
   GET_INITIAL_TAB,
   GET_ALL_WINDOWS,
+  GET_ALL_WINDOWS_ALL_DESKTOPS,
+  GET_VIRTUAL_DESKTOP_INFO,
   ACTIVATE_WINDOW,
   COPY_TO_CLIPBOARD,
   SET_MODAL_MODE,
