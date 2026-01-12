@@ -59,7 +59,7 @@
   gap: var(--spacing-sm);
   padding: var(--spacing-sm) var(--spacing-md);
   min-width: 150px;
-  height: var(--input-height);
+  height: var(--input-height-sm);
   font-size: var(--font-size-base);
   font-family: var(--font-family);
   border: var(--border-normal);
@@ -161,12 +161,14 @@
 
 .edit-mode-search .search-input {
   width: 100%;
-  padding: var(--spacing-sm) var(--spacing-md);
+  height: var(--input-height-sm);
+  padding: var(--spacing-xs) var(--spacing-md);
   padding-right: calc(var(--spacing-md) + 24px); /* クリアボタン分の余白 */
   font-size: var(--font-size-base);
   border: var(--border-normal);
   border-radius: var(--border-radius);
   outline: none;
+  box-sizing: border-box;
   -webkit-app-region: no-drag;
   transition: var(--transition-normal);
 }
@@ -279,12 +281,14 @@
 
 .edit-mode-toolbar .toolbar-search .search-input {
   width: 100%;
-  padding: var(--spacing-sm) var(--spacing-md);
+  height: var(--input-height-sm);
+  padding: var(--spacing-xs) var(--spacing-md);
   padding-right: calc(var(--spacing-md) + 24px);
   font-size: var(--font-size-base);
   border: var(--border-normal);
   border-radius: var(--border-radius);
   outline: none;
+  box-sizing: border-box;
   -webkit-app-region: no-drag;
   transition: var(--transition-normal);
 }
@@ -866,11 +870,11 @@
   font-family: monospace;
   font-size: var(--font-size-sm);
   white-space: pre-wrap;
-  min-height: 28px;
-  line-height: 28px;
+  min-height: var(--input-height-sm);
+  line-height: var(--input-height-sm);
   display: flex;
   align-items: center;
-  padding: 6px 8px;
+  padding: var(--spacing-xs) var(--spacing-sm);
   width: 100%;
   box-sizing: border-box;
 }
@@ -880,9 +884,9 @@
   font-size: var(--font-size-sm);
   white-space: pre;
   overflow-x: auto;
-  height: 28px;
-  line-height: 28px;
-  padding: 6px 8px;
+  height: var(--input-height-sm);
+  line-height: var(--input-height-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
   width: 100%;
   box-sizing: border-box;
 }
@@ -976,7 +980,7 @@
   font-family: var(--font-family);
   white-space: nowrap;
   width: 100%;
-  min-height: 28px;
+  min-height: var(--input-height-sm);
 }
 
 .type-select-button:hover {

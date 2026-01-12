@@ -213,11 +213,13 @@
 
 .search-input {
   width: 100%;
-  padding: var(--spacing-sm) var(--spacing-md);
+  height: var(--input-height-sm);
+  padding: var(--spacing-xs) var(--spacing-md);
   padding-right: calc(var(--spacing-md) + 24px); /* クリアボタン分の余白 */
   border: var(--border-normal);
   border-radius: var(--border-radius);
   font-size: var(--font-size-base);
+  box-sizing: border-box;
 }
 
 .search-clear-button {
