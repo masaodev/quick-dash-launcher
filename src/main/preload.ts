@@ -90,6 +90,8 @@ import {
   BATCH_UPDATE_ITEMS,
   // パフォーマンス
   LOG_PERFORMANCE_TIMING,
+  // システム通知
+  SHOW_NOTIFICATION,
   // スプラッシュ
   SPLASH_READY,
   // イベント
@@ -299,6 +301,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getWindowList: (): Promise<WindowInfo[]> => ipcRenderer.invoke(GET_ALL_WINDOWS),
   activateWindowByHwnd: (hwnd: number | bigint): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke(ACTIVATE_WINDOW, hwnd),
+  // システム通知API
+  showNotification: (
+    title: string,
+    body: string,
+    type?: 'success' | 'error' | 'info' | 'warning'
+  ) => ipcRenderer.invoke(SHOW_NOTIFICATION, { title, body, type }),
   // ワークスペースウィンドウ制御API
   toggleWorkspaceWindow: () => ipcRenderer.invoke(WORKSPACE_TOGGLE_WINDOW),
   showWorkspaceWindow: () => ipcRenderer.invoke(WORKSPACE_SHOW_WINDOW),

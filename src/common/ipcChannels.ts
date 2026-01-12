@@ -136,6 +136,9 @@ export const WORKSPACE_CHANGED = 'workspace-changed';
 // 管理ウィンドウ
 export const ADMIN_SHOW_ARCHIVE_TAB = 'admin:show-archive-tab';
 
+// システム通知
+export const SHOW_NOTIFICATION = 'show-notification';
+
 // イベント（メインプロセスからレンダラーへの通知）
 export const EVENT_WINDOW_SHOWN = 'window-shown';
 export const EVENT_WINDOW_HIDDEN = 'window-hidden';
@@ -280,6 +283,9 @@ export const IPC_CHANNELS = {
 
   // 管理ウィンドウ
   ADMIN_SHOW_ARCHIVE_TAB,
+
+  // システム通知
+  SHOW_NOTIFICATION,
 
   // ワークスペース - イベント
   WORKSPACE_CHANGED,
