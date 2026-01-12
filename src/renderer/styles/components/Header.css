@@ -68,6 +68,46 @@
   user-select: none;
 }
 
+/* 仮想デスクトップタブバー（ウィンドウ検索モード用） */
+.desktop-tabs-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) 0;
+  -webkit-app-region: no-drag;
+}
+
+.desktop-tab-button {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px var(--spacing-sm);
+  border: var(--border-normal);
+  border-radius: var(--border-radius-sm);
+  background-color: var(--color-white);
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  line-height: 1.2;
+}
+
+.desktop-tab-button:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.desktop-tab-button.active {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-white);
+}
+
+.desktop-tab-button .tab-count {
+  font-size: var(--font-size-xs);
+  opacity: 0.8;
+}
+
 .search-clear-button {
   position: absolute;
   right: var(--spacing-sm);
