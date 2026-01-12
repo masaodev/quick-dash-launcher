@@ -153,11 +153,13 @@
 
 .window-size-field input[type='number'] {
   width: 100px;
-  padding: var(--spacing-sm);
+  height: var(--input-height-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
   border: var(--border-normal);
   border-radius: var(--border-radius);
   font-family: inherit;
   font-size: var(--font-size-base);
+  box-sizing: border-box;
 }
 
 .window-size-field .unit {
@@ -168,11 +170,13 @@
 
 .setting-item input[type='number'],
 .setting-item input[type='text'] {
-  padding: var(--spacing-sm);
+  height: var(--input-height-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
   border: var(--border-normal);
   border-radius: var(--border-radius);
   font-family: inherit;
   font-size: var(--font-size-base);
+  box-sizing: border-box;
 }
 
 .setting-item input[type='checkbox'] {

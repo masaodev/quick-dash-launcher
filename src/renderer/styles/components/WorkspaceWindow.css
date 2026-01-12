@@ -228,12 +228,14 @@ html:has(.workspace-window.background-transparent) {
 /* アイテム名の編集入力 */
 .workspace-item-name-input {
   flex: 1;
-  font-size: 14px;
-  padding: 4px 8px;
-  border: 1px solid var(--border-color);
+  height: var(--input-height-sm);
+  font-size: var(--font-size-base);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: var(--border-normal);
   border-radius: var(--border-radius);
   background-color: var(--input-background);
   color: var(--text-color);
+  box-sizing: border-box;
   outline: none;
 }
 
