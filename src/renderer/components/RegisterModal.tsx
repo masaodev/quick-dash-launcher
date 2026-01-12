@@ -342,7 +342,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
           name: item.name,
           type: 'windowOperation',
           windowTitle: item.windowOperationConfig.windowTitle,
-          exactMatch: item.windowOperationConfig.exactMatch,
           processName: item.windowOperationConfig.processName,
           x: item.windowOperationConfig.x,
           y: item.windowOperationConfig.y,
@@ -626,7 +625,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                             item.windowOperationConfig
                               ? {
                                   title: item.windowOperationConfig.windowTitle,
-                                  exactMatch: item.windowOperationConfig.exactMatch,
                                   processName: item.windowOperationConfig.processName,
                                   x: item.windowOperationConfig.x,
                                   y: item.windowOperationConfig.y,
@@ -643,7 +641,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                           onChange={(windowConfig) =>
                             handleItemChange(index, 'windowOperationConfig', {
                               windowTitle: windowConfig?.title || '',
-                              exactMatch: windowConfig?.exactMatch,
                               processName: windowConfig?.processName,
                               x: windowConfig?.x,
                               y: windowConfig?.y,

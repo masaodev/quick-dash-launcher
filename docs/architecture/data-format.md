@@ -729,7 +729,9 @@ interface RawDataLine {
 ```typescript
 interface WindowConfig {
   title: string;             // ウィンドウタイトル（検索用、必須）
-  exactMatch?: boolean;      // 完全一致で検索するか（省略時はfalse = 部分一致）
+                             // ワイルドカード: *（任意の文字列）、?（任意の1文字）
+                             // ワイルドカードなし → 完全一致、ワイルドカードあり → パターンマッチ
+                             // 例: "*Chrome*" → 部分一致、"Google Chrome" → 完全一致
   processName?: string;      // プロセス名で検索（部分一致、省略時は検索なし）
   x?: number;                // X座標（仮想スクリーン座標系、省略時は位置変更なし）
   y?: number;                // Y座標（仮想スクリーン座標系、省略時は位置変更なし）

@@ -142,7 +142,6 @@ export class ExecutionHistoryService {
           windowHeight: item.height,
           virtualDesktopNumber: item.virtualDesktopNumber,
           activateWindow: item.activateWindow,
-          exactMatch: item.exactMatch,
           processName: item.processName,
         };
         filteredHistory.unshift(historyItem);
@@ -186,7 +185,6 @@ export class ExecutionHistoryService {
 
         // windowConfigが存在する場合、その情報を展開して保存
         if (launcherItem.windowConfig) {
-          historyItem.exactMatch = launcherItem.windowConfig.exactMatch;
           historyItem.processName = launcherItem.windowConfig.processName;
           historyItem.windowX = launcherItem.windowConfig.x;
           historyItem.windowY = launcherItem.windowConfig.y;

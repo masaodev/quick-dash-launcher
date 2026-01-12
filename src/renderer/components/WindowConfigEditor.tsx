@@ -72,25 +72,14 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
                     title: e.target.value,
                   })
                 }
-                placeholder="ウィンドウタイトル（部分一致）"
+                placeholder="例: *Chrome* または Google Chrome"
                 className="window-config-input"
               />
             </div>
-            <div className="window-config-checkbox-row">
-              <label className="window-config-checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={windowConfig?.exactMatch || false}
-                  onChange={(e) =>
-                    onChange({
-                      ...(windowConfig || { title: '' }),
-                      exactMatch: e.target.checked || undefined,
-                    })
-                  }
-                  className="window-config-checkbox"
-                />
-                <span>完全一致で検索（ウィンドウタイトルのみ）</span>
-              </label>
+            <div className="window-config-help-text">
+              💡 ワイルドカード: *（任意の文字列）、?（任意の1文字）
+              <br />
+              ワイルドカードなし → 完全一致、ワイルドカードあり → パターンマッチ
             </div>
             <div className="window-config-row">
               <label className="window-config-label">プロセス名:</label>

@@ -186,7 +186,6 @@ export class WorkspaceService {
           type: 'windowOperation';
           name: string;
           windowTitle: string;
-          exactMatch?: boolean;
           processName?: string;
           x?: number;
           y?: number;
@@ -206,7 +205,6 @@ export class WorkspaceService {
           order: maxOrder + 1,
           addedAt: Date.now(),
           groupId: groupId,
-          exactMatch: windowOpItem.exactMatch,
           processName: windowOpItem.processName,
           windowX: windowOpItem.x,
           windowY: windowOpItem.y,

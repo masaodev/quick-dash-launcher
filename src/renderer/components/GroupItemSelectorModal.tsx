@@ -161,8 +161,8 @@ const GroupItemSelectorModal: React.FC<GroupItemSelectorModalProps> = ({
 
         const launcherItem = item;
 
-        // フォルダ取込アイテムから展開されたアイテムは除外
-        if (launcherItem.isDirExpanded) {
+        // フォルダ取込アイテムから展開されたアイテムは除外（LauncherItemのみ）
+        if (isLauncherItem(launcherItem) && launcherItem.isDirExpanded) {
           return false;
         }
 
@@ -197,23 +197,28 @@ const GroupItemSelectorModal: React.FC<GroupItemSelectorModalProps> = ({
     return excludeNames.includes(itemName);
   };
 
-  const getDefaultIcon = (item: LauncherItem) => {
-    switch (item.type) {
-      case 'url':
-        return '🌐';
-      case 'folder':
-        return '📁';
-      case 'app':
-        return '⚙️';
-      case 'file':
-        return '📄';
-      case 'customUri':
-        return '🔗';
-      case 'windowOperation':
-        return '🪟';
-      default:
-        return '❓';
+  const getDefaultIcon = (item: AppItem) => {
+    if ('type' in item) {
+      switch (item.type) {
+        case 'url':
+          return '🌐';
+        case 'folder':
+          return '📁';
+        case 'app':
+          return '⚙️';
+        case 'file':
+          return '📄';
+        case 'customUri':
+          return '🔗';
+        case 'windowOperation':
+          return '🪟';
+        case 'group':
+          return '📦';
+        default:
+          return '❓';
+      }
     }
+    return '❓';
   };
 
   if (!isOpen) return null;

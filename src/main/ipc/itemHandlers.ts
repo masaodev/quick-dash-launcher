@@ -163,7 +163,6 @@ async function executeGroup(
         // ウィンドウ操作アイテムの場合
         const windowConfig: WindowConfig = {
           title: item.windowTitle,
-          exactMatch: item.exactMatch,
           processName: item.processName,
           x: item.x,
           y: item.y,
@@ -276,7 +275,6 @@ export function setupItemHandlers(
     itemLogger.info(
       {
         windowTitle: item.windowTitle,
-        exactMatch: item.exactMatch,
         processName: item.processName,
         x: item.x,
         y: item.y,
@@ -290,7 +288,6 @@ export function setupItemHandlers(
 
     const windowConfig: WindowConfig = {
       title: item.windowTitle,
-      exactMatch: item.exactMatch,
       processName: item.processName,
       x: item.x,
       y: item.y,

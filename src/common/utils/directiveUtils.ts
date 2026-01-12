@@ -15,7 +15,6 @@ import { parseCSVLine } from './csvParser';
 export interface WindowOperationConfig {
   name: string;
   windowTitle: string;
-  exactMatch?: boolean;
   processName?: string;
   x?: number;
   y?: number;
@@ -150,7 +149,6 @@ export function parseWindowOperationConfig(configString: string): WindowOperatio
     return {
       name: config.name || '',
       windowTitle: config.windowTitle || '',
-      exactMatch: config.exactMatch,
       processName: config.processName,
       x: config.x,
       y: config.y,

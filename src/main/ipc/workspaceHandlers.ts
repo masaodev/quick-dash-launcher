@@ -200,7 +200,6 @@ export function setupWorkspaceHandlers(): void {
         // WindowConfigを構築
         const windowConfig = {
           title: windowTitle,
-          exactMatch: item.exactMatch,
           processName: item.processName,
           x: item.windowX,
           y: item.windowY,

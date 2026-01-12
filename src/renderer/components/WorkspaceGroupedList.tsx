@@ -193,7 +193,6 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
 
         // windowConfig情報があれば含める
         if (
-          historyItem.exactMatch !== undefined ||
           historyItem.processName !== undefined ||
           historyItem.windowX !== undefined ||
           historyItem.windowY !== undefined ||
@@ -205,7 +204,6 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
         ) {
           launcherItem.windowConfig = {
             title: '', // タイトルは不要（プロセス名で検索）
-            exactMatch: historyItem.exactMatch,
             processName: historyItem.processName,
             x: historyItem.windowX,
             y: historyItem.windowY,
@@ -470,7 +468,6 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
 
                       // windowConfig情報があれば含める
                       if (
-                        item.exactMatch !== undefined ||
                         item.processName !== undefined ||
                         item.windowX !== undefined ||
                         item.windowY !== undefined ||
@@ -482,7 +479,6 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
                       ) {
                         launcherItem.windowConfig = {
                           title: '', // タイトルは不要（プロセス名で検索）
-                          exactMatch: item.exactMatch,
                           processName: item.processName,
                           x: item.windowX,
                           y: item.windowY,
@@ -504,7 +500,6 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
                         type: 'windowOperation',
                         name: item.itemName,
                         windowTitle: windowTitle,
-                        exactMatch: item.exactMatch,
                         processName: item.processName,
                         x: item.windowX,
                         y: item.windowY,
