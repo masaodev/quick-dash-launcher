@@ -60,7 +60,13 @@
 }
 
 .register-item .form-group input,
-.register-item .form-group select,
+.register-item .form-group select {
+  flex: 1;
+  height: var(--input-height-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  box-sizing: border-box;
+}
+
 .register-item .form-group textarea {
   flex: 1;
 }
