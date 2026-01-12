@@ -654,7 +654,7 @@ window,{"name":"VSCode","windowTitle":"Visual Studio Code","x":100,"y":100,"widt
 - **アプリケーション起動不要**: 既存ウィンドウのみを制御するため、アプリケーションの起動は不要です
 - **高速な切り替え**: 新規起動よりも高速にウィンドウを表示できます
 - **ウィンドウ配置の自動化**: マルチモニタ環境でのウィンドウ配置を自動化できます
-- **仮想デスクトップ対応**: Windows 10以降の仮想デスクトップ機能を活用できます
+- **仮想デスクトップ対応**: 仮想デスクトップ機能を活用できます
 
 ### 制約事項
 
@@ -737,7 +737,7 @@ interface WindowConfig {
   y?: number;                // Y座標（仮想スクリーン座標系、省略時は位置変更なし）
   width?: number;            // 幅（省略時はサイズ変更なし）
   height?: number;           // 高さ（省略時はサイズ変更なし）
-  virtualDesktopNumber?: number; // 仮想デスクトップ番号（1から開始、省略時は移動なし、Windows 10以降）
+  virtualDesktopNumber?: number; // 仮想デスクトップ番号（1から開始、省略時は移動なし）
   activateWindow?: boolean;  // ウィンドウをアクティブにするかどうか（省略時はtrue）
 }
 ```
