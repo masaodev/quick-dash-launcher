@@ -233,7 +233,20 @@ export function setupWorkspaceHandlers(): void {
       }
 
       // groupタイプの場合：グループ内のアイテムを順次実行
-      if (item.type === 'group' && item.itemNames) {
+      if (item.type === 'group') {
+        logger.info(
+          { groupName: item.displayName, itemNames: item.itemNames },
+          'Group item launch requested'
+        );
+
+        if (!item.itemNames || item.itemNames.length === 0) {
+          logger.warn(
+            { groupName: item.displayName },
+            'Group has no items to execute'
+          );
+          return { success: true, message: 'グループにアイテムが登録されていません' };
+        }
+
         const configFolder = PathManager.getConfigFolder();
         const allItems = await loadDataFiles(configFolder);
 
