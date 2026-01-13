@@ -127,6 +127,9 @@
 グループに追加できないアイテム:
 - グループアイテム（`type === 'group'`）
 - フォルダ取込から展開されたアイテム（`isDirExpanded === true`）
+- WindowInfo（内部データ構造）
+
+**注意**: ウィンドウ操作アイテム（`type === 'windowOperation'`）はグループに追加可能です。
 
 ## 8. デフォルトアイコン
 
@@ -139,6 +142,8 @@
 | `app` | ⚙️ |
 | `file` | 📄 |
 | `customUri` | 🔗 |
+| `windowOperation` | 🪟 |
+| `group` | 📦 |
 | その他 | ❓ |
 
 ## 9. キーボード操作
