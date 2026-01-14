@@ -211,6 +211,23 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
                   className="window-config-input-number"
                 />
               </div>
+              <div className="window-config-row">
+                <label className="window-config-checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={windowConfig?.pinToAllDesktops ?? false}
+                    onChange={(e) =>
+                      onChange({
+                        ...(windowConfig || { title: '' }),
+                        pinToAllDesktops: e.target.checked,
+                      })
+                    }
+                    className="window-config-checkbox"
+                    title="ウィンドウを全てのデスクトップにピン留めします（Windows 10/11の「すべてのデスクトップで表示」機能）"
+                  />
+                  <span>📌 全ての仮想デスクトップに表示</span>
+                </label>
+              </div>
             </div>
 
             {/* 2-3. アクティブ化 */}

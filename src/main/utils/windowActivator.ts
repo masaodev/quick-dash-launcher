@@ -15,7 +15,11 @@ import {
   setWindowBounds,
   getWindowBounds,
 } from './nativeWindowControl.js';
-import { moveWindowToVirtualDesktop, isWindowOnDesktopNumber } from './virtualDesktopControl.js';
+import {
+  moveWindowToVirtualDesktop,
+  isWindowOnDesktopNumber,
+  pinWindowToAllDesktops,
+} from './virtualDesktopControl.js';
 
 /**
  * ウィンドウ位置・サイズ設定の定数
@@ -456,6 +460,29 @@ export async function tryActivateWindow(
           desktopNumber: targetDesktopNumber,
         },
         '仮想デスクトップへの移動に失敗しました'
+      );
+    }
+  }
+
+  // ウィンドウを全ての仮想デスクトップにピン留め（pinToAllDesktopsがtrueの場合）
+  if (effectiveConfig.pinToAllDesktops === true) {
+    const pinSuccess = pinWindowToAllDesktops(hwnd);
+
+    if (pinSuccess) {
+      logger.info(
+        {
+          name: itemName,
+          windowConfig: JSON.stringify(effectiveConfig),
+        },
+        'ウィンドウを全ての仮想デスクトップにピン留めしました'
+      );
+    } else {
+      logger.warn(
+        {
+          name: itemName,
+          windowConfig: JSON.stringify(effectiveConfig),
+        },
+        'ウィンドウのピン留めに失敗しました'
       );
     }
   }

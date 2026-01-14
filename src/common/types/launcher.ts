@@ -30,6 +30,8 @@ export interface WindowConfig {
   virtualDesktopNumber?: number;
   /** ウィンドウをアクティブにするかどうか（省略時はtrue） */
   activateWindow?: boolean;
+  /** 全ての仮想デスクトップに表示（ピン留め）するかどうか（省略時はfalse、Windows 10以降） */
+  pinToAllDesktops?: boolean;
 }
 
 /**
@@ -134,6 +136,8 @@ export interface WindowOperationItem {
   virtualDesktopNumber?: number;
   /** ウィンドウをアクティブにするかどうか（省略時はtrue） */
   activateWindow?: boolean;
+  /** 全ての仮想デスクトップに表示（ピン留め）するかどうか（省略時はfalse、Windows 10以降） */
+  pinToAllDesktops?: boolean;
   /** 元のデータファイル */
   sourceFile?: string;
   /** データファイル内の行番号（編集機能で使用） */

@@ -27,6 +27,9 @@ let virtualDesktopAccessor: any = null;
 let MoveWindowToDesktopNumber: any = null;
 let _getCurrentDesktopNumber: any = null;
 let _isWindowOnDesktopNumber: any = null;
+let _isPinnedWindow: any = null;
+let _pinWindow: any = null;
+let _unpinWindow: any = null;
 
 try {
   // DLLのパスを設定（resources/native/VirtualDesktopAccessor.dll）
@@ -160,6 +163,101 @@ try {
 
   if (_isWindowOnDesktopNumber) {
     debugLog('[VirtualDesktopAccessor] IsWindowOnDesktopNumber初期化完了');
+  }
+
+  // IsPinnedWindow関数を定義
+  // BOOL IsPinnedWindow(HWND hwnd)
+  const isPinnedPatterns = [
+    {
+      name: 'classic __stdcall + void*',
+      loader: () =>
+        virtualDesktopAccessor.func('__stdcall', 'IsPinnedWindow', 'int', ['void *']),
+    },
+    {
+      name: 'prototype __stdcall + void*',
+      loader: () => virtualDesktopAccessor.func('int __stdcall IsPinnedWindow(void *hwnd)'),
+    },
+    {
+      name: 'classic __stdcall + uintptr',
+      loader: () =>
+        virtualDesktopAccessor.func('__stdcall', 'IsPinnedWindow', 'int', ['uintptr']),
+    },
+  ];
+
+  for (const pattern of isPinnedPatterns) {
+    try {
+      _isPinnedWindow = pattern.loader();
+      debugLog(`[VirtualDesktopAccessor] IsPinnedWindow定義成功（${pattern.name}）`);
+      break;
+    } catch (error) {
+      console.warn(`[VirtualDesktopAccessor] ${pattern.name}失敗:`, error);
+    }
+  }
+
+  if (_isPinnedWindow) {
+    debugLog('[VirtualDesktopAccessor] IsPinnedWindow初期化完了');
+  }
+
+  // PinWindow関数を定義
+  // BOOL PinWindow(HWND hwnd)
+  const pinWindowPatterns = [
+    {
+      name: 'classic __stdcall + void*',
+      loader: () => virtualDesktopAccessor.func('__stdcall', 'PinWindow', 'int', ['void *']),
+    },
+    {
+      name: 'prototype __stdcall + void*',
+      loader: () => virtualDesktopAccessor.func('int __stdcall PinWindow(void *hwnd)'),
+    },
+    {
+      name: 'classic __stdcall + uintptr',
+      loader: () => virtualDesktopAccessor.func('__stdcall', 'PinWindow', 'int', ['uintptr']),
+    },
+  ];
+
+  for (const pattern of pinWindowPatterns) {
+    try {
+      _pinWindow = pattern.loader();
+      debugLog(`[VirtualDesktopAccessor] PinWindow定義成功（${pattern.name}）`);
+      break;
+    } catch (error) {
+      console.warn(`[VirtualDesktopAccessor] ${pattern.name}失敗:`, error);
+    }
+  }
+
+  if (_pinWindow) {
+    debugLog('[VirtualDesktopAccessor] PinWindow初期化完了');
+  }
+
+  // UnPinWindow関数を定義
+  // BOOL UnPinWindow(HWND hwnd)
+  const unpinWindowPatterns = [
+    {
+      name: 'classic __stdcall + void*',
+      loader: () => virtualDesktopAccessor.func('__stdcall', 'UnPinWindow', 'int', ['void *']),
+    },
+    {
+      name: 'prototype __stdcall + void*',
+      loader: () => virtualDesktopAccessor.func('int __stdcall UnPinWindow(void *hwnd)'),
+    },
+    {
+      name: 'classic __stdcall + uintptr',
+      loader: () => virtualDesktopAccessor.func('__stdcall', 'UnPinWindow', 'int', ['uintptr']),
+    },
+  ];
+
+  for (const pattern of unpinWindowPatterns) {
+    try {
+      _unpinWindow = pattern.loader();
+      debugLog(`[VirtualDesktopAccessor] UnPinWindow定義成功（${pattern.name}）`);
+      break;
+    } catch (error) {
+      console.warn(`[VirtualDesktopAccessor] ${pattern.name}失敗:`, error);
+    }
+  }
+
+  if (_unpinWindow) {
+    debugLog('[VirtualDesktopAccessor] UnPinWindow初期化完了');
   }
 } catch (error) {
   console.error('[VirtualDesktopAccessor] 初期化失敗:', error);
@@ -664,6 +762,204 @@ export function isWindowOnDesktopNumber(hwnd: number | bigint, desktopNumber: nu
     return isOnDesktop;
   } catch (error) {
     console.error('[isWindowOnDesktopNumber] 例外発生:', error);
+    return false;
+  }
+}
+
+/**
+ * ウィンドウが全ての仮想デスクトップにピン留めされているか確認
+ * @param hwnd ウィンドウハンドル
+ * @returns ピン留めされている場合true、それ以外false
+ */
+export function isWindowPinnedToAllDesktops(hwnd: number | bigint): boolean {
+  // サポート確認
+  if (!isVirtualDesktopSupported()) {
+    console.warn('[isWindowPinnedToAllDesktops] 仮想デスクトップはサポートされていません');
+    return false;
+  }
+
+  // DLLロード確認
+  if (!_isPinnedWindow) {
+    console.error('[isWindowPinnedToAllDesktops] VirtualDesktopAccessor.dllがロードされていません');
+    return false;
+  }
+
+  // HWNDの型変換
+  let hwndValue: number | bigint;
+  if (typeof hwnd === 'bigint') {
+    hwndValue = hwnd;
+  } else {
+    hwndValue = hwnd;
+  }
+
+  try {
+    // IsPinnedWindow呼び出し
+    const result = _isPinnedWindow(hwndValue);
+
+    // 戻り値の型に応じて処理
+    // bool型の場合: true/false
+    // int型の場合: 1 = TRUE (ピン留め済み), 0 = FALSE (未ピン留め), -1 = エラー
+    if (typeof result === 'boolean') {
+      return result;
+    } else if (typeof result === 'number') {
+      if (result === -1) {
+        console.error('[isWindowPinnedToAllDesktops] エラーが発生しました（戻り値: -1）');
+        return false;
+      }
+      return result !== 0;
+    }
+
+    return false;
+  } catch (error) {
+    console.error('[isWindowPinnedToAllDesktops] 例外発生:', error);
+    return false;
+  }
+}
+
+/**
+ * ウィンドウを全ての仮想デスクトップにピン留めする
+ * @param hwnd ウィンドウハンドル
+ * @returns 成功したらtrue
+ */
+export function pinWindowToAllDesktops(hwnd: number | bigint): boolean {
+  // サポート確認
+  if (!isVirtualDesktopSupported()) {
+    console.warn('[pinWindowToAllDesktops] 仮想デスクトップはサポートされていません');
+    return false;
+  }
+
+  // DLLロード確認
+  if (!_pinWindow) {
+    console.error('[pinWindowToAllDesktops] VirtualDesktopAccessor.dllがロードされていません');
+    return false;
+  }
+
+  // HWNDの型変換
+  let hwndValue: number | bigint;
+  if (typeof hwnd === 'bigint') {
+    hwndValue = hwnd;
+  } else {
+    hwndValue = hwnd;
+  }
+
+  debugLog('[pinWindowToAllDesktops] デバッグ情報:', {
+    hwnd: String(hwnd),
+    hwndValue: String(hwndValue),
+    hwndType: typeof hwndValue,
+  });
+
+  try {
+    debugLog('[pinWindowToAllDesktops] 関数呼び出し前チェック:', {
+      PinWindow: typeof _pinWindow,
+      isFunction: typeof _pinWindow === 'function',
+    });
+
+    // PinWindow呼び出し
+    const result = _pinWindow(hwndValue);
+
+    debugLog('[pinWindowToAllDesktops] 実行結果:', result, '型:', typeof result);
+
+    // 戻り値の型に応じて処理
+    // bool型の場合: true/false
+    // int型の場合: 0 = 成功, -1 = エラー
+    if (typeof result === 'boolean') {
+      if (result) {
+        debugLog('[pinWindowToAllDesktops] ウィンドウピン留め成功');
+        return true;
+      } else {
+        console.error('[pinWindowToAllDesktops] ウィンドウピン留め失敗');
+        return false;
+      }
+    } else if (typeof result === 'number') {
+      if (result === 0) {
+        debugLog('[pinWindowToAllDesktops] ウィンドウピン留め成功');
+        return true;
+      } else {
+        console.error(`[pinWindowToAllDesktops] ウィンドウピン留め失敗。戻り値: ${result}`);
+        return false;
+      }
+    }
+
+    console.error('[pinWindowToAllDesktops] 予期しない戻り値の型:', typeof result);
+    return false;
+  } catch (error) {
+    console.error('[pinWindowToAllDesktops] 例外発生:', error);
+    console.error('[pinWindowToAllDesktops] エラースタック:', (error as Error).stack);
+    return false;
+  }
+}
+
+/**
+ * ウィンドウの全ての仮想デスクトップへのピン留めを解除
+ * @param hwnd ウィンドウハンドル
+ * @returns 成功したらtrue
+ */
+export function unpinWindowFromAllDesktops(hwnd: number | bigint): boolean {
+  // サポート確認
+  if (!isVirtualDesktopSupported()) {
+    console.warn('[unpinWindowFromAllDesktops] 仮想デスクトップはサポートされていません');
+    return false;
+  }
+
+  // DLLロード確認
+  if (!_unpinWindow) {
+    console.error(
+      '[unpinWindowFromAllDesktops] VirtualDesktopAccessor.dllがロードされていません'
+    );
+    return false;
+  }
+
+  // HWNDの型変換
+  let hwndValue: number | bigint;
+  if (typeof hwnd === 'bigint') {
+    hwndValue = hwnd;
+  } else {
+    hwndValue = hwnd;
+  }
+
+  debugLog('[unpinWindowFromAllDesktops] デバッグ情報:', {
+    hwnd: String(hwnd),
+    hwndValue: String(hwndValue),
+    hwndType: typeof hwndValue,
+  });
+
+  try {
+    debugLog('[unpinWindowFromAllDesktops] 関数呼び出し前チェック:', {
+      UnPinWindow: typeof _unpinWindow,
+      isFunction: typeof _unpinWindow === 'function',
+    });
+
+    // UnPinWindow呼び出し
+    const result = _unpinWindow(hwndValue);
+
+    debugLog('[unpinWindowFromAllDesktops] 実行結果:', result, '型:', typeof result);
+
+    // 戻り値の型に応じて処理
+    // bool型の場合: true/false
+    // int型の場合: 0 = 成功, -1 = エラー
+    if (typeof result === 'boolean') {
+      if (result) {
+        debugLog('[unpinWindowFromAllDesktops] ウィンドウピン留め解除成功');
+        return true;
+      } else {
+        console.error('[unpinWindowFromAllDesktops] ウィンドウピン留め解除失敗');
+        return false;
+      }
+    } else if (typeof result === 'number') {
+      if (result === 0) {
+        debugLog('[unpinWindowFromAllDesktops] ウィンドウピン留め解除成功');
+        return true;
+      } else {
+        console.error(`[unpinWindowFromAllDesktops] ウィンドウピン留め解除失敗。戻り値: ${result}`);
+        return false;
+      }
+    }
+
+    console.error('[unpinWindowFromAllDesktops] 予期しない戻り値の型:', typeof result);
+    return false;
+  } catch (error) {
+    console.error('[unpinWindowFromAllDesktops] 例外発生:', error);
+    console.error('[unpinWindowFromAllDesktops] エラースタック:', (error as Error).stack);
     return false;
   }
 }
