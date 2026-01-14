@@ -43,6 +43,14 @@ const App: React.FC = () => {
   const [searchMode, setSearchMode] = useState<SearchMode>('normal');
   const [windowList, setWindowList] = useState<WindowInfo[]>([]);
 
+  // 仮想デスクトップ関連の状態
+  const [desktopInfo, setDesktopInfo] = useState<{
+    supported: boolean;
+    desktopCount: number;
+    currentDesktop: number;
+  } | null>(null);
+  const [activeDesktopTab, setActiveDesktopTab] = useState<number>(0); // 0 = すべて
+
   // AlertDialog状態管理
   const [alertDialog, setAlertDialog] = useState<{
     isOpen: boolean;
@@ -119,13 +127,26 @@ const App: React.FC = () => {
     if (searchMode === 'normal') {
       // 通常モード → ウィンドウ検索モード
       setSearchMode('window');
-      const windows = await window.electronAPI.getWindowList();
+      // 全仮想デスクトップのウィンドウと仮想デスクトップ情報を取得
+      const [windows, info] = await Promise.all([
+        window.electronAPI.getAllWindowsAllDesktops(),
+        window.electronAPI.getVirtualDesktopInfo(),
+      ]);
       setWindowList(windows);
+      setDesktopInfo(info);
+      // 現在のデスクトップをデフォルトタブとして設定
+      if (info.supported && info.currentDesktop > 0) {
+        setActiveDesktopTab(info.currentDesktop);
+      } else {
+        setActiveDesktopTab(0);
+      }
       setSearchQuery(''); // 検索クエリをクリア
     } else if (searchMode === 'window') {
       // ウィンドウ検索モード → 実行履歴検索モード
       setSearchMode('history');
       setWindowList([]);
+      setDesktopInfo(null);
+      setActiveDesktopTab(0);
       setSearchQuery(''); // 検索クエリをクリア
     } else {
       // 実行履歴検索モード → 通常モード
@@ -601,9 +622,22 @@ const App: React.FC = () => {
   };
 
   const tabFilteredItems = getTabFilteredItems(mainItems);
+
+  // ウィンドウ検索モード時のタブフィルタリング
+  const getDesktopFilteredWindows = (windows: WindowInfo[]): WindowInfo[] => {
+    if (activeDesktopTab === 0) {
+      return windows; // すべて
+    }
+    if (activeDesktopTab === -1) {
+      // 不明
+      return windows.filter((w) => w.desktopNumber === undefined || w.desktopNumber === -1);
+    }
+    return windows.filter((w) => w.desktopNumber === activeDesktopTab);
+  };
+
   const itemsToFilter =
     searchMode === 'window'
-      ? windowList
+      ? getDesktopFilteredWindows(windowList)
       : searchMode === 'history'
         ? historyItems
         : tabFilteredItems;
@@ -629,6 +663,13 @@ const App: React.FC = () => {
             onChange={handleSearch}
             onKeyDown={handleKeyDown}
             searchMode={searchMode}
+            desktopInfo={desktopInfo}
+            activeDesktopTab={activeDesktopTab}
+            onDesktopTabChange={(tab) => {
+              setActiveDesktopTab(tab);
+              setSelectedIndex(0);
+            }}
+            windowList={windowList}
           />
           <LauncherActionButtons
             onReload={loadItems}

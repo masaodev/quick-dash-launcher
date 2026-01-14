@@ -9,6 +9,8 @@ import * as os from 'os';
 import { WindowInfo } from '@common/types';
 import koffi from 'koffi';
 
+import { getWindowDesktopNumber } from './virtualDesktopControl';
+
 // user32.dll、kernel32.dll、gdiplus.dll、dwmapi.dllをロード
 const user32 = koffi.load('user32.dll');
 const kernel32 = koffi.load('kernel32.dll');
@@ -479,8 +481,12 @@ export function getAllWindows(options?: { includeAllVirtualDesktops?: boolean })
         icon = convertIconToBase64(hIcon);
       }
 
+      // 仮想デスクトップ番号を取得
+      const hwndAddress = koffi.address(hwnd);
+      const desktopNumber = getWindowDesktopNumber(hwndAddress);
+
       windows.push({
-        hwnd: koffi.address(hwnd),
+        hwnd: hwndAddress,
         title,
         x: rect.left,
         y: rect.top,
@@ -492,6 +498,7 @@ export function getAllWindows(options?: { includeAllVirtualDesktops?: boolean })
         processName,
         windowState,
         icon,
+        desktopNumber,
       });
     } catch (error) {
       console.error('Error processing window:', error);

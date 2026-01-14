@@ -167,6 +167,12 @@ export interface ElectronAPI {
   };
   // ウィンドウ検索API
   getWindowList: () => Promise<WindowInfo[]>;
+  getAllWindowsAllDesktops: () => Promise<WindowInfo[]>;
+  getVirtualDesktopInfo: () => Promise<{
+    supported: boolean;
+    desktopCount: number;
+    currentDesktop: number;
+  }>;
   activateWindowByHwnd: (hwnd: number | bigint) => Promise<{ success: boolean; error?: string }>;
   // ワークスペースウィンドウ制御API
   toggleWorkspaceWindow: () => Promise<void>;

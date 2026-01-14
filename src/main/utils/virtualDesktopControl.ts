@@ -3,6 +3,13 @@
  * VirtualDesktopAccessor.dllを使用してウィンドウを指定された仮想デスクトップに移動する機能を提供
  *
  * Note: koffiライブラリを使用したネイティブDLL呼び出しのため、any型を使用しています
+ *
+ * TODO（将来のリファクタリング）:
+ * このファイルは複数の責務を持っており、以下のように分割することを推奨します：
+ * - virtualDesktopRegistry.ts: レジストリアクセス（GUID取得、レジストリ読み書き）
+ * - virtualDesktopGuid.ts: GUID変換（Buffer⇔GUID文字列）
+ * - virtualDesktopWindow.ts: ウィンドウ操作（移動、チェック、デスクトップ番号取得）
+ * 現状でも動作に問題はありませんが、保守性・テスト容易性向上のため検討してください。
  */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as os from 'os';
@@ -27,6 +34,8 @@ let virtualDesktopAccessor: any = null;
 let MoveWindowToDesktopNumber: any = null;
 let _getCurrentDesktopNumber: any = null;
 let _isWindowOnDesktopNumber: any = null;
+let _getWindowDesktopNumber: any = null;
+let _getDesktopCount: any = null;
 
 try {
   // DLLのパスを設定（resources/native/VirtualDesktopAccessor.dll）
@@ -160,6 +169,48 @@ try {
 
   if (_isWindowOnDesktopNumber) {
     debugLog('[VirtualDesktopAccessor] IsWindowOnDesktopNumber初期化完了');
+  }
+
+  // GetWindowDesktopNumber関数を定義
+  // int GetWindowDesktopNumber(HWND hwnd)
+  const getWindowDesktopPatterns = [
+    {
+      name: 'classic __stdcall + void*',
+      loader: () =>
+        virtualDesktopAccessor.func('__stdcall', 'GetWindowDesktopNumber', 'int', ['void *']),
+    },
+    {
+      name: 'prototype __stdcall + void*',
+      loader: () => virtualDesktopAccessor.func('int __stdcall GetWindowDesktopNumber(void *hwnd)'),
+    },
+    {
+      name: 'classic __stdcall + uintptr',
+      loader: () =>
+        virtualDesktopAccessor.func('__stdcall', 'GetWindowDesktopNumber', 'int', ['uintptr']),
+    },
+  ];
+
+  for (const pattern of getWindowDesktopPatterns) {
+    try {
+      _getWindowDesktopNumber = pattern.loader();
+      debugLog(`[VirtualDesktopAccessor] GetWindowDesktopNumber定義成功（${pattern.name}）`);
+      break;
+    } catch (error) {
+      console.warn(`[VirtualDesktopAccessor] ${pattern.name}失敗:`, error);
+    }
+  }
+
+  if (_getWindowDesktopNumber) {
+    debugLog('[VirtualDesktopAccessor] GetWindowDesktopNumber初期化完了');
+  }
+
+  // GetDesktopCount関数を定義
+  // int GetDesktopCount()
+  try {
+    _getDesktopCount = virtualDesktopAccessor.func('__stdcall', 'GetDesktopCount', 'int', []);
+    debugLog('[VirtualDesktopAccessor] GetDesktopCount初期化完了');
+  } catch (error) {
+    console.warn('[VirtualDesktopAccessor] GetDesktopCount初期化失敗:', error);
   }
 } catch (error) {
   console.error('[VirtualDesktopAccessor] 初期化失敗:', error);
@@ -407,94 +458,6 @@ function _bufferToGuidString(buffer: Buffer): string {
 }
 
 /**
- * GUID文字列を16バイトのBufferに変換
- * @param guidString GUID文字列（{xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}形式）
- * @returns 16バイトのGUIDバイナリ
- */
-function _guidStringToBuffer(guidString: string): Buffer {
-  // 波括弧とハイフンを削除
-  const hex = guidString.replace(/[{}-]/g, '');
-
-  if (hex.length !== 32) {
-    throw new Error('GUIDフォーマットが不正です');
-  }
-
-  const buffer = Buffer.alloc(16);
-
-  // GUIDのバイト順序（リトルエンディアン）
-  buffer.writeUInt32LE(parseInt(hex.substring(0, 8), 16), 0);
-  buffer.writeUInt16LE(parseInt(hex.substring(8, 12), 16), 4);
-  buffer.writeUInt16LE(parseInt(hex.substring(12, 16), 16), 6);
-  buffer.writeUInt16BE(parseInt(hex.substring(16, 20), 16), 8);
-  Buffer.from(hex.substring(20, 32), 'hex').copy(buffer, 10);
-
-  return buffer;
-}
-
-/**
- * GUID文字列をGUID構造体に変換（COM API用）
- * @param guidString GUID文字列（{xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}形式）
- * @returns GUID構造体
- */
-function _guidStringToStruct(guidString: string): any {
-  // 波括弧とハイフンを削除
-  const hex = guidString.replace(/[{}-]/g, '');
-
-  if (hex.length !== 32) {
-    throw new Error('GUIDフォーマットが不正です');
-  }
-
-  // Data4配列を作成（通常のArrayを使用）
-  const data4 = [];
-  for (let i = 0; i < 8; i++) {
-    data4.push(parseInt(hex.substring(16 + i * 2, 18 + i * 2), 16));
-  }
-
-  // GUID構造体を作成
-  const guid = {
-    Data1: parseInt(hex.substring(0, 8), 16),
-    Data2: parseInt(hex.substring(8, 12), 16),
-    Data3: parseInt(hex.substring(12, 16), 16),
-    Data4: data4,
-  };
-
-  return guid;
-}
-
-/**
- * デスクトップ番号からGUIDを取得
- * @param desktopNumber デスクトップ番号（1から開始）
- * @returns GUID文字列（失敗時はnull）
- */
-export function getDesktopGUIDByNumber(desktopNumber: number): string | null {
-  if (desktopNumber < 1) {
-    console.error(
-      `[getDesktopGUIDByNumber] デスクトップ番号は1以上である必要があります: ${desktopNumber}`
-    );
-    return null;
-  }
-
-  const guids = getVirtualDesktopGUIDs();
-
-  if (guids.length === 0) {
-    console.warn('[getDesktopGUIDByNumber] 仮想デスクトップが見つかりません');
-    return null;
-  }
-
-  // 番号を0ベースのインデックスに変換
-  const index = desktopNumber - 1;
-
-  if (index >= guids.length) {
-    console.warn(
-      `[getDesktopGUIDByNumber] デスクトップ番号が範囲外です。番号: ${desktopNumber}, 最大: ${guids.length}`
-    );
-    return null;
-  }
-
-  return guids[index];
-}
-
-/**
  * 現在の仮想デスクトップ番号を取得
  * @returns デスクトップ番号（1から開始）。失敗時は-1
  */
@@ -665,5 +628,68 @@ export function isWindowOnDesktopNumber(hwnd: number | bigint, desktopNumber: nu
   } catch (error) {
     console.error('[isWindowOnDesktopNumber] 例外発生:', error);
     return false;
+  }
+}
+
+/**
+ * ウィンドウが所属する仮想デスクトップ番号を取得
+ * @param hwnd ウィンドウハンドル
+ * @returns デスクトップ番号（1から開始）。失敗時は-1
+ */
+export function getWindowDesktopNumber(hwnd: number | bigint): number {
+  // サポート確認
+  if (!isVirtualDesktopSupported()) {
+    return -1;
+  }
+
+  // DLLロード確認
+  if (!_getWindowDesktopNumber) {
+    return -1;
+  }
+
+  // HWNDの型変換
+  const hwndValue = typeof hwnd === 'bigint' ? hwnd : hwnd;
+
+  try {
+    // GetWindowDesktopNumber呼び出し（0ベースのインデックスを返す）
+    const desktopIndex = _getWindowDesktopNumber(hwndValue);
+
+    if (desktopIndex < 0) {
+      return -1;
+    }
+
+    // 1ベースの番号に変換して返す
+    return desktopIndex + 1;
+  } catch (error) {
+    console.error('[getWindowDesktopNumber] 例外発生:', error);
+    return -1;
+  }
+}
+
+/**
+ * 仮想デスクトップの数を取得
+ * @returns デスクトップ数。失敗時は-1
+ */
+export function getDesktopCount(): number {
+  // サポート確認
+  if (!isVirtualDesktopSupported()) {
+    return -1;
+  }
+
+  // DLLロード確認
+  if (!_getDesktopCount) {
+    // DLLが利用できない場合はレジストリから取得
+    const guids = getVirtualDesktopGUIDs();
+    return guids.length > 0 ? guids.length : -1;
+  }
+
+  try {
+    const count = _getDesktopCount();
+    return count > 0 ? count : -1;
+  } catch (error) {
+    console.error('[getDesktopCount] 例外発生:', error);
+    // フォールバック: レジストリから取得
+    const guids = getVirtualDesktopGUIDs();
+    return guids.length > 0 ? guids.length : -1;
   }
 }
