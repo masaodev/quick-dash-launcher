@@ -1,7 +1,7 @@
 import { ipcMain, BrowserWindow } from 'electron';
 import logger from '@common/logger';
-import type { AppItem, WorkspaceItem, WorkspaceGroup } from '@common/types';
-import { isWindowInfo } from '@common/utils/typeGuards';
+import type { AppItem, WorkspaceItem, WorkspaceGroup, WindowConfig } from '@common/types';
+import { isWindowInfo, isLauncherItem, isWindowOperationItem } from '@common/utils/typeGuards';
 import {
   WORKSPACE_LOAD_ITEMS,
   WORKSPACE_ADD_ITEM,
@@ -32,6 +32,8 @@ import { launchItem } from '../utils/itemLauncher.js';
 import { WorkspaceService } from '../services/workspaceService.js';
 import PathManager from '../config/pathManager.js';
 import { IconService } from '../services/iconService.js';
+
+import { loadDataFiles } from './dataHandlers.js';
 
 /**
  * ワークスペース変更イベントを全てのウィンドウに送信
@@ -230,6 +232,99 @@ export function setupWorkspaceHandlers(): void {
         }
       }
 
+      // groupタイプの場合：グループ内のアイテムを順次実行
+      if (item.type === 'group') {
+        logger.info(
+          { groupName: item.displayName, itemNames: item.itemNames },
+          'Group item launch requested'
+        );
+
+        if (!item.itemNames || item.itemNames.length === 0) {
+          logger.warn(
+            { groupName: item.displayName },
+            'Group has no items to execute'
+          );
+          return { success: true, message: 'グループにアイテムが登録されていません' };
+        }
+
+        const configFolder = PathManager.getConfigFolder();
+        const allItems = await loadDataFiles(configFolder);
+
+        logger.info(
+          { groupName: item.displayName, itemCount: item.itemNames.length },
+          'Executing group from workspace'
+        );
+
+        let successCount = 0;
+        let errorCount = 0;
+
+        // アイテム名からLauncherItemまたはWindowOperationItemを検索するマップを作成
+        const itemMap = new Map<string, AppItem>();
+        for (const appItem of allItems) {
+          if (isLauncherItem(appItem)) {
+            itemMap.set(appItem.name, appItem);
+          } else if (isWindowOperationItem(appItem)) {
+            itemMap.set(appItem.name, appItem);
+          }
+        }
+
+        // グループ内のアイテムを順次実行
+        for (const itemName of item.itemNames) {
+          const targetItem = itemMap.get(itemName);
+
+          if (!targetItem) {
+            logger.warn(
+              { groupName: item.displayName, itemName },
+              'Group item not found in launcher items'
+            );
+            errorCount++;
+            continue;
+          }
+
+          try {
+            if (isWindowOperationItem(targetItem)) {
+              // ウィンドウ操作アイテムの場合
+              const windowConfig: WindowConfig = {
+                title: targetItem.windowTitle,
+                processName: targetItem.processName,
+                x: targetItem.x,
+                y: targetItem.y,
+                width: targetItem.width,
+                height: targetItem.height,
+                virtualDesktopNumber: targetItem.virtualDesktopNumber,
+                activateWindow: targetItem.activateWindow,
+              };
+
+              await tryActivateWindow(windowConfig, undefined, targetItem.name, logger);
+            } else if (isLauncherItem(targetItem)) {
+              // 通常のLauncherItemの場合
+              await launchItem(
+                {
+                  type: targetItem.type,
+                  path: targetItem.path,
+                  args: targetItem.args,
+                  name: targetItem.name,
+                },
+                logger
+              );
+            }
+            successCount++;
+          } catch (error) {
+            logger.error(
+              { groupName: item.displayName, itemName, error },
+              'Failed to execute group item'
+            );
+            errorCount++;
+          }
+        }
+
+        logger.info(
+          { groupName: item.displayName, successCount, errorCount },
+          'Group execution completed'
+        );
+        return { success: true, successCount, errorCount };
+      }
+
       // ウィンドウ設定が存在する場合、先にウィンドウ検索を試行
       const activationResult = await tryActivateWindow(
         item.windowConfig,
@@ -245,9 +340,10 @@ export function setupWorkspaceHandlers(): void {
       // アクティブ化失敗または未設定の場合は下記の通常起動処理へフォールバック
 
       // WorkspaceItemを起動：共通のlaunchItem関数を使用
+      // この時点でwindowOperationとgroupは処理済みなので、LaunchableItemの型にキャスト
       await launchItem(
         {
-          type: item.type,
+          type: item.type as 'url' | 'file' | 'folder' | 'app' | 'customUri',
           path: item.path,
           args: item.args,
           name: item.displayName,

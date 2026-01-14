@@ -41,9 +41,6 @@
   },
   "homepage": "https://github.com/masaodev/quick-dash-launcher",
   "bugs": "https://github.com/masaodev/quick-dash-launcher/issues",
-  "os": [
-    "win32"
-  ],
   "engines": {
     "node": ">=20.19.0"
   },
