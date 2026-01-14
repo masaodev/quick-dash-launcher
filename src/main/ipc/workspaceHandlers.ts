@@ -240,10 +240,7 @@ export function setupWorkspaceHandlers(): void {
         );
 
         if (!item.itemNames || item.itemNames.length === 0) {
-          logger.warn(
-            { groupName: item.displayName },
-            'Group has no items to execute'
-          );
+          logger.warn({ groupName: item.displayName }, 'Group has no items to execute');
           return { success: true, message: 'グループにアイテムが登録されていません' };
         }
 

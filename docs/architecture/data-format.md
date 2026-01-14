@@ -919,11 +919,12 @@ export interface SearchHistoryState {
       "displayName": "表示名",
       "originalName": "元の名前",
       "path": "パスまたはURL",
-      "type": "url | file | folder | app | customUri",
+      "type": "url | file | folder | app | customUri | group",
       "icon": "base64エンコードされたアイコン（オプション）",
       "customIcon": "カスタムアイコンファイル名（オプション）",
       "args": "引数（オプション）",
       "originalPath": "ショートカットのリンク先（オプション）",
+      "itemNames": ["アイテム名1", "アイテム名2"],
       "order": 0,
       "addedAt": 1234567890,
       "groupId": "グループID（オプション）"
@@ -942,6 +943,10 @@ export interface SearchHistoryState {
 }
 ```
 
+**備考**:
+- **v0.5.19以降**: `type` に `'group'` が追加され、グループアイテムをワークスペースに追加可能
+- **v0.5.19以降**: `itemNames` フィールドはグループアイテム専用（`type='group'` の場合のみ使用）
+
 ### execution-history.json
 
 アイテムの実行履歴を保存するJSONファイル（最大10件）。
@@ -958,6 +963,7 @@ export interface SearchHistoryState {
       "itemPath": "パスまたはURL",
       "itemType": "url | file | folder | app | customUri | group",
       "icon": "base64エンコードされたアイコン（オプション）",
+      "itemNames": ["アイテム名1", "アイテム名2"],
       "executedAt": 1234567890
     }
   ]
@@ -968,6 +974,8 @@ export interface SearchHistoryState {
 - 最大10件まで保持
 - 古い履歴から自動削除
 - メイン画面でアイテムを起動するたびに自動追加
+- **v0.5.19以降**: `itemType` に `'group'` が追加され、グループアイテムの実行履歴も記録可能
+- **v0.5.19以降**: `itemNames` フィールドはグループアイテム専用（`itemType='group'` の場合のみ使用）
 
 ### workspace-archive.json
 

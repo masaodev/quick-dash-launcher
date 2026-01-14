@@ -219,7 +219,11 @@ export class WorkspaceService {
       else if (isGroupItem(item)) {
         const itemNames = item.itemNames || [];
         logger.info(
-          { groupName: item.name, originalItemNames: item.itemNames, itemNamesLength: itemNames.length },
+          {
+            groupName: item.name,
+            originalItemNames: item.itemNames,
+            itemNamesLength: itemNames.length,
+          },
           'Adding group item to workspace'
         );
         workspaceItem = {

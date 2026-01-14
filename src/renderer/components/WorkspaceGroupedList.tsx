@@ -191,9 +191,10 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
           args: historyItem.args,
         };
 
-        // グループアイテムの場合はitemNamesも含める
+        // グループアイテムの場合はitemNamesも含める（型アサーションで一時的に対応）
         if (historyItem.itemType === 'group' && historyItem.itemNames) {
-          (launcherItem as any).itemNames = historyItem.itemNames;
+          (launcherItem as LauncherItem & { itemNames: string[] }).itemNames =
+            historyItem.itemNames;
         }
 
         // windowConfig情報があれば含める

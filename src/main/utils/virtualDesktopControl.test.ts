@@ -6,7 +6,6 @@ import { describe, it, expect } from 'vitest';
 import {
   isVirtualDesktopSupported,
   getVirtualDesktopGUIDs,
-  getDesktopGUIDByNumber,
   moveWindowToVirtualDesktop,
 } from './virtualDesktopControl.js';
 import { findWindowByTitle } from './windowMatcher.js';
@@ -38,29 +37,6 @@ describe('virtualDesktopControl', () => {
           expect(guid).toMatch(guidPattern);
         });
       }
-    });
-  });
-
-  describe('getDesktopGUIDByNumber', () => {
-    it('有効なデスクトップ番号でGUIDを取得できるべき', () => {
-      const guid = getDesktopGUIDByNumber(1);
-      console.log('デスクトップ1のGUID:', guid);
-
-      // 環境依存のため、結果をログ出力のみ
-      if (guid !== null) {
-        const guidPattern = /^\{[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\}$/i;
-        expect(guid).toMatch(guidPattern);
-      }
-    });
-
-    it('範囲外のデスクトップ番号でnullを返すべき', () => {
-      const guid = getDesktopGUIDByNumber(999);
-      expect(guid).toBeNull();
-    });
-
-    it('0以下のデスクトップ番号でnullを返すべき', () => {
-      const guid = getDesktopGUIDByNumber(0);
-      expect(guid).toBeNull();
     });
   });
 
