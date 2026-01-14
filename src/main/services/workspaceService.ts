@@ -13,7 +13,7 @@ import type {
 } from '@common/types.js';
 import logger from '@common/logger.js';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector.js';
-import { isWindowInfo, isLauncherItem } from '@common/utils/typeGuards.js';
+import { isWindowInfo, isGroupItem } from '@common/utils/typeGuards.js';
 
 import PathManager from '../config/pathManager.js';
 
@@ -170,9 +170,9 @@ export class WorkspaceService {
     try {
       const items = await this.loadItems();
 
-      // グループアイテムとWindowInfoは現状サポートしない
-      if (isWindowInfo(item) || (!isLauncherItem(item) && item.type !== 'windowOperation')) {
-        throw new Error('Only LauncherItem and WindowOperationItem are supported in workspace');
+      // WindowInfoはサポートしない
+      if (isWindowInfo(item)) {
+        throw new Error('WindowInfo is not supported in workspace');
       }
 
       // 新しいorder値を計算（最大値+1）
@@ -213,6 +213,25 @@ export class WorkspaceService {
           virtualDesktopNumber: windowOpItem.virtualDesktopNumber,
           activateWindow: windowOpItem.activateWindow,
           moveToActiveMonitorCenter: windowOpItem.moveToActiveMonitorCenter,
+        };
+      }
+      // GroupItemの場合
+      else if (isGroupItem(item)) {
+        const itemNames = item.itemNames || [];
+        logger.info(
+          { groupName: item.name, originalItemNames: item.itemNames, itemNamesLength: itemNames.length },
+          'Adding group item to workspace'
+        );
+        workspaceItem = {
+          id: randomUUID(),
+          displayName: item.name,
+          originalName: item.name,
+          path: `[グループ: ${itemNames.length}件]`,
+          type: 'group',
+          order: maxOrder + 1,
+          addedAt: Date.now(),
+          groupId: groupId,
+          itemNames: itemNames,
         };
       }
       // LauncherItemの場合

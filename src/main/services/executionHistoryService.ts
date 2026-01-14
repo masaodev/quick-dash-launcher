@@ -155,12 +155,14 @@ export class ExecutionHistoryService {
         // 同じ名前のアイテムを履歴から削除
         const filteredHistory = history.filter((h) => h.itemName !== groupItem.name);
 
+        const itemNames = groupItem.itemNames || [];
         const historyItem: ExecutionHistoryItem = {
           id: randomUUID(),
           itemName: groupItem.name,
-          itemPath: `[グループ: ${groupItem.itemNames.join(', ')}]`,
+          itemPath: `[グループ: ${itemNames.join(', ')}]`,
           itemType: 'group',
           executedAt: Date.now(),
+          itemNames: itemNames,
         };
         filteredHistory.unshift(historyItem);
         history.length = 0;

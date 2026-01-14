@@ -5,13 +5,15 @@
 
 .hotkey-input {
   width: 100%;
-  padding: var(--spacing-sm) var(--spacing-md);
+  height: var(--input-height-sm);
+  padding: var(--spacing-xs) var(--spacing-md);
   border: var(--border-normal);
   border-radius: var(--border-radius);
   font-family: var(--font-family);
   font-size: var(--font-size-base);
   background-color: var(--color-white);
   cursor: pointer;
+  box-sizing: border-box;
   transition: var(--transition-normal);
 }
 

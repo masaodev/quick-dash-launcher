@@ -34,7 +34,7 @@ export interface WorkspaceItem {
   /** アイテムのパス、URL、またはコマンド */
   path: string;
   /** アイテムのタイプ */
-  type: 'url' | 'file' | 'folder' | 'app' | 'customUri' | 'windowOperation';
+  type: 'url' | 'file' | 'folder' | 'app' | 'customUri' | 'windowOperation' | 'group';
   /** アイテムのアイコン（base64エンコードされたデータURL、オプション） */
   icon?: string;
   /** カスタムアイコンのファイル名（オプション） */
@@ -69,6 +69,8 @@ export interface WorkspaceItem {
   processName?: string;
   /** ウィンドウ操作：アクティブモニターの中央に移動するか（windowOperation専用、オプション） */
   moveToActiveMonitorCenter?: boolean;
+  /** グループ内のアイテム名リスト（group専用） */
+  itemNames?: string[];
 }
 
 /**
@@ -124,6 +126,8 @@ export interface ExecutionHistoryItem {
   processName?: string;
   /** ウィンドウ操作：アクティブモニターの中央に移動するか（windowOperation専用、オプション） */
   moveToActiveMonitorCenter?: boolean;
+  /** グループ内のアイテム名リスト（group専用） */
+  itemNames?: string[];
 }
 
 /**

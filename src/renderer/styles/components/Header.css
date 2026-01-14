@@ -41,7 +41,7 @@
 
 .search-box {
   width: 100%;
-  height: 40px;
+  height: var(--input-height-lg);
   margin: 0;
   padding: var(--spacing-sm) var(--spacing-md);
   padding-right: calc(var(--spacing-md) + 24px); /* クリアボタン分の余白 */

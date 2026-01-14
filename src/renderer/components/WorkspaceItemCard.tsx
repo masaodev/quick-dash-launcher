@@ -85,6 +85,8 @@ const WorkspaceItemCard: React.FC<WorkspaceItemCardProps> = ({
         return '🔗';
       case 'windowOperation':
         return '🪟';
+      case 'group':
+        return '📦';
       default:
         return '📄';
     }

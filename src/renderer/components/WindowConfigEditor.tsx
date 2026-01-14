@@ -211,9 +211,6 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
                   className="window-config-input-number"
                 />
               </div>
-              <div className="help-box">
-                <p className="help-note">💡 Windows 10以降で利用可能</p>
-              </div>
             </div>
 
             {/* 2-3. アクティブ化 */}

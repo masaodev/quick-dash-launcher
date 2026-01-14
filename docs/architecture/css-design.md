@@ -186,7 +186,9 @@ src/renderer/styles/
 --z-modal: 2000;                    /* モーダル */
 
 /* 寸法 */
---input-height: 32px;               /* 入力フィールドの高さ */
+--input-height-lg: 40px;            /* メイン検索ボックスの高さ */
+--input-height-sm: 34px;            /* その他のテキスト入力欄の高さ */
+--input-height: 32px;               /* 入力フィールドの高さ（標準） */
 --button-height: 32px;              /* ボタンの高さ */
 --icon-size-sm: 24px;               /* 小アイコン */
 --icon-size: 32px;                  /* 標準アイコン */

@@ -122,12 +122,14 @@
 
 .filter-input {
   width: 100%;
-  padding: var(--spacing-sm);
+  height: var(--input-height-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
   border: var(--border-normal);
   border-radius: var(--border-radius-sm);
   font-size: var(--font-size-base);
   background-color: var(--color-white);
   color: var(--text-primary);
+  box-sizing: border-box;
 }
 
 .filter-input:focus {

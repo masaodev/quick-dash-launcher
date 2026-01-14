@@ -87,7 +87,7 @@ function parseCSVLineToItem(
  * const items = await loadDataFiles('/path/to/config');
  * // [{ name: 'Google', path: 'https://google.com', type: 'url', ... }, ...]
  */
-async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
+export async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
   const items: AppItem[] = [];
 
   // タブ設定を読み込んで、データファイル → tabIndex のマップを作成
