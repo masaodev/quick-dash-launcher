@@ -25,8 +25,8 @@ import { notifyWorkspaceChanged } from './workspaceHandlers.js';
 
 async function openItem(
   item: LauncherItem,
-  mainWindow: BrowserWindow | null,
-  shouldHideWindow: boolean
+  _mainWindow: BrowserWindow | null,
+  _shouldHideWindow: boolean
 ): Promise<void> {
   try {
     itemLogger.info(
@@ -85,8 +85,8 @@ async function openItem(
 
 async function openParentFolder(
   item: LauncherItem,
-  mainWindow: BrowserWindow | null,
-  shouldHideWindow: boolean
+  _mainWindow: BrowserWindow | null,
+  _shouldHideWindow: boolean
 ): Promise<void> {
   try {
     itemLogger.info(
@@ -125,8 +125,8 @@ async function openParentFolder(
 async function executeGroup(
   group: GroupItem,
   allItems: AppItem[],
-  mainWindow: BrowserWindow | null,
-  shouldHideWindow: boolean
+  _mainWindow: BrowserWindow | null,
+  _shouldHideWindow: boolean
 ): Promise<void> {
   itemLogger.info(
     { groupName: group.name, itemCount: group.itemNames.length, itemNames: group.itemNames },

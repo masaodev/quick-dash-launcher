@@ -313,12 +313,15 @@ const WindowSelectorModal: React.FC<WindowSelectorModalProps> = ({ isOpen, onClo
                             {win.executablePath.split('\\').pop()}
                           </span>
                         )}
-                        {showTabs && activeTab === 0 && win.desktopNumber && win.desktopNumber > 0 && (
-                          <span className="window-desktop">
-                            デスクトップ {win.desktopNumber}
-                            {win.desktopNumber === desktopInfo?.currentDesktop && ' (現在)'}
-                          </span>
-                        )}
+                        {showTabs &&
+                          activeTab === 0 &&
+                          win.desktopNumber &&
+                          win.desktopNumber > 0 && (
+                            <span className="window-desktop">
+                              デスクトップ {win.desktopNumber}
+                              {win.desktopNumber === desktopInfo?.currentDesktop && ' (現在)'}
+                            </span>
+                          )}
                       </div>
                     </div>
                   </div>
