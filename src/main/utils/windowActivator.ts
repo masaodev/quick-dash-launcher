@@ -15,7 +15,7 @@ import {
   setWindowBounds,
   getWindowBounds,
 } from './nativeWindowControl.js';
-import { moveWindowToVirtualDesktop, isWindowOnDesktopNumber } from './virtualDesktopControl.js';
+import { moveWindowToVirtualDesktop, isWindowOnDesktopNumber } from './virtualDesktop/index.js';
 
 /**
  * ウィンドウ位置・サイズ設定の定数

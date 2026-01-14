@@ -5,6 +5,7 @@ import type {
   WindowOperationItem,
   LauncherItem,
 } from '@common/types';
+import { isWindowInfo, isGroupItem, isWindowOperationItem } from '@common/utils/typeGuards';
 import { PathUtils } from '@common/utils/pathUtils';
 
 /**
@@ -141,17 +142,17 @@ function getLauncherItemTooltip(launcherItem: LauncherItem): string {
  */
 export function getTooltipText(item: AppItem): string {
   // WindowInfoの場合
-  if ('hwnd' in item) {
-    return getWindowInfoTooltip(item as WindowInfo);
+  if (isWindowInfo(item)) {
+    return getWindowInfoTooltip(item);
   }
 
   // タイプ別処理
-  if (item.type === 'group') {
-    return getGroupItemTooltip(item as GroupItem);
+  if (isGroupItem(item)) {
+    return getGroupItemTooltip(item);
   }
 
-  if (item.type === 'windowOperation') {
-    return getWindowOperationTooltip(item as WindowOperationItem);
+  if (isWindowOperationItem(item)) {
+    return getWindowOperationTooltip(item);
   }
 
   return getLauncherItemTooltip(item as LauncherItem);

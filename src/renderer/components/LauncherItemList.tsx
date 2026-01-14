@@ -1,5 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { isLauncherItem } from '@common/utils/typeGuards';
+import {
+  isLauncherItem,
+  isWindowInfo,
+  isGroupItem,
+  isWindowOperationItem,
+} from '@common/utils/typeGuards';
 import { LauncherItem, GroupItem, AppItem, WindowInfo, WindowOperationItem } from '@common/types';
 
 import { getTooltipText } from '../utils/tooltipTextGenerator';
@@ -144,9 +149,9 @@ const LauncherItemList: React.FC<ItemListProps> = ({
   return (
     <div className="item-list" ref={listRef}>
       {items.map((item, index) => {
-        const isWindow = 'hwnd' in item;
-        const isGroup = !isWindow && item.type === 'group';
-        const isWindowOperation = !isWindow && item.type === 'windowOperation';
+        const isWindow = isWindowInfo(item);
+        const isGroup = isGroupItem(item);
+        const isWindowOperation = isWindowOperationItem(item);
         const windowInfo = isWindow ? (item as WindowInfo) : null;
         const itemName = isWindow
           ? windowInfo?.processName

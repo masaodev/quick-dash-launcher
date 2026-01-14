@@ -16,7 +16,7 @@ import {
   getCurrentDesktopNumber,
   isWindowOnDesktopNumber,
   moveWindowToVirtualDesktop,
-} from '../../main/utils/virtualDesktopControl.js';
+} from '../../main/utils/virtualDesktop/index.js';
 
 interface TestResult {
   success: boolean;

@@ -7,7 +7,7 @@ import {
   isVirtualDesktopSupported,
   getVirtualDesktopGUIDs,
   moveWindowToVirtualDesktop,
-} from './virtualDesktopControl.js';
+} from './virtualDesktop/index.js';
 import { findWindowByTitle } from './windowMatcher.js';
 
 describe('virtualDesktopControl', () => {

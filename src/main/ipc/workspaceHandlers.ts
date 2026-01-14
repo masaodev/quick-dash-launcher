@@ -29,7 +29,7 @@ import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 
 import { tryActivateWindow } from '../utils/windowActivator.js';
 import { launchItem } from '../utils/itemLauncher.js';
-import { WorkspaceService } from '../services/workspaceService.js';
+import { WorkspaceService } from '../services/workspace/index.js';
 import PathManager from '../config/pathManager.js';
 import { IconService } from '../services/iconService.js';
 

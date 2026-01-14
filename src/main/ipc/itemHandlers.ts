@@ -17,7 +17,7 @@ import {
   EXECUTE_WINDOW_OPERATION,
 } from '@common/ipcChannels.js';
 
-import { WorkspaceService } from '../services/workspaceService.js';
+import { WorkspaceService } from '../services/workspace/index.js';
 import { tryActivateWindow } from '../utils/windowActivator.js';
 import { launchItem } from '../utils/itemLauncher.js';
 
