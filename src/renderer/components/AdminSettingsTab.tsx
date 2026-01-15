@@ -33,6 +33,7 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
     showConfirm,
     handleConfirm,
     handleCancelConfirm,
+    toast,
   } = useDialogManager();
 
   // カスタムフック: 基本設定管理
@@ -50,6 +51,7 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
     setEditedSettings,
     onSave,
     showAlert,
+    showToast: toast.success,
   });
 
   // カスタムフック: タブ管理

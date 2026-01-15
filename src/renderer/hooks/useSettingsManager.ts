@@ -9,6 +9,7 @@ interface UseSettingsManagerProps {
   setEditedSettings: Dispatch<SetStateAction<AppSettings>>;
   onSave: (settings: AppSettings) => Promise<void>;
   showAlert: (message: string, type?: 'info' | 'error' | 'warning' | 'success') => void;
+  showToast?: (message: string) => void;
 }
 
 export function useSettingsManager({
@@ -16,6 +17,7 @@ export function useSettingsManager({
   setEditedSettings,
   onSave,
   showAlert,
+  showToast,
 }: UseSettingsManagerProps) {
   const [hotkeyValidation, setHotkeyValidation] = useState<{ isValid: boolean; reason?: string }>({
     isValid: true,
@@ -34,12 +36,14 @@ export function useSettingsManager({
       // 即座に保存
       try {
         await onSave(newSettings);
+        // 成功時にトースト表示
+        showToast?.('設定を保存しました');
       } catch (error) {
         logError('設定の保存に失敗しました:', error);
         showAlert('設定の保存に失敗しました。', 'error');
       }
     },
-    [editedSettings, onSave, setEditedSettings, showAlert]
+    [editedSettings, onSave, setEditedSettings, showAlert, showToast]
   );
 
   // 数値入力の変更ハンドラ（ローカル状態のみ更新）
@@ -60,11 +64,13 @@ export function useSettingsManager({
   const handleNumberInputBlur = useCallback(async () => {
     try {
       await onSave(editedSettings);
+      // 成功時にトースト表示
+      showToast?.('設定を保存しました');
     } catch (error) {
       logError('設定の保存に失敗しました:', error);
       showAlert('設定の保存に失敗しました。', 'error');
     }
-  }, [editedSettings, onSave, showAlert]);
+  }, [editedSettings, onSave, showAlert, showToast]);
 
   // ホットキーバリデーション結果の処理
   const handleHotkeyValidation = useCallback((isValid: boolean, reason?: string) => {

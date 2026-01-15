@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 
 import AdminApp from '../AdminApp';
+import { ToastProvider } from '../components/ToastProvider';
 import '../styles/index.css';
 import '../styles/components/AdminWindow.css';
 import '../styles/components/AdminItemManager.css';
@@ -22,6 +23,8 @@ const root = ReactDOM.createRoot(rootElement);
 
 root.render(
   <React.StrictMode>
-    <AdminApp />
+    <ToastProvider position="bottom-right">
+      <AdminApp />
+    </ToastProvider>
   </React.StrictMode>
 );
