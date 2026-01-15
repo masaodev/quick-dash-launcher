@@ -1,7 +1,6 @@
 import { globalShortcut, BrowserWindow } from 'electron';
 import logger from '@common/logger.js';
 
-import { showMainWindow, hideMainWindow } from '../windowManager.js';
 import { EnvConfig } from '../config/envConfig.js';
 
 import { SettingsService } from './settingsService.js';
@@ -15,9 +14,17 @@ export class HotkeyService {
   private settingsService!: SettingsService;
   private currentHotkey: string | null = null;
   private getMainWindow: () => BrowserWindow | null;
+  private showWindowCallback: (startTime?: number) => Promise<void>;
+  private hideWindowCallback: () => Promise<void>;
 
-  private constructor(getMainWindow: () => BrowserWindow | null) {
+  private constructor(
+    getMainWindow: () => BrowserWindow | null,
+    showWindowCallback: (startTime?: number) => Promise<void>,
+    hideWindowCallback: () => Promise<void>
+  ) {
     this.getMainWindow = getMainWindow;
+    this.showWindowCallback = showWindowCallback;
+    this.hideWindowCallback = hideWindowCallback;
   }
 
   /**
@@ -32,12 +39,22 @@ export class HotkeyService {
   /**
    * HotkeyServiceのシングルトンインスタンスを取得
    */
-  public static getInstance(getMainWindow?: () => BrowserWindow | null): HotkeyService {
+  public static getInstance(
+    getMainWindow?: () => BrowserWindow | null,
+    showWindowCallback?: (startTime?: number) => Promise<void>,
+    hideWindowCallback?: () => Promise<void>
+  ): HotkeyService {
     if (!HotkeyService.instance) {
-      if (!getMainWindow) {
-        throw new Error('HotkeyService requires getMainWindow function on first initialization');
+      if (!getMainWindow || !showWindowCallback || !hideWindowCallback) {
+        throw new Error(
+          'HotkeyService requires getMainWindow, showWindowCallback, and hideWindowCallback on first initialization'
+        );
       }
-      HotkeyService.instance = new HotkeyService(getMainWindow);
+      HotkeyService.instance = new HotkeyService(
+        getMainWindow,
+        showWindowCallback,
+        hideWindowCallback
+      );
     }
     return HotkeyService.instance;
   }
@@ -167,12 +184,16 @@ export class HotkeyService {
       const mainWindow = this.getMainWindow();
       if (mainWindow) {
         if (mainWindow.isVisible()) {
-          hideMainWindow();
+          // まずウィンドウをアクティブ化（他のウィンドウの後ろに隠れている場合でも前面に）
+          mainWindow.focus();
+          // その後、非表示判定（ピン留めモードなら非表示にならず、アクティブ化のみ）
+          // 非同期関数だが、awaitせずに呼び出す（エラーハンドリングのみ実施）
+          void this.hideWindowCallback();
         } else {
           // パフォーマンス計測のため、開始時刻を記録（Date.now()を使用してプロセス間で共通のタイムライン）
           const startTime = Date.now();
           // 非同期関数だが、awaitせずに呼び出す（表示処理は並行実行）
-          void showMainWindow(startTime);
+          void this.showWindowCallback(startTime);
         }
       }
     } catch (error) {
