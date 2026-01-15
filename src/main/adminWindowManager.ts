@@ -4,6 +4,7 @@ import { BrowserWindow } from 'electron';
 import { windowLogger } from '@common/logger';
 
 import { SettingsService } from './services/settingsService.js';
+import { EnvConfig } from './config/envConfig.js';
 
 let adminWindow: BrowserWindow | null = null;
 let isAdminWindowVisible: boolean = false;
@@ -49,9 +50,8 @@ export async function createAdminWindow(): Promise<BrowserWindow> {
   });
 
   // 管理ウィンドウ用のHTMLファイルを読み込み
-  if (process.env.NODE_ENV === 'development') {
-    const port = process.env.VITE_PORT || '9000';
-    adminWindow.loadURL(`http://localhost:${port}/admin.html`);
+  if (EnvConfig.isDevelopment) {
+    adminWindow.loadURL(`${EnvConfig.devServerUrl}/admin.html`);
   } else {
     adminWindow.loadFile(path.join(__dirname, '../admin.html'));
   }
@@ -94,7 +94,7 @@ export async function createAdminWindow(): Promise<BrowserWindow> {
     }
     // Ctrl+Shift+I で開発者ツールを開く（開発モードのみ）
     if (
-      process.env.NODE_ENV === 'development' &&
+      EnvConfig.isDevelopment &&
       input.type === 'keyDown' &&
       input.control &&
       input.shift &&

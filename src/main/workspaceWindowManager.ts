@@ -5,6 +5,7 @@ import { windowLogger } from '@common/logger';
 import type { WorkspacePositionMode } from '@common/types';
 
 import { SettingsService } from './services/settingsService.js';
+import { EnvConfig } from './config/envConfig.js';
 
 let workspaceWindow: BrowserWindow | null = null;
 let isWorkspaceWindowVisible: boolean = false;
@@ -60,9 +61,8 @@ export async function createWorkspaceWindow(): Promise<BrowserWindow> {
   });
 
   // ワークスペースウィンドウ用のHTMLファイルを読み込み
-  if (process.env.NODE_ENV === 'development') {
-    const port = process.env.VITE_PORT || '9000';
-    workspaceWindow.loadURL(`http://localhost:${port}/workspace.html`);
+  if (EnvConfig.isDevelopment) {
+    workspaceWindow.loadURL(`${EnvConfig.devServerUrl}/workspace.html`);
   } else {
     workspaceWindow.loadFile(path.join(__dirname, '../workspace.html'));
   }
@@ -108,7 +108,7 @@ export async function createWorkspaceWindow(): Promise<BrowserWindow> {
     }
     // Ctrl+Shift+I で開発者ツールを開く（開発モードのみ）
     if (
-      process.env.NODE_ENV === 'development' &&
+      EnvConfig.isDevelopment &&
       input.type === 'keyDown' &&
       input.control &&
       input.shift &&

@@ -5,6 +5,8 @@
  */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { EnvConfig } from '../../config/envConfig.js';
+
 // レジストリアクセス定数
 export const HKEY_CURRENT_USER = 0x80000001;
 export const KEY_READ = 0x20019;
@@ -12,7 +14,7 @@ export const REG_BINARY = 3;
 
 // デバッグログヘルパー（開発環境でのみ出力）
 export const debugLog = (...args: any[]): void => {
-  if (process.env.NODE_ENV === 'development') {
+  if (EnvConfig.isDevelopment) {
     console.warn('[VirtualDesktop]', ...args);
   }
 };

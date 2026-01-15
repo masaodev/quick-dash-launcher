@@ -3,6 +3,8 @@ import * as path from 'path';
 import { BrowserWindow } from 'electron';
 import { windowLogger } from '@common/logger';
 
+import { EnvConfig } from './config/envConfig.js';
+
 let splashWindow: BrowserWindow | null = null;
 
 /**
@@ -32,11 +34,10 @@ export async function createSplashWindow(): Promise<BrowserWindow> {
 
   // スプラッシュ画面のHTMLを読み込み
   try {
-    if (process.env.NODE_ENV === 'development') {
+    if (EnvConfig.isDevelopment) {
       // 開発環境では専用のエントリーポイントを使用
-      const port = process.env.VITE_PORT || '9000';
-      windowLogger.info(`開発環境: http://localhost:${port}/splash.html を読み込み中...`);
-      await splashWindow.loadURL(`http://localhost:${port}/splash.html`);
+      windowLogger.info(`開発環境: ${EnvConfig.devServerUrl}/splash.html を読み込み中...`);
+      await splashWindow.loadURL(`${EnvConfig.devServerUrl}/splash.html`);
     } else {
       // プロダクション環境では静的ファイルを読み込み
       const filePath = path.join(__dirname, '../splash.html');

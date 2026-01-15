@@ -2,6 +2,7 @@ import { globalShortcut, BrowserWindow } from 'electron';
 import logger from '@common/logger.js';
 
 import { showMainWindow, hideMainWindow } from '../windowManager.js';
+import { EnvConfig } from '../config/envConfig.js';
 
 import { SettingsService } from './settingsService.js';
 
@@ -50,7 +51,7 @@ export class HotkeyService {
       await this.initializeSettingsService();
 
       // 環境変数が設定されている場合は優先
-      const envHotkey = process.env.HOTKEY;
+      const envHotkey = EnvConfig.customHotkey;
       const hotkey = envHotkey || (await this.settingsService.get('hotkey'));
 
       if (envHotkey) {
