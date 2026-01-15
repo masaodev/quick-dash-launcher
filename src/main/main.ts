@@ -6,6 +6,7 @@ import { setupIPCHandlers } from './ipc';
 import { createDefaultDataFile } from './utils/appHelpers';
 import { migrateWindowOperationFormat } from './utils/migrationHelpers';
 import PathManager from './config/pathManager.js';
+import { EnvConfig } from './config/envConfig.js';
 import { BackupService } from './services/backupService.js';
 import { SettingsService } from './services/settingsService.js';
 import { AutoLaunchService } from './services/autoLaunchService.js';
@@ -40,14 +41,14 @@ export function getIsFirstLaunch(): boolean {
 }
 
 // 多重起動時に完全に独立したuserDataを使用
-if (process.env.APP_INSTANCE) {
-  const appName = `${process.env.APP_INSTANCE}-quick-dash-launcher`;
+if (EnvConfig.hasAppInstance) {
+  const appName = `${EnvConfig.appInstance}-quick-dash-launcher`;
   const userDataPath = path.join(app.getPath('appData'), appName);
   app.setPath('userData', userDataPath);
 }
 
 // 開発モード時にリモートデバッグポートを有効化（Playwright MCP用）
-if (process.env.NODE_ENV === 'development' || process.env.ELECTRON_IS_DEV === '1') {
+if (EnvConfig.isDevelopment) {
   app.commandLine.appendSwitch('--remote-debugging-port', '9222');
 }
 
@@ -72,7 +73,7 @@ app.whenReady().then(async () => {
   setFirstLaunchMode(isFirstLaunch);
 
   // スプラッシュウィンドウを表示（E2Eテスト環境ではスキップ）
-  if (process.env.SKIP_SPLASH_WINDOW !== '1') {
+  if (!EnvConfig.skipSplashWindow) {
     await createSplashWindow();
   }
 
@@ -93,7 +94,7 @@ app.whenReady().then(async () => {
   await createTray();
 
   // テスト環境の場合、ウィンドウを自動表示
-  if (process.env.SHOW_WINDOW_ON_STARTUP === '1') {
+  if (EnvConfig.showWindowOnStartup) {
     const mainWindow = getMainWindow();
     if (mainWindow) {
       mainWindow.show();
@@ -103,7 +104,7 @@ app.whenReady().then(async () => {
 
   // グローバルホットキーを登録（設定から読み込み）
   // テスト環境ではホットキーを無効化
-  if (process.env.DISABLE_GLOBAL_HOTKEY !== '1') {
+  if (!EnvConfig.disableGlobalHotkey) {
     await registerGlobalShortcut();
   }
 

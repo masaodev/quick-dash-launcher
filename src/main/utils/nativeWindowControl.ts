@@ -9,7 +9,7 @@ import * as os from 'os';
 import { WindowInfo } from '@common/types';
 import koffi from 'koffi';
 
-import { getWindowDesktopNumber } from './virtualDesktopControl';
+import { getWindowDesktopNumber } from './virtualDesktop/index.js';
 
 // user32.dll、kernel32.dll、gdiplus.dll、dwmapi.dllをロード
 const user32 = koffi.load('user32.dll');

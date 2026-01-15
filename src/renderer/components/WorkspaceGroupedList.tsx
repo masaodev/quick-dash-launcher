@@ -5,6 +5,12 @@ import type {
   ExecutionHistoryItem,
   LauncherItem,
 } from '@common/types';
+import {
+  executionHistoryToLauncherItem,
+  executionHistoryToWindowOperation,
+  isExternalUrlType,
+  isFileSystemType,
+} from '@common/utils/historyConverters';
 
 import { useWorkspaceContextMenu, useWorkspaceItemGroups } from '../hooks/workspace';
 import { logError } from '../utils/debug';
@@ -180,48 +186,12 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
     // 実行履歴アイテムからのドロップの場合
     if (historyItemData) {
       try {
-        const historyItem = JSON.parse(historyItemData);
+        const historyItem: ExecutionHistoryItem = JSON.parse(historyItemData);
 
-        // ExecutionHistoryItemをLauncherItem形式に変換
-        const launcherItem: Partial<LauncherItem> = {
-          name: historyItem.itemName,
-          path: historyItem.itemPath,
-          type: historyItem.itemType,
-          icon: historyItem.icon,
-          args: historyItem.args,
-        };
-
-        // グループアイテムの場合はitemNamesも含める
-        if (historyItem.itemType === 'group' && historyItem.itemNames) {
-          (launcherItem as any).itemNames = historyItem.itemNames;
-        }
-
-        // windowConfig情報があれば含める
-        if (
-          historyItem.processName !== undefined ||
-          historyItem.windowX !== undefined ||
-          historyItem.windowY !== undefined ||
-          historyItem.windowWidth !== undefined ||
-          historyItem.windowHeight !== undefined ||
-          historyItem.virtualDesktopNumber !== undefined ||
-          historyItem.activateWindow !== undefined ||
-          historyItem.moveToActiveMonitorCenter !== undefined
-        ) {
-          launcherItem.windowConfig = {
-            title: '', // タイトルは不要（プロセス名で検索）
-            processName: historyItem.processName,
-            x: historyItem.windowX,
-            y: historyItem.windowY,
-            width: historyItem.windowWidth,
-            height: historyItem.windowHeight,
-            virtualDesktopNumber: historyItem.virtualDesktopNumber,
-            activateWindow: historyItem.activateWindow,
-            moveToActiveMonitorCenter: historyItem.moveToActiveMonitorCenter,
-          };
-        }
+        // ExecutionHistoryItemをLauncherItem形式に変換（共通ユーティリティ使用）
+        const launcherItem = executionHistoryToLauncherItem(historyItem);
 
         // ワークスペースにアイテムを追加（groupIdも渡す）
-        // name, path, typeは必ず設定されているため、LauncherItemとして扱える
         await window.electronAPI.workspaceAPI.addItem(launcherItem as LauncherItem, groupId);
       } catch (error) {
         logError('実行履歴からのアイテム追加に失敗:', error);
@@ -454,65 +424,17 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
                   key={historyItem.id}
                   item={historyItem}
                   onLaunch={(item) => {
-                    // 実行履歴アイテムを外部で起動
-                    if (item.itemType === 'url' || item.itemType === 'customUri') {
+                    // 実行履歴アイテムを外部で起動（共通ユーティリティ使用）
+                    if (isExternalUrlType(item.itemType)) {
                       window.electronAPI.openExternalUrl(item.itemPath);
-                    } else if (
-                      item.itemType === 'file' ||
-                      item.itemType === 'folder' ||
-                      item.itemType === 'app'
-                    ) {
+                    } else if (isFileSystemType(item.itemType)) {
                       // LauncherItem形式に変換して起動
-                      const launcherItem: Partial<LauncherItem> = {
-                        name: item.itemName,
-                        path: item.itemPath,
-                        type: item.itemType,
-                        icon: item.icon,
-                        args: item.args,
-                      };
-
-                      // windowConfig情報があれば含める
-                      if (
-                        item.processName !== undefined ||
-                        item.windowX !== undefined ||
-                        item.windowY !== undefined ||
-                        item.windowWidth !== undefined ||
-                        item.windowHeight !== undefined ||
-                        item.virtualDesktopNumber !== undefined ||
-                        item.activateWindow !== undefined ||
-                        item.moveToActiveMonitorCenter !== undefined
-                      ) {
-                        launcherItem.windowConfig = {
-                          title: '', // タイトルは不要（プロセス名で検索）
-                          processName: item.processName,
-                          x: item.windowX,
-                          y: item.windowY,
-                          width: item.windowWidth,
-                          height: item.windowHeight,
-                          virtualDesktopNumber: item.virtualDesktopNumber,
-                          activateWindow: item.activateWindow,
-                          moveToActiveMonitorCenter: item.moveToActiveMonitorCenter,
-                        };
-                      }
-
-                      // name, path, typeは必ず設定されているため、LauncherItemとして扱える
+                      const launcherItem = executionHistoryToLauncherItem(item);
                       window.electronAPI.openItem(launcherItem as LauncherItem);
                     } else if (item.itemType === 'windowOperation') {
-                      // [ウィンドウ操作: タイトル] から タイトル を抽出
-                      const match = item.itemPath.match(/^\[ウィンドウ操作: (.+)\]$/);
-                      const windowTitle = match ? match[1] : item.itemPath;
-                      window.electronAPI.executeWindowOperation({
-                        type: 'windowOperation',
-                        name: item.itemName,
-                        windowTitle: windowTitle,
-                        processName: item.processName,
-                        x: item.windowX,
-                        y: item.windowY,
-                        width: item.windowWidth,
-                        height: item.windowHeight,
-                        virtualDesktopNumber: item.virtualDesktopNumber,
-                        activateWindow: item.activateWindow,
-                      });
+                      // WindowOperationItem形式に変換して実行
+                      const windowOp = executionHistoryToWindowOperation(item);
+                      window.electronAPI.executeWindowOperation(windowOp);
                     } else if (item.itemType === 'group') {
                       // グループは再実行しない（履歴としてのみ表示）
                     }

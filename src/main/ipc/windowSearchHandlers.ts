@@ -15,7 +15,7 @@ import {
   getDesktopCount,
   getCurrentDesktopNumber,
   isVirtualDesktopSupported,
-} from '../utils/virtualDesktopControl';
+} from '../utils/virtualDesktop/index.js';
 
 /** 仮想デスクトップ情報 */
 interface VirtualDesktopInfo {

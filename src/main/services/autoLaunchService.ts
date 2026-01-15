@@ -4,6 +4,8 @@ import path from 'path';
 import { app, shell } from 'electron';
 import logger from '@common/logger.js';
 
+import { EnvConfig } from '../config/envConfig.js';
+
 /**
  * 自動起動機能を管理するサービスクラス
  * Windows起動時にアプリケーションを自動的に起動する機能を提供
@@ -31,7 +33,7 @@ export class AutoLaunchService {
    */
   private getStartupFolderPath(): string {
     // %APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup
-    const appDataPath = process.env.APPDATA;
+    const appDataPath = EnvConfig.appData;
     if (!appDataPath) {
       throw new Error('APPDATA environment variable is not set');
     }

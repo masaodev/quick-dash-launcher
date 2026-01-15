@@ -13,6 +13,8 @@ import {
   PARSE_BROWSER_BOOKMARKS,
 } from '@common/ipcChannels.js';
 
+import { EnvConfig } from '../config/envConfig.js';
+
 /**
  * Chromeのプリファレンスファイルの型定義
  */
@@ -112,7 +114,7 @@ async function detectProfiles(userDataPath: string): Promise<BrowserProfile[]> {
  * @returns ブラウザ情報の配列
  */
 export async function detectInstalledBrowsers(): Promise<BrowserInfo[]> {
-  const localAppData = process.env.LOCALAPPDATA;
+  const localAppData = EnvConfig.localAppData;
   if (!localAppData) {
     dataLogger.warn('LOCALAPPDATA環境変数が設定されていません');
     return [];
@@ -178,7 +180,7 @@ export async function detectInstalledBrowsers(): Promise<BrowserInfo[]> {
  * @returns 許可されたパスならtrue
  */
 function isValidBookmarkPath(filePath: string): boolean {
-  const localAppData = process.env.LOCALAPPDATA;
+  const localAppData = EnvConfig.localAppData;
   if (!localAppData) return false;
 
   const normalizedPath = path.normalize(filePath);

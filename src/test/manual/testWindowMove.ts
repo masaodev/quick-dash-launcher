@@ -9,6 +9,7 @@
  * 例:
  *    npm run test:window-move "Microsoft To Do" 100 100 800 600 2
  */
+/* eslint-disable no-console -- 手動テスト用スクリプトのため、標準出力にコンソール出力が必要 */
 
 import { findWindowByTitle } from '../../main/utils/windowMatcher.js';
 import { getWindowBounds, setWindowBounds } from '../../main/utils/nativeWindowControl.js';
@@ -16,7 +17,7 @@ import {
   getCurrentDesktopNumber,
   isWindowOnDesktopNumber,
   moveWindowToVirtualDesktop,
-} from '../../main/utils/virtualDesktopControl.js';
+} from '../../main/utils/virtualDesktop/index.js';
 
 interface TestResult {
   success: boolean;

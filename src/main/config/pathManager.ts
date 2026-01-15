@@ -4,6 +4,8 @@ import * as fs from 'fs';
 import { app } from 'electron';
 import logger from '@common/logger.js';
 
+import { EnvConfig } from './envConfig.js';
+
 /**
  * アプリケーションの設定ファイル・ディレクトリのパスを管理するクラス
  *
@@ -24,8 +26,8 @@ export class PathManager {
     }
 
     // 環境変数でカスタムパスが指定されている場合
-    if (process.env.QUICK_DASH_CONFIG_DIR) {
-      const customPath = path.resolve(process.env.QUICK_DASH_CONFIG_DIR);
+    if (EnvConfig.customConfigDir) {
+      const customPath = path.resolve(EnvConfig.customConfigDir);
 
       // セキュリティチェック: 危険なパスを拒否
       if (this.isUnsafePath(customPath)) {

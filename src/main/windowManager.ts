@@ -9,13 +9,14 @@ import { HotkeyService } from './services/hotkeyService.js';
 import { SettingsService } from './services/settingsService.js';
 import { showAdminWindowWithTab } from './adminWindowManager.js';
 import PathManager from './config/pathManager.js';
+import { EnvConfig } from './config/envConfig.js';
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 
 // 環境変数WINDOW_PIN_MODEから初期ピンモードを取得（デフォルト: 'normal'）
 function getInitialWindowPinMode(): WindowPinMode {
-  const envMode = process.env.WINDOW_PIN_MODE;
+  const envMode = EnvConfig.windowPinMode;
   const validModes: WindowPinMode[] = ['normal', 'alwaysOnTop', 'stayVisible'];
 
   if (envMode && validModes.includes(envMode as WindowPinMode)) {
@@ -84,9 +85,8 @@ export async function createWindow(): Promise<BrowserWindow> {
     },
   });
 
-  if (process.env.NODE_ENV === 'development') {
-    const port = process.env.VITE_PORT || '9000';
-    mainWindow.loadURL(`http://localhost:${port}`);
+  if (EnvConfig.isDevelopment) {
+    mainWindow.loadURL(EnvConfig.devServerUrl);
   } else {
     mainWindow.loadFile(path.join(__dirname, '../index.html'));
   }
@@ -140,7 +140,7 @@ export async function createWindow(): Promise<BrowserWindow> {
   });
 
   // 環境変数でピンモードが指定されている場合、ウィンドウ動作を更新
-  if (process.env.WINDOW_PIN_MODE) {
+  if (EnvConfig.hasWindowPinMode) {
     updateWindowBehavior();
     windowLogger.info(`初期ピンモードを設定しました: ${windowPinMode}`);
   }
@@ -209,7 +209,7 @@ export async function createTray(): Promise<void> {
       label: '再起動',
       click: async () => {
         // 開発モードかどうかを判定
-        const isDev = process.env.NODE_ENV === 'development' || process.env.ELECTRON_IS_DEV === '1';
+        const isDev = EnvConfig.isDevelopment;
 
         if (isDev) {
           // 開発モードでは警告ダイアログを表示
