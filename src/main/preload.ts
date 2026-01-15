@@ -316,9 +316,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     duration?: number
   ) => ipcRenderer.invoke(SHOW_TOAST_WINDOW, { message, type, duration }),
   // トーストウィンドウ用イベントリスナー（toast.html用）
-  onShowToast: (
-    callback: (data: { message: string; type: string; duration: number }) => void
-  ) => {
+  onShowToast: (callback: (data: { message: string; type: string; duration: number }) => void) => {
     ipcRenderer.on(EVENT_SHOW_TOAST, (_event, data) => callback(data));
   },
   // ワークスペースウィンドウ制御API

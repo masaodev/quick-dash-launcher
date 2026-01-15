@@ -9,8 +9,10 @@ import * as path from 'path';
 
 import { BrowserWindow, screen, app } from 'electron';
 
-/** トースト通知の種類 */
-export type ToastType = 'success' | 'error' | 'info' | 'warning';
+import { NotificationType } from './notificationService.js';
+
+/** トースト通知の種類（NotificationTypeのエイリアス） */
+export type ToastType = NotificationType;
 
 /** トースト表示オプション */
 export interface ToastOptions {
@@ -30,7 +32,22 @@ const DEFAULT_DURATION = 2500;
 
 // 現在のトーストウィンドウ
 let toastWindow: BrowserWindow | null = null;
-let closeTimeout: NodeJS.Timeout | null = null;
+let closeTimeout: ReturnType<typeof setTimeout> | null = null;
+
+/**
+ * タイムアウトとウィンドウをクリーンアップする
+ */
+function cleanup(): void {
+  if (closeTimeout) {
+    clearTimeout(closeTimeout);
+    closeTimeout = null;
+  }
+
+  if (toastWindow && !toastWindow.isDestroyed()) {
+    toastWindow.close();
+    toastWindow = null;
+  }
+}
 
 /**
  * トーストウィンドウを作成して表示する
@@ -76,17 +93,8 @@ function createToastWindow(): BrowserWindow {
 export async function showToastWindow(options: ToastOptions): Promise<void> {
   const { message, type = 'success', duration = DEFAULT_DURATION } = options;
 
-  // 既存のタイムアウトをクリア
-  if (closeTimeout) {
-    clearTimeout(closeTimeout);
-    closeTimeout = null;
-  }
-
-  // 既存のウィンドウを閉じる
-  if (toastWindow && !toastWindow.isDestroyed()) {
-    toastWindow.close();
-    toastWindow = null;
-  }
+  // 既存のウィンドウをクリーンアップ
+  cleanup();
 
   // 新しいウィンドウを作成
   toastWindow = createToastWindow();
@@ -109,11 +117,11 @@ export async function showToastWindow(options: ToastOptions): Promise<void> {
 
   // 指定時間後にウィンドウを閉じる
   closeTimeout = setTimeout(() => {
+    closeTimeout = null; // タイムアウト完了をマーク
     if (toastWindow && !toastWindow.isDestroyed()) {
       toastWindow.close();
       toastWindow = null;
     }
-    closeTimeout = null;
   }, duration + 500); // フェードアウトのための余裕を持たせる
 }
 
@@ -121,13 +129,5 @@ export async function showToastWindow(options: ToastOptions): Promise<void> {
  * トーストウィンドウを即座に閉じる
  */
 export function closeToastWindow(): void {
-  if (closeTimeout) {
-    clearTimeout(closeTimeout);
-    closeTimeout = null;
-  }
-
-  if (toastWindow && !toastWindow.isDestroyed()) {
-    toastWindow.close();
-    toastWindow = null;
-  }
+  cleanup();
 }

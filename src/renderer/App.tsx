@@ -156,7 +156,9 @@ const App: React.FC = () => {
         // 履歴モード：選択された履歴アイテムを直接実行
         if (isGroupItem(item)) {
           await window.electronAPI.executeGroup(item, mainItems);
-          window.electronAPI.showToastWindow(`${item.name} (${item.itemNames.length}件) を起動しました`);
+          window.electronAPI.showToastWindow(
+            `${item.name} (${item.itemNames.length}件) を起動しました`
+          );
         } else if (isWindowOperationItem(item)) {
           await window.electronAPI.executeWindowOperation(item);
           window.electronAPI.showToastWindow(`${item.name} を実行しました`);
@@ -175,7 +177,9 @@ const App: React.FC = () => {
         // アイテムの種類で処理を分岐
         if (isGroupItem(item)) {
           await window.electronAPI.executeGroup(item, mainItems);
-          window.electronAPI.showToastWindow(`${item.name} (${item.itemNames.length}件) を起動しました`);
+          window.electronAPI.showToastWindow(
+            `${item.name} (${item.itemNames.length}件) を起動しました`
+          );
         } else if (isWindowOperationItem(item)) {
           await window.electronAPI.executeWindowOperation(item);
           window.electronAPI.showToastWindow(`${item.name} を実行しました`);

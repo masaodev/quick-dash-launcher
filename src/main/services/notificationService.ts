@@ -53,46 +53,6 @@ export function showNotification(options: NotificationOptions): void {
 }
 
 /**
- * アイテム起動通知を表示する
- *
- * @param itemName 起動したアイテム名
- */
-export function showItemLaunchNotification(itemName: string): void {
-  showNotification({
-    title: 'QuickDashLauncher',
-    body: `${itemName} を起動しました`,
-    type: 'success',
-  });
-}
-
-/**
- * グループ起動通知を表示する
- *
- * @param groupName グループ名
- * @param itemCount 起動したアイテム数
- */
-export function showGroupLaunchNotification(groupName: string, itemCount: number): void {
-  showNotification({
-    title: 'QuickDashLauncher',
-    body: `${groupName} (${itemCount}件) を起動しました`,
-    type: 'success',
-  });
-}
-
-/**
- * エラー通知を表示する
- *
- * @param message エラーメッセージ
- */
-export function showErrorNotification(message: string): void {
-  showNotification({
-    title: 'QuickDashLauncher - エラー',
-    body: message,
-    type: 'error',
-  });
-}
-
-/**
  * アプリアイコンのパスを取得する
  *
  * @returns アイコンファイルのパス、見つからない場合はundefined
