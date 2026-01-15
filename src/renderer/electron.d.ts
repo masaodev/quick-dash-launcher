@@ -168,6 +168,22 @@ export interface ElectronAPI {
   // ウィンドウ検索API
   getWindowList: () => Promise<WindowInfo[]>;
   activateWindowByHwnd: (hwnd: number | bigint) => Promise<{ success: boolean; error?: string }>;
+  // システム通知API
+  showNotification: (
+    title: string,
+    body: string,
+    type?: 'success' | 'error' | 'info' | 'warning'
+  ) => Promise<void>;
+  // トーストウィンドウAPI（メインウィンドウが閉じた後も表示可能）
+  showToastWindow: (
+    message: string,
+    type?: 'success' | 'error' | 'info' | 'warning',
+    duration?: number
+  ) => Promise<void>;
+  // トーストウィンドウ用イベントリスナー（toast.html用）
+  onShowToast: (
+    callback: (data: { message: string; type: string; duration: number }) => void
+  ) => void;
   // ワークスペースウィンドウ制御API
   toggleWorkspaceWindow: () => Promise<void>;
   showWorkspaceWindow: () => Promise<void>;

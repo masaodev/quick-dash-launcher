@@ -78,10 +78,10 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({
         }}
         containerStyle={{
           // メインウィンドウ内で適切な位置に表示
-          bottom: 16,
-          right: 16,
+          bottom: 'var(--spacing-lg)',
+          right: 'var(--spacing-lg)',
         }}
-        gutter={8}
+        gutter={8} // spacing-sm相当（8px）
       />
     </>
   );

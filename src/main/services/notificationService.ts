@@ -94,14 +94,16 @@ export function showErrorNotification(message: string): void {
 
 /**
  * アプリアイコンのパスを取得する
+ *
+ * @returns アイコンファイルのパス、見つからない場合はundefined
  */
 function getAppIconPath(): string | undefined {
   // 開発環境とプロダクション環境で異なるパスを使用
   if (app.isPackaged) {
-    // プロダクション環境
+    // プロダクション環境: resourcesPathからアイコンを取得
     return path.join(process.resourcesPath, 'icon.ico');
   } else {
-    // 開発環境
-    return path.join(__dirname, '../../resources/icon.ico');
+    // 開発環境: プロジェクトルートのassetsフォルダからアイコンを取得
+    return path.join(app.getAppPath(), 'assets', 'icon.ico');
   }
 }
