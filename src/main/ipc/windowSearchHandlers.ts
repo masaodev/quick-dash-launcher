@@ -8,6 +8,7 @@ import {
   GET_ALL_WINDOWS_ALL_DESKTOPS,
   GET_VIRTUAL_DESKTOP_INFO,
   ACTIVATE_WINDOW,
+  MOVE_WINDOW_TO_DESKTOP,
 } from '@common/ipcChannels';
 
 import { getAllWindows, activateWindow, restoreWindow } from '../utils/nativeWindowControl';
@@ -15,6 +16,7 @@ import {
   getDesktopCount,
   getCurrentDesktopNumber,
   isVirtualDesktopSupported,
+  moveWindowToVirtualDesktop,
 } from '../utils/virtualDesktop/index.js';
 
 /** 仮想デスクトップ情報 */
@@ -133,6 +135,25 @@ export function setupWindowSearchHandlers(
         return { success };
       } catch (error) {
         console.error('Failed to activate window:', error);
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+        };
+      }
+    }
+  );
+
+  /**
+   * 指定されたウィンドウを仮想デスクトップに移動
+   */
+  ipcMain.handle(
+    MOVE_WINDOW_TO_DESKTOP,
+    async (_event, hwnd: number | bigint, desktopNumber: number): Promise<{ success: boolean; error?: string }> => {
+      try {
+        const success = moveWindowToVirtualDesktop(hwnd, desktopNumber);
+        return { success };
+      } catch (error) {
+        console.error('Failed to move window to desktop:', error);
         return {
           success: false,
           error: error instanceof Error ? error.message : String(error),

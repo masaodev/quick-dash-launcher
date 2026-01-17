@@ -173,6 +173,7 @@ export interface ElectronAPI {
     currentDesktop: number;
   }>;
   activateWindowByHwnd: (hwnd: number | bigint) => Promise<{ success: boolean; error?: string }>;
+  moveWindowToDesktop: (hwnd: number | bigint, desktopNumber: number) => Promise<{ success: boolean; error?: string }>;
   // システム通知API
   showNotification: (
     title: string,
@@ -198,6 +199,10 @@ export interface ElectronAPI {
   showLauncherContextMenu: (item: AppItem) => Promise<void>;
   showWorkspaceContextMenu: (item: WorkspaceItem, groups: WorkspaceGroup[]) => Promise<void>;
   showWorkspaceGroupContextMenu: (group: WorkspaceGroup) => Promise<void>;
+  showWindowContextMenu: (
+    windowInfo: WindowInfo,
+    desktopInfo: { supported: boolean; desktopCount: number; currentDesktop: number }
+  ) => Promise<void>;
   // AdminItemManagerContextMenuイベントリスナー
   onAdminMenuDuplicateItems: (callback: () => void) => () => void;
   onAdminMenuEditItem: (callback: () => void) => () => void;
@@ -211,6 +216,8 @@ export interface ElectronAPI {
   onLauncherMenuCopyShortcutPath: (callback: (item: AppItem) => void) => () => void;
   onLauncherMenuCopyShortcutParentPath: (callback: (item: AppItem) => void) => () => void;
   onLauncherMenuOpenShortcutParentFolder: (callback: (item: AppItem) => void) => () => void;
+  // WindowContextMenuイベントリスナー
+  onMoveWindowToDesktop: (callback: (hwnd: number | bigint, desktopNumber: number) => void) => () => void;
   // WorkspaceContextMenuイベントリスナー
   onWorkspaceMenuRenameItem: (callback: (itemId: string) => void) => () => void;
   onWorkspaceMenuLaunchItem: (callback: (itemId: string) => void) => () => void;

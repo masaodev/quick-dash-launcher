@@ -108,6 +108,29 @@ const LauncherItemList: React.FC<ItemListProps> = ({
         }
       });
 
+    // WindowContextMenuイベントリスナー
+    const cleanupMoveWindowToDesktop = window.electronAPI.onMoveWindowToDesktop(
+      async (hwnd, desktopNumber) => {
+        try {
+          const result = await window.electronAPI.moveWindowToDesktop(hwnd, desktopNumber);
+          if (result.success) {
+            window.electronAPI.showToast(
+              `ウィンドウをデスクトップ ${desktopNumber} に移動しました`,
+              'success'
+            );
+          } else {
+            window.electronAPI.showToast(
+              `ウィンドウの移動に失敗しました: ${result.error || '不明なエラー'}`,
+              'error'
+            );
+          }
+        } catch (error) {
+          logError('ウィンドウの移動に失敗しました:', error);
+          window.electronAPI.showToast('ウィンドウの移動に失敗しました', 'error');
+        }
+      }
+    );
+
     return () => {
       cleanupEditItem();
       cleanupAddToWorkspace();
@@ -117,6 +140,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
       cleanupCopyShortcutPath();
       cleanupCopyShortcutParentPath();
       cleanupOpenShortcutParentFolder();
+      cleanupMoveWindowToDesktop();
     };
   }, [
     onEditItem,
@@ -154,12 +178,21 @@ const LauncherItemList: React.FC<ItemListProps> = ({
     }
   };
 
-  const handleContextMenu = (event: React.MouseEvent, item: AppItem) => {
+  const handleContextMenu = async (event: React.MouseEvent, item: AppItem) => {
     event.preventDefault();
     event.stopPropagation();
 
     // Store item in ref for event listeners
     contextMenuItemRef.current = item;
+
+    // WindowInfo用のコンテキストメニューを表示
+    if (isWindowInfo(item)) {
+      const windowInfo = item as WindowInfo;
+      // 仮想デスクトップ情報を取得
+      const desktopInfo = await window.electronAPI.getVirtualDesktopInfo();
+      window.electronAPI.showWindowContextMenu(windowInfo, desktopInfo);
+      return;
+    }
 
     // Show native context menu
     window.electronAPI.showLauncherContextMenu(item);

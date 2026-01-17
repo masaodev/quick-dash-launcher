@@ -171,6 +171,8 @@ import {
   EVENT_WORKSPACE_GROUP_MENU_COPY_AS_TEXT,
   EVENT_WORKSPACE_GROUP_MENU_ARCHIVE,
   EVENT_WORKSPACE_GROUP_MENU_DELETE,
+  SHOW_WINDOW_CONTEXT_MENU,
+  MOVE_WINDOW_TO_DESKTOP,
 } from '@common/ipcChannels';
 
 interface RegisterItem {
@@ -344,6 +346,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getWindowList: (): Promise<WindowInfo[]> => ipcRenderer.invoke(GET_ALL_WINDOWS),
   activateWindowByHwnd: (hwnd: number | bigint): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke(ACTIVATE_WINDOW, hwnd),
+  moveWindowToDesktop: (hwnd: number | bigint, desktopNumber: number): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke(MOVE_WINDOW_TO_DESKTOP, hwnd, desktopNumber),
   // システム通知API
   showNotification: (
     title: string,
@@ -486,6 +490,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
     const listener = (_event: unknown, item: AppItem) => callback(item);
     ipcRenderer.on(EVENT_LAUNCHER_MENU_OPEN_SHORTCUT_PARENT_FOLDER, listener);
     return () => ipcRenderer.removeListener(EVENT_LAUNCHER_MENU_OPEN_SHORTCUT_PARENT_FOLDER, listener);
+  },
+  // WindowContextMenu
+  showWindowContextMenu: (
+    windowInfo: WindowInfo,
+    desktopInfo: { supported: boolean; desktopCount: number; currentDesktop: number }
+  ): Promise<void> => ipcRenderer.invoke(SHOW_WINDOW_CONTEXT_MENU, windowInfo, desktopInfo),
+  onMoveWindowToDesktop: (callback: (hwnd: number | bigint, desktopNumber: number) => void) => {
+    const listener = (_event: unknown, hwnd: number | bigint, desktopNumber: number) =>
+      callback(hwnd, desktopNumber);
+    ipcRenderer.on(MOVE_WINDOW_TO_DESKTOP, listener);
+    return () => ipcRenderer.removeListener(MOVE_WINDOW_TO_DESKTOP, listener);
   },
   // WorkspaceContextMenu
   showWorkspaceContextMenu: (item: WorkspaceItem, groups: WorkspaceGroup[]): Promise<void> =>
