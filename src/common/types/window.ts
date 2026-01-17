@@ -4,6 +4,18 @@
 export type WindowState = 'normal' | 'minimized' | 'maximized';
 
 /**
+ * 仮想デスクトップ情報
+ */
+export interface VirtualDesktopInfo {
+  /** 仮想デスクトップがサポートされているか */
+  supported: boolean;
+  /** デスクトップ数（サポートされていない場合は-1） */
+  desktopCount: number;
+  /** 現在のデスクトップ番号（1から開始、サポートされていない場合は-1） */
+  currentDesktop: number;
+}
+
+/**
  * ウィンドウ情報
  * ウィンドウ検索機能で取得されるウィンドウの情報
  */

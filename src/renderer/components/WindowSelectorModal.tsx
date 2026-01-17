@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import type { WindowInfo } from '@common/types';
+import type { WindowInfo, VirtualDesktopInfo } from '@common/types';
 
 import '../styles/components/WindowSelectorModal.css';
 import { logError } from '../utils/debug';
@@ -8,13 +8,6 @@ interface WindowSelectorModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSelect: (window: WindowInfo) => void;
-}
-
-/** 仮想デスクトップ情報 */
-interface VirtualDesktopInfo {
-  supported: boolean;
-  desktopCount: number;
-  currentDesktop: number;
 }
 
 /**

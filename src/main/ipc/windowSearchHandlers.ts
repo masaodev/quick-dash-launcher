@@ -2,7 +2,7 @@
  * ウィンドウ検索機能のIPCハンドラー
  */
 import { ipcMain, BrowserWindow } from 'electron';
-import type { WindowPinMode, WindowInfo } from '@common/types';
+import type { WindowPinMode, WindowInfo, VirtualDesktopInfo } from '@common/types';
 import {
   GET_ALL_WINDOWS,
   GET_ALL_WINDOWS_ALL_DESKTOPS,
@@ -18,16 +18,6 @@ import {
   isVirtualDesktopSupported,
   moveWindowToVirtualDesktop,
 } from '../utils/virtualDesktop/index.js';
-
-/** 仮想デスクトップ情報 */
-interface VirtualDesktopInfo {
-  /** 仮想デスクトップがサポートされているか */
-  supported: boolean;
-  /** デスクトップ数（サポートされていない場合は-1） */
-  desktopCount: number;
-  /** 現在のデスクトップ番号（1から開始、サポートされていない場合は-1） */
-  currentDesktop: number;
-}
 
 export function setupWindowSearchHandlers(
   getMainWindow: () => BrowserWindow | null,

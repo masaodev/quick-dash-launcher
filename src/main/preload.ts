@@ -15,6 +15,7 @@ import {
   WorkspaceGroup,
   ExecutionHistoryItem,
   WindowInfo,
+  VirtualDesktopInfo,
 } from '@common/types';
 import {
   // データ操作
@@ -274,11 +275,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getAllWindows: (): Promise<WindowInfo[]> => ipcRenderer.invoke(GET_ALL_WINDOWS),
   getAllWindowsAllDesktops: (): Promise<WindowInfo[]> =>
     ipcRenderer.invoke(GET_ALL_WINDOWS_ALL_DESKTOPS),
-  getVirtualDesktopInfo: (): Promise<{
-    supported: boolean;
-    desktopCount: number;
-    currentDesktop: number;
-  }> => ipcRenderer.invoke(GET_VIRTUAL_DESKTOP_INFO),
+  getVirtualDesktopInfo: (): Promise<VirtualDesktopInfo> =>
+    ipcRenderer.invoke(GET_VIRTUAL_DESKTOP_INFO),
   updateItem: (request: UpdateItemRequest) => ipcRenderer.invoke(UPDATE_ITEM, request),
   updateRawLine: (request: { sourceFile: string; lineNumber: number; newContent: string }) =>
     ipcRenderer.invoke(UPDATE_RAW_LINE, request),
@@ -492,10 +490,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener(EVENT_LAUNCHER_MENU_OPEN_SHORTCUT_PARENT_FOLDER, listener);
   },
   // WindowContextMenu
-  showWindowContextMenu: (
-    windowInfo: WindowInfo,
-    desktopInfo: { supported: boolean; desktopCount: number; currentDesktop: number }
-  ): Promise<void> => ipcRenderer.invoke(SHOW_WINDOW_CONTEXT_MENU, windowInfo, desktopInfo),
+  showWindowContextMenu: (windowInfo: WindowInfo, desktopInfo: VirtualDesktopInfo): Promise<void> =>
+    ipcRenderer.invoke(SHOW_WINDOW_CONTEXT_MENU, windowInfo, desktopInfo),
   onMoveWindowToDesktop: (callback: (hwnd: number | bigint, desktopNumber: number) => void) => {
     const listener = (_event: unknown, hwnd: number | bigint, desktopNumber: number) =>
       callback(hwnd, desktopNumber);

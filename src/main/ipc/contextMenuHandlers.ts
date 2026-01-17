@@ -3,7 +3,7 @@
  * 全てのReactコンテキストメニューをElectronのネイティブメニューに変換
  */
 import { ipcMain, BrowserWindow, Menu, MenuItem } from 'electron';
-import type { AppItem, WorkspaceItem, WorkspaceGroup, WindowInfo } from '@common/types';
+import type { AppItem, WorkspaceItem, WorkspaceGroup, WindowInfo, VirtualDesktopInfo } from '@common/types';
 import {
   SHOW_ADMIN_ITEM_CONTEXT_MENU,
   EVENT_ADMIN_MENU_DUPLICATE_ITEMS,
@@ -441,11 +441,7 @@ export function setupWorkspaceGroupContextMenuHandler(getMainWindow: () => Brows
 export function setupWindowContextMenuHandler(getMainWindow: () => BrowserWindow | null) {
   ipcMain.handle(
     SHOW_WINDOW_CONTEXT_MENU,
-    async (
-      event,
-      windowInfo: WindowInfo,
-      desktopInfo: { supported: boolean; desktopCount: number; currentDesktop: number }
-    ): Promise<void> => {
+    async (event, windowInfo: WindowInfo, desktopInfo: VirtualDesktopInfo): Promise<void> => {
       try {
         const senderWindow = BrowserWindow.fromWebContents(event.sender);
         if (!senderWindow || senderWindow.isDestroyed()) {
