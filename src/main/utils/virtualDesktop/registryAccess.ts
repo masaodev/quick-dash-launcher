@@ -2,14 +2,19 @@
  * レジストリアクセス機能
  * advapi32.dllを使用して仮想デスクトップ関連のレジストリ情報を取得
  *
- * Note: koffiライブラリを使用したネイティブDLL呼び出しのため、any型を使用しています
+ * Note: koffiライブラリを使用したネイティブDLL呼び出しを行います
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as os from 'os';
 
 import koffi from 'koffi';
 
-import { HKEY_CURRENT_USER, KEY_READ, REG_BINARY, debugLog } from './types.js';
+import {
+  HKEY_CURRENT_USER,
+  KEY_READ,
+  REG_BINARY,
+  debugLog,
+  type RegistryHandle,
+} from './types.js';
 import { bufferToGuidString } from './guidUtils.js';
 
 // advapi32.dllをロード（レジストリアクセス用）
@@ -81,7 +86,7 @@ export function isVirtualDesktopSupported(): boolean {
  * レジストリキーを開く
  * @returns [成功フラグ, レジストリキーハンドル]
  */
-function openVirtualDesktopRegistryKey(): [boolean, any] {
+function openVirtualDesktopRegistryKey(): [boolean, RegistryHandle] {
   const registryHandle = [null];
   const openResult = RegOpenKeyExW(
     HKEY_CURRENT_USER,
@@ -104,7 +109,7 @@ function openVirtualDesktopRegistryKey(): [boolean, any] {
  * @param registryHandle - レジストリキーハンドル
  * @returns [成功フラグ, データサイズ, データ型]
  */
-function queryRegistryDataSize(registryHandle: any): [boolean, number, number] {
+function queryRegistryDataSize(registryHandle: RegistryHandle): [boolean, number, number] {
   const dataType = [0];
   const dataSize = [0];
   const sizeQueryResult = RegQueryValueExW(
@@ -147,7 +152,7 @@ function queryRegistryDataSize(registryHandle: any): [boolean, number, number] {
  * @returns [成功フラグ, バッファ, 実際のデータサイズ]
  */
 function queryRegistryBinaryData(
-  registryHandle: any,
+  registryHandle: RegistryHandle,
   expectedSize: number
 ): [boolean, Buffer, number] {
   const bufferSize = expectedSize + 16; // 余裕を持たせる

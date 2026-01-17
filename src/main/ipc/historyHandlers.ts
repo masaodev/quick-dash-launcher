@@ -1,11 +1,6 @@
 import { ipcMain } from 'electron';
 import { SearchHistoryEntry } from '@common/types';
-import {
-  LOAD_SEARCH_HISTORY,
-  SAVE_SEARCH_HISTORY,
-  ADD_SEARCH_HISTORY_ENTRY,
-  CLEAR_SEARCH_HISTORY,
-} from '@common/ipcChannels';
+import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { SearchHistoryService } from '../services/searchHistoryService';
 
@@ -19,14 +14,14 @@ export function setupHistoryHandlers(configFolder: string) {
   searchHistoryService = new SearchHistoryService(configFolder);
 
   // 検索履歴の読み込み
-  ipcMain.handle(LOAD_SEARCH_HISTORY, async (): Promise<SearchHistoryEntry[]> => {
+  ipcMain.handle(IPC_CHANNELS.LOAD_SEARCH_HISTORY, async (): Promise<SearchHistoryEntry[]> => {
     if (!searchHistoryService) return [];
     return searchHistoryService.loadHistory();
   });
 
   // 検索履歴の保存
   ipcMain.handle(
-    SAVE_SEARCH_HISTORY,
+    IPC_CHANNELS.SAVE_SEARCH_HISTORY,
     async (_event, entries: SearchHistoryEntry[]): Promise<void> => {
       if (!searchHistoryService) return;
       searchHistoryService.saveHistory(entries);
@@ -34,13 +29,13 @@ export function setupHistoryHandlers(configFolder: string) {
   );
 
   // 検索履歴エントリーの追加
-  ipcMain.handle(ADD_SEARCH_HISTORY_ENTRY, async (_event, query: string): Promise<void> => {
+  ipcMain.handle(IPC_CHANNELS.ADD_SEARCH_HISTORY_ENTRY, async (_event, query: string): Promise<void> => {
     if (!searchHistoryService) return;
     searchHistoryService.addHistoryEntry(query);
   });
 
   // 検索履歴のクリア
-  ipcMain.handle(CLEAR_SEARCH_HISTORY, async (): Promise<void> => {
+  ipcMain.handle(IPC_CHANNELS.CLEAR_SEARCH_HISTORY, async (): Promise<void> => {
     if (!searchHistoryService) return;
     searchHistoryService.clearHistory();
   });

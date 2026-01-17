@@ -2,29 +2,7 @@ import { ipcMain, BrowserWindow } from 'electron';
 import logger from '@common/logger';
 import type { AppItem, WorkspaceItem, WorkspaceGroup, WindowConfig } from '@common/types';
 import { isWindowInfo, isLauncherItem, isWindowOperationItem } from '@common/types/guards';
-import {
-  WORKSPACE_LOAD_ITEMS,
-  WORKSPACE_ADD_ITEM,
-  WORKSPACE_ADD_ITEMS_FROM_PATHS,
-  WORKSPACE_REMOVE_ITEM,
-  WORKSPACE_UPDATE_DISPLAY_NAME,
-  WORKSPACE_REORDER_ITEMS,
-  WORKSPACE_LAUNCH_ITEM,
-  WORKSPACE_LOAD_GROUPS,
-  WORKSPACE_CREATE_GROUP,
-  WORKSPACE_UPDATE_GROUP,
-  WORKSPACE_DELETE_GROUP,
-  WORKSPACE_REORDER_GROUPS,
-  WORKSPACE_MOVE_ITEM_TO_GROUP,
-  WORKSPACE_LOAD_EXECUTION_HISTORY,
-  WORKSPACE_ADD_EXECUTION_HISTORY,
-  WORKSPACE_CLEAR_EXECUTION_HISTORY,
-  WORKSPACE_ARCHIVE_GROUP,
-  WORKSPACE_LOAD_ARCHIVED_GROUPS,
-  WORKSPACE_RESTORE_GROUP,
-  WORKSPACE_DELETE_ARCHIVED_GROUP,
-  WORKSPACE_CHANGED,
-} from '@common/ipcChannels';
+import { IPC_CHANNELS } from '@common/ipcChannels';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 
 import { tryActivateWindow } from '../utils/windowActivator.js';
@@ -41,7 +19,7 @@ import { loadDataFiles } from './dataHandlers.js';
 export function notifyWorkspaceChanged(): void {
   const windows = BrowserWindow.getAllWindows();
   windows.forEach((window) => {
-    window.webContents.send(WORKSPACE_CHANGED);
+    window.webContents.send(IPC_CHANNELS.WORKSPACE_CHANGED);
   });
 }
 
@@ -52,7 +30,7 @@ export function setupWorkspaceHandlers(): void {
   /**
    * ワークスペースアイテムを全て取得
    */
-  ipcMain.handle(WORKSPACE_LOAD_ITEMS, async () => {
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_LOAD_ITEMS, async () => {
     try {
       const workspaceService = await WorkspaceService.getInstance();
       const items = await workspaceService.loadItems();
@@ -67,7 +45,7 @@ export function setupWorkspaceHandlers(): void {
   /**
    * ワークスペースにアイテムを追加
    */
-  ipcMain.handle(WORKSPACE_ADD_ITEM, async (_event, item: AppItem, groupId?: string) => {
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_ADD_ITEM, async (_event, item: AppItem, groupId?: string) => {
     try {
       const workspaceService = await WorkspaceService.getInstance();
       const addedItem = await workspaceService.addItem(item, groupId);
@@ -88,7 +66,7 @@ export function setupWorkspaceHandlers(): void {
    * アイテムタイプに応じてアイコンを自動取得する
    */
   ipcMain.handle(
-    WORKSPACE_ADD_ITEMS_FROM_PATHS,
+    IPC_CHANNELS.WORKSPACE_ADD_ITEMS_FROM_PATHS,
     async (_event, filePaths: string[], groupId?: string) => {
       try {
         const workspaceService = await WorkspaceService.getInstance();
@@ -143,7 +121,7 @@ export function setupWorkspaceHandlers(): void {
   /**
    * ワークスペースからアイテムを削除
    */
-  ipcMain.handle(WORKSPACE_REMOVE_ITEM, async (_event, id: string) => {
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_REMOVE_ITEM, async (_event, id: string) => {
     try {
       const workspaceService = await WorkspaceService.getInstance();
       await workspaceService.removeItem(id);
@@ -159,7 +137,7 @@ export function setupWorkspaceHandlers(): void {
   /**
    * ワークスペースアイテムの表示名を更新
    */
-  ipcMain.handle(WORKSPACE_UPDATE_DISPLAY_NAME, async (_event, id: string, displayName: string) => {
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_UPDATE_DISPLAY_NAME, async (_event, id: string, displayName: string) => {
     try {
       const workspaceService = await WorkspaceService.getInstance();
       await workspaceService.updateDisplayName(id, displayName);
@@ -175,7 +153,7 @@ export function setupWorkspaceHandlers(): void {
   /**
    * ワークスペースアイテムの並び順を変更
    */
-  ipcMain.handle(WORKSPACE_REORDER_ITEMS, async (_event, itemIds: string[]) => {
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_REORDER_ITEMS, async (_event, itemIds: string[]) => {
     try {
       const workspaceService = await WorkspaceService.getInstance();
       await workspaceService.reorderItems(itemIds);
@@ -191,7 +169,7 @@ export function setupWorkspaceHandlers(): void {
   /**
    * ワークスペースアイテムを起動
    */
-  ipcMain.handle(WORKSPACE_LAUNCH_ITEM, async (_event, item: WorkspaceItem) => {
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_LAUNCH_ITEM, async (_event, item: WorkspaceItem) => {
     try {
       // windowOperationタイプの場合
       if (item.type === 'windowOperation') {
@@ -364,7 +342,7 @@ export function setupWorkspaceHandlers(): void {
   /**
    * ワークスペースグループを全て取得
    */
-  ipcMain.handle(WORKSPACE_LOAD_GROUPS, async () => {
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_LOAD_GROUPS, async () => {
     try {
       const workspaceService = await WorkspaceService.getInstance();
       const groups = await workspaceService.loadGroups();
@@ -379,7 +357,7 @@ export function setupWorkspaceHandlers(): void {
   /**
    * 新しいグループを作成
    */
-  ipcMain.handle(WORKSPACE_CREATE_GROUP, async (_event, name: string, color?: string) => {
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_CREATE_GROUP, async (_event, name: string, color?: string) => {
     try {
       const workspaceService = await WorkspaceService.getInstance();
       const group = await workspaceService.createGroup(name, color);
@@ -396,7 +374,7 @@ export function setupWorkspaceHandlers(): void {
    * グループを更新
    */
   ipcMain.handle(
-    WORKSPACE_UPDATE_GROUP,
+    IPC_CHANNELS.WORKSPACE_UPDATE_GROUP,
     async (_event, id: string, updates: Partial<WorkspaceGroup>) => {
       try {
         const workspaceService = await WorkspaceService.getInstance();
@@ -414,7 +392,7 @@ export function setupWorkspaceHandlers(): void {
   /**
    * グループを削除
    */
-  ipcMain.handle(WORKSPACE_DELETE_GROUP, async (_event, id: string, deleteItems: boolean) => {
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_DELETE_GROUP, async (_event, id: string, deleteItems: boolean) => {
     try {
       const workspaceService = await WorkspaceService.getInstance();
       await workspaceService.deleteGroup(id, deleteItems);
@@ -430,7 +408,7 @@ export function setupWorkspaceHandlers(): void {
   /**
    * グループの並び順を変更
    */
-  ipcMain.handle(WORKSPACE_REORDER_GROUPS, async (_event, groupIds: string[]) => {
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_REORDER_GROUPS, async (_event, groupIds: string[]) => {
     try {
       const workspaceService = await WorkspaceService.getInstance();
       await workspaceService.reorderGroups(groupIds);
@@ -446,7 +424,7 @@ export function setupWorkspaceHandlers(): void {
   /**
    * アイテムをグループに移動
    */
-  ipcMain.handle(WORKSPACE_MOVE_ITEM_TO_GROUP, async (_event, itemId: string, groupId?: string) => {
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_MOVE_ITEM_TO_GROUP, async (_event, itemId: string, groupId?: string) => {
     try {
       const workspaceService = await WorkspaceService.getInstance();
       await workspaceService.moveItemToGroup(itemId, groupId);
@@ -464,7 +442,7 @@ export function setupWorkspaceHandlers(): void {
   /**
    * 実行履歴を全て取得
    */
-  ipcMain.handle(WORKSPACE_LOAD_EXECUTION_HISTORY, async () => {
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_LOAD_EXECUTION_HISTORY, async () => {
     try {
       const workspaceService = await WorkspaceService.getInstance();
       const history = await workspaceService.loadExecutionHistory();
@@ -479,7 +457,7 @@ export function setupWorkspaceHandlers(): void {
   /**
    * アイテム実行を履歴に追加
    */
-  ipcMain.handle(WORKSPACE_ADD_EXECUTION_HISTORY, async (_event, item: AppItem) => {
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_ADD_EXECUTION_HISTORY, async (_event, item: AppItem) => {
     try {
       const workspaceService = await WorkspaceService.getInstance();
       await workspaceService.addExecutionHistory(item);
@@ -498,7 +476,7 @@ export function setupWorkspaceHandlers(): void {
   /**
    * 実行履歴をクリア
    */
-  ipcMain.handle(WORKSPACE_CLEAR_EXECUTION_HISTORY, async () => {
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_CLEAR_EXECUTION_HISTORY, async () => {
     try {
       const workspaceService = await WorkspaceService.getInstance();
       await workspaceService.clearExecutionHistory();
@@ -516,7 +494,7 @@ export function setupWorkspaceHandlers(): void {
   /**
    * グループとそのアイテムをアーカイブ
    */
-  ipcMain.handle(WORKSPACE_ARCHIVE_GROUP, async (_event, groupId: string) => {
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_ARCHIVE_GROUP, async (_event, groupId: string) => {
     try {
       const workspaceService = await WorkspaceService.getInstance();
       await workspaceService.archiveGroup(groupId);
@@ -532,7 +510,7 @@ export function setupWorkspaceHandlers(): void {
   /**
    * アーカイブされたグループ一覧を取得
    */
-  ipcMain.handle(WORKSPACE_LOAD_ARCHIVED_GROUPS, async () => {
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_LOAD_ARCHIVED_GROUPS, async () => {
     try {
       const workspaceService = await WorkspaceService.getInstance();
       const archivedGroups = await workspaceService.loadArchivedGroups();
@@ -547,7 +525,7 @@ export function setupWorkspaceHandlers(): void {
   /**
    * アーカイブされたグループを復元
    */
-  ipcMain.handle(WORKSPACE_RESTORE_GROUP, async (_event, groupId: string) => {
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_RESTORE_GROUP, async (_event, groupId: string) => {
     try {
       const workspaceService = await WorkspaceService.getInstance();
       await workspaceService.restoreGroup(groupId);
@@ -563,7 +541,7 @@ export function setupWorkspaceHandlers(): void {
   /**
    * アーカイブされたグループを完全削除
    */
-  ipcMain.handle(WORKSPACE_DELETE_ARCHIVED_GROUP, async (_event, groupId: string) => {
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_DELETE_ARCHIVED_GROUP, async (_event, groupId: string) => {
     try {
       const workspaceService = await WorkspaceService.getInstance();
       await workspaceService.deleteArchivedGroup(groupId);

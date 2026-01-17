@@ -24,7 +24,7 @@ QuickDashLauncherで使用されるドメイン用語の定義です。開発時
 | アイテム | `WindowOperationItem` | ウィンドウ操作アイテム | ウィンドウ操作 | 既存ウィンドウを検索・制御するアイテム。WindowDirectiveで定義。アプリを起動せずウィンドウのみ操作。 |
 | アイテム | `AppItem` | アプリアイテム | - | `LauncherItem \| GroupItem \| WindowOperationItem \| WindowInfo`の統合型。アイテムリスト表示時に使用。 |
 | アイテム | `WorkspaceItem` | ワークスペースアイテム | - | ワークスペースに追加されたアイテムの独立コピー。元アイテムが削除されても影響を受けない。WorkspaceFileに保存。 |
-| アイテム | `RegisterItem` | 登録アイテム | - | アイテム登録・編集時に使用される型。`RegisterModal`や`useRegisterForm`で使用。`src/common/utils/dataConverters.ts`で定義。 |
+| アイテム | `RegisterItem` | 登録アイテム | - | アイテム登録・編集時に使用される型。`RegisterModal`や`useRegisterForm`で使用。`src/common/types/register.ts`で定義（v0.5.20で型定義を再配置）。 |
 | 登録項目 | `name` | アイテム名 | 表示名 | メインウィンドウのアイテムリストに表示される名前。`RegisterItem.name`および`LauncherItem.name`で使用。ユーザーが自由に設定可能。 |
 | 登録項目 | `path` | 起動パス | パス/URL | 起動対象を指定するパスまたはURL。ファイルパス、フォルダパス、HTTPS URL、カスタムURIなど。`RegisterItem.path`および`LauncherItem.path`で使用。この値から自動的にItemTypeが検出される。 |
 | 登録種別 | `ItemCategory` | アイテム登録種別 | 登録種別 | アイテム登録画面での「種別」選択。`RegisterItem.itemCategory`で使用。ユーザーが登録方法を選択する。<br>値:<br>• `item` - 単一アイテム（1つのアイテムを個別に登録）<br>• `dir` - フォルダ取込（フォルダ内のファイルを一括登録）<br>• `group` - グループ（複数アイテムをまとめて一括起動）<br>• `window` - ウィンドウ操作（既存ウィンドウを検索・制御）<br><br>**ItemTypeとの違い**: ItemCategoryは「登録方法」、ItemTypeは「実行方法」を表す。例: itemCategory='item'かつtype='url'は「単一アイテムとしてURLを登録」を意味する。 |
