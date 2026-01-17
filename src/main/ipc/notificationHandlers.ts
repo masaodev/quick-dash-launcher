@@ -5,7 +5,7 @@
  */
 
 import { ipcMain } from 'electron';
-import { SHOW_NOTIFICATION, SHOW_TOAST_WINDOW } from '@common/ipcChannels';
+import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import {
   showNotification,
@@ -41,13 +41,13 @@ export interface ShowToastWindowRequest {
 /**
  * システム通知関連のIPCハンドラーを登録する
  *
- * レンダラープロセスからSHOW_NOTIFICATIONリクエストを受け取り、
+ * レンダラープロセスからIPC_CHANNELS.SHOW_NOTIFICATIONリクエストを受け取り、
  * OS標準通知を表示します。
  */
 export function setupNotificationHandlers(): void {
   // OS標準通知ハンドラー
   ipcMain.handle(
-    SHOW_NOTIFICATION,
+    IPC_CHANNELS.SHOW_NOTIFICATION,
     async (_event, request: ShowNotificationRequest): Promise<void> => {
       const options: NotificationOptions = {
         title: request.title,
@@ -61,7 +61,7 @@ export function setupNotificationHandlers(): void {
 
   // トーストウィンドウハンドラー
   ipcMain.handle(
-    SHOW_TOAST_WINDOW,
+    IPC_CHANNELS.SHOW_TOAST_WINDOW,
     async (_event, request: ShowToastWindowRequest): Promise<void> => {
       await showToastWindow({
         message: request.message,

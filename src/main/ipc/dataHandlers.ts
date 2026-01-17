@@ -10,18 +10,7 @@ import { RawDataLine, LauncherItem, GroupItem, WindowOperationItem, AppItem } fr
 import type { RegisterItem } from '@common/types/register';
 import { isWindowInfo, isWindowOperationItem } from '@common/types/guards';
 import { parseWindowOperationDirective } from '@common/utils/directiveUtils';
-import {
-  GET_CONFIG_FOLDER,
-  GET_DATA_FILES,
-  CREATE_DATA_FILE,
-  DELETE_DATA_FILE,
-  LOAD_DATA_FILES,
-  REGISTER_ITEMS,
-  IS_DIRECTORY,
-  LOAD_RAW_DATA_FILES,
-  SAVE_RAW_DATA_FILES,
-  EVENT_DATA_CHANGED,
-} from '@common/ipcChannels';
+import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { BackupService } from '../services/backupService.js';
 import { SettingsService } from '../services/settingsService.js';
@@ -576,7 +565,7 @@ export function notifyDataChanged() {
   const allWindows = BrowserWindow.getAllWindows();
   allWindows.forEach((window) => {
     if (!window.isDestroyed()) {
-      window.webContents.send(EVENT_DATA_CHANGED);
+      window.webContents.send(IPC_CHANNELS.EVENT_DATA_CHANGED);
     }
   });
   dataLogger.info({ windowCount: allWindows.length }, 'データ変更通知を送信しました');
@@ -586,14 +575,14 @@ export function setupDataHandlers(configFolder: string) {
   // ブックマーク関連のハンドラーを登録
   setupBookmarkHandlers();
 
-  ipcMain.handle(GET_CONFIG_FOLDER, () => configFolder);
+  ipcMain.handle(IPC_CHANNELS.GET_CONFIG_FOLDER, () => configFolder);
 
-  ipcMain.handle(GET_DATA_FILES, async () => {
+  ipcMain.handle(IPC_CHANNELS.GET_DATA_FILES, async () => {
     const { PathManager } = await import('../config/pathManager.js');
     return PathManager.getDataFiles();
   });
 
-  ipcMain.handle(CREATE_DATA_FILE, async (_event, fileName: string) => {
+  ipcMain.handle(IPC_CHANNELS.CREATE_DATA_FILE, async (_event, fileName: string) => {
     const fs = await import('fs/promises');
     const path = await import('path');
     const filePath = path.join(configFolder, fileName);
@@ -619,7 +608,7 @@ export function setupDataHandlers(configFolder: string) {
     }
   });
 
-  ipcMain.handle(DELETE_DATA_FILE, async (_event, fileName: string) => {
+  ipcMain.handle(IPC_CHANNELS.DELETE_DATA_FILE, async (_event, fileName: string) => {
     const fs = await import('fs/promises');
     const path = await import('path');
 
@@ -643,25 +632,25 @@ export function setupDataHandlers(configFolder: string) {
     }
   });
 
-  ipcMain.handle(LOAD_DATA_FILES, async () => {
+  ipcMain.handle(IPC_CHANNELS.LOAD_DATA_FILES, async () => {
     return await loadDataFiles(configFolder);
   });
 
-  ipcMain.handle(REGISTER_ITEMS, async (_event, items: RegisterItem[]) => {
+  ipcMain.handle(IPC_CHANNELS.REGISTER_ITEMS, async (_event, items: RegisterItem[]) => {
     await registerItems(configFolder, items);
     notifyDataChanged();
     return;
   });
 
-  ipcMain.handle(IS_DIRECTORY, async (_event, filePath: string) => {
+  ipcMain.handle(IPC_CHANNELS.IS_DIRECTORY, async (_event, filePath: string) => {
     return isDirectory(filePath);
   });
 
-  ipcMain.handle(LOAD_RAW_DATA_FILES, async () => {
+  ipcMain.handle(IPC_CHANNELS.LOAD_RAW_DATA_FILES, async () => {
     return await loadRawDataFiles(configFolder);
   });
 
-  ipcMain.handle(SAVE_RAW_DATA_FILES, async (_event, rawLines: RawDataLine[]) => {
+  ipcMain.handle(IPC_CHANNELS.SAVE_RAW_DATA_FILES, async (_event, rawLines: RawDataLine[]) => {
     await saveRawDataFiles(configFolder, rawLines);
     notifyDataChanged();
     return;

@@ -2,6 +2,21 @@
 
 ## 開発環境のセットアップ
 
+### 開発モード用アイコン
+
+v0.5.20以降、開発モード実行時には赤い「DEV」オーバーレイ付きアイコンが自動的に生成・適用されます。これにより、本番環境と視覚的に区別できます。
+
+**自動生成の仕組み**:
+- `npm run dev`実行時に`scripts/create-dev-icon.ps1`が自動実行
+- `build/icon.png`を元に赤い「DEV」オーバーレイ付きアイコンを生成
+- 生成先: `build/icon-dev.ico`, `build/icon-dev.png`
+- 全ウィンドウ（メイン、トレイ、スプラッシュ、ワークスペース、管理）に適用
+
+**App User Model ID**:
+- 開発モード用に異なるIDを設定（アイコンキャッシュ対策）
+- 本番: `com.quickdash.launcher`
+- 開発: `com.quickdash.launcher.dev`
+
 ### 多重起動
 
 v0.5.3以降、開発時に複数のインスタンスを同時に起動できるようになりました。これにより、異なる設定やデータで並行開発・比較検証が可能です。
@@ -434,12 +449,12 @@ const { isDraggingOver } = useNativeDragDrop(loadItems);
 
 #### 型定義とガード関数
 - インターフェースは`I`プレフィックスを使用
-- 型は`src/common/types.ts`で一元管理
-- 型アサーションの代わりに型ガード関数を使用（`src/common/utils/typeGuards.ts`）
+- 型は`src/common/types/`で機能別に分割管理（v0.5.20で再編成）
+- 型アサーションの代わりに型ガード関数を使用（`src/common/types/guards.ts`）
 
 **型ガード関数の使用例:**
 ```typescript
-import { isLauncherItem, isWorkspaceItem, isDragItemData } from '@common/utils/typeGuards';
+import { isLauncherItem, isWorkspaceItem, isDragItemData } from '@common/types/guards';
 
 // 型アサーション（非推奨）
 const item = data as LauncherItem;
@@ -450,6 +465,15 @@ if (isLauncherItem(data)) {
   console.log(data.path);
 }
 ```
+
+**型定義ファイルの構成** (v0.5.20):
+- `types/launcher.ts` - ランチャーアイテム関連の型
+- `types/register.ts` - 登録アイテム関連の型とユーティリティ
+- `types/guards.ts` - 型ガード関数
+- `types/workspace.ts` - ワークスペース関連の型
+- `types/window.ts` - ウィンドウ関連の型
+- `types/settings.ts` - 設定関連の型
+- `types/index.ts` - 統合エクスポート
 
 ### CSS開発パターン
 

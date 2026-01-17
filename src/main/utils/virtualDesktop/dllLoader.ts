@@ -1,24 +1,28 @@
 /**
  * VirtualDesktopAccessor.dllのロードと関数定義
  *
- * Note: koffiライブラリを使用したネイティブDLL呼び出しのため、any型を使用しています
+ * Note: koffiライブラリを使用したネイティブDLL呼び出しを行います
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as path from 'path';
 import * as fs from 'fs';
 
-import koffi from 'koffi';
+import type koffi from 'koffi';
+import koffiModule from 'koffi';
 import { app } from 'electron';
 
 import { debugLog } from './types.js';
 
+// koffi関連の型エイリアス
+type KoffiLibrary = ReturnType<typeof koffiModule.load>;
+type KoffiFunction = ReturnType<KoffiLibrary['func']>;
+
 // DLL関数の参照
-let virtualDesktopAccessor: any = null;
-let MoveWindowToDesktopNumber: any = null;
-let _getCurrentDesktopNumber: any = null;
-let _isWindowOnDesktopNumber: any = null;
-let _getWindowDesktopNumber: any = null;
-let _getDesktopCount: any = null;
+let virtualDesktopAccessor: KoffiLibrary | null = null;
+let MoveWindowToDesktopNumber: KoffiFunction | null = null;
+let _getCurrentDesktopNumber: KoffiFunction | null = null;
+let _isWindowOnDesktopNumber: KoffiFunction | null = null;
+let _getWindowDesktopNumber: KoffiFunction | null = null;
+let _getDesktopCount: KoffiFunction | null = null;
 
 /**
  * DLLのベースパスを取得
@@ -33,7 +37,7 @@ function getDllBasePath(): string {
 /**
  * MoveWindowToDesktopNumber関数を定義（複数パターンでフォールバック）
  */
-function defineMoveWindowFunction(dllHandle: any): any {
+function defineMoveWindowFunction(dllHandle: KoffiLibrary): KoffiFunction | null {
   const patterns = [
     {
       name: 'classic __stdcall + void*',
@@ -72,7 +76,7 @@ function defineMoveWindowFunction(dllHandle: any): any {
 /**
  * IsWindowOnDesktopNumber関数を定義（複数パターンでフォールバック）
  */
-function defineIsWindowOnDesktopFunction(dllHandle: any): any {
+function defineIsWindowOnDesktopFunction(dllHandle: KoffiLibrary): KoffiFunction | null {
   const patterns = [
     {
       name: 'classic __stdcall + void*',
@@ -106,7 +110,7 @@ function defineIsWindowOnDesktopFunction(dllHandle: any): any {
 /**
  * GetWindowDesktopNumber関数を定義（複数パターンでフォールバック）
  */
-function defineGetWindowDesktopFunction(dllHandle: any): any {
+function defineGetWindowDesktopFunction(dllHandle: KoffiLibrary): KoffiFunction | null {
   const patterns = [
     {
       name: 'classic __stdcall + void*',
@@ -147,7 +151,7 @@ try {
 
   debugLog('[DllLoader] DLLファイル確認OK');
 
-  virtualDesktopAccessor = koffi.load(dllPath, { global: true, lazy: false });
+  virtualDesktopAccessor = koffiModule.load(dllPath, { global: true, lazy: false });
   debugLog('[DllLoader] DLLロード成功');
 
   // 関数を定義
@@ -192,23 +196,23 @@ try {
 }
 
 // DLL関数をエクスポート
-export function getMoveWindowToDesktopNumber(): any {
+export function getMoveWindowToDesktopNumber(): KoffiFunction | null {
   return MoveWindowToDesktopNumber;
 }
 
-export function getGetCurrentDesktopNumber(): any {
+export function getGetCurrentDesktopNumber(): KoffiFunction | null {
   return _getCurrentDesktopNumber;
 }
 
-export function getIsWindowOnDesktopNumber(): any {
+export function getIsWindowOnDesktopNumber(): KoffiFunction | null {
   return _isWindowOnDesktopNumber;
 }
 
-export function getGetWindowDesktopNumber(): any {
+export function getGetWindowDesktopNumber(): KoffiFunction | null {
   return _getWindowDesktopNumber;
 }
 
-export function getGetDesktopCount(): any {
+export function getGetDesktopCount(): KoffiFunction | null {
   return _getDesktopCount;
 }
 

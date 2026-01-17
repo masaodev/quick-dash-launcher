@@ -1,18 +1,7 @@
 import { ipcMain, BrowserWindow } from 'electron';
 import type { AppSettings } from '@common/types';
 import logger from '@common/logger';
-import {
-  SETTINGS_IS_FIRST_LAUNCH,
-  SETTINGS_GET,
-  SETTINGS_SET,
-  SETTINGS_SET_MULTIPLE,
-  SETTINGS_RESET,
-  SETTINGS_VALIDATE_HOTKEY,
-  SETTINGS_GET_CONFIG_PATH,
-  SETTINGS_CHANGE_HOTKEY,
-  SETTINGS_CHECK_HOTKEY_AVAILABILITY,
-  EVENT_SETTINGS_CHANGED,
-} from '@common/ipcChannels';
+import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { SettingsService } from '../services/settingsService.js';
 import { HotkeyService } from '../services/hotkeyService.js';
@@ -25,7 +14,7 @@ import { getIsFirstLaunch } from '../main.js';
 function notifySettingsChanged() {
   const allWindows = BrowserWindow.getAllWindows();
   allWindows.forEach((window) => {
-    window.webContents.send(EVENT_SETTINGS_CHANGED);
+    window.webContents.send(IPC_CHANNELS.EVENT_SETTINGS_CHANGED);
   });
 }
 
@@ -34,13 +23,13 @@ function notifySettingsChanged() {
  */
 export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boolean) => void): void {
   // 初回起動かどうかを取得
-  ipcMain.handle(SETTINGS_IS_FIRST_LAUNCH, async () => {
+  ipcMain.handle(IPC_CHANNELS.SETTINGS_IS_FIRST_LAUNCH, async () => {
     const isFirstLaunch = getIsFirstLaunch();
     logger.info(`Is first launch request: ${isFirstLaunch}`);
     return isFirstLaunch;
   });
   // 設定値を取得
-  ipcMain.handle(SETTINGS_GET, async (_event, key?: keyof AppSettings) => {
+  ipcMain.handle(IPC_CHANNELS.SETTINGS_GET, async (_event, key?: keyof AppSettings) => {
     try {
       const settingsService = await SettingsService.getInstance();
       if (key) {
@@ -60,7 +49,7 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
 
   // 設定値を設定
   ipcMain.handle(
-    SETTINGS_SET,
+    IPC_CHANNELS.SETTINGS_SET,
     async (_event, key: keyof AppSettings, value: AppSettings[keyof AppSettings]) => {
       try {
         const settingsService = await SettingsService.getInstance();
@@ -115,7 +104,7 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
   );
 
   // 複数の設定値を一括設定
-  ipcMain.handle(SETTINGS_SET_MULTIPLE, async (_event, settings: Partial<AppSettings>) => {
+  ipcMain.handle(IPC_CHANNELS.SETTINGS_SET_MULTIPLE, async (_event, settings: Partial<AppSettings>) => {
     try {
       const settingsService = await SettingsService.getInstance();
       await settingsService.setMultiple(settings);
@@ -178,7 +167,7 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
   });
 
   // 設定をリセット
-  ipcMain.handle(SETTINGS_RESET, async (_event) => {
+  ipcMain.handle(IPC_CHANNELS.SETTINGS_RESET, async (_event) => {
     try {
       const settingsService = await SettingsService.getInstance();
       await settingsService.reset();
@@ -199,7 +188,7 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
   });
 
   // ホットキーの妥当性を検証
-  ipcMain.handle(SETTINGS_VALIDATE_HOTKEY, async (_event, hotkey: string) => {
+  ipcMain.handle(IPC_CHANNELS.SETTINGS_VALIDATE_HOTKEY, async (_event, hotkey: string) => {
     try {
       const settingsService = await SettingsService.getInstance();
       const result = settingsService.validateHotkey(hotkey);
@@ -212,7 +201,7 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
   });
 
   // 設定ファイルのパスを取得
-  ipcMain.handle(SETTINGS_GET_CONFIG_PATH, async (_event) => {
+  ipcMain.handle(IPC_CHANNELS.SETTINGS_GET_CONFIG_PATH, async (_event) => {
     try {
       const settingsService = await SettingsService.getInstance();
       const path = await settingsService.getConfigPath();
@@ -225,7 +214,7 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
   });
 
   // ホットキーを変更
-  ipcMain.handle(SETTINGS_CHANGE_HOTKEY, async (_event, newHotkey: string) => {
+  ipcMain.handle(IPC_CHANNELS.SETTINGS_CHANGE_HOTKEY, async (_event, newHotkey: string) => {
     try {
       const hotkeyService = HotkeyService.getInstance();
       const success = await hotkeyService.changeHotkey(newHotkey);
@@ -238,7 +227,7 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
   });
 
   // ホットキーの利用可能性をチェック
-  ipcMain.handle(SETTINGS_CHECK_HOTKEY_AVAILABILITY, async (_event, hotkey: string) => {
+  ipcMain.handle(IPC_CHANNELS.SETTINGS_CHECK_HOTKEY_AVAILABILITY, async (_event, hotkey: string) => {
     try {
       const hotkeyService = HotkeyService.getInstance();
       const isAvailable = hotkeyService.isHotkeyAvailable(hotkey);

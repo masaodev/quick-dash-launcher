@@ -9,7 +9,7 @@ QuickDashLauncherのアーキテクチャ概要とデータフローを説明し
 | **メインプロセス** | `src/main/main.ts` | システム操作、ウィンドウ管理、IPC処理 |
 | **レンダラープロセス** | `src/renderer/` | UIのためのReactアプリケーション |
 | **プリロードスクリプト** | `src/main/preload.ts` | レンダラーに限定的なAPIを公開するセキュアブリッジ |
-| **共通型定義** | `src/common/types.ts` | プロセス間で共有される型定義 |
+| **共通型定義** | `src/common/types/` | プロセス間で共有される型定義（機能別に分割） |
 
 ---
 
@@ -68,6 +68,7 @@ IPCハンドラーは機能ごとに分離（`src/main/ipc/`）:
 | `workspaceHandlers.ts` | ワークスペースアイテム・グループ・実行履歴の操作 |
 | `windowSearchHandlers.ts` | ウィンドウ検索（ウィンドウ一覧取得・アクティブ化） |
 | `notificationHandlers.ts` | システム通知・トースト通知の表示 |
+| `contextMenuHandlers.ts` | ネイティブコンテキストメニュー（ランチャー、ワークスペース、管理画面） |
 
 詳細は[IPCチャンネル](ipc-channels.md)を参照。
 
@@ -116,12 +117,29 @@ IPCハンドラーは機能ごとに分離（`src/main/ipc/`）:
 | `directiveUtils.ts` | ディレクティブ（group, dir, window）の判定と解析。v0.5.10以降、`parseWindowOperationDirective()`はJSON形式専用（CSV形式サポート終了） |
 | `windowOperationMigration.ts` | Windows操作アイテムの旧CSV形式からJSON形式への変換処理（v0.5.10で自動移行機能を実装） |
 | `csvParser.ts` | CSV形式のパース・エスケープ処理 |
-| `dataConverters.ts` | データ形式変換（dirオプション解析等） |
+| `dataConverters.ts` | データ形式変換（dirオプション解析等、v0.5.20で型定義を`types/register.ts`に移動） |
 | `windowConfigUtils.ts` | ウィンドウ設定のJSON⇔文字列変換 |
 | `itemTypeDetector.ts` | パスからアイテムタイプを自動検出 |
 | `pathUtils.ts` | パス操作の共通処理 |
-| `typeGuards.ts` | TypeScript型ガード関数 |
 | `historyConverters.ts` | 履歴データの形式変換処理 |
+
+## 共通型定義の構造
+
+型定義は機能別に分割され、`src/common/types/`に配置されています（v0.5.20で再編成）:
+
+| モジュール | 役割 |
+|-----------|------|
+| `index.ts` | すべての型をエクスポートする統合ポイント |
+| `launcher.ts` | ランチャーアイテム関連（`LauncherItem`, `AppItem`, `ItemType`） |
+| `data.ts` | データファイル関連（`RawDataLine`） |
+| `register.ts` | 登録アイテム関連（`RegisterItem`, `DirOptions`, `WindowOperationConfig`）とユーティリティ関数 |
+| `guards.ts` | 型ガード関数（`isWindowInfo`, `isLauncherItem`, `isGroupItem`等） |
+| `workspace.ts` | ワークスペース関連（`WorkspaceItem`, `WorkspaceGroup`, `DragItemData`） |
+| `window.ts` | ウィンドウ関連（`WindowInfo`, `WindowPinMode`） |
+| `settings.ts` | 設定関連（`AppSettings`, `DataFileTab`） |
+| `search.ts` | 検索関連（`SearchMode`） |
+
+**後方互換性**: `src/common/types.ts`は全型を再エクスポートし、既存コードとの互換性を維持しています。
 
 ---
 

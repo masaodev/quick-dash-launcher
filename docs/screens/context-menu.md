@@ -8,7 +8,9 @@
 
 ## 1. 概要
 
-右クリックメニュー（ContextMenu）は、メインウィンドウのアイテムリストで右クリックしたときに表示されるコンテキストメニューです。アイテムのパス操作や編集機能を提供します。
+右クリックメニュー（ContextMenu）は、メインウィンドウのアイテムリストで右クリックしたときに表示される**ネイティブElectronメニュー**です。アイテムのパス操作や編集機能を提供します。
+
+**実装方式**: v0.5.20以降、ReactコンポーネントからElectronのネイティブメニュー（`Menu.buildFromTemplate`）に変更されました。これにより、ウィンドウ境界での切れ問題が解消され、OS標準のメニュー動作を実現しています。
 
 **キーボードショートカット**: Escapeキーでメニューを閉じることができます。
 
@@ -22,28 +24,25 @@
 
 | 項目 | 内容 |
 |------|------|
-| **ファイル名** | `src/renderer/components/ContextMenu.tsx` |
-| **コンポーネント名** | `ContextMenu` |
+| **実装ファイル** | `src/main/ipc/contextMenuHandlers.ts` |
+| **ハンドラー名** | `setupLauncherContextMenuHandler` |
 | **表示条件** | メインウィンドウでアイテムを右クリック |
-| **メニュータイプ** | フローティングメニュー |
+| **メニュータイプ** | ネイティブElectronメニュー（`Menu.buildFromTemplate`） |
 | **親画面** | メインウィンドウ |
+| **IPCチャンネル** | `SHOW_LAUNCHER_CONTEXT_MENU` |
 
-## 3. Props
+## 3. 呼び出しパラメータ
 
-| プロパティ | 型 | 必須 | 説明 |
+ネイティブメニューは、IPCハンドラーで以下のパラメータを受け取って動的に構築されます：
+
+| パラメータ | 型 | 必須 | 説明 |
 |-----------|------|:----:|------|
-| `isVisible` | `boolean` | ○ | メニューの表示状態 |
-| `position` | `{ x: number; y: number }` | ○ | メニューの表示位置 |
-| `item` | `AppItem \| null` | ○ | 対象アイテム |
-| `onClose` | `() => void` | ○ | 閉じる時のコールバック |
-| `onCopyPath` | `(item: LauncherItem) => void` | ○ | パスコピー時のコールバック |
-| `onCopyParentPath` | `(item: LauncherItem) => void` | ○ | 親フォルダーパスコピー時のコールバック |
-| `onOpenParentFolder` | `(item: LauncherItem) => void` | ○ | 親フォルダーを開く時のコールバック |
-| `onCopyShortcutPath` | `(item: LauncherItem) => void` | - | リンク先パスコピー時のコールバック |
-| `onCopyShortcutParentPath` | `(item: LauncherItem) => void` | - | リンク先の親フォルダーパスコピー時のコールバック |
-| `onOpenShortcutParentFolder` | `(item: LauncherItem) => void` | - | リンク先の親フォルダーを開く時のコールバック |
-| `onEditItem` | `(item: AppItem) => void \| Promise<void>` | - | アイテム編集時のコールバック |
-| `onAddToWorkspace` | `(item: AppItem) => void \| Promise<void>` | - | ワークスペースに追加時のコールバック |
+| `item` | `AppItem` | ○ | 対象アイテム（名前、パス、タイプ等） |
+
+**メニュー構築ロジック**:
+- アイテムのタイプ（`url`, `customUri`, `group`, `file`, `folder`, `app`）に応じて表示項目を動的に変更
+- `.lnk`ファイルの場合、ショートカット関連の操作を追加表示
+- メニュー項目クリック時は、レンダラープロセスへイベント送信（`EVENT_LAUNCHER_MENU_*`）
 
 ## 4. メニュー項目一覧
 
@@ -177,18 +176,11 @@
 
 ## 6. 位置調整
 
-メニューは画面からはみ出さないよう自動調整されます。
+ネイティブメニューは、OSが自動的にカーソル位置に表示します。
 
-- 右端からはみ出す場合、左に移動
-- 下端からはみ出す場合、上に移動
-
-### メニューの高さ計算
-
-| アイテムタイプ | 高さ（概算） |
-|---------------|-------------|
-| グループアイテム | 60px |
-| 通常アイテム | 200px |
-| ショートカットアイテム | 340px |
+- 画面境界での切れ問題なし（OS標準動作）
+- ウィンドウ外への表示も正しく処理される
+- 位置調整ロジックは不要（Electronが自動処理）
 
 ## 7. キーボード操作
 
@@ -205,21 +197,12 @@
 
 ## 9. スタイル
 
-### 主要なCSSクラス
+ネイティブメニューはOSの標準スタイルを使用します。
 
-| クラス名 | 説明 |
-|---------|------|
-| `.context-menu` | メニューコンテナ |
-| `.context-menu-item` | メニュー項目 |
-| `.context-menu-icon` | アイコン表示エリア |
-| `.context-menu-divider` | 区切り線 |
-
-### スタイル仕様
-
-- 固定配置（`position: fixed`）
-- z-index: 1000
-- 背景: 白系（変数定義）
-- 影: ドロップシャドウ
+- **外観**: Windows標準のコンテキストメニュー
+- **カスタマイズ**: OSテーマに従う（ライトモード/ダークモード対応）
+- **CSS不要**: Electronが自動的にスタイル適用
+- **一貫性**: 他のWindowsアプリケーションと同じ見た目
 
 ## 10. アイテムタイプ判定
 

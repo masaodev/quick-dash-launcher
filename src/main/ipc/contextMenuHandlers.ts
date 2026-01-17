@@ -4,41 +4,7 @@
  */
 import { ipcMain, BrowserWindow, Menu, MenuItem } from 'electron';
 import type { AppItem, WorkspaceItem, WorkspaceGroup, WindowInfo, VirtualDesktopInfo } from '@common/types';
-import {
-  SHOW_ADMIN_ITEM_CONTEXT_MENU,
-  EVENT_ADMIN_MENU_DUPLICATE_ITEMS,
-  EVENT_ADMIN_MENU_EDIT_ITEM,
-  EVENT_ADMIN_MENU_DELETE_ITEMS,
-  SHOW_LAUNCHER_CONTEXT_MENU,
-  EVENT_LAUNCHER_MENU_EDIT_ITEM,
-  EVENT_LAUNCHER_MENU_ADD_TO_WORKSPACE,
-  EVENT_LAUNCHER_MENU_COPY_PATH,
-  EVENT_LAUNCHER_MENU_COPY_PARENT_PATH,
-  EVENT_LAUNCHER_MENU_OPEN_PARENT_FOLDER,
-  EVENT_LAUNCHER_MENU_COPY_SHORTCUT_PATH,
-  EVENT_LAUNCHER_MENU_COPY_SHORTCUT_PARENT_PATH,
-  EVENT_LAUNCHER_MENU_OPEN_SHORTCUT_PARENT_FOLDER,
-  SHOW_WORKSPACE_CONTEXT_MENU,
-  EVENT_WORKSPACE_MENU_RENAME_ITEM,
-  EVENT_WORKSPACE_MENU_LAUNCH_ITEM,
-  EVENT_WORKSPACE_MENU_COPY_PATH,
-  EVENT_WORKSPACE_MENU_COPY_PARENT_PATH,
-  EVENT_WORKSPACE_MENU_OPEN_PARENT_FOLDER,
-  EVENT_WORKSPACE_MENU_COPY_SHORTCUT_PATH,
-  EVENT_WORKSPACE_MENU_COPY_SHORTCUT_PARENT_PATH,
-  EVENT_WORKSPACE_MENU_OPEN_SHORTCUT_PARENT_FOLDER,
-  EVENT_WORKSPACE_MENU_REMOVE_FROM_GROUP,
-  EVENT_WORKSPACE_MENU_REMOVE_ITEM,
-  SHOW_WORKSPACE_GROUP_CONTEXT_MENU,
-  EVENT_WORKSPACE_GROUP_MENU_RENAME,
-  EVENT_WORKSPACE_GROUP_MENU_SHOW_COLOR_PICKER,
-  EVENT_WORKSPACE_GROUP_MENU_CHANGE_COLOR,
-  EVENT_WORKSPACE_GROUP_MENU_COPY_AS_TEXT,
-  EVENT_WORKSPACE_GROUP_MENU_ARCHIVE,
-  EVENT_WORKSPACE_GROUP_MENU_DELETE,
-  SHOW_WINDOW_CONTEXT_MENU,
-  MOVE_WINDOW_TO_DESKTOP,
-} from '@common/ipcChannels';
+import { IPC_CHANNELS } from '@common/ipcChannels';
 import { isGroupItem } from '@common/types/guards';
 
 /**
@@ -46,7 +12,7 @@ import { isGroupItem } from '@common/types/guards';
  */
 export function setupAdminItemContextMenuHandler(getMainWindow: () => BrowserWindow | null) {
   ipcMain.handle(
-    SHOW_ADMIN_ITEM_CONTEXT_MENU,
+    IPC_CHANNELS.SHOW_ADMIN_ITEM_CONTEXT_MENU,
     async (event, selectedCount: number, isSingleLine: boolean): Promise<void> => {
       try {
         const senderWindow = BrowserWindow.fromWebContents(event.sender);
@@ -61,7 +27,7 @@ export function setupAdminItemContextMenuHandler(getMainWindow: () => BrowserWin
           new MenuItem({
             label: isSingleLine ? '📋 複製' : `📋 複製 (${selectedCount}行)`,
             click: () => {
-              event.sender.send(EVENT_ADMIN_MENU_DUPLICATE_ITEMS);
+              event.sender.send(IPC_CHANNELS.EVENT_ADMIN_MENU_DUPLICATE_ITEMS);
             },
           })
         );
@@ -72,7 +38,7 @@ export function setupAdminItemContextMenuHandler(getMainWindow: () => BrowserWin
             new MenuItem({
               label: '✏️ 詳細編集',
               click: () => {
-                event.sender.send(EVENT_ADMIN_MENU_EDIT_ITEM);
+                event.sender.send(IPC_CHANNELS.EVENT_ADMIN_MENU_EDIT_ITEM);
               },
             })
           );
@@ -85,7 +51,7 @@ export function setupAdminItemContextMenuHandler(getMainWindow: () => BrowserWin
           new MenuItem({
             label: isSingleLine ? '🗑️ 削除' : `🗑️ 削除 (${selectedCount}行)`,
             click: () => {
-              event.sender.send(EVENT_ADMIN_MENU_DELETE_ITEMS);
+              event.sender.send(IPC_CHANNELS.EVENT_ADMIN_MENU_DELETE_ITEMS);
             },
           })
         );
@@ -105,7 +71,7 @@ export function setupAdminItemContextMenuHandler(getMainWindow: () => BrowserWin
  * LauncherContextMenu用のネイティブメニューハンドラーを設定
  */
 export function setupLauncherContextMenuHandler(getMainWindow: () => BrowserWindow | null) {
-  ipcMain.handle(SHOW_LAUNCHER_CONTEXT_MENU, async (event, item: AppItem): Promise<void> => {
+  ipcMain.handle(IPC_CHANNELS.SHOW_LAUNCHER_CONTEXT_MENU, async (event, item: AppItem): Promise<void> => {
     try {
       const senderWindow = BrowserWindow.fromWebContents(event.sender);
       if (!senderWindow || senderWindow.isDestroyed()) {
@@ -123,7 +89,7 @@ export function setupLauncherContextMenuHandler(getMainWindow: () => BrowserWind
         new MenuItem({
           label: '✏️ 編集',
           click: () => {
-            event.sender.send(EVENT_LAUNCHER_MENU_EDIT_ITEM, item);
+            event.sender.send(IPC_CHANNELS.EVENT_LAUNCHER_MENU_EDIT_ITEM, item);
           },
         })
       );
@@ -138,7 +104,7 @@ export function setupLauncherContextMenuHandler(getMainWindow: () => BrowserWind
         new MenuItem({
           label: '⭐ ワークスペースに追加',
           click: () => {
-            event.sender.send(EVENT_LAUNCHER_MENU_ADD_TO_WORKSPACE, item);
+            event.sender.send(IPC_CHANNELS.EVENT_LAUNCHER_MENU_ADD_TO_WORKSPACE, item);
           },
         })
       );
@@ -156,7 +122,7 @@ export function setupLauncherContextMenuHandler(getMainWindow: () => BrowserWind
         new MenuItem({
           label: '📋 パスをコピー',
           click: () => {
-            event.sender.send(EVENT_LAUNCHER_MENU_COPY_PATH, item);
+            event.sender.send(IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_PATH, item);
           },
         })
       );
@@ -167,7 +133,7 @@ export function setupLauncherContextMenuHandler(getMainWindow: () => BrowserWind
           new MenuItem({
             label: '📋 親フォルダーのパスをコピー',
             click: () => {
-              event.sender.send(EVENT_LAUNCHER_MENU_COPY_PARENT_PATH, item);
+              event.sender.send(IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_PARENT_PATH, item);
             },
           })
         );
@@ -176,7 +142,7 @@ export function setupLauncherContextMenuHandler(getMainWindow: () => BrowserWind
           new MenuItem({
             label: '📂 親フォルダーを開く',
             click: () => {
-              event.sender.send(EVENT_LAUNCHER_MENU_OPEN_PARENT_FOLDER, item);
+              event.sender.send(IPC_CHANNELS.EVENT_LAUNCHER_MENU_OPEN_PARENT_FOLDER, item);
             },
           })
         );
@@ -190,7 +156,7 @@ export function setupLauncherContextMenuHandler(getMainWindow: () => BrowserWind
           new MenuItem({
             label: '📋 リンク先のパスをコピー',
             click: () => {
-              event.sender.send(EVENT_LAUNCHER_MENU_COPY_SHORTCUT_PATH, item);
+              event.sender.send(IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_SHORTCUT_PATH, item);
             },
           })
         );
@@ -199,7 +165,7 @@ export function setupLauncherContextMenuHandler(getMainWindow: () => BrowserWind
           new MenuItem({
             label: '📋 リンク先の親フォルダーのパスをコピー',
             click: () => {
-              event.sender.send(EVENT_LAUNCHER_MENU_COPY_SHORTCUT_PARENT_PATH, item);
+              event.sender.send(IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_SHORTCUT_PARENT_PATH, item);
             },
           })
         );
@@ -208,7 +174,7 @@ export function setupLauncherContextMenuHandler(getMainWindow: () => BrowserWind
           new MenuItem({
             label: '📂 リンク先の親フォルダーを開く',
             click: () => {
-              event.sender.send(EVENT_LAUNCHER_MENU_OPEN_SHORTCUT_PARENT_FOLDER, item);
+              event.sender.send(IPC_CHANNELS.EVENT_LAUNCHER_MENU_OPEN_SHORTCUT_PARENT_FOLDER, item);
             },
           })
         );
@@ -226,7 +192,7 @@ export function setupLauncherContextMenuHandler(getMainWindow: () => BrowserWind
  */
 export function setupWorkspaceContextMenuHandler(getMainWindow: () => BrowserWindow | null) {
   ipcMain.handle(
-    SHOW_WORKSPACE_CONTEXT_MENU,
+    IPC_CHANNELS.SHOW_WORKSPACE_CONTEXT_MENU,
     async (event, item: WorkspaceItem, groups: WorkspaceGroup[]): Promise<void> => {
       try {
         const senderWindow = BrowserWindow.fromWebContents(event.sender);
@@ -244,7 +210,7 @@ export function setupWorkspaceContextMenuHandler(getMainWindow: () => BrowserWin
           new MenuItem({
             label: '✏️ 表示名を変更',
             click: () => {
-              event.sender.send(EVENT_WORKSPACE_MENU_RENAME_ITEM, item.id);
+              event.sender.send(IPC_CHANNELS.EVENT_WORKSPACE_MENU_RENAME_ITEM, item.id);
             },
           })
         );
@@ -254,7 +220,7 @@ export function setupWorkspaceContextMenuHandler(getMainWindow: () => BrowserWin
           new MenuItem({
             label: '▶️ 起動',
             click: () => {
-              event.sender.send(EVENT_WORKSPACE_MENU_LAUNCH_ITEM, item.id);
+              event.sender.send(IPC_CHANNELS.EVENT_WORKSPACE_MENU_LAUNCH_ITEM, item.id);
             },
           })
         );
@@ -266,7 +232,7 @@ export function setupWorkspaceContextMenuHandler(getMainWindow: () => BrowserWin
           new MenuItem({
             label: '📋 パスをコピー',
             click: () => {
-              event.sender.send(EVENT_WORKSPACE_MENU_COPY_PATH, item.id);
+              event.sender.send(IPC_CHANNELS.EVENT_WORKSPACE_MENU_COPY_PATH, item.id);
             },
           })
         );
@@ -277,7 +243,7 @@ export function setupWorkspaceContextMenuHandler(getMainWindow: () => BrowserWin
             new MenuItem({
               label: '📋 親フォルダーのパスをコピー',
               click: () => {
-                event.sender.send(EVENT_WORKSPACE_MENU_COPY_PARENT_PATH, item.id);
+                event.sender.send(IPC_CHANNELS.EVENT_WORKSPACE_MENU_COPY_PARENT_PATH, item.id);
               },
             })
           );
@@ -286,7 +252,7 @@ export function setupWorkspaceContextMenuHandler(getMainWindow: () => BrowserWin
             new MenuItem({
               label: '📂 親フォルダーを開く',
               click: () => {
-                event.sender.send(EVENT_WORKSPACE_MENU_OPEN_PARENT_FOLDER, item.id);
+                event.sender.send(IPC_CHANNELS.EVENT_WORKSPACE_MENU_OPEN_PARENT_FOLDER, item.id);
               },
             })
           );
@@ -300,7 +266,7 @@ export function setupWorkspaceContextMenuHandler(getMainWindow: () => BrowserWin
             new MenuItem({
               label: '📋 リンク先のパスをコピー',
               click: () => {
-                event.sender.send(EVENT_WORKSPACE_MENU_COPY_SHORTCUT_PATH, item.id);
+                event.sender.send(IPC_CHANNELS.EVENT_WORKSPACE_MENU_COPY_SHORTCUT_PATH, item.id);
               },
             })
           );
@@ -309,7 +275,7 @@ export function setupWorkspaceContextMenuHandler(getMainWindow: () => BrowserWin
             new MenuItem({
               label: '📋 リンク先の親フォルダーのパスをコピー',
               click: () => {
-                event.sender.send(EVENT_WORKSPACE_MENU_COPY_SHORTCUT_PARENT_PATH, item.id);
+                event.sender.send(IPC_CHANNELS.EVENT_WORKSPACE_MENU_COPY_SHORTCUT_PARENT_PATH, item.id);
               },
             })
           );
@@ -318,7 +284,7 @@ export function setupWorkspaceContextMenuHandler(getMainWindow: () => BrowserWin
             new MenuItem({
               label: '📂 リンク先の親フォルダーを開く',
               click: () => {
-                event.sender.send(EVENT_WORKSPACE_MENU_OPEN_SHORTCUT_PARENT_FOLDER, item.id);
+                event.sender.send(IPC_CHANNELS.EVENT_WORKSPACE_MENU_OPEN_SHORTCUT_PARENT_FOLDER, item.id);
               },
             })
           );
@@ -332,7 +298,7 @@ export function setupWorkspaceContextMenuHandler(getMainWindow: () => BrowserWin
             new MenuItem({
               label: '📤 グループから削除',
               click: () => {
-                event.sender.send(EVENT_WORKSPACE_MENU_REMOVE_FROM_GROUP, item.id);
+                event.sender.send(IPC_CHANNELS.EVENT_WORKSPACE_MENU_REMOVE_FROM_GROUP, item.id);
               },
             })
           );
@@ -345,7 +311,7 @@ export function setupWorkspaceContextMenuHandler(getMainWindow: () => BrowserWin
           new MenuItem({
             label: '🗑️ ワークスペースから削除',
             click: () => {
-              event.sender.send(EVENT_WORKSPACE_MENU_REMOVE_ITEM, item.id);
+              event.sender.send(IPC_CHANNELS.EVENT_WORKSPACE_MENU_REMOVE_ITEM, item.id);
             },
           })
         );
@@ -363,7 +329,7 @@ export function setupWorkspaceContextMenuHandler(getMainWindow: () => BrowserWin
  */
 export function setupWorkspaceGroupContextMenuHandler(getMainWindow: () => BrowserWindow | null) {
   ipcMain.handle(
-    SHOW_WORKSPACE_GROUP_CONTEXT_MENU,
+    IPC_CHANNELS.SHOW_WORKSPACE_GROUP_CONTEXT_MENU,
     async (event, group: WorkspaceGroup): Promise<void> => {
       try {
         const senderWindow = BrowserWindow.fromWebContents(event.sender);
@@ -378,7 +344,7 @@ export function setupWorkspaceGroupContextMenuHandler(getMainWindow: () => Brows
           new MenuItem({
             label: '✏️ グループ名を変更',
             click: () => {
-              event.sender.send(EVENT_WORKSPACE_GROUP_MENU_RENAME, group.id);
+              event.sender.send(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_RENAME, group.id);
             },
           })
         );
@@ -388,7 +354,7 @@ export function setupWorkspaceGroupContextMenuHandler(getMainWindow: () => Brows
           new MenuItem({
             label: '🎨 カラーを変更',
             click: () => {
-              event.sender.send(EVENT_WORKSPACE_GROUP_MENU_SHOW_COLOR_PICKER, group.id);
+              event.sender.send(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_SHOW_COLOR_PICKER, group.id);
             },
           })
         );
@@ -400,7 +366,7 @@ export function setupWorkspaceGroupContextMenuHandler(getMainWindow: () => Brows
           new MenuItem({
             label: '📋 テキストでコピー',
             click: () => {
-              event.sender.send(EVENT_WORKSPACE_GROUP_MENU_COPY_AS_TEXT, group.id);
+              event.sender.send(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_COPY_AS_TEXT, group.id);
             },
           })
         );
@@ -412,7 +378,7 @@ export function setupWorkspaceGroupContextMenuHandler(getMainWindow: () => Brows
           new MenuItem({
             label: '📦 グループをアーカイブ',
             click: () => {
-              event.sender.send(EVENT_WORKSPACE_GROUP_MENU_ARCHIVE, group.id);
+              event.sender.send(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_ARCHIVE, group.id);
             },
           })
         );
@@ -422,7 +388,7 @@ export function setupWorkspaceGroupContextMenuHandler(getMainWindow: () => Brows
           new MenuItem({
             label: '🗑️ グループを削除',
             click: () => {
-              event.sender.send(EVENT_WORKSPACE_GROUP_MENU_DELETE, group.id);
+              event.sender.send(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_DELETE, group.id);
             },
           })
         );
@@ -440,7 +406,7 @@ export function setupWorkspaceGroupContextMenuHandler(getMainWindow: () => Brows
  */
 export function setupWindowContextMenuHandler(getMainWindow: () => BrowserWindow | null) {
   ipcMain.handle(
-    SHOW_WINDOW_CONTEXT_MENU,
+    IPC_CHANNELS.SHOW_WINDOW_CONTEXT_MENU,
     async (event, windowInfo: WindowInfo, desktopInfo: VirtualDesktopInfo): Promise<void> => {
       try {
         const senderWindow = BrowserWindow.fromWebContents(event.sender);
@@ -464,7 +430,7 @@ export function setupWindowContextMenuHandler(getMainWindow: () => BrowserWindow
                 label,
                 enabled: !isCurrentDesktop,
                 click: () => {
-                  event.sender.send(MOVE_WINDOW_TO_DESKTOP, windowInfo.hwnd, i);
+                  event.sender.send(IPC_CHANNELS.MOVE_WINDOW_TO_DESKTOP, windowInfo.hwnd, i);
                 },
               })
             );

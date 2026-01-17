@@ -3,13 +3,7 @@
  */
 import { ipcMain, BrowserWindow } from 'electron';
 import type { WindowPinMode, WindowInfo, VirtualDesktopInfo } from '@common/types';
-import {
-  GET_ALL_WINDOWS,
-  GET_ALL_WINDOWS_ALL_DESKTOPS,
-  GET_VIRTUAL_DESKTOP_INFO,
-  ACTIVATE_WINDOW,
-  MOVE_WINDOW_TO_DESKTOP,
-} from '@common/ipcChannels';
+import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { getAllWindows, activateWindow, restoreWindow } from '../utils/nativeWindowControl';
 import {
@@ -26,7 +20,7 @@ export function setupWindowSearchHandlers(
   /**
    * すべてのウィンドウ情報を取得（QuickDashLauncher自身は除外、現在のデスクトップのみ）
    */
-  ipcMain.handle(GET_ALL_WINDOWS, async (): Promise<WindowInfo[]> => {
+  ipcMain.handle(IPC_CHANNELS.GET_ALL_WINDOWS, async (): Promise<WindowInfo[]> => {
     try {
       const windows = getAllWindows();
 
@@ -52,7 +46,7 @@ export function setupWindowSearchHandlers(
   /**
    * すべての仮想デスクトップのウィンドウ情報を取得（QuickDashLauncher自身は除外）
    */
-  ipcMain.handle(GET_ALL_WINDOWS_ALL_DESKTOPS, async (): Promise<WindowInfo[]> => {
+  ipcMain.handle(IPC_CHANNELS.GET_ALL_WINDOWS_ALL_DESKTOPS, async (): Promise<WindowInfo[]> => {
     try {
       const windows = getAllWindows({ includeAllVirtualDesktops: true });
 
@@ -77,7 +71,7 @@ export function setupWindowSearchHandlers(
   /**
    * 仮想デスクトップ情報を取得
    */
-  ipcMain.handle(GET_VIRTUAL_DESKTOP_INFO, async (): Promise<VirtualDesktopInfo> => {
+  ipcMain.handle(IPC_CHANNELS.GET_VIRTUAL_DESKTOP_INFO, async (): Promise<VirtualDesktopInfo> => {
     try {
       const supported = isVirtualDesktopSupported();
       if (!supported) {
@@ -102,7 +96,7 @@ export function setupWindowSearchHandlers(
    * - normalモードの場合はランチャーウィンドウを非表示
    */
   ipcMain.handle(
-    ACTIVATE_WINDOW,
+    IPC_CHANNELS.ACTIVATE_WINDOW,
     async (_event, hwnd: number | bigint): Promise<{ success: boolean; error?: string }> => {
       try {
         // 最小化されている場合は復元
@@ -137,7 +131,7 @@ export function setupWindowSearchHandlers(
    * 指定されたウィンドウを仮想デスクトップに移動
    */
   ipcMain.handle(
-    MOVE_WINDOW_TO_DESKTOP,
+    IPC_CHANNELS.MOVE_WINDOW_TO_DESKTOP,
     async (_event, hwnd: number | bigint, desktopNumber: number): Promise<{ success: boolean; error?: string }> => {
       try {
         const success = moveWindowToVirtualDesktop(hwnd, desktopNumber);

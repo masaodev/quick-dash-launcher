@@ -2,14 +2,14 @@ import * as path from 'path';
 import * as fs from 'fs';
 
 import { ipcMain, shell } from 'electron';
-import { OPEN_CONFIG_FOLDER, GET_APP_INFO, OPEN_EXTERNAL_URL } from '@common/ipcChannels';
+import { IPC_CHANNELS } from '@common/ipcChannels';
 
 export function setupConfigHandlers(configFolder: string) {
-  ipcMain.handle(OPEN_CONFIG_FOLDER, async () => {
+  ipcMain.handle(IPC_CHANNELS.OPEN_CONFIG_FOLDER, async () => {
     await shell.openPath(configFolder);
   });
 
-  ipcMain.handle(GET_APP_INFO, async () => {
+  ipcMain.handle(IPC_CHANNELS.GET_APP_INFO, async () => {
     try {
       // package.jsonのパスを取得（productionとdevelopmentで異なる）
       const packageJsonPath = path.join(__dirname, '../../package.json');
@@ -37,7 +37,7 @@ export function setupConfigHandlers(configFolder: string) {
     }
   });
 
-  ipcMain.handle(OPEN_EXTERNAL_URL, async (_event, url: string) => {
+  ipcMain.handle(IPC_CHANNELS.OPEN_EXTERNAL_URL, async (_event, url: string) => {
     await shell.openExternal(url);
   });
 }
