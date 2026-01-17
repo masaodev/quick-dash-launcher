@@ -6,7 +6,7 @@
  * グループ起動時のアイテム間の待機時間（ミリ秒）
  * 各アイテムを順次起動する際、安定性のために適用される遅延
  */
-export const GROUP_LAUNCH_DELAY_MS = 500;
+export const GROUP_LAUNCH_DELAY_MS = 100;
 
 /**
  * ブックマークファイルの最大サイズ（バイト）

@@ -61,6 +61,7 @@ export class SettingsService {
     workspacePositionMode: 'primaryRight', // ワークスペース表示位置モード（デフォルト: 右端）
     workspacePositionX: 0, // ワークスペース固定位置のX座標
     workspacePositionY: 0, // ワークスペース固定位置のY座標
+    parallelGroupLaunch: false, // グループアイテムを並列起動（デフォルト: false）
   };
 
   private constructor() {
