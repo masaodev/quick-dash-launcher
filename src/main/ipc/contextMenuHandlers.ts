@@ -37,7 +37,7 @@ import {
   EVENT_WORKSPACE_GROUP_MENU_ARCHIVE,
   EVENT_WORKSPACE_GROUP_MENU_DELETE,
 } from '@common/ipcChannels.js';
-import { isGroupItem } from '@common/utils/typeGuards';
+import { isGroupItem } from '@common/utils/typeGuards.js';
 
 /**
  * AdminItemManagerContextMenu用のネイティブメニューハンドラーを設定
