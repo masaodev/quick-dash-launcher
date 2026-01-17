@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { convertLauncherItemToRawDataLine, type RegisterItem } from '@common/utils/dataConverters';
+import { convertLauncherItemToRawDataLine } from '@common/utils/dataConverters';
+import type { RegisterItem } from '@common/types';
 import { escapeCSV } from '@common/utils/csvParser';
 import {
   LauncherItem,
@@ -10,7 +11,7 @@ import {
   WindowInfo,
   WindowOperationItem,
 } from '@common/types';
-import { isWindowInfo, isGroupItem, isWindowOperationItem } from '@common/utils/typeGuards';
+import { isWindowInfo, isGroupItem, isWindowOperationItem } from '@common/types/guards';
 
 import LauncherSearchBox from './components/LauncherSearchBox';
 import LauncherItemList from './components/LauncherItemList';

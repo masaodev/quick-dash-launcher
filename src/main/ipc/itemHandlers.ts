@@ -9,7 +9,7 @@ import {
   WindowConfig,
 } from '@common/types';
 import { GROUP_LAUNCH_DELAY_MS } from '@common/constants';
-import { isLauncherItem, isWindowOperationItem } from '@common/utils/typeGuards';
+import { isLauncherItem, isWindowOperationItem } from '@common/types/guards.js';
 import {
   OPEN_ITEM,
   OPEN_PARENT_FOLDER,

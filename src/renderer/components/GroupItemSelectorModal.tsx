@@ -5,7 +5,7 @@ import {
   isGroupItem,
   isLauncherItem,
   isWindowOperationItem,
-} from '@common/utils/typeGuards';
+} from '@common/types/guards';
 
 import { debugInfo, logError } from '../utils/debug';
 

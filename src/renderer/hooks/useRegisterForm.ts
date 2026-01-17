@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { type RegisterItem } from '@common/utils/dataConverters';
+import type { RegisterItem } from '@common/types';
 import { detectItemType } from '@common/utils/itemTypeDetector';
 import { RawDataLine, DataFileTab, WindowConfig } from '@common/types';
 

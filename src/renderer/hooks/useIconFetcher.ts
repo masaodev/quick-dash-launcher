@@ -1,6 +1,6 @@
 import React from 'react';
 import { AppItem, LauncherItem, DataFileTab } from '@common/types';
-import { isWindowInfo, isLauncherItem } from '@common/utils/typeGuards';
+import { isWindowInfo, isLauncherItem } from '@common/types/guards';
 
 import { debugInfo } from '../utils/debug';
 

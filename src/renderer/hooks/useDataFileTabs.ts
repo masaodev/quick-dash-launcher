@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { AppItem, DataFileTab } from '@common/types';
-import { isWindowInfo } from '@common/utils/typeGuards';
+import { isWindowInfo } from '@common/types/guards';
 
 import { debugLog, logError } from '../utils/debug';
 

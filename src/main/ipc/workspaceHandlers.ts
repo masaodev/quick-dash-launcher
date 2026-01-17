@@ -1,7 +1,7 @@
 import { ipcMain, BrowserWindow } from 'electron';
 import logger from '@common/logger';
 import type { AppItem, WorkspaceItem, WorkspaceGroup, WindowConfig } from '@common/types';
-import { isWindowInfo, isLauncherItem, isWindowOperationItem } from '@common/utils/typeGuards';
+import { isWindowInfo, isLauncherItem, isWindowOperationItem } from '@common/types/guards.js';
 import {
   WORKSPACE_LOAD_ITEMS,
   WORKSPACE_ADD_ITEM,

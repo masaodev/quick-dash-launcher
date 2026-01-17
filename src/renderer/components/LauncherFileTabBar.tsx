@@ -1,6 +1,6 @@
 import React from 'react';
 import { AppItem, DataFileTab } from '@common/types';
-import { isWindowInfo } from '@common/utils/typeGuards';
+import { isWindowInfo } from '@common/types/guards';
 
 import { filterItems } from '../utils/dataParser';
 

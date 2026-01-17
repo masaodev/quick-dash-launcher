@@ -5,25 +5,10 @@
  */
 
 import type { RawDataLine } from '../types';
+import type { DirOptions, WindowOperationConfig } from '../types/register.js';
+import { parseDirOptionsFromString } from '../types/register.js';
 
-import { parseDirOptionsFromString, type DirOptions } from './dataConverters';
 import { parseCSVLine } from './csvParser';
-
-/**
- * ウィンドウ操作アイテムの設定オブジェクト型定義
- */
-export interface WindowOperationConfig {
-  name: string;
-  windowTitle: string;
-  processName?: string;
-  x?: number;
-  y?: number;
-  width?: number;
-  height?: number;
-  moveToActiveMonitorCenter?: boolean;
-  virtualDesktopNumber?: number;
-  activateWindow?: boolean;
-}
 
 /**
  * グループディレクティブかどうかを判定する

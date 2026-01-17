@@ -5,7 +5,8 @@ import { shell } from 'electron';
 import { minimatch } from 'minimatch';
 import { dataLogger } from '@common/logger';
 import { FileUtils } from '@common/utils/fileUtils';
-import { parseDirOptionsFromString, type DirOptions } from '@common/utils/dataConverters';
+import type { DirOptions } from '@common/types/register.js';
+import { parseDirOptionsFromString } from '@common/types/register.js';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { LauncherItem } from '@common/types';
 

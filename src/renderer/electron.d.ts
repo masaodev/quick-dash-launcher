@@ -15,9 +15,8 @@ import {
   WorkspaceGroup,
   ExecutionHistoryItem,
   WindowInfo,
+  RegisterItem,
 } from '@common/types';
-
-import { RegisterItem } from './components/RegisterModal';
 
 export interface ElectronAPI {
   getConfigFolder: () => Promise<string>;

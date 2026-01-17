@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { type RegisterItem } from '@common/utils/dataConverters';
+import type { RegisterItem } from '@common/types';
 import { RawDataLine, WindowInfo, LauncherItem } from '@common/types';
 
 import { useCustomIcon } from '../hooks/useCustomIcon';

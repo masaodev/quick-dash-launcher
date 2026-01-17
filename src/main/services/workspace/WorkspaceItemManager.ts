@@ -8,7 +8,7 @@ import * as path from 'path';
 import type { AppItem, WorkspaceItem } from '@common/types.js';
 import logger from '@common/logger.js';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector.js';
-import { isWindowInfo, isGroupItem } from '@common/utils/typeGuards.js';
+import { isWindowInfo, isGroupItem } from '@common/types/guards.js';
 
 import type { WorkspaceStoreInstance } from './types.js';
 

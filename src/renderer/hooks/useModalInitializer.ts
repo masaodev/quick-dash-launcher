@@ -1,4 +1,5 @@
-import { convertRawDataLineToRegisterItem, type RegisterItem } from '@common/utils/dataConverters';
+import { convertRawDataLineToRegisterItem } from '@common/utils/dataConverters';
+import type { RegisterItem } from '@common/types';
 import { detectItemType } from '@common/utils/itemTypeDetector';
 import { RawDataLine, DataFileTab } from '@common/types';
 
