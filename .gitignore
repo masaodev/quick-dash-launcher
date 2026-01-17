@@ -29,6 +29,9 @@ desktop.ini
 .env.test.local
 .env.production.local
 
+# Claude Code local settings
+.claude/settings.local.json
+
 # Electron specific
 dist-electron/
 release/
