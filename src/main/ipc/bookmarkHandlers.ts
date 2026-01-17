@@ -11,7 +11,7 @@ import {
   PARSE_BOOKMARK_FILE,
   DETECT_INSTALLED_BROWSERS,
   PARSE_BROWSER_BOOKMARKS,
-} from '@common/ipcChannels.js';
+} from '@common/ipcChannels';
 
 import { EnvConfig } from '../config/envConfig.js';
 

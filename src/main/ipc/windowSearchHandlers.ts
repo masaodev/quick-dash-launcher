@@ -2,30 +2,22 @@
  * ウィンドウ検索機能のIPCハンドラー
  */
 import { ipcMain, BrowserWindow } from 'electron';
-import type { WindowPinMode, WindowInfo } from '@common/types';
+import type { WindowPinMode, WindowInfo, VirtualDesktopInfo } from '@common/types';
 import {
   GET_ALL_WINDOWS,
   GET_ALL_WINDOWS_ALL_DESKTOPS,
   GET_VIRTUAL_DESKTOP_INFO,
   ACTIVATE_WINDOW,
-} from '@common/ipcChannels.js';
+  MOVE_WINDOW_TO_DESKTOP,
+} from '@common/ipcChannels';
 
 import { getAllWindows, activateWindow, restoreWindow } from '../utils/nativeWindowControl';
 import {
   getDesktopCount,
   getCurrentDesktopNumber,
   isVirtualDesktopSupported,
+  moveWindowToVirtualDesktop,
 } from '../utils/virtualDesktop/index.js';
-
-/** 仮想デスクトップ情報 */
-interface VirtualDesktopInfo {
-  /** 仮想デスクトップがサポートされているか */
-  supported: boolean;
-  /** デスクトップ数（サポートされていない場合は-1） */
-  desktopCount: number;
-  /** 現在のデスクトップ番号（1から開始、サポートされていない場合は-1） */
-  currentDesktop: number;
-}
 
 export function setupWindowSearchHandlers(
   getMainWindow: () => BrowserWindow | null,
@@ -133,6 +125,25 @@ export function setupWindowSearchHandlers(
         return { success };
       } catch (error) {
         console.error('Failed to activate window:', error);
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+        };
+      }
+    }
+  );
+
+  /**
+   * 指定されたウィンドウを仮想デスクトップに移動
+   */
+  ipcMain.handle(
+    MOVE_WINDOW_TO_DESKTOP,
+    async (_event, hwnd: number | bigint, desktopNumber: number): Promise<{ success: boolean; error?: string }> => {
+      try {
+        const success = moveWindowToVirtualDesktop(hwnd, desktopNumber);
+        return { success };
+      } catch (error) {
+        console.error('Failed to move window to desktop:', error);
         return {
           success: false,
           error: error instanceof Error ? error.message : String(error),

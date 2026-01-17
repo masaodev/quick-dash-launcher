@@ -5,7 +5,7 @@ import {
   SAVE_SEARCH_HISTORY,
   ADD_SEARCH_HISTORY_ENTRY,
   CLEAR_SEARCH_HISTORY,
-} from '@common/ipcChannels.js';
+} from '@common/ipcChannels';
 
 import { SearchHistoryService } from '../services/searchHistoryService';
 

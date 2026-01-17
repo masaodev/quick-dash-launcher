@@ -2,8 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import ElectronStore from 'electron-store';
-import type { AppSettings } from '@common/types.js';
-import logger from '@common/logger.js';
+import type { AppSettings } from '@common/types';
+import logger from '@common/logger';
 
 import PathManager from '../config/pathManager.js';
 

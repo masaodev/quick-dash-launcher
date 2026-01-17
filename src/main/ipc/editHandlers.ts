@@ -10,7 +10,7 @@ import {
   UPDATE_RAW_LINE,
   DELETE_ITEMS,
   BATCH_UPDATE_ITEMS,
-} from '@common/ipcChannels.js';
+} from '@common/ipcChannels';
 
 import { createSafeIpcHandler } from '../utils/ipcWrapper';
 import { BackupService } from '../services/backupService.js';

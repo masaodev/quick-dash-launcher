@@ -22,7 +22,7 @@ import {
   DELETE_CUSTOM_ICON,
   GET_CUSTOM_ICON,
   GET_ICON_FOR_ITEM,
-} from '@common/ipcChannels.js';
+} from '@common/ipcChannels';
 
 import { CombinedProgressManager } from '../utils/progressManager';
 import { FaviconService } from '../services/faviconService';

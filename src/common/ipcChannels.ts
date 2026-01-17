@@ -190,6 +190,9 @@ export const EVENT_WORKSPACE_GROUP_MENU_COPY_AS_TEXT = 'workspace-group-menu-cop
 export const EVENT_WORKSPACE_GROUP_MENU_ARCHIVE = 'workspace-group-menu-archive';
 export const EVENT_WORKSPACE_GROUP_MENU_DELETE = 'workspace-group-menu-delete';
 
+export const SHOW_WINDOW_CONTEXT_MENU = 'show-window-context-menu';
+export const MOVE_WINDOW_TO_DESKTOP = 'move-window-to-desktop';
+
 /**
  * すべてのIPCチャネル定数をまとめたオブジェクト
  * 型安全な使用のために利用可能

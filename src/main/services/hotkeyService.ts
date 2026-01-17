@@ -1,5 +1,5 @@
 import { globalShortcut, BrowserWindow } from 'electron';
-import logger from '@common/logger.js';
+import logger from '@common/logger';
 
 import { EnvConfig } from '../config/envConfig.js';
 

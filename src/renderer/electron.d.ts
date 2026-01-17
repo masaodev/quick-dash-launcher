@@ -15,6 +15,7 @@ import {
   WorkspaceGroup,
   ExecutionHistoryItem,
   WindowInfo,
+  VirtualDesktopInfo,
   RegisterItem,
 } from '@common/types';
 
@@ -167,12 +168,9 @@ export interface ElectronAPI {
   // ウィンドウ検索API
   getWindowList: () => Promise<WindowInfo[]>;
   getAllWindowsAllDesktops: () => Promise<WindowInfo[]>;
-  getVirtualDesktopInfo: () => Promise<{
-    supported: boolean;
-    desktopCount: number;
-    currentDesktop: number;
-  }>;
+  getVirtualDesktopInfo: () => Promise<VirtualDesktopInfo>;
   activateWindowByHwnd: (hwnd: number | bigint) => Promise<{ success: boolean; error?: string }>;
+  moveWindowToDesktop: (hwnd: number | bigint, desktopNumber: number) => Promise<{ success: boolean; error?: string }>;
   // システム通知API
   showNotification: (
     title: string,
@@ -198,6 +196,7 @@ export interface ElectronAPI {
   showLauncherContextMenu: (item: AppItem) => Promise<void>;
   showWorkspaceContextMenu: (item: WorkspaceItem, groups: WorkspaceGroup[]) => Promise<void>;
   showWorkspaceGroupContextMenu: (group: WorkspaceGroup) => Promise<void>;
+  showWindowContextMenu: (windowInfo: WindowInfo, desktopInfo: VirtualDesktopInfo) => Promise<void>;
   // AdminItemManagerContextMenuイベントリスナー
   onAdminMenuDuplicateItems: (callback: () => void) => () => void;
   onAdminMenuEditItem: (callback: () => void) => () => void;
@@ -211,6 +210,8 @@ export interface ElectronAPI {
   onLauncherMenuCopyShortcutPath: (callback: (item: AppItem) => void) => () => void;
   onLauncherMenuCopyShortcutParentPath: (callback: (item: AppItem) => void) => () => void;
   onLauncherMenuOpenShortcutParentFolder: (callback: (item: AppItem) => void) => () => void;
+  // WindowContextMenuイベントリスナー
+  onMoveWindowToDesktop: (callback: (hwnd: number | bigint, desktopNumber: number) => void) => () => void;
   // WorkspaceContextMenuイベントリスナー
   onWorkspaceMenuRenameItem: (callback: (itemId: string) => void) => () => void;
   onWorkspaceMenuLaunchItem: (callback: (itemId: string) => void) => () => void;

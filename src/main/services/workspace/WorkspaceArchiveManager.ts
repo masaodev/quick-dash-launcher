@@ -6,8 +6,8 @@ import type {
   WorkspaceGroup,
   ArchivedWorkspaceGroup,
   ArchivedWorkspaceItem,
-} from '@common/types.js';
-import logger from '@common/logger.js';
+} from '@common/types';
+import logger from '@common/logger';
 
 import type { WorkspaceStoreInstance, ArchiveStoreInstance } from './types.js';
 

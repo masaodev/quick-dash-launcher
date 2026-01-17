@@ -1,13 +1,6 @@
 import React, { forwardRef, useRef, useImperativeHandle, useMemo } from 'react';
 import { SearchMode } from '@common/types/search';
-import type { WindowInfo } from '@common/types';
-
-/** 仮想デスクトップ情報 */
-interface VirtualDesktopInfo {
-  supported: boolean;
-  desktopCount: number;
-  currentDesktop: number;
-}
+import type { WindowInfo, VirtualDesktopInfo } from '@common/types';
 
 interface SearchBoxProps {
   value: string;

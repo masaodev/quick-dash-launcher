@@ -3,7 +3,7 @@
  * 全てのReactコンテキストメニューをElectronのネイティブメニューに変換
  */
 import { ipcMain, BrowserWindow, Menu, MenuItem } from 'electron';
-import type { AppItem, WorkspaceItem, WorkspaceGroup } from '@common/types';
+import type { AppItem, WorkspaceItem, WorkspaceGroup, WindowInfo, VirtualDesktopInfo } from '@common/types';
 import {
   SHOW_ADMIN_ITEM_CONTEXT_MENU,
   EVENT_ADMIN_MENU_DUPLICATE_ITEMS,
@@ -36,8 +36,10 @@ import {
   EVENT_WORKSPACE_GROUP_MENU_COPY_AS_TEXT,
   EVENT_WORKSPACE_GROUP_MENU_ARCHIVE,
   EVENT_WORKSPACE_GROUP_MENU_DELETE,
-} from '@common/ipcChannels.js';
-import { isGroupItem } from '@common/utils/typeGuards';
+  SHOW_WINDOW_CONTEXT_MENU,
+  MOVE_WINDOW_TO_DESKTOP,
+} from '@common/ipcChannels';
+import { isGroupItem } from '@common/types/guards';
 
 /**
  * AdminItemManagerContextMenu用のネイティブメニューハンドラーを設定
@@ -434,6 +436,58 @@ export function setupWorkspaceGroupContextMenuHandler(getMainWindow: () => Brows
 }
 
 /**
+ * WindowContextMenu用のネイティブメニューハンドラーを設定
+ */
+export function setupWindowContextMenuHandler(getMainWindow: () => BrowserWindow | null) {
+  ipcMain.handle(
+    SHOW_WINDOW_CONTEXT_MENU,
+    async (event, windowInfo: WindowInfo, desktopInfo: VirtualDesktopInfo): Promise<void> => {
+      try {
+        const senderWindow = BrowserWindow.fromWebContents(event.sender);
+        if (!senderWindow || senderWindow.isDestroyed()) {
+          return;
+        }
+
+        const menu = new Menu();
+
+        // 仮想デスクトップがサポートされている場合のみメニューを表示
+        if (desktopInfo.supported && desktopInfo.desktopCount > 1) {
+          // 各デスクトップへの移動メニュー
+          for (let i = 1; i <= desktopInfo.desktopCount; i++) {
+            const isCurrentDesktop = windowInfo.desktopNumber !== undefined && i === windowInfo.desktopNumber;
+            const label = isCurrentDesktop
+              ? `✓ デスクトップ ${i} (現在)`
+              : `🖥️ デスクトップ ${i} に移動`;
+
+            menu.append(
+              new MenuItem({
+                label,
+                enabled: !isCurrentDesktop,
+                click: () => {
+                  event.sender.send(MOVE_WINDOW_TO_DESKTOP, windowInfo.hwnd, i);
+                },
+              })
+            );
+          }
+        } else {
+          // 仮想デスクトップがサポートされていない場合
+          menu.append(
+            new MenuItem({
+              label: '仮想デスクトップがサポートされていません',
+              enabled: false,
+            })
+          );
+        }
+
+        menu.popup({ window: senderWindow });
+      } catch (error) {
+        console.error('Failed to show window context menu:', error);
+      }
+    }
+  );
+}
+
+/**
  * 全てのコンテキストメニューハンドラーを設定
  */
 export function setupContextMenuHandlers(getMainWindow: () => BrowserWindow | null) {
@@ -441,4 +495,5 @@ export function setupContextMenuHandlers(getMainWindow: () => BrowserWindow | nu
   setupLauncherContextMenuHandler(getMainWindow);
   setupWorkspaceContextMenuHandler(getMainWindow);
   setupWorkspaceGroupContextMenuHandler(getMainWindow);
+  setupWindowContextMenuHandler(getMainWindow);
 }
