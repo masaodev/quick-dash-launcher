@@ -1,11 +1,18 @@
 ---
 description: "新バージョンのリリース（タグ作成とプッシュ）"
+argument-hint: "[patch|minor|major]"
 allowed-tools: ["Bash", "Read", "Edit", "TodoWrite", "AskUserQuestion"]
 ---
 
 # Release Version
 
 新バージョンのリリースを行うコマンドです。バージョン番号の更新、コミット、タグ作成、プッシュを自動化します。
+
+**指定されたモード**: `$ARGUMENTS`
+
+- 引数なし、または `patch`: パッチバージョンアップ（0.5.21 → 0.5.22）
+- `minor`: マイナーバージョンアップ（0.5.21 → 0.6.0）
+- `major`: メジャーバージョンアップ（0.5.21 → 1.0.0）
 
 ## 実行内容
 
@@ -14,8 +21,9 @@ allowed-tools: ["Bash", "Read", "Edit", "TodoWrite", "AskUserQuestion"]
    - 既存のGitタグを確認
 
 2. **バージョン番号の決定**
-   - ユーザーに次のバージョン番号を確認
-   - セマンティックバージョニング（パッチ/マイナー/メジャー）に基づいて提案
+   - `$ARGUMENTS` パラメータ（`patch`/`minor`/`major`）に基づいて次のバージョンを計算
+   - パラメータが指定されていない場合は、ユーザーに確認
+   - セマンティックバージョニングに従って自動計算
 
 3. **バージョン更新**
    - `package.json` のバージョン番号を更新
@@ -37,12 +45,24 @@ allowed-tools: ["Bash", "Read", "Edit", "TodoWrite", "AskUserQuestion"]
 
 ## 使用方法
 
-### 基本的な使用
+### パラメータ指定（推奨）
+```bash
+# パッチバージョンアップ（0.5.21 → 0.5.22）
+/release-version patch
+
+# マイナーバージョンアップ（0.5.21 → 0.6.0）
+/release-version minor
+
+# メジャーバージョンアップ（0.5.21 → 1.0.0）
+/release-version major
 ```
+
+### パラメータなし（対話モード）
+```bash
 /release-version
 ```
 
-コマンドを実行すると、対話的に次のバージョン番号を選択できます。
+パラメータを指定しない場合は、対話的に次のバージョン番号を選択できます。
 
 ## 事前要件
 
@@ -111,11 +131,19 @@ git push origin v{version}
 ## 例
 
 ```bash
-# 通常のリリース（パッチバージョン）
-/release-version
-# → 0.2.6 から 0.2.7 へ
+# パッチリリース（バグ修正など）
+/release-version patch
+# → 0.5.21 から 0.5.22 へ
 
-# マイナーバージョンアップ
+# マイナーバージョンアップ（新機能追加）
+/release-version minor
+# → 0.5.21 から 0.6.0 へ
+
+# メジャーバージョンアップ（破壊的変更）
+/release-version major
+# → 0.5.21 から 1.0.0 へ
+
+# 対話モード（パラメータなし）
 /release-version
-# → 0.2.7 から 0.3.0 へ
+# → 対話的にモードを選択
 ```
