@@ -9,13 +9,13 @@ import {
   WindowConfig,
 } from '@common/types';
 import { GROUP_LAUNCH_DELAY_MS } from '@common/constants';
-import { isLauncherItem, isWindowOperationItem } from '@common/types/guards.js';
+import { isLauncherItem, isWindowOperationItem } from '@common/types/guards';
 import {
   OPEN_ITEM,
   OPEN_PARENT_FOLDER,
   EXECUTE_GROUP,
   EXECUTE_WINDOW_OPERATION,
-} from '@common/ipcChannels.js';
+} from '@common/ipcChannels';
 
 import { WorkspaceService } from '../services/workspace/index.js';
 import { tryActivateWindow } from '../utils/windowActivator.js';

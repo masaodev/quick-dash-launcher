@@ -171,7 +171,7 @@ import {
   EVENT_WORKSPACE_GROUP_MENU_COPY_AS_TEXT,
   EVENT_WORKSPACE_GROUP_MENU_ARCHIVE,
   EVENT_WORKSPACE_GROUP_MENU_DELETE,
-} from '@common/ipcChannels.js';
+} from '@common/ipcChannels';
 
 interface RegisterItem {
   filePath: string;

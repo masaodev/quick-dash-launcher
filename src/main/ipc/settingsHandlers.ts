@@ -1,6 +1,6 @@
 import { ipcMain, BrowserWindow } from 'electron';
-import type { AppSettings } from '@common/types.js';
-import logger from '@common/logger.js';
+import type { AppSettings } from '@common/types';
+import logger from '@common/logger';
 import {
   SETTINGS_IS_FIRST_LAUNCH,
   SETTINGS_GET,
@@ -12,7 +12,7 @@ import {
   SETTINGS_CHANGE_HOTKEY,
   SETTINGS_CHECK_HOTKEY_AVAILABILITY,
   EVENT_SETTINGS_CHANGED,
-} from '@common/ipcChannels.js';
+} from '@common/ipcChannels';
 
 import { SettingsService } from '../services/settingsService.js';
 import { HotkeyService } from '../services/hotkeyService.js';

@@ -3,8 +3,8 @@
  */
 import { randomUUID } from 'crypto';
 
-import type { WorkspaceGroup, WorkspaceItem } from '@common/types.js';
-import logger from '@common/logger.js';
+import type { WorkspaceGroup, WorkspaceItem } from '@common/types';
+import logger from '@common/logger';
 
 import type { WorkspaceStoreInstance } from './types.js';
 

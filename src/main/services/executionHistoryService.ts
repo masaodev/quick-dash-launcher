@@ -1,9 +1,9 @@
 import { randomUUID } from 'crypto';
 
 import ElectronStore from 'electron-store';
-import type { AppItem, ExecutionHistoryItem } from '@common/types.js';
-import logger from '@common/logger.js';
-import { isWindowInfo, isLauncherItem, isWindowOperationItem } from '@common/types/guards.js';
+import type { AppItem, ExecutionHistoryItem } from '@common/types';
+import logger from '@common/logger';
+import { isWindowInfo, isLauncherItem, isWindowOperationItem } from '@common/types/guards';
 
 import PathManager from '../config/pathManager.js';
 

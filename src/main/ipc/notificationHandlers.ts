@@ -5,7 +5,7 @@
  */
 
 import { ipcMain } from 'electron';
-import { SHOW_NOTIFICATION, SHOW_TOAST_WINDOW } from '@common/ipcChannels.js';
+import { SHOW_NOTIFICATION, SHOW_TOAST_WINDOW } from '@common/ipcChannels';
 
 import {
   showNotification,

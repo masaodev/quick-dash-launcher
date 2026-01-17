@@ -7,8 +7,8 @@ import { parseCSVLine, escapeCSV } from '@common/utils/csvParser';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { parseWindowConfig, serializeWindowConfig } from '@common/utils/windowConfigUtils';
 import { RawDataLine, LauncherItem, GroupItem, WindowOperationItem, AppItem } from '@common/types';
-import type { RegisterItem } from '@common/types/register.js';
-import { isWindowInfo, isWindowOperationItem } from '@common/types/guards.js';
+import type { RegisterItem } from '@common/types/register';
+import { isWindowInfo, isWindowOperationItem } from '@common/types/guards';
 import { parseWindowOperationDirective } from '@common/utils/directiveUtils';
 import {
   GET_CONFIG_FOLDER,
@@ -21,7 +21,7 @@ import {
   LOAD_RAW_DATA_FILES,
   SAVE_RAW_DATA_FILES,
   EVENT_DATA_CHANGED,
-} from '@common/ipcChannels.js';
+} from '@common/ipcChannels';
 
 import { BackupService } from '../services/backupService.js';
 import { SettingsService } from '../services/settingsService.js';

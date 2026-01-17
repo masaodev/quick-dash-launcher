@@ -1,6 +1,6 @@
 import { ipcMain, BrowserWindow } from 'electron';
 import { windowLogger } from '@common/logger';
-import { SPLASH_READY } from '@common/ipcChannels.js';
+import { SPLASH_READY } from '@common/ipcChannels';
 
 import { closeSplashWindow } from '../splashWindowManager';
 import { getIsFirstLaunch } from '../main';

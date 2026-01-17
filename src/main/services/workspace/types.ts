@@ -6,7 +6,7 @@ import type {
   WorkspaceGroup,
   ArchivedWorkspaceGroup,
   ArchivedWorkspaceItem,
-} from '@common/types.js';
+} from '@common/types';
 
 /**
  * electron-storeのインスタンス型（workspace.json用）

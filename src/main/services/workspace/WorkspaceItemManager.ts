@@ -5,10 +5,10 @@ import { randomUUID } from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
 
-import type { AppItem, WorkspaceItem } from '@common/types.js';
-import logger from '@common/logger.js';
-import { detectItemTypeSync } from '@common/utils/itemTypeDetector.js';
-import { isWindowInfo, isGroupItem } from '@common/types/guards.js';
+import type { AppItem, WorkspaceItem } from '@common/types';
+import logger from '@common/logger';
+import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
+import { isWindowInfo, isGroupItem } from '@common/types/guards';
 
 import type { WorkspaceStoreInstance } from './types.js';
 

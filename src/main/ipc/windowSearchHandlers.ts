@@ -8,7 +8,7 @@ import {
   GET_ALL_WINDOWS_ALL_DESKTOPS,
   GET_VIRTUAL_DESKTOP_INFO,
   ACTIVATE_WINDOW,
-} from '@common/ipcChannels.js';
+} from '@common/ipcChannels';
 
 import { getAllWindows, activateWindow, restoreWindow } from '../utils/nativeWindowControl';
 import {

@@ -27,7 +27,7 @@ import {
   WORKSPACE_GET_OPACITY,
   WORKSPACE_SET_SIZE,
   WORKSPACE_SET_POSITION_AND_SIZE,
-} from '@common/ipcChannels.js';
+} from '@common/ipcChannels';
 
 import { SettingsService } from '../services/settingsService.js';
 import {

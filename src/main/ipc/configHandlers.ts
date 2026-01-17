@@ -2,7 +2,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 
 import { ipcMain, shell } from 'electron';
-import { OPEN_CONFIG_FOLDER, GET_APP_INFO, OPEN_EXTERNAL_URL } from '@common/ipcChannels.js';
+import { OPEN_CONFIG_FOLDER, GET_APP_INFO, OPEN_EXTERNAL_URL } from '@common/ipcChannels';
 
 export function setupConfigHandlers(configFolder: string) {
   ipcMain.handle(OPEN_CONFIG_FOLDER, async () => {
