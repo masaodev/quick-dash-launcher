@@ -70,6 +70,12 @@ export async function createWindow(): Promise<BrowserWindow> {
   const windowWidth = isFirstLaunchMode ? 700 : await settingsService.get('windowWidth');
   const windowHeight = isFirstLaunchMode ? 600 : await settingsService.get('windowHeight');
 
+  // アイコンパスを取得（開発モード時は専用のアイコンを使用）
+  const iconPath = PathManager.getAppIconPath();
+
+  windowLogger.info(`アイコンパス: ${iconPath}`);
+  windowLogger.info(`ファイル存在確認: ${require('fs').existsSync(iconPath)}`);
+
   mainWindow = new BrowserWindow({
     width: windowWidth,
     height: windowHeight,
@@ -77,13 +83,22 @@ export async function createWindow(): Promise<BrowserWindow> {
     alwaysOnTop: false,
     frame: false,
     show: false,
-    icon: path.join(__dirname, '../../assets/icon.ico'),
+    icon: iconPath,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
     },
   });
+
+  // タスクバーのアイコンを明示的に設定（Windowsで必要）
+  const icon = nativeImage.createFromPath(iconPath);
+  if (icon.isEmpty()) {
+    windowLogger.warn(`アイコンファイルが読み込めませんでした: ${iconPath}`);
+  } else {
+    windowLogger.info(`アイコンを設定しました: ${iconPath}`);
+    mainWindow.setIcon(icon);
+  }
 
   if (EnvConfig.isDevelopment) {
     mainWindow.loadURL(EnvConfig.devServerUrl);
@@ -149,7 +164,8 @@ export async function createWindow(): Promise<BrowserWindow> {
 }
 
 export async function createTray(): Promise<void> {
-  const iconPath = path.join(__dirname, '../../assets/icon.ico');
+  // アイコンパスを取得（開発モード時は専用のアイコンを使用）
+  const iconPath = PathManager.getAppIconPath();
   const icon = nativeImage.createFromPath(iconPath);
 
   tray = new Tray(icon);
