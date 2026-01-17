@@ -98,6 +98,15 @@ const LauncherSearchBox = forwardRef<HTMLInputElement, SearchBoxProps>(
           )}
         </div>
 
+        <div className="search-mode-indicator">
+          {searchMode === 'window'
+            ? 'ウィンドウ検索モード'
+            : searchMode === 'history'
+              ? '実行履歴検索モード'
+              : '通常モード'}{' '}
+          (Shift+Tabで切り替え)
+        </div>
+
         {/* 仮想デスクトップタブ（ウィンドウ検索モード時のみ表示） */}
         {showDesktopTabs && (
           <div className="desktop-tabs-bar">
@@ -113,15 +122,6 @@ const LauncherSearchBox = forwardRef<HTMLInputElement, SearchBoxProps>(
             ))}
           </div>
         )}
-
-        <div className="search-mode-indicator">
-          {searchMode === 'window'
-            ? 'ウィンドウ検索モード'
-            : searchMode === 'history'
-              ? '実行履歴検索モード'
-              : '通常モード'}{' '}
-          (Shift+Tabで切り替え)
-        </div>
       </div>
     );
   }
