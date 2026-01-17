@@ -187,6 +187,24 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                   </label>
                 </div>
               </div>
+
+              <div className="settings-section">
+                <h3>グループ起動</h3>
+                <div className="setting-item">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={editedSettings.parallelGroupLaunch}
+                      onChange={(e) => handleSettingChange('parallelGroupLaunch', e.target.checked)}
+                      disabled={isLoading}
+                    />
+                    グループアイテムを並列起動
+                  </label>
+                  <div className="setting-description">
+                    有効にすると、グループ内のアイテムを順次実行せずに並列で起動します。起動速度が向上しますが、順序が保証されません。
+                  </div>
+                </div>
+              </div>
             </>
           )}
 

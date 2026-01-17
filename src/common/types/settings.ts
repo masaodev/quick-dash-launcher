@@ -83,4 +83,6 @@ export interface AppSettings {
   workspacePositionX: number;
   /** 固定位置のY座標（workspacePositionMode='fixed'時に使用、デフォルト: 0） */
   workspacePositionY: number;
+  /** グループアイテムを並列起動する（デフォルト: false） */
+  parallelGroupLaunch: boolean;
 }
