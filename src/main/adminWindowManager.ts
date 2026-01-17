@@ -5,6 +5,7 @@ import { windowLogger } from '@common/logger';
 
 import { SettingsService } from './services/settingsService.js';
 import { EnvConfig } from './config/envConfig.js';
+import PathManager from './config/pathManager.js';
 
 let adminWindow: BrowserWindow | null = null;
 let isAdminWindowVisible: boolean = false;
@@ -41,7 +42,7 @@ export async function createAdminWindow(): Promise<BrowserWindow> {
     autoHideMenuBar: true, // メニューバーを自動的に非表示にする
     show: false,
     title: 'QuickDashLauncher - 設定・管理',
-    icon: path.join(__dirname, '../../assets/icon.ico'),
+    icon: PathManager.getAppIconPath(),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,

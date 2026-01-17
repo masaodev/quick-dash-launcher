@@ -6,6 +6,7 @@ import type { WorkspacePositionMode } from '@common/types';
 
 import { SettingsService } from './services/settingsService.js';
 import { EnvConfig } from './config/envConfig.js';
+import PathManager from './config/pathManager.js';
 
 let workspaceWindow: BrowserWindow | null = null;
 let isWorkspaceWindowVisible: boolean = false;
@@ -50,7 +51,7 @@ export async function createWorkspaceWindow(): Promise<BrowserWindow> {
     frame: false, // フレームレスウィンドウ（ドラッグ可能にするため）
     show: false, // 位置設定後に表示
     resizable: false, // カスタムサイズ変更を使用するため無効化
-    icon: path.join(__dirname, '../../assets/icon.ico'),
+    icon: PathManager.getAppIconPath(),
     transparent: true, // 透過対応を有効化
     opacity: opacityValue, // 初期透過度を設定
     webPreferences: {
