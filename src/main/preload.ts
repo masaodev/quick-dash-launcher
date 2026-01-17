@@ -92,6 +92,10 @@ import {
   BATCH_UPDATE_ITEMS,
   // パフォーマンス
   LOG_PERFORMANCE_TIMING,
+  // システム通知
+  SHOW_NOTIFICATION,
+  SHOW_TOAST_WINDOW,
+  EVENT_SHOW_TOAST,
   // スプラッシュ
   SPLASH_READY,
   // イベント
@@ -308,6 +312,22 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getWindowList: (): Promise<WindowInfo[]> => ipcRenderer.invoke(GET_ALL_WINDOWS),
   activateWindowByHwnd: (hwnd: number | bigint): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke(ACTIVATE_WINDOW, hwnd),
+  // システム通知API
+  showNotification: (
+    title: string,
+    body: string,
+    type?: 'success' | 'error' | 'info' | 'warning'
+  ) => ipcRenderer.invoke(SHOW_NOTIFICATION, { title, body, type }),
+  // トーストウィンドウAPI（メインウィンドウが閉じた後も表示可能）
+  showToastWindow: (
+    message: string,
+    type?: 'success' | 'error' | 'info' | 'warning',
+    duration?: number
+  ) => ipcRenderer.invoke(SHOW_TOAST_WINDOW, { message, type, duration }),
+  // トーストウィンドウ用イベントリスナー（toast.html用）
+  onShowToast: (callback: (data: { message: string; type: string; duration: number }) => void) => {
+    ipcRenderer.on(EVENT_SHOW_TOAST, (_event, data) => callback(data));
+  },
   // ワークスペースウィンドウ制御API
   toggleWorkspaceWindow: () => ipcRenderer.invoke(WORKSPACE_TOGGLE_WINDOW),
   showWorkspaceWindow: () => ipcRenderer.invoke(WORKSPACE_SHOW_WINDOW),

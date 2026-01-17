@@ -219,13 +219,17 @@ const WorkspaceApp: React.FC = () => {
    * 全展開ハンドラー
    */
   const handleExpandAll = async () => {
-    // 全てのグループを展開
-    for (const group of groups) {
-      if (group.collapsed) {
-        await window.electronAPI.workspaceAPI.updateGroup(group.id, { collapsed: false });
-      }
+    // 全てのグループを並列で展開
+    const updatePromises = groups
+      .filter((group) => group.collapsed)
+      .map((group) =>
+        window.electronAPI.workspaceAPI.updateGroup(group.id, { collapsed: false })
+      );
+
+    if (updatePromises.length > 0) {
+      await Promise.all(updatePromises);
+      await loadGroups();
     }
-    await loadGroups();
     // 未分類と実行履歴も展開
     expandAll();
   };
@@ -234,13 +238,17 @@ const WorkspaceApp: React.FC = () => {
    * 全閉じハンドラー
    */
   const handleCollapseAll = async () => {
-    // 全てのグループを閉じる
-    for (const group of groups) {
-      if (!group.collapsed) {
-        await window.electronAPI.workspaceAPI.updateGroup(group.id, { collapsed: true });
-      }
+    // 全てのグループを並列で閉じる
+    const updatePromises = groups
+      .filter((group) => !group.collapsed)
+      .map((group) =>
+        window.electronAPI.workspaceAPI.updateGroup(group.id, { collapsed: true })
+      );
+
+    if (updatePromises.length > 0) {
+      await Promise.all(updatePromises);
+      await loadGroups();
     }
-    await loadGroups();
     // 未分類と実行履歴も閉じる
     collapseAll();
   };

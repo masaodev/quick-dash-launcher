@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 
 import WorkspaceApp from '../WorkspaceApp';
+import { ToastProvider } from '../components/ToastProvider';
 import '../styles/index.css';
 import '../styles/components/WorkspaceWindow.css';
 import '../styles/components/LauncherContextMenu.css';
@@ -15,6 +16,8 @@ const root = ReactDOM.createRoot(rootElement);
 
 root.render(
   <React.StrictMode>
-    <WorkspaceApp />
+    <ToastProvider position="bottom-right">
+      <WorkspaceApp />
+    </ToastProvider>
   </React.StrictMode>
 );

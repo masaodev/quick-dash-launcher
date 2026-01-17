@@ -257,7 +257,11 @@ export async function createTray(): Promise<void> {
 
 export async function registerGlobalShortcut(): Promise<void> {
   try {
-    const hotkeyService = HotkeyService.getInstance(() => mainWindow);
+    const hotkeyService = HotkeyService.getInstance(
+      () => mainWindow,
+      showMainWindow,
+      hideMainWindow
+    );
     const success = await hotkeyService.registerHotkey();
 
     if (!success) {
@@ -556,6 +560,41 @@ export async function saveWindowPosition(): Promise<void> {
 }
 
 /**
+ * ワークスペース自動表示処理（共通ヘルパー関数）
+ * autoShowWorkspace設定が有効な場合、ワークスペースを表示する
+ * メインウィンドウのフォーカスを維持するため、skipFocus: trueで表示
+ */
+async function autoShowWorkspaceIfEnabled(): Promise<void> {
+  const settingsService = await SettingsService.getInstance();
+  const autoShowWorkspace = await settingsService.get('autoShowWorkspace');
+
+  if (autoShowWorkspace) {
+    const { showWorkspaceWindow } = await import('./workspaceWindowManager.js');
+    // メイン画面のフォーカスを維持するため、skipFocus: trueで表示
+    await showWorkspaceWindow({ skipFocus: true });
+    windowLogger.info('ワークスペースを自動表示しました');
+  }
+}
+
+/**
+ * メインウィンドウをアクティブ化して検索欄にフォーカス（共通ヘルパー関数）
+ * ワークスペース自動表示処理を含む
+ */
+async function activateMainWindowWithFocus(): Promise<void> {
+  if (!mainWindow) return;
+
+  // ワークスペース自動表示（メインウィンドウのフォーカス前に実行）
+  await autoShowWorkspaceIfEnabled();
+
+  // メインウィンドウに確実にフォーカスを戻す
+  mainWindow.focus();
+
+  // 検索欄にフォーカスを当てるため、window-shownイベントを送信
+  mainWindow.webContents.send('window-shown');
+  windowLogger.info('メインウィンドウをアクティブにしました');
+}
+
+/**
  * メインウィンドウを表示する（ホットキー用）
  * 設定されたモードに応じてウィンドウ位置を設定してから表示します
  * @param startTime パフォーマンス計測用の開始時刻（Date.now()の値）
@@ -570,17 +609,8 @@ export async function showMainWindow(startTime?: number): Promise<void> {
   timer.log('position-set');
 
   // ワークスペース自動表示の処理
-  const settingsService = await SettingsService.getInstance();
-  const autoShowWorkspace = await settingsService.get('autoShowWorkspace');
-
-  if (autoShowWorkspace) {
-    const { isWorkspaceWindowShown, showWorkspaceWindow } =
-      await import('./workspaceWindowManager.js');
-    if (!isWorkspaceWindowShown()) {
-      await showWorkspaceWindow();
-      timer.log('workspace-auto-shown');
-    }
-  }
+  await autoShowWorkspaceIfEnabled();
+  timer.log('workspace-auto-shown');
 
   mainWindow.show();
   timer.log('window-shown');
@@ -596,7 +626,7 @@ export async function showMainWindow(startTime?: number): Promise<void> {
  * メインウィンドウを非表示にする（ホットキー用）
  * ピン留めモード、編集モード、モーダルモード、初回起動モード時は非表示にしない
  */
-export function hideMainWindow(): void {
+export async function hideMainWindow(): Promise<void> {
   if (!mainWindow) return;
 
   // 以下の場合はホットキーでも閉じない
@@ -612,7 +642,12 @@ export function hideMainWindow(): void {
     windowPinMode === 'stayVisible';
 
   if (shouldNotHide) {
-    windowLogger.info('現在のモードではホットキーで非表示にできません');
+    // ピン留めモードの場合、非表示にはしないがアクティブにする
+    if (windowPinMode === 'alwaysOnTop' || windowPinMode === 'stayVisible') {
+      await activateMainWindowWithFocus();
+    } else {
+      windowLogger.info('現在のモードではホットキーで非表示にできません');
+    }
     return;
   }
 

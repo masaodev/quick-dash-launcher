@@ -28,12 +28,25 @@ QuickDashLauncherのアーキテクチャ概要とデータフローを説明し
 | `WorkspaceService` | ワークスペースアイテム・グループの管理 | シングルトン |
 | `ExecutionHistoryService` | 実行履歴の保存・読み込み・管理 | シングルトン |
 | `IconService` | アイテムタイプに応じた適切なアイコン取得処理 | 静的クラス |
+| `NotificationService` | システム通知・トースト通知の表示管理 | 静的関数 |
+| `ToastWindowService` | トースト専用ウィンドウの管理 | 静的クラス |
 
 **設計原則:**
 - シングルトンパターン: `getInstance()`で取得
 - 静的クラス: 静的メソッドで直接呼び出し
 - 単一責任の原則に従う
 - 重複したロジックを一箇所に集約（DRY原則）
+
+### ワークスペースサービスの内部構造
+
+`WorkspaceService`は単一責務の原則に従い、以下のマネージャーに分割されています（`src/main/services/workspace/`）:
+
+| クラス | 役割 |
+|-------|------|
+| `WorkspaceItemManager` | アイテムの追加・削除・更新・並び替え |
+| `WorkspaceGroupManager` | グループの作成・更新・削除・並び替え |
+| `WorkspaceArchiveManager` | グループのアーカイブ・復元・削除 |
+| `WorkspaceService` | 上記マネージャーを統合するファサード |
 
 ---
 
@@ -54,6 +67,7 @@ IPCハンドラーは機能ごとに分離（`src/main/ipc/`）:
 | `splashHandlers.ts` | スプラッシュウィンドウ制御 |
 | `workspaceHandlers.ts` | ワークスペースアイテム・グループ・実行履歴の操作 |
 | `windowSearchHandlers.ts` | ウィンドウ検索（ウィンドウ一覧取得・アクティブ化） |
+| `notificationHandlers.ts` | システム通知・トースト通知の表示 |
 
 詳細は[IPCチャンネル](ipc-channels.md)を参照。
 
@@ -70,6 +84,20 @@ IPCハンドラーは機能ごとに分離（`src/main/ipc/`）:
 | `windowMatcher.ts` | ウィンドウタイトルによるウィンドウ検索 | `windowActivator.ts` |
 | `nativeWindowControl.ts` | ネイティブWindows API経由のウィンドウ制御 | `windowActivator.ts` |
 | `migrationHelpers.ts` | データファイル形式の自動移行処理 | `main.ts` |
+| `virtualDesktop/` | 仮想デスクトップ制御の機能別モジュール群 | `windowActivator.ts`, `windowSearchHandlers.ts` |
+
+### virtualDesktopモジュールの内部構造
+
+仮想デスクトップ制御は単一責務の原則に従い分割されています（`src/main/utils/virtualDesktop/`）:
+
+| モジュール | 役割 |
+|-----------|------|
+| `dllLoader.ts` | Windows DLLの動的ロード（koffi経由） |
+| `guidUtils.ts` | GUID文字列とバイナリの相互変換 |
+| `registryAccess.ts` | レジストリからの仮想デスクトップ情報取得 |
+| `windowOperations.ts` | ウィンドウの仮想デスクトップ所属判定 |
+| `types.ts` | 型定義とデバッグログ |
+| `index.ts` | 公開API（統合エントリーポイント） |
 
 **設計原則:**
 - **DRY（Don't Repeat Yourself）**: 重複コードを共通関数に集約
@@ -93,6 +121,20 @@ IPCハンドラーは機能ごとに分離（`src/main/ipc/`）:
 | `itemTypeDetector.ts` | パスからアイテムタイプを自動検出 |
 | `pathUtils.ts` | パス操作の共通処理 |
 | `typeGuards.ts` | TypeScript型ガード関数 |
+| `historyConverters.ts` | 履歴データの形式変換処理 |
+
+---
+
+## 設定・パス管理
+
+環境変数とファイルパスは専用モジュールで一元管理（`src/main/config/`）:
+
+| モジュール | 役割 |
+|-----------|------|
+| `pathManager.ts` | ファイルパス管理（設定フォルダ、データファイル、キャッシュ等） |
+| `envConfig.ts` | 環境変数の一元管理（`QUICK_DASH_*`） |
+
+**PathManager**はシングルトンパターンで、アプリケーション全体で一貫したパスを提供します。
 
 ---
 

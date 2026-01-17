@@ -134,7 +134,7 @@ export async function createWorkspaceWindow(): Promise<BrowserWindow> {
  * ワークスペースウィンドウを表示する
  * 存在しない場合は新しく作成してから表示する
  */
-export async function showWorkspaceWindow(): Promise<void> {
+export async function showWorkspaceWindow(options?: { skipFocus?: boolean }): Promise<void> {
   try {
     if (!workspaceWindow || workspaceWindow.isDestroyed()) {
       await createWorkspaceWindow();
@@ -145,7 +145,10 @@ export async function showWorkspaceWindow(): Promise<void> {
       await setWorkspacePosition();
 
       workspaceWindow.show();
-      workspaceWindow.focus();
+      // skipFocusオプションがtrueの場合はフォーカスしない（メイン画面のフォーカスを維持）
+      if (!options?.skipFocus) {
+        workspaceWindow.focus();
+      }
       isWorkspaceWindowVisible = true;
       windowLogger.info('ワークスペースウィンドウを表示しました');
     }

@@ -3,8 +3,8 @@
   padding: var(--spacing-xl);
   max-width: 750px;
   width: 90%;
-  min-height: 800px;
   max-height: 85vh;
+  overflow-y: auto;
 }
 
 .register-modal h2 {

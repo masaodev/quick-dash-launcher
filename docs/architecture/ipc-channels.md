@@ -28,6 +28,7 @@ ipcRenderer.invoke(OPEN_ITEM, item);
 | アイコン | - | `FETCH_FAVICON`, `EXTRACT_ICON` |
 | ワークスペース | `WORKSPACE_*` | `WORKSPACE_LOAD_ITEMS`, `WORKSPACE_ADD_ITEM` |
 | イベント | `EVENT_*` | `EVENT_DATA_CHANGED`, `EVENT_WINDOW_SHOWN` |
+| 通知 | `SHOW_*` | `SHOW_NOTIFICATION`, `SHOW_TOAST_WINDOW` |
 
 ### IPC_CHANNELSオブジェクト
 
@@ -399,6 +400,33 @@ interface IconProgressResult {
 }
 ```
 
+## システム通知
+
+### `show-notification`
+OS標準通知を表示
+- パラメータ:
+  - `title: string` - 通知タイトル
+  - `body: string` - 通知本文
+  - `type?: NotificationType` - 通知タイプ（アイコン選択用）
+- 戻り値: なし
+- 通知タイプ: `'success' | 'error' | 'warning' | 'info'`
+
+### `show-toast-window`
+トースト専用ウィンドウで通知を表示
+- パラメータ:
+  - `message: string` - 表示メッセージ
+  - `type?: ToastType` - トーストの種類（`'success' | 'error' | 'warning' | 'info'`）
+  - `duration?: number` - 表示時間（ミリ秒、デフォルト: 3000）
+- 戻り値: なし
+- 特徴: メインウィンドウが閉じた後でも通知表示可能
+
+### `show-toast` (イベント)
+トースト通知を全ウィンドウに送信
+- **方向**: メインプロセス → レンダラープロセス
+- **パラメータ**: `{ message: string, type?: ToastType, duration?: number }`
+- **発生タイミング**: トースト通知が要求された時
+- **用途**: レンダラープロセス内でreact-hot-toastを使用して通知表示
+
 ## ブックマーク関連
 
 ### `detect-installed-browsers`
@@ -479,6 +507,14 @@ interface IconProgressResult {
 - 戻り値: `string`
 
 ## プリロードAPIイベントリスナー
+
+### `onShowToast`
+トースト通知イベントリスナー
+```typescript
+onShowToast(callback: (data: { message: string, type?: ToastType, duration?: number }) => void)
+```
+- **用途**: メインプロセスからのトースト通知をレンダラーで受信
+- **ToastType**: `'success' | 'error' | 'warning' | 'info'`
 
 ### `onSettingsChanged`
 設定変更イベントリスナー

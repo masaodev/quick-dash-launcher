@@ -1,5 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 
+import { useToast } from './useToast';
+
 export interface AlertDialogState {
   isOpen: boolean;
   message: string;
@@ -16,6 +18,9 @@ export interface ConfirmDialogState {
 }
 
 export function useDialogManager() {
+  // トーストフック
+  const { showSuccess, showError, showInfo, showWarning, showToast, dismissAll } = useToast();
+
   const [alertDialog, setAlertDialog] = useState<AlertDialogState>({
     isOpen: false,
     message: '',
@@ -105,12 +110,23 @@ export function useDialogManager() {
   }, []);
 
   return {
+    // AlertDialog
     alertDialog,
     showAlert,
     closeAlert,
+    // ConfirmDialog
     confirmDialog,
     showConfirm,
     handleConfirm,
     handleCancelConfirm,
+    // Toast（軽量フィードバック用）
+    toast: {
+      success: showSuccess,
+      error: showError,
+      info: showInfo,
+      warning: showWarning,
+      show: showToast,
+      dismissAll,
+    },
   };
 }

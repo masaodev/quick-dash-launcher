@@ -24,7 +24,11 @@ QuickDashLauncherで使用されるドメイン用語の定義です。開発時
 | アイテム | `WindowOperationItem` | ウィンドウ操作アイテム | ウィンドウ操作 | 既存ウィンドウを検索・制御するアイテム。WindowDirectiveで定義。アプリを起動せずウィンドウのみ操作。 |
 | アイテム | `AppItem` | アプリアイテム | - | `LauncherItem \| GroupItem \| WindowOperationItem \| WindowInfo`の統合型。アイテムリスト表示時に使用。 |
 | アイテム | `WorkspaceItem` | ワークスペースアイテム | - | ワークスペースに追加されたアイテムの独立コピー。元アイテムが削除されても影響を受けない。WorkspaceFileに保存。 |
-| アイテムタイプ | `ItemType` | アイテムタイプ | - | アイテムの種別を表す列挙型。`LauncherItem.type`で使用。<br>値:<br>• `url` - URL（HTTPまたはHTTPS URL、デフォルトブラウザで開く）<br>• `file` - ファイル（実行ファイル・ドキュメント等、関連付けされたアプリで開く）<br>• `folder` - フォルダ（ディレクトリ、エクスプローラーで開く）<br>• `app` - アプリケーション（実行可能ファイル、直接実行）<br>• `customUri` - カスタムURI（`obsidian://`、`vscode://`等の独自スキーマ）<br>• `group` - グループ（複数アイテムの一括起動）<br>• `windowOperation` - ウィンドウ操作（既存ウィンドウの制御） |
+| アイテム | `RegisterItem` | 登録アイテム | - | アイテム登録・編集時に使用される型。`RegisterModal`や`useRegisterForm`で使用。`src/common/utils/dataConverters.ts`で定義。 |
+| 登録項目 | `name` | アイテム名 | 表示名 | メインウィンドウのアイテムリストに表示される名前。`RegisterItem.name`および`LauncherItem.name`で使用。ユーザーが自由に設定可能。 |
+| 登録項目 | `path` | 起動パス | パス/URL | 起動対象を指定するパスまたはURL。ファイルパス、フォルダパス、HTTPS URL、カスタムURIなど。`RegisterItem.path`および`LauncherItem.path`で使用。この値から自動的にItemTypeが検出される。 |
+| 登録種別 | `ItemCategory` | アイテム登録種別 | 登録種別 | アイテム登録画面での「種別」選択。`RegisterItem.itemCategory`で使用。ユーザーが登録方法を選択する。<br>値:<br>• `item` - 単一アイテム（1つのアイテムを個別に登録）<br>• `dir` - フォルダ取込（フォルダ内のファイルを一括登録）<br>• `group` - グループ（複数アイテムをまとめて一括起動）<br>• `window` - ウィンドウ操作（既存ウィンドウを検索・制御）<br><br>**ItemTypeとの違い**: ItemCategoryは「登録方法」、ItemTypeは「実行方法」を表す。例: itemCategory='item'かつtype='url'は「単一アイテムとしてURLを登録」を意味する。 |
+| アイテムタイプ | `ItemType` | アイテム実行タイプ | - | アイテムの実行方法を表す列挙型。`LauncherItem.type`で使用。パスから自動検出され、起動時の動作を決定する。<br>値:<br>• `url` - URL（HTTPまたはHTTPS URL、デフォルトブラウザで開く）<br>• `file` - ファイル（実行ファイル・ドキュメント等、関連付けされたアプリで開く）<br>• `folder` - フォルダ（ディレクトリ、エクスプローラーで開く）<br>• `app` - アプリケーション（実行可能ファイル、直接実行）<br>• `customUri` - カスタムURI（`obsidian://`、`vscode://`等の独自スキーマ）<br><br>**注**: GroupItemやWindowOperationItemは独自のtype値を持つため、ItemTypeには含まれない。 |
 | データファイル | `DataFile` | データファイル | - | アイテム定義を保存するファイル（data.txt, data2.txt, data3.txt等）。CSV形式で記述し、1行が1アイテムに対応する。`%APPDATA%/quick-dash-launcher/config/`に配置。data.txtは必須で削除不可。`PathManager.getDataFilePath()`でdata.txtのパス取得。タブ表示で切り替え可能。 |
 | データファイル | `RawDataLine` | 生データ行 | - | データファイルの1行を表す内部型。管理画面のアイテム編集で使用。`src/common/types/data.ts`で定義。 |
 | データファイル | `DataFileTab` | データファイルタブ | タブ | 複数データファイルをグループ化したタブ設定。設定画面で編集可能。 |
