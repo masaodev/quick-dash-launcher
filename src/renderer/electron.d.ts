@@ -194,6 +194,42 @@ export interface ElectronAPI {
   toggleWorkspaceWindow: () => Promise<void>;
   showWorkspaceWindow: () => Promise<void>;
   hideWorkspaceWindow: () => Promise<void>;
+  // コンテキストメニュー表示API
+  showAdminItemContextMenu: (selectedCount: number, isSingleLine: boolean) => Promise<void>;
+  showLauncherContextMenu: (item: AppItem) => Promise<void>;
+  showWorkspaceContextMenu: (item: WorkspaceItem, groups: WorkspaceGroup[]) => Promise<void>;
+  showWorkspaceGroupContextMenu: (group: WorkspaceGroup) => Promise<void>;
+  // AdminItemManagerContextMenuイベントリスナー
+  onAdminMenuDuplicateItems: (callback: () => void) => () => void;
+  onAdminMenuEditItem: (callback: () => void) => () => void;
+  onAdminMenuDeleteItems: (callback: () => void) => () => void;
+  // LauncherContextMenuイベントリスナー
+  onLauncherMenuEditItem: (callback: (item: AppItem) => void) => () => void;
+  onLauncherMenuAddToWorkspace: (callback: (item: AppItem) => void) => () => void;
+  onLauncherMenuCopyPath: (callback: (item: AppItem) => void) => () => void;
+  onLauncherMenuCopyParentPath: (callback: (item: AppItem) => void) => () => void;
+  onLauncherMenuOpenParentFolder: (callback: (item: AppItem) => void) => () => void;
+  onLauncherMenuCopyShortcutPath: (callback: (item: AppItem) => void) => () => void;
+  onLauncherMenuCopyShortcutParentPath: (callback: (item: AppItem) => void) => () => void;
+  onLauncherMenuOpenShortcutParentFolder: (callback: (item: AppItem) => void) => () => void;
+  // WorkspaceContextMenuイベントリスナー
+  onWorkspaceMenuRenameItem: (callback: (itemId: string) => void) => () => void;
+  onWorkspaceMenuLaunchItem: (callback: (itemId: string) => void) => () => void;
+  onWorkspaceMenuCopyPath: (callback: (itemId: string) => void) => () => void;
+  onWorkspaceMenuCopyParentPath: (callback: (itemId: string) => void) => () => void;
+  onWorkspaceMenuOpenParentFolder: (callback: (itemId: string) => void) => () => void;
+  onWorkspaceMenuCopyShortcutPath: (callback: (itemId: string) => void) => () => void;
+  onWorkspaceMenuCopyShortcutParentPath: (callback: (itemId: string) => void) => () => void;
+  onWorkspaceMenuOpenShortcutParentFolder: (callback: (itemId: string) => void) => () => void;
+  onWorkspaceMenuRemoveFromGroup: (callback: (itemId: string) => void) => () => void;
+  onWorkspaceMenuRemoveItem: (callback: (itemId: string) => void) => () => void;
+  // WorkspaceGroupContextMenuイベントリスナー
+  onWorkspaceGroupMenuRename: (callback: (groupId: string) => void) => () => void;
+  onWorkspaceGroupMenuShowColorPicker: (callback: (groupId: string) => void) => () => void;
+  onWorkspaceGroupMenuChangeColor: (callback: (groupId: string, color: string) => void) => () => void;
+  onWorkspaceGroupMenuCopyAsText: (callback: (groupId: string) => void) => () => void;
+  onWorkspaceGroupMenuArchive: (callback: (groupId: string) => void) => () => void;
+  onWorkspaceGroupMenuDelete: (callback: (groupId: string) => void) => () => void;
 }
 
 declare global {

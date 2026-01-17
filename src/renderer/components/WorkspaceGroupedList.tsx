@@ -12,14 +12,48 @@ import {
   isFileSystemType,
 } from '@common/utils/historyConverters';
 
-import { useWorkspaceContextMenu, useWorkspaceItemGroups } from '../hooks/workspace';
+import { useWorkspaceItemGroups } from '../hooks/workspace';
 import { logError } from '../utils/debug';
+import { PathUtils } from '@common/utils/pathUtils';
 
 import WorkspaceGroupHeader from './WorkspaceGroupHeader';
 import WorkspaceItemCard from './WorkspaceItemCard';
 import WorkspaceExecutionHistoryCard from './WorkspaceExecutionHistoryCard';
-import WorkspaceContextMenu from './WorkspaceContextMenu';
-import WorkspaceGroupContextMenu from './WorkspaceGroupContextMenu';
+import ColorPicker from './ColorPicker';
+
+/**
+ * カラーピッカーモーダル専用コンポーネント
+ * モーダルオーバーレイとESCキー処理を担当
+ */
+const ColorPickerModal: React.FC<{
+  currentColor?: string;
+  onSelectColor: (color: string) => void;
+  onClose: () => void;
+}> = ({ currentColor, onSelectColor, onClose }) => {
+  // ESCキー処理
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
+  return (
+    <div className="modal-overlay-base" onClick={onClose} style={{ zIndex: 10000 }}>
+      <div onClick={(e) => e.stopPropagation()}>
+        <ColorPicker
+          currentColor={currentColor}
+          onSelectColor={onSelectColor}
+          onClose={onClose}
+          disableEventListeners={true}
+        />
+      </div>
+    </div>
+  );
+};
 
 interface WorkspaceGroupedListProps {
   data: {
@@ -83,28 +117,189 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
   const [draggedItemId, setDraggedItemId] = React.useState<string | null>(null);
   const [_draggedGroupId, setDraggedGroupId] = React.useState<string | null>(null);
   const [editingGroupId, setEditingGroupId] = React.useState<string | null>(null);
-  const [groupContextMenu, setGroupContextMenu] = React.useState<{
-    isVisible: boolean;
-    position: { x: number; y: number };
-    group: WorkspaceGroup | null;
-  }>({
-    isVisible: false,
-    position: { x: 0, y: 0 },
-    group: null,
-  });
+  const [colorPickerGroupId, setColorPickerGroupId] = React.useState<string | null>(null);
+  const contextMenuItemRef = React.useRef<WorkspaceItem | null>(null);
+  const contextMenuGroupRef = React.useRef<WorkspaceGroup | null>(null);
 
   // グループ化ロジック
   const { itemsByGroup, uncategorizedItems } = useWorkspaceItemGroups(items);
 
-  // コンテキストメニュー
-  const {
-    contextMenu,
-    handleContextMenu,
-    handleCloseContextMenu,
-    handleEditFromContextMenu,
-    handleRemoveFromGroup,
-    pathHandlers,
-  } = useWorkspaceContextMenu(onMoveItemToGroup, setEditingItemId);
+  // パフォーマンス最適化: IDからアイテム/グループへの高速ルックアップマップ
+  const itemsMap = React.useMemo(() => {
+    const map = new Map<string, WorkspaceItem>();
+    items.forEach((item) => map.set(item.id, item));
+    return map;
+  }, [items]);
+
+  const groupsMap = React.useMemo(() => {
+    const map = new Map<string, WorkspaceGroup>();
+    groups.forEach((group) => map.set(group.id, group));
+    return map;
+  }, [groups]);
+
+  // パス操作ヘルパー関数
+  const handlePathOperation = React.useCallback(
+    async (
+      item: WorkspaceItem,
+      operation: 'copy' | 'open',
+      pathType: 'item' | 'parent',
+      useOriginalPath: boolean = false
+    ) => {
+      let basePath: string;
+      if (useOriginalPath) {
+        if (!item.originalPath) return;
+        basePath = item.originalPath;
+      } else {
+        basePath = item.path;
+      }
+
+      const targetPath = pathType === 'parent' ? PathUtils.getParentPath(basePath) : basePath;
+
+      if (operation === 'copy') {
+        window.electronAPI.copyToClipboard(targetPath);
+      } else if (operation === 'open') {
+        await window.electronAPI.openExternalUrl(`file:///${targetPath}`);
+      }
+    },
+    []
+  );
+
+  // WorkspaceContextMenuイベントリスナー登録
+  React.useEffect(() => {
+    const cleanupRenameItem = window.electronAPI.onWorkspaceMenuRenameItem((itemId) => {
+      setEditingItemId(itemId);
+    });
+
+    const cleanupLaunchItem = window.electronAPI.onWorkspaceMenuLaunchItem((itemId) => {
+      const item = itemsMap.get(itemId);
+      if (item) {
+        onLaunch(item);
+      }
+    });
+
+    const cleanupCopyPath = window.electronAPI.onWorkspaceMenuCopyPath((itemId) => {
+      const item = itemsMap.get(itemId);
+      if (item) {
+        handlePathOperation(item, 'copy', 'item', false);
+      }
+    });
+
+    const cleanupCopyParentPath = window.electronAPI.onWorkspaceMenuCopyParentPath((itemId) => {
+      const item = itemsMap.get(itemId);
+      if (item) {
+        handlePathOperation(item, 'copy', 'parent', false);
+      }
+    });
+
+    const cleanupOpenParentFolder = window.electronAPI.onWorkspaceMenuOpenParentFolder((itemId) => {
+      const item = itemsMap.get(itemId);
+      if (item) {
+        handlePathOperation(item, 'open', 'parent', false);
+      }
+    });
+
+    const cleanupCopyShortcutPath = window.electronAPI.onWorkspaceMenuCopyShortcutPath((itemId) => {
+      const item = itemsMap.get(itemId);
+      if (item) {
+        handlePathOperation(item, 'copy', 'item', true);
+      }
+    });
+
+    const cleanupCopyShortcutParentPath = window.electronAPI.onWorkspaceMenuCopyShortcutParentPath(
+      (itemId) => {
+        const item = itemsMap.get(itemId);
+        if (item) {
+          handlePathOperation(item, 'copy', 'parent', true);
+        }
+      }
+    );
+
+    const cleanupOpenShortcutParentFolder =
+      window.electronAPI.onWorkspaceMenuOpenShortcutParentFolder((itemId) => {
+        const item = itemsMap.get(itemId);
+        if (item) {
+          handlePathOperation(item, 'open', 'parent', true);
+        }
+      });
+
+    const cleanupRemoveFromGroup = window.electronAPI.onWorkspaceMenuRemoveFromGroup((itemId) => {
+      const item = itemsMap.get(itemId);
+      if (item && item.groupId) {
+        onMoveItemToGroup(itemId, undefined);
+      }
+    });
+
+    const cleanupRemoveItem = window.electronAPI.onWorkspaceMenuRemoveItem((itemId) => {
+      onRemoveItem(itemId);
+    });
+
+    return () => {
+      cleanupRenameItem();
+      cleanupLaunchItem();
+      cleanupCopyPath();
+      cleanupCopyParentPath();
+      cleanupOpenParentFolder();
+      cleanupCopyShortcutPath();
+      cleanupCopyShortcutParentPath();
+      cleanupOpenShortcutParentFolder();
+      cleanupRemoveFromGroup();
+      cleanupRemoveItem();
+    };
+  }, [itemsMap, handlePathOperation, setEditingItemId, onLaunch, onMoveItemToGroup, onRemoveItem]);
+
+  // WorkspaceGroupContextMenuイベントリスナー登録
+  React.useEffect(() => {
+    const cleanupRename = window.electronAPI.onWorkspaceGroupMenuRename((groupId) => {
+      setEditingGroupId(groupId);
+    });
+
+    const cleanupShowColorPicker = window.electronAPI.onWorkspaceGroupMenuShowColorPicker(
+      (groupId) => {
+        setColorPickerGroupId(groupId);
+      }
+    );
+
+    const cleanupChangeColor = window.electronAPI.onWorkspaceGroupMenuChangeColor(
+      (groupId, color) => {
+        onUpdateGroup(groupId, { color });
+      }
+    );
+
+    const cleanupCopyAsText = window.electronAPI.onWorkspaceGroupMenuCopyAsText((groupId) => {
+      const group = groupsMap.get(groupId);
+      if (group) {
+        const groupItems = itemsByGroup[groupId] || [];
+        let text = `【${group.name}】\r\n`;
+        groupItems.forEach((item, index) => {
+          // eslint-disable-next-line no-irregular-whitespace
+          text += `　■${item.displayName}\r\n`;
+          // eslint-disable-next-line no-irregular-whitespace
+          text += `　　${item.path}\r\n`;
+          if (index < groupItems.length - 1) {
+            text += '\r\n';
+          }
+        });
+        window.electronAPI.copyToClipboard(text);
+      }
+    });
+
+    const cleanupArchive = window.electronAPI.onWorkspaceGroupMenuArchive((groupId) => {
+      onArchiveGroup(groupId);
+    });
+
+    const cleanupDelete = window.electronAPI.onWorkspaceGroupMenuDelete((groupId) => {
+      onDeleteGroup(groupId);
+    });
+
+    return () => {
+      cleanupRename();
+      cleanupShowColorPicker();
+      cleanupChangeColor();
+      cleanupCopyAsText();
+      cleanupArchive();
+      cleanupDelete();
+    };
+  }, [groupsMap, itemsByGroup, onUpdateGroup, onArchiveGroup, onDeleteGroup]);
 
   // ドラッグ&ドロップハンドラー
   const handleItemDragStart = (item: WorkspaceItem) => (e: React.DragEvent) => {
@@ -204,53 +399,27 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
     setDraggedItemId(null);
   };
 
-  // グループコンテキストメニューハンドラー
+  // コンテキストメニューハンドラー
+  const handleContextMenu = (item: WorkspaceItem) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Store item in ref for event listeners
+    contextMenuItemRef.current = item;
+
+    // Show native context menu
+    window.electronAPI.showWorkspaceContextMenu(item, groups);
+  };
+
   const handleGroupContextMenu = (group: WorkspaceGroup) => (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setGroupContextMenu({
-      isVisible: true,
-      position: { x: e.clientX, y: e.clientY },
-      group,
-    });
-  };
 
-  const handleCloseGroupContextMenu = () => {
-    setGroupContextMenu({
-      isVisible: false,
-      position: { x: 0, y: 0 },
-      group: null,
-    });
-  };
+    // Store group in ref for event listeners
+    contextMenuGroupRef.current = group;
 
-  const handleRenameGroupFromContextMenu = (group: WorkspaceGroup) => {
-    setEditingGroupId(group.id);
-  };
-
-  const handleChangeGroupColor = (groupId: string, color: string) => {
-    onUpdateGroup(groupId, { color });
-  };
-
-  const handleCopyGroupAsText = (group: WorkspaceGroup) => {
-    const groupItems = itemsByGroup[group.id] || [];
-
-    // テキスト形式に整形（改行はCRLF）
-    let text = `【${group.name}】\r\n`;
-
-    groupItems.forEach((item, index) => {
-      // eslint-disable-next-line no-irregular-whitespace
-      text += `　■${item.displayName}\r\n`;
-      // eslint-disable-next-line no-irregular-whitespace
-      text += `　　${item.path}\r\n`;
-
-      // 最後のアイテム以外は空行を追加
-      if (index < groupItems.length - 1) {
-        text += '\r\n';
-      }
-    });
-
-    // クリップボードにコピー
-    window.electronAPI.copyToClipboard(text);
+    // Show native context menu
+    window.electronAPI.showWorkspaceGroupContextMenu(group);
   };
 
   // グループのトグル処理（折りたたみ/展開とアクティブ化）
@@ -454,36 +623,17 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
         </div>
       )}
 
-      {/* アイテムコンテキストメニュー */}
-      <WorkspaceContextMenu
-        isVisible={contextMenu.isVisible}
-        position={contextMenu.position}
-        item={contextMenu.item}
-        onClose={handleCloseContextMenu}
-        onEdit={handleEditFromContextMenu}
-        onLaunch={onLaunch}
-        onRemove={onRemoveItem}
-        onRemoveFromGroup={handleRemoveFromGroup}
-        onCopyPath={pathHandlers.handleCopyPath}
-        onCopyParentPath={pathHandlers.handleCopyParentPath}
-        onOpenParentFolder={pathHandlers.handleOpenParentFolder}
-        onCopyShortcutPath={pathHandlers.handleCopyShortcutPath}
-        onCopyShortcutParentPath={pathHandlers.handleCopyShortcutParentPath}
-        onOpenShortcutParentFolder={pathHandlers.handleOpenShortcutParentFolder}
-      />
-
-      {/* グループコンテキストメニュー */}
-      <WorkspaceGroupContextMenu
-        isVisible={groupContextMenu.isVisible}
-        position={groupContextMenu.position}
-        group={groupContextMenu.group}
-        onClose={handleCloseGroupContextMenu}
-        onRename={handleRenameGroupFromContextMenu}
-        onChangeColor={handleChangeGroupColor}
-        onArchive={onArchiveGroup}
-        onDelete={onDeleteGroup}
-        onCopyAsText={handleCopyGroupAsText}
-      />
+      {/* カラーピッカー */}
+      {colorPickerGroupId && (
+        <ColorPickerModal
+          currentColor={groupsMap.get(colorPickerGroupId)?.color}
+          onSelectColor={(color) => {
+            onUpdateGroup(colorPickerGroupId, { color });
+            setColorPickerGroupId(null);
+          }}
+          onClose={() => setColorPickerGroupId(null)}
+        />
+      )}
     </div>
   );
 };

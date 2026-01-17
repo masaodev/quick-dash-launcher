@@ -13,6 +13,7 @@ import { setupHistoryHandlers } from './historyHandlers';
 import { setupWorkspaceHandlers } from './workspaceHandlers';
 import { setupWindowSearchHandlers } from './windowSearchHandlers';
 import { setupNotificationHandlers } from './notificationHandlers';
+import { setupContextMenuHandlers } from './contextMenuHandlers';
 
 export function setupIPCHandlers(
   configFolder: string,
@@ -42,4 +43,5 @@ export function setupIPCHandlers(
   setupWorkspaceHandlers();
   setupWindowSearchHandlers(getMainWindow, getWindowPinMode);
   setupNotificationHandlers();
+  setupContextMenuHandlers(getMainWindow);
 }

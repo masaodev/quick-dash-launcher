@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { parseCSVLine, escapeCSV } from '@common/utils/csvParser';
 import {
   isGroupDirective,
@@ -12,7 +12,6 @@ import { RawDataLine, LauncherItem } from '@common/types';
 import { logError } from '../utils/debug';
 
 import ConfirmDialog from './ConfirmDialog';
-import AdminItemManagerContextMenu from './AdminItemManagerContextMenu';
 
 interface EditableRawItemListProps {
   rawLines: RawDataLine[];
@@ -38,19 +37,11 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
   const [editingCell, setEditingCell] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState('');
 
-  // コンテキストメニュー状態管理
-  const [contextMenu, setContextMenu] = useState<{
-    isVisible: boolean;
-    position: { x: number; y: number };
-    selectedLines: RawDataLine[];
-  }>({
-    isVisible: false,
-    position: { x: 0, y: 0 },
-    selectedLines: [],
-  });
-
   // アイコンキャッシュ: Map<行番号, base64データURL>
   const [itemIcons, setItemIcons] = useState<Map<number, string>>(new Map());
+
+  // 右クリックされた行を保存（コンテキストメニューイベント用）
+  const contextMenuLinesRef = useRef<RawDataLine[]>([]);
 
   // ConfirmDialog状態管理
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -120,35 +111,65 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
 
   const getLineKey = (line: RawDataLine) => `${line.sourceFile}_${line.lineNumber}`;
 
+  // コンテキストメニューイベントリスナーを登録
+  useEffect(() => {
+    // 複製
+    const cleanupDuplicate = window.electronAPI.onAdminMenuDuplicateItems(() => {
+      const targetLines = contextMenuLinesRef.current;
+      if (targetLines.length > 0) {
+        onDuplicateLines(targetLines);
+      }
+    });
+
+    // 詳細編集
+    const cleanupEdit = window.electronAPI.onAdminMenuEditItem(() => {
+      const targetLines = contextMenuLinesRef.current;
+      if (targetLines.length === 1) {
+        onEditClick(targetLines[0]);
+      }
+    });
+
+    // 削除
+    const cleanupDelete = window.electronAPI.onAdminMenuDeleteItems(() => {
+      const targetLines = contextMenuLinesRef.current;
+      if (targetLines.length > 0) {
+        onDeleteLines(targetLines);
+      }
+    });
+
+    // クリーンアップ
+    return () => {
+      cleanupDuplicate();
+      cleanupEdit();
+      cleanupDelete();
+    };
+  }, [onDuplicateLines, onEditClick, onDeleteLines]);
+
   const handleContextMenu = (event: React.MouseEvent, line: RawDataLine) => {
     event.preventDefault();
     event.stopPropagation();
 
     const lineKey = getLineKey(line);
-    let linesToShow: RawDataLine[];
+    let selectedCount: number;
+    let isSingleLine: boolean;
+    let targetLines: RawDataLine[];
 
-    // 右クリックした行が選択されていない場合、その行だけを選択
+    // 右クリックした行が選択されていない場合、その行だけを対象にする
     if (selectedItems.has(lineKey)) {
-      // 既に選択されている場合、全選択行を対象
-      linesToShow = rawLines.filter((l) => selectedItems.has(getLineKey(l)));
+      targetLines = rawLines.filter((l) => selectedItems.has(getLineKey(l)));
+      selectedCount = targetLines.length;
+      isSingleLine = selectedCount === 1;
     } else {
-      // 選択されていない場合、その行のみを対象
-      linesToShow = [line];
+      targetLines = [line];
+      selectedCount = 1;
+      isSingleLine = true;
     }
 
-    setContextMenu({
-      isVisible: true,
-      position: { x: event.clientX, y: event.clientY },
-      selectedLines: linesToShow,
-    });
-  };
+    // 対象行を保存（イベントリスナーから参照するため）
+    contextMenuLinesRef.current = targetLines;
 
-  const handleCloseContextMenu = () => {
-    setContextMenu({
-      isVisible: false,
-      position: { x: 0, y: 0 },
-      selectedLines: [],
-    });
+    // ネイティブメニューを表示
+    window.electronAPI.showAdminItemContextMenu(selectedCount, isSingleLine);
   };
 
   const handleCellEdit = (line: RawDataLine) => {
@@ -773,16 +794,6 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
       </table>
 
       {rawLines.length === 0 && <div className="no-items">データファイルに行がありません</div>}
-
-      <AdminItemManagerContextMenu
-        isVisible={contextMenu.isVisible}
-        position={contextMenu.position}
-        selectedLines={contextMenu.selectedLines}
-        onClose={handleCloseContextMenu}
-        onDuplicate={onDuplicateLines}
-        onEdit={onEditClick}
-        onDelete={onDeleteLines}
-      />
 
       <ConfirmDialog
         isOpen={confirmDialog.isOpen}
