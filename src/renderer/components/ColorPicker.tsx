@@ -9,17 +9,26 @@ interface ColorPickerProps {
   onClose: () => void;
   /** 現在選択されている色 */
   currentColor?: string;
+  /** モーダルモードの場合はtrueにして内部のイベントリスナーを無効化 */
+  disableEventListeners?: boolean;
 }
 
 /**
  * グループ色選択用のカラーピッカーコンポーネント
  * プリセット色をグリッド表示し、クリック時に色を選択
  */
-const ColorPicker: React.FC<ColorPickerProps> = ({ onSelectColor, onClose, currentColor }) => {
+const ColorPicker: React.FC<ColorPickerProps> = ({
+  onSelectColor,
+  onClose,
+  currentColor,
+  disableEventListeners = false,
+}) => {
   const pickerRef = useRef<HTMLDivElement>(null);
 
-  // ESCキーで閉じる
+  // ESCキーで閉じる（モーダルモードでは無効化）
   useEffect(() => {
+    if (disableEventListeners) return;
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         onClose();
@@ -30,10 +39,12 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ onSelectColor, onClose, curre
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [onClose]);
+  }, [onClose, disableEventListeners]);
 
-  // 外側クリックで閉じる
+  // 外側クリックで閉じる（モーダルモードでは無効化）
   useEffect(() => {
+    if (disableEventListeners) return;
+
     const handleClickOutside = (e: MouseEvent) => {
       if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
         onClose();
@@ -50,7 +61,7 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ onSelectColor, onClose, curre
       clearTimeout(timer);
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [onClose]);
+  }, [onClose, disableEventListeners]);
 
   const handleColorClick = (colorValue: string) => {
     onSelectColor(colorValue);

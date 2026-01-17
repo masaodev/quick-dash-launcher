@@ -62,7 +62,11 @@ app.whenReady().then(async () => {
   isFirstLaunch = !hotkey || hotkey.trim() === '';
 
   // アプリケーションのApp User Model IDを設定（Windows用）
-  app.setAppUserModelId('net.masaodev.quick-dash-launcher');
+  // 開発モード時は異なるIDを使用してアイコンキャッシュの問題を回避
+  const appUserModelId = EnvConfig.isDevelopment
+    ? 'net.masaodev.quick-dash-launcher.dev'
+    : 'net.masaodev.quick-dash-launcher';
+  app.setAppUserModelId(appUserModelId);
 
   // 自動起動設定を適用（設定ファイルの値をシステムに反映）
   const autoLaunchService = AutoLaunchService.getInstance();

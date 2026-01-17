@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   isLauncherItem,
   isWindowInfo,
@@ -9,8 +9,6 @@ import { LauncherItem, GroupItem, AppItem, WindowInfo, WindowOperationItem } fro
 
 import { getTooltipText } from '../utils/tooltipTextGenerator';
 import { logError } from '../utils/debug';
-
-import LauncherContextMenu from './LauncherContextMenu';
 
 interface ItemListProps {
   items: AppItem[];
@@ -43,15 +41,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
 }) => {
   const listRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const [contextMenu, setContextMenu] = useState<{
-    isVisible: boolean;
-    position: { x: number; y: number };
-    item: AppItem | null;
-  }>({
-    isVisible: false,
-    position: { x: 0, y: 0 },
-    item: null,
-  });
+  const contextMenuItemRef = useRef<AppItem | null>(null);
 
   useEffect(() => {
     // Scroll selected item into view
@@ -62,6 +52,81 @@ const LauncherItemList: React.FC<ItemListProps> = ({
       });
     }
   }, [selectedIndex]);
+
+  // LauncherContextMenuイベントリスナー登録
+  useEffect(() => {
+    const cleanupEditItem = window.electronAPI.onLauncherMenuEditItem((item) => {
+      if (onEditItem) {
+        onEditItem(item);
+      }
+    });
+
+    const cleanupAddToWorkspace = window.electronAPI.onLauncherMenuAddToWorkspace(async (item) => {
+      try {
+        await window.electronAPI.workspaceAPI.addItem(item);
+      } catch (error) {
+        logError('ワークスペースへの追加に失敗しました:', error);
+      }
+    });
+
+    const cleanupCopyPath = window.electronAPI.onLauncherMenuCopyPath((item) => {
+      if (isLauncherItem(item) && onCopyPath) {
+        onCopyPath(item);
+      }
+    });
+
+    const cleanupCopyParentPath = window.electronAPI.onLauncherMenuCopyParentPath((item) => {
+      if (isLauncherItem(item) && onCopyParentPath) {
+        onCopyParentPath(item);
+      }
+    });
+
+    const cleanupOpenParentFolder = window.electronAPI.onLauncherMenuOpenParentFolder((item) => {
+      if (isLauncherItem(item) && onOpenParentFolder) {
+        onOpenParentFolder(item);
+      }
+    });
+
+    const cleanupCopyShortcutPath = window.electronAPI.onLauncherMenuCopyShortcutPath((item) => {
+      if (isLauncherItem(item) && onCopyShortcutPath) {
+        onCopyShortcutPath(item);
+      }
+    });
+
+    const cleanupCopyShortcutParentPath = window.electronAPI.onLauncherMenuCopyShortcutParentPath(
+      (item) => {
+        if (isLauncherItem(item) && onCopyShortcutParentPath) {
+          onCopyShortcutParentPath(item);
+        }
+      }
+    );
+
+    const cleanupOpenShortcutParentFolder =
+      window.electronAPI.onLauncherMenuOpenShortcutParentFolder((item) => {
+        if (isLauncherItem(item) && onOpenShortcutParentFolder) {
+          onOpenShortcutParentFolder(item);
+        }
+      });
+
+    return () => {
+      cleanupEditItem();
+      cleanupAddToWorkspace();
+      cleanupCopyPath();
+      cleanupCopyParentPath();
+      cleanupOpenParentFolder();
+      cleanupCopyShortcutPath();
+      cleanupCopyShortcutParentPath();
+      cleanupOpenShortcutParentFolder();
+    };
+  }, [
+    onEditItem,
+    onCopyPath,
+    onCopyParentPath,
+    onOpenParentFolder,
+    onCopyShortcutPath,
+    onCopyShortcutParentPath,
+    onOpenShortcutParentFolder,
+  ]);
 
   const getDefaultIcon = (item: AppItem) => {
     // WindowInfoの場合
@@ -93,57 +158,11 @@ const LauncherItemList: React.FC<ItemListProps> = ({
     event.preventDefault();
     event.stopPropagation();
 
-    setContextMenu({
-      isVisible: true,
-      position: { x: event.clientX, y: event.clientY },
-      item: item,
-    });
-  };
+    // Store item in ref for event listeners
+    contextMenuItemRef.current = item;
 
-  const handleCloseContextMenu = () => {
-    setContextMenu({
-      isVisible: false,
-      position: { x: 0, y: 0 },
-      item: null,
-    });
-  };
-
-  const handleCopyPath = (item: LauncherItem) => {
-    if (onCopyPath) {
-      onCopyPath(item);
-    }
-  };
-
-  const handleCopyParentPath = (item: LauncherItem) => {
-    if (onCopyParentPath) {
-      onCopyParentPath(item);
-    }
-  };
-
-  const handleCopyShortcutPath = (item: LauncherItem) => {
-    if (onCopyShortcutPath) {
-      onCopyShortcutPath(item);
-    }
-  };
-
-  const handleCopyShortcutParentPath = (item: LauncherItem) => {
-    if (onCopyShortcutParentPath) {
-      onCopyShortcutParentPath(item);
-    }
-  };
-
-  const handleOpenParentFolder = (item: LauncherItem) => {
-    if (onOpenParentFolder) {
-      onOpenParentFolder(item);
-    }
-  };
-
-  const handleAddToWorkspace = async (item: AppItem) => {
-    try {
-      await window.electronAPI.workspaceAPI.addItem(item);
-    } catch (error) {
-      logError('ワークスペースへの追加に失敗しました:', error);
-    }
+    // Show native context menu
+    window.electronAPI.showLauncherContextMenu(item);
   };
 
   return (
@@ -208,20 +227,6 @@ const LauncherItemList: React.FC<ItemListProps> = ({
           </div>
         );
       })}
-      <LauncherContextMenu
-        isVisible={contextMenu.isVisible}
-        position={contextMenu.position}
-        item={contextMenu.item}
-        onClose={handleCloseContextMenu}
-        onCopyPath={handleCopyPath}
-        onCopyParentPath={handleCopyParentPath}
-        onOpenParentFolder={handleOpenParentFolder}
-        onCopyShortcutPath={handleCopyShortcutPath}
-        onCopyShortcutParentPath={handleCopyShortcutParentPath}
-        onOpenShortcutParentFolder={onOpenShortcutParentFolder}
-        onEditItem={onEditItem}
-        onAddToWorkspace={handleAddToWorkspace}
-      />
     </div>
   );
 };

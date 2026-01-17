@@ -5,7 +5,6 @@ import WorkspaceApp from '../WorkspaceApp';
 import { ToastProvider } from '../components/ToastProvider';
 import '../styles/index.css';
 import '../styles/components/WorkspaceWindow.css';
-import '../styles/components/LauncherContextMenu.css';
 import '../styles/components/ColorPicker.css';
 
 const rootElement = document.getElementById('workspace-root');

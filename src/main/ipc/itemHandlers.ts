@@ -20,6 +20,7 @@ import {
 import { WorkspaceService } from '../services/workspace/index.js';
 import { tryActivateWindow } from '../utils/windowActivator.js';
 import { launchItem } from '../utils/itemLauncher.js';
+import { SettingsService } from '../services/settingsService.js';
 
 import { notifyWorkspaceChanged } from './workspaceHandlers.js';
 
@@ -114,8 +115,74 @@ async function openParentFolder(
 }
 
 /**
- * グループ内のアイテムを順次実行する
- * アイテム名から実際のLauncherItemを検索し、500ms間隔で順次起動する
+ * グループ内の1つのアイテムを実行する
+ *
+ * @param groupName - グループ名（ログ出力用）
+ * @param itemName - 実行するアイテム名
+ * @param item - 実行するアイテム（LauncherItemまたはWindowOperationItem）
+ * @returns 実行結果（成功/失敗とアイテム名）
+ */
+async function executeGroupItem(
+  groupName: string,
+  itemName: string,
+  item: LauncherItem | WindowOperationItem | undefined
+): Promise<{ success: boolean; itemName: string }> {
+  if (!item) {
+    itemLogger.warn({ groupName, itemName }, 'グループ内のアイテムが見つかりません');
+    return { success: false, itemName };
+  }
+
+  try {
+    // アイテムの種類に応じて実行
+    if (isWindowOperationItem(item)) {
+      // ウィンドウ操作アイテムの場合
+      const windowConfig: WindowConfig = {
+        title: item.windowTitle,
+        processName: item.processName,
+        x: item.x,
+        y: item.y,
+        width: item.width,
+        height: item.height,
+        virtualDesktopNumber: item.virtualDesktopNumber,
+        activateWindow: item.activateWindow,
+      };
+
+      const result = await tryActivateWindow(
+        windowConfig,
+        undefined,
+        item.windowTitle,
+        itemLogger
+      );
+
+      if (!result.windowFound) {
+        itemLogger.warn(
+          { groupName, itemName, windowTitle: item.windowTitle },
+          'グループ内のウィンドウ操作アイテム: ウィンドウが見つかりませんでした'
+        );
+      }
+    } else {
+      // 通常のLauncherItemの場合
+      await openItem(item, null, false);
+    }
+
+    itemLogger.info({ groupName, itemName }, 'グループアイテムを実行しました');
+    return { success: true, itemName };
+  } catch (error) {
+    itemLogger.error(
+      {
+        groupName,
+        itemName,
+        error: error instanceof Error ? error.message : String(error),
+      },
+      'グループアイテムの実行に失敗しました'
+    );
+    return { success: false, itemName };
+  }
+}
+
+/**
+ * グループ内のアイテムを実行する（並列または順次）
+ * アイテム名から実際のLauncherItemを検索し、設定に応じて並列または順次起動する
  *
  * @param group - 実行するグループアイテム
  * @param allItems - すべてのアイテムリスト（参照解決用）
@@ -133,6 +200,10 @@ async function executeGroup(
     'グループを実行中'
   );
 
+  // 設定を取得
+  const settingsService = await SettingsService.getInstance();
+  const parallelLaunch = await settingsService.get('parallelGroupLaunch');
+
   // アイテム名からLauncherItemまたはWindowOperationItemを検索するマップを作成
   const itemMap = new Map<string, LauncherItem | WindowOperationItem>();
   for (const item of allItems) {
@@ -146,70 +217,39 @@ async function executeGroup(
   let successCount = 0;
   let errorCount = 0;
 
-  // グループ内のアイテムを順次実行
-  for (let i = 0; i < group.itemNames.length; i++) {
-    const itemName = group.itemNames[i];
-    const item = itemMap.get(itemName);
+  // 並列起動モード
+  if (parallelLaunch) {
+    itemLogger.info({ groupName: group.name }, '並列起動モードでグループを実行');
 
-    if (!item) {
-      itemLogger.warn({ groupName: group.name, itemName }, 'グループ内のアイテムが見つかりません');
-      errorCount++;
-      continue;
-    }
+    const promises = group.itemNames.map((itemName) =>
+      executeGroupItem(group.name, itemName, itemMap.get(itemName))
+    );
 
-    try {
-      // アイテムの種類に応じて実行
-      if (isWindowOperationItem(item)) {
-        // ウィンドウ操作アイテムの場合
-        const windowConfig: WindowConfig = {
-          title: item.windowTitle,
-          processName: item.processName,
-          x: item.x,
-          y: item.y,
-          width: item.width,
-          height: item.height,
-          virtualDesktopNumber: item.virtualDesktopNumber,
-          activateWindow: item.activateWindow,
-        };
+    const results = await Promise.all(promises);
+    successCount = results.filter((r) => r.success).length;
+    errorCount = results.filter((r) => !r.success).length;
+  } else {
+    // 順次起動モード
+    itemLogger.info({ groupName: group.name }, '順次起動モードでグループを実行');
 
-        const result = await tryActivateWindow(
-          windowConfig,
-          undefined,
-          item.windowTitle,
-          itemLogger
+    for (let i = 0; i < group.itemNames.length; i++) {
+      const itemName = group.itemNames[i];
+      const result = await executeGroupItem(group.name, itemName, itemMap.get(itemName));
+
+      if (result.success) {
+        successCount++;
+        itemLogger.info(
+          { groupName: group.name, itemName, index: i + 1, total: group.itemNames.length },
+          'グループアイテムを実行しました（順次）'
         );
-
-        if (!result.windowFound) {
-          itemLogger.warn(
-            { groupName: group.name, itemName, windowTitle: item.windowTitle },
-            'グループ内のウィンドウ操作アイテム: ウィンドウが見つかりませんでした'
-          );
-        }
       } else {
-        // 通常のLauncherItemの場合
-        await openItem(item, null, false);
+        errorCount++;
       }
 
-      successCount++;
-      itemLogger.info(
-        { groupName: group.name, itemName, index: i + 1, total: group.itemNames.length },
-        'グループアイテムを実行しました'
-      );
-    } catch (error) {
-      itemLogger.error(
-        {
-          groupName: group.name,
-          itemName,
-          error: error instanceof Error ? error.message : String(error),
-        },
-        'グループアイテムの実行に失敗しました'
-      );
-      errorCount++;
-    }
-
-    // 最後のアイテム以外は待機
-    if (i < group.itemNames.length - 1) {
-      await new Promise((resolve) => setTimeout(resolve, GROUP_LAUNCH_DELAY_MS));
+      // 最後のアイテム以外は待機
+      if (i < group.itemNames.length - 1) {
+        await new Promise((resolve) => setTimeout(resolve, GROUP_LAUNCH_DELAY_MS));
+      }
     }
   }
 
@@ -219,6 +259,7 @@ async function executeGroup(
       total: group.itemNames.length,
       success: successCount,
       error: errorCount,
+      mode: parallelLaunch ? '並列' : '順次',
     },
     'グループ実行完了'
   );

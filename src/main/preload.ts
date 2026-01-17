@@ -139,6 +139,38 @@ import {
   WORKSPACE_GET_OPACITY,
   WORKSPACE_SET_SIZE,
   WORKSPACE_SET_POSITION_AND_SIZE,
+  // コンテキストメニュー
+  SHOW_ADMIN_ITEM_CONTEXT_MENU,
+  EVENT_ADMIN_MENU_DUPLICATE_ITEMS,
+  EVENT_ADMIN_MENU_EDIT_ITEM,
+  EVENT_ADMIN_MENU_DELETE_ITEMS,
+  SHOW_LAUNCHER_CONTEXT_MENU,
+  EVENT_LAUNCHER_MENU_EDIT_ITEM,
+  EVENT_LAUNCHER_MENU_ADD_TO_WORKSPACE,
+  EVENT_LAUNCHER_MENU_COPY_PATH,
+  EVENT_LAUNCHER_MENU_COPY_PARENT_PATH,
+  EVENT_LAUNCHER_MENU_OPEN_PARENT_FOLDER,
+  EVENT_LAUNCHER_MENU_COPY_SHORTCUT_PATH,
+  EVENT_LAUNCHER_MENU_COPY_SHORTCUT_PARENT_PATH,
+  EVENT_LAUNCHER_MENU_OPEN_SHORTCUT_PARENT_FOLDER,
+  SHOW_WORKSPACE_CONTEXT_MENU,
+  EVENT_WORKSPACE_MENU_RENAME_ITEM,
+  EVENT_WORKSPACE_MENU_LAUNCH_ITEM,
+  EVENT_WORKSPACE_MENU_COPY_PATH,
+  EVENT_WORKSPACE_MENU_COPY_PARENT_PATH,
+  EVENT_WORKSPACE_MENU_OPEN_PARENT_FOLDER,
+  EVENT_WORKSPACE_MENU_COPY_SHORTCUT_PATH,
+  EVENT_WORKSPACE_MENU_COPY_SHORTCUT_PARENT_PATH,
+  EVENT_WORKSPACE_MENU_OPEN_SHORTCUT_PARENT_FOLDER,
+  EVENT_WORKSPACE_MENU_REMOVE_FROM_GROUP,
+  EVENT_WORKSPACE_MENU_REMOVE_ITEM,
+  SHOW_WORKSPACE_GROUP_CONTEXT_MENU,
+  EVENT_WORKSPACE_GROUP_MENU_RENAME,
+  EVENT_WORKSPACE_GROUP_MENU_SHOW_COLOR_PICKER,
+  EVENT_WORKSPACE_GROUP_MENU_CHANGE_COLOR,
+  EVENT_WORKSPACE_GROUP_MENU_COPY_AS_TEXT,
+  EVENT_WORKSPACE_GROUP_MENU_ARCHIVE,
+  EVENT_WORKSPACE_GROUP_MENU_DELETE,
 } from '@common/ipcChannels.js';
 
 interface RegisterItem {
@@ -392,5 +424,154 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke(WORKSPACE_SET_POSITION_AND_SIZE, x, y, width, height),
     // ウィンドウ制御
     hideWindow: (): Promise<boolean> => ipcRenderer.invoke(WORKSPACE_HIDE_WINDOW),
+  },
+  // コンテキストメニュー表示API
+  showAdminItemContextMenu: (selectedCount: number, isSingleLine: boolean): Promise<void> =>
+    ipcRenderer.invoke(SHOW_ADMIN_ITEM_CONTEXT_MENU, selectedCount, isSingleLine),
+  // AdminItemManagerContextMenuイベントリスナー
+  onAdminMenuDuplicateItems: (callback: () => void) => {
+    const listener = () => callback();
+    ipcRenderer.on(EVENT_ADMIN_MENU_DUPLICATE_ITEMS, listener);
+    return () => ipcRenderer.removeListener(EVENT_ADMIN_MENU_DUPLICATE_ITEMS, listener);
+  },
+  onAdminMenuEditItem: (callback: () => void) => {
+    const listener = () => callback();
+    ipcRenderer.on(EVENT_ADMIN_MENU_EDIT_ITEM, listener);
+    return () => ipcRenderer.removeListener(EVENT_ADMIN_MENU_EDIT_ITEM, listener);
+  },
+  onAdminMenuDeleteItems: (callback: () => void) => {
+    const listener = () => callback();
+    ipcRenderer.on(EVENT_ADMIN_MENU_DELETE_ITEMS, listener);
+    return () => ipcRenderer.removeListener(EVENT_ADMIN_MENU_DELETE_ITEMS, listener);
+  },
+  // LauncherContextMenu
+  showLauncherContextMenu: (item: AppItem): Promise<void> =>
+    ipcRenderer.invoke(SHOW_LAUNCHER_CONTEXT_MENU, item),
+  onLauncherMenuEditItem: (callback: (item: AppItem) => void) => {
+    const listener = (_event: unknown, item: AppItem) => callback(item);
+    ipcRenderer.on(EVENT_LAUNCHER_MENU_EDIT_ITEM, listener);
+    return () => ipcRenderer.removeListener(EVENT_LAUNCHER_MENU_EDIT_ITEM, listener);
+  },
+  onLauncherMenuAddToWorkspace: (callback: (item: AppItem) => void) => {
+    const listener = (_event: unknown, item: AppItem) => callback(item);
+    ipcRenderer.on(EVENT_LAUNCHER_MENU_ADD_TO_WORKSPACE, listener);
+    return () => ipcRenderer.removeListener(EVENT_LAUNCHER_MENU_ADD_TO_WORKSPACE, listener);
+  },
+  onLauncherMenuCopyPath: (callback: (item: AppItem) => void) => {
+    const listener = (_event: unknown, item: AppItem) => callback(item);
+    ipcRenderer.on(EVENT_LAUNCHER_MENU_COPY_PATH, listener);
+    return () => ipcRenderer.removeListener(EVENT_LAUNCHER_MENU_COPY_PATH, listener);
+  },
+  onLauncherMenuCopyParentPath: (callback: (item: AppItem) => void) => {
+    const listener = (_event: unknown, item: AppItem) => callback(item);
+    ipcRenderer.on(EVENT_LAUNCHER_MENU_COPY_PARENT_PATH, listener);
+    return () => ipcRenderer.removeListener(EVENT_LAUNCHER_MENU_COPY_PARENT_PATH, listener);
+  },
+  onLauncherMenuOpenParentFolder: (callback: (item: AppItem) => void) => {
+    const listener = (_event: unknown, item: AppItem) => callback(item);
+    ipcRenderer.on(EVENT_LAUNCHER_MENU_OPEN_PARENT_FOLDER, listener);
+    return () => ipcRenderer.removeListener(EVENT_LAUNCHER_MENU_OPEN_PARENT_FOLDER, listener);
+  },
+  onLauncherMenuCopyShortcutPath: (callback: (item: AppItem) => void) => {
+    const listener = (_event: unknown, item: AppItem) => callback(item);
+    ipcRenderer.on(EVENT_LAUNCHER_MENU_COPY_SHORTCUT_PATH, listener);
+    return () => ipcRenderer.removeListener(EVENT_LAUNCHER_MENU_COPY_SHORTCUT_PATH, listener);
+  },
+  onLauncherMenuCopyShortcutParentPath: (callback: (item: AppItem) => void) => {
+    const listener = (_event: unknown, item: AppItem) => callback(item);
+    ipcRenderer.on(EVENT_LAUNCHER_MENU_COPY_SHORTCUT_PARENT_PATH, listener);
+    return () => ipcRenderer.removeListener(EVENT_LAUNCHER_MENU_COPY_SHORTCUT_PARENT_PATH, listener);
+  },
+  onLauncherMenuOpenShortcutParentFolder: (callback: (item: AppItem) => void) => {
+    const listener = (_event: unknown, item: AppItem) => callback(item);
+    ipcRenderer.on(EVENT_LAUNCHER_MENU_OPEN_SHORTCUT_PARENT_FOLDER, listener);
+    return () => ipcRenderer.removeListener(EVENT_LAUNCHER_MENU_OPEN_SHORTCUT_PARENT_FOLDER, listener);
+  },
+  // WorkspaceContextMenu
+  showWorkspaceContextMenu: (item: WorkspaceItem, groups: WorkspaceGroup[]): Promise<void> =>
+    ipcRenderer.invoke(SHOW_WORKSPACE_CONTEXT_MENU, item, groups),
+  onWorkspaceMenuRenameItem: (callback: (itemId: string) => void) => {
+    const listener = (_event: unknown, itemId: string) => callback(itemId);
+    ipcRenderer.on(EVENT_WORKSPACE_MENU_RENAME_ITEM, listener);
+    return () => ipcRenderer.removeListener(EVENT_WORKSPACE_MENU_RENAME_ITEM, listener);
+  },
+  onWorkspaceMenuLaunchItem: (callback: (itemId: string) => void) => {
+    const listener = (_event: unknown, itemId: string) => callback(itemId);
+    ipcRenderer.on(EVENT_WORKSPACE_MENU_LAUNCH_ITEM, listener);
+    return () => ipcRenderer.removeListener(EVENT_WORKSPACE_MENU_LAUNCH_ITEM, listener);
+  },
+  onWorkspaceMenuCopyPath: (callback: (itemId: string) => void) => {
+    const listener = (_event: unknown, itemId: string) => callback(itemId);
+    ipcRenderer.on(EVENT_WORKSPACE_MENU_COPY_PATH, listener);
+    return () => ipcRenderer.removeListener(EVENT_WORKSPACE_MENU_COPY_PATH, listener);
+  },
+  onWorkspaceMenuCopyParentPath: (callback: (itemId: string) => void) => {
+    const listener = (_event: unknown, itemId: string) => callback(itemId);
+    ipcRenderer.on(EVENT_WORKSPACE_MENU_COPY_PARENT_PATH, listener);
+    return () => ipcRenderer.removeListener(EVENT_WORKSPACE_MENU_COPY_PARENT_PATH, listener);
+  },
+  onWorkspaceMenuOpenParentFolder: (callback: (itemId: string) => void) => {
+    const listener = (_event: unknown, itemId: string) => callback(itemId);
+    ipcRenderer.on(EVENT_WORKSPACE_MENU_OPEN_PARENT_FOLDER, listener);
+    return () => ipcRenderer.removeListener(EVENT_WORKSPACE_MENU_OPEN_PARENT_FOLDER, listener);
+  },
+  onWorkspaceMenuCopyShortcutPath: (callback: (itemId: string) => void) => {
+    const listener = (_event: unknown, itemId: string) => callback(itemId);
+    ipcRenderer.on(EVENT_WORKSPACE_MENU_COPY_SHORTCUT_PATH, listener);
+    return () => ipcRenderer.removeListener(EVENT_WORKSPACE_MENU_COPY_SHORTCUT_PATH, listener);
+  },
+  onWorkspaceMenuCopyShortcutParentPath: (callback: (itemId: string) => void) => {
+    const listener = (_event: unknown, itemId: string) => callback(itemId);
+    ipcRenderer.on(EVENT_WORKSPACE_MENU_COPY_SHORTCUT_PARENT_PATH, listener);
+    return () => ipcRenderer.removeListener(EVENT_WORKSPACE_MENU_COPY_SHORTCUT_PARENT_PATH, listener);
+  },
+  onWorkspaceMenuOpenShortcutParentFolder: (callback: (itemId: string) => void) => {
+    const listener = (_event: unknown, itemId: string) => callback(itemId);
+    ipcRenderer.on(EVENT_WORKSPACE_MENU_OPEN_SHORTCUT_PARENT_FOLDER, listener);
+    return () => ipcRenderer.removeListener(EVENT_WORKSPACE_MENU_OPEN_SHORTCUT_PARENT_FOLDER, listener);
+  },
+  onWorkspaceMenuRemoveFromGroup: (callback: (itemId: string) => void) => {
+    const listener = (_event: unknown, itemId: string) => callback(itemId);
+    ipcRenderer.on(EVENT_WORKSPACE_MENU_REMOVE_FROM_GROUP, listener);
+    return () => ipcRenderer.removeListener(EVENT_WORKSPACE_MENU_REMOVE_FROM_GROUP, listener);
+  },
+  onWorkspaceMenuRemoveItem: (callback: (itemId: string) => void) => {
+    const listener = (_event: unknown, itemId: string) => callback(itemId);
+    ipcRenderer.on(EVENT_WORKSPACE_MENU_REMOVE_ITEM, listener);
+    return () => ipcRenderer.removeListener(EVENT_WORKSPACE_MENU_REMOVE_ITEM, listener);
+  },
+  // WorkspaceGroupContextMenu
+  showWorkspaceGroupContextMenu: (group: WorkspaceGroup): Promise<void> =>
+    ipcRenderer.invoke(SHOW_WORKSPACE_GROUP_CONTEXT_MENU, group),
+  onWorkspaceGroupMenuRename: (callback: (groupId: string) => void) => {
+    const listener = (_event: unknown, groupId: string) => callback(groupId);
+    ipcRenderer.on(EVENT_WORKSPACE_GROUP_MENU_RENAME, listener);
+    return () => ipcRenderer.removeListener(EVENT_WORKSPACE_GROUP_MENU_RENAME, listener);
+  },
+  onWorkspaceGroupMenuShowColorPicker: (callback: (groupId: string) => void) => {
+    const listener = (_event: unknown, groupId: string) => callback(groupId);
+    ipcRenderer.on(EVENT_WORKSPACE_GROUP_MENU_SHOW_COLOR_PICKER, listener);
+    return () =>
+      ipcRenderer.removeListener(EVENT_WORKSPACE_GROUP_MENU_SHOW_COLOR_PICKER, listener);
+  },
+  onWorkspaceGroupMenuChangeColor: (callback: (groupId: string, color: string) => void) => {
+    const listener = (_event: unknown, groupId: string, color: string) => callback(groupId, color);
+    ipcRenderer.on(EVENT_WORKSPACE_GROUP_MENU_CHANGE_COLOR, listener);
+    return () => ipcRenderer.removeListener(EVENT_WORKSPACE_GROUP_MENU_CHANGE_COLOR, listener);
+  },
+  onWorkspaceGroupMenuCopyAsText: (callback: (groupId: string) => void) => {
+    const listener = (_event: unknown, groupId: string) => callback(groupId);
+    ipcRenderer.on(EVENT_WORKSPACE_GROUP_MENU_COPY_AS_TEXT, listener);
+    return () => ipcRenderer.removeListener(EVENT_WORKSPACE_GROUP_MENU_COPY_AS_TEXT, listener);
+  },
+  onWorkspaceGroupMenuArchive: (callback: (groupId: string) => void) => {
+    const listener = (_event: unknown, groupId: string) => callback(groupId);
+    ipcRenderer.on(EVENT_WORKSPACE_GROUP_MENU_ARCHIVE, listener);
+    return () => ipcRenderer.removeListener(EVENT_WORKSPACE_GROUP_MENU_ARCHIVE, listener);
+  },
+  onWorkspaceGroupMenuDelete: (callback: (groupId: string) => void) => {
+    const listener = (_event: unknown, groupId: string) => callback(groupId);
+    ipcRenderer.on(EVENT_WORKSPACE_GROUP_MENU_DELETE, listener);
+    return () => ipcRenderer.removeListener(EVENT_WORKSPACE_GROUP_MENU_DELETE, listener);
   },
 });

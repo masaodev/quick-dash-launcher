@@ -153,6 +153,43 @@ export const EVENT_ICON_PROGRESS_START = 'icon-progress-start';
 export const EVENT_ICON_PROGRESS_UPDATE = 'icon-progress-update';
 export const EVENT_ICON_PROGRESS_COMPLETE = 'icon-progress-complete';
 
+// コンテキストメニュー
+export const SHOW_ADMIN_ITEM_CONTEXT_MENU = 'show-admin-item-context-menu';
+export const EVENT_ADMIN_MENU_DUPLICATE_ITEMS = 'admin-menu-duplicate-items';
+export const EVENT_ADMIN_MENU_EDIT_ITEM = 'admin-menu-edit-item';
+export const EVENT_ADMIN_MENU_DELETE_ITEMS = 'admin-menu-delete-items';
+
+export const SHOW_LAUNCHER_CONTEXT_MENU = 'show-launcher-context-menu';
+export const EVENT_LAUNCHER_MENU_EDIT_ITEM = 'launcher-menu-edit-item';
+export const EVENT_LAUNCHER_MENU_ADD_TO_WORKSPACE = 'launcher-menu-add-to-workspace';
+export const EVENT_LAUNCHER_MENU_COPY_PATH = 'launcher-menu-copy-path';
+export const EVENT_LAUNCHER_MENU_COPY_PARENT_PATH = 'launcher-menu-copy-parent-path';
+export const EVENT_LAUNCHER_MENU_OPEN_PARENT_FOLDER = 'launcher-menu-open-parent-folder';
+export const EVENT_LAUNCHER_MENU_COPY_SHORTCUT_PATH = 'launcher-menu-copy-shortcut-path';
+export const EVENT_LAUNCHER_MENU_COPY_SHORTCUT_PARENT_PATH = 'launcher-menu-copy-shortcut-parent-path';
+export const EVENT_LAUNCHER_MENU_OPEN_SHORTCUT_PARENT_FOLDER = 'launcher-menu-open-shortcut-parent-folder';
+
+export const SHOW_WORKSPACE_CONTEXT_MENU = 'show-workspace-context-menu';
+export const EVENT_WORKSPACE_MENU_RENAME_ITEM = 'workspace-menu-rename-item';
+export const EVENT_WORKSPACE_MENU_LAUNCH_ITEM = 'workspace-menu-launch-item';
+export const EVENT_WORKSPACE_MENU_COPY_PATH = 'workspace-menu-copy-path';
+export const EVENT_WORKSPACE_MENU_COPY_PARENT_PATH = 'workspace-menu-copy-parent-path';
+export const EVENT_WORKSPACE_MENU_OPEN_PARENT_FOLDER = 'workspace-menu-open-parent-folder';
+export const EVENT_WORKSPACE_MENU_COPY_SHORTCUT_PATH = 'workspace-menu-copy-shortcut-path';
+export const EVENT_WORKSPACE_MENU_COPY_SHORTCUT_PARENT_PATH = 'workspace-menu-copy-shortcut-parent-path';
+export const EVENT_WORKSPACE_MENU_OPEN_SHORTCUT_PARENT_FOLDER = 'workspace-menu-open-shortcut-parent-folder';
+export const EVENT_WORKSPACE_MENU_REMOVE_FROM_GROUP = 'workspace-menu-remove-from-group';
+export const EVENT_WORKSPACE_MENU_REMOVE_ITEM = 'workspace-menu-remove-item';
+
+export const SHOW_WORKSPACE_GROUP_CONTEXT_MENU = 'show-workspace-group-context-menu';
+export const EVENT_WORKSPACE_GROUP_MENU_RENAME = 'workspace-group-menu-rename';
+export const EVENT_WORKSPACE_GROUP_MENU_SHOW_COLOR_PICKER =
+  'workspace-group-menu-show-color-picker';
+export const EVENT_WORKSPACE_GROUP_MENU_CHANGE_COLOR = 'workspace-group-menu-change-color';
+export const EVENT_WORKSPACE_GROUP_MENU_COPY_AS_TEXT = 'workspace-group-menu-copy-as-text';
+export const EVENT_WORKSPACE_GROUP_MENU_ARCHIVE = 'workspace-group-menu-archive';
+export const EVENT_WORKSPACE_GROUP_MENU_DELETE = 'workspace-group-menu-delete';
+
 /**
  * すべてのIPCチャネル定数をまとめたオブジェクト
  * 型安全な使用のために利用可能

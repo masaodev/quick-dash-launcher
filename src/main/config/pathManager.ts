@@ -140,6 +140,23 @@ export class PathManager {
   }
 
   /**
+   * アプリケーションアイコンのパスを取得
+   * 開発モード時は専用のアイコン（icon-dev.ico）を使用
+   * @returns アイコンファイルの絶対パス
+   */
+  static getAppIconPath(): string {
+    const iconFileName = EnvConfig.isDevelopment ? 'icon-dev.ico' : 'icon.ico';
+
+    // 開発モードではプロジェクトルートから、本番モードでは__dirnameから相対パスで取得
+    if (EnvConfig.isDevelopment) {
+      return path.join(process.cwd(), 'assets', iconFileName);
+    } else {
+      // 本番モード: 全てのファイルがdist/main/main.jsにバンドルされるため、2階層上がってassetsフォルダへ
+      return path.join(__dirname, '../../assets', iconFileName);
+    }
+  }
+
+  /**
    * 必要なディレクトリを作成
    */
   static ensureDirectories(): void {

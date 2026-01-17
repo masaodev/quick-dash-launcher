@@ -217,11 +217,6 @@ const App: React.FC = () => {
           await loadExecutionHistory();
         }
       }
-
-      // アイテム実行後に検索テキストをクリア（ピン止めモードでない場合のみ）
-      if (windowPinMode === 'normal') {
-        setSearchQuery('');
-      }
     } catch (error) {
       setAlertDialog({
         isOpen: true,
@@ -319,6 +314,7 @@ const App: React.FC = () => {
 
     // ウィンドウが非表示になる際にリセット
     window.electronAPI.onWindowHidden(() => {
+      setSearchQuery(''); // 検索テキストをクリア
       setSearchMode('normal'); // 通常モードに戻す
       setWindowList([]); // ウィンドウリストもクリア
     });
