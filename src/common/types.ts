@@ -63,6 +63,10 @@ export type { WindowInfo } from './types/window';
 // アプリケーション情報
 export type { AppInfo } from './types/app';
 
+// 登録関連の型と関数
+export type { RegisterItem, DirOptions, WindowOperationConfig } from './types/register';
+export { parseDirOptionsFromString, formatDirOptionsToString } from './types/register';
+
 // 型ガード関数をエクスポート（新規追加）
 export {
   isWindowInfo,
@@ -71,4 +75,4 @@ export {
   isWindowOperationItem,
   isWorkspaceItem,
   isDragItemData,
-} from './utils/typeGuards';
+} from './types/guards';

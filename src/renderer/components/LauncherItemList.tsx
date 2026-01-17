@@ -4,7 +4,7 @@ import {
   isWindowInfo,
   isGroupItem,
   isWindowOperationItem,
-} from '@common/utils/typeGuards';
+} from '@common/types/guards';
 import { LauncherItem, GroupItem, AppItem, WindowInfo, WindowOperationItem } from '@common/types';
 
 import { getTooltipText } from '../utils/tooltipTextGenerator';

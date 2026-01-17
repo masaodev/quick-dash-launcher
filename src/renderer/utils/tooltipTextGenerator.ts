@@ -5,7 +5,7 @@ import type {
   WindowOperationItem,
   LauncherItem,
 } from '@common/types';
-import { isWindowInfo, isGroupItem, isWindowOperationItem } from '@common/utils/typeGuards';
+import { isWindowInfo, isGroupItem, isWindowOperationItem } from '@common/types/guards';
 import { PathUtils } from '@common/utils/pathUtils';
 
 /**

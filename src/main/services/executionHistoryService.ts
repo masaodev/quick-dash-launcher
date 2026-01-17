@@ -3,7 +3,7 @@ import { randomUUID } from 'crypto';
 import ElectronStore from 'electron-store';
 import type { AppItem, ExecutionHistoryItem } from '@common/types.js';
 import logger from '@common/logger.js';
-import { isWindowInfo, isLauncherItem, isWindowOperationItem } from '@common/utils/typeGuards.js';
+import { isWindowInfo, isLauncherItem, isWindowOperationItem } from '@common/types/guards.js';
 
 import PathManager from '../config/pathManager.js';
 

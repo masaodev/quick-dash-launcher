@@ -7,9 +7,9 @@ import { parseCSVLine, escapeCSV } from '@common/utils/csvParser';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { parseWindowConfig, serializeWindowConfig } from '@common/utils/windowConfigUtils';
 import { RawDataLine, LauncherItem, GroupItem, WindowOperationItem, AppItem } from '@common/types';
-import { isWindowInfo, isWindowOperationItem } from '@common/utils/typeGuards';
+import type { RegisterItem } from '@common/types/register.js';
+import { isWindowInfo, isWindowOperationItem } from '@common/types/guards.js';
 import { parseWindowOperationDirective } from '@common/utils/directiveUtils';
-import { RegisterItem } from '@common/utils/dataConverters';
 import {
   GET_CONFIG_FOLDER,
   GET_DATA_FILES,

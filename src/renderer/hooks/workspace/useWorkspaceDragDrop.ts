@@ -1,6 +1,6 @@
 import React from 'react';
 import type { DragItemData } from '@common/types';
-import { isDragItemData } from '@common/utils/typeGuards';
+import { isDragItemData } from '@common/types/guards';
 
 import { logError } from '../../utils/debug';
 

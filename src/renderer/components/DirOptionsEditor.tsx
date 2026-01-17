@@ -1,5 +1,5 @@
 import React from 'react';
-import { type RegisterItem } from '@common/utils/dataConverters';
+import type { RegisterItem } from '@common/types';
 
 interface DirOptionsEditorProps {
   dirOptions: RegisterItem['dirOptions'];

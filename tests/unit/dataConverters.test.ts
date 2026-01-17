@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { convertRegisterItemToRawDataLine, type RegisterItem } from '@common/utils/dataConverters';
+import { convertRegisterItemToRawDataLine } from '@common/utils/dataConverters';
+import type { RegisterItem } from '@common/types';
 import type { RawDataLine } from '@common/types';
 
 describe('convertRegisterItemToRawDataLine', () => {

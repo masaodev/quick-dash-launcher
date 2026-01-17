@@ -6,7 +6,14 @@
  */
 
 // ランチャー関連の型
-export type { WindowConfig, LauncherItem, LauncherItemNew, GroupItem, AppItem } from './launcher';
+export type {
+  WindowConfig,
+  LauncherItem,
+  LauncherItemNew,
+  GroupItem,
+  WindowOperationItem,
+  AppItem,
+} from './launcher';
 
 // ワークスペース関連の型
 export type {
@@ -43,3 +50,17 @@ export type { WindowInfo } from './window';
 
 // アプリケーション情報
 export type { AppInfo } from './app';
+
+// 登録関連の型と関数
+export type { RegisterItem, DirOptions, WindowOperationConfig } from './register';
+export { parseDirOptionsFromString, formatDirOptionsToString } from './register';
+
+// 型ガード関数
+export {
+  isWindowInfo,
+  isLauncherItem,
+  isGroupItem,
+  isWindowOperationItem,
+  isWorkspaceItem,
+  isDragItemData,
+} from './guards';

@@ -8,11 +8,10 @@ import type {
   AppItem,
   GroupItem,
   LauncherItem,
-  WindowInfo,
   WindowOperationItem,
-  WorkspaceItem,
-  DragItemData,
-} from '../types';
+} from './launcher';
+import type { WindowInfo } from './window';
+import type { WorkspaceItem, DragItemData } from './workspace';
 
 /**
  * WindowInfoかどうかを判定する型ガード

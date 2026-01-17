@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { RawDataLine, SimpleBookmarkItem, DataFileTab } from '@common/types';
-import { convertRegisterItemToRawDataLine, type RegisterItem } from '@common/utils/dataConverters';
+import { convertRegisterItemToRawDataLine } from '@common/utils/dataConverters';
+import type { RegisterItem } from '@common/types';
 import { parseCSVLine } from '@common/utils/csvParser';
 
 import { logError } from '../utils/debug';
