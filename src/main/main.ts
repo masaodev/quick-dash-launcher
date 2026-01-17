@@ -49,7 +49,11 @@ if (EnvConfig.hasAppInstance) {
 
 // 開発モード時にリモートデバッグポートを有効化（Playwright MCP用）
 if (EnvConfig.isDevelopment) {
-  app.commandLine.appendSwitch('--remote-debugging-port', '9222');
+  // APP_INSTANCEごとに異なるポートを使用してポート競合を回避
+  // dev:testはPlaywright MCP用に固定ポート9222を使用、それ以外は動的割り当て
+  const isTestMode = EnvConfig.customConfigDir?.includes('tests/dev/full');
+  const debugPort = isTestMode ? '9222' : '0'; // 0 = 自動的に空いているポートを割り当て
+  app.commandLine.appendSwitch('--remote-debugging-port', debugPort);
 }
 
 app.whenReady().then(async () => {
