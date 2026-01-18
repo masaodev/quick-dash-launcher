@@ -16,6 +16,20 @@ import {
   isPinnedWindow,
 } from '../utils/virtualDesktop/index.js';
 
+/**
+ * QuickDashLauncher自身のウィンドウを除外したウィンドウリストを返す
+ */
+function excludeMainWindow(windows: WindowInfo[], mainWindow: BrowserWindow | null): WindowInfo[] {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    return windows;
+  }
+
+  const mainHwnd = mainWindow.getNativeWindowHandle();
+  const mainHwndValue = mainHwnd.readBigInt64LE(0);
+
+  return windows.filter((win) => win.hwnd !== mainHwndValue);
+}
+
 export function setupWindowSearchHandlers(
   getMainWindow: () => BrowserWindow | null,
   getWindowPinMode: () => WindowPinMode
@@ -26,20 +40,7 @@ export function setupWindowSearchHandlers(
   ipcMain.handle(IPC_CHANNELS.GET_ALL_WINDOWS, async (): Promise<WindowInfo[]> => {
     try {
       const windows = getAllWindows();
-
-      // QuickDashLauncher自身のウィンドウを除外
-      const mainWindow = getMainWindow();
-      if (!mainWindow || mainWindow.isDestroyed()) {
-        return windows;
-      }
-
-      const mainHwnd = mainWindow.getNativeWindowHandle();
-      const mainHwndValue = mainHwnd.readBigInt64LE(0);
-
-      const filteredWindows = windows.filter((win) => win.hwnd !== mainHwndValue);
-
-      // アイコンは既にgetAllWindows()で取得済み
-      return filteredWindows;
+      return excludeMainWindow(windows, getMainWindow());
     } catch (error) {
       console.error('Failed to get window list:', error);
       return [];
@@ -52,19 +53,7 @@ export function setupWindowSearchHandlers(
   ipcMain.handle(IPC_CHANNELS.GET_ALL_WINDOWS_ALL_DESKTOPS, async (): Promise<WindowInfo[]> => {
     try {
       const windows = getAllWindows({ includeAllVirtualDesktops: true });
-
-      // QuickDashLauncher自身のウィンドウを除外
-      const mainWindow = getMainWindow();
-      if (!mainWindow || mainWindow.isDestroyed()) {
-        return windows;
-      }
-
-      const mainHwnd = mainWindow.getNativeWindowHandle();
-      const mainHwndValue = mainHwnd.readBigInt64LE(0);
-
-      const filteredWindows = windows.filter((win) => win.hwnd !== mainHwndValue);
-
-      return filteredWindows;
+      return excludeMainWindow(windows, getMainWindow());
     } catch (error) {
       console.error('Failed to get window list (all desktops):', error);
       return [];

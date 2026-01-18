@@ -8,6 +8,17 @@ interface SearchBoxProps {
   searchMode?: SearchMode;
 }
 
+function getSearchModeLabel(mode: SearchMode): string {
+  switch (mode) {
+    case 'window':
+      return 'ウィンドウ検索モード';
+    case 'history':
+      return '実行履歴検索モード';
+    default:
+      return '通常モード';
+  }
+}
+
 const LauncherSearchBox = forwardRef<HTMLInputElement, SearchBoxProps>(
   ({ value, onChange, onKeyDown, searchMode = 'normal' }, ref) => {
     const inputRef = useRef<HTMLInputElement>(null);
@@ -45,12 +56,7 @@ const LauncherSearchBox = forwardRef<HTMLInputElement, SearchBoxProps>(
         </div>
 
         <div className="search-mode-indicator">
-          {searchMode === 'window'
-            ? 'ウィンドウ検索モード'
-            : searchMode === 'history'
-              ? '実行履歴検索モード'
-              : '通常モード'}{' '}
-          (Shift+Tabで切り替え)
+          {getSearchModeLabel(searchMode)} (Shift+Tabで切り替え)
         </div>
       </div>
     );

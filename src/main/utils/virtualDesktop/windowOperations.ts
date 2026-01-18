@@ -19,6 +19,14 @@ import {
 import { isVirtualDesktopSupported, getVirtualDesktopGUIDs } from './registryAccess.js';
 
 /**
+ * DLL関数の戻り値をbooleanに変換
+ * boolean型の場合はそのまま、数値の場合は0以外をtrueとして扱う
+ */
+function toBooleanResult(result: boolean | number): boolean {
+  return typeof result === 'boolean' ? result : result !== 0;
+}
+
+/**
  * 現在の仮想デスクトップ番号を取得
  * @returns デスクトップ番号（1から開始）。失敗時は-1
  */
@@ -99,8 +107,7 @@ export function moveWindowToVirtualDesktop(hwnd: number | bigint, desktopNumber:
 
     debugLog('[WindowOps] 実行結果:', result, '型:', typeof result);
 
-    // 戻り値の型に応じて処理
-    const success = typeof result === 'boolean' ? result : result !== 0;
+    const success = toBooleanResult(result);
 
     if (success) {
       debugLog('[WindowOps] ウィンドウ移動成功');
@@ -148,9 +155,7 @@ export function isWindowOnDesktopNumber(hwnd: number | bigint, desktopNumber: nu
 
   try {
     const result = isWindowOnDesktopNumberFn(hwndValue, desktopIndex);
-
-    // 戻り値の型に応じて処理
-    const isOnDesktop = typeof result === 'boolean' ? result : result !== 0;
+    const isOnDesktop = toBooleanResult(result);
 
     debugLog(
       '[WindowOps] isWindowOnDesktopNumber チェック結果:',
@@ -248,15 +253,14 @@ export function pinWindow(hwnd: number | bigint): boolean {
 
   try {
     const result = pinWindowFn(hwndValue);
-    const success = typeof result === 'boolean' ? result : result !== 0;
+    const success = toBooleanResult(result);
 
     if (success) {
       debugLog('[WindowOps] ウィンドウ固定成功');
-      return true;
     } else {
       console.error(`[WindowOps] ウィンドウ固定失敗。戻り値: ${result}`);
-      return false;
     }
+    return success;
   } catch (error) {
     console.error('[WindowOps] pinWindow例外発生:', error);
     return false;
@@ -284,15 +288,14 @@ export function unPinWindow(hwnd: number | bigint): boolean {
 
   try {
     const result = unPinWindowFn(hwndValue);
-    const success = typeof result === 'boolean' ? result : result !== 0;
+    const success = toBooleanResult(result);
 
     if (success) {
       debugLog('[WindowOps] ウィンドウ固定解除成功');
-      return true;
     } else {
       console.error(`[WindowOps] ウィンドウ固定解除失敗。戻り値: ${result}`);
-      return false;
     }
+    return success;
   } catch (error) {
     console.error('[WindowOps] unPinWindow例外発生:', error);
     return false;
@@ -318,7 +321,7 @@ export function isPinnedWindow(hwnd: number | bigint): boolean {
 
   try {
     const result = isPinnedWindowFn(hwndValue);
-    const isPinned = typeof result === 'boolean' ? result : result !== 0;
+    const isPinned = toBooleanResult(result);
 
     debugLog('[WindowOps] isPinnedWindow チェック結果:', isPinned);
     return isPinned;

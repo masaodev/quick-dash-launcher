@@ -18,6 +18,16 @@ interface DesktopTab {
   count: number;
 }
 
+function getTabTooltip(tabId: number): string {
+  if (tabId === 0) {
+    return 'すべてのデスクトップのウィンドウ';
+  }
+  if (tabId === -1) {
+    return 'デスクトップ番号が不明なウィンドウ';
+  }
+  return `デスクトップ ${tabId} のウィンドウ`;
+}
+
 /**
  * ウィンドウ検索モード用デスクトップタブバーコンポーネント
  * 仮想デスクトップごとにウィンドウをタブで切り替え可能にする
@@ -64,13 +74,7 @@ const LauncherDesktopTabBar: React.FC<DesktopTabBarProps> = ({
           key={tab.id}
           className={`desktop-tab-button ${activeDesktopTab === tab.id ? 'active' : ''}`}
           onClick={() => onTabChange(tab.id)}
-          title={
-            tab.id === 0
-              ? 'すべてのデスクトップのウィンドウ'
-              : tab.id === -1
-                ? 'デスクトップ番号が不明なウィンドウ'
-                : `デスクトップ ${tab.id} のウィンドウ`
-          }
+          title={getTabTooltip(tab.id)}
         >
           {tab.label}
           <span className="tab-count">({tab.count})</span>
