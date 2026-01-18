@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { convertLauncherItemToRawDataLine } from '@common/utils/dataConverters';
 import type { RegisterItem } from '@common/types';
 import { escapeCSV } from '@common/utils/csvParser';
+import { buildWindowOperationConfig } from '@common/utils/windowConfigUtils';
 import {
   LauncherItem,
   AppItem,
@@ -433,24 +434,20 @@ const App: React.FC = () => {
           const cfg = item.windowOperationConfig;
           if (!cfg) throw new Error('windowOperationConfig is required for window items');
 
-          // JSON形式で設定を保存
-          const config: Record<string, string | number | boolean> = {
+          // 共通ヘルパーを使用してJSON設定を構築
+          const config = buildWindowOperationConfig({
             name: item.name,
             windowTitle: cfg.windowTitle,
-          };
-
-          // オプションフィールドは値がある場合のみ追加
-          if (cfg.processName !== undefined) config.processName = cfg.processName;
-          if (cfg.x !== undefined) config.x = cfg.x;
-          if (cfg.y !== undefined) config.y = cfg.y;
-          if (cfg.width !== undefined) config.width = cfg.width;
-          if (cfg.height !== undefined) config.height = cfg.height;
-          if (cfg.moveToActiveMonitorCenter !== undefined)
-            config.moveToActiveMonitorCenter = cfg.moveToActiveMonitorCenter;
-          if (cfg.virtualDesktopNumber !== undefined)
-            config.virtualDesktopNumber = cfg.virtualDesktopNumber;
-          if (cfg.activateWindow !== undefined) config.activateWindow = cfg.activateWindow;
-          if (cfg.pinToAllDesktops !== undefined) config.pinToAllDesktops = cfg.pinToAllDesktops;
+            processName: cfg.processName,
+            x: cfg.x,
+            y: cfg.y,
+            width: cfg.width,
+            height: cfg.height,
+            moveToActiveMonitorCenter: cfg.moveToActiveMonitorCenter,
+            virtualDesktopNumber: cfg.virtualDesktopNumber,
+            activateWindow: cfg.activateWindow,
+            pinToAllDesktops: cfg.pinToAllDesktops,
+          });
 
           const newContent = `window,${escapeCSV(JSON.stringify(config))}`;
 
@@ -565,24 +562,20 @@ const App: React.FC = () => {
     if (isWindowOperationItem(item)) {
       const windowOp = item;
 
-      // JSON形式で設定を構築
-      const config: Record<string, string | number | boolean> = {
+      // 共通ヘルパーを使用してJSON設定を構築
+      const config = buildWindowOperationConfig({
         name: windowOp.name,
         windowTitle: windowOp.windowTitle,
-      };
-
-      // オプションフィールドは値がある場合のみ追加
-      if (windowOp.processName !== undefined) config.processName = windowOp.processName;
-      if (windowOp.x !== undefined) config.x = windowOp.x;
-      if (windowOp.y !== undefined) config.y = windowOp.y;
-      if (windowOp.width !== undefined) config.width = windowOp.width;
-      if (windowOp.height !== undefined) config.height = windowOp.height;
-      if (windowOp.moveToActiveMonitorCenter !== undefined)
-        config.moveToActiveMonitorCenter = windowOp.moveToActiveMonitorCenter;
-      if (windowOp.virtualDesktopNumber !== undefined)
-        config.virtualDesktopNumber = windowOp.virtualDesktopNumber;
-      if (windowOp.activateWindow !== undefined) config.activateWindow = windowOp.activateWindow;
-      if (windowOp.pinToAllDesktops !== undefined) config.pinToAllDesktops = windowOp.pinToAllDesktops;
+        processName: windowOp.processName,
+        x: windowOp.x,
+        y: windowOp.y,
+        width: windowOp.width,
+        height: windowOp.height,
+        moveToActiveMonitorCenter: windowOp.moveToActiveMonitorCenter,
+        virtualDesktopNumber: windowOp.virtualDesktopNumber,
+        activateWindow: windowOp.activateWindow,
+        pinToAllDesktops: windowOp.pinToAllDesktops,
+      });
 
       // JSON形式のコンテンツを作成
       const content = `window,${escapeCSV(JSON.stringify(config))}`;

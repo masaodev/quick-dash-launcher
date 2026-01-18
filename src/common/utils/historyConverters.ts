@@ -11,19 +11,26 @@ import type {
 } from '../types';
 
 /**
+ * windowConfig関連のプロパティ名リスト
+ */
+const WINDOW_CONFIG_PROPERTIES = [
+  'processName',
+  'windowX',
+  'windowY',
+  'windowWidth',
+  'windowHeight',
+  'virtualDesktopNumber',
+  'activateWindow',
+  'moveToActiveMonitorCenter',
+  'pinToAllDesktops',
+] as const;
+
+/**
  * ExecutionHistoryItemにwindowConfig関連の情報が含まれているか判定
  */
 export function hasWindowConfig(item: ExecutionHistoryItem): boolean {
-  return (
-    item.processName !== undefined ||
-    item.windowX !== undefined ||
-    item.windowY !== undefined ||
-    item.windowWidth !== undefined ||
-    item.windowHeight !== undefined ||
-    item.virtualDesktopNumber !== undefined ||
-    item.activateWindow !== undefined ||
-    item.moveToActiveMonitorCenter !== undefined ||
-    item.pinToAllDesktops !== undefined
+  return WINDOW_CONFIG_PROPERTIES.some(
+    (prop) => item[prop as keyof ExecutionHistoryItem] !== undefined
   );
 }
 

@@ -74,6 +74,65 @@ interface Bounds {
 }
 
 /**
+ * アクティブモニター中央座標を計算する
+ *
+ * @param hwnd ウィンドウハンドル
+ * @param itemName アイテム名（ログ出力用）
+ * @param windowConfig ウィンドウ設定（ログ出力用）
+ * @param logger ロガーインスタンス
+ * @returns 計算された中央座標、または計算失敗時はundefined
+ */
+function calculateActiveMonitorCenter(
+  hwnd: bigint | number,
+  itemName: string,
+  windowConfig: WindowConfig,
+  logger: Logger
+): { x: number; y: number } | undefined {
+  const cursorPoint = screen.getCursorScreenPoint();
+  const currentBounds = getWindowBounds(hwnd);
+
+  if (!currentBounds) {
+    logger.warn(
+      { name: itemName, windowConfig: JSON.stringify(windowConfig) },
+      'ウィンドウサイズの取得に失敗したため、アクティブモニター中央への移動をスキップします'
+    );
+    return undefined;
+  }
+
+  const display = screen.getDisplayNearestPoint(cursorPoint);
+  const displayBounds = display.workArea;
+
+  // モニターの中央座標を計算
+  const centerX =
+    displayBounds.x + Math.floor((displayBounds.width - currentBounds.width) / 2);
+  const centerY =
+    displayBounds.y + Math.floor((displayBounds.height - currentBounds.height) / 2);
+
+  // 画面外に出ないように調整
+  const x = Math.max(
+    displayBounds.x,
+    Math.min(centerX, displayBounds.x + displayBounds.width - currentBounds.width)
+  );
+  const y = Math.max(
+    displayBounds.y,
+    Math.min(centerY, displayBounds.y + displayBounds.height - currentBounds.height)
+  );
+
+  logger.info(
+    {
+      name: itemName,
+      windowConfig: JSON.stringify(windowConfig),
+      calculatedPosition: { x, y },
+      cursorPoint,
+      displayBounds,
+    },
+    'アクティブモニターの中央座標を計算しました'
+  );
+
+  return { x, y };
+}
+
+/**
  * 実際のウィンドウ位置・サイズと目標値を比較検証する
  *
  * @param actual 実際のウィンドウ位置・サイズ
@@ -341,47 +400,10 @@ export async function tryActivateWindow(
     // アクティブモニター中央への移動が指定されている場合、座標を計算
     if (needsActiveMonitorCenter) {
       try {
-        const cursorPoint = screen.getCursorScreenPoint();
-        const currentBounds = getWindowBounds(hwnd);
-
-        if (currentBounds) {
-          const display = screen.getDisplayNearestPoint(cursorPoint);
-          const displayBounds = display.workArea;
-
-          // モニターの中央座標を計算
-          const centerX =
-            displayBounds.x + Math.floor((displayBounds.width - currentBounds.width) / 2);
-          const centerY =
-            displayBounds.y + Math.floor((displayBounds.height - currentBounds.height) / 2);
-
-          // 画面外に出ないように調整（安全性チェック）
-          targetBounds.x = Math.max(
-            displayBounds.x,
-            Math.min(centerX, displayBounds.x + displayBounds.width - currentBounds.width)
-          );
-          targetBounds.y = Math.max(
-            displayBounds.y,
-            Math.min(centerY, displayBounds.y + displayBounds.height - currentBounds.height)
-          );
-
-          logger.info(
-            {
-              name: itemName,
-              windowConfig: JSON.stringify(effectiveConfig),
-              calculatedPosition: { x: targetBounds.x, y: targetBounds.y },
-              cursorPoint,
-              displayBounds,
-            },
-            'アクティブモニターの中央座標を計算しました'
-          );
-        } else {
-          logger.warn(
-            {
-              name: itemName,
-              windowConfig: JSON.stringify(effectiveConfig),
-            },
-            'ウィンドウサイズの取得に失敗したため、アクティブモニター中央への移動をスキップします'
-          );
+        const centerPosition = calculateActiveMonitorCenter(hwnd, itemName, effectiveConfig, logger);
+        if (centerPosition) {
+          targetBounds.x = centerPosition.x;
+          targetBounds.y = centerPosition.y;
         }
       } catch (error) {
         logger.error(

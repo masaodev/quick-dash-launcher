@@ -15,6 +15,23 @@ interface WindowConfigEditorProps {
 }
 
 /**
+ * 数値入力フィールドのonChange処理を簡略化するヘルパー
+ */
+function createNumericChangeHandler(
+  windowConfig: WindowConfig | undefined,
+  onChange: (config: WindowConfig) => void,
+  fieldName: keyof WindowConfig
+): (e: React.ChangeEvent<HTMLInputElement>) => void {
+  return (e) => {
+    const value = e.target.value ? parseInt(e.target.value, 10) : undefined;
+    onChange({
+      ...(windowConfig || { title: '' }),
+      [fieldName]: value,
+    });
+  };
+}
+
+/**
  * ウィンドウ設定エディター
  *
  * ウィンドウタイトル、X座標、Y座標、幅、高さを編集するUIコンポーネント
@@ -25,6 +42,10 @@ interface WindowConfigEditorProps {
 const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
   ({ windowConfig, onChange, onGetWindowClick, defaultExpanded = false, showToggle = true }) => {
     const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+
+    // 数値フィールドのonChangeハンドラーを生成
+    const handleNumericChange = (fieldName: keyof WindowConfig) =>
+      createNumericChangeHandler(windowConfig, onChange, fieldName);
 
     // 折りたたみトグルを表示しない場合は、常にコンテンツを表示
     const shouldShowContent = !showToggle || isExpanded;
@@ -127,12 +148,7 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
                   <input
                     type="number"
                     value={windowConfig?.x ?? ''}
-                    onChange={(e) =>
-                      onChange({
-                        ...(windowConfig || { title: '' }),
-                        x: e.target.value ? parseInt(e.target.value, 10) : undefined,
-                      })
-                    }
+                    onChange={handleNumericChange('x')}
                     placeholder="X座標"
                     className="window-config-input-number"
                     disabled={windowConfig?.moveToActiveMonitorCenter || false}
@@ -143,12 +159,7 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
                   <input
                     type="number"
                     value={windowConfig?.y ?? ''}
-                    onChange={(e) =>
-                      onChange({
-                        ...(windowConfig || { title: '' }),
-                        y: e.target.value ? parseInt(e.target.value, 10) : undefined,
-                      })
-                    }
+                    onChange={handleNumericChange('y')}
                     placeholder="Y座標"
                     className="window-config-input-number"
                     disabled={windowConfig?.moveToActiveMonitorCenter || false}
@@ -161,12 +172,7 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
                   <input
                     type="number"
                     value={windowConfig?.width ?? ''}
-                    onChange={(e) =>
-                      onChange({
-                        ...(windowConfig || { title: '' }),
-                        width: e.target.value ? parseInt(e.target.value, 10) : undefined,
-                      })
-                    }
+                    onChange={handleNumericChange('width')}
                     placeholder="幅"
                     className="window-config-input-number"
                   />
@@ -176,12 +182,7 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
                   <input
                     type="number"
                     value={windowConfig?.height ?? ''}
-                    onChange={(e) =>
-                      onChange({
-                        ...(windowConfig || { title: '' }),
-                        height: e.target.value ? parseInt(e.target.value, 10) : undefined,
-                      })
-                    }
+                    onChange={handleNumericChange('height')}
                     placeholder="高さ"
                     className="window-config-input-number"
                   />
@@ -219,14 +220,7 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
                   min="1"
                   max="20"
                   value={windowConfig?.virtualDesktopNumber ?? ''}
-                  onChange={(e) =>
-                    onChange({
-                      ...(windowConfig || { title: '' }),
-                      virtualDesktopNumber: e.target.value
-                        ? parseInt(e.target.value, 10)
-                        : undefined,
-                    })
-                  }
+                  onChange={handleNumericChange('virtualDesktopNumber')}
                   placeholder="1から開始"
                   className="window-config-input-number"
                   disabled={windowConfig?.pinToAllDesktops || false}

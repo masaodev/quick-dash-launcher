@@ -10,7 +10,11 @@ import type { RegisterItem, DirOptions, WindowOperationConfig } from '../types/r
 import { parseDirOptionsFromString, formatDirOptionsToString } from '../types/register.js';
 
 import { parseCSVLine, escapeCSV } from './csvParser';
-import { parseWindowConfig, serializeWindowConfig } from './windowConfigUtils';
+import {
+  parseWindowConfig,
+  serializeWindowConfig,
+  buildWindowOperationConfig,
+} from './windowConfigUtils';
 import { parseWindowOperationDirective } from './directiveUtils';
 
 /**
@@ -167,23 +171,20 @@ export function convertRegisterItemToRawDataLine(
     const cfg = item.windowOperationConfig;
     if (!cfg) throw new Error('windowOperationConfig is required for window items');
 
-    // JSON形式で設定を保存
-    const config: Record<string, string | number | boolean> = {
+    // 共通ヘルパーを使用してJSON設定を構築
+    const config = buildWindowOperationConfig({
       name: item.name,
       windowTitle: cfg.windowTitle,
-    };
-
-    // オプションフィールドは値がある場合のみ追加
-    if (cfg.x !== undefined) config.x = cfg.x;
-    if (cfg.y !== undefined) config.y = cfg.y;
-    if (cfg.width !== undefined) config.width = cfg.width;
-    if (cfg.height !== undefined) config.height = cfg.height;
-    if (cfg.moveToActiveMonitorCenter !== undefined)
-      config.moveToActiveMonitorCenter = cfg.moveToActiveMonitorCenter;
-    if (cfg.virtualDesktopNumber !== undefined)
-      config.virtualDesktopNumber = cfg.virtualDesktopNumber;
-    if (cfg.activateWindow !== undefined) config.activateWindow = cfg.activateWindow;
-    if (cfg.pinToAllDesktops !== undefined) config.pinToAllDesktops = cfg.pinToAllDesktops;
+      processName: cfg.processName,
+      x: cfg.x,
+      y: cfg.y,
+      width: cfg.width,
+      height: cfg.height,
+      moveToActiveMonitorCenter: cfg.moveToActiveMonitorCenter,
+      virtualDesktopNumber: cfg.virtualDesktopNumber,
+      activateWindow: cfg.activateWindow,
+      pinToAllDesktops: cfg.pinToAllDesktops,
+    });
 
     newContent = `window,${escapeCSV(JSON.stringify(config))}`;
   } else {

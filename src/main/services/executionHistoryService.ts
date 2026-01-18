@@ -109,6 +109,54 @@ export class ExecutionHistoryService {
   }
 
   /**
+   * 履歴リストを更新するヘルパー
+   * 同名アイテムを除外した後、新しいアイテムを先頭に追加
+   */
+  private updateHistoryList(
+    history: ExecutionHistoryItem[],
+    itemName: string,
+    newItem: ExecutionHistoryItem
+  ): ExecutionHistoryItem[] {
+    const filtered = history.filter((h) => h.itemName !== itemName);
+    filtered.unshift(newItem);
+    return filtered;
+  }
+
+  /**
+   * WindowOperationItemから履歴アイテムを作成
+   */
+  private createWindowOperationHistoryItem(item: {
+    name: string;
+    windowTitle: string;
+    x?: number;
+    y?: number;
+    width?: number;
+    height?: number;
+    moveToActiveMonitorCenter?: boolean;
+    virtualDesktopNumber?: number;
+    activateWindow?: boolean;
+    pinToAllDesktops?: boolean;
+    processName?: string;
+  }): ExecutionHistoryItem {
+    return {
+      id: randomUUID(),
+      itemName: item.name,
+      itemPath: `[ウィンドウ操作: ${item.windowTitle}]`,
+      itemType: 'windowOperation',
+      executedAt: Date.now(),
+      windowX: item.x,
+      windowY: item.y,
+      windowWidth: item.width,
+      windowHeight: item.height,
+      moveToActiveMonitorCenter: item.moveToActiveMonitorCenter,
+      virtualDesktopNumber: item.virtualDesktopNumber,
+      activateWindow: item.activateWindow,
+      pinToAllDesktops: item.pinToAllDesktops,
+      processName: item.processName,
+    };
+  }
+
+  /**
    * アイテム実行を履歴に追加
    * @param item 実行されたアイテム
    */
@@ -117,46 +165,22 @@ export class ExecutionHistoryService {
     if (!this.historyStore) throw new Error('History store not initialized');
 
     try {
-      const history = await this.loadExecutionHistory();
-
       // WindowInfoは履歴に追加しない
       if (isWindowInfo(item)) {
         logger.info('WindowInfo is not supported in execution history');
         return;
       }
 
-      // ウィンドウ操作アイテムの場合
+      const history = await this.loadExecutionHistory();
+      let updatedHistory: ExecutionHistoryItem[];
+
       if (isWindowOperationItem(item)) {
-        // 同じ名前のアイテムを履歴から削除
-        const filteredHistory = history.filter((h) => h.itemName !== item.name);
-
-        const historyItem: ExecutionHistoryItem = {
-          id: randomUUID(),
-          itemName: item.name,
-          itemPath: `[ウィンドウ操作: ${item.windowTitle}]`,
-          itemType: 'windowOperation',
-          executedAt: Date.now(),
-          windowX: item.x,
-          windowY: item.y,
-          windowWidth: item.width,
-          windowHeight: item.height,
-          moveToActiveMonitorCenter: item.moveToActiveMonitorCenter,
-          virtualDesktopNumber: item.virtualDesktopNumber,
-          activateWindow: item.activateWindow,
-          pinToAllDesktops: item.pinToAllDesktops,
-          processName: item.processName,
-        };
-        filteredHistory.unshift(historyItem);
-        history.length = 0;
-        history.push(...filteredHistory);
-      }
-      // グループアイテムの場合
-      else if (!isLauncherItem(item)) {
+        // ウィンドウ操作アイテムの場合
+        const historyItem = this.createWindowOperationHistoryItem(item);
+        updatedHistory = this.updateHistoryList(history, item.name, historyItem);
+      } else if (!isLauncherItem(item)) {
+        // グループアイテムの場合
         const groupItem = item as { name: string; type: 'group'; itemNames: string[] };
-
-        // 同じ名前のアイテムを履歴から削除
-        const filteredHistory = history.filter((h) => h.itemName !== groupItem.name);
-
         const itemNames = groupItem.itemNames || [];
         const historyItem: ExecutionHistoryItem = {
           id: randomUUID(),
@@ -166,52 +190,39 @@ export class ExecutionHistoryService {
           executedAt: Date.now(),
           itemNames: itemNames,
         };
-        filteredHistory.unshift(historyItem);
-        history.length = 0;
-        history.push(...filteredHistory);
-      }
-      // 通常のアイテムの場合
-      else {
-        const launcherItem = item;
-
-        // 同じ名前のアイテムを履歴から削除
-        const filteredHistory = history.filter((h) => h.itemName !== launcherItem.name);
-
+        updatedHistory = this.updateHistoryList(history, groupItem.name, historyItem);
+      } else {
+        // 通常のLauncherItemの場合
         const historyItem: ExecutionHistoryItem = {
           id: randomUUID(),
-          itemName: launcherItem.name,
-          itemPath: launcherItem.path,
-          itemType: launcherItem.type,
-          icon: launcherItem.icon,
-          args: launcherItem.args,
+          itemName: item.name,
+          itemPath: item.path,
+          itemType: item.type,
+          icon: item.icon,
+          args: item.args,
           executedAt: Date.now(),
         };
 
         // windowConfigが存在する場合、その情報を展開して保存
-        if (launcherItem.windowConfig) {
-          historyItem.processName = launcherItem.windowConfig.processName;
-          historyItem.windowX = launcherItem.windowConfig.x;
-          historyItem.windowY = launcherItem.windowConfig.y;
-          historyItem.windowWidth = launcherItem.windowConfig.width;
-          historyItem.windowHeight = launcherItem.windowConfig.height;
-          historyItem.virtualDesktopNumber = launcherItem.windowConfig.virtualDesktopNumber;
-          historyItem.activateWindow = launcherItem.windowConfig.activateWindow;
-          historyItem.moveToActiveMonitorCenter =
-            launcherItem.windowConfig.moveToActiveMonitorCenter;
+        if (item.windowConfig) {
+          historyItem.processName = item.windowConfig.processName;
+          historyItem.windowX = item.windowConfig.x;
+          historyItem.windowY = item.windowConfig.y;
+          historyItem.windowWidth = item.windowConfig.width;
+          historyItem.windowHeight = item.windowConfig.height;
+          historyItem.virtualDesktopNumber = item.windowConfig.virtualDesktopNumber;
+          historyItem.activateWindow = item.windowConfig.activateWindow;
+          historyItem.moveToActiveMonitorCenter = item.windowConfig.moveToActiveMonitorCenter;
         }
 
-        filteredHistory.unshift(historyItem);
-        history.length = 0;
-        history.push(...filteredHistory);
+        updatedHistory = this.updateHistoryList(history, item.name, historyItem);
       }
 
-      // 最大件数を超えた分を削除
-      const trimmedHistory = history.slice(0, ExecutionHistoryService.MAX_HISTORY_ITEMS);
-
-      // 保存
+      // 最大件数を超えた分を削除して保存
+      const trimmedHistory = updatedHistory.slice(0, ExecutionHistoryService.MAX_HISTORY_ITEMS);
       this.historyStore.set('history', trimmedHistory);
-      const itemName = isLauncherItem(item) ? item.name : item.name;
-      logger.info({ itemName, count: trimmedHistory.length }, 'Added item to execution history');
+
+      logger.info({ itemName: item.name, count: trimmedHistory.length }, 'Added item to execution history');
     } catch (error) {
       const itemName = isWindowInfo(item) ? item.title : item.name;
       logger.error({ error, itemName }, 'Failed to add execution history');

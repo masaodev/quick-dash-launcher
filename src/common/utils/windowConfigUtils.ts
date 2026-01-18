@@ -126,3 +126,60 @@ export function migrateWindowTitle(windowTitle: string | undefined): WindowConfi
 
   return { title: windowTitle.trim() };
 }
+
+/**
+ * ウィンドウ操作設定オブジェクト型
+ */
+interface WindowOperationSource {
+  name: string;
+  windowTitle: string;
+  processName?: string;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  moveToActiveMonitorCenter?: boolean;
+  virtualDesktopNumber?: number;
+  activateWindow?: boolean;
+  pinToAllDesktops?: boolean;
+}
+
+/**
+ * ウィンドウ操作設定をJSON形式で保存するためのオブジェクトに変換
+ *
+ * @param source - ウィンドウ操作設定ソース
+ * @returns JSON.stringifyに渡すためのオブジェクト（undefinedフィールドは除外済み）
+ *
+ * @example
+ * const config = buildWindowOperationConfig({
+ *   name: 'Chrome',
+ *   windowTitle: 'Google Chrome',
+ *   x: 100,
+ *   y: 100
+ * });
+ * const json = JSON.stringify(config);
+ * // => '{"name":"Chrome","windowTitle":"Google Chrome","x":100,"y":100}'
+ */
+export function buildWindowOperationConfig(
+  source: WindowOperationSource
+): Record<string, string | number | boolean> {
+  const config: Record<string, string | number | boolean> = {
+    name: source.name,
+    windowTitle: source.windowTitle,
+  };
+
+  // オプションフィールドは値がある場合のみ追加
+  if (source.processName !== undefined) config.processName = source.processName;
+  if (source.x !== undefined) config.x = source.x;
+  if (source.y !== undefined) config.y = source.y;
+  if (source.width !== undefined) config.width = source.width;
+  if (source.height !== undefined) config.height = source.height;
+  if (source.moveToActiveMonitorCenter !== undefined)
+    config.moveToActiveMonitorCenter = source.moveToActiveMonitorCenter;
+  if (source.virtualDesktopNumber !== undefined)
+    config.virtualDesktopNumber = source.virtualDesktopNumber;
+  if (source.activateWindow !== undefined) config.activateWindow = source.activateWindow;
+  if (source.pinToAllDesktops !== undefined) config.pinToAllDesktops = source.pinToAllDesktops;
+
+  return config;
+}
