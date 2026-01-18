@@ -37,10 +37,6 @@ dist-electron/
 release/
 *.asar
 
-# Development mode generated icons
-assets/icon-dev.png
-assets/icon-dev.ico
-
 # Test coverage
 coverage/
 .nyc_output/
