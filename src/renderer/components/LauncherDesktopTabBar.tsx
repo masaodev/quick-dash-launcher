@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { DESKTOP_TAB } from '@common/constants';
 import type { WindowInfo, VirtualDesktopInfo } from '@common/types';
 
 interface DesktopTabBarProps {
@@ -19,11 +20,11 @@ interface DesktopTab {
 }
 
 function getTabTooltip(tabId: number): string {
-  if (tabId === 0) {
+  if (tabId === DESKTOP_TAB.ALL) {
     return 'すべてのデスクトップのウィンドウ';
   }
-  if (tabId === -1) {
-    return 'デスクトップ番号が不明なウィンドウ';
+  if (tabId === DESKTOP_TAB.PINNED) {
+    return '全仮想デスクトップにピン止めされたウィンドウ';
   }
   return `デスクトップ ${tabId} のウィンドウ`;
 }
@@ -40,10 +41,15 @@ const LauncherDesktopTabBar: React.FC<DesktopTabBarProps> = ({
 }) => {
   // タブリストを生成（useMemoで最適化）
   const tabs = useMemo((): DesktopTab[] => {
-    const tabList: DesktopTab[] = [];
+    const tabList: DesktopTab[] = [
+      { id: DESKTOP_TAB.ALL, label: 'すべて', count: windowList.length },
+    ];
 
-    // 「すべて」タブ
-    tabList.push({ id: 0, label: 'すべて', count: windowList.length });
+    // 「ピン止め」タブ（ピン止めされたウィンドウがある場合のみ表示）
+    const pinnedCount = windowList.filter((w) => w.isPinned === true).length;
+    if (pinnedCount > 0) {
+      tabList.push({ id: DESKTOP_TAB.PINNED, label: 'ピン止め', count: pinnedCount });
+    }
 
     // 各デスクトップのタブを追加
     for (let i = 1; i <= desktopInfo.desktopCount; i++) {
@@ -54,14 +60,6 @@ const LauncherDesktopTabBar: React.FC<DesktopTabBarProps> = ({
         label: isCurrent ? `${i} (現在)` : `${i}`,
         count,
       });
-    }
-
-    // デスクトップ番号が不明なウィンドウがある場合
-    const unknownCount = windowList.filter(
-      (w) => w.desktopNumber === undefined || w.desktopNumber === -1
-    ).length;
-    if (unknownCount > 0) {
-      tabList.push({ id: -1, label: '?', count: unknownCount });
     }
 
     return tabList;

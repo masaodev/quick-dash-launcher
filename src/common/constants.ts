@@ -19,3 +19,13 @@ export const MAX_BOOKMARK_FILE_SIZE = 50 * 1024 * 1024; // 50MB
  * 7日間
  */
 export const ICON_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * デスクトップタブのID定数
+ */
+export const DESKTOP_TAB = {
+  /** すべてのウィンドウを表示 */
+  ALL: 0,
+  /** ピン止めされたウィンドウを表示 */
+  PINNED: -2,
+} as const;

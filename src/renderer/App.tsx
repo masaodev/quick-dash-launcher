@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { DESKTOP_TAB } from '@common/constants';
 import { convertLauncherItemToRawDataLine } from '@common/utils/dataConverters';
 import type { RegisterItem } from '@common/types';
 import { escapeCSV } from '@common/utils/csvParser';
@@ -635,12 +636,11 @@ const App: React.FC = () => {
 
   // ウィンドウ検索モード時のタブフィルタリング
   const getDesktopFilteredWindows = (windows: WindowInfo[]): WindowInfo[] => {
-    if (activeDesktopTab === 0) {
-      return windows; // すべて
+    if (activeDesktopTab === DESKTOP_TAB.ALL) {
+      return windows;
     }
-    if (activeDesktopTab === -1) {
-      // 不明
-      return windows.filter((w) => w.desktopNumber === undefined || w.desktopNumber === -1);
+    if (activeDesktopTab === DESKTOP_TAB.PINNED) {
+      return windows.filter((w) => w.isPinned === true);
     }
     return windows.filter((w) => w.desktopNumber === activeDesktopTab);
   };

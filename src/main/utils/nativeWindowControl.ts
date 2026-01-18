@@ -9,7 +9,7 @@ import * as os from 'os';
 import { WindowInfo } from '@common/types';
 import koffi from 'koffi';
 
-import { getWindowDesktopNumber } from './virtualDesktop/index.js';
+import { getWindowDesktopNumber, isPinnedWindow } from './virtualDesktop/index.js';
 
 // user32.dll、kernel32.dll、gdiplus.dll、dwmapi.dllをロード
 const user32 = koffi.load('user32.dll');
@@ -141,6 +141,7 @@ const WS_EX_TOOLWINDOW = 0x00000080; // ツールウィンドウ（タスクバ�
 const WS_EX_APPWINDOW = 0x00040000; // アプリウィンドウ（強制的に表示）
 const GW_OWNER = 4; // オーナーウィンドウ取得用
 const DWMWA_CLOAKED = 14; // DWM クローキング状態取得用
+const DWM_CLOAKED_SHELL = 0x2; // システムによる非表示（他の仮想デスクトップ等）
 
 // SetWindowPos用フラグ
 const SWP_NOSIZE = 0x0001; // サイズ変更をスキップ
@@ -361,56 +362,56 @@ function extractProcessName(executablePath: string | undefined): string | undefi
 
 /**
  * Alt+Tabに表示されるウィンドウかどうかを判定
- * Windowsの標準動作と同じフィルタリングを行う
  *
  * @param hwnd ウィンドウハンドル
- * @param includeAllVirtualDesktops trueの場合、クローキングチェックをスキップ（全仮想デスクトップを含む）
+ * @param includeAllVirtualDesktops true: 他の仮想デスクトップのウィンドウも含める
  * @returns Alt+Tabに表示される場合true
- *
- * 判定ロジック:
- * - クローキング（Cloaked）されていない（includeAllVirtualDesktops=falseの場合のみ）
- * - WS_EX_TOOLWINDOWを持たない かつ オーナーウィンドウがない（通常のアプリウィンドウ）
- * - または WS_EX_APPWINDOWを持つ（強制的に表示されるウィンドウ）
  */
 function isAltTabWindow(hwnd: unknown, includeAllVirtualDesktops = false): boolean {
   try {
-    // クローキング状態をチェック（Windows Vista以降）
-    // includeAllVirtualDesktopsがtrueの場合はスキップ（全仮想デスクトップのウィンドウを含める）
-    if (!includeAllVirtualDesktops) {
-      const cloakedArr = [0];
-      try {
-        const hr = DwmGetWindowAttribute(hwnd, DWMWA_CLOAKED, cloakedArr, 4);
-        // S_OK (0) の場合、成功
-        if (hr === 0 && cloakedArr[0] !== 0) {
-          // クローキングされているウィンドウは除外
-          return false;
-        }
-      } catch (_dwmError) {
-        // DWM APIが利用できない場合（古いWindows）はスキップ
-        // エラーは無視して続行
-      }
+    // クローキング状態をチェック
+    if (isWindowCloaked(hwnd, includeAllVirtualDesktops)) {
+      return false;
     }
 
     // 拡張ウィンドウスタイルを取得
     const exStyle = GetWindowLongW(hwnd, GWL_EXSTYLE);
-
-    // オーナーウィンドウを取得
-    const owner = GetWindow(hwnd, GW_OWNER);
-    const hasOwner = owner !== null && koffi.address(owner) !== 0n;
-
-    // 各フラグのチェック
     const hasToolWindowStyle = !!(exStyle & WS_EX_TOOLWINDOW);
     const hasAppWindowStyle = !!(exStyle & WS_EX_APPWINDOW);
 
-    // パターンA: ツールウィンドウでなく、オーナーがない（通常のアプリウィンドウ）
-    const isNormalWindow = !hasToolWindowStyle && !hasOwner;
+    // オーナーウィンドウの有無をチェック
+    const owner = GetWindow(hwnd, GW_OWNER);
+    const hasOwner = owner !== null && koffi.address(owner) !== 0n;
 
-    // パターンB: アプリウィンドウスタイルを持つ（強制表示）
-    const isAppWindow = hasAppWindowStyle;
-
-    return isNormalWindow || isAppWindow;
+    // 通常のアプリウィンドウ または 強制表示フラグを持つウィンドウ
+    return (!hasToolWindowStyle && !hasOwner) || hasAppWindowStyle;
   } catch (error) {
     console.error('[isAltTabWindow] Error:', error);
+    return false;
+  }
+}
+
+/**
+ * ウィンドウがクローキング（非表示）されているかチェック
+ *
+ * @param hwnd ウィンドウハンドル
+ * @param includeAllVirtualDesktops true: 仮想デスクトップによるクローキングは許可
+ * @returns クローキングされている場合true
+ */
+function isWindowCloaked(hwnd: unknown, includeAllVirtualDesktops: boolean): boolean {
+  try {
+    const cloakedArr = [0];
+    const hr = DwmGetWindowAttribute(hwnd, DWMWA_CLOAKED, cloakedArr, 4);
+
+    if (hr !== 0 || cloakedArr[0] === 0) {
+      return false; // クローキングされていない
+    }
+
+    // includeAllVirtualDesktops=true: システムクローキング（DWM_CLOAKED_SHELL）のみ除外
+    // includeAllVirtualDesktops=false: すべてのクローキングを除外
+    return !includeAllVirtualDesktops || (cloakedArr[0] & DWM_CLOAKED_SHELL) !== 0;
+  } catch {
+    // DWM APIが利用できない場合はクローキングされていないとみなす
     return false;
   }
 }
@@ -485,6 +486,9 @@ export function getAllWindows(options?: { includeAllVirtualDesktops?: boolean })
       const hwndAddress = koffi.address(hwnd);
       const desktopNumber = getWindowDesktopNumber(hwndAddress);
 
+      // ピン止め状態を取得
+      const isPinned = isPinnedWindow(hwndAddress);
+
       windows.push({
         hwnd: hwndAddress,
         title,
@@ -499,6 +503,7 @@ export function getAllWindows(options?: { includeAllVirtualDesktops?: boolean })
         windowState,
         icon,
         desktopNumber,
+        isPinned,
       });
     } catch (error) {
       console.error('Error processing window:', error);

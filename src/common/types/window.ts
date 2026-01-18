@@ -46,4 +46,6 @@ export interface WindowInfo {
   icon?: string;
   /** 仮想デスクトップ番号（1から開始、取得できない場合は-1） */
   desktopNumber?: number;
+  /** 全ての仮想デスクトップにピン止めされているか */
+  isPinned?: boolean;
 }
