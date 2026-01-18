@@ -11,10 +11,10 @@ import {
   isExternalUrlType,
   isFileSystemType,
 } from '@common/utils/historyConverters';
+import { PathUtils } from '@common/utils/pathUtils';
 
 import { useWorkspaceItemGroups } from '../hooks/workspace';
 import { logError } from '../utils/debug';
-import { PathUtils } from '@common/utils/pathUtils';
 
 import WorkspaceGroupHeader from './WorkspaceGroupHeader';
 import WorkspaceItemCard from './WorkspaceItemCard';
@@ -383,11 +383,15 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
       try {
         const historyItem: ExecutionHistoryItem = JSON.parse(historyItemData);
 
-        // ExecutionHistoryItemをLauncherItem形式に変換（共通ユーティリティ使用）
-        const launcherItem = executionHistoryToLauncherItem(historyItem);
-
-        // ワークスペースにアイテムを追加（groupIdも渡す）
-        await window.electronAPI.workspaceAPI.addItem(launcherItem as LauncherItem, groupId);
+        // WindowOperationItemの場合は専用の変換を使用
+        if (historyItem.itemType === 'windowOperation') {
+          const windowOpItem = executionHistoryToWindowOperation(historyItem);
+          await window.electronAPI.workspaceAPI.addItem(windowOpItem, groupId);
+        } else {
+          // その他のアイテムはLauncherItem形式に変換
+          const launcherItem = executionHistoryToLauncherItem(historyItem);
+          await window.electronAPI.workspaceAPI.addItem(launcherItem as LauncherItem, groupId);
+        }
       } catch (error) {
         logError('実行履歴からのアイテム追加に失敗:', error);
       }

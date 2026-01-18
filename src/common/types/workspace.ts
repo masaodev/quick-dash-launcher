@@ -69,6 +69,8 @@ export interface WorkspaceItem {
   processName?: string;
   /** ウィンドウ操作：アクティブモニターの中央に移動するか（windowOperation専用、オプション） */
   moveToActiveMonitorCenter?: boolean;
+  /** ウィンドウ操作：全仮想デスクトップにピン止めするか（windowOperation専用、オプション） */
+  pinToAllDesktops?: boolean;
   /** グループ内のアイテム名リスト（group専用） */
   itemNames?: string[];
 }
@@ -126,6 +128,8 @@ export interface ExecutionHistoryItem {
   processName?: string;
   /** ウィンドウ操作：アクティブモニターの中央に移動するか（windowOperation専用、オプション） */
   moveToActiveMonitorCenter?: boolean;
+  /** ウィンドウ操作：全仮想デスクトップにピン止めするか（windowOperation専用、オプション） */
+  pinToAllDesktops?: boolean;
   /** グループ内のアイテム名リスト（group専用） */
   itemNames?: string[];
 }

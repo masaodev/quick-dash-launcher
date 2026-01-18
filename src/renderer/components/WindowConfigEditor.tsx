@@ -189,9 +189,29 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
               </div>
             </div>
 
-            {/* 2-2. 仮想デスクトップ移動 */}
+            {/* 2-2. 仮想デスクトップ移動・ピン止め */}
             <div className="window-config-subgroup">
-              <h5 className="window-config-subgroup-title">🖥️ 仮想デスクトップ移動</h5>
+              <h5 className="window-config-subgroup-title">🖥️ 仮想デスクトップ</h5>
+              <div className="window-config-checkbox-row">
+                <label className="window-config-checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={windowConfig?.pinToAllDesktops || false}
+                    onChange={(e) =>
+                      onChange({
+                        ...(windowConfig || { title: '' }),
+                        pinToAllDesktops: e.target.checked || undefined,
+                        // ピン止め時は仮想デスクトップ番号をクリア
+                        virtualDesktopNumber: e.target.checked
+                          ? undefined
+                          : windowConfig?.virtualDesktopNumber,
+                      })
+                    }
+                    className="window-config-checkbox"
+                  />
+                  <span>📌 全デスクトップにピン止め</span>
+                </label>
+              </div>
               <div className="window-config-row">
                 <label className="window-config-label">デスクトップ番号:</label>
                 <input
@@ -209,7 +229,13 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
                   }
                   placeholder="1から開始"
                   className="window-config-input-number"
+                  disabled={windowConfig?.pinToAllDesktops || false}
                 />
+              </div>
+              <div className="help-box">
+                <p className="help-note">
+                  💡 ピン止め: 全仮想デスクトップに表示（移動先番号は無視されます）
+                </p>
               </div>
             </div>
 

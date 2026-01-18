@@ -93,6 +93,7 @@ export class WorkspaceItemManager {
       virtualDesktopNumber?: number;
       activateWindow?: boolean;
       moveToActiveMonitorCenter?: boolean;
+      pinToAllDesktops?: boolean;
     };
 
     return {
@@ -112,6 +113,7 @@ export class WorkspaceItemManager {
       virtualDesktopNumber: windowOpItem.virtualDesktopNumber,
       activateWindow: windowOpItem.activateWindow,
       moveToActiveMonitorCenter: windowOpItem.moveToActiveMonitorCenter,
+      pinToAllDesktops: windowOpItem.pinToAllDesktops,
     };
   }
 

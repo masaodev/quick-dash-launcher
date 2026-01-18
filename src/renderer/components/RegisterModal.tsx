@@ -351,6 +351,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
           moveToActiveMonitorCenter: item.windowOperationConfig.moveToActiveMonitorCenter,
           virtualDesktopNumber: item.windowOperationConfig.virtualDesktopNumber,
           activateWindow: item.windowOperationConfig.activateWindow,
+          pinToAllDesktops: item.windowOperationConfig.pinToAllDesktops,
         });
       } else if (item.itemCategory === 'group') {
         debugLog('グループアイテムは実行ボタンからは実行できません');
@@ -636,6 +637,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                                   virtualDesktopNumber:
                                     item.windowOperationConfig.virtualDesktopNumber,
                                   activateWindow: item.windowOperationConfig.activateWindow,
+                                  pinToAllDesktops: item.windowOperationConfig.pinToAllDesktops,
                                 }
                               : { title: '' }
                           }
@@ -651,6 +653,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                               moveToActiveMonitorCenter: windowConfig?.moveToActiveMonitorCenter,
                               virtualDesktopNumber: windowConfig?.virtualDesktopNumber,
                               activateWindow: windowConfig?.activateWindow,
+                              pinToAllDesktops: windowConfig?.pinToAllDesktops,
                             })
                           }
                           onGetWindowClick={() => openWindowSelector(index)}

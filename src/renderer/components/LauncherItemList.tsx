@@ -136,10 +136,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
     );
 
     // ウィンドウのPin操作共通ハンドラー
-    const handleWindowPinOperation = async (
-      operation: 'pin' | 'unpin',
-      hwnd: number | bigint
-    ) => {
+    const handleWindowPinOperation = async (operation: 'pin' | 'unpin', hwnd: number | bigint) => {
       const config = {
         pin: {
           fn: window.electronAPI.pinWindow,

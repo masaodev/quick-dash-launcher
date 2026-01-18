@@ -140,8 +140,10 @@ export class ExecutionHistoryService {
           windowY: item.y,
           windowWidth: item.width,
           windowHeight: item.height,
+          moveToActiveMonitorCenter: item.moveToActiveMonitorCenter,
           virtualDesktopNumber: item.virtualDesktopNumber,
           activateWindow: item.activateWindow,
+          pinToAllDesktops: item.pinToAllDesktops,
           processName: item.processName,
         };
         filteredHistory.unshift(historyItem);

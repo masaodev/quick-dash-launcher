@@ -22,7 +22,8 @@ export function hasWindowConfig(item: ExecutionHistoryItem): boolean {
     item.windowHeight !== undefined ||
     item.virtualDesktopNumber !== undefined ||
     item.activateWindow !== undefined ||
-    item.moveToActiveMonitorCenter !== undefined
+    item.moveToActiveMonitorCenter !== undefined ||
+    item.pinToAllDesktops !== undefined
   );
 }
 
@@ -44,6 +45,7 @@ export function extractWindowConfig(item: ExecutionHistoryItem): WindowConfig | 
     virtualDesktopNumber: item.virtualDesktopNumber,
     activateWindow: item.activateWindow,
     moveToActiveMonitorCenter: item.moveToActiveMonitorCenter,
+    pinToAllDesktops: item.pinToAllDesktops,
   };
 }
 
@@ -100,8 +102,10 @@ export function executionHistoryToWindowOperation(
     y: historyItem.windowY,
     width: historyItem.windowWidth,
     height: historyItem.windowHeight,
+    moveToActiveMonitorCenter: historyItem.moveToActiveMonitorCenter,
     virtualDesktopNumber: historyItem.virtualDesktopNumber,
     activateWindow: historyItem.activateWindow,
+    pinToAllDesktops: historyItem.pinToAllDesktops,
   };
 }
 

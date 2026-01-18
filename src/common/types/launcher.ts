@@ -30,6 +30,8 @@ export interface WindowConfig {
   virtualDesktopNumber?: number;
   /** ウィンドウをアクティブにするかどうか（省略時はtrue） */
   activateWindow?: boolean;
+  /** 全仮想デスクトップにピン止めするかどうか（省略時はfalse） */
+  pinToAllDesktops?: boolean;
 }
 
 /**
@@ -134,6 +136,8 @@ export interface WindowOperationItem {
   virtualDesktopNumber?: number;
   /** ウィンドウをアクティブにするかどうか（省略時はtrue） */
   activateWindow?: boolean;
+  /** 全仮想デスクトップにピン止めするかどうか（省略時はfalse） */
+  pinToAllDesktops?: boolean;
   /** 元のデータファイル */
   sourceFile?: string;
   /** データファイル内の行番号（編集機能で使用） */

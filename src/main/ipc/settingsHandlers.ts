@@ -104,67 +104,70 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
   );
 
   // 複数の設定値を一括設定
-  ipcMain.handle(IPC_CHANNELS.SETTINGS_SET_MULTIPLE, async (_event, settings: Partial<AppSettings>) => {
-    try {
-      const settingsService = await SettingsService.getInstance();
-      await settingsService.setMultiple(settings);
-      logger.info({ settings }, 'Settings set multiple request');
+  ipcMain.handle(
+    IPC_CHANNELS.SETTINGS_SET_MULTIPLE,
+    async (_event, settings: Partial<AppSettings>) => {
+      try {
+        const settingsService = await SettingsService.getInstance();
+        await settingsService.setMultiple(settings);
+        logger.info({ settings }, 'Settings set multiple request');
 
-      // ホットキーが設定された場合、初回起動モードを解除
-      if (settings.hotkey && settings.hotkey.trim() !== '' && setFirstLaunchMode) {
-        setFirstLaunchMode(false);
-        logger.info('初回起動モードを解除しました（ホットキーが設定されたため）');
-      }
-
-      // autoLaunch設定が含まれている場合、システムの自動起動設定を更新
-      if (settings.autoLaunch !== undefined) {
-        const autoLaunchService = AutoLaunchService.getInstance();
-        await autoLaunchService.setAutoLaunch(settings.autoLaunch);
-      }
-
-      // workspaceOpacity設定が含まれている場合、ワークスペースウィンドウの透過度を即座に反映
-      if (
-        settings.workspaceOpacity !== undefined ||
-        settings.workspaceBackgroundTransparent !== undefined
-      ) {
-        const { getWorkspaceWindow } = await import('../workspaceWindowManager.js');
-        const workspace = getWorkspaceWindow();
-        if (workspace && !workspace.isDestroyed()) {
-          // 現在の設定を取得
-          const currentSettings = await settingsService.getAll();
-          const backgroundTransparent =
-            settings.workspaceBackgroundTransparent ??
-            currentSettings.workspaceBackgroundTransparent;
-          const opacity = settings.workspaceOpacity ?? currentSettings.workspaceOpacity;
-
-          // 背景のみ透過の場合はウィンドウは完全不透明、それ以外は設定値を使用
-          workspace.setOpacity(backgroundTransparent ? 1.0 : opacity / 100);
+        // ホットキーが設定された場合、初回起動モードを解除
+        if (settings.hotkey && settings.hotkey.trim() !== '' && setFirstLaunchMode) {
+          setFirstLaunchMode(false);
+          logger.info('初回起動モードを解除しました（ホットキーが設定されたため）');
         }
-      }
 
-      // workspacePositionMode設定が含まれる場合、ワークスペース位置を即座に反映
-      if (
-        settings.workspacePositionMode !== undefined ||
-        settings.workspacePositionX !== undefined ||
-        settings.workspacePositionY !== undefined
-      ) {
-        const { getWorkspaceWindow, setWorkspacePosition } =
-          await import('../workspaceWindowManager.js');
-        const workspace = getWorkspaceWindow();
-        if (workspace && !workspace.isDestroyed() && workspace.isVisible()) {
-          await setWorkspacePosition();
+        // autoLaunch設定が含まれている場合、システムの自動起動設定を更新
+        if (settings.autoLaunch !== undefined) {
+          const autoLaunchService = AutoLaunchService.getInstance();
+          await autoLaunchService.setAutoLaunch(settings.autoLaunch);
         }
+
+        // workspaceOpacity設定が含まれている場合、ワークスペースウィンドウの透過度を即座に反映
+        if (
+          settings.workspaceOpacity !== undefined ||
+          settings.workspaceBackgroundTransparent !== undefined
+        ) {
+          const { getWorkspaceWindow } = await import('../workspaceWindowManager.js');
+          const workspace = getWorkspaceWindow();
+          if (workspace && !workspace.isDestroyed()) {
+            // 現在の設定を取得
+            const currentSettings = await settingsService.getAll();
+            const backgroundTransparent =
+              settings.workspaceBackgroundTransparent ??
+              currentSettings.workspaceBackgroundTransparent;
+            const opacity = settings.workspaceOpacity ?? currentSettings.workspaceOpacity;
+
+            // 背景のみ透過の場合はウィンドウは完全不透明、それ以外は設定値を使用
+            workspace.setOpacity(backgroundTransparent ? 1.0 : opacity / 100);
+          }
+        }
+
+        // workspacePositionMode設定が含まれる場合、ワークスペース位置を即座に反映
+        if (
+          settings.workspacePositionMode !== undefined ||
+          settings.workspacePositionX !== undefined ||
+          settings.workspacePositionY !== undefined
+        ) {
+          const { getWorkspaceWindow, setWorkspacePosition } =
+            await import('../workspaceWindowManager.js');
+          const workspace = getWorkspaceWindow();
+          if (workspace && !workspace.isDestroyed() && workspace.isVisible()) {
+            await setWorkspacePosition();
+          }
+        }
+
+        // すべてのウィンドウに設定変更を通知
+        notifySettingsChanged();
+
+        return true;
+      } catch (error) {
+        logger.error({ error }, 'Failed to set multiple settings');
+        throw error;
       }
-
-      // すべてのウィンドウに設定変更を通知
-      notifySettingsChanged();
-
-      return true;
-    } catch (error) {
-      logger.error({ error }, 'Failed to set multiple settings');
-      throw error;
     }
-  });
+  );
 
   // 設定をリセット
   ipcMain.handle(IPC_CHANNELS.SETTINGS_RESET, async (_event) => {
@@ -227,17 +230,20 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
   });
 
   // ホットキーの利用可能性をチェック
-  ipcMain.handle(IPC_CHANNELS.SETTINGS_CHECK_HOTKEY_AVAILABILITY, async (_event, hotkey: string) => {
-    try {
-      const hotkeyService = HotkeyService.getInstance();
-      const isAvailable = hotkeyService.isHotkeyAvailable(hotkey);
-      logger.info(`Hotkey availability check: ${hotkey} = ${isAvailable}`);
-      return isAvailable;
-    } catch (error) {
-      logger.error({ error, hotkey }, 'Failed to check hotkey availability');
-      throw error;
+  ipcMain.handle(
+    IPC_CHANNELS.SETTINGS_CHECK_HOTKEY_AVAILABILITY,
+    async (_event, hotkey: string) => {
+      try {
+        const hotkeyService = HotkeyService.getInstance();
+        const isAvailable = hotkeyService.isHotkeyAvailable(hotkey);
+        logger.info(`Hotkey availability check: ${hotkey} = ${isAvailable}`);
+        return isAvailable;
+      } catch (error) {
+        logger.error({ error, hotkey }, 'Failed to check hotkey availability');
+        throw error;
+      }
     }
-  });
+  );
 
   logger.info('Settings IPC handlers registered');
 }

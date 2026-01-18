@@ -445,9 +445,12 @@ const App: React.FC = () => {
           if (cfg.y !== undefined) config.y = cfg.y;
           if (cfg.width !== undefined) config.width = cfg.width;
           if (cfg.height !== undefined) config.height = cfg.height;
+          if (cfg.moveToActiveMonitorCenter !== undefined)
+            config.moveToActiveMonitorCenter = cfg.moveToActiveMonitorCenter;
           if (cfg.virtualDesktopNumber !== undefined)
             config.virtualDesktopNumber = cfg.virtualDesktopNumber;
           if (cfg.activateWindow !== undefined) config.activateWindow = cfg.activateWindow;
+          if (cfg.pinToAllDesktops !== undefined) config.pinToAllDesktops = cfg.pinToAllDesktops;
 
           const newContent = `window,${escapeCSV(JSON.stringify(config))}`;
 
@@ -574,9 +577,12 @@ const App: React.FC = () => {
       if (windowOp.y !== undefined) config.y = windowOp.y;
       if (windowOp.width !== undefined) config.width = windowOp.width;
       if (windowOp.height !== undefined) config.height = windowOp.height;
+      if (windowOp.moveToActiveMonitorCenter !== undefined)
+        config.moveToActiveMonitorCenter = windowOp.moveToActiveMonitorCenter;
       if (windowOp.virtualDesktopNumber !== undefined)
         config.virtualDesktopNumber = windowOp.virtualDesktopNumber;
       if (windowOp.activateWindow !== undefined) config.activateWindow = windowOp.activateWindow;
+      if (windowOp.pinToAllDesktops !== undefined) config.pinToAllDesktops = windowOp.pinToAllDesktops;
 
       // JSON形式のコンテンツを作成
       const content = `window,${escapeCSV(JSON.stringify(config))}`;

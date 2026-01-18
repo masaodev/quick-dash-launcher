@@ -45,21 +45,24 @@ export function setupWorkspaceHandlers(): void {
   /**
    * ワークスペースにアイテムを追加
    */
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_ADD_ITEM, async (_event, item: AppItem, groupId?: string) => {
-    try {
-      const workspaceService = await WorkspaceService.getInstance();
-      const addedItem = await workspaceService.addItem(item, groupId);
-      logger.info(
-        { id: addedItem.id, name: addedItem.displayName, groupId },
-        'Added item to workspace'
-      );
-      notifyWorkspaceChanged();
-      return addedItem;
-    } catch (error) {
-      logger.error({ error }, 'Failed to add item to workspace');
-      throw error;
+  ipcMain.handle(
+    IPC_CHANNELS.WORKSPACE_ADD_ITEM,
+    async (_event, item: AppItem, groupId?: string) => {
+      try {
+        const workspaceService = await WorkspaceService.getInstance();
+        const addedItem = await workspaceService.addItem(item, groupId);
+        logger.info(
+          { id: addedItem.id, name: addedItem.displayName, groupId },
+          'Added item to workspace'
+        );
+        notifyWorkspaceChanged();
+        return addedItem;
+      } catch (error) {
+        logger.error({ error }, 'Failed to add item to workspace');
+        throw error;
+      }
     }
-  });
+  );
 
   /**
    * ファイルパスからワークスペースにアイテムを追加
@@ -137,18 +140,21 @@ export function setupWorkspaceHandlers(): void {
   /**
    * ワークスペースアイテムの表示名を更新
    */
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_UPDATE_DISPLAY_NAME, async (_event, id: string, displayName: string) => {
-    try {
-      const workspaceService = await WorkspaceService.getInstance();
-      await workspaceService.updateDisplayName(id, displayName);
-      logger.info({ id, displayName }, 'Updated workspace item display name');
-      notifyWorkspaceChanged();
-      return { success: true };
-    } catch (error) {
-      logger.error({ error, id }, 'Failed to update workspace item display name');
-      throw error;
+  ipcMain.handle(
+    IPC_CHANNELS.WORKSPACE_UPDATE_DISPLAY_NAME,
+    async (_event, id: string, displayName: string) => {
+      try {
+        const workspaceService = await WorkspaceService.getInstance();
+        await workspaceService.updateDisplayName(id, displayName);
+        logger.info({ id, displayName }, 'Updated workspace item display name');
+        notifyWorkspaceChanged();
+        return { success: true };
+      } catch (error) {
+        logger.error({ error, id }, 'Failed to update workspace item display name');
+        throw error;
+      }
     }
-  });
+  );
 
   /**
    * ワークスペースアイテムの並び順を変更
@@ -188,6 +194,7 @@ export function setupWorkspaceHandlers(): void {
           virtualDesktopNumber: item.virtualDesktopNumber,
           activateWindow: item.activateWindow,
           moveToActiveMonitorCenter: item.moveToActiveMonitorCenter,
+          pinToAllDesktops: item.pinToAllDesktops,
         };
 
         // ウィンドウ操作を実行
@@ -266,8 +273,10 @@ export function setupWorkspaceHandlers(): void {
                 y: targetItem.y,
                 width: targetItem.width,
                 height: targetItem.height,
+                moveToActiveMonitorCenter: targetItem.moveToActiveMonitorCenter,
                 virtualDesktopNumber: targetItem.virtualDesktopNumber,
                 activateWindow: targetItem.activateWindow,
+                pinToAllDesktops: targetItem.pinToAllDesktops,
               };
 
               await tryActivateWindow(windowConfig, undefined, targetItem.name, logger);
@@ -357,18 +366,21 @@ export function setupWorkspaceHandlers(): void {
   /**
    * 新しいグループを作成
    */
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_CREATE_GROUP, async (_event, name: string, color?: string) => {
-    try {
-      const workspaceService = await WorkspaceService.getInstance();
-      const group = await workspaceService.createGroup(name, color);
-      logger.info({ id: group.id, name: group.name }, 'Created workspace group');
-      notifyWorkspaceChanged();
-      return group;
-    } catch (error) {
-      logger.error({ error, name }, 'Failed to create workspace group');
-      throw error;
+  ipcMain.handle(
+    IPC_CHANNELS.WORKSPACE_CREATE_GROUP,
+    async (_event, name: string, color?: string) => {
+      try {
+        const workspaceService = await WorkspaceService.getInstance();
+        const group = await workspaceService.createGroup(name, color);
+        logger.info({ id: group.id, name: group.name }, 'Created workspace group');
+        notifyWorkspaceChanged();
+        return group;
+      } catch (error) {
+        logger.error({ error, name }, 'Failed to create workspace group');
+        throw error;
+      }
     }
-  });
+  );
 
   /**
    * グループを更新
@@ -392,18 +404,21 @@ export function setupWorkspaceHandlers(): void {
   /**
    * グループを削除
    */
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_DELETE_GROUP, async (_event, id: string, deleteItems: boolean) => {
-    try {
-      const workspaceService = await WorkspaceService.getInstance();
-      await workspaceService.deleteGroup(id, deleteItems);
-      logger.info({ id, deleteItems }, 'Deleted workspace group');
-      notifyWorkspaceChanged();
-      return { success: true };
-    } catch (error) {
-      logger.error({ error, id }, 'Failed to delete workspace group');
-      throw error;
+  ipcMain.handle(
+    IPC_CHANNELS.WORKSPACE_DELETE_GROUP,
+    async (_event, id: string, deleteItems: boolean) => {
+      try {
+        const workspaceService = await WorkspaceService.getInstance();
+        await workspaceService.deleteGroup(id, deleteItems);
+        logger.info({ id, deleteItems }, 'Deleted workspace group');
+        notifyWorkspaceChanged();
+        return { success: true };
+      } catch (error) {
+        logger.error({ error, id }, 'Failed to delete workspace group');
+        throw error;
+      }
     }
-  });
+  );
 
   /**
    * グループの並び順を変更
@@ -424,18 +439,21 @@ export function setupWorkspaceHandlers(): void {
   /**
    * アイテムをグループに移動
    */
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_MOVE_ITEM_TO_GROUP, async (_event, itemId: string, groupId?: string) => {
-    try {
-      const workspaceService = await WorkspaceService.getInstance();
-      await workspaceService.moveItemToGroup(itemId, groupId);
-      logger.info({ itemId, groupId }, 'Moved item to group');
-      notifyWorkspaceChanged();
-      return { success: true };
-    } catch (error) {
-      logger.error({ error, itemId, groupId }, 'Failed to move item to group');
-      throw error;
+  ipcMain.handle(
+    IPC_CHANNELS.WORKSPACE_MOVE_ITEM_TO_GROUP,
+    async (_event, itemId: string, groupId?: string) => {
+      try {
+        const workspaceService = await WorkspaceService.getInstance();
+        await workspaceService.moveItemToGroup(itemId, groupId);
+        logger.info({ itemId, groupId }, 'Moved item to group');
+        notifyWorkspaceChanged();
+        return { success: true };
+      } catch (error) {
+        logger.error({ error, itemId, groupId }, 'Failed to move item to group');
+        throw error;
+      }
     }
-  });
+  );
 
   // ==================== 実行履歴ハンドラー ====================
 

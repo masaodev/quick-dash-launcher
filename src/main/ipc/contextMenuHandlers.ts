@@ -3,7 +3,13 @@
  * 全てのReactコンテキストメニューをElectronのネイティブメニューに変換
  */
 import { ipcMain, BrowserWindow, Menu, MenuItem } from 'electron';
-import type { AppItem, WorkspaceItem, WorkspaceGroup, WindowInfo, VirtualDesktopInfo } from '@common/types';
+import type {
+  AppItem,
+  WorkspaceItem,
+  WorkspaceGroup,
+  WindowInfo,
+  VirtualDesktopInfo,
+} from '@common/types';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 import { isGroupItem } from '@common/types/guards';
 
@@ -71,120 +77,126 @@ export function setupAdminItemContextMenuHandler(getMainWindow: () => BrowserWin
  * LauncherContextMenu用のネイティブメニューハンドラーを設定
  */
 export function setupLauncherContextMenuHandler(getMainWindow: () => BrowserWindow | null) {
-  ipcMain.handle(IPC_CHANNELS.SHOW_LAUNCHER_CONTEXT_MENU, async (event, item: AppItem): Promise<void> => {
-    try {
-      const senderWindow = BrowserWindow.fromWebContents(event.sender);
-      if (!senderWindow || senderWindow.isDestroyed()) {
-        return;
-      }
+  ipcMain.handle(
+    IPC_CHANNELS.SHOW_LAUNCHER_CONTEXT_MENU,
+    async (event, item: AppItem): Promise<void> => {
+      try {
+        const senderWindow = BrowserWindow.fromWebContents(event.sender);
+        if (!senderWindow || senderWindow.isDestroyed()) {
+          return;
+        }
 
-      const menu = new Menu();
-      const isGroup = isGroupItem(item);
-      const hasParentFolder =
-        !isGroup && 'type' in item && item.type !== 'url' && item.type !== 'customUri';
-      const isShortcut = !isGroup && 'originalPath' in item && item.originalPath !== undefined;
+        const menu = new Menu();
+        const isGroup = isGroupItem(item);
+        const hasParentFolder =
+          !isGroup && 'type' in item && item.type !== 'url' && item.type !== 'customUri';
+        const isShortcut = !isGroup && 'originalPath' in item && item.originalPath !== undefined;
 
-      // 編集
-      menu.append(
-        new MenuItem({
-          label: '✏️ 編集',
-          click: () => {
-            event.sender.send(IPC_CHANNELS.EVENT_LAUNCHER_MENU_EDIT_ITEM, item);
-          },
-        })
-      );
+        // 編集
+        menu.append(
+          new MenuItem({
+            label: '✏️ 編集',
+            click: () => {
+              event.sender.send(IPC_CHANNELS.EVENT_LAUNCHER_MENU_EDIT_ITEM, item);
+            },
+          })
+        );
 
-      // グループ以外は区切り線を追加
-      if (!isGroup) {
+        // グループ以外は区切り線を追加
+        if (!isGroup) {
+          menu.append(new MenuItem({ type: 'separator' }));
+        }
+
+        // ワークスペースに追加
+        menu.append(
+          new MenuItem({
+            label: '⭐ ワークスペースに追加',
+            click: () => {
+              event.sender.send(IPC_CHANNELS.EVENT_LAUNCHER_MENU_ADD_TO_WORKSPACE, item);
+            },
+          })
+        );
+
+        // グループの場合はここで終了
+        if (isGroup) {
+          menu.popup({ window: senderWindow });
+          return;
+        }
+
         menu.append(new MenuItem({ type: 'separator' }));
-      }
 
-      // ワークスペースに追加
-      menu.append(
-        new MenuItem({
-          label: '⭐ ワークスペースに追加',
-          click: () => {
-            event.sender.send(IPC_CHANNELS.EVENT_LAUNCHER_MENU_ADD_TO_WORKSPACE, item);
-          },
-        })
-      );
+        // パスをコピー
+        menu.append(
+          new MenuItem({
+            label: '📋 パスをコピー',
+            click: () => {
+              event.sender.send(IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_PATH, item);
+            },
+          })
+        );
 
-      // グループの場合はここで終了
-      if (isGroup) {
+        // 親フォルダー関連（URLとcustomURI以外）
+        if (hasParentFolder) {
+          menu.append(
+            new MenuItem({
+              label: '📋 親フォルダーのパスをコピー',
+              click: () => {
+                event.sender.send(IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_PARENT_PATH, item);
+              },
+            })
+          );
+
+          menu.append(
+            new MenuItem({
+              label: '📂 親フォルダーを開く',
+              click: () => {
+                event.sender.send(IPC_CHANNELS.EVENT_LAUNCHER_MENU_OPEN_PARENT_FOLDER, item);
+              },
+            })
+          );
+        }
+
+        // ショートカット関連
+        if (isShortcut) {
+          menu.append(new MenuItem({ type: 'separator' }));
+
+          menu.append(
+            new MenuItem({
+              label: '📋 リンク先のパスをコピー',
+              click: () => {
+                event.sender.send(IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_SHORTCUT_PATH, item);
+              },
+            })
+          );
+
+          menu.append(
+            new MenuItem({
+              label: '📋 リンク先の親フォルダーのパスをコピー',
+              click: () => {
+                event.sender.send(IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_SHORTCUT_PARENT_PATH, item);
+              },
+            })
+          );
+
+          menu.append(
+            new MenuItem({
+              label: '📂 リンク先の親フォルダーを開く',
+              click: () => {
+                event.sender.send(
+                  IPC_CHANNELS.EVENT_LAUNCHER_MENU_OPEN_SHORTCUT_PARENT_FOLDER,
+                  item
+                );
+              },
+            })
+          );
+        }
+
         menu.popup({ window: senderWindow });
-        return;
+      } catch (error) {
+        console.error('Failed to show launcher context menu:', error);
       }
-
-      menu.append(new MenuItem({ type: 'separator' }));
-
-      // パスをコピー
-      menu.append(
-        new MenuItem({
-          label: '📋 パスをコピー',
-          click: () => {
-            event.sender.send(IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_PATH, item);
-          },
-        })
-      );
-
-      // 親フォルダー関連（URLとcustomURI以外）
-      if (hasParentFolder) {
-        menu.append(
-          new MenuItem({
-            label: '📋 親フォルダーのパスをコピー',
-            click: () => {
-              event.sender.send(IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_PARENT_PATH, item);
-            },
-          })
-        );
-
-        menu.append(
-          new MenuItem({
-            label: '📂 親フォルダーを開く',
-            click: () => {
-              event.sender.send(IPC_CHANNELS.EVENT_LAUNCHER_MENU_OPEN_PARENT_FOLDER, item);
-            },
-          })
-        );
-      }
-
-      // ショートカット関連
-      if (isShortcut) {
-        menu.append(new MenuItem({ type: 'separator' }));
-
-        menu.append(
-          new MenuItem({
-            label: '📋 リンク先のパスをコピー',
-            click: () => {
-              event.sender.send(IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_SHORTCUT_PATH, item);
-            },
-          })
-        );
-
-        menu.append(
-          new MenuItem({
-            label: '📋 リンク先の親フォルダーのパスをコピー',
-            click: () => {
-              event.sender.send(IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_SHORTCUT_PARENT_PATH, item);
-            },
-          })
-        );
-
-        menu.append(
-          new MenuItem({
-            label: '📂 リンク先の親フォルダーを開く',
-            click: () => {
-              event.sender.send(IPC_CHANNELS.EVENT_LAUNCHER_MENU_OPEN_SHORTCUT_PARENT_FOLDER, item);
-            },
-          })
-        );
-      }
-
-      menu.popup({ window: senderWindow });
-    } catch (error) {
-      console.error('Failed to show launcher context menu:', error);
     }
-  });
+  );
 }
 
 /**
@@ -275,7 +287,10 @@ export function setupWorkspaceContextMenuHandler(getMainWindow: () => BrowserWin
             new MenuItem({
               label: '📋 リンク先の親フォルダーのパスをコピー',
               click: () => {
-                event.sender.send(IPC_CHANNELS.EVENT_WORKSPACE_MENU_COPY_SHORTCUT_PARENT_PATH, item.id);
+                event.sender.send(
+                  IPC_CHANNELS.EVENT_WORKSPACE_MENU_COPY_SHORTCUT_PARENT_PATH,
+                  item.id
+                );
               },
             })
           );
@@ -284,7 +299,10 @@ export function setupWorkspaceContextMenuHandler(getMainWindow: () => BrowserWin
             new MenuItem({
               label: '📂 リンク先の親フォルダーを開く',
               click: () => {
-                event.sender.send(IPC_CHANNELS.EVENT_WORKSPACE_MENU_OPEN_SHORTCUT_PARENT_FOLDER, item.id);
+                event.sender.send(
+                  IPC_CHANNELS.EVENT_WORKSPACE_MENU_OPEN_SHORTCUT_PARENT_FOLDER,
+                  item.id
+                );
               },
             })
           );
@@ -354,7 +372,10 @@ export function setupWorkspaceGroupContextMenuHandler(getMainWindow: () => Brows
           new MenuItem({
             label: '🎨 カラーを変更',
             click: () => {
-              event.sender.send(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_SHOW_COLOR_PICKER, group.id);
+              event.sender.send(
+                IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_SHOW_COLOR_PICKER,
+                group.id
+              );
             },
           })
         );
@@ -407,7 +428,12 @@ export function setupWorkspaceGroupContextMenuHandler(getMainWindow: () => Brows
 export function setupWindowContextMenuHandler(getMainWindow: () => BrowserWindow | null) {
   ipcMain.handle(
     IPC_CHANNELS.SHOW_WINDOW_CONTEXT_MENU,
-    async (event, windowInfo: WindowInfo, desktopInfo: VirtualDesktopInfo, isPinned: boolean): Promise<void> => {
+    async (
+      event,
+      windowInfo: WindowInfo,
+      desktopInfo: VirtualDesktopInfo,
+      isPinned: boolean
+    ): Promise<void> => {
       try {
         const senderWindow = BrowserWindow.fromWebContents(event.sender);
         if (!senderWindow || senderWindow.isDestroyed()) {
@@ -435,10 +461,9 @@ export function setupWindowContextMenuHandler(getMainWindow: () => BrowserWindow
         if (desktopInfo.supported && desktopInfo.desktopCount > 1) {
           // 各デスクトップへの移動メニュー
           for (let i = 1; i <= desktopInfo.desktopCount; i++) {
-            const isCurrentDesktop = windowInfo.desktopNumber !== undefined && i === windowInfo.desktopNumber;
-            const label = isCurrentDesktop
-              ? `✓ デスクトップ ${i} (現在)`
-              : `🖥️ デスクトップ ${i}`;
+            const isCurrentDesktop =
+              windowInfo.desktopNumber !== undefined && i === windowInfo.desktopNumber;
+            const label = isCurrentDesktop ? `✓ デスクトップ ${i} (現在)` : `🖥️ デスクトップ ${i}`;
 
             virtualDesktopSubmenu.append(
               new MenuItem({

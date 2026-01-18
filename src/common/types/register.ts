@@ -20,6 +20,7 @@ export interface WindowOperationConfig {
   moveToActiveMonitorCenter?: boolean;
   virtualDesktopNumber?: number;
   activateWindow?: boolean;
+  pinToAllDesktops?: boolean;
 }
 
 /**

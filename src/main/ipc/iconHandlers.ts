@@ -870,9 +870,18 @@ export function setupIconHandlers(
   });
 
   // 統合進捗API
-  ipcMain.handle(IPC_CHANNELS.FETCH_ICONS_COMBINED, async (_event, urlItems: IconItem[], items: IconItem[]) => {
-    return await fetchIconsCombined(urlItems, items, faviconsFolder, iconsFolder, extensionsFolder);
-  });
+  ipcMain.handle(
+    IPC_CHANNELS.FETCH_ICONS_COMBINED,
+    async (_event, urlItems: IconItem[], items: IconItem[]) => {
+      return await fetchIconsCombined(
+        urlItems,
+        items,
+        faviconsFolder,
+        iconsFolder,
+        extensionsFolder
+      );
+    }
+  );
 
   // カスタムアイコン関連のハンドラー
   ipcMain.handle(IPC_CHANNELS.SELECT_CUSTOM_ICON_FILE, async () => {

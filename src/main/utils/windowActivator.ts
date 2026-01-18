@@ -15,7 +15,11 @@ import {
   setWindowBounds,
   getWindowBounds,
 } from './nativeWindowControl.js';
-import { moveWindowToVirtualDesktop, isWindowOnDesktopNumber } from './virtualDesktop/index.js';
+import {
+  moveWindowToVirtualDesktop,
+  isWindowOnDesktopNumber,
+  pinWindow,
+} from './virtualDesktop/index.js';
 
 /**
  * ウィンドウ位置・サイズ設定の定数
@@ -291,6 +295,29 @@ export async function tryActivateWindow(
   // 最小化されている場合は復元
   restoreWindow(hwnd);
 
+  // ピン止め処理
+  const needsPinning = effectiveConfig.pinToAllDesktops === true;
+  if (needsPinning) {
+    const pinSuccess = pinWindow(hwnd);
+    if (pinSuccess) {
+      logger.info(
+        {
+          name: itemName,
+          windowConfig: JSON.stringify(effectiveConfig),
+        },
+        '全仮想デスクトップにピン止めしました'
+      );
+    } else {
+      logger.warn(
+        {
+          name: itemName,
+          windowConfig: JSON.stringify(effectiveConfig),
+        },
+        'ウィンドウのピン止めに失敗しました'
+      );
+    }
+  }
+
   // アクティブモニター中央への移動が必要かチェック
   const needsActiveMonitorCenter = effectiveConfig.moveToActiveMonitorCenter === true;
 
@@ -373,9 +400,10 @@ export async function tryActivateWindow(
 
   // 最終的なデスクトップに移動
   // virtualDesktopNumberが指定されている場合のみ、そのデスクトップに移動
+  // ただし、ピン止めが有効な場合はスキップ（ピン止めウィンドウは全デスクトップに表示される）
   let targetDesktopNumber: number | undefined;
 
-  if (effectiveConfig.virtualDesktopNumber !== undefined) {
+  if (effectiveConfig.virtualDesktopNumber !== undefined && !needsPinning) {
     targetDesktopNumber = effectiveConfig.virtualDesktopNumber;
   }
 

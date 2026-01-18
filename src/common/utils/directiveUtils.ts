@@ -142,6 +142,7 @@ export function parseWindowOperationConfig(configString: string): WindowOperatio
       moveToActiveMonitorCenter: config.moveToActiveMonitorCenter,
       virtualDesktopNumber: config.virtualDesktopNumber,
       activateWindow: config.activateWindow,
+      pinToAllDesktops: config.pinToAllDesktops,
     };
   } catch (error) {
     throw new Error(

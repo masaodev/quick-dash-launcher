@@ -8,13 +8,7 @@ import * as os from 'os';
 
 import koffi from 'koffi';
 
-import {
-  HKEY_CURRENT_USER,
-  KEY_READ,
-  REG_BINARY,
-  debugLog,
-  type RegistryHandle,
-} from './types.js';
+import { HKEY_CURRENT_USER, KEY_READ, REG_BINARY, debugLog, type RegistryHandle } from './types.js';
 import { bufferToGuidString } from './guidUtils.js';
 
 // advapi32.dllをロード（レジストリアクセス用）

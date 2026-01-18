@@ -170,7 +170,10 @@ export interface ElectronAPI {
   getAllWindowsAllDesktops: () => Promise<WindowInfo[]>;
   getVirtualDesktopInfo: () => Promise<VirtualDesktopInfo>;
   activateWindowByHwnd: (hwnd: number | bigint) => Promise<{ success: boolean; error?: string }>;
-  moveWindowToDesktop: (hwnd: number | bigint, desktopNumber: number) => Promise<{ success: boolean; error?: string }>;
+  moveWindowToDesktop: (
+    hwnd: number | bigint,
+    desktopNumber: number
+  ) => Promise<{ success: boolean; error?: string }>;
   pinWindow: (hwnd: number | bigint) => Promise<{ success: boolean; error?: string }>;
   unPinWindow: (hwnd: number | bigint) => Promise<{ success: boolean; error?: string }>;
   isWindowPinned: (hwnd: number | bigint) => Promise<boolean>;
@@ -199,7 +202,11 @@ export interface ElectronAPI {
   showLauncherContextMenu: (item: AppItem) => Promise<void>;
   showWorkspaceContextMenu: (item: WorkspaceItem, groups: WorkspaceGroup[]) => Promise<void>;
   showWorkspaceGroupContextMenu: (group: WorkspaceGroup) => Promise<void>;
-  showWindowContextMenu: (windowInfo: WindowInfo, desktopInfo: VirtualDesktopInfo, isPinned: boolean) => Promise<void>;
+  showWindowContextMenu: (
+    windowInfo: WindowInfo,
+    desktopInfo: VirtualDesktopInfo,
+    isPinned: boolean
+  ) => Promise<void>;
   // AdminItemManagerContextMenuイベントリスナー
   onAdminMenuDuplicateItems: (callback: () => void) => () => void;
   onAdminMenuEditItem: (callback: () => void) => () => void;
@@ -215,7 +222,9 @@ export interface ElectronAPI {
   onLauncherMenuOpenShortcutParentFolder: (callback: (item: AppItem) => void) => () => void;
   // WindowContextMenuイベントリスナー
   onWindowMenuActivate: (callback: (windowInfo: WindowInfo) => void) => () => void;
-  onMoveWindowToDesktop: (callback: (hwnd: number | bigint, desktopNumber: number) => void) => () => void;
+  onMoveWindowToDesktop: (
+    callback: (hwnd: number | bigint, desktopNumber: number) => void
+  ) => () => void;
   onPinWindow: (callback: (hwnd: number | bigint) => void) => () => void;
   onUnPinWindow: (callback: (hwnd: number | bigint) => void) => () => void;
   // WorkspaceContextMenuイベントリスナー
@@ -232,7 +241,9 @@ export interface ElectronAPI {
   // WorkspaceGroupContextMenuイベントリスナー
   onWorkspaceGroupMenuRename: (callback: (groupId: string) => void) => () => void;
   onWorkspaceGroupMenuShowColorPicker: (callback: (groupId: string) => void) => () => void;
-  onWorkspaceGroupMenuChangeColor: (callback: (groupId: string, color: string) => void) => () => void;
+  onWorkspaceGroupMenuChangeColor: (
+    callback: (groupId: string, color: string) => void
+  ) => () => void;
   onWorkspaceGroupMenuCopyAsText: (callback: (groupId: string) => void) => () => void;
   onWorkspaceGroupMenuArchive: (callback: (groupId: string) => void) => () => void;
   onWorkspaceGroupMenuDelete: (callback: (groupId: string) => void) => () => void;

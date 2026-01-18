@@ -4,12 +4,7 @@
  * 型アサーションを安全に置き換えるための型ガード関数を提供します。
  */
 
-import type {
-  AppItem,
-  GroupItem,
-  LauncherItem,
-  WindowOperationItem,
-} from './launcher';
+import type { AppItem, GroupItem, LauncherItem, WindowOperationItem } from './launcher';
 import type { WindowInfo } from './window';
 import type { WorkspaceItem, DragItemData } from './workspace';
 

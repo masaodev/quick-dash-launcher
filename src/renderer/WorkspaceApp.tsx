@@ -222,9 +222,7 @@ const WorkspaceApp: React.FC = () => {
     // 全てのグループを並列で展開
     const updatePromises = groups
       .filter((group) => group.collapsed)
-      .map((group) =>
-        window.electronAPI.workspaceAPI.updateGroup(group.id, { collapsed: false })
-      );
+      .map((group) => window.electronAPI.workspaceAPI.updateGroup(group.id, { collapsed: false }));
 
     if (updatePromises.length > 0) {
       await Promise.all(updatePromises);
@@ -241,9 +239,7 @@ const WorkspaceApp: React.FC = () => {
     // 全てのグループを並列で閉じる
     const updatePromises = groups
       .filter((group) => !group.collapsed)
-      .map((group) =>
-        window.electronAPI.workspaceAPI.updateGroup(group.id, { collapsed: true })
-      );
+      .map((group) => window.electronAPI.workspaceAPI.updateGroup(group.id, { collapsed: true }));
 
     if (updatePromises.length > 0) {
       await Promise.all(updatePromises);

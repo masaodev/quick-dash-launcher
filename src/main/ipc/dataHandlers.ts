@@ -217,6 +217,7 @@ export async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
           moveToActiveMonitorCenter: windowOp.moveToActiveMonitorCenter,
           virtualDesktopNumber: windowOp.virtualDesktopNumber,
           activateWindow: windowOp.activateWindow,
+          pinToAllDesktops: windowOp.pinToAllDesktops,
           sourceFile: fileName,
           lineNumber: lineIndex + 1,
           isEdited: false,

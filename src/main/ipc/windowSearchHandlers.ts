@@ -124,7 +124,11 @@ export function setupWindowSearchHandlers(
    */
   ipcMain.handle(
     IPC_CHANNELS.MOVE_WINDOW_TO_DESKTOP,
-    async (_event, hwnd: number | bigint, desktopNumber: number): Promise<{ success: boolean; error?: string }> => {
+    async (
+      _event,
+      hwnd: number | bigint,
+      desktopNumber: number
+    ): Promise<{ success: boolean; error?: string }> => {
       try {
         const success = moveWindowToVirtualDesktop(hwnd, desktopNumber);
         return { success };

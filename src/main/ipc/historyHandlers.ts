@@ -29,10 +29,13 @@ export function setupHistoryHandlers(configFolder: string) {
   );
 
   // 検索履歴エントリーの追加
-  ipcMain.handle(IPC_CHANNELS.ADD_SEARCH_HISTORY_ENTRY, async (_event, query: string): Promise<void> => {
-    if (!searchHistoryService) return;
-    searchHistoryService.addHistoryEntry(query);
-  });
+  ipcMain.handle(
+    IPC_CHANNELS.ADD_SEARCH_HISTORY_ENTRY,
+    async (_event, query: string): Promise<void> => {
+      if (!searchHistoryService) return;
+      searchHistoryService.addHistoryEntry(query);
+    }
+  );
 
   // 検索履歴のクリア
   ipcMain.handle(IPC_CHANNELS.CLEAR_SEARCH_HISTORY, async (): Promise<void> => {

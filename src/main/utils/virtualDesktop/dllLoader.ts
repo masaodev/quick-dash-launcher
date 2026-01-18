@@ -110,7 +110,6 @@ function defineIsWindowOnDesktopFunction(dllHandle: KoffiLibrary): KoffiFunction
   return null;
 }
 
-
 /**
  * 単一パラメータ（HWND）の関数を定義（複数パターンでフォールバック）
  * PinWindow、UnPinWindow、IsPinnedWindow等の共通パターン
@@ -186,7 +185,10 @@ try {
     debugLog('[DllLoader] IsWindowOnDesktopNumber初期化完了');
   }
 
-  _getWindowDesktopNumber = defineSingleHwndFunction(virtualDesktopAccessor, 'GetWindowDesktopNumber');
+  _getWindowDesktopNumber = defineSingleHwndFunction(
+    virtualDesktopAccessor,
+    'GetWindowDesktopNumber'
+  );
   if (_getWindowDesktopNumber) {
     debugLog('[DllLoader] GetWindowDesktopNumber初期化完了');
   }

@@ -57,6 +57,8 @@ export function parseWindowConfig(value: string | undefined): WindowConfig | nul
       if (typeof parsed.virtualDesktopNumber === 'number')
         config.virtualDesktopNumber = parsed.virtualDesktopNumber;
       if (typeof parsed.activateWindow === 'boolean') config.activateWindow = parsed.activateWindow;
+      if (typeof parsed.pinToAllDesktops === 'boolean')
+        config.pinToAllDesktops = parsed.pinToAllDesktops;
 
       return config;
     } catch (error) {
@@ -91,7 +93,7 @@ export function serializeWindowConfig(config: WindowConfig | undefined): string 
     return '';
   }
 
-  // 位置・サイズ・仮想デスクトップ・アクティブ化・プロセス名情報がない場合は、文字列形式（後方互換）
+  // 位置・サイズ・仮想デスクトップ・アクティブ化・プロセス名・ピン止め情報がない場合は、文字列形式（後方互換）
   if (
     config.processName === undefined &&
     config.x === undefined &&
@@ -100,7 +102,8 @@ export function serializeWindowConfig(config: WindowConfig | undefined): string 
     config.height === undefined &&
     config.moveToActiveMonitorCenter === undefined &&
     config.virtualDesktopNumber === undefined &&
-    config.activateWindow === undefined
+    config.activateWindow === undefined &&
+    config.pinToAllDesktops === undefined
   ) {
     return config.title;
   }

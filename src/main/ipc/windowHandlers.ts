@@ -75,9 +75,12 @@ export function setupWindowHandlers(
     return isAdminWindowShown();
   });
 
-  ipcMain.handle(IPC_CHANNELS.OPEN_EDIT_WINDOW_WITH_TAB, async (_event, tab: 'settings' | 'edit' | 'other') => {
-    await showAdminWindowWithTab(tab);
-  });
+  ipcMain.handle(
+    IPC_CHANNELS.OPEN_EDIT_WINDOW_WITH_TAB,
+    async (_event, tab: 'settings' | 'edit' | 'other') => {
+      await showAdminWindowWithTab(tab);
+    }
+  );
 
   // アーカイブタブを開くIPCハンドラー
   ipcMain.handle(IPC_CHANNELS.ADMIN_SHOW_ARCHIVE_TAB, async () => {

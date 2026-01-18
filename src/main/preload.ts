@@ -44,7 +44,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   deleteDataFile: (fileName: string) => ipcRenderer.invoke(IPC_CHANNELS.DELETE_DATA_FILE, fileName),
   loadDataFiles: (): Promise<AppItem[]> => ipcRenderer.invoke(IPC_CHANNELS.LOAD_DATA_FILES),
   openItem: (item: LauncherItem) => ipcRenderer.invoke(IPC_CHANNELS.OPEN_ITEM, item),
-  openParentFolder: (item: LauncherItem) => ipcRenderer.invoke(IPC_CHANNELS.OPEN_PARENT_FOLDER, item),
+  openParentFolder: (item: LauncherItem) =>
+    ipcRenderer.invoke(IPC_CHANNELS.OPEN_PARENT_FOLDER, item),
   executeGroup: (group: GroupItem, allItems: AppItem[]) =>
     ipcRenderer.invoke(IPC_CHANNELS.EXECUTE_GROUP, group, allItems),
   executeWindowOperation: (item: WindowOperationItem): Promise<void> =>
@@ -54,10 +55,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   extractIcon: (filePath: string) => ipcRenderer.invoke(IPC_CHANNELS.EXTRACT_ICON, filePath),
   extractFileIconByExtension: (filePath: string) =>
     ipcRenderer.invoke(IPC_CHANNELS.EXTRACT_FILE_ICON_BY_EXTENSION, filePath),
-  extractCustomUriIcon: (uri: string) => ipcRenderer.invoke(IPC_CHANNELS.EXTRACT_CUSTOM_URI_ICON, uri),
+  extractCustomUriIcon: (uri: string) =>
+    ipcRenderer.invoke(IPC_CHANNELS.EXTRACT_CUSTOM_URI_ICON, uri),
   getIconForItem: (filePath: string, itemType: 'url' | 'file' | 'folder' | 'app' | 'customUri') =>
     ipcRenderer.invoke(IPC_CHANNELS.GET_ICON_FOR_ITEM, filePath, itemType),
-  loadCachedIcons: (items: LauncherItem[]) => ipcRenderer.invoke(IPC_CHANNELS.LOAD_CACHED_ICONS, items),
+  loadCachedIcons: (items: LauncherItem[]) =>
+    ipcRenderer.invoke(IPC_CHANNELS.LOAD_CACHED_ICONS, items),
   // 統合進捗付きアイコン取得API
   fetchIconsCombined: (urlItems: LauncherItem[], items: LauncherItem[]) =>
     ipcRenderer.invoke(IPC_CHANNELS.FETCH_ICONS_COMBINED, urlItems, items),
@@ -109,7 +112,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     };
   },
   // 3段階ピンモードAPI
-  getWindowPinMode: (): Promise<WindowPinMode> => ipcRenderer.invoke(IPC_CHANNELS.GET_WINDOW_PIN_MODE),
+  getWindowPinMode: (): Promise<WindowPinMode> =>
+    ipcRenderer.invoke(IPC_CHANNELS.GET_WINDOW_PIN_MODE),
   cycleWindowPinMode: () => ipcRenderer.invoke(IPC_CHANNELS.CYCLE_WINDOW_PIN_MODE),
   registerItems: (items: RegisterItem[]) => ipcRenderer.invoke(IPC_CHANNELS.REGISTER_ITEMS, items),
   isDirectory: (filePath: string) => ipcRenderer.invoke(IPC_CHANNELS.IS_DIRECTORY, filePath),
@@ -123,15 +127,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
   updateItem: (request: UpdateItemRequest) => ipcRenderer.invoke(IPC_CHANNELS.UPDATE_ITEM, request),
   updateRawLine: (request: { sourceFile: string; lineNumber: number; newContent: string }) =>
     ipcRenderer.invoke(IPC_CHANNELS.UPDATE_RAW_LINE, request),
-  deleteItems: (requests: DeleteItemRequest[]) => ipcRenderer.invoke(IPC_CHANNELS.DELETE_ITEMS, requests),
+  deleteItems: (requests: DeleteItemRequest[]) =>
+    ipcRenderer.invoke(IPC_CHANNELS.DELETE_ITEMS, requests),
   batchUpdateItems: (requests: UpdateItemRequest[]) =>
     ipcRenderer.invoke(IPC_CHANNELS.BATCH_UPDATE_ITEMS, requests),
   loadRawDataFiles: () => ipcRenderer.invoke(IPC_CHANNELS.LOAD_RAW_DATA_FILES),
-  saveRawDataFiles: (rawLines: RawDataLine[]) => ipcRenderer.invoke(IPC_CHANNELS.SAVE_RAW_DATA_FILES, rawLines),
+  saveRawDataFiles: (rawLines: RawDataLine[]) =>
+    ipcRenderer.invoke(IPC_CHANNELS.SAVE_RAW_DATA_FILES, rawLines),
   setEditMode: (editMode: boolean) => ipcRenderer.invoke(IPC_CHANNELS.SET_EDIT_MODE, editMode),
   getEditMode: () => ipcRenderer.invoke(IPC_CHANNELS.GET_EDIT_MODE),
   selectBookmarkFile: () => ipcRenderer.invoke(IPC_CHANNELS.SELECT_BOOKMARK_FILE),
-  parseBookmarkFile: (filePath: string) => ipcRenderer.invoke(IPC_CHANNELS.PARSE_BOOKMARK_FILE, filePath),
+  parseBookmarkFile: (filePath: string) =>
+    ipcRenderer.invoke(IPC_CHANNELS.PARSE_BOOKMARK_FILE, filePath),
   // ブラウザブックマーク直接インポートAPI
   detectInstalledBrowsers: (): Promise<BrowserInfo[]> =>
     ipcRenderer.invoke(IPC_CHANNELS.DETECT_INSTALLED_BROWSERS),
@@ -144,9 +151,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   setMultipleSettings: (settings: Partial<AppSettings>) =>
     ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_SET_MULTIPLE, settings),
   resetSettings: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_RESET),
-  validateHotkey: (hotkey: string) => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_VALIDATE_HOTKEY, hotkey),
+  validateHotkey: (hotkey: string) =>
+    ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_VALIDATE_HOTKEY, hotkey),
   getSettingsConfigPath: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET_CONFIG_PATH),
-  changeHotkey: (newHotkey: string) => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_CHANGE_HOTKEY, newHotkey),
+  changeHotkey: (newHotkey: string) =>
+    ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_CHANGE_HOTKEY, newHotkey),
   checkHotkeyAvailability: (hotkey: string) =>
     ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_CHECK_HOTKEY_AVAILABILITY, hotkey),
   isFirstLaunch: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_IS_FIRST_LAUNCH),
@@ -178,7 +187,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   loadSearchHistory: () => ipcRenderer.invoke(IPC_CHANNELS.LOAD_SEARCH_HISTORY),
   saveSearchHistory: (entries: SearchHistoryEntry[]) =>
     ipcRenderer.invoke(IPC_CHANNELS.SAVE_SEARCH_HISTORY, entries),
-  addSearchHistoryEntry: (query: string) => ipcRenderer.invoke(IPC_CHANNELS.ADD_SEARCH_HISTORY_ENTRY, query),
+  addSearchHistoryEntry: (query: string) =>
+    ipcRenderer.invoke(IPC_CHANNELS.ADD_SEARCH_HISTORY_ENTRY, query),
   clearSearchHistory: () => ipcRenderer.invoke(IPC_CHANNELS.CLEAR_SEARCH_HISTORY),
   // アプリ情報関連API
   getAppInfo: (): Promise<AppInfo> => ipcRenderer.invoke(IPC_CHANNELS.GET_APP_INFO),
@@ -187,7 +197,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getWindowList: (): Promise<WindowInfo[]> => ipcRenderer.invoke(IPC_CHANNELS.GET_ALL_WINDOWS),
   activateWindowByHwnd: (hwnd: number | bigint): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke(IPC_CHANNELS.ACTIVATE_WINDOW, hwnd),
-  moveWindowToDesktop: (hwnd: number | bigint, desktopNumber: number): Promise<{ success: boolean; error?: string }> =>
+  moveWindowToDesktop: (
+    hwnd: number | bigint,
+    desktopNumber: number
+  ): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke(IPC_CHANNELS.MOVE_WINDOW_TO_DESKTOP, hwnd, desktopNumber),
   pinWindow: (hwnd: number | bigint): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke(IPC_CHANNELS.PIN_WINDOW, hwnd),
@@ -217,7 +230,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   hideWorkspaceWindow: () => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_HIDE_WINDOW),
   // ワークスペース関連API
   workspaceAPI: {
-    loadItems: (): Promise<WorkspaceItem[]> => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_LOAD_ITEMS),
+    loadItems: (): Promise<WorkspaceItem[]> =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_LOAD_ITEMS),
     addItem: (item: AppItem, groupId?: string): Promise<WorkspaceItem> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_ADD_ITEM, item, groupId),
     addItemsFromPaths: (filePaths: string[], groupId?: string): Promise<WorkspaceItem[]> =>
@@ -231,7 +245,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     launchItem: (item: WorkspaceItem): Promise<{ success: boolean }> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_LAUNCH_ITEM, item),
     // グループ管理
-    loadGroups: (): Promise<WorkspaceGroup[]> => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_LOAD_GROUPS),
+    loadGroups: (): Promise<WorkspaceGroup[]> =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_LOAD_GROUPS),
     createGroup: (name: string, color?: string): Promise<WorkspaceGroup> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_CREATE_GROUP, name, color),
     updateGroup: (id: string, updates: Partial<WorkspaceGroup>): Promise<{ success: boolean }> =>
@@ -259,8 +274,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     clearExecutionHistory: (): Promise<{ success: boolean }> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_CLEAR_EXECUTION_HISTORY),
     // ピン留め関連
-    getAlwaysOnTop: (): Promise<boolean> => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_GET_ALWAYS_ON_TOP),
-    toggleAlwaysOnTop: (): Promise<boolean> => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_TOGGLE_ALWAYS_ON_TOP),
+    getAlwaysOnTop: (): Promise<boolean> =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_GET_ALWAYS_ON_TOP),
+    toggleAlwaysOnTop: (): Promise<boolean> =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_TOGGLE_ALWAYS_ON_TOP),
     // モーダルモード関連
     setModalMode: (isModal: boolean, requiredSize?: { width: number; height: number }) =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_SET_MODAL_MODE, isModal, requiredSize),
@@ -283,7 +300,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onAdminMenuDuplicateItems: (callback: () => void) => {
     const listener = () => callback();
     ipcRenderer.on(IPC_CHANNELS.EVENT_ADMIN_MENU_DUPLICATE_ITEMS, listener);
-    return () => ipcRenderer.removeListener(IPC_CHANNELS.EVENT_ADMIN_MENU_DUPLICATE_ITEMS, listener);
+    return () =>
+      ipcRenderer.removeListener(IPC_CHANNELS.EVENT_ADMIN_MENU_DUPLICATE_ITEMS, listener);
   },
   onAdminMenuEditItem: (callback: () => void) => {
     const listener = () => callback();
@@ -306,7 +324,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onLauncherMenuAddToWorkspace: (callback: (item: AppItem) => void) => {
     const listener = (_event: unknown, item: AppItem) => callback(item);
     ipcRenderer.on(IPC_CHANNELS.EVENT_LAUNCHER_MENU_ADD_TO_WORKSPACE, listener);
-    return () => ipcRenderer.removeListener(IPC_CHANNELS.EVENT_LAUNCHER_MENU_ADD_TO_WORKSPACE, listener);
+    return () =>
+      ipcRenderer.removeListener(IPC_CHANNELS.EVENT_LAUNCHER_MENU_ADD_TO_WORKSPACE, listener);
   },
   onLauncherMenuCopyPath: (callback: (item: AppItem) => void) => {
     const listener = (_event: unknown, item: AppItem) => callback(item);
@@ -316,30 +335,45 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onLauncherMenuCopyParentPath: (callback: (item: AppItem) => void) => {
     const listener = (_event: unknown, item: AppItem) => callback(item);
     ipcRenderer.on(IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_PARENT_PATH, listener);
-    return () => ipcRenderer.removeListener(IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_PARENT_PATH, listener);
+    return () =>
+      ipcRenderer.removeListener(IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_PARENT_PATH, listener);
   },
   onLauncherMenuOpenParentFolder: (callback: (item: AppItem) => void) => {
     const listener = (_event: unknown, item: AppItem) => callback(item);
     ipcRenderer.on(IPC_CHANNELS.EVENT_LAUNCHER_MENU_OPEN_PARENT_FOLDER, listener);
-    return () => ipcRenderer.removeListener(IPC_CHANNELS.EVENT_LAUNCHER_MENU_OPEN_PARENT_FOLDER, listener);
+    return () =>
+      ipcRenderer.removeListener(IPC_CHANNELS.EVENT_LAUNCHER_MENU_OPEN_PARENT_FOLDER, listener);
   },
   onLauncherMenuCopyShortcutPath: (callback: (item: AppItem) => void) => {
     const listener = (_event: unknown, item: AppItem) => callback(item);
     ipcRenderer.on(IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_SHORTCUT_PATH, listener);
-    return () => ipcRenderer.removeListener(IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_SHORTCUT_PATH, listener);
+    return () =>
+      ipcRenderer.removeListener(IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_SHORTCUT_PATH, listener);
   },
   onLauncherMenuCopyShortcutParentPath: (callback: (item: AppItem) => void) => {
     const listener = (_event: unknown, item: AppItem) => callback(item);
     ipcRenderer.on(IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_SHORTCUT_PARENT_PATH, listener);
-    return () => ipcRenderer.removeListener(IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_SHORTCUT_PARENT_PATH, listener);
+    return () =>
+      ipcRenderer.removeListener(
+        IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_SHORTCUT_PARENT_PATH,
+        listener
+      );
   },
   onLauncherMenuOpenShortcutParentFolder: (callback: (item: AppItem) => void) => {
     const listener = (_event: unknown, item: AppItem) => callback(item);
     ipcRenderer.on(IPC_CHANNELS.EVENT_LAUNCHER_MENU_OPEN_SHORTCUT_PARENT_FOLDER, listener);
-    return () => ipcRenderer.removeListener(IPC_CHANNELS.EVENT_LAUNCHER_MENU_OPEN_SHORTCUT_PARENT_FOLDER, listener);
+    return () =>
+      ipcRenderer.removeListener(
+        IPC_CHANNELS.EVENT_LAUNCHER_MENU_OPEN_SHORTCUT_PARENT_FOLDER,
+        listener
+      );
   },
   // WindowContextMenu
-  showWindowContextMenu: (windowInfo: WindowInfo, desktopInfo: VirtualDesktopInfo, isPinned: boolean): Promise<void> =>
+  showWindowContextMenu: (
+    windowInfo: WindowInfo,
+    desktopInfo: VirtualDesktopInfo,
+    isPinned: boolean
+  ): Promise<void> =>
     ipcRenderer.invoke(IPC_CHANNELS.SHOW_WINDOW_CONTEXT_MENU, windowInfo, desktopInfo, isPinned),
   onWindowMenuActivate: (callback: (windowInfo: WindowInfo) => void) => {
     const listener = (_event: unknown, windowInfo: WindowInfo) => callback(windowInfo);
@@ -368,12 +402,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onWorkspaceMenuRenameItem: (callback: (itemId: string) => void) => {
     const listener = (_event: unknown, itemId: string) => callback(itemId);
     ipcRenderer.on(IPC_CHANNELS.EVENT_WORKSPACE_MENU_RENAME_ITEM, listener);
-    return () => ipcRenderer.removeListener(IPC_CHANNELS.EVENT_WORKSPACE_MENU_RENAME_ITEM, listener);
+    return () =>
+      ipcRenderer.removeListener(IPC_CHANNELS.EVENT_WORKSPACE_MENU_RENAME_ITEM, listener);
   },
   onWorkspaceMenuLaunchItem: (callback: (itemId: string) => void) => {
     const listener = (_event: unknown, itemId: string) => callback(itemId);
     ipcRenderer.on(IPC_CHANNELS.EVENT_WORKSPACE_MENU_LAUNCH_ITEM, listener);
-    return () => ipcRenderer.removeListener(IPC_CHANNELS.EVENT_WORKSPACE_MENU_LAUNCH_ITEM, listener);
+    return () =>
+      ipcRenderer.removeListener(IPC_CHANNELS.EVENT_WORKSPACE_MENU_LAUNCH_ITEM, listener);
   },
   onWorkspaceMenuCopyPath: (callback: (itemId: string) => void) => {
     const listener = (_event: unknown, itemId: string) => callback(itemId);
@@ -383,37 +419,50 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onWorkspaceMenuCopyParentPath: (callback: (itemId: string) => void) => {
     const listener = (_event: unknown, itemId: string) => callback(itemId);
     ipcRenderer.on(IPC_CHANNELS.EVENT_WORKSPACE_MENU_COPY_PARENT_PATH, listener);
-    return () => ipcRenderer.removeListener(IPC_CHANNELS.EVENT_WORKSPACE_MENU_COPY_PARENT_PATH, listener);
+    return () =>
+      ipcRenderer.removeListener(IPC_CHANNELS.EVENT_WORKSPACE_MENU_COPY_PARENT_PATH, listener);
   },
   onWorkspaceMenuOpenParentFolder: (callback: (itemId: string) => void) => {
     const listener = (_event: unknown, itemId: string) => callback(itemId);
     ipcRenderer.on(IPC_CHANNELS.EVENT_WORKSPACE_MENU_OPEN_PARENT_FOLDER, listener);
-    return () => ipcRenderer.removeListener(IPC_CHANNELS.EVENT_WORKSPACE_MENU_OPEN_PARENT_FOLDER, listener);
+    return () =>
+      ipcRenderer.removeListener(IPC_CHANNELS.EVENT_WORKSPACE_MENU_OPEN_PARENT_FOLDER, listener);
   },
   onWorkspaceMenuCopyShortcutPath: (callback: (itemId: string) => void) => {
     const listener = (_event: unknown, itemId: string) => callback(itemId);
     ipcRenderer.on(IPC_CHANNELS.EVENT_WORKSPACE_MENU_COPY_SHORTCUT_PATH, listener);
-    return () => ipcRenderer.removeListener(IPC_CHANNELS.EVENT_WORKSPACE_MENU_COPY_SHORTCUT_PATH, listener);
+    return () =>
+      ipcRenderer.removeListener(IPC_CHANNELS.EVENT_WORKSPACE_MENU_COPY_SHORTCUT_PATH, listener);
   },
   onWorkspaceMenuCopyShortcutParentPath: (callback: (itemId: string) => void) => {
     const listener = (_event: unknown, itemId: string) => callback(itemId);
     ipcRenderer.on(IPC_CHANNELS.EVENT_WORKSPACE_MENU_COPY_SHORTCUT_PARENT_PATH, listener);
-    return () => ipcRenderer.removeListener(IPC_CHANNELS.EVENT_WORKSPACE_MENU_COPY_SHORTCUT_PARENT_PATH, listener);
+    return () =>
+      ipcRenderer.removeListener(
+        IPC_CHANNELS.EVENT_WORKSPACE_MENU_COPY_SHORTCUT_PARENT_PATH,
+        listener
+      );
   },
   onWorkspaceMenuOpenShortcutParentFolder: (callback: (itemId: string) => void) => {
     const listener = (_event: unknown, itemId: string) => callback(itemId);
     ipcRenderer.on(IPC_CHANNELS.EVENT_WORKSPACE_MENU_OPEN_SHORTCUT_PARENT_FOLDER, listener);
-    return () => ipcRenderer.removeListener(IPC_CHANNELS.EVENT_WORKSPACE_MENU_OPEN_SHORTCUT_PARENT_FOLDER, listener);
+    return () =>
+      ipcRenderer.removeListener(
+        IPC_CHANNELS.EVENT_WORKSPACE_MENU_OPEN_SHORTCUT_PARENT_FOLDER,
+        listener
+      );
   },
   onWorkspaceMenuRemoveFromGroup: (callback: (itemId: string) => void) => {
     const listener = (_event: unknown, itemId: string) => callback(itemId);
     ipcRenderer.on(IPC_CHANNELS.EVENT_WORKSPACE_MENU_REMOVE_FROM_GROUP, listener);
-    return () => ipcRenderer.removeListener(IPC_CHANNELS.EVENT_WORKSPACE_MENU_REMOVE_FROM_GROUP, listener);
+    return () =>
+      ipcRenderer.removeListener(IPC_CHANNELS.EVENT_WORKSPACE_MENU_REMOVE_FROM_GROUP, listener);
   },
   onWorkspaceMenuRemoveItem: (callback: (itemId: string) => void) => {
     const listener = (_event: unknown, itemId: string) => callback(itemId);
     ipcRenderer.on(IPC_CHANNELS.EVENT_WORKSPACE_MENU_REMOVE_ITEM, listener);
-    return () => ipcRenderer.removeListener(IPC_CHANNELS.EVENT_WORKSPACE_MENU_REMOVE_ITEM, listener);
+    return () =>
+      ipcRenderer.removeListener(IPC_CHANNELS.EVENT_WORKSPACE_MENU_REMOVE_ITEM, listener);
   },
   // WorkspaceGroupContextMenu
   showWorkspaceGroupContextMenu: (group: WorkspaceGroup): Promise<void> =>
@@ -421,32 +470,40 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onWorkspaceGroupMenuRename: (callback: (groupId: string) => void) => {
     const listener = (_event: unknown, groupId: string) => callback(groupId);
     ipcRenderer.on(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_RENAME, listener);
-    return () => ipcRenderer.removeListener(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_RENAME, listener);
+    return () =>
+      ipcRenderer.removeListener(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_RENAME, listener);
   },
   onWorkspaceGroupMenuShowColorPicker: (callback: (groupId: string) => void) => {
     const listener = (_event: unknown, groupId: string) => callback(groupId);
     ipcRenderer.on(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_SHOW_COLOR_PICKER, listener);
     return () =>
-      ipcRenderer.removeListener(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_SHOW_COLOR_PICKER, listener);
+      ipcRenderer.removeListener(
+        IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_SHOW_COLOR_PICKER,
+        listener
+      );
   },
   onWorkspaceGroupMenuChangeColor: (callback: (groupId: string, color: string) => void) => {
     const listener = (_event: unknown, groupId: string, color: string) => callback(groupId, color);
     ipcRenderer.on(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_CHANGE_COLOR, listener);
-    return () => ipcRenderer.removeListener(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_CHANGE_COLOR, listener);
+    return () =>
+      ipcRenderer.removeListener(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_CHANGE_COLOR, listener);
   },
   onWorkspaceGroupMenuCopyAsText: (callback: (groupId: string) => void) => {
     const listener = (_event: unknown, groupId: string) => callback(groupId);
     ipcRenderer.on(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_COPY_AS_TEXT, listener);
-    return () => ipcRenderer.removeListener(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_COPY_AS_TEXT, listener);
+    return () =>
+      ipcRenderer.removeListener(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_COPY_AS_TEXT, listener);
   },
   onWorkspaceGroupMenuArchive: (callback: (groupId: string) => void) => {
     const listener = (_event: unknown, groupId: string) => callback(groupId);
     ipcRenderer.on(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_ARCHIVE, listener);
-    return () => ipcRenderer.removeListener(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_ARCHIVE, listener);
+    return () =>
+      ipcRenderer.removeListener(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_ARCHIVE, listener);
   },
   onWorkspaceGroupMenuDelete: (callback: (groupId: string) => void) => {
     const listener = (_event: unknown, groupId: string) => callback(groupId);
     ipcRenderer.on(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_DELETE, listener);
-    return () => ipcRenderer.removeListener(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_DELETE, listener);
+    return () =>
+      ipcRenderer.removeListener(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_DELETE, listener);
   },
 });

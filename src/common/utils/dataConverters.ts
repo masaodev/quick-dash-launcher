@@ -80,6 +80,7 @@ export async function convertRawDataLineToRegisterItem(
           moveToActiveMonitorCenter: windowOp.moveToActiveMonitorCenter,
           virtualDesktopNumber: windowOp.virtualDesktopNumber,
           activateWindow: windowOp.activateWindow,
+          pinToAllDesktops: windowOp.pinToAllDesktops,
         },
       };
     } else if (trimmedContent.startsWith('group,')) {
@@ -182,6 +183,7 @@ export function convertRegisterItemToRawDataLine(
     if (cfg.virtualDesktopNumber !== undefined)
       config.virtualDesktopNumber = cfg.virtualDesktopNumber;
     if (cfg.activateWindow !== undefined) config.activateWindow = cfg.activateWindow;
+    if (cfg.pinToAllDesktops !== undefined) config.pinToAllDesktops = cfg.pinToAllDesktops;
 
     newContent = `window,${escapeCSV(JSON.stringify(config))}`;
   } else {

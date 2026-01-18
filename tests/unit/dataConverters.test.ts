@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { convertRegisterItemToRawDataLine } from '@common/utils/dataConverters';
-import type { RegisterItem } from '@common/types';
-import type { RawDataLine } from '@common/types';
+import type { RegisterItem, RawDataLine } from '@common/types';
 
 describe('convertRegisterItemToRawDataLine', () => {
   describe('通常のアイテム（引数なし）', () => {
