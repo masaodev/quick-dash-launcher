@@ -19,6 +19,7 @@ import LauncherActionButtons from './components/LauncherActionButtons';
 import RegisterModal from './components/RegisterModal';
 import LauncherIconProgressBar from './components/LauncherIconProgressBar';
 import LauncherFileTabBar from './components/LauncherFileTabBar';
+import LauncherDesktopTabBar from './components/LauncherDesktopTabBar';
 import LauncherItemCountDisplay from './components/LauncherItemCountDisplay';
 import { SetupFirstLaunch } from './components/SetupFirstLaunch';
 import AlertDialog from './components/AlertDialog';
@@ -673,13 +674,6 @@ const App: React.FC = () => {
             onChange={handleSearch}
             onKeyDown={handleKeyDown}
             searchMode={searchMode}
-            desktopInfo={desktopInfo}
-            activeDesktopTab={activeDesktopTab}
-            onDesktopTabChange={(tab) => {
-              setActiveDesktopTab(tab);
-              setSelectedIndex(0);
-            }}
-            windowList={windowList}
           />
           <LauncherActionButtons
             onReload={loadItems}
@@ -708,10 +702,23 @@ const App: React.FC = () => {
           />
         )}
 
-        {!showDataFileTabs && (
+        {!showDataFileTabs && searchMode === 'normal' && (
           <div className="search-info-bar">
             <LauncherItemCountDisplay count={filteredItems.length} />
           </div>
+        )}
+
+        {/* ウィンドウ検索モード用デスクトップタブ */}
+        {searchMode === 'window' && desktopInfo?.supported && desktopInfo.desktopCount > 1 && (
+          <LauncherDesktopTabBar
+            desktopInfo={desktopInfo}
+            activeDesktopTab={activeDesktopTab}
+            windowList={windowList}
+            onTabChange={(tabId) => {
+              setActiveDesktopTab(tabId);
+              setSelectedIndex(0);
+            }}
+          />
         )}
 
         <LauncherItemList
