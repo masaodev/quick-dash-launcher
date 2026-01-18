@@ -118,19 +118,19 @@ const LauncherItemList: React.FC<ItemListProps> = ({
         try {
           const result = await window.electronAPI.moveWindowToDesktop(hwnd, desktopNumber);
           if (result.success) {
-            window.electronAPI.showToast(
+            window.electronAPI.showToastWindow(
               `ウィンドウをデスクトップ ${desktopNumber} に移動しました`,
               'success'
             );
           } else {
-            window.electronAPI.showToast(
+            window.electronAPI.showToastWindow(
               `ウィンドウの移動に失敗しました: ${result.error || '不明なエラー'}`,
               'error'
             );
           }
         } catch (error) {
           logError('ウィンドウの移動に失敗しました:', error);
-          window.electronAPI.showToast('ウィンドウの移動に失敗しました', 'error');
+          window.electronAPI.showToastWindow('ウィンドウの移動に失敗しました', 'error');
         }
       }
     );
@@ -158,16 +158,16 @@ const LauncherItemList: React.FC<ItemListProps> = ({
       try {
         const result = await fn(hwnd);
         if (result.success) {
-          window.electronAPI.showToast(successMsg, 'success');
+          window.electronAPI.showToastWindow(successMsg, 'success');
         } else {
-          window.electronAPI.showToast(
+          window.electronAPI.showToastWindow(
             `${errorPrefix}に失敗しました: ${result.error || '不明なエラー'}`,
             'error'
           );
         }
       } catch (error) {
         logError(`${errorPrefix}に失敗しました:`, error);
-        window.electronAPI.showToast(`${errorPrefix}に失敗しました`, 'error');
+        window.electronAPI.showToastWindow(`${errorPrefix}に失敗しました`, 'error');
       }
     };
 

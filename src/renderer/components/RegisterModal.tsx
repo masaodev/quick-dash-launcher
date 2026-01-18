@@ -253,6 +253,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     if (item.itemCategory === 'window') {
       // ウィンドウ操作アイテムの場合
       const windowOperationConfig = {
+        name: item.name,
         windowTitle: window.title,
         processName: window.processName,
         x: window.x,
@@ -640,6 +641,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                           }
                           onChange={(windowConfig) =>
                             handleItemChange(index, 'windowOperationConfig', {
+                              name: item.name,
                               windowTitle: windowConfig?.title || '',
                               processName: windowConfig?.processName,
                               x: windowConfig?.x,

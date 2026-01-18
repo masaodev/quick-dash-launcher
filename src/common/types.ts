@@ -58,7 +58,7 @@ export type { SimpleBookmarkItem, BrowserProfile, BrowserInfo } from './types/bo
 export type { SearchHistoryEntry, SearchHistoryState, SearchMode } from './types/search';
 
 // ウィンドウ関連の型
-export type { WindowInfo } from './types/window';
+export type { WindowInfo, VirtualDesktopInfo, WindowState } from './types/window';
 
 // アプリケーション情報
 export type { AppInfo } from './types/app';

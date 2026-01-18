@@ -70,6 +70,7 @@ export async function convertRawDataLineToRegisterItem(
         targetFile: line.sourceFile,
         itemCategory: 'window',
         windowOperationConfig: {
+          name: windowOp.name,
           windowTitle: windowOp.windowTitle,
           processName: windowOp.processName,
           x: windowOp.x,

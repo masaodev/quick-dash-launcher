@@ -16,6 +16,7 @@
     "noUnusedParameters": false,
     "noImplicitReturns": true,
     "allowSyntheticDefaultImports": true,
+    "baseUrl": ".",
     "paths": {
       "@common/*": ["./src/common/*"],
       "@main/*": ["./src/main/*"],

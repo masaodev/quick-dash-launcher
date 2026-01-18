@@ -169,7 +169,7 @@ export function useRegisterForm(
       } else if (value === 'window') {
         // ウィンドウ操作選択時：ウィンドウ操作オプションを初期化
         if (!newItems[index].windowOperationConfig) {
-          newItems[index].windowOperationConfig = { windowTitle: '' };
+          newItems[index].windowOperationConfig = { name: '', windowTitle: '' };
         }
         // その他のオプションをクリア
         delete newItems[index].folderProcessing;
