@@ -407,7 +407,7 @@ export function setupWorkspaceGroupContextMenuHandler(getMainWindow: () => Brows
 export function setupWindowContextMenuHandler(getMainWindow: () => BrowserWindow | null) {
   ipcMain.handle(
     IPC_CHANNELS.SHOW_WINDOW_CONTEXT_MENU,
-    async (event, windowInfo: WindowInfo, desktopInfo: VirtualDesktopInfo): Promise<void> => {
+    async (event, windowInfo: WindowInfo, desktopInfo: VirtualDesktopInfo, isPinned: boolean): Promise<void> => {
       try {
         const senderWindow = BrowserWindow.fromWebContents(event.sender);
         if (!senderWindow || senderWindow.isDestroyed()) {
@@ -416,16 +416,31 @@ export function setupWindowContextMenuHandler(getMainWindow: () => BrowserWindow
 
         const menu = new Menu();
 
-        // 仮想デスクトップがサポートされている場合のみメニューを表示
+        // アクティブにする
+        menu.append(
+          new MenuItem({
+            label: '▶️ アクティブにする',
+            click: () => {
+              event.sender.send(IPC_CHANNELS.EVENT_WINDOW_MENU_ACTIVATE, windowInfo);
+            },
+          })
+        );
+
+        menu.append(new MenuItem({ type: 'separator' }));
+
+        // 仮想デスクトップへの移動（サブメニュー）
+        const virtualDesktopSubmenu = new Menu();
+
+        // 仮想デスクトップがサポートされている場合のみサブメニューを有効化
         if (desktopInfo.supported && desktopInfo.desktopCount > 1) {
           // 各デスクトップへの移動メニュー
           for (let i = 1; i <= desktopInfo.desktopCount; i++) {
             const isCurrentDesktop = windowInfo.desktopNumber !== undefined && i === windowInfo.desktopNumber;
             const label = isCurrentDesktop
               ? `✓ デスクトップ ${i} (現在)`
-              : `🖥️ デスクトップ ${i} に移動`;
+              : `🖥️ デスクトップ ${i}`;
 
-            menu.append(
+            virtualDesktopSubmenu.append(
               new MenuItem({
                 label,
                 enabled: !isCurrentDesktop,
@@ -435,14 +450,48 @@ export function setupWindowContextMenuHandler(getMainWindow: () => BrowserWindow
               })
             );
           }
-        } else {
-          // 仮想デスクトップがサポートされていない場合
+
           menu.append(
             new MenuItem({
-              label: '仮想デスクトップがサポートされていません',
+              label: '🖥️ 仮想デスクトップへの移動',
+              submenu: virtualDesktopSubmenu,
+            })
+          );
+        } else {
+          // 仮想デスクトップがサポートされていない場合は無効化
+          menu.append(
+            new MenuItem({
+              label: '🖥️ 仮想デスクトップへの移動',
               enabled: false,
             })
           );
+        }
+
+        // 固定/固定解除（仮想デスクトップがサポートされている場合のみ）
+        if (desktopInfo.supported) {
+          menu.append(new MenuItem({ type: 'separator' }));
+
+          if (isPinned) {
+            // 固定解除
+            menu.append(
+              new MenuItem({
+                label: '📌 固定を解除',
+                click: () => {
+                  event.sender.send(IPC_CHANNELS.UNPIN_WINDOW, windowInfo.hwnd);
+                },
+              })
+            );
+          } else {
+            // 固定
+            menu.append(
+              new MenuItem({
+                label: '📌 全デスクトップに固定',
+                click: () => {
+                  event.sender.send(IPC_CHANNELS.PIN_WINDOW, windowInfo.hwnd);
+                },
+              })
+            );
+          }
         }
 
         menu.popup({ window: senderWindow });

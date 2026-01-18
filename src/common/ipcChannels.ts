@@ -199,7 +199,11 @@ export const IPC_CHANNELS = {
 
   // コンテキストメニュー - Window
   SHOW_WINDOW_CONTEXT_MENU: 'show-window-context-menu',
+  EVENT_WINDOW_MENU_ACTIVATE: 'window-menu-activate',
   MOVE_WINDOW_TO_DESKTOP: 'move-window-to-desktop',
+  PIN_WINDOW: 'pin-window',
+  UNPIN_WINDOW: 'unpin-window',
+  IS_WINDOW_PINNED: 'is-window-pinned',
 } as const;
 
 /**

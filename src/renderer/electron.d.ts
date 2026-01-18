@@ -171,6 +171,9 @@ export interface ElectronAPI {
   getVirtualDesktopInfo: () => Promise<VirtualDesktopInfo>;
   activateWindowByHwnd: (hwnd: number | bigint) => Promise<{ success: boolean; error?: string }>;
   moveWindowToDesktop: (hwnd: number | bigint, desktopNumber: number) => Promise<{ success: boolean; error?: string }>;
+  pinWindow: (hwnd: number | bigint) => Promise<{ success: boolean; error?: string }>;
+  unPinWindow: (hwnd: number | bigint) => Promise<{ success: boolean; error?: string }>;
+  isWindowPinned: (hwnd: number | bigint) => Promise<boolean>;
   // システム通知API
   showNotification: (
     title: string,
@@ -196,7 +199,7 @@ export interface ElectronAPI {
   showLauncherContextMenu: (item: AppItem) => Promise<void>;
   showWorkspaceContextMenu: (item: WorkspaceItem, groups: WorkspaceGroup[]) => Promise<void>;
   showWorkspaceGroupContextMenu: (group: WorkspaceGroup) => Promise<void>;
-  showWindowContextMenu: (windowInfo: WindowInfo, desktopInfo: VirtualDesktopInfo) => Promise<void>;
+  showWindowContextMenu: (windowInfo: WindowInfo, desktopInfo: VirtualDesktopInfo, isPinned: boolean) => Promise<void>;
   // AdminItemManagerContextMenuイベントリスナー
   onAdminMenuDuplicateItems: (callback: () => void) => () => void;
   onAdminMenuEditItem: (callback: () => void) => () => void;
@@ -211,7 +214,10 @@ export interface ElectronAPI {
   onLauncherMenuCopyShortcutParentPath: (callback: (item: AppItem) => void) => () => void;
   onLauncherMenuOpenShortcutParentFolder: (callback: (item: AppItem) => void) => () => void;
   // WindowContextMenuイベントリスナー
+  onWindowMenuActivate: (callback: (windowInfo: WindowInfo) => void) => () => void;
   onMoveWindowToDesktop: (callback: (hwnd: number | bigint, desktopNumber: number) => void) => () => void;
+  onPinWindow: (callback: (hwnd: number | bigint) => void) => () => void;
+  onUnPinWindow: (callback: (hwnd: number | bigint) => void) => () => void;
   // WorkspaceContextMenuイベントリスナー
   onWorkspaceMenuRenameItem: (callback: (itemId: string) => void) => () => void;
   onWorkspaceMenuLaunchItem: (callback: (itemId: string) => void) => () => void;

@@ -11,6 +11,9 @@ import {
   getCurrentDesktopNumber,
   isVirtualDesktopSupported,
   moveWindowToVirtualDesktop,
+  pinWindow,
+  unPinWindow,
+  isPinnedWindow,
 } from '../utils/virtualDesktop/index.js';
 
 export function setupWindowSearchHandlers(
@@ -142,6 +145,59 @@ export function setupWindowSearchHandlers(
           success: false,
           error: error instanceof Error ? error.message : String(error),
         };
+      }
+    }
+  );
+
+  /**
+   * 指定されたウィンドウを全ての仮想デスクトップに固定
+   */
+  ipcMain.handle(
+    IPC_CHANNELS.PIN_WINDOW,
+    async (_event, hwnd: number | bigint): Promise<{ success: boolean; error?: string }> => {
+      try {
+        const success = pinWindow(hwnd);
+        return { success };
+      } catch (error) {
+        console.error('Failed to pin window:', error);
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+        };
+      }
+    }
+  );
+
+  /**
+   * 指定されたウィンドウの固定を解除
+   */
+  ipcMain.handle(
+    IPC_CHANNELS.UNPIN_WINDOW,
+    async (_event, hwnd: number | bigint): Promise<{ success: boolean; error?: string }> => {
+      try {
+        const success = unPinWindow(hwnd);
+        return { success };
+      } catch (error) {
+        console.error('Failed to unpin window:', error);
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+        };
+      }
+    }
+  );
+
+  /**
+   * 指定されたウィンドウが固定されているか確認
+   */
+  ipcMain.handle(
+    IPC_CHANNELS.IS_WINDOW_PINNED,
+    async (_event, hwnd: number | bigint): Promise<boolean> => {
+      try {
+        return isPinnedWindow(hwnd);
+      } catch (error) {
+        console.error('Failed to check if window is pinned:', error);
+        return false;
       }
     }
   );

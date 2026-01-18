@@ -109,6 +109,10 @@ const LauncherItemList: React.FC<ItemListProps> = ({
       });
 
     // WindowContextMenuイベントリスナー
+    const cleanupActivateWindow = window.electronAPI.onWindowMenuActivate((windowInfo) => {
+      onItemExecute(windowInfo);
+    });
+
     const cleanupMoveWindowToDesktop = window.electronAPI.onMoveWindowToDesktop(
       async (hwnd, desktopNumber) => {
         try {
@@ -131,6 +135,50 @@ const LauncherItemList: React.FC<ItemListProps> = ({
       }
     );
 
+    // ウィンドウのPin操作共通ハンドラー
+    const handleWindowPinOperation = async (
+      operation: 'pin' | 'unpin',
+      hwnd: number | bigint
+    ) => {
+      const config = {
+        pin: {
+          fn: window.electronAPI.pinWindow,
+          successMsg: 'ウィンドウを全デスクトップに固定しました',
+          errorPrefix: 'ウィンドウの固定',
+        },
+        unpin: {
+          fn: window.electronAPI.unPinWindow,
+          successMsg: 'ウィンドウの固定を解除しました',
+          errorPrefix: 'ウィンドウの固定解除',
+        },
+      };
+
+      const { fn, successMsg, errorPrefix } = config[operation];
+
+      try {
+        const result = await fn(hwnd);
+        if (result.success) {
+          window.electronAPI.showToast(successMsg, 'success');
+        } else {
+          window.electronAPI.showToast(
+            `${errorPrefix}に失敗しました: ${result.error || '不明なエラー'}`,
+            'error'
+          );
+        }
+      } catch (error) {
+        logError(`${errorPrefix}に失敗しました:`, error);
+        window.electronAPI.showToast(`${errorPrefix}に失敗しました`, 'error');
+      }
+    };
+
+    const cleanupPinWindow = window.electronAPI.onPinWindow((hwnd) =>
+      handleWindowPinOperation('pin', hwnd)
+    );
+
+    const cleanupUnPinWindow = window.electronAPI.onUnPinWindow((hwnd) =>
+      handleWindowPinOperation('unpin', hwnd)
+    );
+
     return () => {
       cleanupEditItem();
       cleanupAddToWorkspace();
@@ -140,10 +188,14 @@ const LauncherItemList: React.FC<ItemListProps> = ({
       cleanupCopyShortcutPath();
       cleanupCopyShortcutParentPath();
       cleanupOpenShortcutParentFolder();
+      cleanupActivateWindow();
       cleanupMoveWindowToDesktop();
+      cleanupPinWindow();
+      cleanupUnPinWindow();
     };
   }, [
     onEditItem,
+    onItemExecute,
     onCopyPath,
     onCopyParentPath,
     onOpenParentFolder,
@@ -190,7 +242,9 @@ const LauncherItemList: React.FC<ItemListProps> = ({
       const windowInfo = item as WindowInfo;
       // 仮想デスクトップ情報を取得
       const desktopInfo = await window.electronAPI.getVirtualDesktopInfo();
-      window.electronAPI.showWindowContextMenu(windowInfo, desktopInfo);
+      // ウィンドウが固定されているか確認
+      const isPinned = await window.electronAPI.isWindowPinned(windowInfo.hwnd);
+      window.electronAPI.showWindowContextMenu(windowInfo, desktopInfo, isPinned);
       return;
     }
 

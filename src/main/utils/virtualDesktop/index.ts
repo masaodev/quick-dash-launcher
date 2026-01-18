@@ -20,6 +20,9 @@ export {
   isWindowOnDesktopNumber,
   getWindowDesktopNumber,
   getDesktopCount,
+  pinWindow,
+  unPinWindow,
+  isPinnedWindow,
 } from './windowOperations.js';
 
 // DLLローダー（内部使用向け）

@@ -12,6 +12,9 @@ import {
   getIsWindowOnDesktopNumber,
   getGetWindowDesktopNumber,
   getGetDesktopCount,
+  getPinWindow,
+  getUnPinWindow,
+  getIsPinnedWindow,
 } from './dllLoader.js';
 import { isVirtualDesktopSupported, getVirtualDesktopGUIDs } from './registryAccess.js';
 
@@ -221,5 +224,106 @@ export function getDesktopCount(): number {
     // フォールバック: レジストリから取得
     const guids = getVirtualDesktopGUIDs();
     return guids.length > 0 ? guids.length : -1;
+  }
+}
+
+/**
+ * ウィンドウを全ての仮想デスクトップに固定
+ * @param hwnd ウィンドウハンドル
+ * @returns 成功したらtrue
+ */
+export function pinWindow(hwnd: number | bigint): boolean {
+  if (!isVirtualDesktopSupported()) {
+    console.warn('[WindowOps] 仮想デスクトップはサポートされていません');
+    return false;
+  }
+
+  const pinWindowFn = getPinWindow();
+  if (!pinWindowFn) {
+    console.error('[WindowOps] VirtualDesktopAccessor.dllがロードされていません');
+    return false;
+  }
+
+  const hwndValue = typeof hwnd === 'bigint' ? hwnd : hwnd;
+
+  try {
+    const result = pinWindowFn(hwndValue);
+    const success = typeof result === 'boolean' ? result : result !== 0;
+
+    if (success) {
+      debugLog('[WindowOps] ウィンドウ固定成功');
+      return true;
+    } else {
+      console.error(`[WindowOps] ウィンドウ固定失敗。戻り値: ${result}`);
+      return false;
+    }
+  } catch (error) {
+    console.error('[WindowOps] pinWindow例外発生:', error);
+    return false;
+  }
+}
+
+/**
+ * ウィンドウの固定を解除
+ * @param hwnd ウィンドウハンドル
+ * @returns 成功したらtrue
+ */
+export function unPinWindow(hwnd: number | bigint): boolean {
+  if (!isVirtualDesktopSupported()) {
+    console.warn('[WindowOps] 仮想デスクトップはサポートされていません');
+    return false;
+  }
+
+  const unPinWindowFn = getUnPinWindow();
+  if (!unPinWindowFn) {
+    console.error('[WindowOps] VirtualDesktopAccessor.dllがロードされていません');
+    return false;
+  }
+
+  const hwndValue = typeof hwnd === 'bigint' ? hwnd : hwnd;
+
+  try {
+    const result = unPinWindowFn(hwndValue);
+    const success = typeof result === 'boolean' ? result : result !== 0;
+
+    if (success) {
+      debugLog('[WindowOps] ウィンドウ固定解除成功');
+      return true;
+    } else {
+      console.error(`[WindowOps] ウィンドウ固定解除失敗。戻り値: ${result}`);
+      return false;
+    }
+  } catch (error) {
+    console.error('[WindowOps] unPinWindow例外発生:', error);
+    return false;
+  }
+}
+
+/**
+ * ウィンドウが全ての仮想デスクトップに固定されているか確認
+ * @param hwnd ウィンドウハンドル
+ * @returns 固定されている場合true
+ */
+export function isPinnedWindow(hwnd: number | bigint): boolean {
+  if (!isVirtualDesktopSupported()) {
+    return false;
+  }
+
+  const isPinnedWindowFn = getIsPinnedWindow();
+  if (!isPinnedWindowFn) {
+    return false;
+  }
+
+  const hwndValue = typeof hwnd === 'bigint' ? hwnd : hwnd;
+
+  try {
+    const result = isPinnedWindowFn(hwndValue);
+    const isPinned = typeof result === 'boolean' ? result : result !== 0;
+
+    debugLog('[WindowOps] isPinnedWindow チェック結果:', isPinned);
+    return isPinned;
+  } catch (error) {
+    console.error('[WindowOps] isPinnedWindow例外発生:', error);
+    return false;
   }
 }

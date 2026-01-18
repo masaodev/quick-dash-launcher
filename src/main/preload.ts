@@ -189,6 +189,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke(IPC_CHANNELS.ACTIVATE_WINDOW, hwnd),
   moveWindowToDesktop: (hwnd: number | bigint, desktopNumber: number): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke(IPC_CHANNELS.MOVE_WINDOW_TO_DESKTOP, hwnd, desktopNumber),
+  pinWindow: (hwnd: number | bigint): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke(IPC_CHANNELS.PIN_WINDOW, hwnd),
+  unPinWindow: (hwnd: number | bigint): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke(IPC_CHANNELS.UNPIN_WINDOW, hwnd),
+  isWindowPinned: (hwnd: number | bigint): Promise<boolean> =>
+    ipcRenderer.invoke(IPC_CHANNELS.IS_WINDOW_PINNED, hwnd),
   // システム通知API
   showNotification: (
     title: string,
@@ -333,13 +339,28 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener(IPC_CHANNELS.EVENT_LAUNCHER_MENU_OPEN_SHORTCUT_PARENT_FOLDER, listener);
   },
   // WindowContextMenu
-  showWindowContextMenu: (windowInfo: WindowInfo, desktopInfo: VirtualDesktopInfo): Promise<void> =>
-    ipcRenderer.invoke(IPC_CHANNELS.SHOW_WINDOW_CONTEXT_MENU, windowInfo, desktopInfo),
+  showWindowContextMenu: (windowInfo: WindowInfo, desktopInfo: VirtualDesktopInfo, isPinned: boolean): Promise<void> =>
+    ipcRenderer.invoke(IPC_CHANNELS.SHOW_WINDOW_CONTEXT_MENU, windowInfo, desktopInfo, isPinned),
+  onWindowMenuActivate: (callback: (windowInfo: WindowInfo) => void) => {
+    const listener = (_event: unknown, windowInfo: WindowInfo) => callback(windowInfo);
+    ipcRenderer.on(IPC_CHANNELS.EVENT_WINDOW_MENU_ACTIVATE, listener);
+    return () => ipcRenderer.removeListener(IPC_CHANNELS.EVENT_WINDOW_MENU_ACTIVATE, listener);
+  },
   onMoveWindowToDesktop: (callback: (hwnd: number | bigint, desktopNumber: number) => void) => {
     const listener = (_event: unknown, hwnd: number | bigint, desktopNumber: number) =>
       callback(hwnd, desktopNumber);
     ipcRenderer.on(IPC_CHANNELS.MOVE_WINDOW_TO_DESKTOP, listener);
     return () => ipcRenderer.removeListener(IPC_CHANNELS.MOVE_WINDOW_TO_DESKTOP, listener);
+  },
+  onPinWindow: (callback: (hwnd: number | bigint) => void) => {
+    const listener = (_event: unknown, hwnd: number | bigint) => callback(hwnd);
+    ipcRenderer.on(IPC_CHANNELS.PIN_WINDOW, listener);
+    return () => ipcRenderer.removeListener(IPC_CHANNELS.PIN_WINDOW, listener);
+  },
+  onUnPinWindow: (callback: (hwnd: number | bigint) => void) => {
+    const listener = (_event: unknown, hwnd: number | bigint) => callback(hwnd);
+    ipcRenderer.on(IPC_CHANNELS.UNPIN_WINDOW, listener);
+    return () => ipcRenderer.removeListener(IPC_CHANNELS.UNPIN_WINDOW, listener);
   },
   // WorkspaceContextMenu
   showWorkspaceContextMenu: (item: WorkspaceItem, groups: WorkspaceGroup[]): Promise<void> =>

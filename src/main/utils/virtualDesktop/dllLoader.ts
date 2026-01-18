@@ -23,6 +23,9 @@ let _getCurrentDesktopNumber: KoffiFunction | null = null;
 let _isWindowOnDesktopNumber: KoffiFunction | null = null;
 let _getWindowDesktopNumber: KoffiFunction | null = null;
 let _getDesktopCount: KoffiFunction | null = null;
+let _pinWindow: KoffiFunction | null = null;
+let _unPinWindow: KoffiFunction | null = null;
+let _isPinnedWindow: KoffiFunction | null = null;
 
 /**
  * DLLのベースパスを取得
@@ -107,32 +110,37 @@ function defineIsWindowOnDesktopFunction(dllHandle: KoffiLibrary): KoffiFunction
   return null;
 }
 
+
 /**
- * GetWindowDesktopNumber関数を定義（複数パターンでフォールバック）
+ * 単一パラメータ（HWND）の関数を定義（複数パターンでフォールバック）
+ * PinWindow、UnPinWindow、IsPinnedWindow等の共通パターン
  */
-function defineGetWindowDesktopFunction(dllHandle: KoffiLibrary): KoffiFunction | null {
+function defineSingleHwndFunction(
+  dllHandle: KoffiLibrary,
+  functionName: string
+): KoffiFunction | null {
   const patterns = [
     {
       name: 'classic __stdcall + void*',
-      loader: () => dllHandle.func('__stdcall', 'GetWindowDesktopNumber', 'int', ['void *']),
+      loader: () => dllHandle.func('__stdcall', functionName, 'int', ['void *']),
     },
     {
       name: 'prototype __stdcall + void*',
-      loader: () => dllHandle.func('int __stdcall GetWindowDesktopNumber(void *hwnd)'),
+      loader: () => dllHandle.func(`int __stdcall ${functionName}(void *hwnd)`),
     },
     {
       name: 'classic __stdcall + uintptr',
-      loader: () => dllHandle.func('__stdcall', 'GetWindowDesktopNumber', 'int', ['uintptr']),
+      loader: () => dllHandle.func('__stdcall', functionName, 'int', ['uintptr']),
     },
   ];
 
   for (const pattern of patterns) {
     try {
       const func = pattern.loader();
-      debugLog(`[DllLoader] GetWindowDesktopNumber定義成功（${pattern.name}）`);
+      debugLog(`[DllLoader] ${functionName}定義成功（${pattern.name}）`);
       return func;
     } catch (error) {
-      console.warn(`[DllLoader] ${pattern.name}失敗:`, error);
+      console.warn(`[DllLoader] ${functionName} ${pattern.name}失敗:`, error);
     }
   }
   return null;
@@ -178,7 +186,7 @@ try {
     debugLog('[DllLoader] IsWindowOnDesktopNumber初期化完了');
   }
 
-  _getWindowDesktopNumber = defineGetWindowDesktopFunction(virtualDesktopAccessor);
+  _getWindowDesktopNumber = defineSingleHwndFunction(virtualDesktopAccessor, 'GetWindowDesktopNumber');
   if (_getWindowDesktopNumber) {
     debugLog('[DllLoader] GetWindowDesktopNumber初期化完了');
   }
@@ -189,6 +197,24 @@ try {
     debugLog('[DllLoader] GetDesktopCount初期化完了');
   } catch (error) {
     console.warn('[DllLoader] GetDesktopCount初期化失敗:', error);
+  }
+
+  // PinWindow関数を定義
+  _pinWindow = defineSingleHwndFunction(virtualDesktopAccessor, 'PinWindow');
+  if (_pinWindow) {
+    debugLog('[DllLoader] PinWindow初期化完了');
+  }
+
+  // UnPinWindow関数を定義
+  _unPinWindow = defineSingleHwndFunction(virtualDesktopAccessor, 'UnPinWindow');
+  if (_unPinWindow) {
+    debugLog('[DllLoader] UnPinWindow初期化完了');
+  }
+
+  // IsPinnedWindow関数を定義
+  _isPinnedWindow = defineSingleHwndFunction(virtualDesktopAccessor, 'IsPinnedWindow');
+  if (_isPinnedWindow) {
+    debugLog('[DllLoader] IsPinnedWindow初期化完了');
   }
 } catch (error) {
   console.error('[DllLoader] 初期化失敗:', error);
@@ -214,6 +240,18 @@ export function getGetWindowDesktopNumber(): KoffiFunction | null {
 
 export function getGetDesktopCount(): KoffiFunction | null {
   return _getDesktopCount;
+}
+
+export function getPinWindow(): KoffiFunction | null {
+  return _pinWindow;
+}
+
+export function getUnPinWindow(): KoffiFunction | null {
+  return _unPinWindow;
+}
+
+export function getIsPinnedWindow(): KoffiFunction | null {
+  return _isPinnedWindow;
 }
 
 /**
