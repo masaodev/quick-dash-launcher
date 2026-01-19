@@ -673,6 +673,7 @@ const App: React.FC = () => {
             onChange={handleSearch}
             onKeyDown={handleKeyDown}
             searchMode={searchMode}
+            onToggleSearchMode={handleToggleSearchMode}
           />
           <LauncherActionButtons
             onReload={loadItems}
