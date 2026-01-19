@@ -6,6 +6,7 @@ interface SearchBoxProps {
   onChange: (value: string) => void;
   onKeyDown: (e: React.KeyboardEvent) => void;
   searchMode?: SearchMode;
+  onToggleSearchMode?: () => void;
 }
 
 function getSearchModeLabel(mode: SearchMode): string {
@@ -15,12 +16,12 @@ function getSearchModeLabel(mode: SearchMode): string {
     case 'history':
       return '実行履歴検索モード';
     default:
-      return '通常モード';
+      return '通常検索モード';
   }
 }
 
 const LauncherSearchBox = forwardRef<HTMLInputElement, SearchBoxProps>(
-  ({ value, onChange, onKeyDown, searchMode = 'normal' }, ref) => {
+  ({ value, onChange, onKeyDown, searchMode = 'normal', onToggleSearchMode }, ref) => {
     const inputRef = useRef<HTMLInputElement>(null);
 
     useImperativeHandle(ref, () => inputRef.current!);
@@ -56,7 +57,15 @@ const LauncherSearchBox = forwardRef<HTMLInputElement, SearchBoxProps>(
         </div>
 
         <div className="search-mode-indicator">
-          {getSearchModeLabel(searchMode)} (Shift+Tabで切り替え)
+          {getSearchModeLabel(searchMode)} (Shift+Tabで
+          <button
+            type="button"
+            className="search-mode-hint-link"
+            onClick={onToggleSearchMode}
+          >
+            切り替え
+          </button>
+          )
         </div>
       </div>
     );
