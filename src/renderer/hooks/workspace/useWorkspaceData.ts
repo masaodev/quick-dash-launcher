@@ -3,45 +3,65 @@ import type { WorkspaceItem, WorkspaceGroup, ExecutionHistoryItem } from '@commo
 
 import { logError } from '../../utils/debug';
 
+/** アイコンキャッシュ取得用の最小限の型 */
+type IconCacheItem = {
+  name: string;
+  path: string;
+  type: 'url' | 'file' | 'folder' | 'app' | 'customUri';
+  customIcon?: string;
+  originalPath?: string;
+};
+
+/**
+ * アイコンキャッシュを読み込んでアイテムにマージする
+ */
+async function mergeIconsFromCache<T extends { icon?: string }>(
+  items: T[],
+  getPath: (item: T) => string,
+  toLauncherStyle: (item: T) => IconCacheItem,
+  needsIcon: (item: T) => boolean
+): Promise<T[]> {
+  const itemsNeedingIcons = items.filter(needsIcon);
+  if (itemsNeedingIcons.length === 0) return items;
+
+  const launcherStyleItems = itemsNeedingIcons.map(toLauncherStyle);
+  const iconCache = await window.electronAPI.loadCachedIcons(launcherStyleItems);
+
+  return items.map((item) => ({
+    ...item,
+    icon: item.icon || iconCache[getPath(item)] || undefined,
+  }));
+}
+
 /**
  * ワークスペースのデータ管理フック
- *
- * アイテム、グループ、実行履歴のデータ読み込みと状態管理を行います。
- * ワークスペース変更イベントをリッスンして自動的にデータを再読み込みします。
- *
- * @returns データの状態と読み込み関数
- *
- * @example
- * ```tsx
- * const { items, groups, executionHistory, loadItems, loadGroups, loadExecutionHistory } = useWorkspaceData();
- *
- * // データは自動的に読み込まれ、変更時も自動更新されます
- * console.log(items.length, groups.length, executionHistory.length);
- *
- * // 手動で再読み込みも可能
- * await loadItems();
- * ```
  */
 export function useWorkspaceData() {
   const [items, setItems] = useState<WorkspaceItem[]>([]);
   const [groups, setGroups] = useState<WorkspaceGroup[]>([]);
   const [executionHistory, setExecutionHistory] = useState<ExecutionHistoryItem[]>([]);
 
-  /**
-   * ワークスペースアイテムを読み込み
-   */
   const loadItems = async () => {
     try {
       const loadedItems = await window.electronAPI.workspaceAPI.loadItems();
-      setItems(loadedItems);
+      const itemsWithIcons = await mergeIconsFromCache(
+        loadedItems,
+        (item) => item.path,
+        (item) => ({
+          name: item.displayName,
+          path: item.path,
+          type: item.type as IconCacheItem['type'],
+          customIcon: item.customIcon,
+          originalPath: item.originalPath,
+        }),
+        (item) => !item.icon && item.type !== 'windowOperation' && item.type !== 'group'
+      );
+      setItems(itemsWithIcons);
     } catch (error) {
       logError('Failed to load workspace items:', error);
     }
   };
 
-  /**
-   * ワークスペースグループを読み込み
-   */
   const loadGroups = async () => {
     try {
       const loadedGroups = await window.electronAPI.workspaceAPI.loadGroups();
@@ -51,13 +71,21 @@ export function useWorkspaceData() {
     }
   };
 
-  /**
-   * 実行履歴を読み込み
-   */
   const loadExecutionHistory = async () => {
     try {
       const history = await window.electronAPI.workspaceAPI.loadExecutionHistory();
-      setExecutionHistory(history);
+      const historyWithIcons = await mergeIconsFromCache(
+        history,
+        (item) => item.itemPath,
+        (item) => ({
+          name: item.itemName,
+          path: item.itemPath,
+          type: item.itemType as IconCacheItem['type'],
+          customIcon: item.customIcon,
+        }),
+        (item) => !item.icon && item.itemType !== 'windowOperation' && item.itemType !== 'group'
+      );
+      setExecutionHistory(historyWithIcons);
     } catch (error) {
       logError('Failed to load execution history:', error);
     }

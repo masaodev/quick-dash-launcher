@@ -148,6 +148,7 @@ export class WorkspaceItemManager {
 
   /**
    * LauncherItemからWorkspaceItemを作成
+   * 注意: iconはキャッシュフォルダから参照するため、設定ファイルには保存しない
    */
   private createLauncherItem(item: AppItem, order: number, groupId?: string): WorkspaceItem {
     const launcherItem = item as {
@@ -167,7 +168,6 @@ export class WorkspaceItemManager {
       originalName: launcherItem.name,
       path: launcherItem.path,
       type: launcherItem.type,
-      icon: launcherItem.icon,
       customIcon: launcherItem.customIcon,
       args: launcherItem.args,
       originalPath: launcherItem.originalPath,
@@ -180,8 +180,9 @@ export class WorkspaceItemManager {
 
   /**
    * ファイルパスからワークスペースにアイテムを追加
+   * 注意: iconはキャッシュフォルダから参照するため、設定ファイルには保存しない
    */
-  public addItemFromPath(filePath: string, icon?: string, groupId?: string): WorkspaceItem {
+  public addItemFromPath(filePath: string, _icon?: string, groupId?: string): WorkspaceItem {
     try {
       const items = this.loadItems();
 
@@ -199,7 +200,6 @@ export class WorkspaceItemManager {
         originalName: fileName,
         path: filePath,
         type: itemType,
-        icon,
         order: maxOrder + 1,
         addedAt: Date.now(),
         groupId,

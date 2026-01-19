@@ -108,6 +108,8 @@ export interface ExecutionHistoryItem {
   itemType: 'url' | 'file' | 'folder' | 'app' | 'customUri' | 'group' | 'windowOperation';
   /** アイテムのアイコン（base64エンコードされたデータURL、オプション） */
   icon?: string;
+  /** カスタムアイコンのファイル名（オプション） */
+  customIcon?: string;
   /** 実行時のコマンドライン引数（オプション） */
   args?: string;
   /** 実行日時（timestamp） */

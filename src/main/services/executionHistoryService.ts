@@ -198,7 +198,7 @@ export class ExecutionHistoryService {
           itemName: item.name,
           itemPath: item.path,
           itemType: item.type,
-          icon: item.icon,
+          customIcon: item.customIcon,
           args: item.args,
           executedAt: Date.now(),
         };
