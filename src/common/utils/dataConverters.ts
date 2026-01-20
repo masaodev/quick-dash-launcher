@@ -5,8 +5,8 @@
  * これらの変換ロジックは以前、複数のコンポーネントに重複していました。
  */
 
-import type { RawDataLine, LauncherItem, DataFileTab, WindowConfig } from '../types';
-import type { RegisterItem, DirOptions, WindowOperationConfig } from '../types/register.js';
+import type { RawDataLine, LauncherItem, DataFileTab } from '../types';
+import type { RegisterItem } from '../types/register.js';
 import { parseDirOptionsFromString, formatDirOptionsToString } from '../types/register.js';
 
 import { parseCSVLine, escapeCSV } from './csvParser';

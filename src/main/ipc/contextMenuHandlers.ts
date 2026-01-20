@@ -16,7 +16,7 @@ import { isGroupItem } from '@common/types/guards';
 /**
  * AdminItemManagerContextMenu用のネイティブメニューハンドラーを設定
  */
-export function setupAdminItemContextMenuHandler(getMainWindow: () => BrowserWindow | null) {
+export function setupAdminItemContextMenuHandler(_getMainWindow: () => BrowserWindow | null) {
   ipcMain.handle(
     IPC_CHANNELS.SHOW_ADMIN_ITEM_CONTEXT_MENU,
     async (event, selectedCount: number, isSingleLine: boolean): Promise<void> => {
@@ -76,7 +76,7 @@ export function setupAdminItemContextMenuHandler(getMainWindow: () => BrowserWin
 /**
  * LauncherContextMenu用のネイティブメニューハンドラーを設定
  */
-export function setupLauncherContextMenuHandler(getMainWindow: () => BrowserWindow | null) {
+export function setupLauncherContextMenuHandler(_getMainWindow: () => BrowserWindow | null) {
   ipcMain.handle(
     IPC_CHANNELS.SHOW_LAUNCHER_CONTEXT_MENU,
     async (event, item: AppItem): Promise<void> => {
@@ -202,10 +202,10 @@ export function setupLauncherContextMenuHandler(getMainWindow: () => BrowserWind
 /**
  * WorkspaceContextMenu用のネイティブメニューハンドラーを設定
  */
-export function setupWorkspaceContextMenuHandler(getMainWindow: () => BrowserWindow | null) {
+export function setupWorkspaceContextMenuHandler(_getMainWindow: () => BrowserWindow | null) {
   ipcMain.handle(
     IPC_CHANNELS.SHOW_WORKSPACE_CONTEXT_MENU,
-    async (event, item: WorkspaceItem, groups: WorkspaceGroup[]): Promise<void> => {
+    async (event, item: WorkspaceItem, _groups: WorkspaceGroup[]): Promise<void> => {
       try {
         const senderWindow = BrowserWindow.fromWebContents(event.sender);
         if (!senderWindow || senderWindow.isDestroyed()) {
@@ -345,7 +345,7 @@ export function setupWorkspaceContextMenuHandler(getMainWindow: () => BrowserWin
 /**
  * WorkspaceGroupContextMenu用のネイティブメニューハンドラーを設定
  */
-export function setupWorkspaceGroupContextMenuHandler(getMainWindow: () => BrowserWindow | null) {
+export function setupWorkspaceGroupContextMenuHandler(_getMainWindow: () => BrowserWindow | null) {
   ipcMain.handle(
     IPC_CHANNELS.SHOW_WORKSPACE_GROUP_CONTEXT_MENU,
     async (event, group: WorkspaceGroup): Promise<void> => {
@@ -425,7 +425,7 @@ export function setupWorkspaceGroupContextMenuHandler(getMainWindow: () => Brows
 /**
  * WindowContextMenu用のネイティブメニューハンドラーを設定
  */
-export function setupWindowContextMenuHandler(getMainWindow: () => BrowserWindow | null) {
+export function setupWindowContextMenuHandler(_getMainWindow: () => BrowserWindow | null) {
   ipcMain.handle(
     IPC_CHANNELS.SHOW_WINDOW_CONTEXT_MENU,
     async (

@@ -6,7 +6,6 @@
 import * as path from 'path';
 import * as fs from 'fs';
 
-import type koffi from 'koffi';
 import koffiModule from 'koffi';
 import { app } from 'electron';
 

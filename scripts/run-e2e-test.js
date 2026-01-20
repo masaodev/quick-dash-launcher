@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* eslint-env node */
+/* global process */
 
 /**
  * E2Eテストを個別に実行するためのヘルパースクリプト
