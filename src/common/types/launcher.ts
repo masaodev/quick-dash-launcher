@@ -69,19 +69,6 @@ export interface LauncherItem {
   windowConfig?: WindowConfig;
 }
 
-/**
- * LauncherItem（非推奨プロパティを除外）
- * windowTitleを使用しない新しいコードで使用してください
- *
- * @example
- * const item: LauncherItemNew = {
- *   name: "My App",
- *   path: "C:/app.exe",
- *   type: "app",
- *   windowConfig: { title: "MyApp Window", x: 100, y: 100 }
- * };
- */
-export type LauncherItemNew = Omit<LauncherItem, 'windowTitle'>;
 
 /**
  * 複数のアイテムをまとめて一括起動するためのグループアイテム

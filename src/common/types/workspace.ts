@@ -75,23 +75,6 @@ export interface WorkspaceItem {
   itemNames?: string[];
 }
 
-/**
- * WorkspaceItem（非推奨プロパティを除外）
- * windowTitleとlabelを使用しない新しいコードで使用してください
- *
- * @example
- * const item: WorkspaceItemNew = {
- *   id: "uuid-1234",
- *   displayName: "My App",
- *   originalName: "My App",
- *   path: "C:/app.exe",
- *   type: "app",
- *   order: 0,
- *   addedAt: Date.now(),
- *   windowConfig: { title: "MyApp Window", x: 100, y: 100 }
- * };
- */
-export type WorkspaceItemNew = Omit<WorkspaceItem, 'windowTitle' | 'label'>;
 
 /**
  * 実行履歴アイテム

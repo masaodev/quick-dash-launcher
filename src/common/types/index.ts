@@ -9,7 +9,6 @@
 export type {
   WindowConfig,
   LauncherItem,
-  LauncherItemNew,
   GroupItem,
   WindowOperationItem,
   AppItem,
@@ -18,18 +17,24 @@ export type {
 // ワークスペース関連の型
 export type {
   WorkspaceItem,
-  WorkspaceItemNew,
   WorkspaceGroup,
   ExecutionHistoryItem,
   DragItemData,
   DropTargetData,
+  ArchivedWorkspaceGroup,
+  ArchivedWorkspaceItem,
 } from './workspace';
 
 // データファイル関連の型
 export type { RawDataLine, DataFileTab } from './data';
 
 // 設定関連の型
-export type { AppSettings, WindowPinMode, WindowPositionMode } from './settings';
+export type {
+  AppSettings,
+  WindowPinMode,
+  WindowPositionMode,
+  WorkspacePositionMode,
+} from './settings';
 
 // アイコン関連の型
 export type {

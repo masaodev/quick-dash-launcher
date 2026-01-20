@@ -12,8 +12,10 @@ import {
   SearchMode,
   WindowInfo,
   WindowOperationItem,
+  isWindowInfo,
+  isGroupItem,
+  isWindowOperationItem,
 } from '@common/types';
-import { isWindowInfo, isGroupItem, isWindowOperationItem } from '@common/types/guards';
 
 import LauncherSearchBox from './components/LauncherSearchBox';
 import LauncherItemList from './components/LauncherItemList';
