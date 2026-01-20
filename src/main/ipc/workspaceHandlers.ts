@@ -198,12 +198,7 @@ export function setupWorkspaceHandlers(): void {
         };
 
         // ウィンドウ操作を実行
-        const activationResult = await tryActivateWindow(
-          windowConfig,
-          undefined,
-          item.displayName,
-          logger
-        );
+        const activationResult = await tryActivateWindow(windowConfig, item.displayName, logger);
 
         if (activationResult.activated) {
           logger.info({ id: item.id, name: item.displayName }, 'Window operation executed');
@@ -279,7 +274,7 @@ export function setupWorkspaceHandlers(): void {
                 pinToAllDesktops: targetItem.pinToAllDesktops,
               };
 
-              await tryActivateWindow(windowConfig, undefined, targetItem.name, logger);
+              await tryActivateWindow(windowConfig, targetItem.name, logger);
             } else if (isLauncherItem(targetItem)) {
               // 通常のLauncherItemの場合
               await launchItem(
@@ -310,12 +305,7 @@ export function setupWorkspaceHandlers(): void {
       }
 
       // ウィンドウ設定が存在する場合、先にウィンドウ検索を試行
-      const activationResult = await tryActivateWindow(
-        item.windowConfig,
-        undefined,
-        item.displayName,
-        logger
-      );
+      const activationResult = await tryActivateWindow(item.windowConfig, item.displayName, logger);
 
       if (activationResult.activated) {
         // ウィンドウアクティブ化成功

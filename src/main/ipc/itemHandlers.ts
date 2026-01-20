@@ -38,12 +38,7 @@ async function openItem(
     );
 
     // ウィンドウ設定が存在する場合、先にウィンドウ検索を試行
-    const activationResult = await tryActivateWindow(
-      item.windowConfig,
-      undefined,
-      item.name,
-      itemLogger
-    );
+    const activationResult = await tryActivateWindow(item.windowConfig, item.name, itemLogger);
 
     if (activationResult.activated) {
       // ウィンドウアクティブ化成功、通常起動をスキップ
@@ -144,7 +139,7 @@ async function executeGroupItem(
         pinToAllDesktops: item.pinToAllDesktops,
       };
 
-      const result = await tryActivateWindow(windowConfig, undefined, item.windowTitle, itemLogger);
+      const result = await tryActivateWindow(windowConfig, item.windowTitle, itemLogger);
 
       if (!result.windowFound) {
         itemLogger.warn(
@@ -337,7 +332,7 @@ export function setupItemHandlers(
         pinToAllDesktops: item.pinToAllDesktops,
       };
 
-      const result = await tryActivateWindow(windowConfig, undefined, item.windowTitle, itemLogger);
+      const result = await tryActivateWindow(windowConfig, item.windowTitle, itemLogger);
 
       if (!result.windowFound) {
         itemLogger.warn({ windowTitle: item.windowTitle }, 'ウィンドウが見つかりませんでした');

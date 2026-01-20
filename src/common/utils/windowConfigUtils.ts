@@ -113,21 +113,6 @@ export function serializeWindowConfig(config: WindowConfig | undefined): string 
 }
 
 /**
- * 旧形式のwindowTitle文字列からWindowConfigへ変換
- * マイグレーション用のヘルパー関数
- *
- * @param windowTitle - 旧形式のwindowTitle文字列
- * @returns WindowConfig（タイトルのみ）
- */
-export function migrateWindowTitle(windowTitle: string | undefined): WindowConfig | undefined {
-  if (!windowTitle || windowTitle.trim() === '') {
-    return undefined;
-  }
-
-  return { title: windowTitle.trim() };
-}
-
-/**
  * ウィンドウ操作設定オブジェクト型
  */
 interface WindowOperationSource {

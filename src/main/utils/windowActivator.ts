@@ -304,14 +304,13 @@ async function waitForDesktopMove(
  * ウィンドウ設定に基づいてウィンドウをアクティブ化する
  *
  * @param windowConfig ウィンドウ設定（WindowConfigまたはundefined）
- * @param windowTitle 旧形式のウィンドウタイトル（後方互換性用、非推奨）
  * @param itemName アイテム名（ログ出力用）
  * @param logger ロガーインスタンス
  * @returns アクティブ化結果
  *
  * @description
  * 以下の処理を順次実行します：
- * 1. ウィンドウ設定からタイトルを取得（windowConfig優先、なければwindowTitle使用）
+ * 1. ウィンドウ設定からタイトルを取得
  * 2. タイトルに一致するウィンドウを検索
  * 3. ウィンドウが見つかった場合：
  *    - 最小化されている場合は復元
@@ -321,25 +320,21 @@ async function waitForDesktopMove(
  */
 export async function tryActivateWindow(
   windowConfig: WindowConfig | undefined,
-  windowTitle: string | undefined,
   itemName: string,
   logger: Logger
 ): Promise<WindowActivationResult> {
-  // ウィンドウ設定を取得（windowConfig優先、なければwindowTitleから生成）
-  const effectiveConfig = windowConfig || (windowTitle ? { title: windowTitle } : undefined);
-
-  if (!effectiveConfig) {
+  if (!windowConfig) {
     // ウィンドウ設定が存在しない場合は何もしない
     return { activated: false, windowFound: false };
   }
 
   // ウィンドウタイトルでウィンドウを検索
-  const hwnd = findWindowByTitle(effectiveConfig.title, effectiveConfig.processName);
+  const hwnd = findWindowByTitle(windowConfig.title, windowConfig.processName);
 
   if (hwnd === null) {
     // ウィンドウが見つからない場合
     logger.info(
-      { name: itemName, windowConfig: JSON.stringify(effectiveConfig) },
+      { name: itemName, windowConfig: JSON.stringify(windowConfig) },
       'ウィンドウが見つかりませんでした。通常起動します'
     );
     return { activated: false, windowFound: false };
@@ -347,7 +342,7 @@ export async function tryActivateWindow(
 
   // ウィンドウが見つかった場合
   logger.info(
-    { name: itemName, windowConfig: JSON.stringify(effectiveConfig), hwnd: String(hwnd) },
+    { name: itemName, windowConfig: JSON.stringify(windowConfig), hwnd: String(hwnd) },
     'ウィンドウが見つかりました。アクティブ化と位置・サイズ調整を実行します'
   );
 
@@ -355,14 +350,14 @@ export async function tryActivateWindow(
   restoreWindow(hwnd);
 
   // ピン止め処理
-  const needsPinning = effectiveConfig.pinToAllDesktops === true;
+  const needsPinning = windowConfig.pinToAllDesktops === true;
   if (needsPinning) {
     const pinSuccess = pinWindow(hwnd);
     if (pinSuccess) {
       logger.info(
         {
           name: itemName,
-          windowConfig: JSON.stringify(effectiveConfig),
+          windowConfig: JSON.stringify(windowConfig),
         },
         '全仮想デスクトップにピン止めしました'
       );
@@ -370,7 +365,7 @@ export async function tryActivateWindow(
       logger.warn(
         {
           name: itemName,
-          windowConfig: JSON.stringify(effectiveConfig),
+          windowConfig: JSON.stringify(windowConfig),
         },
         'ウィンドウのピン止めに失敗しました'
       );
@@ -378,29 +373,29 @@ export async function tryActivateWindow(
   }
 
   // アクティブモニター中央への移動が必要かチェック
-  const needsActiveMonitorCenter = effectiveConfig.moveToActiveMonitorCenter === true;
+  const needsActiveMonitorCenter = windowConfig.moveToActiveMonitorCenter === true;
 
   // 位置・サイズ設定が必要かチェック
   const needsBoundsChange =
     needsActiveMonitorCenter ||
-    effectiveConfig.x !== undefined ||
-    effectiveConfig.y !== undefined ||
-    effectiveConfig.width !== undefined ||
-    effectiveConfig.height !== undefined;
+    windowConfig.x !== undefined ||
+    windowConfig.y !== undefined ||
+    windowConfig.width !== undefined ||
+    windowConfig.height !== undefined;
 
   // ウィンドウの位置・サイズを設定（指定されている場合）
   if (needsBoundsChange) {
     let targetBounds = {
-      x: effectiveConfig.x,
-      y: effectiveConfig.y,
-      width: effectiveConfig.width,
-      height: effectiveConfig.height,
+      x: windowConfig.x,
+      y: windowConfig.y,
+      width: windowConfig.width,
+      height: windowConfig.height,
     };
 
     // アクティブモニター中央への移動が指定されている場合、座標を計算
     if (needsActiveMonitorCenter) {
       try {
-        const centerPosition = calculateActiveMonitorCenter(hwnd, itemName, effectiveConfig, logger);
+        const centerPosition = calculateActiveMonitorCenter(hwnd, itemName, windowConfig, logger);
         if (centerPosition) {
           targetBounds.x = centerPosition.x;
           targetBounds.y = centerPosition.y;
@@ -409,7 +404,7 @@ export async function tryActivateWindow(
         logger.error(
           {
             name: itemName,
-            windowConfig: JSON.stringify(effectiveConfig),
+            windowConfig: JSON.stringify(windowConfig),
             error: error instanceof Error ? error.message : String(error),
           },
           'アクティブモニター中央座標の計算中にエラーが発生しました。既存の座標処理にフォールバックします'
@@ -417,7 +412,7 @@ export async function tryActivateWindow(
       }
     }
 
-    await setBoundsWithRetry(hwnd, targetBounds, itemName, effectiveConfig, logger);
+    await setBoundsWithRetry(hwnd, targetBounds, itemName, windowConfig, logger);
   }
 
   // 最終的なデスクトップに移動
@@ -425,8 +420,8 @@ export async function tryActivateWindow(
   // ただし、ピン止めが有効な場合はスキップ（ピン止めウィンドウは全デスクトップに表示される）
   let targetDesktopNumber: number | undefined;
 
-  if (effectiveConfig.virtualDesktopNumber !== undefined && !needsPinning) {
-    targetDesktopNumber = effectiveConfig.virtualDesktopNumber;
+  if (windowConfig.virtualDesktopNumber !== undefined && !needsPinning) {
+    targetDesktopNumber = windowConfig.virtualDesktopNumber;
   }
 
   if (targetDesktopNumber !== undefined) {
@@ -436,7 +431,7 @@ export async function tryActivateWindow(
       logger.info(
         {
           name: itemName,
-          windowConfig: JSON.stringify(effectiveConfig),
+          windowConfig: JSON.stringify(windowConfig),
           desktopNumber: targetDesktopNumber,
         },
         '仮想デスクトップに移動しました'
@@ -446,14 +441,14 @@ export async function tryActivateWindow(
       // （デスクトップ移動時にWindowsが位置・サイズをリセットすることがあるため）
       if (needsBoundsChange) {
         // デスクトップ移動完了を待機
-        await waitForDesktopMove(hwnd, targetDesktopNumber, itemName, effectiveConfig, logger);
+        await waitForDesktopMove(hwnd, targetDesktopNumber, itemName, windowConfig, logger);
 
         // 位置・サイズを再設定
         const targetBounds = {
-          x: effectiveConfig.x,
-          y: effectiveConfig.y,
-          width: effectiveConfig.width,
-          height: effectiveConfig.height,
+          x: windowConfig.x,
+          y: windowConfig.y,
+          width: windowConfig.width,
+          height: windowConfig.height,
         };
 
         const setSuccess = setWindowBounds(hwnd, targetBounds);
@@ -471,7 +466,7 @@ export async function tryActivateWindow(
               logger.info(
                 {
                   name: itemName,
-                  windowConfig: JSON.stringify(effectiveConfig),
+                  windowConfig: JSON.stringify(windowConfig),
                   actualBounds,
                 },
                 'デスクトップ移動後、位置・サイズを再設定しました'
@@ -480,7 +475,7 @@ export async function tryActivateWindow(
               logger.warn(
                 {
                   name: itemName,
-                  windowConfig: JSON.stringify(effectiveConfig),
+                  windowConfig: JSON.stringify(windowConfig),
                   targetBounds,
                   actualBounds,
                 },
@@ -492,7 +487,7 @@ export async function tryActivateWindow(
           logger.warn(
             {
               name: itemName,
-              windowConfig: JSON.stringify(effectiveConfig),
+              windowConfig: JSON.stringify(windowConfig),
             },
             'デスクトップ移動後のSetWindowPosに失敗しました'
           );
@@ -502,7 +497,7 @@ export async function tryActivateWindow(
       logger.warn(
         {
           name: itemName,
-          windowConfig: JSON.stringify(effectiveConfig),
+          windowConfig: JSON.stringify(windowConfig),
           desktopNumber: targetDesktopNumber,
         },
         '仮想デスクトップへの移動に失敗しました'
@@ -511,11 +506,11 @@ export async function tryActivateWindow(
   }
 
   // ウィンドウをアクティブ化（activateWindowがfalseの場合はスキップ）
-  const shouldActivate = effectiveConfig.activateWindow !== false; // undefined または true の場合はアクティブ化
+  const shouldActivate = windowConfig.activateWindow !== false; // undefined または true の場合はアクティブ化
 
   if (!shouldActivate) {
     logger.info(
-      { name: itemName, windowConfig: JSON.stringify(effectiveConfig) },
+      { name: itemName, windowConfig: JSON.stringify(windowConfig) },
       'activateWindow=falseのため、ウィンドウのアクティブ化をスキップしました'
     );
     return { activated: true, windowFound: true }; // ウィンドウ検索・設定は成功
@@ -529,7 +524,7 @@ export async function tryActivateWindow(
   } else {
     // アクティブ化失敗（通常起動へフォールバック）
     logger.warn(
-      { name: itemName, windowConfig: JSON.stringify(effectiveConfig) },
+      { name: itemName, windowConfig: JSON.stringify(windowConfig) },
       'ウィンドウのアクティブ化に失敗。通常起動にフォールバック'
     );
     return { activated: false, windowFound: true };
