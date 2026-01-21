@@ -59,7 +59,7 @@ const LauncherFileTabBar: React.FC<FileTabBarProps> = ({
   };
 
   return (
-    <div className="file-tab-bar">
+    <div className="tab-bar">
       {dataFileTabs.map((tabConfig, index) => {
         const count = getTabItemCount(tabConfig);
         const representativeFile = getRepresentativeFile(tabConfig);
@@ -74,12 +74,12 @@ const LauncherFileTabBar: React.FC<FileTabBarProps> = ({
         return (
           <button
             key={`tab-${index}-${representativeFile}`}
-            className={`file-tab ${isTabActive(tabConfig) ? 'active' : ''}`}
+            className={`tab-button ${isTabActive(tabConfig) ? 'active' : ''}`}
             onClick={() => onTabClick(representativeFile)}
             title={filesTitle}
           >
-            <span className="file-tab-label">{tabConfig.name}</span>
-            <span className="file-tab-count">({count})</span>
+            {tabConfig.name}
+            <span className="tab-count">({count})</span>
           </button>
         );
       })}
