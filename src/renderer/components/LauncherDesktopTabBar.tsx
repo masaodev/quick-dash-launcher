@@ -66,11 +66,11 @@ const LauncherDesktopTabBar: React.FC<DesktopTabBarProps> = ({
   }, [windowList, desktopInfo.desktopCount, desktopInfo.currentDesktop]);
 
   return (
-    <div className="desktop-tabs-bar">
+    <div className="tab-bar">
       {tabs.map((tab) => (
         <button
           key={tab.id}
-          className={`desktop-tab-button ${activeDesktopTab === tab.id ? 'active' : ''}`}
+          className={`tab-button ${activeDesktopTab === tab.id ? 'active' : ''}`}
           onClick={() => onTabChange(tab.id)}
           title={getTabTooltip(tab.id)}
         >
