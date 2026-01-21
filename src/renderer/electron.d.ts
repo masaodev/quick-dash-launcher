@@ -42,8 +42,11 @@ export interface ElectronAPI {
   // 統合進捗付きアイコン取得API
   fetchIconsCombined: (
     urlItems: LauncherItem[],
-    items: LauncherItem[]
+    items: LauncherItem[],
+    forceRefresh?: boolean
   ) => Promise<{ favicons: Record<string, string | null>; icons: Record<string, string | null> }>;
+  // アイコン取得エラー記録をクリア
+  clearIconFetchErrors: () => Promise<{ success: boolean }>;
   // 進捗イベントリスナー
   onIconProgress: (
     eventType: 'start' | 'update' | 'complete',

@@ -34,6 +34,7 @@ export const IPC_CHANNELS = {
   LOAD_CACHED_ICONS: 'load-cached-icons',
   LOAD_CACHED_ICONS_BY_ITEMS: 'load-cached-icons-by-items',
   FETCH_ICONS_COMBINED: 'fetch-icons-combined',
+  CLEAR_ICON_FETCH_ERRORS: 'clear-icon-fetch-errors',
   SELECT_CUSTOM_ICON_FILE: 'select-custom-icon-file',
   SAVE_CUSTOM_ICON: 'save-custom-icon',
   DELETE_CUSTOM_ICON: 'delete-custom-icon',

@@ -62,8 +62,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   loadCachedIcons: (items: LauncherItem[]) =>
     ipcRenderer.invoke(IPC_CHANNELS.LOAD_CACHED_ICONS, items),
   // 統合進捗付きアイコン取得API
-  fetchIconsCombined: (urlItems: LauncherItem[], items: LauncherItem[]) =>
-    ipcRenderer.invoke(IPC_CHANNELS.FETCH_ICONS_COMBINED, urlItems, items),
+  fetchIconsCombined: (
+    urlItems: LauncherItem[],
+    items: LauncherItem[],
+    forceRefresh: boolean = false
+  ) => ipcRenderer.invoke(IPC_CHANNELS.FETCH_ICONS_COMBINED, urlItems, items, forceRefresh),
+  // アイコン取得エラー記録をクリア
+  clearIconFetchErrors: () => ipcRenderer.invoke(IPC_CHANNELS.CLEAR_ICON_FETCH_ERRORS),
   // 進捗イベントリスナー
   onIconProgress: (
     eventType: 'start' | 'update' | 'complete',
