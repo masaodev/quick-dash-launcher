@@ -63,3 +63,20 @@ export interface IconProgressState {
   /** 現在の進捗情報 */
   progress: IconProgress | null;
 }
+
+/**
+ * アイコン取得エラー記録
+ * エラーになったアイテムを記録し、次回の取得時にスキップするために使用
+ */
+export interface IconFetchErrorRecord {
+  /** 識別キー（URL または ファイルパス） */
+  key: string;
+  /** 取得タイプ（ファビコンまたはアイコン） */
+  type: 'favicon' | 'icon';
+  /** エラーメッセージ */
+  errorMessage: string;
+  /** エラー発生時刻（ミリ秒） */
+  errorAt: number;
+  /** 失敗回数 */
+  failCount: number;
+}

@@ -4,10 +4,43 @@ import { isWindowInfo, isLauncherItem } from '@common/types/guards';
 
 import { debugInfo } from '../utils/debug';
 
+type IconResults = {
+  favicons: Record<string, string | null>;
+  icons: Record<string, string | null>;
+};
+
+function hasNoIcon(item: AppItem): boolean {
+  return !('icon' in item && item.icon);
+}
+
+function extractUrlItems(items: AppItem[], requireNoIcon: boolean): LauncherItem[] {
+  return items.filter(
+    (item) =>
+      isLauncherItem(item) && item.type === 'url' && (!requireNoIcon || hasNoIcon(item))
+  ) as LauncherItem[];
+}
+
+function extractIconItems(items: AppItem[], requireNoIcon: boolean): LauncherItem[] {
+  return items.filter(
+    (item) =>
+      isLauncherItem(item) &&
+      item.type !== 'url' &&
+      item.type !== 'folder' &&
+      (!requireNoIcon || hasNoIcon(item))
+  ) as LauncherItem[];
+}
+
+function applyIconsToItems(items: AppItem[], results: IconResults): AppItem[] {
+  return items.map((item) => {
+    if (!isLauncherItem(item)) return item;
+    const icon =
+      item.type === 'url' ? results.favicons[item.path] : results.icons[item.path];
+    return icon ? { ...item, icon } : item;
+  });
+}
+
 /**
  * アイコン取得管理フック
- *
- * アイコンの一括取得、未取得アイコンの取得を管理します。
  */
 export function useIconFetcher(
   mainItems: AppItem[],
@@ -15,155 +48,73 @@ export function useIconFetcher(
   showDataFileTabs: boolean,
   activeTab: string,
   dataFileTabs: DataFileTab[]
-) {
-  /**
-   * すべてのアイテムとアイコンを更新（強制取得）
-   */
-  const handleRefreshAll = async (loadItems: () => Promise<AppItem[]>) => {
+): {
+  handleRefreshAll: (loadItems: () => Promise<AppItem[]>) => Promise<void>;
+  handleFetchMissingIcons: () => Promise<void>;
+  handleFetchMissingIconsCurrentTab: () => Promise<void>;
+} {
+  const handleRefreshAll = async (loadItems: () => Promise<AppItem[]>): Promise<void> => {
     debugInfo('すべての更新を開始');
 
-    // 1. データファイルの再読み込み
     const loadedItems = await loadItems();
+    const urlItems = extractUrlItems(loadedItems, false);
+    const iconItems = extractIconItems(loadedItems, false);
 
-    // 2. 統合プログレスAPIで全アイコン取得（強制）
-    const allUrlItems = loadedItems.filter(
-      (item) => isLauncherItem(item) && item.type === 'url'
-    ) as LauncherItem[];
-
-    const allIconItems = loadedItems.filter(
-      (item) => isLauncherItem(item) && item.type !== 'url' && item.type !== 'folder'
-    ) as LauncherItem[];
-
-    if (allUrlItems.length > 0 || allIconItems.length > 0) {
-      const results = await window.electronAPI.fetchIconsCombined(allUrlItems, allIconItems);
-
-      // 取得したアイコンをアイテムに適用
-      const updateItemsWithIcons = (items: AppItem[]) => {
-        return items.map((item) => {
-          if (isLauncherItem(item) && item.type === 'url' && results.favicons[item.path]) {
-            return { ...item, icon: results.favicons[item.path] || undefined };
-          } else if (isLauncherItem(item) && item.type !== 'url' && results.icons[item.path]) {
-            return { ...item, icon: results.icons[item.path] || undefined };
-          }
-          return item;
-        });
-      };
-
-      setMainItems(updateItemsWithIcons(loadedItems));
+    if (urlItems.length > 0 || iconItems.length > 0) {
+      const results = await window.electronAPI.fetchIconsCombined(urlItems, iconItems, true);
+      setMainItems(applyIconsToItems(loadedItems, results));
     }
 
     debugInfo('すべての更新が完了');
   };
 
-  /**
-   * 未取得アイコンを取得（全タブ）
-   */
-  const handleFetchMissingIcons = async () => {
+  const handleFetchMissingIcons = async (): Promise<void> => {
     debugInfo('未取得アイコンの取得を開始（全タブ）');
 
-    // 統合プログレスAPIを使用
-    // URLアイテムの抽出（アイコン未設定のみ）
-    const urlItems = mainItems.filter(
-      (item) => isLauncherItem(item) && item.type === 'url' && !('icon' in item && item.icon)
-    ) as LauncherItem[];
-
-    // EXE/ファイル/カスタムURIアイテムの抽出（アイコン未設定のみ、フォルダを除外）
-    const iconItems = mainItems.filter(
-      (item) =>
-        isLauncherItem(item) &&
-        item.type !== 'url' &&
-        item.type !== 'folder' &&
-        !('icon' in item && item.icon)
-    ) as LauncherItem[];
+    const urlItems = extractUrlItems(mainItems, true);
+    const iconItems = extractIconItems(mainItems, true);
 
     if (urlItems.length === 0 && iconItems.length === 0) {
       debugInfo('取得対象のアイテムがありません');
       return;
     }
 
-    // 統合APIを呼び出し
-    const results = await window.electronAPI.fetchIconsCombined(urlItems, iconItems);
+    const results = await window.electronAPI.fetchIconsCombined(urlItems, iconItems, false);
+    setMainItems(applyIconsToItems(mainItems, results));
 
-    // 取得したアイコンをアイテムに適用
-    const updateItemsWithIcons = (items: AppItem[]) => {
-      return items.map((item) => {
-        if (isLauncherItem(item) && item.type === 'url' && results.favicons[item.path]) {
-          return { ...item, icon: results.favicons[item.path] || undefined };
-        } else if (isLauncherItem(item) && item.type !== 'url' && results.icons[item.path]) {
-          return { ...item, icon: results.icons[item.path] || undefined };
-        }
-        return item;
-      });
-    };
-
-    setMainItems(updateItemsWithIcons(mainItems));
     debugInfo('未取得アイコンの取得が完了（全タブ）');
   };
 
-  /**
-   * 未取得アイコンを取得（現在のタブのみ）
-   */
-  const handleFetchMissingIconsCurrentTab = async () => {
+  const handleFetchMissingIconsCurrentTab = async (): Promise<void> => {
     debugInfo('未取得アイコンの取得を開始（現在のタブ）');
 
-    // 現在のタブのアイテムのみをフィルタリング
-    let currentTabItems: AppItem[];
-    if (!showDataFileTabs) {
-      currentTabItems = mainItems.filter(
-        (item) => !isWindowInfo(item) && item.sourceFile === 'data.txt'
-      );
-    } else {
-      // アクティブなタブに紐付く全ファイルのアイテムを取得
-      const activeTabConfig = dataFileTabs.find((tab) => tab.files.includes(activeTab));
-      if (activeTabConfig) {
-        currentTabItems = mainItems.filter(
-          (item) => !isWindowInfo(item) && activeTabConfig.files.includes(item.sourceFile || '')
-        );
-      } else {
-        currentTabItems = mainItems.filter(
-          (item) => !isWindowInfo(item) && item.sourceFile === activeTab
-        );
-      }
-    }
-
-    // 統合プログレスAPIを使用
-    // URLアイテムの抽出（アイコン未設定のみ）
-    const urlItems = currentTabItems.filter(
-      (item) => isLauncherItem(item) && item.type === 'url' && !('icon' in item && item.icon)
-    ) as LauncherItem[];
-
-    // EXE/ファイル/カスタムURIアイテムの抽出（アイコン未設定のみ、フォルダを除外）
-    const iconItems = currentTabItems.filter(
-      (item) =>
-        isLauncherItem(item) &&
-        item.type !== 'url' &&
-        item.type !== 'folder' &&
-        !('icon' in item && item.icon)
-    ) as LauncherItem[];
+    const currentTabItems = getCurrentTabItems();
+    const urlItems = extractUrlItems(currentTabItems, true);
+    const iconItems = extractIconItems(currentTabItems, true);
 
     if (urlItems.length === 0 && iconItems.length === 0) {
       debugInfo('取得対象のアイテムがありません（現在のタブ）');
       return;
     }
 
-    // 統合APIを呼び出し
-    const results = await window.electronAPI.fetchIconsCombined(urlItems, iconItems);
+    const results = await window.electronAPI.fetchIconsCombined(urlItems, iconItems, false);
+    setMainItems(applyIconsToItems(mainItems, results));
 
-    // 取得したアイコンをアイテムに適用
-    const updateItemsWithIcons = (items: AppItem[]) => {
-      return items.map((item) => {
-        if (isLauncherItem(item) && item.type === 'url' && results.favicons[item.path]) {
-          return { ...item, icon: results.favicons[item.path] || undefined };
-        } else if (isLauncherItem(item) && item.type !== 'url' && results.icons[item.path]) {
-          return { ...item, icon: results.icons[item.path] || undefined };
-        }
-        return item;
-      });
-    };
-
-    setMainItems(updateItemsWithIcons(mainItems));
     debugInfo('未取得アイコンの取得が完了（現在のタブ）');
   };
+
+  function getCurrentTabItems(): AppItem[] {
+    if (!showDataFileTabs) {
+      return mainItems.filter((item) => !isWindowInfo(item) && item.sourceFile === 'data.txt');
+    }
+
+    const activeTabConfig = dataFileTabs.find((tab) => tab.files.includes(activeTab));
+    const targetFiles = activeTabConfig ? activeTabConfig.files : [activeTab];
+
+    return mainItems.filter(
+      (item) => !isWindowInfo(item) && targetFiles.includes(item.sourceFile || '')
+    );
+  }
 
   return {
     handleRefreshAll,

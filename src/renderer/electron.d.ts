@@ -17,6 +17,7 @@ import {
   WindowInfo,
   VirtualDesktopInfo,
   RegisterItem,
+  IconFetchErrorRecord,
 } from '@common/types';
 
 export interface ElectronAPI {
@@ -42,8 +43,13 @@ export interface ElectronAPI {
   // 統合進捗付きアイコン取得API
   fetchIconsCombined: (
     urlItems: LauncherItem[],
-    items: LauncherItem[]
+    items: LauncherItem[],
+    forceRefresh?: boolean
   ) => Promise<{ favicons: Record<string, string | null>; icons: Record<string, string | null> }>;
+  // アイコン取得エラー記録をクリア
+  clearIconFetchErrors: () => Promise<{ success: boolean }>;
+  // アイコン取得エラー記録を取得
+  getIconFetchErrors: () => Promise<IconFetchErrorRecord[]>;
   // 進捗イベントリスナー
   onIconProgress: (
     eventType: 'start' | 'update' | 'complete',
