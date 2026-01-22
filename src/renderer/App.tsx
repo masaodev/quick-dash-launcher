@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { DESKTOP_TAB } from '@common/constants';
 import { convertLauncherItemToRawDataLine } from '@common/utils/dataConverters';
 import type { RegisterItem } from '@common/types';
@@ -12,6 +12,7 @@ import {
   SearchMode,
   WindowInfo,
   WindowOperationItem,
+  IconFetchErrorRecord,
   isWindowInfo,
   isGroupItem,
   isWindowOperationItem,
@@ -25,6 +26,7 @@ import LauncherIconProgressBar from './components/LauncherIconProgressBar';
 import LauncherFileTabBar from './components/LauncherFileTabBar';
 import LauncherDesktopTabBar from './components/LauncherDesktopTabBar';
 import LauncherItemCountDisplay from './components/LauncherItemCountDisplay';
+import MissingIconNotice from './components/MissingIconNotice';
 import { SetupFirstLaunch } from './components/SetupFirstLaunch';
 import AlertDialog from './components/AlertDialog';
 import ConfirmDialog from './components/ConfirmDialog';
@@ -76,6 +78,9 @@ const App: React.FC = () => {
     isOpen: false,
     item: null,
   });
+
+  // アイコン取得エラー記録
+  const [iconFetchErrors, setIconFetchErrors] = useState<IconFetchErrorRecord[]>([]);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const { progressState, resetProgress } = useIconProgress();
@@ -292,6 +297,13 @@ const App: React.FC = () => {
     checkFirstLaunch();
 
     loadItems();
+
+    // アイコン取得エラー記録を読み込み
+    const loadIconFetchErrors = async () => {
+      const errors = await window.electronAPI.getIconFetchErrors();
+      setIconFetchErrors(errors);
+    };
+    loadIconFetchErrors();
 
     window.electronAPI.onWindowShown((startTime) => {
       // パフォーマンス計測：レンダリング完了後に測定
@@ -636,6 +648,32 @@ const App: React.FC = () => {
 
   const tabFilteredItems = getTabFilteredItems(mainItems);
 
+  // エラー記録のキーセットを作成（検索を高速化）
+  const errorKeySet = useMemo(() => {
+    return new Set(iconFetchErrors.map((e) => e.key));
+  }, [iconFetchErrors]);
+
+  // アイコン未取得数を計算（LauncherItemのみ対象、フォルダ・エラー記録を除外）
+  const missingIconCount = useMemo(() => {
+    return mainItems.filter((item) => {
+      // LauncherItemのみ対象（WindowInfo, GroupItem, WindowOperationItemは除外）
+      if (isWindowInfo(item) || isGroupItem(item) || isWindowOperationItem(item)) {
+        return false;
+      }
+      const launcherItem = item as LauncherItem;
+      // フォルダとカスタムURIは除外（アイコン取得対象外）
+      if (launcherItem.type === 'folder' || launcherItem.type === 'customUri') {
+        return false;
+      }
+      // エラー記録にあるアイテムは除外
+      if (errorKeySet.has(launcherItem.path)) {
+        return false;
+      }
+      // アイコンが未取得のもの
+      return !launcherItem.icon;
+    }).length;
+  }, [mainItems, errorKeySet]);
+
   // ウィンドウ検索モード時のタブフィルタリング
   const getDesktopFilteredWindows = (windows: WindowInfo[]): WindowInfo[] => {
     if (activeDesktopTab === DESKTOP_TAB.ALL) {
@@ -737,6 +775,14 @@ const App: React.FC = () => {
           onOpenShortcutParentFolder={handleOpenShortcutParentFolder}
           onEditItem={handleEditItem}
         />
+
+        {/* アイコン未取得通知（進捗表示がない場合のみ） */}
+        {!progressState.isActive && missingIconCount > 0 && (
+          <MissingIconNotice
+            missingCount={missingIconCount}
+            onFetchClick={handleFetchMissingIcons}
+          />
+        )}
 
         {progressState.isActive && progressState.progress && (
           <LauncherIconProgressBar progress={progressState.progress} onClose={resetProgress} />

@@ -523,12 +523,26 @@ async function loadCachedIcons(
           } else if (fs.existsSync(exeIconPath)) {
             iconPath = exeIconPath;
           }
-        } else if (item.type === 'app' && item.path && item.path.endsWith('.exe')) {
-          // .exeファイルの場合、アイコンをチェック
-          const iconName = path.basename(item.path, '.exe') + '_icon.png';
-          const exeIconPath = path.join(iconsFolder, iconName);
-          if (fs.existsSync(exeIconPath)) {
-            iconPath = exeIconPath;
+        } else if (item.type === 'app' && item.path) {
+          const lowerPath = item.path.toLowerCase();
+          if (lowerPath.endsWith('.exe')) {
+            // .exeファイルの場合、アイコンをチェック
+            const iconName = path.basename(item.path, path.extname(item.path)) + '_icon.png';
+            const exeIconPath = path.join(iconsFolder, iconName);
+            if (fs.existsSync(exeIconPath)) {
+              iconPath = exeIconPath;
+            }
+          } else if (
+            lowerPath.endsWith('.bat') ||
+            lowerPath.endsWith('.cmd') ||
+            lowerPath.endsWith('.com')
+          ) {
+            // .bat/.cmd/.comファイルの場合、拡張子ベースのアイコンをチェック
+            const extensionName = path.extname(item.path).slice(1).toLowerCase();
+            const extensionIconPath = path.join(extensionsFolder, `ext_${extensionName}_icon.png`);
+            if (fs.existsSync(extensionIconPath)) {
+              iconPath = extensionIconPath;
+            }
           }
         } else if (item.type === 'customUri' && item.path) {
           // カスタムURIの場合、まずスキーマベースのアイコンをチェック
@@ -942,6 +956,12 @@ export function setupIconHandlers(
     const errorService = await IconFetchErrorService.getInstance();
     await errorService.clearAllErrors();
     return { success: true };
+  });
+
+  // アイコン取得エラー記録を取得
+  ipcMain.handle(IPC_CHANNELS.GET_ICON_FETCH_ERRORS, async () => {
+    const errorService = await IconFetchErrorService.getInstance();
+    return await errorService.getAllErrors();
   });
 
   // カスタムアイコン関連のハンドラー

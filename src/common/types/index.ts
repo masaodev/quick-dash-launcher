@@ -42,6 +42,7 @@ export type {
   IconPhaseProgress,
   IconProgress,
   IconProgressState,
+  IconFetchErrorRecord,
 } from './icon';
 
 // ブックマーク関連の型

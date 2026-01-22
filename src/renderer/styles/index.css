@@ -3,6 +3,7 @@
 @import './common.css';
 @import './components/LauncherItemCountDisplay.css';
 @import './components/GroupItemSelectorModal.css';
+@import './components/MissingIconNotice.css';
 
 /* グローバルリセットとベーススタイル */
 * {

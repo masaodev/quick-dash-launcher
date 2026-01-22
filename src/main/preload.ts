@@ -16,6 +16,7 @@ import {
   ExecutionHistoryItem,
   WindowInfo,
   VirtualDesktopInfo,
+  IconFetchErrorRecord,
 } from '@common/types';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
@@ -69,6 +70,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   ) => ipcRenderer.invoke(IPC_CHANNELS.FETCH_ICONS_COMBINED, urlItems, items, forceRefresh),
   // アイコン取得エラー記録をクリア
   clearIconFetchErrors: () => ipcRenderer.invoke(IPC_CHANNELS.CLEAR_ICON_FETCH_ERRORS),
+  // アイコン取得エラー記録を取得
+  getIconFetchErrors: (): Promise<IconFetchErrorRecord[]> =>
+    ipcRenderer.invoke(IPC_CHANNELS.GET_ICON_FETCH_ERRORS),
   // 進捗イベントリスナー
   onIconProgress: (
     eventType: 'start' | 'update' | 'complete',
