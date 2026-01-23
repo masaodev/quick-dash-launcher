@@ -24,7 +24,9 @@
     "test:e2e:debug": "npm run build && playwright test --debug",
     "test:e2e:headed": "npm run build && playwright test --headed",
     "test:e2e:single": "node scripts/run-e2e-test.js",
-    "test:window-move": "tsx src/test/manual/testWindowMove.ts"
+    "test:window-move": "tsx src/test/manual/testWindowMove.ts",
+    "test:window-list": "tsx src/test/manual/testWindowList.ts",
+    "debug:windows": "node scripts/debug-windows.mjs"
   },
   "keywords": [
     "launcher",

@@ -40,6 +40,8 @@ export interface WindowInfo {
   executablePath?: string;
   /** プロセス名（実行ファイル名） */
   processName?: string;
+  /** ウィンドウクラス名 */
+  className?: string;
   /** ウィンドウの状態 */
   windowState?: WindowState;
   /** アイコン（base64エンコードされたデータURL） */
