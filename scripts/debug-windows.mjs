@@ -81,6 +81,21 @@ const EXCLUDED_WINDOWS = [
     className: 'Progman',
     description: 'デスクトップ壁紙（Program Manager）',
   },
+  {
+    processName: 'LockApp.exe',
+    className: 'Windows.UI.Core.CoreWindow',
+    description: 'Windows ロック画面',
+  },
+  {
+    processName: 'StartMenuExperienceHost.exe',
+    className: 'Windows.UI.Core.CoreWindow',
+    description: 'Windows スタートメニュー',
+  },
+  {
+    processName: 'SearchHost.exe',
+    className: 'Windows.UI.Core.CoreWindow',
+    description: 'Windows 検索',
+  },
 ];
 
 // =====================================================================
