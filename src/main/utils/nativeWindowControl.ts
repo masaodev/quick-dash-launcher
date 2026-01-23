@@ -159,6 +159,21 @@ const EXCLUDED_WINDOWS: ExcludedWindowRule[] = [
     className: 'Progman',
     description: 'デスクトップ壁紙（Program Manager）',
   },
+  {
+    processName: 'LockApp.exe',
+    className: 'Windows.UI.Core.CoreWindow',
+    description: 'Windows ロック画面',
+  },
+  {
+    processName: 'StartMenuExperienceHost.exe',
+    className: 'Windows.UI.Core.CoreWindow',
+    description: 'Windows スタートメニュー',
+  },
+  {
+    processName: 'SearchHost.exe',
+    className: 'Windows.UI.Core.CoreWindow',
+    description: 'Windows 検索',
+  },
 ];
 
 // Alt+Tabフィルタリング用の定数
@@ -521,11 +536,13 @@ export function getAllWindows(options?: { includeAllVirtualDesktops?: boolean })
       const className = getWindowClassName(hwnd);
 
       // 除外リストに含まれるウィンドウかチェック（プロセス名とクラス名の両方が一致する必要がある）
-      const isExcluded = EXCLUDED_WINDOWS.some(
+      // 除外ルールに一致し、かつクローク状態（非表示）の場合のみ除外
+      // 実際に表示されているウィンドウは除外しない（誤検知防止）
+      const matchesExclusionRule = EXCLUDED_WINDOWS.some(
         (excluded) =>
           excluded.processName === processName && excluded.className === className
       );
-      if (isExcluded) {
+      if (matchesExclusionRule && isWindowCloaked(hwnd, false)) {
         return true;
       }
 

@@ -81,6 +81,21 @@ const EXCLUDED_WINDOWS = [
     className: 'Progman',
     description: 'デスクトップ壁紙（Program Manager）',
   },
+  {
+    processName: 'LockApp.exe',
+    className: 'Windows.UI.Core.CoreWindow',
+    description: 'Windows ロック画面',
+  },
+  {
+    processName: 'StartMenuExperienceHost.exe',
+    className: 'Windows.UI.Core.CoreWindow',
+    description: 'Windows スタートメニュー',
+  },
+  {
+    processName: 'SearchHost.exe',
+    className: 'Windows.UI.Core.CoreWindow',
+    description: 'Windows 検索',
+  },
 ];
 
 // =====================================================================
@@ -184,11 +199,13 @@ function getWindows(includeAllDesktops = false) {
         };
 
         // 除外チェック
+        // 除外ルールに一致し、かつクローク状態（非表示）の場合のみ除外
+        // 実際に表示されているウィンドウは除外しない（誤検知防止）
         const matchedRule = EXCLUDED_WINDOWS.find(
           (rule) => rule.processName === processName && rule.className === className
         );
 
-        if (matchedRule) {
+        if (matchedRule && isWindowCloaked(hwnd, false)) {
           excludedWindows.push({
             ...windowInfo,
             excludeReason: matchedRule.description,
