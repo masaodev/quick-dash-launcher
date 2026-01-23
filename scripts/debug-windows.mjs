@@ -199,26 +199,17 @@ function getWindows(includeAllDesktops = false) {
         };
 
         // 除外チェック
+        // 除外ルールに一致し、かつクローク状態（非表示）の場合のみ除外
+        // 実際に表示されているウィンドウは除外しない（誤検知防止）
         const matchedRule = EXCLUDED_WINDOWS.find(
           (rule) => rule.processName === processName && rule.className === className
         );
 
-        if (matchedRule) {
-          // 除外ルールに一致する場合でも、クローク状態（非表示）の場合のみ除外
-          // 実際に表示されているウィンドウは除外しない（誤検知防止）
-          const cloakedArr = [0];
-          const hr = DwmGetWindowAttribute(hwnd, DWMWA_CLOAKED, cloakedArr, 4);
-          const isCloaked = hr === 0 && cloakedArr[0] !== 0;
-
-          if (isCloaked) {
-            excludedWindows.push({
-              ...windowInfo,
-              excludeReason: matchedRule.description,
-            });
-          } else {
-            // 表示されている場合は除外しない
-            visibleWindows.push(windowInfo);
-          }
+        if (matchedRule && isWindowCloaked(hwnd, false)) {
+          excludedWindows.push({
+            ...windowInfo,
+            excludeReason: matchedRule.description,
+          });
         } else {
           visibleWindows.push(windowInfo);
         }

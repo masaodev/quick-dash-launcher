@@ -536,21 +536,14 @@ export function getAllWindows(options?: { includeAllVirtualDesktops?: boolean })
       const className = getWindowClassName(hwnd);
 
       // 除外リストに含まれるウィンドウかチェック（プロセス名とクラス名の両方が一致する必要がある）
+      // 除外ルールに一致し、かつクローク状態（非表示）の場合のみ除外
+      // 実際に表示されているウィンドウは除外しない（誤検知防止）
       const matchesExclusionRule = EXCLUDED_WINDOWS.some(
         (excluded) =>
           excluded.processName === processName && excluded.className === className
       );
-      if (matchesExclusionRule) {
-        // 除外ルールに一致する場合でも、クローク状態（非表示）の場合のみ除外
-        // 実際に表示されているウィンドウは除外しない（誤検知防止）
-        const cloakedArr = [0];
-        const hr = DwmGetWindowAttribute(hwnd, DWMWA_CLOAKED, cloakedArr, 4);
-        const isCloaked = hr === 0 && cloakedArr[0] !== 0;
-
-        if (isCloaked) {
-          return true; // クローク状態の場合のみ除外
-        }
-        // 表示されている場合は除外しない（続行）
+      if (matchesExclusionRule && isWindowCloaked(hwnd, false)) {
+        return true;
       }
 
       // ウィンドウの状態を取得
