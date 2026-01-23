@@ -30,6 +30,7 @@ const EnumWindowsProc = koffi.proto('bool __stdcall EnumWindowsProc(void* hwnd, 
 const EnumWindows = user32.func('EnumWindows', 'bool', [koffi.pointer(EnumWindowsProc), 'intptr']);
 const GetWindowTextW = user32.func('GetWindowTextW', 'int', ['void*', 'str16', 'int']);
 const GetWindowTextLengthW = user32.func('GetWindowTextLengthW', 'int', ['void*']);
+const GetClassNameW = user32.func('GetClassNameW', 'int', ['void*', 'str16', 'int']);
 const IsWindowVisible = user32.func('IsWindowVisible', 'bool', ['void*']);
 const IsIconic = user32.func('IsIconic', 'bool', ['void*']);
 const IsZoomed = user32.func('IsZoomed', 'bool', ['void*']);
@@ -134,6 +135,31 @@ const GDI_STATUS_MESSAGES: Record<number, string> = {
 // 定数
 const SW_RESTORE = 9;
 const PROCESS_QUERY_LIMITED_INFORMATION = 0x1000;
+
+/** ウィンドウ除外ルール（プロセス名とクラス名の両方が一致する必要がある） */
+interface ExcludedWindowRule {
+  processName: string;
+  className: string;
+  description: string;
+}
+
+const EXCLUDED_WINDOWS: ExcludedWindowRule[] = [
+  {
+    processName: 'TextInputHost.exe',
+    className: 'Windows.UI.Core.CoreWindow',
+    description: 'Windows 入力エクスペリエンス',
+  },
+  {
+    processName: 'ShellExperienceHost.exe',
+    className: 'Windows.UI.Core.CoreWindow',
+    description: 'Windowsシェルエクスペリエンス',
+  },
+  {
+    processName: 'explorer.exe',
+    className: 'Progman',
+    description: 'デスクトップ壁紙（Program Manager）',
+  },
+];
 
 // Alt+Tabフィルタリング用の定数
 const GWL_EXSTYLE = -20; // 拡張ウィンドウスタイル取得用
@@ -317,6 +343,28 @@ export function getExecutablePathFromProcessId(processId: number): string | unde
 }
 
 /**
+ * ウィンドウのクラス名を取得
+ * @param hwnd ウィンドウハンドル
+ * @returns ウィンドウクラス名。取得できない場合はundefined
+ */
+function getWindowClassName(hwnd: unknown): string | undefined {
+  try {
+    const buffer = Buffer.alloc(512); // クラス名用バッファ（256文字分）
+    const length = GetClassNameW(hwnd, buffer, 256);
+
+    if (length === 0) {
+      return undefined;
+    }
+
+    const className = buffer.toString('utf16le').substring(0, length).trim();
+    return className || undefined;
+  } catch (error) {
+    console.error('[getWindowClassName] Error:', error);
+    return undefined;
+  }
+}
+
+/**
  * ウィンドウの状態を取得
  * @param hwnd ウィンドウハンドル
  * @returns ウィンドウの状態（'normal' | 'minimized' | 'maximized'）
@@ -348,16 +396,8 @@ function extractProcessName(executablePath: string | undefined): string | undefi
   if (!executablePath) {
     return undefined;
   }
-  try {
-    // Windowsパスの区切り文字で分割して最後の要素（ファイル名）を取得
-    const parts = executablePath.split('\\');
-    const fileName = parts[parts.length - 1];
-    // 空文字列の場合はundefinedを返す
-    return fileName && fileName.trim() !== '' ? fileName : undefined;
-  } catch (error) {
-    console.error('[extractProcessName] Error:', error);
-    return undefined;
-  }
+  const fileName = path.basename(executablePath);
+  return fileName || undefined;
 }
 
 /**
@@ -407,9 +447,14 @@ function isWindowCloaked(hwnd: unknown, includeAllVirtualDesktops: boolean): boo
       return false; // クローキングされていない
     }
 
-    // includeAllVirtualDesktops=true: システムクローキング（DWM_CLOAKED_SHELL）のみ除外
-    // includeAllVirtualDesktops=false: すべてのクローキングを除外
-    return !includeAllVirtualDesktops || (cloakedArr[0] & DWM_CLOAKED_SHELL) !== 0;
+    if (includeAllVirtualDesktops) {
+      // 全デスクトップを含める場合、DWM_CLOAKED_SHELL以外のクローキングのみ除外
+      // DWM_CLOAKED_SHELLは仮想デスクトップによるクローキングなので許可する
+      return (cloakedArr[0] & ~DWM_CLOAKED_SHELL) !== 0;
+    } else {
+      // 現在のデスクトップのみの場合、すべてのクローキングを除外
+      return true;
+    }
   } catch {
     // DWM APIが利用できない場合はクローキングされていないとみなす
     return false;
@@ -472,6 +517,18 @@ export function getAllWindows(options?: { includeAllVirtualDesktops?: boolean })
       // プロセス名を抽出
       const processName = extractProcessName(executablePath);
 
+      // ウィンドウクラス名を取得
+      const className = getWindowClassName(hwnd);
+
+      // 除外リストに含まれるウィンドウかチェック（プロセス名とクラス名の両方が一致する必要がある）
+      const isExcluded = EXCLUDED_WINDOWS.some(
+        (excluded) =>
+          excluded.processName === processName && excluded.className === className
+      );
+      if (isExcluded) {
+        return true;
+      }
+
       // ウィンドウの状態を取得
       const windowState = getWindowState(hwnd);
 
@@ -500,6 +557,7 @@ export function getAllWindows(options?: { includeAllVirtualDesktops?: boolean })
         isVisible: true,
         executablePath,
         processName,
+        className,
         windowState,
         icon,
         desktopNumber,

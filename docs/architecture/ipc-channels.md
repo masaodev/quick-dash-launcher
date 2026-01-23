@@ -571,8 +571,10 @@ onWindowHidden(callback: () => void)
   - QuickDashLauncher自身のウィンドウは除外
   - 表示されていないウィンドウ（`IsWindowVisible = false`）は除外
   - タイトルのないウィンドウは除外
+  - システムウィンドウを除外（プロセス名+クラス名で判定）
   - 各ウィンドウのアイコンを取得（Windows API + GDI+使用）
-  - 実行ファイルパスを取得（プロセスIDから取得）
+  - 実行ファイルパスとプロセス名を取得（プロセスIDから取得）
+  - ウィンドウクラス名を取得（GetClassNameW使用）
 - データ型:
   ```typescript
   interface WindowInfo {
@@ -585,6 +587,8 @@ onWindowHidden(callback: () => void)
     processId: number;           // プロセスID
     isVisible: boolean;          // 表示状態
     executablePath?: string;     // 実行ファイルパス（取得可能な場合）
+    processName?: string;        // プロセス名（実行ファイル名）
+    className?: string;          // ウィンドウクラス名
     icon?: string;               // アイコン（base64エンコードされたデータURL）
     desktopNumber?: number;      // 仮想デスクトップ番号（1から開始、v0.5.19以降）
   }
@@ -595,17 +599,26 @@ onWindowHidden(callback: () => void)
   - `getExecutablePathFromProcessId()`: プロセスIDから実行ファイルパスを取得
   - メモリリーク対策: GDI+リソース解放、一時ファイル削除、koffi callback解放
   - エラーハンドリング: GDI+ステータスコード（0-20）の詳細ログ出力で問題診断を支援（詳細は[アイコンシステム](../features/icons.md#gdiエラーハンドリング)を参照）
+- システムウィンドウ除外:
+  - 除外対象: Windows入力エクスペリエンス、Windowsシェルエクスペリエンス、Program Manager
+  - 判定方法: プロセス名とクラス名の両方が一致する場合に除外
+  - 詳細: `src/main/utils/nativeWindowControl.ts` の `EXCLUDED_WINDOWS` 配列
+  - デバッグ: `scripts/debug-windows.mjs` で除外動作を確認可能
 
 ### `get-all-windows-all-desktops`
 すべての仮想デスクトップからウィンドウ一覧を取得（v0.5.19以降）
 - 戻り値: `WindowInfo[]`
 - 処理内容:
   - Win32 API（koffi経由）でシステム内の全ウィンドウを列挙
-  - すべての仮想デスクトップからウィンドウを取得
+  - すべての仮想デスクトップからウィンドウを取得（`includeAllVirtualDesktops: true`）
+  - DWMクローキングフラグの処理:
+    - `DWM_CLOAKED_SHELL`（仮想デスクトップによるクローキング）は許可
+    - それ以外のクローキングは除外
   - 各ウィンドウに`desktopNumber`を設定（1から開始）
   - QuickDashLauncher自身のウィンドウは除外
   - 表示されていないウィンドウ（`IsWindowVisible = false`）は除外
   - タイトルのないウィンドウは除外
+  - システムウィンドウを除外（プロセス名+クラス名で判定）
   - 各ウィンドウのアイコンを取得（Windows API + GDI+使用）
   - 実行ファイルパスを取得（プロセスIDから取得）
 

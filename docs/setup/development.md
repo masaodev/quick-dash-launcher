@@ -597,12 +597,58 @@ QuickDashLauncherではCSS変数ベースの統一されたデザインシステ
 
 > **注意**: v0.4.4以降、開発モードでの自動DevTools起動は削除されました。必要な場合は上記の方法で手動で開いてください。
 
+### ウィンドウ検索機能のデバッグ
+
+ウィンドウ検索機能のトラブルシューティングには、専用のデバッグツールを使用できます。
+
+**ウィンドウデバッグツール（debug-windows.mjs）:**
+
+```bash
+# 基本的な使い方
+npm run debug:windows
+
+# 全仮想デスクトップのウィンドウを取得
+npm run debug:windows -- --all-desktops
+
+# 除外されたウィンドウも表示
+npm run debug:windows -- --show-excluded
+
+# 実行パスも表示
+npm run debug:windows -- --show-paths
+
+# ファイルに出力
+npm run debug:windows -- --all-desktops --show-excluded --output debug.txt
+```
+
+**機能:**
+- ウィンドウ一覧の取得と確認
+- 除外ルールの動作確認（プロセス名・クラス名の組み合わせ）
+- 各ウィンドウのプロセス名・クラス名・実行パスの確認
+- システムウィンドウの除外動作の検証
+
+**詳細:** `scripts/README.md` を参照
+
 ### デバッグ時の問題
 
 #### 白い/空白のウィンドウ
 - DevToolsコンソールでエラーを確認（`Ctrl+Shift+I`で開く）
 - Viteデベロップメントサーバーが起動しているか確認（開発モード時）
 - プロダクションモードでindex.htmlパスが正しいか確認
+
+#### ウィンドウが検索で表示されない
+1. **除外ルールで除外されていないか確認**
+   ```bash
+   npm run debug:windows -- --show-excluded
+   ```
+
+2. **全デスクトップを取得しているか確認**
+   ```bash
+   npm run debug:windows -- --all-desktops
+   ```
+
+3. **クローキング状態を確認**
+   - 他の仮想デスクトップにあるウィンドウは`DWM_CLOAKED_SHELL`フラグでクローキングされている
+   - `--all-desktops`オプションで取得可能
 
 ### よくあるビルドの問題
 - TypeScript設定の`@common`パスエイリアスがVite設定と一致しているか確認
