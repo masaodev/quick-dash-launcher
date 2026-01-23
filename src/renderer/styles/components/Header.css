@@ -157,19 +157,7 @@
   background-color: var(--color-gray-400);
 }
 
-/* 3段階ピンモードのスタイル */
-.action-btn.pin-normal {
-  background-color: var(--color-white);
-  color: var(--text-primary);
-  border-color: var(--color-gray-400);
-}
-
-.action-btn.pin-normal:hover {
-  background-color: var(--bg-info-light) !important;
-  border-color: var(--color-info-light);
-  box-shadow: var(--shadow);
-}
-
+/* ピンボタンのモード別スタイル（normalモードはaction-btnのデフォルトスタイルを使用） */
 .action-btn.pin-always-on-top {
   background-color: var(--color-danger);
   color: var(--color-white);
@@ -197,7 +185,6 @@
 }
 
 /* アクティブ状態のフィードバック */
-.action-btn.pin-normal:active,
 .action-btn.pin-always-on-top:active,
 .action-btn.pin-stay-visible:active {
   transform: scale(0.95);
