@@ -37,52 +37,6 @@
   color: var(--text-color);
 }
 
-/* Button styles */
-.confirm-dialog .modal-actions .cancel-button {
-  padding: 0.5rem 1.5rem;
-  background-color: var(--color-gray-400);
-  color: white;
-  border: none;
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  font-size: 1rem;
-  transition: background-color 0.2s;
-}
-
-.confirm-dialog .modal-actions .cancel-button:hover {
-  background-color: var(--color-gray-500);
-}
-
-.confirm-dialog button.primary {
-  padding: 0.5rem 1.5rem;
-  background-color: var(--color-primary);
-  color: white;
-  border: none;
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  font-size: 1rem;
-  transition: background-color 0.2s;
-}
-
-.confirm-dialog button.primary:hover {
-  background-color: var(--color-primary-hover);
-}
-
-.confirm-dialog .danger-button {
-  padding: 0.5rem 1.5rem;
-  background-color: var(--color-danger);
-  color: white;
-  border: none;
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  font-size: 1rem;
-  transition: background-color 0.2s;
-}
-
-.confirm-dialog .danger-button:hover {
-  background-color: var(--color-danger-hover);
-}
-
 /* チェックボックスコンテナ */
 .confirm-checkbox-container {
   margin-top: var(--spacing-md);

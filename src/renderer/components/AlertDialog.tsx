@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 
 import '../styles/components/Modal.css';
 import '../styles/components/AlertDialog.css';
+import { Button } from './ui';
 
 interface AlertDialogProps {
   isOpen: boolean;
@@ -87,9 +88,9 @@ const AlertDialog: React.FC<AlertDialogProps> = ({
         </div>
 
         <div className="modal-actions">
-          <button className="primary" onClick={onClose} data-testid="alert-dialog-ok-button">
+          <Button variant="primary" onClick={onClose} data-testid="alert-dialog-ok-button">
             OK
-          </button>
+          </Button>
         </div>
       </div>
     </div>

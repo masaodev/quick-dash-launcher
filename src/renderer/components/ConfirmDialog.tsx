@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 
 import '../styles/components/Modal.css';
 import '../styles/components/ConfirmDialog.css';
+import { Button } from './ui';
 
 interface ConfirmDialogProps {
   isOpen: boolean;
@@ -87,20 +88,16 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
         </div>
 
         <div className="modal-actions">
-          <button
-            className="cancel-button"
-            onClick={onClose}
-            data-testid="confirm-dialog-cancel-button"
-          >
+          <Button variant="cancel" onClick={onClose} data-testid="confirm-dialog-cancel-button">
             {cancelText}
-          </button>
-          <button
-            className={danger ? 'danger-button' : 'primary'}
+          </Button>
+          <Button
+            variant={danger ? 'danger' : 'primary'}
             onClick={onConfirm}
             data-testid="confirm-dialog-confirm-button"
           >
             {confirmText}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
