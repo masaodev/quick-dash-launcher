@@ -187,10 +187,3 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 | 検索クリアボタン | `.search-clear-button` |
 | ドロップダウントリガー | `.dropdown-trigger-btn` |
 
----
-
-## 今後の拡張予定
-
-- `IconButton` - アイコンのみのボタン
-- `ButtonGroup` - 複数ボタンのグループ化
-- `Tabs` - タブコンポーネント
