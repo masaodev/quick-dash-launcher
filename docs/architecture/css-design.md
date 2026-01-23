@@ -21,6 +21,7 @@ src/renderer/styles/
 └── components/                  # コンポーネント別スタイル
     ├── AdminWindow.css          # 管理ウィンドウ
     ├── AlertDialog.css          # 通知ダイアログ
+    ├── Button.css               # 共通ボタンコンポーネント
     ├── ArchiveTab.css           # アーカイブタブ
     ├── BookmarkImport.css       # ブックマークインポート
     ├── ColorPicker.css          # カラーピッカー
@@ -198,6 +199,8 @@ src/renderer/styles/
 ## 共通ユーティリティクラス
 
 ### ボタンクラス
+
+> **推奨**: モーダルのアクションボタンやフォームの送信ボタンには、[Buttonコンポーネント](ui-components.md#buttonコンポーネント)を使用してください。以下のクラスは特殊なケース（ツールバー、タブ等）向けです。
 
 #### .btn-base
 基本的なボタンスタイル
