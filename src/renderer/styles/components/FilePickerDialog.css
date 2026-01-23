@@ -50,17 +50,3 @@
   transform: translateY(1px);
 }
 
-.file-picker-dialog .cancel-button {
-  padding: 0.5rem 1.5rem;
-  background-color: var(--color-gray-400);
-  color: white;
-  border: none;
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  font-size: 1rem;
-  transition: background-color 0.2s;
-}
-
-.file-picker-dialog .cancel-button:hover {
-  background-color: var(--color-gray-500);
-}
