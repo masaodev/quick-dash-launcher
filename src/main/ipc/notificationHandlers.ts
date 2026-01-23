@@ -10,64 +10,24 @@ import { IPC_CHANNELS } from '@common/ipcChannels';
 import {
   showNotification,
   NotificationOptions,
-  NotificationType,
 } from '../services/notificationService.js';
-import { showToastWindow, ToastType } from '../services/toastWindowService.js';
-
-/**
- * OS通知リクエストの型定義
- */
-export interface ShowNotificationRequest {
-  /** 通知タイトル */
-  title: string;
-  /** 通知本文 */
-  body: string;
-  /** 通知タイプ（アイコン選択用） */
-  type?: NotificationType;
-}
-
-/**
- * トーストウィンドウリクエストの型定義
- */
-export interface ShowToastWindowRequest {
-  /** 表示メッセージ */
-  message: string;
-  /** トーストの種類 */
-  type?: ToastType;
-  /** 表示時間（ミリ秒） */
-  duration?: number;
-}
+import { showToastWindow, ToastOptions } from '../services/toastWindowService.js';
 
 /**
  * システム通知関連のIPCハンドラーを登録する
- *
- * レンダラープロセスからIPC_CHANNELS.SHOW_NOTIFICATIONリクエストを受け取り、
- * OS標準通知を表示します。
  */
 export function setupNotificationHandlers(): void {
-  // OS標準通知ハンドラー
   ipcMain.handle(
     IPC_CHANNELS.SHOW_NOTIFICATION,
-    async (_event, request: ShowNotificationRequest): Promise<void> => {
-      const options: NotificationOptions = {
-        title: request.title,
-        body: request.body,
-        type: request.type,
-      };
-
+    async (_event, options: NotificationOptions): Promise<void> => {
       showNotification(options);
     }
   );
 
-  // トーストウィンドウハンドラー
   ipcMain.handle(
     IPC_CHANNELS.SHOW_TOAST_WINDOW,
-    async (_event, request: ShowToastWindowRequest): Promise<void> => {
-      await showToastWindow({
-        message: request.message,
-        type: request.type,
-        duration: request.duration,
-      });
+    async (_event, options: ToastOptions): Promise<void> => {
+      await showToastWindow(options);
     }
   );
 }
