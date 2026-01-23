@@ -31,31 +31,32 @@ const LauncherActionButtons: React.FC<ActionButtonsProps> = ({
   windowPinMode,
   isEditMode,
 }) => {
-  // 各モードの表示設定
-  const getPinButtonConfig = (mode: WindowPinMode) => {
+  // ピンモード別のクラス名を取得
+  // normal: デフォルトのaction-btnスタイルを使用
+  // alwaysOnTop/stayVisible: 専用の色付きスタイルを適用
+  function getPinModeClassName(mode: WindowPinMode): string {
+    switch (mode) {
+      case 'alwaysOnTop':
+        return 'action-btn pin-always-on-top';
+      case 'stayVisible':
+        return 'action-btn pin-stay-visible';
+      default:
+        return 'action-btn';
+    }
+  }
+
+  // ピンモード別のツールチップを取得
+  function getPinModeTitle(mode: WindowPinMode): string {
     switch (mode) {
       case 'normal':
-        return {
-          className: 'action-btn pin-normal',
-          title: '通常モード → 常に最上面モード',
-          emoji: '📌',
-        };
+        return '通常モード → 常に最上面モード';
       case 'alwaysOnTop':
-        return {
-          className: 'action-btn pin-always-on-top',
-          title: '常に最上面モード → 表示固定モード',
-          emoji: '📌',
-        };
+        return '常に最上面モード → 表示固定モード';
       case 'stayVisible':
-        return {
-          className: 'action-btn pin-stay-visible',
-          title: '表示固定モード → 通常モード',
-          emoji: '📌',
-        };
+        return '表示固定モード → 通常モード';
     }
-  };
+  }
 
-  const pinConfig = getPinButtonConfig(windowPinMode);
   return (
     <div className="action-buttons">
       <button className="action-btn" onClick={onOpenRegisterModal} title="アイテムを登録">
@@ -67,8 +68,12 @@ const LauncherActionButtons: React.FC<ActionButtonsProps> = ({
         onFetchMissingIconsCurrentTab={onFetchMissingIconsCurrentTab}
         onRefreshAll={onRefreshAll}
       />
-      <button className={pinConfig.className} onClick={onTogglePin} title={pinConfig.title}>
-        {pinConfig.emoji}
+      <button
+        className={getPinModeClassName(windowPinMode)}
+        onClick={onTogglePin}
+        title={getPinModeTitle(windowPinMode)}
+      >
+        📌
       </button>
       <LauncherSettingsDropdown
         onOpenBasicSettings={onOpenBasicSettings}
