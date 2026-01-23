@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { IconProgressResult } from '@common/types';
 import '../styles/components/IconProgressDetailModal.css';
+import { Button } from './ui';
 
 interface IconProgressDetailModalProps {
   isOpen: boolean;
@@ -180,9 +181,9 @@ const IconProgressDetailModal: React.FC<IconProgressDetailModalProps> = ({
         </div>
 
         <div className="modal-actions">
-          <button onClick={onClose} className="primary">
+          <Button variant="primary" onClick={onClose}>
             閉じる
-          </button>
+          </Button>
         </div>
       </div>
     </div>

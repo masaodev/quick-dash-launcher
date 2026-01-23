@@ -2,73 +2,48 @@ import React, { useEffect } from 'react';
 
 import '../styles/components/Modal.css';
 import '../styles/components/AlertDialog.css';
+import { Button } from './ui';
+
+type AlertType = 'info' | 'error' | 'warning' | 'success';
 
 interface AlertDialogProps {
   isOpen: boolean;
   onClose: () => void;
   title?: string;
   message: string;
-  type?: 'info' | 'error' | 'warning' | 'success';
+  type?: AlertType;
 }
 
-const AlertDialog: React.FC<AlertDialogProps> = ({
+const ALERT_CONFIG: Record<AlertType, { icon: string; defaultTitle: string }> = {
+  error: { icon: '❌', defaultTitle: 'エラー' },
+  warning: { icon: '⚠️', defaultTitle: '警告' },
+  success: { icon: '✅', defaultTitle: '成功' },
+  info: { icon: 'ℹ️', defaultTitle: 'お知らせ' },
+};
+
+function AlertDialog({
   isOpen,
   onClose,
   title,
   message,
   type = 'info',
-}) => {
+}: AlertDialogProps): React.ReactElement | null {
   useEffect(() => {
     if (!isOpen) return;
 
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+    function handleKeyDown(e: KeyboardEvent): void {
+      if (e.key === 'Escape' || e.key === 'Enter') {
         onClose();
       }
-    };
+    }
 
-    const handleEnter = (e: KeyboardEvent) => {
-      if (e.key === 'Enter') {
-        onClose();
-      }
-    };
-
-    window.addEventListener('keydown', handleEscape);
-    window.addEventListener('keydown', handleEnter);
-
-    return () => {
-      window.removeEventListener('keydown', handleEscape);
-      window.removeEventListener('keydown', handleEnter);
-    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
-  const getIcon = () => {
-    switch (type) {
-      case 'error':
-        return '❌';
-      case 'warning':
-        return '⚠️';
-      case 'success':
-        return '✅';
-      default:
-        return 'ℹ️';
-    }
-  };
-
-  const getDefaultTitle = () => {
-    switch (type) {
-      case 'error':
-        return 'エラー';
-      case 'warning':
-        return '警告';
-      case 'success':
-        return '成功';
-      default:
-        return 'お知らせ';
-    }
-  };
+  const config = ALERT_CONFIG[type];
 
   return (
     <div className="modal-overlay" onClick={onClose} data-testid="alert-dialog-overlay">
@@ -78,8 +53,8 @@ const AlertDialog: React.FC<AlertDialogProps> = ({
         data-testid="alert-dialog"
       >
         <div className="alert-header">
-          <span className="alert-icon">{getIcon()}</span>
-          <h2>{title || getDefaultTitle()}</h2>
+          <span className="alert-icon">{config.icon}</span>
+          <h2>{title || config.defaultTitle}</h2>
         </div>
 
         <div className="alert-body">
@@ -87,9 +62,9 @@ const AlertDialog: React.FC<AlertDialogProps> = ({
         </div>
 
         <div className="modal-actions">
-          <button className="primary" onClick={onClose} data-testid="alert-dialog-ok-button">
+          <Button variant="primary" onClick={onClose} data-testid="alert-dialog-ok-button">
             OK
-          </button>
+          </Button>
         </div>
       </div>
     </div>

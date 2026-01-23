@@ -3,6 +3,7 @@ import type { WindowInfo, VirtualDesktopInfo } from '@common/types';
 
 import '../styles/components/WindowSelectorModal.css';
 import { logError } from '../utils/debug';
+import { Button } from './ui';
 
 interface WindowSelectorModalProps {
   isOpen: boolean;
@@ -325,9 +326,9 @@ const WindowSelectorModal: React.FC<WindowSelectorModalProps> = ({ isOpen, onClo
         </div>
 
         <div className="window-selector-footer">
-          <button onClick={onClose} className="cancel-button">
+          <Button variant="cancel" onClick={onClose}>
             キャンセル
-          </button>
+          </Button>
         </div>
       </div>
     </div>
