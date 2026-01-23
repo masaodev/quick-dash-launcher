@@ -4,6 +4,7 @@ import { SimpleBookmarkItem, BrowserInfo, BrowserProfile } from '@common/types';
 import { logError } from '../utils/debug';
 
 import AlertDialog from './AlertDialog';
+import { Button } from './ui';
 
 type ImportSource = 'chrome' | 'edge' | 'html';
 
@@ -498,16 +499,12 @@ const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({ isOpen, onClo
             )}
           </div>
           <div className="bookmark-modal-actions">
-            <button onClick={handleClose} className="bookmark-cancel-button">
+            <Button variant="cancel" onClick={handleClose}>
               キャンセル
-            </button>
-            <button
-              onClick={handleImport}
-              className="bookmark-import-button"
-              disabled={selectedCount === 0}
-            >
+            </Button>
+            <Button variant="primary" onClick={handleImport} disabled={selectedCount === 0}>
               インポート ({selectedCount}件)
-            </button>
+            </Button>
           </div>
         </div>
       </div>

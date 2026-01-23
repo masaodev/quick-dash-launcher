@@ -8,6 +8,7 @@ import {
 } from '@common/types/guards';
 
 import { debugInfo, logError } from '../utils/debug';
+import { Button } from './ui';
 
 interface GroupItemSelectorModalProps {
   isOpen: boolean;
@@ -273,7 +274,9 @@ const GroupItemSelectorModal: React.FC<GroupItemSelectorModalProps> = ({
         </div>
 
         <div className="modal-actions">
-          <button onClick={onClose}>キャンセル</button>
+          <Button variant="cancel" onClick={onClose}>
+            キャンセル
+          </Button>
         </div>
       </div>
     </div>

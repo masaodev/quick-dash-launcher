@@ -211,20 +211,3 @@
   border-top: var(--border-light);
 }
 
-.modal-actions button {
-  padding: var(--spacing-sm) var(--spacing-lg);
-  border: none;
-  border-radius: var(--border-radius);
-  font-size: var(--font-size-sm);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.modal-actions button.primary {
-  background-color: var(--color-info);
-  color: white;
-}
-
-.modal-actions button.primary:hover {
-  background-color: var(--color-info-dark);
-}

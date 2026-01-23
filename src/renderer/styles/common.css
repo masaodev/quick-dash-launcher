@@ -58,6 +58,8 @@
 /* =========================
    ボタン共通スタイル
    ========================= */
+/* 注意: .btn-* クラスは Button.css で定義。
+   ここでは Button コンポーネントを使わないレガシー用に .btn-base のみ残す */
 .btn-base {
   padding: var(--spacing-sm) var(--spacing-lg);
   font-size: var(--font-size-base);
@@ -80,83 +82,6 @@
 .btn-base:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-.btn-primary {
-  background-color: var(--color-primary);
-  color: var(--color-white);
-  border-color: var(--color-primary);
-}
-
-.btn-primary:hover:not(:disabled) {
-  background-color: var(--color-primary-hover);
-  border-color: var(--color-primary-hover);
-}
-
-.btn-success {
-  background-color: var(--color-success);
-  color: var(--color-white);
-  border-color: var(--color-success);
-}
-
-.btn-success:hover:not(:disabled) {
-  background-color: var(--color-success-hover);
-  border-color: var(--color-success-hover);
-}
-
-.btn-danger {
-  background-color: var(--color-danger);
-  color: var(--color-white);
-  border-color: var(--color-danger);
-}
-
-.btn-danger:hover:not(:disabled) {
-  background-color: var(--color-danger-hover);
-  border-color: var(--color-danger-hover);
-}
-
-.btn-secondary {
-  background-color: var(--color-secondary);
-  color: var(--color-white);
-  border-color: var(--color-secondary);
-}
-
-.btn-secondary:hover:not(:disabled) {
-  background-color: var(--color-secondary-hover);
-  border-color: var(--color-secondary-hover);
-}
-
-.btn-light {
-  background-color: var(--color-gray-100);
-  color: var(--text-primary);
-  border-color: var(--color-gray-400);
-}
-
-.btn-light:hover:not(:disabled) {
-  background-color: var(--color-gray-400);
-  border-color: var(--color-gray-600);
-}
-
-.btn-info {
-  background-color: var(--color-info);
-  color: var(--color-white);
-  border-color: var(--color-info);
-}
-
-.btn-info:hover:not(:disabled) {
-  background-color: var(--color-info-hover);
-  border-color: var(--color-info-hover);
-}
-
-.btn-sm {
-  padding: var(--spacing-xs) var(--spacing-md);
-  font-size: var(--font-size-sm);
-  height: var(--input-height-sm);
-}
-
-.btn-lg {
-  padding: var(--spacing-md) var(--spacing-xl);
-  font-size: var(--font-size-lg);
 }
 
 /* アクションボタン（32x32の正方形） */

@@ -8,6 +8,7 @@ import { useTabManager } from '../hooks/useTabManager';
 import AlertDialog from './AlertDialog';
 import ConfirmDialog from './ConfirmDialog';
 import { HotkeyInput } from './HotkeyInput';
+import { Button } from './ui';
 
 interface SettingsTabProps {
   settings: AppSettings;
@@ -822,22 +823,20 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
               {/* タブ管理の保存/キャンセルボタン */}
               {editedSettings.showDataFileTabs && (
                 <div className="tab-management-actions">
-                  <button
-                    type="button"
-                    className="btn-base btn-primary"
+                  <Button
+                    variant="primary"
                     onClick={handleSaveTabChanges}
                     disabled={!hasUnsavedTabChanges || isLoading}
                   >
                     💾 保存
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-base btn-secondary"
+                  </Button>
+                  <Button
+                    variant="secondary"
                     onClick={() => handleCancelTabChanges()}
                     disabled={!hasUnsavedTabChanges || isLoading}
                   >
                     ↩️ キャンセル
-                  </button>
+                  </Button>
                   {hasUnsavedTabChanges && (
                     <span className="unsaved-indicator">未保存の変更があります</span>
                   )}

@@ -41,13 +41,19 @@
   border-bottom: var(--border-light);
 }
 
-/* インポート元選択セクション */
-.import-source-section {
+/* インポート関連セクション共通スタイル */
+.import-source-section,
+.profile-select-section,
+.file-select-section {
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm);
   margin-bottom: var(--spacing-sm);
+}
+
+.import-source-section {
+  gap: var(--spacing-md);
 }
 
 .import-source-label {
@@ -103,15 +109,6 @@
   font-size: var(--font-size-sm);
 }
 
-/* プロファイル選択セクション */
-.profile-select-section {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: var(--spacing-sm);
-  margin-bottom: var(--spacing-sm);
-}
-
 .profile-select-label {
   display: flex;
   flex-direction: row;
@@ -139,7 +136,8 @@
   box-shadow: 0 0 0 2px var(--color-info-light);
 }
 
-.load-bookmarks-button {
+.load-bookmarks-button,
+.select-file-button {
   padding: var(--spacing-sm) var(--spacing-lg);
   background-color: var(--color-info);
   color: var(--color-white);
@@ -152,38 +150,12 @@
   white-space: nowrap;
 }
 
-.load-bookmarks-button:hover:not(:disabled) {
-  background-color: var(--color-info-hover);
-}
-
-.load-bookmarks-button:disabled {
-  background-color: var(--color-gray-400);
-  cursor: not-allowed;
-}
-
-.file-select-section {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: var(--spacing-sm);
-  margin-bottom: var(--spacing-sm);
-}
-
-.select-file-button {
-  padding: var(--spacing-sm) var(--spacing-lg);
-  background-color: var(--color-info);
-  color: var(--color-white);
-  border: none;
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  font-size: var(--font-size-base);
-  white-space: nowrap;
-}
-
+.load-bookmarks-button:hover:not(:disabled),
 .select-file-button:hover:not(:disabled) {
   background-color: var(--color-info-hover);
 }
 
+.load-bookmarks-button:disabled,
 .select-file-button:disabled {
   background-color: var(--color-gray-400);
   cursor: not-allowed;
@@ -328,6 +300,7 @@
 .bookmark-table .checkbox-column {
   width: 50px;
   text-align: center;
+  vertical-align: middle;
 }
 
 .bookmark-table .name-column {

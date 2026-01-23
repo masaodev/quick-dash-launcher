@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 
 import '../styles/components/Modal.css';
 import '../styles/components/ConfirmDialog.css';
+import { Button } from './ui';
 
 interface ConfirmDialogProps {
   isOpen: boolean;
@@ -18,7 +19,7 @@ interface ConfirmDialogProps {
   onCheckboxChange?: (checked: boolean) => void;
 }
 
-const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
+function ConfirmDialog({
   isOpen,
   onClose,
   onConfirm,
@@ -31,29 +32,20 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   checkboxLabel = '',
   checkboxChecked = false,
   onCheckboxChange,
-}) => {
+}: ConfirmDialogProps): React.ReactElement | null {
   useEffect(() => {
     if (!isOpen) return;
 
-    const handleEscape = (e: KeyboardEvent) => {
+    function handleKeyDown(e: KeyboardEvent): void {
       if (e.key === 'Escape') {
         onClose();
-      }
-    };
-
-    const handleEnter = (e: KeyboardEvent) => {
-      if (e.key === 'Enter') {
+      } else if (e.key === 'Enter') {
         onConfirm();
       }
-    };
+    }
 
-    window.addEventListener('keydown', handleEscape);
-    window.addEventListener('keydown', handleEnter);
-
-    return () => {
-      window.removeEventListener('keydown', handleEscape);
-      window.removeEventListener('keydown', handleEnter);
-    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose, onConfirm]);
 
   if (!isOpen) return null;
@@ -87,20 +79,16 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
         </div>
 
         <div className="modal-actions">
-          <button
-            className="cancel-button"
-            onClick={onClose}
-            data-testid="confirm-dialog-cancel-button"
-          >
+          <Button variant="cancel" onClick={onClose} data-testid="confirm-dialog-cancel-button">
             {cancelText}
-          </button>
-          <button
-            className={danger ? 'danger-button' : 'primary'}
+          </Button>
+          <Button
+            variant={danger ? 'danger' : 'primary'}
             onClick={onConfirm}
             data-testid="confirm-dialog-confirm-button"
           >
             {confirmText}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

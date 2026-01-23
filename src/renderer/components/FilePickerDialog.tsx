@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 import '../styles/components/Modal.css';
 import '../styles/components/FilePickerDialog.css';
 import { logError } from '../utils/debug';
+import { Button } from './ui';
 
 interface FilePickerDialogProps {
   isOpen: boolean;
@@ -82,13 +83,9 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
         </div>
 
         <div className="modal-actions">
-          <button
-            className="cancel-button"
-            onClick={onClose}
-            data-testid="file-picker-cancel-button"
-          >
+          <Button variant="cancel" onClick={onClose} data-testid="file-picker-cancel-button">
             キャンセル
-          </button>
+          </Button>
         </div>
       </div>
     </div>
