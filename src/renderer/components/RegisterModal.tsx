@@ -13,6 +13,7 @@ import WindowSelectorModal from './WindowSelectorModal';
 import WindowConfigEditor from './WindowConfigEditor';
 import CustomIconEditor from './CustomIconEditor';
 import UrlConverterMenu from './UrlConverterMenu';
+import { Button } from './ui';
 import '../styles/components/UrlConverterMenu.css';
 
 interface RegisterModalProps {
@@ -686,22 +687,22 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                 {items.length > 0 &&
                   items[0].itemCategory !== 'dir' &&
                   items[0].itemCategory !== 'group' && (
-                    <button onClick={handleExecute} className="primary">
+                    <Button variant="primary" onClick={handleExecute}>
                       ⚡ 試しに実行
-                    </button>
+                    </Button>
                   )}
                 <div className="modal-actions-right">
                   {editingItem && onDelete && (
-                    <button onClick={handleDelete} className="danger">
+                    <Button variant="danger" onClick={handleDelete}>
                       削除
-                    </button>
+                    </Button>
                   )}
-                  <button onClick={handleCancel} className="cancel-button">
+                  <Button variant="cancel" onClick={handleCancel}>
                     キャンセル
-                  </button>
-                  <button onClick={validateAndRegister} className="primary">
+                  </Button>
+                  <Button variant="primary" onClick={validateAndRegister}>
                     {editingItem ? '更新' : '登録'}
-                  </button>
+                  </Button>
                 </div>
               </div>
             </>

@@ -18,19 +18,19 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   fullWidth?: boolean;
 }
 
-export const Button: React.FC<ButtonProps> = ({
+export function Button({
   variant = 'light',
   size = 'md',
   fullWidth = false,
   className = '',
   children,
   ...props
-}) => {
+}: ButtonProps): React.ReactElement {
   const classNames = [
     'btn',
     `btn-${variant}`,
-    size !== 'md' ? `btn-${size}` : '',
-    fullWidth ? 'btn-full-width' : '',
+    size !== 'md' && `btn-${size}`,
+    fullWidth && 'btn-full-width',
     className,
   ]
     .filter(Boolean)
@@ -41,4 +41,4 @@ export const Button: React.FC<ButtonProps> = ({
       {children}
     </button>
   );
-};
+}

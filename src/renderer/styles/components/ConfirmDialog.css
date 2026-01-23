@@ -7,24 +7,24 @@
 }
 
 .confirm-header {
-  margin-bottom: 1rem;
+  margin-bottom: var(--spacing-lg);
 }
 
 .confirm-header h2 {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: var(--font-size-xl);
   font-weight: 600;
-  color: var(--text-color);
+  color: var(--text-primary);
 }
 
 .confirm-body {
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--spacing-xl);
 }
 
 .confirm-body p {
   margin: 0;
-  color: var(--text-color);
-  line-height: 1.6;
+  color: var(--text-primary);
+  line-height: var(--line-height-relaxed);
   white-space: pre-wrap;
 }
 
@@ -34,7 +34,7 @@
 }
 
 .confirm-dialog.confirm-danger .confirm-body p {
-  color: var(--text-color);
+  color: var(--text-primary);
 }
 
 /* チェックボックスコンテナ */

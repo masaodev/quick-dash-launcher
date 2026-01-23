@@ -19,7 +19,7 @@ interface ConfirmDialogProps {
   onCheckboxChange?: (checked: boolean) => void;
 }
 
-const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
+function ConfirmDialog({
   isOpen,
   onClose,
   onConfirm,
@@ -32,29 +32,20 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   checkboxLabel = '',
   checkboxChecked = false,
   onCheckboxChange,
-}) => {
+}: ConfirmDialogProps): React.ReactElement | null {
   useEffect(() => {
     if (!isOpen) return;
 
-    const handleEscape = (e: KeyboardEvent) => {
+    function handleKeyDown(e: KeyboardEvent): void {
       if (e.key === 'Escape') {
         onClose();
-      }
-    };
-
-    const handleEnter = (e: KeyboardEvent) => {
-      if (e.key === 'Enter') {
+      } else if (e.key === 'Enter') {
         onConfirm();
       }
-    };
+    }
 
-    window.addEventListener('keydown', handleEscape);
-    window.addEventListener('keydown', handleEnter);
-
-    return () => {
-      window.removeEventListener('keydown', handleEscape);
-      window.removeEventListener('keydown', handleEnter);
-    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose, onConfirm]);
 
   if (!isOpen) return null;
