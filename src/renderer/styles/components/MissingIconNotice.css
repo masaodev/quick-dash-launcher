@@ -32,24 +32,3 @@
   color: var(--text-secondary);
 }
 
-.missing-icon-notice__button {
-  padding: var(--spacing-xs) var(--spacing-md);
-  font-size: var(--font-size-sm);
-  font-family: var(--font-family);
-  background-color: var(--color-primary);
-  border: 1px solid var(--color-primary);
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  color: var(--color-white);
-  font-weight: 500;
-  transition: var(--transition-normal);
-}
-
-.missing-icon-notice__button:hover {
-  background-color: var(--color-primary-hover);
-  border-color: var(--color-primary-hover);
-}
-
-.missing-icon-notice__button:active {
-  background-color: var(--color-primary-dark);
-}

@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import '../styles/components/HotkeyInput.css';
 
+import { Button } from './ui/Button';
+
 interface HotkeyInputProps {
   value: string;
   onChange: (hotkey: string) => void;
@@ -143,9 +145,9 @@ export const HotkeyInput: React.FC<HotkeyInputProps> = ({
       {isRecording && (
         <div className="hotkey-recording-indicator">
           録画中...
-          <button type="button" className="cancel-recording" onClick={stopRecording}>
+          <Button variant="cancel" size="sm" type="button" onClick={stopRecording}>
             キャンセル
-          </button>
+          </Button>
         </div>
       )}
     </div>

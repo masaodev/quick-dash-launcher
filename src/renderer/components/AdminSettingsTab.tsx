@@ -831,7 +831,7 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                     💾 保存
                   </Button>
                   <Button
-                    variant="secondary"
+                    variant="cancel"
                     onClick={() => handleCancelTabChanges()}
                     disabled={!hasUnsavedTabChanges || isLoading}
                   >

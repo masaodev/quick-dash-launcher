@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { WindowConfig } from '@common/types';
 
+import { Button } from './ui/Button';
+
 interface WindowConfigEditorProps {
   /** ウィンドウ設定 */
   windowConfig?: WindowConfig;
@@ -75,9 +77,9 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
         </div>
 
         <div className="window-config-section">
-          <button type="button" className="get-window-btn" onClick={onGetWindowClick}>
+          <Button variant="info" type="button" onClick={onGetWindowClick}>
             ウィンドウから取得
-          </button>
+          </Button>
 
           {/* 1. ウィンドウ検索設定 */}
           <div className="window-config-group">

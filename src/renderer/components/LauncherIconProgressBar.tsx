@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { IconProgress } from '@common/types';
 
 import IconProgressDetailModal from './IconProgressDetailModal';
+import { Button } from './ui/Button';
 import '../styles/components/LauncherIconProgress.css';
 
 interface IconProgressBarProps {
@@ -98,13 +99,14 @@ const LauncherIconProgressBar: React.FC<IconProgressBarProps> = ({ progress, onC
           </div>
           <div className="progress-actions">
             {progress.isComplete && allResults.length > 0 && (
-              <button
-                className="progress-detail-btn"
+              <Button
+                variant="info"
+                size="sm"
                 onClick={() => setIsDetailModalOpen(true)}
                 aria-label="詳細を表示"
               >
                 詳細
-              </button>
+              </Button>
             )}
             <button className="progress-close-btn" onClick={onClose} aria-label="閉じる">
               ×

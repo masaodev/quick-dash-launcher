@@ -10,6 +10,7 @@ import AdminItemManagerList from './AdminItemManagerList';
 import RegisterModal from './RegisterModal';
 import BookmarkImportModal from './BookmarkImportModal';
 import ConfirmDialog from './ConfirmDialog';
+import { Button } from './ui/Button';
 
 interface EditModeViewProps {
   rawLines: RawDataLine[];
@@ -601,10 +602,11 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
       {/* ツールバーエリア */}
       <div className="edit-mode-toolbar">
         <div className="toolbar-left">
-          <button onClick={handleAddLine} className="toolbar-button add-line-button">
+          <Button variant="info" onClick={handleAddLine}>
             ➕ 行を追加
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="danger"
             onClick={() => {
               const selectedLines = filteredLines.filter((line) => {
                 const lineKey = `${line.sourceFile}_${line.lineNumber}`;
@@ -622,18 +624,14 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
                 });
               }
             }}
-            className="toolbar-button delete-lines-button"
             disabled={selectedItems.size === 0}
             title="選択されている行を削除します"
           >
             🗑️ 選択行を削除
-          </button>
-          <button
-            onClick={() => setIsBookmarkModalOpen(true)}
-            className="toolbar-button import-bookmark-button"
-          >
+          </Button>
+          <Button variant="info" onClick={() => setIsBookmarkModalOpen(true)}>
             ブックマークをインポート
-          </button>
+          </Button>
           <div className="toolbar-search">
             <div className="search-input-container">
               <input
@@ -657,13 +655,13 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
           </div>
         </div>
         <div className="toolbar-right">
-          <button
+          <Button
+            variant="primary"
             onClick={handleSaveChanges}
-            className="toolbar-button save-changes-button"
             disabled={!hasUnsavedChanges}
           >
             変更を保存
-          </button>
+          </Button>
         </div>
       </div>
 

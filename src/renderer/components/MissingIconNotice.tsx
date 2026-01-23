@@ -1,5 +1,7 @@
 import React from 'react';
 
+import { Button } from './ui/Button';
+
 interface MissingIconNoticeProps {
   /** 未取得アイコン数 */
   missingCount: number;
@@ -27,13 +29,14 @@ const MissingIconNotice: React.FC<MissingIconNoticeProps> = ({
         <span className="missing-icon-notice__label">アイコン未取得:</span>
         <span className="missing-icon-notice__count">{missingCount}件</span>
       </div>
-      <button
-        className="missing-icon-notice__button"
+      <Button
+        variant="info"
+        size="sm"
         onClick={onFetchClick}
         title="アイコンを取得"
       >
         取得
-      </button>
+      </Button>
     </div>
   );
 };

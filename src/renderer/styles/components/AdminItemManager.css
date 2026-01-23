@@ -327,85 +327,6 @@
   transform: translateY(-50%) scale(1.1);
 }
 
-/* ツールバーボタン基本スタイル */
-.edit-mode-toolbar .toolbar-button {
-  padding: var(--spacing-sm) var(--spacing-md);
-  font-size: var(--font-size-sm);
-  border: var(--border-normal);
-  border-radius: var(--border-radius);
-  background-color: var(--color-white);
-  cursor: pointer;
-  transition: var(--transition-normal);
-  font-family: var(--font-family);
-  -webkit-app-region: no-drag;
-  white-space: nowrap;
-}
-
-.edit-mode-toolbar .toolbar-button:hover:not(:disabled) {
-  background-color: var(--bg-hover);
-  border-color: var(--color-primary);
-}
-
-.edit-mode-toolbar .toolbar-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* ツールバー内の個別ボタンスタイル */
-.edit-mode-toolbar .import-bookmark-button {
-  background-color: var(--color-info) !important;
-  color: var(--color-white) !important;
-  border-color: var(--color-info) !important;
-}
-
-.edit-mode-toolbar .import-bookmark-button:hover:not(:disabled) {
-  background-color: var(--color-info-hover) !important;
-  border-color: var(--color-info-hover) !important;
-}
-
-.edit-mode-toolbar .save-changes-button {
-  background-color: var(--color-success) !important;
-  color: var(--color-white) !important;
-  border-color: var(--color-success) !important;
-}
-
-.edit-mode-toolbar .save-changes-button:hover:not(:disabled) {
-  background-color: var(--color-success-hover) !important;
-  border-color: var(--color-success-hover) !important;
-}
-
-.edit-mode-toolbar .add-line-button {
-  background-color: var(--color-success) !important;
-  color: var(--color-white) !important;
-  border-color: var(--color-success) !important;
-}
-
-.edit-mode-toolbar .add-line-button:hover:not(:disabled) {
-  background-color: var(--color-success-hover) !important;
-  border-color: var(--color-success-hover) !important;
-}
-
-.edit-mode-toolbar .delete-lines-button {
-  background-color: var(--color-danger) !important;
-  color: var(--color-white) !important;
-  border-color: var(--color-danger) !important;
-}
-
-.edit-mode-toolbar .delete-lines-button:hover:not(:disabled) {
-  background-color: var(--color-danger-hover) !important;
-  border-color: var(--color-danger-hover) !important;
-}
-
-.edit-mode-toolbar .sort-button {
-  background-color: var(--color-secondary) !important;
-  color: var(--color-white) !important;
-  border-color: var(--color-secondary) !important;
-}
-
-.edit-mode-toolbar .sort-button:hover:not(:disabled) {
-  background-color: var(--color-secondary-hover) !important;
-  border-color: var(--color-secondary-hover) !important;
-}
 
 /* 操作ボタン群のスタイル（廃止予定） */
 .edit-mode-operations {
@@ -494,16 +415,6 @@
   border-color: var(--color-danger-hover) !important;
 }
 
-.save-changes-button {
-  background-color: var(--color-success) !important;
-  color: var(--color-white) !important;
-  border-color: var(--color-success) !important;
-}
-
-.save-changes-button:hover:not(:disabled) {
-  background-color: var(--color-success-hover) !important;
-  border-color: var(--color-success-hover) !important;
-}
 
 .editable-item-list {
   flex: 1;

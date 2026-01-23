@@ -39,11 +39,11 @@ import { Button } from './ui';
 ### インターフェース
 
 ```tsx
-type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'success' | 'info' | 'light' | 'cancel';
+type ButtonVariant = 'primary' | 'danger' | 'info' | 'cancel';
 type ButtonSize = 'sm' | 'md' | 'lg';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: ButtonVariant;  // デフォルト: 'light'
+  variant?: ButtonVariant;  // デフォルト: 'info'
   size?: ButtonSize;        // デフォルト: 'md'
   fullWidth?: boolean;      // デフォルト: false
 }
@@ -54,11 +54,8 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 | variant | 用途 | 背景色 |
 |---------|------|--------|
 | `primary` | 主要アクション（確定、保存、登録） | 青 (`--color-primary`) |
-| `secondary` | 副次アクション | グレー (`--color-secondary`) |
-| `danger` | 危険な操作（削除） | 赤 (`--color-danger`) |
-| `success` | 成功・完了 | 緑 (`--color-success`) |
-| `info` | 情報・補助 | 水色 (`--color-info`) |
-| `light` | 軽微なアクション（デフォルト） | 薄グレー (`--color-gray-100`) |
+| `danger` | 危険な操作（削除、リセット） | 赤 (`--color-danger`) |
+| `info` | 補助アクション（デフォルト） | 水色 (`--color-info`) |
 | `cancel` | キャンセル | グレー (`--color-gray-400`) |
 
 ### サイズ
