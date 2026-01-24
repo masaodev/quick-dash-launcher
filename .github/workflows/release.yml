@@ -31,9 +31,9 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
-      # 依存関係のインストール
+      # 依存関係のインストール（package-lock.jsonを使用した確実なインストール）
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       # アプリケーションのビルド（TypeScriptのコンパイル等）
       - name: Build application
