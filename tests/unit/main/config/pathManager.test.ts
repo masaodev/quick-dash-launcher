@@ -26,14 +26,27 @@ describe('PathManager', () => {
     it('各サブフォルダのパスが正しく生成される', () => {
       const configFolder = pathHelper.setup('subfolder-test');
 
-      expect(PathManager.getIconsFolder()).toBe(path.join(configFolder, 'icons'));
-      expect(PathManager.getFaviconsFolder()).toBe(path.join(configFolder, 'favicons'));
-      expect(PathManager.getCustomIconsFolder()).toBe(path.join(configFolder, 'custom-icons'));
-      expect(PathManager.getSchemesFolder()).toBe(path.join(configFolder, 'icons', 'schemes'));
+      expect(PathManager.getIconCacheFolder()).toBe(path.join(configFolder, 'icon-cache'));
+      expect(PathManager.getAppsFolder()).toBe(path.join(configFolder, 'icon-cache', 'apps'));
+      expect(PathManager.getFaviconsFolder()).toBe(
+        path.join(configFolder, 'icon-cache', 'favicons')
+      );
+      expect(PathManager.getCustomIconsFolder()).toBe(
+        path.join(configFolder, 'icon-cache', 'custom')
+      );
+      expect(PathManager.getSchemesFolder()).toBe(
+        path.join(configFolder, 'icon-cache', 'schemes')
+      );
       expect(PathManager.getExtensionsFolder()).toBe(
-        path.join(configFolder, 'icons', 'extensions')
+        path.join(configFolder, 'icon-cache', 'extensions')
       );
       expect(PathManager.getBackupFolder()).toBe(path.join(configFolder, 'backup'));
+    });
+
+    it('getIconsFolder()はgetAppsFolder()に委譲される（後方互換性）', () => {
+      pathHelper.setup('backward-compat-test');
+
+      expect(PathManager.getIconsFolder()).toBe(PathManager.getAppsFolder());
     });
 
     it('data.txtファイルのパスを取得できる', () => {
@@ -51,7 +64,8 @@ describe('PathManager', () => {
 
       // すべてのディレクトリが存在することを確認
       expect(fs.existsSync(PathManager.getConfigFolder())).toBe(true);
-      expect(fs.existsSync(PathManager.getIconsFolder())).toBe(true);
+      expect(fs.existsSync(PathManager.getIconCacheFolder())).toBe(true);
+      expect(fs.existsSync(PathManager.getAppsFolder())).toBe(true);
       expect(fs.existsSync(PathManager.getFaviconsFolder())).toBe(true);
       expect(fs.existsSync(PathManager.getCustomIconsFolder())).toBe(true);
       expect(fs.existsSync(PathManager.getSchemesFolder())).toBe(true);

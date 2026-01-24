@@ -15,94 +15,84 @@ import { EnvConfig } from './envConfig.js';
 export class PathManager {
   private static configFolder: string | null = null;
 
-  /**
-   * 設定フォルダのベースパスを取得
-   * @returns 設定フォルダの絶対パス
-   */
+  // ============================================================
+  // ディレクトリパス取得
+  // ============================================================
+
+  /** 設定フォルダのベースパスを取得 */
   static getConfigFolder(): string {
-    // テスト用のオーバーライドが設定されている場合
     if (this.configFolder) {
       return this.configFolder;
     }
 
-    // 環境変数でカスタムパスが指定されている場合
     if (EnvConfig.customConfigDir) {
       const customPath = path.resolve(EnvConfig.customConfigDir);
 
-      // セキュリティチェック: 危険なパスを拒否
       if (this.isUnsafePath(customPath)) {
         logger.warn(`Unsafe config path detected: ${customPath}. Using default path instead.`);
-        return path.join(app.getPath('userData'), 'config');
+        return this.getDefaultConfigPath();
       }
 
       logger.info(`Using custom config path: ${customPath}`);
       return customPath;
     }
 
-    // デフォルトパス（後方互換性のため）
-    return path.join(app.getPath('userData'), 'config');
+    return this.getDefaultConfigPath();
+  }
+
+  /** アイコンキャッシュのベースフォルダパスを取得 */
+  static getIconCacheFolder(): string {
+    return path.join(this.getConfigFolder(), 'icon-cache');
+  }
+
+  /** アプリケーションアイコンフォルダのパスを取得 */
+  static getAppsFolder(): string {
+    return this.getIconCacheSubfolder('apps');
   }
 
   /**
    * アイコンフォルダのパスを取得
-   * @returns アイコンフォルダの絶対パス
+   * @deprecated getAppsFolder() を使用してください
    */
   static getIconsFolder(): string {
-    return path.join(this.getConfigFolder(), 'icons');
+    return this.getAppsFolder();
   }
 
-  /**
-   * faviconフォルダのパスを取得
-   * @returns faviconフォルダの絶対パス
-   */
+  /** faviconフォルダのパスを取得 */
   static getFaviconsFolder(): string {
-    return path.join(this.getConfigFolder(), 'favicons');
+    return this.getIconCacheSubfolder('favicons');
   }
 
-  /**
-   * カスタムアイコンフォルダのパスを取得
-   * @returns カスタムアイコンフォルダの絶対パス
-   */
+  /** カスタムアイコンフォルダのパスを取得 */
   static getCustomIconsFolder(): string {
-    return path.join(this.getConfigFolder(), 'custom-icons');
+    return this.getIconCacheSubfolder('custom');
   }
 
-  /**
-   * スキームアイコンフォルダのパスを取得
-   * @returns スキームアイコンフォルダの絶対パス
-   */
+  /** スキームアイコンフォルダのパスを取得 */
   static getSchemesFolder(): string {
-    return path.join(this.getIconsFolder(), 'schemes');
+    return this.getIconCacheSubfolder('schemes');
   }
 
-  /**
-   * 拡張子アイコンフォルダのパスを取得
-   * @returns 拡張子アイコンフォルダの絶対パス
-   */
+  /** 拡張子アイコンフォルダのパスを取得 */
   static getExtensionsFolder(): string {
-    return path.join(this.getIconsFolder(), 'extensions');
+    return this.getIconCacheSubfolder('extensions');
   }
 
-  /**
-   * バックアップフォルダのパスを取得
-   * @returns バックアップフォルダの絶対パス
-   */
+  /** バックアップフォルダのパスを取得 */
   static getBackupFolder(): string {
     return path.join(this.getConfigFolder(), 'backup');
   }
 
-  /**
-   * data.txtファイルのパスを取得
-   * @returns data.txtファイルの絶対パス
-   */
+  // ============================================================
+  // ファイルパス取得
+  // ============================================================
+
+  /** data.txtファイルのパスを取得 */
   static getDataFilePath(): string {
     return path.join(this.getConfigFolder(), 'data.txt');
   }
 
-  /**
-   * workspace.jsonファイルのパスを取得
-   * @returns workspace.jsonファイルの絶対パス
-   */
+  /** workspace.jsonファイルのパスを取得 */
   static getWorkspaceFilePath(): string {
     return path.join(this.getConfigFolder(), 'workspace.json');
   }
@@ -120,16 +110,10 @@ export class PathManager {
         return [];
       }
 
-      // 設定フォルダ内のファイル一覧を取得
       const files = fs.readdirSync(configFolder);
-
-      // data*.txt パターンにマッチするファイルをフィルタリング
       const dataFiles = files
-        .filter((file) => {
-          // data で始まり .txt で終わるファイル
-          return file.startsWith('data') && file.endsWith('.txt');
-        })
-        .sort(); // ファイル名順にソート
+        .filter((file) => file.startsWith('data') && file.endsWith('.txt'))
+        .sort();
 
       logger.info(`Found ${dataFiles.length} data files: ${dataFiles.join(', ')}`);
       return dataFiles;
@@ -142,35 +126,35 @@ export class PathManager {
   /**
    * アプリケーションアイコンのパスを取得
    * 開発モード時は専用のアイコン（icon-dev.ico）を使用
-   * @returns アイコンファイルの絶対パス
    */
   static getAppIconPath(): string {
     const iconFileName = EnvConfig.isDevelopment ? 'icon-dev.ico' : 'icon.ico';
 
-    // 開発モードではプロジェクトルートから、本番モードでは__dirnameから相対パスで取得
     if (EnvConfig.isDevelopment) {
       return path.join(process.cwd(), 'assets', iconFileName);
-    } else {
-      // 本番モード: 全てのファイルがdist/main/main.jsにバンドルされるため、2階層上がってassetsフォルダへ
-      return path.join(__dirname, '../../assets', iconFileName);
     }
+    // 本番モード: dist/main/main.jsから2階層上がってassetsフォルダへ
+    return path.join(__dirname, '../../assets', iconFileName);
   }
 
-  /**
-   * 必要なディレクトリを作成
-   */
+  // ============================================================
+  // ディレクトリ操作
+  // ============================================================
+
+  /** 必要なディレクトリを作成 */
   static ensureDirectories(): void {
     const dirs = [
       this.getConfigFolder(),
-      this.getIconsFolder(),
-      this.getFaviconsFolder(),
-      this.getCustomIconsFolder(),
+      this.getIconCacheFolder(),
+      this.getAppsFolder(),
       this.getSchemesFolder(),
       this.getExtensionsFolder(),
+      this.getFaviconsFolder(),
+      this.getCustomIconsFolder(),
       this.getBackupFolder(),
     ];
 
-    dirs.forEach((dir) => {
+    for (const dir of dirs) {
       if (!fs.existsSync(dir)) {
         try {
           fs.mkdirSync(dir, { recursive: true });
@@ -180,33 +164,61 @@ export class PathManager {
           throw error;
         }
       }
-    });
+    }
   }
 
-  /**
-   * テスト用に設定フォルダをオーバーライド
-   * @param customPath カスタム設定フォルダのパス
-   */
+  /** 設定フォルダが書き込み可能かチェック */
+  static isConfigFolderWritable(): boolean {
+    const configFolder = this.getConfigFolder();
+
+    try {
+      if (!fs.existsSync(configFolder)) {
+        fs.mkdirSync(configFolder, { recursive: true });
+      }
+
+      const testFile = path.join(configFolder, '.write-test');
+      fs.writeFileSync(testFile, 'test');
+      fs.unlinkSync(testFile);
+
+      return true;
+    } catch (error) {
+      logger.error({ error, configFolder }, 'Config folder is not writable');
+      return false;
+    }
+  }
+
+  // ============================================================
+  // テスト用ユーティリティ
+  // ============================================================
+
+  /** テスト用に設定フォルダをオーバーライド */
   static setConfigFolderForTesting(customPath: string): void {
     this.configFolder = path.resolve(customPath);
     logger.info(`Config folder overridden for testing: ${this.configFolder}`);
   }
 
-  /**
-   * 設定フォルダのオーバーライドをリセット
-   */
+  /** 設定フォルダのオーバーライドをリセット */
   static resetConfigFolder(): void {
     this.configFolder = null;
     logger.info('Config folder override reset');
   }
 
-  /**
-   * 危険なパスかどうかをチェック
-   * @param targetPath チェック対象のパス
-   * @returns 危険なパスの場合true
-   */
+  // ============================================================
+  // プライベートヘルパー
+  // ============================================================
+
+  /** デフォルトの設定フォルダパスを取得 */
+  private static getDefaultConfigPath(): string {
+    return path.join(app.getPath('userData'), 'config');
+  }
+
+  /** アイコンキャッシュ配下のサブフォルダパスを取得 */
+  private static getIconCacheSubfolder(subfolder: string): string {
+    return path.join(this.getIconCacheFolder(), subfolder);
+  }
+
+  /** 危険なパスかどうかをチェック */
   private static isUnsafePath(targetPath: string): boolean {
-    // システムディレクトリやルートディレクトリへの書き込みを防ぐ
     const unsafePaths = [
       'C:\\Windows',
       'C:\\Program Files',
@@ -220,7 +232,6 @@ export class PathManager {
 
     const normalizedPath = path.normalize(targetPath).toLowerCase();
 
-    // 危険なパスまたはその子ディレクトリかチェック
     return unsafePaths.some((unsafePath) => {
       const normalizedUnsafe = path.normalize(unsafePath).toLowerCase();
       return (
@@ -228,31 +239,6 @@ export class PathManager {
         normalizedPath.startsWith(normalizedUnsafe + path.sep)
       );
     });
-  }
-
-  /**
-   * 設定フォルダが書き込み可能かチェック
-   * @returns 書き込み可能な場合true
-   */
-  static isConfigFolderWritable(): boolean {
-    const configFolder = this.getConfigFolder();
-
-    try {
-      // ディレクトリが存在しない場合は作成を試みる
-      if (!fs.existsSync(configFolder)) {
-        fs.mkdirSync(configFolder, { recursive: true });
-      }
-
-      // 書き込みテスト
-      const testFile = path.join(configFolder, '.write-test');
-      fs.writeFileSync(testFile, 'test');
-      fs.unlinkSync(testFile);
-
-      return true;
-    } catch (error) {
-      logger.error({ error, configFolder }, 'Config folder is not writable');
-      return false;
-    }
   }
 }
 
