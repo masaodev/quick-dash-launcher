@@ -61,11 +61,18 @@
 }
 
 .search-mode-indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
   font-size: var(--font-size-xs);
   color: var(--text-muted);
   padding-left: var(--spacing-sm);
   line-height: 1;
   user-select: none;
+}
+
+.search-mode-label {
+  min-width: 10em; /* 最長ラベル「ウィンドウ検索モード」に合わせて固定幅 */
 }
 
 .search-mode-hint-link {
