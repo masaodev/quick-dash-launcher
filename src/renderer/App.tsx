@@ -199,6 +199,21 @@ const App: React.FC = () => {
     setSelectedIndex(0); // 選択インデックスをリセット
   };
 
+  // アイテム実行の共通処理（トースト表示 + 実行）
+  const executeAppItem = async (item: AppItem): Promise<void> => {
+    if (isGroupItem(item)) {
+      window.electronAPI.showToastWindow(`${item.name} (${item.itemNames.length}件) を起動します`);
+      await window.electronAPI.executeGroup(item, mainItems);
+    } else if (isWindowOperationItem(item)) {
+      window.electronAPI.showToastWindow(`${item.name} を実行します`);
+      await window.electronAPI.executeWindowOperation(item);
+    } else {
+      const launcherItem = item as LauncherItem;
+      window.electronAPI.showToastWindow(`${launcherItem.name} を起動します`);
+      await window.electronAPI.openItem(launcherItem);
+    }
+  };
+
   // handleExecuteItemを定義（useKeyboardShortcutsより前に必要）
   const handleExecuteItem = async (item: AppItem) => {
     try {
@@ -218,44 +233,19 @@ const App: React.FC = () => {
         }
       } else if (searchMode === 'history') {
         // 履歴モード：選択された履歴アイテムを直接実行
-        if (isGroupItem(item)) {
-          await window.electronAPI.executeGroup(item, mainItems);
-          window.electronAPI.showToastWindow(
-            `${item.name} (${item.itemNames.length}件) を起動しました`
-          );
-        } else if (isWindowOperationItem(item)) {
-          await window.electronAPI.executeWindowOperation(item);
-          window.electronAPI.showToastWindow(`${item.name} を実行しました`);
-        } else {
-          const launcherItem = item as LauncherItem;
-          await window.electronAPI.openItem(launcherItem);
-          window.electronAPI.showToastWindow(`${launcherItem.name} を起動しました`);
-        }
+        await executeAppItem(item);
       } else {
-        // 通常モード（既存ロジック）
-        // 検索クエリがある場合は履歴に追加
+        // 通常モード
         if (searchQuery.trim()) {
           await addHistoryEntry(searchQuery.trim());
         }
 
-        // アイテムの種類で処理を分岐
-        if (isGroupItem(item)) {
-          await window.electronAPI.executeGroup(item, mainItems);
-          window.electronAPI.showToastWindow(
-            `${item.name} (${item.itemNames.length}件) を起動しました`
-          );
-        } else if (isWindowOperationItem(item)) {
-          await window.electronAPI.executeWindowOperation(item);
-          window.electronAPI.showToastWindow(`${item.name} を実行しました`);
-        } else {
+        await executeAppItem(item);
+
+        // LauncherItemの場合のみ実行履歴に追加
+        if (!isGroupItem(item) && !isWindowOperationItem(item)) {
           const launcherItem = item as LauncherItem;
-          await window.electronAPI.openItem(launcherItem);
-          window.electronAPI.showToastWindow(`${launcherItem.name} を起動しました`);
-
-          // 実行履歴に追加
           await window.electronAPI.workspaceAPI.addExecutionHistory(launcherItem);
-
-          // 実行履歴を再読み込み
           await loadExecutionHistory();
         }
       }
