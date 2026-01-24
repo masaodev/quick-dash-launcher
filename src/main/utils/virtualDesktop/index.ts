@@ -23,6 +23,8 @@ export {
   pinWindow,
   unPinWindow,
   isPinnedWindow,
+  getDesktopName,
+  getAllDesktopNames,
 } from './windowOperations.js';
 
 // DLLローダー（内部使用向け）
