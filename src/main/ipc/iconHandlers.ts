@@ -734,7 +734,7 @@ async function fetchIconsCombined(
         iconResults[item.path] = icon;
 
         // 進捗表示用の文字列を生成（アイテム名がある場合は「名前 (パス)」形式）
-        const displayText = item.name ? `${item.name}\n${item.path}` : item.path;
+        const displayText = item.displayName ? `${item.displayName}\n${item.path}` : item.path;
 
         if (icon) {
           progress.update(displayText);
@@ -749,7 +749,7 @@ async function fetchIconsCombined(
         const errorMsg = error instanceof Error ? error.message : 'アイコン抽出に失敗しました';
         // エラーを記録
         await errorService.recordError(item.path, 'icon', errorMsg);
-        const displayText = item.name ? `${item.name}\n${item.path}` : item.path;
+        const displayText = item.displayName ? `${item.displayName}\n${item.path}` : item.path;
         progress.update(displayText, true, errorMsg);
       }
     }

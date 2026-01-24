@@ -642,7 +642,7 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                             {expanded ? (
                               <input
                                 type="text"
-                                value={tab.name}
+                                value={tab.displayName}
                                 onChange={(e) =>
                                   handleTabNameChangeByIndex(tabIndex, e.target.value)
                                 }
@@ -655,7 +655,7 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                                 className="tab-accordion-name"
                                 onClick={() => toggleTabExpand(tabIndex)}
                               >
-                                {tab.name || getDefaultTabName(tab.files[0] || 'data.txt')}
+                                {tab.displayName || getDefaultTabName(tab.files[0] || 'data.txt')}
                               </span>
                             )}
 
@@ -727,7 +727,7 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                                           <input
                                             type="text"
                                             className="data-file-label-input"
-                                            placeholder={getDefaultFileLabel(fileName, tab.name)}
+                                            placeholder={getDefaultFileLabel(fileName, tab.displayName)}
                                             value={getFileLabel(fileName)}
                                             onChange={(e) =>
                                               handleFileLabelChange(fileName, e.target.value)

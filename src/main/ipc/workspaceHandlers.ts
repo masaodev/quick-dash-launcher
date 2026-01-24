@@ -239,9 +239,9 @@ export function setupWorkspaceHandlers(): void {
         const itemMap = new Map<string, AppItem>();
         for (const appItem of allItems) {
           if (isLauncherItem(appItem)) {
-            itemMap.set(appItem.name, appItem);
+            itemMap.set(appItem.displayName, appItem);
           } else if (isWindowOperationItem(appItem)) {
-            itemMap.set(appItem.name, appItem);
+            itemMap.set(appItem.displayName, appItem);
           }
         }
 
@@ -274,7 +274,7 @@ export function setupWorkspaceHandlers(): void {
                 pinToAllDesktops: targetItem.pinToAllDesktops,
               };
 
-              await tryActivateWindow(windowConfig, targetItem.name, logger);
+              await tryActivateWindow(windowConfig, targetItem.displayName, logger);
             } else if (isLauncherItem(targetItem)) {
               // 通常のLauncherItemの場合
               await launchItem(
@@ -282,7 +282,7 @@ export function setupWorkspaceHandlers(): void {
                   type: targetItem.type,
                   path: targetItem.path,
                   args: targetItem.args,
-                  name: targetItem.name,
+                  name: targetItem.displayName,
                 },
                 logger
               );
@@ -469,12 +469,12 @@ export function setupWorkspaceHandlers(): void {
     try {
       const workspaceService = await WorkspaceService.getInstance();
       await workspaceService.addExecutionHistory(item);
-      const itemName = isWindowInfo(item) ? item.title : item.name;
+      const itemName = isWindowInfo(item) ? item.title : item.displayName;
       logger.info({ itemName }, 'Added item to execution history');
       notifyWorkspaceChanged();
       return { success: true };
     } catch (error) {
-      const itemName = isWindowInfo(item) ? item.title : item.name;
+      const itemName = isWindowInfo(item) ? item.title : item.displayName;
       logger.error({ error, itemName }, 'Failed to add execution history');
       // エラーでも処理は継続
       return { success: false };

@@ -10,7 +10,7 @@ import type { WindowConfig, LauncherItem } from './launcher';
  * ウィンドウ操作アイテムの設定オブジェクト型定義
  */
 export interface WindowOperationConfig {
-  name: string;
+  displayName: string;
   windowTitle: string;
   processName?: string;
   x?: number;
@@ -39,7 +39,7 @@ export interface DirOptions {
  * RegisterModalで使用されるアイテム型
  */
 export interface RegisterItem {
-  name: string;
+  displayName: string;
   path: string;
   type: LauncherItem['type'];
   args?: string;

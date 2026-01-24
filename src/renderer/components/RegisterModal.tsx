@@ -254,7 +254,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     if (item.itemCategory === 'window') {
       // ウィンドウ操作アイテムの場合
       const windowOperationConfig = {
-        name: item.name,
+        name: item.displayName,
         windowTitle: window.title,
         processName: window.processName,
         x: window.x,
@@ -307,7 +307,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
 
     // 単一アイテムの場合
     return {
-      name: item.name,
+      name: item.displayName,
       path: item.path,
       type: item.type,
       args: item.args,
@@ -341,7 +341,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
         }
 
         await window.electronAPI.executeWindowOperation({
-          name: item.name,
+          name: item.displayName,
           type: 'windowOperation',
           windowTitle: item.windowOperationConfig.windowTitle,
           processName: item.windowOperationConfig.processName,
@@ -468,7 +468,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                         <label>名前:</label>
                         <input
                           type="text"
-                          value={item.name}
+                          value={item.displayName}
                           className={errors[index]?.name ? 'error' : ''}
                           onChange={(e) => handleItemChange(index, 'name', e.target.value)}
                           placeholder={
@@ -479,8 +479,8 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                                 : '表示名を入力'
                           }
                         />
-                        {errors[index]?.name && (
-                          <span className="error-message">{errors[index].name}</span>
+                        {errors[index]?.displayName && (
+                          <span className="error-message">{errors[index].displayName}</span>
                         )}
                       </div>
                     )}
@@ -644,7 +644,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                           }
                           onChange={(windowConfig) =>
                             handleItemChange(index, 'windowOperationConfig', {
-                              name: item.name,
+                              name: item.displayName,
                               windowTitle: windowConfig?.title || '',
                               processName: windowConfig?.processName,
                               x: windowConfig?.x,
@@ -661,9 +661,9 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                           showToggle={false}
                           defaultExpanded={false}
                         />
-                        {errors[index]?.name && (
+                        {errors[index]?.displayName && (
                           <div className="form-group">
-                            <span className="error-message">{errors[index].name}</span>
+                            <span className="error-message">{errors[index].displayName}</span>
                           </div>
                         )}
                       </div>

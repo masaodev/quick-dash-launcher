@@ -40,7 +40,7 @@ export interface WindowConfig {
  */
 export interface LauncherItem {
   /** アイテムの表示名 */
-  name: string;
+  displayName: string;
   /** アイテムのパス、URL、またはコマンド */
   path: string;
   /** アイテムのタイプ（URL、ファイル、フォルダ、アプリケーション、カスタムURI） */
@@ -75,7 +75,7 @@ export interface LauncherItem {
  */
 export interface GroupItem {
   /** グループの表示名 */
-  name: string;
+  displayName: string;
   /** アイテムタイプ（常に'group'） */
   type: 'group';
   /** グループ内で参照するアイテム名のリスト */
@@ -103,7 +103,7 @@ export interface WindowOperationItem {
   /** アイテムタイプ（常に'windowOperation'） */
   type: 'windowOperation';
   /** アイテムリストでの表示名 */
-  name: string;
+  displayName: string;
   /** ウィンドウタイトル（検索用、必須） */
   windowTitle: string;
   /** プロセス名で検索（部分一致、省略時は検索なし） */

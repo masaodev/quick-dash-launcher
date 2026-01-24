@@ -139,7 +139,7 @@ const GroupItemSelectorModal: React.FC<GroupItemSelectorModalProps> = ({
       setFilteredItems(availableItems);
     } else {
       const query = searchQuery.toLowerCase();
-      const filtered = availableItems.filter((item) => item.name.toLowerCase().includes(query));
+      const filtered = availableItems.filter((item) => item.displayName.toLowerCase().includes(query));
       setFilteredItems(filtered);
     }
   }, [searchQuery, availableItems]);
@@ -181,7 +181,7 @@ const GroupItemSelectorModal: React.FC<GroupItemSelectorModalProps> = ({
 
       debugInfo(
         'Available items:',
-        itemsWithIcons.map((item) => item.name)
+        itemsWithIcons.map((item) => item.displayName)
       );
       setAvailableItems(itemsWithIcons);
       setFilteredItems(itemsWithIcons);
@@ -252,12 +252,12 @@ const GroupItemSelectorModal: React.FC<GroupItemSelectorModalProps> = ({
             </div>
           ) : (
             filteredItems.map((item, index) => {
-              const excluded = isExcluded(item.name);
+              const excluded = isExcluded(item.displayName);
               return (
                 <div
                   key={index}
                   className={`item-row ${excluded ? 'excluded' : ''}`}
-                  onClick={() => !excluded && handleSelectItem(item.name)}
+                  onClick={() => !excluded && handleSelectItem(item.displayName)}
                 >
                   <span className="item-icon">
                     {item.icon ? (
@@ -266,7 +266,7 @@ const GroupItemSelectorModal: React.FC<GroupItemSelectorModalProps> = ({
                       getDefaultIcon(item)
                     )}
                   </span>
-                  <span className="item-name">{item.name}</span>
+                  <span className="item-name">{item.displayName}</span>
                   {excluded && <span className="excluded-label">追加済み</span>}
                 </div>
               );

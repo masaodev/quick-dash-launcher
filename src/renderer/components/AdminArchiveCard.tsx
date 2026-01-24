@@ -31,7 +31,7 @@ const AdminArchiveCard: React.FC<ArchivedGroupCardProps> = ({ group, onRestore, 
         style={{ backgroundColor: group.color || 'var(--color-primary)' }}
       />
       <div className="archived-group-info">
-        <h3 className="archived-group-name">{group.name}</h3>
+        <h3 className="archived-group-name">{group.displayName}</h3>
         <div className="archived-group-meta">
           <span className="archived-date">アーカイブ日時: {formatDate(group.archivedAt)}</span>
           <span className="archived-item-count">{group.itemCount}個のアイテム</span>
@@ -49,7 +49,7 @@ const AdminArchiveCard: React.FC<ArchivedGroupCardProps> = ({ group, onRestore, 
         <Button
           variant="danger"
           size="sm"
-          onClick={() => onDelete(group.id, group.name)}
+          onClick={() => onDelete(group.id, group.displayName)}
           title="アーカイブから完全削除"
         >
           🗑️ 削除

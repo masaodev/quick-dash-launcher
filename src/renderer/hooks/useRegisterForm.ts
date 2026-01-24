@@ -237,7 +237,7 @@ export function useRegisterForm(
       newErrors[i] = {};
 
       // フォルダ取込以外は名前が必須
-      if (item.itemCategory !== 'dir' && !item.name.trim()) {
+      if (item.itemCategory !== 'dir' && !item.displayName.trim()) {
         newErrors[i].name =
           item.itemCategory === 'group'
             ? 'グループ名を入力してください'

@@ -71,7 +71,7 @@ export async function launchItem(item: LaunchableItem, logger: Logger): Promise<
               error: error.message,
               path: item.path,
               args: item.args,
-              name: item.name,
+              name: item.displayName,
             },
             'アイテムの起動に失敗しました (spawn)'
           );
@@ -86,7 +86,7 @@ export async function launchItem(item: LaunchableItem, logger: Logger): Promise<
     } else {
       // 未知のアイテムタイプ
       logger.warn(
-        { type: item.type, path: item.path, name: item.name },
+        { type: item.type, path: item.path, name: item.displayName },
         '未知のアイテムタイプです'
       );
     }
@@ -96,7 +96,7 @@ export async function launchItem(item: LaunchableItem, logger: Logger): Promise<
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
         item: {
-          name: item.name,
+          name: item.displayName,
           type: item.type,
           path: item.path,
           args: item.args || 'なし',

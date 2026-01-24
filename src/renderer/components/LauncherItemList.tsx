@@ -261,8 +261,8 @@ const LauncherItemList: React.FC<ItemListProps> = ({
             ? `${windowInfo.title} (${windowInfo.processName})`
             : windowInfo!.title
           : isWindowOperation
-            ? (item as WindowOperationItem).name
-            : (item as LauncherItem | GroupItem).name;
+            ? (item as WindowOperationItem).displayName
+            : (item as LauncherItem | GroupItem).displayName;
 
         return (
           <div

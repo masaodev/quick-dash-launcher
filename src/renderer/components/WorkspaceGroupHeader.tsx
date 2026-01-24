@@ -36,7 +36,7 @@ const WorkspaceGroupHeader: React.FC<WorkspaceGroupHeaderProps> = ({
   onGroupDropForReorder,
   onContextMenu,
 }) => {
-  const [editName, setEditName] = useState(group.name);
+  const [editName, setEditName] = useState(group.displayName);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // 編集モードに入ったときにフォーカス
@@ -57,14 +57,14 @@ const WorkspaceGroupHeader: React.FC<WorkspaceGroupHeaderProps> = ({
   };
 
   const handleSaveEdit = () => {
-    if (editName.trim() && editName !== group.name) {
+    if (editName.trim() && editName !== group.displayName) {
       onUpdate(group.id, { name: editName.trim() });
     }
     onStartEdit(); // 編集モードを終了
   };
 
   const handleCancelEdit = () => {
-    setEditName(group.name);
+    setEditName(group.displayName);
     onStartEdit(); // 編集モードを終了
   };
 
@@ -153,9 +153,9 @@ const WorkspaceGroupHeader: React.FC<WorkspaceGroupHeaderProps> = ({
           className="workspace-group-name"
           onDoubleClick={handleStartEditClick}
           onDragStart={preventDragStart}
-          title={group.name}
+          title={group.displayName}
         >
-          {group.name}
+          {group.displayName}
         </span>
       )}
 

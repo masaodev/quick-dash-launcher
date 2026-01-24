@@ -116,7 +116,7 @@ export function serializeWindowConfig(config: WindowConfig | undefined): string 
  * ウィンドウ操作設定オブジェクト型
  */
 interface WindowOperationSource {
-  name: string;
+  displayName: string;
   windowTitle: string;
   processName?: string;
   x?: number;
@@ -149,7 +149,7 @@ export function buildWindowOperationConfig(
   source: WindowOperationSource
 ): Record<string, string | number | boolean> {
   const config: Record<string, string | number | boolean> = {
-    name: source.name,
+    displayName: source.displayName,
     windowTitle: source.windowTitle,
   };
 

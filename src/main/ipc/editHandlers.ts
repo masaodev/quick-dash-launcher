@@ -152,7 +152,7 @@ function formatItemToCSV(item: LauncherItem): string {
   const windowConfigStr = item.windowConfig ? serializeWindowConfig(item.windowConfig) : '';
 
   // 基本フィールド：名前,パス
-  let csvLine = `${escapeCSV(item.name)},${escapeCSV(item.path)}`;
+  let csvLine = `${escapeCSV(item.displayName)},${escapeCSV(item.path)}`;
 
   // 引数フィールド
   csvLine += `,${escapeCSV(args)}`;
