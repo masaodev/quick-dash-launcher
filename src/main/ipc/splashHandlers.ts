@@ -4,6 +4,8 @@ import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { closeSplashWindow } from '../splashWindowManager';
 import { getIsFirstLaunch } from '../main';
+import { registerGlobalShortcut } from '../windowManager';
+import { EnvConfig } from '../config/envConfig';
 
 /**
  * スプラッシュスクリーン関連のIPCハンドラーを設定する
@@ -13,6 +15,12 @@ export function setupSplashHandlers(getMainWindow: () => BrowserWindow | null): 
   // スプラッシュスクリーンの準備完了通知
   ipcMain.handle(IPC_CHANNELS.SPLASH_READY, async () => {
     windowLogger.info('スプラッシュスクリーンの準備が完了しました');
+
+    // グローバルホットキーを登録（テスト環境ではスキップ）
+    if (!EnvConfig.disableGlobalHotkey) {
+      await registerGlobalShortcut();
+      windowLogger.info('グローバルホットキーを登録しました');
+    }
 
     // 初回起動判定を取得
     const isFirstLaunch = getIsFirstLaunch();
