@@ -127,6 +127,8 @@
 2. ウィンドウ検索モードに自動切り替え
 3. タブバーを非表示（検索に集中しやすいUI）
 4. システム内の開いているウィンドウを取得（QuickDashLauncher自身は除外）
+   - 全仮想デスクトップのウィンドウを取得（`DWM_CLOAKED_SHELL`フラグ処理により実現）
+   - システムウィンドウを除外（Windows入力エクスペリエンス、Program Manager等）
 5. 各ウィンドウのアイコンを取得（Windows API使用）
 6. `<` を除いた検索クエリでウィンドウタイトルをフィルタリング（スペース区切りでAND検索）
 7. フィルタリングされたウィンドウリストを表示
@@ -1032,8 +1034,14 @@ Escapeキーでウィンドウを閉じられない状態でも、以下の方�
 **モード切り替え:**
 1. 検索入力欄の最初の文字が `<` であることを検知
 2. ウィンドウ検索モードに自動切り替え
-3. システム内の開いているウィンドウを取得（`get-all-windows` IPC）
+3. システム内の開いているウィンドウを取得（`get-all-windows-all-desktops` IPC）
+   - 全仮想デスクトップのウィンドウを取得（`includeAllVirtualDesktops: true`パラメータ使用）
+   - `DWM_CLOAKED_SHELL`以外のクローキングは除外（仮想デスクトップのウィンドウは含める）
 4. QuickDashLauncher自身のウィンドウは除外される
+5. システムウィンドウを除外（プロセス名とクラス名の組み合わせで判定）
+   - Windows入力エクスペリエンス（TextInputHost.exe + Windows.UI.Core.CoreWindow）
+   - Windowsシェルエクスペリエンス（ShellExperienceHost.exe + Windows.UI.Core.CoreWindow）
+   - デスクトップ壁紙（explorer.exe + Progman）
 
 **ウィンドウのフィルタリング:**
 1. `<` を除いた検索クエリを取得
@@ -1098,6 +1106,8 @@ interface WindowInfo {
   processId: number;           // プロセスID
   isVisible: boolean;          // 表示状態
   executablePath?: string;     // 実行ファイルパス（取得可能な場合）
+  processName?: string;        // プロセス名（実行ファイル名）
+  className?: string;          // ウィンドウクラス名（システムウィンドウ除外に使用）
   icon?: string;               // アイコン（base64エンコードされたデータURL）
   desktopNumber?: number;      // ウィンドウが存在する仮想デスクトップ番号
   isPinned?: boolean;          // 全仮想デスクトップにピン止めされているか
@@ -1120,8 +1130,24 @@ type SearchMode = 'normal' | 'window' | 'history';
 - ウィンドウタイトルの一部だけを覚えている状態で検索したい
 - タスクバーやAlt+Tabよりも高速にウィンドウを切り替えたい
 
+#### システムウィンドウの除外
+
+ウィンドウ検索機能では、以下のシステムウィンドウを自動的に除外します：
+
+| ウィンドウ | プロセス名 | クラス名 | 説明 |
+|-----------|----------|---------|------|
+| Windows入力エクスペリエンス | TextInputHost.exe | Windows.UI.Core.CoreWindow | IME・タッチキーボード等 |
+| Windowsシェルエクスペリエンス | ShellExperienceHost.exe | Windows.UI.Core.CoreWindow | スタートメニュー・通知センター等 |
+| デスクトップ壁紙 | explorer.exe | Progman | Program Manager（デスクトップ背景） |
+
+**除外ルールの仕組み:**
+- プロセス名とクラス名の**両方**が一致する場合にのみ除外（誤検知防止）
+- 実装場所: `src/main/utils/nativeWindowControl.ts` の `EXCLUDED_WINDOWS` 配列
+- デバッグ: `scripts/debug-windows.mjs` で除外動作を確認可能
+
 #### 制限事項
 - Windows専用機能（Win32 API使用）
+- 一部のシステムウィンドウは除外ルールにより表示されない
 - タイトルのないウィンドウは表示されない
 - QuickDashLauncher自身のウィンドウは除外される
 - 表示されていないウィンドウ（`IsWindowVisible = false`）は除外される

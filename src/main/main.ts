@@ -13,7 +13,6 @@ import { AutoLaunchService } from './services/autoLaunchService.js';
 import {
   createWindow,
   createTray,
-  registerGlobalShortcut,
   getMainWindow,
   setEditMode,
   getEditMode,
@@ -110,12 +109,6 @@ app.whenReady().then(async () => {
     }
   }
 
-  // グローバルホットキーを登録（設定から読み込み）
-  // テスト環境ではホットキーを無効化
-  if (!EnvConfig.disableGlobalHotkey) {
-    await registerGlobalShortcut();
-  }
-
   // レンダラープロセスとの通信用IPCハンドラーを設定
   setupIPCHandlers(
     PathManager.getConfigFolder(),
@@ -134,7 +127,7 @@ app.whenReady().then(async () => {
   // ワークスペースウィンドウを作成（起動時は表示しない、ユーザーが手動で起動したときのみ表示）
   await createWorkspaceWindow();
 
-  // スプラッシュウィンドウはReactコンポーネントの完了信号(splash-ready)で閉じられる
+  // スプラッシュウィンドウとホットキー登録はsplash-readyハンドラー内で処理される
 });
 
 app.on('window-all-closed', () => {

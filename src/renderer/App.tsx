@@ -4,7 +4,7 @@ import { convertLauncherItemToRawDataLine } from '@common/utils/dataConverters';
 import type { RegisterItem } from '@common/types';
 import { escapeCSV } from '@common/utils/csvParser';
 import { buildWindowOperationConfig } from '@common/utils/windowConfigUtils';
-import {
+import type {
   LauncherItem,
   AppItem,
   WindowPinMode,
@@ -13,10 +13,8 @@ import {
   WindowInfo,
   WindowOperationItem,
   IconFetchErrorRecord,
-  isWindowInfo,
-  isGroupItem,
-  isWindowOperationItem,
 } from '@common/types';
+import { isWindowInfo, isGroupItem, isWindowOperationItem } from '@common/types/guards';
 
 import LauncherSearchBox from './components/LauncherSearchBox';
 import LauncherItemList from './components/LauncherItemList';
@@ -30,6 +28,7 @@ import MissingIconNotice from './components/MissingIconNotice';
 import { SetupFirstLaunch } from './components/SetupFirstLaunch';
 import AlertDialog from './components/AlertDialog';
 import ConfirmDialog from './components/ConfirmDialog';
+import GlobalLoadingIndicator from './components/GlobalLoadingIndicator';
 import { filterItems } from './utils/dataParser';
 import { debugLog, logError } from './utils/debug';
 import { useIconProgress } from './hooks/useIconProgress';
@@ -41,6 +40,7 @@ import { useDataFileTabs } from './hooks/useDataFileTabs';
 import { useIconFetcher } from './hooks/useIconFetcher';
 import { useDragAndDrop } from './hooks/useDragAndDrop';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { useGlobalLoading } from './hooks/useGlobalLoading';
 
 const App: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -132,6 +132,25 @@ const App: React.FC = () => {
   // アイコン取得フック
   const { handleRefreshAll, handleFetchMissingIcons, handleFetchMissingIconsCurrentTab } =
     useIconFetcher(mainItems, setMainItems, showDataFileTabs, activeTab, dataFileTabs);
+
+  // グローバルローディングフック
+  const { isLoading, message: loadingMessage, withLoading } = useGlobalLoading();
+
+  // ウィンドウリストを更新する関数
+  const handleRefreshWindows = async () => {
+    if (searchMode !== 'window') return;
+
+    await withLoading('ウィンドウ更新中', async () => {
+      // ウィンドウリストと仮想デスクトップ情報を再取得
+      const [windows, info] = await Promise.all([
+        window.electronAPI.getAllWindowsAllDesktops(),
+        window.electronAPI.getVirtualDesktopInfo(),
+      ]);
+      setWindowList(windows);
+      setDesktopInfo(info);
+      setSelectedIndex(0); // 選択インデックスをリセット
+    });
+  };
 
   // 検索モード切り替えハンドラー（順次切り替え: normal → window → history → normal...）
   const handleToggleSearchMode = async () => {
@@ -285,7 +304,8 @@ const App: React.FC = () => {
     searchMode,
     windowList,
     historyItems,
-    handleToggleSearchMode
+    handleToggleSearchMode,
+    handleRefreshWindows
   );
 
   useEffect(() => {
@@ -377,6 +397,9 @@ const App: React.FC = () => {
     setMainItems(itemsWithIcons);
     return itemsWithIcons;
   };
+
+  // データ再読込ハンドラー（ローディング表示付き）
+  const handleReloadItems = () => withLoading('データ読み込み中', loadItems);
 
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
@@ -705,128 +728,127 @@ const App: React.FC = () => {
 
   return (
     <div className={`app ${isDraggingOver ? 'dragging-over' : ''}`} onKeyDown={handleKeyDown}>
-      <>
-        <div className="header">
-          <LauncherSearchBox
-            ref={searchInputRef}
-            value={searchQuery}
-            onChange={handleSearch}
-            onKeyDown={handleKeyDown}
-            searchMode={searchMode}
-            onToggleSearchMode={handleToggleSearchMode}
-          />
-          <LauncherActionButtons
-            onReload={loadItems}
-            onFetchMissingIcons={handleFetchMissingIcons}
-            onFetchMissingIconsCurrentTab={handleFetchMissingIconsCurrentTab}
-            onRefreshAll={handleRefreshAllWrapper}
-            onTogglePin={handleTogglePin}
-            onOpenBasicSettings={handleOpenBasicSettings}
-            onOpenItemManagement={handleOpenItemManagement}
-            onToggleWorkspace={handleToggleWorkspace}
-            onOpenRegisterModal={handleOpenRegisterModal}
-            windowPinMode={windowPinMode}
-            isEditMode={false}
-          />
-          <div className="drag-handle">⋮⋮</div>
-        </div>
+      <div className="header">
+        <LauncherSearchBox
+          ref={searchInputRef}
+          value={searchQuery}
+          onChange={handleSearch}
+          onKeyDown={handleKeyDown}
+          searchMode={searchMode}
+          onToggleSearchMode={handleToggleSearchMode}
+          onRefreshWindows={handleRefreshWindows}
+        />
+        <LauncherActionButtons
+          onReload={handleReloadItems}
+          onFetchMissingIcons={handleFetchMissingIcons}
+          onFetchMissingIconsCurrentTab={handleFetchMissingIconsCurrentTab}
+          onRefreshAll={handleRefreshAllWrapper}
+          onTogglePin={handleTogglePin}
+          onOpenBasicSettings={handleOpenBasicSettings}
+          onOpenItemManagement={handleOpenItemManagement}
+          onToggleWorkspace={handleToggleWorkspace}
+          onOpenRegisterModal={handleOpenRegisterModal}
+          windowPinMode={windowPinMode}
+          isEditMode={false}
+        />
+        <div className="drag-handle">⋮⋮</div>
+      </div>
 
-        {showDataFileTabs && searchMode === 'normal' && (
-          <LauncherFileTabBar
-            dataFileTabs={dataFileTabs}
-            activeTab={activeTab}
-            onTabClick={handleTabClickWrapper}
-            allItems={mainItems}
-            searchQuery={searchQuery}
-            dataFileLabels={dataFileLabels}
-          />
-        )}
-
-        {!showDataFileTabs && searchMode === 'normal' && (
-          <div className="search-info-bar">
-            <LauncherItemCountDisplay count={filteredItems.length} />
-          </div>
-        )}
-
-        {/* ウィンドウ検索モード用デスクトップタブ */}
-        {searchMode === 'window' && desktopInfo?.supported && desktopInfo.desktopCount > 1 && (
-          <LauncherDesktopTabBar
-            desktopInfo={desktopInfo}
-            activeDesktopTab={activeDesktopTab}
-            windowList={windowList}
-            onTabChange={(tabId) => {
-              setActiveDesktopTab(tabId);
-              setSelectedIndex(0);
-            }}
-          />
-        )}
-
-        <LauncherItemList
-          items={filteredItems}
+      {showDataFileTabs && searchMode === 'normal' && (
+        <LauncherFileTabBar
+          dataFileTabs={dataFileTabs}
+          activeTab={activeTab}
+          onTabClick={handleTabClickWrapper}
           allItems={mainItems}
-          selectedIndex={selectedIndex}
-          onItemExecute={handleExecuteItem}
-          onItemSelect={setSelectedIndex}
-          onCopyPath={handleCopyPath}
-          onCopyParentPath={handleCopyParentPath}
-          onOpenParentFolder={handleOpenParentFolder}
-          onCopyShortcutPath={handleCopyShortcutPath}
-          onCopyShortcutParentPath={handleCopyShortcutParentPath}
-          onOpenShortcutParentFolder={handleOpenShortcutParentFolder}
-          onEditItem={handleEditItem}
+          searchQuery={searchQuery}
+          dataFileLabels={dataFileLabels}
         />
+      )}
 
-        {/* アイコン未取得通知（進捗表示がない場合のみ） */}
-        {!progressState.isActive && missingIconCount > 0 && (
-          <MissingIconNotice
-            missingCount={missingIconCount}
-            onFetchClick={handleFetchMissingIcons}
-          />
-        )}
+      {!showDataFileTabs && searchMode === 'normal' && (
+        <div className="search-info-bar">
+          <LauncherItemCountDisplay count={filteredItems.length} />
+        </div>
+      )}
 
-        {progressState.isActive && progressState.progress && (
-          <LauncherIconProgressBar progress={progressState.progress} onClose={resetProgress} />
-        )}
-
-        <RegisterModal
-          isOpen={isRegisterModalOpen}
-          onClose={closeModal}
-          onRegister={handleRegisterItems}
-          droppedPaths={droppedPaths}
-          editingItem={editingItem}
-          currentTab={activeTab}
-          onDelete={handleDeleteItemFromModal}
+      {searchMode === 'window' && desktopInfo?.supported && desktopInfo.desktopCount > 1 && (
+        <LauncherDesktopTabBar
+          desktopInfo={desktopInfo}
+          activeDesktopTab={activeDesktopTab}
+          windowList={windowList}
+          onTabChange={(tabId) => {
+            setActiveDesktopTab(tabId);
+            setSelectedIndex(0);
+          }}
         />
+      )}
 
-        {isDraggingOver && (
-          <div className="drag-overlay">
-            <div className="drag-message">ファイルをドロップして登録</div>
-          </div>
-        )}
+      <LauncherItemList
+        items={filteredItems}
+        allItems={mainItems}
+        selectedIndex={selectedIndex}
+        onItemExecute={handleExecuteItem}
+        onItemSelect={setSelectedIndex}
+        onCopyPath={handleCopyPath}
+        onCopyParentPath={handleCopyParentPath}
+        onOpenParentFolder={handleOpenParentFolder}
+        onCopyShortcutPath={handleCopyShortcutPath}
+        onCopyShortcutParentPath={handleCopyShortcutParentPath}
+        onOpenShortcutParentFolder={handleOpenShortcutParentFolder}
+        onEditItem={handleEditItem}
+      />
 
-        <AlertDialog
-          isOpen={alertDialog.isOpen}
-          onClose={() => setAlertDialog({ ...alertDialog, isOpen: false })}
-          message={alertDialog.message}
-          type={alertDialog.type}
+      {!progressState.isActive && missingIconCount > 0 && (
+        <MissingIconNotice
+          missingCount={missingIconCount}
+          onFetchClick={handleFetchMissingIcons}
         />
+      )}
 
-        <ConfirmDialog
-          isOpen={deleteConfirmDialog.isOpen}
-          onClose={() => setDeleteConfirmDialog({ isOpen: false, item: null })}
-          onConfirm={handleConfirmDelete}
-          message={
-            deleteConfirmDialog.item
-              ? `「${
-                  deleteConfirmDialog.item.type === 'item'
-                    ? deleteConfirmDialog.item.content.split(',')[0]
-                    : deleteConfirmDialog.item.content
-                }」を削除してもよろしいですか？`
-              : ''
-          }
-          danger={true}
-        />
-      </>
+      {progressState.isActive && progressState.progress && (
+        <LauncherIconProgressBar progress={progressState.progress} onClose={resetProgress} />
+      )}
+
+      <RegisterModal
+        isOpen={isRegisterModalOpen}
+        onClose={closeModal}
+        onRegister={handleRegisterItems}
+        droppedPaths={droppedPaths}
+        editingItem={editingItem}
+        currentTab={activeTab}
+        onDelete={handleDeleteItemFromModal}
+      />
+
+      {isDraggingOver && (
+        <div className="drag-overlay">
+          <div className="drag-message">ファイルをドロップして登録</div>
+        </div>
+      )}
+
+      <AlertDialog
+        isOpen={alertDialog.isOpen}
+        onClose={() => setAlertDialog({ ...alertDialog, isOpen: false })}
+        message={alertDialog.message}
+        type={alertDialog.type}
+      />
+
+      <ConfirmDialog
+        isOpen={deleteConfirmDialog.isOpen}
+        onClose={() => setDeleteConfirmDialog({ isOpen: false, item: null })}
+        onConfirm={handleConfirmDelete}
+        message={
+          deleteConfirmDialog.item
+            ? `「${
+                deleteConfirmDialog.item.type === 'item'
+                  ? deleteConfirmDialog.item.content.split(',')[0]
+                  : deleteConfirmDialog.item.content
+              }」を削除してもよろしいですか？`
+            : ''
+        }
+        danger={true}
+      />
+
+      <GlobalLoadingIndicator isLoading={isLoading} message={loadingMessage} />
     </div>
   );
 };
