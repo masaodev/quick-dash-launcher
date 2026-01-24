@@ -129,9 +129,22 @@ const App: React.FC = () => {
     }
   );
 
+  // アイコン取得エラー記録を読み込む関数
+  const loadIconFetchErrors = async () => {
+    const errors = await window.electronAPI.getIconFetchErrors();
+    setIconFetchErrors(errors);
+  };
+
   // アイコン取得フック
   const { handleRefreshAll, handleFetchMissingIcons, handleFetchMissingIconsCurrentTab } =
-    useIconFetcher(mainItems, setMainItems, showDataFileTabs, activeTab, dataFileTabs);
+    useIconFetcher({
+      mainItems,
+      setMainItems,
+      showDataFileTabs,
+      activeTab,
+      dataFileTabs,
+      reloadIconFetchErrors: loadIconFetchErrors,
+    });
 
   // グローバルローディングフック
   const { isLoading, message: loadingMessage, withLoading } = useGlobalLoading();
@@ -319,10 +332,6 @@ const App: React.FC = () => {
     loadItems();
 
     // アイコン取得エラー記録を読み込み
-    const loadIconFetchErrors = async () => {
-      const errors = await window.electronAPI.getIconFetchErrors();
-      setIconFetchErrors(errors);
-    };
     loadIconFetchErrors();
 
     window.electronAPI.onWindowShown((startTime) => {
