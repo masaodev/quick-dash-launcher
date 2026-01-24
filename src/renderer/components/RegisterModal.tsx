@@ -465,18 +465,18 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
 
                     {item.itemCategory !== 'dir' && (
                       <div className="form-group">
-                        <label>名前:</label>
+                        <label>アイテム表示名:</label>
                         <input
                           type="text"
                           value={item.displayName}
-                          className={errors[index]?.name ? 'error' : ''}
-                          onChange={(e) => handleItemChange(index, 'name', e.target.value)}
+                          className={errors[index]?.displayName ? 'error' : ''}
+                          onChange={(e) => handleItemChange(index, 'displayName', e.target.value)}
                           placeholder={
                             item.itemCategory === 'group'
                               ? 'グループ名を入力'
                               : item.itemCategory === 'window'
-                                ? 'アイテムリストでの表示名を入力'
-                                : '表示名を入力'
+                                ? 'アイテム表示名を入力'
+                                : 'アイテム表示名を入力'
                           }
                         />
                         {errors[index]?.displayName && (

@@ -238,12 +238,12 @@ export function useRegisterForm(
 
       // フォルダ取込以外は名前が必須
       if (item.itemCategory !== 'dir' && !item.displayName.trim()) {
-        newErrors[i].name =
+        newErrors[i].displayName =
           item.itemCategory === 'group'
             ? 'グループ名を入力してください'
             : item.itemCategory === 'window'
-              ? '表示名を入力してください'
-              : '名前を入力してください';
+              ? 'アイテム表示名を入力してください'
+              : 'アイテム表示名を入力してください';
       }
 
       // グループ・ウィンドウ操作以外はパスが必須
