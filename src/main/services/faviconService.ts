@@ -14,8 +14,8 @@ interface FaviconSource {
 export class FaviconService {
   private faviconsFolder: string;
   private defaultSize: number = 64; // デフォルトサイズを64pxに
-  private htmlDownloadTimeout: number = 10000; // HTMLダウンロードのタイムアウト（10秒）
-  private faviconDownloadTimeout: number = 5000; // ファビコンダウンロードのタイムアウト（5秒）
+  private htmlDownloadTimeout: number = 5000; // HTMLダウンロードのタイムアウト（5秒）
+  private faviconDownloadTimeout: number = 3000; // ファビコンダウンロードのタイムアウト（3秒）
 
   constructor(faviconsFolder: string) {
     this.faviconsFolder = faviconsFolder;
@@ -108,31 +108,41 @@ export class FaviconService {
     const origin = new URL(url).origin;
 
     // 1. HTMLを解析してメタタグからファビコンを探す
-    try {
-      const htmlSources = await this.parseHtmlForFavicons(url);
-      sources.push(...htmlSources);
-    } catch (error) {
-      // エラーの種類を判定してメッセージを分ける
-      let errorMessage = 'HTML解析をスキップ';
-      if (error instanceof Error) {
-        if (error.message.includes('タイムアウト')) {
-          errorMessage = 'HTMLダウンロードがタイムアウト（標準的なファビコンソースを試行）';
-        }
-      }
-      faviconLogger.info({ error }, errorMessage);
+    const { htmlSources, isNetworkError } = await this.tryParseHtmlForFavicons(url);
+    sources.push(...htmlSources);
+
+    // 2. ネットワークエラーでない場合のみ標準的な場所を確認
+    if (!isNetworkError) {
+      sources.push(
+        { url: `${origin}/favicon.ico`, size: 32 },
+        { url: `${origin}/favicon.png`, size: 32 },
+        { url: `${origin}/apple-touch-icon.png`, size: 180 },
+        { url: `${origin}/apple-touch-icon-precomposed.png`, size: 180 },
+        { url: `${origin}/icon.png`, size: 32 },
+        { url: `${origin}/logo.png`, size: 64 }
+      );
     }
 
-    // 2. 標準的な場所を確認
-    sources.push(
-      { url: `${origin}/favicon.ico`, size: 32 },
-      { url: `${origin}/favicon.png`, size: 32 },
-      { url: `${origin}/apple-touch-icon.png`, size: 180 },
-      { url: `${origin}/apple-touch-icon-precomposed.png`, size: 180 },
-      { url: `${origin}/icon.png`, size: 32 },
-      { url: `${origin}/logo.png`, size: 64 }
-    );
-
     return sources;
+  }
+
+  /**
+   * HTML解析を試行し、結果とネットワークエラーの有無を返す
+   */
+  private async tryParseHtmlForFavicons(
+    url: string
+  ): Promise<{ htmlSources: FaviconSource[]; isNetworkError: boolean }> {
+    try {
+      const htmlSources = await this.parseHtmlForFavicons(url);
+      return { htmlSources, isNetworkError: false };
+    } catch (error) {
+      const isNetworkError = this.isNetworkError(error);
+      const logMessage = isNetworkError
+        ? 'ネットワークエラーのため標準ファビコンソースをスキップ'
+        : 'HTML解析をスキップ（標準的なファビコンソースを試行）';
+      faviconLogger.info({ error }, logMessage);
+      return { htmlSources: [], isNetworkError };
+    }
   }
 
   /**
@@ -410,16 +420,38 @@ export class FaviconService {
     try {
       if (url.startsWith('//')) {
         return `https:${url}`;
-      } else if (url.startsWith('http://') || url.startsWith('https://')) {
-        return url;
-      } else if (url.startsWith('/')) {
-        return new URL(url, base).href;
-      } else {
-        return new URL(url, base).href;
       }
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        return url;
+      }
+      return new URL(url, base).href;
     } catch (error) {
       faviconLogger.error({ error }, 'URL解決エラー');
       return null;
     }
+  }
+
+  /**
+   * エラーがネットワーク関連のエラーかどうかを判定
+   * ネットワークエラーの場合、同一オリジンの他のリソースも取得できない可能性が高い
+   */
+  private isNetworkError(error: unknown): boolean {
+    if (!(error instanceof Error)) {
+      return false;
+    }
+
+    const message = error.message.toLowerCase();
+    const networkErrorPatterns = [
+      'タイムアウト', // 日本語タイムアウトメッセージ
+      'enotfound', // DNS解決失敗
+      'getaddrinfo', // DNS解決失敗
+      'econnrefused', // 接続拒否
+      'etimedout', // 接続タイムアウト
+      'enetunreach', // ネットワーク到達不可
+      'econnreset', // 接続リセット
+      'ehostunreach', // ホスト到達不可
+    ];
+
+    return networkErrorPatterns.some((pattern) => message.includes(pattern));
   }
 }
