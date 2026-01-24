@@ -1,6 +1,8 @@
 import React from 'react';
 import type { ArchivedWorkspaceGroup } from '@common/types';
 
+import { Button } from './ui/Button';
+
 interface ArchivedGroupCardProps {
   group: ArchivedWorkspaceGroup;
   onRestore: (groupId: string) => void;
@@ -36,20 +38,22 @@ const AdminArchiveCard: React.FC<ArchivedGroupCardProps> = ({ group, onRestore, 
         </div>
       </div>
       <div className="archived-group-actions">
-        <button
-          className="archived-group-restore-btn"
+        <Button
+          variant="info"
+          size="sm"
           onClick={() => onRestore(group.id)}
           title="グループを復元"
         >
           ↩️ 復元
-        </button>
-        <button
-          className="archived-group-delete-btn"
+        </Button>
+        <Button
+          variant="danger"
+          size="sm"
           onClick={() => onDelete(group.id, group.name)}
           title="アーカイブから完全削除"
         >
           🗑️ 削除
-        </button>
+        </Button>
       </div>
     </div>
   );

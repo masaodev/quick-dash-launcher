@@ -113,44 +113,6 @@
   flex-shrink: 0;
 }
 
-.archived-group-restore-btn,
-.archived-group-delete-btn {
-  padding: var(--spacing-sm) var(--spacing-md);
-  border: none;
-  border-radius: var(--border-radius);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  cursor: pointer;
-  transition: var(--transition-normal);
-  font-family: inherit;
-}
-
-.archived-group-restore-btn {
-  background-color: var(--color-primary);
-  color: var(--color-white);
-}
-
-.archived-group-restore-btn:hover {
-  background-color: var(--color-primary-hover);
-}
-
-.archived-group-restore-btn:active {
-  background-color: var(--color-primary-active);
-}
-
-.archived-group-delete-btn {
-  background-color: var(--color-gray-300);
-  color: var(--text-primary);
-}
-
-.archived-group-delete-btn:hover {
-  background-color: var(--color-danger);
-  color: var(--color-white);
-}
-
-.archived-group-delete-btn:active {
-  background-color: var(--color-danger-active);
-}
 
 /* レスポンシブデザイン */
 @media (max-width: 600px) {

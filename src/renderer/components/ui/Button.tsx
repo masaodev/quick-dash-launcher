@@ -2,14 +2,7 @@ import React from 'react';
 
 import '../../styles/components/Button.css';
 
-export type ButtonVariant =
-  | 'primary'
-  | 'secondary'
-  | 'danger'
-  | 'success'
-  | 'info'
-  | 'light'
-  | 'cancel';
+export type ButtonVariant = 'primary' | 'danger' | 'info' | 'cancel';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -19,7 +12,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 }
 
 export function Button({
-  variant = 'light',
+  variant = 'info',
   size = 'md',
   fullWidth = false,
   className = '',

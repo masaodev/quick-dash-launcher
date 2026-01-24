@@ -48,19 +48,6 @@
   color: var(--color-white);
 }
 
-/* Secondary */
-.btn-secondary {
-  background-color: var(--color-secondary);
-  color: var(--color-white);
-  border-color: var(--color-secondary);
-}
-
-.btn-secondary:hover:not(:disabled) {
-  background-color: var(--color-secondary-hover);
-  border-color: var(--color-secondary-hover);
-  color: var(--color-white);
-}
-
 /* Danger */
 .btn-danger {
   background-color: var(--color-danger);
@@ -71,19 +58,6 @@
 .btn-danger:hover:not(:disabled) {
   background-color: var(--color-danger-hover);
   border-color: var(--color-danger-hover);
-  color: var(--color-white);
-}
-
-/* Success */
-.btn-success {
-  background-color: var(--color-success);
-  color: var(--color-white);
-  border-color: var(--color-success);
-}
-
-.btn-success:hover:not(:disabled) {
-  background-color: var(--color-success-hover);
-  border-color: var(--color-success-hover);
   color: var(--color-white);
 }
 
@@ -98,18 +72,6 @@
   background-color: var(--color-info-hover);
   border-color: var(--color-info-hover);
   color: var(--color-white);
-}
-
-/* Light */
-.btn-light {
-  background-color: var(--color-gray-100);
-  color: var(--text-primary);
-  border-color: var(--color-gray-400);
-}
-
-.btn-light:hover:not(:disabled) {
-  background-color: var(--color-gray-400);
-  border-color: var(--color-gray-600);
 }
 
 /* Cancel（グレー系、キャンセルボタン用） */

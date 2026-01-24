@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { AppInfo } from '@common/types';
 
+import { Button } from './ui/Button';
+
 const AdminOtherTab: React.FC = () => {
   const [appInfo, setAppInfo] = useState<AppInfo | null>(null);
 
@@ -34,9 +36,9 @@ const AdminOtherTab: React.FC = () => {
         <div className="section">
           <h3>ファイル管理</h3>
           <div className="action-buttons">
-            <button onClick={handleOpenConfigFolder} className="section-action-button">
+            <Button variant="info" onClick={handleOpenConfigFolder}>
               📁 設定フォルダを開く
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -47,9 +49,9 @@ const AdminOtherTab: React.FC = () => {
               バージョン: {appInfo?.version || '読込中...'} ・ ライセンス:{' '}
               {appInfo?.license || '読込中...'}
             </div>
-            <button onClick={handleOpenGitHub} className="link-button" disabled={!appInfo}>
+            <Button variant="info" onClick={handleOpenGitHub} disabled={!appInfo}>
               🔗 GitHubリポジトリ
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -90,9 +92,9 @@ const AdminOtherTab: React.FC = () => {
         <div className="section">
           <h3>アプリケーション</h3>
           <div className="app-actions">
-            <button onClick={handleQuitApp} className="quit-button">
+            <Button variant="danger" onClick={handleQuitApp}>
               🚪 アプリケーションを終了
-            </button>
+            </Button>
           </div>
         </div>
       </div>

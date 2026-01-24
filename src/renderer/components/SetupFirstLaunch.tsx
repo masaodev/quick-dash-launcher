@@ -6,6 +6,7 @@ import { logError } from '../utils/debug';
 
 import { HotkeyInput } from './HotkeyInput';
 import AlertDialog from './AlertDialog';
+import { Button } from './ui/Button';
 
 interface FirstLaunchSetupProps {
   onComplete: (hotkey: string, autoLaunch: boolean) => void;
@@ -107,14 +108,14 @@ export const SetupFirstLaunch: React.FC<FirstLaunchSetupProps> = ({ onComplete }
         </div>
 
         <div className="first-launch-actions">
-          <button
-            className="complete-button"
+          <Button
+            variant="primary"
             onClick={handleComplete}
             disabled={isLoading || !hotkeyValidation.isValid}
             type="button"
           >
             設定を完了
-          </button>
+          </Button>
         </div>
       </div>
 

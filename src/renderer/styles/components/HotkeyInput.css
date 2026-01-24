@@ -61,20 +61,6 @@
   z-index: var(--z-dropdown);
 }
 
-.cancel-recording {
-  background: none;
-  border: none;
-  color: var(--color-white);
-  text-decoration: underline;
-  cursor: pointer;
-  font-size: var(--font-size-xs);
-  padding: 0;
-  margin-left: var(--spacing-sm);
-}
-
-.cancel-recording:hover {
-  color: var(--text-light-hover);
-}
 
 @keyframes pulse {
   0% {
