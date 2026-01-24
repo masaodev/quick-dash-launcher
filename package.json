@@ -97,9 +97,6 @@
     "react-dom": "^19.2.3",
     "react-hot-toast": "^2.6.0"
   },
-  "overrides": {
-    "tar": "^6.2.1"
-  },
   "build": {
     "appId": "net.masaodev.quick-dash-launcher",
     "productName": "QuickDashLauncher",
