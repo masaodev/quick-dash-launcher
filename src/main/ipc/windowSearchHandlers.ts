@@ -14,6 +14,7 @@ import {
   pinWindow,
   unPinWindow,
   isPinnedWindow,
+  getAllDesktopNames,
 } from '../utils/virtualDesktop/index.js';
 
 /**
@@ -74,6 +75,7 @@ export function setupWindowSearchHandlers(
         supported: true,
         desktopCount: getDesktopCount(),
         currentDesktop: getCurrentDesktopNumber(),
+        desktopNames: getAllDesktopNames(),
       };
     } catch (error) {
       console.error('Failed to get virtual desktop info:', error);

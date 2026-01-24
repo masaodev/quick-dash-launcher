@@ -15,6 +15,7 @@ import {
   getPinWindow,
   getUnPinWindow,
   getIsPinnedWindow,
+  getGetDesktopName,
 } from './dllLoader.js';
 import { isVirtualDesktopSupported, getVirtualDesktopGUIDs } from './registryAccess.js';
 
@@ -85,13 +86,9 @@ export function moveWindowToVirtualDesktop(hwnd: number | bigint, desktopNumber:
   // VirtualDesktopAccessorは0ベースのインデックスを使用
   const desktopIndex = desktopNumber - 1;
 
-  // HWNDの型変換
-  const hwndValue = typeof hwnd === 'bigint' ? hwnd : hwnd;
-
   debugLog('[WindowOps] moveWindowToVirtualDesktop デバッグ情報:', {
     hwnd: String(hwnd),
-    hwndValue: String(hwndValue),
-    hwndType: typeof hwndValue,
+    hwndType: typeof hwnd,
     desktopNumber,
     desktopIndex,
   });
@@ -103,7 +100,7 @@ export function moveWindowToVirtualDesktop(hwnd: number | bigint, desktopNumber:
     });
 
     // MoveWindowToDesktopNumber呼び出し
-    const result = MoveWindowToDesktopNumber(hwndValue, desktopIndex);
+    const result = MoveWindowToDesktopNumber(hwnd, desktopIndex);
 
     debugLog('[WindowOps] 実行結果:', result, '型:', typeof result);
 
@@ -150,11 +147,8 @@ export function isWindowOnDesktopNumber(hwnd: number | bigint, desktopNumber: nu
   // VirtualDesktopAccessorは0ベースのインデックスを使用
   const desktopIndex = desktopNumber - 1;
 
-  // HWNDの型変換
-  const hwndValue = typeof hwnd === 'bigint' ? hwnd : hwnd;
-
   try {
-    const result = isWindowOnDesktopNumberFn(hwndValue, desktopIndex);
+    const result = isWindowOnDesktopNumberFn(hwnd, desktopIndex);
     const isOnDesktop = toBooleanResult(result);
 
     debugLog(
@@ -186,12 +180,9 @@ export function getWindowDesktopNumber(hwnd: number | bigint): number {
     return -1;
   }
 
-  // HWNDの型変換
-  const hwndValue = typeof hwnd === 'bigint' ? hwnd : hwnd;
-
   try {
     // GetWindowDesktopNumber呼び出し（0ベースのインデックスを返す）
-    const desktopIndex = getWindowDesktopNumberFn(hwndValue);
+    const desktopIndex = getWindowDesktopNumberFn(hwnd);
 
     if (desktopIndex < 0) {
       return -1;
@@ -249,10 +240,8 @@ export function pinWindow(hwnd: number | bigint): boolean {
     return false;
   }
 
-  const hwndValue = typeof hwnd === 'bigint' ? hwnd : hwnd;
-
   try {
-    const result = pinWindowFn(hwndValue);
+    const result = pinWindowFn(hwnd);
     const success = toBooleanResult(result);
 
     if (success) {
@@ -284,10 +273,8 @@ export function unPinWindow(hwnd: number | bigint): boolean {
     return false;
   }
 
-  const hwndValue = typeof hwnd === 'bigint' ? hwnd : hwnd;
-
   try {
-    const result = unPinWindowFn(hwndValue);
+    const result = unPinWindowFn(hwnd);
     const success = toBooleanResult(result);
 
     if (success) {
@@ -317,10 +304,8 @@ export function isPinnedWindow(hwnd: number | bigint): boolean {
     return false;
   }
 
-  const hwndValue = typeof hwnd === 'bigint' ? hwnd : hwnd;
-
   try {
-    const result = isPinnedWindowFn(hwndValue);
+    const result = isPinnedWindowFn(hwnd);
     const isPinned = toBooleanResult(result);
 
     debugLog('[WindowOps] isPinnedWindow チェック結果:', isPinned);
@@ -329,4 +314,51 @@ export function isPinnedWindow(hwnd: number | bigint): boolean {
     console.error('[WindowOps] isPinnedWindow例外発生:', error);
     return false;
   }
+}
+
+/**
+ * 指定デスクトップの名前を取得（Win11専用）
+ * @param desktopNumber デスクトップ番号（1から開始）
+ * @returns 名前（未設定または取得失敗時はundefined）
+ */
+export function getDesktopName(desktopNumber: number): string | undefined {
+  const getDesktopNameFn = getGetDesktopName();
+  if (!getDesktopNameFn) {
+    return undefined; // Win10などDLL未対応
+  }
+
+  const desktopIndex = desktopNumber - 1; // 0ベースに変換
+  const bufferSize = 512;
+  const buffer = Buffer.alloc(bufferSize);
+
+  try {
+    const result = getDesktopNameFn(desktopIndex, buffer, bufferSize);
+    if (result < 0) {
+      return undefined;
+    }
+
+    // UTF-8文字列として読み取り、null終端で切り詰め
+    const name = buffer.toString('utf8').replace(/\0+$/, '').trim();
+    return name.length > 0 ? name : undefined;
+  } catch (error) {
+    debugLog('[WindowOps] getDesktopName例外:', error);
+    return undefined;
+  }
+}
+
+/**
+ * 全デスクトップの名前を取得
+ * @returns デスクトップ番号（1-N）と名前のマップ
+ */
+export function getAllDesktopNames(): Record<number, string | undefined> {
+  const count = getDesktopCount();
+  if (count <= 0) {
+    return {};
+  }
+
+  const names: Record<number, string | undefined> = {};
+  for (let i = 1; i <= count; i++) {
+    names[i] = getDesktopName(i);
+  }
+  return names;
 }

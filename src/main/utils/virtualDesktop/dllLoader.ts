@@ -25,6 +25,7 @@ let _getDesktopCount: KoffiFunction | null = null;
 let _pinWindow: KoffiFunction | null = null;
 let _unPinWindow: KoffiFunction | null = null;
 let _isPinnedWindow: KoffiFunction | null = null;
+let _getDesktopName: KoffiFunction | null = null;
 
 /**
  * DLLのベースパスを取得
@@ -217,6 +218,18 @@ try {
   if (_isPinnedWindow) {
     debugLog('[DllLoader] IsPinnedWindow初期化完了');
   }
+
+  // GetDesktopName関数を定義（Win11専用）
+  try {
+    _getDesktopName = virtualDesktopAccessor.func('__stdcall', 'GetDesktopName', 'int', [
+      'int',
+      'void*',
+      'uintptr',
+    ]);
+    debugLog('[DllLoader] GetDesktopName初期化完了');
+  } catch (error) {
+    console.warn('[DllLoader] GetDesktopName初期化失敗（Win11専用）:', error);
+  }
 } catch (error) {
   console.error('[DllLoader] 初期化失敗:', error);
   console.error('[DllLoader] エラー詳細:', JSON.stringify(error, null, 2));
@@ -253,6 +266,10 @@ export function getUnPinWindow(): KoffiFunction | null {
 
 export function getIsPinnedWindow(): KoffiFunction | null {
   return _isPinnedWindow;
+}
+
+export function getGetDesktopName(): KoffiFunction | null {
+  return _getDesktopName;
 }
 
 /**

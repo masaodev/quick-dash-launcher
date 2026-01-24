@@ -19,12 +19,19 @@ interface DesktopTab {
   count: number;
 }
 
-function getTabTooltip(tabId: number): string {
+function getTabTooltip(
+  tabId: number,
+  desktopNames?: Record<number, string | undefined>
+): string {
   if (tabId === DESKTOP_TAB.ALL) {
     return 'すべてのデスクトップのウィンドウ';
   }
   if (tabId === DESKTOP_TAB.PINNED) {
     return '全仮想デスクトップにピン止めされたウィンドウ';
+  }
+  const name = desktopNames?.[tabId];
+  if (name) {
+    return `デスクトップ ${tabId}「${name}」のウィンドウ`;
   }
   return `デスクトップ ${tabId} のウィンドウ`;
 }
@@ -55,15 +62,17 @@ const LauncherDesktopTabBar: React.FC<DesktopTabBarProps> = ({
     for (let i = 1; i <= desktopInfo.desktopCount; i++) {
       const count = windowList.filter((w) => w.desktopNumber === i).length;
       const isCurrent = i === desktopInfo.currentDesktop;
+      const desktopName = desktopInfo.desktopNames?.[i];
+      const baseLabel = desktopName || `${i}`;
       tabList.push({
         id: i,
-        label: isCurrent ? `${i} (現在)` : `${i}`,
+        label: isCurrent ? `${baseLabel} (現在)` : baseLabel,
         count,
       });
     }
 
     return tabList;
-  }, [windowList, desktopInfo.desktopCount, desktopInfo.currentDesktop]);
+  }, [windowList, desktopInfo.desktopCount, desktopInfo.currentDesktop, desktopInfo.desktopNames]);
 
   return (
     <div className="tab-bar">
@@ -72,7 +81,7 @@ const LauncherDesktopTabBar: React.FC<DesktopTabBarProps> = ({
           key={tab.id}
           className={`tab-button ${activeDesktopTab === tab.id ? 'active' : ''}`}
           onClick={() => onTabChange(tab.id)}
-          title={getTabTooltip(tab.id)}
+          title={getTabTooltip(tab.id, desktopInfo.desktopNames)}
         >
           {tab.label}
           <span className="tab-count">({tab.count})</span>

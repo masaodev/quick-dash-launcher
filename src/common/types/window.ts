@@ -13,6 +13,8 @@ export interface VirtualDesktopInfo {
   desktopCount: number;
   /** 現在のデスクトップ番号（1から開始、サポートされていない場合は-1） */
   currentDesktop: number;
+  /** デスクトップ名のマップ（キー: デスクトップ番号1-N、値: 名前またはundefined） */
+  desktopNames?: Record<number, string | undefined>;
 }
 
 /**
