@@ -7,10 +7,7 @@
 import { ipcMain } from 'electron';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
-import {
-  showNotification,
-  NotificationOptions,
-} from '../services/notificationService.js';
+import { showNotification, NotificationOptions } from '../services/notificationService.js';
 import { showToastWindow, ToastOptions } from '../services/toastWindowService.js';
 
 /**

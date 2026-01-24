@@ -222,7 +222,10 @@ export class ExecutionHistoryService {
       const trimmedHistory = updatedHistory.slice(0, ExecutionHistoryService.MAX_HISTORY_ITEMS);
       this.historyStore.set('history', trimmedHistory);
 
-      logger.info({ itemName: item.name, count: trimmedHistory.length }, 'Added item to execution history');
+      logger.info(
+        { itemName: item.name, count: trimmedHistory.length },
+        'Added item to execution history'
+      );
     } catch (error) {
       const itemName = isWindowInfo(item) ? item.title : item.name;
       logger.error({ error, itemName }, 'Failed to add execution history');

@@ -539,8 +539,7 @@ export function getAllWindows(options?: { includeAllVirtualDesktops?: boolean })
       // 除外ルールに一致し、かつクローク状態（非表示）の場合のみ除外
       // 実際に表示されているウィンドウは除外しない（誤検知防止）
       const matchesExclusionRule = EXCLUDED_WINDOWS.some(
-        (excluded) =>
-          excluded.processName === processName && excluded.className === className
+        (excluded) => excluded.processName === processName && excluded.className === className
       );
       if (matchesExclusionRule && isWindowCloaked(hwnd, false)) {
         return true;

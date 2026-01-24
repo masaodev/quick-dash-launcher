@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { IconProgressResult } from '@common/types';
+
 import '../styles/components/IconProgressDetailModal.css';
 import { Button } from './ui';
 

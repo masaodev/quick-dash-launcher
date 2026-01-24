@@ -15,8 +15,7 @@ function hasNoIcon(item: AppItem): boolean {
 
 function extractUrlItems(items: AppItem[], requireNoIcon: boolean): LauncherItem[] {
   return items.filter(
-    (item) =>
-      isLauncherItem(item) && item.type === 'url' && (!requireNoIcon || hasNoIcon(item))
+    (item) => isLauncherItem(item) && item.type === 'url' && (!requireNoIcon || hasNoIcon(item))
   ) as LauncherItem[];
 }
 
@@ -33,8 +32,7 @@ function extractIconItems(items: AppItem[], requireNoIcon: boolean): LauncherIte
 function applyIconsToItems(items: AppItem[], results: IconResults): AppItem[] {
   return items.map((item) => {
     if (!isLauncherItem(item)) return item;
-    const icon =
-      item.type === 'url' ? results.favicons[item.path] : results.icons[item.path];
+    const icon = item.type === 'url' ? results.favicons[item.path] : results.icons[item.path];
     return icon ? { ...item, icon } : item;
   });
 }

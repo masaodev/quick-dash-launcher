@@ -93,6 +93,6 @@ function ConfirmDialog({
       </div>
     </div>
   );
-};
+}
 
 export default ConfirmDialog;

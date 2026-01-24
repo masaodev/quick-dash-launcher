@@ -13,16 +13,19 @@ interface SearchBoxProps {
 function getSearchModeLabel(mode: SearchMode): string {
   switch (mode) {
     case 'window':
-      return 'ウィンドウ検索モード';
+      return '🪟 ウィンドウ検索モード';
     case 'history':
-      return '実行履歴検索モード';
+      return '📜 実行履歴検索モード';
     default:
       return '通常検索モード';
   }
 }
 
 const LauncherSearchBox = forwardRef<HTMLInputElement, SearchBoxProps>(
-  ({ value, onChange, onKeyDown, searchMode = 'normal', onToggleSearchMode, onRefreshWindows }, ref) => {
+  (
+    { value, onChange, onKeyDown, searchMode = 'normal', onToggleSearchMode, onRefreshWindows },
+    ref
+  ) => {
     const inputRef = useRef<HTMLInputElement>(null);
 
     useImperativeHandle(ref, () => inputRef.current!);

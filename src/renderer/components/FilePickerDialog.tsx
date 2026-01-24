@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 import '../styles/components/Modal.css';
 import '../styles/components/FilePickerDialog.css';
 import { logError } from '../utils/debug';
+
 import { Button } from './ui';
 
 interface FilePickerDialogProps {

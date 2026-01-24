@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { DESKTOP_TAB } from '@common/constants';
 import { convertLauncherItemToRawDataLine } from '@common/utils/dataConverters';
-import type { RegisterItem } from '@common/types';
-import { escapeCSV } from '@common/utils/csvParser';
-import { buildWindowOperationConfig } from '@common/utils/windowConfigUtils';
 import type {
+  RegisterItem,
   LauncherItem,
   AppItem,
   WindowPinMode,
@@ -14,6 +12,8 @@ import type {
   WindowOperationItem,
   IconFetchErrorRecord,
 } from '@common/types';
+import { escapeCSV } from '@common/utils/csvParser';
+import { buildWindowOperationConfig } from '@common/utils/windowConfigUtils';
 import { isWindowInfo, isGroupItem, isWindowOperationItem } from '@common/types/guards';
 
 import LauncherSearchBox from './components/LauncherSearchBox';
@@ -799,10 +799,7 @@ const App: React.FC = () => {
       />
 
       {!progressState.isActive && missingIconCount > 0 && (
-        <MissingIconNotice
-          missingCount={missingIconCount}
-          onFetchClick={handleFetchMissingIcons}
-        />
+        <MissingIconNotice missingCount={missingIconCount} onFetchClick={handleFetchMissingIcons} />
       )}
 
       {progressState.isActive && progressState.progress && (

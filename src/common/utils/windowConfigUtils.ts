@@ -2,7 +2,7 @@
  * WindowConfig のパース・シリアライズユーティリティ
  * 文字列形式とJSON形式の両方をサポート
  */
-import type { WindowConfig } from '../types.js';
+import type { WindowConfig } from '../types/index.js';
 
 /**
  * 文字列またはJSON形式からWindowConfigをパース
