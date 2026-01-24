@@ -7,6 +7,7 @@ interface SearchBoxProps {
   onKeyDown: (e: React.KeyboardEvent) => void;
   searchMode?: SearchMode;
   onToggleSearchMode?: () => void;
+  onRefreshWindows?: () => void;
 }
 
 function getSearchModeLabel(mode: SearchMode): string {
@@ -21,7 +22,7 @@ function getSearchModeLabel(mode: SearchMode): string {
 }
 
 const LauncherSearchBox = forwardRef<HTMLInputElement, SearchBoxProps>(
-  ({ value, onChange, onKeyDown, searchMode = 'normal', onToggleSearchMode }, ref) => {
+  ({ value, onChange, onKeyDown, searchMode = 'normal', onToggleSearchMode, onRefreshWindows }, ref) => {
     const inputRef = useRef<HTMLInputElement>(null);
 
     useImperativeHandle(ref, () => inputRef.current!);
@@ -57,15 +58,26 @@ const LauncherSearchBox = forwardRef<HTMLInputElement, SearchBoxProps>(
         </div>
 
         <div className="search-mode-indicator">
-          {getSearchModeLabel(searchMode)} (Shift+Tabで
-          <button
-            type="button"
-            className="search-mode-hint-link"
-            onClick={onToggleSearchMode}
-          >
-            切り替え
-          </button>
-          )
+          <span>
+            {getSearchModeLabel(searchMode)} (Shift+Tab:
+            <button type="button" className="search-mode-hint-link" onClick={onToggleSearchMode}>
+              モード切り替え
+            </button>
+            {searchMode === 'window' && onRefreshWindows && (
+              <>
+                {' / F5:'}
+                <button
+                  type="button"
+                  className="search-mode-hint-link"
+                  onClick={onRefreshWindows}
+                  title="ウィンドウリストを更新"
+                >
+                  更新
+                </button>
+              </>
+            )}
+            )
+          </span>
         </div>
       </div>
     );
