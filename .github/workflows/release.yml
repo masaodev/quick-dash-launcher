@@ -24,11 +24,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      # Node.js環境のセットアップ（バージョン20を使用）
+      # Node.js環境のセットアップ（バージョン22を使用）
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
       # 依存関係のインストール（package-lock.jsonを使用した確実なインストール）
