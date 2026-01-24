@@ -36,9 +36,9 @@ function parseCSVLineToItem(
     return null;
   }
 
-  const [name, itemPath, argsField, customIconField, windowConfigField] = parts;
+  const [displayName, itemPath, argsField, customIconField, windowConfigField] = parts;
 
-  if (!name || !itemPath) {
+  if (!displayName || !itemPath) {
     return null;
   }
 
@@ -49,7 +49,7 @@ function parseCSVLineToItem(
       : undefined;
 
   const item: LauncherItem = {
-    name,
+    displayName,
     path: itemPath,
     type: detectItemTypeSync(itemPath),
     args: argsField && argsField.trim() ? argsField : undefined,
@@ -159,14 +159,14 @@ export async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
         // Add scanned items with duplicate check (per tab)
         for (const item of scannedItems) {
           const uniqueKey = item.args
-            ? `${item.name}|${item.path}|${item.args}`
-            : `${item.name}|${item.path}`;
+            ? `${item.displayName}|${item.path}|${item.args}`
+            : `${item.displayName}|${item.path}`;
           if (!seenPaths.has(uniqueKey)) {
             seenPaths.add(uniqueKey);
             items.push(item);
           } else {
             dataLogger.debug(
-              { tabIndex, fileName, itemName: item.name, uniqueKey },
+              { tabIndex, fileName, itemName: item.displayName, uniqueKey },
               'タブ内で重複するアイテムをスキップ'
             );
           }
@@ -183,7 +183,7 @@ export async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
 
           if (groupName && itemNames.length > 0) {
             const groupItem: GroupItem = {
-              name: groupName,
+              displayName: groupName,
               type: 'group',
               itemNames: itemNames,
               sourceFile: fileName,
@@ -207,7 +207,7 @@ export async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
 
         const windowOperationItem: WindowOperationItem = {
           type: 'windowOperation',
-          name: windowOp.name,
+          displayName: windowOp.displayName,
           windowTitle: windowOp.windowTitle,
           processName: windowOp.processName,
           x: windowOp.x,
@@ -237,14 +237,14 @@ export async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
           const item = processShortcut(itemPath, fileName, lineIndex + 1, displayName);
           if (item) {
             const uniqueKey = item.args
-              ? `${item.name}|${item.path}|${item.args}`
-              : `${item.name}|${item.path}`;
+              ? `${item.displayName}|${item.path}|${item.args}`
+              : `${item.displayName}|${item.path}`;
             if (!seenPaths.has(uniqueKey)) {
               seenPaths.add(uniqueKey);
               items.push(item);
             } else {
               dataLogger.debug(
-                { tabIndex, fileName, itemName: item.name, uniqueKey },
+                { tabIndex, fileName, itemName: item.displayName, uniqueKey },
                 'タブ内で重複するアイテムをスキップ'
               );
             }
@@ -257,14 +257,14 @@ export async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
       const item = parseCSVLineToItem(trimmedLine, fileName, lineIndex + 1);
       if (item) {
         const uniqueKey = item.args
-          ? `${item.name}|${item.path}|${item.args}`
-          : `${item.name}|${item.path}`;
+          ? `${item.displayName}|${item.path}|${item.args}`
+          : `${item.displayName}|${item.path}`;
         if (!seenPaths.has(uniqueKey)) {
           seenPaths.add(uniqueKey);
           items.push(item);
         } else {
           dataLogger.debug(
-            { tabIndex, fileName, itemName: item.name, uniqueKey },
+            { tabIndex, fileName, itemName: item.displayName, uniqueKey },
             'タブ内で重複するアイテムをスキップ'
           );
         }
@@ -272,10 +272,10 @@ export async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
     }
   }
 
-  // Sort items by name
+  // Sort items by displayName
   items.sort((a, b) => {
-    const aName = isWindowInfo(a) ? a.title : isWindowOperationItem(a) ? a.name : a.name;
-    const bName = isWindowInfo(b) ? b.title : isWindowOperationItem(b) ? b.name : b.name;
+    const aName = isWindowInfo(a) ? a.title : isWindowOperationItem(a) ? a.displayName : a.displayName;
+    const bName = isWindowInfo(b) ? b.title : isWindowOperationItem(b) ? b.displayName : b.displayName;
     return aName.localeCompare(bName, 'ja');
   });
 
@@ -495,7 +495,7 @@ async function registerItems(configFolder: string, items: RegisterItem[]): Promi
         return dirLine;
       } else if (item.itemCategory === 'group') {
         // グループアイテムの場合
-        let groupLine = `group,${item.name}`;
+        let groupLine = `group,${item.displayName}`;
         if (item.groupItemNames && item.groupItemNames.length > 0) {
           groupLine += ',' + item.groupItemNames.join(',');
         }
@@ -509,7 +509,7 @@ async function registerItems(configFolder: string, items: RegisterItem[]): Promi
 
         // JSON形式で設定を保存
         const config: Record<string, string | number | boolean> = {
-          name: item.name,
+          displayName: item.displayName,
           windowTitle: cfg.windowTitle,
         };
 
@@ -524,7 +524,7 @@ async function registerItems(configFolder: string, items: RegisterItem[]): Promi
 
         return `window,${escapeCSV(JSON.stringify(config))}`;
       } else {
-        let line = `${escapeCSV(item.name)},${escapeCSV(item.path)}`;
+        let line = `${escapeCSV(item.displayName)},${escapeCSV(item.path)}`;
 
         // 引数フィールドを追加
         if (item.args) {

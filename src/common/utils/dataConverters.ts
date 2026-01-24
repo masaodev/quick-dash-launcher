@@ -67,14 +67,14 @@ export async function convertRawDataLineToRegisterItem(
       const windowOp = parseWindowOperationDirective(line);
 
       return {
-        name: windowOp.name,
+        name: windowOp.displayName,
         path: '',
         type: 'app',
         targetTab: defaultTab,
         targetFile: line.sourceFile,
         itemCategory: 'window',
         windowOperationConfig: {
-          name: windowOp.name,
+          name: windowOp.displayName,
           windowTitle: windowOp.windowTitle,
           processName: windowOp.processName,
           x: windowOp.x,
@@ -164,7 +164,7 @@ export function convertRegisterItemToRawDataLine(
     newType = 'directive';
     const itemNames = item.groupItemNames || [];
     const escapedItemNames = itemNames.map((name) => escapeCSV(name));
-    newContent = `group,${escapeCSV(item.name)},${escapedItemNames.join(',')}`;
+    newContent = `group,${escapeCSV(item.displayName)},${escapedItemNames.join(',')}`;
   } else if (item.itemCategory === 'window') {
     // ウィンドウ操作アイテムの場合：window,{JSON形式の設定}
     newType = 'directive';
@@ -173,7 +173,7 @@ export function convertRegisterItemToRawDataLine(
 
     // 共通ヘルパーを使用してJSON設定を構築
     const config = buildWindowOperationConfig({
-      name: item.name,
+      displayName: item.displayName,
       windowTitle: cfg.windowTitle,
       processName: cfg.processName,
       x: cfg.x,
@@ -196,7 +196,7 @@ export function convertRegisterItemToRawDataLine(
     const windowConfigStr = item.windowConfig ? serializeWindowConfig(item.windowConfig) : '';
 
     // 基本フィールド
-    newContent = `${escapeCSV(item.name)},${escapeCSV(item.path)}`;
+    newContent = `${escapeCSV(item.displayName)},${escapeCSV(item.path)}`;
 
     // 引数フィールド
     newContent += `,${escapeCSV(args)}`;
@@ -266,7 +266,7 @@ export async function convertLauncherItemToRawDataLine(
   const windowConfigStr = item.windowConfig ? serializeWindowConfig(item.windowConfig) : '';
 
   // 基本フィールド
-  let content = `${escapeCSV(item.name)},${escapeCSV(item.path)}`;
+  let content = `${escapeCSV(item.displayName)},${escapeCSV(item.path)}`;
 
   // 引数フィールド
   content += `,${escapeCSV(args)}`;

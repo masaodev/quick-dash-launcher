@@ -27,7 +27,7 @@ async function openItem(
   try {
     itemLogger.info(
       {
-        name: item.name,
+        name: item.displayName,
         type: item.type,
         path: item.path,
         args: item.args || 'なし',
@@ -38,7 +38,7 @@ async function openItem(
     );
 
     // ウィンドウ設定が存在する場合、先にウィンドウ検索を試行
-    const activationResult = await tryActivateWindow(item.windowConfig, item.name, itemLogger);
+    const activationResult = await tryActivateWindow(item.windowConfig, item.displayName, itemLogger);
 
     if (activationResult.activated) {
       // ウィンドウアクティブ化成功、通常起動をスキップ
@@ -52,7 +52,7 @@ async function openItem(
         type: item.type,
         path: item.path,
         args: item.args,
-        name: item.name,
+        name: item.displayName,
       },
       itemLogger
     );
@@ -62,7 +62,7 @@ async function openItem(
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
         item: {
-          name: item.name,
+          name: item.displayName,
           type: item.type,
           path: item.path,
           args: item.args || 'なし',
@@ -82,7 +82,7 @@ async function openParentFolder(
   try {
     itemLogger.info(
       {
-        name: item.name,
+        name: item.displayName,
         type: item.type,
         path: item.path,
         originalPath: item.originalPath || 'なし',
@@ -97,7 +97,7 @@ async function openParentFolder(
     itemLogger.error(
       {
         error: error instanceof Error ? error.message : String(error),
-        item: { name: item.name, type: item.type, path: item.path },
+        item: { name: item.displayName, type: item.type, path: item.path },
       },
       '親フォルダの表示に失敗しました'
     );
@@ -183,7 +183,7 @@ async function executeGroup(
   _shouldHideWindow: boolean
 ): Promise<void> {
   itemLogger.info(
-    { groupName: group.name, itemCount: group.itemNames.length, itemNames: group.itemNames },
+    { groupName: group.displayName, itemCount: group.itemNames.length, itemNames: group.itemNames },
     'グループを実行中'
   );
 
@@ -195,9 +195,9 @@ async function executeGroup(
   const itemMap = new Map<string, LauncherItem | WindowOperationItem>();
   for (const item of allItems) {
     if (isLauncherItem(item)) {
-      itemMap.set(item.name, item);
+      itemMap.set(item.displayName, item);
     } else if (isWindowOperationItem(item)) {
-      itemMap.set(item.name, item);
+      itemMap.set(item.displayName, item);
     }
   }
 
@@ -206,10 +206,10 @@ async function executeGroup(
 
   // 並列起動モード
   if (parallelLaunch) {
-    itemLogger.info({ groupName: group.name }, '並列起動モードでグループを実行');
+    itemLogger.info({ groupName: group.displayName }, '並列起動モードでグループを実行');
 
     const promises = group.itemNames.map((itemName) =>
-      executeGroupItem(group.name, itemName, itemMap.get(itemName))
+      executeGroupItem(group.displayName, itemName, itemMap.get(itemName))
     );
 
     const results = await Promise.all(promises);
@@ -217,16 +217,16 @@ async function executeGroup(
     errorCount = results.filter((r) => !r.success).length;
   } else {
     // 順次起動モード
-    itemLogger.info({ groupName: group.name }, '順次起動モードでグループを実行');
+    itemLogger.info({ groupName: group.displayName }, '順次起動モードでグループを実行');
 
     for (let i = 0; i < group.itemNames.length; i++) {
       const itemName = group.itemNames[i];
-      const result = await executeGroupItem(group.name, itemName, itemMap.get(itemName));
+      const result = await executeGroupItem(group.displayName, itemName, itemMap.get(itemName));
 
       if (result.success) {
         successCount++;
         itemLogger.info(
-          { groupName: group.name, itemName, index: i + 1, total: group.itemNames.length },
+          { groupName: group.displayName, itemName, index: i + 1, total: group.itemNames.length },
           'グループアイテムを実行しました（順次）'
         );
       } else {
@@ -242,7 +242,7 @@ async function executeGroup(
 
   itemLogger.info(
     {
-      groupName: group.name,
+      groupName: group.displayName,
       total: group.itemNames.length,
       success: successCount,
       error: errorCount,
@@ -269,7 +269,7 @@ export function setupItemHandlers(
     } catch (error) {
       // 履歴記録失敗はエラーログのみ（アイテム起動自体は成功）
       itemLogger.error(
-        { error: error instanceof Error ? error.message : String(error), itemName: item.name },
+        { error: error instanceof Error ? error.message : String(error), itemName: item.displayName },
         '実行履歴の記録に失敗しました'
       );
     }
@@ -295,7 +295,7 @@ export function setupItemHandlers(
       } catch (error) {
         // 履歴記録失敗はエラーログのみ（グループ起動自体は成功）
         itemLogger.error(
-          { error: error instanceof Error ? error.message : String(error), groupName: group.name },
+          { error: error instanceof Error ? error.message : String(error), groupName: group.displayName },
           'グループ実行履歴の記録に失敗しました'
         );
       }
@@ -345,7 +345,7 @@ export function setupItemHandlers(
         notifyWorkspaceChanged();
       } catch (error) {
         itemLogger.error(
-          { error: error instanceof Error ? error.message : String(error), itemName: item.name },
+          { error: error instanceof Error ? error.message : String(error), itemName: item.displayName },
           '実行履歴の記録に失敗しました'
         );
       }

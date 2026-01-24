@@ -8,7 +8,7 @@ export interface WorkspaceGroup {
   /** グループの一意識別子（UUID） */
   id: string;
   /** グループ名 */
-  name: string;
+  displayName: string;
   /** グループの色（CSS変数名またはカラーコード） */
   color: string;
   /** 並び順（0から開始） */

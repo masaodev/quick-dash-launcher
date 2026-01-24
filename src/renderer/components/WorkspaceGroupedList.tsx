@@ -269,7 +269,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
       const group = groupsMap.get(groupId);
       if (group) {
         const groupItems = itemsByGroup[groupId] || [];
-        let text = `【${group.name}】\r\n`;
+        let text = `【${group.displayName}】\r\n`;
         groupItems.forEach((item, index) => {
           // eslint-disable-next-line no-irregular-whitespace
           text += `　■${item.displayName}\r\n`;

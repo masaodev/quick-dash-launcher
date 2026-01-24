@@ -79,7 +79,7 @@ export class WorkspaceGroupManager {
       }
 
       // 更新可能なフィールドのみ更新（id, order, createdAtは除外）
-      if (updates.name !== undefined) group.name = updates.name;
+      if (updates.displayName !== undefined) group.displayName = updates.displayName;
       if (updates.color !== undefined) group.color = updates.color;
       if (updates.collapsed !== undefined) group.collapsed = updates.collapsed;
 

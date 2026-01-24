@@ -6,7 +6,7 @@ export interface AppInfo {
   /** アプリケーションのバージョン番号 */
   version: string;
   /** アプリケーション名 */
-  name: string;
+  displayName: string;
   /** アプリケーションの説明 */
   description: string;
   /** 作者名 */

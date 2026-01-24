@@ -301,7 +301,7 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
       // JSON形式でない場合やパースエラー時は詳細なエラーメッセージをスロー
       try {
         const config = parseWindowOperationConfig(parts[1] || '');
-        name = config.name || '';
+        name = config.displayName || '';
       } catch (error) {
         logError('ウィンドウ操作アイテムのJSON形式が不正です:', error);
         alert(error instanceof Error ? error.message : 'JSON形式が不正です');
@@ -355,7 +355,7 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
         // parseWindowOperationConfigヘルパーでJSON形式を安全にパース
         const config = parseWindowOperationConfig(parts[1] || '');
         // 名前フィールドのみ更新
-        config.name = newName;
+        config.displayName = newName;
         // JSON.stringify()でオブジェクトをJSON文字列に変換し、
         // escapeCSV()でCSV形式に適合するようにエスケープ（ダブルクォートを二重化）
         newContent = `window,${escapeCSV(JSON.stringify(config))}`;
@@ -460,7 +460,7 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
         // window,{JSON形式}
         try {
           const config = parseWindowOperationConfig(parts[1] || '');
-          name = config.name || '';
+          name = config.displayName || '';
         } catch {
           name = '(JSON形式エラー)';
           hasError = true;

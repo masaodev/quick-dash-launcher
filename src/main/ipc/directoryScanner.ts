@@ -93,7 +93,7 @@ function processItem(
   }
 
   return {
-    name: displayName,
+    displayName: displayName,
     path: itemPath,
     type: itemType === 'folder' ? 'folder' : detectItemTypeSync(itemPath),
     sourceFile,
@@ -167,7 +167,7 @@ export function processShortcut(
       }
 
       return {
-        name: name,
+        displayName: name,
         path: filePath,
         type: targetType,
         args:

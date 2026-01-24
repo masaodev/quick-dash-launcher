@@ -202,14 +202,14 @@ const App: React.FC = () => {
   // アイテム実行の共通処理（トースト表示 + 実行）
   const executeAppItem = async (item: AppItem): Promise<void> => {
     if (isGroupItem(item)) {
-      window.electronAPI.showToastWindow(`${item.name} (${item.itemNames.length}件) を起動します`);
+      window.electronAPI.showToastWindow(`${item.displayName} (${item.itemNames.length}件) を起動します`);
       await window.electronAPI.executeGroup(item, mainItems);
     } else if (isWindowOperationItem(item)) {
-      window.electronAPI.showToastWindow(`${item.name} を実行します`);
+      window.electronAPI.showToastWindow(`${item.displayName} を実行します`);
       await window.electronAPI.executeWindowOperation(item);
     } else {
       const launcherItem = item as LauncherItem;
-      window.electronAPI.showToastWindow(`${launcherItem.name} を起動します`);
+      window.electronAPI.showToastWindow(`${launcherItem.displayName} を起動します`);
       await window.electronAPI.openItem(launcherItem);
     }
   };
@@ -458,7 +458,7 @@ const App: React.FC = () => {
         } else if (editingItem.type === 'directive' && item.itemCategory === 'group') {
           // グループアイテムの編集の場合
           const itemNames = item.groupItemNames || [];
-          const newContent = `group,${item.name},${itemNames.join(',')}`;
+          const newContent = `group,${item.displayName},${itemNames.join(',')}`;
 
           // RawDataLineとして更新
           await window.electronAPI.updateRawLine({
@@ -473,7 +473,7 @@ const App: React.FC = () => {
 
           // 共通ヘルパーを使用してJSON設定を構築
           const config = buildWindowOperationConfig({
-            name: item.name,
+            displayName: item.displayName,
             windowTitle: cfg.windowTitle,
             processName: cfg.processName,
             x: cfg.x,
@@ -497,7 +497,7 @@ const App: React.FC = () => {
         } else {
           // 通常のアイテムの編集
           const newItem: LauncherItem = {
-            name: item.name,
+            name: item.displayName,
             path: item.path,
             type: item.type,
             args: item.args,
@@ -601,7 +601,7 @@ const App: React.FC = () => {
 
       // 共通ヘルパーを使用してJSON設定を構築
       const config = buildWindowOperationConfig({
-        name: windowOp.name,
+        displayName: windowOp.displayName,
         windowTitle: windowOp.windowTitle,
         processName: windowOp.processName,
         x: windowOp.x,

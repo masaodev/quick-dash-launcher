@@ -140,7 +140,7 @@ export class ExecutionHistoryService {
   }): ExecutionHistoryItem {
     return {
       id: randomUUID(),
-      itemName: item.name,
+      itemName: item.displayName,
       itemPath: `[ウィンドウ操作: ${item.windowTitle}]`,
       itemType: 'windowOperation',
       executedAt: Date.now(),
@@ -177,25 +177,25 @@ export class ExecutionHistoryService {
       if (isWindowOperationItem(item)) {
         // ウィンドウ操作アイテムの場合
         const historyItem = this.createWindowOperationHistoryItem(item);
-        updatedHistory = this.updateHistoryList(history, item.name, historyItem);
+        updatedHistory = this.updateHistoryList(history, item.displayName, historyItem);
       } else if (!isLauncherItem(item)) {
         // グループアイテムの場合
-        const groupItem = item as { name: string; type: 'group'; itemNames: string[] };
+        const groupItem = item as { displayName: string; type: 'group'; itemNames: string[] };
         const itemNames = groupItem.itemNames || [];
         const historyItem: ExecutionHistoryItem = {
           id: randomUUID(),
-          itemName: groupItem.name,
+          itemName: groupItem.displayName,
           itemPath: `[グループ: ${itemNames.join(', ')}]`,
           itemType: 'group',
           executedAt: Date.now(),
           itemNames: itemNames,
         };
-        updatedHistory = this.updateHistoryList(history, groupItem.name, historyItem);
+        updatedHistory = this.updateHistoryList(history, groupItem.displayName, historyItem);
       } else {
         // 通常のLauncherItemの場合
         const historyItem: ExecutionHistoryItem = {
           id: randomUUID(),
-          itemName: item.name,
+          itemName: item.displayName,
           itemPath: item.path,
           itemType: item.type,
           customIcon: item.customIcon,
@@ -215,7 +215,7 @@ export class ExecutionHistoryService {
           historyItem.moveToActiveMonitorCenter = item.windowConfig.moveToActiveMonitorCenter;
         }
 
-        updatedHistory = this.updateHistoryList(history, item.name, historyItem);
+        updatedHistory = this.updateHistoryList(history, item.displayName, historyItem);
       }
 
       // 最大件数を超えた分を削除して保存
@@ -223,11 +223,11 @@ export class ExecutionHistoryService {
       this.historyStore.set('history', trimmedHistory);
 
       logger.info(
-        { itemName: item.name, count: trimmedHistory.length },
+        { itemName: item.displayName, count: trimmedHistory.length },
         'Added item to execution history'
       );
     } catch (error) {
-      const itemName = isWindowInfo(item) ? item.title : item.name;
+      const itemName = isWindowInfo(item) ? item.title : item.displayName;
       logger.error({ error, itemName }, 'Failed to add execution history');
       // エラーでも処理は継続（履歴追加の失敗はアイテム実行を妨げない）
     }

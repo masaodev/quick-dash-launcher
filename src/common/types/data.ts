@@ -22,5 +22,5 @@ export interface DataFileTab {
   /** データファイル名のリスト（例: ['data.txt'], ['data2.txt', 'data3.txt']） */
   files: string[];
   /** タブに表示する名前（例: 'メイン', 'サブ1'） */
-  name: string;
+  displayName: string;
 }

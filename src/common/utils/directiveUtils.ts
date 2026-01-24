@@ -132,7 +132,7 @@ export function parseWindowOperationConfig(configString: string): WindowOperatio
   try {
     const config = JSON.parse(configString);
     return {
-      name: config.name || '',
+      displayName: config.displayName || config.name || '',
       windowTitle: config.windowTitle || '',
       processName: config.processName,
       x: config.x,
