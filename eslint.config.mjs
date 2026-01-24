@@ -30,7 +30,7 @@ export default [
 
   // スクリプトファイル設定（Node.js専用）
   {
-    files: ['scripts/**/*.js'],
+    files: ['scripts/**/*.{js,mjs}'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
@@ -39,7 +39,14 @@ export default [
       }
     },
     rules: {
-      'no-console': 'off'
+      'no-console': 'off',
+      'no-unused-vars': ['warn', {
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        caughtErrorsIgnorePattern: '^_',
+        destructuredArrayIgnorePattern: '^_'
+      }],
+      'no-redeclare': 'off'
     }
   },
 

@@ -13,15 +13,15 @@
  */
 /* eslint-disable no-console -- 手動テスト用スクリプトのため、標準出力にコンソール出力が必要 */
 
+import * as fs from 'fs';
+import * as path from 'path';
+
 import { getAllWindows } from '../../main/utils/nativeWindowControl.js';
 import {
   getCurrentDesktopNumber,
   getDesktopCount,
   isVirtualDesktopSupported,
 } from '../../main/utils/virtualDesktop/index.js';
-
-import * as fs from 'fs';
-import * as path from 'path';
 
 // 出力バッファ
 let outputBuffer = '';

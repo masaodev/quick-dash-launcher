@@ -69,7 +69,6 @@ export interface LauncherItem {
   windowConfig?: WindowConfig;
 }
 
-
 /**
  * 複数のアイテムをまとめて一括起動するためのグループアイテム
  * 既存のアイテム名を参照して、順次実行する

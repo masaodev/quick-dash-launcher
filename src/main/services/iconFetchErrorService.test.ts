@@ -104,7 +104,13 @@ describe('IconFetchErrorService', () => {
       const service = await IconFetchErrorService.getInstance();
 
       mockStore.get.mockReturnValue([
-        { key: 'https://example.com', type: 'favicon', errorMessage: 'Test', errorAt: Date.now(), failCount: 1 },
+        {
+          key: 'https://example.com',
+          type: 'favicon',
+          errorMessage: 'Test',
+          errorAt: Date.now(),
+          failCount: 1,
+        },
       ]);
 
       expect(await service.hasError('https://example.com', 'favicon')).toBe(true);
@@ -122,7 +128,13 @@ describe('IconFetchErrorService', () => {
       const service = await IconFetchErrorService.getInstance();
 
       mockStore.get.mockReturnValue([
-        { key: 'https://other.com', type: 'favicon', errorMessage: 'Test', errorAt: Date.now(), failCount: 1 },
+        {
+          key: 'https://other.com',
+          type: 'favicon',
+          errorMessage: 'Test',
+          errorAt: Date.now(),
+          failCount: 1,
+        },
       ]);
 
       expect(await service.hasError('https://example.com', 'favicon')).toBe(false);
@@ -133,7 +145,13 @@ describe('IconFetchErrorService', () => {
       const service = await IconFetchErrorService.getInstance();
 
       mockStore.get.mockReturnValue([
-        { key: 'https://example.com', type: 'icon', errorMessage: 'Test', errorAt: Date.now(), failCount: 1 },
+        {
+          key: 'https://example.com',
+          type: 'icon',
+          errorMessage: 'Test',
+          errorAt: Date.now(),
+          failCount: 1,
+        },
       ]);
 
       expect(await service.hasError('https://example.com', 'favicon')).toBe(false);
@@ -157,8 +175,20 @@ describe('IconFetchErrorService', () => {
       const service = await IconFetchErrorService.getInstance();
 
       const errors = [
-        { key: 'https://example.com', type: 'favicon' as const, errorMessage: 'Error 1', errorAt: Date.now(), failCount: 1 },
-        { key: 'C:\\test\\file.exe', type: 'icon' as const, errorMessage: 'Error 2', errorAt: Date.now(), failCount: 2 },
+        {
+          key: 'https://example.com',
+          type: 'favicon' as const,
+          errorMessage: 'Error 1',
+          errorAt: Date.now(),
+          failCount: 1,
+        },
+        {
+          key: 'C:\\test\\file.exe',
+          type: 'icon' as const,
+          errorMessage: 'Error 2',
+          errorAt: Date.now(),
+          failCount: 2,
+        },
       ];
       mockStore.get.mockReturnValue(errors);
 

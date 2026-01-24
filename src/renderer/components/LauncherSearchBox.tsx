@@ -12,12 +12,15 @@ interface SearchBoxProps {
 
 const SEARCH_MODE_LABELS: Record<SearchMode, string> = {
   normal: '通常検索モード',
-  window: 'ウィンドウ検索モード',
-  history: '実行履歴検索モード',
+  window: '🪟 ウィンドウ検索モード',
+  history: '📜 実行履歴検索モード',
 };
 
 const LauncherSearchBox = forwardRef<HTMLInputElement, SearchBoxProps>(
-  ({ value, onChange, onKeyDown, searchMode = 'normal', onToggleSearchMode, onRefreshWindows }, ref) => {
+  (
+    { value, onChange, onKeyDown, searchMode = 'normal', onToggleSearchMode, onRefreshWindows },
+    ref
+  ) => {
     const inputRef = useRef<HTMLInputElement>(null);
 
     useImperativeHandle(ref, () => inputRef.current!);

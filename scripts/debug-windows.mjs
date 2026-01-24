@@ -119,7 +119,7 @@ function getProcessPath(processId) {
     }
 
     return buffer.toString('utf16le').substring(0, sizeArr[0]);
-  } catch (error) {
+  } catch (_error) {
     return undefined;
   } finally {
     if (hProcess && koffi.address(hProcess) !== 0n) {
@@ -134,7 +134,7 @@ function getClassName(hwnd) {
     const length = GetClassNameW(hwnd, buffer, 256);
     if (length === 0) return undefined;
     return buffer.toString('utf16le').substring(0, length);
-  } catch (error) {
+  } catch (_error) {
     return undefined;
   }
 }
@@ -213,8 +213,8 @@ function getWindows(includeAllDesktops = false) {
         } else {
           visibleWindows.push(windowInfo);
         }
-      } catch (error) {
-        console.error('エラー:', error);
+      } catch (_error) {
+        console.error('エラー:', _error);
       }
       return true;
     },

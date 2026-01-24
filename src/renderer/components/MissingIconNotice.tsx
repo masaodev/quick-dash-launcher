@@ -11,10 +11,7 @@ interface MissingIconNoticeProps {
  * アイコン未取得通知コンポーネント
  * 起動時に未取得アイコンがあれば画面下部に表示し、クリックで取得を開始できる
  */
-const MissingIconNotice: React.FC<MissingIconNoticeProps> = ({
-  missingCount,
-  onFetchClick,
-}) => {
+const MissingIconNotice: React.FC<MissingIconNoticeProps> = ({ missingCount, onFetchClick }) => {
   // 未取得がなければ非表示
   if (missingCount === 0) {
     return null;
@@ -27,11 +24,7 @@ const MissingIconNotice: React.FC<MissingIconNoticeProps> = ({
         <span className="missing-icon-notice__label">アイコン未取得:</span>
         <span className="missing-icon-notice__count">{missingCount}件</span>
       </div>
-      <button
-        className="missing-icon-notice__button"
-        onClick={onFetchClick}
-        title="アイコンを取得"
-      >
+      <button className="missing-icon-notice__button" onClick={onFetchClick} title="アイコンを取得">
         取得
       </button>
     </div>

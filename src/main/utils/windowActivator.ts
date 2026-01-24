@@ -103,10 +103,8 @@ function calculateActiveMonitorCenter(
   const displayBounds = display.workArea;
 
   // モニターの中央座標を計算
-  const centerX =
-    displayBounds.x + Math.floor((displayBounds.width - currentBounds.width) / 2);
-  const centerY =
-    displayBounds.y + Math.floor((displayBounds.height - currentBounds.height) / 2);
+  const centerX = displayBounds.x + Math.floor((displayBounds.width - currentBounds.width) / 2);
+  const centerY = displayBounds.y + Math.floor((displayBounds.height - currentBounds.height) / 2);
 
   // 画面外に出ないように調整
   const x = Math.max(

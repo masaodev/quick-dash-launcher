@@ -10,6 +10,7 @@ import * as path from 'path';
 import { BrowserWindow, screen } from 'electron';
 
 import { EnvConfig } from '../config/envConfig.js';
+
 import { NotificationType } from './notificationService.js';
 
 /** トースト表示オプション */
