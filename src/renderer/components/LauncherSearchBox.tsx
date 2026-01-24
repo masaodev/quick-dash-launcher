@@ -10,16 +10,11 @@ interface SearchBoxProps {
   onRefreshWindows?: () => void;
 }
 
-function getSearchModeLabel(mode: SearchMode): string {
-  switch (mode) {
-    case 'window':
-      return '🪟 ウィンドウ検索モード';
-    case 'history':
-      return '📜 実行履歴検索モード';
-    default:
-      return '通常検索モード';
-  }
-}
+const SEARCH_MODE_LABELS: Record<SearchMode, string> = {
+  normal: '通常検索モード',
+  window: '🪟 ウィンドウ検索モード',
+  history: '📜 実行履歴検索モード',
+};
 
 const LauncherSearchBox = forwardRef<HTMLInputElement, SearchBoxProps>(
   (
@@ -61,25 +56,20 @@ const LauncherSearchBox = forwardRef<HTMLInputElement, SearchBoxProps>(
         </div>
 
         <div className="search-mode-indicator">
+          <span className="search-mode-label">{SEARCH_MODE_LABELS[searchMode]}</span>
           <span>
-            {getSearchModeLabel(searchMode)} (Shift+Tab:
+            Shift+Tab:
             <button type="button" className="search-mode-hint-link" onClick={onToggleSearchMode}>
               モード切り替え
             </button>
             {searchMode === 'window' && onRefreshWindows && (
               <>
                 {' / F5:'}
-                <button
-                  type="button"
-                  className="search-mode-hint-link"
-                  onClick={onRefreshWindows}
-                  title="ウィンドウリストを更新"
-                >
+                <button type="button" className="search-mode-hint-link" onClick={onRefreshWindows}>
                   更新
                 </button>
               </>
             )}
-            )
           </span>
         </div>
       </div>
