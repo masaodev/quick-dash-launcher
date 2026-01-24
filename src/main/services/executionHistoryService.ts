@@ -126,7 +126,7 @@ export class ExecutionHistoryService {
    * WindowOperationItemから履歴アイテムを作成
    */
   private createWindowOperationHistoryItem(item: {
-    name: string;
+    displayName: string;
     windowTitle: string;
     x?: number;
     y?: number;

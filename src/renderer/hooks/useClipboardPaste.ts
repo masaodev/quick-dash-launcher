@@ -65,7 +65,7 @@ export function useClipboardPaste(onItemsAdded: () => void, activeGroupId?: stri
 
           // アイテムを追加（アクティブグループに追加）
           const item = {
-            name: firstLine,
+            displayName: firstLine,
             path: firstLine,
             type: itemType,
             icon,

@@ -13,14 +13,16 @@ export interface RawDataLine {
   sourceFile: string;
   /** カスタムアイコンのファイル名（custom-iconsフォルダ内の相対パス、オプション） */
   customIcon?: string;
+  /** JSONファイルから読み込んだ場合のアイテムID（ID保持用） */
+  jsonItemId?: string;
 }
 
 /**
  * データファイルタブの設定項目
  */
 export interface DataFileTab {
-  /** データファイル名のリスト（例: ['data.txt'], ['data2.txt', 'data3.txt']） */
+  /** データファイル名のリスト（例: ['data.json'], ['data2.json', 'data3.json']） */
   files: string[];
   /** タブに表示する名前（例: 'メイン', 'サブ1'） */
-  displayName: string;
+  name: string;
 }

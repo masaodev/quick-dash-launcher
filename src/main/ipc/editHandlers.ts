@@ -2,9 +2,11 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import { editLogger } from '@common/logger';
-import { LauncherItem } from '@common/types';
+import { LauncherItem, JsonItem, JsonLauncherItem, RawDataLine } from '@common/types';
 import { escapeCSV } from '@common/utils/csvParser';
 import { serializeWindowConfig } from '@common/utils/windowConfigUtils';
+import { parseJsonDataFile, serializeJsonDataFile } from '@common/utils/jsonParser';
+import { convertRawDataLineToJsonItem } from '@common/utils/jsonToRawDataConverter';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { createSafeIpcHandler } from '../utils/ipcWrapper';
@@ -171,14 +173,98 @@ function formatItemToCSV(item: LauncherItem): string {
 }
 
 /**
+ * LauncherItemをJsonLauncherItemに変換する
+ */
+function convertLauncherItemToJsonItem(item: LauncherItem, existingId: string): JsonLauncherItem {
+  const jsonItem: JsonLauncherItem = {
+    id: existingId,
+    type: 'item',
+    displayName: item.displayName,
+    path: item.path,
+  };
+
+  if (item.args) {
+    jsonItem.args = item.args;
+  }
+  if (item.customIcon) {
+    jsonItem.customIcon = item.customIcon;
+  }
+  if (item.windowConfig) {
+    jsonItem.windowConfig = item.windowConfig;
+  }
+
+  return jsonItem;
+}
+
+/**
+ * JSONファイルのアイテムを更新する
+ */
+class JsonFileEditor {
+  static readAndParse(filePath: string) {
+    if (!fs.existsSync(filePath)) {
+      throw new Error(`File does not exist: ${filePath}`);
+    }
+    const content = fs.readFileSync(filePath, 'utf8');
+    return parseJsonDataFile(content);
+  }
+
+  static write(filePath: string, data: ReturnType<typeof parseJsonDataFile>) {
+    const content = serializeJsonDataFile(data);
+    fs.writeFileSync(filePath, content, 'utf8');
+  }
+
+  static async editWithBackup(
+    configFolder: string,
+    fileName: string,
+    editFunc: (items: JsonItem[]) => JsonItem[]
+  ): Promise<void> {
+    const filePath = path.join(configFolder, fileName);
+
+    // バックアップ作成
+    await createBackup(configFolder, fileName);
+
+    // JSONファイル読み込み
+    const jsonData = this.readAndParse(filePath);
+
+    // 編集処理実行
+    const newItems = editFunc(jsonData.items);
+
+    // 書き込み
+    this.write(filePath, { ...jsonData, items: newItems });
+  }
+}
+
+/**
  * 指定されたアイテムを更新する
  *
- * CsvFileEditorを使用して、ファイルの読み書きとバックアップ処理を統一的に実行します。
- * これにより、重複コードを削減し、エラーハンドリングを一貫させています。
+ * JSONファイル(.json)とCSVファイル(.txt)で処理を分岐します。
+ * JSONファイルの場合はインデックス（lineNumber - 1）でアイテムを特定し更新します。
+ * CSVファイルの場合は従来どおり行ベースで更新します。
  */
 export async function updateItem(configFolder: string, request: UpdateItemRequest): Promise<void> {
   const { sourceFile, lineNumber, newItem } = request;
 
+  // JSONファイルの場合
+  if (sourceFile.endsWith('.json')) {
+    await JsonFileEditor.editWithBackup(configFolder, sourceFile, (items) => {
+      const itemIndex = lineNumber - 1; // 1-indexed → 0-indexed
+      if (itemIndex < 0 || itemIndex >= items.length) {
+        throw new Error(`Invalid item index: ${itemIndex}`);
+      }
+
+      // 既存アイテムのIDを保持して更新
+      const existingItem = items[itemIndex];
+      const updatedItem = convertLauncherItemToJsonItem(newItem, existingItem.id);
+
+      // アイテムを置き換え
+      const newItems = [...items];
+      newItems[itemIndex] = updatedItem;
+      return newItems;
+    });
+    return;
+  }
+
+  // CSVファイル（.txt）の場合は従来のロジック
   await CsvFileEditor.editWithBackup(configFolder, sourceFile, (lines) => {
     // 行番号のバリデーション（1-indexed）
     if (lineNumber < 1 || lineNumber > lines.length) {
@@ -195,6 +281,8 @@ export async function updateItem(configFolder: string, request: UpdateItemReques
  *
  * formatItemToCSVを通さず、渡されたテキストをそのまま書き込みます。
  * コメント行やディレクティブ行の編集に使用されます。
+ *
+ * JSONファイル(.json)の場合はCSV形式のコンテンツをJsonItemに変換して保存します。
  */
 export async function updateRawLine(
   configFolder: string,
@@ -202,6 +290,47 @@ export async function updateRawLine(
 ): Promise<void> {
   const { sourceFile, lineNumber, newContent } = request;
 
+  // JSONファイルの場合
+  if (sourceFile.endsWith('.json')) {
+    await JsonFileEditor.editWithBackup(configFolder, sourceFile, (items) => {
+      const itemIndex = lineNumber - 1; // 1-indexed → 0-indexed
+      if (itemIndex < 0 || itemIndex >= items.length) {
+        throw new Error(`Invalid item index: ${itemIndex}`);
+      }
+
+      // 既存アイテムのIDを保持
+      const existingId = items[itemIndex].id;
+
+      // CSVコンテンツからRawDataLineを作成し、JsonItemに変換
+      const trimmedContent = newContent.trim();
+      let lineType: RawDataLine['type'] = 'item';
+      if (
+        trimmedContent.startsWith('dir,') ||
+        trimmedContent.startsWith('group,') ||
+        trimmedContent.startsWith('window,')
+      ) {
+        lineType = 'directive';
+      }
+
+      const rawLine: RawDataLine = {
+        lineNumber,
+        content: newContent,
+        type: lineType,
+        sourceFile,
+        jsonItemId: existingId, // 既存IDを保持
+      };
+
+      const updatedItem = convertRawDataLineToJsonItem(rawLine);
+
+      // アイテムを置き換え
+      const newItems = [...items];
+      newItems[itemIndex] = updatedItem;
+      return newItems;
+    });
+    return;
+  }
+
+  // CSVファイル（.txt）の場合は従来のロジック
   await CsvFileEditor.editWithBackup(configFolder, sourceFile, (lines) => {
     // 行番号のバリデーション（1-indexed）
     if (lineNumber < 1 || lineNumber > lines.length) {
@@ -219,7 +348,7 @@ export async function updateRawLine(
  * 複数ファイルにまたがる削除リクエストを効率的に処理します。
  * ファイルごとにグループ化し、各ファイルに対して1回のバックアップと書き込みで完了します。
  *
- * 重要: 行削除時はインデックスがシフトするため、降順でソートしてから削除します。
+ * 重要: 削除時はインデックスがシフトするため、降順でソートしてから削除します。
  */
 export async function deleteItems(
   configFolder: string,
@@ -241,6 +370,26 @@ export async function deleteItems(
   // 各ファイルを個別に処理
   for (const [sourceFile, fileRequests] of fileGroups) {
     try {
+      // JSONファイルの場合
+      if (sourceFile.endsWith('.json')) {
+        await JsonFileEditor.editWithBackup(configFolder, sourceFile, (items) => {
+          // インデックスシフトを避けるため、行番号を降順にソート
+          const sortedRequests = fileRequests.sort((a, b) => b.lineNumber - a.lineNumber);
+
+          const newItems = [...items];
+          // アイテムを削除（後ろから削除することで、前のインデックスに影響しない）
+          for (const request of sortedRequests) {
+            const itemIndex = request.lineNumber - 1;
+            if (itemIndex >= 0 && itemIndex < newItems.length) {
+              newItems.splice(itemIndex, 1);
+            }
+          }
+          return newItems;
+        });
+        continue;
+      }
+
+      // CSVファイル（.txt）の場合
       await CsvFileEditor.editWithBackup(configFolder, sourceFile, (lines) => {
         // インデックスシフトを避けるため、行番号を降順にソート
         const sortedRequests = fileRequests.sort((a, b) => b.lineNumber - a.lineNumber);
@@ -263,7 +412,7 @@ export async function deleteItems(
 /**
  * 複数のアイテムを一括更新する
  *
- * ドラッグ&ドロップによる並び替えなど、複数行を同時に更新する際に使用します。
+ * ドラッグ&ドロップによる並び替えなど、複数アイテムを同時に更新する際に使用します。
  * ファイルごとにグループ化し、各ファイルに対して1回のバックアップと書き込みで完了します。
  *
  * パフォーマンス: 100個のアイテムを更新する場合でも、同じファイル内であれば
@@ -289,6 +438,24 @@ export async function batchUpdateItems(
   // 各ファイルを個別に処理
   for (const [sourceFile, fileRequests] of fileGroups) {
     try {
+      // JSONファイルの場合
+      if (sourceFile.endsWith('.json')) {
+        await JsonFileEditor.editWithBackup(configFolder, sourceFile, (items) => {
+          const newItems = [...items];
+          // ファイル内のすべての更新を適用
+          for (const request of fileRequests) {
+            const itemIndex = request.lineNumber - 1;
+            if (itemIndex >= 0 && itemIndex < newItems.length) {
+              const existingItem = newItems[itemIndex];
+              newItems[itemIndex] = convertLauncherItemToJsonItem(request.newItem, existingItem.id);
+            }
+          }
+          return newItems;
+        });
+        continue;
+      }
+
+      // CSVファイル（.txt）の場合
       await CsvFileEditor.editWithBackup(configFolder, sourceFile, (lines) => {
         // ファイル内のすべての更新を適用
         for (const request of fileRequests) {

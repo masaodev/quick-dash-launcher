@@ -616,7 +616,7 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                   <div className="tab-accordion-container">
                     {/* タブ一覧（アコーディオン） */}
                     {(editedSettings.dataFileTabs || []).map((tab, tabIndex) => {
-                      const hasDataTxt = tab.files.includes('data.txt');
+                      const hasMainDataFile = tab.files.includes('data.json');
                       const expanded = isTabExpanded(tabIndex);
                       const availableFiles = dataFiles.filter(
                         (file: string) => !tab.files.includes(file)
@@ -642,12 +642,12 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                             {expanded ? (
                               <input
                                 type="text"
-                                value={tab.displayName}
+                                value={tab.name}
                                 onChange={(e) =>
                                   handleTabNameChangeByIndex(tabIndex, e.target.value)
                                 }
                                 className="tab-accordion-name-input"
-                                placeholder={getDefaultTabName(tab.files[0] || 'data.txt')}
+                                placeholder={getDefaultTabName(tab.files[0] || 'data.json')}
                                 disabled={isLoading}
                               />
                             ) : (
@@ -655,7 +655,7 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                                 className="tab-accordion-name"
                                 onClick={() => toggleTabExpand(tabIndex)}
                               >
-                                {tab.displayName || getDefaultTabName(tab.files[0] || 'data.txt')}
+                                {tab.name || getDefaultTabName(tab.files[0] || 'data.json')}
                               </span>
                             )}
 
@@ -685,7 +685,7 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                               >
                                 ▼
                               </button>
-                              {!hasDataTxt && (
+                              {!hasMainDataFile && (
                                 <button
                                   type="button"
                                   onClick={() => handleDeleteTab(tabIndex)}
@@ -705,16 +705,16 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                               {/* データファイル一覧 */}
                               <div className="data-file-list">
                                 {tab.files.map((fileName) => {
-                                  const isDataTxt = fileName === 'data.txt';
+                                  const isMainDataFile = fileName === 'data.json';
                                   const isLastFile = tab.files.length === 1;
-                                  // data.txtが他のタブにも存在するかチェック
-                                  const dataFileExistsInOtherTabs =
-                                    isDataTxt &&
+                                  // data.jsonが他のタブにも存在するかチェック
+                                  const mainDataFileExistsInOtherTabs =
+                                    isMainDataFile &&
                                     (editedSettings.dataFileTabs || []).some(
-                                      (t, idx) => idx !== tabIndex && t.files.includes('data.txt')
+                                      (t, idx) => idx !== tabIndex && t.files.includes('data.json')
                                     );
-                                  // data.txtが他のタブにも存在する場合は削除可能
-                                  const canDelete = dataFileExistsInOtherTabs;
+                                  // data.jsonが他のタブにも存在する場合は削除可能
+                                  const canDelete = mainDataFileExistsInOtherTabs;
 
                                   return (
                                     <div key={fileName} className="data-file-item">
@@ -727,7 +727,7 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                                           <input
                                             type="text"
                                             className="data-file-label-input"
-                                            placeholder={getDefaultFileLabel(fileName, tab.displayName)}
+                                            placeholder={getDefaultFileLabel(fileName, tab.name)}
                                             value={getFileLabel(fileName)}
                                             onChange={(e) =>
                                               handleFileLabelChange(fileName, e.target.value)

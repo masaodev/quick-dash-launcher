@@ -62,7 +62,7 @@ const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({ isOpen, onClo
     if (!searchQuery) return true;
     const searchLower = searchQuery.toLowerCase();
     return (
-      bookmark.name.toLowerCase().includes(searchLower) ||
+      bookmark.displayName.toLowerCase().includes(searchLower) ||
       bookmark.url.toLowerCase().includes(searchLower)
     );
   });
@@ -357,8 +357,8 @@ const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({ isOpen, onClo
                       disabled={!browser.installed}
                       title={
                         browser.installed
-                          ? `${browser.name}から直接読み込む`
-                          : `${browser.name}がインストールされていません`
+                          ? `${browser.displayName}から直接読み込む`
+                          : `${browser.displayName}がインストールされていません`
                       }
                     >
                       <span className="import-source-icon">
@@ -394,7 +394,7 @@ const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({ isOpen, onClo
                 >
                   {selectedBrowser.profiles.map((profile) => (
                     <option key={profile.id} value={profile.id}>
-                      {profile.name} ({profile.id})
+                      {profile.displayName} ({profile.id})
                     </option>
                   ))}
                 </select>
@@ -480,7 +480,7 @@ const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({ isOpen, onClo
                         onChange={() => handleToggleBookmark(bookmark.id)}
                       />
                     </td>
-                    <td className="name-column">{bookmark.name}</td>
+                    <td className="name-column">{bookmark.displayName}</td>
                     <td className="url-column">{bookmark.url}</td>
                   </tr>
                 ))}

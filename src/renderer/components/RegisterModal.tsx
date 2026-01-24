@@ -254,7 +254,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     if (item.itemCategory === 'window') {
       // ウィンドウ操作アイテムの場合
       const windowOperationConfig = {
-        name: item.displayName,
+        displayName: item.displayName,
         windowTitle: window.title,
         processName: window.processName,
         x: window.x,
@@ -307,7 +307,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
 
     // 単一アイテムの場合
     return {
-      name: item.displayName,
+      displayName: item.displayName,
       path: item.path,
       type: item.type,
       args: item.args,
@@ -341,7 +341,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
         }
 
         await window.electronAPI.executeWindowOperation({
-          name: item.displayName,
+          displayName: item.displayName,
           type: 'windowOperation',
           windowTitle: item.windowOperationConfig.windowTitle,
           processName: item.windowOperationConfig.processName,
@@ -644,7 +644,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                           }
                           onChange={(windowConfig) =>
                             handleItemChange(index, 'windowOperationConfig', {
-                              name: item.displayName,
+                              displayName: item.displayName,
                               windowTitle: windowConfig?.title || '',
                               processName: windowConfig?.processName,
                               x: windowConfig?.x,

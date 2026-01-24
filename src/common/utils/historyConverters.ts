@@ -66,7 +66,7 @@ export function executionHistoryToLauncherItem(
   historyItem: ExecutionHistoryItem
 ): LauncherItem & { itemNames?: string[] } {
   const launcherItem: LauncherItem & { itemNames?: string[] } = {
-    name: historyItem.itemName,
+    displayName: historyItem.itemName,
     path: historyItem.itemPath,
     type: historyItem.itemType as LauncherItem['type'],
     icon: historyItem.icon,
@@ -102,7 +102,7 @@ export function executionHistoryToWindowOperation(
 
   return {
     type: 'windowOperation',
-    name: historyItem.itemName,
+    displayName: historyItem.itemName,
     windowTitle: windowTitle,
     processName: historyItem.processName,
     x: historyItem.windowX,

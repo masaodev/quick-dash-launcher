@@ -91,7 +91,7 @@ describe('tooltipTextGenerator', () => {
   describe('GroupItem', () => {
     it('グループアイテムの情報が正しくフォーマットされる', () => {
       const item: GroupItem = {
-        name: 'TestGroup',
+        displayName: 'TestGroup',
         type: 'group',
         itemNames: ['item1', 'item2', 'item3'],
         sourceFile: 'data.txt',
@@ -107,7 +107,7 @@ describe('tooltipTextGenerator', () => {
 
     it('メタ情報がない場合', () => {
       const item: GroupItem = {
-        name: 'TestGroup',
+        displayName: 'TestGroup',
         type: 'group',
         itemNames: ['item1', 'item2'],
       };
@@ -123,7 +123,7 @@ describe('tooltipTextGenerator', () => {
   describe('WindowOperationItem', () => {
     it('ウィンドウ操作アイテムの全情報が正しくフォーマットされる', () => {
       const item: WindowOperationItem = {
-        name: 'TestOperation',
+        displayName: 'TestOperation',
         type: 'windowOperation',
         windowTitle: 'Target Window',
         x: 0,
@@ -149,7 +149,7 @@ describe('tooltipTextGenerator', () => {
 
     it('オプショナルフィールドがない場合', () => {
       const item: WindowOperationItem = {
-        name: 'TestOperation',
+        displayName: 'TestOperation',
         type: 'windowOperation',
         windowTitle: 'Target Window',
       };
@@ -165,7 +165,7 @@ describe('tooltipTextGenerator', () => {
 
     it('activateWindowがtrueの場合、表示されない', () => {
       const item: WindowOperationItem = {
-        name: 'TestOperation',
+        displayName: 'TestOperation',
         type: 'windowOperation',
         windowTitle: 'Target Window',
         activateWindow: true,
@@ -180,7 +180,7 @@ describe('tooltipTextGenerator', () => {
   describe('LauncherItem', () => {
     it('LauncherItemの情報が正しくフォーマットされる', () => {
       const item: LauncherItem = {
-        name: 'TestApp',
+        displayName: 'TestApp',
         type: 'app',
         path: 'C:\\test\\app.exe',
         sourceFile: 'data.txt',
@@ -200,7 +200,7 @@ describe('tooltipTextGenerator', () => {
 
     it('引数がある場合、パスと結合される', () => {
       const item: LauncherItem = {
-        name: 'TestApp',
+        displayName: 'TestApp',
         type: 'app',
         path: 'C:\\test\\app.exe',
         args: '--flag value',
@@ -213,7 +213,7 @@ describe('tooltipTextGenerator', () => {
 
     it('メタ情報がない場合', () => {
       const item: LauncherItem = {
-        name: 'TestApp',
+        displayName: 'TestApp',
         type: 'app',
         path: 'C:\\test\\app.exe',
       };
@@ -229,7 +229,7 @@ describe('tooltipTextGenerator', () => {
 
     it('URL型の場合も正しく処理される', () => {
       const item: LauncherItem = {
-        name: 'TestURL',
+        displayName: 'TestURL',
         type: 'url',
         path: 'https://example.com',
       };

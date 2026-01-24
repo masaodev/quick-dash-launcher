@@ -156,7 +156,7 @@ describe('directiveUtils', () => {
           sourceFile: 'data.txt',
         };
         const result = parseWindowOperationDirective(line);
-        expect(result.name).toBe('表示名');
+        expect(result.displayName).toBe('表示名');
         expect(result.windowTitle).toBe('Chrome');
         expect(result.x).toBeUndefined();
         expect(result.y).toBeUndefined();
@@ -172,7 +172,7 @@ describe('directiveUtils', () => {
           sourceFile: 'data.txt',
         };
         const result = parseWindowOperationDirective(line);
-        expect(result.name).toBe('TODOキャンパス');
+        expect(result.displayName).toBe('TODOキャンパス');
         expect(result.windowTitle).toBe('Obsidian');
         expect(result.x).toBe(100);
         expect(result.y).toBe(200);
@@ -190,7 +190,7 @@ describe('directiveUtils', () => {
           sourceFile: 'data.txt',
         };
         const result = parseWindowOperationDirective(line);
-        expect(result.name).toBe('表示名');
+        expect(result.displayName).toBe('表示名');
         expect(result.windowTitle).toBe('Chrome');
       });
 
@@ -279,7 +279,7 @@ describe('directiveUtils', () => {
           sourceFile: 'data.txt',
         };
         const result = parseWindowOperationDirective(line);
-        expect(result.name).toBe('TODOキャンパス');
+        expect(result.displayName).toBe('TODOキャンパス');
         expect(result.windowTitle).toBe('TODOキャンパス - obsidian-pri - Obsidian v1.10.6');
         expect(result.x).toBe(2565);
         expect(result.y).toBe(0);

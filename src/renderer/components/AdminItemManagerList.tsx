@@ -72,7 +72,7 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
 
           // LauncherItemに変換（typeはdetectItemTypeSyncで判定）
           return {
-            name,
+            displayName: name,
             path,
             type: detectItemTypeSync(path),
           } as LauncherItem;

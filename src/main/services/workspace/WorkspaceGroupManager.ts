@@ -25,7 +25,27 @@ export class WorkspaceGroupManager {
   public loadGroups(): WorkspaceGroup[] {
     try {
       const groups = this.store.get('groups') || [];
-      return groups.sort((a, b) => a.order - b.order);
+
+      // 旧データの name → displayName マイグレーション
+      let needsMigration = false;
+      const migratedGroups = groups.map((group) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const rawGroup = group as any;
+        if (rawGroup.name !== undefined && rawGroup.displayName === undefined) {
+          needsMigration = true;
+          const { name, ...rest } = rawGroup;
+          return { ...rest, displayName: name } as WorkspaceGroup;
+        }
+        return group;
+      });
+
+      // マイグレーションが必要な場合、ストアを更新
+      if (needsMigration) {
+        this.store.set('groups', migratedGroups);
+        logger.info('Migrated workspace groups: name → displayName');
+      }
+
+      return migratedGroups.sort((a, b) => a.order - b.order);
     } catch (error) {
       logger.error({ error }, 'Failed to load workspace groups');
       return [];
@@ -45,7 +65,7 @@ export class WorkspaceGroupManager {
 
       const workspaceGroup: WorkspaceGroup = {
         id: randomUUID(),
-        name,
+        displayName: name,
         color,
         order: maxOrder + 1,
         collapsed: false,
@@ -54,7 +74,7 @@ export class WorkspaceGroupManager {
 
       groups.push(workspaceGroup);
       this.store.set('groups', groups);
-      logger.info({ id: workspaceGroup.id, name: workspaceGroup.name }, 'Created workspace group');
+      logger.info({ id: workspaceGroup.id, name: workspaceGroup.displayName }, 'Created workspace group');
 
       return workspaceGroup;
     } catch (error) {

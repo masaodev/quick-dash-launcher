@@ -59,7 +59,7 @@ export interface AppSettings {
   backupRetention: number;
   /** タブ表示の有効/無効（デフォルト: false） */
   showDataFileTabs: boolean;
-  /** デフォルトで表示するタブ（タブ表示ON時のみ有効、デフォルト: 'data.txt'） */
+  /** デフォルトで表示するタブ（タブ表示ON時のみ有効、デフォルト: 'data.json'） */
   defaultFileTab: string;
   /** データファイルタブの設定（ファイル名リスト、タブ名、表示順序） */
   dataFileTabs: DataFileTab[];

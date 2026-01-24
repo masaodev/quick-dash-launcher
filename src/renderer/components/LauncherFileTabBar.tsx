@@ -55,7 +55,7 @@ const LauncherFileTabBar: React.FC<FileTabBarProps> = ({
   // タブグループの代表ファイル名を取得（クリック時に使用）
   const getRepresentativeFile = (tabConfig: DataFileTab): string => {
     // 最初のファイルを使用
-    return tabConfig.files[0] || 'data.txt';
+    return tabConfig.files[0] || 'data.json';
   };
 
   return (

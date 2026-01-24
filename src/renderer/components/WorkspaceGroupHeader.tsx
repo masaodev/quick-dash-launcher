@@ -58,7 +58,7 @@ const WorkspaceGroupHeader: React.FC<WorkspaceGroupHeaderProps> = ({
 
   const handleSaveEdit = () => {
     if (editName.trim() && editName !== group.displayName) {
-      onUpdate(group.id, { name: editName.trim() });
+      onUpdate(group.id, { displayName: editName.trim() });
     }
     onStartEdit(); // 編集モードを終了
   };

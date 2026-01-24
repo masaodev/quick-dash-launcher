@@ -83,7 +83,7 @@ export class WorkspaceItemManager {
   private createWindowOperationItem(item: AppItem, order: number, groupId?: string): WorkspaceItem {
     const windowOpItem = item as {
       type: 'windowOperation';
-      name: string;
+      displayName: string;
       windowTitle: string;
       processName?: string;
       x?: number;
@@ -98,8 +98,8 @@ export class WorkspaceItemManager {
 
     return {
       id: randomUUID(),
-      displayName: windowOpItem.name,
-      originalName: windowOpItem.name,
+      displayName: windowOpItem.displayName,
+      originalName: windowOpItem.displayName,
       path: `[ウィンドウ操作: ${windowOpItem.windowTitle}]`,
       type: 'windowOperation',
       order,
@@ -121,12 +121,12 @@ export class WorkspaceItemManager {
    * GroupItemからWorkspaceItemを作成
    */
   private createGroupItem(item: AppItem, order: number, groupId?: string): WorkspaceItem {
-    const groupItem = item as { name: string; itemNames?: string[] };
+    const groupItem = item as { displayName: string; itemNames?: string[] };
     const itemNames = groupItem.itemNames || [];
 
     logger.info(
       {
-        groupName: groupItem.name,
+        groupName: groupItem.displayName,
         originalItemNames: groupItem.itemNames,
         itemNamesLength: itemNames.length,
       },
@@ -135,8 +135,8 @@ export class WorkspaceItemManager {
 
     return {
       id: randomUUID(),
-      displayName: groupItem.name,
-      originalName: groupItem.name,
+      displayName: groupItem.displayName,
+      originalName: groupItem.displayName,
       path: `[グループ: ${itemNames.length}件]`,
       type: 'group',
       order,
@@ -152,7 +152,7 @@ export class WorkspaceItemManager {
    */
   private createLauncherItem(item: AppItem, order: number, groupId?: string): WorkspaceItem {
     const launcherItem = item as {
-      name: string;
+      displayName: string;
       path: string;
       type: 'url' | 'file' | 'folder' | 'app' | 'customUri';
       icon?: string;
@@ -164,8 +164,8 @@ export class WorkspaceItemManager {
 
     return {
       id: randomUUID(),
-      displayName: launcherItem.name,
-      originalName: launcherItem.name,
+      displayName: launcherItem.displayName,
+      originalName: launcherItem.displayName,
       path: launcherItem.path,
       type: launcherItem.type,
       customIcon: launcherItem.customIcon,

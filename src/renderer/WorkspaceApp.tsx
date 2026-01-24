@@ -306,7 +306,7 @@ const WorkspaceApp: React.FC = () => {
         }
         onConfirm={handleConfirmDeleteGroup}
         title="グループの削除"
-        message={`「${groups.find((g) => g.id === deleteGroupDialog.groupId)?.name}」を削除してもよろしいですか？\n\nこのグループには${deleteGroupDialog.itemCount}個のアイテムが含まれています。`}
+        message={`「${groups.find((g) => g.id === deleteGroupDialog.groupId)?.displayName}」を削除してもよろしいですか？\n\nこのグループには${deleteGroupDialog.itemCount}個のアイテムが含まれています。`}
         confirmText="削除"
         cancelText="キャンセル"
         danger={true}
@@ -331,7 +331,7 @@ const WorkspaceApp: React.FC = () => {
         }
         onConfirm={handleConfirmArchiveGroup}
         title="グループのアーカイブ"
-        message={`「${groups.find((g) => g.id === archiveGroupDialog.groupId)?.name}」をアーカイブしてもよろしいですか？\n\nこのグループには${archiveGroupDialog.itemCount}個のアイテムが含まれています。\nアーカイブしたグループは後で復元できます。`}
+        message={`「${groups.find((g) => g.id === archiveGroupDialog.groupId)?.displayName}」をアーカイブしてもよろしいですか？\n\nこのグループには${archiveGroupDialog.itemCount}個のアイテムが含まれています。\nアーカイブしたグループは後で復元できます。`}
         confirmText="アーカイブ"
         cancelText="キャンセル"
         danger={false}

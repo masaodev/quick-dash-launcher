@@ -282,7 +282,7 @@ export function setupWorkspaceHandlers(): void {
                   type: targetItem.type,
                   path: targetItem.path,
                   args: targetItem.args,
-                  name: targetItem.displayName,
+                  displayName: targetItem.displayName,
                 },
                 logger
               );
@@ -320,7 +320,7 @@ export function setupWorkspaceHandlers(): void {
           type: item.type as 'url' | 'file' | 'folder' | 'app' | 'customUri',
           path: item.path,
           args: item.args,
-          name: item.displayName,
+          displayName: item.displayName,
         },
         logger
       );
@@ -362,7 +362,7 @@ export function setupWorkspaceHandlers(): void {
       try {
         const workspaceService = await WorkspaceService.getInstance();
         const group = await workspaceService.createGroup(name, color);
-        logger.info({ id: group.id, name: group.name }, 'Created workspace group');
+        logger.info({ id: group.id, name: group.displayName }, 'Created workspace group');
         notifyWorkspaceChanged();
         return group;
       } catch (error) {

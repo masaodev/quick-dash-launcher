@@ -46,10 +46,10 @@ export function filterItems(
       itemText = (item as WindowInfo).title.toLowerCase();
     } else if (item.type === 'windowOperation') {
       // WindowOperationItem
-      itemText = (item as WindowOperationItem).name.toLowerCase();
+      itemText = (item as WindowOperationItem).displayName.toLowerCase();
     } else {
       // LauncherItem or GroupItem
-      itemText = (item as LauncherItem | GroupItem).name.toLowerCase();
+      itemText = (item as LauncherItem | GroupItem).displayName.toLowerCase();
     }
 
     return keywords.every((keyword) => itemText.includes(keyword));

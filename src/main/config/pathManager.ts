@@ -87,9 +87,9 @@ export class PathManager {
   // ファイルパス取得
   // ============================================================
 
-  /** data.txtファイルのパスを取得 */
+  /** data.jsonファイルのパスを取得 */
   static getDataFilePath(): string {
-    return path.join(this.getConfigFolder(), 'data.txt');
+    return path.join(this.getConfigFolder(), 'data.json');
   }
 
   /** workspace.jsonファイルのパスを取得 */
@@ -98,8 +98,12 @@ export class PathManager {
   }
 
   /**
-   * 設定フォルダ内のすべてのdata*.txtファイルを取得
-   * @returns データファイル名の配列（例: ['data.txt', 'data2.txt', 'data3.txt']）
+   * 設定フォルダ内のすべてのdata*ファイル（.jsonまたは.txt）を取得
+   *
+   * JSONファイル（data*.json）が優先される。同名のJSONとTXTがある場合はJSONのみ返す。
+   * マイグレーション完了後はJSONファイルのみ存在する想定。
+   *
+   * @returns データファイル名の配列（例: ['data.json', 'data2.json']）
    */
   static getDataFiles(): string[] {
     const configFolder = this.getConfigFolder();
@@ -111,14 +115,70 @@ export class PathManager {
       }
 
       const files = fs.readdirSync(configFolder);
-      const dataFiles = files
-        .filter((file) => file.startsWith('data') && file.endsWith('.txt'))
-        .sort();
+
+      // JSON形式のデータファイルを収集
+      const jsonFiles = files.filter((file) => file.startsWith('data') && file.endsWith('.json'));
+
+      // TXT形式のデータファイルを収集
+      const txtFiles = files.filter((file) => file.startsWith('data') && file.endsWith('.txt'));
+
+      // 対応するJSONファイルがないTXTファイルのみを追加
+      const txtFilesWithoutJson = txtFiles.filter((txtFile) => {
+        const baseName = txtFile.replace(/\.txt$/, '');
+        return !jsonFiles.some((jsonFile) => jsonFile.replace(/\.json$/, '') === baseName);
+      });
+
+      // JSONファイルを優先、残りのTXTファイルを追加してソート
+      const dataFiles = [...jsonFiles, ...txtFilesWithoutJson].sort();
 
       logger.info(`Found ${dataFiles.length} data files: ${dataFiles.join(', ')}`);
       return dataFiles;
     } catch (error) {
       logger.error({ error, configFolder }, 'Failed to read data files');
+      return [];
+    }
+  }
+
+  /**
+   * 設定フォルダ内にCSV形式のデータファイル（data*.txt）が存在するかチェック
+   *
+   * マイグレーションが必要かどうかの判定に使用
+   *
+   * @returns CSV形式のデータファイルが存在する場合はtrue
+   */
+  static hasCsvDataFiles(): boolean {
+    const configFolder = this.getConfigFolder();
+
+    try {
+      if (!fs.existsSync(configFolder)) {
+        return false;
+      }
+
+      const files = fs.readdirSync(configFolder);
+      return files.some((file) => file.startsWith('data') && file.endsWith('.txt'));
+    } catch (error) {
+      logger.error({ error, configFolder }, 'Failed to check CSV data files');
+      return false;
+    }
+  }
+
+  /**
+   * CSV形式のデータファイル名のリストを取得
+   *
+   * @returns CSV形式のデータファイル名の配列
+   */
+  static getCsvDataFiles(): string[] {
+    const configFolder = this.getConfigFolder();
+
+    try {
+      if (!fs.existsSync(configFolder)) {
+        return [];
+      }
+
+      const files = fs.readdirSync(configFolder);
+      return files.filter((file) => file.startsWith('data') && file.endsWith('.txt')).sort();
+    } catch (error) {
+      logger.error({ error, configFolder }, 'Failed to get CSV data files');
       return [];
     }
   }

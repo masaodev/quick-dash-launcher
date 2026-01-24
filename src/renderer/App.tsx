@@ -268,7 +268,7 @@ const App: React.FC = () => {
         const windowTitle = match ? match[1] : entry.itemPath;
         return {
           type: 'windowOperation' as const,
-          name: entry.itemName,
+          displayName: entry.itemName,
           windowTitle: windowTitle,
           x: entry.windowX,
           y: entry.windowY,
@@ -280,7 +280,7 @@ const App: React.FC = () => {
         } as WindowOperationItem;
       } else {
         return {
-          name: entry.itemName,
+          displayName: entry.itemName,
           path: entry.itemPath,
           type: entry.itemType as 'url' | 'file' | 'folder' | 'app' | 'customUri',
           icon: entry.icon,
@@ -497,7 +497,7 @@ const App: React.FC = () => {
         } else {
           // 通常のアイテムの編集
           const newItem: LauncherItem = {
-            name: item.displayName,
+            displayName: item.displayName,
             path: item.path,
             type: item.type,
             args: item.args,
@@ -586,9 +586,9 @@ const App: React.FC = () => {
       const groupItem = item;
       const rawDataLine: RawDataLine = {
         lineNumber: groupItem.lineNumber || 1,
-        content: `group,${groupItem.name},${groupItem.itemNames.join(',')}`,
+        content: `group,${groupItem.displayName},${groupItem.itemNames.join(',')}`,
         type: 'directive',
-        sourceFile: groupItem.sourceFile || 'data.txt',
+        sourceFile: groupItem.sourceFile || 'data.json',
         customIcon: undefined,
       };
       openEditModal(rawDataLine);
@@ -621,7 +621,7 @@ const App: React.FC = () => {
         lineNumber: windowOp.lineNumber || 1,
         content: content,
         type: 'directive',
-        sourceFile: windowOp.sourceFile || 'data.txt',
+        sourceFile: windowOp.sourceFile || 'data.json',
         customIcon: undefined,
       };
       openEditModal(rawDataLine);
@@ -639,11 +639,11 @@ const App: React.FC = () => {
   const handleFirstLaunchComplete = async (hotkey: string, autoLaunch: boolean) => {
     try {
       // ホットキーを設定（設定ファイルが自動的に作成される）
-      // dataFileTabsも明示的に設定して、data.txtタブが含まれるようにする
+      // dataFileTabsも明示的に設定して、data.jsonタブが含まれるようにする
       await window.electronAPI.setMultipleSettings({
         hotkey: hotkey,
         autoLaunch: autoLaunch,
-        dataFileTabs: [{ files: ['data.txt'], name: 'メイン' }],
+        dataFileTabs: [{ files: ['data.json'], name: 'メイン' }],
       });
       await window.electronAPI.changeHotkey(hotkey);
 

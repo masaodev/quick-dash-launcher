@@ -30,7 +30,7 @@ export async function convertRawDataLineToRegisterItem(
   tabs: DataFileTab[],
   detectItemType: (path: string) => Promise<LauncherItem['type']>
 ): Promise<RegisterItem> {
-  const defaultTab = line.sourceFile || (tabs.length > 0 ? tabs[0].files[0] : 'data.txt');
+  const defaultTab = line.sourceFile || (tabs.length > 0 ? tabs[0].files[0] : 'data.json');
 
   if (line.type === 'item') {
     // アイテム行の場合：名前,パス,引数,カスタムアイコン,ウィンドウ設定
@@ -47,7 +47,7 @@ export async function convertRawDataLineToRegisterItem(
     const itemType = await detectItemType(path);
 
     return {
-      name,
+      displayName: name,
       path,
       type: itemType,
       args: args || undefined,
@@ -67,14 +67,14 @@ export async function convertRawDataLineToRegisterItem(
       const windowOp = parseWindowOperationDirective(line);
 
       return {
-        name: windowOp.displayName,
+        displayName: windowOp.displayName,
         path: '',
         type: 'app',
         targetTab: defaultTab,
         targetFile: line.sourceFile,
         itemCategory: 'window',
         windowOperationConfig: {
-          name: windowOp.displayName,
+          displayName: windowOp.displayName,
           windowTitle: windowOp.windowTitle,
           processName: windowOp.processName,
           x: windowOp.x,
@@ -94,7 +94,7 @@ export async function convertRawDataLineToRegisterItem(
       const itemNames = parts.slice(2).filter((name) => name);
 
       return {
-        name: groupName,
+        displayName: groupName,
         path: '',
         type: 'app',
         targetTab: defaultTab,
@@ -111,7 +111,7 @@ export async function convertRawDataLineToRegisterItem(
       const dirOptions = parseDirOptionsFromString(optionsStr);
 
       return {
-        name: path,
+        displayName: path,
         path,
         type: 'folder',
         targetTab: defaultTab,
@@ -124,7 +124,7 @@ export async function convertRawDataLineToRegisterItem(
   } else {
     // その他の場合（コメント、空行など）
     return {
-      name: line.content || '',
+      displayName: line.content || '',
       path: line.content || '',
       type: 'file',
       targetTab: defaultTab,
@@ -255,7 +255,7 @@ export async function convertLauncherItemToRawDataLine(
       lineNumber: item.lineNumber || 1,
       content: content,
       type: 'directive',
-      sourceFile: item.sourceFile || 'data.txt',
+      sourceFile: item.sourceFile || 'data.json',
       customIcon: undefined,
     };
   }
@@ -285,7 +285,7 @@ export async function convertLauncherItemToRawDataLine(
     lineNumber: item.lineNumber || 1,
     content: content,
     type: 'item',
-    sourceFile: item.sourceFile || 'data.txt',
+    sourceFile: item.sourceFile || 'data.json',
     customIcon: item.customIcon,
   };
 }

@@ -6,7 +6,7 @@ describe('convertRegisterItemToRawDataLine', () => {
   describe('通常のアイテム（引数なし）', () => {
     it('基本的なアイテムを正しく変換する', () => {
       const item: RegisterItem = {
-        name: 'Google',
+        displayName: 'Google',
         path: 'https://google.com',
         type: 'url',
         targetTab: 'data.txt',
@@ -30,7 +30,7 @@ describe('convertRegisterItemToRawDataLine', () => {
   describe('引数を含むアイテム', () => {
     it('カンマを含まない引数を正しく処理する', () => {
       const item: RegisterItem = {
-        name: 'Git Bash',
+        displayName: 'Git Bash',
         path: 'wt.exe',
         type: 'app',
         args: '-p "Git Bash" -d "C:\\Users\\test" --title "test"',
@@ -55,7 +55,7 @@ describe('convertRegisterItemToRawDataLine', () => {
 
     it('カンマを含む引数を正しくエスケープする', () => {
       const item: RegisterItem = {
-        name: 'Custom App',
+        displayName: 'Custom App',
         path: 'app.exe',
         type: 'app',
         args: '-p "value1,value2" --flag',
@@ -78,7 +78,7 @@ describe('convertRegisterItemToRawDataLine', () => {
 
     it('複雑なパスと引数を正しく処理する', () => {
       const item: RegisterItem = {
-        name: 'claude code用_myahk_v2',
+        displayName: 'claude code用_myahk_v2',
         path: 'wt.exe',
         type: 'app',
         args: '-p "Git Bash" -d "C:\\Users\\daido\\git\\masao\\masaoroot\\05_会社と共有\\myahk_v2" --title "myahk_v2"',
@@ -105,7 +105,7 @@ describe('convertRegisterItemToRawDataLine', () => {
   describe('カスタムアイコンを含むアイテム', () => {
     it('引数とカスタムアイコン両方を含むアイテムを正しく処理する', () => {
       const item: RegisterItem = {
-        name: 'VSCode',
+        displayName: 'VSCode',
         path: 'code.exe',
         type: 'app',
         args: '--new-window',
@@ -128,7 +128,7 @@ describe('convertRegisterItemToRawDataLine', () => {
 
     it('カンマを含むカスタムアイコン名を正しくエスケープする', () => {
       const item: RegisterItem = {
-        name: 'App',
+        displayName: 'App',
         path: 'app.exe',
         type: 'app',
         customIcon: 'icon,v2.png',
@@ -152,7 +152,7 @@ describe('convertRegisterItemToRawDataLine', () => {
   describe('フォルダ取込アイテム', () => {
     it('基本的なフォルダ取込アイテムを正しく変換する', () => {
       const item: RegisterItem = {
-        name: '',
+        displayName: '',
         path: 'C:\\Users\\test',
         type: 'folder',
         targetTab: 'data.txt',
@@ -174,7 +174,7 @@ describe('convertRegisterItemToRawDataLine', () => {
 
     it('オプション付きフォルダ取込アイテムを正しく変換する', () => {
       const item: RegisterItem = {
-        name: '',
+        displayName: '',
         path: 'C:\\Projects',
         type: 'folder',
         targetTab: 'data.txt',
@@ -203,7 +203,7 @@ describe('convertRegisterItemToRawDataLine', () => {
   describe('グループアイテム', () => {
     it('基本的なグループアイテムを正しく変換する', () => {
       const item: RegisterItem = {
-        name: '開発環境',
+        displayName: '開発環境',
         path: '',
         type: 'app',
         targetTab: 'data.txt',
@@ -228,7 +228,7 @@ describe('convertRegisterItemToRawDataLine', () => {
   describe('エッジケース', () => {
     it('空の引数を正しく処理する', () => {
       const item: RegisterItem = {
-        name: 'App',
+        displayName: 'App',
         path: 'app.exe',
         type: 'app',
         args: '',
@@ -250,7 +250,7 @@ describe('convertRegisterItemToRawDataLine', () => {
 
     it('名前にカンマを含むアイテムを正しくエスケープする', () => {
       const item: RegisterItem = {
-        name: 'App, Version 2',
+        displayName: 'App, Version 2',
         path: 'app.exe',
         type: 'app',
         targetTab: 'data.txt',

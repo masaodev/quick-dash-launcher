@@ -52,7 +52,7 @@ async function openItem(
         type: item.type,
         path: item.path,
         args: item.args,
-        name: item.displayName,
+        displayName: item.displayName,
       },
       itemLogger
     );

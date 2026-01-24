@@ -26,7 +26,7 @@ export function useRegisterForm(
   const [availableTabs, setAvailableTabs] = useState<DataFileTab[]>([]);
   const [dataFileLabels, setDataFileLabels] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<{
-    [index: number]: { name?: string; path?: string; groupItemNames?: string };
+    [index: number]: { displayName?: string; path?: string; groupItemNames?: string };
   }>({});
   const [selectorModalOpen, setSelectorModalOpen] = useState(false);
   const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
@@ -122,14 +122,14 @@ export function useRegisterForm(
     }
 
     // 入力変更時に該当フィールドのエラーをクリア
-    if (field === 'name' || field === 'path' || field === 'windowOperationConfig') {
+    if (field === 'displayName' || field === 'path' || field === 'windowOperationConfig') {
       setErrors((prev) => {
         const newErrors = { ...prev };
         if (newErrors[index]) {
           const updatedError = { ...newErrors[index] };
           if (field === 'windowOperationConfig') {
-            // windowOperationConfigの場合はnameエラーをクリア
-            delete updatedError.name;
+            // windowOperationConfigの場合はdisplayNameエラーをクリア
+            delete updatedError.displayName;
           } else {
             delete updatedError[field];
           }
@@ -169,7 +169,7 @@ export function useRegisterForm(
       } else if (value === 'window') {
         // ウィンドウ操作選択時：ウィンドウ操作オプションを初期化
         if (!newItems[index].windowOperationConfig) {
-          newItems[index].windowOperationConfig = { name: '', windowTitle: '' };
+          newItems[index].windowOperationConfig = { displayName: '', windowTitle: '' };
         }
         // その他のオプションをクリア
         delete newItems[index].folderProcessing;
@@ -236,7 +236,7 @@ export function useRegisterForm(
       const item = items[i];
       newErrors[i] = {};
 
-      // フォルダ取込以外は名前が必須
+      // フォルダ取込以外は表示名が必須
       if (item.itemCategory !== 'dir' && !item.displayName.trim()) {
         newErrors[i].displayName =
           item.itemCategory === 'group'
@@ -264,7 +264,7 @@ export function useRegisterForm(
         const hasWindowTitle = item.windowOperationConfig?.windowTitle?.trim();
         const hasProcessName = item.windowOperationConfig?.processName?.trim();
         if (!hasWindowTitle && !hasProcessName) {
-          newErrors[i].name = 'ウィンドウタイトルまたはプロセス名を入力してください';
+          newErrors[i].displayName = 'ウィンドウタイトルまたはプロセス名を入力してください';
         }
       }
     }

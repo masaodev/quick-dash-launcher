@@ -20,8 +20,8 @@ export interface LaunchableItem {
   path: string;
   /** コマンドライン引数（オプション） */
   args?: string;
-  /** アイテム名（ログ出力用） */
-  name?: string;
+  /** アイテム表示名（ログ出力用） */
+  displayName?: string;
 }
 
 /**

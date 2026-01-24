@@ -72,7 +72,7 @@ export class WorkspaceArchiveManager {
       this.store.set('items', remainingItems);
 
       logger.info(
-        { groupId, groupName: group.name, itemCount: groupItems.length },
+        { groupId, groupName: group.displayName, itemCount: groupItems.length },
         'Archived group and its items'
       );
     } catch (error) {
@@ -88,7 +88,27 @@ export class WorkspaceArchiveManager {
   public loadArchivedGroups(): ArchivedWorkspaceGroup[] {
     try {
       const groups = this.archiveStore.get('groups') || [];
-      return groups.sort((a, b) => b.archivedAt - a.archivedAt);
+
+      // 旧データの name → displayName マイグレーション
+      let needsMigration = false;
+      const migratedGroups = groups.map((group) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const rawGroup = group as any;
+        if (rawGroup.name !== undefined && rawGroup.displayName === undefined) {
+          needsMigration = true;
+          const { name, ...rest } = rawGroup;
+          return { ...rest, displayName: name } as ArchivedWorkspaceGroup;
+        }
+        return group;
+      });
+
+      // マイグレーションが必要な場合、ストアを更新
+      if (needsMigration) {
+        this.archiveStore.set('groups', migratedGroups);
+        logger.info('Migrated archived groups: name → displayName');
+      }
+
+      return migratedGroups.sort((a, b) => b.archivedAt - a.archivedAt);
     } catch (error) {
       logger.error({ error }, 'Failed to load archived groups');
       return [];
@@ -137,12 +157,12 @@ export class WorkspaceArchiveManager {
       const groupArchivedItems = archivedItems.filter((item) => item.archivedGroupId === groupId);
 
       // グループ名の重複チェック
-      let restoredGroupName = archivedGroup.name;
-      const existingNames = currentGroups.map((g) => g.name);
+      let restoredGroupName = archivedGroup.displayName;
+      const existingNames = currentGroups.map((g) => g.displayName);
       if (existingNames.includes(restoredGroupName)) {
         restoredGroupName = `${restoredGroupName} (復元)`;
         logger.info(
-          { originalName: archivedGroup.name, newName: restoredGroupName },
+          { originalName: archivedGroup.displayName, newName: restoredGroupName },
           'Group name was duplicated, added suffix'
         );
       }
@@ -156,7 +176,7 @@ export class WorkspaceArchiveManager {
       // グループを復元
       const restoredGroup: WorkspaceGroup = {
         id: archivedGroup.id,
-        name: restoredGroupName,
+        displayName: restoredGroupName,
         color: archivedGroup.color,
         order: maxGroupOrder + 1,
         collapsed: archivedGroup.collapsed,
@@ -229,7 +249,7 @@ export class WorkspaceArchiveManager {
       this.archiveStore.set('groups', remainingArchivedGroups);
       this.archiveStore.set('items', remainingArchivedItems);
 
-      logger.info({ groupId, groupName: group.name }, 'Deleted archived group permanently');
+      logger.info({ groupId, groupName: group.displayName }, 'Deleted archived group permanently');
     } catch (error) {
       logger.error({ error, groupId }, 'Failed to delete archived group');
       throw error;

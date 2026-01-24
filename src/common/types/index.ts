@@ -28,6 +28,25 @@ export type {
 // データファイル関連の型
 export type { RawDataLine, DataFileTab } from './data';
 
+// JSONデータファイル関連の型
+export type {
+  JsonDataFile,
+  JsonItem,
+  JsonLauncherItem,
+  JsonDirItem,
+  JsonDirOptions,
+  JsonGroupItem,
+  JsonWindowItem,
+} from './json-data';
+export {
+  isJsonLauncherItem,
+  isJsonDirItem,
+  isJsonGroupItem,
+  isJsonWindowItem,
+  JSON_DATA_VERSION,
+  JSON_ID_LENGTH,
+} from './json-data';
+
 // 設定関連の型
 export type {
   AppSettings,

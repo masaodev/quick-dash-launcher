@@ -110,7 +110,7 @@ export function useModalInitializer() {
         }
 
         newItems.push({
-          name,
+          displayName: name,
           path: filePath,
           type: itemType,
           targetTab: defaultTab,
@@ -150,7 +150,7 @@ export function useModalInitializer() {
     const defaultTab = currentTab || (tabs.length > 0 ? tabs[0].files[0] : 'data.txt');
     return [
       {
-        name: '',
+        displayName: '',
         path: '',
         type: 'app',
         targetTab: defaultTab,

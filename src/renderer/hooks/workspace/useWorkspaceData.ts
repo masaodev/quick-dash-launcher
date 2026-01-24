@@ -5,7 +5,7 @@ import { logError } from '../../utils/debug';
 
 /** アイコンキャッシュ取得用の最小限の型 */
 type IconCacheItem = {
-  name: string;
+  displayName: string;
   path: string;
   type: 'url' | 'file' | 'folder' | 'app' | 'customUri';
   customIcon?: string;
@@ -48,7 +48,7 @@ export function useWorkspaceData() {
         loadedItems,
         (item) => item.path,
         (item) => ({
-          name: item.displayName,
+          displayName: item.displayName,
           path: item.path,
           type: item.type as IconCacheItem['type'],
           customIcon: item.customIcon,
@@ -78,7 +78,7 @@ export function useWorkspaceData() {
         history,
         (item) => item.itemPath,
         (item) => ({
-          name: item.itemName,
+          displayName: item.itemName,
           path: item.itemPath,
           type: item.itemType as IconCacheItem['type'],
           customIcon: item.customIcon,

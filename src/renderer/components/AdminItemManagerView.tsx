@@ -45,7 +45,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
 
   // タブとファイル選択用の状態
   const [selectedTabIndex, setSelectedTabIndex] = useState<number>(0);
-  const [selectedDataFile, setSelectedDataFile] = useState<string>('data.txt');
+  const [selectedDataFile, setSelectedDataFile] = useState<string>('data.json');
 
   // 保存時の整列・重複削除チェックボックスの状態
   const [sortAndDedupChecked, setSortAndDedupChecked] = useState(true);
@@ -97,23 +97,15 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
       const updatedItem = items[0];
       const updatedLine = convertRegisterItemToRawDataLine(updatedItem, editingItem);
 
-      // workingLinesを更新して即座に保存
-      const updatedLines = workingLines.map((line) => {
-        if (
-          line.sourceFile === updatedLine.sourceFile &&
-          line.lineNumber === updatedLine.lineNumber
-        ) {
-          return updatedLine;
-        }
-        return line;
-      });
-
-      // 即座にファイルに保存
-      onRawDataSave(updatedLines);
-
-      // 状態をクリア
-      setEditedLines(new Map());
-      setHasUnsavedChanges(false);
+      // 変更内容が異なる場合のみ編集として記録
+      if (updatedLine.content !== editingItem.content) {
+        // handleLineEditと同様に編集内容を保持（即座保存しない）
+        const lineKey = `${updatedLine.sourceFile}_${updatedLine.lineNumber}`;
+        const newEditedLines = new Map(editedLines);
+        newEditedLines.set(lineKey, updatedLine);
+        setEditedLines(newEditedLines);
+        setHasUnsavedChanges(true);
+      }
     }
     setIsRegisterModalOpen(false);
     setEditingItem(null);
@@ -362,7 +354,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     // 選択されたブックマークを新規行として追加
     const newLines: RawDataLine[] = bookmarks.map((bookmark, index) => ({
       lineNumber: index + 1,
-      content: `${bookmark.name},${bookmark.url}`,
+      content: `${bookmark.displayName},${bookmark.url}`,
       type: 'item' as const,
       sourceFile: selectedDataFile, // 現在選択中のファイルにインポート
     }));
@@ -539,7 +531,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
 
   // 現在選択されているタブの情報を取得
   const currentTab = dataFileTabs[selectedTabIndex];
-  const currentTabFiles = currentTab?.files || ['data.txt'];
+  const currentTabFiles = currentTab?.files || ['data.json'];
 
   return (
     <div className="edit-mode-view" onKeyDown={handleKeyDown} tabIndex={0}>

@@ -82,7 +82,7 @@ export function useFileOperations() {
 
       // アイテムを追加
       const item = {
-        name: url,
+        displayName: url,
         path: url,
         type: 'url' as const,
         icon,

@@ -49,9 +49,9 @@ export class SettingsService {
     backupInterval: 5,
     backupRetention: 20,
     showDataFileTabs: false, // タブ表示OFF（デフォルト）
-    defaultFileTab: 'data.txt', // デフォルトタブ
-    dataFileTabs: [{ files: ['data.txt'], name: 'メイン' }], // データファイルタブの設定
-    dataFileLabels: { 'data.txt': 'メイン用データファイル' }, // データファイルのラベル定義
+    defaultFileTab: 'data.json', // デフォルトタブ
+    dataFileTabs: [{ files: ['data.json'], name: 'メイン' }], // データファイルタブの設定
+    dataFileLabels: { 'data.json': 'メイン用データファイル' }, // データファイルのラベル定義
     windowPositionMode: 'center', // ウィンドウ表示位置モード（デフォルト: 画面中央）
     windowPositionX: 0, // 固定位置のX座標
     windowPositionY: 0, // 固定位置のY座標

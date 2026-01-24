@@ -93,7 +93,7 @@ async function detectProfiles(userDataPath: string): Promise<BrowserProfile[]> {
 
       profiles.push({
         id: entry.name,
-        name: profileName,
+        displayName: profileName,
         bookmarkPath: bookmarkPath,
       });
     }
@@ -123,14 +123,14 @@ export async function detectInstalledBrowsers(): Promise<BrowserInfo[]> {
     const profiles = await detectProfiles(chromeUserData);
     browsers.push({
       id: 'chrome',
-      name: 'Google Chrome',
+      displayName: 'Google Chrome',
       installed: profiles.length > 0,
       profiles: profiles,
     });
   } else {
     browsers.push({
       id: 'chrome',
-      name: 'Google Chrome',
+      displayName: 'Google Chrome',
       installed: false,
       profiles: [],
     });
@@ -142,14 +142,14 @@ export async function detectInstalledBrowsers(): Promise<BrowserInfo[]> {
     const profiles = await detectProfiles(edgeUserData);
     browsers.push({
       id: 'edge',
-      name: 'Microsoft Edge',
+      displayName: 'Microsoft Edge',
       installed: profiles.length > 0,
       profiles: profiles,
     });
   } else {
     browsers.push({
       id: 'edge',
-      name: 'Microsoft Edge',
+      displayName: 'Microsoft Edge',
       installed: false,
       profiles: [],
     });
@@ -226,7 +226,7 @@ export async function parseBrowserBookmarks(filePath: string): Promise<SimpleBoo
         if (url.startsWith('http://') || url.startsWith('https://')) {
           bookmarks.push({
             id: `browser-bookmark-${index++}`,
-            name: node.name.trim() || url,
+            displayName: node.name.trim() || url,
             url: url,
             checked: false,
           });
@@ -292,7 +292,7 @@ export function parseBookmarkFile(filePath: string): SimpleBookmarkItem[] {
       if (url && name && (url.startsWith('http://') || url.startsWith('https://'))) {
         bookmarks.push({
           id: `bookmark-${index}`,
-          name: name,
+          displayName: name,
           url: url,
           checked: false,
         });
