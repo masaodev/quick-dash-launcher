@@ -25,7 +25,8 @@ export function useKeyboardShortcuts(
   searchMode: SearchMode,
   windowList: WindowInfo[],
   historyItems: AppItem[],
-  toggleSearchMode: () => Promise<void>
+  toggleSearchMode: () => Promise<void>,
+  refreshWindows: () => Promise<void>
 ) {
   /**
    * アクティブなタブに基づいてアイテムをフィルタリング（キーハンドラ用）
@@ -127,6 +128,13 @@ export function useKeyboardShortcuts(
         } else if (filteredItems[selectedIndex]) {
           // 統一ハンドラを使用
           await handleExecuteItem(filteredItems[selectedIndex]);
+        }
+        break;
+      case 'F5':
+        if (searchMode === 'window') {
+          e.preventDefault();
+          e.stopPropagation();
+          await refreshWindows();
         }
         break;
       case 'ArrowUp':
