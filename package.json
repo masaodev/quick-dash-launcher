@@ -98,7 +98,7 @@
     "react-hot-toast": "^2.6.0"
   },
   "overrides": {
-    "tar": "^7.5.4"
+    "tar": "^6.2.1"
   },
   "build": {
     "appId": "net.masaodev.quick-dash-launcher",
