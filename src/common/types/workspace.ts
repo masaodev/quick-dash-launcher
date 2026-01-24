@@ -75,7 +75,6 @@ export interface WorkspaceItem {
   itemNames?: string[];
 }
 
-
 /**
  * 実行履歴アイテム
  * メインウィンドウで実行されたアイテムの履歴を記録する

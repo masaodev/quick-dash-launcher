@@ -3,6 +3,7 @@ import type { WindowInfo, VirtualDesktopInfo } from '@common/types';
 
 import '../styles/components/WindowSelectorModal.css';
 import { logError } from '../utils/debug';
+
 import { Button } from './ui';
 
 interface WindowSelectorModalProps {

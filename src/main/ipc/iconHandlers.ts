@@ -682,7 +682,11 @@ async function fetchIconsCombined(
           progress.update(displayText);
         } else {
           // ファビコンが見つからなかった場合もエラーとして記録
-          await errorService.recordError(urlItem.path, 'favicon', 'ファビコンが見つかりませんでした');
+          await errorService.recordError(
+            urlItem.path,
+            'favicon',
+            'ファビコンが見つかりませんでした'
+          );
           progress.update(displayText, true, 'ファビコンが見つかりませんでした');
         }
       } catch (error) {

@@ -9,14 +9,28 @@ type IconResults = {
   icons: Record<string, string | null>;
 };
 
+type UseIconFetcherOptions = {
+  mainItems: AppItem[];
+  setMainItems: React.Dispatch<React.SetStateAction<AppItem[]>>;
+  showDataFileTabs: boolean;
+  activeTab: string;
+  dataFileTabs: DataFileTab[];
+  reloadIconFetchErrors: () => Promise<void>;
+};
+
+type UseIconFetcherResult = {
+  handleRefreshAll: (loadItems: () => Promise<AppItem[]>) => Promise<void>;
+  handleFetchMissingIcons: () => Promise<void>;
+  handleFetchMissingIconsCurrentTab: () => Promise<void>;
+};
+
 function hasNoIcon(item: AppItem): boolean {
   return !('icon' in item && item.icon);
 }
 
 function extractUrlItems(items: AppItem[], requireNoIcon: boolean): LauncherItem[] {
   return items.filter(
-    (item) =>
-      isLauncherItem(item) && item.type === 'url' && (!requireNoIcon || hasNoIcon(item))
+    (item) => isLauncherItem(item) && item.type === 'url' && (!requireNoIcon || hasNoIcon(item))
   ) as LauncherItem[];
 }
 
@@ -33,8 +47,7 @@ function extractIconItems(items: AppItem[], requireNoIcon: boolean): LauncherIte
 function applyIconsToItems(items: AppItem[], results: IconResults): AppItem[] {
   return items.map((item) => {
     if (!isLauncherItem(item)) return item;
-    const icon =
-      item.type === 'url' ? results.favicons[item.path] : results.icons[item.path];
+    const icon = item.type === 'url' ? results.favicons[item.path] : results.icons[item.path];
     return icon ? { ...item, icon } : item;
   });
 }
@@ -42,17 +55,15 @@ function applyIconsToItems(items: AppItem[], results: IconResults): AppItem[] {
 /**
  * アイコン取得管理フック
  */
-export function useIconFetcher(
-  mainItems: AppItem[],
-  setMainItems: React.Dispatch<React.SetStateAction<AppItem[]>>,
-  showDataFileTabs: boolean,
-  activeTab: string,
-  dataFileTabs: DataFileTab[]
-): {
-  handleRefreshAll: (loadItems: () => Promise<AppItem[]>) => Promise<void>;
-  handleFetchMissingIcons: () => Promise<void>;
-  handleFetchMissingIconsCurrentTab: () => Promise<void>;
-} {
+export function useIconFetcher(options: UseIconFetcherOptions): UseIconFetcherResult {
+  const {
+    mainItems,
+    setMainItems,
+    showDataFileTabs,
+    activeTab,
+    dataFileTabs,
+    reloadIconFetchErrors,
+  } = options;
   const handleRefreshAll = async (loadItems: () => Promise<AppItem[]>): Promise<void> => {
     debugInfo('すべての更新を開始');
 
@@ -80,7 +91,10 @@ export function useIconFetcher(
     }
 
     const results = await window.electronAPI.fetchIconsCombined(urlItems, iconItems, false);
-    setMainItems(applyIconsToItems(mainItems, results));
+    setMainItems((prevItems) => applyIconsToItems(prevItems, results));
+
+    // アイコン取得エラー記録を再読み込み
+    await reloadIconFetchErrors();
 
     debugInfo('未取得アイコンの取得が完了（全タブ）');
   };
@@ -98,7 +112,10 @@ export function useIconFetcher(
     }
 
     const results = await window.electronAPI.fetchIconsCombined(urlItems, iconItems, false);
-    setMainItems(applyIconsToItems(mainItems, results));
+    setMainItems((prevItems) => applyIconsToItems(prevItems, results));
+
+    // アイコン取得エラー記録を再読み込み
+    await reloadIconFetchErrors();
 
     debugInfo('未取得アイコンの取得が完了（現在のタブ）');
   };
