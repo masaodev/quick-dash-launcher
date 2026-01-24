@@ -35,6 +35,40 @@ let isEditMode: boolean = false;
 let isFirstLaunchMode: boolean = false;
 let isModalMode: boolean = false;
 let normalWindowBounds: { width: number; height: number } | null = null;
+let isShowingWindow: boolean = false; // ウィンドウ表示中フラグ（blur無視用）
+let showingWindowTimeoutId: ReturnType<typeof setTimeout> | null = null;
+
+/** フォーカスが安定するまでの猶予期間（ミリ秒） */
+const WINDOW_FOCUS_STABILIZATION_DELAY_MS = 200;
+
+/**
+ * ウィンドウ表示中フラグを設定し、一定時間後に自動解除する
+ * 既存のタイムアウトがあれば先にクリアする
+ */
+function setShowingWindowFlag(): void {
+  // 既存のタイムアウトをクリア
+  if (showingWindowTimeoutId !== null) {
+    clearTimeout(showingWindowTimeoutId);
+  }
+
+  isShowingWindow = true;
+
+  showingWindowTimeoutId = setTimeout(() => {
+    isShowingWindow = false;
+    showingWindowTimeoutId = null;
+  }, WINDOW_FOCUS_STABILIZATION_DELAY_MS);
+}
+
+/**
+ * ウィンドウ表示中フラグを即座にリセットする
+ */
+function clearShowingWindowFlag(): void {
+  if (showingWindowTimeoutId !== null) {
+    clearTimeout(showingWindowTimeoutId);
+    showingWindowTimeoutId = null;
+  }
+  isShowingWindow = false;
+}
 
 /**
  * メインウィンドウを非表示にし、レンダラープロセスに通知を送る
@@ -42,6 +76,8 @@ let normalWindowBounds: { width: number; height: number } | null = null;
  */
 function hideMainWindowInternal(): void {
   if (!mainWindow) return;
+
+  clearShowingWindowFlag();
 
   // レンダラープロセスに非表示通知を送る
   mainWindow.webContents.send('window-hidden');
@@ -113,7 +149,8 @@ export async function createWindow(): Promise<BrowserWindow> {
       shouldHideOnBlur() &&
       !isEditMode &&
       !isFirstLaunchMode &&
-      !isModalMode
+      !isModalMode &&
+      !isShowingWindow // ウィンドウ表示中はblurを無視
     ) {
       hideMainWindowInternal();
     }
@@ -551,6 +588,8 @@ export async function setWindowPosition(mode?: WindowPositionMode): Promise<void
 export function showWindowAtCenter(): void {
   if (!mainWindow) return;
 
+  setShowingWindowFlag();
+
   mainWindow.center();
   mainWindow.show();
   mainWindow.focus();
@@ -620,6 +659,8 @@ export async function showMainWindow(startTime?: number): Promise<void> {
 
   const timer = new PerformanceTimer(startTime, (msg) => windowLogger.info(msg));
   timer.log(`hotkey-pressed: 0.00ms (start: ${startTime})`);
+
+  setShowingWindowFlag();
 
   await setWindowPosition();
   timer.log('position-set');
