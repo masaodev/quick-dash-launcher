@@ -114,7 +114,6 @@ IPCハンドラーは機能ごとに分離（`src/main/ipc/`）:
 | モジュール | 役割 |
 |-----------|------|
 | `directiveUtils.ts` | ディレクティブ（group, dir, window）の判定と解析 |
-| `csvParser.ts` | データ形式のパース処理 |
 | `dataConverters.ts` | データ形式変換（dirオプション解析等、v0.5.20で型定義を`types/register.ts`に移動） |
 | `windowConfigUtils.ts` | ウィンドウ設定のJSON⇔文字列変換 |
 | `itemTypeDetector.ts` | パスからアイテムタイプを自動検出 |

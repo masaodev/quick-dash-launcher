@@ -23,7 +23,7 @@ describe('FileNameGenerator', () => {
 
     it('パターンに一致しないファイル名の場合はそのまま返す', () => {
       expect(FileNameGenerator.getDefaultTabName('custom.txt')).toBe('custom.txt');
-      expect(FileNameGenerator.getDefaultTabName('data.csv')).toBe('data.csv');
+      expect(FileNameGenerator.getDefaultTabName('custom.json')).toBe('custom.json');
     });
   });
 
