@@ -402,13 +402,17 @@ function validateWindowConfig(config: unknown): JsonLauncherItem['windowConfig']
 
   const obj = config as Record<string, unknown>;
 
-  if (typeof obj.title !== 'string' || !obj.title) {
-    throw new Error('windowConfig.title is required and must be a non-empty string');
-  }
-
+  // titleはオプションとして扱う（古いデータとの互換性のため）
   const result: NonNullable<JsonLauncherItem['windowConfig']> = {
-    title: obj.title,
+    title: '',
   };
+
+  if (obj.title !== undefined) {
+    if (typeof obj.title !== 'string') {
+      throw new Error('windowConfig.title must be a string');
+    }
+    result.title = obj.title;
+  }
 
   // オプションフィールド（文字列）
   if (obj.processName !== undefined) {

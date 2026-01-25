@@ -26,7 +26,7 @@ export type {
 } from './workspace';
 
 // データファイル関連の型
-export type { RawDataLine, DataFileTab } from './data';
+export type { DataFileTab, RawDataLine } from './data';
 
 // JSONデータファイル関連の型
 export type {

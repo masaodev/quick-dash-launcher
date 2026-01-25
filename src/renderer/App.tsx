@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { DESKTOP_TAB } from '@common/constants';
 import { convertLauncherItemToRawDataLine } from '@common/utils/dataConverters';
+import { escapeCSV } from '@common/utils/displayTextConverter';
 import type {
   RegisterItem,
   LauncherItem,
@@ -12,7 +13,6 @@ import type {
   WindowOperationItem,
   IconFetchErrorRecord,
 } from '@common/types';
-import { escapeCSV } from '@common/utils/csvParser';
 import { buildWindowOperationConfig } from '@common/utils/windowConfigUtils';
 import { isWindowInfo, isGroupItem, isWindowOperationItem } from '@common/types/guards';
 
@@ -435,39 +435,25 @@ const App: React.FC = () => {
         // ファイルが変更されていない場合：従来の更新処理
         // フォルダ取込ディレクティブの編集の場合
         if (editingItem.type === 'directive' && item.itemCategory === 'dir') {
-          // ディレクティブ形式でRawDataLineを更新
-          let newContent = `dir,${item.path}`;
-          if (item.dirOptions) {
-            const opts = item.dirOptions;
-            const optParts = [];
-            optParts.push(`depth=${opts.depth}`);
-            optParts.push(`types=${opts.types}`);
-            if (opts.filter) optParts.push(`filter=${opts.filter}`);
-            if (opts.exclude) optParts.push(`exclude=${opts.exclude}`);
-            if (opts.prefix) optParts.push(`prefix=${opts.prefix}`);
-            if (opts.suffix) optParts.push(`suffix=${opts.suffix}`);
-            newContent += ',' + optParts.join(',');
-          }
-
-          // RawDataLineとして更新（editHandlersのupdateRawLineを使用する必要がある）
-          await window.electronAPI.updateRawLine({
-            sourceFile: editingItem.sourceFile,
-            lineNumber: editingItem.lineNumber,
-            newContent: newContent,
-          });
+          // 新しいupdateDirItem APIを使用
+          await window.electronAPI.updateDirItem(
+            editingItem.sourceFile,
+            editingItem.lineNumber,
+            item.path,
+            item.dirOptions
+          );
         } else if (editingItem.type === 'directive' && item.itemCategory === 'group') {
           // グループアイテムの編集の場合
           const itemNames = item.groupItemNames || [];
-          const newContent = `group,${item.displayName},${itemNames.join(',')}`;
-
-          // RawDataLineとして更新
-          await window.electronAPI.updateRawLine({
-            sourceFile: editingItem.sourceFile,
-            lineNumber: editingItem.lineNumber,
-            newContent: newContent,
-          });
+          // 新しいupdateGroupItem APIを使用
+          await window.electronAPI.updateGroupItem(
+            editingItem.sourceFile,
+            editingItem.lineNumber,
+            item.displayName,
+            itemNames
+          );
         } else if (editingItem.type === 'directive' && item.itemCategory === 'window') {
-          // ウィンドウ操作アイテムの編集の場合：window,{JSON形式の設定}
+          // ウィンドウ操作アイテムの編集の場合
           const cfg = item.windowOperationConfig;
           if (!cfg) throw new Error('windowOperationConfig is required for window items');
 
@@ -486,14 +472,12 @@ const App: React.FC = () => {
             pinToAllDesktops: cfg.pinToAllDesktops,
           });
 
-          const newContent = `window,${escapeCSV(JSON.stringify(config))}`;
-
-          // RawDataLineとして更新
-          await window.electronAPI.updateRawLine({
-            sourceFile: editingItem.sourceFile,
-            lineNumber: editingItem.lineNumber,
-            newContent: newContent,
-          });
+          // 新しいupdateWindowItem APIを使用
+          await window.electronAPI.updateWindowItem(
+            editingItem.sourceFile,
+            editingItem.lineNumber,
+            config
+          );
         } else {
           // 通常のアイテムの編集
           const newItem: LauncherItem = {
@@ -629,10 +613,7 @@ const App: React.FC = () => {
     }
 
     // LauncherItemからRawDataLineを構築
-    const rawDataLine: RawDataLine = await convertLauncherItemToRawDataLine(
-      item as LauncherItem,
-      window.electronAPI.loadRawDataFiles
-    );
+    const rawDataLine: RawDataLine = convertLauncherItemToRawDataLine(item as LauncherItem);
     openEditModal(rawDataLine);
   };
 

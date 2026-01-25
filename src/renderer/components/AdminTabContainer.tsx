@@ -1,5 +1,6 @@
 import React from 'react';
-import { RawDataLine, AppSettings, DataFileTab } from '@common/types';
+import { AppSettings, DataFileTab } from '@common/types';
+import type { EditableJsonItem } from '@common/types/editableItem';
 
 import AdminSettingsTab from './AdminSettingsTab';
 import AdminItemManagerView from './AdminItemManagerView';
@@ -11,8 +12,8 @@ interface AdminTabContainerProps {
   onTabChange: (tab: 'settings' | 'edit' | 'archive' | 'other') => void;
   settings: AppSettings | null;
   onSettingsSave: (settings: AppSettings) => Promise<void>;
-  rawLines: RawDataLine[];
-  onRawDataSave: (rawLines: RawDataLine[]) => Promise<void>;
+  editableItems: EditableJsonItem[];
+  onEditableItemsSave: (editableItems: EditableJsonItem[]) => Promise<void>;
   searchQuery: string;
   onSearchChange: (query: string) => void;
   dataFileTabs: DataFileTab[];
@@ -24,8 +25,8 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
   onTabChange,
   settings,
   onSettingsSave,
-  rawLines,
-  onRawDataSave,
+  editableItems,
+  onEditableItemsSave,
   searchQuery,
   onSearchChange,
   dataFileTabs,
@@ -76,8 +77,8 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
         )}
         {activeTab === 'edit' && (
           <AdminItemManagerView
-            rawLines={rawLines}
-            onRawDataSave={onRawDataSave}
+            editableItems={editableItems}
+            onEditableItemsSave={onEditableItemsSave}
             onExitEditMode={handleExitEditMode}
             searchQuery={searchQuery}
             onSearchChange={onSearchChange}

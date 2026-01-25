@@ -5,9 +5,16 @@
  */
 
 import type { WindowConfig, LauncherItem } from './launcher';
+import type { JsonDirOptions } from './json-data';
 
 /**
  * ウィンドウ操作アイテムの設定オブジェクト型定義
+ *
+ * RegisterModalで使用されるウィンドウ操作アイテムの編集用型。
+ * JsonWindowItem（JSON形式のデータ型）と同じフィールドを持つが、
+ * 編集フローでの使用を目的としているため別の型として定義されています。
+ *
+ * @see JsonWindowItem - JSON形式のウィンドウ操作アイテム
  */
 export interface WindowOperationConfig {
   displayName: string;
@@ -25,15 +32,9 @@ export interface WindowOperationConfig {
 
 /**
  * フォルダ取込アイテムのオプション型定義
+ * @deprecated JsonDirOptionsを使用してください
  */
-export interface DirOptions {
-  depth: number;
-  types: 'file' | 'folder' | 'both';
-  filter?: string;
-  exclude?: string;
-  prefix?: string;
-  suffix?: string;
-}
+export type DirOptions = JsonDirOptions;
 
 /**
  * RegisterModalで使用されるアイテム型
@@ -56,20 +57,17 @@ export interface RegisterItem {
 }
 
 /**
- * カンマ区切りのオプション文字列をDirOptionsオブジェクトに変換する
+ * カンマ区切りのオプション文字列をJsonDirOptionsオブジェクトに変換する
  *
  * @param optionsStr - カンマ区切りのオプション文字列（例: "depth=2,filter=*.pdf,prefix=Doc: "）
- * @returns 解析されたDirOptionsオブジェクト
+ * @returns 解析されたJsonDirOptionsオブジェクト
  *
  * @example
  * const options = parseDirOptionsFromString("depth=2,filter=*.pdf,prefix=Doc: ");
  * // { depth: 2, types: 'both', filter: '*.pdf', prefix: 'Doc: ' }
  */
-export function parseDirOptionsFromString(optionsStr: string): DirOptions {
-  const dirOptions: DirOptions = {
-    depth: 0,
-    types: 'both',
-  };
+export function parseDirOptionsFromString(optionsStr: string): JsonDirOptions {
+  const dirOptions: JsonDirOptions = {};
 
   if (!optionsStr) {
     return dirOptions;
@@ -111,22 +109,22 @@ export function parseDirOptionsFromString(optionsStr: string): DirOptions {
 }
 
 /**
- * DirOptionsオブジェクトをカンマ区切りのオプション文字列に変換する
+ * JsonDirOptionsオブジェクトをカンマ区切りのオプション文字列に変換する
  *
- * @param dirOptions - DirOptionsオブジェクト
+ * @param dirOptions - JsonDirOptionsオブジェクト
  * @returns カンマ区切りのオプション文字列
  *
  * @example
  * const optionsStr = formatDirOptionsToString({ depth: 2, types: 'file', filter: '*.pdf' });
  * // "depth=2,types=file,filter=*.pdf"
  */
-export function formatDirOptionsToString(dirOptions: DirOptions): string {
+export function formatDirOptionsToString(dirOptions: JsonDirOptions): string {
   const options: string[] = [];
 
-  if (dirOptions.depth !== 0) {
+  if (dirOptions.depth !== undefined && dirOptions.depth !== 0) {
     options.push(`depth=${dirOptions.depth}`);
   }
-  if (dirOptions.types !== 'both') {
+  if (dirOptions.types && dirOptions.types !== 'both') {
     options.push(`types=${dirOptions.types}`);
   }
   if (dirOptions.filter) {

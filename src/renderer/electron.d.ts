@@ -1,6 +1,5 @@
 import {
   LauncherItem,
-  RawDataLine,
   SimpleBookmarkItem,
   AppSettings,
   IconProgress,
@@ -18,7 +17,9 @@ import {
   VirtualDesktopInfo,
   RegisterItem,
   IconFetchErrorRecord,
+  JsonDirOptions,
 } from '@common/types';
+import type { EditableJsonItem, LoadEditableItemsResult } from '@common/types/editableItem';
 
 export interface ElectronAPI {
   getConfigFolder: () => Promise<string>;
@@ -80,11 +81,6 @@ export interface ElectronAPI {
     lineNumber: number;
     newItem: LauncherItem;
   }) => Promise<{ success: boolean }>;
-  updateRawLine: (request: {
-    sourceFile: string;
-    lineNumber: number;
-    newContent: string;
-  }) => Promise<{ success: boolean }>;
   deleteItems: (
     requests: {
       sourceFile: string;
@@ -98,8 +94,38 @@ export interface ElectronAPI {
       newItem: LauncherItem;
     }[]
   ) => Promise<{ success: boolean }>;
-  loadRawDataFiles: () => Promise<RawDataLine[]>;
-  saveRawDataFiles: (rawLines: RawDataLine[]) => Promise<void>;
+  // EditableJsonItem API
+  loadEditableItems: () => Promise<LoadEditableItemsResult>;
+  saveEditableItems: (editableItems: EditableJsonItem[]) => Promise<void>;
+  updateDirItem: (
+    sourceFile: string,
+    lineNumber: number,
+    dirPath: string,
+    options?: JsonDirOptions
+  ) => Promise<void>;
+  updateGroupItem: (
+    sourceFile: string,
+    lineNumber: number,
+    displayName: string,
+    itemNames: string[]
+  ) => Promise<void>;
+  updateWindowItem: (
+    sourceFile: string,
+    lineNumber: number,
+    config: {
+      displayName: string;
+      windowTitle: string;
+      processName?: string;
+      x?: number;
+      y?: number;
+      width?: number;
+      height?: number;
+      moveToActiveMonitorCenter?: boolean;
+      virtualDesktopNumber?: number;
+      activateWindow?: boolean;
+      pinToAllDesktops?: boolean;
+    }
+  ) => Promise<void>;
   setEditMode: (editMode: boolean) => Promise<void>;
   getEditMode: () => Promise<boolean>;
   selectBookmarkFile: () => Promise<string | null>;

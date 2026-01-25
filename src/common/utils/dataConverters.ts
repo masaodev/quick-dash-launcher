@@ -1,20 +1,15 @@
 /**
  * データ変換ユーティリティ
  *
- * RawDataLine、RegisterItem、LauncherItem間の変換ロジックを提供します。
- * これらの変換ロジックは以前、複数のコンポーネントに重複していました。
+ * RawDataLine（編集画面用）とLauncherItem間の変換ロジックを提供します。
  */
 
 import type { RawDataLine, LauncherItem, DataFileTab } from '../types';
 import type { RegisterItem } from '../types/register.js';
-import { parseDirOptionsFromString, formatDirOptionsToString } from '../types/register.js';
+import { parseDirOptionsFromString } from '../types/register.js';
 
-import { parseCSVLine, escapeCSV } from './csvParser';
-import {
-  parseWindowConfig,
-  serializeWindowConfig,
-  buildWindowOperationConfig,
-} from './windowConfigUtils';
+import { parseCSVLine, escapeCSV } from './displayTextConverter';
+import { parseWindowConfig, serializeWindowConfig } from './windowConfigUtils';
 import { parseWindowOperationDirective } from './directiveUtils';
 
 /**
@@ -135,118 +130,15 @@ export async function convertRawDataLineToRegisterItem(
 }
 
 /**
- * RegisterItemをRawDataLineに変換する
- *
- * @param item - 変換元のRegisterItem
- * @param originalLine - 元のRawDataLine（行番号などのメタ情報を保持）
- * @returns 変換されたRawDataLine
- */
-export function convertRegisterItemToRawDataLine(
-  item: RegisterItem,
-  originalLine: RawDataLine
-): RawDataLine {
-  let newContent = '';
-  let newType: RawDataLine['type'] = originalLine.type;
-
-  if (item.itemCategory === 'dir') {
-    // フォルダ取込アイテムの場合
-    newType = 'directive';
-    if (item.dirOptions) {
-      const optionsStr = formatDirOptionsToString(item.dirOptions);
-      newContent = optionsStr
-        ? `dir,${escapeCSV(item.path)},${optionsStr}`
-        : `dir,${escapeCSV(item.path)}`;
-    } else {
-      newContent = `dir,${escapeCSV(item.path)}`;
-    }
-  } else if (item.itemCategory === 'group') {
-    // グループアイテムの場合：group,グループ名,アイテム1,アイテム2,...
-    newType = 'directive';
-    const itemNames = item.groupItemNames || [];
-    const escapedItemNames = itemNames.map((name) => escapeCSV(name));
-    newContent = `group,${escapeCSV(item.displayName)},${escapedItemNames.join(',')}`;
-  } else if (item.itemCategory === 'window') {
-    // ウィンドウ操作アイテムの場合：window,{JSON形式の設定}
-    newType = 'directive';
-    const cfg = item.windowOperationConfig;
-    if (!cfg) throw new Error('windowOperationConfig is required for window items');
-
-    // 共通ヘルパーを使用してJSON設定を構築
-    const config = buildWindowOperationConfig({
-      displayName: item.displayName,
-      windowTitle: cfg.windowTitle,
-      processName: cfg.processName,
-      x: cfg.x,
-      y: cfg.y,
-      width: cfg.width,
-      height: cfg.height,
-      moveToActiveMonitorCenter: cfg.moveToActiveMonitorCenter,
-      virtualDesktopNumber: cfg.virtualDesktopNumber,
-      activateWindow: cfg.activateWindow,
-      pinToAllDesktops: cfg.pinToAllDesktops,
-    });
-
-    newContent = `window,${escapeCSV(JSON.stringify(config))}`;
-  } else {
-    // アイテム行の場合：名前,パス,引数,カスタムアイコン,ウィンドウ設定 の形式
-    // CSVエスケープを適用
-    newType = 'item';
-    const args = item.args || '';
-    const customIcon = item.customIcon || '';
-    const windowConfigStr = item.windowConfig ? serializeWindowConfig(item.windowConfig) : '';
-
-    // 基本フィールド
-    newContent = `${escapeCSV(item.displayName)},${escapeCSV(item.path)}`;
-
-    // 引数フィールド
-    newContent += `,${escapeCSV(args)}`;
-
-    // カスタムアイコンフィールド
-    if (customIcon || windowConfigStr) {
-      newContent += `,${escapeCSV(customIcon)}`;
-    }
-
-    // ウィンドウ設定フィールド
-    if (windowConfigStr) {
-      newContent += `,${escapeCSV(windowConfigStr)}`;
-    }
-  }
-
-  return {
-    ...originalLine,
-    content: newContent,
-    type: newType,
-  };
-}
-
-/**
  * LauncherItemをRawDataLineに変換する
  *
  * @param item - 変換元のLauncherItem
- * @param loadRawDataFiles - データファイルをロードする関数
  * @returns 変換されたRawDataLine
  */
-export async function convertLauncherItemToRawDataLine(
-  item: LauncherItem,
-  loadRawDataFiles: () => Promise<RawDataLine[]>
-): Promise<RawDataLine> {
+export function convertLauncherItemToRawDataLine(item: LauncherItem): RawDataLine {
   // フォルダ取込から展開されたアイテムの場合
-  if (item.isDirExpanded && item.expandedFrom && item.lineNumber && item.sourceFile) {
-    try {
-      const rawLines = await loadRawDataFiles();
-      const originalLine = rawLines.find(
-        (line) => line.sourceFile === item.sourceFile && line.lineNumber === item.lineNumber
-      );
-
-      if (originalLine) {
-        return originalLine;
-      }
-    } catch (err) {
-      console.error('元のディレクティブ行の読み込みに失敗しました:', err);
-    }
-
-    // フォールバック: expandedOptionsを使用
-    let content = `dir,${item.expandedFrom}`;
+  if (item.isDirExpanded && item.expandedFrom) {
+    let content = `dir,${escapeCSV(item.expandedFrom)}`;
     if (item.expandedOptions) {
       content += `,${item.expandedOptions}`;
     }

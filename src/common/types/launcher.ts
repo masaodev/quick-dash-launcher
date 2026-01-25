@@ -98,6 +98,9 @@ export interface GroupItem {
  *   - `?`: 任意の1文字
  * - ワイルドカード文字が含まれていない場合、完全一致検索を実行
  * - 大文字小文字は区別しない
+ *
+ * @deprecated JSON形式に移行しています。新しいコードではJsonWindowItemを使用してください。
+ * @see JsonWindowItem - JSON形式のウィンドウ操作アイテム
  */
 export interface WindowOperationItem {
   /** アイテムタイプ（常に'windowOperation'） */
