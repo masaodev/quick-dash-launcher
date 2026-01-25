@@ -10,7 +10,6 @@ QuickDashLauncherは複数のJSON形式のデータファイルをサポート�
 
 - **data.json**: メインのデータファイル（必須、削除不可）
 - **data2.json, data3.json, data4.json...**: 追加のデータファイル（オプション）
-- **tempdata.json**: 一時データファイル（実行時生成）
 
 **データ形式**: v0.6.0以降、全てのデータファイルはJSON形式（data*.json）で管理されます。
 

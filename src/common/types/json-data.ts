@@ -38,7 +38,7 @@ export type JsonItem = JsonLauncherItem | JsonDirItem | JsonGroupItem | JsonWind
  * 全アイテム共通の基底インターフェース
  */
 interface JsonItemBase {
-  /** 8文字の一意ID（nanoid等で生成） */
+  /** 8文字の一意ID（英数字、ランダムに生成） */
   id: string;
 }
 
