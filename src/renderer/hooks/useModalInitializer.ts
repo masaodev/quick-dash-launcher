@@ -1,7 +1,10 @@
-import { convertRawDataLineToRegisterItem } from '@common/utils/dataConverters';
-import type { RegisterItem } from '@common/types';
+import {
+  convertEditingAppItemToRegisterItem,
+  convertEditableJsonItemToRegisterItem,
+} from '@common/utils/dataConverters';
+import type { RegisterItem, EditingAppItem, DataFileTab, EditableJsonItem } from '@common/types';
+import { isEditingLauncherItem } from '@common/types';
 import { detectItemType } from '@common/utils/itemTypeDetector';
-import { RawDataLine, DataFileTab } from '@common/types';
 
 import { debugInfo, logWarn, logError } from '../utils/debug';
 
@@ -35,9 +38,10 @@ export function useModalInitializer() {
 
   /**
    * 編集アイテムから初期化
+   * EditingAppItemまたはEditableJsonItemを受け取る
    */
   const initializeFromEditingItem = async (
-    editingItem: RawDataLine,
+    editingItem: EditingAppItem | EditableJsonItem,
     tabs: DataFileTab[],
     onLoadCustomIcon: (index: number, customIconFileName: string) => Promise<void>
   ): Promise<RegisterItem[]> => {
@@ -47,13 +51,29 @@ export function useModalInitializer() {
         return [];
       }
 
-      const item = await convertRawDataLineToRegisterItem(editingItem, tabs, (path) =>
-        detectItemType(path, window.electronAPI.isDirectory)
-      );
+      let item: RegisterItem;
+      let customIconFileName: string | undefined;
 
-      // カスタムアイコンのプレビューを読み込み
-      if (item.customIcon) {
-        await onLoadCustomIcon(0, item.customIcon);
+      // EditableJsonItem（アイテム管理画面から）かEditingAppItem（通常のランチャー画面から）かを判定
+      if ('item' in editingItem && 'meta' in editingItem) {
+        // EditableJsonItem
+        item = convertEditableJsonItemToRegisterItem(editingItem, tabs);
+        // EditableJsonItemの場合、カスタムアイコンはjsonItem.customIconに含まれている
+        if (editingItem.item.type === 'item' && 'customIcon' in editingItem.item) {
+          customIconFileName = editingItem.item.customIcon;
+        }
+      } else {
+        // EditingAppItem
+        item = convertEditingAppItemToRegisterItem(editingItem, tabs);
+        // カスタムアイコンのプレビューを読み込み（LauncherItemの場合のみ）
+        if (isEditingLauncherItem(editingItem) && editingItem.customIcon) {
+          customIconFileName = editingItem.customIcon;
+        }
+      }
+
+      // カスタムアイコンのプレビュー読み込み
+      if (customIconFileName) {
+        await onLoadCustomIcon(0, customIconFileName);
       }
 
       return [item];
@@ -73,7 +93,7 @@ export function useModalInitializer() {
     tabs: DataFileTab[]
   ): Promise<RegisterItem[]> => {
     const newItems: RegisterItem[] = [];
-    const defaultTab = currentTab || (tabs.length > 0 ? tabs[0].files[0] : 'data.txt');
+    const defaultTab = currentTab || (tabs.length > 0 ? tabs[0].files[0] : 'data.json');
 
     try {
       if (!droppedPaths || droppedPaths.length === 0) {
@@ -147,7 +167,7 @@ export function useModalInitializer() {
     currentTab: string | undefined,
     tabs: DataFileTab[]
   ): RegisterItem[] => {
-    const defaultTab = currentTab || (tabs.length > 0 ? tabs[0].files[0] : 'data.txt');
+    const defaultTab = currentTab || (tabs.length > 0 ? tabs[0].files[0] : 'data.json');
     return [
       {
         displayName: '',

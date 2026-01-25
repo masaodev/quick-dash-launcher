@@ -4,7 +4,6 @@
  * ウィンドウ操作ディレクティブの解析を行います。
  */
 
-import type { RawDataLine } from '../types';
 import type { WindowOperationConfig } from '../types/register.js';
 
 import { parseDisplayTextFields } from './displayTextConverter';
@@ -13,27 +12,19 @@ import { parseDisplayTextFields } from './displayTextConverter';
  * ウィンドウ操作アイテムのJSON設定を安全にパースする
  *
  * JSON形式の検証とパースを一元化し、エラーハンドリングを統一します。
- * App.tsxやEditableRawItemList.tsxなど、複数箇所で使用されるJSON.parseロジックを共通化します。
  *
- * @param configString - パース対象のJSON文字列（CSV形式でエスケープされている場合はparseDisplayTextFieldsで事前処理が必要）
+ * @param configString - パース対象のJSON文字列
  * @returns パースされた設定オブジェクト
  * @throws {Error} JSON形式でない場合、またはパースに失敗した場合
  *
  * @example
- * // CSV形式でエスケープされたJSON文字列をparseDisplayTextFieldsで事前処理
- * const parts = parseDisplayTextFields('window,"{""name"":""表示名"",""windowTitle"":""Chrome""}"');
- * const config = parseWindowOperationConfig(parts[1]);
- * // { name: '表示名', windowTitle: 'Chrome' }
- *
- * @example
- * // 不正なJSON形式の場合はエラーをスロー
- * parseWindowOperationConfig('{invalid}');
- * // Error: ウィンドウ操作アイテムのJSON形式が不正です: ...
+ * const config = parseWindowOperationConfig('{"displayName":"表示名","windowTitle":"Chrome"}');
+ * // { displayName: '表示名', windowTitle: 'Chrome' }
  */
 export function parseWindowOperationConfig(configString: string): WindowOperationConfig {
   if (!configString || !configString.trim().startsWith('{')) {
     throw new Error(
-      'ウィンドウ操作アイテムはJSON形式で記述する必要があります。形式: {"name":"表示名","windowTitle":"ウィンドウタイトル",...}'
+      'ウィンドウ操作アイテムはJSON形式で記述する必要があります。形式: {"displayName":"表示名","windowTitle":"ウィンドウタイトル",...}'
     );
   }
 
@@ -60,22 +51,16 @@ export function parseWindowOperationConfig(configString: string): WindowOperatio
 }
 
 /**
- * ウィンドウ操作ディレクティブを解析する
+ * ウィンドウ操作ディレクティブ文字列を解析する
  *
  * JSON形式のみをサポートします。
  *
- * @param line - 解析対象のRawDataLine
- * @returns ウィンドウタイトルと位置・サイズ情報
+ * @param content - 解析対象のディレクティブ文字列（例: 'window,{"displayName":"表示名",...}'）
+ * @returns ウィンドウ操作設定
  * @throws JSON形式でない場合、またはパースに失敗した場合はエラーをスロー
- *
- * @example
- * // JSON形式
- * const line = { type: 'directive', content: 'window,{"name":"表示名","windowTitle":"Chrome","x":100,"y":100}' };
- * parseWindowOperationDirective(line);
- * // { name: '表示名', windowTitle: 'Chrome', x: 100, y: 100 }
  */
-export function parseWindowOperationDirective(line: RawDataLine): WindowOperationConfig {
-  const parts = parseDisplayTextFields(line.content);
+export function parseWindowOperationDirectiveContent(content: string): WindowOperationConfig {
+  const parts = parseDisplayTextFields(content);
   // parseWindowOperationConfigヘルパーを使用してJSON形式を安全にパース
   return parseWindowOperationConfig(parts[1] || '');
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { RawDataLine } from '@common/types';
+import type { EditingAppItem } from '@common/types';
 
 /**
  * 登録モーダルの状態管理を行うカスタムフック
@@ -8,7 +8,7 @@ import { RawDataLine } from '@common/types';
 export const useRegisterModal = () => {
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [droppedPaths, setDroppedPaths] = useState<string[]>([]);
-  const [editingItem, setEditingItem] = useState<RawDataLine | null>(null);
+  const [editingItem, setEditingItem] = useState<EditingAppItem | null>(null);
 
   /**
    * モーダルを開く（新規登録モード）
@@ -21,7 +21,7 @@ export const useRegisterModal = () => {
   /**
    * モーダルを開く（編集モード）
    */
-  const openEditModal = (item: RawDataLine) => {
+  const openEditModal = (item: EditingAppItem) => {
     setEditingItem(item);
     setIsRegisterModalOpen(true);
   };

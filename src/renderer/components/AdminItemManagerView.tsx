@@ -4,6 +4,7 @@ import type { EditableJsonItem } from '@common/types/editableItem';
 import type { RegisterItem } from '@common/types';
 import { jsonItemToDisplayText, displayTextToJsonItem } from '@common/utils/displayTextConverter';
 import { validateEditableItem } from '@common/types/editableItem';
+import { convertRegisterItemToJsonItem } from '@common/utils/dataConverters';
 
 import { logError } from '../utils/debug';
 
@@ -97,16 +98,11 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     if (editingItem && items.length > 0) {
       const updatedRegisterItem = items[0];
 
-      // RegisterItemからJsonItemに変換
-      const updatedJsonItem = {
-        id: editingItem.item.id,
-        type: 'item' as const,
-        displayName: updatedRegisterItem.displayName,
-        path: updatedRegisterItem.path,
-        args: updatedRegisterItem.args,
-        customIcon: updatedRegisterItem.customIcon,
-        windowConfig: updatedRegisterItem.windowConfig,
-      };
+      // RegisterItemからJsonItemに変換（既存のIDを保持）
+      const updatedJsonItem = convertRegisterItemToJsonItem(
+        updatedRegisterItem,
+        editingItem.item.id
+      );
 
       // バリデーション
       const validation = validateEditableItem(updatedJsonItem);

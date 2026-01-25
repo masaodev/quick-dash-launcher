@@ -1,6 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
-import type { RegisterItem } from '@common/types';
-import { RawDataLine, WindowInfo, LauncherItem } from '@common/types';
+import type {
+  RegisterItem,
+  EditingAppItem,
+  EditableJsonItem,
+  WindowInfo,
+  LauncherItem,
+} from '@common/types';
 
 import { useCustomIcon } from '../hooks/useCustomIcon';
 import { useRegisterForm } from '../hooks/useRegisterForm';
@@ -21,9 +26,9 @@ interface RegisterModalProps {
   onClose: () => void;
   onRegister: (items: RegisterItem[]) => void;
   droppedPaths: string[];
-  editingItem?: RawDataLine | null;
+  editingItem?: EditingAppItem | EditableJsonItem | null;
   currentTab?: string; // 現在開いているタブ
-  onDelete?: (item: RawDataLine) => void; // 削除ハンドラー
+  onDelete?: (item: EditingAppItem | EditableJsonItem) => void; // 削除ハンドラー
 }
 
 const RegisterModal: React.FC<RegisterModalProps> = ({

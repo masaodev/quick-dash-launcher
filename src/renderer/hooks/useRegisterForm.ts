@@ -1,7 +1,12 @@
 import { useState, useEffect } from 'react';
-import type { RegisterItem } from '@common/types';
+import type {
+  RegisterItem,
+  EditingAppItem,
+  EditableJsonItem,
+  DataFileTab,
+  WindowConfig,
+} from '@common/types';
 import { detectItemType } from '@common/utils/itemTypeDetector';
-import { RawDataLine, DataFileTab, WindowConfig } from '@common/types';
 
 import { debugInfo } from '../utils/debug';
 
@@ -14,7 +19,7 @@ import { useModalInitializer } from './useModalInitializer';
  */
 export function useRegisterForm(
   isOpen: boolean,
-  editingItem: RawDataLine | null | undefined,
+  editingItem: EditingAppItem | EditableJsonItem | null | undefined,
   droppedPaths: string[],
   currentTab: string | undefined,
   loadCustomIconPreview: (index: number, customIconFileName: string) => Promise<void>,

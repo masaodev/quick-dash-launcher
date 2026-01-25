@@ -1,20 +1,19 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { DESKTOP_TAB } from '@common/constants';
-import { convertLauncherItemToRawDataLine } from '@common/utils/dataConverters';
-import { escapeDisplayTextField } from '@common/utils/displayTextConverter';
 import type {
   RegisterItem,
   LauncherItem,
   AppItem,
   WindowPinMode,
-  RawDataLine,
   SearchMode,
   WindowInfo,
   WindowOperationItem,
   IconFetchErrorRecord,
+  EditingAppItem,
 } from '@common/types';
 import { buildWindowOperationConfig } from '@common/utils/windowConfigUtils';
 import { isWindowInfo, isGroupItem, isWindowOperationItem } from '@common/types/guards';
+import { isEditingLauncherItem } from '@common/types';
 
 import LauncherSearchBox from './components/LauncherSearchBox';
 import LauncherItemList from './components/LauncherItemList';
@@ -73,7 +72,7 @@ const App: React.FC = () => {
   // 削除確認ダイアログ状態管理
   const [deleteConfirmDialog, setDeleteConfirmDialog] = useState<{
     isOpen: boolean;
-    item: RawDataLine | null;
+    item: EditingAppItem | null;
   }>({
     isOpen: false,
     item: null,
@@ -417,42 +416,57 @@ const App: React.FC = () => {
       // 編集モードの場合
       const item = items[0];
 
+      // 展開後のアイテムからフォルダ取込を編集する場合の特別処理
+      const isEditingExpandedItem =
+        isEditingLauncherItem(editingItem) &&
+        editingItem.isDirExpanded &&
+        editingItem.expandedFromFile &&
+        editingItem.expandedFromLine !== undefined;
+
+      // 更新先のファイルと行番号を決定
+      const targetSourceFile = isEditingExpandedItem
+        ? editingItem.expandedFromFile!
+        : editingItem.sourceFile;
+      const targetLineNumber = isEditingExpandedItem
+        ? editingItem.expandedFromLine!
+        : editingItem.lineNumber;
+
       // 保存先ファイルが変更されたかチェック
       // targetFileが指定されている場合はそれを優先、なければtargetTabを使用
       const targetFile = item.targetFile || item.targetTab;
-      const isFileChanged = targetFile !== editingItem.sourceFile;
+      const isFileChanged = targetFile !== targetSourceFile;
 
       if (isFileChanged) {
         // ファイルが変更された場合：元のファイルから削除 + 新しいファイルに登録
         await window.electronAPI.deleteItems([
           {
-            sourceFile: editingItem.sourceFile,
-            lineNumber: editingItem.lineNumber,
+            sourceFile: targetSourceFile,
+            lineNumber: targetLineNumber,
           },
         ]);
         await window.electronAPI.registerItems([item]);
       } else {
         // ファイルが変更されていない場合：従来の更新処理
-        // フォルダ取込ディレクティブの編集の場合
-        if (editingItem.type === 'directive' && item.itemCategory === 'dir') {
+        // フォルダ取込ディレクティブの編集の場合（dirアイテム）
+        if (item.itemCategory === 'dir') {
           // 新しいupdateDirItem APIを使用
           await window.electronAPI.updateDirItem(
-            editingItem.sourceFile,
-            editingItem.lineNumber,
+            targetSourceFile,
+            targetLineNumber,
             item.path,
             item.dirOptions
           );
-        } else if (editingItem.type === 'directive' && item.itemCategory === 'group') {
+        } else if (item.itemCategory === 'group') {
           // グループアイテムの編集の場合
           const itemNames = item.groupItemNames || [];
           // 新しいupdateGroupItem APIを使用
           await window.electronAPI.updateGroupItem(
-            editingItem.sourceFile,
-            editingItem.lineNumber,
+            targetSourceFile,
+            targetLineNumber,
             item.displayName,
             itemNames
           );
-        } else if (editingItem.type === 'directive' && item.itemCategory === 'window') {
+        } else if (item.itemCategory === 'window') {
           // ウィンドウ操作アイテムの編集の場合
           const cfg = item.windowOperationConfig;
           if (!cfg) throw new Error('windowOperationConfig is required for window items');
@@ -474,8 +488,8 @@ const App: React.FC = () => {
 
           // 新しいupdateWindowItem APIを使用
           await window.electronAPI.updateWindowItem(
-            editingItem.sourceFile,
-            editingItem.lineNumber,
+            targetSourceFile,
+            targetLineNumber,
             config
           );
         } else {
@@ -490,8 +504,8 @@ const App: React.FC = () => {
           };
 
           await window.electronAPI.updateItem({
-            sourceFile: editingItem.sourceFile,
-            lineNumber: editingItem.lineNumber,
+            sourceFile: targetSourceFile,
+            lineNumber: targetLineNumber,
             newItem: newItem,
           });
         }
@@ -504,7 +518,7 @@ const App: React.FC = () => {
   };
 
   // アイテム削除ハンドラー（RegisterModalから呼び出される）
-  const handleDeleteItemFromModal = (item: RawDataLine) => {
+  const handleDeleteItemFromModal = (item: EditingAppItem) => {
     setDeleteConfirmDialog({
       isOpen: true,
       item: item,
@@ -567,54 +581,34 @@ const App: React.FC = () => {
 
     // グループアイテムの場合
     if (isGroupItem(item)) {
-      const groupItem = item;
-      const rawDataLine: RawDataLine = {
-        lineNumber: groupItem.lineNumber || 1,
-        content: `group,${groupItem.displayName},${groupItem.itemNames.join(',')}`,
-        type: 'directive',
-        sourceFile: groupItem.sourceFile || 'data.json',
-        customIcon: undefined,
+      const editingItem: EditingAppItem = {
+        ...item,
+        sourceFile: item.sourceFile || 'data.json',
+        lineNumber: item.lineNumber || 1,
       };
-      openEditModal(rawDataLine);
+      openEditModal(editingItem);
       return;
     }
 
     // WindowOperationItemの場合
     if (isWindowOperationItem(item)) {
-      const windowOp = item;
-
-      // 共通ヘルパーを使用してJSON設定を構築
-      const config = buildWindowOperationConfig({
-        displayName: windowOp.displayName,
-        windowTitle: windowOp.windowTitle,
-        processName: windowOp.processName,
-        x: windowOp.x,
-        y: windowOp.y,
-        width: windowOp.width,
-        height: windowOp.height,
-        moveToActiveMonitorCenter: windowOp.moveToActiveMonitorCenter,
-        virtualDesktopNumber: windowOp.virtualDesktopNumber,
-        activateWindow: windowOp.activateWindow,
-        pinToAllDesktops: windowOp.pinToAllDesktops,
-      });
-
-      // JSON形式のコンテンツを作成
-      const content = `window,${escapeDisplayTextField(JSON.stringify(config))}`;
-
-      const rawDataLine: RawDataLine = {
-        lineNumber: windowOp.lineNumber || 1,
-        content: content,
-        type: 'directive',
-        sourceFile: windowOp.sourceFile || 'data.json',
-        customIcon: undefined,
+      const editingItem: EditingAppItem = {
+        ...item,
+        sourceFile: item.sourceFile || 'data.json',
+        lineNumber: item.lineNumber || 1,
       };
-      openEditModal(rawDataLine);
+      openEditModal(editingItem);
       return;
     }
 
-    // LauncherItemからRawDataLineを構築
-    const rawDataLine: RawDataLine = convertLauncherItemToRawDataLine(item as LauncherItem);
-    openEditModal(rawDataLine);
+    // LauncherItemの場合
+    const launcherItem = item as LauncherItem;
+    const editingItem: EditingAppItem = {
+      ...launcherItem,
+      sourceFile: launcherItem.sourceFile || 'data.json',
+      lineNumber: launcherItem.lineNumber || 1,
+    };
+    openEditModal(editingItem);
   };
 
   const handleFirstLaunchComplete = async (hotkey: string, autoLaunch: boolean) => {
@@ -815,11 +809,7 @@ const App: React.FC = () => {
         onConfirm={handleConfirmDelete}
         message={
           deleteConfirmDialog.item
-            ? `「${
-                deleteConfirmDialog.item.type === 'item'
-                  ? deleteConfirmDialog.item.content.split(',')[0]
-                  : deleteConfirmDialog.item.content
-              }」を削除してもよろしいですか？`
+            ? `「${deleteConfirmDialog.item.displayName}」を削除してもよろしいですか？`
             : ''
         }
         danger={true}

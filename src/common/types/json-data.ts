@@ -70,7 +70,15 @@ export interface JsonLauncherItem extends JsonItemBase {
 // ============================================================
 
 /**
- * フォルダ取込オプション
+ * フォルダ取込オプションのデフォルト値
+ */
+export const DIR_OPTIONS_DEFAULTS = {
+  depth: 0,
+  types: 'both' as const,
+} as const;
+
+/**
+ * フォルダ取込オプション（JSON保存用、すべてオプショナル）
  */
 export interface JsonDirOptions {
   /** スキャンする深さ（0=サブフォルダなし、デフォルト） */
@@ -84,6 +92,24 @@ export interface JsonDirOptions {
   /** 表示名のプレフィックス */
   prefix?: string;
   /** 表示名のサフィックス */
+  suffix?: string;
+}
+
+/**
+ * フォルダ取込オプション（処理時用、必須フィールドあり）
+ */
+export interface DirOptionsForProcessing {
+  /** スキャンする深さ（-1=無制限、0=サブフォルダなし） */
+  depth: number;
+  /** 取り込むアイテムの種類 */
+  types: 'file' | 'folder' | 'both';
+  /** ファイル名フィルタ（オプション） */
+  filter?: string;
+  /** 除外フィルタ（オプション） */
+  exclude?: string;
+  /** 表示名のプレフィックス（オプション） */
+  prefix?: string;
+  /** 表示名のサフィックス（オプション） */
   suffix?: string;
 }
 

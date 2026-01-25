@@ -37,6 +37,7 @@ export type {
   JsonDirOptions,
   JsonGroupItem,
   JsonWindowItem,
+  DirOptionsForProcessing,
 } from './json-data';
 export {
   isJsonLauncherItem,
@@ -45,6 +46,7 @@ export {
   isJsonWindowItem,
   JSON_DATA_VERSION,
   JSON_ID_LENGTH,
+  DIR_OPTIONS_DEFAULTS,
 } from './json-data';
 
 // 設定関連の型
@@ -76,9 +78,22 @@ export type { WindowInfo, VirtualDesktopInfo, WindowState } from './window';
 // アプリケーション情報
 export type { AppInfo } from './app';
 
-// 登録関連の型と関数
-export type { RegisterItem, DirOptions, WindowOperationConfig } from './register';
-export { parseDirOptionsFromString, formatDirOptionsToString } from './register';
+// 登録関連の型
+export type { RegisterItem, WindowOperationConfig } from './register';
+
+// 編集用アイテムの型と関数
+export type {
+  EditingItemMeta,
+  EditingLauncherItem,
+  EditingGroupItem,
+  EditingWindowOperationItem,
+  EditingAppItem,
+} from './editingItem';
+export {
+  isEditingLauncherItem,
+  isEditingGroupItem,
+  isEditingWindowOperationItem,
+} from './editingItem';
 
 // 型ガード関数
 export {

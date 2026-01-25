@@ -5,18 +5,18 @@ import { shell } from 'electron';
 import { minimatch } from 'minimatch';
 import { dataLogger } from '@common/logger';
 import { FileUtils } from '@common/utils/fileUtils';
-import type { DirOptions } from '@common/types/register';
-import { parseDirOptionsFromString } from '@common/types/register';
+import type { DirOptionsForProcessing, JsonDirOptions } from '@common/types/json-data';
+import { DIR_OPTIONS_DEFAULTS } from '@common/types/json-data';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { LauncherItem } from '@common/types';
 
 /**
- * DirOptionsを人間が読める形式の文字列に変換する
+ * DirOptionsForProcessingを人間が読める形式の文字列に変換する
  *
- * @param options - DirOptionsオブジェクト
- * @returns 人間が読める形式の文字列（例：「深さ:2, タイプ:file, フィルター:*.pdf」）
+ * @param options - DirOptionsForProcessingオブジェクト
+ * @returns 人間が読める形式の文字列（例：「深さ:2, タイプ:ファイルのみ, フィルター:*.pdf」）
  */
-export function formatDirOptions(options: DirOptions): string {
+export function formatDirOptions(options: DirOptionsForProcessing): string {
   const parts: string[] = [];
 
   // 深さ
@@ -68,6 +68,8 @@ export function formatDirOptions(options: DirOptions): string {
  * @param suffix - 表示名に追加するサフィックス（オプション）
  * @param expandedFrom - フォルダ取込の元となるディレクトリパス（オプション）
  * @param expandedOptions - フォルダ取込オプション情報（人間が読める形式、オプション）
+ * @param expandedFromFile - フォルダ取込アイテムの元のデータファイル（オプション）
+ * @param expandedFromLine - フォルダ取込アイテムの元の行番号（オプション）
  * @returns LauncherItemオブジェクト
  */
 function processItem(
@@ -78,7 +80,9 @@ function processItem(
   prefix?: string,
   suffix?: string,
   expandedFrom?: string,
-  expandedOptions?: string
+  expandedOptions?: string,
+  expandedFromFile?: string,
+  expandedFromLine?: number
 ): LauncherItem {
   let displayName = path.basename(itemPath);
 
@@ -101,6 +105,8 @@ function processItem(
     isDirExpanded: expandedFrom ? true : false,
     expandedFrom,
     expandedOptions,
+    expandedFromFile,
+    expandedFromLine,
     isEdited: false,
   };
 }
@@ -118,6 +124,8 @@ function processItem(
  * @param suffix - 表示名に追加するサフィックス（オプション）
  * @param expandedFrom - フォルダ取込の元となるディレクトリパス（オプション）
  * @param expandedOptions - フォルダ取込オプション情報（人間が読める形式、オプション）
+ * @param expandedFromFile - フォルダ取込アイテムの元のデータファイル（オプション）
+ * @param expandedFromLine - フォルダ取込アイテムの元の行番号（オプション）
  * @returns LauncherItemオブジェクト。解析に失敗した場合はnull
  * @throws Error ショートカットファイルの読み込みに失敗した場合（ログに記録され、nullを返す）
  *
@@ -135,7 +143,9 @@ export function processShortcut(
   prefix?: string,
   suffix?: string,
   expandedFrom?: string,
-  expandedOptions?: string
+  expandedOptions?: string,
+  expandedFromFile?: string,
+  expandedFromLine?: number
 ): LauncherItem | null {
   try {
     // Electron のネイティブ機能を使用してショートカットを読み取り
@@ -178,6 +188,8 @@ export function processShortcut(
         isDirExpanded: expandedFrom ? true : false,
         expandedFrom,
         expandedOptions,
+        expandedFromFile,
+        expandedFromLine,
         isEdited: false,
       };
     }
@@ -198,6 +210,8 @@ export function processShortcut(
  * @param rootDirPath - フォルダ取込の元となるルートディレクトリパス（オプション）
  * @param optionsText - フォルダ取込オプション情報（人間が読める形式、オプション）
  * @param lineNumber - データファイル内の行番号（オプション）
+ * @param expandedFromFile - フォルダ取込アイテムの元のデータファイル（オプション）
+ * @param expandedFromLine - フォルダ取込アイテムの元の行番号（オプション）
  * @param currentDepth - 現在の再帰深度（内部使用、初期値は0）
  * @returns LauncherItem配列
  * @throws ディレクトリアクセス権限エラー、ファイルシステムエラー
@@ -208,15 +222,17 @@ export function processShortcut(
  *   types: 'file',
  *   filter: '*.pdf',
  *   prefix: 'Doc: '
- * }, 'data.txt', '/home/user/documents', '深さ:2, タイプ:ファイルのみ', 15);
+ * }, 'data.txt', '/home/user/documents', '深さ:2, タイプ:ファイルのみ', 15, 'data.txt', 15);
  */
 export async function scanDirectory(
   dirPath: string,
-  options: DirOptions,
+  options: DirOptionsForProcessing,
   sourceFile: string,
   rootDirPath?: string,
   optionsText?: string,
   lineNumber?: number,
+  expandedFromFile?: string,
+  expandedFromLine?: number,
   currentDepth = 0
 ): Promise<LauncherItem[]> {
   const results: LauncherItem[] = [];
@@ -272,7 +288,9 @@ export async function scanDirectory(
                 options.prefix,
                 options.suffix,
                 rootDirPath,
-                optionsText
+                optionsText,
+                expandedFromFile,
+                expandedFromLine
               )
             );
           }
@@ -287,6 +305,8 @@ export async function scanDirectory(
             rootDirPath,
             optionsText,
             lineNumber,
+            expandedFromFile,
+            expandedFromLine,
             currentDepth + 1
           );
           results.push(...subResults);
@@ -304,7 +324,9 @@ export async function scanDirectory(
               options.prefix,
               options.suffix,
               rootDirPath,
-              optionsText
+              optionsText,
+              expandedFromFile,
+              expandedFromLine
             );
             if (processedShortcut) {
               results.push(processedShortcut);
@@ -319,7 +341,9 @@ export async function scanDirectory(
                 options.prefix,
                 options.suffix,
                 rootDirPath,
-                optionsText
+                optionsText,
+                expandedFromFile,
+                expandedFromLine
               )
             );
           }
@@ -336,14 +360,14 @@ export async function scanDirectory(
 /**
  * フォルダ取込アイテムを処理する
  * @param dirPath - ディレクトリパス
- * @param optionsStr - オプション文字列
+ * @param options - フォルダ取込オプション（undefinedの場合はデフォルト値を使用）
  * @param sourceFile - データファイル名
  * @param lineNumber - 行番号
  * @returns LauncherItem配列
  */
 export async function processDirectoryItem(
   dirPath: string,
-  optionsStr: string,
+  options: JsonDirOptions | undefined,
   sourceFile: string,
   lineNumber: number
 ): Promise<LauncherItem[]> {
@@ -362,15 +386,25 @@ export async function processDirectoryItem(
   }
 
   try {
-    const options = parseDirOptionsFromString(optionsStr);
-    const optionsText = formatDirOptions(options);
+    // デフォルト値とマージして処理用オプションを作成
+    const processOptions: DirOptionsForProcessing = {
+      depth: options?.depth ?? DIR_OPTIONS_DEFAULTS.depth,
+      types: options?.types ?? DIR_OPTIONS_DEFAULTS.types,
+      filter: options?.filter,
+      exclude: options?.exclude,
+      prefix: options?.prefix,
+      suffix: options?.suffix,
+    };
+    const optionsText = formatDirOptions(processOptions);
     return await scanDirectory(
       normalizedPath,
-      options,
+      processOptions,
       sourceFile,
       normalizedPath,
       optionsText,
-      lineNumber
+      lineNumber,
+      sourceFile, // 元のフォルダ取込アイテムのデータファイル
+      lineNumber  // 元のフォルダ取込アイテムの行番号
     );
   } catch (error) {
     dataLogger.error({ dirPath: normalizedPath, error }, 'ディレクトリのスキャンに失敗');

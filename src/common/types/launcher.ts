@@ -63,6 +63,10 @@ export interface LauncherItem {
   expandedFrom?: string;
   /** フォルダ取込アイテムから展開された場合のオプション情報（人間が読める形式） */
   expandedOptions?: string;
+  /** フォルダ取込アイテムから展開された場合の元のデータファイル */
+  expandedFromFile?: string;
+  /** フォルダ取込アイテムから展開された場合の元の行番号 */
+  expandedFromLine?: number;
   /** 編集モードで変更されたかどうか */
   isEdited?: boolean;
   /** ウィンドウ制御設定（ウィンドウ検索・位置・サイズ制御） */

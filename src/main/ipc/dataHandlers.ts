@@ -30,36 +30,6 @@ import { setupBookmarkHandlers } from './bookmarkHandlers.js';
 import { processDirectoryItem, processShortcut } from './directoryScanner.js';
 
 /**
- * JsonDirOptionsをオプション文字列に変換（processDirectoryItem用）
- */
-function formatDirOptionsForProcessing(options: JsonDirOptions | undefined): string {
-  if (!options) return '';
-
-  const parts: string[] = [];
-
-  if (options.depth !== undefined) {
-    parts.push(`depth=${options.depth}`);
-  }
-  if (options.types !== undefined) {
-    parts.push(`types=${options.types}`);
-  }
-  if (options.filter !== undefined) {
-    parts.push(`filter=${options.filter}`);
-  }
-  if (options.exclude !== undefined) {
-    parts.push(`exclude=${options.exclude}`);
-  }
-  if (options.prefix !== undefined) {
-    parts.push(`prefix=${options.prefix}`);
-  }
-  if (options.suffix !== undefined) {
-    parts.push(`suffix=${options.suffix}`);
-  }
-
-  return parts.join(',');
-}
-
-/**
  * JSONファイルからAppItem配列を読み込む
  *
  * @param filePath - JSONファイルのパス
@@ -175,10 +145,9 @@ async function convertJsonItemToAppItems(
     }
   } else if (isJsonDirItem(jsonItem)) {
     // フォルダ取込アイテム
-    const optionsStr = formatDirOptionsForProcessing(jsonItem.options);
     const scannedItems = await processDirectoryItem(
       jsonItem.path,
-      optionsStr,
+      jsonItem.options,
       sourceFile,
       itemIndex + 1
     );
