@@ -407,4 +407,4 @@ export interface ArchivedWorkspaceItem extends WorkspaceItem {
 - **[ワークスペースウィンドウ](../screens/workspace-window.md)** - UI操作ガイド
 - **[データファイル形式](data-format.md)** - data.json仕様
 - **[設定ファイル形式](settings-format.md)** - config.json仕様
-- **[ファイル形式一覧](file-formats.md)** - すべてのファイル形式の概要
+- **[ファイル形式一覧](README.md)** - すべてのファイル形式の概要

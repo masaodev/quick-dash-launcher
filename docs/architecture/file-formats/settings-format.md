@@ -333,4 +333,4 @@ window.electron.on('settings-changed', (settings) => {
 - **[初回起動セットアップ](../screens/first-launch-setup.md)** - ホットキー初期設定
 - **[データファイル形式](data-format.md)** - data.json仕様
 - **[ワークスペースファイル形式](workspace-format.md)** - workspace.json仕様
-- **[ファイル形式一覧](file-formats.md)** - すべてのファイル形式の概要
+- **[ファイル形式一覧](README.md)** - すべてのファイル形式の概要

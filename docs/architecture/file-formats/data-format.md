@@ -851,5 +851,5 @@ export interface SearchHistoryState {
 - **[フォルダ取込](../screens/register-modal.md#6-フォルダ取込アイテムの詳細)** - フォルダ取込機能の詳細
 - **[ワークスペースファイル形式](workspace-format.md)** - workspace.json仕様
 - **[設定ファイル形式](settings-format.md)** - config.json仕様
-- **[ファイル形式一覧](file-formats.md)** - すべてのファイル形式の概要
+- **[ファイル形式一覧](README.md)** - すべてのファイル形式の概要
 - **[開発ガイド](../setup/development.md)** - 開発時の注意事項

@@ -201,7 +201,7 @@ WindowsAppsフォルダ等のシンボリックリンクを自動解決してア
 MyApp,C:\MyApp\app.exe,,{hash}.png
 ```
 
-詳細は[データファイル形式仕様](../architecture/data-format.md#カスタムアイコンの処理)を参照。
+詳細は[データファイル形式仕様](../architecture/file-formats/data-format.md#カスタムアイコンの処理)を参照。
 
 ---
 

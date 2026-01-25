@@ -93,6 +93,6 @@ QuickDashLauncherで使用されるドメイン用語の定義です。開発時
 
 ## 関連ドキュメント
 
-- **[データ形式仕様](data-format.md)** - データファイルの詳細仕様
+- **[データ形式仕様](file-formats/data-format.md)** - データファイルの詳細仕様
 - **[システム概要](overview.md)** - アーキテクチャの全体像
 - **[コンポーネント命名規則](component-naming.md)** - コンポーネントの命名規則

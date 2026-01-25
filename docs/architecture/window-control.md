@@ -581,6 +581,6 @@ v0.5.10以降、ウィンドウ操作アイテムはJSON形式専用となりま
 
 - [アーキテクチャ概要](overview.md) - システム全体の構造
 - [IPCチャンネル詳細](ipc-channels.md) - ウィンドウ制御関連のIPCチャンネル
-- [データファイル形式](data-format.md) - ウィンドウ設定フィールドの仕様
+- [データファイル形式](file-formats/data-format.md) - ウィンドウ設定フィールドの仕様
 - [アイテム登録・編集モーダル](../screens/register-modal.md) - ウィンドウ設定のUI
 - [アプリケーション設定](../screens/admin-window.md#7-設定機能の詳細) - 設定画面へのアクセス方法
