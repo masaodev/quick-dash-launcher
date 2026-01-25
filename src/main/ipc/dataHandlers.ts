@@ -3,9 +3,7 @@ import * as path from 'path';
 import { ipcMain, BrowserWindow } from 'electron';
 import { dataLogger } from '@common/logger';
 import { FileUtils } from '@common/utils/fileUtils';
-import { parseCSVLine, escapeCSV } from '@common/utils/csvParser';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
-import { parseWindowConfig, serializeWindowConfig } from '@common/utils/windowConfigUtils';
 import { parseJsonDataFile, serializeJsonDataFile, generateId } from '@common/utils/jsonParser';
 import {
   convertJsonDataFileToRawDataLines,
@@ -25,7 +23,6 @@ import {
 import type { JsonItem, JsonDirOptions } from '@common/types';
 import type { RegisterItem } from '@common/types/register';
 import { isWindowInfo, isWindowOperationItem } from '@common/types/guards';
-import { parseWindowOperationDirective } from '@common/utils/directiveUtils';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { BackupService } from '../services/backupService.js';
@@ -33,52 +30,6 @@ import { SettingsService } from '../services/settingsService.js';
 
 import { setupBookmarkHandlers } from './bookmarkHandlers.js';
 import { processDirectoryItem, processShortcut } from './directoryScanner.js';
-
-/**
- * CSV行をLauncherItemに変換する
- *
- * @param line - CSV行
- * @param sourceFile - データファイル名
- * @param lineNumber - 行番号（オプション）
- * @returns LauncherItemまたはnull
- */
-function parseCSVLineToItem(
-  line: string,
-  sourceFile: string,
-  lineNumber?: number
-): LauncherItem | null {
-  const parts = parseCSVLine(line);
-  if (parts.length < 2) {
-    return null;
-  }
-
-  const [displayName, itemPath, argsField, customIconField, windowConfigField] = parts;
-
-  if (!displayName || !itemPath) {
-    return null;
-  }
-
-  // 第5フィールドをWindowConfigとしてパース（文字列/JSON両対応）
-  const windowConfig =
-    windowConfigField && windowConfigField.trim()
-      ? parseWindowConfig(windowConfigField)
-      : undefined;
-
-  const item: LauncherItem = {
-    displayName,
-    path: itemPath,
-    type: detectItemTypeSync(itemPath),
-    args: argsField && argsField.trim() ? argsField : undefined,
-    customIcon: customIconField && customIconField.trim() ? customIconField : undefined,
-    windowConfig: windowConfig ?? undefined,
-    sourceFile,
-    lineNumber: lineNumber,
-    isDirExpanded: false,
-    isEdited: false,
-  };
-
-  return item;
-}
 
 /**
  * JsonDirOptionsをオプション文字列に変換（processDirectoryItem用）
@@ -285,7 +236,7 @@ async function convertJsonItemToAppItems(
 }
 
 /**
- * 設定フォルダからデータファイル（data.json, data.txt等）を読み込み、AppItem配列に変換する
+ * 設定フォルダからデータファイル（data.json等）を読み込み、AppItem配列に変換する
  * フォルダ取込アイテムの展開、.lnkファイルの解析、CSV行のパース、重複チェック、ソートを全て実行する
  *
  * @param configFolder - 設定フォルダのパス
@@ -350,156 +301,9 @@ export async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
 
     const filePath = path.join(configFolder, fileName);
 
-    // JSONファイルとCSVファイルで処理を分岐
-    if (fileName.endsWith('.json')) {
-      // JSONファイルの場合
-      const jsonItems = await loadJsonDataFile(filePath, fileName, seenPaths, tabIndex);
-      items.push(...jsonItems);
-      continue;
-    }
-
-    // CSVファイル（.txt）の場合は従来のロジック
-    const content = FileUtils.safeReadTextFile(filePath);
-    if (content === null) continue;
-
-    const lines = content.split(/\r\n|\n|\r/);
-
-    for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
-      const line = lines[lineIndex];
-      const trimmedLine = line.trim();
-
-      // Skip empty lines and comments
-      if (!trimmedLine || trimmedLine.startsWith('//')) {
-        continue;
-      }
-
-      // Handle フォルダ取込アイテム
-      if (trimmedLine.startsWith('dir,')) {
-        const parts = parseCSVLine(trimmedLine);
-        const dirPath = parts[1];
-        const optionsStr = parts.slice(2).join(',');
-
-        const scannedItems = await processDirectoryItem(
-          dirPath,
-          optionsStr,
-          fileName,
-          lineIndex + 1
-        );
-
-        // Add scanned items with duplicate check (per tab)
-        for (const item of scannedItems) {
-          const uniqueKey = item.args
-            ? `${item.displayName}|${item.path}|${item.args}`
-            : `${item.displayName}|${item.path}`;
-          if (!seenPaths.has(uniqueKey)) {
-            seenPaths.add(uniqueKey);
-            items.push(item);
-          } else {
-            dataLogger.debug(
-              { tabIndex, fileName, itemName: item.displayName, uniqueKey },
-              'タブ内で重複するアイテムをスキップ'
-            );
-          }
-        }
-        continue;
-      }
-
-      // Handle グループアイテム
-      if (trimmedLine.startsWith('group,')) {
-        const parts = parseCSVLine(trimmedLine.substring(6)); // 'group,'を除去
-        if (parts.length >= 2) {
-          const groupName = parts[0];
-          const itemNames = parts.slice(1).filter((name) => name.trim());
-
-          if (groupName && itemNames.length > 0) {
-            const groupItem: GroupItem = {
-              displayName: groupName,
-              type: 'group',
-              itemNames: itemNames,
-              sourceFile: fileName,
-              lineNumber: lineIndex + 1,
-              isEdited: false,
-            };
-            items.push(groupItem);
-          }
-        }
-        continue;
-      }
-
-      // Handle ウィンドウ操作アイテム
-      if (trimmedLine.startsWith('window,')) {
-        const windowOp = parseWindowOperationDirective({
-          type: 'directive',
-          content: trimmedLine,
-          lineNumber: lineIndex + 1,
-          sourceFile: fileName,
-        });
-
-        const windowOperationItem: WindowOperationItem = {
-          type: 'windowOperation',
-          displayName: windowOp.displayName,
-          windowTitle: windowOp.windowTitle,
-          processName: windowOp.processName,
-          x: windowOp.x,
-          y: windowOp.y,
-          width: windowOp.width,
-          height: windowOp.height,
-          moveToActiveMonitorCenter: windowOp.moveToActiveMonitorCenter,
-          virtualDesktopNumber: windowOp.virtualDesktopNumber,
-          activateWindow: windowOp.activateWindow,
-          pinToAllDesktops: windowOp.pinToAllDesktops,
-          sourceFile: fileName,
-          lineNumber: lineIndex + 1,
-          isEdited: false,
-        };
-
-        // ウィンドウ操作アイテムは重複チェック対象外
-        items.push(windowOperationItem);
-        continue;
-      }
-
-      // Handle .lnk files
-      const parts = parseCSVLine(trimmedLine);
-      if (parts.length >= 2) {
-        const displayName = parts[0];
-        const itemPath = parts[1];
-        if (itemPath.toLowerCase().endsWith('.lnk') && FileUtils.exists(itemPath)) {
-          const item = processShortcut(itemPath, fileName, lineIndex + 1, displayName);
-          if (item) {
-            const uniqueKey = item.args
-              ? `${item.displayName}|${item.path}|${item.args}`
-              : `${item.displayName}|${item.path}`;
-            if (!seenPaths.has(uniqueKey)) {
-              seenPaths.add(uniqueKey);
-              items.push(item);
-            } else {
-              dataLogger.debug(
-                { tabIndex, fileName, itemName: item.displayName, uniqueKey },
-                'タブ内で重複するアイテムをスキップ'
-              );
-            }
-            continue;
-          }
-        }
-      }
-
-      // Parse normal item
-      const item = parseCSVLineToItem(trimmedLine, fileName, lineIndex + 1);
-      if (item) {
-        const uniqueKey = item.args
-          ? `${item.displayName}|${item.path}|${item.args}`
-          : `${item.displayName}|${item.path}`;
-        if (!seenPaths.has(uniqueKey)) {
-          seenPaths.add(uniqueKey);
-          items.push(item);
-        } else {
-          dataLogger.debug(
-            { tabIndex, fileName, itemName: item.displayName, uniqueKey },
-            'タブ内で重複するアイテムをスキップ'
-          );
-        }
-      }
-    }
+    // JSON形式のデータファイルを読み込み
+    const jsonItems = await loadJsonDataFile(filePath, fileName, seenPaths, tabIndex);
+    items.push(...jsonItems);
   }
 
   // Sort items by displayName
@@ -538,74 +342,17 @@ async function loadRawDataFiles(configFolder: string): Promise<RawDataLine[]> {
       continue;
     }
 
-    // JSONファイルの場合は専用の変換関数を使用
-    if (fileName.endsWith('.json')) {
-      try {
-        const jsonData = parseJsonDataFile(content);
-        const jsonRawLines = convertJsonDataFileToRawDataLines(jsonData, fileName);
-        rawLines.push(...jsonRawLines);
-      } catch (error) {
-        dataLogger.error({ error, fileName }, 'JSONファイルのパースに失敗しました');
-      }
-      continue;
+    // JSON形式のデータファイルを変換
+    try {
+      const jsonData = parseJsonDataFile(content);
+      const jsonRawLines = convertJsonDataFileToRawDataLines(jsonData, fileName);
+      rawLines.push(...jsonRawLines);
+    } catch (error) {
+      dataLogger.error({ error, fileName }, 'JSONファイルのパースに失敗しました');
     }
-
-    // CSVファイル（.txt）の場合は従来のロジック
-    // 改行コードを正規化（CRLF、LF、CRのいずれにも対応）
-    const lines = content.split(/\r\n|\n|\r/);
-
-    lines.forEach((line, index) => {
-      const lineType = detectLineType(line);
-      let customIcon: string | undefined = undefined;
-
-      // アイテム行の場合、customIconフィールドを抽出
-      // CSVエスケープを正しく処理するためparseCSVLineを使用
-      if (lineType === 'item') {
-        try {
-          const parts = parseCSVLine(line);
-          // 4番目のフィールドがcustomIconフィールド
-          if (parts.length >= 4 && parts[3]) {
-            customIcon = parts[3];
-          }
-        } catch {
-          // エラーが発生した場合はcustomIconをundefinedのまま
-        }
-      }
-
-      rawLines.push({
-        lineNumber: index + 1,
-        content: line,
-        type: lineType,
-        sourceFile: fileName,
-        customIcon,
-      });
-    });
   }
 
   return rawLines;
-}
-
-// 行のタイプを判定
-function detectLineType(line: string): RawDataLine['type'] {
-  const trimmedLine = line.trim();
-
-  if (!trimmedLine) {
-    return 'empty';
-  }
-
-  if (trimmedLine.startsWith('//')) {
-    return 'comment';
-  }
-
-  if (
-    trimmedLine.startsWith('dir,') ||
-    trimmedLine.startsWith('group,') ||
-    trimmedLine.startsWith('window,')
-  ) {
-    return 'directive';
-  }
-
-  return 'item';
 }
 
 // 生データを保存
@@ -638,21 +385,10 @@ async function saveRawDataFiles(configFolder: string, rawLines: RawDataLine[]): 
       await backupService.createBackup(filePath);
     }
 
-    // JSONファイルの場合はJSON形式で保存
-    if (fileName.endsWith('.json')) {
-      const sortedLines = lines.sort((a, b) => a.lineNumber - b.lineNumber);
-      const jsonData = convertRawDataLinesToJsonDataFile(sortedLines);
-      const content = serializeJsonDataFile(jsonData);
-      FileUtils.safeWriteTextFile(filePath, content);
-      continue;
-    }
-
-    // CSVファイル（.txt）の場合は従来のロジック
-    // 行番号でソートして内容を結合（空の場合は空文字列）
+    // JSON形式で保存
     const sortedLines = lines.sort((a, b) => a.lineNumber - b.lineNumber);
-    const content = sortedLines.map((line) => line.content).join('\r\n');
-
-    // ファイルに書き込み
+    const jsonData = convertRawDataLinesToJsonDataFile(sortedLines);
+    const content = serializeJsonDataFile(jsonData);
     FileUtils.safeWriteTextFile(filePath, content);
   }
 }
@@ -666,7 +402,7 @@ async function saveRawDataFiles(configFolder: string, rawLines: RawDataLine[]): 
  * @param items[].name - アイテム名
  * @param items[].type - アイテムタイプ（'file', 'app', 'url', 'folder', 'customUri'）
  * @param items[].path - アイテムのパスまたはURL
- * @param items[].targetTab - 保存先データファイル名（例: 'data.txt', 'data2.txt'）
+ * @param items[].targetTab - 保存先データファイル名（例: 'data.json', 'data2.json'）
  * @param items[].args - コマンドライン引数（オプション）
  * @param items[].customIcon - カスタムアイコンファイル名（オプション）
  * @param items[].itemCategory - アイテムカテゴリ（'item' | 'dir' | 'group'）
@@ -677,9 +413,9 @@ async function saveRawDataFiles(configFolder: string, rawLines: RawDataLine[]): 
  *
  * @example
  * await registerItems('/path/to/config', [
- *   { name: 'VSCode', type: 'app', path: 'code.exe', targetTab: 'data.txt', itemCategory: 'item' },
- *   { name: 'Documents', type: 'folder', path: '/docs', targetTab: 'data2.txt', itemCategory: 'dir', dirOptions: {...} },
- *   { name: 'DevTools', type: 'app', path: '', targetTab: 'data.txt', itemCategory: 'group', groupItemNames: ['VSCode', 'Chrome'] }
+ *   { name: 'VSCode', type: 'app', path: 'code.exe', targetTab: 'data.json', itemCategory: 'item' },
+ *   { name: 'Documents', type: 'folder', path: '/docs', targetTab: 'data2.json', itemCategory: 'dir', dirOptions: {...} },
+ *   { name: 'DevTools', type: 'app', path: '', targetTab: 'data.json', itemCategory: 'group', groupItemNames: ['VSCode', 'Chrome'] }
  * ]);
  */
 async function registerItems(configFolder: string, items: RegisterItem[]): Promise<void> {
@@ -703,120 +439,8 @@ async function registerItems(configFolder: string, items: RegisterItem[]): Promi
   for (const [targetFile, targetItems] of itemsByTab) {
     const dataPath = path.join(configFolder, targetFile);
 
-    // JSONファイルの場合
-    if (targetFile.endsWith('.json')) {
-      await registerItemsToJsonFile(dataPath, targetItems);
-      continue;
-    }
-
-    // CSVファイル（.txt）の場合は従来のロジック
-    const existingContent = FileUtils.safeReadTextFile(dataPath) || '';
-
-    const newLines = targetItems.map((item) => {
-      if (item.itemCategory === 'dir') {
-        let dirLine = `dir,${item.path}`;
-
-        // フォルダ取込アイテムオプションを追加
-        if (item.dirOptions) {
-          const options: string[] = [];
-
-          // depth
-          if (item.dirOptions.depth !== 0) {
-            options.push(`depth=${item.dirOptions.depth}`);
-          }
-
-          // types
-          if (item.dirOptions.types !== 'both') {
-            options.push(`types=${item.dirOptions.types}`);
-          }
-
-          // filter
-          if (item.dirOptions.filter) {
-            options.push(`filter=${item.dirOptions.filter}`);
-          }
-
-          // exclude
-          if (item.dirOptions.exclude) {
-            options.push(`exclude=${item.dirOptions.exclude}`);
-          }
-
-          // prefix
-          if (item.dirOptions.prefix) {
-            options.push(`prefix=${item.dirOptions.prefix}`);
-          }
-
-          // suffix
-          if (item.dirOptions.suffix) {
-            options.push(`suffix=${item.dirOptions.suffix}`);
-          }
-
-          if (options.length > 0) {
-            dirLine += ',' + options.join(',');
-          }
-        }
-
-        return dirLine;
-      } else if (item.itemCategory === 'group') {
-        // グループアイテムの場合
-        let groupLine = `group,${item.displayName}`;
-        if (item.groupItemNames && item.groupItemNames.length > 0) {
-          groupLine += ',' + item.groupItemNames.join(',');
-        }
-        return groupLine;
-      } else if (item.itemCategory === 'window') {
-        // ウィンドウ操作アイテムの場合：window,{JSON形式の設定}
-        const cfg = item.windowOperationConfig;
-        if (!cfg) {
-          throw new Error('windowOperationConfig is required for window items');
-        }
-
-        // JSON形式で設定を保存
-        const config: Record<string, string | number | boolean> = {
-          displayName: item.displayName,
-          windowTitle: cfg.windowTitle,
-        };
-
-        // オプションフィールドは値がある場合のみ追加
-        if (cfg.x !== undefined) config.x = cfg.x;
-        if (cfg.y !== undefined) config.y = cfg.y;
-        if (cfg.width !== undefined) config.width = cfg.width;
-        if (cfg.height !== undefined) config.height = cfg.height;
-        if (cfg.virtualDesktopNumber !== undefined)
-          config.virtualDesktopNumber = cfg.virtualDesktopNumber;
-        if (cfg.activateWindow !== undefined) config.activateWindow = cfg.activateWindow;
-
-        return `window,${escapeCSV(JSON.stringify(config))}`;
-      } else {
-        let line = `${escapeCSV(item.displayName)},${escapeCSV(item.path)}`;
-
-        // 引数フィールドを追加
-        if (item.args) {
-          line += `,${escapeCSV(item.args)}`;
-        } else {
-          line += ',';
-        }
-
-        // カスタムアイコンフィールドを追加
-        if (item.customIcon) {
-          line += `,${escapeCSV(item.customIcon)}`;
-        } else {
-          line += ',';
-        }
-
-        // ウィンドウ設定フィールドを追加
-        const windowConfigStr = serializeWindowConfig(item.windowConfig);
-        if (windowConfigStr) {
-          line += `,${escapeCSV(windowConfigStr)}`;
-        }
-
-        return line;
-      }
-    });
-
-    const updatedContent = existingContent
-      ? existingContent.trim() + '\r\n' + newLines.join('\r\n')
-      : newLines.join('\r\n');
-    FileUtils.safeWriteTextFile(dataPath, updatedContent.trim());
+    // JSON形式で保存
+    await registerItemsToJsonFile(dataPath, targetItems);
   }
 }
 
@@ -987,8 +611,8 @@ export function setupDataHandlers(configFolder: string) {
     const fs = await import('fs/promises');
     const path = await import('path');
 
-    // data.txt/data.jsonは削除不可（メインデータファイル）
-    if (fileName === 'data.txt' || fileName === 'data.json') {
+    // data.jsonは削除不可（メインデータファイル）
+    if (fileName === 'data.json') {
       return { success: false, error: 'メインデータファイルは削除できません' };
     }
 

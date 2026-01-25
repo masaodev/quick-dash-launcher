@@ -12,6 +12,8 @@ QuickDashLauncherは複数のJSON形式のデータファイルをサポート�
 - **data2.json, data3.json, data4.json...**: 追加のデータファイル（オプション）
 - **tempdata.json**: 一時データファイル（実行時生成）
 
+**重要な変更**: v0.6.1以降、CSV形式マイグレーション処理が完全に削除されました。全てのデータファイルはJSON形式（data*.json）で管理され、CSV形式（data*.txt）のサポートは終了しました。新規インストール時からJSON形式でデータファイルが作成されます。
+
 #### 複数データファイルのサポート
 
 - **ファイル名パターン**: `data*.json`（例: data.json, data2.json, data3.json...）

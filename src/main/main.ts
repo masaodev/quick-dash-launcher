@@ -4,8 +4,6 @@ import { app, globalShortcut } from 'electron';
 
 import { setupIPCHandlers } from './ipc';
 import { createDefaultDataFile } from './utils/appHelpers';
-import { migrateWindowOperationFormat } from './utils/migrationHelpers';
-import { MigrationService } from './services/migrationService.js';
 import PathManager from './config/pathManager.js';
 import { EnvConfig } from './config/envConfig.js';
 import { BackupService } from './services/backupService.js';
@@ -85,16 +83,7 @@ app.whenReady().then(async () => {
     await createSplashWindow();
   }
 
-  // Windows操作アイテムのCSV形式からJSON形式への移行を実行
-  migrateWindowOperationFormat();
-
-  // CSV→JSON形式へのデータファイルマイグレーションを実行（デフォルトファイル作成より先に実行）
-  const migrationService = MigrationService.getInstance();
-  if (migrationService.needsMigration()) {
-    await migrationService.migrate();
-  }
-
-  // 初回起動時にデフォルトのdata.jsonファイルを作成（マイグレーション後に実行）
+  // 初回起動時にデフォルトのdata.jsonファイルを作成
   createDefaultDataFile();
 
   // 既存のデータファイルをタイムスタンプ付きでバックアップ（設定に基づく）
