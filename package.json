@@ -1,6 +1,6 @@
 {
   "name": "quick-dash-launcher",
-  "version": "0.6.2",
+  "version": "0.7.0",
   "main": "dist/main/main.js",
   "scripts": {
     "create-dev-icon": "powershell -ExecutionPolicy Bypass -File scripts/create-dev-icon.ps1",
