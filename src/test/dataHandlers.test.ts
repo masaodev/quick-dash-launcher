@@ -4,14 +4,14 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { parseCSVLine } from '@common/utils/displayTextConverter';
+import { parseDisplayTextFields } from '@common/utils/displayTextConverter';
 import type { LauncherItem, GroupItem, WindowOperationItem } from '@common/types';
 
 describe('データハンドラー: name → displayName リファクタリング検証', () => {
   describe('CSV行のパース', () => {
     it('通常のアイテムがdisplayNameプロパティを持つこと', () => {
       const csvLine = 'テストアイテム,C:\\test\\path.exe';
-      const parts = parseCSVLine(csvLine);
+      const parts = parseDisplayTextFields(csvLine);
 
       const item: LauncherItem = {
         displayName: parts[0],
@@ -30,7 +30,7 @@ describe('データハンドラー: name → displayName リファクタリン�
 
     it('グループアイテムがdisplayNameプロパティを持つこと', () => {
       const csvLine = 'group,テストグループ,アイテム1,アイテム2';
-      const parts = parseCSVLine(csvLine.substring(6)); // 'group,'を除去
+      const parts = parseDisplayTextFields(csvLine.substring(6)); // 'group,'を除去
 
       const groupItem: GroupItem = {
         displayName: parts[0],
@@ -71,7 +71,7 @@ describe('データハンドラー: name → displayName リファクタリン�
       ];
 
       testData.forEach((csvLine, index) => {
-        const parts = parseCSVLine(csvLine);
+        const parts = parseDisplayTextFields(csvLine);
         const item: LauncherItem = {
           displayName: parts[0],
           path: parts[1],

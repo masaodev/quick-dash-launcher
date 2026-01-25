@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { DESKTOP_TAB } from '@common/constants';
 import { convertLauncherItemToRawDataLine } from '@common/utils/dataConverters';
-import { escapeCSV } from '@common/utils/displayTextConverter';
+import { escapeDisplayTextField } from '@common/utils/displayTextConverter';
 import type {
   RegisterItem,
   LauncherItem,
@@ -599,7 +599,7 @@ const App: React.FC = () => {
       });
 
       // JSON形式のコンテンツを作成
-      const content = `window,${escapeCSV(JSON.stringify(config))}`;
+      const content = `window,${escapeDisplayTextField(JSON.stringify(config))}`;
 
       const rawDataLine: RawDataLine = {
         lineNumber: windowOp.lineNumber || 1,
