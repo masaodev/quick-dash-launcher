@@ -8,25 +8,26 @@ QuickDashLauncherのデータファイル形式の完全な仕様です。
 
 QuickDashLauncherは複数のデータファイルをサポートしています：
 
-- **data.txt**: メインのデータファイル（必須、削除不可）
-- **data2.txt, data3.txt, data4.txt...**: 追加のデータファイル（オプション）
-- **tempdata.txt**: 一時データファイル（実行時生成）
+- **data.json**: メインのデータファイル（必須、削除不可）
+- **data2.json, data3.json, data4.json...**: 追加のデータファイル（オプション）
+
+**注意**: v0.5.10以降、CSV形式（data*.txt）のサポートは終了しました。全てのデータファイルはJSON形式（data*.json）で保存されます。
 
 #### 複数データファイルのサポート
 
-- **ファイル名パターン**: `data*.txt`（例: data.txt, data2.txt, data3.txt...）
+- **ファイル名パターン**: `data*.json`（例: data.json, data2.json, data3.json...）
 - **配置場所**: `%APPDATA%/quick-dash-launcher/config/`
-- **自動検出**: アプリケーション起動時に設定フォルダ内のすべての`data*.txt`ファイルを自動的に検出
+- **自動検出**: アプリケーション起動時に設定フォルダ内のすべての`data*.json`ファイルを自動的に検出
 - **タブ表示**: 設定でタブ表示を有効にすると、各データファイルをタブで切り替えて使用可能
 - **ファイル管理**: 設定画面でデータファイルの追加・削除・タブ名のカスタマイズが可能
 
 #### 必須ファイルと追加ファイル
 
-- **data.txt**: 常に必要な必須ファイル。削除不可
-- **data2.txt以降**: 任意で追加可能。設定画面または手動でファイルを作成
+- **data.json**: 常に必要な必須ファイル。削除不可
+- **data2.json以降**: 任意で追加可能。設定画面または手動でファイルを作成
 - **作成方法**:
   - 設定画面の「データファイル管理」セクションで➕行追加ボタンをクリック
-  - または、設定フォルダに手動でdata*.txtファイルを作成
+  - または、設定フォルダに手動でdata*.jsonファイルを作成
 
 ### 文字エンコーディング
 - **UTF-8** (BOMなし)
@@ -81,24 +82,24 @@ v0.4.2以降、重複排除は**タブ単位**で実行されます：
 ```json
 {
   "dataFileTabs": [
-    { "files": ["data.txt", "data3.txt"], "name": "メイン" },
-    { "files": ["data2.txt"], "name": "サブ1" }
+    { "files": ["data.json", "data3.json"], "name": "メイン" },
+    { "files": ["data2.json"], "name": "サブ1" }
   ]
 }
 ```
 
 **データファイル:**
-- data.txt: `GitHub,https://github.com/`
-- data2.txt: `GitHub,https://github.com/`
-- data3.txt: `GitHub,https://github.com/`
+- data.json: `GitHub,https://github.com/`
+- data2.json: `GitHub,https://github.com/`
+- data3.json: `GitHub,https://github.com/`
 
 **表示結果:**
-- **メインタブ**: GitHub 1つ（data.txtとdata3.txtの重複を排除）
-- **サブ1タブ**: GitHub 1つ（data2.txtから）
+- **メインタブ**: GitHub 1つ（data.jsonとdata3.jsonの重複を排除）
+- **サブ1タブ**: GitHub 1つ（data2.jsonから）
 
 ### タブに属さないファイル
 
-タブ設定に含まれていないデータファイル（例: data4.txt）は、独立したタブとして扱われます：
+タブ設定に含まれていないデータファイル（例: data4.json）は、独立したタブとして扱われます：
 
 - ファイル内では重複排除が行われます
 - 他のタブとは独立して重複判定が行われます
@@ -720,7 +721,7 @@ interface RawDataLine {
   lineNumber: number;        // 行番号（1から開始）
   content: string;           // 行の内容（改行文字除く）
   type: 'directive' | 'item' | 'comment' | 'empty';
-  sourceFile: string;        // 元データファイル名（例: 'data.txt', 'data2.txt', 'data3.txt'...）
+  sourceFile: string;        // 元データファイル名（例: 'data.json', 'data2.json', 'data3.json'...）
   customIcon?: string;       // カスタムアイコンファイル名
 }
 ```
