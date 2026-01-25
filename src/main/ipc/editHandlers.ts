@@ -1,8 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-import { editLogger } from '@common/logger';
-import { LauncherItem, JsonItem, JsonLauncherItem } from '@common/types';
+import { LauncherItem, JsonLauncherItem } from '@common/types';
 import { parseJsonDataFile, serializeJsonDataFile } from '@common/utils/jsonParser';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
@@ -11,15 +10,13 @@ import { BackupService } from '../services/backupService.js';
 
 import { notifyDataChanged } from './dataHandlers.js';
 
-interface UpdateItemRequest {
-  sourceFile: string;
-  lineNumber: number;
+interface UpdateItemByIdRequest {
+  id: string;
   newItem: LauncherItem;
 }
 
-interface DeleteItemRequest {
-  sourceFile: string;
-  lineNumber: number;
+interface DeleteItemByIdRequest {
+  id: string;
 }
 
 async function createBackup(configFolder: string, fileName: string): Promise<void> {
@@ -53,161 +50,125 @@ function convertLauncherItemToJsonItem(item: LauncherItem, existingId: string): 
 }
 
 /**
- * JSONファイルのアイテムを更新する
+ * 指定されたアイテムをIDで更新する
  */
-class JsonFileEditor {
-  static readAndParse(filePath: string) {
-    if (!fs.existsSync(filePath)) {
-      throw new Error(`File does not exist: ${filePath}`);
-    }
-    const content = fs.readFileSync(filePath, 'utf8');
-    return parseJsonDataFile(content);
-  }
+export async function updateItemById(
+  configFolder: string,
+  request: UpdateItemByIdRequest
+): Promise<void> {
+  const { id, newItem } = request;
+  const { PathManager } = await import('../config/pathManager.js');
+  const dataFiles = PathManager.getDataFiles();
 
-  static write(filePath: string, data: ReturnType<typeof parseJsonDataFile>) {
-    const content = serializeJsonDataFile(data);
-    fs.writeFileSync(filePath, content, 'utf8');
-  }
-
-  static async editWithBackup(
-    configFolder: string,
-    fileName: string,
-    editFunc: (items: JsonItem[]) => JsonItem[]
-  ): Promise<void> {
+  // 全データファイルからIDで検索
+  for (const fileName of dataFiles) {
     const filePath = path.join(configFolder, fileName);
+    if (!fs.existsSync(filePath)) continue;
 
-    // バックアップ作成
-    await createBackup(configFolder, fileName);
+    const content = fs.readFileSync(filePath, 'utf8');
+    const jsonData = parseJsonDataFile(content);
+    const itemIndex = jsonData.items.findIndex((item) => item.id === id);
 
-    // JSONファイル読み込み
-    const jsonData = this.readAndParse(filePath);
+    if (itemIndex !== -1) {
+      // バックアップ作成
+      await createBackup(configFolder, fileName);
 
-    // 編集処理実行
-    const newItems = editFunc(jsonData.items);
+      // アイテム更新（IDを保持）
+      const updatedItem = convertLauncherItemToJsonItem(newItem, id);
+      jsonData.items[itemIndex] = updatedItem;
 
-    // 書き込み
-    this.write(filePath, { ...jsonData, items: newItems });
-  }
-}
-
-/**
- * 指定されたアイテムを更新する
- *
- * インデックス（lineNumber - 1）でアイテムを特定し更新します。
- */
-export async function updateItem(configFolder: string, request: UpdateItemRequest): Promise<void> {
-  const { sourceFile, lineNumber, newItem } = request;
-
-  await JsonFileEditor.editWithBackup(configFolder, sourceFile, (items) => {
-    const itemIndex = lineNumber - 1; // 1-indexed → 0-indexed
-    if (itemIndex < 0 || itemIndex >= items.length) {
-      throw new Error(`Invalid item index: ${itemIndex}`);
+      // 保存
+      const newContent = serializeJsonDataFile(jsonData);
+      fs.writeFileSync(filePath, newContent, 'utf8');
+      return;
     }
+  }
 
-    // 既存アイテムのIDを保持して更新
-    const existingItem = items[itemIndex];
-    const updatedItem = convertLauncherItemToJsonItem(newItem, existingItem.id);
-
-    // アイテムを置き換え
-    const newItems = [...items];
-    newItems[itemIndex] = updatedItem;
-    return newItems;
-  });
+  throw new Error(`ID ${id} のアイテムが見つかりません`);
 }
 
 /**
- * 複数のアイテムを削除する
+ * 複数のアイテムをIDで削除する
  *
  * 複数ファイルにまたがる削除リクエストを効率的に処理します。
- * ファイルごとにグループ化し、各ファイルに対して1回のバックアップと書き込みで完了します。
- *
- * 重要: 削除時はインデックスがシフトするため、降順でソートしてから削除します。
+ * IDで検索してアイテムを削除します。
  */
-export async function deleteItems(
+export async function deleteItemsById(
   configFolder: string,
-  requests: DeleteItemRequest[]
+  requests: DeleteItemByIdRequest[]
 ): Promise<void> {
-  // リクエストをファイルごとにグループ化
-  const fileGroups = new Map<string, DeleteItemRequest[]>();
-  requests.forEach((request) => {
-    if (!fileGroups.has(request.sourceFile)) {
-      fileGroups.set(request.sourceFile, []);
-    }
-    const group = fileGroups.get(request.sourceFile);
-    if (!group) {
-      throw new Error(`Failed to get file group for: ${request.sourceFile}`);
-    }
-    group.push(request);
-  });
+  const { PathManager } = await import('../config/pathManager.js');
+  const dataFiles = PathManager.getDataFiles();
+  const idsToDelete = new Set(requests.map((r) => r.id));
 
-  // 各ファイルを個別に処理
-  for (const [sourceFile, fileRequests] of fileGroups) {
-    try {
-      await JsonFileEditor.editWithBackup(configFolder, sourceFile, (items) => {
-        // インデックスシフトを避けるため、行番号を降順にソート
-        const sortedRequests = fileRequests.sort((a, b) => b.lineNumber - a.lineNumber);
+  // 各データファイルを処理
+  for (const fileName of dataFiles) {
+    const filePath = path.join(configFolder, fileName);
+    if (!fs.existsSync(filePath)) continue;
 
-        const newItems = [...items];
-        // アイテムを削除（後ろから削除することで、前のインデックスに影響しない）
-        for (const request of sortedRequests) {
-          const itemIndex = request.lineNumber - 1;
-          if (itemIndex >= 0 && itemIndex < newItems.length) {
-            newItems.splice(itemIndex, 1);
-          }
-        }
-        return newItems;
-      });
-    } catch (error) {
-      // ファイルが存在しない場合はスキップして続行
-      editLogger.warn({ sourceFile, error }, 'ファイルが存在しません、スキップします');
+    const content = fs.readFileSync(filePath, 'utf8');
+    const jsonData = parseJsonDataFile(content);
+
+    // このファイルに削除対象のIDが含まれているか確認
+    const hasTargetItems = jsonData.items.some((item) => idsToDelete.has(item.id));
+
+    if (hasTargetItems) {
+      // バックアップ作成
+      await createBackup(configFolder, fileName);
+
+      // 削除対象以外のアイテムをフィルタリング
+      const newItems = jsonData.items.filter((item) => !idsToDelete.has(item.id));
+
+      // 保存
+      const newContent = serializeJsonDataFile({ ...jsonData, items: newItems });
+      fs.writeFileSync(filePath, newContent, 'utf8');
     }
   }
 }
 
 /**
- * 複数のアイテムを一括更新する
+ * 複数のアイテムをIDで一括更新する
  *
  * ドラッグ&ドロップによる並び替えなど、複数アイテムを同時に更新する際に使用します。
- * ファイルごとにグループ化し、各ファイルに対して1回のバックアップと書き込みで完了します。
- *
- * パフォーマンス: 100個のアイテムを更新する場合でも、同じファイル内であれば
- * 1回のファイル読み書きで完了するため、効率的です。
+ * 全データファイルを処理し、各ファイルに対して1回のバックアップと書き込みで完了します。
  */
-export async function batchUpdateItems(
+export async function batchUpdateItemsById(
   configFolder: string,
-  requests: UpdateItemRequest[]
+  requests: UpdateItemByIdRequest[]
 ): Promise<void> {
-  // リクエストをファイルごとにグループ化
-  const fileGroups = new Map<string, UpdateItemRequest[]>();
-  requests.forEach((request) => {
-    if (!fileGroups.has(request.sourceFile)) {
-      fileGroups.set(request.sourceFile, []);
-    }
-    const group = fileGroups.get(request.sourceFile);
-    if (!group) {
-      throw new Error(`Failed to get file group for: ${request.sourceFile}`);
-    }
-    group.push(request);
-  });
+  const { PathManager } = await import('../config/pathManager.js');
+  const dataFiles = PathManager.getDataFiles();
 
-  // 各ファイルを個別に処理
-  for (const [sourceFile, fileRequests] of fileGroups) {
-    try {
-      await JsonFileEditor.editWithBackup(configFolder, sourceFile, (items) => {
-        const newItems = [...items];
-        // ファイル内のすべての更新を適用
-        for (const request of fileRequests) {
-          const itemIndex = request.lineNumber - 1;
-          if (itemIndex >= 0 && itemIndex < newItems.length) {
-            const existingItem = newItems[itemIndex];
-            newItems[itemIndex] = convertLauncherItemToJsonItem(request.newItem, existingItem.id);
-          }
+  // 更新対象のIDをMapに格納
+  const updateMap = new Map(requests.map((r) => [r.id, r.newItem]));
+
+  // 各データファイルを処理
+  for (const fileName of dataFiles) {
+    const filePath = path.join(configFolder, fileName);
+    if (!fs.existsSync(filePath)) continue;
+
+    const content = fs.readFileSync(filePath, 'utf8');
+    const jsonData = parseJsonDataFile(content);
+
+    // このファイルに更新対象のIDが含まれているか確認
+    const hasTargetItems = jsonData.items.some((item) => updateMap.has(item.id));
+
+    if (hasTargetItems) {
+      // バックアップ作成
+      await createBackup(configFolder, fileName);
+
+      // アイテムを更新
+      const newItems = jsonData.items.map((item) => {
+        const newItem = updateMap.get(item.id);
+        if (newItem) {
+          return convertLauncherItemToJsonItem(newItem, item.id);
         }
-        return newItems;
+        return item;
       });
-    } catch (error) {
-      // ファイルが存在しない場合はスキップして続行
-      editLogger.warn({ sourceFile, error }, 'ファイルが存在しません、スキップします');
+
+      // 保存
+      const newContent = serializeJsonDataFile({ ...jsonData, items: newItems });
+      fs.writeFileSync(filePath, newContent, 'utf8');
     }
   }
 }
@@ -215,32 +176,32 @@ export async function batchUpdateItems(
 // Register IPC handlers
 export function registerEditHandlers(configFolder: string): void {
   createSafeIpcHandler(
-    IPC_CHANNELS.UPDATE_ITEM,
-    async (request: UpdateItemRequest) => {
-      await updateItem(configFolder, request);
+    IPC_CHANNELS.UPDATE_ITEM_BY_ID,
+    async (request: UpdateItemByIdRequest) => {
+      await updateItemById(configFolder, request);
       notifyDataChanged();
       return { success: true };
     },
-    'アイテムの更新'
+    'アイテムの更新（IDベース）'
   );
 
   createSafeIpcHandler(
-    IPC_CHANNELS.DELETE_ITEMS,
-    async (requests: DeleteItemRequest[]) => {
-      await deleteItems(configFolder, requests);
+    IPC_CHANNELS.DELETE_ITEMS_BY_ID,
+    async (requests: DeleteItemByIdRequest[]) => {
+      await deleteItemsById(configFolder, requests);
       notifyDataChanged();
       return { success: true };
     },
-    'アイテムの削除'
+    'アイテムの削除（IDベース）'
   );
 
   createSafeIpcHandler(
-    IPC_CHANNELS.BATCH_UPDATE_ITEMS,
-    async (requests: UpdateItemRequest[]) => {
-      await batchUpdateItems(configFolder, requests);
+    IPC_CHANNELS.BATCH_UPDATE_ITEMS_BY_ID,
+    async (requests: UpdateItemByIdRequest[]) => {
+      await batchUpdateItemsById(configFolder, requests);
       notifyDataChanged();
       return { success: true };
     },
-    'アイテムの一括更新'
+    'アイテムの一括更新（IDベース）'
   );
 }

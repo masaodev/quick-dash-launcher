@@ -68,8 +68,7 @@ export function formatDirOptions(options: DirOptionsForProcessing): string {
  * @param suffix - 表示名に追加するサフィックス（オプション）
  * @param expandedFrom - フォルダ取込の元となるディレクトリパス（オプション）
  * @param expandedOptions - フォルダ取込オプション情報（人間が読める形式、オプション）
- * @param expandedFromFile - フォルダ取込アイテムの元のデータファイル（オプション）
- * @param expandedFromLine - フォルダ取込アイテムの元の行番号（オプション）
+ * @param expandedFromId - フォルダ取込アイテムから展開された場合の元のdirディレクティブID（オプション）
  * @returns LauncherItemオブジェクト
  */
 function processItem(
@@ -81,8 +80,7 @@ function processItem(
   suffix?: string,
   expandedFrom?: string,
   expandedOptions?: string,
-  expandedFromFile?: string,
-  expandedFromLine?: number
+  expandedFromId?: string
 ): LauncherItem {
   let displayName = path.basename(itemPath);
 
@@ -105,8 +103,7 @@ function processItem(
     isDirExpanded: expandedFrom ? true : false,
     expandedFrom,
     expandedOptions,
-    expandedFromFile,
-    expandedFromLine,
+    expandedFromId,
     isEdited: false,
   };
 }
@@ -124,8 +121,7 @@ function processItem(
  * @param suffix - 表示名に追加するサフィックス（オプション）
  * @param expandedFrom - フォルダ取込の元となるディレクトリパス（オプション）
  * @param expandedOptions - フォルダ取込オプション情報（人間が読める形式、オプション）
- * @param expandedFromFile - フォルダ取込アイテムの元のデータファイル（オプション）
- * @param expandedFromLine - フォルダ取込アイテムの元の行番号（オプション）
+ * @param expandedFromId - フォルダ取込アイテムから展開された場合の元のdirディレクティブID（オプション）
  * @returns LauncherItemオブジェクト。解析に失敗した場合はnull
  * @throws Error ショートカットファイルの読み込みに失敗した場合（ログに記録され、nullを返す）
  *
@@ -144,8 +140,7 @@ export function processShortcut(
   suffix?: string,
   expandedFrom?: string,
   expandedOptions?: string,
-  expandedFromFile?: string,
-  expandedFromLine?: number
+  expandedFromId?: string
 ): LauncherItem | null {
   try {
     // Electron のネイティブ機能を使用してショートカットを読み取り
@@ -188,8 +183,7 @@ export function processShortcut(
         isDirExpanded: expandedFrom ? true : false,
         expandedFrom,
         expandedOptions,
-        expandedFromFile,
-        expandedFromLine,
+        expandedFromId,
         isEdited: false,
       };
     }
@@ -210,8 +204,7 @@ export function processShortcut(
  * @param rootDirPath - フォルダ取込の元となるルートディレクトリパス（オプション）
  * @param optionsText - フォルダ取込オプション情報（人間が読める形式、オプション）
  * @param lineNumber - データファイル内の行番号（オプション）
- * @param expandedFromFile - フォルダ取込アイテムの元のデータファイル（オプション）
- * @param expandedFromLine - フォルダ取込アイテムの元の行番号（オプション）
+ * @param expandedFromId - フォルダ取込アイテムから展開された場合の元のdirディレクティブID（オプション）
  * @param currentDepth - 現在の再帰深度（内部使用、初期値は0）
  * @returns LauncherItem配列
  * @throws ディレクトリアクセス権限エラー、ファイルシステムエラー
@@ -222,7 +215,7 @@ export function processShortcut(
  *   types: 'file',
  *   filter: '*.pdf',
  *   prefix: 'Doc: '
- * }, 'data.txt', '/home/user/documents', '深さ:2, タイプ:ファイルのみ', 15, 'data.txt', 15);
+ * }, 'data.txt', '/home/user/documents', '深さ:2, タイプ:ファイルのみ', 15, 'abc12345');
  */
 export async function scanDirectory(
   dirPath: string,
@@ -231,8 +224,7 @@ export async function scanDirectory(
   rootDirPath?: string,
   optionsText?: string,
   lineNumber?: number,
-  expandedFromFile?: string,
-  expandedFromLine?: number,
+  expandedFromId?: string,
   currentDepth = 0
 ): Promise<LauncherItem[]> {
   const results: LauncherItem[] = [];
@@ -289,8 +281,7 @@ export async function scanDirectory(
                 options.suffix,
                 rootDirPath,
                 optionsText,
-                expandedFromFile,
-                expandedFromLine
+                expandedFromId
               )
             );
           }
@@ -305,8 +296,7 @@ export async function scanDirectory(
             rootDirPath,
             optionsText,
             lineNumber,
-            expandedFromFile,
-            expandedFromLine,
+            expandedFromId,
             currentDepth + 1
           );
           results.push(...subResults);
@@ -325,8 +315,7 @@ export async function scanDirectory(
               options.suffix,
               rootDirPath,
               optionsText,
-              expandedFromFile,
-              expandedFromLine
+              expandedFromId
             );
             if (processedShortcut) {
               results.push(processedShortcut);
@@ -342,8 +331,7 @@ export async function scanDirectory(
                 options.suffix,
                 rootDirPath,
                 optionsText,
-                expandedFromFile,
-                expandedFromLine
+                expandedFromId
               )
             );
           }
@@ -369,7 +357,8 @@ export async function processDirectoryItem(
   dirPath: string,
   options: JsonDirOptions | undefined,
   sourceFile: string,
-  lineNumber: number
+  lineNumber: number,
+  dirItemId?: string
 ): Promise<LauncherItem[]> {
   // パスを正規化して絶対パスに変換
   const normalizedPath = path.normalize(path.resolve(dirPath));
@@ -403,8 +392,7 @@ export async function processDirectoryItem(
       normalizedPath,
       optionsText,
       lineNumber,
-      sourceFile, // 元のフォルダ取込アイテムのデータファイル
-      lineNumber  // 元のフォルダ取込アイテムの行番号
+      dirItemId // 元のフォルダ取込アイテムのID
     );
   } catch (error) {
     dataLogger.error({ dirPath: normalizedPath, error }, 'ディレクトリのスキャンに失敗');

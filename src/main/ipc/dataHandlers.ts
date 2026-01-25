@@ -107,6 +107,7 @@ async function convertJsonItemToAppItems(
       windowConfig: jsonItem.windowConfig,
       sourceFile,
       lineNumber: itemIndex + 1, // 互換性のため1ベース
+      id: jsonItem.id, // JSONのIDを保持
       isDirExpanded: false,
       isEdited: false,
     };
@@ -149,7 +150,8 @@ async function convertJsonItemToAppItems(
       jsonItem.path,
       jsonItem.options,
       sourceFile,
-      itemIndex + 1
+      itemIndex + 1,
+      jsonItem.id // dirアイテムのIDを渡す
     );
 
     for (const scannedItem of scannedItems) {
@@ -174,6 +176,7 @@ async function convertJsonItemToAppItems(
       itemNames: jsonItem.itemNames,
       sourceFile,
       lineNumber: itemIndex + 1,
+      id: jsonItem.id, // JSONのIDを保持
       isEdited: false,
     };
     items.push(groupItem);
@@ -194,6 +197,7 @@ async function convertJsonItemToAppItems(
       pinToAllDesktops: jsonItem.pinToAllDesktops,
       sourceFile,
       lineNumber: itemIndex + 1,
+      id: jsonItem.id, // JSONのIDを保持
       isEdited: false,
     };
     items.push(windowOperationItem);
@@ -411,115 +415,116 @@ async function saveEditableItems(
 }
 
 /**
- * dirアイテムを更新する（新しいAPI）
+ * IDでdirアイテムを更新する（新API）
  *
  * @param configFolder - 設定フォルダのパス
- * @param sourceFile - ソースファイル名
- * @param lineNumber - 行番号（0始まり）
- * @param dirPath - dirのパス
- * @param options - dirのオプション
+ * @param id - 更新対象のアイテムID
+ * @param dirPath - 新しいディレクトリパス
+ * @param options - フォルダ取込オプション（オプション）
+ * @throws アイテムが見つからない場合、またはファイル操作エラー
  */
-async function updateDirItem(
+async function updateDirItemById(
   configFolder: string,
-  sourceFile: string,
-  lineNumber: number,
+  id: string,
   dirPath: string,
   options?: JsonDirOptions
 ): Promise<void> {
-  const filePath = path.join(configFolder, sourceFile);
-  const content = FileUtils.safeReadTextFile(filePath);
+  const { PathManager } = await import('../config/pathManager.js');
+  const dataFiles = PathManager.getDataFiles();
 
-  if (content === null) {
-    throw new Error(`ファイルが読み込めませんでした: ${filePath}`);
+  // 全データファイルからIDで検索
+  for (const fileName of dataFiles) {
+    const filePath = path.join(configFolder, fileName);
+    const content = FileUtils.safeReadTextFile(filePath);
+    if (!content) continue;
+
+    const jsonData = parseJsonDataFile(content);
+    const itemIndex = jsonData.items.findIndex(item => item.id === id);
+
+    if (itemIndex !== -1) {
+      // バックアップ作成
+      const backupService = await BackupService.getInstance();
+      await backupService.createBackup(filePath);
+
+      // アイテム更新（ID保持）
+      jsonData.items[itemIndex] = {
+        id,
+        type: 'dir',
+        path: dirPath,
+        options: options && Object.keys(options).length > 0 ? options : undefined,
+      };
+
+      // 保存
+      const newContent = serializeJsonDataFile(jsonData);
+      FileUtils.safeWriteTextFile(filePath, newContent);
+      return;
+    }
   }
 
-  // バックアップを作成（設定に基づく）
-  const backupService = await BackupService.getInstance();
-  await backupService.createBackup(filePath);
-
-  const jsonData = parseJsonDataFile(content);
-
-  // 指定された行のアイテムを更新
-  if (lineNumber < 0 || lineNumber >= jsonData.items.length) {
-    throw new Error(`無効な行番号です: ${lineNumber}`);
-  }
-
-  const existingItem = jsonData.items[lineNumber];
-
-  // IDを保持してdirアイテムを更新
-  jsonData.items[lineNumber] = {
-    id: existingItem.id,
-    type: 'dir',
-    path: dirPath,
-    options: options && Object.keys(options).length > 0 ? options : undefined,
-  };
-
-  // 保存
-  const newContent = serializeJsonDataFile(jsonData);
-  FileUtils.safeWriteTextFile(filePath, newContent);
+  throw new Error(`ID ${id} のアイテムが見つかりません`);
 }
 
 /**
- * groupアイテムを更新する（新しいAPI）
+ * IDでgroupアイテムを更新する（新API）
  *
  * @param configFolder - 設定フォルダのパス
- * @param sourceFile - ソースファイル名
- * @param lineNumber - 行番号（0始まり）
- * @param displayName - groupの表示名
- * @param itemNames - groupのアイテム名リスト
+ * @param id - 更新対象のアイテムID
+ * @param displayName - 新しい表示名
+ * @param itemNames - グループ内のアイテム名リスト
+ * @throws アイテムが見つからない場合、またはファイル操作エラー
  */
-async function updateGroupItem(
+async function updateGroupItemById(
   configFolder: string,
-  sourceFile: string,
-  lineNumber: number,
+  id: string,
   displayName: string,
   itemNames: string[]
 ): Promise<void> {
-  const filePath = path.join(configFolder, sourceFile);
-  const content = FileUtils.safeReadTextFile(filePath);
+  const { PathManager } = await import('../config/pathManager.js');
+  const dataFiles = PathManager.getDataFiles();
 
-  if (content === null) {
-    throw new Error(`ファイルが読み込めませんでした: ${filePath}`);
+  // 全データファイルからIDで検索
+  for (const fileName of dataFiles) {
+    const filePath = path.join(configFolder, fileName);
+    const content = FileUtils.safeReadTextFile(filePath);
+    if (!content) continue;
+
+    const jsonData = parseJsonDataFile(content);
+    const itemIndex = jsonData.items.findIndex(item => item.id === id);
+
+    if (itemIndex !== -1) {
+      // バックアップ作成
+      const backupService = await BackupService.getInstance();
+      await backupService.createBackup(filePath);
+
+      // アイテム更新（ID保持）
+      jsonData.items[itemIndex] = {
+        id,
+        type: 'group',
+        displayName,
+        itemNames,
+      };
+
+      // 保存
+      const newContent = serializeJsonDataFile(jsonData);
+      FileUtils.safeWriteTextFile(filePath, newContent);
+      return;
+    }
   }
 
-  // バックアップを作成（設定に基づく）
-  const backupService = await BackupService.getInstance();
-  await backupService.createBackup(filePath);
-
-  const jsonData = parseJsonDataFile(content);
-
-  // 指定された行のアイテムを更新
-  if (lineNumber < 0 || lineNumber >= jsonData.items.length) {
-    throw new Error(`無効な行番号です: ${lineNumber}`);
-  }
-
-  const existingItem = jsonData.items[lineNumber];
-
-  // IDを保持してgroupアイテムを更新
-  jsonData.items[lineNumber] = {
-    id: existingItem.id,
-    type: 'group',
-    displayName,
-    itemNames,
-  };
-
-  // 保存
-  const newContent = serializeJsonDataFile(jsonData);
-  FileUtils.safeWriteTextFile(filePath, newContent);
+  throw new Error(`ID ${id} のアイテムが見つかりません`);
 }
 
 /**
- * windowアイテムを更新する（新しいAPI）
+ * IDでwindowアイテムを更新する（新API）
  *
  * @param configFolder - 設定フォルダのパス
- * @param sourceFile - ソースファイル名
- * @param lineNumber - 行番号（0始まり）
- * @param config - windowの設定
+ * @param id - 更新対象のアイテムID
+ * @param config - ウィンドウ制御設定
+ * @throws アイテムが見つからない場合、またはファイル操作エラー
  */
-async function updateWindowItem(
+async function updateWindowItemById(
   configFolder: string,
-  sourceFile: string,
-  lineNumber: number,
+  id: string,
   config: {
     displayName: string;
     windowTitle: string;
@@ -534,52 +539,52 @@ async function updateWindowItem(
     pinToAllDesktops?: boolean;
   }
 ): Promise<void> {
-  const filePath = path.join(configFolder, sourceFile);
-  const content = FileUtils.safeReadTextFile(filePath);
+  const { PathManager } = await import('../config/pathManager.js');
+  const dataFiles = PathManager.getDataFiles();
 
-  if (content === null) {
-    throw new Error(`ファイルが読み込めませんでした: ${filePath}`);
+  // 全データファイルからIDで検索
+  for (const fileName of dataFiles) {
+    const filePath = path.join(configFolder, fileName);
+    const content = FileUtils.safeReadTextFile(filePath);
+    if (!content) continue;
+
+    const jsonData = parseJsonDataFile(content);
+    const itemIndex = jsonData.items.findIndex(item => item.id === id);
+
+    if (itemIndex !== -1) {
+      // バックアップ作成
+      const backupService = await BackupService.getInstance();
+      await backupService.createBackup(filePath);
+
+      // アイテム更新（ID保持）
+      const newItem: JsonWindowItem = {
+        id,
+        type: 'window',
+        displayName: config.displayName,
+        windowTitle: config.windowTitle,
+      };
+
+      // オプショナルフィールドを条件付きで追加
+      if (config.processName !== undefined) newItem.processName = config.processName;
+      if (config.x !== undefined) newItem.x = config.x;
+      if (config.y !== undefined) newItem.y = config.y;
+      if (config.width !== undefined) newItem.width = config.width;
+      if (config.height !== undefined) newItem.height = config.height;
+      if (config.moveToActiveMonitorCenter !== undefined) newItem.moveToActiveMonitorCenter = config.moveToActiveMonitorCenter;
+      if (config.virtualDesktopNumber !== undefined) newItem.virtualDesktopNumber = config.virtualDesktopNumber;
+      if (config.activateWindow !== undefined) newItem.activateWindow = config.activateWindow;
+      if (config.pinToAllDesktops !== undefined) newItem.pinToAllDesktops = config.pinToAllDesktops;
+
+      jsonData.items[itemIndex] = newItem;
+
+      // 保存
+      const newContent = serializeJsonDataFile(jsonData);
+      FileUtils.safeWriteTextFile(filePath, newContent);
+      return;
+    }
   }
 
-  // バックアップを作成（設定に基づく）
-  const backupService = await BackupService.getInstance();
-  await backupService.createBackup(filePath);
-
-  const jsonData = parseJsonDataFile(content);
-
-  // 指定された行のアイテムを更新
-  if (lineNumber < 0 || lineNumber >= jsonData.items.length) {
-    throw new Error(`無効な行番号です: ${lineNumber}`);
-  }
-
-  const existingItem = jsonData.items[lineNumber];
-
-  // IDを保持してwindowアイテムを更新
-  const windowItem: JsonItem = {
-    id: existingItem.id,
-    type: 'window',
-    displayName: config.displayName,
-    windowTitle: config.windowTitle,
-  };
-
-  if (config.processName !== undefined) windowItem.processName = config.processName;
-  if (config.x !== undefined) windowItem.x = config.x;
-  if (config.y !== undefined) windowItem.y = config.y;
-  if (config.width !== undefined) windowItem.width = config.width;
-  if (config.height !== undefined) windowItem.height = config.height;
-  if (config.moveToActiveMonitorCenter !== undefined)
-    windowItem.moveToActiveMonitorCenter = config.moveToActiveMonitorCenter;
-  if (config.virtualDesktopNumber !== undefined)
-    windowItem.virtualDesktopNumber = config.virtualDesktopNumber;
-  if (config.activateWindow !== undefined) windowItem.activateWindow = config.activateWindow;
-  if (config.pinToAllDesktops !== undefined)
-    windowItem.pinToAllDesktops = config.pinToAllDesktops;
-
-  jsonData.items[lineNumber] = windowItem;
-
-  // 保存
-  const newContent = serializeJsonDataFile(jsonData);
-  FileUtils.safeWriteTextFile(filePath, newContent);
+  throw new Error(`ID ${id} のアイテムが見つかりません`);
 }
 
 /**
@@ -848,42 +853,30 @@ export function setupDataHandlers(configFolder: string) {
     }
   );
 
+  // IDベースのアイテム更新
   ipcMain.handle(
-    IPC_CHANNELS.UPDATE_DIR_ITEM,
-    async (
-      _event,
-      sourceFile: string,
-      lineNumber: number,
-      dirPath: string,
-      options?: JsonDirOptions
-    ) => {
-      await updateDirItem(configFolder, sourceFile, lineNumber, dirPath, options);
+    IPC_CHANNELS.UPDATE_DIR_ITEM_BY_ID,
+    async (_event, id: string, dirPath: string, options?: JsonDirOptions) => {
+      await updateDirItemById(configFolder, id, dirPath, options);
       notifyDataChanged();
       return;
     }
   );
 
   ipcMain.handle(
-    IPC_CHANNELS.UPDATE_GROUP_ITEM,
-    async (
-      _event,
-      sourceFile: string,
-      lineNumber: number,
-      displayName: string,
-      itemNames: string[]
-    ) => {
-      await updateGroupItem(configFolder, sourceFile, lineNumber, displayName, itemNames);
+    IPC_CHANNELS.UPDATE_GROUP_ITEM_BY_ID,
+    async (_event, id: string, displayName: string, itemNames: string[]) => {
+      await updateGroupItemById(configFolder, id, displayName, itemNames);
       notifyDataChanged();
       return;
     }
   );
 
   ipcMain.handle(
-    IPC_CHANNELS.UPDATE_WINDOW_ITEM,
+    IPC_CHANNELS.UPDATE_WINDOW_ITEM_BY_ID,
     async (
       _event,
-      sourceFile: string,
-      lineNumber: number,
+      id: string,
       config: {
         displayName: string;
         windowTitle: string;
@@ -898,7 +891,7 @@ export function setupDataHandlers(configFolder: string) {
         pinToAllDesktops?: boolean;
       }
     ) => {
-      await updateWindowItem(configFolder, sourceFile, lineNumber, config);
+      await updateWindowItemById(configFolder, id, config);
       notifyDataChanged();
       return;
     }

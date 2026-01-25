@@ -28,15 +28,13 @@ interface RegisterItem {
   fullArgs?: string;
 }
 
-interface UpdateItemRequest {
-  sourceFile: string;
-  lineNumber: number;
+interface UpdateItemByIdRequest {
+  id: string;
   newItem: LauncherItem;
 }
 
-interface DeleteItemRequest {
-  sourceFile: string;
-  lineNumber: number;
+interface DeleteItemByIdRequest {
+  id: string;
 }
 
 contextBridge.exposeInMainWorld('electronAPI', {
@@ -134,38 +132,24 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke(IPC_CHANNELS.GET_ALL_WINDOWS_ALL_DESKTOPS),
   getVirtualDesktopInfo: (): Promise<VirtualDesktopInfo> =>
     ipcRenderer.invoke(IPC_CHANNELS.GET_VIRTUAL_DESKTOP_INFO),
-  updateItem: (request: UpdateItemRequest) => ipcRenderer.invoke(IPC_CHANNELS.UPDATE_ITEM, request),
-  deleteItems: (requests: DeleteItemRequest[]) =>
-    ipcRenderer.invoke(IPC_CHANNELS.DELETE_ITEMS, requests),
-  batchUpdateItems: (requests: UpdateItemRequest[]) =>
-    ipcRenderer.invoke(IPC_CHANNELS.BATCH_UPDATE_ITEMS, requests),
+  updateItemById: (request: UpdateItemByIdRequest) =>
+    ipcRenderer.invoke(IPC_CHANNELS.UPDATE_ITEM_BY_ID, request),
+  deleteItemsById: (requests: DeleteItemByIdRequest[]) =>
+    ipcRenderer.invoke(IPC_CHANNELS.DELETE_ITEMS_BY_ID, requests),
+  batchUpdateItemsById: (requests: UpdateItemByIdRequest[]) =>
+    ipcRenderer.invoke(IPC_CHANNELS.BATCH_UPDATE_ITEMS_BY_ID, requests),
   // EditableJsonItem API
   loadEditableItems: (): Promise<LoadEditableItemsResult> =>
     ipcRenderer.invoke(IPC_CHANNELS.LOAD_EDITABLE_ITEMS),
   saveEditableItems: (editableItems: EditableJsonItem[]) =>
     ipcRenderer.invoke(IPC_CHANNELS.SAVE_EDITABLE_ITEMS, editableItems),
-  updateDirItem: (
-    sourceFile: string,
-    lineNumber: number,
-    dirPath: string,
-    options?: JsonDirOptions
-  ) => ipcRenderer.invoke(IPC_CHANNELS.UPDATE_DIR_ITEM, sourceFile, lineNumber, dirPath, options),
-  updateGroupItem: (
-    sourceFile: string,
-    lineNumber: number,
-    displayName: string,
-    itemNames: string[]
-  ) =>
-    ipcRenderer.invoke(
-      IPC_CHANNELS.UPDATE_GROUP_ITEM,
-      sourceFile,
-      lineNumber,
-      displayName,
-      itemNames
-    ),
-  updateWindowItem: (
-    sourceFile: string,
-    lineNumber: number,
+  // IDベースのアイテム更新
+  updateDirItemById: (id: string, dirPath: string, options?: JsonDirOptions) =>
+    ipcRenderer.invoke(IPC_CHANNELS.UPDATE_DIR_ITEM_BY_ID, id, dirPath, options),
+  updateGroupItemById: (id: string, displayName: string, itemNames: string[]) =>
+    ipcRenderer.invoke(IPC_CHANNELS.UPDATE_GROUP_ITEM_BY_ID, id, displayName, itemNames),
+  updateWindowItemById: (
+    id: string,
     config: {
       displayName: string;
       windowTitle: string;
@@ -179,7 +163,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
       activateWindow?: boolean;
       pinToAllDesktops?: boolean;
     }
-  ) => ipcRenderer.invoke(IPC_CHANNELS.UPDATE_WINDOW_ITEM, sourceFile, lineNumber, config),
+  ) => ipcRenderer.invoke(IPC_CHANNELS.UPDATE_WINDOW_ITEM_BY_ID, id, config),
   setEditMode: (editMode: boolean) => ipcRenderer.invoke(IPC_CHANNELS.SET_EDIT_MODE, editMode),
   getEditMode: () => ipcRenderer.invoke(IPC_CHANNELS.GET_EDIT_MODE),
   selectBookmarkFile: () => ipcRenderer.invoke(IPC_CHANNELS.SELECT_BOOKMARK_FILE),

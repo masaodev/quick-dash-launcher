@@ -13,10 +13,8 @@ import type { LauncherItem, GroupItem, WindowOperationItem } from './launcher';
 export interface EditingItemMeta {
   /** 元のデータファイル名 */
   sourceFile: string;
-  /** データファイル内の行番号（1から開始） */
-  lineNumber: number;
-  /** JSONファイルのアイテムID（ID保持用） */
-  jsonItemId?: string;
+  /** JSONファイルのアイテムID（編集・削除の識別子として使用） */
+  jsonItemId: string;
 }
 
 /**
@@ -46,7 +44,7 @@ export interface EditingWindowOperationItem extends WindowOperationItem, Editing
  *
  * RegisterModal、useRegisterModal、useRegisterFormで使用される。
  * LauncherItem/GroupItem/WindowOperationItemのいずれかに、
- * 編集に必要なメタデータ（sourceFile, lineNumber, jsonItemId）を付加したもの。
+ * 編集に必要なメタデータ（sourceFile, jsonItemId）を付加したもの。
  */
 export type EditingAppItem = EditingLauncherItem | EditingGroupItem | EditingWindowOperationItem;
 

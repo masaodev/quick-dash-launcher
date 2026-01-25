@@ -55,18 +55,18 @@ export interface LauncherItem {
   originalPath?: string;
   /** 元のデータファイル */
   sourceFile?: string;
-  /** データファイル内の行番号（編集機能で使用） */
+  /** データファイル内の行番号（編集機能で使用、非推奨：IDベースアクセスを推奨） */
   lineNumber?: number;
+  /** JSONアイテムのID（JSON形式の場合） */
+  id?: string;
   /** フォルダ取込アイテムによって展開されたアイテムかどうか */
   isDirExpanded?: boolean;
   /** フォルダ取込アイテムから展開された場合の元ディレクトリパス */
   expandedFrom?: string;
   /** フォルダ取込アイテムから展開された場合のオプション情報（人間が読める形式） */
   expandedOptions?: string;
-  /** フォルダ取込アイテムから展開された場合の元のデータファイル */
-  expandedFromFile?: string;
-  /** フォルダ取込アイテムから展開された場合の元の行番号 */
-  expandedFromLine?: number;
+  /** フォルダ取込アイテムから展開された場合の元のdirディレクティブID */
+  expandedFromId?: string;
   /** 編集モードで変更されたかどうか */
   isEdited?: boolean;
   /** ウィンドウ制御設定（ウィンドウ検索・位置・サイズ制御） */
@@ -86,8 +86,10 @@ export interface GroupItem {
   itemNames: string[];
   /** 元のデータファイル */
   sourceFile?: string;
-  /** データファイル内の行番号（編集機能で使用） */
+  /** データファイル内の行番号（編集機能で使用、非推奨：IDベースアクセスを推奨） */
   lineNumber?: number;
+  /** JSONアイテムのID（JSON形式の場合） */
+  id?: string;
   /** 編集モードで変更されたかどうか */
   isEdited?: boolean;
 }
@@ -133,8 +135,10 @@ export interface WindowOperationItem {
   pinToAllDesktops?: boolean;
   /** 元のデータファイル */
   sourceFile?: string;
-  /** データファイル内の行番号（編集機能で使用） */
+  /** データファイル内の行番号（編集機能で使用、非推奨：IDベースアクセスを推奨） */
   lineNumber?: number;
+  /** JSONアイテムのID（JSON形式の場合） */
+  id?: string;
   /** 編集モードで変更されたかどうか */
   isEdited?: boolean;
 }

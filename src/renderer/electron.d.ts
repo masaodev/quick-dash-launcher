@@ -76,42 +76,17 @@ export interface ElectronAPI {
   validateHotkey: (hotkey: string) => Promise<{ isValid: boolean; reason?: string }>;
   changeHotkey: (newHotkey: string) => Promise<boolean>;
   isFirstLaunch: () => Promise<boolean>;
-  updateItem: (request: {
-    sourceFile: string;
-    lineNumber: number;
-    newItem: LauncherItem;
-  }) => Promise<{ success: boolean }>;
-  deleteItems: (
-    requests: {
-      sourceFile: string;
-      lineNumber: number;
-    }[]
-  ) => Promise<{ success: boolean }>;
-  batchUpdateItems: (
-    requests: {
-      sourceFile: string;
-      lineNumber: number;
-      newItem: LauncherItem;
-    }[]
-  ) => Promise<{ success: boolean }>;
+  updateItemById: (request: { id: string; newItem: LauncherItem }) => Promise<{ success: boolean }>;
+  deleteItemsById: (requests: { id: string }[]) => Promise<{ success: boolean }>;
+  batchUpdateItemsById: (requests: { id: string; newItem: LauncherItem }[]) => Promise<{ success: boolean }>;
   // EditableJsonItem API
   loadEditableItems: () => Promise<LoadEditableItemsResult>;
   saveEditableItems: (editableItems: EditableJsonItem[]) => Promise<void>;
-  updateDirItem: (
-    sourceFile: string,
-    lineNumber: number,
-    dirPath: string,
-    options?: JsonDirOptions
-  ) => Promise<void>;
-  updateGroupItem: (
-    sourceFile: string,
-    lineNumber: number,
-    displayName: string,
-    itemNames: string[]
-  ) => Promise<void>;
-  updateWindowItem: (
-    sourceFile: string,
-    lineNumber: number,
+  // IDベースのアイテム更新
+  updateDirItemById: (id: string, dirPath: string, options?: JsonDirOptions) => Promise<void>;
+  updateGroupItemById: (id: string, displayName: string, itemNames: string[]) => Promise<void>;
+  updateWindowItemById: (
+    id: string,
     config: {
       displayName: string;
       windowTitle: string;

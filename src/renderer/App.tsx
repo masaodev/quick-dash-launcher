@@ -416,32 +416,19 @@ const App: React.FC = () => {
       // 編集モードの場合
       const item = items[0];
 
-      // 展開後のアイテムからフォルダ取込を編集する場合の特別処理
-      const isEditingExpandedItem =
-        isEditingLauncherItem(editingItem) &&
-        editingItem.isDirExpanded &&
-        editingItem.expandedFromFile &&
-        editingItem.expandedFromLine !== undefined;
-
-      // 更新先のファイルと行番号を決定
-      const targetSourceFile = isEditingExpandedItem
-        ? editingItem.expandedFromFile!
-        : editingItem.sourceFile;
-      const targetLineNumber = isEditingExpandedItem
-        ? editingItem.expandedFromLine!
-        : editingItem.lineNumber;
-
       // 保存先ファイルが変更されたかチェック
       // targetFileが指定されている場合はそれを優先、なければtargetTabを使用
       const targetFile = item.targetFile || item.targetTab;
-      const isFileChanged = targetFile !== targetSourceFile;
+      const isFileChanged = targetFile !== editingItem.sourceFile;
 
       if (isFileChanged) {
         // ファイルが変更された場合：元のファイルから削除 + 新しいファイルに登録
-        await window.electronAPI.deleteItems([
+        if (!editingItem.jsonItemId) {
+          throw new Error('アイテムIDが見つかりません');
+        }
+        await window.electronAPI.deleteItemsById([
           {
-            sourceFile: targetSourceFile,
-            lineNumber: targetLineNumber,
+            id: editingItem.jsonItemId,
           },
         ]);
         await window.electronAPI.registerItems([item]);
@@ -449,25 +436,30 @@ const App: React.FC = () => {
         // ファイルが変更されていない場合：従来の更新処理
         // フォルダ取込ディレクティブの編集の場合（dirアイテム）
         if (item.itemCategory === 'dir') {
-          // 新しいupdateDirItem APIを使用
-          await window.electronAPI.updateDirItem(
-            targetSourceFile,
-            targetLineNumber,
+          if (!editingItem.jsonItemId) {
+            throw new Error('アイテムIDが見つかりません');
+          }
+          await window.electronAPI.updateDirItemById(
+            editingItem.jsonItemId,
             item.path,
             item.dirOptions
           );
         } else if (item.itemCategory === 'group') {
           // グループアイテムの編集の場合
+          if (!editingItem.jsonItemId) {
+            throw new Error('アイテムIDが見つかりません');
+          }
           const itemNames = item.groupItemNames || [];
-          // 新しいupdateGroupItem APIを使用
-          await window.electronAPI.updateGroupItem(
-            targetSourceFile,
-            targetLineNumber,
+          await window.electronAPI.updateGroupItemById(
+            editingItem.jsonItemId,
             item.displayName,
             itemNames
           );
         } else if (item.itemCategory === 'window') {
           // ウィンドウ操作アイテムの編集の場合
+          if (!editingItem.jsonItemId) {
+            throw new Error('アイテムIDが見つかりません');
+          }
           const cfg = item.windowOperationConfig;
           if (!cfg) throw new Error('windowOperationConfig is required for window items');
 
@@ -486,14 +478,16 @@ const App: React.FC = () => {
             pinToAllDesktops: cfg.pinToAllDesktops,
           });
 
-          // 新しいupdateWindowItem APIを使用
-          await window.electronAPI.updateWindowItem(
-            targetSourceFile,
-            targetLineNumber,
+          await window.electronAPI.updateWindowItemById(
+            editingItem.jsonItemId,
             config
           );
         } else {
           // 通常のアイテムの編集
+          if (!editingItem.jsonItemId) {
+            throw new Error('アイテムIDが見つかりません');
+          }
+
           const newItem: LauncherItem = {
             displayName: item.displayName,
             path: item.path,
@@ -503,9 +497,8 @@ const App: React.FC = () => {
             windowConfig: item.windowConfig,
           };
 
-          await window.electronAPI.updateItem({
-            sourceFile: targetSourceFile,
-            lineNumber: targetLineNumber,
+          await window.electronAPI.updateItemById({
+            id: editingItem.jsonItemId,
             newItem: newItem,
           });
         }
@@ -531,10 +524,12 @@ const App: React.FC = () => {
     if (!itemToDelete) return;
 
     try {
-      await window.electronAPI.deleteItems([
+      if (!itemToDelete.jsonItemId) {
+        throw new Error('アイテムIDが見つかりません');
+      }
+      await window.electronAPI.deleteItemsById([
         {
-          sourceFile: itemToDelete.sourceFile,
-          lineNumber: itemToDelete.lineNumber,
+          id: itemToDelete.jsonItemId,
         },
       ]);
 
@@ -581,34 +576,33 @@ const App: React.FC = () => {
 
     // グループアイテムの場合
     if (isGroupItem(item)) {
-      const editingItem: EditingAppItem = {
+      openEditModal({
         ...item,
         sourceFile: item.sourceFile || 'data.json',
-        lineNumber: item.lineNumber || 1,
-      };
-      openEditModal(editingItem);
+        jsonItemId: item.id,
+      });
       return;
     }
 
     // WindowOperationItemの場合
     if (isWindowOperationItem(item)) {
-      const editingItem: EditingAppItem = {
+      openEditModal({
         ...item,
         sourceFile: item.sourceFile || 'data.json',
-        lineNumber: item.lineNumber || 1,
-      };
-      openEditModal(editingItem);
+        jsonItemId: item.id,
+      });
       return;
     }
 
     // LauncherItemの場合
     const launcherItem = item as LauncherItem;
-    const editingItem: EditingAppItem = {
+    // 展開されたアイテムの場合はexpandedFromIdを、そうでない場合はidを使用
+    const jsonItemId = launcherItem.isDirExpanded ? launcherItem.expandedFromId : launcherItem.id;
+    openEditModal({
       ...launcherItem,
       sourceFile: launcherItem.sourceFile || 'data.json',
-      lineNumber: launcherItem.lineNumber || 1,
-    };
-    openEditModal(editingItem);
+      jsonItemId,
+    });
   };
 
   const handleFirstLaunchComplete = async (hotkey: string, autoLaunch: boolean) => {

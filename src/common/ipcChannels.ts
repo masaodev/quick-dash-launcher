@@ -67,13 +67,13 @@ export const IPC_CHANNELS = {
   SET_MODAL_MODE: 'set-modal-mode',
   LOG_PERFORMANCE_TIMING: 'log-performance-timing',
 
-  // 編集操作
-  UPDATE_ITEM: 'update-item',
-  UPDATE_DIR_ITEM: 'update-dir-item',
-  UPDATE_GROUP_ITEM: 'update-group-item',
-  UPDATE_WINDOW_ITEM: 'update-window-item',
-  DELETE_ITEMS: 'delete-items',
-  BATCH_UPDATE_ITEMS: 'batch-update-items',
+  // 編集操作（IDベース）
+  UPDATE_ITEM_BY_ID: 'update-item-by-id',
+  UPDATE_DIR_ITEM_BY_ID: 'update-dir-item-by-id',
+  UPDATE_GROUP_ITEM_BY_ID: 'update-group-item-by-id',
+  UPDATE_WINDOW_ITEM_BY_ID: 'update-window-item-by-id',
+  DELETE_ITEMS_BY_ID: 'delete-items-by-id',
+  BATCH_UPDATE_ITEMS_BY_ID: 'batch-update-items-by-id',
 
   // 設定
   SETTINGS_IS_FIRST_LAUNCH: 'settings:is-first-launch',
