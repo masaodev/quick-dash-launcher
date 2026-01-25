@@ -35,13 +35,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # アプリケーションのビルド（TypeScriptのコンパイル等）
-      - name: Build application
-        run: npm run build
-
-      # Windowsインストーラーの作成（electron-builderを使用）
-      # 注意: publish: neverで自動公開を無効化（GitHub Actionsで制御するため）
-      - name: Build Windows installer
+      # アプリケーションのビルドとWindowsインストーラーの作成
+      # npm run dist は内部で npm run build を実行し、その prebuild でライセンスファイルも生成される
+      - name: Build and package
         run: npm run dist -- --publish never
 
       # タグ名からバージョン番号を抽出（v1.0.0 → 1.0.0）
@@ -67,10 +63,10 @@ jobs:
             QuickDashLauncher ${{ github.ref_name }} のリリースです。
 
             ## インストール方法
-            
+
             ### インストーラー版
             `QuickDashLauncher-Setup-${{ steps.get_version.outputs.VERSION }}.exe` をダウンロードして実行してください。
-            
+
             ### ポータブル版
             `QuickDashLauncher-${{ steps.get_version.outputs.VERSION }}.exe` をダウンロードして任意の場所に配置してください。インストール不要で直接実行できます。
 
@@ -78,9 +74,14 @@ jobs:
             - Alt+Spaceでグローバルランチャー起動（デフォルト、設定で変更可能）
             - Webサイト、アプリケーション、フォルダへの素早いアクセス
             - フォルダ取込機能でファイル一覧の自動取得
+
+            ## ライセンス情報
+            このソフトウェアはMITライセンスの下で公開されています。
+            依存パッケージのライセンスについては、`THIRD-PARTY-NOTICES.md`を参照してください。
           draft: false
           prerelease: false
           files: |
             release/*.exe
             release/*.exe.blockmap
             release/latest.yml
+            THIRD-PARTY-NOTICES.md

@@ -58,6 +58,9 @@ test-run.log
 temp/
 tmp/
 
+# Auto-generated license file
+THIRD-PARTY-NOTICES.md
+
 # Test config directories (local working directories at project root)
 # ルートレベルの作業用設定フォルダのみを除外
 /test-config/
