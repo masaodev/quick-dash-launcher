@@ -342,7 +342,7 @@ Chrome,chrome.exe,,,Google Chrome
 }
 ```
 
-詳細は **[データファイル形式 - ウィンドウ設定](data-format.md#ウィンドウ設定フィールドの記述方法)** を参照してください。
+詳細は **[データファイル形式 - ウィンドウ設定](file-formats/data-format.md#315-ウィンドウ制御設定windowconfig)** を参照してください。
 
 ### アクティブモニター中央への移動
 

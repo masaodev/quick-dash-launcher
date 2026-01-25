@@ -28,6 +28,7 @@ docs/
 - **[画面仕様](screens/)** - 画面単位の操作とUI仕様（仕様書の主軸）
 - **[横断的機能](features/)** - 複数画面にまたがる機能・概念
 - **[アーキテクチャ](architecture/)** - 技術実装の詳細
+  - **[ファイル形式](architecture/file-formats/)** - data.json、workspace.json、config.jsonの仕様
 - **[テスト](testing/)** - テスト関連
 - **[ドメイン用語集](architecture/glossary.md)** - プロジェクトで使用される用語の定義
 
