@@ -12,7 +12,7 @@ QuickDashLauncherは複数のJSON形式のデータファイルをサポート�
 - **data2.json, data3.json, data4.json...**: 追加のデータファイル（オプション）
 - **tempdata.json**: 一時データファイル（実行時生成）
 
-**重要な変更**: v0.6.1以降、CSV形式マイグレーション処理が完全に削除されました。全てのデータファイルはJSON形式（data*.json）で管理され、CSV形式（data*.txt）のサポートは終了しました。新規インストール時からJSON形式でデータファイルが作成されます。
+**データ形式**: v0.6.0以降、全てのデータファイルはJSON形式（data*.json）で管理されます。
 
 #### 複数データファイルのサポート
 
@@ -97,73 +97,6 @@ QuickDashLauncherは複数のJSON形式のデータファイルをサポート�
   ]
 }
 ```
-
-## CSV→JSONマイグレーション
-
-v0.6.0以降、データファイル形式がCSV（data.txt）からJSON（data.json）に変更されました。
-
-### 自動マイグレーション
-
-アプリケーション起動時に以下の処理が自動的に実行されます：
-
-1. **CSV検出**: 設定フォルダ内のCSV形式ファイル（data.txt, data2.txt, ...）を検出
-2. **JSON変換**: 各CSVファイルをJSON形式に変換（例: data.txt → data.json）
-3. **バックアップ**: 元のCSVファイルをバックアップフォルダに移動
-4. **設定更新**: settings.jsonのファイル参照を自動的に更新
-
-### バックアップの仕組み
-
-- **バックアップ先**: `%APPDATA%/quick-dash-launcher/backup/migration-{日時}/`
-- **保存内容**: 元のCSVファイル（data.txt, data2.txt, ...）
-- **タイムスタンプ**: 移行日時がフォルダ名に含まれます
-- **例**: `backup/migration-2026-01-25T01-38-05-123Z/data.txt`
-
-### 移行例
-
-**移行前（CSV形式）:**
-```
-Google,https://www.google.com
-VSCode,C:\Program Files\Microsoft VS Code\Code.exe,--new-window
-```
-
-**移行後（JSON形式）:**
-```json
-{
-  "version": "1.0",
-  "items": [
-    {
-      "id": "a1B2c3D4",
-      "type": "item",
-      "displayName": "Google",
-      "path": "https://www.google.com"
-    },
-    {
-      "id": "e5F6g7H8",
-      "type": "item",
-      "displayName": "VSCode",
-      "path": "C:\\Program Files\\Microsoft VS Code\\Code.exe",
-      "args": "--new-window"
-    }
-  ]
-}
-```
-
-### スキップされた行
-
-マイグレーション中に変換できなかった行は以下のように処理されます：
-
-- **ログ記録**: スキップされた行とエラー理由がログに記録されます
-- **ログ場所**: `%APPDATA%/quick-dash-launcher/logs/main.log`
-- **継続処理**: 変換できる行のみを処理し、エラーがあっても処理を継続します
-
-### 移行後の確認
-
-マイグレーション完了後、以下を確認してください：
-
-1. **データファイル**: data.jsonが正しく生成されているか
-2. **バックアップ**: backupフォルダに元のdata.txtが保存されているか
-3. **アイテム表示**: アプリケーション起動時にアイテムが正しく表示されるか
-4. **ログ**: スキップされた行がないかログを確認
 
 ## 重複排除ルール
 
