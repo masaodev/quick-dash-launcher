@@ -63,6 +63,7 @@
 .search-mode-indicator {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: var(--spacing-sm);
   font-size: var(--font-size-xs);
   color: var(--text-muted);
