@@ -84,7 +84,6 @@ IPCハンドラーは機能ごとに分離（`src/main/ipc/`）:
 | `itemLauncher.ts` | URL/ファイル/アプリ/カスタムURIの起動処理を統一 | `itemHandlers.ts`, `workspaceHandlers.ts` |
 | `windowMatcher.ts` | ウィンドウタイトルによるウィンドウ検索 | `windowActivator.ts` |
 | `nativeWindowControl.ts` | ネイティブWindows API経由のウィンドウ制御 | `windowActivator.ts` |
-| `migrationHelpers.ts` | データファイル形式の自動移行処理 | `main.ts` |
 | `virtualDesktop/` | 仮想デスクトップ制御の機能別モジュール群 | `windowActivator.ts`, `windowSearchHandlers.ts` |
 
 ### virtualDesktopモジュールの内部構造
@@ -114,8 +113,7 @@ IPCハンドラーは機能ごとに分離（`src/main/ipc/`）:
 
 | モジュール | 役割 |
 |-----------|------|
-| `directiveUtils.ts` | ディレクティブ（group, dir, window）の判定と解析。v0.5.10以降、`parseWindowOperationDirective()`はJSON形式専用（CSV形式サポート終了） |
-| `windowOperationMigration.ts` | Windows操作アイテムの旧CSV形式からJSON形式への変換処理（v0.5.10で自動移行機能を実装） |
+| `directiveUtils.ts` | ディレクティブ（group, dir, window）の判定と解析 |
 | `csvParser.ts` | データ形式のパース処理 |
 | `dataConverters.ts` | データ形式変換（dirオプション解析等、v0.5.20で型定義を`types/register.ts`に移動） |
 | `windowConfigUtils.ts` | ウィンドウ設定のJSON⇔文字列変換 |
@@ -245,5 +243,8 @@ IPCハンドラーは機能ごとに分離（`src/main/ipc/`）:
 
 - [IPCチャンネル](ipc-channels.md) - 各IPCチャンネルの仕様
 - [ウィンドウ制御](window-control.md) - ウィンドウ管理システム
-- [データファイル形式](data-format.md) - data.jsonファイル仕様
+- [ファイル形式一覧](file-formats/README.md) - すべてのファイル形式の概要
+- [データファイル形式](file-formats/data-format.md) - data.json仕様
+- [ワークスペースファイル形式](file-formats/workspace-format.md) - workspace.json仕様
+- [設定ファイル形式](file-formats/settings-format.md) - config.json仕様
 - [CSSデザインシステム](css-design.md) - スタイル管理

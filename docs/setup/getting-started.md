@@ -229,10 +229,6 @@ Viteデベロップメントサーバーが起動し、ホットリロード付�
 | `group` | グループアイテム（複数アイテムを一括起動） |
 | `window` | ウィンドウ操作アイテム（既存ウィンドウを制御） |
 
-### CSV形式からの移行
-
-v0.6.0以降、データファイル形式がCSV（data.txt）からJSON（data.json）に変更されました。既存のCSVファイルは初回起動時に自動的にJSON形式に変換され、バックアップフォルダに保存されます。詳細は[データファイル形式仕様](../architecture/data-format.md#csvjsonマイグレーション)を参照してください。
-
 ---
 
 ## 制約事項
@@ -246,6 +242,7 @@ v0.6.0以降、データファイル形式がCSV（data.txt）からJSON（data.
 
 - [開発ガイド](development.md) - 詳細な開発情報
 - [ビルドとデプロイ](build-deploy.md) - ビルドシステムとデプロイ方法
+- [ファイル形式一覧](../architecture/file-formats/README.md) - data.json、workspace.json、config.jsonの詳細
 - [アイテム管理](../screens/admin-window.md#6-アイテム管理の詳細) - 編集モードの使い方
 - [アイコンシステム](../features/icons.md) - アイコン機能の詳細
 - [アプリケーション設定](../screens/admin-window.md#7-設定機能の詳細) - ホットキーや表示設定

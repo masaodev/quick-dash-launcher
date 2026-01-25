@@ -29,14 +29,14 @@ QuickDashLauncherで使用されるドメイン用語の定義です。開発時
 | 登録項目 | `path` | 起動パス | パス/URL | 起動対象を指定するパスまたはURL。ファイルパス、フォルダパス、HTTPS URL、カスタムURIなど。`RegisterItem.path`および`LauncherItem.path`で使用。この値から自動的にItemTypeが検出される。 |
 | 登録種別 | `ItemCategory` | アイテム登録種別 | 登録種別 | アイテム登録画面での「種別」選択。`RegisterItem.itemCategory`で使用。ユーザーが登録方法を選択する。<br>値:<br>• `item` - 単一アイテム（1つのアイテムを個別に登録）<br>• `dir` - フォルダ取込（フォルダ内のファイルを一括登録）<br>• `group` - グループ（複数アイテムをまとめて一括起動）<br>• `window` - ウィンドウ操作（既存ウィンドウを検索・制御）<br><br>**ItemTypeとの違い**: ItemCategoryは「登録方法」、ItemTypeは「実行方法」を表す。例: itemCategory='item'かつtype='url'は「単一アイテムとしてURLを登録」を意味する。 |
 | アイテムタイプ | `ItemType` | アイテム実行タイプ | - | アイテムの実行方法を表す列挙型。`LauncherItem.type`で使用。パスから自動検出され、起動時の動作を決定する。<br>値:<br>• `url` - URL（HTTPまたはHTTPS URL、デフォルトブラウザで開く）<br>• `file` - ファイル（実行ファイル・ドキュメント等、関連付けされたアプリで開く）<br>• `folder` - フォルダ（ディレクトリ、エクスプローラーで開く）<br>• `app` - アプリケーション（実行可能ファイル、直接実行）<br>• `customUri` - カスタムURI（`obsidian://`、`vscode://`等の独自スキーマ）<br><br>**注**: GroupItemやWindowOperationItemは独自のtype値を持つため、ItemTypeには含まれない。 |
-| データファイル | `DataFile` | データファイル | - | アイテム定義を保存するファイル（data.json, data2.json, data3.json等）。JSON形式で記述し、items配列にアイテムを定義する。`%APPDATA%/quick-dash-launcher/config/`に配置。data.jsonは必須で削除不可。`PathManager.getDataFilePath()`でdata.jsonのパス取得。タブ表示で切り替え可能。v0.6.0以降、CSV形式（data.txt）からJSON形式（data.json）に移行。 |
+| データファイル | `DataFile` | データファイル | - | アイテム定義を保存するファイル（data.json, data2.json, data3.json等）。JSON形式で記述し、items配列にアイテムを定義する。`%APPDATA%/quick-dash-launcher/config/`に配置。data.jsonは必須で削除不可。`PathManager.getDataFilePath()`でdata.jsonのパス取得。タブ表示で切り替え可能。 |
 | データファイル | `RawDataLine` | 生データ行 | - | データファイルの1行を表す内部型。管理画面のアイテム編集で使用。`src/common/types/data.ts`で定義。 |
 | データファイル | `DataFileTab` | データファイルタブ | タブ | 複数データファイルをグループ化したタブ設定。設定画面で編集可能。 |
-| ディレクティブ | - | ディレクティブ | - | 【旧CSV形式の概念】データファイル内で特殊な処理を指示する行の総称。JSON形式では各アイテムの`type`フィールドで識別される。フォルダ取込（`type: "dir"`）、グループ（`type: "group"`）、ウィンドウ操作（`type: "window"`）の3種類がある。 |
-| ディレクティブ | `DirDirective` | フォルダ取込ディレクティブ | フォルダ取込 | 【旧CSV形式の概念】指定フォルダ内のアイテムを自動取込するディレクティブ。JSON形式では`JsonDirItem`（`type: "dir"`）として定義。内部処理で互換性のため`isDirDirective()`、`parseDirDirective()`を使用。 |
-| ディレクティブ | `GroupDirective` | グループディレクティブ | グループ | 【旧CSV形式の概念】複数アイテムをグループ化するディレクティブ。JSON形式では`JsonGroupItem`（`type: "group"`）として定義。内部処理で互換性のため`isGroupDirective()`、`parseGroupDirective()`を使用。 |
-| ディレクティブ | `WindowDirective` | ウィンドウ操作ディレクティブ | ウィンドウ操作 | 【旧CSV形式の概念】ウィンドウ検索・制御を定義するディレクティブ。JSON形式では`JsonWindowItem`（`type: "window"`）として定義。内部処理で互換性のため`isWindowOperationDirective()`を使用。 |
-| 行タイプ | `LineType` | 行タイプ | - | 【旧CSV形式の概念】データファイルの行の種別を表す列挙型。`RawDataLine.type`で使用。内部処理で互換性のため維持。<br>値:<br>• `directive` - ディレクティブ行（JSON形式では`type: "dir"/"group"/"window"`に対応）<br>• `item` - アイテム行（JSON形式では`type: "item"`に対応）<br>• `comment` - コメント行（JSON形式では廃止、内部互換性のみ）<br>• `empty` - 空行（JSON形式では廃止、内部互換性のみ） |
+| ディレクティブ | - | ディレクティブ | - | データファイル内で特殊な処理を指示するアイテムの総称。各アイテムの`type`フィールドで識別される。フォルダ取込（`type: "dir"`）、グループ（`type: "group"`）、ウィンドウ操作（`type: "window"`）の3種類がある。 |
+| ディレクティブ | `DirDirective` | フォルダ取込ディレクティブ | フォルダ取込 | 指定フォルダ内のアイテムを自動取込するディレクティブ。`JsonDirItem`（`type: "dir"`）として定義。内部処理で`isDirDirective()`、`parseDirDirective()`を使用。 |
+| ディレクティブ | `GroupDirective` | グループディレクティブ | グループ | 複数アイテムをグループ化するディレクティブ。`JsonGroupItem`（`type: "group"`）として定義。内部処理で`isGroupDirective()`、`parseGroupDirective()`を使用。 |
+| ディレクティブ | `WindowDirective` | ウィンドウ操作ディレクティブ | ウィンドウ操作 | ウィンドウ検索・制御を定義するディレクティブ。`JsonWindowItem`（`type: "window"`）として定義。内部処理で`isWindowOperationDirective()`を使用。 |
+| 行タイプ | `LineType` | 行タイプ | - | データファイルの行の種別を表す列挙型。`RawDataLine.type`で使用。内部処理で維持。<br>値:<br>• `directive` - ディレクティブ行（`type: "dir"/"group"/"window"`に対応）<br>• `item` - アイテム行（`type: "item"`に対応）<br>• `comment` - コメント行（内部互換性のみ）<br>• `empty` - 空行（内部互換性のみ） |
 | ワークスペース | - | ワークスペース機能 | ワークスペース | よく使うアイテムを整理・保存する機能の総称。メインウィンドウとは独立したウィンドウで表示される。アイテムをグループ分けして管理でき、ドラッグ&ドロップで整理できる。データファイルのアイテムとは独立したコピーとして保存される。 |
 | ワークスペース | `Workspace` | ワークスペース | ワークスペース | ワークスペース機能の作業領域。ワークスペースウィンドウに表示される。 |
 | ワークスペース | `WorkspaceGroup` | ワークスペースグループ | グループ | ワークスペース内のアイテムをグループ化。色分け・折りたたみ可能。 |
@@ -93,6 +93,6 @@ QuickDashLauncherで使用されるドメイン用語の定義です。開発時
 
 ## 関連ドキュメント
 
-- **[データ形式仕様](data-format.md)** - データファイルの詳細仕様
+- **[データ形式仕様](file-formats/data-format.md)** - データファイルの詳細仕様
 - **[システム概要](overview.md)** - アーキテクチャの全体像
 - **[コンポーネント命名規則](component-naming.md)** - コンポーネントの命名規則

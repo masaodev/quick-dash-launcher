@@ -299,7 +299,7 @@
 - プライマリモニターの左上が原点 (0, 0)
 - セカンダリモニターは相対位置に配置
 
-詳細は **[データファイル形式 - ウィンドウ設定](../architecture/data-format.md#ウィンドウ設定フィールドの記述方法)** を参照してください。
+詳細は **[データファイル形式 - ウィンドウ設定](../architecture/file-formats/data-format.md#ウィンドウ設定フィールドの記述方法)** を参照してください。
 
 #### データ保存形式
 
@@ -453,7 +453,7 @@ v0.5.10以降、管理画面（AdminItemManagerList）では、JSON文字列の�
 2. RegisterModalでウィンドウ操作設定を入力
 3. 「更新」ボタンをクリックすると、自動的に正しいJSON形式で保存される
 
-詳細は **[ウィンドウ制御システム](../architecture/window-control.md)** および **[データファイル形式](../architecture/data-format.md#ウィンドウ操作アイテム行の詳細)** を参照してください。
+詳細は **[ウィンドウ制御システム](../architecture/window-control.md)** および **[データファイル形式](../architecture/file-formats/data-format.md#ウィンドウ操作アイテム行の詳細)** を参照してください。
 
 ### 4.8. グループアイテムを管理
 
@@ -929,7 +929,7 @@ interface WindowInfo {
 
 ### 6.1. データファイル形式
 
-フォルダ取込アイテムの詳細な構文とオプションについては、**[データファイル形式仕様 - フォルダ取込アイテム行の詳細](../architecture/data-format.md#フォルダ取込アイテム行の詳細)** を参照してください。
+フォルダ取込アイテムの詳細な構文とオプションについては、**[データファイル形式仕様 - フォルダ取込アイテム行の詳細](../architecture/file-formats/data-format.md#フォルダ取込アイテム行の詳細)** を参照してください。
 
 ### 6.2. 使用例
 
@@ -1296,7 +1296,7 @@ try {
 
 #### 関連ドキュメント
 
-- **[データ形式仕様](../architecture/data-format.md)** - data.jsonの全体的な形式仕様
+- **[データ形式仕様](../architecture/file-formats/data-format.md)** - data.jsonの全体的な形式仕様
 - **[ウィンドウ制御](../architecture/window-control.md)** - ウィンドウ操作の内部実装
 
 #### 変更履歴

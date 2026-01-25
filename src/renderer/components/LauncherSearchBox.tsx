@@ -58,18 +58,19 @@ const LauncherSearchBox = forwardRef<HTMLInputElement, SearchBoxProps>(
         <div className="search-mode-indicator">
           <span className="search-mode-label">{SEARCH_MODE_LABELS[searchMode]}</span>
           <span>
+            {searchMode === 'window' && onRefreshWindows && (
+              <>
+                F5:
+                <button type="button" className="search-mode-hint-link" onClick={onRefreshWindows}>
+                  更新
+                </button>
+                {' / '}
+              </>
+            )}
             Shift+Tab:
             <button type="button" className="search-mode-hint-link" onClick={onToggleSearchMode}>
               モード切り替え
             </button>
-            {searchMode === 'window' && onRefreshWindows && (
-              <>
-                {' / F5:'}
-                <button type="button" className="search-mode-hint-link" onClick={onRefreshWindows}>
-                  更新
-                </button>
-              </>
-            )}
           </span>
         </div>
       </div>

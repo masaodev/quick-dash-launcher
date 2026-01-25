@@ -4,7 +4,7 @@
 
 - [画面一覧](./README.md) - 全画面構成の概要
 - [ワークスペース機能](../features/workspace.md) - 機能の使い方
-- [データファイル形式](../architecture/data-format.md) - workspace.json形式
+- [データファイル形式](../architecture/file-formats/data-format.md) - workspace.json形式
 - [IPC通信](../architecture/ipc-channels.md) - ワークスペース関連のIPCチャンネル
 - [管理ウィンドウ仕様書](./admin-window.md) - アーカイブタブの詳細
 
@@ -787,7 +787,7 @@ C:\Program Files\Code\Code.exe --new-window
 
 ### データ形式
 
-詳細なデータ形式は[データファイル形式](../architecture/data-format.md#ワークスペースデータ)を参照してください。
+詳細なデータ形式は[データファイル形式](../architecture/file-formats/data-format.md#ワークスペースデータ)を参照してください。
 
 ### ウィンドウカスタマイズ関連のCSSクラス
 
@@ -873,7 +873,7 @@ C:\Program Files\Code\Code.exe --new-window
 ## 10. 関連ドキュメント
 
 - **[ワークスペース機能](../features/workspace.md)** - 機能の詳細な使い方
-- **[データファイル形式](../architecture/data-format.md)** - workspace.json/execution-history.json形式
+- **[データファイル形式](../architecture/file-formats/data-format.md)** - workspace.json/execution-history.json形式
 - **[IPC通信](../architecture/ipc-channels.md)** - ワークスペース関連のIPCチャンネル
 - **[キーボードショートカット](../features/keyboard-shortcuts.md)** - 全ショートカット一覧
 - **[CSSデザインシステム](../architecture/css-design.md)** - スタイルガイドライン

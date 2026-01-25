@@ -1,16 +1,18 @@
 {
   "name": "quick-dash-launcher",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "main": "dist/main/main.js",
   "scripts": {
     "create-dev-icon": "powershell -ExecutionPolicy Bypass -File scripts/create-dev-icon.ps1",
     "dev": "cross-env APP_INSTANCE=dev VITE_PORT=9001 HOTKEY=Ctrl+Alt+A NODE_ENV=development ELECTRON_IS_DEV=1 vite",
     "dev2": "cross-env APP_INSTANCE=dev2 VITE_PORT=9002 HOTKEY=Ctrl+Alt+S NODE_ENV=development ELECTRON_IS_DEV=1 vite",
     "dev:test": "cross-env QUICK_DASH_CONFIG_DIR=./tests/dev/full VITE_PORT=9003 HOTKEY=Ctrl+Alt+T SHOW_WINDOW_ON_STARTUP=1 WINDOW_PIN_MODE=stayVisible NODE_ENV=development ELECTRON_IS_DEV=1 vite",
+    "prebuild": "npm run generate-licenses",
     "build": "vite build",
     "preview": "vite preview",
     "start": "npm run build && electron .",
     "dist": "npm run build && electron-builder",
+    "generate-licenses": "license-checker --production --markdown --out THIRD-PARTY-NOTICES.md",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "type-check": "tsc --noEmit",
@@ -74,6 +76,7 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "globals": "^17.0.0",
     "jsdom": "^27.4.0",
+    "license-checker": "^25.0.1",
     "path-browserify": "^1.0.1",
     "playwright": "^1.57.0",
     "prettier": "^3.8.0",
@@ -105,7 +108,8 @@
     },
     "files": [
       "dist/**/*",
-      "assets/**/*"
+      "assets/**/*",
+      "THIRD-PARTY-NOTICES.md"
     ],
     "extraResources": [
       {
