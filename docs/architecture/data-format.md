@@ -801,75 +801,9 @@ interface WindowOperationItem {
 type AppItem = LauncherItem | GroupItem | WindowOperationItem | WindowInfo;
 ```
 
-### 6.3. ワークスペース関連型
+### 6.3. 検索関連型
 
-#### 6.3.1. DragItemData
-
-```typescript
-/**
- * ドラッグアイテムのデータ型
- * ドラッグされているアイテムの種別と情報を表す
- */
-export type DragItemData =
-  | { type: 'workspace-item'; itemId: string; currentGroupId?: string }
-  | { type: 'history-item'; historyItem: LauncherItem }
-  | { type: 'group'; groupId: string };
-```
-
-#### 6.3.2. DropTargetData
-
-```typescript
-/**
- * ドロップターゲットのデータ型
- * ドロップ先の種別と識別子を表す
- */
-export interface DropTargetData {
-  /** ドロップ先のタイプ */
-  targetType: 'group' | 'item' | 'uncategorized';
-  /** グループID（targetType='group'の場合） */
-  groupId?: string;
-  /** アイテムID（targetType='item'の場合） */
-  itemId?: string;
-}
-```
-
-**用途**: ワークスペース機能のドラッグ&ドロップで使用される型安全なデータ構造です。
-
-#### 6.3.3. ArchivedWorkspaceGroup
-
-```typescript
-/**
- * アーカイブされたワークスペースグループ
- * WorkspaceGroupを拡張し、アーカイブ関連の情報を追加
- */
-export interface ArchivedWorkspaceGroup extends WorkspaceGroup {
-  /** アーカイブ日時（timestamp） */
-  archivedAt: number;
-  /** アーカイブ前のorder（復元時の参考用） */
-  originalOrder: number;
-  /** アーカイブ時のアイテム数（表示用） */
-  itemCount: number;
-}
-```
-
-#### 6.3.4. ArchivedWorkspaceItem
-
-```typescript
-/**
- * アーカイブされたワークスペースアイテム
- * WorkspaceItemを拡張し、アーカイブ関連の情報を追加
- */
-export interface ArchivedWorkspaceItem extends WorkspaceItem {
-  /** アーカイブ日時（timestamp） */
-  archivedAt: number;
-  /** アーカイブグループID（どのグループと一緒にアーカイブされたか） */
-  archivedGroupId: string;
-}
-```
-
-### 6.4. 検索関連型
-
-#### 6.4.1. SearchMode
+#### 6.3.1. SearchMode
 
 ```typescript
 /**
@@ -881,7 +815,7 @@ export interface ArchivedWorkspaceItem extends WorkspaceItem {
 export type SearchMode = 'normal' | 'window' | 'history';
 ```
 
-#### 6.4.2. SearchHistoryEntry
+#### 6.3.2. SearchHistoryEntry
 
 ```typescript
 /**
@@ -896,7 +830,7 @@ export interface SearchHistoryEntry {
 }
 ```
 
-#### 6.4.3. SearchHistoryState
+#### 6.3.3. SearchHistoryState
 
 ```typescript
 /**
@@ -911,134 +845,11 @@ export interface SearchHistoryState {
 }
 ```
 
-## 7. ワークスペースデータ
-
-ワークスペース機能で使用されるデータファイルの形式です。
-
-### 7.1. workspace.json
-
-ワークスペースアイテムとグループを保存するJSONファイル。
-
-**保存場所**: `%APPDATA%/quick-dash-launcher/config/workspace.json`
-
-**形式**:
-```json
-{
-  "items": [
-    {
-      "id": "uuid",
-      "displayName": "表示名",
-      "originalName": "元の名前",
-      "path": "パスまたはURL",
-      "type": "url | file | folder | app | customUri | group",
-      "icon": "base64エンコードされたアイコン（オプション）",
-      "customIcon": "カスタムアイコンファイル名（オプション）",
-      "args": "引数（オプション）",
-      "originalPath": "ショートカットのリンク先（オプション）",
-      "itemNames": ["アイテム名1", "アイテム名2"],
-      "order": 0,
-      "addedAt": 1234567890,
-      "groupId": "グループID（オプション）"
-    }
-  ],
-  "groups": [
-    {
-      "id": "uuid",
-      "name": "グループ名",
-      "color": "色（CSS変数名またはカラーコード）",
-      "order": 0,
-      "collapsed": false,
-      "createdAt": 1234567890
-    }
-  ]
-}
-```
-
-**備考**:
-- **v0.5.19以降**: `type` に `'group'` が追加され、グループアイテムをワークスペースに追加可能
-- **v0.5.19以降**: `itemNames` フィールドはグループアイテム専用（`type='group'` の場合のみ使用）
-
-### 7.2. execution-history.json
-
-アイテムの実行履歴を保存するJSONファイル（最大10件）。
-
-**保存場所**: `%APPDATA%/quick-dash-launcher/config/execution-history.json`
-
-**形式**:
-```json
-{
-  "history": [
-    {
-      "id": "uuid",
-      "itemName": "アイテム名",
-      "itemPath": "パスまたはURL",
-      "itemType": "url | file | folder | app | customUri | group",
-      "icon": "base64エンコードされたアイコン（オプション）",
-      "itemNames": ["アイテム名1", "アイテム名2"],
-      "executedAt": 1234567890
-    }
-  ]
-}
-```
-
-**特徴**:
-- 最大10件まで保持
-- 古い履歴から自動削除
-- メイン画面でアイテムを起動するたびに自動追加
-- **v0.5.19以降**: `itemType` に `'group'` が追加され、グループアイテムの実行履歴も記録可能
-- **v0.5.19以降**: `itemNames` フィールドはグループアイテム専用（`itemType='group'` の場合のみ使用）
-
-### 7.3. workspace-archive.json
-
-アーカイブされたワークスペースグループとアイテムを保存するJSONファイル。
-
-**保存場所**: `%APPDATA%/quick-dash-launcher/config/workspace-archive.json`
-
-**形式**:
-```json
-{
-  "archivedGroups": [
-    {
-      "id": "uuid",
-      "name": "グループ名",
-      "color": "色（CSS変数名またはカラーコード）",
-      "order": 0,
-      "collapsed": false,
-      "createdAt": 1234567890,
-      "archivedAt": 1234567890,
-      "originalOrder": 0,
-      "itemCount": 3
-    }
-  ],
-  "archivedItems": [
-    {
-      "id": "uuid",
-      "displayName": "表示名",
-      "originalName": "元の名前",
-      "path": "パスまたはURL",
-      "type": "url | file | folder | app | customUri",
-      "icon": "base64エンコードされたアイコン（オプション）",
-      "customIcon": "カスタムアイコンファイル名（オプション）",
-      "args": "引数（オプション）",
-      "originalPath": "ショートカットのリンク先（オプション）",
-      "order": 0,
-      "addedAt": 1234567890,
-      "groupId": "グループID",
-      "archivedAt": 1234567890,
-      "archivedGroupId": "アーカイブグループID"
-    }
-  ]
-}
-```
-
-**特徴**:
-- グループ単位でアーカイブ
-- グループとその中のアイテムが一緒に保存される
-- 復元時に同名グループが存在する場合、「(復元)」サフィックスが自動付加される
-
-## 8. 関連ドキュメント
+## 7. 関連ドキュメント
 
 - **[アイテム管理](../screens/admin-window.md#6-アイテム管理の詳細)** - データファイルの編集機能
 - **[フォルダ取込](../screens/register-modal.md#6-フォルダ取込アイテムの詳細)** - フォルダ取込機能の詳細
-- **[ワークスペース](../features/workspace.md)** - ワークスペース機能の使い方
+- **[ワークスペースファイル形式](workspace-format.md)** - workspace.json仕様
+- **[設定ファイル形式](settings-format.md)** - config.json仕様
+- **[ファイル形式一覧](file-formats.md)** - すべてのファイル形式の概要
 - **[開発ガイド](../setup/development.md)** - 開発時の注意事項

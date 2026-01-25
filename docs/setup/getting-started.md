@@ -242,6 +242,7 @@ Viteデベロップメントサーバーが起動し、ホットリロード付�
 
 - [開発ガイド](development.md) - 詳細な開発情報
 - [ビルドとデプロイ](build-deploy.md) - ビルドシステムとデプロイ方法
+- [ファイル形式一覧](../architecture/file-formats.md) - data.json、workspace.json、config.jsonの詳細
 - [アイテム管理](../screens/admin-window.md#6-アイテム管理の詳細) - 編集モードの使い方
 - [アイコンシステム](../features/icons.md) - アイコン機能の詳細
 - [アプリケーション設定](../screens/admin-window.md#7-設定機能の詳細) - ホットキーや表示設定

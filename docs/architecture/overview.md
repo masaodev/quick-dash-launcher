@@ -243,5 +243,8 @@ IPCハンドラーは機能ごとに分離（`src/main/ipc/`）:
 
 - [IPCチャンネル](ipc-channels.md) - 各IPCチャンネルの仕様
 - [ウィンドウ制御](window-control.md) - ウィンドウ管理システム
-- [データファイル形式](data-format.md) - data.jsonファイル仕様
+- [ファイル形式一覧](file-formats.md) - すべてのファイル形式の概要
+- [データファイル形式](data-format.md) - data.json仕様
+- [ワークスペースファイル形式](workspace-format.md) - workspace.json仕様
+- [設定ファイル形式](settings-format.md) - config.json仕様
 - [CSSデザインシステム](css-design.md) - スタイル管理
