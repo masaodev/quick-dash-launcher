@@ -47,7 +47,7 @@ describe('convertRegisterItemToRawDataLine', () => {
 
       const result = convertRegisterItemToRawDataLine(item, originalLine);
 
-      // ダブルクォートを含むので、escapeCSVがエスケープする
+      // ダブルクォートを含むので、escapeDisplayTextFieldがエスケープする
       expect(result.content).toBe(
         'Git Bash,wt.exe,"-p ""Git Bash"" -d ""C:\\Users\\test"" --title ""test"""'
       );
@@ -72,7 +72,7 @@ describe('convertRegisterItemToRawDataLine', () => {
 
       const result = convertRegisterItemToRawDataLine(item, originalLine);
 
-      // カンマを含むので、escapeCSVがエスケープする
+      // カンマを含むので、escapeDisplayTextFieldがエスケープする
       expect(result.content).toBe('Custom App,app.exe,"-p ""value1,value2"" --flag"');
     });
 

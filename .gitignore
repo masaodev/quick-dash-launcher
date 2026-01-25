@@ -1,10 +1,14 @@
 # Dependencies
 node_modules/
 npm-debug.log*
+npm-install.log
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+
+# Build and type check logs
+type-check-*.txt
 
 # Build output
 dist/

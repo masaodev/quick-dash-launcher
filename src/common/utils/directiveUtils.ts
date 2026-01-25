@@ -7,7 +7,7 @@
 import type { RawDataLine } from '../types';
 import type { WindowOperationConfig } from '../types/register.js';
 
-import { parseCSVLine } from './displayTextConverter';
+import { parseDisplayTextFields } from './displayTextConverter';
 
 /**
  * ウィンドウ操作アイテムのJSON設定を安全にパースする
@@ -15,13 +15,13 @@ import { parseCSVLine } from './displayTextConverter';
  * JSON形式の検証とパースを一元化し、エラーハンドリングを統一します。
  * App.tsxやEditableRawItemList.tsxなど、複数箇所で使用されるJSON.parseロジックを共通化します。
  *
- * @param configString - パース対象のJSON文字列（CSV形式でエスケープされている場合はparseCSVLineで事前処理が必要）
+ * @param configString - パース対象のJSON文字列（CSV形式でエスケープされている場合はparseDisplayTextFieldsで事前処理が必要）
  * @returns パースされた設定オブジェクト
  * @throws {Error} JSON形式でない場合、またはパースに失敗した場合
  *
  * @example
- * // CSV形式でエスケープされたJSON文字列をparseCSVLineで事前処理
- * const parts = parseCSVLine('window,"{""name"":""表示名"",""windowTitle"":""Chrome""}"');
+ * // CSV形式でエスケープされたJSON文字列をparseDisplayTextFieldsで事前処理
+ * const parts = parseDisplayTextFields('window,"{""name"":""表示名"",""windowTitle"":""Chrome""}"');
  * const config = parseWindowOperationConfig(parts[1]);
  * // { name: '表示名', windowTitle: 'Chrome' }
  *
@@ -75,7 +75,7 @@ export function parseWindowOperationConfig(configString: string): WindowOperatio
  * // { name: '表示名', windowTitle: 'Chrome', x: 100, y: 100 }
  */
 export function parseWindowOperationDirective(line: RawDataLine): WindowOperationConfig {
-  const parts = parseCSVLine(line.content);
+  const parts = parseDisplayTextFields(line.content);
   // parseWindowOperationConfigヘルパーを使用してJSON形式を安全にパース
   return parseWindowOperationConfig(parts[1] || '');
 }

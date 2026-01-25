@@ -6,13 +6,13 @@
  * - displayTextからJsonItemに逆変換する
  *
  * displayText形式:
- * - CSV形式のテキスト表現を使用（人間が読みやすく編集しやすい）
+ * - フィールド区切りにカンマを使用したテキスト表現（人間が読みやすく編集しやすい）
  * - 例: "アプリ名,C:\path\to\app.exe,引数,custom-icon.png"
  *
- * CSV関連関数:
- * - escapeCSV(), parseCSVLine() は、displayTextのパース/エスケープに使用
- * - データファイル形式ではなく、UI上の表示・編集用テキスト処理のために使用
- * - 元々のCSV形式サポートは削除されたが、これらの関数はdisplayText処理で必要
+ * 重要な注意:
+ * - escapeDisplayTextField(), parseDisplayTextFields() は、displayText専用のパース/エスケープ処理です
+ * - データファイル（data.json等）はJSON形式で保存され、CSV形式は使用していません
+ * - これらの関数は、UI上の表示・編集用テキストのフォーマット処理のみに使用されます
  */
 
 import type { JsonItem, JsonDirOptions } from '@common/types';
@@ -21,7 +21,7 @@ import { generateId } from '@common/utils/jsonParser';
 /**
  * displayTextのフィールドをエスケープする
  *
- * displayText（アイテム管理画面での表示用テキスト）はCSV形式を使用しているため、
+ * displayText（アイテム管理画面での表示用テキスト）はカンマ区切りフォーマットを使用しているため、
  * カンマやダブルクォートを含む値を適切にエスケープする必要があります。
  *
  * エスケープルール:
@@ -33,11 +33,11 @@ import { generateId } from '@common/utils/jsonParser';
  * @returns エスケープされた値
  *
  * @example
- * escapeCSV('アプリ名') // => 'アプリ名'
- * escapeCSV('App, Name') // => '"App, Name"'
- * escapeCSV('My "App"') // => '"My ""App"""'
+ * escapeDisplayTextField('アプリ名') // => 'アプリ名'
+ * escapeDisplayTextField('App, Name') // => '"App, Name"'
+ * escapeDisplayTextField('My "App"') // => '"My ""App"""'
  */
-export function escapeCSV(value: string): string {
+export function escapeDisplayTextField(value: string): string {
   // ダブルクォートまたはカンマを含む場合のみエスケープ
   if (value.includes('"') || value.includes(',')) {
     return `"${value.replace(/"/g, '""')}"`;
@@ -48,7 +48,7 @@ export function escapeCSV(value: string): string {
 /**
  * displayTextのフィールドをパースする
  *
- * displayText（アイテム管理画面での表示用テキスト）をCSV形式としてパースし、
+ * displayText（アイテム管理画面での表示用テキスト）をカンマ区切りフォーマットとしてパースし、
  * フィールドの配列を返します。
  *
  * パースルール:
@@ -56,15 +56,15 @@ export function escapeCSV(value: string): string {
  * - ダブルクォートで囲まれたフィールド内のカンマは区切りとして扱わない
  * - ダブルクォートの連続（""）はエスケープされた1つのダブルクォートとして扱う
  *
- * @param line - パース対象のdisplayText（CSV形式の文字列）
+ * @param line - パース対象のdisplayText（カンマ区切りフォーマットの文字列）
  * @returns フィールドの配列
  *
  * @example
- * parseCSVLine('アプリ名,C:\\path\\app.exe') // => ['アプリ名', 'C:\\path\\app.exe']
- * parseCSVLine('"App, Name",path') // => ['App, Name', 'path']
- * parseCSVLine('"My ""App""",path') // => ['My "App"', 'path']
+ * parseDisplayTextFields('アプリ名,C:\\path\\app.exe') // => ['アプリ名', 'C:\\path\\app.exe']
+ * parseDisplayTextFields('"App, Name",path') // => ['App, Name', 'path']
+ * parseDisplayTextFields('"My ""App""",path') // => ['My "App"', 'path']
  */
-export function parseCSVLine(line: string): string[] {
+export function parseDisplayTextFields(line: string): string[] {
   const fields: string[] = [];
   let current = '';
   let inQuotes = false;
@@ -138,8 +138,8 @@ export function jsonItemToDisplayText(item: JsonItem): string {
       if (item.windowConfig) {
         parts.push(JSON.stringify(item.windowConfig));
       }
-      // CSVエスケープを適用
-      return parts.map(escapeCSV).join(',');
+      // displayTextフィールドエスケープを適用
+      return parts.map(escapeDisplayTextField).join(',');
     }
 
     case 'dir': {
@@ -180,8 +180,8 @@ export function jsonItemToDisplayText(item: JsonItem): string {
       if (item.pinToAllDesktops !== undefined) config.pinToAllDesktops = item.pinToAllDesktops;
 
       const jsonStr = JSON.stringify(config);
-      // CSVエスケープ（カンマを含むためダブルクォートで囲む）
-      const escapedJson = escapeCSV(jsonStr);
+      // displayTextフィールドエスケープ（カンマを含むためダブルクォートで囲む）
+      const escapedJson = escapeDisplayTextField(jsonStr);
       return `window,${escapedJson}`;
     }
 
@@ -223,7 +223,7 @@ export function displayTextToJsonItem(text: string, existingId?: string): JsonIt
 
   // dir行
   if (trimmed.startsWith('dir,')) {
-    const parts = parseCSVLine(trimmed);
+    const parts = parseDisplayTextFields(trimmed);
     const dirPath = parts[1] || '';
     const optionsStr = parts.slice(2).join(',');
 
@@ -251,7 +251,7 @@ export function displayTextToJsonItem(text: string, existingId?: string): JsonIt
 
   // group行
   if (trimmed.startsWith('group,')) {
-    const parts = parseCSVLine(trimmed.substring(6)); // 'group,'を除去
+    const parts = parseDisplayTextFields(trimmed.substring(6)); // 'group,'を除去
     const displayName = parts[0] || '';
     const itemNames = parts.slice(1).filter((name) => name.trim());
 
@@ -265,7 +265,7 @@ export function displayTextToJsonItem(text: string, existingId?: string): JsonIt
 
   // window行
   if (trimmed.startsWith('window,')) {
-    const parts = parseCSVLine(trimmed);
+    const parts = parseDisplayTextFields(trimmed);
     const configStr = parts[1] || '{}';
     const config = JSON.parse(configStr) as Record<string, unknown>;
 
@@ -287,7 +287,7 @@ export function displayTextToJsonItem(text: string, existingId?: string): JsonIt
   }
 
   // 通常アイテム行
-  const parts = parseCSVLine(text);
+  const parts = parseDisplayTextFields(text);
   const displayName = parts[0] || '';
   const path = parts[1] || '';
   const args = parts[2] && parts[2].trim() ? parts[2] : undefined;

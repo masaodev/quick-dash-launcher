@@ -8,7 +8,7 @@ import type { RawDataLine, LauncherItem, DataFileTab } from '../types';
 import type { RegisterItem } from '../types/register.js';
 import { parseDirOptionsFromString } from '../types/register.js';
 
-import { parseCSVLine, escapeCSV } from './displayTextConverter';
+import { parseDisplayTextFields, escapeDisplayTextField } from './displayTextConverter';
 import { parseWindowConfig, serializeWindowConfig } from './windowConfigUtils';
 import { parseWindowOperationDirective } from './directiveUtils';
 
@@ -29,7 +29,7 @@ export async function convertRawDataLineToRegisterItem(
 
   if (line.type === 'item') {
     // アイテム行の場合：名前,パス,引数,カスタムアイコン,ウィンドウ設定
-    const parts = parseCSVLine(line.content);
+    const parts = parseDisplayTextFields(line.content);
     const name = parts[0] || '';
     const path = parts[1] || '';
     const args = parts[2] || '';
@@ -84,7 +84,7 @@ export async function convertRawDataLineToRegisterItem(
       };
     } else if (trimmedContent.startsWith('group,')) {
       // グループアイテム行の場合：group,グループ名,アイテム1,アイテム2,...
-      const parts = parseCSVLine(line.content);
+      const parts = parseDisplayTextFields(line.content);
       const groupName = parts[1] || '';
       const itemNames = parts.slice(2).filter((name) => name);
 
@@ -99,7 +99,7 @@ export async function convertRawDataLineToRegisterItem(
       };
     } else {
       // フォルダ取込アイテム行の場合：dir,パス,オプション
-      const parts = parseCSVLine(line.content);
+      const parts = parseDisplayTextFields(line.content);
       const path = parts[1] || '';
       const optionsStr = parts.slice(2).join(',');
 
@@ -138,7 +138,7 @@ export async function convertRawDataLineToRegisterItem(
 export function convertLauncherItemToRawDataLine(item: LauncherItem): RawDataLine {
   // フォルダ取込から展開されたアイテムの場合
   if (item.isDirExpanded && item.expandedFrom) {
-    let content = `dir,${escapeCSV(item.expandedFrom)}`;
+    let content = `dir,${escapeDisplayTextField(item.expandedFrom)}`;
     if (item.expandedOptions) {
       content += `,${item.expandedOptions}`;
     }
@@ -158,19 +158,19 @@ export function convertLauncherItemToRawDataLine(item: LauncherItem): RawDataLin
   const windowConfigStr = item.windowConfig ? serializeWindowConfig(item.windowConfig) : '';
 
   // 基本フィールド
-  let content = `${escapeCSV(item.displayName)},${escapeCSV(item.path)}`;
+  let content = `${escapeDisplayTextField(item.displayName)},${escapeDisplayTextField(item.path)}`;
 
   // 引数フィールド
-  content += `,${escapeCSV(args)}`;
+  content += `,${escapeDisplayTextField(args)}`;
 
   // カスタムアイコンフィールド
   if (customIcon || windowConfigStr) {
-    content += `,${escapeCSV(customIcon)}`;
+    content += `,${escapeDisplayTextField(customIcon)}`;
   }
 
   // ウィンドウ設定フィールド
   if (windowConfigStr) {
-    content += `,${escapeCSV(windowConfigStr)}`;
+    content += `,${escapeDisplayTextField(windowConfigStr)}`;
   }
 
   return {
