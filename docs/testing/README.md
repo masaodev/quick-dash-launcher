@@ -203,7 +203,7 @@ npx playwright show-trace test-results/test-artifacts/<テスト名>/trace.zip
 | ファイル | 理由 |
 |---------|------|
 | `tests/e2e/templates/*` | テストの基礎データ |
-| `tests/dev/*/data.txt` | 開発用初期データ |
+| `tests/dev/*/data.json` | 開発用初期データ |
 | `tests/dev/*/settings.json` | テンプレート設定 |
 | `README.md` | ドキュメント |
 
@@ -224,14 +224,14 @@ npx playwright show-trace test-results/test-artifacts/<テスト名>/trace.zip
 
 ```bash
 mkdir tests/dev/my-custom
-echo "My App,C:\path\to\app.exe" > tests/dev/my-custom/data.txt
+echo "My App,C:\path\to\app.exe" > tests/dev/my-custom/data.json
 ```
 
 ### E2Eテスト用テンプレート
 
 ```bash
 mkdir tests/e2e/templates/my-test
-echo "My Item,https://example.com" > tests/e2e/templates/my-test/data.txt
+echo "My Item,https://example.com" > tests/e2e/templates/my-test/data.json
 echo '{"showDataFileTabs": false}' > tests/e2e/templates/my-test/settings.json
 ```
 

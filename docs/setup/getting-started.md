@@ -88,55 +88,150 @@ Viteデベロップメントサーバーが起動し、ホットリロード付�
 
 ## データファイルの記述方法
 
-データファイル（data.txt、data2.txt）のアイテムは2種類に分類されます。
+データファイル（data.json、data2.json）はJSON形式で記述します。各アイテムは`items`配列内にオブジェクトとして定義します。
 
-### 1. 単一アイテム
+### 基本構造
+
+```json
+{
+  "version": "1.0",
+  "items": [
+    // アイテムの配列
+  ]
+}
+```
+
+### 1. 通常アイテム（type: "item"）
 
 個別に定義される静的なランチャーアイテム。
 
 **形式:**
-```
-表示名,実行先[,引数][,カスタムアイコン]
+```json
+{
+  "id": "ランダムなID（8文字）",
+  "type": "item",
+  "displayName": "表示名",
+  "path": "実行先パスまたはURL",
+  "args": "引数（オプション）",
+  "customIcon": "カスタムアイコンファイル名（オプション）"
+}
 ```
 
 **例:**
-```
-Notepad++,C:\Program Files\Notepad++\notepad++.exe
-GitHub,https://github.com
-プロジェクトフォルダ,C:\Users\Documents\Projects
-重要な資料,C:\Users\Documents\important.pdf
-Visual Studio,devenv.exe,/rootsuffix Exp
-Netflix,https://www.netflix.com/browse,,7439edeb.png
+```json
+{
+  "version": "1.0",
+  "items": [
+    {
+      "id": "a1B2c3D4",
+      "type": "item",
+      "displayName": "Notepad++",
+      "path": "C:\\Program Files\\Notepad++\\notepad++.exe"
+    },
+    {
+      "id": "e5F6g7H8",
+      "type": "item",
+      "displayName": "GitHub",
+      "path": "https://github.com"
+    },
+    {
+      "id": "i9J0k1L2",
+      "type": "item",
+      "displayName": "プロジェクトフォルダ",
+      "path": "C:\\Users\\Documents\\Projects"
+    },
+    {
+      "id": "m3N4o5P6",
+      "type": "item",
+      "displayName": "Visual Studio",
+      "path": "devenv.exe",
+      "args": "/rootsuffix Exp"
+    },
+    {
+      "id": "q7R8s9T0",
+      "type": "item",
+      "displayName": "Netflix",
+      "path": "https://www.netflix.com/browse",
+      "customIcon": "7439edeb.png"
+    }
+  ]
+}
 ```
 
-- 実行先（URL、EXE、フォルダ等）はシステムが自動判定
-- 第3項目: 実行時の引数（オプション）
-- 第4項目: カスタムアイコンファイル名（オプション）
+- `id`: 8文字のランダムなID（自動生成、重複なし）
+- `type`: アイテムタイプ（通常アイテムは"item"）
+- `displayName`: アイテムリストに表示される名前
+- `path`: URL、実行ファイル、フォルダ等のパス（システムが自動判定）
+- `args`: コマンドライン引数（オプション）
+- `customIcon`: カスタムアイコンファイル名（オプション）
 
-### 2. フォルダ取込アイテム
+### 2. フォルダ取込アイテム（type: "dir"）
 
 フォルダ内容を動的にインポート。
 
 **形式:**
-```
-dir,ディレクトリパス[,オプション1=値1][,オプション2=値2]...
+```json
+{
+  "id": "ランダムなID（8文字）",
+  "type": "dir",
+  "path": "フォルダパス",
+  "options": {
+    "depth": 0,
+    "types": "both",
+    "filter": "*.{js,ts}",
+    "exclude": "node_modules",
+    "prefix": "プレフィックス",
+    "suffix": "サフィックス"
+  }
+}
 ```
 
 **例:**
-```
-dir,C:\Tools
-dir,C:\Projects,depth=1,types=file
-dir,C:\Scripts,filter=*.ps1,prefix=Script
+```json
+{
+  "version": "1.0",
+  "items": [
+    {
+      "id": "u1V2w3X4",
+      "type": "dir",
+      "path": "C:\\Tools"
+    },
+    {
+      "id": "y5Z6a7B8",
+      "type": "dir",
+      "path": "C:\\Projects",
+      "options": {
+        "depth": 1,
+        "types": "file"
+      }
+    },
+    {
+      "id": "c9D0e1F2",
+      "type": "dir",
+      "path": "C:\\Scripts",
+      "options": {
+        "filter": "*.ps1",
+        "prefix": "Script"
+      }
+    }
+  ]
+}
 ```
 
 詳細は[フォルダ取込](../screens/register-modal.md#6-フォルダ取込アイテムの詳細)を参照。
 
-### 主な違い
+### アイテムタイプ
 
-| 種類 | 説明 |
-|------|------|
-| 単一アイテム | 1行 = 1つのランチャーアイテム |
-| フォルダ取込 | 1行 = 複数のアイテムを動的生成 |
+| タイプ | 説明 |
+|--------|------|
+| `item` | 通常のランチャーアイテム（URL、ファイル、フォルダ等） |
+| `dir` | フォルダ取込アイテム（フォルダ内容を動的にインポート） |
+| `group` | グループアイテム（複数アイテムを一括起動） |
+| `window` | ウィンドウ操作アイテム（既存ウィンドウを制御） |
+
+### CSV形式からの移行
+
+v0.6.0以降、データファイル形式がCSV（data.txt）からJSON（data.json）に変更されました。既存のCSVファイルは初回起動時に自動的にJSON形式に変換され、バックアップフォルダに保存されます。詳細は[データファイル形式仕様](../architecture/data-format.md#csvjsonマイグレーション)を参照してください。
 
 ---
 
