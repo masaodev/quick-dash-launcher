@@ -16,8 +16,8 @@ export const IPC_CHANNELS = {
 
   // データ操作
   LOAD_DATA_FILES: 'load-data-files',
-  LOAD_RAW_DATA_FILES: 'load-raw-data-files',
-  SAVE_RAW_DATA_FILES: 'save-raw-data-files',
+  LOAD_EDITABLE_ITEMS: 'load-editable-items',
+  SAVE_EDITABLE_ITEMS: 'save-editable-items',
   REGISTER_ITEMS: 'register-items',
   GET_CONFIG_FOLDER: 'get-config-folder',
   GET_DATA_FILES: 'get-data-files',
@@ -69,7 +69,9 @@ export const IPC_CHANNELS = {
 
   // 編集操作
   UPDATE_ITEM: 'update-item',
-  UPDATE_RAW_LINE: 'update-raw-line',
+  UPDATE_DIR_ITEM: 'update-dir-item',
+  UPDATE_GROUP_ITEM: 'update-group-item',
+  UPDATE_WINDOW_ITEM: 'update-window-item',
   DELETE_ITEMS: 'delete-items',
   BATCH_UPDATE_ITEMS: 'batch-update-items',
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { RawDataLine, AppSettings } from '@common/types';
+import { AppSettings } from '@common/types';
+import type { EditableJsonItem } from '@common/types/editableItem';
 
 import { debugInfo, logError } from './utils/debug';
 import AdminTabContainer from './components/AdminTabContainer';
@@ -7,7 +8,7 @@ import AlertDialog from './components/AlertDialog';
 
 const AdminApp: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'settings' | 'edit' | 'archive' | 'other'>('settings');
-  const [rawLines, setRawLines] = useState<RawDataLine[]>([]);
+  const [editableItems, setEditableItems] = useState<EditableJsonItem[]>([]);
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -60,12 +61,18 @@ const AdminApp: React.FC = () => {
         setIsLoading(true);
       }
       // 設定とデータを並行して読み込み
-      const [settingsData, rawData] = await Promise.all([
+      const [settingsData, itemsResult] = await Promise.all([
         window.electronAPI.getSettings(),
-        window.electronAPI.loadRawDataFiles(),
+        window.electronAPI.loadEditableItems(),
       ]);
       setSettings(settingsData);
-      setRawLines(rawData);
+
+      if (itemsResult.error) {
+        logError('Failed to load editable items:', itemsResult.error);
+        setEditableItems([]);
+      } else {
+        setEditableItems(itemsResult.items);
+      }
     } catch (error) {
       logError('Failed to load data:', error);
     } finally {
@@ -75,13 +82,13 @@ const AdminApp: React.FC = () => {
     }
   };
 
-  const handleRawDataSave = async (newRawLines: RawDataLine[]) => {
+  const handleEditableItemsSave = async (newEditableItems: EditableJsonItem[]) => {
     try {
-      await window.electronAPI.saveRawDataFiles(newRawLines);
-      setRawLines(newRawLines);
-      debugInfo('Raw data files saved successfully');
+      await window.electronAPI.saveEditableItems(newEditableItems);
+      setEditableItems(newEditableItems);
+      debugInfo('Editable items saved successfully');
     } catch (error) {
-      logError('Failed to save raw data files:', error);
+      logError('Failed to save editable items:', error);
     }
   };
 
@@ -149,8 +156,8 @@ const AdminApp: React.FC = () => {
         onTabChange={setActiveTab}
         settings={settings}
         onSettingsSave={handleSettingsSave}
-        rawLines={rawLines}
-        onRawDataSave={handleRawDataSave}
+        editableItems={editableItems}
+        onEditableItemsSave={handleEditableItemsSave}
         searchQuery={searchQuery}
         onSearchChange={handleSearchChange}
         dataFileTabs={dataFileTabs}

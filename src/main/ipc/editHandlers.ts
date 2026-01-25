@@ -2,9 +2,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import { editLogger } from '@common/logger';
-import { LauncherItem, JsonItem, JsonLauncherItem, RawDataLine } from '@common/types';
+import { LauncherItem, JsonItem, JsonLauncherItem } from '@common/types';
 import { parseJsonDataFile, serializeJsonDataFile } from '@common/utils/jsonParser';
-import { convertRawDataLineToJsonItem } from '@common/utils/jsonToRawDataConverter';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { createSafeIpcHandler } from '../utils/ipcWrapper';
@@ -108,55 +107,6 @@ export async function updateItem(configFolder: string, request: UpdateItemReques
     // 既存アイテムのIDを保持して更新
     const existingItem = items[itemIndex];
     const updatedItem = convertLauncherItemToJsonItem(newItem, existingItem.id);
-
-    // アイテムを置き換え
-    const newItems = [...items];
-    newItems[itemIndex] = updatedItem;
-    return newItems;
-  });
-}
-
-/**
- * 指定された行を生のテキストで更新する
- *
- * CSV形式のコンテンツをJsonItemに変換して保存します。
- * コメント行やディレクティブ行の編集に使用されます。
- */
-export async function updateRawLine(
-  configFolder: string,
-  request: { sourceFile: string; lineNumber: number; newContent: string }
-): Promise<void> {
-  const { sourceFile, lineNumber, newContent } = request;
-
-  await JsonFileEditor.editWithBackup(configFolder, sourceFile, (items) => {
-    const itemIndex = lineNumber - 1; // 1-indexed → 0-indexed
-    if (itemIndex < 0 || itemIndex >= items.length) {
-      throw new Error(`Invalid item index: ${itemIndex}`);
-    }
-
-    // 既存アイテムのIDを保持
-    const existingId = items[itemIndex].id;
-
-    // CSVコンテンツからRawDataLineを作成し、JsonItemに変換
-    const trimmedContent = newContent.trim();
-    let lineType: RawDataLine['type'] = 'item';
-    if (
-      trimmedContent.startsWith('dir,') ||
-      trimmedContent.startsWith('group,') ||
-      trimmedContent.startsWith('window,')
-    ) {
-      lineType = 'directive';
-    }
-
-    const rawLine: RawDataLine = {
-      lineNumber,
-      content: newContent,
-      type: lineType,
-      sourceFile,
-      jsonItemId: existingId, // 既存IDを保持
-    };
-
-    const updatedItem = convertRawDataLineToJsonItem(rawLine);
 
     // アイテムを置き換え
     const newItems = [...items];
@@ -272,16 +222,6 @@ export function registerEditHandlers(configFolder: string): void {
       return { success: true };
     },
     'アイテムの更新'
-  );
-
-  createSafeIpcHandler(
-    IPC_CHANNELS.UPDATE_RAW_LINE,
-    async (request: { sourceFile: string; lineNumber: number; newContent: string }) => {
-      await updateRawLine(configFolder, request);
-      notifyDataChanged();
-      return { success: true };
-    },
-    '生データ行の更新'
   );
 
   createSafeIpcHandler(

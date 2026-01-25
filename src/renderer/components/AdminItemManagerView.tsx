@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { RawDataLine, SimpleBookmarkItem, DataFileTab } from '@common/types';
-import { convertRegisterItemToRawDataLine } from '@common/utils/dataConverters';
+import { SimpleBookmarkItem, DataFileTab } from '@common/types';
+import type { EditableJsonItem } from '@common/types/editableItem';
 import type { RegisterItem } from '@common/types';
-import { parseCSVLine } from '@common/utils/csvParser';
+import { jsonItemToDisplayText, displayTextToJsonItem } from '@common/utils/displayTextConverter';
+import { validateEditableItem } from '@common/types/editableItem';
 
 import { logError } from '../utils/debug';
 
@@ -13,8 +14,8 @@ import ConfirmDialog from './ConfirmDialog';
 import { Button } from './ui/Button';
 
 interface EditModeViewProps {
-  rawLines: RawDataLine[];
-  onRawDataSave: (rawLines: RawDataLine[]) => void;
+  editableItems: EditableJsonItem[];
+  onEditableItemsSave: (editableItems: EditableJsonItem[]) => void;
   onExitEditMode: () => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
@@ -23,8 +24,8 @@ interface EditModeViewProps {
 }
 
 const AdminItemManagerView: React.FC<EditModeViewProps> = ({
-  rawLines,
-  onRawDataSave,
+  editableItems,
+  onEditableItemsSave,
   onExitEditMode,
   searchQuery,
   onSearchChange,
@@ -36,11 +37,11 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     return dataFileLabels[fileName] || fileName;
   };
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
-  const [editedLines, setEditedLines] = useState<Map<string, RawDataLine>>(new Map());
+  const [editedItems, setEditedItems] = useState<Map<string, EditableJsonItem>>(new Map());
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<RawDataLine | null>(null);
-  const [workingLines, setWorkingLines] = useState<RawDataLine[]>(rawLines);
+  const [editingItem, setEditingItem] = useState<EditableJsonItem | null>(null);
+  const [workingItems, setWorkingItems] = useState<EditableJsonItem[]>(editableItems);
   const [isBookmarkModalOpen, setIsBookmarkModalOpen] = useState(false);
 
   // タブとファイル選択用の状態
@@ -79,31 +80,53 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   const tabDropdownRef = useRef<HTMLDivElement>(null);
   const fileDropdownRef = useRef<HTMLDivElement>(null);
 
-  const handleLineEdit = (line: RawDataLine) => {
-    const lineKey = `${line.sourceFile}_${line.lineNumber}`;
-    const newEditedLines = new Map(editedLines);
-    newEditedLines.set(lineKey, line);
-    setEditedLines(newEditedLines);
+  const handleItemEdit = (editableItem: EditableJsonItem) => {
+    const itemKey = `${editableItem.meta.sourceFile}_${editableItem.meta.lineNumber}`;
+    const newEditedItems = new Map(editedItems);
+    newEditedItems.set(itemKey, editableItem);
+    setEditedItems(newEditedItems);
     setHasUnsavedChanges(true);
   };
 
-  const handleEditItem = (line: RawDataLine) => {
-    setEditingItem(line);
+  const handleEditItemClick = (editableItem: EditableJsonItem) => {
+    setEditingItem(editableItem);
     setIsRegisterModalOpen(true);
   };
 
   const handleUpdateItem = (items: RegisterItem[]) => {
     if (editingItem && items.length > 0) {
-      const updatedItem = items[0];
-      const updatedLine = convertRegisterItemToRawDataLine(updatedItem, editingItem);
+      const updatedRegisterItem = items[0];
+
+      // RegisterItemからJsonItemに変換
+      const updatedJsonItem = {
+        id: editingItem.item.id,
+        type: 'item' as const,
+        displayName: updatedRegisterItem.displayName,
+        path: updatedRegisterItem.path,
+        args: updatedRegisterItem.args,
+        customIcon: updatedRegisterItem.customIcon,
+        windowConfig: updatedRegisterItem.windowConfig,
+      };
+
+      // バリデーション
+      const validation = validateEditableItem(updatedJsonItem);
+
+      const updatedEditableItem: EditableJsonItem = {
+        item: updatedJsonItem,
+        displayText: jsonItemToDisplayText(updatedJsonItem),
+        meta: {
+          ...editingItem.meta,
+          isValid: validation.isValid,
+          validationError: validation.error,
+        },
+      };
 
       // 変更内容が異なる場合のみ編集として記録
-      if (updatedLine.content !== editingItem.content) {
-        // handleLineEditと同様に編集内容を保持（即座保存しない）
-        const lineKey = `${updatedLine.sourceFile}_${updatedLine.lineNumber}`;
-        const newEditedLines = new Map(editedLines);
-        newEditedLines.set(lineKey, updatedLine);
-        setEditedLines(newEditedLines);
+      if (updatedEditableItem.displayText !== editingItem.displayText) {
+        const itemKey = `${updatedEditableItem.meta.sourceFile}_${updatedEditableItem.meta.lineNumber}`;
+        const newEditedItems = new Map(editedItems);
+        newEditedItems.set(itemKey, updatedEditableItem);
+        setEditedItems(newEditedItems);
         setHasUnsavedChanges(true);
       }
     }
@@ -111,53 +134,57 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     setEditingItem(null);
   };
 
-  const handleLineSelect = (line: RawDataLine, selected: boolean) => {
-    const lineKey = `${line.sourceFile}_${line.lineNumber}`;
+  const handleItemSelect = (editableItem: EditableJsonItem, selected: boolean) => {
+    const itemKey = `${editableItem.meta.sourceFile}_${editableItem.meta.lineNumber}`;
     const newSelected = new Set(selectedItems);
     if (selected) {
-      newSelected.add(lineKey);
+      newSelected.add(itemKey);
     } else {
-      newSelected.delete(lineKey);
+      newSelected.delete(itemKey);
     }
     setSelectedItems(newSelected);
   };
 
   const handleSelectAll = (selected: boolean) => {
     if (selected) {
-      const visibleLines = new Set(
-        filteredLines.map((line) => `${line.sourceFile}_${line.lineNumber}`)
+      const visibleItems = new Set(
+        filteredItems.map((item) => `${item.meta.sourceFile}_${item.meta.lineNumber}`)
       );
-      setSelectedItems(visibleLines);
+      setSelectedItems(visibleItems);
     } else {
       setSelectedItems(new Set());
     }
   };
 
-  const handleDeleteLines = (linesToDelete: RawDataLine[]) => {
-    const updatedLines = workingLines.filter(
-      (line) =>
-        !linesToDelete.some(
-          (deleteThisLine) =>
-            line.sourceFile === deleteThisLine.sourceFile &&
-            line.lineNumber === deleteThisLine.lineNumber
+  const handleDeleteItems = (itemsToDelete: EditableJsonItem[]) => {
+    const updatedItems = workingItems.filter(
+      (item) =>
+        !itemsToDelete.some(
+          (deleteThisItem) =>
+            item.meta.sourceFile === deleteThisItem.meta.sourceFile &&
+            item.meta.lineNumber === deleteThisItem.meta.lineNumber
         )
     );
 
     // 行番号を振り直し
-    const reorderedLines = reorderLineNumbers(updatedLines);
-    setWorkingLines(reorderedLines);
+    const reorderedItems = reorderItemNumbers(updatedItems);
+    setWorkingItems(reorderedItems);
     setSelectedItems(new Set());
     setHasUnsavedChanges(true);
   };
 
-  const handleDuplicateLines = (linesToDuplicate: RawDataLine[]) => {
-    // 1. 複製対象行を行番号でソート（挿入位置を正しく計算するため）
-    const sortedLines = [...linesToDuplicate].sort((a, b) => a.lineNumber - b.lineNumber);
+  const handleDuplicateItems = (itemsToDuplicate: EditableJsonItem[]) => {
+    // 1. 複製対象アイテムを行番号でソート（挿入位置を正しく計算するため）
+    const sortedItems = [...itemsToDuplicate].sort(
+      (a, b) => a.meta.lineNumber - b.meta.lineNumber
+    );
 
-    // 2. 最後の行の次に挿入する位置を特定
-    const lastLine = sortedLines[sortedLines.length - 1];
-    const insertAfterIndex = workingLines.findIndex(
-      (line) => line.sourceFile === lastLine.sourceFile && line.lineNumber === lastLine.lineNumber
+    // 2. 最後のアイテムの次に挿入する位置を特定
+    const lastItem = sortedItems[sortedItems.length - 1];
+    const insertAfterIndex = workingItems.findIndex(
+      (item) =>
+        item.meta.sourceFile === lastItem.meta.sourceFile &&
+        item.meta.lineNumber === lastItem.meta.lineNumber
     );
 
     if (insertAfterIndex === -1) {
@@ -165,41 +192,54 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
       return;
     }
 
-    // 3. 複製行を作成（行番号は仮の値を設定）
-    const duplicatedLines = sortedLines.map((line) => ({
-      ...line,
-      lineNumber: -1, // 後でreorderLineNumbersで振り直される
+    // 3. 複製アイテムを作成（行番号は仮の値を設定）
+    const duplicatedItems = sortedItems.map((item) => ({
+      ...item,
+      meta: {
+        ...item.meta,
+        lineNumber: -1, // 後でreorderItemNumbersで振り直される
+      },
     }));
 
-    // 4. workingLinesに挿入
-    const updatedLines = [
-      ...workingLines.slice(0, insertAfterIndex + 1),
-      ...duplicatedLines,
-      ...workingLines.slice(insertAfterIndex + 1),
+    // 4. workingItemsに挿入
+    const updatedItems = [
+      ...workingItems.slice(0, insertAfterIndex + 1),
+      ...duplicatedItems,
+      ...workingItems.slice(insertAfterIndex + 1),
     ];
 
     // 5. 行番号を振り直し
-    const reorderedLines = reorderLineNumbers(updatedLines);
+    const reorderedItems = reorderItemNumbers(updatedItems);
 
     // 6. 状態を更新
-    setWorkingLines(reorderedLines);
+    setWorkingItems(reorderedItems);
     setHasUnsavedChanges(true);
 
     // 7. 選択状態をクリア
     setSelectedItems(new Set());
   };
 
-  const handleAddLine = () => {
-    const newLine: RawDataLine = {
-      lineNumber: 1,
-      content: '',
-      type: 'empty',
-      sourceFile: selectedDataFile, // 現在選択中のファイルに追加
+  const handleAddItem = () => {
+    // 新しい空のアイテムを作成
+    const newItem: EditableJsonItem = {
+      item: {
+        id: `temp-${Date.now()}`,
+        type: 'item',
+        displayName: '',
+        path: '',
+      },
+      displayText: ',',
+      meta: {
+        sourceFile: selectedDataFile,
+        lineNumber: 0,
+        isValid: false,
+        validationError: 'displayNameが空です',
+      },
     };
 
-    const updatedLines = [newLine, ...workingLines];
-    const reorderedLines = reorderLineNumbers(updatedLines);
-    setWorkingLines(reorderedLines);
+    const updatedItems = [newItem, ...workingItems];
+    const reorderedItems = reorderItemNumbers(updatedItems);
+    setWorkingItems(reorderedItems);
     setHasUnsavedChanges(true);
   };
 
@@ -225,60 +265,71 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
       onConfirm: () => {
         setConfirmDialog({ ...confirmDialog, isOpen: false });
 
-        // editedLinesの変更をworkingLinesに反映
-        let updatedLines = workingLines.map((line) => {
-          const lineKey = `${line.sourceFile}_${line.lineNumber}`;
-          return editedLines.get(lineKey) || line;
+        // editedItemsの変更をworkingItemsに反映
+        let updatedItems = workingItems.map((item) => {
+          const itemKey = `${item.meta.sourceFile}_${item.meta.lineNumber}`;
+          return editedItems.get(itemKey) || item;
         });
 
         // チェックボックスがONの場合、整列・重複削除を実行
         if (sortAndDedupChecked) {
-          // 現在選択中のデータファイルの行のみフィルタリング
-          const currentDataFileLines = updatedLines.filter(
-            (line) => line.sourceFile === selectedDataFile
+          // 現在選択中のデータファイルのアイテムのみフィルタリング
+          const currentDataFileItems = updatedItems.filter(
+            (item) => item.meta.sourceFile === selectedDataFile
           );
 
-          // 他のデータファイルの行
-          const otherDataFileLines = updatedLines.filter(
-            (line) => line.sourceFile !== selectedDataFile
+          // 他のデータファイルのアイテム
+          const otherDataFileItems = updatedItems.filter(
+            (item) => item.meta.sourceFile !== selectedDataFile
           );
 
           // 重複削除関数
-          const removeDuplicates = (lines: RawDataLine[]) => {
+          const removeDuplicates = (items: EditableJsonItem[]) => {
             const seen = new Set<string>();
-            const deduplicated: RawDataLine[] = [];
+            const deduplicated: EditableJsonItem[] = [];
 
-            for (const line of lines) {
-              const key = `${line.type}:${line.content}`;
+            for (const item of items) {
+              const key = `${item.item.type}:${item.displayText}`;
               if (!seen.has(key)) {
                 seen.add(key);
-                deduplicated.push(line);
+                deduplicated.push(item);
               }
             }
             return deduplicated;
           };
 
-          const getPathAndArgs = (line: RawDataLine) => {
-            if (line.type === 'item') {
-              const parts = parseCSVLine(line.content);
-              const pathPart = parts[1] || '';
-              const argsPart = parts[2] || '';
+          const getPathAndArgs = (item: EditableJsonItem) => {
+            const jsonItem = item.item;
+            if (jsonItem.type === 'item') {
+              const pathPart = jsonItem.path || '';
+              const argsPart = jsonItem.args || '';
               return argsPart ? `${pathPart} ${argsPart}` : pathPart;
-            } else if (line.type === 'directive') {
-              const parts = parseCSVLine(line.content);
-              const pathPart = parts[1] || '';
-              const options = parts.slice(2).join(',').trim();
+            } else if (jsonItem.type === 'dir') {
+              const pathPart = jsonItem.path || '';
+              const options = jsonItem.options
+                ? Object.entries(jsonItem.options)
+                    .map(([k, v]) => `${k}=${v}`)
+                    .join(',')
+                : '';
               return options ? `${pathPart} ${options}` : pathPart;
-            } else {
-              return line.content || (line.type === 'empty' ? '(空行)' : '');
+            } else if (jsonItem.type === 'group') {
+              return jsonItem.displayName || '';
+            } else if (jsonItem.type === 'window') {
+              return jsonItem.displayName || '';
             }
+            return '';
           };
 
-          // 現在のデータファイルの行のみを整列
-          const sortedLines = [...currentDataFileLines].sort((a, b) => {
-            const typeOrder = { directive: 0, item: 1, comment: 2, empty: 3 };
-            const typeA = typeOrder[a.type] ?? 99;
-            const typeB = typeOrder[b.type] ?? 99;
+          // 現在のデータファイルのアイテムのみを整列
+          const sortedItems = [...currentDataFileItems].sort((a, b) => {
+            const typeOrder = {
+              dir: 0,
+              group: 1,
+              window: 2,
+              item: 3,
+            };
+            const typeA = typeOrder[a.item.type] ?? 99;
+            const typeB = typeOrder[b.item.type] ?? 99;
 
             if (typeA !== typeB) {
               return typeA - typeB;
@@ -291,27 +342,29 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
               return pathAndArgsA.localeCompare(pathAndArgsB);
             }
 
-            const nameA = a.type === 'item' ? (parseCSVLine(a.content)[0] || '').toLowerCase() : '';
-            const nameB = b.type === 'item' ? (parseCSVLine(b.content)[0] || '').toLowerCase() : '';
+            const nameA =
+              a.item.type === 'item' ? (a.item.displayName || '').toLowerCase() : '';
+            const nameB =
+              b.item.type === 'item' ? (b.item.displayName || '').toLowerCase() : '';
 
             return nameA.localeCompare(nameB);
           });
 
           // 重複削除
-          const deduplicatedLines = removeDuplicates(sortedLines);
+          const deduplicatedItems = removeDuplicates(sortedItems);
 
-          // 他のデータファイルの行と結合
-          updatedLines = [...otherDataFileLines, ...deduplicatedLines];
+          // 他のデータファイルのアイテムと結合
+          updatedItems = [...otherDataFileItems, ...deduplicatedItems];
         }
 
         // 行番号を振り直して保存
-        const reorderedLines = reorderLineNumbers(updatedLines);
+        const reorderedItems = reorderItemNumbers(updatedItems);
 
         // 全件書き戻し
-        onRawDataSave(reorderedLines);
-        setEditedLines(new Map());
+        onEditableItemsSave(reorderedItems);
+        setEditedItems(new Map());
         setHasUnsavedChanges(false);
-        setWorkingLines(reorderedLines);
+        setWorkingItems(reorderedItems);
 
         // 保存後、チェックボックスをリセット
         setSortAndDedupChecked(false);
@@ -320,48 +373,64 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     });
   };
 
-  // 行番号を振り直す関数
-  const reorderLineNumbers = (lines: RawDataLine[]): RawDataLine[] => {
-    const fileGroups = new Map<string, RawDataLine[]>();
+  // アイテム番号を振り直す関数
+  const reorderItemNumbers = (items: EditableJsonItem[]): EditableJsonItem[] => {
+    const fileGroups = new Map<string, EditableJsonItem[]>();
 
     // ファイル別にグループ化
-    lines.forEach((line) => {
-      if (!fileGroups.has(line.sourceFile)) {
-        fileGroups.set(line.sourceFile, []);
+    items.forEach((item) => {
+      if (!fileGroups.has(item.meta.sourceFile)) {
+        fileGroups.set(item.meta.sourceFile, []);
       }
-      const group = fileGroups.get(line.sourceFile);
+      const group = fileGroups.get(item.meta.sourceFile);
       if (!group) {
-        throw new Error(`Failed to get file group for: ${line.sourceFile}`);
+        throw new Error(`Failed to get file group for: ${item.meta.sourceFile}`);
       }
-      group.push(line);
+      group.push(item);
     });
 
     // 各ファイル内で行番号を振り直し
-    const reorderedLines: RawDataLine[] = [];
-    for (const [, fileLines] of fileGroups) {
-      fileLines.forEach((line, index) => {
-        reorderedLines.push({
-          ...line,
-          lineNumber: index + 1,
+    const reorderedItems: EditableJsonItem[] = [];
+    for (const [, fileItems] of fileGroups) {
+      fileItems.forEach((item, index) => {
+        reorderedItems.push({
+          ...item,
+          meta: {
+            ...item.meta,
+            lineNumber: index,
+          },
         });
       });
     }
 
-    return reorderedLines;
+    return reorderedItems;
   };
 
   const handleBookmarkImport = (bookmarks: SimpleBookmarkItem[]) => {
-    // 選択されたブックマークを新規行として追加
-    const newLines: RawDataLine[] = bookmarks.map((bookmark, index) => ({
-      lineNumber: index + 1,
-      content: `${bookmark.displayName},${bookmark.url}`,
-      type: 'item' as const,
-      sourceFile: selectedDataFile, // 現在選択中のファイルにインポート
-    }));
+    // 選択されたブックマークを新規アイテムとして追加
+    const newItems: EditableJsonItem[] = bookmarks.map((bookmark) => {
+      const jsonItem = {
+        id: `bookmark-${Date.now()}-${Math.random()}`,
+        type: 'item' as const,
+        displayName: bookmark.displayName,
+        path: bookmark.url,
+      };
+      const validation = validateEditableItem(jsonItem);
+      return {
+        item: jsonItem,
+        displayText: jsonItemToDisplayText(jsonItem),
+        meta: {
+          sourceFile: selectedDataFile,
+          lineNumber: 0,
+          isValid: validation.isValid,
+          validationError: validation.error,
+        },
+      };
+    });
 
-    const updatedLines = [...newLines, ...workingLines];
-    const reorderedLines = reorderLineNumbers(updatedLines);
-    setWorkingLines(reorderedLines);
+    const updatedItems = [...newItems, ...workingItems];
+    const reorderedItems = reorderItemNumbers(updatedItems);
+    setWorkingItems(reorderedItems);
     setHasUnsavedChanges(true);
     setIsBookmarkModalOpen(false);
   };
@@ -386,20 +455,20 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     if (e.key === 'Escape') {
       handleExitEditMode();
     } else if (e.key === 'Delete' && selectedItems.size > 0) {
-      const selectedLines = workingLines.filter((line) =>
-        selectedItems.has(`${line.sourceFile}_${line.lineNumber}`)
+      const selectedEditableItems = workingItems.filter((item) =>
+        selectedItems.has(`${item.meta.sourceFile}_${item.meta.lineNumber}`)
       );
-      handleDeleteLines(selectedLines);
+      handleDeleteItems(selectedEditableItems);
     } else if (e.ctrlKey && e.key === 's') {
       e.preventDefault();
       handleSaveChanges();
     }
   };
 
-  const mergedLines = workingLines.map((line) => {
-    const lineKey = `${line.sourceFile}_${line.lineNumber}`;
-    const editedLine = editedLines.get(lineKey);
-    return editedLine || line;
+  const mergedItems = workingItems.map((item) => {
+    const itemKey = `${item.meta.sourceFile}_${item.meta.lineNumber}`;
+    const editedItem = editedItems.get(itemKey);
+    return editedItem || item;
   });
 
   // タブ変更時の未保存チェック
@@ -412,7 +481,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
           setConfirmDialog({ ...confirmDialog, isOpen: false });
           setSelectedTabIndex(newTabIndex);
           setHasUnsavedChanges(false);
-          setEditedLines(new Map());
+          setEditedItems(new Map());
         },
         danger: true,
       });
@@ -431,7 +500,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
           setConfirmDialog({ ...confirmDialog, isOpen: false });
           setSelectedDataFile(newFile);
           setHasUnsavedChanges(false);
-          setEditedLines(new Map());
+          setEditedItems(new Map());
         },
         danger: true,
       });
@@ -451,12 +520,9 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     handleFileChange(newFile);
   };
 
-  const filteredLines = mergedLines.filter((line) => {
+  const filteredItems = mergedItems.filter((item) => {
     // 選択されたデータファイルでフィルタリング
-    if (line.sourceFile !== selectedDataFile) return false;
-
-    // コメント行を非表示
-    if (line.type === 'comment') return false;
+    if (item.meta.sourceFile !== selectedDataFile) return false;
 
     // 検索クエリによるフィルタリング
     if (!searchQuery) return true;
@@ -464,8 +530,8 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
       .toLowerCase()
       .split(/\s+/)
       .filter((k) => k.length > 0);
-    const lineText = line.content.toLowerCase();
-    return keywords.every((keyword) => lineText.includes(keyword));
+    const itemText = item.displayText.toLowerCase();
+    return keywords.every((keyword) => itemText.includes(keyword));
   });
 
   // タブ変更時にファイルを自動選択
@@ -486,17 +552,17 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     }
   }, []);
 
-  // rawLinesが変更されたらworkingLinesも更新
+  // editableItemsが変更されたらworkingItemsも更新
   useEffect(() => {
-    setWorkingLines(rawLines);
-    setEditedLines(new Map());
+    setWorkingItems(editableItems);
+    setEditedItems(new Map());
     setHasUnsavedChanges(false);
-  }, [rawLines]);
+  }, [editableItems]);
 
-  // 検索クエリが変更されたら、非表示になった行の選択状態をクリア
+  // 検索クエリが変更されたら、非表示になったアイテムの選択状態をクリア
   useEffect(() => {
     const filteredKeys = new Set(
-      filteredLines.map((line) => `${line.sourceFile}_${line.lineNumber}`)
+      filteredItems.map((item) => `${item.meta.sourceFile}_${item.meta.lineNumber}`)
     );
     setSelectedItems((prevSelected) => {
       const newSelectedItems = new Set([...prevSelected].filter((key) => filteredKeys.has(key)));
@@ -507,7 +573,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
       }
       return prevSelected;
     });
-  }, [searchQuery, workingLines]);
+  }, [searchQuery, workingItems]);
 
   // ドロップダウンのクリック外判定
   useEffect(() => {
@@ -594,23 +660,23 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
       {/* ツールバーエリア */}
       <div className="edit-mode-toolbar">
         <div className="toolbar-left">
-          <Button variant="info" onClick={handleAddLine}>
+          <Button variant="info" onClick={handleAddItem}>
             ➕ 行を追加
           </Button>
           <Button
             variant="danger"
             onClick={() => {
-              const selectedLines = filteredLines.filter((line) => {
-                const lineKey = `${line.sourceFile}_${line.lineNumber}`;
-                return selectedItems.has(lineKey);
+              const selectedEditableItems = filteredItems.filter((item) => {
+                const itemKey = `${item.meta.sourceFile}_${item.meta.lineNumber}`;
+                return selectedItems.has(itemKey);
               });
-              if (selectedLines.length > 0) {
+              if (selectedEditableItems.length > 0) {
                 setConfirmDialog({
                   isOpen: true,
-                  message: `${selectedLines.length}行を削除しますか？`,
+                  message: `${selectedEditableItems.length}行を削除しますか？`,
                   onConfirm: () => {
                     setConfirmDialog({ ...confirmDialog, isOpen: false });
-                    handleDeleteLines(selectedLines);
+                    handleDeleteItems(selectedEditableItems);
                   },
                   danger: true,
                 });
@@ -658,26 +724,26 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
       </div>
 
       <AdminItemManagerList
-        rawLines={filteredLines}
+        editableItems={filteredItems}
         selectedItems={selectedItems}
-        onLineEdit={handleLineEdit}
-        onLineSelect={handleLineSelect}
+        onItemEdit={handleItemEdit}
+        onItemSelect={handleItemSelect}
         onSelectAll={handleSelectAll}
-        onDeleteLines={handleDeleteLines}
-        onEditClick={handleEditItem}
-        onDuplicateLines={handleDuplicateLines}
+        onDeleteItems={handleDeleteItems}
+        onEditClick={handleEditItemClick}
+        onDuplicateItems={handleDuplicateItems}
       />
 
       <div className="edit-mode-status">
         <span className="selection-count">
           {(() => {
-            const visibleSelectedCount = filteredLines.filter((line) =>
-              selectedItems.has(`${line.sourceFile}_${line.lineNumber}`)
+            const visibleSelectedCount = filteredItems.filter((item) =>
+              selectedItems.has(`${item.meta.sourceFile}_${item.meta.lineNumber}`)
             ).length;
             return visibleSelectedCount > 0 ? `${visibleSelectedCount}行を選択中` : '';
           })()}
         </span>
-        <span className="total-count">合計: {filteredLines.length}行</span>
+        <span className="total-count">合計: {filteredItems.length}行</span>
         {hasUnsavedChanges && <span className="unsaved-changes">未保存の変更があります</span>}
       </div>
 

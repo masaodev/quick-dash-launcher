@@ -1,7 +1,6 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron';
 import {
   LauncherItem,
-  RawDataLine,
   AppSettings,
   IconProgress,
   WindowPinMode,
@@ -17,7 +16,9 @@ import {
   WindowInfo,
   VirtualDesktopInfo,
   IconFetchErrorRecord,
+  JsonDirOptions,
 } from '@common/types';
+import type { EditableJsonItem, LoadEditableItemsResult } from '@common/types/editableItem';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
 interface RegisterItem {
@@ -134,15 +135,51 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getVirtualDesktopInfo: (): Promise<VirtualDesktopInfo> =>
     ipcRenderer.invoke(IPC_CHANNELS.GET_VIRTUAL_DESKTOP_INFO),
   updateItem: (request: UpdateItemRequest) => ipcRenderer.invoke(IPC_CHANNELS.UPDATE_ITEM, request),
-  updateRawLine: (request: { sourceFile: string; lineNumber: number; newContent: string }) =>
-    ipcRenderer.invoke(IPC_CHANNELS.UPDATE_RAW_LINE, request),
   deleteItems: (requests: DeleteItemRequest[]) =>
     ipcRenderer.invoke(IPC_CHANNELS.DELETE_ITEMS, requests),
   batchUpdateItems: (requests: UpdateItemRequest[]) =>
     ipcRenderer.invoke(IPC_CHANNELS.BATCH_UPDATE_ITEMS, requests),
-  loadRawDataFiles: () => ipcRenderer.invoke(IPC_CHANNELS.LOAD_RAW_DATA_FILES),
-  saveRawDataFiles: (rawLines: RawDataLine[]) =>
-    ipcRenderer.invoke(IPC_CHANNELS.SAVE_RAW_DATA_FILES, rawLines),
+  // EditableJsonItem API
+  loadEditableItems: (): Promise<LoadEditableItemsResult> =>
+    ipcRenderer.invoke(IPC_CHANNELS.LOAD_EDITABLE_ITEMS),
+  saveEditableItems: (editableItems: EditableJsonItem[]) =>
+    ipcRenderer.invoke(IPC_CHANNELS.SAVE_EDITABLE_ITEMS, editableItems),
+  updateDirItem: (
+    sourceFile: string,
+    lineNumber: number,
+    dirPath: string,
+    options?: JsonDirOptions
+  ) => ipcRenderer.invoke(IPC_CHANNELS.UPDATE_DIR_ITEM, sourceFile, lineNumber, dirPath, options),
+  updateGroupItem: (
+    sourceFile: string,
+    lineNumber: number,
+    displayName: string,
+    itemNames: string[]
+  ) =>
+    ipcRenderer.invoke(
+      IPC_CHANNELS.UPDATE_GROUP_ITEM,
+      sourceFile,
+      lineNumber,
+      displayName,
+      itemNames
+    ),
+  updateWindowItem: (
+    sourceFile: string,
+    lineNumber: number,
+    config: {
+      displayName: string;
+      windowTitle: string;
+      processName?: string;
+      x?: number;
+      y?: number;
+      width?: number;
+      height?: number;
+      moveToActiveMonitorCenter?: boolean;
+      virtualDesktopNumber?: number;
+      activateWindow?: boolean;
+      pinToAllDesktops?: boolean;
+    }
+  ) => ipcRenderer.invoke(IPC_CHANNELS.UPDATE_WINDOW_ITEM, sourceFile, lineNumber, config),
   setEditMode: (editMode: boolean) => ipcRenderer.invoke(IPC_CHANNELS.SET_EDIT_MODE, editMode),
   getEditMode: () => ipcRenderer.invoke(IPC_CHANNELS.GET_EDIT_MODE),
   selectBookmarkFile: () => ipcRenderer.invoke(IPC_CHANNELS.SELECT_BOOKMARK_FILE),

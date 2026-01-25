@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { parseCSVLine } from '@common/utils/csvParser';
+import { parseCSVLine } from '@common/utils/displayTextConverter';
 import type { LauncherItem, GroupItem, WindowOperationItem } from '@common/types';
 
 describe('データハンドラー: name → displayName リファクタリング検証', () => {
