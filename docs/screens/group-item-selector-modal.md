@@ -35,7 +35,7 @@
 | `isOpen` | `boolean` | ○ | モーダルの表示状態 |
 | `onClose` | `() => void` | ○ | 閉じる時のコールバック |
 | `onSelect` | `(itemName: string) => void` | ○ | アイテム選択時のコールバック |
-| `targetFile` | `string` | ○ | 対象のデータファイル名（例: `data.txt`） |
+| `targetFile` | `string` | ○ | 対象のデータファイル名（例: `data.json`） |
 | `excludeNames` | `string[]` | ○ | 既に追加済みのアイテム名（選択不可にする） |
 
 ## 4. 画面項目一覧

@@ -119,7 +119,7 @@ QUICK_DASH_CONFIG_DIR=./tests/dev/minimal npm run dev
 
 ### データファイル形式
 
-データファイル（data.txt、data2.txt）の詳細な形式仕様については、専用ドキュメントを参照してください：
+データファイル（data.json、data2.json）の詳細な形式仕様については、専用ドキュメントを参照してください：
 **[データファイル形式仕様](../architecture/data-format.md)**
 
 **基本例:**

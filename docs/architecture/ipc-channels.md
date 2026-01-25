@@ -186,7 +186,7 @@ const channel = IPC_CHANNELS.SETTINGS_GET; // 'settings:get'
 
 ### `get-data-files`
 設定フォルダ内のすべてのdata*.txtファイルを取得
-- 戻り値: `string[]` (例: `['data.txt', 'data2.txt', 'data3.txt']`)
+- 戻り値: `string[]` (例: `['data.json', 'data2.json', 'data3.json']`)
 
 ### `create-data-file`
 新しいデータファイルを作成
@@ -198,7 +198,7 @@ const channel = IPC_CHANNELS.SETTINGS_GET; // 'settings:get'
 データファイルを削除
 - パラメータ: `fileName: string`
 - 戻り値: `{ success: boolean, error?: string }`
-- 制限: `data.txt`は削除不可
+- 制限: `data.json`は削除不可
 
 ### `load-data-files`
 全てのdata*.txtファイルを読み込み、パース

@@ -198,22 +198,9 @@
 #### 処理フロー
 1. 入力値を取得
 2. アイテムの引数を更新
-3. 保存時に自動的にCSVエスケープ処理が実行される
 
 #### プレースホルダー
 - 「コマンドライン引数（実行ファイルやアプリの場合のみ有効）」
-
-#### CSVエスケープの自動処理
-引数フィールドに入力された内容は、保存時に自動的にCSVエスケープ処理が行われます。ダブルクォートやカンマを含む引数も、通常の文字列として入力するだけで正しく保存されます。
-
-**入力例:**
-- `-p "Git Bash" -d "C:\Projects"`
-- `--new-window "C:\My Projects"`
-- `--options value1,value2`
-
-これらの入力は、保存時にデータファイル内で適切にエスケープされ、読み込み時には元の形式で表示されます。ユーザーはエスケープ処理を意識する必要はありません。
-
-詳細は **[CSV形式のエスケープルール](../architecture/data-format.md#csv形式のエスケープルール)** を参照してください。
 
 #### バリデーション
 - 任意項目（バリデーションなし）
@@ -458,9 +445,8 @@ v0.5.10以降、管理画面（AdminItemManagerList）では、JSON文字列の�
 - 編集する場合は、必ず✏️ボタンから詳細編集モーダル（RegisterModal）を開く必要があります
 
 **インライン編集を禁止する理由:**
-- parseCSVLineで抽出されるJSON文字列を直接編集すると、保存時にescapeCSVによる二重エスケープが発生
-- JSON文字列の破損により、アプリケーション起動時にパースエラーが発生する可能性
-- 詳細編集モーダルでは、JSON形式の構築とCSVエスケープが正しく処理される
+- JSON文字列を直接編集すると、データ形式の破損が発生する可能性
+- 詳細編集モーダルでは、JSON形式の構築が正しく処理される
 
 **編集方法:**
 1. 管理画面で該当行の「✏️」ボタンをクリック
@@ -524,8 +510,8 @@ v0.5.10以降、管理画面（AdminItemManagerList）では、JSON文字列の�
 
 | 例 | 説明 |
 |----|------|
-| `data.txt` | デフォルトのデータファイル |
-| `data2.txt` | 追加のデータファイル |
+| `data.json` | デフォルトのデータファイル |
+| `data2.json` | 追加のデータファイル |
 
 **注意**: 複数ファイルを持つタブの場合、`targetTab`にはそのタブの`files[0]`（最初のファイル）が設定されます。実際に保存するファイルを指定する場合は`targetFile`を使用します。
 
@@ -1030,7 +1016,7 @@ dir,C:\Projects,depth=2,types=file,filter=*.{js,ts},exclude=node_modules,prefix=
 ```
 C:\Work\projects\myproject\readme.pdf
 
-データファイル: data.txt
+データファイル: data.json
 行番号: 15
 取込元: C:\Work\projects
 設定: 深さ:2, タイプ:ファイルのみ, フィルター:*.pdf
@@ -1059,18 +1045,24 @@ C:\Work\projects\myproject\readme.pdf
 - 指定した仮想デスクトップに移動
 - ウィンドウをアクティブ化（フォーカス）
 
-### 7.2. data.txtでの記述形式
+### 7.2. data.jsonでの記述形式
 
-ウィンドウ操作アイテムは、`data.txt`に以下の形式で記述します：
+ウィンドウ操作アイテムは、`data.json`に以下の形式で記述します：
 
-```
-window,"{""name"":""表示名"",""windowTitle"":""ウィンドウタイトル"",""x"":100,""y"":200,...}"
+```json
+{
+  "id": "a1B2c3D4",
+  "type": "window",
+  "name": "表示名",
+  "windowTitle": "ウィンドウタイトル",
+  "x": 100,
+  "y": 200
+}
 ```
 
 #### 重要な注意点
 
-- **JSON形式のみサポート**：CSV形式（旧形式）は廃止されました
-- **CSV形式でのエスケープが必要**：JSON文字列全体をダブルクォートで囲み、JSON内のダブルクォートを二重化（`""`）します
+- **JSON形式のみサポート**：v0.6.0以降はJSON形式専用です
 
 ### 7.3. JSON形式の仕様
 
@@ -1210,39 +1202,7 @@ window,"{""name"":""TODOキャンパス"",""windowTitle"":""Obsidian"",""x"":256
 - ウィンドウのアクティブ化（フォーカス）は、現在のデスクトップにあるウィンドウのみ可能です
 - 別デスクトップのウィンドウに対して`activateWindow: true`を指定しても、フォーカスは移りません（位置・サイズのみ設定されます）
 
-### 7.5. CSV形式でのエスケープ方法
-
-`data.txt`はCSV形式のため、JSON文字列を以下のようにエスケープします：
-
-#### エスケープ前（通常のJSON）
-
-```json
-{"name":"表示名","windowTitle":"Chrome","x":100}
-```
-
-#### エスケープ後（data.txtに保存する形式）
-
-```
-window,"{""name"":""表示名"",""windowTitle"":""Chrome"",""x"":100}"
-```
-
-#### エスケープのルール
-
-1. JSON文字列全体をダブルクォート（`"`）で囲む
-2. JSON内のダブルクォートを二重化（`"` → `""`）
-
-**誤った例**：
-```
-window,{"name":"表示名","windowTitle":"Chrome"}  ❌ 外側のクォートがない
-window,{""name"":""表示名"",""windowTitle"":""Chrome""}  ❌ 外側のクォートがない
-```
-
-**正しい例**：
-```
-window,"{""name"":""表示名"",""windowTitle"":""Chrome""}"  ✅
-```
-
-### 7.6. アイテムの登録・編集方法
+### 7.5. アイテムの登録・編集方法
 
 #### 新規登録
 
@@ -1268,48 +1228,37 @@ window,"{""name"":""表示名"",""windowTitle"":""Chrome""}"  ✅
 - 管理画面の「名前」列をダブルクリックして編集可能
 - **注意**: 「パス・引数」列は編集不可（詳細編集モーダルを使用してください）
 
-#### data.txtを直接編集する場合
+#### data.jsonを直接編集する場合
 
 **推奨しません**が、直接編集する場合は以下に注意してください：
 
 1. JSON形式を厳密に守る（カンマ、クォートの位置）
-2. CSV形式でエスケープする（上記「エスケープ方法」参照）
-3. 編集後、アプリを再起動して変更を反映
+2. 編集後、アプリを再起動して変更を反映
 
-### 7.7. よくあるエラーと対処法
+### 7.6. よくあるエラーと対処法
 
-#### エラー1: 「ウィンドウ操作アイテムはJSON形式で記述する必要があります」
-
-**原因**: JSON形式でない、または外側のクォートがない
-
-**対処法**:
-```
-❌ window,Chrome,100,100,1920,1080  （旧CSV形式は非サポート）
-✅ window,"{""name"":""Chrome"",""windowTitle"":""Google Chrome""}"
-```
-
-#### エラー2: 「ウィンドウ操作アイテムのJSON形式が不正です」
+#### エラー1: 「ウィンドウ操作アイテムのJSON形式が不正です」
 
 **原因**: JSON構文エラー（閉じ括弧忘れ、カンマの位置ミス等）
 
 **対処法**:
-```
-❌ window,"{""name"":""表示名""  （閉じ括弧なし）
-❌ window,"{""name"":""表示名"",""windowTitle"":""Chrome"",}"  （末尾カンマ）
-✅ window,"{""name"":""表示名"",""windowTitle"":""Chrome""}"
+```json
+❌ {"name":"表示名"  （閉じ括弧なし）
+❌ {"name":"表示名","windowTitle":"Chrome",}  （末尾カンマ）
+✅ {"name":"表示名","windowTitle":"Chrome"}
 ```
 
-#### エラー3: 編集後にアイテムが表示されない
+#### エラー2: 編集後にアイテムが表示されない
 
-**原因**: data.txtの該当行が破損している
+**原因**: data.jsonの該当行が破損している
 
 **対処法**:
-1. data.txtをテキストエディタで開く
+1. data.jsonをテキストエディタで開く
 2. 該当行のJSON形式を確認
-3. 上記「CSV形式でのエスケープ方法」に従って修正
+3. JSON構文を修正
 4. アプリを再起動
 
-#### エラー4: ウィンドウが見つからない
+#### エラー3: ウィンドウが見つからない
 
 **原因**: `windowTitle`がウィンドウの実際のタイトルと一致していない
 
@@ -1320,52 +1269,23 @@ window,"{""name"":""表示名"",""windowTitle"":""Chrome""}"  ✅
    ```
 2. `windowTitle`フィールドに部分一致する文字列を設定
 
-### 7.8. 実装上の注意点
+### 7.7. 実装上の注意点
 
 #### コード内での処理
 
 ウィンドウ操作アイテムは以下のように処理されます：
 
-1. **パース**: `directiveUtils.ts`の`parseWindowOperationConfig()`でJSON形式を解析
+1. **パース**: JSON形式として解析
 2. **検証**: 必須フィールド（`name`, `windowTitle`）の存在を確認
 3. **実行**: Mainプロセスで`WindowManager`クラスがウィンドウ操作を実行
 
-#### エスケープ関数の使用
-
-data.txtへの保存時は必ず`escapeCSV()`関数を使用してください：
-
-```typescript
-import { escapeCSV } from '@common/utils/csvParser';
-
-const config = {
-  name: '表示名',
-  windowTitle: 'Chrome',
-  x: 100,
-  y: 100,
-};
-
-const content = `window,${escapeCSV(JSON.stringify(config))}`;
-// 結果: window,"{""name"":""表示名"",""windowTitle"":""Chrome"",""x"":100,""y"":100}"
-```
-
-**誤った例**：
-```typescript
-// ❌ 手動でエスケープ（不完全になりやすい）
-const content = `window,${JSON.stringify(config).replace(/"/g, '""')}`;
-
-// ✅ escapeCSV()を使用
-const content = `window,${escapeCSV(JSON.stringify(config))}`;
-```
-
 #### パース時のエラーハンドリング
 
-`parseWindowOperationConfig()`はエラー時にthrowするため、必ずtry-catchで囲んでください：
+JSON解析はエラー時にthrowするため、必ずtry-catchで囲んでください：
 
 ```typescript
-import { parseWindowOperationConfig } from '@common/utils/directiveUtils';
-
 try {
-  const config = parseWindowOperationConfig(jsonString);
+  const config = JSON.parse(jsonString);
   // 処理を続行
 } catch (error) {
   console.error('JSON形式が不正です:', error);
@@ -1376,10 +1296,9 @@ try {
 
 #### 関連ドキュメント
 
-- **[データ形式仕様](../architecture/data-format.md)** - data.txtの全体的な形式仕様
+- **[データ形式仕様](../architecture/data-format.md)** - data.jsonの全体的な形式仕様
 - **[ウィンドウ制御](../architecture/window-control.md)** - ウィンドウ操作の内部実装
 
 #### 変更履歴
 
-- **v0.6.0以降**: JSON形式のみをサポート（CSV形式廃止）
-- **v0.5.x以前**: CSV形式とJSON形式の両方をサポート（現在は廃止）
+- **v0.6.0以降**: JSON形式のみをサポート
