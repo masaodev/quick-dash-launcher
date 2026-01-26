@@ -44,7 +44,7 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
       expect(hintExists).toBe(true);
 
       // 完了ボタンが表示されていることを確認
-      const completeButtonExists = await utils.elementExists('.complete-button');
+      const completeButtonExists = await utils.elementExists('.btn-primary');
       expect(completeButtonExists).toBe(true);
     });
 
@@ -54,7 +54,7 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
       expect(hotkeyValue).toBe('Alt+Space');
 
       // デフォルトのホットキーが valid なので、完了ボタンが有効
-      const isDisabled = await mainWindow.isDisabled('.complete-button');
+      const isDisabled = await mainWindow.isDisabled('.btn-primary');
       expect(isDisabled).toBe(false);
     });
   });
@@ -115,8 +115,8 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
     });
 
     await test.step('完了ボタンをクリックして設定を保存', async () => {
-      await utils.waitForElement('.complete-button');
-      await mainWindow.click('.complete-button');
+      await utils.waitForElement('.btn-primary');
+      await mainWindow.click('.btn-primary');
 
       // settings.jsonが存在し、設定が保存されたことを確認
       expect(configHelper.fileExists('settings.json')).toBe(true);
@@ -151,7 +151,7 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
     expect(hotkeyValue).toBe('Ctrl+Shift+A');
 
     // 完了ボタンをクリック
-    await mainWindow.click('.complete-button');
+    await mainWindow.click('.btn-primary');
 
     // 設定ファイルの内容を確認
     const settings = configHelper.readSettings();
@@ -212,7 +212,7 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
     const isChecked = await mainWindow.isChecked('.auto-launch-checkbox');
     expect(isChecked).toBe(true);
 
-    await mainWindow.click('.complete-button');
+    await mainWindow.click('.btn-primary');
 
     const settings = configHelper.readSettings();
     expect(settings.autoLaunch).toBe(true);
@@ -230,7 +230,7 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
     const isChecked = await mainWindow.isChecked('.auto-launch-checkbox');
     expect(isChecked).toBe(false);
 
-    await mainWindow.click('.complete-button');
+    await mainWindow.click('.btn-primary');
 
     const settings = configHelper.readSettings();
     expect(settings.autoLaunch).toBe(false);

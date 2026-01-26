@@ -167,7 +167,8 @@ export class TestUtils {
    * 登録モーダルの登録ボタンをクリック
    */
   async clickRegisterButton(): Promise<void> {
-    const registerButton = this.page.locator('.register-modal button.primary').first();
+    // ボタンのテキスト「登録」で検索（.primaryクラスではなくテキストで探す）
+    const registerButton = this.page.locator('.register-modal button', { hasText: '登録' }).first();
     await registerButton.click();
     // モーダルが閉じるまで待機
     await this.page.waitForSelector('.register-modal', { state: 'hidden', timeout: 5000 });

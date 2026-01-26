@@ -101,8 +101,16 @@ export const test = base.extend<ElectronFixtures>({
   mainWindow: async ({ electronApp }, use) => {
     // メインウィンドウを探す関数（非同期）
     const findMainWindow = async (windows: Page[]): Promise<Page | undefined> => {
+      // Workspaceウィンドウを除外するヘルパー
+      const isWorkspaceWindow = async (win: Page): Promise<boolean> => {
+        const title = await win.title();
+        const url = win.url();
+        return title === 'Workspace' || url.includes('workspace.html');
+      };
+
       // タイトルで判定（QuickDashLauncherがメインウィンドウ）
       for (const win of windows) {
+        if (await isWorkspaceWindow(win)) continue;
         const title = await win.title();
         if (title === 'QuickDashLauncher') {
           return win;
@@ -111,14 +119,26 @@ export const test = base.extend<ElectronFixtures>({
 
       // フォールバック: URLで判定
       for (const win of windows) {
+        if (await isWorkspaceWindow(win)) continue;
         const url = win.url();
         const isMainWindow =
           url.includes('index.html') &&
-          !url.includes('workspace.html') &&
           !url.includes('admin.html') &&
           !url.includes('splash.html');
         if (isMainWindow) {
           return win;
+        }
+      }
+
+      // 第2フォールバック: 除外リストにないウィンドウを探す
+      for (const win of windows) {
+        if (await isWorkspaceWindow(win)) continue;
+        const title = await win.title();
+        if (title !== '設定・管理') {
+          const url = win.url();
+          if (!url.includes('admin.html') && !url.includes('splash.html')) {
+            return win;
+          }
         }
       }
 

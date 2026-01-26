@@ -77,8 +77,71 @@ export const test = base.extend<ElectronFixtures>({
 
   // メインウィンドウを取得するフィクスチャ
   mainWindow: async ({ electronApp }, use) => {
-    // 最初のウィンドウを取得（メインウィンドウ）
-    const mainWindow = await electronApp.firstWindow();
+    // メインウィンドウを探す関数（非同期）
+    const findMainWindow = async (windows: Page[]): Promise<Page | undefined> => {
+      // Workspaceウィンドウを除外するヘルパー
+      const isWorkspaceWindow = async (win: Page): Promise<boolean> => {
+        const title = await win.title();
+        const url = win.url();
+        return title === 'Workspace' || url.includes('workspace.html');
+      };
+
+      // タイトルで判定（QuickDashLauncherがメインウィンドウ）
+      for (const win of windows) {
+        if (await isWorkspaceWindow(win)) continue;
+        const title = await win.title();
+        if (title === 'QuickDashLauncher') {
+          return win;
+        }
+      }
+
+      // フォールバック: URLで判定
+      for (const win of windows) {
+        if (await isWorkspaceWindow(win)) continue;
+        const url = win.url();
+        const isMainWindow =
+          url.includes('index.html') &&
+          !url.includes('admin.html') &&
+          !url.includes('splash.html');
+        if (isMainWindow) {
+          return win;
+        }
+      }
+
+      // 第2フォールバック: 除外リストにないウィンドウを探す
+      for (const win of windows) {
+        if (await isWorkspaceWindow(win)) continue;
+        const title = await win.title();
+        if (title !== '設定・管理') {
+          const url = win.url();
+          if (!url.includes('admin.html') && !url.includes('splash.html')) {
+            return win;
+          }
+        }
+      }
+
+      return undefined;
+    };
+
+    // メインウィンドウが見つかるまで最大10秒待機（ポーリング）
+    let mainWindow: Page | undefined;
+    const maxAttempts = 20; // 20回 × 500ms = 10秒
+    const delayMs = 500;
+
+    for (let i = 0; i < maxAttempts; i++) {
+      const windows = electronApp.windows();
+      mainWindow = await findMainWindow(windows);
+      if (mainWindow) {
+        break;
+      }
+
+      // メインウィンドウが見つからない場合は少し待つ
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+
+    if (!mainWindow) {
+      throw new Error('メインウィンドウが見つかりません');
+    }
 
     // ウィンドウが完全に読み込まれるまで待機
     await mainWindow.waitForLoadState('domcontentloaded');
