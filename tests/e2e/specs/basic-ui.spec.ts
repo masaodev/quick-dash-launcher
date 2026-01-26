@@ -20,12 +20,15 @@ test.describe('QuickDashLauncher - 基本UI機能テスト', () => {
       const hasItemList = await utils.elementExists('.item-list');
       expect(hasItemList).toBe(true);
 
-      // アイテムが表示されることを確認
+      // アイテムが表示されるまで待機（データ読み込み完了を待つ）
       const items = mainWindow.locator('.item');
+      await items.first().waitFor({ state: 'visible', timeout: 10000 });
+
+      // アイテムが表示されることを確認
       const itemCount = await items.count();
       expect(itemCount).toBeGreaterThan(0);
 
-      // E2Eテスト用data.txtには最低でも7個のアイテムがあることを確認
+      // E2Eテスト用data.jsonには最低でも7個のアイテムがあることを確認
       expect(itemCount).toBeGreaterThanOrEqual(7);
     });
 

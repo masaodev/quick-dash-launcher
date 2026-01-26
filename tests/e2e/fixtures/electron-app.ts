@@ -61,8 +61,6 @@ export const test = base.extend<ElectronFixtures>({
         // テスト用の設定パスを指定（本番環境の設定に影響しない）
         QUICK_DASH_CONFIG_DIR: testConfigDir,
       },
-      // Electronアプリのコンソール出力をテストコンソールに転送
-      executablePath: undefined, // システムにインストールされたElectronを使用
     });
 
     // Electronアプリのcontextを取得してトレースを開始
@@ -101,17 +99,30 @@ export const test = base.extend<ElectronFixtures>({
 
   // メインウィンドウを取得するフィクスチャ
   mainWindow: async ({ electronApp }, use) => {
-    // メインウィンドウを探す関数
-    const findMainWindow = (windows: Page[]): Page | undefined => {
-      return windows.find((win) => {
+    // メインウィンドウを探す関数（非同期）
+    const findMainWindow = async (windows: Page[]): Promise<Page | undefined> => {
+      // タイトルで判定（QuickDashLauncherがメインウィンドウ）
+      for (const win of windows) {
+        const title = await win.title();
+        if (title === 'QuickDashLauncher') {
+          return win;
+        }
+      }
+
+      // フォールバック: URLで判定
+      for (const win of windows) {
         const url = win.url();
-        return (
+        const isMainWindow =
           url.includes('index.html') &&
           !url.includes('workspace.html') &&
           !url.includes('admin.html') &&
-          !url.includes('splash.html')
-        );
-      });
+          !url.includes('splash.html');
+        if (isMainWindow) {
+          return win;
+        }
+      }
+
+      return undefined;
     };
 
     // メインウィンドウが見つかるまで最大10秒待機（ポーリング）
@@ -121,7 +132,7 @@ export const test = base.extend<ElectronFixtures>({
 
     for (let i = 0; i < maxAttempts; i++) {
       const windows = electronApp.windows();
-      mainWindow = findMainWindow(windows);
+      mainWindow = await findMainWindow(windows);
       if (mainWindow) {
         break;
       }

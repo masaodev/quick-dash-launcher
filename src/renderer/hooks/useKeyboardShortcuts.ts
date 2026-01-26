@@ -33,8 +33,8 @@ export function useKeyboardShortcuts(
    */
   const getTabFilteredItemsForKeyHandler = (): AppItem[] => {
     if (!showDataFileTabs) {
-      // タブ表示OFF: data.txtのみ表示
-      return mainItems.filter((item) => !isWindowInfo(item) && item.sourceFile === 'data.txt');
+      // タブ表示OFF: activeTab（デフォルト: data.json）のみ表示
+      return mainItems.filter((item) => !isWindowInfo(item) && item.sourceFile === activeTab);
     }
     // タブ表示ON: アクティブなタブに紐付く全ファイルのアイテムを表示
     // アクティブなタブの設定を検索

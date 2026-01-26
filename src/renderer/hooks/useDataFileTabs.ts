@@ -12,7 +12,7 @@ import { debugLog, logError } from '../utils/debug';
 export function useDataFileTabs() {
   const [showDataFileTabs, setShowDataFileTabs] = useState(false);
   const [dataFiles, setDataFiles] = useState<string[]>([]);
-  const [activeTab, setActiveTab] = useState<string>('data.txt');
+  const [activeTab, setActiveTab] = useState<string>('data.json');
   const [dataFileTabs, setDataFileTabs] = useState<DataFileTab[]>([]);
   const [dataFileLabels, setDataFileLabels] = useState<Record<string, string>>({});
 
@@ -66,9 +66,9 @@ export function useDataFileTabs() {
       // 物理ファイルが存在しない場合は自動作成
       await ensureDataFilesExist(files);
 
-      // タブ表示がOFFの場合は、data.txtのみ表示
+      // タブ表示がOFFの場合は、defaultFileTabを使用
       if (!settings.showDataFileTabs) {
-        setActiveTab('data.txt');
+        setActiveTab(settings.defaultFileTab || 'data.json');
       } else {
         // アクティブタブが存在するか確認、存在しない場合はdata.txtにフォールバック
         const defaultTab = settings.defaultFileTab || 'data.txt';
@@ -161,8 +161,8 @@ export function useDataFileTabs() {
    */
   const getTabFilteredItems = (mainItems: AppItem[]): AppItem[] => {
     if (!showDataFileTabs) {
-      // タブ表示OFF: data.txtのみ表示
-      return mainItems.filter((item) => !isWindowInfo(item) && item.sourceFile === 'data.txt');
+      // タブ表示OFF: activeTab（デフォルトはdefaultFileTab）のアイテムのみ表示
+      return mainItems.filter((item) => !isWindowInfo(item) && item.sourceFile === activeTab);
     }
     // タブ表示ON: アクティブなタブに紐付く全ファイルのアイテムを表示
     // アクティブなタブの設定を検索
@@ -184,9 +184,9 @@ export function useDataFileTabs() {
     try {
       const settings = await window.electronAPI.getSettings();
 
-      // タブ表示がOFFの場合はdata.txtに戻す
+      // タブ表示がOFFの場合はdefaultFileTabに戻す
       if (!settings.showDataFileTabs) {
-        setActiveTab('data.txt');
+        setActiveTab(settings.defaultFileTab || 'data.json');
         return;
       }
 
