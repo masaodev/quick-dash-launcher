@@ -92,7 +92,7 @@
     "@types/minimatch": "^6.0.0",
     "electron-store": "^11.0.2",
     "extract-file-icon": "^0.3.2",
-    "koffi": "^2.9.0",
+    "koffi": "^2.15.1",
     "minimatch": "^10.1.1",
     "pino": "^10.2.0",
     "pino-pretty": "^13.1.3",
