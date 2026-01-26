@@ -1,11 +1,17 @@
 import fs from 'fs';
 import path from 'path';
 
-import type { AppSettings } from '@common/types';
+import type { AppSettings, LauncherItem } from '@common/types';
+
+/** データファイルのJSON構造 */
+interface DataFileContent {
+  version: string;
+  items: LauncherItem[];
+}
 
 /**
  * E2Eテスト用の設定ファイル管理ヘルパー
- * data.txtとsettings.jsonの両方をバックアップ・復元・変更できる
+ * data.jsonとsettings.jsonの両方をバックアップ・復元・変更できる
  */
 export class ConfigFileHelper {
   private dataBackupPath: string | null = null;
@@ -50,7 +56,7 @@ export class ConfigFileHelper {
   // ==================== バックアップ・復元 ====================
 
   /**
-   * data.txtとsettings.jsonの両方をバックアップ
+   * data.jsonとsettings.jsonの両方をバックアップ
    */
   backupAll(): void {
     this.backupData();
@@ -58,7 +64,7 @@ export class ConfigFileHelper {
   }
 
   /**
-   * data.txtとsettings.jsonの両方を復元
+   * data.jsonとsettings.jsonの両方を復元
    */
   restoreAll(): void {
     this.restoreData();
@@ -66,11 +72,11 @@ export class ConfigFileHelper {
   }
 
   /**
-   * data.txtをバックアップ
+   * data.jsonをバックアップ
    */
   backupData(): void {
-    const dataFilePath = path.join(this.configDir, 'data.txt');
-    this.dataBackupPath = path.join(this.configDir, '.data.txt.backup');
+    const dataFilePath = path.join(this.configDir, 'data.json');
+    this.dataBackupPath = path.join(this.configDir, '.data.json.backup');
 
     if (fs.existsSync(dataFilePath)) {
       fs.copyFileSync(dataFilePath, this.dataBackupPath);
@@ -78,12 +84,12 @@ export class ConfigFileHelper {
   }
 
   /**
-   * data.txtを復元
+   * data.jsonを復元
    */
   restoreData(): void {
     if (!this.dataBackupPath) return;
 
-    const dataFilePath = path.join(this.configDir, 'data.txt');
+    const dataFilePath = path.join(this.configDir, 'data.json');
 
     if (fs.existsSync(this.dataBackupPath)) {
       fs.copyFileSync(this.dataBackupPath, dataFilePath);
@@ -128,9 +134,9 @@ export class ConfigFileHelper {
    * @param templateName テンプレート名（例: 'base', 'with-tabs'）
    *
    * テンプレートフォルダ内の以下のファイルを自動的にコピー：
-   * - data.txt → configDir/data.txt
-   * - data2.txt → configDir/data2.txt（存在する場合）
-   * - data3.txt以降 → configDir/data*.txt（存在する場合）
+   * - data.json → configDir/data.json
+   * - data2.json → configDir/data2.json（存在する場合）
+   * - data3.json以降 → configDir/data*.json（存在する場合）
    * - settings.json → configDir/settings.json（存在する場合）
    */
   loadTemplate(templateName: string): void {
@@ -140,16 +146,16 @@ export class ConfigFileHelper {
       throw new Error(`Template directory not found: ${templateDir}`);
     }
 
-    // data.txt をコピー
-    const dataTemplate = path.join(templateDir, 'data.txt');
-    const dataTarget = path.join(this.configDir, 'data.txt');
+    // data.json をコピー
+    const dataTemplate = path.join(templateDir, 'data.json');
+    const dataTarget = path.join(this.configDir, 'data.json');
     if (fs.existsSync(dataTemplate)) {
       fs.copyFileSync(dataTemplate, dataTarget);
     }
 
-    // data2.txt〜data9.txt をコピー（存在する場合）
+    // data2.json〜data9.json をコピー（存在する場合）
     for (let i = 2; i <= 9; i++) {
-      const dataFile = `data${i}.txt`;
+      const dataFile = `data${i}.json`;
       const dataTemplate = path.join(templateDir, dataFile);
       const dataTarget = path.join(this.configDir, dataFile);
       if (fs.existsSync(dataTemplate)) {
@@ -168,7 +174,7 @@ export class ConfigFileHelper {
   /**
    * テンプレートフォルダから特定のファイルのみ読み込み
    * @param templateName テンプレート名（例: 'base', 'with-tabs'）
-   * @param fileName ファイル名（例: 'data.txt', 'settings.json'）
+   * @param fileName ファイル名（例: 'data.json', 'settings.json'）
    */
   loadTemplateFile(templateName: string, fileName: string): void {
     const templatePath = path.join(
@@ -191,11 +197,25 @@ export class ConfigFileHelper {
   // ==================== データファイル操作（汎用） ====================
 
   /**
-   * 指定したデータファイルの内容を読み込み
-   * @param fileName ファイル名（例: 'data.txt', 'data2.txt', 'data3.txt'）
-   * @returns ファイルの内容（存在しない場合は空文字列）
+   * 指定したデータファイルの内容を読み込み（JSON形式）
+   * @param fileName ファイル名（例: 'data.json', 'data2.json', 'data3.json'）
+   * @returns ファイルの内容（存在しない場合は空のデータ構造）
    */
-  readDataFile(fileName: string): string {
+  readDataFile(fileName: string): DataFileContent {
+    const dataFilePath = path.join(this.configDir, fileName);
+    if (!fs.existsSync(dataFilePath)) {
+      return { version: '1.0', items: [] };
+    }
+    const content = fs.readFileSync(dataFilePath, 'utf8');
+    return JSON.parse(content) as DataFileContent;
+  }
+
+  /**
+   * 指定したデータファイルの内容を読み込み（生の文字列として）
+   * @param fileName ファイル名
+   * @returns ファイルの内容文字列（存在しない場合は空文字列）
+   */
+  readDataFileRaw(fileName: string): string {
     const dataFilePath = path.join(this.configDir, fileName);
     if (!fs.existsSync(dataFilePath)) {
       return '';
@@ -204,35 +224,73 @@ export class ConfigFileHelper {
   }
 
   /**
-   * 指定したデータファイルに内容を上書き
-   * @param fileName ファイル名（例: 'data.txt', 'data2.txt', 'data3.txt'）
+   * 指定したデータファイルに内容を上書き（JSON形式）
+   * @param fileName ファイル名（例: 'data.json', 'data2.json', 'data3.json'）
    * @param content ファイルの内容
    */
-  writeDataFile(fileName: string, content: string): void {
+  writeDataFile(fileName: string, content: DataFileContent): void {
+    const dataFilePath = path.join(this.configDir, fileName);
+    fs.writeFileSync(dataFilePath, JSON.stringify(content, null, '  '), 'utf8');
+  }
+
+  /**
+   * 指定したデータファイルに内容を上書き（生の文字列として）
+   * @param fileName ファイル名
+   * @param content ファイルの内容文字列
+   */
+  writeDataFileRaw(fileName: string, content: string): void {
     const dataFilePath = path.join(this.configDir, fileName);
     fs.writeFileSync(dataFilePath, content, 'utf8');
   }
 
   /**
-   * 指定したデータファイルにアイテムを追加
-   * @param fileName ファイル名（例: 'data.txt', 'data2.txt', 'data3.txt'）
-   * @param name アイテム名
-   * @param target アイテムのパス・URL
+   * 指定したデータファイルにアイテムを追加（JSON形式）
+   * @param fileName ファイル名（例: 'data.json', 'data2.json', 'data3.json'）
+   * @param item 追加するアイテム
    */
-  addItemToFile(fileName: string, name: string, target: string): void {
-    const content = this.readDataFile(fileName);
-    const newContent = content.trim() + `\n${name},${target}\n`;
-    this.writeDataFile(fileName, newContent);
+  addItemToFile(fileName: string, item: LauncherItem): void {
+    const data = this.readDataFile(fileName);
+    data.items.push(item);
+    this.writeDataFile(fileName, data);
+  }
+
+  /**
+   * 簡易的なアイテム追加（displayNameとpathのみ指定）
+   * @param fileName ファイル名
+   * @param displayName 表示名
+   * @param itemPath アイテムのパス・URL
+   */
+  addSimpleItem(fileName: string, displayName: string, itemPath: string): void {
+    const id = this.generateId();
+    const item: LauncherItem = {
+      id,
+      type: 'item',
+      displayName,
+      path: itemPath,
+    };
+    this.addItemToFile(fileName, item);
+  }
+
+  /**
+   * 8文字のユニークIDを生成
+   */
+  private generateId(): string {
+    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let id = '';
+    for (let i = 0; i < 8; i++) {
+      id += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return id;
   }
 
   /**
    * 指定したデータファイルを削除
-   * @param fileName ファイル名（例: 'data2.txt', 'data3.txt'）
-   * @note data.txtは削除できません（必須ファイルのため）
+   * @param fileName ファイル名（例: 'data2.json', 'data3.json'）
+   * @note data.jsonは削除できません（必須ファイルのため）
    */
   deleteDataFile(fileName: string): void {
-    if (fileName === 'data.txt') {
-      throw new Error('data.txt is required and cannot be deleted');
+    if (fileName === 'data.json') {
+      throw new Error('data.json is required and cannot be deleted');
     }
     const dataFilePath = path.join(this.configDir, fileName);
     if (fs.existsSync(dataFilePath)) {
@@ -303,10 +361,10 @@ export class ConfigFileHelper {
   }
 
   /**
-   * data.txtのフルパスを取得
+   * data.jsonのフルパスを取得
    */
   getDataPath(): string {
-    return path.join(this.configDir, 'data.txt');
+    return path.join(this.configDir, 'data.json');
   }
 
   /**
@@ -322,5 +380,48 @@ export class ConfigFileHelper {
   fileExists(fileName: string): boolean {
     const filePath = path.join(this.configDir, fileName);
     return fs.existsSync(filePath);
+  }
+
+  // ==================== 検証ヘルパー ====================
+
+  /**
+   * データファイル内に指定した表示名のアイテムが存在するかチェック
+   */
+  hasItemByDisplayName(fileName: string, displayName: string): boolean {
+    const data = this.readDataFile(fileName);
+    return data.items.some((item) => item.displayName === displayName);
+  }
+
+  /**
+   * データファイル内に指定したパスのアイテムが存在するかチェック
+   */
+  hasItemByPath(fileName: string, itemPath: string): boolean {
+    const data = this.readDataFile(fileName);
+    return data.items.some((item) => item.path === itemPath);
+  }
+
+  /**
+   * データファイル内に指定した表示名とパスを持つアイテムが存在するかチェック
+   */
+  hasItem(fileName: string, displayName: string, itemPath: string): boolean {
+    const data = this.readDataFile(fileName);
+    return data.items.some((item) => item.displayName === displayName && item.path === itemPath);
+  }
+
+  /**
+   * データファイル内の指定した表示名のアイテムを取得
+   */
+  getItemByDisplayName(fileName: string, displayName: string): LauncherItem | undefined {
+    const data = this.readDataFile(fileName);
+    return data.items.find((item) => item.displayName === displayName);
+  }
+
+  /**
+   * データファイルの内容に指定した文字列が含まれるかチェック（後方互換用）
+   * 注: JSON形式でも文字列検索で使用可能
+   */
+  dataFileContains(fileName: string, searchString: string): boolean {
+    const rawContent = this.readDataFileRaw(fileName);
+    return rawContent.includes(searchString);
   }
 }

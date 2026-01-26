@@ -27,7 +27,7 @@ v0.5.3以降、開発時に複数のインスタンスを同時に起動でき�
 |---------|--------|-----------|------------|------|
 | `npm run dev` | 9001 | Ctrl+Alt+A | `%APPDATA%\dev-quick-dash-launcher\config` | メイン開発環境 |
 | `npm run dev2` | 9002 | Ctrl+Alt+S | `%APPDATA%\dev2-quick-dash-launcher\config` | 比較検証用 |
-| `npm run dev:test` | 9000 | 設定による | `./tests/dev/full` | テストデータでの動作確認 |
+| `npm run dev:test` | 9003 | 設定による | `./tests/dev/full` | テストデータでの動作確認 |
 
 #### 環境変数
 
@@ -123,12 +123,7 @@ QUICK_DASH_CONFIG_DIR=./tests/dev/minimal npm run dev
 **[データファイル形式仕様](../architecture/file-formats/data-format.md)**
 
 **基本例:**
-```
-// コメント行は//で開始
-表示名,URLまたはパス
-アプリ名,C:\path\to\app.exe,オプション引数
-dir,C:\folder\path  // フォルダ取込アイテム
-```
+詳細な形式仕様については上記リンク先を参照してください。JSON形式でアイテムを管理しています。
 
 ### データ読み込みと重複排除
 
@@ -542,7 +537,6 @@ QuickDashLauncherではCSS変数ベースの統一されたデザインシステ
   - パスと引数列でパス＋引数を統合表示・編集
   - アイテム行：パス＋引数の組み合わせ（例：`notepad.exe`, `https://github.com/`）
   - フォルダ取込アイテム：フォルダパス＋オプション（例：`C:\Users\Documents filter:*.txt`）
-  - 編集時の自動CSV形式変換機能
 
 #### ワークスペースウィンドウ
 - **WorkspaceApp.tsx**: ワークスペースアプリケーションコンポーネント（444行→216行にリファクタリング）
@@ -666,12 +660,8 @@ npm run debug:windows -- --all-desktops --show-excluded --output debug.txt
   - `loadDataFiles`: フォルダ取込アイテム展開時の読み込み
   - `registerItems`: 新規アイテム登録時の保存
 
-### CSVフォーマットの処理
-- **アイテム行**: `名前,パス[,引数][,カスタムアイコン]`
-  - 引数とカスタムアイコンは省略可能
-  - セル編集時は必要なフィールドのみ出力（末尾の無駄なカンマを防止）
-- **フォルダ取込アイテム**: `dir,パス[,オプション...]`
-  - オプションはカンマ区切りで複数指定可能
+### データフォーマットの処理
+データファイルはJSON形式で管理されています。詳細な形式仕様については、**[データファイル形式仕様](../architecture/file-formats/data-format.md)** を参照してください。
 
 ## UI/UXガイドライン
 

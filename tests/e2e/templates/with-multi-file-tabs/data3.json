@@ -1,0 +1,23 @@
+{
+  "version": "1.0",
+  "items": [
+    {
+      "id": "mf300001",
+      "type": "item",
+      "displayName": "Qiita",
+      "path": "https://qiita.com"
+    },
+    {
+      "id": "mf300002",
+      "type": "item",
+      "displayName": "Zenn",
+      "path": "https://zenn.dev"
+    },
+    {
+      "id": "mf300003",
+      "type": "item",
+      "displayName": "note",
+      "path": "https://note.com"
+    }
+  ]
+}

@@ -18,7 +18,7 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
     const _utils = new TestUtils(mainWindow);
 
     await test.step('グループアイテムが表示されることを確認', async () => {
-      // data.txtに含まれるグループアイテムが表示されることを確認
+      // data.jsonに含まれるグループアイテムが表示されることを確認
       const knownGroups = ['開発環境スタート', 'Web開発セット', 'ドキュメント作成'];
 
       for (const groupName of knownGroups) {
@@ -131,9 +131,12 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
       await expect(newGroup).toBeVisible();
     });
 
-    await test.step('登録したグループがdata.txtに保存される', async () => {
-      const dataContent = configHelper.readDataFile('data.txt');
-      expect(dataContent).toContain('group,テストグループ,GitHub,Google');
+    await test.step('登録したグループがdata.jsonに保存される', async () => {
+      const item = configHelper.getItemByDisplayName('data.json', 'テストグループ');
+      expect(item).toBeDefined();
+      expect(item?.type).toBe('group');
+      expect(item?.itemNames).toContain('GitHub');
+      expect(item?.itemNames).toContain('Google');
     });
 
     await test.step('登録したグループが表示される', async () => {
@@ -263,10 +266,10 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
       await expect(editedGroup).toBeVisible();
     });
 
-    await test.step('編集がdata.txtに保存される', async () => {
-      const dataContent = configHelper.readDataFile('data.txt');
-      expect(dataContent).toContain('開発環境スタート編集');
-      expect(dataContent).toContain('Wikipedia');
+    await test.step('編集がdata.jsonに保存される', async () => {
+      const item = configHelper.getItemByDisplayName('data.json', '開発環境スタート編集');
+      expect(item).toBeDefined();
+      expect(item?.itemNames).toContain('Wikipedia');
     });
   });
 
@@ -277,7 +280,7 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
     const utils = new TestUtils(mainWindow);
 
     await test.step('グループアイテムを編集してキャンセル', async () => {
-      const dataBefore = configHelper.readDataFile('data.txt');
+      const dataBefore = configHelper.readDataFileRaw('data.json');
 
       await utils.editItemByRightClick('開発環境スタート');
       const groupNameInput = mainWindow
@@ -287,8 +290,8 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
 
       await utils.clickCancelButton();
 
-      // data.txtが変更されていないことを確認
-      const dataAfter = configHelper.readDataFile('data.txt');
+      // data.jsonが変更されていないことを確認
+      const dataAfter = configHelper.readDataFileRaw('data.json');
       expect(dataAfter).toBe(dataBefore);
     });
   });
@@ -481,9 +484,10 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
         const updateButton = adminWindow.locator('.register-modal button.primary').first();
         await updateButton.click();
 
-        // data.txtに保存されたことを確認
-        const dataContent = configHelper.readDataFile('data.txt');
-        expect(dataContent).toContain('開発環境スタート管理画面編集');
+        // data.jsonに保存されたことを確認
+        expect(
+          configHelper.hasItemByDisplayName('data.json', '開発環境スタート管理画面編集')
+        ).toBe(true);
       });
 
       await test.step('メイン画面に変更が反映される', async () => {
@@ -533,8 +537,7 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
         const saveButton = adminWindow.locator('button.save-changes-button');
         await saveButton.click();
 
-        const dataContent = configHelper.readDataFile('data.txt');
-        expect(dataContent).not.toContain('開発環境スタート');
+        expect(configHelper.hasItemByDisplayName('data.json', '開発環境スタート')).toBe(false);
       });
 
       await test.step('メイン画面から削除される', async () => {

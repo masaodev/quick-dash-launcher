@@ -1,0 +1,35 @@
+{
+  "version": "1.0",
+  "items": [
+    {
+      "id": "mf200001",
+      "type": "item",
+      "displayName": "Stack Overflow",
+      "path": "https://stackoverflow.com/"
+    },
+    {
+      "id": "mf200002",
+      "type": "item",
+      "displayName": "Reddit",
+      "path": "https://reddit.com/"
+    },
+    {
+      "id": "mf200003",
+      "type": "item",
+      "displayName": "YouTube",
+      "path": "https://youtube.com/"
+    },
+    {
+      "id": "mf200004",
+      "type": "item",
+      "displayName": "ペイント",
+      "path": "mspaint.exe"
+    },
+    {
+      "id": "mf200005",
+      "type": "item",
+      "displayName": "エクスプローラー",
+      "path": "explorer.exe"
+    }
+  ]
+}

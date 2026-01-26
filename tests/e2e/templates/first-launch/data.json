@@ -1,0 +1,47 @@
+{
+  "version": "1.0",
+  "items": [
+    {
+      "id": "flnc0001",
+      "type": "item",
+      "displayName": "GitHub",
+      "path": "https://github.com/"
+    },
+    {
+      "id": "flnc0002",
+      "type": "item",
+      "displayName": "Google",
+      "path": "https://google.com/"
+    },
+    {
+      "id": "flnc0003",
+      "type": "item",
+      "displayName": "Wikipedia",
+      "path": "https://wikipedia.org/"
+    },
+    {
+      "id": "flnc0004",
+      "type": "item",
+      "displayName": "メモ帳",
+      "path": "notepad.exe"
+    },
+    {
+      "id": "flnc0005",
+      "type": "item",
+      "displayName": "電卓",
+      "path": "calc.exe"
+    },
+    {
+      "id": "flnc0006",
+      "type": "item",
+      "displayName": "デスクトップ",
+      "path": "shell:Desktop"
+    },
+    {
+      "id": "flnc0007",
+      "type": "item",
+      "displayName": "ドキュメント",
+      "path": "shell:Documents"
+    }
+  ]
+}

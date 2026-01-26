@@ -1017,7 +1017,7 @@ dir,C:\Projects,depth=2,types=file,filter=*.{js,ts},exclude=node_modules,prefix=
 C:\Work\projects\myproject\readme.pdf
 
 データファイル: data.json
-行番号: 15
+ID: abc123
 取込元: C:\Work\projects
 設定: 深さ:2, タイプ:ファイルのみ, フィルター:*.pdf
 ```

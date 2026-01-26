@@ -120,7 +120,7 @@ group,業務開始,Outlook,Teams,社内ポータル,タイムカード
 - **ツールチップ**: マウスホバーで詳細情報を表示
   - グループに含まれるアイテム名の一覧
   - データファイル名（data.json または data2.json）
-  - データファイル内の行番号
+  - アイテムID
 
 ### ツールチップの表示例
 
@@ -130,7 +130,7 @@ group,業務開始,Outlook,Teams,社内ポータル,タイムカード
 グループ: Visual Studio Code, Slack, Chrome, 開発フォルダ
 
 データファイル: data.json
-行番号: 25
+ID: abc123
 ```
 
 ### 実行方法

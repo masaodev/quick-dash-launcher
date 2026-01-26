@@ -4,8 +4,8 @@ import { TestUtils } from '../helpers/test-utils';
 test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
   test.beforeEach(async ({ configHelper, mainWindow }) => {
     // baseテンプレートは既に読み込まれている
-    // data2.txtは削除（このテストでは使用しない）
-    configHelper.deleteDataFile('data2.txt');
+    // data2.jsonは削除（このテストでは使用しない）
+    configHelper.deleteDataFile('data2.json');
 
     // ページの読み込み完了を待機
     const utils = new TestUtils(mainWindow);
@@ -53,8 +53,8 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         await expect(actionHeader).toBeVisible();
       });
 
-      await test.step('data.txtのアイテムが表示されることを確認', async () => {
-        // data.txtの既知のアイテムが表示されることを確認
+      await test.step('data.jsonのアイテムが表示されることを確認', async () => {
+        // data.jsonの既知のアイテムが表示されることを確認
         const knownItems = ['GitHub', 'Google', 'Wikipedia'];
 
         for (const itemName of knownItems) {
@@ -118,9 +118,8 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         await expect(confirmButton).toBeVisible();
         await confirmButton.click();
 
-        // data.txtに保存されたことを確認
-        const dataContent = configHelper.readDataFile('data.txt');
-        expect(dataContent).toContain('新規アイテム,https://new-item.com');
+        // data.jsonに保存されたことを確認
+        expect(configHelper.hasItem('data.json', '新規アイテム', 'https://new-item.com')).toBe(true);
       });
     } finally {
       await adminWindow.close();
@@ -159,8 +158,7 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         await expect(confirmButton).toBeVisible();
         await confirmButton.click();
 
-        const dataContent = configHelper.readDataFile('data.txt');
-        expect(dataContent).toContain('GitHub編集後');
+        expect(configHelper.hasItemByDisplayName('data.json', 'GitHub編集後')).toBe(true);
       });
 
       await test.step('Googleアイテムの詳細編集ボタンをクリック', async () => {
@@ -187,10 +185,10 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         const updateButton = adminWindow.locator('.register-modal button.primary').first();
         await updateButton.click();
 
-        // data.txtに保存されたことを確認
-        const dataContent = configHelper.readDataFile('data.txt');
-        expect(dataContent).toContain('Google詳細編集');
-        expect(dataContent).toContain('--test-args');
+        // data.jsonに保存されたことを確認
+        expect(configHelper.hasItemByDisplayName('data.json', 'Google詳細編集')).toBe(true);
+        const item = configHelper.getItemByDisplayName('data.json', 'Google詳細編集');
+        expect(item?.args).toBe('--test-args');
       });
     } finally {
       await adminWindow.close();
@@ -236,8 +234,7 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         await expect(confirmButton).toBeVisible();
         await confirmButton.click();
 
-        const dataContent = configHelper.readDataFile('data.txt');
-        expect(dataContent).not.toContain('GitHub');
+        expect(configHelper.hasItemByDisplayName('data.json', 'GitHub')).toBe(false);
       });
     } finally {
       await adminWindow.close();
@@ -297,9 +294,8 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         await expect(confirmButton).toBeVisible();
         await confirmButton.click();
 
-        const dataContent = configHelper.readDataFile('data.txt');
-        expect(dataContent).not.toContain('GitHub');
-        expect(dataContent).not.toContain('Google');
+        expect(configHelper.hasItemByDisplayName('data.json', 'GitHub')).toBe(false);
+        expect(configHelper.hasItemByDisplayName('data.json', 'Google')).toBe(false);
       });
     } finally {
       await adminWindow.close();
@@ -356,8 +352,7 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         await confirmButton.click();
 
         // 保存されたことを確認
-        const dataContent = configHelper.readDataFile('data.txt');
-        expect(dataContent).toContain('GitHub整列テスト');
+        expect(configHelper.hasItemByDisplayName('data.json', 'GitHub整列テスト')).toBe(true);
       });
     } finally {
       await adminWindow.close();
@@ -490,7 +485,7 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         // ドロップダウンが閉じるまで待機
         await expect(dropdownMenu).not.toBeVisible();
 
-        // data2.txtのアイテムが表示されることを確認
+        // data2.jsonのアイテムが表示されることを確認
         const redditRow = adminWindow.locator('.raw-item-row', { hasText: 'Reddit' });
         await expect(redditRow).toBeVisible({ timeout: 5000 });
       });
@@ -513,9 +508,8 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         await expect(confirmButton).toBeVisible();
         await confirmButton.click();
 
-        // data2.txtに保存されたことを確認
-        const data2Content = configHelper.readDataFile('data2.txt');
-        expect(data2Content).toContain('Reddit編集');
+        // data2.jsonに保存されたことを確認
+        expect(configHelper.hasItemByDisplayName('data2.json', 'Reddit編集')).toBe(true);
       });
     } finally {
       await adminWindow.close();
@@ -565,8 +559,10 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         await expect(confirmButton).toBeVisible();
         await confirmButton.click();
 
-        const dataContent = configHelper.readDataFile('data.txt');
-        expect(dataContent).toContain('dir,C:\\TestFolder');
+        const item = configHelper.getItemByDisplayName('data.json', 'C:\\TestFolder');
+        expect(item).toBeDefined();
+        expect(item?.type).toBe('dir');
+        expect(item?.path).toBe('C:\\TestFolder');
       });
     } finally {
       await adminWindow.close();
@@ -604,13 +600,13 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         await expect(fileDropdownButton).toBeVisible();
       });
 
-      await test.step('data.txtのアイテムが表示される', async () => {
-        // デフォルトでdata.txtが選択されているはず
+      await test.step('data.jsonのアイテムが表示される', async () => {
+        // デフォルトでdata.jsonが選択されているはず
         const githubRow = adminWindow.locator('.raw-item-row', { hasText: 'GitHub' });
         await expect(githubRow).toBeVisible({ timeout: 5000 });
       });
 
-      await test.step('data3.txtに切り替え', async () => {
+      await test.step('data3.jsonに切り替え', async () => {
         // ファイル選択ドロップダウンを開く
         const fileDropdownButton = adminWindow.locator('.file-dropdown .dropdown-trigger-btn');
         await fileDropdownButton.click();
@@ -619,24 +615,24 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         const fileDropdownMenu = adminWindow.locator('.file-dropdown .dropdown-menu');
         await expect(fileDropdownMenu).toBeVisible();
 
-        // data3.txtを選択
+        // data3.jsonを選択
         const fileItems = adminWindow.locator('.file-dropdown .dropdown-item');
-        const data3Item = fileItems.filter({ hasText: 'data3.txt' });
+        const data3Item = fileItems.filter({ hasText: 'data3.json' });
         await data3Item.click();
 
         // メニューが閉じるまで待機
         await expect(fileDropdownMenu).not.toBeVisible();
 
-        // data3.txtのアイテムが表示されることを確認
+        // data3.jsonのアイテムが表示されることを確認
         const qiitaRow = adminWindow.locator('.raw-item-row', { hasText: 'Qiita' });
         await expect(qiitaRow).toBeVisible({ timeout: 5000 });
 
-        // data.txtのアイテムは表示されない
+        // data.jsonのアイテムは表示されない
         const githubRow = adminWindow.locator('.raw-item-row', { hasText: 'GitHub' });
         await expect(githubRow).not.toBeVisible();
       });
 
-      await test.step('data3.txtでアイテムを編集', async () => {
+      await test.step('data3.jsonでアイテムを編集', async () => {
         const qiitaRow = adminWindow.locator('.raw-item-row', { hasText: 'Qiita' });
         const nameCell = qiitaRow.locator('.name-column .editable-cell');
         await nameCell.click();
@@ -654,9 +650,8 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         await expect(confirmButton).toBeVisible();
         await confirmButton.click();
 
-        // data3.txtに保存されたことを確認
-        const data3Content = configHelper.readDataFile('data3.txt');
-        expect(data3Content).toContain('Qiita編集');
+        // data3.jsonに保存されたことを確認
+        expect(configHelper.hasItemByDisplayName('data3.json', 'Qiita編集')).toBe(true);
       });
 
       await test.step('サブ1タブに切り替え', async () => {
@@ -676,11 +671,11 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         // ドロップダウンが閉じるまで待機
         await expect(dropdownMenu).not.toBeVisible();
 
-        // サブ1は単一ファイル（data2.txt）なので、ファイル選択ドロップダウンは表示されない
+        // サブ1は単一ファイル（data2.json）なので、ファイル選択ドロップダウンは表示されない
         const fileDropdownButton = adminWindow.locator('.file-dropdown .dropdown-trigger-btn');
         await expect(fileDropdownButton).not.toBeVisible();
 
-        // data2.txtのアイテムが表示される
+        // data2.jsonのアイテムが表示される
         const redditRow = adminWindow.locator('.raw-item-row', { hasText: 'Reddit' });
         await expect(redditRow).toBeVisible({ timeout: 5000 });
       });
@@ -703,9 +698,8 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         await expect(confirmButton).toBeVisible();
         await confirmButton.click();
 
-        // data2.txtに保存されたことを確認
-        const data2Content = configHelper.readDataFile('data2.txt');
-        expect(data2Content).toContain('Reddit複数ファイルタブ');
+        // data2.jsonに保存されたことを確認
+        expect(configHelper.hasItemByDisplayName('data2.json', 'Reddit複数ファイルタブ')).toBe(true);
       });
     } finally {
       await adminWindow.close();
@@ -730,7 +724,7 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
     try {
       const _adminUtils = new TestUtils(adminWindow);
 
-      await test.step('data3.txtに切り替え', async () => {
+      await test.step('data3.jsonに切り替え', async () => {
         // ファイル選択ドロップダウンを開く
         const fileDropdownButton = adminWindow.locator('.file-dropdown .dropdown-trigger-btn');
         await fileDropdownButton.click();
@@ -739,16 +733,16 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         const fileDropdownMenu = adminWindow.locator('.file-dropdown .dropdown-menu');
         await expect(fileDropdownMenu).toBeVisible();
 
-        // data3.txtを選択
+        // data3.jsonを選択
         const fileItems = adminWindow.locator('.file-dropdown .dropdown-item');
-        const data3Item = fileItems.filter({ hasText: 'data3.txt' });
+        const data3Item = fileItems.filter({ hasText: 'data3.json' });
         await data3Item.click();
 
         // メニューが閉じるまで待機
         await expect(fileDropdownMenu).not.toBeVisible();
       });
 
-      await test.step('data3.txtに新規アイテムを追加', async () => {
+      await test.step('data3.jsonに新規アイテムを追加', async () => {
         const addButton = adminWindow.locator('button.add-line-button');
         await addButton.click();
 
@@ -780,13 +774,13 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         await expect(confirmButton).toBeVisible();
         await confirmButton.click();
 
-        // data3.txtに保存されたことを確認
-        const data3Content = configHelper.readDataFile('data3.txt');
-        expect(data3Content).toContain('新規data3アイテム,https://example3.com');
+        // data3.jsonに保存されたことを確認
+        expect(
+          configHelper.hasItem('data3.json', '新規data3アイテム', 'https://example3.com')
+        ).toBe(true);
 
-        // data.txtには保存されていないことを確認
-        const dataContent = configHelper.readDataFile('data.txt');
-        expect(dataContent).not.toContain('新規data3アイテム');
+        // data.jsonには保存されていないことを確認
+        expect(configHelper.hasItemByDisplayName('data.json', '新規data3アイテム')).toBe(false);
       });
     } finally {
       await adminWindow.close();

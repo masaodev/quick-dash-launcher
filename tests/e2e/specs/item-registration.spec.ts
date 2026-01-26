@@ -6,8 +6,8 @@ import { TestUtils } from '../helpers/test-utils';
 test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', () => {
   test.beforeEach(async ({ configHelper, mainWindow }) => {
     // baseテンプレートは既に読み込まれている
-    // data2.txtは削除（このテストでは使用しない）
-    configHelper.deleteDataFile('data2.txt');
+    // data2.jsonは削除（このテストでは使用しない）
+    configHelper.deleteDataFile('data2.json');
 
     // ページの読み込み完了を待機
     const utils = new TestUtils(mainWindow);
@@ -125,13 +125,14 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       const newItem = mainWindow.locator('.item', { hasText: 'メモ帳（引数あり）' });
       await expect(newItem).toBeVisible();
 
-      // data.txtに引数が保存されていることを確認
-      const dataContent = configHelper.readDataFile('data.txt');
-      expect(dataContent).toContain('notepad.exe');
-      expect(dataContent).toContain('C:\\test.txt');
+      // data.jsonに引数が保存されていることを確認
+      const item = configHelper.getItemByDisplayName('data.json', 'メモ帳（引数あり）');
+      expect(item).toBeDefined();
+      expect(item?.path).toBe('notepad.exe');
+      expect(item?.args).toBe('C:\\test.txt');
     });
 
-    await test.step('登録したアイテムがdata.txtに保存される', async () => {
+    await test.step('登録したアイテムがdata.jsonに保存される', async () => {
       await utils.openRegisterModal();
       await utils.fillRegisterForm({
         name: 'テスト保存',
@@ -139,8 +140,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       });
       await utils.clickRegisterButton();
 
-      const dataAfter = configHelper.readDataFile('data.txt');
-      expect(dataAfter).toContain('テスト保存,https://test-save.com');
+      expect(configHelper.hasItem('data.json', 'テスト保存', 'https://test-save.com')).toBe(true);
     });
 
     await test.step('登録したアイテムがリロード後も表示される', async () => {
@@ -280,8 +280,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       });
       await utils.clickRegisterButton();
 
-      const dataContent = configHelper.readDataFile('data.txt');
-      expect(dataContent).toContain('https://github.com/new-path');
+      expect(configHelper.hasItemByPath('data.json', 'https://github.com/new-path')).toBe(true);
     });
 
     await test.step('アイテムの引数を編集できる', async () => {
@@ -301,8 +300,8 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       });
       await utils.clickRegisterButton();
 
-      const dataContent = configHelper.readDataFile('data.txt');
-      expect(dataContent).toContain('C:\\edited.txt');
+      const item = configHelper.getItemByDisplayName('data.json', '引数テスト');
+      expect(item?.args).toBe('C:\\edited.txt');
     });
 
     await test.step('編集したアイテムが反映される', async () => {
@@ -359,7 +358,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
     });
 
     await test.step('編集をキャンセルするとアイテムは変更されない', async () => {
-      const dataBefore = configHelper.readDataFile('data.txt');
+      const dataBefore = configHelper.readDataFileRaw('data.json');
 
       await utils.editItemByRightClick('GitHub');
       await utils.fillRegisterForm({
@@ -367,8 +366,8 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       });
       await utils.clickCancelButton();
 
-      // data.txtが変更されていないことを確認
-      const dataAfter = configHelper.readDataFile('data.txt');
+      // data.jsonが変更されていないことを確認
+      const dataAfter = configHelper.readDataFileRaw('data.json');
       expect(dataAfter).toBe(dataBefore);
     });
   });
@@ -395,11 +394,11 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       await utils.openRegisterModal();
     });
 
-    await test.step('デフォルトの保存先がメインタブ（data.txt）になっている', async () => {
+    await test.step('デフォルトの保存先がメインタブ（data.json）になっている', async () => {
       // 保存先セレクトボックスの値を確認
       const targetTabSelect = mainWindow.locator('.register-modal select').last();
       const selectedValue = await targetTabSelect.inputValue();
-      expect(selectedValue).toBe('data.txt');
+      expect(selectedValue).toBe('data.json');
 
       await utils.clickCancelButton();
     });
@@ -417,11 +416,11 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       await utils.openRegisterModal();
     });
 
-    await test.step('デフォルトの保存先がサブタブ（data2.txt）になっている', async () => {
+    await test.step('デフォルトの保存先がサブタブ（data2.json）になっている', async () => {
       // 保存先セレクトボックスの値を確認
       const targetTabSelect = mainWindow.locator('.register-modal select').last();
       const selectedValue = await targetTabSelect.inputValue();
-      expect(selectedValue).toBe('data2.txt');
+      expect(selectedValue).toBe('data2.json');
 
       await utils.clickCancelButton();
     });
@@ -435,14 +434,14 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       await utils.clickRegisterButton();
     });
 
-    await test.step('登録したアイテムがサブタブ（data2.txt）に保存される', async () => {
-      // data2.txtの内容を確認
-      const data2Content = configHelper.readDataFile('data2.txt');
-      expect(data2Content).toContain('サブタブ登録テスト,https://sub-tab-test.com');
+    await test.step('登録したアイテムがサブタブ（data2.json）に保存される', async () => {
+      // data2.jsonの内容を確認
+      expect(
+        configHelper.hasItem('data2.json', 'サブタブ登録テスト', 'https://sub-tab-test.com')
+      ).toBe(true);
 
-      // data.txtには保存されていないことを確認
-      const dataContent = configHelper.readDataFile('data.txt');
-      expect(dataContent).not.toContain('サブタブ登録テスト');
+      // data.jsonには保存されていないことを確認
+      expect(configHelper.hasItemByDisplayName('data.json', 'サブタブ登録テスト')).toBe(false);
     });
 
     await test.step('サブタブで登録したアイテムが表示される', async () => {
@@ -513,9 +512,8 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       await expect(itemRow).toBeVisible({ timeout: 10000 });
 
       // アイテムの内容を確認
-      const itemContent = await itemRow.textContent();
-      expect(itemContent).toContain('同期テストアイテム');
-      expect(itemContent).toContain('https://sync-test.com');
+      await expect(itemRow.locator('.name-column')).toContainText('同期テストアイテム');
+      await expect(itemRow.locator('.content-column')).toContainText('https://sync-test.com');
 
       // 管理画面を閉じる
       await adminWindow.close();

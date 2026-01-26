@@ -37,7 +37,7 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
     const mainTab = mainWindow.locator('.file-tab', { hasText: 'メイン' });
     await expect(mainTab).toBeVisible();
 
-    // サブ1タブが存在することを確認（data2.txt）
+    // サブ1タブが存在することを確認（data2.json）
     const subTab1 = mainWindow.locator('.file-tab', { hasText: 'サブ1' });
     await expect(subTab1).toBeVisible();
   });
@@ -72,7 +72,7 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
 
   // ==================== サブタブのアイテム表示テスト ====================
 
-  test('サブタブに切り替えるとdata2.txtのアイテムが表示される', async ({
+  test('サブタブに切り替えるとdata2.jsonのアイテムが表示される', async ({
     mainWindow,
   }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
@@ -86,7 +86,7 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
       await subTab1.click();
     });
 
-    await test.step('data2.txtのアイテムが表示されることを確認', async () => {
+    await test.step('data2.jsonのアイテムが表示されることを確認', async () => {
       const knownItems = ['Stack Overflow', 'Reddit', 'YouTube'];
 
       for (const itemName of knownItems) {
@@ -113,12 +113,12 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
     const githubAfter = mainWindow.locator('.item', { hasText: 'GitHub' });
     await expect(githubAfter).not.toBeVisible();
 
-    // data2.txtのアイテムが表示されることを確認
+    // data2.jsonのアイテムが表示されることを確認
     const redditItem = mainWindow.locator('.item', { hasText: 'Reddit' });
     await expect(redditItem).toBeVisible();
   });
 
-  test('メインタブに戻るとdata.txtのアイテムが表示される', async ({ mainWindow }) => {
+  test('メインタブに戻るとdata.jsonのアイテムが表示される', async ({ mainWindow }) => {
     const utils = new TestUtils(mainWindow);
 
     await utils.waitForPageLoad();
@@ -131,7 +131,7 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
     const mainTab = mainWindow.locator('.file-tab', { hasText: 'メイン' });
     await mainTab.click();
 
-    // data.txtのアイテムが表示されることを確認
+    // data.jsonのアイテムが表示されることを確認
     const knownItems = ['GitHub', 'Google', 'Wikipedia'];
 
     for (const itemName of knownItems) {
@@ -139,7 +139,7 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
       await expect(item).toBeVisible();
     }
 
-    // data2.txtのアイテムは表示されないことを確認
+    // data2.jsonのアイテムは表示されないことを確認
     const redditItem = mainWindow.locator('.item', { hasText: 'Reddit' });
     await expect(redditItem).not.toBeVisible();
   });
@@ -214,8 +214,8 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
   test('サブタブで新しいアイテムを追加して表示される', async ({ mainWindow, configHelper }) => {
     const utils = new TestUtils(mainWindow);
 
-    // data2.txtに新しいアイテムを追加
-    configHelper.addItemToFile('data2.txt', '新規サブアイテム', 'https://example-sub.com');
+    // data2.jsonに新しいアイテムを追加
+    configHelper.addSimpleItem('data2.json', '新規サブアイテム', 'https://example-sub.com');
 
     // アプリをリロード
     await mainWindow.reload();
@@ -309,9 +309,9 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
     });
 
     await test.step('保存先をサブ1タブに変更して更新', async () => {
-      // 保存先セレクトボックスを直接操作してdata2.txtを選択
+      // 保存先セレクトボックスを直接操作してdata2.jsonを選択
       const tabSelect = mainWindow.locator('.register-modal select').last();
-      await tabSelect.selectOption({ value: 'data2.txt' });
+      await tabSelect.selectOption({ value: 'data2.json' });
 
       // 更新ボタンをクリック
       await utils.clickRegisterButton();
@@ -341,14 +341,16 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
       await expect(githubItem).toBeVisible({ timeout: 5000 });
     });
 
-    await test.step('data.txtとdata2.txtの内容を確認', async () => {
-      // data.txtにGitHubが含まれていないことを確認
-      const dataContent = configHelper.readDataFile('data.txt');
-      expect(dataContent).not.toContain('GitHub');
+    await test.step('data.jsonとdata2.jsonの内容を確認', async () => {
+      // data.jsonにGitHubが含まれていないことを確認
+      const dataContent = configHelper.readDataFile('data.json');
+      const hasGitHubInData = dataContent.items.some((item) => item.displayName === 'GitHub');
+      expect(hasGitHubInData).toBe(false);
 
-      // data2.txtにGitHubが含まれていることを確認
-      const data2Content = configHelper.readDataFile('data2.txt');
-      expect(data2Content).toContain('GitHub');
+      // data2.jsonにGitHubが含まれていることを確認
+      const data2Content = configHelper.readDataFile('data2.json');
+      const hasGitHubInData2 = data2Content.items.some((item) => item.displayName === 'GitHub');
+      expect(hasGitHubInData2).toBe(true);
     });
   });
 
@@ -535,7 +537,7 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
       await expect(unifiedTab).toBeVisible();
     });
 
-    await test.step('data.txtのアイテムが表示されることを確認', async () => {
+    await test.step('data.jsonのアイテムが表示されることを確認', async () => {
       const knownDataItems = ['GitHub', 'Google', 'Wikipedia'];
 
       for (const itemName of knownDataItems) {
@@ -544,7 +546,7 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
       }
     });
 
-    await test.step('data3.txtのアイテムも表示されることを確認', async () => {
+    await test.step('data3.jsonのアイテムも表示されることを確認', async () => {
       const knownData3Items = ['Qiita', 'Zenn', 'note'];
 
       for (const itemName of knownData3Items) {
@@ -597,11 +599,11 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
     await test.step('統合タブの初期状態を確認', async () => {
       await utils.waitForPageLoad();
 
-      // data.txtのアイテムが表示されていることを確認
+      // data.jsonのアイテムが表示されていることを確認
       const githubItem = mainWindow.locator('.item', { hasText: 'GitHub' });
       await expect(githubItem).toBeVisible();
 
-      // data3.txtのアイテムも表示されていることを確認
+      // data3.jsonのアイテムも表示されていることを確認
       const qiitaItem = mainWindow.locator('.item', { hasText: 'Qiita' });
       await expect(qiitaItem).toBeVisible();
     });
@@ -612,15 +614,15 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
     });
 
     await test.step('統合タブのアイテムが表示されないことを確認', async () => {
-      // data.txtのアイテムが表示されないことを確認
+      // data.jsonのアイテムが表示されないことを確認
       const githubItem = mainWindow.locator('.item', { hasText: 'GitHub' });
       await expect(githubItem).not.toBeVisible();
 
-      // data3.txtのアイテムも表示されないことを確認
+      // data3.jsonのアイテムも表示されないことを確認
       const qiitaItem = mainWindow.locator('.item', { hasText: 'Qiita' });
       await expect(qiitaItem).not.toBeVisible();
 
-      // data2.txtのアイテムが表示されることを確認
+      // data2.jsonのアイテムが表示されることを確認
       const redditItem = mainWindow.locator('.item', { hasText: 'Reddit' });
       await expect(redditItem).toBeVisible();
     });
@@ -648,21 +650,21 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
       expect(initialCount).toBeGreaterThan(0);
     });
 
-    await test.step('data.txtのアイテムで検索', async () => {
+    await test.step('data.jsonのアイテムで検索', async () => {
       await utils.searchFor('GitHub');
 
-      // GitHubアイテムが表示されることを確認（data.txtのアイテム）
+      // GitHubアイテムが表示されることを確認（data.jsonのアイテム）
       const githubItem = mainWindow.locator('.item', { hasText: 'GitHub' });
       await expect(githubItem).toBeVisible();
     });
 
-    await test.step('検索をクリアしてdata3.txtのアイテムで検索', async () => {
+    await test.step('検索をクリアしてdata3.jsonのアイテムで検索', async () => {
       const searchBox = mainWindow.locator('input[type="text"]').first();
       await searchBox.clear();
 
       await utils.searchFor('Qiita');
 
-      // Qiitaアイテムが表示されることを確認（data3.txtのアイテム）
+      // Qiitaアイテムが表示されることを確認（data3.jsonのアイテム）
       const qiitaItem = mainWindow.locator('.item', { hasText: 'Qiita' });
       await expect(qiitaItem).toBeVisible();
     });
@@ -788,7 +790,7 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
     });
   });
 
-  test('統合タブでdata.txtとdata3.txtのアイテムをまたいで矢印キーで移動できる', async ({
+  test('統合タブでdata.jsonとdata3.jsonのアイテムをまたいで矢印キーで移動できる', async ({
     mainWindow,
     configHelper,
   }, _testInfo) => {
@@ -804,7 +806,7 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
       const unifiedTab = mainWindow.locator('.file-tab.active', { hasText: '統合タブ' });
       await expect(unifiedTab).toBeVisible();
 
-      // 全アイテム数を取得（data.txt: 8個 + data3.txt: 3個 = 11個）
+      // 全アイテム数を取得（data.json: 8個 + data3.json: 3個 = 11個）
       const allItems = mainWindow.locator('.item');
       const itemCount = await allItems.count();
       expect(itemCount).toBe(11);

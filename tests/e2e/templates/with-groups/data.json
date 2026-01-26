@@ -1,0 +1,65 @@
+{
+  "version": "1.0",
+  "items": [
+    {
+      "id": "grp00001",
+      "type": "item",
+      "displayName": "GitHub",
+      "path": "https://github.com/"
+    },
+    {
+      "id": "grp00002",
+      "type": "item",
+      "displayName": "Google",
+      "path": "https://google.com/"
+    },
+    {
+      "id": "grp00003",
+      "type": "item",
+      "displayName": "Wikipedia",
+      "path": "https://wikipedia.org/"
+    },
+    {
+      "id": "grp00004",
+      "type": "item",
+      "displayName": "Stack Overflow",
+      "path": "https://stackoverflow.com/"
+    },
+    {
+      "id": "grp00005",
+      "type": "item",
+      "displayName": "VS Code",
+      "path": "vscode://"
+    },
+    {
+      "id": "grp00006",
+      "type": "item",
+      "displayName": "メモ帳",
+      "path": "notepad.exe"
+    },
+    {
+      "id": "grp00007",
+      "type": "item",
+      "displayName": "エクスプローラー",
+      "path": "explorer.exe"
+    },
+    {
+      "id": "grp00008",
+      "type": "group",
+      "displayName": "開発環境スタート",
+      "itemNames": ["VS Code", "GitHub", "Stack Overflow", "メモ帳"]
+    },
+    {
+      "id": "grp00009",
+      "type": "group",
+      "displayName": "Web開発セット",
+      "itemNames": ["VS Code", "GitHub", "Google"]
+    },
+    {
+      "id": "grp00010",
+      "type": "group",
+      "displayName": "ドキュメント作成",
+      "itemNames": ["メモ帳", "エクスプローラー"]
+    }
+  ]
+}

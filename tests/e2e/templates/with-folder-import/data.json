@@ -1,0 +1,17 @@
+{
+  "version": "1.0",
+  "items": [
+    {
+      "id": "fldr0001",
+      "type": "item",
+      "displayName": "GitHub",
+      "path": "https://github.com/"
+    },
+    {
+      "id": "fldr0002",
+      "type": "dir",
+      "displayName": "デスクトップ内容",
+      "path": "shell:Desktop"
+    }
+  ]
+}

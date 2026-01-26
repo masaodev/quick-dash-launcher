@@ -185,7 +185,7 @@ const channel = IPC_CHANNELS.SETTINGS_GET; // 'settings:get'
 - 戻り値: `string`
 
 ### `get-data-files`
-設定フォルダ内のすべてのdata*.txtファイルを取得
+設定フォルダ内のすべてのdata*.jsonファイルを取得
 - 戻り値: `string[]` (例: `['data.json', 'data2.json', 'data3.json']`)
 
 ### `create-data-file`
@@ -201,7 +201,7 @@ const channel = IPC_CHANNELS.SETTINGS_GET; // 'settings:get'
 - 制限: `data.json`は削除不可
 
 ### `load-data-files`
-全てのdata*.txtファイルを読み込み、パース
+全てのdata*.jsonファイルを読み込み、パース
 - 戻り値: `AppItem[]` (LauncherItemとGroupItemの配列)
 - 処理内容:
   - フォルダ取込ディレクティブの展開
@@ -251,8 +251,8 @@ const channel = IPC_CHANNELS.SETTINGS_GET; // 'settings:get'
 - バックアップ: 保存前に自動作成
 
 ### `update-item`
-単一アイテムをCSV形式で更新
-- パラメータ: `{ sourceFile: string, lineNumber: number, newItem: LauncherItem }`
+単一アイテムをJSON形式で更新
+- パラメータ: `{ sourceFile: string, id: string, newItem: LauncherItem }`
 - 戻り値: `{ success: boolean }`
 - バックアップ: 更新前に自動作成
 - 処理完了後、`data-changed`イベントを全ウィンドウに送信

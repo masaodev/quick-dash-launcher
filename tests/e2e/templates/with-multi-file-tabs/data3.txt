@@ -1,4 +1,0 @@
-# data3.txt用のアイテム
-Qiita,https://qiita.com
-Zenn,https://zenn.dev
-note,https://note.com
