@@ -26,12 +26,7 @@ const MissingIconNotice: React.FC<MissingIconNoticeProps> = ({ missingCount, onF
         <span className="missing-icon-notice__label">アイコン未取得:</span>
         <span className="missing-icon-notice__count">{missingCount}件</span>
       </div>
-      <Button
-        variant="info"
-        size="sm"
-        onClick={onFetchClick}
-        title="アイコンを取得"
-      >
+      <Button variant="info" size="sm" onClick={onFetchClick} title="アイコンを取得">
         取得
       </Button>
     </div>

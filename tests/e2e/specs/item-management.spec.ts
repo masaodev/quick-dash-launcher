@@ -1,3 +1,5 @@
+import { isJsonLauncherItem, isJsonDirItem } from '@common/types';
+
 import { test, expect } from '../fixtures/electron-app';
 import { TestUtils } from '../helpers/test-utils';
 
@@ -114,7 +116,9 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         await confirmButton.click();
 
         // data.jsonに保存されたことを確認
-        expect(configHelper.hasItem('data.json', '新規アイテム', 'https://new-item.com')).toBe(true);
+        expect(configHelper.hasItem('data.json', '新規アイテム', 'https://new-item.com')).toBe(
+          true
+        );
       });
     } finally {
       await adminWindow.close();
@@ -185,7 +189,9 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
       });
 
       await test.step('更新ボタンをクリック', async () => {
-        const updateButton = adminWindow.locator('.register-modal button', { hasText: '更新' }).first();
+        const updateButton = adminWindow
+          .locator('.register-modal button', { hasText: '更新' })
+          .first();
         await updateButton.click();
 
         // モーダルが閉じるのを待機
@@ -206,7 +212,9 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         // data.jsonに保存されたことを確認
         expect(configHelper.hasItemByDisplayName('data.json', 'Google詳細編集')).toBe(true);
         const item = configHelper.getItemByDisplayName('data.json', 'Google詳細編集');
-        expect(item?.args).toBe('--test-args');
+        if (item && isJsonLauncherItem(item)) {
+          expect(item.args).toBe('--test-args');
+        }
       });
     } finally {
       await adminWindow.close();
@@ -579,10 +587,12 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         await expect(confirmButton).toBeVisible();
         await confirmButton.click();
 
-        const item = configHelper.getItemByDisplayName('data.json', 'C:\\TestFolder');
+        const item = configHelper.getItemByPath('data.json', 'C:\\TestFolder');
         expect(item).toBeDefined();
         expect(item?.type).toBe('dir');
-        expect(item?.path).toBe('C:\\TestFolder');
+        if (item && isJsonDirItem(item)) {
+          expect(item.path).toBe('C:\\TestFolder');
+        }
       });
     } finally {
       await adminWindow.close();
@@ -720,7 +730,9 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         await confirmButton.click();
 
         // data2.jsonに保存されたことを確認
-        expect(configHelper.hasItemByDisplayName('data2.json', 'Reddit複数ファイルタブ')).toBe(true);
+        expect(configHelper.hasItemByDisplayName('data2.json', 'Reddit複数ファイルタブ')).toBe(
+          true
+        );
       });
     } finally {
       await adminWindow.close();

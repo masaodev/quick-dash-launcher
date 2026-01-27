@@ -11,16 +11,17 @@ import type { LauncherItem, GroupItem, WindowOperationItem } from './launcher';
  * 編集可能なアイテムの共通メタデータ
  */
 export interface EditingItemMeta {
-  /** 元のデータファイル名 */
+  /** 元のデータファイル名（編集用では必須） */
   sourceFile: string;
   /** JSONファイルのアイテムID（編集・削除の識別子として使用） */
-  jsonItemId: string;
+  jsonItemId?: string;
 }
 
 /**
  * 編集用LauncherItem
+ * sourceFileを必須にするため、Omitで除外してから再定義
  */
-export interface EditingLauncherItem extends LauncherItem, EditingItemMeta {
+export interface EditingLauncherItem extends Omit<LauncherItem, 'sourceFile'>, EditingItemMeta {
   /** フォルダ取込から展開されたアイテムかどうか */
   isDirExpanded?: boolean;
   /** フォルダ取込の元パス */
@@ -31,13 +32,16 @@ export interface EditingLauncherItem extends LauncherItem, EditingItemMeta {
 
 /**
  * 編集用GroupItem
+ * sourceFileを必須にするため、Omitで除外してから再定義
  */
-export interface EditingGroupItem extends GroupItem, EditingItemMeta {}
+export interface EditingGroupItem extends Omit<GroupItem, 'sourceFile'>, EditingItemMeta {}
 
 /**
  * 編集用WindowOperationItem
+ * sourceFileを必須にするため、Omitで除外してから再定義
  */
-export interface EditingWindowOperationItem extends WindowOperationItem, EditingItemMeta {}
+export interface EditingWindowOperationItem
+  extends Omit<WindowOperationItem, 'sourceFile'>, EditingItemMeta {}
 
 /**
  * 編集用アイテムの統合型
@@ -65,6 +69,8 @@ export function isEditingGroupItem(item: EditingAppItem): item is EditingGroupIt
 /**
  * EditingWindowOperationItemかどうかを判定
  */
-export function isEditingWindowOperationItem(item: EditingAppItem): item is EditingWindowOperationItem {
+export function isEditingWindowOperationItem(
+  item: EditingAppItem
+): item is EditingWindowOperationItem {
   return item.type === 'windowOperation';
 }

@@ -98,9 +98,7 @@ describe('データハンドラー: name → displayName リファクタリン�
         { displayName: 'Banana', path: '/b', type: 'app' },
       ];
 
-      const sorted = [...items].sort((a, b) =>
-        a.displayName.localeCompare(b.displayName, 'ja')
-      );
+      const sorted = [...items].sort((a, b) => a.displayName.localeCompare(b.displayName, 'ja'));
 
       expect(sorted[0].displayName).toBe('Apple');
       expect(sorted[1].displayName).toBe('Banana');

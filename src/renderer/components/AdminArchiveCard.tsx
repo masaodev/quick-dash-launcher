@@ -38,12 +38,7 @@ const AdminArchiveCard: React.FC<ArchivedGroupCardProps> = ({ group, onRestore, 
         </div>
       </div>
       <div className="archived-group-actions">
-        <Button
-          variant="info"
-          size="sm"
-          onClick={() => onRestore(group.id)}
-          title="グループを復元"
-        >
+        <Button variant="info" size="sm" onClick={() => onRestore(group.id)} title="グループを復元">
           ↩️ 復元
         </Button>
         <Button

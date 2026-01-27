@@ -78,7 +78,9 @@ export interface ElectronAPI {
   isFirstLaunch: () => Promise<boolean>;
   updateItemById: (request: { id: string; newItem: LauncherItem }) => Promise<{ success: boolean }>;
   deleteItemsById: (requests: { id: string }[]) => Promise<{ success: boolean }>;
-  batchUpdateItemsById: (requests: { id: string; newItem: LauncherItem }[]) => Promise<{ success: boolean }>;
+  batchUpdateItemsById: (
+    requests: { id: string; newItem: LauncherItem }[]
+  ) => Promise<{ success: boolean }>;
   // EditableJsonItem API
   loadEditableItems: () => Promise<LoadEditableItemsResult>;
   saveEditableItems: (editableItems: EditableJsonItem[]) => Promise<void>;

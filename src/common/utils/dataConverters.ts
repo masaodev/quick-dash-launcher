@@ -4,7 +4,7 @@
  * EditingAppItem（編集画面用）からRegisterItem（登録画面用）への変換ロジックを提供します。
  */
 
-import type { LauncherItem, DataFileTab, JsonDirOptions } from '../types';
+import type { LauncherItem, DataFileTab, JsonDirOptions, JsonItem } from '../types';
 import type { RegisterItem } from '../types/register.js';
 import type { EditingAppItem } from '../types/editingItem.js';
 import type { EditableJsonItem } from '../types/editableItem.js';
@@ -18,8 +18,8 @@ import {
   isJsonDirItem,
   isJsonGroupItem,
   isJsonWindowItem,
+  DIR_OPTIONS_DEFAULTS,
 } from '../types/json-data.js';
-import { DIR_OPTIONS_DEFAULTS } from '../types/json-data.js';
 
 /**
  * expandedOptionsの文字列をJsonDirOptionsに変換する
@@ -176,15 +176,11 @@ export function convertEditingAppItemToRegisterItem(
     };
   }
 
-  // フォールバック（通常は到達しない）
-  return {
-    displayName: '',
-    path: '',
-    type: 'file',
-    targetTab: defaultTab,
-    targetFile: item.sourceFile,
-    itemCategory: 'item',
-  };
+  // フォールバック（通常は到達しないが、型安全性のために必要）
+  // isEditingLauncherItemで全てのEditingAppItemをカバーしているため、
+  // このコードは実行されないが、TypeScriptの網羅性チェックのために残す
+  const _exhaustiveCheck: never = item;
+  throw new Error(`Unexpected item type: ${_exhaustiveCheck}`);
 }
 
 /**

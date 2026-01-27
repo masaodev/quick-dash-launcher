@@ -4,12 +4,12 @@
 
 import { describe, it, expect } from 'vitest';
 import { jsonItemToDisplayText, displayTextToJsonItem } from '@common/utils/displayTextConverter';
-import type {
-  JsonItem,
-  JsonLauncherItem,
-  JsonDirItem,
-  JsonGroupItem,
-  JsonWindowItem,
+import type { JsonLauncherItem, JsonDirItem, JsonGroupItem, JsonWindowItem } from '@common/types';
+import {
+  isJsonLauncherItem,
+  isJsonDirItem,
+  isJsonGroupItem,
+  isJsonWindowItem,
 } from '@common/types';
 
 describe('displayTextConverter', () => {
@@ -177,7 +177,9 @@ describe('displayTextConverter', () => {
           windowTitle: 'Window Title',
         };
         const result = jsonItemToDisplayText(item);
-        expect(result).toBe('window,"{""displayName"":""MyWindow"",""windowTitle"":""Window Title""}"');
+        expect(result).toBe(
+          'window,"{""displayName"":""MyWindow"",""windowTitle"":""Window Title""}"'
+        );
       });
 
       it('全オプション付きのwindowアイテムを変換できる', () => {
@@ -212,42 +214,57 @@ describe('displayTextConverter', () => {
         const text = 'Chrome,C:\\Program Files\\Chrome\\chrome.exe';
         const result = displayTextToJsonItem(text);
         expect(result.type).toBe('item');
-        expect(result.displayName).toBe('Chrome');
-        expect(result.path).toBe('C:\\Program Files\\Chrome\\chrome.exe');
+        expect(isJsonLauncherItem(result)).toBe(true);
+        if (isJsonLauncherItem(result)) {
+          expect(result.displayName).toBe('Chrome');
+          expect(result.path).toBe('C:\\Program Files\\Chrome\\chrome.exe');
+        }
       });
 
       it('引数付きの通常アイテムを解析できる', () => {
         const text = 'Chrome,C:\\Chrome\\chrome.exe,--profile-default';
         const result = displayTextToJsonItem(text);
         expect(result.type).toBe('item');
-        expect(result.displayName).toBe('Chrome');
-        expect(result.path).toBe('C:\\Chrome\\chrome.exe');
-        expect(result.args).toBe('--profile-default');
+        expect(isJsonLauncherItem(result)).toBe(true);
+        if (isJsonLauncherItem(result)) {
+          expect(result.displayName).toBe('Chrome');
+          expect(result.path).toBe('C:\\Chrome\\chrome.exe');
+          expect(result.args).toBe('--profile-default');
+        }
       });
 
       it('カスタムアイコン付きの通常アイテムを解析できる', () => {
         const text = 'Custom,C:\\App\\app.exe,,custom-icon.png';
         const result = displayTextToJsonItem(text);
         expect(result.type).toBe('item');
-        expect(result.displayName).toBe('Custom');
-        expect(result.path).toBe('C:\\App\\app.exe');
-        expect(result.customIcon).toBe('custom-icon.png');
+        expect(isJsonLauncherItem(result)).toBe(true);
+        if (isJsonLauncherItem(result)) {
+          expect(result.displayName).toBe('Custom');
+          expect(result.path).toBe('C:\\App\\app.exe');
+          expect(result.customIcon).toBe('custom-icon.png');
+        }
       });
 
       it('エスケープされたカンマを含むdisplayNameを解析できる', () => {
         const text = '"My, App",C:\\App\\app.exe';
         const result = displayTextToJsonItem(text);
         expect(result.type).toBe('item');
-        expect(result.displayName).toBe('My, App');
-        expect(result.path).toBe('C:\\App\\app.exe');
+        expect(isJsonLauncherItem(result)).toBe(true);
+        if (isJsonLauncherItem(result)) {
+          expect(result.displayName).toBe('My, App');
+          expect(result.path).toBe('C:\\App\\app.exe');
+        }
       });
 
       it('エスケープされたダブルクォートを含むdisplayNameを解析できる', () => {
         const text = '"My ""App""",C:\\App\\app.exe';
         const result = displayTextToJsonItem(text);
         expect(result.type).toBe('item');
-        expect(result.displayName).toBe('My "App"');
-        expect(result.path).toBe('C:\\App\\app.exe');
+        expect(isJsonLauncherItem(result)).toBe(true);
+        if (isJsonLauncherItem(result)) {
+          expect(result.displayName).toBe('My "App"');
+          expect(result.path).toBe('C:\\App\\app.exe');
+        }
       });
     });
 
@@ -256,25 +273,34 @@ describe('displayTextConverter', () => {
         const text = 'dir,C:\\Documents';
         const result = displayTextToJsonItem(text);
         expect(result.type).toBe('dir');
-        expect(result.path).toBe('C:\\Documents');
+        expect(isJsonDirItem(result)).toBe(true);
+        if (isJsonDirItem(result)) {
+          expect(result.path).toBe('C:\\Documents');
+        }
       });
 
       it('depthオプション付きのdirアイテムを解析できる', () => {
         const text = 'dir,C:\\Documents,depth=2';
         const result = displayTextToJsonItem(text);
         expect(result.type).toBe('dir');
-        expect(result.path).toBe('C:\\Documents');
-        expect(result.options?.depth).toBe(2);
+        expect(isJsonDirItem(result)).toBe(true);
+        if (isJsonDirItem(result)) {
+          expect(result.path).toBe('C:\\Documents');
+          expect(result.options?.depth).toBe(2);
+        }
       });
 
       it('複数オプション付きのdirアイテムを解析できる', () => {
         const text = 'dir,C:\\Documents,depth=2,types=file,filter=*.txt';
         const result = displayTextToJsonItem(text);
         expect(result.type).toBe('dir');
-        expect(result.path).toBe('C:\\Documents');
-        expect(result.options?.depth).toBe(2);
-        expect(result.options?.types).toBe('file');
-        expect(result.options?.filter).toBe('*.txt');
+        expect(isJsonDirItem(result)).toBe(true);
+        if (isJsonDirItem(result)) {
+          expect(result.path).toBe('C:\\Documents');
+          expect(result.options?.depth).toBe(2);
+          expect(result.options?.types).toBe('file');
+          expect(result.options?.filter).toBe('*.txt');
+        }
       });
 
       it('全オプション付きのdirアイテムを解析できる', () => {
@@ -282,13 +308,16 @@ describe('displayTextConverter', () => {
           'dir,C:\\Documents,depth=3,types=both,filter=*.md,exclude=node_modules,prefix=[DOC],suffix=.bak';
         const result = displayTextToJsonItem(text);
         expect(result.type).toBe('dir');
-        expect(result.path).toBe('C:\\Documents');
-        expect(result.options?.depth).toBe(3);
-        expect(result.options?.types).toBe('both');
-        expect(result.options?.filter).toBe('*.md');
-        expect(result.options?.exclude).toBe('node_modules');
-        expect(result.options?.prefix).toBe('[DOC]');
-        expect(result.options?.suffix).toBe('.bak');
+        expect(isJsonDirItem(result)).toBe(true);
+        if (isJsonDirItem(result)) {
+          expect(result.path).toBe('C:\\Documents');
+          expect(result.options?.depth).toBe(3);
+          expect(result.options?.types).toBe('both');
+          expect(result.options?.filter).toBe('*.md');
+          expect(result.options?.exclude).toBe('node_modules');
+          expect(result.options?.prefix).toBe('[DOC]');
+          expect(result.options?.suffix).toBe('.bak');
+        }
       });
     });
 
@@ -297,16 +326,22 @@ describe('displayTextConverter', () => {
         const text = 'group,Work,Gmail,Slack,VSCode';
         const result = displayTextToJsonItem(text);
         expect(result.type).toBe('group');
-        expect(result.displayName).toBe('Work');
-        expect(result.itemNames).toEqual(['Gmail', 'Slack', 'VSCode']);
+        expect(isJsonGroupItem(result)).toBe(true);
+        if (isJsonGroupItem(result)) {
+          expect(result.displayName).toBe('Work');
+          expect(result.itemNames).toEqual(['Gmail', 'Slack', 'VSCode']);
+        }
       });
 
       it('1つのアイテムを持つgroupアイテムを解析できる', () => {
         const text = 'group,Single,OnlyOne';
         const result = displayTextToJsonItem(text);
         expect(result.type).toBe('group');
-        expect(result.displayName).toBe('Single');
-        expect(result.itemNames).toEqual(['OnlyOne']);
+        expect(isJsonGroupItem(result)).toBe(true);
+        if (isJsonGroupItem(result)) {
+          expect(result.displayName).toBe('Single');
+          expect(result.itemNames).toEqual(['OnlyOne']);
+        }
       });
     });
 
@@ -315,8 +350,11 @@ describe('displayTextConverter', () => {
         const text = 'window,"{""displayName"":""MyWindow"",""windowTitle"":""Window Title""}"';
         const result = displayTextToJsonItem(text);
         expect(result.type).toBe('window');
-        expect(result.displayName).toBe('MyWindow');
-        expect(result.windowTitle).toBe('Window Title');
+        expect(isJsonWindowItem(result)).toBe(true);
+        if (isJsonWindowItem(result)) {
+          expect(result.displayName).toBe('MyWindow');
+          expect(result.windowTitle).toBe('Window Title');
+        }
       });
 
       it('全オプション付きのwindowアイテムを解析できる', () => {
@@ -336,17 +374,20 @@ describe('displayTextConverter', () => {
         const text = `window,"${JSON.stringify(config).replace(/"/g, '""')}"`;
         const result = displayTextToJsonItem(text);
         expect(result.type).toBe('window');
-        expect(result.displayName).toBe('MyWindow');
-        expect(result.windowTitle).toBe('Title');
-        expect(result.processName).toBe('app.exe');
-        expect(result.x).toBe(100);
-        expect(result.y).toBe(200);
-        expect(result.width).toBe(800);
-        expect(result.height).toBe(600);
-        expect(result.moveToActiveMonitorCenter).toBe(true);
-        expect(result.virtualDesktopNumber).toBe(2);
-        expect(result.activateWindow).toBe(true);
-        expect(result.pinToAllDesktops).toBe(false);
+        expect(isJsonWindowItem(result)).toBe(true);
+        if (isJsonWindowItem(result)) {
+          expect(result.displayName).toBe('MyWindow');
+          expect(result.windowTitle).toBe('Title');
+          expect(result.processName).toBe('app.exe');
+          expect(result.x).toBe(100);
+          expect(result.y).toBe(200);
+          expect(result.width).toBe(800);
+          expect(result.height).toBe(600);
+          expect(result.moveToActiveMonitorCenter).toBe(true);
+          expect(result.virtualDesktopNumber).toBe(2);
+          expect(result.activateWindow).toBe(true);
+          expect(result.pinToAllDesktops).toBe(false);
+        }
       });
     });
 

@@ -5,7 +5,7 @@ import { dataLogger } from '@common/logger';
 import { FileUtils } from '@common/utils/fileUtils';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { parseJsonDataFile, serializeJsonDataFile, generateId } from '@common/utils/jsonParser';
-import { jsonItemToDisplayText, displayTextToJsonItem } from '@common/utils/displayTextConverter';
+import { jsonItemToDisplayText } from '@common/utils/displayTextConverter';
 import type { EditableJsonItem, LoadEditableItemsResult } from '@common/types/editableItem';
 import { validateEditableItem } from '@common/types/editableItem';
 import {
@@ -18,7 +18,7 @@ import {
   isJsonGroupItem,
   isJsonWindowItem,
 } from '@common/types';
-import type { JsonItem, JsonDirOptions } from '@common/types';
+import type { JsonItem, JsonDirOptions, JsonWindowItem } from '@common/types';
 import type { RegisterItem } from '@common/types/register';
 import { isWindowInfo, isWindowOperationItem } from '@common/types/guards';
 import { IPC_CHANNELS } from '@common/ipcChannels';
@@ -114,7 +114,12 @@ async function convertJsonItemToAppItems(
 
     // .lnkファイルの場合は特別処理
     if (jsonItem.path.toLowerCase().endsWith('.lnk') && FileUtils.exists(jsonItem.path)) {
-      const lnkItem = processShortcut(jsonItem.path, sourceFile, itemIndex + 1, jsonItem.displayName);
+      const lnkItem = processShortcut(
+        jsonItem.path,
+        sourceFile,
+        itemIndex + 1,
+        jsonItem.displayName
+      );
       if (lnkItem) {
         const uniqueKey = lnkItem.args
           ? `${lnkItem.displayName}|${lnkItem.path}|${lnkItem.args}`
@@ -279,8 +284,16 @@ export async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
 
   // Sort items by displayName
   items.sort((a, b) => {
-    const aName = isWindowInfo(a) ? a.title : isWindowOperationItem(a) ? a.displayName : a.displayName;
-    const bName = isWindowInfo(b) ? b.title : isWindowOperationItem(b) ? b.displayName : b.displayName;
+    const aName = isWindowInfo(a)
+      ? a.title
+      : isWindowOperationItem(a)
+        ? a.displayName
+        : a.displayName;
+    const bName = isWindowInfo(b)
+      ? b.title
+      : isWindowOperationItem(b)
+        ? b.displayName
+        : b.displayName;
     return aName.localeCompare(bName, 'ja');
   });
 
@@ -439,7 +452,7 @@ async function updateDirItemById(
     if (!content) continue;
 
     const jsonData = parseJsonDataFile(content);
-    const itemIndex = jsonData.items.findIndex(item => item.id === id);
+    const itemIndex = jsonData.items.findIndex((item) => item.id === id);
 
     if (itemIndex !== -1) {
       // バックアップ作成
@@ -489,7 +502,7 @@ async function updateGroupItemById(
     if (!content) continue;
 
     const jsonData = parseJsonDataFile(content);
-    const itemIndex = jsonData.items.findIndex(item => item.id === id);
+    const itemIndex = jsonData.items.findIndex((item) => item.id === id);
 
     if (itemIndex !== -1) {
       // バックアップ作成
@@ -549,7 +562,7 @@ async function updateWindowItemById(
     if (!content) continue;
 
     const jsonData = parseJsonDataFile(content);
-    const itemIndex = jsonData.items.findIndex(item => item.id === id);
+    const itemIndex = jsonData.items.findIndex((item) => item.id === id);
 
     if (itemIndex !== -1) {
       // バックアップ作成
@@ -570,8 +583,10 @@ async function updateWindowItemById(
       if (config.y !== undefined) newItem.y = config.y;
       if (config.width !== undefined) newItem.width = config.width;
       if (config.height !== undefined) newItem.height = config.height;
-      if (config.moveToActiveMonitorCenter !== undefined) newItem.moveToActiveMonitorCenter = config.moveToActiveMonitorCenter;
-      if (config.virtualDesktopNumber !== undefined) newItem.virtualDesktopNumber = config.virtualDesktopNumber;
+      if (config.moveToActiveMonitorCenter !== undefined)
+        newItem.moveToActiveMonitorCenter = config.moveToActiveMonitorCenter;
+      if (config.virtualDesktopNumber !== undefined)
+        newItem.virtualDesktopNumber = config.virtualDesktopNumber;
       if (config.activateWindow !== undefined) newItem.activateWindow = config.activateWindow;
       if (config.pinToAllDesktops !== undefined) newItem.pinToAllDesktops = config.pinToAllDesktops;
 
@@ -641,10 +656,7 @@ async function registerItems(configFolder: string, items: RegisterItem[]): Promi
 /**
  * JSONファイルにアイテムを登録する
  */
-async function registerItemsToJsonFile(
-  dataPath: string,
-  items: RegisterItem[]
-): Promise<void> {
+async function registerItemsToJsonFile(dataPath: string, items: RegisterItem[]): Promise<void> {
   // 既存のJSONデータを読み込む
   let jsonData = { version: '1.0', items: [] as JsonItem[] };
   const existingContent = FileUtils.safeReadTextFile(dataPath);

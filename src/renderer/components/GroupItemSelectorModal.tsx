@@ -139,7 +139,9 @@ const GroupItemSelectorModal: React.FC<GroupItemSelectorModalProps> = ({
       setFilteredItems(availableItems);
     } else {
       const query = searchQuery.toLowerCase();
-      const filtered = availableItems.filter((item) => item.displayName.toLowerCase().includes(query));
+      const filtered = availableItems.filter((item) =>
+        item.displayName.toLowerCase().includes(query)
+      );
       setFilteredItems(filtered);
     }
   }, [searchQuery, availableItems]);

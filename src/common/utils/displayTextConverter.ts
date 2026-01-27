@@ -160,7 +160,8 @@ export function jsonItemToDisplayText(item: JsonItem): string {
     }
 
     case 'group': {
-      return `group,${item.displayName},${item.itemNames.join(',')}`; }
+      return `group,${item.displayName},${item.itemNames.join(',')}`;
+    }
 
     case 'window': {
       const config: Record<string, unknown> = {

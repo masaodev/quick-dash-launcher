@@ -1,3 +1,5 @@
+import { isJsonGroupItem } from '@common/types';
+
 import { test, expect } from '../fixtures/electron-app';
 import { TestUtils } from '../helpers/test-utils';
 
@@ -135,8 +137,10 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
       const item = configHelper.getItemByDisplayName('data.json', 'テストグループ');
       expect(item).toBeDefined();
       expect(item?.type).toBe('group');
-      expect(item?.itemNames).toContain('GitHub');
-      expect(item?.itemNames).toContain('Google');
+      if (item && isJsonGroupItem(item)) {
+        expect(item.itemNames).toContain('GitHub');
+        expect(item.itemNames).toContain('Google');
+      }
     });
 
     await test.step('登録したグループが表示される', async () => {
@@ -156,7 +160,9 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
       await typeSelect.selectOption({ value: 'group' });
 
       // グループ名を空のままで登録を試みる
-      const registerButton = mainWindow.locator('.register-modal button:is(:has-text("登録"), :has-text("更新"))').first();
+      const registerButton = mainWindow
+        .locator('.register-modal button:is(:has-text("登録"), :has-text("更新"))')
+        .first();
       await registerButton.click();
 
       // モーダルが閉じていない（エラーで登録できない）
@@ -186,7 +192,9 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
       await groupNameInput.fill('空のグループ');
 
       // グループアイテムを追加せずに登録を試みる
-      const registerButton = mainWindow.locator('.register-modal button:is(:has-text("登録"), :has-text("更新"))').first();
+      const registerButton = mainWindow
+        .locator('.register-modal button:is(:has-text("登録"), :has-text("更新"))')
+        .first();
       await registerButton.click();
 
       // モーダルが閉じていない（エラーで登録できない）
@@ -270,7 +278,9 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
     await test.step('編集がdata.jsonに保存される', async () => {
       const item = configHelper.getItemByDisplayName('data.json', '開発環境スタート編集');
       expect(item).toBeDefined();
-      expect(item?.itemNames).toContain('Wikipedia');
+      if (item && isJsonGroupItem(item)) {
+        expect(item.itemNames).toContain('Wikipedia');
+      }
     });
   });
 
@@ -483,7 +493,9 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
       });
 
       await test.step('更新ボタンをクリック', async () => {
-        const updateButton = adminWindow.locator('.register-modal button:is(:has-text("登録"), :has-text("更新"))').first();
+        const updateButton = adminWindow
+          .locator('.register-modal button:is(:has-text("登録"), :has-text("更新"))')
+          .first();
         await updateButton.click();
 
         // モーダルが閉じるのを待機
@@ -502,9 +514,9 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
         await confirmButton.click();
 
         // data.jsonに保存されたことを確認
-        expect(
-          configHelper.hasItemByDisplayName('data.json', '開発環境スタート管理画面編集')
-        ).toBe(true);
+        expect(configHelper.hasItemByDisplayName('data.json', '開発環境スタート管理画面編集')).toBe(
+          true
+        );
       });
 
       await test.step('メイン画面に変更が反映される', async () => {

@@ -83,7 +83,10 @@ export function validateEditableItem(item: JsonItem): ValidationResult {
           return { isValid: false, error: 'depthは0以上である必要があります' };
         }
         if (item.options.types && !['file', 'folder', 'both'].includes(item.options.types)) {
-          return { isValid: false, error: 'typesはfile, folder, bothのいずれかである必要があります' };
+          return {
+            isValid: false,
+            error: 'typesはfile, folder, bothのいずれかである必要があります',
+          };
         }
       }
       return { isValid: true };

@@ -1,4 +1,5 @@
 import type { Page } from '@playwright/test';
+import { isJsonLauncherItem } from '@common/types';
 
 import { test, expect } from '../fixtures/electron-app';
 import { TestUtils } from '../helpers/test-utils';
@@ -287,7 +288,9 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       await utils.clickRegisterButton();
 
       const item = configHelper.getItemByDisplayName('data.json', '引数テスト');
-      expect(item?.args).toBe('C:\\edited.txt');
+      if (item && isJsonLauncherItem(item)) {
+        expect(item.args).toBe('C:\\edited.txt');
+      }
     });
 
     await test.step('編集したアイテムが反映される', async () => {

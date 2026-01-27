@@ -1,8 +1,9 @@
 import * as fs from 'fs';
 
-import PathManager from '../config/pathManager.js';
 import { generateId, serializeJsonDataFile } from '@common/utils/jsonParser';
 import type { JsonDataFile } from '@common/types';
+
+import PathManager from '../config/pathManager.js';
 
 /**
  * デフォルトのデータファイルを作成（JSON形式）

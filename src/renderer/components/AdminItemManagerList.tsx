@@ -9,7 +9,7 @@ import {
   isJsonWindowItem,
 } from '@common/types';
 
-import { logError } from '../utils/debug';
+// import { logError } from '../utils/debug'; // 未使用のため一時的にコメントアウト
 
 import ConfirmDialog from './ConfirmDialog';
 
@@ -105,8 +105,7 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
     loadIcons();
   }, [editableItems]);
 
-  const getItemKey = (item: EditableJsonItem) =>
-    `${item.meta.sourceFile}_${item.meta.lineNumber}`;
+  const getItemKey = (item: EditableJsonItem) => `${item.meta.sourceFile}_${item.meta.lineNumber}`;
 
   // コンテキストメニューイベントリスナーを登録
   useEffect(() => {
@@ -522,8 +521,7 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
   };
 
   const allSelected =
-    editableItems.length > 0 &&
-    editableItems.every((item) => selectedItems.has(getItemKey(item)));
+    editableItems.length > 0 && editableItems.every((item) => selectedItems.has(getItemKey(item)));
   const someSelected = editableItems.some((item) => selectedItems.has(getItemKey(item)));
 
   return (

@@ -475,10 +475,7 @@ export function createJsonLauncherItem(
 /**
  * 新しいJsonDirItemを作成（IDは自動生成）
  */
-export function createJsonDirItem(
-  path: string,
-  options?: JsonDirItem['options']
-): JsonDirItem {
+export function createJsonDirItem(path: string, options?: JsonDirItem['options']): JsonDirItem {
   const item: JsonDirItem = {
     id: generateId(),
     type: 'dir',

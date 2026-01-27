@@ -1,4 +1,5 @@
 import type { Page, TestInfo, ElectronApplication } from '@playwright/test';
+
 import { IPC_CHANNELS } from '../../../src/common/ipcChannels';
 
 /**
@@ -400,7 +401,10 @@ export class NativeMenuTestHelper {
     );
   }
 
-  async simulateLauncherMenu(action: LauncherMenuAction, item: Record<string, unknown>): Promise<void> {
+  async simulateLauncherMenu(
+    action: LauncherMenuAction,
+    item: Record<string, unknown>
+  ): Promise<void> {
     await this.sendIpcToRenderer(LAUNCHER_MENU_CHANNELS[action], item);
   }
 

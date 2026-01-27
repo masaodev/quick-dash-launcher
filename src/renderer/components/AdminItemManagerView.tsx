@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { SimpleBookmarkItem, DataFileTab } from '@common/types';
 import type { EditableJsonItem } from '@common/types/editableItem';
 import type { RegisterItem } from '@common/types';
-import { jsonItemToDisplayText, displayTextToJsonItem } from '@common/utils/displayTextConverter';
+import { jsonItemToDisplayText } from '@common/utils/displayTextConverter';
 import { validateEditableItem } from '@common/types/editableItem';
 import { convertRegisterItemToJsonItem } from '@common/utils/dataConverters';
 
@@ -171,9 +171,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
 
   const handleDuplicateItems = (itemsToDuplicate: EditableJsonItem[]) => {
     // 1. 複製対象アイテムを行番号でソート（挿入位置を正しく計算するため）
-    const sortedItems = [...itemsToDuplicate].sort(
-      (a, b) => a.meta.lineNumber - b.meta.lineNumber
-    );
+    const sortedItems = [...itemsToDuplicate].sort((a, b) => a.meta.lineNumber - b.meta.lineNumber);
 
     // 2. 最後のアイテムの次に挿入する位置を特定
     const lastItem = sortedItems[sortedItems.length - 1];
@@ -338,10 +336,8 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
               return pathAndArgsA.localeCompare(pathAndArgsB);
             }
 
-            const nameA =
-              a.item.type === 'item' ? (a.item.displayName || '').toLowerCase() : '';
-            const nameB =
-              b.item.type === 'item' ? (b.item.displayName || '').toLowerCase() : '';
+            const nameA = a.item.type === 'item' ? (a.item.displayName || '').toLowerCase() : '';
+            const nameB = b.item.type === 'item' ? (b.item.displayName || '').toLowerCase() : '';
 
             return nameA.localeCompare(nameB);
           });
@@ -709,11 +705,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
           </div>
         </div>
         <div className="toolbar-right">
-          <Button
-            variant="primary"
-            onClick={handleSaveChanges}
-            disabled={!hasUnsavedChanges}
-          >
+          <Button variant="primary" onClick={handleSaveChanges} disabled={!hasUnsavedChanges}>
             変更を保存
           </Button>
         </div>

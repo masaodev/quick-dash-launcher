@@ -345,12 +345,16 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
     await test.step('data.jsonとdata2.jsonの内容を確認', async () => {
       // data.jsonにGitHubが含まれていないことを確認
       const dataContent = configHelper.readDataFile('data.json');
-      const hasGitHubInData = dataContent.items.some((item) => item.displayName === 'GitHub');
+      const hasGitHubInData = dataContent.items.some(
+        (item) => item.type !== 'dir' && item.displayName === 'GitHub'
+      );
       expect(hasGitHubInData).toBe(false);
 
       // data2.jsonにGitHubが含まれていることを確認
       const data2Content = configHelper.readDataFile('data2.json');
-      const hasGitHubInData2 = data2Content.items.some((item) => item.displayName === 'GitHub');
+      const hasGitHubInData2 = data2Content.items.some(
+        (item) => item.type !== 'dir' && item.displayName === 'GitHub'
+      );
       expect(hasGitHubInData2).toBe(true);
     });
   });

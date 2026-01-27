@@ -34,9 +34,7 @@ describe('PathManager', () => {
       expect(PathManager.getCustomIconsFolder()).toBe(
         path.join(configFolder, 'icon-cache', 'custom')
       );
-      expect(PathManager.getSchemesFolder()).toBe(
-        path.join(configFolder, 'icon-cache', 'schemes')
-      );
+      expect(PathManager.getSchemesFolder()).toBe(path.join(configFolder, 'icon-cache', 'schemes'));
       expect(PathManager.getExtensionsFolder()).toBe(
         path.join(configFolder, 'icon-cache', 'extensions')
       );

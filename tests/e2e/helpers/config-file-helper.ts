@@ -1,12 +1,12 @@
 import fs from 'fs';
 import path from 'path';
 
-import type { AppSettings, LauncherItem } from '@common/types';
+import type { AppSettings, JsonItem, JsonLauncherItem } from '@common/types';
 
 /** データファイルのJSON構造 */
 interface DataFileContent {
   version: string;
-  items: LauncherItem[];
+  items: JsonItem[];
 }
 
 /**
@@ -248,7 +248,7 @@ export class ConfigFileHelper {
    * @param fileName ファイル名（例: 'data.json', 'data2.json', 'data3.json'）
    * @param item 追加するアイテム
    */
-  addItemToFile(fileName: string, item: LauncherItem): void {
+  addItemToFile(fileName: string, item: JsonItem): void {
     const data = this.readDataFile(fileName);
     data.items.push(item);
     this.writeDataFile(fileName, data);
@@ -262,7 +262,7 @@ export class ConfigFileHelper {
    */
   addSimpleItem(fileName: string, displayName: string, itemPath: string): void {
     const id = this.generateId();
-    const item: LauncherItem = {
+    const item: JsonLauncherItem = {
       id,
       type: 'item',
       displayName,
@@ -385,11 +385,25 @@ export class ConfigFileHelper {
   // ==================== 検証ヘルパー ====================
 
   /**
+   * アイテムがdisplayNameを持つかチェック（型ガード用ヘルパー）
+   */
+  private hasDisplayName(item: JsonItem): item is JsonItem & { displayName: string } {
+    return item.type !== 'dir';
+  }
+
+  /**
+   * アイテムがpathを持つかチェック（型ガード用ヘルパー）
+   */
+  private hasPath(item: JsonItem): item is JsonItem & { path: string } {
+    return item.type !== 'group';
+  }
+
+  /**
    * データファイル内に指定した表示名のアイテムが存在するかチェック
    */
   hasItemByDisplayName(fileName: string, displayName: string): boolean {
     const data = this.readDataFile(fileName);
-    return data.items.some((item) => item.displayName === displayName);
+    return data.items.some((item) => this.hasDisplayName(item) && item.displayName === displayName);
   }
 
   /**
@@ -397,7 +411,7 @@ export class ConfigFileHelper {
    */
   hasItemByPath(fileName: string, itemPath: string): boolean {
     const data = this.readDataFile(fileName);
-    return data.items.some((item) => item.path === itemPath);
+    return data.items.some((item) => this.hasPath(item) && item.path === itemPath);
   }
 
   /**
@@ -405,15 +419,35 @@ export class ConfigFileHelper {
    */
   hasItem(fileName: string, displayName: string, itemPath: string): boolean {
     const data = this.readDataFile(fileName);
-    return data.items.some((item) => item.displayName === displayName && item.path === itemPath);
+    return data.items.some(
+      (item) =>
+        this.hasDisplayName(item) &&
+        this.hasPath(item) &&
+        item.displayName === displayName &&
+        item.path === itemPath
+    );
   }
 
   /**
    * データファイル内の指定した表示名のアイテムを取得
    */
-  getItemByDisplayName(fileName: string, displayName: string): LauncherItem | undefined {
+  getItemByDisplayName(fileName: string, displayName: string): JsonItem | undefined {
     const data = this.readDataFile(fileName);
-    return data.items.find((item) => item.displayName === displayName);
+    return data.items.find((item) => {
+      if (!this.hasDisplayName(item)) return false;
+      return item.displayName === displayName;
+    });
+  }
+
+  /**
+   * データファイル内の指定したパスのアイテムを取得
+   */
+  getItemByPath(fileName: string, itemPath: string): JsonItem | undefined {
+    const data = this.readDataFile(fileName);
+    return data.items.find((item) => {
+      if (!this.hasPath(item)) return false;
+      return item.path === itemPath;
+    });
   }
 
   /**

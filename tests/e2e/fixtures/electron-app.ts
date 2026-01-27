@@ -122,9 +122,7 @@ export const test = base.extend<ElectronFixtures>({
         if (await isWorkspaceWindow(win)) continue;
         const url = win.url();
         const isMainWindow =
-          url.includes('index.html') &&
-          !url.includes('admin.html') &&
-          !url.includes('splash.html');
+          url.includes('index.html') && !url.includes('admin.html') && !url.includes('splash.html');
         if (isMainWindow) {
           return win;
         }

@@ -74,7 +74,10 @@ export class WorkspaceGroupManager {
 
       groups.push(workspaceGroup);
       this.store.set('groups', groups);
-      logger.info({ id: workspaceGroup.id, name: workspaceGroup.displayName }, 'Created workspace group');
+      logger.info(
+        { id: workspaceGroup.id, name: workspaceGroup.displayName },
+        'Created workspace group'
+      );
 
       return workspaceGroup;
     } catch (error) {

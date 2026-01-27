@@ -115,7 +115,24 @@ export function serializeWindowConfig(config: WindowConfig | undefined): string 
 /**
  * ウィンドウ操作設定オブジェクト型
  */
-interface WindowOperationSource {
+export interface WindowOperationSource {
+  displayName: string;
+  windowTitle: string;
+  processName?: string;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  moveToActiveMonitorCenter?: boolean;
+  virtualDesktopNumber?: number;
+  activateWindow?: boolean;
+  pinToAllDesktops?: boolean;
+}
+
+/**
+ * ウィンドウ操作設定の結果型
+ */
+export interface WindowOperationConfig {
   displayName: string;
   windowTitle: string;
   processName?: string;
@@ -145,10 +162,8 @@ interface WindowOperationSource {
  * const json = JSON.stringify(config);
  * // => '{"name":"Chrome","windowTitle":"Google Chrome","x":100,"y":100}'
  */
-export function buildWindowOperationConfig(
-  source: WindowOperationSource
-): Record<string, string | number | boolean> {
-  const config: Record<string, string | number | boolean> = {
+export function buildWindowOperationConfig(source: WindowOperationSource): WindowOperationConfig {
+  const config: WindowOperationConfig = {
     displayName: source.displayName,
     windowTitle: source.windowTitle,
   };

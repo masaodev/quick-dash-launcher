@@ -95,6 +95,10 @@ export {
   isEditingWindowOperationItem,
 } from './editingItem';
 
+// 編集可能なJSONアイテムの型
+export type { EditableJsonItem, LoadEditableItemsResult, ValidationResult } from './editableItem';
+export { validateEditableItem } from './editableItem';
+
 // 型ガード関数
 export {
   isWindowInfo,

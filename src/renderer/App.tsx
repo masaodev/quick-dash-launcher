@@ -10,10 +10,10 @@ import type {
   WindowOperationItem,
   IconFetchErrorRecord,
   EditingAppItem,
+  EditableJsonItem,
 } from '@common/types';
 import { buildWindowOperationConfig } from '@common/utils/windowConfigUtils';
 import { isWindowInfo, isGroupItem, isWindowOperationItem } from '@common/types/guards';
-import { isEditingLauncherItem } from '@common/types';
 
 import LauncherSearchBox from './components/LauncherSearchBox';
 import LauncherItemList from './components/LauncherItemList';
@@ -199,7 +199,9 @@ const App: React.FC = () => {
   // アイテム実行の共通処理（トースト表示 + 実行）
   const executeAppItem = async (item: AppItem): Promise<void> => {
     if (isGroupItem(item)) {
-      window.electronAPI.showToastWindow(`${item.displayName} (${item.itemNames.length}件) を起動します`);
+      window.electronAPI.showToastWindow(
+        `${item.displayName} (${item.itemNames.length}件) を起動します`
+      );
       await window.electronAPI.executeGroup(item, mainItems);
     } else if (isWindowOperationItem(item)) {
       window.electronAPI.showToastWindow(`${item.displayName} を実行します`);
@@ -479,10 +481,7 @@ const App: React.FC = () => {
             pinToAllDesktops: cfg.pinToAllDesktops,
           });
 
-          await window.electronAPI.updateWindowItemById(
-            editingItem.jsonItemId,
-            config
-          );
+          await window.electronAPI.updateWindowItemById(editingItem.jsonItemId, config);
         } else {
           // 通常のアイテムの編集
           if (!editingItem.jsonItemId) {
@@ -512,11 +511,28 @@ const App: React.FC = () => {
   };
 
   // アイテム削除ハンドラー（RegisterModalから呼び出される）
-  const handleDeleteItemFromModal = (item: EditingAppItem) => {
-    setDeleteConfirmDialog({
-      isOpen: true,
-      item: item,
-    });
+  const handleDeleteItemFromModal = (item: EditingAppItem | EditableJsonItem) => {
+    // EditableJsonItemの場合はEditingAppItemに変換する
+    if ('item' in item && 'meta' in item) {
+      // EditableJsonItem形式
+      const editableItem = item as EditableJsonItem;
+      // EditableJsonItemからEditingAppItemへの変換は行わず、
+      // jsonItemIdを取得して直接削除処理に使用
+      setDeleteConfirmDialog({
+        isOpen: true,
+        item: {
+          ...editableItem.item,
+          sourceFile: editableItem.meta.sourceFile,
+          jsonItemId: editableItem.item.id,
+        } as EditingAppItem,
+      });
+    } else {
+      // EditingAppItem形式
+      setDeleteConfirmDialog({
+        isOpen: true,
+        item: item as EditingAppItem,
+      });
+    }
   };
 
   // 削除確認後の実行ハンドラー
@@ -580,7 +596,7 @@ const App: React.FC = () => {
       openEditModal({
         ...item,
         sourceFile: item.sourceFile || 'data.json',
-        jsonItemId: item.id,
+        jsonItemId: item.id ?? undefined,
       });
       return;
     }
@@ -590,7 +606,7 @@ const App: React.FC = () => {
       openEditModal({
         ...item,
         sourceFile: item.sourceFile || 'data.json',
-        jsonItemId: item.id,
+        jsonItemId: item.id ?? undefined,
       });
       return;
     }
@@ -602,7 +618,7 @@ const App: React.FC = () => {
     openEditModal({
       ...launcherItem,
       sourceFile: launcherItem.sourceFile || 'data.json',
-      jsonItemId,
+      jsonItemId: jsonItemId ?? undefined,
     });
   };
 
@@ -763,7 +779,9 @@ const App: React.FC = () => {
         activeDesktopTab !== DESKTOP_TAB.ALL &&
         activeDesktopTab !== DESKTOP_TAB.PINNED && (
           <div className="shortcut-hint">
-            <span><kbd>Ctrl</kbd>+<kbd>←</kbd>/<kbd>→</kbd> 仮想デスクトップ移動</span>
+            <span>
+              <kbd>Ctrl</kbd>+<kbd>←</kbd>/<kbd>→</kbd> 仮想デスクトップ移動
+            </span>
           </div>
         )}
 

@@ -19,10 +19,7 @@ interface DesktopTab {
   count: number;
 }
 
-function getTabTooltip(
-  tabId: number,
-  desktopNames?: Record<number, string | undefined>
-): string {
+function getTabTooltip(tabId: number, desktopNames?: Record<number, string | undefined>): string {
   if (tabId === DESKTOP_TAB.ALL) {
     return 'すべてのデスクトップのウィンドウ';
   }

@@ -38,7 +38,11 @@ async function openItem(
     );
 
     // ウィンドウ設定が存在する場合、先にウィンドウ検索を試行
-    const activationResult = await tryActivateWindow(item.windowConfig, item.displayName, itemLogger);
+    const activationResult = await tryActivateWindow(
+      item.windowConfig,
+      item.displayName,
+      itemLogger
+    );
 
     if (activationResult.activated) {
       // ウィンドウアクティブ化成功、通常起動をスキップ
@@ -269,7 +273,10 @@ export function setupItemHandlers(
     } catch (error) {
       // 履歴記録失敗はエラーログのみ（アイテム起動自体は成功）
       itemLogger.error(
-        { error: error instanceof Error ? error.message : String(error), itemName: item.displayName },
+        {
+          error: error instanceof Error ? error.message : String(error),
+          itemName: item.displayName,
+        },
         '実行履歴の記録に失敗しました'
       );
     }
@@ -295,7 +302,10 @@ export function setupItemHandlers(
       } catch (error) {
         // 履歴記録失敗はエラーログのみ（グループ起動自体は成功）
         itemLogger.error(
-          { error: error instanceof Error ? error.message : String(error), groupName: group.displayName },
+          {
+            error: error instanceof Error ? error.message : String(error),
+            groupName: group.displayName,
+          },
           'グループ実行履歴の記録に失敗しました'
         );
       }
@@ -345,7 +355,10 @@ export function setupItemHandlers(
         notifyWorkspaceChanged();
       } catch (error) {
         itemLogger.error(
-          { error: error instanceof Error ? error.message : String(error), itemName: item.displayName },
+          {
+            error: error instanceof Error ? error.message : String(error),
+            itemName: item.displayName,
+          },
           '実行履歴の記録に失敗しました'
         );
       }
