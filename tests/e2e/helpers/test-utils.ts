@@ -1,4 +1,5 @@
 import type { Page, TestInfo, ElectronApplication } from '@playwright/test';
+import { IPC_CHANNELS } from '../../../src/common/ipcChannels';
 
 /**
  * テスト用のユーティリティ関数
@@ -323,5 +324,91 @@ export class TestUtils {
     if (data.name) {
       await this.waitForSave(data.name);
     }
+  }
+}
+
+/** ランチャーメニュー操作タイプ */
+type LauncherMenuAction =
+  | 'edit'
+  | 'copyPath'
+  | 'copyParentPath'
+  | 'openParentFolder'
+  | 'addToWorkspace'
+  | 'copyShortcutPath'
+  | 'copyShortcutParentPath'
+  | 'openShortcutParentFolder';
+
+/** ワークスペースメニュー操作タイプ */
+type WorkspaceMenuAction = 'rename' | 'launch' | 'remove';
+
+/** 管理画面メニュー操作タイプ */
+type AdminMenuAction = 'duplicate' | 'edit' | 'delete';
+
+const LAUNCHER_MENU_CHANNELS: Record<LauncherMenuAction, string> = {
+  edit: IPC_CHANNELS.EVENT_LAUNCHER_MENU_EDIT_ITEM,
+  copyPath: IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_PATH,
+  copyParentPath: IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_PARENT_PATH,
+  openParentFolder: IPC_CHANNELS.EVENT_LAUNCHER_MENU_OPEN_PARENT_FOLDER,
+  addToWorkspace: IPC_CHANNELS.EVENT_LAUNCHER_MENU_ADD_TO_WORKSPACE,
+  copyShortcutPath: IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_SHORTCUT_PATH,
+  copyShortcutParentPath: IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_SHORTCUT_PARENT_PATH,
+  openShortcutParentFolder: IPC_CHANNELS.EVENT_LAUNCHER_MENU_OPEN_SHORTCUT_PARENT_FOLDER,
+};
+
+const WORKSPACE_MENU_CHANNELS: Record<WorkspaceMenuAction, string> = {
+  rename: IPC_CHANNELS.EVENT_WORKSPACE_MENU_RENAME_ITEM,
+  launch: IPC_CHANNELS.EVENT_WORKSPACE_MENU_LAUNCH_ITEM,
+  remove: IPC_CHANNELS.EVENT_WORKSPACE_MENU_REMOVE_ITEM,
+};
+
+const ADMIN_MENU_CHANNELS: Record<AdminMenuAction, string> = {
+  duplicate: IPC_CHANNELS.EVENT_ADMIN_MENU_DUPLICATE_ITEMS,
+  edit: IPC_CHANNELS.EVENT_ADMIN_MENU_EDIT_ITEM,
+  delete: IPC_CHANNELS.EVENT_ADMIN_MENU_DELETE_ITEMS,
+};
+
+/**
+ * ネイティブコンテキストメニューをテストするためのヘルパークラス
+ *
+ * Electronのネイティブメニュー（Menu.popup()）はPlaywrightから直接アクセスできないため、
+ * IPCイベントを直接送信してメニュー項目のクリックをシミュレートします。
+ */
+export class NativeMenuTestHelper {
+  constructor(
+    private electronApp: ElectronApplication,
+    private page: Page
+  ) {}
+
+  async sendIpcToRenderer(channel: string, ...args: unknown[]): Promise<void> {
+    const url = this.page.url();
+    await this.electronApp.evaluate(
+      async ({ BrowserWindow }, { targetUrl, channel, args }) => {
+        const allWindows = BrowserWindow.getAllWindows();
+        const targetWindow = allWindows.find((win) => {
+          try {
+            return win.webContents.getURL() === targetUrl;
+          } catch {
+            return false;
+          }
+        });
+
+        if (targetWindow && !targetWindow.isDestroyed()) {
+          targetWindow.webContents.send(channel, ...args);
+        }
+      },
+      { targetUrl: url, channel, args }
+    );
+  }
+
+  async simulateLauncherMenu(action: LauncherMenuAction, item: Record<string, unknown>): Promise<void> {
+    await this.sendIpcToRenderer(LAUNCHER_MENU_CHANNELS[action], item);
+  }
+
+  async simulateWorkspaceMenu(action: WorkspaceMenuAction, itemId: string): Promise<void> {
+    await this.sendIpcToRenderer(WORKSPACE_MENU_CHANNELS[action], itemId);
+  }
+
+  async simulateAdminMenu(action: AdminMenuAction): Promise<void> {
+    await this.sendIpcToRenderer(ADMIN_MENU_CHANNELS[action]);
   }
 }

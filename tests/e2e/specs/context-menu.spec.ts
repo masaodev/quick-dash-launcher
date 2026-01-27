@@ -2,26 +2,27 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import { test, expect } from '../fixtures/electron-app';
-import { TestUtils } from '../helpers/test-utils';
+import { TestUtils, NativeMenuTestHelper } from '../helpers/test-utils';
 
-// このテストスイートはネイティブElectronコンテキストメニューを使用しているため、
-// PlaywrightでDOM要素をテストすることができません。
-// ネイティブメニューのテストは別の方法で行う必要があります。
-test.describe.skip('QuickDashLauncher - コンテキストメニュー機能テスト', () => {
+/**
+ * コンテキストメニュー機能テスト
+ *
+ * Electronのネイティブメニュー（Menu.popup()）はPlaywrightから直接アクセスできないため、
+ * IPCイベントを直接送信してメニュー項目のクリックをシミュレートします。
+ */
+test.describe('QuickDashLauncher - コンテキストメニュー機能テスト', () => {
   let shortcutPath: string = '';
 
   test.beforeEach(async ({ configHelper, mainWindow }) => {
-    // baseテンプレートを使用（fixtureで既にロード済み）
-    // テスト用のショートカットファイルを作成
     const testDir = configHelper.getConfigDir();
     shortcutPath = path.join(testDir, 'test-shortcut.lnk');
 
-    // 実際の.lnkファイルを作成（notepad.exeへのショートカット）
+    // ショートカットファイルを作成（notepad.exeへのリンク）
     const { execSync } = require('child_process');
     const psScriptPath = path.join(testDir, 'create-shortcut.ps1');
     const psScriptContent = `
 $WshShell = New-Object -ComObject WScript.Shell
-$Shortcut = $WshShell.CreateShortcut("${shortcutPath}")
+$Shortcut = $WshShell.CreateShortcut("${shortcutPath.replace(/\\/g, '\\\\')}")
 $Shortcut.TargetPath = "notepad.exe"
 $Shortcut.Save()
 `;
@@ -38,12 +39,10 @@ $Shortcut.Save()
       throw new Error(`ショートカットファイルが作成されませんでした: ${shortcutPath}`);
     }
 
-    // baseテンプレートにショートカットアイテムを追加
     configHelper.addSimpleItem('data.json', 'テストショートカット', shortcutPath);
 
     const utils = new TestUtils(mainWindow);
     await utils.waitForPageLoad();
-    // データ変更を反映するためにリロード
     await mainWindow.reload();
     await utils.waitForPageLoad();
   });
@@ -52,8 +51,8 @@ $Shortcut.Save()
     if (shortcutPath && fs.existsSync(shortcutPath)) {
       try {
         fs.unlinkSync(shortcutPath);
-      } catch (_err) {
-        // Ignore cleanup errors
+      } catch {
+        // クリーンアップエラーは無視
       }
     }
     if (shortcutPath) {
@@ -61,294 +60,134 @@ $Shortcut.Save()
       if (fs.existsSync(psScriptPath)) {
         try {
           fs.unlinkSync(psScriptPath);
-        } catch (_err) {
-          // Ignore cleanup errors
+        } catch {
+          // クリーンアップエラーは無視
         }
       }
     }
   });
-  // ==================== 基本的なコンテキストメニュー表示 ====================
 
-  test('右クリックでコンテキストメニューが表示される', async ({ mainWindow }, _testInfo) => {
+  test('編集メニュー操作で編集モーダルが開く', async ({ electronApp, mainWindow }) => {
     const utils = new TestUtils(mainWindow);
+    const menuHelper = new NativeMenuTestHelper(electronApp, mainWindow);
 
-    await test.step('通常のアイテムを右クリックするとメニューが表示される', async () => {
-      await utils.rightClickItem('Google');
+    const googleItem = mainWindow.locator('.item .item-name', { hasText: 'Google' });
+    await expect(googleItem).toBeVisible({ timeout: 5000 });
 
-      const contextMenu = mainWindow.locator('.context-menu');
-      await expect(contextMenu).toBeVisible();
+    await menuHelper.simulateLauncherMenu('edit', {
+      id: 'google-test-id',
+      displayName: 'Google',
+      path: 'https://www.google.com',
+      type: 'url',
     });
 
-    await test.step('メニューに基本項目が表示される', async () => {
-      const editItem = mainWindow.locator('.context-menu-item', { hasText: '編集' });
-      const copyPathItem = mainWindow.locator('.context-menu-item', { hasText: 'パスをコピー' });
+    await mainWindow.waitForSelector('.register-modal', { state: 'visible', timeout: 5000 });
+    await expect(mainWindow.locator('.register-modal')).toBeVisible();
 
-      await expect(editItem).toBeVisible();
-      await expect(copyPathItem).toBeVisible();
-    });
-  });
-
-  test('通常のアイテムのメニュー構成', async ({ mainWindow }, _testInfo) => {
-    const utils = new TestUtils(mainWindow);
-
-    await test.step('Webサイトアイテムには親フォルダメニューが表示されない', async () => {
-      await utils.rightClickItem('Google');
-
-      const editItem = mainWindow.locator('.context-menu-item', { hasText: '編集' });
-      const copyPathItem = mainWindow.locator('.context-menu-item', { hasText: 'パスをコピー' });
-      const parentFolderItem = mainWindow.locator('.context-menu-item', {
-        hasText: '親フォルダー',
-      });
-
-      await expect(editItem).toBeVisible();
-      await expect(copyPathItem).toBeVisible();
-      // URLには親フォルダーが存在しないため表示されない
-      const count = await parentFolderItem.count();
-      expect(count).toBe(0);
-    });
-
-    // メニューを閉じる
     await mainWindow.keyboard.press('Escape');
     await utils.wait(300);
-
-    await test.step('アプリケーションアイテムには親フォルダメニューが表示される', async () => {
-      await utils.rightClickItem('メモ帳');
-
-      const copyParentPathItem = mainWindow.locator('.context-menu-item', {
-        hasText: '親フォルダーのパスをコピー',
-      });
-      const openParentFolderItem = mainWindow.locator('.context-menu-item', {
-        hasText: '親フォルダーを開く',
-      });
-
-      await expect(copyParentPathItem).toBeVisible();
-      await expect(openParentFolderItem).toBeVisible();
-    });
   });
 
-  // ==================== ショートカットアイテムのメニュー ====================
+  test('パスをコピーメニュー操作でクリップボードにコピーされる', async ({
+    electronApp,
+    mainWindow,
+  }) => {
+    const menuHelper = new NativeMenuTestHelper(electronApp, mainWindow);
 
-  test('ショートカットアイテムのメニュー構成', async ({ mainWindow }, _testInfo) => {
+    const itemData = {
+      id: 'test-notepad',
+      name: 'メモ帳',
+      path: 'C:\\Windows\\System32\\notepad.exe',
+      type: 'app',
+    };
+
+    await menuHelper.simulateLauncherMenu('copyPath', itemData);
+
+    const clipboardText = await electronApp.evaluate(async ({ clipboard }) => {
+      return clipboard.readText();
+    });
+
+    expect(clipboardText).toBe('C:\\Windows\\System32\\notepad.exe');
+  });
+
+  test('親フォルダーのパスをコピーメニュー操作', async ({ electronApp, mainWindow }) => {
+    const menuHelper = new NativeMenuTestHelper(electronApp, mainWindow);
+
+    const itemData = {
+      id: 'test-notepad',
+      name: 'メモ帳',
+      path: 'C:\\Windows\\System32\\notepad.exe',
+      type: 'app',
+    };
+
+    await menuHelper.simulateLauncherMenu('copyParentPath', itemData);
+
+    const clipboardText = await electronApp.evaluate(async ({ clipboard }) => {
+      return clipboard.readText();
+    });
+
+    expect(clipboardText).toBe('C:\\Windows\\System32');
+  });
+
+  test('ショートカットのリンク先パスをコピー', async ({ electronApp, mainWindow }) => {
+    const menuHelper = new NativeMenuTestHelper(electronApp, mainWindow);
+
+    const shortcutItem = mainWindow.locator('.item', { hasText: 'テストショートカット' });
+    await expect(shortcutItem).toBeVisible({ timeout: 5000 });
+
+    await menuHelper.simulateLauncherMenu('copyShortcutPath', {
+      id: 'test-shortcut',
+      name: 'テストショートカット',
+      path: shortcutPath,
+      type: 'app',
+      originalPath: 'C:\\Windows\\System32\\notepad.exe',
+    });
+
+    const clipboardText = await electronApp.evaluate(async ({ clipboard }) => {
+      return clipboard.readText();
+    });
+
+    expect(clipboardText.toLowerCase()).toContain('notepad.exe');
+  });
+
+  test('ワークスペースに追加メニュー操作', async ({ electronApp, mainWindow }) => {
+    const menuHelper = new NativeMenuTestHelper(electronApp, mainWindow);
     const utils = new TestUtils(mainWindow);
 
-    await test.step('ショートカットを右クリックするとメニューが表示される', async () => {
-      await utils.rightClickItem('テストショートカット');
-
-      const contextMenu = mainWindow.locator('.context-menu');
-      await expect(contextMenu).toBeVisible();
+    await menuHelper.simulateLauncherMenu('addToWorkspace', {
+      id: 'google-id',
+      name: 'Google',
+      path: 'https://www.google.com',
+      type: 'url',
     });
 
-    await test.step('区切り線が正しく表示される', async () => {
-      const dividers = mainWindow.locator('.context-menu-divider');
-      const count = await dividers.count();
-      // 編集メニューがある場合: 編集の後 + ショートカットセクションの前 = 2つ
-      // 編集メニューがない場合: ショートカットセクションの前のみ = 1つ
-      expect(count).toBeGreaterThanOrEqual(1);
-    });
-
-    await test.step('基本メニュー項目が表示される', async () => {
-      const editItem = mainWindow.locator('.context-menu-item', { hasText: '編集' });
-      // ショートカットアイテムの場合、複数の類似メニューが存在するため.first()を使用
-      const copyPathItem = mainWindow
-        .locator('.context-menu-item:has-text("パスをコピー")')
-        .first();
-      const copyParentPathItem = mainWindow
-        .locator('.context-menu-item:has-text("親フォルダーのパスをコピー")')
-        .first();
-      const openParentFolderItem = mainWindow
-        .locator('.context-menu-item:has-text("親フォルダーを開く")')
-        .first();
-
-      await expect(editItem).toBeVisible();
-      await expect(copyPathItem).toBeVisible();
-      await expect(copyParentPathItem).toBeVisible();
-      await expect(openParentFolderItem).toBeVisible();
-    });
-
-    await test.step('ショートカット専用メニュー項目が表示される', async () => {
-      const copyShortcutPathItem = mainWindow.locator('.context-menu-item', {
-        hasText: 'リンク先のパスをコピー',
-      });
-      const copyShortcutParentPathItem = mainWindow.locator('.context-menu-item', {
-        hasText: 'リンク先の親フォルダーのパスをコピー',
-      });
-      const openShortcutParentFolderItem = mainWindow.locator('.context-menu-item', {
-        hasText: 'リンク先の親フォルダーを開く',
-      });
-
-      await expect(copyShortcutPathItem).toBeVisible();
-      await expect(copyShortcutParentPathItem).toBeVisible();
-      await expect(openShortcutParentFolderItem).toBeVisible();
-    });
-
-    await test.step('アイコンが正しく表示される', async () => {
-      // 編集アイコン
-      const editIcon = mainWindow.locator('.context-menu-item:has-text("編集") .context-menu-icon');
-      await expect(editIcon).toContainText('✏️');
-
-      // コピー系アイコン（📋）
-      const copyIcons = mainWindow.locator(
-        '.context-menu-item:has-text("コピー") .context-menu-icon'
-      );
-      const copyCount = await copyIcons.count();
-      expect(copyCount).toBeGreaterThan(0);
-
-      // フォルダを開く系アイコン（📂）
-      const folderIcons = mainWindow.locator(
-        '.context-menu-item:has-text("開く") .context-menu-icon'
-      );
-      const folderCount = await folderIcons.count();
-      expect(folderCount).toBe(2); // 親フォルダーを開く + リンク先の親フォルダーを開く
-    });
+    await utils.wait(500);
   });
+});
 
-  // ==================== メニュー操作 ====================
-
-  test('メニューを閉じる操作', async ({ mainWindow }, _testInfo) => {
+/**
+ * 管理ウィンドウのコンテキストメニューテスト
+ */
+test.describe('QuickDashLauncher - 管理ウィンドウのコンテキストメニュー', () => {
+  test('管理ウィンドウへのIPC送信が正常に行われる', async ({ electronApp, mainWindow }) => {
     const utils = new TestUtils(mainWindow);
 
-    await test.step('Escapeキーでメニューが閉じる', async () => {
-      await utils.rightClickItem('メモ帳');
+    const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
+    await adminWindow.waitForLoadState('domcontentloaded');
 
-      let contextMenu = mainWindow.locator('.context-menu');
-      await expect(contextMenu).toBeVisible();
+    const menuHelper = new NativeMenuTestHelper(electronApp, adminWindow);
 
-      await mainWindow.keyboard.press('Escape');
+    await adminWindow.waitForSelector('.raw-item-row', { state: 'visible', timeout: 10000 });
 
-      contextMenu = mainWindow.locator('.context-menu');
-      const count = await contextMenu.count();
-      expect(count).toBe(0);
-    });
+    const firstRow = adminWindow.locator('.raw-item-row').first();
+    const checkbox = firstRow.locator('input[type="checkbox"]');
+    await checkbox.click();
+    await expect(checkbox).toBeChecked();
 
-    await test.step('メニュー外をクリックするとメニューが閉じる', async () => {
-      await utils.rightClickItem('メモ帳');
+    await menuHelper.simulateAdminMenu('duplicate');
+    await menuHelper.simulateAdminMenu('edit');
+    await adminWindow.waitForTimeout(100);
 
-      let contextMenu = mainWindow.locator('.context-menu');
-      await expect(contextMenu).toBeVisible();
-
-      // メニュー外をクリック（検索ボックスをクリック）
-      const searchBox = mainWindow.locator('input[type="text"]').first();
-      await searchBox.click();
-
-      contextMenu = mainWindow.locator('.context-menu');
-      const count = await contextMenu.count();
-      expect(count).toBe(0);
-    });
-  });
-
-  // ==================== メニュー項目の機能テスト ====================
-
-  test('編集メニューの動作', async ({ mainWindow }, _testInfo) => {
-    const utils = new TestUtils(mainWindow);
-
-    await test.step('編集メニューが表示され、クリック可能である', async () => {
-      await utils.rightClickItem('Google');
-
-      // 編集メニューが存在するか確認
-      const editItem = mainWindow.locator('.context-menu-item', { hasText: '編集' });
-      await expect(editItem).toBeVisible();
-
-      // 編集メニューをクリック
-      await editItem.click();
-
-      // メニューが閉じたことを確認
-      const contextMenu = mainWindow.locator('.context-menu');
-      const menuCount = await contextMenu.count();
-      expect(menuCount).toBe(0);
-    });
-  });
-
-  test('パスをコピーメニューの動作', async ({ mainWindow }, _testInfo) => {
-    const utils = new TestUtils(mainWindow);
-
-    await test.step('パスをコピーメニューをクリックするとメニューが閉じる', async () => {
-      await utils.rightClickItem('メモ帳');
-
-      // 「パスをコピー」メニュー項目を探す（:has-text()で部分一致）
-      const copyPathItem = mainWindow
-        .locator('.context-menu-item:has-text("パスをコピー")')
-        .first();
-      await copyPathItem.click();
-
-      // メニューが閉じたことを確認
-      const contextMenu = mainWindow.locator('.context-menu');
-      const count = await contextMenu.count();
-      expect(count).toBe(0);
-    });
-  });
-
-  test('ショートカットのリンク先の親フォルダーを開くメニュー', async ({ mainWindow }, testInfo) => {
-    const _utils = new TestUtils(mainWindow);
-
-    await test.step('ショートカットアイテムを探す', async () => {
-      // ショートカットアイテムが存在するか確認
-      const items = mainWindow.locator('.item');
-      const itemCount = await items.count();
-
-      // アイテム名をすべて出力（デバッグ用）
-      for (let i = 0; i < itemCount; i++) {
-        const itemName = await items.nth(i).locator('.item-name').textContent();
-        // console.log でなく testInfo に情報を記録
-        if (itemName) {
-          testInfo.annotations.push({ type: 'item', description: `Item ${i}: ${itemName}` });
-        }
-      }
-    });
-
-    await test.step('ショートカットアイテムが存在すればメニューを確認', async () => {
-      const shortcutItem = mainWindow.locator('.item').filter({ hasText: 'テストショートカット' });
-      const shortcutCount = await shortcutItem.count();
-
-      if (shortcutCount > 0) {
-        await shortcutItem.click({ button: 'right' });
-
-        // リンク先の親フォルダーを開くメニューが存在するか確認
-        const openShortcutParentFolderItem = mainWindow.locator('.context-menu-item').filter({
-          hasText: 'リンク先の親フォルダーを開く',
-        });
-        const menuCount = await openShortcutParentFolderItem.count();
-
-        if (menuCount > 0) {
-          await expect(openShortcutParentFolderItem.first()).toBeVisible();
-
-          // メニューをクリック
-          await openShortcutParentFolderItem.first().click();
-
-          // メニューが閉じたことを確認
-          const contextMenu = mainWindow.locator('.context-menu');
-          const contextCount = await contextMenu.count();
-          expect(contextCount).toBe(0);
-        }
-      }
-    });
-  });
-
-  // ==================== メニュー位置の調整 ====================
-
-  test('メニュー位置の自動調整', async ({ mainWindow }, _testInfo) => {
-    const utils = new TestUtils(mainWindow);
-
-    await test.step('メニューが画面内に収まるように調整される', async () => {
-      // アイテムを右クリック
-      await utils.rightClickItem('Google');
-
-      const contextMenu = mainWindow.locator('.context-menu');
-      await expect(contextMenu).toBeVisible();
-
-      // メニューの位置を取得
-      const box = await contextMenu.boundingBox();
-      expect(box).not.toBeNull();
-
-      if (box) {
-        // メニューが画面内に収まっているか確認
-        const viewport = mainWindow.viewportSize();
-        if (viewport) {
-          expect(box.x).toBeGreaterThanOrEqual(0);
-          expect(box.y).toBeGreaterThanOrEqual(0);
-          expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
-          expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
-        }
-      }
-    });
+    await adminWindow.close();
   });
 });
