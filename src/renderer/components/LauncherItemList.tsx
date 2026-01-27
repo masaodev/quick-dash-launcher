@@ -23,6 +23,7 @@ interface ItemListProps {
   onCopyShortcutParentPath?: (item: LauncherItem) => void;
   onOpenShortcutParentFolder?: (item: LauncherItem) => void;
   onEditItem?: (item: AppItem) => void | Promise<void>;
+  onRefreshWindows?: () => Promise<void>;
 }
 
 const LauncherItemList: React.FC<ItemListProps> = ({
@@ -38,6 +39,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
   onCopyShortcutParentPath,
   onOpenShortcutParentFolder,
   onEditItem,
+  onRefreshWindows,
 }) => {
   const listRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -122,6 +124,10 @@ const LauncherItemList: React.FC<ItemListProps> = ({
               `ウィンドウをデスクトップ ${desktopNumber} に移動しました`,
               'success'
             );
+            // ウィンドウリストを更新
+            if (onRefreshWindows) {
+              await onRefreshWindows();
+            }
           } else {
             window.electronAPI.showToastWindow(
               `ウィンドウの移動に失敗しました: ${result.error || '不明なエラー'}`,
@@ -199,6 +205,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
     onCopyShortcutPath,
     onCopyShortcutParentPath,
     onOpenShortcutParentFolder,
+    onRefreshWindows,
   ]);
 
   const getDefaultIcon = (item: AppItem) => {

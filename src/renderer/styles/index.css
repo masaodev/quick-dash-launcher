@@ -54,3 +54,25 @@ body {
 *::-webkit-scrollbar-thumb:hover {
   background: var(--color-gray-600);
 }
+
+/* ショートカットヒント（ウィンドウ検索モード時など） */
+.shortcut-hint {
+  padding: var(--spacing-xs) var(--spacing-lg);
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  background-color: var(--bg-header);
+  border-top: var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-lg);
+}
+
+.shortcut-hint kbd {
+  background-color: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  padding: 1px 4px;
+  font-family: var(--font-family);
+  font-size: var(--font-size-xs);
+}

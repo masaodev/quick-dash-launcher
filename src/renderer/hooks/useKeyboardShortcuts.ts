@@ -1,33 +1,66 @@
 import React from 'react';
+import { DESKTOP_TAB } from '@common/constants';
 import { AppItem, LauncherItem, DataFileTab, SearchMode, WindowInfo } from '@common/types';
 import { isWindowInfo, isLauncherItem } from '@common/types/guards';
 
 import { filterItems } from '../utils/dataParser';
+import { filterWindowsByDesktopTab } from '../utils/windowFilter';
+
+/**
+ * キーボードショートカットフックのパラメータ
+ */
+export interface UseKeyboardShortcutsParams {
+  showDataFileTabs: boolean;
+  activeTab: string;
+  dataFileTabs: DataFileTab[];
+  mainItems: AppItem[];
+  searchQuery: string;
+  selectedIndex: number;
+  setSelectedIndex: React.Dispatch<React.SetStateAction<number>>;
+  setActiveTab: React.Dispatch<React.SetStateAction<string>>;
+  navigateToPrevious: () => string | null;
+  navigateToNext: () => string | null;
+  setSearchQuery: (query: string) => void;
+  handleExecuteItem: (item: AppItem) => Promise<void>;
+  searchMode: SearchMode;
+  windowList: WindowInfo[];
+  historyItems: AppItem[];
+  toggleSearchMode: () => Promise<void>;
+  refreshWindows: () => Promise<void>;
+  desktopCount: number;
+  activeDesktopTab: number;
+  setActiveDesktopTab: React.Dispatch<React.SetStateAction<number>>;
+}
 
 /**
  * キーボードショートカット管理フック
  *
  * キーボード操作（タブ切り替え、検索履歴、アイテム選択、実行）を管理します。
  */
-export function useKeyboardShortcuts(
-  showDataFileTabs: boolean,
-  activeTab: string,
-  dataFileTabs: DataFileTab[],
-  mainItems: AppItem[],
-  searchQuery: string,
-  selectedIndex: number,
-  setSelectedIndex: React.Dispatch<React.SetStateAction<number>>,
-  setActiveTab: React.Dispatch<React.SetStateAction<string>>,
-  navigateToPrevious: () => string | null,
-  navigateToNext: () => string | null,
-  setSearchQuery: (query: string) => void,
-  handleExecuteItem: (item: AppItem) => Promise<void>,
-  searchMode: SearchMode,
-  windowList: WindowInfo[],
-  historyItems: AppItem[],
-  toggleSearchMode: () => Promise<void>,
-  refreshWindows: () => Promise<void>
-) {
+export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams) {
+  const {
+    showDataFileTabs,
+    activeTab,
+    dataFileTabs,
+    mainItems,
+    searchQuery,
+    selectedIndex,
+    setSelectedIndex,
+    setActiveTab,
+    navigateToPrevious,
+    navigateToNext,
+    setSearchQuery,
+    handleExecuteItem,
+    searchMode,
+    windowList,
+    historyItems,
+    toggleSearchMode,
+    refreshWindows,
+    desktopCount,
+    activeDesktopTab,
+    setActiveDesktopTab,
+  } = params;
+
   /**
    * アクティブなタブに基づいてアイテムをフィルタリング（キーハンドラ用）
    */
@@ -86,8 +119,31 @@ export function useKeyboardShortcuts(
       return;
     }
 
-    // ウィンドウモードまたは履歴モードでTabキーが押された場合は無効化
-    if (e.key === 'Tab' && (searchMode === 'window' || searchMode === 'history')) {
+    // ウィンドウモード時：Tab でデスクトップタブ切り替え
+    if (e.key === 'Tab' && searchMode === 'window' && desktopCount > 1) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      // タブリストを生成（LauncherDesktopTabBarと同じ順序）
+      const tabIds: number[] = [DESKTOP_TAB.ALL];
+      const hasPinnedWindows = windowList.some((w) => w.isPinned === true);
+      if (hasPinnedWindows) {
+        tabIds.push(DESKTOP_TAB.PINNED);
+      }
+      for (let i = 1; i <= desktopCount; i++) {
+        tabIds.push(i);
+      }
+
+      // 現在のタブのインデックスを探す
+      const currentIndex = tabIds.indexOf(activeDesktopTab);
+      const nextIndex = currentIndex < tabIds.length - 1 ? currentIndex + 1 : 0;
+      setActiveDesktopTab(tabIds[nextIndex]);
+      setSelectedIndex(0);
+      return;
+    }
+
+    // 履歴モードでTabキーが押された場合は無効化
+    if (e.key === 'Tab' && searchMode === 'history') {
       e.preventDefault();
       return;
     }
@@ -95,7 +151,7 @@ export function useKeyboardShortcuts(
     // 各キー処理で最新のfilteredItemsを計算
     const tabFilteredItems =
       searchMode === 'window'
-        ? windowList
+        ? filterWindowsByDesktopTab(windowList, activeDesktopTab)
         : searchMode === 'history'
           ? historyItems
           : getTabFilteredItemsForKeyHandler();
@@ -112,6 +168,43 @@ export function useKeyboardShortcuts(
         setSearchQuery(newQuery);
         setSelectedIndex(0);
       }
+      return;
+    }
+
+    // ウィンドウモード時：Ctrl+左右矢印で選択中のウィンドウを仮想デスクトップ間移動
+    // 「すべて」「ピン止め」タブでは無効
+    if (searchMode === 'window' && e.ctrlKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      // 「すべて」「ピン止め」タブでは移動不可
+      if (activeDesktopTab === DESKTOP_TAB.ALL || activeDesktopTab === DESKTOP_TAB.PINNED) return;
+
+      const selectedWindow = filteredItems[selectedIndex] as WindowInfo | undefined;
+      if (!selectedWindow || desktopCount < 2) return;
+
+      // ピン止めされたウィンドウは移動不可
+      if (selectedWindow.isPinned) return;
+
+      const currentDesktop = selectedWindow.desktopNumber || 1;
+      let targetDesktop: number;
+
+      if (e.key === 'ArrowRight') {
+        // 右へ移動（次のデスクトップ）
+        if (currentDesktop >= desktopCount) return; // 端に達したら何もしない
+        targetDesktop = currentDesktop + 1;
+      } else {
+        // 左へ移動（前のデスクトップ）
+        if (currentDesktop <= 1) return; // 端に達したら何もしない
+        targetDesktop = currentDesktop - 1;
+      }
+
+      // ウィンドウを移動してリストを更新
+      window.electronAPI.moveWindowToDesktop(selectedWindow.hwnd, targetDesktop).then((result) => {
+        if (result.success) {
+          refreshWindows();
+        }
+      });
       return;
     }
 

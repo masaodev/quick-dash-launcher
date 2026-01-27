@@ -29,6 +29,7 @@ import AlertDialog from './components/AlertDialog';
 import ConfirmDialog from './components/ConfirmDialog';
 import GlobalLoadingIndicator from './components/GlobalLoadingIndicator';
 import { filterItems } from './utils/dataParser';
+import { filterWindowsByDesktopTab } from './utils/windowFilter';
 import { debugLog, logError } from './utils/debug';
 import { useIconProgress } from './hooks/useIconProgress';
 import { useSearchHistory } from './hooks/useSearchHistory';
@@ -182,18 +183,15 @@ const App: React.FC = () => {
       } else {
         setActiveDesktopTab(0);
       }
-      setSearchQuery(''); // 検索クエリをクリア
     } else if (searchMode === 'window') {
       // ウィンドウ検索モード → 実行履歴検索モード
       setSearchMode('history');
       setWindowList([]);
       setDesktopInfo(null);
       setActiveDesktopTab(0);
-      setSearchQuery(''); // 検索クエリをクリア
     } else {
       // 実行履歴検索モード → 通常モード
       setSearchMode('normal');
-      setSearchQuery(''); // 検索クエリをクリア
     }
     setSelectedIndex(0); // 選択インデックスをリセット
   };
@@ -290,7 +288,7 @@ const App: React.FC = () => {
     });
 
   // キーボードショートカットフック
-  const { handleKeyDown } = useKeyboardShortcuts(
+  const { handleKeyDown } = useKeyboardShortcuts({
     showDataFileTabs,
     activeTab,
     dataFileTabs,
@@ -306,9 +304,12 @@ const App: React.FC = () => {
     searchMode,
     windowList,
     historyItems,
-    handleToggleSearchMode,
-    handleRefreshWindows
-  );
+    toggleSearchMode: handleToggleSearchMode,
+    refreshWindows: handleRefreshWindows,
+    desktopCount: desktopInfo?.desktopCount || 0,
+    activeDesktopTab,
+    setActiveDesktopTab,
+  });
 
   useEffect(() => {
     // 初回起動チェック: 設定ファイルの存在を確認
@@ -665,20 +666,9 @@ const App: React.FC = () => {
     }).length;
   }, [mainItems, errorKeySet]);
 
-  // ウィンドウ検索モード時のタブフィルタリング
-  const getDesktopFilteredWindows = (windows: WindowInfo[]): WindowInfo[] => {
-    if (activeDesktopTab === DESKTOP_TAB.ALL) {
-      return windows;
-    }
-    if (activeDesktopTab === DESKTOP_TAB.PINNED) {
-      return windows.filter((w) => w.isPinned === true);
-    }
-    return windows.filter((w) => w.desktopNumber === activeDesktopTab);
-  };
-
   const itemsToFilter =
     searchMode === 'window'
-      ? getDesktopFilteredWindows(windowList)
+      ? filterWindowsByDesktopTab(windowList, activeDesktopTab)
       : searchMode === 'history'
         ? historyItems
         : tabFilteredItems;
@@ -764,7 +754,18 @@ const App: React.FC = () => {
         onCopyShortcutParentPath={handleCopyShortcutParentPath}
         onOpenShortcutParentFolder={handleOpenShortcutParentFolder}
         onEditItem={handleEditItem}
+        onRefreshWindows={handleRefreshWindows}
       />
+
+      {searchMode === 'window' &&
+        desktopInfo &&
+        desktopInfo.desktopCount > 1 &&
+        activeDesktopTab !== DESKTOP_TAB.ALL &&
+        activeDesktopTab !== DESKTOP_TAB.PINNED && (
+          <div className="shortcut-hint">
+            <span><kbd>Ctrl</kbd>+<kbd>←</kbd>/<kbd>→</kbd> 仮想デスクトップ移動</span>
+          </div>
+        )}
 
       {!progressState.isActive && missingIconCount > 0 && (
         <MissingIconNotice missingCount={missingIconCount} onFetchClick={handleFetchMissingIcons} />
