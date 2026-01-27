@@ -57,6 +57,7 @@ export interface ElectronAPI {
     callback: (data: IconProgress) => void
   ) => void;
   onWindowShown: (callback: (startTime?: number) => void) => () => void;
+  onWindowShownItemSearch: (callback: (startTime?: number) => void) => () => void;
   onWindowHidden: (callback: () => void) => () => void;
   onSetActiveTab: (callback: (tab: 'settings' | 'edit' | 'archive' | 'other') => void) => void;
   onDataChanged: (callback: () => void) => () => void;
@@ -75,6 +76,7 @@ export interface ElectronAPI {
   resetSettings: () => Promise<void>;
   validateHotkey: (hotkey: string) => Promise<{ isValid: boolean; reason?: string }>;
   changeHotkey: (newHotkey: string) => Promise<boolean>;
+  changeItemSearchHotkey: (newHotkey: string) => Promise<boolean>;
   isFirstLaunch: () => Promise<boolean>;
   updateItemById: (request: { id: string; newItem: LauncherItem }) => Promise<{ success: boolean }>;
   deleteItemsById: (requests: { id: string }[]) => Promise<{ success: boolean }>;

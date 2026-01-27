@@ -315,6 +315,10 @@ export async function registerGlobalShortcut(): Promise<void> {
       showMainWindow,
       hideMainWindow
     );
+
+    // アイテム検索モード直接起動のコールバックを設定
+    hotkeyService.setItemSearchCallback(showMainWindowWithItemSearch);
+
     const success = await hotkeyService.registerHotkey();
 
     if (!success) {
@@ -677,6 +681,29 @@ export async function showMainWindow(startTime?: number): Promise<void> {
 
   mainWindow.webContents.send('window-shown', startTime);
   windowLogger.info('メインウィンドウを表示しました');
+}
+
+/**
+ * メインウィンドウを表示し、ウィンドウ検索モードに切り替える（ウィンドウ検索ホットキー用）
+ * 設定されたモードに応じてウィンドウ位置を設定してから表示します
+ * @param startTime パフォーマンス計測用の開始時刻（Date.now()の値）
+ */
+export async function showMainWindowWithItemSearch(startTime?: number): Promise<void> {
+  if (!mainWindow) return;
+
+  setShowingWindowFlag();
+
+  await setWindowPosition();
+
+  // ワークスペース自動表示の処理
+  await autoShowWorkspaceIfEnabled();
+
+  mainWindow.show();
+  mainWindow.focus();
+
+  // ウィンドウ検索モード用のイベントを送信
+  mainWindow.webContents.send('window-shown-item-search', startTime);
+  windowLogger.info('メインウィンドウをウィンドウ検索モードで表示しました');
 }
 
 /**

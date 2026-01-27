@@ -85,4 +85,6 @@ export interface AppSettings {
   workspacePositionY: number;
   /** グループアイテムを並列起動する（デフォルト: false） */
   parallelGroupLaunch: boolean;
+  /** アイテム検索モード直接起動のホットキー（デフォルト: ''、空の場合は無効） */
+  itemSearchHotkey: string;
 }

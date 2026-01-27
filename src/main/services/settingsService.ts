@@ -62,6 +62,7 @@ export class SettingsService {
     workspacePositionX: 0, // ワークスペース固定位置のX座標
     workspacePositionY: 0, // ワークスペース固定位置のY座標
     parallelGroupLaunch: false, // グループアイテムを並列起動（デフォルト: false）
+    itemSearchHotkey: '', // アイテム検索モード直接起動のホットキー（デフォルト: 空=無効）
   };
 
   private constructor() {

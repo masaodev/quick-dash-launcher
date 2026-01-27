@@ -1,6 +1,13 @@
 .hotkey-input-container {
   position: relative;
   width: 100%;
+  display: flex;
+  gap: var(--spacing-xs);
+  align-items: center;
+}
+
+.hotkey-clear-button {
+  flex-shrink: 0;
 }
 
 .hotkey-input {

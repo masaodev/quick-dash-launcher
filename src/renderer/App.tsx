@@ -350,6 +350,47 @@ const App: React.FC = () => {
       searchInputRef.current?.focus();
     });
 
+    // ウィンドウ検索モードで表示された場合のリスナー
+    window.electronAPI.onWindowShownItemSearch(async (startTime) => {
+      // パフォーマンス計測
+      if (startTime !== undefined) {
+        const logTiming = (label: string) => {
+          const duration = Date.now() - startTime;
+          window.electronAPI.logPerformanceTiming(label, duration);
+        };
+
+        logTiming('renderer-received-window-search');
+
+        requestAnimationFrame(() => {
+          logTiming('before-animation-frame-window-search');
+
+          requestAnimationFrame(() => {
+            logTiming('window-show-complete-window-search');
+          });
+        });
+      }
+      // 検索モードをwindowに設定
+      setSearchMode('window');
+      // ウィンドウリストと仮想デスクトップ情報を取得
+      const [windows, info] = await Promise.all([
+        window.electronAPI.getAllWindowsAllDesktops(),
+        window.electronAPI.getVirtualDesktopInfo(),
+      ]);
+      setWindowList(windows);
+      setDesktopInfo(info);
+      // 現在のデスクトップをデフォルトタブとして設定
+      if (info.supported && info.currentDesktop > 0) {
+        setActiveDesktopTab(info.currentDesktop);
+      } else {
+        setActiveDesktopTab(0);
+      }
+      // 検索クエリをクリア
+      setSearchQuery('');
+      setSelectedIndex(0);
+      // 検索入力欄にフォーカス
+      searchInputRef.current?.focus();
+    });
+
     // ウィンドウが非表示になる際にリセット
     window.electronAPI.onWindowHidden(() => {
       setSearchQuery(''); // 検索テキストをクリア

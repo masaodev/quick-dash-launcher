@@ -245,5 +245,23 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
     }
   );
 
+  // アイテム検索ホットキーを変更
+  ipcMain.handle(
+    IPC_CHANNELS.SETTINGS_CHANGE_ITEM_SEARCH_HOTKEY,
+    async (_event, newHotkey: string) => {
+      try {
+        const hotkeyService = HotkeyService.getInstance();
+        const success = await hotkeyService.changeItemSearchHotkey(newHotkey);
+        logger.info(
+          `Item search hotkey change request: ${newHotkey} = ${success ? 'success' : 'failed'}`
+        );
+        return success;
+      } catch (error) {
+        logger.error({ error, newHotkey }, 'Failed to change item search hotkey');
+        throw error;
+      }
+    }
+  );
+
   logger.info('Settings IPC handlers registered');
 }

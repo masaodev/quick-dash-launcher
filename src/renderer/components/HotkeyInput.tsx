@@ -9,6 +9,10 @@ interface HotkeyInputProps {
   onValidationChange: (isValid: boolean, reason?: string) => void;
   disabled?: boolean;
   placeholder?: string;
+  /** 空文字列を許可するかどうか（デフォルト: false） */
+  allowEmpty?: boolean;
+  /** クリアボタンを表示するかどうか（デフォルト: false） */
+  showClearButton?: boolean;
 }
 
 export const HotkeyInput: React.FC<HotkeyInputProps> = ({
@@ -17,6 +21,8 @@ export const HotkeyInput: React.FC<HotkeyInputProps> = ({
   onValidationChange,
   disabled = false,
   placeholder = 'ホットキーを入力...',
+  allowEmpty = false,
+  showClearButton = false,
 }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [currentKeys, setCurrentKeys] = useState<Set<string>>(new Set());
@@ -90,8 +96,11 @@ export const HotkeyInput: React.FC<HotkeyInputProps> = ({
   useEffect(() => {
     if (value) {
       validateHotkey(value);
+    } else if (allowEmpty) {
+      // 空が許可されている場合は有効とみなす
+      onValidationChange(true);
     }
-  }, [value]);
+  }, [value, allowEmpty]);
 
   const validateHotkey = async (hotkey: string) => {
     try {
@@ -100,6 +109,12 @@ export const HotkeyInput: React.FC<HotkeyInputProps> = ({
     } catch {
       onValidationChange(false, 'ホットキーの検証に失敗しました');
     }
+  };
+
+  // ホットキーをクリア
+  const handleClear = () => {
+    onChange('');
+    onValidationChange(true);
   };
 
   // 入力フィールドクリック時の録画開始
@@ -142,6 +157,18 @@ export const HotkeyInput: React.FC<HotkeyInputProps> = ({
         disabled={disabled}
         placeholder={placeholder}
       />
+      {showClearButton && value && !isRecording && (
+        <Button
+          variant="cancel"
+          size="sm"
+          type="button"
+          onClick={handleClear}
+          disabled={disabled}
+          className="hotkey-clear-button"
+        >
+          クリア
+        </Button>
+      )}
       {isRecording && (
         <div className="hotkey-recording-indicator">
           録画中...

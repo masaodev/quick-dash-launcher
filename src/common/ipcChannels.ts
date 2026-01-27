@@ -85,6 +85,7 @@ export const IPC_CHANNELS = {
   SETTINGS_GET_CONFIG_PATH: 'settings:get-config-path',
   SETTINGS_CHANGE_HOTKEY: 'settings:change-hotkey',
   SETTINGS_CHECK_HOTKEY_AVAILABILITY: 'settings:check-hotkey-availability',
+  SETTINGS_CHANGE_ITEM_SEARCH_HOTKEY: 'settings:change-item-search-hotkey',
 
   // 設定ファイル操作
   OPEN_CONFIG_FOLDER: 'open-config-folder',
@@ -154,6 +155,7 @@ export const IPC_CHANNELS = {
 
   // イベント（メインプロセスからレンダラーへの通知）
   EVENT_WINDOW_SHOWN: 'window-shown',
+  EVENT_WINDOW_SHOWN_ITEM_SEARCH: 'window-shown-item-search',
   EVENT_WINDOW_HIDDEN: 'window-hidden',
   EVENT_DATA_CHANGED: 'data-changed',
   EVENT_SETTINGS_CHANGED: 'settings-changed',

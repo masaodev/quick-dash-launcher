@@ -37,6 +37,37 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
     toast,
   } = useDialogManager();
 
+  // アイテム検索ホットキーのバリデーション状態
+  const [itemSearchHotkeyValidation, setItemSearchHotkeyValidation] = useState<{
+    isValid: boolean;
+    reason?: string;
+  }>({ isValid: true });
+
+  // ウィンドウ検索ホットキーの変更ハンドラー
+  const handleItemSearchHotkeyChange = useCallback(
+    async (newHotkey: string) => {
+      try {
+        const success = await window.electronAPI.changeItemSearchHotkey(newHotkey);
+        if (success) {
+          setEditedSettings((prev) => ({
+            ...prev,
+            itemSearchHotkey: newHotkey,
+          }));
+          toast.success('ウィンドウ検索ホットキーを設定しました');
+        } else {
+          showAlert(
+            'ウィンドウ検索ホットキーの設定に失敗しました。メインホットキーと同じ値は設定できません。',
+            'error'
+          );
+        }
+      } catch (error) {
+        console.error('ウィンドウ検索ホットキーの変更に失敗しました:', error);
+        showAlert('ウィンドウ検索ホットキーの変更に失敗しました。', 'error');
+      }
+    },
+    [setEditedSettings, toast, showAlert]
+  );
+
   // カスタムフック: 基本設定管理
   const {
     hotkeyValidation,
@@ -173,6 +204,26 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                   {!hotkeyValidation.isValid && (
                     <div className="validation-error">{hotkeyValidation.reason}</div>
                   )}
+                </div>
+                <div className="setting-item">
+                  <label htmlFor="itemSearchHotkey">ウィンドウ検索モード直接起動:</label>
+                  <HotkeyInput
+                    value={editedSettings.itemSearchHotkey || ''}
+                    onChange={handleItemSearchHotkeyChange}
+                    onValidationChange={(isValid, reason) =>
+                      setItemSearchHotkeyValidation({ isValid, reason })
+                    }
+                    disabled={isLoading}
+                    placeholder="設定なし（オプション）"
+                    allowEmpty={true}
+                    showClearButton={true}
+                  />
+                  {!itemSearchHotkeyValidation.isValid && (
+                    <div className="validation-error">{itemSearchHotkeyValidation.reason}</div>
+                  )}
+                  <div className="setting-description">
+                    このホットキーを押すとウィンドウ検索モードで直接起動します。設定なしで無効化されます。
+                  </div>
                 </div>
               </div>
 

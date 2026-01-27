@@ -91,6 +91,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.removeListener(IPC_CHANNELS.EVENT_WINDOW_SHOWN, listener);
     };
   },
+  onWindowShownItemSearch: (callback: (startTime?: number) => void) => {
+    const listener = (_event: unknown, startTime?: number) => callback(startTime);
+    ipcRenderer.on(IPC_CHANNELS.EVENT_WINDOW_SHOWN_ITEM_SEARCH, listener);
+    return () => {
+      ipcRenderer.removeListener(IPC_CHANNELS.EVENT_WINDOW_SHOWN_ITEM_SEARCH, listener);
+    };
+  },
   onWindowHidden: (callback: () => void) => {
     const listener = () => callback();
     ipcRenderer.on(IPC_CHANNELS.EVENT_WINDOW_HIDDEN, listener);
@@ -188,6 +195,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_CHANGE_HOTKEY, newHotkey),
   checkHotkeyAvailability: (hotkey: string) =>
     ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_CHECK_HOTKEY_AVAILABILITY, hotkey),
+  changeItemSearchHotkey: (newHotkey: string) =>
+    ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_CHANGE_ITEM_SEARCH_HOTKEY, newHotkey),
   isFirstLaunch: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_IS_FIRST_LAUNCH),
   // 編集ウィンドウ関連API
   showEditWindow: () => ipcRenderer.invoke(IPC_CHANNELS.SHOW_EDIT_WINDOW),
