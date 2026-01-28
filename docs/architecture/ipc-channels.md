@@ -95,6 +95,11 @@ const channel = IPC_CHANNELS.SETTINGS_GET; // 'settings:get'
 - パラメータ: `hotkey: string`
 - 戻り値: `boolean` (利用可能かどうか)
 
+### `settings:change-item-search-hotkey`
+ウィンドウ検索モード直接起動のホットキーを変更
+- パラメータ: `newHotkey: string`（空文字列で無効化）
+- 戻り値: `boolean` (成功/失敗)
+
 ### `settings-changed` (イベント)
 設定変更を全ウィンドウに通知
 - **方向**: メインプロセス → レンダラープロセス（全ウィンドウ）
@@ -545,6 +550,14 @@ onSetActiveTab(callback: (tab: 'settings' | 'edit' | 'archive' | 'other') => voi
 ```typescript
 onWindowShown(callback: () => void)
 ```
+
+### `onWindowShownItemSearch`
+ウィンドウ検索モードで直接起動されたときのイベントリスナー
+```typescript
+onWindowShownItemSearch(callback: () => void)
+```
+- **発生タイミング**: `itemSearchHotkey`で設定されたホットキーでウィンドウが表示されたとき
+- **用途**: ウィンドウ検索モードを自動的に有効にする
 
 ### `onWindowHidden`
 ウィンドウ非表示イベントリスナー

@@ -47,7 +47,8 @@ QuickDashLauncherで使用されるドメイン用語の定義です。開発時
 | ワークスペース | `ExecutionHistoryFile` | 実行履歴ファイル | - | 実行履歴を保存するファイル（execution-history.json）。最大10件、古いものから自動削除。`ExecutionHistoryService`で管理。 |
 | ワークスペース | `WorkspaceArchiveFile` | アーカイブファイル | - | アーカイブされたグループ・アイテムを保存するファイル（workspace-archive.json）。復元時に参照。`WorkspaceService`で管理。 |
 | ウィンドウ | `WindowInfo` | ウィンドウ情報 | - | ウィンドウ検索機能で取得されるウィンドウの情報。hwnd、タイトル、位置、サイズ等を含む。`src/common/types/window.ts`で定義。 |
-| ウィンドウ | `WindowConfig` | ウィンドウ設定 | - | アイテム起動時のウィンドウ制御設定。`LauncherItem.windowConfig`で使用。タイトル検索と位置・サイズ制御を定義。 |
+| ウィンドウ | `WindowConfig` | ウィンドウ設定 | - | アイテム起動時のウィンドウ制御設定。`LauncherItem.windowConfig`で使用。タイトル検索（ワイルドカード対応）と位置・サイズ制御を定義。 |
+| ウィンドウ | - | ワイルドカード検索 | - | ウィンドウタイトル検索で使用できるパターンマッチング機能。`*`（任意の0文字以上）と`?`（任意の1文字）が使用可能。ワイルドカード文字が含まれない場合は完全一致検索。大文字小文字は区別しない。 |
 | ウィンドウ | `WindowState` | ウィンドウ状態 | - | ウィンドウの表示状態を表す列挙型。`WindowInfo.windowState`で使用。<br>値:<br>• `normal` - 通常<br>• `minimized` - 最小化<br>• `maximized` - 最大化 |
 | ウィンドウ | `WindowPinMode` | ウィンドウ固定モード | 固定モード | メインウィンドウの固定状態。タイトルバーのピンアイコンで切り替え。設定に保存されない（セッション中のみ）。<br>値:<br>• `normal` - 通常モード（フォーカスが外れたら非表示）<br>• `alwaysOnTop` - 常に最上面モード（常に最上面に表示、他ウィンドウより前面）<br>• `stayVisible` - 表示固定モード（フォーカスが外れても表示継続、他ウィンドウの背面に隠れる可能性あり） |
 | ウィンドウ | `WindowPositionMode` | ウィンドウ表示位置モード | 表示位置 | メインウィンドウの表示位置設定。設定画面の「表示位置」で変更。<br>値:<br>• `center` - 画面中央（プライマリモニターの中央、デフォルト）<br>• `cursor` - カーソル位置（マウスカーソル中心）<br>• `cursorMonitorCenter` - カーソルモニター中央（カーソルがあるモニターの中央）<br>• `fixed` - 固定位置（手動で移動した位置を記憶、`windowPositionX/Y`に座標保存） |
@@ -58,6 +59,7 @@ QuickDashLauncherで使用されるドメイン用語の定義です。開発時
 | 検索 | `SearchHistoryState` | 検索履歴状態 | - | 検索履歴のリストと現在のインデックス。キーボードナビゲーション用。 |
 | 設定 | `AppSettings` | アプリケーション設定 | 設定 | 全設定項目を管理するインターフェース。`electron-store`で永続化。`src/common/types/settings.ts`で定義。 |
 | 設定 | `hotkey` | ホットキー | ホットキー | グローバルホットキー。デフォルト`Alt+Space`。設定画面で変更可能。 |
+| 設定 | `itemSearchHotkey` | ウィンドウ検索ホットキー | ウィンドウ検索モード直接起動 | ウィンドウ検索モードで直接起動するオプションのホットキー。空文字列で無効。設定画面で変更可能。 |
 | 設定 | `autoLaunch` | 自動起動 | 自動起動 | Windows起動時に自動起動するか。設定画面のチェックボックスで切り替え。 |
 | 設定 | `backupEnabled` | バックアップ有効 | バックアップ | バックアップ機能の有効/無効。設定画面で変更。 |
 | D&D | `DragItemData` | ドラッグアイテムデータ | - | ドラッグ中のアイテム情報。`workspace-item`/`history-item`/`group`の3種類。`src/common/types/workspace.ts`で定義。 |

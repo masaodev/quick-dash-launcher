@@ -1071,20 +1071,33 @@ ID: abc123
 | フィールド名 | 型 | 説明 |
 |------------|------|------|
 | `name` | string | Quick Dash Launcherで表示される名前 |
-| `windowTitle` | string | 操作対象のウィンドウタイトル（部分一致または完全一致） |
+| `windowTitle` | string | 操作対象のウィンドウタイトル（ワイルドカード対応） |
+
+#### ワイルドカード検索
+
+タイトル検索では以下のワイルドカード文字が使用可能です：
+
+| 文字 | 説明 | 例 |
+|------|------|-----|
+| `*` | 任意の0文字以上の文字列 | `*Chrome*` は "Google Chrome - タブ名" にマッチ |
+| `?` | 任意の1文字 | `Chrome ?` は "Chrome 1" にマッチ |
+
+- ワイルドカード文字が含まれていない場合は完全一致検索
+- 大文字小文字は区別しない
 
 #### オプションフィールド
 
 | フィールド名 | 型 | 説明 | デフォルト |
 |------------|------|------|-----------|
-| `exactMatch` | boolean | ウィンドウタイトルの完全一致で検索するか | `false`（部分一致） |
 | `processName` | string | プロセス名で検索（部分一致、例: "chrome"） | 指定なし |
 | `x` | number | ウィンドウのX座標（左端） | 現在位置を維持 |
 | `y` | number | ウィンドウのY座標（上端） | 現在位置を維持 |
 | `width` | number | ウィンドウの幅（ピクセル） | 現在サイズを維持 |
 | `height` | number | ウィンドウの高さ（ピクセル） | 現在サイズを維持 |
+| `moveToActiveMonitorCenter` | boolean | アクティブモニター中央に移動するか | `false` |
 | `virtualDesktopNumber` | number | 仮想デスクトップ番号（1始まり） | 現在のデスクトップ |
 | `activateWindow` | boolean | ウィンドウをアクティブ化するか | `true` |
+| `pinToAllDesktops` | boolean | 全仮想デスクトップにピン止めするか | `false` |
 
 #### 記述例
 
@@ -1119,13 +1132,21 @@ window,"{""name"":""MS To DO"",""windowTitle"":""Microsoft To Do"",""x"":1273,""
 
 **動作**: ウィンドウを指定位置に移動するが、サイズは現在のまま維持
 
-**完全一致で検索**
+**完全一致で検索（ワイルドカードなし）**
 
 ```
-window,"{""name"":""Google Chrome"",""windowTitle"":""Google Chrome"",""exactMatch"":true}"
+window,"{""name"":""Google Chrome"",""windowTitle"":""Google Chrome""}"
 ```
 
-**動作**: ウィンドウタイトルが正確に「Google Chrome」であるウィンドウのみを検索（部分一致では「Google Chrome - タブ名」などもマッチするが、完全一致では除外される）
+**動作**: ウィンドウタイトルが正確に「Google Chrome」であるウィンドウのみを検索
+
+**部分一致で検索（ワイルドカード使用）**
+
+```
+window,"{""name"":""Chrome"",""windowTitle"":""*Chrome*""}"
+```
+
+**動作**: ウィンドウタイトルに「Chrome」を含むすべてのウィンドウを検索（例: 「Google Chrome - タブ名」もマッチ）
 
 **プロセス名で検索**
 

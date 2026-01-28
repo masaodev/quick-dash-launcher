@@ -43,9 +43,8 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
   "defaultFileTab": "data.json",
   "dataFileTabs": [
     {
-      "fileName": "data.json",
-      "tabName": "メイン",
-      "order": 0
+      "files": ["data.json"],
+      "name": "メイン"
     }
   ],
   "dataFileLabels": {
@@ -61,7 +60,8 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
   "workspacePositionMode": "primaryRight",
   "workspacePositionX": 0,
   "workspacePositionY": 0,
-  "parallelGroupLaunch": false
+  "parallelGroupLaunch": false,
+  "itemSearchHotkey": ""
 }
 ```
 
@@ -113,19 +113,17 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
 |-----------|-----|-------------|------|
 | **showDataFileTabs** | boolean | false | タブ表示の有効/無効 |
 | **defaultFileTab** | string | "data.json" | デフォルトで表示するタブ（タブ表示ON時のみ有効） |
-| **dataFileTabs** | DataFileTab[] | `[{fileName: "data.json", tabName: "メイン", order: 0}]` | データファイルタブの設定 |
+| **dataFileTabs** | DataFileTab[] | `[{files: ["data.json"], name: "メイン"}]` | データファイルタブの設定 |
 | **dataFileLabels** | Record<string, string> | `{"data.json": "メイン"}` | データファイルの名前定義（物理ファイル名 → 表示名） |
 
 #### 3.6.1. DataFileTab 構造
 
 ```typescript
 interface DataFileTab {
-  /** 物理ファイル名（例: "data.json", "data2.json"） */
-  fileName: string;
-  /** タブ表示名（例: "メイン", "仕事用"） */
-  tabName: string;
-  /** 表示順序（0から開始） */
-  order: number;
+  /** データファイル名のリスト（例: ['data.json'], ['data2.json', 'data3.json']） */
+  files: string[];
+  /** タブに表示する名前（例: "メイン", "サブ1"） */
+  name: string;
 }
 ```
 
@@ -170,6 +168,12 @@ interface DataFileTab {
 | フィールド | 型 | デフォルト値 | 説明 |
 |-----------|-----|-------------|------|
 | **parallelGroupLaunch** | boolean | false | グループアイテムを並列起動するか<br>true: 全アイテムを同時起動<br>false: 順次起動（500msディレイ） |
+
+### 3.10. 追加ホットキー設定
+
+| フィールド | 型 | デフォルト値 | 説明 |
+|-----------|-----|-------------|------|
+| **itemSearchHotkey** | string | "" | ウィンドウ検索モード直接起動のホットキー<br>空の場合は無効<br>例: "Ctrl+Alt+W" |
 
 ---
 
@@ -237,6 +241,8 @@ export interface AppSettings {
   workspacePositionY: number;
   /** グループアイテムを並列起動する（デフォルト: false） */
   parallelGroupLaunch: boolean;
+  /** ウィンドウ検索モード直接起動のホットキー（デフォルト: ''、空の場合は無効） */
+  itemSearchHotkey: string;
 }
 ```
 
@@ -272,12 +278,10 @@ export type WorkspacePositionMode =
  * データファイルタブの設定
  */
 export interface DataFileTab {
-  /** データファイル名（例: "data.json", "data2.json"） */
-  fileName: string;
-  /** タブ表示名（例: "メイン", "仕事用"） */
-  tabName: string;
-  /** 表示順序（0から開始） */
-  order: number;
+  /** データファイル名のリスト（例: ['data.json'], ['data2.json', 'data3.json']） */
+  files: string[];
+  /** タブに表示する名前（例: "メイン", "サブ1"） */
+  name: string;
 }
 ```
 

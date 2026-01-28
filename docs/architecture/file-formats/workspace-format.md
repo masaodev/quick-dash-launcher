@@ -42,14 +42,16 @@ QuickDashLauncherのワークスペース機能で使用されるデータファ
       "addedAt": 1234567890,
       "groupId": "グループID（オプション）",
       "windowConfig": {
-        "title": "ウィンドウタイトル",
-        "exactMatch": false,
+        "title": "ウィンドウタイトル（ワイルドカード対応）",
         "processName": "プロセス名（オプション）",
         "x": 100,
         "y": 100,
         "width": 800,
         "height": 600,
-        "activateWindow": true
+        "moveToActiveMonitorCenter": false,
+        "virtualDesktopNumber": 1,
+        "activateWindow": true,
+        "pinToAllDesktops": false
       }
     }
   ],

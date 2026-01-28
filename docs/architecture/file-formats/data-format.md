@@ -184,8 +184,7 @@ QuickDashLauncherは複数のJSON形式のデータファイルをサポート�
 
 | フィールド | 型 | 必須 | 既定値 | 説明 |
 |-----------|-----|------|--------|------|
-| **title** | string | ✓ | - | ウィンドウ検索用のタイトル文字列 |
-| **exactMatch** | boolean | - | false | true=完全一致、false=部分一致で検索 |
+| **title** | string | ✓ | - | ウィンドウ検索用のタイトル文字列（ワイルドカード対応） |
 | **processName** | string | - | - | プロセス名で検索対象を絞り込み |
 | **activateWindow** | boolean | - | true | ウィンドウを前面に表示してフォーカス |
 | **virtualDesktopNumber** | number | - | - | 対象の仮想デスクトップ番号（1から開始） |
@@ -194,11 +193,25 @@ QuickDashLauncherは複数のJSON形式のデータファイルをサポート�
 | **width** | number | - | - | 幅（ピクセル単位） |
 | **height** | number | - | - | 高さ（ピクセル単位） |
 | **moveToActiveMonitorCenter** | boolean | - | false | アクティブモニター中央に移動（x/y座標は無視） |
+| **pinToAllDesktops** | boolean | - | false | 全仮想デスクトップにピン止めするか |
 
-##### 3.1.5.2. 動作仕様
+##### 3.1.5.2. ワイルドカード検索
+
+タイトル検索では以下のワイルドカード文字が使用可能です：
+
+| 文字 | 説明 | 例 |
+|------|------|-----|
+| `*` | 任意の0文字以上の文字列 | `*Chrome*` は "Google Chrome - タブ名" にマッチ |
+| `?` | 任意の1文字 | `Chrome ?` は "Chrome 1" にマッチ |
+
+- ワイルドカード文字が含まれていない場合は完全一致検索
+- 大文字小文字は区別しない
+
+##### 3.1.5.3. 動作仕様
 
 1. **ウィンドウ検索**: アイテム起動前に、`title`で指定されたウィンドウを検索
-   - `exactMatch`がfalseの場合は部分一致、trueの場合は完全一致
+   - ワイルドカード文字（`*` または `?`）が含まれている場合はワイルドカードマッチング
+   - 含まれていない場合は完全一致検索
    - 大文字小文字を区別しない
    - `processName`が指定されている場合、プロセス名でも絞り込み
 2. **ウィンドウ発見時**:
@@ -207,7 +220,7 @@ QuickDashLauncherは複数のJSON形式のデータファイルをサポート�
    - 通常起動は実行しない
 3. **ウィンドウ未発見時**: 通常通りアイテムを起動
 
-##### 3.1.5.3. 使用例
+##### 3.1.5.4. 使用例
 
 ```json
 {
@@ -225,7 +238,7 @@ QuickDashLauncherは複数のJSON形式のデータファイルをサポート�
 }
 ```
 
-##### 3.1.5.4. マルチモニタ対応
+##### 3.1.5.5. マルチモニタ対応
 
 座標系は仮想スクリーン座標（Virtual Screen Coordinates）を使用します：
 
@@ -710,11 +723,17 @@ interface JsonWindowItem {
 #### 6.1.7. WindowConfig
 
 ```typescript
+/**
+ * ワイルドカード検索:
+ * - タイトルにワイルドカード文字（*または?）が含まれている場合、ワイルドカードマッチングを実行
+ *   - `*`: 任意の0文字以上の文字列
+ *   - `?`: 任意の1文字
+ * - ワイルドカード文字が含まれていない場合、完全一致検索を実行
+ * - 大文字小文字は区別しない
+ */
 interface WindowConfig {
-  /** ウィンドウタイトル（検索用、必須） */
+  /** ウィンドウタイトル（検索用、必須、ワイルドカード対応） */
   title: string;
-  /** 完全一致で検索するか（省略時はfalse = 部分一致） */
-  exactMatch?: boolean;
   /** プロセス名で検索（部分一致、省略時は検索なし） */
   processName?: string;
   /** X座標（仮想スクリーン座標系、省略時は位置変更なし） */
@@ -725,12 +744,14 @@ interface WindowConfig {
   width?: number;
   /** 高さ（省略時はサイズ変更なし） */
   height?: number;
+  /** アクティブモニター中央に移動するか（省略時はfalse） */
+  moveToActiveMonitorCenter?: boolean;
   /** 仮想デスクトップ番号（1から開始、省略時は移動なし） */
   virtualDesktopNumber?: number;
   /** ウィンドウをアクティブにするかどうか（省略時はtrue） */
   activateWindow?: boolean;
-  /** アクティブモニター中央に移動するか（省略時はfalse） */
-  moveToActiveMonitorCenter?: boolean;
+  /** 全仮想デスクトップにピン止めするか（省略時はfalse） */
+  pinToAllDesktops?: boolean;
 }
 ```
 
@@ -740,7 +761,7 @@ interface WindowConfig {
 
 ```typescript
 interface LauncherItem {
-  name: string;              // 表示名
+  displayName: string;       // 表示名
   path: string;              // パス・URL・コマンド
   type: 'url' | 'file' | 'folder' | 'app' | 'customUri';
   icon?: string;             // base64アイコンデータ
@@ -748,12 +769,13 @@ interface LauncherItem {
   args?: string;             // コマンドライン引数
   originalPath?: string;     // ショートカットの元パス
   sourceFile?: string;       // 元データファイル名
-  lineNumber?: number;       // データファイル内の行番号
+  lineNumber?: number;       // データファイル内の行番号（非推奨：IDベースアクセスを推奨）
+  id?: string;               // JSONアイテムのID（JSON形式の場合）
   isDirExpanded?: boolean;   // フォルダ取込アイテム展開フラグ
   expandedFrom?: string;     // フォルダ取込元ディレクトリパス
   expandedOptions?: string;  // フォルダ取込オプション（人間が読める形式）
+  expandedFromId?: string;   // フォルダ取込元のdirディレクティブID
   isEdited?: boolean;        // 編集フラグ
-  jsonItemId?: string;       // JSON形式のアイテムID（8文字）
   windowConfig?: WindowConfig; // ウィンドウ制御設定
 }
 ```
@@ -762,35 +784,44 @@ interface LauncherItem {
 
 ```typescript
 interface GroupItem {
-  name: string;              // グループの表示名
+  displayName: string;       // グループの表示名
   type: 'group';             // アイテムタイプ（常に'group'）
   itemNames: string[];       // グループ内で参照するアイテム名のリスト
   sourceFile?: string;       // 元データファイル名
-  lineNumber?: number;       // データファイル内の行番号
+  lineNumber?: number;       // データファイル内の行番号（非推奨：IDベースアクセスを推奨）
+  id?: string;               // JSONアイテムのID（JSON形式の場合）
   isEdited?: boolean;        // 編集フラグ
-  jsonItemId?: string;       // JSON形式のアイテムID（8文字）
 }
 ```
 
 #### 6.2.3. WindowOperationItem（内部型）
 
 ```typescript
+/**
+ * ワイルドカード検索:
+ * - windowTitleにワイルドカード文字（*または?）が含まれている場合、ワイルドカードマッチングを実行
+ * - ワイルドカード文字が含まれていない場合、完全一致検索を実行
+ * - 大文字小文字は区別しない
+ *
+ * @deprecated JSON形式に移行しています。新しいコードではJsonWindowItemを使用してください。
+ */
 interface WindowOperationItem {
   type: 'windowOperation';   // アイテムタイプ（常に'windowOperation'）
-  name: string;              // アイテムリストでの表示名（必須）
-  windowTitle: string;       // ウィンドウタイトル（検索用、必須）
-  exactMatch?: boolean;      // 完全一致で検索するか（省略時はfalse = 部分一致）
+  displayName: string;       // アイテムリストでの表示名（必須）
+  windowTitle: string;       // ウィンドウタイトル（検索用、必須、ワイルドカード対応）
   processName?: string;      // プロセス名で検索（部分一致、省略時は検索なし）
   x?: number;                // X座標（仮想スクリーン座標系、省略時は位置変更なし）
   y?: number;                // Y座標（仮想スクリーン座標系、省略時は位置変更なし）
   width?: number;            // 幅（省略時はサイズ変更なし）
   height?: number;           // 高さ（省略時はサイズ変更なし）
+  moveToActiveMonitorCenter?: boolean; // アクティブモニター中央に移動するか（省略時はfalse）
   virtualDesktopNumber?: number; // 仮想デスクトップ番号（1から開始、省略時は移動なし）
   activateWindow?: boolean;  // ウィンドウをアクティブにするかどうか（省略時はtrue）
+  pinToAllDesktops?: boolean; // 全仮想デスクトップにピン止めするか（省略時はfalse）
   sourceFile?: string;       // 元データファイル名
   lineNumber?: number;       // データファイル内の行番号
+  id?: string;               // JSONアイテムのID（JSON形式の場合）
   isEdited?: boolean;        // 編集フラグ
-  jsonItemId?: string;       // JSON形式のアイテムID（8文字）
 }
 ```
 
