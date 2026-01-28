@@ -6,13 +6,7 @@
  */
 
 // ランチャー関連の型
-export type {
-  WindowConfig,
-  LauncherItem,
-  GroupItem,
-  WindowOperationItem,
-  AppItem,
-} from './launcher';
+export type { WindowConfig, LauncherItem, GroupItem, WindowItem, AppItem } from './launcher';
 
 // ワークスペース関連の型
 export type {
@@ -86,14 +80,10 @@ export type {
   EditingItemMeta,
   EditingLauncherItem,
   EditingGroupItem,
-  EditingWindowOperationItem,
+  EditingWindowItem,
   EditingAppItem,
 } from './editingItem';
-export {
-  isEditingLauncherItem,
-  isEditingGroupItem,
-  isEditingWindowOperationItem,
-} from './editingItem';
+export { isEditingLauncherItem, isEditingGroupItem, isEditingWindowItem } from './editingItem';
 
 // 編集可能なJSONアイテムの型
 export type { EditableJsonItem, LoadEditableItemsResult, ValidationResult } from './editableItem';
@@ -104,7 +94,7 @@ export {
   isWindowInfo,
   isLauncherItem,
   isGroupItem,
-  isWindowOperationItem,
+  isWindowItem,
   isWorkspaceItem,
   isDragItemData,
 } from './guards';

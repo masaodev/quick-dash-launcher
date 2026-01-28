@@ -7,13 +7,13 @@ import type {
   WindowPinMode,
   SearchMode,
   WindowInfo,
-  WindowOperationItem,
+  WindowItem,
   IconFetchErrorRecord,
   EditingAppItem,
   EditableJsonItem,
 } from '@common/types';
 import { buildWindowOperationConfig } from '@common/utils/windowConfigUtils';
-import { isWindowInfo, isGroupItem, isWindowOperationItem } from '@common/types/guards';
+import { isWindowInfo, isGroupItem, isWindowItem } from '@common/types/guards';
 
 import LauncherSearchBox from './components/LauncherSearchBox';
 import LauncherItemList from './components/LauncherItemList';
@@ -203,7 +203,7 @@ const App: React.FC = () => {
         `${item.displayName} (${item.itemNames.length}件) を起動します`
       );
       await window.electronAPI.executeGroup(item, mainItems);
-    } else if (isWindowOperationItem(item)) {
+    } else if (isWindowItem(item)) {
       window.electronAPI.showToastWindow(`${item.displayName} を実行します`);
       await window.electronAPI.executeWindowOperation(item);
     } else {
@@ -242,7 +242,7 @@ const App: React.FC = () => {
         await executeAppItem(item);
 
         // LauncherItemの場合のみ実行履歴に追加
-        if (!isGroupItem(item) && !isWindowOperationItem(item)) {
+        if (!isGroupItem(item) && !isWindowItem(item)) {
           const launcherItem = item as LauncherItem;
           await window.electronAPI.workspaceAPI.addExecutionHistory(launcherItem);
           await loadExecutionHistory();
@@ -266,7 +266,7 @@ const App: React.FC = () => {
         const match = entry.itemPath.match(/^\[ウィンドウ操作: (.+)\]$/);
         const windowTitle = match ? match[1] : entry.itemPath;
         return {
-          type: 'windowOperation' as const,
+          type: 'window',
           displayName: entry.itemName,
           windowTitle: windowTitle,
           x: entry.windowX,
@@ -276,7 +276,7 @@ const App: React.FC = () => {
           virtualDesktopNumber: entry.virtualDesktopNumber,
           activateWindow: entry.activateWindow,
           sourceFile: 'history',
-        } as WindowOperationItem;
+        } as WindowItem;
       } else {
         return {
           displayName: entry.itemName,
@@ -380,13 +380,13 @@ const App: React.FC = () => {
 
     // Load cached icons (LauncherItemのみ)
     const launcherItems = items.filter(
-      (item) => !isWindowInfo(item) && !isGroupItem(item) && !isWindowOperationItem(item)
+      (item) => !isWindowInfo(item) && !isGroupItem(item) && !isWindowItem(item)
     ) as LauncherItem[];
     const iconCache = await window.electronAPI.loadCachedIcons(launcherItems);
 
     // Apply cached icons to items
     const itemsWithIcons = items.map((item) => {
-      if (isWindowInfo(item) || isGroupItem(item) || isWindowOperationItem(item)) {
+      if (isWindowInfo(item) || isGroupItem(item) || isWindowItem(item)) {
         return item;
       }
       return {
@@ -601,8 +601,8 @@ const App: React.FC = () => {
       return;
     }
 
-    // WindowOperationItemの場合
-    if (isWindowOperationItem(item)) {
+    // WindowItemの場合
+    if (isWindowItem(item)) {
       openEditModal({
         ...item,
         sourceFile: item.sourceFile || 'data.json',
@@ -664,8 +664,8 @@ const App: React.FC = () => {
   // アイコン未取得数を計算（LauncherItemのみ対象、フォルダ・エラー記録を除外）
   const missingIconCount = useMemo(() => {
     return mainItems.filter((item) => {
-      // LauncherItemのみ対象（WindowInfo, GroupItem, WindowOperationItemは除外）
-      if (isWindowInfo(item) || isGroupItem(item) || isWindowOperationItem(item)) {
+      // LauncherItemのみ対象（WindowInfo, GroupItem, WindowItemは除外）
+      if (isWindowInfo(item) || isGroupItem(item) || isWindowItem(item)) {
         return false;
       }
       const launcherItem = item as LauncherItem;

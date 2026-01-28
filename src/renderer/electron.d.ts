@@ -6,7 +6,7 @@ import {
   WindowPinMode,
   SearchHistoryEntry,
   GroupItem,
-  WindowOperationItem,
+  WindowItem,
   AppItem,
   AppInfo,
   BrowserInfo,
@@ -30,7 +30,7 @@ export interface ElectronAPI {
   openItem: (item: LauncherItem) => Promise<void>;
   openParentFolder: (item: LauncherItem) => Promise<void>;
   executeGroup: (group: GroupItem, allItems: AppItem[]) => Promise<void>;
-  executeWindowOperation: (item: WindowOperationItem) => Promise<void>;
+  executeWindowOperation: (item: WindowItem) => Promise<void>;
   openConfigFolder: () => Promise<void>;
   fetchFavicon: (url: string) => Promise<string | null>;
   extractIcon: (filePath: string) => Promise<string | null>;

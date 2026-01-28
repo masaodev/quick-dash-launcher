@@ -4,7 +4,7 @@
  * 型アサーションを安全に置き換えるための型ガード関数を提供します。
  */
 
-import type { AppItem, GroupItem, LauncherItem, WindowOperationItem } from './launcher';
+import type { AppItem, GroupItem, LauncherItem, WindowItem } from './launcher';
 import type { WindowInfo } from './window';
 import type { WorkspaceItem, DragItemData } from './workspace';
 
@@ -39,7 +39,7 @@ export function isWindowInfo(item: AppItem): item is WindowInfo {
  * }
  */
 export function isLauncherItem(item: AppItem): item is LauncherItem {
-  return !isWindowInfo(item) && item.type !== 'group' && item.type !== 'windowOperation';
+  return !isWindowInfo(item) && item.type !== 'group' && item.type !== 'window';
 }
 
 /**
@@ -60,20 +60,20 @@ export function isGroupItem(item: AppItem): item is GroupItem {
 }
 
 /**
- * WindowOperationItemかどうかを判定する型ガード
+ * WindowItemかどうかを判定する型ガード
  *
  * @param item - 判定対象のAppItem
- * @returns WindowOperationItemの場合true
+ * @returns WindowItemの場合true
  *
  * @example
  * const item: AppItem = getItem();
- * if (isWindowOperationItem(item)) {
- *   // ここではitemはWindowOperationItem型として扱われる
+ * if (isWindowItem(item)) {
+ *   // ここではitemはWindowItem型として扱われる
  *   console.log(item.windowTitle);
  * }
  */
-export function isWindowOperationItem(item: AppItem): item is WindowOperationItem {
-  return !isWindowInfo(item) && item.type === 'windowOperation';
+export function isWindowItem(item: AppItem): item is WindowItem {
+  return !isWindowInfo(item) && item.type === 'window';
 }
 
 /**

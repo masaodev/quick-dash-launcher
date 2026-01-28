@@ -11,7 +11,7 @@ import { validateEditableItem } from '@common/types/editableItem';
 import {
   LauncherItem,
   GroupItem,
-  WindowOperationItem,
+  WindowItem,
   AppItem,
   isJsonLauncherItem,
   isJsonDirItem,
@@ -20,7 +20,7 @@ import {
 } from '@common/types';
 import type { JsonItem, JsonDirOptions, JsonWindowItem } from '@common/types';
 import type { RegisterItem } from '@common/types/register';
-import { isWindowInfo, isWindowOperationItem } from '@common/types/guards';
+import { isWindowInfo, isWindowItem } from '@common/types/guards';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { BackupService } from '../services/backupService.js';
@@ -187,8 +187,8 @@ async function convertJsonItemToAppItems(
     items.push(groupItem);
   } else if (isJsonWindowItem(jsonItem)) {
     // ウィンドウ操作アイテム
-    const windowOperationItem: WindowOperationItem = {
-      type: 'windowOperation',
+    const windowItem: WindowItem = {
+      type: 'window',
       displayName: jsonItem.displayName,
       windowTitle: jsonItem.windowTitle,
       processName: jsonItem.processName,
@@ -205,7 +205,7 @@ async function convertJsonItemToAppItems(
       id: jsonItem.id, // JSONのIDを保持
       isEdited: false,
     };
-    items.push(windowOperationItem);
+    items.push(windowItem);
   }
 
   return items;
@@ -284,16 +284,8 @@ export async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
 
   // Sort items by displayName
   items.sort((a, b) => {
-    const aName = isWindowInfo(a)
-      ? a.title
-      : isWindowOperationItem(a)
-        ? a.displayName
-        : a.displayName;
-    const bName = isWindowInfo(b)
-      ? b.title
-      : isWindowOperationItem(b)
-        ? b.displayName
-        : b.displayName;
+    const aName = isWindowInfo(a) ? a.title : isWindowItem(a) ? a.displayName : a.displayName;
+    const bName = isWindowInfo(b) ? b.title : isWindowItem(b) ? b.displayName : b.displayName;
     return aName.localeCompare(bName, 'ja');
   });
 

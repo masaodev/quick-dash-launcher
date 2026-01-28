@@ -11,7 +11,7 @@ import type { EditableJsonItem } from '../types/editableItem.js';
 import {
   isEditingLauncherItem,
   isEditingGroupItem,
-  isEditingWindowOperationItem,
+  isEditingWindowItem,
 } from '../types/editingItem.js';
 import {
   isJsonLauncherItem,
@@ -118,8 +118,8 @@ export function convertEditingAppItemToRegisterItem(
     };
   }
 
-  // WindowOperationItemの場合
-  if (isEditingWindowOperationItem(item)) {
+  // WindowItemの場合
+  if (isEditingWindowItem(item)) {
     return {
       displayName: item.displayName,
       path: '',

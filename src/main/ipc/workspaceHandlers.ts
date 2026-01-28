@@ -1,7 +1,7 @@
 import { ipcMain, BrowserWindow } from 'electron';
 import logger from '@common/logger';
 import type { AppItem, WorkspaceItem, WorkspaceGroup, WindowConfig } from '@common/types';
-import { isWindowInfo, isLauncherItem, isWindowOperationItem } from '@common/types/guards';
+import { isWindowInfo, isLauncherItem, isWindowItem } from '@common/types/guards';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 
@@ -76,7 +76,7 @@ export function setupWorkspaceHandlers(): void {
         const addedItems: WorkspaceItem[] = [];
 
         // アイコンキャッシュフォルダのパスを取得
-        const iconsFolder = PathManager.getIconsFolder();
+        const iconsFolder = PathManager.getAppsFolder();
         const extensionsFolder = PathManager.getExtensionsFolder();
 
         for (const filePath of filePaths) {
@@ -235,12 +235,12 @@ export function setupWorkspaceHandlers(): void {
         let successCount = 0;
         let errorCount = 0;
 
-        // アイテム名からLauncherItemまたはWindowOperationItemを検索するマップを作成
+        // アイテム名からLauncherItemまたはWindowItemを検索するマップを作成
         const itemMap = new Map<string, AppItem>();
         for (const appItem of allItems) {
           if (isLauncherItem(appItem)) {
             itemMap.set(appItem.displayName, appItem);
-          } else if (isWindowOperationItem(appItem)) {
+          } else if (isWindowItem(appItem)) {
             itemMap.set(appItem.displayName, appItem);
           }
         }
@@ -259,7 +259,7 @@ export function setupWorkspaceHandlers(): void {
           }
 
           try {
-            if (isWindowOperationItem(targetItem)) {
+            if (isWindowItem(targetItem)) {
               // ウィンドウ操作アイテムの場合
               const windowConfig: WindowConfig = {
                 title: targetItem.windowTitle,

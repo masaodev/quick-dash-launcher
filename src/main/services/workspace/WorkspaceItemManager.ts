@@ -54,8 +54,8 @@ export class WorkspaceItemManager {
 
       let workspaceItem: WorkspaceItem;
 
-      if (item.type === 'windowOperation') {
-        workspaceItem = this.createWindowOperationItem(item, maxOrder + 1, groupId);
+      if (item.type === 'window') {
+        workspaceItem = this.createWindowItem(item, maxOrder + 1, groupId);
       } else if (isGroupItem(item)) {
         workspaceItem = this.createGroupItem(item, maxOrder + 1, groupId);
       } else {
@@ -78,11 +78,11 @@ export class WorkspaceItemManager {
   }
 
   /**
-   * WindowOperationItemからWorkspaceItemを作成
+   * WindowItemからWorkspaceItemを作成
    */
-  private createWindowOperationItem(item: AppItem, order: number, groupId?: string): WorkspaceItem {
-    const windowOpItem = item as {
-      type: 'windowOperation';
+  private createWindowItem(item: AppItem, order: number, groupId?: string): WorkspaceItem {
+    const windowItem = item as {
+      type: 'window';
       displayName: string;
       windowTitle: string;
       processName?: string;
@@ -98,22 +98,22 @@ export class WorkspaceItemManager {
 
     return {
       id: randomUUID(),
-      displayName: windowOpItem.displayName,
-      originalName: windowOpItem.displayName,
-      path: `[ウィンドウ操作: ${windowOpItem.windowTitle}]`,
+      displayName: windowItem.displayName,
+      originalName: windowItem.displayName,
+      path: `[ウィンドウ操作: ${windowItem.windowTitle}]`,
       type: 'windowOperation',
       order,
       addedAt: Date.now(),
       groupId,
-      processName: windowOpItem.processName,
-      windowX: windowOpItem.x,
-      windowY: windowOpItem.y,
-      windowWidth: windowOpItem.width,
-      windowHeight: windowOpItem.height,
-      virtualDesktopNumber: windowOpItem.virtualDesktopNumber,
-      activateWindow: windowOpItem.activateWindow,
-      moveToActiveMonitorCenter: windowOpItem.moveToActiveMonitorCenter,
-      pinToAllDesktops: windowOpItem.pinToAllDesktops,
+      processName: windowItem.processName,
+      windowX: windowItem.x,
+      windowY: windowItem.y,
+      windowWidth: windowItem.width,
+      windowHeight: windowItem.height,
+      virtualDesktopNumber: windowItem.virtualDesktopNumber,
+      activateWindow: windowItem.activateWindow,
+      moveToActiveMonitorCenter: windowItem.moveToActiveMonitorCenter,
+      pinToAllDesktops: windowItem.pinToAllDesktops,
     };
   }
 

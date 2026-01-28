@@ -3,7 +3,7 @@ import { randomUUID } from 'crypto';
 import ElectronStore from 'electron-store';
 import type { AppItem, ExecutionHistoryItem } from '@common/types';
 import logger from '@common/logger';
-import { isWindowInfo, isLauncherItem, isWindowOperationItem } from '@common/types/guards';
+import { isWindowInfo, isLauncherItem, isWindowItem } from '@common/types/guards';
 
 import PathManager from '../config/pathManager.js';
 
@@ -174,7 +174,7 @@ export class ExecutionHistoryService {
       const history = await this.loadExecutionHistory();
       let updatedHistory: ExecutionHistoryItem[];
 
-      if (isWindowOperationItem(item)) {
+      if (isWindowItem(item)) {
         // ウィンドウ操作アイテムの場合
         const historyItem = this.createWindowOperationHistoryItem(item);
         updatedHistory = this.updateHistoryList(history, item.displayName, historyItem);

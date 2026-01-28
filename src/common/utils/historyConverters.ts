@@ -1,14 +1,9 @@
 /**
  * 実行履歴アイテムの変換ユーティリティ
  *
- * ExecutionHistoryItemからLauncherItem/WindowOperationItemへの変換ロジックを共通化
+ * ExecutionHistoryItemからLauncherItem/WindowItemへの変換ロジックを共通化
  */
-import type {
-  ExecutionHistoryItem,
-  LauncherItem,
-  WindowOperationItem,
-  WindowConfig,
-} from '../types';
+import type { ExecutionHistoryItem, LauncherItem, WindowItem, WindowConfig } from '../types';
 
 /**
  * windowConfig関連のプロパティ名リスト
@@ -88,20 +83,18 @@ export function executionHistoryToLauncherItem(
 }
 
 /**
- * ExecutionHistoryItemをWindowOperationItem形式に変換
+ * ExecutionHistoryItemをWindowItem形式に変換
  *
  * @param historyItem - 実行履歴アイテム
- * @returns WindowOperationItem形式のオブジェクト
+ * @returns WindowItem形式のオブジェクト
  */
-export function executionHistoryToWindowOperation(
-  historyItem: ExecutionHistoryItem
-): WindowOperationItem {
+export function executionHistoryToWindowItem(historyItem: ExecutionHistoryItem): WindowItem {
   // [ウィンドウ操作: タイトル] から タイトル を抽出
   const match = historyItem.itemPath.match(/^\[ウィンドウ操作: (.+)\]$/);
   const windowTitle = match ? match[1] : historyItem.itemPath;
 
   return {
-    type: 'windowOperation',
+    type: 'window',
     displayName: historyItem.itemName,
     windowTitle: windowTitle,
     processName: historyItem.processName,
