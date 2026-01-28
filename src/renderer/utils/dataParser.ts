@@ -4,7 +4,7 @@ import {
   WindowInfo,
   LauncherItem,
   GroupItem,
-  WindowOperationItem,
+  WindowItem,
 } from '@common/types';
 
 /**
@@ -39,14 +39,14 @@ export function filterItems(
     .filter((k) => k.length > 0);
 
   return items.filter((item) => {
-    // WindowInfo, WindowOperationItem, LauncherItem, GroupItem に対応
+    // WindowInfo, WindowItem, LauncherItem, GroupItem に対応
     let itemText: string;
     if ('hwnd' in item) {
       // WindowInfo
       itemText = (item as WindowInfo).title.toLowerCase();
-    } else if (item.type === 'windowOperation') {
-      // WindowOperationItem
-      itemText = (item as WindowOperationItem).displayName.toLowerCase();
+    } else if (item.type === 'window') {
+      // WindowItem
+      itemText = (item as WindowItem).displayName.toLowerCase();
     } else {
       // LauncherItem or GroupItem
       itemText = (item as LauncherItem | GroupItem).displayName.toLowerCase();

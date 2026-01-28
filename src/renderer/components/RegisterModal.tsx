@@ -347,7 +347,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
 
         await window.electronAPI.executeWindowOperation({
           displayName: item.displayName,
-          type: 'windowOperation',
+          type: 'window',
           windowTitle: item.windowOperationConfig.windowTitle,
           processName: item.windowOperationConfig.processName,
           x: item.windowOperationConfig.x,

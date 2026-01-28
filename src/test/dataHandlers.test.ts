@@ -3,9 +3,9 @@
  * name → displayName リファクタリングの検証
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { parseDisplayTextFields } from '@common/utils/displayTextConverter';
-import type { LauncherItem, GroupItem, WindowOperationItem } from '@common/types';
+import type { LauncherItem, GroupItem, WindowItem } from '@common/types';
 
 describe('データハンドラー: name → displayName リファクタリング検証', () => {
   describe('CSV行のパース', () => {
@@ -47,8 +47,8 @@ describe('データハンドラー: name → displayName リファクタリン�
     });
 
     it('ウィンドウ操作アイテムがdisplayNameプロパティを持つこと', () => {
-      const windowOp: WindowOperationItem = {
-        type: 'windowOperation',
+      const windowItem: WindowItem = {
+        type: 'window',
         displayName: 'Chrome起動',
         windowTitle: 'Google Chrome',
         sourceFile: 'data.txt',
@@ -56,9 +56,9 @@ describe('データハンドラー: name → displayName リファクタリン�
         isEdited: false,
       };
 
-      expect(windowOp.displayName).toBe('Chrome起動');
-      expect(windowOp).toHaveProperty('displayName');
-      expect(windowOp).not.toHaveProperty('name');
+      expect(windowItem.displayName).toBe('Chrome起動');
+      expect(windowItem).toHaveProperty('displayName');
+      expect(windowItem).not.toHaveProperty('name');
     });
   });
 

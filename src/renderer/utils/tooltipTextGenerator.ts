@@ -1,11 +1,5 @@
-import type {
-  AppItem,
-  WindowInfo,
-  GroupItem,
-  WindowOperationItem,
-  LauncherItem,
-} from '@common/types';
-import { isWindowInfo, isGroupItem, isWindowOperationItem } from '@common/types/guards';
+import type { AppItem, WindowInfo, GroupItem, WindowItem, LauncherItem } from '@common/types';
+import { isWindowInfo, isGroupItem, isWindowItem } from '@common/types/guards';
 import { PathUtils } from '@common/utils/pathUtils';
 
 /**
@@ -84,34 +78,34 @@ function getGroupItemTooltip(groupItem: GroupItem): string {
 }
 
 /**
- * WindowOperationItem用のツールチップテキストを生成
+ * WindowItem用のツールチップテキストを生成
  */
-function getWindowOperationTooltip(windowOp: WindowOperationItem): string {
+function getWindowItemTooltip(windowItem: WindowItem): string {
   const lines: string[] = [];
-  lines.push(`ウィンドウタイトル: ${windowOp.windowTitle}`);
+  lines.push(`ウィンドウタイトル: ${windowItem.windowTitle}`);
 
   // 空行
   lines.push('');
 
   // 位置・サイズ情報
-  if (windowOp.x !== undefined && windowOp.y !== undefined) {
-    lines.push(`位置: (${windowOp.x}, ${windowOp.y})`);
+  if (windowItem.x !== undefined && windowItem.y !== undefined) {
+    lines.push(`位置: (${windowItem.x}, ${windowItem.y})`);
   }
-  if (windowOp.width !== undefined && windowOp.height !== undefined) {
-    lines.push(`サイズ: ${windowOp.width}x${windowOp.height}`);
+  if (windowItem.width !== undefined && windowItem.height !== undefined) {
+    lines.push(`サイズ: ${windowItem.width}x${windowItem.height}`);
   }
 
   // 仮想デスクトップ情報
-  if (windowOp.virtualDesktopNumber !== undefined) {
-    lines.push(`仮想デスクトップ: ${windowOp.virtualDesktopNumber}`);
+  if (windowItem.virtualDesktopNumber !== undefined) {
+    lines.push(`仮想デスクトップ: ${windowItem.virtualDesktopNumber}`);
   }
 
   // アクティブ化フラグ
-  if (windowOp.activateWindow === false) {
+  if (windowItem.activateWindow === false) {
     lines.push(`アクティブ化: しない`);
   }
 
-  appendMetaInfo(lines, windowOp.sourceFile, windowOp.lineNumber);
+  appendMetaInfo(lines, windowItem.sourceFile, windowItem.lineNumber);
 
   return lines.join('\n');
 }
@@ -151,8 +145,8 @@ export function getTooltipText(item: AppItem): string {
     return getGroupItemTooltip(item);
   }
 
-  if (isWindowOperationItem(item)) {
-    return getWindowOperationTooltip(item);
+  if (isWindowItem(item)) {
+    return getWindowItemTooltip(item);
   }
 
   return getLauncherItemTooltip(item as LauncherItem);

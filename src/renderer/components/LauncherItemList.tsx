@@ -1,11 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import {
-  isLauncherItem,
-  isWindowInfo,
-  isGroupItem,
-  isWindowOperationItem,
-} from '@common/types/guards';
-import { LauncherItem, GroupItem, AppItem, WindowInfo, WindowOperationItem } from '@common/types';
+import { isLauncherItem, isWindowInfo, isGroupItem, isWindowItem } from '@common/types/guards';
+import { LauncherItem, GroupItem, AppItem, WindowInfo, WindowItem } from '@common/types';
 
 import { getTooltipText } from '../utils/tooltipTextGenerator';
 import { logError } from '../utils/debug';
@@ -227,7 +222,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
         return '🔗';
       case 'group':
         return '📦';
-      case 'windowOperation':
+      case 'window':
         return '🪟';
       default:
         return '❓';
@@ -261,14 +256,14 @@ const LauncherItemList: React.FC<ItemListProps> = ({
       {items.map((item, index) => {
         const isWindow = isWindowInfo(item);
         const isGroup = isGroupItem(item);
-        const isWindowOperation = isWindowOperationItem(item);
+        const isWindowOperation = isWindowItem(item);
         const windowInfo = isWindow ? (item as WindowInfo) : null;
         const itemName = isWindow
           ? windowInfo?.processName
             ? `${windowInfo.title} (${windowInfo.processName})`
             : windowInfo!.title
           : isWindowOperation
-            ? (item as WindowOperationItem).displayName
+            ? (item as WindowItem).displayName
             : (item as LauncherItem | GroupItem).displayName;
 
         return (

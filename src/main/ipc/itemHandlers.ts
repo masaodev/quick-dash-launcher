@@ -3,13 +3,13 @@ import { itemLogger } from '@common/logger';
 import {
   LauncherItem,
   GroupItem,
-  WindowOperationItem,
+  WindowItem,
   AppItem,
   WindowPinMode,
   WindowConfig,
 } from '@common/types';
 import { GROUP_LAUNCH_DELAY_MS } from '@common/constants';
-import { isLauncherItem, isWindowOperationItem } from '@common/types/guards';
+import { isLauncherItem, isWindowItem } from '@common/types/guards';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { WorkspaceService } from '../services/workspace/index.js';
@@ -113,13 +113,13 @@ async function openParentFolder(
  *
  * @param groupName - グループ名（ログ出力用）
  * @param itemName - 実行するアイテム名
- * @param item - 実行するアイテム（LauncherItemまたはWindowOperationItem）
+ * @param item - 実行するアイテム（LauncherItemまたはWindowItem）
  * @returns 実行結果（成功/失敗とアイテム名）
  */
 async function executeGroupItem(
   groupName: string,
   itemName: string,
-  item: LauncherItem | WindowOperationItem | undefined
+  item: LauncherItem | WindowItem | undefined
 ): Promise<{ success: boolean; itemName: string }> {
   if (!item) {
     itemLogger.warn({ groupName, itemName }, 'グループ内のアイテムが見つかりません');
@@ -128,7 +128,7 @@ async function executeGroupItem(
 
   try {
     // アイテムの種類に応じて実行
-    if (isWindowOperationItem(item)) {
+    if (isWindowItem(item)) {
       // ウィンドウ操作アイテムの場合
       const windowConfig: WindowConfig = {
         title: item.windowTitle,
@@ -195,12 +195,12 @@ async function executeGroup(
   const settingsService = await SettingsService.getInstance();
   const parallelLaunch = await settingsService.get('parallelGroupLaunch');
 
-  // アイテム名からLauncherItemまたはWindowOperationItemを検索するマップを作成
-  const itemMap = new Map<string, LauncherItem | WindowOperationItem>();
+  // アイテム名からLauncherItemまたはWindowItemを検索するマップを作成
+  const itemMap = new Map<string, LauncherItem | WindowItem>();
   for (const item of allItems) {
     if (isLauncherItem(item)) {
       itemMap.set(item.displayName, item);
-    } else if (isWindowOperationItem(item)) {
+    } else if (isWindowItem(item)) {
       itemMap.set(item.displayName, item);
     }
   }
@@ -312,56 +312,53 @@ export function setupItemHandlers(
     }
   );
 
-  ipcMain.handle(
-    IPC_CHANNELS.EXECUTE_WINDOW_OPERATION,
-    async (_event, item: WindowOperationItem) => {
-      itemLogger.info(
-        {
-          windowTitle: item.windowTitle,
-          processName: item.processName,
-          x: item.x,
-          y: item.y,
-          width: item.width,
-          height: item.height,
-          virtualDesktopNumber: item.virtualDesktopNumber,
-          activateWindow: item.activateWindow,
-        },
-        'ウィンドウ操作アイテムを実行中'
-      );
-
-      const windowConfig: WindowConfig = {
-        title: item.windowTitle,
+  ipcMain.handle(IPC_CHANNELS.EXECUTE_WINDOW_OPERATION, async (_event, item: WindowItem) => {
+    itemLogger.info(
+      {
+        windowTitle: item.windowTitle,
         processName: item.processName,
         x: item.x,
         y: item.y,
         width: item.width,
         height: item.height,
-        moveToActiveMonitorCenter: item.moveToActiveMonitorCenter,
         virtualDesktopNumber: item.virtualDesktopNumber,
         activateWindow: item.activateWindow,
-        pinToAllDesktops: item.pinToAllDesktops,
-      };
+      },
+      'ウィンドウ操作アイテムを実行中'
+    );
 
-      const result = await tryActivateWindow(windowConfig, item.windowTitle, itemLogger);
+    const windowConfig: WindowConfig = {
+      title: item.windowTitle,
+      processName: item.processName,
+      x: item.x,
+      y: item.y,
+      width: item.width,
+      height: item.height,
+      moveToActiveMonitorCenter: item.moveToActiveMonitorCenter,
+      virtualDesktopNumber: item.virtualDesktopNumber,
+      activateWindow: item.activateWindow,
+      pinToAllDesktops: item.pinToAllDesktops,
+    };
 
-      if (!result.windowFound) {
-        itemLogger.warn({ windowTitle: item.windowTitle }, 'ウィンドウが見つかりませんでした');
-      }
+    const result = await tryActivateWindow(windowConfig, item.windowTitle, itemLogger);
 
-      // 実行履歴に記録
-      try {
-        const workspaceService = await WorkspaceService.getInstance();
-        await workspaceService.addExecutionHistory(item);
-        notifyWorkspaceChanged();
-      } catch (error) {
-        itemLogger.error(
-          {
-            error: error instanceof Error ? error.message : String(error),
-            itemName: item.displayName,
-          },
-          '実行履歴の記録に失敗しました'
-        );
-      }
+    if (!result.windowFound) {
+      itemLogger.warn({ windowTitle: item.windowTitle }, 'ウィンドウが見つかりませんでした');
     }
-  );
+
+    // 実行履歴に記録
+    try {
+      const workspaceService = await WorkspaceService.getInstance();
+      await workspaceService.addExecutionHistory(item);
+      notifyWorkspaceChanged();
+    } catch (error) {
+      itemLogger.error(
+        {
+          error: error instanceof Error ? error.message : String(error),
+          itemName: item.displayName,
+        },
+        '実行履歴の記録に失敗しました'
+      );
+    }
+  });
 }

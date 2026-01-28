@@ -104,13 +104,10 @@ export interface GroupItem {
  *   - `?`: 任意の1文字
  * - ワイルドカード文字が含まれていない場合、完全一致検索を実行
  * - 大文字小文字は区別しない
- *
- * @deprecated JSON形式に移行しています。新しいコードではJsonWindowItemを使用してください。
- * @see JsonWindowItem - JSON形式のウィンドウ操作アイテム
  */
-export interface WindowOperationItem {
-  /** アイテムタイプ（常に'windowOperation'） */
-  type: 'windowOperation';
+export interface WindowItem {
+  /** アイテムタイプ（常に'window'） */
+  type: 'window';
   /** アイテムリストでの表示名 */
   displayName: string;
   /** ウィンドウタイトル（検索用、必須） */
@@ -145,6 +142,6 @@ export interface WindowOperationItem {
 
 /**
  * アプリケーションで扱うすべてのアイテムの統合型
- * 通常のLauncherItem、GroupItem、WindowOperationItem、WindowInfo（ウィンドウ検索結果）を扱える
+ * 通常のLauncherItem、GroupItem、WindowItem、WindowInfo（ウィンドウ検索結果）を扱える
  */
-export type AppItem = LauncherItem | GroupItem | WindowOperationItem | WindowInfo;
+export type AppItem = LauncherItem | GroupItem | WindowItem | WindowInfo;

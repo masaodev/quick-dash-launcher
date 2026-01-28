@@ -7,7 +7,7 @@ import type {
 } from '@common/types';
 import {
   executionHistoryToLauncherItem,
-  executionHistoryToWindowOperation,
+  executionHistoryToWindowItem,
   isExternalUrlType,
   isFileSystemType,
 } from '@common/utils/historyConverters';
@@ -385,7 +385,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
 
         // WindowOperationItemの場合は専用の変換を使用
         if (historyItem.itemType === 'windowOperation') {
-          const windowOpItem = executionHistoryToWindowOperation(historyItem);
+          const windowOpItem = executionHistoryToWindowItem(historyItem);
           await window.electronAPI.workspaceAPI.addItem(windowOpItem, groupId);
         } else {
           // その他のアイテムはLauncherItem形式に変換
@@ -606,7 +606,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
                       window.electronAPI.openItem(launcherItem as LauncherItem);
                     } else if (item.itemType === 'windowOperation') {
                       // WindowOperationItem形式に変換して実行
-                      const windowOp = executionHistoryToWindowOperation(item);
+                      const windowOp = executionHistoryToWindowItem(item);
                       window.electronAPI.executeWindowOperation(windowOp);
                     } else if (item.itemType === 'group') {
                       // グループは再実行しない（履歴としてのみ表示）

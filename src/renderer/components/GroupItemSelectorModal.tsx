@@ -1,11 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { LauncherItem, AppItem } from '@common/types';
-import {
-  isWindowInfo,
-  isGroupItem,
-  isLauncherItem,
-  isWindowOperationItem,
-} from '@common/types/guards';
+import { isWindowInfo, isGroupItem, isLauncherItem, isWindowItem } from '@common/types/guards';
 
 import { debugInfo, logError } from '../utils/debug';
 
@@ -158,8 +153,8 @@ const GroupItemSelectorModal: React.FC<GroupItemSelectorModalProps> = ({
           return false;
         }
 
-        // LauncherItemまたはWindowOperationItemのみ許可
-        if (!isLauncherItem(item) && !isWindowOperationItem(item)) {
+        // LauncherItemまたはWindowItemのみ許可
+        if (!isLauncherItem(item) && !isWindowItem(item)) {
           return false;
         }
 
@@ -214,7 +209,7 @@ const GroupItemSelectorModal: React.FC<GroupItemSelectorModalProps> = ({
           return '📄';
         case 'customUri':
           return '🔗';
-        case 'windowOperation':
+        case 'window':
           return '🪟';
         case 'group':
           return '📦';
