@@ -94,14 +94,14 @@ describe('tooltipTextGenerator', () => {
         displayName: 'TestGroup',
         type: 'group',
         itemNames: ['item1', 'item2', 'item3'],
-        sourceFile: 'data.txt',
+        sourceFile: 'data.json',
         lineNumber: 10,
       };
 
       const result = getTooltipText(item);
 
       expect(result).toContain('グループ: item1, item2, item3');
-      expect(result).toContain('データファイル: data.txt');
+      expect(result).toContain('データファイル: data.json');
       expect(result).toContain('行番号: 10');
     });
 
@@ -132,7 +132,7 @@ describe('tooltipTextGenerator', () => {
         height: 1080,
         virtualDesktopNumber: 2,
         activateWindow: false,
-        sourceFile: 'data.txt',
+        sourceFile: 'data.json',
         lineNumber: 15,
       };
 
@@ -143,7 +143,7 @@ describe('tooltipTextGenerator', () => {
       expect(result).toContain('サイズ: 1920x1080');
       expect(result).toContain('仮想デスクトップ: 2');
       expect(result).toContain('アクティブ化: しない');
-      expect(result).toContain('データファイル: data.txt');
+      expect(result).toContain('データファイル: data.json');
       expect(result).toContain('行番号: 15');
     });
 
@@ -183,7 +183,7 @@ describe('tooltipTextGenerator', () => {
         displayName: 'TestApp',
         type: 'app',
         path: 'C:\\test\\app.exe',
-        sourceFile: 'data.txt',
+        sourceFile: 'data.json',
         lineNumber: 20,
         expandedFrom: 'C:\\folder',
         expandedOptions: 'recursive',
@@ -192,7 +192,7 @@ describe('tooltipTextGenerator', () => {
       const result = getTooltipText(item);
 
       expect(result).toContain('C:\\test\\app.exe');
-      expect(result).toContain('データファイル: data.txt');
+      expect(result).toContain('データファイル: data.json');
       expect(result).toContain('行番号: 20');
       expect(result).toContain('取込元: C:\\folder');
       expect(result).toContain('設定: recursive');

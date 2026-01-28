@@ -127,7 +127,7 @@ function processItem(
  *
  * @example
  * ```typescript
- * const item = processShortcut('C:\\Users\\Desktop\\MyApp.lnk', 'data.txt', 10, 'マイアプリ', 'デスクトップ');
+ * const item = processShortcut('C:\\Users\\Desktop\\MyApp.lnk', 'data.json', 10, 'マイアプリ', 'デスクトップ');
  * // { name: 'デスクトップ: マイアプリ', path: 'C:\\Program Files\\MyApp\\app.exe', type: 'app', ... }
  * ```
  */
@@ -215,7 +215,7 @@ export function processShortcut(
  *   types: 'file',
  *   filter: '*.pdf',
  *   prefix: 'Doc: '
- * }, 'data.txt', '/home/user/documents', '深さ:2, タイプ:ファイルのみ', 15, 'abc12345');
+ * }, 'data.json', '/home/user/documents', '深さ:2, タイプ:ファイルのみ', 15, 'abc12345');
  */
 export async function scanDirectory(
   dirPath: string,

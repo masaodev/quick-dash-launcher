@@ -122,7 +122,7 @@ export function useIconFetcher(options: UseIconFetcherOptions): UseIconFetcherRe
 
   function getCurrentTabItems(): AppItem[] {
     if (!showDataFileTabs) {
-      return mainItems.filter((item) => !isWindowInfo(item) && item.sourceFile === 'data.txt');
+      return mainItems.filter((item) => !isWindowInfo(item) && item.sourceFile === 'data.json');
     }
 
     const activeTabConfig = dataFileTabs.find((tab) => tab.files.includes(activeTab));

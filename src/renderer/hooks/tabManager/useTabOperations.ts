@@ -101,9 +101,9 @@ export function useTabOperations({
 
       const tab = tabs[tabIndex];
 
-      // data.txtを含むタブは削除不可
-      if (tab.files.includes('data.txt')) {
-        showAlert('data.txtを含むタブは削除できません。', 'warning');
+      // data.jsonを含むタブは削除不可
+      if (tab.files.includes('data.json')) {
+        showAlert('data.jsonを含むタブは削除できません。', 'warning');
         return;
       }
 

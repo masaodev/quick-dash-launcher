@@ -21,7 +21,7 @@ interface FileTabBarProps {
 
 /**
  * メインウィンドウのデータファイルタブバーコンポーネント
- * 複数のdata*.txtファイルをタブで切り替え可能にする
+ * 複数のdata*.jsonファイルをタブで切り替え可能にする
  * 1つのタブに複数のデータファイルを紐付けることが可能
  */
 const LauncherFileTabBar: React.FC<FileTabBarProps> = ({

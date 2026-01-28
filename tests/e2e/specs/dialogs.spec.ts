@@ -2,7 +2,7 @@ import { test, expect } from '../fixtures/electron-app';
 import { TestUtils } from '../helpers/test-utils';
 
 test.describe('AlertDialog', () => {
-  test('data.txt削除試行時に警告ダイアログが表示される', async ({ mainWindow }, _testInfo) => {
+  test('data.json削除試行時に警告ダイアログが表示される', async ({ mainWindow }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('アプリケーションが正常に起動している', async () => {
@@ -29,7 +29,7 @@ test.describe('AlertDialog', () => {
       }
     });
 
-    await test.step('data.txtの削除を試みて警告ダイアログを表示', async () => {
+    await test.step('data.jsonの削除を試みて警告ダイアログを表示', async () => {
       const manageFileButtons = mainWindow.locator('button[title="ファイルを管理"]');
       if ((await manageFileButtons.count()) > 0) {
         await manageFileButtons.first().click();
@@ -44,7 +44,7 @@ test.describe('AlertDialog', () => {
 
           // メッセージ内容を確認
           const message = alertDialog.locator('.alert-body p');
-          await expect(message).toContainText('data.txtは削除できません');
+          await expect(message).toContainText('data.jsonは削除できません');
 
           // OKボタンで閉じる
           const okButton = mainWindow.locator('[data-testid="alert-dialog-ok-button"]');

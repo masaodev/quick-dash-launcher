@@ -5,6 +5,7 @@ import type { RegisterItem } from '@common/types';
 import { jsonItemToDisplayText } from '@common/utils/displayTextConverter';
 import { validateEditableItem } from '@common/types/editableItem';
 import { convertRegisterItemToJsonItem } from '@common/utils/dataConverters';
+import { generateId } from '@common/utils/jsonParser';
 
 import { logError } from '../utils/debug';
 
@@ -402,7 +403,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     // 選択されたブックマークを新規アイテムとして追加
     const newItems: EditableJsonItem[] = bookmarks.map((bookmark) => {
       const jsonItem = {
-        id: `bookmark-${Date.now()}-${Math.random()}`,
+        id: generateId(),
         type: 'item' as const,
         displayName: bookmark.displayName,
         path: bookmark.url,

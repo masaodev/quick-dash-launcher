@@ -5,6 +5,21 @@ import { isWindowInfo } from '@common/types/guards';
 import { debugLog, logError } from '../utils/debug';
 
 /**
+ * タブ設定から全ファイルのユニークリストを生成
+ * data.jsonが含まれていない場合は先頭に追加
+ */
+function extractUniqueFiles(tabs: DataFileTab[]): string[] {
+  const allFiles = tabs.flatMap((tab) => tab.files || []);
+  const files = Array.from(new Set(allFiles)).filter((file) => file && typeof file === 'string');
+
+  if (!files.includes('data.json')) {
+    files.unshift('data.json');
+  }
+
+  return files;
+}
+
+/**
  * データファイルタブ管理フック
  *
  * タブ設定のロード、タブフィルタリング、ファイル存在確認を管理します。
@@ -48,19 +63,8 @@ export function useDataFileTabs() {
         setActiveTab(settings.defaultFileTab);
       }
 
-      // 設定からデータファイルリストを生成（設定ファイルベース）
-      const tabs = settings.dataFileTabs || [];
-      // 全タブの全ファイルを統合してユニークなリストを作成
-      const allFiles = tabs.flatMap((tab) => tab.files || []);
-      const files = Array.from(new Set(allFiles)).filter(
-        (file) => file && typeof file === 'string'
-      );
-
-      // data.txtが含まれていない場合は追加
-      if (!files.includes('data.txt')) {
-        files.unshift('data.txt');
-      }
-
+      // 設定からデータファイルリストを生成
+      const files = extractUniqueFiles(settings.dataFileTabs || []);
       setDataFiles(files);
 
       // 物理ファイルが存在しない場合は自動作成
@@ -70,12 +74,12 @@ export function useDataFileTabs() {
       if (!settings.showDataFileTabs) {
         setActiveTab(settings.defaultFileTab || 'data.json');
       } else {
-        // アクティブタブが存在するか確認、存在しない場合はdata.txtにフォールバック
-        const defaultTab = settings.defaultFileTab || 'data.txt';
+        // アクティブタブが存在するか確認、存在しない場合はdata.jsonにフォールバック
+        const defaultTab = settings.defaultFileTab || 'data.json';
         if (files.includes(defaultTab)) {
           setActiveTab(defaultTab);
-        } else if (files.includes('data.txt')) {
-          setActiveTab('data.txt');
+        } else if (files.includes('data.json')) {
+          setActiveTab('data.json');
         } else if (files.length > 0) {
           setActiveTab(files[0]);
         }
@@ -105,19 +109,8 @@ export function useDataFileTabs() {
       setShowDataFileTabs(settings.showDataFileTabs);
       setDataFileTabs(settings.dataFileTabs || []);
 
-      // 設定からデータファイルリストを再生成（設定ファイルベース）
-      const tabs = settings.dataFileTabs || [];
-      // 全タブの全ファイルを統合してユニークなリストを作成
-      const allFiles = tabs.flatMap((tab) => tab.files || []);
-      const files = Array.from(new Set(allFiles)).filter(
-        (file) => file && typeof file === 'string'
-      );
-
-      // data.txtが含まれていない場合は追加
-      if (!files.includes('data.txt')) {
-        files.unshift('data.txt');
-      }
-
+      // 設定からデータファイルリストを再生成
+      const files = extractUniqueFiles(settings.dataFileTabs || []);
       setDataFiles(files);
 
       // 物理ファイルが存在しない場合は自動作成
@@ -126,8 +119,8 @@ export function useDataFileTabs() {
       // アクティブタブが削除されていた場合のフォールバック
       setActiveTab((prevTab) => {
         if (!files.includes(prevTab)) {
-          if (files.includes('data.txt')) {
-            return 'data.txt';
+          if (files.includes('data.json')) {
+            return 'data.json';
           } else if (files.length > 0) {
             return files[0];
           }
@@ -191,24 +184,15 @@ export function useDataFileTabs() {
       }
 
       // タブ表示がONの場合はdefaultFileTabに戻す
-      const defaultTab = settings.defaultFileTab || 'data.txt';
+      const defaultTab = settings.defaultFileTab || 'data.json';
 
       // 設定から最新のファイルリストを再生成（クロージャで古い値を参照しないため）
-      const tabs = settings.dataFileTabs || [];
-      const allFiles = tabs.flatMap((tab) => tab.files || []);
-      const files = Array.from(new Set(allFiles)).filter(
-        (file) => file && typeof file === 'string'
-      );
-
-      // data.txtが含まれていない場合は追加
-      if (!files.includes('data.txt')) {
-        files.unshift('data.txt');
-      }
+      const files = extractUniqueFiles(settings.dataFileTabs || []);
 
       if (files.includes(defaultTab)) {
         setActiveTab(defaultTab);
-      } else if (files.includes('data.txt')) {
-        setActiveTab('data.txt');
+      } else if (files.includes('data.json')) {
+        setActiveTab('data.json');
       } else if (files.length > 0) {
         setActiveTab(files[0]);
       }

@@ -8,11 +8,11 @@ describe('TabStateCalculator', () => {
   describe('hasUnsavedChanges', () => {
     it('保存済み状態と現在の状態が同じ場合はfalseを返す', () => {
       const savedState: SavedTabState = {
-        dataFileTabs: [{ name: 'メイン', files: ['data.txt'] }],
-        dataFileLabels: { 'data.txt': 'メイン用データファイル' },
+        dataFileTabs: [{ name: 'メイン', files: ['data.json'] }],
+        dataFileLabels: { 'data.json': 'メイン用データファイル' },
       };
-      const currentTabs: DataFileTab[] = [{ name: 'メイン', files: ['data.txt'] }];
-      const currentLabels = { 'data.txt': 'メイン用データファイル' };
+      const currentTabs: DataFileTab[] = [{ name: 'メイン', files: ['data.json'] }];
+      const currentLabels = { 'data.json': 'メイン用データファイル' };
       const pendingOps: PendingFileOperations = { filesToCreate: [], filesToDelete: [] };
 
       expect(
@@ -22,10 +22,10 @@ describe('TabStateCalculator', () => {
 
     it('タブ名が変更されている場合はtrueを返す', () => {
       const savedState: SavedTabState = {
-        dataFileTabs: [{ name: 'メイン', files: ['data.txt'] }],
+        dataFileTabs: [{ name: 'メイン', files: ['data.json'] }],
         dataFileLabels: {},
       };
-      const currentTabs: DataFileTab[] = [{ name: 'メイン変更後', files: ['data.txt'] }];
+      const currentTabs: DataFileTab[] = [{ name: 'メイン変更後', files: ['data.json'] }];
       const currentLabels = {};
       const pendingOps: PendingFileOperations = { filesToCreate: [], filesToDelete: [] };
 
@@ -36,10 +36,10 @@ describe('TabStateCalculator', () => {
 
     it('タブにファイルが追加されている場合はtrueを返す', () => {
       const savedState: SavedTabState = {
-        dataFileTabs: [{ name: 'メイン', files: ['data.txt'] }],
+        dataFileTabs: [{ name: 'メイン', files: ['data.json'] }],
         dataFileLabels: {},
       };
-      const currentTabs: DataFileTab[] = [{ name: 'メイン', files: ['data.txt', 'data2.txt'] }];
+      const currentTabs: DataFileTab[] = [{ name: 'メイン', files: ['data.json', 'data2.json'] }];
       const currentLabels = {};
       const pendingOps: PendingFileOperations = { filesToCreate: [], filesToDelete: [] };
 
@@ -50,11 +50,11 @@ describe('TabStateCalculator', () => {
 
     it('ラベルが変更されている場合はtrueを返す', () => {
       const savedState: SavedTabState = {
-        dataFileTabs: [{ name: 'メイン', files: ['data.txt'] }],
-        dataFileLabels: { 'data.txt': 'メイン用データファイル' },
+        dataFileTabs: [{ name: 'メイン', files: ['data.json'] }],
+        dataFileLabels: { 'data.json': 'メイン用データファイル' },
       };
-      const currentTabs: DataFileTab[] = [{ name: 'メイン', files: ['data.txt'] }];
-      const currentLabels = { 'data.txt': 'カスタムラベル' };
+      const currentTabs: DataFileTab[] = [{ name: 'メイン', files: ['data.json'] }];
+      const currentLabels = { 'data.json': 'カスタムラベル' };
       const pendingOps: PendingFileOperations = { filesToCreate: [], filesToDelete: [] };
 
       expect(
@@ -64,12 +64,12 @@ describe('TabStateCalculator', () => {
 
     it('ファイル作成が保留中の場合はtrueを返す', () => {
       const savedState: SavedTabState = {
-        dataFileTabs: [{ name: 'メイン', files: ['data.txt'] }],
+        dataFileTabs: [{ name: 'メイン', files: ['data.json'] }],
         dataFileLabels: {},
       };
-      const currentTabs: DataFileTab[] = [{ name: 'メイン', files: ['data.txt'] }];
+      const currentTabs: DataFileTab[] = [{ name: 'メイン', files: ['data.json'] }];
       const currentLabels = {};
-      const pendingOps: PendingFileOperations = { filesToCreate: ['data2.txt'], filesToDelete: [] };
+      const pendingOps: PendingFileOperations = { filesToCreate: ['data2.json'], filesToDelete: [] };
 
       expect(
         TabStateCalculator.hasUnsavedChanges(savedState, currentTabs, currentLabels, pendingOps)
@@ -78,14 +78,14 @@ describe('TabStateCalculator', () => {
 
     it('ファイル削除が保留中の場合はtrueを返す', () => {
       const savedState: SavedTabState = {
-        dataFileTabs: [{ name: 'メイン', files: ['data.txt'] }],
+        dataFileTabs: [{ name: 'メイン', files: ['data.json'] }],
         dataFileLabels: {},
       };
-      const currentTabs: DataFileTab[] = [{ name: 'メイン', files: ['data.txt'] }];
+      const currentTabs: DataFileTab[] = [{ name: 'メイン', files: ['data.json'] }];
       const currentLabels = {};
       const pendingOps: PendingFileOperations = {
         filesToCreate: [],
-        filesToDelete: ['data2.txt'],
+        filesToDelete: ['data2.json'],
       };
 
       expect(
@@ -95,14 +95,14 @@ describe('TabStateCalculator', () => {
 
     it('複数の変更が同時に発生している場合はtrueを返す', () => {
       const savedState: SavedTabState = {
-        dataFileTabs: [{ name: 'メイン', files: ['data.txt'] }],
+        dataFileTabs: [{ name: 'メイン', files: ['data.json'] }],
         dataFileLabels: {},
       };
-      const currentTabs: DataFileTab[] = [{ name: 'メイン変更後', files: ['data.txt'] }];
-      const currentLabels = { 'data.txt': 'カスタムラベル' };
+      const currentTabs: DataFileTab[] = [{ name: 'メイン変更後', files: ['data.json'] }];
+      const currentLabels = { 'data.json': 'カスタムラベル' };
       const pendingOps: PendingFileOperations = {
-        filesToCreate: ['data2.txt'],
-        filesToDelete: ['data3.txt'],
+        filesToCreate: ['data2.json'],
+        filesToDelete: ['data3.json'],
       };
 
       expect(
@@ -113,10 +113,10 @@ describe('TabStateCalculator', () => {
 
   describe('getFileDeletionType', () => {
     it('作成予定のファイルを削除する場合はcancelCreationを返す', () => {
-      const updatedTabs: DataFileTab[] = [{ name: 'メイン', files: ['data.txt'] }];
+      const updatedTabs: DataFileTab[] = [{ name: 'メイン', files: ['data.json'] }];
       const result = TabStateCalculator.getFileDeletionType(
-        'data2.txt',
-        ['data2.txt'],
+        'data2.json',
+        ['data2.json'],
         updatedTabs
       );
       expect(result).toBe('cancelCreation');
@@ -124,27 +124,27 @@ describe('TabStateCalculator', () => {
 
     it('他のタブでも使用されているファイルを削除する場合はremoveFromTabを返す', () => {
       const updatedTabs: DataFileTab[] = [
-        { name: 'メイン', files: ['data.txt'] },
-        { name: 'サブ1', files: ['data.txt'] },
+        { name: 'メイン', files: ['data.json'] },
+        { name: 'サブ1', files: ['data.json'] },
       ];
-      const result = TabStateCalculator.getFileDeletionType('data.txt', [], updatedTabs);
+      const result = TabStateCalculator.getFileDeletionType('data.json', [], updatedTabs);
       expect(result).toBe('removeFromTab');
     });
 
     it('他のタブで使用されていないファイルを削除する場合はscheduleDeleteを返す', () => {
-      const updatedTabs: DataFileTab[] = [{ name: 'メイン', files: ['data.txt'] }];
-      const result = TabStateCalculator.getFileDeletionType('data2.txt', [], updatedTabs);
+      const updatedTabs: DataFileTab[] = [{ name: 'メイン', files: ['data.json'] }];
+      const result = TabStateCalculator.getFileDeletionType('data2.json', [], updatedTabs);
       expect(result).toBe('scheduleDelete');
     });
 
     it('作成予定かつ他のタブでも使用されている場合はcancelCreationを優先', () => {
       const updatedTabs: DataFileTab[] = [
-        { name: 'メイン', files: ['data2.txt'] },
-        { name: 'サブ1', files: ['data2.txt'] },
+        { name: 'メイン', files: ['data2.json'] },
+        { name: 'サブ1', files: ['data2.json'] },
       ];
       const result = TabStateCalculator.getFileDeletionType(
-        'data2.txt',
-        ['data2.txt'],
+        'data2.json',
+        ['data2.json'],
         updatedTabs
       );
       expect(result).toBe('cancelCreation');
@@ -154,17 +154,17 @@ describe('TabStateCalculator', () => {
   describe('getFilesToDeleteOnTabRemoval', () => {
     it('タブに含まれるファイルが他のタブで使用されていない場合は削除リストに含める', () => {
       const allTabs: DataFileTab[] = [
-        { name: 'メイン', files: ['data.txt'] },
-        { name: 'サブ1', files: ['data2.txt'] },
+        { name: 'メイン', files: ['data.json'] },
+        { name: 'サブ1', files: ['data2.json'] },
       ];
       const result = TabStateCalculator.getFilesToDeleteOnTabRemoval(1, [], allTabs);
-      expect(result).toEqual(['data2.txt']);
+      expect(result).toEqual(['data2.json']);
     });
 
     it('タブに含まれるファイルが他のタブでも使用されている場合は削除リストに含めない', () => {
       const allTabs: DataFileTab[] = [
-        { name: 'メイン', files: ['data.txt'] },
-        { name: 'サブ1', files: ['data.txt'] },
+        { name: 'メイン', files: ['data.json'] },
+        { name: 'サブ1', files: ['data.json'] },
       ];
       const result = TabStateCalculator.getFilesToDeleteOnTabRemoval(1, [], allTabs);
       expect(result).toEqual([]);
@@ -172,28 +172,28 @@ describe('TabStateCalculator', () => {
 
     it('作成予定のファイルは削除リストに含めない', () => {
       const allTabs: DataFileTab[] = [
-        { name: 'メイン', files: ['data.txt'] },
-        { name: 'サブ1', files: ['data2.txt'] },
+        { name: 'メイン', files: ['data.json'] },
+        { name: 'サブ1', files: ['data2.json'] },
       ];
-      const result = TabStateCalculator.getFilesToDeleteOnTabRemoval(1, ['data2.txt'], allTabs);
+      const result = TabStateCalculator.getFilesToDeleteOnTabRemoval(1, ['data2.json'], allTabs);
       expect(result).toEqual([]);
     });
 
     it('複数ファイルがあり、一部は他のタブでも使用されている場合', () => {
       const allTabs: DataFileTab[] = [
-        { name: 'メイン', files: ['data.txt'] },
-        { name: 'サブ1', files: ['data.txt', 'data2.txt'] },
+        { name: 'メイン', files: ['data.json'] },
+        { name: 'サブ1', files: ['data.json', 'data2.json'] },
       ];
       const result = TabStateCalculator.getFilesToDeleteOnTabRemoval(1, [], allTabs);
-      // data.txtは他のタブでも使用されているため削除しない
-      // data2.txtは他のタブで使用されていないため削除する
-      expect(result).toEqual(['data2.txt']);
+      // data.jsonは他のタブでも使用されているため削除しない
+      // data2.jsonは他のタブで使用されていないため削除する
+      expect(result).toEqual(['data2.json']);
     });
 
     it('複数ファイルがあり、すべて他のタブでも使用されている場合', () => {
       const allTabs: DataFileTab[] = [
-        { name: 'メイン', files: ['data.txt', 'data2.txt'] },
-        { name: 'サブ1', files: ['data.txt', 'data2.txt'] },
+        { name: 'メイン', files: ['data.json', 'data2.json'] },
+        { name: 'サブ1', files: ['data.json', 'data2.json'] },
       ];
       const result = TabStateCalculator.getFilesToDeleteOnTabRemoval(1, [], allTabs);
       expect(result).toEqual([]);
@@ -201,15 +201,15 @@ describe('TabStateCalculator', () => {
 
     it('複数ファイルがあり、すべて他のタブで使用されていない場合', () => {
       const allTabs: DataFileTab[] = [
-        { name: 'メイン', files: ['data.txt'] },
-        { name: 'サブ1', files: ['data2.txt', 'data3.txt'] },
+        { name: 'メイン', files: ['data.json'] },
+        { name: 'サブ1', files: ['data2.json', 'data3.json'] },
       ];
       const result = TabStateCalculator.getFilesToDeleteOnTabRemoval(1, [], allTabs);
-      expect(result).toEqual(['data2.txt', 'data3.txt']);
+      expect(result).toEqual(['data2.json', 'data3.json']);
     });
 
     it('範囲外のタブインデックスの場合は空配列を返す', () => {
-      const allTabs: DataFileTab[] = [{ name: 'メイン', files: ['data.txt'] }];
+      const allTabs: DataFileTab[] = [{ name: 'メイン', files: ['data.json'] }];
       expect(TabStateCalculator.getFilesToDeleteOnTabRemoval(1, [], allTabs)).toEqual([]);
       expect(TabStateCalculator.getFilesToDeleteOnTabRemoval(-1, [], allTabs)).toEqual([]);
     });

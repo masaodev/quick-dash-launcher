@@ -36,8 +36,8 @@ export const TabStateCalculator = {
    *
    * @example
    * hasUnsavedChanges(
-   *   { dataFileTabs: [{ name: 'メイン', files: ['data.txt'] }], dataFileLabels: {} },
-   *   [{ name: 'メイン変更後', files: ['data.txt'] }],
+   *   { dataFileTabs: [{ name: 'メイン', files: ['data.json'] }], dataFileLabels: {} },
+   *   [{ name: 'メイン変更後', files: ['data.json'] }],
    *   {},
    *   { filesToCreate: [], filesToDelete: [] }
    * ) // => true (タブ名が変更されている)
@@ -70,17 +70,17 @@ export const TabStateCalculator = {
    *
    * @example
    * // 作成予定のファイルを削除
-   * getFileDeletionType('data2.txt', ['data2.txt'], []) // => 'cancelCreation'
+   * getFileDeletionType('data2.json', ['data2.json'], []) // => 'cancelCreation'
    *
    * // 他のタブでも使用されているファイルを削除
-   * getFileDeletionType('data.txt', [], [
-   *   { name: 'メイン', files: ['data.txt'] },
-   *   { name: 'サブ1', files: ['data.txt'] }
+   * getFileDeletionType('data.json', [], [
+   *   { name: 'メイン', files: ['data.json'] },
+   *   { name: 'サブ1', files: ['data.json'] }
    * ]) // => 'removeFromTab'
    *
    * // 他のタブで使用されていないファイルを削除
-   * getFileDeletionType('data2.txt', [], [
-   *   { name: 'メイン', files: ['data.txt'] }
+   * getFileDeletionType('data2.json', [], [
+   *   { name: 'メイン', files: ['data.json'] }
    * ]) // => 'scheduleDelete'
    */
   getFileDeletionType(
@@ -118,30 +118,30 @@ export const TabStateCalculator = {
    *   1,
    *   [],
    *   [
-   *     { name: 'メイン', files: ['data.txt'] },
-   *     { name: 'サブ1', files: ['data2.txt'] }
+   *     { name: 'メイン', files: ['data.json'] },
+   *     { name: 'サブ1', files: ['data2.json'] }
    *   ]
-   * ) // => ['data2.txt']
+   * ) // => ['data2.json']
    *
    * // タブに含まれるファイルが他のタブでも使用されている場合
    * getFilesToDeleteOnTabRemoval(
    *   1,
    *   [],
    *   [
-   *     { name: 'メイン', files: ['data.txt'] },
-   *     { name: 'サブ1', files: ['data.txt'] }
+   *     { name: 'メイン', files: ['data.json'] },
+   *     { name: 'サブ1', files: ['data.json'] }
    *   ]
-   * ) // => [] (data.txtは他のタブでも使用されているため削除しない)
+   * ) // => [] (data.jsonは他のタブでも使用されているため削除しない)
    *
    * // 作成予定のファイルは削除リストに含めない
    * getFilesToDeleteOnTabRemoval(
    *   1,
-   *   ['data2.txt'],
+   *   ['data2.json'],
    *   [
-   *     { name: 'メイン', files: ['data.txt'] },
-   *     { name: 'サブ1', files: ['data2.txt'] }
+   *     { name: 'メイン', files: ['data.json'] },
+   *     { name: 'サブ1', files: ['data2.json'] }
    *   ]
-   * ) // => [] (data2.txtは作成予定なので削除リストに含めない)
+   * ) // => [] (data2.jsonは作成予定なので削除リストに含めない)
    */
   getFilesToDeleteOnTabRemoval(
     tabIndex: number,

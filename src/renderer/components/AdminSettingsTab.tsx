@@ -792,7 +792,7 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                                         {!canDelete ? (
                                           <span
                                             className="data-file-default-badge"
-                                            title="data.txtは最低1つのタブに必要です"
+                                            title="data.jsonは最低1つのタブに必要です"
                                           >
                                             既定
                                           </span>

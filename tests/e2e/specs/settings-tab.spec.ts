@@ -16,8 +16,8 @@ import { TestUtils } from '../helpers/test-utils';
 test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
   test.beforeEach(async ({ configHelper, mainWindow }) => {
     // baseテンプレートは既に読み込まれている
-    // data2.txtは削除（このテストでは使用しない）
-    configHelper.deleteDataFile('data2.txt');
+    // data2.jsonは削除（このテストでは使用しない）
+    configHelper.deleteDataFile('data2.json');
 
     // ページの読み込み完了を待機
     const utils = new TestUtils(mainWindow);

@@ -47,9 +47,9 @@ describe('PathManager', () => {
       expect(PathManager.getIconsFolder()).toBe(PathManager.getAppsFolder());
     });
 
-    it('data.txtファイルのパスを取得できる', () => {
+    it('data.jsonファイルのパスを取得できる', () => {
       const configFolder = pathHelper.setup('datafile-test');
-      expect(PathManager.getDataFilePath()).toBe(path.join(configFolder, 'data.txt'));
+      expect(PathManager.getDataFilePath()).toBe(path.join(configFolder, 'data.json'));
     });
   });
 

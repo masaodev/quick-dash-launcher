@@ -4,7 +4,12 @@ import { ipcMain, BrowserWindow } from 'electron';
 import { dataLogger } from '@common/logger';
 import { FileUtils } from '@common/utils/fileUtils';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
-import { parseJsonDataFile, serializeJsonDataFile, generateId } from '@common/utils/jsonParser';
+import {
+  parseJsonDataFile,
+  serializeJsonDataFile,
+  generateId,
+  createEmptyJsonDataFile,
+} from '@common/utils/jsonParser';
 import { jsonItemToDisplayText } from '@common/utils/displayTextConverter';
 import type { EditableJsonItem, LoadEditableItemsResult } from '@common/types/editableItem';
 import { validateEditableItem } from '@common/types/editableItem';
@@ -794,7 +799,8 @@ export function setupDataHandlers(configFolder: string) {
     } catch {
       // ファイルが存在しない場合は作成
       try {
-        await fs.writeFile(filePath, `// ${fileName}\r\n`, 'utf-8');
+        const emptyData = serializeJsonDataFile(createEmptyJsonDataFile());
+        await fs.writeFile(filePath, emptyData, 'utf-8');
         dataLogger.info(`File created successfully: ${filePath}`);
         // notifyDataChanged(); // 設定の再読み込みを防ぐため削除
         return { success: true };

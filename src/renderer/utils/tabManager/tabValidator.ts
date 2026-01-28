@@ -19,7 +19,7 @@ export const TabValidator = {
    * @returns バリデーション結果
    *
    * @example
-   * canDeleteTab({ name: 'メイン', files: ['data.txt'] }) // => { valid: true }
+   * canDeleteTab({ name: 'メイン', files: ['data.json'] }) // => { valid: true }
    */
   canDeleteTab(_tab: DataFileTab): ValidationResult {
     // 現時点では特に制約なし（将来的に追加可能）
@@ -29,7 +29,7 @@ export const TabValidator = {
   /**
    * ファイルをタブから削除できるかチェック
    * - タブには最低1つのファイルが必要
-   * - data.txtは最低1つのタブに含まれる必要がある
+   * - data.jsonは最低1つのタブに含まれる必要がある
    *
    * @param fileName - 削除対象のファイル名
    * @param tabIndex - 削除対象のタブインデックス
@@ -38,15 +38,15 @@ export const TabValidator = {
    *
    * @example
    * // タブに1つしかファイルがない場合
-   * canRemoveFileFromTab('data.txt', 0, [{ name: 'メイン', files: ['data.txt'] }])
+   * canRemoveFileFromTab('data.json', 0, [{ name: 'メイン', files: ['data.json'] }])
    * // => { valid: false, reason: 'タブには最低1つのファイルが必要です...' }
    *
-   * // data.txtが他のタブにない場合
-   * canRemoveFileFromTab('data.txt', 0, [
-   *   { name: 'メイン', files: ['data.txt', 'data2.txt'] },
-   *   { name: 'サブ1', files: ['data2.txt'] }
+   * // data.jsonが他のタブにない場合
+   * canRemoveFileFromTab('data.json', 0, [
+   *   { name: 'メイン', files: ['data.json', 'data2.json'] },
+   *   { name: 'サブ1', files: ['data2.json'] }
    * ])
-   * // => { valid: false, reason: 'data.txtは最低1つのタブに含まれている必要があります...' }
+   * // => { valid: false, reason: 'data.jsonは最低1つのタブに含まれている必要があります...' }
    */
   canRemoveFileFromTab(fileName: string, tabIndex: number, tabs: DataFileTab[]): ValidationResult {
     if (tabIndex < 0 || tabIndex >= tabs.length) {
@@ -63,16 +63,16 @@ export const TabValidator = {
       };
     }
 
-    // data.txtの場合、他のタブにもdata.txtが存在するかチェック
-    if (fileName === 'data.txt') {
-      const otherTabsWithDataTxt = tabs.filter(
-        (t, idx) => idx !== tabIndex && t.files.includes('data.txt')
+    // data.jsonの場合、他のタブにもdata.jsonが存在するかチェック
+    if (fileName === 'data.json') {
+      const otherTabsWithDataJson = tabs.filter(
+        (t, idx) => idx !== tabIndex && t.files.includes('data.json')
       );
-      if (otherTabsWithDataTxt.length === 0) {
+      if (otherTabsWithDataJson.length === 0) {
         return {
           valid: false,
           reason:
-            'data.txtは最低1つのタブに含まれている必要があります。\n他のタブにdata.txtを追加してから削除してください。',
+            'data.jsonは最低1つのタブに含まれている必要があります。\n他のタブにdata.jsonを追加してから削除してください。',
         };
       }
     }
@@ -88,14 +88,14 @@ export const TabValidator = {
    * @returns 他のタブで使用されている場合はtrue
    *
    * @example
-   * isFileUsedInOtherTabs('data.txt', 0, [
-   *   { name: 'メイン', files: ['data.txt'] },
-   *   { name: 'サブ1', files: ['data.txt'] }
+   * isFileUsedInOtherTabs('data.json', 0, [
+   *   { name: 'メイン', files: ['data.json'] },
+   *   { name: 'サブ1', files: ['data.json'] }
    * ]) // => true
    *
-   * isFileUsedInOtherTabs('data2.txt', 0, [
-   *   { name: 'メイン', files: ['data.txt', 'data2.txt'] },
-   *   { name: 'サブ1', files: ['data.txt'] }
+   * isFileUsedInOtherTabs('data2.json', 0, [
+   *   { name: 'メイン', files: ['data.json', 'data2.json'] },
+   *   { name: 'サブ1', files: ['data.json'] }
    * ]) // => false
    */
   isFileUsedInOtherTabs(fileName: string, excludeTabIndex: number, tabs: DataFileTab[]): boolean {
@@ -109,10 +109,10 @@ export const TabValidator = {
    * @returns バリデーション結果
    *
    * @example
-   * canAddFileToTab('data.txt', { name: 'メイン', files: ['data.txt'] })
+   * canAddFileToTab('data.json', { name: 'メイン', files: ['data.json'] })
    * // => { valid: false, reason: 'このファイルは既にタブに含まれています。' }
    *
-   * canAddFileToTab('data2.txt', { name: 'メイン', files: ['data.txt'] })
+   * canAddFileToTab('data2.json', { name: 'メイン', files: ['data.json'] })
    * // => { valid: true }
    */
   canAddFileToTab(fileName: string, tab: DataFileTab): ValidationResult {

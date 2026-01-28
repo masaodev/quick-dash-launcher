@@ -17,7 +17,7 @@ describe('データハンドラー: name → displayName リファクタリン�
         displayName: parts[0],
         path: parts[1],
         type: 'app',
-        sourceFile: 'data.txt',
+        sourceFile: 'data.json',
         lineNumber: 1,
         isDirExpanded: false,
         isEdited: false,
@@ -36,7 +36,7 @@ describe('データハンドラー: name → displayName リファクタリン�
         displayName: parts[0],
         type: 'group',
         itemNames: parts.slice(1),
-        sourceFile: 'data.txt',
+        sourceFile: 'data.json',
         lineNumber: 1,
         isEdited: false,
       };
@@ -51,7 +51,7 @@ describe('データハンドラー: name → displayName リファクタリン�
         type: 'window',
         displayName: 'Chrome起動',
         windowTitle: 'Google Chrome',
-        sourceFile: 'data.txt',
+        sourceFile: 'data.json',
         lineNumber: 1,
         isEdited: false,
       };
@@ -63,7 +63,7 @@ describe('データハンドラー: name → displayName リファクタリン�
   });
 
   describe('実際のテストデータの読み込み', () => {
-    it('dev-configのdata.txtから読み込んだアイテムがdisplayNameを持つこと', () => {
+    it('dev-configのdata.jsonから読み込んだアイテムがdisplayNameを持つこと', () => {
       // テストデータの例
       const testData = [
         'WSL HOME（Windowsで開く）,\\\\wsl.localhost\\Ubuntu-24.04\\home\\masao',
@@ -77,7 +77,7 @@ describe('データハンドラー: name → displayName リファクタリン�
           path: parts[1],
           type: 'app',
           args: parts[2] || undefined,
-          sourceFile: 'data.txt',
+          sourceFile: 'data.json',
           lineNumber: index + 1,
           isDirExpanded: false,
           isEdited: false,
