@@ -35,10 +35,6 @@ export const SetupFirstLaunch: React.FC<FirstLaunchSetupProps> = ({ onComplete }
     type: 'info',
   });
 
-  const handleHotkeyChange = (newHotkey: string) => {
-    setHotkey(newHotkey);
-  };
-
   const handleHotkeyValidation = (isValid: boolean, reason?: string) => {
     setHotkeyValidation({ isValid, reason });
   };
@@ -78,7 +74,7 @@ export const SetupFirstLaunch: React.FC<FirstLaunchSetupProps> = ({ onComplete }
           </p>
           <HotkeyInput
             value={hotkey}
-            onChange={handleHotkeyChange}
+            onChange={setHotkey}
             onValidationChange={handleHotkeyValidation}
             disabled={isLoading}
             placeholder="Alt+Space"

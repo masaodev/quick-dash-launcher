@@ -9,6 +9,42 @@ import type { LauncherItem } from '../types';
 
 import { PathUtils } from './pathUtils';
 
+/** 実行可能ファイルの拡張子 */
+const EXECUTABLE_EXTENSIONS = new Set(['.exe', '.bat', '.cmd', '.com', '.lnk']);
+
+/** 標準的なURLスキーマ */
+const STANDARD_URL_SCHEMES = new Set(['http', 'https', 'ftp']);
+
+/**
+ * パスのパターンのみでタイプを判定する（共通ロジック）
+ */
+function detectTypeFromPath(itemPath: string): LauncherItem['type'] {
+  // URLs
+  if (itemPath.includes('://')) {
+    const scheme = itemPath.split('://')[0];
+    return STANDARD_URL_SCHEMES.has(scheme) ? 'url' : 'customUri';
+  }
+
+  // Shell paths
+  if (itemPath.startsWith('shell:')) {
+    return 'folder';
+  }
+
+  const ext = PathUtils.getExtension(itemPath);
+
+  // Executables and shortcuts
+  if (EXECUTABLE_EXTENSIONS.has(ext)) {
+    return 'app';
+  }
+
+  // Likely a directory (no extension or ends with separator)
+  if (!ext || itemPath.endsWith('/') || itemPath.endsWith('\\')) {
+    return 'folder';
+  }
+
+  return 'file';
+}
+
 /**
  * アイテムのパスからタイプを検出する（クライアント側用）
  *
@@ -19,7 +55,6 @@ import { PathUtils } from './pathUtils';
  * @returns アイテムタイプ
  *
  * @example
- * // クライアント側での使用
  * const type = await detectItemType(
  *   'C:\\Users\\Documents',
  *   window.electronAPI.isDirectory
@@ -29,18 +64,9 @@ export async function detectItemType(
   itemPath: string,
   isDirectoryCheck?: (path: string) => Promise<boolean>
 ): Promise<LauncherItem['type']> {
-  // URLs
-  if (itemPath.includes('://')) {
-    const scheme = itemPath.split('://')[0];
-    if (!['http', 'https', 'ftp'].includes(scheme)) {
-      return 'customUri';
-    }
-    return 'url';
-  }
-
-  // Shell paths
-  if (itemPath.startsWith('shell:')) {
-    return 'folder';
+  // URLやシェルパスは早期リターン
+  if (itemPath.includes('://') || itemPath.startsWith('shell:')) {
+    return detectTypeFromPath(itemPath);
   }
 
   // ディレクトリチェック（提供されている場合のみ）
@@ -55,21 +81,7 @@ export async function detectItemType(
     }
   }
 
-  // File extensions - PathUtilsを使用して拡張子を取得
-  const ext = PathUtils.getExtension(itemPath);
-
-  // Executables and shortcuts
-  if (ext === '.exe' || ext === '.bat' || ext === '.cmd' || ext === '.com' || ext === '.lnk') {
-    return 'app';
-  }
-
-  // Check if it's likely a directory
-  if (!ext || itemPath.endsWith('/') || itemPath.endsWith('\\')) {
-    return 'folder';
-  }
-
-  // Default to file
-  return 'file';
+  return detectTypeFromPath(itemPath);
 }
 
 /**
@@ -82,37 +94,8 @@ export async function detectItemType(
  * @returns アイテムタイプ
  *
  * @example
- * // サーバー側での使用
  * const type = detectItemTypeSync('C:\\Program Files\\app.exe');
  */
 export function detectItemTypeSync(itemPath: string): LauncherItem['type'] {
-  // URLs
-  if (itemPath.includes('://')) {
-    const scheme = itemPath.split('://')[0];
-    if (!['http', 'https', 'ftp'].includes(scheme)) {
-      return 'customUri';
-    }
-    return 'url';
-  }
-
-  // Shell paths
-  if (itemPath.startsWith('shell:')) {
-    return 'folder';
-  }
-
-  // File extensions - PathUtilsを使用して拡張子を取得
-  const ext = PathUtils.getExtension(itemPath);
-
-  // Executables and shortcuts
-  if (ext === '.exe' || ext === '.bat' || ext === '.cmd' || ext === '.com' || ext === '.lnk') {
-    return 'app';
-  }
-
-  // Check if it's likely a directory
-  if (!ext || itemPath.endsWith('/') || itemPath.endsWith('\\')) {
-    return 'folder';
-  }
-
-  // Default to file
-  return 'file';
+  return detectTypeFromPath(itemPath);
 }

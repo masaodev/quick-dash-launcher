@@ -67,71 +67,62 @@ export class BackupService {
   }
 
   /**
-   * 起動時バックアップ用：指定ファイルの最新のバックアップファイルパスを取得
+   * バックアップファイル名のパターンを生成
    * @param baseFileName 元のファイル名（拡張子付き）
-   * @param backupFolder バックアップフォルダのパス
-   * @returns 最新のバックアップファイルパス、存在しない場合はnull
+   * @param isStartupBackup 起動時バックアップかどうか
+   * @returns 正規表現パターン
    */
-  private getLatestStartupBackupFile(baseFileName: string, backupFolder: string): string | null {
-    if (!FileUtils.exists(backupFolder)) {
-      return null;
+  private getBackupFilePattern(baseFileName: string, isStartupBackup: boolean): RegExp {
+    // 起動時バックアップ: fileName.timestamp
+    // 編集時バックアップ: baseName_timestamp.ext
+    if (isStartupBackup) {
+      return new RegExp(`^${baseFileName}\\.\\d{4}-\\d{2}-\\d{2}T\\d{2}-\\d{2}-\\d{2}$`);
     }
+    const baseName = path.parse(baseFileName).name;
+    const extension = path.parse(baseFileName).ext;
+    return new RegExp(`^${baseName}_\\d{4}-\\d{2}-\\d{2}T\\d{2}-\\d{2}-\\d{2}${extension}$`);
+  }
 
-    try {
-      const files = fs
-        .readdirSync(backupFolder)
-        .filter((file) => {
-          // 起動時バックアップのファイル名パターン: fileName.timestamp
-          const pattern = new RegExp(
-            `^${baseFileName}\\.\\d{4}-\\d{2}-\\d{2}T\\d{2}-\\d{2}-\\d{2}$`
-          );
-          return pattern.test(file);
-        })
-        .map((file) => ({
-          name: file,
-          path: path.join(backupFolder, file),
-          mtime: fs.statSync(path.join(backupFolder, file)).mtime.getTime(),
-        }))
-        .sort((a, b) => b.mtime - a.mtime); // 新しい順にソート
-
-      return files.length > 0 ? files[0].path : null;
-    } catch (error) {
-      logger.error({ error, baseFileName }, '起動時バックアップファイルの検索に失敗しました');
-      return null;
-    }
+  /**
+   * バックアップファイル一覧を取得（新しい順）
+   * @param backupFolder バックアップフォルダのパス
+   * @param pattern ファイル名マッチングパターン
+   * @returns ファイル情報の配列
+   */
+  private getBackupFiles(
+    backupFolder: string,
+    pattern: RegExp
+  ): Array<{ name: string; path: string; mtime: number }> {
+    return fs
+      .readdirSync(backupFolder)
+      .filter((file) => pattern.test(file))
+      .map((file) => ({
+        name: file,
+        path: path.join(backupFolder, file),
+        mtime: fs.statSync(path.join(backupFolder, file)).mtime.getTime(),
+      }))
+      .sort((a, b) => b.mtime - a.mtime);
   }
 
   /**
    * 指定ファイルの最新のバックアップファイルパスを取得
    * @param baseFileName 元のファイル名（拡張子付き）
    * @param backupFolder バックアップフォルダのパス
+   * @param isStartupBackup 起動時バックアップかどうか（ファイル名パターンが異なる）
    * @returns 最新のバックアップファイルパス、存在しない場合はnull
    */
-  private getLatestBackupFile(baseFileName: string, backupFolder: string): string | null {
+  private getLatestBackupFile(
+    baseFileName: string,
+    backupFolder: string,
+    isStartupBackup: boolean = false
+  ): string | null {
     if (!FileUtils.exists(backupFolder)) {
       return null;
     }
 
-    const baseName = path.parse(baseFileName).name;
-    const extension = path.parse(baseFileName).ext;
-
     try {
-      const files = fs
-        .readdirSync(backupFolder)
-        .filter((file) => {
-          // ファイル名のパターンマッチング: baseName_timestamp.ext
-          const pattern = new RegExp(
-            `^${baseName}_\\d{4}-\\d{2}-\\d{2}T\\d{2}-\\d{2}-\\d{2}${extension}$`
-          );
-          return pattern.test(file);
-        })
-        .map((file) => ({
-          name: file,
-          path: path.join(backupFolder, file),
-          mtime: fs.statSync(path.join(backupFolder, file)).mtime.getTime(),
-        }))
-        .sort((a, b) => b.mtime - a.mtime); // 新しい順にソート
-
+      const pattern = this.getBackupFilePattern(baseFileName, isStartupBackup);
+      const files = this.getBackupFiles(backupFolder, pattern);
       return files.length > 0 ? files[0].path : null;
     } catch (error) {
       logger.error({ error, baseFileName }, 'バックアップファイルの検索に失敗しました');
@@ -164,7 +155,7 @@ export class BackupService {
     FileUtils.ensureDirectory(backupFolder);
 
     // 直近のバックアップファイルと内容を比較
-    const latestBackupPath = this.getLatestBackupFile(fileName, backupFolder);
+    const latestBackupPath = this.getLatestBackupFile(fileName, backupFolder, false);
     if (latestBackupPath && FileUtils.areFilesEqual(sourcePath, latestBackupPath)) {
       logger.info(
         { sourcePath, latestBackupPath },
@@ -214,7 +205,7 @@ export class BackupService {
       const sourcePath = path.join(configFolder, file);
       if (FileUtils.exists(sourcePath)) {
         // 直近のバックアップファイルと内容を比較
-        const latestBackupPath = this.getLatestStartupBackupFile(file, backupFolder);
+        const latestBackupPath = this.getLatestBackupFile(file, backupFolder, true);
         if (latestBackupPath && FileUtils.areFilesEqual(sourcePath, latestBackupPath)) {
           logger.info(
             { file, sourcePath, latestBackupPath },
@@ -249,26 +240,10 @@ export class BackupService {
     if (!this.settingsService) return;
 
     const backupRetention = await this.settingsService.get('backupRetention');
-    const baseName = path.parse(baseFileName).name;
-    const extension = path.parse(baseFileName).ext;
 
     try {
-      // バックアップファイルを取得
-      const files = fs
-        .readdirSync(backupFolder)
-        .filter((file) => {
-          // ファイル名のパターンマッチング: baseName_timestamp.ext
-          const pattern = new RegExp(
-            `^${baseName}_\\d{4}-\\d{2}-\\d{2}T\\d{2}-\\d{2}-\\d{2}${extension}$`
-          );
-          return pattern.test(file);
-        })
-        .map((file) => ({
-          name: file,
-          path: path.join(backupFolder, file),
-          mtime: fs.statSync(path.join(backupFolder, file)).mtime.getTime(),
-        }))
-        .sort((a, b) => b.mtime - a.mtime); // 新しい順にソート
+      const pattern = this.getBackupFilePattern(baseFileName, false);
+      const files = this.getBackupFiles(backupFolder, pattern);
 
       // 保持件数を超えるファイルを削除
       if (files.length > backupRetention) {

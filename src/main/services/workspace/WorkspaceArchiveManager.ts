@@ -10,6 +10,7 @@ import type {
 import logger from '@common/logger';
 
 import type { WorkspaceStoreInstance, ArchiveStoreInstance } from './types.js';
+import { migrateGroupDisplayName } from './migrationUtils.js';
 
 /**
  * ワークスペースのアーカイブ操作を担当するクラス
@@ -89,23 +90,10 @@ export class WorkspaceArchiveManager {
     try {
       const groups = this.archiveStore.get('groups') || [];
 
-      // 旧データの name → displayName マイグレーション
-      let needsMigration = false;
-      const migratedGroups = groups.map((group) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const rawGroup = group as any;
-        if (rawGroup.name !== undefined && rawGroup.displayName === undefined) {
-          needsMigration = true;
-          const { name, ...rest } = rawGroup;
-          return { ...rest, displayName: name } as ArchivedWorkspaceGroup;
-        }
-        return group;
-      });
+      const { migratedGroups, needsMigration } = migrateGroupDisplayName(groups, 'archived groups');
 
-      // マイグレーションが必要な場合、ストアを更新
       if (needsMigration) {
         this.archiveStore.set('groups', migratedGroups);
-        logger.info('Migrated archived groups: name → displayName');
       }
 
       return migratedGroups.sort((a, b) => b.archivedAt - a.archivedAt);

@@ -425,13 +425,46 @@ async function saveEditableItems(
 }
 
 /**
- * IDでdirアイテムを更新する（新API）
+ * IDでアイテムを検索し、バックアップ作成後に更新コールバックを実行する共通処理
  *
  * @param configFolder - 設定フォルダのパス
  * @param id - 更新対象のアイテムID
- * @param dirPath - 新しいディレクトリパス
- * @param options - フォルダ取込オプション（オプション）
+ * @param createNewItem - 新しいアイテムを生成するコールバック
  * @throws アイテムが見つからない場合、またはファイル操作エラー
+ */
+async function updateItemByIdWithCallback(
+  configFolder: string,
+  id: string,
+  createNewItem: (id: string) => JsonItem
+): Promise<void> {
+  const { PathManager } = await import('../config/pathManager.js');
+  const dataFiles = PathManager.getDataFiles();
+
+  for (const fileName of dataFiles) {
+    const filePath = path.join(configFolder, fileName);
+    const content = FileUtils.safeReadTextFile(filePath);
+    if (!content) continue;
+
+    const jsonData = parseJsonDataFile(content);
+    const itemIndex = jsonData.items.findIndex((item) => item.id === id);
+
+    if (itemIndex !== -1) {
+      const backupService = await BackupService.getInstance();
+      await backupService.createBackup(filePath);
+
+      jsonData.items[itemIndex] = createNewItem(id);
+
+      const newContent = serializeJsonDataFile(jsonData);
+      FileUtils.safeWriteTextFile(filePath, newContent);
+      return;
+    }
+  }
+
+  throw new Error(`ID ${id} のアイテムが見つかりません`);
+}
+
+/**
+ * IDでdirアイテムを更新する
  */
 async function updateDirItemById(
   configFolder: string,
@@ -439,49 +472,16 @@ async function updateDirItemById(
   dirPath: string,
   options?: JsonDirOptions
 ): Promise<void> {
-  const { PathManager } = await import('../config/pathManager.js');
-  const dataFiles = PathManager.getDataFiles();
-
-  // 全データファイルからIDで検索
-  for (const fileName of dataFiles) {
-    const filePath = path.join(configFolder, fileName);
-    const content = FileUtils.safeReadTextFile(filePath);
-    if (!content) continue;
-
-    const jsonData = parseJsonDataFile(content);
-    const itemIndex = jsonData.items.findIndex((item) => item.id === id);
-
-    if (itemIndex !== -1) {
-      // バックアップ作成
-      const backupService = await BackupService.getInstance();
-      await backupService.createBackup(filePath);
-
-      // アイテム更新（ID保持）
-      jsonData.items[itemIndex] = {
-        id,
-        type: 'dir',
-        path: dirPath,
-        options: options && Object.keys(options).length > 0 ? options : undefined,
-      };
-
-      // 保存
-      const newContent = serializeJsonDataFile(jsonData);
-      FileUtils.safeWriteTextFile(filePath, newContent);
-      return;
-    }
-  }
-
-  throw new Error(`ID ${id} のアイテムが見つかりません`);
+  await updateItemByIdWithCallback(configFolder, id, (itemId) => ({
+    id: itemId,
+    type: 'dir',
+    path: dirPath,
+    options: options && Object.keys(options).length > 0 ? options : undefined,
+  }));
 }
 
 /**
- * IDでgroupアイテムを更新する（新API）
- *
- * @param configFolder - 設定フォルダのパス
- * @param id - 更新対象のアイテムID
- * @param displayName - 新しい表示名
- * @param itemNames - グループ内のアイテム名リスト
- * @throws アイテムが見つからない場合、またはファイル操作エラー
+ * IDでgroupアイテムを更新する
  */
 async function updateGroupItemById(
   configFolder: string,
@@ -489,48 +489,16 @@ async function updateGroupItemById(
   displayName: string,
   itemNames: string[]
 ): Promise<void> {
-  const { PathManager } = await import('../config/pathManager.js');
-  const dataFiles = PathManager.getDataFiles();
-
-  // 全データファイルからIDで検索
-  for (const fileName of dataFiles) {
-    const filePath = path.join(configFolder, fileName);
-    const content = FileUtils.safeReadTextFile(filePath);
-    if (!content) continue;
-
-    const jsonData = parseJsonDataFile(content);
-    const itemIndex = jsonData.items.findIndex((item) => item.id === id);
-
-    if (itemIndex !== -1) {
-      // バックアップ作成
-      const backupService = await BackupService.getInstance();
-      await backupService.createBackup(filePath);
-
-      // アイテム更新（ID保持）
-      jsonData.items[itemIndex] = {
-        id,
-        type: 'group',
-        displayName,
-        itemNames,
-      };
-
-      // 保存
-      const newContent = serializeJsonDataFile(jsonData);
-      FileUtils.safeWriteTextFile(filePath, newContent);
-      return;
-    }
-  }
-
-  throw new Error(`ID ${id} のアイテムが見つかりません`);
+  await updateItemByIdWithCallback(configFolder, id, (itemId) => ({
+    id: itemId,
+    type: 'group',
+    displayName,
+    itemNames,
+  }));
 }
 
 /**
- * IDでwindowアイテムを更新する（新API）
- *
- * @param configFolder - 設定フォルダのパス
- * @param id - 更新対象のアイテムID
- * @param config - ウィンドウ制御設定
- * @throws アイテムが見つからない場合、またはファイル操作エラー
+ * IDでwindowアイテムを更新する
  */
 async function updateWindowItemById(
   configFolder: string,
@@ -549,54 +517,28 @@ async function updateWindowItemById(
     pinToAllDesktops?: boolean;
   }
 ): Promise<void> {
-  const { PathManager } = await import('../config/pathManager.js');
-  const dataFiles = PathManager.getDataFiles();
+  await updateItemByIdWithCallback(configFolder, id, (itemId) => {
+    const newItem: JsonWindowItem = {
+      id: itemId,
+      type: 'window',
+      displayName: config.displayName,
+      windowTitle: config.windowTitle,
+    };
 
-  // 全データファイルからIDで検索
-  for (const fileName of dataFiles) {
-    const filePath = path.join(configFolder, fileName);
-    const content = FileUtils.safeReadTextFile(filePath);
-    if (!content) continue;
+    if (config.processName !== undefined) newItem.processName = config.processName;
+    if (config.x !== undefined) newItem.x = config.x;
+    if (config.y !== undefined) newItem.y = config.y;
+    if (config.width !== undefined) newItem.width = config.width;
+    if (config.height !== undefined) newItem.height = config.height;
+    if (config.moveToActiveMonitorCenter !== undefined)
+      newItem.moveToActiveMonitorCenter = config.moveToActiveMonitorCenter;
+    if (config.virtualDesktopNumber !== undefined)
+      newItem.virtualDesktopNumber = config.virtualDesktopNumber;
+    if (config.activateWindow !== undefined) newItem.activateWindow = config.activateWindow;
+    if (config.pinToAllDesktops !== undefined) newItem.pinToAllDesktops = config.pinToAllDesktops;
 
-    const jsonData = parseJsonDataFile(content);
-    const itemIndex = jsonData.items.findIndex((item) => item.id === id);
-
-    if (itemIndex !== -1) {
-      // バックアップ作成
-      const backupService = await BackupService.getInstance();
-      await backupService.createBackup(filePath);
-
-      // アイテム更新（ID保持）
-      const newItem: JsonWindowItem = {
-        id,
-        type: 'window',
-        displayName: config.displayName,
-        windowTitle: config.windowTitle,
-      };
-
-      // オプショナルフィールドを条件付きで追加
-      if (config.processName !== undefined) newItem.processName = config.processName;
-      if (config.x !== undefined) newItem.x = config.x;
-      if (config.y !== undefined) newItem.y = config.y;
-      if (config.width !== undefined) newItem.width = config.width;
-      if (config.height !== undefined) newItem.height = config.height;
-      if (config.moveToActiveMonitorCenter !== undefined)
-        newItem.moveToActiveMonitorCenter = config.moveToActiveMonitorCenter;
-      if (config.virtualDesktopNumber !== undefined)
-        newItem.virtualDesktopNumber = config.virtualDesktopNumber;
-      if (config.activateWindow !== undefined) newItem.activateWindow = config.activateWindow;
-      if (config.pinToAllDesktops !== undefined) newItem.pinToAllDesktops = config.pinToAllDesktops;
-
-      jsonData.items[itemIndex] = newItem;
-
-      // 保存
-      const newContent = serializeJsonDataFile(jsonData);
-      FileUtils.safeWriteTextFile(filePath, newContent);
-      return;
-    }
-  }
-
-  throw new Error(`ID ${id} のアイテムが見つかりません`);
+    return newItem;
+  });
 }
 
 /**

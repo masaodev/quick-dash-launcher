@@ -23,17 +23,15 @@ const WorkspaceItemList: React.FC<WorkspaceItemListProps> = ({
   setEditingId,
 }) => {
   const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
-  const [_dragOverItemId, setDragOverItemId] = useState<string | null>(null);
 
   const handleDragStart = (item: WorkspaceItem) => (e: React.DragEvent) => {
     setDraggedItemId(item.id);
     e.dataTransfer.effectAllowed = 'move';
   };
 
-  const handleDragOver = (item: WorkspaceItem) => (e: React.DragEvent) => {
+  const handleDragOver = (_item: WorkspaceItem) => (e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
-    setDragOverItemId(item.id);
   };
 
   const handleDrop = (item: WorkspaceItem) => (e: React.DragEvent) => {
@@ -41,7 +39,6 @@ const WorkspaceItemList: React.FC<WorkspaceItemListProps> = ({
 
     if (!draggedItemId || draggedItemId === item.id) {
       setDraggedItemId(null);
-      setDragOverItemId(null);
       return;
     }
 
@@ -51,7 +48,6 @@ const WorkspaceItemList: React.FC<WorkspaceItemListProps> = ({
 
     if (draggedIndex === -1 || targetIndex === -1) {
       setDraggedItemId(null);
-      setDragOverItemId(null);
       return;
     }
 
@@ -64,12 +60,6 @@ const WorkspaceItemList: React.FC<WorkspaceItemListProps> = ({
     onReorder(newItemIds);
 
     setDraggedItemId(null);
-    setDragOverItemId(null);
-  };
-
-  const _handleDragEnd = () => {
-    setDraggedItemId(null);
-    setDragOverItemId(null);
   };
 
   if (items.length === 0) {

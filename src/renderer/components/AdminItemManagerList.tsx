@@ -9,8 +9,6 @@ import {
   isJsonWindowItem,
 } from '@common/types';
 
-// import { logError } from '../utils/debug'; // 未使用のため一時的にコメントアウト
-
 import ConfirmDialog from './ConfirmDialog';
 
 interface EditableRawItemListProps {

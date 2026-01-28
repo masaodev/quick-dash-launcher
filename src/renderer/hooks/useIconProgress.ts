@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
 import { IconProgress, IconProgressState } from '@common/types';
 
-export const useIconProgress = () => {
+export function useIconProgress(): {
+  progressState: IconProgressState;
+  resetProgress: () => void;
+} {
   const [progressState, setProgressState] = useState<IconProgressState>({
     isActive: false,
     progress: null,
@@ -49,15 +52,15 @@ export const useIconProgress = () => {
     };
   }, []);
 
-  const resetProgress = () => {
+  function resetProgress(): void {
     setProgressState({
       isActive: false,
       progress: null,
     });
-  };
+  }
 
   return {
     progressState,
     resetProgress,
   };
-};
+}

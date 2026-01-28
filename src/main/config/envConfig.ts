@@ -24,13 +24,6 @@ export class EnvConfig {
   }
 
   /**
-   * 本番モードかどうか
-   */
-  static get isProduction(): boolean {
-    return process.env.NODE_ENV === 'production';
-  }
-
-  /**
    * Vite開発サーバーのポート番号
    * @returns ポート番号（デフォルト: '9000'）
    */

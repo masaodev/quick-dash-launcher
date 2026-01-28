@@ -32,39 +32,31 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
   dataFileTabs,
   dataFileLabels = {},
 }) => {
-  const handleTabChange = (newTab: 'settings' | 'edit' | 'archive' | 'other') => {
-    onTabChange(newTab);
-  };
-
-  const handleExitEditMode = () => {
-    window.electronAPI.hideEditWindow();
-  };
-
   return (
     <div className="admin-tab-container">
       <div className="admin-header">
         <div className="admin-tabs">
           <button
             className={`tab-button ${activeTab === 'settings' ? 'active' : ''}`}
-            onClick={() => handleTabChange('settings')}
+            onClick={() => onTabChange('settings')}
           >
             ⚙️ 基本設定
           </button>
           <button
             className={`tab-button ${activeTab === 'edit' ? 'active' : ''}`}
-            onClick={() => handleTabChange('edit')}
+            onClick={() => onTabChange('edit')}
           >
             ✏️ アイテム管理
           </button>
           <button
             className={`tab-button ${activeTab === 'archive' ? 'active' : ''}`}
-            onClick={() => handleTabChange('archive')}
+            onClick={() => onTabChange('archive')}
           >
             📦 アーカイブ
           </button>
           <button
             className={`tab-button ${activeTab === 'other' ? 'active' : ''}`}
-            onClick={() => handleTabChange('other')}
+            onClick={() => onTabChange('other')}
           >
             📊 その他
           </button>
@@ -79,7 +71,7 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
           <AdminItemManagerView
             editableItems={editableItems}
             onEditableItemsSave={onEditableItemsSave}
-            onExitEditMode={handleExitEditMode}
+            onExitEditMode={() => window.electronAPI.hideEditWindow()}
             searchQuery={searchQuery}
             onSearchChange={onSearchChange}
             dataFileTabs={dataFileTabs}

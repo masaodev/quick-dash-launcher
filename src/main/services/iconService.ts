@@ -38,21 +38,16 @@ export class IconService {
     iconsFolder: string,
     extensionsFolder: string
   ): Promise<string | undefined> {
-    if (itemType === 'app') {
-      // EXE/アプリケーションのアイコンを抽出
-      const icon = await extractIcon(filePath, iconsFolder);
-      return icon || undefined;
-    } else if (itemType === 'file') {
-      // 拡張子ベースのアイコンを取得
-      const icon = await extractFileIconByExtension(filePath, extensionsFolder);
-      return icon || undefined;
-    } else if (itemType === 'customUri') {
-      // カスタムURIのアイコンを取得
-      const icon = await extractCustomUriIcon(filePath, iconsFolder);
-      return icon || undefined;
+    switch (itemType) {
+      case 'app':
+        return (await extractIcon(filePath, iconsFolder)) ?? undefined;
+      case 'file':
+        return (await extractFileIconByExtension(filePath, extensionsFolder)) ?? undefined;
+      case 'customUri':
+        return (await extractCustomUriIcon(filePath, iconsFolder)) ?? undefined;
+      default:
+        // folder と url タイプはアイコン取得をスキップ（デフォルトアイコンを使用）
+        return undefined;
     }
-
-    // folder と url タイプはアイコン取得をスキップ（デフォルトアイコンを使用）
-    return undefined;
   }
 }

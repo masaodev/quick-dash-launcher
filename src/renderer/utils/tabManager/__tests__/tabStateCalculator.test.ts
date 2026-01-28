@@ -69,7 +69,10 @@ describe('TabStateCalculator', () => {
       };
       const currentTabs: DataFileTab[] = [{ name: 'メイン', files: ['data.json'] }];
       const currentLabels = {};
-      const pendingOps: PendingFileOperations = { filesToCreate: ['data2.json'], filesToDelete: [] };
+      const pendingOps: PendingFileOperations = {
+        filesToCreate: ['data2.json'],
+        filesToDelete: [],
+      };
 
       expect(
         TabStateCalculator.hasUnsavedChanges(savedState, currentTabs, currentLabels, pendingOps)

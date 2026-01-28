@@ -15,7 +15,6 @@ interface ActionButtonsProps {
   onToggleWorkspace: () => void;
   onOpenRegisterModal: () => void;
   windowPinMode: WindowPinMode;
-  isEditMode: boolean;
 }
 
 const LauncherActionButtons: React.FC<ActionButtonsProps> = ({
@@ -29,7 +28,6 @@ const LauncherActionButtons: React.FC<ActionButtonsProps> = ({
   onToggleWorkspace,
   onOpenRegisterModal,
   windowPinMode,
-  isEditMode,
 }) => {
   // ピンモード別のクラス名を取得
   // normal: デフォルトのaction-btnスタイルを使用
@@ -80,7 +78,6 @@ const LauncherActionButtons: React.FC<ActionButtonsProps> = ({
         onOpenItemManagement={onOpenItemManagement}
         onToggleWorkspace={onToggleWorkspace}
         onQuitApp={() => window.electronAPI.quitApp()}
-        isEditMode={isEditMode}
       />
     </div>
   );

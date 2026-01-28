@@ -1,6 +1,16 @@
 import * as path from 'path';
 
-import { BrowserWindow, Tray, Menu, nativeImage, app, shell, screen, dialog } from 'electron';
+import {
+  BrowserWindow,
+  Tray,
+  Menu,
+  nativeImage,
+  app,
+  shell,
+  screen,
+  dialog,
+  Rectangle,
+} from 'electron';
 import { windowLogger } from '@common/logger';
 import type { WindowPinMode, WindowPositionMode } from '@common/types';
 import { PerformanceTimer } from '@common/utils/performanceTimer';
@@ -492,6 +502,33 @@ export function setFirstLaunchMode(isFirstLaunch: boolean): void {
 }
 
 /**
+ * ウィンドウ位置を画面内に収まるよう調整する
+ * @param x 目標X座標
+ * @param y 目標Y座標
+ * @param windowWidth ウィンドウ幅
+ * @param windowHeight ウィンドウ高さ
+ * @param displayBounds ディスプレイの作業領域
+ * @returns 調整後の座標
+ */
+function adjustPositionToDisplay(
+  x: number,
+  y: number,
+  windowWidth: number,
+  windowHeight: number,
+  displayBounds: Rectangle
+): { x: number; y: number } {
+  const adjustedX = Math.max(
+    displayBounds.x,
+    Math.min(x, displayBounds.x + displayBounds.width - windowWidth)
+  );
+  const adjustedY = Math.max(
+    displayBounds.y,
+    Math.min(y, displayBounds.y + displayBounds.height - windowHeight)
+  );
+  return { x: adjustedX, y: adjustedY };
+}
+
+/**
  * ウィンドウを指定されたモードに応じた位置に配置する
  * @param mode ウィンドウ表示位置モード ('center' | 'cursor' | 'fixed')
  */
@@ -510,57 +547,43 @@ export async function setWindowPosition(mode?: WindowPositionMode): Promise<void
     case 'cursor': {
       const cursorPoint = screen.getCursorScreenPoint();
       const bounds = mainWindow.getBounds();
+      const display = screen.getDisplayNearestPoint(cursorPoint);
 
       // カーソル位置がテキストボックス付近に来るようにウィンドウを配置
-      const offsetX = 100; // 左端からテキストボックスまでの距離
-      const offsetY = 40; // 上端からテキストボックスまでの距離
-      const x = cursorPoint.x - offsetX;
-      const y = cursorPoint.y - offsetY;
+      const targetX = cursorPoint.x - 100; // 左端からテキストボックスまでの距離
+      const targetY = cursorPoint.y - 40; // 上端からテキストボックスまでの距離
 
-      // 画面外に出ないように調整
-      const display = screen.getDisplayNearestPoint(cursorPoint);
-      const displayBounds = display.workArea;
-
-      const adjustedX = Math.max(
-        displayBounds.x,
-        Math.min(x, displayBounds.x + displayBounds.width - bounds.width)
+      const { x, y } = adjustPositionToDisplay(
+        targetX,
+        targetY,
+        bounds.width,
+        bounds.height,
+        display.workArea
       );
-      const adjustedY = Math.max(
-        displayBounds.y,
-        Math.min(y, displayBounds.y + displayBounds.height - bounds.height)
-      );
-
-      mainWindow.setPosition(adjustedX, adjustedY);
-      windowLogger.info(`ウィンドウをカーソル位置に配置しました: (${adjustedX}, ${adjustedY})`);
+      mainWindow.setPosition(x, y);
+      windowLogger.info(`ウィンドウをカーソル位置に配置しました: (${x}, ${y})`);
       break;
     }
 
     case 'cursorMonitorCenter': {
       const cursorPoint = screen.getCursorScreenPoint();
       const bounds = mainWindow.getBounds();
-
-      // カーソルがあるモニターを特定
       const display = screen.getDisplayNearestPoint(cursorPoint);
       const displayBounds = display.workArea;
 
       // モニターの中央座標を計算
-      const x = displayBounds.x + Math.floor((displayBounds.width - bounds.width) / 2);
-      const y = displayBounds.y + Math.floor((displayBounds.height - bounds.height) / 2);
+      const targetX = displayBounds.x + Math.floor((displayBounds.width - bounds.width) / 2);
+      const targetY = displayBounds.y + Math.floor((displayBounds.height - bounds.height) / 2);
 
-      // 画面外に出ないように調整（安全性チェック）
-      const adjustedX = Math.max(
-        displayBounds.x,
-        Math.min(x, displayBounds.x + displayBounds.width - bounds.width)
+      const { x, y } = adjustPositionToDisplay(
+        targetX,
+        targetY,
+        bounds.width,
+        bounds.height,
+        displayBounds
       );
-      const adjustedY = Math.max(
-        displayBounds.y,
-        Math.min(y, displayBounds.y + displayBounds.height - bounds.height)
-      );
-
-      mainWindow.setPosition(adjustedX, adjustedY);
-      windowLogger.info(
-        `ウィンドウをカーソルのモニター中央に配置しました: (${adjustedX}, ${adjustedY})`
-      );
+      mainWindow.setPosition(x, y);
+      windowLogger.info(`ウィンドウをカーソルのモニター中央に配置しました: (${x}, ${y})`);
       break;
     }
 

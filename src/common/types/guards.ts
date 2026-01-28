@@ -120,18 +120,16 @@ export function isDragItemData(data: unknown): data is DragItemData {
     return false;
   }
 
-  const typed = data as { type: string };
+  const record = data as Record<string, unknown>;
 
-  // type フィールドの値に応じてバリデーション
-  if (typed.type === 'workspace-item') {
-    return 'itemId' in data && typeof (data as { itemId: unknown }).itemId === 'string';
-  } else if (typed.type === 'history-item') {
-    return (
-      'historyItem' in data && typeof (data as { historyItem: unknown }).historyItem === 'object'
-    );
-  } else if (typed.type === 'group') {
-    return 'groupId' in data && typeof (data as { groupId: unknown }).groupId === 'string';
+  switch (record.type) {
+    case 'workspace-item':
+      return typeof record.itemId === 'string';
+    case 'history-item':
+      return typeof record.historyItem === 'object';
+    case 'group':
+      return typeof record.groupId === 'string';
+    default:
+      return false;
   }
-
-  return false;
 }

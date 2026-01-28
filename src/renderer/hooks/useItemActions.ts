@@ -7,7 +7,7 @@ import { useToast } from './useToast';
 /**
  * アイテムに対する各種アクション（コピー、親フォルダを開く等）を管理するカスタムフック
  */
-export const useItemActions = () => {
+export function useItemActions() {
   const { showSuccess, showError, showWarning } = useToast();
   /**
    * アイテムのパスをクリップボードにコピー
@@ -149,4 +149,4 @@ export const useItemActions = () => {
     handleOpenParentFolder,
     handleOpenShortcutParentFolder,
   };
-};
+}

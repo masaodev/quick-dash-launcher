@@ -43,5 +43,5 @@ export function setupIPCHandlers(
   setupWorkspaceHandlers();
   setupWindowSearchHandlers(getMainWindow, getWindowPinMode);
   setupNotificationHandlers();
-  setupContextMenuHandlers(getMainWindow);
+  setupContextMenuHandlers();
 }

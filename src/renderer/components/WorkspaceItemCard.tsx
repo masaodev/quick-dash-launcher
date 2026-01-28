@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import type { WorkspaceItem } from '@common/types';
 
+import { getDefaultIconForItemType } from '../utils/itemTypeIcons';
+
 interface WorkspaceItemCardProps {
   item: WorkspaceItem;
   isEditing: boolean;
@@ -71,27 +73,6 @@ const WorkspaceItemCard: React.FC<WorkspaceItemCardProps> = ({
     }
   };
 
-  const getDefaultIcon = () => {
-    switch (item.type) {
-      case 'url':
-        return '🌐';
-      case 'folder':
-        return '📁';
-      case 'app':
-        return '⚙️';
-      case 'file':
-        return '📄';
-      case 'customUri':
-        return '🔗';
-      case 'windowOperation':
-        return '🪟';
-      case 'group':
-        return '📦';
-      default:
-        return '📄';
-    }
-  };
-
   const getTooltipText = (): string => {
     const lines: string[] = [];
 
@@ -144,7 +125,11 @@ const WorkspaceItemCard: React.FC<WorkspaceItemCardProps> = ({
     >
       <div className="workspace-item-content">
         {item.icon && <img src={item.icon} alt="" className="workspace-item-icon" />}
-        {!item.icon && <div className="workspace-item-icon-placeholder">{getDefaultIcon()}</div>}
+        {!item.icon && (
+          <div className="workspace-item-icon-placeholder">
+            {getDefaultIconForItemType(item.type)}
+          </div>
+        )}
         {isEditing ? (
           <input
             ref={inputRef}

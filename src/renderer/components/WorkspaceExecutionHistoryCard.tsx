@@ -1,6 +1,8 @@
 import React from 'react';
 import type { ExecutionHistoryItem } from '@common/types';
 
+import { getDefaultIconForItemType } from '../utils/itemTypeIcons';
+
 interface ExecutionHistoryItemCardProps {
   item: ExecutionHistoryItem;
   onLaunch: (item: ExecutionHistoryItem) => void;
@@ -31,27 +33,6 @@ const WorkspaceExecutionHistoryCard: React.FC<ExecutionHistoryItemCardProps> = (
     setTimeout(() => {
       setIsDragging(false);
     }, 100);
-  };
-
-  const getDefaultIcon = () => {
-    switch (item.itemType) {
-      case 'url':
-        return '🌐';
-      case 'folder':
-        return '📁';
-      case 'app':
-        return '⚙️';
-      case 'file':
-        return '📄';
-      case 'customUri':
-        return '🔗';
-      case 'group':
-        return '📦';
-      case 'windowOperation':
-        return '🪟';
-      default:
-        return '📄';
-    }
   };
 
   const formatExecutionTime = (timestamp: number) => {
@@ -102,7 +83,11 @@ const WorkspaceExecutionHistoryCard: React.FC<ExecutionHistoryItemCardProps> = (
     >
       <div className="workspace-item-content">
         {item.icon && <img src={item.icon} alt="" className="workspace-item-icon" />}
-        {!item.icon && <div className="workspace-item-icon-placeholder">{getDefaultIcon()}</div>}
+        {!item.icon && (
+          <div className="workspace-item-icon-placeholder">
+            {getDefaultIconForItemType(item.itemType)}
+          </div>
+        )}
         <div className="workspace-item-name">{item.itemName}</div>
       </div>
       <div className="execution-history-time">{formatExecutionTime(item.executedAt)}</div>

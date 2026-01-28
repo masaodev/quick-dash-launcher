@@ -5,7 +5,6 @@ interface SettingsDropdownProps {
   onOpenItemManagement: () => void;
   onToggleWorkspace: () => void;
   onQuitApp: () => void;
-  isEditMode: boolean;
 }
 
 const LauncherSettingsDropdown: React.FC<SettingsDropdownProps> = ({
@@ -13,7 +12,6 @@ const LauncherSettingsDropdown: React.FC<SettingsDropdownProps> = ({
   onOpenItemManagement,
   onToggleWorkspace,
   onQuitApp,
-  isEditMode: _isEditMode,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);

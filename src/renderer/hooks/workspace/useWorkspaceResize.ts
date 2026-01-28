@@ -4,7 +4,9 @@ import React, { useCallback } from 'react';
  * ワークスペースウィンドウのサイズ変更を管理するカスタムフック
  * マウスイベントを使用してウィンドウの端をドラッグしてサイズ変更を実現
  */
-export const useWorkspaceResize = () => {
+export function useWorkspaceResize(): {
+  handleResize: (direction: string) => (e: React.MouseEvent) => void;
+} {
   /**
    * サイズ変更ハンドラーを生成
    * @param direction サイズ変更の方向（'top', 'bottom', 'left', 'right', 'top-left', 'top-right', 'bottom-left', 'bottom-right'）
@@ -70,4 +72,4 @@ export const useWorkspaceResize = () => {
   }, []);
 
   return { handleResize };
-};
+}

@@ -764,7 +764,6 @@ const App: React.FC = () => {
           onToggleWorkspace={handleToggleWorkspace}
           onOpenRegisterModal={handleOpenRegisterModal}
           windowPinMode={windowPinMode}
-          isEditMode={false}
         />
         <div className="drag-handle">⋮⋮</div>
       </div>

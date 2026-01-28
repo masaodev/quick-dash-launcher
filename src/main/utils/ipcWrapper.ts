@@ -20,22 +20,3 @@ export function createSafeIpcHandler<T extends unknown[], R>(
     }
   });
 }
-
-/**
- * 同期的なハンドラー用のラッパー関数
- * 同期処理にも対応したエラーハンドリング
- */
-export function createSafeIpcHandlerSync<T extends unknown[], R>(
-  channel: string,
-  handler: (...args: T) => R,
-  loggerContext: string
-): void {
-  ipcMain.handle(channel, async (_event, ...args: T) => {
-    try {
-      return handler(...args);
-    } catch (error) {
-      logger.error({ channel, error }, `${loggerContext}に失敗`);
-      throw error;
-    }
-  });
-}

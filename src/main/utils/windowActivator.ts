@@ -441,7 +441,7 @@ export async function tryActivateWindow(
         // デスクトップ移動完了を待機
         await waitForDesktopMove(hwnd, targetDesktopNumber, itemName, windowConfig, logger);
 
-        // 位置・サイズを再設定
+        // 位置・サイズを再設定（既存のリトライ付き関数を再利用）
         const targetBounds = {
           x: windowConfig.x,
           y: windowConfig.y,
@@ -449,47 +449,7 @@ export async function tryActivateWindow(
           height: windowConfig.height,
         };
 
-        const setSuccess = setWindowBounds(hwnd, targetBounds);
-
-        if (setSuccess) {
-          // 少し待ってから実際の値を確認
-          await new Promise((resolve) => setTimeout(resolve, WINDOW_BOUNDS_CONFIG.RETRY_DELAY_MS));
-
-          const actualBounds = getWindowBounds(hwnd);
-
-          if (actualBounds) {
-            const validation = validateBounds(actualBounds, targetBounds);
-
-            if (validation.allMatch) {
-              logger.info(
-                {
-                  name: itemName,
-                  windowConfig: JSON.stringify(windowConfig),
-                  actualBounds,
-                },
-                'デスクトップ移動後、位置・サイズを再設定しました'
-              );
-            } else {
-              logger.warn(
-                {
-                  name: itemName,
-                  windowConfig: JSON.stringify(windowConfig),
-                  targetBounds,
-                  actualBounds,
-                },
-                'デスクトップ移動後の位置・サイズ再設定に失敗しました'
-              );
-            }
-          }
-        } else {
-          logger.warn(
-            {
-              name: itemName,
-              windowConfig: JSON.stringify(windowConfig),
-            },
-            'デスクトップ移動後のSetWindowPosに失敗しました'
-          );
-        }
+        await setBoundsWithRetry(hwnd, targetBounds, itemName, windowConfig, logger);
       }
     } else {
       logger.warn(

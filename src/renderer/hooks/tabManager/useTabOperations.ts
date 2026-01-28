@@ -44,14 +44,15 @@ export function useTabOperations({
   showAlert,
   showConfirm,
 }: UseTabOperationsProps): UseTabOperationsReturn {
-  // タブを上に移動
-  const handleMoveTabUp = useCallback(
-    (tabIndex: number) => {
+  // タブを移動する共通処理
+  const moveTab = useCallback(
+    (fromIndex: number, toIndex: number) => {
       const tabs = editedSettings.dataFileTabs || [];
-      if (tabIndex <= 0) return;
+      if (fromIndex < 0 || fromIndex >= tabs.length) return;
+      if (toIndex < 0 || toIndex >= tabs.length) return;
 
       const newTabs = [...tabs];
-      [newTabs[tabIndex - 1], newTabs[tabIndex]] = [newTabs[tabIndex], newTabs[tabIndex - 1]];
+      [newTabs[fromIndex], newTabs[toIndex]] = [newTabs[toIndex], newTabs[fromIndex]];
 
       setEditedSettings((prev) => ({
         ...prev,
@@ -61,21 +62,16 @@ export function useTabOperations({
     [editedSettings.dataFileTabs, setEditedSettings]
   );
 
+  // タブを上に移動
+  const handleMoveTabUp = useCallback(
+    (tabIndex: number) => moveTab(tabIndex, tabIndex - 1),
+    [moveTab]
+  );
+
   // タブを下に移動
   const handleMoveTabDown = useCallback(
-    (tabIndex: number) => {
-      const tabs = editedSettings.dataFileTabs || [];
-      if (tabIndex < 0 || tabIndex >= tabs.length - 1) return;
-
-      const newTabs = [...tabs];
-      [newTabs[tabIndex], newTabs[tabIndex + 1]] = [newTabs[tabIndex + 1], newTabs[tabIndex]];
-
-      setEditedSettings((prev) => ({
-        ...prev,
-        dataFileTabs: newTabs,
-      }));
-    },
-    [editedSettings.dataFileTabs, setEditedSettings]
+    (tabIndex: number) => moveTab(tabIndex, tabIndex + 1),
+    [moveTab]
   );
 
   // タブ名を変更

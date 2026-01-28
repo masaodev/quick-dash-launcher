@@ -45,26 +45,14 @@ export function useCollapsibleSections(initialSections: Record<string, boolean> 
    * 全てのセクションを展開
    */
   const expandAll = () => {
-    setCollapsed((prev) => {
-      const newState: Record<string, boolean> = {};
-      for (const key in prev) {
-        newState[key] = false;
-      }
-      return newState;
-    });
+    setCollapsed((prev) => Object.fromEntries(Object.keys(prev).map((key) => [key, false])));
   };
 
   /**
    * 全てのセクションを閉じる
    */
   const collapseAll = () => {
-    setCollapsed((prev) => {
-      const newState: Record<string, boolean> = {};
-      for (const key in prev) {
-        newState[key] = true;
-      }
-      return newState;
-    });
+    setCollapsed((prev) => Object.fromEntries(Object.keys(prev).map((key) => [key, true])));
   };
 
   return { collapsed, toggleSection, expandAll, collapseAll, setCollapsed };

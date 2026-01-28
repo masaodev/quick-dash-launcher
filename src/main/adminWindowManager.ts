@@ -201,9 +201,9 @@ export function getInitialTab(): 'settings' | 'edit' | 'archive' | 'other' {
 }
 
 /**
- * 初期表示タブをリセットする
+ * 初期表示タブをリセットする（内部使用のみ）
  */
-export function resetInitialTab(): void {
+function resetInitialTab(): void {
   initialTab = 'settings';
 }
 

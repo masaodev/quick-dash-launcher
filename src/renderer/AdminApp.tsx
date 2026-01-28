@@ -127,10 +127,6 @@ const AdminApp: React.FC = () => {
     }
   };
 
-  const handleSearchChange = (query: string) => {
-    setSearchQuery(query);
-  };
-
   // dataFileTabsをメモ化して、内容が変わらない限り参照を保持
   const dataFileTabs = useMemo(() => {
     return settings?.dataFileTabs || [];
@@ -159,7 +155,7 @@ const AdminApp: React.FC = () => {
         editableItems={editableItems}
         onEditableItemsSave={handleEditableItemsSave}
         searchQuery={searchQuery}
-        onSearchChange={handleSearchChange}
+        onSearchChange={setSearchQuery}
         dataFileTabs={dataFileTabs}
         dataFileLabels={dataFileLabels}
       />

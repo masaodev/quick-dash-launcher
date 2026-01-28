@@ -7,6 +7,7 @@ import type { WorkspaceGroup, WorkspaceItem } from '@common/types';
 import logger from '@common/logger';
 
 import type { WorkspaceStoreInstance } from './types.js';
+import { migrateGroupDisplayName } from './migrationUtils.js';
 
 /**
  * ワークスペースグループの管理を担当するクラス
@@ -26,23 +27,13 @@ export class WorkspaceGroupManager {
     try {
       const groups = this.store.get('groups') || [];
 
-      // 旧データの name → displayName マイグレーション
-      let needsMigration = false;
-      const migratedGroups = groups.map((group) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const rawGroup = group as any;
-        if (rawGroup.name !== undefined && rawGroup.displayName === undefined) {
-          needsMigration = true;
-          const { name, ...rest } = rawGroup;
-          return { ...rest, displayName: name } as WorkspaceGroup;
-        }
-        return group;
-      });
+      const { migratedGroups, needsMigration } = migrateGroupDisplayName(
+        groups,
+        'workspace groups'
+      );
 
-      // マイグレーションが必要な場合、ストアを更新
       if (needsMigration) {
         this.store.set('groups', migratedGroups);
-        logger.info('Migrated workspace groups: name → displayName');
       }
 
       return migratedGroups.sort((a, b) => a.order - b.order);

@@ -11,11 +11,107 @@ import { getIsFirstLaunch } from '../main.js';
 /**
  * すべてのウィンドウに設定変更を通知
  */
-function notifySettingsChanged() {
+function notifySettingsChanged(): void {
   const allWindows = BrowserWindow.getAllWindows();
   allWindows.forEach((window) => {
     window.webContents.send(IPC_CHANNELS.EVENT_SETTINGS_CHANGED);
   });
+}
+
+/**
+ * ワークスペースウィンドウの透過度を更新する
+ */
+async function updateWorkspaceOpacity(
+  backgroundTransparent: boolean,
+  opacity: number
+): Promise<void> {
+  const { getWorkspaceWindow } = await import('../workspaceWindowManager.js');
+  const workspace = getWorkspaceWindow();
+  if (workspace && !workspace.isDestroyed()) {
+    workspace.setOpacity(backgroundTransparent ? 1.0 : opacity / 100);
+  }
+}
+
+/**
+ * ワークスペースウィンドウの位置を更新する
+ */
+async function updateWorkspacePosition(): Promise<void> {
+  const { getWorkspaceWindow, setWorkspacePosition } = await import('../workspaceWindowManager.js');
+  const workspace = getWorkspaceWindow();
+  if (workspace && !workspace.isDestroyed() && workspace.isVisible()) {
+    await setWorkspacePosition();
+  }
+}
+
+/**
+ * 個別の設定変更の副作用を適用する
+ */
+async function applySingleSettingEffect(
+  key: keyof AppSettings,
+  value: AppSettings[keyof AppSettings],
+  settingsService: SettingsService
+): Promise<void> {
+  // autoLaunch設定の場合
+  if (key === 'autoLaunch') {
+    const autoLaunchService = AutoLaunchService.getInstance();
+    await autoLaunchService.setAutoLaunch(value as boolean);
+  }
+
+  // workspaceOpacity または workspaceBackgroundTransparent 設定の場合
+  if (key === 'workspaceOpacity' || key === 'workspaceBackgroundTransparent') {
+    const currentSettings = await settingsService.getAll();
+    const backgroundTransparent =
+      key === 'workspaceBackgroundTransparent'
+        ? (value as boolean)
+        : currentSettings.workspaceBackgroundTransparent;
+    const opacity =
+      key === 'workspaceOpacity' ? (value as number) : currentSettings.workspaceOpacity;
+    await updateWorkspaceOpacity(backgroundTransparent, opacity);
+  }
+
+  // workspacePositionMode等の設定の場合
+  if (
+    key === 'workspacePositionMode' ||
+    key === 'workspacePositionX' ||
+    key === 'workspacePositionY'
+  ) {
+    await updateWorkspacePosition();
+  }
+}
+
+/**
+ * 複数設定変更の副作用を適用する
+ */
+async function applyMultipleSettingsEffects(
+  settings: Partial<AppSettings>,
+  settingsService: SettingsService
+): Promise<void> {
+  // autoLaunch設定
+  if (settings.autoLaunch !== undefined) {
+    const autoLaunchService = AutoLaunchService.getInstance();
+    await autoLaunchService.setAutoLaunch(settings.autoLaunch);
+  }
+
+  // workspaceOpacity設定
+  if (
+    settings.workspaceOpacity !== undefined ||
+    settings.workspaceBackgroundTransparent !== undefined
+  ) {
+    const currentSettings = await settingsService.getAll();
+    const backgroundTransparent =
+      settings.workspaceBackgroundTransparent ?? currentSettings.workspaceBackgroundTransparent;
+    const opacity = settings.workspaceOpacity ?? currentSettings.workspaceOpacity;
+    await updateWorkspaceOpacity(backgroundTransparent, opacity);
+  }
+
+  // workspacePositionMode設定
+  if (
+    settings.workspacePositionMode !== undefined ||
+    settings.workspacePositionX !== undefined ||
+    settings.workspacePositionY !== undefined
+  ) {
+    await updateWorkspacePosition();
+  }
 }
 
 /**
@@ -56,44 +152,8 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
         await settingsService.set(key, value);
         logger.info(`Settings set request: ${key} = ${value}`);
 
-        // autoLaunch設定の場合、システムの自動起動設定を更新
-        if (key === 'autoLaunch') {
-          const autoLaunchService = AutoLaunchService.getInstance();
-          await autoLaunchService.setAutoLaunch(value as boolean);
-        }
-
-        // workspaceOpacity または workspaceBackgroundTransparent 設定の場合、ワークスペースウィンドウの透過度を即座に反映
-        if (key === 'workspaceOpacity' || key === 'workspaceBackgroundTransparent') {
-          const { getWorkspaceWindow } = await import('../workspaceWindowManager.js');
-          const workspace = getWorkspaceWindow();
-          if (workspace && !workspace.isDestroyed()) {
-            // 現在の設定を取得
-            const currentSettings = await settingsService.getAll();
-            const backgroundTransparent =
-              key === 'workspaceBackgroundTransparent'
-                ? (value as boolean)
-                : currentSettings.workspaceBackgroundTransparent;
-            const opacity =
-              key === 'workspaceOpacity' ? (value as number) : currentSettings.workspaceOpacity;
-
-            // 背景のみ透過の場合はウィンドウは完全不透明、それ以外は設定値を使用
-            workspace.setOpacity(backgroundTransparent ? 1.0 : opacity / 100);
-          }
-        }
-
-        // workspacePositionMode等の設定時、ワークスペース位置を即座に反映
-        if (
-          key === 'workspacePositionMode' ||
-          key === 'workspacePositionX' ||
-          key === 'workspacePositionY'
-        ) {
-          const { getWorkspaceWindow, setWorkspacePosition } =
-            await import('../workspaceWindowManager.js');
-          const workspace = getWorkspaceWindow();
-          if (workspace && !workspace.isDestroyed() && workspace.isVisible()) {
-            await setWorkspacePosition();
-          }
-        }
+        // 個別設定を適用
+        await applySingleSettingEffect(key, value, settingsService);
 
         return true;
       } catch (error) {
@@ -118,45 +178,8 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
           logger.info('初回起動モードを解除しました（ホットキーが設定されたため）');
         }
 
-        // autoLaunch設定が含まれている場合、システムの自動起動設定を更新
-        if (settings.autoLaunch !== undefined) {
-          const autoLaunchService = AutoLaunchService.getInstance();
-          await autoLaunchService.setAutoLaunch(settings.autoLaunch);
-        }
-
-        // workspaceOpacity設定が含まれている場合、ワークスペースウィンドウの透過度を即座に反映
-        if (
-          settings.workspaceOpacity !== undefined ||
-          settings.workspaceBackgroundTransparent !== undefined
-        ) {
-          const { getWorkspaceWindow } = await import('../workspaceWindowManager.js');
-          const workspace = getWorkspaceWindow();
-          if (workspace && !workspace.isDestroyed()) {
-            // 現在の設定を取得
-            const currentSettings = await settingsService.getAll();
-            const backgroundTransparent =
-              settings.workspaceBackgroundTransparent ??
-              currentSettings.workspaceBackgroundTransparent;
-            const opacity = settings.workspaceOpacity ?? currentSettings.workspaceOpacity;
-
-            // 背景のみ透過の場合はウィンドウは完全不透明、それ以外は設定値を使用
-            workspace.setOpacity(backgroundTransparent ? 1.0 : opacity / 100);
-          }
-        }
-
-        // workspacePositionMode設定が含まれる場合、ワークスペース位置を即座に反映
-        if (
-          settings.workspacePositionMode !== undefined ||
-          settings.workspacePositionX !== undefined ||
-          settings.workspacePositionY !== undefined
-        ) {
-          const { getWorkspaceWindow, setWorkspacePosition } =
-            await import('../workspaceWindowManager.js');
-          const workspace = getWorkspaceWindow();
-          if (workspace && !workspace.isDestroyed() && workspace.isVisible()) {
-            await setWorkspacePosition();
-          }
-        }
+        // 複数設定を適用
+        await applyMultipleSettingsEffects(settings, settingsService);
 
         // すべてのウィンドウに設定変更を通知
         notifySettingsChanged();

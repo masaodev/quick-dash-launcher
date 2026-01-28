@@ -63,10 +63,6 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
     };
   }, [onClose, disableEventListeners]);
 
-  const handleColorClick = (colorValue: string) => {
-    onSelectColor(colorValue);
-  };
-
   return (
     <div className="color-picker-dropdown" ref={pickerRef}>
       <div className="color-picker-grid">
@@ -75,7 +71,7 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
             key={color.value}
             className={`color-picker-option ${currentColor === color.value ? 'selected' : ''}`}
             style={{ backgroundColor: color.value }}
-            onClick={() => handleColorClick(color.value)}
+            onClick={() => onSelectColor(color.value)}
             title={color.name}
             type="button"
           />
