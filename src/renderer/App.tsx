@@ -165,6 +165,36 @@ const App: React.FC = () => {
     });
   };
 
+  // データ読み込み関数
+  const loadItems = async (): Promise<AppItem[]> => {
+    const items = await window.electronAPI.loadDataFiles();
+
+    // Load cached icons (LauncherItemのみ)
+    const launcherItems = items.filter(
+      (item) => !isWindowInfo(item) && !isGroupItem(item) && !isWindowItem(item)
+    ) as LauncherItem[];
+    const iconCache = await window.electronAPI.loadCachedIcons(launcherItems);
+
+    // Apply cached icons to items
+    const itemsWithIcons = items.map((item) => {
+      if (isWindowInfo(item) || isGroupItem(item) || isWindowItem(item)) {
+        return item;
+      }
+      return {
+        ...item,
+        icon: iconCache[item.path] || item.icon,
+      };
+    });
+
+    setMainItems(itemsWithIcons);
+    return itemsWithIcons;
+  };
+
+  // データ再読込ハンドラー（ローディング表示付き）
+  const handleReloadItems = async (): Promise<void> => {
+    await withLoading('データ再読込中', loadItems);
+  };
+
   // 検索モード切り替えハンドラー（順次切り替え: normal → window → history → normal...）
   const handleToggleSearchMode = async () => {
     if (searchMode === 'normal') {
@@ -308,6 +338,7 @@ const App: React.FC = () => {
     historyItems,
     toggleSearchMode: handleToggleSearchMode,
     refreshWindows: handleRefreshWindows,
+    reloadData: handleReloadItems,
     desktopCount: desktopInfo?.desktopCount || 0,
     activeDesktopTab,
     setActiveDesktopTab,
@@ -415,33 +446,6 @@ const App: React.FC = () => {
       cleanupDataChanged();
     };
   }, []);
-
-  const loadItems = async (): Promise<AppItem[]> => {
-    const items = await window.electronAPI.loadDataFiles();
-
-    // Load cached icons (LauncherItemのみ)
-    const launcherItems = items.filter(
-      (item) => !isWindowInfo(item) && !isGroupItem(item) && !isWindowItem(item)
-    ) as LauncherItem[];
-    const iconCache = await window.electronAPI.loadCachedIcons(launcherItems);
-
-    // Apply cached icons to items
-    const itemsWithIcons = items.map((item) => {
-      if (isWindowInfo(item) || isGroupItem(item) || isWindowItem(item)) {
-        return item;
-      }
-      return {
-        ...item,
-        icon: iconCache[item.path] || item.icon,
-      };
-    });
-
-    setMainItems(itemsWithIcons);
-    return itemsWithIcons;
-  };
-
-  // データ再読込ハンドラー（ローディング表示付き）
-  const handleReloadItems = () => withLoading('データ読み込み中', loadItems);
 
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
@@ -597,7 +601,7 @@ const App: React.FC = () => {
       // 削除ダイアログを閉じる
       setDeleteConfirmDialog({ isOpen: false, item: null });
 
-      // データ再読み込み
+      // データ再読込
       loadItems();
     } catch (error) {
       logError('Failed to delete item:', error);
@@ -752,6 +756,7 @@ const App: React.FC = () => {
           searchMode={searchMode}
           onToggleSearchMode={handleToggleSearchMode}
           onRefreshWindows={handleRefreshWindows}
+          onReloadData={handleReloadItems}
         />
         <LauncherActionButtons
           onReload={handleReloadItems}

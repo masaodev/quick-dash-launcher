@@ -45,7 +45,7 @@ const LauncherRefreshActionsDropdown: React.FC<RefreshActionsDropdownProps> = ({
       {isOpen && (
         <div className="dropdown-menu">
           <button className="dropdown-item" onClick={() => handleMenuItemClick(onReload)}>
-            📋 データ再読み込み
+            📋 データ再読込
           </button>
           <button
             className="dropdown-item"
