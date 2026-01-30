@@ -529,7 +529,12 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
             return null;
           }
           return (
-            <div key={group.id} className="workspace-group">
+            <div
+              key={group.id}
+              className="workspace-group"
+              onDragOver={handleGroupDragOver}
+              onDrop={handleGroupDrop(group.id)}
+            >
               <WorkspaceGroupHeader
                 group={group}
                 itemCount={groupItems.length}
@@ -537,8 +542,6 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
                 onToggle={handleGroupToggle}
                 onUpdate={onUpdateGroup}
                 onStartEdit={() => setEditingGroupId(editingGroupId === group.id ? null : group.id)}
-                onDragOver={handleGroupDragOver}
-                onDrop={handleGroupDrop(group.id)}
                 onGroupDragStart={handleGroupDragStart(group)}
                 onGroupDragEnd={handleGroupDragEnd}
                 onGroupDragOverForReorder={handleGroupDragOverForReorder(group)}
