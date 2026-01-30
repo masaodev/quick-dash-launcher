@@ -12,11 +12,21 @@ import { debugInfo } from '../utils/debug';
 
 import { useModalInitializer } from './useModalInitializer';
 
-/**
- * RegisterModalのフォーム状態管理フック
- *
- * アイテムの状態管理、バリデーション、操作を一元管理します。
- */
+async function loadCachedIconsForItems(items: RegisterItem[]): Promise<Record<string, string>> {
+  const itemsNeedingIcons = items.filter(
+    (item) => !item.icon && item.path.trim() && item.type !== 'folder'
+  );
+  if (itemsNeedingIcons.length === 0) {
+    return {};
+  }
+  const launcherItems = itemsNeedingIcons.map((item) => ({
+    path: item.path,
+    type: item.type,
+    displayName: item.displayName,
+  }));
+  return window.electronAPI.loadCachedIcons(launcherItems);
+}
+
 export function useRegisterForm(
   isOpen: boolean,
   editingItem: EditingAppItem | EditableJsonItem | null | undefined,
@@ -35,66 +45,62 @@ export function useRegisterForm(
   }>({});
   const [selectorModalOpen, setSelectorModalOpen] = useState(false);
   const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
+  const [iconFetchLoading, setIconFetchLoading] = useState<boolean[]>([]);
 
-  // モーダル初期化フック
   const { initializeFromEditingItem, initializeFromDroppedPaths, createEmptyTemplateItem } =
     useModalInitializer();
 
-  /**
-   * モーダルが開かれたときの初期化処理
-   */
   useEffect(() => {
     if (!isOpen) {
-      // モーダルが閉じられたときのクリーンアップ
       setItems([]);
       setErrors({});
       setLoading(false);
+      setIconFetchLoading([]);
       return;
     }
 
-    // 設定からタブ一覧を取得してから、アイテムを初期化
     const loadAvailableTabsAndInitialize = async () => {
       const settings = await window.electronAPI.getSettings();
       setAvailableTabs(settings.dataFileTabs);
       setDataFileLabels(settings.dataFileLabels || {});
-
-      // モーダルが開いたとき、まず前回の状態をクリア
       setItems([]);
       setErrors({});
+
+      let newItems: RegisterItem[] = [];
 
       if (editingItem) {
         debugInfo('RegisterModal opened in edit mode:', editingItem);
         setLoading(true);
-        const items = await initializeFromEditingItem(
+        newItems = await initializeFromEditingItem(
           editingItem,
           settings.dataFileTabs,
           loadCustomIconPreview
         );
-        setItems(items);
-        setLoading(false);
       } else if (droppedPaths && droppedPaths.length > 0) {
         debugInfo('RegisterModal opened with paths:', droppedPaths);
         setLoading(true);
-        const items = await initializeFromDroppedPaths(
+        newItems = await initializeFromDroppedPaths(
           droppedPaths,
           currentTab,
           settings.dataFileTabs
         );
-        setItems(items);
-        setLoading(false);
       } else {
-        // ボタンから開かれた場合：空のテンプレートアイテムを1つ作成
         debugInfo('RegisterModal opened manually: creating empty template');
-        const items = createEmptyTemplateItem(currentTab, settings.dataFileTabs);
-        setItems(items);
+        newItems = createEmptyTemplateItem(currentTab, settings.dataFileTabs);
       }
+
+      const cachedIcons = await loadCachedIconsForItems(newItems);
+      const itemsWithIcons = newItems.map((item) =>
+        cachedIcons[item.path] ? { ...item, icon: cachedIcons[item.path] } : item
+      );
+
+      setItems(itemsWithIcons);
+      setIconFetchLoading(newItems.map(() => false));
+      setLoading(false);
     };
     loadAvailableTabsAndInitialize();
   }, [isOpen, droppedPaths, editingItem, currentTab]);
 
-  /**
-   * アイテムの値を変更
-   */
   const handleItemChange = async (
     index: number,
     field: keyof RegisterItem,
@@ -116,7 +122,6 @@ export function useRegisterForm(
         windowOperationConfig: value as RegisterItem['windowOperationConfig'],
       };
     } else if (field === 'groupItemNames') {
-      // groupItemNamesの場合は文字列をパース
       const itemNames = (value as string)
         .split(',')
         .map((name) => name.trim())
@@ -126,14 +131,12 @@ export function useRegisterForm(
       newItems[index] = { ...newItems[index], [field]: value };
     }
 
-    // 入力変更時に該当フィールドのエラーをクリア
     if (field === 'displayName' || field === 'path' || field === 'windowOperationConfig') {
       setErrors((prev) => {
         const newErrors = { ...prev };
         if (newErrors[index]) {
           const updatedError = { ...newErrors[index] };
           if (field === 'windowOperationConfig') {
-            // windowOperationConfigの場合はdisplayNameエラーをクリア
             delete updatedError.displayName;
           } else {
             delete updatedError[field];
@@ -144,10 +147,8 @@ export function useRegisterForm(
       });
     }
 
-    // アイテム種別が変更された場合の処理
     if (field === 'itemCategory') {
       if (value === 'dir') {
-        // フォルダ取込選択時：フォルダ処理を展開に設定し、フォルダ取込アイテムオプションを初期化
         newItems[index].folderProcessing = 'expand';
         if (!newItems[index].dirOptions) {
           newItems[index].dirOptions = {
@@ -159,29 +160,22 @@ export function useRegisterForm(
             suffix: undefined,
           };
         }
-        // グループオプションをクリア
         delete newItems[index].groupItemNames;
       } else if (value === 'group') {
-        // グループ選択時：グループアイテムオプションを初期化
         if (!newItems[index].groupItemNames) {
           newItems[index].groupItemNames = [];
         }
-        // フォルダ取込オプションをクリア
         delete newItems[index].folderProcessing;
         delete newItems[index].dirOptions;
-        // ウィンドウ操作オプションをクリア
         delete newItems[index].windowOperationConfig;
       } else if (value === 'window') {
-        // ウィンドウ操作選択時：ウィンドウ操作オプションを初期化
         if (!newItems[index].windowOperationConfig) {
           newItems[index].windowOperationConfig = { displayName: '', windowTitle: '' };
         }
-        // その他のオプションをクリア
         delete newItems[index].folderProcessing;
         delete newItems[index].dirOptions;
         delete newItems[index].groupItemNames;
       } else {
-        // 単一アイテム選択時：すべてクリア
         delete newItems[index].folderProcessing;
         delete newItems[index].dirOptions;
         delete newItems[index].groupItemNames;
@@ -192,10 +186,6 @@ export function useRegisterForm(
     setItems(newItems);
   };
 
-  /**
-   * パス入力フィールドのフォーカスアウト時の処理
-   * アイテムタイプを再検出し、タイプに応じたデフォルト値を設定
-   */
   const handlePathBlur = async (index: number) => {
     const item = items[index];
     if (!item.path.trim()) {
@@ -206,7 +196,6 @@ export function useRegisterForm(
     const newItems = [...items];
     newItems[index].type = newType;
 
-    // タイプに応じてデフォルト値を設定
     if (newType === 'folder') {
       if (!newItems[index].folderProcessing) {
         newItems[index].folderProcessing = 'folder';
@@ -222,26 +211,25 @@ export function useRegisterForm(
         };
       }
     } else {
-      // フォルダでない場合はフォルダ関連の設定をクリア
       delete newItems[index].folderProcessing;
       delete newItems[index].dirOptions;
+
+      const cachedIcons = await loadCachedIconsForItems([newItems[index]]);
+      if (cachedIcons[item.path]) {
+        newItems[index].icon = cachedIcons[item.path];
+      }
     }
 
     setItems(newItems);
   };
 
-  /**
-   * バリデーションを実行して登録
-   */
   const validateAndRegister = () => {
-    // バリデーション：名前とパスの必須チェック
     const newErrors: typeof errors = {};
 
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
       newErrors[i] = {};
 
-      // フォルダ取込以外は表示名が必須
       if (item.itemCategory !== 'dir' && !item.displayName.trim()) {
         newErrors[i].displayName =
           item.itemCategory === 'group'
@@ -251,12 +239,10 @@ export function useRegisterForm(
               : 'アイテム表示名を入力してください';
       }
 
-      // グループ・ウィンドウ操作以外はパスが必須
       if (item.itemCategory !== 'group' && item.itemCategory !== 'window' && !item.path.trim()) {
         newErrors[i].path = 'パスを入力してください';
       }
 
-      // グループの場合はアイテム名リストが必須
       if (item.itemCategory === 'group') {
         const itemNames = item.groupItemNames || [];
         if (itemNames.length === 0) {
@@ -264,7 +250,6 @@ export function useRegisterForm(
         }
       }
 
-      // ウィンドウ操作の場合はウィンドウタイトルまたはプロセス名が必須
       if (item.itemCategory === 'window') {
         const hasWindowTitle = item.windowOperationConfig?.windowTitle?.trim();
         const hasProcessName = item.windowOperationConfig?.processName?.trim();
@@ -274,7 +259,6 @@ export function useRegisterForm(
       }
     }
 
-    // エラーがある場合は登録しない
     setErrors(newErrors);
     const hasErrors = Object.values(newErrors).some((e) =>
       Object.values(e).some((msg) => msg !== undefined)
@@ -288,25 +272,16 @@ export function useRegisterForm(
     onClose();
   };
 
-  /**
-   * キャンセル処理
-   */
   const handleCancel = () => {
     setItems([]);
     onClose();
   };
 
-  /**
-   * グループアイテム追加ボタンのクリック
-   */
   const handleAddGroupItem = (index: number) => {
     setEditingItemIndex(index);
     setSelectorModalOpen(true);
   };
 
-  /**
-   * グループアイテム選択時の処理
-   */
   const handleSelectGroupItem = (itemName: string) => {
     if (editingItemIndex === null) return;
 
@@ -318,7 +293,6 @@ export function useRegisterForm(
     };
     setItems(newItems);
 
-    // エラーをクリア
     setErrors((prev) => {
       const newErrors = { ...prev };
       if (newErrors[editingItemIndex]) {
@@ -330,9 +304,6 @@ export function useRegisterForm(
     });
   };
 
-  /**
-   * グループアイテムを削除
-   */
   const handleRemoveGroupItem = (itemIndex: number, groupItemNameIndex: number) => {
     const newItems = [...items];
     const currentGroupItemNames = newItems[itemIndex].groupItemNames || [];
@@ -344,25 +315,18 @@ export function useRegisterForm(
     setItems(newItems);
   };
 
-  /**
-   * アイテムリストを直接更新（カスタムアイコン選択時など）
-   */
   const updateItem = (index: number, updatedFields: Partial<RegisterItem>) => {
     const newItems = [...items];
     newItems[index] = { ...newItems[index], ...updatedFields };
     setItems(newItems);
   };
 
-  /**
-   * 保存先タブ変更時の処理
-   */
   const handleTargetTabChange = (index: number, targetTab: string) => {
     const selectedTab = availableTabs.find((tab) => tab.files.includes(targetTab));
 
     const newItems = [...items];
     newItems[index] = { ...newItems[index], targetTab };
 
-    // タブに複数ファイルがある場合、最初のファイルを設定
     if (selectedTab && selectedTab.files.length > 0) {
       newItems[index] = {
         ...newItems[index],
@@ -373,6 +337,41 @@ export function useRegisterForm(
     setItems(newItems);
   };
 
+  const handleFetchIcon = async (index: number) => {
+    const item = items[index];
+    if (!item.path.trim() || item.type === 'folder') {
+      return;
+    }
+
+    setIconFetchLoading((prev) => {
+      const newState = [...prev];
+      newState[index] = true;
+      return newState;
+    });
+
+    try {
+      const icon =
+        item.type === 'url'
+          ? await window.electronAPI.fetchFavicon(item.path)
+          : await window.electronAPI.getIconForItem(item.path, item.type);
+
+      if (icon) {
+        updateItem(index, { icon });
+        debugInfo(`アイコン取得成功 (index: ${index}, type: ${item.type})`);
+      } else {
+        debugInfo(`アイコン取得失敗 (index: ${index}, type: ${item.type})`);
+      }
+    } catch (error) {
+      debugInfo(`アイコン取得エラー (index: ${index}):`, error);
+    } finally {
+      setIconFetchLoading((prev) => {
+        const newState = [...prev];
+        newState[index] = false;
+        return newState;
+      });
+    }
+  };
+
   return {
     items,
     loading,
@@ -381,6 +380,7 @@ export function useRegisterForm(
     dataFileLabels,
     selectorModalOpen,
     editingItemIndex,
+    iconFetchLoading,
     handleItemChange,
     handlePathBlur,
     validateAndRegister,
@@ -390,6 +390,7 @@ export function useRegisterForm(
     handleRemoveGroupItem,
     updateItem,
     handleTargetTabChange,
+    handleFetchIcon,
     setEditingItemIndex,
     setSelectorModalOpen,
   };

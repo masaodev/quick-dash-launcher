@@ -542,3 +542,71 @@
   cursor: pointer;
   accent-color: var(--color-primary);
 }
+
+/* パス入力グループ（アイコン取得ボタン配置用） */
+.path-input-group {
+  flex-wrap: wrap;
+}
+
+.path-input-group input {
+  flex: 1;
+  min-width: 200px;
+}
+
+/* パス入力欄横のアクションボタン共通スタイル */
+.icon-fetch-btn,
+.url-converter-btn {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  border: none;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  white-space: nowrap;
+  font-size: var(--font-size-sm);
+  height: var(--input-height-sm);
+  transition: background-color var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.icon-fetch-btn:hover:not(:disabled),
+.url-converter-btn:hover:not(:disabled) {
+  background-color: var(--color-primary-hover);
+}
+
+.icon-fetch-btn:disabled,
+.url-converter-btn:disabled {
+  background-color: var(--color-gray-400);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.icon-fetch-emoji,
+.url-converter-emoji {
+  font-size: var(--font-size-md);
+}
+
+/* アイコン取得ボタンのスピナー */
+.icon-fetch-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--color-white);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: icon-fetch-spin 0.8s linear infinite;
+}
+
+@keyframes icon-fetch-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* エラーメッセージの配置調整（path-input-group内） */
+.path-input-group .error-message {
+  width: 100%;
+  margin-left: 120px;
+}

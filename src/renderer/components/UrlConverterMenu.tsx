@@ -3,29 +3,21 @@ import { findMatchingRule, applyConversionPrefix } from '@common/urlConversionRu
 import type { ConversionRule } from '@common/urlConversionRules';
 
 interface UrlConverterMenuProps {
-  /** 現在のURL */
   url: string;
-  /** URL変換時のコールバック */
   onConvert: (convertedUrl: string) => void;
+  itemType?: 'url' | 'file' | 'folder' | 'app' | 'customUri';
 }
 
-/**
- * URL変換メニューコンポーネント
- *
- * パス入力欄の下に表示されるリンクで、クリックするとSharePoint等のURL変換メニューを表示します。
- */
-const UrlConverterMenu: React.FC<UrlConverterMenuProps> = ({ url, onConvert }) => {
+const UrlConverterMenu: React.FC<UrlConverterMenuProps> = ({ url, onConvert, itemType }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [matchedRule, setMatchedRule] = useState<ConversionRule | undefined>(undefined);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // URLが変更されたときにルールを再検索
   useEffect(() => {
     const rule = findMatchingRule(url);
     setMatchedRule(rule);
   }, [url]);
 
-  // メニュー外クリックで閉じる
   useEffect(() => {
     if (!isOpen) return;
 
@@ -41,27 +33,30 @@ const UrlConverterMenu: React.FC<UrlConverterMenuProps> = ({ url, onConvert }) =
     };
   }, [isOpen]);
 
-  const handleLinkClick = (e: React.MouseEvent) => {
+  const handleButtonClick = (e: React.MouseEvent) => {
     e.preventDefault();
     setIsOpen(!isOpen);
   };
 
   const handleOptionClick = (prefix: string) => {
-    const convertedUrl = applyConversionPrefix(url, prefix);
-    onConvert(convertedUrl);
+    onConvert(applyConversionPrefix(url, prefix));
     setIsOpen(false);
   };
 
-  // URLが空の場合は表示しない
-  if (!url) {
-    return null;
-  }
+  const isDisabled = !url.trim() || (itemType !== undefined && itemType !== 'url');
 
   return (
     <div className="url-converter-menu-container" ref={menuRef}>
-      <a href="#" onClick={handleLinkClick} className="url-converter-link">
-        🔗 URL形式を変換
-      </a>
+      <button
+        type="button"
+        className="url-converter-btn"
+        onClick={handleButtonClick}
+        disabled={isDisabled}
+        title="URL形式を変換（SharePoint等）"
+      >
+        <span className="url-converter-emoji">🔗</span>
+        <span>URL変換</span>
+      </button>
 
       {isOpen && (
         <div className="url-converter-menu">

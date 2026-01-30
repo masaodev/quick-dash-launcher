@@ -1,23 +1,8 @@
 /* UrlConverterMenuコンポーネント用のスタイル */
+/* 注: ボタンスタイル(.url-converter-btn, .url-converter-emoji)はRegisterModal.cssで共通定義 */
 
 .url-converter-menu-container {
   position: relative;
-  margin-top: var(--spacing-xs);
-}
-
-.url-converter-link {
-  display: inline-block;
-  color: var(--color-primary);
-  font-size: var(--font-size-sm);
-  text-decoration: none;
-  cursor: pointer;
-  padding: var(--spacing-xs) 0;
-  transition: color var(--transition-fast);
-}
-
-.url-converter-link:hover {
-  color: var(--color-primary-hover);
-  text-decoration: underline;
 }
 
 .url-converter-menu {

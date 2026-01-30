@@ -18,6 +18,7 @@ import WindowSelectorModal from './WindowSelectorModal';
 import WindowConfigEditor from './WindowConfigEditor';
 import CustomIconEditor from './CustomIconEditor';
 import UrlConverterMenu from './UrlConverterMenu';
+import IconFetchButton from './IconFetchButton';
 import { Button } from './ui';
 import '../styles/components/UrlConverterMenu.css';
 
@@ -70,6 +71,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     dataFileLabels,
     selectorModalOpen,
     editingItemIndex,
+    iconFetchLoading,
     handleItemChange,
     handlePathBlur,
     validateAndRegister,
@@ -79,6 +81,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     handleRemoveGroupItem,
     updateItem,
     handleTargetTabChange,
+    handleFetchIcon,
     setEditingItemIndex,
     setSelectorModalOpen,
   } = useRegisterForm(
@@ -479,9 +482,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                           placeholder={
                             item.itemCategory === 'group'
                               ? 'グループ名を入力'
-                              : item.itemCategory === 'window'
-                                ? 'アイテム表示名を入力'
-                                : 'アイテム表示名を入力'
+                              : 'アイテム表示名を入力'
                           }
                         />
                         {errors[index]?.displayName && (
@@ -491,7 +492,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                     )}
 
                     {item.itemCategory !== 'group' && item.itemCategory !== 'window' && (
-                      <div className="form-group">
+                      <div className="form-group path-input-group">
                         <label>パス:</label>
                         <input
                           type="text"
@@ -508,15 +509,22 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                           onBlur={() => handlePathBlur(index)}
                           placeholder="ファイルパス、URL、またはカスタムURIを入力"
                         />
-                        {errors[index]?.path && (
-                          <span className="error-message">{errors[index].path}</span>
-                        )}
+                        <IconFetchButton
+                          path={item.path}
+                          loading={iconFetchLoading[index] || false}
+                          onFetch={() => handleFetchIcon(index)}
+                          itemType={item.type}
+                        />
                         <UrlConverterMenu
                           url={item.path}
                           onConvert={(convertedUrl) =>
                             handleItemChange(index, 'path', convertedUrl)
                           }
+                          itemType={item.type}
                         />
+                        {errors[index]?.path && (
+                          <span className="error-message">{errors[index].path}</span>
+                        )}
                       </div>
                     )}
 
