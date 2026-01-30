@@ -3,32 +3,9 @@ import type { WorkspaceItem, WorkspaceGroup } from '@common/types';
 import { logError } from '../../utils/debug';
 
 /**
- * ワークスペースのアクションハンドラーを統合管理するカスタムフック
- *
- * アイテムとグループに関する全ての操作（起動、削除、並び替え、更新など）を
- * 一箇所にまとめ、WorkspaceAppコンポーネントの肥大化を防ぎます。
- *
- * @param onDataChanged データ変更時のコールバック（再読み込み用）
- * @returns アクションハンドラー関数群
- *
- * @example
- * ```tsx
- * const actions = useWorkspaceActions(() => {
- *   loadItems();
- *   loadGroups();
- * });
- *
- * // アイテムを起動
- * await actions.handleLaunch(item);
- *
- * // アイテムを削除
- * await actions.handleRemove(item.id);
- * ```
+ * ワークスペースの操作（起動、削除、並び替え、更新等）を統合管理するフック
  */
 export function useWorkspaceActions(onDataChanged: () => void) {
-  /**
-   * ワークスペースアイテムを起動
-   */
   const handleLaunch = async (item: WorkspaceItem) => {
     try {
       await window.electronAPI.workspaceAPI.launchItem(item);
@@ -37,9 +14,6 @@ export function useWorkspaceActions(onDataChanged: () => void) {
     }
   };
 
-  /**
-   * ワークスペースアイテムを削除
-   */
   const handleRemove = async (id: string) => {
     try {
       await window.electronAPI.workspaceAPI.removeItem(id);
@@ -49,9 +23,6 @@ export function useWorkspaceActions(onDataChanged: () => void) {
     }
   };
 
-  /**
-   * ワークスペースアイテムの並び順を変更
-   */
   const handleReorder = async (itemIds: string[]) => {
     try {
       await window.electronAPI.workspaceAPI.reorderItems(itemIds);
@@ -61,9 +32,6 @@ export function useWorkspaceActions(onDataChanged: () => void) {
     }
   };
 
-  /**
-   * ワークスペースアイテムの表示名を更新
-   */
   const handleUpdateDisplayName = async (id: string, displayName: string) => {
     try {
       await window.electronAPI.workspaceAPI.updateDisplayName(id, displayName);
@@ -73,9 +41,15 @@ export function useWorkspaceActions(onDataChanged: () => void) {
     }
   };
 
-  /**
-   * グループの折りたたみ状態を切り替え
-   */
+  const handleUpdateItem = async (id: string, updates: Partial<WorkspaceItem>) => {
+    try {
+      await window.electronAPI.workspaceAPI.updateItem(id, updates);
+      onDataChanged();
+    } catch (error) {
+      logError('Failed to update workspace item:', error);
+    }
+  };
+
   const handleToggleGroup = async (groupId: string, groups: WorkspaceGroup[]) => {
     try {
       const group = groups.find((g) => g.id === groupId);
@@ -90,9 +64,6 @@ export function useWorkspaceActions(onDataChanged: () => void) {
     }
   };
 
-  /**
-   * グループ情報を更新
-   */
   const handleUpdateGroup = async (groupId: string, updates: Partial<WorkspaceGroup>) => {
     try {
       await window.electronAPI.workspaceAPI.updateGroup(groupId, updates);
@@ -102,11 +73,6 @@ export function useWorkspaceActions(onDataChanged: () => void) {
     }
   };
 
-  /**
-   * グループを削除
-   * @param groupId グループID
-   * @param deleteItems グループ内のアイテムも削除するか
-   */
   const handleDeleteGroup = async (groupId: string, deleteItems: boolean) => {
     try {
       await window.electronAPI.workspaceAPI.deleteGroup(groupId, deleteItems);
@@ -116,10 +82,6 @@ export function useWorkspaceActions(onDataChanged: () => void) {
     }
   };
 
-  /**
-   * グループをアーカイブ
-   * @param groupId グループID
-   */
   const handleArchiveGroup = async (groupId: string) => {
     try {
       await window.electronAPI.workspaceAPI.archiveGroup(groupId);
@@ -129,9 +91,6 @@ export function useWorkspaceActions(onDataChanged: () => void) {
     }
   };
 
-  /**
-   * 新しいグループを追加
-   */
   const handleAddGroup = async (groupCount: number) => {
     try {
       await window.electronAPI.workspaceAPI.createGroup(`グループ ${groupCount + 1}`);
@@ -141,9 +100,6 @@ export function useWorkspaceActions(onDataChanged: () => void) {
     }
   };
 
-  /**
-   * アイテムをグループに移動
-   */
   const handleMoveItemToGroup = async (itemId: string, groupId?: string) => {
     try {
       await window.electronAPI.workspaceAPI.moveItemToGroup(itemId, groupId);
@@ -153,9 +109,6 @@ export function useWorkspaceActions(onDataChanged: () => void) {
     }
   };
 
-  /**
-   * グループの並び順を変更
-   */
   const handleReorderGroups = async (groupIds: string[]) => {
     try {
       await window.electronAPI.workspaceAPI.reorderGroups(groupIds);
@@ -170,6 +123,7 @@ export function useWorkspaceActions(onDataChanged: () => void) {
     handleRemove,
     handleReorder,
     handleUpdateDisplayName,
+    handleUpdateItem,
     handleToggleGroup,
     handleUpdateGroup,
     handleDeleteGroup,

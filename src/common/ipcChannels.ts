@@ -108,6 +108,7 @@ export const IPC_CHANNELS = {
   WORKSPACE_ADD_ITEMS_FROM_PATHS: 'workspace:add-items-from-paths',
   WORKSPACE_REMOVE_ITEM: 'workspace:remove-item',
   WORKSPACE_UPDATE_DISPLAY_NAME: 'workspace:update-display-name',
+  WORKSPACE_UPDATE_ITEM: 'workspace:update-item',
   WORKSPACE_REORDER_ITEMS: 'workspace:reorder-items',
   WORKSPACE_LAUNCH_ITEM: 'workspace:launch-item',
 
@@ -184,6 +185,7 @@ export const IPC_CHANNELS = {
   // コンテキストメニュー - Workspace
   SHOW_WORKSPACE_CONTEXT_MENU: 'show-workspace-context-menu',
   EVENT_WORKSPACE_MENU_RENAME_ITEM: 'workspace-menu-rename-item',
+  EVENT_WORKSPACE_MENU_EDIT_ITEM: 'workspace-menu-edit-item',
   EVENT_WORKSPACE_MENU_LAUNCH_ITEM: 'workspace-menu-launch-item',
   EVENT_WORKSPACE_MENU_COPY_PATH: 'workspace-menu-copy-path',
   EVENT_WORKSPACE_MENU_COPY_PARENT_PATH: 'workspace-menu-copy-parent-path',

@@ -142,6 +142,11 @@ export class WorkspaceService {
     this.itemManager!.updateDisplayName(id, displayName);
   }
 
+  public async updateItem(id: string, updates: Partial<WorkspaceItem>): Promise<void> {
+    await this.initializeStore();
+    this.itemManager!.updateItem(id, updates);
+  }
+
   public async reorderItems(itemIds: string[]): Promise<void> {
     await this.initializeStore();
     this.itemManager!.reorderItems(itemIds);

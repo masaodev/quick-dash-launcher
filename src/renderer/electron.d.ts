@@ -147,6 +147,7 @@ export interface ElectronAPI {
     addItemsFromPaths: (filePaths: string[], groupId?: string) => Promise<WorkspaceItem[]>;
     removeItem: (id: string) => Promise<{ success: boolean }>;
     updateDisplayName: (id: string, displayName: string) => Promise<{ success: boolean }>;
+    updateItem: (id: string, updates: Partial<WorkspaceItem>) => Promise<{ success: boolean }>;
     reorderItems: (itemIds: string[]) => Promise<{ success: boolean }>;
     launchItem: (item: WorkspaceItem) => Promise<{ success: boolean }>;
     // グループ管理
@@ -240,6 +241,7 @@ export interface ElectronAPI {
   onUnPinWindow: (callback: (hwnd: number | bigint) => void) => () => void;
   // WorkspaceContextMenuイベントリスナー
   onWorkspaceMenuRenameItem: (callback: (itemId: string) => void) => () => void;
+  onWorkspaceMenuEditItem: (callback: (itemId: string) => void) => () => void;
   onWorkspaceMenuLaunchItem: (callback: (itemId: string) => void) => () => void;
   onWorkspaceMenuCopyPath: (callback: (itemId: string) => void) => () => void;
   onWorkspaceMenuCopyParentPath: (callback: (itemId: string) => void) => () => void;

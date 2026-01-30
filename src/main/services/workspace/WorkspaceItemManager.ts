@@ -264,6 +264,42 @@ export class WorkspaceItemManager {
   }
 
   /**
+   * アイテムを更新（全フィールド対応）
+   * @param id アイテムID
+   * @param updates 更新するフィールド
+   */
+  public updateItem(id: string, updates: Partial<WorkspaceItem>): void {
+    try {
+      const items = this.loadItems();
+      const itemIndex = items.findIndex((i) => i.id === id);
+
+      if (itemIndex === -1) {
+        logger.warn({ id }, 'Item not found in workspace');
+        throw new Error(`Item not found: ${id}`);
+      }
+
+      // 更新対象のフィールドをマージ（id, order, addedAt, groupIdは保持）
+      const existingItem = items[itemIndex];
+      const updatedItem: WorkspaceItem = {
+        ...existingItem,
+        ...updates,
+        // 以下のフィールドは保持（更新データに含まれていても上書きしない）
+        id: existingItem.id,
+        order: existingItem.order,
+        addedAt: existingItem.addedAt,
+        groupId: existingItem.groupId,
+      };
+
+      items[itemIndex] = updatedItem;
+      this.store.set('items', items);
+      logger.info({ id, updates }, 'Updated workspace item');
+    } catch (error) {
+      logger.error({ error, id }, 'Failed to update workspace item');
+      throw error;
+    }
+  }
+
+  /**
    * アイテムの並び順を変更
    */
   public reorderItems(itemIds: string[]): void {

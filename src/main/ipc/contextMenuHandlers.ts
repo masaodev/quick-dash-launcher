@@ -310,6 +310,16 @@ function setupWorkspaceContextMenuHandler(): void {
 
         menu.append(new MenuItem({ type: 'separator' }));
 
+        // 編集
+        menu.append(
+          new MenuItem({
+            label: '🔧 編集',
+            click: () => {
+              event.sender.send(IPC_CHANNELS.EVENT_WORKSPACE_MENU_EDIT_ITEM, item.id);
+            },
+          })
+        );
+
         // グループから削除（グループに所属している場合のみ）
         if (hasGroup) {
           menu.append(
@@ -320,9 +330,9 @@ function setupWorkspaceContextMenuHandler(): void {
               },
             })
           );
-
-          menu.append(new MenuItem({ type: 'separator' }));
         }
+
+        menu.append(new MenuItem({ type: 'separator' }));
 
         // ワークスペースから削除
         menu.append(

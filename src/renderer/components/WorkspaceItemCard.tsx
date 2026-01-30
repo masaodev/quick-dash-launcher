@@ -146,7 +146,7 @@ const WorkspaceItemCard: React.FC<WorkspaceItemCardProps> = ({
         )}
       </div>
       <button className="workspace-item-delete-btn" onClick={handleRemoveClick} title="削除">
-        ×
+        x
       </button>
     </div>
   );

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import type { WorkspaceItem } from '@common/types';
 
 import ConfirmDialog from './components/ConfirmDialog';
 import WorkspaceGroupedList from './components/WorkspaceGroupedList';
 import WorkspaceHeader from './components/WorkspaceHeader';
+import WorkspaceItemEditModal from './components/WorkspaceItemEditModal';
 import { useClipboardPaste } from './hooks/useClipboardPaste';
 import { useCollapsibleSections } from './hooks/useCollapsibleSections';
 import { useNativeDragDrop } from './hooks/useNativeDragDrop';
@@ -15,6 +17,7 @@ const WorkspaceApp: React.FC = () => {
   const [isPinned, setIsPinned] = useState(false);
   const [backgroundTransparent, setBackgroundTransparent] = useState(false);
   const [activeGroupId, setActiveGroupId] = useState<string | undefined>(undefined);
+  const [editModalItem, setEditModalItem] = useState<WorkspaceItem | null>(null);
 
   // データ管理フック
   const { items, groups, executionHistory, loadItems, loadGroups, loadExecutionHistory } =
@@ -94,15 +97,17 @@ const WorkspaceApp: React.FC = () => {
   }, []);
 
   // モーダルダイアログのモーダルモード設定（統合管理）
+  // 注意: 編集モーダルは独自にsetModalModeを管理しているため、ここでは含めない
   useEffect(() => {
     const isAnyModalOpen = deleteGroupDialog.isOpen || archiveGroupDialog.isOpen;
 
     if (isAnyModalOpen) {
       window.electronAPI.workspaceAPI.setModalMode(true, { width: 600, height: 400 });
-    } else {
+    } else if (!editModalItem) {
+      // 編集モーダルが開いていない場合のみモーダルモードを解除
       window.electronAPI.workspaceAPI.setModalMode(false);
     }
-  }, [deleteGroupDialog.isOpen, archiveGroupDialog.isOpen]);
+  }, [deleteGroupDialog.isOpen, archiveGroupDialog.isOpen, editModalItem]);
 
   /**
    * グループ削除ハンドラー（確認ダイアログ表示）
@@ -276,6 +281,7 @@ const WorkspaceApp: React.FC = () => {
             actions.handleUpdateDisplayName(id, displayName);
             setEditingId(null);
           },
+          onEditItem: (item: WorkspaceItem) => setEditModalItem(item),
           onToggleGroup: (groupId: string) => actions.handleToggleGroup(groupId, groups),
           onUpdateGroup: actions.handleUpdateGroup,
           onDeleteGroup: handleDeleteGroup,
@@ -335,6 +341,13 @@ const WorkspaceApp: React.FC = () => {
         confirmText="アーカイブ"
         cancelText="キャンセル"
         danger={false}
+      />
+      {/* ワークスペースアイテム編集モーダル */}
+      <WorkspaceItemEditModal
+        isOpen={editModalItem !== null}
+        onClose={() => setEditModalItem(null)}
+        editingItem={editModalItem}
+        onSave={actions.handleUpdateItem}
       />
       {/* サイズ変更ハンドル */}
       <div className="workspace-resize-handle top-left" onMouseDown={handleResize('top-left')} />

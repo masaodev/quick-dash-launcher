@@ -10,7 +10,7 @@ interface GroupItemSelectorModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSelect: (itemName: string) => void;
-  targetFile: string; // 対象のデータファイル名
+  targetFile?: string; // 対象のデータファイル名（未指定時は全データファイルから選択）
   excludeNames: string[]; // 既に追加済みのアイテム名（選択不可にする）
 }
 
@@ -165,8 +165,12 @@ const GroupItemSelectorModal: React.FC<GroupItemSelectorModalProps> = ({
           return false;
         }
 
-        // 対象ファイルのアイテムのみ
-        return launcherItem.sourceFile === targetFile;
+        // targetFileが指定されている場合は、対象ファイルのアイテムのみ
+        // 未指定の場合は全データファイルからのアイテムを許可
+        if (targetFile) {
+          return launcherItem.sourceFile === targetFile;
+        }
+        return true;
       }) as LauncherItem[];
 
       // アイコンを読み込む
@@ -196,28 +200,19 @@ const GroupItemSelectorModal: React.FC<GroupItemSelectorModalProps> = ({
     return excludeNames.includes(itemName);
   };
 
-  const getDefaultIcon = (item: AppItem) => {
-    if ('type' in item) {
-      switch (item.type) {
-        case 'url':
-          return '🌐';
-        case 'folder':
-          return '📁';
-        case 'app':
-          return '⚙️';
-        case 'file':
-          return '📄';
-        case 'customUri':
-          return '🔗';
-        case 'window':
-          return '🪟';
-        case 'group':
-          return '📦';
-        default:
-          return '❓';
-      }
-    }
-    return '❓';
+  const getDefaultIcon = (item: AppItem): string => {
+    if (!('type' in item)) return '❓';
+
+    const iconMap: Record<string, string> = {
+      url: '🌐',
+      folder: '📁',
+      app: '⚙️',
+      file: '📄',
+      customUri: '🔗',
+      window: '🪟',
+      group: '📦',
+    };
+    return iconMap[item.type] || '❓';
   };
 
   if (!isOpen) return null;

@@ -66,6 +66,7 @@ interface WorkspaceGroupedListProps {
     onRemoveItem: (id: string) => void;
     onReorderItems: (itemIds: string[]) => void;
     onUpdateDisplayName: (id: string, displayName: string) => void;
+    onEditItem: (item: WorkspaceItem) => void;
     onToggleGroup: (groupId: string) => void;
     onUpdateGroup: (groupId: string, updates: Partial<WorkspaceGroup>) => void;
     onDeleteGroup: (groupId: string) => void;
@@ -95,6 +96,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
     onRemoveItem,
     onReorderItems,
     onUpdateDisplayName,
+    onEditItem,
     onToggleGroup,
     onUpdateGroup,
     onDeleteGroup,
@@ -170,6 +172,13 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
       setEditingItemId(itemId);
     });
 
+    const cleanupEditItem = window.electronAPI.onWorkspaceMenuEditItem((itemId) => {
+      const item = itemsMap.get(itemId);
+      if (item) {
+        onEditItem(item);
+      }
+    });
+
     const cleanupLaunchItem = window.electronAPI.onWorkspaceMenuLaunchItem((itemId) => {
       const item = itemsMap.get(itemId);
       if (item) {
@@ -235,6 +244,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
 
     return () => {
       cleanupRenameItem();
+      cleanupEditItem();
       cleanupLaunchItem();
       cleanupCopyPath();
       cleanupCopyParentPath();
@@ -245,7 +255,15 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
       cleanupRemoveFromGroup();
       cleanupRemoveItem();
     };
-  }, [itemsMap, handlePathOperation, setEditingItemId, onLaunch, onMoveItemToGroup, onRemoveItem]);
+  }, [
+    itemsMap,
+    handlePathOperation,
+    setEditingItemId,
+    onLaunch,
+    onMoveItemToGroup,
+    onRemoveItem,
+    onEditItem,
+  ]);
 
   // WorkspaceGroupContextMenuイベントリスナー登録
   React.useEffect(() => {

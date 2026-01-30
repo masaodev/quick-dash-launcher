@@ -1,17 +1,12 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 
 import { logError } from '../utils/debug';
 
 /**
- * カスタムアイコン管理フック
- *
- * カスタムアイコンの選択、プレビュー、削除を管理します。
+ * カスタムアイコンの選択、プレビュー、削除を管理するフック
  */
 export function useCustomIcon() {
-  // カスタムアイコンのプレビュー（index -> base64データURL）
   const [customIconPreviews, setCustomIconPreviews] = useState<{ [index: number]: string }>({});
-
-  // FilePickerDialog の状態管理
   const [filePickerState, setFilePickerState] = useState<{
     isOpen: boolean;
     itemIndex: number | null;
@@ -20,74 +15,58 @@ export function useCustomIcon() {
     itemIndex: null,
   });
 
-  /**
-   * カスタムアイコン選択ダイアログを開く
-   */
-  const openCustomIconPicker = (index: number) => {
+  const openCustomIconPicker = useCallback((index: number) => {
     setFilePickerState({
       isOpen: true,
       itemIndex: index,
     });
-  };
+  }, []);
 
-  /**
-   * カスタムアイコンファイルが選択されたときの処理
-   */
-  const handleCustomIconFileSelected = async (
-    filePath: string,
-    itemPath: string,
-    onIconUpdated: (index: number, customIconFileName: string) => void
-  ) => {
-    if (filePickerState.itemIndex === null) return;
+  const handleCustomIconFileSelected = useCallback(
+    async (
+      filePath: string,
+      itemPath: string,
+      onIconUpdated: (index: number, customIconFileName: string) => void
+    ) => {
+      if (filePickerState.itemIndex === null) return;
 
-    try {
-      const index = filePickerState.itemIndex;
-      const customIconFileName = await window.electronAPI.saveCustomIcon(filePath, itemPath);
+      try {
+        const index = filePickerState.itemIndex;
+        const customIconFileName = await window.electronAPI.saveCustomIcon(filePath, itemPath);
+        onIconUpdated(index, customIconFileName);
 
-      // アイテムのcustomIconを更新（親コンポーネントのコールバック）
-      onIconUpdated(index, customIconFileName);
-
-      // プレビュー用にアイコンを取得
-      const iconData = await window.electronAPI.getCustomIcon(customIconFileName);
-      if (iconData) {
-        setCustomIconPreviews((prev) => ({ ...prev, [index]: iconData }));
+        const iconData = await window.electronAPI.getCustomIcon(customIconFileName);
+        if (iconData) {
+          setCustomIconPreviews((prev) => ({ ...prev, [index]: iconData }));
+        }
+      } catch (error) {
+        logError('カスタムアイコン選択エラー:', error);
+        alert('カスタムアイコンの選択に失敗しました: ' + error);
       }
-    } catch (error) {
-      logError('カスタムアイコン選択エラー:', error);
-      alert('カスタムアイコンの選択に失敗しました: ' + error);
-    }
-  };
+    },
+    [filePickerState.itemIndex]
+  );
 
-  /**
-   * カスタムアイコンを削除
-   */
-  const deleteCustomIcon = async (
-    index: number,
-    customIconFileName: string,
-    onIconDeleted: (index: number) => void
-  ) => {
-    try {
-      await window.electronAPI.deleteCustomIcon(customIconFileName);
+  const deleteCustomIcon = useCallback(
+    async (index: number, customIconFileName: string, onIconDeleted: (index: number) => void) => {
+      try {
+        await window.electronAPI.deleteCustomIcon(customIconFileName);
+        onIconDeleted(index);
 
-      // アイテムのcustomIconを削除（親コンポーネントのコールバック）
-      onIconDeleted(index);
+        setCustomIconPreviews((prev) => {
+          const newPreviews = { ...prev };
+          delete newPreviews[index];
+          return newPreviews;
+        });
+      } catch (error) {
+        logError('カスタムアイコン削除エラー:', error);
+        alert('カスタムアイコンの削除に失敗しました: ' + error);
+      }
+    },
+    []
+  );
 
-      // プレビューも削除
-      setCustomIconPreviews((prev) => {
-        const newPreviews = { ...prev };
-        delete newPreviews[index];
-        return newPreviews;
-      });
-    } catch (error) {
-      logError('カスタムアイコン削除エラー:', error);
-      alert('カスタムアイコンの削除に失敗しました: ' + error);
-    }
-  };
-
-  /**
-   * 編集モードでカスタムアイコンのプレビューを読み込み
-   */
-  const loadCustomIconPreview = async (index: number, customIconFileName: string) => {
+  const loadCustomIconPreview = useCallback(async (index: number, customIconFileName: string) => {
     try {
       const iconData = await window.electronAPI.getCustomIcon(customIconFileName);
       if (iconData) {
@@ -96,21 +75,15 @@ export function useCustomIcon() {
     } catch (error) {
       logError('カスタムアイコンプレビュー読み込みエラー:', error);
     }
-  };
+  }, []);
 
-  /**
-   * FilePickerDialogを閉じる
-   */
-  const closeCustomIconPicker = () => {
+  const closeCustomIconPicker = useCallback(() => {
     setFilePickerState({ isOpen: false, itemIndex: null });
-  };
+  }, []);
 
-  /**
-   * カスタムアイコンプレビューをクリア
-   */
-  const clearCustomIconPreviews = () => {
+  const clearCustomIconPreviews = useCallback(() => {
     setCustomIconPreviews({});
-  };
+  }, []);
 
   return {
     customIconPreviews,
