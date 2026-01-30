@@ -84,8 +84,12 @@ const LauncherSearchBox = forwardRef<HTMLInputElement, SearchBoxProps>(
         <div className="search-mode-indicator">
           <span className="search-mode-label">{SEARCH_MODE_LABELS[searchMode]}</span>
           <span>
-            {searchMode === 'window' && onRefreshWindows && <F5Hint label="更新" onClick={onRefreshWindows} />}
-            {searchMode === 'normal' && onReloadData && <F5Hint label="データ再読込" onClick={onReloadData} />}
+            {searchMode === 'window' && onRefreshWindows && (
+              <F5Hint label="更新" onClick={onRefreshWindows} />
+            )}
+            {searchMode === 'normal' && onReloadData && (
+              <F5Hint label="データ再読込" onClick={onReloadData} />
+            )}
             Shift+Tab:
             <button type="button" className="search-mode-hint-link" onClick={onToggleSearchMode}>
               モード切り替え

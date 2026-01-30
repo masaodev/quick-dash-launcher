@@ -4,15 +4,32 @@ import { FileUtils } from '@common/utils/fileUtils';
 import { SearchHistoryEntry } from '@common/types';
 
 /**
+ * 検索履歴ファイルのJSON形式
+ */
+interface SearchHistoryFile {
+  version: string;
+  entries: SearchHistoryEntry[];
+}
+
+/**
  * 検索履歴の管理サービス
- * CSV形式での履歴ファイルの読み書きと履歴データの操作を提供する
+ * JSON形式での履歴ファイルの読み書きと履歴データの操作を提供する
  */
 export class SearchHistoryService {
   private readonly historyFilePath: string;
   private readonly maxHistoryCount = 100;
 
   constructor(configFolder: string) {
-    this.historyFilePath = path.join(configFolder, 'history.txt');
+    this.historyFilePath = path.join(configFolder, 'search-history.json');
+  }
+
+  /**
+   * timestampで降順ソート（最新が先頭）
+   */
+  private sortByTimestampDesc(entries: SearchHistoryEntry[]): SearchHistoryEntry[] {
+    return [...entries].sort(
+      (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
   }
 
   /**
@@ -25,23 +42,12 @@ export class SearchHistoryService {
       return [];
     }
 
-    const entries: SearchHistoryEntry[] = [];
-    const lines = content.split(/\r?\n/);
-
-    for (const line of lines) {
-      const trimmedLine = line.trim();
-      if (!trimmedLine) continue;
-
-      const [query, timestamp] = trimmedLine.split(',');
-      if (query && timestamp) {
-        entries.push({ query: query.trim(), timestamp: timestamp.trim() });
-      }
+    const data = JSON.parse(content) as SearchHistoryFile;
+    if (!Array.isArray(data.entries)) {
+      return [];
     }
 
-    // 最新が先頭になるようにソート
-    return entries.sort(
-      (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-    );
+    return this.sortByTimestampDesc(data.entries);
   }
 
   /**
@@ -49,15 +55,12 @@ export class SearchHistoryService {
    * @param entries 保存する検索履歴のエントリー配列
    */
   saveHistory(entries: SearchHistoryEntry[]): void {
-    // 最新が先頭になるようにソートしてから上限まで制限
-    const sortedEntries = entries
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-      .slice(0, this.maxHistoryCount);
+    const data: SearchHistoryFile = {
+      version: '1.0',
+      entries: this.sortByTimestampDesc(entries).slice(0, this.maxHistoryCount),
+    };
 
-    const lines = sortedEntries.map((entry) => `${entry.query},${entry.timestamp}`);
-    const content = lines.join('\r\n');
-
-    FileUtils.safeWriteTextFile(this.historyFilePath, content);
+    FileUtils.safeWriteTextFile(this.historyFilePath, JSON.stringify(data, null, 2));
   }
 
   /**
@@ -66,18 +69,16 @@ export class SearchHistoryService {
    * @param query 検索クエリ
    */
   addHistoryEntry(query: string): void {
-    if (!query.trim()) return;
+    const trimmedQuery = query.trim();
+    if (!trimmedQuery) return;
 
     const entries = this.loadHistory();
-    const timestamp = new Date().toISOString();
 
-    // 既存の同一クエリを削除
-    const filteredEntries = entries.filter((entry) => entry.query !== query.trim());
+    // 既存の同一クエリを削除して先頭に追加
+    const newEntries = entries.filter((entry) => entry.query !== trimmedQuery);
+    newEntries.unshift({ query: trimmedQuery, timestamp: new Date().toISOString() });
 
-    // 新しいエントリーを先頭に追加
-    filteredEntries.unshift({ query: query.trim(), timestamp });
-
-    this.saveHistory(filteredEntries);
+    this.saveHistory(newEntries);
   }
 
   /**
