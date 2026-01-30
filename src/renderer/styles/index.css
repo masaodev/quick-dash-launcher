@@ -12,6 +12,12 @@
   padding: 0;
 }
 
+/* タブキーのフォーカス枠を非表示（アプリ独自のキーボード操作を使用） */
+*:focus,
+*:focus-visible {
+  outline: none;
+}
+
 html {
   overflow: hidden;
 }
