@@ -934,3 +934,31 @@
   color: var(--color-white);
   border-color: var(--color-info);
 }
+
+/* ソート可能ヘッダー */
+.sortable-header {
+  cursor: pointer;
+  user-select: none;
+}
+
+.sortable-header:hover {
+  background-color: var(--color-gray-200);
+}
+
+.sortable-header .header-content {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.sort-indicator {
+  font-size: var(--font-size-xs);
+}
+
+.sort-indicator.inactive {
+  opacity: 0.4;
+}
+
+.sort-indicator.active {
+  color: var(--color-primary);
+}

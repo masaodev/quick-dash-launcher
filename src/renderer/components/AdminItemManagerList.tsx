@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import type { EditableJsonItem } from '@common/types/editableItem';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import type { LauncherItem, JsonItem } from '@common/types';
@@ -10,6 +10,10 @@ import {
 } from '@common/types';
 
 import ConfirmDialog from './ConfirmDialog';
+
+// ソート関連の型定義
+type SortColumn = 'type' | 'displayName' | 'pathAndArgs';
+type SortDirection = 'asc' | 'desc';
 
 interface EditableRawItemListProps {
   editableItems: EditableJsonItem[];
@@ -34,6 +38,12 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
 }) => {
   const [editingCell, setEditingCell] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState('');
+
+  // ソート状態 (column が null の場合はソートなし)
+  const [sortState, setSortState] = useState<{
+    column: SortColumn | null;
+    direction: SortDirection;
+  }>({ column: null, direction: 'asc' });
 
   // アイコンキャッシュ: Map<行番号, base64データURL>
   const [itemIcons, setItemIcons] = useState<Map<number, string>>(new Map());
@@ -446,6 +456,52 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
   // EditableJsonItemでは空行の概念がないため、この関数は使用されない
   // （空のJsonItemを作成する場合は、AdminItemManagerView側で処理）
 
+  // ソート用: displayNameを取得するヘルパー関数
+  const getDisplayName = (item: EditableJsonItem): string => {
+    const jsonItem = item.item;
+    if (
+      (jsonItem.type === 'item' && isJsonLauncherItem(jsonItem)) ||
+      (jsonItem.type === 'group' && isJsonGroupItem(jsonItem)) ||
+      (jsonItem.type === 'window' && isJsonWindowItem(jsonItem))
+    ) {
+      return jsonItem.displayName || '';
+    }
+    return '';
+  };
+
+  // ヘッダークリック時のソート状態トグル: asc → desc → 解除
+  const handleHeaderClick = (column: SortColumn): void => {
+    setSortState((prev) => {
+      if (prev.column !== column) return { column, direction: 'asc' };
+      if (prev.direction === 'asc') return { column, direction: 'desc' };
+      return { column: null, direction: 'asc' };
+    });
+  };
+
+  // ソートされたアイテムを取得
+  const sortedItems = useMemo(() => {
+    const { column, direction } = sortState;
+    if (!column) return editableItems;
+
+    const getValue = (item: EditableJsonItem): string => {
+      if (column === 'type') return item.item.type;
+      if (column === 'displayName') return getDisplayName(item);
+      return getPathAndArgs(item);
+    };
+
+    return [...editableItems].sort((a, b) => {
+      const comparison = getValue(a).localeCompare(getValue(b), 'ja');
+      return direction === 'asc' ? comparison : -comparison;
+    });
+  }, [editableItems, sortState]);
+
+  // ソートインジケーターを描画
+  const renderSortIndicator = (column: SortColumn): React.ReactNode => {
+    const isActive = sortState.column === column;
+    const icon = isActive ? (sortState.direction === 'asc' ? '▲' : '▼') : '⇅';
+    return <span className={`sort-indicator ${isActive ? 'active' : 'inactive'}`}>{icon}</span>;
+  };
+
   const renderTypeCell = (item: EditableJsonItem) => {
     return (
       <>
@@ -538,15 +594,36 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
               />
             </th>
             <th className="line-number-column">#</th>
-            <th className="type-column">種類</th>
+            <th className="type-column sortable-header" onClick={() => handleHeaderClick('type')}>
+              <span className="header-content">
+                種類
+                {renderSortIndicator('type')}
+              </span>
+            </th>
             <th className="icon-column"></th>
-            <th className="name-column">名前</th>
-            <th className="content-column">パスと引数 (パスのみ編集可、引数編集は✏️から)</th>
+            <th
+              className="name-column sortable-header"
+              onClick={() => handleHeaderClick('displayName')}
+            >
+              <span className="header-content">
+                名前
+                {renderSortIndicator('displayName')}
+              </span>
+            </th>
+            <th
+              className="content-column sortable-header"
+              onClick={() => handleHeaderClick('pathAndArgs')}
+            >
+              <span className="header-content">
+                パスと引数 (パスのみ編集可、引数編集は✏️から)
+                {renderSortIndicator('pathAndArgs')}
+              </span>
+            </th>
             <th className="actions-column">操作</th>
           </tr>
         </thead>
         <tbody>
-          {editableItems.map((item) => {
+          {sortedItems.map((item) => {
             const itemKey = getItemKey(item);
             const isSelected = selectedItems.has(itemKey);
 
