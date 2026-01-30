@@ -11,6 +11,7 @@ import { detectItemType } from '@common/utils/itemTypeDetector';
 import { debugInfo } from '../utils/debug';
 
 import { useModalInitializer } from './useModalInitializer';
+import { useToast } from './useToast';
 
 async function loadCachedIconsForItems(items: RegisterItem[]): Promise<Record<string, string>> {
   const itemsNeedingIcons = items.filter(
@@ -46,6 +47,7 @@ export function useRegisterForm(
   const [selectorModalOpen, setSelectorModalOpen] = useState(false);
   const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
   const [iconFetchLoading, setIconFetchLoading] = useState<boolean[]>([]);
+  const { showWarning, showError } = useToast();
 
   const { initializeFromEditingItem, initializeFromDroppedPaths, createEmptyTemplateItem } =
     useModalInitializer();
@@ -343,11 +345,10 @@ export function useRegisterForm(
       return;
     }
 
-    setIconFetchLoading((prev) => {
-      const newState = [...prev];
-      newState[index] = true;
-      return newState;
-    });
+    const setLoadingAt = (idx: number, value: boolean) =>
+      setIconFetchLoading((prev) => prev.map((v, i) => (i === idx ? value : v)));
+
+    setLoadingAt(index, true);
 
     try {
       const icon =
@@ -357,18 +358,14 @@ export function useRegisterForm(
 
       if (icon) {
         updateItem(index, { icon });
-        debugInfo(`アイコン取得成功 (index: ${index}, type: ${item.type})`);
       } else {
-        debugInfo(`アイコン取得失敗 (index: ${index}, type: ${item.type})`);
+        showWarning('アイコンを取得できませんでした');
       }
     } catch (error) {
       debugInfo(`アイコン取得エラー (index: ${index}):`, error);
+      showError('アイコン取得中にエラーが発生しました');
     } finally {
-      setIconFetchLoading((prev) => {
-        const newState = [...prev];
-        newState[index] = false;
-        return newState;
-      });
+      setLoadingAt(index, false);
     }
   };
 
