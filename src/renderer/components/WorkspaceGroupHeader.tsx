@@ -8,8 +8,6 @@ interface WorkspaceGroupHeaderProps {
   onToggle: (groupId: string) => void;
   onUpdate: (groupId: string, updates: Partial<WorkspaceGroup>) => void;
   onStartEdit: () => void;
-  onDragOver: (e: React.DragEvent) => void;
-  onDrop: (e: React.DragEvent) => void;
   onGroupDragStart: (e: React.DragEvent) => void;
   onGroupDragEnd: () => void;
   onGroupDragOverForReorder: (e: React.DragEvent) => void;
@@ -24,8 +22,6 @@ const WorkspaceGroupHeader: React.FC<WorkspaceGroupHeaderProps> = ({
   onToggle,
   onUpdate,
   onStartEdit,
-  onDragOver,
-  onDrop,
   onGroupDragStart,
   onGroupDragEnd,
   onGroupDragOverForReorder,
@@ -82,24 +78,18 @@ const WorkspaceGroupHeader: React.FC<WorkspaceGroupHeaderProps> = ({
   };
 
   const handleDragOver = (e: React.DragEvent) => {
-    // グループの並び替えとアイテムのドロップの両方に対応
-    onDragOver(e);
+    // グループの並び替え用（アイテムドロップは親divが処理）
     onGroupDragOverForReorder(e);
   };
 
   const handleDrop = (e: React.DragEvent) => {
-    // アイテムのドロップかグループの並び替えかを判定
-    const itemId = e.dataTransfer.getData('itemId');
+    // グループの並び替えのみ処理（アイテムドロップは親divにバブルアップ）
     const groupId = e.dataTransfer.getData('groupId');
-    const historyItemData = e.dataTransfer.getData('historyItem');
-
-    if (itemId || historyItemData) {
-      // アイテムのドロップ（ワークスペースアイテムまたは実行履歴アイテム）
-      onDrop(e);
-    } else if (groupId) {
-      // グループの並び替え
+    if (groupId) {
+      e.stopPropagation(); // グループ並び替えの場合のみバブルアップを停止
       onGroupDropForReorder(e);
     }
+    // アイテムドロップは親divのonDropが処理するため、ここでは何もしない
   };
 
   // グループ名やボタン部分でのドラッグを無効化
