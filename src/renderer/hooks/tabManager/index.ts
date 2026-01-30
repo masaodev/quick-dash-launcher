@@ -137,7 +137,11 @@ export function useTabManager({
   const toggleTabExpand = useCallback((tabIndex: number) => {
     setExpandedTabs((prev) => {
       const next = new Set(prev);
-      next.has(tabIndex) ? next.delete(tabIndex) : next.add(tabIndex);
+      if (next.has(tabIndex)) {
+        next.delete(tabIndex);
+      } else {
+        next.add(tabIndex);
+      }
       return next;
     });
   }, []);

@@ -157,6 +157,25 @@ export function setupWorkspaceHandlers(): void {
   );
 
   /**
+   * ワークスペースアイテムを更新（全フィールド対応）
+   */
+  ipcMain.handle(
+    IPC_CHANNELS.WORKSPACE_UPDATE_ITEM,
+    async (_event, id: string, updates: Partial<WorkspaceItem>) => {
+      try {
+        const workspaceService = await WorkspaceService.getInstance();
+        await workspaceService.updateItem(id, updates);
+        logger.info({ id, updates }, 'Updated workspace item');
+        notifyWorkspaceChanged();
+        return { success: true };
+      } catch (error) {
+        logger.error({ error, id }, 'Failed to update workspace item');
+        throw error;
+      }
+    }
+  );
+
+  /**
    * ワークスペースアイテムの並び順を変更
    */
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_REORDER_ITEMS, async (_event, itemIds: string[]) => {

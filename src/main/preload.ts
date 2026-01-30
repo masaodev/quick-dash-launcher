@@ -279,6 +279,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_REMOVE_ITEM, id),
     updateDisplayName: (id: string, displayName: string): Promise<{ success: boolean }> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_UPDATE_DISPLAY_NAME, id, displayName),
+    updateItem: (id: string, updates: Partial<WorkspaceItem>): Promise<{ success: boolean }> =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_UPDATE_ITEM, id, updates),
     reorderItems: (itemIds: string[]): Promise<{ success: boolean }> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_REORDER_ITEMS, itemIds),
     launchItem: (item: WorkspaceItem): Promise<{ success: boolean }> =>
@@ -443,6 +445,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on(IPC_CHANNELS.EVENT_WORKSPACE_MENU_RENAME_ITEM, listener);
     return () =>
       ipcRenderer.removeListener(IPC_CHANNELS.EVENT_WORKSPACE_MENU_RENAME_ITEM, listener);
+  },
+  onWorkspaceMenuEditItem: (callback: (itemId: string) => void) => {
+    const listener = (_event: unknown, itemId: string) => callback(itemId);
+    ipcRenderer.on(IPC_CHANNELS.EVENT_WORKSPACE_MENU_EDIT_ITEM, listener);
+    return () => ipcRenderer.removeListener(IPC_CHANNELS.EVENT_WORKSPACE_MENU_EDIT_ITEM, listener);
   },
   onWorkspaceMenuLaunchItem: (callback: (itemId: string) => void) => {
     const listener = (_event: unknown, itemId: string) => callback(itemId);
