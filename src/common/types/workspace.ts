@@ -35,7 +35,7 @@ export interface WorkspaceItem {
   path: string;
   /** アイテムのタイプ */
   type: 'url' | 'file' | 'folder' | 'app' | 'customUri' | 'windowOperation' | 'group';
-  /** アイテムのアイコン（base64エンコードされたデータURL、オプション） */
+  /** アイテムのアイコン（実行時にキャッシュから取得、ファイルには保存しない） */
   icon?: string;
   /** カスタムアイコンのファイル名（オプション） */
   customIcon?: string;
@@ -88,7 +88,7 @@ export interface ExecutionHistoryItem {
   itemPath: string;
   /** アイテムのタイプ */
   itemType: 'url' | 'file' | 'folder' | 'app' | 'customUri' | 'group' | 'windowOperation';
-  /** アイテムのアイコン（base64エンコードされたデータURL、オプション） */
+  /** アイテムのアイコン（実行時にキャッシュから取得、ファイルには保存しない） */
   icon?: string;
   /** カスタムアイコンのファイル名（オプション） */
   customIcon?: string;

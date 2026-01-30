@@ -33,7 +33,6 @@ QuickDashLauncherのワークスペース機能で使用されるデータファ
       "originalName": "元の名前",
       "path": "パスまたはURL",
       "type": "url | file | folder | app | customUri | windowOperation | group",
-      "icon": "base64エンコードされたアイコン（オプション）",
       "customIcon": "カスタムアイコンファイル名（オプション）",
       "args": "引数（オプション）",
       "originalPath": "ショートカットのリンク先（オプション）",
@@ -77,7 +76,7 @@ QuickDashLauncherのワークスペース機能で使用されるデータファ
 | **originalName** | string | ✓ | 元のアイテム名（参照用） |
 | **path** | string | ✓ | アイテムのパス、URL、またはコマンド |
 | **type** | string | ✓ | アイテムタイプ（url, file, folder, app, customUri, windowOperation, group） |
-| **icon** | string | - | base64エンコードされたアイコン（オプション） |
+| **icon** | string | - | アイコン（実行時にキャッシュから取得、**ファイルには保存しない**） |
 | **customIcon** | string | - | カスタムアイコンファイル名（オプション） |
 | **args** | string | - | 実行時のコマンドライン引数（オプション） |
 | **originalPath** | string | - | ショートカットファイルのリンク先のパス（オプション） |
@@ -131,7 +130,6 @@ QuickDashLauncherのワークスペース機能で使用されるデータファ
       "itemName": "アイテム名",
       "itemPath": "パスまたはURL",
       "itemType": "url | file | folder | app | customUri | group | windowOperation",
-      "icon": "base64エンコードされたアイコン（オプション）",
       "customIcon": "カスタムアイコンファイル名（オプション）",
       "args": "引数（オプション）",
       "itemNames": ["アイテム名1", "アイテム名2"],
@@ -149,7 +147,7 @@ QuickDashLauncherのワークスペース機能で使用されるデータファ
 | **itemName** | string | ✓ | アイテム名 |
 | **itemPath** | string | ✓ | アイテムのパス、URL、またはコマンド |
 | **itemType** | string | ✓ | アイテムタイプ |
-| **icon** | string | - | base64エンコードされたアイコン（オプション） |
+| **icon** | string | - | アイコン（実行時にキャッシュから取得、**ファイルには保存しない**） |
 | **customIcon** | string | - | カスタムアイコンファイル名（オプション） |
 | **args** | string | - | 実行時のコマンドライン引数（オプション） |
 | **executedAt** | number | ✓ | 実行日時（timestamp） |
@@ -202,7 +200,6 @@ QuickDashLauncherのワークスペース機能で使用されるデータファ
       "originalName": "元の名前",
       "path": "パスまたはURL",
       "type": "url | file | folder | app | customUri | windowOperation | group",
-      "icon": "base64エンコードされたアイコン（オプション）",
       "customIcon": "カスタムアイコンファイル名（オプション）",
       "args": "引数（オプション）",
       "originalPath": "ショートカットのリンク先（オプション）",
@@ -264,7 +261,7 @@ export interface WorkspaceItem {
   path: string;
   /** アイテムのタイプ */
   type: 'url' | 'file' | 'folder' | 'app' | 'customUri' | 'windowOperation' | 'group';
-  /** アイテムのアイコン（base64エンコードされたデータURL、オプション） */
+  /** アイテムのアイコン（実行時にキャッシュから取得、ファイルには保存しない） */
   icon?: string;
   /** カスタムアイコンのファイル名（オプション） */
   customIcon?: string;
@@ -325,7 +322,7 @@ export interface ExecutionHistoryItem {
   itemPath: string;
   /** アイテムのタイプ */
   itemType: 'url' | 'file' | 'folder' | 'app' | 'customUri' | 'group' | 'windowOperation';
-  /** アイテムのアイコン（base64エンコードされたデータURL、オプション） */
+  /** アイテムのアイコン（実行時にキャッシュから取得、ファイルには保存しない） */
   icon?: string;
   /** カスタムアイコンのファイル名（オプション） */
   customIcon?: string;
