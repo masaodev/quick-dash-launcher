@@ -27,6 +27,7 @@ export interface UseKeyboardShortcutsParams {
   historyItems: AppItem[];
   toggleSearchMode: () => Promise<void>;
   refreshWindows: () => Promise<void>;
+  reloadData: () => Promise<void>;
   desktopCount: number;
   activeDesktopTab: number;
   setActiveDesktopTab: React.Dispatch<React.SetStateAction<number>>;
@@ -56,6 +57,7 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams) {
     historyItems,
     toggleSearchMode,
     refreshWindows,
+    reloadData,
     desktopCount,
     activeDesktopTab,
     setActiveDesktopTab,
@@ -224,10 +226,12 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams) {
         }
         break;
       case 'F5':
+        e.preventDefault();
+        e.stopPropagation();
         if (searchMode === 'window') {
-          e.preventDefault();
-          e.stopPropagation();
           await refreshWindows();
+        } else if (searchMode === 'normal') {
+          await reloadData();
         }
         break;
       case 'ArrowUp':

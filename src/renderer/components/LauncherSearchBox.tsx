@@ -8,6 +8,7 @@ interface SearchBoxProps {
   searchMode?: SearchMode;
   onToggleSearchMode?: () => void;
   onRefreshWindows?: () => void;
+  onReloadData?: () => void;
 }
 
 const SEARCH_MODE_LABELS: Record<SearchMode, string> = {
@@ -16,9 +17,34 @@ const SEARCH_MODE_LABELS: Record<SearchMode, string> = {
   history: '📜 実行履歴検索モード',
 };
 
+interface F5HintProps {
+  label: string;
+  onClick: () => void;
+}
+
+function F5Hint({ label, onClick }: F5HintProps): React.ReactElement {
+  return (
+    <>
+      F5:
+      <button type="button" className="search-mode-hint-link" onClick={onClick}>
+        {label}
+      </button>
+      {' / '}
+    </>
+  );
+}
+
 const LauncherSearchBox = forwardRef<HTMLInputElement, SearchBoxProps>(
   (
-    { value, onChange, onKeyDown, searchMode = 'normal', onToggleSearchMode, onRefreshWindows },
+    {
+      value,
+      onChange,
+      onKeyDown,
+      searchMode = 'normal',
+      onToggleSearchMode,
+      onRefreshWindows,
+      onReloadData,
+    },
     ref
   ) => {
     const inputRef = useRef<HTMLInputElement>(null);
@@ -58,15 +84,8 @@ const LauncherSearchBox = forwardRef<HTMLInputElement, SearchBoxProps>(
         <div className="search-mode-indicator">
           <span className="search-mode-label">{SEARCH_MODE_LABELS[searchMode]}</span>
           <span>
-            {searchMode === 'window' && onRefreshWindows && (
-              <>
-                F5:
-                <button type="button" className="search-mode-hint-link" onClick={onRefreshWindows}>
-                  更新
-                </button>
-                {' / '}
-              </>
-            )}
+            {searchMode === 'window' && onRefreshWindows && <F5Hint label="更新" onClick={onRefreshWindows} />}
+            {searchMode === 'normal' && onReloadData && <F5Hint label="データ再読込" onClick={onReloadData} />}
             Shift+Tab:
             <button type="button" className="search-mode-hint-link" onClick={onToggleSearchMode}>
               モード切り替え
