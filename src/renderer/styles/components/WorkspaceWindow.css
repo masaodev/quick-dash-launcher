@@ -150,6 +150,103 @@ html:has(.workspace-window.background-transparent) {
   transform: scale(0.95);
 }
 
+/* コントロールボタン アクティブ状態 */
+.workspace-control-btn.active {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  border-color: var(--color-primary);
+}
+
+.workspace-control-btn.active:hover {
+  background-color: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+}
+
+/* ==================== フィルタバー ==================== */
+
+.workspace-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-md);
+  background-color: var(--bg-section);
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.workspace-filter-input-wrapper {
+  position: relative;
+  flex: 1;
+}
+
+.workspace-filter-input-wrapper::before {
+  content: '\1F50D'; /* 🔍 */
+  position: absolute;
+  left: var(--spacing-sm);
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: var(--font-size-sm);
+  pointer-events: none;
+}
+
+.workspace-filter-input {
+  width: 100%;
+  height: var(--input-height-sm);
+  padding: var(--spacing-xs) var(--spacing-sm) var(--spacing-xs) 28px;
+  border: var(--border-normal);
+  border-radius: var(--border-radius);
+  background-color: var(--input-background);
+  color: var(--text-color);
+  font-size: var(--font-size-sm);
+  box-sizing: border-box;
+}
+
+.workspace-filter-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.workspace-filter-input::placeholder {
+  color: var(--text-tertiary-color);
+}
+
+.workspace-filter-scope {
+  min-width: 80px;
+  height: var(--input-height-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: var(--border-normal);
+  border-radius: var(--border-radius);
+  background-color: var(--input-background);
+  color: var(--text-color);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+
+.workspace-filter-scope:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.workspace-filter-close-btn {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--text-secondary-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--border-radius);
+  transition: var(--transition-fast);
+}
+
+.workspace-filter-close-btn:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-color);
+}
+
 /* アイテムリスト */
 .workspace-item-list {
   flex: 1;
