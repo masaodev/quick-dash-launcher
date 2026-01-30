@@ -354,6 +354,7 @@ export function getWindowPinMode(): WindowPinMode {
 /**
  * ウィンドウピンモードを設定し、ウィンドウの動作を更新する
  * @param mode 設定するWindowPinMode
+ * @internal 現在は使用されていませんが、将来の拡張のために保持
  */
 export function setWindowPinMode(mode: WindowPinMode): void {
   windowPinMode = mode;
@@ -611,6 +612,7 @@ export async function setWindowPosition(mode?: WindowPositionMode): Promise<void
 /**
  * ウィンドウを画面中央に表示する（タスクトレイメニュー用）
  * このメソッドは設定に関係なく強制的に画面中央に表示します
+ * @internal 現在は使用されていませんが、将来の拡張のために保持
  */
 export function showWindowAtCenter(): void {
   if (!mainWindow) return;

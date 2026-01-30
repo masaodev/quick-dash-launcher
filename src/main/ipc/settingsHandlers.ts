@@ -6,7 +6,6 @@ import { IPC_CHANNELS } from '@common/ipcChannels';
 import { SettingsService } from '../services/settingsService.js';
 import { HotkeyService } from '../services/hotkeyService.js';
 import { AutoLaunchService } from '../services/autoLaunchService.js';
-import { getIsFirstLaunch } from '../main.js';
 
 /**
  * すべてのウィンドウに設定変更を通知
@@ -120,7 +119,10 @@ async function applyMultipleSettingsEffects(
 export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boolean) => void): void {
   // 初回起動かどうかを取得
   ipcMain.handle(IPC_CHANNELS.SETTINGS_IS_FIRST_LAUNCH, async () => {
-    const isFirstLaunch = getIsFirstLaunch();
+    // ホットキーが設定されているかどうかで初回起動を判定
+    const settingsService = await SettingsService.getInstance();
+    const hotkey = await settingsService.get('hotkey');
+    const isFirstLaunch = !hotkey || hotkey.trim() === '';
     logger.info(`Is first launch request: ${isFirstLaunch}`);
     return isFirstLaunch;
   });

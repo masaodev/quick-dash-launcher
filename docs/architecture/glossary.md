@@ -21,8 +21,8 @@ QuickDashLauncherで使用されるドメイン用語の定義です。開発時
 | アイテム | - | アイテム | アイテム | ランチャーで起動・操作できる対象の総称。ランチャーアイテム（単一起動）、グループアイテム（一括起動）、ウィンドウ操作アイテム（既存ウィンドウ制御）の3種類がある。メインウィンドウのアイテムリストに表示され、クリックまたはEnterキーで実行する。 |
 | アイテム | `LauncherItem` | ランチャーアイテム | アイテム | 起動対象（URL/ファイル/フォルダ/アプリ/カスタムURI）を表す基本型。メインウィンドウのアイテムリストに表示される。`src/common/types/launcher.ts`で定義。 |
 | アイテム | `GroupItem` | グループアイテム | グループ | 複数アイテムをまとめて一括起動するアイテム。GroupDirectiveで定義。実行すると参照アイテムを500ms間隔で順次起動。 |
-| アイテム | `WindowOperationItem` | ウィンドウ操作アイテム | ウィンドウ操作 | 既存ウィンドウを検索・制御するアイテム。WindowDirectiveで定義。アプリを起動せずウィンドウのみ操作。 |
-| アイテム | `AppItem` | アプリアイテム | - | `LauncherItem \| GroupItem \| WindowOperationItem \| WindowInfo`の統合型。アイテムリスト表示時に使用。 |
+| アイテム | `WindowItem` | ウィンドウアイテム | ウィンドウ操作 | 既存ウィンドウを検索・制御するアイテム。アプリを起動せずウィンドウのみ操作。v0.5.20以降、`WindowOperationItem`から`WindowItem`に統一。 |
+| アイテム | `AppItem` | アプリアイテム | - | `LauncherItem \| GroupItem \| WindowItem \| WindowInfo`の統合型。アイテムリスト表示時に使用。 |
 | アイテム | `WorkspaceItem` | ワークスペースアイテム | - | ワークスペースに追加されたアイテムの独立コピー。元アイテムが削除されても影響を受けない。WorkspaceFileに保存。 |
 | アイテム | `RegisterItem` | 登録アイテム | - | アイテム登録・編集時に使用される型。`RegisterModal`や`useRegisterForm`で使用。`src/common/types/register.ts`で定義（v0.5.20で型定義を再配置）。 |
 | 登録項目 | `displayName` | アイテム名 | アイテム表示名 | メインウィンドウのアイテムリストに表示される名前。`RegisterItem.displayName`および`LauncherItem.displayName`で使用。ユーザーが自由に設定可能。 |

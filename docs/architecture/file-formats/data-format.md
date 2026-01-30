@@ -828,9 +828,11 @@ interface WindowOperationItem {
 #### 6.2.4. AppItem
 
 ```typescript
-// LauncherItem、GroupItem、WindowOperationItemの統合型
-type AppItem = LauncherItem | GroupItem | WindowOperationItem | WindowInfo;
+// LauncherItem、GroupItem、WindowItemの統合型
+type AppItem = LauncherItem | GroupItem | WindowItem | WindowInfo;
 ```
+
+**注**: v0.5.20以降、`WindowOperationItem`は`WindowItem`に統一されました。
 
 ### 6.3. 検索関連型
 

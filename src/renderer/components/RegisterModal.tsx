@@ -364,7 +364,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
         });
       } else if (item.itemCategory === 'group') {
         debugLog('グループアイテムは実行ボタンからは実行できません');
-        // TODO: 必要に応じてグループ実行にも対応
+        // 注: グループ実行は登録後、メインウィンドウから実行可能
       } else if (item.itemCategory === 'dir') {
         debugLog('フォルダ取込アイテムは実行ボタンからは実行できません');
       } else {

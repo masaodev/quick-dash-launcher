@@ -14,7 +14,6 @@ import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { CombinedProgressManager } from '../utils/progressManager';
 import { FaviconService } from '../services/faviconService';
-import { IconService } from '../services/iconService.js';
 import { IconFetchErrorService } from '../services/iconFetchErrorService';
 import PathManager from '../config/pathManager.js';
 
@@ -881,7 +880,7 @@ async function getCustomIcon(customIconFileName: string): Promise<string | null>
 }
 
 /**
- * アイテムタイプに応じて適切なアイコンを取得（IconServiceを使用）
+ * アイテムタイプに応じて適切なアイコンを取得
  * レンダラープロセスから呼び出すための統合API
  *
  * @param filePath ファイルパスまたはURL
@@ -896,13 +895,18 @@ async function getIconForItem(
     const iconsFolder = PathManager.getAppsFolder();
     const extensionsFolder = PathManager.getExtensionsFolder();
 
-    const icon = await IconService.getIconForItem(
-      filePath,
-      itemType,
-      iconsFolder,
-      extensionsFolder
-    );
-    return icon || null;
+    // タイプに応じて直接アイコン抽出関数を呼び出す
+    switch (itemType) {
+      case 'app':
+        return await extractIcon(filePath, iconsFolder);
+      case 'file':
+        return await extractFileIconByExtension(filePath, extensionsFolder);
+      case 'customUri':
+        return await extractCustomUriIcon(filePath, iconsFolder);
+      default:
+        // folder と url タイプはアイコン取得をスキップ（デフォルトアイコンを使用）
+        return null;
+    }
   } catch (error) {
     iconLogger.error({ error, filePath, itemType }, 'アイコン取得エラー');
     return null;

@@ -15,12 +15,6 @@ export const GROUP_LAUNCH_DELAY_MS = 100;
 export const MAX_BOOKMARK_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
 /**
- * アイコンキャッシュの有効期限（ミリ秒）
- * 7日間
- */
-export const ICON_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-
-/**
  * デスクトップタブのID定数
  */
 export const DESKTOP_TAB = {

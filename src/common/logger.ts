@@ -106,5 +106,4 @@ export const iconLogger = createChildLogger('icon');
 export const dataLogger = createChildLogger('data');
 export const windowLogger = createChildLogger('window');
 export const faviconLogger = createChildLogger('favicon');
-export const editLogger = createChildLogger('edit');
 export const itemLogger = createChildLogger('item');
