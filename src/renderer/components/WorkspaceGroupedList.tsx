@@ -83,6 +83,9 @@ interface WorkspaceGroupedListProps {
     onToggleHistory: () => void;
     activeGroupId?: string;
     setActiveGroupId: (id: string | undefined) => void;
+    visibleGroupIds?: Set<string> | null;
+    itemVisibility?: Map<string, boolean> | null;
+    showUncategorized?: boolean;
   };
 }
 
@@ -115,6 +118,9 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
     onToggleHistory,
     activeGroupId: _activeGroupId,
     setActiveGroupId,
+    visibleGroupIds,
+    itemVisibility,
+    showUncategorized = true,
   } = ui;
   const [draggedItemId, setDraggedItemId] = React.useState<string | null>(null);
   const [_draggedGroupId, setDraggedGroupId] = React.useState<string | null>(null);
@@ -513,29 +519,82 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
 
   return (
     <div className="workspace-item-list">
-      {/* グループを表示 */}
-      {groups.map((group) => {
-        const groupItems = itemsByGroup[group.id] || [];
+      {groups
+        .filter((group) => !visibleGroupIds || visibleGroupIds.has(group.id))
+        .map((group) => {
+          const groupItems = (itemsByGroup[group.id] || []).filter(
+            (item) => !itemVisibility || itemVisibility.get(item.id) !== false
+          );
+          if (itemVisibility && groupItems.length === 0) {
+            return null;
+          }
+          return (
+            <div key={group.id} className="workspace-group">
+              <WorkspaceGroupHeader
+                group={group}
+                itemCount={groupItems.length}
+                isEditing={editingGroupId === group.id}
+                onToggle={handleGroupToggle}
+                onUpdate={onUpdateGroup}
+                onStartEdit={() => setEditingGroupId(editingGroupId === group.id ? null : group.id)}
+                onDragOver={handleGroupDragOver}
+                onDrop={handleGroupDrop(group.id)}
+                onGroupDragStart={handleGroupDragStart(group)}
+                onGroupDragEnd={handleGroupDragEnd}
+                onGroupDragOverForReorder={handleGroupDragOverForReorder(group)}
+                onGroupDropForReorder={handleGroupDropForReorder(group)}
+                onContextMenu={handleGroupContextMenu(group)}
+              />
+              {!group.collapsed && (
+                <div className="workspace-group-items">
+                  {groupItems.map((item) => (
+                    <WorkspaceItemCard
+                      key={item.id}
+                      item={item}
+                      isEditing={editingItemId === item.id}
+                      onLaunch={onLaunch}
+                      onRemove={onRemoveItem}
+                      onUpdateDisplayName={onUpdateDisplayName}
+                      onStartEdit={() =>
+                        setEditingItemId(editingItemId === item.id ? null : item.id)
+                      }
+                      onDragStart={handleItemDragStart(item)}
+                      onDragEnd={handleItemDragEnd}
+                      onDragOver={handleItemDragOver(item)}
+                      onDrop={handleItemDrop(item)}
+                      onContextMenu={handleContextMenu(item)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+      {(() => {
+        const filteredUncategorizedItems = uncategorizedItems.filter(
+          (item) => !itemVisibility || itemVisibility.get(item.id) !== false
+        );
+        if ((!showUncategorized && itemVisibility) || filteredUncategorizedItems.length === 0) {
+          return null;
+        }
         return (
-          <div key={group.id} className="workspace-group">
-            <WorkspaceGroupHeader
-              group={group}
-              itemCount={groupItems.length}
-              isEditing={editingGroupId === group.id}
-              onToggle={handleGroupToggle}
-              onUpdate={onUpdateGroup}
-              onStartEdit={() => setEditingGroupId(editingGroupId === group.id ? null : group.id)}
-              onDragOver={handleGroupDragOver}
-              onDrop={handleGroupDrop(group.id)}
-              onGroupDragStart={handleGroupDragStart(group)}
-              onGroupDragEnd={handleGroupDragEnd}
-              onGroupDragOverForReorder={handleGroupDragOverForReorder(group)}
-              onGroupDropForReorder={handleGroupDropForReorder(group)}
-              onContextMenu={handleGroupContextMenu(group)}
-            />
-            {!group.collapsed && (
+          <div
+            className="workspace-uncategorized-section"
+            onDragOver={handleGroupDragOver}
+            onDrop={handleGroupDrop(undefined)}
+          >
+            <div
+              className="workspace-uncategorized-header"
+              onClick={handleUncategorizedToggle}
+              style={{ cursor: 'pointer' }}
+            >
+              <span className="workspace-collapse-icon">{uncategorizedCollapsed ? '▶' : '▼'}</span>
+              未分類 ({filteredUncategorizedItems.length})
+            </div>
+            {!uncategorizedCollapsed && (
               <div className="workspace-group-items">
-                {groupItems.map((item) => (
+                {filteredUncategorizedItems.map((item) => (
                   <WorkspaceItemCard
                     key={item.id}
                     item={item}
@@ -555,45 +614,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
             )}
           </div>
         );
-      })}
-
-      {/* 未分類セクション */}
-      {uncategorizedItems.length > 0 && (
-        <div
-          className="workspace-uncategorized-section"
-          onDragOver={handleGroupDragOver}
-          onDrop={handleGroupDrop(undefined)}
-        >
-          <div
-            className="workspace-uncategorized-header"
-            onClick={handleUncategorizedToggle}
-            style={{ cursor: 'pointer' }}
-          >
-            <span className="workspace-collapse-icon">{uncategorizedCollapsed ? '▶' : '▼'}</span>
-            未分類 ({uncategorizedItems.length})
-          </div>
-          {!uncategorizedCollapsed && (
-            <div className="workspace-group-items">
-              {uncategorizedItems.map((item) => (
-                <WorkspaceItemCard
-                  key={item.id}
-                  item={item}
-                  isEditing={editingItemId === item.id}
-                  onLaunch={onLaunch}
-                  onRemove={onRemoveItem}
-                  onUpdateDisplayName={onUpdateDisplayName}
-                  onStartEdit={() => setEditingItemId(editingItemId === item.id ? null : item.id)}
-                  onDragStart={handleItemDragStart(item)}
-                  onDragEnd={handleItemDragEnd}
-                  onDragOver={handleItemDragOver(item)}
-                  onDrop={handleItemDrop(item)}
-                  onContextMenu={handleContextMenu(item)}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+      })()}
 
       {/* 実行履歴セクション */}
       {executionHistory.length > 0 && (

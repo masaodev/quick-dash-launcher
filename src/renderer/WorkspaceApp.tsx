@@ -2,47 +2,43 @@ import React, { useState, useEffect } from 'react';
 import type { WorkspaceItem } from '@common/types';
 
 import ConfirmDialog from './components/ConfirmDialog';
+import WorkspaceFilterBar from './components/WorkspaceFilterBar';
 import WorkspaceGroupedList from './components/WorkspaceGroupedList';
 import WorkspaceHeader from './components/WorkspaceHeader';
 import WorkspaceItemEditModal from './components/WorkspaceItemEditModal';
 import { useClipboardPaste } from './hooks/useClipboardPaste';
 import { useCollapsibleSections } from './hooks/useCollapsibleSections';
 import { useNativeDragDrop } from './hooks/useNativeDragDrop';
+import { useWorkspaceFilter, type FilterScope } from './hooks/useWorkspaceFilter';
 import { useWorkspaceActions, useWorkspaceData, useWorkspaceResize } from './hooks/workspace';
 import { logError } from './utils/debug';
 
 const WorkspaceApp: React.FC = () => {
-  // ローカル状態
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isPinned, setIsPinned] = useState(false);
   const [backgroundTransparent, setBackgroundTransparent] = useState(false);
   const [activeGroupId, setActiveGroupId] = useState<string | undefined>(undefined);
   const [editModalItem, setEditModalItem] = useState<WorkspaceItem | null>(null);
+  const [isFilterVisible, setIsFilterVisible] = useState(false);
+  const [filterText, setFilterText] = useState('');
+  const [filterScope, setFilterScope] = useState<FilterScope>('all');
 
-  // データ管理フック
   const { items, groups, executionHistory, loadItems, loadGroups, loadExecutionHistory } =
     useWorkspaceData();
 
-  // アクション統合フック
   const actions = useWorkspaceActions(() => {
     loadItems();
     loadGroups();
     loadExecutionHistory();
   });
 
-  // ネイティブドラッグ&ドロップフック
   const { isDraggingOver } = useNativeDragDrop(loadItems);
-
-  // クリップボードペースト処理フック（アクティブグループに追加）
   useClipboardPaste(loadItems, activeGroupId);
-
-  // 折りたたみ状態管理フック
   const { collapsed, toggleSection, expandAll, collapseAll } = useCollapsibleSections({
     uncategorized: false,
     history: false,
   });
-
-  // サイズ変更フック
+  const filterResult = useWorkspaceFilter(groups, items, filterText, filterScope);
   const { handleResize } = useWorkspaceResize();
   const [deleteGroupDialog, setDeleteGroupDialog] = useState<{
     isOpen: boolean;
@@ -65,69 +61,45 @@ const WorkspaceApp: React.FC = () => {
     itemCount: 0,
   });
 
-  // ピン状態の初期化
   useEffect(() => {
-    const loadPinState = async () => {
-      const pinned = await window.electronAPI.workspaceAPI.getAlwaysOnTop();
-      setIsPinned(pinned);
-    };
-    loadPinState();
+    window.electronAPI.workspaceAPI.getAlwaysOnTop().then(setIsPinned);
   }, []);
 
-  // 背景透過設定の初期化と監視
   useEffect(() => {
-    const loadBackgroundSetting = async () => {
+    const loadSetting = async () => {
       const settings = await window.electronAPI.getSettings();
       setBackgroundTransparent(settings.workspaceBackgroundTransparent || false);
     };
-    loadBackgroundSetting();
+    loadSetting();
 
-    // 設定変更を監視
-    const handleSettingsChanged = async () => {
+    const cleanup = window.electronAPI.onSettingsChanged(async () => {
       const settings = await window.electronAPI.getSettings();
       setBackgroundTransparent(settings.workspaceBackgroundTransparent || false);
-    };
+    });
 
-    const cleanup = window.electronAPI.onSettingsChanged(handleSettingsChanged);
-
-    // クリーンアップ関数を返す
-    return () => {
-      if (cleanup) cleanup();
-    };
+    return () => cleanup?.();
   }, []);
 
-  // モーダルダイアログのモーダルモード設定（統合管理）
-  // 注意: 編集モーダルは独自にsetModalModeを管理しているため、ここでは含めない
   useEffect(() => {
     const isAnyModalOpen = deleteGroupDialog.isOpen || archiveGroupDialog.isOpen;
-
     if (isAnyModalOpen) {
       window.electronAPI.workspaceAPI.setModalMode(true, { width: 600, height: 400 });
     } else if (!editModalItem) {
-      // 編集モーダルが開いていない場合のみモーダルモードを解除
       window.electronAPI.workspaceAPI.setModalMode(false);
     }
   }, [deleteGroupDialog.isOpen, archiveGroupDialog.isOpen, editModalItem]);
 
-  /**
-   * グループ削除ハンドラー（確認ダイアログ表示）
-   */
   const handleDeleteGroup = async (groupId: string) => {
     try {
-      // グループ内のアイテム数を確認
       const groupItems = items.filter((item) => item.groupId === groupId);
-      const hasItems = groupItems.length > 0;
-
-      if (hasItems) {
-        // 確認ダイアログを表示
+      if (groupItems.length > 0) {
         setDeleteGroupDialog({
           isOpen: true,
-          groupId: groupId,
+          groupId,
           itemCount: groupItems.length,
           deleteItems: false,
         });
       } else {
-        // アイテムがない場合は即削除
         await actions.handleDeleteGroup(groupId, false);
       }
     } catch (error) {
@@ -135,122 +107,68 @@ const WorkspaceApp: React.FC = () => {
     }
   };
 
-  /**
-   * グループ削除の確定ハンドラー
-   */
   const handleConfirmDeleteGroup = async () => {
     const { groupId, deleteItems } = deleteGroupDialog;
     if (!groupId) return;
-
     try {
       await actions.handleDeleteGroup(groupId, deleteItems);
-
-      // ダイアログを閉じる
-      setDeleteGroupDialog({
-        isOpen: false,
-        groupId: null,
-        itemCount: 0,
-        deleteItems: false,
-      });
+      setDeleteGroupDialog({ isOpen: false, groupId: null, itemCount: 0, deleteItems: false });
     } catch (error) {
       logError('Failed to delete workspace group:', error);
     }
   };
 
-  /**
-   * グループアーカイブハンドラー（確認ダイアログ表示）
-   */
   const handleArchiveGroup = async (groupId: string) => {
     try {
-      // グループ内のアイテム数を確認
-      const groupItems = items.filter((item) => item.groupId === groupId);
-      const itemCount = groupItems.length;
-
-      // 確認ダイアログを表示
-      setArchiveGroupDialog({
-        isOpen: true,
-        groupId: groupId,
-        itemCount: itemCount,
-      });
+      const itemCount = items.filter((item) => item.groupId === groupId).length;
+      setArchiveGroupDialog({ isOpen: true, groupId, itemCount });
     } catch (error) {
       logError('Failed to archive workspace group:', error);
     }
   };
 
-  /**
-   * グループアーカイブの確定ハンドラー
-   */
   const handleConfirmArchiveGroup = async () => {
     const { groupId } = archiveGroupDialog;
     if (!groupId) return;
-
     try {
       await actions.handleArchiveGroup(groupId);
-
-      // ダイアログを閉じる
-      setArchiveGroupDialog({
-        isOpen: false,
-        groupId: null,
-        itemCount: 0,
-      });
+      setArchiveGroupDialog({ isOpen: false, groupId: null, itemCount: 0 });
     } catch (error) {
       logError('Failed to archive workspace group:', error);
     }
   };
 
-  /**
-   * ピン留めトグルハンドラー
-   */
   const handleTogglePin = async () => {
-    const newState = await window.electronAPI.workspaceAPI.toggleAlwaysOnTop();
-    setIsPinned(newState);
+    setIsPinned(await window.electronAPI.workspaceAPI.toggleAlwaysOnTop());
   };
 
-  /**
-   * ウィンドウを閉じるハンドラー
-   */
   const handleClose = () => {
     window.electronAPI.workspaceAPI.hideWindow();
   };
 
-  /**
-   * アーカイブタブを開くハンドラー
-   */
   const handleOpenArchive = async () => {
     await window.electronAPI.openEditWindowWithTab('archive');
   };
 
-  /**
-   * 全展開ハンドラー
-   */
   const handleExpandAll = async () => {
-    // 全てのグループを並列で展開
     const updatePromises = groups
       .filter((group) => group.collapsed)
       .map((group) => window.electronAPI.workspaceAPI.updateGroup(group.id, { collapsed: false }));
-
     if (updatePromises.length > 0) {
       await Promise.all(updatePromises);
       await loadGroups();
     }
-    // 未分類と実行履歴も展開
     expandAll();
   };
 
-  /**
-   * 全閉じハンドラー
-   */
   const handleCollapseAll = async () => {
-    // 全てのグループを並列で閉じる
     const updatePromises = groups
       .filter((group) => !group.collapsed)
       .map((group) => window.electronAPI.workspaceAPI.updateGroup(group.id, { collapsed: true }));
-
     if (updatePromises.length > 0) {
       await Promise.all(updatePromises);
       await loadGroups();
     }
-    // 未分類と実行履歴も閉じる
     collapseAll();
   };
 
@@ -259,6 +177,13 @@ const WorkspaceApp: React.FC = () => {
       className={`workspace-window ${isDraggingOver ? 'dragging-over' : ''} ${backgroundTransparent ? 'background-transparent' : ''}`}
     >
       <WorkspaceHeader
+        isFilterVisible={isFilterVisible}
+        onToggleFilter={() => {
+          if (isFilterVisible) {
+            setFilterText('');
+          }
+          setIsFilterVisible(!isFilterVisible);
+        }}
         onExpandAll={handleExpandAll}
         onCollapseAll={handleCollapseAll}
         onAddGroup={() => actions.handleAddGroup(groups.length)}
@@ -267,6 +192,18 @@ const WorkspaceApp: React.FC = () => {
         onTogglePin={handleTogglePin}
         onClose={handleClose}
       />
+      {isFilterVisible && (
+        <WorkspaceFilterBar
+          filterText={filterText}
+          onFilterTextChange={setFilterText}
+          filterScope={filterScope}
+          onFilterScopeChange={setFilterScope}
+          onClose={() => {
+            setIsFilterVisible(false);
+            setFilterText('');
+          }}
+        />
+      )}
       <WorkspaceGroupedList
         data={{
           groups,
@@ -298,6 +235,9 @@ const WorkspaceApp: React.FC = () => {
           onToggleHistory: () => toggleSection('history'),
           activeGroupId: activeGroupId,
           setActiveGroupId: setActiveGroupId,
+          visibleGroupIds: filterResult.visibleGroupIds,
+          itemVisibility: filterResult.itemVisibility,
+          showUncategorized: filterResult.showUncategorized,
         }}
       />
       <ConfirmDialog
