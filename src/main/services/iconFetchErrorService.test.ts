@@ -1,27 +1,34 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
+const mockStore = vi.hoisted(() => ({
+  get: vi.fn(),
+  set: vi.fn(),
+}));
+
 vi.mock('../config/pathManager.js', () => ({
   default: { getConfigFolder: vi.fn(() => '/mock/config') },
 }));
 
-const mockStore = {
-  get: vi.fn(),
-  set: vi.fn(),
-};
-
-vi.mock('electron-store', () => ({
-  default: vi.fn(() => mockStore),
-}));
+vi.mock('electron-store', () => {
+  return {
+    default: class MockElectronStore {
+      get = mockStore.get;
+      set = mockStore.set;
+    },
+  };
+});
 
 vi.mock('@common/logger', () => ({
   default: { info: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() },
 }));
 
+import { IconFetchErrorService } from './iconFetchErrorService';
+
 describe('IconFetchErrorService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockStore.get.mockReturnValue([]);
-    vi.resetModules();
+    IconFetchErrorService.resetInstance();
   });
 
   afterEach(() => {
@@ -30,7 +37,6 @@ describe('IconFetchErrorService', () => {
 
   describe('recordError', () => {
     it('新規エラーを記録できる', async () => {
-      const { IconFetchErrorService } = await import('./iconFetchErrorService');
       const service = await IconFetchErrorService.getInstance();
 
       await service.recordError('https://example.com', 'favicon', 'Connection failed');
@@ -46,7 +52,6 @@ describe('IconFetchErrorService', () => {
     });
 
     it('既存エラーの failCount をインクリメントする', async () => {
-      const { IconFetchErrorService } = await import('./iconFetchErrorService');
       const service = await IconFetchErrorService.getInstance();
 
       mockStore.get.mockReturnValue([
@@ -72,7 +77,6 @@ describe('IconFetchErrorService', () => {
     });
 
     it('異なるタイプのエラーは別々に記録される', async () => {
-      const { IconFetchErrorService } = await import('./iconFetchErrorService');
       const service = await IconFetchErrorService.getInstance();
 
       const existingError = {
@@ -100,7 +104,6 @@ describe('IconFetchErrorService', () => {
 
   describe('hasError', () => {
     it('エラー記録がある場合は true を返す', async () => {
-      const { IconFetchErrorService } = await import('./iconFetchErrorService');
       const service = await IconFetchErrorService.getInstance();
 
       mockStore.get.mockReturnValue([
@@ -117,14 +120,12 @@ describe('IconFetchErrorService', () => {
     });
 
     it('エラー記録がない場合は false を返す', async () => {
-      const { IconFetchErrorService } = await import('./iconFetchErrorService');
       const service = await IconFetchErrorService.getInstance();
 
       expect(await service.hasError('https://example.com', 'favicon')).toBe(false);
     });
 
     it('異なるキーのエラー記録は検出しない', async () => {
-      const { IconFetchErrorService } = await import('./iconFetchErrorService');
       const service = await IconFetchErrorService.getInstance();
 
       mockStore.get.mockReturnValue([
@@ -141,7 +142,6 @@ describe('IconFetchErrorService', () => {
     });
 
     it('異なるタイプのエラー記録は検出しない', async () => {
-      const { IconFetchErrorService } = await import('./iconFetchErrorService');
       const service = await IconFetchErrorService.getInstance();
 
       mockStore.get.mockReturnValue([
@@ -160,7 +160,6 @@ describe('IconFetchErrorService', () => {
 
   describe('clearAllErrors', () => {
     it('すべてのエラー記録をクリアする', async () => {
-      const { IconFetchErrorService } = await import('./iconFetchErrorService');
       const service = await IconFetchErrorService.getInstance();
 
       await service.clearAllErrors();
@@ -171,7 +170,6 @@ describe('IconFetchErrorService', () => {
 
   describe('getAllErrors', () => {
     it('すべてのエラー記録を取得する', async () => {
-      const { IconFetchErrorService } = await import('./iconFetchErrorService');
       const service = await IconFetchErrorService.getInstance();
 
       const errors = [
@@ -196,7 +194,6 @@ describe('IconFetchErrorService', () => {
     });
 
     it('エラー記録が空の場合は空配列を返す', async () => {
-      const { IconFetchErrorService } = await import('./iconFetchErrorService');
       const service = await IconFetchErrorService.getInstance();
 
       expect(await service.getAllErrors()).toEqual([]);

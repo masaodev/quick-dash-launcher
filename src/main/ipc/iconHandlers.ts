@@ -893,7 +893,7 @@ async function getIconForItem(
   itemType: 'url' | 'file' | 'folder' | 'app' | 'customUri'
 ): Promise<string | null> {
   try {
-    const iconsFolder = PathManager.getIconsFolder();
+    const iconsFolder = PathManager.getAppsFolder();
     const extensionsFolder = PathManager.getExtensionsFolder();
 
     const icon = await IconService.getIconForItem(

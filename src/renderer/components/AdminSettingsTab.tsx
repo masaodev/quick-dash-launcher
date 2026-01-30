@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { AppSettings, WindowPositionMode, WorkspacePositionMode } from '@common/types';
 
 import { useDialogManager } from '../hooks/useDialogManager';
 import { useSettingsManager } from '../hooks/useSettingsManager';
-import { useTabManager } from '../hooks/useTabManager';
+import { useTabManager } from '../hooks/tabManager';
 
 import AlertDialog from './AlertDialog';
 import ConfirmDialog from './ConfirmDialog';
@@ -17,7 +17,6 @@ interface SettingsTabProps {
 
 const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
   const [editedSettings, setEditedSettings] = useState<AppSettings>(settings);
-  const [dataFiles, setDataFiles] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('basic');
 
   // settingsプロパティが変更されたときにeditedSettingsを更新
@@ -111,18 +110,14 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
     handleSettingChange,
     showAlert,
     showConfirm,
-    dataFiles,
   });
 
   // 設定に基づいてデータファイルリストを生成（設定ファイル基準）
-  useEffect(() => {
+  const dataFiles = useMemo(() => {
     const tabs = editedSettings.dataFileTabs || [];
-    // 全タブの全ファイルを統合してユニークなリストを作成
     const allFiles = tabs.flatMap((tab) => tab.files);
-    const fileNames = Array.from(new Set(allFiles));
-
-    setDataFiles(fileNames);
-  }, [editedSettings, getDefaultTabName]);
+    return Array.from(new Set(allFiles));
+  }, [editedSettings.dataFileTabs]);
 
   // カテゴリ切り替えハンドラ
   const handleCategoryChange = useCallback(

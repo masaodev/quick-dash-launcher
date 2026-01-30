@@ -41,12 +41,6 @@ describe('PathManager', () => {
       expect(PathManager.getBackupFolder()).toBe(path.join(configFolder, 'backup'));
     });
 
-    it('getIconsFolder()はgetAppsFolder()に委譲される（後方互換性）', () => {
-      pathHelper.setup('backward-compat-test');
-
-      expect(PathManager.getIconsFolder()).toBe(PathManager.getAppsFolder());
-    });
-
     it('data.jsonファイルのパスを取得できる', () => {
       const configFolder = pathHelper.setup('datafile-test');
       expect(PathManager.getDataFilePath()).toBe(path.join(configFolder, 'data.json'));

@@ -25,7 +25,6 @@ interface UseTabManagerProps {
       danger?: boolean;
     }
   ) => Promise<boolean>;
-  dataFiles: string[]; // 後方互換性のため（内部では使用しない）
 }
 
 interface UseTabManagerReturn {
@@ -65,7 +64,6 @@ export function useTabManager({
   handleSettingChange,
   showAlert,
   showConfirm,
-  dataFiles: _dataFiles, // 後方互換性のため受け取るが使用しない
 }: UseTabManagerProps): UseTabManagerReturn {
   // 状態管理
   const {
@@ -139,11 +137,7 @@ export function useTabManager({
   const toggleTabExpand = useCallback((tabIndex: number) => {
     setExpandedTabs((prev) => {
       const next = new Set(prev);
-      if (next.has(tabIndex)) {
-        next.delete(tabIndex);
-      } else {
-        next.add(tabIndex);
-      }
+      next.has(tabIndex) ? next.delete(tabIndex) : next.add(tabIndex);
       return next;
     });
   }, []);

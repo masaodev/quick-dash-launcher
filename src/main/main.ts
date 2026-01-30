@@ -109,7 +109,7 @@ app.whenReady().then(async () => {
   setupIPCHandlers(
     PathManager.getConfigFolder(),
     PathManager.getFaviconsFolder(),
-    PathManager.getIconsFolder(),
+    PathManager.getAppsFolder(),
     PathManager.getExtensionsFolder(),
     getMainWindow,
     setEditMode,

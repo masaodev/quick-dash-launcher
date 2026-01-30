@@ -50,6 +50,12 @@ export class IconFetchErrorService {
     return IconFetchErrorService.instance;
   }
 
+  /** テスト用：シングルトンインスタンスをリセット */
+  public static resetInstance(): void {
+    IconFetchErrorService.instance = undefined as unknown as IconFetchErrorService;
+    Store = null;
+  }
+
   private getErrors(): IconFetchErrorRecord[] {
     if (!this.errorStore) throw new Error('Error store not initialized');
     return this.errorStore.get('errors') || [];

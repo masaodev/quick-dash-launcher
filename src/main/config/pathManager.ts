@@ -50,14 +50,6 @@ export class PathManager {
     return this.getIconCacheSubfolder('apps');
   }
 
-  /**
-   * アイコンフォルダのパスを取得
-   * @deprecated getAppsFolder() を使用してください
-   */
-  static getIconsFolder(): string {
-    return this.getAppsFolder();
-  }
-
   /** faviconフォルダのパスを取得 */
   static getFaviconsFolder(): string {
     return this.getIconCacheSubfolder('favicons');

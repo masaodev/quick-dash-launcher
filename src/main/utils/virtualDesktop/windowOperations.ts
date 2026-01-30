@@ -83,6 +83,15 @@ export function moveWindowToVirtualDesktop(hwnd: number | bigint, desktopNumber:
     return false;
   }
 
+  // デスクトップ数の上限チェック
+  const desktopCount = getDesktopCount();
+  if (desktopCount > 0 && desktopNumber > desktopCount) {
+    console.error(
+      `[WindowOps] デスクトップ番号${desktopNumber}は存在しません（最大: ${desktopCount}）`
+    );
+    return false;
+  }
+
   // VirtualDesktopAccessorは0ベースのインデックスを使用
   const desktopIndex = desktopNumber - 1;
 
