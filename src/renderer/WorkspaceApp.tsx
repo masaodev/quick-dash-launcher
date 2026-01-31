@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { WorkspaceItem } from '@common/types';
 
 import ConfirmDialog from './components/ConfirmDialog';
+import GlobalLoadingIndicator from './components/GlobalLoadingIndicator';
 import WorkspaceFilterBar from './components/WorkspaceFilterBar';
 import WorkspaceGroupedList from './components/WorkspaceGroupedList';
 import WorkspaceHeader from './components/WorkspaceHeader';
@@ -23,17 +24,15 @@ const WorkspaceApp: React.FC = () => {
   const [filterText, setFilterText] = useState('');
   const [filterScope, setFilterScope] = useState<FilterScope>('all');
 
-  const { items, groups, executionHistory, loadItems, loadGroups, loadExecutionHistory } =
+  const { items, groups, executionHistory, loadAllDataWithLoading, isLoading, loadingMessage } =
     useWorkspaceData();
 
   const actions = useWorkspaceActions(() => {
-    loadItems();
-    loadGroups();
-    loadExecutionHistory();
+    loadAllDataWithLoading();
   });
 
-  const { isDraggingOver } = useNativeDragDrop(loadItems);
-  useClipboardPaste(loadItems, activeGroupId);
+  const { isDraggingOver } = useNativeDragDrop(loadAllDataWithLoading);
+  useClipboardPaste(loadAllDataWithLoading, activeGroupId);
   const { collapsed, toggleSection, expandAll, collapseAll } = useCollapsibleSections({
     uncategorized: false,
     history: false,
@@ -151,23 +150,27 @@ const WorkspaceApp: React.FC = () => {
   };
 
   const handleExpandAll = async () => {
-    const updatePromises = groups
-      .filter((group) => group.collapsed)
-      .map((group) => window.electronAPI.workspaceAPI.updateGroup(group.id, { collapsed: false }));
-    if (updatePromises.length > 0) {
-      await Promise.all(updatePromises);
-      await loadGroups();
+    const groupsToExpand = groups.filter((group) => group.collapsed);
+    if (groupsToExpand.length > 0) {
+      await Promise.all(
+        groupsToExpand.map((group) =>
+          window.electronAPI.workspaceAPI.updateGroup(group.id, { collapsed: false })
+        )
+      );
+      await loadAllDataWithLoading();
     }
     expandAll();
   };
 
   const handleCollapseAll = async () => {
-    const updatePromises = groups
-      .filter((group) => !group.collapsed)
-      .map((group) => window.electronAPI.workspaceAPI.updateGroup(group.id, { collapsed: true }));
-    if (updatePromises.length > 0) {
-      await Promise.all(updatePromises);
-      await loadGroups();
+    const groupsToCollapse = groups.filter((group) => !group.collapsed);
+    if (groupsToCollapse.length > 0) {
+      await Promise.all(
+        groupsToCollapse.map((group) =>
+          window.electronAPI.workspaceAPI.updateGroup(group.id, { collapsed: true })
+        )
+      );
+      await loadAllDataWithLoading();
     }
     collapseAll();
   };
@@ -304,6 +307,7 @@ const WorkspaceApp: React.FC = () => {
         onMouseDown={handleResize('bottom-left')}
       />
       <div className="workspace-resize-handle left" onMouseDown={handleResize('left')} />
+      <GlobalLoadingIndicator isLoading={isLoading} message={loadingMessage} />
     </div>
   );
 };

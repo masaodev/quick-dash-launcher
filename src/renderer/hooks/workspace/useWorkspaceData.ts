@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import type { WorkspaceItem, WorkspaceGroup, ExecutionHistoryItem } from '@common/types';
 
 import { logError } from '../../utils/debug';
+import { useGlobalLoading } from '../useGlobalLoading';
 
 /** アイコンキャッシュ取得用の最小限の型 */
 type IconCacheItem = {
@@ -40,6 +41,9 @@ export function useWorkspaceData() {
   const [items, setItems] = useState<WorkspaceItem[]>([]);
   const [groups, setGroups] = useState<WorkspaceGroup[]>([]);
   const [executionHistory, setExecutionHistory] = useState<ExecutionHistoryItem[]>([]);
+
+  // ローディング状態管理
+  const { isLoading, message: loadingMessage, withLoading } = useGlobalLoading();
 
   const loadItems = async () => {
     try {
@@ -91,30 +95,33 @@ export function useWorkspaceData() {
     }
   };
 
+  // 全データ読み込み（内部用）
+  const loadAllData = async () => {
+    await Promise.all([loadItems(), loadGroups(), loadExecutionHistory()]);
+  };
+
+  // ローディング表示付きの全データ読み込み（外部公開用）
+  const loadAllDataWithLoading = async () => {
+    await withLoading('データ読込中', loadAllData);
+  };
+
   // 初期データ読み込みと変更イベントリスニング
   useEffect(() => {
-    loadItems();
-    loadGroups();
-    loadExecutionHistory();
+    // 初期化時はローディング表示なし（画面がまだ表示されていない）
+    loadAllData();
 
-    // ワークスペース変更イベントをリッスン
-    const unsubscribe = window.electronAPI.onWorkspaceChanged(() => {
-      loadItems();
-      loadGroups();
-      loadExecutionHistory();
-    });
+    // ワークスペース変更イベントをリッスン（ローディング表示付き）
+    const unsubscribe = window.electronAPI.onWorkspaceChanged(loadAllDataWithLoading);
 
-    return () => {
-      unsubscribe();
-    };
+    return unsubscribe;
   }, []);
 
   return {
     items,
     groups,
     executionHistory,
-    loadItems,
-    loadGroups,
-    loadExecutionHistory,
+    loadAllDataWithLoading,
+    isLoading,
+    loadingMessage,
   };
 }
