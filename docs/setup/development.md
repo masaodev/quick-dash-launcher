@@ -88,7 +88,7 @@ const hotkey = envHotkey || (await this.settingsService.get('hotkey'));
 $env:APP_INSTANCE="custom"; $env:VITE_PORT="9003"; $env:HOTKEY="Ctrl+Shift+Z"; npm run dev
 
 # 特定のテストデータで起動
-$env:QUICK_DASH_CONFIG_DIR="./tests/dev/minimal"; npm run dev
+$env:QUICK_DASH_CONFIG_DIR="./tests/dev/full"; npm run dev
 ```
 
 **Bashの例:**
@@ -97,7 +97,7 @@ $env:QUICK_DASH_CONFIG_DIR="./tests/dev/minimal"; npm run dev
 APP_INSTANCE=custom VITE_PORT=9003 HOTKEY=Ctrl+Shift+Z npm run dev
 
 # 特定のテストデータで起動
-QUICK_DASH_CONFIG_DIR=./tests/dev/minimal npm run dev
+QUICK_DASH_CONFIG_DIR=./tests/dev/full npm run dev
 ```
 
 #### 注意事項

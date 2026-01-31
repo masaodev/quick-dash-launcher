@@ -24,8 +24,10 @@ Electron MCP（Playwright MCPサーバー）を使用することで、Claude Co
   "mcpServers": {
     "electron-playwright": {
       "type": "stdio",
-      "command": "npx",
+      "command": "cmd",
       "args": [
+        "/c",
+        "npx",
         "@playwright/mcp@latest",
         "--cdp-endpoint",
         "http://localhost:9222"
