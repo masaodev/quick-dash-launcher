@@ -35,11 +35,9 @@ const AdminOtherTab: React.FC = () => {
       <div className="other-content">
         <div className="section">
           <h3>ファイル管理</h3>
-          <div className="action-buttons">
-            <Button variant="info" onClick={handleOpenConfigFolder}>
-              📁 設定フォルダを開く
-            </Button>
-          </div>
+          <Button variant="info" onClick={handleOpenConfigFolder}>
+            📁 設定フォルダを開く
+          </Button>
         </div>
 
         <div className="section">
