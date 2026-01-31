@@ -58,7 +58,7 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
             className={`tab-button ${activeTab === 'other' ? 'active' : ''}`}
             onClick={() => onTabChange('other')}
           >
-            📊 その他
+            📖 ヘルプ
           </button>
         </div>
       </div>

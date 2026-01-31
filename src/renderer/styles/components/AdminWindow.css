@@ -321,62 +321,45 @@
 }
 
 /* その他タブ用スタイル */
+/* ヘルプタブ */
 .admin-other-tab {
   flex: 1;
   overflow-y: auto;
   padding: var(--spacing-xl);
 }
 
-.other-content {
+.help-content {
   max-width: 800px;
   margin: 0 auto;
   width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
 }
 
-.section {
-  margin-bottom: 30px;
+/* ヘルプセクション共通 */
+.help-section {
   background-color: var(--bg-section);
   padding: var(--spacing-xl);
   border-radius: var(--border-radius-xl);
   border: var(--border-light);
 }
 
-.section h3 {
-  margin-bottom: 15px;
+.help-section h3 {
+  margin-bottom: var(--spacing-lg);
   color: var(--text-primary);
   font-size: var(--font-size-xl);
   font-weight: bold;
 }
 
-.action-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--spacing-sm);
+/* ショートカットセクション */
+.help-section-shortcuts {
+  background: linear-gradient(135deg, var(--bg-section) 0%, var(--bg-secondary) 100%);
 }
 
-
-.info-grid {
+.shortcuts-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: var(--spacing-lg);
-}
-
-.info-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--spacing-sm) 0;
-  border-bottom: var(--border-light);
-}
-
-.info-item label {
-  font-weight: 500;
-  color: var(--text-secondary);
-}
-
-.shortcuts-list {
-  display: flex;
-  flex-direction: column;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: var(--spacing-sm);
 }
 
@@ -384,7 +367,14 @@
   display: flex;
   align-items: center;
   gap: var(--spacing-lg);
-  padding: var(--spacing-sm) 0;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--bg-primary);
+  border-radius: var(--border-radius);
+  transition: background-color 0.15s ease;
+}
+
+.shortcut-item:hover {
+  background-color: var(--bg-hover);
 }
 
 .shortcut-item kbd {
@@ -394,26 +384,91 @@
   padding: var(--spacing-xs) var(--spacing-sm);
   font-family: var(--font-family-mono);
   font-size: var(--font-size-xs);
-  min-width: 120px;
+  min-width: 130px;
   text-align: center;
+  flex-shrink: 0;
 }
 
-.app-actions {
-  display: flex;
-  justify-content: center;
+.shortcut-item span {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
 }
 
-
-.app-info-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+/* 2カラムカードエリア */
+.help-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: var(--spacing-lg);
 }
 
-.info-text {
+@media (max-width: 600px) {
+  .help-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+.help-card {
+  background-color: var(--bg-section);
+  padding: var(--spacing-lg);
+  border-radius: var(--border-radius-xl);
+  border: var(--border-light);
+  display: flex;
+  flex-direction: column;
+}
+
+.help-card h3 {
+  margin-bottom: var(--spacing-md);
+  color: var(--text-primary);
+  font-size: var(--font-size-lg);
+  font-weight: bold;
+}
+
+.help-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  flex: 1;
+}
+
+.help-card-description {
   color: var(--text-secondary);
-  font-size: var(--font-size-base);
+  font-size: var(--font-size-sm);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* アプリ情報 */
+.app-info-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.app-info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-xs) 0;
+}
+
+.app-info-label {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.app-info-value {
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+}
+
+/* フッター（終了ボタン） */
+.help-footer {
+  display: flex;
+  justify-content: center;
+  padding-top: var(--spacing-lg);
+  border-top: var(--border-light);
+  margin-top: var(--spacing-md);
 }
 
 
@@ -832,24 +887,10 @@
   border-radius: var(--border-radius-sm);
 }
 
-.column-order {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-}
-
 .column-name {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
-}
-
-.column-actions {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--spacing-xs);
 }
 
 .file-count {
@@ -1034,27 +1075,6 @@
   align-items: center;
 }
 
-.delete-tab-button {
-  padding: 4px 8px;
-  background: transparent;
-  border: none;
-  border-radius: var(--border-radius-sm);
-  cursor: pointer;
-  font-size: 18px;
-  transition: var(--transition-normal);
-  opacity: 0.6;
-}
-
-.delete-tab-button:hover:not(:disabled) {
-  opacity: 1;
-  background-color: var(--color-red-100);
-}
-
-.delete-tab-button:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-
 .tab-card-body {
   padding: var(--spacing-lg);
   display: flex;
@@ -1111,51 +1131,6 @@
   display: flex;
   gap: var(--spacing-xs);
   align-items: center;
-}
-
-.set-default-button {
-  padding: 2px 6px;
-  background: transparent;
-  border: var(--border-light);
-  border-radius: var(--border-radius-sm);
-  cursor: pointer;
-  font-size: 14px;
-  transition: var(--transition-normal);
-  opacity: 0.5;
-}
-
-.set-default-button:hover:not(:disabled) {
-  opacity: 1;
-  background-color: var(--color-yellow-100);
-  border-color: var(--color-warning);
-}
-
-.set-default-button:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-
-.remove-file-button {
-  padding: 2px 6px;
-  background: transparent;
-  border: none;
-  border-radius: var(--border-radius-sm);
-  cursor: pointer;
-  font-size: 14px;
-  transition: var(--transition-normal);
-  opacity: 0.5;
-  color: var(--text-muted);
-}
-
-.remove-file-button:hover:not(:disabled) {
-  opacity: 1;
-  background-color: var(--color-red-100);
-  color: var(--color-danger);
-}
-
-.remove-file-button:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
 }
 
 .tab-file-actions {
