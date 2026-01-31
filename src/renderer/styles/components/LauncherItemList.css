@@ -140,3 +140,18 @@
   font-size: 0.85em;
   color: var(--text-secondary);
 }
+
+/* ドラッグ中のアイテムスタイル */
+.item.dragging {
+  opacity: 0.5;
+  background-color: var(--bg-hover);
+}
+
+/* ドラッグ可能なアイテムのカーソル */
+.item[draggable="true"] {
+  cursor: grab;
+}
+
+.item[draggable="true"]:active {
+  cursor: grabbing;
+}

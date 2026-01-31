@@ -391,39 +391,61 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
 
   const handleGroupDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    // 実行履歴からのドラッグの場合はcopy、それ以外はmove
+    // 実行履歴またはランチャーアイテムからのドラッグの場合はcopy、それ以外はmove
     const hasHistoryItem = e.dataTransfer.types.includes('historyitem');
-    e.dataTransfer.dropEffect = hasHistoryItem ? 'copy' : 'move';
+    const hasLauncherItem = e.dataTransfer.types.includes('launcheritem');
+    e.dataTransfer.dropEffect = hasHistoryItem || hasLauncherItem ? 'copy' : 'move';
   };
+
+  /** LauncherItemをワークスペースに追加 */
+  async function addLauncherItemToWorkspace(
+    launcherItemData: string,
+    groupId?: string
+  ): Promise<void> {
+    const launcherItem: LauncherItem = JSON.parse(launcherItemData);
+    await window.electronAPI.workspaceAPI.addItem(launcherItem, groupId);
+    window.electronAPI.showToastWindow(
+      `「${launcherItem.displayName}」をワークスペースに追加しました`,
+      'success'
+    );
+  }
+
+  /** 実行履歴アイテムをワークスペースに追加 */
+  async function addHistoryItemToWorkspace(
+    historyItemData: string,
+    groupId?: string
+  ): Promise<void> {
+    const historyItem: ExecutionHistoryItem = JSON.parse(historyItemData);
+
+    if (historyItem.itemType === 'windowOperation') {
+      const windowOpItem = executionHistoryToWindowItem(historyItem);
+      await window.electronAPI.workspaceAPI.addItem(windowOpItem, groupId);
+    } else {
+      const launcherItem = executionHistoryToLauncherItem(historyItem);
+      await window.electronAPI.workspaceAPI.addItem(launcherItem as LauncherItem, groupId);
+    }
+  }
 
   const handleGroupDrop = (groupId?: string) => async (e: React.DragEvent) => {
     e.preventDefault();
     const itemId = e.dataTransfer.getData('itemId');
     const currentGroupId = e.dataTransfer.getData('currentGroupId');
     const historyItemData = e.dataTransfer.getData('historyItem');
+    const launcherItemData = e.dataTransfer.getData('launcherItem');
 
-    // 実行履歴アイテムからのドロップの場合
-    if (historyItemData) {
-      try {
-        const historyItem: ExecutionHistoryItem = JSON.parse(historyItemData);
-
-        // WindowOperationItemの場合は専用の変換を使用
-        if (historyItem.itemType === 'windowOperation') {
-          const windowOpItem = executionHistoryToWindowItem(historyItem);
-          await window.electronAPI.workspaceAPI.addItem(windowOpItem, groupId);
-        } else {
-          // その他のアイテムはLauncherItem形式に変換
-          const launcherItem = executionHistoryToLauncherItem(historyItem);
-          await window.electronAPI.workspaceAPI.addItem(launcherItem as LauncherItem, groupId);
-        }
-      } catch (error) {
-        logError('実行履歴からのアイテム追加に失敗:', error);
+    try {
+      if (launcherItemData) {
+        await addLauncherItemToWorkspace(launcherItemData, groupId);
+      } else if (historyItemData) {
+        await addHistoryItemToWorkspace(historyItemData, groupId);
+      } else if (itemId && currentGroupId !== (groupId || '')) {
+        onMoveItemToGroup(itemId, groupId);
       }
+    } catch (error) {
+      logError('ワークスペースへのアイテム追加に失敗:', error);
+      window.electronAPI.showToastWindow('ワークスペースへの追加に失敗しました', 'error');
     }
-    // 既存のワークスペースアイテムの移動
-    else if (itemId && currentGroupId !== (groupId || '')) {
-      onMoveItemToGroup(itemId, groupId);
-    }
+
     setDraggedItemId(null);
   };
 

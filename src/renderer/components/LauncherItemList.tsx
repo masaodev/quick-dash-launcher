@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { isLauncherItem, isWindowInfo, isGroupItem, isWindowItem } from '@common/types/guards';
 import { LauncherItem, GroupItem, AppItem, WindowInfo, WindowItem } from '@common/types';
 
@@ -39,6 +39,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
   const listRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
   const contextMenuItemRef = useRef<AppItem | null>(null);
+  const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
 
   useEffect(() => {
     // Scroll selected item into view
@@ -203,9 +204,8 @@ const LauncherItemList: React.FC<ItemListProps> = ({
     onRefreshWindows,
   ]);
 
-  const getDefaultIcon = (item: AppItem) => {
-    // WindowInfoの場合
-    if ('hwnd' in item) {
+  function getDefaultIcon(item: AppItem): string {
+    if (isWindowInfo(item)) {
       return '🪟';
     }
 
@@ -227,6 +227,37 @@ const LauncherItemList: React.FC<ItemListProps> = ({
       default:
         return '❓';
     }
+  }
+
+  /** アイテムのアイコン（カスタムまたはデフォルト）を取得 */
+  function getItemIcon(item: AppItem): React.ReactNode {
+    // LauncherItemでカスタムアイコンがある場合
+    if (isLauncherItem(item) && item.icon) {
+      return <img src={item.icon} alt="" width="24" height="24" />;
+    }
+    // WindowInfoでアイコンがある場合
+    if (isWindowInfo(item) && item.icon) {
+      return <img src={item.icon} alt="" width="24" height="24" />;
+    }
+    // デフォルトアイコン
+    return getDefaultIcon(item);
+  }
+
+  // ドラッグ&ドロップハンドラー（ワークスペースへの追加用）
+  const handleDragStart = (e: React.DragEvent, item: AppItem, index: number) => {
+    // LauncherItemのみドラッグ可能
+    if (!isLauncherItem(item)) {
+      e.preventDefault();
+      return;
+    }
+
+    setDraggedItemIndex(index);
+    e.dataTransfer.effectAllowed = 'copy';
+    e.dataTransfer.setData('launcherItem', JSON.stringify(item));
+  };
+
+  const handleDragEnd = () => {
+    setDraggedItemIndex(null);
   };
 
   const handleContextMenu = async (event: React.MouseEvent, item: AppItem) => {
@@ -266,6 +297,9 @@ const LauncherItemList: React.FC<ItemListProps> = ({
             ? (item as WindowItem).displayName
             : (item as LauncherItem | GroupItem).displayName;
 
+        const isDraggable = isLauncherItem(item);
+        const isDragging = draggedItemIndex === index;
+
         return (
           <div
             key={
@@ -278,7 +312,10 @@ const LauncherItemList: React.FC<ItemListProps> = ({
             ref={(el) => {
               itemRefs.current[index] = el;
             }}
-            className={`item ${index === selectedIndex ? 'selected' : ''} ${isGroup ? 'group-item' : ''} ${isWindow ? 'window-item' : ''} ${isWindowOperation ? 'window-operation-item' : ''}`}
+            className={`item ${index === selectedIndex ? 'selected' : ''} ${isGroup ? 'group-item' : ''} ${isWindow ? 'window-item' : ''} ${isWindowOperation ? 'window-operation-item' : ''} ${isDragging ? 'dragging' : ''}`}
+            draggable={isDraggable}
+            onDragStart={(e) => handleDragStart(e, item, index)}
+            onDragEnd={handleDragEnd}
             onClick={() => {
               onItemSelect(index);
               onItemExecute(item);
@@ -287,15 +324,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
             onContextMenu={(e) => handleContextMenu(e, item)}
             title={getTooltipText(item)}
           >
-            <span className="item-icon">
-              {!isGroup && !isWindow && !isWindowOperation && (item as LauncherItem).icon ? (
-                <img src={(item as LauncherItem).icon} alt="" width="24" height="24" />
-              ) : isWindow && (item as WindowInfo).icon ? (
-                <img src={(item as WindowInfo).icon} alt="" width="24" height="24" />
-              ) : (
-                getDefaultIcon(item)
-              )}
-            </span>
+            <span className="item-icon">{getItemIcon(item)}</span>
             <span className="item-name">
               {itemName}
               {isGroup && (
