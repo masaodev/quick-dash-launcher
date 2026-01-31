@@ -197,13 +197,35 @@ export interface ElectronAPI {
   ) => Promise<void>;
   // トーストウィンドウAPI（メインウィンドウが閉じた後も表示可能）
   showToastWindow: (
-    message: string,
+    options:
+      | string
+      | {
+          message?: string;
+          type?: 'success' | 'error' | 'info' | 'warning';
+          duration?: number;
+          itemType?: 'url' | 'file' | 'folder' | 'app' | 'customUri' | 'group' | 'windowOperation';
+          displayName?: string;
+          path?: string;
+          icon?: string;
+          itemCount?: number;
+          itemNames?: string[];
+        },
     type?: 'success' | 'error' | 'info' | 'warning',
     duration?: number
   ) => Promise<void>;
   // トーストウィンドウ用イベントリスナー（toast.html用）
   onShowToast: (
-    callback: (data: { message: string; type: string; duration: number }) => void
+    callback: (data: {
+      message?: string;
+      type: string;
+      duration: number;
+      itemType?: string;
+      displayName?: string;
+      path?: string;
+      icon?: string;
+      itemCount?: number;
+      itemNames?: string[];
+    }) => void
   ) => void;
   // ワークスペースウィンドウ制御API
   toggleWorkspaceWindow: () => Promise<void>;
