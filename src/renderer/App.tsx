@@ -439,7 +439,7 @@ const App: React.FC = () => {
     // データ変更通知のリスナーを設定
     const cleanupDataChanged = window.electronAPI.onDataChanged(async () => {
       debugLog('データ変更通知を受信、データを再読み込みします');
-      loadItems();
+      await withLoading('データ再読込中', loadItems);
     });
 
     return () => {
@@ -552,7 +552,7 @@ const App: React.FC = () => {
       // 新規登録モード
       await window.electronAPI.registerItems(items);
     }
-    loadItems(); // Reload items after registration/update
+    await withLoading('データ再読込中', loadItems); // Reload items after registration/update
   };
 
   // アイテム削除ハンドラー（RegisterModalから呼び出される）
@@ -602,7 +602,7 @@ const App: React.FC = () => {
       setDeleteConfirmDialog({ isOpen: false, item: null });
 
       // データ再読込
-      loadItems();
+      await withLoading('データ再読込中', loadItems);
     } catch (error) {
       logError('Failed to delete item:', error);
       setAlertDialog({
