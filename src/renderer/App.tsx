@@ -229,16 +229,27 @@ const App: React.FC = () => {
   // アイテム実行の共通処理（トースト表示 + 実行）
   const executeAppItem = async (item: AppItem): Promise<void> => {
     if (isGroupItem(item)) {
-      window.electronAPI.showToastWindow(
-        `${item.displayName} (${item.itemNames.length}件) を起動します`
-      );
+      window.electronAPI.showToastWindow({
+        displayName: item.displayName,
+        itemType: 'group',
+        itemCount: item.itemNames.length,
+        itemNames: item.itemNames.slice(0, 3),
+      });
       await window.electronAPI.executeGroup(item, mainItems);
     } else if (isWindowItem(item)) {
-      window.electronAPI.showToastWindow(`${item.displayName} を実行します`);
+      window.electronAPI.showToastWindow({
+        displayName: item.displayName,
+        itemType: 'windowOperation',
+      });
       await window.electronAPI.executeWindowOperation(item);
     } else {
       const launcherItem = item as LauncherItem;
-      window.electronAPI.showToastWindow(`${launcherItem.displayName} を起動します`);
+      window.electronAPI.showToastWindow({
+        displayName: launcherItem.displayName,
+        itemType: launcherItem.type,
+        path: launcherItem.path,
+        icon: launcherItem.icon,
+      });
       await window.electronAPI.openItem(launcherItem);
     }
   };

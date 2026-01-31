@@ -13,18 +13,40 @@ import { EnvConfig } from '../config/envConfig.js';
 
 import { NotificationType } from './notificationService.js';
 
+/** アイテムタイプ */
+export type ToastItemType =
+  | 'url'
+  | 'file'
+  | 'folder'
+  | 'app'
+  | 'customUri'
+  | 'group'
+  | 'windowOperation';
+
 /** トースト表示オプション */
 export interface ToastOptions {
-  /** 表示メッセージ */
-  message: string;
+  /** 表示メッセージ（従来互換用） */
+  message?: string;
   /** トーストの種類 */
   type?: NotificationType;
   /** 表示時間（ミリ秒） */
   duration?: number;
+  /** アイテムタイプ */
+  itemType?: ToastItemType;
+  /** 表示名 */
+  displayName?: string;
+  /** パス（URL含む） */
+  path?: string;
+  /** アイコン（Base64データURLまたはURL） */
+  icon?: string;
+  /** グループ内アイテム数 */
+  itemCount?: number;
+  /** グループ内アイテム名（最大3件） */
+  itemNames?: string[];
 }
 
-const TOAST_WIDTH = 320;
-const TOAST_HEIGHT = 80;
+const TOAST_WIDTH = 400;
+const TOAST_HEIGHT = 100;
 const TOAST_MARGIN = 16;
 const DEFAULT_DURATION = 2500;
 
@@ -79,7 +101,20 @@ function createToastWindow(): BrowserWindow {
  * トースト通知を表示する
  */
 export async function showToastWindow(options: ToastOptions): Promise<void> {
-  const { message, type = 'success', duration = DEFAULT_DURATION } = options;
+  const {
+    message,
+    type = 'success',
+    duration: customDuration,
+    itemType,
+    displayName,
+    path: itemPath,
+    icon,
+    itemCount,
+    itemNames,
+  } = options;
+
+  // グループ起動時は表示時間を長め（3秒）に設定
+  const duration = customDuration ?? (itemType === 'group' ? 3000 : DEFAULT_DURATION);
 
   cleanup();
   toastWindow = createToastWindow();
@@ -90,7 +125,18 @@ export async function showToastWindow(options: ToastOptions): Promise<void> {
     await toastWindow.loadFile(path.join(__dirname, '../toast.html'));
   }
 
-  toastWindow.webContents.send('show-toast', { message, type, duration });
+  // 拡張データを送信
+  toastWindow.webContents.send('show-toast', {
+    message,
+    type,
+    duration,
+    itemType,
+    displayName,
+    path: itemPath,
+    icon,
+    itemCount,
+    itemNames,
+  });
   toastWindow.show();
 
   closeTimeout = setTimeout(() => {
