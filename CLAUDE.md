@@ -11,13 +11,12 @@
 
 ```
 src/
-├── main/           # Electronメインプロセス
+├── main/           # Electronメインプロセス（preload.ts含む）
 ├── renderer/       # React UI（コンポーネント、フック、状態管理）
-├── preload/        # IPC橋渡し
 ├── common/         # 共通型定義（@common/*エイリアス）
 └── test/           # テストヘルパー
 docs/               # 詳細ドキュメント
-e2e/                # E2Eテスト
+tests/e2e/          # E2Eテスト
 ```
 
 ## 開発コマンド（HOW）

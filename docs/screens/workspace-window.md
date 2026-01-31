@@ -767,22 +767,22 @@ C:\Program Files\Code\Code.exe --new-window
 | **WorkspaceGroupedList** | `components/WorkspaceGroupedList.tsx` | アイテムリスト（460行→385行にリファクタリング） |
 | **WorkspaceGroupHeader** | `components/WorkspaceGroupHeader.tsx` | グループヘッダー（編集、色変更、アーカイブ、削除ボタン） |
 | **WorkspaceItemCard** | `components/WorkspaceItemCard.tsx` | ワークスペースアイテムカード |
-| **ExecutionHistoryItemCard** | `components/ExecutionHistoryItemCard.tsx` | 実行履歴アイテムカード |
-| **WorkspaceContextMenu** | `components/WorkspaceContextMenu.tsx` | 右クリックメニュー |
+| **WorkspaceExecutionHistoryCard** | `components/WorkspaceExecutionHistoryCard.tsx` | 実行履歴アイテムカード |
 
 ### カスタムフック
 
 | フック | ファイル | 責務 |
 |-------|---------|------|
-| **useWorkspaceData** | `hooks/useWorkspaceData.ts` | データ読み込みと状態管理 |
-| **useWorkspaceActions** | `hooks/useWorkspaceActions.ts` | アクション処理の統合 |
+| **useWorkspaceData** | `hooks/workspace/useWorkspaceData.ts` | データ読み込みと状態管理 |
+| **useWorkspaceActions** | `hooks/workspace/useWorkspaceActions.ts` | アクション処理の統合 |
 | **useNativeDragDrop** | `hooks/useNativeDragDrop.ts` | ネイティブドラッグ&ドロップ処理 |
 | **useClipboardPaste** | `hooks/useClipboardPaste.ts` | クリップボードペースト処理（Ctrl+V） |
 | **useCollapsibleSections** | `hooks/useCollapsibleSections.ts` | 折りたたみ状態管理 |
-| **useWorkspaceItemGroups** | `hooks/useWorkspaceItemGroups.ts` | アイテムグループ化ロジック |
-| **useWorkspaceContextMenu** | `hooks/useWorkspaceContextMenu.ts` | コンテキストメニュー管理 |
-| **useWorkspaceDragDrop** | `hooks/useWorkspaceDragDrop.ts` | 型安全なドラッグ&ドロップヘルパー |
-| **useWorkspaceResize** | `hooks/useWorkspaceResize.ts` | ウィンドウのサイズ変更処理 |
+| **useWorkspaceItemGroups** | `hooks/workspace/useWorkspaceItemGroups.ts` | アイテムグループ化ロジック |
+| **useWorkspaceContextMenu** | `hooks/workspace/useWorkspaceContextMenu.ts` | コンテキストメニュー管理 |
+| **useWorkspaceDragDrop** | `hooks/workspace/useWorkspaceDragDrop.ts` | 型安全なドラッグ&ドロップヘルパー |
+| **useWorkspaceResize** | `hooks/workspace/useWorkspaceResize.ts` | ウィンドウのサイズ変更処理 |
+| **useWorkspaceItemEditForm** | `hooks/workspace/useWorkspaceItemEditForm.ts` | アイテム編集フォーム |
 | **useFileOperations** | `hooks/useFileOperations.ts` | ファイルとURL操作の共通ユーティリティ |
 
 **リファクタリングの効果:**

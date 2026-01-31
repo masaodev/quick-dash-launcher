@@ -244,41 +244,41 @@ const channel = IPC_CHANNELS.SETTINGS_GET; // 'settings:get'
 
 ## 編集モード専用
 
-### `load-raw-data-files`
-生データファイルを展開せずに読み込み（編集モード用）
-- 戻り値: `RawDataLine[]`
+### `load-editable-items`
+編集可能なアイテムを読み込み（編集モード用）
+- 戻り値: `EditableItem[]`
 
-### `save-raw-data-files`
-生データファイルを直接保存（編集モード用）
-- パラメータ: `rawLines: RawDataLine[]`
+### `save-editable-items`
+編集可能なアイテムを保存（編集モード用）
+- パラメータ: `items: EditableItem[]`
 - 戻り値: なし
 - 処理完了後、`data-changed`イベントを全ウィンドウに送信
 - バックアップ: 保存前に自動作成
 
-### `update-item`
-単一アイテムをJSON形式で更新
+### `update-item-by-id`
+単一アイテムをIDで更新
 - パラメータ: `{ sourceFile: string, id: string, newItem: LauncherItem }`
 - 戻り値: `{ success: boolean }`
 - バックアップ: 更新前に自動作成
 - 処理完了後、`data-changed`イベントを全ウィンドウに送信
 
-### `update-raw-line`
-生データファイルの指定行を直接更新（フォルダ取込ディレクティブ編集用）
-- パラメータ: `{ sourceFile: string, lineNumber: number, newContent: string }`
+### `update-dir-item-by-id`
+フォルダ取込アイテムをIDで更新
+- パラメータ: `{ sourceFile: string, id: string, newItem: DirItem }`
 - 戻り値: `{ success: boolean }`
 - バックアップ: 更新前に自動作成
 - 処理完了後、`data-changed`イベントを全ウィンドウに送信
 
-### `delete-items`
-複数アイテムを一括削除
-- パラメータ: `DeleteItemRequest[]` (各要素: `{ sourceFile, lineNumber }`)
+### `delete-items-by-id`
+複数アイテムをIDで一括削除
+- パラメータ: `DeleteItemByIdRequest[]` (各要素: `{ sourceFile, id }`)
 - 戻り値: `{ success: boolean }`
 - バックアップ: 削除前に自動作成
 - 処理完了後、`data-changed`イベントを全ウィンドウに送信
 
-### `batch-update-items`
-複数アイテムを一括更新
-- パラメータ: `UpdateItemRequest[]` (各要素: `{ sourceFile, lineNumber, newItem }`)
+### `batch-update-items-by-id`
+複数アイテムをIDで一括更新
+- パラメータ: `UpdateItemByIdRequest[]` (各要素: `{ sourceFile, id, newItem }`)
 - 戻り値: `{ success: boolean }`
 - バックアップ: 更新前に自動作成
 - 処理完了後、`data-changed`イベントを全ウィンドウに送信

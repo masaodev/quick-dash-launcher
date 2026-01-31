@@ -31,8 +31,8 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
   "hotkey": "Alt+Space",
   "windowWidth": 600,
   "windowHeight": 400,
-  "editModeWidth": 1000,
-  "editModeHeight": 700,
+  "editModeWidth": 1200,
+  "editModeHeight": 1000,
   "autoLaunch": false,
   "backupEnabled": false,
   "backupOnStart": false,
@@ -88,8 +88,8 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
 |-----------|-----|-------------|------|
 | **windowWidth** | number | 600 | ウィンドウの初期幅（ピクセル） |
 | **windowHeight** | number | 400 | ウィンドウの初期高さ（ピクセル） |
-| **editModeWidth** | number | 1000 | 編集モード時のウィンドウ幅（ピクセル） |
-| **editModeHeight** | number | 700 | 編集モード時のウィンドウ高さ（ピクセル） |
+| **editModeWidth** | number | 1200 | 編集モード時のウィンドウ幅（ピクセル） |
+| **editModeHeight** | number | 1000 | 編集モード時のウィンドウ高さ（ピクセル） |
 
 ### 3.4. 自動起動設定
 

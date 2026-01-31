@@ -36,6 +36,8 @@
 | `onValidationChange` | `(isValid: boolean, reason?: string) => void` | ○ | - | バリデーション結果のコールバック |
 | `disabled` | `boolean` | - | `false` | 入力を無効化するか |
 | `placeholder` | `string` | - | `'ホットキーを入力...'` | プレースホルダーテキスト |
+| `allowEmpty` | `boolean` | - | `false` | 空文字列を許可するか |
+| `showClearButton` | `boolean` | - | `false` | クリアボタンを表示するか |
 
 ## 4. 画面項目一覧
 
@@ -162,7 +164,7 @@
 | `.hotkey-input.recording` | 録画中の入力フィールド |
 | `.hotkey-input.disabled` | 無効状態の入力フィールド |
 | `.hotkey-recording-indicator` | 録画中インジケーター |
-| `.cancel-recording` | キャンセルボタン |
+| `.hotkey-clear-button` | クリアボタン（`showClearButton`が`true`の場合のみ表示） |
 
 ### 視覚的フィードバック
 

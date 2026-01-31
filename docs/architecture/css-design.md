@@ -19,27 +19,27 @@ src/renderer/styles/
 ├── common.css                   # 共通ユーティリティクラス
 ├── splash.css                   # スプラッシュ画面
 └── components/                  # コンポーネント別スタイル
+    ├── AdminArchiveTab.css      # アーカイブタブ
+    ├── AdminItemManager.css     # アイテム管理（編集モード）
     ├── AdminWindow.css          # 管理ウィンドウ
     ├── AlertDialog.css          # 通知ダイアログ
-    ├── Button.css               # 共通ボタンコンポーネント
-    ├── ArchiveTab.css           # アーカイブタブ
     ├── BookmarkImport.css       # ブックマークインポート
+    ├── Button.css               # 共通ボタンコンポーネント
     ├── ColorPicker.css          # カラーピッカー
     ├── ConfirmDialog.css        # 確認ダイアログ
-    ├── ContextMenu.css          # コンテキストメニュー
-    ├── EditMode.css             # 編集モード
     ├── FilePickerDialog.css     # ファイル選択ダイアログ
-    ├── FileTabBar.css           # ファイルタブバー
-    ├── FirstLaunchSetup.css     # 初回起動セットアップ
+    ├── GlobalLoadingIndicator.css # ローディングインジケータ
     ├── GroupItemSelectorModal.css  # グループアイテム選択モーダル
     ├── Header.css               # ヘッダー
     ├── HotkeyInput.css          # ホットキー入力
-    ├── IconProgress.css         # アイコン進捗バー
     ├── IconProgressDetailModal.css # アイコン進捗詳細モーダル
-    ├── ItemCountDisplay.css     # アイテム数表示
-    ├── ItemList.css             # アイテムリスト
+    ├── LauncherIconProgress.css # アイコン進捗バー
+    ├── LauncherItemCountDisplay.css # アイテム数表示
+    ├── LauncherItemList.css     # アイテムリスト
+    ├── MissingIconNotice.css    # アイコン欠落通知
     ├── Modal.css                # モーダル共通
     ├── RegisterModal.css        # 登録モーダル
+    ├── SetupFirstLaunch.css     # 初回起動セットアップ
     ├── UrlConverterMenu.css     # URL変換メニュー
     ├── WindowSelectorModal.css  # ウィンドウ選択モーダル
     └── WorkspaceWindow.css      # ワークスペースウィンドウ

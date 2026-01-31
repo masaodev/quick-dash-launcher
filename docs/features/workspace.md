@@ -304,7 +304,7 @@
 
 ### データ形式
 
-詳細なデータ形式は[データファイル形式](../architecture/file-formats/data-format.md#ワークスペースデータ)を参照してください。
+詳細なデータ形式は[ワークスペースファイル形式](../architecture/file-formats/workspace-format.md)を参照してください。
 
 ## ウィンドウのカスタマイズ
 
@@ -402,7 +402,7 @@
 - `item`: アイテム（アイテムID）
 - `uncategorized`: 未分類セクション
 
-詳細は[データファイル形式 - DragItemData/DropTargetData](../architecture/file-formats/data-format.md#dragitemdata)を参照してください。
+詳細は[ワークスペースファイル形式 - DragItemData/DropTargetData](../architecture/file-formats/workspace-format.md#dragitemdata)を参照してください。
 
 ## トラブルシューティング
 
@@ -423,6 +423,6 @@
 
 ## 関連ドキュメント
 
-- **[データファイル形式](../architecture/file-formats/data-format.md)** - workspace.json形式
+- **[ワークスペースファイル形式](../architecture/file-formats/workspace-format.md)** - workspace.json形式
 - **[IPC通信](../architecture/ipc-channels.md)** - ワークスペース関連のIPCチャネル
 - **[キーボードショートカット](keyboard-shortcuts.md)** - 全ショートカット一覧

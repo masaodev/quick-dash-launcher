@@ -35,7 +35,7 @@
 | `isOpen` | `boolean` | ○ | モーダルの表示状態 |
 | `onClose` | `() => void` | ○ | 閉じる時のコールバック |
 | `onSelect` | `(itemName: string) => void` | ○ | アイテム選択時のコールバック |
-| `targetFile` | `string` | ○ | 対象のデータファイル名（例: `data.json`） |
+| `targetFile` | `string` | - | 対象のデータファイル名（例: `data.json`、未指定時は全データファイルから選択） |
 | `excludeNames` | `string[]` | ○ | 既に追加済みのアイテム名（選択不可にする） |
 
 ## 4. 画面項目一覧
@@ -129,7 +129,7 @@
 - フォルダ取込から展開されたアイテム（`isDirExpanded === true`）
 - WindowInfo（内部データ構造）
 
-**注意**: ウィンドウ操作アイテム（`type === 'windowOperation'`）はグループに追加可能です。
+**注意**: ウィンドウ操作アイテム（`type === 'window'`）はグループに追加可能です。
 
 ## 8. デフォルトアイコン
 
@@ -142,7 +142,7 @@
 | `app` | ⚙️ |
 | `file` | 📄 |
 | `customUri` | 🔗 |
-| `windowOperation` | 🪟 |
+| `window` | 🪟 |
 | `group` | 📦 |
 | その他 | ❓ |
 
