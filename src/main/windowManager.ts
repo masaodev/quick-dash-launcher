@@ -20,6 +20,7 @@ import { SettingsService } from './services/settingsService.js';
 import { showAdminWindowWithTab } from './adminWindowManager.js';
 import PathManager from './config/pathManager.js';
 import { EnvConfig } from './config/envConfig.js';
+import { calculateModalSize } from './utils/modalSizeManager.js';
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
@@ -463,28 +464,25 @@ export async function setModalMode(
   requiredSize?: { width: number; height: number }
 ): Promise<void> {
   isModalMode = isModal;
+  if (!mainWindow) return;
 
-  if (mainWindow) {
-    if (isModal && requiredSize) {
-      // モーダル表示時：現在のサイズを保存し、必要な場合のみ拡大
+  if (isModal && requiredSize) {
+    // ネストしたモーダル対応：既に保存済みでない場合のみサイズを保存
+    if (!normalWindowBounds) {
       const currentBounds = mainWindow.getBounds();
       normalWindowBounds = { width: currentBounds.width, height: currentBounds.height };
-
-      // 必要サイズと現在サイズを比較し、必要な場合のみ拡大
-      if (currentBounds.width < requiredSize.width || currentBounds.height < requiredSize.height) {
-        mainWindow.setSize(
-          Math.max(currentBounds.width, requiredSize.width),
-          Math.max(currentBounds.height, requiredSize.height)
-        );
-        mainWindow.center();
-      }
-    } else {
-      // モーダルを閉じる時：元のサイズに復元
-      if (normalWindowBounds) {
-        mainWindow.setSize(normalWindowBounds.width, normalWindowBounds.height);
-        mainWindow.center();
-      }
     }
+
+    const { needsResize, newSize } = calculateModalSize(mainWindow.getBounds(), requiredSize);
+    if (needsResize) {
+      mainWindow.setSize(newSize.width, newSize.height);
+      mainWindow.center();
+    }
+  } else if (normalWindowBounds) {
+    // モーダルを閉じる時：元のサイズに復元
+    mainWindow.setSize(normalWindowBounds.width, normalWindowBounds.height);
+    mainWindow.center();
+    normalWindowBounds = null;
   }
 }
 
