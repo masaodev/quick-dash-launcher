@@ -7,6 +7,7 @@ import type { WorkspacePositionMode } from '@common/types';
 import { SettingsService } from './services/settingsService.js';
 import { EnvConfig } from './config/envConfig.js';
 import PathManager from './config/pathManager.js';
+import { calculateModalSize } from './utils/modalSizeManager.js';
 
 let workspaceWindow: BrowserWindow | null = null;
 let isWorkspaceWindowVisible: boolean = false;
@@ -248,55 +249,41 @@ export function setWorkspaceModalMode(
   isModal: boolean,
   requiredSize?: { width: number; height: number }
 ): void {
-  if (workspaceWindow && !workspaceWindow.isDestroyed()) {
-    if (isModal && requiredSize) {
-      // モーダル表示時：現在のサイズを保存し、必要な場合のみ拡大
-      const currentBounds = workspaceWindow.getBounds();
+  if (!workspaceWindow || workspaceWindow.isDestroyed()) return;
+
+  const { width: screenWidth } = screen.getPrimaryDisplay().workAreaSize;
+  const currentBounds = workspaceWindow.getBounds();
+
+  if (isModal && requiredSize) {
+    // ネストしたモーダル対応：既に保存済みでない場合のみサイズを保存
+    if (!normalWorkspaceWindowBounds) {
       normalWorkspaceWindowBounds = { width: currentBounds.width, height: currentBounds.height };
-
-      // 必要サイズと現在サイズを比較し、必要な場合のみ拡大
-      if (currentBounds.width < requiredSize.width || currentBounds.height < requiredSize.height) {
-        const newWidth = Math.max(currentBounds.width, requiredSize.width);
-        const newHeight = Math.max(currentBounds.height, requiredSize.height);
-
-        // 画面右端に固定するためにx座標を調整
-        const { width: screenWidth } = screen.getPrimaryDisplay().workAreaSize;
-        const newX = screenWidth - newWidth;
-
-        workspaceWindow.setBounds({
-          x: newX,
-          y: currentBounds.y,
-          width: newWidth,
-          height: newHeight,
-        });
-
-        windowLogger.info(
-          `モーダルモードON: サイズを${currentBounds.width}x${currentBounds.height}から${newWidth}x${newHeight}に変更`
-        );
-      }
-    } else {
-      // モーダルを閉じる時：元のサイズに復元
-      if (normalWorkspaceWindowBounds) {
-        const currentBounds = workspaceWindow.getBounds();
-
-        // 画面右端に固定するためにx座標を調整
-        const { width: screenWidth } = screen.getPrimaryDisplay().workAreaSize;
-        const newX = screenWidth - normalWorkspaceWindowBounds.width;
-
-        workspaceWindow.setBounds({
-          x: newX,
-          y: currentBounds.y,
-          width: normalWorkspaceWindowBounds.width,
-          height: normalWorkspaceWindowBounds.height,
-        });
-
-        windowLogger.info(
-          `モーダルモードOFF: サイズを${normalWorkspaceWindowBounds.width}x${normalWorkspaceWindowBounds.height}に復元`
-        );
-
-        normalWorkspaceWindowBounds = null;
-      }
     }
+
+    const { needsResize, newSize } = calculateModalSize(currentBounds, requiredSize);
+    if (needsResize) {
+      workspaceWindow.setBounds({
+        x: screenWidth - newSize.width,
+        y: currentBounds.y,
+        width: newSize.width,
+        height: newSize.height,
+      });
+      windowLogger.info(
+        `モーダルモードON: サイズを${currentBounds.width}x${currentBounds.height}から${newSize.width}x${newSize.height}に変更`
+      );
+    }
+  } else if (normalWorkspaceWindowBounds) {
+    // モーダルを閉じる時：元のサイズに復元
+    workspaceWindow.setBounds({
+      x: screenWidth - normalWorkspaceWindowBounds.width,
+      y: currentBounds.y,
+      width: normalWorkspaceWindowBounds.width,
+      height: normalWorkspaceWindowBounds.height,
+    });
+    windowLogger.info(
+      `モーダルモードOFF: サイズを${normalWorkspaceWindowBounds.width}x${normalWorkspaceWindowBounds.height}に復元`
+    );
+    normalWorkspaceWindowBounds = null;
   }
 }
 
