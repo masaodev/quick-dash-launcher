@@ -366,6 +366,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_SET_SIZE, width, height),
     setPositionAndSize: (x: number, y: number, width: number, height: number): Promise<boolean> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_SET_POSITION_AND_SIZE, x, y, width, height),
+    // 位置モード設定（primaryLeft: 左端、primaryRight: 右端）
+    setPositionMode: (mode: 'primaryLeft' | 'primaryRight'): Promise<boolean> =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_SET_POSITION_MODE, mode),
     // ウィンドウ制御
     hideWindow: (): Promise<boolean> => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_HIDE_WINDOW),
   },

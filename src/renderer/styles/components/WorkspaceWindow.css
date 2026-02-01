@@ -52,34 +52,8 @@ html:has(.workspace-window.background-transparent) {
   -webkit-app-region: no-drag;
 }
 
-/* コントロールボタン（全て展開・全て閉じる） */
-.workspace-control-btn {
-  width: 32px;
-  height: 32px;
-  margin: 0;
-  padding: 0;
-  border: 1px solid var(--color-gray-400);
-  background-color: var(--color-white);
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  font-size: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: var(--transition-normal);
-  flex-shrink: 0;
-}
-
-.workspace-control-btn:hover {
-  background-color: var(--bg-hover);
-  border-color: var(--color-gray-600);
-}
-
-.workspace-control-btn:active {
-  transform: scale(0.95);
-}
-
-/* ピンボタン */
+/* コントロールボタン（共通スタイル） */
+.workspace-control-btn,
 .workspace-pin-btn {
   width: 32px;
   height: 32px;
@@ -97,9 +71,15 @@ html:has(.workspace-window.background-transparent) {
   flex-shrink: 0;
 }
 
+.workspace-control-btn:hover,
 .workspace-pin-btn:hover {
   background-color: var(--bg-hover);
   border-color: var(--color-gray-600);
+}
+
+.workspace-control-btn:active,
+.workspace-pin-btn:active {
+  transform: scale(0.95);
 }
 
 /* ピン留め状態のスタイル（赤色） */
@@ -114,10 +94,6 @@ html:has(.workspace-window.background-transparent) {
   border-color: var(--color-danger-hover);
   box-shadow: var(--shadow);
   transform: scale(1.05);
-}
-
-.workspace-pin-btn:active {
-  transform: scale(0.95);
 }
 
 /* 閉じるボタン */
@@ -160,6 +136,46 @@ html:has(.workspace-window.background-transparent) {
 .workspace-control-btn.active:hover {
   background-color: var(--color-primary-hover);
   border-color: var(--color-primary-hover);
+}
+
+/* 設定ボタンとドロップダウンメニュー */
+.workspace-settings-container {
+  position: relative;
+  display: inline-block;
+}
+
+.workspace-settings-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  min-width: 180px;
+  background-color: var(--color-white);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.workspace-settings-menu-item {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: none;
+  background-color: transparent;
+  text-align: left;
+  font-size: var(--font-size-sm);
+  color: var(--text-color);
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.workspace-settings-menu-item:hover {
+  background-color: var(--bg-hover);
+}
+
+.workspace-settings-menu-item:active {
+  background-color: var(--bg-selected);
 }
 
 /* ==================== フィルタバー ==================== */

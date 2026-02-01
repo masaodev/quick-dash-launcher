@@ -182,9 +182,14 @@ export interface ElectronAPI {
     toggleAlwaysOnTop: () => Promise<boolean>;
     // モーダルモード関連
     setModalMode: (isModal: boolean, requiredSize?: { width: number; height: number }) => void;
+    // 透過度関連
+    setOpacity: (opacityPercent: number) => Promise<boolean>;
+    getOpacity: () => Promise<number>;
     // サイズ変更関連
     setSize: (width: number, height: number) => Promise<boolean>;
     setPositionAndSize: (x: number, y: number, width: number, height: number) => Promise<boolean>;
+    // 位置モード設定
+    setPositionMode: (mode: 'primaryLeft' | 'primaryRight') => Promise<boolean>;
     // ウィンドウ制御
     hideWindow: () => Promise<boolean>;
   };

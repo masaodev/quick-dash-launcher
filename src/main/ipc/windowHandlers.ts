@@ -1,5 +1,5 @@
 import { ipcMain, app, clipboard } from 'electron';
-import type { WindowPinMode } from '@common/types';
+import type { WindowPinMode, WorkspacePositionMode } from '@common/types';
 import { windowLogger } from '@common/logger';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
@@ -20,6 +20,7 @@ import {
   toggleWorkspaceAlwaysOnTop,
   setWorkspaceModalMode,
   getWorkspaceWindow,
+  setWorkspacePosition,
 } from '../workspaceWindowManager.js';
 import { getTray } from '../windowManager.js';
 
@@ -222,6 +223,21 @@ export function setupWindowHandlers(
         return false;
       } catch (error) {
         windowLogger.error({ error }, 'Failed to set workspace position and size');
+        throw error;
+      }
+    }
+  );
+
+  // ワークスペースウィンドウの位置モードを設定するハンドラー
+  ipcMain.handle(
+    IPC_CHANNELS.WORKSPACE_SET_POSITION_MODE,
+    async (_event, mode: WorkspacePositionMode) => {
+      try {
+        await setWorkspacePosition(mode);
+        windowLogger.info(`Workspace position mode set to ${mode}`);
+        return true;
+      } catch (error) {
+        windowLogger.error({ error }, 'Failed to set workspace position mode');
         throw error;
       }
     }
