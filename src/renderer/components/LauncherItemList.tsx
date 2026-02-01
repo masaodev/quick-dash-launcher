@@ -5,6 +5,9 @@ import { LauncherItem, GroupItem, AppItem, WindowInfo, WindowItem } from '@commo
 import { getTooltipText } from '../utils/tooltipTextGenerator';
 import { logError } from '../utils/debug';
 
+import MemoViewModal from './MemoViewModal';
+import '../styles/components/MemoViewModal.css';
+
 interface ItemListProps {
   items: AppItem[];
   allItems: AppItem[]; // グループ実行時の参照解決用
@@ -40,6 +43,8 @@ const LauncherItemList: React.FC<ItemListProps> = ({
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
   const contextMenuItemRef = useRef<AppItem | null>(null);
   const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
+  const [memoModalOpen, setMemoModalOpen] = useState(false);
+  const [memoModalItem, setMemoModalItem] = useState<{ name: string; memo: string } | null>(null);
 
   useEffect(() => {
     // Scroll selected item into view
@@ -260,6 +265,18 @@ const LauncherItemList: React.FC<ItemListProps> = ({
     setDraggedItemIndex(null);
   };
 
+  const handleMemoClick = (e: React.MouseEvent, item: AppItem) => {
+    e.stopPropagation();
+    const name = isWindowInfo(item)
+      ? item.title
+      : isWindowItem(item)
+        ? item.displayName
+        : (item as LauncherItem | GroupItem).displayName;
+    const memo = (item as LauncherItem | GroupItem | WindowItem).memo || '';
+    setMemoModalItem({ name, memo });
+    setMemoModalOpen(true);
+  };
+
   const handleContextMenu = async (event: React.MouseEvent, item: AppItem) => {
     event.preventDefault();
     event.stopPropagation();
@@ -338,10 +355,27 @@ const LauncherItemList: React.FC<ItemListProps> = ({
                   🔍
                 </span>
               )}
+              {!isWindowInfo(item) && (item as LauncherItem | GroupItem | WindowItem).memo && (
+                <span
+                  className="memo-badge"
+                  onClick={(e) => handleMemoClick(e, item)}
+                  title="メモを表示"
+                >
+                  📝
+                </span>
+              )}
             </span>
           </div>
         );
       })}
+
+      {/* メモ表示モーダル */}
+      <MemoViewModal
+        isOpen={memoModalOpen}
+        onClose={() => setMemoModalOpen(false)}
+        itemName={memoModalItem?.name || ''}
+        memo={memoModalItem?.memo || ''}
+      />
     </div>
   );
 };

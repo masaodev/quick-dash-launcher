@@ -87,8 +87,18 @@ export interface ElectronAPI {
   loadEditableItems: () => Promise<LoadEditableItemsResult>;
   saveEditableItems: (editableItems: EditableJsonItem[]) => Promise<void>;
   // IDベースのアイテム更新
-  updateDirItemById: (id: string, dirPath: string, options?: JsonDirOptions) => Promise<void>;
-  updateGroupItemById: (id: string, displayName: string, itemNames: string[]) => Promise<void>;
+  updateDirItemById: (
+    id: string,
+    dirPath: string,
+    options?: JsonDirOptions,
+    memo?: string
+  ) => Promise<void>;
+  updateGroupItemById: (
+    id: string,
+    displayName: string,
+    itemNames: string[],
+    memo?: string
+  ) => Promise<void>;
   updateWindowItemById: (
     id: string,
     config: {
@@ -103,7 +113,8 @@ export interface ElectronAPI {
       virtualDesktopNumber?: number;
       activateWindow?: boolean;
       pinToAllDesktops?: boolean;
-    }
+    },
+    memo?: string
   ) => Promise<void>;
   setEditMode: (editMode: boolean) => Promise<void>;
   getEditMode: () => Promise<boolean>;

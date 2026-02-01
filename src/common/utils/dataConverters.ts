@@ -115,6 +115,7 @@ export function convertEditingAppItemToRegisterItem(
       targetFile: item.sourceFile,
       itemCategory: 'group',
       groupItemNames: [...item.itemNames],
+      memo: item.memo,
     };
   }
 
@@ -140,6 +141,7 @@ export function convertEditingAppItemToRegisterItem(
         activateWindow: item.activateWindow,
         pinToAllDesktops: item.pinToAllDesktops,
       },
+      memo: item.memo,
     };
   }
 
@@ -173,6 +175,7 @@ export function convertEditingAppItemToRegisterItem(
       customIcon: item.customIcon,
       windowConfig: item.windowConfig,
       itemCategory: 'item',
+      memo: item.memo,
     };
   }
 
@@ -247,6 +250,7 @@ export function convertEditableJsonItemToRegisterItem(
       targetFile: sourceFile,
       itemCategory: 'group',
       groupItemNames: [...jsonItem.itemNames],
+      memo: jsonItem.memo,
     };
   }
 
@@ -272,6 +276,7 @@ export function convertEditableJsonItemToRegisterItem(
         activateWindow: jsonItem.activateWindow,
         pinToAllDesktops: jsonItem.pinToAllDesktops,
       },
+      memo: jsonItem.memo,
     };
   }
 
@@ -288,6 +293,7 @@ export function convertEditableJsonItemToRegisterItem(
       customIcon: jsonItem.customIcon,
       windowConfig: jsonItem.windowConfig,
       itemCategory: 'item',
+      memo: jsonItem.memo,
     };
   }
 
@@ -320,28 +326,32 @@ export function convertRegisterItemToJsonItem(
 
   // フォルダ取込アイテム
   if (registerItem.itemCategory === 'dir') {
-    return {
+    const dirItem: JsonItem = {
       id,
       type: 'dir',
       path: registerItem.path,
       options: registerItem.dirOptions,
     };
+    if (registerItem.memo) dirItem.memo = registerItem.memo;
+    return dirItem;
   }
 
   // グループアイテム
   if (registerItem.itemCategory === 'group') {
-    return {
+    const groupItem: JsonItem = {
       id,
       type: 'group',
       displayName: registerItem.displayName,
       itemNames: registerItem.groupItemNames || [],
     };
+    if (registerItem.memo) groupItem.memo = registerItem.memo;
+    return groupItem;
   }
 
   // ウィンドウ操作アイテム
   if (registerItem.itemCategory === 'window') {
     const config = registerItem.windowOperationConfig;
-    return {
+    const windowItem: JsonItem = {
       id,
       type: 'window',
       displayName: config?.displayName || registerItem.displayName,
@@ -356,10 +366,12 @@ export function convertRegisterItemToJsonItem(
       activateWindow: config?.activateWindow,
       pinToAllDesktops: config?.pinToAllDesktops,
     };
+    if (registerItem.memo) windowItem.memo = registerItem.memo;
+    return windowItem;
   }
 
   // 通常のLauncherItem
-  return {
+  const launcherItem: JsonItem = {
     id,
     type: 'item',
     displayName: registerItem.displayName,
@@ -368,4 +380,6 @@ export function convertRegisterItemToJsonItem(
     customIcon: registerItem.customIcon,
     windowConfig: registerItem.windowConfig,
   };
+  if (registerItem.memo) launcherItem.memo = registerItem.memo;
+  return launcherItem;
 }

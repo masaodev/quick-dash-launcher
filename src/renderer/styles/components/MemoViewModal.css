@@ -1,0 +1,80 @@
+.memo-view-modal-overlay {
+  z-index: var(--z-index-modal-overlay);
+}
+
+.memo-view-modal {
+  max-width: 500px;
+  min-width: 300px;
+}
+
+.memo-view-header {
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.memo-view-header h3 {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  color: var(--color-text-primary);
+  word-break: break-word;
+}
+
+.memo-view-content {
+  margin-bottom: var(--spacing-md);
+}
+
+.memo-text {
+  margin: 0;
+  padding: var(--spacing-sm);
+  background-color: var(--color-bg-secondary);
+  border-radius: var(--border-radius-sm);
+  font-family: inherit;
+  font-size: var(--font-size-base);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.memo-view-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* メモバッジスタイル */
+.memo-badge {
+  cursor: pointer;
+  margin-left: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  opacity: 0.7;
+  transition: opacity var(--transition-fast);
+}
+
+.memo-badge:hover {
+  opacity: 1;
+}
+
+/* メモ入力用textarea */
+.memo-textarea {
+  width: 100%;
+  min-height: 60px;
+  padding: var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  background-color: var(--color-bg-input);
+  color: var(--color-text-primary);
+  font-family: inherit;
+  font-size: var(--font-size-base);
+  resize: vertical;
+}
+
+.memo-textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.memo-textarea::placeholder {
+  color: var(--color-text-tertiary);
+}

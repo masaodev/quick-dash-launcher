@@ -47,6 +47,7 @@ export function convertWorkspaceItemToRegisterItem(item: WorkspaceItem): Registe
       targetTab: '',
       itemCategory: 'window',
       windowOperationConfig,
+      memo: item.memo,
     };
   }
 
@@ -58,6 +59,7 @@ export function convertWorkspaceItemToRegisterItem(item: WorkspaceItem): Registe
       targetTab: '',
       itemCategory: 'group',
       groupItemNames: item.itemNames ? [...item.itemNames] : [],
+      memo: item.memo,
     };
   }
 
@@ -70,6 +72,7 @@ export function convertWorkspaceItemToRegisterItem(item: WorkspaceItem): Registe
     customIcon: item.customIcon,
     windowConfig: item.windowConfig,
     itemCategory: 'item',
+    memo: item.memo,
   };
 }
 
@@ -100,6 +103,7 @@ export function convertRegisterItemToWorkspaceItemUpdate(
       customIcon: undefined,
       windowConfig: undefined,
       itemNames: undefined,
+      memo: registerItem.memo,
     };
   }
 
@@ -123,6 +127,7 @@ export function convertRegisterItemToWorkspaceItemUpdate(
       activateWindow: undefined,
       moveToActiveMonitorCenter: undefined,
       pinToAllDesktops: undefined,
+      memo: registerItem.memo,
     };
   }
 
@@ -143,5 +148,6 @@ export function convertRegisterItemToWorkspaceItemUpdate(
     moveToActiveMonitorCenter: undefined,
     pinToAllDesktops: undefined,
     itemNames: undefined,
+    memo: registerItem.memo,
   };
 }

@@ -241,6 +241,13 @@ function validateJsonLauncherItem(obj: Record<string, unknown>): JsonLauncherIte
     item.windowConfig = validateWindowConfig(obj.windowConfig);
   }
 
+  if (obj.memo !== undefined) {
+    if (typeof obj.memo !== 'string') {
+      throw new Error('memo must be a string');
+    }
+    item.memo = obj.memo;
+  }
+
   return item;
 }
 
@@ -310,6 +317,13 @@ function validateJsonDirItem(obj: Record<string, unknown>): JsonDirItem {
     }
   }
 
+  if (obj.memo !== undefined) {
+    if (typeof obj.memo !== 'string') {
+      throw new Error('memo must be a string');
+    }
+    item.memo = obj.memo;
+  }
+
   return item;
 }
 
@@ -329,12 +343,21 @@ function validateJsonGroupItem(obj: Record<string, unknown>): JsonGroupItem {
     }
   }
 
-  return {
+  const item: JsonGroupItem = {
     id: obj.id as string,
     type: 'group',
     displayName: obj.displayName,
     itemNames: obj.itemNames as string[],
   };
+
+  if (obj.memo !== undefined) {
+    if (typeof obj.memo !== 'string') {
+      throw new Error('memo must be a string');
+    }
+    item.memo = obj.memo;
+  }
+
+  return item;
 }
 
 /**
@@ -387,6 +410,13 @@ function validateJsonWindowItem(obj: Record<string, unknown>): JsonWindowItem {
       }
       item[field] = obj[field] as boolean;
     }
+  }
+
+  if (obj.memo !== undefined) {
+    if (typeof obj.memo !== 'string') {
+      throw new Error('memo must be a string');
+    }
+    item.memo = obj.memo;
   }
 
   return item;

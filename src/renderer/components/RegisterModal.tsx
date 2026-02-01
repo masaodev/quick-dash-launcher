@@ -691,6 +691,18 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                       />
                     )}
 
+                    {/* メモ入力欄（全アイテムタイプ共通） */}
+                    <div className="form-group">
+                      <label>メモ:</label>
+                      <textarea
+                        value={item.memo || ''}
+                        onChange={(e) => handleItemChange(index, 'memo', e.target.value)}
+                        placeholder="自由にメモを入力（任意）"
+                        rows={3}
+                        className="memo-textarea"
+                      />
+                    </div>
+
                     {items.length > 1 && <hr />}
                   </div>
                 ))}

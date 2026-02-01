@@ -115,6 +115,7 @@ async function convertJsonItemToAppItems(
       id: jsonItem.id, // JSONのIDを保持
       isDirExpanded: false,
       isEdited: false,
+      memo: jsonItem.memo,
     };
 
     // .lnkファイルの場合は特別処理
@@ -188,6 +189,7 @@ async function convertJsonItemToAppItems(
       lineNumber: itemIndex + 1,
       id: jsonItem.id, // JSONのIDを保持
       isEdited: false,
+      memo: jsonItem.memo,
     };
     items.push(groupItem);
   } else if (isJsonWindowItem(jsonItem)) {
@@ -209,6 +211,7 @@ async function convertJsonItemToAppItems(
       lineNumber: itemIndex + 1,
       id: jsonItem.id, // JSONのIDを保持
       isEdited: false,
+      memo: jsonItem.memo,
     };
     items.push(windowItem);
   }
@@ -470,13 +473,15 @@ async function updateDirItemById(
   configFolder: string,
   id: string,
   dirPath: string,
-  options?: JsonDirOptions
+  options?: JsonDirOptions,
+  memo?: string
 ): Promise<void> {
   await updateItemByIdWithCallback(configFolder, id, (itemId) => ({
     id: itemId,
     type: 'dir',
     path: dirPath,
     options: options && Object.keys(options).length > 0 ? options : undefined,
+    memo: memo || undefined,
   }));
 }
 
@@ -487,13 +492,15 @@ async function updateGroupItemById(
   configFolder: string,
   id: string,
   displayName: string,
-  itemNames: string[]
+  itemNames: string[],
+  memo?: string
 ): Promise<void> {
   await updateItemByIdWithCallback(configFolder, id, (itemId) => ({
     id: itemId,
     type: 'group',
     displayName,
     itemNames,
+    memo: memo || undefined,
   }));
 }
 
@@ -515,7 +522,8 @@ async function updateWindowItemById(
     virtualDesktopNumber?: number;
     activateWindow?: boolean;
     pinToAllDesktops?: boolean;
-  }
+  },
+  memo?: string
 ): Promise<void> {
   await updateItemByIdWithCallback(configFolder, id, (itemId) => {
     const newItem: JsonWindowItem = {
@@ -536,6 +544,7 @@ async function updateWindowItemById(
       newItem.virtualDesktopNumber = config.virtualDesktopNumber;
     if (config.activateWindow !== undefined) newItem.activateWindow = config.activateWindow;
     if (config.pinToAllDesktops !== undefined) newItem.pinToAllDesktops = config.pinToAllDesktops;
+    if (memo !== undefined) newItem.memo = memo;
 
     return newItem;
   });
@@ -649,12 +658,14 @@ function convertRegisterItemToJsonItem(item: RegisterItem): JsonItem {
   }
 
   if (item.itemCategory === 'group') {
-    return {
+    const groupItem: JsonItem = {
       id,
       type: 'group',
       displayName: item.displayName,
       itemNames: item.groupItemNames || [],
     };
+    if (item.memo) groupItem.memo = item.memo;
+    return groupItem;
   }
 
   if (item.itemCategory === 'window') {
@@ -681,6 +692,7 @@ function convertRegisterItemToJsonItem(item: RegisterItem): JsonItem {
       windowItem.virtualDesktopNumber = cfg.virtualDesktopNumber;
     if (cfg.activateWindow !== undefined) windowItem.activateWindow = cfg.activateWindow;
     if (cfg.pinToAllDesktops !== undefined) windowItem.pinToAllDesktops = cfg.pinToAllDesktops;
+    if (item.memo) windowItem.memo = item.memo;
 
     return windowItem;
   }
@@ -696,6 +708,7 @@ function convertRegisterItemToJsonItem(item: RegisterItem): JsonItem {
   if (item.args) launcherItem.args = item.args;
   if (item.customIcon) launcherItem.customIcon = item.customIcon;
   if (item.windowConfig) launcherItem.windowConfig = item.windowConfig;
+  if (item.memo) launcherItem.memo = item.memo;
 
   return launcherItem;
 }
@@ -808,8 +821,8 @@ export function setupDataHandlers(configFolder: string) {
   // IDベースのアイテム更新
   ipcMain.handle(
     IPC_CHANNELS.UPDATE_DIR_ITEM_BY_ID,
-    async (_event, id: string, dirPath: string, options?: JsonDirOptions) => {
-      await updateDirItemById(configFolder, id, dirPath, options);
+    async (_event, id: string, dirPath: string, options?: JsonDirOptions, memo?: string) => {
+      await updateDirItemById(configFolder, id, dirPath, options, memo);
       notifyDataChanged();
       return;
     }
@@ -817,8 +830,8 @@ export function setupDataHandlers(configFolder: string) {
 
   ipcMain.handle(
     IPC_CHANNELS.UPDATE_GROUP_ITEM_BY_ID,
-    async (_event, id: string, displayName: string, itemNames: string[]) => {
-      await updateGroupItemById(configFolder, id, displayName, itemNames);
+    async (_event, id: string, displayName: string, itemNames: string[], memo?: string) => {
+      await updateGroupItemById(configFolder, id, displayName, itemNames, memo);
       notifyDataChanged();
       return;
     }
@@ -841,9 +854,10 @@ export function setupDataHandlers(configFolder: string) {
         virtualDesktopNumber?: number;
         activateWindow?: boolean;
         pinToAllDesktops?: boolean;
-      }
+      },
+      memo?: string
     ) => {
-      await updateWindowItemById(configFolder, id, config);
+      await updateWindowItemById(configFolder, id, config, memo);
       notifyDataChanged();
       return;
     }

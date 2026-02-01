@@ -442,6 +442,18 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
                       )}
                     </div>
                   )}
+
+                  {/* メモ入力欄（全アイテムタイプ共通） */}
+                  <div className="form-group">
+                    <label>メモ:</label>
+                    <textarea
+                      value={item.memo || ''}
+                      onChange={(e) => handleFieldChange('memo', e.target.value)}
+                      placeholder="自由にメモを入力（任意）"
+                      rows={3}
+                      className="memo-textarea"
+                    />
+                  </div>
                 </div>
               </div>
 
