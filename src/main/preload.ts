@@ -151,10 +151,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   saveEditableItems: (editableItems: EditableJsonItem[]) =>
     ipcRenderer.invoke(IPC_CHANNELS.SAVE_EDITABLE_ITEMS, editableItems),
   // IDベースのアイテム更新
-  updateDirItemById: (id: string, dirPath: string, options?: JsonDirOptions) =>
-    ipcRenderer.invoke(IPC_CHANNELS.UPDATE_DIR_ITEM_BY_ID, id, dirPath, options),
-  updateGroupItemById: (id: string, displayName: string, itemNames: string[]) =>
-    ipcRenderer.invoke(IPC_CHANNELS.UPDATE_GROUP_ITEM_BY_ID, id, displayName, itemNames),
+  updateDirItemById: (id: string, dirPath: string, options?: JsonDirOptions, memo?: string) =>
+    ipcRenderer.invoke(IPC_CHANNELS.UPDATE_DIR_ITEM_BY_ID, id, dirPath, options, memo),
+  updateGroupItemById: (id: string, displayName: string, itemNames: string[], memo?: string) =>
+    ipcRenderer.invoke(IPC_CHANNELS.UPDATE_GROUP_ITEM_BY_ID, id, displayName, itemNames, memo),
   updateWindowItemById: (
     id: string,
     config: {
@@ -169,8 +169,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
       virtualDesktopNumber?: number;
       activateWindow?: boolean;
       pinToAllDesktops?: boolean;
-    }
-  ) => ipcRenderer.invoke(IPC_CHANNELS.UPDATE_WINDOW_ITEM_BY_ID, id, config),
+    },
+    memo?: string
+  ) => ipcRenderer.invoke(IPC_CHANNELS.UPDATE_WINDOW_ITEM_BY_ID, id, config, memo),
   setEditMode: (editMode: boolean) => ipcRenderer.invoke(IPC_CHANNELS.SET_EDIT_MODE, editMode),
   getEditMode: () => ipcRenderer.invoke(IPC_CHANNELS.GET_EDIT_MODE),
   selectBookmarkFile: () => ipcRenderer.invoke(IPC_CHANNELS.SELECT_BOOKMARK_FILE),

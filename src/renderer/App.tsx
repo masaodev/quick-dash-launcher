@@ -513,7 +513,8 @@ const App: React.FC = () => {
           await window.electronAPI.updateDirItemById(
             editingItem.jsonItemId,
             item.path,
-            item.dirOptions
+            item.dirOptions,
+            item.memo
           );
         } else if (item.itemCategory === 'group') {
           // グループアイテムの編集の場合
@@ -524,7 +525,8 @@ const App: React.FC = () => {
           await window.electronAPI.updateGroupItemById(
             editingItem.jsonItemId,
             item.displayName,
-            itemNames
+            itemNames,
+            item.memo
           );
         } else if (item.itemCategory === 'window') {
           // ウィンドウ操作アイテムの編集の場合
@@ -549,7 +551,7 @@ const App: React.FC = () => {
             pinToAllDesktops: cfg.pinToAllDesktops,
           });
 
-          await window.electronAPI.updateWindowItemById(editingItem.jsonItemId, config);
+          await window.electronAPI.updateWindowItemById(editingItem.jsonItemId, config, item.memo);
         } else {
           // 通常のアイテムの編集
           if (!editingItem.jsonItemId) {
@@ -563,6 +565,7 @@ const App: React.FC = () => {
             args: item.args,
             customIcon: item.customIcon,
             windowConfig: item.windowConfig,
+            memo: item.memo,
           };
 
           await window.electronAPI.updateItemById({
