@@ -1,4 +1,5 @@
 import React from 'react';
+import toast from 'react-hot-toast';
 import { DESKTOP_TAB } from '@common/constants';
 import { AppItem, LauncherItem, DataFileTab, SearchMode, WindowInfo } from '@common/types';
 import { isWindowInfo, isLauncherItem } from '@common/types/guards';
@@ -207,6 +208,30 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams) {
           refreshWindows();
         }
       });
+      return;
+    }
+
+    // ウィンドウモード時：Ctrl+Pで選択中のウィンドウをピン留め/解除トグル
+    if (searchMode === 'window' && e.ctrlKey && e.key.toLowerCase() === 'p') {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const selectedWindow = filteredItems[selectedIndex] as WindowInfo | undefined;
+      if (!selectedWindow) return;
+
+      const isPinned = await window.electronAPI.isWindowPinned(selectedWindow.hwnd);
+      const result = isPinned
+        ? await window.electronAPI.unPinWindow(selectedWindow.hwnd)
+        : await window.electronAPI.pinWindow(selectedWindow.hwnd);
+
+      if (result.success) {
+        toast.success(
+          isPinned ? 'ウィンドウの固定を解除しました' : 'ウィンドウを全デスクトップに固定しました'
+        );
+        await refreshWindows();
+      } else {
+        toast.error(`${isPinned ? '固定解除' : '固定'}に失敗しました: ${result.error || '不明なエラー'}`);
+      }
       return;
     }
 
