@@ -40,6 +40,22 @@
   border-bottom: 2px solid var(--color-primary);
 }
 
+/* アイテム数が0のタブは控えめに表示 */
+.tab-button.zero,
+.desktop-tab.zero {
+  opacity: 0.5;
+}
+
+.tab-button.zero:hover,
+.desktop-tab.zero:hover {
+  opacity: 0.7;
+}
+
+.tab-button.active.zero,
+.desktop-tab.active.zero {
+  opacity: 0.6;
+}
+
 .tab-button:focus,
 .tab-button:focus-visible {
   outline: none;
@@ -51,8 +67,32 @@
   line-height: 1;
 }
 
-.tab-button.active .tab-count {
+/* 数字が0の場合は控えめに表示 */
+.tab-count.zero {
+  opacity: 0.4;
+  font-size: calc(var(--font-size-xxs) * 0.9);
+}
+
+/* 数字がある場合（0より大きい）は強調表示 */
+.tab-count.has-count {
+  opacity: 0.85;
+  font-weight: 600;
+}
+
+.tab-button.active .tab-count,
+.desktop-tab.active .tab-count {
   opacity: 0.9;
+}
+
+.tab-button.active .tab-count.zero,
+.desktop-tab.active .tab-count.zero {
+  opacity: 0.5;
+}
+
+.tab-button.active .tab-count.has-count,
+.desktop-tab.active .tab-count.has-count {
+  opacity: 1;
+  font-weight: 600;
 }
 
 /* =========================

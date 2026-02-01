@@ -3,6 +3,7 @@ import type { WindowInfo, VirtualDesktopInfo } from '@common/types';
 
 import '../styles/components/WindowSelectorModal.css';
 import { logError } from '../utils/debug';
+import { getCountClass } from '../utils/tabUtils';
 
 import { Button } from './ui';
 
@@ -241,16 +242,19 @@ const WindowSelectorModal: React.FC<WindowSelectorModalProps> = ({ isOpen, onClo
           {/* 仮想デスクトップタブ */}
           {showTabs && (
             <div className="desktop-tabs">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  className={`desktop-tab ${activeTab === tab.id ? 'active' : ''}`}
-                  onClick={() => setActiveTab(tab.id)}
-                >
-                  {tab.label}
-                  <span className="tab-count">({tab.count})</span>
-                </button>
-              ))}
+              {tabs.map((tab) => {
+                const countClass = getCountClass(tab.count);
+                return (
+                  <button
+                    key={tab.id}
+                    className={`desktop-tab ${countClass} ${activeTab === tab.id ? 'active' : ''}`}
+                    onClick={() => setActiveTab(tab.id)}
+                  >
+                    {tab.label}
+                    <span className={`tab-count ${countClass}`}>({tab.count})</span>
+                  </button>
+                );
+              })}
             </div>
           )}
 

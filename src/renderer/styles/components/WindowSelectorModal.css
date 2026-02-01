@@ -106,15 +106,7 @@
   border-bottom: 2px solid var(--color-primary);
 }
 
-.desktop-tab .tab-count {
-  font-size: var(--font-size-xxs);
-  opacity: 0.7;
-  line-height: 1;
-}
-
-.desktop-tab.active .tab-count {
-  opacity: 0.9;
-}
+/* .zero, .has-count, .tab-count のスタイルは common.css で共通定義 */
 
 .filter-section {
   margin-bottom: var(--spacing-md);

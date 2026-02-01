@@ -3,6 +3,7 @@ import { AppItem, DataFileTab } from '@common/types';
 import { isWindowInfo } from '@common/types/guards';
 
 import { filterItems } from '../utils/dataParser';
+import { getCountClass } from '../utils/tabUtils';
 
 interface FileTabBarProps {
   /** データファイルタブの設定（タブグループのリスト） */
@@ -62,6 +63,7 @@ const LauncherFileTabBar: React.FC<FileTabBarProps> = ({
     <div className="tab-bar">
       {dataFileTabs.map((tabConfig, index) => {
         const count = getTabItemCount(tabConfig);
+        const countClass = getCountClass(count);
         const representativeFile = getRepresentativeFile(tabConfig);
         // ツールチップにデータファイル名と物理ファイル名を表示
         const filesTitle = tabConfig.files
@@ -74,12 +76,12 @@ const LauncherFileTabBar: React.FC<FileTabBarProps> = ({
         return (
           <button
             key={`tab-${index}-${representativeFile}`}
-            className={`tab-button ${isTabActive(tabConfig) ? 'active' : ''}`}
+            className={`tab-button ${countClass} ${isTabActive(tabConfig) ? 'active' : ''}`}
             onClick={() => onTabClick(representativeFile)}
             title={filesTitle}
           >
             {tabConfig.name}
-            <span className="tab-count">({count})</span>
+            <span className={`tab-count ${countClass}`}>({count})</span>
           </button>
         );
       })}
