@@ -210,6 +210,37 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams) {
       return;
     }
 
+    // ウィンドウモード時：Ctrl+Pで選択中のウィンドウをピン留め/解除トグル
+    if (searchMode === 'window' && e.ctrlKey && e.key.toLowerCase() === 'p') {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const selectedWindow = filteredItems[selectedIndex] as WindowInfo | undefined;
+      if (!selectedWindow) return;
+
+      const isPinned = await window.electronAPI.isWindowPinned(selectedWindow.hwnd);
+      const action = isPinned ? 'unpin' : 'pin';
+      const result = isPinned
+        ? await window.electronAPI.unPinWindow(selectedWindow.hwnd)
+        : await window.electronAPI.pinWindow(selectedWindow.hwnd);
+
+      if (result.success) {
+        const message =
+          action === 'unpin'
+            ? 'ウィンドウの固定を解除しました'
+            : 'ウィンドウを全デスクトップに固定しました';
+        window.electronAPI.showToastWindow(message, 'success');
+        await refreshWindows();
+      } else {
+        const actionLabel = action === 'unpin' ? '固定解除' : '固定';
+        window.electronAPI.showToastWindow(
+          `${actionLabel}に失敗しました: ${result.error || '不明なエラー'}`,
+          'error'
+        );
+      }
+      return;
+    }
+
     switch (e.key) {
       case 'Enter':
         e.preventDefault();

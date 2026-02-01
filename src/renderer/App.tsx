@@ -829,17 +829,18 @@ const App: React.FC = () => {
         onRefreshWindows={handleRefreshWindows}
       />
 
-      {searchMode === 'window' &&
-        desktopInfo &&
-        desktopInfo.desktopCount > 1 &&
-        activeDesktopTab !== DESKTOP_TAB.ALL &&
-        activeDesktopTab !== DESKTOP_TAB.PINNED && (
-          <div className="shortcut-hint">
+      {searchMode === 'window' && (
+        <div className="shortcut-hint">
+          <span>
+            <kbd>Ctrl</kbd>+<kbd>P</kbd> ピン留め/解除
+          </span>
+          {desktopInfo && desktopInfo.desktopCount > 1 && activeDesktopTab > 0 && (
             <span>
               <kbd>Ctrl</kbd>+<kbd>←</kbd>/<kbd>→</kbd> 仮想デスクトップ移動
             </span>
-          </div>
-        )}
+          )}
+        </div>
+      )}
 
       {!progressState.isActive && missingIconCount > 0 && (
         <MissingIconNotice missingCount={missingIconCount} onFetchClick={handleFetchMissingIcons} />
