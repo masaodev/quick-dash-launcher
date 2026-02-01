@@ -25,6 +25,7 @@ interface UseTabManagerProps {
       danger?: boolean;
     }
   ) => Promise<boolean>;
+  showToast?: (message: string) => void;
 }
 
 interface UseTabManagerReturn {
@@ -64,6 +65,7 @@ export function useTabManager({
   handleSettingChange,
   showAlert,
   showConfirm,
+  showToast,
 }: UseTabManagerProps): UseTabManagerReturn {
   // 状態管理
   const {
@@ -118,6 +120,7 @@ export function useTabManager({
     handleSettingChange,
     showAlert,
     showConfirm,
+    showToast,
   });
 
   // ユーティリティ関数のラッパー

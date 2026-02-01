@@ -77,7 +77,6 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
     handleHotkeyValidation,
     handleReset,
   } = useSettingsManager({
-    settings,
     editedSettings,
     setEditedSettings,
     onSave,
@@ -110,6 +109,7 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
     handleSettingChange,
     showAlert,
     showConfirm,
+    showToast: toast.success,
   });
 
   // 設定に基づいてデータファイルリストを生成（設定ファイル基準）

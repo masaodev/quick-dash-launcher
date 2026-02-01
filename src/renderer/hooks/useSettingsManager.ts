@@ -4,7 +4,6 @@ import { AppSettings } from '@common/types';
 import { logError } from '../utils/debug';
 
 interface UseSettingsManagerProps {
-  settings: AppSettings;
   editedSettings: AppSettings;
   setEditedSettings: Dispatch<SetStateAction<AppSettings>>;
   onSave: (settings: AppSettings) => Promise<void>;
@@ -88,13 +87,14 @@ export function useSettingsManager({
       await window.electronAPI.resetSettings();
       const resetSettings = await window.electronAPI.getSettings();
       setEditedSettings(resetSettings);
+      showToast?.('設定をリセットしました');
     } catch (error) {
       logError('設定のリセットに失敗しました:', error);
       showAlert('設定のリセットに失敗しました。', 'error');
     } finally {
       setIsLoading(false);
     }
-  }, [setEditedSettings, showAlert]);
+  }, [setEditedSettings, showAlert, showToast]);
 
   // 設定フォルダを開く
   const handleOpenConfigFolder = useCallback(async () => {

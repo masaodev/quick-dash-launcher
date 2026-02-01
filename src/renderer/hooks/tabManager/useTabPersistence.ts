@@ -25,6 +25,7 @@ interface UseTabPersistenceProps {
       danger?: boolean;
     }
   ) => Promise<boolean>;
+  showToast?: (message: string) => void;
 }
 
 interface UseTabPersistenceReturn {
@@ -49,6 +50,7 @@ export function useTabPersistence({
   handleSettingChange,
   showAlert,
   showConfirm,
+  showToast,
 }: UseTabPersistenceProps): UseTabPersistenceReturn {
   // タブ管理の保存処理
   const handleSave = useCallback(async () => {
@@ -90,7 +92,7 @@ export function useTabPersistence({
       });
       setPendingFileOperations({ filesToCreate: [], filesToDelete: [] });
 
-      showAlert('タブ設定を保存しました。', 'success');
+      showToast?.('タブ設定を保存しました');
     } catch (error) {
       logError('タブ設定の保存に失敗しました:', error);
       showAlert('タブ設定の保存に失敗しました。', 'error');
@@ -102,6 +104,7 @@ export function useTabPersistence({
     setSavedTabsState,
     setPendingFileOperations,
     showAlert,
+    showToast,
   ]);
 
   // タブ管理のキャンセル処理
@@ -129,12 +132,12 @@ export function useTabPersistence({
       // 保留中のファイル操作をクリア
       setPendingFileOperations({ filesToCreate: [], filesToDelete: [] });
 
-      // 確認ダイアログを表示した場合のみアラートを表示
+      // 確認ダイアログを表示した場合のみトーストを表示
       if (!skipConfirmation) {
-        showAlert('変更を破棄しました。', 'info');
+        showToast?.('変更を破棄しました');
       }
     },
-    [savedTabsState, setEditedSettings, setPendingFileOperations, showConfirm, showAlert]
+    [savedTabsState, setEditedSettings, setPendingFileOperations, showConfirm, showToast]
   );
 
   return {

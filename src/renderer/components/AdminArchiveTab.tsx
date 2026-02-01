@@ -2,10 +2,12 @@ import React, { useEffect, useState } from 'react';
 import type { ArchivedWorkspaceGroup } from '@common/types';
 
 import { logError } from '../utils/debug';
+import { useToast } from '../hooks/useToast';
 
 import AdminArchiveCard from './AdminArchiveCard';
 
 const AdminArchiveTab: React.FC = () => {
+  const { showSuccess, showError } = useToast();
   const [archivedGroups, setArchivedGroups] = useState<ArchivedWorkspaceGroup[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -40,10 +42,11 @@ const AdminArchiveTab: React.FC = () => {
   const handleRestore = async (groupId: string) => {
     try {
       await window.electronAPI.workspaceAPI.restoreGroup(groupId);
+      showSuccess('グループを復元しました');
       // onWorkspaceChangedイベントで自動的に再読み込みされる
     } catch (error) {
       logError('Failed to restore group:', error);
-      alert('グループの復元に失敗しました');
+      showError('グループの復元に失敗しました');
     }
   };
 
@@ -59,10 +62,11 @@ const AdminArchiveTab: React.FC = () => {
 
     try {
       await window.electronAPI.workspaceAPI.deleteArchivedGroup(groupId);
+      showSuccess('グループを削除しました');
       // onWorkspaceChangedイベントで自動的に再読み込みされる
     } catch (error) {
       logError('Failed to delete archived group:', error);
-      alert('グループの削除に失敗しました');
+      showError('グループの削除に失敗しました');
     }
   };
 

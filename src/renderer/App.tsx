@@ -40,6 +40,7 @@ import { useIconFetcher } from './hooks/useIconFetcher';
 import { useDragAndDrop } from './hooks/useDragAndDrop';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useGlobalLoading } from './hooks/useGlobalLoading';
+import { useToast } from './hooks/useToast';
 
 const App: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -103,6 +104,7 @@ const App: React.FC = () => {
     handleOpenParentFolder,
     handleOpenShortcutParentFolder,
   } = useItemActions();
+  const { showSuccess } = useToast();
 
   // タブ管理フック
   const {
@@ -579,6 +581,13 @@ const App: React.FC = () => {
       await window.electronAPI.registerItems(items);
     }
     await withLoading('データ再読込中', loadItems); // Reload items after registration/update
+
+    // 成功通知
+    if (editingItem) {
+      showSuccess('アイテムを更新しました');
+    } else {
+      showSuccess('アイテムを登録しました');
+    }
   };
 
   // アイテム削除ハンドラー（RegisterModalから呼び出される）
@@ -629,6 +638,9 @@ const App: React.FC = () => {
 
       // データ再読込
       await withLoading('データ再読込中', loadItems);
+
+      // 削除成功通知
+      showSuccess('アイテムを削除しました');
     } catch (error) {
       logError('Failed to delete item:', error);
       setAlertDialog({

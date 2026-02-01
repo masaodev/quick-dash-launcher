@@ -8,6 +8,7 @@ import { convertRegisterItemToJsonItem } from '@common/utils/dataConverters';
 import { generateId } from '@common/utils/jsonParser';
 
 import { logError } from '../utils/debug';
+import { useToast } from '../hooks/useToast';
 
 import AdminItemManagerList from './AdminItemManagerList';
 import RegisterModal from './RegisterModal';
@@ -34,6 +35,8 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   dataFileTabs,
   dataFileLabels = {},
 }) => {
+  const { showSuccess } = useToast();
+
   // データファイル名を取得（設定がない場合は物理ファイル名）
   const getFileLabel = (fileName: string): string => {
     return dataFileLabels[fileName] || fileName;
@@ -361,6 +364,9 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
 
         // 保存後、チェックボックスをリセット
         setSortAndDedupChecked(false);
+
+        // 保存成功をトーストで通知
+        showSuccess('変更を保存しました');
       },
       danger: false,
     });
