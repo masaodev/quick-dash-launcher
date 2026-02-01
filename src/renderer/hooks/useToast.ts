@@ -1,7 +1,9 @@
 /**
- * トースト通知フック
+ * トースト通知フック（UI内トースト）
  *
  * react-hot-toastをラップして、アプリケーション固有のトースト表示機能を提供します。
+ *
+ * @see docs/features/toast-notifications.md
  */
 
 import toast, { ToastOptions } from 'react-hot-toast';

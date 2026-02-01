@@ -1,8 +1,10 @@
 /**
- * トーストプロバイダーコンポーネント
+ * トーストプロバイダーコンポーネント（UI内トースト）
  *
  * react-hot-toastを使用した軽量なトースト通知を提供します。
  * ウィンドウ内での軽いフィードバック表示に使用します。
+ *
+ * @see docs/features/toast-notifications.md
  */
 
 import React from 'react';
