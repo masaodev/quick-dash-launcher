@@ -230,7 +230,9 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams) {
         );
         await refreshWindows();
       } else {
-        toast.error(`${isPinned ? '固定解除' : '固定'}に失敗しました: ${result.error || '不明なエラー'}`);
+        toast.error(
+          `${isPinned ? '固定解除' : '固定'}に失敗しました: ${result.error || '不明なエラー'}`
+        );
       }
       return;
     }

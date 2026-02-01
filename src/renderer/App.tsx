@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { DESKTOP_TAB } from '@common/constants';
 import type {
   RegisterItem,
   LauncherItem,
