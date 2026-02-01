@@ -71,6 +71,8 @@ export interface LauncherItem {
   isEdited?: boolean;
   /** ウィンドウ制御設定（ウィンドウ検索・位置・サイズ制御） */
   windowConfig?: WindowConfig;
+  /** 自由記述メモ（オプション） */
+  memo?: string;
 }
 
 /**
@@ -92,6 +94,8 @@ export interface GroupItem {
   id?: string;
   /** 編集モードで変更されたかどうか */
   isEdited?: boolean;
+  /** 自由記述メモ（オプション） */
+  memo?: string;
 }
 
 /**
@@ -138,6 +142,8 @@ export interface WindowItem {
   id?: string;
   /** 編集モードで変更されたかどうか */
   isEdited?: boolean;
+  /** 自由記述メモ（オプション） */
+  memo?: string;
 }
 
 /**

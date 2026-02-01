@@ -45,6 +45,9 @@ function convertLauncherItemToJsonItem(item: LauncherItem, existingId: string): 
   if (item.windowConfig) {
     jsonItem.windowConfig = item.windowConfig;
   }
+  if (item.memo) {
+    jsonItem.memo = item.memo;
+  }
 
   return jsonItem;
 }

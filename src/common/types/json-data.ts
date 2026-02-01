@@ -40,6 +40,8 @@ export type JsonItem = JsonLauncherItem | JsonDirItem | JsonGroupItem | JsonWind
 interface JsonItemBase {
   /** 8文字の一意ID（英数字、ランダムに生成） */
   id: string;
+  /** 自由記述メモ（オプション） */
+  memo?: string;
 }
 
 // ============================================================

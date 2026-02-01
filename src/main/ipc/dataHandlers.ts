@@ -115,6 +115,7 @@ async function convertJsonItemToAppItems(
       id: jsonItem.id, // JSONのIDを保持
       isDirExpanded: false,
       isEdited: false,
+      memo: jsonItem.memo,
     };
 
     // .lnkファイルの場合は特別処理
@@ -188,6 +189,7 @@ async function convertJsonItemToAppItems(
       lineNumber: itemIndex + 1,
       id: jsonItem.id, // JSONのIDを保持
       isEdited: false,
+      memo: jsonItem.memo,
     };
     items.push(groupItem);
   } else if (isJsonWindowItem(jsonItem)) {
@@ -209,6 +211,7 @@ async function convertJsonItemToAppItems(
       lineNumber: itemIndex + 1,
       id: jsonItem.id, // JSONのIDを保持
       isEdited: false,
+      memo: jsonItem.memo,
     };
     items.push(windowItem);
   }
@@ -649,12 +652,14 @@ function convertRegisterItemToJsonItem(item: RegisterItem): JsonItem {
   }
 
   if (item.itemCategory === 'group') {
-    return {
+    const groupItem: JsonItem = {
       id,
       type: 'group',
       displayName: item.displayName,
       itemNames: item.groupItemNames || [],
     };
+    if (item.memo) groupItem.memo = item.memo;
+    return groupItem;
   }
 
   if (item.itemCategory === 'window') {
@@ -681,6 +686,7 @@ function convertRegisterItemToJsonItem(item: RegisterItem): JsonItem {
       windowItem.virtualDesktopNumber = cfg.virtualDesktopNumber;
     if (cfg.activateWindow !== undefined) windowItem.activateWindow = cfg.activateWindow;
     if (cfg.pinToAllDesktops !== undefined) windowItem.pinToAllDesktops = cfg.pinToAllDesktops;
+    if (item.memo) windowItem.memo = item.memo;
 
     return windowItem;
   }
@@ -696,6 +702,7 @@ function convertRegisterItemToJsonItem(item: RegisterItem): JsonItem {
   if (item.args) launcherItem.args = item.args;
   if (item.customIcon) launcherItem.customIcon = item.customIcon;
   if (item.windowConfig) launcherItem.windowConfig = item.windowConfig;
+  if (item.memo) launcherItem.memo = item.memo;
 
   return launcherItem;
 }

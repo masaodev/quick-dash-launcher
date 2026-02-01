@@ -48,4 +48,6 @@ export interface RegisterItem {
   dirOptions?: JsonDirOptions;
   groupItemNames?: string[];
   windowOperationConfig?: WindowOperationConfig;
+  /** 自由記述メモ（オプション） */
+  memo?: string;
 }

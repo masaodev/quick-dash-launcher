@@ -73,6 +73,8 @@ export interface WorkspaceItem {
   pinToAllDesktops?: boolean;
   /** グループ内のアイテム名リスト（group専用） */
   itemNames?: string[];
+  /** 自由記述メモ（オプション） */
+  memo?: string;
 }
 
 /**
