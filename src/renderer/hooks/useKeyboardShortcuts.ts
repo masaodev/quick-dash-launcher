@@ -220,21 +220,17 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams) {
       if (!selectedWindow) return;
 
       const isPinned = await window.electronAPI.isWindowPinned(selectedWindow.hwnd);
-      const action = isPinned ? 'unpin' : 'pin';
       const result = isPinned
         ? await window.electronAPI.unPinWindow(selectedWindow.hwnd)
         : await window.electronAPI.pinWindow(selectedWindow.hwnd);
 
       if (result.success) {
-        const message =
-          action === 'unpin'
-            ? 'ウィンドウの固定を解除しました'
-            : 'ウィンドウを全デスクトップに固定しました';
-        toast.success(message);
+        toast.success(
+          isPinned ? 'ウィンドウの固定を解除しました' : 'ウィンドウを全デスクトップに固定しました'
+        );
         await refreshWindows();
       } else {
-        const actionLabel = action === 'unpin' ? '固定解除' : '固定';
-        toast.error(`${actionLabel}に失敗しました: ${result.error || '不明なエラー'}`);
+        toast.error(`${isPinned ? '固定解除' : '固定'}に失敗しました: ${result.error || '不明なエラー'}`);
       }
       return;
     }

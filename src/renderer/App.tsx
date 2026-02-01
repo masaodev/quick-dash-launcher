@@ -834,7 +834,7 @@ const App: React.FC = () => {
           <span>
             <kbd>Ctrl</kbd>+<kbd>P</kbd> ピン留め/解除
           </span>
-          {desktopInfo && desktopInfo.desktopCount > 1 && activeDesktopTab > 0 && (
+          {desktopInfo?.desktopCount && desktopInfo.desktopCount > 1 && activeDesktopTab > 0 && (
             <span>
               <kbd>Ctrl</kbd>+<kbd>←</kbd>/<kbd>→</kbd> 仮想デスクトップ移動
             </span>
