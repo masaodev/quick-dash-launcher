@@ -2,6 +2,8 @@ import React, { useMemo } from 'react';
 import { DESKTOP_TAB } from '@common/constants';
 import type { WindowInfo, VirtualDesktopInfo } from '@common/types';
 
+import { getCountClass } from '../utils/tabUtils';
+
 interface DesktopTabBarProps {
   /** 仮想デスクトップ情報 */
   desktopInfo: VirtualDesktopInfo;
@@ -73,17 +75,20 @@ const LauncherDesktopTabBar: React.FC<DesktopTabBarProps> = ({
 
   return (
     <div className="tab-bar">
-      {tabs.map((tab) => (
-        <button
-          key={tab.id}
-          className={`tab-button ${activeDesktopTab === tab.id ? 'active' : ''}`}
-          onClick={() => onTabChange(tab.id)}
-          title={getTabTooltip(tab.id, desktopInfo.desktopNames)}
-        >
-          {tab.label}
-          <span className="tab-count">({tab.count})</span>
-        </button>
-      ))}
+      {tabs.map((tab) => {
+        const countClass = getCountClass(tab.count);
+        return (
+          <button
+            key={tab.id}
+            className={`tab-button ${countClass} ${activeDesktopTab === tab.id ? 'active' : ''}`}
+            onClick={() => onTabChange(tab.id)}
+            title={getTabTooltip(tab.id, desktopInfo.desktopNames)}
+          >
+            {tab.label}
+            <span className={`tab-count ${countClass}`}>({tab.count})</span>
+          </button>
+        );
+      })}
     </div>
   );
 };
