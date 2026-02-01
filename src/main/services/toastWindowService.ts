@@ -1,8 +1,10 @@
 /**
- * トースト専用ウィンドウサービス
+ * トースト専用ウィンドウサービス（独立トースト）
  *
  * メインウィンドウが閉じた後でもトースト通知を表示するための
  * 小さな透明ウィンドウを管理します。
+ *
+ * @see docs/features/toast-notifications.md
  */
 
 import * as path from 'path';
