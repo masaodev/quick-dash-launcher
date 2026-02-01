@@ -1,4 +1,5 @@
 import React from 'react';
+import toast from 'react-hot-toast';
 import { DESKTOP_TAB } from '@common/constants';
 import { AppItem, LauncherItem, DataFileTab, SearchMode, WindowInfo } from '@common/types';
 import { isWindowInfo, isLauncherItem } from '@common/types/guards';
@@ -229,14 +230,11 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams) {
           action === 'unpin'
             ? 'ウィンドウの固定を解除しました'
             : 'ウィンドウを全デスクトップに固定しました';
-        window.electronAPI.showToastWindow(message, 'success');
+        toast.success(message);
         await refreshWindows();
       } else {
         const actionLabel = action === 'unpin' ? '固定解除' : '固定';
-        window.electronAPI.showToastWindow(
-          `${actionLabel}に失敗しました: ${result.error || '不明なエラー'}`,
-          'error'
-        );
+        toast.error(`${actionLabel}に失敗しました: ${result.error || '不明なエラー'}`);
       }
       return;
     }
