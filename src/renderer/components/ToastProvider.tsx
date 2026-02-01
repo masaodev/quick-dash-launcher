@@ -40,16 +40,16 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({
           // デフォルトの表示時間
           duration: 3000,
 
-          // 成功トースト
+          // 成功トースト（GlobalLoadingIndicatorと統一）
           success: {
             duration: 2000,
             style: {
-              background: 'var(--color-success)',
-              color: 'var(--color-white)',
+              background: 'var(--color-white)',
+              color: 'var(--text-muted)',
             },
             iconTheme: {
-              primary: 'var(--color-white)',
-              secondary: 'var(--color-success)',
+              primary: 'var(--color-primary)',
+              secondary: 'var(--color-white)',
             },
           },
 
@@ -66,13 +66,14 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({
             },
           },
 
-          // 共通スタイル
+          // 共通スタイル（GlobalLoadingIndicatorと統一）
           style: {
             fontFamily: 'var(--font-family)',
-            fontSize: 'var(--font-size-sm)',
-            padding: 'var(--spacing-sm) var(--spacing-md)',
-            borderRadius: 'var(--border-radius)',
-            boxShadow: 'var(--shadow-lg)',
+            fontSize: 'var(--font-size-xs)',
+            padding: 'var(--spacing-xs) var(--spacing-sm)',
+            border: 'var(--border-normal)',
+            borderRadius: 'var(--border-radius-sm)',
+            boxShadow: 'var(--shadow)',
             maxWidth: '350px',
           },
         }}
