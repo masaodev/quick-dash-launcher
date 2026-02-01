@@ -369,6 +369,51 @@ export function useRegisterForm(
     }
   };
 
+  // パスからアイテムを作成しキャッシュアイコンを適用する共通処理
+  const createItemsFromPaths = async (paths: string[]): Promise<RegisterItem[]> => {
+    const newItems = await initializeFromDroppedPaths(paths, currentTab, availableTabs);
+    const cachedIcons = await loadCachedIconsForItems(newItems);
+    return newItems.map((item) =>
+      cachedIcons[item.path] ? { ...item, icon: cachedIcons[item.path] } : item
+    );
+  };
+
+  const addItemsFromPaths = async (paths: string[]) => {
+    if (paths.length === 0) return;
+
+    setLoading(true);
+    try {
+      const itemsWithIcons = await createItemsFromPaths(paths);
+      setItems((prevItems) => [...prevItems, ...itemsWithIcons]);
+      setIconFetchLoading((prev) => [...prev, ...itemsWithIcons.map(() => false)]);
+    } catch (error) {
+      debugInfo('ファイル追加エラー:', error);
+      showError('ファイルの追加中にエラーが発生しました');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const replaceFirstItemFromPath = async (path: string) => {
+    setLoading(true);
+    try {
+      const itemsWithIcons = await createItemsFromPaths([path]);
+      if (itemsWithIcons.length === 0) return;
+
+      setItems((prevItems) => {
+        const updated = [...prevItems];
+        updated[0] = itemsWithIcons[0];
+        return updated;
+      });
+      setErrors({});
+    } catch (error) {
+      debugInfo('ファイル置き換えエラー:', error);
+      showError('ファイルの読み込み中にエラーが発生しました');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     items,
     loading,
@@ -390,5 +435,7 @@ export function useRegisterForm(
     handleFetchIcon,
     setEditingItemIndex,
     setSelectorModalOpen,
+    addItemsFromPaths,
+    replaceFirstItemFromPath,
   };
 }

@@ -10,6 +10,7 @@ import type {
 import { useCustomIcon } from '../hooks/useCustomIcon';
 import { useRegisterForm } from '../hooks/useRegisterForm';
 import { debugLog, logError } from '../utils/debug';
+import { getPathsFromDropEvent } from '../utils/fileDropUtils';
 
 import GroupItemSelectorModal from './GroupItemSelectorModal';
 import FilePickerDialog from './FilePickerDialog';
@@ -50,6 +51,9 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
   // オプションセクションの開閉状態管理
   const [optionsSectionOpen, setOptionsSectionOpen] = useState<boolean[]>([]);
 
+  // モーダル内ドラッグ&ドロップの状態管理
+  const [isDraggingOverModal, setIsDraggingOverModal] = useState(false);
+
   // カスタムアイコン管理フック
   const {
     customIconPreviews,
@@ -84,6 +88,8 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     handleFetchIcon,
     setEditingItemIndex,
     setSelectorModalOpen,
+    addItemsFromPaths: _addItemsFromPaths,
+    replaceFirstItemFromPath,
   } = useRegisterForm(
     isOpen,
     editingItem,
@@ -98,6 +104,19 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
   useEffect(() => {
     setOptionsSectionOpen(items.map(() => false));
   }, [items.length]);
+
+  // ドラッグ操作がキャンセルされた場合の処理（モーダル外でドロップされた場合など）
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const resetDragState = () => setIsDraggingOverModal(false);
+
+    document.addEventListener('dragend', resetDragState);
+
+    return () => {
+      document.removeEventListener('dragend', resetDragState);
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -301,6 +320,43 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     });
   };
 
+  // モーダル内ドラッグ&ドロップハンドラー
+  const handleModalDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOverModal(true);
+  };
+
+  const handleModalDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // relatedTargetがモーダル内にある場合は何もしない（子要素間の移動）
+    const relatedTarget = e.relatedTarget as Node | null;
+    if (relatedTarget && e.currentTarget.contains(relatedTarget)) {
+      return;
+    }
+
+    // モーダルの外に出た場合のみfalseにする
+    setIsDraggingOverModal(false);
+  };
+
+  const handleModalDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOverModal(false);
+
+    const paths = getPathsFromDropEvent(e);
+    if (paths.length === 0) {
+      return;
+    }
+
+    // 最初のファイルのみを使用して、現在の最初のアイテムを完全に置き換える
+    if (items.length > 0) {
+      await replaceFirstItemFromPath(paths[0]);
+    }
+  };
+
   // RegisterItemをLauncherItemに変換する関数
   const convertToLauncherItem = (item: RegisterItem): LauncherItem | null => {
     if (item.itemCategory === 'dir' || item.itemCategory === 'group') {
@@ -390,8 +446,11 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     <>
       <div className="modal-overlay" onClick={(e) => e.stopPropagation()}>
         <div
-          className="modal-content register-modal"
+          className={`modal-content register-modal ${isDraggingOverModal ? 'dragging-over' : ''}`}
           onClick={(e) => e.stopPropagation()}
+          onDragOver={handleModalDragOver}
+          onDragLeave={handleModalDragLeave}
+          onDrop={handleModalDrop}
           ref={modalRef}
           tabIndex={-1}
         >
@@ -731,6 +790,13 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                 </div>
               </div>
             </>
+          )}
+
+          {/* モーダル内ドラッグ&ドロップオーバーレイ */}
+          {isDraggingOverModal && (
+            <div className="drag-overlay">
+              <div className="drag-message">ファイルをドロップして追加</div>
+            </div>
           )}
         </div>
       </div>

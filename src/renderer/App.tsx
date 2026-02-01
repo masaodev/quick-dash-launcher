@@ -125,7 +125,8 @@ const App: React.FC = () => {
         message,
         type: 'error',
       });
-    }
+    },
+    isRegisterModalOpen
   );
 
   // アイコン取得エラー記録を読み込む関数

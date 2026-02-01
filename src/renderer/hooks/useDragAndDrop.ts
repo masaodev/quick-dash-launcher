@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 
-import { debugLog, logError } from '../utils/debug';
+import { debugLog } from '../utils/debug';
+import { getPathsFromDropEvent } from '../utils/fileDropUtils';
 
 /**
  * ドラッグ&ドロップ管理フック
@@ -9,12 +10,18 @@ import { debugLog, logError } from '../utils/debug';
  */
 export function useDragAndDrop(
   onFilesDropped: (paths: string[]) => void,
-  onDropError: (message: string) => void
+  onDropError: (message: string) => void,
+  isModalOpen: boolean = false
 ) {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
 
   useEffect(() => {
-    // Setup drag and drop event listeners
+    // モーダルが開いている場合はイベントリスナーを設定しない
+    if (isModalOpen) {
+      setIsDraggingOver(false);
+      return;
+    }
+
     const handleDragOver = (e: DragEvent) => {
       e.preventDefault();
       e.stopPropagation();
@@ -27,38 +34,17 @@ export function useDragAndDrop(
       setIsDraggingOver(false);
     };
 
-    const handleDrop = async (e: DragEvent) => {
+    const handleDrop = (e: DragEvent) => {
       e.preventDefault();
       e.stopPropagation();
       setIsDraggingOver(false);
 
-      // Check if we have files
-      if (!e.dataTransfer?.files || e.dataTransfer.files.length === 0) {
-        return;
-      }
-
-      const paths: string[] = [];
-      const files = e.dataTransfer.files;
-
-      // Use webUtils.getPathForFile() through the preload API
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        try {
-          const filePath = window.electronAPI.getPathForFile(file);
-          debugLog(`Got path for ${file.name}: ${filePath}`);
-          if (filePath) {
-            paths.push(filePath);
-          }
-        } catch (error) {
-          logError(`Error getting path for ${file.name}:`, error);
-        }
-      }
-
+      const paths = getPathsFromDropEvent(e);
       debugLog('Final paths:', paths);
 
       if (paths.length > 0) {
         onFilesDropped(paths);
-      } else {
+      } else if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
         onDropError(
           'ファイルパスを取得できませんでした。\nファイルを直接エクスプローラーからドラッグしてください。'
         );
@@ -74,7 +60,7 @@ export function useDragAndDrop(
       document.removeEventListener('dragleave', handleDragLeave);
       document.removeEventListener('drop', handleDrop);
     };
-  }, [onFilesDropped, onDropError]);
+  }, [onFilesDropped, onDropError, isModalOpen]);
 
   return {
     isDraggingOver,
