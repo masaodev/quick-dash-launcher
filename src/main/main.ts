@@ -27,6 +27,7 @@ import {
   closeWorkspaceWindow,
   setAppQuitting as setWorkspaceAppQuitting,
 } from './workspaceWindowManager';
+import { destroyToastWindow } from './services/toastWindowService.js';
 
 // 初回起動判定用のグローバル変数
 let isFirstLaunch = false;
@@ -143,4 +144,5 @@ app.on('will-quit', () => {
   closeAdminWindow(); // 管理ウィンドウを確実に閉じる
   closeWorkspaceWindow(); // ワークスペースウィンドウを確実に閉じる
   closeSplashWindow(); // スプラッシュウィンドウを確実に閉じる
+  destroyToastWindow(); // トーストウィンドウを確実に閉じる
 });

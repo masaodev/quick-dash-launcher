@@ -229,7 +229,7 @@ const App: React.FC = () => {
   // アイテム実行の共通処理（トースト表示 + 実行）
   const executeAppItem = async (item: AppItem): Promise<void> => {
     if (isGroupItem(item)) {
-      window.electronAPI.showToastWindow({
+      await window.electronAPI.showToastWindow({
         displayName: item.displayName,
         itemType: 'group',
         itemCount: item.itemNames.length,
@@ -237,14 +237,14 @@ const App: React.FC = () => {
       });
       await window.electronAPI.executeGroup(item, mainItems);
     } else if (isWindowItem(item)) {
-      window.electronAPI.showToastWindow({
+      await window.electronAPI.showToastWindow({
         displayName: item.displayName,
         itemType: 'windowOperation',
       });
       await window.electronAPI.executeWindowOperation(item);
     } else {
       const launcherItem = item as LauncherItem;
-      window.electronAPI.showToastWindow({
+      await window.electronAPI.showToastWindow({
         displayName: launcherItem.displayName,
         itemType: launcherItem.type,
         path: launcherItem.path,
@@ -269,24 +269,36 @@ const App: React.FC = () => {
             type: 'error',
           });
         } else {
-          window.electronAPI.showToastWindow(`${windowItem.title} をアクティブ化しました`);
+          await window.electronAPI.showToastWindow(`${windowItem.title} をアクティブ化しました`);
         }
       } else if (searchMode === 'history') {
         // 履歴モード：選択された履歴アイテムを直接実行
         await executeAppItem(item);
       } else {
         // 通常モード
-        if (searchQuery.trim()) {
-          await addHistoryEntry(searchQuery.trim());
-        }
+        // 検索クエリを事前保存（実行後にクリアされる可能性を考慮）
+        const searchQueryForHistory = searchQuery.trim();
 
+        // 即座にアイテム実行（トースト表示含む）
         await executeAppItem(item);
 
-        // LauncherItemの場合のみ実行履歴に追加
+        // 実行後、バックグラウンドで履歴追加（並列化、fire-and-forget）
+        // 検索履歴追加
+        if (searchQueryForHistory) {
+          addHistoryEntry(searchQueryForHistory).catch((error) => {
+            console.error('検索履歴の追加に失敗しました:', error);
+          });
+        }
+
+        // 実行履歴追加（LauncherItemのみ）
         if (!isGroupItem(item) && !isWindowItem(item)) {
           const launcherItem = item as LauncherItem;
-          await window.electronAPI.workspaceAPI.addExecutionHistory(launcherItem);
-          await loadExecutionHistory();
+          window.electronAPI.workspaceAPI
+            .addExecutionHistory(launcherItem)
+            .then(() => loadExecutionHistory())
+            .catch((error) => {
+              console.error('実行履歴の追加に失敗しました:', error);
+            });
         }
       }
     } catch (error) {
