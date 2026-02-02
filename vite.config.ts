@@ -30,7 +30,7 @@ export default defineConfig({
               fileName: () => 'main.js',
             },
             rollupOptions: {
-              external: ['electron', 'electron-store', 'koffi', 'extract-file-icon'],
+              external: ['electron', 'electron-store', 'koffi', 'extract-file-icon', 'clipboard-files'],
               output: {
                 format: 'cjs',
                 inlineDynamicImports: true,

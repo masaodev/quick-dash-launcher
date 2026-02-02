@@ -63,9 +63,11 @@ export function extractWindowConfig(item: ExecutionHistoryItem): WindowConfig | 
  * @param historyItem - 実行履歴アイテム
  * @returns LauncherItem形式のオブジェクト（グループの場合はitemNames、クリップボードの場合はclipboardDataRefを含む）
  */
-export function executionHistoryToLauncherItem(
-  historyItem: ExecutionHistoryItem
-): LauncherItem & { itemNames?: string[]; clipboardDataRef?: string; clipboardFormats?: ClipboardFormat[] } {
+export function executionHistoryToLauncherItem(historyItem: ExecutionHistoryItem): LauncherItem & {
+  itemNames?: string[];
+  clipboardDataRef?: string;
+  clipboardFormats?: ClipboardFormat[];
+} {
   const launcherItem: LauncherItem & {
     itemNames?: string[];
     clipboardDataRef?: string;

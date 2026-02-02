@@ -90,6 +90,7 @@
   },
   "dependencies": {
     "@types/minimatch": "^6.0.0",
+    "clipboard-files": "^3.0.0",
     "electron-store": "^11.0.2",
     "extract-file-icon": "^0.3.2",
     "koffi": "^2.9.0",
