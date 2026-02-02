@@ -57,7 +57,8 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
   "workspaceOpacity": 100,
   "workspaceBackgroundTransparent": false,
   "autoShowWorkspace": false,
-  "workspacePositionMode": "primaryRight",
+  "workspacePositionMode": "displayRight",
+  "workspaceTargetDisplayIndex": 0,
   "workspacePositionX": 0,
   "workspacePositionY": 0,
   "parallelGroupLaunch": false,
@@ -151,7 +152,8 @@ interface DataFileTab {
 | **workspaceOpacity** | number | 100 | ワークスペースウィンドウの不透明度（0-100%） |
 | **workspaceBackgroundTransparent** | boolean | false | ワークスペースウィンドウの背景のみを透過するか |
 | **autoShowWorkspace** | boolean | false | メイン画面表示時にワークスペースを自動表示するか |
-| **workspacePositionMode** | WorkspacePositionMode | "primaryRight" | ワークスペースウィンドウの表示位置モード |
+| **workspacePositionMode** | WorkspacePositionMode | "displayRight" | ワークスペースウィンドウの表示位置モード |
+| **workspaceTargetDisplayIndex** | number | 0 | ターゲットディスプレイ番号（displayLeft/displayRight時に使用、0始まり） |
 | **workspacePositionX** | number | 0 | 固定位置のX座標（workspacePositionMode='fixed'時に使用） |
 | **workspacePositionY** | number | 0 | 固定位置のY座標（workspacePositionMode='fixed'時に使用） |
 
@@ -159,9 +161,11 @@ interface DataFileTab {
 
 | 値 | 説明 |
 |----|------|
-| **primaryLeft** | プライマリディスプレイの左端に配置 |
-| **primaryRight** | プライマリディスプレイの右端に配置 |
+| **displayLeft** | 指定ディスプレイの左端に配置 |
+| **displayRight** | 指定ディスプレイの右端に配置（デフォルト） |
 | **fixed** | 固定位置に表示（手動で移動した位置を記憶） |
+| **primaryLeft** | @deprecated プライマリディスプレイの左端に配置（後方互換性のため、displayLeftに移行） |
+| **primaryRight** | @deprecated プライマリディスプレイの右端に配置（後方互換性のため、displayRightに移行） |
 
 ### 3.9. グループ起動設定
 
@@ -233,8 +237,10 @@ export interface AppSettings {
   workspaceBackgroundTransparent: boolean;
   /** メイン画面表示時にワークスペースを自動表示（デフォルト: false） */
   autoShowWorkspace: boolean;
-  /** ワークスペースウィンドウの表示位置モード（デフォルト: 'primaryRight'） */
+  /** ワークスペースウィンドウの表示位置モード（デフォルト: 'displayRight'） */
   workspacePositionMode: WorkspacePositionMode;
+  /** ワークスペースのターゲットディスプレイ番号（displayLeft/displayRight時に使用、デフォルト: 0） */
+  workspaceTargetDisplayIndex: number;
   /** 固定位置のX座標（workspacePositionMode='fixed'時に使用、デフォルト: 0） */
   workspacePositionX: number;
   /** 固定位置のY座標（workspacePositionMode='fixed'時に使用、デフォルト: 0） */
@@ -266,9 +272,11 @@ export type WindowPositionMode =
  * ワークスペースの表示位置モードを表す列挙型
  */
 export type WorkspacePositionMode =
-  | 'primaryLeft'  // プライマリディスプレイの左端に配置
-  | 'primaryRight' // プライマリディスプレイの右端に配置
-  | 'fixed';       // 固定位置に表示（手動で移動した位置を記憶）
+  | 'primaryLeft'   // @deprecated 後方互換性のため残存。displayLeftに移行
+  | 'primaryRight'  // @deprecated 後方互換性のため残存。displayRightに移行
+  | 'displayLeft'   // 指定ディスプレイの左端に配置
+  | 'displayRight'  // 指定ディスプレイの右端に配置（デフォルト）
+  | 'fixed';        // 固定位置に表示（手動で移動した位置を記憶）
 ```
 
 ### 4.4. DataFileTab
