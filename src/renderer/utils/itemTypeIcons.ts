@@ -21,6 +21,8 @@ export function getDefaultIconForItemType(type: ItemType): string {
       return '\u{1F4E6}';
     case 'windowOperation':
       return '\u{1FA9F}';
+    case 'clipboard':
+      return '\u{1F4CB}';
     default:
       return '\u{1F4C4}';
   }

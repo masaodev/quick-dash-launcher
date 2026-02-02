@@ -17,6 +17,10 @@ import {
   VirtualDesktopInfo,
   IconFetchErrorRecord,
   JsonDirOptions,
+  ClipboardCaptureResult,
+  ClipboardRestoreResult,
+  ClipboardPreview,
+  CurrentClipboardState,
 } from '@common/types';
 import type { EditableJsonItem, LoadEditableItemsResult } from '@common/types/editableItem';
 import { IPC_CHANNELS } from '@common/ipcChannels';
@@ -589,5 +593,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_DELETE, listener);
     return () =>
       ipcRenderer.removeListener(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_DELETE, listener);
+  },
+  // クリップボード関連API
+  clipboardAPI: {
+    checkCurrent: (): Promise<CurrentClipboardState> =>
+      ipcRenderer.invoke(IPC_CHANNELS.CLIPBOARD_CHECK_CURRENT),
+    capture: (): Promise<ClipboardCaptureResult> =>
+      ipcRenderer.invoke(IPC_CHANNELS.CLIPBOARD_CAPTURE),
+    restore: (dataFileRef: string): Promise<ClipboardRestoreResult> =>
+      ipcRenderer.invoke(IPC_CHANNELS.CLIPBOARD_RESTORE, dataFileRef),
+    deleteData: (dataFileRef: string): Promise<boolean> =>
+      ipcRenderer.invoke(IPC_CHANNELS.CLIPBOARD_DELETE_DATA, dataFileRef),
+    getPreview: (dataFileRef: string): Promise<ClipboardPreview | null> =>
+      ipcRenderer.invoke(IPC_CHANNELS.CLIPBOARD_GET_PREVIEW, dataFileRef),
   },
 });

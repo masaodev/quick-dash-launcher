@@ -323,6 +323,30 @@ export function setupWorkspaceHandlers(): void {
         return { success: true, successCount, errorCount };
       }
 
+      // クリップボードタイプの場合
+      if (item.type === 'clipboard') {
+        if (!item.clipboardDataRef) {
+          logger.warn({ id: item.id, name: item.displayName }, 'Clipboard data ref not found');
+          throw new Error('クリップボードデータの参照が見つかりません');
+        }
+
+        await launchItem(
+          {
+            type: 'clipboard',
+            path: '',
+            displayName: item.displayName,
+            clipboardDataRef: item.clipboardDataRef,
+          },
+          logger
+        );
+
+        logger.info(
+          { id: item.id, name: item.displayName },
+          'Restored clipboard from workspace item'
+        );
+        return { success: true };
+      }
+
       // ウィンドウ設定が存在する場合、先にウィンドウ検索を試行
       const activationResult = await tryActivateWindow(item.windowConfig, item.displayName, logger);
 

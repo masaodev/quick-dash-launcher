@@ -6,6 +6,7 @@
 
 import type { WindowConfig, LauncherItem } from './launcher';
 import type { JsonDirOptions } from './json-data';
+import type { ClipboardFormat } from './clipboard';
 
 /**
  * ウィンドウ操作アイテムの設定オブジェクト型定義
@@ -44,10 +45,18 @@ export interface RegisterItem {
   icon?: string;
   customIcon?: string;
   windowConfig?: WindowConfig;
-  itemCategory: 'item' | 'dir' | 'group' | 'window';
+  itemCategory: 'item' | 'dir' | 'group' | 'window' | 'clipboard';
   dirOptions?: JsonDirOptions;
   groupItemNames?: string[];
   windowOperationConfig?: WindowOperationConfig;
   /** 自由記述メモ（オプション） */
   memo?: string;
+  /** クリップボードデータファイルへの参照（clipboard専用） */
+  clipboardDataRef?: string;
+  /** クリップボードの保存フォーマット（clipboard専用） */
+  clipboardFormats?: ClipboardFormat[];
+  /** クリップボードの保存日時（clipboard専用） */
+  clipboardSavedAt?: number;
+  /** クリップボードのプレビュー（clipboard専用） */
+  clipboardPreview?: string;
 }

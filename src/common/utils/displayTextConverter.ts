@@ -15,7 +15,7 @@
  * - これらの関数は、UI上の表示・編集用テキストのフォーマット処理のみに使用されます
  */
 
-import type { JsonItem, JsonDirOptions } from '@common/types';
+import type { JsonItem, JsonDirOptions, ClipboardFormat } from '@common/types';
 import { generateId } from '@common/utils/jsonParser';
 
 /**
@@ -186,6 +186,14 @@ export function jsonItemToDisplayText(item: JsonItem): string {
       return `window,${escapedJson}`;
     }
 
+    case 'clipboard': {
+      const parts = ['clipboard', item.displayName, item.dataFileRef, item.formats.join(';')];
+      if (item.preview) {
+        parts.push(item.preview);
+      }
+      return parts.map(escapeDisplayTextField).join(',');
+    }
+
     default:
       throw new Error(`Unknown item type: ${(item as JsonItem).type}`);
   }
@@ -284,6 +292,27 @@ export function displayTextToJsonItem(text: string, existingId?: string): JsonIt
       virtualDesktopNumber: config.virtualDesktopNumber as number | undefined,
       activateWindow: config.activateWindow as boolean | undefined,
       pinToAllDesktops: config.pinToAllDesktops as boolean | undefined,
+    };
+  }
+
+  // clipboard行
+  if (trimmed.startsWith('clipboard,')) {
+    const parts = parseDisplayTextFields(trimmed);
+    const displayName = parts[1] || '';
+    const dataFileRef = parts[2] || '';
+    const formatsStr = parts[3] || '';
+    const preview = parts[4] || undefined;
+
+    const formats = formatsStr.split(';').filter((f) => f.trim()) as ClipboardFormat[];
+
+    return {
+      id: itemId,
+      type: 'clipboard',
+      displayName,
+      dataFileRef,
+      savedAt: Date.now(),
+      formats,
+      preview,
     };
   }
 

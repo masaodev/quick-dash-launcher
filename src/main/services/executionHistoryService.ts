@@ -3,7 +3,13 @@ import { randomUUID } from 'crypto';
 import ElectronStore from 'electron-store';
 import type { AppItem, ExecutionHistoryItem } from '@common/types';
 import logger from '@common/logger';
-import { isWindowInfo, isLauncherItem, isWindowItem } from '@common/types/guards';
+import {
+  isWindowInfo,
+  isLauncherItem,
+  isWindowItem,
+  isClipboardItem,
+  isGroupItem,
+} from '@common/types/guards';
 
 import PathManager from '../config/pathManager.js';
 
@@ -157,6 +163,46 @@ export class ExecutionHistoryService {
   }
 
   /**
+   * ClipboardItemから履歴アイテムを作成
+   */
+  private createClipboardHistoryItem(item: {
+    displayName: string;
+    clipboardDataRef: string;
+    preview?: string;
+    formats: import('@common/types').ClipboardFormat[];
+    customIcon?: string;
+  }): ExecutionHistoryItem {
+    return {
+      id: randomUUID(),
+      itemName: item.displayName,
+      itemPath: `[クリップボード: ${item.preview?.substring(0, 20) || 'データ'}...]`,
+      itemType: 'clipboard',
+      customIcon: item.customIcon,
+      executedAt: Date.now(),
+      clipboardDataRef: item.clipboardDataRef,
+      clipboardFormats: item.formats,
+    };
+  }
+
+  /**
+   * GroupItemから履歴アイテムを作成
+   */
+  private createGroupHistoryItem(item: {
+    displayName: string;
+    itemNames?: string[];
+  }): ExecutionHistoryItem {
+    const itemNames = item.itemNames || [];
+    return {
+      id: randomUUID(),
+      itemName: item.displayName,
+      itemPath: `[グループ: ${itemNames.join(', ')}]`,
+      itemType: 'group',
+      executedAt: Date.now(),
+      itemNames: itemNames,
+    };
+  }
+
+  /**
    * アイテム実行を履歴に追加
    * @param item 実行されたアイテム
    */
@@ -178,19 +224,14 @@ export class ExecutionHistoryService {
         // ウィンドウ操作アイテムの場合
         const historyItem = this.createWindowOperationHistoryItem(item);
         updatedHistory = this.updateHistoryList(history, item.displayName, historyItem);
-      } else if (!isLauncherItem(item)) {
+      } else if (isClipboardItem(item)) {
+        // クリップボードアイテムの場合
+        const historyItem = this.createClipboardHistoryItem(item);
+        updatedHistory = this.updateHistoryList(history, item.displayName, historyItem);
+      } else if (isGroupItem(item)) {
         // グループアイテムの場合
-        const groupItem = item as { displayName: string; type: 'group'; itemNames: string[] };
-        const itemNames = groupItem.itemNames || [];
-        const historyItem: ExecutionHistoryItem = {
-          id: randomUUID(),
-          itemName: groupItem.displayName,
-          itemPath: `[グループ: ${itemNames.join(', ')}]`,
-          itemType: 'group',
-          executedAt: Date.now(),
-          itemNames: itemNames,
-        };
-        updatedHistory = this.updateHistoryList(history, groupItem.displayName, historyItem);
+        const historyItem = this.createGroupHistoryItem(item);
+        updatedHistory = this.updateHistoryList(history, item.displayName, historyItem);
       } else {
         // 通常のLauncherItemの場合
         const historyItem: ExecutionHistoryItem = {

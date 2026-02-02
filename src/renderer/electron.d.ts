@@ -18,6 +18,10 @@ import {
   RegisterItem,
   IconFetchErrorRecord,
   JsonDirOptions,
+  ClipboardCaptureResult,
+  ClipboardRestoreResult,
+  ClipboardPreview,
+  CurrentClipboardState,
 } from '@common/types';
 import type { EditableJsonItem, LoadEditableItemsResult } from '@common/types/editableItem';
 
@@ -38,7 +42,7 @@ export interface ElectronAPI {
   extractCustomUriIcon: (uri: string) => Promise<string | null>;
   getIconForItem: (
     filePath: string,
-    itemType: 'url' | 'file' | 'folder' | 'app' | 'customUri'
+    itemType: 'url' | 'file' | 'folder' | 'app' | 'customUri' | 'clipboard'
   ) => Promise<string | null>;
   loadCachedIcons: (items: LauncherItem[]) => Promise<Record<string, string>>;
   // 統合進捗付きアイコン取得API
@@ -219,7 +223,15 @@ export interface ElectronAPI {
           message?: string;
           type?: 'success' | 'error' | 'info' | 'warning';
           duration?: number;
-          itemType?: 'url' | 'file' | 'folder' | 'app' | 'customUri' | 'group' | 'windowOperation';
+          itemType?:
+            | 'url'
+            | 'file'
+            | 'folder'
+            | 'app'
+            | 'customUri'
+            | 'group'
+            | 'windowOperation'
+            | 'clipboard';
           displayName?: string;
           path?: string;
           icon?: string;
@@ -298,6 +310,14 @@ export interface ElectronAPI {
   onWorkspaceGroupMenuCopyAsText: (callback: (groupId: string) => void) => () => void;
   onWorkspaceGroupMenuArchive: (callback: (groupId: string) => void) => () => void;
   onWorkspaceGroupMenuDelete: (callback: (groupId: string) => void) => () => void;
+  // クリップボード関連API
+  clipboardAPI: {
+    checkCurrent: () => Promise<CurrentClipboardState>;
+    capture: () => Promise<ClipboardCaptureResult>;
+    restore: (dataFileRef: string) => Promise<ClipboardRestoreResult>;
+    deleteData: (dataFileRef: string) => Promise<boolean>;
+    getPreview: (dataFileRef: string) => Promise<ClipboardPreview | null>;
+  };
 }
 
 declare global {

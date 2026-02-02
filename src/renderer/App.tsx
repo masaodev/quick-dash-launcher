@@ -12,7 +12,13 @@ import type {
   EditableJsonItem,
 } from '@common/types';
 import { buildWindowOperationConfig } from '@common/utils/windowConfigUtils';
-import { isWindowInfo, isGroupItem, isWindowItem } from '@common/types/guards';
+import {
+  isWindowInfo,
+  isGroupItem,
+  isWindowItem,
+  isClipboardItem,
+  isLauncherItem,
+} from '@common/types/guards';
 
 import LauncherSearchBox from './components/LauncherSearchBox';
 import LauncherItemList from './components/LauncherItemList';
@@ -179,7 +185,7 @@ const App: React.FC = () => {
 
     // Apply cached icons to items
     const itemsWithIcons = items.map((item) => {
-      if (isWindowInfo(item) || isGroupItem(item) || isWindowItem(item)) {
+      if (isWindowInfo(item) || isGroupItem(item) || isWindowItem(item) || isClipboardItem(item)) {
         return item;
       }
       return {
@@ -244,15 +250,20 @@ const App: React.FC = () => {
         itemType: 'windowOperation',
       });
       await window.electronAPI.executeWindowOperation(item);
-    } else {
-      const launcherItem = item as LauncherItem;
+    } else if (isClipboardItem(item)) {
       await window.electronAPI.showToastWindow({
-        displayName: launcherItem.displayName,
-        itemType: launcherItem.type,
-        path: launcherItem.path,
-        icon: launcherItem.icon,
+        displayName: item.displayName,
+        itemType: 'clipboard',
       });
-      await window.electronAPI.openItem(launcherItem);
+      await window.electronAPI.clipboardAPI.restore(item.clipboardDataRef);
+    } else if (isLauncherItem(item)) {
+      await window.electronAPI.showToastWindow({
+        displayName: item.displayName,
+        itemType: item.type,
+        path: item.path,
+        icon: item.icon,
+      });
+      await window.electronAPI.openItem(item);
     }
   };
 

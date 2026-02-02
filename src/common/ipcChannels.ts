@@ -213,6 +213,13 @@ export const IPC_CHANNELS = {
   PIN_WINDOW: 'pin-window',
   UNPIN_WINDOW: 'unpin-window',
   IS_WINDOW_PINNED: 'is-window-pinned',
+
+  // クリップボード操作
+  CLIPBOARD_CAPTURE: 'clipboard:capture',
+  CLIPBOARD_RESTORE: 'clipboard:restore',
+  CLIPBOARD_DELETE_DATA: 'clipboard:delete-data',
+  CLIPBOARD_GET_PREVIEW: 'clipboard:get-preview',
+  CLIPBOARD_CHECK_CURRENT: 'clipboard:check-current',
 } as const;
 
 /**

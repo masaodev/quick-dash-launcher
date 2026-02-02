@@ -1,6 +1,19 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { isLauncherItem, isWindowInfo, isGroupItem, isWindowItem } from '@common/types/guards';
-import { LauncherItem, GroupItem, AppItem, WindowInfo, WindowItem } from '@common/types';
+import {
+  isLauncherItem,
+  isWindowInfo,
+  isGroupItem,
+  isWindowItem,
+  isClipboardItem,
+} from '@common/types/guards';
+import {
+  LauncherItem,
+  GroupItem,
+  AppItem,
+  WindowInfo,
+  WindowItem,
+  ClipboardItem,
+} from '@common/types';
 
 import { getTooltipText } from '../utils/tooltipTextGenerator';
 import { logError } from '../utils/debug';
@@ -229,6 +242,8 @@ const LauncherItemList: React.FC<ItemListProps> = ({
         return '📦';
       case 'window':
         return '🪟';
+      case 'clipboard':
+        return '📋';
       default:
         return '❓';
     }
@@ -243,6 +258,10 @@ const LauncherItemList: React.FC<ItemListProps> = ({
     // WindowInfoでアイコンがある場合
     if (isWindowInfo(item) && item.icon) {
       return <img src={item.icon} alt="" width="24" height="24" />;
+    }
+    // ClipboardItemでカスタムアイコンがある場合
+    if (isClipboardItem(item) && item.customIcon) {
+      return <img src={item.customIcon} alt="" width="24" height="24" />;
     }
     // デフォルトアイコン
     return getDefaultIcon(item);
@@ -269,10 +288,10 @@ const LauncherItemList: React.FC<ItemListProps> = ({
     e.stopPropagation();
     const name = isWindowInfo(item)
       ? item.title
-      : isWindowItem(item)
+      : isWindowItem(item) || isClipboardItem(item)
         ? item.displayName
         : (item as LauncherItem | GroupItem).displayName;
-    const memo = (item as LauncherItem | GroupItem | WindowItem).memo || '';
+    const memo = (item as LauncherItem | GroupItem | WindowItem | ClipboardItem).memo || '';
     setMemoModalItem({ name, memo });
     setMemoModalOpen(true);
   };
@@ -306,12 +325,13 @@ const LauncherItemList: React.FC<ItemListProps> = ({
         const isGroup = isGroupItem(item);
         const isWindowOperation = isWindowItem(item);
         const windowInfo = isWindow ? (item as WindowInfo) : null;
+        const isClipboard = isClipboardItem(item);
         const itemName = isWindow
           ? windowInfo?.processName
             ? `${windowInfo.title} (${windowInfo.processName})`
             : windowInfo!.title
-          : isWindowOperation
-            ? (item as WindowItem).displayName
+          : isWindowOperation || isClipboard
+            ? (item as WindowItem | ClipboardItem).displayName
             : (item as LauncherItem | GroupItem).displayName;
 
         const isDraggable = isLauncherItem(item);
@@ -329,7 +349,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
             ref={(el) => {
               itemRefs.current[index] = el;
             }}
-            className={`item ${index === selectedIndex ? 'selected' : ''} ${isGroup ? 'group-item' : ''} ${isWindow ? 'window-item' : ''} ${isWindowOperation ? 'window-operation-item' : ''} ${isDragging ? 'dragging' : ''}`}
+            className={`item ${index === selectedIndex ? 'selected' : ''} ${isGroup ? 'group-item' : ''} ${isWindow ? 'window-item' : ''} ${isWindowOperation ? 'window-operation-item' : ''} ${isClipboard ? 'clipboard-item' : ''} ${isDragging ? 'dragging' : ''}`}
             draggable={isDraggable}
             onDragStart={(e) => handleDragStart(e, item, index)}
             onDragEnd={handleDragEnd}
@@ -355,15 +375,16 @@ const LauncherItemList: React.FC<ItemListProps> = ({
                   🔍
                 </span>
               )}
-              {!isWindowInfo(item) && (item as LauncherItem | GroupItem | WindowItem).memo && (
-                <span
-                  className="memo-badge"
-                  onClick={(e) => handleMemoClick(e, item)}
-                  title="メモを表示"
-                >
-                  📝
-                </span>
-              )}
+              {!isWindowInfo(item) &&
+                (item as LauncherItem | GroupItem | WindowItem | ClipboardItem).memo && (
+                  <span
+                    className="memo-badge"
+                    onClick={(e) => handleMemoClick(e, item)}
+                    title="メモを表示"
+                  >
+                    📝
+                  </span>
+                )}
             </span>
           </div>
         );

@@ -1,4 +1,5 @@
 import { WindowInfo } from './window';
+import type { ClipboardFormat } from './clipboard';
 
 /**
  * ウィンドウ制御の設定情報
@@ -43,8 +44,8 @@ export interface LauncherItem {
   displayName: string;
   /** アイテムのパス、URL、またはコマンド */
   path: string;
-  /** アイテムのタイプ（URL、ファイル、フォルダ、アプリケーション、カスタムURI） */
-  type: 'url' | 'file' | 'folder' | 'app' | 'customUri';
+  /** アイテムのタイプ（URL、ファイル、フォルダ、アプリケーション、カスタムURI、クリップボード） */
+  type: 'url' | 'file' | 'folder' | 'app' | 'customUri' | 'clipboard';
   /** アイテムのアイコン（base64エンコードされたデータURL、オプション） */
   icon?: string;
   /** カスタムアイコンのファイル名（custom-iconsフォルダ内の相対パス、オプション） */
@@ -73,6 +74,12 @@ export interface LauncherItem {
   windowConfig?: WindowConfig;
   /** 自由記述メモ（オプション） */
   memo?: string;
+  /** クリップボードデータファイルへの参照（クリップボードアイテムのみ） */
+  clipboardDataRef?: string;
+  /** クリップボードの保存フォーマット（クリップボードアイテムのみ） */
+  clipboardFormats?: ClipboardFormat[];
+  /** クリップボードの保存日時（クリップボードアイテムのみ） */
+  clipboardSavedAt?: number;
 }
 
 /**
@@ -147,7 +154,38 @@ export interface WindowItem {
 }
 
 /**
- * アプリケーションで扱うすべてのアイテムの統合型
- * 通常のLauncherItem、GroupItem、WindowItem、WindowInfo（ウィンドウ検索結果）を扱える
+ * クリップボードアイテム
+ * クリップボードの内容を保存し、後から復元できる
  */
-export type AppItem = LauncherItem | GroupItem | WindowItem | WindowInfo;
+export interface ClipboardItem {
+  /** アイテムタイプ（常に'clipboard'） */
+  type: 'clipboard';
+  /** アイテムリストでの表示名 */
+  displayName: string;
+  /** クリップボードデータファイルへの参照（clipboard-data/{id}.json） */
+  clipboardDataRef: string;
+  /** 保存日時（timestamp） */
+  savedAt: number;
+  /** プレビューテキスト（最初の100文字程度） */
+  preview?: string;
+  /** 保存されているフォーマット */
+  formats: ClipboardFormat[];
+  /** カスタムアイコンのファイル名（オプション） */
+  customIcon?: string;
+  /** 元のデータファイル */
+  sourceFile?: string;
+  /** データファイル内の行番号（編集機能で使用、非推奨：IDベースアクセスを推奨） */
+  lineNumber?: number;
+  /** JSONアイテムのID（JSON形式の場合） */
+  id?: string;
+  /** 編集モードで変更されたかどうか */
+  isEdited?: boolean;
+  /** 自由記述メモ（オプション） */
+  memo?: string;
+}
+
+/**
+ * アプリケーションで扱うすべてのアイテムの統合型
+ * 通常のLauncherItem、GroupItem、WindowItem、ClipboardItem、WindowInfo（ウィンドウ検索結果）を扱える
+ */
+export type AppItem = LauncherItem | GroupItem | WindowItem | ClipboardItem | WindowInfo;

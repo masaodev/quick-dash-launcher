@@ -14,6 +14,7 @@ import { setupWorkspaceHandlers } from './workspaceHandlers';
 import { setupWindowSearchHandlers } from './windowSearchHandlers';
 import { setupNotificationHandlers } from './notificationHandlers';
 import { setupContextMenuHandlers } from './contextMenuHandlers';
+import { setupClipboardHandlers } from './clipboardHandlers';
 
 export function setupIPCHandlers(
   configFolder: string,
@@ -44,4 +45,5 @@ export function setupIPCHandlers(
   setupWindowSearchHandlers(getMainWindow, getWindowPinMode);
   setupNotificationHandlers();
   setupContextMenuHandlers();
+  setupClipboardHandlers();
 }

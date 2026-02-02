@@ -5,7 +5,7 @@ import type { ConversionRule } from '@common/urlConversionRules';
 interface UrlConverterMenuProps {
   url: string;
   onConvert: (convertedUrl: string) => void;
-  itemType?: 'url' | 'file' | 'folder' | 'app' | 'customUri';
+  itemType?: 'url' | 'file' | 'folder' | 'app' | 'customUri' | 'clipboard';
 }
 
 const UrlConverterMenu: React.FC<UrlConverterMenuProps> = ({ url, onConvert, itemType }) => {

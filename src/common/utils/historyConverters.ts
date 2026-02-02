@@ -3,7 +3,13 @@
  *
  * ExecutionHistoryItemからLauncherItem/WindowItemへの変換ロジックを共通化
  */
-import type { ExecutionHistoryItem, LauncherItem, WindowItem, WindowConfig } from '../types';
+import type {
+  ExecutionHistoryItem,
+  LauncherItem,
+  WindowItem,
+  WindowConfig,
+  ClipboardFormat,
+} from '../types';
 
 /**
  * windowConfig関連のプロパティ名リスト
@@ -55,12 +61,16 @@ export function extractWindowConfig(item: ExecutionHistoryItem): WindowConfig | 
  * ExecutionHistoryItemをLauncherItem形式に変換
  *
  * @param historyItem - 実行履歴アイテム
- * @returns LauncherItem形式のオブジェクト（グループの場合はitemNamesを含む）
+ * @returns LauncherItem形式のオブジェクト（グループの場合はitemNames、クリップボードの場合はclipboardDataRefを含む）
  */
 export function executionHistoryToLauncherItem(
   historyItem: ExecutionHistoryItem
-): LauncherItem & { itemNames?: string[] } {
-  const launcherItem: LauncherItem & { itemNames?: string[] } = {
+): LauncherItem & { itemNames?: string[]; clipboardDataRef?: string; clipboardFormats?: ClipboardFormat[] } {
+  const launcherItem: LauncherItem & {
+    itemNames?: string[];
+    clipboardDataRef?: string;
+    clipboardFormats?: ClipboardFormat[];
+  } = {
     displayName: historyItem.itemName,
     path: historyItem.itemPath,
     type: historyItem.itemType as LauncherItem['type'],
@@ -71,6 +81,12 @@ export function executionHistoryToLauncherItem(
   // グループアイテムの場合はitemNamesも含める
   if (historyItem.itemType === 'group' && historyItem.itemNames) {
     launcherItem.itemNames = historyItem.itemNames;
+  }
+
+  // クリップボードアイテムの場合はclipboardDataRefとclipboardFormatsも含める
+  if (historyItem.itemType === 'clipboard') {
+    launcherItem.clipboardDataRef = historyItem.clipboardDataRef;
+    launcherItem.clipboardFormats = historyItem.clipboardFormats;
   }
 
   // windowConfig情報があれば含める

@@ -18,6 +18,7 @@ import {
   isJsonDirItem,
   isJsonGroupItem,
   isJsonWindowItem,
+  isJsonClipboardItem,
   DIR_OPTIONS_DEFAULTS,
 } from '../types/json-data.js';
 
@@ -297,6 +298,24 @@ export function convertEditableJsonItemToRegisterItem(
     };
   }
 
+  // クリップボードアイテム
+  if (isJsonClipboardItem(jsonItem)) {
+    return {
+      displayName: jsonItem.displayName,
+      path: '',
+      type: 'clipboard',
+      targetTab: defaultTab,
+      targetFile: sourceFile,
+      itemCategory: 'clipboard',
+      clipboardDataRef: jsonItem.dataFileRef,
+      clipboardFormats: jsonItem.formats,
+      clipboardSavedAt: jsonItem.savedAt,
+      clipboardPreview: jsonItem.preview,
+      customIcon: jsonItem.customIcon,
+      memo: jsonItem.memo,
+    };
+  }
+
   // フォールバック
   return {
     displayName: '',
@@ -368,6 +387,22 @@ export function convertRegisterItemToJsonItem(
     };
     if (registerItem.memo) windowItem.memo = registerItem.memo;
     return windowItem;
+  }
+
+  // クリップボードアイテム
+  if (registerItem.itemCategory === 'clipboard') {
+    const clipboardItem: JsonItem = {
+      id,
+      type: 'clipboard',
+      displayName: registerItem.displayName,
+      dataFileRef: registerItem.clipboardDataRef || '',
+      savedAt: registerItem.clipboardSavedAt || Date.now(),
+      formats: registerItem.clipboardFormats || [],
+      preview: registerItem.clipboardPreview,
+      customIcon: registerItem.customIcon,
+    };
+    if (registerItem.memo) clipboardItem.memo = registerItem.memo;
+    return clipboardItem;
   }
 
   // 通常のLauncherItem

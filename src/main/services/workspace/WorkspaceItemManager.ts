@@ -5,10 +5,10 @@ import { randomUUID } from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
 
-import type { AppItem, WorkspaceItem } from '@common/types';
+import type { AppItem, WorkspaceItem, ClipboardFormat, WindowConfig } from '@common/types';
 import logger from '@common/logger';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
-import { isWindowInfo, isGroupItem } from '@common/types/guards';
+import { isWindowInfo, isGroupItem, isClipboardItem } from '@common/types/guards';
 
 import type { WorkspaceStoreInstance } from './types.js';
 
@@ -58,6 +58,8 @@ export class WorkspaceItemManager {
         workspaceItem = this.createWindowItem(item, maxOrder + 1, groupId);
       } else if (isGroupItem(item)) {
         workspaceItem = this.createGroupItem(item, maxOrder + 1, groupId);
+      } else if (isClipboardItem(item)) {
+        workspaceItem = this.createClipboardItem(item, maxOrder + 1, groupId);
       } else {
         workspaceItem = this.createLauncherItem(item, maxOrder + 1, groupId);
       }
@@ -147,6 +149,38 @@ export class WorkspaceItemManager {
   }
 
   /**
+   * ClipboardItemからWorkspaceItemを作成
+   */
+  private createClipboardItem(item: AppItem, order: number, groupId?: string): WorkspaceItem {
+    const clipboardItem = item as {
+      type: 'clipboard';
+      displayName: string;
+      clipboardDataRef: string;
+      savedAt: number;
+      preview?: string;
+      formats: ClipboardFormat[];
+      customIcon?: string;
+      memo?: string;
+    };
+
+    return {
+      id: randomUUID(),
+      displayName: clipboardItem.displayName,
+      originalName: clipboardItem.displayName,
+      path: `[クリップボード: ${clipboardItem.preview?.substring(0, 20) || 'データ'}...]`,
+      type: 'clipboard',
+      customIcon: clipboardItem.customIcon,
+      order,
+      addedAt: Date.now(),
+      groupId,
+      clipboardDataRef: clipboardItem.clipboardDataRef,
+      clipboardFormats: clipboardItem.formats,
+      clipboardSavedAt: clipboardItem.savedAt,
+      memo: clipboardItem.memo,
+    };
+  }
+
+  /**
    * LauncherItemからWorkspaceItemを作成
    * 注意: iconはキャッシュフォルダから参照するため、設定ファイルには保存しない
    */
@@ -159,7 +193,7 @@ export class WorkspaceItemManager {
       customIcon?: string;
       args?: string;
       originalPath?: string;
-      windowConfig?: import('../../../common/types/launcher.js').WindowConfig;
+      windowConfig?: WindowConfig;
     };
 
     return {

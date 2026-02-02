@@ -11,7 +11,9 @@ import type {
   JsonDirItem,
   JsonGroupItem,
   JsonWindowItem,
+  JsonClipboardItem,
 } from '@common/types';
+import type { ClipboardFormat } from '@common/types/clipboard';
 import { JSON_DATA_VERSION, JSON_ID_LENGTH } from '@common/types';
 
 // ============================================================
@@ -199,6 +201,8 @@ function validateJsonItem(item: unknown, index: number): JsonItem {
       return validateJsonGroupItem(obj);
     case 'window':
       return validateJsonWindowItem(obj);
+    case 'clipboard':
+      return validateJsonClipboardItem(obj);
     default:
       throw new Error(`Unknown item type: ${obj.type}`);
   }
@@ -423,6 +427,66 @@ function validateJsonWindowItem(obj: Record<string, unknown>): JsonWindowItem {
 }
 
 /**
+ * JsonClipboardItemを検証
+ */
+function validateJsonClipboardItem(obj: Record<string, unknown>): JsonClipboardItem {
+  if (typeof obj.displayName !== 'string' || !obj.displayName) {
+    throw new Error('displayName is required and must be a non-empty string');
+  }
+  if (typeof obj.dataFileRef !== 'string' || !obj.dataFileRef) {
+    throw new Error('dataFileRef is required and must be a non-empty string');
+  }
+  if (typeof obj.savedAt !== 'number') {
+    throw new Error('savedAt is required and must be a number');
+  }
+  if (!Array.isArray(obj.formats)) {
+    throw new Error('formats is required and must be an array');
+  }
+
+  // formats の各要素を検証
+  const validFormats: ClipboardFormat[] = ['text', 'html', 'rtf', 'image', 'file'];
+  for (let i = 0; i < obj.formats.length; i++) {
+    const format = obj.formats[i];
+    if (typeof format !== 'string' || !validFormats.includes(format as ClipboardFormat)) {
+      throw new Error(`formats[${i}] must be one of: ${validFormats.join(', ')}`);
+    }
+  }
+
+  const item: JsonClipboardItem = {
+    id: obj.id as string,
+    type: 'clipboard',
+    displayName: obj.displayName,
+    dataFileRef: obj.dataFileRef,
+    savedAt: obj.savedAt,
+    formats: obj.formats as ClipboardFormat[],
+  };
+
+  // オプションフィールド
+  if (obj.preview !== undefined) {
+    if (typeof obj.preview !== 'string') {
+      throw new Error('preview must be a string');
+    }
+    item.preview = obj.preview;
+  }
+
+  if (obj.customIcon !== undefined) {
+    if (typeof obj.customIcon !== 'string') {
+      throw new Error('customIcon must be a string');
+    }
+    item.customIcon = obj.customIcon;
+  }
+
+  if (obj.memo !== undefined) {
+    if (typeof obj.memo !== 'string') {
+      throw new Error('memo must be a string');
+    }
+    item.memo = obj.memo;
+  }
+
+  return item;
+}
+
+/**
  * WindowConfigを検証
  */
 function validateWindowConfig(config: unknown): JsonLauncherItem['windowConfig'] {
@@ -542,6 +606,30 @@ export function createJsonWindowItem(
     type: 'window',
     displayName,
     windowTitle,
+    ...options,
+  };
+}
+
+/**
+ * 新しいJsonClipboardItemを作成（IDは自動生成）
+ */
+export function createJsonClipboardItem(
+  displayName: string,
+  dataFileRef: string,
+  formats: ClipboardFormat[],
+  savedAt: number,
+  options?: Omit<
+    JsonClipboardItem,
+    'id' | 'type' | 'displayName' | 'dataFileRef' | 'formats' | 'savedAt'
+  >
+): JsonClipboardItem {
+  return {
+    id: generateId(),
+    type: 'clipboard',
+    displayName,
+    dataFileRef,
+    formats,
+    savedAt,
     ...options,
   };
 }

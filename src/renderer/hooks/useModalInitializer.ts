@@ -59,7 +59,8 @@ export function useModalInitializer() {
         // EditableJsonItem
         item = convertEditableJsonItemToRegisterItem(editingItem, tabs);
         // EditableJsonItemの場合、カスタムアイコンはjsonItem.customIconに含まれている
-        if (editingItem.item.type === 'item' && 'customIcon' in editingItem.item) {
+        const itemType = editingItem.item.type;
+        if ((itemType === 'item' || itemType === 'clipboard') && 'customIcon' in editingItem.item) {
           customIconFileName = editingItem.item.customIcon;
         }
       } else {

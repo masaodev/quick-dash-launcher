@@ -9,6 +9,7 @@ import type {
 
 import { useCustomIcon } from '../hooks/useCustomIcon';
 import { useRegisterForm } from '../hooks/useRegisterForm';
+import { useToast } from '../hooks/useToast';
 import { debugLog, logError } from '../utils/debug';
 import { getPathsFromDropEvent } from '../utils/fileDropUtils';
 
@@ -20,6 +21,7 @@ import WindowConfigEditor from './WindowConfigEditor';
 import CustomIconEditor from './CustomIconEditor';
 import UrlConverterMenu from './UrlConverterMenu';
 import IconFetchButton from './IconFetchButton';
+import ClipboardItemEditor from './ClipboardItemEditor';
 import { Button } from './ui';
 import '../styles/components/UrlConverterMenu.css';
 
@@ -53,6 +55,9 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
 
   // モーダル内ドラッグ&ドロップの状態管理
   const [isDraggingOverModal, setIsDraggingOverModal] = useState(false);
+
+  // トースト通知フック
+  const { showError } = useToast();
 
   // カスタムアイコン管理フック
   const {
@@ -519,7 +524,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                           handleItemChange(
                             index,
                             'itemCategory',
-                            e.target.value as 'item' | 'dir' | 'group' | 'window'
+                            e.target.value as 'item' | 'dir' | 'group' | 'window' | 'clipboard'
                           )
                         }
                       >
@@ -527,6 +532,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                         <option value="dir">🗂️ フォルダ取込</option>
                         <option value="group">📦 グループ</option>
                         <option value="window">🪟 ウィンドウ操作</option>
+                        <option value="clipboard">📋 クリップボード</option>
                       </select>
                     </div>
 
@@ -541,7 +547,9 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                           placeholder={
                             item.itemCategory === 'group'
                               ? 'グループ名を入力'
-                              : 'アイテム表示名を入力'
+                              : item.itemCategory === 'clipboard'
+                                ? 'クリップボードアイテム名を入力'
+                                : 'アイテム表示名を入力'
                           }
                         />
                         {errors[index]?.displayName && (
@@ -550,42 +558,44 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                       </div>
                     )}
 
-                    {item.itemCategory !== 'group' && item.itemCategory !== 'window' && (
-                      <div className="form-group path-input-group">
-                        <label>パス:</label>
-                        <input
-                          type="text"
-                          value={item.path}
-                          readOnly={!!droppedPaths && droppedPaths.length > 0}
-                          className={
-                            errors[index]?.path
-                              ? 'error'
-                              : droppedPaths && droppedPaths.length > 0
-                                ? 'readonly'
-                                : ''
-                          }
-                          onChange={(e) => handleItemChange(index, 'path', e.target.value)}
-                          onBlur={() => handlePathBlur(index)}
-                          placeholder="ファイルパス、URL、またはカスタムURIを入力"
-                        />
-                        <IconFetchButton
-                          path={item.path}
-                          loading={iconFetchLoading[index] || false}
-                          onFetch={() => handleFetchIcon(index)}
-                          itemType={item.type}
-                        />
-                        <UrlConverterMenu
-                          url={item.path}
-                          onConvert={(convertedUrl) =>
-                            handleItemChange(index, 'path', convertedUrl)
-                          }
-                          itemType={item.type}
-                        />
-                        {errors[index]?.path && (
-                          <span className="error-message">{errors[index].path}</span>
-                        )}
-                      </div>
-                    )}
+                    {item.itemCategory !== 'group' &&
+                      item.itemCategory !== 'window' &&
+                      item.itemCategory !== 'clipboard' && (
+                        <div className="form-group path-input-group">
+                          <label>パス:</label>
+                          <input
+                            type="text"
+                            value={item.path}
+                            readOnly={!!droppedPaths && droppedPaths.length > 0}
+                            className={
+                              errors[index]?.path
+                                ? 'error'
+                                : droppedPaths && droppedPaths.length > 0
+                                  ? 'readonly'
+                                  : ''
+                            }
+                            onChange={(e) => handleItemChange(index, 'path', e.target.value)}
+                            onBlur={() => handlePathBlur(index)}
+                            placeholder="ファイルパス、URL、またはカスタムURIを入力"
+                          />
+                          <IconFetchButton
+                            path={item.path}
+                            loading={iconFetchLoading[index] || false}
+                            onFetch={() => handleFetchIcon(index)}
+                            itemType={item.type}
+                          />
+                          <UrlConverterMenu
+                            url={item.path}
+                            onConvert={(convertedUrl) =>
+                              handleItemChange(index, 'path', convertedUrl)
+                            }
+                            itemType={item.type}
+                          />
+                          {errors[index]?.path && (
+                            <span className="error-message">{errors[index].path}</span>
+                          )}
+                        </div>
+                      )}
 
                     {item.itemCategory === 'group' && (
                       <div className="form-group vertical-layout">
@@ -750,6 +760,56 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                       />
                     )}
 
+                    {/* クリップボードアイテムエディター */}
+                    {item.itemCategory === 'clipboard' && (
+                      <>
+                        <ClipboardItemEditor
+                          capturedData={
+                            item.clipboardDataRef
+                              ? {
+                                  dataFileRef: item.clipboardDataRef,
+                                  preview: item.clipboardPreview,
+                                  formats: item.clipboardFormats || [],
+                                  savedAt: item.clipboardSavedAt || Date.now(),
+                                }
+                              : undefined
+                          }
+                          onCapture={(result) => {
+                            // 一度にすべてのフィールドを更新（連続呼び出しによる状態上書きを防ぐ）
+                            const updates: Partial<RegisterItem> = {
+                              clipboardDataRef: result.dataFileRef,
+                              clipboardFormats: result.formats,
+                              clipboardSavedAt: result.savedAt,
+                              clipboardPreview: result.preview || '',
+                            };
+                            // 表示名が空の場合、自動設定
+                            if (!item.displayName) {
+                              const preview = result.preview || 'クリップボード';
+                              updates.displayName =
+                                preview.length > 30 ? preview.substring(0, 30) + '...' : preview;
+                            }
+                            updateItem(index, updates);
+                          }}
+                          onError={(error) => {
+                            debugLog('クリップボードキャプチャエラー:', error);
+                            showError(error);
+                          }}
+                        />
+                        {errors[index]?.path && (
+                          <span className="error-message">{errors[index].path}</span>
+                        )}
+                      </>
+                    )}
+
+                    {/* クリップボードの場合はカスタムアイコンも表示 */}
+                    {item.itemCategory === 'clipboard' && (
+                      <CustomIconEditor
+                        customIconPreview={customIconPreviews[index]}
+                        onSelectClick={() => openCustomIconPicker(index)}
+                        onDeleteClick={() => onCustomIconDeleted(index)}
+                      />
+                    )}
+
                     {/* メモ入力欄（全アイテムタイプ共通） */}
                     <div className="form-group">
                       <label>メモ:</label>
@@ -770,7 +830,8 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
               <div className="modal-actions">
                 {items.length > 0 &&
                   items[0].itemCategory !== 'dir' &&
-                  items[0].itemCategory !== 'group' && (
+                  items[0].itemCategory !== 'group' &&
+                  items[0].itemCategory !== 'clipboard' && (
                     <Button variant="primary" onClick={handleExecute}>
                       ⚡ 試しに実行
                     </Button>

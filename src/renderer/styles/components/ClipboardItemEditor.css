@@ -1,0 +1,168 @@
+/**
+ * クリップボードアイテムエディターのスタイル
+ */
+
+.clipboard-item-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.clipboard-item-editor .section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-sm);
+}
+
+.clipboard-item-editor .section-header h4 {
+  margin: 0;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+/* 現在のクリップボード状態 */
+.clipboard-current-state {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+}
+
+.clipboard-preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+/* 画像プレビュー */
+.clipboard-preview .image-preview {
+  display: flex;
+  justify-content: center;
+  padding: var(--spacing-sm);
+  background: var(--color-bg-tertiary);
+  border-radius: var(--radius-sm);
+}
+
+.clipboard-preview .image-preview img {
+  max-width: 100%;
+  max-height: 150px;
+  object-fit: contain;
+  border-radius: var(--radius-xs);
+}
+
+/* テキストプレビュー */
+.clipboard-preview .text-preview,
+.clipboard-captured-data .text-preview {
+  background: var(--color-bg-tertiary);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-sm);
+  max-height: 100px;
+  overflow: auto;
+}
+
+.clipboard-preview .text-preview pre,
+.clipboard-captured-data .text-preview pre {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family-mono);
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--color-text-secondary);
+}
+
+.clipboard-preview .no-preview {
+  color: var(--color-text-tertiary);
+  font-style: italic;
+  text-align: center;
+  padding: var(--spacing-sm);
+}
+
+/* フォーマット・サイズ情報 */
+.clipboard-preview .format-info,
+.clipboard-preview .size-info,
+.clipboard-captured-data .format-info,
+.clipboard-captured-data .saved-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+}
+
+.clipboard-preview .label,
+.clipboard-captured-data .label {
+  color: var(--color-text-tertiary);
+}
+
+.clipboard-preview .formats,
+.clipboard-captured-data .formats {
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+.clipboard-preview .size,
+.clipboard-captured-data .date {
+  color: var(--color-text-secondary);
+}
+
+/* キャプチャボタン */
+.clipboard-preview .capture-action,
+.clipboard-captured-data .recapture-action {
+  margin-top: var(--spacing-sm);
+}
+
+/* 空のクリップボード */
+.clipboard-empty {
+  text-align: center;
+  padding: var(--spacing-lg);
+  color: var(--color-text-secondary);
+}
+
+.clipboard-empty p {
+  margin: 0;
+}
+
+.clipboard-empty .hint {
+  margin-top: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-tertiary);
+}
+
+/* ローディング */
+.clipboard-loading {
+  text-align: center;
+  padding: var(--spacing-md);
+  color: var(--color-text-tertiary);
+}
+
+/* キャプチャ済みデータ */
+.clipboard-captured-data {
+  background: var(--color-bg-success-subtle);
+  border: 1px solid var(--color-border-success);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+}
+
+.captured-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+/* 注意事項 */
+.clipboard-notes {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  background: var(--color-bg-tertiary);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-sm);
+}
+
+.clipboard-notes p {
+  margin: 0;
+}
+
+.clipboard-notes strong {
+  color: var(--color-text-secondary);
+}

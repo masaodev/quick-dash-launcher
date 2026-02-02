@@ -5,6 +5,7 @@ import type {
   EditableJsonItem,
   DataFileTab,
   WindowConfig,
+  ClipboardFormat,
 } from '@common/types';
 import { detectItemType } from '@common/utils/itemTypeDetector';
 
@@ -109,9 +110,11 @@ export function useRegisterForm(
     value:
       | string
       | boolean
+      | number
       | RegisterItem['dirOptions']
       | WindowConfig
       | RegisterItem['windowOperationConfig']
+      | ClipboardFormat[]
   ) => {
     const newItems = [...items];
     if (field === 'dirOptions') {
@@ -123,6 +126,14 @@ export function useRegisterForm(
         ...newItems[index],
         windowOperationConfig: value as RegisterItem['windowOperationConfig'],
       };
+    } else if (field === 'clipboardDataRef') {
+      newItems[index] = { ...newItems[index], clipboardDataRef: value as string };
+    } else if (field === 'clipboardFormats') {
+      newItems[index] = { ...newItems[index], clipboardFormats: value as ClipboardFormat[] };
+    } else if (field === 'clipboardSavedAt') {
+      newItems[index] = { ...newItems[index], clipboardSavedAt: value as number };
+    } else if (field === 'clipboardPreview') {
+      newItems[index] = { ...newItems[index], clipboardPreview: value as string };
     } else if (field === 'groupItemNames') {
       const itemNames = (value as string)
         .split(',')
@@ -177,11 +188,28 @@ export function useRegisterForm(
         delete newItems[index].folderProcessing;
         delete newItems[index].dirOptions;
         delete newItems[index].groupItemNames;
+        delete newItems[index].clipboardDataRef;
+        delete newItems[index].clipboardFormats;
+        delete newItems[index].clipboardSavedAt;
+        delete newItems[index].clipboardPreview;
+      } else if (value === 'clipboard') {
+        // クリップボードアイテムの場合、他のフィールドをクリア
+        delete newItems[index].folderProcessing;
+        delete newItems[index].dirOptions;
+        delete newItems[index].groupItemNames;
+        delete newItems[index].windowOperationConfig;
+        // pathは不要なのでクリア
+        newItems[index].path = '';
+        newItems[index].type = 'clipboard';
       } else {
         delete newItems[index].folderProcessing;
         delete newItems[index].dirOptions;
         delete newItems[index].groupItemNames;
         delete newItems[index].windowOperationConfig;
+        delete newItems[index].clipboardDataRef;
+        delete newItems[index].clipboardFormats;
+        delete newItems[index].clipboardSavedAt;
+        delete newItems[index].clipboardPreview;
       }
     }
 
@@ -241,7 +269,12 @@ export function useRegisterForm(
               : 'アイテム表示名を入力してください';
       }
 
-      if (item.itemCategory !== 'group' && item.itemCategory !== 'window' && !item.path.trim()) {
+      if (
+        item.itemCategory !== 'group' &&
+        item.itemCategory !== 'window' &&
+        item.itemCategory !== 'clipboard' &&
+        !item.path.trim()
+      ) {
         newErrors[i].path = 'パスを入力してください';
       }
 
@@ -257,6 +290,12 @@ export function useRegisterForm(
         const hasProcessName = item.windowOperationConfig?.processName?.trim();
         if (!hasWindowTitle && !hasProcessName) {
           newErrors[i].displayName = 'ウィンドウタイトルまたはプロセス名を入力してください';
+        }
+      }
+
+      if (item.itemCategory === 'clipboard') {
+        if (!item.clipboardDataRef) {
+          newErrors[i].path = 'クリップボードをキャプチャしてください';
         }
       }
     }
@@ -341,7 +380,7 @@ export function useRegisterForm(
 
   const handleFetchIcon = async (index: number) => {
     const item = items[index];
-    if (!item.path.trim() || item.type === 'folder') {
+    if (!item.path.trim() || item.type === 'folder' || item.type === 'clipboard') {
       return;
     }
 
@@ -351,10 +390,11 @@ export function useRegisterForm(
     setLoadingAt(index, true);
 
     try {
+      const itemType = item.type as 'url' | 'file' | 'app' | 'customUri';
       const icon =
-        item.type === 'url'
+        itemType === 'url'
           ? await window.electronAPI.fetchFavicon(item.path)
-          : await window.electronAPI.getIconForItem(item.path, item.type);
+          : await window.electronAPI.getIconForItem(item.path, itemType);
 
       if (icon) {
         updateItem(index, { icon });

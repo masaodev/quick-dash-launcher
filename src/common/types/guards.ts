@@ -4,7 +4,7 @@
  * 型アサーションを安全に置き換えるための型ガード関数を提供します。
  */
 
-import type { AppItem, GroupItem, LauncherItem, WindowItem } from './launcher';
+import type { AppItem, GroupItem, LauncherItem, WindowItem, ClipboardItem } from './launcher';
 import type { WindowInfo } from './window';
 import type { WorkspaceItem, DragItemData } from './workspace';
 
@@ -39,7 +39,12 @@ export function isWindowInfo(item: AppItem): item is WindowInfo {
  * }
  */
 export function isLauncherItem(item: AppItem): item is LauncherItem {
-  return !isWindowInfo(item) && item.type !== 'group' && item.type !== 'window';
+  return (
+    !isWindowInfo(item) &&
+    item.type !== 'group' &&
+    item.type !== 'window' &&
+    item.type !== 'clipboard'
+  );
 }
 
 /**
@@ -74,6 +79,23 @@ export function isGroupItem(item: AppItem): item is GroupItem {
  */
 export function isWindowItem(item: AppItem): item is WindowItem {
   return !isWindowInfo(item) && item.type === 'window';
+}
+
+/**
+ * ClipboardItemかどうかを判定する型ガード
+ *
+ * @param item - 判定対象のAppItem
+ * @returns ClipboardItemの場合true
+ *
+ * @example
+ * const item: AppItem = getItem();
+ * if (isClipboardItem(item)) {
+ *   // ここではitemはClipboardItem型として扱われる
+ *   console.log(item.clipboardDataRef);
+ * }
+ */
+export function isClipboardItem(item: AppItem): item is ClipboardItem {
+  return !isWindowInfo(item) && item.type === 'clipboard';
 }
 
 /**

@@ -11,7 +11,7 @@ import type {
   VirtualDesktopInfo,
 } from '@common/types';
 import { IPC_CHANNELS } from '@common/ipcChannels';
-import { isGroupItem } from '@common/types/guards';
+import { isGroupItem, isClipboardItem } from '@common/types/guards';
 
 /**
  * AdminItemManagerContextMenu用のネイティブメニューハンドラーを設定
@@ -88,9 +88,12 @@ function setupLauncherContextMenuHandler(): void {
 
         const menu = new Menu();
         const isGroup = isGroupItem(item);
+        const isClipboard = isClipboardItem(item);
+        const isGroupOrClipboard = isGroup || isClipboard;
         const hasParentFolder =
-          !isGroup && 'type' in item && item.type !== 'url' && item.type !== 'customUri';
-        const isShortcut = !isGroup && 'originalPath' in item && item.originalPath !== undefined;
+          !isGroupOrClipboard && 'type' in item && item.type !== 'url' && item.type !== 'customUri';
+        const isShortcut =
+          !isGroupOrClipboard && 'originalPath' in item && item.originalPath !== undefined;
 
         // 編集
         menu.append(
@@ -102,8 +105,8 @@ function setupLauncherContextMenuHandler(): void {
           })
         );
 
-        // グループ以外は区切り線を追加
-        if (!isGroup) {
+        // グループとクリップボード以外は区切り線を追加
+        if (!isGroupOrClipboard) {
           menu.append(new MenuItem({ type: 'separator' }));
         }
 
@@ -117,8 +120,8 @@ function setupLauncherContextMenuHandler(): void {
           })
         );
 
-        // グループの場合はここで終了
-        if (isGroup) {
+        // グループまたはクリップボードの場合はここで終了（パス関連メニューは不要）
+        if (isGroupOrClipboard) {
           menu.popup({ window: senderWindow });
           return;
         }
@@ -214,8 +217,10 @@ function setupWorkspaceContextMenuHandler(): void {
 
         const menu = new Menu();
         const hasGroup = item.groupId !== undefined;
-        const hasParentFolder = item.type !== 'url' && item.type !== 'customUri';
-        const isShortcut = item.originalPath !== undefined;
+        const isClipboardType = item.type === 'clipboard';
+        const hasParentFolder =
+          item.type !== 'url' && item.type !== 'customUri' && !isClipboardType;
+        const isShortcut = item.originalPath !== undefined && !isClipboardType;
 
         // 表示名を変更
         menu.append(
@@ -239,17 +244,19 @@ function setupWorkspaceContextMenuHandler(): void {
 
         menu.append(new MenuItem({ type: 'separator' }));
 
-        // パスをコピー
-        menu.append(
-          new MenuItem({
-            label: '📋 パスをコピー',
-            click: () => {
-              event.sender.send(IPC_CHANNELS.EVENT_WORKSPACE_MENU_COPY_PATH, item.id);
-            },
-          })
-        );
+        // パスをコピー（クリップボード以外）
+        if (!isClipboardType) {
+          menu.append(
+            new MenuItem({
+              label: '📋 パスをコピー',
+              click: () => {
+                event.sender.send(IPC_CHANNELS.EVENT_WORKSPACE_MENU_COPY_PATH, item.id);
+              },
+            })
+          );
+        }
 
-        // 親フォルダー関連（URLとcustomURI以外）
+        // 親フォルダー関連（URLとcustomURIとクリップボード以外）
         if (hasParentFolder) {
           menu.append(
             new MenuItem({

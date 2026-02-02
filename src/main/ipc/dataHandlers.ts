@@ -17,13 +17,15 @@ import {
   LauncherItem,
   GroupItem,
   WindowItem,
+  ClipboardItem,
   AppItem,
   isJsonLauncherItem,
   isJsonDirItem,
   isJsonGroupItem,
   isJsonWindowItem,
+  isJsonClipboardItem,
 } from '@common/types';
-import type { JsonItem, JsonDirOptions, JsonWindowItem } from '@common/types';
+import type { JsonItem, JsonDirOptions, JsonWindowItem, JsonClipboardItem } from '@common/types';
 import type { RegisterItem } from '@common/types/register';
 import { isWindowInfo, isWindowItem } from '@common/types/guards';
 import { IPC_CHANNELS } from '@common/ipcChannels';
@@ -214,6 +216,23 @@ async function convertJsonItemToAppItems(
       memo: jsonItem.memo,
     };
     items.push(windowItem);
+  } else if (isJsonClipboardItem(jsonItem)) {
+    // クリップボードアイテム
+    const clipboardItem: ClipboardItem = {
+      type: 'clipboard',
+      displayName: jsonItem.displayName,
+      clipboardDataRef: jsonItem.dataFileRef,
+      savedAt: jsonItem.savedAt,
+      preview: jsonItem.preview,
+      formats: jsonItem.formats,
+      customIcon: jsonItem.customIcon,
+      sourceFile,
+      lineNumber: itemIndex + 1,
+      id: jsonItem.id,
+      isEdited: false,
+      memo: jsonItem.memo,
+    };
+    items.push(clipboardItem);
   }
 
   return items;
@@ -695,6 +714,27 @@ function convertRegisterItemToJsonItem(item: RegisterItem): JsonItem {
     if (item.memo) windowItem.memo = item.memo;
 
     return windowItem;
+  }
+
+  if (item.itemCategory === 'clipboard') {
+    if (!item.clipboardDataRef) {
+      throw new Error('clipboardDataRef is required for clipboard items');
+    }
+
+    const clipboardItem: JsonClipboardItem = {
+      id,
+      type: 'clipboard',
+      displayName: item.displayName,
+      dataFileRef: item.clipboardDataRef,
+      savedAt: item.clipboardSavedAt || Date.now(),
+      formats: item.clipboardFormats || [],
+      preview: item.clipboardPreview,
+    };
+
+    if (item.customIcon) clipboardItem.customIcon = item.customIcon;
+    if (item.memo) clipboardItem.memo = item.memo;
+
+    return clipboardItem;
   }
 
   // 通常アイテム

@@ -6,6 +6,7 @@
  */
 
 import type { WindowConfig } from './launcher';
+import type { ClipboardFormat } from './clipboard';
 
 // ============================================================
 // JSON ファイル全体の型
@@ -28,7 +29,12 @@ export interface JsonDataFile {
 /**
  * JSONデータファイル内のアイテム型（Union型）
  */
-export type JsonItem = JsonLauncherItem | JsonDirItem | JsonGroupItem | JsonWindowItem;
+export type JsonItem =
+  | JsonLauncherItem
+  | JsonDirItem
+  | JsonGroupItem
+  | JsonWindowItem
+  | JsonClipboardItem;
 
 // ============================================================
 // 共通フィールド
@@ -181,6 +187,31 @@ export interface JsonWindowItem extends JsonItemBase {
 }
 
 // ============================================================
+// クリップボードアイテム (type: "clipboard")
+// ============================================================
+
+/**
+ * クリップボードアイテム
+ * クリップボードの内容を保存し、後から復元できる
+ */
+export interface JsonClipboardItem extends JsonItemBase {
+  /** アイテムタイプ */
+  type: 'clipboard';
+  /** アイテムの表示名 */
+  displayName: string;
+  /** クリップボードデータファイルへの参照（clipboard-data/{id}.json） */
+  dataFileRef: string;
+  /** 保存日時（timestamp） */
+  savedAt: number;
+  /** プレビューテキスト（最初の100文字程度） */
+  preview?: string;
+  /** 保存されているフォーマット */
+  formats: ClipboardFormat[];
+  /** カスタムアイコンファイル名（オプション） */
+  customIcon?: string;
+}
+
+// ============================================================
 // 型ガード関数
 // ============================================================
 
@@ -210,6 +241,13 @@ export function isJsonGroupItem(item: JsonItem): item is JsonGroupItem {
  */
 export function isJsonWindowItem(item: JsonItem): item is JsonWindowItem {
   return item.type === 'window';
+}
+
+/**
+ * JsonClipboardItemかどうかを判定
+ */
+export function isJsonClipboardItem(item: JsonItem): item is JsonClipboardItem {
+  return item.type === 'clipboard';
 }
 
 // ============================================================

@@ -1,5 +1,12 @@
-import type { AppItem, WindowInfo, GroupItem, WindowItem, LauncherItem } from '@common/types';
-import { isWindowInfo, isGroupItem, isWindowItem } from '@common/types/guards';
+import type {
+  AppItem,
+  WindowInfo,
+  GroupItem,
+  WindowItem,
+  LauncherItem,
+  ClipboardItem,
+} from '@common/types';
+import { isWindowInfo, isGroupItem, isWindowItem, isClipboardItem } from '@common/types/guards';
 import { PathUtils } from '@common/utils/pathUtils';
 
 /**
@@ -131,6 +138,43 @@ function getLauncherItemTooltip(launcherItem: LauncherItem): string {
 }
 
 /**
+ * ClipboardItem用のツールチップテキストを生成
+ */
+function getClipboardItemTooltip(clipboardItem: ClipboardItem): string {
+  const lines: string[] = [];
+
+  // フォーマット情報
+  const formatLabels: Record<string, string> = {
+    text: 'テキスト',
+    html: 'HTML',
+    rtf: 'RTF',
+    image: '画像',
+    file: 'ファイル',
+  };
+  const formats = (clipboardItem.formats || []).map((f) => formatLabels[f] || f).join(', ');
+  lines.push(`フォーマット: ${formats}`);
+
+  // プレビュー
+  if (clipboardItem.preview) {
+    const preview =
+      clipboardItem.preview.length > 50
+        ? clipboardItem.preview.substring(0, 50) + '...'
+        : clipboardItem.preview;
+    lines.push(`プレビュー: ${preview}`);
+  }
+
+  // 保存日時
+  if (clipboardItem.savedAt) {
+    const date = new Date(clipboardItem.savedAt).toLocaleString('ja-JP');
+    lines.push(`保存日時: ${date}`);
+  }
+
+  appendMetaInfo(lines, clipboardItem.sourceFile, clipboardItem.lineNumber);
+
+  return lines.join('\n');
+}
+
+/**
  * AppItem用のツールチップテキストを生成
  * アイテムタイプに応じて適切な生成関数を呼び出す
  */
@@ -147,6 +191,10 @@ export function getTooltipText(item: AppItem): string {
 
   if (isWindowItem(item)) {
     return getWindowItemTooltip(item);
+  }
+
+  if (isClipboardItem(item)) {
+    return getClipboardItemTooltip(item);
   }
 
   return getLauncherItemTooltip(item as LauncherItem);

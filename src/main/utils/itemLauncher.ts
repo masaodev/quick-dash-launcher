@@ -10,18 +10,22 @@ import { shell } from 'electron';
 import { Logger } from 'pino';
 import { parseArgs } from '@common/utils/argsParser';
 
+import { ClipboardService } from '../services/clipboardService.js';
+
 /**
  * 起動可能なアイテムの最小インターフェース
  */
 export interface LaunchableItem {
   /** アイテムタイプ */
-  type: 'url' | 'file' | 'folder' | 'app' | 'customUri';
+  type: 'url' | 'file' | 'folder' | 'app' | 'customUri' | 'clipboard';
   /** パス（URL、ファイルパス、アプリケーションパスなど） */
   path: string;
   /** コマンドライン引数（オプション） */
   args?: string;
   /** アイテム表示名（ログ出力用） */
   displayName?: string;
+  /** クリップボードデータファイルへの参照（クリップボードアイテムのみ） */
+  clipboardDataRef?: string;
 }
 
 /**
@@ -83,6 +87,20 @@ export async function launchItem(item: LaunchableItem, logger: Logger): Promise<
     } else if (item.type === 'customUri') {
       // カスタムURIスキーマ（obsidian://, vscode://など）を開く
       await shell.openExternal(item.path);
+    } else if (item.type === 'clipboard') {
+      // クリップボードアイテムの場合、保存したクリップボードを復元
+      if (item.clipboardDataRef) {
+        const clipboardService = ClipboardService.getInstance();
+        const result = await clipboardService.restoreClipboard(item.clipboardDataRef);
+        if (!result.success) {
+          logger.error(
+            { error: result.error, dataRef: item.clipboardDataRef, name: item.displayName },
+            'クリップボードの復元に失敗しました'
+          );
+        }
+      } else {
+        logger.warn({ name: item.displayName }, 'クリップボードデータ参照がありません');
+      }
     } else {
       // 未知のアイテムタイプ
       logger.warn(

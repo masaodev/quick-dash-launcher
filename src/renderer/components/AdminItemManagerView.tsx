@@ -320,11 +320,12 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
 
           // 現在のデータファイルのアイテムのみを整列
           const sortedItems = [...currentDataFileItems].sort((a, b) => {
-            const typeOrder = {
+            const typeOrder: Record<string, number> = {
               dir: 0,
               group: 1,
               window: 2,
               item: 3,
+              clipboard: 4,
             };
             const typeA = typeOrder[a.item.type] ?? 99;
             const typeB = typeOrder[b.item.type] ?? 99;

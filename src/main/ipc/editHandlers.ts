@@ -1,12 +1,13 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-import { LauncherItem, JsonLauncherItem } from '@common/types';
+import { LauncherItem, JsonLauncherItem, isJsonClipboardItem } from '@common/types';
 import { parseJsonDataFile, serializeJsonDataFile } from '@common/utils/jsonParser';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { createSafeIpcHandler } from '../utils/ipcWrapper';
 import { BackupService } from '../services/backupService.js';
+import { ClipboardService } from '../services/clipboardService.js';
 
 import { notifyDataChanged } from './dataHandlers.js';
 
@@ -118,6 +119,14 @@ export async function deleteItemsById(
     if (hasTargetItems) {
       // バックアップ作成
       await createBackup(configFolder, fileName);
+
+      // クリップボードアイテムの場合、データファイルも削除
+      const clipboardService = ClipboardService.getInstance();
+      for (const item of jsonData.items) {
+        if (idsToDelete.has(item.id) && isJsonClipboardItem(item)) {
+          await clipboardService.deleteClipboardData(item.dataFileRef);
+        }
+      }
 
       // 削除対象以外のアイテムをフィルタリング
       const newItems = jsonData.items.filter((item) => !idsToDelete.has(item.id));

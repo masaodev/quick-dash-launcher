@@ -112,6 +112,19 @@ export function validateEditableItem(item: JsonItem): ValidationResult {
       return { isValid: true };
     }
 
+    case 'clipboard': {
+      if (!item.displayName || !item.displayName.trim()) {
+        return { isValid: false, error: 'clipboardのdisplayNameが空です' };
+      }
+      if (!item.dataFileRef || !item.dataFileRef.trim()) {
+        return { isValid: false, error: 'clipboardのdataFileRefが空です' };
+      }
+      if (!item.formats || item.formats.length === 0) {
+        return { isValid: false, error: 'clipboardのformatsが空です' };
+      }
+      return { isValid: true };
+    }
+
     default:
       return { isValid: false, error: `未知のアイテムタイプ: ${(item as JsonItem).type}` };
   }

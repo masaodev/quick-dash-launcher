@@ -6,7 +6,14 @@
  */
 
 // ランチャー関連の型
-export type { WindowConfig, LauncherItem, GroupItem, WindowItem, AppItem } from './launcher';
+export type {
+  WindowConfig,
+  LauncherItem,
+  GroupItem,
+  WindowItem,
+  ClipboardItem,
+  AppItem,
+} from './launcher';
 
 // ワークスペース関連の型
 export type {
@@ -31,6 +38,7 @@ export type {
   JsonDirOptions,
   JsonGroupItem,
   JsonWindowItem,
+  JsonClipboardItem,
   DirOptionsForProcessing,
 } from './json-data';
 export {
@@ -38,10 +46,27 @@ export {
   isJsonDirItem,
   isJsonGroupItem,
   isJsonWindowItem,
+  isJsonClipboardItem,
   JSON_DATA_VERSION,
   JSON_ID_LENGTH,
   DIR_OPTIONS_DEFAULTS,
 } from './json-data';
+
+// クリップボード関連の型
+export type {
+  SerializableClipboard,
+  ClipboardFormat,
+  ClipboardCaptureResult,
+  ClipboardRestoreResult,
+  ClipboardPreview,
+  CurrentClipboardState,
+} from './clipboard';
+export {
+  MAX_IMAGE_SIZE_BYTES,
+  PREVIEW_MAX_LENGTH,
+  THUMBNAIL_MAX_WIDTH,
+  THUMBNAIL_MAX_HEIGHT,
+} from './clipboard';
 
 // 設定関連の型
 export type {
@@ -95,6 +120,7 @@ export {
   isLauncherItem,
   isGroupItem,
   isWindowItem,
+  isClipboardItem,
   isWorkspaceItem,
   isDragItemData,
 } from './guards';

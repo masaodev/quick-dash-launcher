@@ -75,6 +75,16 @@ export class PathManager {
     return path.join(this.getConfigFolder(), 'backup');
   }
 
+  /** クリップボードデータフォルダのパスを取得 */
+  static getClipboardDataFolder(): string {
+    return path.join(this.getConfigFolder(), 'clipboard-data');
+  }
+
+  /** クリップボードデータファイルのパスを取得 */
+  static getClipboardDataFilePath(id: string): string {
+    return path.join(this.getClipboardDataFolder(), `${id}.json`);
+  }
+
   // ============================================================
   // ファイルパス取得
   // ============================================================
@@ -147,6 +157,7 @@ export class PathManager {
       this.getFaviconsFolder(),
       this.getCustomIconsFolder(),
       this.getBackupFolder(),
+      this.getClipboardDataFolder(),
     ];
 
     for (const dir of dirs) {

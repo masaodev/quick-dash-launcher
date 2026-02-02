@@ -1,4 +1,5 @@
 import { LauncherItem } from './launcher';
+import type { ClipboardFormat } from './clipboard';
 
 /**
  * ワークスペースのグループ
@@ -34,7 +35,7 @@ export interface WorkspaceItem {
   /** アイテムのパス、URL、またはコマンド */
   path: string;
   /** アイテムのタイプ */
-  type: 'url' | 'file' | 'folder' | 'app' | 'customUri' | 'windowOperation' | 'group';
+  type: 'url' | 'file' | 'folder' | 'app' | 'customUri' | 'windowOperation' | 'group' | 'clipboard';
   /** アイテムのアイコン（実行時にキャッシュから取得、ファイルには保存しない） */
   icon?: string;
   /** カスタムアイコンのファイル名（オプション） */
@@ -75,6 +76,12 @@ export interface WorkspaceItem {
   itemNames?: string[];
   /** 自由記述メモ（オプション） */
   memo?: string;
+  /** クリップボードデータファイルへの参照（clipboard専用） */
+  clipboardDataRef?: string;
+  /** クリップボードの保存フォーマット（clipboard専用） */
+  clipboardFormats?: ClipboardFormat[];
+  /** クリップボードの保存日時（clipboard専用） */
+  clipboardSavedAt?: number;
 }
 
 /**
@@ -89,7 +96,15 @@ export interface ExecutionHistoryItem {
   /** アイテムのパス、URL、またはコマンド */
   itemPath: string;
   /** アイテムのタイプ */
-  itemType: 'url' | 'file' | 'folder' | 'app' | 'customUri' | 'group' | 'windowOperation';
+  itemType:
+    | 'url'
+    | 'file'
+    | 'folder'
+    | 'app'
+    | 'customUri'
+    | 'group'
+    | 'windowOperation'
+    | 'clipboard';
   /** アイテムのアイコン（実行時にキャッシュから取得、ファイルには保存しない） */
   icon?: string;
   /** カスタムアイコンのファイル名（オプション） */
@@ -118,6 +133,10 @@ export interface ExecutionHistoryItem {
   pinToAllDesktops?: boolean;
   /** グループ内のアイテム名リスト（group専用） */
   itemNames?: string[];
+  /** クリップボードデータファイルへの参照（clipboard専用） */
+  clipboardDataRef?: string;
+  /** クリップボードの保存フォーマット（clipboard専用） */
+  clipboardFormats?: ClipboardFormat[];
 }
 
 /**
