@@ -22,9 +22,31 @@ export type WindowPositionMode =
  * ワークスペースの表示位置モードを表す列挙型
  */
 export type WorkspacePositionMode =
-  | 'primaryLeft' // プライマリディスプレイの左端に配置
-  | 'primaryRight' // プライマリディスプレイの右端に配置
+  | 'primaryLeft' // @deprecated 後方互換性のため残存。displayLeftに移行
+  | 'primaryRight' // @deprecated 後方互換性のため残存。displayRightに移行
+  | 'displayLeft' // 指定ディスプレイの左端に配置
+  | 'displayRight' // 指定ディスプレイの右端に配置（デフォルト）
   | 'fixed'; // 固定位置に表示（手動で移動した位置を記憶）
+
+/**
+ * ディスプレイ情報を表すインターフェース
+ */
+export interface DisplayInfo {
+  /** ディスプレイインデックス（0始まり） */
+  index: number;
+  /** 表示名（例: "ディスプレイ 1 (プライマリ)"） */
+  label: string;
+  /** プライマリディスプレイかどうか */
+  isPrimary: boolean;
+  /** 作業領域の幅 */
+  width: number;
+  /** 作業領域の高さ */
+  height: number;
+  /** 作業領域のX座標 */
+  x: number;
+  /** 作業領域のY座標 */
+  y: number;
+}
 
 /**
  * アプリケーションの設定を管理するインターフェース
@@ -77,8 +99,10 @@ export interface AppSettings {
   workspaceBackgroundTransparent: boolean;
   /** メイン画面表示時にワークスペースを自動表示（デフォルト: false） */
   autoShowWorkspace: boolean;
-  /** ワークスペースウィンドウの表示位置モード（デフォルト: 'primaryRight'） */
+  /** ワークスペースウィンドウの表示位置モード（デフォルト: 'displayRight'） */
   workspacePositionMode: WorkspacePositionMode;
+  /** ワークスペースのターゲットディスプレイ番号（displayLeft/displayRight時に使用、デフォルト: 0） */
+  workspaceTargetDisplayIndex: number;
   /** 固定位置のX座標（workspacePositionMode='fixed'時に使用、デフォルト: 0） */
   workspacePositionX: number;
   /** 固定位置のY座標（workspacePositionMode='fixed'時に使用、デフォルト: 0） */

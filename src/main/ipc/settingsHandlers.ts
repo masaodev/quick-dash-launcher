@@ -1,5 +1,5 @@
-import { ipcMain, BrowserWindow } from 'electron';
-import type { AppSettings } from '@common/types';
+import { ipcMain, BrowserWindow, screen } from 'electron';
+import type { AppSettings, DisplayInfo } from '@common/types';
 import logger from '@common/logger';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
@@ -71,6 +71,7 @@ async function applySingleSettingEffect(
   // workspacePositionMode等の設定の場合
   if (
     key === 'workspacePositionMode' ||
+    key === 'workspaceTargetDisplayIndex' ||
     key === 'workspacePositionX' ||
     key === 'workspacePositionY'
   ) {
@@ -106,6 +107,7 @@ async function applyMultipleSettingsEffects(
   // workspacePositionMode設定
   if (
     settings.workspacePositionMode !== undefined ||
+    settings.workspaceTargetDisplayIndex !== undefined ||
     settings.workspacePositionX !== undefined ||
     settings.workspacePositionY !== undefined
   ) {
@@ -287,6 +289,33 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
       }
     }
   );
+
+  // ディスプレイ一覧を取得
+  ipcMain.handle(IPC_CHANNELS.SETTINGS_GET_DISPLAYS, async () => {
+    try {
+      const displays = screen.getAllDisplays();
+      const primaryDisplay = screen.getPrimaryDisplay();
+
+      const displayInfos: DisplayInfo[] = displays.map((display, index) => {
+        const isPrimary = display.id === primaryDisplay.id;
+        return {
+          index,
+          label: `ディスプレイ ${index + 1}${isPrimary ? ' (プライマリ)' : ''}`,
+          isPrimary,
+          width: display.workArea.width,
+          height: display.workArea.height,
+          x: display.workArea.x,
+          y: display.workArea.y,
+        };
+      });
+
+      logger.info({ displayCount: displayInfos.length }, 'ディスプレイ一覧を取得');
+      return displayInfos;
+    } catch (error) {
+      logger.error({ error }, 'ディスプレイ一覧の取得に失敗');
+      throw error;
+    }
+  });
 
   logger.info('Settings IPC handlers registered');
 }

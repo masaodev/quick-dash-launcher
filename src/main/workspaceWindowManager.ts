@@ -1,6 +1,6 @@
 import * as path from 'path';
 
-import { BrowserWindow, screen } from 'electron';
+import { BrowserWindow, Display, screen } from 'electron';
 import { windowLogger } from '@common/logger';
 import type { WorkspacePositionMode } from '@common/types';
 
@@ -288,39 +288,72 @@ export function setWorkspaceModalMode(
 }
 
 /**
+ * 指定インデックスのディスプレイを取得する
+ * 範囲外の場合はプライマリディスプレイを返す
+ */
+function getDisplayByIndex(displayIndex: number): Display {
+  const displays = screen.getAllDisplays();
+  if (displayIndex >= 0 && displayIndex < displays.length) {
+    return displays[displayIndex];
+  }
+  // 範囲外の場合はプライマリディスプレイにフォールバック
+  windowLogger.warn(
+    `指定ディスプレイ(${displayIndex})が範囲外のため、プライマリディスプレイを使用`
+  );
+  return screen.getPrimaryDisplay();
+}
+
+/**
+ * プライマリディスプレイのインデックスを取得する
+ */
+function getPrimaryDisplayIndex(): number {
+  const displays = screen.getAllDisplays();
+  const primaryDisplay = screen.getPrimaryDisplay();
+  return displays.findIndex((d) => d.id === primaryDisplay.id);
+}
+
+/**
  * ワークスペースウィンドウを指定されたモードに応じた位置に配置する
- * @param mode ワークスペース表示位置モード ('primaryLeft' | 'primaryRight' | 'fixed')
+ * @param mode ワークスペース表示位置モード ('displayLeft' | 'displayRight' | 'fixed')
  */
 export async function setWorkspacePosition(mode?: WorkspacePositionMode): Promise<void> {
   if (!workspaceWindow || workspaceWindow.isDestroyed()) return;
 
   const settingsService = await SettingsService.getInstance();
   const positionMode = mode || (await settingsService.get('workspacePositionMode'));
-
-  const { width: screenWidth, height: screenHeight } = screen.getPrimaryDisplay().workAreaSize;
   const bounds = workspaceWindow.getBounds();
 
   switch (positionMode) {
+    // 後方互換性: primaryLeft/primaryRight はプライマリディスプレイを使用
     case 'primaryLeft':
-      workspaceWindow.setPosition(0, 0);
-      workspaceWindow.setSize(bounds.width, screenHeight);
-      windowLogger.info('ワークスペースをプライマリディスプレイの左端に配置');
-      break;
-
     case 'primaryRight':
-      workspaceWindow.setPosition(screenWidth - bounds.width, 0);
-      workspaceWindow.setSize(bounds.width, screenHeight);
-      windowLogger.info('ワークスペースをプライマリディスプレイの右端に配置');
+    case 'displayLeft':
+    case 'displayRight': {
+      // primaryLeft/primaryRight の場合はプライマリディスプレイのインデックスを使用
+      const isPrimaryMode = positionMode === 'primaryLeft' || positionMode === 'primaryRight';
+      const targetIndex = isPrimaryMode
+        ? getPrimaryDisplayIndex()
+        : await settingsService.get('workspaceTargetDisplayIndex');
+      const targetDisplay = getDisplayByIndex(targetIndex);
+      const workArea = targetDisplay.workArea;
+      const isLeft = positionMode === 'primaryLeft' || positionMode === 'displayLeft';
+      const x = isLeft ? workArea.x : workArea.x + workArea.width - bounds.width;
+      workspaceWindow.setPosition(x, workArea.y);
+      workspaceWindow.setSize(bounds.width, workArea.height);
+      const side = isLeft ? '左' : '右';
+      windowLogger.info(`ワークスペースをディスプレイ${targetIndex + 1}の${side}端に配置`);
       break;
+    }
 
     case 'fixed': {
       const savedX = await settingsService.get('workspacePositionX');
       const savedY = await settingsService.get('workspacePositionY');
+      const primaryWorkArea = screen.getPrimaryDisplay().workArea;
 
       // 初回起動時（0,0）は右端に配置
       if (savedX === 0 && savedY === 0) {
-        workspaceWindow.setPosition(screenWidth - bounds.width, 0);
-        workspaceWindow.setSize(bounds.width, screenHeight);
+        workspaceWindow.setPosition(primaryWorkArea.width - bounds.width, 0);
+        workspaceWindow.setSize(bounds.width, primaryWorkArea.height);
         const newBounds = workspaceWindow.getBounds();
         await settingsService.set('workspacePositionX', newBounds.x);
         await settingsService.set('workspacePositionY', newBounds.y);
@@ -341,7 +374,7 @@ export async function setWorkspacePosition(mode?: WorkspacePositionMode): Promis
         if (!isOnScreen) {
           // 画面外の場合は右端にフォールバック
           windowLogger.warn('保存位置が画面外のため右端に配置');
-          workspaceWindow.setPosition(screenWidth - bounds.width, 0);
+          workspaceWindow.setPosition(primaryWorkArea.width - bounds.width, 0);
           // 新しい位置を保存
           const newBounds = workspaceWindow.getBounds();
           await settingsService.set('workspacePositionX', newBounds.x);

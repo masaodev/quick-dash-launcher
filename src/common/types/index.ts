@@ -74,6 +74,7 @@ export type {
   WindowPinMode,
   WindowPositionMode,
   WorkspacePositionMode,
+  DisplayInfo,
 } from './settings';
 
 // アイコン関連の型

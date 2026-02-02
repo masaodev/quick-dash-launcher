@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { AppSettings, WindowPositionMode, WorkspacePositionMode } from '@common/types';
+import { AppSettings, WindowPositionMode, WorkspacePositionMode, DisplayInfo } from '@common/types';
 
 import { useDialogManager } from '../hooks/useDialogManager';
 import { useSettingsManager } from '../hooks/useSettingsManager';
@@ -18,11 +18,25 @@ interface SettingsTabProps {
 const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
   const [editedSettings, setEditedSettings] = useState<AppSettings>(settings);
   const [selectedCategory, setSelectedCategory] = useState<string>('basic');
+  const [displays, setDisplays] = useState<DisplayInfo[]>([]);
 
   // settingsプロパティが変更されたときにeditedSettingsを更新
   useEffect(() => {
     setEditedSettings(settings);
   }, [settings]);
+
+  // ディスプレイ一覧を取得
+  useEffect(() => {
+    const loadDisplays = async () => {
+      try {
+        const displayInfos = await window.electronAPI.getDisplays();
+        setDisplays(displayInfos);
+      } catch (error) {
+        console.error('ディスプレイ一覧の取得に失敗:', error);
+      }
+    };
+    loadDisplays();
+  }, []);
 
   // カスタムフック: ダイアログ管理
   const {
@@ -118,6 +132,18 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
     const allFiles = tabs.flatMap((tab) => tab.files);
     return Array.from(new Set(allFiles));
   }, [editedSettings.dataFileTabs]);
+
+  // ディスプレイ端配置モードかどうか（後方互換性のためprimaryLeft/primaryRightも含む）
+  const isDisplayEdgeMode =
+    editedSettings.workspacePositionMode === 'displayLeft' ||
+    editedSettings.workspacePositionMode === 'displayRight' ||
+    editedSettings.workspacePositionMode === 'primaryLeft' ||
+    editedSettings.workspacePositionMode === 'primaryRight';
+
+  // 左端配置かどうか（後方互換性のためprimaryLeftも含む）
+  const isLeftEdge =
+    editedSettings.workspacePositionMode === 'displayLeft' ||
+    editedSettings.workspacePositionMode === 'primaryLeft';
 
   // カテゴリ切り替えハンドラ
   const handleCategoryChange = useCallback(
@@ -453,44 +479,67 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                       <input
                         type="radio"
                         name="workspacePositionMode"
-                        value="primaryLeft"
-                        checked={editedSettings.workspacePositionMode === 'primaryLeft'}
-                        onChange={(e) =>
-                          handleSettingChange(
-                            'workspacePositionMode',
-                            e.target.value as WorkspacePositionMode
-                          )
+                        value="displayEdge"
+                        checked={isDisplayEdgeMode}
+                        onChange={() =>
+                          handleSettingChange('workspacePositionMode', 'displayRight')
                         }
                         disabled={isLoading}
                       />
                       <div className="option-content">
-                        <div className="option-title">プライマリディスプレイの左端</div>
+                        <div className="option-title">ディスプレイの端に配置（デフォルト）</div>
                         <div className="option-description">
-                          プライマリモニターの左端にワークスペースを固定配置します
+                          選択したディスプレイの左端または右端にワークスペースを配置します
                         </div>
-                      </div>
-                    </label>
-                    <label className="position-option">
-                      <input
-                        type="radio"
-                        name="workspacePositionMode"
-                        value="primaryRight"
-                        checked={editedSettings.workspacePositionMode === 'primaryRight'}
-                        onChange={(e) =>
-                          handleSettingChange(
-                            'workspacePositionMode',
-                            e.target.value as WorkspacePositionMode
-                          )
-                        }
-                        disabled={isLoading}
-                      />
-                      <div className="option-content">
-                        <div className="option-title">
-                          プライマリディスプレイの右端（デフォルト）
-                        </div>
-                        <div className="option-description">
-                          プライマリモニターの右端にワークスペースを固定配置します（既存の動作）
-                        </div>
+                        {isDisplayEdgeMode && (
+                          <div className="display-edge-options">
+                            <select
+                              className="display-select"
+                              value={editedSettings.workspaceTargetDisplayIndex}
+                              onChange={(e) =>
+                                handleSettingChange(
+                                  'workspaceTargetDisplayIndex',
+                                  parseInt(e.target.value)
+                                )
+                              }
+                              disabled={isLoading}
+                            >
+                              {displays.map((display) => (
+                                <option key={display.index} value={display.index}>
+                                  {display.label}
+                                </option>
+                              ))}
+                            </select>
+                            <div className="edge-radio-group">
+                              <label className="edge-option">
+                                <input
+                                  type="radio"
+                                  name="displayEdgeSide"
+                                  value="displayLeft"
+                                  checked={isLeftEdge}
+                                  onChange={() =>
+                                    handleSettingChange('workspacePositionMode', 'displayLeft')
+                                  }
+                                  disabled={isLoading}
+                                />
+                                左端
+                              </label>
+                              <label className="edge-option">
+                                <input
+                                  type="radio"
+                                  name="displayEdgeSide"
+                                  value="displayRight"
+                                  checked={!isLeftEdge}
+                                  onChange={() =>
+                                    handleSettingChange('workspacePositionMode', 'displayRight')
+                                  }
+                                  disabled={isLoading}
+                                />
+                                右端
+                              </label>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </label>
                     <label className="position-option">
