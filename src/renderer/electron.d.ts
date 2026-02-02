@@ -22,6 +22,7 @@ import {
   ClipboardRestoreResult,
   ClipboardPreview,
   CurrentClipboardState,
+  DisplayInfo,
 } from '@common/types';
 import type { EditableJsonItem, LoadEditableItemsResult } from '@common/types/editableItem';
 
@@ -81,6 +82,7 @@ export interface ElectronAPI {
   validateHotkey: (hotkey: string) => Promise<{ isValid: boolean; reason?: string }>;
   changeHotkey: (newHotkey: string) => Promise<boolean>;
   changeItemSearchHotkey: (newHotkey: string) => Promise<boolean>;
+  getDisplays: () => Promise<DisplayInfo[]>;
   isFirstLaunch: () => Promise<boolean>;
   updateItemById: (request: { id: string; newItem: LauncherItem }) => Promise<{ success: boolean }>;
   deleteItemsById: (requests: { id: string }[]) => Promise<{ success: boolean }>;

@@ -58,7 +58,8 @@ export class SettingsService {
     workspaceOpacity: 100, // ワークスペースウィンドウの不透明度（デフォルト: 100%）
     workspaceBackgroundTransparent: false, // ワークスペースウィンドウの背景のみを透過（デフォルト: false）
     autoShowWorkspace: false, // メイン画面表示時にワークスペースを自動表示（デフォルト: false）
-    workspacePositionMode: 'primaryRight', // ワークスペース表示位置モード（デフォルト: 右端）
+    workspacePositionMode: 'displayRight', // ワークスペース表示位置モード（デフォルト: 右端）
+    workspaceTargetDisplayIndex: 0, // ワークスペースのターゲットディスプレイ番号（デフォルト: 0）
     workspacePositionX: 0, // ワークスペース固定位置のX座標
     workspacePositionY: 0, // ワークスペース固定位置のY座標
     parallelGroupLaunch: false, // グループアイテムを並列起動（デフォルト: false）

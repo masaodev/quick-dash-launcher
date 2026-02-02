@@ -86,6 +86,7 @@ export const IPC_CHANNELS = {
   SETTINGS_CHANGE_HOTKEY: 'settings:change-hotkey',
   SETTINGS_CHECK_HOTKEY_AVAILABILITY: 'settings:check-hotkey-availability',
   SETTINGS_CHANGE_ITEM_SEARCH_HOTKEY: 'settings:change-item-search-hotkey',
+  SETTINGS_GET_DISPLAYS: 'settings:get-displays',
 
   // 設定ファイル操作
   OPEN_CONFIG_FOLDER: 'open-config-folder',
