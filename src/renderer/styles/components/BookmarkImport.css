@@ -375,3 +375,57 @@
   background-color: var(--color-gray-400);
   cursor: not-allowed;
 }
+
+/* 重複警告セクション */
+.duplicate-warning-section {
+  padding: var(--spacing-md) var(--spacing-2xl);
+  background-color: var(--color-warning-light, #fff8e6);
+  border-top: var(--border-light);
+  border-bottom: var(--border-light);
+}
+
+.duplicate-warning-message {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+  font-weight: 600;
+  color: var(--color-warning-dark, #856404);
+}
+
+.duplicate-warning-icon {
+  font-size: var(--font-size-lg);
+  color: var(--color-warning, #ffc107);
+}
+
+.duplicate-options-section {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--spacing-lg);
+  flex-wrap: wrap;
+}
+
+.duplicate-options-label {
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.duplicate-option {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  cursor: pointer;
+  color: var(--text-primary);
+  font-size: var(--font-size-base);
+}
+
+.duplicate-option input[type="radio"] {
+  cursor: pointer;
+  margin: 0;
+}
+
+.duplicate-option:hover {
+  color: var(--color-info);
+}

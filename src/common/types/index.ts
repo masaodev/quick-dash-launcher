@@ -89,7 +89,13 @@ export type {
 } from './icon';
 
 // ブックマーク関連の型
-export type { SimpleBookmarkItem, BrowserProfile, BrowserInfo } from './bookmark';
+export type {
+  SimpleBookmarkItem,
+  BrowserProfile,
+  BrowserInfo,
+  DuplicateHandlingOption,
+  DuplicateCheckResult,
+} from './bookmark';
 
 // 検索関連の型
 export type { SearchHistoryEntry, SearchHistoryState, SearchMode } from './search';

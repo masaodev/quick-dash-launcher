@@ -1,5 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { SimpleBookmarkItem, BrowserInfo, BrowserProfile } from '@common/types';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import {
+  SimpleBookmarkItem,
+  BrowserInfo,
+  BrowserProfile,
+  DuplicateHandlingOption,
+} from '@common/types';
+import type { EditableJsonItem } from '@common/types/editableItem';
+import { checkDuplicates } from '@common/utils/duplicateDetector';
 
 import { logError } from '../utils/debug';
 
@@ -11,16 +18,25 @@ type ImportSource = 'chrome' | 'edge' | 'html';
 interface BookmarkImportModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onImport: (bookmarks: SimpleBookmarkItem[]) => void;
+  onImport: (bookmarks: SimpleBookmarkItem[], duplicateHandling: DuplicateHandlingOption) => void;
+  existingItems: EditableJsonItem[];
 }
 
-const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({ isOpen, onClose, onImport }) => {
+const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({
+  isOpen,
+  onClose,
+  onImport,
+  existingItems,
+}) => {
   const [bookmarks, setBookmarks] = useState<SimpleBookmarkItem[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
+
+  // 重複処理オプション
+  const [duplicateHandling, setDuplicateHandling] = useState<DuplicateHandlingOption>('skip');
 
   // ブラウザ直接インポート用の状態
   const [importSource, setImportSource] = useState<ImportSource | null>(null);
@@ -66,6 +82,15 @@ const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({ isOpen, onClo
       bookmark.url.toLowerCase().includes(searchLower)
     );
   });
+
+  // 選択されたブックマークの重複チェック
+  const duplicateCheckResult = useMemo(() => {
+    const selectedBookmarks = bookmarks.filter((b) => selectedIds.has(b.id));
+    if (selectedBookmarks.length === 0) {
+      return null;
+    }
+    return checkDuplicates(selectedBookmarks, existingItems);
+  }, [bookmarks, selectedIds, existingItems]);
 
   // インポート元選択
   const handleSelectImportSource = (source: ImportSource) => {
@@ -202,7 +227,7 @@ const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({ isOpen, onClo
       return;
     }
 
-    onImport(selectedBookmarks);
+    onImport(selectedBookmarks, duplicateHandling);
     handleClose();
   };
 
@@ -214,6 +239,7 @@ const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({ isOpen, onClo
     setFileName(null);
     setImportSource(null);
     setSelectedProfile(null);
+    setDuplicateHandling('skip');
     onClose();
   };
 
@@ -486,6 +512,39 @@ const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({ isOpen, onClo
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* 重複警告セクション */}
+        {duplicateCheckResult && duplicateCheckResult.duplicateCount > 0 && (
+          <div className="duplicate-warning-section">
+            <div className="duplicate-warning-message">
+              <span className="duplicate-warning-icon">&#9888;</span>
+              <span>{duplicateCheckResult.duplicateCount}件の重複が検出されました</span>
+            </div>
+            <div className="duplicate-options-section">
+              <span className="duplicate-options-label">重複時の処理:</span>
+              <label className="duplicate-option">
+                <input
+                  type="radio"
+                  name="duplicateHandling"
+                  value="skip"
+                  checked={duplicateHandling === 'skip'}
+                  onChange={() => setDuplicateHandling('skip')}
+                />
+                <span>スキップ（重複アイテムはインポートしない）</span>
+              </label>
+              <label className="duplicate-option">
+                <input
+                  type="radio"
+                  name="duplicateHandling"
+                  value="overwrite"
+                  checked={duplicateHandling === 'overwrite'}
+                  onChange={() => setDuplicateHandling('overwrite')}
+                />
+                <span>上書き（既存アイテムを新しい情報で更新）</span>
+              </label>
+            </div>
           </div>
         )}
 

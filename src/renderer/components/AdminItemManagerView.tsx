@@ -1,11 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { SimpleBookmarkItem, DataFileTab } from '@common/types';
+import { SimpleBookmarkItem, DataFileTab, DuplicateHandlingOption } from '@common/types';
 import type { EditableJsonItem } from '@common/types/editableItem';
 import type { RegisterItem } from '@common/types';
 import { jsonItemToDisplayText } from '@common/utils/displayTextConverter';
 import { validateEditableItem } from '@common/types/editableItem';
 import { convertRegisterItemToJsonItem } from '@common/utils/dataConverters';
 import { generateId } from '@common/utils/jsonParser';
+import {
+  checkDuplicates,
+  filterNonDuplicateBookmarks,
+  buildUrlToIdMap,
+  normalizeUrl,
+} from '@common/utils/duplicateDetector';
 
 import { logError } from '../utils/debug';
 import { useToast } from '../hooks/useToast';
@@ -406,11 +412,41 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     return reorderedItems;
   };
 
-  const handleBookmarkImport = (bookmarks: SimpleBookmarkItem[]) => {
-    // 選択されたブックマークを新規アイテムとして追加
-    const newItems: EditableJsonItem[] = bookmarks.map((bookmark) => {
+  const handleBookmarkImport = (
+    bookmarks: SimpleBookmarkItem[],
+    duplicateHandling: DuplicateHandlingOption
+  ) => {
+    // 現在のデータファイルのアイテムのみを対象に重複チェック
+    const currentFileItems = workingItems.filter(
+      (item) => item.meta.sourceFile === selectedDataFile
+    );
+    const duplicateResult = checkDuplicates(bookmarks, currentFileItems);
+
+    // スキップ: 重複を除いた新規ブックマークのみ / 上書き: 全ブックマークをインポート
+    const bookmarksToImport =
+      duplicateHandling === 'skip'
+        ? filterNonDuplicateBookmarks(bookmarks, duplicateResult.duplicateBookmarkIds)
+        : bookmarks;
+
+    // 上書きモードの場合、重複する既存アイテムを削除
+    const updatedWorkingItems =
+      duplicateHandling === 'overwrite'
+        ? workingItems.filter(
+            (item) => !new Set(duplicateResult.duplicateExistingIds).has(item.item.id)
+          )
+        : [...workingItems];
+
+    // 上書きモード用のURL->IDマッピング
+    const urlToIdMap = duplicateHandling === 'overwrite' ? buildUrlToIdMap(currentFileItems) : null;
+
+    // 新規アイテムを作成
+    const newItems: EditableJsonItem[] = bookmarksToImport.map((bookmark) => {
+      // 上書きモードの場合、既存アイテムのIDを再利用
+      const existingId = urlToIdMap?.get(normalizeUrl(bookmark.url));
+      const itemId = existingId ?? generateId();
+
       const jsonItem = {
-        id: generateId(),
+        id: itemId,
         type: 'item' as const,
         displayName: bookmark.displayName,
         path: bookmark.url,
@@ -428,8 +464,8 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
       };
     });
 
-    const updatedItems = [...newItems, ...workingItems];
-    const reorderedItems = reorderItemNumbers(updatedItems);
+    const finalItems = [...newItems, ...updatedWorkingItems];
+    const reorderedItems = reorderItemNumbers(finalItems);
     setWorkingItems(reorderedItems);
     setHasUnsavedChanges(true);
     setIsBookmarkModalOpen(false);
@@ -758,6 +794,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
         isOpen={isBookmarkModalOpen}
         onClose={() => setIsBookmarkModalOpen(false)}
         onImport={handleBookmarkImport}
+        existingItems={workingItems.filter((item) => item.meta.sourceFile === selectedDataFile)}
       />
 
       <ConfirmDialog
