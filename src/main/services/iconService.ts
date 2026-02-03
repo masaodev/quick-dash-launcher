@@ -45,6 +45,9 @@ export class IconService {
         return (await extractFileIconByExtension(filePath, extensionsFolder)) ?? undefined;
       case 'customUri':
         return (await extractCustomUriIcon(filePath, iconsFolder)) ?? undefined;
+      case 'clipboard':
+        // クリップボードアイテムはカスタムアイコンで管理（自動アイコン取得不要）
+        return undefined;
       default:
         // folder と url タイプはアイコン取得をスキップ（デフォルトアイコンを使用）
         return undefined;

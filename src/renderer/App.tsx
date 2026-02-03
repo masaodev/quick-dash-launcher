@@ -758,8 +758,8 @@ const App: React.FC = () => {
   // アイコン未取得数を計算（LauncherItemのみ対象、フォルダ・エラー記録を除外）
   const missingIconCount = useMemo(() => {
     return mainItems.filter((item) => {
-      // LauncherItemのみ対象（WindowInfo, GroupItem, WindowItemは除外）
-      if (isWindowInfo(item) || isGroupItem(item) || isWindowItem(item)) {
+      // LauncherItemのみ対象（WindowInfo, GroupItem, WindowItem, ClipboardItemは除外）
+      if (isWindowInfo(item) || isGroupItem(item) || isWindowItem(item) || isClipboardItem(item)) {
         return false;
       }
       const launcherItem = item as LauncherItem;

@@ -23,6 +23,8 @@ import {
   ClipboardPreview,
   CurrentClipboardState,
   DisplayInfo,
+  ClipboardSessionCaptureResult,
+  ClipboardSessionCommitResult,
 } from '@common/types';
 import type { EditableJsonItem, LoadEditableItemsResult } from '@common/types/editableItem';
 
@@ -319,6 +321,10 @@ export interface ElectronAPI {
     restore: (dataFileRef: string) => Promise<ClipboardRestoreResult>;
     deleteData: (dataFileRef: string) => Promise<boolean>;
     getPreview: (dataFileRef: string) => Promise<ClipboardPreview | null>;
+    // セッション管理（登録確定前の一時保存）
+    captureToSession: () => Promise<ClipboardSessionCaptureResult>;
+    commitSession: (sessionId: string) => Promise<ClipboardSessionCommitResult>;
+    discardSession: (sessionId: string) => Promise<boolean>;
   };
 }
 

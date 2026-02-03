@@ -221,6 +221,10 @@ export const IPC_CHANNELS = {
   CLIPBOARD_DELETE_DATA: 'clipboard:delete-data',
   CLIPBOARD_GET_PREVIEW: 'clipboard:get-preview',
   CLIPBOARD_CHECK_CURRENT: 'clipboard:check-current',
+  // クリップボードセッション管理（登録確定前の一時保存）
+  CLIPBOARD_CAPTURE_TO_SESSION: 'clipboard:capture-to-session',
+  CLIPBOARD_COMMIT_SESSION: 'clipboard:commit-session',
+  CLIPBOARD_DISCARD_SESSION: 'clipboard:discard-session',
 } as const;
 
 /**

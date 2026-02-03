@@ -22,6 +22,8 @@ import {
   ClipboardPreview,
   CurrentClipboardState,
   DisplayInfo,
+  ClipboardSessionCaptureResult,
+  ClipboardSessionCommitResult,
 } from '@common/types';
 import type { EditableJsonItem, LoadEditableItemsResult } from '@common/types/editableItem';
 import { IPC_CHANNELS } from '@common/ipcChannels';
@@ -608,5 +610,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke(IPC_CHANNELS.CLIPBOARD_DELETE_DATA, dataFileRef),
     getPreview: (dataFileRef: string): Promise<ClipboardPreview | null> =>
       ipcRenderer.invoke(IPC_CHANNELS.CLIPBOARD_GET_PREVIEW, dataFileRef),
+    // セッション管理（登録確定前の一時保存）
+    captureToSession: (): Promise<ClipboardSessionCaptureResult> =>
+      ipcRenderer.invoke(IPC_CHANNELS.CLIPBOARD_CAPTURE_TO_SESSION),
+    commitSession: (sessionId: string): Promise<ClipboardSessionCommitResult> =>
+      ipcRenderer.invoke(IPC_CHANNELS.CLIPBOARD_COMMIT_SESSION, sessionId),
+    discardSession: (sessionId: string): Promise<boolean> =>
+      ipcRenderer.invoke(IPC_CHANNELS.CLIPBOARD_DISCARD_SESSION, sessionId),
   },
 });

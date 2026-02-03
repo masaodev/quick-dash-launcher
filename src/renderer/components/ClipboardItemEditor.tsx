@@ -1,70 +1,114 @@
-/**
- * クリップボードアイテムエディター
- *
- * クリップボードの内容をキャプチャして保存するためのエディターコンポーネント
- */
-
 import React, { useState, useEffect } from 'react';
 import type { CurrentClipboardState, ClipboardFormat } from '@common/types';
 
 import { Button } from './ui';
 import '../styles/components/ClipboardItemEditor.css';
 
+interface CapturedDataInfo {
+  dataFileRef: string;
+  preview?: string;
+  formats: ClipboardFormat[];
+  savedAt: number;
+}
+
+interface SessionDataInfo {
+  sessionId: string;
+  preview?: string;
+  formats: ClipboardFormat[];
+  capturedAt: number;
+}
+
+interface CaptureResult {
+  sessionId: string;
+  preview?: string;
+  formats: ClipboardFormat[];
+  capturedAt: number;
+  dataSize: number;
+}
+
 interface ClipboardItemEditorProps {
-  /** キャプチャ済みデータがある場合の情報 */
-  capturedData?: {
-    dataFileRef: string;
-    preview?: string;
-    formats: ClipboardFormat[];
-    savedAt: number;
-  };
-  /** キャプチャ成功時のコールバック */
-  onCapture: (result: {
-    dataFileRef: string;
-    preview?: string;
-    formats: ClipboardFormat[];
-    savedAt: number;
-    dataSize: number;
-  }) => void;
-  /** エラー発生時のコールバック */
+  capturedData?: CapturedDataInfo;
+  sessionData?: SessionDataInfo;
+  onCapture: (result: CaptureResult) => void;
   onError?: (error: string) => void;
 }
 
-/**
- * フォーマットを日本語で表示
- */
+const FORMAT_LABELS: Record<ClipboardFormat, string> = {
+  text: 'テキスト',
+  html: 'HTML',
+  rtf: 'RTF',
+  image: '画像',
+  file: 'ファイル',
+};
+
 function formatToLabel(format: ClipboardFormat): string {
-  switch (format) {
-    case 'text':
-      return 'テキスト';
-    case 'html':
-      return 'HTML';
-    case 'rtf':
-      return 'RTF';
-    case 'image':
-      return '画像';
-    case 'file':
-      return 'ファイル';
-    default:
-      return format;
-  }
+  return FORMAT_LABELS[format] || format;
 }
 
-/**
- * データサイズを人間が読みやすい形式に変換
- */
 function formatDataSize(bytes: number): string {
-  if (bytes < 1024) {
-    return `${bytes} B`;
-  } else if (bytes < 1024 * 1024) {
-    return `${(bytes / 1024).toFixed(1)} KB`;
-  } else {
-    return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
-  }
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+const CLIPBOARD_CHECK_INTERVAL_MS = 3000;
+
+interface CapturedDataSectionProps {
+  capturedData?: CapturedDataInfo;
+  sessionData?: SessionDataInfo;
+  onRecapture: () => void;
+  capturing: boolean;
+  canCapture: boolean;
+}
+
+function CapturedDataSection({
+  capturedData,
+  sessionData,
+  onRecapture,
+  capturing,
+  canCapture,
+}: CapturedDataSectionProps): React.ReactElement {
+  const preview = capturedData?.preview || sessionData?.preview;
+  const formats = capturedData?.formats || sessionData?.formats || [];
+  const timestamp = capturedData?.savedAt || sessionData?.capturedAt || Date.now();
+  const isPersisted = !!capturedData;
+
+  return (
+    <div className="clipboard-captured-data">
+      <div className="section-header">
+        <h4>{isPersisted ? '保存済みデータ' : 'キャプチャ済みデータ'}</h4>
+      </div>
+
+      <div className="captured-info">
+        {preview && (
+          <div className="text-preview">
+            <pre>{preview}</pre>
+          </div>
+        )}
+
+        <div className="format-info">
+          <span className="label">フォーマット:</span>
+          <span className="formats">{formats.map(formatToLabel).join(', ')}</span>
+        </div>
+
+        <div className="saved-info">
+          <span className="label">{isPersisted ? '保存日時:' : 'キャプチャ日時:'}</span>
+          <span className="date">{new Date(timestamp).toLocaleString('ja-JP')}</span>
+        </div>
+
+        <div className="recapture-action">
+          <Button variant="info" onClick={onRecapture} disabled={capturing || !canCapture}>
+            {capturing ? 'キャプチャ中...' : '現在のクリップボードで上書き'}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 const ClipboardItemEditor: React.FC<ClipboardItemEditorProps> = ({
   capturedData,
+  sessionData,
   onCapture,
   onError,
 }) => {
@@ -72,7 +116,6 @@ const ClipboardItemEditor: React.FC<ClipboardItemEditorProps> = ({
   const [loading, setLoading] = useState(false);
   const [capturing, setCapturing] = useState(false);
 
-  // 現在のクリップボード状態を確認
   const checkClipboard = async () => {
     setLoading(true);
     try {
@@ -85,28 +128,23 @@ const ClipboardItemEditor: React.FC<ClipboardItemEditorProps> = ({
     }
   };
 
-  // コンポーネントマウント時と定期的にクリップボードを確認
   useEffect(() => {
     checkClipboard();
-
-    // 3秒ごとにクリップボードを確認
-    const interval = setInterval(checkClipboard, 3000);
-
+    const interval = setInterval(checkClipboard, CLIPBOARD_CHECK_INTERVAL_MS);
     return () => clearInterval(interval);
   }, []);
 
-  // クリップボードをキャプチャ
   const handleCapture = async () => {
     setCapturing(true);
     try {
-      const result = await window.electronAPI.clipboardAPI.capture();
+      const result = await window.electronAPI.clipboardAPI.captureToSession();
 
-      if (result.success && result.dataFileRef) {
+      if (result.success && result.sessionId) {
         onCapture({
-          dataFileRef: result.dataFileRef,
+          sessionId: result.sessionId,
           preview: result.preview,
           formats: result.formats || [],
-          savedAt: result.savedAt || Date.now(),
+          capturedAt: result.capturedAt || Date.now(),
           dataSize: result.dataSize || 0,
         });
       } else {
@@ -181,45 +219,14 @@ const ClipboardItemEditor: React.FC<ClipboardItemEditorProps> = ({
         )}
       </div>
 
-      {/* キャプチャ済みデータの表示 */}
-      {capturedData && (
-        <div className="clipboard-captured-data">
-          <div className="section-header">
-            <h4>保存済みデータ</h4>
-          </div>
-
-          <div className="captured-info">
-            {/* プレビュー */}
-            {capturedData.preview && (
-              <div className="text-preview">
-                <pre>{capturedData.preview}</pre>
-              </div>
-            )}
-
-            {/* フォーマット情報 */}
-            <div className="format-info">
-              <span className="label">フォーマット:</span>
-              <span className="formats">{capturedData.formats.map(formatToLabel).join(', ')}</span>
-            </div>
-
-            {/* 保存日時 */}
-            <div className="saved-info">
-              <span className="label">保存日時:</span>
-              <span className="date">{new Date(capturedData.savedAt).toLocaleString('ja-JP')}</span>
-            </div>
-
-            {/* 再キャプチャボタン */}
-            <div className="recapture-action">
-              <Button
-                variant="info"
-                onClick={handleCapture}
-                disabled={capturing || !currentState?.hasContent}
-              >
-                {capturing ? 'キャプチャ中...' : '現在のクリップボードで上書き'}
-              </Button>
-            </div>
-          </div>
-        </div>
+      {(capturedData || sessionData) && (
+        <CapturedDataSection
+          capturedData={capturedData}
+          sessionData={sessionData}
+          onRecapture={handleCapture}
+          capturing={capturing}
+          canCapture={currentState?.hasContent ?? false}
+        />
       )}
 
       {/* 注意事項 */}

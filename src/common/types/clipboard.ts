@@ -33,19 +33,40 @@ export interface SerializableClipboard {
 export type ClipboardFormat = 'text' | 'html' | 'rtf' | 'image' | 'file';
 
 /**
- * クリップボードキャプチャ結果
+ * クリップボードキャプチャ結果の共通フィールド
  */
-export interface ClipboardCaptureResult {
+interface ClipboardCaptureResultBase {
+  success: boolean;
+  preview?: string;
+  formats?: ClipboardFormat[];
+  dataSize?: number;
+  error?: string;
+}
+
+/**
+ * クリップボードキャプチャ結果（ファイル保存済み）
+ */
+export interface ClipboardCaptureResult extends ClipboardCaptureResultBase {
+  dataFileRef?: string;
+  savedAt?: number;
+}
+
+/**
+ * クリップボードセッションキャプチャ結果（メモリ上に一時保持）
+ */
+export interface ClipboardSessionCaptureResult extends ClipboardCaptureResultBase {
+  sessionId?: string;
+  capturedAt?: number;
+}
+
+/**
+ * セッションコミット結果
+ */
+export interface ClipboardSessionCommitResult {
   /** 成功したかどうか */
   success: boolean;
   /** データファイルへの参照（clipboard-data/{id}.json） */
   dataFileRef?: string;
-  /** プレビュー文字列（最初の100文字程度） */
-  preview?: string;
-  /** 利用可能なフォーマット */
-  formats?: ClipboardFormat[];
-  /** データサイズ（bytes） */
-  dataSize?: number;
   /** 保存日時 */
   savedAt?: number;
   /** エラーメッセージ */

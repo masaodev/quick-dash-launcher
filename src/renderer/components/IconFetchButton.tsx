@@ -8,7 +8,7 @@ interface IconFetchButtonProps {
 }
 
 const IconFetchButton: React.FC<IconFetchButtonProps> = ({ path, loading, onFetch, itemType }) => {
-  const isDisabled = !path.trim() || loading || itemType === 'folder';
+  const isDisabled = !path?.trim() || loading || itemType === 'folder' || itemType === 'clipboard';
 
   return (
     <button

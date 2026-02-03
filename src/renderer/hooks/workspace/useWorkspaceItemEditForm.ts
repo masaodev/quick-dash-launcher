@@ -98,7 +98,8 @@ export function useWorkspaceItemEditForm(
   );
 
   const handlePathBlur = useCallback(async () => {
-    if (!item || !item.path.trim()) return;
+    // クリップボードアイテムはpathを持たない
+    if (!item || item.itemCategory === 'clipboard' || !item.path?.trim()) return;
 
     const newType = await detectItemType(item.path);
     setItem((prev) => (prev ? { ...prev, type: newType } : null));
@@ -116,7 +117,12 @@ export function useWorkspaceItemEditForm(
           : 'アイテム表示名を入力してください';
     }
 
-    if (item.itemCategory !== 'group' && item.itemCategory !== 'window' && !item.path.trim()) {
+    if (
+      item.itemCategory !== 'group' &&
+      item.itemCategory !== 'window' &&
+      item.itemCategory !== 'clipboard' &&
+      !item.path?.trim()
+    ) {
       newErrors.path = 'パスを入力してください';
     }
 

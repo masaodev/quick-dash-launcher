@@ -43,7 +43,7 @@ const UrlConverterMenu: React.FC<UrlConverterMenuProps> = ({ url, onConvert, ite
     setIsOpen(false);
   };
 
-  const isDisabled = !url.trim() || (itemType !== undefined && itemType !== 'url');
+  const isDisabled = !url?.trim() || (itemType !== undefined && itemType !== 'url');
 
   return (
     <div className="url-converter-menu-container" ref={menuRef}>

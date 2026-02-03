@@ -364,17 +364,28 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
 
   // RegisterItemをLauncherItemに変換する関数
   const convertToLauncherItem = (item: RegisterItem): LauncherItem | null => {
-    if (item.itemCategory === 'dir' || item.itemCategory === 'group') {
-      // フォルダ取込とグループは直接実行不可
+    // フォルダ取込、グループ、ウィンドウ操作は直接実行不可
+    const nonExecutableCategories = ['dir', 'group', 'window'] as const;
+    if (
+      nonExecutableCategories.includes(
+        item.itemCategory as (typeof nonExecutableCategories)[number]
+      )
+    ) {
       return null;
     }
 
-    if (item.itemCategory === 'window') {
-      // ウィンドウ操作アイテムは別処理
-      return null;
+    if (item.itemCategory === 'clipboard') {
+      return {
+        displayName: item.displayName,
+        path: '',
+        type: 'clipboard',
+        customIcon: item.customIcon,
+        clipboardDataRef: item.clipboardDataRef,
+        clipboardFormats: item.clipboardFormats,
+        clipboardSavedAt: item.clipboardSavedAt,
+      };
     }
 
-    // 単一アイテムの場合
     return {
       displayName: item.displayName,
       path: item.path,
@@ -774,12 +785,22 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                                 }
                               : undefined
                           }
+                          sessionData={
+                            item.clipboardSessionId
+                              ? {
+                                  sessionId: item.clipboardSessionId,
+                                  preview: item.clipboardPreview,
+                                  formats: item.clipboardFormats || [],
+                                  capturedAt: item.clipboardSavedAt || Date.now(),
+                                }
+                              : undefined
+                          }
                           onCapture={(result) => {
                             // 一度にすべてのフィールドを更新（連続呼び出しによる状態上書きを防ぐ）
                             const updates: Partial<RegisterItem> = {
-                              clipboardDataRef: result.dataFileRef,
+                              clipboardSessionId: result.sessionId,
                               clipboardFormats: result.formats,
-                              clipboardSavedAt: result.savedAt,
+                              clipboardSavedAt: result.capturedAt,
                               clipboardPreview: result.preview || '',
                             };
                             // 表示名が空の場合、自動設定

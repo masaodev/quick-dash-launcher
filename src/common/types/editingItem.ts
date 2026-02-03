@@ -5,7 +5,7 @@
  * RawDataLine（CSV形式）を廃止し、AppItemベースで直接扱う。
  */
 
-import type { LauncherItem, GroupItem, WindowItem } from './launcher';
+import type { LauncherItem, GroupItem, WindowItem, ClipboardItem } from './launcher';
 
 /**
  * 編集可能なアイテムの共通メタデータ
@@ -43,19 +43,30 @@ export interface EditingGroupItem extends Omit<GroupItem, 'sourceFile'>, Editing
 export interface EditingWindowItem extends Omit<WindowItem, 'sourceFile'>, EditingItemMeta {}
 
 /**
+ * 編集用ClipboardItem
+ * sourceFileを必須にするため、Omitで除外してから再定義
+ */
+export interface EditingClipboardItem extends Omit<ClipboardItem, 'sourceFile'>, EditingItemMeta {}
+
+/**
  * 編集用アイテムの統合型
  *
  * RegisterModal、useRegisterModal、useRegisterFormで使用される。
- * LauncherItem/GroupItem/WindowItemのいずれかに、
+ * LauncherItem/GroupItem/WindowItem/ClipboardItemのいずれかに、
  * 編集に必要なメタデータ（sourceFile, jsonItemId）を付加したもの。
  */
-export type EditingAppItem = EditingLauncherItem | EditingGroupItem | EditingWindowItem;
+export type EditingAppItem =
+  | EditingLauncherItem
+  | EditingGroupItem
+  | EditingWindowItem
+  | EditingClipboardItem;
 
 /**
  * EditingLauncherItemかどうかを判定
  */
 export function isEditingLauncherItem(item: EditingAppItem): item is EditingLauncherItem {
-  return item.type !== 'group' && item.type !== 'window';
+  const specialTypes = ['group', 'window', 'clipboard'] as const;
+  return !specialTypes.includes(item.type as (typeof specialTypes)[number]);
 }
 
 /**
@@ -70,4 +81,11 @@ export function isEditingGroupItem(item: EditingAppItem): item is EditingGroupIt
  */
 export function isEditingWindowItem(item: EditingAppItem): item is EditingWindowItem {
   return item.type === 'window';
+}
+
+/**
+ * EditingClipboardItemかどうかを判定
+ */
+export function isEditingClipboardItem(item: EditingAppItem): item is EditingClipboardItem {
+  return item.type === 'clipboard';
 }

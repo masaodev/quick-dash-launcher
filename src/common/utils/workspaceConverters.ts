@@ -5,12 +5,16 @@
 import type { WorkspaceItem, WindowConfig } from '../types';
 import type { RegisterItem, WindowOperationConfig } from '../types/register';
 
-function getItemCategoryFromWorkspaceItem(item: WorkspaceItem): 'item' | 'group' | 'window' {
+function getItemCategoryFromWorkspaceItem(
+  item: WorkspaceItem
+): 'item' | 'group' | 'window' | 'clipboard' {
   switch (item.type) {
     case 'windowOperation':
       return 'window';
     case 'group':
       return 'group';
+    case 'clipboard':
+      return 'clipboard';
     default:
       return 'item';
   }
@@ -63,6 +67,21 @@ export function convertWorkspaceItemToRegisterItem(item: WorkspaceItem): Registe
     };
   }
 
+  if (itemCategory === 'clipboard') {
+    return {
+      displayName: item.displayName,
+      path: '',
+      type: 'clipboard',
+      targetTab: '',
+      itemCategory: 'clipboard',
+      clipboardDataRef: item.clipboardDataRef,
+      clipboardFormats: item.clipboardFormats,
+      clipboardSavedAt: item.clipboardSavedAt,
+      customIcon: item.customIcon,
+      memo: item.memo,
+    };
+  }
+
   return {
     displayName: item.displayName,
     path: item.path,
@@ -76,17 +95,33 @@ export function convertWorkspaceItemToRegisterItem(item: WorkspaceItem): Registe
   };
 }
 
+/** 他の種別のフィールドをクリアするための共通値 */
+const CLEAR_WINDOW_FIELDS = {
+  processName: undefined,
+  windowX: undefined,
+  windowY: undefined,
+  windowWidth: undefined,
+  windowHeight: undefined,
+  virtualDesktopNumber: undefined,
+  activateWindow: undefined,
+  moveToActiveMonitorCenter: undefined,
+  pinToAllDesktops: undefined,
+} as const;
+
 /**
  * RegisterItemからWorkspaceItem更新用データを生成
  */
 export function convertRegisterItemToWorkspaceItemUpdate(
   registerItem: RegisterItem
 ): Partial<WorkspaceItem> {
+  const base = { memo: registerItem.memo };
+
   if (registerItem.itemCategory === 'window') {
     const config = registerItem.windowOperationConfig;
     const windowTitle = config?.windowTitle || '';
 
     return {
+      ...base,
       displayName: config?.displayName || registerItem.displayName,
       path: `[ウィンドウ操作: ${windowTitle}]`,
       type: 'windowOperation',
@@ -103,7 +138,6 @@ export function convertRegisterItemToWorkspaceItemUpdate(
       customIcon: undefined,
       windowConfig: undefined,
       itemNames: undefined,
-      memo: registerItem.memo,
     };
   }
 
@@ -111,6 +145,8 @@ export function convertRegisterItemToWorkspaceItemUpdate(
     const itemNames = registerItem.groupItemNames || [];
 
     return {
+      ...base,
+      ...CLEAR_WINDOW_FIELDS,
       displayName: registerItem.displayName,
       path: `[グループ: ${itemNames.length}件]`,
       type: 'group',
@@ -118,36 +154,35 @@ export function convertRegisterItemToWorkspaceItemUpdate(
       args: undefined,
       customIcon: undefined,
       windowConfig: undefined,
-      processName: undefined,
-      windowX: undefined,
-      windowY: undefined,
-      windowWidth: undefined,
-      windowHeight: undefined,
-      virtualDesktopNumber: undefined,
-      activateWindow: undefined,
-      moveToActiveMonitorCenter: undefined,
-      pinToAllDesktops: undefined,
-      memo: registerItem.memo,
+    };
+  }
+
+  if (registerItem.itemCategory === 'clipboard') {
+    return {
+      ...base,
+      ...CLEAR_WINDOW_FIELDS,
+      displayName: registerItem.displayName,
+      path: `[クリップボード]`,
+      type: 'clipboard',
+      clipboardDataRef: registerItem.clipboardDataRef,
+      clipboardFormats: registerItem.clipboardFormats,
+      clipboardSavedAt: registerItem.clipboardSavedAt,
+      customIcon: registerItem.customIcon,
+      args: undefined,
+      windowConfig: undefined,
+      itemNames: undefined,
     };
   }
 
   return {
+    ...base,
+    ...CLEAR_WINDOW_FIELDS,
     displayName: registerItem.displayName,
     path: registerItem.path,
     type: registerItem.type as WorkspaceItem['type'],
     args: registerItem.args,
     customIcon: registerItem.customIcon,
     windowConfig: registerItem.windowConfig as WindowConfig | undefined,
-    processName: undefined,
-    windowX: undefined,
-    windowY: undefined,
-    windowWidth: undefined,
-    windowHeight: undefined,
-    virtualDesktopNumber: undefined,
-    activateWindow: undefined,
-    moveToActiveMonitorCenter: undefined,
-    pinToAllDesktops: undefined,
     itemNames: undefined,
-    memo: registerItem.memo,
   };
 }

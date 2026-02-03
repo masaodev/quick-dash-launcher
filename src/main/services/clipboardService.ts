@@ -18,6 +18,8 @@ import type {
   ClipboardRestoreResult,
   ClipboardPreview,
   CurrentClipboardState,
+  ClipboardSessionCaptureResult,
+  ClipboardSessionCommitResult,
 } from '@common/types/clipboard';
 import {
   MAX_IMAGE_SIZE_BYTES,
@@ -30,8 +32,24 @@ import PathManager from '../config/pathManager.js';
 
 const DATA_FILE_REF_PATTERN = /clipboard-data\/(.+)\.json$/;
 
+interface SessionData {
+  clipboardData: SerializableClipboard;
+  preview?: string;
+  capturedAt: number;
+}
+
+interface CollectedClipboardData {
+  clipboardData: SerializableClipboard;
+  preview?: string;
+}
+
+type CollectResult =
+  | { success: true; data: CollectedClipboardData }
+  | { success: false; error: string };
+
 export class ClipboardService {
   private static instance: ClipboardService | null = null;
+  private pendingSessions: Map<string, SessionData> = new Map();
 
   private constructor() {}
 
@@ -119,84 +137,108 @@ export class ClipboardService {
     return [];
   }
 
-  async captureClipboard(): Promise<ClipboardCaptureResult> {
-    try {
-      const state = await this.checkCurrentClipboard();
+  /**
+   * クリップボードからデータを収集する共通処理
+   */
+  private async collectClipboardData(): Promise<CollectResult> {
+    const state = await this.checkCurrentClipboard();
 
-      if (!state.hasContent) {
-        return { success: false, error: 'クリップボードが空です' };
+    if (!state.hasContent) {
+      return { success: false, error: 'クリップボードが空です' };
+    }
+
+    const clipboardData: SerializableClipboard = {
+      formats: state.formats,
+      savedAt: Date.now(),
+      dataSize: 0,
+    };
+
+    if (state.formats.includes('text')) {
+      clipboardData.text = clipboard.readText();
+      clipboardData.dataSize += Buffer.byteLength(clipboardData.text || '', 'utf8');
+    }
+
+    if (state.formats.includes('html')) {
+      clipboardData.html = clipboard.readHTML();
+      clipboardData.dataSize += Buffer.byteLength(clipboardData.html || '', 'utf8');
+    }
+
+    if (state.formats.includes('rtf')) {
+      clipboardData.rtf = clipboard.readRTF();
+      clipboardData.dataSize += Buffer.byteLength(clipboardData.rtf || '', 'utf8');
+    }
+
+    if (state.formats.includes('image')) {
+      const image = clipboard.readImage();
+      const pngBuffer = image.toPNG();
+
+      if (pngBuffer.length > MAX_IMAGE_SIZE_BYTES) {
+        const maxMB = Math.round(MAX_IMAGE_SIZE_BYTES / 1024 / 1024);
+        return { success: false, error: `画像サイズが上限（${maxMB}MB）を超えています` };
       }
 
-      const clipboardData: SerializableClipboard = {
-        formats: state.formats,
-        savedAt: Date.now(),
-        dataSize: 0,
-      };
+      clipboardData.imageBase64 = pngBuffer.toString('base64');
+      clipboardData.dataSize += pngBuffer.length;
+    }
 
-      if (state.formats.includes('text')) {
-        clipboardData.text = clipboard.readText();
-        clipboardData.dataSize += Buffer.byteLength(clipboardData.text || '', 'utf8');
-      }
+    if (state.formats.includes('file')) {
+      const filePaths = this.readFilePaths();
+      if (filePaths.length > 0) {
+        clipboardData.filePaths = filePaths;
+        clipboardData.dataSize += this.calculatePathsSize(filePaths);
 
-      if (state.formats.includes('html')) {
-        clipboardData.html = clipboard.readHTML();
-        clipboardData.dataSize += Buffer.byteLength(clipboardData.html || '', 'utf8');
-      }
-
-      if (state.formats.includes('rtf')) {
-        clipboardData.rtf = clipboard.readRTF();
-        clipboardData.dataSize += Buffer.byteLength(clipboardData.rtf || '', 'utf8');
-      }
-
-      if (state.formats.includes('image')) {
-        const image = clipboard.readImage();
-        const pngBuffer = image.toPNG();
-
-        if (pngBuffer.length > MAX_IMAGE_SIZE_BYTES) {
-          const maxMB = Math.round(MAX_IMAGE_SIZE_BYTES / 1024 / 1024);
-          return { success: false, error: `画像サイズが上限（${maxMB}MB）を超えています` };
-        }
-
-        clipboardData.imageBase64 = pngBuffer.toString('base64');
-        clipboardData.dataSize += pngBuffer.length;
-      }
-
-      if (state.formats.includes('file')) {
-        const filePaths = this.readFilePaths();
-        if (filePaths.length > 0) {
-          clipboardData.filePaths = filePaths;
-          clipboardData.dataSize += this.calculatePathsSize(filePaths);
-
-          if (!clipboardData.text) {
-            clipboardData.text = filePaths.join('\n');
-            if (!clipboardData.formats.includes('text')) {
-              clipboardData.formats.push('text');
-            }
+        if (!clipboardData.text) {
+          clipboardData.text = filePaths.join('\n');
+          if (!clipboardData.formats.includes('text')) {
+            clipboardData.formats.push('text');
           }
         }
       }
+    }
 
-      const id = generateId();
-      const dataFileRef = `clipboard-data/${id}.json`;
-      const filePath = PathManager.getClipboardDataFilePath(id);
+    return {
+      success: true,
+      data: { clipboardData, preview: state.preview },
+    };
+  }
 
-      const dir = path.dirname(filePath);
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
+  /**
+   * クリップボードデータをファイルに保存する共通処理
+   */
+  private saveClipboardDataToFile(clipboardData: SerializableClipboard): string {
+    const id = generateId();
+    const dataFileRef = `clipboard-data/${id}.json`;
+    const filePath = PathManager.getClipboardDataFilePath(id);
+
+    const dir = path.dirname(filePath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
+    fs.writeFileSync(filePath, JSON.stringify(clipboardData, null, 2), 'utf8');
+    return dataFileRef;
+  }
+
+  async captureClipboard(): Promise<ClipboardCaptureResult> {
+    try {
+      const result = await this.collectClipboardData();
+      if (!result.success) {
+        return { success: false, error: result.error };
       }
 
-      fs.writeFileSync(filePath, JSON.stringify(clipboardData, null, 2), 'utf8');
+      const { clipboardData, preview } = result.data;
+      const dataFileRef = this.saveClipboardDataToFile(clipboardData);
 
       logger.info(
-        { id, formats: state.formats, dataSize: clipboardData.dataSize },
+        { dataFileRef, formats: clipboardData.formats, dataSize: clipboardData.dataSize },
         'クリップボードデータを保存しました'
       );
 
       return {
         success: true,
         dataFileRef,
-        preview: state.preview,
-        formats: state.formats,
+        preview,
+        formats: clipboardData.formats,
         dataSize: clipboardData.dataSize,
         savedAt: clipboardData.savedAt,
       };
@@ -207,6 +249,76 @@ export class ClipboardService {
         error: error instanceof Error ? error.message : 'キャプチャに失敗しました',
       };
     }
+  }
+
+  async captureToSession(): Promise<ClipboardSessionCaptureResult> {
+    try {
+      const result = await this.collectClipboardData();
+      if (!result.success) {
+        return { success: false, error: result.error };
+      }
+
+      const { clipboardData, preview } = result.data;
+      const sessionId = generateId();
+      const capturedAt = Date.now();
+
+      this.pendingSessions.set(sessionId, { clipboardData, preview, capturedAt });
+
+      logger.info(
+        { sessionId, formats: clipboardData.formats, dataSize: clipboardData.dataSize },
+        'クリップボードデータをセッションにキャプチャしました'
+      );
+
+      return {
+        success: true,
+        sessionId,
+        preview,
+        formats: clipboardData.formats,
+        dataSize: clipboardData.dataSize,
+        capturedAt,
+      };
+    } catch (error) {
+      logger.error({ error }, 'セッションキャプチャに失敗しました');
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'キャプチャに失敗しました',
+      };
+    }
+  }
+
+  async commitSession(sessionId: string): Promise<ClipboardSessionCommitResult> {
+    try {
+      const session = this.pendingSessions.get(sessionId);
+      if (!session) {
+        return { success: false, error: 'セッションが見つかりません' };
+      }
+
+      const dataFileRef = this.saveClipboardDataToFile(session.clipboardData);
+      this.pendingSessions.delete(sessionId);
+
+      logger.info({ sessionId, dataFileRef }, 'セッションデータをファイルに永続化しました');
+
+      return {
+        success: true,
+        dataFileRef,
+        savedAt: session.clipboardData.savedAt,
+      };
+    } catch (error) {
+      logger.error({ error, sessionId }, 'セッションのコミットに失敗しました');
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'コミットに失敗しました',
+      };
+    }
+  }
+
+  discardSession(sessionId: string): boolean {
+    const existed = this.pendingSessions.has(sessionId);
+    if (existed) {
+      this.pendingSessions.delete(sessionId);
+      logger.info({ sessionId }, 'セッションデータを破棄しました');
+    }
+    return existed;
   }
 
   async restoreClipboard(dataFileRef: string): Promise<ClipboardRestoreResult> {

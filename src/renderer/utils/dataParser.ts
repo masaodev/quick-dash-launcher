@@ -5,6 +5,7 @@ import {
   LauncherItem,
   GroupItem,
   WindowItem,
+  ClipboardItem,
 } from '@common/types';
 
 /**
@@ -39,7 +40,7 @@ export function filterItems(
     .filter((k) => k.length > 0);
 
   return items.filter((item) => {
-    // WindowInfo, WindowItem, LauncherItem, GroupItem に対応
+    // WindowInfo, WindowItem, LauncherItem, GroupItem, ClipboardItem に対応
     let itemText: string;
     if ('hwnd' in item) {
       // WindowInfo
@@ -48,8 +49,8 @@ export function filterItems(
       // WindowItem
       itemText = (item as WindowItem).displayName.toLowerCase();
     } else {
-      // LauncherItem or GroupItem
-      itemText = (item as LauncherItem | GroupItem).displayName.toLowerCase();
+      // LauncherItem, GroupItem, ClipboardItem（すべてdisplayNameを持つ）
+      itemText = (item as LauncherItem | GroupItem | ClipboardItem).displayName.toLowerCase();
     }
 
     return keywords.every((keyword) => itemText.includes(keyword));

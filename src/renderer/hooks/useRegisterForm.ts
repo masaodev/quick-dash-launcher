@@ -16,7 +16,7 @@ import { useToast } from './useToast';
 
 async function loadCachedIconsForItems(items: RegisterItem[]): Promise<Record<string, string>> {
   const itemsNeedingIcons = items.filter(
-    (item) => !item.icon && item.path.trim() && item.type !== 'folder'
+    (item) => !item.icon && item.path?.trim() && item.type !== 'folder' && item.type !== 'clipboard' // クリップボードアイテムはアイコン自動取得不要
   );
   if (itemsNeedingIcons.length === 0) {
     return {};
@@ -27,6 +27,10 @@ async function loadCachedIconsForItems(items: RegisterItem[]): Promise<Record<st
     displayName: item.displayName,
   }));
   return window.electronAPI.loadCachedIcons(launcherItems);
+}
+
+function needsClipboardCommit(item: RegisterItem): boolean {
+  return item.itemCategory === 'clipboard' && !!item.clipboardSessionId;
 }
 
 export function useRegisterForm(
@@ -52,6 +56,43 @@ export function useRegisterForm(
 
   const { initializeFromEditingItem, initializeFromDroppedPaths, createEmptyTemplateItem } =
     useModalInitializer();
+
+  const commitClipboardSessions = async (
+    itemsToCommit: RegisterItem[]
+  ): Promise<RegisterItem[] | null> => {
+    const results = await Promise.all(
+      itemsToCommit.map(async (item) => {
+        if (!needsClipboardCommit(item)) {
+          return item;
+        }
+
+        try {
+          const result = await window.electronAPI.clipboardAPI.commitSession(
+            item.clipboardSessionId!
+          );
+          if (result.success && result.dataFileRef) {
+            return {
+              ...item,
+              clipboardDataRef: result.dataFileRef,
+              clipboardSavedAt: result.savedAt || item.clipboardSavedAt,
+              clipboardSessionId: undefined,
+            };
+          }
+          showError(result.error || 'クリップボードデータの保存に失敗しました');
+          return item;
+        } catch (error) {
+          debugInfo('クリップボードセッションのコミットに失敗:', error);
+          showError('クリップボードデータの保存に失敗しました');
+          return item;
+        }
+      })
+    );
+
+    const hasCommitError = results.some(
+      (item) => needsClipboardCommit(item) && !item.clipboardDataRef
+    );
+    return hasCommitError ? null : results;
+  };
 
   useEffect(() => {
     if (!isOpen) {
@@ -161,10 +202,26 @@ export function useRegisterForm(
     }
 
     if (field === 'itemCategory') {
-      if (value === 'dir') {
-        newItems[index].folderProcessing = 'expand';
-        if (!newItems[index].dirOptions) {
-          newItems[index].dirOptions = {
+      const item = newItems[index];
+      // 共通: 他カテゴリのフィールドをクリア
+      const clearCommonFields = () => {
+        delete item.folderProcessing;
+        delete item.dirOptions;
+        delete item.groupItemNames;
+        delete item.windowOperationConfig;
+      };
+      const clearClipboardFields = () => {
+        delete item.clipboardDataRef;
+        delete item.clipboardFormats;
+        delete item.clipboardSavedAt;
+        delete item.clipboardPreview;
+        delete item.clipboardSessionId;
+      };
+
+      switch (value) {
+        case 'dir':
+          item.folderProcessing = 'expand';
+          item.dirOptions ??= {
             depth: 0,
             types: 'both',
             filter: undefined,
@@ -172,44 +229,26 @@ export function useRegisterForm(
             prefix: undefined,
             suffix: undefined,
           };
-        }
-        delete newItems[index].groupItemNames;
-      } else if (value === 'group') {
-        if (!newItems[index].groupItemNames) {
-          newItems[index].groupItemNames = [];
-        }
-        delete newItems[index].folderProcessing;
-        delete newItems[index].dirOptions;
-        delete newItems[index].windowOperationConfig;
-      } else if (value === 'window') {
-        if (!newItems[index].windowOperationConfig) {
-          newItems[index].windowOperationConfig = { displayName: '', windowTitle: '' };
-        }
-        delete newItems[index].folderProcessing;
-        delete newItems[index].dirOptions;
-        delete newItems[index].groupItemNames;
-        delete newItems[index].clipboardDataRef;
-        delete newItems[index].clipboardFormats;
-        delete newItems[index].clipboardSavedAt;
-        delete newItems[index].clipboardPreview;
-      } else if (value === 'clipboard') {
-        // クリップボードアイテムの場合、他のフィールドをクリア
-        delete newItems[index].folderProcessing;
-        delete newItems[index].dirOptions;
-        delete newItems[index].groupItemNames;
-        delete newItems[index].windowOperationConfig;
-        // pathは不要なのでクリア
-        newItems[index].path = '';
-        newItems[index].type = 'clipboard';
-      } else {
-        delete newItems[index].folderProcessing;
-        delete newItems[index].dirOptions;
-        delete newItems[index].groupItemNames;
-        delete newItems[index].windowOperationConfig;
-        delete newItems[index].clipboardDataRef;
-        delete newItems[index].clipboardFormats;
-        delete newItems[index].clipboardSavedAt;
-        delete newItems[index].clipboardPreview;
+          delete item.groupItemNames;
+          break;
+        case 'group':
+          clearCommonFields();
+          item.groupItemNames ??= [];
+          break;
+        case 'window':
+          clearCommonFields();
+          item.windowOperationConfig ??= { displayName: '', windowTitle: '' };
+          clearClipboardFields();
+          break;
+        case 'clipboard':
+          clearCommonFields();
+          item.path = '';
+          item.type = 'clipboard';
+          break;
+        default:
+          clearCommonFields();
+          clearClipboardFields();
+          break;
       }
     }
 
@@ -218,7 +257,8 @@ export function useRegisterForm(
 
   const handlePathBlur = async (index: number) => {
     const item = items[index];
-    if (!item.path.trim()) {
+    // クリップボードアイテムはpathを持たない
+    if (item.itemCategory === 'clipboard' || !item.path?.trim()) {
       return;
     }
 
@@ -253,7 +293,7 @@ export function useRegisterForm(
     setItems(newItems);
   };
 
-  const validateAndRegister = () => {
+  const validateAndRegister = async () => {
     const newErrors: typeof errors = {};
 
     for (let i = 0; i < items.length; i++) {
@@ -264,9 +304,7 @@ export function useRegisterForm(
         newErrors[i].displayName =
           item.itemCategory === 'group'
             ? 'グループ名を入力してください'
-            : item.itemCategory === 'window'
-              ? 'アイテム表示名を入力してください'
-              : 'アイテム表示名を入力してください';
+            : 'アイテム表示名を入力してください';
       }
 
       if (
@@ -294,7 +332,8 @@ export function useRegisterForm(
       }
 
       if (item.itemCategory === 'clipboard') {
-        if (!item.clipboardDataRef) {
+        // セッションまたは永続化済みデータのいずれかが必要
+        if (!item.clipboardSessionId && !item.clipboardDataRef) {
           newErrors[i].path = 'クリップボードをキャプチャしてください';
         }
       }
@@ -309,11 +348,28 @@ export function useRegisterForm(
       return;
     }
 
-    onRegister(items);
+    const finalItems = await commitClipboardSessions(items);
+    if (!finalItems) {
+      return;
+    }
+
+    onRegister(finalItems);
     onClose();
   };
 
-  const handleCancel = () => {
+  const handleCancel = async () => {
+    // キャンセル時にセッション上のクリップボードデータを破棄
+    // セッションはメモリ上にあるだけなので、discardSessionで解放
+    for (const item of items) {
+      if (item.clipboardSessionId) {
+        try {
+          await window.electronAPI.clipboardAPI.discardSession(item.clipboardSessionId);
+          debugInfo('キャンセルによりクリップボードセッションを破棄:', item.clipboardSessionId);
+        } catch (error) {
+          debugInfo('クリップボードセッションの破棄に失敗:', error);
+        }
+      }
+    }
     setItems([]);
     onClose();
   };
@@ -380,7 +436,7 @@ export function useRegisterForm(
 
   const handleFetchIcon = async (index: number) => {
     const item = items[index];
-    if (!item.path.trim() || item.type === 'folder' || item.type === 'clipboard') {
+    if (!item.path?.trim() || item.type === 'folder' || item.type === 'clipboard') {
       return;
     }
 

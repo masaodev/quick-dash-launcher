@@ -120,7 +120,8 @@ function removeExistingPrefix(url: string): string {
  * @param url 検索対象のURL
  * @returns 一致したルール、または undefined
  */
-export function findMatchingRule(url: string): ConversionRule | undefined {
+export function findMatchingRule(url: string | undefined): ConversionRule | undefined {
+  if (!url) return undefined;
   // 既存のプレフィックスを削除してから検索
   const cleanUrl = removeExistingPrefix(url);
   return conversionRules.find((rule) => rule.pattern.test(cleanUrl));

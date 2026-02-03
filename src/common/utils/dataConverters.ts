@@ -12,6 +12,7 @@ import {
   isEditingLauncherItem,
   isEditingGroupItem,
   isEditingWindowItem,
+  isEditingClipboardItem,
 } from '../types/editingItem.js';
 import {
   isJsonLauncherItem,
@@ -142,6 +143,24 @@ export function convertEditingAppItemToRegisterItem(
         activateWindow: item.activateWindow,
         pinToAllDesktops: item.pinToAllDesktops,
       },
+      memo: item.memo,
+    };
+  }
+
+  // ClipboardItemの場合
+  if (isEditingClipboardItem(item)) {
+    return {
+      displayName: item.displayName,
+      path: '',
+      type: 'clipboard',
+      targetTab: defaultTab,
+      targetFile: item.sourceFile,
+      itemCategory: 'clipboard',
+      clipboardDataRef: item.clipboardDataRef,
+      clipboardFormats: item.formats,
+      clipboardSavedAt: item.savedAt,
+      clipboardPreview: item.preview,
+      customIcon: item.customIcon,
       memo: item.memo,
     };
   }

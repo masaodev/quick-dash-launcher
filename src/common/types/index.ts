@@ -60,6 +60,8 @@ export type {
   ClipboardRestoreResult,
   ClipboardPreview,
   CurrentClipboardState,
+  ClipboardSessionCaptureResult,
+  ClipboardSessionCommitResult,
 } from './clipboard';
 export {
   MAX_IMAGE_SIZE_BYTES,

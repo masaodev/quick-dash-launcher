@@ -51,7 +51,7 @@ export interface RegisterItem {
   windowOperationConfig?: WindowOperationConfig;
   /** 自由記述メモ（オプション） */
   memo?: string;
-  /** クリップボードデータファイルへの参照（clipboard専用） */
+  /** クリップボードデータファイルへの参照（clipboard専用、永続化済み） */
   clipboardDataRef?: string;
   /** クリップボードの保存フォーマット（clipboard専用） */
   clipboardFormats?: ClipboardFormat[];
@@ -59,4 +59,6 @@ export interface RegisterItem {
   clipboardSavedAt?: number;
   /** クリップボードのプレビュー（clipboard専用） */
   clipboardPreview?: string;
+  /** クリップボードセッションID（clipboard専用、登録確定前の一時保存用） */
+  clipboardSessionId?: string;
 }
