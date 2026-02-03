@@ -54,13 +54,17 @@ const DEFAULT_DURATION = 2500;
 
 let toastWindow: BrowserWindow | null = null;
 let closeTimeout: ReturnType<typeof setTimeout> | null = null;
-let isWindowReady = false; // 準備完了フラグ
+let isWindowReady = false;
 
-function cleanup(): void {
+function clearCloseTimeout(): void {
   if (closeTimeout) {
     clearTimeout(closeTimeout);
     closeTimeout = null;
   }
+}
+
+function cleanup(): void {
+  clearCloseTimeout();
 
   if (toastWindow && !toastWindow.isDestroyed()) {
     toastWindow.close();
@@ -69,12 +73,23 @@ function cleanup(): void {
   }
 }
 
-function createToastWindow(): BrowserWindow {
-  const primaryDisplay = screen.getPrimaryDisplay();
-  const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize;
+/**
+ * マウスカーソルがある画面でのトースト表示位置を計算
+ */
+function getToastPosition(): { x: number; y: number } {
+  const cursorPoint = screen.getCursorScreenPoint();
+  const display = screen.getDisplayNearestPoint(cursorPoint);
+  const { x: displayX, y: displayY } = display.workArea;
+  const { width: screenWidth, height: screenHeight } = display.workAreaSize;
 
-  const x = Math.round((screenWidth - TOAST_WIDTH) / 2);
-  const y = screenHeight - TOAST_HEIGHT - TOAST_MARGIN;
+  const x = displayX + Math.round((screenWidth - TOAST_WIDTH) / 2);
+  const y = displayY + screenHeight - TOAST_HEIGHT - TOAST_MARGIN;
+
+  return { x, y };
+}
+
+function createToastWindow(): BrowserWindow {
+  const { x, y } = getToastPosition();
 
   const win = new BrowserWindow({
     width: TOAST_WIDTH,
@@ -144,10 +159,7 @@ export async function showToastWindow(options: ToastOptions): Promise<void> {
   // グループ起動時は表示時間を長め（3秒）に設定
   const duration = customDuration ?? (itemType === 'group' ? 3000 : DEFAULT_DURATION);
 
-  if (closeTimeout) {
-    clearTimeout(closeTimeout);
-    closeTimeout = null;
-  }
+  clearCloseTimeout();
 
   // ウィンドウを準備（初回のみ作成・ロード）
   const win = await ensureToastWindow();
@@ -165,6 +177,10 @@ export async function showToastWindow(options: ToastOptions): Promise<void> {
     itemNames,
   });
 
+  // マウスカーソルがある画面に位置を更新
+  const { x, y } = getToastPosition();
+  win.setPosition(x, y);
+
   // 最前面に表示されるようレベルを明示的に設定してから表示
   win.setAlwaysOnTop(true, 'pop-up-menu');
   if (!win.isVisible()) {
@@ -174,8 +190,8 @@ export async function showToastWindow(options: ToastOptions): Promise<void> {
   // 指定時間後に非表示（破棄はしない）
   closeTimeout = setTimeout(() => {
     closeTimeout = null;
-    if (win && !win.isDestroyed()) {
-      win.hide(); // 破棄せず非表示のみ
+    if (!win.isDestroyed()) {
+      win.hide();
     }
   }, duration + 500);
 }
@@ -184,13 +200,10 @@ export async function showToastWindow(options: ToastOptions): Promise<void> {
  * トーストウィンドウを即座に閉じる
  */
 export function closeToastWindow(): void {
-  if (closeTimeout) {
-    clearTimeout(closeTimeout);
-    closeTimeout = null;
-  }
+  clearCloseTimeout();
 
   if (toastWindow && !toastWindow.isDestroyed()) {
-    toastWindow.hide(); // 破棄せず非表示
+    toastWindow.hide();
   }
 }
 
