@@ -165,6 +165,8 @@ export async function showToastWindow(options: ToastOptions): Promise<void> {
     itemNames,
   });
 
+  // 最前面に表示されるようレベルを明示的に設定してから表示
+  win.setAlwaysOnTop(true, 'pop-up-menu');
   if (!win.isVisible()) {
     win.show();
   }
