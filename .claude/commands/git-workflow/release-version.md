@@ -1,6 +1,6 @@
 ---
 description: "新バージョンのリリース（タグ作成とプッシュ）"
-argument-hint: "[patch|minor|major]"
+argument-hint: "[patch|minor|major] [--yes]"
 allowed-tools: ["Bash", "Read", "Edit", "TodoWrite", "AskUserQuestion"]
 ---
 
@@ -10,9 +10,15 @@ allowed-tools: ["Bash", "Read", "Edit", "TodoWrite", "AskUserQuestion"]
 
 **指定されたモード**: `$ARGUMENTS`
 
+### バージョンタイプ
 - 引数なし、または `patch`: パッチバージョンアップ（0.5.21 → 0.5.22）
 - `minor`: マイナーバージョンアップ（0.5.21 → 0.6.0）
 - `major`: メジャーバージョンアップ（0.5.21 → 1.0.0）
+
+### オプション
+- `--yes`: すべての確認をスキップして自動実行（CI/CD向け）
+
+**注意**: `--yes` オプションを指定した場合、バージョンタイプ（patch/minor/major）の指定が必須です。
 
 ## 実行内容
 
@@ -56,6 +62,23 @@ allowed-tools: ["Bash", "Read", "Edit", "TodoWrite", "AskUserQuestion"]
 # メジャーバージョンアップ（0.5.21 → 1.0.0）
 /release-version major
 ```
+
+### 確認スキップモード（--yes）
+```bash
+# 確認なしでパッチリリース
+/release-version patch --yes
+
+# 確認なしでマイナーリリース
+/release-version minor --yes
+
+# 確認なしでメジャーリリース
+/release-version major --yes
+```
+
+`--yes` オプションを指定すると、以下の確認をすべてスキップします：
+- バージョン番号の確認
+- コミット前の確認
+- タグ作成・プッシュ前の確認
 
 ### パラメータなし（対話モード）
 ```bash
@@ -146,4 +169,8 @@ git push origin v{version}
 # 対話モード（パラメータなし）
 /release-version
 # → 対話的にモードを選択
+
+# 確認なしで即座にパッチリリース（CI/CD向け）
+/release-version patch --yes
+# → 確認なしで 0.5.21 から 0.5.22 へ
 ```
