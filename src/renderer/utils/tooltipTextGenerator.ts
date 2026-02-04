@@ -55,13 +55,12 @@ function getWindowInfoTooltip(win: WindowInfo): string {
   }
 
   if (win.windowState) {
-    const stateText =
-      win.windowState === 'minimized'
-        ? '最小化'
-        : win.windowState === 'maximized'
-          ? '最大化'
-          : '通常';
-    lines.push(`状態: ${stateText}`);
+    const stateLabels: Record<string, string> = {
+      minimized: '最小化',
+      maximized: '最大化',
+      normal: '通常',
+    };
+    lines.push(`状態: ${stateLabels[win.windowState] || '通常'}`);
   }
 
   lines.push('');
@@ -90,24 +89,17 @@ function getGroupItemTooltip(groupItem: GroupItem): string {
 function getWindowItemTooltip(windowItem: WindowItem): string {
   const lines: string[] = [];
   lines.push(`ウィンドウタイトル: ${windowItem.windowTitle}`);
-
-  // 空行
   lines.push('');
 
-  // 位置・サイズ情報
   if (windowItem.x !== undefined && windowItem.y !== undefined) {
     lines.push(`位置: (${windowItem.x}, ${windowItem.y})`);
   }
   if (windowItem.width !== undefined && windowItem.height !== undefined) {
     lines.push(`サイズ: ${windowItem.width}x${windowItem.height}`);
   }
-
-  // 仮想デスクトップ情報
   if (windowItem.virtualDesktopNumber !== undefined) {
     lines.push(`仮想デスクトップ: ${windowItem.virtualDesktopNumber}`);
   }
-
-  // アクティブ化フラグ
   if (windowItem.activateWindow === false) {
     lines.push(`アクティブ化: しない`);
   }
@@ -122,8 +114,6 @@ function getWindowItemTooltip(windowItem: WindowItem): string {
  */
 function getLauncherItemTooltip(launcherItem: LauncherItem): string {
   const lines: string[] = [];
-
-  // パス情報（最初に表示）
   lines.push(PathUtils.getFullPath(launcherItem));
 
   appendMetaInfo(
@@ -142,8 +132,6 @@ function getLauncherItemTooltip(launcherItem: LauncherItem): string {
  */
 function getClipboardItemTooltip(clipboardItem: ClipboardItem): string {
   const lines: string[] = [];
-
-  // フォーマット情報
   const formatLabels: Record<string, string> = {
     text: 'テキスト',
     html: 'HTML',
@@ -154,7 +142,6 @@ function getClipboardItemTooltip(clipboardItem: ClipboardItem): string {
   const formats = (clipboardItem.formats || []).map((f) => formatLabels[f] || f).join(', ');
   lines.push(`フォーマット: ${formats}`);
 
-  // プレビュー
   if (clipboardItem.preview) {
     const preview =
       clipboardItem.preview.length > 50
@@ -163,7 +150,6 @@ function getClipboardItemTooltip(clipboardItem: ClipboardItem): string {
     lines.push(`プレビュー: ${preview}`);
   }
 
-  // 保存日時
   if (clipboardItem.savedAt) {
     const date = new Date(clipboardItem.savedAt).toLocaleString('ja-JP');
     lines.push(`保存日時: ${date}`);
@@ -179,12 +165,10 @@ function getClipboardItemTooltip(clipboardItem: ClipboardItem): string {
  * アイテムタイプに応じて適切な生成関数を呼び出す
  */
 export function getTooltipText(item: AppItem): string {
-  // WindowInfoの場合
   if (isWindowInfo(item)) {
     return getWindowInfoTooltip(item);
   }
 
-  // タイプ別処理
   if (isGroupItem(item)) {
     return getGroupItemTooltip(item);
   }

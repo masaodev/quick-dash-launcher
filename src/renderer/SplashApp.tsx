@@ -4,12 +4,12 @@ interface SplashAppProps {
   onReady?: () => void;
 }
 
-const SplashApp: React.FC<SplashAppProps> = ({ onReady }) => {
+function SplashApp({ onReady }: SplashAppProps): React.ReactElement {
   const [loadingText, setLoadingText] = useState('起動中');
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    // Simulate startup progress
+    // 起動進捗のシミュレーション
     const steps = [
       { delay: 100, text: '起動中', progress: 10 },
       { delay: 300, text: '設定を読み込み中', progress: 25 },
@@ -58,6 +58,6 @@ const SplashApp: React.FC<SplashAppProps> = ({ onReady }) => {
       </div>
     </div>
   );
-};
+}
 
 export default SplashApp;

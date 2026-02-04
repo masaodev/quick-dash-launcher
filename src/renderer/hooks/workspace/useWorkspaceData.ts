@@ -4,7 +4,6 @@ import type { WorkspaceItem, WorkspaceGroup, ExecutionHistoryItem } from '@commo
 import { logError } from '../../utils/debug';
 import { useGlobalLoading } from '../useGlobalLoading';
 
-/** アイコンキャッシュ取得用の最小限の型 */
 type IconCacheItem = {
   displayName: string;
   path: string;
@@ -13,16 +12,19 @@ type IconCacheItem = {
   originalPath?: string;
 };
 
-/**
- * アイコンキャッシュを読み込んでアイテムにマージする
- */
+type ItemType = 'url' | 'file' | 'folder' | 'app' | 'customUri' | 'windowOperation' | 'group';
+
+function needsIconFromCache(type: ItemType): boolean {
+  return type !== 'windowOperation' && type !== 'group';
+}
+
 async function mergeIconsFromCache<T extends { icon?: string }>(
   items: T[],
   getPath: (item: T) => string,
   toLauncherStyle: (item: T) => IconCacheItem,
-  needsIcon: (item: T) => boolean
+  getType: (item: T) => ItemType
 ): Promise<T[]> {
-  const itemsNeedingIcons = items.filter(needsIcon);
+  const itemsNeedingIcons = items.filter((item) => !item.icon && needsIconFromCache(getType(item)));
   if (itemsNeedingIcons.length === 0) return items;
 
   const launcherStyleItems = itemsNeedingIcons.map(toLauncherStyle);
@@ -34,18 +36,13 @@ async function mergeIconsFromCache<T extends { icon?: string }>(
   }));
 }
 
-/**
- * ワークスペースのデータ管理フック
- */
 export function useWorkspaceData() {
   const [items, setItems] = useState<WorkspaceItem[]>([]);
   const [groups, setGroups] = useState<WorkspaceGroup[]>([]);
   const [executionHistory, setExecutionHistory] = useState<ExecutionHistoryItem[]>([]);
-
-  // ローディング状態管理
   const { isLoading, message: loadingMessage, withLoading } = useGlobalLoading();
 
-  const loadItems = async () => {
+  async function loadItems(): Promise<void> {
     try {
       const loadedItems = await window.electronAPI.workspaceAPI.loadItems();
       const itemsWithIcons = await mergeIconsFromCache(
@@ -58,24 +55,24 @@ export function useWorkspaceData() {
           customIcon: item.customIcon,
           originalPath: item.originalPath,
         }),
-        (item) => !item.icon && item.type !== 'windowOperation' && item.type !== 'group'
+        (item) => item.type as ItemType
       );
       setItems(itemsWithIcons);
     } catch (error) {
       logError('Failed to load workspace items:', error);
     }
-  };
+  }
 
-  const loadGroups = async () => {
+  async function loadGroups(): Promise<void> {
     try {
       const loadedGroups = await window.electronAPI.workspaceAPI.loadGroups();
       setGroups(loadedGroups);
     } catch (error) {
       logError('Failed to load workspace groups:', error);
     }
-  };
+  }
 
-  const loadExecutionHistory = async () => {
+  async function loadExecutionHistory(): Promise<void> {
     try {
       const history = await window.electronAPI.workspaceAPI.loadExecutionHistory();
       const historyWithIcons = await mergeIconsFromCache(
@@ -87,32 +84,25 @@ export function useWorkspaceData() {
           type: item.itemType as IconCacheItem['type'],
           customIcon: item.customIcon,
         }),
-        (item) => !item.icon && item.itemType !== 'windowOperation' && item.itemType !== 'group'
+        (item) => item.itemType as ItemType
       );
       setExecutionHistory(historyWithIcons);
     } catch (error) {
       logError('Failed to load execution history:', error);
     }
-  };
+  }
 
-  // 全データ読み込み（内部用）
-  const loadAllData = async () => {
+  async function loadAllData(): Promise<void> {
     await Promise.all([loadItems(), loadGroups(), loadExecutionHistory()]);
-  };
+  }
 
-  // ローディング表示付きの全データ読み込み（外部公開用）
-  const loadAllDataWithLoading = async () => {
+  async function loadAllDataWithLoading(): Promise<void> {
     await withLoading('データ読込中', loadAllData);
-  };
+  }
 
-  // 初期データ読み込みと変更イベントリスニング
   useEffect(() => {
-    // 初期化時はローディング表示なし（画面がまだ表示されていない）
     loadAllData();
-
-    // ワークスペース変更イベントをリッスン（ローディング表示付き）
     const unsubscribe = window.electronAPI.onWorkspaceChanged(loadAllDataWithLoading);
-
     return unsubscribe;
   }, []);
 

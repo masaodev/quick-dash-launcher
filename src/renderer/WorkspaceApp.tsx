@@ -18,7 +18,7 @@ const WorkspaceApp: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isPinned, setIsPinned] = useState(false);
   const [backgroundTransparent, setBackgroundTransparent] = useState(false);
-  const [activeGroupId, setActiveGroupId] = useState<string | undefined>(undefined);
+  const [activeGroupId, setActiveGroupId] = useState<string>();
   const [editModalItem, setEditModalItem] = useState<WorkspaceItem | null>(null);
   const [isFilterVisible, setIsFilterVisible] = useState(false);
   const [filterText, setFilterText] = useState('');
@@ -117,13 +117,9 @@ const WorkspaceApp: React.FC = () => {
     }
   };
 
-  const handleArchiveGroup = async (groupId: string) => {
-    try {
-      const itemCount = items.filter((item) => item.groupId === groupId).length;
-      setArchiveGroupDialog({ isOpen: true, groupId, itemCount });
-    } catch (error) {
-      logError('Failed to archive workspace group:', error);
-    }
+  const handleArchiveGroup = (groupId: string): void => {
+    const itemCount = items.filter((item) => item.groupId === groupId).length;
+    setArchiveGroupDialog({ isOpen: true, groupId, itemCount });
   };
 
   const handleConfirmArchiveGroup = async () => {
@@ -285,28 +281,28 @@ const WorkspaceApp: React.FC = () => {
         cancelText="キャンセル"
         danger={false}
       />
-      {/* ワークスペースアイテム編集モーダル */}
       <WorkspaceItemEditModal
         isOpen={editModalItem !== null}
         onClose={() => setEditModalItem(null)}
         editingItem={editModalItem}
         onSave={actions.handleUpdateItem}
       />
-      {/* サイズ変更ハンドル */}
-      <div className="workspace-resize-handle top-left" onMouseDown={handleResize('top-left')} />
-      <div className="workspace-resize-handle top" onMouseDown={handleResize('top')} />
-      <div className="workspace-resize-handle top-right" onMouseDown={handleResize('top-right')} />
-      <div className="workspace-resize-handle right" onMouseDown={handleResize('right')} />
-      <div
-        className="workspace-resize-handle bottom-right"
-        onMouseDown={handleResize('bottom-right')}
-      />
-      <div className="workspace-resize-handle bottom" onMouseDown={handleResize('bottom')} />
-      <div
-        className="workspace-resize-handle bottom-left"
-        onMouseDown={handleResize('bottom-left')}
-      />
-      <div className="workspace-resize-handle left" onMouseDown={handleResize('left')} />
+      {[
+        'top-left',
+        'top',
+        'top-right',
+        'right',
+        'bottom-right',
+        'bottom',
+        'bottom-left',
+        'left',
+      ].map((direction) => (
+        <div
+          key={direction}
+          className={`workspace-resize-handle ${direction}`}
+          onMouseDown={handleResize(direction)}
+        />
+      ))}
       <GlobalLoadingIndicator isLoading={isLoading} message={loadingMessage} />
     </div>
   );

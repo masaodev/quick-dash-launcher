@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { AppItem, DataFileTab } from '@common/types';
+import { AppItem, AppSettings, DataFileTab } from '@common/types';
 import { isWindowInfo } from '@common/types/guards';
 
 import { debugLog, logError } from '../utils/debug';
@@ -20,9 +20,20 @@ function extractUniqueFiles(tabs: DataFileTab[]): string[] {
 }
 
 /**
+ * ファイルリストから有効なアクティブタブを決定
+ */
+function resolveActiveTab(files: string[], preferredTab: string): string {
+  if (files.includes(preferredTab)) {
+    return preferredTab;
+  }
+  if (files.includes('data.json')) {
+    return 'data.json';
+  }
+  return files[0] || 'data.json';
+}
+
+/**
  * データファイルタブ管理フック
- *
- * タブ設定のロード、タブフィルタリング、ファイル存在確認を管理します。
  */
 export function useDataFileTabs() {
   const [showDataFileTabs, setShowDataFileTabs] = useState(false);
@@ -31,108 +42,75 @@ export function useDataFileTabs() {
   const [dataFileTabs, setDataFileTabs] = useState<DataFileTab[]>([]);
   const [dataFileLabels, setDataFileLabels] = useState<Record<string, string>>({});
 
-  /**
-   * 設定に登録されているファイルが物理的に存在するか確認し、存在しない場合は作成
-   */
-  const ensureDataFilesExist = async (fileNames: string[]) => {
-    // undefined や空文字列をフィルタリング
+  async function ensureDataFilesExist(fileNames: string[]): Promise<void> {
     const validFileNames = fileNames.filter((name) => name && typeof name === 'string');
     for (const fileName of validFileNames) {
       try {
-        // ファイルが存在するか確認（実際には作成APIを呼ぶだけで、既存ファイルは上書きされない）
         await window.electronAPI.createDataFile(fileName);
       } catch (error) {
         logError(`${fileName}の作成/確認に失敗しました:`, error);
       }
     }
-  };
+  }
 
-  /**
-   * タブ設定をロード
-   */
-  const loadTabSettings = async () => {
-    try {
-      const settings = await window.electronAPI.getSettings();
+  async function applySettings(
+    settings: AppSettings,
+    options: { resetToDefault?: boolean } = {}
+  ): Promise<void> {
+    setShowDataFileTabs(settings.showDataFileTabs);
+    setDataFileTabs(settings.dataFileTabs || []);
+    setDataFileLabels(settings.dataFileLabels || {});
 
-      setShowDataFileTabs(settings.showDataFileTabs);
-      setDataFileTabs(settings.dataFileTabs || []);
-      setDataFileLabels(settings.dataFileLabels || {});
+    const files = extractUniqueFiles(settings.dataFileTabs || []);
+    setDataFiles(files);
 
-      // デフォルトタブを設定
-      if (settings.defaultFileTab) {
-        setActiveTab(settings.defaultFileTab);
-      }
+    await ensureDataFilesExist(files);
 
-      // 設定からデータファイルリストを生成
-      const files = extractUniqueFiles(settings.dataFileTabs || []);
-      setDataFiles(files);
+    const defaultTab = settings.defaultFileTab || 'data.json';
 
-      // 物理ファイルが存在しない場合は自動作成
-      await ensureDataFilesExist(files);
-
-      // タブ表示がOFFの場合は、defaultFileTabを使用
-      if (!settings.showDataFileTabs) {
-        setActiveTab(settings.defaultFileTab || 'data.json');
-      } else {
-        // アクティブタブが存在するか確認、存在しない場合はdata.jsonにフォールバック
-        const defaultTab = settings.defaultFileTab || 'data.json';
-        if (files.includes(defaultTab)) {
-          setActiveTab(defaultTab);
-        } else if (files.includes('data.json')) {
-          setActiveTab('data.json');
-        } else if (files.length > 0) {
-          setActiveTab(files[0]);
-        }
-      }
-    } catch (error) {
-      logError('タブ設定のロードに失敗しました:', error);
-    }
-  };
-
-  /**
-   * 設定変更通知リスナーとwindow-hiddenイベントリスナーを設定
-   */
-  useEffect(() => {
-    // 初期ロード
-    loadTabSettings();
-
-    // ウィンドウ非表示時にデフォルトタブに戻す（次回表示時に既にリセット済みにするため）
-    const cleanupWindowHidden = window.electronAPI.onWindowHidden(async () => {
-      debugLog('ウィンドウ非表示通知を受信、デフォルトタブに戻します');
-      await resetToDefaultTab();
-    });
-
-    // 設定変更通知のリスナーを設定
-    const cleanupSettingsChanged = window.electronAPI.onSettingsChanged(async () => {
-      debugLog('設定変更通知を受信、タブ設定を再読み込みします');
-      const settings = await window.electronAPI.getSettings();
-      setShowDataFileTabs(settings.showDataFileTabs);
-      setDataFileTabs(settings.dataFileTabs || []);
-
-      // 設定からデータファイルリストを再生成
-      const files = extractUniqueFiles(settings.dataFileTabs || []);
-      setDataFiles(files);
-
-      // 物理ファイルが存在しない場合は自動作成
-      await ensureDataFilesExist(files);
-
-      // アクティブタブが削除されていた場合のフォールバック
+    if (options.resetToDefault) {
+      setActiveTab(resolveActiveTab(files, defaultTab));
+    } else {
       setActiveTab((prevTab) => {
         if (!files.includes(prevTab)) {
-          if (files.includes('data.json')) {
-            return 'data.json';
-          } else if (files.length > 0) {
-            return files[0];
-          }
+          return resolveActiveTab(files, defaultTab);
         }
         return prevTab;
       });
+    }
+  }
 
-      // デフォルトタブが変更されていたら反映
-      if (settings.defaultFileTab && settings.defaultFileTab !== activeTab) {
-        if (files.includes(settings.defaultFileTab)) {
-          setActiveTab(settings.defaultFileTab);
-        }
+  useEffect(() => {
+    async function loadTabSettings(): Promise<void> {
+      try {
+        const settings = await window.electronAPI.getSettings();
+        await applySettings(settings, { resetToDefault: true });
+      } catch (error) {
+        logError('タブ設定のロードに失敗しました:', error);
+      }
+    }
+
+    loadTabSettings();
+
+    const cleanupWindowHidden = window.electronAPI.onWindowHidden(async () => {
+      debugLog('ウィンドウ非表示通知を受信、デフォルトタブに戻します');
+      try {
+        const settings = await window.electronAPI.getSettings();
+        const files = extractUniqueFiles(settings.dataFileTabs || []);
+        const defaultTab = settings.defaultFileTab || 'data.json';
+        setActiveTab(resolveActiveTab(files, defaultTab));
+      } catch (error) {
+        logError('デフォルトタブへのリセットに失敗しました:', error);
+      }
+    });
+
+    const cleanupSettingsChanged = window.electronAPI.onSettingsChanged(async () => {
+      debugLog('設定変更通知を受信、タブ設定を再読み込みします');
+      try {
+        const settings = await window.electronAPI.getSettings();
+        await applySettings(settings);
+      } catch (error) {
+        logError('設定の再読み込みに失敗しました:', error);
       }
     });
 
@@ -142,64 +120,24 @@ export function useDataFileTabs() {
     };
   }, []);
 
-  /**
-   * タブクリックハンドラ
-   */
-  const handleTabClick = (fileName: string) => {
+  function handleTabClick(fileName: string): void {
     setActiveTab(fileName);
-  };
+  }
 
-  /**
-   * アクティブなタブに基づいてアイテムをフィルタリング
-   */
-  const getTabFilteredItems = (mainItems: AppItem[]): AppItem[] => {
+  function getTabFilteredItems(mainItems: AppItem[]): AppItem[] {
     if (!showDataFileTabs) {
-      // タブ表示OFF: activeTab（デフォルトはdefaultFileTab）のアイテムのみ表示
       return mainItems.filter((item) => !isWindowInfo(item) && item.sourceFile === activeTab);
     }
-    // タブ表示ON: アクティブなタブに紐付く全ファイルのアイテムを表示
-    // アクティブなタブの設定を検索
+
     const activeTabConfig = dataFileTabs.find((tab) => tab.files.includes(activeTab));
     if (activeTabConfig) {
-      // タブに紐付く全ファイルのアイテムを取得
       return mainItems.filter(
         (item) => !isWindowInfo(item) && activeTabConfig.files.includes(item.sourceFile || '')
       );
     }
-    // フォールバック: アクティブタブと一致するファイルのアイテムのみ
+
     return mainItems.filter((item) => !isWindowInfo(item) && item.sourceFile === activeTab);
-  };
-
-  /**
-   * デフォルトタブに戻す（メイン画面再表示時に呼び出す）
-   */
-  const resetToDefaultTab = async () => {
-    try {
-      const settings = await window.electronAPI.getSettings();
-
-      // タブ表示がOFFの場合はdefaultFileTabに戻す
-      if (!settings.showDataFileTabs) {
-        setActiveTab(settings.defaultFileTab || 'data.json');
-        return;
-      }
-
-      // タブ表示がONの場合はdefaultFileTabに戻す
-      const defaultTab = settings.defaultFileTab || 'data.json';
-
-      // 設定から最新のファイルリストを再生成（クロージャで古い値を参照しないため）
-      const files = extractUniqueFiles(settings.dataFileTabs || []);
-
-      if (files.includes(defaultTab)) {
-        setActiveTab(defaultTab);
-      } else if (files.includes('data.json')) {
-        setActiveTab('data.json');
-      } else if (files.length > 0) {
-        setActiveTab(files[0]);
-      }
-    } catch (error) {
-      logError('デフォルトタブへのリセットに失敗しました:', error);
-    }
-  };
+  }
 
   return {
     showDataFileTabs,

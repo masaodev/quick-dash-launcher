@@ -25,41 +25,20 @@ let mainWindow: BrowserWindow | null = null;
 
 const execAsync = promisify(exec);
 
-/**
- * 環境変数を展開する共通関数
- * @param path 環境変数を含む可能性があるパス
- * @returns 環境変数が展開されたパス
- */
-function expandEnvironmentVariables(path: string): string {
-  return path.replace(/%([^%]+)%/g, (_, envVar) => {
-    return process.env[envVar] || _;
-  });
+/** 環境変数を展開する（%VAR%形式） */
+function expandEnvironmentVariables(envPath: string): string {
+  return envPath.replace(/%([^%]+)%/g, (original, envVar) => process.env[envVar] || original);
 }
 
-/**
- * 指定されたURLのファビコンを取得する（FaviconServiceへの委譲）
- * FaviconServiceのインスタンスを管理し、ファビコンの取得処理を実行する
- *
- * @param url - ファビコンを取得するURL
- * @param faviconsFolder - ファビコンキャッシュフォルダのパス
- * @returns base64エンコードされたファビコンデータURL、失敗時はnull
- */
+/** 指定されたURLのファビコンを取得する（FaviconServiceへの委譲） */
 async function fetchFavicon(url: string, faviconsFolder: string): Promise<string | null> {
   if (!faviconService) {
     faviconService = new FaviconService(faviconsFolder);
   }
-
-  return await faviconService.fetchFavicon(url);
+  return faviconService.fetchFavicon(url);
 }
 
-/**
- * ショートカットファイル(.lnk)からカスタムアイコンを抽出してキャッシュに保存する
- * 最初に.lnkファイル自体からアイコンを抽出し、失敗した場合はターゲットファイルからの抽出にフォールバックする
- *
- * @param lnkPath - ショートカットファイルのパス
- * @param iconsFolder - アイコンキャッシュフォルダのパス
- * @returns base64エンコードされたアイコンデータURL、失敗時はnull
- */
+/** ショートカットファイル(.lnk)からアイコンを抽出してキャッシュに保存する */
 async function extractShortcutIcon(lnkPath: string, iconsFolder: string): Promise<string | null> {
   try {
     // ファイルが存在するか確認
@@ -155,14 +134,7 @@ async function extractShortcutIcon(lnkPath: string, iconsFolder: string): Promis
   }
 }
 
-/**
- * 実行ファイルからアイコンを抽出してキャッシュに保存する
- * extract-file-iconライブラリを使用してWindowsの実行ファイルからアイコンを抽出し、PNGとしてキャッシュする
- *
- * @param filePath - アイコンを抽出するファイルのパス
- * @param iconsFolder - アイコンキャッシュフォルダのパス
- * @returns base64エンコードされたアイコンデータURL、失敗時はnull
- */
+/** 実行ファイルからアイコンを抽出してキャッシュに保存する */
 export async function extractIcon(filePath: string, iconsFolder: string): Promise<string | null> {
   try {
     let resolvedPath = filePath;
@@ -290,20 +262,7 @@ export async function extractCustomUriIcon(
   }
 }
 
-/**
- * ファイル拡張子に基づいてアイコンを抽出し、キャッシュに保存する
- * URIスキーマやファイルパスから拡張子を取得し、関連付けられたアプリケーションのアイコンを取得する
- * レジストリ検索やサンプルファイル作成による高度なアイコン抽出機能を提供する
- *
- * @param filePath - ファイルパスまたはURI（http://example.com/file.pdfなど）
- * @param extensionsFolder - 拡張子アイコンキャッシュフォルダのパス
- * @returns base64エンコードされたアイコンデータURL、失敗時はnull
- * @throws アイコン抽出エラー、一時ファイル作成エラー
- *
- * @example
- * const iconUrl = await extractFileIconByExtension('document.pdf', '/cache/extensions');
- * // 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...'
- */
+/** ファイル拡張子に基づいてアイコンを抽出し、キャッシュに保存する */
 export async function extractFileIconByExtension(
   filePath: string,
   extensionsFolder: string
@@ -445,26 +404,23 @@ interface IconItem {
   type: string;
   path: string;
   originalPath?: string;
+  customIcon?: string;
 }
 
-/**
- * 複数のアイテムのキャッシュされたアイコンを一括で読み込む
- * 各アイテムのタイプに応じて適切なキャッシュフォルダからアイコンを検索し、base64形式で返す
- * URL（ファビコン）、実行ファイル（直接アイコン）、拡張子ベース（関連付け）の3つの方法に対応
- *
- * @param items - アイコンを読み込むアイテムの配列
- * @param faviconsFolder - ファビコンキャッシュフォルダのパス
- * @param iconsFolder - アイコンキャッシュフォルダのパス
- * @param extensionsFolder - 拡張子アイコンキャッシュフォルダのパス
- * @returns パス（またはURL）をキーとするアイコンデータのマップ
- *
- * @example
- * const icons = await loadCachedIcons(
- *   [{ path: 'code.exe', type: 'app' }, { path: 'https://google.com', type: 'url' }],
- *   '/cache/favicons', '/cache/icons', '/cache/extensions'
- * );
- * // { 'code.exe': 'data:image/png;base64,...', 'https://google.com': 'data:image/png;base64,...' }
- */
+/** 候補パスの中から最初に存在するファイルのパスを返す */
+function findExistingFile(...paths: string[]): string | null {
+  for (const p of paths) {
+    if (fs.existsSync(p)) return p;
+  }
+  return null;
+}
+
+/** 拡張子アイコンのキャッシュパスを取得 */
+function getExtensionIconPath(extensionsFolder: string, ext: string): string {
+  return path.join(extensionsFolder, `ext_${ext.replace('.', '')}_icon.png`);
+}
+
+/** 複数のアイテムのキャッシュされたアイコンを一括で読み込む */
 async function loadCachedIcons(
   items: IconItem[],
   faviconsFolder: string,
@@ -478,108 +434,15 @@ async function loadCachedIcons(
       let iconPath: string | null = null;
 
       // カスタムアイコンを最優先でチェック
-      const itemWithCustomIcon = item as IconItem & { customIcon?: string };
-      if (itemWithCustomIcon.customIcon) {
-        const customIconPath = path.join(
-          PathManager.getCustomIconsFolder(),
-          itemWithCustomIcon.customIcon
-        );
-        if (fs.existsSync(customIconPath)) {
-          iconPath = customIconPath;
-        }
+      if (item.customIcon) {
+        const customIconPath = path.join(PathManager.getCustomIconsFolder(), item.customIcon);
+        iconPath = findExistingFile(customIconPath);
       }
 
       // カスタムアイコンがない場合は自動取得アイコンを確認
       if (!iconPath) {
-        // URLの場合、キャッシュされたファビコンをチェック
-        if (item.type === 'url' && item.path && item.path.includes('://')) {
-          const domain = new URL(item.path).hostname;
-          // 新しい64pxファイルを優先的にチェック
-          const faviconPath64 = path.join(faviconsFolder, `${domain}_favicon_64.png`);
-          const faviconPath32 = path.join(faviconsFolder, `${domain}_favicon_32.png`);
-
-          if (fs.existsSync(faviconPath64)) {
-            iconPath = faviconPath64;
-          } else if (fs.existsSync(faviconPath32)) {
-            iconPath = faviconPath32;
-          }
-        } else if (
-          item.type === 'app' &&
-          (PathUtils.isShortcutFile(item.originalPath) || PathUtils.isShortcutFile(item.path))
-        ) {
-          // ショートカットファイルの場合（展開済みアイテムまたは直接指定）
-          // 元のショートカットパスを優先、なければ現在のパスを使用
-          const shortcutPath = PathUtils.isShortcutFile(item.originalPath)
-            ? item.originalPath!
-            : item.path;
-
-          const shortcutName = path.basename(shortcutPath, '.lnk');
-          const lnkIconPath = path.join(iconsFolder, `${shortcutName}_lnk_icon.png`);
-          const exeIconPath = path.join(iconsFolder, `${shortcutName}_icon.png`);
-
-          if (fs.existsSync(lnkIconPath)) {
-            iconPath = lnkIconPath;
-          } else if (fs.existsSync(exeIconPath)) {
-            iconPath = exeIconPath;
-          }
-        } else if (item.type === 'app' && item.path) {
-          const lowerPath = item.path.toLowerCase();
-          if (lowerPath.endsWith('.exe')) {
-            // .exeファイルの場合、アイコンをチェック
-            const iconName = path.basename(item.path, path.extname(item.path)) + '_icon.png';
-            const exeIconPath = path.join(iconsFolder, iconName);
-            if (fs.existsSync(exeIconPath)) {
-              iconPath = exeIconPath;
-            }
-          } else if (
-            lowerPath.endsWith('.bat') ||
-            lowerPath.endsWith('.cmd') ||
-            lowerPath.endsWith('.com')
-          ) {
-            // .bat/.cmd/.comファイルの場合、拡張子ベースのアイコンをチェック
-            const extensionName = path.extname(item.path).slice(1).toLowerCase();
-            const extensionIconPath = path.join(extensionsFolder, `ext_${extensionName}_icon.png`);
-            if (fs.existsSync(extensionIconPath)) {
-              iconPath = extensionIconPath;
-            }
-          }
-        } else if (item.type === 'customUri' && item.path) {
-          // カスタムURIの場合、まずスキーマベースのアイコンをチェック
-          const schemeMatch = item.path.match(/^([^:]+):/);
-          if (schemeMatch) {
-            const scheme = schemeMatch[1];
-            const uriIconPath = path.join(iconsFolder, `uri_${scheme}_icon.png`);
-            if (fs.existsSync(uriIconPath)) {
-              iconPath = uriIconPath;
-            }
-          }
-
-          // スキーマベースのアイコンがない場合、拡張子ベースのアイコンをチェック
-          if (!iconPath) {
-            const fileExtension = extractExtensionFromUri(item.path);
-            if (fileExtension) {
-              const extensionName = fileExtension.replace('.', '');
-              const extensionIconPath = path.join(
-                extensionsFolder,
-                `ext_${extensionName}_icon.png`
-              );
-              if (fs.existsSync(extensionIconPath)) {
-                iconPath = extensionIconPath;
-              }
-            }
-          }
-        } else if (item.type === 'file' && item.path) {
-          // ファイルの場合、拡張子ベースのアイコンをチェック
-          const fileExtension = path.extname(item.path).toLowerCase();
-          if (fileExtension) {
-            const extensionName = fileExtension.replace('.', '');
-            const extensionIconPath = path.join(extensionsFolder, `ext_${extensionName}_icon.png`);
-            if (fs.existsSync(extensionIconPath)) {
-              iconPath = extensionIconPath;
-            }
-          }
-        }
-      } // カスタムアイコンがない場合のif文の終了
+        iconPath = findCachedIconPath(item, faviconsFolder, iconsFolder, extensionsFolder);
+      }
 
       if (iconPath) {
         const iconBuffer = fs.readFileSync(iconPath);
@@ -593,15 +456,126 @@ async function loadCachedIcons(
   return iconCache;
 }
 
-/**
- * ファビコン取得とアイコン抽出を統合して実行し、統合進捗を報告する
- * @param urlItems - ファビコン取得対象のURLアイテム配列
- * @param items - アイコン抽出対象のアイテム配列
- * @param faviconsFolder - ファビコンキャッシュフォルダ
- * @param iconsFolder - アイコンキャッシュフォルダ
- * @param extensionsFolder - 拡張子アイコンキャッシュフォルダ
- * @param forceRefresh - trueの場合、エラー記録を無視して全アイテムを取得
- */
+/** アイテムタイプに応じたキャッシュアイコンのパスを検索 */
+function findCachedIconPath(
+  item: IconItem,
+  faviconsFolder: string,
+  iconsFolder: string,
+  extensionsFolder: string
+): string | null {
+  if (item.type === 'url' && item.path?.includes('://')) {
+    const domain = new URL(item.path).hostname;
+    return findExistingFile(
+      path.join(faviconsFolder, `${domain}_favicon_64.png`),
+      path.join(faviconsFolder, `${domain}_favicon_32.png`)
+    );
+  }
+
+  if (item.type === 'app') {
+    // ショートカットファイルの場合
+    if (PathUtils.isShortcutFile(item.originalPath) || PathUtils.isShortcutFile(item.path)) {
+      const shortcutPath = PathUtils.isShortcutFile(item.originalPath)
+        ? item.originalPath!
+        : item.path;
+      const shortcutName = path.basename(shortcutPath, '.lnk');
+      return findExistingFile(
+        path.join(iconsFolder, `${shortcutName}_lnk_icon.png`),
+        path.join(iconsFolder, `${shortcutName}_icon.png`)
+      );
+    }
+
+    // 通常の実行ファイル
+    if (item.path) {
+      const lowerPath = item.path.toLowerCase();
+      if (lowerPath.endsWith('.exe')) {
+        const iconName = path.basename(item.path, path.extname(item.path)) + '_icon.png';
+        return findExistingFile(path.join(iconsFolder, iconName));
+      }
+      if (lowerPath.endsWith('.bat') || lowerPath.endsWith('.cmd') || lowerPath.endsWith('.com')) {
+        const extensionName = path.extname(item.path).slice(1).toLowerCase();
+        return findExistingFile(getExtensionIconPath(extensionsFolder, extensionName));
+      }
+    }
+  }
+
+  if (item.type === 'customUri' && item.path) {
+    // スキーマベースのアイコンを優先
+    const schemeMatch = item.path.match(/^([^:]+):/);
+    if (schemeMatch) {
+      const uriIconPath = path.join(iconsFolder, `uri_${schemeMatch[1]}_icon.png`);
+      if (fs.existsSync(uriIconPath)) return uriIconPath;
+    }
+    // 拡張子ベースにフォールバック
+    const fileExtension = extractExtensionFromUri(item.path);
+    if (fileExtension) {
+      return findExistingFile(getExtensionIconPath(extensionsFolder, fileExtension));
+    }
+  }
+
+  if (item.type === 'file' && item.path) {
+    const fileExtension = path.extname(item.path).toLowerCase();
+    if (fileExtension) {
+      return findExistingFile(getExtensionIconPath(extensionsFolder, fileExtension));
+    }
+  }
+
+  return null;
+}
+
+/** 進捗表示用テキストを生成 */
+function getDisplayText(item: IconItem): string {
+  return item.name ? `${item.name}\n${item.path}` : item.path;
+}
+
+/** エラー記録のないアイテムのみをフィルタリング */
+async function filterItemsWithoutErrors(
+  items: IconItem[],
+  errorService: IconFetchErrorService,
+  errorType: 'favicon' | 'icon'
+): Promise<IconItem[]> {
+  const result: IconItem[] = [];
+  for (const item of items) {
+    const hasError = await errorService.hasError(item.path, errorType);
+    if (!hasError) {
+      result.push(item);
+    } else {
+      iconLogger.info({ path: item.path }, `Skipping ${errorType} fetch due to previous error`);
+    }
+  }
+  return result;
+}
+
+/** アイテムからアイコンを抽出 */
+async function extractIconForItem(
+  item: IconItem,
+  iconsFolder: string,
+  extensionsFolder: string
+): Promise<string | null> {
+  if (item.type === 'app') {
+    if (PathUtils.isShortcutFile(item.originalPath)) {
+      return extractIcon(item.originalPath!, iconsFolder);
+    }
+    if (item.path.endsWith('.exe') || PathUtils.isShortcutFile(item.path)) {
+      return extractIcon(item.path, iconsFolder);
+    }
+    if (item.path.endsWith('.bat') || item.path.endsWith('.cmd') || item.path.endsWith('.com')) {
+      return extractFileIconByExtension(item.path, extensionsFolder);
+    }
+  }
+
+  if (item.type === 'customUri') {
+    const icon = await extractCustomUriIcon(item.path, iconsFolder);
+    return icon || extractFileIconByExtension(item.path, extensionsFolder);
+  }
+
+  if (item.type === 'file') {
+    return extractFileIconByExtension(item.path, extensionsFolder);
+  }
+
+  return null;
+}
+
+/** ファビコン取得とアイコン抽出を統合して実行し、統合進捗を報告する */
 async function fetchIconsCombined(
   urlItems: IconItem[],
   items: IconItem[],
@@ -610,44 +584,21 @@ async function fetchIconsCombined(
   extensionsFolder: string,
   forceRefresh: boolean = false
 ): Promise<{ favicons: Record<string, string | null>; icons: Record<string, string | null> }> {
-  // エラーサービスのインスタンスを取得
   const errorService = await IconFetchErrorService.getInstance();
 
-  // forceRefresh時はエラー記録をクリア
   if (forceRefresh) {
     await errorService.clearAllErrors();
   }
 
-  // エラー記録をチェックしてスキップするアイテムをフィルタリング
-  let filteredUrlItems = urlItems;
-  let filteredItems = items;
+  // エラー記録のないアイテムをフィルタリング
+  const filteredUrlItems = forceRefresh
+    ? urlItems
+    : await filterItemsWithoutErrors(urlItems, errorService, 'favicon');
+  const filteredItems = forceRefresh
+    ? items
+    : await filterItemsWithoutErrors(items, errorService, 'icon');
 
-  if (!forceRefresh) {
-    // エラー記録があるアイテムをスキップ
-    const urlItemsToProcess: IconItem[] = [];
-    for (const urlItem of urlItems) {
-      const hasError = await errorService.hasError(urlItem.path, 'favicon');
-      if (!hasError) {
-        urlItemsToProcess.push(urlItem);
-      } else {
-        iconLogger.info({ url: urlItem.path }, 'Skipping favicon fetch due to previous error');
-      }
-    }
-    filteredUrlItems = urlItemsToProcess;
-
-    const itemsToProcess: IconItem[] = [];
-    for (const item of items) {
-      const hasError = await errorService.hasError(item.path, 'icon');
-      if (!hasError) {
-        itemsToProcess.push(item);
-      } else {
-        iconLogger.info({ path: item.path }, 'Skipping icon extraction due to previous error');
-      }
-    }
-    filteredItems = itemsToProcess;
-  }
-
-  // フェーズタイプと各フェーズのアイテム数を設定
+  // フェーズ設定
   const phaseTypes: ('favicon' | 'icon')[] = [];
   const phaseTotals: number[] = [];
 
@@ -655,7 +606,6 @@ async function fetchIconsCombined(
     phaseTypes.push('favicon');
     phaseTotals.push(filteredUrlItems.length);
   }
-
   if (filteredItems.length > 0) {
     phaseTypes.push('icon');
     phaseTotals.push(filteredItems.length);
@@ -668,248 +618,129 @@ async function fetchIconsCombined(
   const iconResults: Record<string, string | null> = {};
 
   // フェーズ1: ファビコン取得
-  if (filteredUrlItems.length > 0) {
-    for (const urlItem of filteredUrlItems) {
-      try {
-        const favicon = await fetchFavicon(urlItem.path, faviconsFolder);
-        faviconResults[urlItem.path] = favicon;
+  for (const urlItem of filteredUrlItems) {
+    const displayText = getDisplayText(urlItem);
+    try {
+      const favicon = await fetchFavicon(urlItem.path, faviconsFolder);
+      faviconResults[urlItem.path] = favicon;
 
-        // 進捗表示用の文字列を生成（アイテム名がある場合は「名前 + 改行 + URL」形式）
-        const displayText = urlItem.name ? `${urlItem.name}\n${urlItem.path}` : urlItem.path;
-
-        if (favicon) {
-          progress.update(displayText);
-        } else {
-          // ファビコンが見つからなかった場合もエラーとして記録
-          await errorService.recordError(
-            urlItem.path,
-            'favicon',
-            'ファビコンが見つかりませんでした'
-          );
-          progress.update(displayText, true, 'ファビコンが見つかりませんでした');
-        }
-      } catch (error) {
-        iconLogger.error({ url: urlItem.path, error }, 'ファビコン取得エラー');
-        faviconResults[urlItem.path] = null;
-        const errorMsg = error instanceof Error ? error.message : 'ファビコン取得に失敗しました';
-        // エラーを記録
-        await errorService.recordError(urlItem.path, 'favicon', errorMsg);
-        const displayText = urlItem.name ? `${urlItem.name}\n${urlItem.path}` : urlItem.path;
-        progress.update(displayText, true, errorMsg);
+      if (favicon) {
+        progress.update(displayText);
+      } else {
+        await errorService.recordError(urlItem.path, 'favicon', 'ファビコンが見つかりませんでした');
+        progress.update(displayText, true, 'ファビコンが見つかりませんでした');
       }
+    } catch (error) {
+      iconLogger.error({ url: urlItem.path, error }, 'ファビコン取得エラー');
+      faviconResults[urlItem.path] = null;
+      const errorMsg = error instanceof Error ? error.message : 'ファビコン取得に失敗しました';
+      await errorService.recordError(urlItem.path, 'favicon', errorMsg);
+      progress.update(displayText, true, errorMsg);
     }
-
-    progress.completePhase();
   }
+  if (filteredUrlItems.length > 0) progress.completePhase();
 
   // フェーズ2: アイコン抽出
-  if (filteredItems.length > 0) {
-    for (const item of filteredItems) {
-      try {
-        let icon: string | null = null;
+  for (const item of filteredItems) {
+    const displayText = getDisplayText(item);
+    try {
+      const icon = await extractIconForItem(item, iconsFolder, extensionsFolder);
+      iconResults[item.path] = icon;
 
-        if (item.type === 'app') {
-          if (PathUtils.isShortcutFile(item.originalPath)) {
-            icon = await extractIcon(item.originalPath!, iconsFolder);
-          } else if (item.path.endsWith('.exe') || PathUtils.isShortcutFile(item.path)) {
-            icon = await extractIcon(item.path, iconsFolder);
-          } else if (
-            item.path.endsWith('.bat') ||
-            item.path.endsWith('.cmd') ||
-            item.path.endsWith('.com')
-          ) {
-            // .bat/.cmd/.comファイルは拡張子ベースのアイコン取得を使用
-            icon = await extractFileIconByExtension(item.path, extensionsFolder);
-          }
-        } else if (item.type === 'customUri') {
-          icon = await extractCustomUriIcon(item.path, iconsFolder);
-          if (!icon) {
-            icon = await extractFileIconByExtension(item.path, extensionsFolder);
-          }
-        } else if (item.type === 'file') {
-          icon = await extractFileIconByExtension(item.path, extensionsFolder);
-        }
-
-        iconResults[item.path] = icon;
-
-        // 進捗表示用の文字列を生成（アイテム名がある場合は「名前 (パス)」形式）
-        const displayText = item.name ? `${item.name}\n${item.path}` : item.path;
-
-        if (icon) {
-          progress.update(displayText);
-        } else {
-          // アイコンが見つからなかった場合もエラーとして記録
-          await errorService.recordError(item.path, 'icon', 'アイコンが見つかりませんでした');
-          progress.update(displayText, true, 'アイコンが見つかりませんでした');
-        }
-      } catch (error) {
-        iconLogger.error({ itemPath: item.path, error }, 'アイコン抽出エラー');
-        iconResults[item.path] = null;
-        const errorMsg = error instanceof Error ? error.message : 'アイコン抽出に失敗しました';
-        // エラーを記録
-        await errorService.recordError(item.path, 'icon', errorMsg);
-        const displayText = item.name ? `${item.name}\n${item.path}` : item.path;
-        progress.update(displayText, true, errorMsg);
+      if (icon) {
+        progress.update(displayText);
+      } else {
+        await errorService.recordError(item.path, 'icon', 'アイコンが見つかりませんでした');
+        progress.update(displayText, true, 'アイコンが見つかりませんでした');
       }
+    } catch (error) {
+      iconLogger.error({ itemPath: item.path, error }, 'アイコン抽出エラー');
+      iconResults[item.path] = null;
+      const errorMsg = error instanceof Error ? error.message : 'アイコン抽出に失敗しました';
+      await errorService.recordError(item.path, 'icon', errorMsg);
+      progress.update(displayText, true, errorMsg);
     }
-
-    progress.completePhase();
   }
+  if (filteredItems.length > 0) progress.completePhase();
 
   progress.completeAll();
-
   return { favicons: faviconResults, icons: iconResults };
 }
 
-/**
- * カスタムアイコンファイルを選択するダイアログを表示
- * @returns 選択されたファイルパス、キャンセル時はnull
- */
+/** カスタムアイコンファイルを選択するダイアログを表示 */
 async function selectCustomIconFile(): Promise<string | null> {
-  try {
-    const result = await dialog.showOpenDialog({
-      title: 'カスタムアイコンを選択',
-      filters: [
-        { name: '画像ファイル', extensions: ['png', 'jpg', 'jpeg', 'ico', 'svg'] },
-        { name: 'すべてのファイル', extensions: ['*'] },
-      ],
-      properties: ['openFile'],
-    });
+  const result = await dialog.showOpenDialog({
+    title: 'カスタムアイコンを選択',
+    filters: [
+      { name: '画像ファイル', extensions: ['png', 'jpg', 'jpeg', 'ico', 'svg'] },
+      { name: 'すべてのファイル', extensions: ['*'] },
+    ],
+    properties: ['openFile'],
+  });
 
-    if (result.canceled || result.filePaths.length === 0) {
-      return null;
-    }
-
-    return result.filePaths[0];
-  } catch (error) {
-    iconLogger.error({ error }, 'カスタムアイコンファイル選択エラー');
-    return null;
-  }
+  return result.canceled ? null : (result.filePaths[0] ?? null);
 }
 
-/**
- * 画像ファイルをリサイズしてPNG形式で保存
- * @param inputPath 入力画像のパス
- * @param outputPath 出力PNGファイルのパス
- * @param maxSize 最大サイズ（デフォルト: 256px）
- */
-async function resizeAndSaveImage(
-  inputPath: string,
-  outputPath: string,
-  _maxSize: number = 256
-): Promise<void> {
-  try {
-    // Sharp を使用した画像リサイズ処理
-    // 現在はファイルをそのままコピーする簡易版として実装
-    // 将来的にsharpライブラリを追加してリサイズ処理を実装予定
-    await fs.promises.copyFile(inputPath, outputPath);
-    iconLogger.info(`カスタムアイコンを保存: ${inputPath} -> ${outputPath}`);
-  } catch (error) {
-    iconLogger.error({ error }, '画像のリサイズ・保存エラー');
-    throw error;
-  }
+/** 画像ファイルをコピーして保存（将来的にリサイズ処理を追加予定） */
+async function copyImageFile(inputPath: string, outputPath: string): Promise<void> {
+  await fs.promises.copyFile(inputPath, outputPath);
+  iconLogger.info(`カスタムアイコンを保存: ${inputPath} -> ${outputPath}`);
 }
 
-/**
- * カスタムアイコンを保存
- * @param sourceFilePath 元の画像ファイルパス
- * @param itemIdentifier アイテムの識別子（パスまたはURL）
- * @returns 保存されたカスタムアイコンのファイル名
- */
+/** カスタムアイコンを保存し、ファイル名を返す */
 async function saveCustomIcon(sourceFilePath: string, itemIdentifier: string): Promise<string> {
-  try {
-    // ファイル存在確認
-    if (!fs.existsSync(sourceFilePath)) {
-      throw new Error(`ソースファイルが見つかりません: ${sourceFilePath}`);
-    }
-
-    // ファイルサイズチェック（5MB制限）
-    const stats = await fs.promises.stat(sourceFilePath);
-    const maxSize = 5 * 1024 * 1024; // 5MB
-    if (stats.size > maxSize) {
-      throw new Error('ファイルサイズが大きすぎます（最大5MB）');
-    }
-
-    // アイテム識別子からハッシュ値を生成してファイル名を決定
-    const hash = crypto.createHash('md5').update(itemIdentifier).digest('hex').substring(0, 8);
-    const customIconFileName = `${hash}.png`;
-    const customIconPath = path.join(PathManager.getCustomIconsFolder(), customIconFileName);
-
-    // 画像をリサイズして保存
-    await resizeAndSaveImage(sourceFilePath, customIconPath);
-
-    iconLogger.info(`カスタムアイコンを保存: ${itemIdentifier} -> ${customIconFileName}`);
-    return customIconFileName;
-  } catch (error) {
-    iconLogger.error({ error }, 'カスタムアイコン保存エラー');
-    throw error;
+  if (!fs.existsSync(sourceFilePath)) {
+    throw new Error(`ソースファイルが見つかりません: ${sourceFilePath}`);
   }
+
+  const stats = await fs.promises.stat(sourceFilePath);
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+  if (stats.size > MAX_FILE_SIZE) {
+    throw new Error('ファイルサイズが大きすぎます（最大5MB）');
+  }
+
+  const hash = crypto.createHash('md5').update(itemIdentifier).digest('hex').substring(0, 8);
+  const customIconFileName = `${hash}.png`;
+  const customIconPath = path.join(PathManager.getCustomIconsFolder(), customIconFileName);
+
+  await copyImageFile(sourceFilePath, customIconPath);
+  iconLogger.info(`カスタムアイコンを保存: ${itemIdentifier} -> ${customIconFileName}`);
+  return customIconFileName;
 }
 
-/**
- * カスタムアイコンを削除
- * @param customIconFileName カスタムアイコンのファイル名
- */
+/** カスタムアイコンを削除 */
 async function deleteCustomIcon(customIconFileName: string): Promise<void> {
-  try {
-    const customIconPath = path.join(PathManager.getCustomIconsFolder(), customIconFileName);
+  const customIconPath = path.join(PathManager.getCustomIconsFolder(), customIconFileName);
 
-    if (fs.existsSync(customIconPath)) {
-      await fs.promises.unlink(customIconPath);
-      iconLogger.info(`カスタムアイコンを削除: ${customIconFileName}`);
-    }
-  } catch (error) {
-    iconLogger.error({ error }, 'カスタムアイコン削除エラー');
-    throw error;
+  if (fs.existsSync(customIconPath)) {
+    await fs.promises.unlink(customIconPath);
+    iconLogger.info(`カスタムアイコンを削除: ${customIconFileName}`);
   }
 }
 
-/**
- * カスタムアイコンを取得
- * @param customIconFileName カスタムアイコンのファイル名
- * @returns base64エンコードされたアイコンデータURL、見つからない場合はnull
- */
-async function getCustomIcon(customIconFileName: string): Promise<string | null> {
-  try {
-    const customIconPath = path.join(PathManager.getCustomIconsFolder(), customIconFileName);
-    return FileUtils.readCachedBinaryAsBase64(customIconPath);
-  } catch (error) {
-    iconLogger.error({ error }, 'カスタムアイコン取得エラー');
-    return null;
-  }
+/** カスタムアイコンをbase64で取得 */
+function getCustomIcon(customIconFileName: string): string | null {
+  const customIconPath = path.join(PathManager.getCustomIconsFolder(), customIconFileName);
+  return FileUtils.readCachedBinaryAsBase64(customIconPath);
 }
 
-/**
- * アイテムタイプに応じて適切なアイコンを取得
- * レンダラープロセスから呼び出すための統合API
- *
- * @param filePath ファイルパスまたはURL
- * @param itemType アイテムタイプ
- * @returns base64エンコードされたアイコンデータURL、取得失敗時はnull
- */
+/** アイテムタイプに応じて適切なアイコンを取得（統合API） */
 async function getIconForItem(
   filePath: string,
   itemType: 'url' | 'file' | 'folder' | 'app' | 'customUri'
 ): Promise<string | null> {
-  try {
-    const iconsFolder = PathManager.getAppsFolder();
-    const extensionsFolder = PathManager.getExtensionsFolder();
+  const iconsFolder = PathManager.getAppsFolder();
+  const extensionsFolder = PathManager.getExtensionsFolder();
 
-    // タイプに応じて直接アイコン抽出関数を呼び出す
-    switch (itemType) {
-      case 'app':
-        return await extractIcon(filePath, iconsFolder);
-      case 'file':
-        return await extractFileIconByExtension(filePath, extensionsFolder);
-      case 'customUri':
-        return await extractCustomUriIcon(filePath, iconsFolder);
-      default:
-        // folder と url タイプはアイコン取得をスキップ（デフォルトアイコンを使用）
-        return null;
-    }
-  } catch (error) {
-    iconLogger.error({ error, filePath, itemType }, 'アイコン取得エラー');
-    return null;
+  switch (itemType) {
+    case 'app':
+      return extractIcon(filePath, iconsFolder);
+    case 'file':
+      return extractFileIconByExtension(filePath, extensionsFolder);
+    case 'customUri':
+      return extractCustomUriIcon(filePath, iconsFolder);
+    default:
+      return null;
   }
 }
 

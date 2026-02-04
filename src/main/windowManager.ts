@@ -101,15 +101,6 @@ function hideMainWindowInternal(): void {
  * アプリケーションのメインウィンドウを作成し、初期設定を行う
  * 初期状態では通常モード（非最前面）で、フレームレスで中央に配置される
  * フォーカス喪失時の自動非表示やESCキーでの終了など、ランチャーアプリとしての動作を設定
- *
- * @returns 作成されたBrowserWindowインスタンス
- * @throws Error ウィンドウの作成やコンテンツの読み込みに失敗した場合
- *
- * @example
- * ```typescript
- * const window = createWindow();
- * window.show();
- * ```
  */
 export async function createWindow(): Promise<BrowserWindow> {
   const settingsService = await SettingsService.getInstance();
@@ -154,15 +145,16 @@ export async function createWindow(): Promise<BrowserWindow> {
   }
 
   mainWindow.on('blur', () => {
-    if (
+    const shouldHide =
       mainWindow &&
       !mainWindow.webContents.isDevToolsOpened() &&
-      shouldHideOnBlur() &&
+      windowPinMode === 'normal' &&
       !isEditMode &&
       !isFirstLaunchMode &&
       !isModalMode &&
-      !isShowingWindow // ウィンドウ表示中はblurを無視
-    ) {
+      !isShowingWindow;
+
+    if (shouldHide) {
       hideMainWindowInternal();
     }
   });
@@ -383,42 +375,14 @@ export function cycleWindowPinMode(): WindowPinMode {
 function updateWindowBehavior(): void {
   if (!mainWindow) return;
 
-  switch (windowPinMode) {
-    case 'normal':
-      mainWindow.setAlwaysOnTop(false);
-      break;
-    case 'alwaysOnTop':
-      mainWindow.setAlwaysOnTop(true);
-      break;
-    case 'stayVisible':
-      mainWindow.setAlwaysOnTop(false);
-      break;
-  }
-}
-
-/**
- * フォーカス喪失時にウィンドウを非表示にするかどうかを判定する
- * @returns true: 非表示にする, false: 非表示にしない
- */
-function shouldHideOnBlur(): boolean {
-  return windowPinMode === 'normal';
+  // alwaysOnTopモードのみ最前面に固定、他は通常表示
+  mainWindow.setAlwaysOnTop(windowPinMode === 'alwaysOnTop');
 }
 
 /**
  * アプリケーションの編集モードを設定し、それに応じてウィンドウサイズを調整する
  * 編集モード時はウィンドウサイズを拡大し、通常モード時は元のサイズに戻す
  * 編集モード中はフォーカス喪失時に自動非表示されないように制御される
- *
- * @param editMode - 編集モードのON/OFF（true: 編集モード、false: 通常モード）
- *
- * @example
- * ```typescript
- * // 編集モードを有効にする
- * setEditMode(true);
- *
- * // 編集モードを無効にする
- * setEditMode(false);
- * ```
  */
 export async function setEditMode(editMode: boolean): Promise<void> {
   isEditMode = editMode;
@@ -609,8 +573,7 @@ export async function setWindowPosition(mode?: WindowPositionMode): Promise<void
 
 /**
  * ウィンドウを画面中央に表示する（タスクトレイメニュー用）
- * このメソッドは設定に関係なく強制的に画面中央に表示します
- * @internal 現在は使用されていませんが、将来の拡張のために保持
+ * 設定に関係なく強制的に画面中央に表示する
  */
 export function showWindowAtCenter(): void {
   if (!mainWindow) return;
@@ -677,56 +640,56 @@ async function activateMainWindowWithFocus(): Promise<void> {
 }
 
 /**
- * メインウィンドウを表示する（ホットキー用）
- * 設定されたモードに応じてウィンドウ位置を設定してから表示します
- * @param startTime パフォーマンス計測用の開始時刻（Date.now()の値）
+ * メインウィンドウを表示する共通処理
+ * @param eventName 送信するイベント名
+ * @param startTime パフォーマンス計測用の開始時刻
+ * @param enableTimer パフォーマンスタイマーを有効にするか
  */
-export async function showMainWindow(startTime?: number): Promise<void> {
+async function showMainWindowInternal(
+  eventName: string,
+  startTime?: number,
+  enableTimer: boolean = false
+): Promise<void> {
   if (!mainWindow) return;
 
-  const timer = new PerformanceTimer(startTime, (msg) => windowLogger.info(msg));
-  timer.log(`hotkey-pressed: 0.00ms (start: ${startTime})`);
+  const timer = enableTimer
+    ? new PerformanceTimer(startTime, (msg) => windowLogger.info(msg))
+    : null;
+  timer?.log(`hotkey-pressed: 0.00ms (start: ${startTime})`);
 
   setShowingWindowFlag();
 
   await setWindowPosition();
-  timer.log('position-set');
+  timer?.log('position-set');
 
-  // ワークスペース自動表示の処理
   await autoShowWorkspaceIfEnabled();
-  timer.log('workspace-auto-shown');
+  timer?.log('workspace-auto-shown');
 
   mainWindow.show();
-  timer.log('window-shown');
+  timer?.log('window-shown');
 
   mainWindow.focus();
-  timer.log('window-focused');
+  timer?.log('window-focused');
 
-  mainWindow.webContents.send('window-shown', startTime);
+  mainWindow.webContents.send(eventName, startTime);
+}
+
+/**
+ * メインウィンドウを表示する（ホットキー用）
+ * 設定されたモードに応じてウィンドウ位置を設定してから表示する
+ */
+export async function showMainWindow(startTime?: number): Promise<void> {
+  await showMainWindowInternal('window-shown', startTime, true);
   windowLogger.info('メインウィンドウを表示しました');
 }
 
 /**
- * メインウィンドウを表示し、ウィンドウ検索モードに切り替える（ウィンドウ検索ホットキー用）
- * 設定されたモードに応じてウィンドウ位置を設定してから表示します
- * @param startTime パフォーマンス計測用の開始時刻（Date.now()の値）
+ * メインウィンドウを表示し、アイテム検索モードに切り替える（アイテム検索ホットキー用）
+ * 設定されたモードに応じてウィンドウ位置を設定してから表示する
  */
 export async function showMainWindowWithItemSearch(startTime?: number): Promise<void> {
-  if (!mainWindow) return;
-
-  setShowingWindowFlag();
-
-  await setWindowPosition();
-
-  // ワークスペース自動表示の処理
-  await autoShowWorkspaceIfEnabled();
-
-  mainWindow.show();
-  mainWindow.focus();
-
-  // ウィンドウ検索モード用のイベントを送信
-  mainWindow.webContents.send('window-shown-item-search', startTime);
-  windowLogger.info('メインウィンドウをウィンドウ検索モードで表示しました');
+  await showMainWindowInternal('window-shown-item-search', startTime);
+  windowLogger.info('メインウィンドウをアイテム検索モードで表示しました');
 }
 
 /**
@@ -736,25 +699,17 @@ export async function showMainWindowWithItemSearch(startTime?: number): Promise<
 export async function hideMainWindow(): Promise<void> {
   if (!mainWindow) return;
 
-  // 以下の場合はホットキーでも閉じない
-  // - 初回起動モード
-  // - 編集モード
-  // - モーダルモード
-  // - ピン留めモードがalwaysOnTopまたはstayVisible
-  const shouldNotHide =
-    isFirstLaunchMode ||
-    isEditMode ||
-    isModalMode ||
-    windowPinMode === 'alwaysOnTop' ||
-    windowPinMode === 'stayVisible';
+  const isPinned = windowPinMode === 'alwaysOnTop' || windowPinMode === 'stayVisible';
 
-  if (shouldNotHide) {
-    // ピン留めモードの場合、非表示にはしないがアクティブにする
-    if (windowPinMode === 'alwaysOnTop' || windowPinMode === 'stayVisible') {
-      await activateMainWindowWithFocus();
-    } else {
-      windowLogger.info('現在のモードではホットキーで非表示にできません');
-    }
+  // ピン留めモードの場合、非表示にはしないがアクティブにする
+  if (isPinned) {
+    await activateMainWindowWithFocus();
+    return;
+  }
+
+  // 編集中・初回起動・モーダル表示中は非表示にしない
+  if (isFirstLaunchMode || isEditMode || isModalMode) {
+    windowLogger.info('現在のモードではホットキーで非表示にできません');
     return;
   }
 

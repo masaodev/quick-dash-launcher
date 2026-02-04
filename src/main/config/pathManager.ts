@@ -15,11 +15,6 @@ import { EnvConfig } from './envConfig.js';
 export class PathManager {
   private static configFolder: string | null = null;
 
-  // ============================================================
-  // ディレクトリパス取得
-  // ============================================================
-
-  /** 設定フォルダのベースパスを取得 */
   static getConfigFolder(): string {
     if (this.configFolder) {
       return this.configFolder;
@@ -40,70 +35,51 @@ export class PathManager {
     return this.getDefaultConfigPath();
   }
 
-  /** アイコンキャッシュのベースフォルダパスを取得 */
   static getIconCacheFolder(): string {
     return path.join(this.getConfigFolder(), 'icon-cache');
   }
 
-  /** アプリケーションアイコンフォルダのパスを取得 */
   static getAppsFolder(): string {
     return this.getIconCacheSubfolder('apps');
   }
 
-  /** faviconフォルダのパスを取得 */
   static getFaviconsFolder(): string {
     return this.getIconCacheSubfolder('favicons');
   }
 
-  /** カスタムアイコンフォルダのパスを取得 */
   static getCustomIconsFolder(): string {
     return this.getIconCacheSubfolder('custom');
   }
 
-  /** スキームアイコンフォルダのパスを取得 */
   static getSchemesFolder(): string {
     return this.getIconCacheSubfolder('schemes');
   }
 
-  /** 拡張子アイコンフォルダのパスを取得 */
   static getExtensionsFolder(): string {
     return this.getIconCacheSubfolder('extensions');
   }
 
-  /** バックアップフォルダのパスを取得 */
   static getBackupFolder(): string {
     return path.join(this.getConfigFolder(), 'backup');
   }
 
-  /** クリップボードデータフォルダのパスを取得 */
   static getClipboardDataFolder(): string {
     return path.join(this.getConfigFolder(), 'clipboard-data');
   }
 
-  /** クリップボードデータファイルのパスを取得 */
   static getClipboardDataFilePath(id: string): string {
     return path.join(this.getClipboardDataFolder(), `${id}.json`);
   }
 
-  // ============================================================
-  // ファイルパス取得
-  // ============================================================
-
-  /** data.jsonファイルのパスを取得 */
   static getDataFilePath(): string {
     return path.join(this.getConfigFolder(), 'data.json');
   }
 
-  /** workspace.jsonファイルのパスを取得 */
   static getWorkspaceFilePath(): string {
     return path.join(this.getConfigFolder(), 'workspace.json');
   }
 
-  /**
-   * 設定フォルダ内のすべてのdata*ファイル（.json）を取得
-   *
-   * @returns データファイル名の配列（例: ['data.json', 'data2.json']）
-   */
+  /** 設定フォルダ内のすべてのdata*.jsonファイルを取得 */
   static getDataFiles(): string[] {
     const configFolder = this.getConfigFolder();
 
@@ -114,8 +90,6 @@ export class PathManager {
       }
 
       const files = fs.readdirSync(configFolder);
-
-      // JSON形式のデータファイルのみ収集
       const jsonFiles = files
         .filter((file) => file.startsWith('data') && file.endsWith('.json'))
         .sort();
@@ -128,25 +102,13 @@ export class PathManager {
     }
   }
 
-  /**
-   * アプリケーションアイコンのパスを取得
-   * 開発モード時は専用のアイコン（icon-dev.ico）を使用
-   */
+  /** 開発モード時は専用アイコン（icon-dev.ico）を使用 */
   static getAppIconPath(): string {
     const iconFileName = EnvConfig.isDevelopment ? 'icon-dev.ico' : 'icon.ico';
-
-    if (EnvConfig.isDevelopment) {
-      return path.join(process.cwd(), 'assets', iconFileName);
-    }
-    // 本番モード: dist/main/main.jsから2階層上がってassetsフォルダへ
-    return path.join(__dirname, '../../assets', iconFileName);
+    const baseDir = EnvConfig.isDevelopment ? process.cwd() : path.join(__dirname, '../..');
+    return path.join(baseDir, 'assets', iconFileName);
   }
 
-  // ============================================================
-  // ディレクトリ操作
-  // ============================================================
-
-  /** 必要なディレクトリを作成 */
   static ensureDirectories(): void {
     const dirs = [
       this.getConfigFolder(),
@@ -173,7 +135,6 @@ export class PathManager {
     }
   }
 
-  /** 設定フォルダが書き込み可能かチェック */
   static isConfigFolderWritable(): boolean {
     const configFolder = this.getConfigFolder();
 
@@ -193,37 +154,24 @@ export class PathManager {
     }
   }
 
-  // ============================================================
-  // テスト用ユーティリティ
-  // ============================================================
-
-  /** テスト用に設定フォルダをオーバーライド */
   static setConfigFolderForTesting(customPath: string): void {
     this.configFolder = path.resolve(customPath);
     logger.info(`Config folder overridden for testing: ${this.configFolder}`);
   }
 
-  /** 設定フォルダのオーバーライドをリセット */
   static resetConfigFolder(): void {
     this.configFolder = null;
     logger.info('Config folder override reset');
   }
 
-  // ============================================================
-  // プライベートヘルパー
-  // ============================================================
-
-  /** デフォルトの設定フォルダパスを取得 */
   private static getDefaultConfigPath(): string {
     return path.join(app.getPath('userData'), 'config');
   }
 
-  /** アイコンキャッシュ配下のサブフォルダパスを取得 */
   private static getIconCacheSubfolder(subfolder: string): string {
     return path.join(this.getIconCacheFolder(), subfolder);
   }
 
-  /** 危険なパスかどうかをチェック */
   private static isUnsafePath(targetPath: string): boolean {
     const unsafePaths = [
       'C:\\Windows',

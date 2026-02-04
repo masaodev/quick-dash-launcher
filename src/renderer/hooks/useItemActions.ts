@@ -4,17 +4,16 @@ import { logWarn, logError } from '../utils/debug';
 
 import { useToast } from './useToast';
 
-/**
- * アイテムに対する各種アクション（コピー、親フォルダを開く等）を管理するカスタムフック
- */
+function getParentPath(path: string): string | null {
+  const lastSlash = Math.max(path.lastIndexOf('\\'), path.lastIndexOf('/'));
+  return lastSlash > 0 ? path.substring(0, lastSlash) : null;
+}
+
 export function useItemActions() {
   const { showSuccess, showError, showWarning } = useToast();
-  /**
-   * アイテムのパスをクリップボードにコピー
-   */
-  const handleCopyPath = async (item: LauncherItem) => {
+
+  const handleCopyPath = async (item: LauncherItem): Promise<void> => {
     try {
-      // 引数がある場合は結合してコピー
       const fullCommand = item.args ? `${item.path} ${item.args}` : item.path;
       await window.electronAPI.copyToClipboard(fullCommand);
       logWarn(`パスをコピーしました: ${fullCommand}`);
@@ -25,30 +24,19 @@ export function useItemActions() {
     }
   };
 
-  /**
-   * アイテムの親フォルダのパスをクリップボードにコピー
-   */
-  const handleCopyParentPath = async (item: LauncherItem) => {
+  const handleCopyParentPath = async (item: LauncherItem): Promise<void> => {
+    if (item.type === 'url' || item.type === 'customUri') {
+      showWarning('URLおよびカスタムURIには親フォルダーがありません');
+      return;
+    }
+
+    const parentPath = getParentPath(item.path);
+    if (!parentPath) {
+      showWarning('親フォルダーのパスを取得できませんでした');
+      return;
+    }
+
     try {
-      let parentPath = '';
-
-      // URL types don't have a parent path
-      if (item.type === 'url' || item.type === 'customUri') {
-        showWarning('URLおよびカスタムURIには親フォルダーがありません');
-        return;
-      }
-
-      // Get parent directory path
-      const path = item.path;
-      const lastSlash = Math.max(path.lastIndexOf('\\'), path.lastIndexOf('/'));
-
-      if (lastSlash > 0) {
-        parentPath = path.substring(0, lastSlash);
-      } else {
-        showWarning('親フォルダーのパスを取得できませんでした');
-        return;
-      }
-
       await window.electronAPI.copyToClipboard(parentPath);
       logWarn(`親フォルダーのパスをコピーしました: ${parentPath}`);
       showSuccess('親フォルダーのパスをコピーしました');
@@ -58,16 +46,13 @@ export function useItemActions() {
     }
   };
 
-  /**
-   * ショートカットのパスをクリップボードにコピー
-   */
-  const handleCopyShortcutPath = async (item: LauncherItem) => {
-    try {
-      if (!item.originalPath) {
-        showWarning('ショートカットのパスが見つかりません');
-        return;
-      }
+  const handleCopyShortcutPath = async (item: LauncherItem): Promise<void> => {
+    if (!item.originalPath) {
+      showWarning('ショートカットのパスが見つかりません');
+      return;
+    }
 
+    try {
       await window.electronAPI.copyToClipboard(item.originalPath);
       logWarn(`ショートカットのパスをコピーしました: ${item.originalPath}`);
       showSuccess('ショートカットのパスをコピーしました');
@@ -77,38 +62,29 @@ export function useItemActions() {
     }
   };
 
-  /**
-   * ショートカットの親フォルダのパスをクリップボードにコピー
-   */
-  const handleCopyShortcutParentPath = async (item: LauncherItem) => {
+  const handleCopyShortcutParentPath = async (item: LauncherItem): Promise<void> => {
+    if (!item.originalPath) {
+      showWarning('ショートカットのパスが見つかりません');
+      return;
+    }
+
+    const parentPath = getParentPath(item.originalPath);
+    if (!parentPath) {
+      showWarning('ショートカットの親フォルダーのパスを取得できませんでした');
+      return;
+    }
+
     try {
-      if (!item.originalPath) {
-        showWarning('ショートカットのパスが見つかりません');
-        return;
-      }
-
-      // Get parent directory path of the shortcut file
-      const path = item.originalPath;
-      const lastSlash = Math.max(path.lastIndexOf('\\'), path.lastIndexOf('/'));
-
-      if (lastSlash > 0) {
-        const parentPath = path.substring(0, lastSlash);
-        await window.electronAPI.copyToClipboard(parentPath);
-        logWarn(`ショートカットの親フォルダーのパスをコピーしました: ${parentPath}`);
-        showSuccess('ショートカットの親フォルダーのパスをコピーしました');
-      } else {
-        showWarning('ショートカットの親フォルダーのパスを取得できませんでした');
-      }
+      await window.electronAPI.copyToClipboard(parentPath);
+      logWarn(`ショートカットの親フォルダーのパスをコピーしました: ${parentPath}`);
+      showSuccess('ショートカットの親フォルダーのパスをコピーしました');
     } catch (err) {
       logError('ショートカットの親フォルダーのパスのコピーに失敗しました:', err);
       showError('ショートカットの親フォルダーのパスのコピーに失敗しました');
     }
   };
 
-  /**
-   * アイテムの親フォルダをエクスプローラーで開く
-   */
-  const handleOpenParentFolder = async (item: LauncherItem) => {
+  const handleOpenParentFolder = async (item: LauncherItem): Promise<void> => {
     try {
       await window.electronAPI.openParentFolder(item);
     } catch (err) {
@@ -117,23 +93,14 @@ export function useItemActions() {
     }
   };
 
-  /**
-   * ショートカットのリンク先の親フォルダをエクスプローラーで開く
-   */
-  const handleOpenShortcutParentFolder = async (item: LauncherItem) => {
+  const handleOpenShortcutParentFolder = async (item: LauncherItem): Promise<void> => {
+    if (!item.originalPath) {
+      showWarning('ショートカットのパスが見つかりません');
+      return;
+    }
+
     try {
-      if (!item.originalPath) {
-        showWarning('ショートカットのパスが見つかりません');
-        return;
-      }
-
-      // リンク先のパスで一時的なアイテムを作成してopenParentFolderを使用
-      const tempItem: LauncherItem = {
-        ...item,
-        path: item.originalPath,
-      };
-
-      await window.electronAPI.openParentFolder(tempItem);
+      await window.electronAPI.openParentFolder({ ...item, path: item.originalPath });
       logWarn(`リンク先の親フォルダーを開きました: ${item.originalPath}`);
     } catch (err) {
       logError('リンク先の親フォルダーを開くのに失敗しました:', err);

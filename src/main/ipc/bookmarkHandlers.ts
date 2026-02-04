@@ -94,7 +94,7 @@ async function detectProfiles(userDataPath: string): Promise<BrowserProfile[]> {
       profiles.push({
         id: entry.name,
         displayName: profileName,
-        bookmarkPath: bookmarkPath,
+        bookmarkPath,
       });
     }
   } catch (error) {
@@ -103,6 +103,14 @@ async function detectProfiles(userDataPath: string): Promise<BrowserProfile[]> {
 
   return profiles;
 }
+
+/**
+ * ブラウザ検出用の設定
+ */
+const BROWSER_CONFIGS = [
+  { id: 'chrome', displayName: 'Google Chrome', pathSegments: ['Google', 'Chrome', 'User Data'] },
+  { id: 'edge', displayName: 'Microsoft Edge', pathSegments: ['Microsoft', 'Edge', 'User Data'] },
+] as const;
 
 /**
  * インストール済みのブラウザ（Chrome/Edge）を検出する
@@ -115,45 +123,19 @@ export async function detectInstalledBrowsers(): Promise<BrowserInfo[]> {
     return [];
   }
 
-  const browsers: BrowserInfo[] = [];
+  const browsers: BrowserInfo[] = await Promise.all(
+    BROWSER_CONFIGS.map(async (config) => {
+      const userDataPath = path.join(localAppData, ...config.pathSegments);
+      const profiles = fs.existsSync(userDataPath) ? await detectProfiles(userDataPath) : [];
 
-  // Chrome検出
-  const chromeUserData = path.join(localAppData, 'Google', 'Chrome', 'User Data');
-  if (fs.existsSync(chromeUserData)) {
-    const profiles = await detectProfiles(chromeUserData);
-    browsers.push({
-      id: 'chrome',
-      displayName: 'Google Chrome',
-      installed: profiles.length > 0,
-      profiles: profiles,
-    });
-  } else {
-    browsers.push({
-      id: 'chrome',
-      displayName: 'Google Chrome',
-      installed: false,
-      profiles: [],
-    });
-  }
-
-  // Edge検出
-  const edgeUserData = path.join(localAppData, 'Microsoft', 'Edge', 'User Data');
-  if (fs.existsSync(edgeUserData)) {
-    const profiles = await detectProfiles(edgeUserData);
-    browsers.push({
-      id: 'edge',
-      displayName: 'Microsoft Edge',
-      installed: profiles.length > 0,
-      profiles: profiles,
-    });
-  } else {
-    browsers.push({
-      id: 'edge',
-      displayName: 'Microsoft Edge',
-      installed: false,
-      profiles: [],
-    });
-  }
+      return {
+        id: config.id,
+        displayName: config.displayName,
+        installed: profiles.length > 0,
+        profiles,
+      };
+    })
+  );
 
   dataLogger.info(
     {
@@ -332,11 +314,9 @@ export function setupBookmarkHandlers() {
   });
 
   // ブラウザブックマーク直接インポートAPI
-  ipcMain.handle(IPC_CHANNELS.DETECT_INSTALLED_BROWSERS, async () => {
-    return await detectInstalledBrowsers();
-  });
+  ipcMain.handle(IPC_CHANNELS.DETECT_INSTALLED_BROWSERS, detectInstalledBrowsers);
 
-  ipcMain.handle(IPC_CHANNELS.PARSE_BROWSER_BOOKMARKS, async (_event, filePath: string) => {
-    return await parseBrowserBookmarks(filePath);
-  });
+  ipcMain.handle(IPC_CHANNELS.PARSE_BROWSER_BOOKMARKS, (_event, filePath: string) =>
+    parseBrowserBookmarks(filePath)
+  );
 }

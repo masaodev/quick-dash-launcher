@@ -1,6 +1,6 @@
 import { ipcMain, BrowserWindow } from 'electron';
 import logger from '@common/logger';
-import type { AppItem, WorkspaceItem, WorkspaceGroup, WindowConfig } from '@common/types';
+import type { AppItem, WorkspaceItem, WorkspaceGroup } from '@common/types';
 import { isWindowInfo, isLauncherItem, isWindowItem } from '@common/types/guards';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
@@ -9,7 +9,7 @@ import { tryActivateWindow } from '../utils/windowActivator.js';
 import { launchItem } from '../utils/itemLauncher.js';
 import { WorkspaceService } from '../services/workspace/index.js';
 import PathManager from '../config/pathManager.js';
-import { IconService } from '../services/iconService.js';
+import { getIconForItem } from '../services/iconService.js';
 
 import { loadDataFiles } from './dataHandlers.js';
 
@@ -81,23 +81,12 @@ export function setupWorkspaceHandlers(): void {
 
         for (const filePath of filePaths) {
           try {
-            // アイテムタイプを判定
             const itemType = detectItemTypeSync(filePath);
 
-            // タイプに応じてアイコンを取得（IconServiceを使用）
-            const icon = await IconService.getIconForItem(
-              filePath,
-              itemType,
-              iconsFolder,
-              extensionsFolder
-            );
-            logger.info(
-              { path: filePath, hasIcon: !!icon, type: itemType },
-              'Extracted icon for workspace'
-            );
+            // アイコンをキャッシュに保存（アイコンはキャッシュフォルダから参照される）
+            await getIconForItem(filePath, itemType, iconsFolder, extensionsFolder);
 
-            // アイコン付きでアイテムを追加
-            const addedItem = await workspaceService.addItemFromPath(filePath, icon, groupId);
+            const addedItem = await workspaceService.addItemFromPath(filePath, groupId);
             addedItems.push(addedItem);
             logger.info(
               { id: addedItem.id, name: addedItem.displayName, path: filePath, type: itemType },
@@ -105,7 +94,6 @@ export function setupWorkspaceHandlers(): void {
             );
           } catch (error) {
             logger.error({ error, path: filePath }, 'Failed to add item from path');
-            // 個別のエラーは記録するが、処理は継続
           }
         }
 
@@ -198,37 +186,35 @@ export function setupWorkspaceHandlers(): void {
     try {
       // windowOperationタイプの場合
       if (item.type === 'windowOperation') {
-        // pathから windowTitle を抽出（[ウィンドウ操作: タイトル] 形式）
         const match = item.path.match(/^\[ウィンドウ操作: (.+)\]$/);
         const windowTitle = match ? match[1] : item.path;
 
-        // WindowConfigを構築
-        const windowConfig = {
-          title: windowTitle,
-          processName: item.processName,
-          x: item.windowX,
-          y: item.windowY,
-          width: item.windowWidth,
-          height: item.windowHeight,
-          virtualDesktopNumber: item.virtualDesktopNumber,
-          activateWindow: item.activateWindow,
-          moveToActiveMonitorCenter: item.moveToActiveMonitorCenter,
-          pinToAllDesktops: item.pinToAllDesktops,
-        };
-
-        // ウィンドウ操作を実行
-        const activationResult = await tryActivateWindow(windowConfig, item.displayName, logger);
+        const activationResult = await tryActivateWindow(
+          {
+            title: windowTitle,
+            processName: item.processName,
+            x: item.windowX,
+            y: item.windowY,
+            width: item.windowWidth,
+            height: item.windowHeight,
+            virtualDesktopNumber: item.virtualDesktopNumber,
+            activateWindow: item.activateWindow,
+            moveToActiveMonitorCenter: item.moveToActiveMonitorCenter,
+            pinToAllDesktops: item.pinToAllDesktops,
+          },
+          item.displayName,
+          logger
+        );
 
         if (activationResult.activated) {
           logger.info({ id: item.id, name: item.displayName }, 'Window operation executed');
           return { success: true };
-        } else {
-          logger.warn(
-            { id: item.id, name: item.displayName, windowTitle },
-            'Window operation failed: Window not found'
-          );
-          throw new Error(`ウィンドウが見つかりませんでした: ${windowTitle}`);
         }
+        logger.warn(
+          { id: item.id, name: item.displayName, windowTitle },
+          'Window operation failed: Window not found'
+        );
+        throw new Error(`ウィンドウが見つかりませんでした: ${windowTitle}`);
       }
 
       // groupタイプの場合：グループ内のアイテムを順次実行
@@ -279,21 +265,22 @@ export function setupWorkspaceHandlers(): void {
 
           try {
             if (isWindowItem(targetItem)) {
-              // ウィンドウ操作アイテムの場合
-              const windowConfig: WindowConfig = {
-                title: targetItem.windowTitle,
-                processName: targetItem.processName,
-                x: targetItem.x,
-                y: targetItem.y,
-                width: targetItem.width,
-                height: targetItem.height,
-                moveToActiveMonitorCenter: targetItem.moveToActiveMonitorCenter,
-                virtualDesktopNumber: targetItem.virtualDesktopNumber,
-                activateWindow: targetItem.activateWindow,
-                pinToAllDesktops: targetItem.pinToAllDesktops,
-              };
-
-              await tryActivateWindow(windowConfig, targetItem.displayName, logger);
+              await tryActivateWindow(
+                {
+                  title: targetItem.windowTitle,
+                  processName: targetItem.processName,
+                  x: targetItem.x,
+                  y: targetItem.y,
+                  width: targetItem.width,
+                  height: targetItem.height,
+                  moveToActiveMonitorCenter: targetItem.moveToActiveMonitorCenter,
+                  virtualDesktopNumber: targetItem.virtualDesktopNumber,
+                  activateWindow: targetItem.activateWindow,
+                  pinToAllDesktops: targetItem.pinToAllDesktops,
+                },
+                targetItem.displayName,
+                logger
+              );
             } else if (isLauncherItem(targetItem)) {
               // 通常のLauncherItemの場合
               await launchItem(

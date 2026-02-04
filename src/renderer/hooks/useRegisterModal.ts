@@ -44,12 +44,9 @@ export const useRegisterModal = () => {
   };
 
   return {
-    // 状態
     isRegisterModalOpen,
     droppedPaths,
     editingItem,
-
-    // アクション
     openRegisterModal,
     openEditModal,
     openWithDroppedPaths,

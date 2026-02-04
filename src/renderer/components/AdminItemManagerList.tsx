@@ -1,7 +1,13 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import type { EditableJsonItem } from '@common/types/editableItem';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
-import type { LauncherItem, JsonItem } from '@common/types';
+import type {
+  LauncherItem,
+  JsonItem,
+  JsonLauncherItem,
+  JsonGroupItem,
+  JsonWindowItem,
+} from '@common/types';
 import {
   isJsonLauncherItem,
   isJsonDirItem,
@@ -11,9 +17,20 @@ import {
 
 import ConfirmDialog from './ConfirmDialog';
 
-// ソート関連の型定義
 type SortColumn = 'type' | 'displayName' | 'pathAndArgs';
 type SortDirection = 'asc' | 'desc';
+
+// displayNameを持つアイテム型
+type JsonItemWithDisplayName = JsonLauncherItem | JsonGroupItem | JsonWindowItem;
+
+// displayNameを持つアイテム型かどうかを判定するヘルパー関数
+function hasDisplayName(jsonItem: JsonItem): jsonItem is JsonItemWithDisplayName {
+  return (
+    (jsonItem.type === 'item' && isJsonLauncherItem(jsonItem)) ||
+    (jsonItem.type === 'group' && isJsonGroupItem(jsonItem)) ||
+    (jsonItem.type === 'window' && isJsonWindowItem(jsonItem))
+  );
+}
 
 interface EditableRawItemListProps {
   editableItems: EditableJsonItem[];
@@ -253,18 +270,8 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
 
   const handleNameEdit = (item: EditableJsonItem) => {
     const jsonItem = item.item;
-    let name = '';
-
-    if (
-      (jsonItem.type === 'item' && isJsonLauncherItem(jsonItem)) ||
-      (jsonItem.type === 'group' && isJsonGroupItem(jsonItem)) ||
-      (jsonItem.type === 'window' && isJsonWindowItem(jsonItem))
-    ) {
-      name = jsonItem.displayName || '';
-    }
-
-    const cellKey = `${getItemKey(item)}_name`;
-    setEditingCell(cellKey);
+    const name = hasDisplayName(jsonItem) ? jsonItem.displayName || '' : '';
+    setEditingCell(`${getItemKey(item)}_name`);
     setEditingValue(name);
   };
 
@@ -272,61 +279,34 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
     const newName = editingValue.trim();
     const jsonItem = item.item;
 
-    let currentName = '';
-    if (
-      (jsonItem.type === 'item' && isJsonLauncherItem(jsonItem)) ||
-      (jsonItem.type === 'group' && isJsonGroupItem(jsonItem)) ||
-      (jsonItem.type === 'window' && isJsonWindowItem(jsonItem))
-    ) {
-      currentName = jsonItem.displayName || '';
-    }
-
-    // 変更があるか確認
-    if (newName !== currentName) {
-      // JsonItemのdisplayNameを更新
-      let updatedJsonItem: JsonItem;
-      if (
-        (jsonItem.type === 'item' && isJsonLauncherItem(jsonItem)) ||
-        (jsonItem.type === 'group' && isJsonGroupItem(jsonItem)) ||
-        (jsonItem.type === 'window' && isJsonWindowItem(jsonItem))
-      ) {
-        updatedJsonItem = {
-          ...jsonItem,
-          displayName: newName,
+    if (hasDisplayName(jsonItem)) {
+      const currentName = jsonItem.displayName || '';
+      if (newName !== currentName) {
+        const updatedItem: EditableJsonItem = {
+          ...item,
+          item: { ...jsonItem, displayName: newName },
         };
-      } else {
-        updatedJsonItem = jsonItem;
+        onItemEdit(updatedItem);
       }
-
-      const updatedItem: EditableJsonItem = {
-        ...item,
-        item: updatedJsonItem,
-      };
-      onItemEdit(updatedItem);
     }
     setEditingCell(null);
     setEditingValue('');
   };
 
-  const handleNameKeyDown = (e: React.KeyboardEvent, item: EditableJsonItem) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleNameSave(item);
-    } else if (e.key === 'Escape') {
-      e.preventDefault();
-      handleCellCancel();
-    }
+  const createKeyDownHandler = (saveHandler: (item: EditableJsonItem) => void) => {
+    return (e: React.KeyboardEvent, item: EditableJsonItem) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        saveHandler(item);
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        handleCellCancel();
+      }
+    };
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent, item: EditableJsonItem) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleCellSave(item);
-    } else if (e.key === 'Escape') {
-      e.preventDefault();
-      handleCellCancel();
-    }
-  };
+  const handleNameKeyDown = createKeyDownHandler(handleNameSave);
+  const handleKeyDown = createKeyDownHandler(handleCellSave);
 
   const getItemTypeIcon = (item: EditableJsonItem) => {
     const jsonItem = item.item;
@@ -363,48 +343,40 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
   const renderNameCell = (item: EditableJsonItem) => {
     const jsonItem = item.item;
 
-    if (
-      (jsonItem.type === 'item' && isJsonLauncherItem(jsonItem)) ||
-      (jsonItem.type === 'group' && isJsonGroupItem(jsonItem)) ||
-      (jsonItem.type === 'window' && isJsonWindowItem(jsonItem))
-    ) {
-      const name = jsonItem.displayName || '';
-      const hasError = item.meta.validationError !== undefined;
-
-      const cellKey = `${getItemKey(item)}_name`;
-      const isEditing = editingCell === cellKey;
-
-      if (isEditing) {
-        return (
-          <input
-            type="text"
-            value={editingValue}
-            onChange={(e) => setEditingValue(e.target.value)}
-            onBlur={() => handleNameSave(item)}
-            onKeyDown={(e) => handleNameKeyDown(e, item)}
-            className="edit-input"
-            autoFocus
-          />
-        );
-      }
-
-      return (
-        <div
-          className={`editable-cell ${hasError ? 'error' : ''}`}
-          onClick={() => handleNameEdit(item)}
-          title={
-            hasError
-              ? `バリデーションエラー: ${item.meta.validationError}`
-              : 'クリックして名前を編集'
-          }
-        >
-          {name || '(名前なし)'}
-        </div>
-      );
-    } else {
-      // dirアイテムは名称編集不可
+    if (!hasDisplayName(jsonItem)) {
       return <div className="readonly-cell">-</div>;
     }
+
+    const name = jsonItem.displayName || '';
+    const hasError = item.meta.validationError !== undefined;
+    const cellKey = `${getItemKey(item)}_name`;
+    const isEditing = editingCell === cellKey;
+
+    if (isEditing) {
+      return (
+        <input
+          type="text"
+          value={editingValue}
+          onChange={(e) => setEditingValue(e.target.value)}
+          onBlur={() => handleNameSave(item)}
+          onKeyDown={(e) => handleNameKeyDown(e, item)}
+          className="edit-input"
+          autoFocus
+        />
+      );
+    }
+
+    return (
+      <div
+        className={`editable-cell ${hasError ? 'error' : ''}`}
+        onClick={() => handleNameEdit(item)}
+        title={
+          hasError ? `バリデーションエラー: ${item.meta.validationError}` : 'クリックして名前を編集'
+        }
+      >
+        {name || '(名前なし)'}
+      </div>
+    );
   };
 
   const getPathAndArgs = (item: EditableJsonItem) => {
@@ -453,20 +425,9 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
     }
   };
 
-  // EditableJsonItemでは空行の概念がないため、この関数は使用されない
-  // （空のJsonItemを作成する場合は、AdminItemManagerView側で処理）
-
-  // ソート用: displayNameを取得するヘルパー関数
   const getDisplayName = (item: EditableJsonItem): string => {
     const jsonItem = item.item;
-    if (
-      (jsonItem.type === 'item' && isJsonLauncherItem(jsonItem)) ||
-      (jsonItem.type === 'group' && isJsonGroupItem(jsonItem)) ||
-      (jsonItem.type === 'window' && isJsonWindowItem(jsonItem))
-    ) {
-      return jsonItem.displayName || '';
-    }
-    return '';
+    return hasDisplayName(jsonItem) ? jsonItem.displayName || '' : '';
   };
 
   // ヘッダークリック時のソート状態トグル: asc → desc → 解除

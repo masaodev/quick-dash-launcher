@@ -1,10 +1,16 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { AppSettings } from '@common/types';
+import type { AppSettings } from '@common/types';
 import type { EditableJsonItem } from '@common/types/editableItem';
 
-import { debugInfo, logError } from './utils/debug';
 import AdminTabContainer from './components/AdminTabContainer';
 import AlertDialog from './components/AlertDialog';
+import { debugInfo, logError } from './utils/debug';
+
+type AlertDialogState = {
+  isOpen: boolean;
+  message: string;
+  type: 'info' | 'error' | 'warning' | 'success';
+};
 
 const AdminApp: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'settings' | 'edit' | 'archive' | 'other'>('settings');
@@ -12,61 +18,48 @@ const AdminApp: React.FC = () => {
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-
-  // AlertDialog状態管理
-  const [alertDialog, setAlertDialog] = useState<{
-    isOpen: boolean;
-    message: string;
-    type?: 'info' | 'error' | 'warning' | 'success';
-  }>({
+  const [alertDialog, setAlertDialog] = useState<AlertDialogState>({
     isOpen: false,
     message: '',
     type: 'info',
   });
 
   useEffect(() => {
-    loadData();
-    loadInitialTab();
+    async function initialize(): Promise<void> {
+      const [, initialTab] = await Promise.all([
+        loadData(),
+        window.electronAPI.getInitialTab().catch(() => 'settings' as const),
+      ]);
+      setActiveTab(initialTab);
+    }
+    initialize();
 
-    // タブ変更イベントをリッスン
-    window.electronAPI.onSetActiveTab((tab) => {
-      setActiveTab(tab);
-    });
-
-    // データ変更通知のリスナーを設定
-    window.electronAPI.onDataChanged(() => {
+    window.electronAPI.onSetActiveTab(setActiveTab);
+    const unsubscribeData = window.electronAPI.onDataChanged(() => {
       debugInfo('データ変更通知を受信、データを再読み込みします');
-      loadData(false); // ローディング表示なしで再読み込み
+      loadData(false);
+    });
+    const unsubscribeWindow = window.electronAPI.onWindowShown(() => {
+      debugInfo('ウィンドウが表示されました、データを再読み込みします');
+      loadData(false);
     });
 
-    // ウィンドウ表示時のリスナーを設定
-    window.electronAPI.onWindowShown(() => {
-      debugInfo('ウィンドウが表示されました、データを再読み込みします');
-      loadData(false); // ローディング表示なしで再読み込み
-    });
+    return () => {
+      unsubscribeData?.();
+      unsubscribeWindow?.();
+    };
   }, []);
 
-  const loadInitialTab = async () => {
+  async function loadData(showLoading = true): Promise<void> {
     try {
-      const initialTab = await window.electronAPI.getInitialTab();
-      setActiveTab(initialTab);
-    } catch (error) {
-      logError('Failed to get initial tab:', error);
-    }
-  };
+      if (showLoading) setIsLoading(true);
 
-  const loadData = async (showLoading = true) => {
-    try {
-      if (showLoading) {
-        setIsLoading(true);
-      }
-      // 設定とデータを並行して読み込み
       const [settingsData, itemsResult] = await Promise.all([
         window.electronAPI.getSettings(),
         window.electronAPI.loadEditableItems(),
       ]);
-      setSettings(settingsData);
 
+      setSettings(settingsData);
       if (itemsResult.error) {
         logError('Failed to load editable items:', itemsResult.error);
         setEditableItems([]);
@@ -76,13 +69,11 @@ const AdminApp: React.FC = () => {
     } catch (error) {
       logError('Failed to load data:', error);
     } finally {
-      if (showLoading) {
-        setIsLoading(false);
-      }
+      if (showLoading) setIsLoading(false);
     }
-  };
+  }
 
-  const handleEditableItemsSave = async (newEditableItems: EditableJsonItem[]) => {
+  async function handleEditableItemsSave(newEditableItems: EditableJsonItem[]): Promise<void> {
     try {
       await window.electronAPI.saveEditableItems(newEditableItems);
       setEditableItems(newEditableItems);
@@ -90,17 +81,13 @@ const AdminApp: React.FC = () => {
     } catch (error) {
       logError('Failed to save editable items:', error);
     }
-  };
+  }
 
-  const handleSettingsSave = async (newSettings: AppSettings) => {
+  async function handleSettingsSave(newSettings: AppSettings): Promise<void> {
     try {
-      // 現在の設定と比較してホットキーが変更されたかチェック
       const isHotkeyChanged = settings && settings.hotkey !== newSettings.hotkey;
-
-      // 設定ファイルを更新
       await window.electronAPI.setMultipleSettings(newSettings);
 
-      // ホットキーが変更された場合は即座に反映
       if (isHotkeyChanged) {
         const success = await window.electronAPI.changeHotkey(newSettings.hotkey);
         if (!success) {
@@ -125,17 +112,10 @@ const AdminApp: React.FC = () => {
         type: 'error',
       });
     }
-  };
+  }
 
-  // dataFileTabsをメモ化して、内容が変わらない限り参照を保持
-  const dataFileTabs = useMemo(() => {
-    return settings?.dataFileTabs || [];
-  }, [JSON.stringify(settings?.dataFileTabs)]);
-
-  // dataFileLabelsをメモ化して、内容が変わらない限り参照を保持
-  const dataFileLabels = useMemo(() => {
-    return settings?.dataFileLabels || {};
-  }, [JSON.stringify(settings?.dataFileLabels)]);
+  const dataFileTabs = useMemo(() => settings?.dataFileTabs ?? [], [settings?.dataFileTabs]);
+  const dataFileLabels = useMemo(() => settings?.dataFileLabels ?? {}, [settings?.dataFileLabels]);
 
   if (isLoading) {
     return (

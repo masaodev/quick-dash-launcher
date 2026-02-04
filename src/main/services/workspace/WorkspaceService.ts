@@ -2,7 +2,7 @@
  * ワークスペースサービスのファサードクラス
  * 各種マネージャークラスに処理を委譲する
  */
-import ElectronStore from 'electron-store';
+import type ElectronStore from 'electron-store';
 import type {
   AppItem,
   WorkspaceItem,
@@ -50,10 +50,7 @@ export class WorkspaceService {
     items: [] as WorkspaceItem[],
   };
 
-  private constructor() {
-    this.store = null;
-    this.archiveStore = null;
-  }
+  private constructor() {}
 
   /**
    * electron-storeを非同期で初期化
@@ -111,7 +108,7 @@ export class WorkspaceService {
     return WorkspaceService.instance;
   }
 
-  // ==================== アイテム管理メソッド ====================
+  // --- アイテム管理 ---
 
   public async loadItems(): Promise<WorkspaceItem[]> {
     await this.initializeStore();
@@ -123,13 +120,9 @@ export class WorkspaceService {
     return this.itemManager!.addItem(item, groupId);
   }
 
-  public async addItemFromPath(
-    filePath: string,
-    icon?: string,
-    groupId?: string
-  ): Promise<WorkspaceItem> {
+  public async addItemFromPath(filePath: string, groupId?: string): Promise<WorkspaceItem> {
     await this.initializeStore();
-    return this.itemManager!.addItemFromPath(filePath, icon, groupId);
+    return this.itemManager!.addItemFromPath(filePath, groupId);
   }
 
   public async removeItem(id: string): Promise<void> {
@@ -167,7 +160,7 @@ export class WorkspaceService {
     this.itemManager!.clear();
   }
 
-  // ==================== グループ管理メソッド ====================
+  // --- グループ管理 ---
 
   public async loadGroups(): Promise<WorkspaceGroup[]> {
     await this.initializeStore();
@@ -204,7 +197,7 @@ export class WorkspaceService {
     this.itemManager!.moveItemToGroup(itemId, groupId, groups);
   }
 
-  // ==================== 実行履歴管理メソッド（ファサードパターン） ====================
+  // --- 実行履歴管理（ファサード） ---
 
   public async loadExecutionHistory(): Promise<ExecutionHistoryItem[]> {
     const historyService = await ExecutionHistoryService.getInstance();
@@ -221,7 +214,7 @@ export class WorkspaceService {
     await historyService.clearExecutionHistory();
   }
 
-  // ==================== アーカイブ管理メソッド ====================
+  // --- アーカイブ管理 ---
 
   public async archiveGroup(groupId: string): Promise<void> {
     await this.initializeStore();

@@ -6,129 +6,66 @@ import { IPC_CHANNELS } from '@common/ipcChannels';
 import { SettingsService } from '../services/settingsService.js';
 import { HotkeyService } from '../services/hotkeyService.js';
 import { AutoLaunchService } from '../services/autoLaunchService.js';
+import { getWorkspaceWindow, setWorkspacePosition } from '../workspaceWindowManager.js';
 
-/**
- * すべてのウィンドウに設定変更を通知
- */
 function notifySettingsChanged(): void {
-  const allWindows = BrowserWindow.getAllWindows();
-  allWindows.forEach((window) => {
+  for (const window of BrowserWindow.getAllWindows()) {
     window.webContents.send(IPC_CHANNELS.EVENT_SETTINGS_CHANGED);
-  });
-}
-
-/**
- * ワークスペースウィンドウの透過度を更新する
- */
-async function updateWorkspaceOpacity(
-  backgroundTransparent: boolean,
-  opacity: number
-): Promise<void> {
-  const { getWorkspaceWindow } = await import('../workspaceWindowManager.js');
-  const workspace = getWorkspaceWindow();
-  if (workspace && !workspace.isDestroyed()) {
-    workspace.setOpacity(backgroundTransparent ? 1.0 : opacity / 100);
   }
 }
 
-/**
- * ワークスペースウィンドウの位置を更新する
- */
-async function updateWorkspacePosition(): Promise<void> {
-  const { getWorkspaceWindow, setWorkspacePosition } = await import('../workspaceWindowManager.js');
-  const workspace = getWorkspaceWindow();
-  if (workspace && !workspace.isDestroyed() && workspace.isVisible()) {
-    await setWorkspacePosition();
-  }
-}
+const OPACITY_KEYS: ReadonlyArray<keyof AppSettings> = [
+  'workspaceOpacity',
+  'workspaceBackgroundTransparent',
+];
+
+const POSITION_KEYS: ReadonlyArray<keyof AppSettings> = [
+  'workspacePositionMode',
+  'workspaceTargetDisplayIndex',
+  'workspacePositionX',
+  'workspacePositionY',
+];
 
 /**
- * 個別の設定変更の副作用を適用する
+ * 設定変更の副作用を適用する
  */
-async function applySingleSettingEffect(
-  key: keyof AppSettings,
-  value: AppSettings[keyof AppSettings],
+async function applySettingsEffects(
+  changedKeys: ReadonlyArray<keyof AppSettings>,
   settingsService: SettingsService
 ): Promise<void> {
-  // autoLaunch設定の場合
-  if (key === 'autoLaunch') {
-    const autoLaunchService = AutoLaunchService.getInstance();
-    await autoLaunchService.setAutoLaunch(value as boolean);
+  if (changedKeys.includes('autoLaunch')) {
+    const autoLaunch = await settingsService.get('autoLaunch');
+    await AutoLaunchService.getInstance().setAutoLaunch(autoLaunch);
   }
 
-  // workspaceOpacity または workspaceBackgroundTransparent 設定の場合
-  if (key === 'workspaceOpacity' || key === 'workspaceBackgroundTransparent') {
-    const currentSettings = await settingsService.getAll();
-    const backgroundTransparent =
-      key === 'workspaceBackgroundTransparent'
-        ? (value as boolean)
-        : currentSettings.workspaceBackgroundTransparent;
-    const opacity =
-      key === 'workspaceOpacity' ? (value as number) : currentSettings.workspaceOpacity;
-    await updateWorkspaceOpacity(backgroundTransparent, opacity);
+  if (changedKeys.some((key) => OPACITY_KEYS.includes(key))) {
+    const workspace = getWorkspaceWindow();
+    if (workspace && !workspace.isDestroyed()) {
+      const [backgroundTransparent, opacity] = await Promise.all([
+        settingsService.get('workspaceBackgroundTransparent'),
+        settingsService.get('workspaceOpacity'),
+      ]);
+      workspace.setOpacity(backgroundTransparent ? 1.0 : opacity / 100);
+    }
   }
 
-  // workspacePositionMode等の設定の場合
-  if (
-    key === 'workspacePositionMode' ||
-    key === 'workspaceTargetDisplayIndex' ||
-    key === 'workspacePositionX' ||
-    key === 'workspacePositionY'
-  ) {
-    await updateWorkspacePosition();
+  if (changedKeys.some((key) => POSITION_KEYS.includes(key))) {
+    const workspace = getWorkspaceWindow();
+    if (workspace && !workspace.isDestroyed() && workspace.isVisible()) {
+      await setWorkspacePosition();
+    }
   }
 }
 
-/**
- * 複数設定変更の副作用を適用する
- */
-async function applyMultipleSettingsEffects(
-  settings: Partial<AppSettings>,
-  settingsService: SettingsService
-): Promise<void> {
-  // autoLaunch設定
-  if (settings.autoLaunch !== undefined) {
-    const autoLaunchService = AutoLaunchService.getInstance();
-    await autoLaunchService.setAutoLaunch(settings.autoLaunch);
-  }
-
-  // workspaceOpacity設定
-  if (
-    settings.workspaceOpacity !== undefined ||
-    settings.workspaceBackgroundTransparent !== undefined
-  ) {
-    const currentSettings = await settingsService.getAll();
-    const backgroundTransparent =
-      settings.workspaceBackgroundTransparent ?? currentSettings.workspaceBackgroundTransparent;
-    const opacity = settings.workspaceOpacity ?? currentSettings.workspaceOpacity;
-    await updateWorkspaceOpacity(backgroundTransparent, opacity);
-  }
-
-  // workspacePositionMode設定
-  if (
-    settings.workspacePositionMode !== undefined ||
-    settings.workspaceTargetDisplayIndex !== undefined ||
-    settings.workspacePositionX !== undefined ||
-    settings.workspacePositionY !== undefined
-  ) {
-    await updateWorkspacePosition();
-  }
-}
-
-/**
- * 設定関連のIPCハンドラーを登録
- */
 export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boolean) => void): void {
-  // 初回起動かどうかを取得
   ipcMain.handle(IPC_CHANNELS.SETTINGS_IS_FIRST_LAUNCH, async () => {
-    // ホットキーが設定されているかどうかで初回起動を判定
     const settingsService = await SettingsService.getInstance();
     const hotkey = await settingsService.get('hotkey');
     const isFirstLaunch = !hotkey || hotkey.trim() === '';
     logger.info(`Is first launch request: ${isFirstLaunch}`);
     return isFirstLaunch;
   });
-  // 設定値を取得
+
   ipcMain.handle(IPC_CHANNELS.SETTINGS_GET, async (_event, key?: keyof AppSettings) => {
     try {
       const settingsService = await SettingsService.getInstance();
@@ -136,18 +73,16 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
         const value = await settingsService.get(key);
         logger.info(`Settings get request: ${key} = ${value}`);
         return value;
-      } else {
-        const allSettings = await settingsService.getAll();
-        logger.info('Settings get all request');
-        return allSettings;
       }
+      const allSettings = await settingsService.getAll();
+      logger.info('Settings get all request');
+      return allSettings;
     } catch (error) {
       logger.error({ error }, 'Failed to get settings');
       throw error;
     }
   });
 
-  // 設定値を設定
   ipcMain.handle(
     IPC_CHANNELS.SETTINGS_SET,
     async (_event, key: keyof AppSettings, value: AppSettings[keyof AppSettings]) => {
@@ -155,10 +90,7 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
         const settingsService = await SettingsService.getInstance();
         await settingsService.set(key, value);
         logger.info(`Settings set request: ${key} = ${value}`);
-
-        // 個別設定を適用
-        await applySingleSettingEffect(key, value, settingsService);
-
+        await applySettingsEffects([key], settingsService);
         return true;
       } catch (error) {
         logger.error({ error, key }, 'Failed to set setting');
@@ -167,7 +99,6 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
     }
   );
 
-  // 複数の設定値を一括設定
   ipcMain.handle(
     IPC_CHANNELS.SETTINGS_SET_MULTIPLE,
     async (_event, settings: Partial<AppSettings>) => {
@@ -176,16 +107,13 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
         await settingsService.setMultiple(settings);
         logger.info({ settings }, 'Settings set multiple request');
 
-        // ホットキーが設定された場合、初回起動モードを解除
         if (settings.hotkey && settings.hotkey.trim() !== '' && setFirstLaunchMode) {
           setFirstLaunchMode(false);
           logger.info('初回起動モードを解除しました（ホットキーが設定されたため）');
         }
 
-        // 複数設定を適用
-        await applyMultipleSettingsEffects(settings, settingsService);
-
-        // すべてのウィンドウに設定変更を通知
+        const changedKeys = Object.keys(settings) as Array<keyof AppSettings>;
+        await applySettingsEffects(changedKeys, settingsService);
         notifySettingsChanged();
 
         return true;
@@ -196,20 +124,13 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
     }
   );
 
-  // 設定をリセット
-  ipcMain.handle(IPC_CHANNELS.SETTINGS_RESET, async (_event) => {
+  ipcMain.handle(IPC_CHANNELS.SETTINGS_RESET, async () => {
     try {
       const settingsService = await SettingsService.getInstance();
       await settingsService.reset();
       logger.info('Settings reset request');
-
-      // 自動起動もリセット（デフォルトはfalse）
-      const autoLaunchService = AutoLaunchService.getInstance();
-      await autoLaunchService.setAutoLaunch(false);
-
-      // すべてのウィンドウに設定変更を通知
+      await AutoLaunchService.getInstance().setAutoLaunch(false);
       notifySettingsChanged();
-
       return true;
     } catch (error) {
       logger.error({ error }, 'Failed to reset settings');
@@ -217,7 +138,6 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
     }
   });
 
-  // ホットキーの妥当性を検証
   ipcMain.handle(IPC_CHANNELS.SETTINGS_VALIDATE_HOTKEY, async (_event, hotkey: string) => {
     try {
       const settingsService = await SettingsService.getInstance();
@@ -230,8 +150,7 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
     }
   });
 
-  // 設定ファイルのパスを取得
-  ipcMain.handle(IPC_CHANNELS.SETTINGS_GET_CONFIG_PATH, async (_event) => {
+  ipcMain.handle(IPC_CHANNELS.SETTINGS_GET_CONFIG_PATH, async () => {
     try {
       const settingsService = await SettingsService.getInstance();
       const path = await settingsService.getConfigPath();
@@ -243,7 +162,6 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
     }
   });
 
-  // ホットキーを変更
   ipcMain.handle(IPC_CHANNELS.SETTINGS_CHANGE_HOTKEY, async (_event, newHotkey: string) => {
     try {
       const hotkeyService = HotkeyService.getInstance();
@@ -256,13 +174,11 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
     }
   });
 
-  // ホットキーの利用可能性をチェック
   ipcMain.handle(
     IPC_CHANNELS.SETTINGS_CHECK_HOTKEY_AVAILABILITY,
     async (_event, hotkey: string) => {
       try {
-        const hotkeyService = HotkeyService.getInstance();
-        const isAvailable = hotkeyService.isHotkeyAvailable(hotkey);
+        const isAvailable = HotkeyService.getInstance().isHotkeyAvailable(hotkey);
         logger.info(`Hotkey availability check: ${hotkey} = ${isAvailable}`);
         return isAvailable;
       } catch (error) {
@@ -272,13 +188,11 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
     }
   );
 
-  // アイテム検索ホットキーを変更
   ipcMain.handle(
     IPC_CHANNELS.SETTINGS_CHANGE_ITEM_SEARCH_HOTKEY,
     async (_event, newHotkey: string) => {
       try {
-        const hotkeyService = HotkeyService.getInstance();
-        const success = await hotkeyService.changeItemSearchHotkey(newHotkey);
+        const success = await HotkeyService.getInstance().changeItemSearchHotkey(newHotkey);
         logger.info(
           `Item search hotkey change request: ${newHotkey} = ${success ? 'success' : 'failed'}`
         );
@@ -290,7 +204,6 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
     }
   );
 
-  // ディスプレイ一覧を取得
   ipcMain.handle(IPC_CHANNELS.SETTINGS_GET_DISPLAYS, async () => {
     try {
       const displays = screen.getAllDisplays();

@@ -7,37 +7,19 @@ import { faviconLogger } from '@common/logger';
 interface FaviconSource {
   url: string;
   size?: number;
-  type?: string;
   isOgImage?: boolean;
 }
 
 export class FaviconService {
   private faviconsFolder: string;
-  private defaultSize: number = 64; // デフォルトサイズを64pxに
-  private htmlDownloadTimeout: number = 5000; // HTMLダウンロードのタイムアウト（5秒）
-  private faviconDownloadTimeout: number = 3000; // ファビコンダウンロードのタイムアウト（3秒）
+  private defaultSize = 64;
+  private htmlDownloadTimeout = 5000;
+  private faviconDownloadTimeout = 3000;
 
   constructor(faviconsFolder: string) {
     this.faviconsFolder = faviconsFolder;
   }
 
-  /**
-   * 指定されたURLのファビコンを取得し、Base64エンコードされたデータURLとして返す
-   * キャッシュが存在する場合はキャッシュから読み込み、なければ複数のソースから取得を試みる
-   *
-   * @param url - ファビコンを取得するWebサイトのURL
-   * @returns ファビコンのBase64データURL。取得に失敗した場合はnull
-   * @throws Error ファビコンの取得処理中にエラーが発生した場合（ログに記録され、nullを返す）
-   *
-   * @example
-   * ```typescript
-   * const faviconService = new FaviconService();
-   * const favicon = await faviconService.fetchFavicon('https://example.com');
-   * if (favicon) {
-   *   console.log('ファビコンを取得しました:', favicon);
-   * }
-   * ```
-   */
   async fetchFavicon(url: string): Promise<string | null> {
     try {
       const domain = new URL(url).hostname;
@@ -71,7 +53,6 @@ export class FaviconService {
   private async tryMultipleSources(url: string): Promise<Buffer | null> {
     const sources = await this.getFaviconSources(url);
 
-    // 各ソースを順番に試す
     for (const source of sources) {
       try {
         faviconLogger.info(
@@ -87,15 +68,7 @@ export class FaviconService {
           return data;
         }
       } catch (error) {
-        // エラーの種類を判定してメッセージを分ける
-        let errorMessage = 'ファビコンソースの取得に失敗';
-        if (error instanceof Error) {
-          if (error.message.includes('タイムアウト')) {
-            errorMessage = 'ファビコンダウンロードがタイムアウト';
-          } else if (error.message.startsWith('HTTP ')) {
-            errorMessage = `HTTPエラー (${error.message})`;
-          }
-        }
+        const errorMessage = this.getErrorMessage(error);
         faviconLogger.info({ url: source.url, error }, errorMessage);
       }
     }
@@ -103,15 +76,35 @@ export class FaviconService {
     return null;
   }
 
+  private getErrorMessage(error: unknown): string {
+    if (!(error instanceof Error)) {
+      return 'ファビコンソースの取得に失敗';
+    }
+    if (error.message.includes('タイムアウト')) {
+      return 'ファビコンダウンロードがタイムアウト';
+    }
+    if (error.message.startsWith('HTTP ')) {
+      return `HTTPエラー (${error.message})`;
+    }
+    return 'ファビコンソースの取得に失敗';
+  }
+
   private async getFaviconSources(url: string): Promise<FaviconSource[]> {
     const sources: FaviconSource[] = [];
     const origin = new URL(url).origin;
+    let isNetworkError = false;
 
-    // 1. HTMLを解析してメタタグからファビコンを探す
-    const { htmlSources, isNetworkError } = await this.tryParseHtmlForFavicons(url);
-    sources.push(...htmlSources);
+    try {
+      const htmlSources = await this.parseHtmlForFavicons(url);
+      sources.push(...htmlSources);
+    } catch (error) {
+      isNetworkError = this.isNetworkError(error);
+      const logMessage = isNetworkError
+        ? 'ネットワークエラーのため標準ファビコンソースをスキップ'
+        : 'HTML解析をスキップ（標準的なファビコンソースを試行）';
+      faviconLogger.info({ error }, logMessage);
+    }
 
-    // 2. ネットワークエラーでない場合のみ標準的な場所を確認
     if (!isNetworkError) {
       sources.push(
         { url: `${origin}/favicon.ico`, size: 32 },
@@ -126,40 +119,6 @@ export class FaviconService {
     return sources;
   }
 
-  /**
-   * HTML解析を試行し、結果とネットワークエラーの有無を返す
-   */
-  private async tryParseHtmlForFavicons(
-    url: string
-  ): Promise<{ htmlSources: FaviconSource[]; isNetworkError: boolean }> {
-    try {
-      const htmlSources = await this.parseHtmlForFavicons(url);
-      return { htmlSources, isNetworkError: false };
-    } catch (error) {
-      const isNetworkError = this.isNetworkError(error);
-      const logMessage = isNetworkError
-        ? 'ネットワークエラーのため標準ファビコンソースをスキップ'
-        : 'HTML解析をスキップ（標準的なファビコンソースを試行）';
-      faviconLogger.info({ error }, logMessage);
-      return { htmlSources: [], isNetworkError };
-    }
-  }
-
-  /**
-   * 指定されたURLのHTMLを解析し、ファビコンとして使用可能な画像URLを抽出する
-   * 標準的なファビコンタグ、Apple Touch Icons、OGP画像、マニフェストファイルなど
-   * 複数のパターンに対応し、サイズ情報も含めて解析する
-   *
-   * @param url - 解析対象のWebサイトのURL
-   * @returns ファビコンソースの配列（優先度の高い順でソート済み）
-   * @throws Error HTMLの取得や解析中にエラーが発生した場合（ログに記録され、空の配列を返す）
-   *
-   * @example
-   * ```typescript
-   * const sources = await faviconService.parseHtmlForFavicons('https://example.com');
-   * console.log(`${sources.length}個のファビコンソースが見つかりました`);
-   * ```
-   */
   private async parseHtmlForFavicons(url: string): Promise<FaviconSource[]> {
     const sources: FaviconSource[] = [];
 
@@ -167,47 +126,36 @@ export class FaviconService {
       const html = await this.fetchHtml(url);
       const origin = new URL(url).origin;
 
-      // ファビコン関連のメタタグを解析（より多くのパターンに対応）
       const iconPatterns = [
         // 標準的なfaviconタグ
         /<link[^>]+rel=["'](?:icon|shortcut icon)["'][^>]+href=["']([^"']+)["']/gi,
         /<link[^>]+href=["']([^"']+)["'][^>]+rel=["'](?:icon|shortcut icon)["']/gi,
-
         // Apple touch icons
         /<link[^>]+rel=["']apple-touch-icon(?:-precomposed)?["'][^>]+href=["']([^"']+)["']/gi,
         /<link[^>]+href=["']([^"']+)["'][^>]+rel=["']apple-touch-icon(?:-precomposed)?["']/gi,
-
         // サイズ指定のあるアイコン
         /<link[^>]+rel=["']icon["'][^>]+sizes=["']([^"']+)["'][^>]+href=["']([^"']+)["']/gi,
         /<link[^>]+href=["']([^"']+)["'][^>]+sizes=["']([^"']+)["'][^>]+rel=["']icon["']/gi,
-
-        // OGP画像（最後の手段として使用）
+        // OGP画像（フォールバック用）
         /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/gi,
         /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/gi,
-
-        // マニフェストファイル
-        /<link[^>]+rel=["']manifest["'][^>]+href=["']([^"']+)["']/gi,
       ];
 
-      // 見つかったアイコンURLを収集
       const foundUrls = new Set<string>();
 
       for (const pattern of iconPatterns) {
         let match;
-        pattern.lastIndex = 0; // 正規表現のインデックスをリセット
+        pattern.lastIndex = 0;
 
         while ((match = pattern.exec(html)) !== null) {
-          // サイズ指定のあるパターンの処理
           if (pattern.source.includes('sizes')) {
             const href = match[2] || match[1];
             const iconUrl = this.resolveUrl(href, origin);
             if (iconUrl && !foundUrls.has(iconUrl)) {
               foundUrls.add(iconUrl);
-              // サイズ情報も取得可能な場合は追加
               const sizes = match[1] || match[2];
               if (sizes && sizes.includes('x')) {
                 const size = parseInt(sizes.split('x')[0]);
-                // 大きすぎるアイコン（300px以上）は除外
                 if (size < 300) {
                   sources.push({ url: iconUrl, size });
                 }
@@ -215,18 +163,10 @@ export class FaviconService {
                 sources.push({ url: iconUrl });
               }
             }
-          } else if (pattern.source.includes('manifest')) {
-            // マニフェストファイルの処理（今後の拡張用）
-            const manifestUrl = this.resolveUrl(match[1], origin);
-            if (manifestUrl) {
-              // 今はマニフェストの解析はスキップ
-              faviconLogger.info({ manifestUrl }, 'マニフェストファイル検出');
-            }
           } else {
             const iconUrl = this.resolveUrl(match[1], origin);
             if (iconUrl && !foundUrls.has(iconUrl)) {
               foundUrls.add(iconUrl);
-              // OGP画像かどうかを判定
               const isOgImage = pattern.source.includes('og:image');
               sources.push({ url: iconUrl, isOgImage });
             }
@@ -234,61 +174,48 @@ export class FaviconService {
         }
       }
 
-      // デバッグ用：取得したソースをログ出力
+      this.sortFaviconSources(sources);
+
       faviconLogger.info(
         {
           url,
-          sources: sources.map((s) => ({
-            url: s.url,
-            size: s.size,
-            isOgImage: s.isOgImage,
-          })),
+          sources: sources.map((s) => ({ url: s.url, size: s.size, isOgImage: s.isOgImage })),
         },
-        'HTMLから取得したファビコンソース'
-      );
-
-      // 優先度の高い順にソート
-      sources.sort((a, b) => {
-        // OGP画像は最後の手段として最低優先度
-        if (a.isOgImage && !b.isOgImage) return 1;
-        if (!a.isOgImage && b.isOgImage) return -1;
-
-        // apple-touch-iconを高優先度に
-        if (a.url.includes('apple-touch-icon') && !b.url.includes('apple-touch-icon')) return -1;
-        if (!a.url.includes('apple-touch-icon') && b.url.includes('apple-touch-icon')) return 1;
-
-        // 標準的なrel="icon"を優先
-        if (a.url.includes('favicon') && !b.url.includes('favicon')) return -1;
-        if (!a.url.includes('favicon') && b.url.includes('favicon')) return 1;
-
-        // サイズが指定されている場合は適度なサイズ（64px前後）を優先
-        if (a.size && b.size) {
-          const idealSize = 64;
-          const aDiff = Math.abs(a.size - idealSize);
-          const bDiff = Math.abs(b.size - idealSize);
-          return aDiff - bDiff;
-        }
-
-        return 0;
-      });
-
-      // デバッグ用：ソート後のソースをログ出力
-      faviconLogger.info(
-        {
-          url,
-          sortedSources: sources.map((s) => ({
-            url: s.url,
-            size: s.size,
-            isOgImage: s.isOgImage,
-          })),
-        },
-        'ソート後のファビコンソース'
+        'ファビコンソース取得完了'
       );
     } catch (error) {
       faviconLogger.error({ error }, 'HTML解析エラー');
     }
 
     return sources;
+  }
+
+  private sortFaviconSources(sources: FaviconSource[]): void {
+    const idealSize = 64;
+    sources.sort((a, b) => {
+      // OGP画像は最低優先度
+      if (a.isOgImage && !b.isOgImage) return 1;
+      if (!a.isOgImage && b.isOgImage) return -1;
+
+      // apple-touch-iconを高優先度に
+      const aIsApple = a.url.includes('apple-touch-icon');
+      const bIsApple = b.url.includes('apple-touch-icon');
+      if (aIsApple && !bIsApple) return -1;
+      if (!aIsApple && bIsApple) return 1;
+
+      // faviconを優先
+      const aIsFavicon = a.url.includes('favicon');
+      const bIsFavicon = b.url.includes('favicon');
+      if (aIsFavicon && !bIsFavicon) return -1;
+      if (!aIsFavicon && bIsFavicon) return 1;
+
+      // サイズが指定されている場合は64px前後を優先
+      if (a.size && b.size) {
+        return Math.abs(a.size - idealSize) - Math.abs(b.size - idealSize);
+      }
+
+      return 0;
+    });
   }
 
   private async fetchHtml(url: string): Promise<string> {
@@ -302,43 +229,34 @@ export class FaviconService {
       let data = '';
       let isResolved = false;
 
-      // タイムアウト設定
-      const timeoutId = setTimeout(() => {
-        if (!isResolved) {
-          isResolved = true;
-          request.abort();
-          reject(new Error(`HTMLダウンロードがタイムアウトしました: ${url}`));
+      const finish = (result: { resolve: string } | { reject: Error }): void => {
+        if (isResolved) return;
+        isResolved = true;
+        clearTimeout(timeoutId);
+        request.abort();
+        if ('resolve' in result) {
+          resolve(result.resolve);
+        } else {
+          reject(result.reject);
         }
+      };
+
+      const timeoutId = setTimeout(() => {
+        finish({ reject: new Error(`HTMLダウンロードがタイムアウトしました: ${url}`) });
       }, this.htmlDownloadTimeout);
 
       request.on('response', (response) => {
         response.on('data', (chunk) => {
           data += chunk.toString();
-          // 最初の5KBだけ読み込む（ファビコンタグは通常ヘッダー部分にある）
           if (data.length > 5000) {
-            clearTimeout(timeoutId);
-            isResolved = true;
-            request.abort();
-            resolve(data);
+            finish({ resolve: data });
           }
         });
 
-        response.on('end', () => {
-          if (!isResolved) {
-            clearTimeout(timeoutId);
-            isResolved = true;
-            resolve(data);
-          }
-        });
+        response.on('end', () => finish({ resolve: data }));
       });
 
-      request.on('error', (error) => {
-        if (!isResolved) {
-          clearTimeout(timeoutId);
-          isResolved = true;
-          reject(error);
-        }
-      });
+      request.on('error', (error) => finish({ reject: error }));
 
       request.end();
     });
@@ -355,23 +273,25 @@ export class FaviconService {
       const chunks: Buffer[] = [];
       let isResolved = false;
 
-      // タイムアウト設定
-      const timeoutId = setTimeout(() => {
-        if (!isResolved) {
-          isResolved = true;
-          request.removeAllListeners();
-          request.abort();
-          reject(new Error(`ファビコンダウンロードがタイムアウトしました: ${url}`));
+      const finish = (result: { resolve: Buffer } | { reject: Error }): void => {
+        if (isResolved) return;
+        isResolved = true;
+        clearTimeout(timeoutId);
+        request.abort();
+        if ('resolve' in result) {
+          resolve(result.resolve);
+        } else {
+          reject(result.reject);
         }
+      };
+
+      const timeoutId = setTimeout(() => {
+        finish({ reject: new Error(`ファビコンダウンロードがタイムアウトしました: ${url}`) });
       }, this.faviconDownloadTimeout);
 
       request.on('response', (response) => {
         if (response.statusCode !== 200) {
-          clearTimeout(timeoutId);
-          isResolved = true;
-          request.removeAllListeners();
-          response.removeAllListeners();
-          reject(new Error(`HTTP ${response.statusCode}`));
+          finish({ reject: new Error(`HTTP ${response.statusCode}`) });
           return;
         }
 
@@ -381,36 +301,11 @@ export class FaviconService {
           }
         });
 
-        response.on('end', () => {
-          if (!isResolved) {
-            clearTimeout(timeoutId);
-            isResolved = true;
-            request.removeAllListeners();
-            response.removeAllListeners();
-            const buffer = Buffer.concat(chunks);
-            resolve(buffer);
-          }
-        });
-
-        response.on('error', (error) => {
-          if (!isResolved) {
-            clearTimeout(timeoutId);
-            isResolved = true;
-            request.removeAllListeners();
-            response.removeAllListeners();
-            reject(error);
-          }
-        });
+        response.on('end', () => finish({ resolve: Buffer.concat(chunks) }));
+        response.on('error', (error) => finish({ reject: error }));
       });
 
-      request.on('error', (error) => {
-        if (!isResolved) {
-          clearTimeout(timeoutId);
-          isResolved = true;
-          request.removeAllListeners();
-          reject(error);
-        }
-      });
+      request.on('error', (error) => finish({ reject: error }));
 
       request.end();
     });
@@ -425,16 +320,11 @@ export class FaviconService {
         return url;
       }
       return new URL(url, base).href;
-    } catch (error) {
-      faviconLogger.error({ error }, 'URL解決エラー');
+    } catch {
       return null;
     }
   }
 
-  /**
-   * エラーがネットワーク関連のエラーかどうかを判定
-   * ネットワークエラーの場合、同一オリジンの他のリソースも取得できない可能性が高い
-   */
   private isNetworkError(error: unknown): boolean {
     if (!(error instanceof Error)) {
       return false;
@@ -442,14 +332,14 @@ export class FaviconService {
 
     const message = error.message.toLowerCase();
     const networkErrorPatterns = [
-      'タイムアウト', // 日本語タイムアウトメッセージ
-      'enotfound', // DNS解決失敗
-      'getaddrinfo', // DNS解決失敗
-      'econnrefused', // 接続拒否
-      'etimedout', // 接続タイムアウト
-      'enetunreach', // ネットワーク到達不可
-      'econnreset', // 接続リセット
-      'ehostunreach', // ホスト到達不可
+      'タイムアウト',
+      'enotfound',
+      'getaddrinfo',
+      'econnrefused',
+      'etimedout',
+      'enetunreach',
+      'econnreset',
+      'ehostunreach',
     ];
 
     return networkErrorPatterns.some((pattern) => message.includes(pattern));

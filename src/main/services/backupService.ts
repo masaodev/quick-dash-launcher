@@ -10,7 +10,6 @@ import { SettingsService } from './settingsService.js';
 
 /**
  * バックアップファイルの管理を行うサービスクラス
- * 設定に基づいてバックアップの実行制御と古いファイルの削除を行う
  */
 export class BackupService {
   private static instance: BackupService;
@@ -19,9 +18,6 @@ export class BackupService {
 
   private constructor() {}
 
-  /**
-   * BackupServiceのシングルトンインスタンスを取得
-   */
   public static async getInstance(): Promise<BackupService> {
     if (!BackupService.instance) {
       BackupService.instance = new BackupService();
@@ -30,35 +26,21 @@ export class BackupService {
     return BackupService.instance;
   }
 
-  /**
-   * バックアップを実行すべきかどうか判定
-   * @param fileName バックアップ対象のファイル名
-   * @param context バックアップのコンテキスト（'start' | 'edit'）
-   * @returns バックアップを実行すべきかどうか
-   */
   public async shouldBackup(fileName: string, context: 'start' | 'edit'): Promise<boolean> {
     if (!this.settingsService) return false;
 
-    // バックアップが無効な場合
     const backupEnabled = await this.settingsService.get('backupEnabled');
     if (!backupEnabled) return false;
 
-    // コンテキスト別の設定確認
-    if (context === 'start') {
-      const backupOnStart = await this.settingsService.get('backupOnStart');
-      if (!backupOnStart) return false;
-    } else if (context === 'edit') {
-      const backupOnEdit = await this.settingsService.get('backupOnEdit');
-      if (!backupOnEdit) return false;
-    }
+    const contextSetting = context === 'start' ? 'backupOnStart' : 'backupOnEdit';
+    const contextEnabled = await this.settingsService.get(contextSetting);
+    if (!contextEnabled) return false;
 
-    // 最小間隔のチェック
     const backupInterval = await this.settingsService.get('backupInterval');
     const lastBackup = this.lastBackupTime.get(fileName) || 0;
-    const now = Date.now();
-    const intervalMs = backupInterval * 60 * 1000; // 分をミリ秒に変換
+    const intervalMs = backupInterval * 60 * 1000;
 
-    if (now - lastBackup < intervalMs) {
+    if (Date.now() - lastBackup < intervalMs) {
       logger.info({ fileName, backupInterval }, 'バックアップをスキップ: 最小間隔未満');
       return false;
     }
@@ -66,29 +48,15 @@ export class BackupService {
     return true;
   }
 
-  /**
-   * バックアップファイル名のパターンを生成
-   * @param baseFileName 元のファイル名（拡張子付き）
-   * @param isStartupBackup 起動時バックアップかどうか
-   * @returns 正規表現パターン
-   */
+  /** 起動時: fileName.timestamp / 編集時: baseName_timestamp.ext */
   private getBackupFilePattern(baseFileName: string, isStartupBackup: boolean): RegExp {
-    // 起動時バックアップ: fileName.timestamp
-    // 編集時バックアップ: baseName_timestamp.ext
     if (isStartupBackup) {
       return new RegExp(`^${baseFileName}\\.\\d{4}-\\d{2}-\\d{2}T\\d{2}-\\d{2}-\\d{2}$`);
     }
-    const baseName = path.parse(baseFileName).name;
-    const extension = path.parse(baseFileName).ext;
-    return new RegExp(`^${baseName}_\\d{4}-\\d{2}-\\d{2}T\\d{2}-\\d{2}-\\d{2}${extension}$`);
+    const { name, ext } = path.parse(baseFileName);
+    return new RegExp(`^${name}_\\d{4}-\\d{2}-\\d{2}T\\d{2}-\\d{2}-\\d{2}${ext}$`);
   }
 
-  /**
-   * バックアップファイル一覧を取得（新しい順）
-   * @param backupFolder バックアップフォルダのパス
-   * @param pattern ファイル名マッチングパターン
-   * @returns ファイル情報の配列
-   */
   private getBackupFiles(
     backupFolder: string,
     pattern: RegExp
@@ -96,56 +64,37 @@ export class BackupService {
     return fs
       .readdirSync(backupFolder)
       .filter((file) => pattern.test(file))
-      .map((file) => ({
-        name: file,
-        path: path.join(backupFolder, file),
-        mtime: fs.statSync(path.join(backupFolder, file)).mtime.getTime(),
-      }))
+      .map((file) => {
+        const filePath = path.join(backupFolder, file);
+        return { name: file, path: filePath, mtime: fs.statSync(filePath).mtime.getTime() };
+      })
       .sort((a, b) => b.mtime - a.mtime);
   }
 
-  /**
-   * 指定ファイルの最新のバックアップファイルパスを取得
-   * @param baseFileName 元のファイル名（拡張子付き）
-   * @param backupFolder バックアップフォルダのパス
-   * @param isStartupBackup 起動時バックアップかどうか（ファイル名パターンが異なる）
-   * @returns 最新のバックアップファイルパス、存在しない場合はnull
-   */
   private getLatestBackupFile(
     baseFileName: string,
     backupFolder: string,
     isStartupBackup: boolean = false
   ): string | null {
-    if (!FileUtils.exists(backupFolder)) {
-      return null;
-    }
+    if (!FileUtils.exists(backupFolder)) return null;
 
     try {
       const pattern = this.getBackupFilePattern(baseFileName, isStartupBackup);
       const files = this.getBackupFiles(backupFolder, pattern);
-      return files.length > 0 ? files[0].path : null;
+      return files[0]?.path ?? null;
     } catch (error) {
       logger.error({ error, baseFileName }, 'バックアップファイルの検索に失敗しました');
       return null;
     }
   }
 
-  /**
-   * バックアップを実行
-   * @param sourcePath バックアップ元ファイルのパス
-   * @param backupFolder バックアップ先フォルダ
-   * @returns バックアップが実行されたかどうか
-   */
   public async createBackup(
     sourcePath: string,
     backupFolder: string = PathManager.getBackupFolder()
   ): Promise<boolean> {
     const fileName = path.basename(sourcePath);
-    const context = 'edit'; // デフォルトは編集時として扱う
 
-    if (!(await this.shouldBackup(fileName, context))) {
-      return false;
-    }
+    if (!(await this.shouldBackup(fileName, 'edit'))) return false;
 
     if (!FileUtils.exists(sourcePath)) {
       logger.warn({ sourcePath }, 'バックアップ元ファイルが存在しません');
@@ -154,38 +103,23 @@ export class BackupService {
 
     FileUtils.ensureDirectory(backupFolder);
 
-    // 直近のバックアップファイルと内容を比較
-    const latestBackupPath = this.getLatestBackupFile(fileName, backupFolder, false);
-    if (latestBackupPath && FileUtils.areFilesEqual(sourcePath, latestBackupPath)) {
-      logger.info(
-        { sourcePath, latestBackupPath },
-        'ファイル内容が直近のバックアップと同一のため、バックアップをスキップしました'
-      );
-      return false;
-    }
+    if (this.isContentUnchanged(sourcePath, fileName, backupFolder, false)) return false;
 
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
-    const backupFileName = `${path.parse(fileName).name}_${timestamp}${path.parse(fileName).ext}`;
-    const backupPath = path.join(backupFolder, backupFileName);
+    const { name, ext } = path.parse(fileName);
+    const timestamp = this.createTimestamp();
+    const backupPath = path.join(backupFolder, `${name}_${timestamp}${ext}`);
 
-    if (FileUtils.safeCopyFile(sourcePath, backupPath)) {
-      this.lastBackupTime.set(fileName, Date.now());
-      logger.info({ sourcePath, backupPath }, 'バックアップを作成しました');
-
-      // 古いバックアップの削除
-      await this.cleanupOldBackups(fileName, backupFolder);
-
-      return true;
-    } else {
+    if (!FileUtils.safeCopyFile(sourcePath, backupPath)) {
       logger.error({ sourcePath }, 'バックアップの作成に失敗しました');
       return false;
     }
+
+    this.lastBackupTime.set(fileName, Date.now());
+    logger.info({ sourcePath, backupPath }, 'バックアップを作成しました');
+    await this.cleanupOldBackups(fileName, backupFolder);
+    return true;
   }
 
-  /**
-   * 起動時のバックアップ（複数ファイル）
-   * @param configFolder 設定フォルダのパス
-   */
   public async backupDataFiles(configFolder: string): Promise<void> {
     if (!this.settingsService) return;
 
@@ -197,45 +131,29 @@ export class BackupService {
       return;
     }
 
-    // 動的にdata*.txtファイルを取得
     const files = PathManager.getDataFiles();
     const backupFolder = path.join(configFolder, 'backup');
+    FileUtils.ensureDirectory(backupFolder);
 
     for (const file of files) {
       const sourcePath = path.join(configFolder, file);
-      if (FileUtils.exists(sourcePath)) {
-        // 直近のバックアップファイルと内容を比較
-        const latestBackupPath = this.getLatestBackupFile(file, backupFolder, true);
-        if (latestBackupPath && FileUtils.areFilesEqual(sourcePath, latestBackupPath)) {
-          logger.info(
-            { file, sourcePath, latestBackupPath },
-            'ファイル内容が直近の起動時バックアップと同一のため、バックアップをスキップしました'
-          );
-          continue;
-        }
+      if (!FileUtils.exists(sourcePath)) continue;
 
-        const timestamp = new Date().toISOString().replace(/:/g, '-').substring(0, 19);
-        const backupPath = path.join(backupFolder, `${file}.${timestamp}`);
+      if (this.isContentUnchanged(sourcePath, file, backupFolder, true)) continue;
 
-        FileUtils.ensureDirectory(backupFolder);
-        if (FileUtils.safeCopyFile(sourcePath, backupPath)) {
-          this.lastBackupTime.set(file, Date.now());
-          logger.info({ file, backupPath }, '起動時バックアップを作成しました');
+      const timestamp = this.createTimestamp();
+      const backupPath = path.join(backupFolder, `${file}.${timestamp}`);
 
-          // 古いバックアップの削除
-          await this.cleanupOldBackups(file, backupFolder);
-        } else {
-          logger.error({ file }, '起動時バックアップの作成に失敗しました');
-        }
+      if (FileUtils.safeCopyFile(sourcePath, backupPath)) {
+        this.lastBackupTime.set(file, Date.now());
+        logger.info({ file, backupPath }, '起動時バックアップを作成しました');
+        await this.cleanupOldBackups(file, backupFolder);
+      } else {
+        logger.error({ file }, '起動時バックアップの作成に失敗しました');
       }
     }
   }
 
-  /**
-   * 古いバックアップファイルを削除
-   * @param baseFileName 元のファイル名（拡張子付き）
-   * @param backupFolder バックアップフォルダのパス
-   */
   private async cleanupOldBackups(baseFileName: string, backupFolder: string): Promise<void> {
     if (!this.settingsService) return;
 
@@ -244,17 +162,35 @@ export class BackupService {
     try {
       const pattern = this.getBackupFilePattern(baseFileName, false);
       const files = this.getBackupFiles(backupFolder, pattern);
+      const filesToDelete = files.slice(backupRetention);
 
-      // 保持件数を超えるファイルを削除
-      if (files.length > backupRetention) {
-        const filesToDelete = files.slice(backupRetention);
-        for (const file of filesToDelete) {
-          fs.unlinkSync(file.path);
-          logger.info({ file: file.name }, '古いバックアップファイルを削除しました');
-        }
+      for (const file of filesToDelete) {
+        fs.unlinkSync(file.path);
+        logger.info({ file: file.name }, '古いバックアップファイルを削除しました');
       }
     } catch (error) {
       logger.error({ error, baseFileName }, 'バックアップファイルのクリーンアップに失敗しました');
     }
+  }
+
+  private createTimestamp(): string {
+    return new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
+  }
+
+  private isContentUnchanged(
+    sourcePath: string,
+    fileName: string,
+    backupFolder: string,
+    isStartupBackup: boolean
+  ): boolean {
+    const latestBackupPath = this.getLatestBackupFile(fileName, backupFolder, isStartupBackup);
+    if (latestBackupPath && FileUtils.areFilesEqual(sourcePath, latestBackupPath)) {
+      logger.info(
+        { sourcePath, latestBackupPath },
+        'ファイル内容が直近のバックアップと同一のため、バックアップをスキップしました'
+      );
+      return true;
+    }
+    return false;
   }
 }

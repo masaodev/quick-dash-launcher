@@ -9,13 +9,12 @@ interface WorkspaceGroupHeaderProps {
   onUpdate: (groupId: string, updates: Partial<WorkspaceGroup>) => void;
   onStartEdit: () => void;
   onGroupDragStart: (e: React.DragEvent) => void;
-  onGroupDragEnd: () => void;
   onGroupDragOverForReorder: (e: React.DragEvent) => void;
   onGroupDropForReorder: (e: React.DragEvent) => void;
   onContextMenu: (e: React.MouseEvent) => void;
 }
 
-const WorkspaceGroupHeader: React.FC<WorkspaceGroupHeaderProps> = ({
+function WorkspaceGroupHeader({
   group,
   itemCount,
   isEditing,
@@ -23,15 +22,13 @@ const WorkspaceGroupHeader: React.FC<WorkspaceGroupHeaderProps> = ({
   onUpdate,
   onStartEdit,
   onGroupDragStart,
-  onGroupDragEnd,
   onGroupDragOverForReorder,
   onGroupDropForReorder,
   onContextMenu,
-}) => {
+}: WorkspaceGroupHeaderProps): React.ReactElement {
   const [editName, setEditName] = useState(group.displayName);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // 編集モードに入ったときにフォーカス
   useEffect(() => {
     if (isEditing && inputRef.current) {
       inputRef.current.focus();
@@ -39,81 +36,53 @@ const WorkspaceGroupHeader: React.FC<WorkspaceGroupHeaderProps> = ({
     }
   }, [isEditing]);
 
-  const handleToggle = () => {
-    onToggle(group.id);
-  };
-
-  const handleStartEditClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onStartEdit();
-  };
-
-  const handleSaveEdit = () => {
+  function handleSaveEdit(): void {
     if (editName.trim() && editName !== group.displayName) {
       onUpdate(group.id, { displayName: editName.trim() });
     }
-    onStartEdit(); // 編集モードを終了
-  };
+    onStartEdit();
+  }
 
-  const handleCancelEdit = () => {
+  function handleCancelEdit(): void {
     setEditName(group.displayName);
-    onStartEdit(); // 編集モードを終了
-  };
+    onStartEdit();
+  }
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  function handleKeyDown(e: React.KeyboardEvent): void {
     if (e.key === 'Enter') {
       handleSaveEdit();
     } else if (e.key === 'Escape') {
       handleCancelEdit();
     }
-  };
+  }
 
-  const handleDragStart = (e: React.DragEvent) => {
-    // 編集モード中はドラッグを無効化
+  function handleDragStart(e: React.DragEvent): void {
     if (isEditing) {
       e.preventDefault();
       return;
     }
     onGroupDragStart(e);
-  };
+  }
 
-  const handleDragOver = (e: React.DragEvent) => {
-    // グループの並び替え用（アイテムドロップは親divが処理）
-    onGroupDragOverForReorder(e);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    // グループの並び替えのみ処理（アイテムドロップは親divにバブルアップ）
+  function handleDrop(e: React.DragEvent): void {
     const groupId = e.dataTransfer.getData('groupId');
     if (groupId) {
-      e.stopPropagation(); // グループ並び替えの場合のみバブルアップを停止
+      e.stopPropagation();
       onGroupDropForReorder(e);
     }
-    // アイテムドロップは親divのonDropが処理するため、ここでは何もしない
-  };
-
-  // グループ名やボタン部分でのドラッグを無効化
-  const preventDragStart = (e: React.DragEvent) => {
-    e.stopPropagation();
-  };
+  }
 
   return (
     <div
       className="workspace-group-header"
-      onClick={handleToggle}
+      onClick={() => onToggle(group.id)}
       draggable={!isEditing}
       onDragStart={handleDragStart}
-      onDragEnd={onGroupDragEnd}
-      onDragOver={handleDragOver}
+      onDragOver={onGroupDragOverForReorder}
       onDrop={handleDrop}
       onContextMenu={onContextMenu}
-      style={
-        {
-          '--group-color': group.color,
-        } as React.CSSProperties
-      }
+      style={{ '--group-color': group.color } as React.CSSProperties}
     >
-      {/* 折りたたみアイコン */}
       <span
         className={`workspace-group-collapse-icon ${group.collapsed ? 'collapsed' : ''}`}
         onClick={(e) => e.stopPropagation()}
@@ -121,7 +90,6 @@ const WorkspaceGroupHeader: React.FC<WorkspaceGroupHeaderProps> = ({
         ▼
       </span>
 
-      {/* グループ名（編集モード対応） */}
       {isEditing ? (
         <input
           ref={inputRef}
@@ -132,23 +100,25 @@ const WorkspaceGroupHeader: React.FC<WorkspaceGroupHeaderProps> = ({
           onBlur={handleSaveEdit}
           className="workspace-group-name-input"
           onClick={(e) => e.stopPropagation()}
-          onDragStart={preventDragStart}
+          onDragStart={(e) => e.stopPropagation()}
         />
       ) : (
         <span
           className="workspace-group-name"
-          onDoubleClick={handleStartEditClick}
-          onDragStart={preventDragStart}
+          onDoubleClick={(e) => {
+            e.stopPropagation();
+            onStartEdit();
+          }}
+          onDragStart={(e) => e.stopPropagation()}
           title={group.displayName}
         >
           {group.displayName}
         </span>
       )}
 
-      {/* アイテム数バッジ */}
       <span className="workspace-group-badge">{itemCount}個</span>
     </div>
   );
-};
+}
 
 export default WorkspaceGroupHeader;

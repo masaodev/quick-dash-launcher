@@ -14,9 +14,18 @@ import { debugInfo } from '../utils/debug';
 import { useModalInitializer } from './useModalInitializer';
 import { useToast } from './useToast';
 
+const DEFAULT_DIR_OPTIONS: RegisterItem['dirOptions'] = {
+  depth: 0,
+  types: 'both',
+  filter: undefined,
+  exclude: undefined,
+  prefix: undefined,
+  suffix: undefined,
+};
+
 async function loadCachedIconsForItems(items: RegisterItem[]): Promise<Record<string, string>> {
   const itemsNeedingIcons = items.filter(
-    (item) => !item.icon && item.path?.trim() && item.type !== 'folder' && item.type !== 'clipboard' // クリップボードアイテムはアイコン自動取得不要
+    (item) => !item.icon && item.path?.trim() && item.type !== 'folder' && item.type !== 'clipboard'
   );
   if (itemsNeedingIcons.length === 0) {
     return {};
@@ -203,7 +212,6 @@ export function useRegisterForm(
 
     if (field === 'itemCategory') {
       const item = newItems[index];
-      // 共通: 他カテゴリのフィールドをクリア
       const clearCommonFields = () => {
         delete item.folderProcessing;
         delete item.dirOptions;
@@ -221,14 +229,7 @@ export function useRegisterForm(
       switch (value) {
         case 'dir':
           item.folderProcessing = 'expand';
-          item.dirOptions ??= {
-            depth: 0,
-            types: 'both',
-            filter: undefined,
-            exclude: undefined,
-            prefix: undefined,
-            suffix: undefined,
-          };
+          item.dirOptions ??= { ...DEFAULT_DIR_OPTIONS };
           delete item.groupItemNames;
           break;
         case 'group':
@@ -257,7 +258,6 @@ export function useRegisterForm(
 
   const handlePathBlur = async (index: number) => {
     const item = items[index];
-    // クリップボードアイテムはpathを持たない
     if (item.itemCategory === 'clipboard' || !item.path?.trim()) {
       return;
     }
@@ -267,19 +267,8 @@ export function useRegisterForm(
     newItems[index].type = newType;
 
     if (newType === 'folder') {
-      if (!newItems[index].folderProcessing) {
-        newItems[index].folderProcessing = 'folder';
-      }
-      if (!newItems[index].dirOptions) {
-        newItems[index].dirOptions = {
-          depth: 0,
-          types: 'both',
-          filter: undefined,
-          exclude: undefined,
-          prefix: undefined,
-          suffix: undefined,
-        };
-      }
+      newItems[index].folderProcessing ??= 'folder';
+      newItems[index].dirOptions ??= { ...DEFAULT_DIR_OPTIONS };
     } else {
       delete newItems[index].folderProcessing;
       delete newItems[index].dirOptions;
@@ -332,7 +321,6 @@ export function useRegisterForm(
       }
 
       if (item.itemCategory === 'clipboard') {
-        // セッションまたは永続化済みデータのいずれかが必要
         if (!item.clipboardSessionId && !item.clipboardDataRef) {
           newErrors[i].path = 'クリップボードをキャプチャしてください';
         }
@@ -358,8 +346,6 @@ export function useRegisterForm(
   };
 
   const handleCancel = async () => {
-    // キャンセル時にセッション上のクリップボードデータを破棄
-    // セッションはメモリ上にあるだけなので、discardSessionで解放
     for (const item of items) {
       if (item.clipboardSessionId) {
         try {
@@ -465,7 +451,6 @@ export function useRegisterForm(
     }
   };
 
-  // パスからアイテムを作成しキャッシュアイコンを適用する共通処理
   const createItemsFromPaths = async (paths: string[]): Promise<RegisterItem[]> => {
     const newItems = await initializeFromDroppedPaths(paths, currentTab, availableTabs);
     const cachedIcons = await loadCachedIconsForItems(newItems);

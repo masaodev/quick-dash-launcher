@@ -1,10 +1,3 @@
-/**
- * アイテムタイプ検出ユーティリティ
- *
- * アイテムのパスからタイプ（URL、ファイル、フォルダ、アプリケーション、カスタムURI）を検出します。
- * クライアント側とサーバー側の両方で使用できるように設計されています。
- */
-
 import type { LauncherItem } from '../types';
 
 import { PathUtils } from './pathUtils';
@@ -47,18 +40,7 @@ function detectTypeFromPath(itemPath: string): LauncherItem['type'] {
 
 /**
  * アイテムのパスからタイプを検出する（クライアント側用）
- *
  * ファイルシステムへの問い合わせを行い、より正確なタイプ検出を実行します。
- *
- * @param itemPath - アイテムのパス
- * @param isDirectoryCheck - ディレクトリかどうかを確認する非同期関数（オプション）
- * @returns アイテムタイプ
- *
- * @example
- * const type = await detectItemType(
- *   'C:\\Users\\Documents',
- *   window.electronAPI.isDirectory
- * );
  */
 export async function detectItemType(
   itemPath: string,
@@ -86,15 +68,7 @@ export async function detectItemType(
 
 /**
  * アイテムのパスからタイプを検出する（同期版、サーバー側用）
- *
- * ファイルシステムへの問い合わせを行わず、パスのパターンのみでタイプを判定します。
- * メインプロセスなど、同期的な処理が必要な場所で使用します。
- *
- * @param itemPath - アイテムのパス
- * @returns アイテムタイプ
- *
- * @example
- * const type = detectItemTypeSync('C:\\Program Files\\app.exe');
+ * パスのパターンのみでタイプを判定します（ファイルシステムへの問い合わせなし）。
  */
 export function detectItemTypeSync(itemPath: string): LauncherItem['type'] {
   return detectTypeFromPath(itemPath);

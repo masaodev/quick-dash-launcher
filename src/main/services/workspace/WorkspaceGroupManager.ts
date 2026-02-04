@@ -161,23 +161,19 @@ export class WorkspaceGroupManager {
     try {
       const groups = this.loadGroups();
       const groupMap = new Map(groups.map((group) => [group.id, group]));
-      const reorderedGroups: WorkspaceGroup[] = [];
+      const groupIdSet = new Set(groupIds);
 
-      groupIds.forEach((id, index) => {
-        const group = groupMap.get(id);
-        if (group) {
-          group.order = index;
-          reorderedGroups.push(group);
-        }
-      });
+      // 指定されたIDの順序でグループを並べ、含まれていないグループは末尾に追加
+      const orderedGroups = groupIds
+        .map((id) => groupMap.get(id))
+        .filter((group): group is WorkspaceGroup => group !== undefined);
 
-      // groupIdsに含まれていないグループも保持（末尾に追加）
-      groups.forEach((group) => {
-        if (!groupIds.includes(group.id)) {
-          group.order = reorderedGroups.length;
-          reorderedGroups.push(group);
-        }
-      });
+      const remainingGroups = groups.filter((group) => !groupIdSet.has(group.id));
+
+      const reorderedGroups = [...orderedGroups, ...remainingGroups].map((group, index) => ({
+        ...group,
+        order: index,
+      }));
 
       this.store.set('groups', reorderedGroups);
       logger.info({ count: groupIds.length }, 'Reordered workspace groups');

@@ -17,44 +17,34 @@ let normalWorkspaceWindowBounds: { width: number; height: number } | null = null
 
 /**
  * ワークスペースウィンドウを作成し、初期設定を行う
- * 画面右端に固定配置される縦長UIのウィンドウ
- *
- * @returns 作成されたBrowserWindowインスタンス
- * @throws Error ウィンドウの作成やコンテンツの読み込みに失敗した場合
  */
 export async function createWorkspaceWindow(): Promise<BrowserWindow> {
   if (workspaceWindow && !workspaceWindow.isDestroyed()) {
-    // 既存のウィンドウがある場合は表示して返す
     workspaceWindow.show();
     workspaceWindow.focus();
     isWorkspaceWindowVisible = true;
     return workspaceWindow;
   }
 
-  // 初期サイズの設定（位置は後で setWorkspacePosition() で設定）
   const { height: screenHeight } = screen.getPrimaryDisplay().workAreaSize;
   const windowWidth = 380;
   const windowHeight = screenHeight;
 
-  // 設定から透過度を取得
   const settingsService = await SettingsService.getInstance();
   const opacity = await settingsService.get('workspaceOpacity');
   const backgroundTransparent = await settingsService.get('workspaceBackgroundTransparent');
-
-  // 背景のみ透過の場合はウィンドウは完全不透明、それ以外は設定値を使用
   const opacityValue = backgroundTransparent ? 1.0 : Math.max(0, Math.min(100, opacity)) / 100;
 
   workspaceWindow = new BrowserWindow({
     width: windowWidth,
     height: windowHeight,
-    // x, y は指定しない（後で setWorkspacePosition() で設定）
     alwaysOnTop: false,
-    frame: false, // フレームレスウィンドウ（ドラッグ可能にするため）
-    show: false, // 位置設定後に表示
-    resizable: false, // カスタムサイズ変更を使用するため無効化
+    frame: false,
+    show: false,
+    resizable: false,
     icon: PathManager.getAppIconPath(),
-    transparent: true, // 透過対応を有効化
-    opacity: opacityValue, // 初期透過度を設定
+    transparent: true,
+    opacity: opacityValue,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -62,30 +52,21 @@ export async function createWorkspaceWindow(): Promise<BrowserWindow> {
     },
   });
 
-  // ワークスペースウィンドウ用のHTMLファイルを読み込み
   if (EnvConfig.isDevelopment) {
     workspaceWindow.loadURL(`${EnvConfig.devServerUrl}/workspace.html`);
   } else {
     workspaceWindow.loadFile(path.join(__dirname, '../workspace.html'));
   }
 
-  // メニューバーを確実に非表示にする
   workspaceWindow.setMenuBarVisibility(false);
-
-  // メニューを完全に削除（Altキーでも表示されないようにする）
   workspaceWindow.setMenu(null);
-
-  // 透過ウィンドウでもマウスイベントを受け取るように設定
   workspaceWindow.setIgnoreMouseEvents(false);
 
   workspaceWindow.on('close', (event) => {
-    // アプリケーション終了時以外はウィンドウを完全に閉じずに非表示にする
     if (!isAppQuitting) {
       event.preventDefault();
-      if (workspaceWindow) {
-        workspaceWindow.hide();
-        isWorkspaceWindowVisible = false;
-      }
+      workspaceWindow?.hide();
+      isWorkspaceWindowVisible = false;
     }
   });
 
@@ -102,13 +83,10 @@ export async function createWorkspaceWindow(): Promise<BrowserWindow> {
     isWorkspaceWindowVisible = false;
   });
 
-  // キーボードショートカット処理
   workspaceWindow.webContents.on('before-input-event', (event, input) => {
-    // Escapeキーでの閉じる処理は無効化（誤操作防止）
     if (input.key === 'Escape' && input.type === 'keyDown') {
       event.preventDefault();
     }
-    // Ctrl+Shift+I で開発者ツールを開く（開発モードのみ）
     if (
       EnvConfig.isDevelopment &&
       input.type === 'keyDown' &&
@@ -120,12 +98,10 @@ export async function createWorkspaceWindow(): Promise<BrowserWindow> {
     }
   });
 
-  // ウィンドウ移動時に位置を保存（fixedモード時のみ）
   workspaceWindow.on('moved', () => {
     void saveWorkspacePosition();
   });
 
-  // 位置を設定
   await setWorkspacePosition();
 
   windowLogger.info('ワークスペースウィンドウを作成しました');
@@ -133,8 +109,7 @@ export async function createWorkspaceWindow(): Promise<BrowserWindow> {
 }
 
 /**
- * ワークスペースウィンドウを表示する
- * 存在しない場合は新しく作成してから表示する
+ * ワークスペースウィンドウを表示する（存在しない場合は新規作成）
  */
 export async function showWorkspaceWindow(options?: { skipFocus?: boolean }): Promise<void> {
   try {
@@ -143,11 +118,8 @@ export async function showWorkspaceWindow(options?: { skipFocus?: boolean }): Pr
     }
 
     if (workspaceWindow) {
-      // 表示前に位置を設定（設定変更考慮）
       await setWorkspacePosition();
-
       workspaceWindow.show();
-      // skipFocusオプションがtrueの場合はフォーカスしない（メイン画面のフォーカスを維持）
       if (!options?.skipFocus) {
         workspaceWindow.focus();
       }
@@ -159,9 +131,7 @@ export async function showWorkspaceWindow(options?: { skipFocus?: boolean }): Pr
   }
 }
 
-/**
- * ワークスペースウィンドウを非表示にする
- */
+/** ワークスペースウィンドウを非表示にする */
 export function hideWorkspaceWindow(): void {
   if (workspaceWindow && !workspaceWindow.isDestroyed()) {
     workspaceWindow.hide();
@@ -170,10 +140,7 @@ export function hideWorkspaceWindow(): void {
   }
 }
 
-/**
- * ワークスペースウィンドウを完全に閉じる
- * アプリケーション終了時などに使用する
- */
+/** ワークスペースウィンドウを完全に閉じる（アプリケーション終了時に使用） */
 export function closeWorkspaceWindow(): void {
   if (workspaceWindow && !workspaceWindow.isDestroyed()) {
     workspaceWindow.destroy();
@@ -183,10 +150,7 @@ export function closeWorkspaceWindow(): void {
   }
 }
 
-/**
- * ワークスペースウィンドウの表示状態を切り替える
- * 表示中の場合は非表示に、非表示の場合は表示にする
- */
+/** ワークスペースウィンドウの表示状態を切り替える */
 export async function toggleWorkspaceWindow(): Promise<void> {
   if (isWorkspaceWindowVisible) {
     hideWorkspaceWindow();
@@ -195,26 +159,17 @@ export async function toggleWorkspaceWindow(): Promise<void> {
   }
 }
 
-/**
- * ワークスペースウィンドウの表示状態を取得する
- * @returns ワークスペースウィンドウが表示されている場合はtrue
- */
+/** ワークスペースウィンドウの表示状態を取得する */
 export function isWorkspaceWindowShown(): boolean {
   return isWorkspaceWindowVisible;
 }
 
-/**
- * アプリケーション終了フラグを設定する
- * @param quitting アプリケーションが終了中かどうか
- */
+/** アプリケーション終了フラグを設定する */
 export function setAppQuitting(quitting: boolean): void {
   isAppQuitting = quitting;
 }
 
-/**
- * ワークスペースウィンドウのピン留め状態を設定する
- * @param isPinned - true: 最前面に固定、false: 通常モード
- */
+/** ワークスペースウィンドウのピン留め状態を設定する */
 export function setWorkspaceAlwaysOnTop(isPinned: boolean): void {
   isWorkspacePinned = isPinned;
   if (workspaceWindow && !workspaceWindow.isDestroyed()) {
@@ -223,27 +178,21 @@ export function setWorkspaceAlwaysOnTop(isPinned: boolean): void {
   }
 }
 
-/**
- * ワークスペースウィンドウのピン留め状態をトグルする
- * @returns 新しいピン留め状態
- */
+/** ワークスペースウィンドウのピン留め状態をトグルする */
 export function toggleWorkspaceAlwaysOnTop(): boolean {
   const newState = !isWorkspacePinned;
   setWorkspaceAlwaysOnTop(newState);
   return newState;
 }
 
-/**
- * ワークスペースウィンドウの現在のピン留め状態を取得する
- * @returns 現在のピン留め状態
- */
+/** ワークスペースウィンドウの現在のピン留め状態を取得する */
 export function getWorkspaceAlwaysOnTop(): boolean {
   return isWorkspacePinned;
 }
 
 /**
- * ワークスペースウィンドウのモーダルモードの切り替え
- * モーダル表示時は必要に応じてウィンドウサイズを拡大し、閉じる時は元のサイズに戻す
+ * ワークスペースウィンドウのモーダルモードを切り替え
+ * モーダル表示時はサイズを拡大し、閉じる時は元のサイズに戻す
  */
 export function setWorkspaceModalMode(
   isModal: boolean,
@@ -255,7 +204,6 @@ export function setWorkspaceModalMode(
   const currentBounds = workspaceWindow.getBounds();
 
   if (isModal && requiredSize) {
-    // ネストしたモーダル対応：既に保存済みでない場合のみサイズを保存
     if (!normalWorkspaceWindowBounds) {
       normalWorkspaceWindowBounds = { width: currentBounds.width, height: currentBounds.height };
     }
@@ -269,11 +217,10 @@ export function setWorkspaceModalMode(
         height: newSize.height,
       });
       windowLogger.info(
-        `モーダルモードON: サイズを${currentBounds.width}x${currentBounds.height}から${newSize.width}x${newSize.height}に変更`
+        `モーダルモードON: ${currentBounds.width}x${currentBounds.height} -> ${newSize.width}x${newSize.height}`
       );
     }
   } else if (normalWorkspaceWindowBounds) {
-    // モーダルを閉じる時：元のサイズに復元
     workspaceWindow.setBounds({
       x: screenWidth - normalWorkspaceWindowBounds.width,
       y: currentBounds.y,
@@ -281,41 +228,40 @@ export function setWorkspaceModalMode(
       height: normalWorkspaceWindowBounds.height,
     });
     windowLogger.info(
-      `モーダルモードOFF: サイズを${normalWorkspaceWindowBounds.width}x${normalWorkspaceWindowBounds.height}に復元`
+      `モーダルモードOFF: ${normalWorkspaceWindowBounds.width}x${normalWorkspaceWindowBounds.height}に復元`
     );
     normalWorkspaceWindowBounds = null;
   }
 }
 
-/**
- * 指定インデックスのディスプレイを取得する
- * 範囲外の場合はプライマリディスプレイを返す
- */
+/** 指定インデックスのディスプレイを取得（範囲外はプライマリ） */
 function getDisplayByIndex(displayIndex: number): Display {
   const displays = screen.getAllDisplays();
   if (displayIndex >= 0 && displayIndex < displays.length) {
     return displays[displayIndex];
   }
-  // 範囲外の場合はプライマリディスプレイにフォールバック
   windowLogger.warn(
     `指定ディスプレイ(${displayIndex})が範囲外のため、プライマリディスプレイを使用`
   );
   return screen.getPrimaryDisplay();
 }
 
-/**
- * プライマリディスプレイのインデックスを取得する
- */
+/** プライマリディスプレイのインデックスを取得する */
 function getPrimaryDisplayIndex(): number {
   const displays = screen.getAllDisplays();
   const primaryDisplay = screen.getPrimaryDisplay();
   return displays.findIndex((d) => d.id === primaryDisplay.id);
 }
 
-/**
- * ワークスペースウィンドウを指定されたモードに応じた位置に配置する
- * @param mode ワークスペース表示位置モード ('displayLeft' | 'displayRight' | 'fixed')
- */
+/** 指定座標がいずれかのディスプレイ内にあるか確認 */
+function isPositionOnScreen(x: number, y: number): boolean {
+  return screen.getAllDisplays().some((display) => {
+    const wb = display.workArea;
+    return x >= wb.x && x < wb.x + wb.width && y >= wb.y && y < wb.y + wb.height;
+  });
+}
+
+/** ワークスペースウィンドウを指定されたモードに応じた位置に配置する */
 export async function setWorkspacePosition(mode?: WorkspacePositionMode): Promise<void> {
   if (!workspaceWindow || workspaceWindow.isDestroyed()) return;
 
@@ -324,12 +270,11 @@ export async function setWorkspacePosition(mode?: WorkspacePositionMode): Promis
   const bounds = workspaceWindow.getBounds();
 
   switch (positionMode) {
-    // 後方互換性: primaryLeft/primaryRight はプライマリディスプレイを使用
     case 'primaryLeft':
     case 'primaryRight':
     case 'displayLeft':
     case 'displayRight': {
-      // primaryLeft/primaryRight の場合はプライマリディスプレイのインデックスを使用
+      // primaryLeft/primaryRight は後方互換性のためプライマリディスプレイを使用
       const isPrimaryMode = positionMode === 'primaryLeft' || positionMode === 'primaryRight';
       const targetIndex = isPrimaryMode
         ? getPrimaryDisplayIndex()
@@ -349,49 +294,31 @@ export async function setWorkspacePosition(mode?: WorkspacePositionMode): Promis
       const savedX = await settingsService.get('workspacePositionX');
       const savedY = await settingsService.get('workspacePositionY');
       const primaryWorkArea = screen.getPrimaryDisplay().workArea;
+      const isFirstLaunch = savedX === 0 && savedY === 0;
+      const needsFallback = !isFirstLaunch && !isPositionOnScreen(savedX, savedY);
 
-      // 初回起動時（0,0）は右端に配置
-      if (savedX === 0 && savedY === 0) {
+      if (isFirstLaunch || needsFallback) {
+        if (needsFallback) {
+          windowLogger.warn('保存位置が画面外のため右端に配置');
+        }
         workspaceWindow.setPosition(primaryWorkArea.width - bounds.width, 0);
         workspaceWindow.setSize(bounds.width, primaryWorkArea.height);
         const newBounds = workspaceWindow.getBounds();
         await settingsService.set('workspacePositionX', newBounds.x);
         await settingsService.set('workspacePositionY', newBounds.y);
-        windowLogger.info('初回起動: ワークスペースを右端に配置し位置を保存');
-      } else {
-        // 保存された位置が画面内にあるかチェック
-        const displays = screen.getAllDisplays();
-        const isOnScreen = displays.some((display) => {
-          const wb = display.workArea;
-          return (
-            savedX >= wb.x &&
-            savedX < wb.x + wb.width &&
-            savedY >= wb.y &&
-            savedY < wb.y + wb.height
-          );
-        });
-
-        if (!isOnScreen) {
-          // 画面外の場合は右端にフォールバック
-          windowLogger.warn('保存位置が画面外のため右端に配置');
-          workspaceWindow.setPosition(primaryWorkArea.width - bounds.width, 0);
-          // 新しい位置を保存
-          const newBounds = workspaceWindow.getBounds();
-          await settingsService.set('workspacePositionX', newBounds.x);
-          await settingsService.set('workspacePositionY', newBounds.y);
-        } else {
-          workspaceWindow.setPosition(savedX, savedY);
-          windowLogger.info(`ワークスペースを固定位置に配置: (${savedX}, ${savedY})`);
+        if (isFirstLaunch) {
+          windowLogger.info('初回起動: ワークスペースを右端に配置');
         }
+      } else {
+        workspaceWindow.setPosition(savedX, savedY);
+        windowLogger.info(`ワークスペースを固定位置に配置: (${savedX}, ${savedY})`);
       }
       break;
     }
   }
 }
 
-/**
- * 現在のワークスペースウィンドウ位置を保存する（fixedモード時のみ）
- */
+/** 現在のワークスペースウィンドウ位置を保存する（fixedモード時のみ） */
 export async function saveWorkspacePosition(): Promise<void> {
   if (!workspaceWindow || workspaceWindow.isDestroyed()) return;
 
@@ -406,10 +333,7 @@ export async function saveWorkspacePosition(): Promise<void> {
   }
 }
 
-/**
- * ワークスペースウィンドウのインスタンスを取得する
- * @returns ワークスペースウィンドウのBrowserWindowインスタンス、存在しない場合はnull
- */
+/** ワークスペースウィンドウのインスタンスを取得する */
 export function getWorkspaceWindow(): BrowserWindow | null {
   return workspaceWindow;
 }

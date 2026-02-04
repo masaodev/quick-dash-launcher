@@ -6,14 +6,7 @@ import {
   isWindowItem,
   isClipboardItem,
 } from '@common/types/guards';
-import {
-  LauncherItem,
-  GroupItem,
-  AppItem,
-  WindowInfo,
-  WindowItem,
-  ClipboardItem,
-} from '@common/types';
+import { LauncherItem, GroupItem, AppItem } from '@common/types';
 
 import { getTooltipText } from '../utils/tooltipTextGenerator';
 import { logError } from '../utils/debug';
@@ -23,9 +16,8 @@ import '../styles/components/MemoViewModal.css';
 
 interface ItemListProps {
   items: AppItem[];
-  allItems: AppItem[]; // グループ実行時の参照解決用
   selectedIndex: number;
-  onItemExecute: (item: AppItem) => void; // 統一ハンドラ
+  onItemExecute: (item: AppItem) => void;
   onItemSelect: (index: number) => void;
   onCopyPath?: (item: LauncherItem) => void;
   onCopyParentPath?: (item: LauncherItem) => void;
@@ -39,7 +31,6 @@ interface ItemListProps {
 
 const LauncherItemList: React.FC<ItemListProps> = ({
   items,
-  allItems: _allItems,
   selectedIndex,
   onItemExecute,
   onItemSelect,
@@ -54,27 +45,20 @@ const LauncherItemList: React.FC<ItemListProps> = ({
 }) => {
   const listRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const contextMenuItemRef = useRef<AppItem | null>(null);
   const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
   const [memoModalOpen, setMemoModalOpen] = useState(false);
   const [memoModalItem, setMemoModalItem] = useState<{ name: string; memo: string } | null>(null);
 
   useEffect(() => {
-    // Scroll selected item into view
-    if (itemRefs.current[selectedIndex]) {
-      itemRefs.current[selectedIndex]?.scrollIntoView({
-        block: 'nearest',
-        behavior: 'smooth',
-      });
-    }
+    itemRefs.current[selectedIndex]?.scrollIntoView({
+      block: 'nearest',
+      behavior: 'smooth',
+    });
   }, [selectedIndex]);
 
-  // LauncherContextMenuイベントリスナー登録
   useEffect(() => {
     const cleanupEditItem = window.electronAPI.onLauncherMenuEditItem((item) => {
-      if (onEditItem) {
-        onEditItem(item);
-      }
+      onEditItem?.(item);
     });
 
     const cleanupAddToWorkspace = window.electronAPI.onLauncherMenuAddToWorkspace(async (item) => {
@@ -85,49 +69,35 @@ const LauncherItemList: React.FC<ItemListProps> = ({
       }
     });
 
-    const cleanupCopyPath = window.electronAPI.onLauncherMenuCopyPath((item) => {
-      if (isLauncherItem(item) && onCopyPath) {
-        onCopyPath(item);
-      }
-    });
-
-    const cleanupCopyParentPath = window.electronAPI.onLauncherMenuCopyParentPath((item) => {
-      if (isLauncherItem(item) && onCopyParentPath) {
-        onCopyParentPath(item);
-      }
-    });
-
-    const cleanupOpenParentFolder = window.electronAPI.onLauncherMenuOpenParentFolder((item) => {
-      if (isLauncherItem(item) && onOpenParentFolder) {
-        onOpenParentFolder(item);
-      }
-    });
-
-    const cleanupCopyShortcutPath = window.electronAPI.onLauncherMenuCopyShortcutPath((item) => {
-      if (isLauncherItem(item) && onCopyShortcutPath) {
-        onCopyShortcutPath(item);
-      }
-    });
-
-    const cleanupCopyShortcutParentPath = window.electronAPI.onLauncherMenuCopyShortcutParentPath(
-      (item) => {
-        if (isLauncherItem(item) && onCopyShortcutParentPath) {
-          onCopyShortcutParentPath(item);
+    const createLauncherItemHandler = (handler?: (item: LauncherItem) => void) => {
+      return (item: AppItem) => {
+        if (isLauncherItem(item) && handler) {
+          handler(item);
         }
-      }
+      };
+    };
+
+    const cleanupCopyPath = window.electronAPI.onLauncherMenuCopyPath(
+      createLauncherItemHandler(onCopyPath)
     );
-
+    const cleanupCopyParentPath = window.electronAPI.onLauncherMenuCopyParentPath(
+      createLauncherItemHandler(onCopyParentPath)
+    );
+    const cleanupOpenParentFolder = window.electronAPI.onLauncherMenuOpenParentFolder(
+      createLauncherItemHandler(onOpenParentFolder)
+    );
+    const cleanupCopyShortcutPath = window.electronAPI.onLauncherMenuCopyShortcutPath(
+      createLauncherItemHandler(onCopyShortcutPath)
+    );
+    const cleanupCopyShortcutParentPath = window.electronAPI.onLauncherMenuCopyShortcutParentPath(
+      createLauncherItemHandler(onCopyShortcutParentPath)
+    );
     const cleanupOpenShortcutParentFolder =
-      window.electronAPI.onLauncherMenuOpenShortcutParentFolder((item) => {
-        if (isLauncherItem(item) && onOpenShortcutParentFolder) {
-          onOpenShortcutParentFolder(item);
-        }
-      });
+      window.electronAPI.onLauncherMenuOpenShortcutParentFolder(
+        createLauncherItemHandler(onOpenShortcutParentFolder)
+      );
 
-    // WindowContextMenuイベントリスナー
-    const cleanupActivateWindow = window.electronAPI.onWindowMenuActivate((windowInfo) => {
-      onItemExecute(windowInfo);
-    });
+    const cleanupActivateWindow = window.electronAPI.onWindowMenuActivate(onItemExecute);
 
     const cleanupMoveWindowToDesktop = window.electronAPI.onMoveWindowToDesktop(
       async (hwnd, desktopNumber) => {
@@ -138,10 +108,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
               `ウィンドウをデスクトップ ${desktopNumber} に移動しました`,
               'success'
             );
-            // ウィンドウリストを更新
-            if (onRefreshWindows) {
-              await onRefreshWindows();
-            }
+            await onRefreshWindows?.();
           } else {
             window.electronAPI.showToastWindow(
               `ウィンドウの移動に失敗しました: ${result.error || '不明なエラー'}`,
@@ -155,23 +122,12 @@ const LauncherItemList: React.FC<ItemListProps> = ({
       }
     );
 
-    // ウィンドウのPin操作共通ハンドラー
-    const handleWindowPinOperation = async (operation: 'pin' | 'unpin', hwnd: number | bigint) => {
-      const config = {
-        pin: {
-          fn: window.electronAPI.pinWindow,
-          successMsg: 'ウィンドウを全デスクトップに固定しました',
-          errorPrefix: 'ウィンドウの固定',
-        },
-        unpin: {
-          fn: window.electronAPI.unPinWindow,
-          successMsg: 'ウィンドウの固定を解除しました',
-          errorPrefix: 'ウィンドウの固定解除',
-        },
-      };
-
-      const { fn, successMsg, errorPrefix } = config[operation];
-
+    const handleWindowPinOperation = async (
+      fn: (hwnd: number | bigint) => Promise<{ success: boolean; error?: string }>,
+      successMsg: string,
+      errorPrefix: string,
+      hwnd: number | bigint
+    ): Promise<void> => {
       try {
         const result = await fn(hwnd);
         if (result.success) {
@@ -189,11 +145,21 @@ const LauncherItemList: React.FC<ItemListProps> = ({
     };
 
     const cleanupPinWindow = window.electronAPI.onPinWindow((hwnd) =>
-      handleWindowPinOperation('pin', hwnd)
+      handleWindowPinOperation(
+        window.electronAPI.pinWindow,
+        'ウィンドウを全デスクトップに固定しました',
+        'ウィンドウの固定',
+        hwnd
+      )
     );
 
     const cleanupUnPinWindow = window.electronAPI.onUnPinWindow((hwnd) =>
-      handleWindowPinOperation('unpin', hwnd)
+      handleWindowPinOperation(
+        window.electronAPI.unPinWindow,
+        'ウィンドウの固定を解除しました',
+        'ウィンドウの固定解除',
+        hwnd
+      )
     );
 
     return () => {
@@ -222,49 +188,32 @@ const LauncherItemList: React.FC<ItemListProps> = ({
     onRefreshWindows,
   ]);
 
-  function getDefaultIcon(item: AppItem): string {
+  const DEFAULT_ICONS: Record<string, string> = {
+    url: '🌐',
+    folder: '📁',
+    app: '⚙️',
+    file: '📄',
+    customUri: '🔗',
+    group: '📦',
+    window: '🪟',
+    clipboard: '📋',
+  };
+
+  function getItemIcon(item: AppItem): React.ReactNode {
+    const customIcon =
+      (isLauncherItem(item) && item.icon) ||
+      (isWindowInfo(item) && item.icon) ||
+      (isClipboardItem(item) && item.customIcon);
+
+    if (customIcon) {
+      return <img src={customIcon} alt="" width="24" height="24" />;
+    }
+
     if (isWindowInfo(item)) {
       return '🪟';
     }
 
-    switch (item.type) {
-      case 'url':
-        return '🌐';
-      case 'folder':
-        return '📁';
-      case 'app':
-        return '⚙️';
-      case 'file':
-        return '📄';
-      case 'customUri':
-        return '🔗';
-      case 'group':
-        return '📦';
-      case 'window':
-        return '🪟';
-      case 'clipboard':
-        return '📋';
-      default:
-        return '❓';
-    }
-  }
-
-  /** アイテムのアイコン（カスタムまたはデフォルト）を取得 */
-  function getItemIcon(item: AppItem): React.ReactNode {
-    // LauncherItemでカスタムアイコンがある場合
-    if (isLauncherItem(item) && item.icon) {
-      return <img src={item.icon} alt="" width="24" height="24" />;
-    }
-    // WindowInfoでアイコンがある場合
-    if (isWindowInfo(item) && item.icon) {
-      return <img src={item.icon} alt="" width="24" height="24" />;
-    }
-    // ClipboardItemでカスタムアイコンがある場合
-    if (isClipboardItem(item) && item.customIcon) {
-      return <img src={item.customIcon} alt="" width="24" height="24" />;
-    }
-    // デフォルトアイコン
-    return getDefaultIcon(item);
+    return DEFAULT_ICONS[item.type] || '❓';
   }
 
   // ドラッグ&ドロップハンドラー（ワークスペースへの追加用）
@@ -286,12 +235,15 @@ const LauncherItemList: React.FC<ItemListProps> = ({
 
   const handleMemoClick = (e: React.MouseEvent, item: AppItem) => {
     e.stopPropagation();
-    const name = isWindowInfo(item)
-      ? item.title
-      : isWindowItem(item) || isClipboardItem(item)
-        ? item.displayName
-        : (item as LauncherItem | GroupItem).displayName;
-    const memo = (item as LauncherItem | GroupItem | WindowItem | ClipboardItem).memo || '';
+    let name: string;
+    if (isWindowInfo(item)) {
+      name = item.title;
+    } else if (isWindowItem(item) || isClipboardItem(item)) {
+      name = item.displayName;
+    } else {
+      name = (item as LauncherItem | GroupItem).displayName;
+    }
+    const memo = 'memo' in item ? (item.memo as string) || '' : '';
     setMemoModalItem({ name, memo });
     setMemoModalOpen(true);
   };
@@ -300,21 +252,15 @@ const LauncherItemList: React.FC<ItemListProps> = ({
     event.preventDefault();
     event.stopPropagation();
 
-    // Store item in ref for event listeners
-    contextMenuItemRef.current = item;
-
-    // WindowInfo用のコンテキストメニューを表示
     if (isWindowInfo(item)) {
-      const windowInfo = item as WindowInfo;
-      // 仮想デスクトップ情報を取得
-      const desktopInfo = await window.electronAPI.getVirtualDesktopInfo();
-      // ウィンドウが固定されているか確認
-      const isPinned = await window.electronAPI.isWindowPinned(windowInfo.hwnd);
-      window.electronAPI.showWindowContextMenu(windowInfo, desktopInfo, isPinned);
+      const [desktopInfo, isPinned] = await Promise.all([
+        window.electronAPI.getVirtualDesktopInfo(),
+        window.electronAPI.isWindowPinned(item.hwnd),
+      ]);
+      window.electronAPI.showWindowContextMenu(item, desktopInfo, isPinned);
       return;
     }
 
-    // Show native context menu
     window.electronAPI.showLauncherContextMenu(item);
   };
 
@@ -324,32 +270,49 @@ const LauncherItemList: React.FC<ItemListProps> = ({
         const isWindow = isWindowInfo(item);
         const isGroup = isGroupItem(item);
         const isWindowOperation = isWindowItem(item);
-        const windowInfo = isWindow ? (item as WindowInfo) : null;
         const isClipboard = isClipboardItem(item);
-        const itemName = isWindow
-          ? windowInfo?.processName
-            ? `${windowInfo.title} (${windowInfo.processName})`
-            : windowInfo!.title
-          : isWindowOperation || isClipboard
-            ? (item as WindowItem | ClipboardItem).displayName
-            : (item as LauncherItem | GroupItem).displayName;
-
         const isDraggable = isLauncherItem(item);
         const isDragging = draggedItemIndex === index;
 
+        let itemName: string;
+        if (isWindow) {
+          itemName = item.processName ? `${item.title} (${item.processName})` : item.title;
+        } else if (isWindowOperation || isClipboard) {
+          itemName = item.displayName;
+        } else {
+          itemName = (item as LauncherItem | GroupItem).displayName;
+        }
+
+        let itemKey: string;
+        if (isWindow) {
+          itemKey = `window-${item.hwnd}`;
+        } else if (isWindowOperation) {
+          itemKey = `windowop-${itemName}-${index}`;
+        } else {
+          itemKey = `${itemName}-${index}`;
+        }
+
+        const classNames = [
+          'item',
+          index === selectedIndex && 'selected',
+          isGroup && 'group-item',
+          isWindow && 'window-item',
+          isWindowOperation && 'window-operation-item',
+          isClipboard && 'clipboard-item',
+          isDragging && 'dragging',
+        ]
+          .filter(Boolean)
+          .join(' ');
+
+        const hasMemo = !isWindow && 'memo' in item && item.memo;
+
         return (
           <div
-            key={
-              isWindow
-                ? `window-${(item as WindowInfo).hwnd}`
-                : isWindowOperation
-                  ? `windowop-${itemName}-${index}`
-                  : `${itemName}-${index}`
-            }
+            key={itemKey}
             ref={(el) => {
               itemRefs.current[index] = el;
             }}
-            className={`item ${index === selectedIndex ? 'selected' : ''} ${isGroup ? 'group-item' : ''} ${isWindow ? 'window-item' : ''} ${isWindowOperation ? 'window-operation-item' : ''} ${isClipboard ? 'clipboard-item' : ''} ${isDragging ? 'dragging' : ''}`}
+            className={classNames}
             draggable={isDraggable}
             onDragStart={(e) => handleDragStart(e, item, index)}
             onDragEnd={handleDragEnd}
@@ -375,22 +338,20 @@ const LauncherItemList: React.FC<ItemListProps> = ({
                   🔍
                 </span>
               )}
-              {!isWindowInfo(item) &&
-                (item as LauncherItem | GroupItem | WindowItem | ClipboardItem).memo && (
-                  <span
-                    className="memo-badge"
-                    onClick={(e) => handleMemoClick(e, item)}
-                    title="メモを表示"
-                  >
-                    📝
-                  </span>
-                )}
+              {hasMemo && (
+                <span
+                  className="memo-badge"
+                  onClick={(e) => handleMemoClick(e, item)}
+                  title="メモを表示"
+                >
+                  📝
+                </span>
+              )}
             </span>
           </div>
         );
       })}
 
-      {/* メモ表示モーダル */}
       <MemoViewModal
         isOpen={memoModalOpen}
         onClose={() => setMemoModalOpen(false)}

@@ -1,15 +1,12 @@
 import React from 'react';
 import toast from 'react-hot-toast';
 import { DESKTOP_TAB } from '@common/constants';
-import { AppItem, LauncherItem, DataFileTab, SearchMode, WindowInfo } from '@common/types';
-import { isWindowInfo, isLauncherItem } from '@common/types/guards';
+import { AppItem, DataFileTab, LauncherItem, SearchMode, WindowInfo } from '@common/types';
+import { isLauncherItem, isWindowInfo } from '@common/types/guards';
 
 import { filterItems } from '../utils/dataParser';
 import { filterWindowsByDesktopTab } from '../utils/windowFilter';
 
-/**
- * キーボードショートカットフックのパラメータ
- */
 export interface UseKeyboardShortcutsParams {
   showDataFileTabs: boolean;
   activeTab: string;
@@ -34,12 +31,9 @@ export interface UseKeyboardShortcutsParams {
   setActiveDesktopTab: React.Dispatch<React.SetStateAction<number>>;
 }
 
-/**
- * キーボードショートカット管理フック
- *
- * キーボード操作（タブ切り替え、検索履歴、アイテム選択、実行）を管理します。
- */
-export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams) {
+export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
+  handleKeyDown: (e: React.KeyboardEvent) => Promise<void>;
+} {
   const {
     showDataFileTabs,
     activeTab,
@@ -64,32 +58,45 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams) {
     setActiveDesktopTab,
   } = params;
 
-  /**
-   * アクティブなタブに基づいてアイテムをフィルタリング（キーハンドラ用）
-   */
-  const getTabFilteredItemsForKeyHandler = (): AppItem[] => {
+  function getTabFilteredItems(): AppItem[] {
     if (!showDataFileTabs) {
-      // タブ表示OFF: activeTab（デフォルト: data.json）のみ表示
       return mainItems.filter((item) => !isWindowInfo(item) && item.sourceFile === activeTab);
     }
-    // タブ表示ON: アクティブなタブに紐付く全ファイルのアイテムを表示
-    // アクティブなタブの設定を検索
+
     const activeTabConfig = dataFileTabs.find((tab) => tab.files.includes(activeTab));
     if (activeTabConfig) {
-      // タブに紐付く全ファイルのアイテムを取得
       return mainItems.filter(
         (item) => !isWindowInfo(item) && activeTabConfig.files.includes(item.sourceFile || '')
       );
     }
-    // フォールバック: アクティブタブと一致するファイルのアイテムのみ
-    return mainItems.filter((item) => !isWindowInfo(item) && item.sourceFile === activeTab);
-  };
 
-  /**
-   * キーボードイベントハンドラ
-   */
-  const handleKeyDown = async (e: React.KeyboardEvent) => {
-    // Shift+Tab: ウィンドウ検索モード切り替え（最優先）
+    return mainItems.filter((item) => !isWindowInfo(item) && item.sourceFile === activeTab);
+  }
+
+  function buildDesktopTabIds(): number[] {
+    const tabIds: number[] = [DESKTOP_TAB.ALL];
+    const hasPinnedWindows = windowList.some((w) => w.isPinned === true);
+    if (hasPinnedWindows) {
+      tabIds.push(DESKTOP_TAB.PINNED);
+    }
+    for (let i = 1; i <= desktopCount; i++) {
+      tabIds.push(i);
+    }
+    return tabIds;
+  }
+
+  function getFilteredItems(): AppItem[] {
+    if (searchMode === 'window') {
+      return filterWindowsByDesktopTab(windowList, activeDesktopTab);
+    }
+    if (searchMode === 'history') {
+      return historyItems;
+    }
+    return getTabFilteredItems();
+  }
+
+  async function handleKeyDown(e: React.KeyboardEvent): Promise<void> {
+    // Shift+Tab: ウィンドウ検索モード切り替え
     if (e.key === 'Tab' && e.shiftKey) {
       e.preventDefault();
       e.stopPropagation();
@@ -97,47 +104,28 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams) {
       return;
     }
 
-    // Tab: タブ切り替え（通常モード時のみ、複数タブがある場合）
+    // Tab: タブ切り替え（通常モード時）
     if (e.key === 'Tab' && searchMode === 'normal' && showDataFileTabs && dataFileTabs.length > 1) {
       e.preventDefault();
       e.stopPropagation();
 
-      // 現在のアクティブタブが属するタブグループのインデックスを探す
       const currentTabIndex = dataFileTabs.findIndex((tab) => tab.files.includes(activeTab));
+      const newTabIndex =
+        currentTabIndex === -1 || currentTabIndex >= dataFileTabs.length - 1
+          ? 0
+          : currentTabIndex + 1;
 
-      if (currentTabIndex === -1) {
-        // 見つからない場合は最初のタブへ
-        const firstTab = dataFileTabs[0];
-        setActiveTab(firstTab.files[0]);
-        setSelectedIndex(0);
-        return;
-      }
-
-      // Tab: 次のタブへ
-      const newTabIndex = currentTabIndex < dataFileTabs.length - 1 ? currentTabIndex + 1 : 0;
-
-      const newTab = dataFileTabs[newTabIndex];
-      setActiveTab(newTab.files[0]);
-      setSelectedIndex(0); // タブ切り替え時は選択インデックスをリセット
+      setActiveTab(dataFileTabs[newTabIndex].files[0]);
+      setSelectedIndex(0);
       return;
     }
 
-    // ウィンドウモード時：Tab でデスクトップタブ切り替え
+    // Tab: デスクトップタブ切り替え（ウィンドウモード時）
     if (e.key === 'Tab' && searchMode === 'window' && desktopCount > 1) {
       e.preventDefault();
       e.stopPropagation();
 
-      // タブリストを生成（LauncherDesktopTabBarと同じ順序）
-      const tabIds: number[] = [DESKTOP_TAB.ALL];
-      const hasPinnedWindows = windowList.some((w) => w.isPinned === true);
-      if (hasPinnedWindows) {
-        tabIds.push(DESKTOP_TAB.PINNED);
-      }
-      for (let i = 1; i <= desktopCount; i++) {
-        tabIds.push(i);
-      }
-
-      // 現在のタブのインデックスを探す
+      const tabIds = buildDesktopTabIds();
       const currentIndex = tabIds.indexOf(activeDesktopTab);
       const nextIndex = currentIndex < tabIds.length - 1 ? currentIndex + 1 : 0;
       setActiveDesktopTab(tabIds[nextIndex]);
@@ -145,28 +133,20 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams) {
       return;
     }
 
-    // 履歴モードでTabキーが押された場合は無効化
+    // Tab: 履歴モードでは無効化
     if (e.key === 'Tab' && searchMode === 'history') {
       e.preventDefault();
       return;
     }
 
-    // 各キー処理で最新のfilteredItemsを計算
-    const tabFilteredItems =
-      searchMode === 'window'
-        ? filterWindowsByDesktopTab(windowList, activeDesktopTab)
-        : searchMode === 'history'
-          ? historyItems
-          : getTabFilteredItemsForKeyHandler();
-    const filteredItems = filterItems(tabFilteredItems, searchQuery, searchMode);
+    const filteredItems = filterItems(getFilteredItems(), searchQuery, searchMode);
 
-    // 検索履歴のナビゲーション（Ctrl + 上下矢印）
+    // Ctrl + 上下矢印: 検索履歴ナビゲーション
     if (e.ctrlKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
       e.preventDefault();
       e.stopPropagation();
 
       const newQuery = e.key === 'ArrowUp' ? navigateToPrevious() : navigateToNext();
-
       if (newQuery !== null) {
         setSearchQuery(newQuery);
         setSelectedIndex(0);
@@ -174,44 +154,32 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams) {
       return;
     }
 
-    // ウィンドウモード時：Ctrl+左右矢印で選択中のウィンドウを仮想デスクトップ間移動
-    // 「すべて」「ピン止め」タブでは無効
+    // Ctrl + 左右矢印: ウィンドウをデスクトップ間移動（ウィンドウモード時）
     if (searchMode === 'window' && e.ctrlKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
       e.preventDefault();
       e.stopPropagation();
 
-      // 「すべて」「ピン止め」タブでは移動不可
       if (activeDesktopTab === DESKTOP_TAB.ALL || activeDesktopTab === DESKTOP_TAB.PINNED) return;
 
       const selectedWindow = filteredItems[selectedIndex] as WindowInfo | undefined;
-      if (!selectedWindow || desktopCount < 2) return;
-
-      // ピン止めされたウィンドウは移動不可
-      if (selectedWindow.isPinned) return;
+      if (!selectedWindow || desktopCount < 2 || selectedWindow.isPinned) return;
 
       const currentDesktop = selectedWindow.desktopNumber || 1;
-      let targetDesktop: number;
+      const targetDesktop = e.key === 'ArrowRight' ? currentDesktop + 1 : currentDesktop - 1;
 
-      if (e.key === 'ArrowRight') {
-        // 右へ移動（次のデスクトップ）
-        if (currentDesktop >= desktopCount) return; // 端に達したら何もしない
-        targetDesktop = currentDesktop + 1;
-      } else {
-        // 左へ移動（前のデスクトップ）
-        if (currentDesktop <= 1) return; // 端に達したら何もしない
-        targetDesktop = currentDesktop - 1;
+      if (targetDesktop < 1 || targetDesktop > desktopCount) return;
+
+      const result = await window.electronAPI.moveWindowToDesktop(
+        selectedWindow.hwnd,
+        targetDesktop
+      );
+      if (result.success) {
+        await refreshWindows();
       }
-
-      // ウィンドウを移動してリストを更新
-      window.electronAPI.moveWindowToDesktop(selectedWindow.hwnd, targetDesktop).then((result) => {
-        if (result.success) {
-          refreshWindows();
-        }
-      });
       return;
     }
 
-    // ウィンドウモード時：Ctrl+Pで選択中のウィンドウをピン留め/解除トグル
+    // Ctrl+P: ウィンドウのピン留めトグル（ウィンドウモード時）
     if (searchMode === 'window' && e.ctrlKey && e.key.toLowerCase() === 'p') {
       e.preventDefault();
       e.stopPropagation();
@@ -237,21 +205,20 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams) {
       return;
     }
 
+    const selectedItem = filteredItems[selectedIndex];
+
     switch (e.key) {
       case 'Enter':
         e.preventDefault();
         e.stopPropagation();
-        if (
-          e.shiftKey &&
-          filteredItems[selectedIndex] &&
-          isLauncherItem(filteredItems[selectedIndex])
-        ) {
-          await window.electronAPI.openParentFolder(filteredItems[selectedIndex] as LauncherItem);
-        } else if (filteredItems[selectedIndex]) {
-          // 統一ハンドラを使用
-          await handleExecuteItem(filteredItems[selectedIndex]);
+        if (!selectedItem) return;
+        if (e.shiftKey && isLauncherItem(selectedItem)) {
+          await window.electronAPI.openParentFolder(selectedItem as LauncherItem);
+        } else {
+          await handleExecuteItem(selectedItem);
         }
-        break;
+        return;
+
       case 'F5':
         e.preventDefault();
         e.stopPropagation();
@@ -260,41 +227,41 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams) {
         } else if (searchMode === 'normal') {
           await reloadData();
         }
-        break;
+        return;
+
       case 'ArrowUp':
         if (!e.ctrlKey) {
-          // Ctrlキーが押されていない場合のみメニュー選択
           e.preventDefault();
           e.stopPropagation();
           setSelectedIndex((prev) => (prev > 0 ? prev - 1 : filteredItems.length - 1));
         }
-        break;
+        return;
+
       case 'ArrowDown':
         if (!e.ctrlKey) {
-          // Ctrlキーが押されていない場合のみメニュー選択
           e.preventDefault();
           e.stopPropagation();
           setSelectedIndex((prev) => (prev < filteredItems.length - 1 ? prev + 1 : 0));
         }
-        break;
+        return;
+
       case 'e':
         if (e.ctrlKey) {
           e.preventDefault();
           e.stopPropagation();
           window.electronAPI.toggleEditWindow();
         }
-        break;
+        return;
+
       case 'w':
         if (e.ctrlKey) {
           e.preventDefault();
           e.stopPropagation();
           window.electronAPI.toggleWorkspaceWindow();
         }
-        break;
+        return;
     }
-  };
+  }
 
-  return {
-    handleKeyDown,
-  };
+  return { handleKeyDown };
 }

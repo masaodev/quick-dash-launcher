@@ -35,6 +35,19 @@ interface RegisterModalProps {
   onDelete?: (item: EditingAppItem | EditableJsonItem) => void; // 削除ハンドラー
 }
 
+function getDisplayNamePlaceholder(itemCategory: string): string {
+  switch (itemCategory) {
+    case 'group':
+      return 'グループ名を入力';
+    case 'clipboard':
+      return 'クリップボードアイテム名を入力';
+    default:
+      return 'アイテム表示名を入力';
+  }
+}
+
+const NON_EXECUTABLE_CATEGORIES = ['dir', 'group', 'clipboard'] as const;
+
 const RegisterModal: React.FC<RegisterModalProps> = ({
   isOpen,
   onClose,
@@ -46,20 +59,13 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
 
-  // ウィンドウ選択ダイアログの状態管理
   const [windowSelectorOpen, setWindowSelectorOpen] = useState(false);
   const [windowSelectorItemIndex, setWindowSelectorItemIndex] = useState<number | null>(null);
-
-  // オプションセクションの開閉状態管理
   const [optionsSectionOpen, setOptionsSectionOpen] = useState<boolean[]>([]);
-
-  // モーダル内ドラッグ&ドロップの状態管理
   const [isDraggingOverModal, setIsDraggingOverModal] = useState(false);
 
-  // トースト通知フック
   const { showError } = useToast();
 
-  // カスタムアイコン管理フック
   const {
     customIconPreviews,
     filePickerState,
@@ -71,7 +77,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     clearCustomIconPreviews,
   } = useCustomIcon();
 
-  // フォーム状態管理フック
   const {
     items,
     loading,
@@ -93,7 +98,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     handleFetchIcon,
     setEditingItemIndex,
     setSelectorModalOpen,
-    addItemsFromPaths: _addItemsFromPaths,
     replaceFirstItemFromPath,
   } = useRegisterForm(
     isOpen,
@@ -105,55 +109,39 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     onRegister
   );
 
-  // items配列の長さが変わったときにオプション開閉状態を初期化
   useEffect(() => {
     setOptionsSectionOpen(items.map(() => false));
   }, [items.length]);
 
-  // ドラッグ操作がキャンセルされた場合の処理（モーダル外でドロップされた場合など）
   useEffect(() => {
     if (!isOpen) return;
 
     const resetDragState = () => setIsDraggingOverModal(false);
-
     document.addEventListener('dragend', resetDragState);
-
-    return () => {
-      document.removeEventListener('dragend', resetDragState);
-    };
+    return () => document.removeEventListener('dragend', resetDragState);
   }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) {
-      // モーダルが閉じられたときの処理
       document.body.style.overflow = 'auto';
       window.electronAPI.setModalMode(false);
-      // カスタムアイコンプレビューをクリア
       clearCustomIconPreviews();
       return;
     }
 
-    // モーダルが開いたときの処理
     document.body.style.overflow = 'hidden';
-
-    // フォーカスをモーダルに設定
     modalRef.current?.focus();
 
-    // キーイベントの制御：capture phaseで全てのキーイベントを捕捉
     const handleKeyDown = (event: KeyboardEvent) => {
-      // モーダル内でのキーイベントかどうかを確認
       const modal = modalRef.current;
       if (!modal) return;
 
-      // モーダル内の要素がフォーカスされているかチェック
       const isModalFocused = modal.contains(document.activeElement);
 
       if (event.key === 'Escape') {
         // GroupItemSelectorModalが表示されている場合は、そちらに任せる
-        const groupSelectorModal = document.querySelector('.group-item-selector-modal');
-        if (groupSelectorModal) {
-          return;
-        }
+        if (document.querySelector('.group-item-selector-modal')) return;
+
         event.preventDefault();
         event.stopPropagation();
         event.stopImmediatePropagation();
@@ -168,69 +156,59 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
         const firstFocusableElement = focusableElements[0] as HTMLElement;
         const lastFocusableElement = focusableElements[focusableElements.length - 1] as HTMLElement;
 
-        if (event.shiftKey) {
-          // Shift+Tab: 逆方向
-          if (document.activeElement === firstFocusableElement) {
-            lastFocusableElement.focus();
-            event.preventDefault();
-            event.stopPropagation();
-            event.stopImmediatePropagation();
-          }
-        } else {
-          // Tab: 順方向
-          if (document.activeElement === lastFocusableElement) {
-            firstFocusableElement.focus();
-            event.preventDefault();
-            event.stopPropagation();
-            event.stopImmediatePropagation();
-          }
+        if (event.shiftKey && document.activeElement === firstFocusableElement) {
+          lastFocusableElement.focus();
+          event.preventDefault();
+          event.stopPropagation();
+          event.stopImmediatePropagation();
+        } else if (!event.shiftKey && document.activeElement === lastFocusableElement) {
+          firstFocusableElement.focus();
+          event.preventDefault();
+          event.stopPropagation();
+          event.stopImmediatePropagation();
         }
-        // モーダル内でのTab操作なので、すべての場合で背景への伝播を阻止
+
         event.preventDefault();
         event.stopPropagation();
         event.stopImmediatePropagation();
         return;
       }
 
-      // モーダル内でのキーイベントの場合、背景への伝播を完全に阻止
       if (isModalFocused) {
-        // 現在フォーカスされている要素がinput/textareaの場合のみ、特定のキーを許可
         const activeElement = document.activeElement as HTMLElement;
         const isInputField =
-          activeElement &&
-          (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
+          activeElement?.tagName === 'INPUT' || activeElement?.tagName === 'TEXTAREA';
 
         if (isInputField) {
-          // input/textareaでの通常の編集キー（文字入力、Backspace、Delete、矢印キー、Ctrl+A、Ctrl+C、Ctrl+V、Ctrl+X）は許可
-          if (
+          const allowedKeys = [
+            'Backspace',
+            'Delete',
+            'ArrowLeft',
+            'ArrowRight',
+            'ArrowUp',
+            'ArrowDown',
+            'Home',
+            'End',
+          ];
+          const allowedCtrlKeys = ['a', 'c', 'v', 'x', 'z', 'y'];
+          const isAllowedKey =
             event.key.length === 1 ||
-            [
-              'Backspace',
-              'Delete',
-              'ArrowLeft',
-              'ArrowRight',
-              'ArrowUp',
-              'ArrowDown',
-              'Home',
-              'End',
-            ].includes(event.key) ||
-            (event.ctrlKey && ['a', 'c', 'v', 'x', 'z', 'y'].includes(event.key))
-          ) {
-            // これらのキーは許可するが、背景への伝播は阻止
+            allowedKeys.includes(event.key) ||
+            (event.ctrlKey && allowedCtrlKeys.includes(event.key));
+
+          if (isAllowedKey) {
             event.stopPropagation();
             event.stopImmediatePropagation();
             return;
           }
         }
 
-        // その他の全てのキーイベントを阻止
         event.preventDefault();
         event.stopPropagation();
         event.stopImmediatePropagation();
       }
     };
 
-    // capture phaseでキーイベントを捕捉
     document.addEventListener('keydown', handleKeyDown, true);
 
     return () => {
@@ -239,28 +217,20 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     };
   }, [isOpen, droppedPaths, editingItem]);
 
-  // アイテムの内容が変更されたときにモーダルサイズを調整
   useEffect(() => {
     if (!isOpen || items.length === 0) return;
 
-    // 必要サイズを設定
-    const requiredWidth = 850;
-    const requiredHeight = 1000;
-
-    // モーダルモードを有効化し、必要サイズを設定
-    window.electronAPI.setModalMode(true, { width: requiredWidth, height: requiredHeight });
+    window.electronAPI.setModalMode(true, { width: 850, height: 1000 });
   }, [isOpen, items]);
 
-  // カスタムアイコン選択時のコールバック
-  const onCustomIconSelected = async (filePath: string) => {
+  const onCustomIconSelected = async (filePath: string): Promise<void> => {
     const item = items[filePickerState.itemIndex!];
     await handleCustomIconFileSelected(filePath, item.path, (index, customIconFileName) => {
       updateItem(index, { customIcon: customIconFileName });
     });
   };
 
-  // カスタムアイコン削除時のコールバック
-  const onCustomIconDeleted = async (index: number) => {
+  const onCustomIconDeleted = async (index: number): Promise<void> => {
     const item = items[index];
     if (item.customIcon) {
       await deleteCustomIcon(index, item.customIcon, (idx) => {
@@ -269,22 +239,18 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     }
   };
 
-  // ウィンドウ選択ダイアログを開く
-  const openWindowSelector = (index: number) => {
+  const openWindowSelector = (index: number): void => {
     setWindowSelectorItemIndex(index);
     setWindowSelectorOpen(true);
   };
 
-  // ウィンドウ選択時のコールバック
-  const onWindowSelected = (window: WindowInfo) => {
+  const onWindowSelected = (window: WindowInfo): void => {
     if (windowSelectorItemIndex === null) return;
 
     const item = items[windowSelectorItemIndex];
     if (!item) return;
 
-    // ウィンドウ情報から設定を作成
     if (item.itemCategory === 'window') {
-      // ウィンドウ操作アイテムの場合
       const windowOperationConfig = {
         displayName: item.displayName,
         windowTitle: window.title,
@@ -296,7 +262,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
       };
       handleItemChange(windowSelectorItemIndex, 'windowOperationConfig', windowOperationConfig);
     } else {
-      // 単一アイテムの場合
       const windowConfig = {
         title: window.title,
         processName: window.processName,
@@ -309,15 +274,13 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     }
   };
 
-  // アイテム削除ハンドラー
-  const handleDelete = () => {
+  const handleDelete = (): void => {
     if (editingItem && onDelete) {
       onDelete(editingItem);
     }
   };
 
-  // オプションセクションの開閉切り替え
-  const toggleOptionsSection = (index: number) => {
+  const toggleOptionsSection = (index: number): void => {
     setOptionsSectionOpen((prev) => {
       const newState = [...prev];
       newState[index] = !newState[index];
@@ -325,46 +288,36 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     });
   };
 
-  // モーダル内ドラッグ&ドロップハンドラー
-  const handleModalDragOver = (e: React.DragEvent) => {
+  const handleModalDragOver = (e: React.DragEvent): void => {
     e.preventDefault();
     e.stopPropagation();
     setIsDraggingOverModal(true);
   };
 
-  const handleModalDragLeave = (e: React.DragEvent) => {
+  const handleModalDragLeave = (e: React.DragEvent): void => {
     e.preventDefault();
     e.stopPropagation();
 
-    // relatedTargetがモーダル内にある場合は何もしない（子要素間の移動）
     const relatedTarget = e.relatedTarget as Node | null;
-    if (relatedTarget && e.currentTarget.contains(relatedTarget)) {
-      return;
-    }
+    if (relatedTarget && e.currentTarget.contains(relatedTarget)) return;
 
-    // モーダルの外に出た場合のみfalseにする
     setIsDraggingOverModal(false);
   };
 
-  const handleModalDrop = async (e: React.DragEvent) => {
+  const handleModalDrop = async (e: React.DragEvent): Promise<void> => {
     e.preventDefault();
     e.stopPropagation();
     setIsDraggingOverModal(false);
 
     const paths = getPathsFromDropEvent(e);
-    if (paths.length === 0) {
-      return;
-    }
+    if (paths.length === 0) return;
 
-    // 最初のファイルのみを使用して、現在の最初のアイテムを完全に置き換える
     if (items.length > 0) {
       await replaceFirstItemFromPath(paths[0]);
     }
   };
 
-  // RegisterItemをLauncherItemに変換する関数
   const convertToLauncherItem = (item: RegisterItem): LauncherItem | null => {
-    // フォルダ取込、グループ、ウィンドウ操作は直接実行不可
     const nonExecutableCategories = ['dir', 'group', 'window'] as const;
     if (
       nonExecutableCategories.includes(
@@ -396,25 +349,20 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     };
   };
 
-  // 実行ボタンのハンドラー
-  const handleExecute = async () => {
+  const handleExecute = async (): Promise<void> => {
     if (items.length === 0) return;
 
-    const item = items[0]; // 最初のアイテムを実行
-
-    // ウィンドウが閉じないように、一時的にピンモードを変更
+    const item = items[0];
     const originalPinMode = await window.electronAPI.getWindowPinMode();
     let pinModeChanged = false;
 
     try {
-      // ピンモードがnormalの場合、一時的にalwaysOnTopに変更
       if (originalPinMode === 'normal') {
-        await window.electronAPI.cycleWindowPinMode(); // normal -> alwaysOnTop
+        await window.electronAPI.cycleWindowPinMode();
         pinModeChanged = true;
       }
 
       if (item.itemCategory === 'window') {
-        // ウィンドウ操作アイテムの場合
         if (!item.windowOperationConfig) {
           logError('ウィンドウ操作設定が不足しています');
           return;
@@ -436,11 +384,9 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
         });
       } else if (item.itemCategory === 'group') {
         debugLog('グループアイテムは実行ボタンからは実行できません');
-        // 注: グループ実行は登録後、メインウィンドウから実行可能
       } else if (item.itemCategory === 'dir') {
         debugLog('フォルダ取込アイテムは実行ボタンからは実行できません');
       } else {
-        // 単一アイテムの場合
         const launcherItem = convertToLauncherItem(item);
         if (launcherItem) {
           await window.electronAPI.openItem(launcherItem);
@@ -449,9 +395,8 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     } catch (error) {
       logError('アイテムの実行に失敗しました:', error);
     } finally {
-      // 元のピンモードに戻す
       if (pinModeChanged) {
-        await window.electronAPI.cycleWindowPinMode(); // alwaysOnTop -> normal
+        await window.electronAPI.cycleWindowPinMode();
       }
     }
   };
@@ -483,7 +428,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                       {item.icon && <img src={item.icon} alt="" className="item-icon" />}
                     </div>
 
-                    {/* 保存先タブと保存先ファイルを最上部に配置 */}
                     <div className="form-row">
                       <div className="form-group">
                         <label>保存先タブ:</label>
@@ -499,7 +443,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                         </select>
                       </div>
 
-                      {/* タブに複数ファイルがある場合、保存先ファイルを選択 */}
                       {(() => {
                         const selectedTab = availableTabs.find((tab) =>
                           tab.files.includes(item.targetTab)
@@ -555,13 +498,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                           value={item.displayName}
                           className={errors[index]?.displayName ? 'error' : ''}
                           onChange={(e) => handleItemChange(index, 'displayName', e.target.value)}
-                          placeholder={
-                            item.itemCategory === 'group'
-                              ? 'グループ名を入力'
-                              : item.itemCategory === 'clipboard'
-                                ? 'クリップボードアイテム名を入力'
-                                : 'アイテム表示名を入力'
-                          }
+                          placeholder={getDisplayNamePlaceholder(item.itemCategory)}
                         />
                         {errors[index]?.displayName && (
                           <span className="error-message">{errors[index].displayName}</span>
@@ -648,7 +585,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                       </div>
                     )}
 
-                    {/* オプション設定（折りたたみ可能） */}
                     {(item.itemCategory === 'item' || item.itemCategory === 'dir') && (
                       <div className="options-section">
                         <button
@@ -701,7 +637,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                       </div>
                     )}
 
-                    {/* ウィンドウ切り替え設定（並列に配置） */}
                     {item.itemCategory === 'item' && (
                       <WindowConfigEditor
                         windowConfig={item.windowConfig}
@@ -713,7 +648,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                       />
                     )}
 
-                    {/* ウィンドウ操作設定 */}
                     {item.itemCategory === 'window' && (
                       <div>
                         <WindowConfigEditor
@@ -762,16 +696,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                       </div>
                     )}
 
-                    {/* グループの場合はカスタムアイコンのみ表示 */}
-                    {item.itemCategory === 'group' && (
-                      <CustomIconEditor
-                        customIconPreview={customIconPreviews[index]}
-                        onSelectClick={() => openCustomIconPicker(index)}
-                        onDeleteClick={() => onCustomIconDeleted(index)}
-                      />
-                    )}
-
-                    {/* クリップボードアイテムエディター */}
                     {item.itemCategory === 'clipboard' && (
                       <>
                         <ClipboardItemEditor
@@ -796,14 +720,12 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                               : undefined
                           }
                           onCapture={(result) => {
-                            // 一度にすべてのフィールドを更新（連続呼び出しによる状態上書きを防ぐ）
                             const updates: Partial<RegisterItem> = {
                               clipboardSessionId: result.sessionId,
                               clipboardFormats: result.formats,
                               clipboardSavedAt: result.capturedAt,
                               clipboardPreview: result.preview || '',
                             };
-                            // 表示名が空の場合、自動設定
                             if (!item.displayName) {
                               const preview = result.preview || 'クリップボード';
                               updates.displayName =
@@ -822,8 +744,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                       </>
                     )}
 
-                    {/* クリップボードの場合はカスタムアイコンも表示 */}
-                    {item.itemCategory === 'clipboard' && (
+                    {(item.itemCategory === 'group' || item.itemCategory === 'clipboard') && (
                       <CustomIconEditor
                         customIconPreview={customIconPreviews[index]}
                         onSelectClick={() => openCustomIconPicker(index)}
@@ -831,7 +752,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                       />
                     )}
 
-                    {/* メモ入力欄（全アイテムタイプ共通） */}
                     <div className="form-group">
                       <label>メモ:</label>
                       <textarea
@@ -850,9 +770,9 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
 
               <div className="modal-actions">
                 {items.length > 0 &&
-                  items[0].itemCategory !== 'dir' &&
-                  items[0].itemCategory !== 'group' &&
-                  items[0].itemCategory !== 'clipboard' && (
+                  !NON_EXECUTABLE_CATEGORIES.includes(
+                    items[0].itemCategory as (typeof NON_EXECUTABLE_CATEGORIES)[number]
+                  ) && (
                     <Button variant="primary" onClick={handleExecute}>
                       ⚡ 試しに実行
                     </Button>
@@ -874,7 +794,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
             </>
           )}
 
-          {/* モーダル内ドラッグ&ドロップオーバーレイ */}
           {isDraggingOverModal && (
             <div className="drag-overlay">
               <div className="drag-message">ファイルをドロップして追加</div>
@@ -883,7 +802,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
         </div>
       </div>
 
-      {/* グループアイテム選択モーダル */}
       {editingItemIndex !== null && (
         <GroupItemSelectorModal
           isOpen={selectorModalOpen}
@@ -897,7 +815,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
         />
       )}
 
-      {/* カスタムアイコンファイル選択ダイアログ */}
       <FilePickerDialog
         isOpen={filePickerState.isOpen}
         onClose={closeCustomIconPicker}
@@ -907,7 +824,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
         description="アイコンとして使用する画像ファイルを選択してください。"
       />
 
-      {/* ウィンドウ選択ダイアログ */}
       <WindowSelectorModal
         isOpen={windowSelectorOpen}
         onClose={() => setWindowSelectorOpen(false)}

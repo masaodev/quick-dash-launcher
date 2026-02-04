@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import type {
   RegisterItem,
   LauncherItem,
@@ -11,7 +11,6 @@ import type {
   EditingAppItem,
   EditableJsonItem,
 } from '@common/types';
-import { buildWindowOperationConfig } from '@common/utils/windowConfigUtils';
 import {
   isWindowInfo,
   isGroupItem,
@@ -48,7 +47,7 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useGlobalLoading } from './hooks/useGlobalLoading';
 import { useToast } from './hooks/useToast';
 
-const App: React.FC = () => {
+function App(): React.ReactElement {
   const [searchQuery, setSearchQuery] = useState('');
   const [mainItems, setMainItems] = useState<AppItem[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -112,10 +111,8 @@ const App: React.FC = () => {
   } = useItemActions();
   const { showSuccess } = useToast();
 
-  // タブ管理フック
   const {
     showDataFileTabs,
-    dataFiles: _dataFiles,
     activeTab,
     dataFileTabs,
     dataFileLabels,
@@ -124,7 +121,6 @@ const App: React.FC = () => {
     getTabFilteredItems,
   } = useDataFileTabs();
 
-  // ドラッグ&ドロップフック
   const { isDraggingOver } = useDragAndDrop(
     (paths: string[]) => openWithDroppedPaths(paths),
     (message: string) => {
@@ -137,13 +133,11 @@ const App: React.FC = () => {
     isRegisterModalOpen
   );
 
-  // アイコン取得エラー記録を読み込む関数
-  const loadIconFetchErrors = async () => {
+  const loadIconFetchErrors = useCallback(async () => {
     const errors = await window.electronAPI.getIconFetchErrors();
     setIconFetchErrors(errors);
-  };
+  }, []);
 
-  // アイコン取得フック
   const { handleRefreshAll, handleFetchMissingIcons, handleFetchMissingIconsCurrentTab } =
     useIconFetcher({
       mainItems,
@@ -154,10 +148,8 @@ const App: React.FC = () => {
       reloadIconFetchErrors: loadIconFetchErrors,
     });
 
-  // グローバルローディングフック
   const { isLoading, message: loadingMessage, withLoading } = useGlobalLoading();
 
-  // ウィンドウリストを更新する関数
   const handleRefreshWindows = async () => {
     if (searchMode !== 'window') return;
 
@@ -173,7 +165,6 @@ const App: React.FC = () => {
     });
   };
 
-  // データ読み込み関数
   const loadItems = async (): Promise<AppItem[]> => {
     const items = await window.electronAPI.loadDataFiles();
 
@@ -198,12 +189,10 @@ const App: React.FC = () => {
     return itemsWithIcons;
   };
 
-  // データ再読込ハンドラー（ローディング表示付き）
   const handleReloadItems = async (): Promise<void> => {
     await withLoading('データ再読込中', loadItems);
   };
 
-  // 検索モード切り替えハンドラー（順次切り替え: normal → window → history → normal...）
   const handleToggleSearchMode = async () => {
     if (searchMode === 'normal') {
       // 通常モード → ウィンドウ検索モード
@@ -234,7 +223,6 @@ const App: React.FC = () => {
     setSelectedIndex(0); // 選択インデックスをリセット
   };
 
-  // アイテム実行の共通処理（トースト表示 + 実行）
   const executeAppItem = async (item: AppItem): Promise<void> => {
     if (isGroupItem(item)) {
       await window.electronAPI.showToastWindow({
@@ -267,7 +255,6 @@ const App: React.FC = () => {
     }
   };
 
-  // handleExecuteItemを定義（useKeyboardShortcutsより前に必要）
   const handleExecuteItem = async (item: AppItem) => {
     try {
       if (searchMode === 'window') {
@@ -292,11 +279,9 @@ const App: React.FC = () => {
         // 検索クエリを事前保存（実行後にクリアされる可能性を考慮）
         const searchQueryForHistory = searchQuery.trim();
 
-        // 即座にアイテム実行（トースト表示含む）
         await executeAppItem(item);
 
-        // 実行後、バックグラウンドで履歴追加（並列化、fire-and-forget）
-        // 検索履歴追加
+        // バックグラウンドで履歴追加（fire-and-forget）
         if (searchQueryForHistory) {
           addHistoryEntry(searchQueryForHistory).catch((error) => {
             console.error('検索履歴の追加に失敗しました:', error);
@@ -323,7 +308,6 @@ const App: React.FC = () => {
     }
   };
 
-  // 実行履歴エントリーをAppItem形式に変換（グループは除外）
   const historyItems: AppItem[] = executionHistory
     .filter((entry) => entry.itemType !== 'group')
     .map((entry) => {
@@ -355,7 +339,6 @@ const App: React.FC = () => {
       }
     });
 
-  // キーボードショートカットフック
   const { handleKeyDown } = useKeyboardShortcuts({
     showDataFileTabs,
     activeTab,
@@ -381,7 +364,6 @@ const App: React.FC = () => {
   });
 
   useEffect(() => {
-    // 初回起動チェック: 設定ファイルの存在を確認
     const checkFirstLaunch = async () => {
       const isFirst = await window.electronAPI.isFirstLaunch();
       setIsFirstLaunch(isFirst);
@@ -389,12 +371,9 @@ const App: React.FC = () => {
     checkFirstLaunch();
 
     loadItems();
-
-    // アイコン取得エラー記録を読み込み
     loadIconFetchErrors();
 
     window.electronAPI.onWindowShown((startTime) => {
-      // パフォーマンス計測：レンダリング完了後に測定
       if (startTime !== undefined) {
         const logTiming = (label: string) => {
           const duration = Date.now() - startTime;
@@ -405,8 +384,6 @@ const App: React.FC = () => {
 
         requestAnimationFrame(() => {
           logTiming('before-animation-frame');
-
-          // 次のフレームで実際の描画完了を確認
           requestAnimationFrame(() => {
             logTiming('window-show-complete');
           });
@@ -417,9 +394,7 @@ const App: React.FC = () => {
       searchInputRef.current?.focus();
     });
 
-    // ウィンドウ検索モードで表示された場合のリスナー
     window.electronAPI.onWindowShownItemSearch(async (startTime) => {
-      // パフォーマンス計測
       if (startTime !== undefined) {
         const logTiming = (label: string) => {
           const duration = Date.now() - startTime;
@@ -436,43 +411,31 @@ const App: React.FC = () => {
           });
         });
       }
-      // 検索モードをwindowに設定
       setSearchMode('window');
-      // ウィンドウリストと仮想デスクトップ情報を取得
       const [windows, info] = await Promise.all([
         window.electronAPI.getAllWindowsAllDesktops(),
         window.electronAPI.getVirtualDesktopInfo(),
       ]);
       setWindowList(windows);
       setDesktopInfo(info);
-      // 現在のデスクトップをデフォルトタブとして設定
-      if (info.supported && info.currentDesktop > 0) {
-        setActiveDesktopTab(info.currentDesktop);
-      } else {
-        setActiveDesktopTab(0);
-      }
-      // 検索クエリをクリア
+      setActiveDesktopTab(info.supported && info.currentDesktop > 0 ? info.currentDesktop : 0);
       setSearchQuery('');
       setSelectedIndex(0);
-      // 検索入力欄にフォーカス
       searchInputRef.current?.focus();
     });
 
-    // ウィンドウが非表示になる際にリセット
     window.electronAPI.onWindowHidden(() => {
-      setSearchQuery(''); // 検索テキストをクリア
-      setSearchMode('normal'); // 通常モードに戻す
-      setWindowList([]); // ウィンドウリストもクリア
+      setSearchQuery('');
+      setSearchMode('normal');
+      setWindowList([]);
     });
 
-    // Load initial pin mode
     const loadPinState = async () => {
       const pinMode = await window.electronAPI.getWindowPinMode();
       setWindowPinMode(pinMode);
     };
     loadPinState();
 
-    // データ変更通知のリスナーを設定
     const cleanupDataChanged = window.electronAPI.onDataChanged(async () => {
       debugLog('データ変更通知を受信、データを再読み込みします');
       await withLoading('データ再読込中', loadItems);
@@ -483,10 +446,9 @@ const App: React.FC = () => {
     };
   }, []);
 
-  const handleSearch = async (query: string) => {
+  const handleSearch = (query: string) => {
     setSearchQuery(query);
     setSelectedIndex(0);
-    // ユーザーが手動で入力を変更した場合は履歴ナビゲーションをリセット
     resetNavigation();
   };
 
@@ -497,16 +459,11 @@ const App: React.FC = () => {
 
   const handleRegisterItems = async (items: RegisterItem[]) => {
     if (editingItem && items.length === 1) {
-      // 編集モードの場合
       const item = items[0];
-
-      // 保存先ファイルが変更されたかチェック
-      // targetFileが指定されている場合はそれを優先、なければtargetTabを使用
       const targetFile = item.targetFile || item.targetTab;
       const isFileChanged = targetFile !== editingItem.sourceFile;
 
       if (isFileChanged) {
-        // ファイルが変更された場合：元のファイルから削除 + 新しいファイルに登録
         if (!editingItem.jsonItemId) {
           throw new Error('アイテムIDが見つかりません');
         }
@@ -517,8 +474,6 @@ const App: React.FC = () => {
         ]);
         await window.electronAPI.registerItems([item]);
       } else {
-        // ファイルが変更されていない場合：従来の更新処理
-        // フォルダ取込ディレクティブの編集の場合（dirアイテム）
         if (item.itemCategory === 'dir') {
           if (!editingItem.jsonItemId) {
             throw new Error('アイテムIDが見つかりません');
@@ -530,7 +485,6 @@ const App: React.FC = () => {
             item.memo
           );
         } else if (item.itemCategory === 'group') {
-          // グループアイテムの編集の場合
           if (!editingItem.jsonItemId) {
             throw new Error('アイテムIDが見つかりません');
           }
@@ -542,31 +496,15 @@ const App: React.FC = () => {
             item.memo
           );
         } else if (item.itemCategory === 'window') {
-          // ウィンドウ操作アイテムの編集の場合
           if (!editingItem.jsonItemId) {
             throw new Error('アイテムIDが見つかりません');
           }
           const cfg = item.windowOperationConfig;
           if (!cfg) throw new Error('windowOperationConfig is required for window items');
 
-          // 共通ヘルパーを使用してJSON設定を構築
-          const config = buildWindowOperationConfig({
-            displayName: item.displayName,
-            windowTitle: cfg.windowTitle,
-            processName: cfg.processName,
-            x: cfg.x,
-            y: cfg.y,
-            width: cfg.width,
-            height: cfg.height,
-            moveToActiveMonitorCenter: cfg.moveToActiveMonitorCenter,
-            virtualDesktopNumber: cfg.virtualDesktopNumber,
-            activateWindow: cfg.activateWindow,
-            pinToAllDesktops: cfg.pinToAllDesktops,
-          });
-
+          const config = { ...cfg, displayName: item.displayName };
           await window.electronAPI.updateWindowItemById(editingItem.jsonItemId, config, item.memo);
         } else {
-          // 通常のアイテムの編集
           if (!editingItem.jsonItemId) {
             throw new Error('アイテムIDが見つかりません');
           }
@@ -588,12 +526,10 @@ const App: React.FC = () => {
         }
       }
     } else {
-      // 新規登録モード
       await window.electronAPI.registerItems(items);
     }
-    await withLoading('データ再読込中', loadItems); // Reload items after registration/update
+    await withLoading('データ再読込中', loadItems);
 
-    // 成功通知
     if (editingItem) {
       showSuccess('アイテムを更新しました');
     } else {
@@ -601,14 +537,9 @@ const App: React.FC = () => {
     }
   };
 
-  // アイテム削除ハンドラー（RegisterModalから呼び出される）
   const handleDeleteItemFromModal = (item: EditingAppItem | EditableJsonItem) => {
-    // EditableJsonItemの場合はEditingAppItemに変換する
     if ('item' in item && 'meta' in item) {
-      // EditableJsonItem形式
       const editableItem = item as EditableJsonItem;
-      // EditableJsonItemからEditingAppItemへの変換は行わず、
-      // jsonItemIdを取得して直接削除処理に使用
       setDeleteConfirmDialog({
         isOpen: true,
         item: {
@@ -618,7 +549,6 @@ const App: React.FC = () => {
         } as EditingAppItem,
       });
     } else {
-      // EditingAppItem形式
       setDeleteConfirmDialog({
         isOpen: true,
         item: item as EditingAppItem,
@@ -626,7 +556,6 @@ const App: React.FC = () => {
     }
   };
 
-  // 削除確認後の実行ハンドラー
   const handleConfirmDelete = async () => {
     const itemToDelete = deleteConfirmDialog.item;
     if (!itemToDelete) return;
@@ -635,22 +564,10 @@ const App: React.FC = () => {
       if (!itemToDelete.jsonItemId) {
         throw new Error('アイテムIDが見つかりません');
       }
-      await window.electronAPI.deleteItemsById([
-        {
-          id: itemToDelete.jsonItemId,
-        },
-      ]);
-
-      // モーダルを閉じる
+      await window.electronAPI.deleteItemsById([{ id: itemToDelete.jsonItemId }]);
       closeModal();
-
-      // 削除ダイアログを閉じる
       setDeleteConfirmDialog({ isOpen: false, item: null });
-
-      // データ再読込
       await withLoading('データ再読込中', loadItems);
-
-      // 削除成功通知
       showSuccess('アイテムを削除しました');
     } catch (error) {
       logError('Failed to delete item:', error);
@@ -675,18 +592,10 @@ const App: React.FC = () => {
     await window.electronAPI.toggleWorkspaceWindow();
   };
 
-  const handleOpenRegisterModal = () => {
-    openRegisterModal();
-  };
+  const handleEditItem = (item: AppItem) => {
+    if (isWindowInfo(item)) return;
 
-  const handleEditItem = async (item: AppItem) => {
-    // WindowInfoは編集不可
-    if (isWindowInfo(item)) {
-      return;
-    }
-
-    // グループアイテムの場合
-    if (isGroupItem(item)) {
+    if (isGroupItem(item) || isWindowItem(item)) {
       openEditModal({
         ...item,
         sourceFile: item.sourceFile || 'data.json',
@@ -695,19 +604,7 @@ const App: React.FC = () => {
       return;
     }
 
-    // WindowItemの場合
-    if (isWindowItem(item)) {
-      openEditModal({
-        ...item,
-        sourceFile: item.sourceFile || 'data.json',
-        jsonItemId: item.id ?? undefined,
-      });
-      return;
-    }
-
-    // LauncherItemの場合
     const launcherItem = item as LauncherItem;
-    // 展開されたアイテムの場合はexpandedFromIdを、そうでない場合はidを使用
     const jsonItemId = launcherItem.isDirExpanded ? launcherItem.expandedFromId : launcherItem.id;
     openEditModal({
       ...launcherItem,
@@ -718,16 +615,12 @@ const App: React.FC = () => {
 
   const handleFirstLaunchComplete = async (hotkey: string, autoLaunch: boolean) => {
     try {
-      // ホットキーを設定（設定ファイルが自動的に作成される）
-      // dataFileTabsも明示的に設定して、data.jsonタブが含まれるようにする
       await window.electronAPI.setMultipleSettings({
-        hotkey: hotkey,
-        autoLaunch: autoLaunch,
+        hotkey,
+        autoLaunch,
         dataFileTabs: [{ files: ['data.json'], name: 'メイン' }],
       });
       await window.electronAPI.changeHotkey(hotkey);
-
-      // 初回起動画面を閉じる
       setIsFirstLaunch(false);
     } catch (error) {
       logError('初回設定の保存に失敗しました:', error);
@@ -739,10 +632,8 @@ const App: React.FC = () => {
     }
   };
 
-  // handleRefreshAllのラッパー（loadItemsを渡す）
   const handleRefreshAllWrapper = () => handleRefreshAll(loadItems);
 
-  // handleTabClickのラッパー（選択インデックスをリセット）
   const handleTabClickWrapper = (fileName: string) => {
     handleTabClick(fileName);
     setSelectedIndex(0);
@@ -750,46 +641,40 @@ const App: React.FC = () => {
 
   const tabFilteredItems = getTabFilteredItems(mainItems);
 
-  // エラー記録のキーセットを作成（検索を高速化）
-  const errorKeySet = useMemo(() => {
-    return new Set(iconFetchErrors.map((e) => e.key));
-  }, [iconFetchErrors]);
+  const errorKeySet = useMemo(() => new Set(iconFetchErrors.map((e) => e.key)), [iconFetchErrors]);
 
-  // アイコン未取得数を計算（LauncherItemのみ対象、フォルダ・エラー記録を除外）
   const missingIconCount = useMemo(() => {
     return mainItems.filter((item) => {
-      // LauncherItemのみ対象（WindowInfo, GroupItem, WindowItem, ClipboardItemは除外）
       if (isWindowInfo(item) || isGroupItem(item) || isWindowItem(item) || isClipboardItem(item)) {
         return false;
       }
       const launcherItem = item as LauncherItem;
-      // フォルダとカスタムURIは除外（アイコン取得対象外）
       if (launcherItem.type === 'folder' || launcherItem.type === 'customUri') {
         return false;
       }
-      // エラー記録にあるアイテムは除外
       if (errorKeySet.has(launcherItem.path)) {
         return false;
       }
-      // アイコンが未取得のもの
       return !launcherItem.icon;
     }).length;
   }, [mainItems, errorKeySet]);
 
-  const itemsToFilter =
-    searchMode === 'window'
-      ? filterWindowsByDesktopTab(windowList, activeDesktopTab)
-      : searchMode === 'history'
-        ? historyItems
-        : tabFilteredItems;
-  const filteredItems = filterItems(itemsToFilter, searchQuery, searchMode);
+  const getItemsToFilter = (): AppItem[] => {
+    switch (searchMode) {
+      case 'window':
+        return filterWindowsByDesktopTab(windowList, activeDesktopTab);
+      case 'history':
+        return historyItems;
+      default:
+        return tabFilteredItems;
+    }
+  };
+  const filteredItems = filterItems(getItemsToFilter(), searchQuery, searchMode);
 
-  // 初回起動チェック中はローディング表示
   if (isFirstLaunch === null) {
     return <div className="app">読み込み中...</div>;
   }
 
-  // 初回起動の場合は設定画面を表示
   if (isFirstLaunch) {
     return <SetupFirstLaunch onComplete={handleFirstLaunchComplete} />;
   }
@@ -816,7 +701,7 @@ const App: React.FC = () => {
           onOpenBasicSettings={handleOpenBasicSettings}
           onOpenItemManagement={handleOpenItemManagement}
           onToggleWorkspace={handleToggleWorkspace}
-          onOpenRegisterModal={handleOpenRegisterModal}
+          onOpenRegisterModal={openRegisterModal}
           windowPinMode={windowPinMode}
         />
         <div className="drag-handle">⋮⋮</div>
@@ -853,7 +738,6 @@ const App: React.FC = () => {
 
       <LauncherItemList
         items={filteredItems}
-        allItems={mainItems}
         selectedIndex={selectedIndex}
         onItemExecute={handleExecuteItem}
         onItemSelect={setSelectedIndex}
@@ -926,6 +810,6 @@ const App: React.FC = () => {
       <GlobalLoadingIndicator isLoading={isLoading} message={loadingMessage} />
     </div>
   );
-};
+}
 
 export default App;

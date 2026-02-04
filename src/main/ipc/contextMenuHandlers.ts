@@ -2,7 +2,7 @@
  * コンテキストメニュー用IPCハンドラー
  * 全てのReactコンテキストメニューをElectronのネイティブメニューに変換
  */
-import { ipcMain, BrowserWindow, Menu, MenuItem } from 'electron';
+import { ipcMain, BrowserWindow, Menu, MenuItem, IpcMainInvokeEvent, WebContents } from 'electron';
 import type {
   AppItem,
   WorkspaceItem,
@@ -13,435 +13,355 @@ import type {
 import { IPC_CHANNELS } from '@common/ipcChannels';
 import { isGroupItem, isClipboardItem } from '@common/types/guards';
 
-/**
- * AdminItemManagerContextMenu用のネイティブメニューハンドラーを設定
- */
+/** メニューアイテムを作成するヘルパー */
+function createMenuItem(
+  label: string,
+  sender: WebContents,
+  channel: string,
+  ...args: unknown[]
+): MenuItem {
+  return new MenuItem({
+    label,
+    click: () => sender.send(channel, ...args),
+  });
+}
+
+/** セパレーターを作成 */
+function createSeparator(): MenuItem {
+  return new MenuItem({ type: 'separator' });
+}
+
+/** イベントからウィンドウを取得（無効な場合はnull） */
+function getValidWindow(event: IpcMainInvokeEvent): BrowserWindow | null {
+  const window = BrowserWindow.fromWebContents(event.sender);
+  if (!window || window.isDestroyed()) {
+    return null;
+  }
+  return window;
+}
+
+/** AdminItemManagerContextMenu用のネイティブメニューハンドラーを設定 */
 function setupAdminItemContextMenuHandler(): void {
   ipcMain.handle(
     IPC_CHANNELS.SHOW_ADMIN_ITEM_CONTEXT_MENU,
     async (event, selectedCount: number, isSingleLine: boolean): Promise<void> => {
-      try {
-        const senderWindow = BrowserWindow.fromWebContents(event.sender);
-        if (!senderWindow || senderWindow.isDestroyed()) {
-          return;
-        }
+      const senderWindow = getValidWindow(event);
+      if (!senderWindow) return;
 
-        const menu = new Menu();
+      const menu = new Menu();
+      const countSuffix = isSingleLine ? '' : ` (${selectedCount}行)`;
 
-        // 複製
+      menu.append(
+        createMenuItem(
+          `📋 複製${countSuffix}`,
+          event.sender,
+          IPC_CHANNELS.EVENT_ADMIN_MENU_DUPLICATE_ITEMS
+        )
+      );
+
+      if (isSingleLine) {
         menu.append(
-          new MenuItem({
-            label: isSingleLine ? '📋 複製' : `📋 複製 (${selectedCount}行)`,
-            click: () => {
-              event.sender.send(IPC_CHANNELS.EVENT_ADMIN_MENU_DUPLICATE_ITEMS);
-            },
-          })
+          createMenuItem('✏️ 詳細編集', event.sender, IPC_CHANNELS.EVENT_ADMIN_MENU_EDIT_ITEM)
         );
-
-        // 詳細編集（単一行のみ）
-        if (isSingleLine) {
-          menu.append(
-            new MenuItem({
-              label: '✏️ 詳細編集',
-              click: () => {
-                event.sender.send(IPC_CHANNELS.EVENT_ADMIN_MENU_EDIT_ITEM);
-              },
-            })
-          );
-        }
-
-        menu.append(new MenuItem({ type: 'separator' }));
-
-        // 削除
-        menu.append(
-          new MenuItem({
-            label: isSingleLine ? '🗑️ 削除' : `🗑️ 削除 (${selectedCount}行)`,
-            click: () => {
-              event.sender.send(IPC_CHANNELS.EVENT_ADMIN_MENU_DELETE_ITEMS);
-            },
-          })
-        );
-
-        // メニューを表示
-        menu.popup({
-          window: senderWindow,
-        });
-      } catch (error) {
-        console.error('Failed to show admin item context menu:', error);
       }
+
+      menu.append(createSeparator());
+      menu.append(
+        createMenuItem(
+          `🗑️ 削除${countSuffix}`,
+          event.sender,
+          IPC_CHANNELS.EVENT_ADMIN_MENU_DELETE_ITEMS
+        )
+      );
+
+      menu.popup({ window: senderWindow });
     }
   );
 }
 
-/**
- * LauncherContextMenu用のネイティブメニューハンドラーを設定
- */
+/** LauncherContextMenu用のネイティブメニューハンドラーを設定 */
 function setupLauncherContextMenuHandler(): void {
   ipcMain.handle(
     IPC_CHANNELS.SHOW_LAUNCHER_CONTEXT_MENU,
     async (event, item: AppItem): Promise<void> => {
-      try {
-        const senderWindow = BrowserWindow.fromWebContents(event.sender);
-        if (!senderWindow || senderWindow.isDestroyed()) {
-          return;
-        }
+      const senderWindow = getValidWindow(event);
+      if (!senderWindow) return;
 
-        const menu = new Menu();
-        const isGroup = isGroupItem(item);
-        const isClipboard = isClipboardItem(item);
-        const isGroupOrClipboard = isGroup || isClipboard;
-        const hasParentFolder =
-          !isGroupOrClipboard && 'type' in item && item.type !== 'url' && item.type !== 'customUri';
-        const isShortcut =
-          !isGroupOrClipboard && 'originalPath' in item && item.originalPath !== undefined;
+      const menu = new Menu();
+      const isGroupOrClipboard = isGroupItem(item) || isClipboardItem(item);
+      const hasParentFolder =
+        !isGroupOrClipboard && 'type' in item && item.type !== 'url' && item.type !== 'customUri';
+      const isShortcut =
+        !isGroupOrClipboard && 'originalPath' in item && item.originalPath !== undefined;
 
-        // 編集
-        menu.append(
-          new MenuItem({
-            label: '✏️ 編集',
-            click: () => {
-              event.sender.send(IPC_CHANNELS.EVENT_LAUNCHER_MENU_EDIT_ITEM, item);
-            },
-          })
-        );
+      menu.append(
+        createMenuItem('✏️ 編集', event.sender, IPC_CHANNELS.EVENT_LAUNCHER_MENU_EDIT_ITEM, item)
+      );
 
-        // グループとクリップボード以外は区切り線を追加
-        if (!isGroupOrClipboard) {
-          menu.append(new MenuItem({ type: 'separator' }));
-        }
-
-        // ワークスペースに追加
-        menu.append(
-          new MenuItem({
-            label: '⭐ ワークスペースに追加',
-            click: () => {
-              event.sender.send(IPC_CHANNELS.EVENT_LAUNCHER_MENU_ADD_TO_WORKSPACE, item);
-            },
-          })
-        );
-
-        // グループまたはクリップボードの場合はここで終了（パス関連メニューは不要）
-        if (isGroupOrClipboard) {
-          menu.popup({ window: senderWindow });
-          return;
-        }
-
-        menu.append(new MenuItem({ type: 'separator' }));
-
-        // パスをコピー
-        menu.append(
-          new MenuItem({
-            label: '📋 パスをコピー',
-            click: () => {
-              event.sender.send(IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_PATH, item);
-            },
-          })
-        );
-
-        // 親フォルダー関連（URLとcustomURI以外）
-        if (hasParentFolder) {
-          menu.append(
-            new MenuItem({
-              label: '📋 親フォルダーのパスをコピー',
-              click: () => {
-                event.sender.send(IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_PARENT_PATH, item);
-              },
-            })
-          );
-
-          menu.append(
-            new MenuItem({
-              label: '📂 親フォルダーを開く',
-              click: () => {
-                event.sender.send(IPC_CHANNELS.EVENT_LAUNCHER_MENU_OPEN_PARENT_FOLDER, item);
-              },
-            })
-          );
-        }
-
-        // ショートカット関連
-        if (isShortcut) {
-          menu.append(new MenuItem({ type: 'separator' }));
-
-          menu.append(
-            new MenuItem({
-              label: '📋 リンク先のパスをコピー',
-              click: () => {
-                event.sender.send(IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_SHORTCUT_PATH, item);
-              },
-            })
-          );
-
-          menu.append(
-            new MenuItem({
-              label: '📋 リンク先の親フォルダーのパスをコピー',
-              click: () => {
-                event.sender.send(IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_SHORTCUT_PARENT_PATH, item);
-              },
-            })
-          );
-
-          menu.append(
-            new MenuItem({
-              label: '📂 リンク先の親フォルダーを開く',
-              click: () => {
-                event.sender.send(
-                  IPC_CHANNELS.EVENT_LAUNCHER_MENU_OPEN_SHORTCUT_PARENT_FOLDER,
-                  item
-                );
-              },
-            })
-          );
-        }
-
-        menu.popup({ window: senderWindow });
-      } catch (error) {
-        console.error('Failed to show launcher context menu:', error);
+      if (!isGroupOrClipboard) {
+        menu.append(createSeparator());
       }
+
+      menu.append(
+        createMenuItem(
+          '⭐ ワークスペースに追加',
+          event.sender,
+          IPC_CHANNELS.EVENT_LAUNCHER_MENU_ADD_TO_WORKSPACE,
+          item
+        )
+      );
+
+      if (isGroupOrClipboard) {
+        menu.popup({ window: senderWindow });
+        return;
+      }
+
+      menu.append(createSeparator());
+      menu.append(
+        createMenuItem(
+          '📋 パスをコピー',
+          event.sender,
+          IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_PATH,
+          item
+        )
+      );
+
+      if (hasParentFolder) {
+        menu.append(
+          createMenuItem(
+            '📋 親フォルダーのパスをコピー',
+            event.sender,
+            IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_PARENT_PATH,
+            item
+          )
+        );
+        menu.append(
+          createMenuItem(
+            '📂 親フォルダーを開く',
+            event.sender,
+            IPC_CHANNELS.EVENT_LAUNCHER_MENU_OPEN_PARENT_FOLDER,
+            item
+          )
+        );
+      }
+
+      if (isShortcut) {
+        menu.append(createSeparator());
+        menu.append(
+          createMenuItem(
+            '📋 リンク先のパスをコピー',
+            event.sender,
+            IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_SHORTCUT_PATH,
+            item
+          )
+        );
+        menu.append(
+          createMenuItem(
+            '📋 リンク先の親フォルダーのパスをコピー',
+            event.sender,
+            IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_SHORTCUT_PARENT_PATH,
+            item
+          )
+        );
+        menu.append(
+          createMenuItem(
+            '📂 リンク先の親フォルダーを開く',
+            event.sender,
+            IPC_CHANNELS.EVENT_LAUNCHER_MENU_OPEN_SHORTCUT_PARENT_FOLDER,
+            item
+          )
+        );
+      }
+
+      menu.popup({ window: senderWindow });
     }
   );
 }
 
-/**
- * WorkspaceContextMenu用のネイティブメニューハンドラーを設定
- */
+/** WorkspaceContextMenu用のネイティブメニューハンドラーを設定 */
 function setupWorkspaceContextMenuHandler(): void {
   ipcMain.handle(
     IPC_CHANNELS.SHOW_WORKSPACE_CONTEXT_MENU,
-    async (event, item: WorkspaceItem, _groups: WorkspaceGroup[]): Promise<void> => {
-      try {
-        const senderWindow = BrowserWindow.fromWebContents(event.sender);
-        if (!senderWindow || senderWindow.isDestroyed()) {
-          return;
-        }
+    async (event, item: WorkspaceItem): Promise<void> => {
+      const senderWindow = getValidWindow(event);
+      if (!senderWindow) return;
 
-        const menu = new Menu();
-        const hasGroup = item.groupId !== undefined;
-        const isClipboardType = item.type === 'clipboard';
-        const hasParentFolder =
-          item.type !== 'url' && item.type !== 'customUri' && !isClipboardType;
-        const isShortcut = item.originalPath !== undefined && !isClipboardType;
+      const menu = new Menu();
+      const isClipboardType = item.type === 'clipboard';
+      const hasParentFolder = item.type !== 'url' && item.type !== 'customUri' && !isClipboardType;
+      const isShortcut = item.originalPath !== undefined && !isClipboardType;
 
-        // 表示名を変更
+      menu.append(
+        createMenuItem(
+          '✏️ 表示名を変更',
+          event.sender,
+          IPC_CHANNELS.EVENT_WORKSPACE_MENU_RENAME_ITEM,
+          item.id
+        )
+      );
+      menu.append(
+        createMenuItem(
+          '▶️ 起動',
+          event.sender,
+          IPC_CHANNELS.EVENT_WORKSPACE_MENU_LAUNCH_ITEM,
+          item.id
+        )
+      );
+      menu.append(createSeparator());
+
+      if (!isClipboardType) {
         menu.append(
-          new MenuItem({
-            label: '✏️ 表示名を変更',
-            click: () => {
-              event.sender.send(IPC_CHANNELS.EVENT_WORKSPACE_MENU_RENAME_ITEM, item.id);
-            },
-          })
+          createMenuItem(
+            '📋 パスをコピー',
+            event.sender,
+            IPC_CHANNELS.EVENT_WORKSPACE_MENU_COPY_PATH,
+            item.id
+          )
         );
-
-        // 起動
-        menu.append(
-          new MenuItem({
-            label: '▶️ 起動',
-            click: () => {
-              event.sender.send(IPC_CHANNELS.EVENT_WORKSPACE_MENU_LAUNCH_ITEM, item.id);
-            },
-          })
-        );
-
-        menu.append(new MenuItem({ type: 'separator' }));
-
-        // パスをコピー（クリップボード以外）
-        if (!isClipboardType) {
-          menu.append(
-            new MenuItem({
-              label: '📋 パスをコピー',
-              click: () => {
-                event.sender.send(IPC_CHANNELS.EVENT_WORKSPACE_MENU_COPY_PATH, item.id);
-              },
-            })
-          );
-        }
-
-        // 親フォルダー関連（URLとcustomURIとクリップボード以外）
-        if (hasParentFolder) {
-          menu.append(
-            new MenuItem({
-              label: '📋 親フォルダーのパスをコピー',
-              click: () => {
-                event.sender.send(IPC_CHANNELS.EVENT_WORKSPACE_MENU_COPY_PARENT_PATH, item.id);
-              },
-            })
-          );
-
-          menu.append(
-            new MenuItem({
-              label: '📂 親フォルダーを開く',
-              click: () => {
-                event.sender.send(IPC_CHANNELS.EVENT_WORKSPACE_MENU_OPEN_PARENT_FOLDER, item.id);
-              },
-            })
-          );
-        }
-
-        // ショートカット関連
-        if (isShortcut) {
-          menu.append(new MenuItem({ type: 'separator' }));
-
-          menu.append(
-            new MenuItem({
-              label: '📋 リンク先のパスをコピー',
-              click: () => {
-                event.sender.send(IPC_CHANNELS.EVENT_WORKSPACE_MENU_COPY_SHORTCUT_PATH, item.id);
-              },
-            })
-          );
-
-          menu.append(
-            new MenuItem({
-              label: '📋 リンク先の親フォルダーのパスをコピー',
-              click: () => {
-                event.sender.send(
-                  IPC_CHANNELS.EVENT_WORKSPACE_MENU_COPY_SHORTCUT_PARENT_PATH,
-                  item.id
-                );
-              },
-            })
-          );
-
-          menu.append(
-            new MenuItem({
-              label: '📂 リンク先の親フォルダーを開く',
-              click: () => {
-                event.sender.send(
-                  IPC_CHANNELS.EVENT_WORKSPACE_MENU_OPEN_SHORTCUT_PARENT_FOLDER,
-                  item.id
-                );
-              },
-            })
-          );
-        }
-
-        menu.append(new MenuItem({ type: 'separator' }));
-
-        // 編集
-        menu.append(
-          new MenuItem({
-            label: '🔧 編集',
-            click: () => {
-              event.sender.send(IPC_CHANNELS.EVENT_WORKSPACE_MENU_EDIT_ITEM, item.id);
-            },
-          })
-        );
-
-        // グループから削除（グループに所属している場合のみ）
-        if (hasGroup) {
-          menu.append(
-            new MenuItem({
-              label: '📤 グループから削除',
-              click: () => {
-                event.sender.send(IPC_CHANNELS.EVENT_WORKSPACE_MENU_REMOVE_FROM_GROUP, item.id);
-              },
-            })
-          );
-        }
-
-        menu.append(new MenuItem({ type: 'separator' }));
-
-        // ワークスペースから削除
-        menu.append(
-          new MenuItem({
-            label: '🗑️ ワークスペースから削除',
-            click: () => {
-              event.sender.send(IPC_CHANNELS.EVENT_WORKSPACE_MENU_REMOVE_ITEM, item.id);
-            },
-          })
-        );
-
-        menu.popup({ window: senderWindow });
-      } catch (error) {
-        console.error('Failed to show workspace context menu:', error);
       }
+
+      if (hasParentFolder) {
+        menu.append(
+          createMenuItem(
+            '📋 親フォルダーのパスをコピー',
+            event.sender,
+            IPC_CHANNELS.EVENT_WORKSPACE_MENU_COPY_PARENT_PATH,
+            item.id
+          )
+        );
+        menu.append(
+          createMenuItem(
+            '📂 親フォルダーを開く',
+            event.sender,
+            IPC_CHANNELS.EVENT_WORKSPACE_MENU_OPEN_PARENT_FOLDER,
+            item.id
+          )
+        );
+      }
+
+      if (isShortcut) {
+        menu.append(createSeparator());
+        menu.append(
+          createMenuItem(
+            '📋 リンク先のパスをコピー',
+            event.sender,
+            IPC_CHANNELS.EVENT_WORKSPACE_MENU_COPY_SHORTCUT_PATH,
+            item.id
+          )
+        );
+        menu.append(
+          createMenuItem(
+            '📋 リンク先の親フォルダーのパスをコピー',
+            event.sender,
+            IPC_CHANNELS.EVENT_WORKSPACE_MENU_COPY_SHORTCUT_PARENT_PATH,
+            item.id
+          )
+        );
+        menu.append(
+          createMenuItem(
+            '📂 リンク先の親フォルダーを開く',
+            event.sender,
+            IPC_CHANNELS.EVENT_WORKSPACE_MENU_OPEN_SHORTCUT_PARENT_FOLDER,
+            item.id
+          )
+        );
+      }
+
+      menu.append(createSeparator());
+      menu.append(
+        createMenuItem(
+          '🔧 編集',
+          event.sender,
+          IPC_CHANNELS.EVENT_WORKSPACE_MENU_EDIT_ITEM,
+          item.id
+        )
+      );
+
+      if (item.groupId !== undefined) {
+        menu.append(
+          createMenuItem(
+            '📤 グループから削除',
+            event.sender,
+            IPC_CHANNELS.EVENT_WORKSPACE_MENU_REMOVE_FROM_GROUP,
+            item.id
+          )
+        );
+      }
+
+      menu.append(createSeparator());
+      menu.append(
+        createMenuItem(
+          '🗑️ ワークスペースから削除',
+          event.sender,
+          IPC_CHANNELS.EVENT_WORKSPACE_MENU_REMOVE_ITEM,
+          item.id
+        )
+      );
+
+      menu.popup({ window: senderWindow });
     }
   );
 }
 
-/**
- * WorkspaceGroupContextMenu用のネイティブメニューハンドラーを設定
- */
+/** WorkspaceGroupContextMenu用のネイティブメニューハンドラーを設定 */
 function setupWorkspaceGroupContextMenuHandler(): void {
   ipcMain.handle(
     IPC_CHANNELS.SHOW_WORKSPACE_GROUP_CONTEXT_MENU,
     async (event, group: WorkspaceGroup): Promise<void> => {
-      try {
-        const senderWindow = BrowserWindow.fromWebContents(event.sender);
-        if (!senderWindow || senderWindow.isDestroyed()) {
-          return;
-        }
+      const senderWindow = getValidWindow(event);
+      if (!senderWindow) return;
 
-        const menu = new Menu();
+      const menu = new Menu();
 
-        // グループ名を変更
-        menu.append(
-          new MenuItem({
-            label: '✏️ グループ名を変更',
-            click: () => {
-              event.sender.send(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_RENAME, group.id);
-            },
-          })
-        );
+      menu.append(
+        createMenuItem(
+          '✏️ グループ名を変更',
+          event.sender,
+          IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_RENAME,
+          group.id
+        )
+      );
+      menu.append(
+        createMenuItem(
+          '🎨 カラーを変更',
+          event.sender,
+          IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_SHOW_COLOR_PICKER,
+          group.id
+        )
+      );
+      menu.append(createSeparator());
+      menu.append(
+        createMenuItem(
+          '📋 テキストでコピー',
+          event.sender,
+          IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_COPY_AS_TEXT,
+          group.id
+        )
+      );
+      menu.append(createSeparator());
+      menu.append(
+        createMenuItem(
+          '📦 グループをアーカイブ',
+          event.sender,
+          IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_ARCHIVE,
+          group.id
+        )
+      );
+      menu.append(
+        createMenuItem(
+          '🗑️ グループを削除',
+          event.sender,
+          IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_DELETE,
+          group.id
+        )
+      );
 
-        // カラーを変更（Reactカラーピッカーを表示）
-        menu.append(
-          new MenuItem({
-            label: '🎨 カラーを変更',
-            click: () => {
-              event.sender.send(
-                IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_SHOW_COLOR_PICKER,
-                group.id
-              );
-            },
-          })
-        );
-
-        menu.append(new MenuItem({ type: 'separator' }));
-
-        // テキストでコピー
-        menu.append(
-          new MenuItem({
-            label: '📋 テキストでコピー',
-            click: () => {
-              event.sender.send(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_COPY_AS_TEXT, group.id);
-            },
-          })
-        );
-
-        menu.append(new MenuItem({ type: 'separator' }));
-
-        // グループをアーカイブ
-        menu.append(
-          new MenuItem({
-            label: '📦 グループをアーカイブ',
-            click: () => {
-              event.sender.send(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_ARCHIVE, group.id);
-            },
-          })
-        );
-
-        // グループを削除
-        menu.append(
-          new MenuItem({
-            label: '🗑️ グループを削除',
-            click: () => {
-              event.sender.send(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_DELETE, group.id);
-            },
-          })
-        );
-
-        menu.popup({ window: senderWindow });
-      } catch (error) {
-        console.error('Failed to show workspace group context menu:', error);
-      }
+      menu.popup({ window: senderWindow });
     }
   );
 }
 
-/**
- * WindowContextMenu用のネイティブメニューハンドラーを設定
- */
+/** WindowContextMenu用のネイティブメニューハンドラーを設定 */
 function setupWindowContextMenuHandler(): void {
   ipcMain.handle(
     IPC_CHANNELS.SHOW_WINDOW_CONTEXT_MENU,
@@ -451,102 +371,60 @@ function setupWindowContextMenuHandler(): void {
       desktopInfo: VirtualDesktopInfo,
       isPinned: boolean
     ): Promise<void> => {
-      try {
-        const senderWindow = BrowserWindow.fromWebContents(event.sender);
-        if (!senderWindow || senderWindow.isDestroyed()) {
-          return;
-        }
+      const senderWindow = getValidWindow(event);
+      if (!senderWindow) return;
 
-        const menu = new Menu();
+      const menu = new Menu();
 
-        // アクティブにする
-        menu.append(
-          new MenuItem({
-            label: '▶️ アクティブにする',
-            click: () => {
-              event.sender.send(IPC_CHANNELS.EVENT_WINDOW_MENU_ACTIVATE, windowInfo);
-            },
-          })
-        );
+      menu.append(
+        createMenuItem(
+          '▶️ アクティブにする',
+          event.sender,
+          IPC_CHANNELS.EVENT_WINDOW_MENU_ACTIVATE,
+          windowInfo
+        )
+      );
+      menu.append(createSeparator());
 
-        menu.append(new MenuItem({ type: 'separator' }));
+      const canMoveToDesktop = desktopInfo.supported && desktopInfo.desktopCount > 1;
 
-        // 仮想デスクトップへの移動（サブメニュー）
+      if (canMoveToDesktop) {
         const virtualDesktopSubmenu = new Menu();
 
-        // 仮想デスクトップがサポートされている場合のみサブメニューを有効化
-        if (desktopInfo.supported && desktopInfo.desktopCount > 1) {
-          // 各デスクトップへの移動メニュー
-          for (let i = 1; i <= desktopInfo.desktopCount; i++) {
-            const isCurrentDesktop =
-              windowInfo.desktopNumber !== undefined && i === windowInfo.desktopNumber;
-            const label = isCurrentDesktop ? `✓ デスクトップ ${i} (現在)` : `🖥️ デスクトップ ${i}`;
+        for (let i = 1; i <= desktopInfo.desktopCount; i++) {
+          const isCurrentDesktop = windowInfo.desktopNumber === i;
+          const label = isCurrentDesktop ? `✓ デスクトップ ${i} (現在)` : `🖥️ デスクトップ ${i}`;
 
-            virtualDesktopSubmenu.append(
-              new MenuItem({
-                label,
-                enabled: !isCurrentDesktop,
-                click: () => {
-                  event.sender.send(IPC_CHANNELS.MOVE_WINDOW_TO_DESKTOP, windowInfo.hwnd, i);
-                },
-              })
-            );
-          }
-
-          menu.append(
+          virtualDesktopSubmenu.append(
             new MenuItem({
-              label: '🖥️ 仮想デスクトップへの移動',
-              submenu: virtualDesktopSubmenu,
-            })
-          );
-        } else {
-          // 仮想デスクトップがサポートされていない場合は無効化
-          menu.append(
-            new MenuItem({
-              label: '🖥️ 仮想デスクトップへの移動',
-              enabled: false,
+              label,
+              enabled: !isCurrentDesktop,
+              click: () =>
+                event.sender.send(IPC_CHANNELS.MOVE_WINDOW_TO_DESKTOP, windowInfo.hwnd, i),
             })
           );
         }
 
-        // 固定/固定解除（仮想デスクトップがサポートされている場合のみ）
-        if (desktopInfo.supported) {
-          menu.append(new MenuItem({ type: 'separator' }));
-
-          if (isPinned) {
-            // 固定解除
-            menu.append(
-              new MenuItem({
-                label: '📌 固定を解除',
-                click: () => {
-                  event.sender.send(IPC_CHANNELS.UNPIN_WINDOW, windowInfo.hwnd);
-                },
-              })
-            );
-          } else {
-            // 固定
-            menu.append(
-              new MenuItem({
-                label: '📌 全デスクトップに固定',
-                click: () => {
-                  event.sender.send(IPC_CHANNELS.PIN_WINDOW, windowInfo.hwnd);
-                },
-              })
-            );
-          }
-        }
-
-        menu.popup({ window: senderWindow });
-      } catch (error) {
-        console.error('Failed to show window context menu:', error);
+        menu.append(
+          new MenuItem({ label: '🖥️ 仮想デスクトップへの移動', submenu: virtualDesktopSubmenu })
+        );
+      } else {
+        menu.append(new MenuItem({ label: '🖥️ 仮想デスクトップへの移動', enabled: false }));
       }
+
+      if (desktopInfo.supported) {
+        menu.append(createSeparator());
+        const pinLabel = isPinned ? '📌 固定を解除' : '📌 全デスクトップに固定';
+        const pinChannel = isPinned ? IPC_CHANNELS.UNPIN_WINDOW : IPC_CHANNELS.PIN_WINDOW;
+        menu.append(createMenuItem(pinLabel, event.sender, pinChannel, windowInfo.hwnd));
+      }
+
+      menu.popup({ window: senderWindow });
     }
   );
 }
 
-/**
- * 全てのコンテキストメニューハンドラーを設定
- */
+/** 全てのコンテキストメニューハンドラーを設定 */
 export function setupContextMenuHandlers(): void {
   setupAdminItemContextMenuHandler();
   setupLauncherContextMenuHandler();

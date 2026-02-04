@@ -3,13 +3,7 @@ import { randomUUID } from 'crypto';
 import ElectronStore from 'electron-store';
 import type { AppItem, ExecutionHistoryItem } from '@common/types';
 import logger from '@common/logger';
-import {
-  isWindowInfo,
-  isLauncherItem,
-  isWindowItem,
-  isClipboardItem,
-  isGroupItem,
-} from '@common/types/guards';
+import { isWindowInfo, isWindowItem, isClipboardItem, isGroupItem } from '@common/types/guards';
 
 import PathManager from '../config/pathManager.js';
 
@@ -52,7 +46,6 @@ export class ExecutionHistoryService {
 
   private constructor() {
     // electron-storeは後で非同期に初期化
-    this.historyStore = null;
   }
 
   /**
@@ -115,91 +108,97 @@ export class ExecutionHistoryService {
   }
 
   /**
+   * 履歴アイテムの基本プロパティを作成
+   */
+  private createBaseHistoryItem(
+    itemName: string
+  ): Pick<ExecutionHistoryItem, 'id' | 'itemName' | 'executedAt'> {
+    return {
+      id: randomUUID(),
+      itemName,
+      executedAt: Date.now(),
+    };
+  }
+
+  /**
    * 履歴リストを更新するヘルパー
-   * 同名アイテムを除外した後、新しいアイテムを先頭に追加
+   * 同名アイテムを除外した後、新しいアイテムを先頭に追加し、最大件数で切り詰める
    */
   private updateHistoryList(
     history: ExecutionHistoryItem[],
-    itemName: string,
     newItem: ExecutionHistoryItem
   ): ExecutionHistoryItem[] {
-    const filtered = history.filter((h) => h.itemName !== itemName);
-    filtered.unshift(newItem);
-    return filtered;
+    const filtered = history.filter((h) => h.itemName !== newItem.itemName);
+    return [newItem, ...filtered].slice(0, ExecutionHistoryService.MAX_HISTORY_ITEMS);
   }
 
   /**
-   * WindowOperationItemから履歴アイテムを作成
+   * アイテムから履歴アイテムを作成
    */
-  private createWindowOperationHistoryItem(item: {
-    displayName: string;
-    windowTitle: string;
-    x?: number;
-    y?: number;
-    width?: number;
-    height?: number;
-    moveToActiveMonitorCenter?: boolean;
-    virtualDesktopNumber?: number;
-    activateWindow?: boolean;
-    pinToAllDesktops?: boolean;
-    processName?: string;
-  }): ExecutionHistoryItem {
-    return {
-      id: randomUUID(),
-      itemName: item.displayName,
-      itemPath: `[ウィンドウ操作: ${item.windowTitle}]`,
-      itemType: 'windowOperation',
-      executedAt: Date.now(),
-      windowX: item.x,
-      windowY: item.y,
-      windowWidth: item.width,
-      windowHeight: item.height,
-      moveToActiveMonitorCenter: item.moveToActiveMonitorCenter,
-      virtualDesktopNumber: item.virtualDesktopNumber,
-      activateWindow: item.activateWindow,
-      pinToAllDesktops: item.pinToAllDesktops,
-      processName: item.processName,
-    };
-  }
+  private createHistoryItem(
+    item: Exclude<AppItem, import('@common/types').WindowInfo>
+  ): ExecutionHistoryItem {
+    const base = this.createBaseHistoryItem(item.displayName);
 
-  /**
-   * ClipboardItemから履歴アイテムを作成
-   */
-  private createClipboardHistoryItem(item: {
-    displayName: string;
-    clipboardDataRef: string;
-    preview?: string;
-    formats: import('@common/types').ClipboardFormat[];
-    customIcon?: string;
-  }): ExecutionHistoryItem {
-    return {
-      id: randomUUID(),
-      itemName: item.displayName,
-      itemPath: `[クリップボード: ${item.preview?.substring(0, 20) || 'データ'}...]`,
-      itemType: 'clipboard',
+    if (isWindowItem(item)) {
+      return {
+        ...base,
+        itemPath: `[ウィンドウ操作: ${item.windowTitle}]`,
+        itemType: 'windowOperation',
+        windowX: item.x,
+        windowY: item.y,
+        windowWidth: item.width,
+        windowHeight: item.height,
+        moveToActiveMonitorCenter: item.moveToActiveMonitorCenter,
+        virtualDesktopNumber: item.virtualDesktopNumber,
+        activateWindow: item.activateWindow,
+        pinToAllDesktops: item.pinToAllDesktops,
+        processName: item.processName,
+      };
+    }
+
+    if (isClipboardItem(item)) {
+      return {
+        ...base,
+        itemPath: `[クリップボード: ${item.preview?.substring(0, 20) || 'データ'}...]`,
+        itemType: 'clipboard',
+        customIcon: item.customIcon,
+        clipboardDataRef: item.clipboardDataRef,
+        clipboardFormats: item.formats,
+      };
+    }
+
+    if (isGroupItem(item)) {
+      const itemNames = item.itemNames || [];
+      return {
+        ...base,
+        itemPath: `[グループ: ${itemNames.join(', ')}]`,
+        itemType: 'group',
+        itemNames,
+      };
+    }
+
+    // 通常のLauncherItemの場合
+    const historyItem: ExecutionHistoryItem = {
+      ...base,
+      itemPath: item.path,
+      itemType: item.type,
       customIcon: item.customIcon,
-      executedAt: Date.now(),
-      clipboardDataRef: item.clipboardDataRef,
-      clipboardFormats: item.formats,
+      args: item.args,
     };
-  }
 
-  /**
-   * GroupItemから履歴アイテムを作成
-   */
-  private createGroupHistoryItem(item: {
-    displayName: string;
-    itemNames?: string[];
-  }): ExecutionHistoryItem {
-    const itemNames = item.itemNames || [];
-    return {
-      id: randomUUID(),
-      itemName: item.displayName,
-      itemPath: `[グループ: ${itemNames.join(', ')}]`,
-      itemType: 'group',
-      executedAt: Date.now(),
-      itemNames: itemNames,
-    };
+    if (item.windowConfig) {
+      historyItem.processName = item.windowConfig.processName;
+      historyItem.windowX = item.windowConfig.x;
+      historyItem.windowY = item.windowConfig.y;
+      historyItem.windowWidth = item.windowConfig.width;
+      historyItem.windowHeight = item.windowConfig.height;
+      historyItem.virtualDesktopNumber = item.windowConfig.virtualDesktopNumber;
+      historyItem.activateWindow = item.windowConfig.activateWindow;
+      historyItem.moveToActiveMonitorCenter = item.windowConfig.moveToActiveMonitorCenter;
+    }
+
+    return historyItem;
   }
 
   /**
@@ -211,66 +210,23 @@ export class ExecutionHistoryService {
     if (!this.historyStore) throw new Error('History store not initialized');
 
     try {
-      // WindowInfoは履歴に追加しない
       if (isWindowInfo(item)) {
         logger.info('WindowInfo is not supported in execution history');
         return;
       }
 
       const history = await this.loadExecutionHistory();
-      let updatedHistory: ExecutionHistoryItem[];
-
-      if (isWindowItem(item)) {
-        // ウィンドウ操作アイテムの場合
-        const historyItem = this.createWindowOperationHistoryItem(item);
-        updatedHistory = this.updateHistoryList(history, item.displayName, historyItem);
-      } else if (isClipboardItem(item)) {
-        // クリップボードアイテムの場合
-        const historyItem = this.createClipboardHistoryItem(item);
-        updatedHistory = this.updateHistoryList(history, item.displayName, historyItem);
-      } else if (isGroupItem(item)) {
-        // グループアイテムの場合
-        const historyItem = this.createGroupHistoryItem(item);
-        updatedHistory = this.updateHistoryList(history, item.displayName, historyItem);
-      } else {
-        // 通常のLauncherItemの場合
-        const historyItem: ExecutionHistoryItem = {
-          id: randomUUID(),
-          itemName: item.displayName,
-          itemPath: item.path,
-          itemType: item.type,
-          customIcon: item.customIcon,
-          args: item.args,
-          executedAt: Date.now(),
-        };
-
-        // windowConfigが存在する場合、その情報を展開して保存
-        if (item.windowConfig) {
-          historyItem.processName = item.windowConfig.processName;
-          historyItem.windowX = item.windowConfig.x;
-          historyItem.windowY = item.windowConfig.y;
-          historyItem.windowWidth = item.windowConfig.width;
-          historyItem.windowHeight = item.windowConfig.height;
-          historyItem.virtualDesktopNumber = item.windowConfig.virtualDesktopNumber;
-          historyItem.activateWindow = item.windowConfig.activateWindow;
-          historyItem.moveToActiveMonitorCenter = item.windowConfig.moveToActiveMonitorCenter;
-        }
-
-        updatedHistory = this.updateHistoryList(history, item.displayName, historyItem);
-      }
-
-      // 最大件数を超えた分を削除して保存
-      const trimmedHistory = updatedHistory.slice(0, ExecutionHistoryService.MAX_HISTORY_ITEMS);
-      this.historyStore.set('history', trimmedHistory);
+      const historyItem = this.createHistoryItem(item);
+      const updatedHistory = this.updateHistoryList(history, historyItem);
+      this.historyStore.set('history', updatedHistory);
 
       logger.info(
-        { itemName: item.displayName, count: trimmedHistory.length },
+        { itemName: item.displayName, count: updatedHistory.length },
         'Added item to execution history'
       );
     } catch (error) {
       const itemName = isWindowInfo(item) ? item.title : item.displayName;
       logger.error({ error, itemName }, 'Failed to add execution history');
-      // エラーでも処理は継続（履歴追加の失敗はアイテム実行を妨げない）
     }
   }
 

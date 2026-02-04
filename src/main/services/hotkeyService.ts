@@ -5,7 +5,6 @@ import { EnvConfig } from '../config/envConfig.js';
 
 import { SettingsService } from './settingsService.js';
 
-/** ホットキーの種別 */
 type HotkeyType = 'main' | 'itemSearch';
 
 /**
@@ -17,9 +16,9 @@ export class HotkeyService {
   private settingsService!: SettingsService;
   private currentHotkey: string | null = null;
   private currentItemSearchHotkey: string | null = null;
-  private getMainWindow: () => BrowserWindow | null;
-  private showWindowCallback: (startTime?: number) => Promise<void>;
-  private hideWindowCallback: () => Promise<void>;
+  private readonly getMainWindow: () => BrowserWindow | null;
+  private readonly showWindowCallback: (startTime?: number) => Promise<void>;
+  private readonly hideWindowCallback: () => Promise<void>;
   private showItemSearchCallback: ((startTime?: number) => Promise<void>) | null = null;
 
   private constructor(
@@ -32,25 +31,16 @@ export class HotkeyService {
     this.hideWindowCallback = hideWindowCallback;
   }
 
-  /**
-   * アイテム検索モード直接起動のコールバックを設定
-   */
   public setItemSearchCallback(callback: (startTime?: number) => Promise<void>): void {
     this.showItemSearchCallback = callback;
   }
 
-  /**
-   * SettingsServiceを初期化
-   */
   private async initializeSettingsService(): Promise<void> {
     if (!this.settingsService) {
       this.settingsService = await SettingsService.getInstance();
     }
   }
 
-  /**
-   * HotkeyServiceのシングルトンインスタンスを取得
-   */
   public static getInstance(
     getMainWindow?: () => BrowserWindow | null,
     showWindowCallback?: (startTime?: number) => Promise<void>,
@@ -79,7 +69,6 @@ export class HotkeyService {
     try {
       await this.initializeSettingsService();
 
-      // 環境変数が設定されている場合は優先
       const envHotkey = EnvConfig.customHotkey;
       const hotkey = envHotkey || (await this.settingsService.get('hotkey'));
 
@@ -87,11 +76,9 @@ export class HotkeyService {
         logger.info(`Using hotkey from environment variable: ${envHotkey}`);
       }
 
-      const mainSuccess = this.setHotkey(hotkey);
-
-      // アイテム検索ホットキーも登録
+      const mainSuccess = this.registerHotkeyInternal(hotkey, 'main');
       const itemSearchHotkey = await this.settingsService.get('itemSearchHotkey');
-      const itemSearchSuccess = this.setItemSearchHotkey(itemSearchHotkey);
+      const itemSearchSuccess = this.registerHotkeyInternal(itemSearchHotkey, 'itemSearch');
 
       return mainSuccess && itemSearchSuccess;
     } catch (error) {
@@ -100,16 +87,14 @@ export class HotkeyService {
     }
   }
 
-  /**
-   * ホットキーを解除する共通処理
-   */
   private unregisterHotkeyInternal(type: HotkeyType): void {
     const hotkey = type === 'main' ? this.currentHotkey : this.currentItemSearchHotkey;
     if (!hotkey) return;
 
     try {
       globalShortcut.unregister(hotkey);
-      logger.info(`${type === 'main' ? 'Hotkey' : 'Item search hotkey'} unregistered: ${hotkey}`);
+      const label = type === 'main' ? 'Hotkey' : 'Item search hotkey';
+      logger.info(`${label} unregistered: ${hotkey}`);
     } catch (error) {
       logger.error({ error, hotkey }, `Error unregistering ${type} hotkey`);
     }
@@ -121,92 +106,63 @@ export class HotkeyService {
     }
   }
 
-  /**
-   * 指定されたホットキーを登録
-   * @param hotkey 登録するホットキー
-   * @returns 登録成功の可否
-   */
-  public setHotkey(hotkey: string): boolean {
+  private registerHotkeyInternal(hotkey: string, type: HotkeyType): boolean {
+    const isMain = type === 'main';
+    const label = isMain ? 'Hotkey' : 'Item search hotkey';
+
     try {
-      this.unregisterHotkeyInternal('main');
+      this.unregisterHotkeyInternal(type);
 
-      if (!hotkey || hotkey.trim() === '') {
-        logger.info('ホットキーが未設定のため、登録をスキップしました');
+      if (!hotkey?.trim()) {
+        logger.info(`${label}が未設定のため、登録をスキップしました`);
         return true;
       }
 
-      const success = globalShortcut.register(hotkey, () => {
-        this.handleHotkeyPressed();
-      });
-
-      if (success) {
-        this.currentHotkey = hotkey;
-        logger.info(`Hotkey registered successfully: ${hotkey}`);
-        return true;
-      }
-
-      logger.warn(`Failed to register hotkey: ${hotkey}`);
-      return false;
-    } catch (error) {
-      logger.error({ error, hotkey }, 'Error registering hotkey');
-      return false;
-    }
-  }
-
-  /**
-   * アイテム検索ホットキーを登録
-   * @param hotkey 登録するホットキー
-   * @returns 登録成功の可否
-   */
-  public setItemSearchHotkey(hotkey: string): boolean {
-    try {
-      this.unregisterHotkeyInternal('itemSearch');
-
-      if (!hotkey || hotkey.trim() === '') {
-        logger.info('アイテム検索ホットキーが未設定のため、登録をスキップしました');
-        return true;
-      }
-
-      if (hotkey === this.currentHotkey) {
+      if (!isMain && hotkey === this.currentHotkey) {
         logger.warn(`アイテム検索ホットキーがメインホットキーと競合しています: ${hotkey}`);
         return false;
       }
 
-      const success = globalShortcut.register(hotkey, () => {
-        this.handleItemSearchHotkeyPressed();
-      });
+      const handler = isMain
+        ? () => this.handleHotkeyPressed()
+        : () => this.handleItemSearchHotkeyPressed();
+
+      const success = globalShortcut.register(hotkey, handler);
 
       if (success) {
-        this.currentItemSearchHotkey = hotkey;
-        logger.info(`Item search hotkey registered successfully: ${hotkey}`);
+        if (isMain) {
+          this.currentHotkey = hotkey;
+        } else {
+          this.currentItemSearchHotkey = hotkey;
+        }
+        logger.info(`${label} registered successfully: ${hotkey}`);
         return true;
       }
 
-      logger.warn(`Failed to register item search hotkey: ${hotkey}`);
+      logger.warn(`Failed to register ${label.toLowerCase()}: ${hotkey}`);
       return false;
     } catch (error) {
-      logger.error({ error, hotkey }, 'Error registering item search hotkey');
+      logger.error({ error, hotkey }, `Error registering ${label.toLowerCase()}`);
       return false;
     }
   }
 
-  /**
-   * 現在のホットキーを解除
-   */
+  public setHotkey(hotkey: string): boolean {
+    return this.registerHotkeyInternal(hotkey, 'main');
+  }
+
+  public setItemSearchHotkey(hotkey: string): boolean {
+    return this.registerHotkeyInternal(hotkey, 'itemSearch');
+  }
+
   public unregisterCurrentHotkey(): void {
     this.unregisterHotkeyInternal('main');
   }
 
-  /**
-   * 現在のアイテム検索ホットキーを解除
-   */
   public unregisterItemSearchHotkey(): void {
     this.unregisterHotkeyInternal('itemSearch');
   }
 
-  /**
-   * 全てのホットキーを解除
-   */
   public unregisterAllHotkeys(): void {
     try {
       globalShortcut.unregisterAll();
@@ -218,24 +174,12 @@ export class HotkeyService {
     }
   }
 
-  /**
-   * ホットキーが利用可能かチェック
-   * @param hotkey チェックするホットキー
-   * @param forItemSearch アイテム検索ホットキー用かどうか
-   * @returns 利用可能性
-   */
   public isHotkeyAvailable(hotkey: string, forItemSearch: boolean = false): boolean {
-    // 現在登録されているホットキーは利用可能とみなす
     const currentHotkey = forItemSearch ? this.currentItemSearchHotkey : this.currentHotkey;
-    if (hotkey === currentHotkey) {
-      return true;
-    }
+    if (hotkey === currentHotkey) return true;
 
-    // 他方のホットキーとの競合をチェック
     const otherHotkey = forItemSearch ? this.currentHotkey : this.currentItemSearchHotkey;
-    if (hotkey === otherHotkey) {
-      return false;
-    }
+    if (hotkey === otherHotkey) return false;
 
     try {
       const tempRegistered = globalShortcut.register(hotkey, () => {});
@@ -250,23 +194,14 @@ export class HotkeyService {
     }
   }
 
-  /**
-   * 現在登録されているホットキーを取得
-   */
   public getCurrentHotkey(): string | null {
     return this.currentHotkey;
   }
 
-  /**
-   * 現在登録されているアイテム検索ホットキーを取得
-   */
   public getCurrentItemSearchHotkey(): string | null {
     return this.currentItemSearchHotkey;
   }
 
-  /**
-   * ホットキー押下時のハンドラ
-   */
   private handleHotkeyPressed(): void {
     try {
       const mainWindow = this.getMainWindow();
@@ -276,32 +211,37 @@ export class HotkeyService {
         mainWindow.focus();
         void this.hideWindowCallback();
       } else {
-        const startTime = Date.now();
-        void this.showWindowCallback(startTime);
+        void this.showWindowCallback(Date.now());
       }
     } catch (error) {
       logger.error({ error }, 'Error handling hotkey press');
     }
   }
 
-  /**
-   * ホットキー変更の共通処理
-   */
+  private handleItemSearchHotkeyPressed(): void {
+    try {
+      const mainWindow = this.getMainWindow();
+      if (!mainWindow || !this.showItemSearchCallback) return;
+
+      void this.showItemSearchCallback(Date.now());
+    } catch (error) {
+      logger.error({ error }, 'Error handling item search hotkey press');
+    }
+  }
+
   private async changeHotkeyInternal(newHotkey: string, type: HotkeyType): Promise<boolean> {
     await this.initializeSettingsService();
     const isItemSearch = type === 'itemSearch';
     const settingKey = isItemSearch ? 'itemSearchHotkey' : 'hotkey';
     const logLabel = isItemSearch ? 'Item search hotkey' : 'Hotkey';
 
-    // 空の場合は無効化（アイテム検索ホットキーのみ許可）
-    if (!newHotkey || newHotkey.trim() === '') {
+    if (!newHotkey?.trim()) {
       if (isItemSearch) {
         await this.settingsService.set(settingKey, '');
         this.unregisterHotkeyInternal(type);
         logger.info(`${logLabel} disabled`);
         return true;
       }
-      // メインホットキーは空を許可しない
       logger.warn('Main hotkey cannot be empty');
       return false;
     }
@@ -319,8 +259,7 @@ export class HotkeyService {
 
     await this.settingsService.set(settingKey, newHotkey);
 
-    const success = isItemSearch ? this.setItemSearchHotkey(newHotkey) : this.setHotkey(newHotkey);
-
+    const success = this.registerHotkeyInternal(newHotkey, type);
     if (success) {
       logger.info(`${logLabel} changed successfully to: ${newHotkey}`);
     }
@@ -328,11 +267,6 @@ export class HotkeyService {
     return success;
   }
 
-  /**
-   * ホットキー変更
-   * @param newHotkey 新しいホットキー
-   * @returns 変更成功の可否
-   */
   public async changeHotkey(newHotkey: string): Promise<boolean> {
     try {
       return await this.changeHotkeyInternal(newHotkey, 'main');
@@ -342,32 +276,12 @@ export class HotkeyService {
     }
   }
 
-  /**
-   * アイテム検索ホットキー変更
-   * @param newHotkey 新しいホットキー（空文字列で無効化）
-   * @returns 変更成功の可否
-   */
   public async changeItemSearchHotkey(newHotkey: string): Promise<boolean> {
     try {
       return await this.changeHotkeyInternal(newHotkey, 'itemSearch');
     } catch (error) {
       logger.error({ error, newHotkey }, 'Error changing item search hotkey');
       return false;
-    }
-  }
-
-  /**
-   * アイテム検索ホットキー押下時のハンドラ
-   */
-  private handleItemSearchHotkeyPressed(): void {
-    try {
-      const mainWindow = this.getMainWindow();
-      if (!mainWindow || !this.showItemSearchCallback) return;
-
-      const startTime = Date.now();
-      void this.showItemSearchCallback(startTime);
-    } catch (error) {
-      logger.error({ error }, 'Error handling item search hotkey press');
     }
   }
 }

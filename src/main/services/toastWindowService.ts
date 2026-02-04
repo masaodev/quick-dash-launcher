@@ -63,16 +63,6 @@ function clearCloseTimeout(): void {
   }
 }
 
-function cleanup(): void {
-  clearCloseTimeout();
-
-  if (toastWindow && !toastWindow.isDestroyed()) {
-    toastWindow.close();
-    toastWindow = null;
-    isWindowReady = false;
-  }
-}
-
 /**
  * マウスカーソルがある画面でのトースト表示位置を計算
  */
@@ -211,5 +201,11 @@ export function closeToastWindow(): void {
  * アプリ終了時のクリーンアップ
  */
 export function destroyToastWindow(): void {
-  cleanup();
+  clearCloseTimeout();
+
+  if (toastWindow && !toastWindow.isDestroyed()) {
+    toastWindow.close();
+    toastWindow = null;
+    isWindowReady = false;
+  }
 }

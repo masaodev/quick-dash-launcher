@@ -5,30 +5,12 @@
 import type { WorkspaceItem, WindowConfig } from '../types';
 import type { RegisterItem, WindowOperationConfig } from '../types/register';
 
-function getItemCategoryFromWorkspaceItem(
-  item: WorkspaceItem
-): 'item' | 'group' | 'window' | 'clipboard' {
-  switch (item.type) {
-    case 'windowOperation':
-      return 'window';
-    case 'group':
-      return 'group';
-    case 'clipboard':
-      return 'clipboard';
-    default:
-      return 'item';
-  }
-}
-
 /**
  * WorkspaceItemをRegisterItemに変換（編集モーダル用）
  */
 export function convertWorkspaceItemToRegisterItem(item: WorkspaceItem): RegisterItem {
-  const itemCategory = getItemCategoryFromWorkspaceItem(item);
-
-  if (itemCategory === 'window') {
-    const match = item.path.match(/^\[ウィンドウ操作: (.+)\]$/);
-    const windowTitle = match ? match[1] : item.path;
+  if (item.type === 'windowOperation') {
+    const windowTitle = item.path.match(/^\[ウィンドウ操作: (.+)\]$/)?.[1] ?? item.path;
 
     const windowOperationConfig: WindowOperationConfig = {
       displayName: item.displayName,
@@ -55,7 +37,7 @@ export function convertWorkspaceItemToRegisterItem(item: WorkspaceItem): Registe
     };
   }
 
-  if (itemCategory === 'group') {
+  if (item.type === 'group') {
     return {
       displayName: item.displayName,
       path: '',
@@ -67,7 +49,7 @@ export function convertWorkspaceItemToRegisterItem(item: WorkspaceItem): Registe
     };
   }
 
-  if (itemCategory === 'clipboard') {
+  if (item.type === 'clipboard') {
     return {
       displayName: item.displayName,
       path: '',

@@ -93,12 +93,8 @@ export function setupWindowHandlers(
   });
 
   ipcMain.handle(IPC_CHANNELS.COPY_TO_CLIPBOARD, (_event, text: string) => {
-    try {
-      clipboard.writeText(text);
-      return true;
-    } catch (_error) {
-      return false;
-    }
+    clipboard.writeText(text);
+    return true;
   });
 
   ipcMain.handle(

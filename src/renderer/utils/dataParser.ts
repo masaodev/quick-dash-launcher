@@ -1,82 +1,46 @@
-import {
-  AppItem,
-  SearchMode,
-  WindowInfo,
-  LauncherItem,
-  GroupItem,
-  WindowItem,
-  ClipboardItem,
-} from '@common/types';
+import { AppItem, SearchMode, WindowInfo } from '@common/types';
+
+/**
+ * クエリ文字列をキーワード配列に分割する
+ */
+function parseKeywords(query: string): string[] {
+  return query
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((k) => k.length > 0);
+}
+
+/**
+ * アイテムから検索対象テキストを取得する
+ * WindowInfo は title、それ以外は displayName を使用
+ */
+function getSearchText(item: AppItem): string {
+  if ('hwnd' in item) {
+    return (item as WindowInfo).title;
+  }
+  return (item as { displayName: string }).displayName;
+}
 
 /**
  * アイテムをクエリでフィルタリングする
  * 複数キーワードのAND検索に対応
- *
- * @param items - フィルタリング対象のアイテム配列
- * @param query - 検索クエリ（スペース区切りで複数キーワード指定可能）
- * @param mode - 検索モード（'normal' | 'window'）
- * @returns フィルタリングされたアイテム配列
  */
 export function filterItems(
   items: AppItem[],
   query: string,
   mode: SearchMode = 'normal'
 ): AppItem[] {
-  if (!query) {
+  // ウィンドウモードの場合は先頭の '<' を除去
+  const normalizedQuery = mode === 'window' && query.startsWith('<') ? query.substring(1) : query;
+
+  if (!normalizedQuery) {
     return items;
   }
 
-  // ウィンドウモードの場合
-  if (mode === 'window') {
-    // '<'を除去してフィルタリング
-    const windowQuery = query.startsWith('<') ? query.substring(1) : query;
-    return filterWindowItems(items as WindowInfo[], windowQuery);
-  }
-
-  // 通常モード: 既存のロジック
-  const keywords = query
-    .toLowerCase()
-    .split(/\s+/)
-    .filter((k) => k.length > 0);
+  const keywords = parseKeywords(normalizedQuery);
 
   return items.filter((item) => {
-    // WindowInfo, WindowItem, LauncherItem, GroupItem, ClipboardItem に対応
-    let itemText: string;
-    if ('hwnd' in item) {
-      // WindowInfo
-      itemText = (item as WindowInfo).title.toLowerCase();
-    } else if (item.type === 'window') {
-      // WindowItem
-      itemText = (item as WindowItem).displayName.toLowerCase();
-    } else {
-      // LauncherItem, GroupItem, ClipboardItem（すべてdisplayNameを持つ）
-      itemText = (item as LauncherItem | GroupItem | ClipboardItem).displayName.toLowerCase();
-    }
-
-    return keywords.every((keyword) => itemText.includes(keyword));
-  });
-}
-
-/**
- * ウィンドウアイテム用のフィルタリング関数
- * ウィンドウタイトルでフィルタリング（スペース区切りAND検索）
- *
- * @param windows - ウィンドウ情報の配列
- * @param query - 検索クエリ
- * @returns フィルタリングされたウィンドウ配列
- */
-function filterWindowItems(windows: WindowInfo[], query: string): WindowInfo[] {
-  if (!query) {
-    return windows;
-  }
-
-  const keywords = query
-    .toLowerCase()
-    .split(/\s+/)
-    .filter((k) => k.length > 0);
-
-  return windows.filter((win) => {
-    const titleText = win.title.toLowerCase();
-    return keywords.every((keyword) => titleText.includes(keyword));
+    const text = getSearchText(item).toLowerCase();
+    return keywords.every((keyword) => text.includes(keyword));
   });
 }

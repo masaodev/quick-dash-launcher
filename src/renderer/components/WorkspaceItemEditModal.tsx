@@ -78,8 +78,6 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
       const modal = modalRef.current;
       if (!modal) return;
 
-      const isModalFocused = modal.contains(document.activeElement);
-
       if (event.key === 'Escape') {
         const groupSelectorModal = document.querySelector('.group-item-selector-modal');
         if (groupSelectorModal) return;
@@ -98,58 +96,51 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
         const firstFocusableElement = focusableElements[0] as HTMLElement;
         const lastFocusableElement = focusableElements[focusableElements.length - 1] as HTMLElement;
 
-        if (event.shiftKey) {
-          if (document.activeElement === firstFocusableElement) {
-            lastFocusableElement.focus();
-            event.preventDefault();
-            event.stopPropagation();
-            event.stopImmediatePropagation();
-          }
-        } else {
-          if (document.activeElement === lastFocusableElement) {
-            firstFocusableElement.focus();
-            event.preventDefault();
-            event.stopPropagation();
-            event.stopImmediatePropagation();
-          }
+        const shouldWrapToLast = event.shiftKey && document.activeElement === firstFocusableElement;
+        const shouldWrapToFirst =
+          !event.shiftKey && document.activeElement === lastFocusableElement;
+
+        if (shouldWrapToLast) {
+          lastFocusableElement.focus();
+        } else if (shouldWrapToFirst) {
+          firstFocusableElement.focus();
         }
+
         event.preventDefault();
         event.stopPropagation();
         event.stopImmediatePropagation();
         return;
       }
 
-      if (isModalFocused) {
-        const activeElement = document.activeElement as HTMLElement;
-        const isInputField =
-          activeElement &&
-          (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
+      const activeElement = document.activeElement as HTMLElement;
+      const isInputField =
+        activeElement &&
+        (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
 
-        if (isInputField) {
-          if (
-            event.key.length === 1 ||
-            [
-              'Backspace',
-              'Delete',
-              'ArrowLeft',
-              'ArrowRight',
-              'ArrowUp',
-              'ArrowDown',
-              'Home',
-              'End',
-            ].includes(event.key) ||
-            (event.ctrlKey && ['a', 'c', 'v', 'x', 'z', 'y'].includes(event.key))
-          ) {
-            event.stopPropagation();
-            event.stopImmediatePropagation();
-            return;
-          }
+      if (isInputField) {
+        const allowedInputKeys = [
+          'Backspace',
+          'Delete',
+          'ArrowLeft',
+          'ArrowRight',
+          'ArrowUp',
+          'ArrowDown',
+          'Home',
+          'End',
+        ];
+        const isCtrlShortcut = event.ctrlKey && ['a', 'c', 'v', 'x', 'z', 'y'].includes(event.key);
+        const isCharacterInput = event.key.length === 1;
+
+        if (isCharacterInput || allowedInputKeys.includes(event.key) || isCtrlShortcut) {
+          event.stopPropagation();
+          event.stopImmediatePropagation();
+          return;
         }
-
-        event.preventDefault();
-        event.stopPropagation();
-        event.stopImmediatePropagation();
       }
+
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
     };
 
     document.addEventListener('keydown', handleKeyDown, true);
@@ -443,7 +434,6 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
                     </div>
                   )}
 
-                  {/* メモ入力欄（全アイテムタイプ共通） */}
                   <div className="form-group">
                     <label>メモ:</label>
                     <textarea

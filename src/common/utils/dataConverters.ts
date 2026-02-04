@@ -1,12 +1,10 @@
 /**
  * データ変換ユーティリティ
- *
- * EditingAppItem（編集画面用）からRegisterItem（登録画面用）への変換ロジックを提供します。
  */
 
 import type { LauncherItem, DataFileTab, JsonDirOptions, JsonItem } from '../types';
-import type { RegisterItem } from '../types/register.js';
-import type { EditingAppItem } from '../types/editingItem.js';
+import type { RegisterItem, WindowOperationConfig } from '../types/register.js';
+import type { EditingAppItem, EditingWindowItem } from '../types/editingItem.js';
 import type { EditableJsonItem } from '../types/editableItem.js';
 import {
   isEditingLauncherItem,
@@ -21,15 +19,71 @@ import {
   isJsonWindowItem,
   isJsonClipboardItem,
   DIR_OPTIONS_DEFAULTS,
+  type JsonWindowItem,
 } from '../types/json-data.js';
+
+/** 深さ値のマッピング */
+const DEPTH_MAP: Record<string, number> = { 無制限: -1 };
+
+/** タイプ値のマッピング */
+const TYPES_MAP: Record<string, 'file' | 'folder' | 'both'> = {
+  ファイルのみ: 'file',
+  フォルダのみ: 'folder',
+  ファイルとフォルダ: 'both',
+};
+
+/** オプションキーと処理のマッピング */
+const OPTION_PARSERS: {
+  prefix: string;
+  length: number;
+  handler: (value: string, options: JsonDirOptions) => void;
+}[] = [
+  {
+    prefix: '深さ:',
+    length: 3,
+    handler: (value, options) => {
+      options.depth = DEPTH_MAP[value] ?? (parseInt(value, 10) || 0);
+    },
+  },
+  {
+    prefix: 'タイプ:',
+    length: 4,
+    handler: (value, options) => {
+      if (TYPES_MAP[value]) options.types = TYPES_MAP[value];
+    },
+  },
+  {
+    prefix: 'フィルター:',
+    length: 6,
+    handler: (value, options) => {
+      options.filter = value;
+    },
+  },
+  {
+    prefix: '除外:',
+    length: 3,
+    handler: (value, options) => {
+      options.exclude = value;
+    },
+  },
+  {
+    prefix: '接頭辞:',
+    length: 4,
+    handler: (value, options) => {
+      options.prefix = value;
+    },
+  },
+  {
+    prefix: '接尾辞:',
+    length: 4,
+    handler: (value, options) => {
+      options.suffix = value;
+    },
+  },
+];
 
 /**
  * expandedOptionsの文字列をJsonDirOptionsに変換する
- *
- * 日本語形式（"深さ:0, タイプ:ファイルとフォルダ, 接頭辞:ソフト："）のみをサポート
- *
- * @param optionsStr - カンマ区切りのオプション文字列
- * @returns JsonDirOptionsオブジェクト
  */
 function parseExpandedOptionsToJsonDirOptions(optionsStr: string | undefined): JsonDirOptions {
   const dirOptions: JsonDirOptions = {
@@ -37,77 +91,54 @@ function parseExpandedOptionsToJsonDirOptions(optionsStr: string | undefined): J
     types: DIR_OPTIONS_DEFAULTS.types,
   };
 
-  if (!optionsStr) {
-    return dirOptions;
-  }
+  if (!optionsStr) return dirOptions;
 
   for (const option of optionsStr.split(',')) {
     const trimmed = option.trim();
-
-    if (trimmed.startsWith('深さ:')) {
-      const value = trimmed.substring(3).trim();
-      if (value === '無制限') {
-        dirOptions.depth = -1;
-      } else {
-        dirOptions.depth = parseInt(value, 10) || 0;
+    for (const parser of OPTION_PARSERS) {
+      if (trimmed.startsWith(parser.prefix)) {
+        parser.handler(trimmed.substring(parser.length).trim(), dirOptions);
+        break;
       }
-      continue;
-    }
-
-    if (trimmed.startsWith('タイプ:')) {
-      const value = trimmed.substring(4).trim();
-      if (value === 'ファイルのみ') {
-        dirOptions.types = 'file';
-      } else if (value === 'フォルダのみ') {
-        dirOptions.types = 'folder';
-      } else if (value === 'ファイルとフォルダ') {
-        dirOptions.types = 'both';
-      }
-      continue;
-    }
-
-    if (trimmed.startsWith('フィルター:')) {
-      dirOptions.filter = trimmed.substring(6).trim();
-      continue;
-    }
-
-    if (trimmed.startsWith('除外:')) {
-      dirOptions.exclude = trimmed.substring(3).trim();
-      continue;
-    }
-
-    if (trimmed.startsWith('接頭辞:')) {
-      dirOptions.prefix = trimmed.substring(4).trim();
-      continue;
-    }
-
-    if (trimmed.startsWith('接尾辞:')) {
-      dirOptions.suffix = trimmed.substring(4).trim();
-      continue;
     }
   }
 
   return dirOptions;
 }
 
+/** デフォルトのタブを取得する */
+function getDefaultTab(sourceFile: string | undefined, tabs: DataFileTab[]): string {
+  return sourceFile || (tabs.length > 0 ? tabs[0].files[0] : 'data.json');
+}
+
+/** EditingWindowItemまたはJsonWindowItemからWindowOperationConfigを作成する */
+function createWindowOperationConfig(
+  item: EditingWindowItem | JsonWindowItem
+): WindowOperationConfig {
+  return {
+    displayName: item.displayName,
+    windowTitle: item.windowTitle,
+    processName: item.processName,
+    x: item.x,
+    y: item.y,
+    width: item.width,
+    height: item.height,
+    moveToActiveMonitorCenter: item.moveToActiveMonitorCenter,
+    virtualDesktopNumber: item.virtualDesktopNumber,
+    activateWindow: item.activateWindow,
+    pinToAllDesktops: item.pinToAllDesktops,
+  };
+}
+
 /**
  * EditingAppItemをRegisterItemに変換する
- *
- * AppItem（LauncherItem/GroupItem/WindowOperationItem）から
- * RegisterModal用のRegisterItem形式に直接変換します。
- * CSV形式の中間変換を経由しません。
- *
- * @param item - 変換元のEditingAppItem
- * @param tabs - 利用可能なデータファイルタブのリスト
- * @returns 変換されたRegisterItem
  */
 export function convertEditingAppItemToRegisterItem(
   item: EditingAppItem,
   tabs: DataFileTab[]
 ): RegisterItem {
-  const defaultTab = item.sourceFile || (tabs.length > 0 ? tabs[0].files[0] : 'data.json');
+  const defaultTab = getDefaultTab(item.sourceFile, tabs);
 
-  // GroupItemの場合
   if (isEditingGroupItem(item)) {
     return {
       displayName: item.displayName,
@@ -121,7 +152,6 @@ export function convertEditingAppItemToRegisterItem(
     };
   }
 
-  // WindowItemの場合
   if (isEditingWindowItem(item)) {
     return {
       displayName: item.displayName,
@@ -130,24 +160,11 @@ export function convertEditingAppItemToRegisterItem(
       targetTab: defaultTab,
       targetFile: item.sourceFile,
       itemCategory: 'window',
-      windowOperationConfig: {
-        displayName: item.displayName,
-        windowTitle: item.windowTitle,
-        processName: item.processName,
-        x: item.x,
-        y: item.y,
-        width: item.width,
-        height: item.height,
-        moveToActiveMonitorCenter: item.moveToActiveMonitorCenter,
-        virtualDesktopNumber: item.virtualDesktopNumber,
-        activateWindow: item.activateWindow,
-        pinToAllDesktops: item.pinToAllDesktops,
-      },
+      windowOperationConfig: createWindowOperationConfig(item),
       memo: item.memo,
     };
   }
 
-  // ClipboardItemの場合
   if (isEditingClipboardItem(item)) {
     return {
       displayName: item.displayName,
@@ -165,12 +182,8 @@ export function convertEditingAppItemToRegisterItem(
     };
   }
 
-  // LauncherItemの場合
   if (isEditingLauncherItem(item)) {
-    // フォルダ取込から展開されたアイテムの場合
     if (item.isDirExpanded && item.expandedFrom) {
-      const dirOptions = parseExpandedOptionsToJsonDirOptions(item.expandedOptions);
-
       return {
         displayName: item.expandedFrom,
         path: item.expandedFrom,
@@ -178,12 +191,11 @@ export function convertEditingAppItemToRegisterItem(
         targetTab: defaultTab,
         targetFile: item.sourceFile,
         folderProcessing: 'expand',
-        dirOptions,
+        dirOptions: parseExpandedOptionsToJsonDirOptions(item.expandedOptions),
         itemCategory: 'dir',
       };
     }
 
-    // 通常のLauncherItem
     return {
       displayName: item.displayName,
       path: item.path,
@@ -199,21 +211,12 @@ export function convertEditingAppItemToRegisterItem(
     };
   }
 
-  // フォールバック（通常は到達しないが、型安全性のために必要）
-  // isEditingLauncherItemで全てのEditingAppItemをカバーしているため、
-  // このコードは実行されないが、TypeScriptの網羅性チェックのために残す
   const _exhaustiveCheck: never = item;
   throw new Error(`Unexpected item type: ${_exhaustiveCheck}`);
 }
 
 /**
  * AppItemからEditingAppItemを作成する
- *
- * 既存のLauncherItem/GroupItem/WindowOperationItemに
- * 編集に必要なメタデータを付加してEditingAppItemを作成します。
- *
- * @param item - 元のAppItem（LauncherItem/GroupItem/WindowOperationItem）
- * @returns EditingAppItem
  */
 export function createEditingAppItem(
   item: LauncherItem & { sourceFile?: string; lineNumber?: number }
@@ -227,13 +230,6 @@ export function createEditingAppItem(
 
 /**
  * EditableJsonItemをRegisterItemに変換する
- *
- * アイテム管理画面で使用されるEditableJsonItemを
- * RegisterModal用のRegisterItem形式に変換します。
- *
- * @param editableItem - 変換元のEditableJsonItem
- * @param tabs - 利用可能なデータファイルタブのリスト
- * @returns 変換されたRegisterItem
  */
 export function convertEditableJsonItemToRegisterItem(
   editableItem: EditableJsonItem,
@@ -241,9 +237,8 @@ export function convertEditableJsonItemToRegisterItem(
 ): RegisterItem {
   const jsonItem = editableItem.item;
   const sourceFile = editableItem.meta.sourceFile;
-  const defaultTab = sourceFile || (tabs.length > 0 ? tabs[0].files[0] : 'data.json');
+  const defaultTab = getDefaultTab(sourceFile, tabs);
 
-  // フォルダ取込アイテム
   if (isJsonDirItem(jsonItem)) {
     return {
       displayName: jsonItem.path,
@@ -260,7 +255,6 @@ export function convertEditableJsonItemToRegisterItem(
     };
   }
 
-  // グループアイテム
   if (isJsonGroupItem(jsonItem)) {
     return {
       displayName: jsonItem.displayName,
@@ -274,7 +268,6 @@ export function convertEditableJsonItemToRegisterItem(
     };
   }
 
-  // ウィンドウ操作アイテム
   if (isJsonWindowItem(jsonItem)) {
     return {
       displayName: jsonItem.displayName,
@@ -283,29 +276,16 @@ export function convertEditableJsonItemToRegisterItem(
       targetTab: defaultTab,
       targetFile: sourceFile,
       itemCategory: 'window',
-      windowOperationConfig: {
-        displayName: jsonItem.displayName,
-        windowTitle: jsonItem.windowTitle,
-        processName: jsonItem.processName,
-        x: jsonItem.x,
-        y: jsonItem.y,
-        width: jsonItem.width,
-        height: jsonItem.height,
-        moveToActiveMonitorCenter: jsonItem.moveToActiveMonitorCenter,
-        virtualDesktopNumber: jsonItem.virtualDesktopNumber,
-        activateWindow: jsonItem.activateWindow,
-        pinToAllDesktops: jsonItem.pinToAllDesktops,
-      },
+      windowOperationConfig: createWindowOperationConfig(jsonItem),
       memo: jsonItem.memo,
     };
   }
 
-  // 通常のLauncherItem
   if (isJsonLauncherItem(jsonItem)) {
     return {
       displayName: jsonItem.displayName,
       path: jsonItem.path,
-      type: 'app', // 型検出は後でRegisterModal側で行われる
+      type: 'app',
       args: jsonItem.args || undefined,
       targetTab: defaultTab,
       targetFile: sourceFile,
@@ -317,7 +297,6 @@ export function convertEditableJsonItemToRegisterItem(
     };
   }
 
-  // クリップボードアイテム
   if (isJsonClipboardItem(jsonItem)) {
     return {
       displayName: jsonItem.displayName,
@@ -335,7 +314,6 @@ export function convertEditableJsonItemToRegisterItem(
     };
   }
 
-  // フォールバック
   return {
     displayName: '',
     path: '',
@@ -348,48 +326,37 @@ export function convertEditableJsonItemToRegisterItem(
 
 /**
  * RegisterItemをJsonItemに変換する
- *
- * RegisterModal用のRegisterItem形式をJSON保存用のJsonItem形式に変換します。
- * itemCategoryに基づいて適切なJsonItem型（JsonLauncherItem/JsonDirItem/JsonGroupItem/JsonWindowItem）を生成します。
- *
- * @param registerItem - 変換元のRegisterItem
- * @param existingId - 既存のID（編集時に使用、未指定時は新規生成）
- * @returns 変換されたJsonItem
  */
 export function convertRegisterItemToJsonItem(
   registerItem: RegisterItem,
   existingId?: string
 ): JsonItem {
   const id = existingId || `temp-${Date.now()}`;
+  const memo = registerItem.memo;
 
-  // フォルダ取込アイテム
   if (registerItem.itemCategory === 'dir') {
-    const dirItem: JsonItem = {
+    return {
       id,
       type: 'dir',
       path: registerItem.path,
       options: registerItem.dirOptions,
+      ...(memo && { memo }),
     };
-    if (registerItem.memo) dirItem.memo = registerItem.memo;
-    return dirItem;
   }
 
-  // グループアイテム
   if (registerItem.itemCategory === 'group') {
-    const groupItem: JsonItem = {
+    return {
       id,
       type: 'group',
       displayName: registerItem.displayName,
       itemNames: registerItem.groupItemNames || [],
+      ...(memo && { memo }),
     };
-    if (registerItem.memo) groupItem.memo = registerItem.memo;
-    return groupItem;
   }
 
-  // ウィンドウ操作アイテム
   if (registerItem.itemCategory === 'window') {
     const config = registerItem.windowOperationConfig;
-    const windowItem: JsonItem = {
+    return {
       id,
       type: 'window',
       displayName: config?.displayName || registerItem.displayName,
@@ -403,14 +370,12 @@ export function convertRegisterItemToJsonItem(
       virtualDesktopNumber: config?.virtualDesktopNumber,
       activateWindow: config?.activateWindow,
       pinToAllDesktops: config?.pinToAllDesktops,
+      ...(memo && { memo }),
     };
-    if (registerItem.memo) windowItem.memo = registerItem.memo;
-    return windowItem;
   }
 
-  // クリップボードアイテム
   if (registerItem.itemCategory === 'clipboard') {
-    const clipboardItem: JsonItem = {
+    return {
       id,
       type: 'clipboard',
       displayName: registerItem.displayName,
@@ -419,13 +384,11 @@ export function convertRegisterItemToJsonItem(
       formats: registerItem.clipboardFormats || [],
       preview: registerItem.clipboardPreview,
       customIcon: registerItem.customIcon,
+      ...(memo && { memo }),
     };
-    if (registerItem.memo) clipboardItem.memo = registerItem.memo;
-    return clipboardItem;
   }
 
-  // 通常のLauncherItem
-  const launcherItem: JsonItem = {
+  return {
     id,
     type: 'item',
     displayName: registerItem.displayName,
@@ -433,7 +396,6 @@ export function convertRegisterItemToJsonItem(
     args: registerItem.args,
     customIcon: registerItem.customIcon,
     windowConfig: registerItem.windowConfig,
+    ...(memo && { memo }),
   };
-  if (registerItem.memo) launcherItem.memo = registerItem.memo;
-  return launcherItem;
 }

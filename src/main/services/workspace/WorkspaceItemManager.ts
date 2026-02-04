@@ -1,20 +1,21 @@
-/**
- * ワークスペースアイテムのCRUD操作を管理するマネージャークラス
- */
 import { randomUUID } from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
 
-import type { AppItem, WorkspaceItem, ClipboardFormat, WindowConfig } from '@common/types';
+import type {
+  AppItem,
+  ClipboardItem,
+  GroupItem,
+  LauncherItem,
+  WindowItem,
+  WorkspaceItem,
+} from '@common/types';
 import logger from '@common/logger';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { isWindowInfo, isGroupItem, isClipboardItem } from '@common/types/guards';
 
 import type { WorkspaceStoreInstance } from './types.js';
 
-/**
- * ワークスペースアイテムの管理を担当するクラス
- */
 export class WorkspaceItemManager {
   private store: WorkspaceStoreInstance;
 
@@ -22,10 +23,10 @@ export class WorkspaceItemManager {
     this.store = store;
   }
 
-  /**
-   * 全てのワークスペースアイテムを取得
-   * @returns ワークスペースアイテムの配列（order順にソート済み）
-   */
+  private getNextOrder(items: WorkspaceItem[]): number {
+    return items.length > 0 ? Math.max(...items.map((i) => i.order)) + 1 : 0;
+  }
+
   public loadItems(): WorkspaceItem[] {
     try {
       const items = this.store.get('items') || [];
@@ -36,12 +37,6 @@ export class WorkspaceItemManager {
     }
   }
 
-  /**
-   * アイテムをワークスペースに追加
-   * @param item 追加するアイテム（LauncherItem or WindowOperationItem or GroupItem）
-   * @param groupId オプションのグループID
-   * @returns 追加されたWorkspaceItem
-   */
   public addItem(item: AppItem, groupId?: string): WorkspaceItem {
     try {
       const items = this.loadItems();
@@ -50,18 +45,17 @@ export class WorkspaceItemManager {
         throw new Error('WindowInfo is not supported in workspace');
       }
 
-      const maxOrder = items.length > 0 ? Math.max(...items.map((i) => i.order)) : -1;
-
+      const order = this.getNextOrder(items);
       let workspaceItem: WorkspaceItem;
 
       if (item.type === 'window') {
-        workspaceItem = this.createWindowItem(item, maxOrder + 1, groupId);
+        workspaceItem = this.createWindowItem(item, order, groupId);
       } else if (isGroupItem(item)) {
-        workspaceItem = this.createGroupItem(item, maxOrder + 1, groupId);
+        workspaceItem = this.createGroupItem(item, order, groupId);
       } else if (isClipboardItem(item)) {
-        workspaceItem = this.createClipboardItem(item, maxOrder + 1, groupId);
+        workspaceItem = this.createClipboardItem(item, order, groupId);
       } else {
-        workspaceItem = this.createLauncherItem(item, maxOrder + 1, groupId);
+        workspaceItem = this.createLauncherItem(item, order, groupId);
       }
 
       items.push(workspaceItem);
@@ -79,144 +73,91 @@ export class WorkspaceItemManager {
     }
   }
 
-  /**
-   * WindowItemからWorkspaceItemを作成
-   */
   private createWindowItem(item: AppItem, order: number, groupId?: string): WorkspaceItem {
-    const windowItem = item as {
-      type: 'window';
-      displayName: string;
-      windowTitle: string;
-      processName?: string;
-      x?: number;
-      y?: number;
-      width?: number;
-      height?: number;
-      virtualDesktopNumber?: number;
-      activateWindow?: boolean;
-      moveToActiveMonitorCenter?: boolean;
-      pinToAllDesktops?: boolean;
-    };
+    const w = item as WindowItem;
 
     return {
       id: randomUUID(),
-      displayName: windowItem.displayName,
-      originalName: windowItem.displayName,
-      path: `[ウィンドウ操作: ${windowItem.windowTitle}]`,
+      displayName: w.displayName,
+      originalName: w.displayName,
+      path: `[ウィンドウ操作: ${w.windowTitle}]`,
       type: 'windowOperation',
       order,
       addedAt: Date.now(),
       groupId,
-      processName: windowItem.processName,
-      windowX: windowItem.x,
-      windowY: windowItem.y,
-      windowWidth: windowItem.width,
-      windowHeight: windowItem.height,
-      virtualDesktopNumber: windowItem.virtualDesktopNumber,
-      activateWindow: windowItem.activateWindow,
-      moveToActiveMonitorCenter: windowItem.moveToActiveMonitorCenter,
-      pinToAllDesktops: windowItem.pinToAllDesktops,
+      processName: w.processName,
+      windowX: w.x,
+      windowY: w.y,
+      windowWidth: w.width,
+      windowHeight: w.height,
+      virtualDesktopNumber: w.virtualDesktopNumber,
+      activateWindow: w.activateWindow,
+      moveToActiveMonitorCenter: w.moveToActiveMonitorCenter,
+      pinToAllDesktops: w.pinToAllDesktops,
     };
   }
 
-  /**
-   * GroupItemからWorkspaceItemを作成
-   */
   private createGroupItem(item: AppItem, order: number, groupId?: string): WorkspaceItem {
-    const groupItem = item as { displayName: string; itemNames?: string[] };
-    const itemNames = groupItem.itemNames || [];
+    const g = item as GroupItem;
 
     logger.info(
-      {
-        groupName: groupItem.displayName,
-        originalItemNames: groupItem.itemNames,
-        itemNamesLength: itemNames.length,
-      },
+      { groupName: g.displayName, itemNamesLength: g.itemNames.length },
       'Adding group item to workspace'
     );
 
     return {
       id: randomUUID(),
-      displayName: groupItem.displayName,
-      originalName: groupItem.displayName,
-      path: `[グループ: ${itemNames.length}件]`,
+      displayName: g.displayName,
+      originalName: g.displayName,
+      path: `[グループ: ${g.itemNames.length}件]`,
       type: 'group',
       order,
       addedAt: Date.now(),
       groupId,
-      itemNames,
+      itemNames: g.itemNames,
     };
   }
 
-  /**
-   * ClipboardItemからWorkspaceItemを作成
-   */
   private createClipboardItem(item: AppItem, order: number, groupId?: string): WorkspaceItem {
-    const clipboardItem = item as {
-      type: 'clipboard';
-      displayName: string;
-      clipboardDataRef: string;
-      savedAt: number;
-      preview?: string;
-      formats: ClipboardFormat[];
-      customIcon?: string;
-      memo?: string;
-    };
+    const c = item as ClipboardItem;
 
     return {
       id: randomUUID(),
-      displayName: clipboardItem.displayName,
-      originalName: clipboardItem.displayName,
-      path: `[クリップボード: ${clipboardItem.preview?.substring(0, 20) || 'データ'}...]`,
+      displayName: c.displayName,
+      originalName: c.displayName,
+      path: `[クリップボード: ${c.preview?.substring(0, 20) || 'データ'}...]`,
       type: 'clipboard',
-      customIcon: clipboardItem.customIcon,
+      customIcon: c.customIcon,
       order,
       addedAt: Date.now(),
       groupId,
-      clipboardDataRef: clipboardItem.clipboardDataRef,
-      clipboardFormats: clipboardItem.formats,
-      clipboardSavedAt: clipboardItem.savedAt,
-      memo: clipboardItem.memo,
+      clipboardDataRef: c.clipboardDataRef,
+      clipboardFormats: c.formats,
+      clipboardSavedAt: c.savedAt,
+      memo: c.memo,
     };
   }
 
-  /**
-   * LauncherItemからWorkspaceItemを作成
-   * 注意: iconはキャッシュフォルダから参照するため、設定ファイルには保存しない
-   */
   private createLauncherItem(item: AppItem, order: number, groupId?: string): WorkspaceItem {
-    const launcherItem = item as {
-      displayName: string;
-      path: string;
-      type: 'url' | 'file' | 'folder' | 'app' | 'customUri';
-      icon?: string;
-      customIcon?: string;
-      args?: string;
-      originalPath?: string;
-      windowConfig?: WindowConfig;
-    };
+    const l = item as LauncherItem;
 
     return {
       id: randomUUID(),
-      displayName: launcherItem.displayName,
-      originalName: launcherItem.displayName,
-      path: launcherItem.path,
-      type: launcherItem.type,
-      customIcon: launcherItem.customIcon,
-      args: launcherItem.args,
-      originalPath: launcherItem.originalPath,
+      displayName: l.displayName,
+      originalName: l.displayName,
+      path: l.path,
+      type: l.type as 'url' | 'file' | 'folder' | 'app' | 'customUri',
+      customIcon: l.customIcon,
+      args: l.args,
+      originalPath: l.originalPath,
       order,
       addedAt: Date.now(),
       groupId,
-      windowConfig: launcherItem.windowConfig,
+      windowConfig: l.windowConfig,
     };
   }
 
-  /**
-   * ファイルパスからワークスペースにアイテムを追加
-   * 注意: iconはキャッシュフォルダから参照するため、設定ファイルには保存しない
-   */
-  public addItemFromPath(filePath: string, _icon?: string, groupId?: string): WorkspaceItem {
+  public addItemFromPath(filePath: string, groupId?: string): WorkspaceItem {
     try {
       const items = this.loadItems();
 
@@ -226,7 +167,6 @@ export class WorkspaceItemManager {
 
       const itemType = detectItemTypeSync(filePath);
       const fileName = path.basename(filePath);
-      const maxOrder = items.length > 0 ? Math.max(...items.map((i) => i.order)) : -1;
 
       const workspaceItem: WorkspaceItem = {
         id: randomUUID(),
@@ -234,7 +174,7 @@ export class WorkspaceItemManager {
         originalName: fileName,
         path: filePath,
         type: itemType,
-        order: maxOrder + 1,
+        order: this.getNextOrder(items),
         addedAt: Date.now(),
         groupId,
       };
@@ -254,9 +194,6 @@ export class WorkspaceItemManager {
     }
   }
 
-  /**
-   * ワークスペースからアイテムを削除
-   */
   public removeItem(id: string): void {
     try {
       const items = this.loadItems();
@@ -275,9 +212,6 @@ export class WorkspaceItemManager {
     }
   }
 
-  /**
-   * アイテムの表示名を更新
-   */
   public updateDisplayName(id: string, displayName: string): void {
     try {
       const items = this.loadItems();
@@ -297,11 +231,6 @@ export class WorkspaceItemManager {
     }
   }
 
-  /**
-   * アイテムを更新（全フィールド対応）
-   * @param id アイテムID
-   * @param updates 更新するフィールド
-   */
   public updateItem(id: string, updates: Partial<WorkspaceItem>): void {
     try {
       const items = this.loadItems();
@@ -312,19 +241,16 @@ export class WorkspaceItemManager {
         throw new Error(`Item not found: ${id}`);
       }
 
-      // 更新対象のフィールドをマージ（id, order, addedAt, groupIdは保持）
-      const existingItem = items[itemIndex];
-      const updatedItem: WorkspaceItem = {
-        ...existingItem,
+      const existing = items[itemIndex];
+      items[itemIndex] = {
+        ...existing,
         ...updates,
-        // 以下のフィールドは保持（更新データに含まれていても上書きしない）
-        id: existingItem.id,
-        order: existingItem.order,
-        addedAt: existingItem.addedAt,
-        groupId: existingItem.groupId,
+        id: existing.id,
+        order: existing.order,
+        addedAt: existing.addedAt,
+        groupId: existing.groupId,
       };
 
-      items[itemIndex] = updatedItem;
       this.store.set('items', items);
       logger.info({ id, updates }, 'Updated workspace item');
     } catch (error) {
@@ -333,9 +259,6 @@ export class WorkspaceItemManager {
     }
   }
 
-  /**
-   * アイテムの並び順を変更
-   */
   public reorderItems(itemIds: string[]): void {
     try {
       const items = this.loadItems();
@@ -365,9 +288,6 @@ export class WorkspaceItemManager {
     }
   }
 
-  /**
-   * 指定したグループのアイテムを取得
-   */
   public getItemsByGroup(groupId?: string): WorkspaceItem[] {
     try {
       const items = this.loadItems();
@@ -378,9 +298,6 @@ export class WorkspaceItemManager {
     }
   }
 
-  /**
-   * アイテムをグループに移動
-   */
   public moveItemToGroup(itemId: string, groupId?: string, groups?: { id: string }[]): void {
     try {
       const items = this.loadItems();
@@ -391,19 +308,12 @@ export class WorkspaceItemManager {
         throw new Error(`Item not found: ${itemId}`);
       }
 
-      if (groupId && groups) {
-        const group = groups.find((g) => g.id === groupId);
-        if (!group) {
-          logger.warn({ groupId }, 'Group not found in workspace');
-          throw new Error(`Group not found: ${groupId}`);
-        }
+      if (groupId && groups && !groups.some((g) => g.id === groupId)) {
+        logger.warn({ groupId }, 'Group not found in workspace');
+        throw new Error(`Group not found: ${groupId}`);
       }
 
-      if (groupId) {
-        item.groupId = groupId;
-      } else {
-        delete item.groupId;
-      }
+      item.groupId = groupId;
 
       this.store.set('items', items);
       logger.info({ itemId, groupId }, 'Moved item to group');
@@ -413,9 +323,6 @@ export class WorkspaceItemManager {
     }
   }
 
-  /**
-   * 全アイテムをクリア
-   */
   public clear(): void {
     try {
       this.store.set('items', []);

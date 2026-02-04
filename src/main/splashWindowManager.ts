@@ -10,7 +10,6 @@ let splashWindow: BrowserWindow | null = null;
 
 /**
  * スプラッシュウィンドウを作成し、表示する
- * アプリケーション起動時に表示される小さなローディング画面
  */
 export async function createSplashWindow(): Promise<BrowserWindow> {
   windowLogger.info('スプラッシュウィンドウを作成中...');
@@ -33,29 +32,24 @@ export async function createSplashWindow(): Promise<BrowserWindow> {
     },
   });
 
-  // スプラッシュ画面のHTMLを読み込み
   try {
     if (EnvConfig.isDevelopment) {
-      // 開発環境では専用のエントリーポイントを使用
-      windowLogger.info(`開発環境: ${EnvConfig.devServerUrl}/splash.html を読み込み中...`);
-      await splashWindow.loadURL(`${EnvConfig.devServerUrl}/splash.html`);
+      const url = `${EnvConfig.devServerUrl}/splash.html`;
+      windowLogger.info(`開発環境: ${url} を読み込み中...`);
+      await splashWindow.loadURL(url);
     } else {
-      // プロダクション環境では静的ファイルを読み込み
       const filePath = path.join(__dirname, '../splash.html');
       windowLogger.info(`本番環境: ${filePath} を読み込み中...`);
       await splashWindow.loadFile(filePath);
     }
-    windowLogger.info('スプラッシュウィンドウのHTMLを読み込み完了');
   } catch (error) {
     windowLogger.error({ error }, 'スプラッシュウィンドウのHTML読み込みエラー');
   }
 
   splashWindow.on('closed', () => {
     splashWindow = null;
-    windowLogger.info('スプラッシュウィンドウが閉じられました');
   });
 
-  // フォーカスを当てて確実に見えるようにする
   splashWindow.focus();
   splashWindow.moveTop();
   windowLogger.info('スプラッシュウィンドウを表示しました');

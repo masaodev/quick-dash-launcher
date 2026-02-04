@@ -164,16 +164,82 @@ export function createEmptyJsonDataFile(): JsonDataFile {
 }
 
 // ============================================================
+// バリデーションヘルパー
+// ============================================================
+
+/** ウィンドウ関連の数値フィールド */
+const WINDOW_NUMERIC_FIELDS = ['x', 'y', 'width', 'height', 'virtualDesktopNumber'] as const;
+
+/** ウィンドウ関連のブーリアンフィールド */
+const WINDOW_BOOLEAN_FIELDS = [
+  'moveToActiveMonitorCenter',
+  'activateWindow',
+  'pinToAllDesktops',
+] as const;
+
+/**
+ * オプションの文字列フィールドを検証・設定
+ */
+function validateOptionalString(
+  source: Record<string, unknown>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  target: any,
+  field: string
+): void {
+  if (source[field] !== undefined) {
+    if (typeof source[field] !== 'string') {
+      throw new Error(`${field} must be a string`);
+    }
+    target[field] = source[field];
+  }
+}
+
+/**
+ * 数値フィールドを検証・設定
+ */
+function validateNumericFields(
+  source: Record<string, unknown>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  target: any,
+  fields: readonly string[],
+  prefix: string = ''
+): void {
+  for (const field of fields) {
+    if (source[field] !== undefined) {
+      if (typeof source[field] !== 'number') {
+        throw new Error(`${prefix}${field} must be a number`);
+      }
+      target[field] = source[field];
+    }
+  }
+}
+
+/**
+ * ブーリアンフィールドを検証・設定
+ */
+function validateBooleanFields(
+  source: Record<string, unknown>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  target: any,
+  fields: readonly string[],
+  prefix: string = ''
+): void {
+  for (const field of fields) {
+    if (source[field] !== undefined) {
+      if (typeof source[field] !== 'boolean') {
+        throw new Error(`${prefix}${field} must be a boolean`);
+      }
+      target[field] = source[field];
+    }
+  }
+}
+
+// ============================================================
 // アイテムバリデーション
 // ============================================================
 
 /**
  * JSONアイテムを検証し、型付きオブジェクトとして返す
- *
- * @param item - 検証するアイテム（unknown型）
- * @param index - アイテムのインデックス（エラーメッセージ用）
- * @returns 検証済みのJsonItem
- * @throws バリデーションエラー
  */
 function validateJsonItem(item: unknown, index: number): JsonItem {
   if (!item || typeof item !== 'object') {
@@ -226,30 +292,12 @@ function validateJsonLauncherItem(obj: Record<string, unknown>): JsonLauncherIte
     path: obj.path,
   };
 
-  // オプションフィールド
-  if (obj.args !== undefined) {
-    if (typeof obj.args !== 'string') {
-      throw new Error('args must be a string');
-    }
-    item.args = obj.args;
-  }
-
-  if (obj.customIcon !== undefined) {
-    if (typeof obj.customIcon !== 'string') {
-      throw new Error('customIcon must be a string');
-    }
-    item.customIcon = obj.customIcon;
-  }
+  validateOptionalString(obj, item, 'args');
+  validateOptionalString(obj, item, 'customIcon');
+  validateOptionalString(obj, item, 'memo');
 
   if (obj.windowConfig !== undefined) {
     item.windowConfig = validateWindowConfig(obj.windowConfig);
-  }
-
-  if (obj.memo !== undefined) {
-    if (typeof obj.memo !== 'string') {
-      throw new Error('memo must be a string');
-    }
-    item.memo = obj.memo;
   }
 
   return item;
@@ -269,7 +317,6 @@ function validateJsonDirItem(obj: Record<string, unknown>): JsonDirItem {
     path: obj.path,
   };
 
-  // オプションフィールド
   if (obj.options !== undefined) {
     if (typeof obj.options !== 'object' || obj.options === null) {
       throw new Error('options must be an object');
@@ -292,41 +339,13 @@ function validateJsonDirItem(obj: Record<string, unknown>): JsonDirItem {
       item.options.types = opts.types;
     }
 
-    if (opts.filter !== undefined) {
-      if (typeof opts.filter !== 'string') {
-        throw new Error('options.filter must be a string');
-      }
-      item.options.filter = opts.filter;
-    }
-
-    if (opts.exclude !== undefined) {
-      if (typeof opts.exclude !== 'string') {
-        throw new Error('options.exclude must be a string');
-      }
-      item.options.exclude = opts.exclude;
-    }
-
-    if (opts.prefix !== undefined) {
-      if (typeof opts.prefix !== 'string') {
-        throw new Error('options.prefix must be a string');
-      }
-      item.options.prefix = opts.prefix;
-    }
-
-    if (opts.suffix !== undefined) {
-      if (typeof opts.suffix !== 'string') {
-        throw new Error('options.suffix must be a string');
-      }
-      item.options.suffix = opts.suffix;
-    }
+    validateOptionalString(opts, item.options, 'filter');
+    validateOptionalString(opts, item.options, 'exclude');
+    validateOptionalString(opts, item.options, 'prefix');
+    validateOptionalString(opts, item.options, 'suffix');
   }
 
-  if (obj.memo !== undefined) {
-    if (typeof obj.memo !== 'string') {
-      throw new Error('memo must be a string');
-    }
-    item.memo = obj.memo;
-  }
+  validateOptionalString(obj, item, 'memo');
 
   return item;
 }
@@ -354,12 +373,7 @@ function validateJsonGroupItem(obj: Record<string, unknown>): JsonGroupItem {
     itemNames: obj.itemNames as string[],
   };
 
-  if (obj.memo !== undefined) {
-    if (typeof obj.memo !== 'string') {
-      throw new Error('memo must be a string');
-    }
-    item.memo = obj.memo;
-  }
+  validateOptionalString(obj, item, 'memo');
 
   return item;
 }
@@ -382,49 +396,16 @@ function validateJsonWindowItem(obj: Record<string, unknown>): JsonWindowItem {
     windowTitle: obj.windowTitle,
   };
 
-  // オプションフィールド（数値）
-  const numericFields = ['x', 'y', 'width', 'height', 'virtualDesktopNumber'] as const;
-  for (const field of numericFields) {
-    if (obj[field] !== undefined) {
-      if (typeof obj[field] !== 'number') {
-        throw new Error(`${field} must be a number`);
-      }
-      item[field] = obj[field] as number;
-    }
-  }
-
-  // オプションフィールド（文字列）
-  if (obj.processName !== undefined) {
-    if (typeof obj.processName !== 'string') {
-      throw new Error('processName must be a string');
-    }
-    item.processName = obj.processName;
-  }
-
-  // オプションフィールド（ブーリアン）
-  const booleanFields = [
-    'moveToActiveMonitorCenter',
-    'activateWindow',
-    'pinToAllDesktops',
-  ] as const;
-  for (const field of booleanFields) {
-    if (obj[field] !== undefined) {
-      if (typeof obj[field] !== 'boolean') {
-        throw new Error(`${field} must be a boolean`);
-      }
-      item[field] = obj[field] as boolean;
-    }
-  }
-
-  if (obj.memo !== undefined) {
-    if (typeof obj.memo !== 'string') {
-      throw new Error('memo must be a string');
-    }
-    item.memo = obj.memo;
-  }
+  validateNumericFields(obj, item, WINDOW_NUMERIC_FIELDS);
+  validateBooleanFields(obj, item, WINDOW_BOOLEAN_FIELDS);
+  validateOptionalString(obj, item, 'processName');
+  validateOptionalString(obj, item, 'memo');
 
   return item;
 }
+
+/** 有効なクリップボードフォーマット */
+const VALID_CLIPBOARD_FORMATS: ClipboardFormat[] = ['text', 'html', 'rtf', 'image', 'file'];
 
 /**
  * JsonClipboardItemを検証
@@ -443,12 +424,13 @@ function validateJsonClipboardItem(obj: Record<string, unknown>): JsonClipboardI
     throw new Error('formats is required and must be an array');
   }
 
-  // formats の各要素を検証
-  const validFormats: ClipboardFormat[] = ['text', 'html', 'rtf', 'image', 'file'];
   for (let i = 0; i < obj.formats.length; i++) {
     const format = obj.formats[i];
-    if (typeof format !== 'string' || !validFormats.includes(format as ClipboardFormat)) {
-      throw new Error(`formats[${i}] must be one of: ${validFormats.join(', ')}`);
+    if (
+      typeof format !== 'string' ||
+      !VALID_CLIPBOARD_FORMATS.includes(format as ClipboardFormat)
+    ) {
+      throw new Error(`formats[${i}] must be one of: ${VALID_CLIPBOARD_FORMATS.join(', ')}`);
     }
   }
 
@@ -461,27 +443,9 @@ function validateJsonClipboardItem(obj: Record<string, unknown>): JsonClipboardI
     formats: obj.formats as ClipboardFormat[],
   };
 
-  // オプションフィールド
-  if (obj.preview !== undefined) {
-    if (typeof obj.preview !== 'string') {
-      throw new Error('preview must be a string');
-    }
-    item.preview = obj.preview;
-  }
-
-  if (obj.customIcon !== undefined) {
-    if (typeof obj.customIcon !== 'string') {
-      throw new Error('customIcon must be a string');
-    }
-    item.customIcon = obj.customIcon;
-  }
-
-  if (obj.memo !== undefined) {
-    if (typeof obj.memo !== 'string') {
-      throw new Error('memo must be a string');
-    }
-    item.memo = obj.memo;
-  }
+  validateOptionalString(obj, item, 'preview');
+  validateOptionalString(obj, item, 'customIcon');
+  validateOptionalString(obj, item, 'memo');
 
   return item;
 }
@@ -508,7 +472,6 @@ function validateWindowConfig(config: unknown): JsonLauncherItem['windowConfig']
     result.title = obj.title;
   }
 
-  // オプションフィールド（文字列）
   if (obj.processName !== undefined) {
     if (typeof obj.processName !== 'string') {
       throw new Error('windowConfig.processName must be a string');
@@ -516,31 +479,8 @@ function validateWindowConfig(config: unknown): JsonLauncherItem['windowConfig']
     result.processName = obj.processName;
   }
 
-  // オプションフィールド（数値）
-  const numericFields = ['x', 'y', 'width', 'height', 'virtualDesktopNumber'] as const;
-  for (const field of numericFields) {
-    if (obj[field] !== undefined) {
-      if (typeof obj[field] !== 'number') {
-        throw new Error(`windowConfig.${field} must be a number`);
-      }
-      result[field] = obj[field] as number;
-    }
-  }
-
-  // オプションフィールド（ブーリアン）
-  const booleanFields = [
-    'moveToActiveMonitorCenter',
-    'activateWindow',
-    'pinToAllDesktops',
-  ] as const;
-  for (const field of booleanFields) {
-    if (obj[field] !== undefined) {
-      if (typeof obj[field] !== 'boolean') {
-        throw new Error(`windowConfig.${field} must be a boolean`);
-      }
-      result[field] = obj[field] as boolean;
-    }
-  }
+  validateNumericFields(obj, result, WINDOW_NUMERIC_FIELDS, 'windowConfig.');
+  validateBooleanFields(obj, result, WINDOW_BOOLEAN_FIELDS, 'windowConfig.');
 
   return result;
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { AppSettings, WindowPositionMode, WorkspacePositionMode, DisplayInfo } from '@common/types';
 
 import { useDialogManager } from '../hooks/useDialogManager';
@@ -125,13 +125,6 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
     showConfirm,
     showToast: toast.success,
   });
-
-  // 設定に基づいてデータファイルリストを生成（設定ファイル基準）
-  const dataFiles = useMemo(() => {
-    const tabs = editedSettings.dataFileTabs || [];
-    const allFiles = tabs.flatMap((tab) => tab.files);
-    return Array.from(new Set(allFiles));
-  }, [editedSettings.dataFileTabs]);
 
   // ディスプレイ端配置モードかどうか（後方互換性のためprimaryLeft/primaryRightも含む）
   const isDisplayEdgeMode =
@@ -611,80 +604,78 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
 
           {/* バックアップ */}
           {selectedCategory === 'backup' && (
-            <>
-              <div className="settings-section">
-                <h3>バックアップ</h3>
-                <div className="setting-item">
-                  <label>
+            <div className="settings-section">
+              <h3>バックアップ</h3>
+              <div className="setting-item">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={editedSettings.backupEnabled}
+                    onChange={(e) => handleSettingChange('backupEnabled', e.target.checked)}
+                    disabled={isLoading}
+                  />
+                  バックアップ機能を有効にする
+                </label>
+              </div>
+
+              {editedSettings.backupEnabled && (
+                <>
+                  <div className="setting-item indent">
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={editedSettings.backupOnStart}
+                        onChange={(e) => handleSettingChange('backupOnStart', e.target.checked)}
+                        disabled={isLoading}
+                      />
+                      アプリ起動時にバックアップを作成
+                    </label>
+                  </div>
+
+                  <div className="setting-item indent">
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={editedSettings.backupOnEdit}
+                        onChange={(e) => handleSettingChange('backupOnEdit', e.target.checked)}
+                        disabled={isLoading}
+                      />
+                      データ編集時にバックアップを作成
+                    </label>
+                  </div>
+
+                  <div className="setting-item indent">
+                    <label htmlFor="backupInterval">最小バックアップ間隔:</label>
                     <input
-                      type="checkbox"
-                      checked={editedSettings.backupEnabled}
-                      onChange={(e) => handleSettingChange('backupEnabled', e.target.checked)}
+                      id="backupInterval"
+                      type="number"
+                      min="1"
+                      max="60"
+                      value={editedSettings.backupInterval}
+                      onChange={(e) => handleNumberInputChange('backupInterval', e.target.value)}
+                      onBlur={handleNumberInputBlur}
                       disabled={isLoading}
                     />
-                    バックアップ機能を有効にする
-                  </label>
-                </div>
+                    <span className="unit">分</span>
+                  </div>
 
-                {editedSettings.backupEnabled && (
-                  <>
-                    <div className="setting-item indent">
-                      <label>
-                        <input
-                          type="checkbox"
-                          checked={editedSettings.backupOnStart}
-                          onChange={(e) => handleSettingChange('backupOnStart', e.target.checked)}
-                          disabled={isLoading}
-                        />
-                        アプリ起動時にバックアップを作成
-                      </label>
-                    </div>
-
-                    <div className="setting-item indent">
-                      <label>
-                        <input
-                          type="checkbox"
-                          checked={editedSettings.backupOnEdit}
-                          onChange={(e) => handleSettingChange('backupOnEdit', e.target.checked)}
-                          disabled={isLoading}
-                        />
-                        データ編集時にバックアップを作成
-                      </label>
-                    </div>
-
-                    <div className="setting-item indent">
-                      <label htmlFor="backupInterval">最小バックアップ間隔:</label>
-                      <input
-                        id="backupInterval"
-                        type="number"
-                        min="1"
-                        max="60"
-                        value={editedSettings.backupInterval}
-                        onChange={(e) => handleNumberInputChange('backupInterval', e.target.value)}
-                        onBlur={handleNumberInputBlur}
-                        disabled={isLoading}
-                      />
-                      <span className="unit">分</span>
-                    </div>
-
-                    <div className="setting-item indent">
-                      <label htmlFor="backupRetention">バックアップ保存件数:</label>
-                      <input
-                        id="backupRetention"
-                        type="number"
-                        min="1"
-                        max="100"
-                        value={editedSettings.backupRetention}
-                        onChange={(e) => handleNumberInputChange('backupRetention', e.target.value)}
-                        onBlur={handleNumberInputBlur}
-                        disabled={isLoading}
-                      />
-                      <span className="unit">件</span>
-                    </div>
-                  </>
-                )}
-              </div>
-            </>
+                  <div className="setting-item indent">
+                    <label htmlFor="backupRetention">バックアップ保存件数:</label>
+                    <input
+                      id="backupRetention"
+                      type="number"
+                      min="1"
+                      max="100"
+                      value={editedSettings.backupRetention}
+                      onChange={(e) => handleNumberInputChange('backupRetention', e.target.value)}
+                      onBlur={handleNumberInputBlur}
+                      disabled={isLoading}
+                    />
+                    <span className="unit">件</span>
+                  </div>
+                </>
+              )}
+            </div>
           )}
 
           {/* タブ管理 */}
@@ -713,8 +704,11 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                     {(editedSettings.dataFileTabs || []).map((tab, tabIndex) => {
                       const hasMainDataFile = tab.files.includes('data.json');
                       const expanded = isTabExpanded(tabIndex);
-                      const availableFiles = dataFiles.filter(
-                        (file: string) => !tab.files.includes(file)
+                      const allDataFiles = Array.from(
+                        new Set((editedSettings.dataFileTabs || []).flatMap((t) => t.files))
+                      );
+                      const availableFiles = allDataFiles.filter(
+                        (file) => !tab.files.includes(file)
                       );
 
                       return (

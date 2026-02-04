@@ -61,6 +61,5 @@ export function parseWindowOperationConfig(configString: string): WindowOperatio
  */
 export function parseWindowOperationDirectiveContent(content: string): WindowOperationConfig {
   const parts = parseDisplayTextFields(content);
-  // parseWindowOperationConfigヘルパーを使用してJSON形式を安全にパース
   return parseWindowOperationConfig(parts[1] || '');
 }

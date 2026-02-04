@@ -1,10 +1,16 @@
-import React, { forwardRef, useRef, useImperativeHandle } from 'react';
+import {
+  forwardRef,
+  useRef,
+  useImperativeHandle,
+  type ReactElement,
+  type KeyboardEvent,
+} from 'react';
 import { SearchMode } from '@common/types/search';
 
 interface SearchBoxProps {
   value: string;
   onChange: (value: string) => void;
-  onKeyDown: (e: React.KeyboardEvent) => void;
+  onKeyDown: (e: KeyboardEvent) => void;
   searchMode?: SearchMode;
   onToggleSearchMode?: () => void;
   onRefreshWindows?: () => void;
@@ -17,12 +23,7 @@ const SEARCH_MODE_LABELS: Record<SearchMode, string> = {
   history: '📜 実行履歴検索モード',
 };
 
-interface F5HintProps {
-  label: string;
-  onClick: () => void;
-}
-
-function F5Hint({ label, onClick }: F5HintProps): React.ReactElement {
+function F5Hint({ label, onClick }: { label: string; onClick: () => void }): ReactElement {
   return (
     <>
       F5:

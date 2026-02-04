@@ -53,14 +53,6 @@ export interface WindowActivationResult {
 interface BoundsValidationResult {
   /** すべての値が許容範囲内かどうか */
   allMatch: boolean;
-  /** X座標が一致しているか */
-  xMatch: boolean;
-  /** Y座標が一致しているか */
-  yMatch: boolean;
-  /** 幅が一致しているか */
-  widthMatch: boolean;
-  /** 高さが一致しているか */
-  heightMatch: boolean;
 }
 
 /**
@@ -143,19 +135,15 @@ function validateBounds(
   target: Bounds,
   tolerance: number = WINDOW_BOUNDS_CONFIG.TOLERANCE_PX
 ): BoundsValidationResult {
-  const xMatch = target.x === undefined || Math.abs(actual.x - target.x) <= tolerance;
-  const yMatch = target.y === undefined || Math.abs(actual.y - target.y) <= tolerance;
-  const widthMatch =
-    target.width === undefined || Math.abs(actual.width - target.width) <= tolerance;
-  const heightMatch =
-    target.height === undefined || Math.abs(actual.height - target.height) <= tolerance;
+  const isWithinTolerance = (actualVal: number, targetVal: number | undefined): boolean =>
+    targetVal === undefined || Math.abs(actualVal - targetVal) <= tolerance;
 
   return {
-    allMatch: xMatch && yMatch && widthMatch && heightMatch,
-    xMatch,
-    yMatch,
-    widthMatch,
-    heightMatch,
+    allMatch:
+      isWithinTolerance(actual.x, target.x) &&
+      isWithinTolerance(actual.y, target.y) &&
+      isWithinTolerance(actual.width, target.width) &&
+      isWithinTolerance(actual.height, target.height),
   };
 }
 
@@ -348,7 +336,7 @@ export async function tryActivateWindow(
   restoreWindow(hwnd);
 
   // ピン止め処理
-  const needsPinning = windowConfig.pinToAllDesktops === true;
+  const needsPinning = windowConfig.pinToAllDesktops;
   if (needsPinning) {
     const pinSuccess = pinWindow(hwnd);
     if (pinSuccess) {
@@ -371,7 +359,7 @@ export async function tryActivateWindow(
   }
 
   // アクティブモニター中央への移動が必要かチェック
-  const needsActiveMonitorCenter = windowConfig.moveToActiveMonitorCenter === true;
+  const needsActiveMonitorCenter = windowConfig.moveToActiveMonitorCenter;
 
   // 位置・サイズ設定が必要かチェック
   const needsBoundsChange =
@@ -416,11 +404,10 @@ export async function tryActivateWindow(
   // 最終的なデスクトップに移動
   // virtualDesktopNumberが指定されている場合のみ、そのデスクトップに移動
   // ただし、ピン止めが有効な場合はスキップ（ピン止めウィンドウは全デスクトップに表示される）
-  let targetDesktopNumber: number | undefined;
-
-  if (windowConfig.virtualDesktopNumber !== undefined && !needsPinning) {
-    targetDesktopNumber = windowConfig.virtualDesktopNumber;
-  }
+  const targetDesktopNumber =
+    windowConfig.virtualDesktopNumber !== undefined && !needsPinning
+      ? windowConfig.virtualDesktopNumber
+      : undefined;
 
   if (targetDesktopNumber !== undefined) {
     const desktopMoveSuccess = moveWindowToVirtualDesktop(hwnd, targetDesktopNumber);

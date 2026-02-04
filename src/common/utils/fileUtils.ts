@@ -3,13 +3,10 @@ import * as path from 'path';
 
 /**
  * ファイル操作の共通ユーティリティクラス
- * プロジェクト全体で重複しているファイル操作を統一し、エラーハンドリングを標準化する
  */
 export class FileUtils {
   /**
-   * ファイルが存在するかチェックし、安全にテキストファイルを読み込む
-   * @param filePath - 読み込み対象のファイルパス
-   * @returns ファイル内容またはnull（ファイルが存在しない、または読み込み失敗）
+   * テキストファイルを安全に読み込む（存在しない場合やエラー時はnull）
    */
   static safeReadTextFile(filePath: string): string | null {
     try {
@@ -23,10 +20,7 @@ export class FileUtils {
   }
 
   /**
-   * ディレクトリが存在することを確認し、安全にテキストファイルを書き込む
-   * @param filePath - 書き込み対象のファイルパス
-   * @param content - 書き込み内容
-   * @returns 書き込み成功時はtrue、失敗時はfalse
+   * テキストファイルを安全に書き込む（ディレクトリも自動作成）
    */
   static safeWriteTextFile(filePath: string, content: string): boolean {
     try {
@@ -41,7 +35,6 @@ export class FileUtils {
 
   /**
    * ディレクトリが存在しない場合は再帰的に作成する
-   * @param dirPath - 作成対象のディレクトリパス
    */
   static ensureDirectory(dirPath: string): void {
     if (!fs.existsSync(dirPath)) {
@@ -50,10 +43,7 @@ export class FileUtils {
   }
 
   /**
-   * バイナリファイルをキャッシュから読み込み、Base64エンコードされたデータURLとして返す
-   * @param filePath - 読み込み対象のファイルパス
-   * @param mimeType - MIMEタイプ（デフォルト: 'image/png'）
-   * @returns base64エンコードされたデータURL、失敗時はnull
+   * バイナリファイルを読み込み、Base64エンコードされたデータURLとして返す
    */
   static readCachedBinaryAsBase64(filePath: string, mimeType = 'image/png'): string | null {
     try {
@@ -61,18 +51,14 @@ export class FileUtils {
         return null;
       }
       const cachedData = fs.readFileSync(filePath);
-      const base64 = cachedData.toString('base64');
-      return `data:${mimeType};base64,${base64}`;
+      return this.bufferToBase64DataUrl(cachedData, mimeType);
     } catch (_error) {
       return null;
     }
   }
 
   /**
-   * バイナリデータをファイルに書き込む
-   * @param filePath - 書き込み対象のファイルパス
-   * @param data - 書き込み対象のバイナリデータ
-   * @returns 書き込み成功時はtrue、失敗時はfalse
+   * バイナリデータをファイルに書き込む（ディレクトリも自動作成）
    */
   static writeBinaryFile(filePath: string, data: Buffer): boolean {
     try {
@@ -86,10 +72,7 @@ export class FileUtils {
   }
 
   /**
-   * ファイルを安全にコピーする
-   * @param sourcePath - コピー元のファイルパス
-   * @param targetPath - コピー先のファイルパス
-   * @returns コピー成功時はtrue、失敗時はfalse
+   * ファイルを安全にコピーする（コピー先ディレクトリも自動作成）
    */
   static safeCopyFile(sourcePath: string, targetPath: string): boolean {
     try {
@@ -106,9 +89,7 @@ export class FileUtils {
   }
 
   /**
-   * 指定されたパスがディレクトリかどうかを安全にチェックする
-   * @param filePath - チェック対象のパス
-   * @returns ディレクトリの場合はtrue、それ以外はfalse
+   * 指定されたパスがディレクトリかどうかをチェックする
    */
   static isDirectory(filePath: string): boolean {
     try {
@@ -120,8 +101,6 @@ export class FileUtils {
 
   /**
    * ファイルの存在をチェックする
-   * @param filePath - チェック対象のファイルパス
-   * @returns ファイルが存在する場合はtrue、それ以外はfalse
    */
   static exists(filePath: string): boolean {
     return fs.existsSync(filePath);
@@ -129,28 +108,22 @@ export class FileUtils {
 
   /**
    * 2つのファイルの内容が同じかどうかを比較する
-   * @param filePath1 - 比較対象のファイルパス1
-   * @param filePath2 - 比較対象のファイルパス2
-   * @returns ファイル内容が同じ場合はtrue、異なる場合やエラー時はfalse
    */
   static areFilesEqual(filePath1: string, filePath2: string): boolean {
     try {
-      // どちらかのファイルが存在しない場合
       if (!fs.existsSync(filePath1) || !fs.existsSync(filePath2)) {
         return false;
       }
 
-      // ファイルサイズを比較（高速な事前チェック）
       const stat1 = fs.statSync(filePath1);
       const stat2 = fs.statSync(filePath2);
       if (stat1.size !== stat2.size) {
         return false;
       }
 
-      // ファイル内容を比較
-      const content1 = fs.readFileSync(filePath1, 'utf8');
-      const content2 = fs.readFileSync(filePath2, 'utf8');
-      return content1 === content2;
+      const content1 = fs.readFileSync(filePath1);
+      const content2 = fs.readFileSync(filePath2);
+      return content1.equals(content2);
     } catch (_error) {
       return false;
     }
@@ -158,36 +131,8 @@ export class FileUtils {
 
   /**
    * バッファをBase64エンコードされたデータURLに変換する
-   *
-   * バイナリデータ（画像ファイルなど）をBase64エンコードし、
-   * ブラウザで直接利用可能なデータURL形式に変換します。
-   * アイコンやファビコンの表示に使用されます。
-   *
-   * @param buffer - 変換するバッファ（画像データなど）
-   * @param mimeType - MIMEタイプ（デフォルト: 'image/png'）
-   *                   画像形式に応じて 'image/jpeg', 'image/svg+xml' などを指定
-   * @returns base64エンコードされたデータURL
-   *          形式: `data:{mimeType};base64,{base64文字列}`
-   *
-   * @example
-   * // PNG画像をデータURLに変換
-   * const imageBuffer = fs.readFileSync('icon.png');
-   * const dataUrl = FileUtils.bufferToBase64DataUrl(imageBuffer);
-   * // => 'data:image/png;base64,iVBORw0KGgo...'
-   *
-   * @example
-   * // JPEG画像をデータURLに変換
-   * const jpegBuffer = fs.readFileSync('photo.jpg');
-   * const jpegDataUrl = FileUtils.bufferToBase64DataUrl(jpegBuffer, 'image/jpeg');
-   * // => 'data:image/jpeg;base64,/9j/4AAQSkZJRg...'
-   *
-   * @example
-   * // SVGをデータURLに変換
-   * const svgBuffer = Buffer.from('<svg>...</svg>');
-   * const svgDataUrl = FileUtils.bufferToBase64DataUrl(svgBuffer, 'image/svg+xml');
    */
   static bufferToBase64DataUrl(buffer: Buffer, mimeType = 'image/png'): string {
-    const base64 = buffer.toString('base64');
-    return `data:${mimeType};base64,${base64}`;
+    return `data:${mimeType};base64,${buffer.toString('base64')}`;
   }
 }

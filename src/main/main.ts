@@ -62,7 +62,7 @@ app.whenReady().then(async () => {
   // 初回起動判定: ホットキーが設定されているかどうかで判定
   const settingsService = await SettingsService.getInstance();
   const hotkey = await settingsService.get('hotkey');
-  isFirstLaunch = !hotkey || hotkey.trim() === '';
+  isFirstLaunch = !hotkey?.trim();
 
   // アプリケーションのApp User Model IDを設定（Windows用）
   // 開発モード時は異なるIDを使用してアイコンキャッシュの問題を回避
@@ -121,10 +121,7 @@ app.whenReady().then(async () => {
     setFirstLaunchMode
   );
 
-  // ワークスペースウィンドウを作成（起動時は表示しない、ユーザーが手動で起動したときのみ表示）
   await createWorkspaceWindow();
-
-  // スプラッシュウィンドウとホットキー登録はsplash-readyハンドラー内で処理される
 });
 
 app.on('window-all-closed', () => {
@@ -134,15 +131,14 @@ app.on('window-all-closed', () => {
 });
 
 app.on('before-quit', () => {
-  // 管理ウィンドウとワークスペースウィンドウの終了フラグを設定
   setAdminAppQuitting(true);
   setWorkspaceAppQuitting(true);
 });
 
 app.on('will-quit', () => {
   globalShortcut.unregisterAll();
-  closeAdminWindow(); // 管理ウィンドウを確実に閉じる
-  closeWorkspaceWindow(); // ワークスペースウィンドウを確実に閉じる
-  closeSplashWindow(); // スプラッシュウィンドウを確実に閉じる
-  destroyToastWindow(); // トーストウィンドウを確実に閉じる
+  closeAdminWindow();
+  closeWorkspaceWindow();
+  closeSplashWindow();
+  destroyToastWindow();
 });

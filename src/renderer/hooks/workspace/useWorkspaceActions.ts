@@ -2,121 +2,100 @@ import type { WorkspaceItem, WorkspaceGroup } from '@common/types';
 
 import { logError } from '../../utils/debug';
 
-/**
- * ワークスペースの操作（起動、削除、並び替え、更新等）を統合管理するフック
- */
+function withErrorHandling<T extends unknown[]>(
+  action: (...args: T) => Promise<unknown>,
+  errorMessage: string,
+  onSuccess?: () => void
+): (...args: T) => Promise<void> {
+  return async (...args: T) => {
+    try {
+      await action(...args);
+      onSuccess?.();
+    } catch (error) {
+      logError(errorMessage, error);
+    }
+  };
+}
+
 export function useWorkspaceActions(onDataChanged: () => void) {
-  const handleLaunch = async (item: WorkspaceItem) => {
-    try {
-      await window.electronAPI.workspaceAPI.launchItem(item);
-    } catch (error) {
-      logError('Failed to launch workspace item:', error);
-    }
-  };
+  const api = window.electronAPI.workspaceAPI;
 
-  const handleRemove = async (id: string) => {
+  const handleLaunch = withErrorHandling(
+    async (item: WorkspaceItem) => api.launchItem(item),
+    'Failed to launch workspace item:'
+  );
+
+  const handleRemove = withErrorHandling(
+    async (id: string) => api.removeItem(id),
+    'Failed to remove workspace item:',
+    onDataChanged
+  );
+
+  const handleReorder = withErrorHandling(
+    async (itemIds: string[]) => api.reorderItems(itemIds),
+    'Failed to reorder workspace items:',
+    onDataChanged
+  );
+
+  const handleUpdateDisplayName = withErrorHandling(
+    async (id: string, displayName: string) => api.updateDisplayName(id, displayName),
+    'Failed to update workspace item display name:',
+    onDataChanged
+  );
+
+  const handleUpdateItem = withErrorHandling(
+    async (id: string, updates: Partial<WorkspaceItem>) => api.updateItem(id, updates),
+    'Failed to update workspace item:',
+    onDataChanged
+  );
+
+  const handleToggleGroup = async (groupId: string, groups: WorkspaceGroup[]): Promise<void> => {
+    const group = groups.find((g) => g.id === groupId);
+    if (!group) return;
+
     try {
-      await window.electronAPI.workspaceAPI.removeItem(id);
+      await api.updateGroup(groupId, { collapsed: !group.collapsed });
       onDataChanged();
-    } catch (error) {
-      logError('Failed to remove workspace item:', error);
-    }
-  };
-
-  const handleReorder = async (itemIds: string[]) => {
-    try {
-      await window.electronAPI.workspaceAPI.reorderItems(itemIds);
-      onDataChanged();
-    } catch (error) {
-      logError('Failed to reorder workspace items:', error);
-    }
-  };
-
-  const handleUpdateDisplayName = async (id: string, displayName: string) => {
-    try {
-      await window.electronAPI.workspaceAPI.updateDisplayName(id, displayName);
-      onDataChanged();
-    } catch (error) {
-      logError('Failed to update workspace item display name:', error);
-    }
-  };
-
-  const handleUpdateItem = async (id: string, updates: Partial<WorkspaceItem>) => {
-    try {
-      await window.electronAPI.workspaceAPI.updateItem(id, updates);
-      onDataChanged();
-    } catch (error) {
-      logError('Failed to update workspace item:', error);
-    }
-  };
-
-  const handleToggleGroup = async (groupId: string, groups: WorkspaceGroup[]) => {
-    try {
-      const group = groups.find((g) => g.id === groupId);
-      if (group) {
-        await window.electronAPI.workspaceAPI.updateGroup(groupId, {
-          collapsed: !group.collapsed,
-        });
-        onDataChanged();
-      }
     } catch (error) {
       logError('Failed to toggle workspace group:', error);
     }
   };
 
-  const handleUpdateGroup = async (groupId: string, updates: Partial<WorkspaceGroup>) => {
-    try {
-      await window.electronAPI.workspaceAPI.updateGroup(groupId, updates);
-      onDataChanged();
-    } catch (error) {
-      logError('Failed to update workspace group:', error);
-    }
-  };
+  const handleUpdateGroup = withErrorHandling(
+    async (groupId: string, updates: Partial<WorkspaceGroup>) => api.updateGroup(groupId, updates),
+    'Failed to update workspace group:',
+    onDataChanged
+  );
 
-  const handleDeleteGroup = async (groupId: string, deleteItems: boolean) => {
-    try {
-      await window.electronAPI.workspaceAPI.deleteGroup(groupId, deleteItems);
-      onDataChanged();
-    } catch (error) {
-      logError('Failed to delete workspace group:', error);
-    }
-  };
+  const handleDeleteGroup = withErrorHandling(
+    async (groupId: string, deleteItems: boolean) => api.deleteGroup(groupId, deleteItems),
+    'Failed to delete workspace group:',
+    onDataChanged
+  );
 
-  const handleArchiveGroup = async (groupId: string) => {
-    try {
-      await window.electronAPI.workspaceAPI.archiveGroup(groupId);
-      onDataChanged();
-    } catch (error) {
-      logError('Failed to archive workspace group:', error);
-    }
-  };
+  const handleArchiveGroup = withErrorHandling(
+    async (groupId: string) => api.archiveGroup(groupId),
+    'Failed to archive workspace group:',
+    onDataChanged
+  );
 
-  const handleAddGroup = async (groupCount: number) => {
-    try {
-      await window.electronAPI.workspaceAPI.createGroup(`グループ ${groupCount + 1}`);
-      onDataChanged();
-    } catch (error) {
-      logError('Failed to create workspace group:', error);
-    }
-  };
+  const handleAddGroup = withErrorHandling(
+    async (groupCount: number) => api.createGroup(`グループ ${groupCount + 1}`),
+    'Failed to create workspace group:',
+    onDataChanged
+  );
 
-  const handleMoveItemToGroup = async (itemId: string, groupId?: string) => {
-    try {
-      await window.electronAPI.workspaceAPI.moveItemToGroup(itemId, groupId);
-      onDataChanged();
-    } catch (error) {
-      logError('Failed to move item to group:', error);
-    }
-  };
+  const handleMoveItemToGroup = withErrorHandling(
+    async (itemId: string, groupId?: string) => api.moveItemToGroup(itemId, groupId),
+    'Failed to move item to group:',
+    onDataChanged
+  );
 
-  const handleReorderGroups = async (groupIds: string[]) => {
-    try {
-      await window.electronAPI.workspaceAPI.reorderGroups(groupIds);
-      onDataChanged();
-    } catch (error) {
-      logError('Failed to reorder workspace groups:', error);
-    }
-  };
+  const handleReorderGroups = withErrorHandling(
+    async (groupIds: string[]) => api.reorderGroups(groupIds),
+    'Failed to reorder workspace groups:',
+    onDataChanged
+  );
 
   return {
     handleLaunch,

@@ -313,12 +313,11 @@ export class ClipboardService {
   }
 
   discardSession(sessionId: string): boolean {
-    const existed = this.pendingSessions.has(sessionId);
-    if (existed) {
-      this.pendingSessions.delete(sessionId);
+    const deleted = this.pendingSessions.delete(sessionId);
+    if (deleted) {
       logger.info({ sessionId }, 'セッションデータを破棄しました');
     }
-    return existed;
+    return deleted;
   }
 
   async restoreClipboard(dataFileRef: string): Promise<ClipboardRestoreResult> {
@@ -337,28 +336,19 @@ export class ClipboardService {
       const data: SerializableClipboard = JSON.parse(content);
 
       const restoredFormats: ClipboardFormat[] = [];
-
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const writeData: any = {};
 
-      if (data.text) {
-        writeData.text = data.text;
-        restoredFormats.push('text');
-      }
-
-      if (data.html) {
-        writeData.html = data.html;
-        restoredFormats.push('html');
-      }
-
-      if (data.rtf) {
-        writeData.rtf = data.rtf;
-        restoredFormats.push('rtf');
+      const textFormats = ['text', 'html', 'rtf'] as const;
+      for (const format of textFormats) {
+        if (data[format]) {
+          writeData[format] = data[format];
+          restoredFormats.push(format);
+        }
       }
 
       if (data.imageBase64) {
-        const imageBuffer = Buffer.from(data.imageBase64, 'base64');
-        writeData.image = nativeImage.createFromBuffer(imageBuffer);
+        writeData.image = nativeImage.createFromBuffer(Buffer.from(data.imageBase64, 'base64'));
         restoredFormats.push('image');
       }
 
@@ -476,32 +466,32 @@ export class ClipboardService {
   }
 
   private generateImageThumbnail(imageBase64: string | undefined): string | undefined {
-    if (!imageBase64) {
-      return undefined;
-    }
-    const imageBuffer = Buffer.from(imageBase64, 'base64');
-    const image = nativeImage.createFromBuffer(imageBuffer);
+    if (!imageBase64) return undefined;
+
+    const image = nativeImage.createFromBuffer(Buffer.from(imageBase64, 'base64'));
     const thumbnail = this.createThumbnail(image);
     return thumbnail ? this.toDataUrl(thumbnail) : undefined;
   }
 
   private createThumbnail(image: NativeImage): NativeImage | null {
-    if (image.isEmpty()) {
-      return null;
+    if (image.isEmpty()) return null;
+
+    const { width, height } = image.getSize();
+    const aspectRatio = width / height;
+
+    const scaledByWidth = {
+      width: THUMBNAIL_MAX_WIDTH,
+      height: Math.round(THUMBNAIL_MAX_WIDTH / aspectRatio),
+    };
+
+    if (scaledByWidth.height <= THUMBNAIL_MAX_HEIGHT) {
+      return image.resize(scaledByWidth);
     }
 
-    const size = image.getSize();
-    const aspectRatio = size.width / size.height;
-
-    let newWidth = THUMBNAIL_MAX_WIDTH;
-    let newHeight = Math.round(THUMBNAIL_MAX_WIDTH / aspectRatio);
-
-    if (newHeight > THUMBNAIL_MAX_HEIGHT) {
-      newHeight = THUMBNAIL_MAX_HEIGHT;
-      newWidth = Math.round(THUMBNAIL_MAX_HEIGHT * aspectRatio);
-    }
-
-    return image.resize({ width: newWidth, height: newHeight });
+    return image.resize({
+      width: Math.round(THUMBNAIL_MAX_HEIGHT * aspectRatio),
+      height: THUMBNAIL_MAX_HEIGHT,
+    });
   }
 }
 

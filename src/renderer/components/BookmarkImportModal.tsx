@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import type { ReactElement } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   SimpleBookmarkItem,
   BrowserInfo,
@@ -22,12 +23,12 @@ interface BookmarkImportModalProps {
   existingItems: EditableJsonItem[];
 }
 
-const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({
+function BookmarkImportModal({
   isOpen,
   onClose,
   onImport,
   existingItems,
-}) => {
+}: BookmarkImportModalProps): ReactElement | null {
   const [bookmarks, setBookmarks] = useState<SimpleBookmarkItem[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
@@ -92,12 +93,17 @@ const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({
     return checkDuplicates(selectedBookmarks, existingItems);
   }, [bookmarks, selectedIds, existingItems]);
 
-  // インポート元選択
-  const handleSelectImportSource = (source: ImportSource) => {
-    setImportSource(source);
+  // ブックマーク関連の状態をリセット
+  const resetBookmarkState = useCallback(() => {
     setBookmarks([]);
     setSelectedIds(new Set());
     setSearchQuery('');
+  }, []);
+
+  // インポート元選択
+  const handleSelectImportSource = (source: ImportSource) => {
+    setImportSource(source);
+    resetBookmarkState();
     setFileName(null);
     setSelectedProfile(null);
 
@@ -128,7 +134,6 @@ const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({
       );
       setBookmarks(parsedBookmarks);
       setSelectedIds(new Set());
-      setSearchQuery('');
 
       if (parsedBookmarks.length === 0) {
         setAlertDialog({
@@ -162,7 +167,6 @@ const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({
       const parsedBookmarks = await window.electronAPI.parseBookmarkFile(filePath);
       setBookmarks(parsedBookmarks);
       setSelectedIds(new Set());
-      setSearchQuery('');
     } catch (error) {
       logError('Error selecting bookmark file:', error);
       setAlertDialog({
@@ -175,7 +179,7 @@ const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({
     }
   };
 
-  // 個別選択
+  // 個別選択のトグル
   const handleToggleBookmark = (id: string) => {
     setSelectedIds((prev) => {
       const newSet = new Set(prev);
@@ -188,32 +192,34 @@ const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({
     });
   };
 
-  // 表示中のアイテムを全て選択
-  const handleSelectFiltered = () => {
-    const filteredIds = filteredBookmarks.map((b) => b.id);
-    setSelectedIds((prev) => new Set([...prev, ...filteredIds]));
-  };
-
-  // 表示中のアイテムを全て解除
-  const handleDeselectFiltered = () => {
-    const filteredIds = filteredBookmarks.map((b) => b.id);
+  // 選択操作の共通処理
+  const updateSelection = (ids: string[], action: 'add' | 'remove' | 'set') => {
     setSelectedIds((prev) => {
+      if (action === 'set') {
+        return new Set(ids);
+      }
       const newSet = new Set(prev);
-      filteredIds.forEach((id) => newSet.delete(id));
+      ids.forEach((id) => (action === 'add' ? newSet.add(id) : newSet.delete(id)));
       return newSet;
     });
   };
 
-  // 全て選択
-  const handleSelectAll = () => {
-    const allIds = bookmarks.map((b) => b.id);
-    setSelectedIds(new Set(allIds));
-  };
-
-  // 全て解除
-  const handleDeselectAll = () => {
-    setSelectedIds(new Set());
-  };
+  const handleSelectFiltered = () =>
+    updateSelection(
+      filteredBookmarks.map((b) => b.id),
+      'add'
+    );
+  const handleDeselectFiltered = () =>
+    updateSelection(
+      filteredBookmarks.map((b) => b.id),
+      'remove'
+    );
+  const handleSelectAll = () =>
+    updateSelection(
+      bookmarks.map((b) => b.id),
+      'set'
+    );
+  const handleDeselectAll = () => setSelectedIds(new Set());
 
   // インポート実行
   const handleImport = () => {
@@ -232,7 +238,7 @@ const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({
   };
 
   // モーダルを閉じる
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     setBookmarks([]);
     setSelectedIds(new Set());
     setSearchQuery('');
@@ -241,7 +247,7 @@ const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({
     setSelectedProfile(null);
     setDuplicateHandling('skip');
     onClose();
-  };
+  }, [onClose]);
 
   // キーボードショートカット
   useEffect(() => {
@@ -336,7 +342,7 @@ const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({
     return () => {
       document.removeEventListener('keydown', handleKeyDown, true);
     };
-  }, [isOpen]);
+  }, [isOpen, handleClose]);
 
   if (!isOpen) return null;
 
@@ -576,6 +582,6 @@ const BookmarkImportModal: React.FC<BookmarkImportModalProps> = ({
       />
     </div>
   );
-};
+}
 
 export default BookmarkImportModal;

@@ -90,10 +90,7 @@ interface WorkspaceGroupedListProps {
 }
 
 const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handlers, ui }) => {
-  // データの展開
   const { groups, items, executionHistory } = data;
-
-  // ハンドラーの展開
   const {
     onLaunch,
     onRemoveItem,
@@ -107,8 +104,6 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
     onMoveItemToGroup,
     onReorderGroups,
   } = handlers;
-
-  // UI状態の展開
   const {
     editingItemId,
     setEditingItemId,
@@ -116,23 +111,18 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
     onToggleUncategorized,
     historyCollapsed,
     onToggleHistory,
-    activeGroupId: _activeGroupId,
     setActiveGroupId,
     visibleGroupIds,
     itemVisibility,
     showUncategorized = true,
   } = ui;
+
   const [draggedItemId, setDraggedItemId] = React.useState<string | null>(null);
-  const [_draggedGroupId, setDraggedGroupId] = React.useState<string | null>(null);
   const [editingGroupId, setEditingGroupId] = React.useState<string | null>(null);
   const [colorPickerGroupId, setColorPickerGroupId] = React.useState<string | null>(null);
-  const contextMenuItemRef = React.useRef<WorkspaceItem | null>(null);
-  const contextMenuGroupRef = React.useRef<WorkspaceGroup | null>(null);
 
-  // グループ化ロジック
   const { itemsByGroup, uncategorizedItems } = useWorkspaceItemGroups(items);
 
-  // パフォーマンス最適化: IDからアイテム/グループへの高速ルックアップマップ
   const itemsMap = React.useMemo(() => {
     const map = new Map<string, WorkspaceItem>();
     items.forEach((item) => map.set(item.id, item));
@@ -145,7 +135,6 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
     return map;
   }, [groups]);
 
-  // パス操作ヘルパー関数
   const handlePathOperation = React.useCallback(
     async (
       item: WorkspaceItem,
@@ -172,7 +161,6 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
     []
   );
 
-  // WorkspaceContextMenuイベントリスナー登録
   React.useEffect(() => {
     const cleanupRenameItem = window.electronAPI.onWorkspaceMenuRenameItem((itemId) => {
       setEditingItemId(itemId);
@@ -271,7 +259,6 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
     onEditItem,
   ]);
 
-  // WorkspaceGroupContextMenuイベントリスナー登録
   React.useEffect(() => {
     const cleanupRename = window.electronAPI.onWorkspaceGroupMenuRename((groupId) => {
       setEditingGroupId(groupId);
@@ -294,15 +281,15 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
       if (group) {
         const groupItems = itemsByGroup[groupId] || [];
         let text = `【${group.displayName}】\r\n`;
+        /* eslint-disable no-irregular-whitespace */
         groupItems.forEach((item, index) => {
-          // eslint-disable-next-line no-irregular-whitespace
           text += `　■${item.displayName}\r\n`;
-          // eslint-disable-next-line no-irregular-whitespace
           text += `　　${item.path}\r\n`;
           if (index < groupItems.length - 1) {
             text += '\r\n';
           }
         });
+        /* eslint-enable no-irregular-whitespace */
         window.electronAPI.copyToClipboard(text);
       }
     });
@@ -325,7 +312,6 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
     };
   }, [groupsMap, itemsByGroup, onUpdateGroup, onArchiveGroup, onDeleteGroup]);
 
-  // ドラッグ&ドロップハンドラー
   const handleItemDragStart = (item: WorkspaceItem) => (e: React.DragEvent) => {
     setDraggedItemId(item.id);
     e.dataTransfer.effectAllowed = 'move';
@@ -337,7 +323,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
     setDraggedItemId(null);
   };
 
-  const handleItemDragOver = (_item: WorkspaceItem) => (e: React.DragEvent) => {
+  const handleItemDragOver = () => (e: React.DragEvent) => {
     e.preventDefault();
     if (draggedItemId) {
       e.dataTransfer.dropEffect = 'move';
@@ -391,10 +377,9 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
 
   const handleGroupDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    // 実行履歴またはランチャーアイテムからのドラッグの場合はcopy、それ以外はmove
-    const hasHistoryItem = e.dataTransfer.types.includes('historyitem');
-    const hasLauncherItem = e.dataTransfer.types.includes('launcheritem');
-    e.dataTransfer.dropEffect = hasHistoryItem || hasLauncherItem ? 'copy' : 'move';
+    const isCopyOperation =
+      e.dataTransfer.types.includes('historyitem') || e.dataTransfer.types.includes('launcheritem');
+    e.dataTransfer.dropEffect = isCopyOperation ? 'copy' : 'move';
   };
 
   /** LauncherItemをワークスペースに追加 */
@@ -449,53 +434,34 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
     setDraggedItemId(null);
   };
 
-  // コンテキストメニューハンドラー
   const handleContextMenu = (item: WorkspaceItem) => (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-
-    // Store item in ref for event listeners
-    contextMenuItemRef.current = item;
-
-    // Show native context menu
     window.electronAPI.showWorkspaceContextMenu(item, groups);
   };
 
   const handleGroupContextMenu = (group: WorkspaceGroup) => (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-
-    // Store group in ref for event listeners
-    contextMenuGroupRef.current = group;
-
-    // Show native context menu
     window.electronAPI.showWorkspaceGroupContextMenu(group);
   };
 
-  // グループのトグル処理（折りたたみ/展開とアクティブ化）
   const handleGroupToggle = (groupId: string) => {
     onToggleGroup(groupId);
     setActiveGroupId(groupId);
   };
 
-  // 無分類セクションのトグル処理（アクティブグループをクリア）
   const handleUncategorizedToggle = () => {
     onToggleUncategorized();
     setActiveGroupId(undefined);
   };
 
-  // グループの並び替えハンドラー
   const handleGroupDragStart = (group: WorkspaceGroup) => (e: React.DragEvent) => {
-    setDraggedGroupId(group.id);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('groupId', group.id);
   };
 
-  const handleGroupDragEnd = () => {
-    setDraggedGroupId(null);
-  };
-
-  const handleGroupDragOverForReorder = (_group: WorkspaceGroup) => (e: React.DragEvent) => {
+  const handleGroupDragOverForReorder = () => (e: React.DragEvent) => {
     e.preventDefault();
     const draggedId = e.dataTransfer.getData('groupId');
     if (draggedId) {
@@ -522,7 +488,6 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
         onReorderGroups(newGroupIds);
       }
     }
-    setDraggedGroupId(null);
   };
 
   // アイテムが1つもない場合
@@ -565,8 +530,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
                 onUpdate={onUpdateGroup}
                 onStartEdit={() => setEditingGroupId(editingGroupId === group.id ? null : group.id)}
                 onGroupDragStart={handleGroupDragStart(group)}
-                onGroupDragEnd={handleGroupDragEnd}
-                onGroupDragOverForReorder={handleGroupDragOverForReorder(group)}
+                onGroupDragOverForReorder={handleGroupDragOverForReorder()}
                 onGroupDropForReorder={handleGroupDropForReorder(group)}
                 onContextMenu={handleGroupContextMenu(group)}
               />
@@ -585,7 +549,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
                       }
                       onDragStart={handleItemDragStart(item)}
                       onDragEnd={handleItemDragEnd}
-                      onDragOver={handleItemDragOver(item)}
+                      onDragOver={handleItemDragOver()}
                       onDrop={handleItemDrop(item)}
                       onContextMenu={handleContextMenu(item)}
                     />
@@ -630,7 +594,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
                     onStartEdit={() => setEditingItemId(editingItemId === item.id ? null : item.id)}
                     onDragStart={handleItemDragStart(item)}
                     onDragEnd={handleItemDragEnd}
-                    onDragOver={handleItemDragOver(item)}
+                    onDragOver={handleItemDragOver()}
                     onDrop={handleItemDrop(item)}
                     onContextMenu={handleContextMenu(item)}
                   />

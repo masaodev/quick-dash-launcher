@@ -29,7 +29,7 @@ const WorkspaceItemList: React.FC<WorkspaceItemListProps> = ({
     e.dataTransfer.effectAllowed = 'move';
   };
 
-  const handleDragOver = (_item: WorkspaceItem) => (e: React.DragEvent) => {
+  const handleDragOver = (e: React.DragEvent): void => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
   };
@@ -42,7 +42,6 @@ const WorkspaceItemList: React.FC<WorkspaceItemListProps> = ({
       return;
     }
 
-    // アイテムの並び替え
     const draggedIndex = items.findIndex((i) => i.id === draggedItemId);
     const targetIndex = items.findIndex((i) => i.id === item.id);
 
@@ -55,9 +54,7 @@ const WorkspaceItemList: React.FC<WorkspaceItemListProps> = ({
     const [draggedItem] = newItems.splice(draggedIndex, 1);
     newItems.splice(targetIndex, 0, draggedItem);
 
-    // 新しい順序でIDリストを作成
-    const newItemIds = newItems.map((i) => i.id);
-    onReorder(newItemIds);
+    onReorder(newItems.map((i) => i.id));
 
     setDraggedItemId(null);
   };
@@ -87,7 +84,7 @@ const WorkspaceItemList: React.FC<WorkspaceItemListProps> = ({
           onUpdateDisplayName={onUpdateDisplayName}
           onStartEdit={() => setEditingId(editingId === item.id ? null : item.id)}
           onDragStart={handleDragStart(item)}
-          onDragOver={handleDragOver(item)}
+          onDragOver={handleDragOver}
           onDrop={handleDrop(item)}
         />
       ))}

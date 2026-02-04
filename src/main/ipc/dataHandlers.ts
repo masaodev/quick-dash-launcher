@@ -15,9 +15,6 @@ import type { EditableJsonItem, LoadEditableItemsResult } from '@common/types/ed
 import { validateEditableItem } from '@common/types/editableItem';
 import {
   LauncherItem,
-  GroupItem,
-  WindowItem,
-  ClipboardItem,
   AppItem,
   isJsonLauncherItem,
   isJsonDirItem,
@@ -27,7 +24,7 @@ import {
 } from '@common/types';
 import type { JsonItem, JsonDirOptions, JsonWindowItem, JsonClipboardItem } from '@common/types';
 import type { RegisterItem } from '@common/types/register';
-import { isWindowInfo, isWindowItem } from '@common/types/guards';
+import { isWindowInfo } from '@common/types/guards';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { BackupService } from '../services/backupService.js';
@@ -86,13 +83,6 @@ async function loadJsonDataFile(
 
 /**
  * JsonItemをAppItem（複数の場合あり）に変換
- *
- * @param jsonItem - 変換元のJsonItem
- * @param sourceFile - ソースファイル名
- * @param itemIndex - アイテムインデックス（エラーメッセージ用）
- * @param seenPaths - 重複チェック用のSet
- * @param tabIndex - タブインデックス（ログ用）
- * @returns AppItem配列（dirアイテムは複数になりうる）
  */
 async function convertJsonItemToAppItems(
   jsonItem: JsonItem,
@@ -102,9 +92,39 @@ async function convertJsonItemToAppItems(
   tabIndex: number
 ): Promise<AppItem[]> {
   const items: AppItem[] = [];
+  const lineNumber = itemIndex + 1;
+
+  /**
+   * 重複チェックを行い、重複でなければアイテムを追加する
+   */
+  function addIfUnique(item: LauncherItem): boolean {
+    const uniqueKey = item.args
+      ? `${item.displayName}|${item.path}|${item.args}`
+      : `${item.displayName}|${item.path}`;
+
+    if (seenPaths.has(uniqueKey)) {
+      dataLogger.debug(
+        { tabIndex, sourceFile, itemName: item.displayName, uniqueKey },
+        'タブ内で重複するアイテムをスキップ'
+      );
+      return false;
+    }
+
+    seenPaths.add(uniqueKey);
+    items.push(item);
+    return true;
+  }
 
   if (isJsonLauncherItem(jsonItem)) {
-    // 通常アイテム
+    // .lnkファイルの場合は特別処理
+    if (jsonItem.path.toLowerCase().endsWith('.lnk') && FileUtils.exists(jsonItem.path)) {
+      const lnkItem = processShortcut(jsonItem.path, sourceFile, lineNumber, jsonItem.displayName);
+      if (lnkItem) {
+        addIfUnique(lnkItem);
+        return items;
+      }
+    }
+
     const item: LauncherItem = {
       displayName: jsonItem.displayName,
       path: jsonItem.path,
@@ -113,90 +133,38 @@ async function convertJsonItemToAppItems(
       customIcon: jsonItem.customIcon,
       windowConfig: jsonItem.windowConfig,
       sourceFile,
-      lineNumber: itemIndex + 1, // 互換性のため1ベース
-      id: jsonItem.id, // JSONのIDを保持
+      lineNumber,
+      id: jsonItem.id,
       isDirExpanded: false,
       isEdited: false,
       memo: jsonItem.memo,
     };
-
-    // .lnkファイルの場合は特別処理
-    if (jsonItem.path.toLowerCase().endsWith('.lnk') && FileUtils.exists(jsonItem.path)) {
-      const lnkItem = processShortcut(
-        jsonItem.path,
-        sourceFile,
-        itemIndex + 1,
-        jsonItem.displayName
-      );
-      if (lnkItem) {
-        const uniqueKey = lnkItem.args
-          ? `${lnkItem.displayName}|${lnkItem.path}|${lnkItem.args}`
-          : `${lnkItem.displayName}|${lnkItem.path}`;
-        if (!seenPaths.has(uniqueKey)) {
-          seenPaths.add(uniqueKey);
-          items.push(lnkItem);
-        } else {
-          dataLogger.debug(
-            { tabIndex, sourceFile, itemName: lnkItem.displayName, uniqueKey },
-            'タブ内で重複するアイテムをスキップ'
-          );
-        }
-        return items;
-      }
-    }
-
-    const uniqueKey = item.args
-      ? `${item.displayName}|${item.path}|${item.args}`
-      : `${item.displayName}|${item.path}`;
-    if (!seenPaths.has(uniqueKey)) {
-      seenPaths.add(uniqueKey);
-      items.push(item);
-    } else {
-      dataLogger.debug(
-        { tabIndex, sourceFile, itemName: item.displayName, uniqueKey },
-        'タブ内で重複するアイテムをスキップ'
-      );
-    }
+    addIfUnique(item);
   } else if (isJsonDirItem(jsonItem)) {
-    // フォルダ取込アイテム
     const scannedItems = await processDirectoryItem(
       jsonItem.path,
       jsonItem.options,
       sourceFile,
-      itemIndex + 1,
-      jsonItem.id // dirアイテムのIDを渡す
+      lineNumber,
+      jsonItem.id
     );
 
     for (const scannedItem of scannedItems) {
-      const uniqueKey = scannedItem.args
-        ? `${scannedItem.displayName}|${scannedItem.path}|${scannedItem.args}`
-        : `${scannedItem.displayName}|${scannedItem.path}`;
-      if (!seenPaths.has(uniqueKey)) {
-        seenPaths.add(uniqueKey);
-        items.push(scannedItem);
-      } else {
-        dataLogger.debug(
-          { tabIndex, sourceFile, itemName: scannedItem.displayName, uniqueKey },
-          'タブ内で重複するアイテムをスキップ'
-        );
-      }
+      addIfUnique(scannedItem);
     }
   } else if (isJsonGroupItem(jsonItem)) {
-    // グループアイテム
-    const groupItem: GroupItem = {
+    items.push({
       displayName: jsonItem.displayName,
       type: 'group',
       itemNames: jsonItem.itemNames,
       sourceFile,
-      lineNumber: itemIndex + 1,
-      id: jsonItem.id, // JSONのIDを保持
+      lineNumber,
+      id: jsonItem.id,
       isEdited: false,
       memo: jsonItem.memo,
-    };
-    items.push(groupItem);
+    });
   } else if (isJsonWindowItem(jsonItem)) {
-    // ウィンドウ操作アイテム
-    const windowItem: WindowItem = {
+    items.push({
       type: 'window',
       displayName: jsonItem.displayName,
       windowTitle: jsonItem.windowTitle,
@@ -210,15 +178,13 @@ async function convertJsonItemToAppItems(
       activateWindow: jsonItem.activateWindow,
       pinToAllDesktops: jsonItem.pinToAllDesktops,
       sourceFile,
-      lineNumber: itemIndex + 1,
-      id: jsonItem.id, // JSONのIDを保持
+      lineNumber,
+      id: jsonItem.id,
       isEdited: false,
       memo: jsonItem.memo,
-    };
-    items.push(windowItem);
+    });
   } else if (isJsonClipboardItem(jsonItem)) {
-    // クリップボードアイテム
-    const clipboardItem: ClipboardItem = {
+    items.push({
       type: 'clipboard',
       displayName: jsonItem.displayName,
       clipboardDataRef: jsonItem.dataFileRef,
@@ -227,12 +193,11 @@ async function convertJsonItemToAppItems(
       formats: jsonItem.formats,
       customIcon: jsonItem.customIcon,
       sourceFile,
-      lineNumber: itemIndex + 1,
+      lineNumber,
       id: jsonItem.id,
       isEdited: false,
       memo: jsonItem.memo,
-    };
-    items.push(clipboardItem);
+    });
   }
 
   return items;
@@ -309,10 +274,10 @@ export async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
     items.push(...jsonItems);
   }
 
-  // Sort items by displayName
+  // displayNameでソート
   items.sort((a, b) => {
-    const aName = isWindowInfo(a) ? a.title : isWindowItem(a) ? a.displayName : a.displayName;
-    const bName = isWindowInfo(b) ? b.title : isWindowItem(b) ? b.displayName : b.displayName;
+    const aName = isWindowInfo(a) ? a.title : a.displayName;
+    const bName = isWindowInfo(b) ? b.title : b.displayName;
     return aName.localeCompare(bName, 'ja');
   });
 
@@ -753,10 +718,6 @@ function convertRegisterItemToJsonItem(item: RegisterItem): JsonItem {
   return launcherItem;
 }
 
-function isDirectory(filePath: string): boolean {
-  return FileUtils.isDirectory(filePath);
-}
-
 // データ変更を全ウィンドウに通知する関数
 export function notifyDataChanged() {
   const allWindows = BrowserWindow.getAllWindows();
@@ -841,7 +802,7 @@ export function setupDataHandlers(configFolder: string) {
   });
 
   ipcMain.handle(IPC_CHANNELS.IS_DIRECTORY, async (_event, filePath: string) => {
-    return isDirectory(filePath);
+    return FileUtils.isDirectory(filePath);
   });
 
   // EditableJsonItem API
