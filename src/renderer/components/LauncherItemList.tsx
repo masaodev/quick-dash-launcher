@@ -218,14 +218,14 @@ const LauncherItemList: React.FC<ItemListProps> = ({
 
   // ドラッグ&ドロップハンドラー（ワークスペースへの追加用）
   const handleDragStart = (e: React.DragEvent, item: AppItem, index: number) => {
-    // LauncherItemのみドラッグ可能
-    if (!isLauncherItem(item)) {
+    if (!isLauncherItem(item) && !isWindowItem(item)) {
       e.preventDefault();
       return;
     }
 
     setDraggedItemIndex(index);
     e.dataTransfer.effectAllowed = 'copy';
+    // WindowItemもlauncherItemキーで転送（Workspace側でLauncherItemとして扱う）
     e.dataTransfer.setData('launcherItem', JSON.stringify(item));
   };
 
@@ -271,7 +271,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
         const isGroup = isGroupItem(item);
         const isWindowOperation = isWindowItem(item);
         const isClipboard = isClipboardItem(item);
-        const isDraggable = isLauncherItem(item);
+        const isDraggable = isLauncherItem(item) || isWindowOperation;
         const isDragging = draggedItemIndex === index;
 
         let itemName: string;
