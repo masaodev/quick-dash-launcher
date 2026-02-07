@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { WindowInfo, GroupItem, WindowItem, LauncherItem } from '@common/types';
+import type { WindowInfo, GroupItem, WindowItem, LauncherItem, ClipboardItem } from '@common/types';
 
 import { getTooltipText } from '../../../src/renderer/utils/tooltipTextGenerator';
 
@@ -105,6 +105,37 @@ describe('tooltipTextGenerator', () => {
       expect(result).toContain('行番号: 10');
     });
 
+    it('IDが設定されている場合、IDが表示され行番号は表示されない', () => {
+      const item: GroupItem = {
+        displayName: 'TestGroup',
+        type: 'group',
+        itemNames: ['item1', 'item2'],
+        sourceFile: 'data.json',
+        id: 'abc12345',
+        lineNumber: 10,
+      };
+
+      const result = getTooltipText(item);
+
+      expect(result).toContain('ID: abc12345');
+      expect(result).not.toContain('行番号:');
+    });
+
+    it('IDがなく行番号のみの場合、行番号が表示される（後方互換性）', () => {
+      const item: GroupItem = {
+        displayName: 'TestGroup',
+        type: 'group',
+        itemNames: ['item1', 'item2'],
+        sourceFile: 'data.json',
+        lineNumber: 10,
+      };
+
+      const result = getTooltipText(item);
+
+      expect(result).toContain('行番号: 10');
+      expect(result).not.toContain('ID:');
+    });
+
     it('メタ情報がない場合', () => {
       const item: GroupItem = {
         displayName: 'TestGroup',
@@ -145,6 +176,22 @@ describe('tooltipTextGenerator', () => {
       expect(result).toContain('アクティブ化: しない');
       expect(result).toContain('データファイル: data.json');
       expect(result).toContain('行番号: 15');
+    });
+
+    it('IDが設定されている場合、IDが表示され行番号は表示されない', () => {
+      const item: WindowItem = {
+        displayName: 'TestOperation',
+        type: 'window',
+        windowTitle: 'Target Window',
+        sourceFile: 'data.json',
+        id: 'win12345',
+        lineNumber: 15,
+      };
+
+      const result = getTooltipText(item);
+
+      expect(result).toContain('ID: win12345');
+      expect(result).not.toContain('行番号:');
     });
 
     it('オプショナルフィールドがない場合', () => {
@@ -198,6 +245,44 @@ describe('tooltipTextGenerator', () => {
       expect(result).toContain('設定: recursive');
     });
 
+    it('IDが設定されている場合、IDが表示され行番号は表示されない', () => {
+      const item: LauncherItem = {
+        displayName: 'TestApp',
+        type: 'app',
+        path: 'C:\\test\\app.exe',
+        sourceFile: 'data.json',
+        id: 'app12345',
+        lineNumber: 20,
+      };
+
+      const result = getTooltipText(item);
+
+      expect(result).toContain('ID: app12345');
+      expect(result).not.toContain('行番号:');
+    });
+
+    it('フォルダ取込展開アイテムの場合、展開元IDが表示される', () => {
+      const item: LauncherItem = {
+        displayName: 'test.exe',
+        path: 'C:\\folder\\test.exe',
+        type: 'app',
+        sourceFile: 'data.json',
+        expandedFromId: 'dir-abc1',
+        expandedFrom: 'C:\\folder',
+        expandedOptions: '深さ:2, タイプ:ファイルのみ',
+        lineNumber: 20,
+      };
+
+      const result = getTooltipText(item);
+
+      expect(result).toContain('展開元ID: dir-abc1');
+      expect(result).toContain('取込元: C:\\folder');
+      expect(result).toContain('設定: 深さ:2, タイプ:ファイルのみ');
+      // 個別IDフィールドは持たないことを確認（展開元IDとは異なる）
+      expect(result).not.toMatch(/^ID: /m); // 行頭に"ID: "がないことを確認
+      expect(result).not.toContain('行番号:');
+    });
+
     it('引数がある場合、パスと結合される', () => {
       const item: LauncherItem = {
         displayName: 'TestApp',
@@ -237,6 +322,48 @@ describe('tooltipTextGenerator', () => {
       const result = getTooltipText(item);
 
       expect(result).toContain('https://example.com');
+    });
+  });
+
+  describe('ClipboardItem', () => {
+    it('クリップボードアイテムの情報が正しくフォーマットされる', () => {
+      const item: ClipboardItem = {
+        displayName: 'TestClipboard',
+        type: 'clipboard',
+        clipboardDataRef: 'clipboard-data/test1234.json',
+        formats: ['text', 'html'],
+        preview: 'Sample text content',
+        savedAt: 1704067200000, // 2024-01-01 00:00:00 UTC
+        sourceFile: 'clipboard.json',
+        lineNumber: 5,
+      };
+
+      const result = getTooltipText(item);
+
+      expect(result).toContain('フォーマット: テキスト, HTML');
+      expect(result).toContain('プレビュー: Sample text content');
+      expect(result).toContain('保存日時:');
+      expect(result).toContain('データファイル: clipboard.json');
+      expect(result).toContain('行番号: 5');
+    });
+
+    it('IDが設定されている場合、IDが表示され行番号は表示されない', () => {
+      const item: ClipboardItem = {
+        displayName: 'TestClipboard',
+        type: 'clipboard',
+        clipboardDataRef: 'clipboard-data/test5678.json',
+        formats: ['text'],
+        preview: 'Sample text',
+        savedAt: 1704067200000,
+        sourceFile: 'clipboard.json',
+        id: 'clip1234',
+        lineNumber: 5,
+      };
+
+      const result = getTooltipText(item);
+
+      expect(result).toContain('ID: clip1234');
+      expect(result).not.toContain('行番号:');
     });
   });
 });
