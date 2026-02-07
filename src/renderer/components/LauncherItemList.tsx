@@ -250,14 +250,14 @@ const LauncherItemList: React.FC<ItemListProps> = ({
 
   // ドラッグ&ドロップハンドラー（ワークスペースへの追加用）
   const handleDragStart = (e: React.DragEvent, item: AppItem, index: number) => {
-    if (!isLauncherItem(item) && !isWindowItem(item)) {
+    if (isWindowInfo(item)) {
       e.preventDefault();
       return;
     }
 
     setDraggedItemIndex(index);
     e.dataTransfer.effectAllowed = 'copy';
-    // WindowItemもlauncherItemキーで転送（Workspace側でLauncherItemとして扱う）
+    // AppItemをワークスペース側にJSON転送（WindowInfoはドラッグ不可のため除外済み）
     e.dataTransfer.setData('launcherItem', JSON.stringify(item));
   };
 
@@ -267,14 +267,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
 
   const handleMemoClick = (e: React.MouseEvent, item: AppItem) => {
     e.stopPropagation();
-    let name: string;
-    if (isWindowInfo(item)) {
-      name = item.title;
-    } else if (isWindowItem(item) || isClipboardItem(item)) {
-      name = item.displayName;
-    } else {
-      name = (item as LauncherItem | GroupItem).displayName;
-    }
+    const name = isWindowInfo(item) ? item.title : item.displayName;
     const memo = 'memo' in item ? (item.memo as string) || '' : '';
     setMemoModalItem({ name, memo });
     setMemoModalOpen(true);
@@ -303,16 +296,14 @@ const LauncherItemList: React.FC<ItemListProps> = ({
         const isGroup = isGroupItem(item);
         const isWindowOperation = isWindowItem(item);
         const isClipboard = isClipboardItem(item);
-        const isDraggable = isLauncherItem(item) || isWindowOperation;
+        const isDraggable = !isWindow;
         const isDragging = draggedItemIndex === index;
 
         let itemName: string;
         if (isWindow) {
           itemName = item.processName ? `${item.title} (${item.processName})` : item.title;
-        } else if (isWindowOperation || isClipboard) {
-          itemName = item.displayName;
         } else {
-          itemName = (item as LauncherItem | GroupItem).displayName;
+          itemName = item.displayName;
         }
 
         let itemKey: string;

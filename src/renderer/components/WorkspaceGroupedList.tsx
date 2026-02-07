@@ -1,5 +1,6 @@
 import React from 'react';
 import type {
+  AppItem,
   WorkspaceItem,
   WorkspaceGroup,
   ExecutionHistoryItem,
@@ -382,18 +383,16 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
     e.dataTransfer.dropEffect = isCopyOperation ? 'copy' : 'move';
   };
 
-  /** LauncherItemをワークスペースに追加 */
-  async function addLauncherItemToWorkspace(
-    launcherItemData: string,
-    groupId?: string
-  ): Promise<void> {
-    const launcherItem: LauncherItem = JSON.parse(launcherItemData);
-    await window.electronAPI.workspaceAPI.addItem(launcherItem, groupId);
+  /** AppItem（LauncherItem/GroupItem/WindowItem/ClipboardItem）をワークスペースに追加 */
+  async function addAppItemToWorkspace(appItemData: string, groupId?: string): Promise<void> {
+    const item: AppItem = JSON.parse(appItemData);
+    await window.electronAPI.workspaceAPI.addItem(item, groupId);
+    // WindowInfoはドラッグ不可のため実際には来ないが、型安全のためinチェックを使用
     await window.electronAPI.showToastWindow({
-      displayName: launcherItem.displayName,
+      displayName: 'displayName' in item ? item.displayName : '',
       itemType: 'workspaceAdd',
-      path: launcherItem.path,
-      icon: launcherItem.icon,
+      path: 'path' in item ? item.path : undefined,
+      icon: 'icon' in item ? item.icon : undefined,
     });
   }
 
@@ -422,7 +421,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
 
     try {
       if (launcherItemData) {
-        await addLauncherItemToWorkspace(launcherItemData, groupId);
+        await addAppItemToWorkspace(launcherItemData, groupId);
       } else if (historyItemData) {
         await addHistoryItemToWorkspace(historyItemData, groupId);
       } else if (itemId && currentGroupId !== (groupId || '')) {
