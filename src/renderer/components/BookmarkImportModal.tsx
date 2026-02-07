@@ -21,6 +21,7 @@ interface BookmarkImportModalProps {
   onClose: () => void;
   onImport: (bookmarks: SimpleBookmarkItem[], duplicateHandling: DuplicateHandlingOption) => void;
   existingItems: EditableJsonItem[];
+  importDestination: string;
 }
 
 function BookmarkImportModal({
@@ -28,6 +29,7 @@ function BookmarkImportModal({
   onClose,
   onImport,
   existingItems,
+  importDestination,
 }: BookmarkImportModalProps): ReactElement | null {
   const [bookmarks, setBookmarks] = useState<SimpleBookmarkItem[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -370,6 +372,11 @@ function BookmarkImportModal({
           <button className="close-button" onClick={handleClose}>
             ✕
           </button>
+        </div>
+
+        <div className="import-destination-bar">
+          <span className="import-destination-label">インポート先:</span>
+          <span className="import-destination-value">{importDestination}</span>
         </div>
 
         <div className="bookmark-import-controls">

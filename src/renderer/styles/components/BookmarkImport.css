@@ -36,6 +36,27 @@
   color: var(--text-primary);
 }
 
+/* インポート先表示バー */
+.import-destination-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-2xl);
+  background-color: var(--bg-info-light);
+  border-bottom: var(--border-light);
+  font-size: var(--font-size-sm);
+}
+
+.import-destination-label {
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.import-destination-value {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
 .bookmark-import-controls {
   padding: var(--spacing-lg) var(--spacing-2xl) var(--spacing-md);
   border-bottom: var(--border-light);
@@ -379,7 +400,7 @@
 /* 重複警告セクション */
 .duplicate-warning-section {
   padding: var(--spacing-md) var(--spacing-2xl);
-  background-color: var(--color-warning-light, #fff8e6);
+  background-color: var(--bg-warning-light);
   border-top: var(--border-light);
   border-bottom: var(--border-light);
 }
@@ -390,7 +411,7 @@
   gap: var(--spacing-sm);
   margin-bottom: var(--spacing-md);
   font-weight: 600;
-  color: var(--color-warning-dark, #856404);
+  color: var(--text-secondary);
 }
 
 .duplicate-warning-icon {
