@@ -5,7 +5,12 @@ import { ipcMain, BrowserWindow } from 'electron';
 import type { WindowPinMode, WindowInfo, VirtualDesktopInfo } from '@common/types';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
-import { getAllWindows, activateWindow, restoreWindow } from '../utils/nativeWindowControl';
+import {
+  getAllWindows,
+  activateWindow,
+  restoreWindow,
+  closeWindow,
+} from '../utils/nativeWindowControl';
 import {
   getDesktopCount,
   getCurrentDesktopNumber,
@@ -143,6 +148,18 @@ export function setupWindowSearchHandlers(
       } catch (error) {
         console.error('Failed to check if window is pinned:', error);
         return false;
+      }
+    }
+  );
+
+  ipcMain.handle(
+    IPC_CHANNELS.CLOSE_WINDOW,
+    async (_event, hwnd: number | bigint): Promise<OperationResult> => {
+      try {
+        return { success: closeWindow(hwnd) };
+      } catch (error) {
+        console.error('Failed to close window:', error);
+        return { success: false, error: getErrorMessage(error) };
       }
     }
   );

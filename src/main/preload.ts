@@ -242,6 +242,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke(IPC_CHANNELS.UNPIN_WINDOW, hwnd),
   isWindowPinned: (hwnd: number | bigint): Promise<boolean> =>
     ipcRenderer.invoke(IPC_CHANNELS.IS_WINDOW_PINNED, hwnd),
+  closeWindow: (hwnd: number | bigint): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke(IPC_CHANNELS.CLOSE_WINDOW, hwnd),
   // システム通知API
   showNotification: (
     title: string,
