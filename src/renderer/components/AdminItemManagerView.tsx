@@ -635,6 +635,15 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   const currentTab = dataFileTabs[selectedTabIndex];
   const currentTabFiles = currentTab?.files || ['data.json'];
 
+  // インポート先の表示テキストを生成
+  const getImportDestination = (): string => {
+    const tabName = currentTab?.name || '';
+    if (currentTabFiles.length > 1) {
+      return `${tabName} > ${getFileLabel(selectedDataFile)}`;
+    }
+    return tabName;
+  };
+
   return (
     <div className="edit-mode-view" onKeyDown={handleKeyDown} tabIndex={0}>
       <div className="edit-mode-header">
@@ -795,6 +804,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
         onClose={() => setIsBookmarkModalOpen(false)}
         onImport={handleBookmarkImport}
         existingItems={workingItems.filter((item) => item.meta.sourceFile === selectedDataFile)}
+        importDestination={getImportDestination()}
       />
 
       <ConfirmDialog
