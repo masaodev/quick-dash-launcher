@@ -20,7 +20,7 @@ type ErrorStoreInstance = {
  */
 export class IconFetchErrorService {
   private errorStore: ErrorStoreInstance | null = null;
-  private static instance: IconFetchErrorService;
+  private static instance: IconFetchErrorService | null = null;
 
   private constructor() {}
 
@@ -32,27 +32,28 @@ export class IconFetchErrorService {
       Store = module.default;
     }
 
-    const configFolder = PathManager.getConfigFolder();
+    const iconCacheFolder = PathManager.getIconCacheFolder();
     this.errorStore = new Store!<ErrorStoreData>({
       name: 'icon-fetch-errors',
-      cwd: configFolder,
+      cwd: iconCacheFolder,
       defaults: { errors: [] },
     }) as unknown as ErrorStoreInstance;
 
-    logger.info(`IconFetchErrorService initialized at ${configFolder}`);
+    logger.info(`IconFetchErrorService initialized at ${iconCacheFolder}`);
   }
 
   public static async getInstance(): Promise<IconFetchErrorService> {
     if (!IconFetchErrorService.instance) {
-      IconFetchErrorService.instance = new IconFetchErrorService();
-      await IconFetchErrorService.instance.initializeStore();
+      const service = new IconFetchErrorService();
+      await service.initializeStore();
+      IconFetchErrorService.instance = service;
     }
     return IconFetchErrorService.instance;
   }
 
   /** テスト用：シングルトンインスタンスをリセット */
   public static resetInstance(): void {
-    IconFetchErrorService.instance = undefined as unknown as IconFetchErrorService;
+    IconFetchErrorService.instance = null;
     Store = null;
   }
 

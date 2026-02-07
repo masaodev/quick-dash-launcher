@@ -6,7 +6,7 @@ const mockStore = vi.hoisted(() => ({
 }));
 
 vi.mock('../config/pathManager.js', () => ({
-  default: { getConfigFolder: vi.fn(() => '/mock/config') },
+  default: { getIconCacheFolder: vi.fn(() => '/mock/config/icon-cache') },
 }));
 
 vi.mock('electron-store', () => {
