@@ -20,7 +20,7 @@ QuickDashLauncherのアーキテクチャ概要とデータフローを説明し
 | サービス | 役割 | パターン |
 |---------|------|---------|
 | `SettingsService` | アプリケーション設定の読み書き・管理 | シングルトン |
-| `HotkeyService` | グローバルホットキーの登録・変更 | シングルトン |
+| `HotkeyService` | 起動ホットキーの登録・変更 | シングルトン |
 | `BackupService` | データファイルの自動バックアップ | シングルトン |
 | `AutoLaunchService` | Windows起動時の自動起動設定 | シングルトン |
 | `FaviconService` | ファビコン・アイコンの取得・キャッシュ管理 | 通常クラス |

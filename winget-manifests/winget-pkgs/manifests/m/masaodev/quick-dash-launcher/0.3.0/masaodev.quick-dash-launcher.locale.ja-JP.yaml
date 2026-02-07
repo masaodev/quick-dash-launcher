@@ -12,12 +12,12 @@ PackageUrl: https://github.com/masaodev/quick-dash-launcher
 License: MIT
 LicenseUrl: https://github.com/masaodev/quick-dash-launcher/blob/main/LICENSE
 Copyright: Copyright (c) masaodev
-ShortDescription: グローバルホットキーで素早くアクセスできるWindowsランチャー
+ShortDescription: 起動ホットキーで素早くアクセスできるWindowsランチャー
 Description: |-
   QuickDashLauncherは、Alt+Spaceキー（デフォルト、カスタマイズ可能）でWebサイト、アプリケーション、フォルダ、ファイルに素早くアクセスできるWindows用ランチャーアプリケーションです。
 
   主な機能：
-  - グローバルホットキーによる高速起動
+  - 起動ホットキーによる高速起動
   - Webサイト、アプリケーション、フォルダへのクイックアクセス
   - カスタムURIスキーマ対応（obsidian://, vscode://など）
   - フォルダ取込機能によるファイル一覧の自動取得
@@ -35,7 +35,7 @@ ReleaseNotes: |-
   QuickDashLauncher v0.3.0 のリリースです。
 
   ## 機能
-  - Alt+Spaceでグローバルランチャー起動（デフォルト、設定で変更可能）
+  - Alt+Spaceでランチャー起動（デフォルト、設定で変更可能）
   - Webサイト、アプリケーション、フォルダへの素早いアクセス
   - フォルダ取込機能でファイル一覧の自動取得
 ReleaseNotesUrl: https://github.com/masaodev/quick-dash-launcher/releases/tag/v0.3.0

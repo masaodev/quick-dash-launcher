@@ -81,7 +81,7 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
 
 | フィールド | 型 | デフォルト値 | 説明 |
 |-----------|-----|-------------|------|
-| **hotkey** | string | "Alt+Space" | グローバルホットキー<br>例: "Alt+Space", "Ctrl+Shift+L" |
+| **hotkey** | string | "Alt+Space" | 起動ホットキー<br>例: "Alt+Space", "Ctrl+Shift+L" |
 
 ### 3.3. ウィンドウサイズ設定
 
@@ -177,7 +177,7 @@ interface DataFileTab {
 
 | フィールド | 型 | デフォルト値 | 説明 |
 |-----------|-----|-------------|------|
-| **itemSearchHotkey** | string | "" | ウィンドウ検索モード直接起動のホットキー<br>空の場合は無効<br>例: "Ctrl+Alt+W" |
+| **itemSearchHotkey** | string | "" | ウィンドウ検索の起動ホットキー<br>空の場合は無効<br>例: "Ctrl+Alt+W" |
 
 ---
 
@@ -195,7 +195,7 @@ export interface AppSettings {
   createdWithVersion?: string;
   /** この設定ファイルを最後に更新したアプリバージョン */
   updatedWithVersion?: string;
-  /** グローバルホットキー（デフォルト: 'Alt+Space'） */
+  /** 起動ホットキー（デフォルト: 'Alt+Space'） */
   hotkey: string;
   /** ウィンドウの初期幅（デフォルト: 600） */
   windowWidth: number;
@@ -247,7 +247,7 @@ export interface AppSettings {
   workspacePositionY: number;
   /** グループアイテムを並列起動する（デフォルト: false） */
   parallelGroupLaunch: boolean;
-  /** ウィンドウ検索モード直接起動のホットキー（デフォルト: ''、空の場合は無効） */
+  /** ウィンドウ検索の起動ホットキー（デフォルト: ''、空の場合は無効） */
   itemSearchHotkey: string;
 }
 ```

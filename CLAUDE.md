@@ -2,7 +2,7 @@
 
 ## プロジェクト概要（WHAT）
 
-**QuickDashLauncher** - グローバルホットキー（Alt+Space）でWebサイト、アプリケーション、フォルダ、ファイルに素早くアクセスするWindows用ランチャー。
+**QuickDashLauncher** - 起動ホットキー（Alt+Space）でWebサイト、アプリケーション、フォルダ、ファイルに素早くアクセスするWindows用ランチャー。
 
 **技術スタック**: Electron + React + TypeScript + Vite
 **テスト**: Vitest（単体）、Playwright（E2E）

@@ -119,7 +119,9 @@ export class HotkeyService {
       }
 
       if (!isMain && hotkey === this.currentHotkey) {
-        logger.warn(`アイテム検索ホットキーがメインホットキーと競合しています: ${hotkey}`);
+        logger.warn(
+          `ウィンドウ検索の起動ホットキーがランチャー起動ホットキーと競合しています: ${hotkey}`
+        );
         return false;
       }
 

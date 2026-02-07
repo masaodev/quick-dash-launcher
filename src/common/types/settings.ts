@@ -57,7 +57,7 @@ export interface AppSettings {
   createdWithVersion?: string;
   /** この設定ファイルを最後に更新したアプリバージョン */
   updatedWithVersion?: string;
-  /** グローバルホットキー（デフォルト: 'Alt+Space'） */
+  /** ランチャー起動ホットキー（デフォルト: 'Alt+Space'） */
   hotkey: string;
   /** ウィンドウの初期幅（デフォルト: 600） */
   windowWidth: number;
@@ -111,6 +111,6 @@ export interface AppSettings {
   workspaceVisibleOnAllDesktops: boolean;
   /** グループアイテムを並列起動する（デフォルト: false） */
   parallelGroupLaunch: boolean;
-  /** アイテム検索モード直接起動のホットキー（デフォルト: ''、空の場合は無効） */
+  /** ウィンドウ検索で起動のホットキー（デフォルト: ''、空の場合は無効） */
   itemSearchHotkey: string;
 }

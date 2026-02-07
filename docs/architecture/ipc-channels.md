@@ -86,7 +86,7 @@ const channel = IPC_CHANNELS.SETTINGS_GET; // 'settings:get'
 - 戻り値: `string` (設定ファイルのフルパス)
 
 ### `settings:change-hotkey`
-グローバルホットキーを変更
+起動ホットキーを変更
 - パラメータ: `newHotkey: string`
 - 戻り値: `boolean` (成功/失敗)
 
@@ -96,7 +96,7 @@ const channel = IPC_CHANNELS.SETTINGS_GET; // 'settings:get'
 - 戻り値: `boolean` (利用可能かどうか)
 
 ### `settings:change-item-search-hotkey`
-ウィンドウ検索モード直接起動のホットキーを変更
+ウィンドウ検索の起動ホットキーを変更
 - パラメータ: `newHotkey: string`（空文字列で無効化）
 - 戻り値: `boolean` (成功/失敗)
 
@@ -556,7 +556,7 @@ onWindowShown(callback: () => void)
 ```typescript
 onWindowShownItemSearch(callback: () => void)
 ```
-- **発生タイミング**: `itemSearchHotkey`で設定されたホットキーでウィンドウが表示されたとき
+- **発生タイミング**: `itemSearchHotkey`で設定されたウィンドウ検索の起動ホットキーでウィンドウが表示されたとき
 - **用途**: ウィンドウ検索モードを自動的に有効にする
 
 ### `onWindowHidden`

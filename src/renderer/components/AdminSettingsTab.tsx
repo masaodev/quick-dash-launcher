@@ -56,7 +56,7 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
     reason?: string;
   }>({ isValid: true });
 
-  // ウィンドウ検索ホットキーの変更ハンドラー
+  // ウィンドウ検索の起動ホットキーの変更ハンドラー
   const handleItemSearchHotkeyChange = useCallback(
     async (newHotkey: string) => {
       try {
@@ -66,16 +66,16 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
             ...prev,
             itemSearchHotkey: newHotkey,
           }));
-          toast.success('ウィンドウ検索ホットキーを設定しました');
+          toast.success('ウィンドウ検索の起動ホットキーを設定しました');
         } else {
           showAlert(
-            'ウィンドウ検索ホットキーの設定に失敗しました。メインホットキーと同じ値は設定できません。',
+            'ウィンドウ検索の起動ホットキーの設定に失敗しました。ランチャー起動と同じ値は設定できません。',
             'error'
           );
         }
       } catch (error) {
-        console.error('ウィンドウ検索ホットキーの変更に失敗しました:', error);
-        showAlert('ウィンドウ検索ホットキーの変更に失敗しました。', 'error');
+        console.error('ウィンドウ検索の起動ホットキーの変更に失敗しました:', error);
+        showAlert('ウィンドウ検索の起動ホットキーの変更に失敗しました。', 'error');
       }
     },
     [setEditedSettings, toast, showAlert]
@@ -205,9 +205,9 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
           {selectedCategory === 'basic' && (
             <>
               <div className="settings-section">
-                <h3>ホットキー</h3>
+                <h3>起動ホットキー</h3>
                 <div className="setting-item">
-                  <label htmlFor="hotkey">グローバルホットキー:</label>
+                  <label htmlFor="hotkey">ランチャー起動:</label>
                   <HotkeyInput
                     value={editedSettings.hotkey}
                     onChange={(hotkey) => handleSettingChange('hotkey', hotkey)}
@@ -220,7 +220,7 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                   )}
                 </div>
                 <div className="setting-item">
-                  <label htmlFor="itemSearchHotkey">ウィンドウ検索モード直接起動:</label>
+                  <label htmlFor="itemSearchHotkey">ウィンドウ検索で起動:</label>
                   <HotkeyInput
                     value={editedSettings.itemSearchHotkey || ''}
                     onChange={handleItemSearchHotkeyChange}
@@ -236,7 +236,7 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                     <div className="validation-error">{itemSearchHotkeyValidation.reason}</div>
                   )}
                   <div className="setting-description">
-                    このホットキーを押すとウィンドウ検索モードで直接起動します。設定なしで無効化されます。
+                    このホットキーでウィンドウ検索モードとして起動します。設定なしで無効化されます。
                   </div>
                 </div>
               </div>

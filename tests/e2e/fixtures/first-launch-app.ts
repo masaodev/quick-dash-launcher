@@ -55,7 +55,7 @@ export const test = base.extend<ElectronFixtures>({
         ...process.env,
         NODE_ENV: 'test',
         ELECTRON_IS_DEV: '0',
-        // テスト実行時はグローバルホットキーを無効化
+        // テスト実行時は起動ホットキーを無効化
         DISABLE_GLOBAL_HOTKEY: '1',
         // テスト実行時はウィンドウを自動表示
         SHOW_WINDOW_ON_STARTUP: '1',

@@ -14,7 +14,7 @@ interface FirstLaunchSetupProps {
 
 /**
  * 初回起動時のホットキー設定画面コンポーネント
- * ユーザーがグローバルホットキーをカスタマイズできるようにする
+ * ユーザーがランチャー起動ホットキーをカスタマイズできるようにする
  */
 export const SetupFirstLaunch: React.FC<FirstLaunchSetupProps> = ({ onComplete }) => {
   const [hotkey, setHotkey] = useState<string>('Alt+Space');
@@ -67,10 +67,10 @@ export const SetupFirstLaunch: React.FC<FirstLaunchSetupProps> = ({ onComplete }
 
         <div className="hotkey-setup-section">
           <label htmlFor="hotkey-input" className="hotkey-label">
-            グローバルホットキー
+            ランチャー起動ホットキー
           </label>
           <p className="section-description">
-            アプリを起動するためのキーです（デフォルト: Alt+Space）
+            ランチャーを起動するためのキーです（デフォルト: Alt+Space）
           </p>
           <HotkeyInput
             value={hotkey}

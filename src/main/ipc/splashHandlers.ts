@@ -16,10 +16,10 @@ export function setupSplashHandlers(getMainWindow: () => BrowserWindow | null): 
   ipcMain.handle(IPC_CHANNELS.SPLASH_READY, async () => {
     windowLogger.info('スプラッシュスクリーンの準備が完了しました');
 
-    // グローバルホットキーを登録（テスト環境ではスキップ）
+    // 起動ホットキーを登録（テスト環境ではスキップ）
     if (!EnvConfig.disableGlobalHotkey) {
       await registerGlobalShortcut();
-      windowLogger.info('グローバルホットキーを登録しました');
+      windowLogger.info('起動ホットキーを登録しました');
     }
 
     // 初回起動判定を取得
