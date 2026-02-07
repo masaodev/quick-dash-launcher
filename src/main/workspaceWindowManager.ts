@@ -8,6 +8,7 @@ import { SettingsService } from './services/settingsService.js';
 import { EnvConfig } from './config/envConfig.js';
 import PathManager from './config/pathManager.js';
 import { calculateModalSize } from './utils/modalSizeManager.js';
+import { pinWindow, unPinWindow } from './utils/virtualDesktop/index.js';
 
 let workspaceWindow: BrowserWindow | null = null;
 let isWorkspaceWindowVisible: boolean = false;
@@ -103,6 +104,8 @@ export async function createWorkspaceWindow(): Promise<BrowserWindow> {
   });
 
   await setWorkspacePosition();
+
+  await applyVisibilityOnAllDesktops();
 
   windowLogger.info('ワークスペースウィンドウを作成しました');
   return workspaceWindow;
@@ -336,4 +339,26 @@ export async function saveWorkspacePosition(): Promise<void> {
 /** ワークスペースウィンドウのインスタンスを取得する */
 export function getWorkspaceWindow(): BrowserWindow | null {
   return workspaceWindow;
+}
+
+/**
+ * ワークスペースウィンドウの全仮想デスクトップ表示設定を適用
+ */
+export async function applyVisibilityOnAllDesktops(): Promise<void> {
+  if (!workspaceWindow || workspaceWindow.isDestroyed()) {
+    return;
+  }
+
+  const settingsService = await SettingsService.getInstance();
+  const enabled = await settingsService.get('workspaceVisibleOnAllDesktops');
+
+  const hwnd = workspaceWindow.getNativeWindowHandle().readBigUInt64LE();
+  const action = enabled ? 'pin' : 'unpin';
+  const success = enabled ? pinWindow(hwnd) : unPinWindow(hwnd);
+
+  if (success) {
+    windowLogger.info(`ワークスペースの仮想デスクトップ固定: ${action}`);
+  } else {
+    windowLogger.warn(`ワークスペースの仮想デスクトップ固定に失敗: ${action}`);
+  }
 }

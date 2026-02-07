@@ -6,7 +6,11 @@ import { IPC_CHANNELS } from '@common/ipcChannels';
 import { SettingsService } from '../services/settingsService.js';
 import { HotkeyService } from '../services/hotkeyService.js';
 import { AutoLaunchService } from '../services/autoLaunchService.js';
-import { getWorkspaceWindow, setWorkspacePosition } from '../workspaceWindowManager.js';
+import {
+  getWorkspaceWindow,
+  setWorkspacePosition,
+  applyVisibilityOnAllDesktops,
+} from '../workspaceWindowManager.js';
 
 function notifySettingsChanged(): void {
   for (const window of BrowserWindow.getAllWindows()) {
@@ -54,6 +58,10 @@ async function applySettingsEffects(
     if (workspace && !workspace.isDestroyed() && workspace.isVisible()) {
       await setWorkspacePosition();
     }
+  }
+
+  if (changedKeys.includes('workspaceVisibleOnAllDesktops')) {
+    await applyVisibilityOnAllDesktops();
   }
 }
 

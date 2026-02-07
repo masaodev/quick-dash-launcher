@@ -107,6 +107,8 @@ export interface AppSettings {
   workspacePositionX: number;
   /** 固定位置のY座標（workspacePositionMode='fixed'時に使用、デフォルト: 0） */
   workspacePositionY: number;
+  /** ワークスペースウィンドウを全仮想デスクトップに表示（デフォルト: true） */
+  workspaceVisibleOnAllDesktops: boolean;
   /** グループアイテムを並列起動する（デフォルト: false） */
   parallelGroupLaunch: boolean;
   /** アイテム検索モード直接起動のホットキー（デフォルト: ''、空の場合は無効） */

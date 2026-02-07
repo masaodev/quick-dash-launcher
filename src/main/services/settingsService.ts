@@ -52,6 +52,7 @@ export class SettingsService {
     workspaceTargetDisplayIndex: 0,
     workspacePositionX: 0,
     workspacePositionY: 0,
+    workspaceVisibleOnAllDesktops: true,
     parallelGroupLaunch: false,
     itemSearchHotkey: '',
   };

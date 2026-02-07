@@ -598,6 +598,24 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                     有効にすると、背景のみが透過され、アイテムやグループは通常通り表示されます。
                   </div>
                 </div>
+
+                <div className="setting-item">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={editedSettings.workspaceVisibleOnAllDesktops}
+                      onChange={(e) =>
+                        handleSettingChange('workspaceVisibleOnAllDesktops', e.target.checked)
+                      }
+                      disabled={isLoading}
+                    />
+                    全ての仮想デスクトップに表示
+                  </label>
+                  <div className="setting-description">
+                    有効にすると、ワークスペースウィンドウが全ての仮想デスクトップで表示されます（Windows
+                    10/11の仮想デスクトップ機能）。
+                  </div>
+                </div>
               </div>
             </>
           )}
