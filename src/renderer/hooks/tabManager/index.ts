@@ -1,6 +1,7 @@
 import { useCallback, Dispatch, SetStateAction } from 'react';
 import { AppSettings } from '@common/types';
 
+import { HandleSettingChange } from '../useSettingsManager';
 import { FileNameGenerator } from '../../utils/tabManager';
 
 import { useTabState } from './useTabState';
@@ -11,10 +12,7 @@ import { useTabPersistence } from './useTabPersistence';
 interface UseTabManagerProps {
   editedSettings: AppSettings;
   setEditedSettings: Dispatch<SetStateAction<AppSettings>>;
-  handleSettingChange: <K extends keyof AppSettings>(
-    key: K,
-    value: AppSettings[K]
-  ) => Promise<void>;
+  handleSettingChange: HandleSettingChange;
   showAlert: (message: string, type?: 'info' | 'error' | 'warning' | 'success') => void;
   showConfirm: (
     message: string,

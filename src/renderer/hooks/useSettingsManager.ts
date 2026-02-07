@@ -3,6 +3,12 @@ import { AppSettings } from '@common/types';
 
 import { logError } from '../utils/debug';
 
+export type HandleSettingChange = <K extends keyof AppSettings>(
+  key: K,
+  value: AppSettings[K],
+  options?: { silent?: boolean }
+) => Promise<void>;
+
 interface UseSettingsManagerProps {
   editedSettings: AppSettings;
   setEditedSettings: Dispatch<SetStateAction<AppSettings>>;
@@ -24,10 +30,12 @@ export function useSettingsManager({
   const [isLoading, setIsLoading] = useState(false);
 
   const saveSettings = useCallback(
-    async (settings: AppSettings, successMessage: string): Promise<void> => {
+    async (settings: AppSettings, successMessage?: string): Promise<void> => {
       try {
         await onSave(settings);
-        showToast?.(successMessage);
+        if (successMessage) {
+          showToast?.(successMessage);
+        }
       } catch (error) {
         logError('設定の保存に失敗しました:', error);
         showAlert('設定の保存に失敗しました。', 'error');
@@ -37,10 +45,14 @@ export function useSettingsManager({
   );
 
   const handleSettingChange = useCallback(
-    async <K extends keyof AppSettings>(key: K, value: AppSettings[K]): Promise<void> => {
+    async <K extends keyof AppSettings>(
+      key: K,
+      value: AppSettings[K],
+      options?: { silent?: boolean }
+    ): Promise<void> => {
       const newSettings = { ...editedSettings, [key]: value };
       setEditedSettings(newSettings);
-      await saveSettings(newSettings, '設定を保存しました');
+      await saveSettings(newSettings, options?.silent ? undefined : '設定を保存しました');
     },
     [editedSettings, setEditedSettings, saveSettings]
   );

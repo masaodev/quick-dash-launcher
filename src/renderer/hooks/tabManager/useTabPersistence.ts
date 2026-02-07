@@ -1,6 +1,7 @@
 import { useCallback, Dispatch, SetStateAction } from 'react';
 import { AppSettings } from '@common/types';
 
+import { HandleSettingChange } from '../useSettingsManager';
 import { logError } from '../../utils/debug';
 import { FileNameGenerator, SavedTabState, PendingFileOperations } from '../../utils/tabManager';
 
@@ -11,10 +12,7 @@ interface UseTabPersistenceProps {
   setPendingFileOperations: Dispatch<SetStateAction<PendingFileOperations>>;
   savedTabsState: SavedTabState | null;
   setSavedTabsState: Dispatch<SetStateAction<SavedTabState | null>>;
-  handleSettingChange: <K extends keyof AppSettings>(
-    key: K,
-    value: AppSettings[K]
-  ) => Promise<void>;
+  handleSettingChange: HandleSettingChange;
   showAlert: (message: string, type?: 'info' | 'error' | 'warning' | 'success') => void;
   showConfirm: (
     message: string,
@@ -79,10 +77,10 @@ export function useTabPersistence({
         });
       });
 
-      // 4. 設定を保存
+      // 4. 設定を保存（個別のトーストを抑制し、最後にまとめて表示）
       await Promise.all([
-        handleSettingChange('dataFileTabs', tabs),
-        handleSettingChange('dataFileLabels', labels),
+        handleSettingChange('dataFileTabs', tabs, { silent: true }),
+        handleSettingChange('dataFileLabels', labels, { silent: true }),
       ]);
 
       // 5. 保存完了後、状態をリセット
