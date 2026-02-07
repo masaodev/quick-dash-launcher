@@ -51,7 +51,7 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
     "data.json": "メイン",
     "data2.json": "サブ"
   },
-  "windowPositionMode": "center",
+  "windowPositionMode": "cursorMonitorCenter",
   "windowPositionX": 0,
   "windowPositionY": 0,
   "workspaceOpacity": 100,
@@ -132,7 +132,7 @@ interface DataFileTab {
 
 | フィールド | 型 | デフォルト値 | 説明 |
 |-----------|-----|-------------|------|
-| **windowPositionMode** | WindowPositionMode | "center" | ウィンドウ表示位置モード |
+| **windowPositionMode** | WindowPositionMode | "cursorMonitorCenter" | ウィンドウ表示位置モード |
 | **windowPositionX** | number | 0 | 固定位置のX座標（windowPositionMode='fixed'時に使用） |
 | **windowPositionY** | number | 0 | 固定位置のY座標（windowPositionMode='fixed'時に使用） |
 
@@ -225,7 +225,7 @@ export interface AppSettings {
   dataFileTabs: DataFileTab[];
   /** データファイルの名前定義（物理ファイル名 → データファイル名） */
   dataFileLabels: Record<string, string>;
-  /** ウィンドウ表示位置モード（デフォルト: 'center'） */
+  /** ウィンドウ表示位置モード（デフォルト: 'cursorMonitorCenter'） */
   windowPositionMode: WindowPositionMode;
   /** 固定位置のX座標（windowPositionMode='fixed'時に使用、デフォルト: 0） */
   windowPositionX: number;

@@ -405,24 +405,24 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
         await expect(positionSection).toBeVisible();
       });
 
-      await test.step('デフォルトは画面中央（固定）が選択されている', async () => {
-        const centerRadio = adminWindow.locator('input[name="windowPositionMode"][value="center"]');
-        await expect(centerRadio).toBeChecked();
-      });
-
-      await test.step('画面中央（自動切替）を選択できる', async () => {
-        // ウィンドウ表示位置セクション内のラジオボタンを直接操作
+      await test.step('デフォルトは画面中央（自動切替）が選択されている', async () => {
         const cursorMonitorCenterRadio = adminWindow.locator(
           'input[name="windowPositionMode"][value="cursorMonitorCenter"]'
         );
-        await cursorMonitorCenterRadio.click({ force: true });
+        await expect(cursorMonitorCenterRadio).toBeChecked();
+      });
+
+      await test.step('画面中央（固定）を選択できる', async () => {
+        // ウィンドウ表示位置セクション内のラジオボタンを直接操作
+        const centerRadio = adminWindow.locator('input[name="windowPositionMode"][value="center"]');
+        await centerRadio.click({ force: true });
         await adminUtils.wait(200);
 
-        await expect(cursorMonitorCenterRadio).toBeChecked();
+        await expect(centerRadio).toBeChecked();
 
         // settings.jsonに保存されたことを確認
         const settings = configHelper.readSettings();
-        expect(settings.windowPositionMode).toBe('cursorMonitorCenter');
+        expect(settings.windowPositionMode).toBe('center');
       });
 
       await test.step('カーソル付近を選択できる', async () => {

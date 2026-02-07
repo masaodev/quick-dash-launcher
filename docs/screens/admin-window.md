@@ -270,7 +270,7 @@
 | **fixed** | 固定位置（手動設定） - ウィンドウを移動した位置を記憶して、次回も同じ位置に表示します |
 
 #### 注意
-- デフォルトは「center」（画面中央（固定））
+- デフォルトは「cursorMonitorCenter」（画面中央（自動切替））
 - 「cursorMonitorCenter」モードは、マルチモニター環境で作業中のモニターにウィンドウを表示したい場合に便利です
 - 「fixed」モードでは、ウィンドウを手動で移動した後の位置が記憶されます
 
@@ -1225,7 +1225,7 @@ QuickDashLauncherの動作をカスタマイズするための設定機能を説
 | `editModeWidth` | `number` | `1200` | 管理画面の幅 |
 | `editModeHeight` | `number` | `1000` | 管理画面の高さ |
 | `autoLaunch` | `boolean` | `false` | Windows起動時に自動起動 |
-| `windowPositionMode` | `string` | `'center'` | 表示位置モード |
+| `windowPositionMode` | `string` | `'cursorMonitorCenter'` | 表示位置モード |
 | `showDataFileTabs` | `boolean` | `false` | タブ表示の有効/無効 |
 | `dataFileLabels` | `object` | `{}` | データファイルのラベル定義 |
 | `backupEnabled` | `boolean` | `false` | バックアップ機能 |
@@ -1311,8 +1311,8 @@ Alt+Shift+W
 
 | モード | 説明 |
 |-------|------|
-| `center`（画面中央（固定）） | 常にプライマリモニターの中央にウィンドウを表示します（デフォルト） |
-| `cursorMonitorCenter`（画面中央（自動切替）） | マウスカーソルがあるモニターの中央にウィンドウを表示します（マルチモニター推奨） |
+| `center`（画面中央（固定）） | 常にプライマリモニターの中央にウィンドウを表示します |
+| `cursorMonitorCenter`（画面中央（自動切替）） | マウスカーソルがあるモニターの中央にウィンドウを表示します（デフォルト、マルチモニター推奨） |
 | `cursor`（カーソル付近） | マウスカーソルの近くにウィンドウを表示します（検索入力がしやすい位置） |
 | `fixed`（固定位置（手動設定）） | ウィンドウを移動した位置を記憶して、次回も同じ位置に表示します |
 
@@ -1505,7 +1505,7 @@ $env:QUICK_DASH_CONFIG_DIR = "D:\MyApps\quick-dash-config"
     "data.json": "メインリスト",
     "data2.json": "開発用"
   },
-  "windowPositionMode": "center",
+  "windowPositionMode": "cursorMonitorCenter",
   "windowPositionX": 0,
   "windowPositionY": 0,
   "workspaceOpacity": 100,
