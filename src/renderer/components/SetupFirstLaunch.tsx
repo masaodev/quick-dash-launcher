@@ -2,14 +2,22 @@ import React, { useState } from 'react';
 
 import '../styles/components/SetupFirstLaunch.css';
 
-import { logError } from '../utils/debug';
-
 import { HotkeyInput } from './HotkeyInput';
-import AlertDialog from './AlertDialog';
 import { Button } from './ui/Button';
 
+interface HotkeyValidation {
+  isValid: boolean;
+  reason?: string;
+}
+
+interface FirstLaunchSettings {
+  hotkey: string;
+  autoLaunch: boolean;
+  itemSearchHotkey: string;
+}
+
 interface FirstLaunchSetupProps {
-  onComplete: (hotkey: string, autoLaunch: boolean) => void;
+  onComplete: (settings: FirstLaunchSettings) => void;
 }
 
 /**
@@ -17,46 +25,21 @@ interface FirstLaunchSetupProps {
  * ユーザーがランチャー起動ホットキーをカスタマイズできるようにする
  */
 export const SetupFirstLaunch: React.FC<FirstLaunchSetupProps> = ({ onComplete }) => {
-  const [hotkey, setHotkey] = useState<string>('Alt+Space');
-  const [hotkeyValidation, setHotkeyValidation] = useState<{ isValid: boolean; reason?: string }>({
+  const [hotkey, setHotkey] = useState('Alt+Space');
+  const [hotkeyValidation, setHotkeyValidation] = useState<HotkeyValidation>({ isValid: true });
+  const [itemSearchHotkey, setItemSearchHotkey] = useState('');
+  const [itemSearchHotkeyValidation, setItemSearchHotkeyValidation] = useState<HotkeyValidation>({
     isValid: true,
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [autoLaunch, setAutoLaunch] = useState<boolean>(false);
+  const [autoLaunch, setAutoLaunch] = useState(false);
 
-  // AlertDialog状態管理
-  const [alertDialog, setAlertDialog] = useState<{
-    isOpen: boolean;
-    message: string;
-    type?: 'info' | 'error' | 'warning' | 'success';
-  }>({
-    isOpen: false,
-    message: '',
-    type: 'info',
-  });
+  const isValid = hotkeyValidation.isValid && itemSearchHotkeyValidation.isValid;
 
-  const handleHotkeyValidation = (isValid: boolean, reason?: string) => {
-    setHotkeyValidation({ isValid, reason });
-  };
-
-  const handleComplete = async () => {
-    if (!hotkeyValidation.isValid) {
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      onComplete(hotkey, autoLaunch);
-    } catch (error) {
-      logError('初回設定の保存に失敗しました:', error);
-      setAlertDialog({
-        isOpen: true,
-        message: '設定の保存に失敗しました。',
-        type: 'error',
-      });
-    } finally {
-      setIsLoading(false);
-    }
+  const handleComplete = () => {
+    if (!isValid) return;
+    setIsLoading(true);
+    onComplete({ hotkey, autoLaunch, itemSearchHotkey });
   };
 
   return (
@@ -75,7 +58,7 @@ export const SetupFirstLaunch: React.FC<FirstLaunchSetupProps> = ({ onComplete }
           <HotkeyInput
             value={hotkey}
             onChange={setHotkey}
-            onValidationChange={handleHotkeyValidation}
+            onValidationChange={(valid, reason) => setHotkeyValidation({ isValid: valid, reason })}
             disabled={isLoading}
             placeholder="Alt+Space"
           />
@@ -86,6 +69,32 @@ export const SetupFirstLaunch: React.FC<FirstLaunchSetupProps> = ({ onComplete }
             修飾キー（Ctrl、Alt、Shift等）と通常キーを組み合わせてください。
             <br />
             例: Alt+Space、Ctrl+Alt+W、Ctrl+Shift+L など
+          </p>
+        </div>
+
+        <div className="hotkey-setup-section">
+          <label htmlFor="item-search-hotkey-input" className="hotkey-label">
+            ウィンドウ検索で起動のホットキー
+          </label>
+          <p className="section-description">
+            ウィンドウ検索モードで直接起動するためのキーです（デフォルト: 未設定）
+          </p>
+          <HotkeyInput
+            value={itemSearchHotkey}
+            onChange={setItemSearchHotkey}
+            onValidationChange={(valid, reason) =>
+              setItemSearchHotkeyValidation({ isValid: valid, reason })
+            }
+            disabled={isLoading}
+            placeholder="未設定"
+            allowEmpty={true}
+            showClearButton={true}
+          />
+          {!itemSearchHotkeyValidation.isValid && (
+            <div className="validation-error">{itemSearchHotkeyValidation.reason}</div>
+          )}
+          <p className="hotkey-hint">
+            設定するとこのキーでウィンドウ検索モードが直接開きます。後から設定することもできます。
           </p>
         </div>
 
@@ -107,20 +116,13 @@ export const SetupFirstLaunch: React.FC<FirstLaunchSetupProps> = ({ onComplete }
           <Button
             variant="primary"
             onClick={handleComplete}
-            disabled={isLoading || !hotkeyValidation.isValid}
+            disabled={isLoading || !isValid}
             type="button"
           >
             設定を完了
           </Button>
         </div>
       </div>
-
-      <AlertDialog
-        isOpen={alertDialog.isOpen}
-        onClose={() => setAlertDialog({ ...alertDialog, isOpen: false })}
-        message={alertDialog.message}
-        type={alertDialog.type}
-      />
     </div>
   );
 };

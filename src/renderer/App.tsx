@@ -616,14 +616,22 @@ function App(): React.ReactElement {
     });
   };
 
-  const handleFirstLaunchComplete = async (hotkey: string, autoLaunch: boolean) => {
+  const handleFirstLaunchComplete = async (settings: {
+    hotkey: string;
+    autoLaunch: boolean;
+    itemSearchHotkey: string;
+  }) => {
     try {
       await window.electronAPI.setMultipleSettings({
-        hotkey,
-        autoLaunch,
+        hotkey: settings.hotkey,
+        autoLaunch: settings.autoLaunch,
+        itemSearchHotkey: settings.itemSearchHotkey,
         dataFileTabs: [{ files: ['data.json'], name: 'メイン' }],
       });
-      await window.electronAPI.changeHotkey(hotkey);
+      await window.electronAPI.changeHotkey(settings.hotkey);
+      if (settings.itemSearchHotkey) {
+        await window.electronAPI.changeItemSearchHotkey(settings.itemSearchHotkey);
+      }
       setIsFirstLaunch(false);
     } catch (error) {
       logError('初回設定の保存に失敗しました:', error);
