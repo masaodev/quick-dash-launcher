@@ -44,15 +44,6 @@
       transform: translateY(-10px);
     }
 
-    /* すべてのタイプで同じ白背景を使用 */
-    .toast-container.success,
-    .toast-container.error,
-    .toast-container.info,
-    .toast-container.warning {
-      background: #ffffff;
-      color: #333;
-    }
-
     /* アイコン部分 */
     .toast-icon-wrapper {
       flex-shrink: 0;
@@ -156,27 +147,19 @@
   <div id="toast" class="toast-container"></div>
 
   <script>
-    // タイプ別デフォルトアイコン
-    const defaultIcons = {
-      url: '🌐',
-      app: '⚙️',
-      file: '📄',
-      folder: '📁',
-      customUri: '🔗',
-      group: '📦',
-      windowOperation: '🪟'
+    // タイプ別設定（アイコンとアクション文言を統合管理）
+    const itemTypeConfig = {
+      url:             { icon: '🌐', action: 'URLを開いています...' },
+      app:             { icon: '⚙️', action: 'アプリを起動中...' },
+      file:            { icon: '📄', action: 'ファイルを開いています...' },
+      folder:          { icon: '📁', action: 'フォルダーを開いています...' },
+      customUri:       { icon: '🔗', action: '起動中...' },
+      group:           { icon: '📦', action: null },
+      windowOperation: { icon: '🪟', action: 'ウィンドウ操作を実行します' },
+      clipboard:       { icon: '📋', action: 'クリップボードに復元しています...' }
     };
 
-    // タイプ別アクション文言
-    const actionTexts = {
-      url: 'を開きます',
-      app: 'を開きます',
-      file: 'を開きます',
-      folder: 'を開きます',
-      customUri: 'を開きます',
-      group: null, // 特殊処理
-      windowOperation: 'ウィンドウ操作を実行します'
-    };
+    const DEFAULT_ICON = '📋';
 
     // 従来のアイコン（シンプルメッセージ用）
     const legacyIcons = {
@@ -186,12 +169,20 @@
       warning: '⚠'
     };
 
-    // パス省略関数（40文字超で中間省略）
+    function getDefaultIcon(itemType) {
+      const config = itemTypeConfig[itemType];
+      return config ? config.icon : DEFAULT_ICON;
+    }
+
+    function getActionText(itemType) {
+      const config = itemTypeConfig[itemType];
+      return config ? config.action : '起動中...';
+    }
+
+    // パス省略（40文字超で中間省略）
     function truncatePath(path, maxLength = 40) {
       if (!path || path.length <= maxLength) return path;
-      const prefixLen = 15;
-      const suffixLen = 20;
-      return path.substring(0, prefixLen) + '...' + path.substring(path.length - suffixLen);
+      return path.substring(0, 15) + '...' + path.substring(path.length - 20);
     }
 
     // グループアイテム名のフォーマット
@@ -207,6 +198,44 @@
       return displayNames;
     }
 
+    // HTMLエスケープ
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // アイコンHTML生成
+    function buildIconHtml(icon, itemType) {
+      const fallback = getDefaultIcon(itemType);
+      if (icon) {
+        return `<img src="${escapeHtml(icon)}" alt="" onerror="this.parentElement.innerHTML='<span class=\\'default-icon\\'>${fallback}</span>'" />`;
+      }
+      return `<span class="default-icon">${fallback}</span>`;
+    }
+
+    // 新形式トーストのコンテンツ部分を生成
+    function buildItemContent(data) {
+      const { itemType, displayName, path, itemCount, itemNames } = data;
+      let html = `<div class="toast-title">${escapeHtml(displayName)}</div>`;
+
+      if (itemType === 'group') {
+        const count = itemCount || (itemNames ? itemNames.length : 0);
+        html += `<div class="toast-items">${escapeHtml(formatGroupItems(itemNames, itemCount))}</div>`;
+        html += '<div class="toast-separator"></div>';
+        html += `<div class="toast-action">${count}件のアイテムを起動します</div>`;
+      } else {
+        if (path) {
+          html += `<div class="toast-path">${escapeHtml(truncatePath(path))}</div>`;
+        }
+        html += '<div class="toast-separator"></div>';
+        html += `<div class="toast-action">${getActionText(itemType)}</div>`;
+      }
+
+      return html;
+    }
+
     // IPC経由でトースト表示リクエストを受け取る
     if (window.electronAPI && window.electronAPI.onShowToast) {
       window.electronAPI.onShowToast((data) => {
@@ -220,84 +249,32 @@
         type = 'success',
         duration = 2500,
         itemType,
-        displayName,
-        path,
-        icon,
-        itemCount,
-        itemNames
+        displayName
       } = data;
 
       const toast = document.getElementById('toast');
-
-      // クラスをリセット
       toast.className = 'toast-container ' + type;
 
-      // 新形式（アイテム情報あり）か従来形式（メッセージのみ）か判定
       if (itemType && displayName) {
-        // 新形式のトースト
-        let html = '';
-
-        // アイコン部分
-        html += '<div class="toast-icon-wrapper">';
-        if (icon) {
-          html += `<img src="${escapeHtml(icon)}" alt="" onerror="this.parentElement.innerHTML='<span class=\\'default-icon\\'>${defaultIcons[itemType] || '📋'}</span>'" />`;
-        } else {
-          html += `<span class="default-icon">${defaultIcons[itemType] || '📋'}</span>`;
-        }
-        html += '</div>';
-
-        // コンテンツ部分
-        html += '<div class="toast-content">';
-        html += `<div class="toast-title">${escapeHtml(displayName)}</div>`;
-
-        if (itemType === 'group') {
-          // グループ起動
-          html += `<div class="toast-items">${escapeHtml(formatGroupItems(itemNames, itemCount))}</div>`;
-          html += '<div class="toast-separator"></div>';
-          html += `<div class="toast-action">${itemCount || (itemNames ? itemNames.length : 0)}件のアイテムを起動します</div>`;
-        } else if (itemType === 'windowOperation') {
-          // ウィンドウ操作
-          html += '<div class="toast-separator"></div>';
-          html += `<div class="toast-action">${actionTexts.windowOperation}</div>`;
-        } else {
-          // 通常アイテム
-          if (path) {
-            html += `<div class="toast-path">${escapeHtml(truncatePath(path))}</div>`;
-          }
-          html += '<div class="toast-separator"></div>';
-          html += `<div class="toast-action">${escapeHtml(displayName)}${actionTexts[itemType] || 'を開きます'}</div>`;
-        }
-
-        html += '</div>';
-        toast.innerHTML = html;
+        toast.innerHTML =
+          '<div class="toast-icon-wrapper">' + buildIconHtml(data.icon, itemType) + '</div>' +
+          '<div class="toast-content">' + buildItemContent(data) + '</div>';
       } else {
-        // 従来形式のシンプルトースト
-        toast.innerHTML = `
-          <div class="toast-simple">
-            <span class="toast-simple-icon">${legacyIcons[type] || legacyIcons.success}</span>
-            <span class="toast-simple-message">${escapeHtml(message || '')}</span>
-          </div>
-        `;
+        toast.innerHTML =
+          '<div class="toast-simple">' +
+            `<span class="toast-simple-icon">${legacyIcons[type] || legacyIcons.success}</span>` +
+            `<span class="toast-simple-message">${escapeHtml(message || '')}</span>` +
+          '</div>';
       }
 
-      // 表示アニメーション
       requestAnimationFrame(() => {
         toast.classList.add('show');
       });
 
-      // 非表示アニメーション
       setTimeout(() => {
         toast.classList.remove('show');
         toast.classList.add('hide');
       }, duration);
-    }
-
-    // HTMLエスケープ
-    function escapeHtml(text) {
-      if (!text) return '';
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
     }
   </script>
 </body>
