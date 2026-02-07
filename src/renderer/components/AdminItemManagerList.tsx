@@ -601,7 +601,7 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
                     onChange={(e) => onItemSelect(item, e.target.checked)}
                   />
                 </td>
-                <td className="line-number-column">{item.meta.lineNumber}</td>
+                <td className="line-number-column">{item.meta.lineNumber + 1}</td>
                 <td className="type-column">{renderTypeCell(item)}</td>
                 <td className="icon-column">{renderIconCell(item)}</td>
                 <td className="name-column">{renderNameCell(item)}</td>
@@ -620,7 +620,7 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
                       onClick={() => {
                         setConfirmDialog({
                           isOpen: true,
-                          message: `行 ${item.meta.lineNumber} を削除しますか？`,
+                          message: `行 ${item.meta.lineNumber + 1} を削除しますか？`,
                           onConfirm: () => {
                             setConfirmDialog({ ...confirmDialog, isOpen: false });
                             onDeleteItems([item]);
