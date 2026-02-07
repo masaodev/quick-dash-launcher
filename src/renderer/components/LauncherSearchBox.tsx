@@ -30,7 +30,7 @@ function F5Hint({ label, onClick }: { label: string; onClick: () => void }): Rea
       <button type="button" className="search-mode-hint-link" onClick={onClick}>
         {label}
       </button>
-      {' / '}
+      {'　'}
     </>
   );
 }

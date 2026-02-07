@@ -751,18 +751,19 @@ function App(): React.ReactElement {
         onRefreshWindows={handleRefreshWindows}
       />
 
+      {/* eslint-disable no-irregular-whitespace */}
       {searchMode === 'window' && (
         <div className="shortcut-hint">
+          {/* prettier-ignore */}
           <span>
-            <kbd>Ctrl</kbd>+<kbd>P</kbd> ピン留め/解除
+            <strong>Ctrl+P</strong>:ピン留め/解除　<strong>Ctrl+D</strong>:ウィンドウを閉じる
+            {desktopInfo?.desktopCount && desktopInfo.desktopCount > 1 && activeDesktopTab > 0 && (
+              <>　<strong>Ctrl+←/→</strong>:仮想デスクトップ移動</>
+            )}
           </span>
-          {desktopInfo?.desktopCount && desktopInfo.desktopCount > 1 && activeDesktopTab > 0 && (
-            <span>
-              <kbd>Ctrl</kbd>+<kbd>←</kbd>/<kbd>→</kbd> 仮想デスクトップ移動
-            </span>
-          )}
         </div>
       )}
+      {/* eslint-enable no-irregular-whitespace */}
 
       {!progressState.isActive && missingIconCount > 0 && (
         <MissingIconNotice missingCount={missingIconCount} onFetchClick={handleFetchMissingIcons} />

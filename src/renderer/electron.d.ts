@@ -213,6 +213,7 @@ export interface ElectronAPI {
   pinWindow: (hwnd: number | bigint) => Promise<{ success: boolean; error?: string }>;
   unPinWindow: (hwnd: number | bigint) => Promise<{ success: boolean; error?: string }>;
   isWindowPinned: (hwnd: number | bigint) => Promise<boolean>;
+  closeWindow: (hwnd: number | bigint) => Promise<{ success: boolean; error?: string }>;
   // システム通知API
   showNotification: (
     title: string,

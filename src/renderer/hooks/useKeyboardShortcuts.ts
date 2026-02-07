@@ -205,6 +205,25 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
       return;
     }
 
+    // Ctrl+D: ウィンドウを閉じる（ウィンドウモード時）
+    if (searchMode === 'window' && e.ctrlKey && e.key.toLowerCase() === 'd') {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const selectedWindow = filteredItems[selectedIndex] as WindowInfo | undefined;
+      if (!selectedWindow) return;
+
+      const result = await window.electronAPI.closeWindow(selectedWindow.hwnd);
+
+      if (result.success) {
+        toast.success('ウィンドウを閉じました');
+        await refreshWindows();
+      } else {
+        toast.error(`ウィンドウを閉じるのに失敗しました: ${result.error || '不明なエラー'}`);
+      }
+      return;
+    }
+
     const selectedItem = filteredItems[selectedIndex];
 
     switch (e.key) {

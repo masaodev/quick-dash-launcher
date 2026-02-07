@@ -214,6 +214,7 @@ export const IPC_CHANNELS = {
   PIN_WINDOW: 'pin-window',
   UNPIN_WINDOW: 'unpin-window',
   IS_WINDOW_PINNED: 'is-window-pinned',
+  CLOSE_WINDOW: 'close-window',
 
   // クリップボード操作
   CLIPBOARD_CAPTURE: 'clipboard:capture',

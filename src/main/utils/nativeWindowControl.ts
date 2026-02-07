@@ -197,6 +197,9 @@ const ICON_BIG = 1;
 const ICON_SMALL2 = 2;
 const GCLP_HICON = -14;
 
+// ウィンドウメッセージ定数
+const WM_CLOSE = 0x0010;
+
 /**
  * ウィンドウからアイコンハンドル（HICON）を取得
  * @param hwnd ウィンドウハンドル
@@ -732,5 +735,21 @@ export function getWindowBounds(
       `[getWindowBounds] Error: hwnd=${hwnd}, error=${error instanceof Error ? error.message : String(error)}`
     );
     return null;
+  }
+}
+
+/**
+ * ウィンドウにWM_CLOSEメッセージを送信してウィンドウを閉じる
+ * @param hwnd ウィンドウハンドル
+ * @returns 成功したらtrue
+ */
+export function closeWindow(hwnd: number | bigint): boolean {
+  try {
+    const hwndNumber = typeof hwnd === 'bigint' ? Number(hwnd) : hwnd;
+    SendMessageW(hwndNumber, WM_CLOSE, 0, 0);
+    return true;
+  } catch (error) {
+    console.error(`Error closing window ${hwnd}:`, error);
+    return false;
   }
 }
