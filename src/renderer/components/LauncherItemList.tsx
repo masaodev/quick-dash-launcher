@@ -57,6 +57,12 @@ const LauncherItemList: React.FC<ItemListProps> = ({
   }, [selectedIndex]);
 
   useEffect(() => {
+    /** hwndからウィンドウタイトルを検索する */
+    function findWindowTitle(hwnd: number | bigint): string {
+      const found = items.find((item) => isWindowInfo(item) && item.hwnd === hwnd);
+      return found && isWindowInfo(found) ? found.title : '不明なウィンドウ';
+    }
+
     const cleanupEditItem = window.electronAPI.onLauncherMenuEditItem((item) => {
       onEditItem?.(item);
     });
@@ -64,8 +70,23 @@ const LauncherItemList: React.FC<ItemListProps> = ({
     const cleanupAddToWorkspace = window.electronAPI.onLauncherMenuAddToWorkspace(async (item) => {
       try {
         await window.electronAPI.workspaceAPI.addItem(item);
+        if (isLauncherItem(item)) {
+          await window.electronAPI.showToastWindow({
+            displayName: item.displayName,
+            itemType: 'workspaceAdd',
+            path: item.path,
+            icon: item.icon,
+          });
+        }
       } catch (error) {
         logError('ワークスペースへの追加に失敗しました:', error);
+        if (isLauncherItem(item)) {
+          await window.electronAPI.showToastWindow({
+            displayName: item.displayName,
+            itemType: 'workspaceAdd',
+            message: 'ワークスペースへの追加に失敗しました',
+          });
+        }
       }
     });
 
@@ -102,61 +123,72 @@ const LauncherItemList: React.FC<ItemListProps> = ({
     const cleanupMoveWindowToDesktop = window.electronAPI.onMoveWindowToDesktop(
       async (hwnd, desktopNumber) => {
         try {
+          const windowTitle = findWindowTitle(hwnd);
           const result = await window.electronAPI.moveWindowToDesktop(hwnd, desktopNumber);
           if (result.success) {
-            window.electronAPI.showToastWindow(
-              `ウィンドウをデスクトップ ${desktopNumber} に移動しました`,
-              'success'
-            );
+            await window.electronAPI.showToastWindow({
+              displayName: windowTitle,
+              itemType: 'windowMoveDesktop',
+              message: `ウィンドウをデスクトップ ${desktopNumber} に移動しました`,
+            });
             await onRefreshWindows?.();
           } else {
-            window.electronAPI.showToastWindow(
-              `ウィンドウの移動に失敗しました: ${result.error || '不明なエラー'}`,
-              'error'
-            );
+            await window.electronAPI.showToastWindow({
+              displayName: windowTitle,
+              itemType: 'windowMoveDesktop',
+              message: `ウィンドウの移動に失敗しました: ${result.error || '不明なエラー'}`,
+            });
           }
         } catch (error) {
           logError('ウィンドウの移動に失敗しました:', error);
-          window.electronAPI.showToastWindow('ウィンドウの移動に失敗しました', 'error');
+          await window.electronAPI.showToastWindow({
+            displayName: '不明なウィンドウ',
+            itemType: 'windowMoveDesktop',
+            message: 'ウィンドウの移動に失敗しました',
+          });
         }
       }
     );
 
     const handleWindowPinOperation = async (
       fn: (hwnd: number | bigint) => Promise<{ success: boolean; error?: string }>,
-      successMsg: string,
+      itemType: 'windowPin' | 'windowUnpin',
       errorPrefix: string,
       hwnd: number | bigint
     ): Promise<void> => {
       try {
+        const windowTitle = findWindowTitle(hwnd);
         const result = await fn(hwnd);
         if (result.success) {
-          window.electronAPI.showToastWindow(successMsg, 'success');
+          await window.electronAPI.showToastWindow({
+            displayName: windowTitle,
+            itemType: itemType,
+          });
         } else {
-          window.electronAPI.showToastWindow(
-            `${errorPrefix}に失敗しました: ${result.error || '不明なエラー'}`,
-            'error'
-          );
+          await window.electronAPI.showToastWindow({
+            displayName: windowTitle,
+            itemType: itemType,
+            message: `${errorPrefix}に失敗しました: ${result.error || '不明なエラー'}`,
+          });
         }
       } catch (error) {
         logError(`${errorPrefix}に失敗しました:`, error);
-        window.electronAPI.showToastWindow(`${errorPrefix}に失敗しました`, 'error');
+        await window.electronAPI.showToastWindow({
+          displayName: '不明なウィンドウ',
+          itemType: itemType,
+          message: `${errorPrefix}に失敗しました`,
+        });
       }
     };
 
     const cleanupPinWindow = window.electronAPI.onPinWindow((hwnd) =>
-      handleWindowPinOperation(
-        window.electronAPI.pinWindow,
-        'ウィンドウを全デスクトップに固定しました',
-        'ウィンドウの固定',
-        hwnd
-      )
+      handleWindowPinOperation(window.electronAPI.pinWindow, 'windowPin', 'ウィンドウの固定', hwnd)
     );
 
     const cleanupUnPinWindow = window.electronAPI.onUnPinWindow((hwnd) =>
       handleWindowPinOperation(
         window.electronAPI.unPinWindow,
-        'ウィンドウの固定を解除しました',
+        'windowUnpin',
         'ウィンドウの固定解除',
         hwnd
       )

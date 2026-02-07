@@ -18,6 +18,7 @@ import {
   RegisterItem,
   IconFetchErrorRecord,
   JsonDirOptions,
+  ToastItemType,
   ClipboardCaptureResult,
   ClipboardRestoreResult,
   ClipboardPreview,
@@ -221,31 +222,17 @@ export interface ElectronAPI {
     type?: 'success' | 'error' | 'info' | 'warning'
   ) => Promise<void>;
   // トーストウィンドウAPI（メインウィンドウが閉じた後も表示可能）
-  showToastWindow: (
-    options:
-      | string
-      | {
-          message?: string;
-          type?: 'success' | 'error' | 'info' | 'warning';
-          duration?: number;
-          itemType?:
-            | 'url'
-            | 'file'
-            | 'folder'
-            | 'app'
-            | 'customUri'
-            | 'group'
-            | 'windowOperation'
-            | 'clipboard';
-          displayName?: string;
-          path?: string;
-          icon?: string;
-          itemCount?: number;
-          itemNames?: string[];
-        },
-    type?: 'success' | 'error' | 'info' | 'warning',
-    duration?: number
-  ) => Promise<void>;
+  showToastWindow: (options: {
+    message?: string;
+    type?: 'success' | 'error' | 'info' | 'warning';
+    duration?: number;
+    itemType?: ToastItemType;
+    displayName?: string;
+    path?: string;
+    icon?: string;
+    itemCount?: number;
+    itemNames?: string[];
+  }) => Promise<void>;
   // トーストウィンドウ用イベントリスナー（toast.html用）
   onShowToast: (
     callback: (data: {

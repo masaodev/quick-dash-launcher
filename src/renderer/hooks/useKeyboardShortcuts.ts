@@ -1,5 +1,4 @@
 import React from 'react';
-import toast from 'react-hot-toast';
 import { DESKTOP_TAB } from '@common/constants';
 import { AppItem, DataFileTab, LauncherItem, SearchMode, WindowInfo } from '@common/types';
 import { isLauncherItem, isWindowInfo } from '@common/types/guards';
@@ -174,7 +173,18 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
         targetDesktop
       );
       if (result.success) {
+        await window.electronAPI.showToastWindow({
+          displayName: selectedWindow.title,
+          itemType: 'windowMoveDesktop',
+          message: `ウィンドウをデスクトップ ${targetDesktop} に移動しました`,
+        });
         await refreshWindows();
+      } else {
+        await window.electronAPI.showToastWindow({
+          displayName: selectedWindow.title,
+          itemType: 'windowMoveDesktop',
+          message: `ウィンドウの移動に失敗しました: ${result.error || '不明なエラー'}`,
+        });
       }
       return;
     }
@@ -193,14 +203,17 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
         : await window.electronAPI.pinWindow(selectedWindow.hwnd);
 
       if (result.success) {
-        toast.success(
-          isPinned ? 'ウィンドウの固定を解除しました' : 'ウィンドウを全デスクトップに固定しました'
-        );
+        await window.electronAPI.showToastWindow({
+          displayName: selectedWindow.title,
+          itemType: isPinned ? 'windowUnpin' : 'windowPin',
+        });
         await refreshWindows();
       } else {
-        toast.error(
-          `${isPinned ? '固定解除' : '固定'}に失敗しました: ${result.error || '不明なエラー'}`
-        );
+        await window.electronAPI.showToastWindow({
+          displayName: selectedWindow.title,
+          itemType: isPinned ? 'windowUnpin' : 'windowPin',
+          message: `${isPinned ? '固定解除' : '固定'}に失敗しました: ${result.error || '不明なエラー'}`,
+        });
       }
       return;
     }
@@ -216,10 +229,17 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
       const result = await window.electronAPI.closeWindow(selectedWindow.hwnd);
 
       if (result.success) {
-        toast.success('ウィンドウを閉じました');
+        await window.electronAPI.showToastWindow({
+          displayName: selectedWindow.title,
+          itemType: 'windowClose',
+        });
         await refreshWindows();
       } else {
-        toast.error(`ウィンドウを閉じるのに失敗しました: ${result.error || '不明なエラー'}`);
+        await window.electronAPI.showToastWindow({
+          displayName: selectedWindow.title,
+          itemType: 'windowClose',
+          message: `ウィンドウを閉じるのに失敗しました: ${result.error || '不明なエラー'}`,
+        });
       }
       return;
     }

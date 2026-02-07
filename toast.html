@@ -149,14 +149,20 @@
   <script>
     // タイプ別設定（アイコンとアクション文言を統合管理）
     const itemTypeConfig = {
-      url:             { icon: '🌐', action: 'URLを開いています...' },
-      app:             { icon: '⚙️', action: 'アプリを起動中...' },
-      file:            { icon: '📄', action: 'ファイルを開いています...' },
-      folder:          { icon: '📁', action: 'フォルダーを開いています...' },
-      customUri:       { icon: '🔗', action: '起動中...' },
-      group:           { icon: '📦', action: null },
-      windowOperation: { icon: '🪟', action: 'ウィンドウ操作を実行します' },
-      clipboard:       { icon: '📋', action: 'クリップボードに復元しています...' }
+      url:               { icon: '🌐', action: 'URLを開いています...' },
+      app:               { icon: '⚙️', action: 'アプリを起動中...' },
+      file:              { icon: '📄', action: 'ファイルを開いています...' },
+      folder:            { icon: '📁', action: 'フォルダーを開いています...' },
+      customUri:         { icon: '🔗', action: '起動中...' },
+      group:             { icon: '📦', action: null },
+      windowOperation:   { icon: '🪟', action: 'ウィンドウ操作を実行します' },
+      windowActivate:    { icon: '🔄', action: 'ウィンドウをアクティブ化しました' },
+      windowClose:       { icon: '✖️', action: 'ウィンドウを閉じました' },
+      windowPin:         { icon: '📌', action: 'ウィンドウを全デスクトップに固定しました' },
+      windowUnpin:       { icon: '🔓', action: 'ウィンドウの固定を解除しました' },
+      windowMoveDesktop: { icon: '➡️', action: null },
+      workspaceAdd:      { icon: '⭐', action: 'ワークスペースに追加しました' },
+      clipboard:         { icon: '📋', action: 'クリップボードに復元しています...' }
     };
 
     const DEFAULT_ICON = '📋';
@@ -217,7 +223,7 @@
 
     // 新形式トーストのコンテンツ部分を生成
     function buildItemContent(data) {
-      const { itemType, displayName, path, itemCount, itemNames } = data;
+      const { itemType, displayName, path, itemCount, itemNames, message } = data;
       let html = `<div class="toast-title">${escapeHtml(displayName)}</div>`;
 
       if (itemType === 'group') {
@@ -230,7 +236,9 @@
           html += `<div class="toast-path">${escapeHtml(truncatePath(path))}</div>`;
         }
         html += '<div class="toast-separator"></div>';
-        html += `<div class="toast-action">${getActionText(itemType)}</div>`;
+        // messageが指定されていればそれを使用、なければitemTypeから取得
+        const actionText = message || getActionText(itemType);
+        html += `<div class="toast-action">${escapeHtml(actionText)}</div>`;
       }
 
       return html;

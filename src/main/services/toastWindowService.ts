@@ -10,21 +10,11 @@
 import * as path from 'path';
 
 import { BrowserWindow, screen } from 'electron';
+import type { ToastItemType } from '@common/types';
 
 import { EnvConfig } from '../config/envConfig.js';
 
 import { NotificationType } from './notificationService.js';
-
-/** アイテムタイプ */
-export type ToastItemType =
-  | 'url'
-  | 'file'
-  | 'folder'
-  | 'app'
-  | 'customUri'
-  | 'group'
-  | 'windowOperation'
-  | 'clipboard';
 
 /** トースト表示オプション */
 export interface ToastOptions {

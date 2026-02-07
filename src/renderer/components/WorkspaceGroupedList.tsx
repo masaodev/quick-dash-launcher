@@ -389,10 +389,12 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
   ): Promise<void> {
     const launcherItem: LauncherItem = JSON.parse(launcherItemData);
     await window.electronAPI.workspaceAPI.addItem(launcherItem, groupId);
-    window.electronAPI.showToastWindow(
-      `「${launcherItem.displayName}」をワークスペースに追加しました`,
-      'success'
-    );
+    await window.electronAPI.showToastWindow({
+      displayName: launcherItem.displayName,
+      itemType: 'workspaceAdd',
+      path: launcherItem.path,
+      icon: launcherItem.icon,
+    });
   }
 
   /** 実行履歴アイテムをワークスペースに追加 */
@@ -428,7 +430,11 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
       }
     } catch (error) {
       logError('ワークスペースへのアイテム追加に失敗:', error);
-      window.electronAPI.showToastWindow('ワークスペースへの追加に失敗しました', 'error');
+      await window.electronAPI.showToastWindow({
+        displayName: 'ワークスペース',
+        itemType: 'workspaceAdd',
+        message: 'ワークスペースへの追加に失敗しました',
+      });
     }
 
     setDraggedItemId(null);

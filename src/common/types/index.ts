@@ -123,6 +123,9 @@ export { isEditingLauncherItem, isEditingGroupItem, isEditingWindowItem } from '
 export type { EditableJsonItem, LoadEditableItemsResult, ValidationResult } from './editableItem';
 export { validateEditableItem } from './editableItem';
 
+// トースト関連の型
+export type { ToastItemType } from './toast';
+
 // 型ガード関数
 export {
   isWindowInfo,

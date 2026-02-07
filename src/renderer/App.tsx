@@ -269,7 +269,10 @@ function App(): React.ReactElement {
             type: 'error',
           });
         } else {
-          await window.electronAPI.showToastWindow(`${windowItem.title} をアクティブ化しました`);
+          await window.electronAPI.showToastWindow({
+            displayName: windowItem.title,
+            itemType: 'windowActivate',
+          });
         }
       } else if (searchMode === 'history') {
         // 履歴モード：選択された履歴アイテムを直接実行
