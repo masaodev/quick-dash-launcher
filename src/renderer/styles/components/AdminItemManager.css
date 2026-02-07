@@ -853,9 +853,12 @@
 .raw-items-table .updated-at-column {
   width: 140px;
   text-align: center;
+  white-space: nowrap;
+}
+
+.raw-items-table td.updated-at-column {
   font-size: var(--font-size-xs);
   color: var(--text-muted);
-  white-space: nowrap;
 }
 
 /* 固定幅の列 */
