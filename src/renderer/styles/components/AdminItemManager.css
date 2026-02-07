@@ -849,6 +849,15 @@
   padding: 4px 8px !important;
 }
 
+/* 更新日列 */
+.raw-items-table .updated-at-column {
+  width: 140px;
+  text-align: center;
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
 /* 固定幅の列 */
 .raw-items-table .actions-column {
   width: 120px;

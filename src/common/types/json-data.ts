@@ -48,6 +48,8 @@ interface JsonItemBase {
   id: string;
   /** 自由記述メモ（オプション） */
   memo?: string;
+  /** 更新日時（Unixタイムスタンプ ms、オプション） */
+  updatedAt?: number;
 }
 
 // ============================================================

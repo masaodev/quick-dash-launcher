@@ -467,6 +467,7 @@ async function updateDirItemById(
     path: dirPath,
     options: options && Object.keys(options).length > 0 ? options : undefined,
     memo: memo || undefined,
+    updatedAt: Date.now(),
   }));
 }
 
@@ -486,6 +487,7 @@ async function updateGroupItemById(
     displayName,
     itemNames,
     memo: memo || undefined,
+    updatedAt: Date.now(),
   }));
 }
 
@@ -516,6 +518,7 @@ async function updateWindowItemById(
       type: 'window',
       displayName: config.displayName,
       windowTitle: config.windowTitle,
+      updatedAt: Date.now(),
     };
 
     if (config.processName !== undefined) newItem.processName = config.processName;
@@ -618,6 +621,7 @@ async function registerItemsToJsonFile(dataPath: string, items: RegisterItem[]):
  */
 function convertRegisterItemToJsonItem(item: RegisterItem): JsonItem {
   const id = generateId();
+  const now = Date.now();
 
   if (item.itemCategory === 'dir') {
     const options: JsonDirOptions = {};
@@ -639,6 +643,7 @@ function convertRegisterItemToJsonItem(item: RegisterItem): JsonItem {
       type: 'dir',
       path: item.path,
       options: Object.keys(options).length > 0 ? options : undefined,
+      updatedAt: now,
     };
   }
 
@@ -648,6 +653,7 @@ function convertRegisterItemToJsonItem(item: RegisterItem): JsonItem {
       type: 'group',
       displayName: item.displayName,
       itemNames: item.groupItemNames || [],
+      updatedAt: now,
     };
     if (item.memo) groupItem.memo = item.memo;
     return groupItem;
@@ -664,6 +670,7 @@ function convertRegisterItemToJsonItem(item: RegisterItem): JsonItem {
       type: 'window',
       displayName: item.displayName,
       windowTitle: cfg.windowTitle,
+      updatedAt: now,
     };
 
     if (cfg.processName !== undefined) windowItem.processName = cfg.processName;
@@ -692,9 +699,10 @@ function convertRegisterItemToJsonItem(item: RegisterItem): JsonItem {
       type: 'clipboard',
       displayName: item.displayName,
       dataFileRef: item.clipboardDataRef,
-      savedAt: item.clipboardSavedAt || Date.now(),
+      savedAt: item.clipboardSavedAt || now,
       formats: item.clipboardFormats || [],
       preview: item.clipboardPreview,
+      updatedAt: now,
     };
 
     if (item.customIcon) clipboardItem.customIcon = item.customIcon;
@@ -709,6 +717,7 @@ function convertRegisterItemToJsonItem(item: RegisterItem): JsonItem {
     type: 'item',
     displayName: item.displayName,
     path: item.path,
+    updatedAt: now,
   };
 
   if (item.args) launcherItem.args = item.args;

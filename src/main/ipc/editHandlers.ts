@@ -30,6 +30,7 @@ function convertLauncherItemToJsonItem(item: LauncherItem, existingId: string): 
     ...(item.customIcon && { customIcon: item.customIcon }),
     ...(item.windowConfig && { windowConfig: item.windowConfig }),
     ...(item.memo && { memo: item.memo }),
+    updatedAt: Date.now(),
   };
 }
 

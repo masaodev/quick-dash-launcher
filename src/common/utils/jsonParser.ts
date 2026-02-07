@@ -295,6 +295,7 @@ function validateJsonLauncherItem(obj: Record<string, unknown>): JsonLauncherIte
   validateOptionalString(obj, item, 'args');
   validateOptionalString(obj, item, 'customIcon');
   validateOptionalString(obj, item, 'memo');
+  validateNumericFields(obj, item, ['updatedAt']);
 
   if (obj.windowConfig !== undefined) {
     item.windowConfig = validateWindowConfig(obj.windowConfig);
@@ -346,6 +347,7 @@ function validateJsonDirItem(obj: Record<string, unknown>): JsonDirItem {
   }
 
   validateOptionalString(obj, item, 'memo');
+  validateNumericFields(obj, item, ['updatedAt']);
 
   return item;
 }
@@ -374,6 +376,7 @@ function validateJsonGroupItem(obj: Record<string, unknown>): JsonGroupItem {
   };
 
   validateOptionalString(obj, item, 'memo');
+  validateNumericFields(obj, item, ['updatedAt']);
 
   return item;
 }
@@ -400,6 +403,7 @@ function validateJsonWindowItem(obj: Record<string, unknown>): JsonWindowItem {
   validateBooleanFields(obj, item, WINDOW_BOOLEAN_FIELDS);
   validateOptionalString(obj, item, 'processName');
   validateOptionalString(obj, item, 'memo');
+  validateNumericFields(obj, item, ['updatedAt']);
 
   return item;
 }
@@ -446,6 +450,7 @@ function validateJsonClipboardItem(obj: Record<string, unknown>): JsonClipboardI
   validateOptionalString(obj, item, 'preview');
   validateOptionalString(obj, item, 'customIcon');
   validateOptionalString(obj, item, 'memo');
+  validateNumericFields(obj, item, ['updatedAt']);
 
   return item;
 }
