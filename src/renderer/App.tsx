@@ -729,6 +729,7 @@ function App(): React.ReactElement {
           desktopInfo={desktopInfo}
           activeDesktopTab={activeDesktopTab}
           windowList={windowList}
+          searchQuery={searchQuery}
           onTabChange={(tabId) => {
             setActiveDesktopTab(tabId);
             setSelectedIndex(0);
