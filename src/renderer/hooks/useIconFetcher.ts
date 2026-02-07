@@ -1,5 +1,5 @@
 import { type Dispatch, type SetStateAction } from 'react';
-import { AppItem, LauncherItem, DataFileTab } from '@common/types';
+import { DEFAULT_DATA_FILE, AppItem, LauncherItem, DataFileTab } from '@common/types';
 import { isWindowInfo, isLauncherItem } from '@common/types/guards';
 
 import { debugInfo } from '../utils/debug';
@@ -69,7 +69,9 @@ export function useIconFetcher(options: UseIconFetcherOptions): UseIconFetcherRe
 
   function getCurrentTabItems(): AppItem[] {
     if (!showDataFileTabs) {
-      return mainItems.filter((item) => !isWindowInfo(item) && item.sourceFile === 'data.json');
+      return mainItems.filter(
+        (item) => !isWindowInfo(item) && item.sourceFile === DEFAULT_DATA_FILE
+      );
     }
 
     const activeTabConfig = dataFileTabs.find((tab) => tab.files.includes(activeTab));

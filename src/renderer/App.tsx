@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { DEFAULT_DATA_FILE } from '@common/types';
 import type {
   RegisterItem,
   LauncherItem,
@@ -601,7 +602,7 @@ function App(): React.ReactElement {
     if (isGroupItem(item) || isWindowItem(item)) {
       openEditModal({
         ...item,
-        sourceFile: item.sourceFile || 'data.json',
+        sourceFile: item.sourceFile || DEFAULT_DATA_FILE,
         jsonItemId: item.id ?? undefined,
       });
       return;
@@ -611,7 +612,7 @@ function App(): React.ReactElement {
     const jsonItemId = launcherItem.isDirExpanded ? launcherItem.expandedFromId : launcherItem.id;
     openEditModal({
       ...launcherItem,
-      sourceFile: launcherItem.sourceFile || 'data.json',
+      sourceFile: launcherItem.sourceFile || DEFAULT_DATA_FILE,
       jsonItemId: jsonItemId ?? undefined,
     });
   };
@@ -621,7 +622,7 @@ function App(): React.ReactElement {
       await window.electronAPI.setMultipleSettings({
         hotkey,
         autoLaunch,
-        dataFileTabs: [{ files: ['data.json'], name: 'メイン' }],
+        dataFileTabs: [{ files: [DEFAULT_DATA_FILE], name: 'メイン' }],
       });
       await window.electronAPI.changeHotkey(hotkey);
       setIsFirstLaunch(false);

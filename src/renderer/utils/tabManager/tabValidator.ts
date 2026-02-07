@@ -1,4 +1,4 @@
-import { DataFileTab } from '@common/types';
+import { DEFAULT_DATA_FILE, DataFileTab } from '@common/types';
 
 /**
  * バリデーション結果
@@ -19,7 +19,7 @@ export const TabValidator = {
    * @returns バリデーション結果
    *
    * @example
-   * canDeleteTab({ name: 'メイン', files: ['data.json'] }) // => { valid: true }
+   * canDeleteTab({ name: 'メイン', files: ['datafiles/data.json'] }) // => { valid: true }
    */
   canDeleteTab(_tab: DataFileTab): ValidationResult {
     // 現時点では特に制約なし（将来的に追加可能）
@@ -29,7 +29,7 @@ export const TabValidator = {
   /**
    * ファイルをタブから削除できるかチェック
    * - タブには最低1つのファイルが必要
-   * - data.jsonは最低1つのタブに含まれる必要がある
+   * - datafiles/data.jsonは最低1つのタブに含まれる必要がある
    *
    * @param fileName - 削除対象のファイル名
    * @param tabIndex - 削除対象のタブインデックス
@@ -38,15 +38,15 @@ export const TabValidator = {
    *
    * @example
    * // タブに1つしかファイルがない場合
-   * canRemoveFileFromTab('data.json', 0, [{ name: 'メイン', files: ['data.json'] }])
+   * canRemoveFileFromTab('datafiles/data.json', 0, [{ name: 'メイン', files: ['datafiles/data.json'] }])
    * // => { valid: false, reason: 'タブには最低1つのファイルが必要です...' }
    *
-   * // data.jsonが他のタブにない場合
-   * canRemoveFileFromTab('data.json', 0, [
-   *   { name: 'メイン', files: ['data.json', 'data2.json'] },
-   *   { name: 'サブ1', files: ['data2.json'] }
+   * // datafiles/data.jsonが他のタブにない場合
+   * canRemoveFileFromTab('datafiles/data.json', 0, [
+   *   { name: 'メイン', files: ['datafiles/data.json', 'datafiles/data2.json'] },
+   *   { name: 'サブ1', files: ['datafiles/data2.json'] }
    * ])
-   * // => { valid: false, reason: 'data.jsonは最低1つのタブに含まれている必要があります...' }
+   * // => { valid: false, reason: 'datafiles/data.jsonは最低1つのタブに含まれている必要があります...' }
    */
   canRemoveFileFromTab(fileName: string, tabIndex: number, tabs: DataFileTab[]): ValidationResult {
     if (tabIndex < 0 || tabIndex >= tabs.length) {
@@ -63,16 +63,15 @@ export const TabValidator = {
       };
     }
 
-    // data.jsonの場合、他のタブにもdata.jsonが存在するかチェック
-    if (fileName === 'data.json') {
-      const otherTabsWithDataJson = tabs.filter(
-        (t, idx) => idx !== tabIndex && t.files.includes('data.json')
+    // メインデータファイルの場合、他のタブにも存在するかチェック
+    if (fileName === DEFAULT_DATA_FILE) {
+      const otherTabsWithMainFile = tabs.filter(
+        (t, idx) => idx !== tabIndex && t.files.includes(DEFAULT_DATA_FILE)
       );
-      if (otherTabsWithDataJson.length === 0) {
+      if (otherTabsWithMainFile.length === 0) {
         return {
           valid: false,
-          reason:
-            'data.jsonは最低1つのタブに含まれている必要があります。\n他のタブにdata.jsonを追加してから削除してください。',
+          reason: `${DEFAULT_DATA_FILE}は最低1つのタブに含まれている必要があります。\n他のタブに${DEFAULT_DATA_FILE}を追加してから削除してください。`,
         };
       }
     }
@@ -88,14 +87,14 @@ export const TabValidator = {
    * @returns 他のタブで使用されている場合はtrue
    *
    * @example
-   * isFileUsedInOtherTabs('data.json', 0, [
-   *   { name: 'メイン', files: ['data.json'] },
-   *   { name: 'サブ1', files: ['data.json'] }
+   * isFileUsedInOtherTabs('datafiles/data.json', 0, [
+   *   { name: 'メイン', files: ['datafiles/data.json'] },
+   *   { name: 'サブ1', files: ['datafiles/data.json'] }
    * ]) // => true
    *
-   * isFileUsedInOtherTabs('data2.json', 0, [
-   *   { name: 'メイン', files: ['data.json', 'data2.json'] },
-   *   { name: 'サブ1', files: ['data.json'] }
+   * isFileUsedInOtherTabs('datafiles/data2.json', 0, [
+   *   { name: 'メイン', files: ['datafiles/data.json', 'datafiles/data2.json'] },
+   *   { name: 'サブ1', files: ['datafiles/data.json'] }
    * ]) // => false
    */
   isFileUsedInOtherTabs(fileName: string, excludeTabIndex: number, tabs: DataFileTab[]): boolean {
@@ -109,10 +108,10 @@ export const TabValidator = {
    * @returns バリデーション結果
    *
    * @example
-   * canAddFileToTab('data.json', { name: 'メイン', files: ['data.json'] })
+   * canAddFileToTab('datafiles/data.json', { name: 'メイン', files: ['datafiles/data.json'] })
    * // => { valid: false, reason: 'このファイルは既にタブに含まれています。' }
    *
-   * canAddFileToTab('data2.json', { name: 'メイン', files: ['data.json'] })
+   * canAddFileToTab('datafiles/data2.json', { name: 'メイン', files: ['datafiles/data.json'] })
    * // => { valid: true }
    */
   canAddFileToTab(fileName: string, tab: DataFileTab): ValidationResult {

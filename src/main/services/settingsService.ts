@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { DEFAULT_DATA_FILE } from '@common/types';
 import type { AppSettings } from '@common/types';
 import logger from '@common/logger';
 
@@ -39,9 +40,9 @@ export class SettingsService {
     backupInterval: 5,
     backupRetention: 20,
     showDataFileTabs: false,
-    defaultFileTab: 'data.json',
-    dataFileTabs: [{ files: ['data.json'], name: 'メイン' }],
-    dataFileLabels: { 'data.json': 'メイン用データファイル' },
+    defaultFileTab: DEFAULT_DATA_FILE,
+    dataFileTabs: [{ files: [DEFAULT_DATA_FILE], name: 'メイン' }],
+    dataFileLabels: { [DEFAULT_DATA_FILE]: 'メイン用データファイル' },
     windowPositionMode: 'center',
     windowPositionX: 0,
     windowPositionY: 0,

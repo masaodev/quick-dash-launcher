@@ -2,8 +2,8 @@ import {
   convertEditingAppItemToRegisterItem,
   convertEditableJsonItemToRegisterItem,
 } from '@common/utils/dataConverters';
+import { DEFAULT_DATA_FILE, isEditingLauncherItem } from '@common/types';
 import type { RegisterItem, EditingAppItem, DataFileTab, EditableJsonItem } from '@common/types';
-import { isEditingLauncherItem } from '@common/types';
 import { detectItemType } from '@common/utils/itemTypeDetector';
 
 import { debugInfo, logWarn, logError } from '../utils/debug';
@@ -94,7 +94,7 @@ export function useModalInitializer() {
     tabs: DataFileTab[]
   ): Promise<RegisterItem[]> => {
     const newItems: RegisterItem[] = [];
-    const defaultTab = currentTab || (tabs.length > 0 ? tabs[0].files[0] : 'data.json');
+    const defaultTab = currentTab || (tabs.length > 0 ? tabs[0].files[0] : DEFAULT_DATA_FILE);
 
     try {
       if (!droppedPaths || droppedPaths.length === 0) {
@@ -168,7 +168,7 @@ export function useModalInitializer() {
     currentTab: string | undefined,
     tabs: DataFileTab[]
   ): RegisterItem[] => {
-    const defaultTab = currentTab || (tabs.length > 0 ? tabs[0].files[0] : 'data.json');
+    const defaultTab = currentTab || (tabs.length > 0 ? tabs[0].files[0] : DEFAULT_DATA_FILE);
     return [
       {
         displayName: '',

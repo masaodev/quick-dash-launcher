@@ -6,7 +6,7 @@ import { TabValidator } from '../tabValidator';
 describe('TabValidator', () => {
   describe('canDeleteTab', () => {
     it('タブ削除は常に許可される', () => {
-      const tab: DataFileTab = { name: 'メイン', files: ['data.json'] };
+      const tab: DataFileTab = { name: 'メイン', files: ['datafiles/data.json'] };
       const result = TabValidator.canDeleteTab(tab);
       expect(result.valid).toBe(true);
       expect(result.reason).toBeUndefined();
@@ -15,58 +15,60 @@ describe('TabValidator', () => {
 
   describe('canRemoveFileFromTab', () => {
     it('タブに1つしかファイルがない場合は削除不可', () => {
-      const tabs: DataFileTab[] = [{ name: 'メイン', files: ['data.json'] }];
-      const result = TabValidator.canRemoveFileFromTab('data.json', 0, tabs);
+      const tabs: DataFileTab[] = [{ name: 'メイン', files: ['datafiles/data.json'] }];
+      const result = TabValidator.canRemoveFileFromTab('datafiles/data.json', 0, tabs);
       expect(result.valid).toBe(false);
       expect(result.reason).toBe('タブには最低1つのファイルが必要です。タブごと削除してください。');
     });
 
     it('タブに複数ファイルがある場合は削除可能', () => {
-      const tabs: DataFileTab[] = [{ name: 'メイン', files: ['data.json', 'data2.json'] }];
-      const result = TabValidator.canRemoveFileFromTab('data2.json', 0, tabs);
+      const tabs: DataFileTab[] = [
+        { name: 'メイン', files: ['datafiles/data.json', 'datafiles/data2.json'] },
+      ];
+      const result = TabValidator.canRemoveFileFromTab('datafiles/data2.json', 0, tabs);
       expect(result.valid).toBe(true);
     });
 
     it('data.jsonが他のタブにも存在する場合は削除可能', () => {
       const tabs: DataFileTab[] = [
-        { name: 'メイン', files: ['data.json', 'data2.json'] },
-        { name: 'サブ1', files: ['data.json'] },
+        { name: 'メイン', files: ['datafiles/data.json', 'datafiles/data2.json'] },
+        { name: 'サブ1', files: ['datafiles/data.json'] },
       ];
-      const result = TabValidator.canRemoveFileFromTab('data.json', 0, tabs);
+      const result = TabValidator.canRemoveFileFromTab('datafiles/data.json', 0, tabs);
       expect(result.valid).toBe(true);
     });
 
     it('data.jsonが他のタブに存在しない場合は削除不可', () => {
       const tabs: DataFileTab[] = [
-        { name: 'メイン', files: ['data.json', 'data2.json'] },
-        { name: 'サブ1', files: ['data2.json'] },
+        { name: 'メイン', files: ['datafiles/data.json', 'datafiles/data2.json'] },
+        { name: 'サブ1', files: ['datafiles/data2.json'] },
       ];
-      const result = TabValidator.canRemoveFileFromTab('data.json', 0, tabs);
+      const result = TabValidator.canRemoveFileFromTab('datafiles/data.json', 0, tabs);
       expect(result.valid).toBe(false);
       expect(result.reason).toBe(
-        'data.jsonは最低1つのタブに含まれている必要があります。\n他のタブにdata.jsonを追加してから削除してください。'
+        'datafiles/data.jsonは最低1つのタブに含まれている必要があります。\n他のタブにdatafiles/data.jsonを追加してから削除してください。'
       );
     });
 
     it('data.json以外のファイルは他のタブに存在しなくても削除可能', () => {
       const tabs: DataFileTab[] = [
-        { name: 'メイン', files: ['data.json', 'data2.json'] },
-        { name: 'サブ1', files: ['data.json'] },
+        { name: 'メイン', files: ['datafiles/data.json', 'datafiles/data2.json'] },
+        { name: 'サブ1', files: ['datafiles/data.json'] },
       ];
-      const result = TabValidator.canRemoveFileFromTab('data2.json', 0, tabs);
+      const result = TabValidator.canRemoveFileFromTab('datafiles/data2.json', 0, tabs);
       expect(result.valid).toBe(true);
     });
 
     it('タブインデックスが範囲外の場合はエラー', () => {
-      const tabs: DataFileTab[] = [{ name: 'メイン', files: ['data.json'] }];
-      const result = TabValidator.canRemoveFileFromTab('data.json', 1, tabs);
+      const tabs: DataFileTab[] = [{ name: 'メイン', files: ['datafiles/data.json'] }];
+      const result = TabValidator.canRemoveFileFromTab('datafiles/data.json', 1, tabs);
       expect(result.valid).toBe(false);
       expect(result.reason).toBe('タブが見つかりません。');
     });
 
     it('タブインデックスが負の場合はエラー', () => {
-      const tabs: DataFileTab[] = [{ name: 'メイン', files: ['data.json'] }];
-      const result = TabValidator.canRemoveFileFromTab('data.json', -1, tabs);
+      const tabs: DataFileTab[] = [{ name: 'メイン', files: ['datafiles/data.json'] }];
+      const result = TabValidator.canRemoveFileFromTab('datafiles/data.json', -1, tabs);
       expect(result.valid).toBe(false);
       expect(result.reason).toBe('タブが見つかりません。');
     });
@@ -75,61 +77,61 @@ describe('TabValidator', () => {
   describe('isFileUsedInOtherTabs', () => {
     it('他のタブでも使用されている場合はtrueを返す', () => {
       const tabs: DataFileTab[] = [
-        { name: 'メイン', files: ['data.json'] },
-        { name: 'サブ1', files: ['data.json'] },
+        { name: 'メイン', files: ['datafiles/data.json'] },
+        { name: 'サブ1', files: ['datafiles/data.json'] },
       ];
-      expect(TabValidator.isFileUsedInOtherTabs('data.json', 0, tabs)).toBe(true);
+      expect(TabValidator.isFileUsedInOtherTabs('datafiles/data.json', 0, tabs)).toBe(true);
     });
 
     it('他のタブで使用されていない場合はfalseを返す', () => {
       const tabs: DataFileTab[] = [
-        { name: 'メイン', files: ['data.json', 'data2.json'] },
-        { name: 'サブ1', files: ['data.json'] },
+        { name: 'メイン', files: ['datafiles/data.json', 'datafiles/data2.json'] },
+        { name: 'サブ1', files: ['datafiles/data.json'] },
       ];
-      expect(TabValidator.isFileUsedInOtherTabs('data2.json', 0, tabs)).toBe(false);
+      expect(TabValidator.isFileUsedInOtherTabs('datafiles/data2.json', 0, tabs)).toBe(false);
     });
 
     it('除外タブのみで使用されている場合はfalseを返す', () => {
       const tabs: DataFileTab[] = [
-        { name: 'メイン', files: ['data.json', 'data2.json'] },
-        { name: 'サブ1', files: ['data.json'] },
+        { name: 'メイン', files: ['datafiles/data.json', 'datafiles/data2.json'] },
+        { name: 'サブ1', files: ['datafiles/data.json'] },
       ];
-      expect(TabValidator.isFileUsedInOtherTabs('data2.json', 0, tabs)).toBe(false);
+      expect(TabValidator.isFileUsedInOtherTabs('datafiles/data2.json', 0, tabs)).toBe(false);
     });
 
     it('複数の他のタブで使用されている場合はtrueを返す', () => {
       const tabs: DataFileTab[] = [
-        { name: 'メイン', files: ['data.json'] },
-        { name: 'サブ1', files: ['data.json'] },
-        { name: 'サブ2', files: ['data.json'] },
+        { name: 'メイン', files: ['datafiles/data.json'] },
+        { name: 'サブ1', files: ['datafiles/data.json'] },
+        { name: 'サブ2', files: ['datafiles/data.json'] },
       ];
-      expect(TabValidator.isFileUsedInOtherTabs('data.json', 0, tabs)).toBe(true);
+      expect(TabValidator.isFileUsedInOtherTabs('datafiles/data.json', 0, tabs)).toBe(true);
     });
 
     it('どのタブでも使用されていない場合はfalseを返す', () => {
-      const tabs: DataFileTab[] = [{ name: 'メイン', files: ['data.json'] }];
-      expect(TabValidator.isFileUsedInOtherTabs('data2.json', 0, tabs)).toBe(false);
+      const tabs: DataFileTab[] = [{ name: 'メイン', files: ['datafiles/data.json'] }];
+      expect(TabValidator.isFileUsedInOtherTabs('datafiles/data2.json', 0, tabs)).toBe(false);
     });
   });
 
   describe('canAddFileToTab', () => {
     it('ファイルが既にタブに含まれている場合は追加不可', () => {
-      const tab: DataFileTab = { name: 'メイン', files: ['data.json'] };
-      const result = TabValidator.canAddFileToTab('data.json', tab);
+      const tab: DataFileTab = { name: 'メイン', files: ['datafiles/data.json'] };
+      const result = TabValidator.canAddFileToTab('datafiles/data.json', tab);
       expect(result.valid).toBe(false);
       expect(result.reason).toBe('このファイルは既にタブに含まれています。');
     });
 
     it('ファイルがタブに含まれていない場合は追加可能', () => {
-      const tab: DataFileTab = { name: 'メイン', files: ['data.json'] };
-      const result = TabValidator.canAddFileToTab('data2.json', tab);
+      const tab: DataFileTab = { name: 'メイン', files: ['datafiles/data.json'] };
+      const result = TabValidator.canAddFileToTab('datafiles/data2.json', tab);
       expect(result.valid).toBe(true);
       expect(result.reason).toBeUndefined();
     });
 
     it('空のタブにはファイルを追加可能', () => {
       const tab: DataFileTab = { name: 'メイン', files: [] };
-      const result = TabValidator.canAddFileToTab('data.json', tab);
+      const result = TabValidator.canAddFileToTab('datafiles/data.json', tab);
       expect(result.valid).toBe(true);
     });
   });

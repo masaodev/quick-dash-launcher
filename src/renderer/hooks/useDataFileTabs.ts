@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { AppItem, AppSettings, DataFileTab } from '@common/types';
+import { DEFAULT_DATA_FILE, AppItem, AppSettings, DataFileTab } from '@common/types';
 import { isWindowInfo } from '@common/types/guards';
 
 import { debugLog, logError } from '../utils/debug';
@@ -12,8 +12,8 @@ function extractUniqueFiles(tabs: DataFileTab[]): string[] {
   const allFiles = tabs.flatMap((tab) => tab.files || []);
   const files = Array.from(new Set(allFiles)).filter((file) => file && typeof file === 'string');
 
-  if (!files.includes('data.json')) {
-    files.unshift('data.json');
+  if (!files.includes(DEFAULT_DATA_FILE)) {
+    files.unshift(DEFAULT_DATA_FILE);
   }
 
   return files;
@@ -26,10 +26,10 @@ function resolveActiveTab(files: string[], preferredTab: string): string {
   if (files.includes(preferredTab)) {
     return preferredTab;
   }
-  if (files.includes('data.json')) {
-    return 'data.json';
+  if (files.includes(DEFAULT_DATA_FILE)) {
+    return DEFAULT_DATA_FILE;
   }
-  return files[0] || 'data.json';
+  return files[0] || DEFAULT_DATA_FILE;
 }
 
 /**
@@ -38,7 +38,7 @@ function resolveActiveTab(files: string[], preferredTab: string): string {
 export function useDataFileTabs() {
   const [showDataFileTabs, setShowDataFileTabs] = useState(false);
   const [dataFiles, setDataFiles] = useState<string[]>([]);
-  const [activeTab, setActiveTab] = useState<string>('data.json');
+  const [activeTab, setActiveTab] = useState<string>(DEFAULT_DATA_FILE);
   const [dataFileTabs, setDataFileTabs] = useState<DataFileTab[]>([]);
   const [dataFileLabels, setDataFileLabels] = useState<Record<string, string>>({});
 
@@ -66,7 +66,7 @@ export function useDataFileTabs() {
 
     await ensureDataFilesExist(files);
 
-    const defaultTab = settings.defaultFileTab || 'data.json';
+    const defaultTab = settings.defaultFileTab || DEFAULT_DATA_FILE;
 
     if (options.resetToDefault) {
       setActiveTab(resolveActiveTab(files, defaultTab));
@@ -97,7 +97,7 @@ export function useDataFileTabs() {
       try {
         const settings = await window.electronAPI.getSettings();
         const files = extractUniqueFiles(settings.dataFileTabs || []);
-        const defaultTab = settings.defaultFileTab || 'data.json';
+        const defaultTab = settings.defaultFileTab || DEFAULT_DATA_FILE;
         setActiveTab(resolveActiveTab(files, defaultTab));
       } catch (error) {
         logError('デフォルトタブへのリセットに失敗しました:', error);

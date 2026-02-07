@@ -17,8 +17,11 @@ export class ConfigFileHelper {
   private dataBackupPath: string | null = null;
   private settingsBackupPath: string | null = null;
   private isTempDir: boolean = false;
+  private dataFilesDir: string;
 
-  constructor(private configDir: string) {}
+  constructor(private configDir: string) {
+    this.dataFilesDir = path.join(configDir, 'datafiles');
+  }
 
   /**
    * テンプレートから一時ディレクトリを作成して初期化
@@ -75,7 +78,7 @@ export class ConfigFileHelper {
    * data.jsonをバックアップ
    */
   backupData(): void {
-    const dataFilePath = path.join(this.configDir, 'data.json');
+    const dataFilePath = path.join(this.dataFilesDir, 'data.json');
     this.dataBackupPath = path.join(this.configDir, '.data.json.backup');
 
     if (fs.existsSync(dataFilePath)) {
@@ -89,7 +92,7 @@ export class ConfigFileHelper {
   restoreData(): void {
     if (!this.dataBackupPath) return;
 
-    const dataFilePath = path.join(this.configDir, 'data.json');
+    const dataFilePath = path.join(this.dataFilesDir, 'data.json');
 
     if (fs.existsSync(this.dataBackupPath)) {
       fs.copyFileSync(this.dataBackupPath, dataFilePath);
@@ -146,20 +149,36 @@ export class ConfigFileHelper {
       throw new Error(`Template directory not found: ${templateDir}`);
     }
 
-    // data.json をコピー
-    const dataTemplate = path.join(templateDir, 'data.json');
-    const dataTarget = path.join(this.configDir, 'data.json');
-    if (fs.existsSync(dataTemplate)) {
-      fs.copyFileSync(dataTemplate, dataTarget);
-    }
+    // datafilesディレクトリを作成
+    fs.mkdirSync(this.dataFilesDir, { recursive: true });
 
-    // data2.json〜data9.json をコピー（存在する場合）
-    for (let i = 2; i <= 9; i++) {
-      const dataFile = `data${i}.json`;
-      const dataTemplate = path.join(templateDir, dataFile);
-      const dataTarget = path.join(this.configDir, dataFile);
+    // テンプレートのdatafilesサブディレクトリからdata*.jsonをコピー
+    const templateDataFilesDir = path.join(templateDir, 'datafiles');
+
+    if (fs.existsSync(templateDataFilesDir)) {
+      // 新形式: テンプレートにdatafilesディレクトリがある場合
+      const files = fs.readdirSync(templateDataFilesDir);
+      for (const file of files) {
+        if (file.startsWith('data') && file.endsWith('.json')) {
+          fs.copyFileSync(
+            path.join(templateDataFilesDir, file),
+            path.join(this.dataFilesDir, file)
+          );
+        }
+      }
+    } else {
+      // 旧形式の互換: テンプレート直下のdata*.jsonをdatafilesにコピー
+      const dataTemplate = path.join(templateDir, 'data.json');
       if (fs.existsSync(dataTemplate)) {
-        fs.copyFileSync(dataTemplate, dataTarget);
+        fs.copyFileSync(dataTemplate, path.join(this.dataFilesDir, 'data.json'));
+      }
+
+      for (let i = 2; i <= 9; i++) {
+        const dataFile = `data${i}.json`;
+        const srcPath = path.join(templateDir, dataFile);
+        if (fs.existsSync(srcPath)) {
+          fs.copyFileSync(srcPath, path.join(this.dataFilesDir, dataFile));
+        }
       }
     }
 
@@ -177,20 +196,29 @@ export class ConfigFileHelper {
    * @param fileName ファイル名（例: 'data.json', 'settings.json'）
    */
   loadTemplateFile(templateName: string, fileName: string): void {
-    const templatePath = path.join(
-      process.cwd(),
-      'tests',
-      'e2e',
-      'templates',
-      templateName,
-      fileName
-    );
-    const targetPath = path.join(this.configDir, fileName);
+    const isDataFile = fileName.startsWith('data') && fileName.endsWith('.json');
+    const templateBase = path.join(process.cwd(), 'tests', 'e2e', 'templates', templateName);
 
-    if (fs.existsSync(templatePath)) {
-      fs.copyFileSync(templatePath, targetPath);
+    // datafilesサブディレクトリを優先、なければテンプレート直下から読む
+    let templatePath: string;
+    if (isDataFile) {
+      const dataFilesPath = path.join(templateBase, 'datafiles', fileName);
+      templatePath = fs.existsSync(dataFilesPath)
+        ? dataFilesPath
+        : path.join(templateBase, fileName);
     } else {
+      templatePath = path.join(templateBase, fileName);
+    }
+
+    if (!fs.existsSync(templatePath)) {
       throw new Error(`Template file not found: ${templatePath}`);
+    }
+
+    if (isDataFile) {
+      fs.mkdirSync(this.dataFilesDir, { recursive: true });
+      fs.copyFileSync(templatePath, path.join(this.dataFilesDir, fileName));
+    } else {
+      fs.copyFileSync(templatePath, path.join(this.configDir, fileName));
     }
   }
 
@@ -202,7 +230,7 @@ export class ConfigFileHelper {
    * @returns ファイルの内容（存在しない場合は空のデータ構造）
    */
   readDataFile(fileName: string): DataFileContent {
-    const dataFilePath = path.join(this.configDir, fileName);
+    const dataFilePath = path.join(this.dataFilesDir, fileName);
     if (!fs.existsSync(dataFilePath)) {
       return { version: '1.0', items: [] };
     }
@@ -216,7 +244,7 @@ export class ConfigFileHelper {
    * @returns ファイルの内容文字列（存在しない場合は空文字列）
    */
   readDataFileRaw(fileName: string): string {
-    const dataFilePath = path.join(this.configDir, fileName);
+    const dataFilePath = path.join(this.dataFilesDir, fileName);
     if (!fs.existsSync(dataFilePath)) {
       return '';
     }
@@ -229,7 +257,7 @@ export class ConfigFileHelper {
    * @param content ファイルの内容
    */
   writeDataFile(fileName: string, content: DataFileContent): void {
-    const dataFilePath = path.join(this.configDir, fileName);
+    const dataFilePath = path.join(this.dataFilesDir, fileName);
     fs.writeFileSync(dataFilePath, JSON.stringify(content, null, '  '), 'utf8');
   }
 
@@ -239,7 +267,7 @@ export class ConfigFileHelper {
    * @param content ファイルの内容文字列
    */
   writeDataFileRaw(fileName: string, content: string): void {
-    const dataFilePath = path.join(this.configDir, fileName);
+    const dataFilePath = path.join(this.dataFilesDir, fileName);
     fs.writeFileSync(dataFilePath, content, 'utf8');
   }
 
@@ -292,7 +320,7 @@ export class ConfigFileHelper {
     if (fileName === 'data.json') {
       throw new Error('data.json is required and cannot be deleted');
     }
-    const dataFilePath = path.join(this.configDir, fileName);
+    const dataFilePath = path.join(this.dataFilesDir, fileName);
     if (fs.existsSync(dataFilePath)) {
       fs.unlinkSync(dataFilePath);
     }
@@ -364,7 +392,14 @@ export class ConfigFileHelper {
    * data.jsonのフルパスを取得
    */
   getDataPath(): string {
-    return path.join(this.configDir, 'data.json');
+    return path.join(this.dataFilesDir, 'data.json');
+  }
+
+  /**
+   * datafilesディレクトリのパスを取得
+   */
+  getDataFilesDir(): string {
+    return this.dataFilesDir;
   }
 
   /**
@@ -378,7 +413,9 @@ export class ConfigFileHelper {
    * 特定のファイルが存在するか確認
    */
   fileExists(fileName: string): boolean {
-    const filePath = path.join(this.configDir, fileName);
+    const isDataFile = fileName.startsWith('data') && fileName.endsWith('.json');
+    const dir = isDataFile ? this.dataFilesDir : this.configDir;
+    const filePath = path.join(dir, fileName);
     return fs.existsSync(filePath);
   }
 

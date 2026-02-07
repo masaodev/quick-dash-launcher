@@ -1,5 +1,7 @@
 import { DataFileTab } from '@common/types';
 
+const DATAFILES_PREFIX = 'datafiles/';
+
 /**
  * ファイル名とラベルの生成ロジック
  * すべて純粋関数として実装（副作用なし）
@@ -7,19 +9,23 @@ import { DataFileTab } from '@common/types';
 export const FileNameGenerator = {
   /**
    * デフォルトのタブ名を生成
-   * @param fileName - ファイル名（例: data.json, data2.json）
+   * @param fileName - ファイル名（例: datafiles/data.json, datafiles/data2.json）
    * @returns デフォルトのタブ名（例: メイン、サブ1）
    *
    * @example
-   * getDefaultTabName('data.json') // => 'メイン'
-   * getDefaultTabName('data2.json') // => 'サブ1'
-   * getDefaultTabName('data10.json') // => 'サブ9'
+   * getDefaultTabName('datafiles/data.json') // => 'メイン'
+   * getDefaultTabName('datafiles/data2.json') // => 'サブ1'
+   * getDefaultTabName('datafiles/data10.json') // => 'サブ9'
    */
   getDefaultTabName(fileName: string): string {
-    if (fileName === 'data.json') {
+    const baseName = fileName.startsWith(DATAFILES_PREFIX)
+      ? fileName.slice(DATAFILES_PREFIX.length)
+      : fileName;
+
+    if (baseName === 'data.json') {
       return 'メイン';
     }
-    const match = fileName.match(/^data(\d+)\.json$/);
+    const match = baseName.match(/^data(\d+)\.json$/);
     if (match) {
       const num = parseInt(match[1]);
       return `サブ${num - 1}`;
@@ -35,9 +41,9 @@ export const FileNameGenerator = {
    * @returns ファイルラベル（例: メイン用データファイル）
    *
    * @example
-   * getDefaultFileLabel('data.json', 'メイン') // => 'メイン用データファイル'
-   * getDefaultFileLabel('data2.json', 'サブ1') // => 'サブ1用データファイル'
-   * getDefaultFileLabel('data.json', undefined, tabs) // => タブから自動取得
+   * getDefaultFileLabel('datafiles/data.json', 'メイン') // => 'メイン用データファイル'
+   * getDefaultFileLabel('datafiles/data2.json', 'サブ1') // => 'サブ1用データファイル'
+   * getDefaultFileLabel('datafiles/data.json', undefined, tabs) // => タブから自動取得
    */
   getDefaultFileLabel(fileName: string, tabName?: string, tabs?: DataFileTab[]): string {
     // タブ名が指定されていない場合は、ファイルが紐づいている最初のタブ名を取得
@@ -54,26 +60,29 @@ export const FileNameGenerator = {
    * 次に使用可能なファイル名を生成
    * @param existingFiles - 既存のファイル名リスト
    * @param pendingCreations - 作成予定のファイル名リスト
-   * @returns 次の番号のファイル名（例: data2.json, data3.json）
+   * @returns 次の番号のファイル名（例: datafiles/data2.json, datafiles/data3.json）
    *
    * @example
-   * getNextAvailableFileName(['data.json'], []) // => 'data2.json'
-   * getNextAvailableFileName(['data.json', 'data2.json'], []) // => 'data3.json'
-   * getNextAvailableFileName(['data.json', 'data3.json'], []) // => 'data4.json' (欠番は埋めない)
-   * getNextAvailableFileName(['data.json'], ['data2.json']) // => 'data3.json'
+   * getNextAvailableFileName(['datafiles/data.json'], []) // => 'datafiles/data2.json'
+   * getNextAvailableFileName(['datafiles/data.json', 'datafiles/data2.json'], []) // => 'datafiles/data3.json'
+   * getNextAvailableFileName(['datafiles/data.json', 'datafiles/data3.json'], []) // => 'datafiles/data4.json' (欠番は埋めない)
+   * getNextAvailableFileName(['datafiles/data.json'], ['datafiles/data2.json']) // => 'datafiles/data3.json'
    */
   getNextAvailableFileName(existingFiles: string[], pendingCreations: string[]): string {
     const allFiles = [...existingFiles, ...pendingCreations];
     const existingNumbers = allFiles
       .map((file) => {
-        if (file === 'data.json') return 1;
-        const match = file.match(/^data(\d+)\.json$/i);
+        const baseName = file.startsWith(DATAFILES_PREFIX)
+          ? file.slice(DATAFILES_PREFIX.length)
+          : file;
+        if (baseName === 'data.json') return 1;
+        const match = baseName.match(/^data(\d+)\.json$/i);
         return match ? parseInt(match[1]) : null;
       })
       .filter((n): n is number => n !== null);
 
     const nextNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 2;
-    return `data${nextNumber}.json`;
+    return `${DATAFILES_PREFIX}data${nextNumber}.json`;
   },
 
   /**

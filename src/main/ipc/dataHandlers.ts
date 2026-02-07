@@ -14,6 +14,7 @@ import { jsonItemToDisplayText } from '@common/utils/displayTextConverter';
 import type { EditableJsonItem, LoadEditableItemsResult } from '@common/types/editableItem';
 import { validateEditableItem } from '@common/types/editableItem';
 import {
+  DEFAULT_DATA_FILE,
   LauncherItem,
   AppItem,
   isJsonLauncherItem,
@@ -565,7 +566,7 @@ async function registerItems(configFolder: string, items: RegisterItem[]): Promi
 
   for (const item of items) {
     // targetFileが指定されていればそれを使用、なければtargetTabを使用
-    const targetFile = item.targetFile || item.targetTab || 'data.json';
+    const targetFile = item.targetFile || item.targetTab || DEFAULT_DATA_FILE;
     if (!itemsByTab.has(targetFile)) {
       itemsByTab.set(targetFile, []);
     }
@@ -771,8 +772,8 @@ export function setupDataHandlers(configFolder: string) {
     const fs = await import('fs/promises');
     const path = await import('path');
 
-    // data.jsonは削除不可（メインデータファイル）
-    if (fileName === 'data.json') {
+    // メインデータファイルは削除不可
+    if (fileName === DEFAULT_DATA_FILE) {
       return { success: false, error: 'メインデータファイルは削除できません' };
     }
 
