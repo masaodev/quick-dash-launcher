@@ -11,31 +11,31 @@
 	"backupInterval": 5,
 	"backupRetention": 20,
 	"showDataFileTabs": true,
-	"defaultFileTab": "data.txt",
+	"defaultFileTab": "datafiles/data.txt",
 	"dataFileTabs": [
 		{
 			"files": [
-				"data.txt"
+				"datafiles/data.txt"
 			],
 			"name": "メイン"
 		},
 		{
 			"files": [
-				"data2.txt"
+				"datafiles/data2.txt"
 			],
 			"name": "仕事"
 		},
 		{
 			"files": [
-				"data3.txt"
+				"datafiles/data3.txt"
 			],
 			"name": "プライベート"
 		}
 	],
 	"dataFileLabels": {
-		"data.txt": "メイン用データファイル",
-		"data2.txt": "仕事用データファイル",
-		"data3.txt": "プライベート用データファイル"
+		"datafiles/data.txt": "メイン用データファイル",
+		"datafiles/data2.txt": "仕事用データファイル",
+		"datafiles/data3.txt": "プライベート用データファイル"
 	},
 	"windowPositionMode": "center",
 	"windowPositionX": 0,

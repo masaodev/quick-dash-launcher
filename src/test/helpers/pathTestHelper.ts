@@ -68,10 +68,10 @@ export class PathTestHelper {
 
   /**
    * テストデータファイルを作成
-   * @param fileName ファイル名（デフォルト: 'data.json'）
+   * @param fileName ファイル名（デフォルト: 'datafiles/data.json'）
    * @param content ファイル内容
    */
-  createTestDataFile(fileName: string = 'data.json', content: string): void {
+  createTestDataFile(fileName: string = 'datafiles/data.json', content: string): void {
     if (!this.tempConfigFolder) {
       throw new Error('Setup must be called before createTestDataFile');
     }
@@ -82,10 +82,10 @@ export class PathTestHelper {
 
   /**
    * テストデータファイルを読み込み
-   * @param fileName ファイル名（デフォルト: 'data.json'）
+   * @param fileName ファイル名（デフォルト: 'datafiles/data.json'）
    * @returns ファイル内容
    */
-  readTestDataFile(fileName: string = 'data.json'): string {
+  readTestDataFile(fileName: string = 'datafiles/data.json'): string {
     if (!this.tempConfigFolder) {
       throw new Error('Setup must be called before readTestDataFile');
     }

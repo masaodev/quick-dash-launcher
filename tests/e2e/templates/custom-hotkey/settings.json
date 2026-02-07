@@ -11,8 +11,8 @@
 	"backupInterval": 5,
 	"backupRetention": 20,
 	"showDataFileTabs": false,
-	"defaultFileTab": "data.json",
+	"defaultFileTab": "datafiles/data.json",
 	"dataFileTabs": [
-		{ "files": ["data.json"], "name": "メイン" }
+		{ "files": ["datafiles/data.json"], "name": "メイン" }
 	]
 }

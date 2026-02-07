@@ -1,5 +1,5 @@
 import { useCallback, Dispatch, SetStateAction } from 'react';
-import { AppSettings } from '@common/types';
+import { DEFAULT_DATA_FILE, AppSettings } from '@common/types';
 
 import { logError } from '../../utils/debug';
 import { TabStateCalculator, PendingFileOperations } from '../../utils/tabManager';
@@ -98,8 +98,8 @@ export function useTabOperations({
       const tab = tabs[tabIndex];
 
       // data.jsonを含むタブは削除不可
-      if (tab.files.includes('data.json')) {
-        showAlert('data.jsonを含むタブは削除できません。', 'warning');
+      if (tab.files.includes(DEFAULT_DATA_FILE)) {
+        showAlert(`${DEFAULT_DATA_FILE}を含むタブは削除できません。`, 'warning');
         return;
       }
 

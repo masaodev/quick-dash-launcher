@@ -1,5 +1,5 @@
 import React from 'react';
-import { AppItem, DataFileTab } from '@common/types';
+import { DEFAULT_DATA_FILE, AppItem, DataFileTab } from '@common/types';
 import { isWindowInfo } from '@common/types/guards';
 
 import { filterItems } from '../utils/dataParser';
@@ -56,7 +56,7 @@ const LauncherFileTabBar: React.FC<FileTabBarProps> = ({
   // タブグループの代表ファイル名を取得（クリック時に使用）
   const getRepresentativeFile = (tabConfig: DataFileTab): string => {
     // 最初のファイルを使用
-    return tabConfig.files[0] || 'data.json';
+    return tabConfig.files[0] || DEFAULT_DATA_FILE;
   };
 
   return (

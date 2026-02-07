@@ -1,5 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { AppSettings, WindowPositionMode, WorkspacePositionMode, DisplayInfo } from '@common/types';
+import {
+  DEFAULT_DATA_FILE,
+  AppSettings,
+  WindowPositionMode,
+  WorkspacePositionMode,
+  DisplayInfo,
+} from '@common/types';
 
 import { useDialogManager } from '../hooks/useDialogManager';
 import { useSettingsManager } from '../hooks/useSettingsManager';
@@ -720,7 +726,7 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                   <div className="tab-accordion-container">
                     {/* タブ一覧（アコーディオン） */}
                     {(editedSettings.dataFileTabs || []).map((tab, tabIndex) => {
-                      const hasMainDataFile = tab.files.includes('data.json');
+                      const hasMainDataFile = tab.files.includes(DEFAULT_DATA_FILE);
                       const expanded = isTabExpanded(tabIndex);
                       const allDataFiles = Array.from(
                         new Set((editedSettings.dataFileTabs || []).flatMap((t) => t.files))
@@ -754,7 +760,7 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                                   handleTabNameChangeByIndex(tabIndex, e.target.value)
                                 }
                                 className="tab-accordion-name-input"
-                                placeholder={getDefaultTabName(tab.files[0] || 'data.json')}
+                                placeholder={getDefaultTabName(tab.files[0] || DEFAULT_DATA_FILE)}
                                 disabled={isLoading}
                               />
                             ) : (
@@ -762,7 +768,7 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                                 className="tab-accordion-name"
                                 onClick={() => toggleTabExpand(tabIndex)}
                               >
-                                {tab.name || getDefaultTabName(tab.files[0] || 'data.json')}
+                                {tab.name || getDefaultTabName(tab.files[0] || DEFAULT_DATA_FILE)}
                               </span>
                             )}
 
@@ -812,13 +818,14 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                               {/* データファイル一覧 */}
                               <div className="data-file-list">
                                 {tab.files.map((fileName) => {
-                                  const isMainDataFile = fileName === 'data.json';
+                                  const isMainDataFile = fileName === DEFAULT_DATA_FILE;
                                   const isLastFile = tab.files.length === 1;
                                   // data.jsonが他のタブにも存在するかチェック
                                   const mainDataFileExistsInOtherTabs =
                                     isMainDataFile &&
                                     (editedSettings.dataFileTabs || []).some(
-                                      (t, idx) => idx !== tabIndex && t.files.includes('data.json')
+                                      (t, idx) =>
+                                        idx !== tabIndex && t.files.includes(DEFAULT_DATA_FILE)
                                     );
                                   // data.jsonが他のタブにも存在する場合は削除可能
                                   const canDelete = mainDataFileExistsInOtherTabs;
@@ -848,7 +855,7 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                                         {!canDelete ? (
                                           <span
                                             className="data-file-default-badge"
-                                            title="data.jsonは最低1つのタブに必要です"
+                                            title="datafiles/data.jsonは最低1つのタブに必要です"
                                           >
                                             既定
                                           </span>

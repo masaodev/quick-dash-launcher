@@ -2,6 +2,7 @@
  * データ変換ユーティリティ
  */
 
+import { DEFAULT_DATA_FILE } from '../types';
 import type { LauncherItem, DataFileTab, JsonDirOptions, JsonItem } from '../types';
 import type { RegisterItem, WindowOperationConfig } from '../types/register.js';
 import type { EditingAppItem, EditingWindowItem } from '../types/editingItem.js';
@@ -108,7 +109,7 @@ function parseExpandedOptionsToJsonDirOptions(optionsStr: string | undefined): J
 
 /** デフォルトのタブを取得する */
 function getDefaultTab(sourceFile: string | undefined, tabs: DataFileTab[]): string {
-  return sourceFile || (tabs.length > 0 ? tabs[0].files[0] : 'data.json');
+  return sourceFile || (tabs.length > 0 ? tabs[0].files[0] : DEFAULT_DATA_FILE);
 }
 
 /** EditingWindowItemまたはJsonWindowItemからWindowOperationConfigを作成する */
@@ -223,7 +224,7 @@ export function createEditingAppItem(
 ): EditingAppItem {
   return {
     ...item,
-    sourceFile: item.sourceFile || 'data.json',
+    sourceFile: item.sourceFile || DEFAULT_DATA_FILE,
     lineNumber: item.lineNumber || 1,
   } as EditingAppItem;
 }

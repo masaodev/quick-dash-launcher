@@ -6,19 +6,19 @@ import { FileNameGenerator } from '../fileNameGenerator';
 describe('FileNameGenerator', () => {
   describe('getDefaultTabName', () => {
     it('data.jsonの場合は「メイン」を返す', () => {
-      expect(FileNameGenerator.getDefaultTabName('data.json')).toBe('メイン');
+      expect(FileNameGenerator.getDefaultTabName('datafiles/data.json')).toBe('メイン');
     });
 
     it('data2.jsonの場合は「サブ1」を返す', () => {
-      expect(FileNameGenerator.getDefaultTabName('data2.json')).toBe('サブ1');
+      expect(FileNameGenerator.getDefaultTabName('datafiles/data2.json')).toBe('サブ1');
     });
 
     it('data3.jsonの場合は「サブ2」を返す', () => {
-      expect(FileNameGenerator.getDefaultTabName('data3.json')).toBe('サブ2');
+      expect(FileNameGenerator.getDefaultTabName('datafiles/data3.json')).toBe('サブ2');
     });
 
     it('data10.jsonの場合は「サブ9」を返す', () => {
-      expect(FileNameGenerator.getDefaultTabName('data10.json')).toBe('サブ9');
+      expect(FileNameGenerator.getDefaultTabName('datafiles/data10.json')).toBe('サブ9');
     });
 
     it('パターンに一致しないファイル名の場合はそのまま返す', () => {
@@ -29,37 +29,41 @@ describe('FileNameGenerator', () => {
 
   describe('getDefaultFileLabel', () => {
     it('タブ名が指定されている場合は「タブ名用データファイル」を返す', () => {
-      expect(FileNameGenerator.getDefaultFileLabel('data.json', 'メイン')).toBe(
+      expect(FileNameGenerator.getDefaultFileLabel('datafiles/data.json', 'メイン')).toBe(
         'メイン用データファイル'
       );
-      expect(FileNameGenerator.getDefaultFileLabel('data2.json', 'サブ1')).toBe(
+      expect(FileNameGenerator.getDefaultFileLabel('datafiles/data2.json', 'サブ1')).toBe(
         'サブ1用データファイル'
       );
     });
 
     it('タブ名が未指定でtabsが指定されている場合は紐づくタブ名を使用', () => {
       const tabs: DataFileTab[] = [
-        { name: 'メイン', files: ['data.json'] },
-        { name: 'サブ1', files: ['data2.json'] },
+        { name: 'メイン', files: ['datafiles/data.json'] },
+        { name: 'サブ1', files: ['datafiles/data2.json'] },
       ];
 
-      expect(FileNameGenerator.getDefaultFileLabel('data.json', undefined, tabs)).toBe(
+      expect(FileNameGenerator.getDefaultFileLabel('datafiles/data.json', undefined, tabs)).toBe(
         'メイン用データファイル'
       );
-      expect(FileNameGenerator.getDefaultFileLabel('data2.json', undefined, tabs)).toBe(
+      expect(FileNameGenerator.getDefaultFileLabel('datafiles/data2.json', undefined, tabs)).toBe(
         'サブ1用データファイル'
       );
     });
 
     it('タブ名もtabsも未指定の場合はファイル名からタブ名を生成', () => {
-      expect(FileNameGenerator.getDefaultFileLabel('data.json')).toBe('メイン用データファイル');
-      expect(FileNameGenerator.getDefaultFileLabel('data2.json')).toBe('サブ1用データファイル');
+      expect(FileNameGenerator.getDefaultFileLabel('datafiles/data.json')).toBe(
+        'メイン用データファイル'
+      );
+      expect(FileNameGenerator.getDefaultFileLabel('datafiles/data2.json')).toBe(
+        'サブ1用データファイル'
+      );
     });
 
     it('ファイルがどのタブにも紐づいていない場合はファイル名からタブ名を生成', () => {
-      const tabs: DataFileTab[] = [{ name: 'メイン', files: ['data.json'] }];
+      const tabs: DataFileTab[] = [{ name: 'メイン', files: ['datafiles/data.json'] }];
 
-      expect(FileNameGenerator.getDefaultFileLabel('data3.json', undefined, tabs)).toBe(
+      expect(FileNameGenerator.getDefaultFileLabel('datafiles/data3.json', undefined, tabs)).toBe(
         'サブ2用データファイル'
       );
     });
@@ -67,41 +71,58 @@ describe('FileNameGenerator', () => {
 
   describe('getNextAvailableFileName', () => {
     it('既存ファイルがdata.jsonのみの場合はdata2.jsonを返す', () => {
-      expect(FileNameGenerator.getNextAvailableFileName(['data.json'], [])).toBe('data2.json');
+      expect(FileNameGenerator.getNextAvailableFileName(['datafiles/data.json'], [])).toBe(
+        'datafiles/data2.json'
+      );
     });
 
     it('既存ファイルがdata.json, data2.jsonの場合はdata3.jsonを返す', () => {
-      expect(FileNameGenerator.getNextAvailableFileName(['data.json', 'data2.json'], [])).toBe(
-        'data3.json'
-      );
+      expect(
+        FileNameGenerator.getNextAvailableFileName(
+          ['datafiles/data.json', 'datafiles/data2.json'],
+          []
+        )
+      ).toBe('datafiles/data3.json');
     });
 
     it('欠番がある場合は欠番を埋めずに次の番号を返す', () => {
-      expect(FileNameGenerator.getNextAvailableFileName(['data.json', 'data3.json'], [])).toBe(
-        'data4.json'
-      );
+      expect(
+        FileNameGenerator.getNextAvailableFileName(
+          ['datafiles/data.json', 'datafiles/data3.json'],
+          []
+        )
+      ).toBe('datafiles/data4.json');
     });
 
     it('作成予定のファイルも考慮する', () => {
-      expect(FileNameGenerator.getNextAvailableFileName(['data.json'], ['data2.json'])).toBe(
-        'data3.json'
-      );
+      expect(
+        FileNameGenerator.getNextAvailableFileName(
+          ['datafiles/data.json'],
+          ['datafiles/data2.json']
+        )
+      ).toBe('datafiles/data3.json');
     });
 
     it('大きな番号のファイルがある場合はその次の番号を返す', () => {
-      expect(FileNameGenerator.getNextAvailableFileName(['data.json', 'data10.json'], [])).toBe(
-        'data11.json'
-      );
+      expect(
+        FileNameGenerator.getNextAvailableFileName(
+          ['datafiles/data.json', 'datafiles/data10.json'],
+          []
+        )
+      ).toBe('datafiles/data11.json');
     });
 
     it('既存ファイルが空の場合はdata2.jsonを返す', () => {
-      expect(FileNameGenerator.getNextAvailableFileName([], [])).toBe('data2.json');
+      expect(FileNameGenerator.getNextAvailableFileName([], [])).toBe('datafiles/data2.json');
     });
 
     it('大文字小文字を区別せずにパターンマッチ', () => {
-      expect(FileNameGenerator.getNextAvailableFileName(['DATA.JSON', 'Data2.JSON'], [])).toBe(
-        'data3.json'
-      );
+      expect(
+        FileNameGenerator.getNextAvailableFileName(
+          ['datafiles/DATA.JSON', 'datafiles/Data2.JSON'],
+          []
+        )
+      ).toBe('datafiles/data3.json');
     });
   });
 

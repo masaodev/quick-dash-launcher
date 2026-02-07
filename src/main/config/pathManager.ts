@@ -71,33 +71,38 @@ export class PathManager {
     return path.join(this.getClipboardDataFolder(), `${id}.json`);
   }
 
+  static getDataFilesFolder(): string {
+    return path.join(this.getConfigFolder(), 'datafiles');
+  }
+
   static getDataFilePath(): string {
-    return path.join(this.getConfigFolder(), 'data.json');
+    return path.join(this.getDataFilesFolder(), 'data.json');
   }
 
   static getWorkspaceFilePath(): string {
     return path.join(this.getConfigFolder(), 'workspace.json');
   }
 
-  /** 設定フォルダ内のすべてのdata*.jsonファイルを取得 */
+  /** datafilesフォルダ内のすべてのdata*.jsonファイルを取得（configFolderからの相対パス） */
   static getDataFiles(): string[] {
-    const configFolder = this.getConfigFolder();
+    const dataFilesFolder = this.getDataFilesFolder();
 
     try {
-      if (!fs.existsSync(configFolder)) {
-        logger.warn(`Config folder does not exist: ${configFolder}`);
+      if (!fs.existsSync(dataFilesFolder)) {
+        logger.warn(`Data files folder does not exist: ${dataFilesFolder}`);
         return [];
       }
 
-      const files = fs.readdirSync(configFolder);
+      const files = fs.readdirSync(dataFilesFolder);
       const jsonFiles = files
         .filter((file) => file.startsWith('data') && file.endsWith('.json'))
-        .sort();
+        .sort()
+        .map((file) => `datafiles/${file}`);
 
       logger.info(`Found ${jsonFiles.length} data files: ${jsonFiles.join(', ')}`);
       return jsonFiles;
     } catch (error) {
-      logger.error({ error, configFolder }, 'Failed to read data files');
+      logger.error({ error, dataFilesFolder }, 'Failed to read data files');
       return [];
     }
   }
@@ -112,6 +117,7 @@ export class PathManager {
   static ensureDirectories(): void {
     const dirs = [
       this.getConfigFolder(),
+      this.getDataFilesFolder(),
       this.getIconCacheFolder(),
       this.getAppsFolder(),
       this.getSchemesFolder(),

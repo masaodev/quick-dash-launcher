@@ -26,7 +26,8 @@ export type {
   ArchivedWorkspaceItem,
 } from './workspace';
 
-// データファイル関連の型
+// データファイル関連の型・定数
+export { DEFAULT_DATA_FILE } from './data';
 export type { DataFileTab } from './data';
 
 // JSONデータファイル関連の型

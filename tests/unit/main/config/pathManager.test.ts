@@ -41,9 +41,14 @@ describe('PathManager', () => {
       expect(PathManager.getBackupFolder()).toBe(path.join(configFolder, 'backup'));
     });
 
+    it('datafilesフォルダのパスを取得できる', () => {
+      const configFolder = pathHelper.setup('datafiles-folder-test');
+      expect(PathManager.getDataFilesFolder()).toBe(path.join(configFolder, 'datafiles'));
+    });
+
     it('data.jsonファイルのパスを取得できる', () => {
       const configFolder = pathHelper.setup('datafile-test');
-      expect(PathManager.getDataFilePath()).toBe(path.join(configFolder, 'data.json'));
+      expect(PathManager.getDataFilePath()).toBe(path.join(configFolder, 'datafiles', 'data.json'));
     });
   });
 
@@ -56,6 +61,7 @@ describe('PathManager', () => {
 
       // すべてのディレクトリが存在することを確認
       expect(fs.existsSync(PathManager.getConfigFolder())).toBe(true);
+      expect(fs.existsSync(PathManager.getDataFilesFolder())).toBe(true);
       expect(fs.existsSync(PathManager.getIconCacheFolder())).toBe(true);
       expect(fs.existsSync(PathManager.getAppsFolder())).toBe(true);
       expect(fs.existsSync(PathManager.getFaviconsFolder())).toBe(true);

@@ -1,5 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { SimpleBookmarkItem, DataFileTab, DuplicateHandlingOption } from '@common/types';
+import {
+  DEFAULT_DATA_FILE,
+  SimpleBookmarkItem,
+  DataFileTab,
+  DuplicateHandlingOption,
+} from '@common/types';
 import type { EditableJsonItem } from '@common/types/editableItem';
 import type { RegisterItem } from '@common/types';
 import { jsonItemToDisplayText } from '@common/utils/displayTextConverter';
@@ -57,7 +62,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
 
   // タブとファイル選択用の状態
   const [selectedTabIndex, setSelectedTabIndex] = useState<number>(0);
-  const [selectedDataFile, setSelectedDataFile] = useState<string>('data.json');
+  const [selectedDataFile, setSelectedDataFile] = useState<string>(DEFAULT_DATA_FILE);
 
   // 保存時の整列・重複削除チェックボックスの状態
   const [sortAndDedupChecked, setSortAndDedupChecked] = useState(true);
@@ -643,7 +648,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
 
   // 現在選択されているタブの情報を取得
   const currentTab = dataFileTabs[selectedTabIndex];
-  const currentTabFiles = currentTab?.files || ['data.json'];
+  const currentTabFiles = currentTab?.files || [DEFAULT_DATA_FILE];
 
   return (
     <div className="edit-mode-view" onKeyDown={handleKeyDown} tabIndex={0}>
