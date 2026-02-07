@@ -3,6 +3,7 @@ import { DESKTOP_TAB } from '@common/constants';
 import type { WindowInfo, VirtualDesktopInfo } from '@common/types';
 
 import { getCountClass } from '../utils/tabUtils';
+import { filterItems } from '../utils/dataParser';
 
 interface DesktopTabBarProps {
   /** 仮想デスクトップ情報 */
@@ -11,6 +12,8 @@ interface DesktopTabBarProps {
   activeDesktopTab: number;
   /** ウィンドウリスト */
   windowList: WindowInfo[];
+  /** 検索クエリ（フィルタリング用） */
+  searchQuery: string;
   /** タブ変更時のハンドラ */
   onTabChange: (tabId: number) => void;
 }
@@ -43,23 +46,27 @@ const LauncherDesktopTabBar: React.FC<DesktopTabBarProps> = ({
   desktopInfo,
   activeDesktopTab,
   windowList,
+  searchQuery,
   onTabChange,
 }) => {
   // タブリストを生成（useMemoで最適化）
   const tabs = useMemo((): DesktopTab[] => {
+    // 検索クエリでフィルタリング
+    const filteredWindows = filterItems(windowList, searchQuery, 'window') as WindowInfo[];
+
     const tabList: DesktopTab[] = [
-      { id: DESKTOP_TAB.ALL, label: 'すべて', count: windowList.length },
+      { id: DESKTOP_TAB.ALL, label: 'すべて', count: filteredWindows.length },
     ];
 
     // 「ピン止め」タブ（ピン止めされたウィンドウがある場合のみ表示）
-    const pinnedCount = windowList.filter((w) => w.isPinned === true).length;
+    const pinnedCount = filteredWindows.filter((w) => w.isPinned === true).length;
     if (pinnedCount > 0) {
       tabList.push({ id: DESKTOP_TAB.PINNED, label: 'ピン止め', count: pinnedCount });
     }
 
     // 各デスクトップのタブを追加
     for (let i = 1; i <= desktopInfo.desktopCount; i++) {
-      const count = windowList.filter((w) => w.desktopNumber === i).length;
+      const count = filteredWindows.filter((w) => w.desktopNumber === i).length;
       const isCurrent = i === desktopInfo.currentDesktop;
       const desktopName = desktopInfo.desktopNames?.[i];
       const baseLabel = desktopName || `${i}`;
@@ -71,7 +78,13 @@ const LauncherDesktopTabBar: React.FC<DesktopTabBarProps> = ({
     }
 
     return tabList;
-  }, [windowList, desktopInfo.desktopCount, desktopInfo.currentDesktop, desktopInfo.desktopNames]);
+  }, [
+    windowList,
+    searchQuery,
+    desktopInfo.desktopCount,
+    desktopInfo.currentDesktop,
+    desktopInfo.desktopNames,
+  ]);
 
   return (
     <div className="tab-bar">
