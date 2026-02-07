@@ -105,7 +105,9 @@ export async function createWorkspaceWindow(): Promise<BrowserWindow> {
 
   await setWorkspacePosition();
 
-  await applyVisibilityOnAllDesktops();
+  workspaceWindow.once('show', () => {
+    void applyVisibilityOnAllDesktops();
+  });
 
   windowLogger.info('ワークスペースウィンドウを作成しました');
   return workspaceWindow;
