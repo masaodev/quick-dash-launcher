@@ -43,7 +43,7 @@ export class SettingsService {
     defaultFileTab: DEFAULT_DATA_FILE,
     dataFileTabs: [{ files: [DEFAULT_DATA_FILE], name: 'メイン' }],
     dataFileLabels: { [DEFAULT_DATA_FILE]: 'メイン用データファイル' },
-    windowPositionMode: 'center',
+    windowPositionMode: 'cursorMonitorCenter',
     windowPositionX: 0,
     windowPositionY: 0,
     workspaceOpacity: 100,

@@ -87,7 +87,7 @@ export interface AppSettings {
   dataFileTabs: DataFileTab[];
   /** データファイルの名前定義（物理ファイル名 → データファイル名） */
   dataFileLabels: Record<string, string>;
-  /** ウィンドウ表示位置モード（デフォルト: 'center'） */
+  /** ウィンドウ表示位置モード（デフォルト: 'cursorMonitorCenter'） */
   windowPositionMode: WindowPositionMode;
   /** 固定位置のX座標（windowPositionMode='fixed'時に使用、デフォルト: 0） */
   windowPositionX: number;
