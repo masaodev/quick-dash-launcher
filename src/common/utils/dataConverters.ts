@@ -333,6 +333,7 @@ export function convertRegisterItemToJsonItem(
 ): JsonItem {
   const id = existingId || `temp-${Date.now()}`;
   const memo = registerItem.memo;
+  const now = Date.now();
 
   if (registerItem.itemCategory === 'dir') {
     return {
@@ -341,6 +342,7 @@ export function convertRegisterItemToJsonItem(
       path: registerItem.path,
       options: registerItem.dirOptions,
       ...(memo && { memo }),
+      updatedAt: now,
     };
   }
 
@@ -351,6 +353,7 @@ export function convertRegisterItemToJsonItem(
       displayName: registerItem.displayName,
       itemNames: registerItem.groupItemNames || [],
       ...(memo && { memo }),
+      updatedAt: now,
     };
   }
 
@@ -371,6 +374,7 @@ export function convertRegisterItemToJsonItem(
       activateWindow: config?.activateWindow,
       pinToAllDesktops: config?.pinToAllDesktops,
       ...(memo && { memo }),
+      updatedAt: now,
     };
   }
 
@@ -380,11 +384,12 @@ export function convertRegisterItemToJsonItem(
       type: 'clipboard',
       displayName: registerItem.displayName,
       dataFileRef: registerItem.clipboardDataRef || '',
-      savedAt: registerItem.clipboardSavedAt || Date.now(),
+      savedAt: registerItem.clipboardSavedAt || now,
       formats: registerItem.clipboardFormats || [],
       preview: registerItem.clipboardPreview,
       customIcon: registerItem.customIcon,
       ...(memo && { memo }),
+      updatedAt: now,
     };
   }
 
@@ -397,5 +402,6 @@ export function convertRegisterItemToJsonItem(
     customIcon: registerItem.customIcon,
     windowConfig: registerItem.windowConfig,
     ...(memo && { memo }),
+    updatedAt: now,
   };
 }

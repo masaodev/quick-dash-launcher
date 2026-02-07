@@ -17,7 +17,7 @@ import {
 
 import ConfirmDialog from './ConfirmDialog';
 
-type SortColumn = 'type' | 'displayName' | 'pathAndArgs';
+type SortColumn = 'type' | 'displayName' | 'pathAndArgs' | 'updatedAt';
 type SortDirection = 'asc' | 'desc';
 
 // displayNameを持つアイテム型
@@ -30,6 +30,17 @@ function hasDisplayName(jsonItem: JsonItem): jsonItem is JsonItemWithDisplayName
     (jsonItem.type === 'group' && isJsonGroupItem(jsonItem)) ||
     (jsonItem.type === 'window' && isJsonWindowItem(jsonItem))
   );
+}
+
+function formatUpdatedAt(updatedAt?: number): string {
+  if (!updatedAt) return '-';
+  return new Date(updatedAt).toLocaleString('ja-JP', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 }
 
 interface EditableRawItemListProps {
@@ -451,6 +462,11 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
     };
 
     return [...editableItems].sort((a, b) => {
+      if (column === 'updatedAt') {
+        const aVal = a.item.updatedAt || 0;
+        const bVal = b.item.updatedAt || 0;
+        return direction === 'asc' ? aVal - bVal : bVal - aVal;
+      }
       const comparison = getValue(a).localeCompare(getValue(b), 'ja');
       return direction === 'asc' ? comparison : -comparison;
     });
@@ -580,6 +596,15 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
                 {renderSortIndicator('pathAndArgs')}
               </span>
             </th>
+            <th
+              className="updated-at-column sortable-header"
+              onClick={() => handleHeaderClick('updatedAt')}
+            >
+              <span className="header-content">
+                更新日
+                {renderSortIndicator('updatedAt')}
+              </span>
+            </th>
             <th className="actions-column">操作</th>
           </tr>
         </thead>
@@ -606,6 +631,7 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
                 <td className="icon-column">{renderIconCell(item)}</td>
                 <td className="name-column">{renderNameCell(item)}</td>
                 <td className="content-column">{renderEditableCell(item)}</td>
+                <td className="updated-at-column">{formatUpdatedAt(item.item.updatedAt)}</td>
                 <td className="actions-column">
                   <div className="action-buttons">
                     <button

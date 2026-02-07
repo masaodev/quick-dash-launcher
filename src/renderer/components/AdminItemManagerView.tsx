@@ -199,6 +199,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     // 3. 複製アイテムを作成（行番号は仮の値を設定）
     const duplicatedItems = sortedItems.map((item) => ({
       ...item,
+      item: { ...item.item, id: generateId(), updatedAt: Date.now() },
       meta: {
         ...item.meta,
         lineNumber: -1, // 後でreorderItemNumbersで振り直される
@@ -231,6 +232,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
         type: 'item',
         displayName: '',
         path: '',
+        updatedAt: Date.now(),
       },
       displayText: ',',
       meta: {
@@ -272,7 +274,14 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
         // editedItemsの変更をworkingItemsに反映
         let updatedItems = workingItems.map((item) => {
           const itemKey = `${item.meta.sourceFile}_${item.meta.lineNumber}`;
-          return editedItems.get(itemKey) || item;
+          const editedItem = editedItems.get(itemKey);
+          if (editedItem) {
+            return {
+              ...editedItem,
+              item: { ...editedItem.item, updatedAt: Date.now() },
+            };
+          }
+          return item;
         });
 
         // チェックボックスがONの場合、整列・重複削除を実行
@@ -450,6 +459,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
         type: 'item' as const,
         displayName: bookmark.displayName,
         path: bookmark.url,
+        updatedAt: Date.now(),
       };
       const validation = validateEditableItem(jsonItem);
       return {
