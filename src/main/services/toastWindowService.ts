@@ -23,7 +23,8 @@ export type ToastItemType =
   | 'app'
   | 'customUri'
   | 'group'
-  | 'windowOperation';
+  | 'windowOperation'
+  | 'clipboard';
 
 /** トースト表示オプション */
 export interface ToastOptions {
