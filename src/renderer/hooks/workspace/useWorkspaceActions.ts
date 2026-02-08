@@ -20,10 +20,24 @@ function withErrorHandling<T extends unknown[]>(
 export function useWorkspaceActions(onDataChanged: () => void) {
   const api = window.electronAPI.workspaceAPI;
 
-  const handleLaunch = withErrorHandling(
-    async (item: WorkspaceItem) => api.launchItem(item),
-    'Failed to launch workspace item:'
-  );
+  const handleLaunch = withErrorHandling(async (item: WorkspaceItem) => {
+    const isGroup = item.type === 'group';
+    const hasPathInfo =
+      item.type !== 'group' && item.type !== 'clipboard' && item.type !== 'windowOperation';
+    await window.electronAPI.showToastWindow({
+      displayName: item.displayName,
+      itemType: item.type,
+      ...(isGroup && {
+        itemCount: item.itemNames?.length ?? 0,
+        itemNames: item.itemNames?.slice(0, 3),
+      }),
+      ...(hasPathInfo && {
+        path: item.path,
+        icon: item.icon,
+      }),
+    });
+    await api.launchItem(item);
+  }, 'Failed to launch workspace item:');
 
   const handleRemove = withErrorHandling(
     async (id: string) => api.removeItem(id),
