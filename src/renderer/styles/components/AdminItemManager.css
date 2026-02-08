@@ -522,9 +522,8 @@
 
 .editable-cell {
   cursor: text;
-  padding: var(--spacing-xs) var(--spacing-sm);
+  padding: 1px var(--spacing-sm);
   border-radius: var(--border-radius);
-  min-height: 20px;
   transition: var(--transition-normal);
 }
 
@@ -538,9 +537,12 @@
 }
 
 .readonly-cell {
-  text-align: center;
+  text-align: left;
   color: var(--text-info);
   font-style: italic;
+  font-family: monospace;
+  font-size: var(--font-size-sm);
+  white-space: pre-wrap;
   padding: var(--spacing-xs) var(--spacing-sm);
 }
 
@@ -683,7 +685,7 @@
 }
 
 .raw-item-row {
-  height: 40px;
+  height: 26px;
   background-color: var(--color-white);
   cursor: context-menu;
 }
@@ -701,9 +703,9 @@
 }
 
 .raw-item-row td {
-  height: 40px;
+  height: 26px;
   vertical-align: middle;
-  padding: 6px 8px;
+  padding: 1px 8px;
 }
 
 .line-number-column {
@@ -764,64 +766,75 @@
   word-break: break-all;
 }
 
-.content-column .editable-cell {
+/* content-column のセル共通スタイル */
+.content-column .editable-cell,
+.content-column .edit-input {
   font-family: monospace;
   font-size: var(--font-size-sm);
+}
+
+.content-column .editable-cell {
   white-space: pre-wrap;
 }
 
 .content-column .edit-input {
-  font-family: monospace;
-  font-size: var(--font-size-sm);
   white-space: pre;
   overflow-x: auto;
+}
+
+/* raw-items-table 固有の追加スタイル */
+.raw-items-table .content-column .editable-cell,
+.raw-items-table .content-column .edit-input {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .raw-items-table .content-column .editable-cell {
-  font-family: monospace;
-  font-size: var(--font-size-sm);
-  white-space: pre-wrap;
-  min-height: var(--input-height-sm);
-  line-height: var(--input-height-sm);
-  display: flex;
-  align-items: center;
-  padding: var(--spacing-xs) var(--spacing-sm);
-  width: 100%;
-  box-sizing: border-box;
+  line-height: var(--line-height-normal);
 }
 
 .raw-items-table .content-column .edit-input {
-  font-family: monospace;
-  font-size: var(--font-size-sm);
-  white-space: pre;
-  overflow-x: auto;
   height: var(--input-height-sm);
   line-height: var(--input-height-sm);
-  padding: var(--spacing-xs) var(--spacing-sm);
-  width: 100%;
-  box-sizing: border-box;
 }
 
 /* 生データ編集テーブル用の列幅調整 */
-/* 固定幅の列 */
+
+/* 全列共通: 上下パディング1px */
+.raw-items-table .checkbox-column,
+.raw-items-table .line-number-column,
+.raw-items-table .type-column,
+.raw-items-table .actions-column {
+  padding: 1px 6px !important;
+}
+
+.raw-items-table .name-column,
+.raw-items-table .content-column {
+  padding: 1px 8px !important;
+}
+
 .raw-items-table .checkbox-column {
   width: 40px;
-  text-align: center;
-  padding: 4px !important;
+  padding-left: 4px !important;
+  padding-right: 4px !important;
+}
+
+/* 小フォント列共通 */
+.raw-items-table .line-number-column,
+.raw-items-table .type-column,
+.raw-items-table td.updated-at-column {
+  font-size: var(--font-size-sm);
 }
 
 .raw-items-table .line-number-column {
   width: 60px;
-  text-align: center;
   font-family: monospace;
   color: var(--text-muted);
-  padding: 4px 6px !important;
 }
 
 .raw-items-table .type-column {
   width: 120px;
-  text-align: center;
-  padding: 4px 6px !important;
 }
 
 /* 可変幅の列 - 名前列は適度に伸びる */
@@ -830,13 +843,9 @@
   min-width: 150px;
   max-width: 300px;
   word-break: break-word;
-  padding: 4px 8px !important;
 }
 
-.raw-items-table .name-column .editable-cell {
-  font-size: var(--font-size-sm);
-}
-
+.raw-items-table .name-column .editable-cell,
 .raw-items-table .name-column .edit-input {
   font-size: var(--font-size-sm);
 }
@@ -846,7 +855,6 @@
   width: auto;
   min-width: 250px;
   word-break: break-all;
-  padding: 4px 8px !important;
 }
 
 /* 更新日列 */
@@ -857,15 +865,11 @@
 }
 
 .raw-items-table td.updated-at-column {
-  font-size: var(--font-size-xs);
   color: var(--text-muted);
 }
 
-/* 固定幅の列 */
 .raw-items-table .actions-column {
   width: 120px;
-  text-align: center;
-  padding: 4px 6px !important;
 }
 
 .edit-mode-actions .import-bookmark-button {
