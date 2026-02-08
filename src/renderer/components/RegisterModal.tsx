@@ -12,6 +12,11 @@ import { useRegisterForm } from '../hooks/useRegisterForm';
 import { useToast } from '../hooks/useToast';
 import { debugLog, logError } from '../utils/debug';
 import { getPathsFromDropEvent } from '../utils/fileDropUtils';
+import {
+  fetchMatchingWindow,
+  toWindowConfig,
+  toWindowOperationConfig,
+} from '../utils/windowFilter';
 
 import GroupItemSelectorModal from './GroupItemSelectorModal';
 import FilePickerDialog from './FilePickerDialog';
@@ -244,6 +249,10 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     setWindowSelectorOpen(true);
   };
 
+  const createFetchFromWindow = (index: number): (() => Promise<WindowInfo | null>) => {
+    return () => fetchMatchingWindow(items[index]);
+  };
+
   const onWindowSelected = (window: WindowInfo): void => {
     if (windowSelectorItemIndex === null) return;
 
@@ -251,24 +260,20 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     if (!item) return;
 
     if (item.itemCategory === 'window') {
+      const currentConfig = item.windowOperationConfig;
       const windowOperationConfig = {
+        ...currentConfig,
         displayName: item.displayName,
         windowTitle: window.title,
         processName: window.processName,
-        x: window.x,
-        y: window.y,
-        width: window.width,
-        height: window.height,
       };
       handleItemChange(windowSelectorItemIndex, 'windowOperationConfig', windowOperationConfig);
     } else {
+      const currentConfig = item.windowConfig;
       const windowConfig = {
+        ...currentConfig,
         title: window.title,
         processName: window.processName,
-        x: window.x,
-        y: window.y,
-        width: window.width,
-        height: window.height,
       };
       handleItemChange(windowSelectorItemIndex, 'windowConfig', windowConfig);
     }
@@ -644,6 +649,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                           handleItemChange(index, 'windowConfig', windowConfig)
                         }
                         onGetWindowClick={() => openWindowSelector(index)}
+                        onFetchFromWindow={createFetchFromWindow(index)}
                         defaultExpanded={false}
                       />
                     )}
@@ -653,38 +659,18 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                         <WindowConfigEditor
                           windowConfig={
                             item.windowOperationConfig
-                              ? {
-                                  title: item.windowOperationConfig.windowTitle,
-                                  processName: item.windowOperationConfig.processName,
-                                  x: item.windowOperationConfig.x,
-                                  y: item.windowOperationConfig.y,
-                                  width: item.windowOperationConfig.width,
-                                  height: item.windowOperationConfig.height,
-                                  moveToActiveMonitorCenter:
-                                    item.windowOperationConfig.moveToActiveMonitorCenter,
-                                  virtualDesktopNumber:
-                                    item.windowOperationConfig.virtualDesktopNumber,
-                                  activateWindow: item.windowOperationConfig.activateWindow,
-                                  pinToAllDesktops: item.windowOperationConfig.pinToAllDesktops,
-                                }
+                              ? toWindowConfig(item.windowOperationConfig)
                               : { title: '' }
                           }
-                          onChange={(windowConfig) =>
-                            handleItemChange(index, 'windowOperationConfig', {
-                              displayName: item.displayName,
-                              windowTitle: windowConfig?.title || '',
-                              processName: windowConfig?.processName,
-                              x: windowConfig?.x,
-                              y: windowConfig?.y,
-                              width: windowConfig?.width,
-                              height: windowConfig?.height,
-                              moveToActiveMonitorCenter: windowConfig?.moveToActiveMonitorCenter,
-                              virtualDesktopNumber: windowConfig?.virtualDesktopNumber,
-                              activateWindow: windowConfig?.activateWindow,
-                              pinToAllDesktops: windowConfig?.pinToAllDesktops,
-                            })
+                          onChange={(wc) =>
+                            handleItemChange(
+                              index,
+                              'windowOperationConfig',
+                              toWindowOperationConfig(item.displayName, wc)
+                            )
                           }
                           onGetWindowClick={() => openWindowSelector(index)}
+                          onFetchFromWindow={createFetchFromWindow(index)}
                           showToggle={false}
                           defaultExpanded={false}
                         />

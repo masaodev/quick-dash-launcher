@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { WindowConfig } from '@common/types';
+import { WindowConfig, WindowInfo } from '@common/types';
 
 import { Button } from './ui/Button';
 
@@ -10,6 +10,8 @@ interface WindowConfigEditorProps {
   onChange: (windowConfig: WindowConfig) => void;
   /** ウィンドウから取得ボタンクリック時のコールバック */
   onGetWindowClick: () => void;
+  /** ウィンドウ検索で位置/サイズを取得するコールバック */
+  onFetchFromWindow?: () => Promise<WindowInfo | null>;
   /** 初期状態で展開するか（デフォルト: false） */
   defaultExpanded?: boolean;
   /** 折りたたみトグルを表示するか（デフォルト: true） */
@@ -42,12 +44,44 @@ function createNumericChangeHandler(
  */
 /* eslint-disable react/prop-types */
 const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
-  ({ windowConfig, onChange, onGetWindowClick, defaultExpanded = false, showToggle = true }) => {
+  ({
+    windowConfig,
+    onChange,
+    onGetWindowClick,
+    onFetchFromWindow,
+    defaultExpanded = false,
+    showToggle = true,
+  }) => {
     const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+    const [fetchError, setFetchError] = useState<'position' | 'size' | null>(null);
 
     // 数値フィールドのonChangeハンドラーを生成
     const handleNumericChange = (fieldName: keyof WindowConfig) =>
       createNumericChangeHandler(windowConfig, onChange, fieldName);
+
+    const handleFetchFromWindow = async (
+      type: 'position' | 'size',
+      extractFields: (info: WindowInfo) => Partial<WindowConfig>
+    ) => {
+      if (!onFetchFromWindow) return;
+      setFetchError(null);
+      const windowInfo = await onFetchFromWindow();
+      if (windowInfo) {
+        onChange({
+          ...(windowConfig || { title: '' }),
+          ...extractFields(windowInfo),
+        });
+      } else {
+        setFetchError(type);
+        setTimeout(() => setFetchError(null), 3000);
+      }
+    };
+
+    const handleFetchPosition = () =>
+      handleFetchFromWindow('position', (info) => ({ x: info.x, y: info.y }));
+
+    const handleFetchSize = () =>
+      handleFetchFromWindow('size', (info) => ({ width: info.width, height: info.height }));
 
     // 折りたたみトグルを表示しない場合は、常にコンテンツを表示
     const shouldShowContent = !showToggle || isExpanded;
@@ -77,13 +111,14 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
         </div>
 
         <div className="window-config-section">
-          <Button variant="info" type="button" onClick={onGetWindowClick}>
-            ウィンドウから取得
-          </Button>
-
           {/* 1. ウィンドウ検索設定 */}
           <div className="window-config-group">
-            <h4 className="window-config-group-title">🔍 ① ウィンドウ検索</h4>
+            <div className="window-config-group-header">
+              <h4 className="window-config-group-title">🔍 ① ウィンドウ検索</h4>
+              <Button variant="info" type="button" size="sm" onClick={onGetWindowClick}>
+                ウィンドウを選択
+              </Button>
+            </div>
             <div className="window-config-row">
               <label className="window-config-label">ウィンドウタイトル:</label>
               <input
@@ -146,7 +181,17 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
 
             {/* 2-2. 位置調整 */}
             <div className="window-config-subgroup">
-              <h5 className="window-config-subgroup-title">📐 位置</h5>
+              <div className="window-config-subgroup-header">
+                <h5 className="window-config-subgroup-title">📐 ウィンドウ位置設定</h5>
+                {onFetchFromWindow && (
+                  <Button variant="info" type="button" size="sm" onClick={handleFetchPosition}>
+                    ウィンドウから取得
+                  </Button>
+                )}
+              </div>
+              {fetchError === 'position' && (
+                <div className="window-config-fetch-error">ウィンドウが見つかりません</div>
+              )}
               <div className="window-config-checkbox-row">
                 <label className="window-config-checkbox-label">
                   <input
@@ -192,7 +237,17 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
 
             {/* 2-3. サイズ調整 */}
             <div className="window-config-subgroup">
-              <h5 className="window-config-subgroup-title">📏 サイズ</h5>
+              <div className="window-config-subgroup-header">
+                <h5 className="window-config-subgroup-title">📏 ウィンドウサイズ設定</h5>
+                {onFetchFromWindow && (
+                  <Button variant="info" type="button" size="sm" onClick={handleFetchSize}>
+                    ウィンドウから取得
+                  </Button>
+                )}
+              </div>
+              {fetchError === 'size' && (
+                <div className="window-config-fetch-error">ウィンドウが見つかりません</div>
+              )}
               <div className="window-config-row-double">
                 <div className="window-config-field">
                   <label className="window-config-label">幅:</label>
@@ -219,7 +274,7 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
 
             {/* 2-4. 仮想デスクトップ移動・ピン止め */}
             <div className="window-config-subgroup">
-              <h5 className="window-config-subgroup-title">🖥️ 仮想デスクトップ</h5>
+              <h5 className="window-config-subgroup-title">🖥️ 仮想デスクトップ設定</h5>
               <div className="window-config-checkbox-row">
                 <label className="window-config-checkbox-label">
                   <input

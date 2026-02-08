@@ -4,6 +4,11 @@ import type { WorkspaceItem, WindowInfo, WindowConfig } from '@common/types';
 import { useCustomIcon } from '../hooks/useCustomIcon';
 import { useWorkspaceItemEditForm } from '../hooks/workspace/useWorkspaceItemEditForm';
 import { logError } from '../utils/debug';
+import {
+  fetchMatchingWindow,
+  toWindowConfig,
+  toWindowOperationConfig,
+} from '../utils/windowFilter';
 
 import GroupItemSelectorModal from './GroupItemSelectorModal';
 import FilePickerDialog from './FilePickerDialog';
@@ -185,29 +190,30 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
     if (!item) return;
 
     if (item.itemCategory === 'window') {
+      const currentConfig = item.windowOperationConfig;
       const windowOperationConfig = {
+        ...currentConfig,
         displayName: item.displayName,
         windowTitle: windowInfo.title,
         processName: windowInfo.processName,
-        x: windowInfo.x,
-        y: windowInfo.y,
-        width: windowInfo.width,
-        height: windowInfo.height,
       };
       handleFieldChange('windowOperationConfig', windowOperationConfig);
     } else {
+      const currentConfig = item.windowConfig;
       const windowConfig: WindowConfig = {
+        ...currentConfig,
         title: windowInfo.title,
         processName: windowInfo.processName,
-        x: windowInfo.x,
-        y: windowInfo.y,
-        width: windowInfo.width,
-        height: windowInfo.height,
       };
       handleFieldChange('windowConfig', windowConfig);
     }
 
     setWindowSelectorOpen(false);
+  };
+
+  const fetchFromWindow = async (): Promise<WindowInfo | null> => {
+    if (!item) return null;
+    return fetchMatchingWindow(item);
   };
 
   const handleExecute = async () => {
@@ -382,6 +388,7 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
                       windowConfig={item.windowConfig}
                       onChange={(windowConfig) => handleFieldChange('windowConfig', windowConfig)}
                       onGetWindowClick={() => setWindowSelectorOpen(true)}
+                      onFetchFromWindow={fetchFromWindow}
                       defaultExpanded={false}
                     />
                   )}
@@ -391,38 +398,17 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
                       <WindowConfigEditor
                         windowConfig={
                           item.windowOperationConfig
-                            ? {
-                                title: item.windowOperationConfig.windowTitle,
-                                processName: item.windowOperationConfig.processName,
-                                x: item.windowOperationConfig.x,
-                                y: item.windowOperationConfig.y,
-                                width: item.windowOperationConfig.width,
-                                height: item.windowOperationConfig.height,
-                                moveToActiveMonitorCenter:
-                                  item.windowOperationConfig.moveToActiveMonitorCenter,
-                                virtualDesktopNumber:
-                                  item.windowOperationConfig.virtualDesktopNumber,
-                                activateWindow: item.windowOperationConfig.activateWindow,
-                                pinToAllDesktops: item.windowOperationConfig.pinToAllDesktops,
-                              }
+                            ? toWindowConfig(item.windowOperationConfig)
                             : { title: '' }
                         }
-                        onChange={(windowConfig) =>
-                          handleFieldChange('windowOperationConfig', {
-                            displayName: item.displayName,
-                            windowTitle: windowConfig?.title || '',
-                            processName: windowConfig?.processName,
-                            x: windowConfig?.x,
-                            y: windowConfig?.y,
-                            width: windowConfig?.width,
-                            height: windowConfig?.height,
-                            moveToActiveMonitorCenter: windowConfig?.moveToActiveMonitorCenter,
-                            virtualDesktopNumber: windowConfig?.virtualDesktopNumber,
-                            activateWindow: windowConfig?.activateWindow,
-                            pinToAllDesktops: windowConfig?.pinToAllDesktops,
-                          })
+                        onChange={(wc) =>
+                          handleFieldChange(
+                            'windowOperationConfig',
+                            toWindowOperationConfig(item.displayName, wc)
+                          )
                         }
                         onGetWindowClick={() => setWindowSelectorOpen(true)}
+                        onFetchFromWindow={fetchFromWindow}
                         showToggle={false}
                         defaultExpanded={false}
                       />
