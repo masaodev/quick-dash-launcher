@@ -396,7 +396,6 @@
 }
 
 .window-config-field {
-  flex: 1;
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
@@ -442,6 +441,7 @@
   transition: border-color var(--transition-fast);
   flex: 1;
   min-width: 80px;
+  max-width: 120px;
 }
 
 .window-config-input-number:focus {
