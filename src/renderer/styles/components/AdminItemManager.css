@@ -35,30 +35,35 @@
   font-size: var(--font-size-base);
 }
 
-/* タグ・ファイルドロップダウンコンテナ */
-.edit-mode-info .tab-dropdown,
-.edit-mode-info .file-dropdown {
+/* ドロップダウン共通コンテナ */
+.edit-mode-header .tab-dropdown,
+.edit-mode-header .file-dropdown,
+.edit-mode-header .import-dropdown {
   position: relative;
   display: inline-flex;
   align-items: center;
+  -webkit-app-region: no-drag;
+}
+
+.edit-mode-header .tab-dropdown,
+.edit-mode-header .file-dropdown {
   gap: var(--spacing-xs);
 }
 
 /* ドロップダウンラベル */
-.edit-mode-info .dropdown-label {
+.edit-mode-header .dropdown-label {
   font-weight: 500;
   color: var(--text-primary);
   font-size: var(--font-size-base);
   white-space: nowrap;
 }
 
-/* トリガーボタン */
-.edit-mode-info .dropdown-trigger-btn {
+/* ドロップダウントリガーボタン（共通） */
+.edit-mode-header .dropdown-trigger-btn {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
   padding: var(--spacing-sm) var(--spacing-md);
-  min-width: 150px;
   height: var(--input-height-sm);
   font-size: var(--font-size-base);
   font-family: var(--font-family);
@@ -72,33 +77,42 @@
   -webkit-app-region: no-drag;
 }
 
-.edit-mode-info .dropdown-trigger-btn:hover {
+.edit-mode-header .dropdown-trigger-btn:hover {
   border-color: var(--color-primary);
   background-color: var(--bg-hover);
 }
 
-.edit-mode-info .dropdown-trigger-btn:focus {
+.edit-mode-header .dropdown-trigger-btn:focus {
   border-color: var(--color-primary);
   box-shadow: var(--focus-ring);
 }
 
-/* トリガーボタン内要素 */
-.edit-mode-info .dropdown-trigger-text {
-  flex: 1;
-  text-align: left;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+/* タブ・ファイルドロップダウンのトリガーは幅を広げる */
+.edit-mode-info .dropdown-trigger-btn {
+  min-width: 150px;
 }
 
-.edit-mode-info .dropdown-trigger-icon {
+/* トリガーボタン内要素（共通） */
+.edit-mode-header .dropdown-trigger-text {
+  white-space: nowrap;
+}
+
+.edit-mode-header .dropdown-trigger-icon {
   font-size: var(--font-size-xs);
   color: var(--text-muted);
   line-height: 1;
 }
 
-/* ドロップダウンメニュー */
-.edit-mode-info .dropdown-menu {
+/* タブ・ファイルドロップダウンのテキストは省略表示 */
+.edit-mode-info .dropdown-trigger-text {
+  flex: 1;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ドロップダウンメニュー（共通） */
+.edit-mode-header .dropdown-menu {
   position: absolute;
   top: calc(100% + var(--spacing-xs));
   left: 0;
@@ -113,8 +127,14 @@
   -webkit-app-region: no-drag;
 }
 
-/* メニューアイテム */
-.edit-mode-info .dropdown-item {
+/* インポートドロップダウンは右寄せ */
+.edit-mode-header .import-dropdown .dropdown-menu {
+  left: auto;
+  right: 0;
+}
+
+/* メニューアイテム（共通） */
+.edit-mode-header .dropdown-item {
   display: block;
   width: 100%;
   padding: var(--spacing-sm) var(--spacing-lg);
@@ -130,21 +150,21 @@
   -webkit-app-region: no-drag;
 }
 
-.edit-mode-info .dropdown-item:hover {
+.edit-mode-header .dropdown-item:hover {
   background-color: var(--bg-hover);
 }
 
-.edit-mode-info .dropdown-item.selected {
+.edit-mode-header .dropdown-item.selected {
   background-color: var(--bg-selected);
   color: var(--color-primary);
   font-weight: 600;
 }
 
-.edit-mode-info .dropdown-item:first-child {
+.edit-mode-header .dropdown-item:first-child {
   border-radius: var(--border-radius-sm) var(--border-radius-sm) 0 0;
 }
 
-.edit-mode-info .dropdown-item:last-child {
+.edit-mode-header .dropdown-item:last-child {
   border-radius: 0 0 var(--border-radius-sm) var(--border-radius-sm);
 }
 

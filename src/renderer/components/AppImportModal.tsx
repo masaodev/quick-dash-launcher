@@ -62,7 +62,9 @@ function AppImportModal({
           const result = await window.electronAPI.scanInstalledApps();
           setApps(result.apps);
           setScanDuration(result.scanDuration);
-          setSelectedIds(new Set());
+          setSelectedIds(
+            new Set(result.apps.filter((a) => a.targetType === 'app').map((a) => a.id))
+          );
 
           if (result.apps.length === 0) {
             setAlertDialog({

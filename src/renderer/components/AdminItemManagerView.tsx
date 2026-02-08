@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   DEFAULT_DATA_FILE,
   SimpleBookmarkItem,
@@ -26,6 +26,7 @@ import {
 } from '@common/utils/appDuplicateDetector';
 
 import { logError } from '../utils/debug';
+import { useDropdown } from '../hooks/useDropdown';
 import { useToast } from '../hooks/useToast';
 
 import AdminItemManagerList from './AdminItemManagerList';
@@ -100,10 +101,9 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   });
 
   // ドロップダウン状態管理
-  const [isTabDropdownOpen, setIsTabDropdownOpen] = useState(false);
-  const [isFileDropdownOpen, setIsFileDropdownOpen] = useState(false);
-  const tabDropdownRef = useRef<HTMLDivElement>(null);
-  const fileDropdownRef = useRef<HTMLDivElement>(null);
+  const tabDropdown = useDropdown();
+  const fileDropdown = useDropdown();
+  const importDropdown = useDropdown();
 
   const handleItemEdit = (editableItem: EditableJsonItem) => {
     const itemKey = `${editableItem.meta.sourceFile}_${editableItem.meta.lineNumber}`;
@@ -633,12 +633,12 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
 
   // ドロップダウンメニューアイテムクリック時の処理
   const handleTabMenuItemClick = (newTabIndex: number) => {
-    setIsTabDropdownOpen(false);
+    tabDropdown.close();
     handleTabChange(newTabIndex);
   };
 
   const handleFileMenuItemClick = (newFile: string) => {
-    setIsFileDropdownOpen(false);
+    fileDropdown.close();
     handleFileChange(newFile);
   };
 
@@ -697,26 +697,6 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     });
   }, [searchQuery, workingItems]);
 
-  // ドロップダウンのクリック外判定
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (tabDropdownRef.current && !tabDropdownRef.current.contains(event.target as Node)) {
-        setIsTabDropdownOpen(false);
-      }
-      if (fileDropdownRef.current && !fileDropdownRef.current.contains(event.target as Node)) {
-        setIsFileDropdownOpen(false);
-      }
-    };
-
-    if (isTabDropdownOpen || isFileDropdownOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isTabDropdownOpen, isFileDropdownOpen]);
-
   // 現在選択されているタブの情報を取得
   const currentTab = dataFileTabs[selectedTabIndex];
   const currentTabFiles = currentTab?.files || [DEFAULT_DATA_FILE];
@@ -734,17 +714,17 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     <div className="edit-mode-view" onKeyDown={handleKeyDown} tabIndex={0}>
       <div className="edit-mode-header">
         <div className="edit-mode-info">
-          <div className="tab-dropdown" ref={tabDropdownRef}>
+          <div className="tab-dropdown" ref={tabDropdown.ref}>
             <label className="dropdown-label">タブ:</label>
             <button
               className="dropdown-trigger-btn"
-              onClick={() => setIsTabDropdownOpen(!isTabDropdownOpen)}
+              onClick={tabDropdown.toggle}
               title={currentTab?.name || 'タブ選択'}
             >
               <span className="dropdown-trigger-text">{currentTab?.name || 'タブ選択'}</span>
-              <span className="dropdown-trigger-icon">{isTabDropdownOpen ? '▲' : '▼'}</span>
+              <span className="dropdown-trigger-icon">{tabDropdown.isOpen ? '▲' : '▼'}</span>
             </button>
-            {isTabDropdownOpen && (
+            {tabDropdown.isOpen && (
               <div className="dropdown-menu">
                 {dataFileTabs.map((tab, index) => (
                   <button
@@ -759,17 +739,17 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
             )}
           </div>
           {currentTabFiles.length > 1 && (
-            <div className="file-dropdown" ref={fileDropdownRef}>
+            <div className="file-dropdown" ref={fileDropdown.ref}>
               <label className="dropdown-label">データファイル:</label>
               <button
                 className="dropdown-trigger-btn"
-                onClick={() => setIsFileDropdownOpen(!isFileDropdownOpen)}
+                onClick={fileDropdown.toggle}
                 title={`${getFileLabel(selectedDataFile)} (${selectedDataFile})`}
               >
                 <span className="dropdown-trigger-text">{getFileLabel(selectedDataFile)}</span>
-                <span className="dropdown-trigger-icon">{isFileDropdownOpen ? '▲' : '▼'}</span>
+                <span className="dropdown-trigger-icon">{fileDropdown.isOpen ? '▲' : '▼'}</span>
               </button>
-              {isFileDropdownOpen && (
+              {fileDropdown.isOpen && (
                 <div className="dropdown-menu">
                   {currentTabFiles.map((fileName) => (
                     <button
@@ -783,6 +763,34 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
                   ))}
                 </div>
               )}
+            </div>
+          )}
+        </div>
+        <div className="import-dropdown" ref={importDropdown.ref}>
+          <button className="dropdown-trigger-btn" onClick={importDropdown.toggle}>
+            <span className="dropdown-trigger-text">インポート</span>
+            <span className="dropdown-trigger-icon">{importDropdown.isOpen ? '▲' : '▼'}</span>
+          </button>
+          {importDropdown.isOpen && (
+            <div className="dropdown-menu">
+              <button
+                className="dropdown-item"
+                onClick={() => {
+                  importDropdown.close();
+                  setIsBookmarkModalOpen(true);
+                }}
+              >
+                ブラウザブックマークをインポート
+              </button>
+              <button
+                className="dropdown-item"
+                onClick={() => {
+                  importDropdown.close();
+                  setIsAppImportModalOpen(true);
+                }}
+              >
+                アプリをインポート
+              </button>
             </div>
           )}
         </div>
@@ -817,12 +825,6 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
             title="選択されている行を削除します"
           >
             🗑️ 選択行を削除
-          </Button>
-          <Button variant="info" onClick={() => setIsBookmarkModalOpen(true)}>
-            ブックマークをインポート
-          </Button>
-          <Button variant="info" onClick={() => setIsAppImportModalOpen(true)}>
-            アプリを取り込む
           </Button>
           <div className="toolbar-search">
             <div className="search-input-container">
