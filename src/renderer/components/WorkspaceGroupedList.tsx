@@ -1,17 +1,5 @@
 import React from 'react';
-import type {
-  AppItem,
-  WorkspaceItem,
-  WorkspaceGroup,
-  ExecutionHistoryItem,
-  LauncherItem,
-} from '@common/types';
-import {
-  executionHistoryToLauncherItem,
-  executionHistoryToWindowItem,
-  isExternalUrlType,
-  isFileSystemType,
-} from '@common/utils/historyConverters';
+import type { AppItem, WorkspaceItem, WorkspaceGroup } from '@common/types';
 import { PathUtils } from '@common/utils/pathUtils';
 
 import { useWorkspaceItemGroups } from '../hooks/workspace';
@@ -19,7 +7,6 @@ import { logError } from '../utils/debug';
 
 import WorkspaceGroupHeader from './WorkspaceGroupHeader';
 import WorkspaceItemCard from './WorkspaceItemCard';
-import WorkspaceExecutionHistoryCard from './WorkspaceExecutionHistoryCard';
 import ColorPicker from './ColorPicker';
 
 /**
@@ -60,7 +47,6 @@ interface WorkspaceGroupedListProps {
   data: {
     groups: WorkspaceGroup[];
     items: WorkspaceItem[];
-    executionHistory: ExecutionHistoryItem[];
   };
   handlers: {
     onLaunch: (item: WorkspaceItem) => void;
@@ -81,8 +67,6 @@ interface WorkspaceGroupedListProps {
     setEditingItemId: (id: string | null) => void;
     uncategorizedCollapsed: boolean;
     onToggleUncategorized: () => void;
-    historyCollapsed: boolean;
-    onToggleHistory: () => void;
     activeGroupId?: string;
     setActiveGroupId: (id: string | undefined) => void;
     visibleGroupIds?: Set<string> | null;
@@ -92,7 +76,7 @@ interface WorkspaceGroupedListProps {
 }
 
 const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handlers, ui }) => {
-  const { groups, items, executionHistory } = data;
+  const { groups, items } = data;
   const {
     onLaunch,
     onRemoveItem,
@@ -112,8 +96,6 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
     setEditingItemId,
     uncategorizedCollapsed,
     onToggleUncategorized,
-    historyCollapsed,
-    onToggleHistory,
     setActiveGroupId,
     visibleGroupIds,
     itemVisibility,
@@ -386,18 +368,14 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
     return (
       types.includes('Files') ||
       (types.includes('text/uri-list') && !types.includes('itemid')) ||
-      (types.includes('text/plain') &&
-        !types.includes('itemid') &&
-        !types.includes('historyitem') &&
-        !types.includes('launcheritem'))
+      (types.includes('text/plain') && !types.includes('itemid') && !types.includes('launcheritem'))
     );
   };
 
   const handleGroupDragOver = (groupId?: string) => (e: React.DragEvent) => {
     e.preventDefault();
     const isNative = isNativeFileDrag(e);
-    const isCopyOperation =
-      e.dataTransfer.types.includes('historyitem') || e.dataTransfer.types.includes('launcheritem');
+    const isCopyOperation = e.dataTransfer.types.includes('launcheritem');
 
     if (isNative) {
       e.dataTransfer.dropEffect = 'copy';
@@ -432,22 +410,6 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
     });
   }
 
-  /** 実行履歴アイテムをワークスペースに追加 */
-  async function addHistoryItemToWorkspace(
-    historyItemData: string,
-    groupId?: string
-  ): Promise<void> {
-    const historyItem: ExecutionHistoryItem = JSON.parse(historyItemData);
-
-    if (historyItem.itemType === 'windowOperation') {
-      const windowOpItem = executionHistoryToWindowItem(historyItem);
-      await window.electronAPI.workspaceAPI.addItem(windowOpItem, groupId);
-    } else {
-      const launcherItem = executionHistoryToLauncherItem(historyItem);
-      await window.electronAPI.workspaceAPI.addItem(launcherItem as LauncherItem, groupId);
-    }
-  }
-
   const handleGroupDrop = (groupId?: string) => async (e: React.DragEvent) => {
     e.preventDefault();
     setDragOverGroupId(null);
@@ -464,14 +426,11 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
 
     const itemId = e.dataTransfer.getData('itemId');
     const currentGroupId = e.dataTransfer.getData('currentGroupId');
-    const historyItemData = e.dataTransfer.getData('historyItem');
     const launcherItemData = e.dataTransfer.getData('launcherItem');
 
     try {
       if (launcherItemData) {
         await addAppItemToWorkspace(launcherItemData, groupId);
-      } else if (historyItemData) {
-        await addHistoryItemToWorkspace(historyItemData, groupId);
       } else if (itemId && currentGroupId !== (groupId || '')) {
         onMoveItemToGroup(itemId, groupId);
       }
@@ -657,54 +616,6 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
           </div>
         );
       })()}
-
-      {/* 実行履歴セクション */}
-      {executionHistory.length > 0 && (
-        <div className="workspace-execution-history-section">
-          <div
-            className="workspace-uncategorized-header"
-            onClick={onToggleHistory}
-            style={{ cursor: 'pointer' }}
-          >
-            <span className="workspace-collapse-icon">{historyCollapsed ? '▶' : '▼'}</span>
-            実行履歴 ({executionHistory.length})
-          </div>
-          {!historyCollapsed && (
-            <div className="workspace-group-items">
-              {executionHistory.map((historyItem) => (
-                <WorkspaceExecutionHistoryCard
-                  key={historyItem.id}
-                  item={historyItem}
-                  onLaunch={(item) => {
-                    // 実行履歴アイテムを外部で起動（共通ユーティリティ使用）
-                    if (isExternalUrlType(item.itemType)) {
-                      window.electronAPI.openExternalUrl(item.itemPath);
-                    } else if (isFileSystemType(item.itemType)) {
-                      // LauncherItem形式に変換して起動
-                      const launcherItem = executionHistoryToLauncherItem(item);
-                      window.electronAPI.openItem(launcherItem as LauncherItem);
-                    } else if (item.itemType === 'windowOperation') {
-                      // WindowOperationItem形式に変換して実行
-                      const windowOp = executionHistoryToWindowItem(item);
-                      window.electronAPI.executeWindowOperation(windowOp);
-                    } else if (item.itemType === 'group') {
-                      // グループは再実行しない（履歴としてのみ表示）
-                    }
-                  }}
-                  onDragStart={(e) => {
-                    // 実行履歴アイテムをワークスペースにコピーできるようにする
-                    e.dataTransfer.effectAllowed = 'copy';
-                    e.dataTransfer.setData('historyItemId', historyItem.id);
-
-                    // 実行履歴アイテムのデータをそのまま渡す（ExecutionHistoryItem形式）
-                    e.dataTransfer.setData('historyItem', JSON.stringify(historyItem));
-                  }}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
 
       {/* カラーピッカー */}
       {colorPickerGroupId && (

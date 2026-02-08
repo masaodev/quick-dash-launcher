@@ -12,12 +12,9 @@ import { GROUP_LAUNCH_DELAY_MS } from '@common/constants';
 import { isLauncherItem, isWindowItem } from '@common/types/guards';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
-import { WorkspaceService } from '../services/workspace/index.js';
 import { tryActivateWindow } from '../utils/windowActivator.js';
 import { launchItem } from '../utils/itemLauncher.js';
 import { SettingsService } from '../services/settingsService.js';
-
-import { notifyWorkspaceChanged } from './workspaceHandlers.js';
 
 /**
  * WindowItemからWindowConfigを生成する
@@ -35,28 +32,6 @@ function createWindowConfig(item: WindowItem): WindowConfig {
     activateWindow: item.activateWindow,
     pinToAllDesktops: item.pinToAllDesktops,
   };
-}
-
-/**
- * 実行履歴を記録する
- */
-async function recordExecutionHistory(
-  item: LauncherItem | GroupItem | WindowItem,
-  itemIdentifier: string
-): Promise<void> {
-  try {
-    const workspaceService = await WorkspaceService.getInstance();
-    await workspaceService.addExecutionHistory(item);
-    notifyWorkspaceChanged();
-  } catch (error) {
-    itemLogger.error(
-      {
-        error: error instanceof Error ? error.message : String(error),
-        itemName: itemIdentifier,
-      },
-      '実行履歴の記録に失敗しました'
-    );
-  }
 }
 
 async function openItem(item: LauncherItem): Promise<void> {
@@ -221,7 +196,6 @@ export function setupItemHandlers(
 ): void {
   ipcMain.handle(IPC_CHANNELS.OPEN_ITEM, async (_event, item: LauncherItem) => {
     await openItem(item);
-    await recordExecutionHistory(item, item.displayName);
   });
 
   ipcMain.handle(IPC_CHANNELS.OPEN_PARENT_FOLDER, async (_event, item: LauncherItem) => {
@@ -232,7 +206,6 @@ export function setupItemHandlers(
     IPC_CHANNELS.EXECUTE_GROUP,
     async (_event, group: GroupItem, allItems: AppItem[]) => {
       await executeGroup(group, allItems);
-      await recordExecutionHistory(group, group.displayName);
     }
   );
 
@@ -257,7 +230,5 @@ export function setupItemHandlers(
     if (!result.windowFound) {
       itemLogger.warn({ windowTitle: item.windowTitle }, 'ウィンドウが見つかりませんでした');
     }
-
-    await recordExecutionHistory(item, item.displayName);
   });
 }

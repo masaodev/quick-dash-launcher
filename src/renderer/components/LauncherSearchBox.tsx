@@ -20,7 +20,6 @@ interface SearchBoxProps {
 const SEARCH_MODE_LABELS: Record<SearchMode, string> = {
   normal: '通常検索モード',
   window: '🪟 ウィンドウ検索モード',
-  history: '📜 実行履歴検索モード',
 };
 
 function F5Hint({ label, onClick }: { label: string; onClick: () => void }): ReactElement {

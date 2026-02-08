@@ -7,7 +7,6 @@ import type {
   WindowPinMode,
   SearchMode,
   WindowInfo,
-  WindowItem,
   IconFetchErrorRecord,
   EditingAppItem,
   EditableJsonItem,
@@ -38,7 +37,6 @@ import { filterWindowsByDesktopTab } from './utils/windowFilter';
 import { debugLog, logError } from './utils/debug';
 import { useIconProgress } from './hooks/useIconProgress';
 import { useSearchHistory } from './hooks/useSearchHistory';
-import { useExecutionHistory } from './hooks/useExecutionHistory';
 import { useRegisterModal } from './hooks/useRegisterModal';
 import { useItemActions } from './hooks/useItemActions';
 import { useDataFileTabs } from './hooks/useDataFileTabs';
@@ -92,7 +90,6 @@ function App(): React.ReactElement {
   const { progressState, resetProgress } = useIconProgress();
   const { navigateToPrevious, navigateToNext, resetNavigation, addHistoryEntry } =
     useSearchHistory();
-  const { executionHistory, loadHistory: loadExecutionHistory } = useExecutionHistory();
   const {
     isRegisterModalOpen,
     droppedPaths,
@@ -211,15 +208,12 @@ function App(): React.ReactElement {
       } else {
         setActiveDesktopTab(0);
       }
-    } else if (searchMode === 'window') {
-      // ウィンドウ検索モード → 実行履歴検索モード
-      setSearchMode('history');
+    } else {
+      // ウィンドウ検索モード → 通常モード
+      setSearchMode('normal');
       setWindowList([]);
       setDesktopInfo(null);
       setActiveDesktopTab(0);
-    } else {
-      // 実行履歴検索モード → 通常モード
-      setSearchMode('normal');
     }
     setSelectedIndex(0); // 選択インデックスをリセット
   };
@@ -275,9 +269,6 @@ function App(): React.ReactElement {
             itemType: 'windowActivate',
           });
         }
-      } else if (searchMode === 'history') {
-        // 履歴モード：選択された履歴アイテムを直接実行
-        await executeAppItem(item);
       } else {
         // 通常モード
         // 検索クエリを事前保存（実行後にクリアされる可能性を考慮）
@@ -291,17 +282,6 @@ function App(): React.ReactElement {
             console.error('検索履歴の追加に失敗しました:', error);
           });
         }
-
-        // 実行履歴追加（LauncherItemのみ）
-        if (!isGroupItem(item) && !isWindowItem(item)) {
-          const launcherItem = item as LauncherItem;
-          window.electronAPI.workspaceAPI
-            .addExecutionHistory(launcherItem)
-            .then(() => loadExecutionHistory())
-            .catch((error) => {
-              console.error('実行履歴の追加に失敗しました:', error);
-            });
-        }
       }
     } catch (error) {
       setAlertDialog({
@@ -311,37 +291,6 @@ function App(): React.ReactElement {
       });
     }
   };
-
-  const historyItems: AppItem[] = executionHistory
-    .filter((entry) => entry.itemType !== 'group')
-    .map((entry) => {
-      if (entry.itemType === 'windowOperation') {
-        // [ウィンドウ操作: タイトル] から タイトル を抽出
-        const match = entry.itemPath.match(/^\[ウィンドウ操作: (.+)\]$/);
-        const windowTitle = match ? match[1] : entry.itemPath;
-        return {
-          type: 'window',
-          displayName: entry.itemName,
-          windowTitle: windowTitle,
-          x: entry.windowX,
-          y: entry.windowY,
-          width: entry.windowWidth,
-          height: entry.windowHeight,
-          virtualDesktopNumber: entry.virtualDesktopNumber,
-          activateWindow: entry.activateWindow,
-          sourceFile: 'history',
-        } as WindowItem;
-      } else {
-        return {
-          displayName: entry.itemName,
-          path: entry.itemPath,
-          type: entry.itemType as 'url' | 'file' | 'folder' | 'app' | 'customUri',
-          icon: entry.icon,
-          args: entry.args,
-          sourceFile: 'history',
-        };
-      }
-    });
 
   const { handleKeyDown } = useKeyboardShortcuts({
     showDataFileTabs,
@@ -358,7 +307,6 @@ function App(): React.ReactElement {
     handleExecuteItem,
     searchMode,
     windowList,
-    historyItems,
     toggleSearchMode: handleToggleSearchMode,
     refreshWindows: handleRefreshWindows,
     reloadData: handleReloadItems,
@@ -675,8 +623,6 @@ function App(): React.ReactElement {
     switch (searchMode) {
       case 'window':
         return filterWindowsByDesktopTab(windowList, activeDesktopTab);
-      case 'history':
-        return historyItems;
       default:
         return tabFilteredItems;
     }

@@ -3,17 +3,10 @@
  * 各種マネージャークラスに処理を委譲する
  */
 import type ElectronStore from 'electron-store';
-import type {
-  AppItem,
-  WorkspaceItem,
-  WorkspaceGroup,
-  ExecutionHistoryItem,
-  ArchivedWorkspaceGroup,
-} from '@common/types';
+import type { AppItem, WorkspaceItem, WorkspaceGroup, ArchivedWorkspaceGroup } from '@common/types';
 import logger from '@common/logger';
 
 import PathManager from '../../config/pathManager.js';
-import { ExecutionHistoryService } from '../executionHistoryService.js';
 
 import type { WorkspaceStoreInstance, ArchiveStoreInstance } from './types.js';
 import { WorkspaceItemManager } from './WorkspaceItemManager.js';
@@ -195,23 +188,6 @@ export class WorkspaceService {
     await this.initializeStore();
     const groups = this.groupManager!.loadGroups();
     this.itemManager!.moveItemToGroup(itemId, groupId, groups);
-  }
-
-  // --- 実行履歴管理（ファサード） ---
-
-  public async loadExecutionHistory(): Promise<ExecutionHistoryItem[]> {
-    const historyService = await ExecutionHistoryService.getInstance();
-    return historyService.loadExecutionHistory();
-  }
-
-  public async addExecutionHistory(item: AppItem): Promise<void> {
-    const historyService = await ExecutionHistoryService.getInstance();
-    await historyService.addExecutionHistory(item);
-  }
-
-  public async clearExecutionHistory(): Promise<void> {
-    const historyService = await ExecutionHistoryService.getInstance();
-    await historyService.clearExecutionHistory();
   }
 
   // --- アーカイブ管理 ---

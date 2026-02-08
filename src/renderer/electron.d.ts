@@ -12,7 +12,6 @@ import {
   BrowserInfo,
   WorkspaceItem,
   WorkspaceGroup,
-  ExecutionHistoryItem,
   WindowInfo,
   VirtualDesktopInfo,
   RegisterItem,
@@ -188,10 +187,6 @@ export interface ElectronAPI {
     loadArchivedGroups: () => Promise<WorkspaceGroup[]>;
     restoreGroup: (groupId: string) => Promise<{ success: boolean }>;
     deleteArchivedGroup: (groupId: string) => Promise<{ success: boolean }>;
-    // 実行履歴
-    loadExecutionHistory: () => Promise<ExecutionHistoryItem[]>;
-    addExecutionHistory: (item: AppItem) => Promise<{ success: boolean }>;
-    clearExecutionHistory: () => Promise<{ success: boolean }>;
     // ピン留め関連
     getAlwaysOnTop: () => Promise<boolean>;
     toggleAlwaysOnTop: () => Promise<boolean>;

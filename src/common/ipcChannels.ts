@@ -139,11 +139,6 @@ export const IPC_CHANNELS = {
   WORKSPACE_REORDER_GROUPS: 'workspace:reorder-groups',
   WORKSPACE_MOVE_ITEM_TO_GROUP: 'workspace:move-item-to-group',
 
-  // ワークスペース - 実行履歴
-  WORKSPACE_LOAD_EXECUTION_HISTORY: 'workspace:load-execution-history',
-  WORKSPACE_ADD_EXECUTION_HISTORY: 'workspace:add-execution-history',
-  WORKSPACE_CLEAR_EXECUTION_HISTORY: 'workspace:clear-execution-history',
-
   // ワークスペース - アーカイブ管理
   WORKSPACE_ARCHIVE_GROUP: 'workspace:archive-group',
   WORKSPACE_LOAD_ARCHIVED_GROUPS: 'workspace:load-archived-groups',
