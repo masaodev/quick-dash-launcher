@@ -765,34 +765,34 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
               )}
             </div>
           )}
-        </div>
-        <div className="import-dropdown" ref={importDropdown.ref}>
-          <button className="dropdown-trigger-btn" onClick={importDropdown.toggle}>
-            <span className="dropdown-trigger-text">インポート</span>
-            <span className="dropdown-trigger-icon">{importDropdown.isOpen ? '▲' : '▼'}</span>
-          </button>
-          {importDropdown.isOpen && (
-            <div className="dropdown-menu">
-              <button
-                className="dropdown-item"
-                onClick={() => {
-                  importDropdown.close();
-                  setIsBookmarkModalOpen(true);
-                }}
-              >
-                ブラウザブックマークをインポート
-              </button>
-              <button
-                className="dropdown-item"
-                onClick={() => {
-                  importDropdown.close();
-                  setIsAppImportModalOpen(true);
-                }}
-              >
-                アプリをインポート
-              </button>
-            </div>
-          )}
+          <div className="import-dropdown" ref={importDropdown.ref}>
+            <button className="dropdown-trigger-btn" onClick={importDropdown.toggle}>
+              <span className="dropdown-trigger-text">アイテムを一括取り込み</span>
+              <span className="dropdown-trigger-icon">{importDropdown.isOpen ? '▲' : '▼'}</span>
+            </button>
+            {importDropdown.isOpen && (
+              <div className="dropdown-menu">
+                <button
+                  className="dropdown-item"
+                  onClick={() => {
+                    importDropdown.close();
+                    setIsBookmarkModalOpen(true);
+                  }}
+                >
+                  ブラウザブックマークをインポート
+                </button>
+                <button
+                  className="dropdown-item"
+                  onClick={() => {
+                    importDropdown.close();
+                    setIsAppImportModalOpen(true);
+                  }}
+                >
+                  アプリをインポート
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

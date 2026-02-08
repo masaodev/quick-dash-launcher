@@ -127,10 +127,34 @@
   -webkit-app-region: no-drag;
 }
 
-/* インポートドロップダウンは右寄せ */
-.edit-mode-header .import-dropdown .dropdown-menu {
+/* インポートドロップダウンのメニュー位置 */
+/* edit-mode-infoの外にある場合は右寄せ（後方互換性のため） */
+.edit-mode-header > .import-dropdown .dropdown-menu {
   left: auto;
   right: 0;
+}
+
+/* edit-mode-infoの中にある場合は左寄せ */
+.edit-mode-info .import-dropdown .dropdown-menu {
+  left: 0;
+  right: auto;
+}
+
+/* edit-mode-info内のインポートボタンを「行を追加」と同じスタイルに（btn-info） */
+.edit-mode-info .import-dropdown .dropdown-trigger-btn {
+  background-color: var(--color-info);
+  color: var(--color-white);
+  border-color: var(--color-info);
+  font-weight: 500;
+}
+
+.edit-mode-info .import-dropdown .dropdown-trigger-btn:hover {
+  background-color: var(--color-info-hover);
+  border-color: var(--color-info-hover);
+}
+
+.edit-mode-info .import-dropdown .dropdown-trigger-btn:focus {
+  box-shadow: var(--focus-ring-wide);
 }
 
 /* メニューアイテム（共通） */
