@@ -69,6 +69,7 @@ export interface ElectronAPI {
   onWindowShownItemSearch: (callback: (startTime?: number) => void) => () => void;
   onWindowHidden: (callback: () => void) => () => void;
   onSetActiveTab: (callback: (tab: 'settings' | 'edit' | 'archive' | 'other') => void) => void;
+  onOpenImportModal: (callback: (modal: 'bookmark' | 'app') => void) => () => void;
   onDataChanged: (callback: () => void) => () => void;
   onSettingsChanged: (callback: () => void) => () => void;
   onWorkspaceChanged: (callback: () => void) => () => void;
@@ -140,7 +141,9 @@ export interface ElectronAPI {
   toggleEditWindow: () => Promise<void>;
   isEditWindowShown: () => Promise<boolean>;
   openEditWindowWithTab: (tab: 'settings' | 'edit' | 'archive' | 'other') => Promise<void>;
+  openEditWindowWithImportModal: (modal: 'bookmark' | 'app') => Promise<void>;
   getInitialTab: () => Promise<'settings' | 'edit' | 'archive' | 'other'>;
+  getPendingImportModal: () => Promise<'bookmark' | 'app' | null>;
   copyToClipboard: (text: string) => Promise<boolean>;
   setModalMode: (
     isModal: boolean,

@@ -44,6 +44,8 @@ interface EditModeViewProps {
   onSearchChange: (query: string) => void;
   dataFileTabs: DataFileTab[];
   dataFileLabels?: Record<string, string>;
+  pendingImportModal: 'bookmark' | 'app' | null;
+  onClearPendingImportModal: () => void;
 }
 
 const AdminItemManagerView: React.FC<EditModeViewProps> = ({
@@ -54,6 +56,8 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   onSearchChange,
   dataFileTabs,
   dataFileLabels = {},
+  pendingImportModal,
+  onClearPendingImportModal,
 }) => {
   const { showSuccess } = useToast();
 
@@ -673,6 +677,21 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
       setSelectedTabIndex(0);
     }
   }, []);
+
+  // メインウィンドウからのインポートモーダル表示リクエストを処理
+  useEffect(() => {
+    if (!pendingImportModal) return;
+
+    switch (pendingImportModal) {
+      case 'bookmark':
+        setIsBookmarkModalOpen(true);
+        break;
+      case 'app':
+        setIsAppImportModalOpen(true);
+        break;
+    }
+    onClearPendingImportModal();
+  }, [pendingImportModal]);
 
   // editableItemsが変更されたらworkingItemsも更新
   useEffect(() => {

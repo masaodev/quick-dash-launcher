@@ -10,7 +10,9 @@ import {
   toggleAdminWindow,
   isAdminWindowShown,
   showAdminWindowWithTab,
+  showAdminWindowWithImportModal,
   getInitialTab,
+  getPendingImportModal,
 } from '../adminWindowManager.js';
 import {
   toggleWorkspaceWindow,
@@ -83,6 +85,14 @@ export function setupWindowHandlers(
     }
   );
 
+  // インポートモーダル付きで管理ウィンドウを開くIPCハンドラー
+  ipcMain.handle(
+    IPC_CHANNELS.OPEN_EDIT_WINDOW_WITH_IMPORT_MODAL,
+    async (_event, modal: 'bookmark' | 'app') => {
+      await showAdminWindowWithImportModal(modal);
+    }
+  );
+
   // アーカイブタブを開くIPCハンドラー
   ipcMain.handle(IPC_CHANNELS.ADMIN_SHOW_ARCHIVE_TAB, async () => {
     await showAdminWindowWithTab('archive');
@@ -90,6 +100,10 @@ export function setupWindowHandlers(
 
   ipcMain.handle(IPC_CHANNELS.GET_INITIAL_TAB, () => {
     return getInitialTab();
+  });
+
+  ipcMain.handle(IPC_CHANNELS.GET_PENDING_IMPORT_MODAL, () => {
+    return getPendingImportModal();
   });
 
   ipcMain.handle(IPC_CHANNELS.COPY_TO_CLIPBOARD, (_event, text: string) => {

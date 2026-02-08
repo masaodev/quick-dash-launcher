@@ -2,16 +2,19 @@ import * as path from 'path';
 
 import { BrowserWindow } from 'electron';
 import { windowLogger } from '@common/logger';
+import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { EnvConfig } from './config/envConfig.js';
 import PathManager from './config/pathManager.js';
 import { SettingsService } from './services/settingsService.js';
 
 type AdminTab = 'settings' | 'edit' | 'archive' | 'other';
+type ImportModalType = 'bookmark' | 'app';
 
 let adminWindow: BrowserWindow | null = null;
 let isAdminWindowVisible = false;
 let initialTab: AdminTab = 'settings';
+let pendingImportModal: ImportModalType | null = null;
 let isAppQuitting = false;
 
 /**
@@ -129,6 +132,24 @@ export async function showAdminWindowWithTab(tab: AdminTab): Promise<void> {
 }
 
 /**
+ * 指定されたインポートモーダルを開いた状態で管理ウィンドウを表示する
+ *
+ * ウィンドウの状態に応じて2つの経路でモーダル表示を通知する:
+ * - 既存ウィンドウ: EVENT_OPEN_IMPORT_MODAL イベントで即座に通知
+ * - 新規作成: pendingImportModal に保存し、レンダラー初期化時に getPendingImportModal で取得
+ *   （新規作成直後はレンダラーのロードが未完了のため webContents.send が届かない）
+ */
+export async function showAdminWindowWithImportModal(modal: ImportModalType): Promise<void> {
+  const windowAlreadyExists = isWindowValid();
+  pendingImportModal = modal;
+  await showAdminWindowWithTab('edit');
+
+  if (windowAlreadyExists && isWindowValid()) {
+    adminWindow!.webContents.send(IPC_CHANNELS.EVENT_OPEN_IMPORT_MODAL, modal);
+  }
+}
+
+/**
  * 管理ウィンドウを非表示にする
  */
 export function hideAdminWindow(): void {
@@ -174,6 +195,15 @@ export function isAdminWindowShown(): boolean {
  */
 export function getInitialTab(): AdminTab {
   return initialTab;
+}
+
+/**
+ * 保留中のインポートモーダルを取得する（取得後にクリア）
+ */
+export function getPendingImportModal(): ImportModalType | null {
+  const modal = pendingImportModal;
+  pendingImportModal = null;
+  return modal;
 }
 
 /**

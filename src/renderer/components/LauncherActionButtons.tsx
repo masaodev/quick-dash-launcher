@@ -3,6 +3,7 @@ import type { WindowPinMode } from '@common/types';
 
 import LauncherSettingsDropdown from './LauncherSettingsDropdown';
 import LauncherRefreshActionsDropdown from './LauncherRefreshActionsDropdown';
+import LauncherRegisterDropdown from './LauncherRegisterDropdown';
 
 interface ActionButtonsProps {
   onReload: () => void;
@@ -57,9 +58,7 @@ const LauncherActionButtons: React.FC<ActionButtonsProps> = ({
 
   return (
     <div className="action-buttons">
-      <button className="action-btn" onClick={onOpenRegisterModal} title="アイテムを登録">
-        ➕
-      </button>
+      <LauncherRegisterDropdown onOpenRegisterModal={onOpenRegisterModal} />
       <LauncherRefreshActionsDropdown
         onReload={onReload}
         onFetchMissingIcons={onFetchMissingIcons}

@@ -115,6 +115,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onSetActiveTab: (callback: (tab: 'settings' | 'edit' | 'archive' | 'other') => void) => {
     ipcRenderer.on(IPC_CHANNELS.EVENT_SET_ACTIVE_TAB, (_event, tab) => callback(tab));
   },
+  onOpenImportModal: (callback: (modal: 'bookmark' | 'app') => void) =>
+    createEventListener<'bookmark' | 'app'>(IPC_CHANNELS.EVENT_OPEN_IMPORT_MODAL, callback),
   onDataChanged: (callback: () => void) =>
     createEventListenerNoArg(IPC_CHANNELS.EVENT_DATA_CHANGED, callback),
   onSettingsChanged: (callback: () => void) =>
@@ -205,7 +207,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   isEditWindowShown: () => ipcRenderer.invoke(IPC_CHANNELS.IS_EDIT_WINDOW_SHOWN),
   openEditWindowWithTab: (tab: 'settings' | 'edit' | 'other') =>
     ipcRenderer.invoke(IPC_CHANNELS.OPEN_EDIT_WINDOW_WITH_TAB, tab),
+  openEditWindowWithImportModal: (modal: 'bookmark' | 'app') =>
+    ipcRenderer.invoke(IPC_CHANNELS.OPEN_EDIT_WINDOW_WITH_IMPORT_MODAL, modal),
   getInitialTab: () => ipcRenderer.invoke(IPC_CHANNELS.GET_INITIAL_TAB),
+  getPendingImportModal: (): Promise<'bookmark' | 'app' | null> =>
+    ipcRenderer.invoke(IPC_CHANNELS.GET_PENDING_IMPORT_MODAL),
   copyToClipboard: (text: string) => ipcRenderer.invoke(IPC_CHANNELS.COPY_TO_CLIPBOARD, text),
   setModalMode: (isModal: boolean, requiredSize?: { width: number; height: number }) =>
     ipcRenderer.invoke(IPC_CHANNELS.SET_MODAL_MODE, isModal, requiredSize),

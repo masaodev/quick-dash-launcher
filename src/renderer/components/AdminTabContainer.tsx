@@ -18,6 +18,8 @@ interface AdminTabContainerProps {
   onSearchChange: (query: string) => void;
   dataFileTabs: DataFileTab[];
   dataFileLabels?: Record<string, string>;
+  pendingImportModal: 'bookmark' | 'app' | null;
+  onClearPendingImportModal: () => void;
 }
 
 const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
@@ -31,6 +33,8 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
   onSearchChange,
   dataFileTabs,
   dataFileLabels = {},
+  pendingImportModal,
+  onClearPendingImportModal,
 }) => {
   return (
     <div className="admin-tab-container">
@@ -76,6 +80,8 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
             onSearchChange={onSearchChange}
             dataFileTabs={dataFileTabs}
             dataFileLabels={dataFileLabels}
+            pendingImportModal={pendingImportModal}
+            onClearPendingImportModal={onClearPendingImportModal}
           />
         )}
         {activeTab === 'archive' && <AdminArchiveTab />}

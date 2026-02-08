@@ -18,6 +18,7 @@ const AdminApp: React.FC = () => {
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [pendingImportModal, setPendingImportModal] = useState<'bookmark' | 'app' | null>(null);
   const [alertDialog, setAlertDialog] = useState<AlertDialogState>({
     isOpen: false,
     message: '',
@@ -26,15 +27,22 @@ const AdminApp: React.FC = () => {
 
   useEffect(() => {
     async function initialize(): Promise<void> {
-      const [, initialTab] = await Promise.all([
+      const [, initialTab, importModal] = await Promise.all([
         loadData(),
         window.electronAPI.getInitialTab().catch(() => 'settings' as const),
+        window.electronAPI.getPendingImportModal().catch(() => null),
       ]);
       setActiveTab(initialTab);
+      if (importModal) {
+        setPendingImportModal(importModal);
+      }
     }
     initialize();
 
     window.electronAPI.onSetActiveTab(setActiveTab);
+    const unsubscribeImportModal = window.electronAPI.onOpenImportModal((modal) => {
+      setPendingImportModal(modal);
+    });
     const unsubscribeData = window.electronAPI.onDataChanged(() => {
       debugInfo('データ変更通知を受信、データを再読み込みします');
       loadData(false);
@@ -45,6 +53,7 @@ const AdminApp: React.FC = () => {
     });
 
     return () => {
+      unsubscribeImportModal?.();
       unsubscribeData?.();
       unsubscribeWindow?.();
     };
@@ -138,6 +147,8 @@ const AdminApp: React.FC = () => {
         onSearchChange={setSearchQuery}
         dataFileTabs={dataFileTabs}
         dataFileLabels={dataFileLabels}
+        pendingImportModal={pendingImportModal}
+        onClearPendingImportModal={() => setPendingImportModal(null)}
       />
 
       <AlertDialog
