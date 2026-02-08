@@ -21,7 +21,6 @@ export interface UseKeyboardShortcutsParams {
   handleExecuteItem: (item: AppItem) => Promise<void>;
   searchMode: SearchMode;
   windowList: WindowInfo[];
-  historyItems: AppItem[];
   toggleSearchMode: () => Promise<void>;
   refreshWindows: () => Promise<void>;
   reloadData: () => Promise<void>;
@@ -48,7 +47,6 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
     handleExecuteItem,
     searchMode,
     windowList,
-    historyItems,
     toggleSearchMode,
     refreshWindows,
     reloadData,
@@ -88,9 +86,6 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
     if (searchMode === 'window') {
       return filterWindowsByDesktopTab(windowList, activeDesktopTab);
     }
-    if (searchMode === 'history') {
-      return historyItems;
-    }
     return getTabFilteredItems();
   }
 
@@ -129,12 +124,6 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
       const nextIndex = currentIndex < tabIds.length - 1 ? currentIndex + 1 : 0;
       setActiveDesktopTab(tabIds[nextIndex]);
       setSelectedIndex(0);
-      return;
-    }
-
-    // Tab: 履歴モードでは無効化
-    if (e.key === 'Tab' && searchMode === 'history') {
-      e.preventDefault();
       return;
     }
 

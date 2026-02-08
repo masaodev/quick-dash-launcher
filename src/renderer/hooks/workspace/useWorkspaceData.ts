@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { WorkspaceItem, WorkspaceGroup, ExecutionHistoryItem } from '@common/types';
+import type { WorkspaceItem, WorkspaceGroup } from '@common/types';
 
 import { logError } from '../../utils/debug';
 import { useGlobalLoading } from '../useGlobalLoading';
@@ -39,7 +39,6 @@ async function mergeIconsFromCache<T extends { icon?: string }>(
 export function useWorkspaceData() {
   const [items, setItems] = useState<WorkspaceItem[]>([]);
   const [groups, setGroups] = useState<WorkspaceGroup[]>([]);
-  const [executionHistory, setExecutionHistory] = useState<ExecutionHistoryItem[]>([]);
   const { isLoading, message: loadingMessage, withLoading } = useGlobalLoading();
 
   async function loadItems(): Promise<void> {
@@ -72,28 +71,8 @@ export function useWorkspaceData() {
     }
   }
 
-  async function loadExecutionHistory(): Promise<void> {
-    try {
-      const history = await window.electronAPI.workspaceAPI.loadExecutionHistory();
-      const historyWithIcons = await mergeIconsFromCache(
-        history,
-        (item) => item.itemPath,
-        (item) => ({
-          displayName: item.itemName,
-          path: item.itemPath,
-          type: item.itemType as IconCacheItem['type'],
-          customIcon: item.customIcon,
-        }),
-        (item) => item.itemType as ItemType
-      );
-      setExecutionHistory(historyWithIcons);
-    } catch (error) {
-      logError('Failed to load execution history:', error);
-    }
-  }
-
   async function loadAllData(): Promise<void> {
-    await Promise.all([loadItems(), loadGroups(), loadExecutionHistory()]);
+    await Promise.all([loadItems(), loadGroups()]);
   }
 
   async function loadAllDataWithLoading(): Promise<void> {
@@ -109,7 +88,6 @@ export function useWorkspaceData() {
   return {
     items,
     groups,
-    executionHistory,
     loadAllDataWithLoading,
     isLoading,
     loadingMessage,

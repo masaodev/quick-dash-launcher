@@ -25,8 +25,7 @@ const WorkspaceApp: React.FC = () => {
   const [filterText, setFilterText] = useState('');
   const [filterScope, setFilterScope] = useState<FilterScope>('all');
 
-  const { items, groups, executionHistory, loadAllDataWithLoading, isLoading, loadingMessage } =
-    useWorkspaceData();
+  const { items, groups, loadAllDataWithLoading, isLoading, loadingMessage } = useWorkspaceData();
 
   const actions = useWorkspaceActions(() => {
     loadAllDataWithLoading();
@@ -36,7 +35,6 @@ const WorkspaceApp: React.FC = () => {
   useClipboardPaste(loadAllDataWithLoading, activeGroupId);
   const { collapsed, toggleSection, expandAll, collapseAll } = useCollapsibleSections({
     uncategorized: false,
-    history: false,
   });
   const filterResult = useWorkspaceFilter(groups, items, filterText, filterScope);
   const { handleResize } = useWorkspaceResize();
@@ -248,7 +246,6 @@ const WorkspaceApp: React.FC = () => {
         data={{
           groups,
           items,
-          executionHistory,
         }}
         handlers={{
           onLaunch: actions.handleLaunch,
@@ -272,8 +269,6 @@ const WorkspaceApp: React.FC = () => {
           setEditingItemId: setEditingId,
           uncategorizedCollapsed: collapsed.uncategorized || false,
           onToggleUncategorized: () => toggleSection('uncategorized'),
-          historyCollapsed: collapsed.history || false,
-          onToggleHistory: () => toggleSection('history'),
           activeGroupId: activeGroupId,
           setActiveGroupId: setActiveGroupId,
           visibleGroupIds: filterResult.visibleGroupIds,

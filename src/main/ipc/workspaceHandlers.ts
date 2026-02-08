@@ -1,7 +1,7 @@
 import { ipcMain, BrowserWindow } from 'electron';
 import logger from '@common/logger';
 import type { AppItem, WorkspaceItem, WorkspaceGroup } from '@common/types';
-import { isWindowInfo, isLauncherItem, isWindowItem } from '@common/types/guards';
+import { isLauncherItem, isWindowItem } from '@common/types/guards';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 
@@ -476,56 +476,6 @@ export function setupWorkspaceHandlers(): void {
   );
 
   // ==================== 実行履歴ハンドラー ====================
-
-  /**
-   * 実行履歴を全て取得
-   */
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_LOAD_EXECUTION_HISTORY, async () => {
-    try {
-      const workspaceService = await WorkspaceService.getInstance();
-      const history = await workspaceService.loadExecutionHistory();
-      logger.info({ count: history.length }, 'Loaded execution history');
-      return history;
-    } catch (error) {
-      logger.error({ error }, 'Failed to load execution history');
-      throw error;
-    }
-  });
-
-  /**
-   * アイテム実行を履歴に追加
-   */
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_ADD_EXECUTION_HISTORY, async (_event, item: AppItem) => {
-    try {
-      const workspaceService = await WorkspaceService.getInstance();
-      await workspaceService.addExecutionHistory(item);
-      const itemName = isWindowInfo(item) ? item.title : item.displayName;
-      logger.info({ itemName }, 'Added item to execution history');
-      notifyWorkspaceChanged();
-      return { success: true };
-    } catch (error) {
-      const itemName = isWindowInfo(item) ? item.title : item.displayName;
-      logger.error({ error, itemName }, 'Failed to add execution history');
-      // エラーでも処理は継続
-      return { success: false };
-    }
-  });
-
-  /**
-   * 実行履歴をクリア
-   */
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_CLEAR_EXECUTION_HISTORY, async () => {
-    try {
-      const workspaceService = await WorkspaceService.getInstance();
-      await workspaceService.clearExecutionHistory();
-      logger.info('Cleared execution history');
-      notifyWorkspaceChanged();
-      return { success: true };
-    } catch (error) {
-      logger.error({ error }, 'Failed to clear execution history');
-      throw error;
-    }
-  });
 
   // ==================== アーカイブ管理ハンドラー ====================
 

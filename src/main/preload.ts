@@ -12,7 +12,6 @@ import type {
   BrowserInfo,
   WorkspaceItem,
   WorkspaceGroup,
-  ExecutionHistoryItem,
   WindowInfo,
   VirtualDesktopInfo,
   IconFetchErrorRecord,
@@ -333,13 +332,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_RESTORE_GROUP, groupId),
     deleteArchivedGroup: (groupId: string): Promise<{ success: boolean }> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_DELETE_ARCHIVED_GROUP, groupId),
-    // 実行履歴
-    loadExecutionHistory: (): Promise<ExecutionHistoryItem[]> =>
-      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_LOAD_EXECUTION_HISTORY),
-    addExecutionHistory: (item: AppItem): Promise<{ success: boolean }> =>
-      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_ADD_EXECUTION_HISTORY, item),
-    clearExecutionHistory: (): Promise<{ success: boolean }> =>
-      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_CLEAR_EXECUTION_HISTORY),
     // ピン留め関連
     getAlwaysOnTop: (): Promise<boolean> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_GET_ALWAYS_ON_TOP),
