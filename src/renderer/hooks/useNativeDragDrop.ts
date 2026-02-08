@@ -1,123 +1,60 @@
-import { useState, useEffect } from 'react';
+import type React from 'react';
+import { useEffect, useRef } from 'react';
 
-import { logError } from '../utils/debug';
-
-import { useFileOperations } from './useFileOperations';
+type NativeFileDropHandler = (e: React.DragEvent) => Promise<void>;
 
 /**
  * ワークスペースのネイティブドラッグ&ドロップ処理を管理するカスタムフック
  *
- * ファイルエクスプローラーやブラウザからのファイル・URLドロップを処理し、
- * ワークスペースにアイテムを追加します。
+ * ファイルエクスプローラーやブラウザからのファイル・URLドロップを検知し、
+ * グループレベルで処理されなかったドロップをフォールバック処理として
+ * onNativeFileDrop コールバックに委譲します。
  *
- * @param onItemsAdded アイテム追加完了時のコールバック
- * @returns ドラッグオーバー状態
- *
- * @example
- * ```tsx
- * const { isDraggingOver } = useNativeDragDrop(() => {
- *   loadItems(); // アイテムを再読み込み
- * });
- *
- * <div className={isDraggingOver ? 'dragging-over' : ''}>
- *   ...
- * </div>
- * ```
+ * @param onNativeFileDrop ネイティブファイル/URLドロップ時のコールバック（groupId なし）
  */
-export function useNativeDragDrop(onItemsAdded: () => void) {
-  const [isDraggingOver, setIsDraggingOver] = useState(false);
-  const { extractFilePaths, addItemsFromFilePaths, addUrlItem } = useFileOperations();
+export function useNativeDragDrop(onNativeFileDrop: NativeFileDropHandler): void {
+  const callbackRef = useRef(onNativeFileDrop);
+  callbackRef.current = onNativeFileDrop;
 
   useEffect(() => {
-    /**
-     * ドラッグオーバー時のハンドラー
-     */
-    const handleNativeDragOver = (e: DragEvent) => {
-      // ファイルまたはURLがドラッグされている場合に反応
-      if (e.dataTransfer?.types) {
-        const hasFiles = e.dataTransfer.types.includes('Files');
-        const hasUrl =
-          e.dataTransfer.types.includes('text/uri-list') ||
-          e.dataTransfer.types.includes('text/plain');
+    function hasNativeContent(dataTransfer: DataTransfer | null): boolean {
+      if (!dataTransfer?.types) return false;
+      return (
+        dataTransfer.types.includes('Files') ||
+        dataTransfer.types.includes('text/uri-list') ||
+        dataTransfer.types.includes('text/plain')
+      );
+    }
 
-        if (hasFiles || hasUrl) {
-          e.preventDefault();
-          e.stopPropagation();
-          setIsDraggingOver(true);
-        }
+    function handleDragOverOrLeave(e: DragEvent): void {
+      if (hasNativeContent(e.dataTransfer)) {
+        e.preventDefault();
+        e.stopPropagation();
       }
-    };
+    }
 
-    /**
-     * ドラッグリーブ時のハンドラー
-     */
-    const handleNativeDragLeave = (e: DragEvent) => {
-      // ファイルまたはURLがドラッグされている場合に反応
-      if (e.dataTransfer?.types) {
-        const hasFiles = e.dataTransfer.types.includes('Files');
-        const hasUrl =
-          e.dataTransfer.types.includes('text/uri-list') ||
-          e.dataTransfer.types.includes('text/plain');
-
-        if (hasFiles || hasUrl) {
-          e.preventDefault();
-          e.stopPropagation();
-          setIsDraggingOver(false);
-        }
-      }
-    };
-
-    /**
-     * ドロップ時のハンドラー
-     */
-    const handleNativeDrop = async (e: DragEvent) => {
+    async function handleDrop(e: DragEvent): Promise<void> {
       e.preventDefault();
       e.stopPropagation();
-      setIsDraggingOver(false);
 
-      // ファイルのドロップを処理
-      if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
-        const filePaths = await extractFilePaths(e.dataTransfer.files);
-        await addItemsFromFilePaths(filePaths, onItemsAdded);
+      // グループレベルで既に処理済みの場合はスキップ
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((e as any).__handledByGroup) {
+        return;
       }
-      // URLのドロップを処理
-      else if (e.dataTransfer) {
-        const urlData =
-          e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('text/plain');
 
-        if (urlData) {
-          // 複数のURLが改行で区切られている場合に対応
-          const urls = urlData
-            .split('\n')
-            .map((url) => url.trim())
-            .filter((url) => url && url.startsWith('http'));
+      // グループ未指定としてフォールバック処理
+      await callbackRef.current(e as unknown as React.DragEvent);
+    }
 
-          if (urls.length > 0) {
-            try {
-              // URLごとにアイテムを追加
-              for (const url of urls) {
-                await addUrlItem(url, () => {});
-              }
-              onItemsAdded();
-            } catch (error) {
-              logError('Failed to add URLs from drag & drop:', error);
-            }
-          }
-        }
-      }
-    };
-
-    // ネイティブイベントリスナーを追加
-    document.addEventListener('dragover', handleNativeDragOver);
-    document.addEventListener('dragleave', handleNativeDragLeave);
-    document.addEventListener('drop', handleNativeDrop);
+    document.addEventListener('dragover', handleDragOverOrLeave);
+    document.addEventListener('dragleave', handleDragOverOrLeave);
+    document.addEventListener('drop', handleDrop);
 
     return () => {
-      document.removeEventListener('dragover', handleNativeDragOver);
-      document.removeEventListener('dragleave', handleNativeDragLeave);
-      document.removeEventListener('drop', handleNativeDrop);
+      document.removeEventListener('dragover', handleDragOverOrLeave);
+      document.removeEventListener('dragleave', handleDragOverOrLeave);
+      document.removeEventListener('drop', handleDrop);
     };
-  }, [onItemsAdded, extractFilePaths, addItemsFromFilePaths, addUrlItem]);
-
-  return { isDraggingOver };
+  }, []);
 }

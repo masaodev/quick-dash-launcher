@@ -74,6 +74,7 @@ interface WorkspaceGroupedListProps {
     onArchiveGroup: (groupId: string) => void;
     onMoveItemToGroup: (itemId: string, groupId?: string) => void;
     onReorderGroups: (groupIds: string[]) => void;
+    onNativeFileDrop?: (e: React.DragEvent, groupId?: string) => Promise<void>;
   };
   ui: {
     editingItemId: string | null;
@@ -104,6 +105,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
     onArchiveGroup,
     onMoveItemToGroup,
     onReorderGroups,
+    onNativeFileDrop,
   } = handlers;
   const {
     editingItemId,
@@ -121,6 +123,8 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
   const [draggedItemId, setDraggedItemId] = React.useState<string | null>(null);
   const [editingGroupId, setEditingGroupId] = React.useState<string | null>(null);
   const [colorPickerGroupId, setColorPickerGroupId] = React.useState<string | null>(null);
+  const [dragOverGroupId, setDragOverGroupId] = React.useState<string | null>(null);
+  const dragOverTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { itemsByGroup, uncategorizedItems } = useWorkspaceItemGroups(items);
 
@@ -376,11 +380,43 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
     setDraggedItemId(null);
   };
 
-  const handleGroupDragOver = (e: React.DragEvent) => {
+  /** ネイティブファイル/URLドラッグかどうかを判定 */
+  const isNativeFileDrag = (e: React.DragEvent): boolean => {
+    const types = e.dataTransfer.types;
+    return (
+      types.includes('Files') ||
+      (types.includes('text/uri-list') && !types.includes('itemid')) ||
+      (types.includes('text/plain') &&
+        !types.includes('itemid') &&
+        !types.includes('historyitem') &&
+        !types.includes('launcheritem'))
+    );
+  };
+
+  const handleGroupDragOver = (groupId?: string) => (e: React.DragEvent) => {
     e.preventDefault();
+    const isNative = isNativeFileDrag(e);
     const isCopyOperation =
       e.dataTransfer.types.includes('historyitem') || e.dataTransfer.types.includes('launcheritem');
-    e.dataTransfer.dropEffect = isCopyOperation ? 'copy' : 'move';
+
+    if (isNative) {
+      e.dataTransfer.dropEffect = 'copy';
+    } else {
+      e.dataTransfer.dropEffect = isCopyOperation ? 'copy' : 'move';
+    }
+
+    // ワークスペース内アイテム並び替え以外はハイライト表示
+    if (isNative || isCopyOperation) {
+      const id = groupId ?? '__uncategorized__';
+      setDragOverGroupId(id);
+      // dragoverは継続発火するため、タイマーでリセット
+      if (dragOverTimerRef.current) {
+        clearTimeout(dragOverTimerRef.current);
+      }
+      dragOverTimerRef.current = setTimeout(() => {
+        setDragOverGroupId(null);
+      }, 150);
+    }
   };
 
   /** AppItem（LauncherItem/GroupItem/WindowItem/ClipboardItem）をワークスペースに追加 */
@@ -414,6 +450,18 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
 
   const handleGroupDrop = (groupId?: string) => async (e: React.DragEvent) => {
     e.preventDefault();
+    setDragOverGroupId(null);
+
+    // ネイティブファイル/URLドロップの処理
+    if (isNativeFileDrag(e) && onNativeFileDrop) {
+      // documentレベルのハンドラーに処理済みフラグを設定
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (e.nativeEvent as any).__handledByGroup = true;
+      await onNativeFileDrop(e, groupId);
+      setDraggedItemId(null);
+      return;
+    }
+
     const itemId = e.dataTransfer.getData('itemId');
     const currentGroupId = e.dataTransfer.getData('currentGroupId');
     const historyItemData = e.dataTransfer.getData('historyItem');
@@ -523,8 +571,8 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
           return (
             <div
               key={group.id}
-              className="workspace-group"
-              onDragOver={handleGroupDragOver}
+              className={`workspace-group${dragOverGroupId === group.id ? ' drag-over' : ''}`}
+              onDragOver={handleGroupDragOver(group.id)}
               onDrop={handleGroupDrop(group.id)}
             >
               <WorkspaceGroupHeader
@@ -574,8 +622,8 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({ data, handl
         }
         return (
           <div
-            className="workspace-uncategorized-section"
-            onDragOver={handleGroupDragOver}
+            className={`workspace-uncategorized-section${dragOverGroupId === '__uncategorized__' ? ' drag-over' : ''}`}
+            onDragOver={handleGroupDragOver(undefined)}
             onDrop={handleGroupDrop(undefined)}
           >
             <div
