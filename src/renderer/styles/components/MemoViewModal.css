@@ -56,25 +56,8 @@
   opacity: 1;
 }
 
-/* メモ入力用textarea */
+/* メモ入力用textarea（共通フォームスタイルはModal.cssで適用） */
 .memo-textarea {
-  width: 100%;
   min-height: 60px;
-  padding: var(--spacing-sm);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius-sm);
-  background-color: var(--color-bg-input);
-  color: var(--color-text-primary);
-  font-family: inherit;
-  font-size: var(--font-size-base);
   resize: vertical;
-}
-
-.memo-textarea:focus {
-  outline: none;
-  border-color: var(--color-primary);
-}
-
-.memo-textarea::placeholder {
-  color: var(--color-text-tertiary);
 }
