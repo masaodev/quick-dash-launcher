@@ -445,6 +445,21 @@ html:has(.workspace-window.background-transparent) {
 /* グループコンテナ */
 .workspace-group {
   margin-bottom: 2px;
+  border: 3px dashed transparent;
+  border-radius: var(--border-radius);
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+/* ネイティブファイルドラッグオーバー時のハイライト（グループ・未分類共通） */
+.workspace-group.drag-over,
+.workspace-uncategorized-section.drag-over {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary-50);
+}
+
+.workspace-uncategorized-section.drag-over {
+  border: 3px dashed var(--color-primary);
+  border-radius: var(--border-radius);
 }
 
 /* グループヘッダー */
@@ -608,32 +623,6 @@ html:has(.workspace-window.background-transparent) {
 }
 
 /* ==================== ドラッグ&ドロップスタイル ==================== */
-
-/* ドラッグオーバー時のウィンドウスタイル */
-.workspace-window.dragging-over {
-  outline: 3px dashed var(--color-primary);
-  outline-offset: -3px;
-  background-color: color-mix(in srgb, var(--color-primary) 3%, var(--background-color));
-}
-
-/* ドラッグオーバー時のメッセージ */
-.workspace-window.dragging-over::after {
-  content: 'ファイルをここにドロップしてワークスペースに追加';
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  padding: var(--spacing-lg) var(--spacing-xl);
-  background-color: color-mix(in srgb, var(--color-primary) 10%, white);
-  border: 2px solid var(--color-primary);
-  border-radius: var(--border-radius);
-  color: var(--color-primary);
-  font-size: var(--font-size-lg);
-  font-weight: 600;
-  pointer-events: none;
-  z-index: 1000;
-  box-shadow: var(--shadow-lg);
-}
 
 /* リサイズハンドル - 全方向対応 */
 .workspace-resize-handle {

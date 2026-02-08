@@ -9,6 +9,7 @@ import WorkspaceHeader from './components/WorkspaceHeader';
 import WorkspaceItemEditModal from './components/WorkspaceItemEditModal';
 import { useClipboardPaste } from './hooks/useClipboardPaste';
 import { useCollapsibleSections } from './hooks/useCollapsibleSections';
+import { useFileOperations } from './hooks/useFileOperations';
 import { useNativeDragDrop } from './hooks/useNativeDragDrop';
 import { useWorkspaceFilter, type FilterScope } from './hooks/useWorkspaceFilter';
 import { useWorkspaceActions, useWorkspaceData, useWorkspaceResize } from './hooks/workspace';
@@ -31,7 +32,7 @@ const WorkspaceApp: React.FC = () => {
     loadAllDataWithLoading();
   });
 
-  const { isDraggingOver } = useNativeDragDrop(loadAllDataWithLoading);
+  const { extractFilePaths, addItemsFromFilePaths, addUrlItem } = useFileOperations();
   useClipboardPaste(loadAllDataWithLoading, activeGroupId);
   const { collapsed, toggleSection, expandAll, collapseAll } = useCollapsibleSections({
     uncategorized: false,
@@ -171,10 +172,50 @@ const WorkspaceApp: React.FC = () => {
     collapseAll();
   };
 
+  const handleNativeFileDrop = async (e: React.DragEvent, groupId?: string) => {
+    try {
+      if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+        const filePaths = await extractFilePaths(e.dataTransfer.files);
+        await addItemsFromFilePaths(filePaths, loadAllDataWithLoading, groupId);
+        for (const filePath of filePaths) {
+          const fileName = filePath.split(/[/\\]/).pop() || filePath;
+          await window.electronAPI.showToastWindow({
+            displayName: fileName,
+            itemType: 'workspaceAdd',
+            path: filePath,
+          });
+        }
+      } else if (e.dataTransfer) {
+        const urlData =
+          e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('text/plain');
+        if (urlData) {
+          const urls = urlData
+            .split('\n')
+            .map((url) => url.trim())
+            .filter((url) => url && url.startsWith('http'));
+          for (const url of urls) {
+            await addUrlItem(url, () => {}, groupId);
+            await window.electronAPI.showToastWindow({
+              displayName: url,
+              itemType: 'workspaceAdd',
+              path: url,
+            });
+          }
+          if (urls.length > 0) {
+            loadAllDataWithLoading();
+          }
+        }
+      }
+    } catch (error) {
+      logError('Failed to add native files to group:', error);
+    }
+  };
+
+  // グループレベルで処理されなかったドロップのフォールバック（グループ未指定）
+  useNativeDragDrop(handleNativeFileDrop);
+
   return (
-    <div
-      className={`workspace-window ${isDraggingOver ? 'dragging-over' : ''} ${backgroundTransparent ? 'background-transparent' : ''}`}
-    >
+    <div className={`workspace-window ${backgroundTransparent ? 'background-transparent' : ''}`}>
       <WorkspaceHeader
         isFilterVisible={isFilterVisible}
         onToggleFilter={() => {
@@ -224,6 +265,7 @@ const WorkspaceApp: React.FC = () => {
           onArchiveGroup: handleArchiveGroup,
           onMoveItemToGroup: actions.handleMoveItemToGroup,
           onReorderGroups: actions.handleReorderGroups,
+          onNativeFileDrop: handleNativeFileDrop,
         }}
         ui={{
           editingItemId: editingId,
