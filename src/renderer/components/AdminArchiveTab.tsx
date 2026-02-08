@@ -79,7 +79,7 @@ const AdminArchiveTab: React.FC = () => {
         <div className="archive-header">
           <h2>📦 アーカイブ</h2>
           <p className="archive-description">
-            アーカイブされたグループはここに保存されます。復元またはアーカイブから完全に削除できます。
+            ワークスペースからアーカイブしたグループの一覧です。ワークスペースに復元するか、完全に削除できます。
           </p>
         </div>
 
@@ -87,7 +87,7 @@ const AdminArchiveTab: React.FC = () => {
           <div className="archive-loading">読み込み中...</div>
         ) : sortedGroups.length === 0 ? (
           <div className="archive-empty">
-            <p>アーカイブされたグループはありません</p>
+            <p>アーカイブされたワークスペースグループはありません</p>
           </div>
         ) : (
           <div className="archived-groups-list">
