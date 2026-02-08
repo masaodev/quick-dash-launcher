@@ -25,6 +25,7 @@ import type {
   DisplayInfo,
   ClipboardSessionCaptureResult,
   ClipboardSessionCommitResult,
+  AppScanResult,
 } from '@common/types';
 import type { EditableJsonItem, LoadEditableItemsResult } from '@common/types/editableItem';
 import { IPC_CHANNELS } from '@common/ipcChannels';
@@ -176,6 +177,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke(IPC_CHANNELS.DETECT_INSTALLED_BROWSERS),
   parseBrowserBookmarks: (filePath: string) =>
     ipcRenderer.invoke(IPC_CHANNELS.PARSE_BROWSER_BOOKMARKS, filePath),
+  // アプリインポートAPI
+  scanInstalledApps: (): Promise<AppScanResult> =>
+    ipcRenderer.invoke(IPC_CHANNELS.SCAN_INSTALLED_APPS),
   // Settings API
   getSettings: (key?: keyof AppSettings) => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET, key),
   setSetting: (key: keyof AppSettings, value: AppSettings[keyof AppSettings]) =>

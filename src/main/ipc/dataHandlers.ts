@@ -32,6 +32,7 @@ import { BackupService } from '../services/backupService.js';
 import { SettingsService } from '../services/settingsService.js';
 
 import { setupBookmarkHandlers } from './bookmarkHandlers.js';
+import { setupAppImportHandlers } from './appImportHandlers.js';
 import { processDirectoryItem, processShortcut } from './directoryScanner.js';
 
 /**
@@ -742,6 +743,9 @@ export function notifyDataChanged() {
 export function setupDataHandlers(configFolder: string) {
   // ブックマーク関連のハンドラーを登録
   setupBookmarkHandlers();
+
+  // アプリインポート関連のハンドラーを登録
+  setupAppImportHandlers();
 
   ipcMain.handle(IPC_CHANNELS.GET_CONFIG_FOLDER, () => configFolder);
 

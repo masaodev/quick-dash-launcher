@@ -26,6 +26,7 @@ import {
   DisplayInfo,
   ClipboardSessionCaptureResult,
   ClipboardSessionCommitResult,
+  AppScanResult,
 } from '@common/types';
 import type { EditableJsonItem, LoadEditableItemsResult } from '@common/types/editableItem';
 
@@ -132,6 +133,8 @@ export interface ElectronAPI {
   // ブラウザブックマーク直接インポートAPI
   detectInstalledBrowsers: () => Promise<BrowserInfo[]>;
   parseBrowserBookmarks: (filePath: string) => Promise<SimpleBookmarkItem[]>;
+  // アプリインポートAPI
+  scanInstalledApps: () => Promise<AppScanResult>;
   showEditWindow: () => Promise<void>;
   hideEditWindow: () => Promise<void>;
   toggleEditWindow: () => Promise<void>;

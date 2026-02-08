@@ -10,6 +10,7 @@ import '../styles/components/AdminArchiveTab.css';
 import '../styles/components/Modal.css';
 import '../styles/components/RegisterModal.css';
 import '../styles/components/BookmarkImport.css';
+import '../styles/components/AppImport.css';
 import '../styles/components/LauncherIconProgress.css';
 import '../styles/components/FilePickerDialog.css';
 import '../styles/components/AlertDialog.css';
