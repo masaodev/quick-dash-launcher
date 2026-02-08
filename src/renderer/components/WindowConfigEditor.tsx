@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { WindowConfig } from '@common/types';
+import { WindowConfig, WindowInfo } from '@common/types';
 
 import { Button } from './ui/Button';
 
@@ -10,6 +10,8 @@ interface WindowConfigEditorProps {
   onChange: (windowConfig: WindowConfig) => void;
   /** ウィンドウから取得ボタンクリック時のコールバック */
   onGetWindowClick: () => void;
+  /** ウィンドウ検索で位置/サイズを取得するコールバック */
+  onFetchFromWindow?: () => Promise<WindowInfo | null>;
   /** 初期状態で展開するか（デフォルト: false） */
   defaultExpanded?: boolean;
   /** 折りたたみトグルを表示するか（デフォルト: true） */
@@ -42,12 +44,44 @@ function createNumericChangeHandler(
  */
 /* eslint-disable react/prop-types */
 const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
-  ({ windowConfig, onChange, onGetWindowClick, defaultExpanded = false, showToggle = true }) => {
+  ({
+    windowConfig,
+    onChange,
+    onGetWindowClick,
+    onFetchFromWindow,
+    defaultExpanded = false,
+    showToggle = true,
+  }) => {
     const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+    const [fetchError, setFetchError] = useState<'position' | 'size' | null>(null);
 
     // 数値フィールドのonChangeハンドラーを生成
     const handleNumericChange = (fieldName: keyof WindowConfig) =>
       createNumericChangeHandler(windowConfig, onChange, fieldName);
+
+    const handleFetchFromWindow = async (
+      type: 'position' | 'size',
+      extractFields: (info: WindowInfo) => Partial<WindowConfig>
+    ) => {
+      if (!onFetchFromWindow) return;
+      setFetchError(null);
+      const windowInfo = await onFetchFromWindow();
+      if (windowInfo) {
+        onChange({
+          ...(windowConfig || { title: '' }),
+          ...extractFields(windowInfo),
+        });
+      } else {
+        setFetchError(type);
+        setTimeout(() => setFetchError(null), 3000);
+      }
+    };
+
+    const handleFetchPosition = () =>
+      handleFetchFromWindow('position', (info) => ({ x: info.x, y: info.y }));
+
+    const handleFetchSize = () =>
+      handleFetchFromWindow('size', (info) => ({ width: info.width, height: info.height }));
 
     // 折りたたみトグルを表示しない場合は、常にコンテンツを表示
     const shouldShowContent = !showToggle || isExpanded;
@@ -62,28 +96,29 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
           <p className="help-flow">
             {showToggle ? (
               <>
-                ① ウィンドウタイトルで既存ウィンドウを検索
+                ① タイトル/プロセス名で対象ウィンドウを検索
                 <br />
-                ② 見つかれば → 設定に従って制御
-                <br />③ 見つからなければ → パスのアイテムを新規実行
+                ② 見つかったら下記の操作を実行
+                <br />③ 見つからなければ → パスのアイテムを新規起動
               </>
             ) : (
               <>
-                ① ウィンドウタイトルで既存ウィンドウを検索
-                <br />② 見つかれば → 設定に従って制御
+                ① タイトル/プロセス名で対象ウィンドウを検索
+                <br />② 見つかったら下記の操作を実行
               </>
             )}
           </p>
         </div>
 
         <div className="window-config-section">
-          <Button variant="info" type="button" onClick={onGetWindowClick}>
-            ウィンドウから取得
-          </Button>
-
           {/* 1. ウィンドウ検索設定 */}
           <div className="window-config-group">
-            <h4 className="window-config-group-title">🔍 ウィンドウ検索</h4>
+            <div className="window-config-group-header">
+              <h4 className="window-config-group-title">🔍 ① ウィンドウ検索</h4>
+              <Button variant="info" type="button" size="sm" onClick={onGetWindowClick}>
+                ウィンドウを選択
+              </Button>
+            </div>
             <div className="window-config-row">
               <label className="window-config-label">ウィンドウタイトル:</label>
               <input
@@ -100,9 +135,7 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
               />
             </div>
             <div className="window-config-help-text">
-              💡 ワイルドカード: *（任意の文字列）、?（任意の1文字）
-              <br />
-              ワイルドカードなし → 完全一致、ワイルドカードあり → パターンマッチ
+              💡 * で任意の文字列にマッチ（例: *Chrome* → タイトルに「Chrome」を含むウィンドウ）
             </div>
             <div className="window-config-row">
               <label className="window-config-label">プロセス名:</label>
@@ -123,11 +156,42 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
 
           {/* 2. ウィンドウが見つかった場合の動作 */}
           <div className="window-config-group">
-            <h4 className="window-config-group-title">⚙️ ウィンドウが見つかった場合の動作</h4>
+            <h4 className="window-config-group-title">⚙️ ② 操作内容</h4>
 
-            {/* 2-1. 位置・サイズ調整 */}
+            {/* 2-1. 前面表示（アクティブ化） */}
             <div className="window-config-subgroup">
-              <h5 className="window-config-subgroup-title">📐 位置・サイズ調整</h5>
+              <h5 className="window-config-subgroup-title">✨ 前面表示</h5>
+              <div className="window-config-checkbox-row">
+                <label className="window-config-checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={windowConfig?.activateWindow !== false}
+                    onChange={(e) =>
+                      onChange({
+                        ...(windowConfig || { title: '' }),
+                        activateWindow: e.target.checked,
+                      })
+                    }
+                    className="window-config-checkbox"
+                  />
+                  <span>ウィンドウを前面に表示する</span>
+                </label>
+              </div>
+            </div>
+
+            {/* 2-2. 位置調整 */}
+            <div className="window-config-subgroup">
+              <div className="window-config-subgroup-header">
+                <h5 className="window-config-subgroup-title">📐 ウィンドウ位置設定</h5>
+                {onFetchFromWindow && (
+                  <Button variant="info" type="button" size="sm" onClick={handleFetchPosition}>
+                    ウィンドウから取得
+                  </Button>
+                )}
+              </div>
+              {fetchError === 'position' && (
+                <div className="window-config-fetch-error">ウィンドウが見つかりません</div>
+              )}
               <div className="window-config-checkbox-row">
                 <label className="window-config-checkbox-label">
                   <input
@@ -141,10 +205,11 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
                     }
                     className="window-config-checkbox"
                   />
-                  <span>アクティブモニター（カーソルがあるモニター）の中央に移動</span>
+                  <span>カーソルがあるモニターの中央に配置</span>
                 </label>
               </div>
-              <div className="window-config-row-double">
+              <div className="window-config-help-text">座標で指定</div>
+              <div className="window-config-row-double" style={{ marginLeft: 'var(--spacing-lg)' }}>
                 <div className="window-config-field">
                   <label className="window-config-label">X座標:</label>
                   <input
@@ -168,6 +233,21 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
                   />
                 </div>
               </div>
+            </div>
+
+            {/* 2-3. サイズ調整 */}
+            <div className="window-config-subgroup">
+              <div className="window-config-subgroup-header">
+                <h5 className="window-config-subgroup-title">📏 ウィンドウサイズ設定</h5>
+                {onFetchFromWindow && (
+                  <Button variant="info" type="button" size="sm" onClick={handleFetchSize}>
+                    ウィンドウから取得
+                  </Button>
+                )}
+              </div>
+              {fetchError === 'size' && (
+                <div className="window-config-fetch-error">ウィンドウが見つかりません</div>
+              )}
               <div className="window-config-row-double">
                 <div className="window-config-field">
                   <label className="window-config-label">幅:</label>
@@ -192,9 +272,9 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
               </div>
             </div>
 
-            {/* 2-2. 仮想デスクトップ移動・ピン止め */}
+            {/* 2-4. 仮想デスクトップ移動・ピン止め */}
             <div className="window-config-subgroup">
-              <h5 className="window-config-subgroup-title">🖥️ 仮想デスクトップ</h5>
+              <h5 className="window-config-subgroup-title">🖥️ 仮想デスクトップ設定</h5>
               <div className="window-config-checkbox-row">
                 <label className="window-config-checkbox-label">
                   <input
@@ -215,7 +295,8 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
                   <span>📌 全デスクトップにピン止め</span>
                 </label>
               </div>
-              <div className="window-config-row">
+              <div className="window-config-help-text">番号で指定</div>
+              <div className="window-config-row" style={{ marginLeft: 'var(--spacing-lg)' }}>
                 <label className="window-config-label">デスクトップ番号:</label>
                 <input
                   type="number"
@@ -227,37 +308,6 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
                   className="window-config-input-number"
                   disabled={windowConfig?.pinToAllDesktops || false}
                 />
-              </div>
-              <div className="help-box">
-                <p className="help-note">
-                  💡 ピン止め: 全仮想デスクトップに表示（移動先番号は無視されます）
-                </p>
-              </div>
-            </div>
-
-            {/* 2-3. アクティブ化 */}
-            <div className="window-config-subgroup">
-              <h5 className="window-config-subgroup-title">✨ アクティブ化</h5>
-              <div className="window-config-checkbox-row">
-                <label className="window-config-checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={windowConfig?.activateWindow !== false}
-                    onChange={(e) =>
-                      onChange({
-                        ...(windowConfig || { title: '' }),
-                        activateWindow: e.target.checked,
-                      })
-                    }
-                    className="window-config-checkbox"
-                  />
-                  <span>ウィンドウをアクティブにする</span>
-                </label>
-              </div>
-              <div className="help-box">
-                <p className="help-note">
-                  💡 チェックを外すと、位置・サイズ調整や仮想デスクトップ移動のみ実行
-                </p>
               </div>
             </div>
           </div>
