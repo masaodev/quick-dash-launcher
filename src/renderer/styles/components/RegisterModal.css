@@ -71,6 +71,15 @@
   flex: 1;
 }
 
+/* textarea行はラベルを上揃え */
+.register-item .form-group:has(textarea) {
+  align-items: flex-start;
+}
+
+.register-item .form-group:has(textarea) label {
+  padding-top: var(--spacing-xs);
+}
+
 .register-item .form-group small {
   display: block;
   width: 100%;
