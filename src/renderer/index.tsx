@@ -10,6 +10,7 @@ import './styles/components/AdminItemManager.css';
 import './styles/components/Modal.css';
 import './styles/components/RegisterModal.css';
 import './styles/components/BookmarkImport.css';
+import './styles/components/AppImport.css';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {

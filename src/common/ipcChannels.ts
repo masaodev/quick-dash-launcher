@@ -47,6 +47,9 @@ export const IPC_CHANNELS = {
   DETECT_INSTALLED_BROWSERS: 'detect-installed-browsers',
   PARSE_BROWSER_BOOKMARKS: 'parse-browser-bookmarks',
 
+  // アプリインポート
+  SCAN_INSTALLED_APPS: 'scan-installed-apps',
+
   // ウィンドウ操作
   GET_WINDOW_PIN_MODE: 'get-window-pin-mode',
   CYCLE_WINDOW_PIN_MODE: 'cycle-window-pin-mode',

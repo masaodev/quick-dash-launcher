@@ -98,6 +98,9 @@ export type {
   DuplicateCheckResult,
 } from './bookmark';
 
+// アプリインポート関連の型
+export type { ScannedAppItem, AppScanResult, AppTargetType } from './appImport';
+
 // 検索関連の型
 export type { SearchHistoryEntry, SearchHistoryState, SearchMode } from './search';
 

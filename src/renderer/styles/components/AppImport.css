@@ -1,0 +1,252 @@
+/* アプリインポートモーダルのスタイル */
+.app-import-modal {
+  width: 90%;
+  max-width: 1200px;
+  height: 80vh;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+.app-import-modal .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-xl) var(--spacing-2xl);
+  border-bottom: var(--border-light);
+}
+
+.app-import-modal .modal-header h2 {
+  margin: 0;
+  font-size: var(--font-size-2xl);
+  color: var(--text-primary);
+}
+
+.app-import-modal .close-button {
+  background: none;
+  border: none;
+  font-size: var(--font-size-3xl);
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  line-height: 1;
+}
+
+.app-import-modal .close-button:hover {
+  color: var(--text-primary);
+}
+
+.app-import-controls {
+  padding: var(--spacing-lg) var(--spacing-2xl) var(--spacing-md);
+  border-bottom: var(--border-light);
+}
+
+.app-scan-status {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.app-scan-info {
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* タイプフィルタ */
+.app-type-filter {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.app-type-filter-label {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: var(--font-size-base);
+  white-space: nowrap;
+}
+
+.app-type-filter-buttons {
+  display: flex;
+  gap: var(--spacing-xs);
+  flex-wrap: wrap;
+}
+
+.app-type-filter-button {
+  padding: var(--spacing-xs) var(--spacing-md);
+  background-color: var(--color-gray-200);
+  border: var(--border-normal);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  font-family: inherit;
+  white-space: nowrap;
+  transition: var(--transition-normal);
+}
+
+.app-type-filter-button:hover {
+  background-color: var(--bg-hover);
+}
+
+.app-type-filter-button.selected {
+  background-color: var(--color-info-light);
+  border-color: var(--color-info);
+  color: var(--color-info);
+  font-weight: 600;
+}
+
+.app-import-modal .app-filtered-actions,
+.app-import-modal .app-all-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.app-import-modal .app-action-button {
+  padding: var(--spacing-xs) var(--spacing-md);
+  background-color: var(--color-gray-200);
+  border: var(--border-normal);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  display: inline-block;
+  text-align: center;
+  white-space: nowrap;
+  font-family: inherit;
+  line-height: 1.4;
+  transition: var(--transition-normal);
+}
+
+.app-import-modal .app-action-button:hover {
+  background-color: var(--bg-hover);
+}
+
+.app-list-container {
+  flex: 1;
+  overflow-y: auto;
+  margin: 0;
+  border: var(--border-light);
+  background-color: var(--bg-table-container);
+}
+
+.app-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-base);
+  background-color: var(--color-white);
+  table-layout: fixed;
+}
+
+.app-table thead {
+  position: sticky;
+  top: 0;
+  background-color: var(--color-gray-200);
+  z-index: 1;
+}
+
+.app-table th {
+  padding: var(--spacing-sm);
+  text-align: left;
+  border-bottom: 2px solid var(--color-gray-400);
+  font-weight: 600;
+}
+
+.app-table td {
+  padding: var(--spacing-sm);
+  border-bottom: var(--border-light);
+  vertical-align: middle;
+  line-height: 1.4;
+}
+
+.app-table tbody tr:hover {
+  background-color: var(--bg-hover);
+}
+
+.app-table tbody tr.selected {
+  background-color: var(--bg-selected);
+}
+
+.app-table .checkbox-column {
+  width: 50px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+/* アイコン列 */
+.app-table .icon-column {
+  width: 40px;
+  text-align: center;
+  vertical-align: middle;
+  padding: var(--spacing-xs);
+}
+
+.app-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  vertical-align: middle;
+}
+
+.app-icon-placeholder {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+}
+
+.app-table .name-column {
+  width: 30%;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  max-width: 0;
+  white-space: normal;
+}
+
+/* タイプ列 */
+.app-table .type-column {
+  width: 100px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.app-type-badge {
+  display: inline-block;
+  padding: var(--spacing-xxs) var(--spacing-sm);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.app-type-app {
+  background-color: var(--bg-success-light);
+  color: var(--text-success);
+}
+
+.app-type-other {
+  background-color: var(--color-gray-200);
+  color: var(--text-muted);
+}
+
+.app-table .path-column {
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  word-break: break-all;
+  overflow-wrap: break-word;
+  max-width: 0;
+  white-space: normal;
+}
+
+.app-import-modal .modal-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-lg) var(--spacing-2xl);
+  border-top: var(--border-light);
+}
+
+.app-import-modal .app-modal-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
