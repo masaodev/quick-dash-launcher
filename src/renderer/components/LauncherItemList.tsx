@@ -49,6 +49,13 @@ const LauncherItemList: React.FC<ItemListProps> = ({
   const [memoModalOpen, setMemoModalOpen] = useState(false);
   const [memoModalItem, setMemoModalItem] = useState<{ name: string; memo: string } | null>(null);
 
+  const openMemoModal = (item: AppItem): void => {
+    const name = isWindowInfo(item) ? item.title : item.displayName;
+    const memo = 'memo' in item ? (item.memo as string) || '' : '';
+    setMemoModalItem({ name, memo });
+    setMemoModalOpen(true);
+  };
+
   useEffect(() => {
     itemRefs.current[selectedIndex]?.scrollIntoView({
       block: 'nearest',
@@ -117,6 +124,8 @@ const LauncherItemList: React.FC<ItemListProps> = ({
       window.electronAPI.onLauncherMenuOpenShortcutParentFolder(
         createLauncherItemHandler(onOpenShortcutParentFolder)
       );
+
+    const cleanupShowMemo = window.electronAPI.onLauncherMenuShowMemo(openMemoModal);
 
     const cleanupActivateWindow = window.electronAPI.onWindowMenuActivate(onItemExecute);
 
@@ -203,6 +212,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
       cleanupCopyShortcutPath();
       cleanupCopyShortcutParentPath();
       cleanupOpenShortcutParentFolder();
+      cleanupShowMemo();
       cleanupActivateWindow();
       cleanupMoveWindowToDesktop();
       cleanupPinWindow();
@@ -267,10 +277,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
 
   const handleMemoClick = (e: React.MouseEvent, item: AppItem) => {
     e.stopPropagation();
-    const name = isWindowInfo(item) ? item.title : item.displayName;
-    const memo = 'memo' in item ? (item.memo as string) || '' : '';
-    setMemoModalItem({ name, memo });
-    setMemoModalOpen(true);
+    openMemoModal(item);
   };
 
   const handleContextMenu = async (event: React.MouseEvent, item: AppItem) => {

@@ -93,10 +93,22 @@ function setupLauncherContextMenuHandler(): void {
         !isGroupOrClipboard && 'type' in item && item.type !== 'url' && item.type !== 'customUri';
       const isShortcut =
         !isGroupOrClipboard && 'originalPath' in item && item.originalPath !== undefined;
+      const hasMemo = 'memo' in item && item.memo && item.memo.trim().length > 0;
 
       menu.append(
         createMenuItem('✏️ 編集', event.sender, IPC_CHANNELS.EVENT_LAUNCHER_MENU_EDIT_ITEM, item)
       );
+
+      if (hasMemo) {
+        menu.append(
+          createMenuItem(
+            '📝 メモを表示',
+            event.sender,
+            IPC_CHANNELS.EVENT_LAUNCHER_MENU_SHOW_MEMO,
+            item
+          )
+        );
+      }
 
       if (!isGroupOrClipboard) {
         menu.append(createSeparator());

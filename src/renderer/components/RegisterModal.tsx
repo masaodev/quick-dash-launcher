@@ -189,6 +189,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
             'ArrowDown',
             'Home',
             'End',
+            'Enter',
           ];
           const allowedCtrlKeys = ['a', 'c', 'v', 'x', 'z', 'y'];
           const isAllowedKey =

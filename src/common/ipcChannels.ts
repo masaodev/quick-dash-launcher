@@ -189,6 +189,7 @@ export const IPC_CHANNELS = {
   EVENT_LAUNCHER_MENU_COPY_SHORTCUT_PATH: 'launcher-menu-copy-shortcut-path',
   EVENT_LAUNCHER_MENU_COPY_SHORTCUT_PARENT_PATH: 'launcher-menu-copy-shortcut-parent-path',
   EVENT_LAUNCHER_MENU_OPEN_SHORTCUT_PARENT_FOLDER: 'launcher-menu-open-shortcut-parent-folder',
+  EVENT_LAUNCHER_MENU_SHOW_MEMO: 'launcher-menu-show-memo',
 
   // コンテキストメニュー - Workspace
   SHOW_WORKSPACE_CONTEXT_MENU: 'show-workspace-context-menu',

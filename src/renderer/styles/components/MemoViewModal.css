@@ -1,46 +1,48 @@
-.memo-view-modal-overlay {
-  z-index: var(--z-index-modal-overlay);
-}
-
+/* メモ表示モーダル */
 .memo-view-modal {
   max-width: 500px;
   min-width: 300px;
+  padding: 0;
 }
 
-.memo-view-header {
-  margin-bottom: var(--spacing-md);
-  padding-bottom: var(--spacing-sm);
-  border-bottom: 1px solid var(--color-border);
+.memo-view-modal .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-xl) var(--spacing-2xl);
+  border-bottom: var(--border-light);
 }
 
-.memo-view-header h3 {
+.memo-view-modal .modal-header h2 {
   margin: 0;
-  font-size: var(--font-size-lg);
-  color: var(--color-text-primary);
+  font-size: var(--font-size-2xl);
+  color: var(--text-primary);
   word-break: break-word;
 }
 
 .memo-view-content {
-  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-xl) var(--spacing-2xl);
 }
 
 .memo-text {
   margin: 0;
-  padding: var(--spacing-sm);
+  padding: var(--spacing-md);
   background-color: var(--color-bg-secondary);
-  border-radius: var(--border-radius-sm);
+  border-radius: var(--border-radius);
   font-family: inherit;
   font-size: var(--font-size-base);
-  line-height: 1.5;
+  line-height: 1.6;
   white-space: pre-wrap;
   word-break: break-word;
   max-height: 300px;
   overflow-y: auto;
+  user-select: text;
+  cursor: text;
 }
 
-.memo-view-actions {
-  display: flex;
-  justify-content: flex-end;
+.memo-view-modal .modal-actions {
+  padding: var(--spacing-lg) var(--spacing-2xl) var(--spacing-xl);
+  border-top: var(--border-light);
 }
 
 /* メモバッジスタイル */

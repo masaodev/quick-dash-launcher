@@ -398,6 +398,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
       IPC_CHANNELS.EVENT_LAUNCHER_MENU_OPEN_SHORTCUT_PARENT_FOLDER,
       callback
     ),
+  onLauncherMenuShowMemo: (callback: (item: AppItem) => void) =>
+    createEventListener<AppItem>(IPC_CHANNELS.EVENT_LAUNCHER_MENU_SHOW_MEMO, callback),
   // WindowContextMenu
   showWindowContextMenu: (
     windowInfo: WindowInfo,

@@ -280,6 +280,7 @@ export interface ElectronAPI {
   onLauncherMenuCopyShortcutPath: (callback: (item: AppItem) => void) => () => void;
   onLauncherMenuCopyShortcutParentPath: (callback: (item: AppItem) => void) => () => void;
   onLauncherMenuOpenShortcutParentFolder: (callback: (item: AppItem) => void) => () => void;
+  onLauncherMenuShowMemo: (callback: (item: AppItem) => void) => () => void;
   // WindowContextMenuイベントリスナー
   onWindowMenuActivate: (callback: (windowInfo: WindowInfo) => void) => () => void;
   onMoveWindowToDesktop: (

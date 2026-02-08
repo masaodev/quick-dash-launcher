@@ -1,4 +1,6 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
+
+import { logError } from '../utils/debug';
 
 import { Button } from './ui';
 import '../styles/components/MemoViewModal.css';
@@ -15,8 +17,6 @@ interface MemoViewModalProps {
  * アイテムのメモ内容を閲覧するためのシンプルなモーダル
  */
 const MemoViewModal: React.FC<MemoViewModalProps> = ({ isOpen, onClose, itemName, memo }) => {
-  const modalRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     if (!isOpen) return;
 
@@ -32,22 +32,27 @@ const MemoViewModal: React.FC<MemoViewModalProps> = ({ isOpen, onClose, itemName
     return () => document.removeEventListener('keydown', handleKeyDown, true);
   }, [isOpen, onClose]);
 
+  const handleCopyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(memo);
+    } catch (error) {
+      logError('クリップボードへのコピーに失敗しました:', error);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay memo-view-modal-overlay" onClick={onClose}>
-      <div
-        className="modal-content memo-view-modal"
-        onClick={(e) => e.stopPropagation()}
-        ref={modalRef}
-      >
-        <div className="memo-view-header">
-          <h3>{itemName}</h3>
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content memo-view-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>{itemName}</h2>
         </div>
         <div className="memo-view-content">
           <pre className="memo-text">{memo}</pre>
         </div>
-        <div className="memo-view-actions">
+        <div className="modal-actions">
+          <Button onClick={handleCopyToClipboard}>📋 コピー</Button>
           <Button variant="cancel" onClick={onClose}>
             閉じる
           </Button>
