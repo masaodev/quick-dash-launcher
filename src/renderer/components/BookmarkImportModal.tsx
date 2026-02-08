@@ -368,7 +368,7 @@ function BookmarkImportModal({
         tabIndex={-1}
       >
         <div className="modal-header">
-          <h2>ブックマークをインポート</h2>
+          <h2>ブラウザのブックマークの追加</h2>
           <button className="close-button" onClick={handleClose}>
             ✕
           </button>

@@ -779,7 +779,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
                     setIsBookmarkModalOpen(true);
                   }}
                 >
-                  ブラウザブックマークをインポート
+                  ブラウザのブックマークを追加
                 </button>
                 <button
                   className="dropdown-item"
@@ -788,7 +788,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
                     setIsAppImportModalOpen(true);
                   }}
                 >
-                  アプリをインポート
+                  インストール済みアプリを追加
                 </button>
               </div>
             )}

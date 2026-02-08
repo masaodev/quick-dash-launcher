@@ -325,7 +325,7 @@ function AppImportModal({
         tabIndex={-1}
       >
         <div className="modal-header">
-          <h2>アプリを取り込む</h2>
+          <h2>インストール済みアプリの追加</h2>
           <button className="close-button" onClick={handleClose}>
             &#10005;
           </button>
