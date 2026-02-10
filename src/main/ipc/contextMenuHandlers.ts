@@ -373,6 +373,30 @@ function setupWorkspaceGroupContextMenuHandler(): void {
   );
 }
 
+/** FileTabContextMenu用のネイティブメニューハンドラーを設定 */
+function setupFileTabContextMenuHandler(): void {
+  ipcMain.handle(
+    IPC_CHANNELS.SHOW_FILE_TAB_CONTEXT_MENU,
+    async (event, tabIndex: number): Promise<void> => {
+      const senderWindow = getValidWindow(event);
+      if (!senderWindow) return;
+
+      const menu = new Menu();
+
+      menu.append(
+        createMenuItem(
+          '✏️ 名前を変更',
+          event.sender,
+          IPC_CHANNELS.EVENT_FILE_TAB_MENU_RENAME,
+          tabIndex
+        )
+      );
+
+      menu.popup({ window: senderWindow });
+    }
+  );
+}
+
 /** WindowContextMenu用のネイティブメニューハンドラーを設定 */
 function setupWindowContextMenuHandler(): void {
   ipcMain.handle(
@@ -442,5 +466,6 @@ export function setupContextMenuHandlers(): void {
   setupLauncherContextMenuHandler();
   setupWorkspaceContextMenuHandler();
   setupWorkspaceGroupContextMenuHandler();
+  setupFileTabContextMenuHandler();
   setupWindowContextMenuHandler();
 }

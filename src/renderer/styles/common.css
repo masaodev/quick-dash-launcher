@@ -95,6 +95,21 @@
   font-weight: 600;
 }
 
+/* タブ名インライン編集 */
+.tab-name-input {
+  width: 80px;
+  padding: 1px var(--spacing-xs);
+  font-size: var(--font-size-base);
+  font-family: inherit;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--border-radius-sm);
+  background-color: var(--color-white);
+  color: var(--text-primary);
+  outline: none;
+  box-shadow: var(--focus-ring);
+  text-align: center;
+}
+
 /* =========================
    ボタン共通スタイル
    ========================= */

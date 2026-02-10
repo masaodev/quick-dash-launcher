@@ -594,6 +594,13 @@ function App(): React.ReactElement {
 
   const handleRefreshAllWrapper = () => handleRefreshAll(loadItems);
 
+  const handleTabRename = async (tabIndex: number, newName: string) => {
+    const updatedTabs = dataFileTabs.map((tab, i) =>
+      i === tabIndex ? { ...tab, name: newName } : tab
+    );
+    await window.electronAPI.setMultipleSettings({ dataFileTabs: updatedTabs });
+  };
+
   const handleTabClickWrapper = (fileName: string) => {
     handleTabClick(fileName);
     setSelectedIndex(0);
@@ -670,6 +677,7 @@ function App(): React.ReactElement {
           dataFileTabs={dataFileTabs}
           activeTab={activeTab}
           onTabClick={handleTabClickWrapper}
+          onTabRename={handleTabRename}
           allItems={mainItems}
           searchQuery={searchQuery}
           dataFileLabels={dataFileLabels}

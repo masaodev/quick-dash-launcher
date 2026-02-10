@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { DEFAULT_DATA_FILE, AppItem, DataFileTab } from '@common/types';
 import { isWindowInfo } from '@common/types/guards';
 
@@ -12,6 +12,8 @@ interface FileTabBarProps {
   activeTab: string;
   /** タブクリック時のハンドラ（タブグループの最初のファイル名を渡す） */
   onTabClick: (fileName: string) => void;
+  /** タブ名変更時のハンドラ */
+  onTabRename: (tabIndex: number, newName: string) => void;
   /** 全アイテム（各タブのアイテム数計算用） */
   allItems: AppItem[];
   /** 検索クエリ（フィルタリング用） */
@@ -29,14 +31,33 @@ const LauncherFileTabBar: React.FC<FileTabBarProps> = ({
   dataFileTabs,
   activeTab,
   onTabClick,
+  onTabRename,
   allItems,
   searchQuery,
   dataFileLabels = {},
 }) => {
-  // データファイル名を取得（設定がない場合は物理ファイル名）
-  const getFileLabel = (fileName: string): string => {
-    return dataFileLabels[fileName] || fileName;
-  };
+  const [editingTabIndex, setEditingTabIndex] = useState<number | null>(null);
+  const [editName, setEditName] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // コンテキストメニューからのリネームイベントを受信
+  useEffect(() => {
+    const cleanup = window.electronAPI.onFileTabMenuRename((tabIndex: number) => {
+      if (tabIndex >= 0 && tabIndex < dataFileTabs.length) {
+        setEditName(dataFileTabs[tabIndex].name);
+        setEditingTabIndex(tabIndex);
+      }
+    });
+    return cleanup;
+  }, [dataFileTabs]);
+
+  // 編集モード時にinputにフォーカス
+  useEffect(() => {
+    if (editingTabIndex !== null && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editingTabIndex]);
 
   // 各タブグループのアイテム数を計算
   const getTabItemCount = (tabConfig: DataFileTab): number => {
@@ -55,8 +76,35 @@ const LauncherFileTabBar: React.FC<FileTabBarProps> = ({
 
   // タブグループの代表ファイル名を取得（クリック時に使用）
   const getRepresentativeFile = (tabConfig: DataFileTab): string => {
-    // 最初のファイルを使用
     return tabConfig.files[0] || DEFAULT_DATA_FILE;
+  };
+
+  const handleContextMenu = (e: React.MouseEvent, index: number): void => {
+    e.preventDefault();
+    window.electronAPI.showFileTabContextMenu(index);
+  };
+
+  const handleSaveEdit = (): void => {
+    if (editingTabIndex !== null && editName.trim()) {
+      const currentName = dataFileTabs[editingTabIndex].name;
+      if (editName.trim() !== currentName) {
+        onTabRename(editingTabIndex, editName.trim());
+      }
+    }
+    setEditingTabIndex(null);
+  };
+
+  const handleCancelEdit = (): void => {
+    setEditingTabIndex(null);
+  };
+
+  const handleEditKeyDown = (e: React.KeyboardEvent): void => {
+    e.stopPropagation();
+    if (e.key === 'Enter') {
+      handleSaveEdit();
+    } else if (e.key === 'Escape') {
+      handleCancelEdit();
+    }
   };
 
   return (
@@ -68,7 +116,7 @@ const LauncherFileTabBar: React.FC<FileTabBarProps> = ({
         // ツールチップにデータファイル名と物理ファイル名を表示
         const filesTitle = tabConfig.files
           .map((fileName) => {
-            const label = getFileLabel(fileName);
+            const label = dataFileLabels[fileName] || fileName;
             return label === fileName ? fileName : `${label} (${fileName})`;
           })
           .join(', ');
@@ -78,9 +126,23 @@ const LauncherFileTabBar: React.FC<FileTabBarProps> = ({
             key={`tab-${index}-${representativeFile}`}
             className={`tab-button ${countClass} ${isTabActive(tabConfig) ? 'active' : ''}`}
             onClick={() => onTabClick(representativeFile)}
+            onContextMenu={(e) => handleContextMenu(e, index)}
             title={filesTitle}
           >
-            {tabConfig.name}
+            {editingTabIndex === index ? (
+              <input
+                ref={inputRef}
+                type="text"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                onKeyDown={handleEditKeyDown}
+                onBlur={handleSaveEdit}
+                onClick={(e) => e.stopPropagation()}
+                className="tab-name-input"
+              />
+            ) : (
+              tabConfig.name
+            )}
             <span className={`tab-count ${countClass}`}>({count})</span>
           </button>
         );

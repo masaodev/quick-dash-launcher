@@ -26,6 +26,7 @@ import {
   ClipboardSessionCaptureResult,
   ClipboardSessionCommitResult,
   AppScanResult,
+  WorkspacePositionMode,
 } from '@common/types';
 import type { EditableJsonItem, LoadEditableItemsResult } from '@common/types/editableItem';
 
@@ -199,7 +200,7 @@ export interface ElectronAPI {
     setSize: (width: number, height: number) => Promise<boolean>;
     setPositionAndSize: (x: number, y: number, width: number, height: number) => Promise<boolean>;
     // 位置モード設定
-    setPositionMode: (mode: 'primaryLeft' | 'primaryRight') => Promise<boolean>;
+    setPositionMode: (mode: WorkspacePositionMode) => Promise<boolean>;
     // ウィンドウ制御
     hideWindow: () => Promise<boolean>;
   };
@@ -257,6 +258,9 @@ export interface ElectronAPI {
   showLauncherContextMenu: (item: AppItem) => Promise<void>;
   showWorkspaceContextMenu: (item: WorkspaceItem, groups: WorkspaceGroup[]) => Promise<void>;
   showWorkspaceGroupContextMenu: (group: WorkspaceGroup) => Promise<void>;
+  // FileTabContextMenu
+  showFileTabContextMenu: (tabIndex: number) => Promise<void>;
+  onFileTabMenuRename: (callback: (tabIndex: number) => void) => () => void;
   showWindowContextMenu: (
     windowInfo: WindowInfo,
     desktopInfo: VirtualDesktopInfo,

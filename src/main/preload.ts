@@ -25,6 +25,7 @@ import type {
   ClipboardSessionCaptureResult,
   ClipboardSessionCommitResult,
   AppScanResult,
+  WorkspacePositionMode,
 } from '@common/types';
 import type { EditableJsonItem, LoadEditableItemsResult } from '@common/types/editableItem';
 import { IPC_CHANNELS } from '@common/ipcChannels';
@@ -349,8 +350,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_SET_SIZE, width, height),
     setPositionAndSize: (x: number, y: number, width: number, height: number): Promise<boolean> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_SET_POSITION_AND_SIZE, x, y, width, height),
-    // 位置モード設定（primaryLeft: 左端、primaryRight: 右端）
-    setPositionMode: (mode: 'primaryLeft' | 'primaryRight'): Promise<boolean> =>
+    // 位置モード設定（displayLeft/displayRight/fixed等）
+    setPositionMode: (mode: WorkspacePositionMode): Promise<boolean> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_SET_POSITION_MODE, mode),
     // ウィンドウ制御
     hideWindow: (): Promise<boolean> => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_HIDE_WINDOW),
@@ -392,6 +393,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ),
   onLauncherMenuShowMemo: (callback: (item: AppItem) => void) =>
     createEventListener<AppItem>(IPC_CHANNELS.EVENT_LAUNCHER_MENU_SHOW_MEMO, callback),
+  // FileTabContextMenu
+  showFileTabContextMenu: (tabIndex: number): Promise<void> =>
+    ipcRenderer.invoke(IPC_CHANNELS.SHOW_FILE_TAB_CONTEXT_MENU, tabIndex),
+  onFileTabMenuRename: (callback: (tabIndex: number) => void) =>
+    createEventListener<number>(IPC_CHANNELS.EVENT_FILE_TAB_MENU_RENAME, callback),
   // WindowContextMenu
   showWindowContextMenu: (
     windowInfo: WindowInfo,
