@@ -1,4 +1,4 @@
-import { ipcMain, app, clipboard } from 'electron';
+import { ipcMain, app, clipboard, screen } from 'electron';
 import type { WindowPinMode, WorkspacePositionMode } from '@common/types';
 import { windowLogger } from '@common/logger';
 import { IPC_CHANNELS } from '@common/ipcChannels';
@@ -243,6 +243,19 @@ export function setupWindowHandlers(
     IPC_CHANNELS.WORKSPACE_SET_POSITION_MODE,
     async (_event, mode: WorkspacePositionMode) => {
       try {
+        const settingsService = await SettingsService.getInstance();
+        // displayLeft/displayRight の場合、マウスカーソル位置のディスプレイを使用
+        if (mode === 'displayLeft' || mode === 'displayRight') {
+          const cursorPoint = screen.getCursorScreenPoint();
+          const cursorDisplay = screen.getDisplayNearestPoint(cursorPoint);
+          const allDisplays = screen.getAllDisplays();
+          const displayIndex = allDisplays.findIndex((d) => d.id === cursorDisplay.id);
+          await settingsService.set(
+            'workspaceTargetDisplayIndex',
+            displayIndex >= 0 ? displayIndex : 0
+          );
+        }
+        await settingsService.set('workspacePositionMode', mode);
         await setWorkspacePosition(mode);
         windowLogger.info(`Workspace position mode set to ${mode}`);
         return true;

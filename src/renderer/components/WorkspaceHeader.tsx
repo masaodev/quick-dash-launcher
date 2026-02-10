@@ -43,7 +43,12 @@ const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
     };
   }, [isSettingsMenuOpen]);
 
-  async function handleSetPositionMode(mode: 'primaryLeft' | 'primaryRight'): Promise<void> {
+  async function handleOpenBasicSettings(): Promise<void> {
+    await window.electronAPI.openEditWindowWithTab('settings');
+    setIsSettingsMenuOpen(false);
+  }
+
+  async function handleSetPositionMode(mode: 'displayLeft' | 'displayRight'): Promise<void> {
     await window.electronAPI.workspaceAPI.setPositionMode(mode);
     setIsSettingsMenuOpen(false);
   }
@@ -88,17 +93,21 @@ const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
           </button>
           {isSettingsMenuOpen && (
             <div className="workspace-settings-menu">
+              <button className="workspace-settings-menu-item" onClick={handleOpenBasicSettings}>
+                ⚙️ 基本設定
+              </button>
+              <div className="workspace-settings-menu-divider" />
               <button
                 className="workspace-settings-menu-item"
-                onClick={() => handleSetPositionMode('primaryRight')}
+                onClick={() => handleSetPositionMode('displayLeft')}
               >
-                ディスプレイ右端に寄せる
+                左端に寄せる
               </button>
               <button
                 className="workspace-settings-menu-item"
-                onClick={() => handleSetPositionMode('primaryLeft')}
+                onClick={() => handleSetPositionMode('displayRight')}
               >
-                ディスプレイ左端に寄せる
+                右端に寄せる
               </button>
             </div>
           )}

@@ -178,6 +178,12 @@ html:has(.workspace-window.background-transparent) {
   background-color: var(--bg-selected);
 }
 
+.workspace-settings-menu-divider {
+  height: 1px;
+  background-color: var(--border-color);
+  margin: var(--spacing-xs) 0;
+}
+
 /* ==================== フィルタバー ==================== */
 
 .workspace-filter-bar {
