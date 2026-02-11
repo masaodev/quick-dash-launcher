@@ -57,6 +57,10 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+  const updateRule = (fields: Partial<BookmarkAutoImportRule>) => {
+    setEditingRule((prev) => ({ ...prev, ...fields }));
+  };
+
   // ブラウザ検出
   useEffect(() => {
     window.electronAPI
@@ -67,10 +71,7 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
         if (editingRule.profileIds.length === 0) {
           const browser = detected.find((b) => b.id === editingRule.browserId);
           if (browser?.installed && browser.profiles.length > 0) {
-            setEditingRule((prev) => ({
-              ...prev,
-              profileIds: [browser.profiles[0].id],
-            }));
+            updateRule({ profileIds: [browser.profiles[0].id] });
           }
         }
       })
@@ -125,22 +126,12 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
     const browser = browsers.find((b) => b.id === browserId);
     const firstProfileId =
       browser?.installed && browser.profiles.length > 0 ? [browser.profiles[0].id] : [];
-    setEditingRule((prev) => ({
-      ...prev,
-      browserId,
-      profileIds: firstProfileId,
-      folderPaths: [],
-      updatedAt: Date.now(),
-    }));
+    updateRule({ browserId, profileIds: firstProfileId, folderPaths: [], updatedAt: Date.now() });
     setPreviewItems(null);
   };
 
   const handleProfileChange = (profileId: string) => {
-    setEditingRule((prev) => ({
-      ...prev,
-      profileIds: profileId === '' ? [] : [profileId],
-      updatedAt: Date.now(),
-    }));
+    updateRule({ profileIds: profileId === '' ? [] : [profileId], updatedAt: Date.now() });
     setPreviewItems(null);
   };
 
@@ -200,7 +191,7 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
   return (
     <div className="modal-overlay" onClick={onCancel}>
       <div className="modal-content auto-import-rule-modal" onClick={(e) => e.stopPropagation()}>
-        <h3>{rule ? 'ルールを編集' : '新規ルール作成'}</h3>
+        <h3>ブックマーク自動取込 - {rule ? 'ルールを編集' : '新規ルール作成'}</h3>
 
         <div className="auto-import-rule-form">
           {/* ルール名 */}
@@ -209,7 +200,7 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
             <input
               type="text"
               value={editingRule.name}
-              onChange={(e) => setEditingRule((prev) => ({ ...prev, name: e.target.value }))}
+              onChange={(e) => updateRule({ name: e.target.value })}
               placeholder="例: 開発系ブックマーク"
             />
           </div>
@@ -278,11 +269,9 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
                       name="folderFilterMode"
                       value="include"
                       checked={editingRule.folderFilterMode === 'include'}
-                      onChange={() =>
-                        setEditingRule((prev) => ({ ...prev, folderFilterMode: 'include' }))
-                      }
+                      onChange={() => updateRule({ folderFilterMode: 'include' })}
                     />
-                    指定フォルダのみ
+                    選択フォルダのみ
                   </label>
                   <label>
                     <input
@@ -290,11 +279,9 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
                       name="folderFilterMode"
                       value="exclude"
                       checked={editingRule.folderFilterMode === 'exclude'}
-                      onChange={() =>
-                        setEditingRule((prev) => ({ ...prev, folderFilterMode: 'exclude' }))
-                      }
+                      onChange={() => updateRule({ folderFilterMode: 'exclude' })}
                     />
-                    指定フォルダを除外
+                    選択フォルダを除外
                   </label>
                 </div>
                 <div className="folder-tree-container">{renderFolderTree(folders)}</div>
@@ -303,11 +290,7 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
                     type="checkbox"
                     checked={editingRule.includeSubfolders}
                     onChange={(e) =>
-                      setEditingRule((prev) => ({
-                        ...prev,
-                        includeSubfolders: e.target.checked,
-                        updatedAt: Date.now(),
-                      }))
+                      updateRule({ includeSubfolders: e.target.checked, updatedAt: Date.now() })
                     }
                   />
                   サブフォルダのブックマークも含める
@@ -320,43 +303,39 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
               </div>
             )}
 
-            <div className="auto-import-form-field">
-              <label>URLパターン（正規表現）:</label>
-              <input
-                type="text"
-                value={editingRule.urlPattern}
-                onChange={(e) =>
-                  setEditingRule((prev) => ({ ...prev, urlPattern: e.target.value }))
-                }
-                placeholder="例: github\.com"
-              />
-              <div className="field-description">空の場合は全URLが対象になります</div>
-            </div>
+            <div className="form-row">
+              <div className="auto-import-form-field">
+                <label>URLパターン（正規表現）:</label>
+                <input
+                  type="text"
+                  value={editingRule.urlPattern}
+                  onChange={(e) => updateRule({ urlPattern: e.target.value })}
+                  placeholder="例: github\.com"
+                />
+                <div className="field-description">未入力時は全URL対象</div>
+              </div>
 
-            <div className="auto-import-form-field">
-              <label>名前パターン（正規表現）:</label>
-              <input
-                type="text"
-                value={editingRule.namePattern}
-                onChange={(e) =>
-                  setEditingRule((prev) => ({ ...prev, namePattern: e.target.value }))
-                }
-                placeholder="例: 開発|ツール"
-              />
-              <div className="field-description">空の場合は全名前が対象になります</div>
+              <div className="auto-import-form-field">
+                <label>名前パターン（正規表現）:</label>
+                <input
+                  type="text"
+                  value={editingRule.namePattern}
+                  onChange={(e) => updateRule({ namePattern: e.target.value })}
+                  placeholder="例: 開発|ツール"
+                />
+                <div className="field-description">未入力時は全名前対象</div>
+              </div>
             </div>
           </div>
 
-          {/* インポート先・表示名設定 */}
+          {/* インポート先 */}
           <div className="auto-import-form-section">
-            <h4>インポート先・表示名の設定</h4>
+            <h4>インポート先</h4>
             <div className="auto-import-form-field">
               <label>データファイル:</label>
               <select
                 value={editingRule.targetFile}
-                onChange={(e) =>
-                  setEditingRule((prev) => ({ ...prev, targetFile: e.target.value }))
-                }
+                onChange={(e) => updateRule({ targetFile: e.target.value })}
               >
                 {dataFiles.map((file) => (
                   <option key={file} value={file}>
@@ -365,33 +344,39 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
                 ))}
               </select>
             </div>
-            <div className="auto-import-form-field">
-              <label>接頭辞:</label>
-              <input
-                type="text"
-                value={editingRule.prefix}
-                onChange={(e) => setEditingRule((prev) => ({ ...prev, prefix: e.target.value }))}
-                placeholder="例: [Chrome] "
-              />
-            </div>
-            <div className="auto-import-form-field">
-              <label>接尾辞:</label>
-              <input
-                type="text"
-                value={editingRule.suffix}
-                onChange={(e) => setEditingRule((prev) => ({ ...prev, suffix: e.target.value }))}
-                placeholder="例:  (自動)"
-              />
+          </div>
+
+          {/* 表示名の設定 */}
+          <div className="auto-import-form-section">
+            <h4>表示名の設定</h4>
+            <div className="form-row">
+              <div className="auto-import-form-field">
+                <label>接頭辞:</label>
+                <input
+                  type="text"
+                  value={editingRule.prefix}
+                  onChange={(e) => updateRule({ prefix: e.target.value })}
+                  placeholder="例: [Chrome] "
+                />
+              </div>
+              <div className="auto-import-form-field">
+                <label>接尾辞:</label>
+                <input
+                  type="text"
+                  value={editingRule.suffix}
+                  onChange={(e) => updateRule({ suffix: e.target.value })}
+                  placeholder="例:  (自動)"
+                />
+              </div>
             </div>
             <div className="auto-import-form-field">
               <label>フォルダ名付与:</label>
               <select
                 value={editingRule.folderNameMode}
                 onChange={(e) =>
-                  setEditingRule((prev) => ({
-                    ...prev,
+                  updateRule({
                     folderNameMode: e.target.value as BookmarkAutoImportRule['folderNameMode'],
-                  }))
+                  })
                 }
               >
                 <option value="none">なし</option>
@@ -400,7 +385,7 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
                 <option value="relativePath">ルート除外パス</option>
               </select>
               <div className="field-description">
-                ブックマークの表示名にフォルダ名を付与します（例: [Tools] ブックマーク名）
+                表示名にフォルダ名を付与（例: [Tools] ブックマーク名）
               </div>
             </div>
           </div>

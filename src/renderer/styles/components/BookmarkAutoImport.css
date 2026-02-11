@@ -217,6 +217,12 @@
   color: var(--text-muted);
 }
 
+/* form-row内のフィールド横並び */
+.form-row .auto-import-form-field {
+  flex: 1;
+  min-width: 0;
+}
+
 /* ブラウザ選択ラジオ */
 .browser-radio-group {
   display: flex;
