@@ -39,7 +39,9 @@ export interface ElectronAPI {
   getConfigFolder: () => Promise<string>;
   getDataFiles: () => Promise<string[]>;
   createDataFile: (fileName: string) => Promise<{ success: boolean; error?: string }>;
-  deleteDataFile: (fileName: string) => Promise<{ success: boolean; error?: string }>;
+  deleteDataFile: (
+    fileName: string
+  ) => Promise<{ success: boolean; error?: string; disabledRules?: string[] }>;
   loadDataFiles: () => Promise<AppItem[]>;
   openItem: (item: LauncherItem) => Promise<void>;
   openParentFolder: (item: LauncherItem) => Promise<void>;
