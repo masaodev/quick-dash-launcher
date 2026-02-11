@@ -28,7 +28,6 @@ import type { RegisterItem } from '@common/types/register';
 import { isWindowInfo } from '@common/types/guards';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
-import { BackupService } from '../services/backupService.js';
 import { SettingsService } from '../services/settingsService.js';
 
 import { setupBookmarkHandlers } from './bookmarkHandlers.js';
@@ -395,12 +394,6 @@ async function saveEditableItems(
     const filePath = path.join(configFolder, fileName);
     const items = fileGroups.get(fileName) || [];
 
-    // バックアップを作成（設定に基づく）
-    if (FileUtils.exists(filePath)) {
-      const backupService = await BackupService.getInstance();
-      await backupService.createBackup(filePath);
-    }
-
     // lineNumberでソート
     const sortedItems = items.sort((a, b) => a.meta.lineNumber - b.meta.lineNumber);
 
@@ -439,9 +432,6 @@ async function updateItemByIdWithCallback(
     const itemIndex = jsonData.items.findIndex((item) => item.id === id);
 
     if (itemIndex !== -1) {
-      const backupService = await BackupService.getInstance();
-      await backupService.createBackup(filePath);
-
       jsonData.items[itemIndex] = createNewItem(id);
 
       const newContent = serializeJsonDataFile(jsonData);
@@ -805,10 +795,6 @@ export function setupDataHandlers(configFolder: string) {
     const filePath = path.join(configFolder, fileName);
 
     try {
-      // 削除前にバックアップを作成（設定に基づく）
-      const backupService = await BackupService.getInstance();
-      await backupService.createBackup(filePath);
-
       await fs.unlink(filePath);
 
       // 削除されたファイルを targetFile に持つ自動取込ルールを無効化

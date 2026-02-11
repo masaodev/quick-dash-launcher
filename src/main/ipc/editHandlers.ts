@@ -5,7 +5,6 @@ import { IPC_CHANNELS } from '@common/ipcChannels';
 import { JsonDataFile, JsonLauncherItem, LauncherItem, isJsonClipboardItem } from '@common/types';
 import { parseJsonDataFile, serializeJsonDataFile } from '@common/utils/jsonParser';
 
-import { BackupService } from '../services/backupService.js';
 import { ClipboardService } from '../services/clipboardService.js';
 import { createSafeIpcHandler } from '../utils/ipcWrapper';
 
@@ -48,7 +47,6 @@ async function processDataFiles(
 ): Promise<void> {
   const { PathManager } = await import('../config/pathManager.js');
   const dataFiles = PathManager.getDataFiles();
-  const backupService = await BackupService.getInstance();
 
   for (const fileName of dataFiles) {
     const filePath = path.join(configFolder, fileName);
@@ -59,7 +57,6 @@ async function processDataFiles(
 
     if (!predicate(jsonData)) continue;
 
-    await backupService.createBackup(filePath);
     const result = await processor({ fileName, filePath, jsonData });
 
     if (result) {

@@ -199,10 +199,10 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
         await backupLabel.click();
 
         // バックアップオプションが表示されることを確認
-        const backupOnStartLabel = adminWindow.locator('label', {
-          hasText: 'アプリ起動時にバックアップを作成',
+        const backupRetentionLabel = adminWindow.locator('label', {
+          hasText: 'バックアップ保存件数',
         });
-        await expect(backupOnStartLabel).toBeVisible();
+        await expect(backupRetentionLabel).toBeVisible();
 
         // settings.jsonに保存されたことを確認
         const settings = configHelper.readSettings();

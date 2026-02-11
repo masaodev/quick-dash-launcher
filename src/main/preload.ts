@@ -31,6 +31,8 @@ import type {
   BookmarkAutoImportResult,
   BookmarkFolder,
   BookmarkWithFolder,
+  SnapshotInfo,
+  BackupStatus,
 } from '@common/types';
 import type { EditableJsonItem, LoadEditableItemsResult } from '@common/types/editableItem';
 import { IPC_CHANNELS } from '@common/ipcChannels';
@@ -516,5 +518,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke(IPC_CHANNELS.CLIPBOARD_COMMIT_SESSION, sessionId),
     discardSession: (sessionId: string): Promise<boolean> =>
       ipcRenderer.invoke(IPC_CHANNELS.CLIPBOARD_DISCARD_SESSION, sessionId),
+  },
+  // バックアップAPI
+  backupAPI: {
+    listSnapshots: (): Promise<SnapshotInfo[]> =>
+      ipcRenderer.invoke(IPC_CHANNELS.BACKUP_LIST_SNAPSHOTS),
+    restoreSnapshot: (timestamp: string): Promise<{ success: boolean; error?: string }> =>
+      ipcRenderer.invoke(IPC_CHANNELS.BACKUP_RESTORE_SNAPSHOT, timestamp),
+    deleteSnapshot: (timestamp: string): Promise<{ success: boolean; error?: string }> =>
+      ipcRenderer.invoke(IPC_CHANNELS.BACKUP_DELETE_SNAPSHOT, timestamp),
+    getStatus: (): Promise<BackupStatus> => ipcRenderer.invoke(IPC_CHANNELS.BACKUP_GET_STATUS),
   },
 });

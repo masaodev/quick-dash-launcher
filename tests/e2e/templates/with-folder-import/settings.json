@@ -6,10 +6,7 @@
 	"editModeHeight": 700,
 	"autoLaunch": false,
 	"backupEnabled": false,
-	"backupOnStart": false,
-	"backupOnEdit": false,
-	"backupInterval": 5,
-	"backupRetention": 20,
+	"backupRetention": 10,
 	"showDataFileTabs": false,
 	"defaultFileTab": "datafiles/data.json",
 	"dataFileTabs": [
