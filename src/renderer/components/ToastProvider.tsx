@@ -42,7 +42,7 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({
           // デフォルトの表示時間
           duration: 3000,
 
-          // 成功トースト（GlobalLoadingIndicatorと統一）
+          // 成功トースト
           success: {
             duration: 2000,
             style: {
@@ -68,7 +68,7 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({
             },
           },
 
-          // 共通スタイル（GlobalLoadingIndicatorと統一）
+          // 共通スタイル（ローディングトーストと統一）
           style: {
             fontFamily: 'var(--font-family)',
             fontSize: 'var(--font-size-xs)',

@@ -1,88 +1,69 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useCallback, useRef, useEffect } from 'react';
+import toast from 'react-hot-toast';
 
 /** 最低表示時間（ミリ秒）- 処理が一瞬で終わってもこの時間は必ず表示される */
 const MIN_DISPLAY_TIME = 600;
 
+/** ローディングトーストの固定ID（同一フック内でトーストを一意に管理） */
+const LOADING_TOAST_ID = 'global-loading';
+
+/** ローディングトーストの共通スタイル */
+const LOADING_TOAST_STYLE = {
+  background: 'var(--color-white)',
+  color: 'var(--text-muted)',
+} as const;
+
 /**
  * グローバルローディング状態管理フック
  *
- * アプリケーション全体で使用できるローディングインジケーターの状態を管理します。
- * 画面右下に表示される小さなスピナーで、短時間の処理のフィードバックに使用します。
+ * react-hot-toastのloadingトーストとして表示します。
+ * 他のトーストと自動的にスタッキングされるため、表示が重なりません。
  * 最低表示時間（600ms）を設けているため、処理が一瞬で終わっても必ず見えます。
  *
  * @example
  * const { withLoading } = useGlobalLoading();
- *
- * // withLoadingを使う方法（推奨）
  * await withLoading('データ読み込み中', () => loadItems());
- *
- * // showLoading/hideLoadingを使う方法
- * showLoading('ウィンドウ更新中');
- * await refreshWindows();
- * hideLoading();
  */
 export function useGlobalLoading(): {
-  isLoading: boolean;
-  message: string;
-  showLoading: (loadingMessage?: string) => void;
-  hideLoading: () => void;
   withLoading: <T>(loadingMessage: string, fn: () => Promise<T>) => Promise<T>;
 } {
-  const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState('');
   const showTimeRef = useRef(0);
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // クリーンアップ：アンマウント時にタイムアウトをクリア
+  // クリーンアップ：アンマウント時にタイムアウトとトーストをクリア
   useEffect(() => {
     return () => {
       if (hideTimeoutRef.current) {
         clearTimeout(hideTimeoutRef.current);
       }
+      toast.dismiss(LOADING_TOAST_ID);
     };
   }, []);
 
-  const clearLoadingState = useCallback(() => {
-    setIsLoading(false);
-    setMessage('');
+  const dismissLoading = useCallback(() => {
+    toast.dismiss(LOADING_TOAST_ID);
   }, []);
 
-  /**
-   * ローディング表示を開始
-   * @param loadingMessage - 表示するメッセージ（例: "更新中", "読み込み中"）
-   */
-  const showLoading = useCallback((loadingMessage = '処理中') => {
-    // 既存のタイムアウトをクリア
+  const showLoading = useCallback((message: string) => {
     if (hideTimeoutRef.current) {
       clearTimeout(hideTimeoutRef.current);
       hideTimeoutRef.current = null;
     }
     showTimeRef.current = Date.now();
-    setIsLoading(true);
-    setMessage(loadingMessage);
+    toast.loading(message, { id: LOADING_TOAST_ID, style: LOADING_TOAST_STYLE });
   }, []);
 
-  /**
-   * ローディング表示を終了
-   * 最低表示時間に満たない場合は、残り時間だけ待ってから非表示にする
-   */
   const hideLoading = useCallback(() => {
     const elapsed = Date.now() - showTimeRef.current;
     const remaining = MIN_DISPLAY_TIME - elapsed;
 
     if (remaining > 0) {
-      hideTimeoutRef.current = setTimeout(clearLoadingState, remaining);
+      hideTimeoutRef.current = setTimeout(dismissLoading, remaining);
     } else {
-      clearLoadingState();
+      dismissLoading();
     }
-  }, [clearLoadingState]);
+  }, [dismissLoading]);
 
-  /**
-   * ローディング表示付きで非同期処理を実行
-   * @param loadingMessage - 表示するメッセージ
-   * @param fn - 実行する非同期関数
-   * @returns 非同期関数の戻り値
-   */
   const withLoading = useCallback(
     async <T>(loadingMessage: string, fn: () => Promise<T>): Promise<T> => {
       showLoading(loadingMessage);
@@ -95,11 +76,5 @@ export function useGlobalLoading(): {
     [showLoading, hideLoading]
   );
 
-  return {
-    isLoading,
-    message,
-    showLoading,
-    hideLoading,
-    withLoading,
-  };
+  return { withLoading };
 }

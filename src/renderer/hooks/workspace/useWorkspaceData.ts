@@ -39,7 +39,7 @@ async function mergeIconsFromCache<T extends { icon?: string }>(
 export function useWorkspaceData() {
   const [items, setItems] = useState<WorkspaceItem[]>([]);
   const [groups, setGroups] = useState<WorkspaceGroup[]>([]);
-  const { isLoading, message: loadingMessage, withLoading } = useGlobalLoading();
+  const { withLoading } = useGlobalLoading();
 
   async function loadItems(): Promise<void> {
     try {
@@ -89,7 +89,5 @@ export function useWorkspaceData() {
     items,
     groups,
     loadAllDataWithLoading,
-    isLoading,
-    loadingMessage,
   };
 }

@@ -32,7 +32,6 @@ import MissingIconNotice from './components/MissingIconNotice';
 import { SetupFirstLaunch } from './components/SetupFirstLaunch';
 import AlertDialog from './components/AlertDialog';
 import ConfirmDialog from './components/ConfirmDialog';
-import GlobalLoadingIndicator from './components/GlobalLoadingIndicator';
 import { filterItems } from './utils/dataParser';
 import { filterWindowsByDesktopTab } from './utils/windowFilter';
 import { debugLog, logError } from './utils/debug';
@@ -147,7 +146,7 @@ function App(): React.ReactElement {
       reloadIconFetchErrors: loadIconFetchErrors,
     });
 
-  const { isLoading, message: loadingMessage, withLoading } = useGlobalLoading();
+  const { withLoading } = useGlobalLoading();
 
   const handleRefreshWindows = async () => {
     if (searchMode !== 'window') return;
@@ -794,8 +793,6 @@ function App(): React.ReactElement {
         }
         danger={true}
       />
-
-      <GlobalLoadingIndicator isLoading={isLoading} message={loadingMessage} />
     </div>
   );
 }

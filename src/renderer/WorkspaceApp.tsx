@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import type { WorkspaceItem } from '@common/types';
 
 import ConfirmDialog from './components/ConfirmDialog';
-import GlobalLoadingIndicator from './components/GlobalLoadingIndicator';
 import WorkspaceFilterBar from './components/WorkspaceFilterBar';
 import WorkspaceGroupedList from './components/WorkspaceGroupedList';
 import WorkspaceHeader from './components/WorkspaceHeader';
@@ -25,7 +24,7 @@ const WorkspaceApp: React.FC = () => {
   const [filterText, setFilterText] = useState('');
   const [filterScope, setFilterScope] = useState<FilterScope>('all');
 
-  const { items, groups, loadAllDataWithLoading, isLoading, loadingMessage } = useWorkspaceData();
+  const { items, groups, loadAllDataWithLoading } = useWorkspaceData();
 
   const actions = useWorkspaceActions(() => {
     loadAllDataWithLoading();
@@ -340,7 +339,6 @@ const WorkspaceApp: React.FC = () => {
           onMouseDown={handleResize(direction)}
         />
       ))}
-      <GlobalLoadingIndicator isLoading={isLoading} message={loadingMessage} />
     </div>
   );
 };

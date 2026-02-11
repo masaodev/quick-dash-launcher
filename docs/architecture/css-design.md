@@ -28,7 +28,6 @@ src/renderer/styles/
     ├── ColorPicker.css          # カラーピッカー
     ├── ConfirmDialog.css        # 確認ダイアログ
     ├── FilePickerDialog.css     # ファイル選択ダイアログ
-    ├── GlobalLoadingIndicator.css # ローディングインジケータ
     ├── GroupItemSelectorModal.css  # グループアイテム選択モーダル
     ├── Header.css               # ヘッダー
     ├── HotkeyInput.css          # ホットキー入力
