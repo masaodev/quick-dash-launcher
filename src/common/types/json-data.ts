@@ -73,6 +73,8 @@ export interface JsonLauncherItem extends JsonItemBase {
   customIcon?: string;
   /** ウィンドウ制御設定（オプション） */
   windowConfig?: WindowConfig;
+  /** 自動取込ルールのID（このフィールドがあるアイテムは自動管理対象） */
+  autoImportRuleId?: string;
 }
 
 // ============================================================

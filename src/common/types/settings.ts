@@ -1,4 +1,5 @@
 import { DataFileTab } from './data';
+import { BookmarkAutoImportSettings } from './bookmarkAutoImport';
 
 /**
  * ウィンドウの固定モードを表す列挙型
@@ -113,4 +114,6 @@ export interface AppSettings {
   parallelGroupLaunch: boolean;
   /** ウィンドウ検索で起動のホットキー（デフォルト: ''、空の場合は無効） */
   itemSearchHotkey: string;
+  /** ブックマーク自動取込設定 */
+  bookmarkAutoImport: BookmarkAutoImportSettings;
 }

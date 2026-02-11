@@ -1,0 +1,391 @@
+/* ブックマーク自動取込設定のスタイル */
+
+.bookmark-auto-import {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+/* 全体実行バー */
+.auto-import-global-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background-color: var(--bg-section);
+  border-radius: var(--border-radius-lg);
+  border: var(--border-light);
+}
+
+.auto-import-global-controls label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+}
+
+.auto-import-global-controls .execute-all-button {
+  margin-left: auto;
+}
+
+/* ルール一覧 */
+.auto-import-rules-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-sm);
+}
+
+.auto-import-rules-header h4 {
+  margin: 0;
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+}
+
+.auto-import-rule-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+/* 個別ルールカード */
+.auto-import-rule-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  border: var(--border-light);
+  border-radius: var(--border-radius-lg);
+  background-color: var(--bg-app);
+}
+
+.auto-import-rule-card.disabled {
+  opacity: 0.6;
+}
+
+.auto-import-rule-card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.auto-import-rule-card-header label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  cursor: pointer;
+}
+
+.auto-import-rule-name {
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+}
+
+.auto-import-rule-actions {
+  display: flex;
+  gap: var(--spacing-xs);
+  margin-left: auto;
+}
+
+.auto-import-rule-actions button {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-xs);
+  border: var(--border-light);
+  border-radius: var(--border-radius);
+  background: var(--bg-app);
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+
+.auto-import-rule-actions button:hover {
+  background: var(--bg-hover);
+}
+
+.auto-import-rule-actions button.danger:hover {
+  background: var(--bg-danger-light);
+  color: var(--color-danger);
+}
+
+.auto-import-rule-detail {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  padding-left: var(--spacing-xl);
+}
+
+.auto-import-rule-detail .rule-source {
+  margin-bottom: var(--spacing-xxs);
+}
+
+.auto-import-rule-detail .rule-target {
+  margin-bottom: var(--spacing-xxs);
+}
+
+.auto-import-rule-detail .rule-last-result {
+  color: var(--text-info);
+}
+
+.auto-import-rule-detail .rule-last-result.error {
+  color: var(--text-error);
+}
+
+/* ルール追加ボタン */
+.auto-import-add-rule {
+  display: flex;
+  justify-content: center;
+  padding: var(--spacing-md);
+}
+
+.auto-import-add-rule button {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  font-size: var(--font-size-sm);
+  border: 1px dashed var(--color-gray-500);
+  border-radius: var(--border-radius-lg);
+  background: transparent;
+  cursor: pointer;
+  color: var(--text-muted);
+}
+
+.auto-import-add-rule button:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-primary-50);
+}
+
+/* ルール編集モーダル（modal-contentを継承） */
+.auto-import-rule-modal {
+  max-width: 700px;
+  overflow-y: auto;
+  padding: var(--spacing-xl);
+}
+
+.auto-import-rule-modal h3 {
+  margin: 0 0 var(--spacing-lg) 0;
+  font-size: var(--font-size-xl);
+  color: var(--text-primary);
+}
+
+.auto-import-rule-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.auto-import-form-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.auto-import-form-section h4 {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  border-bottom: var(--border-light);
+  padding-bottom: var(--spacing-xs);
+}
+
+.auto-import-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.auto-import-form-field label {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.auto-import-form-field input[type="text"] {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: var(--border-normal);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-sm);
+}
+
+.auto-import-form-field select {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: var(--border-normal);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-sm);
+}
+
+.auto-import-form-field .field-description {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+/* ブラウザ選択ラジオ */
+.browser-radio-group {
+  display: flex;
+  gap: var(--spacing-lg);
+}
+
+.browser-radio-group label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  cursor: pointer;
+  font-weight: normal;
+}
+
+/* プロファイル選択 */
+.profile-checkboxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.profile-checkboxes label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  cursor: pointer;
+  font-weight: normal;
+  font-size: var(--font-size-sm);
+}
+
+/* フォルダツリー */
+.folder-tree-container {
+  max-height: 200px;
+  overflow-y: auto;
+  border: var(--border-light);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-sm);
+  background: var(--bg-section);
+}
+
+.folder-tree-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xxs) 0;
+  font-size: var(--font-size-sm);
+}
+
+.folder-tree-item label {
+  cursor: pointer;
+  font-weight: normal;
+}
+
+.folder-tree-item .folder-count {
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
+}
+
+.folder-tree-children {
+  padding-left: var(--spacing-lg);
+}
+
+/* サブフォルダ含むチェックボックス */
+.auto-import-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  font-weight: normal;
+  color: var(--text-secondary);
+  margin-top: var(--spacing-xs);
+}
+
+/* フォルダフィルタモード */
+.folder-filter-mode {
+  display: flex;
+  gap: var(--spacing-md);
+}
+
+.folder-filter-mode label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  cursor: pointer;
+  font-weight: normal;
+  font-size: var(--font-size-sm);
+}
+
+/* プレビュー */
+.auto-import-preview {
+  border: var(--border-light);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-md);
+  background: var(--bg-section);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.auto-import-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-sm);
+}
+
+.auto-import-preview-count {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.auto-import-preview-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xxs);
+}
+
+.auto-import-preview-item {
+  display: flex;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-xs);
+  padding: var(--spacing-xxs) 0;
+  border-bottom: 1px solid var(--color-gray-300);
+}
+
+.auto-import-preview-item:last-child {
+  border-bottom: none;
+}
+
+.auto-import-preview-item .preview-name {
+  color: var(--text-primary);
+  flex-shrink: 0;
+  max-width: 40%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.auto-import-preview-item .preview-url {
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* モーダルフッター */
+.auto-import-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: var(--border-light);
+}
+
+/* ルール空状態 */
+.auto-import-empty {
+  text-align: center;
+  padding: var(--spacing-2xl);
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+}
+
+/* 実行中インジケータ */
+.auto-import-executing {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-xs);
+  color: var(--color-primary);
+}

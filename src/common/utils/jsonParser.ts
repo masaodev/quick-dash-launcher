@@ -295,6 +295,7 @@ function validateJsonLauncherItem(obj: Record<string, unknown>): JsonLauncherIte
   validateOptionalString(obj, item, 'args');
   validateOptionalString(obj, item, 'customIcon');
   validateOptionalString(obj, item, 'memo');
+  validateOptionalString(obj, item, 'autoImportRuleId');
   validateNumericFields(obj, item, ['updatedAt']);
 
   if (obj.windowConfig !== undefined) {

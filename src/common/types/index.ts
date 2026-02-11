@@ -98,6 +98,16 @@ export type {
   DuplicateCheckResult,
 } from './bookmark';
 
+// ブックマーク自動取込関連の型
+export type {
+  BookmarkAutoImportRule,
+  BookmarkAutoImportResult,
+  BookmarkAutoImportSettings,
+  BookmarkFolder,
+  BookmarkWithFolder,
+} from './bookmarkAutoImport';
+export { DEFAULT_BOOKMARK_AUTO_IMPORT_SETTINGS } from './bookmarkAutoImport';
+
 // アプリインポート関連の型
 export type { ScannedAppItem, AppScanResult, AppTargetType } from './appImport';
 

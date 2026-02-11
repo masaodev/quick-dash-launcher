@@ -28,6 +28,7 @@ import {
   setAppQuitting as setWorkspaceAppQuitting,
 } from './workspaceWindowManager';
 import { destroyToastWindow } from './services/toastWindowService.js';
+import { BookmarkAutoImportService } from './services/bookmarkAutoImportService.js';
 
 // 初回起動判定用のグローバル変数
 let isFirstLaunch = false;
@@ -122,6 +123,12 @@ app.whenReady().then(async () => {
   );
 
   await createWorkspaceWindow();
+
+  // ブックマーク自動取込の起動時実行
+  const bookmarkAutoImportService = new BookmarkAutoImportService();
+  bookmarkAutoImportService.executeOnStartup().catch((error) => {
+    console.error('ブックマーク自動取込の起動時実行でエラー:', error);
+  });
 });
 
 app.on('window-all-closed', () => {

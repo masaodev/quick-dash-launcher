@@ -50,6 +50,16 @@ export const IPC_CHANNELS = {
   // アプリインポート
   SCAN_INSTALLED_APPS: 'scan-installed-apps',
 
+  // ブックマーク自動取込
+  BOOKMARK_AUTO_IMPORT_GET_SETTINGS: 'bookmark-auto-import:get-settings',
+  BOOKMARK_AUTO_IMPORT_SAVE_SETTINGS: 'bookmark-auto-import:save-settings',
+  BOOKMARK_AUTO_IMPORT_EXECUTE_RULE: 'bookmark-auto-import:execute-rule',
+  BOOKMARK_AUTO_IMPORT_EXECUTE_ALL: 'bookmark-auto-import:execute-all',
+  BOOKMARK_AUTO_IMPORT_PREVIEW_RULE: 'bookmark-auto-import:preview-rule',
+  BOOKMARK_AUTO_IMPORT_GET_FOLDERS: 'bookmark-auto-import:get-folders',
+  BOOKMARK_AUTO_IMPORT_GET_BOOKMARKS_WITH_FOLDERS:
+    'bookmark-auto-import:get-bookmarks-with-folders',
+
   // ウィンドウ操作
   GET_WINDOW_PIN_MODE: 'get-window-pin-mode',
   CYCLE_WINDOW_PIN_MODE: 'cycle-window-pin-mode',

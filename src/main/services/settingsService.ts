@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { DEFAULT_DATA_FILE } from '@common/types';
+import { DEFAULT_DATA_FILE, DEFAULT_BOOKMARK_AUTO_IMPORT_SETTINGS } from '@common/types';
 import type { AppSettings } from '@common/types';
 import logger from '@common/logger';
 
@@ -56,6 +56,7 @@ export class SettingsService {
     workspaceVisibleOnAllDesktops: true,
     parallelGroupLaunch: false,
     itemSearchHotkey: '',
+    bookmarkAutoImport: DEFAULT_BOOKMARK_AUTO_IMPORT_SETTINGS,
   };
 
   private constructor() {}

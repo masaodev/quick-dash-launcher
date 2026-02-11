@@ -15,6 +15,7 @@ import AlertDialog from './AlertDialog';
 import ConfirmDialog from './ConfirmDialog';
 import { HotkeyInput } from './HotkeyInput';
 import { Button } from './ui';
+import BookmarkAutoImportSettings from './BookmarkAutoImportSettings';
 
 interface SettingsTabProps {
   settings: AppSettings;
@@ -201,6 +202,12 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
               onClick={() => handleCategoryChange('backup')}
             >
               💾 バックアップ
+            </button>
+            <button
+              className={`menu-item ${selectedCategory === 'bookmarkAutoImport' ? 'active' : ''}`}
+              onClick={() => handleCategoryChange('bookmarkAutoImport')}
+            >
+              🔖 ブックマーク自動取込
             </button>
           </nav>
         </div>
@@ -699,6 +706,14 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                   </div>
                 </>
               )}
+            </div>
+          )}
+
+          {/* ブックマーク自動取込 */}
+          {selectedCategory === 'bookmarkAutoImport' && (
+            <div className="settings-section">
+              <h3>ブックマーク自動取込</h3>
+              <BookmarkAutoImportSettings />
             </div>
           )}
 

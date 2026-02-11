@@ -26,6 +26,11 @@ import type {
   ClipboardSessionCommitResult,
   AppScanResult,
   WorkspacePositionMode,
+  BookmarkAutoImportSettings,
+  BookmarkAutoImportRule,
+  BookmarkAutoImportResult,
+  BookmarkFolder,
+  BookmarkWithFolder,
 } from '@common/types';
 import type { EditableJsonItem, LoadEditableItemsResult } from '@common/types/editableItem';
 import { IPC_CHANNELS } from '@common/ipcChannels';
@@ -470,6 +475,26 @@ contextBridge.exposeInMainWorld('electronAPI', {
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_ARCHIVE, callback),
   onWorkspaceGroupMenuDelete: (callback: (groupId: string) => void) =>
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_DELETE, callback),
+  // ブックマーク自動取込API
+  bookmarkAutoImportAPI: {
+    getSettings: (): Promise<BookmarkAutoImportSettings> =>
+      ipcRenderer.invoke(IPC_CHANNELS.BOOKMARK_AUTO_IMPORT_GET_SETTINGS),
+    saveSettings: (settings: BookmarkAutoImportSettings): Promise<void> =>
+      ipcRenderer.invoke(IPC_CHANNELS.BOOKMARK_AUTO_IMPORT_SAVE_SETTINGS, settings),
+    executeRule: (rule: BookmarkAutoImportRule): Promise<BookmarkAutoImportResult> =>
+      ipcRenderer.invoke(IPC_CHANNELS.BOOKMARK_AUTO_IMPORT_EXECUTE_RULE, rule),
+    executeAll: (): Promise<BookmarkAutoImportResult[]> =>
+      ipcRenderer.invoke(IPC_CHANNELS.BOOKMARK_AUTO_IMPORT_EXECUTE_ALL),
+    previewRule: (rule: BookmarkAutoImportRule): Promise<BookmarkWithFolder[]> =>
+      ipcRenderer.invoke(IPC_CHANNELS.BOOKMARK_AUTO_IMPORT_PREVIEW_RULE, rule),
+    getFolders: (bookmarkPath: string): Promise<BookmarkFolder[]> =>
+      ipcRenderer.invoke(IPC_CHANNELS.BOOKMARK_AUTO_IMPORT_GET_FOLDERS, bookmarkPath),
+    getBookmarksWithFolders: (bookmarkPath: string): Promise<BookmarkWithFolder[]> =>
+      ipcRenderer.invoke(
+        IPC_CHANNELS.BOOKMARK_AUTO_IMPORT_GET_BOOKMARKS_WITH_FOLDERS,
+        bookmarkPath
+      ),
+  },
   // クリップボード関連API
   clipboardAPI: {
     checkCurrent: (): Promise<CurrentClipboardState> =>

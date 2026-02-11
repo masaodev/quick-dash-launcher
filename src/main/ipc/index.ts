@@ -15,6 +15,7 @@ import { setupWindowSearchHandlers } from './windowSearchHandlers';
 import { setupNotificationHandlers } from './notificationHandlers';
 import { setupContextMenuHandlers } from './contextMenuHandlers';
 import { setupClipboardHandlers } from './clipboardHandlers';
+import { setupBookmarkAutoImportHandlers } from './bookmarkAutoImportHandlers';
 
 export function setupIPCHandlers(
   configFolder: string,
@@ -46,4 +47,5 @@ export function setupIPCHandlers(
   setupNotificationHandlers();
   setupContextMenuHandlers();
   setupClipboardHandlers();
+  setupBookmarkAutoImportHandlers();
 }

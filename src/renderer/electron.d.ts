@@ -27,6 +27,11 @@ import {
   ClipboardSessionCommitResult,
   AppScanResult,
   WorkspacePositionMode,
+  BookmarkAutoImportSettings,
+  BookmarkAutoImportRule,
+  BookmarkAutoImportResult,
+  BookmarkFolder,
+  BookmarkWithFolder,
 } from '@common/types';
 import type { EditableJsonItem, LoadEditableItemsResult } from '@common/types/editableItem';
 
@@ -308,6 +313,16 @@ export interface ElectronAPI {
   onWorkspaceGroupMenuCopyAsText: (callback: (groupId: string) => void) => () => void;
   onWorkspaceGroupMenuArchive: (callback: (groupId: string) => void) => () => void;
   onWorkspaceGroupMenuDelete: (callback: (groupId: string) => void) => () => void;
+  // ブックマーク自動取込API
+  bookmarkAutoImportAPI: {
+    getSettings: () => Promise<BookmarkAutoImportSettings>;
+    saveSettings: (settings: BookmarkAutoImportSettings) => Promise<void>;
+    executeRule: (rule: BookmarkAutoImportRule) => Promise<BookmarkAutoImportResult>;
+    executeAll: () => Promise<BookmarkAutoImportResult[]>;
+    previewRule: (rule: BookmarkAutoImportRule) => Promise<BookmarkWithFolder[]>;
+    getFolders: (bookmarkPath: string) => Promise<BookmarkFolder[]>;
+    getBookmarksWithFolders: (bookmarkPath: string) => Promise<BookmarkWithFolder[]>;
+  };
   // クリップボード関連API
   clipboardAPI: {
     checkCurrent: () => Promise<CurrentClipboardState>;
