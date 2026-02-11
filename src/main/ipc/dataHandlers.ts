@@ -731,13 +731,24 @@ function convertRegisterItemToJsonItem(item: RegisterItem): JsonItem {
 }
 
 // データ変更を全ウィンドウに通知する関数
-export function notifyDataChanged() {
+export function notifyDataChanged(): void {
   const allWindows = BrowserWindow.getAllWindows();
-  allWindows.forEach((window) => {
-    if (!window.isDestroyed()) {
+
+  for (const window of allWindows) {
+    if (window.isDestroyed()) continue;
+
+    if (window.webContents.isLoading()) {
+      // 読み込み中の場合、読み込み完了後に通知
+      window.webContents.once('did-finish-load', () => {
+        if (!window.isDestroyed()) {
+          window.webContents.send(IPC_CHANNELS.EVENT_DATA_CHANGED);
+        }
+      });
+    } else {
       window.webContents.send(IPC_CHANNELS.EVENT_DATA_CHANGED);
     }
-  });
+  }
+
   dataLogger.info({ windowCount: allWindows.length }, 'データ変更通知を送信しました');
 }
 
@@ -799,8 +810,25 @@ export function setupDataHandlers(configFolder: string) {
       await backupService.createBackup(filePath);
 
       await fs.unlink(filePath);
-      // notifyDataChanged(); // 設定の再読み込みを防ぐため削除
-      return { success: true };
+
+      // 削除されたファイルを targetFile に持つ自動取込ルールを無効化
+      const settingsService = await SettingsService.getInstance();
+      const autoImportSettings = await settingsService.get('bookmarkAutoImport');
+      const rulesToDisable =
+        autoImportSettings?.rules?.filter((r) => r.targetFile === fileName && r.enabled) ?? [];
+
+      if (rulesToDisable.length > 0) {
+        for (const rule of rulesToDisable) {
+          rule.enabled = false;
+        }
+        await settingsService.set('bookmarkAutoImport', autoImportSettings);
+        dataLogger.info(
+          { disabledRules: rulesToDisable.map((r) => r.name), fileName },
+          'データファイル削除に伴い自動取込ルールを無効化しました'
+        );
+      }
+
+      return { success: true, disabledRules: rulesToDisable.map((r) => r.name) };
     } catch (error) {
       return { success: false, error: `ファイルの削除に失敗しました: ${error}` };
     }
