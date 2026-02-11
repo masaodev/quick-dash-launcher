@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   DEFAULT_DATA_FILE,
   SimpleBookmarkItem,
   ScannedAppItem,
   DataFileTab,
   DuplicateHandlingOption,
+  isJsonLauncherItem,
+  type RegisterItem,
 } from '@common/types';
 import type { EditableJsonItem } from '@common/types/editableItem';
-import type { RegisterItem } from '@common/types';
 import { jsonItemToDisplayText } from '@common/utils/displayTextConverter';
 import { validateEditableItem } from '@common/types/editableItem';
 import { convertRegisterItemToJsonItem } from '@common/utils/dataConverters';
@@ -28,6 +29,7 @@ import {
 import { logError } from '../utils/debug';
 import { useDropdown } from '../hooks/useDropdown';
 import { useToast } from '../hooks/useToast';
+import { useBookmarkAutoImport } from '../hooks/useBookmarkAutoImport';
 
 import AdminItemManagerList from './AdminItemManagerList';
 import RegisterModal from './RegisterModal';
@@ -104,10 +106,52 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     checkboxChecked: false,
   });
 
+  // 自動取込設定からルールマップを構築
+  const { settings: autoImportSettings } = useBookmarkAutoImport();
+
+  const autoImportRuleMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const rule of autoImportSettings.rules) {
+      map.set(rule.id, rule.name);
+    }
+    return map;
+  }, [autoImportSettings.rules]);
+
+  // 現在のデータファイルに関連するルールのみ抽出
+  const currentFileRules = useMemo(
+    () => autoImportSettings.rules.filter((rule) => rule.targetFile === selectedDataFile),
+    [autoImportSettings.rules, selectedDataFile]
+  );
+
+  // 自動取込フィルタの状態
+  type AutoImportFilter = 'all' | 'auto-import-only' | 'manual-only' | string;
+  const [autoImportFilter, setAutoImportFilter] = useState<AutoImportFilter>('all');
+
   // ドロップダウン状態管理
   const tabDropdown = useDropdown();
   const fileDropdown = useDropdown();
   const importDropdown = useDropdown();
+  const autoImportFilterDropdown = useDropdown();
+
+  // 自動取込フィルタの表示テキストを取得
+  const getAutoImportFilterLabel = (filter: AutoImportFilter): string => {
+    switch (filter) {
+      case 'all':
+        return '取込元: 全て';
+      case 'auto-import-only':
+        return '取込元: 自動取込のみ';
+      case 'manual-only':
+        return '取込元: 手動登録のみ';
+      default:
+        return `取込元: ${autoImportRuleMap.get(filter) ?? '不明なルール'}`;
+    }
+  };
+
+  // 自動取込フィルタの選択ハンドラ
+  const handleAutoImportFilterSelect = (filter: AutoImportFilter): void => {
+    setAutoImportFilter(filter);
+    autoImportFilterDropdown.close();
+  };
 
   const handleItemEdit = (editableItem: EditableJsonItem) => {
     const itemKey = `${editableItem.meta.sourceFile}_${editableItem.meta.lineNumber}`;
@@ -650,6 +694,16 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     // 選択されたデータファイルでフィルタリング
     if (item.meta.sourceFile !== selectedDataFile) return false;
 
+    // 自動取込フィルタ
+    if (autoImportFilter !== 'all') {
+      const ruleId = isJsonLauncherItem(item.item) ? item.item.autoImportRuleId : undefined;
+
+      if (autoImportFilter === 'auto-import-only') return !!ruleId;
+      if (autoImportFilter === 'manual-only') return !ruleId;
+      // 特定ルールIDでフィルタ
+      if (ruleId !== autoImportFilter) return false;
+    }
+
     // 検索クエリによるフィルタリング
     if (!searchQuery) return true;
     const keywords = searchQuery
@@ -670,6 +724,11 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
       }
     }
   }, [selectedTabIndex, dataFileTabs]);
+
+  // ファイル変更時にフィルタをリセット
+  useEffect(() => {
+    setAutoImportFilter('all');
+  }, [selectedDataFile]);
 
   // 初回マウント時のみ最初のタブを選択
   useEffect(() => {
@@ -845,6 +904,53 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
           >
             🗑️ 選択行を削除
           </Button>
+          <div className="auto-import-filter" ref={autoImportFilterDropdown.ref}>
+            <button
+              className="dropdown-trigger-btn"
+              onClick={autoImportFilterDropdown.toggle}
+              title="自動取込フィルタ"
+            >
+              <span className="dropdown-trigger-text">
+                {getAutoImportFilterLabel(autoImportFilter)}
+              </span>
+              <span className="dropdown-trigger-icon">
+                {autoImportFilterDropdown.isOpen ? '▲' : '▼'}
+              </span>
+            </button>
+            {autoImportFilterDropdown.isOpen && (
+              <div className="dropdown-menu">
+                {(
+                  [
+                    { value: 'all', label: '全て' },
+                    { value: 'auto-import-only', label: '自動取込のみ' },
+                    { value: 'manual-only', label: '手動登録のみ' },
+                  ] as const
+                ).map(({ value, label }) => (
+                  <button
+                    key={value}
+                    className={`dropdown-item ${autoImportFilter === value ? 'selected' : ''}`}
+                    onClick={() => handleAutoImportFilterSelect(value)}
+                  >
+                    {label}
+                  </button>
+                ))}
+                {currentFileRules.length > 0 && (
+                  <>
+                    <div className="dropdown-separator" />
+                    {currentFileRules.map((rule) => (
+                      <button
+                        key={rule.id}
+                        className={`dropdown-item ${autoImportFilter === rule.id ? 'selected' : ''}`}
+                        onClick={() => handleAutoImportFilterSelect(rule.id)}
+                      >
+                        {rule.name}
+                      </button>
+                    ))}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
           <div className="toolbar-search">
             <div className="search-input-container">
               <input
@@ -883,6 +989,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
         onDeleteItems={handleDeleteItems}
         onEditClick={handleEditItemClick}
         onDuplicateItems={handleDuplicateItems}
+        autoImportRuleMap={autoImportRuleMap}
       />
 
       <div className="edit-mode-status">

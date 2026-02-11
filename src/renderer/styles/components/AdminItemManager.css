@@ -38,7 +38,8 @@
 /* ドロップダウン共通コンテナ */
 .edit-mode-header .tab-dropdown,
 .edit-mode-header .file-dropdown,
-.edit-mode-header .import-dropdown {
+.edit-mode-header .import-dropdown,
+.edit-mode-toolbar .auto-import-filter {
   position: relative;
   display: inline-flex;
   align-items: center;
@@ -59,7 +60,8 @@
 }
 
 /* ドロップダウントリガーボタン（共通） */
-.edit-mode-header .dropdown-trigger-btn {
+.edit-mode-header .dropdown-trigger-btn,
+.edit-mode-toolbar .auto-import-filter .dropdown-trigger-btn {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
@@ -77,12 +79,14 @@
   -webkit-app-region: no-drag;
 }
 
-.edit-mode-header .dropdown-trigger-btn:hover {
+.edit-mode-header .dropdown-trigger-btn:hover,
+.edit-mode-toolbar .auto-import-filter .dropdown-trigger-btn:hover {
   border-color: var(--color-primary);
   background-color: var(--bg-hover);
 }
 
-.edit-mode-header .dropdown-trigger-btn:focus {
+.edit-mode-header .dropdown-trigger-btn:focus,
+.edit-mode-toolbar .auto-import-filter .dropdown-trigger-btn:focus {
   border-color: var(--color-primary);
   box-shadow: var(--focus-ring);
 }
@@ -93,11 +97,13 @@
 }
 
 /* トリガーボタン内要素（共通） */
-.edit-mode-header .dropdown-trigger-text {
+.edit-mode-header .dropdown-trigger-text,
+.edit-mode-toolbar .auto-import-filter .dropdown-trigger-text {
   white-space: nowrap;
 }
 
-.edit-mode-header .dropdown-trigger-icon {
+.edit-mode-header .dropdown-trigger-icon,
+.edit-mode-toolbar .auto-import-filter .dropdown-trigger-icon {
   font-size: var(--font-size-xs);
   color: var(--text-muted);
   line-height: 1;
@@ -112,7 +118,8 @@
 }
 
 /* ドロップダウンメニュー（共通） */
-.edit-mode-header .dropdown-menu {
+.edit-mode-header .dropdown-menu,
+.edit-mode-toolbar .auto-import-filter .dropdown-menu {
   position: absolute;
   top: calc(100% + var(--spacing-xs));
   left: 0;
@@ -158,7 +165,8 @@
 }
 
 /* メニューアイテム（共通） */
-.edit-mode-header .dropdown-item {
+.edit-mode-header .dropdown-item,
+.edit-mode-toolbar .auto-import-filter .dropdown-item {
   display: block;
   width: 100%;
   padding: var(--spacing-sm) var(--spacing-lg);
@@ -174,21 +182,25 @@
   -webkit-app-region: no-drag;
 }
 
-.edit-mode-header .dropdown-item:hover {
+.edit-mode-header .dropdown-item:hover,
+.edit-mode-toolbar .auto-import-filter .dropdown-item:hover {
   background-color: var(--bg-hover);
 }
 
-.edit-mode-header .dropdown-item.selected {
+.edit-mode-header .dropdown-item.selected,
+.edit-mode-toolbar .auto-import-filter .dropdown-item.selected {
   background-color: var(--bg-selected);
   color: var(--color-primary);
   font-weight: 600;
 }
 
-.edit-mode-header .dropdown-item:first-child {
+.edit-mode-header .dropdown-item:first-child,
+.edit-mode-toolbar .auto-import-filter .dropdown-item:first-child {
   border-radius: var(--border-radius-sm) var(--border-radius-sm) 0 0;
 }
 
-.edit-mode-header .dropdown-item:last-child {
+.edit-mode-header .dropdown-item:last-child,
+.edit-mode-toolbar .auto-import-filter .dropdown-item:last-child {
   border-radius: 0 0 var(--border-radius-sm) var(--border-radius-sm);
 }
 
@@ -1057,6 +1069,26 @@
 
 .sort-indicator.active {
   color: var(--color-primary);
+}
+
+/* 自動取込フィルタドロップダウン（共通スタイルからの差分のみ） */
+.auto-import-filter .dropdown-trigger-btn {
+  font-size: var(--font-size-sm);
+}
+
+.auto-import-filter .dropdown-menu {
+  min-width: 180px;
+}
+
+.auto-import-filter .dropdown-item {
+  font-size: var(--font-size-sm);
+}
+
+/* ドロップダウンセパレータ */
+.dropdown-separator {
+  height: 1px;
+  margin: var(--spacing-xs) 0;
+  background-color: var(--color-border);
 }
 
 /* 自動取込ラベルのスタイル */

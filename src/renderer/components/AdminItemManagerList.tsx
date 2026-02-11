@@ -52,6 +52,7 @@ interface EditableRawItemListProps {
   onDeleteItems: (items: EditableJsonItem[]) => void;
   onEditClick: (item: EditableJsonItem) => void;
   onDuplicateItems: (items: EditableJsonItem[]) => void;
+  autoImportRuleMap?: Map<string, string>;
 }
 
 const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
@@ -63,6 +64,7 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
   onDeleteItems,
   onEditClick,
   onDuplicateItems,
+  autoImportRuleMap,
 }) => {
   const [editingCell, setEditingCell] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState('');
@@ -429,7 +431,12 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
       >
         {name || '(名前なし)'}
         {isJsonLauncherItem(jsonItem) && jsonItem.autoImportRuleId && (
-          <span className="auto-import-label">自動取込</span>
+          <span
+            className="auto-import-label"
+            title={autoImportRuleMap?.get(jsonItem.autoImportRuleId) ?? '不明なルール'}
+          >
+            自動取込
+          </span>
         )}
       </div>
     );
@@ -627,7 +634,11 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
               className="name-column sortable-header"
               onClick={() => handleHeaderClick('displayName')}
               ref={nameThRef}
-              style={nameColumnWidth !== null ? { width: nameColumnWidth, minWidth: nameColumnWidth, maxWidth: nameColumnWidth } : undefined}
+              style={
+                nameColumnWidth !== null
+                  ? { width: nameColumnWidth, minWidth: nameColumnWidth, maxWidth: nameColumnWidth }
+                  : undefined
+              }
             >
               <span className="header-content">
                 名前
