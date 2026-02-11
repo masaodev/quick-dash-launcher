@@ -88,7 +88,13 @@ export function useBookmarkAutoImport() {
 
   // ルールの削除
   const deleteRule = useCallback(
-    async (ruleId: string) => {
+    async (ruleId: string, deleteItems: boolean = false) => {
+      if (deleteItems) {
+        const rule = settings.rules.find((r) => r.id === ruleId);
+        if (rule) {
+          await window.electronAPI.bookmarkAutoImportAPI.deleteRuleItems(ruleId, rule.targetFile);
+        }
+      }
       const newRules = settings.rules.filter((r) => r.id !== ruleId);
       await saveSettings({ ...settings, rules: newRules });
     },

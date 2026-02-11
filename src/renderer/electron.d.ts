@@ -322,6 +322,7 @@ export interface ElectronAPI {
     previewRule: (rule: BookmarkAutoImportRule) => Promise<BookmarkWithFolder[]>;
     getFolders: (bookmarkPath: string) => Promise<BookmarkFolder[]>;
     getBookmarksWithFolders: (bookmarkPath: string) => Promise<BookmarkWithFolder[]>;
+    deleteRuleItems: (ruleId: string, targetFile: string) => Promise<number>;
   };
   // クリップボード関連API
   clipboardAPI: {

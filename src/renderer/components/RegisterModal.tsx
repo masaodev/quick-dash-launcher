@@ -6,6 +6,7 @@ import type {
   WindowInfo,
   LauncherItem,
 } from '@common/types';
+import { isJsonLauncherItem } from '@common/types';
 
 import { useCustomIcon } from '../hooks/useCustomIcon';
 import { useRegisterForm } from '../hooks/useRegisterForm';
@@ -52,6 +53,19 @@ function getDisplayNamePlaceholder(itemCategory: string): string {
 }
 
 const NON_EXECUTABLE_CATEGORIES = ['dir', 'group', 'clipboard'] as const;
+
+/**
+ * 編集中のアイテムが自動取込で管理されているかを判定する
+ */
+function isAutoImportItem(editingItem: EditingAppItem | EditableJsonItem): boolean {
+  // EditableJsonItem（管理画面から）
+  if ('item' in editingItem && 'meta' in editingItem) {
+    const jsonItem = (editingItem as EditableJsonItem).item;
+    return isJsonLauncherItem(jsonItem) && !!jsonItem.autoImportRuleId;
+  }
+  // EditingAppItem（ランチャーから）
+  return 'autoImportRuleId' in editingItem && !!(editingItem as LauncherItem).autoImportRuleId;
+}
 
 const RegisterModal: React.FC<RegisterModalProps> = ({
   isOpen,
@@ -422,6 +436,12 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
           tabIndex={-1}
         >
           <h2>{editingItem ? 'アイテムの編集' : 'アイテムの登録'}</h2>
+
+          {editingItem && isAutoImportItem(editingItem) && (
+            <div className="auto-import-warning">
+              このアイテムはブックマーク自動取込で管理されています。編集しても、次回の自動取込実行時に上書きされます。
+            </div>
+          )}
 
           {loading ? (
             <div className="loading">アイテム情報を読み込み中...</div>

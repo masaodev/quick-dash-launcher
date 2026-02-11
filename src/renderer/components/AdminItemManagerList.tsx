@@ -386,6 +386,9 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
         }
       >
         {name || '(名前なし)'}
+        {isJsonLauncherItem(jsonItem) && jsonItem.autoImportRuleId && (
+          <span className="auto-import-label">自動取込</span>
+        )}
       </div>
     );
   };
