@@ -6,8 +6,10 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import type { BookmarkAutoImportRule } from '@common/types/bookmarkAutoImport';
+import { summarizeImportResults } from '@common/utils/bookmarkImportUtils';
 
 import { useBookmarkAutoImport } from '../hooks/useBookmarkAutoImport';
+import { useToast } from '../hooks/useToast';
 
 import { Button } from './ui';
 import BookmarkAutoImportRuleModal from './BookmarkAutoImportRuleModal';
@@ -28,6 +30,8 @@ const BookmarkAutoImportSettings: React.FC = () => {
     executeAllRules,
     previewRule,
   } = useBookmarkAutoImport();
+
+  const { showSuccess, showError, showWarning } = useToast();
 
   const [editingRule, setEditingRule] = useState<BookmarkAutoImportRule | null | 'new'>(null);
   const [dataFiles, setDataFiles] = useState<string[]>([]);
@@ -67,34 +71,25 @@ const BookmarkAutoImportSettings: React.FC = () => {
     async (rule: BookmarkAutoImportRule) => {
       const result = await executeRule(rule);
       if (result.success) {
-        window.electronAPI.showToastWindow({
-          message: `${rule.name}: ${result.importedCount}件登録, ${result.deletedCount}件削除`,
-          type: 'success',
-          duration: 3000,
-        });
+        showSuccess(
+          `ブックマーク取込（${rule.name}）: ${result.importedCount}件登録, ${result.deletedCount}件削除`
+        );
       } else {
-        window.electronAPI.showToastWindow({
-          message: `${rule.name}: エラー - ${result.errorMessage}`,
-          type: 'error',
-          duration: 4000,
-        });
+        showError(`ブックマーク取込（${rule.name}）: エラー - ${result.errorMessage}`);
       }
     },
-    [executeRule]
+    [executeRule, showSuccess, showError]
   );
 
   const handleExecuteAll = useCallback(async () => {
     const results = await executeAllRules();
-    const totalImported = results.reduce((sum, r) => sum + r.importedCount, 0);
-    const totalDeleted = results.reduce((sum, r) => sum + r.deletedCount, 0);
-    const hasError = results.some((r) => !r.success);
-
-    window.electronAPI.showToastWindow({
-      message: `全ルール実行: ${totalImported}件登録, ${totalDeleted}件削除${hasError ? ' (一部エラー)' : ''}`,
-      type: hasError ? 'warning' : 'success',
-      duration: 3000,
-    });
-  }, [executeAllRules]);
+    const { message, hasError } = summarizeImportResults(results);
+    if (hasError) {
+      showWarning(message);
+    } else {
+      showSuccess(message);
+    }
+  }, [executeAllRules, showSuccess, showWarning]);
 
   const formatLastResult = (rule: BookmarkAutoImportRule): string => {
     if (!rule.lastExecutedAt) return '未実行';

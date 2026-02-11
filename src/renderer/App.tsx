@@ -18,6 +18,7 @@ import {
   isClipboardItem,
   isLauncherItem,
 } from '@common/types/guards';
+import { summarizeImportResults } from '@common/utils/bookmarkImportUtils';
 
 import LauncherSearchBox from './components/LauncherSearchBox';
 import LauncherItemList from './components/LauncherItemList';
@@ -107,7 +108,7 @@ function App(): React.ReactElement {
     handleOpenParentFolder,
     handleOpenShortcutParentFolder,
   } = useItemActions();
-  const { showSuccess } = useToast();
+  const { showSuccess, showWarning } = useToast();
 
   const {
     showDataFileTabs,
@@ -592,7 +593,25 @@ function App(): React.ReactElement {
     }
   };
 
-  const handleRefreshAllWrapper = () => handleRefreshAll(loadItems);
+  const handleBookmarkAutoImport = async () => {
+    const results = await window.electronAPI.bookmarkAutoImportAPI.executeAll();
+    if (results.length === 0) {
+      showWarning('有効なブックマーク取込ルールがありません');
+      return;
+    }
+    const { message, hasError } = summarizeImportResults(results);
+    if (hasError) {
+      showWarning(message);
+    } else {
+      showSuccess(message);
+    }
+    await loadItems();
+  };
+
+  const handleRefreshAllWrapper = async () => {
+    await window.electronAPI.bookmarkAutoImportAPI.executeAll();
+    await handleRefreshAll(loadItems);
+  };
 
   const handleTabRename = async (tabIndex: number, newName: string) => {
     const updatedTabs = dataFileTabs.map((tab, i) =>
@@ -661,6 +680,7 @@ function App(): React.ReactElement {
           onReload={handleReloadItems}
           onFetchMissingIcons={handleFetchMissingIcons}
           onFetchMissingIconsCurrentTab={handleFetchMissingIconsCurrentTab}
+          onBookmarkAutoImport={handleBookmarkAutoImport}
           onRefreshAll={handleRefreshAllWrapper}
           onTogglePin={handleTogglePin}
           onOpenBasicSettings={handleOpenBasicSettings}

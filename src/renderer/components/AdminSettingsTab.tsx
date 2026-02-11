@@ -713,6 +713,9 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
           {selectedCategory === 'bookmarkAutoImport' && (
             <div className="settings-section">
               <h3>ブックマーク自動取込</h3>
+              <p className="settings-section-description">
+                Chrome / Edge のブックマークを読み取り、ランチャーのアイテムとして自動取込します。
+              </p>
               <BookmarkAutoImportSettings />
             </div>
           )}

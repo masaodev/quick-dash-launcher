@@ -90,6 +90,12 @@
   font-weight: bold;
 }
 
+.settings-section-description {
+  margin: -10px 0 15px 0;
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+}
+
 .setting-row {
   display: flex;
   gap: var(--spacing-xl);

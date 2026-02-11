@@ -12,6 +12,7 @@ import * as path from 'path';
 import logger from '@common/logger';
 import { FileUtils } from '@common/utils/fileUtils';
 import { generateId, parseJsonDataFile, serializeJsonDataFile } from '@common/utils/jsonParser';
+import { summarizeImportResults } from '@common/utils/bookmarkImportUtils';
 import type { JsonLauncherItem, JsonDataFile } from '@common/types';
 import type {
   BookmarkAutoImportRule,
@@ -60,26 +61,14 @@ export class BookmarkAutoImportService {
       );
 
       const results = await this.executeRules(enabledRules);
-
-      // 結果の集計
-      let totalImported = 0;
-      let totalDeleted = 0;
-      let hasError = false;
-
-      for (const result of results) {
-        if (result.success) {
-          totalImported += result.importedCount;
-          totalDeleted += result.deletedCount;
-        } else {
-          hasError = true;
-        }
-      }
+      const { totalImported, totalDeleted, hasError } = summarizeImportResults(results);
 
       // トースト通知
       if (totalImported > 0 || totalDeleted > 0) {
         await showToastWindow({
-          message: `自動取込: ${totalImported}件登録${totalDeleted > 0 ? `, ${totalDeleted}件削除` : ''}${hasError ? ' (一部エラーあり)' : ''}`,
-          type: hasError ? 'warning' : 'success',
+          itemType: 'bookmarkImport',
+          displayName: 'ブックマーク取込',
+          message: `${totalImported}件登録${totalDeleted > 0 ? `, ${totalDeleted}件削除` : ''}${hasError ? ' (一部エラーあり)' : ''}`,
           duration: 3000,
         });
       }

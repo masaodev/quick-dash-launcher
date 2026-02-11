@@ -9,6 +9,7 @@ interface ActionButtonsProps {
   onReload: () => void;
   onFetchMissingIcons: () => void;
   onFetchMissingIconsCurrentTab: () => void;
+  onBookmarkAutoImport: () => void;
   onRefreshAll: () => void;
   onTogglePin: () => void;
   onOpenBasicSettings: () => void;
@@ -22,6 +23,7 @@ const LauncherActionButtons: React.FC<ActionButtonsProps> = ({
   onReload,
   onFetchMissingIcons,
   onFetchMissingIconsCurrentTab,
+  onBookmarkAutoImport,
   onRefreshAll,
   onTogglePin,
   onOpenBasicSettings,
@@ -63,6 +65,7 @@ const LauncherActionButtons: React.FC<ActionButtonsProps> = ({
         onReload={onReload}
         onFetchMissingIcons={onFetchMissingIcons}
         onFetchMissingIconsCurrentTab={onFetchMissingIconsCurrentTab}
+        onBookmarkAutoImport={onBookmarkAutoImport}
         onRefreshAll={onRefreshAll}
       />
       <button

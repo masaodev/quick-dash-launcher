@@ -16,11 +16,16 @@ import { EnvConfig } from '../config/envConfig.js';
 
 import { NotificationType } from './notificationService.js';
 
-/** トースト表示オプション */
+/**
+ * トースト表示オプション
+ *
+ * 必ず itemType + displayName を指定してリッチ形式で表示すること。
+ * message + type のみの旧形式（シンプルデザイン）は非推奨。
+ */
 export interface ToastOptions {
-  /** 表示メッセージ（従来互換用） */
+  /** 補足メッセージ（リッチ形式のアクション文言として使用） */
   message?: string;
-  /** トーストの種類 */
+  /** トーストの種類（旧形式フォールバック用、通常は不要） */
   type?: NotificationType;
   /** 表示時間（ミリ秒） */
   duration?: number;

@@ -121,7 +121,7 @@
       color: #666;
     }
 
-    /* 従来のシンプルメッセージ用 */
+    /* 従来のシンプルメッセージ用（非推奨: 新規追加時は itemType + displayName のリッチ形式を使うこと） */
     .toast-simple {
       display: flex;
       align-items: center;
@@ -162,7 +162,8 @@
       windowUnpin:       { icon: '🔓', action: 'ウィンドウの固定を解除しました' },
       windowMoveDesktop: { icon: '➡️', action: null },
       workspaceAdd:      { icon: '⭐', action: 'ワークスペースに追加しました' },
-      clipboard:         { icon: '📋', action: 'クリップボードに復元しています...' }
+      clipboard:         { icon: '📋', action: 'クリップボードに復元しています...' },
+      bookmarkImport:    { icon: '🔖', action: null }
     };
 
     const DEFAULT_ICON = '📋';
@@ -264,10 +265,12 @@
       toast.className = 'toast-container ' + type;
 
       if (itemType && displayName) {
+        // リッチ形式（推奨: 新規追加時はこちらを使うこと）
         toast.innerHTML =
           '<div class="toast-icon-wrapper">' + buildIconHtml(data.icon, itemType) + '</div>' +
           '<div class="toast-content">' + buildItemContent(data) + '</div>';
       } else {
+        // 旧形式フォールバック（非推奨: 現在使用箇所なし）
         toast.innerHTML =
           '<div class="toast-simple">' +
             `<span class="toast-simple-icon">${legacyIcons[type] || legacyIcons.success}</span>` +

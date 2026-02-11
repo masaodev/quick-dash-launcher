@@ -4,6 +4,7 @@ interface RefreshActionsDropdownProps {
   onReload: () => void;
   onFetchMissingIcons: () => void;
   onFetchMissingIconsCurrentTab: () => void;
+  onBookmarkAutoImport: () => void;
   onRefreshAll: () => void;
 }
 
@@ -11,6 +12,7 @@ const LauncherRefreshActionsDropdown: React.FC<RefreshActionsDropdownProps> = ({
   onReload,
   onFetchMissingIcons,
   onFetchMissingIconsCurrentTab,
+  onBookmarkAutoImport,
   onRefreshAll,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -58,6 +60,12 @@ const LauncherRefreshActionsDropdown: React.FC<RefreshActionsDropdownProps> = ({
             onClick={() => handleMenuItemClick(onFetchMissingIcons)}
           >
             🎨 アイコン取得（全タブ）
+          </button>
+          <button
+            className="dropdown-item"
+            onClick={() => handleMenuItemClick(onBookmarkAutoImport)}
+          >
+            🔖 ブックマーク取込
           </button>
           <div className="dropdown-divider"></div>
           <button className="dropdown-item" onClick={() => handleMenuItemClick(onRefreshAll)}>
