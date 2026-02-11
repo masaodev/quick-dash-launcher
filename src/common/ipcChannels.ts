@@ -61,6 +61,12 @@ export const IPC_CHANNELS = {
     'bookmark-auto-import:get-bookmarks-with-folders',
   BOOKMARK_AUTO_IMPORT_DELETE_RULE_ITEMS: 'bookmark-auto-import:delete-rule-items',
 
+  // バックアップ
+  BACKUP_LIST_SNAPSHOTS: 'backup:list-snapshots',
+  BACKUP_RESTORE_SNAPSHOT: 'backup:restore-snapshot',
+  BACKUP_DELETE_SNAPSHOT: 'backup:delete-snapshot',
+  BACKUP_GET_STATUS: 'backup:get-status',
+
   // ウィンドウ操作
   GET_WINDOW_PIN_MODE: 'get-window-pin-mode',
   CYCLE_WINDOW_PIN_MODE: 'cycle-window-pin-mode',

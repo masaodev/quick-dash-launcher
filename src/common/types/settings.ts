@@ -72,13 +72,7 @@ export interface AppSettings {
   autoLaunch: boolean;
   /** バックアップ機能の有効/無効（デフォルト: false） */
   backupEnabled: boolean;
-  /** アプリ起動時のバックアップ（デフォルト: false） */
-  backupOnStart: boolean;
-  /** データ編集時のバックアップ（デフォルト: false） */
-  backupOnEdit: boolean;
-  /** 最小バックアップ間隔（分）（デフォルト: 5） */
-  backupInterval: number;
-  /** バックアップファイルの保存件数上限（デフォルト: 20） */
+  /** バックアップファイルの保存件数上限（デフォルト: 10） */
   backupRetention: number;
   /** タブ表示の有効/無効（デフォルト: false） */
   showDataFileTabs: boolean;
@@ -114,6 +108,8 @@ export interface AppSettings {
   parallelGroupLaunch: boolean;
   /** ウィンドウ検索で起動のホットキー（デフォルト: ''、空の場合は無効） */
   itemSearchHotkey: string;
+  /** クリップボードデータもバックアップに含めるか（デフォルト: false） */
+  backupIncludeClipboard: boolean;
   /** ブックマーク自動取込設定 */
   bookmarkAutoImport: BookmarkAutoImportSettings;
 }

@@ -140,6 +140,9 @@ export { validateEditableItem } from './editableItem';
 // トースト関連の型
 export type { ToastItemType } from './toast';
 
+// バックアップ関連の型
+export type { SnapshotInfo, BackupStatus } from './backup';
+
 // 型ガード関数
 export {
   isWindowInfo,

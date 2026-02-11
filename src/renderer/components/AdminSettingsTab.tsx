@@ -5,6 +5,7 @@ import {
   WindowPositionMode,
   WorkspacePositionMode,
   DisplayInfo,
+  BackupStatus,
 } from '@common/types';
 
 import { useDialogManager } from '../hooks/useDialogManager';
@@ -16,6 +17,7 @@ import ConfirmDialog from './ConfirmDialog';
 import { HotkeyInput } from './HotkeyInput';
 import { Button } from './ui';
 import BookmarkAutoImportSettings from './BookmarkAutoImportSettings';
+import BackupSnapshotModal from './BackupSnapshotModal';
 
 interface SettingsTabProps {
   settings: AppSettings;
@@ -26,6 +28,8 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
   const [editedSettings, setEditedSettings] = useState<AppSettings>(settings);
   const [selectedCategory, setSelectedCategory] = useState<string>('basic');
   const [displays, setDisplays] = useState<DisplayInfo[]>([]);
+  const [backupStatus, setBackupStatus] = useState<BackupStatus | null>(null);
+  const [showSnapshotModal, setShowSnapshotModal] = useState(false);
 
   // settingsプロパティが変更されたときにeditedSettingsを更新
   useEffect(() => {
@@ -44,6 +48,21 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
     };
     loadDisplays();
   }, []);
+
+  // バックアップ状態を取得
+  useEffect(() => {
+    if (selectedCategory === 'backup') {
+      const loadBackupStatus = async () => {
+        try {
+          const status = await window.electronAPI.backupAPI.getStatus();
+          setBackupStatus(status);
+        } catch (error) {
+          console.error('バックアップ状態の取得に失敗:', error);
+        }
+      };
+      loadBackupStatus();
+    }
+  }, [selectedCategory, showSnapshotModal]);
 
   // カスタムフック: ダイアログ管理
   const {
@@ -637,6 +656,9 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
           {selectedCategory === 'backup' && (
             <div className="settings-section">
               <h3>バックアップ</h3>
+              <p className="settings-section-description">
+                アプリ起動時に1日1回、データファイル・設定ファイルをスナップショットとしてバックアップします。
+              </p>
               <div className="setting-item">
                 <label>
                   <input
@@ -652,51 +674,12 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
               {editedSettings.backupEnabled && (
                 <>
                   <div className="setting-item indent">
-                    <label>
-                      <input
-                        type="checkbox"
-                        checked={editedSettings.backupOnStart}
-                        onChange={(e) => handleSettingChange('backupOnStart', e.target.checked)}
-                        disabled={isLoading}
-                      />
-                      アプリ起動時にバックアップを作成
-                    </label>
-                  </div>
-
-                  <div className="setting-item indent">
-                    <label>
-                      <input
-                        type="checkbox"
-                        checked={editedSettings.backupOnEdit}
-                        onChange={(e) => handleSettingChange('backupOnEdit', e.target.checked)}
-                        disabled={isLoading}
-                      />
-                      データ編集時にバックアップを作成
-                    </label>
-                  </div>
-
-                  <div className="setting-item indent">
-                    <label htmlFor="backupInterval">最小バックアップ間隔:</label>
-                    <input
-                      id="backupInterval"
-                      type="number"
-                      min="1"
-                      max="60"
-                      value={editedSettings.backupInterval}
-                      onChange={(e) => handleNumberInputChange('backupInterval', e.target.value)}
-                      onBlur={handleNumberInputBlur}
-                      disabled={isLoading}
-                    />
-                    <span className="unit">分</span>
-                  </div>
-
-                  <div className="setting-item indent">
                     <label htmlFor="backupRetention">バックアップ保存件数:</label>
                     <input
                       id="backupRetention"
                       type="number"
-                      min="1"
-                      max="100"
+                      min="3"
+                      max="50"
                       value={editedSettings.backupRetention}
                       onChange={(e) => handleNumberInputChange('backupRetention', e.target.value)}
                       onBlur={handleNumberInputBlur}
@@ -704,8 +687,54 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                     />
                     <span className="unit">件</span>
                   </div>
+
+                  <div className="setting-item indent">
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={editedSettings.backupIncludeClipboard}
+                        onChange={(e) =>
+                          handleSettingChange('backupIncludeClipboard', e.target.checked)
+                        }
+                        disabled={isLoading}
+                      />
+                      クリップボードデータもバックアップに含める
+                    </label>
+                    <div className="setting-description">
+                      クリップボードデータは容量が大きくなる可能性があります。
+                    </div>
+                  </div>
+
+                  {backupStatus && (
+                    <div className="setting-item indent">
+                      <div className="backup-status-info">
+                        <span>スナップショット: {backupStatus.snapshotCount} 件</span>
+                        <span>
+                          最終バックアップ:{' '}
+                          {backupStatus.lastBackupTime
+                            ? new Date(backupStatus.lastBackupTime).toLocaleString('ja-JP')
+                            : 'なし'}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="setting-item indent">
+                    <Button
+                      variant="info"
+                      onClick={() => setShowSnapshotModal(true)}
+                      disabled={isLoading}
+                    >
+                      スナップショット一覧
+                    </Button>
+                  </div>
                 </>
               )}
+
+              <BackupSnapshotModal
+                isOpen={showSnapshotModal}
+                onClose={() => setShowSnapshotModal(false)}
+              />
             </div>
           )}
 

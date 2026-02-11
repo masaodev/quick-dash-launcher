@@ -32,6 +32,8 @@ import {
   BookmarkAutoImportResult,
   BookmarkFolder,
   BookmarkWithFolder,
+  SnapshotInfo,
+  BackupStatus,
 } from '@common/types';
 import type { EditableJsonItem, LoadEditableItemsResult } from '@common/types/editableItem';
 
@@ -337,6 +339,13 @@ export interface ElectronAPI {
     captureToSession: () => Promise<ClipboardSessionCaptureResult>;
     commitSession: (sessionId: string) => Promise<ClipboardSessionCommitResult>;
     discardSession: (sessionId: string) => Promise<boolean>;
+  };
+  // バックアップAPI
+  backupAPI: {
+    listSnapshots: () => Promise<SnapshotInfo[]>;
+    restoreSnapshot: (timestamp: string) => Promise<{ success: boolean; error?: string }>;
+    deleteSnapshot: (timestamp: string) => Promise<{ success: boolean; error?: string }>;
+    getStatus: () => Promise<BackupStatus>;
   };
 }
 

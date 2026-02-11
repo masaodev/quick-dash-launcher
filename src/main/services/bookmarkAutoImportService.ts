@@ -29,7 +29,6 @@ import {
 import { notifyDataChanged } from '../ipc/dataHandlers.js';
 
 import { SettingsService } from './settingsService.js';
-import { BackupService } from './backupService.js';
 import { showToastWindow } from './toastWindowService.js';
 
 /**
@@ -155,12 +154,6 @@ export class BookmarkAutoImportService {
       const configFolder = PathManager.getConfigFolder();
       const dataFilePath = path.join(configFolder, rule.targetFile);
 
-      // バックアップ
-      if (FileUtils.exists(dataFilePath)) {
-        const backupService = await BackupService.getInstance();
-        await backupService.createBackup(dataFilePath);
-      }
-
       // データファイルの読み込み
       let jsonData: JsonDataFile = { version: '1.0', items: [] };
       const existingContent = FileUtils.safeReadTextFile(dataFilePath);
@@ -241,10 +234,6 @@ export class BookmarkAutoImportService {
     if (!FileUtils.exists(dataFilePath)) {
       return 0;
     }
-
-    // バックアップ
-    const backupService = await BackupService.getInstance();
-    await backupService.createBackup(dataFilePath);
 
     // データファイルの読み込み
     const existingContent = FileUtils.safeReadTextFile(dataFilePath);

@@ -88,9 +88,9 @@ app.whenReady().then(async () => {
   // 初回起動時にデフォルトのdata.jsonファイルを作成
   createDefaultDataFile();
 
-  // 既存のデータファイルをタイムスタンプ付きでバックアップ（設定に基づく）
+  // 起動時スナップショットバックアップ（1日1回、設定に基づく）
   const backupService = await BackupService.getInstance();
-  await backupService.backupDataFiles(PathManager.getConfigFolder());
+  await backupService.createSnapshot();
 
   // メインウィンドウを作成（設定サイズ、フレームレス、常に最前面）
   await createWindow();
