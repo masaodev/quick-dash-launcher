@@ -59,6 +59,7 @@ export const IPC_CHANNELS = {
   BOOKMARK_AUTO_IMPORT_GET_FOLDERS: 'bookmark-auto-import:get-folders',
   BOOKMARK_AUTO_IMPORT_GET_BOOKMARKS_WITH_FOLDERS:
     'bookmark-auto-import:get-bookmarks-with-folders',
+  BOOKMARK_AUTO_IMPORT_DELETE_RULE_ITEMS: 'bookmark-auto-import:delete-rule-items',
 
   // ウィンドウ操作
   GET_WINDOW_PIN_MODE: 'get-window-pin-mode',

@@ -494,6 +494,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
         IPC_CHANNELS.BOOKMARK_AUTO_IMPORT_GET_BOOKMARKS_WITH_FOLDERS,
         bookmarkPath
       ),
+    deleteRuleItems: (ruleId: string, targetFile: string): Promise<number> =>
+      ipcRenderer.invoke(IPC_CHANNELS.BOOKMARK_AUTO_IMPORT_DELETE_RULE_ITEMS, ruleId, targetFile),
   },
   // クリップボード関連API
   clipboardAPI: {

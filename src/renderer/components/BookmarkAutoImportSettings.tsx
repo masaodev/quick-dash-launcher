@@ -13,6 +13,7 @@ import { useToast } from '../hooks/useToast';
 
 import { Button } from './ui';
 import BookmarkAutoImportRuleModal from './BookmarkAutoImportRuleModal';
+import ConfirmDialog from './ConfirmDialog';
 
 import '../styles/components/BookmarkAutoImport.css';
 
@@ -36,6 +37,8 @@ const BookmarkAutoImportSettings: React.FC = () => {
   const [editingRule, setEditingRule] = useState<BookmarkAutoImportRule | null | 'new'>(null);
   const [dataFiles, setDataFiles] = useState<string[]>([]);
   const [dataFileLabels, setDataFileLabels] = useState<Record<string, string>>({});
+  const [deleteConfirmRuleId, setDeleteConfirmRuleId] = useState<string | null>(null);
+  const [deleteAlsoItems, setDeleteAlsoItems] = useState(false);
 
   // データファイル一覧とラベルを取得
   useEffect(() => {
@@ -58,14 +61,17 @@ const BookmarkAutoImportSettings: React.FC = () => {
     [editingRule, addRule, updateRule]
   );
 
-  const handleDeleteRule = useCallback(
-    async (ruleId: string) => {
-      if (window.confirm('このルールを削除しますか？')) {
-        await deleteRule(ruleId);
-      }
-    },
-    [deleteRule]
-  );
+  const handleDeleteRule = useCallback((ruleId: string) => {
+    setDeleteAlsoItems(false);
+    setDeleteConfirmRuleId(ruleId);
+  }, []);
+
+  const handleDeleteConfirm = useCallback(async () => {
+    if (deleteConfirmRuleId) {
+      await deleteRule(deleteConfirmRuleId, deleteAlsoItems);
+      setDeleteConfirmRuleId(null);
+    }
+  }, [deleteConfirmRuleId, deleteAlsoItems, deleteRule]);
 
   const handleExecuteRule = useCallback(
     async (rule: BookmarkAutoImportRule) => {
@@ -222,6 +228,21 @@ const BookmarkAutoImportSettings: React.FC = () => {
           onPreview={previewRule}
         />
       )}
+
+      {/* ルール削除確認ダイアログ */}
+      <ConfirmDialog
+        isOpen={deleteConfirmRuleId !== null}
+        onClose={() => setDeleteConfirmRuleId(null)}
+        onConfirm={handleDeleteConfirm}
+        title="ルールの削除"
+        message="このルールを削除しますか？"
+        confirmText="削除"
+        danger
+        showCheckbox
+        checkboxLabel="取り込まれたアイテムも削除する"
+        checkboxChecked={deleteAlsoItems}
+        onCheckboxChange={setDeleteAlsoItems}
+      />
     </div>
   );
 };

@@ -68,6 +68,14 @@ export function setupBookmarkAutoImportHandlers(): void {
     }
   );
 
+  // ルールに紐づくアイテムの削除
+  ipcMain.handle(
+    IPC_CHANNELS.BOOKMARK_AUTO_IMPORT_DELETE_RULE_ITEMS,
+    async (_event, ruleId: string, targetFile: string): Promise<number> => {
+      return await autoImportService.deleteItemsByRuleId(ruleId, targetFile);
+    }
+  );
+
   // フォルダ構造の取得
   ipcMain.handle(
     IPC_CHANNELS.BOOKMARK_AUTO_IMPORT_GET_FOLDERS,

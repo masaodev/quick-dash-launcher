@@ -173,12 +173,7 @@ export class BookmarkAutoImportService {
       }
 
       // autoImportRuleId === rule.id のアイテムを全削除
-      const beforeCount = jsonData.items.length;
-      jsonData.items = jsonData.items.filter((item) => {
-        if (item.type !== 'item') return true;
-        return (item as JsonLauncherItem).autoImportRuleId !== rule.id;
-      });
-      const deletedCount = beforeCount - jsonData.items.length;
+      const deletedCount = this.removeItemsByRuleId(jsonData, rule.id);
 
       // 新しいアイテムを作成して追加
       const now = Date.now();
@@ -234,6 +229,52 @@ export class BookmarkAutoImportService {
       await this.updateRuleResult(rule.id, result);
       return result;
     }
+  }
+
+  /**
+   * 指定ルールIDに紐づくアイテムをデータファイルから削除
+   */
+  async deleteItemsByRuleId(ruleId: string, targetFile: string): Promise<number> {
+    const configFolder = PathManager.getConfigFolder();
+    const dataFilePath = path.join(configFolder, targetFile);
+
+    if (!FileUtils.exists(dataFilePath)) {
+      return 0;
+    }
+
+    // バックアップ
+    const backupService = await BackupService.getInstance();
+    await backupService.createBackup(dataFilePath);
+
+    // データファイルの読み込み
+    const existingContent = FileUtils.safeReadTextFile(dataFilePath);
+    if (!existingContent) {
+      return 0;
+    }
+
+    let jsonData: JsonDataFile;
+    try {
+      jsonData = parseJsonDataFile(existingContent);
+    } catch {
+      logger.warn({ dataFilePath }, 'JSONファイルのパースに失敗');
+      return 0;
+    }
+
+    // autoImportRuleId === ruleId のアイテムをフィルタ除去
+    const deletedCount = this.removeItemsByRuleId(jsonData, ruleId);
+
+    if (deletedCount > 0) {
+      const content = serializeJsonDataFile(jsonData);
+      FileUtils.safeWriteTextFile(dataFilePath, content);
+      notifyDataChanged();
+    }
+
+    logger.info(
+      { ruleId, targetFile, deletedCount },
+      'ブックマーク自動取込: ルールに紐づくアイテムを削除'
+    );
+
+    return deletedCount;
   }
 
   /**
@@ -335,6 +376,18 @@ export class BookmarkAutoImportService {
     }
 
     return results;
+  }
+
+  /**
+   * JsonDataFileから指定ルールIDに紐づくアイテムを除去し、削除件数を返す
+   */
+  private removeItemsByRuleId(jsonData: JsonDataFile, ruleId: string): number {
+    const beforeCount = jsonData.items.length;
+    jsonData.items = jsonData.items.filter((item) => {
+      if (item.type !== 'item') return true;
+      return (item as JsonLauncherItem).autoImportRuleId !== ruleId;
+    });
+    return beforeCount - jsonData.items.length;
   }
 
   /**

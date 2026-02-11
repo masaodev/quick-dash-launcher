@@ -74,6 +74,8 @@ export interface LauncherItem {
   windowConfig?: WindowConfig;
   /** 自由記述メモ（オプション） */
   memo?: string;
+  /** 自動取込ルールのID（このフィールドがあるアイテムは自動管理対象） */
+  autoImportRuleId?: string;
   /** クリップボードデータファイルへの参照（クリップボードアイテムのみ） */
   clipboardDataRef?: string;
   /** クリップボードの保存フォーマット（クリップボードアイテムのみ） */

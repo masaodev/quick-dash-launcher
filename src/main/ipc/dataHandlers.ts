@@ -140,6 +140,7 @@ async function convertJsonItemToAppItems(
       isDirExpanded: false,
       isEdited: false,
       memo: jsonItem.memo,
+      autoImportRuleId: jsonItem.autoImportRuleId,
     };
     addIfUnique(item);
   } else if (isJsonDirItem(jsonItem)) {
