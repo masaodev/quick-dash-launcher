@@ -67,6 +67,11 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
   const [editingCell, setEditingCell] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState('');
 
+  // 列リサイズ
+  const [nameColumnWidth, setNameColumnWidth] = useState<number | null>(null);
+  const nameThRef = useRef<HTMLTableCellElement>(null);
+  const resizeStateRef = useRef({ isResizing: false, startX: 0, startWidth: 0 });
+
   // ソート状態 (column が null の場合はソートなし)
   const [sortState, setSortState] = useState<{
     column: SortColumn | null;
@@ -176,6 +181,43 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
       cleanupDelete();
     };
   }, [onDuplicateItems, onEditClick, onDeleteItems]);
+
+  // 列リサイズ: マウスドラッグ処理
+  const handleResizeMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const th = nameThRef.current;
+    if (!th) return;
+    resizeStateRef.current = {
+      isResizing: true,
+      startX: e.clientX,
+      startWidth: th.getBoundingClientRect().width,
+    };
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      const state = resizeStateRef.current;
+      if (!state.isResizing) return;
+      const delta = e.clientX - state.startX;
+      const newWidth = Math.max(100, state.startWidth + delta);
+      setNameColumnWidth(newWidth);
+    };
+    const handleMouseUp = () => {
+      if (!resizeStateRef.current.isResizing) return;
+      resizeStateRef.current.isResizing = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
 
   const handleContextMenu = (event: React.MouseEvent, item: EditableJsonItem) => {
     event.preventDefault();
@@ -584,11 +626,18 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
             <th
               className="name-column sortable-header"
               onClick={() => handleHeaderClick('displayName')}
+              ref={nameThRef}
+              style={nameColumnWidth !== null ? { width: nameColumnWidth, minWidth: nameColumnWidth, maxWidth: nameColumnWidth } : undefined}
             >
               <span className="header-content">
                 名前
                 {renderSortIndicator('displayName')}
               </span>
+              <div
+                className="column-resize-handle"
+                onMouseDown={handleResizeMouseDown}
+                onClick={(e) => e.stopPropagation()}
+              />
             </th>
             <th
               className="content-column sortable-header"

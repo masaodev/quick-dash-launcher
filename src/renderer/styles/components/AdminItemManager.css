@@ -712,6 +712,17 @@
   padding: 6px var(--spacing-sm);
   text-align: left;
   border-bottom: var(--border-light);
+  border-right: 1px solid var(--color-gray-300);
+}
+
+.raw-items-table th:last-child,
+.raw-items-table td:last-child {
+  border-right: none;
+}
+
+.raw-items-table th.icon-column,
+.raw-items-table td.icon-column {
+  border-right: none;
 }
 
 .raw-items-table thead {
@@ -846,7 +857,6 @@
 /* 生データ編集テーブル用の列幅調整 */
 
 /* 全列共通: 上下パディング1px */
-.raw-items-table .checkbox-column,
 .raw-items-table .line-number-column,
 .raw-items-table .type-column,
 .raw-items-table .actions-column {
@@ -855,13 +865,19 @@
 
 .raw-items-table .name-column,
 .raw-items-table .content-column {
-  padding: 1px 8px !important;
+  padding: 1px 2px !important;
 }
 
 .raw-items-table .checkbox-column {
   width: 40px;
-  padding-left: 4px !important;
-  padding-right: 4px !important;
+  padding: 0 4px !important;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.raw-items-table .checkbox-column input[type="checkbox"] {
+  margin: 0;
+  vertical-align: middle;
 }
 
 /* 小フォント列共通 */
@@ -872,13 +888,33 @@
 }
 
 .raw-items-table .line-number-column {
-  width: 60px;
+  width: 36px;
   font-family: monospace;
   color: var(--text-muted);
 }
 
 .raw-items-table .type-column {
   width: 120px;
+}
+
+/* 列リサイズハンドル */
+.raw-items-table th.name-column {
+  position: relative;
+}
+
+.column-resize-handle {
+  position: absolute;
+  right: -3px;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  cursor: col-resize;
+  z-index: 101;
+}
+
+.column-resize-handle:hover {
+  background-color: var(--color-primary);
+  opacity: 0.4;
 }
 
 /* 可変幅の列 - 名前列は適度に伸びる */
@@ -904,7 +940,7 @@
 /* 更新日列 */
 .raw-items-table .updated-at-column {
   width: 140px;
-  text-align: center;
+  text-align: left;
   white-space: nowrap;
 }
 
@@ -913,7 +949,7 @@
 }
 
 .raw-items-table .actions-column {
-  width: 120px;
+  width: 70px;
 }
 
 .edit-mode-actions .import-bookmark-button {
