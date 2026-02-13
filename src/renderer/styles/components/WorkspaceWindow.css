@@ -451,27 +451,22 @@ html:has(.workspace-window.background-transparent) {
 /* グループコンテナ */
 .workspace-group {
   margin-bottom: 2px;
-  border: 3px dashed transparent;
   border-radius: var(--border-radius);
-  transition: border-color 0.15s ease, background-color 0.15s ease;
+  transition: background-color 0.15s ease;
 }
 
 /* ネイティブファイルドラッグオーバー時のハイライト（グループ・未分類共通） */
 .workspace-group.drag-over,
 .workspace-uncategorized-section.drag-over {
-  border-color: var(--color-primary);
+  outline: 3px dashed var(--color-primary);
+  outline-offset: -3px;
   background-color: var(--color-primary-50);
-}
-
-.workspace-uncategorized-section.drag-over {
-  border: 3px dashed var(--color-primary);
-  border-radius: var(--border-radius);
 }
 
 /* グループヘッダー */
 .workspace-group-header {
   position: relative;
-  padding: var(--spacing-sm) 45px var(--spacing-sm) var(--spacing-xs);
+  padding: 6px 45px 6px var(--spacing-xs);
   background: linear-gradient(
     135deg,
     var(--group-color, var(--color-primary)),
@@ -549,7 +544,7 @@ html:has(.workspace-window.background-transparent) {
 /* グループ内アイテム */
 .workspace-group-items {
   margin-left: var(--spacing-md);
-  margin-top: var(--spacing-xs);
+  margin-top: 2px;
 }
 
 .workspace-group-items.collapsed {
