@@ -23,7 +23,6 @@ export async function createWorkspaceWindow(): Promise<BrowserWindow> {
   if (workspaceWindow && !workspaceWindow.isDestroyed()) {
     workspaceWindow.show();
     workspaceWindow.focus();
-    isWorkspaceWindowVisible = true;
     return workspaceWindow;
   }
 
@@ -105,10 +104,6 @@ export async function createWorkspaceWindow(): Promise<BrowserWindow> {
 
   await setWorkspacePosition();
 
-  workspaceWindow.once('show', () => {
-    void applyVisibilityOnAllDesktops();
-  });
-
   windowLogger.info('ワークスペースウィンドウを作成しました');
   return workspaceWindow;
 }
@@ -128,7 +123,7 @@ export async function showWorkspaceWindow(options?: { skipFocus?: boolean }): Pr
       if (!options?.skipFocus) {
         workspaceWindow.focus();
       }
-      isWorkspaceWindowVisible = true;
+      await applyVisibilityOnAllDesktops();
       windowLogger.info('ワークスペースウィンドウを表示しました');
     }
   } catch (error) {
@@ -140,7 +135,6 @@ export async function showWorkspaceWindow(options?: { skipFocus?: boolean }): Pr
 export function hideWorkspaceWindow(): void {
   if (workspaceWindow && !workspaceWindow.isDestroyed()) {
     workspaceWindow.hide();
-    isWorkspaceWindowVisible = false;
     windowLogger.info('ワークスペースウィンドウを非表示にしました');
   }
 }
