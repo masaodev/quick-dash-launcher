@@ -282,8 +282,13 @@ export async function setWorkspacePosition(mode?: WorkspacePositionMode): Promis
       const workArea = targetDisplay.workArea;
       const isLeft = positionMode === 'primaryLeft' || positionMode === 'displayLeft';
       const x = isLeft ? workArea.x : workArea.x + workArea.width - bounds.width;
-      workspaceWindow.setPosition(x, workArea.y);
-      workspaceWindow.setSize(bounds.width, workArea.height);
+      const clampedHeight = Math.min(bounds.height, workArea.height);
+      workspaceWindow.setBounds({
+        x,
+        y: workArea.y,
+        width: bounds.width,
+        height: clampedHeight,
+      });
       const side = isLeft ? '左' : '右';
       windowLogger.info(`ワークスペースをディスプレイ${targetIndex + 1}の${side}端に配置`);
       break;
@@ -300,8 +305,13 @@ export async function setWorkspacePosition(mode?: WorkspacePositionMode): Promis
         if (needsFallback) {
           windowLogger.warn('保存位置が画面外のため右端に配置');
         }
-        workspaceWindow.setPosition(primaryWorkArea.width - bounds.width, 0);
-        workspaceWindow.setSize(bounds.width, primaryWorkArea.height);
+        const clampedHeight = Math.min(bounds.height, primaryWorkArea.height);
+        workspaceWindow.setBounds({
+          x: primaryWorkArea.width - bounds.width,
+          y: 0,
+          width: bounds.width,
+          height: clampedHeight,
+        });
         const newBounds = workspaceWindow.getBounds();
         await settingsService.set('workspacePositionX', newBounds.x);
         await settingsService.set('workspacePositionY', newBounds.y);

@@ -11,7 +11,12 @@ import { useCollapsibleSections } from './hooks/useCollapsibleSections';
 import { useFileOperations } from './hooks/useFileOperations';
 import { useNativeDragDrop } from './hooks/useNativeDragDrop';
 import { useWorkspaceFilter, type FilterScope } from './hooks/useWorkspaceFilter';
-import { useWorkspaceActions, useWorkspaceData, useWorkspaceResize } from './hooks/workspace';
+import {
+  useWorkspaceActions,
+  useWorkspaceAutoFit,
+  useWorkspaceData,
+  useWorkspaceResize,
+} from './hooks/workspace';
 import { logError } from './utils/debug';
 
 const WorkspaceApp: React.FC = () => {
@@ -37,6 +42,7 @@ const WorkspaceApp: React.FC = () => {
   });
   const filterResult = useWorkspaceFilter(groups, items, filterText, filterScope);
   const { handleResize } = useWorkspaceResize();
+  const { contentRef } = useWorkspaceAutoFit();
   const [deleteGroupDialog, setDeleteGroupDialog] = useState<{
     isOpen: boolean;
     groupId: string | null;
@@ -242,6 +248,7 @@ const WorkspaceApp: React.FC = () => {
         />
       )}
       <WorkspaceGroupedList
+        contentRef={contentRef}
         data={{
           groups,
           items,
