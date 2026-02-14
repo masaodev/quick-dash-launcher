@@ -104,8 +104,14 @@ const IconProgressDetailModal: React.FC<IconProgressDetailModalProps> = ({
   const successResults = results.filter((r) => r.success);
   const errorResults = results.filter((r) => !r.success);
 
-  const filteredResults =
-    filter === 'all' ? results : filter === 'success' ? successResults : errorResults;
+  let filteredResults: IconProgressResult[];
+  if (filter === 'success') {
+    filteredResults = successResults;
+  } else if (filter === 'error') {
+    filteredResults = errorResults;
+  } else {
+    filteredResults = results;
+  }
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -167,10 +173,10 @@ const IconProgressDetailModal: React.FC<IconProgressDetailModalProps> = ({
                 <div className="result-icon">{result.success ? '✓' : '✗'}</div>
                 <div className="result-content">
                   <div className="result-name">
-                    {result.itemName.split('\n').map((line, i) => (
+                    {result.itemName.split('\n').map((line, i, lines) => (
                       <React.Fragment key={i}>
                         {line}
-                        {i < result.itemName.split('\n').length - 1 && <br />}
+                        {i < lines.length - 1 && <br />}
                       </React.Fragment>
                     ))}
                   </div>

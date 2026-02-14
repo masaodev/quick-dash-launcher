@@ -34,13 +34,10 @@ export function showNotification(options: NotificationOptions): void {
     return;
   }
 
-  // アプリアイコンを取得
-  const iconPath = getAppIconPath();
-
   const notification = new Notification({
     title: options.title,
     body: options.body,
-    icon: iconPath ? nativeImage.createFromPath(iconPath) : undefined,
+    icon: nativeImage.createFromPath(getAppIconPath()),
     silent: false,
   });
 
@@ -52,18 +49,8 @@ export function showNotification(options: NotificationOptions): void {
   notification.show();
 }
 
-/**
- * アプリアイコンのパスを取得する
- *
- * @returns アイコンファイルのパス、見つからない場合はundefined
- */
-function getAppIconPath(): string | undefined {
-  // 開発環境とプロダクション環境で異なるパスを使用
-  if (app.isPackaged) {
-    // プロダクション環境: resourcesPathからアイコンを取得
-    return path.join(process.resourcesPath, 'icon.ico');
-  } else {
-    // 開発環境: プロジェクトルートのassetsフォルダからアイコンを取得
-    return path.join(app.getAppPath(), 'assets', 'icon.ico');
-  }
+function getAppIconPath(): string {
+  return app.isPackaged
+    ? path.join(process.resourcesPath, 'icon.ico')
+    : path.join(app.getAppPath(), 'assets', 'icon.ico');
 }

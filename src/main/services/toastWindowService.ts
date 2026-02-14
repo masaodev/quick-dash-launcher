@@ -130,20 +130,9 @@ async function ensureToastWindow(): Promise<BrowserWindow> {
  * トースト通知を表示する
  */
 export async function showToastWindow(options: ToastOptions): Promise<void> {
-  const {
-    message,
-    type = 'success',
-    duration: customDuration,
-    itemType,
-    displayName,
-    path: itemPath,
-    icon,
-    itemCount,
-    itemNames,
-  } = options;
-
   // グループ起動時は表示時間を長め（3秒）に設定
-  const duration = customDuration ?? (itemType === 'group' ? 3000 : DEFAULT_DURATION);
+  const duration = options.duration ?? (options.itemType === 'group' ? 3000 : DEFAULT_DURATION);
+  const type = options.type ?? 'success';
 
   clearCloseTimeout();
 
@@ -151,17 +140,7 @@ export async function showToastWindow(options: ToastOptions): Promise<void> {
   const win = await ensureToastWindow();
 
   // トーストメッセージを送信して表示
-  win.webContents.send('show-toast', {
-    message,
-    type,
-    duration,
-    itemType,
-    displayName,
-    path: itemPath,
-    icon,
-    itemCount,
-    itemNames,
-  });
+  win.webContents.send('show-toast', { ...options, type, duration });
 
   // マウスカーソルがある画面に位置を更新
   const { x, y } = getToastPosition();

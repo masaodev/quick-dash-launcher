@@ -8,14 +8,22 @@ interface NodeError extends Error {
   path?: string;
 }
 
-// 開発環境かどうかを判定
-const isDevelopment = process.env.NODE_ENV === 'development';
+const logLevel = process.env.NODE_ENV === 'development' ? 'debug' : 'info';
 
-// ログレベルの設定
-const logLevel = isDevelopment ? 'debug' : 'info';
+function serializeError(error: Error): Record<string, unknown> {
+  const nodeError = error as NodeError;
+  return {
+    name: nodeError.name,
+    message: nodeError.message,
+    stack: nodeError.stack,
+    code: nodeError.code,
+    errno: nodeError.errno,
+    syscall: nodeError.syscall,
+    path: nodeError.path,
+  };
+}
 
-// Electronメインプロセス用の安全なシリアライゼーション関数
-const safeStringify = (obj: unknown, space?: number): string => {
+function safeStringify(obj: unknown, space?: number): string {
   const seen = new WeakSet();
   return JSON.stringify(
     obj,
@@ -27,15 +35,7 @@ const safeStringify = (obj: unknown, space?: number): string => {
         seen.add(value);
       }
       if (value instanceof Error) {
-        return {
-          name: value.name,
-          message: value.message,
-          stack: value.stack,
-          code: (value as NodeError).code,
-          errno: (value as NodeError).errno,
-          syscall: (value as NodeError).syscall,
-          path: (value as NodeError).path,
-        };
+        return serializeError(value);
       }
       if (typeof value === 'function') {
         return '[Function]';
@@ -47,27 +47,17 @@ const safeStringify = (obj: unknown, space?: number): string => {
     },
     space
   );
-};
+}
 
-// Electronメインプロセス向けのPino設定
 const logger = pino({
   name: 'QuickDashLauncher',
   level: logLevel,
   timestamp: pino.stdTimeFunctions.isoTime,
-  // Electronメインプロセス用の包括的なシリアライザー
   serializers: {
     err: pino.stdSerializers.err,
     error: (error: unknown) => {
       if (error instanceof Error) {
-        return {
-          name: error.name,
-          message: error.message,
-          stack: error.stack,
-          code: (error as NodeError).code,
-          errno: (error as NodeError).errno,
-          syscall: (error as NodeError).syscall,
-          path: (error as NodeError).path,
-        };
+        return serializeError(error);
       }
       return error;
     },
@@ -96,10 +86,9 @@ const logger = pino({
 
 export default logger;
 
-// 便利なヘルパー関数
-export const createChildLogger = (context: string) => {
+export function createChildLogger(context: string) {
   return logger.child({ context });
-};
+}
 
 // 主要なコンテキスト用のロガー
 export const iconLogger = createChildLogger('icon');

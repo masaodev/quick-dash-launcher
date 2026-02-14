@@ -73,7 +73,6 @@ function collectLnkFiles(dirPath: string): string[] {
 function scanInstalledApps(): AppScanResult {
   const startTime = performance.now();
 
-  // スタートメニューの2箇所をスキャン
   const programDataPath = process.env.PROGRAMDATA || 'C:\\ProgramData';
   const appDataPath =
     process.env.APPDATA || path.join(process.env.USERPROFILE || '', 'AppData', 'Roaming');
@@ -83,12 +82,10 @@ function scanInstalledApps(): AppScanResult {
     path.join(appDataPath, 'Microsoft', 'Windows', 'Start Menu', 'Programs'),
   ];
 
-  // .lnkファイルを収集
   const allLnkFiles = startMenuPaths
     .filter((menuPath) => fs.existsSync(menuPath))
     .flatMap((menuPath) => collectLnkFiles(menuPath));
 
-  // .lnkファイルを解析してアプリ情報を取得
   const apps: ScannedAppItem[] = [];
   const seenTargets = new Set<string>();
 
@@ -102,7 +99,6 @@ function scanInstalledApps(): AppScanResult {
         continue;
       }
 
-      // ターゲットパスで重複排除（同一アプリが両スタートメニューにある場合）
       const normalizedTarget = shortcutDetails.target.toLowerCase();
       if (seenTargets.has(normalizedTarget)) {
         continue;

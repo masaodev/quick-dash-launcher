@@ -23,7 +23,7 @@ import {
   isJsonWindowItem,
   isJsonClipboardItem,
 } from '@common/types';
-import type { JsonItem, JsonDirOptions, JsonWindowItem, JsonClipboardItem } from '@common/types';
+import type { JsonItem, JsonDirOptions, JsonClipboardItem } from '@common/types';
 import type { RegisterItem } from '@common/types/register';
 import { isWindowInfo } from '@common/types/guards';
 import { IPC_CHANNELS } from '@common/ipcChannels';
@@ -250,24 +250,16 @@ export async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
   const { PathManager } = await import('../config/pathManager.js');
   const autoDetectedFiles = PathManager.getDataFiles();
 
-  // dataFileTabsで明示的に指定されたファイルを収集
-  const explicitFiles = Array.from(fileToTabMap.keys());
-
-  // 両方を結合して重複を排除
-  const allFiles = Array.from(new Set([...explicitFiles, ...autoDetectedFiles]));
+  // dataFileTabsで明示的に指定されたファイルを収集し、重複を排除
+  const allFiles = Array.from(new Set([...fileToTabMap.keys(), ...autoDetectedFiles]));
 
   for (const fileName of allFiles) {
-    // 現在のファイルが属するタブインデックスを取得
-    const tabIndex = fileToTabMap.get(fileName) ?? -1; // タブに属さない場合は-1
+    const tabIndex = fileToTabMap.get(fileName) ?? -1;
 
-    // このタブ用のSetを初期化
     if (!seenPathsByTab.has(tabIndex)) {
       seenPathsByTab.set(tabIndex, new Set<string>());
     }
-    const seenPaths = seenPathsByTab.get(tabIndex);
-    if (!seenPaths) {
-      throw new Error(`Failed to get seenPaths for tab index: ${tabIndex}`);
-    }
+    const seenPaths = seenPathsByTab.get(tabIndex)!;
 
     const filePath = path.join(configFolder, fileName);
 
@@ -325,23 +317,21 @@ async function loadEditableItems(configFolder: string): Promise<LoadEditableItem
         const jsonData = parseJsonDataFile(content);
 
         // 各JsonItemをEditableJsonItemに変換
-        jsonData.items.forEach((jsonItem, index) => {
-          const displayText = jsonItemToDisplayText(jsonItem);
+        for (let index = 0; index < jsonData.items.length; index++) {
+          const jsonItem = jsonData.items[index];
           const validation = validateEditableItem(jsonItem);
 
-          const editableItem: EditableJsonItem = {
+          items.push({
             item: jsonItem,
-            displayText,
+            displayText: jsonItemToDisplayText(jsonItem),
             meta: {
               sourceFile: fileName,
               lineNumber: index,
               isValid: validation.isValid,
               validationError: validation.error,
             },
-          };
-
-          items.push(editableItem);
-        });
+          });
+        }
       } catch (error) {
         dataLogger.error({ error, fileName }, 'JSONファイルのパースに失敗しました');
         return {
@@ -377,17 +367,13 @@ async function saveEditableItems(
 
   // ファイル別にグループ化
   const fileGroups = new Map<string, EditableJsonItem[]>();
-  editableItems.forEach((item) => {
+  for (const item of editableItems) {
     const sourceFile = item.meta.sourceFile;
     if (!fileGroups.has(sourceFile)) {
       fileGroups.set(sourceFile, []);
     }
-    const group = fileGroups.get(sourceFile);
-    if (!group) {
-      throw new Error(`Failed to get file group for: ${sourceFile}`);
-    }
-    group.push(item);
-  });
+    fileGroups.get(sourceFile)!.push(item);
+  }
 
   // 管理対象のすべてのファイルを保存（空になったファイルも含む）
   for (const fileName of dataFiles) {
@@ -504,30 +490,23 @@ async function updateWindowItemById(
   },
   memo?: string
 ): Promise<void> {
-  await updateItemByIdWithCallback(configFolder, id, (itemId) => {
-    const newItem: JsonWindowItem = {
-      id: itemId,
-      type: 'window',
-      displayName: config.displayName,
-      windowTitle: config.windowTitle,
-      updatedAt: Date.now(),
-    };
-
-    if (config.processName !== undefined) newItem.processName = config.processName;
-    if (config.x !== undefined) newItem.x = config.x;
-    if (config.y !== undefined) newItem.y = config.y;
-    if (config.width !== undefined) newItem.width = config.width;
-    if (config.height !== undefined) newItem.height = config.height;
-    if (config.moveToActiveMonitorCenter !== undefined)
-      newItem.moveToActiveMonitorCenter = config.moveToActiveMonitorCenter;
-    if (config.virtualDesktopNumber !== undefined)
-      newItem.virtualDesktopNumber = config.virtualDesktopNumber;
-    if (config.activateWindow !== undefined) newItem.activateWindow = config.activateWindow;
-    if (config.pinToAllDesktops !== undefined) newItem.pinToAllDesktops = config.pinToAllDesktops;
-    if (memo !== undefined) newItem.memo = memo;
-
-    return newItem;
-  });
+  await updateItemByIdWithCallback(configFolder, id, (itemId) => ({
+    id: itemId,
+    type: 'window' as const,
+    displayName: config.displayName,
+    windowTitle: config.windowTitle,
+    processName: config.processName,
+    x: config.x,
+    y: config.y,
+    width: config.width,
+    height: config.height,
+    moveToActiveMonitorCenter: config.moveToActiveMonitorCenter,
+    virtualDesktopNumber: config.virtualDesktopNumber,
+    activateWindow: config.activateWindow,
+    pinToAllDesktops: config.pinToAllDesktops,
+    memo,
+    updatedAt: Date.now(),
+  }));
 }
 
 /**
@@ -560,16 +539,11 @@ async function registerItems(configFolder: string, items: RegisterItem[]): Promi
   const itemsByTab = new Map<string, RegisterItem[]>();
 
   for (const item of items) {
-    // targetFileが指定されていればそれを使用、なければtargetTabを使用
     const targetFile = item.targetFile || item.targetTab || DEFAULT_DATA_FILE;
     if (!itemsByTab.has(targetFile)) {
       itemsByTab.set(targetFile, []);
     }
-    const group = itemsByTab.get(targetFile);
-    if (!group) {
-      throw new Error(`Failed to get items group for: ${targetFile}`);
-    }
-    group.push(item);
+    itemsByTab.get(targetFile)!.push(item);
   }
 
   // 各ファイルに書き込み
@@ -657,28 +631,23 @@ function convertRegisterItemToJsonItem(item: RegisterItem): JsonItem {
       throw new Error('windowOperationConfig is required for window items');
     }
 
-    const windowItem: JsonItem = {
+    return {
       id,
-      type: 'window',
+      type: 'window' as const,
       displayName: item.displayName,
       windowTitle: cfg.windowTitle,
+      processName: cfg.processName,
+      x: cfg.x,
+      y: cfg.y,
+      width: cfg.width,
+      height: cfg.height,
+      moveToActiveMonitorCenter: cfg.moveToActiveMonitorCenter,
+      virtualDesktopNumber: cfg.virtualDesktopNumber,
+      activateWindow: cfg.activateWindow,
+      pinToAllDesktops: cfg.pinToAllDesktops,
+      memo: item.memo || undefined,
       updatedAt: now,
     };
-
-    if (cfg.processName !== undefined) windowItem.processName = cfg.processName;
-    if (cfg.x !== undefined) windowItem.x = cfg.x;
-    if (cfg.y !== undefined) windowItem.y = cfg.y;
-    if (cfg.width !== undefined) windowItem.width = cfg.width;
-    if (cfg.height !== undefined) windowItem.height = cfg.height;
-    if (cfg.moveToActiveMonitorCenter !== undefined)
-      windowItem.moveToActiveMonitorCenter = cfg.moveToActiveMonitorCenter;
-    if (cfg.virtualDesktopNumber !== undefined)
-      windowItem.virtualDesktopNumber = cfg.virtualDesktopNumber;
-    if (cfg.activateWindow !== undefined) windowItem.activateWindow = cfg.activateWindow;
-    if (cfg.pinToAllDesktops !== undefined) windowItem.pinToAllDesktops = cfg.pinToAllDesktops;
-    if (item.memo) windowItem.memo = item.memo;
-
-    return windowItem;
   }
 
   if (item.itemCategory === 'clipboard') {
@@ -820,31 +789,25 @@ export function setupDataHandlers(configFolder: string) {
     }
   });
 
-  ipcMain.handle(IPC_CHANNELS.LOAD_DATA_FILES, async () => {
-    return await loadDataFiles(configFolder);
-  });
+  ipcMain.handle(IPC_CHANNELS.LOAD_DATA_FILES, () => loadDataFiles(configFolder));
 
   ipcMain.handle(IPC_CHANNELS.REGISTER_ITEMS, async (_event, items: RegisterItem[]) => {
     await registerItems(configFolder, items);
     notifyDataChanged();
-    return;
   });
 
-  ipcMain.handle(IPC_CHANNELS.IS_DIRECTORY, async (_event, filePath: string) => {
-    return FileUtils.isDirectory(filePath);
-  });
+  ipcMain.handle(IPC_CHANNELS.IS_DIRECTORY, (_event, filePath: string) =>
+    FileUtils.isDirectory(filePath)
+  );
 
   // EditableJsonItem API
-  ipcMain.handle(IPC_CHANNELS.LOAD_EDITABLE_ITEMS, async () => {
-    return await loadEditableItems(configFolder);
-  });
+  ipcMain.handle(IPC_CHANNELS.LOAD_EDITABLE_ITEMS, () => loadEditableItems(configFolder));
 
   ipcMain.handle(
     IPC_CHANNELS.SAVE_EDITABLE_ITEMS,
     async (_event, editableItems: EditableJsonItem[]) => {
       await saveEditableItems(configFolder, editableItems);
       notifyDataChanged();
-      return;
     }
   );
 
@@ -854,7 +817,6 @@ export function setupDataHandlers(configFolder: string) {
     async (_event, id: string, dirPath: string, options?: JsonDirOptions, memo?: string) => {
       await updateDirItemById(configFolder, id, dirPath, options, memo);
       notifyDataChanged();
-      return;
     }
   );
 
@@ -863,7 +825,6 @@ export function setupDataHandlers(configFolder: string) {
     async (_event, id: string, displayName: string, itemNames: string[], memo?: string) => {
       await updateGroupItemById(configFolder, id, displayName, itemNames, memo);
       notifyDataChanged();
-      return;
     }
   );
 
@@ -889,7 +850,6 @@ export function setupDataHandlers(configFolder: string) {
     ) => {
       await updateWindowItemById(configFolder, id, config, memo);
       notifyDataChanged();
-      return;
     }
   );
 }

@@ -1,7 +1,3 @@
-/**
- * ブックマーク自動取込設定を管理するフック
- */
-
 import { useState, useEffect, useCallback } from 'react';
 import type {
   BookmarkAutoImportSettings,
@@ -18,7 +14,6 @@ export function useBookmarkAutoImport() {
   const [isLoading, setIsLoading] = useState(true);
   const [executingRuleId, setExecutingRuleId] = useState<string | null>(null);
 
-  // 設定の読み込み
   const loadSettings = useCallback(async () => {
     try {
       const loaded = await window.electronAPI.bookmarkAutoImportAPI.getSettings();
@@ -34,7 +29,6 @@ export function useBookmarkAutoImport() {
     loadSettings();
   }, [loadSettings]);
 
-  // 設定の保存
   const saveSettings = useCallback(async (newSettings: BookmarkAutoImportSettings) => {
     try {
       await window.electronAPI.bookmarkAutoImportAPI.saveSettings(newSettings);
@@ -45,7 +39,6 @@ export function useBookmarkAutoImport() {
     }
   }, []);
 
-  // autoRunOnStartup の切り替え
   const toggleAutoRunOnStartup = useCallback(async () => {
     const newSettings = {
       ...settings,
@@ -54,7 +47,6 @@ export function useBookmarkAutoImport() {
     await saveSettings(newSettings);
   }, [settings, saveSettings]);
 
-  // ルールの有効/無効切り替え
   const toggleRuleEnabled = useCallback(
     async (ruleId: string) => {
       const newRules = settings.rules.map((r) =>
@@ -65,7 +57,6 @@ export function useBookmarkAutoImport() {
     [settings, saveSettings]
   );
 
-  // ルールの追加
   const addRule = useCallback(
     async (rule: BookmarkAutoImportRule) => {
       const newSettings = {
@@ -77,7 +68,6 @@ export function useBookmarkAutoImport() {
     [settings, saveSettings]
   );
 
-  // ルールの更新
   const updateRule = useCallback(
     async (rule: BookmarkAutoImportRule) => {
       const newRules = settings.rules.map((r) => (r.id === rule.id ? rule : r));
@@ -86,7 +76,6 @@ export function useBookmarkAutoImport() {
     [settings, saveSettings]
   );
 
-  // ルールの削除
   const deleteRule = useCallback(
     async (ruleId: string, deleteItems: boolean = false) => {
       if (deleteItems) {
@@ -101,13 +90,11 @@ export function useBookmarkAutoImport() {
     [settings, saveSettings]
   );
 
-  // 単一ルールの実行
   const executeRule = useCallback(
     async (rule: BookmarkAutoImportRule): Promise<BookmarkAutoImportResult> => {
       setExecutingRuleId(rule.id);
       try {
         const result = await window.electronAPI.bookmarkAutoImportAPI.executeRule(rule);
-        // 設定を再読み込み（lastResultが更新されるため）
         await loadSettings();
         return result;
       } finally {
@@ -117,7 +104,6 @@ export function useBookmarkAutoImport() {
     [loadSettings]
   );
 
-  // 全ルール実行
   const executeAllRules = useCallback(async (): Promise<BookmarkAutoImportResult[]> => {
     setExecutingRuleId('all');
     try {
@@ -129,11 +115,9 @@ export function useBookmarkAutoImport() {
     }
   }, [loadSettings]);
 
-  // プレビュー
   const previewRule = useCallback(
-    async (rule: BookmarkAutoImportRule): Promise<BookmarkWithFolder[]> => {
-      return await window.electronAPI.bookmarkAutoImportAPI.previewRule(rule);
-    },
+    (rule: BookmarkAutoImportRule): Promise<BookmarkWithFolder[]> =>
+      window.electronAPI.bookmarkAutoImportAPI.previewRule(rule),
     []
   );
 

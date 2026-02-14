@@ -19,6 +19,17 @@ import {
 } from './hooks/workspace';
 import { logError } from './utils/debug';
 
+const RESIZE_DIRECTIONS = [
+  'top-left',
+  'top',
+  'top-right',
+  'right',
+  'bottom-right',
+  'bottom',
+  'bottom-left',
+  'left',
+] as const;
+
 const WorkspaceApp: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isPinned, setIsPinned] = useState(false);
@@ -66,14 +77,12 @@ const WorkspaceApp: React.FC = () => {
 
   useEffect(() => {
     window.electronAPI.workspaceAPI.getAlwaysOnTop().then(setIsPinned);
-  }, []);
 
-  useEffect(() => {
-    const loadSetting = async () => {
+    const loadTransparent = async () => {
       const settings = await window.electronAPI.getSettings();
       setBackgroundTransparent(settings.workspaceBackgroundTransparent || false);
     };
-    loadSetting();
+    loadTransparent();
 
     const cleanup = window.electronAPI.onSettingsChanged(async () => {
       const settings = await window.electronAPI.getSettings();
@@ -222,10 +231,8 @@ const WorkspaceApp: React.FC = () => {
       <WorkspaceHeader
         isFilterVisible={isFilterVisible}
         onToggleFilter={() => {
-          if (isFilterVisible) {
-            setFilterText('');
-          }
-          setIsFilterVisible(!isFilterVisible);
+          if (isFilterVisible) setFilterText('');
+          setIsFilterVisible((prev) => !prev);
         }}
         onExpandAll={handleExpandAll}
         onCollapseAll={handleCollapseAll}
@@ -330,16 +337,7 @@ const WorkspaceApp: React.FC = () => {
         editingItem={editModalItem}
         onSave={actions.handleUpdateItem}
       />
-      {[
-        'top-left',
-        'top',
-        'top-right',
-        'right',
-        'bottom-right',
-        'bottom',
-        'bottom-left',
-        'left',
-      ].map((direction) => (
+      {RESIZE_DIRECTIONS.map((direction) => (
         <div
           key={direction}
           className={`workspace-resize-handle ${direction}`}

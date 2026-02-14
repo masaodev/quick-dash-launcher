@@ -110,38 +110,26 @@ export function useIconFetcher(options: UseIconFetcherOptions): UseIconFetcherRe
     debugInfo('すべての更新が完了');
   };
 
-  const handleFetchMissingIcons = async (): Promise<void> => {
-    debugInfo('未取得アイコンの取得を開始（全タブ）');
+  async function fetchMissingIconsFor(items: AppItem[], label: string): Promise<void> {
+    debugInfo(`未取得アイコンの取得を開始（${label}）`);
 
-    const results = await fetchAndApplyIcons(mainItems, true, false);
+    const results = await fetchAndApplyIcons(items, true, false);
 
     if (!results) {
-      debugInfo('取得対象のアイテムがありません');
+      debugInfo(`取得対象のアイテムがありません（${label}）`);
       return;
     }
 
     setMainItems((prevItems) => applyIconsToItems(prevItems, results));
     await reloadIconFetchErrors();
 
-    debugInfo('未取得アイコンの取得が完了（全タブ）');
-  };
+    debugInfo(`未取得アイコンの取得が完了（${label}）`);
+  }
 
-  const handleFetchMissingIconsCurrentTab = async (): Promise<void> => {
-    debugInfo('未取得アイコンの取得を開始（現在のタブ）');
+  const handleFetchMissingIcons = (): Promise<void> => fetchMissingIconsFor(mainItems, '全タブ');
 
-    const currentTabItems = getCurrentTabItems();
-    const results = await fetchAndApplyIcons(currentTabItems, true, false);
-
-    if (!results) {
-      debugInfo('取得対象のアイテムがありません（現在のタブ）');
-      return;
-    }
-
-    setMainItems((prevItems) => applyIconsToItems(prevItems, results));
-    await reloadIconFetchErrors();
-
-    debugInfo('未取得アイコンの取得が完了（現在のタブ）');
-  };
+  const handleFetchMissingIconsCurrentTab = (): Promise<void> =>
+    fetchMissingIconsFor(getCurrentTabItems(), '現在のタブ');
 
   return {
     handleRefreshAll,

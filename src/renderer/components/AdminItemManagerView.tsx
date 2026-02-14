@@ -100,10 +100,6 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     isOpen: false,
     message: '',
     onConfirm: () => {},
-    danger: false,
-    showCheckbox: false,
-    checkboxLabel: '',
-    checkboxChecked: false,
   });
 
   // 自動取込設定からルールマップを構築
@@ -375,24 +371,25 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
 
           const getPathAndArgs = (item: EditableJsonItem) => {
             const jsonItem = item.item;
-            if (jsonItem.type === 'item') {
-              const pathPart = jsonItem.path || '';
-              const argsPart = jsonItem.args || '';
-              return argsPart ? `${pathPart} ${argsPart}` : pathPart;
-            } else if (jsonItem.type === 'dir') {
-              const pathPart = jsonItem.path || '';
-              const options = jsonItem.options
-                ? Object.entries(jsonItem.options)
-                    .map(([k, v]) => `${k}=${v}`)
-                    .join(',')
-                : '';
-              return options ? `${pathPart} ${options}` : pathPart;
-            } else if (jsonItem.type === 'group') {
-              return jsonItem.displayName || '';
-            } else if (jsonItem.type === 'window') {
-              return jsonItem.displayName || '';
+            switch (jsonItem.type) {
+              case 'item': {
+                const argsPart = jsonItem.args || '';
+                return argsPart ? `${jsonItem.path || ''} ${argsPart}` : jsonItem.path || '';
+              }
+              case 'dir': {
+                const options = jsonItem.options
+                  ? Object.entries(jsonItem.options)
+                      .map(([k, v]) => `${k}=${v}`)
+                      .join(',')
+                  : '';
+                return options ? `${jsonItem.path || ''} ${options}` : jsonItem.path || '';
+              }
+              case 'group':
+              case 'window':
+                return jsonItem.displayName || '';
+              default:
+                return '';
             }
-            return '';
           };
 
           // 現在のデータファイルのアイテムのみを整列
@@ -452,35 +449,16 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
 
   // アイテム番号を振り直す関数
   const reorderItemNumbers = (items: EditableJsonItem[]): EditableJsonItem[] => {
-    const fileGroups = new Map<string, EditableJsonItem[]>();
+    const fileCounters = new Map<string, number>();
 
-    // ファイル別にグループ化
-    items.forEach((item) => {
-      if (!fileGroups.has(item.meta.sourceFile)) {
-        fileGroups.set(item.meta.sourceFile, []);
-      }
-      const group = fileGroups.get(item.meta.sourceFile);
-      if (!group) {
-        throw new Error(`Failed to get file group for: ${item.meta.sourceFile}`);
-      }
-      group.push(item);
+    return items.map((item) => {
+      const counter = fileCounters.get(item.meta.sourceFile) ?? 0;
+      fileCounters.set(item.meta.sourceFile, counter + 1);
+      return {
+        ...item,
+        meta: { ...item.meta, lineNumber: counter },
+      };
     });
-
-    // 各ファイル内で行番号を振り直し
-    const reorderedItems: EditableJsonItem[] = [];
-    for (const [, fileItems] of fileGroups) {
-      fileItems.forEach((item, index) => {
-        reorderedItems.push({
-          ...item,
-          meta: {
-            ...item.meta,
-            lineNumber: index,
-          },
-        });
-      });
-    }
-
-    return reorderedItems;
   };
 
   const handleBookmarkImport = (
@@ -605,20 +583,25 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     setIsAppImportModalOpen(false);
   };
 
-  const handleExitEditMode = () => {
+  // 未保存チェック付きアクション実行ヘルパー
+  const confirmIfUnsaved = (message: string, action: () => void) => {
     if (hasUnsavedChanges) {
       setConfirmDialog({
         isOpen: true,
-        message: '未保存の変更があります。アイテム管理を終了しますか？',
+        message,
         onConfirm: () => {
           setConfirmDialog({ ...confirmDialog, isOpen: false });
-          onExitEditMode();
+          action();
         },
         danger: true,
       });
     } else {
-      onExitEditMode();
+      action();
     }
+  };
+
+  const handleExitEditMode = () => {
+    confirmIfUnsaved('未保存の変更があります。アイテム管理を終了しますか？', onExitEditMode);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -637,46 +620,29 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
 
   const mergedItems = workingItems.map((item) => {
     const itemKey = `${item.meta.sourceFile}_${item.meta.lineNumber}`;
-    const editedItem = editedItems.get(itemKey);
-    return editedItem || item;
+    return editedItems.get(itemKey) || item;
   });
+
+  const discardAndSwitch = (action: () => void) => {
+    action();
+    setHasUnsavedChanges(false);
+    setEditedItems(new Map());
+  };
 
   // タブ変更時の未保存チェック
   const handleTabChange = (newTabIndex: number) => {
-    if (hasUnsavedChanges) {
-      setConfirmDialog({
-        isOpen: true,
-        message: '未保存の変更があります。タブを切り替えると変更が失われます。続行しますか？',
-        onConfirm: () => {
-          setConfirmDialog({ ...confirmDialog, isOpen: false });
-          setSelectedTabIndex(newTabIndex);
-          setHasUnsavedChanges(false);
-          setEditedItems(new Map());
-        },
-        danger: true,
-      });
-    } else {
-      setSelectedTabIndex(newTabIndex);
-    }
+    confirmIfUnsaved(
+      '未保存の変更があります。タブを切り替えると変更が失われます。続行しますか？',
+      () => discardAndSwitch(() => setSelectedTabIndex(newTabIndex))
+    );
   };
 
   // ファイル変更時の未保存チェック
   const handleFileChange = (newFile: string) => {
-    if (hasUnsavedChanges) {
-      setConfirmDialog({
-        isOpen: true,
-        message: '未保存の変更があります。ファイルを切り替えると変更が失われます。続行しますか？',
-        onConfirm: () => {
-          setConfirmDialog({ ...confirmDialog, isOpen: false });
-          setSelectedDataFile(newFile);
-          setHasUnsavedChanges(false);
-          setEditedItems(new Map());
-        },
-        danger: true,
-      });
-    } else {
-      setSelectedDataFile(newFile);
-    }
+    confirmIfUnsaved(
+      '未保存の変更があります。ファイルを切り替えると変更が失われます。続行しますか？',
+      () => discardAndSwitch(() => setSelectedDataFile(newFile))
+    );
   };
 
   // ドロップダウンメニューアイテムクリック時の処理
@@ -713,6 +679,10 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     const itemText = item.displayText.toLowerCase();
     return keywords.every((keyword) => itemText.includes(keyword));
   });
+
+  const visibleSelectedCount = filteredItems.filter((item) =>
+    selectedItems.has(`${item.meta.sourceFile}_${item.meta.lineNumber}`)
+  ).length;
 
   // タブ変更時にファイルを自動選択
   useEffect(() => {
@@ -994,12 +964,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
 
       <div className="edit-mode-status">
         <span className="selection-count">
-          {(() => {
-            const visibleSelectedCount = filteredItems.filter((item) =>
-              selectedItems.has(`${item.meta.sourceFile}_${item.meta.lineNumber}`)
-            ).length;
-            return visibleSelectedCount > 0 ? `${visibleSelectedCount}行を選択中` : '';
-          })()}
+          {visibleSelectedCount > 0 ? `${visibleSelectedCount}行を選択中` : ''}
         </span>
         <span className="total-count">合計: {filteredItems.length}行</span>
         {hasUnsavedChanges && <span className="unsaved-changes">未保存の変更があります</span>}

@@ -103,52 +103,19 @@ export class BookmarkAutoImportService {
     const startTime = Date.now();
 
     try {
-      // ブラウザの検出
-      const browsers = await detectInstalledBrowsers();
-      const browser = browsers.find((b) => b.id === rule.browserId);
-
-      if (!browser || !browser.installed) {
-        return {
-          success: false,
-          importedCount: 0,
-          deletedCount: 0,
-          errorMessage: `ブラウザ ${rule.browserId} が見つかりません`,
-          executedAt: startTime,
-        };
-      }
-
-      // 対象プロファイルの決定
-      const targetProfiles =
-        rule.profileIds.length === 0
-          ? browser.profiles
-          : browser.profiles.filter((p) => rule.profileIds.includes(p.id));
+      const targetProfiles = await this.resolveTargetProfiles(rule);
 
       if (targetProfiles.length === 0) {
         return {
           success: false,
           importedCount: 0,
           deletedCount: 0,
-          errorMessage: 'ブックマークが見つかりません（プロファイルなし）',
+          errorMessage: `ブラウザ ${rule.browserId} が見つからないか、対象プロファイルがありません`,
           executedAt: startTime,
         };
       }
 
-      // 全プロファイルからブックマークを収集
-      let allBookmarks: BookmarkWithFolder[] = [];
-      for (const profile of targetProfiles) {
-        try {
-          const bookmarks = await parseBrowserBookmarksWithFolders(profile.bookmarkPath);
-          allBookmarks.push(...bookmarks);
-        } catch (error) {
-          logger.warn(
-            { error, profileId: profile.id },
-            'ブックマークの読み込みに失敗しました（スキップ）'
-          );
-        }
-      }
-
-      // フィルタ適用
-      allBookmarks = this.applyFilters(allBookmarks, rule);
+      const allBookmarks = await this.collectBookmarksFromProfiles(targetProfiles, rule);
 
       // データファイルの読み込み・更新
       const configFolder = PathManager.getConfigFolder();
@@ -270,6 +237,45 @@ export class BookmarkAutoImportService {
    * ルールのプレビュー（マッチするブックマーク一覧を返す）
    */
   async previewRule(rule: BookmarkAutoImportRule): Promise<BookmarkWithFolder[]> {
+    const profiles = await this.resolveTargetProfiles(rule);
+    const bookmarks = await this.collectBookmarksFromProfiles(profiles, rule);
+
+    // プレビューでもdisplayName変換を適用
+    return bookmarks.map((bookmark) => ({
+      ...bookmark,
+      displayName: this.buildDisplayName(bookmark, rule),
+    }));
+  }
+
+  /**
+   * プロファイルからブックマークを収集・フィルタリング
+   */
+  private async collectBookmarksFromProfiles(
+    profiles: Array<{ id: string; bookmarkPath: string }>,
+    rule: BookmarkAutoImportRule
+  ): Promise<BookmarkWithFolder[]> {
+    const allBookmarks: BookmarkWithFolder[] = [];
+    for (const profile of profiles) {
+      try {
+        const bookmarks = await parseBrowserBookmarksWithFolders(profile.bookmarkPath);
+        allBookmarks.push(...bookmarks);
+      } catch (error) {
+        logger.warn(
+          { error, profileId: profile.id },
+          'ブックマークの読み込みに失敗しました（スキップ）'
+        );
+      }
+    }
+
+    return this.applyFilters(allBookmarks, rule);
+  }
+
+  /**
+   * ルールに対応するブラウザのプロファイルを解決
+   */
+  private async resolveTargetProfiles(
+    rule: BookmarkAutoImportRule
+  ): Promise<Array<{ id: string; bookmarkPath: string }>> {
     const browsers = await detectInstalledBrowsers();
     const browser = browsers.find((b) => b.id === rule.browserId);
 
@@ -277,28 +283,9 @@ export class BookmarkAutoImportService {
       return [];
     }
 
-    const targetProfiles =
-      rule.profileIds.length === 0
-        ? browser.profiles
-        : browser.profiles.filter((p) => rule.profileIds.includes(p.id));
-
-    let allBookmarks: BookmarkWithFolder[] = [];
-    for (const profile of targetProfiles) {
-      try {
-        const bookmarks = await parseBrowserBookmarksWithFolders(profile.bookmarkPath);
-        allBookmarks.push(...bookmarks);
-      } catch {
-        // スキップ
-      }
-    }
-
-    const filtered = this.applyFilters(allBookmarks, rule);
-
-    // プレビューでもdisplayName変換を適用
-    return filtered.map((bookmark) => ({
-      ...bookmark,
-      displayName: this.buildDisplayName(bookmark, rule),
-    }));
+    return rule.profileIds.length === 0
+      ? browser.profiles
+      : browser.profiles.filter((p) => rule.profileIds.includes(p.id));
   }
 
   /**

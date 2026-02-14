@@ -2,11 +2,6 @@ import type { DragEvent } from 'react';
 import type { DragItemData } from '@common/types';
 import { isDragItemData } from '@common/types/guards';
 
-import { logError } from '../../utils/debug';
-
-/**
- * ワークスペースのドラッグ&ドロップ処理を型安全に管理するカスタムフック
- */
 export function useWorkspaceDragDrop(): {
   setDragData: (e: DragEvent, data: DragItemData) => void;
   getDragData: (e: DragEvent) => DragItemData | null;
@@ -22,8 +17,7 @@ export function useWorkspaceDragDrop(): {
 
       const parsed = JSON.parse(jsonData);
       return isDragItemData(parsed) ? parsed : null;
-    } catch (error) {
-      logError('Failed to parse drag data:', error);
+    } catch {
       return null;
     }
   }

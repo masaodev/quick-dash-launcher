@@ -36,14 +36,8 @@ export function setupWindowHandlers(
     requiredSize?: { width: number; height: number }
   ) => Promise<void>
 ) {
-  // 3段階ピンモード用のIPCハンドラー
-  ipcMain.handle(IPC_CHANNELS.GET_WINDOW_PIN_MODE, () => {
-    return getWindowPinMode();
-  });
-
-  ipcMain.handle(IPC_CHANNELS.CYCLE_WINDOW_PIN_MODE, () => {
-    return cycleWindowPinMode();
-  });
+  ipcMain.handle(IPC_CHANNELS.GET_WINDOW_PIN_MODE, () => getWindowPinMode());
+  ipcMain.handle(IPC_CHANNELS.CYCLE_WINDOW_PIN_MODE, () => cycleWindowPinMode());
 
   ipcMain.handle(IPC_CHANNELS.QUIT_APP, () => {
     const tray = getTray();
@@ -56,55 +50,26 @@ export function setupWindowHandlers(
   ipcMain.handle(IPC_CHANNELS.SET_EDIT_MODE, async (_event, editMode: boolean) => {
     await setEditMode(editMode);
   });
+  ipcMain.handle(IPC_CHANNELS.GET_EDIT_MODE, () => getEditMode());
 
-  ipcMain.handle(IPC_CHANNELS.GET_EDIT_MODE, () => {
-    return getEditMode();
-  });
-
-  // 管理ウィンドウ関連のIPCハンドラー
-  ipcMain.handle(IPC_CHANNELS.SHOW_EDIT_WINDOW, async () => {
-    await showAdminWindow();
-  });
-
-  ipcMain.handle(IPC_CHANNELS.HIDE_EDIT_WINDOW, () => {
-    hideAdminWindow();
-  });
-
-  ipcMain.handle(IPC_CHANNELS.TOGGLE_EDIT_WINDOW, async () => {
-    await toggleAdminWindow();
-  });
-
-  ipcMain.handle(IPC_CHANNELS.IS_EDIT_WINDOW_SHOWN, () => {
-    return isAdminWindowShown();
-  });
+  ipcMain.handle(IPC_CHANNELS.SHOW_EDIT_WINDOW, () => showAdminWindow());
+  ipcMain.handle(IPC_CHANNELS.HIDE_EDIT_WINDOW, () => hideAdminWindow());
+  ipcMain.handle(IPC_CHANNELS.TOGGLE_EDIT_WINDOW, () => toggleAdminWindow());
+  ipcMain.handle(IPC_CHANNELS.IS_EDIT_WINDOW_SHOWN, () => isAdminWindowShown());
 
   ipcMain.handle(
     IPC_CHANNELS.OPEN_EDIT_WINDOW_WITH_TAB,
-    async (_event, tab: 'settings' | 'edit' | 'other') => {
-      await showAdminWindowWithTab(tab);
-    }
+    async (_event, tab: 'settings' | 'edit' | 'other') => showAdminWindowWithTab(tab)
   );
 
-  // インポートモーダル付きで管理ウィンドウを開くIPCハンドラー
   ipcMain.handle(
     IPC_CHANNELS.OPEN_EDIT_WINDOW_WITH_IMPORT_MODAL,
-    async (_event, modal: 'bookmark' | 'app') => {
-      await showAdminWindowWithImportModal(modal);
-    }
+    async (_event, modal: 'bookmark' | 'app') => showAdminWindowWithImportModal(modal)
   );
 
-  // アーカイブタブを開くIPCハンドラー
-  ipcMain.handle(IPC_CHANNELS.ADMIN_SHOW_ARCHIVE_TAB, async () => {
-    await showAdminWindowWithTab('archive');
-  });
-
-  ipcMain.handle(IPC_CHANNELS.GET_INITIAL_TAB, () => {
-    return getInitialTab();
-  });
-
-  ipcMain.handle(IPC_CHANNELS.GET_PENDING_IMPORT_MODAL, () => {
-    return getPendingImportModal();
-  });
+  ipcMain.handle(IPC_CHANNELS.ADMIN_SHOW_ARCHIVE_TAB, () => showAdminWindowWithTab('archive'));
+  ipcMain.handle(IPC_CHANNELS.GET_INITIAL_TAB, () => getInitialTab());
+  ipcMain.handle(IPC_CHANNELS.GET_PENDING_IMPORT_MODAL, () => getPendingImportModal());
 
   ipcMain.handle(IPC_CHANNELS.COPY_TO_CLIPBOARD, (_event, text: string) => {
     clipboard.writeText(text);
@@ -118,35 +83,20 @@ export function setupWindowHandlers(
     }
   );
 
-  // パフォーマンス計測のIPCハンドラー
   ipcMain.handle(IPC_CHANNELS.LOG_PERFORMANCE_TIMING, (_event, label: string, duration: number) => {
     windowLogger.info(`[Performance] ${label}: ${duration.toFixed(2)}ms`);
   });
 
-  // ワークスペースウィンドウ関連のIPCハンドラー
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_TOGGLE_WINDOW, async () => {
-    await toggleWorkspaceWindow();
-  });
-
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_SHOW_WINDOW, async () => {
-    await showWorkspaceWindow();
-  });
-
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_TOGGLE_WINDOW, () => toggleWorkspaceWindow());
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_SHOW_WINDOW, () => showWorkspaceWindow());
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_HIDE_WINDOW, () => {
     hideWorkspaceWindow();
     return true;
   });
 
-  // ワークスペースウィンドウのピン留め関連ハンドラー
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_GET_ALWAYS_ON_TOP, () => {
-    return getWorkspaceAlwaysOnTop();
-  });
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_GET_ALWAYS_ON_TOP, () => getWorkspaceAlwaysOnTop());
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_TOGGLE_ALWAYS_ON_TOP, () => toggleWorkspaceAlwaysOnTop());
 
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_TOGGLE_ALWAYS_ON_TOP, () => {
-    return toggleWorkspaceAlwaysOnTop();
-  });
-
-  // ワークスペースウィンドウのモーダルモード関連ハンドラー
   ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_SET_MODAL_MODE,
     (_event, isModal: boolean, requiredSize?: { width: number; height: number }) => {
@@ -154,115 +104,71 @@ export function setupWindowHandlers(
     }
   );
 
-  // ワークスペースウィンドウの透過度設定ハンドラー
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_SET_OPACITY, async (_event, opacityPercent: number) => {
-    try {
-      // 値の検証（0-100の範囲にクリップ）
-      const validOpacity = Math.max(0, Math.min(100, opacityPercent));
-      const opacityValue = validOpacity / 100;
+    const validOpacity = Math.max(0, Math.min(100, opacityPercent));
 
-      // 設定を保存
-      const settingsService = await SettingsService.getInstance();
-      await settingsService.set('workspaceOpacity', validOpacity);
+    const settingsService = await SettingsService.getInstance();
+    await settingsService.set('workspaceOpacity', validOpacity);
 
-      // ウィンドウに反映
-      const workspace = getWorkspaceWindow();
-      if (workspace && !workspace.isDestroyed()) {
-        workspace.setOpacity(opacityValue);
-      }
-
-      windowLogger.info(`Workspace opacity set to ${validOpacity}%`);
-      return true;
-    } catch (error) {
-      windowLogger.error({ error }, 'Failed to set workspace opacity');
-      throw error;
+    const workspace = getWorkspaceWindow();
+    if (workspace && !workspace.isDestroyed()) {
+      workspace.setOpacity(validOpacity / 100);
     }
+
+    windowLogger.info(`Workspace opacity set to ${validOpacity}%`);
+    return true;
   });
 
-  // ワークスペースウィンドウの現在の透過度を取得
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_GET_OPACITY, async () => {
-    try {
-      const settingsService = await SettingsService.getInstance();
-      return await settingsService.get('workspaceOpacity');
-    } catch (error) {
-      windowLogger.error({ error }, 'Failed to get workspace opacity');
-      return 100;
-    }
+    const settingsService = await SettingsService.getInstance();
+    return await settingsService.get('workspaceOpacity');
   });
 
-  // ワークスペースウィンドウのサイズ変更ハンドラー
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_SET_SIZE, (_event, width: number, height: number) => {
-    try {
-      const workspace = getWorkspaceWindow();
-      if (workspace && !workspace.isDestroyed()) {
-        const bounds = workspace.getBounds();
-        workspace.setBounds({
-          x: bounds.x,
-          y: bounds.y,
-          width: Math.round(width),
-          height: Math.round(height),
-        });
-        windowLogger.info(`Workspace size set to ${width}x${height}`);
-        return true;
-      }
-      return false;
-    } catch (error) {
-      windowLogger.error({ error }, 'Failed to set workspace size');
-      throw error;
-    }
+    const workspace = getWorkspaceWindow();
+    if (!workspace || workspace.isDestroyed()) return false;
+
+    const { x, y } = workspace.getBounds();
+    workspace.setBounds({ x, y, width: Math.round(width), height: Math.round(height) });
+    windowLogger.info(`Workspace size set to ${width}x${height}`);
+    return true;
   });
 
-  // ワークスペースウィンドウの位置とサイズを同時に変更するハンドラー（絶対座標）
   ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_SET_POSITION_AND_SIZE,
     (_event, x: number, y: number, width: number, height: number) => {
-      try {
-        const workspace = getWorkspaceWindow();
-        if (workspace && !workspace.isDestroyed()) {
-          workspace.setBounds({
-            x: Math.round(x),
-            y: Math.round(y),
-            width: Math.round(width),
-            height: Math.round(height),
-          });
-          windowLogger.info(
-            `Workspace position and size set to ${width}x${height} at (${x}, ${y})`
-          );
-          return true;
-        }
-        return false;
-      } catch (error) {
-        windowLogger.error({ error }, 'Failed to set workspace position and size');
-        throw error;
-      }
+      const workspace = getWorkspaceWindow();
+      if (!workspace || workspace.isDestroyed()) return false;
+
+      workspace.setBounds({
+        x: Math.round(x),
+        y: Math.round(y),
+        width: Math.round(width),
+        height: Math.round(height),
+      });
+      windowLogger.info(`Workspace position and size set to ${width}x${height} at (${x}, ${y})`);
+      return true;
     }
   );
 
-  // ワークスペースウィンドウの位置モードを設定するハンドラー
   ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_SET_POSITION_MODE,
     async (_event, mode: WorkspacePositionMode) => {
-      try {
-        const settingsService = await SettingsService.getInstance();
-        // displayLeft/displayRight の場合、マウスカーソル位置のディスプレイを使用
-        if (mode === 'displayLeft' || mode === 'displayRight') {
-          const cursorPoint = screen.getCursorScreenPoint();
-          const cursorDisplay = screen.getDisplayNearestPoint(cursorPoint);
-          const allDisplays = screen.getAllDisplays();
-          const displayIndex = allDisplays.findIndex((d) => d.id === cursorDisplay.id);
-          await settingsService.set(
-            'workspaceTargetDisplayIndex',
-            displayIndex >= 0 ? displayIndex : 0
-          );
-        }
-        await settingsService.set('workspacePositionMode', mode);
-        await setWorkspacePosition(mode);
-        windowLogger.info(`Workspace position mode set to ${mode}`);
-        return true;
-      } catch (error) {
-        windowLogger.error({ error }, 'Failed to set workspace position mode');
-        throw error;
+      const settingsService = await SettingsService.getInstance();
+      if (mode === 'displayLeft' || mode === 'displayRight') {
+        const cursorPoint = screen.getCursorScreenPoint();
+        const cursorDisplay = screen.getDisplayNearestPoint(cursorPoint);
+        const allDisplays = screen.getAllDisplays();
+        const displayIndex = allDisplays.findIndex((d) => d.id === cursorDisplay.id);
+        await settingsService.set(
+          'workspaceTargetDisplayIndex',
+          displayIndex >= 0 ? displayIndex : 0
+        );
       }
+      await settingsService.set('workspacePositionMode', mode);
+      await setWorkspacePosition(mode);
+      windowLogger.info(`Workspace position mode set to ${mode}`);
+      return true;
     }
   );
 }

@@ -167,24 +167,7 @@ export function useRegisterForm(
       | ClipboardFormat[]
   ) => {
     const newItems = [...items];
-    if (field === 'dirOptions') {
-      newItems[index] = { ...newItems[index], dirOptions: value as RegisterItem['dirOptions'] };
-    } else if (field === 'windowConfig') {
-      newItems[index] = { ...newItems[index], windowConfig: value as WindowConfig };
-    } else if (field === 'windowOperationConfig') {
-      newItems[index] = {
-        ...newItems[index],
-        windowOperationConfig: value as RegisterItem['windowOperationConfig'],
-      };
-    } else if (field === 'clipboardDataRef') {
-      newItems[index] = { ...newItems[index], clipboardDataRef: value as string };
-    } else if (field === 'clipboardFormats') {
-      newItems[index] = { ...newItems[index], clipboardFormats: value as ClipboardFormat[] };
-    } else if (field === 'clipboardSavedAt') {
-      newItems[index] = { ...newItems[index], clipboardSavedAt: value as number };
-    } else if (field === 'clipboardPreview') {
-      newItems[index] = { ...newItems[index], clipboardPreview: value as string };
-    } else if (field === 'groupItemNames') {
+    if (field === 'groupItemNames') {
       const itemNames = (value as string)
         .split(',')
         .map((name) => name.trim())
@@ -406,17 +389,11 @@ export function useRegisterForm(
 
   const handleTargetTabChange = (index: number, targetTab: string) => {
     const selectedTab = availableTabs.find((tab) => tab.files.includes(targetTab));
+    const targetFile =
+      selectedTab && selectedTab.files.length > 0 ? selectedTab.files[0] : items[index].targetFile;
 
     const newItems = [...items];
-    newItems[index] = { ...newItems[index], targetTab };
-
-    if (selectedTab && selectedTab.files.length > 0) {
-      newItems[index] = {
-        ...newItems[index],
-        targetFile: selectedTab.files[0],
-      };
-    }
-
+    newItems[index] = { ...newItems[index], targetTab, targetFile };
     setItems(newItems);
   };
 

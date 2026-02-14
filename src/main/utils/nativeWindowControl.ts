@@ -136,6 +136,10 @@ const GDI_STATUS_MESSAGES: Record<number, string> = {
 const SW_RESTORE = 9;
 const PROCESS_QUERY_LIMITED_INFORMATION = 0x1000;
 
+function toHwndNumber(hwnd: number | bigint): number {
+  return typeof hwnd === 'bigint' ? Number(hwnd) : hwnd;
+}
+
 /** ウィンドウ除外ルール（プロセス名とクラス名の両方が一致する必要がある） */
 interface ExcludedWindowRule {
   processName: string;
@@ -207,28 +211,23 @@ const WM_CLOSE = 0x0010;
  */
 export function getWindowIcon(hwnd: unknown): bigint {
   try {
-    // まず WM_GETICON で大きいアイコンを取得
-    let hIcon = SendMessageW(hwnd, WM_GETICON, ICON_BIG, 0);
-    if (hIcon !== 0n && hIcon !== 0) {
-      return typeof hIcon === 'bigint' ? hIcon : BigInt(hIcon);
+    const toBigInt = (val: unknown): bigint =>
+      typeof val === 'bigint' ? val : BigInt(val as number);
+
+    const isNonZero = (val: unknown): boolean => val !== 0n && val !== 0;
+
+    // WM_GETICON で大→小の順にアイコンを取得、最後にクラスアイコンを試す
+    for (const args of [
+      [WM_GETICON, ICON_BIG] as const,
+      [WM_GETICON, ICON_SMALL2] as const,
+      [WM_GETICON, ICON_SMALL] as const,
+    ]) {
+      const hIcon = SendMessageW(hwnd, args[0], args[1], 0);
+      if (isNonZero(hIcon)) return toBigInt(hIcon);
     }
 
-    // 次に小さいアイコンを試す
-    hIcon = SendMessageW(hwnd, WM_GETICON, ICON_SMALL2, 0);
-    if (hIcon !== 0n && hIcon !== 0) {
-      return typeof hIcon === 'bigint' ? hIcon : BigInt(hIcon);
-    }
-
-    hIcon = SendMessageW(hwnd, WM_GETICON, ICON_SMALL, 0);
-    if (hIcon !== 0n && hIcon !== 0) {
-      return typeof hIcon === 'bigint' ? hIcon : BigInt(hIcon);
-    }
-
-    // 最後にクラスアイコンを試す
-    hIcon = GetClassLongPtrW(hwnd, GCLP_HICON);
-    if (hIcon !== 0n && hIcon !== 0) {
-      return typeof hIcon === 'bigint' ? hIcon : BigInt(hIcon);
-    }
+    const hIcon = GetClassLongPtrW(hwnd, GCLP_HICON);
+    if (isNonZero(hIcon)) return toBigInt(hIcon);
 
     return 0n;
   } catch (error) {
@@ -292,9 +291,7 @@ export function convertIconToBase64(hIcon: bigint | number): string | undefined 
 
     // ファイルを読み込んでbase64エンコード
     const imageBuffer = fs.readFileSync(tempFilePath);
-    const base64 = `data:image/png;base64,${imageBuffer.toString('base64')}`;
-
-    return base64;
+    return `data:image/png;base64,${imageBuffer.toString('base64')}`;
   } catch (error) {
     console.error(
       `[convertIconToBase64] Unexpected error: hIcon=${hIcon}, error=${error instanceof Error ? error.message : String(error)}`
@@ -347,8 +344,7 @@ export function getExecutablePathFromProcessId(processId: number): string | unde
     }
 
     // UTF-16LEでデコード
-    const path = buffer.toString('utf16le').substring(0, sizeArr[0]);
-    return path;
+    return buffer.toString('utf16le').substring(0, sizeArr[0]);
   } catch (error) {
     console.error(`[getExecutablePathFromProcessId] Error for process ${processId}:`, error);
     return undefined;
@@ -367,15 +363,10 @@ export function getExecutablePathFromProcessId(processId: number): string | unde
  */
 function getWindowClassName(hwnd: unknown): string | undefined {
   try {
-    const buffer = Buffer.alloc(512); // クラス名用バッファ（256文字分）
+    const buffer = Buffer.alloc(512);
     const length = GetClassNameW(hwnd, buffer, 256);
-
-    if (length === 0) {
-      return undefined;
-    }
-
-    const className = buffer.toString('utf16le').substring(0, length).trim();
-    return className || undefined;
+    if (length === 0) return undefined;
+    return buffer.toString('utf16le').substring(0, length).trim() || undefined;
   } catch (error) {
     console.error('[getWindowClassName] Error:', error);
     return undefined;
@@ -389,15 +380,8 @@ function getWindowClassName(hwnd: unknown): string | undefined {
  */
 function getWindowState(hwnd: unknown): 'normal' | 'minimized' | 'maximized' {
   try {
-    // 最小化チェック
-    if (IsIconic(hwnd)) {
-      return 'minimized';
-    }
-    // 最大化チェック
-    if (IsZoomed(hwnd)) {
-      return 'maximized';
-    }
-    // 通常状態
+    if (IsIconic(hwnd)) return 'minimized';
+    if (IsZoomed(hwnd)) return 'maximized';
     return 'normal';
   } catch (error) {
     console.error('[getWindowState] Error:', error);
@@ -411,11 +395,8 @@ function getWindowState(hwnd: unknown): 'normal' | 'minimized' | 'maximized' {
  * @returns プロセス名（ファイル名部分）。パスがない場合はundefined
  */
 function extractProcessName(executablePath: string | undefined): string | undefined {
-  if (!executablePath) {
-    return undefined;
-  }
-  const fileName = path.basename(executablePath);
-  return fileName || undefined;
+  if (!executablePath) return undefined;
+  return path.basename(executablePath) || undefined;
 }
 
 /**
@@ -461,20 +442,11 @@ function isWindowCloaked(hwnd: unknown, includeAllVirtualDesktops: boolean): boo
     const cloakedArr = [0];
     const hr = DwmGetWindowAttribute(hwnd, DWMWA_CLOAKED, cloakedArr, 4);
 
-    if (hr !== 0 || cloakedArr[0] === 0) {
-      return false; // クローキングされていない
-    }
+    if (hr !== 0 || cloakedArr[0] === 0) return false;
 
-    if (includeAllVirtualDesktops) {
-      // 全デスクトップを含める場合、DWM_CLOAKED_SHELL以外のクローキングのみ除外
-      // DWM_CLOAKED_SHELLは仮想デスクトップによるクローキングなので許可する
-      return (cloakedArr[0] & ~DWM_CLOAKED_SHELL) !== 0;
-    } else {
-      // 現在のデスクトップのみの場合、すべてのクローキングを除外
-      return true;
-    }
+    // 全デスクトップを含める場合、仮想デスクトップによるクローキング(DWM_CLOAKED_SHELL)は許可
+    return includeAllVirtualDesktops ? (cloakedArr[0] & ~DWM_CLOAKED_SHELL) !== 0 : true;
   } catch {
-    // DWM APIが利用できない場合はクローキングされていないとみなす
     return false;
   }
 }
@@ -492,77 +464,39 @@ export function getAllWindows(options?: { includeAllVirtualDesktops?: boolean })
   // EnumWindows用のコールバック関数
   const callback = koffi.register((hwnd: unknown, _lParam: number): boolean => {
     try {
-      // 表示されていないウィンドウはスキップ
-      const isVisible = IsWindowVisible(hwnd);
-      if (!isVisible) {
-        return true;
-      }
+      if (!IsWindowVisible(hwnd)) return true;
 
-      // タイトルを取得
       const length = GetWindowTextLengthW(hwnd);
-      if (length === 0) {
-        return true; // タイトルなしのウィンドウはスキップ
-      }
+      if (length === 0) return true;
 
       const buffer = Buffer.alloc((length + 1) * 2); // Unicode文字列用
       const titleLength = GetWindowTextW(hwnd, buffer, length + 1);
       const title = buffer.toString('utf16le').substring(0, titleLength);
 
-      if (!title || title.trim() === '') {
-        return true; // 空のタイトルはスキップ
-      }
+      if (!title || title.trim() === '') return true;
+      if (!isAltTabWindow(hwnd, includeAllVirtualDesktops)) return true;
 
-      // Alt+Tabに表示されないウィンドウはスキップ
-      if (!isAltTabWindow(hwnd, includeAllVirtualDesktops)) {
-        return true;
-      }
-
-      // 位置とサイズを取得
       const rect = { left: 0, top: 0, right: 0, bottom: 0 };
-      const rectSuccess = GetWindowRect(hwnd, rect);
-      if (!rectSuccess) {
-        return true;
-      }
+      if (!GetWindowRect(hwnd, rect)) return true;
 
-      // プロセスIDを取得
       const processIdArr = [0];
       GetWindowThreadProcessId(hwnd, processIdArr);
       const processId = processIdArr[0];
-
-      // 実行ファイルのパスを取得
       const executablePath = getExecutablePathFromProcessId(processId);
-
-      // プロセス名を抽出
       const processName = extractProcessName(executablePath);
-
-      // ウィンドウクラス名を取得
       const className = getWindowClassName(hwnd);
 
-      // 除外リストに含まれるウィンドウかチェック（プロセス名とクラス名の両方が一致する必要がある）
-      // 除外ルールに一致し、かつクローク状態（非表示）の場合のみ除外
-      // 実際に表示されているウィンドウは除外しない（誤検知防止）
+      // 除外ルールに一致し、かつクローク状態の場合のみ除外（誤検知防止）
       const matchesExclusionRule = EXCLUDED_WINDOWS.some(
         (excluded) => excluded.processName === processName && excluded.className === className
       );
-      if (matchesExclusionRule && isWindowCloaked(hwnd, false)) {
-        return true;
-      }
+      if (matchesExclusionRule && isWindowCloaked(hwnd, false)) return true;
 
-      // ウィンドウの状態を取得
       const windowState = getWindowState(hwnd);
-
-      // ウィンドウからアイコンを取得してbase64に変換
-      let icon: string | undefined;
       const hIcon = getWindowIcon(hwnd);
-      if (hIcon !== 0n) {
-        icon = convertIconToBase64(hIcon);
-      }
-
-      // 仮想デスクトップ番号を取得
+      const icon = hIcon !== 0n ? convertIconToBase64(hIcon) : undefined;
       const hwndAddress = koffi.address(hwnd);
       const desktopNumber = getWindowDesktopNumber(hwndAddress);
-
-      // ピン止め状態を取得
       const isPinned = isPinnedWindow(hwndAddress);
 
       windows.push({
@@ -608,8 +542,7 @@ export function getAllWindows(options?: { includeAllVirtualDesktops?: boolean })
  */
 export function activateWindow(hwnd: number | bigint): boolean {
   try {
-    const hwndNumber = typeof hwnd === 'bigint' ? Number(hwnd) : hwnd;
-    return SetForegroundWindow(hwndNumber);
+    return SetForegroundWindow(toHwndNumber(hwnd));
   } catch (error) {
     console.error(`Error activating window ${hwnd}:`, error);
     return false;
@@ -623,8 +556,7 @@ export function activateWindow(hwnd: number | bigint): boolean {
  */
 export function restoreWindow(hwnd: number | bigint): boolean {
   try {
-    const hwndNumber = typeof hwnd === 'bigint' ? Number(hwnd) : hwnd;
-    return ShowWindow(hwndNumber, SW_RESTORE);
+    return ShowWindow(toHwndNumber(hwnd), SW_RESTORE);
   } catch (error) {
     console.error(`Error restoring window ${hwnd}:`, error);
     return false;
@@ -656,39 +588,24 @@ export function setWindowBounds(
   config: { x?: number; y?: number; width?: number; height?: number }
 ): boolean {
   try {
-    const hwndNumber = typeof hwnd === 'bigint' ? Number(hwnd) : hwnd;
+    const hwndNumber = toHwndNumber(hwnd);
 
-    // フラグの決定
     let flags = SWP_NOZORDER | SWP_NOACTIVATE;
+    if (config.x === undefined && config.y === undefined) flags |= SWP_NOMOVE;
+    if (config.width === undefined && config.height === undefined) flags |= SWP_NOSIZE;
 
-    // 位置が省略されている場合
-    if (config.x === undefined && config.y === undefined) {
-      flags |= SWP_NOMOVE;
-    }
-
-    // サイズが省略されている場合
-    if (config.width === undefined && config.height === undefined) {
-      flags |= SWP_NOSIZE;
-    }
-
-    // 現在のウィンドウ情報を取得（省略されたフィールドに使用）
     const rect = { left: 0, top: 0, right: 0, bottom: 0 };
-    const rectSuccess = GetWindowRect(hwndNumber, rect);
-
-    if (!rectSuccess) {
+    if (!GetWindowRect(hwndNumber, rect)) {
       console.error(`[setWindowBounds] Failed to get window rect for hwnd=${hwnd}`);
       return false;
     }
 
-    // 位置とサイズを決定（省略されている場合は現在の値を使用）
     const x = config.x ?? rect.left;
     const y = config.y ?? rect.top;
     const width = config.width ?? rect.right - rect.left;
     const height = config.height ?? rect.bottom - rect.top;
 
-    // SetWindowPos を呼び出し（hWndInsertAfter = 0 はZオーダー変更なし）
     const success = SetWindowPos(hwndNumber, 0, x, y, width, height, flags);
-
     if (!success) {
       console.error(
         `[setWindowBounds] SetWindowPos failed: hwnd=${hwnd}, x=${x}, y=${y}, width=${width}, height=${height}`
@@ -714,12 +631,8 @@ export function getWindowBounds(
   hwnd: number | bigint
 ): { x: number; y: number; width: number; height: number } | null {
   try {
-    const hwndNumber = typeof hwnd === 'bigint' ? Number(hwnd) : hwnd;
-
     const rect = { left: 0, top: 0, right: 0, bottom: 0 };
-    const rectSuccess = GetWindowRect(hwndNumber, rect);
-
-    if (!rectSuccess) {
+    if (!GetWindowRect(toHwndNumber(hwnd), rect)) {
       console.error(`[getWindowBounds] Failed to get window rect for hwnd=${hwnd}`);
       return null;
     }
@@ -745,8 +658,7 @@ export function getWindowBounds(
  */
 export function closeWindow(hwnd: number | bigint): boolean {
   try {
-    const hwndNumber = typeof hwnd === 'bigint' ? Number(hwnd) : hwnd;
-    SendMessageW(hwndNumber, WM_CLOSE, 0, 0);
+    SendMessageW(toHwndNumber(hwnd), WM_CLOSE, 0, 0);
     return true;
   } catch (error) {
     console.error(`Error closing window ${hwnd}:`, error);

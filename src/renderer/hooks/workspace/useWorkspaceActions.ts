@@ -66,13 +66,11 @@ export function useWorkspaceActions(onDataChanged: () => void) {
   const handleToggleGroup = async (groupId: string, groups: WorkspaceGroup[]): Promise<void> => {
     const group = groups.find((g) => g.id === groupId);
     if (!group) return;
-
-    try {
-      await api.updateGroup(groupId, { collapsed: !group.collapsed });
-      onDataChanged();
-    } catch (error) {
-      logError('Failed to toggle workspace group:', error);
-    }
+    await withErrorHandling(
+      async () => api.updateGroup(groupId, { collapsed: !group.collapsed }),
+      'Failed to toggle workspace group:',
+      onDataChanged
+    )();
   };
 
   const handleUpdateGroup = withErrorHandling(

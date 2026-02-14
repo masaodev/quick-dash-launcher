@@ -30,14 +30,8 @@ function getInitialWindowPinMode(): WindowPinMode {
   const envMode = EnvConfig.windowPinMode;
   const validModes: WindowPinMode[] = ['normal', 'alwaysOnTop', 'stayVisible'];
 
-  if (envMode && validModes.includes(envMode as WindowPinMode)) {
-    return envMode as WindowPinMode;
-  }
-
-  if (envMode) {
-    windowLogger.warn(`無効なWINDOW_PIN_MODE: ${envMode}, デフォルト'normal'を使用`);
-  }
-
+  if (envMode && validModes.includes(envMode as WindowPinMode)) return envMode as WindowPinMode;
+  if (envMode) windowLogger.warn(`無効なWINDOW_PIN_MODE: ${envMode}, デフォルト'normal'を使用`);
   return 'normal';
 }
 
@@ -264,11 +258,7 @@ export async function createTray(): Promise<void> {
     {
       label: '再起動',
       click: async () => {
-        // 開発モードかどうかを判定
-        const isDev = EnvConfig.isDevelopment;
-
-        if (isDev) {
-          // 開発モードでは警告ダイアログを表示
+        if (EnvConfig.isDevelopment) {
           const result = await dialog.showMessageBox({
             type: 'warning',
             title: '再起動（開発モード）',
@@ -279,13 +269,11 @@ export async function createTray(): Promise<void> {
             defaultId: 0,
             cancelId: 0,
           });
-
           if (result.response === 1) {
             windowLogger.info('開発モードでの終了を実行します');
             app.quit();
           }
         } else {
-          // 本番モードでは通常の再起動を実行
           windowLogger.info('本番モードでの再起動を実行します');
           app.relaunch();
           app.quit();
@@ -386,32 +374,25 @@ function updateWindowBehavior(): void {
  */
 export async function setEditMode(editMode: boolean): Promise<void> {
   isEditMode = editMode;
+  if (!mainWindow) return;
 
-  if (mainWindow) {
-    const settingsService = await SettingsService.getInstance();
+  const settingsService = await SettingsService.getInstance();
 
-    if (editMode) {
-      // 編集モードに入る時：現在のサイズを保存してから大きくする
-      const currentBounds = mainWindow.getBounds();
-      normalWindowBounds = { width: currentBounds.width, height: currentBounds.height };
-      const editWidth = await settingsService.get('editModeWidth');
-      const editHeight = await settingsService.get('editModeHeight');
-      mainWindow.setSize(editWidth, editHeight);
-      mainWindow.center();
-    } else {
-      // 通常モードに戻る時：元のサイズに戻す
-      if (normalWindowBounds) {
-        mainWindow.setSize(normalWindowBounds.width, normalWindowBounds.height);
-        mainWindow.center();
-      } else {
-        // normalWindowBoundsが無い場合は設定値を使用
-        const normalWidth = await settingsService.get('windowWidth');
-        const normalHeight = await settingsService.get('windowHeight');
-        mainWindow.setSize(normalWidth, normalHeight);
-        mainWindow.center();
-      }
-    }
+  if (editMode) {
+    const currentBounds = mainWindow.getBounds();
+    normalWindowBounds = { width: currentBounds.width, height: currentBounds.height };
+    const editWidth = await settingsService.get('editModeWidth');
+    const editHeight = await settingsService.get('editModeHeight');
+    mainWindow.setSize(editWidth, editHeight);
+  } else if (normalWindowBounds) {
+    mainWindow.setSize(normalWindowBounds.width, normalWindowBounds.height);
+  } else {
+    const normalWidth = await settingsService.get('windowWidth');
+    const normalHeight = await settingsService.get('windowHeight');
+    mainWindow.setSize(normalWidth, normalHeight);
   }
+
+  mainWindow.center();
 }
 
 export function getEditMode(): boolean {
@@ -431,19 +412,16 @@ export async function setModalMode(
   if (!mainWindow) return;
 
   if (isModal && requiredSize) {
-    // ネストしたモーダル対応：既に保存済みでない場合のみサイズを保存
     if (!normalWindowBounds) {
-      const currentBounds = mainWindow.getBounds();
-      normalWindowBounds = { width: currentBounds.width, height: currentBounds.height };
+      const { width, height } = mainWindow.getBounds();
+      normalWindowBounds = { width, height };
     }
-
     const { needsResize, newSize } = calculateModalSize(mainWindow.getBounds(), requiredSize);
     if (needsResize) {
       mainWindow.setSize(newSize.width, newSize.height);
       mainWindow.center();
     }
   } else if (normalWindowBounds) {
-    // モーダルを閉じる時：元のサイズに復元
     mainWindow.setSize(normalWindowBounds.width, normalWindowBounds.height);
     mainWindow.center();
     normalWindowBounds = null;
@@ -699,15 +677,11 @@ export async function showMainWindowWithItemSearch(startTime?: number): Promise<
 export async function hideMainWindow(): Promise<void> {
   if (!mainWindow) return;
 
-  const isPinned = windowPinMode === 'alwaysOnTop' || windowPinMode === 'stayVisible';
-
-  // ピン留めモードの場合、非表示にはしないがアクティブにする
-  if (isPinned) {
+  if (windowPinMode === 'alwaysOnTop' || windowPinMode === 'stayVisible') {
     await activateMainWindowWithFocus();
     return;
   }
 
-  // 編集中・初回起動・モーダル表示中は非表示にしない
   if (isFirstLaunchMode || isEditMode || isModalMode) {
     windowLogger.info('現在のモードではホットキーで非表示にできません');
     return;

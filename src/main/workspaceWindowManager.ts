@@ -199,14 +199,13 @@ export function setWorkspaceModalMode(
 ): void {
   if (!workspaceWindow || workspaceWindow.isDestroyed()) return;
 
-  const { width: screenWidth } = screen.getPrimaryDisplay().workAreaSize;
+  const screenWidth = screen.getPrimaryDisplay().workAreaSize.width;
   const currentBounds = workspaceWindow.getBounds();
 
   if (isModal && requiredSize) {
     if (!normalWorkspaceWindowBounds) {
       normalWorkspaceWindowBounds = { width: currentBounds.width, height: currentBounds.height };
     }
-
     const { needsResize, newSize } = calculateModalSize(currentBounds, requiredSize);
     if (needsResize) {
       workspaceWindow.setBounds({
@@ -220,15 +219,14 @@ export function setWorkspaceModalMode(
       );
     }
   } else if (normalWorkspaceWindowBounds) {
+    const { width, height } = normalWorkspaceWindowBounds;
     workspaceWindow.setBounds({
-      x: screenWidth - normalWorkspaceWindowBounds.width,
+      x: screenWidth - width,
       y: currentBounds.y,
-      width: normalWorkspaceWindowBounds.width,
-      height: normalWorkspaceWindowBounds.height,
+      width,
+      height,
     });
-    windowLogger.info(
-      `モーダルモードOFF: ${normalWorkspaceWindowBounds.width}x${normalWorkspaceWindowBounds.height}に復元`
-    );
+    windowLogger.info(`モーダルモードOFF: ${width}x${height}に復元`);
     normalWorkspaceWindowBounds = null;
   }
 }
@@ -351,20 +349,15 @@ export function getWorkspaceWindow(): BrowserWindow | null {
  * ワークスペースウィンドウの全仮想デスクトップ表示設定を適用
  */
 export async function applyVisibilityOnAllDesktops(): Promise<void> {
-  if (!workspaceWindow || workspaceWindow.isDestroyed()) {
-    return;
-  }
+  if (!workspaceWindow || workspaceWindow.isDestroyed()) return;
 
   const settingsService = await SettingsService.getInstance();
   const enabled = await settingsService.get('workspaceVisibleOnAllDesktops');
-
   const hwnd = workspaceWindow.getNativeWindowHandle().readBigUInt64LE();
-  const action = enabled ? 'pin' : 'unpin';
   const success = enabled ? pinWindow(hwnd) : unPinWindow(hwnd);
-
-  if (success) {
-    windowLogger.info(`ワークスペースの仮想デスクトップ固定: ${action}`);
-  } else {
-    windowLogger.warn(`ワークスペースの仮想デスクトップ固定に失敗: ${action}`);
-  }
+  const action = enabled ? 'pin' : 'unpin';
+  const logFn = success
+    ? windowLogger.info.bind(windowLogger)
+    : windowLogger.warn.bind(windowLogger);
+  logFn(`ワークスペースの仮想デスクトップ固定${success ? '' : 'に失敗'}: ${action}`);
 }

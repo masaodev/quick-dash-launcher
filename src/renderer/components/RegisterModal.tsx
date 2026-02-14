@@ -151,19 +151,20 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     document.body.style.overflow = 'hidden';
     modalRef.current?.focus();
 
+    const suppressEvent = (event: KeyboardEvent, preventDefault = true) => {
+      if (preventDefault) event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+    };
+
     const handleKeyDown = (event: KeyboardEvent) => {
       const modal = modalRef.current;
       if (!modal) return;
 
-      const isModalFocused = modal.contains(document.activeElement);
-
       if (event.key === 'Escape') {
         // GroupItemSelectorModalが表示されている場合は、そちらに任せる
         if (document.querySelector('.group-item-selector-modal')) return;
-
-        event.preventDefault();
-        event.stopPropagation();
-        event.stopImmediatePropagation();
+        suppressEvent(event);
         handleCancel();
         return;
       }
@@ -172,61 +173,49 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
         const focusableElements = modal.querySelectorAll(
           'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
         );
-        const firstFocusableElement = focusableElements[0] as HTMLElement;
-        const lastFocusableElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+        const firstEl = focusableElements[0] as HTMLElement;
+        const lastEl = focusableElements[focusableElements.length - 1] as HTMLElement;
 
-        if (event.shiftKey && document.activeElement === firstFocusableElement) {
-          lastFocusableElement.focus();
-          event.preventDefault();
-          event.stopPropagation();
-          event.stopImmediatePropagation();
-        } else if (!event.shiftKey && document.activeElement === lastFocusableElement) {
-          firstFocusableElement.focus();
-          event.preventDefault();
-          event.stopPropagation();
-          event.stopImmediatePropagation();
+        if (event.shiftKey && document.activeElement === firstEl) {
+          lastEl.focus();
+        } else if (!event.shiftKey && document.activeElement === lastEl) {
+          firstEl.focus();
         }
-
-        event.preventDefault();
-        event.stopPropagation();
-        event.stopImmediatePropagation();
+        suppressEvent(event);
         return;
       }
 
-      if (isModalFocused) {
-        const activeElement = document.activeElement as HTMLElement;
-        const isInputField =
-          activeElement?.tagName === 'INPUT' || activeElement?.tagName === 'TEXTAREA';
+      if (!modal.contains(document.activeElement)) return;
 
-        if (isInputField) {
-          const allowedKeys = [
-            'Backspace',
-            'Delete',
-            'ArrowLeft',
-            'ArrowRight',
-            'ArrowUp',
-            'ArrowDown',
-            'Home',
-            'End',
-            'Enter',
-          ];
-          const allowedCtrlKeys = ['a', 'c', 'v', 'x', 'z', 'y'];
-          const isAllowedKey =
-            event.key.length === 1 ||
-            allowedKeys.includes(event.key) ||
-            (event.ctrlKey && allowedCtrlKeys.includes(event.key));
+      const activeElement = document.activeElement as HTMLElement;
+      const isInputField =
+        activeElement?.tagName === 'INPUT' || activeElement?.tagName === 'TEXTAREA';
 
-          if (isAllowedKey) {
-            event.stopPropagation();
-            event.stopImmediatePropagation();
-            return;
-          }
+      if (isInputField) {
+        const allowedKeys = new Set([
+          'Backspace',
+          'Delete',
+          'ArrowLeft',
+          'ArrowRight',
+          'ArrowUp',
+          'ArrowDown',
+          'Home',
+          'End',
+          'Enter',
+        ]);
+        const allowedCtrlKeys = new Set(['a', 'c', 'v', 'x', 'z', 'y']);
+        const isAllowedKey =
+          event.key.length === 1 ||
+          allowedKeys.has(event.key) ||
+          (event.ctrlKey && allowedCtrlKeys.has(event.key));
+
+        if (isAllowedKey) {
+          suppressEvent(event, false);
+          return;
         }
-
-        event.preventDefault();
-        event.stopPropagation();
-        event.stopImmediatePropagation();
       }
+
+      suppressEvent(event);
     };
 
     document.addEventListener('keydown', handleKeyDown, true);
@@ -338,11 +327,10 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
   };
 
   const convertToLauncherItem = (item: RegisterItem): LauncherItem | null => {
-    const nonExecutableCategories = ['dir', 'group', 'window'] as const;
     if (
-      nonExecutableCategories.includes(
-        item.itemCategory as (typeof nonExecutableCategories)[number]
-      )
+      item.itemCategory === 'dir' ||
+      item.itemCategory === 'group' ||
+      item.itemCategory === 'window'
     ) {
       return null;
     }
@@ -389,18 +377,9 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
         }
 
         await window.electronAPI.executeWindowOperation({
+          ...item.windowOperationConfig,
           displayName: item.displayName,
           type: 'window',
-          windowTitle: item.windowOperationConfig.windowTitle,
-          processName: item.windowOperationConfig.processName,
-          x: item.windowOperationConfig.x,
-          y: item.windowOperationConfig.y,
-          width: item.windowOperationConfig.width,
-          height: item.windowOperationConfig.height,
-          moveToActiveMonitorCenter: item.windowOperationConfig.moveToActiveMonitorCenter,
-          virtualDesktopNumber: item.windowOperationConfig.virtualDesktopNumber,
-          activateWindow: item.windowOperationConfig.activateWindow,
-          pinToAllDesktops: item.windowOperationConfig.pinToAllDesktops,
         });
       } else if (item.itemCategory === 'group') {
         debugLog('グループアイテムは実行ボタンからは実行できません');

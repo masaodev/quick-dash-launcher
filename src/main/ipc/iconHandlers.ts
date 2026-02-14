@@ -535,11 +535,10 @@ async function filterItemsWithoutErrors(
 ): Promise<IconItem[]> {
   const result: IconItem[] = [];
   for (const item of items) {
-    const hasError = await errorService.hasError(item.path, errorType);
-    if (!hasError) {
-      result.push(item);
-    } else {
+    if (await errorService.hasError(item.path, errorType)) {
       iconLogger.info({ path: item.path }, `Skipping ${errorType} fetch due to previous error`);
+    } else {
+      result.push(item);
     }
   }
   return result;
@@ -614,54 +613,56 @@ async function fetchIconsCombined(
   const progress = new CombinedProgressManager(phaseTypes, phaseTotals, mainWindow);
   progress.start();
 
-  const faviconResults: Record<string, string | null> = {};
-  const iconResults: Record<string, string | null> = {};
+  // 各フェーズ共通の処理ループ
+  async function processPhase(
+    items: IconItem[],
+    errorType: 'favicon' | 'icon',
+    fetchFn: (item: IconItem) => Promise<string | null>,
+    notFoundMsg: string,
+    fallbackMsg: string
+  ): Promise<Record<string, string | null>> {
+    const results: Record<string, string | null> = {};
 
-  // フェーズ1: ファビコン取得
-  for (const urlItem of filteredUrlItems) {
-    const displayText = getDisplayText(urlItem);
-    try {
-      const favicon = await fetchFavicon(urlItem.path, faviconsFolder);
-      faviconResults[urlItem.path] = favicon;
+    for (const item of items) {
+      const displayText = getDisplayText(item);
+      try {
+        const result = await fetchFn(item);
+        results[item.path] = result;
 
-      if (favicon) {
-        progress.update(displayText);
-      } else {
-        await errorService.recordError(urlItem.path, 'favicon', 'ファビコンが見つかりませんでした');
-        progress.update(displayText, true, 'ファビコンが見つかりませんでした');
+        if (result) {
+          progress.update(displayText);
+        } else {
+          await errorService.recordError(item.path, errorType, notFoundMsg);
+          progress.update(displayText, true, notFoundMsg);
+        }
+      } catch (error) {
+        iconLogger.error({ path: item.path, error }, `${errorType} fetch error`);
+        results[item.path] = null;
+        const errorMsg = error instanceof Error ? error.message : fallbackMsg;
+        await errorService.recordError(item.path, errorType, errorMsg);
+        progress.update(displayText, true, errorMsg);
       }
-    } catch (error) {
-      iconLogger.error({ url: urlItem.path, error }, 'ファビコン取得エラー');
-      faviconResults[urlItem.path] = null;
-      const errorMsg = error instanceof Error ? error.message : 'ファビコン取得に失敗しました';
-      await errorService.recordError(urlItem.path, 'favicon', errorMsg);
-      progress.update(displayText, true, errorMsg);
     }
-  }
-  if (filteredUrlItems.length > 0) progress.completePhase();
 
-  // フェーズ2: アイコン抽出
-  for (const item of filteredItems) {
-    const displayText = getDisplayText(item);
-    try {
-      const icon = await extractIconForItem(item, iconsFolder, extensionsFolder);
-      iconResults[item.path] = icon;
-
-      if (icon) {
-        progress.update(displayText);
-      } else {
-        await errorService.recordError(item.path, 'icon', 'アイコンが見つかりませんでした');
-        progress.update(displayText, true, 'アイコンが見つかりませんでした');
-      }
-    } catch (error) {
-      iconLogger.error({ itemPath: item.path, error }, 'アイコン抽出エラー');
-      iconResults[item.path] = null;
-      const errorMsg = error instanceof Error ? error.message : 'アイコン抽出に失敗しました';
-      await errorService.recordError(item.path, 'icon', errorMsg);
-      progress.update(displayText, true, errorMsg);
-    }
+    if (items.length > 0) progress.completePhase();
+    return results;
   }
-  if (filteredItems.length > 0) progress.completePhase();
+
+  const faviconResults = await processPhase(
+    filteredUrlItems,
+    'favicon',
+    (item) => fetchFavicon(item.path, faviconsFolder),
+    'ファビコンが見つかりませんでした',
+    'ファビコン取得に失敗しました'
+  );
+
+  const iconResults = await processPhase(
+    filteredItems,
+    'icon',
+    (item) => extractIconForItem(item, iconsFolder, extensionsFolder),
+    'アイコンが見つかりませんでした',
+    'アイコン抽出に失敗しました'
+  );
 
   progress.completeAll();
   return { favicons: faviconResults, icons: iconResults };
@@ -755,79 +756,72 @@ export function setupIconHandlers(
     mainWindow = getMainWindow();
   }
 
-  ipcMain.handle(IPC_CHANNELS.FETCH_FAVICON, async (_event, url: string) => {
-    return await fetchFavicon(url, faviconsFolder);
-  });
+  ipcMain.handle(IPC_CHANNELS.FETCH_FAVICON, (_event, url: string) =>
+    fetchFavicon(url, faviconsFolder)
+  );
 
-  ipcMain.handle(IPC_CHANNELS.EXTRACT_ICON, async (_event, filePath: string) => {
-    return await extractIcon(filePath, iconsFolder);
-  });
+  ipcMain.handle(IPC_CHANNELS.EXTRACT_ICON, (_event, filePath: string) =>
+    extractIcon(filePath, iconsFolder)
+  );
 
-  ipcMain.handle(IPC_CHANNELS.EXTRACT_FILE_ICON_BY_EXTENSION, async (_event, filePath: string) => {
-    return await extractFileIconByExtension(filePath, extensionsFolder);
-  });
+  ipcMain.handle(IPC_CHANNELS.EXTRACT_FILE_ICON_BY_EXTENSION, (_event, filePath: string) =>
+    extractFileIconByExtension(filePath, extensionsFolder)
+  );
 
-  ipcMain.handle(IPC_CHANNELS.EXTRACT_CUSTOM_URI_ICON, async (_event, uri: string) => {
-    return await extractCustomUriIcon(uri, iconsFolder);
-  });
+  ipcMain.handle(IPC_CHANNELS.EXTRACT_CUSTOM_URI_ICON, (_event, uri: string) =>
+    extractCustomUriIcon(uri, iconsFolder)
+  );
 
-  ipcMain.handle(IPC_CHANNELS.LOAD_CACHED_ICONS, async (_event, items: IconItem[]) => {
-    return await loadCachedIcons(items, faviconsFolder, iconsFolder, extensionsFolder);
-  });
+  ipcMain.handle(IPC_CHANNELS.LOAD_CACHED_ICONS, (_event, items: IconItem[]) =>
+    loadCachedIcons(items, faviconsFolder, iconsFolder, extensionsFolder)
+  );
 
   // 統合進捗API
   ipcMain.handle(
     IPC_CHANNELS.FETCH_ICONS_COMBINED,
-    async (_event, urlItems: IconItem[], items: IconItem[], forceRefresh: boolean = false) => {
-      return await fetchIconsCombined(
+    (_event, urlItems: IconItem[], items: IconItem[], forceRefresh: boolean = false) =>
+      fetchIconsCombined(
         urlItems,
         items,
         faviconsFolder,
         iconsFolder,
         extensionsFolder,
         forceRefresh
-      );
-    }
+      )
   );
 
   // アイコン取得エラー記録をクリア
   ipcMain.handle(IPC_CHANNELS.CLEAR_ICON_FETCH_ERRORS, async () => {
-    const errorService = await IconFetchErrorService.getInstance();
-    await errorService.clearAllErrors();
+    await (await IconFetchErrorService.getInstance()).clearAllErrors();
     return { success: true };
   });
 
   // アイコン取得エラー記録を取得
-  ipcMain.handle(IPC_CHANNELS.GET_ICON_FETCH_ERRORS, async () => {
-    const errorService = await IconFetchErrorService.getInstance();
-    return await errorService.getAllErrors();
-  });
+  ipcMain.handle(IPC_CHANNELS.GET_ICON_FETCH_ERRORS, async () =>
+    (await IconFetchErrorService.getInstance()).getAllErrors()
+  );
 
   // カスタムアイコン関連のハンドラー
-  ipcMain.handle(IPC_CHANNELS.SELECT_CUSTOM_ICON_FILE, async () => {
-    return await selectCustomIconFile();
-  });
+  ipcMain.handle(IPC_CHANNELS.SELECT_CUSTOM_ICON_FILE, selectCustomIconFile);
 
   ipcMain.handle(
     IPC_CHANNELS.SAVE_CUSTOM_ICON,
-    async (_event, sourceFilePath: string, itemIdentifier: string) => {
-      return await saveCustomIcon(sourceFilePath, itemIdentifier);
-    }
+    (_event, sourceFilePath: string, itemIdentifier: string) =>
+      saveCustomIcon(sourceFilePath, itemIdentifier)
   );
 
-  ipcMain.handle(IPC_CHANNELS.DELETE_CUSTOM_ICON, async (_event, customIconFileName: string) => {
-    return await deleteCustomIcon(customIconFileName);
-  });
+  ipcMain.handle(IPC_CHANNELS.DELETE_CUSTOM_ICON, (_event, customIconFileName: string) =>
+    deleteCustomIcon(customIconFileName)
+  );
 
-  ipcMain.handle(IPC_CHANNELS.GET_CUSTOM_ICON, async (_event, customIconFileName: string) => {
-    return await getCustomIcon(customIconFileName);
-  });
+  ipcMain.handle(IPC_CHANNELS.GET_CUSTOM_ICON, (_event, customIconFileName: string) =>
+    getCustomIcon(customIconFileName)
+  );
 
   // IconService統合API
   ipcMain.handle(
     IPC_CHANNELS.GET_ICON_FOR_ITEM,
-    async (_event, filePath: string, itemType: 'url' | 'file' | 'folder' | 'app' | 'customUri') => {
-      return await getIconForItem(filePath, itemType);
-    }
+    (_event, filePath: string, itemType: 'url' | 'file' | 'folder' | 'app' | 'customUri') =>
+      getIconForItem(filePath, itemType)
   );
 }

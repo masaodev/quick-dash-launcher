@@ -133,7 +133,6 @@ export async function batchUpdateItemsById(
   );
 }
 
-// Register IPC handlers
 export function registerEditHandlers(configFolder: string): void {
   createSafeIpcHandler(
     IPC_CHANNELS.UPDATE_ITEM_BY_ID,

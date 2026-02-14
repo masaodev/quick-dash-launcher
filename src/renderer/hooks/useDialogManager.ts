@@ -94,20 +94,13 @@ export function useDialogManager() {
     }
   }, []);
 
-  const handleConfirm = useCallback(() => {
-    closeConfirmDialog(true);
-  }, [closeConfirmDialog]);
-
-  const handleCancelConfirm = useCallback(() => {
-    closeConfirmDialog(false);
-  }, [closeConfirmDialog]);
+  const handleConfirm = useCallback(() => closeConfirmDialog(true), [closeConfirmDialog]);
+  const handleCancelConfirm = useCallback(() => closeConfirmDialog(false), [closeConfirmDialog]);
 
   return {
-    // AlertDialog
     alertDialog,
     showAlert,
     closeAlert,
-    // ConfirmDialog
     confirmDialog,
     showConfirm,
     handleConfirm,

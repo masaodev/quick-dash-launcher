@@ -44,7 +44,6 @@ export function useTabOperations({
   showAlert,
   showConfirm,
 }: UseTabOperationsProps): UseTabOperationsReturn {
-  // タブを移動する共通処理
   const moveTab = useCallback(
     (fromIndex: number, toIndex: number) => {
       const tabs = editedSettings.dataFileTabs || [];
@@ -62,19 +61,16 @@ export function useTabOperations({
     [editedSettings.dataFileTabs, setEditedSettings]
   );
 
-  // タブを上に移動
   const handleMoveTabUp = useCallback(
     (tabIndex: number) => moveTab(tabIndex, tabIndex - 1),
     [moveTab]
   );
 
-  // タブを下に移動
   const handleMoveTabDown = useCallback(
     (tabIndex: number) => moveTab(tabIndex, tabIndex + 1),
     [moveTab]
   );
 
-  // タブ名を変更
   const handleTabNameChange = useCallback(
     (tabIndex: number, tabName: string) => {
       const updatedTabs = [...(editedSettings.dataFileTabs || [])];
@@ -89,7 +85,6 @@ export function useTabOperations({
     [editedSettings.dataFileTabs, setEditedSettings]
   );
 
-  // タブを削除
   const handleDeleteTab = useCallback(
     async (tabIndex: number) => {
       const tabs = editedSettings.dataFileTabs || [];
@@ -97,7 +92,6 @@ export function useTabOperations({
 
       const tab = tabs[tabIndex];
 
-      // data.jsonを含むタブは削除不可
       if (tab.files.includes(DEFAULT_DATA_FILE)) {
         showAlert(`${DEFAULT_DATA_FILE}を含むタブは削除できません。`, 'warning');
         return;
@@ -117,21 +111,18 @@ export function useTabOperations({
       }
 
       try {
-        // タブを削除（状態更新のみ）
         const updatedTabs = tabs.filter((_, index) => index !== tabIndex);
         setEditedSettings((prev) => ({
           ...prev,
           dataFileTabs: updatedTabs,
         }));
 
-        // TabStateCalculatorを使用して削除対象ファイルを計算
         const filesToDelete = TabStateCalculator.getFilesToDeleteOnTabRemoval(
           tabIndex,
           pendingFileOperations.filesToCreate,
           tabs
         );
 
-        // ファイル操作を更新
         setPendingFileOperations((prev) => ({
           filesToCreate: prev.filesToCreate.filter((f) => !tab.files.includes(f)),
           filesToDelete: [...prev.filesToDelete, ...filesToDelete],

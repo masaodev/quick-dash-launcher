@@ -18,30 +18,6 @@ interface WindowConfigEditorProps {
   showToggle?: boolean;
 }
 
-/**
- * 数値入力フィールドのonChange処理を簡略化するヘルパー
- */
-function createNumericChangeHandler(
-  windowConfig: WindowConfig | undefined,
-  onChange: (config: WindowConfig) => void,
-  fieldName: keyof WindowConfig
-): (e: React.ChangeEvent<HTMLInputElement>) => void {
-  return (e) => {
-    const value = e.target.value ? parseInt(e.target.value, 10) : undefined;
-    onChange({
-      ...(windowConfig || { title: '' }),
-      [fieldName]: value,
-    });
-  };
-}
-
-/**
- * ウィンドウ設定エディター
- *
- * ウィンドウタイトル、X座標、Y座標、幅、高さを編集するUIコンポーネント
- *
- * Note: TypeScriptを使用しているため、prop-typesは不要です
- */
 /* eslint-disable react/prop-types */
 const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
   ({
@@ -55,9 +31,14 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
     const [isExpanded, setIsExpanded] = useState(defaultExpanded);
     const [fetchError, setFetchError] = useState<'position' | 'size' | null>(null);
 
-    // 数値フィールドのonChangeハンドラーを生成
-    const handleNumericChange = (fieldName: keyof WindowConfig) =>
-      createNumericChangeHandler(windowConfig, onChange, fieldName);
+    const handleNumericChange =
+      (fieldName: keyof WindowConfig) => (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value ? parseInt(e.target.value, 10) : undefined;
+        onChange({
+          ...(windowConfig || { title: '' }),
+          [fieldName]: value,
+        });
+      };
 
     const handleFetchFromWindow = async (
       type: 'position' | 'size',
@@ -83,10 +64,6 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
     const handleFetchSize = () =>
       handleFetchFromWindow('size', (info) => ({ width: info.width, height: info.height }));
 
-    // 折りたたみトグルを表示しない場合は、常にコンテンツを表示
-    const shouldShowContent = !showToggle || isExpanded;
-
-    // コンテンツ部分を共通化
     const renderContent = () => (
       <>
         <div className="help-box">
@@ -328,7 +305,7 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
               <span>オプション設定（ウィンドウ切り替え）</span>
             </button>
 
-            {shouldShowContent && <div className="options-content">{renderContent()}</div>}
+            {isExpanded && <div className="options-content">{renderContent()}</div>}
           </div>
         ) : (
           renderContent()

@@ -8,71 +8,50 @@ import { detectItemType } from '@common/utils/itemTypeDetector';
 
 import { debugInfo, logWarn, logError } from '../utils/debug';
 
-/**
- * RegisterModalの初期化ロジックを管理するフック
- *
- * ドロップされたファイルや編集アイテムから、RegisterItemリストを生成します。
- */
-export function useModalInitializer() {
-  /**
-   * パスから表示名を抽出
-   */
-  const extractDefaultName = (filePath: string): string => {
-    if (filePath.includes('://')) {
-      // URLの場合、ドメイン名を抽出
-      try {
-        const url = new URL(filePath);
-        return url.hostname.replace('www.', '');
-      } catch {
-        return filePath;
-      }
+function getDefaultTab(currentTab: string | undefined, tabs: DataFileTab[]): string {
+  return currentTab || (tabs.length > 0 ? tabs[0].files[0] : DEFAULT_DATA_FILE);
+}
+
+function extractDefaultName(filePath: string): string {
+  if (filePath.includes('://')) {
+    try {
+      const url = new URL(filePath);
+      return url.hostname.replace('www.', '');
+    } catch {
+      return filePath;
     }
+  }
 
-    // ファイルまたはフォルダの場合、パスの最後の部分を抽出
-    const parts = filePath.split(/[\\/]/);
-    const basename = parts[parts.length - 1] || filePath;
-    const lastDot = basename.lastIndexOf('.');
-    const ext = lastDot !== -1 ? basename.substring(lastDot) : '';
-    return ext ? basename.slice(0, -ext.length) : basename;
-  };
+  const parts = filePath.split(/[\\/]/);
+  const basename = parts[parts.length - 1] || filePath;
+  const lastDot = basename.lastIndexOf('.');
+  const ext = lastDot !== -1 ? basename.substring(lastDot) : '';
+  return ext ? basename.slice(0, -ext.length) : basename;
+}
 
-  /**
-   * 編集アイテムから初期化
-   * EditingAppItemまたはEditableJsonItemを受け取る
-   */
+export function useModalInitializer() {
   const initializeFromEditingItem = async (
     editingItem: EditingAppItem | EditableJsonItem,
     tabs: DataFileTab[],
     onLoadCustomIcon: (index: number, customIconFileName: string) => Promise<void>
   ): Promise<RegisterItem[]> => {
     try {
-      if (!editingItem) {
-        logError('No editing item provided');
-        return [];
-      }
-
       let item: RegisterItem;
       let customIconFileName: string | undefined;
 
-      // EditableJsonItem（アイテム管理画面から）かEditingAppItem（通常のランチャー画面から）かを判定
       if ('item' in editingItem && 'meta' in editingItem) {
-        // EditableJsonItem
         item = convertEditableJsonItemToRegisterItem(editingItem, tabs);
-        // EditableJsonItemの場合、カスタムアイコンはjsonItem.customIconに含まれている
         const itemType = editingItem.item.type;
         if ((itemType === 'item' || itemType === 'clipboard') && 'customIcon' in editingItem.item) {
           customIconFileName = editingItem.item.customIcon;
         }
       } else {
-        // EditingAppItem
         item = convertEditingAppItemToRegisterItem(editingItem, tabs);
-        // カスタムアイコンのプレビューを読み込み（LauncherItemの場合のみ）
         if (isEditingLauncherItem(editingItem) && editingItem.customIcon) {
           customIconFileName = editingItem.customIcon;
         }
       }
 
-      // カスタムアイコンのプレビュー読み込み
       if (customIconFileName) {
         await onLoadCustomIcon(0, customIconFileName);
       }
@@ -85,23 +64,15 @@ export function useModalInitializer() {
     }
   };
 
-  /**
-   * ドロップされたパスから初期化
-   */
   const initializeFromDroppedPaths = async (
     droppedPaths: string[],
     currentTab: string | undefined,
     tabs: DataFileTab[]
   ): Promise<RegisterItem[]> => {
+    const defaultTab = getDefaultTab(currentTab, tabs);
     const newItems: RegisterItem[] = [];
-    const defaultTab = currentTab || (tabs.length > 0 ? tabs[0].files[0] : DEFAULT_DATA_FILE);
 
     try {
-      if (!droppedPaths || droppedPaths.length === 0) {
-        logError('No dropped paths provided');
-        return [];
-      }
-
       for (const filePath of droppedPaths) {
         if (!filePath) {
           logWarn('Skipping undefined path');
@@ -115,17 +86,12 @@ export function useModalInitializer() {
 
         let icon: string | undefined;
         try {
-          // IconService統合APIを使用（.bat/.cmd/.comの特別処理を含む）
-          if (
+          const isBatchFile =
             itemType === 'app' &&
-            (filePath.endsWith('.bat') || filePath.endsWith('.cmd') || filePath.endsWith('.com'))
-          ) {
-            // .bat/.cmd/.comファイルは拡張子ベースのアイコン取得を使用
-            icon = (await window.electronAPI.extractFileIconByExtension(filePath)) ?? undefined;
-          } else {
-            // その他は統合APIを使用
-            icon = (await window.electronAPI.getIconForItem(filePath, itemType)) ?? undefined;
-          }
+            (filePath.endsWith('.bat') || filePath.endsWith('.cmd') || filePath.endsWith('.com'));
+          icon = isBatchFile
+            ? ((await window.electronAPI.extractFileIconByExtension(filePath)) ?? undefined)
+            : ((await window.electronAPI.getIconForItem(filePath, itemType)) ?? undefined);
         } catch (error) {
           logError('Failed to extract icon:', error);
         }
@@ -161,14 +127,11 @@ export function useModalInitializer() {
     }
   };
 
-  /**
-   * 空のテンプレートアイテムを作成
-   */
   const createEmptyTemplateItem = (
     currentTab: string | undefined,
     tabs: DataFileTab[]
   ): RegisterItem[] => {
-    const defaultTab = currentTab || (tabs.length > 0 ? tabs[0].files[0] : DEFAULT_DATA_FILE);
+    const defaultTab = getDefaultTab(currentTab, tabs);
     return [
       {
         displayName: '',
@@ -182,7 +145,6 @@ export function useModalInitializer() {
   };
 
   return {
-    extractDefaultName,
     initializeFromEditingItem,
     initializeFromDroppedPaths,
     createEmptyTemplateItem,

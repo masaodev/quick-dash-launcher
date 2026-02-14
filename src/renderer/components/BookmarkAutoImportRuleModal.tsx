@@ -98,17 +98,11 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
 
     try {
       // 最初のプロファイルからフォルダ構造を取得（代表的な構造表示用）
-      const allFolders: BookmarkFolder[] = [];
-      for (const profile of targetProfiles) {
-        const profileFolders = await window.electronAPI.bookmarkAutoImportAPI.getFolders(
-          profile.bookmarkPath
-        );
-        // 重複を避けるため最初のプロファイルのみ使用
-        if (allFolders.length === 0) {
-          allFolders.push(...profileFolders);
-        }
-      }
-      setFolders(allFolders);
+      const firstProfile = targetProfiles[0];
+      const profileFolders = await window.electronAPI.bookmarkAutoImportAPI.getFolders(
+        firstProfile.bookmarkPath
+      );
+      setFolders(profileFolders);
     } catch {
       setFolders([]);
     }

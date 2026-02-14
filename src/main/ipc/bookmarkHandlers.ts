@@ -171,30 +171,34 @@ function isValidBookmarkPath(filePath: string): boolean {
 }
 
 /**
+ * ブックマークファイルを読み込み、バリデーション済みのrootsオブジェクトを返す
+ */
+async function readAndValidateBookmarkFile(filePath: string): Promise<Record<string, unknown>> {
+  if (!isValidBookmarkPath(filePath)) {
+    throw new Error('許可されていないファイルパスです');
+  }
+
+  const content = await fs.promises.readFile(filePath, 'utf-8');
+  if (content.length > MAX_BOOKMARK_FILE_SIZE) {
+    throw new Error('ファイルサイズが大きすぎます');
+  }
+
+  const data = JSON.parse(content) as BookmarkData;
+  if (!data.roots || typeof data.roots !== 'object') {
+    throw new Error('無効なブックマークファイル形式です');
+  }
+
+  return data.roots;
+}
+
+/**
  * ブラウザのブックマークJSONファイルをパースしてSimpleBookmarkItemの配列に変換する
  * @param filePath - ブックマークファイルのパス
  * @returns SimpleBookmarkItemの配列
  */
 export async function parseBrowserBookmarks(filePath: string): Promise<SimpleBookmarkItem[]> {
-  // セキュリティチェック：許可されたパス内かどうか確認
-  if (!isValidBookmarkPath(filePath)) {
-    throw new Error('許可されていないファイルパスです');
-  }
-
   try {
-    const content = await fs.promises.readFile(filePath, 'utf-8');
-
-    // ファイルサイズチェック
-    if (content.length > MAX_BOOKMARK_FILE_SIZE) {
-      throw new Error('ファイルサイズが大きすぎます');
-    }
-
-    const data = JSON.parse(content) as BookmarkData;
-
-    // 構造の検証
-    if (!data.roots || typeof data.roots !== 'object') {
-      throw new Error('無効なブックマークファイル形式です');
-    }
+    const roots = await readAndValidateBookmarkFile(filePath);
 
     const bookmarks: SimpleBookmarkItem[] = [];
     let index = 0;
@@ -224,8 +228,8 @@ export async function parseBrowserBookmarks(filePath: string): Promise<SimpleBoo
 
     // roots内の各ノードを探索
     for (const key of ['bookmark_bar', 'other', 'synced']) {
-      if (data.roots[key]) {
-        traverse(data.roots[key]);
+      if (roots[key]) {
+        traverse(roots[key]);
       }
     }
 
@@ -253,20 +257,7 @@ export async function parseBrowserBookmarks(filePath: string): Promise<SimpleBoo
  * @returns BookmarkFolder配列
  */
 export async function parseBrowserBookmarkFolders(filePath: string): Promise<BookmarkFolder[]> {
-  if (!isValidBookmarkPath(filePath)) {
-    throw new Error('許可されていないファイルパスです');
-  }
-
-  const content = await fs.promises.readFile(filePath, 'utf-8');
-  if (content.length > MAX_BOOKMARK_FILE_SIZE) {
-    throw new Error('ファイルサイズが大きすぎます');
-  }
-
-  const data = JSON.parse(content) as BookmarkData;
-  if (!data.roots || typeof data.roots !== 'object') {
-    throw new Error('無効なブックマークファイル形式です');
-  }
-
+  const roots = await readAndValidateBookmarkFile(filePath);
   const folders: BookmarkFolder[] = [];
 
   function traverseFolders(node: unknown, currentPath: string): BookmarkFolder | null {
@@ -305,8 +296,8 @@ export async function parseBrowserBookmarkFolders(filePath: string): Promise<Boo
   }
 
   for (const key of ['bookmark_bar', 'other', 'synced']) {
-    if (data.roots[key]) {
-      const folder = traverseFolders(data.roots[key], key);
+    if (roots[key]) {
+      const folder = traverseFolders(roots[key], key);
       if (folder) {
         folders.push(folder);
       }
@@ -324,20 +315,7 @@ export async function parseBrowserBookmarkFolders(filePath: string): Promise<Boo
 export async function parseBrowserBookmarksWithFolders(
   filePath: string
 ): Promise<BookmarkWithFolder[]> {
-  if (!isValidBookmarkPath(filePath)) {
-    throw new Error('許可されていないファイルパスです');
-  }
-
-  const content = await fs.promises.readFile(filePath, 'utf-8');
-  if (content.length > MAX_BOOKMARK_FILE_SIZE) {
-    throw new Error('ファイルサイズが大きすぎます');
-  }
-
-  const data = JSON.parse(content) as BookmarkData;
-  if (!data.roots || typeof data.roots !== 'object') {
-    throw new Error('無効なブックマークファイル形式です');
-  }
-
+  const roots = await readAndValidateBookmarkFile(filePath);
   const bookmarks: BookmarkWithFolder[] = [];
 
   function traverse(node: unknown, folderPath: string) {
@@ -370,8 +348,8 @@ export async function parseBrowserBookmarksWithFolders(
   }
 
   for (const key of ['bookmark_bar', 'other', 'synced']) {
-    if (data.roots[key]) {
-      traverse(data.roots[key], key);
+    if (roots[key]) {
+      traverse(roots[key], key);
     }
   }
 
@@ -435,15 +413,12 @@ export function setupBookmarkHandlers() {
       properties: ['openFile'],
     });
 
-    if (!result.canceled && result.filePaths.length > 0) {
-      return result.filePaths[0];
-    }
-    return null;
+    return result.canceled ? null : (result.filePaths[0] ?? null);
   });
 
-  ipcMain.handle(IPC_CHANNELS.PARSE_BOOKMARK_FILE, async (_event, filePath: string) => {
-    return parseBookmarkFile(filePath);
-  });
+  ipcMain.handle(IPC_CHANNELS.PARSE_BOOKMARK_FILE, (_event, filePath: string) =>
+    parseBookmarkFile(filePath)
+  );
 
   // ブラウザブックマーク直接インポートAPI
   ipcMain.handle(IPC_CHANNELS.DETECT_INSTALLED_BROWSERS, detectInstalledBrowsers);

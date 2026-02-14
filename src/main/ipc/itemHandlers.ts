@@ -1,13 +1,6 @@
-import { ipcMain, BrowserWindow, shell } from 'electron';
+import { ipcMain, shell } from 'electron';
 import { itemLogger } from '@common/logger';
-import {
-  LauncherItem,
-  GroupItem,
-  WindowItem,
-  AppItem,
-  WindowPinMode,
-  WindowConfig,
-} from '@common/types';
+import { LauncherItem, GroupItem, WindowItem, AppItem, WindowConfig } from '@common/types';
 import { GROUP_LAUNCH_DELAY_MS } from '@common/constants';
 import { isLauncherItem, isWindowItem } from '@common/types/guards';
 import { IPC_CHANNELS } from '@common/ipcChannels';
@@ -145,55 +138,43 @@ async function executeGroup(group: GroupItem, allItems: AppItem[]): Promise<void
     }
   }
 
-  let successCount = 0;
-  let errorCount = 0;
+  const mode = parallelLaunch ? '並列' : '順次';
+  itemLogger.info({ groupName: group.displayName }, `${mode}起動モードでグループを実行`);
+
+  let results: { success: boolean; itemName: string }[];
 
   if (parallelLaunch) {
-    itemLogger.info({ groupName: group.displayName }, '並列起動モードでグループを実行');
-
-    const promises = group.itemNames.map((itemName) =>
-      executeGroupItem(group.displayName, itemName, itemMap.get(itemName))
+    results = await Promise.all(
+      group.itemNames.map((itemName) =>
+        executeGroupItem(group.displayName, itemName, itemMap.get(itemName))
+      )
     );
-
-    const results = await Promise.all(promises);
-    successCount = results.filter((r) => r.success).length;
-    errorCount = results.filter((r) => !r.success).length;
   } else {
-    itemLogger.info({ groupName: group.displayName }, '順次起動モードでグループを実行');
-
+    results = [];
     for (let i = 0; i < group.itemNames.length; i++) {
       const itemName = group.itemNames[i];
-      const result = await executeGroupItem(group.displayName, itemName, itemMap.get(itemName));
+      results.push(await executeGroupItem(group.displayName, itemName, itemMap.get(itemName)));
 
-      if (result.success) {
-        successCount++;
-      } else {
-        errorCount++;
-      }
-
-      // 最後のアイテム以外は待機
       if (i < group.itemNames.length - 1) {
         await new Promise((resolve) => setTimeout(resolve, GROUP_LAUNCH_DELAY_MS));
       }
     }
   }
 
+  const successCount = results.filter((r) => r.success).length;
   itemLogger.info(
     {
       groupName: group.displayName,
       total: group.itemNames.length,
       success: successCount,
-      error: errorCount,
-      mode: parallelLaunch ? '並列' : '順次',
+      error: results.length - successCount,
+      mode,
     },
     'グループ実行完了'
   );
 }
 
-export function setupItemHandlers(
-  _getMainWindow: () => BrowserWindow | null,
-  _getWindowPinMode: () => WindowPinMode
-): void {
+export function setupItemHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.OPEN_ITEM, async (_event, item: LauncherItem) => {
     await openItem(item);
   });

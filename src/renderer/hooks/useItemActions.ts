@@ -12,16 +12,20 @@ function getParentPath(path: string): string | null {
 export function useItemActions() {
   const { showSuccess, showError, showWarning } = useToast();
 
-  const handleCopyPath = async (item: LauncherItem): Promise<void> => {
+  const copyToClipboard = async (text: string, label: string): Promise<void> => {
     try {
-      const fullCommand = item.args ? `${item.path} ${item.args}` : item.path;
-      await window.electronAPI.copyToClipboard(fullCommand);
-      logWarn(`パスをコピーしました: ${fullCommand}`);
-      showSuccess('パスをコピーしました');
+      await window.electronAPI.copyToClipboard(text);
+      logWarn(`${label}をコピーしました: ${text}`);
+      showSuccess(`${label}をコピーしました`);
     } catch (err) {
-      logError('パスのコピーに失敗しました:', err);
-      showError('パスのコピーに失敗しました');
+      logError(`${label}のコピーに失敗しました:`, err);
+      showError(`${label}のコピーに失敗しました`);
     }
+  };
+
+  const handleCopyPath = async (item: LauncherItem): Promise<void> => {
+    const fullCommand = item.args ? `${item.path} ${item.args}` : item.path;
+    await copyToClipboard(fullCommand, 'パス');
   };
 
   const handleCopyParentPath = async (item: LauncherItem): Promise<void> => {
@@ -36,14 +40,7 @@ export function useItemActions() {
       return;
     }
 
-    try {
-      await window.electronAPI.copyToClipboard(parentPath);
-      logWarn(`親フォルダーのパスをコピーしました: ${parentPath}`);
-      showSuccess('親フォルダーのパスをコピーしました');
-    } catch (err) {
-      logError('親フォルダーのパスのコピーに失敗しました:', err);
-      showError('親フォルダーのパスのコピーに失敗しました');
-    }
+    await copyToClipboard(parentPath, '親フォルダーのパス');
   };
 
   const handleCopyShortcutPath = async (item: LauncherItem): Promise<void> => {
@@ -52,14 +49,7 @@ export function useItemActions() {
       return;
     }
 
-    try {
-      await window.electronAPI.copyToClipboard(item.originalPath);
-      logWarn(`ショートカットのパスをコピーしました: ${item.originalPath}`);
-      showSuccess('ショートカットのパスをコピーしました');
-    } catch (err) {
-      logError('ショートカットのパスのコピーに失敗しました:', err);
-      showError('ショートカットのパスのコピーに失敗しました');
-    }
+    await copyToClipboard(item.originalPath, 'ショートカットのパス');
   };
 
   const handleCopyShortcutParentPath = async (item: LauncherItem): Promise<void> => {
@@ -74,14 +64,7 @@ export function useItemActions() {
       return;
     }
 
-    try {
-      await window.electronAPI.copyToClipboard(parentPath);
-      logWarn(`ショートカットの親フォルダーのパスをコピーしました: ${parentPath}`);
-      showSuccess('ショートカットの親フォルダーのパスをコピーしました');
-    } catch (err) {
-      logError('ショートカットの親フォルダーのパスのコピーに失敗しました:', err);
-      showError('ショートカットの親フォルダーのパスのコピーに失敗しました');
-    }
+    await copyToClipboard(parentPath, 'ショートカットの親フォルダーのパス');
   };
 
   const handleOpenParentFolder = async (item: LauncherItem): Promise<void> => {

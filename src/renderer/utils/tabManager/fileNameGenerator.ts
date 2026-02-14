@@ -46,12 +46,9 @@ export const FileNameGenerator = {
    * getDefaultFileLabel('datafiles/data.json', undefined, tabs) // => タブから自動取得
    */
   getDefaultFileLabel(fileName: string, tabName?: string, tabs?: DataFileTab[]): string {
-    // タブ名が指定されていない場合は、ファイルが紐づいている最初のタブ名を取得
-    if (!tabName && tabs) {
-      const linkedTab = tabs.find((tab) => tab.files.includes(fileName));
-      tabName = linkedTab ? linkedTab.name : this.getDefaultTabName(fileName);
-    } else if (!tabName) {
-      tabName = this.getDefaultTabName(fileName);
+    if (!tabName) {
+      const linkedTab = tabs?.find((tab) => tab.files.includes(fileName));
+      tabName = linkedTab?.name ?? this.getDefaultTabName(fileName);
     }
     return `${tabName}用データファイル`;
   },

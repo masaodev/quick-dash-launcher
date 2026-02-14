@@ -62,7 +62,6 @@ export function useFileOperations({
 
       const tab = tabs[tabIndex];
 
-      // バリデーション: ファイル追加可能かチェック
       const validation = TabValidator.canAddFileToTab(fileName, tab);
       if (!validation.valid) {
         showAlert(validation.reason || 'ファイルを追加できません。', 'warning');
@@ -75,33 +74,22 @@ export function useFileOperations({
         files: [...tab.files, fileName],
       };
 
-      // ファイルにデフォルトラベルを設定
       const labels = { ...(editedSettings.dataFileLabels || {}) };
       const currentLabel = labels[fileName];
 
-      // ラベルが未設定の場合、デフォルトラベルを生成
       if (!currentLabel || currentLabel.trim() === '' || currentLabel === fileName) {
         const usedLabels = new Set<string>(
           Object.values(labels).filter((l) => l && l.trim() !== '')
         );
         const baseLabel = FileNameGenerator.getDefaultFileLabel(fileName, tab.name, tabs);
-        const newLabel = FileNameGenerator.generateUniqueLabel(baseLabel, usedLabels);
-
-        labels[fileName] = newLabel;
-
-        // 設定を更新（状態のみ）
-        setEditedSettings((prev) => ({
-          ...prev,
-          dataFileTabs: updatedTabs,
-          dataFileLabels: labels,
-        }));
-      } else {
-        // ラベルが既に設定されている場合は、タブ設定のみ更新
-        setEditedSettings((prev) => ({
-          ...prev,
-          dataFileTabs: updatedTabs,
-        }));
+        labels[fileName] = FileNameGenerator.generateUniqueLabel(baseLabel, usedLabels);
       }
+
+      setEditedSettings((prev) => ({
+        ...prev,
+        dataFileTabs: updatedTabs,
+        dataFileLabels: labels,
+      }));
     },
     [editedSettings.dataFileTabs, editedSettings.dataFileLabels, setEditedSettings, showAlert]
   );
@@ -114,14 +102,12 @@ export function useFileOperations({
 
       const tab = tabs[tabIndex];
 
-      // バリデーション: ファイル削除可能かチェック
       const validation = TabValidator.canRemoveFileFromTab(fileName, tabIndex, tabs);
       if (!validation.valid) {
         showAlert(validation.reason || 'ファイルを削除できません。', 'warning');
         return;
       }
 
-      // タブからファイルを削除した後の状態を計算
       const newFiles = tab.files.filter((f) => f !== fileName);
       const updatedTabs = [...tabs];
       updatedTabs[tabIndex] = {
@@ -129,14 +115,12 @@ export function useFileOperations({
         files: newFiles,
       };
 
-      // 削除タイプを判定
       const deletionType = TabStateCalculator.getFileDeletionType(
         fileName,
         pendingFileOperations.filesToCreate,
         updatedTabs
       );
 
-      // 確認メッセージを構築
       const message =
         deletionType === 'removeFromTab'
           ? `${fileName} をこのタブから削除しますか？\n\n他のタブでも使用されているため、ファイル自体は削除されません。`
@@ -153,28 +137,18 @@ export function useFileOperations({
       }
 
       try {
-        // タブからファイルを削除（状態更新のみ）
         setEditedSettings((prev) => ({
           ...prev,
           dataFileTabs: updatedTabs,
         }));
 
-        // ファイル操作を更新
         setPendingFileOperations((prev) => {
           if (deletionType === 'cancelCreation') {
-            // 作成予定リストから削除
-            return {
-              ...prev,
-              filesToCreate: prev.filesToCreate.filter((f) => f !== fileName),
-            };
-          } else if (deletionType === 'scheduleDelete') {
-            // 削除予定リストに追加
-            return {
-              ...prev,
-              filesToDelete: [...prev.filesToDelete, fileName],
-            };
+            return { ...prev, filesToCreate: prev.filesToCreate.filter((f) => f !== fileName) };
           }
-          // removeFromTab の場合は何もしない
+          if (deletionType === 'scheduleDelete') {
+            return { ...prev, filesToDelete: [...prev.filesToDelete, fileName] };
+          }
           return prev;
         });
       } catch (error) {
@@ -192,93 +166,62 @@ export function useFileOperations({
     ]
   );
 
-  // 新規ファイルを作成してタブに追加
-  const handleCreateAndAddFileToTab = useCallback(
-    (tabIndex: number) => {
-      const existingFiles = [
-        ...(editedSettings.dataFileTabs?.flatMap((tab) => tab.files) || []),
-        ...pendingFileOperations.filesToCreate,
-      ];
-      const fileName = FileNameGenerator.getNextAvailableFileName(
-        existingFiles,
-        pendingFileOperations.filesToCreate
-      );
-
-      try {
-        // ファイルを作成予定リストに追加
-        setPendingFileOperations((prev) => ({
-          ...prev,
-          filesToCreate: [...prev.filesToCreate, fileName],
-        }));
-
-        // タブにファイルを追加
-        handleAddFileToTab(tabIndex, fileName);
-      } catch (error) {
-        logError('ファイルの作成に失敗しました:', error);
-        showAlert('ファイルの作成に失敗しました。', 'error');
-      }
-    },
-    [
-      editedSettings.dataFileTabs,
-      pendingFileOperations.filesToCreate,
-      setPendingFileOperations,
-      handleAddFileToTab,
-      showAlert,
-    ]
-  );
-
-  // 新規タブを追加
-  const handleAddTab = useCallback(() => {
+  const getNextFileName = useCallback((): string => {
     const existingFiles = [
       ...(editedSettings.dataFileTabs?.flatMap((tab) => tab.files) || []),
       ...pendingFileOperations.filesToCreate,
     ];
-    const fileName = FileNameGenerator.getNextAvailableFileName(
+    return FileNameGenerator.getNextAvailableFileName(
       existingFiles,
       pendingFileOperations.filesToCreate
     );
+  }, [editedSettings.dataFileTabs, pendingFileOperations.filesToCreate]);
 
-    try {
-      // ファイルを作成予定リストに追加
+  const handleCreateAndAddFileToTab = useCallback(
+    (tabIndex: number) => {
+      const fileName = getNextFileName();
       setPendingFileOperations((prev) => ({
         ...prev,
         filesToCreate: [...prev.filesToCreate, fileName],
       }));
+      handleAddFileToTab(tabIndex, fileName);
+    },
+    [getNextFileName, setPendingFileOperations, handleAddFileToTab]
+  );
 
-      // 新しいタブを追加（状態更新のみ）
-      const newTab: DataFileTab = {
-        files: [fileName],
-        name: FileNameGenerator.getDefaultTabName(fileName),
-      };
-      const updatedTabs = [...(editedSettings.dataFileTabs || []), newTab];
+  const handleAddTab = useCallback(() => {
+    const fileName = getNextFileName();
 
-      setEditedSettings((prev) => ({
-        ...prev,
-        dataFileTabs: updatedTabs,
-      }));
+    setPendingFileOperations((prev) => ({
+      ...prev,
+      filesToCreate: [...prev.filesToCreate, fileName],
+    }));
 
-      // 新規タブを展開状態にする
-      setExpandedTabs((prev) => new Set([...prev, updatedTabs.length - 1]));
-    } catch (error) {
-      logError('タブの追加に失敗しました:', error);
-      showAlert('タブの追加に失敗しました。', 'error');
-    }
+    const newTab: DataFileTab = {
+      files: [fileName],
+      name: FileNameGenerator.getDefaultTabName(fileName),
+    };
+    const updatedTabs = [...(editedSettings.dataFileTabs || []), newTab];
+
+    setEditedSettings((prev) => ({
+      ...prev,
+      dataFileTabs: updatedTabs,
+    }));
+
+    setExpandedTabs((prev) => new Set([...prev, updatedTabs.length - 1]));
   }, [
     editedSettings.dataFileTabs,
-    pendingFileOperations.filesToCreate,
+    getNextFileName,
     setPendingFileOperations,
     setEditedSettings,
     setExpandedTabs,
-    showAlert,
   ]);
 
-  // データファイル名を取得（表示用）
   const getFileLabel = useCallback(
     (fileName: string): string => {
       const labels = editedSettings.dataFileLabels || {};
       const label = labels[fileName];
 
-      // ラベルが未設定またはファイル名と同じ場合、デフォルトラベルを返す
       if (!label || label === fileName) {
         const tabs = editedSettings.dataFileTabs || [];
         const linkedTab = tabs.find((tab) => tab.files.includes(fileName));
@@ -290,12 +233,9 @@ export function useFileOperations({
     [editedSettings.dataFileLabels, editedSettings.dataFileTabs]
   );
 
-  // データファイル名を変更
   const handleFileLabelChange = useCallback(
     (fileName: string, label: string) => {
       const labels = { ...(editedSettings.dataFileLabels || {}) };
-
-      // データファイル名は必須なので、空でも設定する（削除しない）
       labels[fileName] = label;
 
       setEditedSettings((prev) => ({

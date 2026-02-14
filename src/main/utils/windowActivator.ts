@@ -48,14 +48,6 @@ export interface WindowActivationResult {
 }
 
 /**
- * ウィンドウの位置・サイズ検証結果
- */
-interface BoundsValidationResult {
-  /** すべての値が許容範囲内かどうか */
-  allMatch: boolean;
-}
-
-/**
  * 位置・サイズの境界値
  */
 interface Bounds {
@@ -124,27 +116,21 @@ function calculateActiveMonitorCenter(
 
 /**
  * 実際のウィンドウ位置・サイズと目標値を比較検証する
- *
- * @param actual 実際のウィンドウ位置・サイズ
- * @param target 目標の位置・サイズ
- * @param tolerance 許容誤差（ピクセル）
- * @returns 検証結果
  */
-function validateBounds(
+function areBoundsWithinTolerance(
   actual: { x: number; y: number; width: number; height: number },
   target: Bounds,
   tolerance: number = WINDOW_BOUNDS_CONFIG.TOLERANCE_PX
-): BoundsValidationResult {
-  const isWithinTolerance = (actualVal: number, targetVal: number | undefined): boolean =>
+): boolean {
+  const ok = (actualVal: number, targetVal: number | undefined): boolean =>
     targetVal === undefined || Math.abs(actualVal - targetVal) <= tolerance;
 
-  return {
-    allMatch:
-      isWithinTolerance(actual.x, target.x) &&
-      isWithinTolerance(actual.y, target.y) &&
-      isWithinTolerance(actual.width, target.width) &&
-      isWithinTolerance(actual.height, target.height),
-  };
+  return (
+    ok(actual.x, target.x) &&
+    ok(actual.y, target.y) &&
+    ok(actual.width, target.width) &&
+    ok(actual.height, target.height)
+  );
 }
 
 /**
@@ -164,74 +150,42 @@ async function setBoundsWithRetry(
   windowConfig: WindowConfig,
   logger: Logger
 ): Promise<boolean> {
-  for (let attempt = 1; attempt <= WINDOW_BOUNDS_CONFIG.MAX_RETRIES; attempt++) {
-    // 位置・サイズを設定
-    const setSuccess = setWindowBounds(hwnd, targetBounds);
+  const logCtx = { name: itemName, windowConfig: JSON.stringify(windowConfig) };
+  const { MAX_RETRIES, RETRY_DELAY_MS } = WINDOW_BOUNDS_CONFIG;
+  const delay = () => new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
 
-    if (setSuccess) {
-      // 少し待ってから実際の値を確認
-      await new Promise((resolve) => setTimeout(resolve, WINDOW_BOUNDS_CONFIG.RETRY_DELAY_MS));
-
-      // 実際の値を取得
-      const actualBounds = getWindowBounds(hwnd);
-
-      if (actualBounds) {
-        const validation = validateBounds(actualBounds, targetBounds);
-
-        if (validation.allMatch) {
-          logger.info(
-            {
-              name: itemName,
-              windowConfig: JSON.stringify(windowConfig),
-              attempt,
-              actualBounds,
-            },
-            'ウィンドウの位置・サイズを設定しました'
-          );
-          return true;
-        } else {
-          logger.warn(
-            {
-              name: itemName,
-              windowConfig: JSON.stringify(windowConfig),
-              attempt,
-              targetBounds,
-              actualBounds,
-            },
-            `位置・サイズの検証に失敗しました（試行${attempt}/${WINDOW_BOUNDS_CONFIG.MAX_RETRIES}）`
-          );
-        }
-      } else {
-        logger.warn(
-          {
-            name: itemName,
-            windowConfig: JSON.stringify(windowConfig),
-            attempt,
-          },
-          '位置・サイズの取得に失敗しました'
-        );
-      }
-    } else {
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    if (!setWindowBounds(hwnd, targetBounds)) {
       logger.warn(
-        {
-          name: itemName,
-          windowConfig: JSON.stringify(windowConfig),
-          attempt,
-        },
-        `SetWindowPosに失敗しました（試行${attempt}/${WINDOW_BOUNDS_CONFIG.MAX_RETRIES}）`
+        { ...logCtx, attempt },
+        `SetWindowPosに失敗しました（試行${attempt}/${MAX_RETRIES}）`
       );
+      if (attempt < MAX_RETRIES) await delay();
+      continue;
     }
 
-    // 最後の試行でなければ、少し待機してからリトライ
-    if (attempt < WINDOW_BOUNDS_CONFIG.MAX_RETRIES) {
-      await new Promise((resolve) => setTimeout(resolve, WINDOW_BOUNDS_CONFIG.RETRY_DELAY_MS));
+    await delay();
+    const actualBounds = getWindowBounds(hwnd);
+
+    if (!actualBounds) {
+      logger.warn({ ...logCtx, attempt }, '位置・サイズの取得に失敗しました');
+      if (attempt < MAX_RETRIES) await delay();
+      continue;
     }
+
+    if (areBoundsWithinTolerance(actualBounds, targetBounds)) {
+      logger.info({ ...logCtx, attempt, actualBounds }, 'ウィンドウの位置・サイズを設定しました');
+      return true;
+    }
+
+    logger.warn(
+      { ...logCtx, attempt, targetBounds, actualBounds },
+      `位置・サイズの検証に失敗しました（試行${attempt}/${MAX_RETRIES}）`
+    );
+    if (attempt < MAX_RETRIES) await delay();
   }
 
-  logger.error(
-    { name: itemName, windowConfig: JSON.stringify(windowConfig) },
-    'ウィンドウの位置・サイズ設定に失敗しました（全試行終了）'
-  );
+  logger.error(logCtx, 'ウィンドウの位置・サイズ設定に失敗しました（全試行終了）');
   return false;
 }
 
@@ -339,29 +293,15 @@ export async function tryActivateWindow(
   const needsPinning = windowConfig.pinToAllDesktops;
   if (needsPinning) {
     const pinSuccess = pinWindow(hwnd);
-    if (pinSuccess) {
-      logger.info(
-        {
-          name: itemName,
-          windowConfig: JSON.stringify(windowConfig),
-        },
-        '全仮想デスクトップにピン止めしました'
-      );
-    } else {
-      logger.warn(
-        {
-          name: itemName,
-          windowConfig: JSON.stringify(windowConfig),
-        },
-        'ウィンドウのピン止めに失敗しました'
-      );
-    }
+    const logFn = pinSuccess ? logger.info.bind(logger) : logger.warn.bind(logger);
+    logFn(
+      { name: itemName, windowConfig: JSON.stringify(windowConfig) },
+      pinSuccess ? '全仮想デスクトップにピン止めしました' : 'ウィンドウのピン止めに失敗しました'
+    );
   }
 
-  // アクティブモニター中央への移動が必要かチェック
-  const needsActiveMonitorCenter = windowConfig.moveToActiveMonitorCenter;
-
   // 位置・サイズ設定が必要かチェック
+  const needsActiveMonitorCenter = windowConfig.moveToActiveMonitorCenter;
   const needsBoundsChange =
     needsActiveMonitorCenter ||
     windowConfig.x !== undefined ||
@@ -370,13 +310,15 @@ export async function tryActivateWindow(
     windowConfig.height !== undefined;
 
   // ウィンドウの位置・サイズを設定（指定されている場合）
+  const baseBounds: Bounds = {
+    x: windowConfig.x,
+    y: windowConfig.y,
+    width: windowConfig.width,
+    height: windowConfig.height,
+  };
+
   if (needsBoundsChange) {
-    let targetBounds = {
-      x: windowConfig.x,
-      y: windowConfig.y,
-      width: windowConfig.width,
-      height: windowConfig.height,
-    };
+    const targetBounds = { ...baseBounds };
 
     // アクティブモニター中央への移動が指定されている場合、座標を計算
     if (needsActiveMonitorCenter) {
@@ -401,9 +343,8 @@ export async function tryActivateWindow(
     await setBoundsWithRetry(hwnd, targetBounds, itemName, windowConfig, logger);
   }
 
-  // 最終的なデスクトップに移動
   // virtualDesktopNumberが指定されている場合のみ、そのデスクトップに移動
-  // ただし、ピン止めが有効な場合はスキップ（ピン止めウィンドウは全デスクトップに表示される）
+  // ピン止めが有効な場合はスキップ（ピン止めウィンドウは全デスクトップに表示される）
   const targetDesktopNumber =
     windowConfig.virtualDesktopNumber !== undefined && !needsPinning
       ? windowConfig.virtualDesktopNumber
@@ -411,67 +352,40 @@ export async function tryActivateWindow(
 
   if (targetDesktopNumber !== undefined) {
     const desktopMoveSuccess = moveWindowToVirtualDesktop(hwnd, targetDesktopNumber);
+    const logCtx = {
+      name: itemName,
+      windowConfig: JSON.stringify(windowConfig),
+      desktopNumber: targetDesktopNumber,
+    };
 
     if (desktopMoveSuccess) {
-      logger.info(
-        {
-          name: itemName,
-          windowConfig: JSON.stringify(windowConfig),
-          desktopNumber: targetDesktopNumber,
-        },
-        '仮想デスクトップに移動しました'
-      );
+      logger.info(logCtx, '仮想デスクトップに移動しました');
 
-      // 仮想デスクトップ移動後、位置・サイズが必要な場合は再設定
-      // （デスクトップ移動時にWindowsが位置・サイズをリセットすることがあるため）
+      // デスクトップ移動時にWindowsが位置・サイズをリセットすることがあるため再設定
       if (needsBoundsChange) {
-        // デスクトップ移動完了を待機
         await waitForDesktopMove(hwnd, targetDesktopNumber, itemName, windowConfig, logger);
-
-        // 位置・サイズを再設定（既存のリトライ付き関数を再利用）
-        const targetBounds = {
-          x: windowConfig.x,
-          y: windowConfig.y,
-          width: windowConfig.width,
-          height: windowConfig.height,
-        };
-
-        await setBoundsWithRetry(hwnd, targetBounds, itemName, windowConfig, logger);
+        await setBoundsWithRetry(hwnd, baseBounds, itemName, windowConfig, logger);
       }
     } else {
-      logger.warn(
-        {
-          name: itemName,
-          windowConfig: JSON.stringify(windowConfig),
-          desktopNumber: targetDesktopNumber,
-        },
-        '仮想デスクトップへの移動に失敗しました'
-      );
+      logger.warn(logCtx, '仮想デスクトップへの移動に失敗しました');
     }
   }
 
-  // ウィンドウをアクティブ化（activateWindowがfalseの場合はスキップ）
-  const shouldActivate = windowConfig.activateWindow !== false; // undefined または true の場合はアクティブ化
-
-  if (!shouldActivate) {
+  // activateWindowがfalseの場合はスキップ（undefined または true の場合はアクティブ化）
+  if (windowConfig.activateWindow === false) {
     logger.info(
       { name: itemName, windowConfig: JSON.stringify(windowConfig) },
       'activateWindow=falseのため、ウィンドウのアクティブ化をスキップしました'
     );
-    return { activated: true, windowFound: true }; // ウィンドウ検索・設定は成功
+    return { activated: true, windowFound: true };
   }
 
   const success = activateWindow(hwnd);
-
-  if (success) {
-    // アクティブ化成功
-    return { activated: true, windowFound: true };
-  } else {
-    // アクティブ化失敗（通常起動へフォールバック）
+  if (!success) {
     logger.warn(
       { name: itemName, windowConfig: JSON.stringify(windowConfig) },
       'ウィンドウのアクティブ化に失敗。通常起動にフォールバック'
     );
-    return { activated: false, windowFound: true };
   }
+  return { activated: success, windowFound: true };
 }

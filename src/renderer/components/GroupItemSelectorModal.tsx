@@ -148,27 +148,17 @@ const GroupItemSelectorModal: React.FC<GroupItemSelectorModalProps> = ({
 
       // 対象ファイルのLauncherItemのみを抽出（グループアイテムとフォルダ取込展開アイテムは除外）
       const itemsInFile = allItems.filter((item: AppItem) => {
-        // WindowInfo、グループアイテムは除外
         if (isWindowInfo(item) || isGroupItem(item)) {
           return false;
         }
-
-        // LauncherItemまたはWindowItemのみ許可
         if (!isLauncherItem(item) && !isWindowItem(item)) {
           return false;
         }
-
-        const launcherItem = item;
-
-        // フォルダ取込アイテムから展開されたアイテムは除外（LauncherItemのみ）
-        if (isLauncherItem(launcherItem) && launcherItem.isDirExpanded) {
+        if (isLauncherItem(item) && item.isDirExpanded) {
           return false;
         }
-
-        // targetFileが指定されている場合は、対象ファイルのアイテムのみ
-        // 未指定の場合は全データファイルからのアイテムを許可
         if (targetFile) {
-          return launcherItem.sourceFile === targetFile;
+          return item.sourceFile === targetFile;
         }
         return true;
       }) as LauncherItem[];
@@ -194,10 +184,6 @@ const GroupItemSelectorModal: React.FC<GroupItemSelectorModalProps> = ({
   const handleSelectItem = (itemName: string) => {
     onSelect(itemName);
     onClose();
-  };
-
-  const isExcluded = (itemName: string) => {
-    return excludeNames.includes(itemName);
   };
 
   const getDefaultIcon = (item: AppItem): string => {
@@ -244,7 +230,7 @@ const GroupItemSelectorModal: React.FC<GroupItemSelectorModalProps> = ({
             </div>
           ) : (
             filteredItems.map((item, index) => {
-              const excluded = isExcluded(item.displayName);
+              const excluded = excludeNames.includes(item.displayName);
               return (
                 <div
                   key={index}

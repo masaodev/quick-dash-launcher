@@ -82,7 +82,7 @@ export class BackupService {
 
     if (copiedCount === 0) {
       // コピーが1つもなければフォルダを削除
-      this.removeDirRecursive(snapshotFolder);
+      fs.rmSync(snapshotFolder, { recursive: true, force: true });
       logger.warn('スナップショット作成: コピー対象ファイルなし');
       return false;
     }
@@ -188,7 +188,7 @@ export class BackupService {
     }
 
     try {
-      this.removeDirRecursive(snapshotFolder);
+      fs.rmSync(snapshotFolder, { recursive: true, force: true });
       logger.info({ timestamp }, 'スナップショットを削除しました');
       return { success: true };
     } catch (error) {
@@ -261,7 +261,7 @@ export class BackupService {
     for (const snapshot of toDelete) {
       const snapshotFolder = path.join(backupFolder, snapshot.timestamp);
       try {
-        this.removeDirRecursive(snapshotFolder);
+        fs.rmSync(snapshotFolder, { recursive: true, force: true });
         logger.info({ timestamp: snapshot.timestamp }, '古いスナップショットを削除しました');
       } catch (error) {
         logger.error(
@@ -427,13 +427,6 @@ export class BackupService {
       // skip
     }
     return results;
-  }
-
-  /**
-   * ディレクトリを再帰的に削除
-   */
-  private removeDirRecursive(dirPath: string): void {
-    fs.rmSync(dirPath, { recursive: true, force: true });
   }
 
   /**

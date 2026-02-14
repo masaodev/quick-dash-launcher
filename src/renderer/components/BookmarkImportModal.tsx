@@ -95,17 +95,12 @@ function BookmarkImportModal({
     return checkDuplicates(selectedBookmarks, existingItems);
   }, [bookmarks, selectedIds, existingItems]);
 
-  // ブックマーク関連の状態をリセット
-  const resetBookmarkState = useCallback(() => {
-    setBookmarks([]);
-    setSelectedIds(new Set());
-    setSearchQuery('');
-  }, []);
-
   // インポート元選択
   const handleSelectImportSource = (source: ImportSource) => {
     setImportSource(source);
-    resetBookmarkState();
+    setBookmarks([]);
+    setSelectedIds(new Set());
+    setSearchQuery('');
     setFileName(null);
     setSelectedProfile(null);
 

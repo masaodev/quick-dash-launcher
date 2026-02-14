@@ -95,36 +95,24 @@ export function moveWindowToVirtualDesktop(hwnd: number | bigint, desktopNumber:
   // VirtualDesktopAccessorは0ベースのインデックスを使用
   const desktopIndex = desktopNumber - 1;
 
-  debugLog('[WindowOps] moveWindowToVirtualDesktop デバッグ情報:', {
+  debugLog('[WindowOps] moveWindowToVirtualDesktop:', {
     hwnd: String(hwnd),
-    hwndType: typeof hwnd,
     desktopNumber,
     desktopIndex,
   });
 
   try {
-    debugLog('[WindowOps] 関数呼び出し前チェック:', {
-      MoveWindowToDesktopNumber: typeof MoveWindowToDesktopNumber,
-      isFunction: typeof MoveWindowToDesktopNumber === 'function',
-    });
-
-    // MoveWindowToDesktopNumber呼び出し
     const result = MoveWindowToDesktopNumber(hwnd, desktopIndex);
-
-    debugLog('[WindowOps] 実行結果:', result, '型:', typeof result);
-
     const success = toBooleanResult(result);
 
     if (success) {
       debugLog('[WindowOps] ウィンドウ移動成功');
-      return true;
     } else {
-      console.error(`[moveWindowToVirtualDesktop] ウィンドウ移動失敗。戻り値: ${result}`);
-      return false;
+      console.error(`[WindowOps] ウィンドウ移動失敗。戻り値: ${result}`);
     }
+    return success;
   } catch (error) {
     console.error('[WindowOps] moveWindowToVirtualDesktop例外発生:', error);
-    console.error('[WindowOps] エラースタック:', (error as Error).stack);
     return false;
   }
 }
@@ -215,20 +203,52 @@ export function getDesktopCount(): number {
   }
 
   const getDesktopCountFn = getGetDesktopCount();
-  if (!getDesktopCountFn) {
-    // DLLが利用できない場合はレジストリから取得
-    const guids = getVirtualDesktopGUIDs();
-    return guids.length > 0 ? guids.length : -1;
+  if (getDesktopCountFn) {
+    try {
+      const count = getDesktopCountFn();
+      if (count > 0) return count;
+    } catch (error) {
+      console.error('[WindowOps] getDesktopCount例外発生:', error);
+    }
+  }
+
+  // DLL未対応またはDLL呼び出し失敗時はレジストリから取得
+  const guids = getVirtualDesktopGUIDs();
+  return guids.length > 0 ? guids.length : -1;
+}
+
+/**
+ * ウィンドウの固定/固定解除の共通処理
+ */
+function callPinFunction(
+  hwnd: number | bigint,
+  getFn: () => ReturnType<typeof getPinWindow>,
+  label: string
+): boolean {
+  if (!isVirtualDesktopSupported()) {
+    console.warn('[WindowOps] 仮想デスクトップはサポートされていません');
+    return false;
+  }
+
+  const fn = getFn();
+  if (!fn) {
+    console.error('[WindowOps] VirtualDesktopAccessor.dllがロードされていません');
+    return false;
   }
 
   try {
-    const count = getDesktopCountFn();
-    return count > 0 ? count : -1;
+    const result = fn(hwnd);
+    const success = toBooleanResult(result);
+
+    if (success) {
+      debugLog(`[WindowOps] ${label}成功`);
+    } else {
+      console.error(`[WindowOps] ${label}失敗。戻り値: ${result}`);
+    }
+    return success;
   } catch (error) {
-    console.error('[WindowOps] getDesktopCount例外発生:', error);
-    // フォールバック: レジストリから取得
-    const guids = getVirtualDesktopGUIDs();
-    return guids.length > 0 ? guids.length : -1;
+    console.error(`[WindowOps] ${label}例外発生:`, error);
+    return false;
   }
 }
 
@@ -238,31 +258,7 @@ export function getDesktopCount(): number {
  * @returns 成功したらtrue
  */
 export function pinWindow(hwnd: number | bigint): boolean {
-  if (!isVirtualDesktopSupported()) {
-    console.warn('[WindowOps] 仮想デスクトップはサポートされていません');
-    return false;
-  }
-
-  const pinWindowFn = getPinWindow();
-  if (!pinWindowFn) {
-    console.error('[WindowOps] VirtualDesktopAccessor.dllがロードされていません');
-    return false;
-  }
-
-  try {
-    const result = pinWindowFn(hwnd);
-    const success = toBooleanResult(result);
-
-    if (success) {
-      debugLog('[WindowOps] ウィンドウ固定成功');
-    } else {
-      console.error(`[WindowOps] ウィンドウ固定失敗。戻り値: ${result}`);
-    }
-    return success;
-  } catch (error) {
-    console.error('[WindowOps] pinWindow例外発生:', error);
-    return false;
-  }
+  return callPinFunction(hwnd, getPinWindow, 'ウィンドウ固定');
 }
 
 /**
@@ -271,31 +267,7 @@ export function pinWindow(hwnd: number | bigint): boolean {
  * @returns 成功したらtrue
  */
 export function unPinWindow(hwnd: number | bigint): boolean {
-  if (!isVirtualDesktopSupported()) {
-    console.warn('[WindowOps] 仮想デスクトップはサポートされていません');
-    return false;
-  }
-
-  const unPinWindowFn = getUnPinWindow();
-  if (!unPinWindowFn) {
-    console.error('[WindowOps] VirtualDesktopAccessor.dllがロードされていません');
-    return false;
-  }
-
-  try {
-    const result = unPinWindowFn(hwnd);
-    const success = toBooleanResult(result);
-
-    if (success) {
-      debugLog('[WindowOps] ウィンドウ固定解除成功');
-    } else {
-      console.error(`[WindowOps] ウィンドウ固定解除失敗。戻り値: ${result}`);
-    }
-    return success;
-  } catch (error) {
-    console.error('[WindowOps] unPinWindow例外発生:', error);
-    return false;
-  }
+  return callPinFunction(hwnd, getUnPinWindow, 'ウィンドウ固定解除');
 }
 
 /**

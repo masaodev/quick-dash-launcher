@@ -325,44 +325,29 @@ function App(): React.ReactElement {
     loadItems();
     loadIconFetchErrors();
 
-    window.electronAPI.onWindowShown((startTime) => {
-      if (startTime !== undefined) {
-        const logTiming = (label: string) => {
-          const duration = Date.now() - startTime;
-          window.electronAPI.logPerformanceTiming(label, duration);
-        };
-
-        logTiming('renderer-received');
-
+    const logShowTimings = (startTime: number | undefined, suffix: string) => {
+      if (startTime === undefined) return;
+      const logTiming = (label: string) => {
+        window.electronAPI.logPerformanceTiming(label, Date.now() - startTime);
+      };
+      logTiming(`renderer-received${suffix}`);
+      requestAnimationFrame(() => {
+        logTiming(`before-animation-frame${suffix}`);
         requestAnimationFrame(() => {
-          logTiming('before-animation-frame');
-          requestAnimationFrame(() => {
-            logTiming('window-show-complete');
-          });
+          logTiming(`window-show-complete${suffix}`);
         });
-      }
+      });
+    };
+
+    window.electronAPI.onWindowShown((startTime) => {
+      logShowTimings(startTime, '');
       setSearchQuery('');
       setSelectedIndex(0);
       searchInputRef.current?.focus();
     });
 
     window.electronAPI.onWindowShownItemSearch(async (startTime) => {
-      if (startTime !== undefined) {
-        const logTiming = (label: string) => {
-          const duration = Date.now() - startTime;
-          window.electronAPI.logPerformanceTiming(label, duration);
-        };
-
-        logTiming('renderer-received-window-search');
-
-        requestAnimationFrame(() => {
-          logTiming('before-animation-frame-window-search');
-
-          requestAnimationFrame(() => {
-            logTiming('window-show-complete-window-search');
-          });
-        });
-      }
+      logShowTimings(startTime, '-window-search');
       setSearchMode('window');
       const [windows, info] = await Promise.all([
         window.electronAPI.getAllWindowsAllDesktops(),
@@ -415,53 +400,35 @@ function App(): React.ReactElement {
       const targetFile = item.targetFile || item.targetTab;
       const isFileChanged = targetFile !== editingItem.sourceFile;
 
+      if (!editingItem.jsonItemId) {
+        throw new Error('アイテムIDが見つかりません');
+      }
+      const itemId = editingItem.jsonItemId;
+
       if (isFileChanged) {
-        if (!editingItem.jsonItemId) {
-          throw new Error('アイテムIDが見つかりません');
-        }
-        await window.electronAPI.deleteItemsById([
-          {
-            id: editingItem.jsonItemId,
-          },
-        ]);
+        await window.electronAPI.deleteItemsById([{ id: itemId }]);
         await window.electronAPI.registerItems([item]);
+      } else if (item.itemCategory === 'dir') {
+        await window.electronAPI.updateDirItemById(itemId, item.path, item.dirOptions, item.memo);
+      } else if (item.itemCategory === 'group') {
+        await window.electronAPI.updateGroupItemById(
+          itemId,
+          item.displayName,
+          item.groupItemNames || [],
+          item.memo
+        );
+      } else if (item.itemCategory === 'window') {
+        const cfg = item.windowOperationConfig;
+        if (!cfg) throw new Error('windowOperationConfig is required for window items');
+        await window.electronAPI.updateWindowItemById(
+          itemId,
+          { ...cfg, displayName: item.displayName },
+          item.memo
+        );
       } else {
-        if (item.itemCategory === 'dir') {
-          if (!editingItem.jsonItemId) {
-            throw new Error('アイテムIDが見つかりません');
-          }
-          await window.electronAPI.updateDirItemById(
-            editingItem.jsonItemId,
-            item.path,
-            item.dirOptions,
-            item.memo
-          );
-        } else if (item.itemCategory === 'group') {
-          if (!editingItem.jsonItemId) {
-            throw new Error('アイテムIDが見つかりません');
-          }
-          const itemNames = item.groupItemNames || [];
-          await window.electronAPI.updateGroupItemById(
-            editingItem.jsonItemId,
-            item.displayName,
-            itemNames,
-            item.memo
-          );
-        } else if (item.itemCategory === 'window') {
-          if (!editingItem.jsonItemId) {
-            throw new Error('アイテムIDが見つかりません');
-          }
-          const cfg = item.windowOperationConfig;
-          if (!cfg) throw new Error('windowOperationConfig is required for window items');
-
-          const config = { ...cfg, displayName: item.displayName };
-          await window.electronAPI.updateWindowItemById(editingItem.jsonItemId, config, item.memo);
-        } else {
-          if (!editingItem.jsonItemId) {
-            throw new Error('アイテムIDが見つかりません');
-          }
-
-          const newItem: LauncherItem = {
+        await window.electronAPI.updateItemById({
+          id: itemId,
+          newItem: {
             displayName: item.displayName,
             path: item.path,
             type: item.type,
@@ -469,13 +436,8 @@ function App(): React.ReactElement {
             customIcon: item.customIcon,
             windowConfig: item.windowConfig,
             memo: item.memo,
-          };
-
-          await window.electronAPI.updateItemById({
-            id: editingItem.jsonItemId,
-            newItem: newItem,
-          });
-        }
+          },
+        });
       }
     } else {
       await window.electronAPI.registerItems(items);
@@ -644,15 +606,11 @@ function App(): React.ReactElement {
     }).length;
   }, [mainItems, errorKeySet]);
 
-  const getItemsToFilter = (): AppItem[] => {
-    switch (searchMode) {
-      case 'window':
-        return filterWindowsByDesktopTab(windowList, activeDesktopTab);
-      default:
-        return tabFilteredItems;
-    }
-  };
-  const filteredItems = filterItems(getItemsToFilter(), searchQuery, searchMode);
+  const itemsToFilter =
+    searchMode === 'window'
+      ? filterWindowsByDesktopTab(windowList, activeDesktopTab)
+      : tabFilteredItems;
+  const filteredItems = filterItems(itemsToFilter, searchQuery, searchMode);
 
   if (isFirstLaunch === null) {
     return <div className="app">読み込み中...</div>;

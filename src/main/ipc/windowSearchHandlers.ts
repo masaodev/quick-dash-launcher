@@ -42,33 +42,23 @@ export function setupWindowSearchHandlers(
 ): void {
   function getWindowList(includeAllDesktops: boolean): WindowInfo[] {
     try {
-      const windows = getAllWindows(
-        includeAllDesktops ? { includeAllVirtualDesktops: true } : undefined
-      );
-      return excludeMainWindow(windows, getMainWindow());
+      const options = includeAllDesktops ? { includeAllVirtualDesktops: true } : undefined;
+      return excludeMainWindow(getAllWindows(options), getMainWindow());
     } catch (error) {
       console.error('Failed to get window list:', error);
       return [];
     }
   }
 
-  ipcMain.handle(IPC_CHANNELS.GET_ALL_WINDOWS, async (): Promise<WindowInfo[]> => {
-    return getWindowList(false);
-  });
-
-  ipcMain.handle(IPC_CHANNELS.GET_ALL_WINDOWS_ALL_DESKTOPS, async (): Promise<WindowInfo[]> => {
-    return getWindowList(true);
-  });
+  ipcMain.handle(IPC_CHANNELS.GET_ALL_WINDOWS, (): WindowInfo[] => getWindowList(false));
+  ipcMain.handle(IPC_CHANNELS.GET_ALL_WINDOWS_ALL_DESKTOPS, (): WindowInfo[] =>
+    getWindowList(true)
+  );
 
   ipcMain.handle(IPC_CHANNELS.GET_VIRTUAL_DESKTOP_INFO, async (): Promise<VirtualDesktopInfo> => {
-    const unsupportedInfo: VirtualDesktopInfo = {
-      supported: false,
-      desktopCount: -1,
-      currentDesktop: -1,
-    };
     try {
       if (!isVirtualDesktopSupported()) {
-        return unsupportedInfo;
+        return { supported: false, desktopCount: -1, currentDesktop: -1 };
       }
       return {
         supported: true,
@@ -78,7 +68,7 @@ export function setupWindowSearchHandlers(
       };
     } catch (error) {
       console.error('Failed to get virtual desktop info:', error);
-      return unsupportedInfo;
+      return { supported: false, desktopCount: -1, currentDesktop: -1 };
     }
   });
 

@@ -9,20 +9,21 @@ import type {
 import { isWindowInfo, isGroupItem, isWindowItem, isClipboardItem } from '@common/types/guards';
 import { PathUtils } from '@common/utils/pathUtils';
 
+interface MetaInfo {
+  sourceFile?: string;
+  id?: string;
+  expandedFromId?: string;
+  lineNumber?: number;
+  expandedFrom?: string;
+  expandedOptions?: string;
+}
+
 /**
  * メタ情報（データファイル、ID、展開元IDなど）を文字列配列に追加
- * 各ツールチップで共通して使用される処理を集約
  */
-function appendMetaInfo(
-  lines: string[],
-  sourceFile?: string,
-  id?: string,
-  expandedFromId?: string,
-  lineNumber?: number,
-  expandedFrom?: string,
-  expandedOptions?: string
-): void {
-  // 空行を追加してメタ情報を分離
+function appendMetaInfo(lines: string[], meta: MetaInfo): void {
+  const { sourceFile, id, expandedFromId, lineNumber, expandedFrom, expandedOptions } = meta;
+
   if (sourceFile || id || expandedFromId || lineNumber || expandedFrom || expandedOptions) {
     lines.push('');
   }
@@ -31,17 +32,14 @@ function appendMetaInfo(
     lines.push(`データファイル: ${sourceFile}`);
   }
 
-  // ID表示（通常アイテム）
   if (id) {
     lines.push(`ID: ${id}`);
   }
 
-  // 展開元ID表示（フォルダ取込展開アイテム）
   if (expandedFromId) {
     lines.push(`展開元ID: ${expandedFromId}`);
   }
 
-  // フォールバック: IDも展開元IDもない場合のみ行番号を表示（後方互換性）
   if (!id && !expandedFromId && lineNumber) {
     lines.push(`行番号: ${lineNumber}`);
   }
@@ -93,15 +91,11 @@ function getGroupItemTooltip(groupItem: GroupItem): string {
   const lines: string[] = [];
   lines.push(`グループ: ${groupItem.itemNames.join(', ')}`);
 
-  appendMetaInfo(
-    lines,
-    groupItem.sourceFile,
-    groupItem.id,
-    undefined, // expandedFromId（GroupItemは持たない）
-    groupItem.lineNumber,
-    undefined, // expandedFrom
-    undefined // expandedOptions
-  );
+  appendMetaInfo(lines, {
+    sourceFile: groupItem.sourceFile,
+    id: groupItem.id,
+    lineNumber: groupItem.lineNumber,
+  });
 
   return lines.join('\n');
 }
@@ -127,15 +121,11 @@ function getWindowItemTooltip(windowItem: WindowItem): string {
     lines.push(`アクティブ化: しない`);
   }
 
-  appendMetaInfo(
-    lines,
-    windowItem.sourceFile,
-    windowItem.id,
-    undefined, // expandedFromId（WindowItemは持たない）
-    windowItem.lineNumber,
-    undefined, // expandedFrom
-    undefined // expandedOptions
-  );
+  appendMetaInfo(lines, {
+    sourceFile: windowItem.sourceFile,
+    id: windowItem.id,
+    lineNumber: windowItem.lineNumber,
+  });
 
   return lines.join('\n');
 }
@@ -147,15 +137,14 @@ function getLauncherItemTooltip(launcherItem: LauncherItem): string {
   const lines: string[] = [];
   lines.push(PathUtils.getFullPath(launcherItem));
 
-  appendMetaInfo(
-    lines,
-    launcherItem.sourceFile,
-    launcherItem.id,
-    launcherItem.expandedFromId,
-    launcherItem.lineNumber,
-    launcherItem.expandedFrom,
-    launcherItem.expandedOptions
-  );
+  appendMetaInfo(lines, {
+    sourceFile: launcherItem.sourceFile,
+    id: launcherItem.id,
+    expandedFromId: launcherItem.expandedFromId,
+    lineNumber: launcherItem.lineNumber,
+    expandedFrom: launcherItem.expandedFrom,
+    expandedOptions: launcherItem.expandedOptions,
+  });
 
   return lines.join('\n');
 }
@@ -188,15 +177,11 @@ function getClipboardItemTooltip(clipboardItem: ClipboardItem): string {
     lines.push(`保存日時: ${date}`);
   }
 
-  appendMetaInfo(
-    lines,
-    clipboardItem.sourceFile,
-    clipboardItem.id,
-    undefined, // expandedFromId（ClipboardItemは持たない）
-    clipboardItem.lineNumber,
-    undefined, // expandedFrom
-    undefined // expandedOptions
-  );
+  appendMetaInfo(lines, {
+    sourceFile: clipboardItem.sourceFile,
+    id: clipboardItem.id,
+    lineNumber: clipboardItem.lineNumber,
+  });
 
   return lines.join('\n');
 }

@@ -64,20 +64,16 @@ export function useWorkspaceItemEditForm(
     ) => {
       if (!item) return;
 
-      const newItem = { ...item };
+      let newItem: RegisterItem;
 
-      if (field === 'windowConfig') {
-        newItem.windowConfig = value as WindowConfig;
-      } else if (field === 'windowOperationConfig') {
-        newItem.windowOperationConfig = value as RegisterItem['windowOperationConfig'];
-      } else if (field === 'groupItemNames') {
+      if (field === 'groupItemNames') {
         const itemNames = (value as string)
           .split(',')
           .map((name) => name.trim())
           .filter((name) => name);
-        newItem.groupItemNames = itemNames;
+        newItem = { ...item, groupItemNames: itemNames };
       } else {
-        (newItem as Record<string, unknown>)[field] = value;
+        newItem = { ...item, [field]: value };
       }
 
       if (field === 'displayName' || field === 'path' || field === 'windowOperationConfig') {

@@ -198,36 +198,21 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
         {/* 左側メニュー */}
         <div className="settings-sidebar">
           <nav className="settings-menu">
-            <button
-              className={`menu-item ${selectedCategory === 'basic' ? 'active' : ''}`}
-              onClick={() => handleCategoryChange('basic')}
-            >
-              ⚙️ 基本設定
-            </button>
-            <button
-              className={`menu-item ${selectedCategory === 'window' ? 'active' : ''}`}
-              onClick={() => handleCategoryChange('window')}
-            >
-              🪟 ウィンドウ
-            </button>
-            <button
-              className={`menu-item ${selectedCategory === 'tabs' ? 'active' : ''}`}
-              onClick={() => handleCategoryChange('tabs')}
-            >
-              📑 タブ管理
-            </button>
-            <button
-              className={`menu-item ${selectedCategory === 'backup' ? 'active' : ''}`}
-              onClick={() => handleCategoryChange('backup')}
-            >
-              💾 バックアップ
-            </button>
-            <button
-              className={`menu-item ${selectedCategory === 'bookmarkAutoImport' ? 'active' : ''}`}
-              onClick={() => handleCategoryChange('bookmarkAutoImport')}
-            >
-              🔖 ブックマーク自動取込
-            </button>
+            {[
+              { key: 'basic', label: '⚙️ 基本設定' },
+              { key: 'window', label: '🪟 ウィンドウ' },
+              { key: 'tabs', label: '📑 タブ管理' },
+              { key: 'backup', label: '💾 バックアップ' },
+              { key: 'bookmarkAutoImport', label: '🔖 ブックマーク自動取込' },
+            ].map(({ key, label }) => (
+              <button
+                key={key}
+                className={`menu-item ${selectedCategory === key ? 'active' : ''}`}
+                onClick={() => handleCategoryChange(key)}
+              >
+                {label}
+              </button>
+            ))}
           </nav>
         </div>
 
@@ -314,74 +299,68 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
               <div className="settings-section">
                 <h3>ウィンドウサイズ</h3>
                 <div className="window-size-grid">
-                  <div className="window-size-group">
-                    <div className="window-size-group-title">メイン画面</div>
-                    <div className="window-size-inputs">
-                      <div className="window-size-field">
-                        <label htmlFor="windowWidth">幅:</label>
-                        <input
-                          id="windowWidth"
-                          type="number"
-                          min="400"
-                          max="2000"
-                          value={editedSettings.windowWidth}
-                          onChange={(e) => handleNumberInputChange('windowWidth', e.target.value)}
-                          onBlur={handleNumberInputBlur}
-                          disabled={isLoading}
-                        />
-                        <span className="unit">px</span>
-                      </div>
-                      <div className="window-size-field">
-                        <label htmlFor="windowHeight">高さ:</label>
-                        <input
-                          id="windowHeight"
-                          type="number"
-                          min="300"
-                          max="1200"
-                          value={editedSettings.windowHeight}
-                          onChange={(e) => handleNumberInputChange('windowHeight', e.target.value)}
-                          onBlur={handleNumberInputBlur}
-                          disabled={isLoading}
-                        />
-                        <span className="unit">px</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="window-size-group">
-                    <div className="window-size-group-title">管理画面</div>
-                    <div className="window-size-inputs">
-                      <div className="window-size-field">
-                        <label htmlFor="editModeWidth">幅:</label>
-                        <input
-                          id="editModeWidth"
-                          type="number"
-                          min="800"
-                          max="2000"
-                          value={editedSettings.editModeWidth}
-                          onChange={(e) => handleNumberInputChange('editModeWidth', e.target.value)}
-                          onBlur={handleNumberInputBlur}
-                          disabled={isLoading}
-                        />
-                        <span className="unit">px</span>
-                      </div>
-                      <div className="window-size-field">
-                        <label htmlFor="editModeHeight">高さ:</label>
-                        <input
-                          id="editModeHeight"
-                          type="number"
-                          min="600"
-                          max="1200"
-                          value={editedSettings.editModeHeight}
-                          onChange={(e) =>
-                            handleNumberInputChange('editModeHeight', e.target.value)
-                          }
-                          onBlur={handleNumberInputBlur}
-                          disabled={isLoading}
-                        />
-                        <span className="unit">px</span>
+                  {[
+                    {
+                      title: 'メイン画面',
+                      fields: [
+                        {
+                          id: 'windowWidth',
+                          label: '幅',
+                          min: 400,
+                          max: 2000,
+                          key: 'windowWidth' as const,
+                        },
+                        {
+                          id: 'windowHeight',
+                          label: '高さ',
+                          min: 300,
+                          max: 1200,
+                          key: 'windowHeight' as const,
+                        },
+                      ],
+                    },
+                    {
+                      title: '管理画面',
+                      fields: [
+                        {
+                          id: 'editModeWidth',
+                          label: '幅',
+                          min: 800,
+                          max: 2000,
+                          key: 'editModeWidth' as const,
+                        },
+                        {
+                          id: 'editModeHeight',
+                          label: '高さ',
+                          min: 600,
+                          max: 1200,
+                          key: 'editModeHeight' as const,
+                        },
+                      ],
+                    },
+                  ].map(({ title, fields }) => (
+                    <div key={title} className="window-size-group">
+                      <div className="window-size-group-title">{title}</div>
+                      <div className="window-size-inputs">
+                        {fields.map(({ id, label, min, max, key }) => (
+                          <div key={id} className="window-size-field">
+                            <label htmlFor={id}>{label}:</label>
+                            <input
+                              id={id}
+                              type="number"
+                              min={min}
+                              max={max}
+                              value={editedSettings[key]}
+                              onChange={(e) => handleNumberInputChange(key, e.target.value)}
+                              onBlur={handleNumberInputBlur}
+                              disabled={isLoading}
+                            />
+                            <span className="unit">px</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
               </div>
 
@@ -389,90 +368,50 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                 <h3>ウィンドウ表示位置</h3>
                 <div className="setting-item">
                   <div className="position-options">
-                    <label className="position-option">
-                      <input
-                        type="radio"
-                        name="windowPositionMode"
-                        value="center"
-                        checked={editedSettings.windowPositionMode === 'center'}
-                        onChange={(e) =>
-                          handleSettingChange(
-                            'windowPositionMode',
-                            e.target.value as WindowPositionMode
-                          )
-                        }
-                        disabled={isLoading}
-                      />
-                      <div className="option-content">
-                        <div className="option-title">画面中央（固定）</div>
-                        <div className="option-description">
-                          常にプライマリモニターの中央にウィンドウを表示します
+                    {(
+                      [
+                        {
+                          value: 'center',
+                          title: '画面中央（固定）',
+                          desc: '常にプライマリモニターの中央にウィンドウを表示します',
+                        },
+                        {
+                          value: 'cursorMonitorCenter',
+                          title: '画面中央（自動切替）',
+                          desc: 'マウスカーソルがあるモニターの中央にウィンドウを表示します（マルチモニター推奨）',
+                        },
+                        {
+                          value: 'cursor',
+                          title: 'カーソル付近',
+                          desc: 'マウスカーソルの近くにウィンドウを表示します（検索入力がしやすい位置）',
+                        },
+                        {
+                          value: 'fixed',
+                          title: '固定位置（手動設定）',
+                          desc: 'ウィンドウを移動した位置を記憶して、次回も同じ位置に表示します',
+                        },
+                      ] as const
+                    ).map(({ value, title, desc }) => (
+                      <label key={value} className="position-option">
+                        <input
+                          type="radio"
+                          name="windowPositionMode"
+                          value={value}
+                          checked={editedSettings.windowPositionMode === value}
+                          onChange={(e) =>
+                            handleSettingChange(
+                              'windowPositionMode',
+                              e.target.value as WindowPositionMode
+                            )
+                          }
+                          disabled={isLoading}
+                        />
+                        <div className="option-content">
+                          <div className="option-title">{title}</div>
+                          <div className="option-description">{desc}</div>
                         </div>
-                      </div>
-                    </label>
-                    <label className="position-option">
-                      <input
-                        type="radio"
-                        name="windowPositionMode"
-                        value="cursorMonitorCenter"
-                        checked={editedSettings.windowPositionMode === 'cursorMonitorCenter'}
-                        onChange={(e) =>
-                          handleSettingChange(
-                            'windowPositionMode',
-                            e.target.value as WindowPositionMode
-                          )
-                        }
-                        disabled={isLoading}
-                      />
-                      <div className="option-content">
-                        <div className="option-title">画面中央（自動切替）</div>
-                        <div className="option-description">
-                          マウスカーソルがあるモニターの中央にウィンドウを表示します（マルチモニター推奨）
-                        </div>
-                      </div>
-                    </label>
-                    <label className="position-option">
-                      <input
-                        type="radio"
-                        name="windowPositionMode"
-                        value="cursor"
-                        checked={editedSettings.windowPositionMode === 'cursor'}
-                        onChange={(e) =>
-                          handleSettingChange(
-                            'windowPositionMode',
-                            e.target.value as WindowPositionMode
-                          )
-                        }
-                        disabled={isLoading}
-                      />
-                      <div className="option-content">
-                        <div className="option-title">カーソル付近</div>
-                        <div className="option-description">
-                          マウスカーソルの近くにウィンドウを表示します（検索入力がしやすい位置）
-                        </div>
-                      </div>
-                    </label>
-                    <label className="position-option">
-                      <input
-                        type="radio"
-                        name="windowPositionMode"
-                        value="fixed"
-                        checked={editedSettings.windowPositionMode === 'fixed'}
-                        onChange={(e) =>
-                          handleSettingChange(
-                            'windowPositionMode',
-                            e.target.value as WindowPositionMode
-                          )
-                        }
-                        disabled={isLoading}
-                      />
-                      <div className="option-content">
-                        <div className="option-title">固定位置（手動設定）</div>
-                        <div className="option-description">
-                          ウィンドウを移動した位置を記憶して、次回も同じ位置に表示します
-                        </div>
-                      </div>
-                    </label>
+                      </label>
+                    ))}
                   </div>
                 </div>
               </div>

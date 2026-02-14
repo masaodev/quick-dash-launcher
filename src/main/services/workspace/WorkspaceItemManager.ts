@@ -73,18 +73,28 @@ export class WorkspaceItemManager {
     }
   }
 
+  private createBaseFields(
+    displayName: string,
+    order: number,
+    groupId?: string
+  ): Pick<WorkspaceItem, 'id' | 'displayName' | 'originalName' | 'order' | 'addedAt' | 'groupId'> {
+    return {
+      id: randomUUID(),
+      displayName,
+      originalName: displayName,
+      order,
+      addedAt: Date.now(),
+      groupId,
+    };
+  }
+
   private createWindowItem(item: AppItem, order: number, groupId?: string): WorkspaceItem {
     const w = item as WindowItem;
 
     return {
-      id: randomUUID(),
-      displayName: w.displayName,
-      originalName: w.displayName,
+      ...this.createBaseFields(w.displayName, order, groupId),
       path: `[ウィンドウ操作: ${w.windowTitle}]`,
       type: 'windowOperation',
-      order,
-      addedAt: Date.now(),
-      groupId,
       processName: w.processName,
       windowX: w.x,
       windowY: w.y,
@@ -106,14 +116,9 @@ export class WorkspaceItemManager {
     );
 
     return {
-      id: randomUUID(),
-      displayName: g.displayName,
-      originalName: g.displayName,
+      ...this.createBaseFields(g.displayName, order, groupId),
       path: `[グループ: ${g.itemNames.length}件]`,
       type: 'group',
-      order,
-      addedAt: Date.now(),
-      groupId,
       itemNames: g.itemNames,
     };
   }
@@ -122,15 +127,10 @@ export class WorkspaceItemManager {
     const c = item as ClipboardItem;
 
     return {
-      id: randomUUID(),
-      displayName: c.displayName,
-      originalName: c.displayName,
+      ...this.createBaseFields(c.displayName, order, groupId),
       path: `[クリップボード: ${c.preview?.substring(0, 20) || 'データ'}...]`,
       type: 'clipboard',
       customIcon: c.customIcon,
-      order,
-      addedAt: Date.now(),
-      groupId,
       clipboardDataRef: c.clipboardDataRef,
       clipboardFormats: c.formats,
       clipboardSavedAt: c.savedAt,
@@ -142,17 +142,12 @@ export class WorkspaceItemManager {
     const l = item as LauncherItem;
 
     return {
-      id: randomUUID(),
-      displayName: l.displayName,
-      originalName: l.displayName,
+      ...this.createBaseFields(l.displayName, order, groupId),
       path: l.path,
       type: l.type as 'url' | 'file' | 'folder' | 'app' | 'customUri',
       customIcon: l.customIcon,
       args: l.args,
       originalPath: l.originalPath,
-      order,
-      addedAt: Date.now(),
-      groupId,
       windowConfig: l.windowConfig,
     };
   }
@@ -169,14 +164,9 @@ export class WorkspaceItemManager {
       const fileName = path.basename(filePath);
 
       const workspaceItem: WorkspaceItem = {
-        id: randomUUID(),
-        displayName: fileName,
-        originalName: fileName,
+        ...this.createBaseFields(fileName, this.getNextOrder(items), groupId),
         path: filePath,
         type: itemType,
-        order: this.getNextOrder(items),
-        addedAt: Date.now(),
-        groupId,
       };
 
       items.push(workspaceItem);

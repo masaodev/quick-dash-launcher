@@ -30,9 +30,6 @@ const POSITION_KEYS: ReadonlyArray<keyof AppSettings> = [
   'workspacePositionY',
 ];
 
-/**
- * 設定変更の副作用を適用する
- */
 async function applySettingsEffects(
   changedKeys: ReadonlyArray<keyof AppSettings>,
   settingsService: SettingsService
@@ -212,30 +209,25 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
     }
   );
 
-  ipcMain.handle(IPC_CHANNELS.SETTINGS_GET_DISPLAYS, async () => {
-    try {
-      const displays = screen.getAllDisplays();
-      const primaryDisplay = screen.getPrimaryDisplay();
+  ipcMain.handle(IPC_CHANNELS.SETTINGS_GET_DISPLAYS, () => {
+    const displays = screen.getAllDisplays();
+    const primaryId = screen.getPrimaryDisplay().id;
 
-      const displayInfos: DisplayInfo[] = displays.map((display, index) => {
-        const isPrimary = display.id === primaryDisplay.id;
-        return {
-          index,
-          label: `ディスプレイ ${index + 1}${isPrimary ? ' (プライマリ)' : ''}`,
-          isPrimary,
-          width: display.workArea.width,
-          height: display.workArea.height,
-          x: display.workArea.x,
-          y: display.workArea.y,
-        };
-      });
+    const displayInfos: DisplayInfo[] = displays.map((display, index) => {
+      const isPrimary = display.id === primaryId;
+      return {
+        index,
+        label: `ディスプレイ ${index + 1}${isPrimary ? ' (プライマリ)' : ''}`,
+        isPrimary,
+        width: display.workArea.width,
+        height: display.workArea.height,
+        x: display.workArea.x,
+        y: display.workArea.y,
+      };
+    });
 
-      logger.info({ displayCount: displayInfos.length }, 'ディスプレイ一覧を取得');
-      return displayInfos;
-    } catch (error) {
-      logger.error({ error }, 'ディスプレイ一覧の取得に失敗');
-      throw error;
-    }
+    logger.info({ displayCount: displayInfos.length }, 'ディスプレイ一覧を取得');
+    return displayInfos;
   });
 
   logger.info('Settings IPC handlers registered');

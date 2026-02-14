@@ -17,10 +17,9 @@ import { loadDataFiles } from './dataHandlers.js';
  * ワークスペース変更イベントを全てのウィンドウに送信
  */
 export function notifyWorkspaceChanged(): void {
-  const windows = BrowserWindow.getAllWindows();
-  windows.forEach((window) => {
+  for (const window of BrowserWindow.getAllWindows()) {
     window.webContents.send(IPC_CHANNELS.WORKSPACE_CHANGED);
-  });
+  }
 }
 
 /**
@@ -243,9 +242,7 @@ export function setupWorkspaceHandlers(): void {
         // アイテム名からLauncherItemまたはWindowItemを検索するマップを作成
         const itemMap = new Map<string, AppItem>();
         for (const appItem of allItems) {
-          if (isLauncherItem(appItem)) {
-            itemMap.set(appItem.displayName, appItem);
-          } else if (isWindowItem(appItem)) {
+          if (isLauncherItem(appItem) || isWindowItem(appItem)) {
             itemMap.set(appItem.displayName, appItem);
           }
         }
@@ -474,8 +471,6 @@ export function setupWorkspaceHandlers(): void {
       }
     }
   );
-
-  // ==================== 実行履歴ハンドラー ====================
 
   // ==================== アーカイブ管理ハンドラー ====================
 

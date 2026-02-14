@@ -59,17 +59,6 @@ export function formatDirOptions(options: DirOptionsForProcessing): string {
 
 /**
  * ファイル/フォルダーをLauncherItemに変換する
- *
- * @param itemPath - アイテムのパス
- * @param itemType - アイテムタイプ（'file' | 'folder'）
- * @param sourceFile - データファイル名
- * @param lineNumber - 行番号（オプション）
- * @param prefix - 表示名に追加するプレフィックス（オプション）
- * @param suffix - 表示名に追加するサフィックス（オプション）
- * @param expandedFrom - フォルダ取込の元となるディレクトリパス（オプション）
- * @param expandedOptions - フォルダ取込オプション情報（人間が読める形式、オプション）
- * @param expandedFromId - フォルダ取込アイテムから展開された場合の元のdirディレクティブID（オプション）
- * @returns LauncherItemオブジェクト
  */
 function processItem(
   itemPath: string,
@@ -84,23 +73,21 @@ function processItem(
 ): LauncherItem {
   let displayName = path.basename(itemPath);
 
-  // プレフィックスが指定されている場合は追加
   if (prefix) {
     displayName = `${prefix}: ${displayName}`;
   }
 
-  // サフィックスが指定されている場合は追加
   if (suffix) {
     displayName = `${displayName} (${suffix})`;
   }
 
   return {
-    displayName: displayName,
+    displayName,
     path: itemPath,
     type: itemType === 'folder' ? 'folder' : detectItemTypeSync(itemPath),
     sourceFile,
     lineNumber,
-    isDirExpanded: expandedFrom ? true : false,
+    isDirExpanded: !!expandedFrom,
     expandedFrom,
     expandedOptions,
     expandedFromId,
@@ -110,26 +97,6 @@ function processItem(
 
 /**
  * ショートカットファイル（.lnk）を解析してLauncherItemに変換する
- * Electronのネイティブ機能を使用してショートカットの詳細を読み取り、
- * LauncherItemオブジェクトを生成する
- *
- * @param filePath - 解析対象のショートカットファイルのパス
- * @param sourceFile - データファイル名
- * @param lineNumber - 行番号（オプション）
- * @param displayName - 表示名（オプション、未指定の場合はファイル名から自動生成）
- * @param prefix - 表示名に追加するプレフィックス（オプション）
- * @param suffix - 表示名に追加するサフィックス（オプション）
- * @param expandedFrom - フォルダ取込の元となるディレクトリパス（オプション）
- * @param expandedOptions - フォルダ取込オプション情報（人間が読める形式、オプション）
- * @param expandedFromId - フォルダ取込アイテムから展開された場合の元のdirディレクティブID（オプション）
- * @returns LauncherItemオブジェクト。解析に失敗した場合はnull
- * @throws Error ショートカットファイルの読み込みに失敗した場合（ログに記録され、nullを返す）
- *
- * @example
- * ```typescript
- * const item = processShortcut('C:\\Users\\Desktop\\MyApp.lnk', 'data.json', 10, 'マイアプリ', 'デスクトップ');
- * // { name: 'デスクトップ: マイアプリ', path: 'C:\\Program Files\\MyApp\\app.exe', type: 'app', ... }
- * ```
  */
 export function processShortcut(
   filePath: string,
@@ -143,44 +110,33 @@ export function processShortcut(
   expandedFromId?: string
 ): LauncherItem | null {
   try {
-    // Electron のネイティブ機能を使用してショートカットを読み取り
     const shortcutDetails = shell.readShortcutLink(filePath);
 
-    if (shortcutDetails && shortcutDetails.target) {
-      // 表示名が指定されていない場合はファイル名から自動生成
+    if (shortcutDetails?.target) {
       let name = displayName || path.basename(filePath, '.lnk');
 
-      // プレフィックスが指定されている場合は追加
       if (prefix) {
         name = `${prefix}: ${name}`;
       }
 
-      // サフィックスが指定されている場合は追加
       if (suffix) {
         name = `${name} (${suffix})`;
       }
 
-      // ターゲットパスの存在確認とディレクトリ判定
-      let targetType: LauncherItem['type'];
-      if (
-        FileUtils.exists(shortcutDetails.target) &&
-        FileUtils.isDirectory(shortcutDetails.target)
-      ) {
-        targetType = 'folder';
-      } else {
-        targetType = detectItemTypeSync(shortcutDetails.target);
-      }
+      const targetType: LauncherItem['type'] =
+        FileUtils.exists(shortcutDetails.target) && FileUtils.isDirectory(shortcutDetails.target)
+          ? 'folder'
+          : detectItemTypeSync(shortcutDetails.target);
 
       return {
         displayName: name,
         path: filePath,
         type: targetType,
-        args:
-          shortcutDetails.args && shortcutDetails.args.trim() ? shortcutDetails.args : undefined,
+        args: shortcutDetails.args?.trim() || undefined,
         originalPath: shortcutDetails.target,
         sourceFile,
         lineNumber,
-        isDirExpanded: expandedFrom ? true : false,
+        isDirExpanded: !!expandedFrom,
         expandedFrom,
         expandedOptions,
         expandedFromId,
@@ -196,26 +152,6 @@ export function processShortcut(
 
 /**
  * 指定されたディレクトリを再帰的にスキャンし、指定されたオプションに基づいてファイル/フォルダを抽出する
- * フォルダ取込アイテムで使用される主要な機能で、深度制限、タイプフィルター、パターンマッチングに対応
- *
- * @param dirPath - スキャン対象のディレクトリパス
- * @param options - スキャンオプション（深度、タイプ、フィルター等）
- * @param sourceFile - データファイル名
- * @param rootDirPath - フォルダ取込の元となるルートディレクトリパス（オプション）
- * @param optionsText - フォルダ取込オプション情報（人間が読める形式、オプション）
- * @param lineNumber - データファイル内の行番号（オプション）
- * @param expandedFromId - フォルダ取込アイテムから展開された場合の元のdirディレクティブID（オプション）
- * @param currentDepth - 現在の再帰深度（内部使用、初期値は0）
- * @returns LauncherItem配列
- * @throws ディレクトリアクセス権限エラー、ファイルシステムエラー
- *
- * @example
- * const items = await scanDirectory('/home/user/documents', {
- *   depth: 2,
- *   types: 'file',
- *   filter: '*.pdf',
- *   prefix: 'Doc: '
- * }, 'data.json', '/home/user/documents', '深さ:2, タイプ:ファイルのみ', 15, 'abc12345');
  */
 export async function scanDirectory(
   dirPath: string,
@@ -229,7 +165,6 @@ export async function scanDirectory(
 ): Promise<LauncherItem[]> {
   const results: LauncherItem[] = [];
 
-  // 深さ制限チェック
   if (options.depth !== -1 && currentDepth > options.depth) {
     return results;
   }
@@ -240,7 +175,6 @@ export async function scanDirectory(
     for (const item of items) {
       const itemPath = path.join(dirPath, item);
 
-      // エラーハンドリング: アクセスできないファイル/フォルダーをスキップ
       let stat;
       try {
         stat = fs.statSync(itemPath);
@@ -252,24 +186,18 @@ export async function scanDirectory(
       const isDirectory = stat.isDirectory();
       const itemName = path.basename(itemPath);
 
-      // 除外パターンチェック
       if (options.exclude && minimatch(itemName, options.exclude)) {
         continue;
       }
 
-      // フィルターパターンチェック
       if (options.filter && !minimatch(itemName, options.filter)) {
-        // サブディレクトリの場合は、中身をスキャンする可能性があるのでスキップしない
         if (!isDirectory) {
           continue;
         }
       }
 
-      // タイプによる処理
       if (isDirectory) {
-        // フォルダーを結果に含める
         if (options.types === 'folder' || options.types === 'both') {
-          // フィルターがない、またはフィルターにマッチする場合のみ追加
           if (!options.filter || minimatch(itemName, options.filter)) {
             results.push(
               processItem(
@@ -287,7 +215,6 @@ export async function scanDirectory(
           }
         }
 
-        // サブディレクトリをスキャン
         if (currentDepth < options.depth || options.depth === -1) {
           const subResults = await scanDirectory(
             itemPath,
@@ -302,9 +229,7 @@ export async function scanDirectory(
           results.push(...subResults);
         }
       } else {
-        // ファイルを結果に含める
         if (options.types === 'file' || options.types === 'both') {
-          // .lnkファイルの場合は特別処理
           if (path.extname(itemPath).toLowerCase() === '.lnk') {
             const processedShortcut = processShortcut(
               itemPath,
@@ -360,11 +285,8 @@ export async function processDirectoryItem(
   lineNumber: number,
   dirItemId?: string
 ): Promise<LauncherItem[]> {
-  // パスを正規化して絶対パスに変換
   const normalizedPath = path.normalize(path.resolve(dirPath));
 
-  // パストラバーサル攻撃対策: 正規化後のパスが元のパスと大きく異なる場合は拒否
-  // ただし、相対パスから絶対パスへの変換は許可
   if (normalizedPath.includes('..')) {
     dataLogger.warn({ dirPath, normalizedPath }, '不正なパス: ディレクトリトラバーサルの可能性');
     return [];
@@ -375,7 +297,6 @@ export async function processDirectoryItem(
   }
 
   try {
-    // デフォルト値とマージして処理用オプションを作成
     const processOptions: DirOptionsForProcessing = {
       depth: options?.depth ?? DIR_OPTIONS_DEFAULTS.depth,
       types: options?.types ?? DIR_OPTIONS_DEFAULTS.types,
@@ -392,7 +313,7 @@ export async function processDirectoryItem(
       normalizedPath,
       optionsText,
       lineNumber,
-      dirItemId // 元のフォルダ取込アイテムのID
+      dirItemId
     );
   } catch (error) {
     dataLogger.error({ dirPath: normalizedPath, error }, 'ディレクトリのスキャンに失敗');

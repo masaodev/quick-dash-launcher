@@ -1,6 +1,13 @@
 import React from 'react';
 import { DESKTOP_TAB } from '@common/constants';
-import { AppItem, DataFileTab, LauncherItem, SearchMode, WindowInfo } from '@common/types';
+import {
+  AppItem,
+  DataFileTab,
+  LauncherItem,
+  SearchMode,
+  ToastItemType,
+  WindowInfo,
+} from '@common/types';
 import { isLauncherItem, isWindowInfo } from '@common/types/guards';
 
 import { filterItems } from '../utils/dataParser';
@@ -87,6 +94,24 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
       return filterWindowsByDesktopTab(windowList, activeDesktopTab);
     }
     return getTabFilteredItems();
+  }
+
+  async function showWindowToastAndRefresh(
+    result: { success: boolean; error?: string },
+    win: WindowInfo,
+    itemType: ToastItemType,
+    errorMessage: string
+  ): Promise<void> {
+    if (result.success) {
+      await window.electronAPI.showToastWindow({ displayName: win.title, itemType });
+      await refreshWindows();
+    } else {
+      await window.electronAPI.showToastWindow({
+        displayName: win.title,
+        itemType,
+        message: `${errorMessage}: ${result.error || '不明なエラー'}`,
+      });
+    }
   }
 
   async function handleKeyDown(e: React.KeyboardEvent): Promise<void> {
@@ -191,19 +216,14 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
         ? await window.electronAPI.unPinWindow(selectedWindow.hwnd)
         : await window.electronAPI.pinWindow(selectedWindow.hwnd);
 
-      if (result.success) {
-        await window.electronAPI.showToastWindow({
-          displayName: selectedWindow.title,
-          itemType: isPinned ? 'windowUnpin' : 'windowPin',
-        });
-        await refreshWindows();
-      } else {
-        await window.electronAPI.showToastWindow({
-          displayName: selectedWindow.title,
-          itemType: isPinned ? 'windowUnpin' : 'windowPin',
-          message: `${isPinned ? '固定解除' : '固定'}に失敗しました: ${result.error || '不明なエラー'}`,
-        });
-      }
+      const itemType = isPinned ? 'windowUnpin' : 'windowPin';
+      const errorLabel = isPinned ? '固定解除' : '固定';
+      await showWindowToastAndRefresh(
+        result,
+        selectedWindow,
+        itemType,
+        `${errorLabel}に失敗しました`
+      );
       return;
     }
 
@@ -216,20 +236,12 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
       if (!selectedWindow) return;
 
       const result = await window.electronAPI.closeWindow(selectedWindow.hwnd);
-
-      if (result.success) {
-        await window.electronAPI.showToastWindow({
-          displayName: selectedWindow.title,
-          itemType: 'windowClose',
-        });
-        await refreshWindows();
-      } else {
-        await window.electronAPI.showToastWindow({
-          displayName: selectedWindow.title,
-          itemType: 'windowClose',
-          message: `ウィンドウを閉じるのに失敗しました: ${result.error || '不明なエラー'}`,
-        });
-      }
+      await showWindowToastAndRefresh(
+        result,
+        selectedWindow,
+        'windowClose',
+        'ウィンドウを閉じるのに失敗しました'
+      );
       return;
     }
 

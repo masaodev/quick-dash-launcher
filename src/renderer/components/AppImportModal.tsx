@@ -154,13 +154,7 @@ function AppImportModal({
         return new Set(ids);
       }
       const newSet = new Set(prev);
-      for (const id of ids) {
-        if (action === 'add') {
-          newSet.add(id);
-        } else {
-          newSet.delete(id);
-        }
-      }
+      ids.forEach((id) => (action === 'add' ? newSet.add(id) : newSet.delete(id)));
       return newSet;
     });
   };

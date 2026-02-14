@@ -46,13 +46,7 @@ export async function detectItemType(
   itemPath: string,
   isDirectoryCheck?: (path: string) => Promise<boolean>
 ): Promise<LauncherItem['type']> {
-  // URLやシェルパスは早期リターン
-  if (itemPath.includes('://') || itemPath.startsWith('shell:')) {
-    return detectTypeFromPath(itemPath);
-  }
-
-  // ディレクトリチェック（提供されている場合のみ）
-  if (isDirectoryCheck) {
+  if (isDirectoryCheck && !itemPath.includes('://') && !itemPath.startsWith('shell:')) {
     try {
       const isDirectory = await isDirectoryCheck(itemPath);
       if (isDirectory) {

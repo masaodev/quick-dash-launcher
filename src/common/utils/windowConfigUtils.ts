@@ -46,19 +46,23 @@ export function parseWindowConfig(value: string | undefined): WindowConfig | nul
         title: parsed.title,
       };
 
-      // オプションフィールドのパース
-      if (typeof parsed.processName === 'string') config.processName = parsed.processName;
-      if (typeof parsed.x === 'number') config.x = parsed.x;
-      if (typeof parsed.y === 'number') config.y = parsed.y;
-      if (typeof parsed.width === 'number') config.width = parsed.width;
-      if (typeof parsed.height === 'number') config.height = parsed.height;
-      if (typeof parsed.moveToActiveMonitorCenter === 'boolean')
-        config.moveToActiveMonitorCenter = parsed.moveToActiveMonitorCenter;
-      if (typeof parsed.virtualDesktopNumber === 'number')
-        config.virtualDesktopNumber = parsed.virtualDesktopNumber;
-      if (typeof parsed.activateWindow === 'boolean') config.activateWindow = parsed.activateWindow;
-      if (typeof parsed.pinToAllDesktops === 'boolean')
-        config.pinToAllDesktops = parsed.pinToAllDesktops;
+      const stringFields = ['processName'] as const;
+      const numberFields = ['x', 'y', 'width', 'height', 'virtualDesktopNumber'] as const;
+      const booleanFields = [
+        'moveToActiveMonitorCenter',
+        'activateWindow',
+        'pinToAllDesktops',
+      ] as const;
+
+      for (const f of stringFields) {
+        if (typeof parsed[f] === 'string') config[f] = parsed[f] as string;
+      }
+      for (const f of numberFields) {
+        if (typeof parsed[f] === 'number') config[f] = parsed[f] as number;
+      }
+      for (const f of booleanFields) {
+        if (typeof parsed[f] === 'boolean') config[f] = parsed[f] as boolean;
+      }
 
       return config;
     } catch (error) {
@@ -93,21 +97,11 @@ export function serializeWindowConfig(config: WindowConfig | undefined): string 
     return '';
   }
 
-  // 位置・サイズ・仮想デスクトップ・アクティブ化・プロセス名・ピン止め情報がない場合は、文字列形式（後方互換）
-  if (
-    config.processName === undefined &&
-    config.x === undefined &&
-    config.y === undefined &&
-    config.width === undefined &&
-    config.height === undefined &&
-    config.moveToActiveMonitorCenter === undefined &&
-    config.virtualDesktopNumber === undefined &&
-    config.activateWindow === undefined &&
-    config.pinToAllDesktops === undefined
-  ) {
+  // title以外のプロパティがない場合は文字列形式（後方互換）
+  const hasExtraFields = Object.keys(config).some((key) => key !== 'title');
+  if (!hasExtraFields) {
     return config.title;
   }
 
-  // 位置・サイズ・仮想デスクトップ・アクティブ化情報がある場合は、JSON形式
   return JSON.stringify(config);
 }

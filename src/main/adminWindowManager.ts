@@ -140,11 +140,12 @@ export async function showAdminWindowWithTab(tab: AdminTab): Promise<void> {
  *   （新規作成直後はレンダラーのロードが未完了のため webContents.send が届かない）
  */
 export async function showAdminWindowWithImportModal(modal: ImportModalType): Promise<void> {
-  const windowAlreadyExists = isWindowValid();
+  const existed = isWindowValid();
   pendingImportModal = modal;
   await showAdminWindowWithTab('edit');
 
-  if (windowAlreadyExists && isWindowValid()) {
+  // 既存ウィンドウの場合のみイベントで即座に通知（新規作成時はレンダラー初期化時にpendingImportModalから取得）
+  if (existed && isWindowValid()) {
     adminWindow!.webContents.send(IPC_CHANNELS.EVENT_OPEN_IMPORT_MODAL, modal);
   }
 }

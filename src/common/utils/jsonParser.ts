@@ -52,20 +52,10 @@ export function generateId(): string {
  * @param id - 検証するID文字列
  * @returns 有効な場合はtrue
  */
+const ID_PATTERN = new RegExp(`^[${ID_ALPHABET}]{${JSON_ID_LENGTH}}$`);
+
 export function isValidId(id: unknown): id is string {
-  if (typeof id !== 'string') {
-    return false;
-  }
-  if (id.length !== JSON_ID_LENGTH) {
-    return false;
-  }
-  // 全ての文字がID_ALPHABETに含まれているか
-  for (const char of id) {
-    if (!ID_ALPHABET.includes(char)) {
-      return false;
-    }
-  }
-  return true;
+  return typeof id === 'string' && ID_PATTERN.test(id);
 }
 
 // ============================================================

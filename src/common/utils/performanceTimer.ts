@@ -22,7 +22,7 @@ export class PerformanceTimer {
   log(label: string): void {
     if (this.startTime !== undefined && this.logger) {
       const duration = Date.now() - this.startTime;
-      this.logger(`[Performance] ${label}: ${duration.toFixed(2)}ms`);
+      this.logger(`[Performance] ${label}: ${duration}ms`);
     }
   }
 

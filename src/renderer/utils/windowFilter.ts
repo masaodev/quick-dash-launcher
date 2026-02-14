@@ -42,26 +42,20 @@ export function findMatchingWindow(
 ): WindowInfo | null {
   return (
     windows.find((win) => {
-      let titleMatches = true;
-      if (title && title.trim() !== '') {
+      if (title?.trim()) {
         const hasWildcard = title.includes('*') || title.includes('?');
-        if (hasWildcard) {
-          titleMatches = wildcardToRegex(title).test(win.title);
-        } else {
-          titleMatches = win.title.toLowerCase() === title.toLowerCase();
-        }
+        const titleMatches = hasWildcard
+          ? wildcardToRegex(title).test(win.title)
+          : win.title.toLowerCase() === title.toLowerCase();
+        if (!titleMatches) return false;
       }
 
-      let processMatches = true;
-      if (processName && processName.trim() !== '') {
-        if (win.processName) {
-          processMatches = win.processName.toLowerCase().includes(processName.toLowerCase());
-        } else {
-          processMatches = false;
-        }
+      if (processName?.trim()) {
+        if (!win.processName) return false;
+        if (!win.processName.toLowerCase().includes(processName.toLowerCase())) return false;
       }
 
-      return titleMatches && processMatches;
+      return true;
     }) || null
   );
 }

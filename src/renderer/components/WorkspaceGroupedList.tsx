@@ -155,93 +155,43 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
   );
 
   React.useEffect(() => {
-    const cleanupRenameItem = window.electronAPI.onWorkspaceMenuRenameItem((itemId) => {
-      setEditingItemId(itemId);
-    });
-
-    const cleanupEditItem = window.electronAPI.onWorkspaceMenuEditItem((itemId) => {
+    const withItem = (fn: (item: WorkspaceItem) => void) => (itemId: string) => {
       const item = itemsMap.get(itemId);
-      if (item) {
-        onEditItem(item);
-      }
-    });
-
-    const cleanupLaunchItem = window.electronAPI.onWorkspaceMenuLaunchItem((itemId) => {
-      const item = itemsMap.get(itemId);
-      if (item) {
-        onLaunch(item);
-      }
-    });
-
-    const cleanupCopyPath = window.electronAPI.onWorkspaceMenuCopyPath((itemId) => {
-      const item = itemsMap.get(itemId);
-      if (item) {
-        handlePathOperation(item, 'copy', 'item', false);
-      }
-    });
-
-    const cleanupCopyParentPath = window.electronAPI.onWorkspaceMenuCopyParentPath((itemId) => {
-      const item = itemsMap.get(itemId);
-      if (item) {
-        handlePathOperation(item, 'copy', 'parent', false);
-      }
-    });
-
-    const cleanupOpenParentFolder = window.electronAPI.onWorkspaceMenuOpenParentFolder((itemId) => {
-      const item = itemsMap.get(itemId);
-      if (item) {
-        handlePathOperation(item, 'open', 'parent', false);
-      }
-    });
-
-    const cleanupCopyShortcutPath = window.electronAPI.onWorkspaceMenuCopyShortcutPath((itemId) => {
-      const item = itemsMap.get(itemId);
-      if (item) {
-        handlePathOperation(item, 'copy', 'item', true);
-      }
-    });
-
-    const cleanupCopyShortcutParentPath = window.electronAPI.onWorkspaceMenuCopyShortcutParentPath(
-      (itemId) => {
-        const item = itemsMap.get(itemId);
-        if (item) {
-          handlePathOperation(item, 'copy', 'parent', true);
-        }
-      }
-    );
-
-    const cleanupOpenShortcutParentFolder =
-      window.electronAPI.onWorkspaceMenuOpenShortcutParentFolder((itemId) => {
-        const item = itemsMap.get(itemId);
-        if (item) {
-          handlePathOperation(item, 'open', 'parent', true);
-        }
-      });
-
-    const cleanupRemoveFromGroup = window.electronAPI.onWorkspaceMenuRemoveFromGroup((itemId) => {
-      const item = itemsMap.get(itemId);
-      if (item && item.groupId) {
-        onMoveItemToGroup(itemId, undefined);
-      }
-    });
-
-    const cleanupRemoveItem = window.electronAPI.onWorkspaceMenuRemoveItem((itemId) => {
-      onRemoveItem(itemId);
-    });
-
-    return () => {
-      cleanupRenameItem();
-      cleanupEditItem();
-      cleanupLaunchItem();
-      cleanupCopyPath();
-      cleanupCopyParentPath();
-      cleanupOpenParentFolder();
-      cleanupCopyShortcutPath();
-      cleanupCopyShortcutParentPath();
-      cleanupOpenShortcutParentFolder();
-      cleanupRemoveFromGroup();
-      cleanupRemoveItem();
+      if (item) fn(item);
     };
+
+    const cleanups = [
+      window.electronAPI.onWorkspaceMenuRenameItem((itemId) => setEditingItemId(itemId)),
+      window.electronAPI.onWorkspaceMenuEditItem(withItem(onEditItem)),
+      window.electronAPI.onWorkspaceMenuLaunchItem(withItem(onLaunch)),
+      window.electronAPI.onWorkspaceMenuCopyPath(
+        withItem((item) => handlePathOperation(item, 'copy', 'item', false))
+      ),
+      window.electronAPI.onWorkspaceMenuCopyParentPath(
+        withItem((item) => handlePathOperation(item, 'copy', 'parent', false))
+      ),
+      window.electronAPI.onWorkspaceMenuOpenParentFolder(
+        withItem((item) => handlePathOperation(item, 'open', 'parent', false))
+      ),
+      window.electronAPI.onWorkspaceMenuCopyShortcutPath(
+        withItem((item) => handlePathOperation(item, 'copy', 'item', true))
+      ),
+      window.electronAPI.onWorkspaceMenuCopyShortcutParentPath(
+        withItem((item) => handlePathOperation(item, 'copy', 'parent', true))
+      ),
+      window.electronAPI.onWorkspaceMenuOpenShortcutParentFolder(
+        withItem((item) => handlePathOperation(item, 'open', 'parent', true))
+      ),
+      window.electronAPI.onWorkspaceMenuRemoveFromGroup((itemId) => {
+        const item = itemsMap.get(itemId);
+        if (item && item.groupId) {
+          onMoveItemToGroup(itemId, undefined);
+        }
+      }),
+      window.electronAPI.onWorkspaceMenuRemoveItem((itemId) => onRemoveItem(itemId)),
+    ];
+
+    return () => cleanups.forEach((cleanup) => cleanup());
   }, [
     itemsMap,
     handlePathOperation,
@@ -253,56 +203,36 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
   ]);
 
   React.useEffect(() => {
-    const cleanupRename = window.electronAPI.onWorkspaceGroupMenuRename((groupId) => {
-      setEditingGroupId(groupId);
-    });
+    const cleanups = [
+      window.electronAPI.onWorkspaceGroupMenuRename((groupId) => setEditingGroupId(groupId)),
+      window.electronAPI.onWorkspaceGroupMenuShowColorPicker((groupId) =>
+        setColorPickerGroupId(groupId)
+      ),
+      window.electronAPI.onWorkspaceGroupMenuChangeColor((groupId, color) =>
+        onUpdateGroup(groupId, { color })
+      ),
+      window.electronAPI.onWorkspaceGroupMenuCopyAsText((groupId) => {
+        const group = groupsMap.get(groupId);
+        if (group) {
+          const groupItems = itemsByGroup[groupId] || [];
+          let text = `【${group.displayName}】\r\n`;
+          /* eslint-disable no-irregular-whitespace */
+          groupItems.forEach((item, index) => {
+            text += `　■${item.displayName}\r\n`;
+            text += `　　${item.path}\r\n`;
+            if (index < groupItems.length - 1) {
+              text += '\r\n';
+            }
+          });
+          /* eslint-enable no-irregular-whitespace */
+          window.electronAPI.copyToClipboard(text);
+        }
+      }),
+      window.electronAPI.onWorkspaceGroupMenuArchive((groupId) => onArchiveGroup(groupId)),
+      window.electronAPI.onWorkspaceGroupMenuDelete((groupId) => onDeleteGroup(groupId)),
+    ];
 
-    const cleanupShowColorPicker = window.electronAPI.onWorkspaceGroupMenuShowColorPicker(
-      (groupId) => {
-        setColorPickerGroupId(groupId);
-      }
-    );
-
-    const cleanupChangeColor = window.electronAPI.onWorkspaceGroupMenuChangeColor(
-      (groupId, color) => {
-        onUpdateGroup(groupId, { color });
-      }
-    );
-
-    const cleanupCopyAsText = window.electronAPI.onWorkspaceGroupMenuCopyAsText((groupId) => {
-      const group = groupsMap.get(groupId);
-      if (group) {
-        const groupItems = itemsByGroup[groupId] || [];
-        let text = `【${group.displayName}】\r\n`;
-        /* eslint-disable no-irregular-whitespace */
-        groupItems.forEach((item, index) => {
-          text += `　■${item.displayName}\r\n`;
-          text += `　　${item.path}\r\n`;
-          if (index < groupItems.length - 1) {
-            text += '\r\n';
-          }
-        });
-        /* eslint-enable no-irregular-whitespace */
-        window.electronAPI.copyToClipboard(text);
-      }
-    });
-
-    const cleanupArchive = window.electronAPI.onWorkspaceGroupMenuArchive((groupId) => {
-      onArchiveGroup(groupId);
-    });
-
-    const cleanupDelete = window.electronAPI.onWorkspaceGroupMenuDelete((groupId) => {
-      onDeleteGroup(groupId);
-    });
-
-    return () => {
-      cleanupRename();
-      cleanupShowColorPicker();
-      cleanupChangeColor();
-      cleanupCopyAsText();
-      cleanupArchive();
-      cleanupDelete();
-    };
+    return () => cleanups.forEach((cleanup) => cleanup());
   }, [groupsMap, itemsByGroup, onUpdateGroup, onArchiveGroup, onDeleteGroup]);
 
   const handleItemDragStart = (item: WorkspaceItem) => (e: React.DragEvent) => {
@@ -316,7 +246,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     setDraggedItemId(null);
   };
 
-  const handleItemDragOver = () => (e: React.DragEvent) => {
+  const handleItemDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     if (draggedItemId) {
       e.dataTransfer.dropEffect = 'move';
@@ -479,7 +409,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     e.dataTransfer.setData('groupId', group.id);
   };
 
-  const handleGroupDragOverForReorder = () => (e: React.DragEvent) => {
+  const handleGroupDragOverForReorder = (e: React.DragEvent) => {
     e.preventDefault();
     const draggedId = e.dataTransfer.getData('groupId');
     if (draggedId) {
@@ -551,7 +481,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
                     setEditingGroupId(editingGroupId === group.id ? null : group.id)
                   }
                   onGroupDragStart={handleGroupDragStart(group)}
-                  onGroupDragOverForReorder={handleGroupDragOverForReorder()}
+                  onGroupDragOverForReorder={handleGroupDragOverForReorder}
                   onGroupDropForReorder={handleGroupDropForReorder(group)}
                   onContextMenu={handleGroupContextMenu(group)}
                 />
@@ -570,7 +500,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
                         }
                         onDragStart={handleItemDragStart(item)}
                         onDragEnd={handleItemDragEnd}
-                        onDragOver={handleItemDragOver()}
+                        onDragOver={handleItemDragOver}
                         onDrop={handleItemDrop(item)}
                         onContextMenu={handleContextMenu(item)}
                       />
@@ -619,7 +549,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
                       }
                       onDragStart={handleItemDragStart(item)}
                       onDragEnd={handleItemDragEnd}
-                      onDragOver={handleItemDragOver()}
+                      onDragOver={handleItemDragOver}
                       onDrop={handleItemDrop(item)}
                       onContextMenu={handleContextMenu(item)}
                     />

@@ -36,47 +36,40 @@ const TYPES_MAP: Record<string, 'file' | 'folder' | 'both'> = {
 /** オプションキーと処理のマッピング */
 const OPTION_PARSERS: {
   prefix: string;
-  length: number;
   handler: (value: string, options: JsonDirOptions) => void;
 }[] = [
   {
     prefix: '深さ:',
-    length: 3,
     handler: (value, options) => {
       options.depth = DEPTH_MAP[value] ?? (parseInt(value, 10) || 0);
     },
   },
   {
     prefix: 'タイプ:',
-    length: 4,
     handler: (value, options) => {
       if (TYPES_MAP[value]) options.types = TYPES_MAP[value];
     },
   },
   {
     prefix: 'フィルター:',
-    length: 6,
     handler: (value, options) => {
       options.filter = value;
     },
   },
   {
     prefix: '除外:',
-    length: 3,
     handler: (value, options) => {
       options.exclude = value;
     },
   },
   {
     prefix: '接頭辞:',
-    length: 4,
     handler: (value, options) => {
       options.prefix = value;
     },
   },
   {
     prefix: '接尾辞:',
-    length: 4,
     handler: (value, options) => {
       options.suffix = value;
     },
@@ -98,7 +91,7 @@ function parseExpandedOptionsToJsonDirOptions(optionsStr: string | undefined): J
     const trimmed = option.trim();
     for (const parser of OPTION_PARSERS) {
       if (trimmed.startsWith(parser.prefix)) {
-        parser.handler(trimmed.substring(parser.length).trim(), dirOptions);
+        parser.handler(trimmed.substring(parser.prefix.length).trim(), dirOptions);
         break;
       }
     }

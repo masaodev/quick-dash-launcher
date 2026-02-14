@@ -23,26 +23,22 @@ export function useWorkspaceAutoFit(): {
     const itemList = contentEl.parentElement;
     if (!itemList) return;
 
-    // itemListより前の兄弟要素（ヘッダー、フィルターバー等）の高さ合計
     let headerHeight = 0;
     for (let el = itemList.previousElementSibling; el; el = el.previousElementSibling) {
       headerHeight += el.getBoundingClientRect().height;
     }
 
-    // itemListのpadding（上下合計）
-    const itemListStyle = getComputedStyle(itemList);
+    const style = getComputedStyle(itemList);
     const itemListPadding =
-      (parseFloat(itemListStyle.paddingTop) || 0) + (parseFloat(itemListStyle.paddingBottom) || 0);
-
-    // workspace-windowのborder（上下合計: offsetHeight - clientHeight）
+      (parseFloat(style.paddingTop) || 0) + (parseFloat(style.paddingBottom) || 0);
     const windowBorder = workspaceWindow.offsetHeight - workspaceWindow.clientHeight;
 
     const desiredHeight = headerHeight + itemListPadding + contentEl.scrollHeight + windowBorder;
+    const clampedHeight = Math.max(
+      MIN_HEIGHT,
+      Math.min(window.screen.availHeight, Math.ceil(desiredHeight))
+    );
 
-    const maxHeight = window.screen.availHeight;
-    const clampedHeight = Math.max(MIN_HEIGHT, Math.min(maxHeight, Math.ceil(desiredHeight)));
-
-    // 差が2px以内なら更新しない（ループ防止）
     if (Math.abs(clampedHeight - lastHeightRef.current) <= 2) return;
 
     lastHeightRef.current = clampedHeight;
@@ -51,7 +47,6 @@ export function useWorkspaceAutoFit(): {
 
   const contentRef = useCallback(
     (node: HTMLDivElement | null) => {
-      // 前の要素の監視を解除
       if (observerRef.current) {
         observerRef.current.disconnect();
         observerRef.current = null;
@@ -59,14 +54,9 @@ export function useWorkspaceAutoFit(): {
 
       if (!node) return;
 
-      const observer = new ResizeObserver(() => {
-        updateHeight(node);
-      });
-
+      const observer = new ResizeObserver(() => updateHeight(node));
       observer.observe(node);
       observerRef.current = observer;
-
-      // 初回実行
       updateHeight(node);
     },
     [updateHeight]

@@ -248,55 +248,38 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
     window.electronAPI.showAdminItemContextMenu(selectedCount, isSingleItem);
   };
 
+  const getEditablePath = (jsonItem: JsonItem): string => {
+    if (jsonItem.type === 'item' && isJsonLauncherItem(jsonItem)) {
+      return jsonItem.path || '';
+    } else if (jsonItem.type === 'group' && isJsonGroupItem(jsonItem)) {
+      return jsonItem.itemNames?.join(', ') || '';
+    } else if (jsonItem.type === 'dir' && isJsonDirItem(jsonItem)) {
+      return jsonItem.path || '';
+    }
+    return '';
+  };
+
   const handleCellEdit = (item: EditableJsonItem) => {
     // ウィンドウ操作アイテムはパス編集不可（詳細編集のみ）
     if (item.item.type === 'window') {
       return;
     }
 
-    const cellKey = getItemKey(item);
-    setEditingCell(cellKey);
-
-    // パスのみを取得（引数は編集しない）
-    let pathOnly = '';
-    const jsonItem = item.item;
-
-    if (jsonItem.type === 'item' && isJsonLauncherItem(jsonItem)) {
-      pathOnly = jsonItem.path || '';
-    } else if (jsonItem.type === 'group' && isJsonGroupItem(jsonItem)) {
-      // グループの場合：アイテム名のリスト（カンマ区切り）
-      pathOnly = jsonItem.itemNames?.join(', ') || '';
-    } else if (jsonItem.type === 'dir' && isJsonDirItem(jsonItem)) {
-      // フォルダ取込の場合：フォルダパス
-      pathOnly = jsonItem.path || '';
-    }
-
-    setEditingValue(pathOnly);
+    setEditingCell(getItemKey(item));
+    setEditingValue(getEditablePath(item.item));
   };
 
   const handleCellSave = (item: EditableJsonItem) => {
     const trimmedValue = editingValue.trim();
     const jsonItem = item.item;
+    const currentValue = getEditablePath(jsonItem);
 
-    // 変更があるか確認
-    let hasChanged = false;
-    if (jsonItem.type === 'item' && isJsonLauncherItem(jsonItem)) {
-      hasChanged = trimmedValue !== (jsonItem.path || '');
-    } else if (jsonItem.type === 'group' && isJsonGroupItem(jsonItem)) {
-      const currentItemNames = jsonItem.itemNames?.join(', ') || '';
-      hasChanged = trimmedValue !== currentItemNames;
-    } else if (jsonItem.type === 'dir' && isJsonDirItem(jsonItem)) {
-      hasChanged = trimmedValue !== (jsonItem.path || '');
-    }
-
-    if (hasChanged) {
-      // JsonItemを直接更新
+    if (trimmedValue !== currentValue) {
       let updatedJsonItem: JsonItem;
 
       if (jsonItem.type === 'item' && isJsonLauncherItem(jsonItem)) {
         updatedJsonItem = { ...jsonItem, path: trimmedValue };
       } else if (jsonItem.type === 'group' && isJsonGroupItem(jsonItem)) {
-        // カンマ区切りのアイテム名リストをパース
         const itemNames = trimmedValue
           .split(',')
           .map((name) => name.trim())
@@ -308,11 +291,7 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
         updatedJsonItem = jsonItem;
       }
 
-      const updatedItem: EditableJsonItem = {
-        ...item,
-        item: updatedJsonItem,
-      };
-      onItemEdit(updatedItem);
+      onItemEdit({ ...item, item: updatedJsonItem });
     }
     setEditingCell(null);
     setEditingValue('');
@@ -363,37 +342,17 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
   const handleNameKeyDown = createKeyDownHandler(handleNameSave);
   const handleKeyDown = createKeyDownHandler(handleCellSave);
 
-  const getItemTypeIcon = (item: EditableJsonItem) => {
-    const jsonItem = item.item;
-    switch (jsonItem.type) {
-      case 'item':
-        return '📄';
-      case 'group':
-        return '📦';
-      case 'dir':
-        return '🗂️';
-      case 'window':
-        return '🪟';
-      default:
-        return '❓';
-    }
+  const itemTypeInfo: Record<string, { icon: string; name: string }> = {
+    item: { icon: '📄', name: '単一アイテム' },
+    group: { icon: '📦', name: 'グループ' },
+    dir: { icon: '🗂️', name: 'フォルダ取込' },
+    window: { icon: '🪟', name: 'ウィンドウ操作' },
   };
 
-  const getItemTypeDisplayName = (item: EditableJsonItem) => {
-    const jsonItem = item.item;
-    switch (jsonItem.type) {
-      case 'item':
-        return '単一アイテム';
-      case 'group':
-        return 'グループ';
-      case 'dir':
-        return 'フォルダ取込';
-      case 'window':
-        return 'ウィンドウ操作';
-      default:
-        return '不明';
-    }
-  };
+  const getItemTypeIcon = (item: EditableJsonItem) => itemTypeInfo[item.item.type]?.icon ?? '❓';
+
+  const getItemTypeDisplayName = (item: EditableJsonItem) =>
+    itemTypeInfo[item.item.type]?.name ?? '不明';
 
   const renderNameCell = (item: EditableJsonItem) => {
     const jsonItem = item.item;
@@ -531,14 +490,12 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
     return <span className={`sort-indicator ${isActive ? 'active' : 'inactive'}`}>{icon}</span>;
   };
 
-  const renderTypeCell = (item: EditableJsonItem) => {
-    return (
-      <>
-        <span className="type-icon">{getItemTypeIcon(item)}</span>
-        <span className="type-name">{getItemTypeDisplayName(item)}</span>
-      </>
-    );
-  };
+  const renderTypeCell = (item: EditableJsonItem) => (
+    <>
+      <span className="type-icon">{getItemTypeIcon(item)}</span>
+      <span className="type-name">{getItemTypeDisplayName(item)}</span>
+    </>
+  );
 
   const renderIconCell = (item: EditableJsonItem) => {
     // 単一アイテムの場合のみアイコンを表示
