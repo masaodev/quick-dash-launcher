@@ -13,6 +13,7 @@ import {
   isJsonDirItem,
   isJsonGroupItem,
   isJsonWindowItem,
+  isJsonClipboardItem,
 } from '@common/types';
 
 import ConfirmDialog from './ConfirmDialog';
@@ -347,6 +348,7 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
     group: { icon: '📦', name: 'グループ' },
     dir: { icon: '🗂️', name: 'フォルダ取込' },
     window: { icon: '🪟', name: 'ウィンドウ操作' },
+    clipboard: { icon: '📋', name: 'クリップボード' },
   };
 
   const getItemTypeIcon = (item: EditableJsonItem) => itemTypeInfo[item.item.type]?.icon ?? '❓';
@@ -442,6 +444,12 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
 
       if (!dirPath) return '(フォルダパスなし)';
       return optionStrs.length > 0 ? `${dirPath} [${optionStrs.join(', ')}]` : dirPath;
+    } else if (jsonItem.type === 'clipboard' && isJsonClipboardItem(jsonItem)) {
+      // クリップボードの場合：フォーマット＋プレビュー
+      const formats = jsonItem.formats?.join(', ') || '';
+      const preview = jsonItem.preview || '';
+      if (!formats && !preview) return '(データなし)';
+      return preview ? `[${formats}] ${preview}` : `[${formats}]`;
     } else {
       return '(不明な型)';
     }
