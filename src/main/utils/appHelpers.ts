@@ -17,14 +17,26 @@ export function createDefaultDataFile(): void {
         {
           id: generateId(),
           type: 'item',
-          displayName: 'GitHub',
-          path: 'https://github.com/',
+          displayName: 'Google 検索',
+          path: 'https://www.google.com/',
+        },
+        {
+          id: generateId(),
+          type: 'item',
+          displayName: 'YouTube',
+          path: 'https://www.youtube.com/',
         },
         {
           id: generateId(),
           type: 'item',
           displayName: 'Google マップ',
           path: 'https://www.google.co.jp/maps',
+        },
+        {
+          id: generateId(),
+          type: 'item',
+          displayName: '天気予報',
+          path: 'https://weathernews.jp/',
         },
         {
           id: generateId(),
@@ -37,6 +49,12 @@ export function createDefaultDataFile(): void {
           type: 'item',
           displayName: 'ダウンロード',
           path: 'shell:Downloads',
+        },
+        {
+          id: generateId(),
+          type: 'item',
+          displayName: '電卓',
+          path: 'calc.exe',
         },
         {
           id: generateId(),
