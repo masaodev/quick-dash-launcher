@@ -30,16 +30,6 @@ import {
 import { destroyToastWindow } from './services/toastWindowService.js';
 import { BookmarkAutoImportService } from './services/bookmarkAutoImportService.js';
 
-// 初回起動判定用のグローバル変数
-let isFirstLaunch = false;
-
-/**
- * 初回起動かどうかを取得
- */
-export function getIsFirstLaunch(): boolean {
-  return isFirstLaunch;
-}
-
 // 多重起動時に完全に独立したuserDataを使用
 if (EnvConfig.hasAppInstance) {
   const appName = `${EnvConfig.appInstance}-quick-dash-launcher`;
@@ -57,13 +47,20 @@ if (EnvConfig.isDevelopment) {
 }
 
 app.whenReady().then(async () => {
-  // 設定フォルダを先に作成
+  // 設定フォルダを先に作成（スプラッシュのアイコンパス解決に必要）
   PathManager.ensureDirectories();
 
-  // 初回起動判定: ホットキーが設定されているかどうかで判定
+  // スプラッシュウィンドウを最速で表示（E2Eテスト環境ではスキップ）
+  if (!EnvConfig.skipSplashWindow) {
+    await createSplashWindow();
+  }
+
+  // 以下はスプラッシュ表示後にバックグラウンドで初期化
   const settingsService = await SettingsService.getInstance();
+
+  // 初回起動判定: ホットキーが未設定なら初回起動
   const hotkey = await settingsService.get('hotkey');
-  isFirstLaunch = !hotkey?.trim();
+  const isFirstLaunch = !hotkey?.trim();
 
   // アプリケーションのApp User Model IDを設定（Windows用）
   // 開発モード時は異なるIDを使用してアイコンキャッシュの問題を回避
@@ -80,34 +77,17 @@ app.whenReady().then(async () => {
   // 初回起動モードを設定（初回起動時はフォーカス喪失やEscapeで閉じないようにする）
   setFirstLaunchMode(isFirstLaunch);
 
-  // スプラッシュウィンドウを表示（E2Eテスト環境ではスキップ）
-  if (!EnvConfig.skipSplashWindow) {
-    await createSplashWindow();
-  }
-
   // 初回起動時にデフォルトのdata.jsonファイルを作成
   createDefaultDataFile();
 
-  // 起動時スナップショットバックアップ（1日1回、設定に基づく）
-  const backupService = await BackupService.getInstance();
-  await backupService.createSnapshot();
+  // 起動時スナップショットバックアップ（fire-and-forget: メインフローをブロックしない）
+  BackupService.getInstance()
+    .then((s) => s.createSnapshot())
+    .catch((error) => {
+      console.error('起動時バックアップでエラー:', error);
+    });
 
-  // メインウィンドウを作成（設定サイズ、フレームレス、常に最前面）
-  await createWindow();
-
-  // システムトレイアイコンとコンテキストメニューを作成
-  await createTray();
-
-  // テスト環境の場合、ウィンドウを自動表示
-  if (EnvConfig.showWindowOnStartup) {
-    const mainWindow = getMainWindow();
-    if (mainWindow) {
-      mainWindow.show();
-      mainWindow.focus();
-    }
-  }
-
-  // レンダラープロセスとの通信用IPCハンドラーを設定
+  // レンダラープロセスとの通信用IPCハンドラーを設定（ハンドラー登録のみなのでウィンドウ作成前に実行可能）
   setupIPCHandlers(
     PathManager.getConfigFolder(),
     PathManager.getFaviconsFolder(),
@@ -122,7 +102,21 @@ app.whenReady().then(async () => {
     setFirstLaunchMode
   );
 
-  await createWorkspaceWindow();
+  // メインウィンドウ・トレイ・ワークスペースを並列作成（互いに独立）
+  await Promise.all([
+    createWindow(),
+    createTray(),
+    createWorkspaceWindow(),
+  ]);
+
+  // テスト環境の場合、ウィンドウを自動表示（createWindow完了後に実行）
+  if (EnvConfig.showWindowOnStartup) {
+    const mainWindow = getMainWindow();
+    if (mainWindow) {
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  }
 
   // ブックマーク自動取込の起動時実行
   const bookmarkAutoImportService = new BookmarkAutoImportService();

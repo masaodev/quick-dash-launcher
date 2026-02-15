@@ -3,7 +3,6 @@ import { windowLogger } from '@common/logger';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { closeSplashWindow } from '../splashWindowManager';
-import { getIsFirstLaunch } from '../main';
 import { registerGlobalShortcut } from '../windowManager';
 import { EnvConfig } from '../config/envConfig';
 
@@ -22,23 +21,15 @@ export function setupSplashHandlers(getMainWindow: () => BrowserWindow | null): 
       windowLogger.info('起動ホットキーを登録しました');
     }
 
-    // 初回起動判定を取得
-    const isFirstLaunch = getIsFirstLaunch();
-
-    // スプラッシュスクリーンを閉じる
+    // スプラッシュスクリーンを閉じてメインウィンドウを表示
     setTimeout(() => {
       closeSplashWindow();
 
-      // 初回起動の場合はメインウィンドウを表示
-      if (isFirstLaunch) {
-        const mainWindow = getMainWindow();
-        if (mainWindow) {
-          mainWindow.show();
-          mainWindow.focus();
-          windowLogger.info(
-            '初回起動: メインウィンドウを自動表示しました（ホットキーが未設定のため）'
-          );
-        }
+      const mainWindow = getMainWindow();
+      if (mainWindow) {
+        mainWindow.show();
+        mainWindow.focus();
+        windowLogger.info('メインウィンドウを自動表示しました');
       }
     }, 500); // 0.5秒後に閉じる（フェードアウト効果のため）
 
