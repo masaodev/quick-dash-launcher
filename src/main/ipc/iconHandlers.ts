@@ -553,84 +553,126 @@ async function filterItemsWithoutErrors(
   return result;
 }
 
-/** UWPアプリのAppIDからパッケージ名を抽出する */
+/** UWPアプリのAppIDからパッケージファミリー名を抽出する */
 function extractPackageFamilyName(appPath: string): string | null {
-  // shell:AppsFolder\Microsoft.WindowsCalculator_8wekyb3d8bbwe!App -> Microsoft.WindowsCalculator_8wekyb3d8bbwe
-  const match = appPath.match(/shell:AppsFolder\\(.+)!/);
-  if (!match) return null;
-  return match[1];
+  return appPath.match(/shell:AppsFolder\\(.+)!/)?.[1] ?? null;
 }
 
-/** UWPアプリのパッケージ名からGet-AppxPackageでアイコンを取得する */
+/** パッケージ情報のメモリキャッシュ */
+interface AppxPackageInfo {
+  installLocation: string;
+  logoPaths: string[];
+}
+let appxPackageCache: Map<string, AppxPackageInfo> | null = null;
+let appxCachePromise: Promise<Map<string, AppxPackageInfo>> | null = null;
+
+/**
+ * 全AppxPackage情報を1回のPowerShellで一括取得してメモリにキャッシュする。
+ * 2回目以降はキャッシュを返す。複数同時呼び出しでも1回だけ実行される。
+ */
+async function getAppxPackageCache(): Promise<Map<string, AppxPackageInfo>> {
+  if (appxPackageCache) return appxPackageCache;
+  if (appxCachePromise) return appxCachePromise;
+
+  appxCachePromise = (async () => {
+    const cache = new Map<string, AppxPackageInfo>();
+    try {
+      const output = await execAsync(
+        `powershell.exe -NoProfile -Command "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Get-AppxPackage | ForEach-Object { $m = Get-AppxPackageManifest -Package $_; $a = $m.Package.Applications.Application; if ($a -is [System.Array]) { $a = $a[0] }; if ($a) { $v = $a.VisualElements; Write-Output (($_.Name + '|' + $_.InstallLocation + '|' + $v.Square44x44Logo + '|' + $v.Square150x150Logo)) } }"`,
+        { encoding: 'utf8', timeout: 30000 }
+      );
+
+      for (const line of output.stdout.trim().split(/\r?\n/)) {
+        const [name, installLocation, ...logos] = line.split('|').map((s) => s.trim());
+        if (!name || !installLocation) continue;
+        cache.set(name, { installLocation, logoPaths: logos.filter(Boolean) });
+      }
+      iconLogger.info({ count: cache.size }, 'AppxPackage情報を一括取得完了');
+    } catch (error) {
+      iconLogger.warn({ error }, 'AppxPackage情報の一括取得に失敗');
+    }
+    appxPackageCache = cache;
+    appxCachePromise = null;
+    return cache;
+  })();
+
+  return appxCachePromise;
+}
+
+/** UWPアプリのパッケージ名からマニフェスト経由でアイコンを取得する */
 async function extractUwpIcon(appPath: string, iconsFolder: string): Promise<string | null> {
   const packageFamilyName = extractPackageFamilyName(appPath);
   if (!packageFamilyName) return null;
 
-  // キャッシュ確認
-  const cacheFileName = `uwp_${packageFamilyName.replace(/[^a-zA-Z0-9._-]/g, '_')}_icon.png`;
-  const cachePath = path.join(iconsFolder, cacheFileName);
-
+  const cachePath = path.join(
+    iconsFolder,
+    `uwp_${packageFamilyName.replace(/[^a-zA-Z0-9._-]/g, '_')}_icon.png`
+  );
   const cachedIcon = FileUtils.readCachedBinaryAsBase64(cachePath);
   if (cachedIcon) return cachedIcon;
 
   try {
-    // パッケージファミリー名からパッケージ名部分を抽出（_の前まで）
-    const packageName = packageFamilyName.split('_')[0];
+    const pkgInfo = (await getAppxPackageCache()).get(packageFamilyName.split('_')[0]);
+    if (!pkgInfo || !fs.existsSync(pkgInfo.installLocation)) return null;
 
-    const output = execAsync(
-      `powershell.exe -NoProfile -Command "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; (Get-AppxPackage -Name '${packageName}' | Select-Object -First 1).InstallLocation"`,
-      { encoding: 'utf8', timeout: 10000 }
-    );
+    const iconPath = findIconFromManifestLogo(pkgInfo.installLocation, pkgInfo.logoPaths);
+    if (!iconPath) return null;
 
-    const installLocation = (await output).stdout.trim();
-    if (!installLocation || !fs.existsSync(installLocation)) return null;
-
-    // Assets フォルダからアイコンを探す
-    const assetsDir = path.join(installLocation, 'Assets');
-    if (!fs.existsSync(assetsDir)) return null;
-
-    // Square44x44Logo, Square150x150Logo, StoreLogo等のパターンでPNGを探す
-    const iconPatterns = [
-      /Square44x44Logo\..*\.png$/i,
-      /Square44x44Logo\.png$/i,
-      /StoreLogo\..*\.png$/i,
-      /StoreLogo\.png$/i,
-      /Square150x150Logo\..*\.png$/i,
-    ];
-
-    const assetFiles = fs.readdirSync(assetsDir);
-    let iconFile: string | null = null;
-
-    for (const pattern of iconPatterns) {
-      // scale-200, scale-100 等のうち最小のスケールを優先
-      const matches = assetFiles
-        .filter((f) => pattern.test(f))
-        .sort((a, b) => {
-          const scaleA = a.match(/scale-(\d+)/)?.[1] ?? '100';
-          const scaleB = b.match(/scale-(\d+)/)?.[1] ?? '100';
-          return parseInt(scaleA) - parseInt(scaleB);
-        });
-      if (matches.length > 0) {
-        iconFile = matches[0];
-        break;
-      }
-    }
-
-    if (!iconFile) return null;
-
-    const iconPath = path.join(assetsDir, iconFile);
     const iconBuffer = fs.readFileSync(iconPath);
+    if (iconBuffer.length === 0) return null;
 
-    if (iconBuffer.length > 0) {
-      FileUtils.writeBinaryFile(cachePath, iconBuffer);
-      return FileUtils.bufferToBase64DataUrl(iconBuffer);
-    }
-
-    return null;
+    FileUtils.writeBinaryFile(cachePath, iconBuffer);
+    return FileUtils.bufferToBase64DataUrl(iconBuffer);
   } catch (error) {
     iconLogger.warn({ appPath, error }, 'UWPアイコンの取得に失敗');
     return null;
   }
+}
+
+/**
+ * マニフェストのロゴパスから実際のアイコンファイルを探す。
+ * マニフェストのパスは "Assets\Logo.png" のような相対パスだが、
+ * 実ファイルは "Logo.scale-100.png" のようなスケール付きファイル名になっている。
+ */
+function findIconFromManifestLogo(installLocation: string, logoPaths: string[]): string | null {
+  for (const logoRelPath of logoPaths) {
+    const fullPath = path.join(installLocation, logoRelPath);
+    if (fs.existsSync(fullPath)) return fullPath;
+
+    const dir = path.dirname(fullPath);
+    if (!fs.existsSync(dir)) continue;
+
+    const baseName = path.basename(logoRelPath, path.extname(logoRelPath));
+    const ext = path.extname(logoRelPath);
+    const files = fs.readdirSync(dir);
+
+    // contrast/altform を除外した候補を優先し、なければ除外なしで再試行
+    const match =
+      findSmallestScaleIcon(files, baseName, ext, true) ??
+      findSmallestScaleIcon(files, baseName, ext, false);
+    if (match) return path.join(dir, match);
+  }
+  return null;
+}
+
+/** scaleが最小のアイコンファイル名を返す。見つからなければnull */
+function findSmallestScaleIcon(
+  files: string[],
+  baseName: string,
+  ext: string,
+  excludeVariants: boolean
+): string | null {
+  const parseScale = (f: string): number => parseInt(f.match(/scale-(\d+)/)?.[1] ?? '999');
+
+  const candidates = files.filter(
+    (f) =>
+      f.startsWith(baseName) &&
+      f.endsWith(ext) &&
+      (!excludeVariants || (!f.includes('contrast-') && !f.includes('_altform-')))
+  );
+
+  if (candidates.length === 0) return null;
+  return candidates.sort((a, b) => parseScale(a) - parseScale(b))[0];
 }
 
 /** アイテムからアイコンを抽出 */
@@ -854,7 +896,9 @@ export function setupIconHandlers(
   );
 
   ipcMain.handle(IPC_CHANNELS.EXTRACT_ICON, (_event, filePath: string) =>
-    extractIcon(filePath, iconsFolder)
+    filePath.startsWith('shell:AppsFolder\\')
+      ? extractUwpIcon(filePath, iconsFolder)
+      : extractIcon(filePath, iconsFolder)
   );
 
   ipcMain.handle(IPC_CHANNELS.EXTRACT_FILE_ICON_BY_EXTENSION, (_event, filePath: string) =>
