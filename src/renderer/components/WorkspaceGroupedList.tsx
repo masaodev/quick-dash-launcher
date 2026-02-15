@@ -525,14 +525,17 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
               onDrop={handleGroupDrop(undefined)}
             >
               <div
-                className="workspace-uncategorized-header"
+                className="workspace-group-header"
                 onClick={handleUncategorizedToggle}
-                style={{ cursor: 'pointer' }}
+                style={{ '--group-color': 'var(--color-secondary)' } as React.CSSProperties}
               >
-                <span className="workspace-collapse-icon">
-                  {uncategorizedCollapsed ? '▶' : '▼'}
+                <span className={`workspace-group-collapse-icon${uncategorizedCollapsed ? ' collapsed' : ''}`}>
+                  ▼
                 </span>
-                未分類 ({filteredUncategorizedItems.length})
+                <span className="workspace-group-name">未分類</span>
+                <span className="workspace-group-badge">
+                  {filteredUncategorizedItems.length}
+                </span>
               </div>
               {!uncategorizedCollapsed && (
                 <div className="workspace-group-items">

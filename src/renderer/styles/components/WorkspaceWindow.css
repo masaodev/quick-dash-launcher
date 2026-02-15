@@ -554,28 +554,6 @@ html:has(.workspace-window.background-transparent) {
 /* 未分類セクション */
 .workspace-uncategorized-section {
   margin-top: var(--spacing-xs);
-  padding-top: var(--spacing-xs);
-  border-top: 1px solid var(--border-color);
-}
-
-.workspace-uncategorized-header {
-  color: var(--text-secondary-color);
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-  padding: var(--spacing-xs) var(--spacing-md);
-  margin-bottom: var(--spacing-xs);
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  user-select: none;
-}
-
-/* 折りたたみアイコン（未分類・実行履歴用） */
-.workspace-collapse-icon {
-  font-size: 10px;
-  transition: transform 0.2s ease;
-  display: inline-block;
-  width: 12px;
 }
 
 /* 実行履歴セクション */
