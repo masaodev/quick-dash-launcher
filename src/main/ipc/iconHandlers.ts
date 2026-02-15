@@ -472,6 +472,15 @@ function findCachedIconPath(
   }
 
   if (item.type === 'app') {
+    // UWPアプリの場合
+    if (item.path.startsWith('shell:AppsFolder\\')) {
+      const packageFamilyName = extractPackageFamilyName(item.path);
+      if (packageFamilyName) {
+        const cacheFileName = `uwp_${packageFamilyName.replace(/[^a-zA-Z0-9._-]/g, '_')}_icon.png`;
+        return findExistingFile(path.join(iconsFolder, cacheFileName));
+      }
+    }
+
     // ショートカットファイルの場合
     if (PathUtils.isShortcutFile(item.originalPath) || PathUtils.isShortcutFile(item.path)) {
       const shortcutPath = PathUtils.isShortcutFile(item.originalPath)
@@ -544,6 +553,86 @@ async function filterItemsWithoutErrors(
   return result;
 }
 
+/** UWPアプリのAppIDからパッケージ名を抽出する */
+function extractPackageFamilyName(appPath: string): string | null {
+  // shell:AppsFolder\Microsoft.WindowsCalculator_8wekyb3d8bbwe!App -> Microsoft.WindowsCalculator_8wekyb3d8bbwe
+  const match = appPath.match(/shell:AppsFolder\\(.+)!/);
+  if (!match) return null;
+  return match[1];
+}
+
+/** UWPアプリのパッケージ名からGet-AppxPackageでアイコンを取得する */
+async function extractUwpIcon(appPath: string, iconsFolder: string): Promise<string | null> {
+  const packageFamilyName = extractPackageFamilyName(appPath);
+  if (!packageFamilyName) return null;
+
+  // キャッシュ確認
+  const cacheFileName = `uwp_${packageFamilyName.replace(/[^a-zA-Z0-9._-]/g, '_')}_icon.png`;
+  const cachePath = path.join(iconsFolder, cacheFileName);
+
+  const cachedIcon = FileUtils.readCachedBinaryAsBase64(cachePath);
+  if (cachedIcon) return cachedIcon;
+
+  try {
+    // パッケージファミリー名からパッケージ名部分を抽出（_の前まで）
+    const packageName = packageFamilyName.split('_')[0];
+
+    const output = execAsync(
+      `powershell.exe -NoProfile -Command "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; (Get-AppxPackage -Name '${packageName}' | Select-Object -First 1).InstallLocation"`,
+      { encoding: 'utf8', timeout: 10000 }
+    );
+
+    const installLocation = (await output).stdout.trim();
+    if (!installLocation || !fs.existsSync(installLocation)) return null;
+
+    // Assets フォルダからアイコンを探す
+    const assetsDir = path.join(installLocation, 'Assets');
+    if (!fs.existsSync(assetsDir)) return null;
+
+    // Square44x44Logo, Square150x150Logo, StoreLogo等のパターンでPNGを探す
+    const iconPatterns = [
+      /Square44x44Logo\..*\.png$/i,
+      /Square44x44Logo\.png$/i,
+      /StoreLogo\..*\.png$/i,
+      /StoreLogo\.png$/i,
+      /Square150x150Logo\..*\.png$/i,
+    ];
+
+    const assetFiles = fs.readdirSync(assetsDir);
+    let iconFile: string | null = null;
+
+    for (const pattern of iconPatterns) {
+      // scale-200, scale-100 等のうち最小のスケールを優先
+      const matches = assetFiles
+        .filter((f) => pattern.test(f))
+        .sort((a, b) => {
+          const scaleA = a.match(/scale-(\d+)/)?.[1] ?? '100';
+          const scaleB = b.match(/scale-(\d+)/)?.[1] ?? '100';
+          return parseInt(scaleA) - parseInt(scaleB);
+        });
+      if (matches.length > 0) {
+        iconFile = matches[0];
+        break;
+      }
+    }
+
+    if (!iconFile) return null;
+
+    const iconPath = path.join(assetsDir, iconFile);
+    const iconBuffer = fs.readFileSync(iconPath);
+
+    if (iconBuffer.length > 0) {
+      FileUtils.writeBinaryFile(cachePath, iconBuffer);
+      return FileUtils.bufferToBase64DataUrl(iconBuffer);
+    }
+
+    return null;
+  } catch (error) {
+    iconLogger.warn({ appPath, error }, 'UWPアイコンの取得に失敗');
+    return null;
+  }
+}
+
 /** アイテムからアイコンを抽出 */
 async function extractIconForItem(
   item: IconItem,
@@ -551,6 +640,10 @@ async function extractIconForItem(
   extensionsFolder: string
 ): Promise<string | null> {
   if (item.type === 'app') {
+    // UWPアプリ（shell:AppsFolder\パス）の場合
+    if (item.path.startsWith('shell:AppsFolder\\')) {
+      return extractUwpIcon(item.path, iconsFolder);
+    }
     if (PathUtils.isShortcutFile(item.originalPath)) {
       return extractIcon(item.originalPath!, iconsFolder);
     }

@@ -109,7 +109,7 @@ export type {
 export { DEFAULT_BOOKMARK_AUTO_IMPORT_SETTINGS } from './bookmarkAutoImport';
 
 // アプリインポート関連の型
-export type { ScannedAppItem, AppScanResult, AppTargetType } from './appImport';
+export type { ScannedAppItem, AppScanResult } from './appImport';
 
 // 検索関連の型
 export type { SearchHistoryEntry, SearchHistoryState, SearchMode } from './search';

@@ -19,6 +19,9 @@ function detectTypeFromPath(itemPath: string): LauncherItem['type'] {
   }
 
   // Shell paths
+  if (itemPath.startsWith('shell:AppsFolder\\')) {
+    return 'app';
+  }
   if (itemPath.startsWith('shell:')) {
     return 'folder';
   }

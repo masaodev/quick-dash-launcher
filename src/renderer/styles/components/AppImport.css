@@ -54,28 +54,32 @@
   font-weight: 600;
 }
 
-/* タイプフィルタ */
-.app-type-filter {
+/* チェックボックスフィルタ */
+.app-filter-checkboxes {
   display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  gap: var(--spacing-sm) var(--spacing-lg);
   margin-bottom: var(--spacing-sm);
 }
 
-.app-type-filter-label {
-  font-weight: 600;
+.app-filter-checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-sm);
   color: var(--text-primary);
-  font-size: var(--font-size-base);
+  cursor: pointer;
   white-space: nowrap;
 }
 
-.app-type-filter-buttons {
+/* ビューモードボタン */
+.app-view-mode-buttons {
   display: flex;
   gap: var(--spacing-xs);
-  flex-wrap: wrap;
+  margin-bottom: var(--spacing-sm);
 }
 
-.app-type-filter-button {
+.app-view-mode-button {
   padding: var(--spacing-xs) var(--spacing-md);
   background-color: var(--color-gray-200);
   border: var(--border-normal);
@@ -87,11 +91,11 @@
   transition: var(--transition-normal);
 }
 
-.app-type-filter-button:hover {
+.app-view-mode-button:hover {
   background-color: var(--bg-hover);
 }
 
-.app-type-filter-button.selected {
+.app-view-mode-button.selected {
   background-color: var(--color-info-light);
   border-color: var(--color-info);
   color: var(--color-info);
@@ -217,14 +221,6 @@
   font-size: var(--font-size-xs);
   font-weight: 500;
   white-space: nowrap;
-}
-
-.app-type-app {
-  background-color: var(--bg-success-light);
-  color: var(--text-success);
-}
-
-.app-type-other {
   background-color: var(--color-gray-200);
   color: var(--text-muted);
 }

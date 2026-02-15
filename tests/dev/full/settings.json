@@ -45,6 +45,11 @@
 	"workspacePositionX": 0,
 	"workspacePositionY": 0,
 	"workspaceVisibleOnAllDesktops": true,
+	"backupIncludeClipboard": false,
 	"parallelGroupLaunch": false,
-	"itemSearchHotkey": ""
+	"itemSearchHotkey": "",
+	"bookmarkAutoImport": {
+		"autoRunOnStartup": false,
+		"rules": []
+	}
 }

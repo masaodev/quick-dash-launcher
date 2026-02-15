@@ -6,6 +6,9 @@
 /** ターゲットファイルの種別 */
 export type AppTargetType = 'app' | 'other';
 
+/** 検出元 */
+export type AppSource = 'lnk' | 'startapps';
+
 /** スキャンされたアプリケーションアイテム */
 export interface ScannedAppItem {
   /** 一意識別子 */
@@ -24,6 +27,10 @@ export interface ScannedAppItem {
   targetType: AppTargetType;
   /** ターゲットファイルの拡張子 */
   targetExtension: string;
+  /** 検出元 */
+  source: AppSource;
+  /** アンインストーラーかどうか */
+  isUninstaller: boolean;
 }
 
 /** アプリスキャン結果 */
