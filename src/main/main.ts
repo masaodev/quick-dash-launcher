@@ -19,9 +19,14 @@ import {
   cycleWindowPinMode,
   setModalMode,
   setFirstLaunchMode,
+  registerGlobalShortcut,
 } from './windowManager';
 import { closeAdminWindow, setAppQuitting as setAdminAppQuitting } from './adminWindowManager';
-import { createSplashWindow, closeSplashWindow } from './splashWindowManager';
+import {
+  createSplashWindow,
+  closeSplashWindow,
+  notifySplashInitComplete,
+} from './splashWindowManager';
 import {
   createWorkspaceWindow,
   closeWorkspaceWindow,
@@ -108,6 +113,14 @@ app.whenReady().then(async () => {
     createTray(),
     createWorkspaceWindow(),
   ]);
+
+  // ホットキー登録（スプラッシュから分離、スキップ環境でも確実に実行）
+  if (!EnvConfig.disableGlobalHotkey) {
+    await registerGlobalShortcut();
+  }
+
+  // スプラッシュに初期化完了を通知
+  notifySplashInitComplete();
 
   // テスト環境の場合、ウィンドウを自動表示（createWindow完了後に実行）
   if (EnvConfig.showWindowOnStartup) {

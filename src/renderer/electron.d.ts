@@ -167,6 +167,7 @@ export interface ElectronAPI {
   getCustomIcon: (customIconFileName: string) => Promise<string | null>;
   // スプラッシュスクリーン関連API
   splashReady: () => Promise<boolean>;
+  onSplashInitComplete: (callback: () => void) => () => void;
   // 検索履歴関連API
   loadSearchHistory: () => Promise<SearchHistoryEntry[]>;
   saveSearchHistory: (entries: SearchHistoryEntry[]) => Promise<void>;

@@ -1,4 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+
+const MIN_DISPLAY_TIME = 600; // 最低表示時間（ms）
+const COMPLETION_DISPLAY_TIME = 150; // 完了表示後の待機時間（ms）
+const FALLBACK_TIMEOUT = 5000; // フォールバックタイムアウト（ms）
 
 interface SplashAppProps {
   onReady?: () => void;
@@ -8,36 +12,72 @@ function SplashApp({ onReady }: SplashAppProps): React.ReactElement {
   const [loadingText, setLoadingText] = useState('起動中');
   const [progress, setProgress] = useState(0);
 
+  const initCompleteRef = useRef(false);
+  const minTimeElapsedRef = useRef(false);
+  const hasCalledReadyRef = useRef(false);
+
   useEffect(() => {
-    // 起動進捗のシミュレーション
-    const steps = [
-      { delay: 100, text: '起動中', progress: 10 },
-      { delay: 300, text: '設定を読み込み中', progress: 25 },
-      { delay: 500, text: 'ディレクトリを準備中', progress: 40 },
-      { delay: 700, text: 'データファイルを読み込み中', progress: 60 },
-      { delay: 900, text: 'アイコンを準備中', progress: 80 },
-      { delay: 1100, text: '初期化完了', progress: 100 },
+    const tryFinish = () => {
+      if (hasCalledReadyRef.current) return;
+      if (!initCompleteRef.current || !minTimeElapsedRef.current) return;
+
+      hasCalledReadyRef.current = true;
+      setLoadingText('初期化完了');
+      setProgress(100);
+
+      setTimeout(() => {
+        onReady?.();
+      }, COMPLETION_DISPLAY_TIME);
+    };
+
+    // 短縮アニメーション（450ms間で進捗を表示）
+    const animSteps = [
+      { delay: 100, text: '起動中', progress: 20 },
+      { delay: 250, text: '設定を読み込み中', progress: 50 },
+      { delay: 450, text: 'アプリケーションを準備中', progress: 75 },
     ];
 
-    let timeouts: ReturnType<typeof setTimeout>[] = [];
+    const timeouts: ReturnType<typeof setTimeout>[] = [];
 
-    steps.forEach((step) => {
-      const timeout = setTimeout(() => {
-        setLoadingText(step.text);
-        setProgress(step.progress);
+    animSteps.forEach((step) => {
+      timeouts.push(
+        setTimeout(() => {
+          if (!hasCalledReadyRef.current) {
+            setLoadingText(step.text);
+            setProgress(step.progress);
+          }
+        }, step.delay)
+      );
+    });
 
-        if (step.progress === 100 && onReady) {
-          setTimeout(() => {
-            onReady();
-          }, 300);
+    // 最低表示時間タイマー
+    timeouts.push(
+      setTimeout(() => {
+        minTimeElapsedRef.current = true;
+        tryFinish();
+      }, MIN_DISPLAY_TIME)
+    );
+
+    // フォールバックタイムアウト（初期化完了通知が来ない場合の安全策）
+    timeouts.push(
+      setTimeout(() => {
+        if (!hasCalledReadyRef.current) {
+          initCompleteRef.current = true;
+          minTimeElapsedRef.current = true;
+          tryFinish();
         }
-      }, step.delay);
+      }, FALLBACK_TIMEOUT)
+    );
 
-      timeouts.push(timeout);
+    // メインプロセスからの初期化完了通知を待ち受け
+    const offSplashInitComplete = window.electronAPI.onSplashInitComplete(() => {
+      initCompleteRef.current = true;
+      tryFinish();
     });
 
     return () => {
       timeouts.forEach((timeout) => clearTimeout(timeout));
+      offSplashInitComplete();
     };
   }, [onReady]);
 

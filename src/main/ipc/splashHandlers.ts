@@ -3,8 +3,6 @@ import { windowLogger } from '@common/logger';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { closeSplashWindow } from '../splashWindowManager';
-import { registerGlobalShortcut } from '../windowManager';
-import { EnvConfig } from '../config/envConfig';
 
 /**
  * スプラッシュスクリーン関連のIPCハンドラーを設定する
@@ -15,23 +13,15 @@ export function setupSplashHandlers(getMainWindow: () => BrowserWindow | null): 
   ipcMain.handle(IPC_CHANNELS.SPLASH_READY, async () => {
     windowLogger.info('スプラッシュスクリーンの準備が完了しました');
 
-    // 起動ホットキーを登録（テスト環境ではスキップ）
-    if (!EnvConfig.disableGlobalHotkey) {
-      await registerGlobalShortcut();
-      windowLogger.info('起動ホットキーを登録しました');
-    }
-
     // スプラッシュスクリーンを閉じてメインウィンドウを表示
-    setTimeout(() => {
-      closeSplashWindow();
+    closeSplashWindow();
 
-      const mainWindow = getMainWindow();
-      if (mainWindow) {
-        mainWindow.show();
-        mainWindow.focus();
-        windowLogger.info('メインウィンドウを自動表示しました');
-      }
-    }, 500); // 0.5秒後に閉じる（フェードアウト効果のため）
+    const mainWindow = getMainWindow();
+    if (mainWindow) {
+      mainWindow.show();
+      mainWindow.focus();
+      windowLogger.info('メインウィンドウを自動表示しました');
+    }
 
     return true;
   });

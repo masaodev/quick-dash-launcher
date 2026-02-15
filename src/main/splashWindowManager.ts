@@ -2,6 +2,7 @@ import * as path from 'path';
 
 import { BrowserWindow } from 'electron';
 import { windowLogger } from '@common/logger';
+import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { EnvConfig } from './config/envConfig.js';
 import PathManager from './config/pathManager.js';
@@ -55,6 +56,15 @@ export async function createSplashWindow(): Promise<BrowserWindow> {
   windowLogger.info('スプラッシュウィンドウを表示しました');
 
   return splashWindow;
+}
+
+/**
+ * スプラッシュウィンドウに初期化完了を通知する
+ */
+export function notifySplashInitComplete(): void {
+  if (splashWindow && !splashWindow.isDestroyed()) {
+    splashWindow.webContents.send(IPC_CHANNELS.SPLASH_INIT_COMPLETE);
+  }
 }
 
 /**
