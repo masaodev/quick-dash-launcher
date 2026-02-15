@@ -472,6 +472,15 @@ function findCachedIconPath(
   }
 
   if (item.type === 'app') {
+    // UWPアプリの場合
+    if (item.path.startsWith('shell:AppsFolder\\')) {
+      const packageFamilyName = extractPackageFamilyName(item.path);
+      if (packageFamilyName) {
+        const cacheFileName = `uwp_${packageFamilyName.replace(/[^a-zA-Z0-9._-]/g, '_')}_icon.png`;
+        return findExistingFile(path.join(iconsFolder, cacheFileName));
+      }
+    }
+
     // ショートカットファイルの場合
     if (PathUtils.isShortcutFile(item.originalPath) || PathUtils.isShortcutFile(item.path)) {
       const shortcutPath = PathUtils.isShortcutFile(item.originalPath)
@@ -544,6 +553,128 @@ async function filterItemsWithoutErrors(
   return result;
 }
 
+/** UWPアプリのAppIDからパッケージファミリー名を抽出する */
+function extractPackageFamilyName(appPath: string): string | null {
+  return appPath.match(/shell:AppsFolder\\(.+)!/)?.[1] ?? null;
+}
+
+/** パッケージ情報のメモリキャッシュ */
+interface AppxPackageInfo {
+  installLocation: string;
+  logoPaths: string[];
+}
+let appxPackageCache: Map<string, AppxPackageInfo> | null = null;
+let appxCachePromise: Promise<Map<string, AppxPackageInfo>> | null = null;
+
+/**
+ * 全AppxPackage情報を1回のPowerShellで一括取得してメモリにキャッシュする。
+ * 2回目以降はキャッシュを返す。複数同時呼び出しでも1回だけ実行される。
+ */
+async function getAppxPackageCache(): Promise<Map<string, AppxPackageInfo>> {
+  if (appxPackageCache) return appxPackageCache;
+  if (appxCachePromise) return appxCachePromise;
+
+  appxCachePromise = (async () => {
+    const cache = new Map<string, AppxPackageInfo>();
+    try {
+      const output = await execAsync(
+        `powershell.exe -NoProfile -Command "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Get-AppxPackage | ForEach-Object { $m = Get-AppxPackageManifest -Package $_; $a = $m.Package.Applications.Application; if ($a -is [System.Array]) { $a = $a[0] }; if ($a) { $v = $a.VisualElements; Write-Output (($_.Name + '|' + $_.InstallLocation + '|' + $v.Square44x44Logo + '|' + $v.Square150x150Logo)) } }"`,
+        { encoding: 'utf8', timeout: 30000 }
+      );
+
+      for (const line of output.stdout.trim().split(/\r?\n/)) {
+        const [name, installLocation, ...logos] = line.split('|').map((s) => s.trim());
+        if (!name || !installLocation) continue;
+        cache.set(name, { installLocation, logoPaths: logos.filter(Boolean) });
+      }
+      iconLogger.info({ count: cache.size }, 'AppxPackage情報を一括取得完了');
+    } catch (error) {
+      iconLogger.warn({ error }, 'AppxPackage情報の一括取得に失敗');
+    }
+    appxPackageCache = cache;
+    appxCachePromise = null;
+    return cache;
+  })();
+
+  return appxCachePromise;
+}
+
+/** UWPアプリのパッケージ名からマニフェスト経由でアイコンを取得する */
+async function extractUwpIcon(appPath: string, iconsFolder: string): Promise<string | null> {
+  const packageFamilyName = extractPackageFamilyName(appPath);
+  if (!packageFamilyName) return null;
+
+  const cachePath = path.join(
+    iconsFolder,
+    `uwp_${packageFamilyName.replace(/[^a-zA-Z0-9._-]/g, '_')}_icon.png`
+  );
+  const cachedIcon = FileUtils.readCachedBinaryAsBase64(cachePath);
+  if (cachedIcon) return cachedIcon;
+
+  try {
+    const pkgInfo = (await getAppxPackageCache()).get(packageFamilyName.split('_')[0]);
+    if (!pkgInfo || !fs.existsSync(pkgInfo.installLocation)) return null;
+
+    const iconPath = findIconFromManifestLogo(pkgInfo.installLocation, pkgInfo.logoPaths);
+    if (!iconPath) return null;
+
+    const iconBuffer = fs.readFileSync(iconPath);
+    if (iconBuffer.length === 0) return null;
+
+    FileUtils.writeBinaryFile(cachePath, iconBuffer);
+    return FileUtils.bufferToBase64DataUrl(iconBuffer);
+  } catch (error) {
+    iconLogger.warn({ appPath, error }, 'UWPアイコンの取得に失敗');
+    return null;
+  }
+}
+
+/**
+ * マニフェストのロゴパスから実際のアイコンファイルを探す。
+ * マニフェストのパスは "Assets\Logo.png" のような相対パスだが、
+ * 実ファイルは "Logo.scale-100.png" のようなスケール付きファイル名になっている。
+ */
+function findIconFromManifestLogo(installLocation: string, logoPaths: string[]): string | null {
+  for (const logoRelPath of logoPaths) {
+    const fullPath = path.join(installLocation, logoRelPath);
+    if (fs.existsSync(fullPath)) return fullPath;
+
+    const dir = path.dirname(fullPath);
+    if (!fs.existsSync(dir)) continue;
+
+    const baseName = path.basename(logoRelPath, path.extname(logoRelPath));
+    const ext = path.extname(logoRelPath);
+    const files = fs.readdirSync(dir);
+
+    // contrast/altform を除外した候補を優先し、なければ除外なしで再試行
+    const match =
+      findSmallestScaleIcon(files, baseName, ext, true) ??
+      findSmallestScaleIcon(files, baseName, ext, false);
+    if (match) return path.join(dir, match);
+  }
+  return null;
+}
+
+/** scaleが最小のアイコンファイル名を返す。見つからなければnull */
+function findSmallestScaleIcon(
+  files: string[],
+  baseName: string,
+  ext: string,
+  excludeVariants: boolean
+): string | null {
+  const parseScale = (f: string): number => parseInt(f.match(/scale-(\d+)/)?.[1] ?? '999');
+
+  const candidates = files.filter(
+    (f) =>
+      f.startsWith(baseName) &&
+      f.endsWith(ext) &&
+      (!excludeVariants || (!f.includes('contrast-') && !f.includes('_altform-')))
+  );
+
+  if (candidates.length === 0) return null;
+  return candidates.sort((a, b) => parseScale(a) - parseScale(b))[0];
+}
+
 /** アイテムからアイコンを抽出 */
 async function extractIconForItem(
   item: IconItem,
@@ -551,6 +682,10 @@ async function extractIconForItem(
   extensionsFolder: string
 ): Promise<string | null> {
   if (item.type === 'app') {
+    // UWPアプリ（shell:AppsFolder\パス）の場合
+    if (item.path.startsWith('shell:AppsFolder\\')) {
+      return extractUwpIcon(item.path, iconsFolder);
+    }
     if (PathUtils.isShortcutFile(item.originalPath)) {
       return extractIcon(item.originalPath!, iconsFolder);
     }
@@ -761,7 +896,9 @@ export function setupIconHandlers(
   );
 
   ipcMain.handle(IPC_CHANNELS.EXTRACT_ICON, (_event, filePath: string) =>
-    extractIcon(filePath, iconsFolder)
+    filePath.startsWith('shell:AppsFolder\\')
+      ? extractUwpIcon(filePath, iconsFolder)
+      : extractIcon(filePath, iconsFolder)
   );
 
   ipcMain.handle(IPC_CHANNELS.EXTRACT_FILE_ICON_BY_EXTENSION, (_event, filePath: string) =>

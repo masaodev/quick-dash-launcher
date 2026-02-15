@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react';
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import type { ScannedAppItem, DuplicateHandlingOption, AppTargetType } from '@common/types';
+import type { ScannedAppItem, DuplicateHandlingOption } from '@common/types';
 import type { EditableJsonItem } from '@common/types/editableItem';
 import { checkAppDuplicates } from '@common/utils/appDuplicateDetector';
 
@@ -9,11 +9,11 @@ import { logError } from '../utils/debug';
 import AlertDialog from './AlertDialog';
 import { Button } from './ui';
 
-/** ターゲットタイプのラベル */
-const TARGET_TYPE_LABELS: Record<AppTargetType, string> = {
-  app: '実行ファイル',
-  other: 'その他',
-};
+interface FilterOptions {
+  excludeUninstallers: boolean;
+  deduplicateLnkPriority: boolean;
+  excludeNonApps: boolean;
+}
 
 interface AppImportModalProps {
   isOpen: boolean;
@@ -22,6 +22,12 @@ interface AppImportModalProps {
   existingItems: EditableJsonItem[];
   importDestination: string;
 }
+
+const DEFAULT_FILTER_OPTIONS: FilterOptions = {
+  excludeUninstallers: true,
+  deduplicateLnkPriority: true,
+  excludeNonApps: true,
+};
 
 function AppImportModal({
   isOpen,
@@ -36,7 +42,8 @@ function AppImportModal({
   const [loading, setLoading] = useState(false);
   const [scanDuration, setScanDuration] = useState<number | null>(null);
   const [icons, setIcons] = useState<Record<string, string | null>>({});
-  const [typeFilter, setTypeFilter] = useState<AppTargetType | 'all'>('app');
+  const [filterOptions, setFilterOptions] = useState<FilterOptions>(DEFAULT_FILTER_OPTIONS);
+  const [viewMode, setViewMode] = useState<'filtered' | 'all' | 'excluded'>('filtered');
   const modalRef = useRef<HTMLDivElement>(null);
 
   // 重複処理オプション
@@ -53,6 +60,102 @@ function AppImportModal({
     type: 'info',
   });
 
+  // 各フィルタで除外される件数
+  const filterCounts = useMemo(() => {
+    const uninstallerCount = apps.filter((a) => a.isUninstaller).length;
+    const nonAppCount = apps.filter((a) => a.targetType === 'other').length;
+
+    // 重複統合の件数: 同一displayNameで複数あるもののうち、lnk以外が除外される件数
+    const nameGroups = new Map<string, ScannedAppItem[]>();
+    for (const app of apps) {
+      const group = nameGroups.get(app.displayName) || [];
+      group.push(app);
+      nameGroups.set(app.displayName, group);
+    }
+    let deduplicateCount = 0;
+    for (const group of nameGroups.values()) {
+      if (group.length > 1) {
+        const hasLnk = group.some((a) => a.source === 'lnk');
+        if (hasLnk) {
+          deduplicateCount += group.filter((a) => a.source !== 'lnk').length;
+        } else {
+          deduplicateCount += group.length - 1;
+        }
+      }
+    }
+
+    return { uninstallerCount, deduplicateCount, nonAppCount };
+  }, [apps]);
+
+  // フィルタ適用結果と除外済みアイテムを計算
+  const { coreFiltered, coreExcluded } = useMemo(() => {
+    const excludedIds = new Set<string>();
+
+    // 条件に合致するアイテムを除外対象としてマーク
+    function markExcluded(
+      items: ScannedAppItem[],
+      shouldExclude: (a: ScannedAppItem) => boolean
+    ): ScannedAppItem[] {
+      const kept: ScannedAppItem[] = [];
+      for (const a of items) {
+        if (shouldExclude(a)) excludedIds.add(a.id);
+        else kept.push(a);
+      }
+      return kept;
+    }
+
+    let result = [...apps];
+
+    if (filterOptions.excludeUninstallers) {
+      result = markExcluded(result, (a) => a.isUninstaller);
+    }
+    if (filterOptions.excludeNonApps) {
+      result = markExcluded(result, (a) => a.targetType === 'other');
+    }
+
+    // 重複統合（ショートカット版を優先）
+    if (filterOptions.deduplicateLnkPriority) {
+      const nameGroups = new Map<string, ScannedAppItem[]>();
+      for (const app of result) {
+        const group = nameGroups.get(app.displayName) || [];
+        group.push(app);
+        nameGroups.set(app.displayName, group);
+      }
+      const deduplicated: ScannedAppItem[] = [];
+      for (const group of nameGroups.values()) {
+        const kept =
+          (group.length > 1 ? group.find((a) => a.source === 'lnk') : undefined) || group[0];
+        deduplicated.push(kept);
+        for (const a of group) {
+          if (a !== kept) excludedIds.add(a.id);
+        }
+      }
+      result = deduplicated;
+    }
+
+    return {
+      coreFiltered: result,
+      coreExcluded: apps.filter((a) => excludedIds.has(a.id)),
+    };
+  }, [apps, filterOptions]);
+
+  // ビューモードに応じた表示アプリ（+ 検索フィルタ）
+  const filteredApps = useMemo(() => {
+    let result: ScannedAppItem[];
+    if (viewMode === 'filtered') result = coreFiltered;
+    else if (viewMode === 'excluded') result = coreExcluded;
+    else result = apps;
+
+    if (!searchQuery) return result;
+
+    const searchLower = searchQuery.toLowerCase();
+    return result.filter(
+      (app) =>
+        app.displayName.toLowerCase().includes(searchLower) ||
+        app.targetPath.toLowerCase().includes(searchLower)
+    );
+  }, [apps, coreFiltered, coreExcluded, viewMode, searchQuery]);
+
   // モーダル表示時にスタートメニューを自動スキャン
   useEffect(() => {
     if (isOpen) {
@@ -62,9 +165,6 @@ function AppImportModal({
           const result = await window.electronAPI.scanInstalledApps();
           setApps(result.apps);
           setScanDuration(result.scanDuration);
-          setSelectedIds(
-            new Set(result.apps.filter((a) => a.targetType === 'app').map((a) => a.id))
-          );
 
           if (result.apps.length === 0) {
             setAlertDialog({
@@ -91,6 +191,13 @@ function AppImportModal({
     }
   }, [isOpen]);
 
+  // フィルタ適用後のアプリが変わったら初期選択を更新
+  useEffect(() => {
+    if (apps.length > 0 && !loading) {
+      setSelectedIds(new Set(coreFiltered.map((a) => a.id)));
+    }
+  }, [coreFiltered, apps.length, loading]);
+
   // バックグラウンドでアイコンを非同期取得
   const fetchIcons = async (appList: ScannedAppItem[]) => {
     const BATCH_SIZE = 10;
@@ -115,28 +222,6 @@ function AppImportModal({
       });
     }
   };
-
-  // タイプごとの件数を集計
-  const typeCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: apps.length };
-    for (const app of apps) {
-      counts[app.targetType] = (counts[app.targetType] || 0) + 1;
-    }
-    return counts;
-  }, [apps]);
-
-  // フィルタリングされたアプリ
-  const filteredApps = useMemo(() => {
-    return apps.filter((app) => {
-      if (typeFilter !== 'all' && app.targetType !== typeFilter) return false;
-      if (!searchQuery) return true;
-      const searchLower = searchQuery.toLowerCase();
-      return (
-        app.displayName.toLowerCase().includes(searchLower) ||
-        app.targetPath.toLowerCase().includes(searchLower)
-      );
-    });
-  }, [apps, typeFilter, searchQuery]);
 
   // 選択されたアプリの重複チェック
   const duplicateCheckResult = useMemo(() => {
@@ -211,7 +296,8 @@ function AppImportModal({
     setSearchQuery('');
     setScanDuration(null);
     setIcons({});
-    setTypeFilter('app');
+    setFilterOptions(DEFAULT_FILTER_OPTIONS);
+    setViewMode('filtered');
     setDuplicateHandling('skip');
     onClose();
   }, [onClose]);
@@ -345,27 +431,57 @@ function AppImportModal({
                   {scanDuration !== null && ` (${scanDuration}ms)`}
                 </span>
               </div>
-              <div className="app-type-filter">
-                <span className="app-type-filter-label">種別:</span>
-                <div className="app-type-filter-buttons">
+              <div className="app-filter-checkboxes">
+                {(
+                  [
+                    {
+                      key: 'excludeUninstallers',
+                      label: 'アンインストーラーを除外',
+                      count: filterCounts.uninstallerCount,
+                    },
+                    {
+                      key: 'deduplicateLnkPriority',
+                      label: '重複を統合（ショートカット版を優先）',
+                      count: filterCounts.deduplicateCount,
+                    },
+                    {
+                      key: 'excludeNonApps',
+                      label: 'アプリ以外を除外',
+                      count: filterCounts.nonAppCount,
+                    },
+                  ] as const
+                ).map(({ key, label, count }) => (
+                  <label key={key} className="app-filter-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={filterOptions[key]}
+                      onChange={(e) =>
+                        setFilterOptions((prev) => ({ ...prev, [key]: e.target.checked }))
+                      }
+                    />
+                    <span>
+                      {label}
+                      {count > 0 && ` (${count}件)`}
+                    </span>
+                  </label>
+                ))}
+              </div>
+              <div className="app-view-mode-buttons">
+                {(
+                  [
+                    { mode: 'filtered', label: 'フィルタ適用', count: coreFiltered.length },
+                    { mode: 'all', label: '全体', count: apps.length },
+                    { mode: 'excluded', label: '除外済み', count: coreExcluded.length },
+                  ] as const
+                ).map(({ mode, label, count }) => (
                   <button
-                    className={`app-type-filter-button ${typeFilter === 'all' ? 'selected' : ''}`}
-                    onClick={() => setTypeFilter('all')}
+                    key={mode}
+                    className={`app-view-mode-button ${viewMode === mode ? 'selected' : ''}`}
+                    onClick={() => setViewMode(mode)}
                   >
-                    すべて ({typeCounts['all'] || 0})
+                    {label} ({count})
                   </button>
-                  {(['app', 'other'] as AppTargetType[])
-                    .filter((type) => (typeCounts[type] || 0) > 0)
-                    .map((type) => (
-                      <button
-                        key={type}
-                        className={`app-type-filter-button ${typeFilter === type ? 'selected' : ''}`}
-                        onClick={() => setTypeFilter(type)}
-                      >
-                        {TARGET_TYPE_LABELS[type]} ({typeCounts[type]})
-                      </button>
-                    ))}
-                </div>
+                ))}
               </div>
               <div className="search-and-actions">
                 <div className="search-input-container">
@@ -439,11 +555,8 @@ function AppImportModal({
                     </td>
                     <td className="name-column">{app.displayName}</td>
                     <td className="type-column">
-                      <span
-                        className={`app-type-badge app-type-${app.targetType}`}
-                        title={app.targetExtension}
-                      >
-                        {TARGET_TYPE_LABELS[app.targetType]}
+                      <span className="app-type-badge" title={app.targetPath}>
+                        {app.targetExtension}
                       </span>
                     </td>
                     <td className="path-column">{app.targetPath}</td>
