@@ -1,6 +1,7 @@
 import * as path from 'path';
 
-import { app, globalShortcut } from 'electron';
+import { app, globalShortcut, ipcMain } from 'electron';
+import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { setupIPCHandlers } from './ipc';
 import { createDefaultDataFile } from './utils/appHelpers';
@@ -92,6 +93,11 @@ app.whenReady().then(async () => {
       console.error('起動時バックアップでエラー:', error);
     });
 
+  // レンダラーの準備完了を待つPromise
+  const rendererReadyPromise = new Promise<void>((resolve) => {
+    ipcMain.handle(IPC_CHANNELS.RENDERER_READY, () => resolve());
+  });
+
   // レンダラープロセスとの通信用IPCハンドラーを設定（ハンドラー登録のみなのでウィンドウ作成前に実行可能）
   setupIPCHandlers(
     PathManager.getConfigFolder(),
@@ -108,18 +114,15 @@ app.whenReady().then(async () => {
   );
 
   // メインウィンドウ・トレイ・ワークスペースを並列作成（互いに独立）
-  await Promise.all([
-    createWindow(),
-    createTray(),
-    createWorkspaceWindow(),
-  ]);
+  await Promise.all([createWindow(), createTray(), createWorkspaceWindow()]);
 
   // ホットキー登録（スプラッシュから分離、スキップ環境でも確実に実行）
   if (!EnvConfig.disableGlobalHotkey) {
     await registerGlobalShortcut();
   }
 
-  // スプラッシュに初期化完了を通知
+  // レンダラーの準備完了を待ってからスプラッシュに初期化完了を通知
+  await rendererReadyPromise;
   notifySplashInitComplete();
 
   // テスト環境の場合、ウィンドウを自動表示（createWindow完了後に実行）

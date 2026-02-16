@@ -316,13 +316,12 @@ function App(): React.ReactElement {
   });
 
   useEffect(() => {
-    const checkFirstLaunch = async () => {
-      const isFirst = await window.electronAPI.isFirstLaunch();
-      setIsFirstLaunch(isFirst);
+    const initialize = async () => {
+      await Promise.all([window.electronAPI.isFirstLaunch().then(setIsFirstLaunch), loadItems()]);
+      window.electronAPI.notifyRendererReady();
     };
-    checkFirstLaunch();
 
-    loadItems();
+    initialize();
     loadIconFetchErrors();
 
     const logShowTimings = (startTime: number | undefined, suffix: string) => {

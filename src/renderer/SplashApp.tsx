@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 
 const MIN_DISPLAY_TIME = 600; // 最低表示時間（ms）
 const COMPLETION_DISPLAY_TIME = 150; // 完了表示後の待機時間（ms）
-const FALLBACK_TIMEOUT = 5000; // フォールバックタイムアウト（ms）
+const FALLBACK_TIMEOUT = 30000; // フォールバックタイムアウト（ms）
 
 interface SplashAppProps {
   onReady?: () => void;

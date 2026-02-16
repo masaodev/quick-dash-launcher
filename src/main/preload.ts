@@ -229,6 +229,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   splashReady: () => ipcRenderer.invoke(IPC_CHANNELS.SPLASH_READY),
   onSplashInitComplete: (callback: () => void) =>
     createEventListenerNoArg(IPC_CHANNELS.SPLASH_INIT_COMPLETE, callback),
+  notifyRendererReady: () => ipcRenderer.invoke(IPC_CHANNELS.RENDERER_READY),
   // カスタムアイコン関連API
   selectCustomIconFile: () => ipcRenderer.invoke(IPC_CHANNELS.SELECT_CUSTOM_ICON_FILE),
   saveCustomIcon: (sourceFilePath: string, itemIdentifier: string) =>
