@@ -2,7 +2,6 @@
 .icon-detail-modal {
   width: 700px;
   max-width: 95vw;
-  max-height: 85vh;
   display: flex;
   flex-direction: column;
   min-height: 500px;

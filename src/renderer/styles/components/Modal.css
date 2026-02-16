@@ -19,7 +19,7 @@
   box-shadow: var(--shadow-xl);
   max-width: 600px;
   width: 90%;
-  max-height: 80vh;
+  max-height: var(--modal-max-height);
   display: flex;
   flex-direction: column;
 }

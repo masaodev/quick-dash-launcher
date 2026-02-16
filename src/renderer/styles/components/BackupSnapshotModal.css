@@ -1,6 +1,5 @@
 .backup-snapshot-modal {
   max-width: 700px;
-  max-height: 80vh;
   padding: var(--spacing-lg);
 }
 

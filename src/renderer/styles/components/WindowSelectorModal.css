@@ -22,7 +22,7 @@
   box-shadow: var(--shadow-lg);
   width: 90%;
   max-width: 800px;
-  max-height: 80vh;
+  max-height: var(--modal-max-height);
   display: flex;
   flex-direction: column;
 }

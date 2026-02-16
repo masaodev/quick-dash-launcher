@@ -133,6 +133,9 @@
   --scrollbar-width: 8px;
   --font-family-mono: monospace;
 
+  /* モーダル */
+  --modal-max-height: 90vh;
+
   /* メニュー・ドロップダウン */
   --menu-width-min: 350px;
   --menu-width-max: 450px;

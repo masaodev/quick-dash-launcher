@@ -3,7 +3,6 @@
   padding: var(--spacing-xl);
   max-width: 750px;
   width: 90%;
-  max-height: 85vh;
   overflow-y: auto;
 }
 
