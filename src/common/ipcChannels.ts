@@ -118,6 +118,7 @@ export const IPC_CHANNELS = {
   // スプラッシュ画面
   SPLASH_READY: 'splash-ready',
   SPLASH_INIT_COMPLETE: 'splash:init-complete',
+  RENDERER_READY: 'renderer-ready',
 
   // 検索履歴
   LOAD_SEARCH_HISTORY: 'load-search-history',
