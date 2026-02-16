@@ -13,7 +13,7 @@
 }
 
 .tab-button {
-  padding: var(--spacing-xs) var(--spacing-lg);
+  padding: var(--spacing-xs) var(--spacing-sm);
   border: none;
   background-color: var(--color-gray-300);
   color: var(--text-muted);
