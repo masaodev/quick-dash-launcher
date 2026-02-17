@@ -728,7 +728,7 @@ function App(): React.ReactElement {
 
       {isDraggingOver && (
         <div className="drag-overlay">
-          <div className="drag-message">ファイルをドロップして登録</div>
+          <div className="drag-message">ファイル / URLをドロップして登録</div>
         </div>
       )}
 

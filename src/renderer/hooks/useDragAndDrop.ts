@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 
 import { debugLog } from '../utils/debug';
-import { getPathsFromDropEvent } from '../utils/fileDropUtils';
+import { getPathsFromDropEvent, getUrlsFromDropEvent } from '../utils/fileDropUtils';
 
 /** ファイルのドラッグ&ドロップイベントを管理するフック */
 export function useDragAndDrop(
@@ -36,12 +36,24 @@ export function useDragAndDrop(
       preventDefaultAndStop(e);
       setIsDraggingOver(false);
 
+      // ファイルパスの抽出を試行
       const paths = getPathsFromDropEvent(e);
       debugLog('Final paths:', paths);
-
       if (paths.length > 0) {
         onFilesDropped(paths);
-      } else if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+        return;
+      }
+
+      // ファイルがなければURLの抽出を試行（ブラウザからのドラッグ&ドロップ）
+      const urls = getUrlsFromDropEvent(e);
+      debugLog('Dropped URLs:', urls);
+      if (urls.length > 0) {
+        onFilesDropped(urls);
+        return;
+      }
+
+      // ファイルはあるがパス取得に失敗した場合のエラー通知
+      if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
         onDropError(
           'ファイルパスを取得できませんでした。\nファイルを直接エクスプローラーからドラッグしてください。'
         );
