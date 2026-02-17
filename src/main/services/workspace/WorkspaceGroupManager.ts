@@ -184,6 +184,34 @@ export class WorkspaceGroupManager {
   }
 
   /**
+   * 複数グループのcollapsed状態を一括更新
+   * @param ids 更新するグループIDの配列
+   * @param collapsed 設定するcollapsed状態
+   */
+  public setGroupsCollapsed(ids: string[], collapsed: boolean): void {
+    try {
+      const groups = this.loadGroups();
+      const idSet = new Set(ids);
+      let updated = 0;
+
+      for (const group of groups) {
+        if (idSet.has(group.id)) {
+          group.collapsed = collapsed;
+          updated++;
+        }
+      }
+
+      if (updated > 0) {
+        this.store.set('groups', groups);
+        logger.info({ count: updated, collapsed }, 'Batch updated groups collapsed state');
+      }
+    } catch (error) {
+      logger.error({ error, ids, collapsed }, 'Failed to batch update groups collapsed state');
+      throw error;
+    }
+  }
+
+  /**
    * グループIDからグループを取得
    * @param groupId グループID
    * @returns グループまたはundefined

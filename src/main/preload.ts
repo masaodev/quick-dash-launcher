@@ -334,6 +334,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_REORDER_GROUPS, groupIds),
     moveItemToGroup: (itemId: string, groupId?: string): Promise<{ success: boolean }> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_MOVE_ITEM_TO_GROUP, itemId, groupId),
+    setGroupsCollapsed: (ids: string[], collapsed: boolean): Promise<{ success: boolean }> =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_SET_GROUPS_COLLAPSED, ids, collapsed),
     // アーカイブ管理
     archiveGroup: (groupId: string): Promise<{ success: boolean }> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_ARCHIVE_GROUP, groupId),

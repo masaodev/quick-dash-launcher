@@ -194,6 +194,7 @@ export interface ElectronAPI {
     deleteGroup: (id: string, deleteItems: boolean) => Promise<{ success: boolean }>;
     reorderGroups: (groupIds: string[]) => Promise<{ success: boolean }>;
     moveItemToGroup: (itemId: string, groupId?: string) => Promise<{ success: boolean }>;
+    setGroupsCollapsed: (ids: string[], collapsed: boolean) => Promise<{ success: boolean }>;
     // アーカイブ管理
     archiveGroup: (groupId: string) => Promise<{ success: boolean }>;
     loadArchivedGroups: () => Promise<WorkspaceGroup[]>;

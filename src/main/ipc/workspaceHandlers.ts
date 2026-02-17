@@ -454,6 +454,25 @@ export function setupWorkspaceHandlers(): void {
   });
 
   /**
+   * 複数グループのcollapsed状態を一括更新
+   */
+  ipcMain.handle(
+    IPC_CHANNELS.WORKSPACE_SET_GROUPS_COLLAPSED,
+    async (_event, ids: string[], collapsed: boolean) => {
+      try {
+        const workspaceService = await WorkspaceService.getInstance();
+        await workspaceService.setGroupsCollapsed(ids, collapsed);
+        logger.info({ count: ids.length, collapsed }, 'Batch updated groups collapsed state');
+        notifyWorkspaceChanged();
+        return { success: true };
+      } catch (error) {
+        logger.error({ error, ids, collapsed }, 'Failed to batch update groups collapsed state');
+        throw error;
+      }
+    }
+  );
+
+  /**
    * アイテムをグループに移動
    */
   ipcMain.handle(

@@ -63,14 +63,30 @@ export function useWorkspaceActions(onDataChanged: () => void) {
     onDataChanged
   );
 
-  const handleToggleGroup = async (groupId: string, groups: WorkspaceGroup[]): Promise<void> => {
+  const handleToggleGroup = async (
+    groupId: string,
+    groups: WorkspaceGroup[],
+    onOptimisticUpdate?: (updatedGroups: WorkspaceGroup[]) => void
+  ): Promise<void> => {
     const group = groups.find((g) => g.id === groupId);
     if (!group) return;
-    await withErrorHandling(
-      async () => api.updateGroup(groupId, { collapsed: !group.collapsed }),
-      'Failed to toggle workspace group:',
-      onDataChanged
-    )();
+    const newCollapsed = !group.collapsed;
+
+    // 楽観的にUIを即座に更新
+    if (onOptimisticUpdate) {
+      const updatedGroups = groups.map((g) =>
+        g.id === groupId ? { ...g, collapsed: newCollapsed } : g
+      );
+      onOptimisticUpdate(updatedGroups);
+    }
+
+    try {
+      await api.updateGroup(groupId, { collapsed: newCollapsed });
+    } catch (error) {
+      logError('Failed to toggle workspace group:', error);
+      // エラー時はロールバック
+      onDataChanged();
+    }
   };
 
   const handleUpdateGroup = withErrorHandling(

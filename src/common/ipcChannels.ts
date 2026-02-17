@@ -157,6 +157,7 @@ export const IPC_CHANNELS = {
   WORKSPACE_DELETE_GROUP: 'workspace:delete-group',
   WORKSPACE_REORDER_GROUPS: 'workspace:reorder-groups',
   WORKSPACE_MOVE_ITEM_TO_GROUP: 'workspace:move-item-to-group',
+  WORKSPACE_SET_GROUPS_COLLAPSED: 'workspace:set-groups-collapsed',
 
   // ワークスペース - アーカイブ管理
   WORKSPACE_ARCHIVE_GROUP: 'workspace:archive-group',

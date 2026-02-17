@@ -40,7 +40,7 @@ const WorkspaceApp: React.FC = () => {
   const [filterText, setFilterText] = useState('');
   const [filterScope, setFilterScope] = useState<FilterScope>('all');
 
-  const { items, groups, loadAllDataWithLoading } = useWorkspaceData();
+  const { items, groups, setGroups, loadAllDataWithLoading } = useWorkspaceData();
 
   const actions = useWorkspaceActions(() => {
     loadAllDataWithLoading();
@@ -158,30 +158,25 @@ const WorkspaceApp: React.FC = () => {
     await window.electronAPI.openEditWindowWithTab('archive');
   };
 
-  const handleExpandAll = async () => {
-    const groupsToExpand = groups.filter((group) => group.collapsed);
-    if (groupsToExpand.length > 0) {
-      await Promise.all(
-        groupsToExpand.map((group) =>
-          window.electronAPI.workspaceAPI.updateGroup(group.id, { collapsed: false })
-        )
-      );
-      await loadAllDataWithLoading();
+  const setAllGroupsCollapsed = async (collapsed: boolean) => {
+    const targetGroups = groups.filter((g) => g.collapsed !== collapsed);
+    if (targetGroups.length > 0) {
+      setGroups(groups.map((g) => ({ ...g, collapsed })));
+      try {
+        await window.electronAPI.workspaceAPI.setGroupsCollapsed(
+          targetGroups.map((g) => g.id),
+          collapsed
+        );
+      } catch (error) {
+        logError(`Failed to ${collapsed ? 'collapse' : 'expand'} all groups:`, error);
+        loadAllDataWithLoading();
+      }
     }
-    expandAll();
-  };
-
-  const handleCollapseAll = async () => {
-    const groupsToCollapse = groups.filter((group) => !group.collapsed);
-    if (groupsToCollapse.length > 0) {
-      await Promise.all(
-        groupsToCollapse.map((group) =>
-          window.electronAPI.workspaceAPI.updateGroup(group.id, { collapsed: true })
-        )
-      );
-      await loadAllDataWithLoading();
+    if (collapsed) {
+      collapseAll();
+    } else {
+      expandAll();
     }
-    collapseAll();
   };
 
   const handleNativeFileDrop = async (e: React.DragEvent, groupId?: string) => {
@@ -234,8 +229,8 @@ const WorkspaceApp: React.FC = () => {
           if (isFilterVisible) setFilterText('');
           setIsFilterVisible((prev) => !prev);
         }}
-        onExpandAll={handleExpandAll}
-        onCollapseAll={handleCollapseAll}
+        onExpandAll={() => setAllGroupsCollapsed(false)}
+        onCollapseAll={() => setAllGroupsCollapsed(true)}
         onAddGroup={() => actions.handleAddGroup(groups.length)}
         onOpenArchive={handleOpenArchive}
         isPinned={isPinned}
@@ -269,7 +264,7 @@ const WorkspaceApp: React.FC = () => {
             setEditingId(null);
           },
           onEditItem: (item: WorkspaceItem) => setEditModalItem(item),
-          onToggleGroup: (groupId: string) => actions.handleToggleGroup(groupId, groups),
+          onToggleGroup: (groupId: string) => actions.handleToggleGroup(groupId, groups, setGroups),
           onUpdateGroup: actions.handleUpdateGroup,
           onDeleteGroup: handleDeleteGroup,
           onArchiveGroup: handleArchiveGroup,

@@ -81,13 +81,14 @@ export function useWorkspaceData() {
 
   useEffect(() => {
     loadAllData();
-    const unsubscribe = window.electronAPI.onWorkspaceChanged(loadAllDataWithLoading);
+    const unsubscribe = window.electronAPI.onWorkspaceChanged(loadAllData);
     return unsubscribe;
   }, []);
 
   return {
     items,
     groups,
+    setGroups,
     loadAllDataWithLoading,
   };
 }

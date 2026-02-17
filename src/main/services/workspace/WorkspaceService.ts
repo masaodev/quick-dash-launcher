@@ -179,6 +179,11 @@ export class WorkspaceService {
     this.groupManager!.deleteGroup(id, deleteItems, items);
   }
 
+  public async setGroupsCollapsed(ids: string[], collapsed: boolean): Promise<void> {
+    await this.initializeStore();
+    this.groupManager!.setGroupsCollapsed(ids, collapsed);
+  }
+
   public async reorderGroups(groupIds: string[]): Promise<void> {
     await this.initializeStore();
     this.groupManager!.reorderGroups(groupIds);
