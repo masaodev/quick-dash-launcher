@@ -319,11 +319,23 @@ function setupWorkspaceContextMenuHandler(): void {
 function setupWorkspaceGroupContextMenuHandler(): void {
   ipcMain.handle(
     IPC_CHANNELS.SHOW_WORKSPACE_GROUP_CONTEXT_MENU,
-    async (event, group: WorkspaceGroup): Promise<void> => {
+    async (event, group: WorkspaceGroup, canAddSubgroup: boolean): Promise<void> => {
       const senderWindow = getValidWindow(event);
       if (!senderWindow) return;
 
       const menu = new Menu();
+
+      if (canAddSubgroup) {
+        menu.append(
+          createMenuItem(
+            '📂 サブグループを追加',
+            event.sender,
+            IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_ADD_SUBGROUP,
+            group.id
+          )
+        );
+        menu.append(createSeparator());
+      }
 
       menu.append(
         createMenuItem(
@@ -338,6 +350,14 @@ function setupWorkspaceGroupContextMenuHandler(): void {
           '🎨 カラーを変更',
           event.sender,
           IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_SHOW_COLOR_PICKER,
+          group.id
+        )
+      );
+      menu.append(
+        createMenuItem(
+          '😀 アイコンを変更',
+          event.sender,
+          IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_CHANGE_ICON,
           group.id
         )
       );

@@ -1,6 +1,7 @@
 import React from 'react';
 import type { AppItem, WorkspaceItem, WorkspaceGroup } from '@common/types';
 import { PathUtils } from '@common/utils/pathUtils';
+import { canCreateSubgroup, type GroupTreeNode } from '@common/utils/groupTreeUtils';
 
 import { useWorkspaceItemGroups } from '../hooks/workspace';
 import { logError } from '../utils/debug';
@@ -43,6 +44,82 @@ const ColorPickerModal: React.FC<{
   );
 };
 
+/**
+ * アイコン選択モーダル（emoji入力）
+ */
+const IconPickerModal: React.FC<{
+  currentIcon?: string;
+  onSelectIcon: (icon: string) => void;
+  onClearIcon: () => void;
+  onClose: () => void;
+}> = ({ currentIcon, onSelectIcon, onClearIcon, onClose }) => {
+  const [inputValue, setInputValue] = React.useState(currentIcon || '');
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  React.useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
+  const handleSubmit = () => {
+    if (inputValue.trim()) {
+      onSelectIcon(inputValue.trim());
+    }
+    onClose();
+  };
+
+  return (
+    <div className="modal-overlay-base" onClick={onClose} style={{ zIndex: 10000 }}>
+      <div className="icon-picker-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="icon-picker-header">アイコンを変更</div>
+        <div className="icon-picker-content">
+          <input
+            ref={inputRef}
+            type="text"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleSubmit();
+            }}
+            className="icon-picker-input"
+            placeholder="絵文字を入力..."
+            maxLength={2}
+          />
+          <div className="icon-picker-preview">
+            {inputValue && <span className="icon-picker-preview-emoji">{inputValue}</span>}
+          </div>
+        </div>
+        <div className="icon-picker-actions">
+          {currentIcon && (
+            <button
+              className="icon-picker-clear-btn"
+              onClick={() => {
+                onClearIcon();
+                onClose();
+              }}
+            >
+              クリア
+            </button>
+          )}
+          <button className="icon-picker-cancel-btn" onClick={onClose}>
+            キャンセル
+          </button>
+          <button className="icon-picker-ok-btn" onClick={handleSubmit}>
+            OK
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 interface WorkspaceGroupedListProps {
   contentRef?: React.Ref<HTMLDivElement>;
   data: {
@@ -59,6 +136,7 @@ interface WorkspaceGroupedListProps {
     onUpdateGroup: (groupId: string, updates: Partial<WorkspaceGroup>) => void;
     onDeleteGroup: (groupId: string) => void;
     onArchiveGroup: (groupId: string) => void;
+    onAddSubgroup: (parentGroupId: string, subgroupCount: number) => void;
     onMoveItemToGroup: (itemId: string, groupId?: string) => void;
     onReorderGroups: (groupIds: string[]) => void;
     onNativeFileDrop?: (e: React.DragEvent, groupId?: string) => Promise<void>;
@@ -93,6 +171,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     onUpdateGroup,
     onDeleteGroup,
     onArchiveGroup,
+    onAddSubgroup,
     onMoveItemToGroup,
     onReorderGroups,
     onNativeFileDrop,
@@ -111,22 +190,24 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
   const [draggedItemId, setDraggedItemId] = React.useState<string | null>(null);
   const [editingGroupId, setEditingGroupId] = React.useState<string | null>(null);
   const [colorPickerGroupId, setColorPickerGroupId] = React.useState<string | null>(null);
+  const [iconPickerGroupId, setIconPickerGroupId] = React.useState<string | null>(null);
   const [dragOverGroupId, setDragOverGroupId] = React.useState<string | null>(null);
   const dragOverTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const { itemsByGroup, uncategorizedItems } = useWorkspaceItemGroups(items);
+  const { itemsByGroup, uncategorizedItems, groupTree } = useWorkspaceItemGroups(items, groups);
 
-  const itemsMap = React.useMemo(() => {
-    const map = new Map<string, WorkspaceItem>();
-    items.forEach((item) => map.set(item.id, item));
-    return map;
-  }, [items]);
+  const itemsMap = React.useMemo(() => new Map(items.map((item) => [item.id, item])), [items]);
 
-  const groupsMap = React.useMemo(() => {
-    const map = new Map<string, WorkspaceGroup>();
-    groups.forEach((group) => map.set(group.id, group));
-    return map;
-  }, [groups]);
+  const groupsMap = React.useMemo(
+    () => new Map(groups.map((group) => [group.id, group])),
+    [groups]
+  );
+
+  const filteredUncategorizedItems = React.useMemo(
+    () =>
+      uncategorizedItems.filter((item) => !itemVisibility || itemVisibility.get(item.id) !== false),
+    [uncategorizedItems, itemVisibility]
+  );
 
   const handlePathOperation = React.useCallback(
     async (
@@ -135,19 +216,14 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
       pathType: 'item' | 'parent',
       useOriginalPath: boolean = false
     ) => {
-      let basePath: string;
-      if (useOriginalPath) {
-        if (!item.originalPath) return;
-        basePath = item.originalPath;
-      } else {
-        basePath = item.path;
-      }
+      const basePath = useOriginalPath ? item.originalPath : item.path;
+      if (!basePath) return;
 
       const targetPath = pathType === 'parent' ? PathUtils.getParentPath(basePath) : basePath;
 
       if (operation === 'copy') {
         window.electronAPI.copyToClipboard(targetPath);
-      } else if (operation === 'open') {
+      } else {
         await window.electronAPI.openExternalUrl(`file:///${targetPath}`);
       }
     },
@@ -230,10 +306,23 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
       }),
       window.electronAPI.onWorkspaceGroupMenuArchive((groupId) => onArchiveGroup(groupId)),
       window.electronAPI.onWorkspaceGroupMenuDelete((groupId) => onDeleteGroup(groupId)),
+      window.electronAPI.onWorkspaceGroupMenuAddSubgroup((parentGroupId) => {
+        const childCount = groups.filter((g) => g.parentGroupId === parentGroupId).length;
+        onAddSubgroup(parentGroupId, childCount);
+      }),
+      window.electronAPI.onWorkspaceGroupMenuChangeIcon((groupId) => setIconPickerGroupId(groupId)),
     ];
 
     return () => cleanups.forEach((cleanup) => cleanup());
-  }, [groupsMap, itemsByGroup, onUpdateGroup, onArchiveGroup, onDeleteGroup]);
+  }, [
+    groupsMap,
+    groups,
+    itemsByGroup,
+    onUpdateGroup,
+    onArchiveGroup,
+    onDeleteGroup,
+    onAddSubgroup,
+  ]);
 
   const handleItemDragStart = (item: WorkspaceItem) => (e: React.DragEvent) => {
     setDraggedItemId(item.id);
@@ -391,7 +480,8 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
   const handleGroupContextMenu = (group: WorkspaceGroup) => (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    window.electronAPI.showWorkspaceGroupContextMenu(group);
+    const canAdd = canCreateSubgroup(group.id, groups);
+    window.electronAPI.showWorkspaceGroupContextMenu(group, canAdd);
   };
 
   const handleGroupToggle = (groupId: string) => {
@@ -422,20 +512,101 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     const draggedId = e.dataTransfer.getData('groupId');
 
     if (draggedId && draggedId !== targetGroup.id) {
-      // 新しい順序を計算
-      const draggedIndex = groups.findIndex((g) => g.id === draggedId);
-      const targetIndex = groups.findIndex((g) => g.id === targetGroup.id);
+      // 同一親グループ内での並び替えのみ許可
+      const draggedGroup = groups.find((g) => g.id === draggedId);
+      if (!draggedGroup || draggedGroup.parentGroupId !== targetGroup.parentGroupId) {
+        return;
+      }
+
+      // 同一親のグループのみ対象にして並び替え
+      const siblingGroups = groups
+        .filter((g) => g.parentGroupId === targetGroup.parentGroupId)
+        .sort((a, b) => a.order - b.order);
+
+      const draggedIndex = siblingGroups.findIndex((g) => g.id === draggedId);
+      const targetIndex = siblingGroups.findIndex((g) => g.id === targetGroup.id);
 
       if (draggedIndex !== -1 && targetIndex !== -1) {
-        const newGroups = [...groups];
-        const [draggedGroup] = newGroups.splice(draggedIndex, 1);
-        newGroups.splice(targetIndex, 0, draggedGroup);
+        const newSiblings = [...siblingGroups];
+        const [draggedGrp] = newSiblings.splice(draggedIndex, 1);
+        newSiblings.splice(targetIndex, 0, draggedGrp);
 
-        // 新しい順序でIDリストを作成
-        const newGroupIds = newGroups.map((g) => g.id);
+        const newGroupIds = newSiblings.map((g) => g.id);
         onReorderGroups(newGroupIds);
       }
     }
+  };
+
+  /** 再帰的にグループツリーノードをレンダリング */
+  const renderGroupNode = (node: GroupTreeNode): React.ReactNode => {
+    if (visibleGroupIds && !visibleGroupIds.has(node.group.id)) {
+      return null;
+    }
+
+    const groupItems = (itemsByGroup[node.group.id] || []).filter(
+      (item) => !itemVisibility || itemVisibility.get(item.id) !== false
+    );
+    if (itemVisibility && groupItems.length === 0 && node.children.length === 0) {
+      // フィルタ時、アイテムもサブグループもなければ非表示
+      const hasVisibleDescendant = node.children.some(
+        (child) => visibleGroupIds && visibleGroupIds.has(child.group.id)
+      );
+      if (!hasVisibleDescendant) return null;
+    }
+
+    return (
+      <div
+        key={node.group.id}
+        className={`workspace-group workspace-group-depth-${node.depth}${dragOverGroupId === node.group.id ? ' drag-over' : ''}`}
+        onDragOver={handleGroupDragOver(node.group.id)}
+        onDrop={handleGroupDrop(node.group.id)}
+      >
+        <WorkspaceGroupHeader
+          group={node.group}
+          itemCount={groupItems.length}
+          isEditing={editingGroupId === node.group.id}
+          depth={node.depth}
+          onToggle={handleGroupToggle}
+          onUpdate={onUpdateGroup}
+          onStartEdit={() =>
+            setEditingGroupId(editingGroupId === node.group.id ? null : node.group.id)
+          }
+          onGroupDragStart={handleGroupDragStart(node.group)}
+          onGroupDragOverForReorder={handleGroupDragOverForReorder}
+          onGroupDropForReorder={handleGroupDropForReorder(node.group)}
+          onContextMenu={handleGroupContextMenu(node.group)}
+        />
+        {!node.group.collapsed && (
+          <>
+            {/* サブグループを再帰レンダリング */}
+            {node.children.length > 0 && (
+              <div className="workspace-subgroups">
+                {node.children.map((child) => renderGroupNode(child))}
+              </div>
+            )}
+            {/* グループ直属のアイテム */}
+            <div className="workspace-group-items">
+              {groupItems.map((item) => (
+                <WorkspaceItemCard
+                  key={item.id}
+                  item={item}
+                  isEditing={editingItemId === item.id}
+                  onLaunch={onLaunch}
+                  onRemove={onRemoveItem}
+                  onUpdateDisplayName={onUpdateDisplayName}
+                  onStartEdit={() => setEditingItemId(editingItemId === item.id ? null : item.id)}
+                  onDragStart={handleItemDragStart(item)}
+                  onDragEnd={handleItemDragEnd}
+                  onDragOver={handleItemDragOver}
+                  onDrop={handleItemDrop(item)}
+                  onContextMenu={handleContextMenu(item)}
+                />
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    );
   };
 
   // アイテムが1つもない場合
@@ -455,113 +626,50 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
   return (
     <div className="workspace-item-list">
       <div ref={contentRef}>
-        {groups
-          .filter((group) => !visibleGroupIds || visibleGroupIds.has(group.id))
-          .map((group) => {
-            const groupItems = (itemsByGroup[group.id] || []).filter(
-              (item) => !itemVisibility || itemVisibility.get(item.id) !== false
-            );
-            if (itemVisibility && groupItems.length === 0) {
-              return null;
-            }
-            return (
-              <div
-                key={group.id}
-                className={`workspace-group${dragOverGroupId === group.id ? ' drag-over' : ''}`}
-                onDragOver={handleGroupDragOver(group.id)}
-                onDrop={handleGroupDrop(group.id)}
-              >
-                <WorkspaceGroupHeader
-                  group={group}
-                  itemCount={groupItems.length}
-                  isEditing={editingGroupId === group.id}
-                  onToggle={handleGroupToggle}
-                  onUpdate={onUpdateGroup}
-                  onStartEdit={() =>
-                    setEditingGroupId(editingGroupId === group.id ? null : group.id)
-                  }
-                  onGroupDragStart={handleGroupDragStart(group)}
-                  onGroupDragOverForReorder={handleGroupDragOverForReorder}
-                  onGroupDropForReorder={handleGroupDropForReorder(group)}
-                  onContextMenu={handleGroupContextMenu(group)}
-                />
-                {!group.collapsed && (
-                  <div className="workspace-group-items">
-                    {groupItems.map((item) => (
-                      <WorkspaceItemCard
-                        key={item.id}
-                        item={item}
-                        isEditing={editingItemId === item.id}
-                        onLaunch={onLaunch}
-                        onRemove={onRemoveItem}
-                        onUpdateDisplayName={onUpdateDisplayName}
-                        onStartEdit={() =>
-                          setEditingItemId(editingItemId === item.id ? null : item.id)
-                        }
-                        onDragStart={handleItemDragStart(item)}
-                        onDragEnd={handleItemDragEnd}
-                        onDragOver={handleItemDragOver}
-                        onDrop={handleItemDrop(item)}
-                        onContextMenu={handleContextMenu(item)}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+        {/* ツリー構造でグループをレンダリング */}
+        {groupTree.map((node) => renderGroupNode(node))}
 
-        {(() => {
-          const filteredUncategorizedItems = uncategorizedItems.filter(
-            (item) => !itemVisibility || itemVisibility.get(item.id) !== false
-          );
-          if ((!showUncategorized && itemVisibility) || filteredUncategorizedItems.length === 0) {
-            return null;
-          }
-          return (
+        {filteredUncategorizedItems.length > 0 && (showUncategorized || !itemVisibility) && (
+          <div
+            className={`workspace-uncategorized-section${dragOverGroupId === '__uncategorized__' ? ' drag-over' : ''}`}
+            onDragOver={handleGroupDragOver(undefined)}
+            onDrop={handleGroupDrop(undefined)}
+          >
             <div
-              className={`workspace-uncategorized-section${dragOverGroupId === '__uncategorized__' ? ' drag-over' : ''}`}
-              onDragOver={handleGroupDragOver(undefined)}
-              onDrop={handleGroupDrop(undefined)}
+              className="workspace-group-header"
+              onClick={handleUncategorizedToggle}
+              style={{ '--group-color': 'var(--color-secondary)' } as React.CSSProperties}
             >
-              <div
-                className="workspace-group-header"
-                onClick={handleUncategorizedToggle}
-                style={{ '--group-color': 'var(--color-secondary)' } as React.CSSProperties}
+              <span
+                className={`workspace-group-collapse-icon${uncategorizedCollapsed ? ' collapsed' : ''}`}
               >
-                <span className={`workspace-group-collapse-icon${uncategorizedCollapsed ? ' collapsed' : ''}`}>
-                  ▼
-                </span>
-                <span className="workspace-group-name">未分類</span>
-                <span className="workspace-group-badge">
-                  {filteredUncategorizedItems.length}
-                </span>
-              </div>
-              {!uncategorizedCollapsed && (
-                <div className="workspace-group-items">
-                  {filteredUncategorizedItems.map((item) => (
-                    <WorkspaceItemCard
-                      key={item.id}
-                      item={item}
-                      isEditing={editingItemId === item.id}
-                      onLaunch={onLaunch}
-                      onRemove={onRemoveItem}
-                      onUpdateDisplayName={onUpdateDisplayName}
-                      onStartEdit={() =>
-                        setEditingItemId(editingItemId === item.id ? null : item.id)
-                      }
-                      onDragStart={handleItemDragStart(item)}
-                      onDragEnd={handleItemDragEnd}
-                      onDragOver={handleItemDragOver}
-                      onDrop={handleItemDrop(item)}
-                      onContextMenu={handleContextMenu(item)}
-                    />
-                  ))}
-                </div>
-              )}
+                ▼
+              </span>
+              <span className="workspace-group-name">未分類</span>
+              <span className="workspace-group-badge">{filteredUncategorizedItems.length}</span>
             </div>
-          );
-        })()}
+            {!uncategorizedCollapsed && (
+              <div className="workspace-group-items">
+                {filteredUncategorizedItems.map((item) => (
+                  <WorkspaceItemCard
+                    key={item.id}
+                    item={item}
+                    isEditing={editingItemId === item.id}
+                    onLaunch={onLaunch}
+                    onRemove={onRemoveItem}
+                    onUpdateDisplayName={onUpdateDisplayName}
+                    onStartEdit={() => setEditingItemId(editingItemId === item.id ? null : item.id)}
+                    onDragStart={handleItemDragStart(item)}
+                    onDragEnd={handleItemDragEnd}
+                    onDragOver={handleItemDragOver}
+                    onDrop={handleItemDrop(item)}
+                    onContextMenu={handleContextMenu(item)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* カラーピッカー */}
         {colorPickerGroupId && (
@@ -572,6 +680,20 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
               setColorPickerGroupId(null);
             }}
             onClose={() => setColorPickerGroupId(null)}
+          />
+        )}
+
+        {/* アイコンピッカー */}
+        {iconPickerGroupId && (
+          <IconPickerModal
+            currentIcon={groupsMap.get(iconPickerGroupId)?.customIcon}
+            onSelectIcon={(icon) => {
+              onUpdateGroup(iconPickerGroupId, { customIcon: icon });
+            }}
+            onClearIcon={() => {
+              onUpdateGroup(iconPickerGroupId, { customIcon: undefined });
+            }}
+            onClose={() => setIconPickerGroupId(null)}
           />
         )}
       </div>

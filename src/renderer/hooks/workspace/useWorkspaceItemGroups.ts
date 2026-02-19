@@ -1,22 +1,23 @@
 import { useMemo } from 'react';
-import type { WorkspaceItem } from '@common/types';
+import type { WorkspaceItem, WorkspaceGroup } from '@common/types';
+import { buildGroupTree, type GroupTreeNode } from '@common/utils/groupTreeUtils';
 
-export function useWorkspaceItemGroups(items: WorkspaceItem[]) {
+export function useWorkspaceItemGroups(items: WorkspaceItem[], groups?: WorkspaceGroup[]) {
   const itemsByGroup = useMemo(() => {
-    return items.reduce(
-      (acc, item) => {
-        const groupId = item.groupId || 'uncategorized';
-        if (!acc[groupId]) {
-          acc[groupId] = [];
-        }
-        acc[groupId].push(item);
-        return acc;
-      },
-      {} as Record<string, WorkspaceItem[]>
-    );
+    const result: Record<string, WorkspaceItem[]> = {};
+    for (const item of items) {
+      const groupId = item.groupId || 'uncategorized';
+      (result[groupId] ??= []).push(item);
+    }
+    return result;
   }, [items]);
 
   const uncategorizedItems = itemsByGroup['uncategorized'] || [];
 
-  return { itemsByGroup, uncategorizedItems };
+  const groupTree: GroupTreeNode[] = useMemo(
+    () => (groups ? buildGroupTree(groups) : []),
+    [groups]
+  );
+
+  return { itemsByGroup, uncategorizedItems, groupTree };
 }

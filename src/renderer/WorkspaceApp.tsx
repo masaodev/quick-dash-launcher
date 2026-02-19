@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { WorkspaceItem } from '@common/types';
+import { getDescendantGroupIds } from '@common/utils/groupTreeUtils';
 
 import ConfirmDialog from './components/ConfirmDialog';
 import WorkspaceFilterBar from './components/WorkspaceFilterBar';
@@ -30,6 +31,19 @@ const RESIZE_DIRECTIONS = [
   'left',
 ] as const;
 
+const INITIAL_DELETE_DIALOG = {
+  isOpen: false,
+  groupId: null as string | null,
+  itemCount: 0,
+  deleteItems: false,
+};
+
+const INITIAL_ARCHIVE_DIALOG = {
+  isOpen: false,
+  groupId: null as string | null,
+  itemCount: 0,
+};
+
 const WorkspaceApp: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isPinned, setIsPinned] = useState(false);
@@ -54,26 +68,8 @@ const WorkspaceApp: React.FC = () => {
   const filterResult = useWorkspaceFilter(groups, items, filterText, filterScope);
   const { handleResize } = useWorkspaceResize();
   const { contentRef } = useWorkspaceAutoFit();
-  const [deleteGroupDialog, setDeleteGroupDialog] = useState<{
-    isOpen: boolean;
-    groupId: string | null;
-    itemCount: number;
-    deleteItems: boolean;
-  }>({
-    isOpen: false,
-    groupId: null,
-    itemCount: 0,
-    deleteItems: false,
-  });
-  const [archiveGroupDialog, setArchiveGroupDialog] = useState<{
-    isOpen: boolean;
-    groupId: string | null;
-    itemCount: number;
-  }>({
-    isOpen: false,
-    groupId: null,
-    itemCount: 0,
-  });
+  const [deleteGroupDialog, setDeleteGroupDialog] = useState(INITIAL_DELETE_DIALOG);
+  const [archiveGroupDialog, setArchiveGroupDialog] = useState(INITIAL_ARCHIVE_DIALOG);
 
   useEffect(() => {
     window.electronAPI.workspaceAPI.getAlwaysOnTop().then(setIsPinned);
@@ -103,12 +99,15 @@ const WorkspaceApp: React.FC = () => {
 
   const handleDeleteGroup = async (groupId: string) => {
     try {
-      const groupItems = items.filter((item) => item.groupId === groupId);
-      if (groupItems.length > 0) {
+      // サブグループのアイテムも含めた件数を算出
+      const descendantIds = getDescendantGroupIds(groupId, groups);
+      const allGroupIds = new Set([groupId, ...descendantIds]);
+      const allGroupItems = items.filter((item) => item.groupId && allGroupIds.has(item.groupId));
+      if (allGroupItems.length > 0) {
         setDeleteGroupDialog({
           isOpen: true,
           groupId,
-          itemCount: groupItems.length,
+          itemCount: allGroupItems.length,
           deleteItems: false,
         });
       } else {
@@ -124,14 +123,16 @@ const WorkspaceApp: React.FC = () => {
     if (!groupId) return;
     try {
       await actions.handleDeleteGroup(groupId, deleteItems);
-      setDeleteGroupDialog({ isOpen: false, groupId: null, itemCount: 0, deleteItems: false });
+      setDeleteGroupDialog(INITIAL_DELETE_DIALOG);
     } catch (error) {
       logError('Failed to delete workspace group:', error);
     }
   };
 
   const handleArchiveGroup = (groupId: string): void => {
-    const itemCount = items.filter((item) => item.groupId === groupId).length;
+    const descendantIds = getDescendantGroupIds(groupId, groups);
+    const allGroupIds = new Set([groupId, ...descendantIds]);
+    const itemCount = items.filter((item) => item.groupId && allGroupIds.has(item.groupId)).length;
     setArchiveGroupDialog({ isOpen: true, groupId, itemCount });
   };
 
@@ -140,7 +141,7 @@ const WorkspaceApp: React.FC = () => {
     if (!groupId) return;
     try {
       await actions.handleArchiveGroup(groupId);
-      setArchiveGroupDialog({ isOpen: false, groupId: null, itemCount: 0 });
+      setArchiveGroupDialog(INITIAL_ARCHIVE_DIALOG);
     } catch (error) {
       logError('Failed to archive workspace group:', error);
     }
@@ -268,6 +269,7 @@ const WorkspaceApp: React.FC = () => {
           onUpdateGroup: actions.handleUpdateGroup,
           onDeleteGroup: handleDeleteGroup,
           onArchiveGroup: handleArchiveGroup,
+          onAddSubgroup: actions.handleAddSubgroup,
           onMoveItemToGroup: actions.handleMoveItemToGroup,
           onReorderGroups: actions.handleReorderGroups,
           onNativeFileDrop: handleNativeFileDrop,
@@ -277,8 +279,8 @@ const WorkspaceApp: React.FC = () => {
           setEditingItemId: setEditingId,
           uncategorizedCollapsed: collapsed.uncategorized || false,
           onToggleUncategorized: () => toggleSection('uncategorized'),
-          activeGroupId: activeGroupId,
-          setActiveGroupId: setActiveGroupId,
+          activeGroupId,
+          setActiveGroupId,
           visibleGroupIds: filterResult.visibleGroupIds,
           itemVisibility: filterResult.itemVisibility,
           showUncategorized: filterResult.showUncategorized,
@@ -286,14 +288,7 @@ const WorkspaceApp: React.FC = () => {
       />
       <ConfirmDialog
         isOpen={deleteGroupDialog.isOpen}
-        onClose={() =>
-          setDeleteGroupDialog({
-            isOpen: false,
-            groupId: null,
-            itemCount: 0,
-            deleteItems: false,
-          })
-        }
+        onClose={() => setDeleteGroupDialog(INITIAL_DELETE_DIALOG)}
         onConfirm={handleConfirmDeleteGroup}
         title="グループの削除"
         message={`「${groups.find((g) => g.id === deleteGroupDialog.groupId)?.displayName}」を削除してもよろしいですか？\n\nこのグループには${deleteGroupDialog.itemCount}個のアイテムが含まれています。`}
@@ -312,13 +307,7 @@ const WorkspaceApp: React.FC = () => {
       />
       <ConfirmDialog
         isOpen={archiveGroupDialog.isOpen}
-        onClose={() =>
-          setArchiveGroupDialog({
-            isOpen: false,
-            groupId: null,
-            itemCount: 0,
-          })
-        }
+        onClose={() => setArchiveGroupDialog(INITIAL_ARCHIVE_DIALOG)}
         onConfirm={handleConfirmArchiveGroup}
         title="グループのアーカイブ"
         message={`「${groups.find((g) => g.id === archiveGroupDialog.groupId)?.displayName}」をアーカイブしてもよろしいですか？\n\nこのグループには${archiveGroupDialog.itemCount}個のアイテムが含まれています。\nアーカイブしたグループは後で復元できます。`}
