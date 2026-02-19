@@ -541,6 +541,12 @@ html:has(.workspace-window.background-transparent) {
   pointer-events: none; /* クリックイベントを透過 */
 }
 
+/* サブグループコンテナ */
+.workspace-subgroups {
+  margin-left: var(--spacing-md);
+  margin-top: 2px;
+}
+
 /* グループ内アイテム */
 .workspace-group-items {
   margin-left: var(--spacing-md);
@@ -549,6 +555,157 @@ html:has(.workspace-window.background-transparent) {
 
 .workspace-group-items.collapsed {
   display: none;
+}
+
+/* ==================== サブグループ階層スタイル ==================== */
+
+/* 深さ1（サブグループ）のヘッダー */
+.workspace-group-header.workspace-group-depth-1 {
+  font-size: 11px;
+  padding: 4px 40px 4px var(--spacing-xs);
+}
+
+.workspace-group-depth-1 .workspace-group-name {
+  font-size: 11px;
+}
+
+.workspace-group-depth-1 .workspace-group-badge {
+  font-size: 10px;
+  padding: 1px 6px;
+}
+
+/* 深さ2（サブサブグループ）のヘッダー */
+.workspace-group-header.workspace-group-depth-2 {
+  font-size: 10px;
+  padding: 3px 36px 3px var(--spacing-xs);
+}
+
+.workspace-group-depth-2 .workspace-group-name {
+  font-size: 10px;
+}
+
+.workspace-group-depth-2 .workspace-group-badge {
+  font-size: 9px;
+  padding: 1px 5px;
+}
+
+/* カスタムアイコン */
+.workspace-group-custom-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.workspace-group-depth-1 .workspace-group-custom-icon {
+  font-size: 12px;
+}
+
+.workspace-group-depth-2 .workspace-group-custom-icon {
+  font-size: 11px;
+}
+
+/* ==================== アイコンピッカーモーダル ==================== */
+
+.icon-picker-modal {
+  background-color: var(--color-white);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--spacing-md);
+  min-width: 240px;
+}
+
+.icon-picker-header {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  margin-bottom: var(--spacing-md);
+  color: var(--text-color);
+}
+
+.icon-picker-content {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.icon-picker-input {
+  flex: 1;
+  height: var(--input-height);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: var(--border-normal);
+  border-radius: var(--border-radius);
+  background-color: var(--input-background);
+  color: var(--text-color);
+  font-size: 20px;
+  text-align: center;
+  outline: none;
+}
+
+.icon-picker-input:focus {
+  border-color: var(--color-primary);
+}
+
+.icon-picker-preview {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: var(--border-normal);
+  border-radius: var(--border-radius);
+  background-color: var(--bg-section);
+}
+
+.icon-picker-preview-emoji {
+  font-size: 24px;
+}
+
+.icon-picker-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-sm);
+}
+
+.icon-picker-clear-btn,
+.icon-picker-cancel-btn,
+.icon-picker-ok-btn {
+  padding: var(--spacing-xs) var(--spacing-md);
+  border: var(--border-normal);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  transition: var(--transition-fast);
+}
+
+.icon-picker-clear-btn {
+  background-color: transparent;
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+  margin-right: auto;
+}
+
+.icon-picker-clear-btn:hover {
+  background-color: var(--color-danger);
+  color: var(--color-white);
+}
+
+.icon-picker-cancel-btn {
+  background-color: var(--color-white);
+  color: var(--text-color);
+}
+
+.icon-picker-cancel-btn:hover {
+  background-color: var(--bg-hover);
+}
+
+.icon-picker-ok-btn {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  border-color: var(--color-primary);
+}
+
+.icon-picker-ok-btn:hover {
+  background-color: var(--color-primary-hover);
 }
 
 /* 未分類セクション */

@@ -8,6 +8,7 @@ import type {
   ArchivedWorkspaceItem,
 } from '@common/types';
 import logger from '@common/logger';
+import { getDescendantGroupIds } from '@common/utils/groupTreeUtils';
 
 import type { WorkspaceStoreInstance, ArchiveStoreInstance } from './types.js';
 import { migrateGroupDisplayName } from './migrationUtils.js';
@@ -25,7 +26,7 @@ export class WorkspaceArchiveManager {
   }
 
   /**
-   * グループとそのアイテムをアーカイブ
+   * グループとそのアイテムをアーカイブ（子孫サブグループも含む）
    * @param groupId アーカイブするグループのID
    * @param groups 現在のグループ一覧
    * @param items 現在のアイテム一覧
@@ -38,43 +39,65 @@ export class WorkspaceArchiveManager {
         throw new Error(`Group not found: ${groupId}`);
       }
 
-      // グループ内のアイテムを検索
-      const groupItems = items.filter((item) => item.groupId === groupId);
+      // 子孫サブグループIDも含めたアーカイブ対象を収集
+      const descendantIds = getDescendantGroupIds(groupId, groups);
+      const allGroupIds = new Set([groupId, ...descendantIds]);
 
-      // アーカイブデータを作成
+      // 対象グループとそのアイテムを検索
+      const targetGroups = groups.filter((g) => allGroupIds.has(g.id));
+      const targetItems = items.filter((item) => item.groupId && allGroupIds.has(item.groupId));
+
+      // アーカイブデータを作成（メインのグループ情報）
       const archivedGroup: ArchivedWorkspaceGroup = {
         ...group,
         archivedAt: Date.now(),
         originalOrder: group.order,
-        itemCount: groupItems.length,
+        itemCount: targetItems.length,
       };
 
-      const archivedItems: ArchivedWorkspaceItem[] = groupItems.map((item) => ({
+      // サブグループもアーカイブ
+      const archivedSubgroups: ArchivedWorkspaceGroup[] = targetGroups
+        .filter((g) => g.id !== groupId)
+        .map((g) => ({
+          ...g,
+          archivedAt: Date.now(),
+          originalOrder: g.order,
+          itemCount: items.filter((item) => item.groupId === g.id).length,
+        }));
+
+      const archivedItems: ArchivedWorkspaceItem[] = targetItems.map((item) => ({
         ...item,
         archivedAt: Date.now(),
-        archivedGroupId: groupId,
+        archivedGroupId: item.groupId!,
       }));
 
       // アーカイブストアに追加
-      const archivedGroups = this.archiveStore.get('groups') || [];
+      const archivedGroupsInStore = this.archiveStore.get('groups') || [];
       const archivedItemsInStore = this.archiveStore.get('items') || [];
 
-      archivedGroups.push(archivedGroup);
+      archivedGroupsInStore.push(archivedGroup, ...archivedSubgroups);
       archivedItemsInStore.push(...archivedItems);
 
-      this.archiveStore.set('groups', archivedGroups);
+      this.archiveStore.set('groups', archivedGroupsInStore);
       this.archiveStore.set('items', archivedItemsInStore);
 
       // ワークスペースから削除
-      const remainingGroups = groups.filter((g) => g.id !== groupId);
-      const remainingItems = items.filter((item) => item.groupId !== groupId);
+      const remainingGroups = groups.filter((g) => !allGroupIds.has(g.id));
+      const remainingItems = items.filter(
+        (item) => !item.groupId || !allGroupIds.has(item.groupId)
+      );
 
       this.store.set('groups', remainingGroups);
       this.store.set('items', remainingItems);
 
       logger.info(
-        { groupId, groupName: group.displayName, itemCount: groupItems.length },
-        'Archived group and its items'
+        {
+          groupId,
+          groupName: group.displayName,
+          itemCount: targetItems.length,
+          subgroupCount: descendantIds.length,
+        },
+        'Archived group (with descendants) and its items'
       );
     } catch (error) {
       logger.error({ error, groupId }, 'Failed to archive group');
@@ -119,7 +142,7 @@ export class WorkspaceArchiveManager {
   }
 
   /**
-   * アーカイブされたグループとそのアイテムを復元
+   * アーカイブされたグループとそのアイテムを復元（サブグループも含む）
    * @param groupId 復元するグループのID
    * @param currentGroups 現在のグループ一覧
    * @param currentItems 現在のアイテム一覧
@@ -134,15 +157,21 @@ export class WorkspaceArchiveManager {
       const archivedGroups = this.archiveStore.get('groups') || [];
       const archivedItems = this.archiveStore.get('items') || [];
 
-      // アーカイブからグループを検索
+      // アーカイブからメイングループを検索
       const archivedGroup = archivedGroups.find((g) => g.id === groupId);
       if (!archivedGroup) {
         logger.warn({ groupId }, 'Archived group not found');
         throw new Error(`Archived group not found: ${groupId}`);
       }
 
-      // アーカイブからアイテムを検索
-      const groupArchivedItems = archivedItems.filter((item) => item.archivedGroupId === groupId);
+      // サブグループも検索（parentGroupIdで紐付いているもの）
+      const archivedSubgroups = this.findArchivedDescendantGroups(groupId, archivedGroups);
+      const allArchivedGroupIds = new Set([groupId, ...archivedSubgroups.map((g) => g.id)]);
+
+      // 全対象グループのアイテムを検索
+      const allArchivedItems = archivedItems.filter((item) =>
+        allArchivedGroupIds.has(item.archivedGroupId)
+      );
 
       // グループ名の重複チェック
       let restoredGroupName = archivedGroup.displayName;
@@ -161,7 +190,12 @@ export class WorkspaceArchiveManager {
       const maxItemOrder =
         currentItems.length > 0 ? Math.max(...currentItems.map((i) => i.order)) : -1;
 
-      // グループを復元
+      // 親グループが存在するか確認、なければトップレベルに
+      const parentExists = archivedGroup.parentGroupId
+        ? currentGroups.some((g) => g.id === archivedGroup.parentGroupId)
+        : true;
+
+      // メイングループを復元
       const restoredGroup: WorkspaceGroup = {
         id: archivedGroup.id,
         displayName: restoredGroupName,
@@ -169,10 +203,24 @@ export class WorkspaceArchiveManager {
         order: maxGroupOrder + 1,
         collapsed: archivedGroup.collapsed,
         createdAt: archivedGroup.createdAt,
+        parentGroupId: parentExists ? archivedGroup.parentGroupId : undefined,
+        customIcon: archivedGroup.customIcon,
       };
 
+      // サブグループを復元
+      const restoredSubgroups: WorkspaceGroup[] = archivedSubgroups.map((sg) => ({
+        id: sg.id,
+        displayName: sg.displayName,
+        color: sg.color,
+        order: sg.order,
+        collapsed: sg.collapsed,
+        createdAt: sg.createdAt,
+        parentGroupId: sg.parentGroupId,
+        customIcon: sg.customIcon,
+      }));
+
       // アイテムを復元（アーカイブ関連プロパティを削除）
-      const restoredItems: WorkspaceItem[] = groupArchivedItems.map((item, index) => {
+      const restoredItems: WorkspaceItem[] = allArchivedItems.map((item, index) => {
         const {
           archivedAt: _archivedAt,
           archivedGroupId: _archivedGroupId,
@@ -185,24 +233,29 @@ export class WorkspaceArchiveManager {
       });
 
       // ワークスペースに追加
-      const updatedGroups = [...currentGroups, restoredGroup];
+      const updatedGroups = [...currentGroups, restoredGroup, ...restoredSubgroups];
       const updatedItems = [...currentItems, ...restoredItems];
 
       this.store.set('groups', updatedGroups);
       this.store.set('items', updatedItems);
 
       // アーカイブから削除
-      const remainingArchivedGroups = archivedGroups.filter((g) => g.id !== groupId);
+      const remainingArchivedGroups = archivedGroups.filter((g) => !allArchivedGroupIds.has(g.id));
       const remainingArchivedItems = archivedItems.filter(
-        (item) => item.archivedGroupId !== groupId
+        (item) => !allArchivedGroupIds.has(item.archivedGroupId)
       );
 
       this.archiveStore.set('groups', remainingArchivedGroups);
       this.archiveStore.set('items', remainingArchivedItems);
 
       logger.info(
-        { groupId, groupName: restoredGroupName, itemCount: restoredItems.length },
-        'Restored group and its items from archive'
+        {
+          groupId,
+          groupName: restoredGroupName,
+          itemCount: restoredItems.length,
+          subgroupCount: restoredSubgroups.length,
+        },
+        'Restored group (with descendants) and its items from archive'
       );
 
       return { restoredGroup, restoredItems };
@@ -210,6 +263,20 @@ export class WorkspaceArchiveManager {
       logger.error({ error, groupId }, 'Failed to restore group from archive');
       throw error;
     }
+  }
+
+  /**
+   * アーカイブ内の子孫サブグループを再帰的に検索
+   */
+  private findArchivedDescendantGroups(
+    groupId: string,
+    archivedGroups: ArchivedWorkspaceGroup[]
+  ): ArchivedWorkspaceGroup[] {
+    const children = archivedGroups.filter((g) => g.parentGroupId === groupId);
+    return children.flatMap((child) => [
+      child,
+      ...this.findArchivedDescendantGroups(child.id, archivedGroups),
+    ]);
   }
 
   /**

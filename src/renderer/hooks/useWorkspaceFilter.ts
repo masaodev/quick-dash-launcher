@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import type { WorkspaceGroup, WorkspaceItem } from '@common/types';
+import { getAncestorGroupIds, getDescendantGroupIds } from '@common/utils/groupTreeUtils';
 
 export type FilterScope = 'all' | 'group' | 'item';
 
@@ -25,15 +26,34 @@ export function useWorkspaceFilter(
     const itemVisibility = new Map<string, boolean>();
     let showUncategorized = false;
 
+    /** グループIDとその全祖先をvisibleGroupIdsに追加 */
+    function addGroupWithAncestors(groupId: string): void {
+      visibleGroupIds.add(groupId);
+      for (const ancestorId of getAncestorGroupIds(groupId, groups)) {
+        visibleGroupIds.add(ancestorId);
+      }
+    }
+
     const matchedGroupIds = new Set(
       groups.filter((g) => g.displayName.toLowerCase().includes(lower)).map((g) => g.id)
     );
 
+    // グループがマッチした場合、その子孫と祖先も表示対象にする
+    const expandedGroupIds = new Set(matchedGroupIds);
+    for (const gid of matchedGroupIds) {
+      for (const descendantId of getDescendantGroupIds(gid, groups)) {
+        expandedGroupIds.add(descendantId);
+      }
+      for (const ancestorId of getAncestorGroupIds(gid, groups)) {
+        expandedGroupIds.add(ancestorId);
+      }
+    }
+
     switch (filterScope) {
       case 'group':
-        matchedGroupIds.forEach((id) => visibleGroupIds.add(id));
+        expandedGroupIds.forEach((id) => visibleGroupIds.add(id));
         for (const item of items) {
-          itemVisibility.set(item.id, !!(item.groupId && matchedGroupIds.has(item.groupId)));
+          itemVisibility.set(item.id, !!(item.groupId && expandedGroupIds.has(item.groupId)));
         }
         break;
 
@@ -43,7 +63,7 @@ export function useWorkspaceFilter(
           itemVisibility.set(item.id, matches);
           if (matches) {
             if (item.groupId) {
-              visibleGroupIds.add(item.groupId);
+              addGroupWithAncestors(item.groupId);
             } else {
               showUncategorized = true;
             }
@@ -55,12 +75,12 @@ export function useWorkspaceFilter(
       default:
         for (const item of items) {
           const itemMatches = item.displayName.toLowerCase().includes(lower);
-          const groupMatches = !!(item.groupId && matchedGroupIds.has(item.groupId));
+          const groupMatches = !!(item.groupId && expandedGroupIds.has(item.groupId));
 
           if (itemMatches || groupMatches) {
             itemVisibility.set(item.id, true);
             if (item.groupId) {
-              visibleGroupIds.add(item.groupId);
+              addGroupWithAncestors(item.groupId);
             } else if (itemMatches) {
               showUncategorized = true;
             }
@@ -68,7 +88,7 @@ export function useWorkspaceFilter(
             itemVisibility.set(item.id, false);
           }
         }
-        matchedGroupIds.forEach((id) => visibleGroupIds.add(id));
+        expandedGroupIds.forEach((id) => visibleGroupIds.add(id));
         break;
     }
 

@@ -324,8 +324,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // グループ管理
     loadGroups: (): Promise<WorkspaceGroup[]> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_LOAD_GROUPS),
-    createGroup: (name: string, color?: string): Promise<WorkspaceGroup> =>
-      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_CREATE_GROUP, name, color),
+    createGroup: (name: string, color?: string, parentGroupId?: string): Promise<WorkspaceGroup> =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_CREATE_GROUP, name, color, parentGroupId),
     updateGroup: (id: string, updates: Partial<WorkspaceGroup>): Promise<{ success: boolean }> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_UPDATE_GROUP, id, updates),
     deleteGroup: (id: string, deleteItems: boolean): Promise<{ success: boolean }> =>
@@ -461,8 +461,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onWorkspaceMenuRemoveItem: (callback: (itemId: string) => void) =>
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_MENU_REMOVE_ITEM, callback),
   // WorkspaceGroupContextMenu
-  showWorkspaceGroupContextMenu: (group: WorkspaceGroup): Promise<void> =>
-    ipcRenderer.invoke(IPC_CHANNELS.SHOW_WORKSPACE_GROUP_CONTEXT_MENU, group),
+  showWorkspaceGroupContextMenu: (group: WorkspaceGroup, canAddSubgroup: boolean): Promise<void> =>
+    ipcRenderer.invoke(IPC_CHANNELS.SHOW_WORKSPACE_GROUP_CONTEXT_MENU, group, canAddSubgroup),
   onWorkspaceGroupMenuRename: (callback: (groupId: string) => void) =>
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_RENAME, callback),
   onWorkspaceGroupMenuShowColorPicker: (callback: (groupId: string) => void) =>
@@ -482,6 +482,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_ARCHIVE, callback),
   onWorkspaceGroupMenuDelete: (callback: (groupId: string) => void) =>
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_DELETE, callback),
+  onWorkspaceGroupMenuAddSubgroup: (callback: (groupId: string) => void) =>
+    createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_ADD_SUBGROUP, callback),
+  onWorkspaceGroupMenuChangeIcon: (callback: (groupId: string) => void) =>
+    createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_CHANGE_ICON, callback),
   // ブックマーク自動取込API
   bookmarkAutoImportAPI: {
     getSettings: (): Promise<BookmarkAutoImportSettings> =>

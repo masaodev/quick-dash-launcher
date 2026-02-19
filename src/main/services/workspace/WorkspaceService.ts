@@ -162,10 +162,11 @@ export class WorkspaceService {
 
   public async createGroup(
     name: string,
-    color: string = 'var(--color-primary)'
+    color: string = 'var(--color-primary)',
+    parentGroupId?: string
   ): Promise<WorkspaceGroup> {
     await this.initializeStore();
-    return this.groupManager!.createGroup(name, color);
+    return this.groupManager!.createGroup(name, color, parentGroupId);
   }
 
   public async updateGroup(id: string, updates: Partial<WorkspaceGroup>): Promise<void> {

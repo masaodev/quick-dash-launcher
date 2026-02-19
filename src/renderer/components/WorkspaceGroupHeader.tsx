@@ -5,6 +5,7 @@ interface WorkspaceGroupHeaderProps {
   group: WorkspaceGroup;
   itemCount: number;
   isEditing: boolean;
+  depth: number;
   onToggle: (groupId: string) => void;
   onUpdate: (groupId: string, updates: Partial<WorkspaceGroup>) => void;
   onStartEdit: () => void;
@@ -18,6 +19,7 @@ function WorkspaceGroupHeader({
   group,
   itemCount,
   isEditing,
+  depth,
   onToggle,
   onUpdate,
   onStartEdit,
@@ -72,9 +74,11 @@ function WorkspaceGroupHeader({
     }
   }
 
+  const depthClass = depth > 0 ? ` workspace-group-depth-${depth}` : '';
+
   return (
     <div
-      className="workspace-group-header"
+      className={`workspace-group-header${depthClass}`}
       onClick={() => onToggle(group.id)}
       draggable={!isEditing}
       onDragStart={handleDragStart}
@@ -89,6 +93,8 @@ function WorkspaceGroupHeader({
       >
         ▼
       </span>
+
+      {group.customIcon && <span className="workspace-group-custom-icon">{group.customIcon}</span>}
 
       {isEditing ? (
         <input

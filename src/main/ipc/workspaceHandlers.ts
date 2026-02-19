@@ -385,11 +385,14 @@ export function setupWorkspaceHandlers(): void {
    */
   ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_CREATE_GROUP,
-    async (_event, name: string, color?: string) => {
+    async (_event, name: string, color?: string, parentGroupId?: string) => {
       try {
         const workspaceService = await WorkspaceService.getInstance();
-        const group = await workspaceService.createGroup(name, color);
-        logger.info({ id: group.id, name: group.displayName }, 'Created workspace group');
+        const group = await workspaceService.createGroup(name, color, parentGroupId);
+        logger.info(
+          { id: group.id, name: group.displayName, parentGroupId },
+          'Created workspace group'
+        );
         notifyWorkspaceChanged();
         return group;
       } catch (error) {

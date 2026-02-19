@@ -108,8 +108,16 @@ export function useWorkspaceActions(onDataChanged: () => void) {
   );
 
   const handleAddGroup = withErrorHandling(
-    async (groupCount: number) => api.createGroup(`グループ ${groupCount + 1}`),
+    async (groupCount: number, parentGroupId?: string) =>
+      api.createGroup(`グループ ${groupCount + 1}`, undefined, parentGroupId),
     'Failed to create workspace group:',
+    onDataChanged
+  );
+
+  const handleAddSubgroup = withErrorHandling(
+    async (parentGroupId: string, subgroupCount: number) =>
+      api.createGroup(`サブグループ ${subgroupCount + 1}`, undefined, parentGroupId),
+    'Failed to create workspace subgroup:',
     onDataChanged
   );
 
@@ -136,6 +144,7 @@ export function useWorkspaceActions(onDataChanged: () => void) {
     handleDeleteGroup,
     handleArchiveGroup,
     handleAddGroup,
+    handleAddSubgroup,
     handleMoveItemToGroup,
     handleReorderGroups,
   };
