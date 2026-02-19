@@ -25,17 +25,7 @@ import { calculateModalSize } from './utils/modalSizeManager.js';
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 
-// 環境変数WINDOW_PIN_MODEから初期ピンモードを取得（デフォルト: 'normal'）
-function getInitialWindowPinMode(): WindowPinMode {
-  const envMode = EnvConfig.windowPinMode;
-  const validModes: WindowPinMode[] = ['normal', 'alwaysOnTop', 'stayVisible'];
-
-  if (envMode && validModes.includes(envMode as WindowPinMode)) return envMode as WindowPinMode;
-  if (envMode) windowLogger.warn(`無効なWINDOW_PIN_MODE: ${envMode}, デフォルト'normal'を使用`);
-  return 'normal';
-}
-
-let windowPinMode: WindowPinMode = getInitialWindowPinMode();
+let windowPinMode: WindowPinMode = EnvConfig.windowPinMode ?? 'normal';
 let isEditMode: boolean = false;
 let isFirstLaunchMode: boolean = false;
 let isModalMode: boolean = false;

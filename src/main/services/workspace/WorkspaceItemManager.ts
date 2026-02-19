@@ -12,7 +12,7 @@ import type {
 } from '@common/types';
 import logger from '@common/logger';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
-import { isWindowInfo, isGroupItem, isClipboardItem } from '@common/types/guards';
+import { isWindowInfo, isWindowItem, isGroupItem, isClipboardItem } from '@common/types/guards';
 
 import type { WorkspaceStoreInstance } from './types.js';
 
@@ -48,7 +48,7 @@ export class WorkspaceItemManager {
       const order = this.getNextOrder(items);
       let workspaceItem: WorkspaceItem;
 
-      if (item.type === 'window') {
+      if (isWindowItem(item)) {
         workspaceItem = this.createWindowItem(item, order, groupId);
       } else if (isGroupItem(item)) {
         workspaceItem = this.createGroupItem(item, order, groupId);
@@ -88,67 +88,59 @@ export class WorkspaceItemManager {
     };
   }
 
-  private createWindowItem(item: AppItem, order: number, groupId?: string): WorkspaceItem {
-    const w = item as WindowItem;
-
+  private createWindowItem(item: WindowItem, order: number, groupId?: string): WorkspaceItem {
     return {
-      ...this.createBaseFields(w.displayName, order, groupId),
-      path: `[ウィンドウ操作: ${w.windowTitle}]`,
+      ...this.createBaseFields(item.displayName, order, groupId),
+      path: `[ウィンドウ操作: ${item.windowTitle}]`,
       type: 'windowOperation',
-      processName: w.processName,
-      windowX: w.x,
-      windowY: w.y,
-      windowWidth: w.width,
-      windowHeight: w.height,
-      virtualDesktopNumber: w.virtualDesktopNumber,
-      activateWindow: w.activateWindow,
-      moveToActiveMonitorCenter: w.moveToActiveMonitorCenter,
-      pinToAllDesktops: w.pinToAllDesktops,
+      processName: item.processName,
+      windowX: item.x,
+      windowY: item.y,
+      windowWidth: item.width,
+      windowHeight: item.height,
+      virtualDesktopNumber: item.virtualDesktopNumber,
+      activateWindow: item.activateWindow,
+      moveToActiveMonitorCenter: item.moveToActiveMonitorCenter,
+      pinToAllDesktops: item.pinToAllDesktops,
     };
   }
 
-  private createGroupItem(item: AppItem, order: number, groupId?: string): WorkspaceItem {
-    const g = item as GroupItem;
-
+  private createGroupItem(item: GroupItem, order: number, groupId?: string): WorkspaceItem {
     logger.info(
-      { groupName: g.displayName, itemNamesLength: g.itemNames.length },
+      { groupName: item.displayName, itemNamesLength: item.itemNames.length },
       'Adding group item to workspace'
     );
 
     return {
-      ...this.createBaseFields(g.displayName, order, groupId),
-      path: `[グループ: ${g.itemNames.length}件]`,
+      ...this.createBaseFields(item.displayName, order, groupId),
+      path: `[グループ: ${item.itemNames.length}件]`,
       type: 'group',
-      itemNames: g.itemNames,
+      itemNames: item.itemNames,
     };
   }
 
-  private createClipboardItem(item: AppItem, order: number, groupId?: string): WorkspaceItem {
-    const c = item as ClipboardItem;
-
+  private createClipboardItem(item: ClipboardItem, order: number, groupId?: string): WorkspaceItem {
     return {
-      ...this.createBaseFields(c.displayName, order, groupId),
-      path: `[クリップボード: ${c.preview?.substring(0, 20) || 'データ'}...]`,
+      ...this.createBaseFields(item.displayName, order, groupId),
+      path: `[クリップボード: ${item.preview?.substring(0, 20) || 'データ'}...]`,
       type: 'clipboard',
-      customIcon: c.customIcon,
-      clipboardDataRef: c.clipboardDataRef,
-      clipboardFormats: c.formats,
-      clipboardSavedAt: c.savedAt,
-      memo: c.memo,
+      customIcon: item.customIcon,
+      clipboardDataRef: item.clipboardDataRef,
+      clipboardFormats: item.formats,
+      clipboardSavedAt: item.savedAt,
+      memo: item.memo,
     };
   }
 
-  private createLauncherItem(item: AppItem, order: number, groupId?: string): WorkspaceItem {
-    const l = item as LauncherItem;
-
+  private createLauncherItem(item: LauncherItem, order: number, groupId?: string): WorkspaceItem {
     return {
-      ...this.createBaseFields(l.displayName, order, groupId),
-      path: l.path,
-      type: l.type as 'url' | 'file' | 'folder' | 'app' | 'customUri',
-      customIcon: l.customIcon,
-      args: l.args,
-      originalPath: l.originalPath,
-      windowConfig: l.windowConfig,
+      ...this.createBaseFields(item.displayName, order, groupId),
+      path: item.path,
+      type: item.type,
+      customIcon: item.customIcon,
+      args: item.args,
+      originalPath: item.originalPath,
+      windowConfig: item.windowConfig,
     };
   }
 

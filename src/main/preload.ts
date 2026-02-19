@@ -33,6 +33,7 @@ import type {
   BookmarkWithFolder,
   SnapshotInfo,
   BackupStatus,
+  RegisterItem,
 } from '@common/types';
 import type { EditableJsonItem, LoadEditableItemsResult } from '@common/types/editableItem';
 import { IPC_CHANNELS } from '@common/ipcChannels';
@@ -48,13 +49,6 @@ function createEventListenerNoArg(channel: string, callback: () => void): () => 
   const listener = () => callback();
   ipcRenderer.on(channel, listener);
   return () => ipcRenderer.removeListener(channel, listener);
-}
-
-interface RegisterItem {
-  filePath: string;
-  displayName: string;
-  itemType: 'url' | 'file' | 'folder' | 'app' | 'customUri';
-  fullArgs?: string;
 }
 
 interface UpdateItemByIdRequest {

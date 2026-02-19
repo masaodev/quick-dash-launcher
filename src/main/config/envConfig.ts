@@ -2,7 +2,7 @@
  * 環境変数の一元管理（メインプロセス専用）
  */
 
-export type WindowPinMode = 'none' | 'auto';
+import type { WindowPinMode } from '@common/types';
 
 export class EnvConfig {
   // 開発モード
@@ -32,7 +32,7 @@ export class EnvConfig {
   // ウィンドウ設定
   static get windowPinMode(): WindowPinMode | undefined {
     const mode = process.env.WINDOW_PIN_MODE;
-    if (mode === 'none' || mode === 'auto') {
+    if (mode === 'normal' || mode === 'alwaysOnTop' || mode === 'stayVisible') {
       return mode;
     }
     return undefined;
