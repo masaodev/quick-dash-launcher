@@ -47,8 +47,8 @@ export function createDetachedGroupWindow(
 
   // カーソル位置が指定されている場合、その付近にウィンドウを配置
   if (cursorX !== undefined && cursorY !== undefined) {
-    windowOptions.x = Math.round(cursorX - windowWidth / 2);
-    windowOptions.y = Math.round(cursorY - windowHeight / 4);
+    windowOptions.x = Math.max(0, Math.round(cursorX - windowWidth / 2));
+    windowOptions.y = Math.max(0, Math.round(cursorY - windowHeight / 4));
   }
 
   const win = new BrowserWindow(windowOptions);
