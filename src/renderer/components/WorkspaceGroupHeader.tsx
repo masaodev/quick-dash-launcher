@@ -6,6 +6,8 @@ interface WorkspaceGroupHeaderProps {
   itemCount: number;
   isEditing: boolean;
   depth: number;
+  isDetachedRoot?: boolean;
+  onCloseDetached?: () => void;
   /** 現在ドラッグ中の要素情報（null=ドラッグなし） */
   draggedElement: { id: string; kind: 'item' | 'group' } | null;
   /** このグループにネスト可能か（深さ制限チェック済み） */
@@ -14,6 +16,7 @@ interface WorkspaceGroupHeaderProps {
   onUpdate: (groupId: string, updates: Partial<WorkspaceGroup>) => void;
   onStartEdit: () => void;
   onGroupDragStart: (e: React.DragEvent) => void;
+  onGroupDragEnd?: (e: React.DragEvent, groupId: string) => void;
   onGroupDragOverForReorder: (e: React.DragEvent) => void;
   onGroupDropForReorder: (e: React.DragEvent, dropZone: GroupDropZone) => void;
   onContextMenu: (e: React.MouseEvent) => void;
@@ -24,12 +27,15 @@ function WorkspaceGroupHeader({
   itemCount,
   isEditing,
   depth,
+  isDetachedRoot,
+  onCloseDetached,
   draggedElement,
   canNest,
   onToggle,
   onUpdate,
   onStartEdit,
   onGroupDragStart,
+  onGroupDragEnd,
   onGroupDragOverForReorder,
   onGroupDropForReorder,
   onContextMenu,
@@ -80,6 +86,10 @@ function WorkspaceGroupHeader({
     onGroupDragStart(e);
   }
 
+  function handleDragEnd(e: React.DragEvent): void {
+    onGroupDragEnd?.(e, group.id);
+  }
+
   /** ドロップゾーンを計算: ヘッダー内のマウスY位置に応じて before/nest/after を判定 */
   function calculateDropZone(e: React.DragEvent): GroupDropZone | null {
     // グループドラッグ以外はゾーン表示しない
@@ -127,11 +137,12 @@ function WorkspaceGroupHeader({
 
   return (
     <div
-      className={`workspace-group-header${depthClass}`}
+      className={`workspace-group-header${depthClass}${isDetachedRoot ? ' detached-root' : ''}`}
       data-drop-zone={dropZone || undefined}
       onClick={() => onToggle(group.id)}
-      draggable={!isEditing}
+      draggable={!isEditing && !isDetachedRoot}
       onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -174,6 +185,19 @@ function WorkspaceGroupHeader({
       )}
 
       <span className="workspace-group-badge">{itemCount}個</span>
+
+      {isDetachedRoot && onCloseDetached && (
+        <button
+          className="detached-group-close-btn"
+          onClick={(e) => {
+            e.stopPropagation();
+            onCloseDetached();
+          }}
+          title="閉じる"
+        >
+          ×
+        </button>
+      )}
     </div>
   );
 }

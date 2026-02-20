@@ -167,6 +167,11 @@ export const IPC_CHANNELS = {
   WORKSPACE_RESTORE_GROUP: 'workspace:restore-group',
   WORKSPACE_DELETE_ARCHIVED_GROUP: 'workspace:delete-archived-group',
 
+  // ワークスペース - 切り離しウィンドウ
+  WORKSPACE_DETACH_GROUP: 'workspace:detach-group',
+  WORKSPACE_CLOSE_DETACHED_GROUP: 'workspace:close-detached-group',
+  WORKSPACE_RESIZE_CALLER_WINDOW: 'workspace:resize-caller-window',
+
   // ワークスペース - イベント
   WORKSPACE_CHANGED: 'workspace-changed',
 

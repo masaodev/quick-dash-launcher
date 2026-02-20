@@ -224,6 +224,14 @@ export interface ElectronAPI {
     setPositionMode: (mode: WorkspacePositionMode) => Promise<boolean>;
     // ウィンドウ制御
     hideWindow: () => Promise<boolean>;
+    // 切り離しウィンドウ
+    detachGroup: (
+      groupId: string,
+      cursorX?: number,
+      cursorY?: number
+    ) => Promise<{ success: boolean }>;
+    closeDetachedGroup: (groupId: string) => Promise<{ success: boolean }>;
+    resizeCallerWindow: (width: number, height: number) => Promise<boolean>;
   };
   // ウィンドウ検索API
   getWindowList: () => Promise<WindowInfo[]>;

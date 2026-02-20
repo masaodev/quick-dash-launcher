@@ -1,4 +1,4 @@
-import { ipcMain, app, clipboard, screen } from 'electron';
+import { ipcMain, app, clipboard, screen, BrowserWindow } from 'electron';
 import type { WindowPinMode, WorkspacePositionMode } from '@common/types';
 import { windowLogger } from '@common/logger';
 import { IPC_CHANNELS } from '@common/ipcChannels';
@@ -24,6 +24,10 @@ import {
   getWorkspaceWindow,
   setWorkspacePosition,
 } from '../workspaceWindowManager.js';
+import {
+  createDetachedGroupWindow,
+  closeDetachedGroupWindow,
+} from '../detachedGroupWindowManager.js';
 import { getTray } from '../windowManager.js';
 
 export function setupWindowHandlers(
@@ -147,6 +151,29 @@ export function setupWindowHandlers(
         height: Math.round(height),
       });
       windowLogger.info(`Workspace position and size set to ${width}x${height} at (${x}, ${y})`);
+      return true;
+    }
+  );
+
+  // 切り離しウィンドウ
+  ipcMain.handle(
+    IPC_CHANNELS.WORKSPACE_DETACH_GROUP,
+    (_event, groupId: string, cursorX?: number, cursorY?: number) =>
+      createDetachedGroupWindow(groupId, cursorX, cursorY)
+  );
+
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_CLOSE_DETACHED_GROUP, (_event, groupId: string) =>
+    closeDetachedGroupWindow(groupId)
+  );
+
+  ipcMain.handle(
+    IPC_CHANNELS.WORKSPACE_RESIZE_CALLER_WINDOW,
+    (event, width: number, height: number) => {
+      const win = BrowserWindow.fromWebContents(event.sender);
+      if (!win || win.isDestroyed()) return false;
+
+      const { x, y } = win.getBounds();
+      win.setBounds({ x, y, width: Math.round(width), height: Math.round(height) });
       return true;
     }
   );
