@@ -165,6 +165,9 @@ export interface DropTargetData {
   itemId?: string;
 }
 
+/** グループヘッダーのドロップゾーン（Y位置に応じた操作区別） */
+export type GroupDropZone = 'before' | 'nest' | 'after';
+
 /** 親グループ内の混在要素（サブグループまたはアイテム） */
 export type MixedChild =
   | { kind: 'group'; group: WorkspaceGroup }

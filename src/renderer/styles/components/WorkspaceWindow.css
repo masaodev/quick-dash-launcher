@@ -487,6 +487,35 @@ html:has(.workspace-window.background-transparent) {
   filter: brightness(1.05);
 }
 
+/* ドロップゾーンインジケーター: before/after 共通（位置ライン） */
+.workspace-group-header[data-drop-zone="before"]::before,
+.workspace-group-header[data-drop-zone="after"]::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background-color: var(--color-danger);
+  border-radius: 2px;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.workspace-group-header[data-drop-zone="before"]::before {
+  top: -2px;
+}
+
+.workspace-group-header[data-drop-zone="after"]::after {
+  bottom: -2px;
+}
+
+/* ドロップゾーンインジケーター: 中に入れる（ヘッダーハイライト） */
+.workspace-group-header[data-drop-zone="nest"] {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+  filter: brightness(1.1);
+}
+
 /* 折りたたみアイコン */
 .workspace-group-collapse-icon {
   font-size: var(--font-size-xs);
@@ -543,7 +572,7 @@ html:has(.workspace-window.background-transparent) {
 
 /* サブグループ・アイテム混在コンテナ */
 .workspace-group-mixed-children {
-  margin-left: var(--spacing-md);
+  padding-left: var(--spacing-md);
   margin-top: 2px;
 }
 
@@ -557,36 +586,80 @@ html:has(.workspace-window.background-transparent) {
   display: none;
 }
 
-/* ==================== サブグループ階層スタイル ==================== */
+/* ==================== サブグループ階層スタイル（ツリーライン） ==================== */
 
-/* 深さ1（サブグループ）のヘッダー */
-.workspace-group-header.workspace-group-depth-1 {
-  font-size: 11px;
-  padding: 4px 40px 4px var(--spacing-xs);
+/*
+ * ツリーライン座標の基準値:
+ *   --tree-offset: 疑似要素のleft位置（コネクターの始点）
+ *   --tree-width:  水平コネクター・L字の横幅
+ *
+ * .workspace-group はborderなし → -6px / 4px
+ * .workspace-item-card はborder: 1px → -7px / 5px（border分を外側に補正）
+ */
+.workspace-group-mixed-children > .workspace-group {
+  position: relative;
+  --tree-offset: -6px;
+  --tree-width: 4px;
 }
 
-.workspace-group-depth-1 .workspace-group-name {
-  font-size: 11px;
+.workspace-group-mixed-children > .workspace-item-card {
+  --tree-offset: -7px;
+  --tree-width: 5px;
 }
 
-.workspace-group-depth-1 .workspace-group-badge {
-  font-size: 10px;
-  padding: 1px 6px;
+/* ├ 水平コネクター（非最後の子） */
+.workspace-group-mixed-children > .workspace-group:not(:last-child)::before,
+.workspace-group-mixed-children > .workspace-item-card:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  left: var(--tree-offset);
+  width: var(--tree-width);
+  height: 1px;
+  background-color: var(--color-gray-600);
+  pointer-events: none;
 }
 
-/* 深さ2（サブサブグループ）のヘッダー */
-.workspace-group-header.workspace-group-depth-2 {
-  font-size: 10px;
-  padding: 3px 36px 3px var(--spacing-xs);
+.workspace-group-mixed-children > .workspace-group:not(:last-child)::before {
+  top: 12px;
 }
 
-.workspace-group-depth-2 .workspace-group-name {
-  font-size: 10px;
+.workspace-group-mixed-children > .workspace-item-card:not(:last-child)::before {
+  top: 50%;
 }
 
-.workspace-group-depth-2 .workspace-group-badge {
-  font-size: 9px;
-  padding: 1px 5px;
+/* ├ 垂直トランクライン（非最後の子） */
+.workspace-group-mixed-children > .workspace-group:not(:last-child)::after,
+.workspace-group-mixed-children > .workspace-item-card:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: var(--tree-offset);
+  top: 0;
+  bottom: -3px;
+  width: 1px;
+  background-color: var(--color-gray-600);
+  pointer-events: none;
+}
+
+/* └ L字コネクター（最後の子、角丸） */
+.workspace-group-mixed-children > .workspace-group:last-child::after,
+.workspace-group-mixed-children > .workspace-item-card:last-child::after {
+  content: '';
+  position: absolute;
+  left: var(--tree-offset);
+  top: 0;
+  width: var(--tree-width);
+  border-left: 1px solid var(--color-gray-600);
+  border-bottom: 1px solid var(--color-gray-600);
+  border-bottom-left-radius: 3px;
+  pointer-events: none;
+}
+
+.workspace-group-mixed-children > .workspace-group:last-child::after {
+  height: 12px;
+}
+
+.workspace-group-mixed-children > .workspace-item-card:last-child::after {
+  height: 50%;
 }
 
 /* カスタムアイコン */
@@ -594,14 +667,6 @@ html:has(.workspace-window.background-transparent) {
   font-size: 14px;
   flex-shrink: 0;
   line-height: 1;
-}
-
-.workspace-group-depth-1 .workspace-group-custom-icon {
-  font-size: 12px;
-}
-
-.workspace-group-depth-2 .workspace-group-custom-icon {
-  font-size: 11px;
 }
 
 /* ==================== アイコンピッカーモーダル ==================== */

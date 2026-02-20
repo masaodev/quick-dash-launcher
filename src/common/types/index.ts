@@ -26,6 +26,7 @@ export type {
   ArchivedWorkspaceItem,
   MixedChild,
   MixedOrderEntry,
+  GroupDropZone,
 } from './workspace';
 
 // データファイル関連の型・定数

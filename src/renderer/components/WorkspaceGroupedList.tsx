@@ -1,7 +1,20 @@
 import React from 'react';
-import type { AppItem, WorkspaceItem, WorkspaceGroup, MixedOrderEntry } from '@common/types';
+import type {
+  AppItem,
+  WorkspaceItem,
+  WorkspaceGroup,
+  MixedChild,
+  MixedOrderEntry,
+  GroupDropZone,
+} from '@common/types';
 import { PathUtils } from '@common/utils/pathUtils';
-import { canCreateSubgroup, type GroupTreeNode } from '@common/utils/groupTreeUtils';
+import {
+  canCreateSubgroup,
+  getSubtreeMaxDepth,
+  getGroupDepth,
+  MAX_GROUP_DEPTH,
+  type GroupTreeNode,
+} from '@common/utils/groupTreeUtils';
 
 import { useWorkspaceItemGroups } from '../hooks/workspace';
 import { logError } from '../utils/debug';
@@ -368,9 +381,69 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     }
   };
 
-  /** 混在ドロップハンドラー: 同一親内でサブグループとアイテムを混在並べ替え（未分類セクションにも対応） */
+  /**
+   * グループをターゲットのネスト先に移動できるかチェック
+   * ドラッグ元のサブツリー深さ + ターゲットの深さが制限を超えないか確認
+   */
+  const canNestGroup = React.useCallback(
+    (draggedGroupId: string, targetGroupId: string): boolean => {
+      // ターゲットがサブグループを作成可能か
+      if (!canCreateSubgroup(targetGroupId, groups)) return false;
+      // ドラッグ元のサブツリー深さを考慮
+      const targetDepth = getGroupDepth(targetGroupId, groups);
+      const draggedSubtreeDepth = getSubtreeMaxDepth(draggedGroupId, groups);
+      return targetDepth + 1 + draggedSubtreeDepth <= MAX_GROUP_DEPTH;
+    },
+    [groups]
+  );
+
+  /** MixedChildからMixedOrderEntryへ変換 */
+  const toMixedEntry = (child: MixedChild): MixedOrderEntry =>
+    child.kind === 'group'
+      ? { id: child.group.id, kind: 'group' }
+      : { id: child.item.id, kind: 'item' };
+
+  /** 親グループIDに応じた並べ替え対象のentries一覧を構築 */
+  const buildEntries = (
+    parentGroupId: string | undefined,
+    dragKind: 'item' | 'group'
+  ): MixedOrderEntry[] => {
+    if (parentGroupId) {
+      return (mixedChildrenByGroup[parentGroupId] || []).map(toMixedEntry);
+    }
+    if (dragKind === 'group') {
+      return groupTree.map((node) => ({ id: node.group.id, kind: 'group' as const }));
+    }
+    return uncategorizedItems.map((item) => ({ id: item.id, kind: 'item' as const }));
+  };
+
+  /**
+   * 配列内の要素を移動する
+   * @param zone 'before' = ターゲットの前, 'after' = ターゲットの後, undefined = ターゲット位置
+   */
+  const reorderEntries = (
+    entries: MixedOrderEntry[],
+    fromIndex: number,
+    toIndex: number,
+    zone?: 'before' | 'after'
+  ): MixedOrderEntry[] => {
+    const result = [...entries];
+    const [moved] = result.splice(fromIndex, 1);
+    // splice後、fromIndex < toIndex なら toIndex が1つ前にずれる
+    const adjusted = fromIndex < toIndex ? toIndex - 1 : toIndex;
+    const insertAt = zone === 'after' ? adjusted + 1 : adjusted;
+    result.splice(insertAt, 0, moved);
+    return result;
+  };
+
+  /** 混在ドロップハンドラー: ドロップゾーンに応じて並べ替えまたはネスト */
   const handleMixedDrop =
-    (targetId: string, targetKind: 'item' | 'group', parentGroupId: string | undefined) =>
+    (
+      targetId: string,
+      targetKind: 'item' | 'group',
+      parentGroupId: string | undefined,
+      dropZone?: GroupDropZone
+    ) =>
     (e: React.DragEvent) => {
       e.preventDefault();
 
@@ -379,18 +452,42 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
         return;
       }
 
-      // グループ→グループのドロップ: サブグループ内では「中に入れる」操作として処理
-      // トップレベル（parentGroupId === undefined）ではグループ同士のドロップは並べ替え
-      const isGroupToGroupInSubLevel =
-        draggedElement.kind === 'group' && targetKind === 'group' && parentGroupId !== undefined;
-      if (isGroupToGroupInSubLevel) {
+      // グループ→グループのドロップでゾーン指定がある場合
+      if (draggedElement.kind === 'group' && targetKind === 'group' && dropZone) {
         e.stopPropagation();
-        onMoveGroupToParent(draggedElement.id, targetId);
+
+        if (dropZone === 'nest') {
+          onMoveGroupToParent(draggedElement.id, targetId);
+          setDraggedElement(null);
+          return;
+        }
+
+        // before/after: 並べ替え処理
+        const draggedParentGroupId = groupsMap.get(draggedElement.id)?.parentGroupId;
+
+        if (draggedParentGroupId !== parentGroupId) {
+          onMoveGroupToParent(draggedElement.id, parentGroupId);
+          setDraggedElement(null);
+          return;
+        }
+
+        const entries = buildEntries(parentGroupId, 'group');
+        const draggedIndex = entries.findIndex(
+          (e) => e.id === draggedElement.id && e.kind === 'group'
+        );
+        const targetIndex = entries.findIndex((e) => e.id === targetId && e.kind === 'group');
+
+        if (draggedIndex === -1 || targetIndex === -1) {
+          setDraggedElement(null);
+          return;
+        }
+
+        onReorderMixed(parentGroupId, reorderEntries(entries, draggedIndex, targetIndex, dropZone));
         setDraggedElement(null);
         return;
       }
 
-      // ドラッグ元の親グループを特定
+      // アイテムドラッグまたはゾーン指定なし: 従来の並べ替え処理
       const draggedParentGroupId =
         draggedElement.kind === 'item'
           ? itemsMap.get(draggedElement.id)?.groupId
@@ -401,43 +498,20 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
         return;
       }
 
-      // 同一親グループ内 → 混在並べ替え（イベント伝播を止める）
       e.stopPropagation();
 
-      // 現在の子要素からentriesを構築
-      let entries: MixedOrderEntry[];
-      if (parentGroupId) {
-        // グループ内: サブグループとアイテムの混在
-        entries = (mixedChildrenByGroup[parentGroupId] || []).map((child) =>
-          child.kind === 'group'
-            ? { id: child.group.id, kind: 'group' as const }
-            : { id: child.item.id, kind: 'item' as const }
-        );
-      } else if (draggedElement.kind === 'group') {
-        // トップレベルグループの並べ替え
-        entries = groupTree.map((node) => ({ id: node.group.id, kind: 'group' as const }));
-      } else {
-        // 未分類アイテムの並べ替え
-        entries = uncategorizedItems.map((item) => ({ id: item.id, kind: 'item' as const }));
-      }
-
+      const entries = buildEntries(parentGroupId, draggedElement.kind);
       const draggedIndex = entries.findIndex(
-        (entry) => entry.id === draggedElement.id && entry.kind === draggedElement.kind
+        (e) => e.id === draggedElement.id && e.kind === draggedElement.kind
       );
-      const targetIndex = entries.findIndex(
-        (entry) => entry.id === targetId && entry.kind === targetKind
-      );
+      const targetIndex = entries.findIndex((e) => e.id === targetId && e.kind === targetKind);
 
       if (draggedIndex === -1 || targetIndex === -1) {
         setDraggedElement(null);
         return;
       }
 
-      const newEntries = [...entries];
-      const [moved] = newEntries.splice(draggedIndex, 1);
-      newEntries.splice(targetIndex, 0, moved);
-
-      onReorderMixed(parentGroupId, newEntries);
+      onReorderMixed(parentGroupId, reorderEntries(entries, draggedIndex, targetIndex));
       setDraggedElement(null);
     };
 
@@ -616,6 +690,12 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
           depth={node.depth}
           isDetachedRoot={isDetachedRoot}
           onCloseDetached={onCloseDetached}
+          draggedElement={draggedElement}
+          canNest={
+            draggedElement?.kind === 'group'
+              ? canNestGroup(draggedElement.id, node.group.id)
+              : false
+          }
           onToggle={handleGroupToggle}
           onUpdate={onUpdateGroup}
           onStartEdit={() =>
@@ -624,7 +704,9 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
           onGroupDragStart={handleMixedDragStart(node.group.id, 'group')}
           onGroupDragEnd={handleGroupDragEndForDetach}
           onGroupDragOverForReorder={handleMixedDragOver}
-          onGroupDropForReorder={handleMixedDrop(node.group.id, 'group', node.group.parentGroupId)}
+          onGroupDropForReorder={(e, dropZone) =>
+            handleMixedDrop(node.group.id, 'group', node.group.parentGroupId, dropZone)(e)
+          }
           onContextMenu={handleGroupContextMenu(node.group)}
         />
         {!node.group.collapsed && (
