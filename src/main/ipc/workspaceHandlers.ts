@@ -11,6 +11,7 @@ import { WorkspaceService } from '../services/workspace/index.js';
 import PathManager from '../config/pathManager.js';
 import { getIconForItem } from '../services/iconService.js';
 
+import { closeDetachedGroupWindow } from '../detachedGroupWindowManager.js';
 import { loadDataFiles } from './dataHandlers.js';
 
 /**
@@ -430,6 +431,7 @@ export function setupWorkspaceHandlers(): void {
       try {
         const workspaceService = await WorkspaceService.getInstance();
         await workspaceService.deleteGroup(id, deleteItems);
+        closeDetachedGroupWindow(id);
         logger.info({ id, deleteItems }, 'Deleted workspace group');
         notifyWorkspaceChanged();
         return { success: true };
@@ -541,6 +543,7 @@ export function setupWorkspaceHandlers(): void {
     try {
       const workspaceService = await WorkspaceService.getInstance();
       await workspaceService.archiveGroup(groupId);
+      closeDetachedGroupWindow(groupId);
       logger.info({ groupId }, 'Archived workspace group');
       notifyWorkspaceChanged();
       return { success: true };
