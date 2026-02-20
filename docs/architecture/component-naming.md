@@ -24,3 +24,15 @@ Rendererプロセス（`src/renderer/`）のコンポーネント命名規則を
 2. **ビジネスロジックを持たない純粋なUI部品**（ダイアログ、入力部品など）
 
 例：`AlertDialog`, `ConfirmDialog`, `ColorPicker`, `HotkeyInput`, `RegisterModal`
+
+## 既知の例外（命名規則未適用）
+
+以下のコンポーネントは管理ウィンドウ専用かつビジネスロジックを持つが、プレフィックスが付いていない。新規作成時は `Admin*` プレフィックスを使用すること。
+
+| コンポーネント | 使用箇所 | 本来あるべきプレフィックス |
+|---------------|---------|--------------------------|
+| `BookmarkAutoImportSettings` | `AdminSettingsTab` | `Admin*` |
+| `BackupSnapshotModal` | `AdminSettingsTab` | `Admin*` |
+| `BookmarkAutoImportRuleModal` | `BookmarkAutoImportSettings` | `Admin*` |
+| `BookmarkImportModal` | `AdminItemManagerView` | `Admin*` |
+| `AppImportModal` | `AdminItemManagerView` | `Admin*` |

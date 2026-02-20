@@ -96,7 +96,7 @@ QuickDashLauncherのApp IDは`net.masaodev.quick-dash-launcher`です。
 1. アイコン抽出の失敗
 2. キャッシュディレクトリへのアクセス権限
 **解決策**:
-- `%APPDATA%/quick-dash-launcher/config/favicons/`ディレクトリの権限を確認
+- `%APPDATA%/quick-dash-launcher/config/icon-cache/favicons/`ディレクトリの権限を確認
 - コンソールログでアイコン抽出エラーを確認
 
 ### 依存関係の問題

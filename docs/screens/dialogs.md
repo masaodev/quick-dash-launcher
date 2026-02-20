@@ -141,7 +141,7 @@
 `danger={true}`を指定すると、以下の変更が適用されます：
 
 - ダイアログに`confirm-danger`クラスが追加
-- 確認ボタンに`danger-button`クラスが適用（赤色系の強調表示）
+- 確認ボタンに`btn-danger`バリアントが適用（赤色系の強調表示）
 - 削除操作など、元に戻せない操作の確認に使用
 
 ### キーボード操作
@@ -302,20 +302,28 @@
 .modal-overlay {
   /* 画面全体を覆う半透明の背景 */
   position: fixed;
-  inset: 0;
-  background-color: var(--overlay-background);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: var(--z-modal);
+  backdrop-filter: blur(2px);
 }
 
 .modal-content {
   /* ダイアログ本体のベーススタイル */
-  background-color: var(--modal-background);
-  border-radius: var(--border-radius-md);
-  box-shadow: var(--shadow-large);
-  padding: var(--spacing-md);
+  background-color: var(--color-white);
+  border-radius: var(--border-radius-xl);
+  box-shadow: var(--shadow-xl);
+  max-width: 600px;
+  width: 90%;
+  max-height: var(--modal-max-height);
+  display: flex;
+  flex-direction: column;
 }
 ```
 
@@ -328,7 +336,8 @@
   display: flex;
   justify-content: flex-end;
   gap: var(--spacing-sm);
-  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-lg);
+  border-top: var(--border-light);
 }
 ```
 

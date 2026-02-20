@@ -9,8 +9,9 @@ QuickDashLauncherのワークスペース機能で使用されるデータファ
 | ファイル名 | 用途 | 保存場所 |
 |-----------|------|---------|
 | **workspace.json** | ワークスペースアイテムとグループ | `%APPDATA%/quick-dash-launcher/config/` |
-| **execution-history.json** | アイテム実行履歴（最大10件） | `%APPDATA%/quick-dash-launcher/config/` |
 | **workspace-archive.json** | アーカイブされたグループとアイテム | `%APPDATA%/quick-dash-launcher/config/` |
+
+> **注意**: `execution-history.json` はメインプロセスには実装されていません。`ExecutionHistoryItem` 型はレンダラーサイドのみで使用されるメモリ上のデータです。
 
 ### 1.2. 文字エンコーディング
 
@@ -32,7 +33,7 @@ QuickDashLauncherのワークスペース機能で使用されるデータファ
       "displayName": "表示名",
       "originalName": "元の名前",
       "path": "パスまたはURL",
-      "type": "url | file | folder | app | customUri | windowOperation | group",
+      "type": "url | file | folder | app | customUri | windowOperation | group | clipboard",
       "customIcon": "カスタムアイコンファイル名（オプション）",
       "args": "引数（オプション）",
       "originalPath": "ショートカットのリンク先（オプション）",
@@ -40,6 +41,11 @@ QuickDashLauncherのワークスペース機能で使用されるデータファ
       "order": 0,
       "addedAt": 1234567890,
       "groupId": "グループID（オプション）",
+      "label": "グループラベル（廃止予定、オプション）",
+      "memo": "自由記述メモ（オプション）",
+      "clipboardDataRef": "クリップボードデータファイルへの参照（clipboard専用、オプション）",
+      "clipboardFormats": ["text", "html"],
+      "clipboardSavedAt": 1234567890,
       "windowConfig": {
         "title": "ウィンドウタイトル（ワイルドカード対応）",
         "processName": "プロセス名（オプション）",
@@ -75,7 +81,7 @@ QuickDashLauncherのワークスペース機能で使用されるデータファ
 | **displayName** | string | ✓ | ワークスペース内での表示名（編集可能） |
 | **originalName** | string | ✓ | 元のアイテム名（参照用） |
 | **path** | string | ✓ | アイテムのパス、URL、またはコマンド |
-| **type** | string | ✓ | アイテムタイプ（url, file, folder, app, customUri, windowOperation, group） |
+| **type** | string | ✓ | アイテムタイプ（url, file, folder, app, customUri, windowOperation, group, clipboard） |
 | **icon** | string | - | アイコン（実行時にキャッシュから取得、**ファイルには保存しない**） |
 | **customIcon** | string | - | カスタムアイコンファイル名（オプション） |
 | **args** | string | - | 実行時のコマンドライン引数（オプション） |
@@ -83,8 +89,13 @@ QuickDashLauncherのワークスペース機能で使用されるデータファ
 | **order** | number | ✓ | 並び順（0から開始） |
 | **addedAt** | number | ✓ | 追加日時（timestamp） |
 | **groupId** | string | - | 所属グループID（未設定の場合は未分類） |
+| **label** | string | - | グループラベル（将来的な拡張用、廃止予定） |
 | **windowConfig** | object | - | ウィンドウ制御設定（オプション） |
 | **itemNames** | string[] | - | グループ内のアイテム名リスト（group専用） |
+| **memo** | string | - | 自由記述メモ（オプション） |
+| **clipboardDataRef** | string | - | クリップボードデータファイルへの参照（clipboard専用） |
+| **clipboardFormats** | string[] | - | クリップボードの保存フォーマット（clipboard専用、text/html/rtf/image/file） |
+| **clipboardSavedAt** | number | - | クリップボードの保存日時（clipboard専用、timestamp） |
 | **windowX** | number | - | ウィンドウX座標（windowOperation専用） |
 | **windowY** | number | - | ウィンドウY座標（windowOperation専用） |
 | **windowWidth** | number | - | ウィンドウ幅（windowOperation専用） |
@@ -116,42 +127,25 @@ QuickDashLauncherのワークスペース機能で使用されるデータファ
 
 ---
 
-## 3. execution-history.json
+## 3. ExecutionHistoryItem 型（レンダラー専用）
 
-アイテムの実行履歴を保存するJSONファイル（最大10件）。
+> **実装上の注意**: `execution-history.json` というファイルはメインプロセスに実装されていません。`ExecutionHistoryItem` 型は `src/common/types/workspace.ts` で定義されていますが、レンダラーサイドのメモリ上でのみ使用されます。ファイルへの永続化は行われません。
 
-### 3.1. ファイル構造
-
-```json
-{
-  "history": [
-    {
-      "id": "uuid",
-      "itemName": "アイテム名",
-      "itemPath": "パスまたはURL",
-      "itemType": "url | file | folder | app | customUri | group | windowOperation",
-      "customIcon": "カスタムアイコンファイル名（オプション）",
-      "args": "引数（オプション）",
-      "itemNames": ["アイテム名1", "アイテム名2"],
-      "executedAt": 1234567890
-    }
-  ]
-}
-```
-
-### 3.2. ExecutionHistoryItem フィールド
+### 3.1. ExecutionHistoryItem フィールド
 
 | フィールド | 型 | 必須 | 説明 |
 |-----------|-----|------|------|
 | **id** | string | ✓ | 履歴アイテムの一意識別子（UUID） |
 | **itemName** | string | ✓ | アイテム名 |
 | **itemPath** | string | ✓ | アイテムのパス、URL、またはコマンド |
-| **itemType** | string | ✓ | アイテムタイプ |
+| **itemType** | string | ✓ | アイテムタイプ（url, file, folder, app, customUri, group, windowOperation, clipboard） |
 | **icon** | string | - | アイコン（実行時にキャッシュから取得、**ファイルには保存しない**） |
 | **customIcon** | string | - | カスタムアイコンファイル名（オプション） |
 | **args** | string | - | 実行時のコマンドライン引数（オプション） |
 | **executedAt** | number | ✓ | 実行日時（timestamp） |
 | **itemNames** | string[] | - | グループ内のアイテム名リスト（group専用） |
+| **clipboardDataRef** | string | - | クリップボードデータファイルへの参照（clipboard専用） |
+| **clipboardFormats** | string[] | - | クリップボードの保存フォーマット（clipboard専用、text/html/rtf/image/file） |
 | **windowX** | number | - | ウィンドウX座標（windowOperation専用） |
 | **windowY** | number | - | ウィンドウY座標（windowOperation専用） |
 | **windowWidth** | number | - | ウィンドウ幅（windowOperation専用） |
@@ -161,14 +155,6 @@ QuickDashLauncherのワークスペース機能で使用されるデータファ
 | **processName** | string | - | プロセス名で検索（windowOperation専用） |
 | **moveToActiveMonitorCenter** | boolean | - | アクティブモニターの中央に移動（windowOperation専用） |
 | **pinToAllDesktops** | boolean | - | 全仮想デスクトップにピン止め（windowOperation専用） |
-
-### 3.3. 特徴
-
-- 最大10件まで保持
-- 古い履歴から自動削除
-- メイン画面でアイテムを起動するたびに自動追加
-- **v0.5.19以降**: `itemType` に `'group'` が追加され、グループアイテムの実行履歴も記録可能
-- **v0.5.19以降**: `itemNames` フィールドはグループアイテム専用（`itemType='group'` の場合のみ使用）
 
 ---
 
@@ -199,7 +185,7 @@ QuickDashLauncherのワークスペース機能で使用されるデータファ
       "displayName": "表示名",
       "originalName": "元の名前",
       "path": "パスまたはURL",
-      "type": "url | file | folder | app | customUri | windowOperation | group",
+      "type": "url | file | folder | app | customUri | windowOperation | group | clipboard",
       "customIcon": "カスタムアイコンファイル名（オプション）",
       "args": "引数（オプション）",
       "originalPath": "ショートカットのリンク先（オプション）",
@@ -260,7 +246,7 @@ export interface WorkspaceItem {
   /** アイテムのパス、URL、またはコマンド */
   path: string;
   /** アイテムのタイプ */
-  type: 'url' | 'file' | 'folder' | 'app' | 'customUri' | 'windowOperation' | 'group';
+  type: 'url' | 'file' | 'folder' | 'app' | 'customUri' | 'windowOperation' | 'group' | 'clipboard';
   /** アイテムのアイコン（実行時にキャッシュから取得、ファイルには保存しない） */
   icon?: string;
   /** カスタムアイコンのファイル名（オプション） */
@@ -275,10 +261,20 @@ export interface WorkspaceItem {
   addedAt: number;
   /** 所属グループID（未設定の場合はundefined = 未分類） */
   groupId?: string;
+  /** グループラベル（将来的な拡張用、廃止予定） */
+  label?: string;
   /** ウィンドウ制御設定（ウィンドウ検索・位置・サイズ制御） */
-  windowConfig?: WindowConfig;
+  windowConfig?: import('./launcher').WindowConfig;
   /** グループ内のアイテム名リスト（group専用） */
   itemNames?: string[];
+  /** 自由記述メモ（オプション） */
+  memo?: string;
+  /** クリップボードデータファイルへの参照（clipboard専用） */
+  clipboardDataRef?: string;
+  /** クリップボードの保存フォーマット（clipboard専用） */
+  clipboardFormats?: ClipboardFormat[];
+  /** クリップボードの保存日時（clipboard専用） */
+  clipboardSavedAt?: number;
   // ... windowOperation専用フィールド（windowX, windowY等）
 }
 ```
@@ -321,7 +317,15 @@ export interface ExecutionHistoryItem {
   /** アイテムのパス、URL、またはコマンド */
   itemPath: string;
   /** アイテムのタイプ */
-  itemType: 'url' | 'file' | 'folder' | 'app' | 'customUri' | 'group' | 'windowOperation';
+  itemType:
+    | 'url'
+    | 'file'
+    | 'folder'
+    | 'app'
+    | 'customUri'
+    | 'group'
+    | 'windowOperation'
+    | 'clipboard';
   /** アイテムのアイコン（実行時にキャッシュから取得、ファイルには保存しない） */
   icon?: string;
   /** カスタムアイコンのファイル名（オプション） */
@@ -332,6 +336,10 @@ export interface ExecutionHistoryItem {
   executedAt: number;
   /** グループ内のアイテム名リスト（group専用） */
   itemNames?: string[];
+  /** クリップボードデータファイルへの参照（clipboard専用） */
+  clipboardDataRef?: string;
+  /** クリップボードの保存フォーマット（clipboard専用） */
+  clipboardFormats?: ClipboardFormat[];
   // ... windowOperation専用フィールド（windowX, windowY等）
 }
 ```
@@ -402,8 +410,7 @@ export interface ArchivedWorkspaceItem extends WorkspaceItem {
 
 ## 6. 関連ドキュメント
 
-- **[ワークスペース機能](../features/workspace.md)** - ワークスペース機能の使い方
-- **[ワークスペースウィンドウ](../screens/workspace-window.md)** - UI操作ガイド
 - **[データファイル形式](data-format.md)** - data.json仕様
 - **[設定ファイル形式](settings-format.md)** - config.json仕様
 - **[ファイル形式一覧](README.md)** - すべてのファイル形式の概要
+- **[システム概要](../overview.md)** - アプリケーション全体のアーキテクチャ

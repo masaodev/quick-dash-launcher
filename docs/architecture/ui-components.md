@@ -179,7 +179,6 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 | 用途 | 推奨クラス |
 |------|-----------|
 | ヘッダーの正方形アイコンボタン | `.action-btn` |
-| ツールバーボタン | `.toolbar-button` |
 | タブ切り替えボタン | `.menu-item`, `.desktop-tab` |
 | 検索クリアボタン | `.search-clear-button` |
 | ドロップダウントリガー | `.dropdown-trigger-btn` |

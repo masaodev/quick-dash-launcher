@@ -23,8 +23,12 @@ src/renderer/styles/
     ├── AdminItemManager.css     # アイテム管理（編集モード）
     ├── AdminWindow.css          # 管理ウィンドウ
     ├── AlertDialog.css          # 通知ダイアログ
+    ├── AppImport.css            # アプリインポート
+    ├── BackupSnapshotModal.css  # バックアップスナップショットモーダル
+    ├── BookmarkAutoImport.css   # ブックマーク自動インポート
     ├── BookmarkImport.css       # ブックマークインポート
     ├── Button.css               # 共通ボタンコンポーネント
+    ├── ClipboardItemEditor.css  # クリップボードアイテムエディター
     ├── ColorPicker.css          # カラーピッカー
     ├── ConfirmDialog.css        # 確認ダイアログ
     ├── FilePickerDialog.css     # ファイル選択ダイアログ
@@ -35,6 +39,7 @@ src/renderer/styles/
     ├── LauncherIconProgress.css # アイコン進捗バー
     ├── LauncherItemCountDisplay.css # アイテム数表示
     ├── LauncherItemList.css     # アイテムリスト
+    ├── MemoViewModal.css        # メモ表示モーダル
     ├── MissingIconNotice.css    # アイコン欠落通知
     ├── Modal.css                # モーダル共通
     ├── RegisterModal.css        # 登録モーダル
@@ -51,16 +56,17 @@ src/renderer/styles/
 #### 基本色
 ```css
 --color-primary: #0078d4;           /* メインカラー */
+--color-primary-50: rgba(0, 120, 212, 0.1); /* プライマリ薄色（選択状態等） */
 --color-primary-hover: #106ebe;     /* プライマリホバー */
 --color-primary-dark: #1976d2;      /* プライマリダーク */
 
 --color-success: #28a745;           /* 成功・確定 */
 --color-success-hover: #218838;     /* 成功ホバー */
---color-success-light: #4caf50;     /* 成功ライト */
 
 --color-danger: #dc3545;            /* 危険・削除 */
 --color-danger-hover: #c82333;      /* 危険ホバー */
---color-danger-light: #ff6b6b;      /* 危険ライト */
+--color-danger-alt: #ff4757;        /* 危険代替色 */
+--color-danger-alt-hover: #ff5252;  /* 危険代替色ホバー */
 
 --color-warning: #ffc107;           /* 警告 */
 
@@ -100,6 +106,7 @@ src/renderer/styles/
 --bg-readonly: #f5f5f5;             /* 読み取り専用 */
 --bg-warning-light: #fff3cd;        /* 警告（薄） */
 --bg-danger-light: #fff5f5;         /* 危険（薄） */
+--bg-success-light: #e8f5e9;        /* 成功（薄） */
 --bg-info-light: #e3f2fd;           /* 情報（薄） */
 --bg-table-container: #fafafa;      /* テーブルコンテナ */
 ```
@@ -113,11 +120,13 @@ src/renderer/styles/
 --text-error: #e74c3c;              /* エラーメッセージ */
 --text-success: #388e3c;            /* 成功テキスト */
 --text-info: #6c757d;               /* 情報テキスト */
+--text-light-hover: #ffe6e6;        /* 危険ホバー時のライトテキスト */
 ```
 
 ### 2. スペーシング
 
 ```css
+--spacing-xxs: 1px;                 /* 極小間隔 */
 --spacing-xs: 4px;                  /* 最小間隔 */
 --spacing-sm: 8px;                  /* 小間隔 */
 --spacing-md: 12px;                 /* 中間隔 */
@@ -153,6 +162,8 @@ src/renderer/styles/
 --border-light: 1px solid #e0e0e0;  /* 薄ボーダー */
 --border-normal: 1px solid #ccc;    /* 通常ボーダー */
 --border-dark: 1px solid #999;      /* 濃ボーダー */
+--border-primary: 1px solid var(--color-primary); /* プライマリボーダー */
+--border-danger: 1px solid var(--color-danger);   /* 危険ボーダー */
 
 --border-radius-sm: 3px;            /* 小角丸 */
 --border-radius: 4px;               /* 標準角丸 */
@@ -171,6 +182,7 @@ src/renderer/styles/
 --focus-ring: 0 0 0 1px var(--color-primary);                /* フォーカスリング */
 --focus-ring-wide: 0 0 0 2px rgba(0, 122, 204, 0.25);        /* 広いフォーカスリング */
 --focus-ring-danger: 0 0 0 2px rgba(255, 107, 107, 0.25);    /* 危険フォーカスリング */
+--focus-ring-danger-wide: 0 0 0 4px rgba(255, 107, 107, 0.15); /* 広い危険フォーカスリング */
 
 --transition-fast: all 0.1s;                     /* 高速トランジション */
 --transition-normal: all 0.2s;                   /* 標準トランジション */
@@ -193,6 +205,14 @@ src/renderer/styles/
 --icon-size-sm: 24px;               /* 小アイコン */
 --icon-size: 32px;                  /* 標準アイコン */
 --scrollbar-width: 8px;             /* スクロールバーの幅 */
+
+/* モーダル */
+--modal-max-height: 90vh;           /* モーダルの最大高さ */
+
+/* メニュー・ドロップダウン */
+--menu-width-min: 350px;            /* メニューの最小幅 */
+--menu-width-max: 450px;            /* メニューの最大幅 */
+--menu-max-height: 400px;           /* メニューの最大高さ */
 ```
 
 ## 共通ユーティリティクラス
@@ -202,28 +222,34 @@ src/renderer/styles/
 > **推奨**: モーダルのアクションボタンやフォームの送信ボタンには、[Buttonコンポーネント](ui-components.md#buttonコンポーネント)を使用してください。以下のクラスは特殊なケース（ツールバー、タブ等）向けです。
 
 #### .btn-base
-基本的なボタンスタイル
+基本的なボタンスタイル（`common.css` で定義）。ボタンバリエーション（`.btn-primary` 等）および `.btn-sm` / `.btn-lg` は `Button.css` で定義。
 ```css
 .btn-base {
   padding: var(--spacing-sm) var(--spacing-lg);
   font-size: var(--font-size-base);
+  font-family: var(--font-family);
   border: var(--border-normal);
   border-radius: var(--border-radius);
+  background-color: var(--color-white);
   cursor: pointer;
   transition: var(--transition-normal);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 400;
 }
 ```
 
-#### .btn-primary / .btn-secondary / .btn-danger
-状態別ボタンスタイル
+#### .btn-primary / .btn-danger / .btn-info / .btn-cancel
+状態別ボタンスタイル（`Button.css` で定義）
 
 #### .btn-sm / .btn-lg
-サイズバリエーション
+サイズバリエーション（`Button.css` で定義）
 ```css
 .btn-sm {
   padding: var(--spacing-xs) var(--spacing-md);
   font-size: var(--font-size-sm);
-  height: 28px;
+  height: var(--input-height-sm); /* 34px */
 }
 
 .btn-lg {
@@ -278,14 +304,43 @@ src/renderer/styles/
 
 ### フォームクラス
 
-#### .form-base
-基本的な入力フィールドスタイル
+#### .input-base
+基本的な入力フィールドスタイル（`common.css` で定義）
 ```css
-.form-base {
-  padding: var(--spacing-sm) var(--spacing-md);
+.input-base {
+  width: 100%;
+  height: var(--input-height-sm);
+  padding: var(--spacing-xs) var(--spacing-md);
+  font-size: var(--font-size-base);
+  font-family: var(--font-family);
   border: var(--border-normal);
   border-radius: var(--border-radius);
+  outline: none;
+  transition: var(--transition-normal);
+  box-sizing: border-box;
+}
+```
+
+#### .select-base
+セレクトボックス用スタイル（`common.css` で定義）
+```css
+.select-base {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-sm);
   font-size: var(--font-size-base);
+  font-family: var(--font-family);
+  border: var(--border-normal);
+  border-radius: var(--border-radius);
+  outline: none;
+  transition: var(--transition-normal);
+}
+```
+
+#### .form-group
+ラベル付きフォームグループ（`common.css` で定義）
+```css
+.form-group {
+  margin-bottom: var(--spacing-md);
 }
 ```
 
@@ -354,65 +409,25 @@ src/renderer/styles/
 
 ### 閉じる・削除ボタンクラス
 
-#### .close-btn-base
-×ボタンの基本スタイル（モーダル閉じるボタン、検索クリアボタンなど）
+#### .close-btn
+モーダル閉じるボタンの共通スタイル（`common.css` で定義）
 
 ```css
-.close-btn-base {
+.close-btn {
   background: none;
   border: none;
+  font-size: var(--font-size-2xl);
   color: var(--text-muted);
-  font-size: 20px;
-  font-weight: bold;
-  line-height: 1;
   cursor: pointer;
   padding: var(--spacing-xs);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all var(--transition-normal);
+  border-radius: var(--border-radius);
+  line-height: var(--line-height-tight);
+  transition: var(--transition-normal);
 }
 
-.close-btn-base:hover {
-  background-color: var(--color-gray-600);
-  color: var(--color-white);
-  transform: scale(1.1);
-}
-
-.close-btn-base:active {
-  background-color: var(--color-gray-700);
-  transform: scale(0.95);
-}
-```
-
-#### .delete-btn-base
-削除ボタンの基本スタイル（赤色の危険系ボタン）
-
-```css
-.delete-btn-base {
-  background-color: var(--color-danger);
-  border: 2px solid var(--color-white);
-  color: var(--color-white);
-  font-size: 18px;
-  font-weight: bold;
-  line-height: 1;
-  cursor: pointer;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all var(--transition-normal);
-}
-
-.delete-btn-base:hover {
-  background-color: var(--color-danger-hover);
-  transform: scale(1.1);
-}
-
-.delete-btn-base:active {
-  background-color: var(--color-danger-hover);
-  transform: scale(0.95);
+.close-btn:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
 }
 ```
 
@@ -535,8 +550,7 @@ const MyComponent = () => {
   - ❌ 誤: `.btn-danger-small`, `.btn-primary-large`
 
 **アクションボタン**:
-- `.action-btn` : 32x32ピクセルの正方形アイコンボタン（メインウィンドウヘッダー用）
-- `.section-action-button` : 横長テキスト付きボタン（管理ウィンドウのセクション内用）
+- `.action-btn` : 32x32ピクセルの正方形アイコンボタン（メインウィンドウヘッダー用、`common.css` で定義）
 
 **コンポーネント要素**:
 - パターン: `.{component}-{element}` （例: `.modal-overlay`, `.item-icon`）
@@ -550,18 +564,11 @@ const MyComponent = () => {
 
 ### 3. レスポンシブ対応
 
-メディアクエリも変数化して統一：
+メディアクエリのブレークポイントは直接ピクセル値で記述します（CSS変数はメディアクエリ内では使用できないため）：
 
 ```css
-/* variables.css */
-:root {
-  --breakpoint-sm: 640px;
-  --breakpoint-md: 768px;
-  --breakpoint-lg: 1024px;
-}
-
-/* 使用例 */
-@media (max-width: var(--breakpoint-sm)) {
+/* メディアクエリの記述例 */
+@media (max-width: 600px) {
   .responsive-element {
     font-size: var(--font-size-sm);
     padding: var(--spacing-sm);
@@ -601,7 +608,7 @@ const MyComponent = () => {
 
 3. **レスポンシブ対応がうまくいかない**
    - メディアクエリの書き方を確認
-   - ブレークポイント変数を使用しているか確認
+   - メディアクエリ内ではCSS変数は使用できないため、直接ピクセル値で記述すること
 
 ### デバッグ方法
 
@@ -625,8 +632,7 @@ const MyComponent = () => {
 
 1. **アクションボタンの命名整理**
    - `.action-btn` : 32x32正方形アイコンボタン（メインウィンドウヘッダー用、`common.css`で定義）
-   - `.section-action-button` : 横長テキストボタン（管理ウィンドウ用、`AdminWindow.css`で定義）
-   - 紛らわしかった `.action-button` は削除済み
+   - 紛らわしかった `.action-button` と `.section-action-button` は削除済み
 
 2. **サイズバリエーションの統一**
    - 変更前: `AdminWindow.css`で `.btn-secondary-small`, `.btn-danger-small` を使用
@@ -656,7 +662,7 @@ const MyComponent = () => {
    - `.modal-close-btn` - アイコン取得進捗詳細モーダルの閉じるボタン
 
 3. **影響範囲**
-   - 7つのCSSファイル（WorkspaceWindow.css、RegisterModal.css、Header.css、BookmarkImport.css、EditMode.css、IconProgress.css、IconProgressDetailModal.css）
+   - 7つのCSSファイル（WorkspaceWindow.css、RegisterModal.css、Header.css、BookmarkImport.css、AdminItemManager.css、LauncherIconProgress.css、IconProgressDetailModal.css）
    - UX改善: ボタンが押せることをより明確に伝達、操作時の視覚的フィードバックを追加
 
 **結果**: 全画面で統一された×ボタンのデザインパターンが確立され、ユーザビリティが向上しました。

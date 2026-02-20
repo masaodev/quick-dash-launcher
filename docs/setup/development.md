@@ -4,18 +4,17 @@
 
 ### 開発モード用アイコン
 
-v0.5.20以降、開発モード実行時には赤い「DEV」オーバーレイ付きアイコンが自動的に生成・適用されます。これにより、本番環境と視覚的に区別できます。
+v0.5.20以降、開発モード実行時には赤い「DEV」オーバーレイ付きアイコンが適用されます。これにより、本番環境と視覚的に区別できます。
 
-**自動生成の仕組み**:
-- `npm run dev`実行時に`scripts/create-dev-icon.ps1`が自動実行
-- `build/icon.png`を元に赤い「DEV」オーバーレイ付きアイコンを生成
-- 生成先: `build/icon-dev.ico`, `build/icon-dev.png`
+**アイコンの仕組み**:
+- 開発用アイコンは`assets/icon-dev.ico`、`assets/icon-dev.png`に配置済み
+- `PathManager.getAppIconPath()`が環境に応じて`assets/`ディレクトリのアイコンを選択
 - 全ウィンドウ（メイン、トレイ、スプラッシュ、ワークスペース、管理）に適用
 
 **App User Model ID**:
 - 開発モード用に異なるIDを設定（アイコンキャッシュ対策）
-- 本番: `com.quickdash.launcher`
-- 開発: `com.quickdash.launcher.dev`
+- 本番: `net.masaodev.quick-dash-launcher`
+- 開発: `net.masaodev.quick-dash-launcher.dev`
 
 ### 多重起動
 
@@ -27,7 +26,7 @@ v0.5.3以降、開発時に複数のインスタンスを同時に起動でき�
 |---------|--------|-----------|------------|------|
 | `npm run dev` | 9001 | Ctrl+Alt+A | `%APPDATA%\dev-quick-dash-launcher\config` | メイン開発環境 |
 | `npm run dev2` | 9002 | Ctrl+Alt+S | `%APPDATA%\dev2-quick-dash-launcher\config` | 比較検証用 |
-| `npm run dev:test` | 9003 | 設定による | `./tests/dev/full` | テストデータでの動作確認 |
+| `npm run dev:test` | 9003 | Ctrl+Alt+T | `./tests/dev/full` | テストデータでの動作確認 |
 
 #### 環境変数
 
@@ -44,11 +43,11 @@ v0.5.3以降、開発時に複数のインスタンスを同時に起動でき�
 
 **1. 独立したuserDataパス**
 
-`src/main/main.ts`で、`APP_INSTANCE`環境変数に基づいて各インスタンスが独立したuserDataパスを使用します：
+`src/main/main.ts`で、`APP_INSTANCE`環境変数に基づいて各インスタンスが独立したuserDataパスを使用します。環境変数へのアクセスは`EnvConfig`クラス経由で行います：
 
 ```typescript
-if (process.env.APP_INSTANCE) {
-  const appName = `${process.env.APP_INSTANCE}-quick-dash-launcher`;
+if (EnvConfig.hasAppInstance) {
+  const appName = `${EnvConfig.appInstance}-quick-dash-launcher`;
   const userDataPath = path.join(app.getPath('appData'), appName);
   app.setPath('userData', userDataPath);
 }
@@ -56,7 +55,7 @@ if (process.env.APP_INSTANCE) {
 
 **2. ポート番号の環境変数対応**
 
-`vite.config.ts`および各ウィンドウマネージャーで、`VITE_PORT`環境変数からポート番号を読み込みます：
+`vite.config.ts`および`EnvConfig`クラス経由で、`VITE_PORT`環境変数からポート番号を読み込みます：
 
 ```typescript
 // vite.config.ts
@@ -64,17 +63,17 @@ server: {
   port: Number(process.env.VITE_PORT) || 9000,
 }
 
-// windowManager.ts, adminWindowManager.ts, etc.
-const port = process.env.VITE_PORT || '9000';
-mainWindow.loadURL(`http://localhost:${port}`);
+// EnvConfig経由（windowManager.tsなど）
+const devServerUrl = EnvConfig.devServerUrl; // http://localhost:{VITE_PORT}
+mainWindow.loadURL(devServerUrl);
 ```
 
 **3. ホットキーの環境変数上書き**
 
-`src/main/services/hotkeyService.ts`で、`HOTKEY`環境変数が設定されている場合、設定ファイルの値を上書きします：
+`src/main/services/hotkeyService.ts`で、`EnvConfig.customHotkey`が設定されている場合、設定ファイルの値を上書きします：
 
 ```typescript
-const envHotkey = process.env.HOTKEY;
+const envHotkey = EnvConfig.customHotkey;
 const hotkey = envHotkey || (await this.settingsService.get('hotkey'));
 ```
 
@@ -110,12 +109,12 @@ QUICK_DASH_CONFIG_DIR=./tests/dev/full npm run dev
 ## 重要な実装詳細
 
 ### ウィンドウの動作
-- フレームレスウィンドウ（479x506px）常に最前面
+- フレームレスウィンドウ（600x400px）常に最前面
 - DevToolsが開いていない限りブラー時に非表示（固定化時・編集モード時は例外）
 - Alt+Space起動ホットキーで表示/非表示（デフォルト、設定で変更可能）
 - 表示時に検索ボックスが自動クリア＆フォーカス
 - 📌ボタンでウィンドウ固定化可能（固定中はフォーカスアウトしても非表示にならない）
-- 編集モード時のウィンドウ自動拡大（1000x700px）と復元機能
+- 編集モード時のウィンドウ自動拡大（1200x1000px）と復元機能
 
 ### データファイル形式
 
@@ -167,7 +166,7 @@ for (const fileName of dataFiles) {
 
 #### 管理画面の重複削除
 
-管理画面（`EditModeView.tsx`）の整列・重複削除機能は、選択中のタブのみを対象に処理します：
+管理画面（`AdminItemManagerView.tsx`）の整列・重複削除機能は、選択中のタブのみを対象に処理します：
 
 1. 現在選択中のタブに属するファイルを特定
 2. そのタブの行のみを抽出して整列・重複削除
@@ -300,6 +299,11 @@ Dependabotは依存関係を以下のグループに分けてPRを作成しま�
 - **SearchHistoryService**: 検索履歴の保存・読み込み
 - **WorkspaceService**: ワークスペースアイテム・グループ・実行履歴の管理
 - **IconService**: アイテムタイプに応じた適切なアイコン取得処理
+- **ClipboardService**: クリップボードデータの保存・読み込み管理
+- **IconFetchErrorService**: アイコン取得エラーの記録・管理
+- **BookmarkAutoImportService**: ブックマーク自動インポートルールの管理
+- **NotificationService**: システム通知の送信
+- **ToastWindowService**: トーストウィンドウの表示管理
 
 **設計パターン:**
 - すべてシングルトンパターンで実装（静的クラスの場合もあり）
@@ -461,13 +465,26 @@ if (isLauncherItem(data)) {
 }
 ```
 
-**型定義ファイルの構成** (v0.5.20):
+**型定義ファイルの構成** (v0.5.20以降、20ファイル):
 - `types/launcher.ts` - ランチャーアイテム関連の型
 - `types/register.ts` - 登録アイテム関連の型とユーティリティ
 - `types/guards.ts` - 型ガード関数
 - `types/workspace.ts` - ワークスペース関連の型
 - `types/window.ts` - ウィンドウ関連の型
 - `types/settings.ts` - 設定関連の型
+- `types/json-data.ts` - JSONデータファイル形式の型
+- `types/data.ts` - データ処理関連の型
+- `types/icon.ts` - アイコン関連の型
+- `types/clipboard.ts` - クリップボード関連の型
+- `types/editableItem.ts` - 編集可能アイテムの型
+- `types/editingItem.ts` - 編集中アイテムの型
+- `types/search.ts` - 検索関連の型
+- `types/app.ts` - アプリケーション全体の型
+- `types/bookmark.ts` - ブックマーク関連の型
+- `types/bookmarkAutoImport.ts` - ブックマーク自動インポートの型
+- `types/toast.ts` - トースト通知の型
+- `types/backup.ts` - バックアップ関連の型
+- `types/appImport.ts` - アプリインポートの型
 - `types/index.ts` - 統合エクスポート
 
 ### CSS開発パターン
@@ -512,7 +529,7 @@ QuickDashLauncherではCSS変数ベースの統一されたデザインシステ
 ### パフォーマンス最適化パターン
 
 #### アイコンのキャッシュ
-- ファビコンは`%APPDATA%/quick-dash-launcher/config/favicons/`にキャッシュ
+- ファビコンは`%APPDATA%/quick-dash-launcher/config/icon-cache/favicons/`にキャッシュ
 - ダウンロード前にキャッシュの存在を確認
 
 #### 検索の最適化
@@ -525,18 +542,16 @@ QuickDashLauncherではCSS変数ベースの統一されたデザインシステ
 
 #### メインウィンドウ
 - **App.tsx**: メインアプリケーションコンポーネント
-- **SearchBox.tsx**: 検索入力フィールド
-- **ActionButtons.tsx**: アクションボタンコンテナ
-- **SettingsDropdown.tsx**: 設定関連機能のドロップダウンメニュー
-- **FileTabBar.tsx**: ファイルタブの切り替え
-- **ItemList.tsx**: アイテムリスト表示
+- **LauncherSearchBox.tsx**: 検索入力フィールド
+- **LauncherActionButtons.tsx**: アクションボタンコンテナ
+- **LauncherSettingsDropdown.tsx**: 設定関連機能のドロップダウンメニュー
+- **LauncherFileTabBar.tsx**: ファイルタブの切り替え
+- **LauncherItemList.tsx**: アイテムリスト表示
 - **RegisterModal.tsx**: ドラッグ&ドロップ登録用モーダル
-  - **WindowConfigEditor.tsx**: ウィンドウ設定エディター（115行）
-  - **CustomIconEditor.tsx**: カスタムアイコンエディター（47行）
-- **EditableRawItemList.tsx**: 編集モード用のデータ編集テーブル
-  - パスと引数列でパス＋引数を統合表示・編集
-  - アイテム行：パス＋引数の組み合わせ（例：`notepad.exe`, `https://github.com/`）
-  - フォルダ取込アイテム：フォルダパス＋オプション（例：`C:\Users\Documents filter:*.txt`）
+  - **WindowConfigEditor.tsx**: ウィンドウ設定エディター
+  - **CustomIconEditor.tsx**: カスタムアイコンエディター
+- **AdminItemManagerView.tsx**: 編集モード用のアイテム管理ビュー
+- **AdminItemManagerList.tsx**: 編集モード用のデータ編集テーブル
 
 #### ワークスペースウィンドウ
 - **WorkspaceApp.tsx**: ワークスペースアプリケーションコンポーネント（444行→216行にリファクタリング）
@@ -655,10 +670,8 @@ npm run debug:windows -- --all-desktops --show-excluded --output debug.txt
 - **ファイル保存時**: 常にCRLF（`\r\n`）で統一
 - **ファイル読み込み時**: 正規表現`/\r\n|\n|\r/`で分割し、CRLF、LF、CRのいずれにも対応
 - **対象関数**:
-  - `loadRawDataFiles`: 生データファイルの読み込み
-  - `saveRawDataFiles`: 生データファイルの保存（CRLF統一）
-  - `loadDataFiles`: フォルダ取込アイテム展開時の読み込み
-  - `registerItems`: 新規アイテム登録時の保存
+  - `loadDataFiles`: データファイルの読み込み（フォルダ取込アイテム展開含む）
+  - `registerItems`: 新規アイテム登録時の保存（CRLF統一）
 
 ### データフォーマットの処理
 データファイルはJSON形式で管理されています。詳細な形式仕様については、**[データファイル形式仕様](../architecture/file-formats/data-format.md)** を参照してください。

@@ -8,10 +8,11 @@ QuickDashLauncherのアイコン処理システムは、様々な種類のアイ
 
 | アイコン種類 | 保存場所 | ファイル名形式 | サイズ |
 |-------------|---------|--------------|-------|
-| **ファビコン** | `%APPDATA%/quick-dash-launcher/config/favicons/` | `{domain}_favicon_{size}.png` | 64px（推奨）/ 32px（互換） |
-| **EXEアイコン** | `%APPDATA%/quick-dash-launcher/config/icons/` | `{hash}_icon.png` | 32px |
-| **カスタムURIアイコン** | `%APPDATA%/quick-dash-launcher/config/icons/` | `uri_{schema}_icon.png` | 32px |
-| **拡張子アイコン** | `%APPDATA%/quick-dash-launcher/config/icons/extensions/` | `{extension}_icon.png` | 32px |
+| **ファビコン** | `%APPDATA%/quick-dash-launcher/config/icon-cache/favicons/` | `{domain}_favicon_{size}.png` | 64px（推奨）/ 32px（互換） |
+| **EXEアイコン** | `%APPDATA%/quick-dash-launcher/config/icon-cache/apps/` | `{basename}_icon.png` | 32px |
+| **カスタムURIアイコン** | `%APPDATA%/quick-dash-launcher/config/icon-cache/schemes/` | `uri_{schema}_icon.png` | 32px |
+| **拡張子アイコン** | `%APPDATA%/quick-dash-launcher/config/icon-cache/extensions/` | `ext_{extension}_icon.png` | 32px |
+| **カスタムアイコン** | `%APPDATA%/quick-dash-launcher/config/icon-cache/custom/` | `{MD5ハッシュ}.png` | 任意 |
 
 ### ファイル名形式の詳細
 
@@ -93,8 +94,8 @@ uri_{schema}_icon.png
 |------|-----|
 | デフォルト解像度 | 64px |
 | HTML読み込みサイズ | 最初の5KBのみ |
-| HTMLダウンロードタイムアウト | 10秒 |
-| ファビコンダウンロードタイムアウト | 5秒 |
+| HTMLダウンロードタイムアウト | 5秒 |
+| ファビコンダウンロードタイムアウト | 3秒 |
 
 ---
 
@@ -184,7 +185,7 @@ WindowsAppsフォルダ等のシンボリックリンクを自動解決してア
 
 ユーザーが手動で指定するカスタムアイコン機能もサポートします。
 
-**保存場所:** `%APPDATA%/quick-dash-launcher/config/custom-icons/`
+**保存場所:** `%APPDATA%/quick-dash-launcher/config/icon-cache/custom/`
 
 **ファイル名形式:** `{MD5ハッシュ}.png`（アイテム識別子からMD5ハッシュを生成）
 
@@ -201,7 +202,7 @@ WindowsAppsフォルダ等のシンボリックリンクを自動解決してア
 MyApp,C:\MyApp\app.exe,,{hash}.png
 ```
 
-詳細は[データファイル形式仕様](../architecture/file-formats/data-format.md#カスタムアイコンの処理)を参照。
+詳細は[データファイル形式仕様](../architecture/file-formats/data-format.md#314-カスタムアイコンの使用)を参照。
 
 ---
 
@@ -265,11 +266,12 @@ MyApp,C:\MyApp\app.exe,,{hash}.png
 
 ```typescript
 async function fetchIconsCombined(
-  urls: string[],
+  urlItems: IconItem[],
   items: IconItem[],
   faviconsFolder: string,
   iconsFolder: string,
-  extensionsFolder: string
+  extensionsFolder: string,
+  forceRefresh?: boolean
 ): Promise<{
   favicons: Record<string, string | null>;
   icons: Record<string, string | null>;
@@ -366,7 +368,7 @@ Windows APIを使用してウィンドウからアイコンハンドル（HICON�
 **実装ファイル:**
 - `src/main/utils/nativeWindowControl.ts`: `getWindowIcon()`, `convertIconToBase64()`, `getExecutablePathFromProcessId()`
 - `src/main/ipc/windowSearchHandlers.ts`: アイコン取得処理の統合
-- `src/common/types.ts`: `WindowInfo`型に`icon`, `executablePath`フィールドを追加
+- `src/common/types/window.ts`: `WindowInfo`型に`icon`, `executablePath`フィールドを追加
 
 ### 表示
 
@@ -454,14 +456,14 @@ Windows APIを使用してウィンドウからアイコンハンドル（HICON�
    - CORSポリシー
 
 3. **キャッシュをクリア**
-   - `%APPDATA%/quick-dash-launcher/config/favicons/`のファイルを削除
+   - `%APPDATA%/quick-dash-launcher/config/icon-cache/favicons/`のファイルを削除
 
 ### エラーの種類
 
 | エラー種類 | 説明 | タイムアウト |
 |-----------|------|------------|
-| HTMLダウンロード | ページの取得失敗 | 10秒 |
-| ファビコンダウンロード | アイコンの取得失敗 | 5秒 |
+| HTMLダウンロード | ページの取得失敗 | 5秒 |
+| ファビコンダウンロード | アイコンの取得失敗 | 3秒 |
 | HTTPエラー | サーバーエラー（4xx, 5xx） | - |
 | ネットワークエラー | DNS、SSL証明書など | - |
 

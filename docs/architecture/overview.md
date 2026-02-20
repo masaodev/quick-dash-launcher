@@ -21,19 +21,21 @@ QuickDashLauncherのアーキテクチャ概要とデータフローを説明し
 |---------|------|---------|
 | `SettingsService` | アプリケーション設定の読み書き・管理 | シングルトン |
 | `HotkeyService` | 起動ホットキーの登録・変更 | シングルトン |
-| `BackupService` | データファイルの自動バックアップ | シングルトン |
+| `BackupService` | データファイルのスナップショット保存・復元 | シングルトン |
 | `AutoLaunchService` | Windows起動時の自動起動設定 | シングルトン |
 | `FaviconService` | ファビコン・アイコンの取得・キャッシュ管理 | 通常クラス |
 | `SearchHistoryService` | 検索履歴の保存・読み込み | 通常クラス |
 | `WorkspaceService` | ワークスペースアイテム・グループの管理 | シングルトン |
-| `ExecutionHistoryService` | 実行履歴の保存・読み込み・管理 | シングルトン |
-| `IconService` | アイテムタイプに応じた適切なアイコン取得処理 | 静的クラス |
-| `NotificationService` | システム通知・トースト通知の表示管理 | 静的関数 |
-| `ToastWindowService` | トースト専用ウィンドウの管理 | 静的クラス |
+| `ClipboardService` | クリップボードの内容のキャプチャ・保存・復元 | シングルトン |
+| `BookmarkAutoImportService` | ルールに基づくブックマーク自動インポート | シングルトン |
+| `IconService` | アイテムタイプに応じた適切なアイコン取得処理 | 関数群（モジュール） |
+| `IconFetchErrorService` | アイコン取得エラーの記録・管理 | シングルトン |
+| `NotificationService` | システム通知・トースト通知の表示管理 | 関数群（モジュール） |
+| `ToastWindowService` | トースト専用ウィンドウの管理 | 通常クラス |
 
 **設計原則:**
 - シングルトンパターン: `getInstance()`で取得
-- 静的クラス: 静的メソッドで直接呼び出し
+- 関数群モジュール: モジュール内の関数を直接呼び出し
 - 単一責任の原則に従う
 - 重複したロジックを一箇所に集約（DRY原則）
 
@@ -61,14 +63,19 @@ IPCハンドラーは機能ごとに分離（`src/main/ipc/`）:
 | `dataHandlers.ts` | データファイルの読み込み・保存・ブックマーク解析 |
 | `itemHandlers.ts` | アイテムの起動・フォルダー表示・グループ実行 |
 | `iconHandlers.ts` | ファビコン取得・アイコン抽出・カスタムアイコン管理 |
+| `bookmarkHandlers.ts` | ブラウザブックマークのインポート |
+| `appImportHandlers.ts` | スタートメニューのアプリスキャン・インポート |
+| `bookmarkAutoImportHandlers.ts` | ブックマーク自動取込ルールの管理と実行 |
+| `backupHandlers.ts` | スナップショットバックアップの管理・リストア |
 | `windowHandlers.ts` | ウィンドウ固定化・編集モード・モーダルモード制御 |
 | `historyHandlers.ts` | 検索履歴の読み書き |
 | `editHandlers.ts` | アイテム編集（更新・削除・一括更新） |
 | `splashHandlers.ts` | スプラッシュウィンドウ制御 |
-| `workspaceHandlers.ts` | ワークスペースアイテム・グループ・実行履歴の操作 |
+| `workspaceHandlers.ts` | ワークスペースアイテム・グループの操作 |
 | `windowSearchHandlers.ts` | ウィンドウ検索（ウィンドウ一覧取得・アクティブ化） |
 | `notificationHandlers.ts` | システム通知・トースト通知の表示 |
 | `contextMenuHandlers.ts` | ネイティブコンテキストメニュー（ランチャー、ワークスペース、管理画面） |
+| `clipboardHandlers.ts` | クリップボードのキャプチャ・確認・セッション管理 |
 
 詳細は[IPCチャンネル](ipc-channels.md)を参照。
 
@@ -127,16 +134,27 @@ IPCハンドラーは機能ごとに分離（`src/main/ipc/`）:
 | モジュール | 役割 |
 |-----------|------|
 | `index.ts` | すべての型をエクスポートする統合ポイント |
-| `launcher.ts` | ランチャーアイテム関連（`LauncherItem`, `AppItem`, `ItemType`） |
-| `data.ts` | データファイル関連（`RawDataLine`） |
-| `register.ts` | 登録アイテム関連（`RegisterItem`, `DirOptions`, `WindowOperationConfig`）とユーティリティ関数 |
+| `launcher.ts` | ランチャーアイテム関連（`LauncherItem`, `AppItem`, `ClipboardItem`等） |
+| `json-data.ts` | JSONデータファイル関連（`JsonDataFile`, `JsonLauncherItem`等） |
+| `data.ts` | データファイルタブ関連（`DataFileTab`, `DEFAULT_DATA_FILE`） |
+| `register.ts` | 登録アイテム関連（`RegisterItem`, `WindowOperationConfig`） |
 | `guards.ts` | 型ガード関数（`isWindowInfo`, `isLauncherItem`, `isGroupItem`等） |
-| `workspace.ts` | ワークスペース関連（`WorkspaceItem`, `WorkspaceGroup`, `DragItemData`） |
-| `window.ts` | ウィンドウ関連（`WindowInfo`, `WindowPinMode`） |
-| `settings.ts` | 設定関連（`AppSettings`, `DataFileTab`） |
-| `search.ts` | 検索関連（`SearchMode`） |
+| `workspace.ts` | ワークスペース関連（`WorkspaceItem`, `WorkspaceGroup`, `DragItemData`等） |
+| `window.ts` | ウィンドウ関連（`WindowInfo`, `VirtualDesktopInfo`, `WindowState`） |
+| `settings.ts` | 設定関連（`AppSettings`, `WindowPinMode`, `WindowPositionMode`等） |
+| `search.ts` | 検索関連（`SearchHistoryEntry`, `SearchHistoryState`, `SearchMode`） |
+| `clipboard.ts` | クリップボード関連（`SerializableClipboard`, `ClipboardFormat`等） |
+| `icon.ts` | アイコン関連（`IconProgressResult`, `IconFetchErrorRecord`等） |
+| `bookmark.ts` | ブックマーク関連（`SimpleBookmarkItem`, `BrowserProfile`等） |
+| `bookmarkAutoImport.ts` | ブックマーク自動取込関連（`BookmarkAutoImportRule`, `BookmarkAutoImportSettings`等） |
+| `backup.ts` | バックアップ関連（`SnapshotInfo`, `BackupStatus`） |
+| `appImport.ts` | アプリインポート関連（`ScannedAppItem`, `AppScanResult`） |
+| `toast.ts` | トースト通知関連（`ToastItemType`） |
+| `app.ts` | アプリケーション情報関連（`AppInfo`） |
+| `editingItem.ts` | 編集中アイテム関連（`EditingLauncherItem`, `EditingGroupItem`等） |
+| `editableItem.ts` | 編集可能JSONアイテム関連（`EditableJsonItem`, `ValidationResult`等） |
 
-**後方互換性**: `src/common/types.ts`は全型を再エクスポートし、既存コードとの互換性を維持しています。
+各ファイルは対応するドメインの型のみを定義し、`index.ts`が統合エクスポートポイントとして全型を再エクスポートします。
 
 ---
 
@@ -196,10 +214,10 @@ IPCハンドラーは機能ごとに分離（`src/main/ipc/`）:
 ### 編集モード（生データ編集）
 
 1. 編集モード開始時にウィンドウサイズを自動拡大
-2. `load-raw-data-files`でデータファイルを展開せずに読み込み
-3. `EditableRawItemList`コンポーネントでテーブル形式表示
+2. `load-editable-items`でデータファイルをJSON形式で読み込み
+3. テーブル形式コンポーネントで編集可能に表示
 4. ユーザーが行の追加・削除・編集を実行
-5. `save-raw-data-files`で変更内容をファイルに書き込み
+5. `save-editable-items`で変更内容をファイルに書き込み
 6. `data-changed`イベントでメインウィンドウに自動反映
 
 ### 設定の即座反映フロー（v1.0.0以降）
@@ -233,7 +251,7 @@ IPCハンドラーは機能ごとに分離（`src/main/ipc/`）:
    - クリップボードからペースト（`Ctrl+V`）- v0.5.1以降
 3. `WorkspaceService`がアイテムをworkspace.jsonに保存
 4. ワークスペースウィンドウでグループ管理・名前変更・並び替え
-5. アイテム起動時に`ExecutionHistoryService`が実行履歴（execution-history.json）に記録（最大10件）
+5. アイテム起動時に実行履歴（`ExecutionHistoryItem`）がワークスペースデータに記録（最大10件）
 6. 実行履歴からワークスペースへドラッグ&ドロップでコピー可能
 
 ---

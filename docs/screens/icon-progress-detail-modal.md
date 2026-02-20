@@ -139,6 +139,7 @@ interface IconProgressResult {
 | `.result-name` | アイテム名 |
 | `.result-error` | エラーメッセージ |
 | `.no-results` | 空結果メッセージ |
+| `.modal-actions` | フッターのアクションエリア（右寄せ、`justify-content: flex-end`） |
 
 ### 閉じるボタン（×）のスタイル
 
@@ -184,13 +185,15 @@ interface IconProgressResult {
 ### 結果アイテムの表示
 
 #### 成功アイテム
-- 緑色系の背景
-- 「✓」アイコン
+- 左ボーダーが緑色（`border-left: 3px solid var(--color-success)`）
+- 背景色はセクション共通背景（`var(--bg-section)`）
+- 「✓」アイコン（緑色）
 - アイテム名のみ表示
 
 #### エラーアイテム
-- 赤色系の背景
-- 「✗」アイコン
+- 左ボーダーが赤色（`border-left: 3px solid var(--color-danger)`）
+- 背景色はセクション共通背景（`var(--bg-section)`）
+- 「✗」アイコン（赤色）
 - アイテム名とエラーメッセージを表示
 
 ### アイテム名の改行対応
@@ -204,9 +207,9 @@ interface IconProgressResult {
   isOpen={showDetail}
   onClose={() => setShowDetail(false)}
   results={[
-    { itemName: 'Google', success: true },
-    { itemName: 'Twitter', success: true },
-    { itemName: '無効なURL', success: false, errorMessage: 'ファビコンの取得に失敗しました' },
+    { itemName: 'Google', success: true, type: 'favicon' },
+    { itemName: 'Twitter', success: true, type: 'favicon' },
+    { itemName: '無効なURL', success: false, type: 'favicon', errorMessage: 'ファビコンの取得に失敗しました' },
   ]}
 />
 ```

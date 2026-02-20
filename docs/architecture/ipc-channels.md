@@ -27,6 +27,9 @@ ipcRenderer.invoke(OPEN_ITEM, item);
 | データ | - | `LOAD_DATA_FILES`, `GET_DATA_FILES` |
 | アイコン | - | `FETCH_FAVICON`, `EXTRACT_ICON` |
 | ワークスペース | `WORKSPACE_*` | `WORKSPACE_LOAD_ITEMS`, `WORKSPACE_ADD_ITEM` |
+| クリップボード | `CLIPBOARD_*` | `CLIPBOARD_CAPTURE`, `CLIPBOARD_RESTORE` |
+| バックアップ | `BACKUP_*` | `BACKUP_LIST_SNAPSHOTS`, `BACKUP_RESTORE_SNAPSHOT` |
+| ブックマーク自動取込 | `BOOKMARK_AUTO_IMPORT_*` | `BOOKMARK_AUTO_IMPORT_GET_SETTINGS`, `BOOKMARK_AUTO_IMPORT_EXECUTE_RULE` |
 | イベント | `EVENT_*` | `EVENT_DATA_CHANGED`, `EVENT_WINDOW_SHOWN` |
 | 通知 | `SHOW_*` | `SHOW_NOTIFICATION`, `SHOW_TOAST_WINDOW` |
 
@@ -100,6 +103,15 @@ const channel = IPC_CHANNELS.SETTINGS_GET; // 'settings:get'
 - パラメータ: `newHotkey: string`（空文字列で無効化）
 - 戻り値: `boolean` (成功/失敗)
 
+### `settings:get-displays`
+接続されているディスプレイ情報を取得
+- 戻り値: `DisplayInfo[]`
+  - `index: number` - ディスプレイインデックス
+  - `label: string` - 表示ラベル（例: `ディスプレイ 1 (プライマリ)`）
+  - `isPrimary: boolean` - プライマリディスプレイかどうか
+  - `width: number`, `height: number` - 作業領域のサイズ
+  - `x: number`, `y: number` - 作業領域の座標
+
 ### `settings-changed` (イベント)
 設定変更を全ウィンドウに通知
 - **方向**: メインプロセス → レンダラープロセス（全ウィンドウ）
@@ -163,6 +175,17 @@ const channel = IPC_CHANNELS.SETTINGS_GET; // 'settings:get'
 - 戻り値: なし
 - 処理内容: 管理ウィンドウが開いていない場合は開き、アーカイブタブを表示
 
+### `open-edit-window-with-import-modal`
+インポートモーダルを指定して管理ウィンドウを開く
+- パラメータ: `modal: 'bookmark' | 'app'`
+- 戻り値: なし
+- 処理内容: 管理ウィンドウを表示し、指定されたインポートモーダルを開く
+
+### `get-pending-import-modal`
+次に表示すべきインポートモーダルを取得
+- 戻り値: `'bookmark' | 'app' | null`
+- 処理内容: `open-edit-window-with-import-modal`で設定された値を一度だけ取得してクリア
+
 ### `set-modal-mode`
 モーダルモードを設定（ウィンドウの自動非表示を制御）
 - パラメータ: `isModal: boolean`, `requiredSize?: { width: number; height: number }`
@@ -217,18 +240,33 @@ const channel = IPC_CHANNELS.SETTINGS_GET; // 'settings:get'
 ### `register-items`
 アイテムをデータファイルに登録
 - パラメータ: `RegisterItem[]`
-  - `name: string` - アイテム名
+  - `displayName: string` - アイテム名
   - `path: string` - パス
   - `type: LauncherItem['type']` - アイテムタイプ
   - `args?: string` - 引数
   - `targetTab: string` - 保存先データファイル名
-  - `targetFile?: string` - 実際の保存先ファイル
-  - `itemCategory: 'item' | 'dir' | 'group'` - アイテムカテゴリ
+  - `targetFile?: string` - 実際の保存先ファイル（targetTabより優先）
+  - `itemCategory: 'item' | 'dir' | 'group' | 'window' | 'clipboard'` - アイテムカテゴリ
   - `folderProcessing?: 'folder' | 'expand'` - フォルダ処理タイプ
   - `icon?: string` - アイコンパス
   - `customIcon?: string` - カスタムアイコンパス
-  - `dirOptions?: DirOptions` - フォルダ取込オプション
-  - `groupItemNames?: string[]` - グループアイテム名リスト
+  - `windowConfig?: WindowConfig` - ウィンドウ設定（起動時ウィンドウ位置制御）
+  - `dirOptions?: JsonDirOptions` - フォルダ取込オプション（`itemCategory: 'dir'`の場合）
+  - `groupItemNames?: string[]` - グループアイテム名リスト（`itemCategory: 'group'`の場合）
+  - `windowOperationConfig?: WindowOperationConfig` - ウィンドウ操作設定（`itemCategory: 'window'`の場合、必須）
+    - `displayName: string` - 表示名
+    - `windowTitle: string` - ウィンドウタイトル
+    - `processName?: string` - プロセス名
+    - `x?: number`, `y?: number`, `width?: number`, `height?: number` - 位置・サイズ
+    - `moveToActiveMonitorCenter?: boolean` - アクティブモニター中央に移動
+    - `virtualDesktopNumber?: number` - 仮想デスクトップ番号
+    - `activateWindow?: boolean` - ウィンドウをアクティブ化
+    - `pinToAllDesktops?: boolean` - 全デスクトップにピン
+  - `clipboardDataRef?: string` - クリップボードデータファイルへの参照（`itemCategory: 'clipboard'`の場合、必須）
+  - `clipboardFormats?: ClipboardFormat[]` - 保存フォーマット一覧（clipboard専用）
+  - `clipboardSavedAt?: number` - 保存日時（clipboard専用）
+  - `clipboardPreview?: string` - プレビューテキスト（clipboard専用）
+  - `memo?: string` - 自由記述メモ
 - 戻り値: なし
 - 処理完了後、`data-changed`イベントを全ウィンドウに送信
 
@@ -256,31 +294,40 @@ const channel = IPC_CHANNELS.SETTINGS_GET; // 'settings:get'
 - バックアップ: 保存前に自動作成
 
 ### `update-item-by-id`
-単一アイテムをIDで更新
-- パラメータ: `{ sourceFile: string, id: string, newItem: LauncherItem }`
+単一LauncherItemをIDで更新（通常アイテム専用）
+- パラメータ: `{ id: string, newItem: LauncherItem }`
 - 戻り値: `{ success: boolean }`
-- バックアップ: 更新前に自動作成
 - 処理完了後、`data-changed`イベントを全ウィンドウに送信
 
 ### `update-dir-item-by-id`
 フォルダ取込アイテムをIDで更新
-- パラメータ: `{ sourceFile: string, id: string, newItem: DirItem }`
-- 戻り値: `{ success: boolean }`
-- バックアップ: 更新前に自動作成
+- パラメータ: `id: string`, `dirPath: string`, `options?: JsonDirOptions`, `memo?: string`
+- 戻り値: なし（エラー時はthrow）
+- 処理完了後、`data-changed`イベントを全ウィンドウに送信
+
+### `update-group-item-by-id`
+グループアイテムをIDで更新
+- パラメータ: `id: string`, `displayName: string`, `itemNames: string[]`, `memo?: string`
+- 戻り値: なし（エラー時はthrow）
+- 処理完了後、`data-changed`イベントを全ウィンドウに送信
+
+### `update-window-item-by-id`
+ウィンドウ操作アイテムをIDで更新
+- パラメータ: `id: string`, `config: { displayName: string, windowTitle: string, processName?: string, x?: number, y?: number, width?: number, height?: number, moveToActiveMonitorCenter?: boolean, virtualDesktopNumber?: number, activateWindow?: boolean, pinToAllDesktops?: boolean }`, `memo?: string`
+- 戻り値: なし（エラー時はthrow）
 - 処理完了後、`data-changed`イベントを全ウィンドウに送信
 
 ### `delete-items-by-id`
 複数アイテムをIDで一括削除
-- パラメータ: `DeleteItemByIdRequest[]` (各要素: `{ sourceFile, id }`)
+- パラメータ: `{ id: string }[]`
 - 戻り値: `{ success: boolean }`
-- バックアップ: 削除前に自動作成
+- 特別な処理: クリップボードアイテムの場合、関連するデータファイルも削除
 - 処理完了後、`data-changed`イベントを全ウィンドウに送信
 
 ### `batch-update-items-by-id`
-複数アイテムをIDで一括更新
-- パラメータ: `UpdateItemByIdRequest[]` (各要素: `{ sourceFile, id, newItem }`)
+複数LauncherItemをIDで一括更新（通常アイテム専用）
+- パラメータ: `{ id: string, newItem: LauncherItem }[]`
 - 戻り値: `{ success: boolean }`
-- バックアップ: 更新前に自動作成
 - 処理完了後、`data-changed`イベントを全ウィンドウに送信
 
 ## アイテム操作
@@ -301,8 +348,14 @@ const channel = IPC_CHANNELS.SETTINGS_GET; // 'settings:get'
 グループアイテムを実行
 - パラメータ: `group: GroupItem`, `allItems: AppItem[]`
 - 戻り値: なし
-- 動作: グループ内のアイテムを500ms間隔で順次起動
+- 動作: 設定（`parallelGroupLaunch`）に応じて並列または順次起動（順次の場合は500ms間隔）
 - ピンモードが`normal`の場合、全アイテム実行後にウィンドウを非表示
+
+### `execute-window-operation`
+ウィンドウ操作アイテムを実行
+- パラメータ: `item: WindowItem`
+- 戻り値: なし
+- 動作: 指定されたウィンドウタイトル・プロセス名でウィンドウを検索し、アクティブ化・位置設定を行う
 
 ## アイコン関連
 
@@ -484,7 +537,146 @@ OS標準通知を表示
 検索履歴をクリア
 - 戻り値: なし
 
+## クリップボード操作
+
+### `clipboard:check-current`
+現在のクリップボードの内容を確認（保存せず）
+- 戻り値: `CurrentClipboardState`
+  - `hasContent: boolean` - 内容があるかどうか
+  - `formats: ClipboardFormat[]` - 利用可能なフォーマット（`'text' | 'html' | 'rtf' | 'image' | 'file'`）
+  - `preview?: string` - プレビューテキスト
+  - `imageThumbnail?: string` - 画像のサムネイル（base64）
+  - `estimatedSize?: number` - 推定データサイズ（バイト）
+
+### `clipboard:capture`
+現在のクリップボードをキャプチャして永続化
+- 戻り値: `ClipboardCaptureResult`
+  - `success: boolean`
+  - `dataFileRef?: string` - 保存されたデータファイルへの参照
+  - `savedAt?: number` - 保存日時
+  - `preview?: string` - プレビューテキスト
+  - `formats?: ClipboardFormat[]` - 保存されたフォーマット
+  - `dataSize?: number` - データサイズ（バイト）
+  - `error?: string` - エラーメッセージ
+
+### `clipboard:restore`
+保存済みクリップボードデータを現在のクリップボードに復元
+- パラメータ: `ref: string` (データファイル参照)
+- 戻り値: `ClipboardRestoreResult`
+  - `success: boolean`
+  - `restoredFormats?: ClipboardFormat[]` - 復元されたフォーマット
+  - `error?: string`
+
+### `clipboard:delete-data`
+保存済みクリップボードデータを削除
+- パラメータ: `ref: string` (データファイル参照)
+- 戻り値: `boolean`
+
+### `clipboard:get-preview`
+保存済みクリップボードデータのプレビューを取得
+- パラメータ: `ref: string` (データファイル参照)
+- 戻り値: `ClipboardPreview | null`
+  - `preview: string`
+  - `formats: ClipboardFormat[]`
+  - `dataSize: number`
+  - `savedAt: number`
+  - `imageThumbnail?: string`
+
+### `clipboard:capture-to-session`
+クリップボードをセッションとして一時保存（登録確定前の保持用）
+- 戻り値: `ClipboardSessionCaptureResult`
+  - `success: boolean`
+  - `sessionId?: string` - セッションID
+  - `capturedAt?: number` - キャプチャ日時
+  - `preview?: string`, `formats?: ClipboardFormat[]`, `dataSize?: number`, `error?: string`
+
+### `clipboard:commit-session`
+セッションデータを永続化してコミット
+- パラメータ: `id: string` (セッションID)
+- 戻り値: `ClipboardSessionCommitResult`
+  - `success: boolean`
+  - `dataFileRef?: string`
+  - `savedAt?: number`
+  - `error?: string`
+
+### `clipboard:discard-session`
+セッションデータを破棄（キャンセル用）
+- パラメータ: `id: string` (セッションID)
+- 戻り値: `boolean`
+
+## ブックマーク自動取込
+
+### `bookmark-auto-import:get-settings`
+ブックマーク自動取込設定を取得
+- 戻り値: `BookmarkAutoImportSettings`
+
+### `bookmark-auto-import:save-settings`
+ブックマーク自動取込設定を保存
+- パラメータ: `settings: BookmarkAutoImportSettings`
+- 戻り値: なし
+
+### `bookmark-auto-import:execute-rule`
+単一ルールを実行してブックマークを取込
+- パラメータ: `rule: BookmarkAutoImportRule`
+- 戻り値: `BookmarkAutoImportResult`
+
+### `bookmark-auto-import:execute-all`
+全ルールを実行してブックマークを取込
+- 戻り値: `BookmarkAutoImportResult[]`
+
+### `bookmark-auto-import:preview-rule`
+ルールを実行した場合の取込プレビューを取得（実際には取込まない）
+- パラメータ: `rule: BookmarkAutoImportRule`
+- 戻り値: `BookmarkWithFolder[]`
+
+### `bookmark-auto-import:delete-rule-items`
+指定ルールに紐づくアイテムを削除
+- パラメータ: `ruleId: string`, `targetFile: string`
+- 戻り値: `number` (削除件数)
+
+### `bookmark-auto-import:get-folders`
+ブックマークファイルのフォルダ構造を取得
+- パラメータ: `bookmarkPath: string`
+- 戻り値: `BookmarkFolder[]`
+
+### `bookmark-auto-import:get-bookmarks-with-folders`
+フォルダパス付きブックマーク一覧を取得
+- パラメータ: `bookmarkPath: string`
+- 戻り値: `BookmarkWithFolder[]`
+
+## バックアップ
+
+### `backup:list-snapshots`
+バックアップのスナップショット一覧を取得
+- 戻り値: `SnapshotInfo[]` (新しい順)
+  - `timestamp: string` - タイムスタンプ文字列（フォルダ名、例: `2026-02-11T08-30-00`）
+  - `createdAt: Date` - 作成日時
+  - `totalSize: number` - 合計サイズ（バイト）
+  - `fileCount: number` - ファイル数
+
+### `backup:restore-snapshot`
+スナップショットからリストア（リストア前に自動バックアップ作成）
+- パラメータ: `timestamp: string`
+- 戻り値: `{ success: boolean, error?: string }`
+
+### `backup:delete-snapshot`
+スナップショットを削除
+- パラメータ: `timestamp: string`
+- 戻り値: `{ success: boolean, error?: string }`
+
+### `backup:get-status`
+バックアップの状態を取得
+- 戻り値: `BackupStatus`
+  - `snapshotCount: number` - スナップショット件数
+  - `lastBackupTime: Date | null` - 最終バックアップ日時
+  - `totalSize: number` - 合計サイズ（バイト）
+
 ## その他
+
+### `scan-installed-apps`
+インストール済みアプリケーションをスキャン
+- 戻り値: `InstalledApp[]` (アプリ情報の配列)
+- スキャン対象: スタートメニュー、Program Files等
 
 ### `open-config-folder`
 設定フォルダをエクスプローラーで開く
@@ -670,39 +862,50 @@ onWindowHidden(callback: () => void)
 
 ### `workspace:add-item`
 アイテムをワークスペースに追加
-- パラメータ: `item: AppItem`
+- パラメータ: `item: AppItem`, `groupId?: string` (追加先グループID、省略時は未分類)
 - 戻り値: `WorkspaceItem`
 - 処理完了後、`workspace-changed`イベントを全ウィンドウに送信
 
 ### `workspace:add-items-from-paths`
 ファイルパスからアイテムを追加（ドラッグ&ドロップ用）
-- パラメータ: `filePaths: string[]`
+- パラメータ: `filePaths: string[]`, `groupId?: string` (追加先グループID)
 - 戻り値: `WorkspaceItem[]`
+- 動作: アイテムタイプに応じてアイコンをキャッシュに自動保存
 - 処理完了後、`workspace-changed`イベントを全ウィンドウに送信
 
 ### `workspace:remove-item`
 ワークスペースからアイテムを削除
-- パラメータ: `itemId: string`
-- 戻り値: `boolean`
+- パラメータ: `id: string`
+- 戻り値: `{ success: boolean }`
 - 処理完了後、`workspace-changed`イベントを全ウィンドウに送信
 
 ### `workspace:update-display-name`
 アイテムの表示名を更新
-- パラメータ: `itemId: string`, `newName: string`
-- 戻り値: `boolean`
+- パラメータ: `id: string`, `displayName: string`
+- 戻り値: `{ success: boolean }`
+- 処理完了後、`workspace-changed`イベントを全ウィンドウに送信
+
+### `workspace:update-item`
+アイテムを更新（全フィールド対応）
+- パラメータ: `id: string`, `updates: Partial<WorkspaceItem>`
+- 戻り値: `{ success: boolean }`
 - 処理完了後、`workspace-changed`イベントを全ウィンドウに送信
 
 ### `workspace:reorder-items`
 アイテムの並び順を更新
 - パラメータ: `itemIds: string[]` (新しい順序)
-- 戻り値: `boolean`
+- 戻り値: `{ success: boolean }`
 - 処理完了後、`workspace-changed`イベントを全ウィンドウに送信
 
 ### `workspace:launch-item`
 ワークスペースアイテムを起動
 - パラメータ: `item: WorkspaceItem`
-- 戻り値: なし
-- 起動時に実行履歴に自動追加
+- 戻り値: `{ success: boolean, message?: string, successCount?: number, errorCount?: number }`
+- 動作:
+  - `windowOperation`タイプ: ウィンドウタイトル・プロセス名でウィンドウを検索してアクティブ化
+  - `group`タイプ: グループ内のアイテムを順次実行
+  - `clipboard`タイプ: クリップボードデータを復元
+  - その他: 通常の起動処理（ウィンドウ設定がある場合はウィンドウアクティブ化を先に試行）
 
 ### `workspace:load-groups`
 ワークスペースグループを読み込み
@@ -710,55 +913,44 @@ onWindowHidden(callback: () => void)
 
 ### `workspace:create-group`
 ワークスペースグループを作成
-- パラメータ: `name: string`, `color: string`
+- パラメータ: `name: string`, `color?: string` (省略可)
 - 戻り値: `WorkspaceGroup`
 - 処理完了後、`workspace-changed`イベントを全ウィンドウに送信
 
 ### `workspace:update-group`
 ワークスペースグループを更新
-- パラメータ: `groupId: string`, `updates: Partial<WorkspaceGroup>`
-- 戻り値: `boolean`
+- パラメータ: `id: string`, `updates: Partial<WorkspaceGroup>`
+- 戻り値: `{ success: boolean }`
 - 処理完了後、`workspace-changed`イベントを全ウィンドウに送信
 
 ### `workspace:delete-group`
 ワークスペースグループを削除
-- パラメータ: `groupId: string`
-- 戻り値: `boolean`
-- グループ内のアイテムは未分類に移動
+- パラメータ: `id: string`, `deleteItems: boolean` (trueの場合グループ内アイテムも削除、falseの場合は未分類に移動)
+- 戻り値: `{ success: boolean }`
 - 処理完了後、`workspace-changed`イベントを全ウィンドウに送信
 
 ### `workspace:reorder-groups`
 グループの並び順を更新
 - パラメータ: `groupIds: string[]` (新しい順序)
-- 戻り値: `boolean`
+- 戻り値: `{ success: boolean }`
+- 処理完了後、`workspace-changed`イベントを全ウィンドウに送信
+
+### `workspace:set-groups-collapsed`
+複数グループの折りたたみ状態を一括更新
+- パラメータ: `ids: string[]`, `collapsed: boolean`
+- 戻り値: `{ success: boolean }`
 - 処理完了後、`workspace-changed`イベントを全ウィンドウに送信
 
 ### `workspace:move-item-to-group`
 アイテムをグループに移動
-- パラメータ: `itemId: string`, `groupId: string | null` (nullは未分類)
-- 戻り値: `boolean`
-- 処理完了後、`workspace-changed`イベントを全ウィンドウに送信
-
-### `workspace:load-execution-history`
-実行履歴を読み込み
-- 戻り値: `ExecutionHistoryItem[]` (最新順、最大10件)
-
-### `workspace:add-execution-history`
-実行履歴にアイテムを追加
-- パラメータ: `item: AppItem`
-- 戻り値: なし
-- 最大10件を超えた場合、古いものから削除
-- 処理完了後、`workspace-changed`イベントを全ウィンドウに送信
-
-### `workspace:clear-execution-history`
-実行履歴をクリア
-- 戻り値: なし
+- パラメータ: `itemId: string`, `groupId?: string` (省略または`undefined`は未分類)
+- 戻り値: `{ success: boolean }`
 - 処理完了後、`workspace-changed`イベントを全ウィンドウに送信
 
 ### `workspace:archive-group`
 ワークスペースグループをアーカイブ
 - パラメータ: `groupId: string`
-- 戻り値: `boolean`
+- 戻り値: `{ success: boolean }`
 - 処理内容:
   - グループとその中のアイテムをアーカイブに移動
   - ワークスペースから削除
@@ -772,7 +964,7 @@ onWindowHidden(callback: () => void)
 ### `workspace:restore-group`
 アーカイブされたグループを復元
 - パラメータ: `groupId: string`
-- 戻り値: `boolean`
+- 戻り値: `{ success: boolean }`
 - 処理内容:
   - グループとアイテムをワークスペースに復元
   - アーカイブから削除
@@ -782,7 +974,7 @@ onWindowHidden(callback: () => void)
 ### `workspace:delete-archived-group`
 アーカイブされたグループを完全削除
 - パラメータ: `groupId: string`
-- 戻り値: `boolean`
+- 戻り値: `{ success: boolean }`
 - 処理内容:
   - グループとアイテムをアーカイブから完全削除（復元不可）
 - 処理完了後、`workspace-changed`イベントを全ウィンドウに送信
@@ -792,6 +984,52 @@ onWindowHidden(callback: () => void)
 - **方向**: メインプロセス → レンダラープロセス（全ウィンドウ）
 - **パラメータ**: なし
 - **発生タイミング**: ワークスペースアイテム・グループ・実行履歴・アーカイブの変更時
+
+### `workspace:toggle-window`
+ワークスペースウィンドウの表示/非表示を切り替え
+- 戻り値: なし
+
+### `workspace:show-window`
+ワークスペースウィンドウを表示
+- 戻り値: なし
+
+### `workspace:hide-window`
+ワークスペースウィンドウを非表示
+- 戻り値: `boolean`
+
+### `workspace:get-always-on-top`
+ワークスペースウィンドウの常に最前面表示状態を取得
+- 戻り値: `boolean`
+
+### `workspace:toggle-always-on-top`
+ワークスペースウィンドウの常に最前面表示を切り替え
+- 戻り値: `boolean` (新しい状態)
+
+### `workspace:set-size`
+ワークスペースウィンドウのサイズを設定
+- パラメータ: `width: number`, `height: number`
+- 戻り値: `boolean`
+
+### `workspace:set-position-and-size`
+ワークスペースウィンドウの位置とサイズを設定
+- パラメータ: `x: number`, `y: number`, `width: number`, `height: number`
+- 戻り値: `boolean`
+
+### `workspace:set-position-mode`
+ワークスペースウィンドウの位置モードを設定
+- パラメータ: `mode: WorkspacePositionMode`
+- 戻り値: `boolean`
+- 動作: `displayLeft`・`displayRight`指定時はカーソル位置のディスプレイを基準にする
+
+### `workspace:get-opacity`
+ワークスペースウィンドウの不透明度を取得
+- 戻り値: `number` (0〜100のパーセント値)
+
+### `workspace:set-opacity`
+ワークスペースウィンドウの不透明度を設定
+- パラメータ: `opacityPercent: number` (0〜100のパーセント値)
+- 戻り値: `boolean`
+- 処理内容: 設定に保存し、ウィンドウにも即時反映
 
 ### `workspace:set-modal-mode`
 ワークスペースウィンドウのモーダルモードを設定（ダイアログ表示時のウィンドウサイズ制御）

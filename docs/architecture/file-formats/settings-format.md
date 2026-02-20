@@ -8,9 +8,9 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
 
 | ファイル名 | 用途 | 管理方法 |
 |-----------|------|---------|
-| **config.json** | アプリケーション設定 | electron-store |
+| **settings.json** | アプリケーション設定 | electron-store |
 
-**保存場所**: `%APPDATA%/quick-dash-launcher/config.json`
+**保存場所**: `%APPDATA%/quick-dash-launcher/config/settings.json`
 
 ### 1.2. 文字エンコーディング
 
@@ -26,30 +26,26 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
 
 ```json
 {
-  "createdWithVersion": "0.6.0",
-  "updatedWithVersion": "0.6.1",
-  "hotkey": "Alt+Space",
+  "createdWithVersion": "0.7.0",
+  "updatedWithVersion": "0.7.13",
+  "hotkey": "",
   "windowWidth": 600,
   "windowHeight": 400,
   "editModeWidth": 1200,
   "editModeHeight": 1000,
   "autoLaunch": false,
   "backupEnabled": false,
-  "backupOnStart": false,
-  "backupOnEdit": false,
-  "backupInterval": 5,
-  "backupRetention": 20,
+  "backupRetention": 10,
   "showDataFileTabs": false,
-  "defaultFileTab": "data.json",
+  "defaultFileTab": "datafiles/data.json",
   "dataFileTabs": [
     {
-      "files": ["data.json"],
+      "files": ["datafiles/data.json"],
       "name": "メイン"
     }
   ],
   "dataFileLabels": {
-    "data.json": "メイン",
-    "data2.json": "サブ"
+    "datafiles/data.json": "メイン用データファイル"
   },
   "windowPositionMode": "cursorMonitorCenter",
   "windowPositionX": 0,
@@ -61,8 +57,10 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
   "workspaceTargetDisplayIndex": 0,
   "workspacePositionX": 0,
   "workspacePositionY": 0,
+  "workspaceVisibleOnAllDesktops": true,
   "parallelGroupLaunch": false,
-  "itemSearchHotkey": ""
+  "itemSearchHotkey": "",
+  "backupIncludeClipboard": false
 }
 ```
 
@@ -81,7 +79,7 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
 
 | フィールド | 型 | デフォルト値 | 説明 |
 |-----------|-----|-------------|------|
-| **hotkey** | string | "Alt+Space" | 起動ホットキー<br>例: "Alt+Space", "Ctrl+Shift+L" |
+| **hotkey** | string | "" | ランチャー起動ホットキー<br>空の場合はホットキー未設定（初回セットアップで設定）<br>例: "Alt+Space", "Ctrl+Shift+L" |
 
 ### 3.3. ウィンドウサイズ設定
 
@@ -103,25 +101,23 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
 | フィールド | 型 | デフォルト値 | 説明 |
 |-----------|-----|-------------|------|
 | **backupEnabled** | boolean | false | バックアップ機能の有効/無効 |
-| **backupOnStart** | boolean | false | アプリ起動時にバックアップを実行するか |
-| **backupOnEdit** | boolean | false | データ編集時にバックアップを実行するか |
-| **backupInterval** | number | 5 | 最小バックアップ間隔（分）<br>この間隔内の連続バックアップを防止 |
-| **backupRetention** | number | 20 | バックアップファイルの保存件数上限<br>古いバックアップから自動削除 |
+| **backupRetention** | number | 10 | バックアップファイルの保存件数上限<br>古いバックアップから自動削除 |
+| **backupIncludeClipboard** | boolean | false | クリップボードデータもバックアップに含めるか |
 
 ### 3.6. データファイルタブ設定
 
 | フィールド | 型 | デフォルト値 | 説明 |
 |-----------|-----|-------------|------|
 | **showDataFileTabs** | boolean | false | タブ表示の有効/無効 |
-| **defaultFileTab** | string | "data.json" | デフォルトで表示するタブ（タブ表示ON時のみ有効） |
-| **dataFileTabs** | DataFileTab[] | `[{files: ["data.json"], name: "メイン"}]` | データファイルタブの設定 |
-| **dataFileLabels** | Record<string, string> | `{"data.json": "メイン"}` | データファイルの名前定義（物理ファイル名 → 表示名） |
+| **defaultFileTab** | string | "datafiles/data.json" | デフォルトで表示するタブ（タブ表示ON時のみ有効） |
+| **dataFileTabs** | DataFileTab[] | `[{files: ["datafiles/data.json"], name: "メイン"}]` | データファイルタブの設定 |
+| **dataFileLabels** | Record<string, string> | `{"datafiles/data.json": "メイン用データファイル"}` | データファイルの名前定義（物理ファイル名 → 表示名） |
 
 #### 3.6.1. DataFileTab 構造
 
 ```typescript
 interface DataFileTab {
-  /** データファイル名のリスト（例: ['data.json'], ['data2.json', 'data3.json']） */
+  /** データファイル名のリスト（例: ['datafiles/data.json'], ['datafiles/data2.json', 'datafiles/data3.json']） */
   files: string[];
   /** タブに表示する名前（例: "メイン", "サブ1"） */
   name: string;
@@ -156,6 +152,7 @@ interface DataFileTab {
 | **workspaceTargetDisplayIndex** | number | 0 | ターゲットディスプレイ番号（displayLeft/displayRight時に使用、0始まり） |
 | **workspacePositionX** | number | 0 | 固定位置のX座標（workspacePositionMode='fixed'時に使用） |
 | **workspacePositionY** | number | 0 | 固定位置のY座標（workspacePositionMode='fixed'時に使用） |
+| **workspaceVisibleOnAllDesktops** | boolean | true | ワークスペースウィンドウを全仮想デスクトップに表示するか |
 
 #### 3.8.1. WorkspacePositionMode 値
 
@@ -195,31 +192,27 @@ export interface AppSettings {
   createdWithVersion?: string;
   /** この設定ファイルを最後に更新したアプリバージョン */
   updatedWithVersion?: string;
-  /** 起動ホットキー（デフォルト: 'Alt+Space'） */
+  /** ランチャー起動ホットキー（デフォルト: ''、空の場合は未設定） */
   hotkey: string;
   /** ウィンドウの初期幅（デフォルト: 600） */
   windowWidth: number;
   /** ウィンドウの初期高さ（デフォルト: 400） */
   windowHeight: number;
-  /** 編集モード時のウィンドウ幅（デフォルト: 1000） */
+  /** 編集モード時のウィンドウ幅（デフォルト: 1200） */
   editModeWidth: number;
-  /** 編集モード時のウィンドウ高さ（デフォルト: 700） */
+  /** 編集モード時のウィンドウ高さ（デフォルト: 1000） */
   editModeHeight: number;
   /** アプリの自動起動設定 */
   autoLaunch: boolean;
   /** バックアップ機能の有効/無効（デフォルト: false） */
   backupEnabled: boolean;
-  /** アプリ起動時のバックアップ（デフォルト: false） */
-  backupOnStart: boolean;
-  /** データ編集時のバックアップ（デフォルト: false） */
-  backupOnEdit: boolean;
-  /** 最小バックアップ間隔（分）（デフォルト: 5） */
-  backupInterval: number;
-  /** バックアップファイルの保存件数上限（デフォルト: 20） */
+  /** バックアップファイルの保存件数上限（デフォルト: 10） */
   backupRetention: number;
+  /** クリップボードデータもバックアップに含めるか（デフォルト: false） */
+  backupIncludeClipboard: boolean;
   /** タブ表示の有効/無効（デフォルト: false） */
   showDataFileTabs: boolean;
-  /** デフォルトで表示するタブ（タブ表示ON時のみ有効、デフォルト: 'data.json'） */
+  /** デフォルトで表示するタブ（タブ表示ON時のみ有効、デフォルト: 'datafiles/data.json'） */
   defaultFileTab: string;
   /** データファイルタブの設定（ファイル名リスト、タブ名、表示順序） */
   dataFileTabs: DataFileTab[];
@@ -245,10 +238,14 @@ export interface AppSettings {
   workspacePositionX: number;
   /** 固定位置のY座標（workspacePositionMode='fixed'時に使用、デフォルト: 0） */
   workspacePositionY: number;
+  /** ワークスペースウィンドウを全仮想デスクトップに表示（デフォルト: true） */
+  workspaceVisibleOnAllDesktops: boolean;
   /** グループアイテムを並列起動する（デフォルト: false） */
   parallelGroupLaunch: boolean;
   /** ウィンドウ検索の起動ホットキー（デフォルト: ''、空の場合は無効） */
   itemSearchHotkey: string;
+  /** ブックマーク自動取込設定 */
+  bookmarkAutoImport: BookmarkAutoImportSettings;
 }
 ```
 
@@ -286,7 +283,7 @@ export type WorkspacePositionMode =
  * データファイルタブの設定
  */
 export interface DataFileTab {
-  /** データファイル名のリスト（例: ['data.json'], ['data2.json', 'data3.json']） */
+  /** データファイル名のリスト（例: ['datafiles/data.json'], ['datafiles/data2.json', 'datafiles/data3.json']） */
   files: string[];
   /** タブに表示する名前（例: "メイン", "サブ1"） */
   name: string;
@@ -299,13 +296,14 @@ export interface DataFileTab {
 
 ### 5.1. 設定の読み込み
 
-設定は `SettingsService.getInstance()` を通じて読み込まれます。
+設定は `SettingsService.getInstance()` を通じて読み込まれます。`getInstance()` は非同期メソッドです。
 
 ```typescript
 import { SettingsService } from '@main/services/settingsService';
 
-const settings = SettingsService.getInstance();
-const hotkey = settings.get('hotkey'); // "Alt+Space"
+const settings = await SettingsService.getInstance();
+const hotkey = await settings.get('hotkey'); // 例: "Alt+Space"
+const allSettings = await settings.getAll();
 ```
 
 ### 5.2. 設定の更新
@@ -315,25 +313,25 @@ const hotkey = settings.get('hotkey'); // "Alt+Space"
 ```typescript
 import { SettingsService } from '@main/services/settingsService';
 
-const settings = SettingsService.getInstance();
-settings.setMultiple({
+const settings = await SettingsService.getInstance();
+await settings.setMultiple({
   hotkey: 'Ctrl+Shift+L',
   autoLaunch: true
 });
 ```
 
-### 5.3. 設定変更の即座反映（v1.0.0以降）
+### 5.3. 設定変更の即座反映
 
-設定変更時、`settings-changed` イベントが全ウィンドウに送信され、各ウィンドウが設定を再読み込みして画面に反映します。
+設定変更時、`settings-changed` イベントが全ウィンドウに送信され、各ウィンドウが設定を再読み込みして画面に反映します。このイベントはデータを伴わない通知のみで、受信側が改めて設定を取得します。
 
 ```typescript
-// メインプロセス
-SettingsService.getInstance().setMultiple({ hotkey: 'Ctrl+Space' });
-// → 全ウィンドウに 'settings-changed' イベント送信
+// メインプロセス側（settingsHandlers.ts）
+// setMultiple() 実行後に全ウィンドウへ通知
+window.webContents.send('settings-changed');
 
-// レンダラープロセス
-window.electron.on('settings-changed', (settings) => {
-  // 設定を再読み込みして画面更新
+// レンダラープロセス側（preload経由）
+window.electron.onSettingsChanged(() => {
+  // コールバックに引数はない。必要な設定は別途IPCで取得する。
 });
 ```
 
@@ -341,8 +339,8 @@ window.electron.on('settings-changed', (settings) => {
 
 ## 6. 関連ドキュメント
 
-- **[アプリケーション設定](../screens/admin-window.md#7-設定機能の詳細)** - 設定画面の使い方
-- **[初回起動セットアップ](../screens/first-launch-setup.md)** - ホットキー初期設定
+- **[アプリケーション設定](../../screens/admin-window.md)** - 設定画面の使い方
+- **[初回起動セットアップ](../../screens/first-launch-setup.md)** - ホットキー初期設定
 - **[データファイル形式](data-format.md)** - data.json仕様
 - **[ワークスペースファイル形式](workspace-format.md)** - workspace.json仕様
 - **[ファイル形式一覧](README.md)** - すべてのファイル形式の概要

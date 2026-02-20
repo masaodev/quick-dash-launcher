@@ -103,11 +103,15 @@ npm run dev:test   # テストデータで起動（全機能を含む）
 | テンプレート | 説明 |
 |-------------|------|
 | `base` | 基本的なアイテムセット |
-| `with-tabs` | マルチタブ機能有効 |
+| `with-tabs` | マルチタブ機能有効（data.json + data2.json） |
+| `with-multi-file-tabs` | 複数ファイルタブ（data.json + data2.json + data3.json） |
 | `empty` | 空のデータファイル |
 | `with-groups` | グループアイテム含む |
 | `with-backup` | バックアップ機能有効 |
 | `first-launch` | 初回起動用 |
+| `custom-hotkey` | カスタムホットキー設定 |
+| `with-folder-import` | フォルダ取込アイテム含む |
+| `with-shortcuts` | ショートカットファイル含む |
 
 ---
 
@@ -153,17 +157,25 @@ test('管理ウィンドウのテスト', async ({ electronApp, mainWindow }, te
 ### ConfigFileHelperの使用
 
 ```typescript
-// テンプレート読み込み
+// テンプレートから一時ディレクトリを作成（推奨）
+const configHelper = ConfigFileHelper.createTempConfigDir(testName, 'base');
+
+// または既存ディレクトリに対してテンプレートを読み込み
 configHelper.loadTemplate('with-tabs');
 
-// データファイル操作
-configHelper.readData();
-configHelper.writeData(lines);
-configHelper.addItem(name, path, args);
+// データファイル操作（JSONファイル名を指定）
+configHelper.readDataFile('data.json');
+configHelper.writeDataFile('data.json', content);
+configHelper.addSimpleItem('data.json', displayName, itemPath);
+configHelper.addItemToFile('data.json', item);
 
 // 設定ファイル操作
 configHelper.readSettings();
 configHelper.updateSetting('key', value);
+configHelper.updateSettings({ key1: value1, key2: value2 });
+
+// クリーンアップ
+configHelper.cleanup();
 ```
 
 ---
@@ -183,9 +195,6 @@ await utils.attachScreenshot(testInfo, 'モーダル表示');
 ### トレースビューアーの使用
 
 ```bash
-# HTMLレポートを開く
-npx playwright show-report test-results/html-report
-
 # 特定のトレースを開く
 npx playwright show-trace test-results/test-artifacts/<テスト名>/trace.zip
 ```
@@ -198,8 +207,9 @@ npx playwright show-trace test-results/test-artifacts/<テスト名>/trace.zip
 
 | ファイル | 理由 |
 |---------|------|
-| `tests/e2e/templates/*` | テストの基礎データ |
-| `tests/dev/*/data.json` | 開発用初期データ |
+| `tests/e2e/templates/*/datafiles/*.json` | テストの基礎データ |
+| `tests/e2e/templates/*/settings.json` | テンプレート設定 |
+| `tests/dev/*/datafiles/*.json` | 開発用初期データ |
 | `tests/dev/*/settings.json` | テンプレート設定 |
 | `README.md` | ドキュメント |
 
@@ -208,8 +218,7 @@ npx playwright show-trace test-results/test-artifacts/<テスト名>/trace.zip
 | ファイル | 理由 |
 |---------|------|
 | `tests/e2e/configs/.temp/` | テスト実行時の一時ディレクトリ |
-| `tests/dev/*/icons/` | 自動生成 |
-| `tests/dev/*/favicons/` | 自動生成 |
+| `tests/dev/*/icon-cache/` | 自動生成 |
 | `tests/dev/*/backup/` | 自動生成 |
 
 ---

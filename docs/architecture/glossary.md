@@ -18,26 +18,25 @@ QuickDashLauncherで使用されるドメイン用語の定義です。開発時
 
 | 分類 | 物理名 | 和名 | UI表記 | 説明 |
 |------|--------|------|--------|------|
-| アイテム | - | アイテム | アイテム | ランチャーで起動・操作できる対象の総称。ランチャーアイテム（単一起動）、グループアイテム（一括起動）、ウィンドウ操作アイテム（既存ウィンドウ制御）の3種類がある。メインウィンドウのアイテムリストに表示され、クリックまたはEnterキーで実行する。 |
+| アイテム | - | アイテム | アイテム | ランチャーで起動・操作できる対象の総称。ランチャーアイテム（単一起動）、グループアイテム（一括起動）、ウィンドウ操作アイテム（既存ウィンドウ制御）、クリップボードアイテム（クリップボード内容の保存・復元）の4種類がある。メインウィンドウのアイテムリストに表示され、クリックまたはEnterキーで実行する。 |
 | アイテム | `LauncherItem` | ランチャーアイテム | アイテム | 起動対象（URL/ファイル/フォルダ/アプリ/カスタムURI）を表す基本型。メインウィンドウのアイテムリストに表示される。`src/common/types/launcher.ts`で定義。 |
 | アイテム | `GroupItem` | グループアイテム | グループ | 複数アイテムをまとめて一括起動するアイテム。GroupDirectiveで定義。実行すると参照アイテムを500ms間隔で順次起動。 |
 | アイテム | `WindowItem` | ウィンドウアイテム | ウィンドウ操作 | 既存ウィンドウを検索・制御するアイテム。アプリを起動せずウィンドウのみ操作。v0.5.20以降、`WindowOperationItem`から`WindowItem`に統一。 |
 | アイテム | `ClipboardItem` | クリップボードアイテム | クリップボード | クリップボード内容を保存・復元するアイテム。テキスト、HTML、RTF、画像、ファイルリストを保存可能。実行すると保存内容をクリップボードに復元する。 |
-| アイテム | `AppItem` | アプリアイテム | - | `LauncherItem \| GroupItem \| WindowItem \| WindowInfo`の統合型。アイテムリスト表示時に使用。 |
+| アイテム | `AppItem` | アプリアイテム | - | `LauncherItem \| GroupItem \| WindowItem \| ClipboardItem \| WindowInfo`の統合型。アイテムリスト表示時に使用。`src/common/types/launcher.ts`で定義。 |
 | アイテム | `WorkspaceItem` | ワークスペースアイテム | - | ワークスペースに追加されたアイテムの独立コピー。元アイテムが削除されても影響を受けない。WorkspaceFileに保存。 |
 | アイテム | `RegisterItem` | 登録アイテム | - | アイテム登録・編集時に使用される型。`RegisterModal`や`useRegisterForm`で使用。`src/common/types/register.ts`で定義（v0.5.20で型定義を再配置）。 |
 | 登録項目 | `displayName` | アイテム名 | アイテム表示名 | メインウィンドウのアイテムリストに表示される名前。`RegisterItem.displayName`および`LauncherItem.displayName`で使用。ユーザーが自由に設定可能。 |
 | 登録項目 | `path` | 起動パス | パス/URL | 起動対象を指定するパスまたはURL。ファイルパス、フォルダパス、HTTPS URL、カスタムURIなど。`RegisterItem.path`および`LauncherItem.path`で使用。この値から自動的にItemTypeが検出される。 |
-| 登録種別 | `ItemCategory` | アイテム登録種別 | 登録種別 | アイテム登録画面での「種別」選択。`RegisterItem.itemCategory`で使用。ユーザーが登録方法を選択する。<br>値:<br>• `item` - 単一アイテム（1つのアイテムを個別に登録）<br>• `dir` - フォルダ取込（フォルダ内のファイルを一括登録）<br>• `group` - グループ（複数アイテムをまとめて一括起動）<br>• `window` - ウィンドウ操作（既存ウィンドウを検索・制御）<br><br>**ItemTypeとの違い**: ItemCategoryは「登録方法」、ItemTypeは「実行方法」を表す。例: itemCategory='item'かつtype='url'は「単一アイテムとしてURLを登録」を意味する。 |
-| アイテムタイプ | `ItemType` | アイテム実行タイプ | - | アイテムの実行方法を表す列挙型。`LauncherItem.type`で使用。パスから自動検出され、起動時の動作を決定する。<br>値:<br>• `url` - URL（HTTPまたはHTTPS URL、デフォルトブラウザで開く）<br>• `file` - ファイル（実行ファイル・ドキュメント等、関連付けされたアプリで開く）<br>• `folder` - フォルダ（ディレクトリ、エクスプローラーで開く）<br>• `app` - アプリケーション（実行可能ファイル、直接実行）<br>• `customUri` - カスタムURI（`obsidian://`、`vscode://`等の独自スキーマ）<br><br>**注**: GroupItemやWindowOperationItemは独自のtype値を持つため、ItemTypeには含まれない。 |
+| 登録種別 | `ItemCategory` | アイテム登録種別 | 登録種別 | アイテム登録画面での「種別」選択。`RegisterItem.itemCategory`で使用。ユーザーが登録方法を選択する。<br>値:<br>• `item` - 単一アイテム（1つのアイテムを個別に登録）<br>• `dir` - フォルダ取込（フォルダ内のファイルを一括登録）<br>• `group` - グループ（複数アイテムをまとめて一括起動）<br>• `window` - ウィンドウ操作（既存ウィンドウを検索・制御）<br>• `clipboard` - クリップボード（クリップボード内容を保存・復元）<br><br>**ItemTypeとの違い**: ItemCategoryは「登録方法」、ItemTypeは「実行方法」を表す。例: itemCategory='item'かつtype='url'は「単一アイテムとしてURLを登録」を意味する。 |
+| アイテムタイプ | `ItemType` | アイテム実行タイプ | - | アイテムの実行方法を表す型。`LauncherItem.type`で使用。パスから自動検出され、起動時の動作を決定する。<br>値:<br>• `url` - URL（HTTPまたはHTTPS URL、デフォルトブラウザで開く）<br>• `file` - ファイル（実行ファイル・ドキュメント等、関連付けされたアプリで開く）<br>• `folder` - フォルダ（ディレクトリ、エクスプローラーで開く）<br>• `app` - アプリケーション（実行可能ファイル、直接実行）<br>• `customUri` - カスタムURI（`obsidian://`、`vscode://`等の独自スキーマ）<br>• `clipboard` - クリップボード（クリップボード内容の保存・復元）<br><br>**注**: `GroupItem`は`type: 'group'`、`WindowItem`は`type: 'window'`、`ClipboardItem`は`type: 'clipboard'`を持つ独立した型として定義される。`LauncherItem.type`の`'clipboard'`は`ClipboardItem`とは別に、LauncherItemとしてクリップボード機能を提供する場合に使用。 |
 | データファイル | `DataFile` | データファイル | - | アイテム定義を保存するファイル（data.json, data2.json, data3.json等）。JSON形式で記述し、items配列にアイテムを定義する。`%APPDATA%/quick-dash-launcher/config/`に配置。data.jsonは必須で削除不可。`PathManager.getDataFilePath()`でdata.jsonのパス取得。タブ表示で切り替え可能。 |
-| データファイル | `RawDataLine` | 生データ行 | - | データファイルの1行を表す内部型。管理画面のアイテム編集で使用。`src/common/types/data.ts`で定義。 |
-| データファイル | `DataFileTab` | データファイルタブ | タブ | 複数データファイルをグループ化したタブ設定。設定画面で編集可能。 |
-| ディレクティブ | - | ディレクティブ | - | データファイル内で特殊な処理を指示するアイテムの総称。各アイテムの`type`フィールドで識別される。フォルダ取込（`type: "dir"`）、グループ（`type: "group"`）、ウィンドウ操作（`type: "window"`）の3種類がある。 |
-| ディレクティブ | `DirDirective` | フォルダ取込ディレクティブ | フォルダ取込 | 指定フォルダ内のアイテムを自動取込するディレクティブ。`JsonDirItem`（`type: "dir"`）として定義。内部処理で`isDirDirective()`、`parseDirDirective()`を使用。 |
-| ディレクティブ | `GroupDirective` | グループディレクティブ | グループ | 複数アイテムをグループ化するディレクティブ。`JsonGroupItem`（`type: "group"`）として定義。内部処理で`isGroupDirective()`、`parseGroupDirective()`を使用。 |
-| ディレクティブ | `WindowDirective` | ウィンドウ操作ディレクティブ | ウィンドウ操作 | ウィンドウ検索・制御を定義するディレクティブ。`JsonWindowItem`（`type: "window"`）として定義。内部処理で`isWindowOperationDirective()`を使用。 |
-| 行タイプ | `LineType` | 行タイプ | - | データファイルの行の種別を表す列挙型。`RawDataLine.type`で使用。内部処理で維持。<br>値:<br>• `directive` - ディレクティブ行（`type: "dir"/"group"/"window"`に対応）<br>• `item` - アイテム行（`type: "item"`に対応）<br>• `comment` - コメント行（内部互換性のみ）<br>• `empty` - 空行（内部互換性のみ） |
+| データファイル | `DataFileTab` | データファイルタブ | タブ | 複数データファイルをグループ化したタブ設定。設定画面で編集可能。`src/common/types/data.ts`で定義。 |
+| ディレクティブ | - | ディレクティブ | - | データファイル内で特殊な処理を指示するアイテムの総称。各アイテムの`type`フィールドで識別される。フォルダ取込（`type: "dir"`）、グループ（`type: "group"`）、ウィンドウ操作（`type: "window"`）、クリップボード（`type: "clipboard"`）の4種類がある。 |
+| ディレクティブ | `JsonDirItem` | フォルダ取込ディレクティブ | フォルダ取込 | 指定フォルダ内のアイテムを自動取込するディレクティブ。`type: "dir"`として定義。型ガード関数`isJsonDirItem()`で判定。`src/common/types/json-data.ts`で定義。 |
+| ディレクティブ | `JsonGroupItem` | グループディレクティブ | グループ | 複数アイテムをグループ化するディレクティブ。`type: "group"`として定義。型ガード関数`isJsonGroupItem()`で判定。`src/common/types/json-data.ts`で定義。 |
+| ディレクティブ | `JsonWindowItem` | ウィンドウ操作ディレクティブ | ウィンドウ操作 | ウィンドウ検索・制御を定義するディレクティブ。`type: "window"`として定義。型ガード関数`isJsonWindowItem()`で判定。`src/common/types/json-data.ts`で定義。 |
+| ディレクティブ | `JsonClipboardItem` | クリップボードディレクティブ | クリップボード | クリップボード内容を保存・復元するディレクティブ。`type: "clipboard"`として定義。型ガード関数`isJsonClipboardItem()`で判定。`src/common/types/json-data.ts`で定義。 |
 | ワークスペース | - | ワークスペース機能 | ワークスペース | よく使うアイテムを整理・保存する機能の総称。メインウィンドウとは独立したウィンドウで表示される。アイテムをグループ分けして管理でき、ドラッグ&ドロップで整理できる。データファイルのアイテムとは独立したコピーとして保存される。 |
 | ワークスペース | `Workspace` | ワークスペース | ワークスペース | ワークスペース機能の作業領域。ワークスペースウィンドウに表示される。 |
 | ワークスペース | `WorkspaceGroup` | ワークスペースグループ | グループ | ワークスペース内のアイテムをグループ化。色分け・折りたたみ可能。 |
@@ -45,7 +44,6 @@ QuickDashLauncherで使用されるドメイン用語の定義です。開発時
 | ワークスペース | `ArchivedWorkspaceGroup` | アーカイブグループ | - | アーカイブされたグループ。WorkspaceArchiveFileに保存。復元可能。 |
 | ワークスペース | `ArchivedWorkspaceItem` | アーカイブアイテム | - | アーカイブされたアイテム。グループと一緒にアーカイブ・復元される。 |
 | ワークスペース | `WorkspaceFile` | ワークスペースファイル | - | ワークスペースのアイテム・グループを保存するファイル（workspace.json）。items配列とgroups配列を持つ。`%APPDATA%/quick-dash-launcher/config/`に配置。`PathManager.getWorkspaceFilePath()`でパス取得。 |
-| ワークスペース | `ExecutionHistoryFile` | 実行履歴ファイル | - | 実行履歴を保存するファイル（execution-history.json）。最大10件、古いものから自動削除。`ExecutionHistoryService`で管理。 |
 | ワークスペース | `WorkspaceArchiveFile` | アーカイブファイル | - | アーカイブされたグループ・アイテムを保存するファイル（workspace-archive.json）。復元時に参照。`WorkspaceService`で管理。 |
 | ウィンドウ | `WindowInfo` | ウィンドウ情報 | - | ウィンドウ検索機能で取得されるウィンドウの情報。hwnd、タイトル、位置、サイズ等を含む。`src/common/types/window.ts`で定義。 |
 | ウィンドウ | `WindowConfig` | ウィンドウ設定 | - | アイテム起動時のウィンドウ制御設定。`LauncherItem.windowConfig`で使用。タイトル検索（ワイルドカード対応）と位置・サイズ制御を定義。 |
@@ -55,8 +53,8 @@ QuickDashLauncherで使用されるドメイン用語の定義です。開発時
 | ウィンドウ | `WindowPositionMode` | ウィンドウ表示位置モード | 表示位置 | メインウィンドウの表示位置設定。設定画面の「表示位置」で変更。<br>値:<br>• `center` - 画面中央（プライマリモニターの中央、デフォルト）<br>• `cursor` - カーソル位置（マウスカーソル中心）<br>• `cursorMonitorCenter` - カーソルモニター中央（カーソルがあるモニターの中央）<br>• `fixed` - 固定位置（手動で移動した位置を記憶、`windowPositionX/Y`に座標保存） |
 | ウィンドウ | `WorkspacePositionMode` | ワークスペース表示位置モード | 表示位置 | ワークスペースウィンドウの表示位置設定。設定画面で変更。<br>値:<br>• `displayLeft` - 指定ディスプレイの左端<br>• `displayRight` - 指定ディスプレイの右端（デフォルト）<br>• `fixed` - 固定位置（手動で移動した位置を記憶、`workspacePositionX/Y`に座標保存） |
 | クリップボード | `ClipboardFormat` | クリップボード形式 | 形式 | クリップボードアイテムで保存するデータ形式。<br>値:<br>• `text` - テキスト<br>• `html` - HTML<br>• `rtf` - リッチテキスト<br>• `image` - 画像<br>• `file` - ファイルリスト |
-| 検索 | - | アイテム検索機能 | - | メインウィンドウの検索ボックスで行う絞り込み機能の総称。通常検索（アイテム）、ウィンドウ検索（実行中ウィンドウ）、履歴検索（実行履歴）の3モードがある。検索ボックス左のアイコンまたはショートカットキーでモードを切り替える。 |
-| 検索 | `SearchMode` | 検索モード | - | 検索ボックスの動作モード。`src/common/types/search.ts`で定義。検索ボックス左のアイコンで切り替え。<br>値:<br>• `normal` - 通常検索（データファイルのアイテムを検索、デフォルト）<br>• `window` - ウィンドウ検索（実行中ウィンドウを検索、`Ctrl+W`で切り替え）<br>• `history` - 履歴検索（実行履歴から検索、`Ctrl+H`で切り替え） |
+| 検索 | - | アイテム検索機能 | - | メインウィンドウの検索ボックスで行う絞り込み機能の総称。通常検索（アイテム）、ウィンドウ検索（実行中ウィンドウ）の2モードがある。検索ボックス左のアイコンまたはショートカットキーでモードを切り替える。 |
+| 検索 | `SearchMode` | 検索モード | - | 検索ボックスの動作モード。`src/common/types/search.ts`で定義。検索ボックス左のアイコンで切り替え。<br>値:<br>• `normal` - 通常検索（データファイルのアイテムを検索、デフォルト）<br>• `window` - ウィンドウ検索（実行中ウィンドウを検索、`Ctrl+W`で切り替え） |
 | 検索 | `SearchHistoryEntry` | 検索履歴エントリ | - | 検索クエリと実行日時のペア。上下キーで履歴を遡れる。 |
 | 検索 | `SearchHistoryState` | 検索履歴状態 | - | 検索履歴のリストと現在のインデックス。キーボードナビゲーション用。 |
 | 設定 | `AppSettings` | アプリケーション設定 | 設定 | 全設定項目を管理するインターフェース。`electron-store`で永続化。`src/common/types/settings.ts`で定義。 |
@@ -69,8 +67,8 @@ QuickDashLauncherで使用されるドメイン用語の定義です。開発時
 | D&D | `DropTargetData` | ドロップターゲットデータ | - | ドロップ先の種別と識別子。`group`/`item`/`uncategorized`の3種類。 |
 | 画面 | - | 画面 | - | アプリケーションのウィンドウの総称。メインウィンドウ（ホットキーで表示）、ワークスペースウィンドウ（アイテム整理）、管理ウィンドウ（設定・アイテム管理）の3種類がある。 |
 | 画面 | `MainWindow` | メインウィンドウ | - | ホットキーで表示されるメイン画面。検索ボックスとアイテムリストを持つ。`src/renderer/App.tsx`で実装。 |
-| 画面 | `WorkspaceWindow` | ワークスペースウィンドウ | ワークスペース | ワークスペース専用ウィンドウ。メインウィンドウとは独立。`src/renderer/Workspace.tsx`で実装。 |
-| 画面 | `AdminWindow` | 管理ウィンドウ | 管理 | 設定・アイテム管理画面。メインウィンドウの歯車アイコンから開く。`src/renderer/Admin.tsx`で実装。 |
+| 画面 | `WorkspaceWindow` | ワークスペースウィンドウ | ワークスペース | ワークスペース専用ウィンドウ。メインウィンドウとは独立。`src/renderer/WorkspaceApp.tsx`で実装。 |
+| 画面 | `AdminWindow` | 管理ウィンドウ | 管理 | 設定・アイテム管理画面。メインウィンドウの歯車アイコンから開く。`src/renderer/AdminApp.tsx`で実装。 |
 | 画面 | `RegisterModal` | 登録モーダル | - | アイテム登録・編集ダイアログ。メインウィンドウ・管理画面から開く。新規登録と編集の両方に対応。 |
 | 画面 | `DirOptionsEditor` | フォルダ取込オプションエディタ | フォルダ取込オプション | フォルダ取込の詳細設定コンポーネント。RegisterModal内で使用。depth、types、filter等を設定。 |
 

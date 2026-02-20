@@ -41,15 +41,16 @@
 **実装場所**: `src/main/ipc/itemHandlers.ts`
 
 ```typescript
-// setupItemHandlers内で、ピンモードに応じて非表示を制御
-ipcMain.handle('open-item', async (_event, item: LauncherItem) => {
-  const shouldHide = getWindowPinMode() === 'normal';
-  await openItem(item, getMainWindow(), shouldHide);
+// setupItemHandlers内でアイテム起動を処理
+ipcMain.handle(IPC_CHANNELS.OPEN_ITEM, async (_event, item: LauncherItem) => {
+  await openItem(item);
 });
 ```
 
-- `normal`モード: `shouldHide = true` → ウィンドウを非表示
-- `alwaysOnTop`/`stayVisible`モード: `shouldHide = false` → ウィンドウを表示したまま
+`openItem()` 関数内で `tryActivateWindow()` によるウィンドウアクティブ化を試行し、失敗時に `launchItem()` で通常起動します。ウィンドウの非表示制御はピン留めモードに基づいて別途行われます。
+
+- `normal`モード: アイテム起動後、ウィンドウを非表示
+- `alwaysOnTop`/`stayVisible`モード: ウィンドウを表示したまま
 
 この動作は以下の操作すべてに適用されます：
 - 個別アイテムの起動 (`open-item`)
@@ -190,8 +191,8 @@ ipcMain.handle('open-item', async (_event, item: LauncherItem) => {
 
 ### ウィンドウ非表示の判定
 
-- **blur イベント**: `shouldHideOnBlur()`で判定 → `normal`モード時のみ非表示
-- **アイテム起動時**: `getWindowPinMode() === 'normal'`で判定 → `normal`モード時のみ非表示
+- **blur イベント**: `windowPinMode === 'normal'` かつ `isEditMode === false` の場合のみ非表示
+- **アイテム起動時**: `windowPinMode === 'normal'`の場合のみ非表示
 - **編集モード時**: `isEditMode`フラグで判定 → 編集モード中は非表示にしない
 
 ## 編集モードのウィンドウ制御
@@ -286,10 +287,10 @@ adminWindow.webContents.on('before-input-event', (event, input) => {
 **使用例:**
 ```typescript
 // モーダル表示時
-window.electron.setWorkspaceModalMode(true, { width: 600, height: 500 });
+window.electronAPI.workspaceAPI.setModalMode(true, { width: 600, height: 500 });
 
 // モーダルを閉じる時
-window.electron.setWorkspaceModalMode(false);
+window.electronAPI.workspaceAPI.setModalMode(false);
 ```
 
 ## ウィンドウ位置・サイズ制御
@@ -492,7 +493,7 @@ Chrome (Desktop2),chrome.exe,,,"{""title"":""Google Chrome"",""virtualDesktopNum
 - koffiライブラリでネイティブDLL呼び出し
 - レジストリから仮想デスクトップGUID一覧を取得し、番号からGUIDに変換
 
-詳細は **[src/main/utils/virtualDesktopControl.ts](../../src/main/utils/virtualDesktopControl.ts)** を参照してください。
+詳細は **[src/main/utils/virtualDesktop/](../../src/main/utils/virtualDesktop/)** を参照してください。
 
 **v0.5.12以降の拡張機能:**
 
@@ -508,7 +509,7 @@ v0.5.12以降、仮想デスクトップ機能が大幅に強化され、以下�
    - `SetWindowPos()` Win32 APIを使用して直接設定
 
 3. **確実な設定反映**
-   - リトライロジック（最大3回、100ms間隔）で確実に設定を反映
+   - リトライロジック（最大3回、50ms間隔）で確実に設定を反映
    - 設定失敗時は自動的に再試行
 
 **処理フロー（v0.5.12以降）:**
@@ -517,12 +518,12 @@ v0.5.12以降、仮想デスクトップ機能が大幅に強化され、以下�
 2. ウィンドウが見つかったら、SetWindowPos()で位置・サイズを直接設定
    - 位置設定（x, y）
    - サイズ設定（width, height）
-   - リトライ処理（最大3回、100ms間隔）
+   - リトライ処理（最大3回、50ms間隔）
 3. 現在のデスクトップは変更されない（ユーザーの作業を中断しない）
 ```
 
 **実装場所:**
-- `src/main/utils/virtualDesktopControl.ts`: `includeAllVirtualDesktops`パラメータの処理
+- `src/main/utils/virtualDesktop/`: `includeAllVirtualDesktops`パラメータの処理（`index.ts`, `windowOperations.ts`等）
 - `src/main/utils/windowActivator.ts`: リトライロジックと位置・サイズ設定
 
 **従来の動作との違い:**

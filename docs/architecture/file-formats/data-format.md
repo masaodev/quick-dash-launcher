@@ -16,7 +16,7 @@ QuickDashLauncherは複数のJSON形式のデータファイルをサポート�
 #### 1.1.1. 複数データファイルのサポート
 
 - **ファイル名パターン**: `data*.json`（例: data.json, data2.json, data3.json...）
-- **配置場所**: `%APPDATA%/quick-dash-launcher/config/`
+- **配置場所**: `%APPDATA%/quick-dash-launcher/config/datafiles/`
 - **自動検出**: アプリケーション起動時に設定フォルダ内のすべての`data*.json`ファイルを自動的に検出
 - **タブ表示**: 設定でタブ表示を有効にすると、各データファイルをタブで切り替えて使用可能
 - **ファイル管理**: 設定画面でデータファイルの追加・削除・タブ名のカスタマイズが可能
@@ -29,7 +29,21 @@ QuickDashLauncherは複数のJSON形式のデータファイルをサポート�
   - 設定画面の「データファイル管理」セクションで➕行追加ボタンをクリック
   - または、設定フォルダに手動でdata*.jsonファイルを作成
 
-### 1.2. 文字エンコーディング
+### 1.2. アイコンキャッシュの構造
+
+アイコンは `%APPDATA%/quick-dash-launcher/config/icon-cache/` 以下にサブフォルダで分類されます：
+
+| サブフォルダ | 説明 | ファイル名形式 |
+|------------|------|--------------|
+| `icon-cache/apps/` | EXEファイルのアイコン | `{basename}_icon.png` |
+| `icon-cache/favicons/` | WebサイトのFavicon | URL由来のファイル名 |
+| `icon-cache/custom/` | カスタムアイコン（手動設定） | 任意のファイル名 |
+| `icon-cache/schemes/` | カスタムURIスキームのアイコン | スキーム由来のファイル名 |
+| `icon-cache/extensions/` | ファイル拡張子のアイコン | `ext_{ext}_icon.png` |
+
+データファイルの `customIcon` フィールドは `icon-cache/custom/` 内のファイル名を指定します。
+
+### 1.3. 文字エンコーディング
 
 - **UTF-8** (BOMなし)
 - **JSON形式**: 標準的なJSON仕様に準拠
@@ -72,7 +86,7 @@ QuickDashLauncherは複数のJSON形式のデータファイルをサポート�
 1. **通常アイテム** (`type: "item"`) - アプリケーション、URL、ファイル、フォルダを起動
 2. **フォルダ取込アイテム** (`type: "dir"`) - 指定フォルダ内のファイル/フォルダを自動取込
 3. **グループアイテム** (`type: "group"`) - 複数のアイテムをまとめて一括起動
-4. **ウィンドウ操作アイテム** (`type: "window"`) - 既存ウィンドウの検索・制御
+4. **ウィンドウアイテム** (`type: "window"`) - 既存ウィンドウの検索・制御
 5. **クリップボードアイテム** (`type: "clipboard"`) - クリップボードの内容を保存・復元
 
 ### 2.5. 基本的な使用例
@@ -115,6 +129,8 @@ QuickDashLauncherは複数のJSON形式のデータファイルをサポート�
 | **args** | string | - | コマンドライン引数（オプション） |
 | **customIcon** | string | - | カスタムアイコンファイル名（オプション） |
 | **windowConfig** | object | - | ウィンドウ制御設定（オプション） |
+| **memo** | string | - | 自由記述メモ（オプション） |
+| **updatedAt** | number | - | 更新日時（Unixタイムスタンプ ms、オプション） |
 
 #### 3.1.2. サポートされるパス種類
 
@@ -174,7 +190,7 @@ QuickDashLauncherは複数のJSON形式のデータファイルをサポート�
 }
 ```
 
-- **配置場所**: `%APPDATA%/quick-dash-launcher/config/custom-icons/`
+- **配置場所**: `%APPDATA%/quick-dash-launcher/config/icon-cache/custom/`
 - **対応形式**: `.png`, `.jpg`, `.jpeg`, `.ico`, `.svg`
 
 #### 3.1.5. ウィンドウ制御設定（WindowConfig）
@@ -271,6 +287,8 @@ QuickDashLauncherは複数のJSON形式のデータファイルをサポート�
 | **type** | "dir" | ✓ | アイテムタイプ（常に "dir"） |
 | **path** | string | ✓ | スキャン対象のフォルダパス |
 | **options** | object | - | スキャンオプション（オプション） |
+| **memo** | string | - | 自由記述メモ（オプション） |
+| **updatedAt** | number | - | 更新日時（Unixタイムスタンプ ms、オプション） |
 
 #### 3.2.2. スキャンオプション（JsonDirOptions）
 
@@ -340,6 +358,8 @@ QuickDashLauncherは複数のJSON形式のデータファイルをサポート�
 | **type** | "group" | ✓ | アイテムタイプ（常に "group"） |
 | **displayName** | string | ✓ | グループの表示名 |
 | **itemNames** | array | ✓ | 既存アイテムの名前のリスト |
+| **memo** | string | - | 自由記述メモ（オプション） |
+| **updatedAt** | number | - | 更新日時（Unixタイムスタンプ ms、オプション） |
 
 #### 3.3.2. 動作仕様
 
@@ -410,7 +430,7 @@ QuickDashLauncherは複数のJSON形式のデータファイルをサポート�
 - **部分的な参照エラー**: エラーがあっても残りのアイテムは実行継続
 - **循環参照**: グループ内でグループは参照できません（通常アイテムのみ）
 
-### 3.4. ウィンドウ操作アイテム（JsonWindowItem）
+### 3.4. ウィンドウアイテム（JsonWindowItem）
 
 既存のウィンドウを検索・制御するアイテムです。アプリケーションを起動せず、既存ウィンドウのみを操作します。
 
@@ -431,6 +451,8 @@ QuickDashLauncherは複数のJSON形式のデータファイルをサポート�
 | **virtualDesktopNumber** | number | - | - | 仮想デスクトップ番号（1から開始） |
 | **activateWindow** | boolean | - | true | ウィンドウをアクティブにするか |
 | **pinToAllDesktops** | boolean | - | - | 全仮想デスクトップにピン止めするか |
+| **memo** | string | - | - | 自由記述メモ（オプション） |
+| **updatedAt** | number | - | - | 更新日時（Unixタイムスタンプ ms、オプション） |
 
 #### 3.4.2. 動作仕様
 
@@ -541,12 +563,13 @@ QuickDashLauncherは複数のJSON形式のデータファイルをサポート�
 | **id** | string | ✓ | 8文字の一意ID |
 | **type** | "clipboard" | ✓ | アイテムタイプ（常に "clipboard"） |
 | **displayName** | string | ✓ | アプリケーション内での表示名 |
-| **dataFileRef** | string | ✓ | クリップボードデータファイルへの参照（clipboard-data/{id}.json） |
+| **dataFileRef** | string | ✓ | クリップボードデータファイルへの参照（{id}.json） |
+| **savedAt** | number | ✓ | 保存日時（Unixタイムスタンプ ms） |
+| **formats** | string[] | ✓ | 保存されているフォーマット（text, html, rtf, image, file） |
 | **preview** | string | - | プレビュー文字列（最初の100文字程度） |
-| **formats** | string[] | - | 利用可能なフォーマット（text, html, rtf, image, file） |
-| **dataSize** | number | - | データサイズ（bytes） |
-| **savedAt** | number | - | 保存日時（タイムスタンプ） |
 | **customIcon** | string | - | カスタムアイコンファイル名（オプション） |
+| **memo** | string | - | 自由記述メモ（オプション） |
+| **updatedAt** | number | - | 更新日時（Unixタイムスタンプ ms、オプション） |
 
 #### 3.5.2. 基本的な使用例
 
@@ -559,10 +582,9 @@ QuickDashLauncherは複数のJSON形式のデータファイルをサポート�
       "type": "clipboard",
       "displayName": "コピーしたテキスト",
       "dataFileRef": "a1B2c3D4.json",
-      "preview": "Hello, World! This is...",
+      "savedAt": 1706832000000,
       "formats": ["text", "html"],
-      "dataSize": 1024,
-      "savedAt": 1706832000000
+      "preview": "Hello, World! This is..."
     }
   ]
 }
@@ -690,15 +712,33 @@ interface JsonDataFile {
 #### 6.1.2. JsonItem
 
 ```typescript
-type JsonItem = JsonLauncherItem | JsonDirItem | JsonGroupItem | JsonWindowItem;
+type JsonItem =
+  | JsonLauncherItem
+  | JsonDirItem
+  | JsonGroupItem
+  | JsonWindowItem
+  | JsonClipboardItem;
+```
+
+#### 6.1.2.1. JsonItemBase（共通基底）
+
+すべてのJSON型は以下の共通フィールドを持ちます：
+
+```typescript
+interface JsonItemBase {
+  /** 8文字の一意ID（英数字、ランダムに生成） */
+  id: string;
+  /** 自由記述メモ（オプション） */
+  memo?: string;
+  /** 更新日時（Unixタイムスタンプ ms、オプション） */
+  updatedAt?: number;
+}
 ```
 
 #### 6.1.3. JsonLauncherItem
 
 ```typescript
-interface JsonLauncherItem {
-  /** 8文字の一意ID */
-  id: string;
+interface JsonLauncherItem extends JsonItemBase {
   /** アイテムタイプ */
   type: 'item';
   /** 表示名 */
@@ -717,9 +757,7 @@ interface JsonLauncherItem {
 #### 6.1.4. JsonDirItem
 
 ```typescript
-interface JsonDirItem {
-  /** 8文字の一意ID */
-  id: string;
+interface JsonDirItem extends JsonItemBase {
   /** アイテムタイプ */
   type: 'dir';
   /** スキャン対象のフォルダパス */
@@ -747,9 +785,7 @@ interface JsonDirOptions {
 #### 6.1.5. JsonGroupItem
 
 ```typescript
-interface JsonGroupItem {
-  /** 8文字の一意ID */
-  id: string;
+interface JsonGroupItem extends JsonItemBase {
   /** アイテムタイプ */
   type: 'group';
   /** グループの表示名 */
@@ -762,9 +798,7 @@ interface JsonGroupItem {
 #### 6.1.6. JsonWindowItem
 
 ```typescript
-interface JsonWindowItem {
-  /** 8文字の一意ID */
-  id: string;
+interface JsonWindowItem extends JsonItemBase {
   /** アイテムタイプ */
   type: 'window';
   /** アイテムリストでの表示名 */
@@ -827,6 +861,27 @@ interface WindowConfig {
 }
 ```
 
+#### 6.1.8. JsonClipboardItem
+
+```typescript
+interface JsonClipboardItem extends JsonItemBase {
+  /** アイテムタイプ */
+  type: 'clipboard';
+  /** アイテムの表示名 */
+  displayName: string;
+  /** クリップボードデータファイルへの参照（{id}.json） */
+  dataFileRef: string;
+  /** 保存日時（Unixタイムスタンプ ms） */
+  savedAt: number;
+  /** 保存されているフォーマット */
+  formats: ClipboardFormat[];
+  /** プレビューテキスト（最初の100文字程度、オプション） */
+  preview?: string;
+  /** カスタムアイコンファイル名（オプション） */
+  customIcon?: string;
+}
+```
+
 ### 6.2. 内部型定義
 
 #### 6.2.1. LauncherItem（内部型）
@@ -835,7 +890,7 @@ interface WindowConfig {
 interface LauncherItem {
   displayName: string;       // 表示名
   path: string;              // パス・URL・コマンド
-  type: 'url' | 'file' | 'folder' | 'app' | 'customUri';
+  type: 'url' | 'file' | 'folder' | 'app' | 'customUri' | 'clipboard';
   icon?: string;             // base64アイコンデータ
   customIcon?: string;       // カスタムアイコンファイル名
   args?: string;             // コマンドライン引数
@@ -849,6 +904,7 @@ interface LauncherItem {
   expandedFromId?: string;   // フォルダ取込元のdirディレクティブID
   isEdited?: boolean;        // 編集フラグ
   windowConfig?: WindowConfig; // ウィンドウ制御設定
+  memo?: string;             // 自由記述メモ
 }
 ```
 
@@ -863,48 +919,35 @@ interface GroupItem {
   lineNumber?: number;       // データファイル内の行番号（非推奨：IDベースアクセスを推奨）
   id?: string;               // JSONアイテムのID（JSON形式の場合）
   isEdited?: boolean;        // 編集フラグ
+  memo?: string;             // 自由記述メモ
 }
 ```
 
-#### 6.2.3. WindowOperationItem（内部型）
+#### 6.2.3. ClipboardItem（内部型）
 
 ```typescript
-/**
- * ワイルドカード検索:
- * - windowTitleにワイルドカード文字（*または?）が含まれている場合、ワイルドカードマッチングを実行
- * - ワイルドカード文字が含まれていない場合、完全一致検索を実行
- * - 大文字小文字は区別しない
- *
- * @deprecated JSON形式に移行しています。新しいコードではJsonWindowItemを使用してください。
- */
-interface WindowOperationItem {
-  type: 'windowOperation';   // アイテムタイプ（常に'windowOperation'）
-  displayName: string;       // アイテムリストでの表示名（必須）
-  windowTitle: string;       // ウィンドウタイトル（検索用、必須、ワイルドカード対応）
-  processName?: string;      // プロセス名で検索（部分一致、省略時は検索なし）
-  x?: number;                // X座標（仮想スクリーン座標系、省略時は位置変更なし）
-  y?: number;                // Y座標（仮想スクリーン座標系、省略時は位置変更なし）
-  width?: number;            // 幅（省略時はサイズ変更なし）
-  height?: number;           // 高さ（省略時はサイズ変更なし）
-  moveToActiveMonitorCenter?: boolean; // アクティブモニター中央に移動するか（省略時はfalse）
-  virtualDesktopNumber?: number; // 仮想デスクトップ番号（1から開始、省略時は移動なし）
-  activateWindow?: boolean;  // ウィンドウをアクティブにするかどうか（省略時はtrue）
-  pinToAllDesktops?: boolean; // 全仮想デスクトップにピン止めするか（省略時はfalse）
+interface ClipboardItem {
+  type: 'clipboard';         // アイテムタイプ（常に'clipboard'）
+  displayName: string;       // アイテムリストでの表示名
+  clipboardDataRef: string;  // クリップボードデータファイルへの参照
+  savedAt: number;           // 保存日時（Unixタイムスタンプ ms）
+  formats: ClipboardFormat[]; // 保存されているフォーマット
+  preview?: string;          // プレビューテキスト
+  customIcon?: string;       // カスタムアイコンファイル名
   sourceFile?: string;       // 元データファイル名
-  lineNumber?: number;       // データファイル内の行番号
+  lineNumber?: number;       // データファイル内の行番号（非推奨：IDベースアクセスを推奨）
   id?: string;               // JSONアイテムのID（JSON形式の場合）
   isEdited?: boolean;        // 編集フラグ
+  memo?: string;             // 自由記述メモ
 }
 ```
 
 #### 6.2.4. AppItem
 
 ```typescript
-// LauncherItem、GroupItem、WindowItemの統合型
-type AppItem = LauncherItem | GroupItem | WindowItem | WindowInfo;
+// LauncherItem、GroupItem、WindowItem、ClipboardItem、WindowInfoの統合型
+type AppItem = LauncherItem | GroupItem | WindowItem | ClipboardItem | WindowInfo;
 ```
-
-**注**: v0.5.20以降、`WindowOperationItem`は`WindowItem`に統一されました。
 
 ### 6.3. 検索関連型
 
@@ -915,9 +958,8 @@ type AppItem = LauncherItem | GroupItem | WindowItem | WindowInfo;
  * 検索モードを表す型
  * normal: 通常のアイテム検索モード
  * window: ウィンドウ検索モード
- * history: 実行履歴検索モード
  */
-export type SearchMode = 'normal' | 'window' | 'history';
+export type SearchMode = 'normal' | 'window';
 ```
 
 #### 6.3.2. SearchHistoryEntry
