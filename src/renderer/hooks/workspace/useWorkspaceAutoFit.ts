@@ -1,6 +1,12 @@
 import { useCallback, useRef } from 'react';
 
+type ResizeFn = (width: number, height: number) => void;
+
 const MIN_HEIGHT = 150;
+
+function defaultResizeFn(width: number, height: number): void {
+  window.electronAPI.workspaceAPI.setSize(width, height);
+}
 
 /**
  * ワークスペースウィンドウの高さをコンテンツに合わせて自動調整するフック
@@ -9,10 +15,14 @@ const MIN_HEIGHT = 150;
  * コンテンツ高さの変化に応じてウィンドウ高さをsetSizeで更新する。
  *
  * callback refパターンを使用し、要素のアタッチ/デタッチに正しく対応する。
+ *
+ * @param resizeFn カスタムリサイズ関数（省略時はメインワークスペースウィンドウをリサイズ）
  */
-export function useWorkspaceAutoFit(): {
+export function useWorkspaceAutoFit(resizeFn?: ResizeFn): {
   contentRef: (node: HTMLDivElement | null) => void;
 } {
+  const resizeRef = useRef(resizeFn ?? defaultResizeFn);
+  resizeRef.current = resizeFn ?? defaultResizeFn;
   const lastHeightRef = useRef<number>(0);
   const observerRef = useRef<ResizeObserver | null>(null);
 
@@ -42,7 +52,7 @@ export function useWorkspaceAutoFit(): {
     if (Math.abs(clampedHeight - lastHeightRef.current) <= 2) return;
 
     lastHeightRef.current = clampedHeight;
-    window.electronAPI.workspaceAPI.setSize(window.outerWidth, clampedHeight);
+    resizeRef.current(window.outerWidth, clampedHeight);
   }, []);
 
   const contentRef = useCallback(

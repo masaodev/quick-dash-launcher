@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import type { WorkspaceItem } from '@common/types';
 import { getDescendantGroupIds } from '@common/utils/groupTreeUtils';
 
@@ -53,6 +53,16 @@ const WorkspaceApp: React.FC = () => {
   const [isFilterVisible, setIsFilterVisible] = useState(false);
   const [filterText, setFilterText] = useState('');
   const [filterScope, setFilterScope] = useState<FilterScope>('all');
+  const [detachedGroupId, setDetachedGroupId] = useState<string | null>(null);
+
+  // URLクエリパラメータから groupId を読み取り（切り離しウィンドウモード判定）
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const groupId = params.get('groupId');
+    if (groupId) {
+      setDetachedGroupId(groupId);
+    }
+  }, []);
 
   const { items, groups, setGroups, loadAllDataWithLoading } = useWorkspaceData();
 
@@ -67,7 +77,15 @@ const WorkspaceApp: React.FC = () => {
   });
   const filterResult = useWorkspaceFilter(groups, items, filterText, filterScope);
   const { handleResize } = useWorkspaceResize();
-  const { contentRef } = useWorkspaceAutoFit();
+  const detachedResizeFn = useMemo(
+    () =>
+      detachedGroupId
+        ? (width: number, height: number) =>
+            window.electronAPI.workspaceAPI.resizeCallerWindow(width, height)
+        : undefined,
+    [detachedGroupId]
+  );
+  const { contentRef } = useWorkspaceAutoFit(detachedResizeFn);
   const [deleteGroupDialog, setDeleteGroupDialog] = useState(INITIAL_DELETE_DIALOG);
   const [archiveGroupDialog, setArchiveGroupDialog] = useState(INITIAL_ARCHIVE_DIALOG);
 
@@ -222,6 +240,81 @@ const WorkspaceApp: React.FC = () => {
   // グループレベルで処理されなかったドロップのフォールバック（グループ未指定）
   useNativeDragDrop(handleNativeFileDrop);
 
+  const handleDetachGroup = (groupId: string, screenX: number, screenY: number) => {
+    window.electronAPI.workspaceAPI.detachGroup(groupId, screenX, screenY);
+  };
+
+  const handleCloseDetached = () => {
+    if (detachedGroupId) {
+      window.electronAPI.workspaceAPI.closeDetachedGroup(detachedGroupId);
+    }
+  };
+
+  // handlers と ui の共通部分（通常モード・切り離しモードで共用）
+  const commonHandlers = {
+    onLaunch: actions.handleLaunch,
+    onRemoveItem: actions.handleRemove,
+    onUpdateDisplayName: (id: string, displayName: string) => {
+      actions.handleUpdateDisplayName(id, displayName);
+      setEditingId(null);
+    },
+    onEditItem: (item: WorkspaceItem) => setEditModalItem(item),
+    onToggleGroup: (groupId: string) => actions.handleToggleGroup(groupId, groups, setGroups),
+    onUpdateGroup: actions.handleUpdateGroup,
+    onDeleteGroup: handleDeleteGroup,
+    onArchiveGroup: handleArchiveGroup,
+    onAddSubgroup: actions.handleAddSubgroup,
+    onMoveItemToGroup: actions.handleMoveItemToGroup,
+    onMoveGroupToParent: actions.handleMoveGroupToParent,
+    onReorderMixed: actions.handleReorderMixed,
+    onNativeFileDrop: handleNativeFileDrop,
+  };
+
+  const commonUi = {
+    editingItemId: editingId,
+    setEditingItemId: setEditingId,
+    uncategorizedCollapsed: collapsed.uncategorized || false,
+    onToggleUncategorized: () => toggleSection('uncategorized'),
+    activeGroupId,
+    setActiveGroupId,
+  };
+
+  const editModal = (
+    <WorkspaceItemEditModal
+      isOpen={editModalItem !== null}
+      onClose={() => setEditModalItem(null)}
+      editingItem={editModalItem}
+      onSave={actions.handleUpdateItem}
+    />
+  );
+
+  // 切り離しウィンドウモード: 対象グループとその子孫のみ表示
+  if (detachedGroupId) {
+    const descendantIds = getDescendantGroupIds(detachedGroupId, groups);
+    const detachedVisibleGroupIds = new Set([detachedGroupId, ...descendantIds]);
+
+    return (
+      <div
+        className={`workspace-window detached-group-window ${backgroundTransparent ? 'background-transparent' : ''}`}
+      >
+        <div className="detached-drag-handle" />
+        <WorkspaceGroupedList
+          contentRef={contentRef}
+          data={{ groups, items }}
+          handlers={commonHandlers}
+          ui={{
+            ...commonUi,
+            visibleGroupIds: detachedVisibleGroupIds,
+            showUncategorized: false,
+            detachedRootGroupId: detachedGroupId,
+            onCloseDetached: handleCloseDetached,
+          }}
+        />
+        {editModal}
+      </div>
+    );
+  }
+
   return (
     <div className={`workspace-window ${backgroundTransparent ? 'background-transparent' : ''}`}>
       <WorkspaceHeader
@@ -252,35 +345,13 @@ const WorkspaceApp: React.FC = () => {
       )}
       <WorkspaceGroupedList
         contentRef={contentRef}
-        data={{
-          groups,
-          items,
-        }}
+        data={{ groups, items }}
         handlers={{
-          onLaunch: actions.handleLaunch,
-          onRemoveItem: actions.handleRemove,
-          onUpdateDisplayName: (id: string, displayName: string) => {
-            actions.handleUpdateDisplayName(id, displayName);
-            setEditingId(null);
-          },
-          onEditItem: (item: WorkspaceItem) => setEditModalItem(item),
-          onToggleGroup: (groupId: string) => actions.handleToggleGroup(groupId, groups, setGroups),
-          onUpdateGroup: actions.handleUpdateGroup,
-          onDeleteGroup: handleDeleteGroup,
-          onArchiveGroup: handleArchiveGroup,
-          onAddSubgroup: actions.handleAddSubgroup,
-          onMoveItemToGroup: actions.handleMoveItemToGroup,
-          onMoveGroupToParent: actions.handleMoveGroupToParent,
-          onReorderMixed: actions.handleReorderMixed,
-          onNativeFileDrop: handleNativeFileDrop,
+          ...commonHandlers,
+          onDetachGroup: handleDetachGroup,
         }}
         ui={{
-          editingItemId: editingId,
-          setEditingItemId: setEditingId,
-          uncategorizedCollapsed: collapsed.uncategorized || false,
-          onToggleUncategorized: () => toggleSection('uncategorized'),
-          activeGroupId,
-          setActiveGroupId,
+          ...commonUi,
           visibleGroupIds: filterResult.visibleGroupIds,
           itemVisibility: filterResult.itemVisibility,
           showUncategorized: filterResult.showUncategorized,
@@ -315,12 +386,7 @@ const WorkspaceApp: React.FC = () => {
         cancelText="キャンセル"
         danger={false}
       />
-      <WorkspaceItemEditModal
-        isOpen={editModalItem !== null}
-        onClose={() => setEditModalItem(null)}
-        editingItem={editModalItem}
-        onSave={actions.handleUpdateItem}
-      />
+      {editModal}
       {RESIZE_DIRECTIONS.map((direction) => (
         <div
           key={direction}

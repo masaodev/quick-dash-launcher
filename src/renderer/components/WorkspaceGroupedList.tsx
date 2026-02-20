@@ -140,6 +140,7 @@ interface WorkspaceGroupedListProps {
     onMoveGroupToParent: (groupId: string, newParentGroupId?: string) => void;
     onReorderMixed: (parentGroupId: string | undefined, entries: MixedOrderEntry[]) => void;
     onNativeFileDrop?: (e: React.DragEvent, groupId?: string) => Promise<void>;
+    onDetachGroup?: (groupId: string, screenX: number, screenY: number) => void;
   };
   ui: {
     editingItemId: string | null;
@@ -151,6 +152,8 @@ interface WorkspaceGroupedListProps {
     visibleGroupIds?: Set<string> | null;
     itemVisibility?: Map<string, boolean> | null;
     showUncategorized?: boolean;
+    detachedRootGroupId?: string;
+    onCloseDetached?: () => void;
   };
 }
 
@@ -175,6 +178,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     onMoveGroupToParent,
     onReorderMixed,
     onNativeFileDrop,
+    onDetachGroup,
   } = handlers;
   const {
     editingItemId,
@@ -185,6 +189,8 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     visibleGroupIds,
     itemVisibility,
     showUncategorized = true,
+    detachedRootGroupId,
+    onCloseDetached,
   } = ui;
 
   const [draggedElement, setDraggedElement] = React.useState<{
@@ -327,6 +333,15 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     onDeleteGroup,
     onAddSubgroup,
   ]);
+
+  /** グループヘッダーの dragEnd でウィンドウ外ドロップを検出 */
+  const handleGroupDragEndForDetach = (e: React.DragEvent, groupId: string) => {
+    if (!onDetachGroup) return;
+    // dropEffect === 'none' はどのドロップターゲットにも受け入れられなかったことを示す
+    if (e.dataTransfer.dropEffect === 'none') {
+      onDetachGroup(groupId, e.screenX, e.screenY);
+    }
+  };
 
   const handleMixedDragStart = (id: string, kind: 'item' | 'group') => (e: React.DragEvent) => {
     setDraggedElement({ id, kind });
@@ -585,6 +600,8 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
         )
       : mixed;
 
+    const isDetachedRoot = detachedRootGroupId === node.group.id;
+
     return (
       <div
         key={node.group.id}
@@ -597,12 +614,15 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
           itemCount={groupItems.length}
           isEditing={editingGroupId === node.group.id}
           depth={node.depth}
+          isDetachedRoot={isDetachedRoot}
+          onCloseDetached={onCloseDetached}
           onToggle={handleGroupToggle}
           onUpdate={onUpdateGroup}
           onStartEdit={() =>
             setEditingGroupId(editingGroupId === node.group.id ? null : node.group.id)
           }
           onGroupDragStart={handleMixedDragStart(node.group.id, 'group')}
+          onGroupDragEnd={handleGroupDragEndForDetach}
           onGroupDragOverForReorder={handleMixedDragOver}
           onGroupDropForReorder={handleMixedDrop(node.group.id, 'group', node.group.parentGroupId)}
           onContextMenu={handleGroupContextMenu(node.group)}
@@ -661,47 +681,51 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
         {/* ツリー構造でグループをレンダリング */}
         {groupTree.map((node) => renderGroupNode(node))}
 
-        {filteredUncategorizedItems.length > 0 && (showUncategorized || !itemVisibility) && (
-          <div
-            className={`workspace-uncategorized-section${dragOverGroupId === '__uncategorized__' ? ' drag-over' : ''}`}
-            onDragOver={handleGroupDragOver(undefined)}
-            onDrop={handleGroupDrop(undefined)}
-          >
+        {filteredUncategorizedItems.length > 0 &&
+          showUncategorized !== false &&
+          (showUncategorized || !itemVisibility) && (
             <div
-              className="workspace-group-header"
-              onClick={handleUncategorizedToggle}
-              style={{ '--group-color': 'var(--color-secondary)' } as React.CSSProperties}
+              className={`workspace-uncategorized-section${dragOverGroupId === '__uncategorized__' ? ' drag-over' : ''}`}
+              onDragOver={handleGroupDragOver(undefined)}
+              onDrop={handleGroupDrop(undefined)}
             >
-              <span
-                className={`workspace-group-collapse-icon${uncategorizedCollapsed ? ' collapsed' : ''}`}
+              <div
+                className="workspace-group-header"
+                onClick={handleUncategorizedToggle}
+                style={{ '--group-color': 'var(--color-secondary)' } as React.CSSProperties}
               >
-                ▼
-              </span>
-              <span className="workspace-group-name">未分類</span>
-              <span className="workspace-group-badge">{filteredUncategorizedItems.length}</span>
-            </div>
-            {!uncategorizedCollapsed && (
-              <div className="workspace-group-items">
-                {filteredUncategorizedItems.map((item) => (
-                  <WorkspaceItemCard
-                    key={item.id}
-                    item={item}
-                    isEditing={editingItemId === item.id}
-                    onLaunch={onLaunch}
-                    onRemove={onRemoveItem}
-                    onUpdateDisplayName={onUpdateDisplayName}
-                    onStartEdit={() => setEditingItemId(editingItemId === item.id ? null : item.id)}
-                    onDragStart={handleMixedDragStart(item.id, 'item')}
-                    onDragEnd={handleMixedDragEnd}
-                    onDragOver={handleMixedDragOver}
-                    onDrop={handleMixedDrop(item.id, 'item', undefined)}
-                    onContextMenu={handleContextMenu(item)}
-                  />
-                ))}
+                <span
+                  className={`workspace-group-collapse-icon${uncategorizedCollapsed ? ' collapsed' : ''}`}
+                >
+                  ▼
+                </span>
+                <span className="workspace-group-name">未分類</span>
+                <span className="workspace-group-badge">{filteredUncategorizedItems.length}</span>
               </div>
-            )}
-          </div>
-        )}
+              {!uncategorizedCollapsed && (
+                <div className="workspace-group-items">
+                  {filteredUncategorizedItems.map((item) => (
+                    <WorkspaceItemCard
+                      key={item.id}
+                      item={item}
+                      isEditing={editingItemId === item.id}
+                      onLaunch={onLaunch}
+                      onRemove={onRemoveItem}
+                      onUpdateDisplayName={onUpdateDisplayName}
+                      onStartEdit={() =>
+                        setEditingItemId(editingItemId === item.id ? null : item.id)
+                      }
+                      onDragStart={handleMixedDragStart(item.id, 'item')}
+                      onDragEnd={handleMixedDragEnd}
+                      onDragOver={handleMixedDragOver}
+                      onDrop={handleMixedDrop(item.id, 'item', undefined)}
+                      onContextMenu={handleContextMenu(item)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
         {/* カラーピッカー */}
         {colorPickerGroupId && (

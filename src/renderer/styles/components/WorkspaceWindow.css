@@ -832,3 +832,54 @@ html:has(.workspace-window.background-transparent) {
   width: 5px;
   cursor: e-resize;
 }
+
+/* ==================== 切り離しグループウィンドウ ==================== */
+
+.detached-group-window {
+  border-radius: var(--border-radius-lg);
+}
+
+/* ウィンドウ上部のドラッグハンドル */
+.detached-drag-handle {
+  height: var(--spacing-sm);
+  flex-shrink: 0;
+  -webkit-app-region: drag;
+  cursor: move;
+}
+
+/* ルートグループヘッダーの閉じるボタン用余白 */
+.workspace-group-header.detached-root {
+  padding-right: 36px;
+}
+
+/* 閉じるボタン（グループヘッダー内） */
+.detached-group-close-btn {
+  -webkit-app-region: no-drag;
+  position: absolute;
+  right: var(--spacing-xs);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-white);
+  transition: var(--transition-fast);
+}
+
+.detached-group-close-btn:hover {
+  background-color: rgba(255, 255, 255, 0.4);
+}
+
+.detached-group-close-btn:active {
+  transform: translateY(-50%) scale(0.95);
+}

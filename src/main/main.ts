@@ -33,6 +33,7 @@ import {
   closeWorkspaceWindow,
   setAppQuitting as setWorkspaceAppQuitting,
 } from './workspaceWindowManager';
+import { closeAllDetachedGroupWindows } from './detachedGroupWindowManager';
 import { destroyToastWindow } from './services/toastWindowService.js';
 import { BookmarkAutoImportService } from './services/bookmarkAutoImportService.js';
 
@@ -156,6 +157,7 @@ app.on('will-quit', () => {
   globalShortcut.unregisterAll();
   closeAdminWindow();
   closeWorkspaceWindow();
+  closeAllDetachedGroupWindows();
   closeSplashWindow();
   destroyToastWindow();
 });

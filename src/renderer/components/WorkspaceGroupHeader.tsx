@@ -6,10 +6,13 @@ interface WorkspaceGroupHeaderProps {
   itemCount: number;
   isEditing: boolean;
   depth: number;
+  isDetachedRoot?: boolean;
+  onCloseDetached?: () => void;
   onToggle: (groupId: string) => void;
   onUpdate: (groupId: string, updates: Partial<WorkspaceGroup>) => void;
   onStartEdit: () => void;
   onGroupDragStart: (e: React.DragEvent) => void;
+  onGroupDragEnd?: (e: React.DragEvent, groupId: string) => void;
   onGroupDragOverForReorder: (e: React.DragEvent) => void;
   onGroupDropForReorder: (e: React.DragEvent) => void;
   onContextMenu: (e: React.MouseEvent) => void;
@@ -20,10 +23,13 @@ function WorkspaceGroupHeader({
   itemCount,
   isEditing,
   depth,
+  isDetachedRoot,
+  onCloseDetached,
   onToggle,
   onUpdate,
   onStartEdit,
   onGroupDragStart,
+  onGroupDragEnd,
   onGroupDragOverForReorder,
   onGroupDropForReorder,
   onContextMenu,
@@ -66,6 +72,10 @@ function WorkspaceGroupHeader({
     onGroupDragStart(e);
   }
 
+  function handleDragEnd(e: React.DragEvent): void {
+    onGroupDragEnd?.(e, group.id);
+  }
+
   function handleDrop(e: React.DragEvent): void {
     const groupId = e.dataTransfer.getData('groupId');
     if (groupId) {
@@ -80,10 +90,11 @@ function WorkspaceGroupHeader({
 
   return (
     <div
-      className={`workspace-group-header${depthClass}`}
+      className={`workspace-group-header${depthClass}${isDetachedRoot ? ' detached-root' : ''}`}
       onClick={() => onToggle(group.id)}
-      draggable={!isEditing}
+      draggable={!isEditing && !isDetachedRoot}
       onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
       onDragOver={onGroupDragOverForReorder}
       onDrop={handleDrop}
       onContextMenu={onContextMenu}
@@ -125,6 +136,19 @@ function WorkspaceGroupHeader({
       )}
 
       <span className="workspace-group-badge">{itemCount}個</span>
+
+      {isDetachedRoot && onCloseDetached && (
+        <button
+          className="detached-group-close-btn"
+          onClick={(e) => {
+            e.stopPropagation();
+            onCloseDetached();
+          }}
+          title="閉じる"
+        >
+          ×
+        </button>
+      )}
     </div>
   );
 }

@@ -372,6 +372,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_SET_POSITION_MODE, mode),
     // ウィンドウ制御
     hideWindow: (): Promise<boolean> => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_HIDE_WINDOW),
+    // 切り離しウィンドウ
+    detachGroup: (
+      groupId: string,
+      cursorX?: number,
+      cursorY?: number
+    ): Promise<{ success: boolean }> =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_DETACH_GROUP, groupId, cursorX, cursorY),
+    closeDetachedGroup: (groupId: string): Promise<{ success: boolean }> =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_CLOSE_DETACHED_GROUP, groupId),
+    resizeCallerWindow: (width: number, height: number): Promise<boolean> =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_RESIZE_CALLER_WINDOW, width, height),
   },
   // コンテキストメニュー表示API
   showAdminItemContextMenu: (selectedCount: number, isSingleLine: boolean): Promise<void> =>
