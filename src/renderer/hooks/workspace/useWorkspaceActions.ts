@@ -1,4 +1,4 @@
-import type { WorkspaceItem, WorkspaceGroup } from '@common/types';
+import type { WorkspaceItem, WorkspaceGroup, MixedOrderEntry } from '@common/types';
 
 import { logError } from '../../utils/debug';
 
@@ -127,9 +127,23 @@ export function useWorkspaceActions(onDataChanged: () => void) {
     onDataChanged
   );
 
+  const handleMoveGroupToParent = withErrorHandling(
+    async (groupId: string, newParentGroupId?: string) =>
+      api.moveGroupToParent(groupId, newParentGroupId),
+    'Failed to move group to parent:',
+    onDataChanged
+  );
+
   const handleReorderGroups = withErrorHandling(
     async (groupIds: string[]) => api.reorderGroups(groupIds),
     'Failed to reorder workspace groups:',
+    onDataChanged
+  );
+
+  const handleReorderMixed = withErrorHandling(
+    async (parentGroupId: string | undefined, entries: MixedOrderEntry[]) =>
+      api.reorderMixed(parentGroupId, entries),
+    'Failed to reorder mixed children:',
     onDataChanged
   );
 
@@ -146,6 +160,8 @@ export function useWorkspaceActions(onDataChanged: () => void) {
     handleAddGroup,
     handleAddSubgroup,
     handleMoveItemToGroup,
+    handleMoveGroupToParent,
     handleReorderGroups,
+    handleReorderMixed,
   };
 }

@@ -24,6 +24,8 @@ export type {
   DropTargetData,
   ArchivedWorkspaceGroup,
   ArchivedWorkspaceItem,
+  MixedChild,
+  MixedOrderEntry,
 } from './workspace';
 
 // データファイル関連の型・定数

@@ -541,13 +541,13 @@ html:has(.workspace-window.background-transparent) {
   pointer-events: none; /* クリックイベントを透過 */
 }
 
-/* サブグループコンテナ */
-.workspace-subgroups {
+/* サブグループ・アイテム混在コンテナ */
+.workspace-group-mixed-children {
   margin-left: var(--spacing-md);
   margin-top: 2px;
 }
 
-/* グループ内アイテム */
+/* グループ内アイテム（未分類セクション用） */
 .workspace-group-items {
   margin-left: var(--spacing-md);
   margin-top: 2px;

@@ -165,6 +165,17 @@ export interface DropTargetData {
   itemId?: string;
 }
 
+/** 親グループ内の混在要素（サブグループまたはアイテム） */
+export type MixedChild =
+  | { kind: 'group'; group: WorkspaceGroup }
+  | { kind: 'item'; item: WorkspaceItem };
+
+/** 混在並べ替えのエントリ（APIに渡す軽量版） */
+export interface MixedOrderEntry {
+  id: string;
+  kind: 'item' | 'group';
+}
+
 /**
  * アーカイブされたワークスペースグループ
  * WorkspaceGroupを拡張し、アーカイブ関連の情報を追加

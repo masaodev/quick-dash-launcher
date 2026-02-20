@@ -3,7 +3,13 @@
  * 各種マネージャークラスに処理を委譲する
  */
 import type ElectronStore from 'electron-store';
-import type { AppItem, WorkspaceItem, WorkspaceGroup, ArchivedWorkspaceGroup } from '@common/types';
+import type {
+  AppItem,
+  WorkspaceItem,
+  WorkspaceGroup,
+  ArchivedWorkspaceGroup,
+  MixedOrderEntry,
+} from '@common/types';
 import logger from '@common/logger';
 
 import PathManager from '../../config/pathManager.js';
@@ -188,6 +194,41 @@ export class WorkspaceService {
   public async reorderGroups(groupIds: string[]): Promise<void> {
     await this.initializeStore();
     this.groupManager!.reorderGroups(groupIds);
+  }
+
+  public async reorderMixed(
+    parentGroupId: string | undefined,
+    entries: MixedOrderEntry[]
+  ): Promise<void> {
+    await this.initializeStore();
+
+    const itemOrderMap = new Map<string, number>();
+    const groupOrderMap = new Map<string, number>();
+
+    entries.forEach((entry, index) => {
+      if (entry.kind === 'item') {
+        itemOrderMap.set(entry.id, index);
+      } else {
+        groupOrderMap.set(entry.id, index);
+      }
+    });
+
+    if (itemOrderMap.size > 0) {
+      this.itemManager!.updateItemOrders(itemOrderMap);
+    }
+    if (groupOrderMap.size > 0) {
+      this.groupManager!.updateGroupOrders(groupOrderMap);
+    }
+
+    logger.info(
+      { parentGroupId, items: itemOrderMap.size, groups: groupOrderMap.size },
+      'Reordered mixed children'
+    );
+  }
+
+  public async moveGroupToParent(groupId: string, newParentGroupId?: string): Promise<void> {
+    await this.initializeStore();
+    this.groupManager!.moveGroupToParent(groupId, newParentGroupId);
   }
 
   public async moveItemToGroup(itemId: string, groupId?: string): Promise<void> {

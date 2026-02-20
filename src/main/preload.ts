@@ -34,6 +34,7 @@ import type {
   SnapshotInfo,
   BackupStatus,
   RegisterItem,
+  MixedOrderEntry,
 } from '@common/types';
 import type { EditableJsonItem, LoadEditableItemsResult } from '@common/types/editableItem';
 import { IPC_CHANNELS } from '@common/ipcChannels';
@@ -326,8 +327,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_DELETE_GROUP, id, deleteItems),
     reorderGroups: (groupIds: string[]): Promise<{ success: boolean }> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_REORDER_GROUPS, groupIds),
+    reorderMixed: (
+      parentGroupId: string | undefined,
+      entries: MixedOrderEntry[]
+    ): Promise<{ success: boolean }> =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_REORDER_MIXED, parentGroupId, entries),
     moveItemToGroup: (itemId: string, groupId?: string): Promise<{ success: boolean }> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_MOVE_ITEM_TO_GROUP, itemId, groupId),
+    moveGroupToParent: (
+      groupId: string,
+      newParentGroupId?: string
+    ): Promise<{ success: boolean }> =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_MOVE_GROUP_TO_PARENT, groupId, newParentGroupId),
     setGroupsCollapsed: (ids: string[], collapsed: boolean): Promise<{ success: boolean }> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_SET_GROUPS_COLLAPSED, ids, collapsed),
     // アーカイブ管理

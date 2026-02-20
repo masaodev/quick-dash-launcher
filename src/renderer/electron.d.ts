@@ -34,6 +34,7 @@ import {
   BookmarkWithFolder,
   SnapshotInfo,
   BackupStatus,
+  MixedOrderEntry,
 } from '@common/types';
 import type { EditableJsonItem, LoadEditableItemsResult } from '@common/types/editableItem';
 
@@ -193,7 +194,15 @@ export interface ElectronAPI {
     updateGroup: (id: string, updates: Partial<WorkspaceGroup>) => Promise<{ success: boolean }>;
     deleteGroup: (id: string, deleteItems: boolean) => Promise<{ success: boolean }>;
     reorderGroups: (groupIds: string[]) => Promise<{ success: boolean }>;
+    reorderMixed: (
+      parentGroupId: string | undefined,
+      entries: MixedOrderEntry[]
+    ) => Promise<{ success: boolean }>;
     moveItemToGroup: (itemId: string, groupId?: string) => Promise<{ success: boolean }>;
+    moveGroupToParent: (
+      groupId: string,
+      newParentGroupId?: string
+    ) => Promise<{ success: boolean }>;
     setGroupsCollapsed: (ids: string[], collapsed: boolean) => Promise<{ success: boolean }>;
     // アーカイブ管理
     archiveGroup: (groupId: string) => Promise<{ success: boolean }>;

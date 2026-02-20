@@ -1,5 +1,5 @@
 import React from 'react';
-import type { AppItem, WorkspaceItem, WorkspaceGroup } from '@common/types';
+import type { AppItem, WorkspaceItem, WorkspaceGroup, MixedOrderEntry } from '@common/types';
 import { PathUtils } from '@common/utils/pathUtils';
 import { canCreateSubgroup, type GroupTreeNode } from '@common/utils/groupTreeUtils';
 
@@ -129,7 +129,6 @@ interface WorkspaceGroupedListProps {
   handlers: {
     onLaunch: (item: WorkspaceItem) => void;
     onRemoveItem: (id: string) => void;
-    onReorderItems: (itemIds: string[]) => void;
     onUpdateDisplayName: (id: string, displayName: string) => void;
     onEditItem: (item: WorkspaceItem) => void;
     onToggleGroup: (groupId: string) => void;
@@ -138,7 +137,8 @@ interface WorkspaceGroupedListProps {
     onArchiveGroup: (groupId: string) => void;
     onAddSubgroup: (parentGroupId: string, subgroupCount: number) => void;
     onMoveItemToGroup: (itemId: string, groupId?: string) => void;
-    onReorderGroups: (groupIds: string[]) => void;
+    onMoveGroupToParent: (groupId: string, newParentGroupId?: string) => void;
+    onReorderMixed: (parentGroupId: string | undefined, entries: MixedOrderEntry[]) => void;
     onNativeFileDrop?: (e: React.DragEvent, groupId?: string) => Promise<void>;
   };
   ui: {
@@ -164,7 +164,6 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
   const {
     onLaunch,
     onRemoveItem,
-    onReorderItems,
     onUpdateDisplayName,
     onEditItem,
     onToggleGroup,
@@ -173,7 +172,8 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     onArchiveGroup,
     onAddSubgroup,
     onMoveItemToGroup,
-    onReorderGroups,
+    onMoveGroupToParent,
+    onReorderMixed,
     onNativeFileDrop,
   } = handlers;
   const {
@@ -187,14 +187,18 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     showUncategorized = true,
   } = ui;
 
-  const [draggedItemId, setDraggedItemId] = React.useState<string | null>(null);
+  const [draggedElement, setDraggedElement] = React.useState<{
+    id: string;
+    kind: 'item' | 'group';
+  } | null>(null);
   const [editingGroupId, setEditingGroupId] = React.useState<string | null>(null);
   const [colorPickerGroupId, setColorPickerGroupId] = React.useState<string | null>(null);
   const [iconPickerGroupId, setIconPickerGroupId] = React.useState<string | null>(null);
   const [dragOverGroupId, setDragOverGroupId] = React.useState<string | null>(null);
   const dragOverTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const { itemsByGroup, uncategorizedItems, groupTree } = useWorkspaceItemGroups(items, groups);
+  const { itemsByGroup, uncategorizedItems, groupTree, mixedChildrenByGroup } =
+    useWorkspaceItemGroups(items, groups);
 
   const itemsMap = React.useMemo(() => new Map(items.map((item) => [item.id, item])), [items]);
 
@@ -324,68 +328,95 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     onAddSubgroup,
   ]);
 
-  const handleItemDragStart = (item: WorkspaceItem) => (e: React.DragEvent) => {
-    setDraggedItemId(item.id);
+  const handleMixedDragStart = (id: string, kind: 'item' | 'group') => (e: React.DragEvent) => {
+    setDraggedElement({ id, kind });
     e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('itemId', item.id);
-    e.dataTransfer.setData('currentGroupId', item.groupId || '');
+    e.dataTransfer.setData('itemId', kind === 'item' ? id : '');
+    e.dataTransfer.setData('groupId', kind === 'group' ? id : '');
+
+    // ドラッグ元の現在の親グループIDを記録（グループ間移動判定に使用）
+    if (kind === 'item') {
+      e.dataTransfer.setData('currentGroupId', itemsMap.get(id)?.groupId || '');
+    } else {
+      e.dataTransfer.setData('currentParentGroupId', groupsMap.get(id)?.parentGroupId || '');
+    }
   };
 
-  const handleItemDragEnd = () => {
-    setDraggedItemId(null);
+  const handleMixedDragEnd = () => {
+    setDraggedElement(null);
   };
 
-  const handleItemDragOver = (e: React.DragEvent) => {
+  const handleMixedDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    if (draggedItemId) {
+    if (draggedElement) {
       e.dataTransfer.dropEffect = 'move';
     }
   };
 
-  const handleItemDrop = (targetItem: WorkspaceItem) => (e: React.DragEvent) => {
-    e.preventDefault();
+  /** 混在ドロップハンドラー: 同一親内でサブグループとアイテムを混在並べ替え（未分類セクションにも対応） */
+  const handleMixedDrop =
+    (targetId: string, targetKind: 'item' | 'group', parentGroupId: string | undefined) =>
+    (e: React.DragEvent) => {
+      e.preventDefault();
 
-    if (!draggedItemId || draggedItemId === targetItem.id) {
-      setDraggedItemId(null);
-      return;
-    }
+      if (!draggedElement || draggedElement.id === targetId) {
+        setDraggedElement(null);
+        return;
+      }
 
-    // ドラッグ元のアイテムを取得
-    const draggedItem = items.find((i) => i.id === draggedItemId);
-    if (!draggedItem) {
-      setDraggedItemId(null);
-      return;
-    }
+      // グループ→グループのドロップ: サブグループ内では「中に入れる」操作として処理
+      // トップレベル（parentGroupId === undefined）ではグループ同士のドロップは並べ替え
+      const isGroupToGroupInSubLevel =
+        draggedElement.kind === 'group' && targetKind === 'group' && parentGroupId !== undefined;
+      if (isGroupToGroupInSubLevel) {
+        e.stopPropagation();
+        onMoveGroupToParent(draggedElement.id, targetId);
+        setDraggedElement(null);
+        return;
+      }
 
-    // 同じグループ内でのみ並び替えを許可
-    const draggedGroupId = draggedItem.groupId || 'uncategorized';
-    const targetGroupId = targetItem.groupId || 'uncategorized';
+      // ドラッグ元の親グループを特定
+      const draggedParentGroupId =
+        draggedElement.kind === 'item'
+          ? itemsMap.get(draggedElement.id)?.groupId
+          : groupsMap.get(draggedElement.id)?.parentGroupId;
 
-    if (draggedGroupId !== targetGroupId) {
-      // 異なるグループ間の並び替えは禁止（グループ移動として扱う）
-      setDraggedItemId(null);
-      return;
-    }
+      // 異なる親からのドラッグは伝播させ、handleGroupDrop でグループ間移動として処理
+      if (draggedParentGroupId !== parentGroupId) {
+        return;
+      }
 
-    // アイテムの並び替え
-    const draggedIndex = items.findIndex((i) => i.id === draggedItemId);
-    const targetIndex = items.findIndex((i) => i.id === targetItem.id);
+      // 同一親グループ内 → 混在並べ替え（イベント伝播を止める）
+      e.stopPropagation();
 
-    if (draggedIndex === -1 || targetIndex === -1) {
-      setDraggedItemId(null);
-      return;
-    }
+      // 現在の子要素からentriesを構築（グループ内 or 未分類）
+      const entries: MixedOrderEntry[] = parentGroupId
+        ? (mixedChildrenByGroup[parentGroupId] || []).map((child) =>
+            child.kind === 'group'
+              ? { id: child.group.id, kind: 'group' as const }
+              : { id: child.item.id, kind: 'item' as const }
+          )
+        : uncategorizedItems.map((item) => ({ id: item.id, kind: 'item' as const }));
 
-    const newItems = [...items];
-    const [movedItem] = newItems.splice(draggedIndex, 1);
-    newItems.splice(targetIndex, 0, movedItem);
+      const draggedIndex = entries.findIndex(
+        (entry) => entry.id === draggedElement.id && entry.kind === draggedElement.kind
+      );
+      const targetIndex = entries.findIndex(
+        (entry) => entry.id === targetId && entry.kind === targetKind
+      );
 
-    // 新しい順序でIDリストを作成
-    const newItemIds = newItems.map((i) => i.id);
-    onReorderItems(newItemIds);
+      if (draggedIndex === -1 || targetIndex === -1) {
+        setDraggedElement(null);
+        return;
+      }
 
-    setDraggedItemId(null);
-  };
+      const newEntries = [...entries];
+      const [moved] = newEntries.splice(draggedIndex, 1);
+      newEntries.splice(targetIndex, 0, moved);
+
+      onReorderMixed(parentGroupId, newEntries);
+      setDraggedElement(null);
+    };
 
   /** ネイティブファイル/URLドラッグかどうかを判定 */
   const isNativeFileDrag = (e: React.DragEvent): boolean => {
@@ -437,6 +468,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
 
   const handleGroupDrop = (groupId?: string) => async (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     setDragOverGroupId(null);
 
     // ネイティブファイル/URLドロップの処理
@@ -445,18 +477,32 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (e.nativeEvent as any).__handledByGroup = true;
       await onNativeFileDrop(e, groupId);
-      setDraggedItemId(null);
+      setDraggedElement(null);
       return;
     }
 
     const itemId = e.dataTransfer.getData('itemId');
     const currentGroupId = e.dataTransfer.getData('currentGroupId');
+    const draggedGroupId = e.dataTransfer.getData('groupId');
+    const currentParentGroupId = e.dataTransfer.getData('currentParentGroupId');
     const launcherItemData = e.dataTransfer.getData('launcherItem');
+
+    // dataTransferは未設定値を空文字列で返すため、groupId(undefined)と比較する際に正規化
+    const normalizeGroupId = (id: string): string | undefined => id || undefined;
 
     try {
       if (launcherItemData) {
+        // ランチャーからのアイテム追加
         await addAppItemToWorkspace(launcherItemData, groupId);
-      } else if (itemId && currentGroupId !== (groupId || '')) {
+      } else if (
+        draggedGroupId &&
+        draggedGroupId !== groupId &&
+        normalizeGroupId(currentParentGroupId) !== groupId
+      ) {
+        // グループを別の親グループに移動
+        onMoveGroupToParent(draggedGroupId, groupId);
+      } else if (itemId && normalizeGroupId(currentGroupId) !== groupId) {
+        // アイテムを別のグループに移動
         onMoveItemToGroup(itemId, groupId);
       }
     } catch (error) {
@@ -468,7 +514,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
       });
     }
 
-    setDraggedItemId(null);
+    setDraggedElement(null);
   };
 
   const handleContextMenu = (item: WorkspaceItem) => (e: React.MouseEvent) => {
@@ -494,50 +540,20 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     setActiveGroupId(undefined);
   };
 
-  const handleGroupDragStart = (group: WorkspaceGroup) => (e: React.DragEvent) => {
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('groupId', group.id);
-  };
-
-  const handleGroupDragOverForReorder = (e: React.DragEvent) => {
-    e.preventDefault();
-    const draggedId = e.dataTransfer.getData('groupId');
-    if (draggedId) {
-      e.dataTransfer.dropEffect = 'move';
-    }
-  };
-
-  const handleGroupDropForReorder = (targetGroup: WorkspaceGroup) => (e: React.DragEvent) => {
-    e.preventDefault();
-    const draggedId = e.dataTransfer.getData('groupId');
-
-    if (draggedId && draggedId !== targetGroup.id) {
-      // 同一親グループ内での並び替えのみ許可
-      const draggedGroup = groups.find((g) => g.id === draggedId);
-      if (!draggedGroup || draggedGroup.parentGroupId !== targetGroup.parentGroupId) {
-        return;
+  /** 子ノードのマップ（renderGroupNode内でサブグループ再帰用） */
+  const childNodeMap = React.useMemo(() => {
+    const map = new Map<string, GroupTreeNode>();
+    const buildMap = (nodes: GroupTreeNode[]) => {
+      for (const node of nodes) {
+        map.set(node.group.id, node);
+        buildMap(node.children);
       }
+    };
+    buildMap(groupTree);
+    return map;
+  }, [groupTree]);
 
-      // 同一親のグループのみ対象にして並び替え
-      const siblingGroups = groups
-        .filter((g) => g.parentGroupId === targetGroup.parentGroupId)
-        .sort((a, b) => a.order - b.order);
-
-      const draggedIndex = siblingGroups.findIndex((g) => g.id === draggedId);
-      const targetIndex = siblingGroups.findIndex((g) => g.id === targetGroup.id);
-
-      if (draggedIndex !== -1 && targetIndex !== -1) {
-        const newSiblings = [...siblingGroups];
-        const [draggedGrp] = newSiblings.splice(draggedIndex, 1);
-        newSiblings.splice(targetIndex, 0, draggedGrp);
-
-        const newGroupIds = newSiblings.map((g) => g.id);
-        onReorderGroups(newGroupIds);
-      }
-    }
-  };
-
-  /** 再帰的にグループツリーノードをレンダリング */
+  /** 再帰的にグループツリーノードをレンダリング（混在表示対応） */
   const renderGroupNode = (node: GroupTreeNode): React.ReactNode => {
     if (visibleGroupIds && !visibleGroupIds.has(node.group.id)) {
       return null;
@@ -547,12 +563,19 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
       (item) => !itemVisibility || itemVisibility.get(item.id) !== false
     );
     if (itemVisibility && groupItems.length === 0 && node.children.length === 0) {
-      // フィルタ時、アイテムもサブグループもなければ非表示
       const hasVisibleDescendant = node.children.some(
         (child) => visibleGroupIds && visibleGroupIds.has(child.group.id)
       );
       if (!hasVisibleDescendant) return null;
     }
+
+    const mixed = mixedChildrenByGroup[node.group.id] || [];
+    // フィルタ適用: アイテムの可視性を反映
+    const filteredMixed = itemVisibility
+      ? mixed.filter(
+          (child) => child.kind === 'group' || itemVisibility.get(child.item.id) !== false
+        )
+      : mixed;
 
     return (
       <div
@@ -571,39 +594,40 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
           onStartEdit={() =>
             setEditingGroupId(editingGroupId === node.group.id ? null : node.group.id)
           }
-          onGroupDragStart={handleGroupDragStart(node.group)}
-          onGroupDragOverForReorder={handleGroupDragOverForReorder}
-          onGroupDropForReorder={handleGroupDropForReorder(node.group)}
+          onGroupDragStart={handleMixedDragStart(node.group.id, 'group')}
+          onGroupDragOverForReorder={handleMixedDragOver}
+          onGroupDropForReorder={handleMixedDrop(node.group.id, 'group', node.group.parentGroupId)}
           onContextMenu={handleGroupContextMenu(node.group)}
         />
         {!node.group.collapsed && (
-          <>
-            {/* サブグループを再帰レンダリング */}
-            {node.children.length > 0 && (
-              <div className="workspace-subgroups">
-                {node.children.map((child) => renderGroupNode(child))}
-              </div>
-            )}
-            {/* グループ直属のアイテム */}
-            <div className="workspace-group-items">
-              {groupItems.map((item) => (
+          <div className="workspace-group-mixed-children">
+            {filteredMixed.map((child) => {
+              if (child.kind === 'group') {
+                const childNode = childNodeMap.get(child.group.id);
+                if (!childNode) return null;
+                if (visibleGroupIds && !visibleGroupIds.has(child.group.id)) return null;
+                return renderGroupNode(childNode);
+              }
+              return (
                 <WorkspaceItemCard
-                  key={item.id}
-                  item={item}
-                  isEditing={editingItemId === item.id}
+                  key={child.item.id}
+                  item={child.item}
+                  isEditing={editingItemId === child.item.id}
                   onLaunch={onLaunch}
                   onRemove={onRemoveItem}
                   onUpdateDisplayName={onUpdateDisplayName}
-                  onStartEdit={() => setEditingItemId(editingItemId === item.id ? null : item.id)}
-                  onDragStart={handleItemDragStart(item)}
-                  onDragEnd={handleItemDragEnd}
-                  onDragOver={handleItemDragOver}
-                  onDrop={handleItemDrop(item)}
-                  onContextMenu={handleContextMenu(item)}
+                  onStartEdit={() =>
+                    setEditingItemId(editingItemId === child.item.id ? null : child.item.id)
+                  }
+                  onDragStart={handleMixedDragStart(child.item.id, 'item')}
+                  onDragEnd={handleMixedDragEnd}
+                  onDragOver={handleMixedDragOver}
+                  onDrop={handleMixedDrop(child.item.id, 'item', node.group.id)}
+                  onContextMenu={handleContextMenu(child.item)}
                 />
-              ))}
-            </div>
-          </>
+              );
+            })}
+          </div>
         )}
       </div>
     );
@@ -659,10 +683,10 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
                     onRemove={onRemoveItem}
                     onUpdateDisplayName={onUpdateDisplayName}
                     onStartEdit={() => setEditingItemId(editingItemId === item.id ? null : item.id)}
-                    onDragStart={handleItemDragStart(item)}
-                    onDragEnd={handleItemDragEnd}
-                    onDragOver={handleItemDragOver}
-                    onDrop={handleItemDrop(item)}
+                    onDragStart={handleMixedDragStart(item.id, 'item')}
+                    onDragEnd={handleMixedDragEnd}
+                    onDragOver={handleMixedDragOver}
+                    onDrop={handleMixedDrop(item.id, 'item', undefined)}
                     onContextMenu={handleContextMenu(item)}
                   />
                 ))}

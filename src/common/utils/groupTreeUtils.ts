@@ -2,7 +2,7 @@
  * ワークスペースグループのツリー構造を扱うユーティリティ
  * フラット配列 ↔ ツリー構造の変換、深さ計算、バリデーション等
  */
-import type { WorkspaceGroup } from '../types/workspace';
+import type { WorkspaceGroup, WorkspaceItem, MixedChild } from '../types/workspace';
 
 /** サブグループの最大階層深さ（0: トップレベル, 1: サブグループ, 2: サブサブグループ） */
 export const MAX_GROUP_DEPTH = 2;
@@ -65,6 +65,18 @@ export function getChildGroups(
 }
 
 /**
+ * 指定グループのサブツリー内での最大相対深さを取得する
+ * @param groupId 対象グループのID
+ * @param groups 全グループ配列
+ * @returns 最大相対深さ（子なし: 0, 子あり: 1, 孫あり: 2）
+ */
+export function getSubtreeMaxDepth(groupId: string, groups: WorkspaceGroup[]): number {
+  const children = groups.filter((g) => g.parentGroupId === groupId);
+  if (children.length === 0) return 0;
+  return 1 + Math.max(...children.map((c) => getSubtreeMaxDepth(c.id, groups)));
+}
+
+/**
  * 指定グループの全子孫グループIDを取得する（再帰）
  * @param groupId 対象グループのID
  * @param groups 全グループ配列
@@ -124,4 +136,42 @@ export function buildGroupTree(groups: WorkspaceGroup[]): GroupTreeNode[] {
  */
 export function flattenGroupTree(nodes: GroupTreeNode[]): GroupTreeNode[] {
   return nodes.flatMap((node) => [node, ...flattenGroupTree(node.children)]);
+}
+
+/** MixedChildのorder値を取得する */
+function getMixedChildOrder(child: MixedChild): number {
+  return child.kind === 'group' ? child.group.order : child.item.order;
+}
+
+/**
+ * 親グループ内のサブグループとアイテムを混在させた配列を返す
+ * 両方を同一のorderナンバースペースでソートする
+ * @param parentGroupId 親グループのID
+ * @param groups 全グループ配列
+ * @param groupItems 親グループ直属のアイテム配列（呼び出し元でフィルタ済み）
+ * @returns MixedChild配列（order順）
+ */
+export function getMixedChildren(
+  parentGroupId: string,
+  groups: WorkspaceGroup[],
+  groupItems: WorkspaceItem[]
+): MixedChild[] {
+  const subgroups = groups.filter((g) => g.parentGroupId === parentGroupId);
+
+  const mixed: MixedChild[] = [
+    ...subgroups.map((group): MixedChild => ({ kind: 'group', group })),
+    ...groupItems.map((item): MixedChild => ({ kind: 'item', item })),
+  ];
+
+  // order順にソート。同一orderではグループを先に（既存表示順序を維持 = 後方互換）
+  mixed.sort((a, b) => {
+    const orderA = getMixedChildOrder(a);
+    const orderB = getMixedChildOrder(b);
+    if (orderA !== orderB) return orderA - orderB;
+    if (a.kind === 'group' && b.kind !== 'group') return -1;
+    if (a.kind !== 'group' && b.kind === 'group') return 1;
+    return 0;
+  });
+
+  return mixed;
 }

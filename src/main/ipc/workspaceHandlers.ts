@@ -1,6 +1,6 @@
 import { ipcMain, BrowserWindow } from 'electron';
 import logger from '@common/logger';
-import type { AppItem, WorkspaceItem, WorkspaceGroup } from '@common/types';
+import type { AppItem, WorkspaceItem, WorkspaceGroup, MixedOrderEntry } from '@common/types';
 import { isLauncherItem, isWindowItem } from '@common/types/guards';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
@@ -457,6 +457,25 @@ export function setupWorkspaceHandlers(): void {
   });
 
   /**
+   * サブグループとアイテムの混在並べ替え
+   */
+  ipcMain.handle(
+    IPC_CHANNELS.WORKSPACE_REORDER_MIXED,
+    async (_event, parentGroupId: string | undefined, entries: MixedOrderEntry[]) => {
+      try {
+        const workspaceService = await WorkspaceService.getInstance();
+        await workspaceService.reorderMixed(parentGroupId, entries);
+        logger.info({ parentGroupId, count: entries.length }, 'Reordered mixed children');
+        notifyWorkspaceChanged();
+        return { success: true };
+      } catch (error) {
+        logger.error({ error }, 'Failed to reorder mixed children');
+        throw error;
+      }
+    }
+  );
+
+  /**
    * 複数グループのcollapsed状態を一括更新
    */
   ipcMain.handle(
@@ -489,6 +508,25 @@ export function setupWorkspaceHandlers(): void {
         return { success: true };
       } catch (error) {
         logger.error({ error, itemId, groupId }, 'Failed to move item to group');
+        throw error;
+      }
+    }
+  );
+
+  /**
+   * グループを別の親グループに移動
+   */
+  ipcMain.handle(
+    IPC_CHANNELS.WORKSPACE_MOVE_GROUP_TO_PARENT,
+    async (_event, groupId: string, newParentGroupId?: string) => {
+      try {
+        const workspaceService = await WorkspaceService.getInstance();
+        await workspaceService.moveGroupToParent(groupId, newParentGroupId);
+        logger.info({ groupId, newParentGroupId }, 'Moved group to new parent');
+        notifyWorkspaceChanged();
+        return { success: true };
+      } catch (error) {
+        logger.error({ error, groupId, newParentGroupId }, 'Failed to move group to parent');
         throw error;
       }
     }

@@ -270,6 +270,29 @@ export class WorkspaceItemManager {
     }
   }
 
+  public updateItemOrders(orderMap: Map<string, number>): void {
+    try {
+      const items = this.loadItems();
+      let updated = 0;
+
+      for (const item of items) {
+        const newOrder = orderMap.get(item.id);
+        if (newOrder !== undefined) {
+          item.order = newOrder;
+          updated++;
+        }
+      }
+
+      if (updated > 0) {
+        this.store.set('items', items);
+        logger.info({ count: updated }, 'Updated item orders');
+      }
+    } catch (error) {
+      logger.error({ error }, 'Failed to update item orders');
+      throw error;
+    }
+  }
+
   public getItemsByGroup(groupId?: string): WorkspaceItem[] {
     try {
       const items = this.loadItems();

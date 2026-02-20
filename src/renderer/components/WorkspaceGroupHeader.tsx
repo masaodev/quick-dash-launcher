@@ -69,9 +69,11 @@ function WorkspaceGroupHeader({
   function handleDrop(e: React.DragEvent): void {
     const groupId = e.dataTransfer.getData('groupId');
     if (groupId) {
-      e.stopPropagation();
+      // グループドラッグ: handleMixedDrop で同一親内なら並べ替え、
+      // 異なる親ならイベントを伝播させて handleGroupDrop でグループ移動
       onGroupDropForReorder(e);
     }
+    // アイテムドラッグ: イベントを伝播させ、親コンテナの handleGroupDrop でグループ間移動
   }
 
   const depthClass = depth > 0 ? ` workspace-group-depth-${depth}` : '';

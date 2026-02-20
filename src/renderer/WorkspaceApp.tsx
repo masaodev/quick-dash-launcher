@@ -259,7 +259,6 @@ const WorkspaceApp: React.FC = () => {
         handlers={{
           onLaunch: actions.handleLaunch,
           onRemoveItem: actions.handleRemove,
-          onReorderItems: actions.handleReorder,
           onUpdateDisplayName: (id: string, displayName: string) => {
             actions.handleUpdateDisplayName(id, displayName);
             setEditingId(null);
@@ -271,7 +270,8 @@ const WorkspaceApp: React.FC = () => {
           onArchiveGroup: handleArchiveGroup,
           onAddSubgroup: actions.handleAddSubgroup,
           onMoveItemToGroup: actions.handleMoveItemToGroup,
-          onReorderGroups: actions.handleReorderGroups,
+          onMoveGroupToParent: actions.handleMoveGroupToParent,
+          onReorderMixed: actions.handleReorderMixed,
           onNativeFileDrop: handleNativeFileDrop,
         }}
         ui={{

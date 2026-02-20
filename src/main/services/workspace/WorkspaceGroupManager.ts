@@ -5,7 +5,13 @@ import { randomUUID } from 'crypto';
 
 import type { WorkspaceGroup, WorkspaceItem } from '@common/types';
 import logger from '@common/logger';
-import { canCreateSubgroup, getDescendantGroupIds } from '@common/utils/groupTreeUtils';
+import {
+  canCreateSubgroup,
+  getDescendantGroupIds,
+  getGroupDepth,
+  getSubtreeMaxDepth,
+  MAX_GROUP_DEPTH,
+} from '@common/utils/groupTreeUtils';
 
 import type { WorkspaceStoreInstance } from './types.js';
 import { migrateGroupDisplayName } from './migrationUtils.js';
@@ -190,6 +196,62 @@ export class WorkspaceGroupManager {
   }
 
   /**
+   * グループを別の親グループに移動（循環参照・深さバリデーション付き）
+   * @param groupId 移動するグループのID
+   * @param newParentGroupId 新しい親グループID（undefinedならトップレベルに移動）
+   */
+  public moveGroupToParent(groupId: string, newParentGroupId?: string): void {
+    try {
+      const groups = this.loadGroups();
+      const group = groups.find((g) => g.id === groupId);
+
+      if (!group) {
+        throw new Error(`Group not found: ${groupId}`);
+      }
+
+      // 同じ親への移動は何もしない
+      if (group.parentGroupId === newParentGroupId) {
+        return;
+      }
+
+      if (newParentGroupId) {
+        // 親グループの存在確認
+        if (!groups.some((g) => g.id === newParentGroupId)) {
+          throw new Error(`Parent group not found: ${newParentGroupId}`);
+        }
+
+        // 循環参照防止: 自分自身または自分の子孫には移動できない
+        const selfAndDescendants = new Set([groupId, ...getDescendantGroupIds(groupId, groups)]);
+        if (selfAndDescendants.has(newParentGroupId)) {
+          throw new Error('Cannot move a group into its own descendant');
+        }
+
+        // 深さバリデーション: 移動先でMAX_GROUP_DEPTHを超えないか確認
+        const newParentDepth = getGroupDepth(newParentGroupId, groups);
+        const subtreeDepth = getSubtreeMaxDepth(groupId, groups);
+        if (newParentDepth + 1 + subtreeDepth > MAX_GROUP_DEPTH) {
+          throw new Error('Moving this group would exceed maximum depth');
+        }
+      }
+
+      // 新しい親グループ内での末尾orderを計算
+      const siblings = groups.filter(
+        (g) => g.parentGroupId === newParentGroupId && g.id !== groupId
+      );
+      const maxOrder = siblings.length > 0 ? Math.max(...siblings.map((g) => g.order)) : -1;
+
+      group.parentGroupId = newParentGroupId;
+      group.order = maxOrder + 1;
+
+      this.store.set('groups', groups);
+      logger.info({ groupId, newParentGroupId }, 'Moved group to new parent');
+    } catch (error) {
+      logger.error({ error, groupId, newParentGroupId }, 'Failed to move group to parent');
+      throw error;
+    }
+  }
+
+  /**
    * グループの並び順を変更（同一親グループ内での並び替え）
    * @param groupIds 新しい順序でのグループIDの配列
    */
@@ -216,6 +278,33 @@ export class WorkspaceGroupManager {
       logger.info({ count: groupIds.length }, 'Reordered workspace groups');
     } catch (error) {
       logger.error({ error }, 'Failed to reorder workspace groups');
+      throw error;
+    }
+  }
+
+  /**
+   * 指定グループのorderを個別更新
+   * @param orderMap グループID -> 新しいorder のマップ
+   */
+  public updateGroupOrders(orderMap: Map<string, number>): void {
+    try {
+      const groups = this.loadGroups();
+      let updated = 0;
+
+      for (const group of groups) {
+        const newOrder = orderMap.get(group.id);
+        if (newOrder !== undefined) {
+          group.order = newOrder;
+          updated++;
+        }
+      }
+
+      if (updated > 0) {
+        this.store.set('groups', groups);
+        logger.info({ count: updated }, 'Updated group orders');
+      }
+    } catch (error) {
+      logger.error({ error }, 'Failed to update group orders');
       throw error;
     }
   }
