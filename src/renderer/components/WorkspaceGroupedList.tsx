@@ -389,14 +389,22 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
       // 同一親グループ内 → 混在並べ替え（イベント伝播を止める）
       e.stopPropagation();
 
-      // 現在の子要素からentriesを構築（グループ内 or 未分類）
-      const entries: MixedOrderEntry[] = parentGroupId
-        ? (mixedChildrenByGroup[parentGroupId] || []).map((child) =>
-            child.kind === 'group'
-              ? { id: child.group.id, kind: 'group' as const }
-              : { id: child.item.id, kind: 'item' as const }
-          )
-        : uncategorizedItems.map((item) => ({ id: item.id, kind: 'item' as const }));
+      // 現在の子要素からentriesを構築
+      let entries: MixedOrderEntry[];
+      if (parentGroupId) {
+        // グループ内: サブグループとアイテムの混在
+        entries = (mixedChildrenByGroup[parentGroupId] || []).map((child) =>
+          child.kind === 'group'
+            ? { id: child.group.id, kind: 'group' as const }
+            : { id: child.item.id, kind: 'item' as const }
+        );
+      } else if (draggedElement.kind === 'group') {
+        // トップレベルグループの並べ替え
+        entries = groupTree.map((node) => ({ id: node.group.id, kind: 'group' as const }));
+      } else {
+        // 未分類アイテムの並べ替え
+        entries = uncategorizedItems.map((item) => ({ id: item.id, kind: 'item' as const }));
+      }
 
       const draggedIndex = entries.findIndex(
         (entry) => entry.id === draggedElement.id && entry.kind === draggedElement.kind
