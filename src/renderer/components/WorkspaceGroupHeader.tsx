@@ -1,17 +1,21 @@
 import React, { useState, useRef, useEffect } from 'react';
-import type { WorkspaceGroup } from '@common/types';
+import type { WorkspaceGroup, GroupDropZone } from '@common/types';
 
 interface WorkspaceGroupHeaderProps {
   group: WorkspaceGroup;
   itemCount: number;
   isEditing: boolean;
   depth: number;
+  /** 現在ドラッグ中の要素情報（null=ドラッグなし） */
+  draggedElement: { id: string; kind: 'item' | 'group' } | null;
+  /** このグループにネスト可能か（深さ制限チェック済み） */
+  canNest: boolean;
   onToggle: (groupId: string) => void;
   onUpdate: (groupId: string, updates: Partial<WorkspaceGroup>) => void;
   onStartEdit: () => void;
   onGroupDragStart: (e: React.DragEvent) => void;
   onGroupDragOverForReorder: (e: React.DragEvent) => void;
-  onGroupDropForReorder: (e: React.DragEvent) => void;
+  onGroupDropForReorder: (e: React.DragEvent, dropZone: GroupDropZone) => void;
   onContextMenu: (e: React.MouseEvent) => void;
 }
 
@@ -20,6 +24,8 @@ function WorkspaceGroupHeader({
   itemCount,
   isEditing,
   depth,
+  draggedElement,
+  canNest,
   onToggle,
   onUpdate,
   onStartEdit,
@@ -29,6 +35,7 @@ function WorkspaceGroupHeader({
   onContextMenu,
 }: WorkspaceGroupHeaderProps): React.ReactElement {
   const [editName, setEditName] = useState(group.displayName);
+  const [dropZone, setDropZone] = useState<GroupDropZone | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -37,6 +44,13 @@ function WorkspaceGroupHeader({
       inputRef.current.select();
     }
   }, [isEditing]);
+
+  // ドラッグ終了時にゾーンをクリア
+  useEffect(() => {
+    if (!draggedElement) {
+      setDropZone(null);
+    }
+  }, [draggedElement]);
 
   function handleSaveEdit(): void {
     if (editName.trim() && editName !== group.displayName) {
@@ -66,12 +80,45 @@ function WorkspaceGroupHeader({
     onGroupDragStart(e);
   }
 
+  /** ドロップゾーンを計算: ヘッダー内のマウスY位置に応じて before/nest/after を判定 */
+  function calculateDropZone(e: React.DragEvent): GroupDropZone | null {
+    // グループドラッグ以外はゾーン表示しない
+    if (!draggedElement || draggedElement.kind !== 'group') return null;
+    // 自分自身へのドラッグはゾーン表示しない
+    if (draggedElement.id === group.id) return null;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const relativeY = (e.clientY - rect.top) / rect.height;
+
+    if (canNest) {
+      // ネスト可能: 上25%=before, 中央50%=nest, 下25%=after
+      if (relativeY < 0.25) return 'before';
+      if (relativeY > 0.75) return 'after';
+      return 'nest';
+    } else {
+      // ネスト不可: 上50%=before, 下50%=after
+      return relativeY < 0.5 ? 'before' : 'after';
+    }
+  }
+
+  function handleDragOver(e: React.DragEvent): void {
+    onGroupDragOverForReorder(e);
+    const zone = calculateDropZone(e);
+    setDropZone(zone);
+  }
+
+  function handleDragLeave(): void {
+    setDropZone(null);
+  }
+
   function handleDrop(e: React.DragEvent): void {
     const groupId = e.dataTransfer.getData('groupId');
-    if (groupId) {
-      // グループドラッグ: handleMixedDrop で同一親内なら並べ替え、
-      // 異なる親ならイベントを伝播させて handleGroupDrop でグループ移動
-      onGroupDropForReorder(e);
+    const currentDropZone = dropZone;
+    setDropZone(null);
+
+    if (groupId && currentDropZone) {
+      // グループドラッグ: ゾーン情報付きでハンドラーを呼び出す
+      onGroupDropForReorder(e, currentDropZone);
     }
     // アイテムドラッグ: イベントを伝播させ、親コンテナの handleGroupDrop でグループ間移動
   }
@@ -81,10 +128,12 @@ function WorkspaceGroupHeader({
   return (
     <div
       className={`workspace-group-header${depthClass}`}
+      data-drop-zone={dropZone || undefined}
       onClick={() => onToggle(group.id)}
       draggable={!isEditing}
       onDragStart={handleDragStart}
-      onDragOver={onGroupDragOverForReorder}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       onContextMenu={onContextMenu}
       style={{ '--group-color': group.color } as React.CSSProperties}
