@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { WorkspaceItem, WorkspaceGroup } from '@common/types';
 
 import { logError } from '../../utils/debug';
@@ -41,6 +41,18 @@ export function useWorkspaceData() {
   const [groups, setGroups] = useState<WorkspaceGroup[]>([]);
   const { withLoading } = useGlobalLoading();
 
+  // ウィンドウごとに独立した collapsed 状態を管理
+  const collapsedOverrides = useRef<Map<string, boolean>>(new Map());
+  const overridesInitialized = useRef(false);
+
+  function applyCollapsedOverrides(loadedGroups: WorkspaceGroup[]): WorkspaceGroup[] {
+    const overrides = collapsedOverrides.current;
+    if (overrides.size === 0) return loadedGroups;
+    return loadedGroups.map((g) =>
+      overrides.has(g.id) ? { ...g, collapsed: overrides.get(g.id)! } : g
+    );
+  }
+
   async function loadItems(): Promise<void> {
     try {
       const loadedItems = await window.electronAPI.workspaceAPI.loadItems();
@@ -65,10 +77,39 @@ export function useWorkspaceData() {
   async function loadGroups(): Promise<void> {
     try {
       const loadedGroups = await window.electronAPI.workspaceAPI.loadGroups();
-      setGroups(loadedGroups);
+      // 初回ロード: バックエンドの collapsed 値をスナップショットとして保存
+      if (!overridesInitialized.current) {
+        for (const g of loadedGroups) {
+          collapsedOverrides.current.set(g.id, g.collapsed);
+        }
+        overridesInitialized.current = true;
+      }
+      // ローカルオーバーライドを適用（初回はバックエンド値と同一）
+      setGroups(applyCollapsedOverrides(loadedGroups));
     } catch (error) {
       logError('Failed to load workspace groups:', error);
     }
+  }
+
+  /** グループの collapsed 状態をトグルし、新しい collapsed 値を返す */
+  function toggleGroupCollapsed(groupId: string): boolean | undefined {
+    const current = collapsedOverrides.current.get(groupId);
+    if (current === undefined) return undefined;
+    const newCollapsed = !current;
+    collapsedOverrides.current.set(groupId, newCollapsed);
+    setGroups((prev) =>
+      prev.map((g) => (g.id === groupId ? { ...g, collapsed: newCollapsed } : g))
+    );
+    return newCollapsed;
+  }
+
+  function setAllGroupsCollapsedLocal(collapsed: boolean): void {
+    setGroups((prev) => {
+      for (const g of prev) {
+        collapsedOverrides.current.set(g.id, collapsed);
+      }
+      return prev.map((g) => ({ ...g, collapsed }));
+    });
   }
 
   async function loadAllData(): Promise<void> {
@@ -88,7 +129,8 @@ export function useWorkspaceData() {
   return {
     items,
     groups,
-    setGroups,
     loadAllDataWithLoading,
+    toggleGroupCollapsed,
+    setAllGroupsCollapsedLocal,
   };
 }

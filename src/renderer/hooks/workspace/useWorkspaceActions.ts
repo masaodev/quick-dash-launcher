@@ -45,12 +45,6 @@ export function useWorkspaceActions(onDataChanged: () => void) {
     onDataChanged
   );
 
-  const handleReorder = withErrorHandling(
-    async (itemIds: string[]) => api.reorderItems(itemIds),
-    'Failed to reorder workspace items:',
-    onDataChanged
-  );
-
   const handleUpdateDisplayName = withErrorHandling(
     async (id: string, displayName: string) => api.updateDisplayName(id, displayName),
     'Failed to update workspace item display name:',
@@ -62,32 +56,6 @@ export function useWorkspaceActions(onDataChanged: () => void) {
     'Failed to update workspace item:',
     onDataChanged
   );
-
-  const handleToggleGroup = async (
-    groupId: string,
-    groups: WorkspaceGroup[],
-    onOptimisticUpdate?: (updatedGroups: WorkspaceGroup[]) => void
-  ): Promise<void> => {
-    const group = groups.find((g) => g.id === groupId);
-    if (!group) return;
-    const newCollapsed = !group.collapsed;
-
-    // 楽観的にUIを即座に更新
-    if (onOptimisticUpdate) {
-      const updatedGroups = groups.map((g) =>
-        g.id === groupId ? { ...g, collapsed: newCollapsed } : g
-      );
-      onOptimisticUpdate(updatedGroups);
-    }
-
-    try {
-      await api.updateGroup(groupId, { collapsed: newCollapsed });
-    } catch (error) {
-      logError('Failed to toggle workspace group:', error);
-      // エラー時はロールバック
-      onDataChanged();
-    }
-  };
 
   const handleUpdateGroup = withErrorHandling(
     async (groupId: string, updates: Partial<WorkspaceGroup>) => api.updateGroup(groupId, updates),
@@ -134,12 +102,6 @@ export function useWorkspaceActions(onDataChanged: () => void) {
     onDataChanged
   );
 
-  const handleReorderGroups = withErrorHandling(
-    async (groupIds: string[]) => api.reorderGroups(groupIds),
-    'Failed to reorder workspace groups:',
-    onDataChanged
-  );
-
   const handleReorderMixed = withErrorHandling(
     async (parentGroupId: string | undefined, entries: MixedOrderEntry[]) =>
       api.reorderMixed(parentGroupId, entries),
@@ -150,10 +112,8 @@ export function useWorkspaceActions(onDataChanged: () => void) {
   return {
     handleLaunch,
     handleRemove,
-    handleReorder,
     handleUpdateDisplayName,
     handleUpdateItem,
-    handleToggleGroup,
     handleUpdateGroup,
     handleDeleteGroup,
     handleArchiveGroup,
@@ -161,7 +121,6 @@ export function useWorkspaceActions(onDataChanged: () => void) {
     handleAddSubgroup,
     handleMoveItemToGroup,
     handleMoveGroupToParent,
-    handleReorderGroups,
     handleReorderMixed,
   };
 }

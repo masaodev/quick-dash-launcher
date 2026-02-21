@@ -64,7 +64,13 @@ const WorkspaceApp: React.FC = () => {
     }
   }, []);
 
-  const { items, groups, setGroups, loadAllDataWithLoading } = useWorkspaceData();
+  const {
+    items,
+    groups,
+    loadAllDataWithLoading,
+    toggleGroupCollapsed,
+    setAllGroupsCollapsedLocal,
+  } = useWorkspaceData();
 
   const actions = useWorkspaceActions(() => {
     loadAllDataWithLoading();
@@ -186,15 +192,17 @@ const WorkspaceApp: React.FC = () => {
   const setAllGroupsCollapsed = async (collapsed: boolean) => {
     const targetGroups = groups.filter((g) => g.collapsed !== collapsed);
     if (targetGroups.length > 0) {
-      setGroups(groups.map((g) => ({ ...g, collapsed })));
-      try {
-        await window.electronAPI.workspaceAPI.setGroupsCollapsed(
-          targetGroups.map((g) => g.id),
-          collapsed
-        );
-      } catch (error) {
-        logError(`Failed to ${collapsed ? 'collapse' : 'expand'} all groups:`, error);
-        loadAllDataWithLoading();
+      setAllGroupsCollapsedLocal(collapsed);
+      if (!isDetached) {
+        try {
+          await window.electronAPI.workspaceAPI.setGroupsCollapsed(
+            targetGroups.map((g) => g.id),
+            collapsed
+          );
+        } catch (error) {
+          logError(`Failed to ${collapsed ? 'collapse' : 'expand'} all groups:`, error);
+          loadAllDataWithLoading();
+        }
       }
     }
     if (collapsed) {
@@ -265,7 +273,18 @@ const WorkspaceApp: React.FC = () => {
       setEditingId(null);
     },
     onEditItem: (item: WorkspaceItem) => setEditModalItem(item),
-    onToggleGroup: (groupId: string) => actions.handleToggleGroup(groupId, groups, setGroups),
+    onToggleGroup: async (groupId: string) => {
+      const newCollapsed = toggleGroupCollapsed(groupId);
+      if (newCollapsed !== undefined && !isDetached) {
+        try {
+          await window.electronAPI.workspaceAPI.updateGroup(groupId, {
+            collapsed: newCollapsed,
+          });
+        } catch (error) {
+          logError('Failed to persist group collapsed state:', error);
+        }
+      }
+    },
     onUpdateGroup: actions.handleUpdateGroup,
     onDeleteGroup: handleDeleteGroup,
     onArchiveGroup: handleArchiveGroup,
