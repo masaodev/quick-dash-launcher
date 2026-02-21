@@ -14,7 +14,7 @@ interface WorkspaceGroupHeaderProps {
   canNest: boolean;
   onToggle: (groupId: string) => void;
   onUpdate: (groupId: string, updates: Partial<WorkspaceGroup>) => void;
-  onStartEdit: () => void;
+  onEndEdit: () => void;
   onGroupDragStart: (e: React.DragEvent) => void;
   onGroupDragEnd?: (e: React.DragEvent, groupId: string) => void;
   onGroupDragOverForReorder: (e: React.DragEvent) => void;
@@ -33,7 +33,7 @@ function WorkspaceGroupHeader({
   canNest,
   onToggle,
   onUpdate,
-  onStartEdit,
+  onEndEdit,
   onGroupDragStart,
   onGroupDragEnd,
   onGroupDragOverForReorder,
@@ -45,11 +45,12 @@ function WorkspaceGroupHeader({
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (isEditing && inputRef.current) {
-      inputRef.current.focus();
-      inputRef.current.select();
+    if (isEditing) {
+      setEditName(group.displayName);
+      inputRef.current?.focus();
+      inputRef.current?.select();
     }
-  }, [isEditing]);
+  }, [isEditing, group.displayName]);
 
   // ドラッグ終了時にゾーンをクリア
   useEffect(() => {
@@ -62,12 +63,12 @@ function WorkspaceGroupHeader({
     if (editName.trim() && editName !== group.displayName) {
       onUpdate(group.id, { displayName: editName.trim() });
     }
-    onStartEdit();
+    onEndEdit();
   }
 
   function handleCancelEdit(): void {
     setEditName(group.displayName);
-    onStartEdit();
+    onEndEdit();
   }
 
   function handleKeyDown(e: React.KeyboardEvent): void {
@@ -149,10 +150,7 @@ function WorkspaceGroupHeader({
       onContextMenu={onContextMenu}
       style={{ '--group-color': group.color } as React.CSSProperties}
     >
-      <span
-        className={`workspace-group-collapse-icon ${group.collapsed ? 'collapsed' : ''}`}
-        onClick={(e) => e.stopPropagation()}
-      >
+      <span className={`workspace-group-collapse-icon ${group.collapsed ? 'collapsed' : ''}`}>
         ▼
       </span>
 
@@ -173,10 +171,6 @@ function WorkspaceGroupHeader({
       ) : (
         <span
           className="workspace-group-name"
-          onDoubleClick={(e) => {
-            e.stopPropagation();
-            onStartEdit();
-          }}
           onDragStart={(e) => e.stopPropagation()}
           title={group.displayName}
         >

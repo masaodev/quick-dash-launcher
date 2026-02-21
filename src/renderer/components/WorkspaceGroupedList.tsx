@@ -698,9 +698,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
           }
           onToggle={handleGroupToggle}
           onUpdate={onUpdateGroup}
-          onStartEdit={() =>
-            setEditingGroupId(editingGroupId === node.group.id ? null : node.group.id)
-          }
+          onEndEdit={() => setEditingGroupId(null)}
           onGroupDragStart={handleMixedDragStart(node.group.id, 'group')}
           onGroupDragEnd={handleGroupDragEndForDetach}
           onGroupDragOverForReorder={handleMixedDragOver}
