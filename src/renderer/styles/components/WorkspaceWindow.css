@@ -908,7 +908,29 @@ html:has(.workspace-window.background-transparent) {
    （overflow: auto だと -webkit-app-region: drag が機能しない Chromium バグの回避も兼ねる） */
 .detached-group-window .workspace-item-list {
   overflow: visible;
-  padding: var(--spacing-xs) var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-sm) var(--spacing-xs) var(--spacing-2xl);
+  -webkit-app-region: drag;
+  position: relative;
+}
+
+/* 左端のドラッグハンドル（⋮⋮） */
+.detached-group-window .workspace-item-list::before {
+  content: '⋮⋮';
+  position: absolute;
+  left: 0;
+  top: var(--spacing-sm);
+  width: var(--spacing-2xl);
+  color: var(--color-gray-600);
+  font-size: var(--font-size-base);
+  font-weight: bold;
+  cursor: move;
+  user-select: none;
+  text-align: center;
+}
+
+/* 子要素はドラッグ対象外（クリック操作を有効にする） */
+.detached-group-window .workspace-item-list > * {
+  -webkit-app-region: no-drag;
 }
 
 /* --- ルートグループヘッダー（ドラッグ領域） --- */
