@@ -904,20 +904,37 @@ html:has(.workspace-window.background-transparent) {
   border-radius: var(--border-radius-lg);
 }
 
-/* ウィンドウ上部のドラッグハンドル */
-.detached-drag-handle {
-  height: var(--spacing-sm);
-  flex-shrink: 0;
+/* autofit でウィンドウ自体がリサイズされるためスクロール不要
+   （overflow: auto だと -webkit-app-region: drag が機能しない Chromium バグの回避も兼ねる） */
+.detached-group-window .workspace-item-list {
+  overflow: visible;
+}
+
+/* --- ルートグループヘッダー（ドラッグ領域） --- */
+
+.workspace-group-header.detached-root {
+  padding-right: 64px;
   -webkit-app-region: drag;
   cursor: move;
 }
 
-/* ルートグループヘッダーの閉じるボタン用余白 */
-.workspace-group-header.detached-root {
-  padding-right: 36px;
+.workspace-group-header.detached-root .workspace-group-badge {
+  right: 32px;
 }
 
-/* 閉じるボタン（グループヘッダー内） */
+.workspace-group-header.detached-root .workspace-group-name,
+.workspace-group-header.detached-root .workspace-group-name-input {
+  -webkit-app-region: no-drag;
+}
+
+.workspace-group-header.detached-root .workspace-group-name {
+  flex: 0 1 auto;
+  max-width: 90%;
+  cursor: pointer;
+}
+
+/* --- 閉じるボタン --- */
+
 .detached-group-close-btn {
   -webkit-app-region: no-drag;
   position: absolute;

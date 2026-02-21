@@ -174,6 +174,26 @@ export function setupWindowHandlers(
 
       const { x, y } = win.getBounds();
       win.setBounds({ x, y, width: Math.round(width), height: Math.round(height) });
+
+      // show:false で作成された切り離しウィンドウを初回 autofit 完了後に表示
+      if (!win.isVisible()) win.show();
+
+      return true;
+    }
+  );
+
+  ipcMain.handle(
+    IPC_CHANNELS.WORKSPACE_SET_CALLER_BOUNDS,
+    (event, x: number, y: number, width: number, height: number) => {
+      const win = BrowserWindow.fromWebContents(event.sender);
+      if (!win || win.isDestroyed()) return false;
+
+      win.setBounds({
+        x: Math.round(x),
+        y: Math.round(y),
+        width: Math.round(width),
+        height: Math.round(height),
+      });
       return true;
     }
   );

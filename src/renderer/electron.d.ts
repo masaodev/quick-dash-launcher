@@ -232,6 +232,7 @@ export interface ElectronAPI {
     ) => Promise<{ success: boolean }>;
     closeDetachedGroup: (groupId: string) => Promise<{ success: boolean }>;
     resizeCallerWindow: (width: number, height: number) => Promise<boolean>;
+    setCallerBounds: (x: number, y: number, width: number, height: number) => Promise<boolean>;
   };
   // ウィンドウ検索API
   getWindowList: () => Promise<WindowInfo[]>;

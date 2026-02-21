@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { WorkspaceItem } from '@common/types';
 import { getDescendantGroupIds } from '@common/utils/groupTreeUtils';
 
@@ -76,16 +76,22 @@ const WorkspaceApp: React.FC = () => {
     uncategorized: false,
   });
   const filterResult = useWorkspaceFilter(groups, items, filterText, filterScope);
-  const { handleResize } = useWorkspaceResize();
-  const detachedResizeFn = useMemo(
-    () =>
-      detachedGroupId
-        ? (width: number, height: number) =>
-            window.electronAPI.workspaceAPI.resizeCallerWindow(width, height)
-        : undefined,
-    [detachedGroupId]
+  const isDetached = detachedGroupId !== null;
+  const { handleResize } = useWorkspaceResize(
+    isDetached
+      ? {
+          setBoundsFn: (x, y, w, h) => window.electronAPI.workspaceAPI.setCallerBounds(x, y, w, h),
+          minWidth: 100,
+          minHeight: 40,
+        }
+      : undefined
   );
-  const { contentRef } = useWorkspaceAutoFit(detachedResizeFn);
+  const { contentRef } = useWorkspaceAutoFit(
+    isDetached
+      ? (width, height) => window.electronAPI.workspaceAPI.resizeCallerWindow(width, height)
+      : undefined,
+    isDetached ? 0 : undefined
+  );
   const [deleteGroupDialog, setDeleteGroupDialog] = useState(INITIAL_DELETE_DIALOG);
   const [archiveGroupDialog, setArchiveGroupDialog] = useState(INITIAL_ARCHIVE_DIALOG);
 
@@ -288,6 +294,14 @@ const WorkspaceApp: React.FC = () => {
     />
   );
 
+  const resizeHandles = RESIZE_DIRECTIONS.map((direction) => (
+    <div
+      key={direction}
+      className={`workspace-resize-handle ${direction}`}
+      onMouseDown={handleResize(direction)}
+    />
+  ));
+
   // 切り離しウィンドウモード: 対象グループとその子孫のみ表示
   if (detachedGroupId) {
     const descendantIds = getDescendantGroupIds(detachedGroupId, groups);
@@ -297,7 +311,6 @@ const WorkspaceApp: React.FC = () => {
       <div
         className={`workspace-window detached-group-window ${backgroundTransparent ? 'background-transparent' : ''}`}
       >
-        <div className="detached-drag-handle" />
         <WorkspaceGroupedList
           contentRef={contentRef}
           data={{ groups, items }}
@@ -311,6 +324,7 @@ const WorkspaceApp: React.FC = () => {
           }}
         />
         {editModal}
+        {resizeHandles}
       </div>
     );
   }
@@ -387,13 +401,7 @@ const WorkspaceApp: React.FC = () => {
         danger={false}
       />
       {editModal}
-      {RESIZE_DIRECTIONS.map((direction) => (
-        <div
-          key={direction}
-          className={`workspace-resize-handle ${direction}`}
-          onMouseDown={handleResize(direction)}
-        />
-      ))}
+      {resizeHandles}
     </div>
   );
 };

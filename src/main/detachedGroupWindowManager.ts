@@ -6,6 +6,9 @@ import { windowLogger } from '@common/logger';
 import { EnvConfig } from './config/envConfig.js';
 import PathManager from './config/pathManager.js';
 
+/** 初回autofit前のフォールバック表示までの待機時間（ms） */
+const SHOW_FALLBACK_TIMEOUT_MS = 1000;
+
 /** groupId → BrowserWindow */
 const detachedWindows = new Map<string, BrowserWindow>();
 
@@ -28,15 +31,18 @@ export function createDetachedGroupWindow(
   }
 
   const windowWidth = 380;
-  const windowHeight = 500;
+  const windowHeight = 200;
 
   const windowOptions: BrowserWindowConstructorOptions = {
     width: windowWidth,
     height: windowHeight,
+    minWidth: 100,
+    minHeight: 40,
     frame: false,
     resizable: true,
     transparent: true,
     alwaysOnTop: false,
+    show: false,
     icon: PathManager.getAppIconPath(),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -66,10 +72,19 @@ export function createDetachedGroupWindow(
   win.setMenu(null);
 
   detachedWindows.set(groupId, win);
-  webContentsIdToGroupId.set(win.webContents.id, groupId);
+  // closed イベント内で webContents にアクセスできないため事前に保存
+  const wcId = win.webContents.id;
+  webContentsIdToGroupId.set(wcId, groupId);
+
+  const showFallback = setTimeout(() => {
+    if (!win.isDestroyed() && !win.isVisible()) {
+      win.show();
+    }
+  }, SHOW_FALLBACK_TIMEOUT_MS);
 
   win.on('closed', () => {
-    webContentsIdToGroupId.delete(win.webContents.id);
+    clearTimeout(showFallback);
+    webContentsIdToGroupId.delete(wcId);
     detachedWindows.delete(groupId);
     windowLogger.info(`切り離しウィンドウを閉じました: ${groupId}`);
   });

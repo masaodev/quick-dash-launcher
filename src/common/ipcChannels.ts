@@ -171,6 +171,7 @@ export const IPC_CHANNELS = {
   WORKSPACE_DETACH_GROUP: 'workspace:detach-group',
   WORKSPACE_CLOSE_DETACHED_GROUP: 'workspace:close-detached-group',
   WORKSPACE_RESIZE_CALLER_WINDOW: 'workspace:resize-caller-window',
+  WORKSPACE_SET_CALLER_BOUNDS: 'workspace:set-caller-bounds',
 
   // ワークスペース - イベント
   WORKSPACE_CHANGED: 'workspace-changed',
