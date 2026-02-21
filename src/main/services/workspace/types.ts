@@ -22,6 +22,25 @@ export type WorkspaceStoreInstance = {
 };
 
 /**
+ * 切り離しウィンドウの永続化状態
+ */
+export type DetachedWindowState = {
+  collapsedStates: Record<string, boolean>;
+  bounds: { x: number; y: number; width: number; height: number };
+};
+
+/**
+ * electron-storeのインスタンス型（workspace-detached.json用）
+ */
+export type DetachedStoreInstance = {
+  get(key: 'windows'): Record<string, DetachedWindowState>;
+  set(key: 'windows', value: Record<string, DetachedWindowState>): void;
+  store: { windows: Record<string, DetachedWindowState> };
+  clear(): void;
+  path: string;
+};
+
+/**
  * electron-storeのインスタンス型（workspace-archive.json用）
  */
 export type ArchiveStoreInstance = {

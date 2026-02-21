@@ -233,6 +233,19 @@ export interface ElectronAPI {
     closeDetachedGroup: (groupId: string) => Promise<{ success: boolean }>;
     resizeCallerWindow: (width: number, height: number) => Promise<boolean>;
     setCallerBounds: (x: number, y: number, width: number, height: number) => Promise<boolean>;
+    // 切り離しウィンドウ状態永続化
+    loadDetachedState: (rootGroupId: string) => Promise<{
+      collapsedStates: Record<string, boolean>;
+      bounds: { x: number; y: number; width: number; height: number };
+    } | null>;
+    saveDetachedCollapsed: (
+      rootGroupId: string,
+      states: Record<string, boolean>
+    ) => Promise<{ success: boolean }>;
+    saveDetachedBounds: (
+      rootGroupId: string,
+      bounds: { x: number; y: number; width: number; height: number }
+    ) => Promise<{ success: boolean }>;
   };
   // ウィンドウ検索API
   getWindowList: () => Promise<WindowInfo[]>;

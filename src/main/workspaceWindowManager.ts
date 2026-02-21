@@ -9,10 +9,12 @@ import { EnvConfig } from './config/envConfig.js';
 import PathManager from './config/pathManager.js';
 import { calculateModalSize } from './utils/modalSizeManager.js';
 import { pinWindow, unPinWindow } from './utils/virtualDesktop/index.js';
+import { restoreDetachedWindows } from './detachedGroupWindowManager.js';
 
 let workspaceWindow: BrowserWindow | null = null;
 let isWorkspaceWindowVisible: boolean = false;
 let isAppQuitting: boolean = false;
+let detachedRestored: boolean = false;
 let isWorkspacePinned: boolean = false;
 let normalWorkspaceWindowBounds: { width: number; height: number } | null = null;
 
@@ -125,6 +127,14 @@ export async function showWorkspaceWindow(options?: { skipFocus?: boolean }): Pr
       }
       await applyVisibilityOnAllDesktops();
       windowLogger.info('ワークスペースウィンドウを表示しました');
+
+      // 初回表示時のみ、前回開いていた切り離しウィンドウを復元
+      if (!detachedRestored) {
+        detachedRestored = true;
+        restoreDetachedWindows().catch((error) => {
+          windowLogger.error({ error }, '切り離しウィンドウの自動復元に失敗しました');
+        });
+      }
     }
   } catch (error) {
     windowLogger.error({ error }, 'ワークスペースウィンドウの表示に失敗しました');

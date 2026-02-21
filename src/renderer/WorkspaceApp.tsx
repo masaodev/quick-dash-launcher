@@ -31,16 +31,29 @@ const RESIZE_DIRECTIONS = [
   'left',
 ] as const;
 
-const INITIAL_DELETE_DIALOG = {
+type DeleteGroupDialog = {
+  isOpen: boolean;
+  groupId: string | null;
+  itemCount: number;
+  deleteItems: boolean;
+};
+
+type ArchiveGroupDialog = {
+  isOpen: boolean;
+  groupId: string | null;
+  itemCount: number;
+};
+
+const INITIAL_DELETE_DIALOG: DeleteGroupDialog = {
   isOpen: false,
-  groupId: null as string | null,
+  groupId: null,
   itemCount: 0,
   deleteItems: false,
 };
 
-const INITIAL_ARCHIVE_DIALOG = {
+const INITIAL_ARCHIVE_DIALOG: ArchiveGroupDialog = {
   isOpen: false,
-  groupId: null as string | null,
+  groupId: null,
   itemCount: 0,
 };
 
@@ -53,16 +66,10 @@ const WorkspaceApp: React.FC = () => {
   const [isFilterVisible, setIsFilterVisible] = useState(false);
   const [filterText, setFilterText] = useState('');
   const [filterScope, setFilterScope] = useState<FilterScope>('all');
-  const [detachedGroupId, setDetachedGroupId] = useState<string | null>(null);
-
   // URLクエリパラメータから groupId を読み取り（切り離しウィンドウモード判定）
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const groupId = params.get('groupId');
-    if (groupId) {
-      setDetachedGroupId(groupId);
-    }
-  }, []);
+  const [detachedGroupId] = useState<string | null>(() =>
+    new URLSearchParams(window.location.search).get('groupId')
+  );
 
   const {
     items,
@@ -70,7 +77,7 @@ const WorkspaceApp: React.FC = () => {
     loadAllDataWithLoading,
     toggleGroupCollapsed,
     setAllGroupsCollapsedLocal,
-  } = useWorkspaceData();
+  } = useWorkspaceData(detachedGroupId);
 
   const actions = useWorkspaceActions(() => {
     loadAllDataWithLoading();
@@ -127,19 +134,18 @@ const WorkspaceApp: React.FC = () => {
     }
   }, [deleteGroupDialog.isOpen, archiveGroupDialog.isOpen, editModalItem]);
 
+  /** グループとそのサブグループに含まれるアイテム数を算出 */
+  const countGroupItems = (groupId: string): number => {
+    const descendantIds = getDescendantGroupIds(groupId, groups);
+    const allGroupIds = new Set([groupId, ...descendantIds]);
+    return items.filter((item) => item.groupId && allGroupIds.has(item.groupId)).length;
+  };
+
   const handleDeleteGroup = async (groupId: string) => {
     try {
-      // サブグループのアイテムも含めた件数を算出
-      const descendantIds = getDescendantGroupIds(groupId, groups);
-      const allGroupIds = new Set([groupId, ...descendantIds]);
-      const allGroupItems = items.filter((item) => item.groupId && allGroupIds.has(item.groupId));
-      if (allGroupItems.length > 0) {
-        setDeleteGroupDialog({
-          isOpen: true,
-          groupId,
-          itemCount: allGroupItems.length,
-          deleteItems: false,
-        });
+      const itemCount = countGroupItems(groupId);
+      if (itemCount > 0) {
+        setDeleteGroupDialog({ isOpen: true, groupId, itemCount, deleteItems: false });
       } else {
         await actions.handleDeleteGroup(groupId, false);
       }
@@ -160,10 +166,7 @@ const WorkspaceApp: React.FC = () => {
   };
 
   const handleArchiveGroup = (groupId: string): void => {
-    const descendantIds = getDescendantGroupIds(groupId, groups);
-    const allGroupIds = new Set([groupId, ...descendantIds]);
-    const itemCount = items.filter((item) => item.groupId && allGroupIds.has(item.groupId)).length;
-    setArchiveGroupDialog({ isOpen: true, groupId, itemCount });
+    setArchiveGroupDialog({ isOpen: true, groupId, itemCount: countGroupItems(groupId) });
   };
 
   const handleConfirmArchiveGroup = async () => {
@@ -192,6 +195,7 @@ const WorkspaceApp: React.FC = () => {
   const setAllGroupsCollapsed = async (collapsed: boolean) => {
     const targetGroups = groups.filter((g) => g.collapsed !== collapsed);
     if (targetGroups.length > 0) {
+      // setAllGroupsCollapsedLocal 内で detached 時は専用 API に保存される
       setAllGroupsCollapsedLocal(collapsed);
       if (!isDetached) {
         try {
@@ -284,6 +288,7 @@ const WorkspaceApp: React.FC = () => {
           logError('Failed to persist group collapsed state:', error);
         }
       }
+      // detached モードの場合は useWorkspaceData 内で自動保存される
     },
     onUpdateGroup: actions.handleUpdateGroup,
     onDeleteGroup: handleDeleteGroup,

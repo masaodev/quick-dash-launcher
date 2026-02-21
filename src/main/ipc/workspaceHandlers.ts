@@ -10,8 +10,8 @@ import { launchItem } from '../utils/itemLauncher.js';
 import { WorkspaceService } from '../services/workspace/index.js';
 import PathManager from '../config/pathManager.js';
 import { getIconForItem } from '../services/iconService.js';
-
 import { closeDetachedGroupWindow } from '../detachedGroupWindowManager.js';
+
 import { loadDataFiles } from './dataHandlers.js';
 
 /**
@@ -599,6 +599,53 @@ export function setupWorkspaceHandlers(): void {
       throw error;
     }
   });
+
+  // ==================== 切り離しウィンドウ状態ハンドラー ====================
+
+  ipcMain.handle(
+    IPC_CHANNELS.WORKSPACE_LOAD_DETACHED_STATE,
+    async (_event, rootGroupId: string) => {
+      try {
+        const workspaceService = await WorkspaceService.getInstance();
+        return await workspaceService.loadDetachedWindowState(rootGroupId);
+      } catch (error) {
+        logger.error({ error, rootGroupId }, 'Failed to load detached window state');
+        throw error;
+      }
+    }
+  );
+
+  ipcMain.handle(
+    IPC_CHANNELS.WORKSPACE_SAVE_DETACHED_COLLAPSED,
+    async (_event, rootGroupId: string, states: Record<string, boolean>) => {
+      try {
+        const workspaceService = await WorkspaceService.getInstance();
+        await workspaceService.saveDetachedCollapsedStates(rootGroupId, states);
+        return { success: true };
+      } catch (error) {
+        logger.error({ error, rootGroupId }, 'Failed to save detached collapsed states');
+        throw error;
+      }
+    }
+  );
+
+  ipcMain.handle(
+    IPC_CHANNELS.WORKSPACE_SAVE_DETACHED_BOUNDS,
+    async (
+      _event,
+      rootGroupId: string,
+      bounds: { x: number; y: number; width: number; height: number }
+    ) => {
+      try {
+        const workspaceService = await WorkspaceService.getInstance();
+        await workspaceService.saveDetachedBounds(rootGroupId, bounds);
+        return { success: true };
+      } catch (error) {
+        logger.error({ error, rootGroupId }, 'Failed to save detached bounds');
+        throw error;
+      }
+    }
+  );
 
   logger.info('Workspace IPC handlers registered');
 }

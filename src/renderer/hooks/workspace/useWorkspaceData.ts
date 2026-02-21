@@ -36,7 +36,8 @@ async function mergeIconsFromCache<T extends { icon?: string }>(
   }));
 }
 
-export function useWorkspaceData() {
+export function useWorkspaceData(detachedGroupId?: string | null) {
+  const isDetached = !!detachedGroupId;
   const [items, setItems] = useState<WorkspaceItem[]>([]);
   const [groups, setGroups] = useState<WorkspaceGroup[]>([]);
   const { withLoading } = useGlobalLoading();
@@ -51,6 +52,12 @@ export function useWorkspaceData() {
     return loadedGroups.map((g) =>
       overrides.has(g.id) ? { ...g, collapsed: overrides.get(g.id)! } : g
     );
+  }
+
+  function saveDetachedCollapsedStates(): void {
+    if (!detachedGroupId) return;
+    const states = Object.fromEntries(collapsedOverrides.current);
+    window.electronAPI.workspaceAPI.saveDetachedCollapsed(detachedGroupId, states).catch(() => {});
   }
 
   async function loadItems(): Promise<void> {
@@ -82,6 +89,19 @@ export function useWorkspaceData() {
         for (const g of loadedGroups) {
           collapsedOverrides.current.set(g.id, g.collapsed);
         }
+        // 切り離しウィンドウの場合: 保存済みの collapsed 状態を上書き適用
+        if (detachedGroupId) {
+          try {
+            const saved = await window.electronAPI.workspaceAPI.loadDetachedState(detachedGroupId);
+            if (saved?.collapsedStates) {
+              for (const [id, collapsed] of Object.entries(saved.collapsedStates)) {
+                collapsedOverrides.current.set(id, collapsed);
+              }
+            }
+          } catch {
+            // 保存データが無い場合は無視
+          }
+        }
         overridesInitialized.current = true;
       }
       // ローカルオーバーライドを適用（初回はバックエンド値と同一）
@@ -100,6 +120,9 @@ export function useWorkspaceData() {
     setGroups((prev) =>
       prev.map((g) => (g.id === groupId ? { ...g, collapsed: newCollapsed } : g))
     );
+    if (isDetached) {
+      saveDetachedCollapsedStates();
+    }
     return newCollapsed;
   }
 
@@ -110,6 +133,9 @@ export function useWorkspaceData() {
       }
       return prev.map((g) => ({ ...g, collapsed }));
     });
+    if (isDetached) {
+      saveDetachedCollapsedStates();
+    }
   }
 
   async function loadAllData(): Promise<void> {

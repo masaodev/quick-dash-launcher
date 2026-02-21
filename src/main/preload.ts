@@ -385,6 +385,23 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_RESIZE_CALLER_WINDOW, width, height),
     setCallerBounds: (x: number, y: number, width: number, height: number): Promise<boolean> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_SET_CALLER_BOUNDS, x, y, width, height),
+    // 切り離しウィンドウ状態永続化
+    loadDetachedState: (
+      rootGroupId: string
+    ): Promise<{
+      collapsedStates: Record<string, boolean>;
+      bounds: { x: number; y: number; width: number; height: number };
+    } | null> => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_LOAD_DETACHED_STATE, rootGroupId),
+    saveDetachedCollapsed: (
+      rootGroupId: string,
+      states: Record<string, boolean>
+    ): Promise<{ success: boolean }> =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_SAVE_DETACHED_COLLAPSED, rootGroupId, states),
+    saveDetachedBounds: (
+      rootGroupId: string,
+      bounds: { x: number; y: number; width: number; height: number }
+    ): Promise<{ success: boolean }> =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_SAVE_DETACHED_BOUNDS, rootGroupId, bounds),
   },
   // コンテキストメニュー表示API
   showAdminItemContextMenu: (selectedCount: number, isSingleLine: boolean): Promise<void> =>

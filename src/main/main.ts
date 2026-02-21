@@ -33,7 +33,7 @@ import {
   closeWorkspaceWindow,
   setAppQuitting as setWorkspaceAppQuitting,
 } from './workspaceWindowManager';
-import { closeAllDetachedGroupWindows } from './detachedGroupWindowManager';
+import { closeAllDetachedGroupWindows, setDetachedAppQuitting } from './detachedGroupWindowManager';
 import { destroyToastWindow } from './services/toastWindowService.js';
 import { BookmarkAutoImportService } from './services/bookmarkAutoImportService.js';
 
@@ -151,6 +151,7 @@ app.on('window-all-closed', () => {
 app.on('before-quit', () => {
   setAdminAppQuitting(true);
   setWorkspaceAppQuitting(true);
+  setDetachedAppQuitting(true);
 });
 
 app.on('will-quit', () => {

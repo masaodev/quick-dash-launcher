@@ -14,7 +14,12 @@ import logger from '@common/logger';
 
 import PathManager from '../../config/pathManager.js';
 
-import type { WorkspaceStoreInstance, ArchiveStoreInstance } from './types.js';
+import type {
+  WorkspaceStoreInstance,
+  ArchiveStoreInstance,
+  DetachedStoreInstance,
+  DetachedWindowState,
+} from './types.js';
 import { WorkspaceItemManager } from './WorkspaceItemManager.js';
 import { WorkspaceGroupManager } from './WorkspaceGroupManager.js';
 import { WorkspaceArchiveManager } from './WorkspaceArchiveManager.js';
@@ -29,6 +34,7 @@ let Store: typeof ElectronStore | null = null;
 export class WorkspaceService {
   private store: WorkspaceStoreInstance | null = null;
   private archiveStore: ArchiveStoreInstance | null = null;
+  private detachedStore: DetachedStoreInstance | null = null;
 
   private itemManager: WorkspaceItemManager | null = null;
   private groupManager: WorkspaceGroupManager | null = null;
@@ -49,13 +55,17 @@ export class WorkspaceService {
     items: [] as WorkspaceItem[],
   };
 
+  private static readonly DEFAULT_DETACHED_DATA = {
+    windows: {} as Record<string, DetachedWindowState>,
+  };
+
   private constructor() {}
 
   /**
    * electron-storeを非同期で初期化
    */
   private async initializeStore(): Promise<void> {
-    if (this.store && this.archiveStore) return;
+    if (this.store && this.archiveStore && this.detachedStore) return;
 
     try {
       if (!Store) {
@@ -82,6 +92,16 @@ export class WorkspaceService {
           cwd: configFolder,
           defaults: WorkspaceService.DEFAULT_ARCHIVE_DATA,
         }) as unknown as ArchiveStoreInstance;
+      }
+
+      if (!this.detachedStore) {
+        this.detachedStore = new Store!<{
+          windows: Record<string, DetachedWindowState>;
+        }>({
+          name: 'workspace-detached',
+          cwd: configFolder,
+          defaults: WorkspaceService.DEFAULT_DETACHED_DATA,
+        }) as unknown as DetachedStoreInstance;
       }
 
       // マネージャーを初期化
@@ -261,6 +281,55 @@ export class WorkspaceService {
   public async deleteArchivedGroup(groupId: string): Promise<void> {
     await this.initializeStore();
     this.archiveManager!.deleteArchivedGroup(groupId);
+  }
+
+  // --- 切り離しウィンドウ状態管理 ---
+
+  public async loadDetachedWindowState(rootGroupId: string): Promise<DetachedWindowState | null> {
+    await this.initializeStore();
+    const windows = this.detachedStore!.get('windows');
+    return windows[rootGroupId] || null;
+  }
+
+  private async updateDetachedWindowState(
+    rootGroupId: string,
+    updates: Partial<DetachedWindowState>
+  ): Promise<void> {
+    await this.initializeStore();
+    const windows = this.detachedStore!.get('windows');
+    const defaultState: DetachedWindowState = {
+      collapsedStates: {},
+      bounds: { x: 0, y: 0, width: 380, height: 200 },
+    };
+    windows[rootGroupId] = { ...(windows[rootGroupId] || defaultState), ...updates };
+    this.detachedStore!.set('windows', windows);
+  }
+
+  public async saveDetachedCollapsedStates(
+    rootGroupId: string,
+    states: Record<string, boolean>
+  ): Promise<void> {
+    await this.updateDetachedWindowState(rootGroupId, { collapsedStates: states });
+  }
+
+  public async saveDetachedBounds(
+    rootGroupId: string,
+    bounds: { x: number; y: number; width: number; height: number }
+  ): Promise<void> {
+    await this.updateDetachedWindowState(rootGroupId, { bounds });
+  }
+
+  public async removeDetachedWindowState(rootGroupId: string): Promise<void> {
+    await this.initializeStore();
+    const windows = this.detachedStore!.get('windows');
+    delete windows[rootGroupId];
+    this.detachedStore!.set('windows', windows);
+  }
+
+  public async loadOpenDetachedGroupIds(): Promise<string[]> {
+    await this.initializeStore();
+    const windows = this.detachedStore!.get('windows');
+    return Object.keys(windows);
   }
 }
 
