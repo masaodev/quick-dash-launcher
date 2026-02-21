@@ -18,8 +18,13 @@ const webContentsIdToGroupId = new Map<number, string>();
 
 type Bounds = { x: number; y: number; width: number; height: number };
 
-/** アプリ終了中はエントリを削除しないためのフラグ */
 let isClosingAll = false;
+
+/** フォーカスを奪わずにウィンドウを前面に表示する */
+export function showWithoutFocus(win: BrowserWindow): void {
+  win.showInactive();
+  win.moveTop();
+}
 
 /**
  * 保存された bounds が画面内に収まるか検証する
@@ -60,17 +65,22 @@ function resolveInitialPosition(
 }
 
 /**
- * 切り離しグループウィンドウを作成する
- * 同じgroupIdのウィンドウが既存ならフォーカスのみ行う
+ * 切り離しグループウィンドウを作成する（既存ならフォーカスのみ）
+ * @param options.skipFocus trueの場合、フォーカスを奪わずに表示する
  */
 export async function createDetachedGroupWindow(
   groupId: string,
   cursorX?: number,
-  cursorY?: number
+  cursorY?: number,
+  options?: { skipFocus?: boolean }
 ): Promise<{ success: boolean }> {
   const existing = detachedWindows.get(groupId);
   if (existing && !existing.isDestroyed()) {
-    existing.focus();
+    if (options?.skipFocus) {
+      showWithoutFocus(existing);
+    } else {
+      existing.focus();
+    }
     return { success: true };
   }
 
@@ -131,7 +141,11 @@ export async function createDetachedGroupWindow(
 
   const showFallback = setTimeout(() => {
     if (!win.isDestroyed() && !win.isVisible()) {
-      win.show();
+      if (options?.skipFocus) {
+        showWithoutFocus(win);
+      } else {
+        win.show();
+      }
     }
   }, SHOW_FALLBACK_TIMEOUT_MS);
 
@@ -236,10 +250,10 @@ export function getGroupIdByWebContentsId(id: number): string | undefined {
 }
 
 /**
- * 前回開いていた切り離しウィンドウを復元する
- * 現在のワークスペースグループに存在するもののみ復元する
+ * 前回開いていた切り離しウィンドウを復元する（存在するグループのみ）
+ * @param options.skipFocus trueの場合、フォーカスを奪わずに表示する
  */
-export async function restoreDetachedWindows(): Promise<void> {
+export async function restoreDetachedWindows(options?: { skipFocus?: boolean }): Promise<void> {
   try {
     const workspaceService = await WorkspaceService.getInstance();
     const openGroupIds = await workspaceService.loadOpenDetachedGroupIds();
@@ -250,7 +264,7 @@ export async function restoreDetachedWindows(): Promise<void> {
 
     for (const groupId of openGroupIds) {
       if (existingGroupIds.has(groupId)) {
-        await createDetachedGroupWindow(groupId);
+        await createDetachedGroupWindow(groupId, undefined, undefined, options);
       } else {
         // 存在しないグループのエントリを削除
         await workspaceService.removeDetachedWindowState(groupId);

@@ -112,6 +112,7 @@ export async function createWorkspaceWindow(): Promise<BrowserWindow> {
 
 /**
  * ワークスペースウィンドウを表示する（存在しない場合は新規作成）
+ * @param options.skipFocus trueの場合、フォーカスを奪わずに表示する
  */
 export async function showWorkspaceWindow(options?: { skipFocus?: boolean }): Promise<void> {
   try {
@@ -128,12 +129,13 @@ export async function showWorkspaceWindow(options?: { skipFocus?: boolean }): Pr
       await applyVisibilityOnAllDesktops();
       windowLogger.info('ワークスペースウィンドウを表示しました');
 
-      // 初回表示時のみ、前回開いていた切り離しウィンドウを復元
       if (!detachedRestored) {
         detachedRestored = true;
-        restoreDetachedWindows().catch((error) => {
+        try {
+          await restoreDetachedWindows({ skipFocus: options?.skipFocus });
+        } catch (error) {
           windowLogger.error({ error }, '切り離しウィンドウの自動復元に失敗しました');
-        });
+        }
       }
     }
   } catch (error) {

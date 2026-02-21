@@ -33,8 +33,8 @@ let normalWindowBounds: { width: number; height: number } | null = null;
 let isShowingWindow: boolean = false; // ウィンドウ表示中フラグ（blur無視用）
 let showingWindowTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
-/** フォーカスが安定するまでの猶予期間（ミリ秒） */
-const WINDOW_FOCUS_STABILIZATION_DELAY_MS = 200;
+/** ワークスペース＋切り離しウィンドウ復元完了までのフォーカス安定猶予（ms） */
+const WINDOW_FOCUS_STABILIZATION_DELAY_MS = 1500;
 
 /**
  * ウィンドウ表示中フラグを設定し、一定時間後に自動解除する
@@ -573,9 +573,7 @@ export async function saveWindowPosition(): Promise<void> {
 }
 
 /**
- * ワークスペース自動表示処理（共通ヘルパー関数）
- * autoShowWorkspace設定が有効な場合、ワークスペースを表示する
- * メインウィンドウのフォーカスを維持するため、skipFocus: trueで表示
+ * autoShowWorkspace設定が有効な場合、フォーカスを奪わずにワークスペースを表示する
  */
 async function autoShowWorkspaceIfEnabled(): Promise<void> {
   const settingsService = await SettingsService.getInstance();
@@ -583,7 +581,6 @@ async function autoShowWorkspaceIfEnabled(): Promise<void> {
 
   if (autoShowWorkspace) {
     const { showWorkspaceWindow } = await import('./workspaceWindowManager.js');
-    // メイン画面のフォーカスを維持するため、skipFocus: trueで表示
     await showWorkspaceWindow({ skipFocus: true });
     windowLogger.info('ワークスペースを自動表示しました');
   }

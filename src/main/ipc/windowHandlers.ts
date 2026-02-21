@@ -27,6 +27,7 @@ import {
 import {
   createDetachedGroupWindow,
   closeDetachedGroupWindow,
+  showWithoutFocus,
 } from '../detachedGroupWindowManager.js';
 import { getTray } from '../windowManager.js';
 
@@ -175,8 +176,10 @@ export function setupWindowHandlers(
       const { x, y } = win.getBounds();
       win.setBounds({ x, y, width: Math.round(width), height: Math.round(height) });
 
-      // show:false で作成された切り離しウィンドウを初回 autofit 完了後に表示
-      if (!win.isVisible()) win.show();
+      // autofit完了後、フォーカスを奪わずに初回表示
+      if (!win.isVisible()) {
+        showWithoutFocus(win);
+      }
 
       return true;
     }
