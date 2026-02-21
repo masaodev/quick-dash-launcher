@@ -908,6 +908,7 @@ html:has(.workspace-window.background-transparent) {
    （overflow: auto だと -webkit-app-region: drag が機能しない Chromium バグの回避も兼ねる） */
 .detached-group-window .workspace-item-list {
   overflow: visible;
+  padding: var(--spacing-xs) var(--spacing-sm);
 }
 
 /* --- ルートグループヘッダー（ドラッグ領域） --- */
