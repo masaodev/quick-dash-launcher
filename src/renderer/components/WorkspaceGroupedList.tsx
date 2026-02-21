@@ -452,28 +452,40 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
         return;
       }
 
-      // グループ→グループのドロップでゾーン指定がある場合
-      if (draggedElement.kind === 'group' && targetKind === 'group' && dropZone) {
+      // グループヘッダーへのドロップでゾーン指定がある場合
+      if (targetKind === 'group' && dropZone) {
         e.stopPropagation();
 
         if (dropZone === 'nest') {
-          onMoveGroupToParent(draggedElement.id, targetId);
+          if (draggedElement.kind === 'group') {
+            onMoveGroupToParent(draggedElement.id, targetId);
+          } else {
+            // アイテムをターゲットグループに移動
+            onMoveItemToGroup(draggedElement.id, targetId);
+          }
           setDraggedElement(null);
           return;
         }
 
         // before/after: 並べ替え処理
-        const draggedParentGroupId = groupsMap.get(draggedElement.id)?.parentGroupId;
+        const draggedParentGroupId =
+          draggedElement.kind === 'group'
+            ? groupsMap.get(draggedElement.id)?.parentGroupId
+            : itemsMap.get(draggedElement.id)?.groupId;
 
         if (draggedParentGroupId !== parentGroupId) {
-          onMoveGroupToParent(draggedElement.id, parentGroupId);
+          if (draggedElement.kind === 'group') {
+            onMoveGroupToParent(draggedElement.id, parentGroupId);
+          } else {
+            onMoveItemToGroup(draggedElement.id, parentGroupId);
+          }
           setDraggedElement(null);
           return;
         }
 
-        const entries = buildEntries(parentGroupId, 'group');
+        const entries = buildEntries(parentGroupId, draggedElement.kind);
         const draggedIndex = entries.findIndex(
-          (e) => e.id === draggedElement.id && e.kind === 'group'
+          (e) => e.id === draggedElement.id && e.kind === draggedElement.kind
         );
         const targetIndex = entries.findIndex((e) => e.id === targetId && e.kind === 'group');
 
@@ -511,7 +523,8 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
         return;
       }
 
-      onReorderMixed(parentGroupId, reorderEntries(entries, draggedIndex, targetIndex));
+      const zone = dropZone === 'before' || dropZone === 'after' ? dropZone : undefined;
+      onReorderMixed(parentGroupId, reorderEntries(entries, draggedIndex, targetIndex, zone));
       setDraggedElement(null);
     };
 
@@ -694,7 +707,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
           canNest={
             draggedElement?.kind === 'group'
               ? canNestGroup(draggedElement.id, node.group.id)
-              : false
+              : draggedElement?.kind === 'item'
           }
           onToggle={handleGroupToggle}
           onUpdate={onUpdateGroup}
@@ -721,6 +734,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
                   key={child.item.id}
                   item={child.item}
                   isEditing={editingItemId === child.item.id}
+                  draggedElement={draggedElement}
                   onLaunch={onLaunch}
                   onRemove={onRemoveItem}
                   onUpdateDisplayName={onUpdateDisplayName}
@@ -730,7 +744,9 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
                   onDragStart={handleMixedDragStart(child.item.id, 'item')}
                   onDragEnd={handleMixedDragEnd}
                   onDragOver={handleMixedDragOver}
-                  onDrop={handleMixedDrop(child.item.id, 'item', node.group.id)}
+                  onDrop={(e, zone) =>
+                    handleMixedDrop(child.item.id, 'item', node.group.id, zone)(e)
+                  }
                   onContextMenu={handleContextMenu(child.item)}
                 />
               );
@@ -789,6 +805,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
                       key={item.id}
                       item={item}
                       isEditing={editingItemId === item.id}
+                      draggedElement={draggedElement}
                       onLaunch={onLaunch}
                       onRemove={onRemoveItem}
                       onUpdateDisplayName={onUpdateDisplayName}
@@ -798,7 +815,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
                       onDragStart={handleMixedDragStart(item.id, 'item')}
                       onDragEnd={handleMixedDragEnd}
                       onDragOver={handleMixedDragOver}
-                      onDrop={handleMixedDrop(item.id, 'item', undefined)}
+                      onDrop={(e, zone) => handleMixedDrop(item.id, 'item', undefined, zone)(e)}
                       onContextMenu={handleContextMenu(item)}
                     />
                   ))}

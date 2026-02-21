@@ -3,9 +3,12 @@ import type { WorkspaceItem } from '@common/types';
 
 import { getDefaultIconForItemType } from '../utils/itemTypeIcons';
 
+type ItemDropZone = 'before' | 'after';
+
 interface WorkspaceItemCardProps {
   item: WorkspaceItem;
   isEditing: boolean;
+  draggedElement?: { id: string; kind: 'item' | 'group' } | null;
   onLaunch: (item: WorkspaceItem) => void;
   onRemove: (id: string) => void;
   onUpdateDisplayName: (id: string, displayName: string) => void;
@@ -13,13 +16,14 @@ interface WorkspaceItemCardProps {
   onDragStart: (e: React.DragEvent) => void;
   onDragEnd?: () => void;
   onDragOver: (e: React.DragEvent) => void;
-  onDrop: (e: React.DragEvent) => void;
+  onDrop: (e: React.DragEvent, dropZone?: ItemDropZone) => void;
   onContextMenu?: (e: React.MouseEvent) => void;
 }
 
 const WorkspaceItemCard: React.FC<WorkspaceItemCardProps> = ({
   item,
   isEditing,
+  draggedElement,
   onLaunch,
   onRemove,
   onUpdateDisplayName,
@@ -31,6 +35,7 @@ const WorkspaceItemCard: React.FC<WorkspaceItemCardProps> = ({
   onContextMenu,
 }) => {
   const [editValue, setEditValue] = useState(item.displayName);
+  const [dropZone, setDropZone] = useState<ItemDropZone | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -39,6 +44,35 @@ const WorkspaceItemCard: React.FC<WorkspaceItemCardProps> = ({
       inputRef.current.select();
     }
   }, [isEditing]);
+
+  // ドラッグ終了時にゾーンをクリア
+  useEffect(() => {
+    if (!draggedElement) {
+      setDropZone(null);
+    }
+  }, [draggedElement]);
+
+  function calculateDropZone(e: React.DragEvent): ItemDropZone | null {
+    if (!draggedElement || draggedElement.id === item.id) return null;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const relativeY = (e.clientY - rect.top) / rect.height;
+    return relativeY < 0.5 ? 'before' : 'after';
+  }
+
+  function handleDragOver(e: React.DragEvent): void {
+    onDragOver(e);
+    setDropZone(calculateDropZone(e));
+  }
+
+  function handleDragLeave(): void {
+    setDropZone(null);
+  }
+
+  function handleDrop(e: React.DragEvent): void {
+    const currentDropZone = dropZone;
+    setDropZone(null);
+    onDrop(e, currentDropZone ?? undefined);
+  }
 
   const handleClick = () => {
     if (!isEditing) {
@@ -104,14 +138,16 @@ const WorkspaceItemCard: React.FC<WorkspaceItemCardProps> = ({
   return (
     <div
       className="workspace-item-card"
+      data-drop-zone={dropZone || undefined}
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
       onContextMenu={onContextMenu}
       draggable={!isEditing}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
-      onDragOver={onDragOver}
-      onDrop={onDrop}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
       title={getTooltipText()}
     >
       <div className="workspace-item-content">

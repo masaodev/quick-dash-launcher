@@ -93,10 +93,9 @@ function WorkspaceGroupHeader({
 
   /** ドロップゾーンを計算: ヘッダー内のマウスY位置に応じて before/nest/after を判定 */
   function calculateDropZone(e: React.DragEvent): GroupDropZone | null {
-    // グループドラッグ以外はゾーン表示しない
-    if (!draggedElement || draggedElement.kind !== 'group') return null;
-    // 自分自身へのドラッグはゾーン表示しない
-    if (draggedElement.id === group.id) return null;
+    if (!draggedElement) return null;
+    // 自分自身（グループ）へのドラッグはゾーン表示しない
+    if (draggedElement.kind === 'group' && draggedElement.id === group.id) return null;
 
     const rect = e.currentTarget.getBoundingClientRect();
     const relativeY = (e.clientY - rect.top) / rect.height;
@@ -124,14 +123,15 @@ function WorkspaceGroupHeader({
 
   function handleDrop(e: React.DragEvent): void {
     const groupId = e.dataTransfer.getData('groupId');
+    const itemId = e.dataTransfer.getData('itemId');
     const currentDropZone = dropZone;
     setDropZone(null);
 
-    if (groupId && currentDropZone) {
-      // グループドラッグ: ゾーン情報付きでハンドラーを呼び出す
+    if (currentDropZone && (groupId || itemId)) {
+      // ゾーン情報付きでハンドラーを呼び出す（グループ・アイテム共通）
       onGroupDropForReorder(e, currentDropZone);
     }
-    // アイテムドラッグ: イベントを伝播させ、親コンテナの handleGroupDrop でグループ間移動
+    // ゾーンなし: イベントを伝播させ、親コンテナの handleGroupDrop で処理
   }
 
   const depthClass = depth > 0 ? ` workspace-group-depth-${depth}` : '';

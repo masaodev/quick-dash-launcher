@@ -487,9 +487,11 @@ html:has(.workspace-window.background-transparent) {
   filter: brightness(1.05);
 }
 
-/* ドロップゾーンインジケーター: before/after 共通（位置ライン） */
+/* ドロップゾーンインジケーター: before/after 共通（位置ライン）- グループヘッダー・アイテムカード共通 */
 .workspace-group-header[data-drop-zone="before"]::before,
-.workspace-group-header[data-drop-zone="after"]::after {
+.workspace-group-header[data-drop-zone="after"]::after,
+.workspace-item-card[data-drop-zone="before"]::before,
+.workspace-item-card[data-drop-zone="after"]::after {
   content: '';
   position: absolute;
   left: 0;
@@ -501,17 +503,19 @@ html:has(.workspace-window.background-transparent) {
   pointer-events: none;
 }
 
-.workspace-group-header[data-drop-zone="before"]::before {
+.workspace-group-header[data-drop-zone="before"]::before,
+.workspace-item-card[data-drop-zone="before"]::before {
   top: -2px;
 }
 
-.workspace-group-header[data-drop-zone="after"]::after {
+.workspace-group-header[data-drop-zone="after"]::after,
+.workspace-item-card[data-drop-zone="after"]::after {
   bottom: -2px;
 }
 
 /* ドロップゾーンインジケーター: 中に入れる（ヘッダーハイライト） */
 .workspace-group-header[data-drop-zone="nest"] {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid var(--color-danger);
   outline-offset: -2px;
   filter: brightness(1.1);
 }
@@ -660,6 +664,29 @@ html:has(.workspace-window.background-transparent) {
 
 .workspace-group-mixed-children > .workspace-item-card:last-child::after {
   height: 50%;
+}
+
+/* ツリーライン内のアイテムカードでドロップゾーン表示時: ツリーラインプロパティを上書き */
+.workspace-group-mixed-children > .workspace-item-card[data-drop-zone="before"]::before,
+.workspace-group-mixed-children > .workspace-item-card[data-drop-zone="after"]::after {
+  left: 0;
+  right: 0;
+  width: auto;
+  height: 3px;
+  background-color: var(--color-danger);
+  border: none;
+  border-radius: 2px;
+  z-index: 20;
+}
+
+.workspace-group-mixed-children > .workspace-item-card[data-drop-zone="before"]::before {
+  top: -2px;
+  bottom: auto;
+}
+
+.workspace-group-mixed-children > .workspace-item-card[data-drop-zone="after"]::after {
+  bottom: -2px;
+  top: auto;
 }
 
 /* カスタムアイコン */
