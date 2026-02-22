@@ -3,7 +3,13 @@
  */
 
 import { DEFAULT_DATA_FILE } from '../types';
-import type { LauncherItem, DataFileTab, JsonDirOptions, JsonItem } from '../types';
+import type {
+  LauncherItem,
+  DataFileTab,
+  JsonDirOptions,
+  JsonItem,
+  ClipboardFormat,
+} from '../types';
 import type { RegisterItem, WindowOperationConfig } from '../types/register.js';
 import type { EditingAppItem, EditingWindowItem } from '../types/editingItem.js';
 import type { EditableJsonItem } from '../types/editableItem.js';
@@ -124,6 +130,74 @@ function createWindowOperationConfig(
   };
 }
 
+/** RegisterItemの共通ベースを作成する */
+function createBaseRegisterItem(
+  displayName: string,
+  targetTab: string,
+  targetFile: string | undefined
+): Pick<RegisterItem, 'displayName' | 'path' | 'type' | 'targetTab' | 'targetFile'> {
+  return { displayName, path: '', type: 'app', targetTab, targetFile };
+}
+
+/** グループ用RegisterItemを作成する */
+function createGroupRegisterItem(
+  displayName: string,
+  itemNames: string[],
+  targetTab: string,
+  targetFile: string | undefined,
+  memo?: string
+): RegisterItem {
+  return {
+    ...createBaseRegisterItem(displayName, targetTab, targetFile),
+    itemCategory: 'group',
+    groupItemNames: [...itemNames],
+    memo,
+  };
+}
+
+/** ウィンドウ操作用RegisterItemを作成する */
+function createWindowRegisterItem(
+  displayName: string,
+  config: WindowOperationConfig,
+  targetTab: string,
+  targetFile: string | undefined,
+  memo?: string
+): RegisterItem {
+  return {
+    ...createBaseRegisterItem(displayName, targetTab, targetFile),
+    itemCategory: 'window',
+    windowOperationConfig: config,
+    memo,
+  };
+}
+
+/** クリップボード用RegisterItemを作成する */
+function createClipboardRegisterItem(
+  displayName: string,
+  targetTab: string,
+  targetFile: string | undefined,
+  clipboard: {
+    dataRef?: string;
+    formats?: ClipboardFormat[];
+    savedAt?: number;
+    preview?: string;
+    customIcon?: string;
+  },
+  memo?: string
+): RegisterItem {
+  return {
+    ...createBaseRegisterItem(displayName, targetTab, targetFile),
+    type: 'clipboard',
+    itemCategory: 'clipboard',
+    clipboardDataRef: clipboard.dataRef,
+    clipboardFormats: clipboard.formats,
+    clipboardSavedAt: clipboard.savedAt,
+    clipboardPreview: clipboard.preview,
+    customIcon: clipboard.customIcon,
+    memo,
+  };
+}
+
 /**
  * EditingAppItemをRegisterItemに変換する
  */
@@ -134,46 +208,39 @@ export function convertEditingAppItemToRegisterItem(
   const defaultTab = getDefaultTab(item.sourceFile, tabs);
 
   if (isEditingGroupItem(item)) {
-    return {
-      displayName: item.displayName,
-      path: '',
-      type: 'app',
-      targetTab: defaultTab,
-      targetFile: item.sourceFile,
-      itemCategory: 'group',
-      groupItemNames: [...item.itemNames],
-      memo: item.memo,
-    };
+    return createGroupRegisterItem(
+      item.displayName,
+      item.itemNames,
+      defaultTab,
+      item.sourceFile,
+      item.memo
+    );
   }
 
   if (isEditingWindowItem(item)) {
-    return {
-      displayName: item.displayName,
-      path: '',
-      type: 'app',
-      targetTab: defaultTab,
-      targetFile: item.sourceFile,
-      itemCategory: 'window',
-      windowOperationConfig: createWindowOperationConfig(item),
-      memo: item.memo,
-    };
+    return createWindowRegisterItem(
+      item.displayName,
+      createWindowOperationConfig(item),
+      defaultTab,
+      item.sourceFile,
+      item.memo
+    );
   }
 
   if (isEditingClipboardItem(item)) {
-    return {
-      displayName: item.displayName,
-      path: '',
-      type: 'clipboard',
-      targetTab: defaultTab,
-      targetFile: item.sourceFile,
-      itemCategory: 'clipboard',
-      clipboardDataRef: item.clipboardDataRef,
-      clipboardFormats: item.formats,
-      clipboardSavedAt: item.savedAt,
-      clipboardPreview: item.preview,
-      customIcon: item.customIcon,
-      memo: item.memo,
-    };
+    return createClipboardRegisterItem(
+      item.displayName,
+      defaultTab,
+      item.sourceFile,
+      {
+        dataRef: item.clipboardDataRef,
+        formats: item.formats,
+        savedAt: item.savedAt,
+        preview: item.preview,
+        customIcon: item.customIcon,
+      },
+      item.memo
+    );
   }
 
   if (isEditingLauncherItem(item)) {
@@ -250,62 +317,55 @@ export function convertEditableJsonItemToRegisterItem(
   }
 
   if (isJsonGroupItem(jsonItem)) {
-    return {
-      displayName: jsonItem.displayName,
-      path: '',
-      type: 'app',
-      targetTab: defaultTab,
-      targetFile: sourceFile,
-      itemCategory: 'group',
-      groupItemNames: [...jsonItem.itemNames],
-      memo: jsonItem.memo,
-    };
+    return createGroupRegisterItem(
+      jsonItem.displayName,
+      jsonItem.itemNames,
+      defaultTab,
+      sourceFile,
+      jsonItem.memo
+    );
   }
 
   if (isJsonWindowItem(jsonItem)) {
-    return {
-      displayName: jsonItem.displayName,
-      path: '',
-      type: 'app',
-      targetTab: defaultTab,
-      targetFile: sourceFile,
-      itemCategory: 'window',
-      windowOperationConfig: createWindowOperationConfig(jsonItem),
-      memo: jsonItem.memo,
-    };
+    return createWindowRegisterItem(
+      jsonItem.displayName,
+      createWindowOperationConfig(jsonItem),
+      defaultTab,
+      sourceFile,
+      jsonItem.memo
+    );
   }
 
   if (isJsonLauncherItem(jsonItem)) {
     return {
       displayName: jsonItem.displayName,
       path: jsonItem.path,
-      type: 'app',
+      type: 'app' as const,
       args: jsonItem.args || undefined,
       targetTab: defaultTab,
       targetFile: sourceFile,
       folderProcessing: undefined,
       customIcon: jsonItem.customIcon,
       windowConfig: jsonItem.windowConfig,
-      itemCategory: 'item',
+      itemCategory: 'item' as const,
       memo: jsonItem.memo,
     };
   }
 
   if (isJsonClipboardItem(jsonItem)) {
-    return {
-      displayName: jsonItem.displayName,
-      path: '',
-      type: 'clipboard',
-      targetTab: defaultTab,
-      targetFile: sourceFile,
-      itemCategory: 'clipboard',
-      clipboardDataRef: jsonItem.dataFileRef,
-      clipboardFormats: jsonItem.formats,
-      clipboardSavedAt: jsonItem.savedAt,
-      clipboardPreview: jsonItem.preview,
-      customIcon: jsonItem.customIcon,
-      memo: jsonItem.memo,
-    };
+    return createClipboardRegisterItem(
+      jsonItem.displayName,
+      defaultTab,
+      sourceFile,
+      {
+        dataRef: jsonItem.dataFileRef,
+        formats: jsonItem.formats,
+        savedAt: jsonItem.savedAt,
+        preview: jsonItem.preview,
+        customIcon: jsonItem.customIcon,
+      },
+      jsonItem.memo
+    );
   }
 
   return {

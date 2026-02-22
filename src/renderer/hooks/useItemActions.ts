@@ -1,13 +1,9 @@
 import { LauncherItem } from '@common/types';
+import { PathUtils } from '@common/utils/pathUtils';
 
 import { logWarn, logError } from '../utils/debug';
 
 import { useToast } from './useToast';
-
-function getParentPath(path: string): string | null {
-  const lastSlash = Math.max(path.lastIndexOf('\\'), path.lastIndexOf('/'));
-  return lastSlash > 0 ? path.substring(0, lastSlash) : null;
-}
 
 export function useItemActions() {
   const { showSuccess, showError, showWarning } = useToast();
@@ -24,8 +20,7 @@ export function useItemActions() {
   };
 
   const handleCopyPath = async (item: LauncherItem): Promise<void> => {
-    const fullCommand = item.args ? `${item.path} ${item.args}` : item.path;
-    await copyToClipboard(fullCommand, 'パス');
+    await copyToClipboard(PathUtils.getFullPath(item), 'パス');
   };
 
   const handleCopyParentPath = async (item: LauncherItem): Promise<void> => {
@@ -34,7 +29,7 @@ export function useItemActions() {
       return;
     }
 
-    const parentPath = getParentPath(item.path);
+    const parentPath = PathUtils.getParentPath(item.path);
     if (!parentPath) {
       showWarning('親フォルダーのパスを取得できませんでした');
       return;
@@ -58,7 +53,7 @@ export function useItemActions() {
       return;
     }
 
-    const parentPath = getParentPath(item.originalPath);
+    const parentPath = PathUtils.getParentPath(item.originalPath);
     if (!parentPath) {
       showWarning('ショートカットの親フォルダーのパスを取得できませんでした');
       return;

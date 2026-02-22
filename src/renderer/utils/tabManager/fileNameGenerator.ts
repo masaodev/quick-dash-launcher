@@ -2,6 +2,10 @@ import { DataFileTab } from '@common/types';
 
 const DATAFILES_PREFIX = 'datafiles/';
 
+function stripPrefix(fileName: string): string {
+  return fileName.startsWith(DATAFILES_PREFIX) ? fileName.slice(DATAFILES_PREFIX.length) : fileName;
+}
+
 /**
  * ファイル名とラベルの生成ロジック
  * すべて純粋関数として実装（副作用なし）
@@ -18,9 +22,7 @@ export const FileNameGenerator = {
    * getDefaultTabName('datafiles/data10.json') // => 'サブ9'
    */
   getDefaultTabName(fileName: string): string {
-    const baseName = fileName.startsWith(DATAFILES_PREFIX)
-      ? fileName.slice(DATAFILES_PREFIX.length)
-      : fileName;
+    const baseName = stripPrefix(fileName);
 
     if (baseName === 'data.json') {
       return 'メイン';
@@ -69,9 +71,7 @@ export const FileNameGenerator = {
     const allFiles = [...existingFiles, ...pendingCreations];
     const existingNumbers = allFiles
       .map((file) => {
-        const baseName = file.startsWith(DATAFILES_PREFIX)
-          ? file.slice(DATAFILES_PREFIX.length)
-          : file;
+        const baseName = stripPrefix(file);
         if (baseName === 'data.json') return 1;
         const match = baseName.match(/^data(\d+)\.json$/i);
         return match ? parseInt(match[1]) : null;

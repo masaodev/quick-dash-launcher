@@ -20,35 +20,29 @@ export class ProgressManager {
     this.startTime = Date.now();
   }
 
-  /**
-   * 進捗開始を通知
-   */
-  start(): void {
-    this.results = [];
-    this.sendProgressUpdate('start', {
+  private buildProgress(currentItem: string, isComplete: boolean): IconPhaseProgress {
+    return {
       type: this.type,
-      current: 0,
+      current: this.current,
       total: this.total,
-      currentItem: '',
-      errors: 0,
+      currentItem,
+      errors: this.errors,
       startTime: this.startTime,
-      isComplete: false,
-      results: [],
-    });
+      isComplete,
+      results: this.results,
+    };
   }
 
-  /**
-   * 進捗更新を通知
-   * @param currentItem - 現在処理中のアイテム名
-   * @param incrementErrors - エラーカウントを増加させるかどうか
-   * @param errorMessage - エラーメッセージ（エラー時のみ）
-   */
+  start(): void {
+    this.results = [];
+    this.sendProgressUpdate('start', this.buildProgress('', false));
+  }
+
   update(currentItem: string, incrementErrors = false, errorMessage?: string): void {
     if (incrementErrors) {
       this.errors++;
     }
 
-    // 結果を記録
     this.results.push({
       itemName: currentItem,
       success: !incrementErrors,
@@ -56,34 +50,12 @@ export class ProgressManager {
       type: this.type,
     });
 
-    this.sendProgressUpdate('update', {
-      type: this.type,
-      current: this.current,
-      total: this.total,
-      currentItem,
-      errors: this.errors,
-      startTime: this.startTime,
-      isComplete: false,
-      results: this.results,
-    });
-
+    this.sendProgressUpdate('update', this.buildProgress(currentItem, false));
     this.current++;
   }
 
-  /**
-   * 進捗完了を通知
-   */
   complete(): void {
-    this.sendProgressUpdate('complete', {
-      type: this.type,
-      current: this.current,
-      total: this.total,
-      currentItem: '',
-      errors: this.errors,
-      startTime: this.startTime,
-      isComplete: true,
-      results: this.results,
-    });
+    this.sendProgressUpdate('complete', this.buildProgress('', true));
   }
 
   /**

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { LauncherItem, AppItem } from '@common/types';
 import { isWindowInfo, isGroupItem, isLauncherItem, isWindowItem } from '@common/types/guards';
 
@@ -10,8 +10,8 @@ interface GroupItemSelectorModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSelect: (itemName: string) => void;
-  targetFile?: string; // 対象のデータファイル名（未指定時は全データファイルから選択）
-  excludeNames: string[]; // 既に追加済みのアイテム名（選択不可にする）
+  targetFile?: string;
+  excludeNames: string[];
 }
 
 const GroupItemSelectorModal: React.FC<GroupItemSelectorModalProps> = ({
@@ -22,7 +22,6 @@ const GroupItemSelectorModal: React.FC<GroupItemSelectorModalProps> = ({
   excludeNames,
 }) => {
   const [availableItems, setAvailableItems] = useState<LauncherItem[]>([]);
-  const [filteredItems, setFilteredItems] = useState<LauncherItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const modalRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -33,17 +32,13 @@ const GroupItemSelectorModal: React.FC<GroupItemSelectorModalProps> = ({
       return;
     }
 
-    // モーダルが開いたときの処理
     loadAvailableItems();
 
-    // フォーカスをモーダルに設定
     modalRef.current?.focus();
-    // 検索ボックスにフォーカス
     setTimeout(() => {
       searchInputRef.current?.focus();
     }, 100);
 
-    // キーイベントの制御
     const handleKeyDown = (event: KeyboardEvent) => {
       const modal = modalRef.current;
       if (!modal) return;
@@ -63,62 +58,46 @@ const GroupItemSelectorModal: React.FC<GroupItemSelectorModalProps> = ({
         const firstFocusableElement = focusableElements[0] as HTMLElement;
         const lastFocusableElement = focusableElements[focusableElements.length - 1] as HTMLElement;
 
-        if (event.shiftKey) {
-          // Shift+Tab: 逆方向
-          if (document.activeElement === firstFocusableElement) {
-            lastFocusableElement.focus();
-            event.preventDefault();
-            event.stopPropagation();
-            event.stopImmediatePropagation();
-          }
-        } else {
-          // Tab: 順方向
-          if (document.activeElement === lastFocusableElement) {
-            firstFocusableElement.focus();
-            event.preventDefault();
-            event.stopPropagation();
-            event.stopImmediatePropagation();
-          }
+        if (event.shiftKey && document.activeElement === firstFocusableElement) {
+          lastFocusableElement.focus();
+        } else if (!event.shiftKey && document.activeElement === lastFocusableElement) {
+          firstFocusableElement.focus();
         }
-        // モーダル内でのTab操作なので、すべての場合で背景への伝播を阻止
         event.preventDefault();
         event.stopPropagation();
         event.stopImmediatePropagation();
         return;
       }
 
-      // モーダル内でのキーイベントの場合、背景への伝播を完全に阻止
-      const isModalFocused = modal.contains(document.activeElement);
-      if (isModalFocused) {
-        const activeElement = document.activeElement as HTMLElement;
-        const isInputField = activeElement && activeElement.tagName === 'INPUT';
+      if (!modal.contains(document.activeElement)) return;
 
-        if (isInputField) {
-          // 入力フィールドでの通常の編集キーは許可
-          if (
-            event.key.length === 1 ||
-            [
-              'Backspace',
-              'Delete',
-              'ArrowLeft',
-              'ArrowRight',
-              'ArrowUp',
-              'ArrowDown',
-              'Home',
-              'End',
-            ].includes(event.key) ||
-            (event.ctrlKey && ['a', 'c', 'v', 'x', 'z', 'y'].includes(event.key))
-          ) {
-            event.stopPropagation();
-            event.stopImmediatePropagation();
-            return;
-          }
+      const activeElement = document.activeElement as HTMLElement;
+      const isInputField = activeElement?.tagName === 'INPUT';
+
+      if (isInputField) {
+        if (
+          event.key.length === 1 ||
+          [
+            'Backspace',
+            'Delete',
+            'ArrowLeft',
+            'ArrowRight',
+            'ArrowUp',
+            'ArrowDown',
+            'Home',
+            'End',
+          ].includes(event.key) ||
+          (event.ctrlKey && ['a', 'c', 'v', 'x', 'z', 'y'].includes(event.key))
+        ) {
+          event.stopPropagation();
+          event.stopImmediatePropagation();
+          return;
         }
-
-        event.preventDefault();
-        event.stopPropagation();
-        event.stopImmediatePropagation();
       }
+
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
     };
 
     document.addEventListener('keydown', handleKeyDown, true);
@@ -128,17 +107,10 @@ const GroupItemSelectorModal: React.FC<GroupItemSelectorModalProps> = ({
     };
   }, [isOpen, onClose]);
 
-  useEffect(() => {
-    // 検索クエリが変更されたらフィルタリング
-    if (searchQuery.trim() === '') {
-      setFilteredItems(availableItems);
-    } else {
-      const query = searchQuery.toLowerCase();
-      const filtered = availableItems.filter((item) =>
-        item.displayName.toLowerCase().includes(query)
-      );
-      setFilteredItems(filtered);
-    }
+  const filteredItems = useMemo(() => {
+    if (!searchQuery.trim()) return availableItems;
+    const query = searchQuery.toLowerCase();
+    return availableItems.filter((item) => item.displayName.toLowerCase().includes(query));
   }, [searchQuery, availableItems]);
 
   const loadAvailableItems = async () => {
@@ -175,7 +147,6 @@ const GroupItemSelectorModal: React.FC<GroupItemSelectorModalProps> = ({
         itemsWithIcons.map((item) => item.displayName)
       );
       setAvailableItems(itemsWithIcons);
-      setFilteredItems(itemsWithIcons);
     } catch (error) {
       logError('Error loading available items:', error);
     }

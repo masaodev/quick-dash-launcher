@@ -28,28 +28,34 @@ function toBooleanResult(result: boolean | number): boolean {
 }
 
 /**
+ * 仮想デスクトップ対応チェック + DLL関数取得の共通ガード
+ * @returns DLL関数。未対応またはDLL未ロード時はnull
+ */
+function getDllFunction<T>(getter: () => T | null, options?: { silent?: boolean }): T | null {
+  if (!isVirtualDesktopSupported()) {
+    if (!options?.silent) {
+      console.warn('[WindowOps] 仮想デスクトップはサポートされていません');
+    }
+    return null;
+  }
+  const fn = getter();
+  if (!fn && !options?.silent) {
+    console.error('[WindowOps] VirtualDesktopAccessor.dllがロードされていません');
+  }
+  return fn;
+}
+
+/**
  * 現在の仮想デスクトップ番号を取得
  * @returns デスクトップ番号（1から開始）。失敗時は-1
  */
 export function getCurrentDesktopNumber(): number {
-  if (!isVirtualDesktopSupported()) {
-    console.warn('[WindowOps] 仮想デスクトップはサポートされていません');
-    return -1;
-  }
-
-  const getCurrentDesktopNumberFn = getGetCurrentDesktopNumber();
-  if (!getCurrentDesktopNumberFn) {
-    console.error('[WindowOps] VirtualDesktopAccessor.dllがロードされていません');
-    return -1;
-  }
+  const fn = getDllFunction(getGetCurrentDesktopNumber);
+  if (!fn) return -1;
 
   try {
-    // GetCurrentDesktopNumber呼び出し（0ベースのインデックスを返す）
-    const desktopIndex = getCurrentDesktopNumberFn();
-
+    const desktopIndex = fn();
     debugLog('[WindowOps] 現在のデスクトップインデックス:', desktopIndex);
-
-    // 1ベースの番号に変換して返す
     return desktopIndex + 1;
   } catch (error) {
     console.error('[WindowOps] getCurrentDesktopNumber例外発生:', error);
@@ -66,18 +72,9 @@ export function getCurrentDesktopNumber(): number {
  * @returns 成功したらtrue
  */
 export function moveWindowToVirtualDesktop(hwnd: number | bigint, desktopNumber: number): boolean {
-  if (!isVirtualDesktopSupported()) {
-    console.warn('[WindowOps] 仮想デスクトップはサポートされていません');
-    return false;
-  }
+  const fn = getDllFunction(getMoveWindowToDesktopNumber);
+  if (!fn) return false;
 
-  const MoveWindowToDesktopNumber = getMoveWindowToDesktopNumber();
-  if (!MoveWindowToDesktopNumber) {
-    console.error('[WindowOps] VirtualDesktopAccessor.dllがロードされていません');
-    return false;
-  }
-
-  // デスクトップ番号の検証（1から開始、0ベースに変換）
   if (desktopNumber < 1) {
     console.error(`[WindowOps] デスクトップ番号は1以上である必要があります: ${desktopNumber}`);
     return false;
@@ -102,7 +99,7 @@ export function moveWindowToVirtualDesktop(hwnd: number | bigint, desktopNumber:
   });
 
   try {
-    const result = MoveWindowToDesktopNumber(hwnd, desktopIndex);
+    const result = fn(hwnd, desktopIndex);
     const success = toBooleanResult(result);
 
     if (success) {
@@ -124,37 +121,25 @@ export function moveWindowToVirtualDesktop(hwnd: number | bigint, desktopNumber:
  * @returns 指定されたデスクトップにある場合true、それ以外false
  */
 export function isWindowOnDesktopNumber(hwnd: number | bigint, desktopNumber: number): boolean {
-  if (!isVirtualDesktopSupported()) {
-    console.warn('[WindowOps] 仮想デスクトップはサポートされていません');
-    return false;
-  }
+  const fn = getDllFunction(getIsWindowOnDesktopNumber);
+  if (!fn) return false;
 
-  const isWindowOnDesktopNumberFn = getIsWindowOnDesktopNumber();
-  if (!isWindowOnDesktopNumberFn) {
-    console.error('[WindowOps] VirtualDesktopAccessor.dllがロードされていません');
-    return false;
-  }
-
-  // デスクトップ番号の検証
   if (desktopNumber < 1) {
     console.error(`[WindowOps] デスクトップ番号は1以上である必要があります: ${desktopNumber}`);
     return false;
   }
 
-  // VirtualDesktopAccessorは0ベースのインデックスを使用
   const desktopIndex = desktopNumber - 1;
 
   try {
-    const result = isWindowOnDesktopNumberFn(hwnd, desktopIndex);
+    const result = fn(hwnd, desktopIndex);
     const isOnDesktop = toBooleanResult(result);
-
     debugLog(
       '[WindowOps] isWindowOnDesktopNumber チェック結果:',
       isOnDesktop,
       'デスクトップ:',
       desktopNumber
     );
-
     return isOnDesktop;
   } catch (error) {
     console.error('[WindowOps] isWindowOnDesktopNumber例外発生:', error);
@@ -168,24 +153,12 @@ export function isWindowOnDesktopNumber(hwnd: number | bigint, desktopNumber: nu
  * @returns デスクトップ番号（1から開始）。失敗時は-1
  */
 export function getWindowDesktopNumber(hwnd: number | bigint): number {
-  if (!isVirtualDesktopSupported()) {
-    return -1;
-  }
-
-  const getWindowDesktopNumberFn = getGetWindowDesktopNumber();
-  if (!getWindowDesktopNumberFn) {
-    return -1;
-  }
+  const fn = getDllFunction(getGetWindowDesktopNumber, { silent: true });
+  if (!fn) return -1;
 
   try {
-    // GetWindowDesktopNumber呼び出し（0ベースのインデックスを返す）
-    const desktopIndex = getWindowDesktopNumberFn(hwnd);
-
-    if (desktopIndex < 0) {
-      return -1;
-    }
-
-    // 1ベースの番号に変換して返す
+    const desktopIndex = fn(hwnd);
+    if (desktopIndex < 0) return -1;
     return desktopIndex + 1;
   } catch (error) {
     console.error('[WindowOps] getWindowDesktopNumber例外発生:', error);
@@ -198,21 +171,18 @@ export function getWindowDesktopNumber(hwnd: number | bigint): number {
  * @returns デスクトップ数。失敗時は-1
  */
 export function getDesktopCount(): number {
-  if (!isVirtualDesktopSupported()) {
-    return -1;
-  }
+  if (!isVirtualDesktopSupported()) return -1;
 
-  const getDesktopCountFn = getGetDesktopCount();
-  if (getDesktopCountFn) {
+  const fn = getGetDesktopCount();
+  if (fn) {
     try {
-      const count = getDesktopCountFn();
+      const count = fn();
       if (count > 0) return count;
     } catch (error) {
       console.error('[WindowOps] getDesktopCount例外発生:', error);
     }
   }
 
-  // DLL未対応またはDLL呼び出し失敗時はレジストリから取得
   const guids = getVirtualDesktopGUIDs();
   return guids.length > 0 ? guids.length : -1;
 }
@@ -225,16 +195,8 @@ function callPinFunction(
   getFn: () => ReturnType<typeof getPinWindow>,
   label: string
 ): boolean {
-  if (!isVirtualDesktopSupported()) {
-    console.warn('[WindowOps] 仮想デスクトップはサポートされていません');
-    return false;
-  }
-
-  const fn = getFn();
-  if (!fn) {
-    console.error('[WindowOps] VirtualDesktopAccessor.dllがロードされていません');
-    return false;
-  }
+  const fn = getDllFunction(getFn);
+  if (!fn) return false;
 
   try {
     const result = fn(hwnd);
@@ -276,19 +238,12 @@ export function unPinWindow(hwnd: number | bigint): boolean {
  * @returns 固定されている場合true
  */
 export function isPinnedWindow(hwnd: number | bigint): boolean {
-  if (!isVirtualDesktopSupported()) {
-    return false;
-  }
-
-  const isPinnedWindowFn = getIsPinnedWindow();
-  if (!isPinnedWindowFn) {
-    return false;
-  }
+  const fn = getDllFunction(getIsPinnedWindow, { silent: true });
+  if (!fn) return false;
 
   try {
-    const result = isPinnedWindowFn(hwnd);
+    const result = fn(hwnd);
     const isPinned = toBooleanResult(result);
-
     debugLog('[WindowOps] isPinnedWindow チェック結果:', isPinned);
     return isPinned;
   } catch (error) {

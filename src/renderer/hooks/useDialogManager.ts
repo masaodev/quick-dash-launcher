@@ -47,11 +47,7 @@ export function useDialogManager() {
   }, []);
 
   const closeAlert = useCallback(() => {
-    setAlertDialog({
-      isOpen: false,
-      message: '',
-      type: 'info',
-    });
+    setAlertDialog((prev) => ({ ...prev, isOpen: false }));
   }, []);
 
   const showConfirm = useCallback(
@@ -80,18 +76,9 @@ export function useDialogManager() {
   );
 
   const closeConfirmDialog = useCallback((result: boolean) => {
-    setConfirmDialog({
-      isOpen: false,
-      message: '',
-      title: '確認',
-      confirmText: 'OK',
-      cancelText: 'キャンセル',
-      danger: false,
-    });
-    if (confirmResolveRef.current) {
-      confirmResolveRef.current(result);
-      confirmResolveRef.current = null;
-    }
+    setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+    confirmResolveRef.current?.(result);
+    confirmResolveRef.current = null;
   }, []);
 
   const handleConfirm = useCallback(() => closeConfirmDialog(true), [closeConfirmDialog]);

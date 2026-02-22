@@ -37,9 +37,8 @@ interface BookmarkData {
   roots?: Record<string, unknown>;
 }
 
-/**
- * オブジェクトがBookmarkNodeかどうかを判定する型ガード
- */
+const BOOKMARK_ROOT_KEYS = ['bookmark_bar', 'other', 'synced'] as const;
+
 function isBookmarkNode(obj: unknown): obj is BookmarkNode {
   return (
     typeof obj === 'object' &&
@@ -227,7 +226,7 @@ export async function parseBrowserBookmarks(filePath: string): Promise<SimpleBoo
     }
 
     // roots内の各ノードを探索
-    for (const key of ['bookmark_bar', 'other', 'synced']) {
+    for (const key of BOOKMARK_ROOT_KEYS) {
       if (roots[key]) {
         traverse(roots[key]);
       }
@@ -295,7 +294,7 @@ export async function parseBrowserBookmarkFolders(filePath: string): Promise<Boo
     return null;
   }
 
-  for (const key of ['bookmark_bar', 'other', 'synced']) {
+  for (const key of BOOKMARK_ROOT_KEYS) {
     if (roots[key]) {
       const folder = traverseFolders(roots[key], key);
       if (folder) {
@@ -347,7 +346,7 @@ export async function parseBrowserBookmarksWithFolders(
     }
   }
 
-  for (const key of ['bookmark_bar', 'other', 'synced']) {
+  for (const key of BOOKMARK_ROOT_KEYS) {
     if (roots[key]) {
       traverse(roots[key], key);
     }

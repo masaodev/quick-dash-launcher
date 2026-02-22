@@ -1,5 +1,10 @@
 import type { LauncherItem } from '@common/types';
 
+/** パスの最後のセパレータ位置を取得 */
+function lastSeparatorIndex(filePath: string): number {
+  return Math.max(filePath.lastIndexOf('\\'), filePath.lastIndexOf('/'));
+}
+
 /** パス操作の共通ユーティリティ */
 export class PathUtils {
   /** アイテムのフルパス（引数を含む）を取得 */
@@ -9,8 +14,8 @@ export class PathUtils {
 
   /** ファイルパスから親ディレクトリのパスを取得 */
   static getParentPath(filePath: string): string {
-    const lastSlash = Math.max(filePath.lastIndexOf('\\'), filePath.lastIndexOf('/'));
-    return lastSlash > 0 ? filePath.substring(0, lastSlash) : '';
+    const index = lastSeparatorIndex(filePath);
+    return index > 0 ? filePath.substring(0, index) : '';
   }
 
   /** パスがショートカットファイル（.lnk）かどうかを判定 */
@@ -20,8 +25,8 @@ export class PathUtils {
 
   /** ファイルパスからファイル名を取得 */
   static getFileName(filePath: string): string {
-    const lastSlash = Math.max(filePath.lastIndexOf('\\'), filePath.lastIndexOf('/'));
-    return lastSlash !== -1 ? filePath.substring(lastSlash + 1) : filePath;
+    const index = lastSeparatorIndex(filePath);
+    return index !== -1 ? filePath.substring(index + 1) : filePath;
   }
 
   /** ファイルパスから拡張子を取得（ドット含む、小文字） */

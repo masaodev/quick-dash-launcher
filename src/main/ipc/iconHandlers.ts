@@ -73,19 +73,13 @@ async function extractShortcutIcon(lnkPath: string, iconsFolder: string): Promis
         iconLogger.info(`カスタムアイコンファイルを発見: ${expandedIconPath}`);
 
         try {
-          // アイコンファイル（.ico）を直接読み込み
           if (expandedIconPath.toLowerCase().endsWith('.ico')) {
-            // ICOファイルをPNGに変換するため、extract-file-iconでアイコンファイルから抽出
-            const extractedIconBuffer = extractFileIcon(expandedIconPath, 32);
-
-            if (extractedIconBuffer && extractedIconBuffer.length > 0) {
-              // ショートカット専用キャッシュに保存
-              FileUtils.writeBinaryFile(lnkIconPath, extractedIconBuffer);
-
+            const result = cacheAndConvertIcon(extractFileIcon(expandedIconPath, 32), lnkIconPath);
+            if (result) {
               iconLogger.info(
                 `カスタムアイコンファイルからアイコンを抽出成功: ${expandedIconPath}`
               );
-              return FileUtils.bufferToBase64DataUrl(extractedIconBuffer);
+              return result;
             }
           }
         } catch (error) {
@@ -101,14 +95,10 @@ async function extractShortcutIcon(lnkPath: string, iconsFolder: string): Promis
 
     // 2. フォールバック：.lnkファイル自体からアイコンを抽出を試行
     iconLogger.info(`ショートカットファイル自体からアイコン抽出を開始: ${lnkPath}`);
-    const shortcutIconBuffer = extractFileIcon(lnkPath, 32);
-
-    if (shortcutIconBuffer && shortcutIconBuffer.length > 0) {
-      // ショートカット専用キャッシュに保存
-      FileUtils.writeBinaryFile(lnkIconPath, shortcutIconBuffer);
-
+    const shortcutIcon = cacheAndConvertIcon(extractFileIcon(lnkPath, 32), lnkIconPath);
+    if (shortcutIcon) {
       iconLogger.info(`ショートカットファイルからアイコンを抽出成功: ${lnkPath}`);
-      return FileUtils.bufferToBase64DataUrl(shortcutIconBuffer);
+      return shortcutIcon;
     }
 
     // 3. 最終フォールバック：ターゲットファイルからアイコンを抽出
@@ -196,23 +186,22 @@ export async function extractIcon(filePath: string, iconsFolder: string): Promis
       return cachedIcon;
     }
 
-    // アイコンを抽出（解決されたパスを使用）
-    const iconBuffer = extractFileIcon(actualFilePath, 32);
-
-    if (iconBuffer && iconBuffer.length > 0) {
-      // キャッシュに保存
-      FileUtils.writeBinaryFile(iconPath, iconBuffer);
-
-      // base64データURLに変換
-      return FileUtils.bufferToBase64DataUrl(iconBuffer);
+    const result = cacheAndConvertIcon(extractFileIcon(actualFilePath, 32), iconPath);
+    if (!result) {
+      iconLogger.warn(`アイコンが抽出できませんでした: ${filePath}`);
     }
-
-    iconLogger.warn(`アイコンが抽出できませんでした: ${filePath}`);
-    return null;
+    return result;
   } catch (error) {
     iconLogger.error({ filePath, error }, 'アイコンの抽出に失敗しました');
     return null;
   }
+}
+
+/** アイコンバッファをキャッシュに保存し、base64データURLとして返す */
+function cacheAndConvertIcon(iconBuffer: Buffer, cachePath: string): string | null {
+  if (!iconBuffer || iconBuffer.length === 0) return null;
+  FileUtils.writeBinaryFile(cachePath, iconBuffer);
+  return FileUtils.bufferToBase64DataUrl(iconBuffer);
 }
 
 export async function extractCustomUriIcon(
@@ -220,42 +209,19 @@ export async function extractCustomUriIcon(
   iconsFolder: string
 ): Promise<string | null> {
   try {
-    // URIスキーマを抽出
     const schemeMatch = uri.match(/^([^:]+):/);
-    if (!schemeMatch) {
-      return null;
-    }
+    if (!schemeMatch) return null;
 
     const scheme = schemeMatch[1];
+    const iconPath = path.join(iconsFolder, `uri_${scheme}_icon.png`);
 
-    // キャッシュファイル名を生成
-    const iconName = `uri_${scheme}_icon.png`;
-    const iconPath = path.join(iconsFolder, iconName);
-
-    // アイコンがすでにキャッシュされているか確認
     const cachedIcon = FileUtils.readCachedBinaryAsBase64(iconPath);
-    if (cachedIcon) {
-      return cachedIcon;
-    }
+    if (cachedIcon) return cachedIcon;
 
-    // レジストリからハンドラーアプリケーションを取得
     const handlerPath = await getUriSchemeHandler(scheme);
-    if (!handlerPath) {
-      return null;
-    }
+    if (!handlerPath) return null;
 
-    // ハンドラーアプリケーションからアイコンを抽出
-    const iconBuffer = extractFileIcon(handlerPath, 32);
-
-    if (iconBuffer && iconBuffer.length > 0) {
-      // キャッシュに保存
-      FileUtils.writeBinaryFile(iconPath, iconBuffer);
-
-      // base64データURLに変換
-      return FileUtils.bufferToBase64DataUrl(iconBuffer);
-    }
-
-    return null;
+    return cacheAndConvertIcon(extractFileIcon(handlerPath, 32), iconPath);
   } catch (error) {
     iconLogger.error({ uri, error }, 'カスタムURIアイコンの抽出に失敗しました');
     return null;
@@ -293,28 +259,15 @@ export async function extractFileIconByExtension(
       return cachedIcon;
     }
 
-    // 拡張子に対応するダミーファイルを作成してアイコンを取得
     const tempFilePath = createTempFileForExtension(extensionName);
 
     try {
-      // extract-file-iconを使用してアイコンを取得
-      const iconBuffer = extractFileIcon(tempFilePath, 32);
-
-      if (iconBuffer && iconBuffer.length > 0) {
-        // キャッシュに保存
-        FileUtils.writeBinaryFile(iconPath, iconBuffer);
-
-        // base64データURLに変換
-        return FileUtils.bufferToBase64DataUrl(iconBuffer);
-      }
+      return cacheAndConvertIcon(extractFileIcon(tempFilePath, 32), iconPath);
     } finally {
-      // 一時ファイルを削除
       if (fs.existsSync(tempFilePath)) {
         fs.unlinkSync(tempFilePath);
       }
     }
-
-    return null;
   } catch (error) {
     iconLogger.error({ filePath, error }, '拡張子ベースのアイコン抽出に失敗しました');
     return null;
@@ -407,6 +360,12 @@ interface IconItem {
   customIcon?: string;
 }
 
+/** スクリプト系拡張子（.bat, .cmd, .com）かどうか判定する */
+function isScriptExtension(filePath: string): boolean {
+  const lower = filePath.toLowerCase();
+  return lower.endsWith('.bat') || lower.endsWith('.cmd') || lower.endsWith('.com');
+}
+
 /** 候補パスの中から最初に存在するファイルのパスを返す */
 function findExistingFile(...paths: string[]): string | null {
   for (const p of paths) {
@@ -495,12 +454,11 @@ function findCachedIconPath(
 
     // 通常の実行ファイル
     if (item.path) {
-      const lowerPath = item.path.toLowerCase();
-      if (lowerPath.endsWith('.exe')) {
+      if (item.path.toLowerCase().endsWith('.exe')) {
         const iconName = path.basename(item.path, path.extname(item.path)) + '_icon.png';
         return findExistingFile(path.join(iconsFolder, iconName));
       }
-      if (lowerPath.endsWith('.bat') || lowerPath.endsWith('.cmd') || lowerPath.endsWith('.com')) {
+      if (isScriptExtension(item.path)) {
         const extensionName = path.extname(item.path).slice(1).toLowerCase();
         return findExistingFile(getExtensionIconPath(extensionsFolder, extensionName));
       }
@@ -615,14 +573,10 @@ async function extractUwpIcon(appPath: string, iconsFolder: string): Promise<str
     const pkgInfo = (await getAppxPackageCache()).get(packageFamilyName.split('_')[0]);
     if (!pkgInfo || !fs.existsSync(pkgInfo.installLocation)) return null;
 
-    const iconPath = findIconFromManifestLogo(pkgInfo.installLocation, pkgInfo.logoPaths);
-    if (!iconPath) return null;
+    const iconFilePath = findIconFromManifestLogo(pkgInfo.installLocation, pkgInfo.logoPaths);
+    if (!iconFilePath) return null;
 
-    const iconBuffer = fs.readFileSync(iconPath);
-    if (iconBuffer.length === 0) return null;
-
-    FileUtils.writeBinaryFile(cachePath, iconBuffer);
-    return FileUtils.bufferToBase64DataUrl(iconBuffer);
+    return cacheAndConvertIcon(fs.readFileSync(iconFilePath), cachePath);
   } catch (error) {
     iconLogger.warn({ appPath, error }, 'UWPアイコンの取得に失敗');
     return null;
@@ -692,7 +646,7 @@ async function extractIconForItem(
     if (item.path.endsWith('.exe') || PathUtils.isShortcutFile(item.path)) {
       return extractIcon(item.path, iconsFolder);
     }
-    if (item.path.endsWith('.bat') || item.path.endsWith('.cmd') || item.path.endsWith('.com')) {
+    if (isScriptExtension(item.path)) {
       return extractFileIconByExtension(item.path, extensionsFolder);
     }
   }

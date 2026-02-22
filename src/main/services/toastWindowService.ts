@@ -59,6 +59,10 @@ function clearCloseTimeout(): void {
   }
 }
 
+function isToastWindowValid(): boolean {
+  return toastWindow !== null && !toastWindow.isDestroyed();
+}
+
 /**
  * マウスカーソルがある画面でのトースト表示位置を計算
  */
@@ -107,8 +111,8 @@ function createToastWindow(): BrowserWindow {
  */
 async function ensureToastWindow(): Promise<BrowserWindow> {
   // 既存ウィンドウが有効なら再利用
-  if (toastWindow && !toastWindow.isDestroyed() && isWindowReady) {
-    return toastWindow;
+  if (isToastWindowValid() && isWindowReady) {
+    return toastWindow!;
   }
 
   // 破棄済みまたは未作成の場合は新規作成
@@ -161,25 +165,17 @@ export async function showToastWindow(options: ToastOptions): Promise<void> {
   }, duration + 500);
 }
 
-/**
- * トーストウィンドウを即座に閉じる
- */
 export function closeToastWindow(): void {
   clearCloseTimeout();
-
-  if (toastWindow && !toastWindow.isDestroyed()) {
-    toastWindow.hide();
+  if (isToastWindowValid()) {
+    toastWindow!.hide();
   }
 }
 
-/**
- * アプリ終了時のクリーンアップ
- */
 export function destroyToastWindow(): void {
   clearCloseTimeout();
-
-  if (toastWindow && !toastWindow.isDestroyed()) {
-    toastWindow.close();
+  if (isToastWindowValid()) {
+    toastWindow!.close();
     toastWindow = null;
     isWindowReady = false;
   }

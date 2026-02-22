@@ -63,11 +63,10 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
   } = params;
 
   function getTabFilteredItems(): AppItem[] {
-    if (!showDataFileTabs) {
-      return mainItems.filter((item) => !isWindowInfo(item) && item.sourceFile === activeTab);
-    }
+    const activeTabConfig = showDataFileTabs
+      ? dataFileTabs.find((tab) => tab.files.includes(activeTab))
+      : undefined;
 
-    const activeTabConfig = dataFileTabs.find((tab) => tab.files.includes(activeTab));
     if (activeTabConfig) {
       return mainItems.filter(
         (item) => !isWindowInfo(item) && activeTabConfig.files.includes(item.sourceFile || '')
@@ -100,10 +99,15 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
     result: { success: boolean; error?: string },
     win: WindowInfo,
     itemType: ToastItemType,
-    errorMessage: string
+    errorMessage: string,
+    successMessage?: string
   ): Promise<void> {
     if (result.success) {
-      await window.electronAPI.showToastWindow({ displayName: win.title, itemType });
+      await window.electronAPI.showToastWindow({
+        displayName: win.title,
+        itemType,
+        message: successMessage,
+      });
       await refreshWindows();
     } else {
       await window.electronAPI.showToastWindow({
@@ -186,20 +190,13 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
         selectedWindow.hwnd,
         targetDesktop
       );
-      if (result.success) {
-        await window.electronAPI.showToastWindow({
-          displayName: selectedWindow.title,
-          itemType: 'windowMoveDesktop',
-          message: `ウィンドウをデスクトップ ${targetDesktop} に移動しました`,
-        });
-        await refreshWindows();
-      } else {
-        await window.electronAPI.showToastWindow({
-          displayName: selectedWindow.title,
-          itemType: 'windowMoveDesktop',
-          message: `ウィンドウの移動に失敗しました: ${result.error || '不明なエラー'}`,
-        });
-      }
+      await showWindowToastAndRefresh(
+        result,
+        selectedWindow,
+        'windowMoveDesktop',
+        'ウィンドウの移動に失敗しました',
+        `ウィンドウをデスクトップ ${targetDesktop} に移動しました`
+      );
       return;
     }
 

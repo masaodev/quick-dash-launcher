@@ -88,18 +88,18 @@ export class HotkeyService {
   }
 
   private unregisterHotkeyInternal(type: HotkeyType): void {
-    const hotkey = type === 'main' ? this.currentHotkey : this.currentItemSearchHotkey;
+    const isMain = type === 'main';
+    const hotkey = isMain ? this.currentHotkey : this.currentItemSearchHotkey;
     if (!hotkey) return;
 
     try {
       globalShortcut.unregister(hotkey);
-      const label = type === 'main' ? 'Hotkey' : 'Item search hotkey';
-      logger.info(`${label} unregistered: ${hotkey}`);
+      logger.info(`${isMain ? 'Hotkey' : 'Item search hotkey'} unregistered: ${hotkey}`);
     } catch (error) {
       logger.error({ error, hotkey }, `Error unregistering ${type} hotkey`);
     }
 
-    if (type === 'main') {
+    if (isMain) {
       this.currentHotkey = null;
     } else {
       this.currentItemSearchHotkey = null;

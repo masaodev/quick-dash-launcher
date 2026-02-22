@@ -80,140 +80,94 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
   });
 
   ipcMain.handle(IPC_CHANNELS.SETTINGS_GET, async (_event, key?: keyof AppSettings) => {
-    try {
-      const settingsService = await SettingsService.getInstance();
-      if (key) {
-        const value = await settingsService.get(key);
-        logger.info(`Settings get request: ${key} = ${value}`);
-        return value;
-      }
-      const allSettings = await settingsService.getAll();
-      logger.info('Settings get all request');
-      return allSettings;
-    } catch (error) {
-      logger.error({ error }, 'Failed to get settings');
-      throw error;
+    const settingsService = await SettingsService.getInstance();
+    if (key) {
+      const value = await settingsService.get(key);
+      logger.info(`Settings get request: ${key} = ${value}`);
+      return value;
     }
+    const allSettings = await settingsService.getAll();
+    logger.info('Settings get all request');
+    return allSettings;
   });
 
   ipcMain.handle(
     IPC_CHANNELS.SETTINGS_SET,
     async (_event, key: keyof AppSettings, value: AppSettings[keyof AppSettings]) => {
-      try {
-        const settingsService = await SettingsService.getInstance();
-        await settingsService.set(key, value);
-        logger.info(`Settings set request: ${key} = ${value}`);
-        await applySettingsEffects([key], settingsService);
-        return true;
-      } catch (error) {
-        logger.error({ error, key }, 'Failed to set setting');
-        throw error;
-      }
+      const settingsService = await SettingsService.getInstance();
+      await settingsService.set(key, value);
+      logger.info(`Settings set request: ${key} = ${value}`);
+      await applySettingsEffects([key], settingsService);
+      return true;
     }
   );
 
   ipcMain.handle(
     IPC_CHANNELS.SETTINGS_SET_MULTIPLE,
     async (_event, settings: Partial<AppSettings>) => {
-      try {
-        const settingsService = await SettingsService.getInstance();
-        await settingsService.setMultiple(settings);
-        logger.info({ settings }, 'Settings set multiple request');
+      const settingsService = await SettingsService.getInstance();
+      await settingsService.setMultiple(settings);
+      logger.info({ settings }, 'Settings set multiple request');
 
-        if (settings.hotkey && settings.hotkey.trim() !== '' && setFirstLaunchMode) {
-          setFirstLaunchMode(false);
-          logger.info('初回起動モードを解除しました（ホットキーが設定されたため）');
-        }
-
-        const changedKeys = Object.keys(settings) as Array<keyof AppSettings>;
-        await applySettingsEffects(changedKeys, settingsService);
-        notifySettingsChanged();
-
-        return true;
-      } catch (error) {
-        logger.error({ error }, 'Failed to set multiple settings');
-        throw error;
+      if (settings.hotkey && settings.hotkey.trim() !== '' && setFirstLaunchMode) {
+        setFirstLaunchMode(false);
+        logger.info('初回起動モードを解除しました（ホットキーが設定されたため）');
       }
+
+      const changedKeys = Object.keys(settings) as Array<keyof AppSettings>;
+      await applySettingsEffects(changedKeys, settingsService);
+      notifySettingsChanged();
+
+      return true;
     }
   );
 
   ipcMain.handle(IPC_CHANNELS.SETTINGS_RESET, async () => {
-    try {
-      const settingsService = await SettingsService.getInstance();
-      await settingsService.reset();
-      logger.info('Settings reset request');
-      await AutoLaunchService.getInstance().setAutoLaunch(false);
-      notifySettingsChanged();
-      return true;
-    } catch (error) {
-      logger.error({ error }, 'Failed to reset settings');
-      throw error;
-    }
+    const settingsService = await SettingsService.getInstance();
+    await settingsService.reset();
+    logger.info('Settings reset request');
+    await AutoLaunchService.getInstance().setAutoLaunch(false);
+    notifySettingsChanged();
+    return true;
   });
 
   ipcMain.handle(IPC_CHANNELS.SETTINGS_VALIDATE_HOTKEY, async (_event, hotkey: string) => {
-    try {
-      const settingsService = await SettingsService.getInstance();
-      const result = settingsService.validateHotkey(hotkey);
-      logger.info(`Hotkey validation request: ${hotkey} = ${result.isValid}`);
-      return result;
-    } catch (error) {
-      logger.error({ error }, 'Failed to validate hotkey');
-      throw error;
-    }
+    const settingsService = await SettingsService.getInstance();
+    const result = settingsService.validateHotkey(hotkey);
+    logger.info(`Hotkey validation request: ${hotkey} = ${result.isValid}`);
+    return result;
   });
 
   ipcMain.handle(IPC_CHANNELS.SETTINGS_GET_CONFIG_PATH, async () => {
-    try {
-      const settingsService = await SettingsService.getInstance();
-      const path = await settingsService.getConfigPath();
-      logger.info(`Settings config path request: ${path}`);
-      return path;
-    } catch (error) {
-      logger.error({ error }, 'Failed to get config path');
-      throw error;
-    }
+    const settingsService = await SettingsService.getInstance();
+    const configPath = await settingsService.getConfigPath();
+    logger.info(`Settings config path request: ${configPath}`);
+    return configPath;
   });
 
   ipcMain.handle(IPC_CHANNELS.SETTINGS_CHANGE_HOTKEY, async (_event, newHotkey: string) => {
-    try {
-      const hotkeyService = HotkeyService.getInstance();
-      const success = await hotkeyService.changeHotkey(newHotkey);
-      logger.info(`Hotkey change request: ${newHotkey} = ${success ? 'success' : 'failed'}`);
-      return success;
-    } catch (error) {
-      logger.error({ error, newHotkey }, 'Failed to change hotkey');
-      throw error;
-    }
+    const success = await HotkeyService.getInstance().changeHotkey(newHotkey);
+    logger.info(`Hotkey change request: ${newHotkey} = ${success ? 'success' : 'failed'}`);
+    return success;
   });
 
   ipcMain.handle(
     IPC_CHANNELS.SETTINGS_CHECK_HOTKEY_AVAILABILITY,
     async (_event, hotkey: string) => {
-      try {
-        const isAvailable = HotkeyService.getInstance().isHotkeyAvailable(hotkey);
-        logger.info(`Hotkey availability check: ${hotkey} = ${isAvailable}`);
-        return isAvailable;
-      } catch (error) {
-        logger.error({ error, hotkey }, 'Failed to check hotkey availability');
-        throw error;
-      }
+      const isAvailable = HotkeyService.getInstance().isHotkeyAvailable(hotkey);
+      logger.info(`Hotkey availability check: ${hotkey} = ${isAvailable}`);
+      return isAvailable;
     }
   );
 
   ipcMain.handle(
     IPC_CHANNELS.SETTINGS_CHANGE_ITEM_SEARCH_HOTKEY,
     async (_event, newHotkey: string) => {
-      try {
-        const success = await HotkeyService.getInstance().changeItemSearchHotkey(newHotkey);
-        logger.info(
-          `Item search hotkey change request: ${newHotkey} = ${success ? 'success' : 'failed'}`
-        );
-        return success;
-      } catch (error) {
-        logger.error({ error, newHotkey }, 'Failed to change item search hotkey');
-        throw error;
-      }
+      const success = await HotkeyService.getInstance().changeItemSearchHotkey(newHotkey);
+      logger.info(
+        `Item search hotkey change request: ${newHotkey} = ${success ? 'success' : 'failed'}`
+      );
+      return success;
     }
   );
 

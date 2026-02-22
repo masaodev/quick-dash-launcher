@@ -74,6 +74,10 @@ function App(): React.ReactElement {
     type: 'info',
   });
 
+  const showErrorAlert = (message: string) => {
+    setAlertDialog({ isOpen: true, message, type: 'error' });
+  };
+
   // 削除確認ダイアログ状態管理
   const [deleteConfirmDialog, setDeleteConfirmDialog] = useState<{
     isOpen: boolean;
@@ -121,13 +125,7 @@ function App(): React.ReactElement {
 
   const { isDraggingOver } = useDragAndDrop(
     (paths: string[]) => openWithDroppedPaths(paths),
-    (message: string) => {
-      setAlertDialog({
-        isOpen: true,
-        message,
-        type: 'error',
-      });
-    },
+    showErrorAlert,
     isRegisterModalOpen
   );
 
@@ -258,11 +256,7 @@ function App(): React.ReactElement {
         const result = await window.electronAPI.activateWindowByHwnd(windowItem.hwnd);
 
         if (!result.success) {
-          setAlertDialog({
-            isOpen: true,
-            message: 'ウィンドウのアクティブ化に失敗しました',
-            type: 'error',
-          });
+          showErrorAlert('ウィンドウのアクティブ化に失敗しました');
         } else {
           await window.electronAPI.showToastWindow({
             displayName: windowItem.title,
@@ -284,11 +278,9 @@ function App(): React.ReactElement {
         }
       }
     } catch (error) {
-      setAlertDialog({
-        isOpen: true,
-        message: `アイテムの実行に失敗しました: ${error instanceof Error ? error.message : String(error)}`,
-        type: 'error',
-      });
+      showErrorAlert(
+        `アイテムの実行に失敗しました: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   };
 
@@ -484,11 +476,7 @@ function App(): React.ReactElement {
       showSuccess('アイテムを削除しました');
     } catch (error) {
       logError('Failed to delete item:', error);
-      setAlertDialog({
-        isOpen: true,
-        message: 'アイテムの削除に失敗しました。',
-        type: 'error',
-      });
+      showErrorAlert('アイテムの削除に失敗しました。');
       setDeleteConfirmDialog({ isOpen: false, item: null });
     }
   };
@@ -545,11 +533,7 @@ function App(): React.ReactElement {
       setIsFirstLaunch(false);
     } catch (error) {
       logError('初回設定の保存に失敗しました:', error);
-      setAlertDialog({
-        isOpen: true,
-        message: '設定の保存に失敗しました。',
-        type: 'error',
-      });
+      showErrorAlert('設定の保存に失敗しました。');
     }
   };
 

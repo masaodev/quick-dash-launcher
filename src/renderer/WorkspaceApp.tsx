@@ -115,16 +115,13 @@ const WorkspaceApp: React.FC = () => {
   useEffect(() => {
     window.electronAPI.workspaceAPI.getAlwaysOnTop().then(setIsPinned);
 
-    const loadTransparent = async () => {
+    const syncBackgroundTransparent = async () => {
       const settings = await window.electronAPI.getSettings();
       setBackgroundTransparent(settings.workspaceBackgroundTransparent || false);
     };
-    loadTransparent();
+    syncBackgroundTransparent();
 
-    const cleanup = window.electronAPI.onSettingsChanged(async () => {
-      const settings = await window.electronAPI.getSettings();
-      setBackgroundTransparent(settings.workspaceBackgroundTransparent || false);
-    });
+    const cleanup = window.electronAPI.onSettingsChanged(syncBackgroundTransparent);
 
     return () => cleanup?.();
   }, []);

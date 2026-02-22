@@ -1,6 +1,3 @@
-/**
- * ウィンドウ検索機能のIPCハンドラー
- */
 import { ipcMain, BrowserWindow } from 'electron';
 import type { WindowPinMode, WindowInfo, VirtualDesktopInfo } from '@common/types';
 import { IPC_CHANNELS } from '@common/ipcChannels';
@@ -24,8 +21,18 @@ import {
 
 type OperationResult = { success: boolean; error?: string };
 
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
+function safeWindowOperation<T extends unknown[]>(
+  fn: (...args: T) => boolean,
+  errorLabel: string
+): (...args: T) => OperationResult {
+  return (...args: T) => {
+    try {
+      return { success: fn(...args) };
+    } catch (error) {
+      console.error(`Failed to ${errorLabel}:`, error);
+      return { success: false, error: error instanceof Error ? error.message : String(error) };
+    }
+  };
 }
 
 function excludeMainWindow(windows: WindowInfo[], mainWindow: BrowserWindow | null): WindowInfo[] {
@@ -55,7 +62,7 @@ export function setupWindowSearchHandlers(
     getWindowList(true)
   );
 
-  ipcMain.handle(IPC_CHANNELS.GET_VIRTUAL_DESKTOP_INFO, async (): Promise<VirtualDesktopInfo> => {
+  ipcMain.handle(IPC_CHANNELS.GET_VIRTUAL_DESKTOP_INFO, (): VirtualDesktopInfo => {
     try {
       if (!isVirtualDesktopSupported()) {
         return { supported: false, desktopCount: -1, currentDesktop: -1 };
@@ -72,85 +79,49 @@ export function setupWindowSearchHandlers(
     }
   });
 
-  ipcMain.handle(
-    IPC_CHANNELS.ACTIVATE_WINDOW,
-    async (_event, hwnd: number | bigint): Promise<OperationResult> => {
-      try {
-        restoreWindow(hwnd);
-        const success = activateWindow(hwnd);
+  ipcMain.handle(IPC_CHANNELS.ACTIVATE_WINDOW, (_event, hwnd: number | bigint): OperationResult => {
+    try {
+      restoreWindow(hwnd);
+      const success = activateWindow(hwnd);
 
-        if (success && getWindowPinMode() === 'normal') {
-          const mainWindow = getMainWindow();
-          if (mainWindow && !mainWindow.isDestroyed()) {
-            mainWindow.hide();
-          }
+      if (success && getWindowPinMode() === 'normal') {
+        const mainWindow = getMainWindow();
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.hide();
         }
-
-        return { success };
-      } catch (error) {
-        console.error('Failed to activate window:', error);
-        return { success: false, error: getErrorMessage(error) };
       }
+
+      return { success };
+    } catch (error) {
+      console.error('Failed to activate window:', error);
+      return { success: false, error: error instanceof Error ? error.message : String(error) };
     }
-  );
+  });
 
   ipcMain.handle(
     IPC_CHANNELS.MOVE_WINDOW_TO_DESKTOP,
-    async (_event, hwnd: number | bigint, desktopNumber: number): Promise<OperationResult> => {
-      try {
-        return { success: moveWindowToVirtualDesktop(hwnd, desktopNumber) };
-      } catch (error) {
-        console.error('Failed to move window to desktop:', error);
-        return { success: false, error: getErrorMessage(error) };
-      }
-    }
+    (_event, hwnd: number | bigint, desktopNumber: number) =>
+      safeWindowOperation(moveWindowToVirtualDesktop, 'move window to desktop')(hwnd, desktopNumber)
   );
 
-  ipcMain.handle(
-    IPC_CHANNELS.PIN_WINDOW,
-    async (_event, hwnd: number | bigint): Promise<OperationResult> => {
-      try {
-        return { success: pinWindow(hwnd) };
-      } catch (error) {
-        console.error('Failed to pin window:', error);
-        return { success: false, error: getErrorMessage(error) };
-      }
-    }
+  ipcMain.handle(IPC_CHANNELS.PIN_WINDOW, (_event, hwnd: number | bigint) =>
+    safeWindowOperation(pinWindow, 'pin window')(hwnd)
   );
 
-  ipcMain.handle(
-    IPC_CHANNELS.UNPIN_WINDOW,
-    async (_event, hwnd: number | bigint): Promise<OperationResult> => {
-      try {
-        return { success: unPinWindow(hwnd) };
-      } catch (error) {
-        console.error('Failed to unpin window:', error);
-        return { success: false, error: getErrorMessage(error) };
-      }
-    }
+  ipcMain.handle(IPC_CHANNELS.UNPIN_WINDOW, (_event, hwnd: number | bigint) =>
+    safeWindowOperation(unPinWindow, 'unpin window')(hwnd)
   );
 
-  ipcMain.handle(
-    IPC_CHANNELS.IS_WINDOW_PINNED,
-    async (_event, hwnd: number | bigint): Promise<boolean> => {
-      try {
-        return isPinnedWindow(hwnd);
-      } catch (error) {
-        console.error('Failed to check if window is pinned:', error);
-        return false;
-      }
+  ipcMain.handle(IPC_CHANNELS.IS_WINDOW_PINNED, (_event, hwnd: number | bigint): boolean => {
+    try {
+      return isPinnedWindow(hwnd);
+    } catch (error) {
+      console.error('Failed to check if window is pinned:', error);
+      return false;
     }
-  );
+  });
 
-  ipcMain.handle(
-    IPC_CHANNELS.CLOSE_WINDOW,
-    async (_event, hwnd: number | bigint): Promise<OperationResult> => {
-      try {
-        return { success: closeWindow(hwnd) };
-      } catch (error) {
-        console.error('Failed to close window:', error);
-        return { success: false, error: getErrorMessage(error) };
-      }
-    }
+  ipcMain.handle(IPC_CHANNELS.CLOSE_WINDOW, (_event, hwnd: number | bigint) =>
+    safeWindowOperation(closeWindow, 'close window')(hwnd)
   );
 }

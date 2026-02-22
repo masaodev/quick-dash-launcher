@@ -1,3 +1,4 @@
+import * as fs from 'fs';
 import * as path from 'path';
 
 import { ipcMain, BrowserWindow } from 'electron';
@@ -29,6 +30,7 @@ import { isWindowInfo } from '@common/types/guards';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { SettingsService } from '../services/settingsService.js';
+import { PathManager } from '../config/pathManager.js';
 
 import { setupBookmarkHandlers } from './bookmarkHandlers.js';
 import { setupAppImportHandlers } from './appImportHandlers.js';
@@ -246,8 +248,6 @@ export async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
   // タブ別の重複チェック用Set
   const seenPathsByTab = new Map<number, Set<string>>();
 
-  // 動的にデータファイルリストを取得
-  const { PathManager } = await import('../config/pathManager.js');
   const autoDetectedFiles = PathManager.getDataFiles();
 
   // dataFileTabsで明示的に指定されたファイルを収集し、重複を排除
@@ -300,8 +300,6 @@ async function loadEditableItems(configFolder: string): Promise<LoadEditableItem
   const items: EditableJsonItem[] = [];
 
   try {
-    // 動的にデータファイルリストを取得
-    const { PathManager } = await import('../config/pathManager.js');
     const dataFiles = PathManager.getDataFiles();
 
     for (const fileName of dataFiles) {
@@ -361,8 +359,6 @@ async function saveEditableItems(
   configFolder: string,
   editableItems: EditableJsonItem[]
 ): Promise<void> {
-  // 管理対象のファイルリストを取得
-  const { PathManager } = await import('../config/pathManager.js');
   const dataFiles = PathManager.getDataFiles();
 
   // ファイル別にグループ化
@@ -406,7 +402,6 @@ async function updateItemByIdWithCallback(
   id: string,
   createNewItem: (id: string) => JsonItem
 ): Promise<void> {
-  const { PathManager } = await import('../config/pathManager.js');
   const dataFiles = PathManager.getDataFiles();
 
   for (const fileName of dataFiles) {
@@ -720,43 +715,29 @@ export function setupDataHandlers(configFolder: string) {
 
   ipcMain.handle(IPC_CHANNELS.GET_CONFIG_FOLDER, () => configFolder);
 
-  ipcMain.handle(IPC_CHANNELS.GET_DATA_FILES, async () => {
-    const { PathManager } = await import('../config/pathManager.js');
-    return PathManager.getDataFiles();
-  });
+  ipcMain.handle(IPC_CHANNELS.GET_DATA_FILES, () => PathManager.getDataFiles());
 
   ipcMain.handle(IPC_CHANNELS.CREATE_DATA_FILE, async (_event, fileName: string) => {
-    const fs = await import('fs/promises');
-    const path = await import('path');
     const filePath = path.join(configFolder, fileName);
-
     dataLogger.info(`create-data-file called: ${fileName} at ${filePath}`);
 
-    // ファイルが既に存在する場合はエラー
-    try {
-      await fs.access(filePath);
+    if (FileUtils.exists(filePath)) {
       dataLogger.warn(`File already exists: ${filePath}`);
       return { success: false, error: 'ファイルは既に存在します' };
-    } catch {
-      // ファイルが存在しない場合は作成
-      try {
-        const emptyData = serializeJsonDataFile(createEmptyJsonDataFile());
-        await fs.writeFile(filePath, emptyData, 'utf-8');
-        dataLogger.info(`File created successfully: ${filePath}`);
-        // notifyDataChanged(); // 設定の再読み込みを防ぐため削除
-        return { success: true };
-      } catch (error) {
-        dataLogger.error({ error, filePath }, 'Failed to create file');
-        return { success: false, error: `ファイルの作成に失敗しました: ${error}` };
-      }
+    }
+
+    try {
+      const emptyData = serializeJsonDataFile(createEmptyJsonDataFile());
+      FileUtils.safeWriteTextFile(filePath, emptyData);
+      dataLogger.info(`File created successfully: ${filePath}`);
+      return { success: true };
+    } catch (error) {
+      dataLogger.error({ error, filePath }, 'Failed to create file');
+      return { success: false, error: `ファイルの作成に失敗しました: ${error}` };
     }
   });
 
   ipcMain.handle(IPC_CHANNELS.DELETE_DATA_FILE, async (_event, fileName: string) => {
-    const fs = await import('fs/promises');
-    const path = await import('path');
-
-    // メインデータファイルは削除不可
     if (fileName === DEFAULT_DATA_FILE) {
       return { success: false, error: 'メインデータファイルは削除できません' };
     }
@@ -764,7 +745,7 @@ export function setupDataHandlers(configFolder: string) {
     const filePath = path.join(configFolder, fileName);
 
     try {
-      await fs.unlink(filePath);
+      await fs.promises.unlink(filePath);
 
       // 削除されたファイルを targetFile に持つ自動取込ルールを無効化
       const settingsService = await SettingsService.getInstance();

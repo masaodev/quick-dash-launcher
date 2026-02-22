@@ -392,8 +392,9 @@ export async function applyVisibilityOnAllDesktops(): Promise<void> {
   const hwnd = workspaceWindow.getNativeWindowHandle().readBigUInt64LE();
   const success = enabled ? pinWindow(hwnd) : unPinWindow(hwnd);
   const action = enabled ? 'pin' : 'unpin';
-  const logFn = success
-    ? windowLogger.info.bind(windowLogger)
-    : windowLogger.warn.bind(windowLogger);
-  logFn(`ワークスペースの仮想デスクトップ固定${success ? '' : 'に失敗'}: ${action}`);
+  if (success) {
+    windowLogger.info(`ワークスペースの仮想デスクトップ固定: ${action}`);
+  } else {
+    windowLogger.warn(`ワークスペースの仮想デスクトップ固定に失敗: ${action}`);
+  }
 }

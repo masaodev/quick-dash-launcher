@@ -1,7 +1,6 @@
 import { useCallback, Dispatch, SetStateAction } from 'react';
 import { AppSettings, DataFileTab } from '@common/types';
 
-import { logError } from '../../utils/debug';
 import {
   FileNameGenerator,
   TabValidator,
@@ -136,25 +135,20 @@ export function useFileOperations({
         return;
       }
 
-      try {
-        setEditedSettings((prev) => ({
-          ...prev,
-          dataFileTabs: updatedTabs,
-        }));
+      setEditedSettings((prev) => ({
+        ...prev,
+        dataFileTabs: updatedTabs,
+      }));
 
-        setPendingFileOperations((prev) => {
-          if (deletionType === 'cancelCreation') {
-            return { ...prev, filesToCreate: prev.filesToCreate.filter((f) => f !== fileName) };
-          }
-          if (deletionType === 'scheduleDelete') {
-            return { ...prev, filesToDelete: [...prev.filesToDelete, fileName] };
-          }
-          return prev;
-        });
-      } catch (error) {
-        logError('ファイルの削除に失敗しました:', error);
-        showAlert('ファイルの削除に失敗しました。', 'error');
-      }
+      setPendingFileOperations((prev) => {
+        if (deletionType === 'cancelCreation') {
+          return { ...prev, filesToCreate: prev.filesToCreate.filter((f) => f !== fileName) };
+        }
+        if (deletionType === 'scheduleDelete') {
+          return { ...prev, filesToDelete: [...prev.filesToDelete, fileName] };
+        }
+        return prev;
+      });
     },
     [
       editedSettings.dataFileTabs,
@@ -167,10 +161,7 @@ export function useFileOperations({
   );
 
   const getNextFileName = useCallback((): string => {
-    const existingFiles = [
-      ...(editedSettings.dataFileTabs?.flatMap((tab) => tab.files) || []),
-      ...pendingFileOperations.filesToCreate,
-    ];
+    const existingFiles = editedSettings.dataFileTabs?.flatMap((tab) => tab.files) || [];
     return FileNameGenerator.getNextAvailableFileName(
       existingFiles,
       pendingFileOperations.filesToCreate

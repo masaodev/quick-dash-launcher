@@ -1,7 +1,8 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import type { WorkspaceItem, WindowInfo, WindowConfig } from '@common/types';
 
 import { useCustomIcon } from '../hooks/useCustomIcon';
+import { useModalKeyboard } from '../hooks/useModalKeyboard';
 import { useWorkspaceItemEditForm } from '../hooks/workspace/useWorkspaceItemEditForm';
 import { logError } from '../utils/debug';
 import {
@@ -68,6 +69,13 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
     setSelectorModalOpen,
   } = useWorkspaceItemEditForm(isOpen, editingItem, loadCustomIconPreview, onClose, onSave);
 
+  const handleEscape = useCallback(() => {
+    if (document.querySelector('.group-item-selector-modal')) return true;
+    return false;
+  }, []);
+
+  useModalKeyboard({ isOpen, modalRef, onClose: handleCancel, onEscape: handleEscape });
+
   useEffect(() => {
     if (!isOpen) {
       document.body.style.overflow = 'auto';
@@ -77,84 +85,11 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
     }
 
     document.body.style.overflow = 'hidden';
-    modalRef.current?.focus();
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      const modal = modalRef.current;
-      if (!modal) return;
-
-      if (event.key === 'Escape') {
-        const groupSelectorModal = document.querySelector('.group-item-selector-modal');
-        if (groupSelectorModal) return;
-
-        event.preventDefault();
-        event.stopPropagation();
-        event.stopImmediatePropagation();
-        handleCancel();
-        return;
-      }
-
-      if (event.key === 'Tab') {
-        const focusableElements = modal.querySelectorAll(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-        );
-        const firstFocusableElement = focusableElements[0] as HTMLElement;
-        const lastFocusableElement = focusableElements[focusableElements.length - 1] as HTMLElement;
-
-        const shouldWrapToLast = event.shiftKey && document.activeElement === firstFocusableElement;
-        const shouldWrapToFirst =
-          !event.shiftKey && document.activeElement === lastFocusableElement;
-
-        if (shouldWrapToLast) {
-          lastFocusableElement.focus();
-        } else if (shouldWrapToFirst) {
-          firstFocusableElement.focus();
-        }
-
-        event.preventDefault();
-        event.stopPropagation();
-        event.stopImmediatePropagation();
-        return;
-      }
-
-      const activeElement = document.activeElement as HTMLElement;
-      const isInputField =
-        activeElement &&
-        (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
-
-      if (isInputField) {
-        const allowedInputKeys = [
-          'Backspace',
-          'Delete',
-          'ArrowLeft',
-          'ArrowRight',
-          'ArrowUp',
-          'ArrowDown',
-          'Home',
-          'End',
-        ];
-        const isCtrlShortcut = event.ctrlKey && ['a', 'c', 'v', 'x', 'z', 'y'].includes(event.key);
-        const isCharacterInput = event.key.length === 1;
-
-        if (isCharacterInput || allowedInputKeys.includes(event.key) || isCtrlShortcut) {
-          event.stopPropagation();
-          event.stopImmediatePropagation();
-          return;
-        }
-      }
-
-      event.preventDefault();
-      event.stopPropagation();
-      event.stopImmediatePropagation();
-    };
-
-    document.addEventListener('keydown', handleKeyDown, true);
 
     return () => {
-      document.removeEventListener('keydown', handleKeyDown, true);
       document.body.style.overflow = 'auto';
     };
-  }, [isOpen, editingItem, handleCancel]);
+  }, [isOpen, editingItem]);
 
   useEffect(() => {
     if (!isOpen || !item) return;

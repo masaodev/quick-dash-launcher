@@ -106,6 +106,24 @@ function CapturedDataSection({
   );
 }
 
+function ClipboardPreview({ state }: { state: CurrentClipboardState }): React.ReactElement {
+  if (state.imageThumbnail) {
+    return (
+      <div className="image-preview">
+        <img src={state.imageThumbnail} alt="クリップボード画像" />
+      </div>
+    );
+  }
+  if (state.preview) {
+    return (
+      <div className="text-preview">
+        <pre>{state.preview}</pre>
+      </div>
+    );
+  }
+  return <div className="no-preview">プレビューなし</div>;
+}
+
 const ClipboardItemEditor: React.FC<ClipboardItemEditorProps> = ({
   capturedData,
   sessionData,
@@ -172,18 +190,7 @@ const ClipboardItemEditor: React.FC<ClipboardItemEditorProps> = ({
         {currentState ? (
           currentState.hasContent ? (
             <div className="clipboard-preview">
-              {/* プレビュー表示 */}
-              {currentState.imageThumbnail ? (
-                <div className="image-preview">
-                  <img src={currentState.imageThumbnail} alt="クリップボード画像" />
-                </div>
-              ) : currentState.preview ? (
-                <div className="text-preview">
-                  <pre>{currentState.preview}</pre>
-                </div>
-              ) : (
-                <div className="no-preview">プレビューなし</div>
-              )}
+              <ClipboardPreview state={currentState} />
 
               {/* フォーマット情報 */}
               <div className="format-info">

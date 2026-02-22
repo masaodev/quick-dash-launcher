@@ -84,21 +84,28 @@ const BackupSnapshotModal: React.FC<BackupSnapshotModalProps> = ({ isOpen, onClo
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose, confirmAction]);
 
-  const handleRestore = async () => {
+  const executeSnapshotAction = async (
+    action: () => Promise<{ success: boolean; error?: string }>,
+    successMessage: string,
+    failPrefix: string,
+    errorMessage: string,
+    clearSelection = false
+  ) => {
     if (!selectedTimestamp) return;
     setConfirmAction(null);
     setIsLoading(true);
     setMessage(null);
 
     try {
-      const result = await window.electronAPI.backupAPI.restoreSnapshot(selectedTimestamp);
+      const result = await action();
       if (result.success) {
-        setMessage('リストアが完了しました。設定を反映するためにアプリの再起動を推奨します。');
+        setMessage(successMessage);
+        if (clearSelection) setSelectedTimestamp(null);
       } else {
-        setMessage(`リストアに失敗しました: ${result.error}`);
+        setMessage(`${failPrefix}: ${result.error}`);
       }
     } catch (error) {
-      setMessage('リストア中にエラーが発生しました');
+      setMessage(errorMessage);
       console.error(error);
     } finally {
       setIsLoading(false);
@@ -106,28 +113,22 @@ const BackupSnapshotModal: React.FC<BackupSnapshotModalProps> = ({ isOpen, onClo
     }
   };
 
-  const handleDelete = async () => {
-    if (!selectedTimestamp) return;
-    setConfirmAction(null);
-    setIsLoading(true);
-    setMessage(null);
+  const handleRestore = () =>
+    executeSnapshotAction(
+      () => window.electronAPI.backupAPI.restoreSnapshot(selectedTimestamp!),
+      'リストアが完了しました。設定を反映するためにアプリの再起動を推奨します。',
+      'リストアに失敗しました',
+      'リストア中にエラーが発生しました'
+    );
 
-    try {
-      const result = await window.electronAPI.backupAPI.deleteSnapshot(selectedTimestamp);
-      if (result.success) {
-        setMessage('スナップショットを削除しました');
-        setSelectedTimestamp(null);
-      } else {
-        setMessage(`削除に失敗しました: ${result.error}`);
-      }
-    } catch (error) {
-      setMessage('削除中にエラーが発生しました');
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-      await loadSnapshots();
-    }
-  };
+  const handleDelete = () =>
+    executeSnapshotAction(
+      () => window.electronAPI.backupAPI.deleteSnapshot(selectedTimestamp!),
+      'スナップショットを削除しました',
+      '削除に失敗しました',
+      '削除中にエラーが発生しました',
+      true
+    );
 
   if (!isOpen) return null;
 

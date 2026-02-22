@@ -86,13 +86,10 @@ export function jsonItemToDisplayText(item: JsonItem): string {
     case 'dir': {
       const parts = ['dir', item.path];
       if (item.options) {
-        const opts: string[] = [];
-        if (item.options.depth !== undefined) opts.push(`depth=${item.options.depth}`);
-        if (item.options.types) opts.push(`types=${item.options.types}`);
-        if (item.options.filter) opts.push(`filter=${item.options.filter}`);
-        if (item.options.exclude) opts.push(`exclude=${item.options.exclude}`);
-        if (item.options.prefix) opts.push(`prefix=${item.options.prefix}`);
-        if (item.options.suffix) opts.push(`suffix=${item.options.suffix}`);
+        const optionKeys = ['depth', 'types', 'filter', 'exclude', 'prefix', 'suffix'] as const;
+        const opts = optionKeys
+          .filter((key) => item.options![key] !== undefined)
+          .map((key) => `${key}=${item.options![key]}`);
         if (opts.length > 0) {
           parts.push(opts.join(','));
         }
@@ -137,15 +134,28 @@ export function displayTextToJsonItem(text: string, existingId?: string): JsonIt
 
     const options: JsonDirOptions = {};
     if (optionsStr) {
-      const optParts = optionsStr.split(',');
-      for (const opt of optParts) {
+      for (const opt of optionsStr.split(',')) {
         const [key, value] = opt.split('=');
-        if (key === 'depth') options.depth = parseInt(value, 10);
-        else if (key === 'types') options.types = value as 'file' | 'folder' | 'both';
-        else if (key === 'filter') options.filter = value;
-        else if (key === 'exclude') options.exclude = value;
-        else if (key === 'prefix') options.prefix = value;
-        else if (key === 'suffix') options.suffix = value;
+        switch (key) {
+          case 'depth':
+            options.depth = parseInt(value, 10);
+            break;
+          case 'types':
+            options.types = value as 'file' | 'folder' | 'both';
+            break;
+          case 'filter':
+            options.filter = value;
+            break;
+          case 'exclude':
+            options.exclude = value;
+            break;
+          case 'prefix':
+            options.prefix = value;
+            break;
+          case 'suffix':
+            options.suffix = value;
+            break;
+        }
       }
     }
 
@@ -210,16 +220,16 @@ export function displayTextToJsonItem(text: string, existingId?: string): JsonIt
   // 通常アイテム行
   const parts = parseDisplayTextFields(text);
   const displayName = parts[0] || '';
-  const path = parts[1] || '';
-  const args = parts[2] && parts[2].trim() ? parts[2] : undefined;
-  const customIcon = parts[3] && parts[3].trim() ? parts[3] : undefined;
-  const windowConfigStr = parts[4] && parts[4].trim() ? parts[4] : undefined;
+  const itemPath = parts[1] || '';
+  const args = parts[2]?.trim() || undefined;
+  const customIcon = parts[3]?.trim() || undefined;
+  const windowConfigStr = parts[4]?.trim() || undefined;
 
   const item: JsonItem = {
     id: itemId,
     type: 'item',
     displayName,
-    path,
+    path: itemPath,
   };
 
   if (args) item.args = args;

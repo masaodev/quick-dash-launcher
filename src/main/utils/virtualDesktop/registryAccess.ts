@@ -39,24 +39,13 @@ const RegCloseKey = advapi32.func('RegCloseKey', 'long', ['void*']);
  * @returns サポートされている場合true
  */
 export function isVirtualDesktopSupported(): boolean {
-  // Windows 10のビルド番号は10.0.10240以降
-  const release = os.release();
-  const parts = release.split('.');
-  if (parts.length < 3) {
-    return false;
-  }
+  const parts = os.release().split('.');
+  if (parts.length < 3) return false;
 
   const major = parseInt(parts[0], 10);
   const build = parseInt(parts[2], 10);
 
-  // Windows 10以降（メジャーバージョン10以上、ビルド10240以降）
-  if (major < 10) {
-    return false;
-  }
-
-  if (major === 10 && build < 10240) {
-    return false;
-  }
+  if (major < 10 || (major === 10 && build < 10240)) return false;
 
   // レジストリキーの存在確認
   const registryHandle = [null];
@@ -149,12 +138,10 @@ function queryRegistryBinaryData(
   registryHandle: RegistryHandle,
   expectedSize: number
 ): [boolean, Buffer, number] {
-  const bufferSize = expectedSize + 16; // 余裕を持たせる
+  const bufferSize = expectedSize + 16;
   const buffer = Buffer.alloc(bufferSize);
   const actualDataSize = [bufferSize];
   const actualDataType = [0];
-
-  buffer.fill(0);
 
   const dataQueryResult = RegQueryValueExW(
     registryHandle,

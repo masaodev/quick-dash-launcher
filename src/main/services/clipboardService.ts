@@ -137,39 +137,39 @@ export class ClipboardService {
     return [];
   }
 
-  /**
-   * クリップボードからデータを収集する共通処理
-   */
   private async collectClipboardData(): Promise<CollectResult> {
-    const state = await this.checkCurrentClipboard();
-
-    if (!state.hasContent) {
-      return { success: false, error: 'クリップボードが空です' };
-    }
-
+    const formats: ClipboardFormat[] = [];
     const clipboardData: SerializableClipboard = {
-      formats: state.formats,
+      formats,
       savedAt: Date.now(),
       dataSize: 0,
     };
+    let preview: string | undefined;
 
-    if (state.formats.includes('text')) {
-      clipboardData.text = clipboard.readText();
-      clipboardData.dataSize += Buffer.byteLength(clipboardData.text || '', 'utf8');
+    const text = clipboard.readText();
+    if (text) {
+      formats.push('text');
+      clipboardData.text = text;
+      clipboardData.dataSize += Buffer.byteLength(text, 'utf8');
+      preview = this.truncatePreview(text);
     }
 
-    if (state.formats.includes('html')) {
-      clipboardData.html = clipboard.readHTML();
-      clipboardData.dataSize += Buffer.byteLength(clipboardData.html || '', 'utf8');
+    const html = clipboard.readHTML();
+    if (html?.trim()) {
+      formats.push('html');
+      clipboardData.html = html;
+      clipboardData.dataSize += Buffer.byteLength(html, 'utf8');
     }
 
-    if (state.formats.includes('rtf')) {
-      clipboardData.rtf = clipboard.readRTF();
-      clipboardData.dataSize += Buffer.byteLength(clipboardData.rtf || '', 'utf8');
+    const rtf = clipboard.readRTF();
+    if (rtf?.trim()) {
+      formats.push('rtf');
+      clipboardData.rtf = rtf;
+      clipboardData.dataSize += Buffer.byteLength(rtf, 'utf8');
     }
 
-    if (state.formats.includes('image')) {
-      const image = clipboard.readImage();
+    const image = clipboard.readImage();
+    if (!image.isEmpty()) {
       const pngBuffer = image.toPNG();
 
       if (pngBuffer.length > MAX_IMAGE_SIZE_BYTES) {
@@ -177,28 +177,43 @@ export class ClipboardService {
         return { success: false, error: `画像サイズが上限（${maxMB}MB）を超えています` };
       }
 
+      formats.push('image');
       clipboardData.imageBase64 = pngBuffer.toString('base64');
       clipboardData.dataSize += pngBuffer.length;
+
+      if (!preview) {
+        const size = image.getSize();
+        preview = `画像 (${size.width}x${size.height})`;
+      }
     }
 
-    if (state.formats.includes('file')) {
-      const filePaths = this.readFilePaths();
-      if (filePaths.length > 0) {
-        clipboardData.filePaths = filePaths;
-        clipboardData.dataSize += this.calculatePathsSize(filePaths);
+    const filePaths = this.readFilePaths();
+    if (filePaths.length > 0) {
+      formats.push('file');
+      clipboardData.filePaths = filePaths;
+      clipboardData.dataSize += this.calculatePathsSize(filePaths);
 
-        if (!clipboardData.text) {
-          clipboardData.text = filePaths.join('\n');
-          if (!clipboardData.formats.includes('text')) {
-            clipboardData.formats.push('text');
-          }
-        }
+      if (!clipboardData.text) {
+        clipboardData.text = filePaths.join('\n');
+        formats.push('text');
       }
+
+      if (!preview) {
+        const filePreview =
+          filePaths.length === 1
+            ? filePaths[0]
+            : `${filePaths.length}個のファイル: ${filePaths[0]}...`;
+        preview = this.truncatePreview(filePreview);
+      }
+    }
+
+    if (formats.length === 0) {
+      return { success: false, error: 'クリップボードが空です' };
     }
 
     return {
       success: true,
-      data: { clipboardData, preview: state.preview },
+      data: { clipboardData, preview },
     };
   }
 

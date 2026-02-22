@@ -29,6 +29,14 @@ export function useWorkspaceItemEditForm(
   const [errors, setErrors] = useState<FormErrors>({});
   const [selectorModalOpen, setSelectorModalOpen] = useState(false);
 
+  const clearErrorField = (field: keyof FormErrors) => {
+    setErrors((prev) => {
+      const newErrors = { ...prev };
+      delete newErrors[field];
+      return newErrors;
+    });
+  };
+
   useEffect(() => {
     if (!isOpen) {
       setItem(null);
@@ -77,15 +85,7 @@ export function useWorkspaceItemEditForm(
       }
 
       if (field === 'displayName' || field === 'path' || field === 'windowOperationConfig') {
-        setErrors((prev) => {
-          const newErrors = { ...prev };
-          if (field === 'windowOperationConfig') {
-            delete newErrors.displayName;
-          } else {
-            delete newErrors[field as keyof FormErrors];
-          }
-          return newErrors;
-        });
+        clearErrorField(field === 'windowOperationConfig' ? 'displayName' : field);
       }
 
       setItem(newItem);
@@ -175,11 +175,7 @@ export function useWorkspaceItemEditForm(
         groupItemNames: [...currentGroupItemNames, itemName],
       });
 
-      setErrors((prev) => {
-        const newErrors = { ...prev };
-        delete newErrors.groupItemNames;
-        return newErrors;
-      });
+      clearErrorField('groupItemNames');
     },
     [item]
   );

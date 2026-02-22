@@ -97,7 +97,7 @@ export function useIconFetcher(options: UseIconFetcherOptions): UseIconFetcherRe
     return window.electronAPI.fetchIconsCombined(urlItems, iconItems, forceRefetch);
   }
 
-  const handleRefreshAll = async (loadItems: () => Promise<AppItem[]>): Promise<void> => {
+  async function handleRefreshAll(loadItems: () => Promise<AppItem[]>): Promise<void> {
     debugInfo('すべての更新を開始');
 
     const loadedItems = await loadItems();
@@ -108,7 +108,7 @@ export function useIconFetcher(options: UseIconFetcherOptions): UseIconFetcherRe
     }
 
     debugInfo('すべての更新が完了');
-  };
+  }
 
   async function fetchMissingIconsFor(items: AppItem[], label: string): Promise<void> {
     debugInfo(`未取得アイコンの取得を開始（${label}）`);
@@ -126,10 +126,13 @@ export function useIconFetcher(options: UseIconFetcherOptions): UseIconFetcherRe
     debugInfo(`未取得アイコンの取得が完了（${label}）`);
   }
 
-  const handleFetchMissingIcons = (): Promise<void> => fetchMissingIconsFor(mainItems, '全タブ');
+  function handleFetchMissingIcons(): Promise<void> {
+    return fetchMissingIconsFor(mainItems, '全タブ');
+  }
 
-  const handleFetchMissingIconsCurrentTab = (): Promise<void> =>
-    fetchMissingIconsFor(getCurrentTabItems(), '現在のタブ');
+  function handleFetchMissingIconsCurrentTab(): Promise<void> {
+    return fetchMissingIconsFor(getCurrentTabItems(), '現在のタブ');
+  }
 
   return {
     handleRefreshAll,

@@ -38,98 +38,28 @@ function getDllBasePath(): string {
 }
 
 /**
- * MoveWindowToDesktopNumber関数を定義（複数パターンでフォールバック）
+ * DLL関数を複数パターンでフォールバック定義する汎用関数
  */
-function defineMoveWindowFunction(dllHandle: KoffiLibrary): KoffiFunction | null {
-  const patterns = [
-    {
-      name: 'classic __stdcall + void*',
-      loader: () =>
-        dllHandle.func('__stdcall', 'MoveWindowToDesktopNumber', 'int', ['void *', 'int']),
-    },
-    {
-      name: 'prototype __stdcall + void*',
-      loader: () =>
-        dllHandle.func('int __stdcall MoveWindowToDesktopNumber(void *hwnd, int desktop_number)'),
-    },
-    {
-      name: 'classic __stdcall + uintptr',
-      loader: () =>
-        dllHandle.func('__stdcall', 'MoveWindowToDesktopNumber', 'int', ['uintptr', 'int']),
-    },
-    {
-      name: 'prototype __stdcall + uintptr',
-      loader: () =>
-        dllHandle.func('int __stdcall MoveWindowToDesktopNumber(uintptr hwnd, int desktop_number)'),
-    },
-  ];
-
-  for (const pattern of patterns) {
-    try {
-      const func = pattern.loader();
-      debugLog(`[DllLoader] MoveWindowToDesktopNumber定義成功（${pattern.name}）`);
-      return func;
-    } catch (error) {
-      console.warn(`[DllLoader] ${pattern.name}失敗:`, error);
-    }
-  }
-  return null;
-}
-
-/**
- * IsWindowOnDesktopNumber関数を定義（複数パターンでフォールバック）
- */
-function defineIsWindowOnDesktopFunction(dllHandle: KoffiLibrary): KoffiFunction | null {
-  const patterns = [
-    {
-      name: 'classic __stdcall + void*',
-      loader: () =>
-        dllHandle.func('__stdcall', 'IsWindowOnDesktopNumber', 'int', ['void *', 'int']),
-    },
-    {
-      name: 'prototype __stdcall + void*',
-      loader: () =>
-        dllHandle.func('int __stdcall IsWindowOnDesktopNumber(void *hwnd, int desktop_number)'),
-    },
-    {
-      name: 'classic __stdcall + uintptr',
-      loader: () =>
-        dllHandle.func('__stdcall', 'IsWindowOnDesktopNumber', 'int', ['uintptr', 'int']),
-    },
-  ];
-
-  for (const pattern of patterns) {
-    try {
-      const func = pattern.loader();
-      debugLog(`[DllLoader] IsWindowOnDesktopNumber定義成功（${pattern.name}）`);
-      return func;
-    } catch (error) {
-      console.warn(`[DllLoader] ${pattern.name}失敗:`, error);
-    }
-  }
-  return null;
-}
-
-/**
- * 単一パラメータ（HWND）の関数を定義（複数パターンでフォールバック）
- * PinWindow、UnPinWindow、IsPinnedWindow等の共通パターン
- */
-function defineSingleHwndFunction(
+function defineDllFunction(
   dllHandle: KoffiLibrary,
-  functionName: string
+  functionName: string,
+  extraParams: string[] = []
 ): KoffiFunction | null {
+  const extraProto =
+    extraParams.length > 0 ? ', ' + extraParams.map((p, i) => `${p} arg${i}`).join(', ') : '';
+
   const patterns = [
     {
       name: 'classic __stdcall + void*',
-      loader: () => dllHandle.func('__stdcall', functionName, 'int', ['void *']),
+      loader: () => dllHandle.func('__stdcall', functionName, 'int', ['void *', ...extraParams]),
     },
     {
       name: 'prototype __stdcall + void*',
-      loader: () => dllHandle.func(`int __stdcall ${functionName}(void *hwnd)`),
+      loader: () => dllHandle.func(`int __stdcall ${functionName}(void *hwnd${extraProto})`),
     },
     {
       name: 'classic __stdcall + uintptr',
-      loader: () => dllHandle.func('__stdcall', functionName, 'int', ['uintptr']),
+      loader: () => dllHandle.func('__stdcall', functionName, 'int', ['uintptr', ...extraParams]),
     },
   ];
 
@@ -161,13 +91,23 @@ try {
   virtualDesktopAccessor = koffiModule.load(dllPath, { global: true, lazy: false });
   debugLog('[DllLoader] DLLロード成功');
 
-  // 関数を定義
-  MoveWindowToDesktopNumber = defineMoveWindowFunction(virtualDesktopAccessor);
-  if (MoveWindowToDesktopNumber) {
-    debugLog('[DllLoader] MoveWindowToDesktopNumber初期化完了');
-  }
+  // HWND + int 引数の関数を定義
+  MoveWindowToDesktopNumber = defineDllFunction(
+    virtualDesktopAccessor,
+    'MoveWindowToDesktopNumber',
+    ['int']
+  );
+  _isWindowOnDesktopNumber = defineDllFunction(virtualDesktopAccessor, 'IsWindowOnDesktopNumber', [
+    'int',
+  ]);
 
-  // GetCurrentDesktopNumber関数を定義
+  // HWND のみの関数を定義
+  _getWindowDesktopNumber = defineDllFunction(virtualDesktopAccessor, 'GetWindowDesktopNumber');
+  _pinWindow = defineDllFunction(virtualDesktopAccessor, 'PinWindow');
+  _unPinWindow = defineDllFunction(virtualDesktopAccessor, 'UnPinWindow');
+  _isPinnedWindow = defineDllFunction(virtualDesktopAccessor, 'IsPinnedWindow');
+
+  // 引数なしの関数を定義
   try {
     _getCurrentDesktopNumber = virtualDesktopAccessor.func(
       '__stdcall',
@@ -175,48 +115,16 @@ try {
       'int',
       []
     );
-    debugLog('[DllLoader] GetCurrentDesktopNumber初期化完了');
+    debugLog('[DllLoader] GetCurrentDesktopNumber定義成功');
   } catch (error) {
     console.error('[DllLoader] GetCurrentDesktopNumber初期化失敗:', error);
   }
 
-  _isWindowOnDesktopNumber = defineIsWindowOnDesktopFunction(virtualDesktopAccessor);
-  if (_isWindowOnDesktopNumber) {
-    debugLog('[DllLoader] IsWindowOnDesktopNumber初期化完了');
-  }
-
-  _getWindowDesktopNumber = defineSingleHwndFunction(
-    virtualDesktopAccessor,
-    'GetWindowDesktopNumber'
-  );
-  if (_getWindowDesktopNumber) {
-    debugLog('[DllLoader] GetWindowDesktopNumber初期化完了');
-  }
-
-  // GetDesktopCount関数を定義
   try {
     _getDesktopCount = virtualDesktopAccessor.func('__stdcall', 'GetDesktopCount', 'int', []);
-    debugLog('[DllLoader] GetDesktopCount初期化完了');
+    debugLog('[DllLoader] GetDesktopCount定義成功');
   } catch (error) {
     console.warn('[DllLoader] GetDesktopCount初期化失敗:', error);
-  }
-
-  // PinWindow関数を定義
-  _pinWindow = defineSingleHwndFunction(virtualDesktopAccessor, 'PinWindow');
-  if (_pinWindow) {
-    debugLog('[DllLoader] PinWindow初期化完了');
-  }
-
-  // UnPinWindow関数を定義
-  _unPinWindow = defineSingleHwndFunction(virtualDesktopAccessor, 'UnPinWindow');
-  if (_unPinWindow) {
-    debugLog('[DllLoader] UnPinWindow初期化完了');
-  }
-
-  // IsPinnedWindow関数を定義
-  _isPinnedWindow = defineSingleHwndFunction(virtualDesktopAccessor, 'IsPinnedWindow');
-  if (_isPinnedWindow) {
-    debugLog('[DllLoader] IsPinnedWindow初期化完了');
   }
 
   // GetDesktopName関数を定義（Win11専用）
@@ -226,7 +134,7 @@ try {
       'void*',
       'uintptr',
     ]);
-    debugLog('[DllLoader] GetDesktopName初期化完了');
+    debugLog('[DllLoader] GetDesktopName定義成功');
   } catch (error) {
     console.warn('[DllLoader] GetDesktopName初期化失敗（Win11専用）:', error);
   }

@@ -114,7 +114,9 @@ export class SettingsService {
   public async set<K extends keyof AppSettings>(key: K, value: AppSettings[K]): Promise<void> {
     const store = await this.ensureStore();
     store.set(key, value);
-    await this.updateVersionIfNeeded(key);
+    if (key !== 'createdWithVersion' && key !== 'updatedWithVersion') {
+      await this.recordUpdatedVersion(store);
+    }
     logger.info({ key, value }, 'Setting updated');
   }
 
@@ -204,12 +206,6 @@ export class SettingsService {
       store.set('updatedWithVersion', version);
       logger.info({ version }, 'Settings file updated with version');
     }
-  }
-
-  private async updateVersionIfNeeded(key: keyof AppSettings): Promise<void> {
-    if (key === 'createdWithVersion' || key === 'updatedWithVersion') return;
-    if (!this.store) return;
-    await this.recordUpdatedVersion(this.store);
   }
 }
 

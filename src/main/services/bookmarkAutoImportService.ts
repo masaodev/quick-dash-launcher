@@ -117,20 +117,8 @@ export class BookmarkAutoImportService {
 
       const allBookmarks = await this.collectBookmarksFromProfiles(targetProfiles, rule);
 
-      // データファイルの読み込み・更新
-      const configFolder = PathManager.getConfigFolder();
-      const dataFilePath = path.join(configFolder, rule.targetFile);
-
-      // データファイルの読み込み
-      let jsonData: JsonDataFile = { version: '1.0', items: [] };
-      const existingContent = FileUtils.safeReadTextFile(dataFilePath);
-      if (existingContent) {
-        try {
-          jsonData = parseJsonDataFile(existingContent);
-        } catch {
-          logger.warn({ dataFilePath }, 'JSONファイルのパースに失敗、新規作成します');
-        }
-      }
+      const dataFilePath = this.getDataFilePath(rule.targetFile);
+      const jsonData = this.loadDataFile(dataFilePath);
 
       // autoImportRuleId === rule.id のアイテムを全削除
       const deletedCount = this.removeItemsByRuleId(jsonData, rule.id);
@@ -195,28 +183,13 @@ export class BookmarkAutoImportService {
    * 指定ルールIDに紐づくアイテムをデータファイルから削除
    */
   async deleteItemsByRuleId(ruleId: string, targetFile: string): Promise<number> {
-    const configFolder = PathManager.getConfigFolder();
-    const dataFilePath = path.join(configFolder, targetFile);
+    const dataFilePath = this.getDataFilePath(targetFile);
 
     if (!FileUtils.exists(dataFilePath)) {
       return 0;
     }
 
-    // データファイルの読み込み
-    const existingContent = FileUtils.safeReadTextFile(dataFilePath);
-    if (!existingContent) {
-      return 0;
-    }
-
-    let jsonData: JsonDataFile;
-    try {
-      jsonData = parseJsonDataFile(existingContent);
-    } catch {
-      logger.warn({ dataFilePath }, 'JSONファイルのパースに失敗');
-      return 0;
-    }
-
-    // autoImportRuleId === ruleId のアイテムをフィルタ除去
+    const jsonData = this.loadDataFile(dataFilePath);
     const deletedCount = this.removeItemsByRuleId(jsonData, ruleId);
 
     if (deletedCount > 0) {
@@ -340,9 +313,23 @@ export class BookmarkAutoImportService {
     return filtered;
   }
 
-  /**
-   * 複数ルールを順次実行
-   */
+  private getDataFilePath(targetFile: string): string {
+    return path.join(PathManager.getConfigFolder(), targetFile);
+  }
+
+  private loadDataFile(dataFilePath: string): JsonDataFile {
+    const content = FileUtils.safeReadTextFile(dataFilePath);
+    if (!content) {
+      return { version: '1.0', items: [] };
+    }
+    try {
+      return parseJsonDataFile(content);
+    } catch {
+      logger.warn({ dataFilePath }, 'JSONファイルのパースに失敗、新規作成します');
+      return { version: '1.0', items: [] };
+    }
+  }
+
   private async executeRules(rules: BookmarkAutoImportRule[]): Promise<BookmarkAutoImportResult[]> {
     const results: BookmarkAutoImportResult[] = [];
 

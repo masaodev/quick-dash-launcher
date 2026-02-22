@@ -43,23 +43,8 @@ const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
     };
   }, [isSettingsMenuOpen]);
 
-  async function handleOpenBasicSettings(): Promise<void> {
-    await window.electronAPI.openEditWindowWithTab('settings');
-    setIsSettingsMenuOpen(false);
-  }
-
-  async function handleSetPositionMode(mode: 'displayLeft' | 'displayRight'): Promise<void> {
-    await window.electronAPI.workspaceAPI.setPositionMode(mode);
-    setIsSettingsMenuOpen(false);
-  }
-
-  async function handleHideAllDetached(): Promise<void> {
-    await window.electronAPI.workspaceAPI.hideAllDetached();
-    setIsSettingsMenuOpen(false);
-  }
-
-  async function handleShowAllDetached(): Promise<void> {
-    await window.electronAPI.workspaceAPI.showAllDetached();
+  async function handleMenuAction(action: () => Promise<unknown>): Promise<void> {
+    await action();
     setIsSettingsMenuOpen(false);
   }
 
@@ -103,27 +88,50 @@ const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
           </button>
           {isSettingsMenuOpen && (
             <div className="workspace-settings-menu">
-              <button className="workspace-settings-menu-item" onClick={handleOpenBasicSettings}>
+              <button
+                className="workspace-settings-menu-item"
+                onClick={() =>
+                  handleMenuAction(() => window.electronAPI.openEditWindowWithTab('settings'))
+                }
+              >
                 ⚙️ 基本設定
               </button>
               <div className="workspace-settings-menu-divider" />
               <button
                 className="workspace-settings-menu-item"
-                onClick={() => handleSetPositionMode('displayLeft')}
+                onClick={() =>
+                  handleMenuAction(() =>
+                    window.electronAPI.workspaceAPI.setPositionMode('displayLeft')
+                  )
+                }
               >
                 左端に寄せる
               </button>
               <button
                 className="workspace-settings-menu-item"
-                onClick={() => handleSetPositionMode('displayRight')}
+                onClick={() =>
+                  handleMenuAction(() =>
+                    window.electronAPI.workspaceAPI.setPositionMode('displayRight')
+                  )
+                }
               >
                 右端に寄せる
               </button>
               <div className="workspace-settings-menu-divider" />
-              <button className="workspace-settings-menu-item" onClick={handleHideAllDetached}>
+              <button
+                className="workspace-settings-menu-item"
+                onClick={() =>
+                  handleMenuAction(() => window.electronAPI.workspaceAPI.hideAllDetached())
+                }
+              >
                 切り離しウィンドウをすべて非表示
               </button>
-              <button className="workspace-settings-menu-item" onClick={handleShowAllDetached}>
+              <button
+                className="workspace-settings-menu-item"
+                onClick={() =>
+                  handleMenuAction(() => window.electronAPI.workspaceAPI.showAllDetached())
+                }
+              >
                 切り離しウィンドウをすべて表示
               </button>
             </div>

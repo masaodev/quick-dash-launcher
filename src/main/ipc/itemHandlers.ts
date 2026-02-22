@@ -61,12 +61,7 @@ async function openItem(item: LauncherItem): Promise<void> {
 
 async function openParentFolder(item: LauncherItem): Promise<void> {
   itemLogger.info(
-    {
-      name: item.displayName,
-      type: item.type,
-      path: item.path,
-      originalPath: item.originalPath || 'なし',
-    },
+    { name: item.displayName, type: item.type, path: item.path },
     '親フォルダーを開く'
   );
 

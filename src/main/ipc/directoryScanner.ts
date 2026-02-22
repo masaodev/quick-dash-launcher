@@ -57,9 +57,12 @@ export function formatDirOptions(options: DirOptionsForProcessing): string {
   return parts.join(', ');
 }
 
-/**
- * ファイル/フォルダーをLauncherItemに変換する
- */
+function applyPrefixSuffix(name: string, prefix?: string, suffix?: string): string {
+  if (prefix) name = `${prefix}: ${name}`;
+  if (suffix) name = `${name} (${suffix})`;
+  return name;
+}
+
 function processItem(
   itemPath: string,
   itemType: 'file' | 'folder',
@@ -71,18 +74,8 @@ function processItem(
   expandedOptions?: string,
   expandedFromId?: string
 ): LauncherItem {
-  let displayName = path.basename(itemPath);
-
-  if (prefix) {
-    displayName = `${prefix}: ${displayName}`;
-  }
-
-  if (suffix) {
-    displayName = `${displayName} (${suffix})`;
-  }
-
   return {
-    displayName,
+    displayName: applyPrefixSuffix(path.basename(itemPath), prefix, suffix),
     path: itemPath,
     type: itemType === 'folder' ? 'folder' : detectItemTypeSync(itemPath),
     sourceFile,
@@ -113,15 +106,11 @@ export function processShortcut(
     const shortcutDetails = shell.readShortcutLink(filePath);
 
     if (shortcutDetails?.target) {
-      let name = displayName || path.basename(filePath, '.lnk');
-
-      if (prefix) {
-        name = `${prefix}: ${name}`;
-      }
-
-      if (suffix) {
-        name = `${name} (${suffix})`;
-      }
+      const name = applyPrefixSuffix(
+        displayName || path.basename(filePath, '.lnk'),
+        prefix,
+        suffix
+      );
 
       const targetType: LauncherItem['type'] =
         FileUtils.exists(shortcutDetails.target) && FileUtils.isDirectory(shortcutDetails.target)

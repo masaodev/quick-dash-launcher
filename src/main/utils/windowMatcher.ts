@@ -83,31 +83,19 @@ export function findWindowByTitle(windowTitle: string, processName?: string): bi
 
     // 検索条件を適用してウィンドウを検索
     const matchedWindow = windows.find((win) => {
-      // ウィンドウタイトルの条件チェック
-      let titleMatches = false;
-      if (useWildcard && regex) {
-        // ワイルドカードマッチング
-        titleMatches = regex.test(win.title);
-      } else {
-        // 完全一致（大文字小文字を区別しない）
-        titleMatches = win.title.toLowerCase() === windowTitle.toLowerCase();
+      const titleMatches = regex
+        ? regex.test(win.title)
+        : win.title.toLowerCase() === windowTitle.toLowerCase();
+
+      if (!titleMatches) return false;
+
+      if (processName?.trim()) {
+        return win.processName
+          ? win.processName.toLowerCase().includes(processName.toLowerCase())
+          : false;
       }
 
-      // プロセス名の条件チェック（指定されている場合のみ）
-      let processMatches = true;
-      if (processName && processName.trim() !== '') {
-        if (win.processName) {
-          const processNameLower = win.processName.toLowerCase();
-          const searchProcessNameLower = processName.toLowerCase();
-          processMatches = processNameLower.includes(searchProcessNameLower);
-        } else {
-          // プロセス名が取得できない場合は条件を満たさない
-          processMatches = false;
-        }
-      }
-
-      // ウィンドウタイトルとプロセス名の両方の条件を満たす必要がある
-      return titleMatches && processMatches;
+      return true;
     });
 
     if (!matchedWindow) {

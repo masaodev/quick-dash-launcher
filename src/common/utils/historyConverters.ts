@@ -9,7 +9,7 @@ import type {
   ClipboardFormat,
 } from '../types';
 
-const WINDOW_CONFIG_PROPERTIES = [
+const WINDOW_CONFIG_KEYS: (keyof ExecutionHistoryItem)[] = [
   'processName',
   'windowX',
   'windowY',
@@ -19,14 +19,10 @@ const WINDOW_CONFIG_PROPERTIES = [
   'activateWindow',
   'moveToActiveMonitorCenter',
   'pinToAllDesktops',
-] as const;
+];
 
 function extractWindowConfig(item: ExecutionHistoryItem): WindowConfig | undefined {
-  const hasConfig = WINDOW_CONFIG_PROPERTIES.some(
-    (prop) => item[prop as keyof ExecutionHistoryItem] !== undefined
-  );
-
-  if (!hasConfig) {
+  if (WINDOW_CONFIG_KEYS.every((key) => item[key] === undefined)) {
     return undefined;
   }
 

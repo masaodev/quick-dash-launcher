@@ -44,24 +44,17 @@ let showingWindowTimeoutId: ReturnType<typeof setTimeout> | null = null;
 const WINDOW_FOCUS_STABILIZATION_DELAY_MS = 1500;
 
 /**
- * hideDetachedWithMainWindow 設定が有効なら切り離しウィンドウを非表示にする（即座）
+ * hideDetachedWithMainWindow 設定が有効なら切り離しウィンドウを表示/非表示にする（即座）
  */
-async function hideDetachedWindowsIfEnabled(): Promise<void> {
+async function toggleDetachedWindowsIfEnabled(show: boolean): Promise<void> {
   const settingsService = await SettingsService.getInstance();
   const hideDetached = await settingsService.get('hideDetachedWithMainWindow');
   if (hideDetached) {
-    hideAllDetachedGroupWindows();
-  }
-}
-
-/**
- * hideDetachedWithMainWindow 設定が有効なら切り離しウィンドウを表示する（即座）
- */
-async function showDetachedWindowsIfEnabled(): Promise<void> {
-  const settingsService = await SettingsService.getInstance();
-  const hideDetached = await settingsService.get('hideDetachedWithMainWindow');
-  if (hideDetached) {
-    showAllDetachedGroupWindows();
+    if (show) {
+      showAllDetachedGroupWindows();
+    } else {
+      hideAllDetachedGroupWindows();
+    }
   }
 }
 
@@ -74,7 +67,7 @@ function hideDetachedWindowsAfterBlur(): void {
     try {
       if (getIsDetachedWindowFocused()) return;
       if (getIsWorkspaceWindowFocused()) return;
-      await hideDetachedWindowsIfEnabled();
+      await toggleDetachedWindowsIfEnabled(false);
     } catch (error) {
       windowLogger.warn({ error }, 'blur時の切り離しウィンドウ連動非表示チェックに失敗');
     }
@@ -215,7 +208,7 @@ export async function createWindow(): Promise<BrowserWindow> {
 
       if (mainWindow && !shouldNotHide) {
         hideMainWindowInternal();
-        void hideDetachedWindowsIfEnabled();
+        void toggleDetachedWindowsIfEnabled(false);
       }
     }
   });
@@ -683,7 +676,7 @@ async function showMainWindowInternal(
   await autoShowWorkspaceIfEnabled();
   timer?.log('workspace-auto-shown');
 
-  await showDetachedWindowsIfEnabled();
+  await toggleDetachedWindowsIfEnabled(true);
   timer?.log('detached-windows-shown');
 
   mainWindow.show();
@@ -731,7 +724,7 @@ export async function hideMainWindow(): Promise<void> {
   }
 
   hideMainWindowInternal();
-  await hideDetachedWindowsIfEnabled();
+  await toggleDetachedWindowsIfEnabled(false);
 
   windowLogger.info('メインウィンドウを非表示にしました');
 }

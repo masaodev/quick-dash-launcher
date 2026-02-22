@@ -185,39 +185,20 @@ function validateOptionalString(
 }
 
 /**
- * 数値フィールドを検証・設定
+ * 指定された型のフィールドを検証・設定
  */
-function validateNumericFields(
+function validateTypedFields(
   source: Record<string, unknown>,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   target: any,
   fields: readonly string[],
+  expectedType: 'number' | 'boolean',
   prefix: string = ''
 ): void {
   for (const field of fields) {
     if (source[field] !== undefined) {
-      if (typeof source[field] !== 'number') {
-        throw new Error(`${prefix}${field} must be a number`);
-      }
-      target[field] = source[field];
-    }
-  }
-}
-
-/**
- * ブーリアンフィールドを検証・設定
- */
-function validateBooleanFields(
-  source: Record<string, unknown>,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  target: any,
-  fields: readonly string[],
-  prefix: string = ''
-): void {
-  for (const field of fields) {
-    if (source[field] !== undefined) {
-      if (typeof source[field] !== 'boolean') {
-        throw new Error(`${prefix}${field} must be a boolean`);
+      if (typeof source[field] !== expectedType) {
+        throw new Error(`${prefix}${field} must be a ${expectedType}`);
       }
       target[field] = source[field];
     }
@@ -286,7 +267,7 @@ function validateJsonLauncherItem(obj: Record<string, unknown>): JsonLauncherIte
   validateOptionalString(obj, item, 'customIcon');
   validateOptionalString(obj, item, 'memo');
   validateOptionalString(obj, item, 'autoImportRuleId');
-  validateNumericFields(obj, item, ['updatedAt']);
+  validateTypedFields(obj, item, ['updatedAt'], 'number');
 
   if (obj.windowConfig !== undefined) {
     item.windowConfig = validateWindowConfig(obj.windowConfig);
@@ -338,7 +319,7 @@ function validateJsonDirItem(obj: Record<string, unknown>): JsonDirItem {
   }
 
   validateOptionalString(obj, item, 'memo');
-  validateNumericFields(obj, item, ['updatedAt']);
+  validateTypedFields(obj, item, ['updatedAt'], 'number');
 
   return item;
 }
@@ -367,7 +348,7 @@ function validateJsonGroupItem(obj: Record<string, unknown>): JsonGroupItem {
   };
 
   validateOptionalString(obj, item, 'memo');
-  validateNumericFields(obj, item, ['updatedAt']);
+  validateTypedFields(obj, item, ['updatedAt'], 'number');
 
   return item;
 }
@@ -390,11 +371,11 @@ function validateJsonWindowItem(obj: Record<string, unknown>): JsonWindowItem {
     windowTitle: obj.windowTitle,
   };
 
-  validateNumericFields(obj, item, WINDOW_NUMERIC_FIELDS);
-  validateBooleanFields(obj, item, WINDOW_BOOLEAN_FIELDS);
+  validateTypedFields(obj, item, WINDOW_NUMERIC_FIELDS, 'number');
+  validateTypedFields(obj, item, WINDOW_BOOLEAN_FIELDS, 'boolean');
   validateOptionalString(obj, item, 'processName');
   validateOptionalString(obj, item, 'memo');
-  validateNumericFields(obj, item, ['updatedAt']);
+  validateTypedFields(obj, item, ['updatedAt'], 'number');
 
   return item;
 }
@@ -441,7 +422,7 @@ function validateJsonClipboardItem(obj: Record<string, unknown>): JsonClipboardI
   validateOptionalString(obj, item, 'preview');
   validateOptionalString(obj, item, 'customIcon');
   validateOptionalString(obj, item, 'memo');
-  validateNumericFields(obj, item, ['updatedAt']);
+  validateTypedFields(obj, item, ['updatedAt'], 'number');
 
   return item;
 }
@@ -475,8 +456,8 @@ function validateWindowConfig(config: unknown): JsonLauncherItem['windowConfig']
     result.processName = obj.processName;
   }
 
-  validateNumericFields(obj, result, WINDOW_NUMERIC_FIELDS, 'windowConfig.');
-  validateBooleanFields(obj, result, WINDOW_BOOLEAN_FIELDS, 'windowConfig.');
+  validateTypedFields(obj, result, WINDOW_NUMERIC_FIELDS, 'number', 'windowConfig.');
+  validateTypedFields(obj, result, WINDOW_BOOLEAN_FIELDS, 'boolean', 'windowConfig.');
 
   return result;
 }

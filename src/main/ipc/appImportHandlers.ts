@@ -1,8 +1,3 @@
-/**
- * アプリインポート機能のIPCハンドラー
- * スタートメニューの.lnkファイルをスキャンしてアプリ一覧を返す
- */
-
 import * as path from 'path';
 import * as fs from 'fs';
 import { execSync } from 'child_process';
@@ -33,16 +28,10 @@ const UNINSTALLER_NAME_PATTERNS = [/uninstall/i, /アンインストール/];
 /** アンインストーラーを示すターゲットファイル名のパターン（Inno Setup等） */
 const UNINSTALLER_FILE_PATTERNS = [/^unins\d+\.exe$/i];
 
-/**
- * ターゲットパスからファイル種別を判定する（拡張子のみ）
- */
 function detectTargetType(targetPath: string): AppTargetType {
   return APP_EXTENSIONS.has(path.extname(targetPath).toLowerCase()) ? 'app' : 'other';
 }
 
-/**
- * アンインストーラーかどうかを判定する
- */
 function isUninstaller(targetPath: string, displayName: string): boolean {
   if (UNINSTALLER_NAME_PATTERNS.some((p) => p.test(displayName))) return true;
   const targetFileName = path.basename(targetPath);
@@ -50,9 +39,6 @@ function isUninstaller(targetPath: string, displayName: string): boolean {
   return false;
 }
 
-/**
- * ディレクトリを再帰的にスキャンして.lnkファイルを収集
- */
 function collectLnkFiles(dirPath: string): string[] {
   const results: string[] = [];
 
@@ -85,9 +71,6 @@ function isFilePathAppId(appId: string): boolean {
   return /^[A-Za-z]:[/\\]/.test(appId) || appId.startsWith('{') || appId.startsWith('\\\\');
 }
 
-/**
- * PowerShellのGet-StartAppsを使って登録アプリをスキャンする
- */
 function scanStartApps(): ScannedAppItem[] {
   try {
     const output = execSync(
@@ -132,9 +115,6 @@ function scanStartApps(): ScannedAppItem[] {
   }
 }
 
-/**
- * スタートメニューからインストール済みアプリをスキャンする
- */
 function scanInstalledApps(): AppScanResult {
   const startTime = performance.now();
 
@@ -199,9 +179,6 @@ function scanInstalledApps(): AppScanResult {
   return { apps, scanDuration };
 }
 
-/**
- * アプリインポート関連のIPCハンドラーを登録する
- */
 export function setupAppImportHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.SCAN_INSTALLED_APPS, () => scanInstalledApps());
 }

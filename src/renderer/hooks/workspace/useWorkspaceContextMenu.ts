@@ -48,44 +48,26 @@ export function useWorkspaceContextMenu(
     }
   };
 
-  // パス操作のヘルパー関数
-  const copyPath = (path: string) => {
+  function copyPath(path: string): void {
     window.electronAPI.copyToClipboard(path);
-  };
+  }
 
-  const openFolder = (path: string) => {
+  function openFolder(path: string): void {
     window.electronAPI.openExternalUrl(`file:///${path}`);
-  };
+  }
 
   const pathHandlers = {
-    handleCopyPath: (item: WorkspaceItem) => {
-      copyPath(item.path);
-    },
-
-    handleCopyParentPath: (item: WorkspaceItem) => {
-      copyPath(PathUtils.getParentPath(item.path));
-    },
-
-    handleOpenParentFolder: (item: WorkspaceItem) => {
-      openFolder(PathUtils.getParentPath(item.path));
-    },
-
+    handleCopyPath: (item: WorkspaceItem) => copyPath(item.path),
+    handleCopyParentPath: (item: WorkspaceItem) => copyPath(PathUtils.getParentPath(item.path)),
+    handleOpenParentFolder: (item: WorkspaceItem) => openFolder(PathUtils.getParentPath(item.path)),
     handleCopyShortcutPath: (item: WorkspaceItem) => {
-      if (item.originalPath) {
-        copyPath(item.originalPath);
-      }
+      if (item.originalPath) copyPath(item.originalPath);
     },
-
     handleCopyShortcutParentPath: (item: WorkspaceItem) => {
-      if (item.originalPath) {
-        copyPath(PathUtils.getParentPath(item.originalPath));
-      }
+      if (item.originalPath) copyPath(PathUtils.getParentPath(item.originalPath));
     },
-
     handleOpenShortcutParentFolder: (item: WorkspaceItem) => {
-      if (item.originalPath) {
-        openFolder(PathUtils.getParentPath(item.originalPath));
-      }
+      if (item.originalPath) openFolder(PathUtils.getParentPath(item.originalPath));
     },
   };
 

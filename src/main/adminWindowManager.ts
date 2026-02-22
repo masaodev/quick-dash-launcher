@@ -31,7 +31,6 @@ export async function createAdminWindow(): Promise<BrowserWindow> {
   if (isWindowValid()) {
     adminWindow!.show();
     adminWindow!.focus();
-    isAdminWindowVisible = true;
     return adminWindow!;
   }
 

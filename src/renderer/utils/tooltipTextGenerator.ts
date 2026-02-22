@@ -24,7 +24,7 @@ interface MetaInfo {
 function appendMetaInfo(lines: string[], meta: MetaInfo): void {
   const { sourceFile, id, expandedFromId, lineNumber, expandedFrom, expandedOptions } = meta;
 
-  if (sourceFile || id || expandedFromId || lineNumber || expandedFrom || expandedOptions) {
+  if (Object.values(meta).some(Boolean)) {
     lines.push('');
   }
 

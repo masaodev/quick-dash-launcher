@@ -97,126 +97,92 @@ const LauncherItemList: React.FC<ItemListProps> = ({
       }
     });
 
-    const createLauncherItemHandler = (handler?: (item: LauncherItem) => void) => {
+    function createLauncherItemHandler(handler?: (item: LauncherItem) => void) {
       return (item: AppItem) => {
         if (isLauncherItem(item) && handler) {
           handler(item);
         }
       };
-    };
+    }
 
-    const cleanupCopyPath = window.electronAPI.onLauncherMenuCopyPath(
-      createLauncherItemHandler(onCopyPath)
-    );
-    const cleanupCopyParentPath = window.electronAPI.onLauncherMenuCopyParentPath(
-      createLauncherItemHandler(onCopyParentPath)
-    );
-    const cleanupOpenParentFolder = window.electronAPI.onLauncherMenuOpenParentFolder(
-      createLauncherItemHandler(onOpenParentFolder)
-    );
-    const cleanupCopyShortcutPath = window.electronAPI.onLauncherMenuCopyShortcutPath(
-      createLauncherItemHandler(onCopyShortcutPath)
-    );
-    const cleanupCopyShortcutParentPath = window.electronAPI.onLauncherMenuCopyShortcutParentPath(
-      createLauncherItemHandler(onCopyShortcutParentPath)
-    );
-    const cleanupOpenShortcutParentFolder =
-      window.electronAPI.onLauncherMenuOpenShortcutParentFolder(
-        createLauncherItemHandler(onOpenShortcutParentFolder)
-      );
-
-    const cleanupShowMemo = window.electronAPI.onLauncherMenuShowMemo(openMemoModal);
-
-    const cleanupActivateWindow = window.electronAPI.onWindowMenuActivate(onItemExecute);
-
-    const cleanupMoveWindowToDesktop = window.electronAPI.onMoveWindowToDesktop(
-      async (hwnd, desktopNumber) => {
-        try {
-          const windowTitle = findWindowTitle(hwnd);
-          const result = await window.electronAPI.moveWindowToDesktop(hwnd, desktopNumber);
-          if (result.success) {
-            await window.electronAPI.showToastWindow({
-              displayName: windowTitle,
-              itemType: 'windowMoveDesktop',
-              message: `ウィンドウをデスクトップ ${desktopNumber} に移動しました`,
-            });
-            await onRefreshWindows?.();
-          } else {
-            await window.electronAPI.showToastWindow({
-              displayName: windowTitle,
-              itemType: 'windowMoveDesktop',
-              message: `ウィンドウの移動に失敗しました: ${result.error || '不明なエラー'}`,
-            });
-          }
-        } catch (error) {
-          logError('ウィンドウの移動に失敗しました:', error);
-          await window.electronAPI.showToastWindow({
-            displayName: '不明なウィンドウ',
-            itemType: 'windowMoveDesktop',
-            message: 'ウィンドウの移動に失敗しました',
-          });
-        }
-      }
-    );
-
-    const handleWindowPinOperation = async (
+    async function handleWindowOperation(
       fn: (hwnd: number | bigint) => Promise<{ success: boolean; error?: string }>,
-      itemType: 'windowPin' | 'windowUnpin',
+      itemType: 'windowMoveDesktop' | 'windowPin' | 'windowUnpin',
       errorPrefix: string,
-      hwnd: number | bigint
-    ): Promise<void> => {
+      hwnd: number | bigint,
+      successMessage?: string
+    ): Promise<void> {
       try {
         const windowTitle = findWindowTitle(hwnd);
         const result = await fn(hwnd);
-        if (result.success) {
-          await window.electronAPI.showToastWindow({
-            displayName: windowTitle,
-            itemType: itemType,
-          });
-        } else {
-          await window.electronAPI.showToastWindow({
-            displayName: windowTitle,
-            itemType: itemType,
-            message: `${errorPrefix}に失敗しました: ${result.error || '不明なエラー'}`,
-          });
+        await window.electronAPI.showToastWindow({
+          displayName: windowTitle,
+          itemType,
+          message: result.success
+            ? successMessage
+            : `${errorPrefix}に失敗しました: ${result.error || '不明なエラー'}`,
+        });
+        if (result.success && itemType === 'windowMoveDesktop') {
+          await onRefreshWindows?.();
         }
       } catch (error) {
         logError(`${errorPrefix}に失敗しました:`, error);
         await window.electronAPI.showToastWindow({
           displayName: '不明なウィンドウ',
-          itemType: itemType,
+          itemType,
           message: `${errorPrefix}に失敗しました`,
         });
       }
-    };
+    }
 
-    const cleanupPinWindow = window.electronAPI.onPinWindow((hwnd) =>
-      handleWindowPinOperation(window.electronAPI.pinWindow, 'windowPin', 'ウィンドウの固定', hwnd)
-    );
-
-    const cleanupUnPinWindow = window.electronAPI.onUnPinWindow((hwnd) =>
-      handleWindowPinOperation(
-        window.electronAPI.unPinWindow,
-        'windowUnpin',
-        'ウィンドウの固定解除',
-        hwnd
-      )
-    );
+    const cleanups = [
+      cleanupEditItem,
+      cleanupAddToWorkspace,
+      window.electronAPI.onLauncherMenuCopyPath(createLauncherItemHandler(onCopyPath)),
+      window.electronAPI.onLauncherMenuCopyParentPath(createLauncherItemHandler(onCopyParentPath)),
+      window.electronAPI.onLauncherMenuOpenParentFolder(
+        createLauncherItemHandler(onOpenParentFolder)
+      ),
+      window.electronAPI.onLauncherMenuCopyShortcutPath(
+        createLauncherItemHandler(onCopyShortcutPath)
+      ),
+      window.electronAPI.onLauncherMenuCopyShortcutParentPath(
+        createLauncherItemHandler(onCopyShortcutParentPath)
+      ),
+      window.electronAPI.onLauncherMenuOpenShortcutParentFolder(
+        createLauncherItemHandler(onOpenShortcutParentFolder)
+      ),
+      window.electronAPI.onLauncherMenuShowMemo(openMemoModal),
+      window.electronAPI.onWindowMenuActivate(onItemExecute),
+      window.electronAPI.onMoveWindowToDesktop(async (hwnd, desktopNumber) => {
+        await handleWindowOperation(
+          (h) => window.electronAPI.moveWindowToDesktop(h, desktopNumber),
+          'windowMoveDesktop',
+          'ウィンドウの移動',
+          hwnd,
+          `ウィンドウをデスクトップ ${desktopNumber} に移動しました`
+        );
+      }),
+      window.electronAPI.onPinWindow((hwnd) => {
+        return handleWindowOperation(
+          window.electronAPI.pinWindow,
+          'windowPin',
+          'ウィンドウの固定',
+          hwnd
+        );
+      }),
+      window.electronAPI.onUnPinWindow((hwnd) => {
+        return handleWindowOperation(
+          window.electronAPI.unPinWindow,
+          'windowUnpin',
+          'ウィンドウの固定解除',
+          hwnd
+        );
+      }),
+    ];
 
     return () => {
-      cleanupEditItem();
-      cleanupAddToWorkspace();
-      cleanupCopyPath();
-      cleanupCopyParentPath();
-      cleanupOpenParentFolder();
-      cleanupCopyShortcutPath();
-      cleanupCopyShortcutParentPath();
-      cleanupOpenShortcutParentFolder();
-      cleanupShowMemo();
-      cleanupActivateWindow();
-      cleanupMoveWindowToDesktop();
-      cleanupPinWindow();
-      cleanupUnPinWindow();
+      cleanups.forEach((cleanup) => cleanup());
     };
   }, [
     onEditItem,

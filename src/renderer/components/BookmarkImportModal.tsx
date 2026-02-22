@@ -9,6 +9,7 @@ import {
 import type { EditableJsonItem } from '@common/types/editableItem';
 import { checkDuplicates } from '@common/utils/duplicateDetector';
 
+import { useModalKeyboard } from '../hooks/useModalKeyboard';
 import { logError } from '../utils/debug';
 
 import AlertDialog from './AlertDialog';
@@ -246,100 +247,7 @@ function BookmarkImportModal({
     onClose();
   }, [onClose]);
 
-  // キーボードショートカット
-  useEffect(() => {
-    if (!isOpen) return;
-
-    // フォーカスをモーダルに設定
-    modalRef.current?.focus();
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      const modal = modalRef.current;
-      if (!modal) return;
-
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        event.stopPropagation();
-        event.stopImmediatePropagation();
-        handleClose();
-        return;
-      }
-
-      if (event.key === 'Tab') {
-        const focusableElements = modal.querySelectorAll(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-        );
-        const firstFocusableElement = focusableElements[0] as HTMLElement;
-        const lastFocusableElement = focusableElements[focusableElements.length - 1] as HTMLElement;
-
-        if (event.shiftKey) {
-          // Shift+Tab: 逆方向
-          if (document.activeElement === firstFocusableElement) {
-            lastFocusableElement.focus();
-            event.preventDefault();
-            event.stopPropagation();
-            event.stopImmediatePropagation();
-          }
-        } else {
-          // Tab: 順方向
-          if (document.activeElement === lastFocusableElement) {
-            firstFocusableElement.focus();
-            event.preventDefault();
-            event.stopPropagation();
-            event.stopImmediatePropagation();
-          }
-        }
-        // モーダル内でのTab操作なので、すべての場合で背景への伝播を阻止
-        event.preventDefault();
-        event.stopPropagation();
-        event.stopImmediatePropagation();
-        return;
-      }
-
-      // モーダル内でのキーイベントの場合、背景への伝播を完全に阻止
-      const isModalFocused = modal.contains(document.activeElement);
-      if (isModalFocused) {
-        const activeElement = document.activeElement as HTMLElement;
-        const isInputField =
-          activeElement &&
-          (activeElement.tagName === 'INPUT' ||
-            activeElement.tagName === 'TEXTAREA' ||
-            activeElement.tagName === 'SELECT');
-
-        if (isInputField) {
-          // 入力フィールドでの通常の編集キーは許可
-          if (
-            event.key.length === 1 ||
-            [
-              'Backspace',
-              'Delete',
-              'ArrowLeft',
-              'ArrowRight',
-              'ArrowUp',
-              'ArrowDown',
-              'Home',
-              'End',
-            ].includes(event.key) ||
-            (event.ctrlKey && ['a', 'c', 'v', 'x', 'z', 'y'].includes(event.key))
-          ) {
-            event.stopPropagation();
-            event.stopImmediatePropagation();
-            return;
-          }
-        }
-
-        event.preventDefault();
-        event.stopPropagation();
-        event.stopImmediatePropagation();
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown, true);
-
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown, true);
-    };
-  }, [isOpen, handleClose]);
+  useModalKeyboard({ isOpen, modalRef, onClose: handleClose });
 
   if (!isOpen) return null;
 

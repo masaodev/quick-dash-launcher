@@ -26,6 +26,11 @@ import {
   normalizeAppPath,
 } from '@common/utils/appDuplicateDetector';
 
+/** EditableJsonItemの一意キーを生成 */
+function getItemKey(item: EditableJsonItem): string {
+  return `${item.meta.sourceFile}_${item.meta.lineNumber}`;
+}
+
 import { logError } from '../utils/debug';
 import { useDropdown } from '../hooks/useDropdown';
 import { useToast } from '../hooks/useToast';
@@ -150,9 +155,8 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   };
 
   const handleItemEdit = (editableItem: EditableJsonItem) => {
-    const itemKey = `${editableItem.meta.sourceFile}_${editableItem.meta.lineNumber}`;
     const newEditedItems = new Map(editedItems);
-    newEditedItems.set(itemKey, editableItem);
+    newEditedItems.set(getItemKey(editableItem), editableItem);
     setEditedItems(newEditedItems);
     setHasUnsavedChanges(true);
   };
@@ -187,9 +191,8 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
 
       // 変更内容が異なる場合のみ編集として記録
       if (updatedEditableItem.displayText !== editingItem.displayText) {
-        const itemKey = `${updatedEditableItem.meta.sourceFile}_${updatedEditableItem.meta.lineNumber}`;
         const newEditedItems = new Map(editedItems);
-        newEditedItems.set(itemKey, updatedEditableItem);
+        newEditedItems.set(getItemKey(updatedEditableItem), updatedEditableItem);
         setEditedItems(newEditedItems);
         setHasUnsavedChanges(true);
       }
@@ -199,22 +202,19 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   };
 
   const handleItemSelect = (editableItem: EditableJsonItem, selected: boolean) => {
-    const itemKey = `${editableItem.meta.sourceFile}_${editableItem.meta.lineNumber}`;
+    const key = getItemKey(editableItem);
     const newSelected = new Set(selectedItems);
     if (selected) {
-      newSelected.add(itemKey);
+      newSelected.add(key);
     } else {
-      newSelected.delete(itemKey);
+      newSelected.delete(key);
     }
     setSelectedItems(newSelected);
   };
 
   const handleSelectAll = (selected: boolean) => {
     if (selected) {
-      const visibleItems = new Set(
-        filteredItems.map((item) => `${item.meta.sourceFile}_${item.meta.lineNumber}`)
-      );
-      setSelectedItems(visibleItems);
+      setSelectedItems(new Set(filteredItems.map(getItemKey)));
     } else {
       setSelectedItems(new Set());
     }
@@ -331,8 +331,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
 
         // editedItemsの変更をworkingItemsに反映
         let updatedItems = workingItems.map((item) => {
-          const itemKey = `${item.meta.sourceFile}_${item.meta.lineNumber}`;
-          const editedItem = editedItems.get(itemKey);
+          const editedItem = editedItems.get(getItemKey(item));
           if (editedItem) {
             return {
               ...editedItem,
@@ -461,101 +460,99 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     });
   };
 
+  /** JsonItemからEditableJsonItemを生成する共通ヘルパー */
+  const toEditableItem = (jsonItem: EditableJsonItem['item']): EditableJsonItem => {
+    const validation = validateEditableItem(jsonItem);
+    return {
+      item: jsonItem,
+      displayText: jsonItemToDisplayText(jsonItem),
+      meta: {
+        sourceFile: selectedDataFile,
+        lineNumber: 0,
+        isValid: validation.isValid,
+        validationError: validation.error,
+      },
+    };
+  };
+
+  /** インポート共通: 重複ハンドリング後のworkingItemsを返す */
+  const getUpdatedWorkingItems = (
+    duplicateHandling: DuplicateHandlingOption,
+    duplicateExistingIds: string[]
+  ): EditableJsonItem[] => {
+    if (duplicateHandling === 'overwrite') {
+      const idsToRemove = new Set(duplicateExistingIds);
+      return workingItems.filter((item) => !idsToRemove.has(item.item.id));
+    }
+    return [...workingItems];
+  };
+
+  /** インポート結果をworkingItemsに反映する共通処理 */
+  const applyImport = (
+    newItems: EditableJsonItem[],
+    updatedWorkingItems: EditableJsonItem[],
+    closeModal: () => void
+  ) => {
+    const reorderedItems = reorderItemNumbers([...newItems, ...updatedWorkingItems]);
+    setWorkingItems(reorderedItems);
+    setHasUnsavedChanges(true);
+    closeModal();
+  };
+
   const handleBookmarkImport = (
     bookmarks: SimpleBookmarkItem[],
     duplicateHandling: DuplicateHandlingOption
   ) => {
-    // 現在のデータファイルのアイテムのみを対象に重複チェック
     const currentFileItems = workingItems.filter(
       (item) => item.meta.sourceFile === selectedDataFile
     );
     const duplicateResult = checkDuplicates(bookmarks, currentFileItems);
 
-    // スキップ: 重複を除いた新規ブックマークのみ / 上書き: 全ブックマークをインポート
     const bookmarksToImport =
       duplicateHandling === 'skip'
         ? filterNonDuplicateBookmarks(bookmarks, duplicateResult.duplicateBookmarkIds)
         : bookmarks;
 
-    // 上書きモードの場合、重複する既存アイテムを削除
-    const updatedWorkingItems =
-      duplicateHandling === 'overwrite'
-        ? workingItems.filter(
-            (item) => !new Set(duplicateResult.duplicateExistingIds).has(item.item.id)
-          )
-        : [...workingItems];
-
-    // 上書きモード用のURL->IDマッピング
     const urlToIdMap = duplicateHandling === 'overwrite' ? buildUrlToIdMap(currentFileItems) : null;
 
-    // 新規アイテムを作成
-    const newItems: EditableJsonItem[] = bookmarksToImport.map((bookmark) => {
-      // 上書きモードの場合、既存アイテムのIDを再利用
+    const newItems = bookmarksToImport.map((bookmark) => {
       const existingId = urlToIdMap?.get(normalizeUrl(bookmark.url));
-      const itemId = existingId ?? generateId();
-
-      const jsonItem = {
-        id: itemId,
+      return toEditableItem({
+        id: existingId ?? generateId(),
         type: 'item' as const,
         displayName: bookmark.displayName,
         path: bookmark.url,
         updatedAt: Date.now(),
-      };
-      const validation = validateEditableItem(jsonItem);
-      return {
-        item: jsonItem,
-        displayText: jsonItemToDisplayText(jsonItem),
-        meta: {
-          sourceFile: selectedDataFile,
-          lineNumber: 0,
-          isValid: validation.isValid,
-          validationError: validation.error,
-        },
-      };
+      });
     });
 
-    const finalItems = [...newItems, ...updatedWorkingItems];
-    const reorderedItems = reorderItemNumbers(finalItems);
-    setWorkingItems(reorderedItems);
-    setHasUnsavedChanges(true);
-    setIsBookmarkModalOpen(false);
+    applyImport(
+      newItems,
+      getUpdatedWorkingItems(duplicateHandling, duplicateResult.duplicateExistingIds),
+      () => setIsBookmarkModalOpen(false)
+    );
   };
 
   const handleAppImport = (apps: ScannedAppItem[], duplicateHandling: DuplicateHandlingOption) => {
-    // 現在のデータファイルのアイテムのみを対象に重複チェック
     const currentFileItems = workingItems.filter(
       (item) => item.meta.sourceFile === selectedDataFile
     );
     const duplicateResult = checkAppDuplicates(apps, currentFileItems);
 
-    // スキップ: 重複を除いた新規アプリのみ / 上書き: 全アプリをインポート
     const appsToImport =
       duplicateHandling === 'skip'
         ? filterNonDuplicateApps(apps, duplicateResult.duplicateBookmarkIds)
         : apps;
 
-    // 上書きモードの場合、重複する既存アイテムを削除
-    const updatedWorkingItems =
-      duplicateHandling === 'overwrite'
-        ? workingItems.filter(
-            (item) => !new Set(duplicateResult.duplicateExistingIds).has(item.item.id)
-          )
-        : [...workingItems];
-
-    // 上書きモード用のパス->IDマッピング
     const pathToIdMap =
       duplicateHandling === 'overwrite' ? buildAppPathToIdMap(currentFileItems) : null;
 
-    // 新規アイテムを作成
-    const newItems: EditableJsonItem[] = appsToImport.map((app) => {
-      // 上書きモードの場合、既存アイテムのIDを再利用
+    const newItems = appsToImport.map((app) => {
       const existingId =
         pathToIdMap?.get(normalizeAppPath(app.shortcutPath)) ??
         pathToIdMap?.get(normalizeAppPath(app.targetPath));
-      const itemId = existingId ?? generateId();
-
       const jsonItem = {
-        id: itemId,
+        id: existingId ?? generateId(),
         type: 'item' as const,
         displayName: app.displayName,
         path: app.shortcutPath,
@@ -576,11 +573,11 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
       };
     });
 
-    const finalItems = [...newItems, ...updatedWorkingItems];
-    const reorderedItems = reorderItemNumbers(finalItems);
-    setWorkingItems(reorderedItems);
-    setHasUnsavedChanges(true);
-    setIsAppImportModalOpen(false);
+    applyImport(
+      newItems,
+      getUpdatedWorkingItems(duplicateHandling, duplicateResult.duplicateExistingIds),
+      () => setIsAppImportModalOpen(false)
+    );
   };
 
   // 未保存チェック付きアクション実行ヘルパー
@@ -609,7 +606,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
       handleExitEditMode();
     } else if (e.key === 'Delete' && selectedItems.size > 0) {
       const selectedEditableItems = workingItems.filter((item) =>
-        selectedItems.has(`${item.meta.sourceFile}_${item.meta.lineNumber}`)
+        selectedItems.has(getItemKey(item))
       );
       handleDeleteItems(selectedEditableItems);
     } else if (e.ctrlKey && e.key === 's') {
@@ -618,10 +615,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     }
   };
 
-  const mergedItems = workingItems.map((item) => {
-    const itemKey = `${item.meta.sourceFile}_${item.meta.lineNumber}`;
-    return editedItems.get(itemKey) || item;
-  });
+  const mergedItems = workingItems.map((item) => editedItems.get(getItemKey(item)) || item);
 
   const discardAndSwitch = (action: () => void) => {
     action();
@@ -681,7 +675,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   });
 
   const visibleSelectedCount = filteredItems.filter((item) =>
-    selectedItems.has(`${item.meta.sourceFile}_${item.meta.lineNumber}`)
+    selectedItems.has(getItemKey(item))
   ).length;
 
   // タブ変更時にファイルを自動選択
@@ -731,9 +725,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
 
   // 検索クエリが変更されたら、非表示になったアイテムの選択状態をクリア
   useEffect(() => {
-    const filteredKeys = new Set(
-      filteredItems.map((item) => `${item.meta.sourceFile}_${item.meta.lineNumber}`)
-    );
+    const filteredKeys = new Set(filteredItems.map(getItemKey));
     setSelectedItems((prevSelected) => {
       const newSelectedItems = new Set([...prevSelected].filter((key) => filteredKeys.has(key)));
 
@@ -853,10 +845,9 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
           <Button
             variant="danger"
             onClick={() => {
-              const selectedEditableItems = filteredItems.filter((item) => {
-                const itemKey = `${item.meta.sourceFile}_${item.meta.lineNumber}`;
-                return selectedItems.has(itemKey);
-              });
+              const selectedEditableItems = filteredItems.filter((item) =>
+                selectedItems.has(getItemKey(item))
+              );
               if (selectedEditableItems.length > 0) {
                 setConfirmDialog({
                   isOpen: true,

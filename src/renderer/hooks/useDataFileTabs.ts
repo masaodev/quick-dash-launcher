@@ -43,8 +43,7 @@ export function useDataFileTabs() {
   const [dataFileLabels, setDataFileLabels] = useState<Record<string, string>>({});
 
   async function ensureDataFilesExist(fileNames: string[]): Promise<void> {
-    const validFileNames = fileNames.filter((name) => name && typeof name === 'string');
-    for (const fileName of validFileNames) {
+    for (const fileName of fileNames) {
       try {
         await window.electronAPI.createDataFile(fileName);
       } catch (error) {
@@ -125,11 +124,10 @@ export function useDataFileTabs() {
   }
 
   function getTabFilteredItems(mainItems: AppItem[]): AppItem[] {
-    if (!showDataFileTabs) {
-      return mainItems.filter((item) => !isWindowInfo(item) && item.sourceFile === activeTab);
-    }
+    const activeTabConfig = showDataFileTabs
+      ? dataFileTabs.find((tab) => tab.files.includes(activeTab))
+      : undefined;
 
-    const activeTabConfig = dataFileTabs.find((tab) => tab.files.includes(activeTab));
     if (activeTabConfig) {
       return mainItems.filter(
         (item) => !isWindowInfo(item) && activeTabConfig.files.includes(item.sourceFile || '')

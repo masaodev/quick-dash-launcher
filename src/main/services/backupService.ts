@@ -56,41 +56,17 @@ export class BackupService {
       return false;
     }
 
-    // スナップショット作成
-    const backupFolder = PathManager.getBackupFolder();
-    FileUtils.ensureDirectory(backupFolder);
-
-    const timestamp = this.createTimestamp();
-    const snapshotFolder = path.join(backupFolder, timestamp);
-    FileUtils.ensureDirectory(snapshotFolder);
-
-    const targets = await this.getBackupTargets();
-    let copiedCount = 0;
-
-    for (const target of targets) {
-      if (!FileUtils.exists(target.sourcePath)) continue;
-
-      const destPath = path.join(snapshotFolder, target.relativePath);
-      FileUtils.ensureDirectory(path.dirname(destPath));
-
-      if (FileUtils.safeCopyFile(target.sourcePath, destPath)) {
-        copiedCount++;
-      } else {
-        logger.error({ source: target.sourcePath }, 'スナップショットへのファイルコピーに失敗');
-      }
-    }
+    const { snapshotFolder, copiedCount } = await this.copyTargetsToSnapshot();
 
     if (copiedCount === 0) {
-      // コピーが1つもなければフォルダを削除
       fs.rmSync(snapshotFolder, { recursive: true, force: true });
       logger.warn('スナップショット作成: コピー対象ファイルなし');
       return false;
     }
 
-    logger.info({ timestamp, fileCount: copiedCount }, 'スナップショットを作成しました');
+    logger.info({ snapshotFolder, fileCount: copiedCount }, 'スナップショットを作成しました');
 
-    // 旧形式ファイルの検出ログ
-    this.logLegacyBackupFiles(backupFolder);
+    this.logLegacyBackupFiles(PathManager.getBackupFolder());
 
     await this.cleanupOldSnapshots();
     return true;
@@ -349,28 +325,38 @@ export class BackupService {
     return targets;
   }
 
-  /**
-   * 設定に関係なく強制的にスナップショットを作成する（リストア前の自動バックアップ用）
-   */
   private async createForcedSnapshot(suffix: string): Promise<void> {
+    const { snapshotFolder } = await this.copyTargetsToSnapshot(suffix);
+    logger.info({ snapshotFolder }, 'リストア前の自動バックアップを作成しました');
+  }
+
+  private async copyTargetsToSnapshot(
+    suffix?: string
+  ): Promise<{ snapshotFolder: string; copiedCount: number }> {
     const backupFolder = PathManager.getBackupFolder();
     FileUtils.ensureDirectory(backupFolder);
 
-    const timestamp = `${this.createTimestamp()}_${suffix}`;
+    const timestamp = suffix ? `${this.createTimestamp()}_${suffix}` : this.createTimestamp();
     const snapshotFolder = path.join(backupFolder, timestamp);
     FileUtils.ensureDirectory(snapshotFolder);
 
     const targets = await this.getBackupTargets();
+    let copiedCount = 0;
 
     for (const target of targets) {
       if (!FileUtils.exists(target.sourcePath)) continue;
 
       const destPath = path.join(snapshotFolder, target.relativePath);
       FileUtils.ensureDirectory(path.dirname(destPath));
-      FileUtils.safeCopyFile(target.sourcePath, destPath);
+
+      if (FileUtils.safeCopyFile(target.sourcePath, destPath)) {
+        copiedCount++;
+      } else {
+        logger.error({ source: target.sourcePath }, 'スナップショットへのファイルコピーに失敗');
+      }
     }
 
-    logger.info({ timestamp }, 'リストア前の自動バックアップを作成しました');
+    return { snapshotFolder, copiedCount };
   }
 
   private createTimestamp(): string {

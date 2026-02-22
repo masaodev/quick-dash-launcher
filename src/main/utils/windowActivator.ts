@@ -264,40 +264,32 @@ export async function tryActivateWindow(
   logger: Logger
 ): Promise<WindowActivationResult> {
   if (!windowConfig) {
-    // ウィンドウ設定が存在しない場合は何もしない
     return { activated: false, windowFound: false };
   }
 
-  // ウィンドウタイトルでウィンドウを検索
+  const logCtx = { name: itemName, windowConfig: JSON.stringify(windowConfig) };
   const hwnd = findWindowByTitle(windowConfig.title, windowConfig.processName);
 
   if (hwnd === null) {
-    // ウィンドウが見つからない場合
-    logger.info(
-      { name: itemName, windowConfig: JSON.stringify(windowConfig) },
-      'ウィンドウが見つかりませんでした。通常起動します'
-    );
+    logger.info(logCtx, 'ウィンドウが見つかりませんでした。通常起動します');
     return { activated: false, windowFound: false };
   }
 
-  // ウィンドウが見つかった場合
   logger.info(
-    { name: itemName, windowConfig: JSON.stringify(windowConfig), hwnd: String(hwnd) },
+    { ...logCtx, hwnd: String(hwnd) },
     'ウィンドウが見つかりました。アクティブ化と位置・サイズ調整を実行します'
   );
 
-  // 最小化されている場合は復元
   restoreWindow(hwnd);
 
-  // ピン止め処理
   const needsPinning = windowConfig.pinToAllDesktops;
   if (needsPinning) {
     const pinSuccess = pinWindow(hwnd);
-    const logFn = pinSuccess ? logger.info.bind(logger) : logger.warn.bind(logger);
-    logFn(
-      { name: itemName, windowConfig: JSON.stringify(windowConfig) },
-      pinSuccess ? '全仮想デスクトップにピン止めしました' : 'ウィンドウのピン止めに失敗しました'
-    );
+    if (pinSuccess) {
+      logger.info(logCtx, '全仮想デスクトップにピン止めしました');
+    } else {
+      logger.warn(logCtx, 'ウィンドウのピン止めに失敗しました');
+    }
   }
 
   // 位置・サイズ設定が必要かチェック
@@ -330,11 +322,7 @@ export async function tryActivateWindow(
         }
       } catch (error) {
         logger.error(
-          {
-            name: itemName,
-            windowConfig: JSON.stringify(windowConfig),
-            error: error instanceof Error ? error.message : String(error),
-          },
+          { ...logCtx, error: error instanceof Error ? error.message : String(error) },
           'アクティブモニター中央座標の計算中にエラーが発生しました。既存の座標処理にフォールバックします'
         );
       }
@@ -352,40 +340,28 @@ export async function tryActivateWindow(
 
   if (targetDesktopNumber !== undefined) {
     const desktopMoveSuccess = moveWindowToVirtualDesktop(hwnd, targetDesktopNumber);
-    const logCtx = {
-      name: itemName,
-      windowConfig: JSON.stringify(windowConfig),
-      desktopNumber: targetDesktopNumber,
-    };
+    const desktopLogCtx = { ...logCtx, desktopNumber: targetDesktopNumber };
 
     if (desktopMoveSuccess) {
-      logger.info(logCtx, '仮想デスクトップに移動しました');
+      logger.info(desktopLogCtx, '仮想デスクトップに移動しました');
 
-      // デスクトップ移動時にWindowsが位置・サイズをリセットすることがあるため再設定
       if (needsBoundsChange) {
         await waitForDesktopMove(hwnd, targetDesktopNumber, itemName, windowConfig, logger);
         await setBoundsWithRetry(hwnd, baseBounds, itemName, windowConfig, logger);
       }
     } else {
-      logger.warn(logCtx, '仮想デスクトップへの移動に失敗しました');
+      logger.warn(desktopLogCtx, '仮想デスクトップへの移動に失敗しました');
     }
   }
 
-  // activateWindowがfalseの場合はスキップ（undefined または true の場合はアクティブ化）
   if (windowConfig.activateWindow === false) {
-    logger.info(
-      { name: itemName, windowConfig: JSON.stringify(windowConfig) },
-      'activateWindow=falseのため、ウィンドウのアクティブ化をスキップしました'
-    );
+    logger.info(logCtx, 'activateWindow=falseのため、ウィンドウのアクティブ化をスキップしました');
     return { activated: true, windowFound: true };
   }
 
   const success = activateWindow(hwnd);
   if (!success) {
-    logger.warn(
-      { name: itemName, windowConfig: JSON.stringify(windowConfig) },
-      'ウィンドウのアクティブ化に失敗。通常起動にフォールバック'
-    );
+    logger.warn(logCtx, 'ウィンドウのアクティブ化に失敗。通常起動にフォールバック');
   }
   return { activated: success, windowFound: true };
 }

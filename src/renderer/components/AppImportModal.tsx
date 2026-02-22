@@ -4,6 +4,7 @@ import type { ScannedAppItem, DuplicateHandlingOption } from '@common/types';
 import type { EditableJsonItem } from '@common/types/editableItem';
 import { checkAppDuplicates } from '@common/utils/appDuplicateDetector';
 
+import { useModalKeyboard } from '../hooks/useModalKeyboard';
 import { logError } from '../utils/debug';
 
 import AlertDialog from './AlertDialog';
@@ -302,94 +303,7 @@ function AppImportModal({
     onClose();
   }, [onClose]);
 
-  // キーボードショートカット
-  useEffect(() => {
-    if (!isOpen) return;
-
-    modalRef.current?.focus();
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      const modal = modalRef.current;
-      if (!modal) return;
-
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        event.stopPropagation();
-        event.stopImmediatePropagation();
-        handleClose();
-        return;
-      }
-
-      if (event.key === 'Tab') {
-        const focusableElements = modal.querySelectorAll(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-        );
-        const firstFocusableElement = focusableElements[0] as HTMLElement;
-        const lastFocusableElement = focusableElements[focusableElements.length - 1] as HTMLElement;
-
-        if (event.shiftKey) {
-          if (document.activeElement === firstFocusableElement) {
-            lastFocusableElement.focus();
-            event.preventDefault();
-            event.stopPropagation();
-            event.stopImmediatePropagation();
-          }
-        } else {
-          if (document.activeElement === lastFocusableElement) {
-            firstFocusableElement.focus();
-            event.preventDefault();
-            event.stopPropagation();
-            event.stopImmediatePropagation();
-          }
-        }
-        event.preventDefault();
-        event.stopPropagation();
-        event.stopImmediatePropagation();
-        return;
-      }
-
-      const isModalFocused = modal.contains(document.activeElement);
-      if (isModalFocused) {
-        const activeElement = document.activeElement as HTMLElement;
-        const isInputField =
-          activeElement &&
-          (activeElement.tagName === 'INPUT' ||
-            activeElement.tagName === 'TEXTAREA' ||
-            activeElement.tagName === 'SELECT');
-
-        if (isInputField) {
-          if (
-            event.key.length === 1 ||
-            [
-              'Backspace',
-              'Delete',
-              'ArrowLeft',
-              'ArrowRight',
-              'ArrowUp',
-              'ArrowDown',
-              'Home',
-              'End',
-            ].includes(event.key) ||
-            (event.ctrlKey && ['a', 'c', 'v', 'x', 'z', 'y'].includes(event.key))
-          ) {
-            event.stopPropagation();
-            event.stopImmediatePropagation();
-            return;
-          }
-        }
-
-        event.preventDefault();
-        event.stopPropagation();
-        event.stopImmediatePropagation();
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown, true);
-
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown, true);
-    };
-  }, [isOpen, handleClose]);
+  useModalKeyboard({ isOpen, modalRef, onClose: handleClose });
 
   if (!isOpen) return null;
 

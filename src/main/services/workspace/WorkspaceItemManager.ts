@@ -245,22 +245,23 @@ export class WorkspaceItemManager {
     try {
       const items = this.loadItems();
       const itemMap = new Map(items.map((item) => [item.id, item]));
+      const itemIdSet = new Set(itemIds);
       const reorderedItems: WorkspaceItem[] = [];
 
-      itemIds.forEach((id, index) => {
-        const item = itemMap.get(id);
+      for (let i = 0; i < itemIds.length; i++) {
+        const item = itemMap.get(itemIds[i]);
         if (item) {
-          item.order = index;
+          item.order = i;
           reorderedItems.push(item);
         }
-      });
+      }
 
-      items.forEach((item) => {
-        if (!itemIds.includes(item.id)) {
+      for (const item of items) {
+        if (!itemIdSet.has(item.id)) {
           item.order = reorderedItems.length;
           reorderedItems.push(item);
         }
-      });
+      }
 
       this.store.set('items', reorderedItems);
       logger.info({ count: itemIds.length }, 'Reordered workspace items');

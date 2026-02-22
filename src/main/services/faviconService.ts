@@ -219,93 +219,88 @@ export class FaviconService {
   }
 
   private async fetchHtml(url: string): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const request = net.request(url);
-      request.setHeader(
-        'User-Agent',
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-      );
+    let data = '';
 
-      let data = '';
-      let isResolved = false;
-
-      const finish = (result: { resolve: string } | { reject: Error }): void => {
-        if (isResolved) return;
-        isResolved = true;
-        clearTimeout(timeoutId);
-        request.abort();
-        if ('resolve' in result) {
-          resolve(result.resolve);
-        } else {
-          reject(result.reject);
+    await this.makeRequest({
+      url,
+      timeout: this.htmlDownloadTimeout,
+      timeoutMessage: `HTMLダウンロードがタイムアウトしました: ${url}`,
+      onData(chunk, finish) {
+        data += chunk.toString();
+        if (data.length > 5000) {
+          finish();
         }
-      };
-
-      const timeoutId = setTimeout(() => {
-        finish({ reject: new Error(`HTMLダウンロードがタイムアウトしました: ${url}`) });
-      }, this.htmlDownloadTimeout);
-
-      request.on('response', (response) => {
-        response.on('data', (chunk) => {
-          data += chunk.toString();
-          if (data.length > 5000) {
-            finish({ resolve: data });
-          }
-        });
-
-        response.on('end', () => finish({ resolve: data }));
-      });
-
-      request.on('error', (error) => finish({ reject: error }));
-
-      request.end();
+      },
     });
+
+    return data;
   }
 
   private async downloadFavicon(url: string): Promise<Buffer | null> {
+    const chunks: Buffer[] = [];
+
+    await this.makeRequest({
+      url,
+      timeout: this.faviconDownloadTimeout,
+      timeoutMessage: `ファビコンダウンロードがタイムアウトしました: ${url}`,
+      checkStatus: true,
+      onData(chunk) {
+        chunks.push(chunk);
+      },
+    });
+
+    return Buffer.concat(chunks);
+  }
+
+  private makeRequest(options: {
+    url: string;
+    timeout: number;
+    timeoutMessage: string;
+    checkStatus?: boolean;
+    onData: (chunk: Buffer, finish: () => void) => void;
+  }): Promise<void> {
     return new Promise((resolve, reject) => {
-      const request = net.request(url);
+      const request = net.request(options.url);
       request.setHeader(
         'User-Agent',
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
       );
 
-      const chunks: Buffer[] = [];
-      let isResolved = false;
+      let isFinished = false;
 
-      const finish = (result: { resolve: Buffer } | { reject: Error }): void => {
-        if (isResolved) return;
-        isResolved = true;
+      function finish(error?: Error): void {
+        if (isFinished) return;
+        isFinished = true;
         clearTimeout(timeoutId);
         request.abort();
-        if ('resolve' in result) {
-          resolve(result.resolve);
+        if (error) {
+          reject(error);
         } else {
-          reject(result.reject);
+          resolve();
         }
-      };
+      }
 
       const timeoutId = setTimeout(() => {
-        finish({ reject: new Error(`ファビコンダウンロードがタイムアウトしました: ${url}`) });
-      }, this.faviconDownloadTimeout);
+        finish(new Error(options.timeoutMessage));
+      }, options.timeout);
 
       request.on('response', (response) => {
-        if (response.statusCode !== 200) {
-          finish({ reject: new Error(`HTTP ${response.statusCode}`) });
+        if (options.checkStatus && response.statusCode !== 200) {
+          finish(new Error(`HTTP ${response.statusCode}`));
           return;
         }
 
         response.on('data', (chunk) => {
-          if (!isResolved) {
-            chunks.push(chunk);
+          if (!isFinished) {
+            options.onData(chunk, () => finish());
           }
         });
 
-        response.on('end', () => finish({ resolve: Buffer.concat(chunks) }));
-        response.on('error', (error) => finish({ reject: error }));
+        response.on('end', () => finish());
+        response.on('error', (error) => finish(error));
       });
 
-      request.on('error', (error) => finish({ reject: error }));
+      request.on('error', (error) => finish(error));
 
       request.end();
     });

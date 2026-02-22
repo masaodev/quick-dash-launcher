@@ -160,7 +160,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
       item: WorkspaceItem,
       operation: 'copy' | 'open',
       pathType: 'item' | 'parent',
-      useOriginalPath: boolean = false
+      useOriginalPath = false
     ) => {
       const basePath = useOriginalPath ? item.originalPath : item.path;
       if (!basePath) return;
@@ -183,17 +183,17 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     };
 
     const cleanups = [
-      window.electronAPI.onWorkspaceMenuRenameItem((itemId) => setEditingItemId(itemId)),
+      window.electronAPI.onWorkspaceMenuRenameItem(setEditingItemId),
       window.electronAPI.onWorkspaceMenuEditItem(withItem(onEditItem)),
       window.electronAPI.onWorkspaceMenuLaunchItem(withItem(onLaunch)),
       window.electronAPI.onWorkspaceMenuCopyPath(
-        withItem((item) => handlePathOperation(item, 'copy', 'item', false))
+        withItem((item) => handlePathOperation(item, 'copy', 'item'))
       ),
       window.electronAPI.onWorkspaceMenuCopyParentPath(
-        withItem((item) => handlePathOperation(item, 'copy', 'parent', false))
+        withItem((item) => handlePathOperation(item, 'copy', 'parent'))
       ),
       window.electronAPI.onWorkspaceMenuOpenParentFolder(
-        withItem((item) => handlePathOperation(item, 'open', 'parent', false))
+        withItem((item) => handlePathOperation(item, 'open', 'parent'))
       ),
       window.electronAPI.onWorkspaceMenuCopyShortcutPath(
         withItem((item) => handlePathOperation(item, 'copy', 'item', true))
@@ -204,13 +204,12 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
       window.electronAPI.onWorkspaceMenuOpenShortcutParentFolder(
         withItem((item) => handlePathOperation(item, 'open', 'parent', true))
       ),
-      window.electronAPI.onWorkspaceMenuRemoveFromGroup((itemId) => {
-        const item = itemsMap.get(itemId);
-        if (item && item.groupId) {
-          onMoveItemToGroup(itemId, undefined);
-        }
-      }),
-      window.electronAPI.onWorkspaceMenuRemoveItem((itemId) => onRemoveItem(itemId)),
+      window.electronAPI.onWorkspaceMenuRemoveFromGroup(
+        withItem((item) => {
+          if (item.groupId) onMoveItemToGroup(item.id, undefined);
+        })
+      ),
+      window.electronAPI.onWorkspaceMenuRemoveItem(onRemoveItem),
     ];
 
     return () => cleanups.forEach((cleanup) => cleanup());
@@ -226,10 +225,8 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
 
   React.useEffect(() => {
     const cleanups = [
-      window.electronAPI.onWorkspaceGroupMenuRename((groupId) => setEditingGroupId(groupId)),
-      window.electronAPI.onWorkspaceGroupMenuShowColorPicker((groupId) =>
-        setColorPickerGroupId(groupId)
-      ),
+      window.electronAPI.onWorkspaceGroupMenuRename(setEditingGroupId),
+      window.electronAPI.onWorkspaceGroupMenuShowColorPicker(setColorPickerGroupId),
       window.electronAPI.onWorkspaceGroupMenuChangeColor((groupId, color) =>
         onUpdateGroup(groupId, { color })
       ),
@@ -250,8 +247,8 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
           window.electronAPI.copyToClipboard(text);
         }
       }),
-      window.electronAPI.onWorkspaceGroupMenuArchive((groupId) => onArchiveGroup(groupId)),
-      window.electronAPI.onWorkspaceGroupMenuDelete((groupId) => onDeleteGroup(groupId)),
+      window.electronAPI.onWorkspaceGroupMenuArchive(onArchiveGroup),
+      window.electronAPI.onWorkspaceGroupMenuDelete(onDeleteGroup),
       window.electronAPI.onWorkspaceGroupMenuAddSubgroup((parentGroupId) => {
         const childCount = groups.filter((g) => g.parentGroupId === parentGroupId).length;
         onAddSubgroup(parentGroupId, childCount);
@@ -699,52 +696,48 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
         {/* ツリー構造でグループをレンダリング */}
         {groupTree.map((node) => renderGroupNode(node))}
 
-        {filteredUncategorizedItems.length > 0 &&
-          showUncategorized !== false &&
-          (showUncategorized || !itemVisibility) && (
+        {filteredUncategorizedItems.length > 0 && showUncategorized && (
+          <div
+            className={`workspace-uncategorized-section${dragOverGroupId === '__uncategorized__' ? ' drag-over' : ''}`}
+            onDragOver={handleGroupDragOver(undefined)}
+            onDrop={handleGroupDrop(undefined)}
+          >
             <div
-              className={`workspace-uncategorized-section${dragOverGroupId === '__uncategorized__' ? ' drag-over' : ''}`}
-              onDragOver={handleGroupDragOver(undefined)}
-              onDrop={handleGroupDrop(undefined)}
+              className="workspace-group-header"
+              onClick={handleUncategorizedToggle}
+              style={{ '--group-color': 'var(--color-secondary)' } as React.CSSProperties}
             >
-              <div
-                className="workspace-group-header"
-                onClick={handleUncategorizedToggle}
-                style={{ '--group-color': 'var(--color-secondary)' } as React.CSSProperties}
+              <span
+                className={`workspace-group-collapse-icon${uncategorizedCollapsed ? ' collapsed' : ''}`}
               >
-                <span
-                  className={`workspace-group-collapse-icon${uncategorizedCollapsed ? ' collapsed' : ''}`}
-                >
-                  ▼
-                </span>
-                <span className="workspace-group-name">未分類</span>
-                <span className="workspace-group-badge">{filteredUncategorizedItems.length}</span>
-              </div>
-              {!uncategorizedCollapsed && (
-                <div className="workspace-group-items">
-                  {filteredUncategorizedItems.map((item) => (
-                    <WorkspaceItemCard
-                      key={item.id}
-                      item={item}
-                      isEditing={editingItemId === item.id}
-                      draggedElement={draggedElement}
-                      onLaunch={onLaunch}
-                      onRemove={onRemoveItem}
-                      onUpdateDisplayName={onUpdateDisplayName}
-                      onStartEdit={() =>
-                        setEditingItemId(editingItemId === item.id ? null : item.id)
-                      }
-                      onDragStart={handleMixedDragStart(item.id, 'item')}
-                      onDragEnd={handleMixedDragEnd}
-                      onDragOver={handleMixedDragOver}
-                      onDrop={(e, zone) => handleMixedDrop(item.id, 'item', undefined, zone)(e)}
-                      onContextMenu={handleContextMenu(item)}
-                    />
-                  ))}
-                </div>
-              )}
+                ▼
+              </span>
+              <span className="workspace-group-name">未分類</span>
+              <span className="workspace-group-badge">{filteredUncategorizedItems.length}</span>
             </div>
-          )}
+            {!uncategorizedCollapsed && (
+              <div className="workspace-group-items">
+                {filteredUncategorizedItems.map((item) => (
+                  <WorkspaceItemCard
+                    key={item.id}
+                    item={item}
+                    isEditing={editingItemId === item.id}
+                    draggedElement={draggedElement}
+                    onLaunch={onLaunch}
+                    onRemove={onRemoveItem}
+                    onUpdateDisplayName={onUpdateDisplayName}
+                    onStartEdit={() => setEditingItemId(editingItemId === item.id ? null : item.id)}
+                    onDragStart={handleMixedDragStart(item.id, 'item')}
+                    onDragEnd={handleMixedDragEnd}
+                    onDragOver={handleMixedDragOver}
+                    onDrop={(e, zone) => handleMixedDrop(item.id, 'item', undefined, zone)(e)}
+                    onContextMenu={handleContextMenu(item)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* カラーピッカー */}
         {colorPickerGroupId && (

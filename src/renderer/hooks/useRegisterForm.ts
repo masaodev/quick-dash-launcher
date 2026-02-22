@@ -66,6 +66,15 @@ export function useRegisterForm(
   const { initializeFromEditingItem, initializeFromDroppedPaths, createEmptyTemplateItem } =
     useModalInitializer();
 
+  const clearErrorField = (index: number, field: string) => {
+    setErrors((prev) => {
+      if (!prev[index]) return prev;
+      const updatedError = { ...prev[index] };
+      delete updatedError[field as keyof typeof updatedError];
+      return { ...prev, [index]: updatedError };
+    });
+  };
+
   const commitClipboardSessions = async (
     itemsToCommit: RegisterItem[]
   ): Promise<RegisterItem[] | null> => {
@@ -178,19 +187,7 @@ export function useRegisterForm(
     }
 
     if (field === 'displayName' || field === 'path' || field === 'windowOperationConfig') {
-      setErrors((prev) => {
-        const newErrors = { ...prev };
-        if (newErrors[index]) {
-          const updatedError = { ...newErrors[index] };
-          if (field === 'windowOperationConfig') {
-            delete updatedError.displayName;
-          } else {
-            delete updatedError[field];
-          }
-          newErrors[index] = updatedError;
-        }
-        return newErrors;
-      });
+      clearErrorField(index, field === 'windowOperationConfig' ? 'displayName' : field);
     }
 
     if (field === 'itemCategory') {
@@ -311,10 +308,7 @@ export function useRegisterForm(
     }
 
     setErrors(newErrors);
-    const hasErrors = Object.values(newErrors).some((e) =>
-      Object.values(e).some((msg) => msg !== undefined)
-    );
-
+    const hasErrors = Object.values(newErrors).some((e) => Object.keys(e).length > 0);
     if (hasErrors) {
       return;
     }
@@ -351,34 +345,16 @@ export function useRegisterForm(
   const handleSelectGroupItem = (itemName: string) => {
     if (editingItemIndex === null) return;
 
-    const newItems = [...items];
-    const currentGroupItemNames = newItems[editingItemIndex].groupItemNames || [];
-    newItems[editingItemIndex] = {
-      ...newItems[editingItemIndex],
-      groupItemNames: [...currentGroupItemNames, itemName],
-    };
-    setItems(newItems);
-
-    setErrors((prev) => {
-      const newErrors = { ...prev };
-      if (newErrors[editingItemIndex]) {
-        const updatedError = { ...newErrors[editingItemIndex] };
-        delete updatedError.groupItemNames;
-        newErrors[editingItemIndex] = updatedError;
-      }
-      return newErrors;
-    });
+    const currentGroupItemNames = items[editingItemIndex].groupItemNames || [];
+    updateItem(editingItemIndex, { groupItemNames: [...currentGroupItemNames, itemName] });
+    clearErrorField(editingItemIndex, 'groupItemNames');
   };
 
   const handleRemoveGroupItem = (itemIndex: number, groupItemNameIndex: number) => {
-    const newItems = [...items];
-    const currentGroupItemNames = newItems[itemIndex].groupItemNames || [];
-    const updatedGroupItemNames = currentGroupItemNames.filter((_, i) => i !== groupItemNameIndex);
-    newItems[itemIndex] = {
-      ...newItems[itemIndex],
-      groupItemNames: updatedGroupItemNames,
-    };
-    setItems(newItems);
+    const currentGroupItemNames = items[itemIndex].groupItemNames || [];
+    updateItem(itemIndex, {
+      groupItemNames: currentGroupItemNames.filter((_, i) => i !== groupItemNameIndex),
+    });
   };
 
   const updateItem = (index: number, updatedFields: Partial<RegisterItem>) => {
@@ -391,10 +367,7 @@ export function useRegisterForm(
     const selectedTab = availableTabs.find((tab) => tab.files.includes(targetTab));
     const targetFile =
       selectedTab && selectedTab.files.length > 0 ? selectedTab.files[0] : items[index].targetFile;
-
-    const newItems = [...items];
-    newItems[index] = { ...newItems[index], targetTab, targetFile };
-    setItems(newItems);
+    updateItem(index, { targetTab, targetFile });
   };
 
   const handleFetchIcon = async (index: number) => {

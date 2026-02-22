@@ -52,6 +52,15 @@ function createEventListenerNoArg(channel: string, callback: () => void): () => 
   return () => ipcRenderer.removeListener(channel, listener);
 }
 
+function createEventListener2<T1, T2>(
+  channel: string,
+  callback: (arg1: T1, arg2: T2) => void
+): () => void {
+  const listener = (_event: unknown, arg1: T1, arg2: T2) => callback(arg1, arg2);
+  ipcRenderer.on(channel, listener);
+  return () => ipcRenderer.removeListener(channel, listener);
+}
+
 interface UpdateItemByIdRequest {
   id: string;
   newItem: LauncherItem;
@@ -59,6 +68,18 @@ interface UpdateItemByIdRequest {
 
 interface DeleteItemByIdRequest {
   id: string;
+}
+
+interface ToastData {
+  message?: string;
+  type: string;
+  duration: number;
+  itemType?: string;
+  displayName?: string;
+  path?: string;
+  icon?: string;
+  itemCount?: number;
+  itemNames?: string[];
 }
 
 contextBridge.exposeInMainWorld('electronAPI', {
@@ -96,7 +117,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // アイコン取得エラー記録を取得
   getIconFetchErrors: (): Promise<IconFetchErrorRecord[]> =>
     ipcRenderer.invoke(IPC_CHANNELS.GET_ICON_FETCH_ERRORS),
-  // 進捗イベントリスナー
   onIconProgress: (
     eventType: 'start' | 'update' | 'complete',
     callback: (data: IconProgress) => void
@@ -106,7 +126,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
       update: IPC_CHANNELS.EVENT_ICON_PROGRESS_UPDATE,
       complete: IPC_CHANNELS.EVENT_ICON_PROGRESS_COMPLETE,
     };
-    ipcRenderer.on(eventMap[eventType], (_event, data) => callback(data));
+    return createEventListener<IconProgress>(eventMap[eventType], callback);
   },
   onWindowShown: (callback: (startTime?: number) => void) =>
     createEventListener<number | undefined>(IPC_CHANNELS.EVENT_WINDOW_SHOWN, callback),
@@ -114,9 +134,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     createEventListener<number | undefined>(IPC_CHANNELS.EVENT_WINDOW_SHOWN_ITEM_SEARCH, callback),
   onWindowHidden: (callback: () => void) =>
     createEventListenerNoArg(IPC_CHANNELS.EVENT_WINDOW_HIDDEN, callback),
-  onSetActiveTab: (callback: (tab: 'settings' | 'edit' | 'archive' | 'other') => void) => {
-    ipcRenderer.on(IPC_CHANNELS.EVENT_SET_ACTIVE_TAB, (_event, tab) => callback(tab));
-  },
+  onSetActiveTab: (callback: (tab: 'settings' | 'edit' | 'archive' | 'other') => void) =>
+    createEventListener<'settings' | 'edit' | 'archive' | 'other'>(
+      IPC_CHANNELS.EVENT_SET_ACTIVE_TAB,
+      callback
+    ),
   onOpenImportModal: (callback: (modal: 'bookmark' | 'app') => void) =>
     createEventListener<'bookmark' | 'app'>(IPC_CHANNELS.EVENT_OPEN_IMPORT_MODAL, callback),
   onDataChanged: (callback: () => void) =>
@@ -278,22 +300,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     itemCount?: number;
     itemNames?: string[];
   }) => ipcRenderer.invoke(IPC_CHANNELS.SHOW_TOAST_WINDOW, options),
-  // トーストウィンドウ用イベントリスナー（toast.html用）
-  onShowToast: (
-    callback: (data: {
-      message?: string;
-      type: string;
-      duration: number;
-      itemType?: string;
-      displayName?: string;
-      path?: string;
-      icon?: string;
-      itemCount?: number;
-      itemNames?: string[];
-    }) => void
-  ) => {
-    ipcRenderer.on(IPC_CHANNELS.EVENT_SHOW_TOAST, (_event, data) => callback(data));
-  },
+  onShowToast: (callback: (data: ToastData) => void) =>
+    createEventListener<ToastData>(IPC_CHANNELS.EVENT_SHOW_TOAST, callback),
   // ワークスペースウィンドウ制御API
   toggleWorkspaceWindow: () => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_TOGGLE_WINDOW),
   showWorkspaceWindow: () => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_SHOW_WINDOW),
@@ -458,12 +466,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke(IPC_CHANNELS.SHOW_WINDOW_CONTEXT_MENU, windowInfo, desktopInfo, isPinned),
   onWindowMenuActivate: (callback: (windowInfo: WindowInfo) => void) =>
     createEventListener<WindowInfo>(IPC_CHANNELS.EVENT_WINDOW_MENU_ACTIVATE, callback),
-  onMoveWindowToDesktop: (callback: (hwnd: number | bigint, desktopNumber: number) => void) => {
-    const listener = (_event: unknown, hwnd: number | bigint, desktopNumber: number) =>
-      callback(hwnd, desktopNumber);
-    ipcRenderer.on(IPC_CHANNELS.MOVE_WINDOW_TO_DESKTOP, listener);
-    return () => ipcRenderer.removeListener(IPC_CHANNELS.MOVE_WINDOW_TO_DESKTOP, listener);
-  },
+  onMoveWindowToDesktop: (callback: (hwnd: number | bigint, desktopNumber: number) => void) =>
+    createEventListener2<number | bigint, number>(IPC_CHANNELS.MOVE_WINDOW_TO_DESKTOP, callback),
   onPinWindow: (callback: (hwnd: number | bigint) => void) =>
     createEventListener<number | bigint>(IPC_CHANNELS.PIN_WINDOW, callback),
   onUnPinWindow: (callback: (hwnd: number | bigint) => void) =>
@@ -509,12 +513,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
       IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_SHOW_COLOR_PICKER,
       callback
     ),
-  onWorkspaceGroupMenuChangeColor: (callback: (groupId: string, color: string) => void) => {
-    const listener = (_event: unknown, groupId: string, color: string) => callback(groupId, color);
-    ipcRenderer.on(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_CHANGE_COLOR, listener);
-    return () =>
-      ipcRenderer.removeListener(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_CHANGE_COLOR, listener);
-  },
+  onWorkspaceGroupMenuChangeColor: (callback: (groupId: string, color: string) => void) =>
+    createEventListener2<string, string>(
+      IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_CHANGE_COLOR,
+      callback
+    ),
   onWorkspaceGroupMenuCopyAsText: (callback: (groupId: string) => void) =>
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_COPY_AS_TEXT, callback),
   onWorkspaceGroupMenuArchive: (callback: (groupId: string) => void) =>

@@ -31,13 +31,12 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
     const [isExpanded, setIsExpanded] = useState(defaultExpanded);
     const [fetchError, setFetchError] = useState<'position' | 'size' | null>(null);
 
+    const baseConfig = windowConfig || { title: '' };
+
     const handleNumericChange =
       (fieldName: keyof WindowConfig) => (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value ? parseInt(e.target.value, 10) : undefined;
-        onChange({
-          ...(windowConfig || { title: '' }),
-          [fieldName]: value,
-        });
+        onChange({ ...baseConfig, [fieldName]: value });
       };
 
     const handleFetchFromWindow = async (
@@ -48,10 +47,7 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
       setFetchError(null);
       const windowInfo = await onFetchFromWindow();
       if (windowInfo) {
-        onChange({
-          ...(windowConfig || { title: '' }),
-          ...extractFields(windowInfo),
-        });
+        onChange({ ...baseConfig, ...extractFields(windowInfo) });
       } else {
         setFetchError(type);
         setTimeout(() => setFetchError(null), 3000);
@@ -103,7 +99,7 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
                 value={windowConfig?.title || ''}
                 onChange={(e) =>
                   onChange({
-                    ...(windowConfig || { title: '' }),
+                    ...baseConfig,
                     title: e.target.value,
                   })
                 }
@@ -121,7 +117,7 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
                 value={windowConfig?.processName || ''}
                 onChange={(e) =>
                   onChange({
-                    ...(windowConfig || { title: '' }),
+                    ...baseConfig,
                     processName: e.target.value || undefined,
                   })
                 }
@@ -145,7 +141,7 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
                     checked={windowConfig?.activateWindow !== false}
                     onChange={(e) =>
                       onChange({
-                        ...(windowConfig || { title: '' }),
+                        ...baseConfig,
                         activateWindow: e.target.checked,
                       })
                     }
@@ -176,7 +172,7 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
                     checked={windowConfig?.moveToActiveMonitorCenter || false}
                     onChange={(e) =>
                       onChange({
-                        ...(windowConfig || { title: '' }),
+                        ...baseConfig,
                         moveToActiveMonitorCenter: e.target.checked || undefined,
                       })
                     }
@@ -259,7 +255,7 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
                     checked={windowConfig?.pinToAllDesktops || false}
                     onChange={(e) =>
                       onChange({
-                        ...(windowConfig || { title: '' }),
+                        ...baseConfig,
                         pinToAllDesktops: e.target.checked || undefined,
                         // ピン止め時は仮想デスクトップ番号をクリア
                         virtualDesktopNumber: e.target.checked

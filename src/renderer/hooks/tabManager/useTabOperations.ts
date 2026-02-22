@@ -1,7 +1,6 @@
 import { useCallback, Dispatch, SetStateAction } from 'react';
 import { DEFAULT_DATA_FILE, AppSettings } from '@common/types';
 
-import { logError } from '../../utils/debug';
 import { TabStateCalculator, PendingFileOperations } from '../../utils/tabManager';
 
 interface UseTabOperationsProps {
@@ -110,27 +109,22 @@ export function useTabOperations({
         return;
       }
 
-      try {
-        const updatedTabs = tabs.filter((_, index) => index !== tabIndex);
-        setEditedSettings((prev) => ({
-          ...prev,
-          dataFileTabs: updatedTabs,
-        }));
+      const updatedTabs = tabs.filter((_, index) => index !== tabIndex);
+      setEditedSettings((prev) => ({
+        ...prev,
+        dataFileTabs: updatedTabs,
+      }));
 
-        const filesToDelete = TabStateCalculator.getFilesToDeleteOnTabRemoval(
-          tabIndex,
-          pendingFileOperations.filesToCreate,
-          tabs
-        );
+      const filesToDelete = TabStateCalculator.getFilesToDeleteOnTabRemoval(
+        tabIndex,
+        pendingFileOperations.filesToCreate,
+        tabs
+      );
 
-        setPendingFileOperations((prev) => ({
-          filesToCreate: prev.filesToCreate.filter((f) => !tab.files.includes(f)),
-          filesToDelete: [...prev.filesToDelete, ...filesToDelete],
-        }));
-      } catch (error) {
-        logError('タブの削除に失敗しました:', error);
-        showAlert('タブの削除に失敗しました。', 'error');
-      }
+      setPendingFileOperations((prev) => ({
+        filesToCreate: prev.filesToCreate.filter((f) => !tab.files.includes(f)),
+        filesToDelete: [...prev.filesToDelete, ...filesToDelete],
+      }));
     },
     [
       editedSettings.dataFileTabs,

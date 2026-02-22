@@ -23,14 +23,7 @@ export class FileUtils {
    * テキストファイルを安全に書き込む（ディレクトリも自動作成）
    */
   static safeWriteTextFile(filePath: string, content: string): boolean {
-    try {
-      const dirPath = path.dirname(filePath);
-      this.ensureDirectory(dirPath);
-      fs.writeFileSync(filePath, content, 'utf8');
-      return true;
-    } catch (_error) {
-      return false;
-    }
+    return this.safeWriteFile(filePath, () => fs.writeFileSync(filePath, content, 'utf8'));
   }
 
   /**
@@ -61,27 +54,24 @@ export class FileUtils {
    * バイナリデータをファイルに書き込む（ディレクトリも自動作成）
    */
   static writeBinaryFile(filePath: string, data: Buffer): boolean {
-    try {
-      const dirPath = path.dirname(filePath);
-      this.ensureDirectory(dirPath);
-      fs.writeFileSync(filePath, data);
-      return true;
-    } catch (_error) {
-      return false;
-    }
+    return this.safeWriteFile(filePath, () => fs.writeFileSync(filePath, data));
   }
 
   /**
    * ファイルを安全にコピーする（コピー先ディレクトリも自動作成）
    */
   static safeCopyFile(sourcePath: string, targetPath: string): boolean {
+    if (!fs.existsSync(sourcePath)) {
+      return false;
+    }
+    return this.safeWriteFile(targetPath, () => fs.copyFileSync(sourcePath, targetPath));
+  }
+
+  /** ディレクトリ作成+書き込み操作の共通パターン */
+  private static safeWriteFile(filePath: string, writeFn: () => void): boolean {
     try {
-      if (!fs.existsSync(sourcePath)) {
-        return false;
-      }
-      const targetDir = path.dirname(targetPath);
-      this.ensureDirectory(targetDir);
-      fs.copyFileSync(sourcePath, targetPath);
+      this.ensureDirectory(path.dirname(filePath));
+      writeFn();
       return true;
     } catch (_error) {
       return false;

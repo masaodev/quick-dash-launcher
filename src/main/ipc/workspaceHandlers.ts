@@ -37,69 +37,86 @@ export function notifyWorkspaceChanged(): void {
 }
 
 /**
+ * WorkspaceServiceの操作を実行し、エラーログとリスローを行う共通ヘルパー
+ */
+async function withWorkspaceService<T>(
+  action: (service: WorkspaceService) => Promise<T>,
+  errorMsg: string,
+  errorContext?: Record<string, unknown>
+): Promise<T> {
+  try {
+    const workspaceService = await WorkspaceService.getInstance();
+    return await action(workspaceService);
+  } catch (error) {
+    logger.error({ error, ...errorContext }, errorMsg);
+    throw error;
+  }
+}
+
+/**
+ * WorkspaceServiceの変更操作を実行し、成功時にnotifyWorkspaceChangedを呼び出す
+ */
+async function withWorkspaceChange<T = void>(
+  action: (service: WorkspaceService) => Promise<T>,
+  logMsg: string,
+  errorMsg: string,
+  logContext?: Record<string, unknown>,
+  errorContext?: Record<string, unknown>
+): Promise<{ success: true } & Record<string, unknown>> {
+  const result = await withWorkspaceService(
+    async (service) => {
+      const actionResult = await action(service);
+      logger.info(logContext ?? {}, logMsg);
+      notifyWorkspaceChanged();
+      return actionResult;
+    },
+    errorMsg,
+    errorContext
+  );
+
+  if (result && typeof result === 'object') {
+    return { success: true, ...result } as { success: true } & Record<string, unknown>;
+  }
+  return { success: true };
+}
+
+/**
  * ワークスペース関連のIPCハンドラーを設定
  */
 export function setupWorkspaceHandlers(): void {
-  /**
-   * ワークスペースアイテムを全て取得
-   */
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_LOAD_ITEMS, async () => {
-    try {
-      const workspaceService = await WorkspaceService.getInstance();
-      const items = await workspaceService.loadItems();
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_LOAD_ITEMS, () =>
+    withWorkspaceService(async (service) => {
+      const items = await service.loadItems();
       logger.info({ count: items.length }, 'Loaded workspace items');
       return items;
-    } catch (error) {
-      logger.error({ error }, 'Failed to load workspace items');
-      throw error;
-    }
-  });
-
-  /**
-   * ワークスペースにアイテムを追加
-   */
-  ipcMain.handle(
-    IPC_CHANNELS.WORKSPACE_ADD_ITEM,
-    async (_event, item: AppItem, groupId?: string) => {
-      try {
-        const workspaceService = await WorkspaceService.getInstance();
-        const addedItem = await workspaceService.addItem(item, groupId);
-        logger.info(
-          { id: addedItem.id, name: addedItem.displayName, groupId },
-          'Added item to workspace'
-        );
-        notifyWorkspaceChanged();
-        return addedItem;
-      } catch (error) {
-        logger.error({ error }, 'Failed to add item to workspace');
-        throw error;
-      }
-    }
+    }, 'Failed to load workspace items')
   );
 
-  /**
-   * ファイルパスからワークスペースにアイテムを追加
-   * アイテムタイプに応じてアイコンを自動取得する
-   */
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_ADD_ITEM, (_event, item: AppItem, groupId?: string) =>
+    withWorkspaceService(async (service) => {
+      const addedItem = await service.addItem(item, groupId);
+      logger.info(
+        { id: addedItem.id, name: addedItem.displayName, groupId },
+        'Added item to workspace'
+      );
+      notifyWorkspaceChanged();
+      return addedItem;
+    }, 'Failed to add item to workspace')
+  );
+
   ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_ADD_ITEMS_FROM_PATHS,
-    async (_event, filePaths: string[], groupId?: string) => {
-      try {
-        const workspaceService = await WorkspaceService.getInstance();
+    (_event, filePaths: string[], groupId?: string) =>
+      withWorkspaceService(async (service) => {
         const addedItems: WorkspaceItem[] = [];
-
-        // アイコンキャッシュフォルダのパスを取得
         const iconsFolder = PathManager.getAppsFolder();
         const extensionsFolder = PathManager.getExtensionsFolder();
 
         for (const filePath of filePaths) {
           try {
             const itemType = detectItemTypeSync(filePath);
-
-            // アイコンをキャッシュに保存（アイコンはキャッシュフォルダから参照される）
             await getIconForItem(filePath, itemType, iconsFolder, extensionsFolder);
-
-            const addedItem = await workspaceService.addItemFromPath(filePath, groupId);
+            const addedItem = await service.addItemFromPath(filePath, groupId);
             addedItems.push(addedItem);
             logger.info(
               { id: addedItem.id, name: addedItem.displayName, path: filePath, type: itemType },
@@ -115,82 +132,51 @@ export function setupWorkspaceHandlers(): void {
         }
 
         return addedItems;
-      } catch (error) {
-        logger.error({ error }, 'Failed to add items from paths to workspace');
-        throw error;
-      }
-    }
+      }, 'Failed to add items from paths to workspace')
   );
 
-  /**
-   * ワークスペースからアイテムを削除
-   */
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_REMOVE_ITEM, async (_event, id: string) => {
-    try {
-      const workspaceService = await WorkspaceService.getInstance();
-      await workspaceService.removeItem(id);
-      logger.info({ id }, 'Removed item from workspace');
-      notifyWorkspaceChanged();
-      return { success: true };
-    } catch (error) {
-      logger.error({ error, id }, 'Failed to remove item from workspace');
-      throw error;
-    }
-  });
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_REMOVE_ITEM, (_event, id: string) =>
+    withWorkspaceChange(
+      (service) => service.removeItem(id),
+      'Removed item from workspace',
+      'Failed to remove item from workspace',
+      { id },
+      { id }
+    )
+  );
 
-  /**
-   * ワークスペースアイテムの表示名を更新
-   */
   ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_UPDATE_DISPLAY_NAME,
-    async (_event, id: string, displayName: string) => {
-      try {
-        const workspaceService = await WorkspaceService.getInstance();
-        await workspaceService.updateDisplayName(id, displayName);
-        logger.info({ id, displayName }, 'Updated workspace item display name');
-        notifyWorkspaceChanged();
-        return { success: true };
-      } catch (error) {
-        logger.error({ error, id }, 'Failed to update workspace item display name');
-        throw error;
-      }
-    }
+    (_event, id: string, displayName: string) =>
+      withWorkspaceChange(
+        (service) => service.updateDisplayName(id, displayName),
+        'Updated workspace item display name',
+        'Failed to update workspace item display name',
+        { id, displayName },
+        { id }
+      )
   );
 
-  /**
-   * ワークスペースアイテムを更新（全フィールド対応）
-   */
   ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_UPDATE_ITEM,
-    async (_event, id: string, updates: Partial<WorkspaceItem>) => {
-      try {
-        const workspaceService = await WorkspaceService.getInstance();
-        await workspaceService.updateItem(id, updates);
-        logger.info({ id, updates }, 'Updated workspace item');
-        notifyWorkspaceChanged();
-        return { success: true };
-      } catch (error) {
-        logger.error({ error, id }, 'Failed to update workspace item');
-        throw error;
-      }
-    }
+    (_event, id: string, updates: Partial<WorkspaceItem>) =>
+      withWorkspaceChange(
+        (service) => service.updateItem(id, updates),
+        'Updated workspace item',
+        'Failed to update workspace item',
+        { id, updates },
+        { id }
+      )
   );
 
-  /**
-   * ワークスペースアイテムの並び順を変更
-   */
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_REORDER_ITEMS, async (_event, itemIds: string[]) => {
-    try {
-      const workspaceService = await WorkspaceService.getInstance();
-      await workspaceService.reorderItems(itemIds);
-      logger.info({ count: itemIds.length }, 'Reordered workspace items');
-      notifyWorkspaceChanged();
-      return { success: true };
-    } catch (error) {
-      logger.error({ error }, 'Failed to reorder workspace items');
-      throw error;
-    }
-  });
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_REORDER_ITEMS, (_event, itemIds: string[]) =>
+    withWorkspaceChange(
+      (service) => service.reorderItems(itemIds),
+      'Reordered workspace items',
+      'Failed to reorder workspace items',
+      { count: itemIds.length }
+    )
+  );
 
   /**
    * ワークスペースアイテムを起動
@@ -379,285 +365,196 @@ export function setupWorkspaceHandlers(): void {
 
   // ==================== グループ管理ハンドラー ====================
 
-  /**
-   * ワークスペースグループを全て取得
-   */
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_LOAD_GROUPS, async () => {
-    try {
-      const workspaceService = await WorkspaceService.getInstance();
-      const groups = await workspaceService.loadGroups();
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_LOAD_GROUPS, () =>
+    withWorkspaceService(async (service) => {
+      const groups = await service.loadGroups();
       logger.info({ count: groups.length }, 'Loaded workspace groups');
       return groups;
-    } catch (error) {
-      logger.error({ error }, 'Failed to load workspace groups');
-      throw error;
-    }
-  });
+    }, 'Failed to load workspace groups')
+  );
 
-  /**
-   * 新しいグループを作成
-   */
   ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_CREATE_GROUP,
-    async (_event, name: string, color?: string, parentGroupId?: string) => {
-      try {
-        const workspaceService = await WorkspaceService.getInstance();
-        const group = await workspaceService.createGroup(name, color, parentGroupId);
-        logger.info(
-          { id: group.id, name: group.displayName, parentGroupId },
-          'Created workspace group'
-        );
-        notifyWorkspaceChanged();
-        return group;
-      } catch (error) {
-        logger.error({ error, name }, 'Failed to create workspace group');
-        throw error;
-      }
-    }
+    (_event, name: string, color?: string, parentGroupId?: string) =>
+      withWorkspaceService(
+        async (service) => {
+          const group = await service.createGroup(name, color, parentGroupId);
+          logger.info(
+            { id: group.id, name: group.displayName, parentGroupId },
+            'Created workspace group'
+          );
+          notifyWorkspaceChanged();
+          return group;
+        },
+        'Failed to create workspace group',
+        { name }
+      )
   );
 
-  /**
-   * グループを更新
-   */
   ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_UPDATE_GROUP,
-    async (_event, id: string, updates: Partial<WorkspaceGroup>) => {
-      try {
-        const workspaceService = await WorkspaceService.getInstance();
-        await workspaceService.updateGroup(id, updates);
-        logger.info({ id, updates }, 'Updated workspace group');
-        notifyWorkspaceChanged();
-        return { success: true };
-      } catch (error) {
-        logger.error({ error, id }, 'Failed to update workspace group');
-        throw error;
-      }
-    }
+    (_event, id: string, updates: Partial<WorkspaceGroup>) =>
+      withWorkspaceChange(
+        (service) => service.updateGroup(id, updates),
+        'Updated workspace group',
+        'Failed to update workspace group',
+        { id, updates },
+        { id }
+      )
   );
 
-  /**
-   * グループを削除
-   */
-  ipcMain.handle(
-    IPC_CHANNELS.WORKSPACE_DELETE_GROUP,
-    async (_event, id: string, deleteItems: boolean) => {
-      try {
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_DELETE_GROUP, (_event, id: string, deleteItems: boolean) =>
+    withWorkspaceService(
+      async (service) => {
         await closeDetachedWindowsForGroup(id);
-        const workspaceService = await WorkspaceService.getInstance();
-        await workspaceService.deleteGroup(id, deleteItems);
+        await service.deleteGroup(id, deleteItems);
         logger.info({ id, deleteItems }, 'Deleted workspace group');
         notifyWorkspaceChanged();
         return { success: true };
-      } catch (error) {
-        logger.error({ error, id }, 'Failed to delete workspace group');
-        throw error;
-      }
-    }
+      },
+      'Failed to delete workspace group',
+      { id }
+    )
   );
 
-  /**
-   * グループの並び順を変更
-   */
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_REORDER_GROUPS, async (_event, groupIds: string[]) => {
-    try {
-      const workspaceService = await WorkspaceService.getInstance();
-      await workspaceService.reorderGroups(groupIds);
-      logger.info({ count: groupIds.length }, 'Reordered workspace groups');
-      notifyWorkspaceChanged();
-      return { success: true };
-    } catch (error) {
-      logger.error({ error }, 'Failed to reorder workspace groups');
-      throw error;
-    }
-  });
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_REORDER_GROUPS, (_event, groupIds: string[]) =>
+    withWorkspaceChange(
+      (service) => service.reorderGroups(groupIds),
+      'Reordered workspace groups',
+      'Failed to reorder workspace groups',
+      { count: groupIds.length }
+    )
+  );
 
-  /**
-   * サブグループとアイテムの混在並べ替え
-   */
   ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_REORDER_MIXED,
-    async (_event, parentGroupId: string | undefined, entries: MixedOrderEntry[]) => {
-      try {
-        const workspaceService = await WorkspaceService.getInstance();
-        await workspaceService.reorderMixed(parentGroupId, entries);
-        logger.info({ parentGroupId, count: entries.length }, 'Reordered mixed children');
-        notifyWorkspaceChanged();
-        return { success: true };
-      } catch (error) {
-        logger.error({ error }, 'Failed to reorder mixed children');
-        throw error;
-      }
-    }
+    (_event, parentGroupId: string | undefined, entries: MixedOrderEntry[]) =>
+      withWorkspaceChange(
+        (service) => service.reorderMixed(parentGroupId, entries),
+        'Reordered mixed children',
+        'Failed to reorder mixed children',
+        { parentGroupId, count: entries.length }
+      )
   );
 
-  /**
-   * 複数グループのcollapsed状態を一括更新
-   */
   ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_SET_GROUPS_COLLAPSED,
-    async (_event, ids: string[], collapsed: boolean) => {
-      try {
-        const workspaceService = await WorkspaceService.getInstance();
-        await workspaceService.setGroupsCollapsed(ids, collapsed);
-        logger.info({ count: ids.length, collapsed }, 'Batch updated groups collapsed state');
-        notifyWorkspaceChanged();
-        return { success: true };
-      } catch (error) {
-        logger.error({ error, ids, collapsed }, 'Failed to batch update groups collapsed state');
-        throw error;
-      }
-    }
+    (_event, ids: string[], collapsed: boolean) =>
+      withWorkspaceChange(
+        (service) => service.setGroupsCollapsed(ids, collapsed),
+        'Batch updated groups collapsed state',
+        'Failed to batch update groups collapsed state',
+        { count: ids.length, collapsed },
+        { ids, collapsed }
+      )
   );
 
-  /**
-   * アイテムをグループに移動
-   */
   ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_MOVE_ITEM_TO_GROUP,
-    async (_event, itemId: string, groupId?: string) => {
-      try {
-        const workspaceService = await WorkspaceService.getInstance();
-        await workspaceService.moveItemToGroup(itemId, groupId);
-        logger.info({ itemId, groupId }, 'Moved item to group');
-        notifyWorkspaceChanged();
-        return { success: true };
-      } catch (error) {
-        logger.error({ error, itemId, groupId }, 'Failed to move item to group');
-        throw error;
-      }
-    }
+    (_event, itemId: string, groupId?: string) =>
+      withWorkspaceChange(
+        (service) => service.moveItemToGroup(itemId, groupId),
+        'Moved item to group',
+        'Failed to move item to group',
+        { itemId, groupId },
+        { itemId, groupId }
+      )
   );
 
-  /**
-   * グループを別の親グループに移動
-   */
   ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_MOVE_GROUP_TO_PARENT,
-    async (_event, groupId: string, newParentGroupId?: string) => {
-      try {
-        const workspaceService = await WorkspaceService.getInstance();
-        await workspaceService.moveGroupToParent(groupId, newParentGroupId);
-        logger.info({ groupId, newParentGroupId }, 'Moved group to new parent');
-        notifyWorkspaceChanged();
-        return { success: true };
-      } catch (error) {
-        logger.error({ error, groupId, newParentGroupId }, 'Failed to move group to parent');
-        throw error;
-      }
-    }
+    (_event, groupId: string, newParentGroupId?: string) =>
+      withWorkspaceChange(
+        (service) => service.moveGroupToParent(groupId, newParentGroupId),
+        'Moved group to new parent',
+        'Failed to move group to parent',
+        { groupId, newParentGroupId },
+        { groupId, newParentGroupId }
+      )
   );
 
   // ==================== アーカイブ管理ハンドラー ====================
 
-  /**
-   * グループとそのアイテムをアーカイブ
-   */
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_ARCHIVE_GROUP, async (_event, groupId: string) => {
-    try {
-      await closeDetachedWindowsForGroup(groupId);
-      const workspaceService = await WorkspaceService.getInstance();
-      await workspaceService.archiveGroup(groupId);
-      logger.info({ groupId }, 'Archived workspace group');
-      notifyWorkspaceChanged();
-      return { success: true };
-    } catch (error) {
-      logger.error({ error, groupId }, 'Failed to archive workspace group');
-      throw error;
-    }
-  });
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_ARCHIVE_GROUP, (_event, groupId: string) =>
+    withWorkspaceService(
+      async (service) => {
+        await closeDetachedWindowsForGroup(groupId);
+        await service.archiveGroup(groupId);
+        logger.info({ groupId }, 'Archived workspace group');
+        notifyWorkspaceChanged();
+        return { success: true };
+      },
+      'Failed to archive workspace group',
+      { groupId }
+    )
+  );
 
-  /**
-   * アーカイブされたグループ一覧を取得
-   */
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_LOAD_ARCHIVED_GROUPS, async () => {
-    try {
-      const workspaceService = await WorkspaceService.getInstance();
-      const archivedGroups = await workspaceService.loadArchivedGroups();
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_LOAD_ARCHIVED_GROUPS, () =>
+    withWorkspaceService(async (service) => {
+      const archivedGroups = await service.loadArchivedGroups();
       logger.info({ count: archivedGroups.length }, 'Loaded archived groups');
       return archivedGroups;
-    } catch (error) {
-      logger.error({ error }, 'Failed to load archived groups');
-      throw error;
-    }
-  });
+    }, 'Failed to load archived groups')
+  );
 
-  /**
-   * アーカイブされたグループを復元
-   */
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_RESTORE_GROUP, async (_event, groupId: string) => {
-    try {
-      const workspaceService = await WorkspaceService.getInstance();
-      await workspaceService.restoreGroup(groupId);
-      logger.info({ groupId }, 'Restored workspace group from archive');
-      notifyWorkspaceChanged();
-      return { success: true };
-    } catch (error) {
-      logger.error({ error, groupId }, 'Failed to restore workspace group');
-      throw error;
-    }
-  });
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_RESTORE_GROUP, (_event, groupId: string) =>
+    withWorkspaceChange(
+      (service) => service.restoreGroup(groupId),
+      'Restored workspace group from archive',
+      'Failed to restore workspace group',
+      { groupId },
+      { groupId }
+    )
+  );
 
-  /**
-   * アーカイブされたグループを完全削除
-   */
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_DELETE_ARCHIVED_GROUP, async (_event, groupId: string) => {
-    try {
-      const workspaceService = await WorkspaceService.getInstance();
-      await workspaceService.deleteArchivedGroup(groupId);
-      logger.info({ groupId }, 'Deleted archived workspace group permanently');
-      notifyWorkspaceChanged();
-      return { success: true };
-    } catch (error) {
-      logger.error({ error, groupId }, 'Failed to delete archived workspace group');
-      throw error;
-    }
-  });
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_DELETE_ARCHIVED_GROUP, (_event, groupId: string) =>
+    withWorkspaceChange(
+      (service) => service.deleteArchivedGroup(groupId),
+      'Deleted archived workspace group permanently',
+      'Failed to delete archived workspace group',
+      { groupId },
+      { groupId }
+    )
+  );
 
   // ==================== 切り離しウィンドウ状態ハンドラー ====================
 
-  ipcMain.handle(
-    IPC_CHANNELS.WORKSPACE_LOAD_DETACHED_STATE,
-    async (_event, rootGroupId: string) => {
-      try {
-        const workspaceService = await WorkspaceService.getInstance();
-        return await workspaceService.loadDetachedWindowState(rootGroupId);
-      } catch (error) {
-        logger.error({ error, rootGroupId }, 'Failed to load detached window state');
-        throw error;
-      }
-    }
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_LOAD_DETACHED_STATE, (_event, rootGroupId: string) =>
+    withWorkspaceService(
+      (service) => service.loadDetachedWindowState(rootGroupId),
+      'Failed to load detached window state',
+      { rootGroupId }
+    )
   );
 
   ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_SAVE_DETACHED_COLLAPSED,
-    async (_event, rootGroupId: string, states: Record<string, boolean>) => {
-      try {
-        const workspaceService = await WorkspaceService.getInstance();
-        await workspaceService.saveDetachedCollapsedStates(rootGroupId, states);
-        return { success: true };
-      } catch (error) {
-        logger.error({ error, rootGroupId }, 'Failed to save detached collapsed states');
-        throw error;
-      }
-    }
+    (_event, rootGroupId: string, states: Record<string, boolean>) =>
+      withWorkspaceService(
+        async (service) => {
+          await service.saveDetachedCollapsedStates(rootGroupId, states);
+          return { success: true };
+        },
+        'Failed to save detached collapsed states',
+        { rootGroupId }
+      )
   );
 
   ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_SAVE_DETACHED_BOUNDS,
-    async (
+    (
       _event,
       rootGroupId: string,
       bounds: { x: number; y: number; width: number; height: number }
-    ) => {
-      try {
-        const workspaceService = await WorkspaceService.getInstance();
-        await workspaceService.saveDetachedBounds(rootGroupId, bounds);
-        return { success: true };
-      } catch (error) {
-        logger.error({ error, rootGroupId }, 'Failed to save detached bounds');
-        throw error;
-      }
-    }
+    ) =>
+      withWorkspaceService(
+        async (service) => {
+          await service.saveDetachedBounds(rootGroupId, bounds);
+          return { success: true };
+        },
+        'Failed to save detached bounds',
+        { rootGroupId }
+      )
   );
 
   logger.info('Workspace IPC handlers registered');
