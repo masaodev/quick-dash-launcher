@@ -824,24 +824,26 @@ html:has(.workspace-window.background-transparent) {
    （overflow: auto だと -webkit-app-region: drag が機能しない Chromium バグの回避も兼ねる） */
 .detached-group-window .workspace-item-list {
   overflow: visible;
-  padding: var(--spacing-xs) var(--spacing-sm) var(--spacing-xs) var(--spacing-2xl);
+  padding: 14px 32px var(--spacing-xs) var(--spacing-sm);
   -webkit-app-region: drag;
   position: relative;
 }
 
-/* 左端のドラッグハンドル（⋮⋮） */
+/* 右端のドラッグハンドル（⋮⋮） */
 .detached-group-window .workspace-item-list::before {
   content: '⋮⋮';
   position: absolute;
-  left: 0;
-  top: var(--spacing-sm);
-  width: var(--spacing-2xl);
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 32px;
   color: var(--color-gray-600);
   font-size: var(--font-size-base);
   font-weight: bold;
   cursor: move;
   user-select: none;
   text-align: center;
+  padding-top: 18px;
 }
 
 /* 子要素はドラッグ対象外（クリック操作を有効にする） */
@@ -849,33 +851,19 @@ html:has(.workspace-window.background-transparent) {
   -webkit-app-region: no-drag;
 }
 
-/* --- ルートグループヘッダー（ドラッグ領域） --- */
+/* --- ルートグループヘッダー --- */
 
 .workspace-group-header.detached-root {
   padding-right: 64px;
-  -webkit-app-region: drag;
-  cursor: move;
 }
 
 .workspace-group-header.detached-root .workspace-group-badge {
   right: 32px;
 }
 
-.workspace-group-header.detached-root .workspace-group-name,
-.workspace-group-header.detached-root .workspace-group-name-input {
-  -webkit-app-region: no-drag;
-}
-
-.workspace-group-header.detached-root .workspace-group-name {
-  flex: 0 1 auto;
-  max-width: 90%;
-  cursor: pointer;
-}
-
 /* --- 閉じるボタン --- */
 
 .detached-group-close-btn {
-  -webkit-app-region: no-drag;
   position: absolute;
   right: var(--spacing-xs);
   top: 50%;
