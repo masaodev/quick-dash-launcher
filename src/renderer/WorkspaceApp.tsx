@@ -35,6 +35,7 @@ type DeleteGroupDialog = {
   isOpen: boolean;
   groupId: string | null;
   itemCount: number;
+  subgroupCount: number;
   deleteItems: boolean;
 };
 
@@ -42,12 +43,14 @@ type ArchiveGroupDialog = {
   isOpen: boolean;
   groupId: string | null;
   itemCount: number;
+  subgroupCount: number;
 };
 
 const INITIAL_DELETE_DIALOG: DeleteGroupDialog = {
   isOpen: false,
   groupId: null,
   itemCount: 0,
+  subgroupCount: 0,
   deleteItems: false,
 };
 
@@ -55,6 +58,7 @@ const INITIAL_ARCHIVE_DIALOG: ArchiveGroupDialog = {
   isOpen: false,
   groupId: null,
   itemCount: 0,
+  subgroupCount: 0,
 };
 
 const WorkspaceApp: React.FC = () => {
@@ -134,18 +138,25 @@ const WorkspaceApp: React.FC = () => {
     }
   }, [deleteGroupDialog.isOpen, archiveGroupDialog.isOpen, editModalItem]);
 
-  /** グループとそのサブグループに含まれるアイテム数を算出 */
-  const countGroupItems = (groupId: string): number => {
+  /** グループとそのサブグループに含まれるアイテム数・サブグループ数を算出 */
+  const getGroupStats = (groupId: string): { itemCount: number; subgroupCount: number } => {
     const descendantIds = getDescendantGroupIds(groupId, groups);
     const allGroupIds = new Set([groupId, ...descendantIds]);
-    return items.filter((item) => item.groupId && allGroupIds.has(item.groupId)).length;
+    const itemCount = items.filter((item) => item.groupId && allGroupIds.has(item.groupId)).length;
+    return { itemCount, subgroupCount: descendantIds.length };
   };
 
   const handleDeleteGroup = async (groupId: string) => {
     try {
-      const itemCount = countGroupItems(groupId);
-      if (itemCount > 0) {
-        setDeleteGroupDialog({ isOpen: true, groupId, itemCount, deleteItems: false });
+      const { itemCount, subgroupCount } = getGroupStats(groupId);
+      if (itemCount > 0 || subgroupCount > 0) {
+        setDeleteGroupDialog({
+          isOpen: true,
+          groupId,
+          itemCount,
+          subgroupCount,
+          deleteItems: false,
+        });
       } else {
         await actions.handleDeleteGroup(groupId, false);
       }
@@ -166,7 +177,13 @@ const WorkspaceApp: React.FC = () => {
   };
 
   const handleArchiveGroup = (groupId: string): void => {
-    setArchiveGroupDialog({ isOpen: true, groupId, itemCount: countGroupItems(groupId) });
+    const { itemCount, subgroupCount } = getGroupStats(groupId);
+    setArchiveGroupDialog({
+      isOpen: true,
+      groupId,
+      itemCount,
+      subgroupCount,
+    });
   };
 
   const handleConfirmArchiveGroup = async () => {
@@ -400,7 +417,7 @@ const WorkspaceApp: React.FC = () => {
         onClose={() => setDeleteGroupDialog(INITIAL_DELETE_DIALOG)}
         onConfirm={handleConfirmDeleteGroup}
         title="グループの削除"
-        message={`「${groups.find((g) => g.id === deleteGroupDialog.groupId)?.displayName}」を削除してもよろしいですか？\n\nこのグループには${deleteGroupDialog.itemCount}個のアイテムが含まれています。`}
+        message={`「${groups.find((g) => g.id === deleteGroupDialog.groupId)?.displayName}」を削除してもよろしいですか？\n\nこのグループには${deleteGroupDialog.subgroupCount > 0 ? `サブグループ${deleteGroupDialog.subgroupCount}個と、` : ''}${deleteGroupDialog.itemCount}個のアイテムが含まれています。`}
         confirmText="削除"
         cancelText="キャンセル"
         danger={true}
@@ -419,7 +436,7 @@ const WorkspaceApp: React.FC = () => {
         onClose={() => setArchiveGroupDialog(INITIAL_ARCHIVE_DIALOG)}
         onConfirm={handleConfirmArchiveGroup}
         title="グループのアーカイブ"
-        message={`「${groups.find((g) => g.id === archiveGroupDialog.groupId)?.displayName}」をアーカイブしてもよろしいですか？\n\nこのグループには${archiveGroupDialog.itemCount}個のアイテムが含まれています。\nアーカイブしたグループは後で復元できます。`}
+        message={`「${groups.find((g) => g.id === archiveGroupDialog.groupId)?.displayName}」をアーカイブしてもよろしいですか？\n\nこのグループには${archiveGroupDialog.subgroupCount > 0 ? `サブグループ${archiveGroupDialog.subgroupCount}個と、` : ''}${archiveGroupDialog.itemCount}個のアイテムが含まれています。\nアーカイブしたグループは後で復元できます。`}
         confirmText="アーカイブ"
         cancelText="キャンセル"
         danger={false}

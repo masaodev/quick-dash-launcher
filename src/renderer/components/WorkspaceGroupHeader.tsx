@@ -188,6 +188,7 @@ function WorkspaceGroupHeader({
             onCloseDetached();
           }}
           title="閉じる"
+          aria-label="切り離しウィンドウを閉じる"
         >
           ×
         </button>
