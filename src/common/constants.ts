@@ -14,6 +14,17 @@ export const GROUP_LAUNCH_DELAY_MS = 100;
  */
 export const MAX_BOOKMARK_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
+/** 階層深さごとのグループデフォルト色 */
+const GROUP_DEFAULT_COLORS_BY_DEPTH: Record<number, string> = {
+  0: 'var(--color-primary)',
+  1: '#00897b',
+  2: 'var(--color-secondary)',
+};
+
+export function getDefaultGroupColor(depth: number): string {
+  return GROUP_DEFAULT_COLORS_BY_DEPTH[depth] ?? 'var(--color-primary)';
+}
+
 /**
  * デスクトップタブのID定数
  */

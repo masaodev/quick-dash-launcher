@@ -188,7 +188,7 @@ export class WorkspaceService {
 
   public async createGroup(
     name: string,
-    color: string = 'var(--color-primary)',
+    color?: string,
     parentGroupId?: string
   ): Promise<WorkspaceGroup> {
     await this.initializeStore();

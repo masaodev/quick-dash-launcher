@@ -12,6 +12,7 @@ import {
   getSubtreeMaxDepth,
   MAX_GROUP_DEPTH,
 } from '@common/utils/groupTreeUtils';
+import { getDefaultGroupColor } from '@common/constants';
 
 import type { WorkspaceStoreInstance } from './types.js';
 import { migrateGroupDisplayName } from './migrationUtils.js';
@@ -53,15 +54,11 @@ export class WorkspaceGroupManager {
   /**
    * 新しいグループを作成
    * @param name グループ名
-   * @param color グループの色（デフォルト: var(--color-primary)）
+   * @param color グループの色（省略時は階層に応じたデフォルト色）
    * @param parentGroupId 親グループID（省略時はトップレベル）
    * @returns 作成されたWorkspaceGroup
    */
-  public createGroup(
-    name: string,
-    color: string = 'var(--color-primary)',
-    parentGroupId?: string
-  ): WorkspaceGroup {
+  public createGroup(name: string, color?: string, parentGroupId?: string): WorkspaceGroup {
     try {
       const groups = this.loadGroups();
 
@@ -76,6 +73,9 @@ export class WorkspaceGroupManager {
         }
       }
 
+      const depth = parentGroupId ? getGroupDepth(parentGroupId, groups) + 1 : 0;
+      const resolvedColor = color ?? getDefaultGroupColor(depth);
+
       // 同一親内での最大orderを計算
       const siblingGroups = groups.filter((g) => g.parentGroupId === parentGroupId);
       const maxOrder =
@@ -84,7 +84,7 @@ export class WorkspaceGroupManager {
       const workspaceGroup: WorkspaceGroup = {
         id: randomUUID(),
         displayName: name,
-        color,
+        color: resolvedColor,
         order: maxOrder + 1,
         collapsed: false,
         createdAt: Date.now(),
