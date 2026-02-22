@@ -56,6 +56,7 @@ export class SettingsService {
     itemSearchHotkey: '',
     bookmarkAutoImport: DEFAULT_BOOKMARK_AUTO_IMPORT_SETTINGS,
     hideDetachedWithMainWindow: true,
+    windowSnapEnabled: true,
   };
 
   private constructor() {}

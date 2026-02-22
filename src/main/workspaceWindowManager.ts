@@ -9,6 +9,7 @@ import { EnvConfig } from './config/envConfig.js';
 import PathManager from './config/pathManager.js';
 import { calculateModalSize } from './utils/modalSizeManager.js';
 import { pinWindow, unPinWindow } from './utils/virtualDesktop/index.js';
+import { attachSnapHandler } from './utils/windowSnap.js';
 import { restoreDetachedWindows } from './detachedGroupWindowManager.js';
 
 let workspaceWindow: BrowserWindow | null = null;
@@ -18,6 +19,7 @@ let detachedRestored: boolean = false;
 let isWorkspacePinned: boolean = false;
 let isWorkspaceFocused: boolean = false;
 let normalWorkspaceWindowBounds: { width: number; height: number } | null = null;
+let windowSnapEnabled: boolean = true;
 
 /**
  * ワークスペースウィンドウを作成し、初期設定を行う
@@ -36,6 +38,7 @@ export async function createWorkspaceWindow(): Promise<BrowserWindow> {
   const settingsService = await SettingsService.getInstance();
   const opacity = await settingsService.get('workspaceOpacity');
   const backgroundTransparent = await settingsService.get('workspaceBackgroundTransparent');
+  windowSnapEnabled = await settingsService.get('windowSnapEnabled');
   const opacityValue = backgroundTransparent ? 1.0 : Math.max(0, Math.min(100, opacity)) / 100;
 
   workspaceWindow = new BrowserWindow({
@@ -114,6 +117,8 @@ export async function createWorkspaceWindow(): Promise<BrowserWindow> {
   });
 
   await setWorkspacePosition();
+
+  attachSnapHandler(workspaceWindow, () => windowSnapEnabled);
 
   windowLogger.info('ワークスペースウィンドウを作成しました');
   return workspaceWindow;
@@ -369,6 +374,11 @@ export function getWorkspaceWindow(): BrowserWindow | null {
 /** ワークスペースウィンドウにフォーカスがあるかどうかを返す */
 export function getIsWorkspaceWindowFocused(): boolean {
   return isWorkspaceFocused;
+}
+
+/** ウィンドウスナップの有効/無効キャッシュを更新する */
+export function setWindowSnapEnabled(enabled: boolean): void {
+  windowSnapEnabled = enabled;
 }
 
 /**

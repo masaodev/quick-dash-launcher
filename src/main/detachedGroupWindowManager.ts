@@ -7,6 +7,7 @@ import { EnvConfig } from './config/envConfig.js';
 import PathManager from './config/pathManager.js';
 import { SettingsService } from './services/settingsService.js';
 import { WorkspaceService } from './services/workspace/index.js';
+import { attachSnapHandler } from './utils/windowSnap.js';
 
 /**
  * 初回autofit前のフォールバック表示までの待機時間（ms）
@@ -24,6 +25,7 @@ type Bounds = { x: number; y: number; width: number; height: number };
 
 let isClosingAll = false;
 let isDetachedWindowFocused = false;
+let detachedWindowSnapEnabled: boolean = true;
 
 /** メインウィンドウ・ワークスペースウィンドウの状態チェック用コールバック（循環依存回避） */
 let isMainWindowVisibleFn: (() => boolean) | null = null;
@@ -38,6 +40,11 @@ export function setManagedWindowCheckers(checkers: {
 }): void {
   isMainWindowVisibleFn = checkers.isMainWindowVisible;
   isWorkspaceWindowFocusedFn = checkers.isWorkspaceWindowFocused;
+}
+
+/** 切り離しウィンドウのスナップ有効/無効キャッシュを更新する */
+export function setDetachedWindowSnapEnabled(enabled: boolean): void {
+  detachedWindowSnapEnabled = enabled;
 }
 
 /**
@@ -119,6 +126,14 @@ export async function createDetachedGroupWindow(
 
   const defaultWidth = 380;
   const defaultHeight = 200;
+
+  // スナップ設定キャッシュの初期化
+  try {
+    const settingsService = await SettingsService.getInstance();
+    detachedWindowSnapEnabled = await settingsService.get('windowSnapEnabled');
+  } catch {
+    // デフォルト値(true)のまま
+  }
 
   // 保存済み bounds の読み込みを試行
   let savedBounds: Bounds | null = null;
@@ -240,6 +255,8 @@ export async function createDetachedGroupWindow(
       win.webContents.toggleDevTools();
     }
   });
+
+  attachSnapHandler(win, () => detachedWindowSnapEnabled);
 
   // エントリの存在を確保（復元対象として認識されるように初期 bounds を保存）
   const initialBounds = win.getBounds();

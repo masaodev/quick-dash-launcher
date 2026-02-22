@@ -114,4 +114,6 @@ export interface AppSettings {
   bookmarkAutoImport: BookmarkAutoImportSettings;
   /** メインウィンドウ非表示時に切り離しウィンドウも連動して非表示にする（デフォルト: true） */
   hideDetachedWithMainWindow: boolean;
+  /** ウィンドウ吸着（モニター端へのスナップ）の有効/無効（デフォルト: true） */
+  windowSnapEnabled: boolean;
 }

@@ -606,6 +606,21 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                     10/11の仮想デスクトップ機能）。
                   </div>
                 </div>
+
+                <div className="setting-item">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={editedSettings.windowSnapEnabled}
+                      onChange={(e) => handleSettingChange('windowSnapEnabled', e.target.checked)}
+                      disabled={isLoading}
+                    />
+                    ウィンドウ吸着（モニター端へのスナップ）
+                  </label>
+                  <div className="setting-description">
+                    有効にすると、ワークスペースウィンドウや切り離しウィンドウをモニター端に近づけたとき、自動的に吸着します。
+                  </div>
+                </div>
               </div>
             </>
           )}
