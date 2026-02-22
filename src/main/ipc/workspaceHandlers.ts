@@ -4,6 +4,7 @@ import type { AppItem, WorkspaceItem, WorkspaceGroup, MixedOrderEntry } from '@c
 import { isLauncherItem, isWindowItem } from '@common/types/guards';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
+import { getDescendantGroupIds } from '@common/utils/groupTreeUtils';
 
 import { tryActivateWindow } from '../utils/windowActivator.js';
 import { launchItem } from '../utils/itemLauncher.js';
@@ -13,6 +14,18 @@ import { getIconForItem } from '../services/iconService.js';
 import { closeDetachedGroupWindow } from '../detachedGroupWindowManager.js';
 
 import { loadDataFiles } from './dataHandlers.js';
+
+/**
+ * 指定グループとその子孫の切り離しウィンドウをすべて閉じる
+ */
+async function closeDetachedWindowsForGroup(groupId: string): Promise<void> {
+  const workspaceService = await WorkspaceService.getInstance();
+  const groups = await workspaceService.loadGroups();
+  const descendantIds = getDescendantGroupIds(groupId, groups);
+  for (const id of [groupId, ...descendantIds]) {
+    closeDetachedGroupWindow(id);
+  }
+}
 
 /**
  * ワークスペース変更イベントを全てのウィンドウに送信
@@ -429,9 +442,9 @@ export function setupWorkspaceHandlers(): void {
     IPC_CHANNELS.WORKSPACE_DELETE_GROUP,
     async (_event, id: string, deleteItems: boolean) => {
       try {
+        await closeDetachedWindowsForGroup(id);
         const workspaceService = await WorkspaceService.getInstance();
         await workspaceService.deleteGroup(id, deleteItems);
-        closeDetachedGroupWindow(id);
         logger.info({ id, deleteItems }, 'Deleted workspace group');
         notifyWorkspaceChanged();
         return { success: true };
@@ -541,9 +554,9 @@ export function setupWorkspaceHandlers(): void {
    */
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_ARCHIVE_GROUP, async (_event, groupId: string) => {
     try {
+      await closeDetachedWindowsForGroup(groupId);
       const workspaceService = await WorkspaceService.getInstance();
       await workspaceService.archiveGroup(groupId);
-      closeDetachedGroupWindow(groupId);
       logger.info({ groupId }, 'Archived workspace group');
       notifyWorkspaceChanged();
       return { success: true };

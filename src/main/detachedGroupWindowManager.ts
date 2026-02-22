@@ -7,8 +7,11 @@ import { EnvConfig } from './config/envConfig.js';
 import PathManager from './config/pathManager.js';
 import { WorkspaceService } from './services/workspace/index.js';
 
-/** 初回autofit前のフォールバック表示までの待機時間（ms） */
-const SHOW_FALLBACK_TIMEOUT_MS = 1000;
+/**
+ * 初回autofit前のフォールバック表示までの待機時間（ms）
+ * windowManager.ts の WINDOW_FOCUS_STABILIZATION_DELAY_MS (1500ms) 以上にすること
+ */
+const SHOW_FALLBACK_TIMEOUT_MS = 1500;
 
 /** groupId → BrowserWindow */
 const detachedWindows = new Map<string, BrowserWindow>();
@@ -53,15 +56,21 @@ function resolveInitialPosition(
   if (savedBounds && isBoundsOnScreen(savedBounds)) {
     return { x: savedBounds.x, y: savedBounds.y };
   }
+  const w = windowWidth ?? 380;
+  const h = windowHeight ?? 200;
   if (cursorX !== undefined && cursorY !== undefined) {
-    const w = windowWidth ?? 380;
-    const h = windowHeight ?? 200;
     return {
       x: Math.max(0, Math.round(cursorX - w / 2)),
       y: Math.max(0, Math.round(cursorY - h / 4)),
     };
   }
-  return undefined;
+  // フォールバック: プライマリモニターの中央に配置
+  const primary = screen.getPrimaryDisplay();
+  const { x, y, width, height } = primary.workArea;
+  return {
+    x: Math.round(x + (width - w) / 2),
+    y: Math.round(y + (height - h) / 2),
+  };
 }
 
 /**
@@ -95,8 +104,8 @@ export async function createDetachedGroupWindow(
     if (state?.bounds && state.bounds.width > 0 && state.bounds.height > 0) {
       savedBounds = state.bounds;
     }
-  } catch {
-    // 読み込み失敗時は無視
+  } catch (error) {
+    windowLogger.warn({ error, groupId }, '切り離しウィンドウの保存済み bounds 読み込みに失敗');
   }
 
   const width = savedBounds?.width ?? defaultWidth;
@@ -159,8 +168,8 @@ export async function createDetachedGroupWindow(
       try {
         const ws = await WorkspaceService.getInstance();
         await ws.saveDetachedBounds(groupId, bounds);
-      } catch {
-        // 保存失敗は無視
+      } catch (error) {
+        windowLogger.warn({ error, groupId }, '切り離しウィンドウの bounds 保存に失敗');
       }
     }, 300);
   };
@@ -177,7 +186,9 @@ export async function createDetachedGroupWindow(
     if (!isClosingAll) {
       WorkspaceService.getInstance()
         .then((ws) => ws.removeDetachedWindowState(groupId))
-        .catch(() => {});
+        .catch((error) => {
+          windowLogger.warn({ error, groupId }, '切り離しウィンドウ状態の削除に失敗');
+        });
     }
     windowLogger.info(`切り離しウィンドウを閉じました: ${groupId}`);
   });
@@ -201,7 +212,9 @@ export async function createDetachedGroupWindow(
   const initialBounds = win.getBounds();
   WorkspaceService.getInstance()
     .then((ws) => ws.saveDetachedBounds(groupId, initialBounds))
-    .catch(() => {});
+    .catch((error) => {
+      windowLogger.warn({ error, groupId }, '切り離しウィンドウの初期 bounds 保存に失敗');
+    });
 
   windowLogger.info(`切り離しウィンドウを作成しました: ${groupId}`);
   return { success: true };
@@ -210,6 +223,12 @@ export async function createDetachedGroupWindow(
 function destroyWindowIfAlive(groupId: string): void {
   const win = detachedWindows.get(groupId);
   if (win && !win.isDestroyed()) {
+    // closed イベントに頼らず明示的にマップから削除
+    const wcId = win.webContents?.id;
+    if (wcId !== undefined) {
+      webContentsIdToGroupId.delete(wcId);
+    }
+    detachedWindows.delete(groupId);
     win.destroy();
     windowLogger.info(`切り離しウィンドウを破棄しました: ${groupId}`);
   }
