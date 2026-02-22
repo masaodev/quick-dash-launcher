@@ -154,8 +154,6 @@ function WorkspaceGroupHeader({
         ▼
       </span>
 
-      {group.customIcon && <span className="workspace-group-custom-icon">{group.customIcon}</span>}
-
       {isEditing ? (
         <input
           ref={inputRef}

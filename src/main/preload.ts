@@ -519,8 +519,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_DELETE, callback),
   onWorkspaceGroupMenuAddSubgroup: (callback: (groupId: string) => void) =>
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_ADD_SUBGROUP, callback),
-  onWorkspaceGroupMenuChangeIcon: (callback: (groupId: string) => void) =>
-    createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_CHANGE_ICON, callback),
   // ブックマーク自動取込API
   bookmarkAutoImportAPI: {
     getSettings: (): Promise<BookmarkAutoImportSettings> =>

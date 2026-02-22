@@ -204,7 +204,6 @@ export class WorkspaceArchiveManager {
         collapsed: archivedGroup.collapsed,
         createdAt: archivedGroup.createdAt,
         parentGroupId: parentExists ? archivedGroup.parentGroupId : undefined,
-        customIcon: archivedGroup.customIcon,
       };
 
       // サブグループを復元
@@ -216,7 +215,6 @@ export class WorkspaceArchiveManager {
         collapsed: sg.collapsed,
         createdAt: sg.createdAt,
         parentGroupId: sg.parentGroupId,
-        customIcon: sg.customIcon,
       }));
 
       // アイテムを復元（アーカイブ関連プロパティを削除）

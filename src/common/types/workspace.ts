@@ -20,8 +20,6 @@ export interface WorkspaceGroup {
   createdAt: number;
   /** 親グループID（undefinedならトップレベル = 後方互換） */
   parentGroupId?: string;
-  /** カスタムアイコン（emoji文字列） */
-  customIcon?: string;
 }
 
 /**

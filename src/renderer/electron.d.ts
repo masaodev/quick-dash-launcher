@@ -352,7 +352,6 @@ export interface ElectronAPI {
   onWorkspaceGroupMenuArchive: (callback: (groupId: string) => void) => () => void;
   onWorkspaceGroupMenuDelete: (callback: (groupId: string) => void) => () => void;
   onWorkspaceGroupMenuAddSubgroup: (callback: (groupId: string) => void) => () => void;
-  onWorkspaceGroupMenuChangeIcon: (callback: (groupId: string) => void) => () => void;
   // ブックマーク自動取込API
   bookmarkAutoImportAPI: {
     getSettings: () => Promise<BookmarkAutoImportSettings>;

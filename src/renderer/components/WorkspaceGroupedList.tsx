@@ -57,82 +57,6 @@ const ColorPickerModal: React.FC<{
   );
 };
 
-/**
- * アイコン選択モーダル（emoji入力）
- */
-const IconPickerModal: React.FC<{
-  currentIcon?: string;
-  onSelectIcon: (icon: string) => void;
-  onClearIcon: () => void;
-  onClose: () => void;
-}> = ({ currentIcon, onSelectIcon, onClearIcon, onClose }) => {
-  const [inputValue, setInputValue] = React.useState(currentIcon || '');
-  const inputRef = React.useRef<HTMLInputElement>(null);
-
-  React.useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
-
-  React.useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
-
-  const handleSubmit = () => {
-    if (inputValue.trim()) {
-      onSelectIcon(inputValue.trim());
-    }
-    onClose();
-  };
-
-  return (
-    <div className="modal-overlay-base" onClick={onClose} style={{ zIndex: 10000 }}>
-      <div className="icon-picker-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="icon-picker-header">アイコンを変更</div>
-        <div className="icon-picker-content">
-          <input
-            ref={inputRef}
-            type="text"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleSubmit();
-            }}
-            className="icon-picker-input"
-            placeholder="絵文字を入力..."
-            maxLength={2}
-          />
-          <div className="icon-picker-preview">
-            {inputValue && <span className="icon-picker-preview-emoji">{inputValue}</span>}
-          </div>
-        </div>
-        <div className="icon-picker-actions">
-          {currentIcon && (
-            <button
-              className="icon-picker-clear-btn"
-              onClick={() => {
-                onClearIcon();
-                onClose();
-              }}
-            >
-              クリア
-            </button>
-          )}
-          <button className="icon-picker-cancel-btn" onClick={onClose}>
-            キャンセル
-          </button>
-          <button className="icon-picker-ok-btn" onClick={handleSubmit}>
-            OK
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 interface WorkspaceGroupedListProps {
   contentRef?: React.Ref<HTMLDivElement>;
   data: {
@@ -212,7 +136,6 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
   } | null>(null);
   const [editingGroupId, setEditingGroupId] = React.useState<string | null>(null);
   const [colorPickerGroupId, setColorPickerGroupId] = React.useState<string | null>(null);
-  const [iconPickerGroupId, setIconPickerGroupId] = React.useState<string | null>(null);
   const [dragOverGroupId, setDragOverGroupId] = React.useState<string | null>(null);
   const dragOverTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -333,7 +256,6 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
         const childCount = groups.filter((g) => g.parentGroupId === parentGroupId).length;
         onAddSubgroup(parentGroupId, childCount);
       }),
-      window.electronAPI.onWorkspaceGroupMenuChangeIcon((groupId) => setIconPickerGroupId(groupId)),
     ];
 
     return () => cleanups.forEach((cleanup) => cleanup());
@@ -833,20 +755,6 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
               setColorPickerGroupId(null);
             }}
             onClose={() => setColorPickerGroupId(null)}
-          />
-        )}
-
-        {/* アイコンピッカー */}
-        {iconPickerGroupId && (
-          <IconPickerModal
-            currentIcon={groupsMap.get(iconPickerGroupId)?.customIcon}
-            onSelectIcon={(icon) => {
-              onUpdateGroup(iconPickerGroupId, { customIcon: icon });
-            }}
-            onClearIcon={() => {
-              onUpdateGroup(iconPickerGroupId, { customIcon: undefined });
-            }}
-            onClose={() => setIconPickerGroupId(null)}
           />
         )}
       </div>

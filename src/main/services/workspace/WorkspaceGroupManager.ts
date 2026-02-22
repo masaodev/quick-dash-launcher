@@ -125,7 +125,6 @@ export class WorkspaceGroupManager {
       if (updates.color !== undefined) group.color = updates.color;
       if (updates.collapsed !== undefined) group.collapsed = updates.collapsed;
       if (updates.parentGroupId !== undefined) group.parentGroupId = updates.parentGroupId;
-      if (updates.customIcon !== undefined) group.customIcon = updates.customIcon;
 
       this.store.set('groups', groups);
       logger.info({ id, updates }, 'Updated workspace group');

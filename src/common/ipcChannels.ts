@@ -240,7 +240,6 @@ export const IPC_CHANNELS = {
   EVENT_WORKSPACE_GROUP_MENU_ARCHIVE: 'workspace-group-menu-archive',
   EVENT_WORKSPACE_GROUP_MENU_DELETE: 'workspace-group-menu-delete',
   EVENT_WORKSPACE_GROUP_MENU_ADD_SUBGROUP: 'workspace-group-menu-add-subgroup',
-  EVENT_WORKSPACE_GROUP_MENU_CHANGE_ICON: 'workspace-group-menu-change-icon',
 
   // コンテキストメニュー - File Tab
   SHOW_FILE_TAB_CONTEXT_MENU: 'show-file-tab-context-menu',

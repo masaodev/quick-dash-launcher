@@ -353,14 +353,6 @@ function setupWorkspaceGroupContextMenuHandler(): void {
           group.id
         )
       );
-      menu.append(
-        createMenuItem(
-          '😀 アイコンを変更',
-          event.sender,
-          IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_CHANGE_ICON,
-          group.id
-        )
-      );
       menu.append(createSeparator());
       menu.append(
         createMenuItem(
