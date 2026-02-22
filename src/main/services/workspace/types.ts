@@ -27,6 +27,7 @@ export type WorkspaceStoreInstance = {
 export type DetachedWindowState = {
   collapsedStates: Record<string, boolean>;
   bounds: { x: number; y: number; width: number; height: number };
+  pinMode?: 0 | 1 | 2;
 };
 
 /**

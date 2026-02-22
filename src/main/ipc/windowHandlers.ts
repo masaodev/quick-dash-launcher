@@ -30,7 +30,11 @@ import {
   showWithoutFocus,
   hideAllDetachedGroupWindows,
   showAllDetachedGroupWindows,
+  getGroupIdByWebContentsId,
+  getDetachedPinMode,
+  cycleDetachedPinMode,
 } from '../detachedGroupWindowManager.js';
+import { WorkspaceService } from '../services/workspace/index.js';
 import { getTray } from '../windowManager.js';
 
 export function setupWindowHandlers(
@@ -168,6 +172,22 @@ export function setupWindowHandlers(
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_CLOSE_DETACHED_GROUP, (_event, groupId: string) =>
     closeDetachedGroupWindow(groupId)
   );
+
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_GET_CALLER_PIN_MODE, (event) => {
+    const groupId = getGroupIdByWebContentsId(event.sender.id);
+    if (!groupId) return 0;
+    return getDetachedPinMode(groupId);
+  });
+
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_CYCLE_CALLER_PIN_MODE, async (event) => {
+    const groupId = getGroupIdByWebContentsId(event.sender.id);
+    if (!groupId) return 0;
+    const newMode = cycleDetachedPinMode(groupId);
+    // ピンモードを永続化
+    const ws = await WorkspaceService.getInstance();
+    await ws.saveDetachedPinMode(groupId, newMode);
+    return newMode;
+  });
 
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_HIDE_ALL_DETACHED, () => hideAllDetachedGroupWindows());
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_SHOW_ALL_DETACHED, () => showAllDetachedGroupWindows());

@@ -64,6 +64,7 @@ const INITIAL_ARCHIVE_DIALOG: ArchiveGroupDialog = {
 const WorkspaceApp: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isPinned, setIsPinned] = useState(false);
+  const [detachedPinMode, setDetachedPinMode] = useState(0);
   const [backgroundTransparent, setBackgroundTransparent] = useState(false);
   const [activeGroupId, setActiveGroupId] = useState<string>();
   const [editModalItem, setEditModalItem] = useState<WorkspaceItem | null>(null);
@@ -113,7 +114,11 @@ const WorkspaceApp: React.FC = () => {
   const [archiveGroupDialog, setArchiveGroupDialog] = useState(INITIAL_ARCHIVE_DIALOG);
 
   useEffect(() => {
-    window.electronAPI.workspaceAPI.getAlwaysOnTop().then(setIsPinned);
+    if (isDetached) {
+      window.electronAPI.workspaceAPI.getCallerPinMode().then(setDetachedPinMode);
+    } else {
+      window.electronAPI.workspaceAPI.getAlwaysOnTop().then(setIsPinned);
+    }
 
     const syncBackgroundTransparent = async () => {
       const settings = await window.electronAPI.getSettings();
@@ -340,6 +345,34 @@ const WorkspaceApp: React.FC = () => {
     />
   ));
 
+  const handleCycleDetachedPin = async () => {
+    setDetachedPinMode(await window.electronAPI.workspaceAPI.cycleCallerPinMode());
+  };
+
+  /** ピンモードに応じたラベルを返す */
+  function getPinLabel(mode: number): string {
+    switch (mode) {
+      case 1:
+        return '最前面に固定';
+      case 2:
+        return 'ピン留め解除';
+      default:
+        return '表示固定';
+    }
+  }
+
+  /** ピンモードに応じたCSSクラスを返す */
+  function getPinClassName(mode: number): string {
+    switch (mode) {
+      case 1:
+        return 'workspace-pin-btn stay-visible';
+      case 2:
+        return 'workspace-pin-btn pinned';
+      default:
+        return 'workspace-pin-btn';
+    }
+  }
+
   // 切り離しウィンドウモード: 対象グループとその子孫のみ表示
   if (detachedGroupId) {
     const descendantIds = getDescendantGroupIds(detachedGroupId, groups);
@@ -357,10 +390,26 @@ const WorkspaceApp: React.FC = () => {
             ...commonUi,
             visibleGroupIds: detachedVisibleGroupIds,
             showUncategorized: false,
-            detachedRootGroupId: detachedGroupId,
-            onCloseDetached: handleCloseDetached,
           }}
         />
+        <div className="detached-window-controls">
+          <button
+            className={getPinClassName(detachedPinMode)}
+            onClick={handleCycleDetachedPin}
+            title={getPinLabel(detachedPinMode)}
+            aria-label={getPinLabel(detachedPinMode)}
+          >
+            📌
+          </button>
+          <button
+            className="workspace-close-btn"
+            onClick={handleCloseDetached}
+            title="閉じる"
+            aria-label="切り離しウィンドウを閉じる"
+          >
+            ×
+          </button>
+        </div>
         {editModal}
         {resizeHandles}
       </div>

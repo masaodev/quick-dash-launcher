@@ -319,6 +319,10 @@ export class WorkspaceService {
     await this.updateDetachedWindowState(rootGroupId, { bounds });
   }
 
+  public async saveDetachedPinMode(rootGroupId: string, pinMode: 0 | 1 | 2): Promise<void> {
+    await this.updateDetachedWindowState(rootGroupId, { pinMode });
+  }
+
   public async removeDetachedWindowState(rootGroupId: string): Promise<void> {
     await this.initializeStore();
     const windows = this.detachedStore!.get('windows');

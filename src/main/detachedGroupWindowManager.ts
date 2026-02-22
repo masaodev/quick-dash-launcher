@@ -15,8 +15,14 @@ import { attachSnapHandler } from './utils/windowSnap.js';
  */
 const SHOW_FALLBACK_TIMEOUT_MS = 1500;
 
+/** 切り離しウィンドウのピンモード: 0=通常, 1=表示固定, 2=最上面固定 */
+export type DetachedPinMode = 0 | 1 | 2;
+
 /** groupId → BrowserWindow */
 const detachedWindows = new Map<string, BrowserWindow>();
+
+/** groupId → ピンモード */
+const detachedPinModes = new Map<string, DetachedPinMode>();
 
 /** webContents.id → groupId（IPC応答用の逆引き） */
 const webContentsIdToGroupId = new Map<number, string>();
@@ -52,6 +58,29 @@ export function setDetachedWindowSnapEnabled(enabled: boolean): void {
  */
 export function getIsDetachedWindowFocused(): boolean {
   return isDetachedWindowFocused;
+}
+
+/**
+ * 指定グループの切り離しウィンドウのピンモードを取得する
+ */
+export function getDetachedPinMode(groupId: string): DetachedPinMode {
+  return detachedPinModes.get(groupId) ?? 0;
+}
+
+/**
+ * 指定グループの切り離しウィンドウのピンモードをサイクルする
+ * 0 → 1 → 2 → 0
+ */
+export function cycleDetachedPinMode(groupId: string): DetachedPinMode {
+  const current = detachedPinModes.get(groupId) ?? 0;
+  const next = ((current + 1) % 3) as DetachedPinMode;
+  detachedPinModes.set(groupId, next);
+
+  const win = detachedWindows.get(groupId);
+  if (win && !win.isDestroyed()) {
+    win.setAlwaysOnTop(next === 2);
+  }
+  return next;
 }
 
 /** フォーカスを奪わずにウィンドウを前面に表示する */
@@ -135,16 +164,20 @@ export async function createDetachedGroupWindow(
     // デフォルト値(true)のまま
   }
 
-  // 保存済み bounds の読み込みを試行
+  // 保存済み状態の読み込みを試行
   let savedBounds: Bounds | null = null;
+  let savedPinMode: DetachedPinMode = 0;
   try {
     const workspaceService = await WorkspaceService.getInstance();
     const state = await workspaceService.loadDetachedWindowState(groupId);
     if (state?.bounds && state.bounds.width > 0 && state.bounds.height > 0) {
       savedBounds = state.bounds;
     }
+    if (state?.pinMode === 1 || state?.pinMode === 2) {
+      savedPinMode = state.pinMode;
+    }
   } catch (error) {
-    windowLogger.warn({ error, groupId }, '切り離しウィンドウの保存済み bounds 読み込みに失敗');
+    windowLogger.warn({ error, groupId }, '切り離しウィンドウの保存済み状態読み込みに失敗');
   }
 
   const width = savedBounds?.width ?? defaultWidth;
@@ -160,7 +193,7 @@ export async function createDetachedGroupWindow(
     frame: false,
     resizable: true,
     transparent: true,
-    alwaysOnTop: false,
+    alwaysOnTop: savedPinMode === 2,
     show: false,
     icon: PathManager.getAppIconPath(),
     webPreferences: {
@@ -183,6 +216,7 @@ export async function createDetachedGroupWindow(
   win.setMenu(null);
 
   detachedWindows.set(groupId, win);
+  detachedPinModes.set(groupId, savedPinMode);
   // closed イベント内で webContents にアクセスできないため事前に保存
   const wcId = win.webContents.id;
   webContentsIdToGroupId.set(wcId, groupId);
@@ -230,6 +264,7 @@ export async function createDetachedGroupWindow(
     if (boundsTimer) clearTimeout(boundsTimer);
     webContentsIdToGroupId.delete(wcId);
     detachedWindows.delete(groupId);
+    detachedPinModes.delete(groupId);
     // 明示的に閉じた場合はエントリごと削除（アプリ終了時は残す）
     if (!isClosingAll) {
       WorkspaceService.getInstance()
@@ -279,6 +314,7 @@ function destroyWindowIfAlive(groupId: string): void {
       webContentsIdToGroupId.delete(wcId);
     }
     detachedWindows.delete(groupId);
+    detachedPinModes.delete(groupId);
     win.destroy();
     windowLogger.info(`切り離しウィンドウを破棄しました: ${groupId}`);
   }
@@ -322,10 +358,11 @@ function hideDetachedWindowsAfterOwnBlur(): void {
 
 /**
  * すべての切り離しウィンドウを非表示にする（hide）
+ * ピンモード 1以上（表示固定/最上面固定）のウィンドウはスキップする
  */
 export function hideAllDetachedGroupWindows(): { success: boolean } {
-  for (const win of detachedWindows.values()) {
-    if (!win.isDestroyed()) {
+  for (const [groupId, win] of detachedWindows.entries()) {
+    if (!win.isDestroyed() && (detachedPinModes.get(groupId) ?? 0) === 0) {
       win.hide();
     }
   }
@@ -334,10 +371,11 @@ export function hideAllDetachedGroupWindows(): { success: boolean } {
 
 /**
  * すべての切り離しウィンドウを再表示する（フォーカスを奪わない）
+ * ピンモード 1以上のウィンドウは既に表示されているためスキップする
  */
 export function showAllDetachedGroupWindows(): { success: boolean } {
-  for (const win of detachedWindows.values()) {
-    if (!win.isDestroyed()) {
+  for (const [groupId, win] of detachedWindows.entries()) {
+    if (!win.isDestroyed() && (detachedPinModes.get(groupId) ?? 0) === 0) {
       showWithoutFocus(win);
     }
   }

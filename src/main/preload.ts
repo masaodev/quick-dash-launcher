@@ -414,6 +414,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
       bounds: { x: number; y: number; width: number; height: number }
     ): Promise<{ success: boolean }> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_SAVE_DETACHED_BOUNDS, rootGroupId, bounds),
+    getCallerPinMode: (): Promise<number> =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_GET_CALLER_PIN_MODE),
+    cycleCallerPinMode: (): Promise<number> =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_CYCLE_CALLER_PIN_MODE),
   },
   // コンテキストメニュー表示API
   showAdminItemContextMenu: (selectedCount: number, isSingleLine: boolean): Promise<void> =>

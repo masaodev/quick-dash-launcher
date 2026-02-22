@@ -175,6 +175,8 @@ export const IPC_CHANNELS = {
   WORKSPACE_LOAD_DETACHED_STATE: 'workspace:load-detached-state',
   WORKSPACE_SAVE_DETACHED_COLLAPSED: 'workspace:save-detached-collapsed',
   WORKSPACE_SAVE_DETACHED_BOUNDS: 'workspace:save-detached-bounds',
+  WORKSPACE_GET_CALLER_PIN_MODE: 'workspace:get-caller-pin-mode',
+  WORKSPACE_CYCLE_CALLER_PIN_MODE: 'workspace:cycle-caller-pin-mode',
   WORKSPACE_HIDE_ALL_DETACHED: 'workspace:hide-all-detached',
   WORKSPACE_SHOW_ALL_DETACHED: 'workspace:show-all-detached',
 

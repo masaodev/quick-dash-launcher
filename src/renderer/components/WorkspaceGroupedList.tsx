@@ -89,8 +89,6 @@ interface WorkspaceGroupedListProps {
     visibleGroupIds?: Set<string> | null;
     itemVisibility?: Map<string, boolean> | null;
     showUncategorized?: boolean;
-    detachedRootGroupId?: string;
-    onCloseDetached?: () => void;
   };
 }
 
@@ -126,8 +124,6 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     visibleGroupIds,
     itemVisibility,
     showUncategorized = true,
-    detachedRootGroupId,
-    onCloseDetached,
   } = ui;
 
   const [draggedElement, setDraggedElement] = React.useState<{
@@ -606,8 +602,6 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
         )
       : mixed;
 
-    const isDetachedRoot = detachedRootGroupId === node.group.id;
-
     return (
       <div
         key={node.group.id}
@@ -620,8 +614,6 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
           itemCount={groupItems.length}
           isEditing={editingGroupId === node.group.id}
           depth={node.depth}
-          isDetachedRoot={isDetachedRoot}
-          onCloseDetached={onCloseDetached}
           draggedElement={draggedElement}
           canNest={
             draggedElement?.kind === 'group'

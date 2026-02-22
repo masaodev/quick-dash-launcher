@@ -82,7 +82,21 @@ html:has(.workspace-window.background-transparent) {
   transform: scale(0.95);
 }
 
-/* ピン留め状態のスタイル（赤色） */
+/* 表示固定状態のスタイル（青色） */
+.workspace-pin-btn.stay-visible {
+  background-color: var(--color-info);
+  color: var(--color-white);
+  border-color: var(--color-info);
+}
+
+.workspace-pin-btn.stay-visible:hover {
+  background-color: var(--color-info-hover);
+  border-color: var(--color-info-hover);
+  box-shadow: var(--shadow);
+  transform: scale(1.05);
+}
+
+/* 最上面固定状態のスタイル（赤色） */
 .workspace-pin-btn.pinned {
   background-color: var(--color-danger);
   color: var(--color-white);
@@ -818,6 +832,7 @@ html:has(.workspace-window.background-transparent) {
 
 .detached-group-window {
   border-radius: var(--border-radius-lg);
+  position: relative;
 }
 
 /* autofit でウィンドウ自体がリサイズされるためスクロール不要
@@ -834,44 +849,22 @@ html:has(.workspace-window.background-transparent) {
   -webkit-app-region: no-drag;
 }
 
-/* --- ルートグループヘッダー --- */
+/* --- 切り離しウィンドウコントロールバー --- */
 
-.workspace-group-header.detached-root {
-  padding-right: 64px;
-}
-
-.workspace-group-header.detached-root .workspace-group-badge {
-  right: 32px;
-}
-
-/* --- 閉じるボタン --- */
-
-.detached-group-close-btn {
+.detached-window-controls {
   position: absolute;
-  right: var(--spacing-xs);
-  top: 50%;
-  transform: translateY(-50%);
-  width: 22px;
-  height: 22px;
-  margin: 0;
-  padding: 0;
-  border: none;
-  background-color: rgba(255, 255, 255, 0.2);
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: bold;
+  top: 4px;
+  right: 4px;
+  z-index: 10000;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-white);
-  transition: var(--transition-fast);
+  gap: 4px;
+  -webkit-app-region: no-drag;
 }
 
-.detached-group-close-btn:hover {
-  background-color: rgba(255, 255, 255, 0.4);
-}
-
-.detached-group-close-btn:active {
-  transform: translateY(-50%) scale(0.95);
+.detached-window-controls .workspace-pin-btn,
+.detached-window-controls .workspace-close-btn {
+  width: 24px;
+  height: 24px;
+  font-size: 12px;
+  -webkit-app-region: no-drag;
 }

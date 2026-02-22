@@ -6,8 +6,6 @@ interface WorkspaceGroupHeaderProps {
   itemCount: number;
   isEditing: boolean;
   depth: number;
-  isDetachedRoot?: boolean;
-  onCloseDetached?: () => void;
   /** 現在ドラッグ中の要素情報（null=ドラッグなし） */
   draggedElement: { id: string; kind: 'item' | 'group' } | null;
   /** このグループにネスト可能か（深さ制限チェック済み） */
@@ -27,8 +25,6 @@ function WorkspaceGroupHeader({
   itemCount,
   isEditing,
   depth,
-  isDetachedRoot,
-  onCloseDetached,
   draggedElement,
   canNest,
   onToggle,
@@ -138,10 +134,10 @@ function WorkspaceGroupHeader({
 
   return (
     <div
-      className={`workspace-group-header${depthClass}${isDetachedRoot ? ' detached-root' : ''}`}
+      className={`workspace-group-header${depthClass}`}
       data-drop-zone={dropZone || undefined}
       onClick={() => onToggle(group.id)}
-      draggable={!isEditing && !isDetachedRoot}
+      draggable={!isEditing}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       onDragOver={handleDragOver}
@@ -177,20 +173,6 @@ function WorkspaceGroupHeader({
       )}
 
       <span className="workspace-group-badge">{itemCount}個</span>
-
-      {isDetachedRoot && onCloseDetached && (
-        <button
-          className="detached-group-close-btn"
-          onClick={(e) => {
-            e.stopPropagation();
-            onCloseDetached();
-          }}
-          title="閉じる"
-          aria-label="切り離しウィンドウを閉じる"
-        >
-          ×
-        </button>
-      )}
     </div>
   );
 }

@@ -248,6 +248,8 @@ export interface ElectronAPI {
       rootGroupId: string,
       bounds: { x: number; y: number; width: number; height: number }
     ) => Promise<{ success: boolean }>;
+    getCallerPinMode: () => Promise<number>;
+    cycleCallerPinMode: () => Promise<number>;
   };
   // ウィンドウ検索API
   getWindowList: () => Promise<WindowInfo[]>;
