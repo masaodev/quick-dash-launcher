@@ -381,6 +381,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_DETACH_GROUP, groupId, cursorX, cursorY),
     closeDetachedGroup: (groupId: string): Promise<{ success: boolean }> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_CLOSE_DETACHED_GROUP, groupId),
+    hideAllDetached: (): Promise<{ success: boolean }> =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_HIDE_ALL_DETACHED),
+    showAllDetached: (): Promise<{ success: boolean }> =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_SHOW_ALL_DETACHED),
     resizeCallerWindow: (width: number, height: number): Promise<boolean> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_RESIZE_CALLER_WINDOW, width, height),
     setCallerBounds: (x: number, y: number, width: number, height: number): Promise<boolean> =>
