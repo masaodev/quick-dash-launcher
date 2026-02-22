@@ -251,6 +251,30 @@ export function setDetachedAppQuitting(quitting: boolean): void {
 }
 
 /**
+ * すべての切り離しウィンドウを非表示にする（hide）
+ */
+export function hideAllDetachedGroupWindows(): { success: boolean } {
+  for (const win of detachedWindows.values()) {
+    if (!win.isDestroyed()) {
+      win.hide();
+    }
+  }
+  return { success: true };
+}
+
+/**
+ * すべての切り離しウィンドウを再表示する（フォーカスを奪わない）
+ */
+export function showAllDetachedGroupWindows(): { success: boolean } {
+  for (const win of detachedWindows.values()) {
+    if (!win.isDestroyed()) {
+      showWithoutFocus(win);
+    }
+  }
+  return { success: true };
+}
+
+/**
  * すべての切り離しウィンドウを閉じる（アプリ終了時用）
  */
 export function closeAllDetachedGroupWindows(): void {

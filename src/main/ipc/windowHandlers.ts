@@ -28,6 +28,8 @@ import {
   createDetachedGroupWindow,
   closeDetachedGroupWindow,
   showWithoutFocus,
+  hideAllDetachedGroupWindows,
+  showAllDetachedGroupWindows,
 } from '../detachedGroupWindowManager.js';
 import { getTray } from '../windowManager.js';
 
@@ -166,6 +168,9 @@ export function setupWindowHandlers(
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_CLOSE_DETACHED_GROUP, (_event, groupId: string) =>
     closeDetachedGroupWindow(groupId)
   );
+
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_HIDE_ALL_DETACHED, () => hideAllDetachedGroupWindows());
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_SHOW_ALL_DETACHED, () => showAllDetachedGroupWindows());
 
   ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_RESIZE_CALLER_WINDOW,

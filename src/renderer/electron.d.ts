@@ -231,6 +231,8 @@ export interface ElectronAPI {
       cursorY?: number
     ) => Promise<{ success: boolean }>;
     closeDetachedGroup: (groupId: string) => Promise<{ success: boolean }>;
+    hideAllDetached: () => Promise<{ success: boolean }>;
+    showAllDetached: () => Promise<{ success: boolean }>;
     resizeCallerWindow: (width: number, height: number) => Promise<boolean>;
     setCallerBounds: (x: number, y: number, width: number, height: number) => Promise<boolean>;
     // 切り離しウィンドウ状態永続化

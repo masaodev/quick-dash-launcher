@@ -53,6 +53,16 @@ const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
     setIsSettingsMenuOpen(false);
   }
 
+  async function handleHideAllDetached(): Promise<void> {
+    await window.electronAPI.workspaceAPI.hideAllDetached();
+    setIsSettingsMenuOpen(false);
+  }
+
+  async function handleShowAllDetached(): Promise<void> {
+    await window.electronAPI.workspaceAPI.showAllDetached();
+    setIsSettingsMenuOpen(false);
+  }
+
   return (
     <div className="workspace-header">
       <h1>Workspace</h1>
@@ -108,6 +118,13 @@ const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
                 onClick={() => handleSetPositionMode('displayRight')}
               >
                 右端に寄せる
+              </button>
+              <div className="workspace-settings-menu-divider" />
+              <button className="workspace-settings-menu-item" onClick={handleHideAllDetached}>
+                切り離しウィンドウをすべて非表示
+              </button>
+              <button className="workspace-settings-menu-item" onClick={handleShowAllDetached}>
+                切り離しウィンドウをすべて表示
               </button>
             </div>
           )}
