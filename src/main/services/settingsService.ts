@@ -55,6 +55,7 @@ export class SettingsService {
     parallelGroupLaunch: false,
     itemSearchHotkey: '',
     bookmarkAutoImport: DEFAULT_BOOKMARK_AUTO_IMPORT_SETTINGS,
+    hideDetachedWithMainWindow: true,
   };
 
   private constructor() {}

@@ -435,6 +435,25 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                   </div>
                 </div>
 
+                {/* 切り離しウィンドウ連動設定 */}
+                <div className="setting-item">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={editedSettings.hideDetachedWithMainWindow}
+                      onChange={(e) =>
+                        handleSettingChange('hideDetachedWithMainWindow', e.target.checked)
+                      }
+                      disabled={isLoading}
+                    />
+                    メインウィンドウ非表示時に切り離しウィンドウも連動して非表示にする
+                  </label>
+                  <div className="setting-description">
+                    有効にすると、メイン画面の表示/非表示に連動して切り離しウィンドウも表示/非表示します。
+                    切り離しウィンドウを操作中はメイン画面が非表示でも切り離しウィンドウは表示されたままになります。
+                  </div>
+                </div>
+
                 {/* 表示位置設定 */}
                 <div className="setting-item">
                   <label>表示位置:</label>

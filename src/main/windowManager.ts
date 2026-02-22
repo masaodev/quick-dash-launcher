@@ -21,6 +21,13 @@ import { showAdminWindowWithTab } from './adminWindowManager.js';
 import PathManager from './config/pathManager.js';
 import { EnvConfig } from './config/envConfig.js';
 import { calculateModalSize } from './utils/modalSizeManager.js';
+import {
+  getIsDetachedWindowFocused,
+  setManagedWindowCheckers,
+  hideAllDetachedGroupWindows,
+  showAllDetachedGroupWindows,
+} from './detachedGroupWindowManager.js';
+import { getIsWorkspaceWindowFocused } from './workspaceWindowManager.js';
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
@@ -35,6 +42,44 @@ let showingWindowTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
 /** ワークスペース＋切り離しウィンドウ復元完了までのフォーカス安定猶予（ms） */
 const WINDOW_FOCUS_STABILIZATION_DELAY_MS = 1500;
+
+/**
+ * hideDetachedWithMainWindow 設定が有効なら切り離しウィンドウを非表示にする（即座）
+ */
+async function hideDetachedWindowsIfEnabled(): Promise<void> {
+  const settingsService = await SettingsService.getInstance();
+  const hideDetached = await settingsService.get('hideDetachedWithMainWindow');
+  if (hideDetached) {
+    hideAllDetachedGroupWindows();
+  }
+}
+
+/**
+ * hideDetachedWithMainWindow 設定が有効なら切り離しウィンドウを表示する（即座）
+ */
+async function showDetachedWindowsIfEnabled(): Promise<void> {
+  const settingsService = await SettingsService.getInstance();
+  const hideDetached = await settingsService.get('hideDetachedWithMainWindow');
+  if (hideDetached) {
+    showAllDetachedGroupWindows();
+  }
+}
+
+/**
+ * blur後の連動非表示（50ms遅延 + 管理ウィンドウフォーカスチェック付き）
+ * 切り離しウィンドウやワークスペースウィンドウにフォーカスがある場合は非表示にしない
+ */
+function hideDetachedWindowsAfterBlur(): void {
+  setTimeout(async () => {
+    try {
+      if (getIsDetachedWindowFocused()) return;
+      if (getIsWorkspaceWindowFocused()) return;
+      await hideDetachedWindowsIfEnabled();
+    } catch (error) {
+      windowLogger.warn({ error }, 'blur時の切り離しウィンドウ連動非表示チェックに失敗');
+    }
+  }, 50);
+}
 
 /**
  * ウィンドウ表示中フラグを設定し、一定時間後に自動解除する
@@ -140,6 +185,7 @@ export async function createWindow(): Promise<BrowserWindow> {
 
     if (shouldHide) {
       hideMainWindowInternal();
+      hideDetachedWindowsAfterBlur();
     }
   });
 
@@ -169,6 +215,7 @@ export async function createWindow(): Promise<BrowserWindow> {
 
       if (mainWindow && !shouldNotHide) {
         hideMainWindowInternal();
+        void hideDetachedWindowsIfEnabled();
       }
     }
   });
@@ -183,6 +230,12 @@ export async function createWindow(): Promise<BrowserWindow> {
     updateWindowBehavior();
     windowLogger.info(`初期ピンモードを設定しました: ${windowPinMode}`);
   }
+
+  // 管理ウィンドウチェッカーを登録（切り離しウィンドウの連動非表示用）
+  setManagedWindowCheckers({
+    isMainWindowVisible: () => mainWindow?.isVisible() ?? false,
+    isWorkspaceWindowFocused: () => getIsWorkspaceWindowFocused(),
+  });
 
   return mainWindow;
 }
@@ -630,6 +683,9 @@ async function showMainWindowInternal(
   await autoShowWorkspaceIfEnabled();
   timer?.log('workspace-auto-shown');
 
+  await showDetachedWindowsIfEnabled();
+  timer?.log('detached-windows-shown');
+
   mainWindow.show();
   timer?.log('window-shown');
 
@@ -675,5 +731,7 @@ export async function hideMainWindow(): Promise<void> {
   }
 
   hideMainWindowInternal();
+  await hideDetachedWindowsIfEnabled();
+
   windowLogger.info('メインウィンドウを非表示にしました');
 }

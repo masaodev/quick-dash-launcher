@@ -16,6 +16,7 @@ let isWorkspaceWindowVisible: boolean = false;
 let isAppQuitting: boolean = false;
 let detachedRestored: boolean = false;
 let isWorkspacePinned: boolean = false;
+let isWorkspaceFocused: boolean = false;
 let normalWorkspaceWindowBounds: { width: number; height: number } | null = null;
 
 /**
@@ -83,6 +84,14 @@ export async function createWorkspaceWindow(): Promise<BrowserWindow> {
 
   workspaceWindow.on('hide', () => {
     isWorkspaceWindowVisible = false;
+  });
+
+  workspaceWindow.on('focus', () => {
+    isWorkspaceFocused = true;
+  });
+
+  workspaceWindow.on('blur', () => {
+    isWorkspaceFocused = false;
   });
 
   workspaceWindow.webContents.on('before-input-event', (event, input) => {
@@ -355,6 +364,11 @@ export async function saveWorkspacePosition(): Promise<void> {
 /** ワークスペースウィンドウのインスタンスを取得する */
 export function getWorkspaceWindow(): BrowserWindow | null {
   return workspaceWindow;
+}
+
+/** ワークスペースウィンドウにフォーカスがあるかどうかを返す */
+export function getIsWorkspaceWindowFocused(): boolean {
+  return isWorkspaceFocused;
 }
 
 /**

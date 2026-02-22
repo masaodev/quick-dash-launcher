@@ -5,6 +5,7 @@ import { windowLogger } from '@common/logger';
 
 import { EnvConfig } from './config/envConfig.js';
 import PathManager from './config/pathManager.js';
+import { SettingsService } from './services/settingsService.js';
 import { WorkspaceService } from './services/workspace/index.js';
 
 /**
@@ -22,6 +23,29 @@ const webContentsIdToGroupId = new Map<number, string>();
 type Bounds = { x: number; y: number; width: number; height: number };
 
 let isClosingAll = false;
+let isDetachedWindowFocused = false;
+
+/** メインウィンドウ・ワークスペースウィンドウの状態チェック用コールバック（循環依存回避） */
+let isMainWindowVisibleFn: (() => boolean) | null = null;
+let isWorkspaceWindowFocusedFn: (() => boolean) | null = null;
+
+/**
+ * 管理ウィンドウの状態チェック関数を注入する（循環依存回避用）
+ */
+export function setManagedWindowCheckers(checkers: {
+  isMainWindowVisible: () => boolean;
+  isWorkspaceWindowFocused: () => boolean;
+}): void {
+  isMainWindowVisibleFn = checkers.isMainWindowVisible;
+  isWorkspaceWindowFocusedFn = checkers.isWorkspaceWindowFocused;
+}
+
+/**
+ * 切り離しウィンドウにフォーカスがあるかどうかを返す
+ */
+export function getIsDetachedWindowFocused(): boolean {
+  return isDetachedWindowFocused;
+}
 
 /** フォーカスを奪わずにウィンドウを前面に表示する */
 export function showWithoutFocus(win: BrowserWindow): void {
@@ -177,6 +201,15 @@ export async function createDetachedGroupWindow(
   win.on('moved', saveBoundsDebounced);
   win.on('resized', saveBoundsDebounced);
 
+  // フォーカス追跡（連動表示/非表示用）
+  win.on('focus', () => {
+    isDetachedWindowFocused = true;
+  });
+  win.on('blur', () => {
+    isDetachedWindowFocused = false;
+    hideDetachedWindowsAfterOwnBlur();
+  });
+
   win.on('closed', () => {
     clearTimeout(showFallback);
     if (boundsTimer) clearTimeout(boundsTimer);
@@ -248,6 +281,26 @@ export function closeDetachedGroupWindow(groupId: string): { success: boolean } 
  */
 export function setDetachedAppQuitting(quitting: boolean): void {
   isClosingAll = quitting;
+}
+
+/**
+ * 切り離しウィンドウのblur後に連動非表示を判定する
+ * 50ms後にチェックし、どの管理ウィンドウにもフォーカスがなければ全非表示
+ */
+function hideDetachedWindowsAfterOwnBlur(): void {
+  setTimeout(async () => {
+    if (isDetachedWindowFocused) return;
+    try {
+      const settingsService = await SettingsService.getInstance();
+      const hideWithMain = await settingsService.get('hideDetachedWithMainWindow');
+      if (!hideWithMain) return;
+      if (isMainWindowVisibleFn?.()) return;
+      if (isWorkspaceWindowFocusedFn?.()) return;
+      hideAllDetachedGroupWindows();
+    } catch (error) {
+      windowLogger.warn({ error }, '切り離しウィンドウblur時の連動非表示チェックに失敗');
+    }
+  }, 50);
 }
 
 /**

@@ -112,4 +112,6 @@ export interface AppSettings {
   backupIncludeClipboard: boolean;
   /** ブックマーク自動取込設定 */
   bookmarkAutoImport: BookmarkAutoImportSettings;
+  /** メインウィンドウ非表示時に切り離しウィンドウも連動して非表示にする（デフォルト: true） */
+  hideDetachedWithMainWindow: boolean;
 }
