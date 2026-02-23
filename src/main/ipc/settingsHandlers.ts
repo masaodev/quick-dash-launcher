@@ -12,7 +12,10 @@ import {
   applyVisibilityOnAllDesktops,
   setWindowSnapEnabled,
 } from '../workspaceWindowManager.js';
-import { setDetachedWindowSnapEnabled } from '../detachedGroupWindowManager.js';
+import {
+  setDetachedWindowSnapEnabled,
+  applyDetachedVisibilityOnAllDesktops,
+} from '../detachedGroupWindowManager.js';
 
 function notifySettingsChanged(): void {
   for (const window of BrowserWindow.getAllWindows()) {
@@ -61,6 +64,10 @@ async function applySettingsEffects(
 
   if (changedKeys.includes('workspaceVisibleOnAllDesktops')) {
     await applyVisibilityOnAllDesktops();
+  }
+
+  if (changedKeys.includes('detachedVisibleOnAllDesktops')) {
+    await applyDetachedVisibilityOnAllDesktops();
   }
 
   if (changedKeys.includes('windowSnapEnabled')) {

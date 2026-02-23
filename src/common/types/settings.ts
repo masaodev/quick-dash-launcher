@@ -104,6 +104,8 @@ export interface AppSettings {
   workspacePositionY: number;
   /** ワークスペースウィンドウを全仮想デスクトップに表示（デフォルト: true） */
   workspaceVisibleOnAllDesktops: boolean;
+  /** 切り離しウィンドウを全仮想デスクトップに表示（デフォルト: true） */
+  detachedVisibleOnAllDesktops: boolean;
   /** グループアイテムを並列起動する（デフォルト: false） */
   parallelGroupLaunch: boolean;
   /** ウィンドウ検索で起動のホットキー（デフォルト: ''、空の場合は無効） */

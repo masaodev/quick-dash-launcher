@@ -8,6 +8,7 @@ import PathManager from './config/pathManager.js';
 import { SettingsService } from './services/settingsService.js';
 import { WorkspaceService } from './services/workspace/index.js';
 import { attachSnapHandler } from './utils/windowSnap.js';
+import { pinWindow, unPinWindow } from './utils/virtualDesktop/index.js';
 
 /**
  * 初回autofit前のフォールバック表示までの待機時間（ms）
@@ -34,6 +35,18 @@ let isDetachedWindowFocused = false;
 let detachedWindowSnapEnabled: boolean = true;
 
 /** メインウィンドウ・ワークスペースウィンドウの状態チェック用コールバック（循環依存回避） */
+function applyVirtualDesktopPinToWindow(win: BrowserWindow, enabled: boolean): void {
+  if (win.isDestroyed()) return;
+  const hwnd = win.getNativeWindowHandle().readBigUInt64LE();
+  const success = enabled ? pinWindow(hwnd) : unPinWindow(hwnd);
+  const action = enabled ? 'pin' : 'unpin';
+  if (success) {
+    windowLogger.info(`切り離しウィンドウの仮想デスクトップ固定: ${action}`);
+  } else {
+    windowLogger.warn(`切り離しウィンドウの仮想デスクトップ固定に失敗: ${action}`);
+  }
+}
+
 let isMainWindowVisibleFn: (() => boolean) | null = null;
 let isWorkspaceWindowFocusedFn: (() => boolean) | null = null;
 
@@ -79,6 +92,11 @@ export function cycleDetachedPinMode(groupId: string): DetachedPinMode {
   const win = detachedWindows.get(groupId);
   if (win && !win.isDestroyed()) {
     win.setAlwaysOnTop(next === 2);
+    // setAlwaysOnTop が仮想デスクトップ固定をリセットするため再適用
+    SettingsService.getInstance()
+      .then((ss) => ss.get('detachedVisibleOnAllDesktops'))
+      .then((enabled) => applyVirtualDesktopPinToWindow(win, enabled))
+      .catch(() => {});
   }
   return next;
 }
@@ -293,6 +311,16 @@ export async function createDetachedGroupWindow(
 
   attachSnapHandler(win, () => detachedWindowSnapEnabled);
 
+  // 仮想デスクトップ固定の適用（ウィンドウ表示後に実行する必要がある）
+  win.once('show', () => {
+    SettingsService.getInstance()
+      .then((ss) => ss.get('detachedVisibleOnAllDesktops'))
+      .then((enabled) => applyVirtualDesktopPinToWindow(win, enabled))
+      .catch(() => {
+        // デフォルトは固定なし
+      });
+  });
+
   // エントリの存在を確保（復元対象として認識されるように初期 bounds を保存）
   const initialBounds = win.getBounds();
   WorkspaceService.getInstance()
@@ -404,6 +432,17 @@ export function getGroupIdByWebContentsId(id: number): string | undefined {
  * 前回開いていた切り離しウィンドウを復元する（存在するグループのみ）
  * @param options.skipFocus trueの場合、フォーカスを奪わずに表示する
  */
+/**
+ * 全切り離しウィンドウに仮想デスクトップ固定設定を一括適用する
+ */
+export async function applyDetachedVisibilityOnAllDesktops(): Promise<void> {
+  const settingsService = await SettingsService.getInstance();
+  const enabled = await settingsService.get('detachedVisibleOnAllDesktops');
+  for (const [, win] of detachedWindows) {
+    applyVirtualDesktopPinToWindow(win, enabled);
+  }
+}
+
 export async function restoreDetachedWindows(options?: { skipFocus?: boolean }): Promise<void> {
   try {
     const workspaceService = await WorkspaceService.getInstance();

@@ -51,6 +51,7 @@ export class SettingsService {
     workspacePositionX: 0,
     workspacePositionY: 0,
     workspaceVisibleOnAllDesktops: true,
+    detachedVisibleOnAllDesktops: true,
     backupIncludeClipboard: false,
     parallelGroupLaunch: false,
     itemSearchHotkey: '',

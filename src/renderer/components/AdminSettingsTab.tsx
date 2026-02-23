@@ -611,6 +611,23 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                   <label>
                     <input
                       type="checkbox"
+                      checked={editedSettings.detachedVisibleOnAllDesktops}
+                      onChange={(e) =>
+                        handleSettingChange('detachedVisibleOnAllDesktops', e.target.checked)
+                      }
+                      disabled={isLoading}
+                    />
+                    切り離しウィンドウも全ての仮想デスクトップに表示
+                  </label>
+                  <div className="setting-description">
+                    有効にすると、切り離しウィンドウも全ての仮想デスクトップで表示されます。
+                  </div>
+                </div>
+
+                <div className="setting-item">
+                  <label>
+                    <input
+                      type="checkbox"
                       checked={editedSettings.windowSnapEnabled}
                       onChange={(e) => handleSettingChange('windowSnapEnabled', e.target.checked)}
                       disabled={isLoading}
