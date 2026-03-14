@@ -17,6 +17,7 @@ export type {
 
 // ワークスペース関連の型
 export type {
+  Workspace,
   WorkspaceItem,
   WorkspaceGroup,
   ExecutionHistoryItem,

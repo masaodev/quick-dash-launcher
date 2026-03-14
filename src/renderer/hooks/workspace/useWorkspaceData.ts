@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import type { WorkspaceItem, WorkspaceGroup } from '@common/types';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import type { Workspace, WorkspaceItem, WorkspaceGroup } from '@common/types';
 
 import { logError } from '../../utils/debug';
 import { useGlobalLoading } from '../useGlobalLoading';
@@ -40,7 +40,18 @@ export function useWorkspaceData(detachedGroupId?: string | null) {
   const isDetached = !!detachedGroupId;
   const [items, setItems] = useState<WorkspaceItem[]>([]);
   const [groups, setGroups] = useState<WorkspaceGroup[]>([]);
+  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
+  const [activeWorkspaceId, setActiveWorkspaceIdState] = useState<string>(() => {
+    return localStorage.getItem('activeWorkspaceId') || 'default';
+  });
+  const activeWorkspaceIdRef = useRef(activeWorkspaceId);
+  activeWorkspaceIdRef.current = activeWorkspaceId;
   const { withLoading } = useGlobalLoading();
+
+  const setActiveWorkspaceId = useCallback((id: string) => {
+    setActiveWorkspaceIdState(id);
+    localStorage.setItem('activeWorkspaceId', id);
+  }, []);
 
   // ウィンドウごとに独立した collapsed 状態を管理
   const collapsedOverrides = useRef<Map<string, boolean>>(new Map());
@@ -138,8 +149,23 @@ export function useWorkspaceData(detachedGroupId?: string | null) {
     }
   }
 
+  async function loadWorkspaces(): Promise<void> {
+    try {
+      const loaded = await window.electronAPI.workspaceAPI.loadWorkspaces();
+      setWorkspaces(loaded);
+
+      // アクティブWSが削除されていた場合、最初のWSにフォールバック
+      if (loaded.length > 0 && !loaded.some((w) => w.id === activeWorkspaceIdRef.current)) {
+        const firstWs = [...loaded].sort((a, b) => a.order - b.order)[0];
+        setActiveWorkspaceId(firstWs.id);
+      }
+    } catch (error) {
+      logError('Failed to load workspaces:', error);
+    }
+  }
+
   async function loadAllData(): Promise<void> {
-    await Promise.all([loadItems(), loadGroups()]);
+    await Promise.all([loadItems(), loadGroups(), loadWorkspaces()]);
   }
 
   async function loadAllDataWithLoading(): Promise<void> {
@@ -155,6 +181,9 @@ export function useWorkspaceData(detachedGroupId?: string | null) {
   return {
     items,
     groups,
+    workspaces,
+    activeWorkspaceId,
+    setActiveWorkspaceId,
     loadAllDataWithLoading,
     toggleGroupCollapsed,
     setAllGroupsCollapsedLocal,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import type { WorkspaceItem } from '@common/types';
 import { getDescendantGroupIds } from '@common/utils/groupTreeUtils';
 
@@ -7,6 +7,7 @@ import WorkspaceFilterBar from './components/WorkspaceFilterBar';
 import WorkspaceGroupedList from './components/WorkspaceGroupedList';
 import WorkspaceHeader from './components/WorkspaceHeader';
 import WorkspaceItemEditModal from './components/WorkspaceItemEditModal';
+import WorkspaceTabBar from './components/WorkspaceTabBar';
 import { useClipboardPaste } from './hooks/useClipboardPaste';
 import { useCollapsibleSections } from './hooks/useCollapsibleSections';
 import { useFileOperations } from './hooks/useFileOperations';
@@ -79,21 +80,34 @@ const WorkspaceApp: React.FC = () => {
   const {
     items,
     groups,
+    workspaces,
+    activeWorkspaceId,
+    setActiveWorkspaceId,
     loadAllDataWithLoading,
     toggleGroupCollapsed,
     setAllGroupsCollapsedLocal,
   } = useWorkspaceData(detachedGroupId);
+
+  // アクティブワークスペースでフィルタリング
+  const filteredItems = useMemo(
+    () => items.filter((i) => i.workspaceId === activeWorkspaceId),
+    [items, activeWorkspaceId]
+  );
+  const filteredGroups = useMemo(
+    () => groups.filter((g) => g.workspaceId === activeWorkspaceId),
+    [groups, activeWorkspaceId]
+  );
 
   const actions = useWorkspaceActions(() => {
     loadAllDataWithLoading();
   });
 
   const { extractFilePaths, addItemsFromFilePaths, addUrlItem } = useFileOperations();
-  useClipboardPaste(loadAllDataWithLoading, activeGroupId);
+  useClipboardPaste(loadAllDataWithLoading, activeGroupId, activeWorkspaceId);
   const { collapsed, toggleSection, expandAll, collapseAll } = useCollapsibleSections({
     uncategorized: false,
   });
-  const filterResult = useWorkspaceFilter(groups, items, filterText, filterScope);
+  const filterResult = useWorkspaceFilter(filteredGroups, filteredItems, filterText, filterScope);
   const isDetached = detachedGroupId !== null;
   const { handleResize } = useWorkspaceResize(
     isDetached
@@ -142,9 +156,11 @@ const WorkspaceApp: React.FC = () => {
 
   /** グループとそのサブグループに含まれるアイテム数・サブグループ数を算出 */
   const getGroupStats = (groupId: string): { itemCount: number; subgroupCount: number } => {
-    const descendantIds = getDescendantGroupIds(groupId, groups);
+    const descendantIds = getDescendantGroupIds(groupId, filteredGroups);
     const allGroupIds = new Set([groupId, ...descendantIds]);
-    const itemCount = items.filter((item) => item.groupId && allGroupIds.has(item.groupId)).length;
+    const itemCount = filteredItems.filter(
+      (item) => item.groupId && allGroupIds.has(item.groupId)
+    ).length;
     return { itemCount, subgroupCount: descendantIds.length };
   };
 
@@ -212,7 +228,7 @@ const WorkspaceApp: React.FC = () => {
   };
 
   const setAllGroupsCollapsed = async (collapsed: boolean) => {
-    const targetGroups = groups.filter((g) => g.collapsed !== collapsed);
+    const targetGroups = filteredGroups.filter((g) => g.collapsed !== collapsed);
     if (targetGroups.length > 0) {
       // setAllGroupsCollapsedLocal 内で detached 時は専用 API に保存される
       setAllGroupsCollapsedLocal(collapsed);
@@ -239,7 +255,7 @@ const WorkspaceApp: React.FC = () => {
     try {
       if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
         const filePaths = await extractFilePaths(e.dataTransfer.files);
-        await addItemsFromFilePaths(filePaths, loadAllDataWithLoading, groupId);
+        await addItemsFromFilePaths(filePaths, loadAllDataWithLoading, groupId, activeWorkspaceId);
         for (const filePath of filePaths) {
           const fileName = filePath.split(/[/\\]/).pop() || filePath;
           await window.electronAPI.showToastWindow({
@@ -257,7 +273,7 @@ const WorkspaceApp: React.FC = () => {
             .map((url) => url.trim())
             .filter((url) => url && url.startsWith('http'));
           for (const url of urls) {
-            await addUrlItem(url, () => {}, groupId);
+            await addUrlItem(url, () => {}, groupId, activeWorkspaceId);
             await window.electronAPI.showToastWindow({
               displayName: url,
               itemType: 'workspaceAdd',
@@ -388,6 +404,7 @@ const WorkspaceApp: React.FC = () => {
           handlers={commonHandlers}
           ui={{
             ...commonUi,
+            activeWorkspaceId,
             visibleGroupIds: detachedVisibleGroupIds,
             showUncategorized: false,
           }}
@@ -426,11 +443,22 @@ const WorkspaceApp: React.FC = () => {
         }}
         onExpandAll={() => setAllGroupsCollapsed(false)}
         onCollapseAll={() => setAllGroupsCollapsed(true)}
-        onAddGroup={() => actions.handleAddGroup(groups.length)}
+        onAddGroup={() =>
+          actions.handleAddGroup(filteredGroups.length, undefined, activeWorkspaceId)
+        }
         onOpenArchive={handleOpenArchive}
         isPinned={isPinned}
         onTogglePin={handleTogglePin}
         onClose={handleClose}
+      />
+      <WorkspaceTabBar
+        workspaces={workspaces}
+        activeWorkspaceId={activeWorkspaceId}
+        onTabClick={setActiveWorkspaceId}
+        onCreateWorkspace={actions.handleCreateWorkspace}
+        onRenameWorkspace={actions.handleRenameWorkspace}
+        onDeleteWorkspace={actions.handleDeleteWorkspace}
+        onReorderWorkspaces={actions.handleReorderWorkspaces}
       />
       {isFilterVisible && (
         <WorkspaceFilterBar
@@ -446,13 +474,15 @@ const WorkspaceApp: React.FC = () => {
       )}
       <WorkspaceGroupedList
         contentRef={contentRef}
-        data={{ groups, items }}
+        workspaces={workspaces}
+        data={{ groups: filteredGroups, items: filteredItems }}
         handlers={{
           ...commonHandlers,
           onDetachGroup: handleDetachGroup,
         }}
         ui={{
           ...commonUi,
+          activeWorkspaceId,
           visibleGroupIds: filterResult.visibleGroupIds,
           itemVisibility: filterResult.itemVisibility,
           showUncategorized: filterResult.showUncategorized,
@@ -463,7 +493,7 @@ const WorkspaceApp: React.FC = () => {
         onClose={() => setDeleteGroupDialog(INITIAL_DELETE_DIALOG)}
         onConfirm={handleConfirmDeleteGroup}
         title="グループの削除"
-        message={`「${groups.find((g) => g.id === deleteGroupDialog.groupId)?.displayName}」を削除してもよろしいですか？\n\nこのグループには${deleteGroupDialog.subgroupCount > 0 ? `サブグループ${deleteGroupDialog.subgroupCount}個と、` : ''}${deleteGroupDialog.itemCount}個のアイテムが含まれています。`}
+        message={`「${filteredGroups.find((g) => g.id === deleteGroupDialog.groupId)?.displayName || groups.find((g) => g.id === deleteGroupDialog.groupId)?.displayName}」を削除してもよろしいですか？\n\nこのグループには${deleteGroupDialog.subgroupCount > 0 ? `サブグループ${deleteGroupDialog.subgroupCount}個と、` : ''}${deleteGroupDialog.itemCount}個のアイテムが含まれています。`}
         confirmText="削除"
         cancelText="キャンセル"
         danger={true}
@@ -482,7 +512,7 @@ const WorkspaceApp: React.FC = () => {
         onClose={() => setArchiveGroupDialog(INITIAL_ARCHIVE_DIALOG)}
         onConfirm={handleConfirmArchiveGroup}
         title="グループのアーカイブ"
-        message={`「${groups.find((g) => g.id === archiveGroupDialog.groupId)?.displayName}」をアーカイブしてもよろしいですか？\n\nこのグループには${archiveGroupDialog.subgroupCount > 0 ? `サブグループ${archiveGroupDialog.subgroupCount}個と、` : ''}${archiveGroupDialog.itemCount}個のアイテムが含まれています。\nアーカイブしたグループは後で復元できます。`}
+        message={`「${filteredGroups.find((g) => g.id === archiveGroupDialog.groupId)?.displayName || groups.find((g) => g.id === archiveGroupDialog.groupId)?.displayName}」をアーカイブしてもよろしいですか？\n\nこのグループには${archiveGroupDialog.subgroupCount > 0 ? `サブグループ${archiveGroupDialog.subgroupCount}個と、` : ''}${archiveGroupDialog.itemCount}個のアイテムが含まれています。\nアーカイブしたグループは後で復元できます。`}
         confirmText="アーカイブ"
         cancelText="キャンセル"
         danger={false}

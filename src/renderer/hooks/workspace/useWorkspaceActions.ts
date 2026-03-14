@@ -76,9 +76,33 @@ export function useWorkspaceActions(onDataChanged: () => void) {
   );
 
   const handleAddGroup = withErrorHandling(
-    async (groupCount: number, parentGroupId?: string) =>
-      api.createGroup(`グループ ${groupCount + 1}`, undefined, parentGroupId),
+    async (groupCount: number, parentGroupId?: string, workspaceId?: string) =>
+      api.createGroup(`グループ ${groupCount + 1}`, undefined, parentGroupId, workspaceId),
     'Failed to create workspace group:',
+    onDataChanged
+  );
+
+  const handleCreateWorkspace = withErrorHandling(
+    async (name: string) => api.createWorkspace(name),
+    'Failed to create workspace:',
+    onDataChanged
+  );
+
+  const handleRenameWorkspace = withErrorHandling(
+    async (id: string, name: string) => api.renameWorkspace(id, name),
+    'Failed to rename workspace:',
+    onDataChanged
+  );
+
+  const handleDeleteWorkspace = withErrorHandling(
+    async (id: string) => api.deleteWorkspace(id),
+    'Failed to delete workspace:',
+    onDataChanged
+  );
+
+  const handleReorderWorkspaces = withErrorHandling(
+    async (ids: string[]) => api.reorderWorkspaces(ids),
+    'Failed to reorder workspaces:',
     onDataChanged
   );
 
@@ -122,5 +146,9 @@ export function useWorkspaceActions(onDataChanged: () => void) {
     handleMoveItemToGroup,
     handleMoveGroupToParent,
     handleReorderMixed,
+    handleCreateWorkspace,
+    handleRenameWorkspace,
+    handleDeleteWorkspace,
+    handleReorderWorkspaces,
   };
 }

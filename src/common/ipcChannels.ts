@@ -180,6 +180,17 @@ export const IPC_CHANNELS = {
   WORKSPACE_HIDE_ALL_DETACHED: 'workspace:hide-all-detached',
   WORKSPACE_SHOW_ALL_DETACHED: 'workspace:show-all-detached',
 
+  // ワークスペース - ワークスペース（タブ）管理
+  WORKSPACE_LOAD_WORKSPACES: 'workspace:load-workspaces',
+  WORKSPACE_CREATE_WORKSPACE: 'workspace:create-workspace',
+  WORKSPACE_RENAME_WORKSPACE: 'workspace:rename-workspace',
+  WORKSPACE_DELETE_WORKSPACE: 'workspace:delete-workspace',
+  WORKSPACE_REORDER_WORKSPACES: 'workspace:reorder-workspaces',
+
+  // ワークスペース - アイテム/グループのワークスペース間移動
+  WORKSPACE_MOVE_ITEM_TO_WORKSPACE: 'workspace:move-item-to-workspace',
+  WORKSPACE_MOVE_GROUP_TO_WORKSPACE: 'workspace:move-group-to-workspace',
+
   // ワークスペース - イベント
   WORKSPACE_CHANGED: 'workspace-changed',
 
@@ -234,6 +245,7 @@ export const IPC_CHANNELS = {
   EVENT_WORKSPACE_MENU_OPEN_SHORTCUT_PARENT_FOLDER: 'workspace-menu-open-shortcut-parent-folder',
   EVENT_WORKSPACE_MENU_REMOVE_FROM_GROUP: 'workspace-menu-remove-from-group',
   EVENT_WORKSPACE_MENU_REMOVE_ITEM: 'workspace-menu-remove-item',
+  EVENT_WORKSPACE_MENU_MOVE_TO_WORKSPACE: 'workspace-menu-move-to-workspace',
 
   // コンテキストメニュー - Workspace Group
   SHOW_WORKSPACE_GROUP_CONTEXT_MENU: 'show-workspace-group-context-menu',
@@ -244,6 +256,12 @@ export const IPC_CHANNELS = {
   EVENT_WORKSPACE_GROUP_MENU_ARCHIVE: 'workspace-group-menu-archive',
   EVENT_WORKSPACE_GROUP_MENU_DELETE: 'workspace-group-menu-delete',
   EVENT_WORKSPACE_GROUP_MENU_ADD_SUBGROUP: 'workspace-group-menu-add-subgroup',
+  EVENT_WORKSPACE_GROUP_MENU_MOVE_TO_WORKSPACE: 'workspace-group-menu-move-to-workspace',
+
+  // コンテキストメニュー - Workspace Tab
+  SHOW_WORKSPACE_TAB_CONTEXT_MENU: 'show-workspace-tab-context-menu',
+  EVENT_WORKSPACE_TAB_MENU_RENAME: 'workspace-tab-menu-rename',
+  EVENT_WORKSPACE_TAB_MENU_DELETE: 'workspace-tab-menu-delete',
 
   // コンテキストメニュー - File Tab
   SHOW_FILE_TAB_CONTEXT_MENU: 'show-file-tab-context-menu',

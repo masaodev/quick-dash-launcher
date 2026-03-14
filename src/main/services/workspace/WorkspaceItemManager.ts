@@ -15,6 +15,7 @@ import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { isWindowInfo, isWindowItem, isGroupItem, isClipboardItem } from '@common/types/guards';
 
 import type { WorkspaceStoreInstance } from './types.js';
+import { DEFAULT_WORKSPACE_ID } from './migrationUtils.js';
 
 export class WorkspaceItemManager {
   private store: WorkspaceStoreInstance;
@@ -37,7 +38,7 @@ export class WorkspaceItemManager {
     }
   }
 
-  public addItem(item: AppItem, groupId?: string): WorkspaceItem {
+  public addItem(item: AppItem, groupId?: string, workspaceId?: string): WorkspaceItem {
     try {
       const items = this.loadItems();
 
@@ -57,6 +58,8 @@ export class WorkspaceItemManager {
       } else {
         workspaceItem = this.createLauncherItem(item, order, groupId);
       }
+
+      workspaceItem.workspaceId = workspaceId || DEFAULT_WORKSPACE_ID;
 
       items.push(workspaceItem);
       this.store.set('items', items);
@@ -144,7 +147,7 @@ export class WorkspaceItemManager {
     };
   }
 
-  public addItemFromPath(filePath: string, groupId?: string): WorkspaceItem {
+  public addItemFromPath(filePath: string, groupId?: string, workspaceId?: string): WorkspaceItem {
     try {
       const items = this.loadItems();
 
@@ -159,6 +162,7 @@ export class WorkspaceItemManager {
         ...this.createBaseFields(fileName, this.getNextOrder(items), groupId),
         path: filePath,
         type: itemType,
+        workspaceId: workspaceId || DEFAULT_WORKSPACE_ID,
       };
 
       items.push(workspaceItem);

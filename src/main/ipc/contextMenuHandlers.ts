@@ -5,6 +5,7 @@
 import { ipcMain, BrowserWindow, Menu, MenuItem, IpcMainInvokeEvent, WebContents } from 'electron';
 import type {
   AppItem,
+  Workspace,
   WorkspaceItem,
   WorkspaceGroup,
   WindowInfo,
@@ -190,11 +191,39 @@ function setupLauncherContextMenuHandler(): void {
   );
 }
 
+/** ワークスペース移動サブメニューを構築 */
+function buildMoveToWorkspaceSubmenu(
+  sender: WebContents,
+  channel: string,
+  targetId: string,
+  currentWorkspaceId: string | undefined,
+  workspaces: Workspace[]
+): MenuItem | null {
+  const otherWorkspaces = workspaces.filter((ws) => ws.id !== currentWorkspaceId);
+  if (otherWorkspaces.length === 0) return null;
+
+  const submenu = new Menu();
+  for (const ws of otherWorkspaces) {
+    submenu.append(
+      new MenuItem({
+        label: ws.displayName,
+        click: () => sender.send(channel, targetId, ws.id),
+      })
+    );
+  }
+  return new MenuItem({ label: '📁 ワークスペースを移動', submenu });
+}
+
 /** WorkspaceContextMenu用のネイティブメニューハンドラーを設定 */
 function setupWorkspaceContextMenuHandler(): void {
   ipcMain.handle(
     IPC_CHANNELS.SHOW_WORKSPACE_CONTEXT_MENU,
-    async (event, item: WorkspaceItem): Promise<void> => {
+    async (
+      event,
+      item: WorkspaceItem,
+      _groups: WorkspaceGroup[],
+      workspaces: Workspace[]
+    ): Promise<void> => {
       const senderWindow = getValidWindow(event);
       if (!senderWindow) return;
 
@@ -289,6 +318,20 @@ function setupWorkspaceContextMenuHandler(): void {
         )
       );
 
+      // ワークスペース移動サブメニュー
+      if (workspaces && workspaces.length > 1) {
+        const moveSubmenu = buildMoveToWorkspaceSubmenu(
+          event.sender,
+          IPC_CHANNELS.EVENT_WORKSPACE_MENU_MOVE_TO_WORKSPACE,
+          item.id,
+          item.workspaceId,
+          workspaces
+        );
+        if (moveSubmenu) {
+          menu.append(moveSubmenu);
+        }
+      }
+
       if (item.groupId !== undefined) {
         menu.append(
           createMenuItem(
@@ -319,7 +362,12 @@ function setupWorkspaceContextMenuHandler(): void {
 function setupWorkspaceGroupContextMenuHandler(): void {
   ipcMain.handle(
     IPC_CHANNELS.SHOW_WORKSPACE_GROUP_CONTEXT_MENU,
-    async (event, group: WorkspaceGroup, canAddSubgroup: boolean): Promise<void> => {
+    async (
+      event,
+      group: WorkspaceGroup,
+      canAddSubgroup: boolean,
+      workspaces?: Workspace[]
+    ): Promise<void> => {
       const senderWindow = getValidWindow(event);
       if (!senderWindow) return;
 
@@ -362,6 +410,22 @@ function setupWorkspaceGroupContextMenuHandler(): void {
           group.id
         )
       );
+
+      // ワークスペース移動サブメニュー
+      if (workspaces && workspaces.length > 1) {
+        const moveSubmenu = buildMoveToWorkspaceSubmenu(
+          event.sender,
+          IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_MOVE_TO_WORKSPACE,
+          group.id,
+          group.workspaceId,
+          workspaces
+        );
+        if (moveSubmenu) {
+          menu.append(createSeparator());
+          menu.append(moveSubmenu);
+        }
+      }
+
       menu.append(createSeparator());
       menu.append(
         createMenuItem(
@@ -472,12 +536,49 @@ function setupWindowContextMenuHandler(): void {
   );
 }
 
+/** WorkspaceTabContextMenu用のネイティブメニューハンドラーを設定 */
+function setupWorkspaceTabContextMenuHandler(): void {
+  ipcMain.handle(
+    IPC_CHANNELS.SHOW_WORKSPACE_TAB_CONTEXT_MENU,
+    async (event, workspaceId: string, canDelete: boolean): Promise<void> => {
+      const senderWindow = getValidWindow(event);
+      if (!senderWindow) return;
+
+      const menu = new Menu();
+
+      menu.append(
+        createMenuItem(
+          '✏️ 名前を変更',
+          event.sender,
+          IPC_CHANNELS.EVENT_WORKSPACE_TAB_MENU_RENAME,
+          workspaceId
+        )
+      );
+
+      if (canDelete) {
+        menu.append(createSeparator());
+        menu.append(
+          createMenuItem(
+            '🗑️ 削除',
+            event.sender,
+            IPC_CHANNELS.EVENT_WORKSPACE_TAB_MENU_DELETE,
+            workspaceId
+          )
+        );
+      }
+
+      menu.popup({ window: senderWindow });
+    }
+  );
+}
+
 /** 全てのコンテキストメニューハンドラーを設定 */
 export function setupContextMenuHandlers(): void {
   setupAdminItemContextMenuHandler();
   setupLauncherContextMenuHandler();
   setupWorkspaceContextMenuHandler();
   setupWorkspaceGroupContextMenuHandler();
+  setupWorkspaceTabContextMenuHandler();
   setupFileTabContextMenuHandler();
   setupWindowContextMenuHandler();
 }
