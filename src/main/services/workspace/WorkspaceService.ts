@@ -2,15 +2,19 @@
  * ワークスペースサービスのファサードクラス
  * 各種マネージャークラスに処理を委譲する
  */
+import { randomUUID } from 'crypto';
+
 import type ElectronStore from 'electron-store';
 import type {
   AppItem,
+  Workspace,
   WorkspaceItem,
   WorkspaceGroup,
   ArchivedWorkspaceGroup,
   MixedOrderEntry,
 } from '@common/types';
 import logger from '@common/logger';
+import { getDescendantGroupIds } from '@common/utils/groupTreeUtils';
 
 import PathManager from '../../config/pathManager.js';
 
@@ -23,6 +27,7 @@ import type {
 import { WorkspaceItemManager } from './WorkspaceItemManager.js';
 import { WorkspaceGroupManager } from './WorkspaceGroupManager.js';
 import { WorkspaceArchiveManager } from './WorkspaceArchiveManager.js';
+import { migrateToMultiWorkspace } from './migrationUtils.js';
 
 // electron-storeを動的にインポート
 let Store: typeof ElectronStore | null = null;
@@ -48,6 +53,7 @@ export class WorkspaceService {
   private static readonly DEFAULT_DATA = {
     items: [] as WorkspaceItem[],
     groups: [] as WorkspaceGroup[],
+    workspaces: [] as Workspace[],
   };
 
   private static readonly DEFAULT_ARCHIVE_DATA = {
@@ -76,7 +82,11 @@ export class WorkspaceService {
       const configFolder = PathManager.getConfigFolder();
 
       if (!this.store) {
-        this.store = new Store!<{ items: WorkspaceItem[]; groups: WorkspaceGroup[] }>({
+        this.store = new Store!<{
+          items: WorkspaceItem[];
+          groups: WorkspaceGroup[];
+          workspaces: Workspace[];
+        }>({
           name: 'workspace',
           cwd: configFolder,
           defaults: WorkspaceService.DEFAULT_DATA,
@@ -104,6 +114,9 @@ export class WorkspaceService {
         }) as unknown as DetachedStoreInstance;
       }
 
+      // マルチワークスペースマイグレーション
+      migrateToMultiWorkspace(this.store);
+
       // マネージャーを初期化
       this.itemManager = new WorkspaceItemManager(this.store);
       this.groupManager = new WorkspaceGroupManager(this.store);
@@ -127,6 +140,75 @@ export class WorkspaceService {
     return WorkspaceService.instance;
   }
 
+  // --- ワークスペース（タブ）管理 ---
+
+  public async loadWorkspaces(): Promise<Workspace[]> {
+    await this.initializeStore();
+    const workspaces = this.store!.get('workspaces') || [];
+    return workspaces.sort((a, b) => a.order - b.order);
+  }
+
+  public async createWorkspace(name: string): Promise<Workspace> {
+    await this.initializeStore();
+    const workspaces = this.store!.get('workspaces') || [];
+    const maxOrder = workspaces.length > 0 ? Math.max(...workspaces.map((w) => w.order)) : -1;
+    const workspace: Workspace = {
+      id: randomUUID(),
+      displayName: name,
+      order: maxOrder + 1,
+      createdAt: Date.now(),
+    };
+    workspaces.push(workspace);
+    this.store!.set('workspaces', workspaces);
+    logger.info({ id: workspace.id, name }, 'Created workspace');
+    return workspace;
+  }
+
+  public async renameWorkspace(id: string, name: string): Promise<void> {
+    await this.initializeStore();
+    const workspaces = this.store!.get('workspaces') || [];
+    const ws = workspaces.find((w) => w.id === id);
+    if (!ws) throw new Error(`Workspace not found: ${id}`);
+    ws.displayName = name;
+    this.store!.set('workspaces', workspaces);
+    logger.info({ id, name }, 'Renamed workspace');
+  }
+
+  public async deleteWorkspace(id: string): Promise<void> {
+    await this.initializeStore();
+    const workspaces = this.store!.get('workspaces') || [];
+    if (workspaces.length <= 1) throw new Error('Cannot delete the last workspace');
+    const filtered = workspaces.filter((w) => w.id !== id);
+    if (filtered.length === workspaces.length) throw new Error(`Workspace not found: ${id}`);
+    this.store!.set('workspaces', filtered);
+
+    // 所属グループ・アイテムも削除
+    const groups = this.store!.get('groups') || [];
+    this.store!.set(
+      'groups',
+      groups.filter((g) => g.workspaceId !== id)
+    );
+    const items = this.store!.get('items') || [];
+    this.store!.set(
+      'items',
+      items.filter((i) => i.workspaceId !== id)
+    );
+
+    logger.info({ id }, 'Deleted workspace with associated groups and items');
+  }
+
+  public async reorderWorkspaces(ids: string[]): Promise<void> {
+    await this.initializeStore();
+    const workspaces = this.store!.get('workspaces') || [];
+    const wsMap = new Map(workspaces.map((w) => [w.id, w]));
+    ids.forEach((id, index) => {
+      const ws = wsMap.get(id);
+      if (ws) ws.order = index;
+    });
+    this.store!.set('workspaces', workspaces);
+    logger.info({ count: ids.length }, 'Reordered workspaces');
+  }
+
   // --- アイテム管理 ---
 
   public async loadItems(): Promise<WorkspaceItem[]> {
@@ -134,14 +216,22 @@ export class WorkspaceService {
     return this.itemManager!.loadItems();
   }
 
-  public async addItem(item: AppItem, groupId?: string): Promise<WorkspaceItem> {
+  public async addItem(
+    item: AppItem,
+    groupId?: string,
+    workspaceId?: string
+  ): Promise<WorkspaceItem> {
     await this.initializeStore();
-    return this.itemManager!.addItem(item, groupId);
+    return this.itemManager!.addItem(item, groupId, workspaceId);
   }
 
-  public async addItemFromPath(filePath: string, groupId?: string): Promise<WorkspaceItem> {
+  public async addItemFromPath(
+    filePath: string,
+    groupId?: string,
+    workspaceId?: string
+  ): Promise<WorkspaceItem> {
     await this.initializeStore();
-    return this.itemManager!.addItemFromPath(filePath, groupId);
+    return this.itemManager!.addItemFromPath(filePath, groupId, workspaceId);
   }
 
   public async removeItem(id: string): Promise<void> {
@@ -189,10 +279,11 @@ export class WorkspaceService {
   public async createGroup(
     name: string,
     color?: string,
-    parentGroupId?: string
+    parentGroupId?: string,
+    workspaceId?: string
   ): Promise<WorkspaceGroup> {
     await this.initializeStore();
-    return this.groupManager!.createGroup(name, color, parentGroupId);
+    return this.groupManager!.createGroup(name, color, parentGroupId, workspaceId);
   }
 
   public async updateGroup(id: string, updates: Partial<WorkspaceGroup>): Promise<void> {
@@ -255,6 +346,50 @@ export class WorkspaceService {
     await this.initializeStore();
     const groups = this.groupManager!.loadGroups();
     this.itemManager!.moveItemToGroup(itemId, groupId, groups);
+  }
+
+  public async moveItemToWorkspace(itemId: string, targetWorkspaceId: string): Promise<void> {
+    await this.initializeStore();
+    const items = this.store!.get('items') || [];
+    const item = items.find((i) => i.id === itemId);
+    if (!item) throw new Error(`Item not found: ${itemId}`);
+    item.workspaceId = targetWorkspaceId;
+    // グループから削除（移動先ワークスペースにはグループが存在しないため）
+    item.groupId = undefined;
+    this.store!.set('items', items);
+    logger.info({ itemId, targetWorkspaceId }, 'Moved item to workspace');
+  }
+
+  public async moveGroupToWorkspace(groupId: string, targetWorkspaceId: string): Promise<void> {
+    await this.initializeStore();
+    const groups = this.store!.get('groups') || [];
+    const items = this.store!.get('items') || [];
+
+    const allGroupIds = new Set([groupId, ...getDescendantGroupIds(groupId, groups)]);
+
+    // グループの workspaceId を更新（トップレベルグループは parentGroupId を解除）
+    for (const group of groups) {
+      if (allGroupIds.has(group.id)) {
+        group.workspaceId = targetWorkspaceId;
+        if (group.id === groupId) {
+          group.parentGroupId = undefined;
+        }
+      }
+    }
+
+    // 所属アイテムの workspaceId を更新
+    for (const item of items) {
+      if (item.groupId && allGroupIds.has(item.groupId)) {
+        item.workspaceId = targetWorkspaceId;
+      }
+    }
+
+    this.store!.set('groups', groups);
+    this.store!.set('items', items);
+    logger.info(
+      { groupId, targetWorkspaceId, groupCount: allGroupIds.size },
+      'Moved group to workspace'
+    );
   }
 
   // --- アーカイブ管理 ---

@@ -1,6 +1,7 @@
 import React from 'react';
 import type {
   AppItem,
+  Workspace,
   WorkspaceItem,
   WorkspaceGroup,
   MixedChild,
@@ -59,6 +60,7 @@ const ColorPickerModal: React.FC<{
 
 interface WorkspaceGroupedListProps {
   contentRef?: React.Ref<HTMLDivElement>;
+  workspaces?: Workspace[];
   data: {
     groups: WorkspaceGroup[];
     items: WorkspaceItem[];
@@ -86,6 +88,7 @@ interface WorkspaceGroupedListProps {
     onToggleUncategorized: () => void;
     activeGroupId?: string;
     setActiveGroupId: (id: string | undefined) => void;
+    activeWorkspaceId?: string;
     visibleGroupIds?: Set<string> | null;
     itemVisibility?: Map<string, boolean> | null;
     showUncategorized?: boolean;
@@ -94,6 +97,7 @@ interface WorkspaceGroupedListProps {
 
 const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
   contentRef,
+  workspaces,
   data,
   handlers,
   ui,
@@ -121,6 +125,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     uncategorizedCollapsed,
     onToggleUncategorized,
     setActiveGroupId,
+    activeWorkspaceId,
     visibleGroupIds,
     itemVisibility,
     showUncategorized = true,
@@ -206,6 +211,13 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
         })
       ),
       window.electronAPI.onWorkspaceMenuRemoveItem(onRemoveItem),
+      window.electronAPI.onWorkspaceMenuMoveToWorkspace(async (itemId, targetWorkspaceId) => {
+        try {
+          await window.electronAPI.workspaceAPI.moveItemToWorkspace(itemId, targetWorkspaceId);
+        } catch (error) {
+          logError('Failed to move item to workspace:', error);
+        }
+      }),
     ];
 
     return () => cleanups.forEach((cleanup) => cleanup());
@@ -248,6 +260,13 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
       window.electronAPI.onWorkspaceGroupMenuAddSubgroup((parentGroupId) => {
         const childCount = groups.filter((g) => g.parentGroupId === parentGroupId).length;
         onAddSubgroup(parentGroupId, childCount);
+      }),
+      window.electronAPI.onWorkspaceGroupMenuMoveToWorkspace(async (groupId, targetWorkspaceId) => {
+        try {
+          await window.electronAPI.workspaceAPI.moveGroupToWorkspace(groupId, targetWorkspaceId);
+        } catch (error) {
+          logError('Failed to move group to workspace:', error);
+        }
       }),
     ];
 
@@ -481,7 +500,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
   /** AppItem（LauncherItem/GroupItem/WindowItem/ClipboardItem）をワークスペースに追加 */
   async function addAppItemToWorkspace(appItemData: string, groupId?: string): Promise<void> {
     const item: AppItem = JSON.parse(appItemData);
-    await window.electronAPI.workspaceAPI.addItem(item, groupId);
+    await window.electronAPI.workspaceAPI.addItem(item, groupId, activeWorkspaceId);
     // WindowInfoはドラッグ不可のため実際には来ないが、型安全のためinチェックを使用
     await window.electronAPI.showToastWindow({
       displayName: 'displayName' in item ? item.displayName : '',
@@ -545,14 +564,14 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
   const handleContextMenu = (item: WorkspaceItem) => (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    window.electronAPI.showWorkspaceContextMenu(item, groups);
+    window.electronAPI.showWorkspaceContextMenu(item, groups, workspaces);
   };
 
   const handleGroupContextMenu = (group: WorkspaceGroup) => (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     const canAdd = canCreateSubgroup(group.id, groups);
-    window.electronAPI.showWorkspaceGroupContextMenu(group, canAdd);
+    window.electronAPI.showWorkspaceGroupContextMenu(group, canAdd, workspaces);
   };
 
   const handleGroupToggle = (groupId: string) => {

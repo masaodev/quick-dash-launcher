@@ -10,6 +10,7 @@ import {
   AppItem,
   AppInfo,
   BrowserInfo,
+  Workspace,
   WorkspaceItem,
   WorkspaceGroup,
   WindowInfo,
@@ -180,9 +181,20 @@ export interface ElectronAPI {
   openExternalUrl: (url: string) => Promise<void>;
   // ワークスペース関連API
   workspaceAPI: {
+    // ワークスペース（タブ）管理
+    loadWorkspaces: () => Promise<Workspace[]>;
+    createWorkspace: (name: string) => Promise<Workspace>;
+    renameWorkspace: (id: string, name: string) => Promise<{ success: boolean }>;
+    deleteWorkspace: (id: string) => Promise<{ success: boolean }>;
+    reorderWorkspaces: (ids: string[]) => Promise<{ success: boolean }>;
+    // アイテム管理
     loadItems: () => Promise<WorkspaceItem[]>;
-    addItem: (item: AppItem, groupId?: string) => Promise<WorkspaceItem>;
-    addItemsFromPaths: (filePaths: string[], groupId?: string) => Promise<WorkspaceItem[]>;
+    addItem: (item: AppItem, groupId?: string, workspaceId?: string) => Promise<WorkspaceItem>;
+    addItemsFromPaths: (
+      filePaths: string[],
+      groupId?: string,
+      workspaceId?: string
+    ) => Promise<WorkspaceItem[]>;
     removeItem: (id: string) => Promise<{ success: boolean }>;
     updateDisplayName: (id: string, displayName: string) => Promise<{ success: boolean }>;
     updateItem: (id: string, updates: Partial<WorkspaceItem>) => Promise<{ success: boolean }>;
@@ -190,7 +202,12 @@ export interface ElectronAPI {
     launchItem: (item: WorkspaceItem) => Promise<{ success: boolean }>;
     // グループ管理
     loadGroups: () => Promise<WorkspaceGroup[]>;
-    createGroup: (name: string, color?: string, parentGroupId?: string) => Promise<WorkspaceGroup>;
+    createGroup: (
+      name: string,
+      color?: string,
+      parentGroupId?: string,
+      workspaceId?: string
+    ) => Promise<WorkspaceGroup>;
     updateGroup: (id: string, updates: Partial<WorkspaceGroup>) => Promise<{ success: boolean }>;
     deleteGroup: (id: string, deleteItems: boolean) => Promise<{ success: boolean }>;
     reorderGroups: (groupIds: string[]) => Promise<{ success: boolean }>;
@@ -202,6 +219,14 @@ export interface ElectronAPI {
     moveGroupToParent: (
       groupId: string,
       newParentGroupId?: string
+    ) => Promise<{ success: boolean }>;
+    moveItemToWorkspace: (
+      itemId: string,
+      targetWorkspaceId: string
+    ) => Promise<{ success: boolean }>;
+    moveGroupToWorkspace: (
+      groupId: string,
+      targetWorkspaceId: string
     ) => Promise<{ success: boolean }>;
     setGroupsCollapsed: (ids: string[], collapsed: boolean) => Promise<{ success: boolean }>;
     // アーカイブ管理
@@ -303,8 +328,20 @@ export interface ElectronAPI {
   // コンテキストメニュー表示API
   showAdminItemContextMenu: (selectedCount: number, isSingleLine: boolean) => Promise<void>;
   showLauncherContextMenu: (item: AppItem) => Promise<void>;
-  showWorkspaceContextMenu: (item: WorkspaceItem, groups: WorkspaceGroup[]) => Promise<void>;
-  showWorkspaceGroupContextMenu: (group: WorkspaceGroup, canAddSubgroup: boolean) => Promise<void>;
+  showWorkspaceContextMenu: (
+    item: WorkspaceItem,
+    groups: WorkspaceGroup[],
+    workspaces?: Workspace[]
+  ) => Promise<void>;
+  showWorkspaceGroupContextMenu: (
+    group: WorkspaceGroup,
+    canAddSubgroup: boolean,
+    workspaces?: Workspace[]
+  ) => Promise<void>;
+  // WorkspaceTabContextMenu
+  showWorkspaceTabContextMenu: (workspaceId: string, canDelete: boolean) => Promise<void>;
+  onWorkspaceTabMenuRename: (callback: (workspaceId: string) => void) => () => void;
+  onWorkspaceTabMenuDelete: (callback: (workspaceId: string) => void) => () => void;
   // FileTabContextMenu
   showFileTabContextMenu: (tabIndex: number) => Promise<void>;
   onFileTabMenuRename: (callback: (tabIndex: number) => void) => () => void;
@@ -346,6 +383,9 @@ export interface ElectronAPI {
   onWorkspaceMenuOpenShortcutParentFolder: (callback: (itemId: string) => void) => () => void;
   onWorkspaceMenuRemoveFromGroup: (callback: (itemId: string) => void) => () => void;
   onWorkspaceMenuRemoveItem: (callback: (itemId: string) => void) => () => void;
+  onWorkspaceMenuMoveToWorkspace: (
+    callback: (itemId: string, targetWorkspaceId: string) => void
+  ) => () => void;
   // WorkspaceGroupContextMenuイベントリスナー
   onWorkspaceGroupMenuRename: (callback: (groupId: string) => void) => () => void;
   onWorkspaceGroupMenuShowColorPicker: (callback: (groupId: string) => void) => () => void;
@@ -356,6 +396,9 @@ export interface ElectronAPI {
   onWorkspaceGroupMenuArchive: (callback: (groupId: string) => void) => () => void;
   onWorkspaceGroupMenuDelete: (callback: (groupId: string) => void) => () => void;
   onWorkspaceGroupMenuAddSubgroup: (callback: (groupId: string) => void) => () => void;
+  onWorkspaceGroupMenuMoveToWorkspace: (
+    callback: (groupId: string, targetWorkspaceId: string) => void
+  ) => () => void;
   // ブックマーク自動取込API
   bookmarkAutoImportAPI: {
     getSettings: () => Promise<BookmarkAutoImportSettings>;

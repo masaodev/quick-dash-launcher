@@ -198,6 +198,33 @@ html:has(.workspace-window.background-transparent) {
   margin: var(--spacing-xs) 0;
 }
 
+/* ==================== ワークスペースタブバー ==================== */
+
+.workspace-tab-bar {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background-color: var(--bg-header);
+  border-bottom: var(--border-light);
+  flex-shrink: 0;
+  overflow-x: auto;
+  scrollbar-width: none; /* Firefox */
+}
+
+.workspace-tab-bar::-webkit-scrollbar {
+  display: none; /* Chromium */
+}
+
+.workspace-add-tab-btn {
+  min-width: 32px;
+  font-size: 16px;
+  font-weight: bold;
+  color: var(--text-secondary-color);
+}
+
+.workspace-add-tab-btn:hover {
+  color: var(--color-primary);
+  background-color: color-mix(in srgb, var(--color-primary) 10%, transparent);
+}
+
 /* ==================== フィルタバー ==================== */
 
 .workspace-filter-bar {

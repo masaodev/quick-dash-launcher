@@ -10,6 +10,7 @@ import type {
   AppItem,
   AppInfo,
   BrowserInfo,
+  Workspace,
   WorkspaceItem,
   WorkspaceGroup,
   WindowInfo,
@@ -308,12 +309,33 @@ contextBridge.exposeInMainWorld('electronAPI', {
   hideWorkspaceWindow: () => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_HIDE_WINDOW),
   // ワークスペース関連API
   workspaceAPI: {
+    // ワークスペース（タブ）管理
+    loadWorkspaces: (): Promise<Workspace[]> =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_LOAD_WORKSPACES),
+    createWorkspace: (name: string): Promise<Workspace> =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_CREATE_WORKSPACE, name),
+    renameWorkspace: (id: string, name: string): Promise<{ success: boolean }> =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_RENAME_WORKSPACE, id, name),
+    deleteWorkspace: (id: string): Promise<{ success: boolean }> =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_DELETE_WORKSPACE, id),
+    reorderWorkspaces: (ids: string[]): Promise<{ success: boolean }> =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_REORDER_WORKSPACES, ids),
+    // アイテム管理
     loadItems: (): Promise<WorkspaceItem[]> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_LOAD_ITEMS),
-    addItem: (item: AppItem, groupId?: string): Promise<WorkspaceItem> =>
-      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_ADD_ITEM, item, groupId),
-    addItemsFromPaths: (filePaths: string[], groupId?: string): Promise<WorkspaceItem[]> =>
-      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_ADD_ITEMS_FROM_PATHS, filePaths, groupId),
+    addItem: (item: AppItem, groupId?: string, workspaceId?: string): Promise<WorkspaceItem> =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_ADD_ITEM, item, groupId, workspaceId),
+    addItemsFromPaths: (
+      filePaths: string[],
+      groupId?: string,
+      workspaceId?: string
+    ): Promise<WorkspaceItem[]> =>
+      ipcRenderer.invoke(
+        IPC_CHANNELS.WORKSPACE_ADD_ITEMS_FROM_PATHS,
+        filePaths,
+        groupId,
+        workspaceId
+      ),
     removeItem: (id: string): Promise<{ success: boolean }> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_REMOVE_ITEM, id),
     updateDisplayName: (id: string, displayName: string): Promise<{ success: boolean }> =>
@@ -327,8 +349,19 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // グループ管理
     loadGroups: (): Promise<WorkspaceGroup[]> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_LOAD_GROUPS),
-    createGroup: (name: string, color?: string, parentGroupId?: string): Promise<WorkspaceGroup> =>
-      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_CREATE_GROUP, name, color, parentGroupId),
+    createGroup: (
+      name: string,
+      color?: string,
+      parentGroupId?: string,
+      workspaceId?: string
+    ): Promise<WorkspaceGroup> =>
+      ipcRenderer.invoke(
+        IPC_CHANNELS.WORKSPACE_CREATE_GROUP,
+        name,
+        color,
+        parentGroupId,
+        workspaceId
+      ),
     updateGroup: (id: string, updates: Partial<WorkspaceGroup>): Promise<{ success: boolean }> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_UPDATE_GROUP, id, updates),
     deleteGroup: (id: string, deleteItems: boolean): Promise<{ success: boolean }> =>
@@ -347,6 +380,20 @@ contextBridge.exposeInMainWorld('electronAPI', {
       newParentGroupId?: string
     ): Promise<{ success: boolean }> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_MOVE_GROUP_TO_PARENT, groupId, newParentGroupId),
+    moveItemToWorkspace: (
+      itemId: string,
+      targetWorkspaceId: string
+    ): Promise<{ success: boolean }> =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_MOVE_ITEM_TO_WORKSPACE, itemId, targetWorkspaceId),
+    moveGroupToWorkspace: (
+      groupId: string,
+      targetWorkspaceId: string
+    ): Promise<{ success: boolean }> =>
+      ipcRenderer.invoke(
+        IPC_CHANNELS.WORKSPACE_MOVE_GROUP_TO_WORKSPACE,
+        groupId,
+        targetWorkspaceId
+      ),
     setGroupsCollapsed: (ids: string[], collapsed: boolean): Promise<{ success: boolean }> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_SET_GROUPS_COLLAPSED, ids, collapsed),
     // アーカイブ管理
@@ -456,6 +503,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ),
   onLauncherMenuShowMemo: (callback: (item: AppItem) => void) =>
     createEventListener<AppItem>(IPC_CHANNELS.EVENT_LAUNCHER_MENU_SHOW_MEMO, callback),
+  // WorkspaceTabContextMenu
+  showWorkspaceTabContextMenu: (workspaceId: string, canDelete: boolean): Promise<void> =>
+    ipcRenderer.invoke(IPC_CHANNELS.SHOW_WORKSPACE_TAB_CONTEXT_MENU, workspaceId, canDelete),
+  onWorkspaceTabMenuRename: (callback: (workspaceId: string) => void) =>
+    createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_TAB_MENU_RENAME, callback),
+  onWorkspaceTabMenuDelete: (callback: (workspaceId: string) => void) =>
+    createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_TAB_MENU_DELETE, callback),
   // FileTabContextMenu
   showFileTabContextMenu: (tabIndex: number): Promise<void> =>
     ipcRenderer.invoke(IPC_CHANNELS.SHOW_FILE_TAB_CONTEXT_MENU, tabIndex),
@@ -477,8 +531,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onUnPinWindow: (callback: (hwnd: number | bigint) => void) =>
     createEventListener<number | bigint>(IPC_CHANNELS.UNPIN_WINDOW, callback),
   // WorkspaceContextMenu
-  showWorkspaceContextMenu: (item: WorkspaceItem, groups: WorkspaceGroup[]): Promise<void> =>
-    ipcRenderer.invoke(IPC_CHANNELS.SHOW_WORKSPACE_CONTEXT_MENU, item, groups),
+  showWorkspaceContextMenu: (
+    item: WorkspaceItem,
+    groups: WorkspaceGroup[],
+    workspaces?: Workspace[]
+  ): Promise<void> =>
+    ipcRenderer.invoke(IPC_CHANNELS.SHOW_WORKSPACE_CONTEXT_MENU, item, groups, workspaces),
   onWorkspaceMenuRenameItem: (callback: (itemId: string) => void) =>
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_MENU_RENAME_ITEM, callback),
   onWorkspaceMenuEditItem: (callback: (itemId: string) => void) =>
@@ -507,9 +565,23 @@ contextBridge.exposeInMainWorld('electronAPI', {
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_MENU_REMOVE_FROM_GROUP, callback),
   onWorkspaceMenuRemoveItem: (callback: (itemId: string) => void) =>
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_MENU_REMOVE_ITEM, callback),
+  onWorkspaceMenuMoveToWorkspace: (callback: (itemId: string, targetWorkspaceId: string) => void) =>
+    createEventListener2<string, string>(
+      IPC_CHANNELS.EVENT_WORKSPACE_MENU_MOVE_TO_WORKSPACE,
+      callback
+    ),
   // WorkspaceGroupContextMenu
-  showWorkspaceGroupContextMenu: (group: WorkspaceGroup, canAddSubgroup: boolean): Promise<void> =>
-    ipcRenderer.invoke(IPC_CHANNELS.SHOW_WORKSPACE_GROUP_CONTEXT_MENU, group, canAddSubgroup),
+  showWorkspaceGroupContextMenu: (
+    group: WorkspaceGroup,
+    canAddSubgroup: boolean,
+    workspaces?: Workspace[]
+  ): Promise<void> =>
+    ipcRenderer.invoke(
+      IPC_CHANNELS.SHOW_WORKSPACE_GROUP_CONTEXT_MENU,
+      group,
+      canAddSubgroup,
+      workspaces
+    ),
   onWorkspaceGroupMenuRename: (callback: (groupId: string) => void) =>
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_RENAME, callback),
   onWorkspaceGroupMenuShowColorPicker: (callback: (groupId: string) => void) =>
@@ -530,6 +602,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_DELETE, callback),
   onWorkspaceGroupMenuAddSubgroup: (callback: (groupId: string) => void) =>
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_ADD_SUBGROUP, callback),
+  onWorkspaceGroupMenuMoveToWorkspace: (
+    callback: (groupId: string, targetWorkspaceId: string) => void
+  ) =>
+    createEventListener2<string, string>(
+      IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_MOVE_TO_WORKSPACE,
+      callback
+    ),
   // ブックマーク自動取込API
   bookmarkAutoImportAPI: {
     getSettings: (): Promise<BookmarkAutoImportSettings> =>

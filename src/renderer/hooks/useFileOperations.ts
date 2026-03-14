@@ -22,11 +22,12 @@ export function useFileOperations() {
   const addItemsFromFilePaths = async (
     filePaths: string[],
     onItemsAdded: () => void,
-    groupId?: string
+    groupId?: string,
+    workspaceId?: string
   ): Promise<void> => {
     if (filePaths.length === 0) return;
     try {
-      await window.electronAPI.workspaceAPI.addItemsFromPaths(filePaths, groupId);
+      await window.electronAPI.workspaceAPI.addItemsFromPaths(filePaths, groupId, workspaceId);
       onItemsAdded();
     } catch (error) {
       logError('Failed to add items from file paths:', error);
@@ -46,13 +47,15 @@ export function useFileOperations() {
   const addUrlItem = async (
     url: string,
     onItemsAdded: () => void,
-    groupId?: string
+    groupId?: string,
+    workspaceId?: string
   ): Promise<void> => {
     try {
       const icon = await fetchFaviconSafely(url);
       await window.electronAPI.workspaceAPI.addItem(
         { displayName: url, path: url, type: 'url' as const, icon },
-        groupId
+        groupId,
+        workspaceId
       );
       onItemsAdded();
     } catch (error) {

@@ -2,6 +2,7 @@
  * ワークスペースサービスで使用する型定義
  */
 import type {
+  Workspace,
   WorkspaceItem,
   WorkspaceGroup,
   ArchivedWorkspaceGroup,
@@ -14,9 +15,11 @@ import type {
 export type WorkspaceStoreInstance = {
   get(key: 'items'): WorkspaceItem[];
   get(key: 'groups'): WorkspaceGroup[];
+  get(key: 'workspaces'): Workspace[];
   set(key: 'items', value: WorkspaceItem[]): void;
   set(key: 'groups', value: WorkspaceGroup[]): void;
-  store: { items: WorkspaceItem[]; groups: WorkspaceGroup[] };
+  set(key: 'workspaces', value: Workspace[]): void;
+  store: { items: WorkspaceItem[]; groups: WorkspaceGroup[]; workspaces: Workspace[] };
   clear(): void;
   path: string;
 };

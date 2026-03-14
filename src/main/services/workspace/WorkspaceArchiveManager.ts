@@ -195,27 +195,25 @@ export class WorkspaceArchiveManager {
         ? currentGroups.some((g) => g.id === archivedGroup.parentGroupId)
         : true;
 
-      // メイングループを復元
+      // メイングループを復元（アーカイブ専用フィールドを除去）
+      const {
+        archivedAt: _mainArchivedAt,
+        originalOrder: _mainOriginalOrder,
+        itemCount: _mainItemCount,
+        ...mainGroupFields
+      } = archivedGroup;
       const restoredGroup: WorkspaceGroup = {
-        id: archivedGroup.id,
+        ...mainGroupFields,
         displayName: restoredGroupName,
-        color: archivedGroup.color,
         order: maxGroupOrder + 1,
-        collapsed: archivedGroup.collapsed,
-        createdAt: archivedGroup.createdAt,
         parentGroupId: parentExists ? archivedGroup.parentGroupId : undefined,
       };
 
-      // サブグループを復元
-      const restoredSubgroups: WorkspaceGroup[] = archivedSubgroups.map((sg) => ({
-        id: sg.id,
-        displayName: sg.displayName,
-        color: sg.color,
-        order: sg.order,
-        collapsed: sg.collapsed,
-        createdAt: sg.createdAt,
-        parentGroupId: sg.parentGroupId,
-      }));
+      // サブグループを復元（アーカイブ専用フィールドを除去）
+      const restoredSubgroups: WorkspaceGroup[] = archivedSubgroups.map(
+        ({ archivedAt: _a, originalOrder: _o, itemCount: _c, ...sgFields }) =>
+          sgFields as WorkspaceGroup
+      );
 
       // アイテムを復元（アーカイブ関連プロパティを削除）
       const restoredItems: WorkspaceItem[] = allArchivedItems.map((item, index) => {

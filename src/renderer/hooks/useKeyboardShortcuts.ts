@@ -122,7 +122,11 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
    * 配列を現在位置から巡回し、条件を満たす次のインデックスを返す。
    * 見つからなければ現在位置をそのまま返す。
    */
-  function findNextIndex(length: number, currentIndex: number, predicate: (i: number) => boolean): number {
+  function findNextIndex(
+    length: number,
+    currentIndex: number,
+    predicate: (i: number) => boolean
+  ): number {
     for (let offset = 1; offset <= length; offset++) {
       const candidate = (currentIndex + offset) % length;
       if (predicate(candidate)) return candidate;
@@ -149,8 +153,7 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
       const newTabIndex = findNextIndex(dataFileTabs.length, currentTabIndex, (i) => {
         if (!searchQuery) return true;
         const tabItems = mainItems.filter(
-          (item) =>
-            !isWindowInfo(item) && dataFileTabs[i].files.includes(item.sourceFile || '')
+          (item) => !isWindowInfo(item) && dataFileTabs[i].files.includes(item.sourceFile || '')
         );
         return filterItems(tabItems, searchQuery).length > 0;
       });

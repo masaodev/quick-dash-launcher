@@ -2,6 +2,21 @@ import { LauncherItem } from './launcher';
 import type { ClipboardFormat } from './clipboard';
 
 /**
+ * ワークスペース（タブ）
+ * 複数のワークスペースをタブで切り替えて管理する
+ */
+export interface Workspace {
+  /** ワークスペースの一意識別子 */
+  id: string;
+  /** ワークスペースの表示名 */
+  displayName: string;
+  /** 並び順（0から開始） */
+  order: number;
+  /** 作成日時（timestamp） */
+  createdAt: number;
+}
+
+/**
  * ワークスペースのグループ
  * アイテムを論理的にグループ化して整理する
  */
@@ -20,6 +35,8 @@ export interface WorkspaceGroup {
   createdAt: number;
   /** 親グループID（undefinedならトップレベル = 後方互換） */
   parentGroupId?: string;
+  /** 所属ワークスペースID */
+  workspaceId?: string;
 }
 
 /**
@@ -78,6 +95,8 @@ export interface WorkspaceItem {
   itemNames?: string[];
   /** 自由記述メモ（オプション） */
   memo?: string;
+  /** 所属ワークスペースID */
+  workspaceId?: string;
   /** クリップボードデータファイルへの参照（clipboard専用） */
   clipboardDataRef?: string;
   /** クリップボードの保存フォーマット（clipboard専用） */

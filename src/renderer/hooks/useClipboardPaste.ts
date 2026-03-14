@@ -5,7 +5,11 @@ import { logError } from '../utils/debug';
 
 import { useFileOperations } from './useFileOperations';
 
-export function useClipboardPaste(onItemsAdded: () => void, activeGroupId?: string) {
+export function useClipboardPaste(
+  onItemsAdded: () => void,
+  activeGroupId?: string,
+  activeWorkspaceId?: string
+) {
   const { extractFilePaths, addItemsFromFilePaths, fetchFaviconSafely } = useFileOperations();
 
   useEffect(() => {
@@ -31,7 +35,8 @@ export function useClipboardPaste(onItemsAdded: () => void, activeGroupId?: stri
 
         await window.electronAPI.workspaceAPI.addItem(
           { displayName: firstLine, path: firstLine, type: itemType, icon },
-          activeGroupId
+          activeGroupId,
+          activeWorkspaceId
         );
         onItemsAdded();
       } catch (error) {
@@ -46,7 +51,7 @@ export function useClipboardPaste(onItemsAdded: () => void, activeGroupId?: stri
       e.preventDefault();
       try {
         const filePaths = await extractFilePaths(e.clipboardData.files);
-        await addItemsFromFilePaths(filePaths, onItemsAdded, activeGroupId);
+        await addItemsFromFilePaths(filePaths, onItemsAdded, activeGroupId, activeWorkspaceId);
       } catch (error) {
         logError('Failed to add items from file paste:', error);
       }
@@ -58,5 +63,12 @@ export function useClipboardPaste(onItemsAdded: () => void, activeGroupId?: stri
       document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('paste', handlePaste);
     };
-  }, [onItemsAdded, extractFilePaths, addItemsFromFilePaths, fetchFaviconSafely, activeGroupId]);
+  }, [
+    onItemsAdded,
+    extractFilePaths,
+    addItemsFromFilePaths,
+    fetchFaviconSafely,
+    activeGroupId,
+    activeWorkspaceId,
+  ]);
 }

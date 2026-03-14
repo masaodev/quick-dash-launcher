@@ -92,21 +92,23 @@ export function setupWorkspaceHandlers(): void {
     }, 'Failed to load workspace items')
   );
 
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_ADD_ITEM, (_event, item: AppItem, groupId?: string) =>
-    withWorkspaceService(async (service) => {
-      const addedItem = await service.addItem(item, groupId);
-      logger.info(
-        { id: addedItem.id, name: addedItem.displayName, groupId },
-        'Added item to workspace'
-      );
-      notifyWorkspaceChanged();
-      return addedItem;
-    }, 'Failed to add item to workspace')
+  ipcMain.handle(
+    IPC_CHANNELS.WORKSPACE_ADD_ITEM,
+    (_event, item: AppItem, groupId?: string, workspaceId?: string) =>
+      withWorkspaceService(async (service) => {
+        const addedItem = await service.addItem(item, groupId, workspaceId);
+        logger.info(
+          { id: addedItem.id, name: addedItem.displayName, groupId, workspaceId },
+          'Added item to workspace'
+        );
+        notifyWorkspaceChanged();
+        return addedItem;
+      }, 'Failed to add item to workspace')
   );
 
   ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_ADD_ITEMS_FROM_PATHS,
-    (_event, filePaths: string[], groupId?: string) =>
+    (_event, filePaths: string[], groupId?: string, workspaceId?: string) =>
       withWorkspaceService(async (service) => {
         const addedItems: WorkspaceItem[] = [];
         const iconsFolder = PathManager.getAppsFolder();
@@ -116,7 +118,7 @@ export function setupWorkspaceHandlers(): void {
           try {
             const itemType = detectItemTypeSync(filePath);
             await getIconForItem(filePath, itemType, iconsFolder, extensionsFolder);
-            const addedItem = await service.addItemFromPath(filePath, groupId);
+            const addedItem = await service.addItemFromPath(filePath, groupId, workspaceId);
             addedItems.push(addedItem);
             logger.info(
               { id: addedItem.id, name: addedItem.displayName, path: filePath, type: itemType },
@@ -363,6 +365,58 @@ export function setupWorkspaceHandlers(): void {
     }
   });
 
+  // ==================== ワークスペース（タブ）管理ハンドラー ====================
+
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_LOAD_WORKSPACES, () =>
+    withWorkspaceService(async (service) => {
+      const workspaces = await service.loadWorkspaces();
+      logger.info({ count: workspaces.length }, 'Loaded workspaces');
+      return workspaces;
+    }, 'Failed to load workspaces')
+  );
+
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_CREATE_WORKSPACE, (_event, name: string) =>
+    withWorkspaceService(async (service) => {
+      const workspace = await service.createWorkspace(name);
+      notifyWorkspaceChanged();
+      return workspace;
+    }, 'Failed to create workspace')
+  );
+
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_RENAME_WORKSPACE, (_event, id: string, name: string) =>
+    withWorkspaceChange(
+      (service) => service.renameWorkspace(id, name),
+      'Renamed workspace',
+      'Failed to rename workspace',
+      { id, name },
+      { id }
+    )
+  );
+
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_DELETE_WORKSPACE, (_event, id: string) =>
+    withWorkspaceService(async (service) => {
+      // 削除前に所属グループの切り離しウィンドウを閉じる
+      const groups = await service.loadGroups();
+      const wsGroups = groups.filter((g) => g.workspaceId === id);
+      for (const group of wsGroups) {
+        await closeDetachedWindowsForGroup(group.id);
+      }
+      await service.deleteWorkspace(id);
+      logger.info({ id }, 'Deleted workspace');
+      notifyWorkspaceChanged();
+      return { success: true };
+    }, 'Failed to delete workspace')
+  );
+
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_REORDER_WORKSPACES, (_event, ids: string[]) =>
+    withWorkspaceChange(
+      (service) => service.reorderWorkspaces(ids),
+      'Reordered workspaces',
+      'Failed to reorder workspaces',
+      { count: ids.length }
+    )
+  );
+
   // ==================== グループ管理ハンドラー ====================
 
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_LOAD_GROUPS, () =>
@@ -375,12 +429,12 @@ export function setupWorkspaceHandlers(): void {
 
   ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_CREATE_GROUP,
-    (_event, name: string, color?: string, parentGroupId?: string) =>
+    (_event, name: string, color?: string, parentGroupId?: string, workspaceId?: string) =>
       withWorkspaceService(
         async (service) => {
-          const group = await service.createGroup(name, color, parentGroupId);
+          const group = await service.createGroup(name, color, parentGroupId, workspaceId);
           logger.info(
-            { id: group.id, name: group.displayName, parentGroupId },
+            { id: group.id, name: group.displayName, parentGroupId, workspaceId },
             'Created workspace group'
           );
           notifyWorkspaceChanged();
@@ -470,6 +524,32 @@ export function setupWorkspaceHandlers(): void {
         'Failed to move group to parent',
         { groupId, newParentGroupId },
         { groupId, newParentGroupId }
+      )
+  );
+
+  // ==================== ワークスペース間移動ハンドラー ====================
+
+  ipcMain.handle(
+    IPC_CHANNELS.WORKSPACE_MOVE_ITEM_TO_WORKSPACE,
+    (_event, itemId: string, targetWorkspaceId: string) =>
+      withWorkspaceChange(
+        (service) => service.moveItemToWorkspace(itemId, targetWorkspaceId),
+        'Moved item to workspace',
+        'Failed to move item to workspace',
+        { itemId, targetWorkspaceId },
+        { itemId, targetWorkspaceId }
+      )
+  );
+
+  ipcMain.handle(
+    IPC_CHANNELS.WORKSPACE_MOVE_GROUP_TO_WORKSPACE,
+    (_event, groupId: string, targetWorkspaceId: string) =>
+      withWorkspaceChange(
+        (service) => service.moveGroupToWorkspace(groupId, targetWorkspaceId),
+        'Moved group to workspace',
+        'Failed to move group to workspace',
+        { groupId, targetWorkspaceId },
+        { groupId, targetWorkspaceId }
       )
   );
 

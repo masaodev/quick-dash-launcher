@@ -58,23 +58,30 @@ export class WorkspaceGroupManager {
    * @param parentGroupId 親グループID（省略時はトップレベル）
    * @returns 作成されたWorkspaceGroup
    */
-  public createGroup(name: string, color?: string, parentGroupId?: string): WorkspaceGroup {
+  public createGroup(
+    name: string,
+    color?: string,
+    parentGroupId?: string,
+    workspaceId?: string
+  ): WorkspaceGroup {
     try {
       const groups = this.loadGroups();
 
-      // 親グループが指定された場合、深さバリデーション
+      // 親グループが指定された場合、存在確認と深さバリデーション
+      const parentGroup = parentGroupId ? groups.find((g) => g.id === parentGroupId) : undefined;
       if (parentGroupId) {
-        const parentExists = groups.some((g) => g.id === parentGroupId);
-        if (!parentExists) {
+        if (!parentGroup) {
           throw new Error(`Parent group not found: ${parentGroupId}`);
         }
         if (!canCreateSubgroup(parentGroupId, groups)) {
           throw new Error('Maximum subgroup depth exceeded');
         }
       }
-
       const depth = parentGroupId ? getGroupDepth(parentGroupId, groups) + 1 : 0;
       const resolvedColor = color ?? getDefaultGroupColor(depth);
+
+      // parentGroupIdがある場合、親のworkspaceIdを継承
+      const resolvedWorkspaceId = workspaceId ?? parentGroup?.workspaceId;
 
       // 同一親内での最大orderを計算
       const siblingGroups = groups.filter((g) => g.parentGroupId === parentGroupId);
@@ -89,6 +96,7 @@ export class WorkspaceGroupManager {
         collapsed: false,
         createdAt: Date.now(),
         parentGroupId,
+        ...(resolvedWorkspaceId && { workspaceId: resolvedWorkspaceId }),
       };
 
       groups.push(workspaceGroup);
