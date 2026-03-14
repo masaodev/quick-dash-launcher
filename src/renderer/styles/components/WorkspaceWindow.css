@@ -205,6 +205,12 @@ html:has(.workspace-window.background-transparent) {
   background-color: var(--bg-header);
   border-bottom: var(--border-light);
   flex-shrink: 0;
+  overflow-x: auto;
+  scrollbar-width: none; /* Firefox */
+}
+
+.workspace-tab-bar::-webkit-scrollbar {
+  display: none; /* Chromium */
 }
 
 .workspace-add-tab-btn {

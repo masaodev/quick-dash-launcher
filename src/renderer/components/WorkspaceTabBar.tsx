@@ -28,6 +28,7 @@ const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const dragSourceId = useRef<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const tabBarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (editingId !== null && inputRef.current) {
@@ -100,6 +101,12 @@ const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({
     }
   };
 
+  const handleWheel = (e: React.WheelEvent) => {
+    if (tabBarRef.current) {
+      tabBarRef.current.scrollLeft += e.deltaY;
+    }
+  };
+
   // D&D handlers
   const handleDragStart = (e: React.DragEvent, wsId: string) => {
     if (editingId) return;
@@ -146,7 +153,7 @@ const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({
 
   return (
     <>
-      <div className="tab-bar workspace-tab-bar">
+      <div className="tab-bar workspace-tab-bar" ref={tabBarRef} onWheel={handleWheel}>
         {workspaces.map((ws) => {
           const isActive = ws.id === activeWorkspaceId;
 
