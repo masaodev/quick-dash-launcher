@@ -71,6 +71,7 @@ const WorkspaceApp: React.FC = () => {
   const [isFilterVisible, setIsFilterVisible] = useState(false);
   const [filterText, setFilterText] = useState('');
   const [filterScope, setFilterScope] = useState<FilterScope>('all');
+  const [focusTrigger, setFocusTrigger] = useState(0);
   // URLクエリパラメータから groupId を読み取り（切り離しウィンドウモード判定）
   const [detachedGroupId] = useState<string | null>(() =>
     new URLSearchParams(window.location.search).get('groupId')
@@ -130,6 +131,19 @@ const WorkspaceApp: React.FC = () => {
 
     return () => cleanup?.();
   }, []);
+
+  useEffect(() => {
+    if (isDetached) return;
+    const handleCtrlF = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === 'f') {
+        e.preventDefault();
+        setIsFilterVisible(true);
+        setFocusTrigger((prev) => prev + 1);
+      }
+    };
+    document.addEventListener('keydown', handleCtrlF);
+    return () => document.removeEventListener('keydown', handleCtrlF);
+  }, [isDetached]);
 
   useEffect(() => {
     const isAnyModalOpen = deleteGroupDialog.isOpen || archiveGroupDialog.isOpen;
@@ -442,6 +456,7 @@ const WorkspaceApp: React.FC = () => {
             setIsFilterVisible(false);
             setFilterText('');
           }}
+          focusTrigger={focusTrigger}
         />
       )}
       <WorkspaceGroupedList

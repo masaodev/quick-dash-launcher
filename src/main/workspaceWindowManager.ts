@@ -98,9 +98,6 @@ export async function createWorkspaceWindow(): Promise<BrowserWindow> {
   });
 
   workspaceWindow.webContents.on('before-input-event', (event, input) => {
-    if (input.key === 'Escape' && input.type === 'keyDown') {
-      event.preventDefault();
-    }
     if (
       EnvConfig.isDevelopment &&
       input.type === 'keyDown' &&

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 import type { FilterScope } from '../hooks/useWorkspaceFilter';
 
@@ -8,6 +8,7 @@ interface WorkspaceFilterBarProps {
   filterScope: FilterScope;
   onFilterScopeChange: (scope: FilterScope) => void;
   onClose: () => void;
+  focusTrigger?: number;
 }
 
 const WorkspaceFilterBar: React.FC<WorkspaceFilterBarProps> = ({
@@ -16,26 +17,20 @@ const WorkspaceFilterBar: React.FC<WorkspaceFilterBarProps> = ({
   filterScope,
   onFilterScopeChange,
   onClose,
+  focusTrigger,
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     inputRef.current?.focus();
-  }, []);
+  }, [focusTrigger]);
 
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        if (filterText) {
-          onFilterTextChange('');
-        } else {
-          onClose();
-        }
-      }
-    },
-    [filterText, onFilterTextChange, onClose]
-  );
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Escape' && !e.nativeEvent.isComposing) {
+      e.preventDefault();
+      onClose();
+    }
+  };
 
   return (
     <div className="workspace-filter-bar">
