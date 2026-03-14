@@ -399,12 +399,17 @@ export function hideAllDetachedGroupWindows(): { success: boolean } {
 
 /**
  * すべての切り離しウィンドウを再表示する（フォーカスを奪わない）
- * ピンモード 1以上のウィンドウは既に表示されているためスキップする
+ * ピンモード 1以上のウィンドウは既に表示されているためmoveTopのみ
  */
 export function showAllDetachedGroupWindows(): { success: boolean } {
   for (const [groupId, win] of detachedWindows.entries()) {
-    if (!win.isDestroyed() && (detachedPinModes.get(groupId) ?? 0) === 0) {
-      showWithoutFocus(win);
+    if (!win.isDestroyed()) {
+      const pinMode = detachedPinModes.get(groupId) ?? 0;
+      if (pinMode === 0) {
+        showWithoutFocus(win);
+      } else {
+        win.moveTop();
+      }
     }
   }
   return { success: true };
