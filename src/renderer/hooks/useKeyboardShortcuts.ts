@@ -118,6 +118,18 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
     }
   }
 
+  /**
+   * 配列を現在位置から巡回し、条件を満たす次のインデックスを返す。
+   * 見つからなければ現在位置をそのまま返す。
+   */
+  function findNextIndex(length: number, currentIndex: number, predicate: (i: number) => boolean): number {
+    for (let offset = 1; offset <= length; offset++) {
+      const candidate = (currentIndex + offset) % length;
+      if (predicate(candidate)) return candidate;
+    }
+    return currentIndex;
+  }
+
   async function handleKeyDown(e: React.KeyboardEvent): Promise<void> {
     // Shift+Tab: ウィンドウ検索モード切り替え
     if (e.key === 'Tab' && e.shiftKey) {
@@ -133,11 +145,15 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
       e.stopPropagation();
 
       const currentTabIndex = dataFileTabs.findIndex((tab) => tab.files.includes(activeTab));
-      const newTabIndex =
-        currentTabIndex === -1 || currentTabIndex >= dataFileTabs.length - 1
-          ? 0
-          : currentTabIndex + 1;
 
+      const newTabIndex = findNextIndex(dataFileTabs.length, currentTabIndex, (i) => {
+        if (!searchQuery) return true;
+        const tabItems = mainItems.filter(
+          (item) =>
+            !isWindowInfo(item) && dataFileTabs[i].files.includes(item.sourceFile || '')
+        );
+        return filterItems(tabItems, searchQuery).length > 0;
+      });
       setActiveTab(dataFileTabs[newTabIndex].files[0]);
       setSelectedIndex(0);
       return;
@@ -150,7 +166,14 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
 
       const tabIds = buildDesktopTabIds();
       const currentIndex = tabIds.indexOf(activeDesktopTab);
-      const nextIndex = currentIndex < tabIds.length - 1 ? currentIndex + 1 : 0;
+
+      const filteredWindows = searchQuery
+        ? (filterItems(windowList, searchQuery, 'window') as WindowInfo[])
+        : null;
+      const nextIndex = findNextIndex(tabIds.length, currentIndex, (i) => {
+        if (!filteredWindows) return true;
+        return filterWindowsByDesktopTab(filteredWindows, tabIds[i]).length > 0;
+      });
       setActiveDesktopTab(tabIds[nextIndex]);
       setSelectedIndex(0);
       return;
