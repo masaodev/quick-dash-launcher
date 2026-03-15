@@ -6,6 +6,7 @@ import type {
   AppItem,
   ClipboardItem,
   GroupItem,
+  LayoutItem,
   LauncherItem,
   WindowItem,
   WorkspaceItem,
@@ -62,8 +63,7 @@ export class WorkspaceItemManager {
       } else if (isClipboardItem(item)) {
         workspaceItem = this.createClipboardItem(item, order, groupId);
       } else if (isLayoutItem(item)) {
-        // LayoutItemはワークスペースに追加できないためスキップ
-        throw new Error('LayoutItem cannot be added to workspace');
+        workspaceItem = this.createLayoutItem(item, order, groupId);
       } else {
         workspaceItem = this.createLauncherItem(item, order, groupId);
       }
@@ -140,6 +140,17 @@ export class WorkspaceItemManager {
       clipboardDataRef: item.clipboardDataRef,
       clipboardFormats: item.formats,
       clipboardSavedAt: item.savedAt,
+      memo: item.memo,
+    };
+  }
+
+  private createLayoutItem(item: LayoutItem, order: number, groupId?: string): WorkspaceItem {
+    return {
+      ...this.createBaseFields(item.displayName, order, groupId),
+      path: `[レイアウト: ${item.entries.length}件]`,
+      type: 'layout',
+      layoutEntries: item.entries,
+      customIcon: item.customIcon,
       memo: item.memo,
     };
   }

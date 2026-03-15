@@ -7,6 +7,10 @@ import type {
   LauncherItem,
 } from '@common/types';
 import { isJsonLauncherItem } from '@common/types';
+import {
+  mergeWindowInfoIntoLayoutEntry,
+  buildLayoutItemFromRegisterItem,
+} from '@common/utils/layoutUtils';
 
 import { useCustomIcon } from '../hooks/useCustomIcon';
 import { useRegisterForm } from '../hooks/useRegisterForm';
@@ -54,7 +58,7 @@ function getDisplayNamePlaceholder(itemCategory: string): string {
   }
 }
 
-const NON_EXECUTABLE_CATEGORIES = ['dir', 'group', 'clipboard', 'layout'] as const;
+const NON_EXECUTABLE_CATEGORIES = ['dir', 'group', 'clipboard'] as const;
 
 /**
  * 編集中のアイテムが自動取込で管理されているかを判定する
@@ -273,19 +277,10 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
       if (!item) return;
       const currentEntries = [...(item.layoutEntries || [])];
       if (entryIndex < currentEntries.length) {
-        currentEntries[entryIndex] = {
-          ...currentEntries[entryIndex],
-          windowTitle: window.title,
-          processName: window.processName,
-          executablePath: window.executablePath || currentEntries[entryIndex].executablePath,
-          x: window.x,
-          y: window.y,
-          width: window.width,
-          height: window.height,
-          virtualDesktopNumber:
-            window.desktopNumber || currentEntries[entryIndex].virtualDesktopNumber,
-          icon: window.icon || currentEntries[entryIndex].icon,
-        };
+        currentEntries[entryIndex] = mergeWindowInfoIntoLayoutEntry(
+          currentEntries[entryIndex],
+          window
+        );
         updateItem(itemIndex, { layoutEntries: currentEntries });
       }
       setLayoutEntryWindowSelectorIndex(null);
@@ -416,6 +411,8 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
           displayName: item.displayName,
           type: 'window',
         });
+      } else if (item.itemCategory === 'layout') {
+        await window.electronAPI.executeLayout(buildLayoutItemFromRegisterItem(item));
       } else if (item.itemCategory === 'group') {
         debugLog('グループアイテムは実行ボタンからは実行できません');
       } else if (item.itemCategory === 'dir') {
@@ -796,7 +793,9 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                       </>
                     )}
 
-                    {(item.itemCategory === 'group' || item.itemCategory === 'clipboard') && (
+                    {(item.itemCategory === 'group' ||
+                      item.itemCategory === 'clipboard' ||
+                      item.itemCategory === 'layout') && (
                       <CustomIconEditor
                         customIconPreview={customIconPreviews[index]}
                         onSelectClick={() => openCustomIconPicker(index)}

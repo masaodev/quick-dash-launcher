@@ -54,7 +54,16 @@ export interface WorkspaceItem {
   /** アイテムのパス、URL、またはコマンド */
   path: string;
   /** アイテムのタイプ */
-  type: 'url' | 'file' | 'folder' | 'app' | 'customUri' | 'windowOperation' | 'group' | 'clipboard';
+  type:
+    | 'url'
+    | 'file'
+    | 'folder'
+    | 'app'
+    | 'customUri'
+    | 'windowOperation'
+    | 'group'
+    | 'clipboard'
+    | 'layout';
   /** アイテムのアイコン（実行時にキャッシュから取得、ファイルには保存しない） */
   icon?: string;
   /** カスタムアイコンのファイル名（オプション） */
@@ -103,6 +112,8 @@ export interface WorkspaceItem {
   clipboardFormats?: ClipboardFormat[];
   /** クリップボードの保存日時（clipboard専用） */
   clipboardSavedAt?: number;
+  /** レイアウト内のウィンドウエントリ一覧（layout専用） */
+  layoutEntries?: import('./launcher').LayoutWindowEntry[];
 }
 
 /**
@@ -125,7 +136,8 @@ export interface ExecutionHistoryItem {
     | 'customUri'
     | 'group'
     | 'windowOperation'
-    | 'clipboard';
+    | 'clipboard'
+    | 'layout';
   /** アイテムのアイコン（実行時にキャッシュから取得、ファイルには保存しない） */
   icon?: string;
   /** カスタムアイコンのファイル名（オプション） */

@@ -239,6 +239,8 @@ export interface LayoutItem {
   isEdited?: boolean;
   /** 自由記述メモ（オプション） */
   memo?: string;
+  /** カスタムアイコンのファイル名（オプション） */
+  customIcon?: string;
 }
 
 // レイアウト実行の進捗型

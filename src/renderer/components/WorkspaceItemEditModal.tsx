@@ -1,5 +1,9 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import type { WorkspaceItem, WindowInfo, WindowConfig } from '@common/types';
+import {
+  mergeWindowInfoIntoLayoutEntry,
+  buildLayoutItemFromRegisterItem,
+} from '@common/utils/layoutUtils';
 
 import { useCustomIcon } from '../hooks/useCustomIcon';
 import { useModalKeyboard } from '../hooks/useModalKeyboard';
@@ -16,6 +20,8 @@ import FilePickerDialog from './FilePickerDialog';
 import WindowSelectorModal from './WindowSelectorModal';
 import WindowConfigEditor from './WindowConfigEditor';
 import CustomIconEditor from './CustomIconEditor';
+import LayoutEntryEditor from './LayoutEntryEditor';
+import LayoutCaptureModal from './LayoutCaptureModal';
 import UrlConverterMenu from './UrlConverterMenu';
 import { Button } from './ui';
 import '../styles/components/UrlConverterMenu.css';
@@ -41,6 +47,10 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
   const [windowSelectorOpen, setWindowSelectorOpen] = useState(false);
+  const [layoutCaptureOpen, setLayoutCaptureOpen] = useState(false);
+  const [layoutEntryWindowSelectorIndex, setLayoutEntryWindowSelectorIndex] = useState<
+    number | null
+  >(null);
 
   const {
     customIconPreviews,
@@ -124,6 +134,21 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
   const onWindowSelected = (windowInfo: WindowInfo) => {
     if (!item) return;
 
+    // レイアウトエントリのウィンドウ選択
+    if (layoutEntryWindowSelectorIndex !== null) {
+      const currentEntries = [...(item.layoutEntries || [])];
+      if (layoutEntryWindowSelectorIndex < currentEntries.length) {
+        currentEntries[layoutEntryWindowSelectorIndex] = mergeWindowInfoIntoLayoutEntry(
+          currentEntries[layoutEntryWindowSelectorIndex],
+          windowInfo
+        );
+        handleFieldChange('layoutEntries', currentEntries);
+      }
+      setLayoutEntryWindowSelectorIndex(null);
+      setWindowSelectorOpen(false);
+      return;
+    }
+
     if (item.itemCategory === 'window') {
       const currentConfig = item.windowOperationConfig;
       const windowOperationConfig = {
@@ -183,6 +208,8 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
           activateWindow: item.windowOperationConfig.activateWindow,
           pinToAllDesktops: item.windowOperationConfig.pinToAllDesktops,
         });
+      } else if (item.itemCategory === 'layout') {
+        await window.electronAPI.executeLayout(buildLayoutItemFromRegisterItem(item));
       } else if (item.itemCategory !== 'group') {
         await window.electronAPI.workspaceAPI.launchItem(editingItem);
       }
@@ -220,6 +247,8 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
                       <option value="item">単一アイテム</option>
                       <option value="group">グループ</option>
                       <option value="window">ウィンドウ操作</option>
+                      <option value="clipboard">クリップボード</option>
+                      <option value="layout">ウィンドウレイアウト</option>
                     </select>
                   </div>
 
@@ -239,24 +268,26 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
                     )}
                   </div>
 
-                  {item.itemCategory !== 'group' && item.itemCategory !== 'window' && (
-                    <div className="form-group">
-                      <label>パス:</label>
-                      <input
-                        type="text"
-                        value={item.path}
-                        className={errors.path ? 'error' : ''}
-                        onChange={(e) => handleFieldChange('path', e.target.value)}
-                        onBlur={() => handlePathBlur()}
-                        placeholder="ファイルパス、URL、またはカスタムURIを入力"
-                      />
-                      {errors.path && <span className="error-message">{errors.path}</span>}
-                      <UrlConverterMenu
-                        url={item.path}
-                        onConvert={(convertedUrl) => handleFieldChange('path', convertedUrl)}
-                      />
-                    </div>
-                  )}
+                  {item.itemCategory !== 'group' &&
+                    item.itemCategory !== 'window' &&
+                    item.itemCategory !== 'layout' && (
+                      <div className="form-group">
+                        <label>パス:</label>
+                        <input
+                          type="text"
+                          value={item.path}
+                          className={errors.path ? 'error' : ''}
+                          onChange={(e) => handleFieldChange('path', e.target.value)}
+                          onBlur={() => handlePathBlur()}
+                          placeholder="ファイルパス、URL、またはカスタムURIを入力"
+                        />
+                        {errors.path && <span className="error-message">{errors.path}</span>}
+                        <UrlConverterMenu
+                          url={item.path}
+                          onConvert={(convertedUrl) => handleFieldChange('path', convertedUrl)}
+                        />
+                      </div>
+                    )}
 
                   {item.itemCategory === 'item' && (
                     <div className="form-group">
@@ -310,7 +341,9 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
                     </div>
                   )}
 
-                  {(item.itemCategory === 'item' || item.itemCategory === 'group') && (
+                  {(item.itemCategory === 'item' ||
+                    item.itemCategory === 'group' ||
+                    item.itemCategory === 'layout') && (
                     <CustomIconEditor
                       customIconPreview={customIconPreviews[0]}
                       onSelectClick={() => openCustomIconPicker(0)}
@@ -353,6 +386,18 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
                         </div>
                       )}
                     </div>
+                  )}
+
+                  {item.itemCategory === 'layout' && (
+                    <LayoutEntryEditor
+                      entries={item.layoutEntries || []}
+                      onChange={(entries) => handleFieldChange('layoutEntries', entries)}
+                      onCaptureClick={() => setLayoutCaptureOpen(true)}
+                      onSelectWindow={(entryIndex) => {
+                        setLayoutEntryWindowSelectorIndex(entryIndex);
+                        setWindowSelectorOpen(true);
+                      }}
+                    />
                   )}
 
                   <div className="form-group">
@@ -410,6 +455,17 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
         isOpen={windowSelectorOpen}
         onClose={() => setWindowSelectorOpen(false)}
         onSelect={onWindowSelected}
+      />
+
+      <LayoutCaptureModal
+        isOpen={layoutCaptureOpen}
+        onClose={() => setLayoutCaptureOpen(false)}
+        onCapture={(entries) => {
+          if (!item) return;
+          const currentEntries = item.layoutEntries || [];
+          handleFieldChange('layoutEntries', [...currentEntries, ...entries]);
+          setLayoutCaptureOpen(false);
+        }}
       />
     </>
   );

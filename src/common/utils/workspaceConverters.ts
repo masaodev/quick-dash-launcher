@@ -64,6 +64,19 @@ export function convertWorkspaceItemToRegisterItem(item: WorkspaceItem): Registe
     };
   }
 
+  if (item.type === 'layout') {
+    return {
+      displayName: item.displayName,
+      path: '',
+      type: 'app',
+      targetTab: '',
+      itemCategory: 'layout',
+      layoutEntries: item.layoutEntries || [],
+      customIcon: item.customIcon,
+      memo: item.memo,
+    };
+  }
+
   return {
     displayName: item.displayName,
     path: item.path,
@@ -149,6 +162,21 @@ export function convertRegisterItemToWorkspaceItemUpdate(
       clipboardDataRef: registerItem.clipboardDataRef,
       clipboardFormats: registerItem.clipboardFormats,
       clipboardSavedAt: registerItem.clipboardSavedAt,
+      customIcon: registerItem.customIcon,
+      args: undefined,
+      windowConfig: undefined,
+      itemNames: undefined,
+    };
+  }
+
+  if (registerItem.itemCategory === 'layout') {
+    return {
+      ...base,
+      ...CLEAR_WINDOW_FIELDS,
+      displayName: registerItem.displayName,
+      path: `[レイアウト: ${registerItem.layoutEntries?.length ?? 0}件]`,
+      type: 'layout',
+      layoutEntries: registerItem.layoutEntries,
       customIcon: registerItem.customIcon,
       args: undefined,
       windowConfig: undefined,

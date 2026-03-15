@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { WorkspaceItem, WindowConfig, RegisterItem } from '@common/types';
+import type { WorkspaceItem, WindowConfig, RegisterItem, LayoutWindowEntry } from '@common/types';
 import {
   convertWorkspaceItemToRegisterItem,
   convertRegisterItemToWorkspaceItemUpdate,
@@ -69,6 +69,7 @@ export function useWorkspaceItemEditForm(
         | RegisterItem['dirOptions']
         | WindowConfig
         | RegisterItem['windowOperationConfig']
+        | LayoutWindowEntry[]
     ) => {
       if (!item) return;
 
@@ -117,6 +118,7 @@ export function useWorkspaceItemEditForm(
       item.itemCategory !== 'group' &&
       item.itemCategory !== 'window' &&
       item.itemCategory !== 'clipboard' &&
+      item.itemCategory !== 'layout' &&
       !item.path?.trim()
     ) {
       newErrors.path = 'パスを入力してください';
