@@ -13,7 +13,7 @@ type AlertDialogState = {
 };
 
 const AdminApp: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'settings' | 'edit' | 'archive' | 'other'>('settings');
+  const [activeTab, setActiveTab] = useState<'settings' | 'edit' | 'other'>('settings');
   const [editableItems, setEditableItems] = useState<EditableJsonItem[]>([]);
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);

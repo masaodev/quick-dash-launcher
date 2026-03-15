@@ -78,7 +78,6 @@ export function setupWindowHandlers(
     async (_event, modal: 'bookmark' | 'app') => showAdminWindowWithImportModal(modal)
   );
 
-  ipcMain.handle(IPC_CHANNELS.ADMIN_SHOW_ARCHIVE_TAB, () => showAdminWindowWithTab('archive'));
   ipcMain.handle(IPC_CHANNELS.GET_INITIAL_TAB, () => getInitialTab());
   ipcMain.handle(IPC_CHANNELS.GET_PENDING_IMPORT_MODAL, () => getPendingImportModal());
 

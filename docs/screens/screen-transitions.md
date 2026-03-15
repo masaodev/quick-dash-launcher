@@ -16,8 +16,7 @@ graph TD
     subgraph AdminWindow[管理ウィンドウ]
         AdminSettings[⚙️ 基本設定タブ]
         AdminItems[✏️ アイテム管理タブ]
-        AdminArchive[📦 アーカイブタブ]
-        AdminOther[📊 その他タブ]
+        AdminOther[📖 ヘルプタブ]
     end
 
     %% モーダル
@@ -49,7 +48,6 @@ graph TD
     AdminItems -->|インポートボタン| BookmarkImport
 
     %% ワークスペースウィンドウの遷移
-    Workspace -->|📦ボタン| AdminArchive
     Workspace -->|アイテム編集| WorkspaceItemEdit
 
     %% アイテム登録・編集モーダルの遷移
@@ -78,7 +76,7 @@ graph TD
 
     class Splash splash
     class FirstLaunch,Main,Workspace window
-    class AdminSettings,AdminItems,AdminArchive,AdminOther adminTab
+    class AdminSettings,AdminItems,AdminOther adminTab
     class Register,BookmarkImport,GroupSelect,WindowSelect,IconProgress,WorkspaceItemEdit modal
     class FilePicker,Alert,Confirm dialog
 ```
@@ -105,7 +103,6 @@ graph TD
 | **初回設定画面** | **メインウィンドウ** | 設定完了ボタン | - | 初回のみ |
 | **メインウィンドウ** | **管理ウィンドウ** | `Ctrl+E` / 設定メニュー | `Ctrl+E` / 閉じるボタン | トグル操作、タブ切り替え可能 |
 | **メインウィンドウ** | **ワークスペースウィンドウ** | `Ctrl+W`（ランチャー内） | `Ctrl+W` / 閉じるボタン | 独立ウィンドウ、同時表示可能 |
-| **ワークスペースウィンドウ** | **管理ウィンドウ/アーカイブタブ** | 📦ボタン | 閉じるボタン | アーカイブタブが開く |
 
 ### メインウィンドウから開くモーダル・ダイアログ
 
@@ -138,19 +135,12 @@ graph TD
 | **管理ウィンドウ/アイテム管理タブ** | **AlertDialog** | エラー/通知発生時 | OKボタン |
 | **管理ウィンドウ/アイテム管理タブ** | **ConfirmDialog** | 確認が必要な操作時 | OK / キャンセル |
 
-### 管理ウィンドウ/アーカイブタブから開くモーダル・ダイアログ
+### 管理ウィンドウ/ヘルプタブから開くモーダル・ダイアログ
 
 | 元画面 | 遷移先 | トリガー | 戻り方 |
 |--------|--------|----------|---------|
-| **管理ウィンドウ/アーカイブタブ** | **AlertDialog** | エラー/通知発生時 | OKボタン |
-| **管理ウィンドウ/アーカイブタブ** | **ConfirmDialog** | 確認が必要な操作時（削除等） | OK / キャンセル |
-
-### 管理ウィンドウ/その他タブから開くモーダル・ダイアログ
-
-| 元画面 | 遷移先 | トリガー | 戻り方 |
-|--------|--------|----------|---------|
-| **管理ウィンドウ/その他タブ** | **AlertDialog** | エラー/通知発生時 | OKボタン |
-| **管理ウィンドウ/その他タブ** | **ConfirmDialog** | 確認が必要な操作時（終了等） | OK / キャンセル |
+| **管理ウィンドウ/ヘルプタブ** | **AlertDialog** | エラー/通知発生時 | OKボタン |
+| **管理ウィンドウ/ヘルプタブ** | **ConfirmDialog** | 確認が必要な操作時（終了等） | OK / キャンセル |
 
 ### ワークスペースウィンドウから開くモーダル・ダイアログ
 
@@ -185,7 +175,7 @@ graph TD
 | **スプラッシュウィンドウ** | 起動時の一時的なローディング画面 | アプリ起動時に自動表示 |
 | **初回設定画面** | 初回起動時のみ表示される設定画面 | `hotkey`が未設定の場合 |
 | **メインウィンドウ** | 主要なランチャー画面 | `Alt+Space`（デフォルト）で表示/非表示 |
-| **管理ウィンドウ** | 設定・アイテム管理を行う画面<br>4つのタブで構成：<br>- ⚙️ 基本設定タブ<br>- ✏️ アイテム管理タブ<br>- 📦 アーカイブタブ<br>- 📊 その他タブ | `Ctrl+E` または設定メニューから |
+| **管理ウィンドウ** | 設定・アイテム管理を行う画面<br>3つのタブで構成：<br>- ⚙️ 基本設定タブ<br>- ✏️ アイテム管理タブ<br>- 📖 ヘルプタブ | `Ctrl+E` または設定メニューから |
 | **ワークスペースウィンドウ** | よく使うアイテムを登録する専用ウィンドウ | `Ctrl+W`（ランチャーウィンドウ内で有効） |
 
 **特記事項:**

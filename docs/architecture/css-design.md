@@ -19,7 +19,6 @@ src/renderer/styles/
 ├── common.css                   # 共通ユーティリティクラス
 ├── splash.css                   # スプラッシュ画面
 └── components/                  # コンポーネント別スタイル
-    ├── AdminArchiveTab.css      # アーカイブタブ
     ├── AdminItemManager.css     # アイテム管理（編集モード）
     ├── AdminWindow.css          # 管理ウィンドウ
     ├── AlertDialog.css          # 通知ダイアログ

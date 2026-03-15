@@ -139,11 +139,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     createEventListener<number | undefined>(IPC_CHANNELS.EVENT_WINDOW_SHOWN_ITEM_SEARCH, callback),
   onWindowHidden: (callback: () => void) =>
     createEventListenerNoArg(IPC_CHANNELS.EVENT_WINDOW_HIDDEN, callback),
-  onSetActiveTab: (callback: (tab: 'settings' | 'edit' | 'archive' | 'other') => void) =>
-    createEventListener<'settings' | 'edit' | 'archive' | 'other'>(
-      IPC_CHANNELS.EVENT_SET_ACTIVE_TAB,
-      callback
-    ),
+  onSetActiveTab: (callback: (tab: 'settings' | 'edit' | 'other') => void) =>
+    createEventListener<'settings' | 'edit' | 'other'>(IPC_CHANNELS.EVENT_SET_ACTIVE_TAB, callback),
   onOpenImportModal: (callback: (modal: 'bookmark' | 'app') => void) =>
     createEventListener<'bookmark' | 'app'>(IPC_CHANNELS.EVENT_OPEN_IMPORT_MODAL, callback),
   onDataChanged: (callback: () => void) =>
