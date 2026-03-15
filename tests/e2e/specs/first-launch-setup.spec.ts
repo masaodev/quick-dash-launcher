@@ -36,7 +36,9 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
       expect(hotkeyLabelExists).toBe(true);
 
       // ホットキー入力フィールドが表示されていることを確認
-      const hotkeyInputExists = await utils.elementExists('.hotkey-input');
+      const hotkeyInputExists = await utils.elementExists(
+        '.hotkey-setup-section:first-of-type .hotkey-input',
+      );
       expect(hotkeyInputExists).toBe(true);
 
       // ヒントテキストが表示されていることを確認
@@ -49,8 +51,10 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
     });
 
     await test.step('デフォルトのホットキーが入力され、完了ボタンが有効であることを確認', async () => {
-      await utils.waitForElement('.hotkey-input');
-      const hotkeyValue = await mainWindow.inputValue('.hotkey-input');
+      await utils.waitForElement('.hotkey-setup-section:first-of-type .hotkey-input');
+      const hotkeyValue = await mainWindow.inputValue(
+        '.hotkey-setup-section:first-of-type .hotkey-input',
+      );
       expect(hotkeyValue).toBe('Alt+Space');
 
       // デフォルトのホットキーが valid なので、完了ボタンが有効
@@ -110,7 +114,9 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
       expect(settingsBefore.hotkey || '').toBe('');
 
       // デフォルトのホットキー値を確認
-      const hotkeyValue = await mainWindow.inputValue('.hotkey-input');
+      const hotkeyValue = await mainWindow.inputValue(
+        '.hotkey-setup-section:first-of-type .hotkey-input',
+      );
       expect(hotkeyValue).toBe('Alt+Space');
     });
 
@@ -137,8 +143,8 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
     // ページの読み込み完了を待機
     await utils.waitForPageLoad();
 
-    // ホットキー入力フィールドを取得
-    const hotkeyInput = mainWindow.locator('.hotkey-input');
+    // ホットキー入力フィールドを取得（ランチャー起動ホットキー）
+    const hotkeyInput = mainWindow.locator('.hotkey-setup-section:first-of-type .hotkey-input');
 
     // フィールドをフォーカス
     await hotkeyInput.click();
