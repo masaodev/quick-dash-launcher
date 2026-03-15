@@ -6,7 +6,6 @@ import { ToastProvider } from '../components/ToastProvider';
 import '../styles/index.css';
 import '../styles/components/AdminWindow.css';
 import '../styles/components/AdminItemManager.css';
-import '../styles/components/AdminArchiveTab.css';
 import '../styles/components/Modal.css';
 import '../styles/components/RegisterModal.css';
 import '../styles/components/BookmarkImport.css';

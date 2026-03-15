@@ -158,22 +158,17 @@ const channel = IPC_CHANNELS.SETTINGS_GET; // 'settings:get'
 
 ### `open-edit-window-with-tab`
 指定されたタブで管理ウィンドウを開く
-- パラメータ: `tab: 'settings' | 'edit' | 'archive' | 'other'`
+- パラメータ: `tab: 'settings' | 'edit' | 'other'`
 - 戻り値: なし
 
 ### `get-initial-tab`
 管理ウィンドウの初期表示タブを取得
-- 戻り値: `'settings' | 'edit' | 'archive' | 'other'`
+- 戻り値: `'settings' | 'edit' | 'other'`
 
 ### `set-active-tab` (イベント)
 管理ウィンドウのアクティブタブを変更
 - **方向**: メインプロセス → レンダラープロセス
-- **パラメータ**: `tab: 'settings' | 'edit' | 'archive' | 'other'`
-
-### `admin:show-archive-tab`
-管理ウィンドウをアーカイブタブで開く
-- 戻り値: なし
-- 処理内容: 管理ウィンドウが開いていない場合は開き、アーカイブタブを表示
+- **パラメータ**: `tab: 'settings' | 'edit' | 'other'`
 
 ### `open-edit-window-with-import-modal`
 インポートモーダルを指定して管理ウィンドウを開く
@@ -734,7 +729,7 @@ onIconProgress(eventType: 'start' | 'update' | 'complete', callback: (data: Icon
 ### `onSetActiveTab`
 管理ウィンドウのタブ変更イベントリスナー
 ```typescript
-onSetActiveTab(callback: (tab: 'settings' | 'edit' | 'archive' | 'other') => void)
+onSetActiveTab(callback: (tab: 'settings' | 'edit' | 'other') => void)
 ```
 
 ### `onWindowShown`

@@ -10,8 +10,7 @@ Rendererプロセス（`src/renderer/`）のコンポーネント命名規則を
 | 管理ウィンドウ（共通） | `Admin*` |
 | 管理 > 基本設定タブ | `AdminSettings*` |
 | 管理 > アイテム管理タブ | `AdminItemManager*` |
-| 管理 > アーカイブタブ | `AdminArchive*` |
-| 管理 > その他タブ | `AdminOther*` |
+| 管理 > ヘルプタブ | `AdminOther*` |
 | ワークスペースウィンドウ | `Workspace*` |
 | 初回設定 | `Setup*` |
 | 共通コンポーネント | なし |

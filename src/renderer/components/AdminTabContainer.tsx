@@ -4,12 +4,11 @@ import type { EditableJsonItem } from '@common/types/editableItem';
 
 import AdminSettingsTab from './AdminSettingsTab';
 import AdminItemManagerView from './AdminItemManagerView';
-import AdminArchiveTab from './AdminArchiveTab';
 import AdminOtherTab from './AdminOtherTab';
 
 interface AdminTabContainerProps {
-  activeTab: 'settings' | 'edit' | 'archive' | 'other';
-  onTabChange: (tab: 'settings' | 'edit' | 'archive' | 'other') => void;
+  activeTab: 'settings' | 'edit' | 'other';
+  onTabChange: (tab: 'settings' | 'edit' | 'other') => void;
   settings: AppSettings | null;
   onSettingsSave: (settings: AppSettings) => Promise<void>;
   editableItems: EditableJsonItem[];
@@ -53,12 +52,6 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
             ✏️ アイテム管理
           </button>
           <button
-            className={`tab-button ${activeTab === 'archive' ? 'active' : ''}`}
-            onClick={() => onTabChange('archive')}
-          >
-            📦 アーカイブ
-          </button>
-          <button
             className={`tab-button ${activeTab === 'other' ? 'active' : ''}`}
             onClick={() => onTabChange('other')}
           >
@@ -84,7 +77,6 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
             onClearPendingImportModal={onClearPendingImportModal}
           />
         )}
-        {activeTab === 'archive' && <AdminArchiveTab />}
         {activeTab === 'other' && <AdminOtherTab />}
       </div>
     </div>

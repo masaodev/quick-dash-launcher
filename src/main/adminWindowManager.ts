@@ -8,7 +8,7 @@ import { EnvConfig } from './config/envConfig.js';
 import PathManager from './config/pathManager.js';
 import { SettingsService } from './services/settingsService.js';
 
-type AdminTab = 'settings' | 'edit' | 'archive' | 'other';
+type AdminTab = 'settings' | 'edit' | 'other';
 type ImportModalType = 'bookmark' | 'app';
 
 let adminWindow: BrowserWindow | null = null;

@@ -195,9 +195,6 @@ export const IPC_CHANNELS = {
   // ワークスペース - イベント
   WORKSPACE_CHANGED: 'workspace-changed',
 
-  // 管理ウィンドウ
-  ADMIN_SHOW_ARCHIVE_TAB: 'admin:show-archive-tab',
-
   // システム通知
   SHOW_NOTIFICATION: 'show-notification',
   SHOW_TOAST_WINDOW: 'show-toast-window',
