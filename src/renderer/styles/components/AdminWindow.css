@@ -1943,10 +1943,7 @@
   display: flex;
   gap: var(--spacing-md);
   align-items: center;
-  padding: var(--spacing-xl);
-  background-color: var(--bg-section);
-  border-radius: var(--border-radius-xl);
-  border: var(--border-light);
+  justify-content: flex-end;
   margin-top: var(--spacing-lg);
 }
 

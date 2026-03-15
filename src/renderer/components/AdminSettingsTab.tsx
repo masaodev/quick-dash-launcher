@@ -974,13 +974,9 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
               {/* タブ管理の保存/キャンセルボタン */}
               {editedSettings.showDataFileTabs && (
                 <div className="tab-management-actions">
-                  <Button
-                    variant="primary"
-                    onClick={handleSaveTabChanges}
-                    disabled={!hasUnsavedTabChanges || isLoading}
-                  >
-                    💾 保存
-                  </Button>
+                  {hasUnsavedTabChanges && (
+                    <span className="unsaved-indicator">未保存の変更があります</span>
+                  )}
                   <Button
                     variant="cancel"
                     onClick={() => handleCancelTabChanges()}
@@ -988,9 +984,13 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
                   >
                     ↩️ キャンセル
                   </Button>
-                  {hasUnsavedTabChanges && (
-                    <span className="unsaved-indicator">未保存の変更があります</span>
-                  )}
+                  <Button
+                    variant="primary"
+                    onClick={handleSaveTabChanges}
+                    disabled={!hasUnsavedTabChanges || isLoading}
+                  >
+                    💾 保存
+                  </Button>
                 </div>
               )}
             </>
