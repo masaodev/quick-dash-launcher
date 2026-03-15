@@ -319,7 +319,7 @@ function setupWorkspaceContextMenuHandler(): void {
       );
 
       // ワークスペース移動サブメニュー
-      if (workspaces && workspaces.length > 1) {
+      if (workspaces && workspaces.length >= 1) {
         const moveSubmenu = buildMoveToWorkspaceSubmenu(
           event.sender,
           IPC_CHANNELS.EVENT_WORKSPACE_MENU_MOVE_TO_WORKSPACE,
@@ -412,7 +412,7 @@ function setupWorkspaceGroupContextMenuHandler(): void {
       );
 
       // ワークスペース移動サブメニュー
-      if (workspaces && workspaces.length > 1) {
+      if (workspaces && workspaces.length >= 1) {
         const moveSubmenu = buildMoveToWorkspaceSubmenu(
           event.sender,
           IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_MOVE_TO_WORKSPACE,

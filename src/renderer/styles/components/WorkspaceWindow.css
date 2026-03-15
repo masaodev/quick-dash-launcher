@@ -213,6 +213,19 @@ html:has(.workspace-window.background-transparent) {
   display: none; /* Chromium */
 }
 
+/* アーカイブタブ */
+.archive-tab {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--text-secondary-color);
+  border-left: 1px solid var(--border-color);
+  padding-left: var(--spacing-sm);
+}
+
+.archive-tab.active {
+  color: var(--text-color);
+}
+
 .workspace-add-tab-btn {
   min-width: 32px;
   font-size: 16px;

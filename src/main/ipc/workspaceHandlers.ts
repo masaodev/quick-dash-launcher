@@ -577,6 +577,14 @@ export function setupWorkspaceHandlers(): void {
     }, 'Failed to load archived groups')
   );
 
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_LOAD_ARCHIVED_ITEMS, () =>
+    withWorkspaceService(async (service) => {
+      const archivedItems = await service.loadArchivedItems();
+      logger.info({ count: archivedItems.length }, 'Loaded archived items');
+      return archivedItems;
+    }, 'Failed to load archived items')
+  );
+
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_RESTORE_GROUP, (_event, groupId: string) =>
     withWorkspaceChange(
       (service) => service.restoreGroup(groupId),

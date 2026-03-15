@@ -11,6 +11,7 @@ import type {
   WorkspaceItem,
   WorkspaceGroup,
   ArchivedWorkspaceGroup,
+  ArchivedWorkspaceItem,
   MixedOrderEntry,
 } from '@common/types';
 import logger from '@common/logger';
@@ -352,12 +353,17 @@ export class WorkspaceService {
     await this.initializeStore();
     const items = this.store!.get('items') || [];
     const item = items.find((i) => i.id === itemId);
-    if (!item) throw new Error(`Item not found: ${itemId}`);
-    item.workspaceId = targetWorkspaceId;
-    // グループから削除（移動先ワークスペースにはグループが存在しないため）
-    item.groupId = undefined;
-    this.store!.set('items', items);
-    logger.info({ itemId, targetWorkspaceId }, 'Moved item to workspace');
+    if (item) {
+      item.workspaceId = targetWorkspaceId;
+      // グループから削除（移動先ワークスペースにはグループが存在しないため）
+      item.groupId = undefined;
+      this.store!.set('items', items);
+      logger.info({ itemId, targetWorkspaceId }, 'Moved item to workspace');
+      return;
+    }
+
+    // アーカイブストアから復元してワークスペースに移動
+    this.archiveManager!.restoreItemToWorkspace(itemId, targetWorkspaceId, items);
   }
 
   public async moveGroupToWorkspace(groupId: string, targetWorkspaceId: string): Promise<void> {
@@ -365,31 +371,39 @@ export class WorkspaceService {
     const groups = this.store!.get('groups') || [];
     const items = this.store!.get('items') || [];
 
-    const allGroupIds = new Set([groupId, ...getDescendantGroupIds(groupId, groups)]);
+    // メインストアにグループが存在する場合
+    if (groups.some((g) => g.id === groupId)) {
+      const allGroupIds = new Set([groupId, ...getDescendantGroupIds(groupId, groups)]);
 
-    // グループの workspaceId を更新（トップレベルグループは parentGroupId を解除）
-    for (const group of groups) {
-      if (allGroupIds.has(group.id)) {
-        group.workspaceId = targetWorkspaceId;
-        if (group.id === groupId) {
-          group.parentGroupId = undefined;
+      // グループの workspaceId を更新（トップレベルグループは parentGroupId を解除）
+      for (const group of groups) {
+        if (allGroupIds.has(group.id)) {
+          group.workspaceId = targetWorkspaceId;
+          if (group.id === groupId) {
+            group.parentGroupId = undefined;
+          }
         }
       }
-    }
 
-    // 所属アイテムの workspaceId を更新
-    for (const item of items) {
-      if (item.groupId && allGroupIds.has(item.groupId)) {
-        item.workspaceId = targetWorkspaceId;
+      // 所属アイテムの workspaceId を更新
+      for (const item of items) {
+        if (item.groupId && allGroupIds.has(item.groupId)) {
+          item.workspaceId = targetWorkspaceId;
+        }
       }
+
+      this.store!.set('groups', groups);
+      this.store!.set('items', items);
+      logger.info(
+        { groupId, targetWorkspaceId, groupCount: allGroupIds.size },
+        'Moved group to workspace'
+      );
+      return;
     }
 
-    this.store!.set('groups', groups);
-    this.store!.set('items', items);
-    logger.info(
-      { groupId, targetWorkspaceId, groupCount: allGroupIds.size },
-      'Moved group to workspace'
-    );
+    // アーカイブストアから復元して移動
+    this.archiveManager!.restoreGroup(groupId, groups, items, { targetWorkspaceId });
+    logger.info({ groupId, targetWorkspaceId }, 'Moved archived group to workspace');
   }
 
   // --- アーカイブ管理 ---
@@ -404,6 +418,11 @@ export class WorkspaceService {
   public async loadArchivedGroups(): Promise<ArchivedWorkspaceGroup[]> {
     await this.initializeStore();
     return this.archiveManager!.loadArchivedGroups();
+  }
+
+  public async loadArchivedItems(): Promise<ArchivedWorkspaceItem[]> {
+    await this.initializeStore();
+    return this.archiveManager!.getAllArchivedItems();
   }
 
   public async restoreGroup(groupId: string): Promise<void> {

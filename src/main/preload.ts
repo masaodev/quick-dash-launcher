@@ -401,6 +401,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_ARCHIVE_GROUP, groupId),
     loadArchivedGroups: (): Promise<WorkspaceGroup[]> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_LOAD_ARCHIVED_GROUPS),
+    loadArchivedItems: (): Promise<WorkspaceItem[]> =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_LOAD_ARCHIVED_ITEMS),
     restoreGroup: (groupId: string): Promise<{ success: boolean }> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_RESTORE_GROUP, groupId),
     deleteArchivedGroup: (groupId: string): Promise<{ success: boolean }> =>
