@@ -3,6 +3,7 @@ import type {
   LauncherItem,
   AppSettings,
   IconProgress,
+  LayoutExecutionProgress,
   WindowPinMode,
   SearchHistoryEntry,
   GroupItem,
@@ -133,6 +134,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
     };
     return createEventListener<IconProgress>(eventMap[eventType], callback);
   },
+  onLayoutProgress: (
+    eventType: 'start' | 'update' | 'complete',
+    callback: (data: LayoutExecutionProgress) => void
+  ) => {
+    const eventMap = {
+      start: IPC_CHANNELS.EVENT_LAYOUT_PROGRESS_START,
+      update: IPC_CHANNELS.EVENT_LAYOUT_PROGRESS_UPDATE,
+      complete: IPC_CHANNELS.EVENT_LAYOUT_PROGRESS_COMPLETE,
+    };
+    return createEventListener<LayoutExecutionProgress>(eventMap[eventType], callback);
+  },
+  cancelLayout: () => ipcRenderer.send(IPC_CHANNELS.LAYOUT_CANCEL),
   onWindowShown: (callback: (startTime?: number) => void) =>
     createEventListener<number | undefined>(IPC_CHANNELS.EVENT_WINDOW_SHOWN, callback),
   onWindowShownItemSearch: (callback: (startTime?: number) => void) =>
@@ -240,7 +253,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   hideEditWindow: () => ipcRenderer.invoke(IPC_CHANNELS.HIDE_EDIT_WINDOW),
   toggleEditWindow: () => ipcRenderer.invoke(IPC_CHANNELS.TOGGLE_EDIT_WINDOW),
   isEditWindowShown: () => ipcRenderer.invoke(IPC_CHANNELS.IS_EDIT_WINDOW_SHOWN),
-  openEditWindowWithTab: (tab: 'settings' | 'edit' | 'other') =>
+  openEditWindowWithTab: (tab: 'settings' | 'edit' | 'archive' | 'other') =>
     ipcRenderer.invoke(IPC_CHANNELS.OPEN_EDIT_WINDOW_WITH_TAB, tab),
   openEditWindowWithImportModal: (modal: 'bookmark' | 'app') =>
     ipcRenderer.invoke(IPC_CHANNELS.OPEN_EDIT_WINDOW_WITH_IMPORT_MODAL, modal),

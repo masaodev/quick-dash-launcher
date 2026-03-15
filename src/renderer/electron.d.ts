@@ -3,6 +3,7 @@ import {
   SimpleBookmarkItem,
   AppSettings,
   IconProgress,
+  LayoutExecutionProgress,
   WindowPinMode,
   SearchHistoryEntry,
   GroupItem,
@@ -79,6 +80,11 @@ export interface ElectronAPI {
     eventType: 'start' | 'update' | 'complete',
     callback: (data: IconProgress) => void
   ) => void;
+  onLayoutProgress: (
+    eventType: 'start' | 'update' | 'complete',
+    callback: (data: LayoutExecutionProgress) => void
+  ) => () => void;
+  cancelLayout: () => void;
   onWindowShown: (callback: (startTime?: number) => void) => () => void;
   onWindowShownItemSearch: (callback: (startTime?: number) => void) => () => void;
   onWindowHidden: (callback: () => void) => () => void;

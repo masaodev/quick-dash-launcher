@@ -536,6 +536,100 @@ export function getAllWindows(options?: { includeAllVirtualDesktops?: boolean })
 }
 
 /**
+ * タイトルとプロセス名でウィンドウを軽量検索し、hwndを返す
+ * getAllWindowsと同じEnumWindowsループを使うが、アイコン取得・仮想デスクトップ番号・
+ * ピン状態・ウィンドウ状態・矩形取得をスキップして高速化する。
+ *
+ * @param titleMatcher タイトルマッチング関数（trueで一致）
+ * @param processNameFilter プロセス名フィルタ（部分一致、省略時は検索なし）
+ * @returns 見つかったウィンドウのhwnd（bigint）、見つからない場合はnull
+ */
+export function findWindowHwndByTitle(
+  titleMatcher: (title: string) => boolean,
+  processNameFilter?: string
+): bigint | null {
+  let foundHwnd: bigint | null = null;
+  const hasProcessFilter = !!processNameFilter?.trim();
+  const normalizedProcessFilter = hasProcessFilter ? processNameFilter!.toLowerCase() : '';
+
+  const callback = koffi.register((hwnd: unknown, _lParam: number): boolean => {
+    try {
+      if (foundHwnd !== null) return false; // 既に見つかった場合は列挙を中止
+
+      if (!IsWindowVisible(hwnd)) return true;
+
+      const length = GetWindowTextLengthW(hwnd);
+      if (length === 0) return true;
+
+      const buffer = Buffer.alloc((length + 1) * 2);
+      const titleLength = GetWindowTextW(hwnd, buffer, length + 1);
+      const title = buffer.toString('utf16le').substring(0, titleLength);
+
+      if (!title || title.trim() === '') return true;
+      if (!isAltTabWindow(hwnd, true)) return true;
+
+      // タイトルマッチング
+      if (!titleMatcher(title)) return true;
+
+      // プロセス名フィルタ（指定時のみプロセス情報を取得）
+      let processName: string | undefined;
+      if (hasProcessFilter) {
+        const processIdArr = [0];
+        GetWindowThreadProcessId(hwnd, processIdArr);
+        const executablePath = getExecutablePathFromProcessId(processIdArr[0]);
+        processName = extractProcessName(executablePath);
+
+        if (!processName || !processName.toLowerCase().includes(normalizedProcessFilter)) {
+          return true;
+        }
+      }
+
+      // 除外ルールチェック: クロークされたウィンドウ（別デスクトップ含む）のみ対象
+      // isAltTabWindow(hwnd, true)でDWM_CLOAKED_SHELLは通過済みだが、
+      // isWindowCloaked(hwnd, false)で再判定し、クロークされていなければ即マッチ
+      if (!isWindowCloaked(hwnd, false)) {
+        foundHwnd = koffi.address(hwnd);
+        return false;
+      }
+
+      const className = getWindowClassName(hwnd);
+      const hasExcludedClassName = EXCLUDED_WINDOWS.some(
+        (excluded) => excluded.className === className
+      );
+
+      if (hasExcludedClassName) {
+        if (!processName) {
+          const processIdArr = [0];
+          GetWindowThreadProcessId(hwnd, processIdArr);
+          const executablePath = getExecutablePathFromProcessId(processIdArr[0]);
+          processName = extractProcessName(executablePath);
+        }
+        const matchesExclusionRule = EXCLUDED_WINDOWS.some(
+          (excluded) => excluded.processName === processName && excluded.className === className
+        );
+        if (matchesExclusionRule) return true; // クローク判定は行588で確認済み
+      }
+
+      foundHwnd = koffi.address(hwnd);
+      return false; // 見つかったので列挙を中止
+    } catch (error) {
+      console.error('[findWindowHwndByTitle] Error processing window:', error);
+    }
+    return true;
+  }, koffi.pointer(EnumWindowsProc));
+
+  try {
+    EnumWindows(callback, 0);
+  } catch (error) {
+    console.error('[findWindowHwndByTitle] Error enumerating windows:', error);
+  } finally {
+    koffi.unregister(callback);
+  }
+
+  return foundHwnd;
+}
+
+/**
  * ウィンドウをアクティブ化（フォーカス）
  * @param hwnd ウィンドウハンドル
  * @returns 成功したらtrue

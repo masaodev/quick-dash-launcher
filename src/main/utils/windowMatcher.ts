@@ -2,7 +2,7 @@
  * ウィンドウタイトルに基づいてウィンドウを検索するユーティリティ
  * 既存のウィンドウ検索機能を再利用し、アイテム起動時のウィンドウアクティブ化機能を提供する
  */
-import { getAllWindows } from './nativeWindowControl.js';
+import { findWindowHwndByTitle } from './nativeWindowControl.js';
 
 /**
  * ワイルドカードパターンを正規表現に変換
@@ -28,6 +28,17 @@ function hasWildcard(text: string): boolean {
 }
 
 /**
+ * ウィンドウタイトルのマッチング関数を作成する
+ * ポーリングループなど同じタイトルで繰り返し検索する場合に、正規表現のプリコンパイルに使用する
+ */
+export function createTitleMatcher(windowTitle: string): (title: string) => boolean {
+  const regex = hasWildcard(windowTitle) ? wildcardToRegex(windowTitle) : null;
+  const lowerWindowTitle = windowTitle.toLowerCase();
+  return (title: string): boolean =>
+    regex ? regex.test(title) : title.toLowerCase() === lowerWindowTitle;
+}
+
+/**
  * ウィンドウタイトルとプロセス名に基づいてウィンドウを検索
  *
  * @param windowTitle 検索するウィンドウタイトル
@@ -35,7 +46,7 @@ function hasWildcard(text: string): boolean {
  * @returns 見つかったウィンドウのhwnd、見つからない場合またはエラー時はnull
  *
  * @remarks
- * - getAllWindows()はシステムコールのため、頻繁な呼び出しはパフォーマンスに影響する可能性があります
+ * - 内部でEnumWindowsを使用するシステムコールのため、頻繁な呼び出しはパフォーマンスに影響する可能性があります
  * - エラー発生時はnullを返し、呼び出し元で通常起動にフォールバックします
  * - 複数のウィンドウがマッチした場合は最初の1つを返します
  * - ウィンドウタイトルとプロセス名の両方が指定されている場合は、両方の条件を満たすウィンドウを検索します（AND条件）
@@ -74,39 +85,10 @@ function hasWildcard(text: string): boolean {
  */
 export function findWindowByTitle(windowTitle: string, processName?: string): bigint | null {
   try {
-    // ウィンドウ操作アイテムでは、全仮想デスクトップのウィンドウを検索対象にする
-    const windows = getAllWindows({ includeAllVirtualDesktops: true });
-
-    // ワイルドカードの有無をチェック
-    const useWildcard = hasWildcard(windowTitle);
-    const regex = useWildcard ? wildcardToRegex(windowTitle) : null;
-
-    // 検索条件を適用してウィンドウを検索
-    const matchedWindow = windows.find((win) => {
-      const titleMatches = regex
-        ? regex.test(win.title)
-        : win.title.toLowerCase() === windowTitle.toLowerCase();
-
-      if (!titleMatches) return false;
-
-      if (processName?.trim()) {
-        return win.processName
-          ? win.processName.toLowerCase().includes(processName.toLowerCase())
-          : false;
-      }
-
-      return true;
-    });
-
-    if (!matchedWindow) {
-      return null;
-    }
-
-    // hwndをbigintに変換（numberの場合）
-    return typeof matchedWindow.hwnd === 'bigint' ? matchedWindow.hwnd : BigInt(matchedWindow.hwnd);
+    return findWindowHwndByTitle(createTitleMatcher(windowTitle), processName);
   } catch (error) {
     console.error(
-      `[findWindowByTitle] ウィンドウ一覧の取得に失敗しました: windowTitle="${windowTitle}", processName="${processName}", error=${error instanceof Error ? error.message : String(error)}`
+      `[findWindowByTitle] ウィンドウ検索に失敗しました: windowTitle="${windowTitle}", processName="${processName}", error=${error instanceof Error ? error.message : String(error)}`
     );
     return null;
   }

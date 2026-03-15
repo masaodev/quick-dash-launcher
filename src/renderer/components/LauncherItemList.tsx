@@ -205,6 +205,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
     group: '📦',
     window: '🪟',
     clipboard: '📋',
+    layout: '🖥️',
   };
 
   function getItemIcon(item: AppItem): React.ReactNode {

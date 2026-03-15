@@ -153,6 +153,7 @@
 .layout-entry-item .entry-field input[type='text'],
 .layout-entry-item .entry-field input[type='number'] {
   flex: 1;
+  min-width: 0;
   padding: 4px 6px;
   border: var(--border-light);
   border-radius: var(--border-radius-sm);

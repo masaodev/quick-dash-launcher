@@ -241,6 +241,23 @@ export interface LayoutItem {
   memo?: string;
 }
 
+// レイアウト実行の進捗型
+export type LayoutEntryStatus = 'waiting' | 'launching' | 'success' | 'failed';
+
+export interface LayoutEntryProgress {
+  index: number;
+  windowTitle: string;
+  status: LayoutEntryStatus;
+  errorMessage?: string;
+}
+
+export interface LayoutExecutionProgress {
+  layoutName: string;
+  entries: LayoutEntryProgress[];
+  isComplete: boolean;
+  isCancelled: boolean;
+}
+
 /**
  * アプリケーションで扱うすべてのアイテムの統合型
  * 通常のLauncherItem、GroupItem、WindowItem、ClipboardItem、LayoutItem、WindowInfo（ウィンドウ検索結果）を扱える
