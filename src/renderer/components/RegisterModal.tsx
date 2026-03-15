@@ -28,6 +28,8 @@ import CustomIconEditor from './CustomIconEditor';
 import UrlConverterMenu from './UrlConverterMenu';
 import IconFetchButton from './IconFetchButton';
 import ClipboardItemEditor from './ClipboardItemEditor';
+import LayoutCaptureModal from './LayoutCaptureModal';
+import LayoutEntryEditor from './LayoutEntryEditor';
 import { Button } from './ui';
 import '../styles/components/UrlConverterMenu.css';
 
@@ -52,7 +54,7 @@ function getDisplayNamePlaceholder(itemCategory: string): string {
   }
 }
 
-const NON_EXECUTABLE_CATEGORIES = ['dir', 'group', 'clipboard'] as const;
+const NON_EXECUTABLE_CATEGORIES = ['dir', 'group', 'clipboard', 'layout'] as const;
 
 /**
  * 編集中のアイテムが自動取込で管理されているかを判定する
@@ -80,6 +82,12 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
 
   const [windowSelectorOpen, setWindowSelectorOpen] = useState(false);
   const [windowSelectorItemIndex, setWindowSelectorItemIndex] = useState<number | null>(null);
+  const [layoutCaptureOpen, setLayoutCaptureOpen] = useState(false);
+  const [layoutCaptureItemIndex, setLayoutCaptureItemIndex] = useState<number | null>(null);
+  const [layoutEntryWindowSelectorIndex, setLayoutEntryWindowSelectorIndex] = useState<{
+    itemIndex: number;
+    entryIndex: number;
+  } | null>(null);
   const [optionsSectionOpen, setOptionsSectionOpen] = useState<boolean[]>([]);
   const [isDraggingOverModal, setIsDraggingOverModal] = useState(false);
 
@@ -258,6 +266,32 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
   };
 
   const onWindowSelected = (window: WindowInfo): void => {
+    // レイアウトエントリのウィンドウ選択
+    if (layoutEntryWindowSelectorIndex !== null) {
+      const { itemIndex, entryIndex } = layoutEntryWindowSelectorIndex;
+      const item = items[itemIndex];
+      if (!item) return;
+      const currentEntries = [...(item.layoutEntries || [])];
+      if (entryIndex < currentEntries.length) {
+        currentEntries[entryIndex] = {
+          ...currentEntries[entryIndex],
+          windowTitle: window.title,
+          processName: window.processName,
+          executablePath: window.executablePath || currentEntries[entryIndex].executablePath,
+          x: window.x,
+          y: window.y,
+          width: window.width,
+          height: window.height,
+          virtualDesktopNumber:
+            window.desktopNumber || currentEntries[entryIndex].virtualDesktopNumber,
+          icon: window.icon || currentEntries[entryIndex].icon,
+        };
+        updateItem(itemIndex, { layoutEntries: currentEntries });
+      }
+      setLayoutEntryWindowSelectorIndex(null);
+      return;
+    }
+
     if (windowSelectorItemIndex === null) return;
 
     const item = items[windowSelectorItemIndex];
@@ -330,7 +364,8 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     if (
       item.itemCategory === 'dir' ||
       item.itemCategory === 'group' ||
-      item.itemCategory === 'window'
+      item.itemCategory === 'window' ||
+      item.itemCategory === 'layout'
     ) {
       return null;
     }
@@ -483,7 +518,13 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                           handleItemChange(
                             index,
                             'itemCategory',
-                            e.target.value as 'item' | 'dir' | 'group' | 'window' | 'clipboard'
+                            e.target.value as
+                              | 'item'
+                              | 'dir'
+                              | 'group'
+                              | 'window'
+                              | 'clipboard'
+                              | 'layout'
                           )
                         }
                       >
@@ -492,6 +533,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                         <option value="group">📦 グループ</option>
                         <option value="window">🪟 ウィンドウ操作</option>
                         <option value="clipboard">📋 クリップボード</option>
+                        <option value="layout">🖥️ レイアウト</option>
                       </select>
                     </div>
 
@@ -513,7 +555,8 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
 
                     {item.itemCategory !== 'group' &&
                       item.itemCategory !== 'window' &&
-                      item.itemCategory !== 'clipboard' && (
+                      item.itemCategory !== 'clipboard' &&
+                      item.itemCategory !== 'layout' && (
                         <div className="form-group path-input-group">
                           <label>パス:</label>
                           <input
@@ -730,6 +773,29 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                       </>
                     )}
 
+                    {item.itemCategory === 'layout' && (
+                      <>
+                        <LayoutEntryEditor
+                          entries={item.layoutEntries || []}
+                          onChange={(entries) => updateItem(index, { layoutEntries: entries })}
+                          onCaptureClick={() => {
+                            setLayoutCaptureItemIndex(index);
+                            setLayoutCaptureOpen(true);
+                          }}
+                          onSelectWindow={(entryIndex) => {
+                            setLayoutEntryWindowSelectorIndex({
+                              itemIndex: index,
+                              entryIndex,
+                            });
+                            setWindowSelectorOpen(true);
+                          }}
+                        />
+                        {errors[index]?.path && (
+                          <span className="error-message">{errors[index].path}</span>
+                        )}
+                      </>
+                    )}
+
                     {(item.itemCategory === 'group' || item.itemCategory === 'clipboard') && (
                       <CustomIconEditor
                         customIconPreview={customIconPreviews[index]}
@@ -814,6 +880,17 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
         isOpen={windowSelectorOpen}
         onClose={() => setWindowSelectorOpen(false)}
         onSelect={onWindowSelected}
+      />
+
+      <LayoutCaptureModal
+        isOpen={layoutCaptureOpen}
+        onClose={() => setLayoutCaptureOpen(false)}
+        onCapture={(entries) => {
+          if (layoutCaptureItemIndex !== null) {
+            const existing = items[layoutCaptureItemIndex]?.layoutEntries || [];
+            updateItem(layoutCaptureItemIndex, { layoutEntries: [...existing, ...entries] });
+          }
+        }}
       />
     </>
   );

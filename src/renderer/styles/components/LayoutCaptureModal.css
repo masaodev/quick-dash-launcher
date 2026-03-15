@@ -1,0 +1,192 @@
+/**
+ * LayoutCaptureModal のスタイル
+ * ウィンドウレイアウトキャプチャダイアログのスタイル定義
+ */
+
+.layout-capture-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.layout-capture-modal {
+  background-color: var(--color-white);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-lg);
+  width: 90%;
+  max-width: 850px;
+  max-height: var(--modal-max-height);
+  display: flex;
+  flex-direction: column;
+}
+
+.layout-capture-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md);
+  border-bottom: var(--border-light);
+}
+
+.layout-capture-header h3 {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  color: var(--text-primary);
+}
+
+.layout-capture-header .close-button {
+  background: none;
+  border: none;
+  font-size: var(--font-size-xl);
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0;
+}
+
+.layout-capture-body {
+  padding: var(--spacing-md);
+  overflow-y: auto;
+  flex: 1;
+}
+
+.layout-capture-body .desktop-tabs {
+  display: flex;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.layout-capture-body .desktop-tab {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: var(--border-light);
+  border-radius: var(--border-radius-sm);
+  background: var(--color-white);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.layout-capture-body .desktop-tab.active {
+  background: var(--color-primary);
+  color: var(--color-white);
+  border-color: var(--color-primary);
+}
+
+.layout-capture-body .desktop-tab .tab-count {
+  margin-left: var(--spacing-xs);
+  font-size: var(--font-size-xs);
+}
+
+.layout-capture-body .filter-section {
+  margin-bottom: var(--spacing-md);
+}
+
+.layout-capture-body .filter-input {
+  width: 100%;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: var(--border-light);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-sm);
+  box-sizing: border-box;
+}
+
+.layout-capture-window-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.layout-capture-window-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  border: var(--border-light);
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.layout-capture-window-item:hover {
+  background-color: var(--color-hover);
+}
+
+.layout-capture-window-item.selected {
+  background-color: var(--color-primary-light, #e3f2fd);
+  border-color: var(--color-primary);
+}
+
+.layout-capture-window-item .window-checkbox {
+  flex-shrink: 0;
+}
+
+.layout-capture-window-item .window-icon {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+}
+
+.layout-capture-window-item .window-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.layout-capture-window-item .window-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.layout-capture-window-item .window-title {
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.layout-capture-window-item .window-details {
+  display: flex;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  flex-wrap: wrap;
+}
+
+.layout-capture-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md);
+  border-top: var(--border-light);
+  gap: var(--spacing-sm);
+}
+
+.layout-capture-footer .selection-count {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.layout-capture-footer .footer-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.layout-capture-body .select-all-section {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: var(--color-gray-50, #fafafa);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}

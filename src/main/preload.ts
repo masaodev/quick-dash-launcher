@@ -7,6 +7,8 @@ import type {
   SearchHistoryEntry,
   GroupItem,
   WindowItem,
+  LayoutItem,
+  LayoutWindowEntry,
   AppItem,
   AppInfo,
   BrowserInfo,
@@ -96,6 +98,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke(IPC_CHANNELS.EXECUTE_GROUP, group, allItems),
   executeWindowOperation: (item: WindowItem): Promise<void> =>
     ipcRenderer.invoke(IPC_CHANNELS.EXECUTE_WINDOW_OPERATION, item),
+  executeLayout: (item: LayoutItem): Promise<void> =>
+    ipcRenderer.invoke(IPC_CHANNELS.EXECUTE_LAYOUT, item),
   openConfigFolder: () => ipcRenderer.invoke(IPC_CHANNELS.OPEN_CONFIG_FOLDER),
   fetchFavicon: (url: string) => ipcRenderer.invoke(IPC_CHANNELS.FETCH_FAVICON, url),
   extractIcon: (filePath: string) => ipcRenderer.invoke(IPC_CHANNELS.EXTRACT_ICON, filePath),
@@ -194,6 +198,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     },
     memo?: string
   ) => ipcRenderer.invoke(IPC_CHANNELS.UPDATE_WINDOW_ITEM_BY_ID, id, config, memo),
+  updateLayoutItemById: (
+    id: string,
+    displayName: string,
+    entries: LayoutWindowEntry[],
+    memo?: string
+  ) => ipcRenderer.invoke(IPC_CHANNELS.UPDATE_LAYOUT_ITEM_BY_ID, id, displayName, entries, memo),
   setEditMode: (editMode: boolean) => ipcRenderer.invoke(IPC_CHANNELS.SET_EDIT_MODE, editMode),
   getEditMode: () => ipcRenderer.invoke(IPC_CHANNELS.GET_EDIT_MODE),
   selectBookmarkFile: () => ipcRenderer.invoke(IPC_CHANNELS.SELECT_BOOKMARK_FILE),

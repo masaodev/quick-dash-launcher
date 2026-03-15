@@ -1,0 +1,171 @@
+/**
+ * LayoutEntryEditor のスタイル
+ * レイアウト内のウィンドウエントリ編集UIのスタイル定義
+ */
+
+.layout-entry-editor {
+  margin-top: var(--spacing-sm);
+}
+
+.layout-entry-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.layout-entry-item {
+  display: flex;
+  flex-direction: column;
+  padding: var(--spacing-sm);
+  border: var(--border-light);
+  border-radius: var(--border-radius-sm);
+  background: var(--color-white);
+}
+
+.layout-entry-item .entry-compact-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.layout-entry-item .entry-expand-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  padding: 2px 4px;
+  flex-shrink: 0;
+}
+
+.layout-entry-item .entry-expand-btn:hover {
+  color: var(--text-primary);
+}
+
+.layout-entry-item .entry-icon {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+}
+
+.layout-entry-item .entry-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.layout-entry-item .entry-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.layout-entry-item .entry-title {
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.layout-entry-item .entry-details {
+  display: flex;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.layout-entry-item .entry-position-inputs {
+  display: flex;
+  gap: var(--spacing-xs);
+  align-items: center;
+  font-size: var(--font-size-xs);
+}
+
+.layout-entry-item .entry-position-inputs input {
+  width: 60px;
+  padding: 2px 4px;
+  border: var(--border-light);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-xs);
+  text-align: right;
+}
+
+.layout-entry-item .entry-actions {
+  display: flex;
+  gap: var(--spacing-xs);
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.layout-entry-item .launch-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.layout-entry-item .launch-toggle input[type='checkbox'] {
+  margin: 0;
+}
+
+.layout-entry-item .remove-entry-btn {
+  background: none;
+  border: none;
+  color: var(--color-danger, #dc3545);
+  cursor: pointer;
+  font-size: var(--font-size-md);
+  padding: 2px 4px;
+  line-height: 1;
+}
+
+.layout-entry-item .remove-entry-btn:hover {
+  color: var(--color-danger-dark, #a71d2a);
+}
+
+/* 展開時の詳細セクション */
+.layout-entry-item .entry-expanded-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-sm);
+  padding-top: var(--spacing-sm);
+  border-top: var(--border-light);
+}
+
+.layout-entry-item .entry-field {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.layout-entry-item .entry-field label {
+  flex-shrink: 0;
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  min-width: 100px;
+}
+
+.layout-entry-item .entry-field input[type='text'],
+.layout-entry-item .entry-field input[type='number'] {
+  flex: 1;
+  padding: 4px 6px;
+  border: var(--border-light);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-sm);
+}
+
+.layout-no-entries {
+  text-align: center;
+  padding: var(--spacing-md);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.layout-capture-button {
+  margin-top: var(--spacing-sm);
+}

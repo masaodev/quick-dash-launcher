@@ -114,6 +114,10 @@ export function jsonItemToDisplayText(item: JsonItem): string {
       return parts.map(escapeDisplayTextField).join(',');
     }
 
+    case 'layout': {
+      return `layout,${escapeDisplayTextField(item.displayName)},${escapeDisplayTextField(JSON.stringify(item.entries))}`;
+    }
+
     default:
       throw new Error(`Unknown item type: ${(item as JsonItem).type}`);
   }
@@ -214,6 +218,21 @@ export function displayTextToJsonItem(text: string, existingId?: string): JsonIt
       savedAt: Date.now(),
       formats,
       preview,
+    };
+  }
+
+  // layout行
+  if (trimmed.startsWith('layout,')) {
+    const parts = parseDisplayTextFields(trimmed);
+    const displayName = parts[1] || '';
+    const entriesStr = parts[2] || '[]';
+    const entries = JSON.parse(entriesStr);
+
+    return {
+      id: itemId,
+      type: 'layout',
+      displayName,
+      entries,
     };
   }
 

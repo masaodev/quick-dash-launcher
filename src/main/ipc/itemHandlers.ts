@@ -1,6 +1,7 @@
 import { ipcMain, shell } from 'electron';
 import { itemLogger } from '@common/logger';
 import { LauncherItem, GroupItem, WindowItem, AppItem, WindowConfig } from '@common/types';
+import type { LayoutItem, LayoutWindowEntry } from '@common/types';
 import { GROUP_LAUNCH_DELAY_MS } from '@common/constants';
 import { isLauncherItem, isWindowItem } from '@common/types/guards';
 import { IPC_CHANNELS } from '@common/ipcChannels';
@@ -8,6 +9,7 @@ import { IPC_CHANNELS } from '@common/ipcChannels';
 import { tryActivateWindow } from '../utils/windowActivator.js';
 import { launchItem } from '../utils/itemLauncher.js';
 import { SettingsService } from '../services/settingsService.js';
+import { findWindowByTitle } from '../utils/windowMatcher.js';
 
 /**
  * WindowItemからWindowConfigを生成する
@@ -169,6 +171,110 @@ async function executeGroup(group: GroupItem, allItems: AppItem[]): Promise<void
   );
 }
 
+/** レイアウトのウィンドウ出現待機の設定 */
+const LAYOUT_WAIT_CONFIG = {
+  /** 最大待機時間（ミリ秒） */
+  MAX_WAIT_MS: 10000,
+  /** ポーリング間隔（ミリ秒） */
+  POLL_INTERVAL_MS: 500,
+};
+
+/**
+ * ウィンドウが出現するまで待機する
+ */
+async function waitForWindow(windowTitle: string, processName?: string): Promise<boolean> {
+  const startTime = Date.now();
+  while (Date.now() - startTime < LAYOUT_WAIT_CONFIG.MAX_WAIT_MS) {
+    const found = findWindowByTitle(windowTitle, processName);
+    if (found) return true;
+    await new Promise((resolve) => setTimeout(resolve, LAYOUT_WAIT_CONFIG.POLL_INTERVAL_MS));
+  }
+  return false;
+}
+
+/**
+ * レイアウトの各エントリを実行する
+ */
+async function executeLayoutEntry(entry: LayoutWindowEntry): Promise<void> {
+  const windowConfig: WindowConfig = {
+    title: entry.windowTitle,
+    processName: entry.processName,
+    x: entry.x,
+    y: entry.y,
+    width: entry.width,
+    height: entry.height,
+    virtualDesktopNumber: entry.virtualDesktopNumber,
+  };
+
+  if (entry.launchApp && entry.executablePath) {
+    // まず既存ウィンドウを検索
+    const existingWindow = findWindowByTitle(entry.windowTitle, entry.processName);
+    if (!existingWindow) {
+      // アプリ起動
+      await launchItem(
+        {
+          type: 'app',
+          path: entry.executablePath,
+          args: entry.args,
+          displayName: entry.windowTitle,
+        },
+        itemLogger
+      );
+
+      // ウィンドウ出現待機
+      const appeared = await waitForWindow(entry.windowTitle, entry.processName);
+      if (!appeared) {
+        itemLogger.warn(
+          { windowTitle: entry.windowTitle },
+          'レイアウト: アプリ起動後のウィンドウ出現待機がタイムアウトしました'
+        );
+        return;
+      }
+    }
+  }
+
+  // ウィンドウの位置・サイズ設定
+  const result = await tryActivateWindow(windowConfig, entry.windowTitle, itemLogger);
+  if (!result.windowFound) {
+    itemLogger.warn(
+      { windowTitle: entry.windowTitle },
+      'レイアウト: ウィンドウが見つかりませんでした'
+    );
+  }
+}
+
+/**
+ * レイアウトを実行する（全エントリを順次処理）
+ */
+async function executeLayout(item: LayoutItem): Promise<void> {
+  itemLogger.info(
+    { displayName: item.displayName, entryCount: item.entries.length },
+    'レイアウトを実行中'
+  );
+
+  for (let i = 0; i < item.entries.length; i++) {
+    try {
+      await executeLayoutEntry(item.entries[i]);
+    } catch (error) {
+      itemLogger.error(
+        {
+          entryIndex: i,
+          windowTitle: item.entries[i].windowTitle,
+          error: error instanceof Error ? error.message : String(error),
+        },
+        'レイアウトエントリの実行に失敗しました'
+      );
+    }
+
+    // エントリ間にディレイを挿入
+    if (i < item.entries.length - 1) {
+      await new Promise((resolve) => setTimeout(resolve, GROUP_LAUNCH_DELAY_MS));
+    }
+  }
+
+  itemLogger.info({ displayName: item.displayName }, 'レイアウト実行完了');
+}
+
 export function setupItemHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.OPEN_ITEM, async (_event, item: LauncherItem) => {
     await openItem(item);
@@ -184,6 +290,10 @@ export function setupItemHandlers(): void {
       await executeGroup(group, allItems);
     }
   );
+
+  ipcMain.handle(IPC_CHANNELS.EXECUTE_LAYOUT, async (_event, item: LayoutItem) => {
+    await executeLayout(item);
+  });
 
   ipcMain.handle(IPC_CHANNELS.EXECUTE_WINDOW_OPERATION, async (_event, item: WindowItem) => {
     itemLogger.info(
