@@ -7,6 +7,7 @@ import type {
   JsonLauncherItem,
   JsonGroupItem,
   JsonWindowItem,
+  JsonLayoutItem,
 } from '@common/types';
 import {
   isJsonLauncherItem,
@@ -14,6 +15,7 @@ import {
   isJsonGroupItem,
   isJsonWindowItem,
   isJsonClipboardItem,
+  isJsonLayoutItem,
 } from '@common/types';
 
 import ConfirmDialog from './ConfirmDialog';
@@ -22,14 +24,15 @@ type SortColumn = 'type' | 'displayName' | 'pathAndArgs' | 'updatedAt';
 type SortDirection = 'asc' | 'desc';
 
 // displayNameを持つアイテム型
-type JsonItemWithDisplayName = JsonLauncherItem | JsonGroupItem | JsonWindowItem;
+type JsonItemWithDisplayName = JsonLauncherItem | JsonGroupItem | JsonWindowItem | JsonLayoutItem;
 
 // displayNameを持つアイテム型かどうかを判定するヘルパー関数
 function hasDisplayName(jsonItem: JsonItem): jsonItem is JsonItemWithDisplayName {
   return (
     (jsonItem.type === 'item' && isJsonLauncherItem(jsonItem)) ||
     (jsonItem.type === 'group' && isJsonGroupItem(jsonItem)) ||
-    (jsonItem.type === 'window' && isJsonWindowItem(jsonItem))
+    (jsonItem.type === 'window' && isJsonWindowItem(jsonItem)) ||
+    (jsonItem.type === 'layout' && isJsonLayoutItem(jsonItem))
   );
 }
 
@@ -349,6 +352,7 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
     dir: { icon: '🗂️', name: 'フォルダ取込' },
     window: { icon: '🪟', name: 'ウィンドウ操作' },
     clipboard: { icon: '📋', name: 'クリップボード' },
+    layout: { icon: '🖥️', name: 'ウィンドウレイアウト' },
   };
 
   const getItemTypeIcon = (item: EditableJsonItem) => itemTypeInfo[item.item.type]?.icon ?? '❓';
@@ -450,6 +454,11 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
       const preview = jsonItem.preview || '';
       if (!formats && !preview) return '(データなし)';
       return preview ? `[${formats}] ${preview}` : `[${formats}]`;
+    } else if (jsonItem.type === 'layout' && isJsonLayoutItem(jsonItem)) {
+      // レイアウトの場合：ウィンドウエントリの概要
+      const entries = jsonItem.entries || [];
+      if (entries.length === 0) return '(エントリなし)';
+      return `${entries.length}個のウィンドウ: ${entries.map((e) => e.windowTitle).join(', ')}`;
     } else {
       return '(不明な型)';
     }

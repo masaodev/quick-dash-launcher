@@ -439,6 +439,7 @@ export function getEditMode(): boolean {
  * モーダルモードの切り替え
  * モーダル表示時は必要に応じてウィンドウサイズを拡大し、閉じる時は元のサイズに戻す
  * モーダル表示中はフォーカス喪失時に自動非表示されないように制御される
+ * また、モーダル表示中はウィンドウを最前面に固定する
  */
 export async function setModalMode(
   isModal: boolean,
@@ -447,20 +448,30 @@ export async function setModalMode(
   isModalMode = isModal;
   if (!mainWindow) return;
 
-  if (isModal && requiredSize) {
-    if (!normalWindowBounds) {
-      const { width, height } = mainWindow.getBounds();
-      normalWindowBounds = { width, height };
+  if (isModal) {
+    // モーダル表示中は最前面に固定
+    mainWindow.setAlwaysOnTop(true);
+
+    if (requiredSize) {
+      if (!normalWindowBounds) {
+        const { width, height } = mainWindow.getBounds();
+        normalWindowBounds = { width, height };
+      }
+      const { needsResize, newSize } = calculateModalSize(mainWindow.getBounds(), requiredSize);
+      if (needsResize) {
+        mainWindow.setSize(newSize.width, newSize.height);
+        mainWindow.center();
+      }
     }
-    const { needsResize, newSize } = calculateModalSize(mainWindow.getBounds(), requiredSize);
-    if (needsResize) {
-      mainWindow.setSize(newSize.width, newSize.height);
+  } else {
+    // 元のピンモードに応じて最前面設定を復元
+    mainWindow.setAlwaysOnTop(windowPinMode === 'alwaysOnTop');
+
+    if (normalWindowBounds) {
+      mainWindow.setSize(normalWindowBounds.width, normalWindowBounds.height);
       mainWindow.center();
+      normalWindowBounds = null;
     }
-  } else if (normalWindowBounds) {
-    mainWindow.setSize(normalWindowBounds.width, normalWindowBounds.height);
-    mainWindow.center();
-    normalWindowBounds = null;
   }
 }
 

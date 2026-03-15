@@ -8,31 +8,31 @@
 	"backupEnabled": false,
 	"backupRetention": 10,
 	"showDataFileTabs": true,
-	"defaultFileTab": "datafiles/data.txt",
+	"defaultFileTab": "datafiles/data.json",
 	"dataFileTabs": [
 		{
 			"files": [
-				"datafiles/data.txt"
+				"datafiles/data.json"
 			],
 			"name": "メイン"
 		},
 		{
 			"files": [
-				"datafiles/data2.txt"
+				"datafiles/data2.json"
 			],
 			"name": "仕事"
 		},
 		{
 			"files": [
-				"datafiles/data3.txt"
+				"datafiles/data3.json"
 			],
 			"name": "プライベート"
 		}
 	],
 	"dataFileLabels": {
-		"datafiles/data.txt": "メイン用データファイル",
-		"datafiles/data2.txt": "仕事用データファイル",
-		"datafiles/data3.txt": "プライベート用データファイル"
+		"datafiles/data.json": "メイン用データファイル",
+		"datafiles/data2.json": "仕事用データファイル",
+		"datafiles/data3.json": "プライベート用データファイル"
 	},
 	"windowPositionMode": "center",
 	"windowPositionX": 0,
@@ -45,11 +45,14 @@
 	"workspacePositionX": 0,
 	"workspacePositionY": 0,
 	"workspaceVisibleOnAllDesktops": true,
+	"detachedVisibleOnAllDesktops": true,
 	"backupIncludeClipboard": false,
 	"parallelGroupLaunch": false,
 	"itemSearchHotkey": "",
 	"bookmarkAutoImport": {
 		"autoRunOnStartup": false,
 		"rules": []
-	}
+	},
+	"hideDetachedWithMainWindow": true,
+	"windowSnapEnabled": true
 }

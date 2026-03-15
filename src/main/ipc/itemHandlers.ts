@@ -1,6 +1,14 @@
 import { ipcMain, shell } from 'electron';
 import { itemLogger } from '@common/logger';
-import { LauncherItem, GroupItem, WindowItem, AppItem, WindowConfig } from '@common/types';
+import {
+  LauncherItem,
+  GroupItem,
+  WindowItem,
+  AppItem,
+  WindowConfig,
+  LayoutExecutionProgress,
+  LayoutEntryProgress,
+} from '@common/types';
 import type { LayoutItem, LayoutWindowEntry } from '@common/types';
 import { GROUP_LAUNCH_DELAY_MS } from '@common/constants';
 import { isLauncherItem, isWindowItem } from '@common/types/guards';
@@ -9,7 +17,9 @@ import { IPC_CHANNELS } from '@common/ipcChannels';
 import { tryActivateWindow } from '../utils/windowActivator.js';
 import { launchItem } from '../utils/itemLauncher.js';
 import { SettingsService } from '../services/settingsService.js';
-import { findWindowByTitle } from '../utils/windowMatcher.js';
+import { findWindowByTitle, createTitleMatcher } from '../utils/windowMatcher.js';
+import { findWindowHwndByTitle } from '../utils/nativeWindowControl.js';
+import { getMainWindow } from '../windowManager.js';
 
 /**
  * WindowItemからWindowConfigを生成する
@@ -174,18 +184,79 @@ async function executeGroup(group: GroupItem, allItems: AppItem[]): Promise<void
 /** レイアウトのウィンドウ出現待機の設定 */
 const LAYOUT_WAIT_CONFIG = {
   /** 最大待機時間（ミリ秒） */
-  MAX_WAIT_MS: 10000,
+  MAX_WAIT_MS: 30000,
   /** ポーリング間隔（ミリ秒） */
-  POLL_INTERVAL_MS: 500,
+  POLL_INTERVAL_MS: 2000,
 };
 
+/** レイアウト並列実行の同時実行数 */
+const LAYOUT_CONCURRENCY = 3;
+
+/** レイアウトキャンセルフラグ */
+let layoutCancelled = false;
+
+/** レイアウト進捗イベントのチャンネルマップ */
+const LAYOUT_PROGRESS_CHANNELS = {
+  start: IPC_CHANNELS.EVENT_LAYOUT_PROGRESS_START,
+  update: IPC_CHANNELS.EVENT_LAYOUT_PROGRESS_UPDATE,
+  complete: IPC_CHANNELS.EVENT_LAYOUT_PROGRESS_COMPLETE,
+} as const;
+
 /**
- * ウィンドウが出現するまで待機する
+ * レイアウト進捗をレンダラーに送信する
+ */
+function sendLayoutProgress(
+  eventType: 'start' | 'update' | 'complete',
+  progress: LayoutExecutionProgress
+): void {
+  const mainWindow = getMainWindow();
+  if (mainWindow) {
+    mainWindow.webContents.send(LAYOUT_PROGRESS_CHANNELS[eventType], progress);
+  }
+}
+
+/**
+ * レイアウトエントリの失敗を記録して進捗を通知する
+ */
+function failLayoutEntry(
+  progress: LayoutExecutionProgress,
+  index: number,
+  errorMessage: string
+): void {
+  progress.entries[index].status = 'failed';
+  progress.entries[index].errorMessage = errorMessage;
+  sendLayoutProgress('update', progress);
+}
+
+/**
+ * レイアウト用にウィンドウタイトルを部分一致パターンに正規化する
+ * ワイルドカードが含まれていない場合、前後に * を付加して部分一致にする。
+ * 片方のみにワイルドカードがある場合（例: "title*"）、もう片方にも * を付加する。
+ * これにより、サクラエディタの編集中マーク（"* filename.txt - sakura"）等の
+ * タイトル変動に対応する。
+ */
+function toPartialMatchTitle(windowTitle: string): string {
+  if (!windowTitle) return windowTitle;
+  let result = windowTitle;
+  if (!result.startsWith('*')) {
+    result = `*${result}`;
+  }
+  if (!result.endsWith('*')) {
+    result = `${result}*`;
+  }
+  return result;
+}
+
+/**
+ * ウィンドウが出現するまで待機する（キャンセル対応）
+ * titleMatcherをループ外でプリコンパイルし、ポーリング毎の正規表現再生成を回避
  */
 async function waitForWindow(windowTitle: string, processName?: string): Promise<boolean> {
+  const titleMatcher = createTitleMatcher(windowTitle);
   const startTime = Date.now();
   while (Date.now() - startTime < LAYOUT_WAIT_CONFIG.MAX_WAIT_MS) {
-    const found = findWindowByTitle(windowTitle, processName);
+    if (layoutCancelled) return false;
+    const found = findWindowHwndByTitle(titleMatcher, processName);
     if (found) return true;
     await new Promise((resolve) => setTimeout(resolve, LAYOUT_WAIT_CONFIG.POLL_INTERVAL_MS));
   }
@@ -195,9 +266,26 @@ async function waitForWindow(windowTitle: string, processName?: string): Promise
 /**
  * レイアウトの各エントリを実行する
  */
-async function executeLayoutEntry(entry: LayoutWindowEntry): Promise<void> {
+async function executeLayoutEntry(
+  entry: LayoutWindowEntry,
+  index: number,
+  progress: LayoutExecutionProgress
+): Promise<void> {
+  // キャンセルチェック
+  if (layoutCancelled) {
+    failLayoutEntry(progress, index, 'キャンセルされました');
+    return;
+  }
+
+  // ステータスを「起動中」に更新
+  progress.entries[index].status = 'launching';
+  sendLayoutProgress('update', progress);
+
+  // レイアウト用にタイトルを部分一致パターンに正規化
+  const searchTitle = toPartialMatchTitle(entry.windowTitle);
+
   const windowConfig: WindowConfig = {
-    title: entry.windowTitle,
+    title: searchTitle,
     processName: entry.processName,
     x: entry.x,
     y: entry.y,
@@ -208,7 +296,7 @@ async function executeLayoutEntry(entry: LayoutWindowEntry): Promise<void> {
 
   if (entry.launchApp && entry.executablePath) {
     // まず既存ウィンドウを検索
-    const existingWindow = findWindowByTitle(entry.windowTitle, entry.processName);
+    const existingWindow = findWindowByTitle(searchTitle, entry.processName);
     if (!existingWindow) {
       // アプリ起動
       await launchItem(
@@ -222,15 +310,22 @@ async function executeLayoutEntry(entry: LayoutWindowEntry): Promise<void> {
       );
 
       // ウィンドウ出現待機
-      const appeared = await waitForWindow(entry.windowTitle, entry.processName);
+      const appeared = await waitForWindow(searchTitle, entry.processName);
       if (!appeared) {
-        itemLogger.warn(
-          { windowTitle: entry.windowTitle },
-          'レイアウト: アプリ起動後のウィンドウ出現待機がタイムアウトしました'
-        );
+        const errorMsg = layoutCancelled
+          ? 'キャンセルされました'
+          : 'ウィンドウ出現待機がタイムアウトしました';
+        itemLogger.warn({ windowTitle: entry.windowTitle }, `レイアウト: ${errorMsg}`);
+        failLayoutEntry(progress, index, errorMsg);
         return;
       }
     }
+  }
+
+  // キャンセルチェック
+  if (layoutCancelled) {
+    failLayoutEntry(progress, index, 'キャンセルされました');
+    return;
   }
 
   // ウィンドウの位置・サイズ設定
@@ -240,11 +335,37 @@ async function executeLayoutEntry(entry: LayoutWindowEntry): Promise<void> {
       { windowTitle: entry.windowTitle },
       'レイアウト: ウィンドウが見つかりませんでした'
     );
+    failLayoutEntry(progress, index, 'ウィンドウが見つかりませんでした');
+    return;
   }
+
+  progress.entries[index].status = 'success';
+  sendLayoutProgress('update', progress);
 }
 
 /**
- * レイアウトを実行する（全エントリを順次処理）
+ * 並列実行数を制限しながらタスクを実行する
+ */
+async function runWithConcurrency<T>(
+  tasks: (() => Promise<T>)[],
+  concurrency: number
+): Promise<void> {
+  let index = 0;
+
+  async function runNext(): Promise<void> {
+    while (index < tasks.length) {
+      if (layoutCancelled) return;
+      const currentIndex = index++;
+      await tasks[currentIndex]();
+    }
+  }
+
+  const workers = Array.from({ length: Math.min(concurrency, tasks.length) }, () => runNext());
+  await Promise.all(workers);
+}
+
+/**
+ * レイアウトを実行する（並列処理・進捗通知・キャンセル対応）
  */
 async function executeLayout(item: LayoutItem): Promise<void> {
   itemLogger.info(
@@ -252,27 +373,73 @@ async function executeLayout(item: LayoutItem): Promise<void> {
     'レイアウトを実行中'
   );
 
-  for (let i = 0; i < item.entries.length; i++) {
+  // キャンセルフラグをリセット
+  layoutCancelled = false;
+
+  // キャンセルリスナーを登録
+  const cancelHandler = () => {
+    layoutCancelled = true;
+    itemLogger.info({ displayName: item.displayName }, 'レイアウト実行がキャンセルされました');
+  };
+  ipcMain.once(IPC_CHANNELS.LAYOUT_CANCEL, cancelHandler);
+
+  // 進捗オブジェクトを初期化
+  const entryProgresses: LayoutEntryProgress[] = item.entries.map((entry, i) => ({
+    index: i,
+    windowTitle: entry.windowTitle,
+    status: 'waiting' as const,
+  }));
+
+  const progress: LayoutExecutionProgress = {
+    layoutName: item.displayName,
+    entries: entryProgresses,
+    isComplete: false,
+    isCancelled: false,
+  };
+
+  // 進捗開始を通知
+  sendLayoutProgress('start', progress);
+
+  // 各エントリの実行タスクを作成
+  const tasks = item.entries.map((entry, i) => async () => {
     try {
-      await executeLayoutEntry(item.entries[i]);
+      await executeLayoutEntry(entry, i, progress);
     } catch (error) {
       itemLogger.error(
         {
           entryIndex: i,
-          windowTitle: item.entries[i].windowTitle,
+          windowTitle: entry.windowTitle,
           error: error instanceof Error ? error.message : String(error),
         },
         'レイアウトエントリの実行に失敗しました'
       );
+      failLayoutEntry(progress, i, error instanceof Error ? error.message : String(error));
     }
+  });
 
-    // エントリ間にディレイを挿入
-    if (i < item.entries.length - 1) {
-      await new Promise((resolve) => setTimeout(resolve, GROUP_LAUNCH_DELAY_MS));
-    }
-  }
+  // 並列実行（同時実行数制限あり）
+  await runWithConcurrency(tasks, LAYOUT_CONCURRENCY);
 
-  itemLogger.info({ displayName: item.displayName }, 'レイアウト実行完了');
+  // キャンセルリスナーを削除
+  ipcMain.removeListener(IPC_CHANNELS.LAYOUT_CANCEL, cancelHandler);
+
+  // 完了通知
+  progress.isComplete = true;
+  progress.isCancelled = layoutCancelled;
+  sendLayoutProgress('complete', progress);
+
+  const successCount = progress.entries.filter((e) => e.status === 'success').length;
+  const failedCount = progress.entries.filter((e) => e.status === 'failed').length;
+  itemLogger.info(
+    {
+      displayName: item.displayName,
+      total: item.entries.length,
+      success: successCount,
+      failed: failedCount,
+      cancelled: layoutCancelled,
+    },
+    'レイアウト実行完了'
+  );
 }
 
 export function setupItemHandlers(): void {

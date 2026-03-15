@@ -15,6 +15,9 @@ export type {
   LayoutItem,
   LayoutWindowEntry,
   LayoutWindowEntryWithoutIcon,
+  LayoutEntryStatus,
+  LayoutEntryProgress,
+  LayoutExecutionProgress,
   AppItem,
 } from './launcher';
 
