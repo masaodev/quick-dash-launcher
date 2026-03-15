@@ -113,6 +113,13 @@ export function useWorkspaceActions(onDataChanged: () => void) {
     onDataChanged
   );
 
+  const handleDuplicateItem = withErrorHandling(
+    async (sourceItemId: string, targetGroupId?: string, insertOrder?: number) =>
+      api.duplicateItem(sourceItemId, targetGroupId, insertOrder),
+    'Failed to duplicate workspace item:',
+    onDataChanged
+  );
+
   const handleMoveItemToGroup = withErrorHandling(
     async (itemId: string, groupId?: string) => api.moveItemToGroup(itemId, groupId),
     'Failed to move item to group:',
@@ -143,6 +150,7 @@ export function useWorkspaceActions(onDataChanged: () => void) {
     handleArchiveGroup,
     handleAddGroup,
     handleAddSubgroup,
+    handleDuplicateItem,
     handleMoveItemToGroup,
     handleMoveGroupToParent,
     handleReorderMixed,

@@ -215,6 +215,11 @@ export interface ElectronAPI {
       parentGroupId: string | undefined,
       entries: MixedOrderEntry[]
     ) => Promise<{ success: boolean }>;
+    duplicateItem: (
+      sourceItemId: string,
+      targetGroupId?: string,
+      insertOrder?: number
+    ) => Promise<{ success: boolean }>;
     moveItemToGroup: (itemId: string, groupId?: string) => Promise<{ success: boolean }>;
     moveGroupToParent: (
       groupId: string,

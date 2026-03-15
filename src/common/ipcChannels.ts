@@ -157,6 +157,7 @@ export const IPC_CHANNELS = {
   WORKSPACE_DELETE_GROUP: 'workspace:delete-group',
   WORKSPACE_REORDER_GROUPS: 'workspace:reorder-groups',
   WORKSPACE_REORDER_MIXED: 'workspace:reorder-mixed',
+  WORKSPACE_DUPLICATE_ITEM: 'workspace:duplicate-item',
   WORKSPACE_MOVE_ITEM_TO_GROUP: 'workspace:move-item-to-group',
   WORKSPACE_MOVE_GROUP_TO_PARENT: 'workspace:move-group-to-parent',
   WORKSPACE_SET_GROUPS_COLLAPSED: 'workspace:set-groups-collapsed',

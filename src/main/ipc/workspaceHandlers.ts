@@ -504,6 +504,18 @@ export function setupWorkspaceHandlers(): void {
   );
 
   ipcMain.handle(
+    IPC_CHANNELS.WORKSPACE_DUPLICATE_ITEM,
+    (_event, sourceItemId: string, targetGroupId?: string, insertOrder?: number) =>
+      withWorkspaceChange(
+        (service) => service.duplicateItem(sourceItemId, targetGroupId, insertOrder),
+        'Duplicated workspace item',
+        'Failed to duplicate workspace item',
+        { sourceItemId, targetGroupId, insertOrder },
+        { sourceItemId, targetGroupId }
+      )
+  );
+
+  ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_MOVE_ITEM_TO_GROUP,
     (_event, itemId: string, groupId?: string) =>
       withWorkspaceChange(

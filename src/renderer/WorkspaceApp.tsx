@@ -343,6 +343,7 @@ const WorkspaceApp: React.FC = () => {
     onDeleteGroup: handleDeleteGroup,
     onArchiveGroup: handleArchiveGroup,
     onAddSubgroup: actions.handleAddSubgroup,
+    onDuplicateItem: actions.handleDuplicateItem,
     onMoveItemToGroup: actions.handleMoveItemToGroup,
     onMoveGroupToParent: actions.handleMoveGroupToParent,
     onReorderMixed: actions.handleReorderMixed,

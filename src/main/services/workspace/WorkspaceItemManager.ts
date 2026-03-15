@@ -298,6 +298,56 @@ export class WorkspaceItemManager {
     }
   }
 
+  public duplicateItem(
+    sourceItemId: string,
+    targetGroupId?: string,
+    insertOrder?: number
+  ): WorkspaceItem {
+    try {
+      const items = this.loadItems();
+      const sourceItem = items.find((i) => i.id === sourceItemId);
+
+      if (!sourceItem) {
+        throw new Error(`Item not found: ${sourceItemId}`);
+      }
+
+      let order: number;
+      if (insertOrder !== undefined) {
+        // 指定位置に挿入: 既存アイテムのorderをずらす
+        for (const item of items) {
+          if (item.order >= insertOrder) {
+            item.order++;
+          }
+        }
+        order = insertOrder;
+      } else {
+        order = this.getNextOrder(items);
+      }
+
+      const duplicatedItem: WorkspaceItem = {
+        ...sourceItem,
+        id: randomUUID(),
+        addedAt: Date.now(),
+        order,
+        groupId: targetGroupId !== undefined ? targetGroupId : sourceItem.groupId,
+        icon: undefined,
+      };
+
+      items.push(duplicatedItem);
+      this.store.set('items', items);
+
+      logger.info(
+        { sourceId: sourceItemId, newId: duplicatedItem.id, targetGroupId },
+        'Duplicated workspace item'
+      );
+
+      return duplicatedItem;
+    } catch (error) {
+      logger.error({ error, sourceItemId }, 'Failed to duplicate workspace item');
+      throw error;
+    }
+  }
+
   public getItemsByGroup(groupId?: string): WorkspaceItem[] {
     try {
       const items = this.loadItems();
