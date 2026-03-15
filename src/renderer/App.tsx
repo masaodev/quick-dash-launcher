@@ -16,6 +16,7 @@ import {
   isGroupItem,
   isWindowItem,
   isClipboardItem,
+  isLayoutItem,
   isLauncherItem,
 } from '@common/types/guards';
 import { summarizeImportResults } from '@common/utils/bookmarkImportUtils';
@@ -172,7 +173,13 @@ function App(): React.ReactElement {
 
     // Apply cached icons to items
     const itemsWithIcons = items.map((item) => {
-      if (isWindowInfo(item) || isGroupItem(item) || isWindowItem(item) || isClipboardItem(item)) {
+      if (
+        isWindowInfo(item) ||
+        isGroupItem(item) ||
+        isWindowItem(item) ||
+        isClipboardItem(item) ||
+        isLayoutItem(item)
+      ) {
         return item;
       }
       return {
@@ -237,6 +244,12 @@ function App(): React.ReactElement {
         itemType: 'clipboard',
       });
       await window.electronAPI.clipboardAPI.restore(item.clipboardDataRef);
+    } else if (isLayoutItem(item)) {
+      await window.electronAPI.showToastWindow({
+        displayName: item.displayName,
+        itemType: 'layout',
+      });
+      await window.electronAPI.executeLayout(item);
     } else if (isLauncherItem(item)) {
       await window.electronAPI.showToastWindow({
         displayName: item.displayName,
@@ -575,7 +588,13 @@ function App(): React.ReactElement {
 
   const missingIconCount = useMemo(() => {
     return mainItems.filter((item) => {
-      if (isWindowInfo(item) || isGroupItem(item) || isWindowItem(item) || isClipboardItem(item)) {
+      if (
+        isWindowInfo(item) ||
+        isGroupItem(item) ||
+        isWindowItem(item) ||
+        isClipboardItem(item) ||
+        isLayoutItem(item)
+      ) {
         return false;
       }
       const launcherItem = item as LauncherItem;

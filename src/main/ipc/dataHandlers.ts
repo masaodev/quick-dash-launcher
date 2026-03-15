@@ -23,11 +23,14 @@ import {
   isJsonGroupItem,
   isJsonWindowItem,
   isJsonClipboardItem,
+  isJsonLayoutItem,
 } from '@common/types';
 import type { JsonItem, JsonDirOptions, JsonClipboardItem } from '@common/types';
+import type { LayoutWindowEntry } from '@common/types/launcher';
 import type { RegisterItem } from '@common/types/register';
 import { isWindowInfo } from '@common/types/guards';
 import { IPC_CHANNELS } from '@common/ipcChannels';
+import { stripIconFromLayoutEntries } from '@common/utils/dataConverters';
 
 import { SettingsService } from '../services/settingsService.js';
 import { PathManager } from '../config/pathManager.js';
@@ -35,6 +38,7 @@ import { PathManager } from '../config/pathManager.js';
 import { setupBookmarkHandlers } from './bookmarkHandlers.js';
 import { setupAppImportHandlers } from './appImportHandlers.js';
 import { processDirectoryItem, processShortcut } from './directoryScanner.js';
+import { extractIcon } from './iconHandlers.js';
 
 /**
  * JSONファイルからAppItem配列を読み込む
@@ -196,6 +200,40 @@ async function convertJsonItemToAppItems(
       preview: jsonItem.preview,
       formats: jsonItem.formats,
       customIcon: jsonItem.customIcon,
+      sourceFile,
+      lineNumber,
+      id: jsonItem.id,
+      isEdited: false,
+      memo: jsonItem.memo,
+    });
+  } else if (isJsonLayoutItem(jsonItem)) {
+    // executablePathからアイコンを復元（既存キャッシュ機構を利用）
+    // 同一exeへの重複extractIcon呼び出しを防ぐPromiseキャッシュ
+    const iconsFolder = PathManager.getAppsFolder();
+    const iconPromiseCache = new Map<string, Promise<string | null>>();
+    const entriesWithIcons = await Promise.all(
+      jsonItem.entries.map(async (entry) => {
+        if (entry.executablePath) {
+          try {
+            if (!iconPromiseCache.has(entry.executablePath)) {
+              iconPromiseCache.set(
+                entry.executablePath,
+                extractIcon(entry.executablePath, iconsFolder)
+              );
+            }
+            const icon = await iconPromiseCache.get(entry.executablePath)!;
+            return { ...entry, icon: icon || undefined };
+          } catch {
+            return entry;
+          }
+        }
+        return entry;
+      })
+    );
+    items.push({
+      type: 'layout',
+      displayName: jsonItem.displayName,
+      entries: entriesWithIcons,
       sourceFile,
       lineNumber,
       id: jsonItem.id,
@@ -505,6 +543,26 @@ async function updateWindowItemById(
 }
 
 /**
+ * IDでlayoutアイテムを更新する
+ */
+async function updateLayoutItemById(
+  configFolder: string,
+  id: string,
+  displayName: string,
+  entries: LayoutWindowEntry[],
+  memo?: string
+): Promise<void> {
+  await updateItemByIdWithCallback(configFolder, id, (itemId) => ({
+    id: itemId,
+    type: 'layout' as const,
+    displayName,
+    entries: stripIconFromLayoutEntries(entries),
+    memo: memo || undefined,
+    updatedAt: Date.now(),
+  }));
+}
+
+/**
  * 複数のアイテムを設定ファイルに登録する（各タブ対応）
  * 単一アイテム、フォルダ取込アイテム、グループアイテムに対応し、targetTabで指定されたデータファイルに追記する
  *
@@ -665,6 +723,18 @@ function convertRegisterItemToJsonItem(item: RegisterItem): JsonItem {
     if (item.memo) clipboardItem.memo = item.memo;
 
     return clipboardItem;
+  }
+
+  if (item.itemCategory === 'layout') {
+    const layoutItem: JsonItem = {
+      id,
+      type: 'layout',
+      displayName: item.displayName,
+      entries: stripIconFromLayoutEntries(item.layoutEntries || []),
+      updatedAt: now,
+    };
+    if (item.memo) layoutItem.memo = item.memo;
+    return layoutItem;
   }
 
   // 通常アイテム
@@ -830,6 +900,20 @@ export function setupDataHandlers(configFolder: string) {
       memo?: string
     ) => {
       await updateWindowItemById(configFolder, id, config, memo);
+      notifyDataChanged();
+    }
+  );
+
+  ipcMain.handle(
+    IPC_CHANNELS.UPDATE_LAYOUT_ITEM_BY_ID,
+    async (
+      _event,
+      id: string,
+      displayName: string,
+      entries: LayoutWindowEntry[],
+      memo?: string
+    ) => {
+      await updateLayoutItemById(configFolder, id, displayName, entries, memo);
       notifyDataChanged();
     }
   );

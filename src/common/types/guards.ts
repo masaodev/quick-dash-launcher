@@ -4,7 +4,14 @@
  * 型アサーションを安全に置き換えるための型ガード関数を提供します。
  */
 
-import type { AppItem, GroupItem, LauncherItem, WindowItem, ClipboardItem } from './launcher';
+import type {
+  AppItem,
+  GroupItem,
+  LauncherItem,
+  WindowItem,
+  ClipboardItem,
+  LayoutItem,
+} from './launcher';
 import type { WindowInfo } from './window';
 import type { WorkspaceItem, DragItemData } from './workspace';
 
@@ -43,7 +50,8 @@ export function isLauncherItem(item: AppItem): item is LauncherItem {
     !isWindowInfo(item) &&
     item.type !== 'group' &&
     item.type !== 'window' &&
-    item.type !== 'clipboard'
+    item.type !== 'clipboard' &&
+    item.type !== 'layout'
   );
 }
 
@@ -96,6 +104,16 @@ export function isWindowItem(item: AppItem): item is WindowItem {
  */
 export function isClipboardItem(item: AppItem): item is ClipboardItem {
   return !isWindowInfo(item) && item.type === 'clipboard';
+}
+
+/**
+ * LayoutItemかどうかを判定する型ガード
+ *
+ * @param item - 判定対象のAppItem
+ * @returns LayoutItemの場合true
+ */
+export function isLayoutItem(item: AppItem): item is LayoutItem {
+  return !isWindowInfo(item) && item.type === 'layout';
 }
 
 /**

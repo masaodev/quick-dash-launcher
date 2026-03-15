@@ -5,7 +5,7 @@
  * CSV形式からの移行後に使用される
  */
 
-import type { WindowConfig } from './launcher';
+import type { WindowConfig, LayoutWindowEntry } from './launcher';
 import type { ClipboardFormat } from './clipboard';
 
 // ============================================================
@@ -34,7 +34,8 @@ export type JsonItem =
   | JsonDirItem
   | JsonGroupItem
   | JsonWindowItem
-  | JsonClipboardItem;
+  | JsonClipboardItem
+  | JsonLayoutItem;
 
 // ============================================================
 // 共通フィールド
@@ -216,6 +217,23 @@ export interface JsonClipboardItem extends JsonItemBase {
 }
 
 // ============================================================
+// レイアウトアイテム (type: "layout")
+// ============================================================
+
+/**
+ * レイアウトアイテム
+ * 複数ウィンドウの位置・サイズを一括でキャプチャ・復元する
+ */
+export interface JsonLayoutItem extends JsonItemBase {
+  /** アイテムタイプ */
+  type: 'layout';
+  /** レイアウトの表示名 */
+  displayName: string;
+  /** レイアウト内のウィンドウエントリ一覧 */
+  entries: LayoutWindowEntry[];
+}
+
+// ============================================================
 // 型ガード関数
 // ============================================================
 
@@ -252,6 +270,13 @@ export function isJsonWindowItem(item: JsonItem): item is JsonWindowItem {
  */
 export function isJsonClipboardItem(item: JsonItem): item is JsonClipboardItem {
   return item.type === 'clipboard';
+}
+
+/**
+ * JsonLayoutItemかどうかを判定
+ */
+export function isJsonLayoutItem(item: JsonItem): item is JsonLayoutItem {
+  return item.type === 'layout';
 }
 
 // ============================================================

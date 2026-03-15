@@ -12,6 +12,7 @@ import type {
   JsonGroupItem,
   JsonWindowItem,
   JsonClipboardItem,
+  JsonLayoutItem,
 } from '@common/types';
 import type { ClipboardFormat } from '@common/types/clipboard';
 import { JSON_DATA_VERSION, JSON_ID_LENGTH } from '@common/types';
@@ -240,6 +241,8 @@ function validateJsonItem(item: unknown, index: number): JsonItem {
       return validateJsonWindowItem(obj);
     case 'clipboard':
       return validateJsonClipboardItem(obj);
+    case 'layout':
+      return validateJsonLayoutItem(obj);
     default:
       throw new Error(`Unknown item type: ${obj.type}`);
   }
@@ -421,6 +424,30 @@ function validateJsonClipboardItem(obj: Record<string, unknown>): JsonClipboardI
 
   validateOptionalString(obj, item, 'preview');
   validateOptionalString(obj, item, 'customIcon');
+  validateOptionalString(obj, item, 'memo');
+  validateTypedFields(obj, item, ['updatedAt'], 'number');
+
+  return item;
+}
+
+/**
+ * JsonLayoutItemを検証
+ */
+function validateJsonLayoutItem(obj: Record<string, unknown>): JsonLayoutItem {
+  if (typeof obj.displayName !== 'string' || !obj.displayName) {
+    throw new Error('displayName is required and must be a non-empty string');
+  }
+  if (!Array.isArray(obj.entries)) {
+    throw new Error('entries is required and must be an array');
+  }
+
+  const item: JsonLayoutItem = {
+    id: obj.id as string,
+    type: 'layout',
+    displayName: obj.displayName,
+    entries: obj.entries as JsonLayoutItem['entries'],
+  };
+
   validateOptionalString(obj, item, 'memo');
   validateTypedFields(obj, item, ['updatedAt'], 'number');
 

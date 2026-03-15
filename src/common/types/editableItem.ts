@@ -125,6 +125,16 @@ export function validateEditableItem(item: JsonItem): ValidationResult {
       return { isValid: true };
     }
 
+    case 'layout': {
+      if (!item.displayName || !item.displayName.trim()) {
+        return { isValid: false, error: 'layoutのdisplayNameが空です' };
+      }
+      if (!item.entries || item.entries.length === 0) {
+        return { isValid: false, error: 'layoutのentriesが空です' };
+      }
+      return { isValid: true };
+    }
+
     default:
       return { isValid: false, error: `未知のアイテムタイプ: ${(item as JsonItem).type}` };
   }

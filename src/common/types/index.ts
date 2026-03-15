@@ -12,6 +12,9 @@ export type {
   GroupItem,
   WindowItem,
   ClipboardItem,
+  LayoutItem,
+  LayoutWindowEntry,
+  LayoutWindowEntryWithoutIcon,
   AppItem,
 } from './launcher';
 
@@ -44,6 +47,7 @@ export type {
   JsonGroupItem,
   JsonWindowItem,
   JsonClipboardItem,
+  JsonLayoutItem,
   DirOptionsForProcessing,
 } from './json-data';
 export {
@@ -52,6 +56,7 @@ export {
   isJsonGroupItem,
   isJsonWindowItem,
   isJsonClipboardItem,
+  isJsonLayoutItem,
   JSON_DATA_VERSION,
   JSON_ID_LENGTH,
   DIR_OPTIONS_DEFAULTS,
@@ -133,9 +138,15 @@ export type {
   EditingLauncherItem,
   EditingGroupItem,
   EditingWindowItem,
+  EditingLayoutItem,
   EditingAppItem,
 } from './editingItem';
-export { isEditingLauncherItem, isEditingGroupItem, isEditingWindowItem } from './editingItem';
+export {
+  isEditingLauncherItem,
+  isEditingGroupItem,
+  isEditingWindowItem,
+  isEditingLayoutItem,
+} from './editingItem';
 
 // 編集可能なJSONアイテムの型
 export type { EditableJsonItem, LoadEditableItemsResult, ValidationResult } from './editableItem';
@@ -154,6 +165,7 @@ export {
   isGroupItem,
   isWindowItem,
   isClipboardItem,
+  isLayoutItem,
   isWorkspaceItem,
   isDragItemData,
 } from './guards';

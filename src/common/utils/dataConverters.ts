@@ -11,6 +11,7 @@ import type {
   ClipboardFormat,
 } from '../types';
 import type { RegisterItem, WindowOperationConfig } from '../types/register.js';
+import type { LayoutWindowEntry, LayoutWindowEntryWithoutIcon } from '../types/launcher.js';
 import type { EditingAppItem, EditingWindowItem } from '../types/editingItem.js';
 import type { EditableJsonItem } from '../types/editableItem.js';
 import {
@@ -18,6 +19,7 @@ import {
   isEditingGroupItem,
   isEditingWindowItem,
   isEditingClipboardItem,
+  isEditingLayoutItem,
 } from '../types/editingItem.js';
 import {
   isJsonLauncherItem,
@@ -25,9 +27,19 @@ import {
   isJsonGroupItem,
   isJsonWindowItem,
   isJsonClipboardItem,
+  isJsonLayoutItem,
   DIR_OPTIONS_DEFAULTS,
   type JsonWindowItem,
 } from '../types/json-data.js';
+
+/**
+ * LayoutWindowEntryの配列からiconフィールドを除去する（JSON保存用）
+ */
+export function stripIconFromLayoutEntries(
+  entries: LayoutWindowEntry[]
+): LayoutWindowEntryWithoutIcon[] {
+  return entries.map(({ icon: _icon, ...rest }) => rest);
+}
 
 /** 深さ値のマッピング */
 const DEPTH_MAP: Record<string, number> = { 無制限: -1 };
@@ -171,6 +183,22 @@ function createWindowRegisterItem(
   };
 }
 
+/** レイアウト用RegisterItemを作成する */
+function createLayoutRegisterItem(
+  displayName: string,
+  entries: LayoutWindowEntry[],
+  targetTab: string,
+  targetFile: string | undefined,
+  memo?: string
+): RegisterItem {
+  return {
+    ...createBaseRegisterItem(displayName, targetTab, targetFile),
+    itemCategory: 'layout',
+    layoutEntries: [...entries],
+    memo,
+  };
+}
+
 /** クリップボード用RegisterItemを作成する */
 function createClipboardRegisterItem(
   displayName: string,
@@ -239,6 +267,16 @@ export function convertEditingAppItemToRegisterItem(
         preview: item.preview,
         customIcon: item.customIcon,
       },
+      item.memo
+    );
+  }
+
+  if (isEditingLayoutItem(item)) {
+    return createLayoutRegisterItem(
+      item.displayName,
+      item.entries,
+      defaultTab,
+      item.sourceFile,
       item.memo
     );
   }
@@ -330,6 +368,16 @@ export function convertEditableJsonItemToRegisterItem(
     return createWindowRegisterItem(
       jsonItem.displayName,
       createWindowOperationConfig(jsonItem),
+      defaultTab,
+      sourceFile,
+      jsonItem.memo
+    );
+  }
+
+  if (isJsonLayoutItem(jsonItem)) {
+    return createLayoutRegisterItem(
+      jsonItem.displayName,
+      jsonItem.entries,
       defaultTab,
       sourceFile,
       jsonItem.memo
@@ -442,6 +490,17 @@ export function convertRegisterItemToJsonItem(
       formats: registerItem.clipboardFormats || [],
       preview: registerItem.clipboardPreview,
       customIcon: registerItem.customIcon,
+      ...(memo && { memo }),
+      updatedAt: now,
+    };
+  }
+
+  if (registerItem.itemCategory === 'layout') {
+    return {
+      id,
+      type: 'layout' as const,
+      displayName: registerItem.displayName,
+      entries: stripIconFromLayoutEntries(registerItem.layoutEntries || []),
       ...(memo && { memo }),
       updatedAt: now,
     };

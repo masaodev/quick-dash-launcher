@@ -14,4 +14,5 @@ export type ToastItemType =
   | 'windowMoveDesktop'
   | 'workspaceAdd'
   | 'clipboard'
+  | 'layout'
   | 'bookmarkImport';

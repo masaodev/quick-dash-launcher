@@ -187,7 +187,68 @@ export interface ClipboardItem {
 }
 
 /**
- * アプリケーションで扱うすべてのアイテムの統合型
- * 通常のLauncherItem、GroupItem、WindowItem、ClipboardItem、WindowInfo（ウィンドウ検索結果）を扱える
+ * レイアウト内の個別ウィンドウエントリ
+ * キャプチャしたウィンドウの位置・サイズ情報とアプリ起動設定を持つ
  */
-export type AppItem = LauncherItem | GroupItem | WindowItem | ClipboardItem | WindowInfo;
+export interface LayoutWindowEntry {
+  /** ウィンドウタイトル（検索用） */
+  windowTitle: string;
+  /** プロセス名（部分一致検索用、オプション） */
+  processName?: string;
+  /** 実行ファイルのパス（アプリ起動用、オプション） */
+  executablePath?: string;
+  /** コマンドライン引数（オプション） */
+  args?: string;
+  /** X座標（仮想スクリーン座標系、オプション） */
+  x?: number;
+  /** Y座標（仮想スクリーン座標系、オプション） */
+  y?: number;
+  /** 幅（オプション） */
+  width?: number;
+  /** 高さ（オプション） */
+  height?: number;
+  /** 仮想デスクトップ番号（1から開始、オプション） */
+  virtualDesktopNumber?: number;
+  /** アプリを起動するかどうか（falseの場合は既存ウィンドウの位置変更のみ） */
+  launchApp: boolean;
+  /** アイコン（base64エンコードされたデータURL、オプション） */
+  icon?: string;
+}
+
+/** LayoutWindowEntry から icon を除いた型（JSON保存用） */
+export type LayoutWindowEntryWithoutIcon = Omit<LayoutWindowEntry, 'icon'>;
+
+/**
+ * ウィンドウレイアウト一括操作アイテム
+ * 複数ウィンドウの位置・サイズを一括でキャプチャ・復元する
+ */
+export interface LayoutItem {
+  /** アイテムタイプ（常に'layout'） */
+  type: 'layout';
+  /** レイアウトの表示名 */
+  displayName: string;
+  /** レイアウト内のウィンドウエントリ一覧 */
+  entries: LayoutWindowEntry[];
+  /** 元のデータファイル */
+  sourceFile?: string;
+  /** データファイル内の行番号（編集機能で使用、非推奨：IDベースアクセスを推奨） */
+  lineNumber?: number;
+  /** JSONアイテムのID（JSON形式の場合） */
+  id?: string;
+  /** 編集モードで変更されたかどうか */
+  isEdited?: boolean;
+  /** 自由記述メモ（オプション） */
+  memo?: string;
+}
+
+/**
+ * アプリケーションで扱うすべてのアイテムの統合型
+ * 通常のLauncherItem、GroupItem、WindowItem、ClipboardItem、LayoutItem、WindowInfo（ウィンドウ検索結果）を扱える
+ */
+export type AppItem =
+  | LauncherItem
+  | GroupItem
+  | WindowItem
+  | ClipboardItem
+  | LayoutItem
+  | WindowInfo;

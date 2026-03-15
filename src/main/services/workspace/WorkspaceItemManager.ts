@@ -12,7 +12,13 @@ import type {
 } from '@common/types';
 import logger from '@common/logger';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
-import { isWindowInfo, isWindowItem, isGroupItem, isClipboardItem } from '@common/types/guards';
+import {
+  isWindowInfo,
+  isWindowItem,
+  isGroupItem,
+  isClipboardItem,
+  isLayoutItem,
+} from '@common/types/guards';
 
 import type { WorkspaceStoreInstance } from './types.js';
 import { DEFAULT_WORKSPACE_ID } from './migrationUtils.js';
@@ -55,6 +61,9 @@ export class WorkspaceItemManager {
         workspaceItem = this.createGroupItem(item, order, groupId);
       } else if (isClipboardItem(item)) {
         workspaceItem = this.createClipboardItem(item, order, groupId);
+      } else if (isLayoutItem(item)) {
+        // LayoutItemはワークスペースに追加できないためスキップ
+        throw new Error('LayoutItem cannot be added to workspace');
       } else {
         workspaceItem = this.createLauncherItem(item, order, groupId);
       }

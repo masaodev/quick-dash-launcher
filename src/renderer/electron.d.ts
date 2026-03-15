@@ -7,6 +7,8 @@ import {
   SearchHistoryEntry,
   GroupItem,
   WindowItem,
+  LayoutItem,
+  LayoutWindowEntry,
   AppItem,
   AppInfo,
   BrowserInfo,
@@ -51,6 +53,7 @@ export interface ElectronAPI {
   openParentFolder: (item: LauncherItem) => Promise<void>;
   executeGroup: (group: GroupItem, allItems: AppItem[]) => Promise<void>;
   executeWindowOperation: (item: WindowItem) => Promise<void>;
+  executeLayout: (item: LayoutItem) => Promise<void>;
   openConfigFolder: () => Promise<void>;
   fetchFavicon: (url: string) => Promise<string | null>;
   extractIcon: (filePath: string) => Promise<string | null>;
@@ -136,6 +139,12 @@ export interface ElectronAPI {
       activateWindow?: boolean;
       pinToAllDesktops?: boolean;
     },
+    memo?: string
+  ) => Promise<void>;
+  updateLayoutItemById: (
+    id: string,
+    displayName: string,
+    entries: LayoutWindowEntry[],
     memo?: string
   ) => Promise<void>;
   setEditMode: (editMode: boolean) => Promise<void>;

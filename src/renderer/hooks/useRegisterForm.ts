@@ -6,6 +6,7 @@ import type {
   DataFileTab,
   WindowConfig,
   ClipboardFormat,
+  LayoutWindowEntry,
 } from '@common/types';
 import { detectItemType } from '@common/utils/itemTypeDetector';
 
@@ -174,6 +175,7 @@ export function useRegisterForm(
       | WindowConfig
       | RegisterItem['windowOperationConfig']
       | ClipboardFormat[]
+      | LayoutWindowEntry[]
   ) => {
     const newItems = [...items];
     if (field === 'groupItemNames') {
@@ -225,6 +227,11 @@ export function useRegisterForm(
           clearCommonFields();
           item.path = '';
           item.type = 'clipboard';
+          break;
+        case 'layout':
+          clearCommonFields();
+          clearClipboardFields();
+          item.layoutEntries ??= [];
           break;
         default:
           clearCommonFields();
@@ -280,6 +287,7 @@ export function useRegisterForm(
         item.itemCategory !== 'group' &&
         item.itemCategory !== 'window' &&
         item.itemCategory !== 'clipboard' &&
+        item.itemCategory !== 'layout' &&
         !item.path.trim()
       ) {
         newErrors[i].path = 'パスを入力してください';
@@ -303,6 +311,12 @@ export function useRegisterForm(
       if (item.itemCategory === 'clipboard') {
         if (!item.clipboardSessionId && !item.clipboardDataRef) {
           newErrors[i].path = 'クリップボードをキャプチャしてください';
+        }
+      }
+
+      if (item.itemCategory === 'layout') {
+        if (!item.layoutEntries || item.layoutEntries.length === 0) {
+          newErrors[i].path = 'ウィンドウをキャプチャしてください';
         }
       }
     }
