@@ -232,6 +232,7 @@ export interface ElectronAPI {
     // アーカイブ管理
     archiveGroup: (groupId: string) => Promise<{ success: boolean }>;
     loadArchivedGroups: () => Promise<WorkspaceGroup[]>;
+    loadArchivedItems: () => Promise<WorkspaceItem[]>;
     restoreGroup: (groupId: string) => Promise<{ success: boolean }>;
     deleteArchivedGroup: (groupId: string) => Promise<{ success: boolean }>;
     // ピン留め関連

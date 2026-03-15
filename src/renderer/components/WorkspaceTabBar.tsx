@@ -11,6 +11,8 @@ interface WorkspaceTabBarProps {
   onRenameWorkspace: (id: string, name: string) => void;
   onDeleteWorkspace: (id: string) => void;
   onReorderWorkspaces?: (ids: string[]) => void;
+  isArchiveActive?: boolean;
+  onArchiveClick?: () => void;
 }
 
 const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({
@@ -21,6 +23,8 @@ const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({
   onRenameWorkspace,
   onDeleteWorkspace,
   onReorderWorkspaces,
+  isArchiveActive,
+  onArchiveClick,
 }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
@@ -155,7 +159,7 @@ const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({
     <>
       <div className="tab-bar workspace-tab-bar" ref={tabBarRef} onWheel={handleWheel}>
         {workspaces.map((ws) => {
-          const isActive = ws.id === activeWorkspaceId;
+          const isActive = !isArchiveActive && ws.id === activeWorkspaceId;
 
           return (
             <button
@@ -189,6 +193,15 @@ const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({
             </button>
           );
         })}
+        {onArchiveClick && (
+          <button
+            className={`tab-button archive-tab ${isArchiveActive ? 'active' : ''}`}
+            onClick={onArchiveClick}
+            title="アーカイブ"
+          >
+            📦
+          </button>
+        )}
         <button
           className="tab-button workspace-add-tab-btn"
           onClick={handleAddWorkspace}

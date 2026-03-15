@@ -146,16 +146,19 @@ export class WorkspaceArchiveManager {
    * @param groupId 復元するグループのID
    * @param currentGroups 現在のグループ一覧
    * @param currentItems 現在のアイテム一覧
+   * @param options.targetWorkspaceId 指定時はこのワークスペースに復元（parentGroupIdもクリア）
    * @returns 復元されたグループとアイテム
    */
   public restoreGroup(
     groupId: string,
     currentGroups: WorkspaceGroup[],
-    currentItems: WorkspaceItem[]
+    currentItems: WorkspaceItem[],
+    options?: { targetWorkspaceId?: string }
   ): { restoredGroup: WorkspaceGroup; restoredItems: WorkspaceItem[] } {
     try {
       const archivedGroups = this.archiveStore.get('groups') || [];
       const archivedItems = this.archiveStore.get('items') || [];
+      const targetWorkspaceId = options?.targetWorkspaceId;
 
       // アーカイブからメイングループを検索
       const archivedGroup = archivedGroups.find((g) => g.id === groupId);
@@ -173,15 +176,17 @@ export class WorkspaceArchiveManager {
         allArchivedGroupIds.has(item.archivedGroupId)
       );
 
-      // グループ名の重複チェック
+      // グループ名の重複チェック（ワークスペース移動時はスキップ）
       let restoredGroupName = archivedGroup.displayName;
-      const existingNames = currentGroups.map((g) => g.displayName);
-      if (existingNames.includes(restoredGroupName)) {
-        restoredGroupName = `${restoredGroupName} (復元)`;
-        logger.info(
-          { originalName: archivedGroup.displayName, newName: restoredGroupName },
-          'Group name was duplicated, added suffix'
-        );
+      if (!targetWorkspaceId) {
+        const existingNames = currentGroups.map((g) => g.displayName);
+        if (existingNames.includes(restoredGroupName)) {
+          restoredGroupName = `${restoredGroupName} (復元)`;
+          logger.info(
+            { originalName: archivedGroup.displayName, newName: restoredGroupName },
+            'Group name was duplicated, added suffix'
+          );
+        }
       }
 
       // 新しいorder値を計算（末尾に追加）
@@ -191,9 +196,10 @@ export class WorkspaceArchiveManager {
         currentItems.length > 0 ? Math.max(...currentItems.map((i) => i.order)) : -1;
 
       // 親グループが存在するか確認、なければトップレベルに
-      const parentExists = archivedGroup.parentGroupId
-        ? currentGroups.some((g) => g.id === archivedGroup.parentGroupId)
-        : true;
+      const parentExists =
+        !targetWorkspaceId && archivedGroup.parentGroupId
+          ? currentGroups.some((g) => g.id === archivedGroup.parentGroupId)
+          : false;
 
       // メイングループを復元（アーカイブ専用フィールドを除去）
       const {
@@ -205,14 +211,17 @@ export class WorkspaceArchiveManager {
       const restoredGroup: WorkspaceGroup = {
         ...mainGroupFields,
         displayName: restoredGroupName,
+        workspaceId: targetWorkspaceId ?? mainGroupFields.workspaceId,
         order: maxGroupOrder + 1,
         parentGroupId: parentExists ? archivedGroup.parentGroupId : undefined,
       };
 
       // サブグループを復元（アーカイブ専用フィールドを除去）
       const restoredSubgroups: WorkspaceGroup[] = archivedSubgroups.map(
-        ({ archivedAt: _a, originalOrder: _o, itemCount: _c, ...sgFields }) =>
-          sgFields as WorkspaceGroup
+        ({ archivedAt: _a, originalOrder: _o, itemCount: _c, ...sgFields }) => ({
+          ...(sgFields as WorkspaceGroup),
+          ...(targetWorkspaceId ? { workspaceId: targetWorkspaceId } : {}),
+        })
       );
 
       // アイテムを復元（アーカイブ関連プロパティを削除）
@@ -224,6 +233,7 @@ export class WorkspaceArchiveManager {
         } = item;
         return {
           ...workspaceItem,
+          ...(targetWorkspaceId ? { workspaceId: targetWorkspaceId } : {}),
           order: maxItemOrder + 1 + index,
         };
       });
@@ -248,6 +258,7 @@ export class WorkspaceArchiveManager {
         {
           groupId,
           groupName: restoredGroupName,
+          targetWorkspaceId,
           itemCount: restoredItems.length,
           subgroupCount: restoredSubgroups.length,
         },
@@ -319,5 +330,44 @@ export class WorkspaceArchiveManager {
       logger.error({ error }, 'Failed to clear archive');
       throw error;
     }
+  }
+
+  /**
+   * 全アーカイブアイテムを取得
+   */
+  public getAllArchivedItems(): ArchivedWorkspaceItem[] {
+    return this.archiveStore.get('items') || [];
+  }
+
+  /**
+   * アーカイブアイテムを指定ワークスペースに復元
+   */
+  public restoreItemToWorkspace(
+    itemId: string,
+    targetWorkspaceId: string,
+    currentItems: WorkspaceItem[]
+  ): void {
+    const archivedItems = this.archiveStore.get('items') || [];
+    const archivedItem = archivedItems.find((i) => i.id === itemId);
+    if (!archivedItem) {
+      throw new Error(`Archived item not found: ${itemId}`);
+    }
+
+    const maxOrder = currentItems.length > 0 ? Math.max(...currentItems.map((i) => i.order)) : -1;
+    const { archivedAt: _, archivedGroupId: __, ...workspaceItem } = archivedItem;
+    const restoredItem: WorkspaceItem = {
+      ...workspaceItem,
+      workspaceId: targetWorkspaceId,
+      groupId: undefined,
+      order: maxOrder + 1,
+    };
+
+    this.store.set('items', [...currentItems, restoredItem]);
+    this.archiveStore.set(
+      'items',
+      archivedItems.filter((i) => i.id !== itemId)
+    );
+
+    logger.info({ itemId, targetWorkspaceId }, 'Restored archived item to workspace');
   }
 }

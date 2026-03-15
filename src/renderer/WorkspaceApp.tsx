@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import type { WorkspaceItem } from '@common/types';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import type { WorkspaceItem, WorkspaceGroup } from '@common/types';
 import { getDescendantGroupIds } from '@common/utils/groupTreeUtils';
 
 import ConfirmDialog from './components/ConfirmDialog';
@@ -69,6 +69,9 @@ const WorkspaceApp: React.FC = () => {
   const [backgroundTransparent, setBackgroundTransparent] = useState(false);
   const [activeGroupId, setActiveGroupId] = useState<string>();
   const [editModalItem, setEditModalItem] = useState<WorkspaceItem | null>(null);
+  const [isArchiveMode, setIsArchiveMode] = useState(false);
+  const [archivedGroups, setArchivedGroups] = useState<WorkspaceGroup[]>([]);
+  const [archivedItems, setArchivedItems] = useState<WorkspaceItem[]>([]);
   const [isFilterVisible, setIsFilterVisible] = useState(false);
   const [filterText, setFilterText] = useState('');
   const [filterScope, setFilterScope] = useState<FilterScope>('all');
@@ -108,7 +111,38 @@ const WorkspaceApp: React.FC = () => {
   const { collapsed, toggleSection, expandAll, collapseAll } = useCollapsibleSections({
     uncategorized: false,
   });
-  const filterResult = useWorkspaceFilter(filteredGroups, filteredItems, filterText, filterScope);
+  const loadArchiveData = useCallback(async () => {
+    try {
+      const [groups, items] = await Promise.all([
+        window.electronAPI.workspaceAPI.loadArchivedGroups(),
+        window.electronAPI.workspaceAPI.loadArchivedItems(),
+      ]);
+      setArchivedGroups(groups);
+      setArchivedItems(items);
+    } catch (error) {
+      logError('Failed to load archive data:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isArchiveMode) return;
+    loadArchiveData();
+    const cleanup = window.electronAPI.onWorkspaceChanged(() => {
+      loadArchiveData();
+    });
+    return cleanup;
+  }, [isArchiveMode, loadArchiveData]);
+
+  // 表示用データ: アーカイブモード時はアーカイブデータを使用
+  // workspaceIdをクリアして全ワークスペースをコンテキストメニューの移動先候補にする
+  const displayGroups = isArchiveMode
+    ? archivedGroups.map((g) => ({ ...g, workspaceId: undefined }))
+    : filteredGroups;
+  const displayItems = isArchiveMode
+    ? archivedItems.map((i) => ({ ...i, workspaceId: undefined }))
+    : filteredItems;
+
+  const filterResult = useWorkspaceFilter(displayGroups, displayItems, filterText, filterScope);
   const isDetached = detachedGroupId !== null;
   const { handleResize } = useWorkspaceResize(
     isDetached
@@ -170,9 +204,9 @@ const WorkspaceApp: React.FC = () => {
 
   /** グループとそのサブグループに含まれるアイテム数・サブグループ数を算出 */
   const getGroupStats = (groupId: string): { itemCount: number; subgroupCount: number } => {
-    const descendantIds = getDescendantGroupIds(groupId, filteredGroups);
+    const descendantIds = getDescendantGroupIds(groupId, displayGroups);
     const allGroupIds = new Set([groupId, ...descendantIds]);
-    const itemCount = filteredItems.filter(
+    const itemCount = displayItems.filter(
       (item) => item.groupId && allGroupIds.has(item.groupId)
     ).length;
     return { itemCount, subgroupCount: descendantIds.length };
@@ -237,12 +271,8 @@ const WorkspaceApp: React.FC = () => {
     window.electronAPI.workspaceAPI.hideWindow();
   };
 
-  const handleOpenArchive = async () => {
-    await window.electronAPI.openEditWindowWithTab('archive');
-  };
-
   const setAllGroupsCollapsed = async (collapsed: boolean) => {
-    const targetGroups = filteredGroups.filter((g) => g.collapsed !== collapsed);
+    const targetGroups = displayGroups.filter((g) => g.collapsed !== collapsed);
     if (targetGroups.length > 0) {
       // setAllGroupsCollapsedLocal 内で detached 時は専用 API に保存される
       setAllGroupsCollapsedLocal(collapsed);
@@ -318,7 +348,7 @@ const WorkspaceApp: React.FC = () => {
   };
 
   // handlers と ui の共通部分（通常モード・切り離しモードで共用）
-  const commonHandlers = {
+  const normalHandlers = {
     onLaunch: actions.handleLaunch,
     onRemoveItem: actions.handleRemove,
     onUpdateDisplayName: (id: string, displayName: string) => {
@@ -348,6 +378,32 @@ const WorkspaceApp: React.FC = () => {
     onReorderMixed: actions.handleReorderMixed,
     onNativeFileDrop: handleNativeFileDrop,
   };
+
+  // noop ハンドラ（アーカイブモードで変更操作を無効化）
+  const noop = () => {};
+  const noopAsync = async () => {};
+
+  // アーカイブモード用ハンドラ: 起動と折りたたみのみ有効
+  const archiveHandlers = {
+    onLaunch: actions.handleLaunch,
+    onRemoveItem: noop,
+    onUpdateDisplayName: noop,
+    onEditItem: noop,
+    onToggleGroup: (groupId: string) => {
+      setArchivedGroups((prev) =>
+        prev.map((g) => (g.id === groupId ? { ...g, collapsed: !g.collapsed } : g))
+      );
+    },
+    onUpdateGroup: noopAsync,
+    onDeleteGroup: noopAsync,
+    onArchiveGroup: noop,
+    onAddSubgroup: noopAsync,
+    onMoveItemToGroup: noopAsync,
+    onMoveGroupToParent: noopAsync,
+    onReorderMixed: noopAsync,
+  };
+
+  const commonHandlers = isArchiveMode ? archiveHandlers : normalHandlers;
 
   const commonUi = {
     editingItemId: editingId,
@@ -458,9 +514,8 @@ const WorkspaceApp: React.FC = () => {
         onExpandAll={() => setAllGroupsCollapsed(false)}
         onCollapseAll={() => setAllGroupsCollapsed(true)}
         onAddGroup={() =>
-          actions.handleAddGroup(filteredGroups.length, undefined, activeWorkspaceId)
+          actions.handleAddGroup(displayGroups.length, undefined, activeWorkspaceId)
         }
-        onOpenArchive={handleOpenArchive}
         isPinned={isPinned}
         onTogglePin={handleTogglePin}
         onClose={handleClose}
@@ -468,11 +523,16 @@ const WorkspaceApp: React.FC = () => {
       <WorkspaceTabBar
         workspaces={workspaces}
         activeWorkspaceId={activeWorkspaceId}
-        onTabClick={setActiveWorkspaceId}
+        onTabClick={(id) => {
+          setActiveWorkspaceId(id);
+          setIsArchiveMode(false);
+        }}
         onCreateWorkspace={actions.handleCreateWorkspace}
         onRenameWorkspace={actions.handleRenameWorkspace}
         onDeleteWorkspace={actions.handleDeleteWorkspace}
         onReorderWorkspaces={actions.handleReorderWorkspaces}
+        isArchiveActive={isArchiveMode}
+        onArchiveClick={() => setIsArchiveMode(true)}
       />
       {isFilterVisible && (
         <WorkspaceFilterBar
@@ -490,10 +550,10 @@ const WorkspaceApp: React.FC = () => {
       <WorkspaceGroupedList
         contentRef={contentRef}
         workspaces={workspaces}
-        data={{ groups: filteredGroups, items: filteredItems }}
+        data={{ groups: displayGroups, items: displayItems }}
         handlers={{
           ...commonHandlers,
-          onDetachGroup: handleDetachGroup,
+          onDetachGroup: isArchiveMode ? undefined : handleDetachGroup,
         }}
         ui={{
           ...commonUi,
@@ -508,7 +568,7 @@ const WorkspaceApp: React.FC = () => {
         onClose={() => setDeleteGroupDialog(INITIAL_DELETE_DIALOG)}
         onConfirm={handleConfirmDeleteGroup}
         title="グループの削除"
-        message={`「${filteredGroups.find((g) => g.id === deleteGroupDialog.groupId)?.displayName || groups.find((g) => g.id === deleteGroupDialog.groupId)?.displayName}」を削除してもよろしいですか？\n\nこのグループには${deleteGroupDialog.subgroupCount > 0 ? `サブグループ${deleteGroupDialog.subgroupCount}個と、` : ''}${deleteGroupDialog.itemCount}個のアイテムが含まれています。`}
+        message={`「${displayGroups.find((g) => g.id === deleteGroupDialog.groupId)?.displayName || groups.find((g) => g.id === deleteGroupDialog.groupId)?.displayName}」を削除してもよろしいですか？\n\nこのグループには${deleteGroupDialog.subgroupCount > 0 ? `サブグループ${deleteGroupDialog.subgroupCount}個と、` : ''}${deleteGroupDialog.itemCount}個のアイテムが含まれています。`}
         confirmText="削除"
         cancelText="キャンセル"
         danger={true}
@@ -527,7 +587,7 @@ const WorkspaceApp: React.FC = () => {
         onClose={() => setArchiveGroupDialog(INITIAL_ARCHIVE_DIALOG)}
         onConfirm={handleConfirmArchiveGroup}
         title="グループのアーカイブ"
-        message={`「${filteredGroups.find((g) => g.id === archiveGroupDialog.groupId)?.displayName || groups.find((g) => g.id === archiveGroupDialog.groupId)?.displayName}」をアーカイブしてもよろしいですか？\n\nこのグループには${archiveGroupDialog.subgroupCount > 0 ? `サブグループ${archiveGroupDialog.subgroupCount}個と、` : ''}${archiveGroupDialog.itemCount}個のアイテムが含まれています。\nアーカイブしたグループは後で復元できます。`}
+        message={`「${displayGroups.find((g) => g.id === archiveGroupDialog.groupId)?.displayName || groups.find((g) => g.id === archiveGroupDialog.groupId)?.displayName}」をアーカイブしてもよろしいですか？\n\nこのグループには${archiveGroupDialog.subgroupCount > 0 ? `サブグループ${archiveGroupDialog.subgroupCount}個と、` : ''}${archiveGroupDialog.itemCount}個のアイテムが含まれています。\nアーカイブしたグループは後で復元できます。`}
         confirmText="アーカイブ"
         cancelText="キャンセル"
         danger={false}

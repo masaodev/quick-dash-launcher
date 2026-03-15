@@ -164,6 +164,7 @@ export const IPC_CHANNELS = {
   // ワークスペース - アーカイブ管理
   WORKSPACE_ARCHIVE_GROUP: 'workspace:archive-group',
   WORKSPACE_LOAD_ARCHIVED_GROUPS: 'workspace:load-archived-groups',
+  WORKSPACE_LOAD_ARCHIVED_ITEMS: 'workspace:load-archived-items',
   WORKSPACE_RESTORE_GROUP: 'workspace:restore-group',
   WORKSPACE_DELETE_ARCHIVED_GROUP: 'workspace:delete-archived-group',
 
