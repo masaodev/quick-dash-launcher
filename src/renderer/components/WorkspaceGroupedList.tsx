@@ -75,6 +75,7 @@ interface WorkspaceGroupedListProps {
     onDeleteGroup: (groupId: string) => void;
     onArchiveGroup: (groupId: string) => void;
     onAddSubgroup: (parentGroupId: string, subgroupCount: number) => void;
+    onDuplicateItem: (sourceItemId: string, targetGroupId?: string, insertOrder?: number) => void;
     onMoveItemToGroup: (itemId: string, groupId?: string) => void;
     onMoveGroupToParent: (groupId: string, newParentGroupId?: string) => void;
     onReorderMixed: (parentGroupId: string | undefined, entries: MixedOrderEntry[]) => void;
@@ -113,6 +114,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     onDeleteGroup,
     onArchiveGroup,
     onAddSubgroup,
+    onDuplicateItem,
     onMoveItemToGroup,
     onMoveGroupToParent,
     onReorderMixed,
@@ -292,7 +294,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
 
   const handleMixedDragStart = (id: string, kind: 'item' | 'group') => (e: React.DragEvent) => {
     setDraggedElement({ id, kind });
-    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.effectAllowed = kind === 'item' ? 'copyMove' : 'move';
     e.dataTransfer.setData('itemId', kind === 'item' ? id : '');
     e.dataTransfer.setData('groupId', kind === 'group' ? id : '');
 
@@ -311,7 +313,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
   const handleMixedDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     if (draggedElement) {
-      e.dataTransfer.dropEffect = 'move';
+      e.dataTransfer.dropEffect = draggedElement.kind === 'item' && e.ctrlKey ? 'copy' : 'move';
     }
   };
 
@@ -382,6 +384,31 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
       e.preventDefault();
 
       if (!draggedElement || draggedElement.id === targetId) {
+        setDraggedElement(null);
+        return;
+      }
+
+      // Ctrl+アイテムドラッグ: コピー操作
+      if (draggedElement.kind === 'item' && e.ctrlKey) {
+        e.stopPropagation();
+        let copyTargetGroupId: string | undefined;
+        let insertOrder: number | undefined;
+
+        if (targetKind === 'group' && dropZone === 'nest') {
+          copyTargetGroupId = targetId;
+        } else {
+          copyTargetGroupId = parentGroupId;
+          if (targetKind === 'item') {
+            insertOrder = itemsMap.get(targetId)?.order;
+          } else if (targetKind === 'group') {
+            const targetOrder = groupsMap.get(targetId)?.order;
+            if (targetOrder !== undefined) {
+              insertOrder = dropZone === 'after' ? targetOrder + 1 : targetOrder;
+            }
+          }
+        }
+
+        onDuplicateItem(draggedElement.id, copyTargetGroupId, insertOrder);
         setDraggedElement(null);
         return;
       }
@@ -475,16 +502,15 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
   const handleGroupDragOver = (groupId?: string) => (e: React.DragEvent) => {
     e.preventDefault();
     const isNative = isNativeFileDrag(e);
-    const isCopyOperation = e.dataTransfer.types.includes('launcheritem');
+    const isCopy =
+      isNative ||
+      e.dataTransfer.types.includes('launcheritem') ||
+      (draggedElement?.kind === 'item' && e.ctrlKey);
 
-    if (isNative) {
-      e.dataTransfer.dropEffect = 'copy';
-    } else {
-      e.dataTransfer.dropEffect = isCopyOperation ? 'copy' : 'move';
-    }
+    e.dataTransfer.dropEffect = isCopy ? 'copy' : 'move';
 
     // ワークスペース内アイテム並び替え以外はハイライト表示
-    if (isNative || isCopyOperation) {
+    if (isCopy) {
       const id = groupId ?? '__uncategorized__';
       setDragOverGroupId(id);
       // dragoverは継続発火するため、タイマーでリセット
@@ -535,6 +561,13 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     const normalizeGroupId = (id: string): string | undefined => id || undefined;
 
     try {
+      // Ctrl+アイテムドラッグ: コピー操作
+      if (draggedElement?.kind === 'item' && e.ctrlKey) {
+        onDuplicateItem(draggedElement.id, groupId);
+        setDraggedElement(null);
+        return;
+      }
+
       if (launcherItemData) {
         // ランチャーからのアイテム追加
         await addAppItemToWorkspace(launcherItemData, groupId);

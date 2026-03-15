@@ -343,6 +343,15 @@ export class WorkspaceService {
     this.groupManager!.moveGroupToParent(groupId, newParentGroupId);
   }
 
+  public async duplicateItem(
+    sourceItemId: string,
+    targetGroupId?: string,
+    insertOrder?: number
+  ): Promise<WorkspaceItem> {
+    await this.initializeStore();
+    return this.itemManager!.duplicateItem(sourceItemId, targetGroupId, insertOrder);
+  }
+
   public async moveItemToGroup(itemId: string, groupId?: string): Promise<void> {
     await this.initializeStore();
     const groups = this.groupManager!.loadGroups();

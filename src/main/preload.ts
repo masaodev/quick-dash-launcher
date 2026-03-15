@@ -380,6 +380,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
       entries: MixedOrderEntry[]
     ): Promise<{ success: boolean }> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_REORDER_MIXED, parentGroupId, entries),
+    duplicateItem: (
+      sourceItemId: string,
+      targetGroupId?: string,
+      insertOrder?: number
+    ): Promise<{ success: boolean }> =>
+      ipcRenderer.invoke(
+        IPC_CHANNELS.WORKSPACE_DUPLICATE_ITEM,
+        sourceItemId,
+        targetGroupId,
+        insertOrder
+      ),
     moveItemToGroup: (itemId: string, groupId?: string): Promise<{ success: boolean }> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_MOVE_ITEM_TO_GROUP, itemId, groupId),
     moveGroupToParent: (
