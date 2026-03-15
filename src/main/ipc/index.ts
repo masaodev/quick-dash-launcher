@@ -37,7 +37,7 @@ export function setupIPCHandlers(
   setupDataHandlers(configFolder);
   setupItemHandlers();
   setupConfigHandlers(configFolder);
-  setupIconHandlers(faviconsFolder, iconsFolder, extensionsFolder, getMainWindow);
+  setupIconHandlers(faviconsFolder, iconsFolder, extensionsFolder);
   setupWindowHandlers(setEditMode, getEditMode, getWindowPinMode, cycleWindowPinMode, setModalMode);
   registerEditHandlers(configFolder);
   setupSettingsHandlers(setFirstLaunchMode);

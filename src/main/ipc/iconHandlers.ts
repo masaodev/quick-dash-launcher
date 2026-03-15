@@ -5,7 +5,7 @@ import { promisify } from 'util';
 import * as os from 'os';
 import * as crypto from 'crypto';
 
-import { ipcMain, BrowserWindow, dialog, shell } from 'electron';
+import { ipcMain, dialog, shell } from 'electron';
 import { iconLogger } from '@common/logger';
 import { FileUtils } from '@common/utils/fileUtils';
 import { PathUtils } from '@common/utils/pathUtils';
@@ -16,12 +16,10 @@ import { CombinedProgressManager } from '../utils/progressManager';
 import { FaviconService } from '../services/faviconService';
 import { IconFetchErrorService } from '../services/iconFetchErrorService';
 import PathManager from '../config/pathManager.js';
+import { getMainWindow } from '../windowManager.js';
 
 // FaviconServiceのインスタンスを保持
 let faviconService: FaviconService;
-
-// メインウィンドウへの参照を保持
-let mainWindow: BrowserWindow | null = null;
 
 const execAsync = promisify(exec);
 
@@ -699,7 +697,7 @@ async function fetchIconsCombined(
     phaseTotals.push(filteredItems.length);
   }
 
-  const progress = new CombinedProgressManager(phaseTypes, phaseTotals, mainWindow);
+  const progress = new CombinedProgressManager(phaseTypes, phaseTotals, getMainWindow());
   progress.start();
 
   // 各フェーズ共通の処理ループ
@@ -837,14 +835,8 @@ async function getIconForItem(
 export function setupIconHandlers(
   faviconsFolder: string,
   iconsFolder: string,
-  extensionsFolder: string,
-  getMainWindow?: () => BrowserWindow | null
+  extensionsFolder: string
 ) {
-  // メインウィンドウの参照を設定
-  if (getMainWindow) {
-    mainWindow = getMainWindow();
-  }
-
   ipcMain.handle(IPC_CHANNELS.FETCH_FAVICON, (_event, url: string) =>
     fetchFavicon(url, faviconsFolder)
   );
