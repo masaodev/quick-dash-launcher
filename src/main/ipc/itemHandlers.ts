@@ -19,7 +19,11 @@ import { launchItem } from '../utils/itemLauncher.js';
 import { SettingsService } from '../services/settingsService.js';
 import { findWindowByTitle, createTitleMatcher } from '../utils/windowMatcher.js';
 import { findWindowHwndByTitle } from '../utils/nativeWindowControl.js';
-import { getMainWindow } from '../windowManager.js';
+import {
+  showLayoutProgressWindow,
+  hideLayoutProgressWindow,
+  getLayoutProgressWindow,
+} from '../services/layoutProgressWindowService.js';
 
 /**
  * WindowItemからWindowConfigを生成する
@@ -203,15 +207,15 @@ const LAYOUT_PROGRESS_CHANNELS = {
 } as const;
 
 /**
- * レイアウト進捗をレンダラーに送信する
+ * レイアウト進捗をミニウィンドウに送信する
  */
 function sendLayoutProgress(
   eventType: 'start' | 'update' | 'complete',
   progress: LayoutExecutionProgress
 ): void {
-  const mainWindow = getMainWindow();
-  if (mainWindow) {
-    mainWindow.webContents.send(LAYOUT_PROGRESS_CHANNELS[eventType], progress);
+  const win = getLayoutProgressWindow();
+  if (win) {
+    win.webContents.send(LAYOUT_PROGRESS_CHANNELS[eventType], progress);
   }
 }
 
@@ -373,6 +377,9 @@ export async function executeLayout(item: LayoutItem): Promise<void> {
     'レイアウトを実行中'
   );
 
+  // ミニウィンドウを表示
+  await showLayoutProgressWindow();
+
   // キャンセルフラグをリセット
   layoutCancelled = false;
 
@@ -460,6 +467,10 @@ export function setupItemHandlers(): void {
 
   ipcMain.handle(IPC_CHANNELS.EXECUTE_LAYOUT, async (_event, item: LayoutItem) => {
     await executeLayout(item);
+  });
+
+  ipcMain.on(IPC_CHANNELS.CLOSE_LAYOUT_PROGRESS_WINDOW, () => {
+    hideLayoutProgressWindow();
   });
 
   ipcMain.handle(IPC_CHANNELS.EXECUTE_WINDOW_OPERATION, async (_event, item: WindowItem) => {

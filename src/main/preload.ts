@@ -146,6 +146,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return createEventListener<LayoutExecutionProgress>(eventMap[eventType], callback);
   },
   cancelLayout: () => ipcRenderer.send(IPC_CHANNELS.LAYOUT_CANCEL),
+  closeLayoutProgressWindow: () => ipcRenderer.send(IPC_CHANNELS.CLOSE_LAYOUT_PROGRESS_WINDOW),
   onWindowShown: (callback: (startTime?: number) => void) =>
     createEventListener<number | undefined>(IPC_CHANNELS.EVENT_WINDOW_SHOWN, callback),
   onWindowShownItemSearch: (callback: (startTime?: number) => void) =>

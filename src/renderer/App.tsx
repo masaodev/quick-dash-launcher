@@ -46,8 +46,6 @@ import { useDragAndDrop } from './hooks/useDragAndDrop';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useGlobalLoading } from './hooks/useGlobalLoading';
 import { useToast } from './hooks/useToast';
-import { useLayoutProgress } from './hooks/useLayoutProgress';
-import LayoutProgressModal from './components/LayoutProgressModal';
 
 function App(): React.ReactElement {
   const [searchQuery, setSearchQuery] = useState('');
@@ -115,7 +113,6 @@ function App(): React.ReactElement {
     handleOpenShortcutParentFolder,
   } = useItemActions();
   const { showSuccess, showWarning } = useToast();
-  const layoutProgress = useLayoutProgress();
 
   const {
     showDataFileTabs,
@@ -762,13 +759,6 @@ function App(): React.ReactElement {
             : ''
         }
         danger={true}
-      />
-
-      <LayoutProgressModal
-        isOpen={layoutProgress.isOpen}
-        progress={layoutProgress.progress}
-        onClose={layoutProgress.close}
-        onCancel={layoutProgress.cancel}
       />
     </div>
   );

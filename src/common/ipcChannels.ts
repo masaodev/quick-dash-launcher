@@ -218,6 +218,7 @@ export const IPC_CHANNELS = {
   EVENT_LAYOUT_PROGRESS_UPDATE: 'layout-progress-update',
   EVENT_LAYOUT_PROGRESS_COMPLETE: 'layout-progress-complete',
   LAYOUT_CANCEL: 'layout-cancel',
+  CLOSE_LAYOUT_PROGRESS_WINDOW: 'close-layout-progress-window',
 
   // コンテキストメニュー - Admin
   SHOW_ADMIN_ITEM_CONTEXT_MENU: 'show-admin-item-context-menu',

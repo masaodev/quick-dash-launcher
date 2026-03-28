@@ -35,6 +35,7 @@ import {
 } from './workspaceWindowManager';
 import { closeAllDetachedGroupWindows, setDetachedAppQuitting } from './detachedGroupWindowManager';
 import { destroyToastWindow } from './services/toastWindowService.js';
+import { destroyLayoutProgressWindow } from './services/layoutProgressWindowService.js';
 import { BookmarkAutoImportService } from './services/bookmarkAutoImportService.js';
 
 // 多重起動時に完全に独立したuserDataを使用
@@ -161,4 +162,5 @@ app.on('will-quit', () => {
   closeAllDetachedGroupWindows();
   closeSplashWindow();
   destroyToastWindow();
+  destroyLayoutProgressWindow();
 });
