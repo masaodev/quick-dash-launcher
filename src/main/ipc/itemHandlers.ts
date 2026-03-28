@@ -82,7 +82,7 @@ async function openParentFolder(item: LauncherItem): Promise<void> {
   );
 
   if (item.type === 'file' || item.type === 'folder' || item.type === 'app') {
-    await shell.showItemInFolder(item.path);
+    shell.showItemInFolder(item.path);
   }
 }
 
