@@ -367,7 +367,7 @@ async function runWithConcurrency<T>(
 /**
  * レイアウトを実行する（並列処理・進捗通知・キャンセル対応）
  */
-async function executeLayout(item: LayoutItem): Promise<void> {
+export async function executeLayout(item: LayoutItem): Promise<void> {
   itemLogger.info(
     { displayName: item.displayName, entryCount: item.entries.length },
     'レイアウトを実行中'

@@ -14,6 +14,7 @@ import { getIconForItem } from '../services/iconService.js';
 import { closeDetachedGroupWindow } from '../detachedGroupWindowManager.js';
 
 import { loadDataFiles } from './dataHandlers.js';
+import { executeLayout } from './itemHandlers.js';
 
 /**
  * 指定グループとその子孫の切り離しウィンドウをすべて閉じる
@@ -329,6 +330,27 @@ export function setupWorkspaceHandlers(): void {
         logger.info(
           { id: item.id, name: item.displayName },
           'Restored clipboard from workspace item'
+        );
+        return { success: true };
+      }
+
+      // レイアウトタイプの場合
+      if (item.type === 'layout') {
+        if (!item.layoutEntries || item.layoutEntries.length === 0) {
+          logger.warn({ id: item.id, name: item.displayName }, 'Layout has no entries');
+          throw new Error('レイアウトにエントリが登録されていません');
+        }
+
+        await executeLayout({
+          type: 'layout',
+          displayName: item.displayName,
+          entries: item.layoutEntries,
+          memo: item.memo,
+        });
+
+        logger.info(
+          { id: item.id, name: item.displayName, entryCount: item.layoutEntries.length },
+          'Executed layout from workspace item'
         );
         return { success: true };
       }

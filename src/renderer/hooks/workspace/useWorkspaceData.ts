@@ -12,17 +12,24 @@ type IconCacheItem = {
   originalPath?: string;
 };
 
-type ItemType = 'url' | 'file' | 'folder' | 'app' | 'customUri' | 'windowOperation' | 'group';
+/** アイコンキャッシュ対象のタイプ（IconCacheItem['type']と一致） */
+const ICON_CACHEABLE_TYPES: ReadonlySet<string> = new Set<IconCacheItem['type']>([
+  'url',
+  'file',
+  'folder',
+  'app',
+  'customUri',
+]);
 
-function needsIconFromCache(type: ItemType): boolean {
-  return type !== 'windowOperation' && type !== 'group';
+function needsIconFromCache(type: WorkspaceItem['type']): boolean {
+  return ICON_CACHEABLE_TYPES.has(type);
 }
 
 async function mergeIconsFromCache<T extends { icon?: string }>(
   items: T[],
   getPath: (item: T) => string,
   toLauncherStyle: (item: T) => IconCacheItem,
-  getType: (item: T) => ItemType
+  getType: (item: T) => WorkspaceItem['type']
 ): Promise<T[]> {
   const itemsNeedingIcons = items.filter((item) => !item.icon && needsIconFromCache(getType(item)));
   if (itemsNeedingIcons.length === 0) return items;
@@ -84,7 +91,7 @@ export function useWorkspaceData(detachedGroupId?: string | null) {
           customIcon: item.customIcon,
           originalPath: item.originalPath,
         }),
-        (item) => item.type as ItemType
+        (item) => item.type as WorkspaceItem['type']
       );
       setItems(itemsWithIcons);
     } catch (error) {

@@ -1,6 +1,6 @@
 import type { WorkspaceItem, ExecutionHistoryItem } from '@common/types';
 
-type ItemType = WorkspaceItem['type'] | ExecutionHistoryItem['itemType'] | 'layout';
+type ItemType = WorkspaceItem['type'] | ExecutionHistoryItem['itemType'];
 
 /**
  * アイテムタイプに応じたデフォルトアイコンを返す
@@ -24,7 +24,7 @@ export function getDefaultIconForItemType(type: ItemType): string {
     case 'clipboard':
       return '\u{1F4CB}';
     case 'layout':
-      return '\u{1F5A5}';
+      return '\u{1F5A5}\uFE0F';
     default:
       return '\u{1F4C4}';
   }

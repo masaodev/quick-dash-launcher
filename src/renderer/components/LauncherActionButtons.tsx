@@ -60,7 +60,6 @@ const LauncherActionButtons: React.FC<ActionButtonsProps> = ({
 
   return (
     <div className="action-buttons">
-      <LauncherRegisterDropdown onOpenRegisterModal={onOpenRegisterModal} />
       <LauncherRefreshActionsDropdown
         onReload={onReload}
         onFetchMissingIcons={onFetchMissingIcons}
@@ -68,6 +67,7 @@ const LauncherActionButtons: React.FC<ActionButtonsProps> = ({
         onBookmarkAutoImport={onBookmarkAutoImport}
         onRefreshAll={onRefreshAll}
       />
+      <LauncherRegisterDropdown onOpenRegisterModal={onOpenRegisterModal} />
       <button
         className={getPinModeClassName(windowPinMode)}
         onClick={onTogglePin}
