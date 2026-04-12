@@ -45,6 +45,8 @@ export function useWorkspaceItemEditForm(
       return;
     }
 
+    let cancelled = false;
+
     if (editingItem) {
       setLoading(true);
       const registerItem = convertWorkspaceItemToRegisterItem(editingItem);
@@ -56,8 +58,48 @@ export function useWorkspaceItemEditForm(
         });
       }
 
+      // JSON保存時にアイコンが除去されるため、executablePathから再取得する
+      const entries = registerItem.layoutEntries;
+      if (registerItem.itemCategory === 'layout' && entries?.length) {
+        const enrichLayoutIcons = async () => {
+          const pathsToResolve = [
+            ...new Set(
+              entries.filter((e) => e.executablePath && !e.icon).map((e) => e.executablePath!)
+            ),
+          ];
+
+          const iconMap = new Map<string, string | null>();
+          await Promise.all(
+            pathsToResolve.map(async (path) => {
+              try {
+                iconMap.set(path, await window.electronAPI.extractIcon(path));
+              } catch {
+                iconMap.set(path, null);
+              }
+            })
+          );
+
+          if (cancelled) return;
+          const enrichedEntries = entries.map((entry) => {
+            if (entry.executablePath && !entry.icon) {
+              const icon = iconMap.get(entry.executablePath);
+              return icon ? { ...entry, icon } : entry;
+            }
+            return entry;
+          });
+          setItem((prev) => (prev ? { ...prev, layoutEntries: enrichedEntries } : null));
+        };
+        enrichLayoutIcons().catch((err) => {
+          logError('Failed to enrich layout entry icons:', err);
+        });
+      }
+
       setLoading(false);
     }
+
+    return () => {
+      cancelled = true;
+    };
   }, [isOpen, editingItem, loadCustomIconPreview]);
 
   const handleFieldChange = useCallback(
