@@ -399,6 +399,7 @@ const WorkspaceApp: React.FC = () => {
     onDeleteGroup: noopAsync,
     onArchiveGroup: noop,
     onAddSubgroup: noopAsync,
+    onDuplicateItem: noop,
     onMoveItemToGroup: noopAsync,
     onMoveGroupToParent: noopAsync,
     onReorderMixed: noopAsync,
