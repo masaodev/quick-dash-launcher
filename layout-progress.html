@@ -85,6 +85,7 @@
         flex: 1;
         overflow-y: auto;
         padding: 6px;
+        -webkit-app-region: no-drag;
       }
 
       .entry-list::-webkit-scrollbar {
@@ -121,6 +122,13 @@
       }
       .entry-item.waiting {
         border-left: 3px solid #ccc;
+      }
+
+      .entry-icon {
+        width: 18px;
+        height: 18px;
+        flex-shrink: 0;
+        object-fit: contain;
       }
 
       .status-icon {
@@ -163,6 +171,12 @@
         color: #333;
         font-size: 12px;
         word-break: break-all;
+      }
+
+      .entry-process {
+        color: #888;
+        font-size: 10px;
+        margin-left: 4px;
       }
 
       .entry-error {
@@ -234,6 +248,32 @@
         failed: '<span class="status-icon failed">✗</span>',
       };
 
+      let renderedEntryCount = 0;
+
+      function buildEntryHtml(entry) {
+        return (
+          '<div class="entry-item ' +
+          entry.status +
+          '" data-index="' +
+          entry.index +
+          '">' +
+          statusIcons[entry.status] +
+          (entry.icon
+            ? '<img class="entry-icon" src="' + escapeAttr(entry.icon) + '" />'
+            : '<div class="entry-icon"></div>') +
+          '<div class="entry-content">' +
+          '<span class="entry-title">' +
+          escapeHtml(entry.windowTitle) +
+          (entry.processName
+            ? '<span class="entry-process">(' + escapeHtml(entry.processName) + ')</span>'
+            : '') +
+          '</span>' +
+          '<div class="entry-error"></div>' +
+          '</div>' +
+          '</div>'
+        );
+      }
+
       function updateUI(data) {
         document.getElementById('layoutName').textContent = data.layoutName;
 
@@ -247,24 +287,22 @@
         document.getElementById('progressText').textContent = completedCount + ' / ' + totalCount;
 
         const entryList = document.getElementById('entryList');
-        entryList.innerHTML = data.entries
-          .map(
-            (entry) =>
-              '<div class="entry-item ' +
-              entry.status +
-              '">' +
-              statusIcons[entry.status] +
-              '<div class="entry-content">' +
-              '<span class="entry-title">' +
-              escapeHtml(entry.windowTitle) +
-              '</span>' +
-              (entry.errorMessage
-                ? '<div class="entry-error">' + escapeHtml(entry.errorMessage) + '</div>'
-                : '') +
-              '</div>' +
-              '</div>'
-          )
-          .join('');
+
+        if (renderedEntryCount !== totalCount) {
+          entryList.innerHTML = data.entries.map(buildEntryHtml).join('');
+          renderedEntryCount = totalCount;
+        } else {
+          data.entries.forEach((entry) => {
+            const el = entryList.children[entry.index];
+            if (!el) return;
+            el.className = 'entry-item ' + entry.status;
+            el.querySelector('.status-icon').outerHTML = statusIcons[entry.status];
+            const errorEl = el.querySelector('.entry-error');
+            if (errorEl) {
+              errorEl.textContent = entry.errorMessage || '';
+            }
+          });
+        }
 
         isComplete = data.isComplete;
         const btn = document.getElementById('actionBtn');
@@ -281,6 +319,10 @@
         const div = document.createElement('div');
         div.textContent = str;
         return div.innerHTML;
+      }
+
+      function escapeAttr(str) {
+        return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
       }
 
       function handleAction() {
@@ -305,6 +347,7 @@
           clearTimeout(autoCloseTimer);
           autoCloseTimer = null;
         }
+        renderedEntryCount = 0;
         updateUI(data);
         const container = document.getElementById('container');
         container.classList.add('visible');

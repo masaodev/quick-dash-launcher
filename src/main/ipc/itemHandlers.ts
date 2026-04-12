@@ -214,8 +214,17 @@ function sendLayoutProgress(
   progress: LayoutExecutionProgress
 ): void {
   const win = getLayoutProgressWindow();
-  if (win) {
+  if (!win) return;
+
+  if (eventType === 'start') {
     win.webContents.send(LAYOUT_PROGRESS_CHANNELS[eventType], progress);
+  } else {
+    // update/completeではiconを除外してIPC転送量を削減
+    const lightweight = {
+      ...progress,
+      entries: progress.entries.map(({ icon: _icon, ...rest }) => rest),
+    };
+    win.webContents.send(LAYOUT_PROGRESS_CHANNELS[eventType], lightweight);
   }
 }
 
@@ -394,6 +403,8 @@ export async function executeLayout(item: LayoutItem): Promise<void> {
   const entryProgresses: LayoutEntryProgress[] = item.entries.map((entry, i) => ({
     index: i,
     windowTitle: entry.windowTitle,
+    processName: entry.processName,
+    icon: entry.icon,
     status: 'waiting' as const,
   }));
 

@@ -249,6 +249,8 @@ export type LayoutEntryStatus = 'waiting' | 'launching' | 'success' | 'failed';
 export interface LayoutEntryProgress {
   index: number;
   windowTitle: string;
+  processName?: string;
+  icon?: string;
   status: LayoutEntryStatus;
   errorMessage?: string;
 }
