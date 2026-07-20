@@ -24,6 +24,7 @@ import {
   hideLayoutProgressWindow,
   getLayoutProgressWindow,
 } from '../services/layoutProgressWindowService.js';
+import { runWithConcurrency } from '../utils/concurrency.js';
 
 /**
  * WindowItemからWindowConfigを生成する
@@ -357,27 +358,6 @@ async function executeLayoutEntry(
 }
 
 /**
- * 並列実行数を制限しながらタスクを実行する
- */
-async function runWithConcurrency<T>(
-  tasks: (() => Promise<T>)[],
-  concurrency: number
-): Promise<void> {
-  let index = 0;
-
-  async function runNext(): Promise<void> {
-    while (index < tasks.length) {
-      if (layoutCancelled) return;
-      const currentIndex = index++;
-      await tasks[currentIndex]();
-    }
-  }
-
-  const workers = Array.from({ length: Math.min(concurrency, tasks.length) }, () => runNext());
-  await Promise.all(workers);
-}
-
-/**
  * レイアウトを実行する（並列処理・進捗通知・キャンセル対応）
  */
 export async function executeLayout(item: LayoutItem): Promise<void> {
@@ -436,7 +416,7 @@ export async function executeLayout(item: LayoutItem): Promise<void> {
   });
 
   // 並列実行（同時実行数制限あり）
-  await runWithConcurrency(tasks, LAYOUT_CONCURRENCY);
+  await runWithConcurrency(tasks, LAYOUT_CONCURRENCY, () => layoutCancelled);
 
   // キャンセルリスナーを削除
   ipcMain.removeListener(IPC_CHANNELS.LAYOUT_CANCEL, cancelHandler);

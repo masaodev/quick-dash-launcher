@@ -102,6 +102,76 @@ describe('IconFetchErrorService', () => {
     });
   });
 
+  describe('recordErrors', () => {
+    it('複数のエラーを1回のストア書き込みでまとめて記録する', async () => {
+      const service = await IconFetchErrorService.getInstance();
+
+      await service.recordErrors([
+        { key: 'https://example.com', type: 'favicon', errorMessage: 'Error 1' },
+        { key: 'C:\\test\\file.exe', type: 'icon', errorMessage: 'Error 2' },
+      ]);
+
+      expect(mockStore.set).toHaveBeenCalledTimes(1);
+      expect(mockStore.set).toHaveBeenCalledWith('errors', [
+        expect.objectContaining({
+          key: 'https://example.com',
+          type: 'favicon',
+          errorMessage: 'Error 1',
+          failCount: 1,
+        }),
+        expect.objectContaining({
+          key: 'C:\\test\\file.exe',
+          type: 'icon',
+          errorMessage: 'Error 2',
+          failCount: 1,
+        }),
+      ]);
+    });
+
+    it('既存エラーと新規エラーが混在してもまとめて反映される', async () => {
+      const service = await IconFetchErrorService.getInstance();
+
+      mockStore.get.mockReturnValue([
+        {
+          key: 'https://example.com',
+          type: 'favicon' as const,
+          errorMessage: 'Previous error',
+          errorAt: Date.now() - 1000,
+          failCount: 1,
+        },
+      ]);
+
+      await service.recordErrors([
+        { key: 'https://example.com', type: 'favicon', errorMessage: 'New error' },
+        { key: 'https://other.com', type: 'favicon', errorMessage: 'Other error' },
+      ]);
+
+      expect(mockStore.set).toHaveBeenCalledTimes(1);
+      expect(mockStore.set).toHaveBeenCalledWith('errors', [
+        expect.objectContaining({
+          key: 'https://example.com',
+          type: 'favicon',
+          errorMessage: 'New error',
+          failCount: 2,
+        }),
+        expect.objectContaining({
+          key: 'https://other.com',
+          type: 'favicon',
+          errorMessage: 'Other error',
+          failCount: 1,
+        }),
+      ]);
+    });
+
+    it('空配列の場合はストアに書き込まない', async () => {
+      const service = await IconFetchErrorService.getInstance();
+
+      await service.recordErrors([]);
+
+      expect(mockStore.set).not.toHaveBeenCalled();
+    });
+  });
+
   describe('hasError', () => {
     it('エラー記録がある場合は true を返す', async () => {
       const service = await IconFetchErrorService.getInstance();

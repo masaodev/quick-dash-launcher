@@ -72,24 +72,34 @@ export class IconFetchErrorService {
     type: 'favicon' | 'icon',
     errorMessage: string
   ): Promise<void> {
+    await this.recordErrors([{ key, type, errorMessage }]);
+  }
+
+  /** 複数のエラーを1回のストア書き込みでまとめて記録する */
+  public async recordErrors(
+    entries: { key: string; type: 'favicon' | 'icon'; errorMessage: string }[]
+  ): Promise<void> {
+    if (entries.length === 0) return;
     await this.initializeStore();
 
     const errors = this.getErrors();
-    const existingIndex = errors.findIndex((e) => e.key === key && e.type === type);
+    for (const { key, type, errorMessage } of entries) {
+      const existingIndex = errors.findIndex((e) => e.key === key && e.type === type);
 
-    if (existingIndex >= 0) {
-      errors[existingIndex] = {
-        ...errors[existingIndex],
-        errorMessage,
-        errorAt: Date.now(),
-        failCount: errors[existingIndex].failCount + 1,
-      };
-    } else {
-      errors.push({ key, type, errorMessage, errorAt: Date.now(), failCount: 1 });
+      if (existingIndex >= 0) {
+        errors[existingIndex] = {
+          ...errors[existingIndex],
+          errorMessage,
+          errorAt: Date.now(),
+          failCount: errors[existingIndex].failCount + 1,
+        };
+      } else {
+        errors.push({ key, type, errorMessage, errorAt: Date.now(), failCount: 1 });
+      }
+      logger.info({ key, type, errorMessage }, 'Recorded icon fetch error');
     }
 
     this.setErrors(errors);
-    logger.info({ key, type, errorMessage }, 'Recorded icon fetch error');
   }
 
   public async hasError(key: string, type: 'favicon' | 'icon'): Promise<boolean> {
