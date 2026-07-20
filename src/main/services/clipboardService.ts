@@ -5,11 +5,11 @@
  */
 
 import * as fs from 'fs';
-import * as path from 'path';
 
 import { clipboard, nativeImage, NativeImage } from 'electron';
 import clipboardFiles from 'clipboard-files';
 import logger from '@common/logger';
+import { FileUtils } from '@common/utils/fileUtils';
 import { generateId } from '@common/utils/jsonParser';
 import type {
   SerializableClipboard,
@@ -225,12 +225,9 @@ export class ClipboardService {
     const dataFileRef = `clipboard-data/${id}.json`;
     const filePath = PathManager.getClipboardDataFilePath(id);
 
-    const dir = path.dirname(filePath);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
+    if (!FileUtils.safeWriteTextFile(filePath, JSON.stringify(clipboardData, null, 2))) {
+      throw new Error(`クリップボードデータの保存に失敗しました: ${filePath}`);
     }
-
-    fs.writeFileSync(filePath, JSON.stringify(clipboardData, null, 2), 'utf8');
     return dataFileRef;
   }
 

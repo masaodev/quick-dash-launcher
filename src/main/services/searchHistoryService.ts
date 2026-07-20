@@ -42,7 +42,13 @@ export class SearchHistoryService {
       return [];
     }
 
-    const data = JSON.parse(content) as SearchHistoryFile;
+    // ファイル破損時に検索のたびIPCエラーになるのを防ぐ（履歴は消えても実害が小さい）
+    let data: SearchHistoryFile;
+    try {
+      data = JSON.parse(content) as SearchHistoryFile;
+    } catch {
+      return [];
+    }
     if (!Array.isArray(data.entries)) {
       return [];
     }

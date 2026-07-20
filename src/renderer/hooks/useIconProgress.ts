@@ -38,17 +38,18 @@ export function useIconProgress(): {
       // 自動的に閉じない（ユーザーが×ボタンで手動で閉じる）
     };
 
-    // IPCイベントリスナーを登録
+    // IPCイベントリスナーを登録（再マウント時の多重登録を防ぐため必ず解除する）
+    const cleanups: Array<() => void> = [];
     if (window.electronAPI && window.electronAPI.onIconProgress) {
-      window.electronAPI.onIconProgress('start', handleProgressStart);
-      window.electronAPI.onIconProgress('update', handleProgressUpdate);
-      window.electronAPI.onIconProgress('complete', handleProgressComplete);
+      cleanups.push(
+        window.electronAPI.onIconProgress('start', handleProgressStart),
+        window.electronAPI.onIconProgress('update', handleProgressUpdate),
+        window.electronAPI.onIconProgress('complete', handleProgressComplete)
+      );
     }
 
-    // クリーンアップ関数
     return () => {
-      // 必要に応じてリスナーを削除
-      // この実装では特別なクリーンアップは不要
+      cleanups.forEach((cleanup) => cleanup());
     };
   }, []);
 

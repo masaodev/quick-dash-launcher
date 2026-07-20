@@ -363,29 +363,31 @@ function App(): React.ReactElement {
       });
     };
 
-    window.electronAPI.onWindowShown((startTime) => {
+    const cleanupWindowShown = window.electronAPI.onWindowShown((startTime) => {
       logShowTimings(startTime, '');
       setSearchQuery('');
       setSelectedIndex(0);
       searchInputRef.current?.focus();
     });
 
-    window.electronAPI.onWindowShownItemSearch(async (startTime) => {
-      logShowTimings(startTime, '-window-search');
-      setSearchMode('window');
-      const [windows, info] = await Promise.all([
-        window.electronAPI.getAllWindowsAllDesktops(),
-        window.electronAPI.getVirtualDesktopInfo(),
-      ]);
-      setWindowList(windows);
-      setDesktopInfo(info);
-      setActiveDesktopTab(info.supported && info.currentDesktop > 0 ? info.currentDesktop : 0);
-      setSearchQuery('');
-      setSelectedIndex(0);
-      searchInputRef.current?.focus();
-    });
+    const cleanupWindowShownItemSearch = window.electronAPI.onWindowShownItemSearch(
+      async (startTime) => {
+        logShowTimings(startTime, '-window-search');
+        setSearchMode('window');
+        const [windows, info] = await Promise.all([
+          window.electronAPI.getAllWindowsAllDesktops(),
+          window.electronAPI.getVirtualDesktopInfo(),
+        ]);
+        setWindowList(windows);
+        setDesktopInfo(info);
+        setActiveDesktopTab(info.supported && info.currentDesktop > 0 ? info.currentDesktop : 0);
+        setSearchQuery('');
+        setSelectedIndex(0);
+        searchInputRef.current?.focus();
+      }
+    );
 
-    window.electronAPI.onWindowHidden(() => {
+    const cleanupWindowHidden = window.electronAPI.onWindowHidden(() => {
       setSearchQuery('');
       setSearchMode('normal');
       setWindowList([]);
@@ -403,6 +405,9 @@ function App(): React.ReactElement {
     });
 
     return () => {
+      cleanupWindowShown();
+      cleanupWindowShownItemSearch();
+      cleanupWindowHidden();
       cleanupDataChanged();
     };
   }, []);

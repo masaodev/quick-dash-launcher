@@ -39,7 +39,7 @@ const AdminApp: React.FC = () => {
     }
     initialize();
 
-    window.electronAPI.onSetActiveTab(setActiveTab);
+    const unsubscribeSetActiveTab = window.electronAPI.onSetActiveTab(setActiveTab);
     const unsubscribeImportModal = window.electronAPI.onOpenImportModal((modal) => {
       setPendingImportModal(modal);
     });
@@ -53,6 +53,7 @@ const AdminApp: React.FC = () => {
     });
 
     return () => {
+      unsubscribeSetActiveTab?.();
       unsubscribeImportModal?.();
       unsubscribeData?.();
       unsubscribeWindow?.();

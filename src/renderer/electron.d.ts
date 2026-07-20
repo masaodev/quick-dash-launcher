@@ -79,7 +79,7 @@ export interface ElectronAPI {
   onIconProgress: (
     eventType: 'start' | 'update' | 'complete',
     callback: (data: IconProgress) => void
-  ) => void;
+  ) => () => void;
   onLayoutProgress: (
     eventType: 'start' | 'update' | 'complete',
     callback: (data: LayoutExecutionProgress) => void
@@ -89,7 +89,7 @@ export interface ElectronAPI {
   onWindowShown: (callback: (startTime?: number) => void) => () => void;
   onWindowShownItemSearch: (callback: (startTime?: number) => void) => () => void;
   onWindowHidden: (callback: () => void) => () => void;
-  onSetActiveTab: (callback: (tab: 'settings' | 'edit' | 'other') => void) => void;
+  onSetActiveTab: (callback: (tab: 'settings' | 'edit' | 'other') => void) => () => void;
   onOpenImportModal: (callback: (modal: 'bookmark' | 'app') => void) => () => void;
   onDataChanged: (callback: () => void) => () => void;
   onSettingsChanged: (callback: () => void) => () => void;

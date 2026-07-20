@@ -1,29 +1,16 @@
 import type { LauncherItem } from '@common/types';
 
-import {
-  extractCustomUriIcon,
-  extractFileIconByExtension,
-  extractIcon,
-} from '../ipc/iconHandlers.js';
+import { getIconForItem as getIconForItemByType } from '../ipc/iconHandlers.js';
 
 /**
  * アイテムタイプに応じて適切なアイコンを取得
+ *
+ * 実装は iconHandlers の統合APIに一本化されている（かつて同一ロジックの
+ * 別実装が存在し、仕様の分岐点が2つに分散していたため委譲に変更）。
  */
 export async function getIconForItem(
   filePath: string,
-  itemType: LauncherItem['type'],
-  iconsFolder: string,
-  extensionsFolder: string
+  itemType: LauncherItem['type']
 ): Promise<string | undefined> {
-  switch (itemType) {
-    case 'app':
-      return (await extractIcon(filePath, iconsFolder)) ?? undefined;
-    case 'file':
-      return (await extractFileIconByExtension(filePath, extensionsFolder)) ?? undefined;
-    case 'customUri':
-      return (await extractCustomUriIcon(filePath, iconsFolder)) ?? undefined;
-    default:
-      // folder, url, clipboard はデフォルトアイコンを使用
-      return undefined;
-  }
+  return (await getIconForItemByType(filePath, itemType)) ?? undefined;
 }

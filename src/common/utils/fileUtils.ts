@@ -20,10 +20,10 @@ export class FileUtils {
   }
 
   /**
-   * テキストファイルを安全に書き込む（ディレクトリも自動作成）
+   * テキストファイルを安全に書き込む（ディレクトリも自動作成・アトミック）
    */
   static safeWriteTextFile(filePath: string, content: string): boolean {
-    return this.safeWriteFile(filePath, () => fs.writeFileSync(filePath, content, 'utf8'));
+    return this.atomicWrite(filePath, (tmpPath) => fs.writeFileSync(tmpPath, content, 'utf8'));
   }
 
   /**
@@ -51,29 +51,40 @@ export class FileUtils {
   }
 
   /**
-   * バイナリデータをファイルに書き込む（ディレクトリも自動作成）
+   * バイナリデータをファイルに書き込む（ディレクトリも自動作成・アトミック）
    */
   static writeBinaryFile(filePath: string, data: Buffer): boolean {
-    return this.safeWriteFile(filePath, () => fs.writeFileSync(filePath, data));
+    return this.atomicWrite(filePath, (tmpPath) => fs.writeFileSync(tmpPath, data));
   }
 
   /**
-   * ファイルを安全にコピーする（コピー先ディレクトリも自動作成）
+   * ファイルを安全にコピーする（コピー先ディレクトリも自動作成・アトミック）
    */
   static safeCopyFile(sourcePath: string, targetPath: string): boolean {
     if (!fs.existsSync(sourcePath)) {
       return false;
     }
-    return this.safeWriteFile(targetPath, () => fs.copyFileSync(sourcePath, targetPath));
+    return this.atomicWrite(targetPath, (tmpPath) => fs.copyFileSync(sourcePath, tmpPath));
   }
 
-  /** ディレクトリ作成+書き込み操作の共通パターン */
-  private static safeWriteFile(filePath: string, writeFn: () => void): boolean {
+  /**
+   * 一時ファイルへ書き込んでから rename する共通パターン。
+   * 直接上書きだと truncate→書き込みの途中でクラッシュ・電源断が起きた際に
+   * ファイルが破損する（データファイル全損につながる）ため、必ず経由すること。
+   */
+  private static atomicWrite(filePath: string, writeFn: (tmpPath: string) => void): boolean {
+    const tmpPath = `${filePath}.tmp`;
     try {
       this.ensureDirectory(path.dirname(filePath));
-      writeFn();
+      writeFn(tmpPath);
+      fs.renameSync(tmpPath, filePath);
       return true;
     } catch (_error) {
+      try {
+        fs.rmSync(tmpPath, { force: true });
+      } catch {
+        // 一時ファイルの掃除失敗は無視（次回の書き込みで上書きされる）
+      }
       return false;
     }
   }

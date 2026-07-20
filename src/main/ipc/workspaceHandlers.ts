@@ -112,13 +112,11 @@ export function setupWorkspaceHandlers(): void {
     (_event, filePaths: string[], groupId?: string, workspaceId?: string) =>
       withWorkspaceService(async (service) => {
         const addedItems: WorkspaceItem[] = [];
-        const iconsFolder = PathManager.getAppsFolder();
-        const extensionsFolder = PathManager.getExtensionsFolder();
 
         for (const filePath of filePaths) {
           try {
             const itemType = detectItemTypeSync(filePath);
-            await getIconForItem(filePath, itemType, iconsFolder, extensionsFolder);
+            await getIconForItem(filePath, itemType);
             const addedItem = await service.addItemFromPath(filePath, groupId, workspaceId);
             addedItems.push(addedItem);
             logger.info(

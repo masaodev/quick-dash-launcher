@@ -1,12 +1,13 @@
 import * as path from 'path';
 import * as fs from 'fs';
-import { exec } from 'child_process';
+import { exec, execFile } from 'child_process';
 import { promisify } from 'util';
 import * as os from 'os';
 import * as crypto from 'crypto';
 
 import { ipcMain, dialog, shell } from 'electron';
 import { iconLogger } from '@common/logger';
+import type { LauncherItem } from '@common/types';
 import { FileUtils } from '@common/utils/fileUtils';
 import { PathUtils } from '@common/utils/pathUtils';
 import extractFileIcon from 'extract-file-icon';
@@ -28,6 +29,7 @@ const CACHED_ICON_READ_CONCURRENCY = 16;
 let faviconService: FaviconService;
 
 const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 /** 環境変数を展開する（%VAR%形式） */
 function expandEnvironmentVariables(envPath: string): string {
@@ -143,7 +145,8 @@ export async function extractIcon(filePath: string, iconsFolder: string): Promis
       if (process.platform === 'win32' && !filePath.includes('\\') && !filePath.includes('/')) {
         iconLogger.info(`ファイル名のみが指定されています。PATHから検索を試みます: ${filePath}`);
         try {
-          const { stdout } = await execAsync(`where "${filePath}"`, { encoding: 'utf8' });
+          // shell経由のexecは"や&入りファイル名でコマンドインジェクションが起き得るため引数配列で渡す
+          const { stdout } = await execFileAsync('where', [filePath], { encoding: 'utf8' });
           const paths = stdout.trim().split('\n');
           if (paths.length > 0 && paths[0]) {
             resolvedPath = paths[0].trim();
@@ -291,14 +294,23 @@ async function getUriSchemeHandler(scheme: string): Promise<string | null> {
     // スキーマからコロンとスラッシュを除去
     const cleanScheme = scheme.replace(/[:\\/]/g, '');
 
+    // URIスキーム名として妥当な文字列のみ許可する（RFC 3986）。
+    // インポート等で不正な文字列が混入した場合にレジストリ照会へ渡さない
+    if (!/^[A-Za-z][A-Za-z0-9+.-]*$/.test(cleanScheme)) {
+      iconLogger.warn({ scheme }, '不正なURIスキーム名のためレジストリ照会をスキップします');
+      return null;
+    }
+
     // レジストリからスキーマハンドラーを取得
-    await execAsync(`reg query "HKEY_CLASSES_ROOT\\${cleanScheme}" /ve`, {
+    // （shell経由のexecは特殊文字でコマンドインジェクションが起き得るため引数配列で渡す）
+    await execFileAsync('reg', ['query', `HKEY_CLASSES_ROOT\\${cleanScheme}`, '/ve'], {
       encoding: 'utf8',
     });
 
     // レジストリから実行ファイルパスを取得
-    const { stdout: commandStdout } = await execAsync(
-      `reg query "HKEY_CLASSES_ROOT\\${cleanScheme}\\shell\\open\\command" /ve`,
+    const { stdout: commandStdout } = await execFileAsync(
+      'reg',
+      ['query', `HKEY_CLASSES_ROOT\\${cleanScheme}\\shell\\open\\command`, '/ve'],
       { encoding: 'utf8' }
     );
 
@@ -838,10 +850,13 @@ function getCustomIcon(customIconFileName: string): string | null {
   return FileUtils.readCachedBinaryAsBase64(customIconPath);
 }
 
-/** アイテムタイプに応じて適切なアイコンを取得（統合API） */
-async function getIconForItem(
+/**
+ * アイテムタイプに応じて適切なアイコンを取得（統合API）。
+ * サービス層からは services/iconService.ts のラッパー経由で利用する
+ */
+export async function getIconForItem(
   filePath: string,
-  itemType: 'url' | 'file' | 'folder' | 'app' | 'customUri'
+  itemType: LauncherItem['type']
 ): Promise<string | null> {
   const iconsFolder = PathManager.getAppsFolder();
   const extensionsFolder = PathManager.getExtensionsFolder();
@@ -854,6 +869,7 @@ async function getIconForItem(
     case 'customUri':
       return extractCustomUriIcon(filePath, iconsFolder);
     default:
+      // folder / url / clipboard はデフォルトアイコンを使用
       return null;
   }
 }

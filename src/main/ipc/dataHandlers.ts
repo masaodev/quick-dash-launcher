@@ -8,7 +8,6 @@ import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import {
   parseJsonDataFile,
   serializeJsonDataFile,
-  generateId,
   createEmptyJsonDataFile,
 } from '@common/utils/jsonParser';
 import { jsonItemToDisplayText } from '@common/utils/displayTextConverter';
@@ -25,20 +24,32 @@ import {
   isJsonClipboardItem,
   isJsonLayoutItem,
 } from '@common/types';
-import type { JsonItem, JsonDirOptions, JsonClipboardItem } from '@common/types';
+import type { JsonItem, JsonDirOptions } from '@common/types';
 import type { LayoutWindowEntry } from '@common/types/launcher';
 import type { RegisterItem } from '@common/types/register';
 import { isWindowInfo } from '@common/types/guards';
 import { IPC_CHANNELS } from '@common/ipcChannels';
-import { stripIconFromLayoutEntries } from '@common/utils/dataConverters';
+import {
+  stripIconFromLayoutEntries,
+  convertRegisterItemToJsonItem,
+} from '@common/utils/dataConverters';
 
 import { SettingsService } from '../services/settingsService.js';
 import { PathManager } from '../config/pathManager.js';
+import { showToastWindow } from '../services/overlayWindowService.js';
 
 import { setupBookmarkHandlers } from './bookmarkHandlers.js';
 import { setupAppImportHandlers } from './appImportHandlers.js';
 import { processDirectoryItem, processShortcut } from './directoryScanner.js';
 import { extractIcon } from './iconHandlers.js';
+
+/**
+ * パースに失敗した（破損の可能性がある）データファイル名の集合。
+ * 破損ファイルを空データや部分データで上書きすると復旧不能になるため、
+ * このセットに載っているファイルへの保存系操作は拒否する。
+ * ユーザーがファイルを修復（または削除）して再読み込みに成功すると解除される。
+ */
+const corruptedDataFiles = new Set<string>();
 
 /**
  * JSONファイルからAppItem配列を読み込む
@@ -66,8 +77,10 @@ async function loadJsonDataFile(
   let jsonData;
   try {
     jsonData = parseJsonDataFile(content);
+    corruptedDataFiles.delete(fileName);
   } catch (error) {
     dataLogger.error({ error, filePath }, 'JSONファイルのパースに失敗しました');
+    corruptedDataFiles.add(fileName);
     return items;
   }
 
@@ -306,6 +319,17 @@ export async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
     items.push(...jsonItems);
   }
 
+  // 破損ファイルがあった場合は無通知でアイテムが消えたように見えないよう警告する
+  if (corruptedDataFiles.size > 0) {
+    showToastWindow({
+      message: `データファイルの読み込みに失敗しました（破損の可能性）: ${[...corruptedDataFiles].join(', ')}`,
+      type: 'error',
+      duration: 6000,
+    }).catch((error) => {
+      dataLogger.error({ error }, '破損警告トーストの表示に失敗しました');
+    });
+  }
+
   // displayNameでソート
   items.sort((a, b) => {
     const aName = isWindowInfo(a) ? a.title : a.displayName;
@@ -351,6 +375,7 @@ async function loadEditableItems(configFolder: string): Promise<LoadEditableItem
 
       try {
         const jsonData = parseJsonDataFile(content);
+        corruptedDataFiles.delete(fileName);
 
         // 各JsonItemをEditableJsonItemに変換
         for (let index = 0; index < jsonData.items.length; index++) {
@@ -370,6 +395,7 @@ async function loadEditableItems(configFolder: string): Promise<LoadEditableItem
         }
       } catch (error) {
         dataLogger.error({ error, fileName }, 'JSONファイルのパースに失敗しました');
+        corruptedDataFiles.add(fileName);
         return {
           items: [],
           error: `JSONファイルのパースに失敗しました: ${fileName}`,
@@ -397,6 +423,14 @@ async function saveEditableItems(
   configFolder: string,
   editableItems: EditableJsonItem[]
 ): Promise<void> {
+  // 破損ファイルがあると読み込めなかったアイテムを空データで上書きしてしまうため保存を拒否する
+  if (corruptedDataFiles.size > 0) {
+    throw new Error(
+      `データファイルが破損している可能性があるため保存を中止しました: ${[...corruptedDataFiles].join(', ')}。` +
+        'ファイルを修復（または削除）してから再試行してください'
+    );
+  }
+
   const dataFiles = PathManager.getDataFiles();
 
   // ファイル別にグループ化
@@ -447,7 +481,15 @@ async function updateItemByIdWithCallback(
     const content = FileUtils.safeReadTextFile(filePath);
     if (!content) continue;
 
-    const jsonData = parseJsonDataFile(content);
+    let jsonData;
+    try {
+      jsonData = parseJsonDataFile(content);
+    } catch (error) {
+      // 破損ファイルはスキップして他ファイルの検索を続行（上書きによる喪失を防ぐ）
+      dataLogger.error({ error, filePath }, 'JSONファイルのパースに失敗したためスキップします');
+      corruptedDataFiles.add(fileName);
+      continue;
+    }
     const itemIndex = jsonData.items.findIndex((item) => item.id === id);
 
     if (itemIndex !== -1) {
@@ -604,23 +646,37 @@ async function registerItems(configFolder: string, items: RegisterItem[]): Promi
     const dataPath = path.join(configFolder, targetFile);
 
     // JSON形式で保存
-    await registerItemsToJsonFile(dataPath, targetItems);
+    await registerItemsToJsonFile(dataPath, targetFile, targetItems);
   }
 }
 
 /**
  * JSONファイルにアイテムを登録する
+ *
+ * @param dataPath - データファイルの絶対パス
+ * @param fileName - corruptedDataFilesのキーに使うファイル名（PathManager.getDataFiles()と同じ形式）
+ * @param items - 登録するアイテム
  */
-async function registerItemsToJsonFile(dataPath: string, items: RegisterItem[]): Promise<void> {
+async function registerItemsToJsonFile(
+  dataPath: string,
+  fileName: string,
+  items: RegisterItem[]
+): Promise<void> {
   // 既存のJSONデータを読み込む
   let jsonData = { version: '1.0', items: [] as JsonItem[] };
   const existingContent = FileUtils.safeReadTextFile(dataPath);
   if (existingContent) {
     try {
       jsonData = parseJsonDataFile(existingContent);
-    } catch {
-      // パースエラーの場合は新規作成
-      dataLogger.warn({ dataPath }, 'JSONファイルのパースに失敗、新規作成します');
+      corruptedDataFiles.delete(fileName);
+    } catch (error) {
+      // 破損ファイルを新規データで上書きすると既存アイテムが復旧不能になるため中止する
+      dataLogger.error({ error, dataPath }, 'JSONファイルのパースに失敗したため登録を中止します');
+      corruptedDataFiles.add(fileName);
+      throw new Error(
+        `データファイルが破損している可能性があるため登録を中止しました: ${fileName}。` +
+          'ファイルを修復（または削除）してから再試行してください'
+      );
     }
   }
 
@@ -633,125 +689,6 @@ async function registerItemsToJsonFile(dataPath: string, items: RegisterItem[]):
   // JSONファイルに書き込み
   const content = serializeJsonDataFile(jsonData);
   FileUtils.safeWriteTextFile(dataPath, content);
-}
-
-/**
- * RegisterItemをJsonItemに変換する
- */
-function convertRegisterItemToJsonItem(item: RegisterItem): JsonItem {
-  const id = generateId();
-  const now = Date.now();
-
-  if (item.itemCategory === 'dir') {
-    const options: JsonDirOptions = {};
-    if (item.dirOptions) {
-      if (item.dirOptions.depth !== undefined && item.dirOptions.depth !== 0) {
-        options.depth = item.dirOptions.depth;
-      }
-      if (item.dirOptions.types && item.dirOptions.types !== 'both') {
-        options.types = item.dirOptions.types;
-      }
-      if (item.dirOptions.filter) options.filter = item.dirOptions.filter;
-      if (item.dirOptions.exclude) options.exclude = item.dirOptions.exclude;
-      if (item.dirOptions.prefix) options.prefix = item.dirOptions.prefix;
-      if (item.dirOptions.suffix) options.suffix = item.dirOptions.suffix;
-    }
-
-    return {
-      id,
-      type: 'dir',
-      path: item.path,
-      options: Object.keys(options).length > 0 ? options : undefined,
-      updatedAt: now,
-    };
-  }
-
-  if (item.itemCategory === 'group') {
-    const groupItem: JsonItem = {
-      id,
-      type: 'group',
-      displayName: item.displayName,
-      itemNames: item.groupItemNames || [],
-      updatedAt: now,
-    };
-    if (item.memo) groupItem.memo = item.memo;
-    return groupItem;
-  }
-
-  if (item.itemCategory === 'window') {
-    const cfg = item.windowOperationConfig;
-    if (!cfg) {
-      throw new Error('windowOperationConfig is required for window items');
-    }
-
-    return {
-      id,
-      type: 'window' as const,
-      displayName: item.displayName,
-      windowTitle: cfg.windowTitle,
-      processName: cfg.processName,
-      x: cfg.x,
-      y: cfg.y,
-      width: cfg.width,
-      height: cfg.height,
-      moveToActiveMonitorCenter: cfg.moveToActiveMonitorCenter,
-      virtualDesktopNumber: cfg.virtualDesktopNumber,
-      activateWindow: cfg.activateWindow,
-      pinToAllDesktops: cfg.pinToAllDesktops,
-      memo: item.memo || undefined,
-      updatedAt: now,
-    };
-  }
-
-  if (item.itemCategory === 'clipboard') {
-    if (!item.clipboardDataRef) {
-      throw new Error('clipboardDataRef is required for clipboard items');
-    }
-
-    const clipboardItem: JsonClipboardItem = {
-      id,
-      type: 'clipboard',
-      displayName: item.displayName,
-      dataFileRef: item.clipboardDataRef,
-      savedAt: item.clipboardSavedAt || now,
-      formats: item.clipboardFormats || [],
-      preview: item.clipboardPreview,
-      updatedAt: now,
-    };
-
-    if (item.customIcon) clipboardItem.customIcon = item.customIcon;
-    if (item.memo) clipboardItem.memo = item.memo;
-
-    return clipboardItem;
-  }
-
-  if (item.itemCategory === 'layout') {
-    const layoutItem: JsonItem = {
-      id,
-      type: 'layout',
-      displayName: item.displayName,
-      entries: stripIconFromLayoutEntries(item.layoutEntries || []),
-      updatedAt: now,
-    };
-    if (item.memo) layoutItem.memo = item.memo;
-    return layoutItem;
-  }
-
-  // 通常アイテム
-  const launcherItem: JsonItem = {
-    id,
-    type: 'item',
-    displayName: item.displayName,
-    path: item.path,
-    updatedAt: now,
-  };
-
-  if (item.args) launcherItem.args = item.args;
-  if (item.customIcon) launcherItem.customIcon = item.customIcon;
-  if (item.windowConfig) launcherItem.windowConfig = item.windowConfig;
-  if (item.memo) launcherItem.memo = item.memo;
-
-  return launcherItem;
 }
 
 // データ変更を全ウィンドウに通知する関数

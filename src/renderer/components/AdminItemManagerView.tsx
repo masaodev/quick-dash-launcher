@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   DEFAULT_DATA_FILE,
   SimpleBookmarkItem,
@@ -161,10 +161,12 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     setHasUnsavedChanges(true);
   };
 
-  const handleEditItemClick = (editableItem: EditableJsonItem) => {
+  // AdminItemManagerList側のIPCリスナー登録effectが依存するため、
+  // 毎レンダーの再登録を防ぐ目的でuseCallback化している（以下2つも同様）
+  const handleEditItemClick = useCallback((editableItem: EditableJsonItem) => {
     setEditingItem(editableItem);
     setIsRegisterModalOpen(true);
-  };
+  }, []);
 
   const handleUpdateItem = (items: RegisterItem[]) => {
     if (editingItem && items.length > 0) {
@@ -220,67 +222,75 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     }
   };
 
-  const handleDeleteItems = (itemsToDelete: EditableJsonItem[]) => {
-    const updatedItems = workingItems.filter(
-      (item) =>
-        !itemsToDelete.some(
-          (deleteThisItem) =>
-            item.meta.sourceFile === deleteThisItem.meta.sourceFile &&
-            item.meta.lineNumber === deleteThisItem.meta.lineNumber
-        )
-    );
+  const handleDeleteItems = useCallback(
+    (itemsToDelete: EditableJsonItem[]) => {
+      const updatedItems = workingItems.filter(
+        (item) =>
+          !itemsToDelete.some(
+            (deleteThisItem) =>
+              item.meta.sourceFile === deleteThisItem.meta.sourceFile &&
+              item.meta.lineNumber === deleteThisItem.meta.lineNumber
+          )
+      );
 
-    // 行番号を振り直し
-    const reorderedItems = reorderItemNumbers(updatedItems);
-    setWorkingItems(reorderedItems);
-    setSelectedItems(new Set());
-    setHasUnsavedChanges(true);
-  };
+      // 行番号を振り直し
+      const reorderedItems = reorderItemNumbers(updatedItems);
+      setWorkingItems(reorderedItems);
+      setSelectedItems(new Set());
+      setHasUnsavedChanges(true);
+    },
+    [workingItems]
+  );
 
-  const handleDuplicateItems = (itemsToDuplicate: EditableJsonItem[]) => {
-    // 1. 複製対象アイテムを行番号でソート（挿入位置を正しく計算するため）
-    const sortedItems = [...itemsToDuplicate].sort((a, b) => a.meta.lineNumber - b.meta.lineNumber);
+  const handleDuplicateItems = useCallback(
+    (itemsToDuplicate: EditableJsonItem[]) => {
+      // 1. 複製対象アイテムを行番号でソート（挿入位置を正しく計算するため）
+      const sortedItems = [...itemsToDuplicate].sort(
+        (a, b) => a.meta.lineNumber - b.meta.lineNumber
+      );
 
-    // 2. 最後のアイテムの次に挿入する位置を特定
-    const lastItem = sortedItems[sortedItems.length - 1];
-    const insertAfterIndex = workingItems.findIndex(
-      (item) =>
-        item.meta.sourceFile === lastItem.meta.sourceFile &&
-        item.meta.lineNumber === lastItem.meta.lineNumber
-    );
+      // 2. 最後のアイテムの次に挿入する位置を特定
+      const lastItem = sortedItems[sortedItems.length - 1];
+      const insertAfterIndex = workingItems.findIndex(
+        (item) =>
+          item.meta.sourceFile === lastItem.meta.sourceFile &&
+          item.meta.lineNumber === lastItem.meta.lineNumber
+      );
 
-    if (insertAfterIndex === -1) {
-      logError('挿入位置の特定に失敗しました');
-      return;
-    }
+      if (insertAfterIndex === -1) {
+        logError('挿入位置の特定に失敗しました');
+        return;
+      }
 
-    // 3. 複製アイテムを作成（行番号は仮の値を設定）
-    const duplicatedItems = sortedItems.map((item) => ({
-      ...item,
-      item: { ...item.item, id: generateId(), updatedAt: Date.now() },
-      meta: {
-        ...item.meta,
-        lineNumber: -1, // 後でreorderItemNumbersで振り直される
-      },
-    }));
+      // 3. 複製アイテムを作成（行番号は仮の値を設定）
+      const duplicatedItems = sortedItems.map((item) => ({
+        ...item,
+        item: { ...item.item, id: generateId(), updatedAt: Date.now() },
+        meta: {
+          ...item.meta,
+          lineNumber: -1, // 後でreorderItemNumbersで振り直される
+        },
+      }));
 
-    // 4. workingItemsに挿入
-    const updatedItems = [
-      ...workingItems.slice(0, insertAfterIndex + 1),
-      ...duplicatedItems,
-      ...workingItems.slice(insertAfterIndex + 1),
-    ];
+      // 4. workingItemsに挿入
+      const updatedItems = [
+        ...workingItems.slice(0, insertAfterIndex + 1),
+        ...duplicatedItems,
+        ...workingItems.slice(insertAfterIndex + 1),
+      ];
 
-    // 5. 行番号を振り直し
-    const reorderedItems = reorderItemNumbers(updatedItems);
+      // 5. 行番号を振り直し
+      const reorderedItems = reorderItemNumbers(updatedItems);
 
-    // 6. 状態を更新
-    setWorkingItems(reorderedItems);
-    setHasUnsavedChanges(true);
+      // 6. 状態を更新
+      setWorkingItems(reorderedItems);
+      setHasUnsavedChanges(true);
 
-    // 7. 選択状態をクリア
-    setSelectedItems(new Set());
-  };
+      // 7. 選択状態をクリア
+      setSelectedItems(new Set());
+    },
+    [workingItems]
+  );
 
   const handleAddItem = () => {
     // 新しい空のアイテムを作成
@@ -327,7 +337,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
         setConfirmDialog((prev) => ({ ...prev, checkboxChecked: checked }));
       },
       onConfirm: () => {
-        setConfirmDialog({ ...confirmDialog, isOpen: false });
+        setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
 
         // editedItemsの変更をworkingItemsに反映
         let updatedItems = workingItems.map((item) => {
@@ -587,7 +597,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
         isOpen: true,
         message,
         onConfirm: () => {
-          setConfirmDialog({ ...confirmDialog, isOpen: false });
+          setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
           action();
         },
         danger: true,
@@ -615,7 +625,12 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     }
   };
 
-  const mergedItems = workingItems.map((item) => editedItems.get(getItemKey(item)) || item);
+  // 毎レンダーの全件再生成は、参照変化がAdminItemManagerListのアイコン取得effect等を
+  // 連鎖発火させるためuseMemoで抑制する
+  const mergedItems = useMemo(
+    () => workingItems.map((item) => editedItems.get(getItemKey(item)) || item),
+    [workingItems, editedItems]
+  );
 
   const discardAndSwitch = (action: () => void) => {
     action();
@@ -650,29 +665,33 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     handleFileChange(newFile);
   };
 
-  const filteredItems = mergedItems.filter((item) => {
-    // 選択されたデータファイルでフィルタリング
-    if (item.meta.sourceFile !== selectedDataFile) return false;
+  const filteredItems = useMemo(
+    () =>
+      mergedItems.filter((item) => {
+        // 選択されたデータファイルでフィルタリング
+        if (item.meta.sourceFile !== selectedDataFile) return false;
 
-    // 自動取込フィルタ
-    if (autoImportFilter !== 'all') {
-      const ruleId = isJsonLauncherItem(item.item) ? item.item.autoImportRuleId : undefined;
+        // 自動取込フィルタ
+        if (autoImportFilter !== 'all') {
+          const ruleId = isJsonLauncherItem(item.item) ? item.item.autoImportRuleId : undefined;
 
-      if (autoImportFilter === 'auto-import-only') return !!ruleId;
-      if (autoImportFilter === 'manual-only') return !ruleId;
-      // 特定ルールIDでフィルタ
-      if (ruleId !== autoImportFilter) return false;
-    }
+          if (autoImportFilter === 'auto-import-only') return !!ruleId;
+          if (autoImportFilter === 'manual-only') return !ruleId;
+          // 特定ルールIDでフィルタ
+          if (ruleId !== autoImportFilter) return false;
+        }
 
-    // 検索クエリによるフィルタリング
-    if (!searchQuery) return true;
-    const keywords = searchQuery
-      .toLowerCase()
-      .split(/\s+/)
-      .filter((k) => k.length > 0);
-    const itemText = item.displayText.toLowerCase();
-    return keywords.every((keyword) => itemText.includes(keyword));
-  });
+        // 検索クエリによるフィルタリング
+        if (!searchQuery) return true;
+        const keywords = searchQuery
+          .toLowerCase()
+          .split(/\s+/)
+          .filter((k) => k.length > 0);
+        const itemText = item.displayText.toLowerCase();
+        return keywords.every((keyword) => itemText.includes(keyword));
+      }),
+    [mergedItems, selectedDataFile, autoImportFilter, searchQuery]
+  );
 
   const visibleSelectedCount = filteredItems.filter((item) =>
     selectedItems.has(getItemKey(item))
@@ -853,7 +872,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
                   isOpen: true,
                   message: `${selectedEditableItems.length}行を削除しますか？`,
                   onConfirm: () => {
-                    setConfirmDialog({ ...confirmDialog, isOpen: false });
+                    setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
                     handleDeleteItems(selectedEditableItems);
                   },
                   danger: true,
@@ -990,7 +1009,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
 
       <ConfirmDialog
         isOpen={confirmDialog.isOpen}
-        onClose={() => setConfirmDialog({ ...confirmDialog, isOpen: false })}
+        onClose={() => setConfirmDialog((prev) => ({ ...prev, isOpen: false }))}
         onConfirm={confirmDialog.onConfirm}
         title={confirmDialog.title}
         message={confirmDialog.message}

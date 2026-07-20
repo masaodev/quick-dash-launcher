@@ -32,6 +32,8 @@ import {
   type JsonWindowItem,
 } from '../types/json-data.js';
 
+import { generateId } from './jsonParser.js';
+
 /**
  * LayoutWindowEntryの配列からiconフィールドを除去する（JSON保存用）
  */
@@ -428,21 +430,44 @@ export function convertEditableJsonItemToRegisterItem(
 
 /**
  * RegisterItemをJsonItemに変換する
+ *
+ * 登録フロー（メインプロセス）と編集フロー（レンダラー）の両方から使う唯一の変換関数。
+ * かつてmain側に別実装が存在しID採番やdirオプションの扱いが食い違っていたため、
+ * 変換仕様の変更は必ずこの関数に対して行うこと。
+ *
+ * @param registerItem - 変換元のRegisterItem
+ * @param existingId - 既存アイテムの編集時にIDを引き継ぐ場合に指定
  */
 export function convertRegisterItemToJsonItem(
   registerItem: RegisterItem,
   existingId?: string
 ): JsonItem {
-  const id = existingId || `temp-${Date.now()}`;
+  const id = existingId ?? generateId();
   const memo = registerItem.memo;
   const now = Date.now();
 
   if (registerItem.itemCategory === 'dir') {
+    // 既定値(depth:0, types:'both')や空オプションは保存しない
+    const options: JsonDirOptions = {};
+    const dirOptions = registerItem.dirOptions;
+    if (dirOptions) {
+      if (dirOptions.depth !== undefined && dirOptions.depth !== DIR_OPTIONS_DEFAULTS.depth) {
+        options.depth = dirOptions.depth;
+      }
+      if (dirOptions.types && dirOptions.types !== DIR_OPTIONS_DEFAULTS.types) {
+        options.types = dirOptions.types;
+      }
+      if (dirOptions.filter) options.filter = dirOptions.filter;
+      if (dirOptions.exclude) options.exclude = dirOptions.exclude;
+      if (dirOptions.prefix) options.prefix = dirOptions.prefix;
+      if (dirOptions.suffix) options.suffix = dirOptions.suffix;
+    }
+
     return {
       id,
       type: 'dir',
       path: registerItem.path,
-      options: registerItem.dirOptions,
+      options: Object.keys(options).length > 0 ? options : undefined,
       ...(memo && { memo }),
       updatedAt: now,
     };
@@ -461,35 +486,41 @@ export function convertRegisterItemToJsonItem(
 
   if (registerItem.itemCategory === 'window') {
     const config = registerItem.windowOperationConfig;
+    if (!config) {
+      throw new Error('windowOperationConfig is required for window items');
+    }
     return {
       id,
       type: 'window',
-      displayName: config?.displayName || registerItem.displayName,
-      windowTitle: config?.windowTitle || '',
-      processName: config?.processName,
-      x: config?.x,
-      y: config?.y,
-      width: config?.width,
-      height: config?.height,
-      moveToActiveMonitorCenter: config?.moveToActiveMonitorCenter,
-      virtualDesktopNumber: config?.virtualDesktopNumber,
-      activateWindow: config?.activateWindow,
-      pinToAllDesktops: config?.pinToAllDesktops,
+      displayName: config.displayName || registerItem.displayName,
+      windowTitle: config.windowTitle,
+      processName: config.processName,
+      x: config.x,
+      y: config.y,
+      width: config.width,
+      height: config.height,
+      moveToActiveMonitorCenter: config.moveToActiveMonitorCenter,
+      virtualDesktopNumber: config.virtualDesktopNumber,
+      activateWindow: config.activateWindow,
+      pinToAllDesktops: config.pinToAllDesktops,
       ...(memo && { memo }),
       updatedAt: now,
     };
   }
 
   if (registerItem.itemCategory === 'clipboard') {
+    if (!registerItem.clipboardDataRef) {
+      throw new Error('clipboardDataRef is required for clipboard items');
+    }
     return {
       id,
       type: 'clipboard',
       displayName: registerItem.displayName,
-      dataFileRef: registerItem.clipboardDataRef || '',
+      dataFileRef: registerItem.clipboardDataRef,
       savedAt: registerItem.clipboardSavedAt || now,
       formats: registerItem.clipboardFormats || [],
       preview: registerItem.clipboardPreview,
-      customIcon: registerItem.customIcon,
+      ...(registerItem.customIcon && { customIcon: registerItem.customIcon }),
       ...(memo && { memo }),
       updatedAt: now,
     };
@@ -511,9 +542,9 @@ export function convertRegisterItemToJsonItem(
     type: 'item',
     displayName: registerItem.displayName,
     path: registerItem.path,
-    args: registerItem.args,
-    customIcon: registerItem.customIcon,
-    windowConfig: registerItem.windowConfig,
+    ...(registerItem.args && { args: registerItem.args }),
+    ...(registerItem.customIcon && { customIcon: registerItem.customIcon }),
+    ...(registerItem.windowConfig && { windowConfig: registerItem.windowConfig }),
     ...(memo && { memo }),
     updatedAt: now,
   };

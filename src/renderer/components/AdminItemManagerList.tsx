@@ -84,8 +84,11 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
     direction: SortDirection;
   }>({ column: null, direction: 'asc' });
 
-  // アイコンキャッシュ: Map<行番号, base64データURL>
-  const [itemIcons, setItemIcons] = useState<Map<number, string>>(new Map());
+  // アイコンキャッシュ: Map<パス, base64データURL>
+  const [itemIcons, setItemIcons] = useState<Map<string, string>>(new Map());
+  // 取得試行済みのパス→updatedAt。フィルタ・選択等でeditableItemsの参照が変わるたびに
+  // 全アイコンをIPC再取得しないよう、未取得または内容が更新されたアイテムのみ取得する
+  const fetchedIconVersionsRef = useRef<Map<string, number | undefined>>(new Map());
 
   // 右クリックされたアイテムを保存（コンテキストメニューイベント用）
   const contextMenuItemsRef = useRef<EditableJsonItem[]>([]);
@@ -103,12 +106,18 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
     danger: false,
   });
 
-  // すべてのアイテムアイコンを取得（ファビコン + 自動取得 + カスタム）
+  // アイテムアイコンを取得（ファビコン + 自動取得 + カスタム）
   useEffect(() => {
     const loadIcons = async () => {
-      // editableItemsからLauncherItemsに変換（type='item'のみ、パスが空でないもののみ）
+      // editableItemsからLauncherItemsに変換（type='item'のみ、パスが空でないもののみ）。
+      // 取得済みかつ未更新のアイテムはスキップし、差分のみIPCで取得する
+      const fetched = fetchedIconVersionsRef.current;
       const launcherItems = editableItems
-        .filter((editableItem) => editableItem.item.type === 'item' && editableItem.item.path)
+        .filter((editableItem) => {
+          const jsonItem = editableItem.item;
+          if (jsonItem.type !== 'item' || !jsonItem.path) return false;
+          return !fetched.has(jsonItem.path) || fetched.get(jsonItem.path) !== jsonItem.updatedAt;
+        })
         .map((editableItem) => {
           const jsonItem = editableItem.item;
           if (isJsonLauncherItem(jsonItem)) {
@@ -123,30 +132,29 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
         })
         .filter((item): item is LauncherItem => item !== null);
 
+      if (launcherItems.length === 0) {
+        return;
+      }
+
+      editableItems.forEach((editableItem) => {
+        const jsonItem = editableItem.item;
+        if (jsonItem.type === 'item' && jsonItem.path) {
+          fetched.set(jsonItem.path, jsonItem.updatedAt);
+        }
+      });
+
       // loadCachedIcons()でアイコンを一括取得（Main Windowと同じAPI）
       const iconCache = await window.electronAPI.loadCachedIcons(launcherItems);
 
-      // パス→アイコンのMapを作成
-      const pathToIconMap = new Map<string, string>();
-      Object.entries(iconCache).forEach(([path, iconData]) => {
-        if (iconData) {
-          pathToIconMap.set(path, iconData);
-        }
-      });
-
-      // 行番号→アイコンのMapに変換（既存のitemIcons stateと互換性を保つ）
-      const lineNumberToIconMap = new Map<number, string>();
-      editableItems.forEach((editableItem) => {
-        if (editableItem.item.type === 'item') {
-          const path = editableItem.item.path || '';
-          const iconData = pathToIconMap.get(path);
+      setItemIcons((prev) => {
+        const next = new Map(prev);
+        Object.entries(iconCache).forEach(([path, iconData]) => {
           if (iconData) {
-            lineNumberToIconMap.set(editableItem.meta.lineNumber, iconData);
+            next.set(path, iconData);
           }
-        }
+        });
+        return next;
       });
-
-      setItemIcons(lineNumberToIconMap);
     };
 
     loadIcons();
@@ -517,7 +525,7 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
   const renderIconCell = (item: EditableJsonItem) => {
     // 単一アイテムの場合のみアイコンを表示
     if (item.item.type === 'item') {
-      const iconData = itemIcons.get(item.meta.lineNumber);
+      const iconData = itemIcons.get(item.item.path || '');
       if (iconData) {
         return <img src={iconData} alt="" className="item-icon-image" />;
       }
