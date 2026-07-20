@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import type { EditableJsonItem } from '@common/types/editableItem';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import type {
@@ -508,6 +509,22 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
     });
   }, [editableItems, sortState]);
 
+  // 行の仮想化: スクロールコンテナは .editable-raw-item-list。
+  // テーブル構造（sticky thead・列幅）を保つため、可視範囲外は上下のスペーサー行で高さを確保する
+  const listRef = useRef<HTMLDivElement>(null);
+  const rowVirtualizer = useVirtualizer({
+    count: sortedItems.length,
+    getScrollElement: () => listRef.current,
+    estimateSize: () => 28, // 行高26px + 境界線。折り返し行はmeasureElementで実測補正
+    overscan: 10,
+  });
+  const virtualRows = rowVirtualizer.getVirtualItems();
+  const paddingTop = virtualRows.length > 0 ? virtualRows[0].start : 0;
+  const paddingBottom =
+    virtualRows.length > 0
+      ? rowVirtualizer.getTotalSize() - virtualRows[virtualRows.length - 1].end
+      : 0;
+
   // ソートインジケーターを描画
   const renderSortIndicator = (column: SortColumn): React.ReactNode => {
     const isActive = sortState.column === column;
@@ -590,7 +607,7 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
   const someSelected = editableItems.some((item) => selectedItems.has(getItemKey(item)));
 
   return (
-    <div className="editable-raw-item-list">
+    <div className="editable-raw-item-list" ref={listRef}>
       <table className="raw-items-table">
         <thead>
           <tr>
@@ -654,13 +671,21 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
           </tr>
         </thead>
         <tbody>
-          {sortedItems.map((item) => {
+          {paddingTop > 0 && (
+            <tr aria-hidden="true">
+              <td colSpan={8} style={{ height: paddingTop, padding: 0, border: 'none' }} />
+            </tr>
+          )}
+          {virtualRows.map((virtualRow) => {
+            const item = sortedItems[virtualRow.index];
             const itemKey = getItemKey(item);
             const isSelected = selectedItems.has(itemKey);
 
             return (
               <tr
                 key={itemKey}
+                data-index={virtualRow.index}
+                ref={rowVirtualizer.measureElement}
                 className={`raw-item-row ${isSelected ? 'selected' : ''} ${item.item.type}`}
                 onContextMenu={(e) => handleContextMenu(e, item)}
               >
@@ -708,6 +733,11 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
               </tr>
             );
           })}
+          {paddingBottom > 0 && (
+            <tr aria-hidden="true">
+              <td colSpan={8} style={{ height: paddingBottom, padding: 0, border: 'none' }} />
+            </tr>
+          )}
         </tbody>
       </table>
 

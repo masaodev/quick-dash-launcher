@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react';
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import type { ScannedAppItem, DuplicateHandlingOption } from '@common/types';
 import type { EditableJsonItem } from '@common/types/editableItem';
 import { checkAppDuplicates } from '@common/utils/appDuplicateDetector';
@@ -42,7 +43,10 @@ function AppImportModal({
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [scanDuration, setScanDuration] = useState<number | null>(null);
-  const [icons, setIcons] = useState<Record<string, string | null>>({});
+  // アイコンはrefのMapに蓄積し、バッチごとにバージョン更新で再描画する
+  // （stateのオブジェクトコピーだとバッチ毎に全件コピーでO(N²)になるため）
+  const iconsRef = useRef<Map<string, string | null>>(new Map());
+  const [, setIconVersion] = useState(0);
   const [filterOptions, setFilterOptions] = useState<FilterOptions>(DEFAULT_FILTER_OPTIONS);
   const [viewMode, setViewMode] = useState<'filtered' | 'all' | 'excluded'>('filtered');
   const modalRef = useRef<HTMLDivElement>(null);
@@ -157,39 +161,61 @@ function AppImportModal({
     );
   }, [apps, coreFiltered, coreExcluded, viewMode, searchQuery]);
 
+  // 行の仮想化: スクロールコンテナは .app-list-container。
+  // テーブル構造（sticky thead・列幅）を保つため、可視範囲外は上下のスペーサー行で高さを確保する
+  const listRef = useRef<HTMLDivElement>(null);
+  const rowVirtualizer = useVirtualizer({
+    count: filteredApps.length,
+    getScrollElement: () => listRef.current,
+    estimateSize: () => 34, // パディング + 1行分のテキスト。折り返し行はmeasureElementで実測補正
+    overscan: 10,
+  });
+  const virtualRows = rowVirtualizer.getVirtualItems();
+  const paddingTop = virtualRows.length > 0 ? virtualRows[0].start : 0;
+  const paddingBottom =
+    virtualRows.length > 0
+      ? rowVirtualizer.getTotalSize() - virtualRows[virtualRows.length - 1].end
+      : 0;
+
   // モーダル表示時にスタートメニューを自動スキャン
   useEffect(() => {
-    if (isOpen) {
-      const scanApps = async () => {
-        setLoading(true);
-        try {
-          const result = await window.electronAPI.scanInstalledApps();
-          setApps(result.apps);
-          setScanDuration(result.scanDuration);
+    if (!isOpen) return;
 
-          if (result.apps.length === 0) {
-            setAlertDialog({
-              isOpen: true,
-              message: 'インストール済みアプリが見つかりませんでした',
-              type: 'info',
-            });
-          }
+    // モーダルを閉じたらスキャン結果の反映とアイコン取得ループを中断する
+    const controller = new AbortController();
+    const scanApps = async () => {
+      setLoading(true);
+      try {
+        const result = await window.electronAPI.scanInstalledApps();
+        if (controller.signal.aborted) return;
+        setApps(result.apps);
+        setScanDuration(result.scanDuration);
 
-          // バックグラウンドでアイコンを取得
-          fetchIcons(result.apps);
-        } catch (error) {
-          logError('Error scanning installed apps:', error);
+        if (result.apps.length === 0) {
           setAlertDialog({
             isOpen: true,
-            message: 'アプリのスキャンに失敗しました',
-            type: 'error',
+            message: 'インストール済みアプリが見つかりませんでした',
+            type: 'info',
           });
-        } finally {
-          setLoading(false);
         }
-      };
-      scanApps();
-    }
+
+        // バックグラウンドでアイコンを取得
+        fetchIcons(result.apps, controller.signal);
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        logError('Error scanning installed apps:', error);
+        setAlertDialog({
+          isOpen: true,
+          message: 'アプリのスキャンに失敗しました',
+          type: 'error',
+        });
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    };
+    scanApps();
+
+    return () => controller.abort();
   }, [isOpen]);
 
   // フィルタ適用後のアプリが変わったら初期選択を更新
@@ -200,9 +226,10 @@ function AppImportModal({
   }, [coreFiltered, apps.length, loading]);
 
   // バックグラウンドでアイコンを非同期取得
-  const fetchIcons = async (appList: ScannedAppItem[]) => {
+  const fetchIcons = async (appList: ScannedAppItem[], signal: AbortSignal) => {
     const BATCH_SIZE = 10;
     for (let i = 0; i < appList.length; i += BATCH_SIZE) {
+      if (signal.aborted) return;
       const batch = appList.slice(i, i + BATCH_SIZE);
       const results = await Promise.all(
         batch.map(async (app) => {
@@ -214,13 +241,11 @@ function AppImportModal({
           }
         })
       );
-      setIcons((prev) => {
-        const updated = { ...prev };
-        for (const { path: p, icon } of results) {
-          updated[p] = icon;
-        }
-        return updated;
-      });
+      if (signal.aborted) return;
+      for (const { path: p, icon } of results) {
+        iconsRef.current.set(p, icon);
+      }
+      setIconVersion((v) => v + 1);
     }
   };
 
@@ -296,7 +321,7 @@ function AppImportModal({
     setSelectedIds(new Set());
     setSearchQuery('');
     setScanDuration(null);
-    setIcons({});
+    iconsRef.current = new Map();
     setFilterOptions(DEFAULT_FILTER_OPTIONS);
     setViewMode('filtered');
     setDuplicateHandling('skip');
@@ -439,7 +464,7 @@ function AppImportModal({
         </div>
 
         {apps.length > 0 && (
-          <div className="app-list-container">
+          <div className="app-list-container" ref={listRef}>
             <table className="app-table">
               <thead>
                 <tr>
@@ -451,31 +476,50 @@ function AppImportModal({
                 </tr>
               </thead>
               <tbody>
-                {filteredApps.map((app) => (
-                  <tr key={app.id} className={selectedIds.has(app.id) ? 'selected' : ''}>
-                    <td className="checkbox-column">
-                      <input
-                        type="checkbox"
-                        checked={selectedIds.has(app.id)}
-                        onChange={() => handleToggleApp(app.id)}
-                      />
-                    </td>
-                    <td className="icon-column">
-                      {icons[app.shortcutPath] ? (
-                        <img src={icons[app.shortcutPath]!} alt="" className="app-icon" />
-                      ) : (
-                        <span className="app-icon-placeholder" />
-                      )}
-                    </td>
-                    <td className="name-column">{app.displayName}</td>
-                    <td className="type-column">
-                      <span className="app-type-badge" title={app.targetPath}>
-                        {app.targetExtension}
-                      </span>
-                    </td>
-                    <td className="path-column">{app.targetPath}</td>
+                {paddingTop > 0 && (
+                  <tr aria-hidden="true">
+                    <td colSpan={5} style={{ height: paddingTop, padding: 0, border: 'none' }} />
                   </tr>
-                ))}
+                )}
+                {virtualRows.map((virtualRow) => {
+                  const app = filteredApps[virtualRow.index];
+                  const icon = iconsRef.current.get(app.shortcutPath);
+                  return (
+                    <tr
+                      key={app.id}
+                      data-index={virtualRow.index}
+                      ref={rowVirtualizer.measureElement}
+                      className={selectedIds.has(app.id) ? 'selected' : ''}
+                    >
+                      <td className="checkbox-column">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(app.id)}
+                          onChange={() => handleToggleApp(app.id)}
+                        />
+                      </td>
+                      <td className="icon-column">
+                        {icon ? (
+                          <img src={icon} alt="" className="app-icon" />
+                        ) : (
+                          <span className="app-icon-placeholder" />
+                        )}
+                      </td>
+                      <td className="name-column">{app.displayName}</td>
+                      <td className="type-column">
+                        <span className="app-type-badge" title={app.targetPath}>
+                          {app.targetExtension}
+                        </span>
+                      </td>
+                      <td className="path-column">{app.targetPath}</td>
+                    </tr>
+                  );
+                })}
+                {paddingBottom > 0 && (
+                  <tr aria-hidden="true">
+                    <td colSpan={5} style={{ height: paddingBottom, padding: 0, border: 'none' }} />
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
