@@ -34,8 +34,7 @@ import {
   setAppQuitting as setWorkspaceAppQuitting,
 } from './workspaceWindowManager';
 import { closeAllDetachedGroupWindows, setDetachedAppQuitting } from './detachedGroupWindowManager';
-import { destroyToastWindow } from './services/toastWindowService.js';
-import { destroyLayoutProgressWindow } from './services/layoutProgressWindowService.js';
+import { destroyOverlayWindow } from './services/overlayWindowService.js';
 import { BookmarkAutoImportService } from './services/bookmarkAutoImportService.js';
 
 // 多重起動時に完全に独立したuserDataを使用
@@ -161,6 +160,5 @@ app.on('will-quit', () => {
   closeWorkspaceWindow();
   closeAllDetachedGroupWindows();
   closeSplashWindow();
-  destroyToastWindow();
-  destroyLayoutProgressWindow();
+  destroyOverlayWindow();
 });

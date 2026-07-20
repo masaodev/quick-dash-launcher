@@ -23,7 +23,7 @@ import {
   showLayoutProgressWindow,
   hideLayoutProgressWindow,
   getLayoutProgressWindow,
-} from '../services/layoutProgressWindowService.js';
+} from '../services/overlayWindowService.js';
 import { runWithConcurrency } from '../utils/concurrency.js';
 
 /**

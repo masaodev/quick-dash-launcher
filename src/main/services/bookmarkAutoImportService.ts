@@ -29,7 +29,7 @@ import {
 import { notifyDataChanged } from '../ipc/dataHandlers.js';
 
 import { SettingsService } from './settingsService.js';
-import { showToastWindow } from './toastWindowService.js';
+import { showToastWindow } from './overlayWindowService.js';
 
 /**
  * ブックマーク自動取込サービス
