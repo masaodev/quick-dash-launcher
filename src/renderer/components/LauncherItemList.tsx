@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   isLauncherItem,
   isWindowInfo,
@@ -13,6 +14,18 @@ import { logError } from '../utils/debug';
 
 import MemoViewModal from './MemoViewModal';
 import '../styles/components/MemoViewModal.css';
+
+const DEFAULT_ICONS: Record<string, string> = {
+  url: '🌐',
+  folder: '📁',
+  app: '⚙️',
+  file: '📄',
+  customUri: '🔗',
+  group: '📦',
+  window: '🪟',
+  clipboard: '📋',
+  layout: '🖥️',
+};
 
 interface ItemListProps {
   items: AppItem[];
@@ -44,10 +57,16 @@ const LauncherItemList: React.FC<ItemListProps> = ({
   onRefreshWindows,
 }) => {
   const listRef = useRef<HTMLDivElement>(null);
-  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
   const [memoModalOpen, setMemoModalOpen] = useState(false);
   const [memoModalItem, setMemoModalItem] = useState<{ name: string; memo: string } | null>(null);
+
+  const rowVirtualizer = useVirtualizer({
+    count: items.length,
+    getScrollElement: () => listRef.current,
+    estimateSize: () => 32, // 実測前の推定行高（padding + アイコン24px）
+    overscan: 8,
+  });
 
   const openMemoModal = (item: AppItem): void => {
     const name = isWindowInfo(item) ? item.title : item.displayName;
@@ -56,22 +75,53 @@ const LauncherItemList: React.FC<ItemListProps> = ({
     setMemoModalOpen(true);
   };
 
+  // 選択中アイテムを可視範囲へスクロール（仮想化のため scrollToIndex を使用）
   useEffect(() => {
-    itemRefs.current[selectedIndex]?.scrollIntoView({
-      block: 'nearest',
-      behavior: 'smooth',
-    });
-  }, [selectedIndex]);
+    if (selectedIndex >= 0 && selectedIndex < items.length) {
+      rowVirtualizer.scrollToIndex(selectedIndex, { align: 'auto' });
+    }
+    // rowVirtualizerは同一インスタンスが維持されるため依存に含めない
+  }, [selectedIndex, items.length]);
+
+  // リスナーからは常に最新のprops/itemsをref経由で参照する。
+  // これにより下のuseEffectの依存を空にでき、レンダーごとの
+  // IPCリスナー解除・再登録（約14件）を初回1回の登録だけにできる。
+  const latestRef = useRef({
+    items,
+    onItemExecute,
+    onCopyPath,
+    onCopyParentPath,
+    onOpenParentFolder,
+    onCopyShortcutPath,
+    onCopyShortcutParentPath,
+    onOpenShortcutParentFolder,
+    onEditItem,
+    onRefreshWindows,
+  });
+  latestRef.current = {
+    items,
+    onItemExecute,
+    onCopyPath,
+    onCopyParentPath,
+    onOpenParentFolder,
+    onCopyShortcutPath,
+    onCopyShortcutParentPath,
+    onOpenShortcutParentFolder,
+    onEditItem,
+    onRefreshWindows,
+  };
 
   useEffect(() => {
     /** hwndからウィンドウタイトルを検索する */
     function findWindowTitle(hwnd: number | bigint): string {
-      const found = items.find((item) => isWindowInfo(item) && item.hwnd === hwnd);
+      const found = latestRef.current.items.find(
+        (item) => isWindowInfo(item) && item.hwnd === hwnd
+      );
       return found && isWindowInfo(found) ? found.title : '不明なウィンドウ';
     }
 
     const cleanupEditItem = window.electronAPI.onLauncherMenuEditItem((item) => {
-      onEditItem?.(item);
+      latestRef.current.onEditItem?.(item);
     });
 
     const cleanupAddToWorkspace = window.electronAPI.onLauncherMenuAddToWorkspace(async (item) => {
@@ -97,8 +147,17 @@ const LauncherItemList: React.FC<ItemListProps> = ({
       }
     });
 
-    function createLauncherItemHandler(handler?: (item: LauncherItem) => void) {
+    type LauncherItemHandlerKey =
+      | 'onCopyPath'
+      | 'onCopyParentPath'
+      | 'onOpenParentFolder'
+      | 'onCopyShortcutPath'
+      | 'onCopyShortcutParentPath'
+      | 'onOpenShortcutParentFolder';
+
+    function createLauncherItemHandler(handlerKey: LauncherItemHandlerKey) {
       return (item: AppItem) => {
+        const handler = latestRef.current[handlerKey];
         if (isLauncherItem(item) && handler) {
           handler(item);
         }
@@ -123,7 +182,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
             : `${errorPrefix}に失敗しました: ${result.error || '不明なエラー'}`,
         });
         if (result.success && itemType === 'windowMoveDesktop') {
-          await onRefreshWindows?.();
+          await latestRef.current.onRefreshWindows?.();
         }
       } catch (error) {
         logError(`${errorPrefix}に失敗しました:`, error);
@@ -138,22 +197,24 @@ const LauncherItemList: React.FC<ItemListProps> = ({
     const cleanups = [
       cleanupEditItem,
       cleanupAddToWorkspace,
-      window.electronAPI.onLauncherMenuCopyPath(createLauncherItemHandler(onCopyPath)),
-      window.electronAPI.onLauncherMenuCopyParentPath(createLauncherItemHandler(onCopyParentPath)),
+      window.electronAPI.onLauncherMenuCopyPath(createLauncherItemHandler('onCopyPath')),
+      window.electronAPI.onLauncherMenuCopyParentPath(
+        createLauncherItemHandler('onCopyParentPath')
+      ),
       window.electronAPI.onLauncherMenuOpenParentFolder(
-        createLauncherItemHandler(onOpenParentFolder)
+        createLauncherItemHandler('onOpenParentFolder')
       ),
       window.electronAPI.onLauncherMenuCopyShortcutPath(
-        createLauncherItemHandler(onCopyShortcutPath)
+        createLauncherItemHandler('onCopyShortcutPath')
       ),
       window.electronAPI.onLauncherMenuCopyShortcutParentPath(
-        createLauncherItemHandler(onCopyShortcutParentPath)
+        createLauncherItemHandler('onCopyShortcutParentPath')
       ),
       window.electronAPI.onLauncherMenuOpenShortcutParentFolder(
-        createLauncherItemHandler(onOpenShortcutParentFolder)
+        createLauncherItemHandler('onOpenShortcutParentFolder')
       ),
       window.electronAPI.onLauncherMenuShowMemo(openMemoModal),
-      window.electronAPI.onWindowMenuActivate(onItemExecute),
+      window.electronAPI.onWindowMenuActivate((item) => latestRef.current.onItemExecute(item)),
       window.electronAPI.onMoveWindowToDesktop(async (hwnd, desktopNumber) => {
         await handleWindowOperation(
           (h) => window.electronAPI.moveWindowToDesktop(h, desktopNumber),
@@ -184,29 +245,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
     return () => {
       cleanups.forEach((cleanup) => cleanup());
     };
-  }, [
-    onEditItem,
-    onItemExecute,
-    onCopyPath,
-    onCopyParentPath,
-    onOpenParentFolder,
-    onCopyShortcutPath,
-    onCopyShortcutParentPath,
-    onOpenShortcutParentFolder,
-    onRefreshWindows,
-  ]);
-
-  const DEFAULT_ICONS: Record<string, string> = {
-    url: '🌐',
-    folder: '📁',
-    app: '⚙️',
-    file: '📄',
-    customUri: '🔗',
-    group: '📦',
-    window: '🪟',
-    clipboard: '📋',
-    layout: '🖥️',
-  };
+  }, []);
 
   function getItemIcon(item: AppItem): React.ReactNode {
     const customIcon =
@@ -264,90 +303,96 @@ const LauncherItemList: React.FC<ItemListProps> = ({
   };
 
   return (
-    <div className="item-list" ref={listRef}>
-      {items.map((item, index) => {
-        const isWindow = isWindowInfo(item);
-        const isGroup = isGroupItem(item);
-        const isWindowOperation = isWindowItem(item);
-        const isClipboard = isClipboardItem(item);
-        const isDraggable = !isWindow;
-        const isDragging = draggedItemIndex === index;
+    <>
+      <div className="item-list" ref={listRef}>
+        <div className="item-list-inner" style={{ height: `${rowVirtualizer.getTotalSize()}px` }}>
+          {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+            const index = virtualRow.index;
+            const item = items[index];
+            const isWindow = isWindowInfo(item);
+            const isGroup = isGroupItem(item);
+            const isWindowOperation = isWindowItem(item);
+            const isClipboard = isClipboardItem(item);
+            const isDraggable = !isWindow;
+            const isDragging = draggedItemIndex === index;
 
-        let itemName: string;
-        if (isWindow) {
-          itemName = item.processName ? `${item.title} (${item.processName})` : item.title;
-        } else {
-          itemName = item.displayName;
-        }
+            let itemName: string;
+            if (isWindow) {
+              itemName = item.processName ? `${item.title} (${item.processName})` : item.title;
+            } else {
+              itemName = item.displayName;
+            }
 
-        let itemKey: string;
-        if (isWindow) {
-          itemKey = `window-${item.hwnd}`;
-        } else if (isWindowOperation) {
-          itemKey = `windowop-${itemName}-${index}`;
-        } else {
-          itemKey = `${itemName}-${index}`;
-        }
+            let itemKey: string;
+            if (isWindow) {
+              itemKey = `window-${item.hwnd}`;
+            } else if (isWindowOperation) {
+              itemKey = `windowop-${itemName}-${index}`;
+            } else {
+              itemKey = `${itemName}-${index}`;
+            }
 
-        const classNames = [
-          'item',
-          index === selectedIndex && 'selected',
-          isGroup && 'group-item',
-          isWindow && 'window-item',
-          isWindowOperation && 'window-operation-item',
-          isClipboard && 'clipboard-item',
-          isDragging && 'dragging',
-        ]
-          .filter(Boolean)
-          .join(' ');
+            const classNames = [
+              'item',
+              index === selectedIndex && 'selected',
+              isGroup && 'group-item',
+              isWindow && 'window-item',
+              isWindowOperation && 'window-operation-item',
+              isClipboard && 'clipboard-item',
+              isDragging && 'dragging',
+            ]
+              .filter(Boolean)
+              .join(' ');
 
-        const hasMemo = !isWindow && 'memo' in item && item.memo;
+            const hasMemo = !isWindow && 'memo' in item && item.memo;
 
-        return (
-          <div
-            key={itemKey}
-            ref={(el) => {
-              itemRefs.current[index] = el;
-            }}
-            className={classNames}
-            draggable={isDraggable}
-            onDragStart={(e) => handleDragStart(e, item, index)}
-            onDragEnd={handleDragEnd}
-            onClick={() => {
-              onItemSelect(index);
-              onItemExecute(item);
-            }}
-            onMouseEnter={() => onItemSelect(index)}
-            onContextMenu={(e) => handleContextMenu(e, item)}
-            title={getTooltipText(item)}
-          >
-            <span className="item-icon">{getItemIcon(item)}</span>
-            <span className="item-name">
-              {itemName}
-              {isGroup && (
-                <span className="group-count"> ({(item as GroupItem).itemNames.length}個)</span>
-              )}
-              {isLauncherItem(item) && item.windowConfig?.title && (
-                <span
-                  className="window-title-badge"
-                  title={`ウィンドウ検索: ${item.windowConfig.title}`}
-                >
-                  🔍
+            return (
+              <div
+                key={itemKey}
+                data-index={index}
+                ref={rowVirtualizer.measureElement}
+                className={`item-row-wrapper ${classNames}`}
+                style={{ transform: `translateY(${virtualRow.start}px)` }}
+                draggable={isDraggable}
+                onDragStart={(e) => handleDragStart(e, item, index)}
+                onDragEnd={handleDragEnd}
+                onClick={() => {
+                  onItemSelect(index);
+                  onItemExecute(item);
+                }}
+                onMouseEnter={() => onItemSelect(index)}
+                onContextMenu={(e) => handleContextMenu(e, item)}
+                title={getTooltipText(item)}
+              >
+                <span className="item-icon">{getItemIcon(item)}</span>
+                <span className="item-name">
+                  {itemName}
+                  {isGroup && (
+                    <span className="group-count"> ({(item as GroupItem).itemNames.length}個)</span>
+                  )}
+                  {isLauncherItem(item) && item.windowConfig?.title && (
+                    <span
+                      className="window-title-badge"
+                      title={`ウィンドウ検索: ${item.windowConfig.title}`}
+                    >
+                      🔍
+                    </span>
+                  )}
+                  {hasMemo && (
+                    <span
+                      className="memo-badge"
+                      onClick={(e) => handleMemoClick(e, item)}
+                      title="メモを表示"
+                    >
+                      📝
+                    </span>
+                  )}
                 </span>
-              )}
-              {hasMemo && (
-                <span
-                  className="memo-badge"
-                  onClick={(e) => handleMemoClick(e, item)}
-                  title="メモを表示"
-                >
-                  📝
-                </span>
-              )}
-            </span>
-          </div>
-        );
-      })}
+              </div>
+            );
+          })}
+        </div>
+      </div>
 
       <MemoViewModal
         isOpen={memoModalOpen}
@@ -355,7 +400,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
         itemName={memoModalItem?.name || ''}
         memo={memoModalItem?.memo || ''}
       />
-    </div>
+    </>
   );
 };
 

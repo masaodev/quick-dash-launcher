@@ -8,6 +8,21 @@
   padding: var(--spacing-xs);
 }
 
+/* 仮想化用: 全アイテム分の高さを確保するスペーサー（絶対配置の基準） */
+.item-list-inner {
+  position: relative;
+  width: 100%;
+}
+
+/* 仮想化された各行のラッパ（実測した位置にtranslateYで配置） */
+.item-row-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
 .item {
   display: flex;
   align-items: center;
@@ -148,10 +163,10 @@
 }
 
 /* ドラッグ可能なアイテムのカーソル */
-.item[draggable="true"] {
+.item[draggable='true'] {
   cursor: grab;
 }
 
-.item[draggable="true"]:active {
+.item[draggable='true']:active {
   cursor: grabbing;
 }
