@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { DEFAULT_DATA_FILE, AppItem, AppSettings, DataFileTab } from '@common/types';
 import { isWindowInfo } from '@common/types/guards';
 
@@ -119,23 +119,26 @@ export function useDataFileTabs() {
     };
   }, []);
 
-  function handleTabClick(fileName: string): void {
+  const handleTabClick = useCallback((fileName: string): void => {
     setActiveTab(fileName);
-  }
+  }, []);
 
-  function getTabFilteredItems(mainItems: AppItem[]): AppItem[] {
-    const activeTabConfig = showDataFileTabs
-      ? dataFileTabs.find((tab) => tab.files.includes(activeTab))
-      : undefined;
+  const getTabFilteredItems = useCallback(
+    (mainItems: AppItem[]): AppItem[] => {
+      const activeTabConfig = showDataFileTabs
+        ? dataFileTabs.find((tab) => tab.files.includes(activeTab))
+        : undefined;
 
-    if (activeTabConfig) {
-      return mainItems.filter(
-        (item) => !isWindowInfo(item) && activeTabConfig.files.includes(item.sourceFile || '')
-      );
-    }
+      if (activeTabConfig) {
+        return mainItems.filter(
+          (item) => !isWindowInfo(item) && activeTabConfig.files.includes(item.sourceFile || '')
+        );
+      }
 
-    return mainItems.filter((item) => !isWindowInfo(item) && item.sourceFile === activeTab);
-  }
+      return mainItems.filter((item) => !isWindowInfo(item) && item.sourceFile === activeTab);
+    },
+    [showDataFileTabs, dataFileTabs, activeTab]
+  );
 
   return {
     showDataFileTabs,

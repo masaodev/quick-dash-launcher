@@ -18,6 +18,8 @@ export interface UseKeyboardShortcutsParams {
   activeTab: string;
   dataFileTabs: DataFileTab[];
   mainItems: AppItem[];
+  /** 検索・タブ絞り込み適用済みの表示中アイテム（App側のuseMemo結果を共有） */
+  filteredItems: AppItem[];
   searchQuery: string;
   selectedIndex: number;
   setSelectedIndex: React.Dispatch<React.SetStateAction<number>>;
@@ -44,6 +46,7 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
     activeTab,
     dataFileTabs,
     mainItems,
+    filteredItems,
     searchQuery,
     selectedIndex,
     setSelectedIndex,
@@ -62,20 +65,6 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
     setActiveDesktopTab,
   } = params;
 
-  function getTabFilteredItems(): AppItem[] {
-    const activeTabConfig = showDataFileTabs
-      ? dataFileTabs.find((tab) => tab.files.includes(activeTab))
-      : undefined;
-
-    if (activeTabConfig) {
-      return mainItems.filter(
-        (item) => !isWindowInfo(item) && activeTabConfig.files.includes(item.sourceFile || '')
-      );
-    }
-
-    return mainItems.filter((item) => !isWindowInfo(item) && item.sourceFile === activeTab);
-  }
-
   function buildDesktopTabIds(): number[] {
     const tabIds: number[] = [DESKTOP_TAB.ALL];
     const hasPinnedWindows = windowList.some((w) => w.isPinned === true);
@@ -86,13 +75,6 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
       tabIds.push(i);
     }
     return tabIds;
-  }
-
-  function getFilteredItems(): AppItem[] {
-    if (searchMode === 'window') {
-      return filterWindowsByDesktopTab(windowList, activeDesktopTab);
-    }
-    return getTabFilteredItems();
   }
 
   async function showWindowToastAndRefresh(
@@ -181,8 +163,6 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
       setSelectedIndex(0);
       return;
     }
-
-    const filteredItems = filterItems(getFilteredItems(), searchQuery, searchMode);
 
     // Ctrl + 上下矢印: 検索履歴ナビゲーション
     if (e.ctrlKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {

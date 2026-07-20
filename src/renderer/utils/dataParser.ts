@@ -22,6 +22,22 @@ function getSearchText(item: AppItem): string {
 }
 
 /**
+ * 小文字化済み検索テキストのキャッシュ。
+ * キー入力ごとの全アイテム再小文字化を避ける。アイテムはデータ再読込で
+ * 作り直されるため、WeakMapで古いオブジェクトごと自動解放される。
+ */
+const lowerSearchTextCache = new WeakMap<AppItem, string>();
+
+function getLowerSearchText(item: AppItem): string {
+  let text = lowerSearchTextCache.get(item);
+  if (text === undefined) {
+    text = getSearchText(item).toLowerCase();
+    lowerSearchTextCache.set(item, text);
+  }
+  return text;
+}
+
+/**
  * アイテムをクエリでフィルタリングする
  * 複数キーワードのAND検索に対応
  */
@@ -40,7 +56,7 @@ export function filterItems(
   const keywords = parseKeywords(normalizedQuery);
 
   return items.filter((item) => {
-    const text = getSearchText(item).toLowerCase();
+    const text = getLowerSearchText(item);
     return keywords.every((keyword) => text.includes(keyword));
   });
 }

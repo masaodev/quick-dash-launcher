@@ -40,67 +40,71 @@ interface UseToastReturn {
  * ```
  */
 export function useToast(): UseToastReturn {
-  const showSuccess = (message: string, options?: ToastOptions) => {
-    toast.success(message, options);
-  };
-
-  const showError = (message: string, options?: ToastOptions) => {
-    toast.error(message, options);
-  };
-
-  const showInfo = (message: string, options?: ToastOptions) => {
-    toast(message, {
-      icon: 'ℹ️',
-      style: {
-        background: 'var(--color-info)',
-        color: 'var(--color-white)',
-      },
-      ...options,
-    });
-  };
-
-  const showWarning = (message: string, options?: ToastOptions) => {
-    toast(message, {
-      icon: '⚠️',
-      style: {
-        background: 'var(--color-warning)',
-        color: 'var(--text-primary)',
-      },
-      ...options,
-    });
-  };
-
-  const showToast = (message: string, type: ToastType = 'info', options?: ToastOptions) => {
-    switch (type) {
-      case 'success':
-        showSuccess(message, options);
-        break;
-      case 'error':
-        showError(message, options);
-        break;
-      case 'warning':
-        showWarning(message, options);
-        break;
-      case 'info':
-      default:
-        showInfo(message, options);
-        break;
-    }
-  };
-
-  const dismissAll = () => {
-    toast.dismiss();
-  };
-
-  return {
-    showSuccess,
-    showError,
-    showInfo,
-    showWarning,
-    showToast,
-    dismissAll,
-  };
+  // 状態を持たないため常に同一の関数群を返す。
+  // 呼び出し側のuseCallback/useMemo依存やリスナー登録が安定する。
+  return TOAST_API;
 }
+
+const showSuccess = (message: string, options?: ToastOptions) => {
+  toast.success(message, options);
+};
+
+const showError = (message: string, options?: ToastOptions) => {
+  toast.error(message, options);
+};
+
+const showInfo = (message: string, options?: ToastOptions) => {
+  toast(message, {
+    icon: 'ℹ️',
+    style: {
+      background: 'var(--color-info)',
+      color: 'var(--color-white)',
+    },
+    ...options,
+  });
+};
+
+const showWarning = (message: string, options?: ToastOptions) => {
+  toast(message, {
+    icon: '⚠️',
+    style: {
+      background: 'var(--color-warning)',
+      color: 'var(--text-primary)',
+    },
+    ...options,
+  });
+};
+
+const showToast = (message: string, type: ToastType = 'info', options?: ToastOptions) => {
+  switch (type) {
+    case 'success':
+      showSuccess(message, options);
+      break;
+    case 'error':
+      showError(message, options);
+      break;
+    case 'warning':
+      showWarning(message, options);
+      break;
+    case 'info':
+    default:
+      showInfo(message, options);
+      break;
+  }
+};
+
+const dismissAll = () => {
+  toast.dismiss();
+};
+
+const TOAST_API: UseToastReturn = {
+  showSuccess,
+  showError,
+  showInfo,
+  showWarning,
+  showToast,
+  dismissAll,
+};
 
 // 直接インポートして使用できるようにエクスポート
 export { toast };

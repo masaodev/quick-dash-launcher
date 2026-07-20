@@ -147,7 +147,7 @@ function App(): React.ReactElement {
 
   const { withLoading } = useGlobalLoading();
 
-  const handleRefreshWindows = async () => {
+  const handleRefreshWindows = useCallback(async () => {
     if (searchMode !== 'window') return;
 
     await withLoading('ウィンドウ更新中', async () => {
@@ -160,7 +160,7 @@ function App(): React.ReactElement {
       setDesktopInfo(info);
       setSelectedIndex(0); // 選択インデックスをリセット
     });
-  };
+  }, [searchMode, withLoading]);
 
   const loadItems = async (): Promise<AppItem[]> => {
     const items = await window.electronAPI.loadDataFiles();
@@ -223,85 +223,105 @@ function App(): React.ReactElement {
     setSelectedIndex(0); // 選択インデックスをリセット
   };
 
-  const executeAppItem = async (item: AppItem): Promise<void> => {
-    if (isGroupItem(item)) {
-      await window.electronAPI.showToastWindow({
-        displayName: item.displayName,
-        itemType: 'group',
-        itemCount: item.itemNames.length,
-        itemNames: item.itemNames.slice(0, 3),
-      });
-      await window.electronAPI.executeGroup(item, mainItems);
-    } else if (isWindowItem(item)) {
-      await window.electronAPI.showToastWindow({
-        displayName: item.displayName,
-        itemType: 'windowOperation',
-      });
-      await window.electronAPI.executeWindowOperation(item);
-    } else if (isClipboardItem(item)) {
-      await window.electronAPI.showToastWindow({
-        displayName: item.displayName,
-        itemType: 'clipboard',
-      });
-      await window.electronAPI.clipboardAPI.restore(item.clipboardDataRef);
-    } else if (isLayoutItem(item)) {
-      await window.electronAPI.showToastWindow({
-        displayName: item.displayName,
-        itemType: 'layout',
-      });
-      await window.electronAPI.executeLayout(item);
-    } else if (isLauncherItem(item)) {
-      await window.electronAPI.showToastWindow({
-        displayName: item.displayName,
-        itemType: item.type,
-        path: item.path,
-        icon: item.icon,
-      });
-      await window.electronAPI.openItem(item);
-    }
-  };
-
-  const handleExecuteItem = async (item: AppItem) => {
-    try {
-      if (searchMode === 'window') {
-        // ウィンドウモード
-        const windowItem = item as WindowInfo;
-        const result = await window.electronAPI.activateWindowByHwnd(windowItem.hwnd);
-
-        if (!result.success) {
-          showErrorAlert('ウィンドウのアクティブ化に失敗しました');
-        } else {
-          await window.electronAPI.showToastWindow({
-            displayName: windowItem.title,
-            itemType: 'windowActivate',
-          });
-        }
-      } else {
-        // 通常モード
-        // 検索クエリを事前保存（実行後にクリアされる可能性を考慮）
-        const searchQueryForHistory = searchQuery.trim();
-
-        await executeAppItem(item);
-
-        // バックグラウンドで履歴追加（fire-and-forget）
-        if (searchQueryForHistory) {
-          addHistoryEntry(searchQueryForHistory).catch((error) => {
-            console.error('検索履歴の追加に失敗しました:', error);
-          });
-        }
+  const executeAppItem = useCallback(
+    async (item: AppItem): Promise<void> => {
+      if (isGroupItem(item)) {
+        await window.electronAPI.showToastWindow({
+          displayName: item.displayName,
+          itemType: 'group',
+          itemCount: item.itemNames.length,
+          itemNames: item.itemNames.slice(0, 3),
+        });
+        await window.electronAPI.executeGroup(item, mainItems);
+      } else if (isWindowItem(item)) {
+        await window.electronAPI.showToastWindow({
+          displayName: item.displayName,
+          itemType: 'windowOperation',
+        });
+        await window.electronAPI.executeWindowOperation(item);
+      } else if (isClipboardItem(item)) {
+        await window.electronAPI.showToastWindow({
+          displayName: item.displayName,
+          itemType: 'clipboard',
+        });
+        await window.electronAPI.clipboardAPI.restore(item.clipboardDataRef);
+      } else if (isLayoutItem(item)) {
+        await window.electronAPI.showToastWindow({
+          displayName: item.displayName,
+          itemType: 'layout',
+        });
+        await window.electronAPI.executeLayout(item);
+      } else if (isLauncherItem(item)) {
+        await window.electronAPI.showToastWindow({
+          displayName: item.displayName,
+          itemType: item.type,
+          path: item.path,
+          icon: item.icon,
+        });
+        await window.electronAPI.openItem(item);
       }
-    } catch (error) {
-      showErrorAlert(
-        `アイテムの実行に失敗しました: ${error instanceof Error ? error.message : String(error)}`
-      );
-    }
-  };
+    },
+    [mainItems]
+  );
+
+  const handleExecuteItem = useCallback(
+    async (item: AppItem) => {
+      try {
+        if (searchMode === 'window') {
+          // ウィンドウモード
+          const windowItem = item as WindowInfo;
+          const result = await window.electronAPI.activateWindowByHwnd(windowItem.hwnd);
+
+          if (!result.success) {
+            showErrorAlert('ウィンドウのアクティブ化に失敗しました');
+          } else {
+            await window.electronAPI.showToastWindow({
+              displayName: windowItem.title,
+              itemType: 'windowActivate',
+            });
+          }
+        } else {
+          // 通常モード
+          // 検索クエリを事前保存（実行後にクリアされる可能性を考慮）
+          const searchQueryForHistory = searchQuery.trim();
+
+          await executeAppItem(item);
+
+          // バックグラウンドで履歴追加（fire-and-forget）
+          if (searchQueryForHistory) {
+            addHistoryEntry(searchQueryForHistory).catch((error) => {
+              console.error('検索履歴の追加に失敗しました:', error);
+            });
+          }
+        }
+      } catch (error) {
+        showErrorAlert(
+          `アイテムの実行に失敗しました: ${error instanceof Error ? error.message : String(error)}`
+        );
+      }
+    },
+    [searchMode, searchQuery, executeAppItem, addHistoryEntry]
+  );
+
+  const tabFilteredItems = useMemo(
+    () => getTabFilteredItems(mainItems),
+    [getTabFilteredItems, mainItems]
+  );
+
+  const filteredItems = useMemo(() => {
+    const itemsToFilter =
+      searchMode === 'window'
+        ? filterWindowsByDesktopTab(windowList, activeDesktopTab)
+        : tabFilteredItems;
+    return filterItems(itemsToFilter, searchQuery, searchMode);
+  }, [searchMode, windowList, activeDesktopTab, tabFilteredItems, searchQuery]);
 
   const { handleKeyDown } = useKeyboardShortcuts({
     showDataFileTabs,
     activeTab,
     dataFileTabs,
     mainItems,
+    filteredItems,
     searchQuery,
     selectedIndex,
     setSelectedIndex,
@@ -513,26 +533,29 @@ function App(): React.ReactElement {
     await window.electronAPI.toggleWorkspaceWindow();
   };
 
-  const handleEditItem = (item: AppItem) => {
-    if (isWindowInfo(item)) return;
+  const handleEditItem = useCallback(
+    (item: AppItem) => {
+      if (isWindowInfo(item)) return;
 
-    if (isGroupItem(item) || isWindowItem(item)) {
+      if (isGroupItem(item) || isWindowItem(item)) {
+        openEditModal({
+          ...item,
+          sourceFile: item.sourceFile || DEFAULT_DATA_FILE,
+          jsonItemId: item.id ?? undefined,
+        });
+        return;
+      }
+
+      const launcherItem = item as LauncherItem;
+      const jsonItemId = launcherItem.isDirExpanded ? launcherItem.expandedFromId : launcherItem.id;
       openEditModal({
-        ...item,
-        sourceFile: item.sourceFile || DEFAULT_DATA_FILE,
-        jsonItemId: item.id ?? undefined,
+        ...launcherItem,
+        sourceFile: launcherItem.sourceFile || DEFAULT_DATA_FILE,
+        jsonItemId: jsonItemId ?? undefined,
       });
-      return;
-    }
-
-    const launcherItem = item as LauncherItem;
-    const jsonItemId = launcherItem.isDirExpanded ? launcherItem.expandedFromId : launcherItem.id;
-    openEditModal({
-      ...launcherItem,
-      sourceFile: launcherItem.sourceFile || DEFAULT_DATA_FILE,
-      jsonItemId: jsonItemId ?? undefined,
-    });
-  };
+    },
+    [openEditModal]
+  );
 
   const handleFirstLaunchComplete = async (settings: {
     hotkey: string;
@@ -589,8 +612,6 @@ function App(): React.ReactElement {
     setSelectedIndex(0);
   };
 
-  const tabFilteredItems = getTabFilteredItems(mainItems);
-
   const errorKeySet = useMemo(() => new Set(iconFetchErrors.map((e) => e.key)), [iconFetchErrors]);
 
   const missingIconCount = useMemo(() => {
@@ -614,12 +635,6 @@ function App(): React.ReactElement {
       return !launcherItem.icon;
     }).length;
   }, [mainItems, errorKeySet]);
-
-  const itemsToFilter =
-    searchMode === 'window'
-      ? filterWindowsByDesktopTab(windowList, activeDesktopTab)
-      : tabFilteredItems;
-  const filteredItems = filterItems(itemsToFilter, searchQuery, searchMode);
 
   if (isFirstLaunch === null) {
     return <div className="app">読み込み中...</div>;

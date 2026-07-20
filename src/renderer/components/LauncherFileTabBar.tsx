@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { DEFAULT_DATA_FILE, AppItem, DataFileTab } from '@common/types';
 import { isWindowInfo } from '@common/types/guards';
 
@@ -59,15 +59,23 @@ const LauncherFileTabBar: React.FC<FileTabBarProps> = ({
     }
   }, [editingTabIndex]);
 
-  // 各タブグループのアイテム数を計算
-  const getTabItemCount = (tabConfig: DataFileTab): number => {
-    // タブに紐付く全ファイルのアイテムを取得
-    const tabItems = allItems.filter(
-      (item) => !isWindowInfo(item) && tabConfig.files.includes(item.sourceFile || '')
+  // 各タブグループのアイテム数を1パスで計算（検索フィルタは全体に1回だけ適用）
+  const tabItemCounts = useMemo(() => {
+    const fileSets = dataFileTabs.map((tab) => new Set(tab.files));
+    const counts = new Array<number>(dataFileTabs.length).fill(0);
+
+    const matchedItems = filterItems(
+      allItems.filter((item) => !isWindowInfo(item)),
+      searchQuery
     );
-    const filteredTabItems = filterItems(tabItems, searchQuery);
-    return filteredTabItems.length;
-  };
+    for (const item of matchedItems) {
+      const sourceFile = ('sourceFile' in item && item.sourceFile) || '';
+      fileSets.forEach((files, index) => {
+        if (files.has(sourceFile)) counts[index]++;
+      });
+    }
+    return counts;
+  }, [dataFileTabs, allItems, searchQuery]);
 
   // タブグループがアクティブかどうかを判定
   const isTabActive = (tabConfig: DataFileTab): boolean => {
@@ -110,7 +118,7 @@ const LauncherFileTabBar: React.FC<FileTabBarProps> = ({
   return (
     <div className="tab-bar">
       {dataFileTabs.map((tabConfig, index) => {
-        const count = getTabItemCount(tabConfig);
+        const count = tabItemCounts[index];
         const countClass = getCountClass(count);
         const representativeFile = getRepresentativeFile(tabConfig);
         // ツールチップにデータファイル名と物理ファイル名を表示
