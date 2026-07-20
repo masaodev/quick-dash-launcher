@@ -13,6 +13,7 @@ import { BrowserWindow, screen } from 'electron';
 import type { ToastItemType } from '@common/types';
 
 import { EnvConfig } from '../config/envConfig.js';
+import { WindowIdleDestroyer } from '../utils/windowIdleDestroyer.js';
 
 import { NotificationType } from './notificationService.js';
 
@@ -47,10 +48,18 @@ const TOAST_WIDTH = 400;
 const TOAST_HEIGHT = 100;
 const TOAST_MARGIN = 16;
 const DEFAULT_DURATION = 2500;
+const IDLE_DESTROY_MS = 5 * 60 * 1000;
 
 let toastWindow: BrowserWindow | null = null;
 let closeTimeout: ReturnType<typeof setTimeout> | null = null;
 let isWindowReady = false;
+
+// 非表示のまま放置されたウィンドウを破棄してレンダラープロセスを解放する
+const idleDestroyer = new WindowIdleDestroyer(IDLE_DESTROY_MS, () => {
+  if (isToastWindowValid() && !toastWindow!.isVisible()) {
+    destroyToastWindow();
+  }
+});
 
 function clearCloseTimeout(): void {
   if (closeTimeout) {
@@ -97,6 +106,7 @@ function createToastWindow(): BrowserWindow {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
+      spellcheck: false,
       preload: path.join(__dirname, 'preload.js'),
     },
   });
@@ -139,6 +149,7 @@ export async function showToastWindow(options: ToastOptions): Promise<void> {
   const type = options.type ?? 'success';
 
   clearCloseTimeout();
+  idleDestroyer.cancel();
 
   // ウィンドウを準備（初回のみ作成・ロード）
   const win = await ensureToastWindow();
@@ -156,11 +167,12 @@ export async function showToastWindow(options: ToastOptions): Promise<void> {
     win.show();
   }
 
-  // 指定時間後に非表示（破棄はしない）
+  // 指定時間後に非表示（すぐには破棄せず、アイドルが続いた場合のみ破棄）
   closeTimeout = setTimeout(() => {
     closeTimeout = null;
     if (!win.isDestroyed()) {
       win.hide();
+      idleDestroyer.schedule();
     }
   }, duration + 500);
 }
@@ -169,11 +181,13 @@ export function closeToastWindow(): void {
   clearCloseTimeout();
   if (isToastWindowValid()) {
     toastWindow!.hide();
+    idleDestroyer.schedule();
   }
 }
 
 export function destroyToastWindow(): void {
   clearCloseTimeout();
+  idleDestroyer.cancel();
   if (isToastWindowValid()) {
     toastWindow!.close();
     toastWindow = null;

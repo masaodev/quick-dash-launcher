@@ -10,13 +10,22 @@ import * as path from 'path';
 import { BrowserWindow, screen } from 'electron';
 
 import { EnvConfig } from '../config/envConfig.js';
+import { WindowIdleDestroyer } from '../utils/windowIdleDestroyer.js';
 
 const WINDOW_WIDTH = 400;
 const WINDOW_HEIGHT = 300;
+const IDLE_DESTROY_MS = 5 * 60 * 1000;
 
 let progressWindow: BrowserWindow | null = null;
 let isWindowReady = false;
 let pendingEnsure: Promise<BrowserWindow> | null = null;
+
+// 非表示のまま放置されたウィンドウを破棄してレンダラープロセスを解放する
+const idleDestroyer = new WindowIdleDestroyer(IDLE_DESTROY_MS, () => {
+  if (isWindowValid() && !progressWindow!.isVisible()) {
+    destroyLayoutProgressWindow();
+  }
+});
 
 function isWindowValid(): boolean {
   return progressWindow !== null && !progressWindow.isDestroyed();
@@ -53,6 +62,7 @@ function createWindow(): BrowserWindow {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
+      spellcheck: false,
       preload: path.join(__dirname, 'preload.js'),
     },
   });
@@ -87,6 +97,7 @@ async function ensureWindow(): Promise<BrowserWindow> {
 }
 
 export async function showLayoutProgressWindow(): Promise<BrowserWindow> {
+  idleDestroyer.cancel();
   const win = await ensureWindow();
 
   const { x, y } = getWindowPosition();
@@ -103,6 +114,7 @@ export async function showLayoutProgressWindow(): Promise<BrowserWindow> {
 export function hideLayoutProgressWindow(): void {
   if (isWindowValid()) {
     progressWindow!.hide();
+    idleDestroyer.schedule();
   }
 }
 
@@ -111,6 +123,7 @@ export function getLayoutProgressWindow(): BrowserWindow | null {
 }
 
 export function destroyLayoutProgressWindow(): void {
+  idleDestroyer.cancel();
   if (isWindowValid()) {
     progressWindow!.close();
     progressWindow = null;

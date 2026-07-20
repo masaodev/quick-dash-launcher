@@ -7,15 +7,26 @@ import { IPC_CHANNELS } from '@common/ipcChannels';
 import { EnvConfig } from './config/envConfig.js';
 import PathManager from './config/pathManager.js';
 import { SettingsService } from './services/settingsService.js';
+import { WindowIdleDestroyer } from './utils/windowIdleDestroyer.js';
 
 type AdminTab = 'settings' | 'edit' | 'other';
 type ImportModalType = 'bookmark' | 'app';
+
+const IDLE_DESTROY_MS = 5 * 60 * 1000;
 
 let adminWindow: BrowserWindow | null = null;
 let isAdminWindowVisible = false;
 let initialTab: AdminTab = 'settings';
 let pendingImportModal: ImportModalType | null = null;
 let isAppQuitting = false;
+
+// 閉じた後も非表示で常駐するウィンドウを、放置が続いた場合のみ破棄して
+// レンダラープロセスを解放する（次回表示時に再作成される）
+const idleDestroyer = new WindowIdleDestroyer(IDLE_DESTROY_MS, () => {
+  if (isWindowValid() && !adminWindow!.isVisible()) {
+    closeAdminWindow();
+  }
+});
 
 /**
  * ウィンドウが有効かどうかを判定する
@@ -52,6 +63,7 @@ export async function createAdminWindow(): Promise<BrowserWindow> {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
+      spellcheck: false,
     },
   });
 
@@ -75,10 +87,17 @@ export async function createAdminWindow(): Promise<BrowserWindow> {
   adminWindow.on('closed', () => {
     adminWindow = null;
     isAdminWindowVisible = false;
+    idleDestroyer.cancel();
   });
 
-  adminWindow.on('show', () => (isAdminWindowVisible = true));
-  adminWindow.on('hide', () => (isAdminWindowVisible = false));
+  adminWindow.on('show', () => {
+    isAdminWindowVisible = true;
+    idleDestroyer.cancel();
+  });
+  adminWindow.on('hide', () => {
+    isAdminWindowVisible = false;
+    idleDestroyer.schedule();
+  });
 
   adminWindow.webContents.on('before-input-event', (event, input) => {
     if (input.key === 'Escape' && input.type === 'keyDown') {
