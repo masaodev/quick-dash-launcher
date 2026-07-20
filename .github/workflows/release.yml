@@ -32,14 +32,27 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
+      # Python環境のセットアップ（node-gyp安定化のため3.11を固定）
+      # ランナー標準のPython 3.14はnode-gypと相性問題を起こすため明示的に固定する
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
       # 依存関係のインストール（package-lock.jsonを使用した確実なインストール）
+      # GYP_MSVS_VERSION: node-gypのVisual Studio自動検出（列挙時にmaxBuffer超過で失敗する）を
+      # スキップし、VS 2022を明示指定する
       - name: Install dependencies
         run: npm ci
+        env:
+          GYP_MSVS_VERSION: '2022'
 
       # アプリケーションのビルドとWindowsインストーラーの作成
       # npm run dist は内部で npm run build を実行し、その prebuild でライセンスファイルも生成される
       - name: Build and package
         run: npm run dist -- --publish never
+        env:
+          GYP_MSVS_VERSION: '2022'
 
       # タグ名からバージョン番号を抽出（v1.0.0 → 1.0.0）
       - name: Get version from tag
