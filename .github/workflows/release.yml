@@ -18,7 +18,9 @@ permissions:
 jobs:
   release:
     # Windows環境で実行（Electronアプリのビルドに必要）
-    runs-on: windows-latest
+    # windows-latestはVisual Studio 18に更新されnode-gyp 11.5.0が認識できない
+    # （unknown version undefined）ため、VS 2022を含む安定版windows-2022に固定する
+    runs-on: windows-2022
 
     steps:
       # リポジトリのコードをチェックアウト
