@@ -1,8 +1,15 @@
 import * as path from 'path';
 import * as fs from 'fs';
 
-import { net, nativeImage } from 'electron';
+import { net, nativeImage, type NativeImage } from 'electron';
 import { faviconLogger } from '@common/logger';
+
+import {
+  isIco,
+  parseIcoEntries,
+  sortEntriesForTarget,
+  decodeIcoBmpEntry,
+} from '../utils/icoDecoder';
 
 interface FaviconSource {
   url: string;
@@ -20,7 +27,7 @@ export class FaviconService {
     this.faviconsFolder = faviconsFolder;
   }
 
-  async fetchFavicon(url: string): Promise<string | null> {
+  async fetchFavicon(url: string, forceRefresh = false): Promise<string | null> {
     try {
       const domain = new URL(url).hostname;
       const faviconPath = path.join(
@@ -28,8 +35,9 @@ export class FaviconService {
         `${domain}_favicon_${this.defaultSize}.png`
       );
 
-      // キャッシュをチェック
-      if (fs.existsSync(faviconPath)) {
+      // キャッシュをチェック（強制更新時はバイパスして再取得する）
+      const hasCache = fs.existsSync(faviconPath);
+      if (hasCache && !forceRefresh) {
         const cachedFavicon = fs.readFileSync(faviconPath);
         return `data:image/png;base64,${cachedFavicon.toString('base64')}`;
       }
@@ -45,6 +53,10 @@ export class FaviconService {
         return `data:image/png;base64,${optimized.toString('base64')}`;
       }
 
+      if (hasCache) {
+        return this.reoptimizeCachedFavicon(faviconPath);
+      }
+
       return null;
     } catch (error) {
       faviconLogger.error({ error }, 'ファビコンの取得に失敗しました');
@@ -53,14 +65,37 @@ export class FaviconService {
   }
 
   /**
+   * 再取得に失敗したサイト（閉鎖等）の既存キャッシュを返す。その際、
+   * 縮小処理導入以前の原寸キャッシュは縮小し直し、画像でないデータ
+   * （HTMLエラーページ等）が保存されていた場合は削除する。
+   */
+  private reoptimizeCachedFavicon(faviconPath: string): string | null {
+    const cached = fs.readFileSync(faviconPath);
+    if (!this.isLikelyImageData(cached)) {
+      fs.unlinkSync(faviconPath);
+      return null;
+    }
+    const optimized = this.resizeFavicon(cached);
+    if (optimized.length < cached.length) {
+      fs.writeFileSync(faviconPath, optimized);
+    }
+    return `data:image/png;base64,${optimized.toString('base64')}`;
+  }
+
+  /**
    * ファビコン画像を最大 defaultSize px に縮小する（アスペクト比維持）。
    * apple-touch-icon や og:image は原寸(数百KB〜1MB超)のまま保存されるため、
    * 表示に必要な大きさへ縮小してメモリ・IPCペイロード・ディスクを削減する。
+   * nativeImage が直接扱えないICOは内包エントリを取り出してPNG化する。
    * デコードできない形式(SVG等)や既に十分小さい画像は元データをそのまま返す。
    */
   private resizeFavicon(data: Buffer): Buffer {
     try {
-      const image = nativeImage.createFromBuffer(data);
+      let image = nativeImage.createFromBuffer(data);
+      const isIcoData = image.isEmpty() && isIco(data);
+      if (isIcoData) {
+        image = this.decodeIco(data) ?? image;
+      }
       if (image.isEmpty()) {
         // SVG等 nativeImage が扱えない形式は縮小せずそのまま保存
         return data;
@@ -69,7 +104,12 @@ export class FaviconService {
       const { width, height } = image.getSize();
       const longEdge = Math.max(width, height);
       if (longEdge <= this.defaultSize) {
-        return data;
+        if (!isIcoData) {
+          return data;
+        }
+        // ICOは多サイズ内包で原寸ファイルが大きいため、小さくてもPNGへ変換して返す
+        const png = image.toPNG();
+        return png.length > 0 ? png : data;
       }
 
       const scale = this.defaultSize / longEdge;
@@ -87,6 +127,67 @@ export class FaviconService {
     }
   }
 
+  /**
+   * ICOから defaultSize への縮小に最適なエントリを選んでデコードする。
+   * PNGエントリと32bpp BMPエントリに対応し、どれも扱えなければnull。
+   */
+  private decodeIco(data: Buffer): NativeImage | null {
+    for (const entry of sortEntriesForTarget(parseIcoEntries(data), this.defaultSize)) {
+      if (entry.isPng) {
+        const image = nativeImage.createFromBuffer(
+          data.subarray(entry.dataOffset, entry.dataOffset + entry.dataSize)
+        );
+        if (!image.isEmpty()) {
+          return image;
+        }
+      } else {
+        const bitmap = decodeIcoBmpEntry(data, entry);
+        if (bitmap) {
+          const image = nativeImage.createFromBitmap(bitmap.bgra, {
+            width: bitmap.width,
+            height: bitmap.height,
+          });
+          if (!image.isEmpty()) {
+            return image;
+          }
+        }
+      }
+    }
+    faviconLogger.warn('ICOのデコードに失敗、原寸のまま保存します');
+    return null;
+  }
+
+  /**
+   * ダウンロードしたデータが画像として妥当かを判定する。
+   * nativeImageで直接デコードできる形式(PNG/JPEG)に加え、レンダラーの<img>で
+   * 表示できるICO/GIF/WebP/BMP/SVGをシグネチャで受け入れる。
+   */
+  private isLikelyImageData(data: Buffer): boolean {
+    if (data.length < 4) {
+      return false;
+    }
+    if (!nativeImage.createFromBuffer(data).isEmpty()) {
+      return true;
+    }
+    if (isIco(data)) {
+      return true;
+    }
+    if (data.toString('ascii', 0, 4) === 'GIF8') {
+      return true;
+    }
+    if (
+      data.length >= 12 &&
+      data.toString('ascii', 0, 4) === 'RIFF' &&
+      data.toString('ascii', 8, 12) === 'WEBP'
+    ) {
+      return true;
+    }
+    if (data[0] === 0x42 && data[1] === 0x4d) {
+      return true; // BMP
+    }
+    return data.subarray(0, 512).toString('utf8').toLowerCase().includes('<svg');
+  }
+
   private async tryMultipleSources(url: string): Promise<Buffer | null> {
     const sources = await this.getFaviconSources(url);
 
@@ -98,6 +199,14 @@ export class FaviconService {
         );
         const data = await this.downloadFavicon(source.url);
         if (data && data.length > 0) {
+          // エラーページ等のHTMLが200で返るサイトがあるため、画像データのみ受け入れる
+          if (!this.isLikelyImageData(data)) {
+            faviconLogger.info(
+              { url: source.url, dataSize: data.length },
+              '画像でないデータのためスキップ'
+            );
+            continue;
+          }
           faviconLogger.info(
             { url: source.url, dataSize: data.length },
             'ファビコンダウンロード成功'

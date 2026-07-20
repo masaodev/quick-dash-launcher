@@ -35,11 +35,15 @@ function expandEnvironmentVariables(envPath: string): string {
 }
 
 /** 指定されたURLのファビコンを取得する（FaviconServiceへの委譲） */
-async function fetchFavicon(url: string, faviconsFolder: string): Promise<string | null> {
+async function fetchFavicon(
+  url: string,
+  faviconsFolder: string,
+  forceRefresh = false
+): Promise<string | null> {
   if (!faviconService) {
     faviconService = new FaviconService(faviconsFolder);
   }
-  return faviconService.fetchFavicon(url);
+  return faviconService.fetchFavicon(url, forceRefresh);
 }
 
 /** ショートカットファイル(.lnk)からアイコンを抽出してキャッシュに保存する */
@@ -758,7 +762,7 @@ async function fetchIconsCombined(
   const faviconResults = await processPhase(
     filteredUrlItems,
     'favicon',
-    (item) => fetchFavicon(item.path, faviconsFolder),
+    (item) => fetchFavicon(item.path, faviconsFolder, forceRefresh),
     'ファビコンが見つかりませんでした',
     'ファビコン取得に失敗しました',
     FAVICON_CONCURRENCY
