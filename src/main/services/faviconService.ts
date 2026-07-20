@@ -1,7 +1,7 @@
 import * as path from 'path';
 import * as fs from 'fs';
 
-import { net } from 'electron';
+import { net, nativeImage } from 'electron';
 import { faviconLogger } from '@common/logger';
 
 interface FaviconSource {
@@ -38,15 +38,52 @@ export class FaviconService {
       const faviconData = await this.tryMultipleSources(url);
 
       if (faviconData) {
+        // 表示に不要な大きさの画像は縮小してメモリ・IPC・ディスクの消費を抑える
+        const optimized = this.resizeFavicon(faviconData);
         // キャッシュに保存
-        fs.writeFileSync(faviconPath, faviconData);
-        return `data:image/png;base64,${faviconData.toString('base64')}`;
+        fs.writeFileSync(faviconPath, optimized);
+        return `data:image/png;base64,${optimized.toString('base64')}`;
       }
 
       return null;
     } catch (error) {
       faviconLogger.error({ error }, 'ファビコンの取得に失敗しました');
       return null;
+    }
+  }
+
+  /**
+   * ファビコン画像を最大 defaultSize px に縮小する（アスペクト比維持）。
+   * apple-touch-icon や og:image は原寸(数百KB〜1MB超)のまま保存されるため、
+   * 表示に必要な大きさへ縮小してメモリ・IPCペイロード・ディスクを削減する。
+   * デコードできない形式(SVG等)や既に十分小さい画像は元データをそのまま返す。
+   */
+  private resizeFavicon(data: Buffer): Buffer {
+    try {
+      const image = nativeImage.createFromBuffer(data);
+      if (image.isEmpty()) {
+        // SVG等 nativeImage が扱えない形式は縮小せずそのまま保存
+        return data;
+      }
+
+      const { width, height } = image.getSize();
+      const longEdge = Math.max(width, height);
+      if (longEdge <= this.defaultSize) {
+        return data;
+      }
+
+      const scale = this.defaultSize / longEdge;
+      const resized = image.resize({
+        width: Math.round(width * scale),
+        height: Math.round(height * scale),
+        quality: 'good',
+      });
+      const png = resized.toPNG();
+      // 変換に失敗した場合(空バッファ)は元データにフォールバック
+      return png.length > 0 ? png : data;
+    } catch (error) {
+      faviconLogger.warn({ error }, 'ファビコンの縮小に失敗、原寸のまま保存します');
+      return data;
     }
   }
 
