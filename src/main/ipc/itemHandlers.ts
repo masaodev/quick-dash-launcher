@@ -25,6 +25,7 @@ import {
   getLayoutProgressWindow,
 } from '../services/overlayWindowService.js';
 import { runWithConcurrency } from '../utils/concurrency.js';
+import { hideMainWindowOnExecute } from '../windowManager.js';
 
 /**
  * WindowItemからWindowConfigを生成する
@@ -441,22 +442,28 @@ export async function executeLayout(item: LayoutItem): Promise<void> {
 }
 
 export function setupItemHandlers(): void {
+  // 各実行ハンドラでは、起動処理の前にメインウィンドウを閉じる
+  // （blur待ちにすると起動の遅いアプリでウィンドウが残り、Enter連打で多重起動するため）
   ipcMain.handle(IPC_CHANNELS.OPEN_ITEM, async (_event, item: LauncherItem) => {
+    hideMainWindowOnExecute();
     await openItem(item);
   });
 
   ipcMain.handle(IPC_CHANNELS.OPEN_PARENT_FOLDER, async (_event, item: LauncherItem) => {
+    hideMainWindowOnExecute();
     await openParentFolder(item);
   });
 
   ipcMain.handle(
     IPC_CHANNELS.EXECUTE_GROUP,
     async (_event, group: GroupItem, allItems: AppItem[]) => {
+      hideMainWindowOnExecute();
       await executeGroup(group, allItems);
     }
   );
 
   ipcMain.handle(IPC_CHANNELS.EXECUTE_LAYOUT, async (_event, item: LayoutItem) => {
+    hideMainWindowOnExecute();
     await executeLayout(item);
   });
 
@@ -478,6 +485,8 @@ export function setupItemHandlers(): void {
       },
       'ウィンドウ操作アイテムを実行中'
     );
+
+    hideMainWindowOnExecute();
 
     const windowConfig = createWindowConfig(item);
     const result = await tryActivateWindow(windowConfig, item.windowTitle, itemLogger);

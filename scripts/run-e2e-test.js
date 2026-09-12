@@ -24,6 +24,7 @@ if (!testName) {
   console.log('  - context-menu');
   console.log('  - dialogs');
   console.log('  - group-item-register');
+  console.log('  - item-execution');
   console.log('\nExample: npm run test:e2e:single first-launch');
   process.exit(1);
 }
@@ -39,6 +40,7 @@ const testMap = {
   'context-menu': 'context-menu.spec.ts',
   'dialogs': 'dialogs.spec.ts',
   'group-item-register': 'group-item-registration.spec.ts',
+  'item-execution': 'item-execution.spec.ts',
 };
 
 const testFile = testMap[testName];

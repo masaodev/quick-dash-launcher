@@ -719,6 +719,23 @@ export async function showMainWindowWithItemSearch(startTime?: number): Promise<
 }
 
 /**
+ * アイテム実行時にメインウィンドウを即座に非表示にする
+ * 起動したアプリがフォーカスを奪う（blur）のを待たずに閉じることで、
+ * 起動待ちの間にEnterを連打して多重起動してしまうのを防ぐ
+ * ピン留めモード、編集モード、モーダルモード、初回起動モード時は非表示にしない
+ */
+export function hideMainWindowOnExecute(): void {
+  if (!mainWindow || mainWindow.isDestroyed() || !mainWindow.isVisible()) return;
+
+  if (windowPinMode !== 'normal' || isFirstLaunchMode || isEditMode || isModalMode) {
+    return;
+  }
+
+  hideMainWindowInternal();
+  hideDetachedWindowsAfterBlur();
+}
+
+/**
  * メインウィンドウを非表示にする（ホットキー用）
  * ピン留めモード、編集モード、モーダルモード、初回起動モード時は非表示にしない
  */
