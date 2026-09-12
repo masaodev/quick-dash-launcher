@@ -39,7 +39,7 @@ export default defineConfig({
               ],
               output: {
                 format: 'cjs',
-                inlineDynamicImports: true,
+                codeSplitting: false,
                 entryFileNames: '[name].js',
               },
             },
@@ -73,7 +73,7 @@ export default defineConfig({
               external: ['electron', 'koffi'],
               output: {
                 format: 'cjs',
-                inlineDynamicImports: true,
+                codeSplitting: false,
                 entryFileNames: '[name].js',
               },
             },
@@ -88,11 +88,11 @@ export default defineConfig({
     emptyOutDir: false,
     rollupOptions: {
       input: {
-        main: resolve(__dirname, 'index.html'),
-        admin: resolve(__dirname, 'admin.html'),
-        splash: resolve(__dirname, 'splash.html'),
-        workspace: resolve(__dirname, 'workspace.html'),
-        overlay: resolve(__dirname, 'overlay.html'),
+        main: resolve(import.meta.dirname, 'index.html'),
+        admin: resolve(import.meta.dirname, 'admin.html'),
+        splash: resolve(import.meta.dirname, 'splash.html'),
+        workspace: resolve(import.meta.dirname, 'workspace.html'),
+        overlay: resolve(import.meta.dirname, 'overlay.html'),
       },
     },
   },

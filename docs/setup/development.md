@@ -55,10 +55,10 @@ if (EnvConfig.hasAppInstance) {
 
 **2. ポート番号の環境変数対応**
 
-`vite.config.ts`および`EnvConfig`クラス経由で、`VITE_PORT`環境変数からポート番号を読み込みます：
+`vite.config.mts`および`EnvConfig`クラス経由で、`VITE_PORT`環境変数からポート番号を読み込みます：
 
 ```typescript
-// vite.config.ts
+// vite.config.mts
 server: {
   port: Number(process.env.VITE_PORT) || 9000,
 }

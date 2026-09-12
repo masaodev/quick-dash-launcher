@@ -67,7 +67,7 @@ QuickDashLauncherのApp IDは`net.masaodev.quick-dash-launcher`です。
 **問題**: `@common`パスが解決されない
 **原因**: TypeScript設定とVite設定の不一致
 **解決策**: 
-- `tsconfig.json`と`vite.config.ts`でパスエイリアスが一致していることを確認
+- `tsconfig.json`と`vite.config.mts`でパスエイリアスが一致していることを確認
 - 両方に`@common: src/common`が設定されているか確認
 
 #### 白い/空白のウィンドウ
