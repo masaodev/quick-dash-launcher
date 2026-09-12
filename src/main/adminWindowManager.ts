@@ -60,7 +60,6 @@ export async function createAdminWindow(): Promise<BrowserWindow> {
     title: 'QuickDashLauncher - 設定・管理',
     icon: PathManager.getAppIconPath(),
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
       spellcheck: false,

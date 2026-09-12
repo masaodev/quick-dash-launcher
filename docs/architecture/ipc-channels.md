@@ -259,6 +259,24 @@ const channel = IPC_CHANNELS.SETTINGS_GET; // 'settings:get'
 
 - 処理: トレイアイコン破棄後、`app.quit()`を呼び出し
 
+### `window:open-child` (イベント)
+
+開き元レンダラーに子ウィンドウの生成を依頼（レンダラープロセス共有）
+
+- **方向**: メインプロセス → レンダラープロセス（開き元: メインまたはワークスペース）
+- **パラメータ**: `{ html: string, name: string }`（書き込むHTMLの内容と `window.name`）
+- **処理**: preload が `window.open('about:blank', name)` を実行し、`document.write` で HTML を書き込む
+- **実装**: `src/main/services/childWindowService.ts`、`src/main/preload.ts`
+- **補足**: 生成された `BrowserWindow` はメインプロセスが `did-create-window` で受け取る。詳細は [システム概要](overview.md#ウィンドウとレンダラープロセスの対応)
+
+### `window:child-written`
+
+子ウィンドウへの HTML 書き込み完了を通知
+
+- **方向**: レンダラープロセス → メインプロセス（`ipcRenderer.send`）
+- **パラメータ**: `name: string`（`window:open-child` で指定した名前）
+- **処理**: 登録済みの開き元からの通知のみ受け付け、ウィンドウの受け取りと合わせて生成完了とする
+
 ## データファイル管理
 
 ### `get-config-folder`

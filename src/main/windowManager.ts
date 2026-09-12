@@ -28,6 +28,7 @@ import {
   showAllDetachedGroupWindows,
 } from './detachedGroupWindowManager.js';
 import { getIsWorkspaceWindowFocused } from './workspaceWindowManager.js';
+import { registerChildWindowOpener } from './services/childWindowService.js';
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
@@ -145,7 +146,6 @@ export async function createWindow(): Promise<BrowserWindow> {
     show: false,
     icon: iconPath,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
       spellcheck: false,
@@ -166,6 +166,9 @@ export async function createWindow(): Promise<BrowserWindow> {
   } else {
     mainWindow.loadFile(path.join(__dirname, '../index.html'));
   }
+
+  // ワークスペース・オーバーレイはこのレンダラーから window.open で開き、プロセスを共有する
+  registerChildWindowOpener('main', mainWindow.webContents);
 
   mainWindow.on('blur', () => {
     const shouldHide =

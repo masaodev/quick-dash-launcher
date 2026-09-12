@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import type { WorkspaceItem, WorkspaceGroup } from '@common/types';
 import { getDescendantGroupIds } from '@common/utils/groupTreeUtils';
+import { DETACHED_WINDOW_NAME_PREFIX } from '@common/constants';
 
 import ConfirmDialog from './components/ConfirmDialog';
 import WorkspaceFilterBar from './components/WorkspaceFilterBar';
@@ -62,6 +63,15 @@ const INITIAL_ARCHIVE_DIALOG: ArchiveGroupDialog = {
   subgroupCount: 0,
 };
 
+/** 切り離しウィンドウの groupId を window.name または URL クエリから取得する */
+function getDetachedGroupIdFromWindow(): string | null {
+  if (window.name.startsWith(DETACHED_WINDOW_NAME_PREFIX)) {
+    const id = window.name.slice(DETACHED_WINDOW_NAME_PREFIX.length);
+    if (id) return id;
+  }
+  return new URLSearchParams(window.location.search).get('groupId');
+}
+
 const WorkspaceApp: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isPinned, setIsPinned] = useState(false);
@@ -76,10 +86,10 @@ const WorkspaceApp: React.FC = () => {
   const [filterText, setFilterText] = useState('');
   const [filterScope, setFilterScope] = useState<FilterScope>('all');
   const [focusTrigger, setFocusTrigger] = useState(0);
-  // URLクエリパラメータから groupId を読み取り（切り離しウィンドウモード判定）
-  const [detachedGroupId] = useState<string | null>(() =>
-    new URLSearchParams(window.location.search).get('groupId')
-  );
+  // 切り離しウィンドウモード判定
+  // 通常は window.name（ワークスペースから window.open で開かれた場合）、
+  // メインプロセスが直接生成したフォールバック時は URL クエリから groupId を読み取る
+  const [detachedGroupId] = useState<string | null>(() => getDetachedGroupIdFromWindow());
 
   const {
     items,

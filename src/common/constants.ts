@@ -34,3 +34,11 @@ export const DESKTOP_TAB = {
   /** ピン止めされたウィンドウを表示 */
   PINNED: -2,
 } as const;
+
+/**
+ * 切り離しウィンドウの window.name 接頭辞
+ * ワークスペースのレンダラーが window.open で開く子ウィンドウに
+ * `<接頭辞><groupId>` という名前を付け、メイン側の逆引きと
+ * レンダラー側の groupId 取得の両方に使う
+ */
+export const DETACHED_WINDOW_NAME_PREFIX = 'detached-group:';

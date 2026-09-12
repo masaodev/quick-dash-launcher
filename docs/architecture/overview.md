@@ -11,6 +11,34 @@ QuickDashLauncherのアーキテクチャ概要とデータフローを説明し
 | **プリロードスクリプト** | `src/main/preload.ts` | レンダラーに限定的なAPIを公開するセキュアブリッジ |
 | **共通型定義** | `src/common/types/` | プロセス間で共有される型定義（機能別に分割） |
 
+### ウィンドウとレンダラープロセスの対応
+
+| ウィンドウ | 生成方法 | レンダラープロセス |
+|-----------|---------|------------------|
+| メイン | メインプロセスの `BrowserWindow` | 独立（開き元） |
+| ワークスペース | メインのレンダラーが `window.open` で生成 | **メインと共有** |
+| オーバーレイ（トースト・レイアウト進捗） | メインのレンダラーが `window.open` で生成 | **メインと共有** |
+| 切り離しグループウィンドウ | ワークスペースのレンダラーが `window.open` で生成 | **メインと共有** |
+| 管理 / スプラッシュ | メインプロセスの `BrowserWindow` | ウィンドウごとに1プロセス |
+
+レンダラープロセスは1枚あたり約60MB以上の固定メモリを消費するため、常駐するウィンドウは
+`src/main/services/childWindowService.ts` の `openChildWindow()` でメインウィンドウのレンダラーから開き、プロセスを共有する。
+流れは次のとおり:
+
+1. メインプロセスが対象HTML（`workspace.html` / `overlay.html`）の内容を読み込み、IPC（`WINDOW_OPEN_CHILD`）で開き元レンダラーに渡す
+2. preload が `window.open('about:blank', name)` を実行し、`document.write` でHTMLを書き込む（相対パスは開き元URL基準で解決される）
+3. メインプロセスが `did-create-window` で `BrowserWindow` を受け取り、以降の表示・位置・イベント管理は従来どおり行う
+4. 開き元が使えない場合はタイムアウト後に `new BrowserWindow` で直接生成する（フォールバック）
+
+切り離しウィンドウの `groupId` は `window.name`（`detached-group:<groupId>`）から取得する（フォールバック時のみURLクエリ）。
+管理画面は重い処理（アイコン一括取得等）でメインのJSスレッドを塞がないよう独立プロセスのまま。
+
+- **about:blank で開く理由**: `window.open` の子ウィンドウをURLへナビゲーションさせると、Electron 44では preload が適用されない
+- **preload の登録**: `session.registerPreloadScript` でセッション単位に登録し、`window.open` の子ウィンドウを含む全ウィンドウに共通適用する（各 `BrowserWindow` の `webPreferences.preload` は指定しない）
+- **注意**: プロセスを共有するウィンドウはJSスレッドも共有する。重い処理を行うウィンドウは独立プロセスにすること
+- **副次効果**: 開き元（メイン・ワークスペース）では `setWindowOpenHandler` により、生成待ちに対応しない `window.open`（外部リンク等）は全て拒否される
+- **IPC**: `window:open-child` / `window:child-written`（[IPCチャンネル](ipc-channels.md#windowopen-child-イベント)）
+
 ---
 
 ## サービスクラス構造

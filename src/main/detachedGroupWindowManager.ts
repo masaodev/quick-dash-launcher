@@ -1,7 +1,7 @@
-import * as path from 'path';
-
 import { BrowserWindow, screen } from 'electron';
+import type { BrowserWindowConstructorOptions } from 'electron';
 import { windowLogger } from '@common/logger';
+import { DETACHED_WINDOW_NAME_PREFIX } from '@common/constants';
 
 import { EnvConfig } from './config/envConfig.js';
 import PathManager from './config/pathManager.js';
@@ -9,6 +9,7 @@ import { SettingsService } from './services/settingsService.js';
 import { WorkspaceService } from './services/workspace/index.js';
 import { attachSnapHandler } from './utils/windowSnap.js';
 import { pinWindow, unPinWindow } from './utils/virtualDesktop/index.js';
+import { getRendererHtmlUrl, openChildWindow } from './services/childWindowService.js';
 
 /**
  * 初回autofit前のフォールバック表示までの待機時間（ms）
@@ -29,6 +30,9 @@ const detachedPinModes = new Map<string, DetachedPinMode>();
 const webContentsIdToGroupId = new Map<number, string>();
 
 type Bounds = { x: number; y: number; width: number; height: number };
+
+/** 生成中の groupId（二重要求の抑止用） */
+const creatingGroupIds = new Set<string>();
 
 let isClosingAll = false;
 let isDetachedWindowFocused = false;
@@ -151,6 +155,27 @@ function resolveInitialPosition(
   };
 }
 
+/** 直接生成（フォールバック）用に、groupId をクエリに付けた workspace.html の URL を組み立てる */
+function buildDetachedWindowUrl(groupId: string): string {
+  return `${getRendererHtmlUrl('workspace.html')}?groupId=${encodeURIComponent(groupId)}`;
+}
+
+/**
+ * メインプロセスで直接 BrowserWindow を生成する（開き元が使えない場合のフォールバック）
+ */
+function createStandaloneWindow(
+  groupId: string,
+  options: BrowserWindowConstructorOptions,
+  pinMode: DetachedPinMode,
+  skipFocus: boolean
+): { success: boolean } {
+  const win = new BrowserWindow(options);
+  win.loadURL(buildDetachedWindowUrl(groupId));
+  setupDetachedWindow(win, groupId, pinMode, skipFocus);
+  windowLogger.info(`切り離しウィンドウを直接作成しました: ${groupId}`);
+  return { success: true };
+}
+
 /**
  * 切り離しグループウィンドウを作成する（既存ならフォーカスのみ）
  * @param options.skipFocus trueの場合、フォーカスを奪わずに表示する
@@ -168,6 +193,10 @@ export async function createDetachedGroupWindow(
     } else {
       existing.focus();
     }
+    return { success: true };
+  }
+  if (creatingGroupIds.has(groupId)) {
+    // 生成中の二重要求は無視
     return { success: true };
   }
 
@@ -202,7 +231,7 @@ export async function createDetachedGroupWindow(
   const height = savedBounds?.height ?? defaultHeight;
   const position = resolveInitialPosition(savedBounds, cursorX, cursorY, width, height);
 
-  const win = new BrowserWindow({
+  const windowOptions: BrowserWindowConstructorOptions = {
     width,
     height,
     ...(position && { x: position.x, y: position.y }),
@@ -215,34 +244,57 @@ export async function createDetachedGroupWindow(
     show: false,
     icon: PathManager.getAppIconPath(),
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
       spellcheck: false,
     },
-  });
+  };
 
-  const queryParam = `?groupId=${encodeURIComponent(groupId)}`;
-  if (EnvConfig.isDevelopment) {
-    win.loadURL(`${EnvConfig.devServerUrl}/workspace.html${queryParam}`);
-  } else {
-    win.loadFile(path.join(__dirname, '../workspace.html'), {
-      search: queryParam,
+  const skipFocus = options?.skipFocus ?? false;
+
+  // ワークスペースのレンダラーから window.open で開き、レンダラープロセスを共有する
+  // （groupId は window.name 経由でレンダラーに伝わる）
+  creatingGroupIds.add(groupId);
+  try {
+    const win = await openChildWindow('workspace', {
+      name: `${DETACHED_WINDOW_NAME_PREFIX}${groupId}`,
+      html: 'workspace.html',
+      options: windowOptions,
     });
+    if (win) {
+      setupDetachedWindow(win, groupId, savedPinMode, skipFocus);
+      windowLogger.info(`切り離しウィンドウをレンダラー共有で作成しました: ${groupId}`);
+      return { success: true };
+    }
+    windowLogger.warn({ groupId }, 'レンダラー共有での生成に失敗したため直接生成します');
+    return createStandaloneWindow(groupId, windowOptions, savedPinMode, skipFocus);
+  } finally {
+    creatingGroupIds.delete(groupId);
   }
+}
 
+/**
+ * 生成済みの BrowserWindow に切り離しウィンドウとしての管理・イベントを設定する
+ * レンダラー共有（did-create-window）と直接生成の両経路から呼ばれる
+ */
+function setupDetachedWindow(
+  win: BrowserWindow,
+  groupId: string,
+  pinMode: DetachedPinMode,
+  skipFocus: boolean
+): void {
   win.setMenuBarVisibility(false);
   win.setMenu(null);
 
   detachedWindows.set(groupId, win);
-  detachedPinModes.set(groupId, savedPinMode);
+  detachedPinModes.set(groupId, pinMode);
   // closed イベント内で webContents にアクセスできないため事前に保存
   const wcId = win.webContents.id;
   webContentsIdToGroupId.set(wcId, groupId);
 
   const showFallback = setTimeout(() => {
     if (!win.isDestroyed() && !win.isVisible()) {
-      if (options?.skipFocus) {
+      if (skipFocus) {
         showWithoutFocus(win);
       } else {
         win.show();
@@ -329,9 +381,6 @@ export async function createDetachedGroupWindow(
     .catch((error) => {
       windowLogger.warn({ error, groupId }, '切り離しウィンドウの初期 bounds 保存に失敗');
     });
-
-  windowLogger.info(`切り離しウィンドウを作成しました: ${groupId}`);
-  return { success: true };
 }
 
 function destroyWindowIfAlive(groupId: string): void {
@@ -435,10 +484,6 @@ export function getGroupIdByWebContentsId(id: number): string | undefined {
 }
 
 /**
- * 前回開いていた切り離しウィンドウを復元する（存在するグループのみ）
- * @param options.skipFocus trueの場合、フォーカスを奪わずに表示する
- */
-/**
  * 全切り離しウィンドウに仮想デスクトップ固定設定を一括適用する
  */
 export async function applyDetachedVisibilityOnAllDesktops(): Promise<void> {
@@ -449,6 +494,10 @@ export async function applyDetachedVisibilityOnAllDesktops(): Promise<void> {
   }
 }
 
+/**
+ * 前回開いていた切り離しウィンドウを復元する（存在するグループのみ）
+ * @param options.skipFocus trueの場合、フォーカスを奪わずに表示する
+ */
 export async function restoreDetachedWindows(options?: { skipFocus?: boolean }): Promise<void> {
   try {
     const workspaceService = await WorkspaceService.getInstance();

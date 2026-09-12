@@ -3,7 +3,7 @@
  *
  * どちらも小型の透過・最前面ウィンドウであるため、1枚のウィンドウを
  * モードに応じてサイズ・位置・操作可否を切り替えて使い回す。
- * レンダラープロセスの固定費（実測WS約100MB）を1枚分に抑えるための統合。
+ * ウィンドウはメインウィンドウのレンダラープロセスを共有する（childWindowService）。
  *
  * 表示ポリシー: レイアウト進捗の表示中はトーストを表示しない（進捗の方が
  * 情報量が多く、レイアウト実行は数秒〜数十秒で終わるため）。
@@ -11,16 +11,16 @@
  * @see docs/features/toast-notifications.md
  */
 
-import * as path from 'path';
-
 import { BrowserWindow, screen } from 'electron';
+import type { BrowserWindowConstructorOptions } from 'electron';
 import type { ToastItemType } from '@common/types';
 import { IPC_CHANNELS } from '@common/ipcChannels';
+import { windowLogger } from '@common/logger';
 
-import { EnvConfig } from '../config/envConfig.js';
 import { WindowIdleDestroyer } from '../utils/windowIdleDestroyer.js';
 
 import { NotificationType } from './notificationService.js';
+import { getRendererHtmlUrl, openChildWindow } from './childWindowService.js';
 
 /**
  * トースト表示オプション
@@ -65,7 +65,7 @@ let pendingEnsure: Promise<BrowserWindow> | null = null;
 let currentMode: OverlayMode | null = null;
 let toastHideTimeout: ReturnType<typeof setTimeout> | null = null;
 
-// 非表示のまま放置されたウィンドウを破棄してレンダラープロセスを解放する
+// 非表示のまま放置されたウィンドウを破棄して DOM・描画面のメモリを解放する
 const idleDestroyer = new WindowIdleDestroyer(IDLE_DESTROY_MS, () => {
   if (isWindowValid() && !overlayWindow!.isVisible()) {
     destroyOverlayWindow();
@@ -113,25 +113,43 @@ function getProgressPosition(): { x: number; y: number } {
   return { x, y };
 }
 
-function createOverlayWindow(): BrowserWindow {
-  return new BrowserWindow({
-    width: TOAST_WIDTH,
-    height: TOAST_HEIGHT,
-    frame: false,
-    transparent: true,
-    alwaysOnTop: true,
-    skipTaskbar: true,
-    resizable: false,
-    movable: false,
-    focusable: false,
-    show: false,
-    webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
-      spellcheck: false,
-      preload: path.join(__dirname, 'preload.js'),
-    },
+const OVERLAY_WINDOW_OPTIONS: BrowserWindowConstructorOptions = {
+  width: TOAST_WIDTH,
+  height: TOAST_HEIGHT,
+  frame: false,
+  transparent: true,
+  alwaysOnTop: true,
+  skipTaskbar: true,
+  resizable: false,
+  movable: false,
+  focusable: false,
+  show: false,
+  webPreferences: {
+    nodeIntegration: false,
+    contextIsolation: true,
+    spellcheck: false,
+  },
+};
+
+/**
+ * オーバーレイウィンドウを生成する
+ * メインウィンドウのレンダラーから window.open で開き、レンダラープロセスを共有する
+ * （トースト表示のたびに別プロセスが立つのを避け、初回表示も速くなる）
+ * 開き元が使えない場合はメインプロセスで直接生成する
+ */
+async function createOverlayWindow(): Promise<BrowserWindow> {
+  const shared = await openChildWindow('main', {
+    name: 'overlay',
+    html: 'overlay.html',
+    options: OVERLAY_WINDOW_OPTIONS,
   });
+  if (shared) {
+    return shared;
+  }
+  windowLogger.warn('レンダラー共有での生成に失敗したためオーバーレイウィンドウを直接生成します');
+  const win = new BrowserWindow(OVERLAY_WINDOW_OPTIONS);
+  await win.loadURL(getRendererHtmlUrl('overlay.html'));
+  return win;
 }
 
 async function ensureWindow(): Promise<BrowserWindow> {
@@ -145,18 +163,14 @@ async function ensureWindow(): Promise<BrowserWindow> {
   }
 
   pendingEnsure = (async () => {
-    overlayWindow = createOverlayWindow();
     isWindowReady = false;
-
-    if (EnvConfig.isDevelopment) {
-      await overlayWindow.loadURL(`${EnvConfig.devServerUrl}/overlay.html`);
-    } else {
-      await overlayWindow.loadFile(path.join(__dirname, '../overlay.html'));
+    try {
+      overlayWindow = await createOverlayWindow();
+      isWindowReady = true;
+      return overlayWindow;
+    } finally {
+      pendingEnsure = null;
     }
-
-    isWindowReady = true;
-    pendingEnsure = null;
-    return overlayWindow;
   })();
 
   return pendingEnsure;

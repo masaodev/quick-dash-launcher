@@ -1,6 +1,5 @@
-import * as path from 'path';
-
 import { BrowserWindow, Display, screen } from 'electron';
+import type { BrowserWindowConstructorOptions } from 'electron';
 import { windowLogger } from '@common/logger';
 import type { WorkspacePositionMode } from '@common/types';
 
@@ -11,8 +10,21 @@ import { calculateModalSize } from './utils/modalSizeManager.js';
 import { pinWindow, unPinWindow } from './utils/virtualDesktop/index.js';
 import { attachSnapHandler } from './utils/windowSnap.js';
 import { restoreDetachedWindows } from './detachedGroupWindowManager.js';
+import {
+  getRendererHtmlUrl,
+  openChildWindow,
+  registerChildWindowOpener,
+} from './services/childWindowService.js';
+
+/**
+ * メインウィンドウのレンダラー経由でワークスペースを生成する際の待機上限（ms）
+ * 起動時はメインレンダラーの読み込み完了を待つため長めに取る
+ */
+const WORKSPACE_OPEN_TIMEOUT_MS = 15000;
 
 let workspaceWindow: BrowserWindow | null = null;
+/** 生成中の Promise（同時呼び出し時に再利用し、二重生成を防ぐ） */
+let pendingCreate: Promise<BrowserWindow> | null = null;
 let isWorkspaceWindowVisible: boolean = false;
 let isAppQuitting: boolean = false;
 let detachedRestored: boolean = false;
@@ -22,7 +34,7 @@ let normalWorkspaceWindowBounds: { width: number; height: number } | null = null
 let windowSnapEnabled: boolean = true;
 
 /**
- * ワークスペースウィンドウを作成し、初期設定を行う
+ * ワークスペースウィンドウを作成し、初期設定を行う（既存なら表示してフォーカス）
  */
 export async function createWorkspaceWindow(): Promise<BrowserWindow> {
   if (workspaceWindow && !workspaceWindow.isDestroyed()) {
@@ -30,7 +42,17 @@ export async function createWorkspaceWindow(): Promise<BrowserWindow> {
     workspaceWindow.focus();
     return workspaceWindow;
   }
+  // 起動時の生成完了を待つ間にホットキー等から呼ばれても二重生成しない
+  if (pendingCreate) {
+    return pendingCreate;
+  }
+  pendingCreate = createWorkspaceWindowInternal().finally(() => {
+    pendingCreate = null;
+  });
+  return pendingCreate;
+}
 
+async function createWorkspaceWindowInternal(): Promise<BrowserWindow> {
   const { height: screenHeight } = screen.getPrimaryDisplay().workAreaSize;
   const windowWidth = 380;
   const windowHeight = screenHeight;
@@ -41,7 +63,7 @@ export async function createWorkspaceWindow(): Promise<BrowserWindow> {
   windowSnapEnabled = await settingsService.get('windowSnapEnabled');
   const opacityValue = backgroundTransparent ? 1.0 : Math.max(0, Math.min(100, opacity)) / 100;
 
-  workspaceWindow = new BrowserWindow({
+  const windowOptions: BrowserWindowConstructorOptions = {
     width: windowWidth,
     height: windowHeight,
     alwaysOnTop: false,
@@ -52,22 +74,37 @@ export async function createWorkspaceWindow(): Promise<BrowserWindow> {
     transparent: true,
     opacity: opacityValue,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
       spellcheck: false,
     },
-  });
+  };
 
-  if (EnvConfig.isDevelopment) {
-    workspaceWindow.loadURL(`${EnvConfig.devServerUrl}/workspace.html`);
+  // メインウィンドウのレンダラーから window.open で開き、レンダラープロセスを共有する
+  // （メインウィンドウは常駐なので、常時1プロセス分のメモリを節約できる）
+  const sharedWindow = await openChildWindow('main', {
+    name: 'workspace',
+    html: 'workspace.html',
+    options: windowOptions,
+    timeoutMs: WORKSPACE_OPEN_TIMEOUT_MS,
+  });
+  if (sharedWindow) {
+    workspaceWindow = sharedWindow;
+    windowLogger.info('ワークスペースウィンドウをレンダラー共有で作成しました');
   } else {
-    workspaceWindow.loadFile(path.join(__dirname, '../workspace.html'));
+    windowLogger.warn(
+      'レンダラー共有での生成に失敗したためワークスペースウィンドウを直接生成します'
+    );
+    workspaceWindow = new BrowserWindow(windowOptions);
+    workspaceWindow.loadURL(getRendererHtmlUrl('workspace.html'));
   }
 
   workspaceWindow.setMenuBarVisibility(false);
   workspaceWindow.setMenu(null);
   workspaceWindow.setIgnoreMouseEvents(false);
+
+  // 切り離しウィンドウはこのレンダラーから window.open で開く
+  registerChildWindowOpener('workspace', workspaceWindow.webContents);
 
   workspaceWindow.on('close', (event) => {
     if (!isAppQuitting) {

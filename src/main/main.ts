@@ -1,6 +1,6 @@
 import * as path from 'path';
 
-import { app, globalShortcut, ipcMain } from 'electron';
+import { app, globalShortcut, ipcMain, session } from 'electron';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { setupIPCHandlers } from './ipc';
@@ -35,6 +35,7 @@ import {
 } from './workspaceWindowManager';
 import { closeAllDetachedGroupWindows, setDetachedAppQuitting } from './detachedGroupWindowManager';
 import { destroyOverlayWindow } from './services/overlayWindowService.js';
+import { cancelAllChildWindowCreations } from './services/childWindowService.js';
 import { BookmarkAutoImportService } from './services/bookmarkAutoImportService.js';
 
 // 多重起動時に完全に独立したuserDataを使用
@@ -56,6 +57,15 @@ if (EnvConfig.isDevelopment) {
 app.whenReady().then(async () => {
   // 設定フォルダを先に作成（スプラッシュのアイコンパス解決に必要）
   PathManager.ensureDirectories();
+
+  // preload はセッション単位で登録し、全ウィンドウ（レンダラーから window.open で
+  // 開く子ウィンドウを含む）に共通適用する。webPreferences.preload は window.open の
+  // 子ウィンドウに引き継がれないため、各 BrowserWindow では個別指定しない
+  session.defaultSession.registerPreloadScript({
+    type: 'frame',
+    id: 'app-preload',
+    filePath: path.join(__dirname, 'preload.js'),
+  });
 
   // スプラッシュウィンドウを最速で表示（E2Eテスト環境ではスキップ）
   if (!EnvConfig.skipSplashWindow) {
@@ -156,6 +166,7 @@ app.on('before-quit', () => {
 
 app.on('will-quit', () => {
   globalShortcut.unregisterAll();
+  cancelAllChildWindowCreations();
   closeAdminWindow();
   closeWorkspaceWindow();
   closeAllDetachedGroupWindows();

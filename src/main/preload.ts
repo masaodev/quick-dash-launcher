@@ -65,6 +65,28 @@ function createEventListener2<T1, T2>(
   return () => ipcRenderer.removeListener(channel, listener);
 }
 
+// 子ウィンドウの生成要求（メインプロセスからの指示で window.open を実行）
+// レンダラーから開くことで子ウィンドウが開き元と同じレンダラープロセスを共有し、
+// ウィンドウ1枚ごとの固定メモリ消費を抑える。生成後の管理はメインプロセス側で行う。
+// 子ウィンドウを URL へナビゲーションさせると preload が適用されないため、
+// about:blank で開いて対象 HTML を開き元から書き込む。
+// 相対パスは開き元ドキュメントの URL を基準に解決される。
+ipcRenderer.on(
+  IPC_CHANNELS.WINDOW_OPEN_CHILD,
+  (_event, payload: { html: string; name: string }) => {
+    const child = window.open('about:blank', payload.name);
+    if (!child) return;
+    // document.write は非推奨扱いだが、about:blank の新規ウィンドウへ HTML 全体を
+    // 書き込む用途では通常のページ読み込みと同じ順序でスクリプトが実行されるため採用する
+    // （DOM 挿入だと module script が非同期実行になり、Vite の React Refresh 前処理と順序が崩れる）
+    child.document.open();
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    child.document.write(payload.html);
+    child.document.close();
+    ipcRenderer.send(IPC_CHANNELS.WINDOW_CHILD_WRITTEN, payload.name);
+  }
+);
+
 interface UpdateItemByIdRequest {
   id: string;
   newItem: LauncherItem;

@@ -195,6 +195,12 @@ export const IPC_CHANNELS = {
   WORKSPACE_MOVE_ITEM_TO_WORKSPACE: 'workspace:move-item-to-workspace',
   WORKSPACE_MOVE_GROUP_TO_WORKSPACE: 'workspace:move-group-to-workspace',
 
+  // 子ウィンドウ生成（レンダラープロセス共有）
+  /** main→renderer: 開き元レンダラーに window.open + document.write で子ウィンドウを開かせる */
+  WINDOW_OPEN_CHILD: 'window:open-child',
+  /** renderer→main: 子ウィンドウへの HTML 書き込み完了通知 */
+  WINDOW_CHILD_WRITTEN: 'window:child-written',
+
   // ワークスペース - イベント
   WORKSPACE_CHANGED: 'workspace-changed',
 
