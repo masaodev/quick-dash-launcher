@@ -190,6 +190,14 @@ const WorkspaceApp: React.FC = () => {
     return () => cleanup?.();
   }, []);
 
+  // 切り離しウィンドウのタイトルにグループ名を反映する（タスクバー・Alt+Tabでの識別用）
+  // グループ名の変更にも追従する
+  useEffect(() => {
+    if (!isDetached) return;
+    const groupName = groups.find((g) => g.id === detachedGroupId)?.displayName;
+    if (groupName) document.title = `${groupName} - QuickDashLauncher`;
+  }, [isDetached, detachedGroupId, groups]);
+
   useEffect(() => {
     if (isDetached) return;
     const handleCtrlF = (e: KeyboardEvent) => {
