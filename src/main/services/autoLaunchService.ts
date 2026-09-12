@@ -43,6 +43,17 @@ export class AutoLaunchService {
     );
   }
 
+  /**
+   * ショートカットのターゲットにする実行ファイルのパスを返す
+   *
+   * ポータブル版（electron-builderのportableターゲット）は起動時に%TEMP%配下へ
+   * 自己展開して実行されるため、process.execPathは一時フォルダのexeを指す。
+   * その場合はランチャーが設定する PORTABLE_EXECUTABLE_FILE（元のexeのフルパス）を使う。
+   */
+  private getTargetPath(): string {
+    return process.env.PORTABLE_EXECUTABLE_FILE || process.execPath;
+  }
+
   public async setAutoLaunch(enabled: boolean): Promise<void> {
     if (!this.isSupported()) {
       logger.warn('Auto launch is only supported on packaged Windows builds');
@@ -52,8 +63,11 @@ export class AutoLaunchService {
     const shortcutPath = this.getShortcutPath();
 
     if (enabled) {
+      // 'create'は既存ショートカットを上書きするため、起動ごとに呼ばれることで
+      // exeの移動やバージョン更新（ファイル名変更）によるパス変更にも追従する
+      const target = this.getTargetPath();
       const success = shell.writeShortcutLink(shortcutPath, 'create', {
-        target: process.execPath,
+        target,
         description: 'QuickDashLauncher - Quick access launcher with global hotkey',
         appUserModelId: 'net.masaodev.quick-dash-launcher',
       });
@@ -61,7 +75,7 @@ export class AutoLaunchService {
       if (!success) {
         throw new Error('Failed to create startup shortcut');
       }
-      logger.info(`Auto launch enabled: shortcut created at ${shortcutPath}`);
+      logger.info(`Auto launch enabled: shortcut created at ${shortcutPath} -> ${target}`);
     } else {
       if (fs.existsSync(shortcutPath)) {
         fs.unlinkSync(shortcutPath);

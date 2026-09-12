@@ -1285,7 +1285,10 @@ Alt+Shift+W
 Windowsログイン時にアプリを自動起動（デフォルト: 無効）。
 
 **実装:**
-- レジストリ `HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run` に登録
+- スタートアップフォルダー（`%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup`）に `QuickDashLauncher.lnk` を作成
+- ショートカットのターゲットは、ポータブル版では `PORTABLE_EXECUTABLE_FILE`（起動した元のexeのパス）、インストーラー版では `process.execPath` を使用
+  - ポータブル版は起動時に `%TEMP%` 配下へ自己展開して実行されるため、`process.execPath` をそのまま使うと一時フォルダを指してしまう
+- アプリ起動のたびにショートカットを再作成するため、exeの移動やバージョン更新（ファイル名変更）後も次回起動時にパスが更新される
 - 開発環境では設定変更しても実際の登録は行われません
 
 ---
@@ -1488,6 +1491,7 @@ $env:QUICK_DASH_CONFIG_DIR = "D:\MyApps\quick-dash-config"
 
 - タスクマネージャー → スタートアップタブで確認
 - 複数起動する場合: 一度無効化→再度有効化
+- ポータブル版でexeを移動・リネーム（バージョン更新）した場合: 新しいexeを一度手動で起動すると、ショートカットのターゲットが更新される
 
 #### 設定が保存されない
 
