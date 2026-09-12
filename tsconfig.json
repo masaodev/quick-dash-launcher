@@ -16,7 +16,7 @@
     "noUnusedParameters": false,
     "noImplicitReturns": true,
     "allowSyntheticDefaultImports": true,
-    "baseUrl": ".",
+    "types": ["node", "vite/client"],
     "paths": {
       "@common/*": ["./src/common/*"],
       "@main/*": ["./src/main/*"],
