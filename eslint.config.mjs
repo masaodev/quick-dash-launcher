@@ -20,6 +20,7 @@ export default [
       'build/',
       'release/',
       'html/',
+      '.vitest/',
       'test-results/',
       'coverage/',
       '*.min.js',

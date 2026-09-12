@@ -49,6 +49,7 @@ coverage/
 test-results/
 playwright-report/
 html/
+.vitest/
 test-output.*
 *-output.log
 test-run.log
