@@ -5,11 +5,14 @@
 
 name: Release
 
-# トリガー条件: v*形式のタグがプッシュされたとき（例: v1.0.0）
+# トリガー条件:
+# - v*形式のタグがプッシュされたとき（例: v1.0.0）→ ビルド＋GitHub Release公開
+# - 手動実行（workflow_dispatch）→ ビルドのみ（Releaseは作成しない。依存更新後の検証用）
 on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
 # 権限設定（リリース作成とファイルアップロードに必要）
 permissions:
@@ -27,11 +30,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      # Node.js環境のセットアップ（バージョン22を使用）
+      # Node.js環境のセットアップ（バージョン24を使用、ローカル開発環境と揃える）
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: '22'
+          node-version: '24'
           cache: 'npm'
 
       # Python環境のセットアップ（node-gyp安定化のため3.11を固定）
@@ -57,18 +60,22 @@ jobs:
           GYP_MSVS_VERSION: '2022'
 
       # タグ名からバージョン番号を抽出（v1.0.0 → 1.0.0）
+      # 以降のステップはタグプッシュ時のみ実行（手動実行時はビルド検証のみで終了）
       - name: Get version from tag
+        if: startsWith(github.ref, 'refs/tags/v')
         id: get_version
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
         shell: bash
 
       # ビルド結果のファイルを確認（デバッグ用）
       - name: List release directory
+        if: startsWith(github.ref, 'refs/tags/v')
         run: dir release
         shell: cmd
 
       # GitHub Releaseの作成と成果物のアップロード
       - name: Create Release and Upload Assets
+        if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
