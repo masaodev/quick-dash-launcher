@@ -28,11 +28,11 @@ jobs:
     steps:
       # リポジトリのコードをチェックアウト
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       # Node.js環境のセットアップ（バージョン24を使用、ローカル開発環境と揃える）
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: '24'
           cache: 'npm'
@@ -40,7 +40,7 @@ jobs:
       # Python環境のセットアップ（node-gyp安定化のため3.11を固定）
       # ランナー標準のPython 3.14はnode-gypと相性問題を起こすため明示的に固定する
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: '3.11'
 
@@ -76,7 +76,7 @@ jobs:
       # GitHub Releaseの作成と成果物のアップロード
       - name: Create Release and Upload Assets
         if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag_name: ${{ github.ref_name }}
