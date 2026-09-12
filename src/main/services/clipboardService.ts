@@ -6,7 +6,7 @@
 
 import * as fs from 'fs';
 
-import { clipboard, nativeImage, NativeImage } from 'electron';
+import { clipboard, ClipboardItem, nativeImage, NativeImage } from 'electron';
 import clipboardFiles from 'clipboard-files';
 import logger from '@common/logger';
 import { FileUtils } from '@common/utils/fileUtils';
@@ -46,6 +46,19 @@ interface CollectedClipboardData {
 type CollectResult =
   { success: true; data: CollectedClipboardData } | { success: false; error: string };
 
+/** クリップボードから読み出した主要フォーマットの内容（存在しないものは空文字・空画像） */
+interface ClipboardContents {
+  text: string;
+  html: string;
+  rtf: string;
+  image: NativeImage;
+}
+
+const MIME_TEXT = 'text/plain';
+const MIME_HTML = 'text/html';
+const MIME_RTF = 'text/rtf';
+const MIME_PNG = 'image/png';
+
 export class ClipboardService {
   private static instance: ClipboardService | null = null;
   private pendingSessions: Map<string, SessionData> = new Map();
@@ -59,32 +72,66 @@ export class ClipboardService {
     return ClipboardService.instance;
   }
 
+  /**
+   * W3C Clipboard API 形式（Electron 44以降）でクリップボードを読み出し、
+   * テキスト・HTML・RTF・PNG画像を取り出す。
+   * 複数の ClipboardItem がある場合は各フォーマットの最初に見つかったものを採用する
+   */
+  private async readClipboardContents(): Promise<ClipboardContents> {
+    const contents: ClipboardContents = {
+      text: '',
+      html: '',
+      rtf: '',
+      image: nativeImage.createEmpty(),
+    };
+
+    const items = await clipboard.read();
+    for (const item of items) {
+      for (const type of item.types) {
+        if (type === MIME_TEXT && !contents.text) {
+          contents.text = await this.readBlobText(item, type);
+        } else if (type === MIME_HTML && !contents.html) {
+          contents.html = await this.readBlobText(item, type);
+        } else if (type === MIME_RTF && !contents.rtf) {
+          contents.rtf = await this.readBlobText(item, type);
+        } else if (type === MIME_PNG && contents.image.isEmpty()) {
+          const blob = (await item.getType(type)) as Blob;
+          contents.image = nativeImage.createFromBuffer(Buffer.from(await blob.arrayBuffer()));
+        }
+      }
+    }
+
+    return contents;
+  }
+
+  private async readBlobText(item: ClipboardItem, type: string): Promise<string> {
+    const blob = (await item.getType(type)) as Blob;
+    return blob.text();
+  }
+
   async checkCurrentClipboard(): Promise<CurrentClipboardState> {
     const formats: ClipboardFormat[] = [];
     let preview: string | undefined;
     let imageThumbnail: string | undefined;
     let estimatedSize = 0;
 
-    const text = clipboard.readText();
+    const { text, html, rtf, image } = await this.readClipboardContents();
     if (text) {
       formats.push('text');
       preview = this.truncatePreview(text);
       estimatedSize += Buffer.byteLength(text, 'utf8');
     }
 
-    const html = clipboard.readHTML();
-    if (html?.trim()) {
+    if (html.trim()) {
       formats.push('html');
       estimatedSize += Buffer.byteLength(html, 'utf8');
     }
 
-    const rtf = clipboard.readRTF();
-    if (rtf?.trim()) {
+    if (rtf.trim()) {
       formats.push('rtf');
       estimatedSize += Buffer.byteLength(rtf, 'utf8');
     }
 
-    const image = clipboard.readImage();
     if (!image.isEmpty()) {
       formats.push('image');
       const pngBuffer = image.toPNG();
@@ -145,7 +192,7 @@ export class ClipboardService {
     };
     let preview: string | undefined;
 
-    const text = clipboard.readText();
+    const { text, html, rtf, image } = await this.readClipboardContents();
     if (text) {
       formats.push('text');
       clipboardData.text = text;
@@ -153,21 +200,18 @@ export class ClipboardService {
       preview = this.truncatePreview(text);
     }
 
-    const html = clipboard.readHTML();
-    if (html?.trim()) {
+    if (html.trim()) {
       formats.push('html');
       clipboardData.html = html;
       clipboardData.dataSize += Buffer.byteLength(html, 'utf8');
     }
 
-    const rtf = clipboard.readRTF();
-    if (rtf?.trim()) {
+    if (rtf.trim()) {
       formats.push('rtf');
       clipboardData.rtf = rtf;
       clipboardData.dataSize += Buffer.byteLength(rtf, 'utf8');
     }
 
-    const image = clipboard.readImage();
     if (!image.isEmpty()) {
       const pngBuffer = image.toPNG();
 
@@ -347,19 +391,25 @@ export class ClipboardService {
       const data: SerializableClipboard = JSON.parse(content);
 
       const restoredFormats: ClipboardFormat[] = [];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const writeData: any = {};
+      const writeData: Record<string, string | Blob> = {};
 
-      const textFormats = ['text', 'html', 'rtf'] as const;
-      for (const format of textFormats) {
-        if (data[format]) {
-          writeData[format] = data[format];
+      const textFormats = [
+        ['text', MIME_TEXT],
+        ['html', MIME_HTML],
+        ['rtf', MIME_RTF],
+      ] as const;
+      for (const [format, mime] of textFormats) {
+        const value = data[format];
+        if (value) {
+          writeData[mime] = value;
           restoredFormats.push(format);
         }
       }
 
       if (data.imageBase64) {
-        writeData.image = nativeImage.createFromBuffer(Buffer.from(data.imageBase64, 'base64'));
+        writeData[MIME_PNG] = new Blob([Buffer.from(data.imageBase64, 'base64')], {
+          type: MIME_PNG,
+        });
         restoredFormats.push('image');
       }
 
@@ -376,7 +426,7 @@ export class ClipboardService {
         }
       }
 
-      clipboard.write(writeData);
+      await clipboard.write([new ClipboardItem(writeData)]);
       logger.info({ id, restoredFormats }, 'クリップボードを復元しました');
 
       return { success: true, restoredFormats };

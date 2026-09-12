@@ -81,8 +81,8 @@ export function setupWindowHandlers(
   ipcMain.handle(IPC_CHANNELS.GET_INITIAL_TAB, () => getInitialTab());
   ipcMain.handle(IPC_CHANNELS.GET_PENDING_IMPORT_MODAL, () => getPendingImportModal());
 
-  ipcMain.handle(IPC_CHANNELS.COPY_TO_CLIPBOARD, (_event, text: string) => {
-    clipboard.writeText(text);
+  ipcMain.handle(IPC_CHANNELS.COPY_TO_CLIPBOARD, async (_event, text: string) => {
+    await clipboard.writeText(text);
     return true;
   });
 
