@@ -199,8 +199,7 @@ export type GroupDropZone = 'before' | 'nest' | 'after';
 
 /** 親グループ内の混在要素（サブグループまたはアイテム） */
 export type MixedChild =
-  | { kind: 'group'; group: WorkspaceGroup }
-  | { kind: 'item'; item: WorkspaceItem };
+  { kind: 'group'; group: WorkspaceGroup } | { kind: 'item'; item: WorkspaceItem };
 
 /** 混在並べ替えのエントリ（APIに渡す軽量版） */
 export interface MixedOrderEntry {

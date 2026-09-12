@@ -44,8 +44,7 @@ interface CollectedClipboardData {
 }
 
 type CollectResult =
-  | { success: true; data: CollectedClipboardData }
-  | { success: false; error: string };
+  { success: true; data: CollectedClipboardData } | { success: false; error: string };
 
 export class ClipboardService {
   private static instance: ClipboardService | null = null;

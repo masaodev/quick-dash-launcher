@@ -516,12 +516,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                             index,
                             'itemCategory',
                             e.target.value as
-                              | 'item'
-                              | 'dir'
-                              | 'group'
-                              | 'window'
-                              | 'clipboard'
-                              | 'layout'
+                              'item' | 'dir' | 'group' | 'window' | 'clipboard' | 'layout'
                           )
                         }
                       >

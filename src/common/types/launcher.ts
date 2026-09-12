@@ -267,9 +267,4 @@ export interface LayoutExecutionProgress {
  * 通常のLauncherItem、GroupItem、WindowItem、ClipboardItem、LayoutItem、WindowInfo（ウィンドウ検索結果）を扱える
  */
 export type AppItem =
-  | LauncherItem
-  | GroupItem
-  | WindowItem
-  | ClipboardItem
-  | LayoutItem
-  | WindowInfo;
+  LauncherItem | GroupItem | WindowItem | ClipboardItem | LayoutItem | WindowInfo;
