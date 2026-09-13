@@ -16,6 +16,7 @@ import { getDefaultGroupColor } from '@common/constants';
 
 import type { WorkspaceStoreInstance } from './types.js';
 import { migrateGroupDisplayName } from './migrationUtils.js';
+import { setStoredItems } from './itemSanitizer.js';
 
 /**
  * ワークスペースグループの管理を担当するクラス
@@ -193,7 +194,7 @@ export class WorkspaceGroupManager {
       }
 
       this.store.set('groups', filteredGroups);
-      this.store.set('items', updatedItems);
+      setStoredItems(this.store, updatedItems);
 
       return updatedItems;
     } catch (error) {

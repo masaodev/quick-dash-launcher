@@ -23,6 +23,7 @@ import {
 
 import type { WorkspaceStoreInstance } from './types.js';
 import { DEFAULT_WORKSPACE_ID } from './migrationUtils.js';
+import { setStoredItems } from './itemSanitizer.js';
 
 export class WorkspaceItemManager {
   private store: WorkspaceStoreInstance;
@@ -71,7 +72,7 @@ export class WorkspaceItemManager {
       workspaceItem.workspaceId = workspaceId || DEFAULT_WORKSPACE_ID;
 
       items.push(workspaceItem);
-      this.store.set('items', items);
+      setStoredItems(this.store, items);
 
       logger.info(
         { id: workspaceItem.id, name: workspaceItem.displayName, groupId },
@@ -186,7 +187,7 @@ export class WorkspaceItemManager {
       };
 
       items.push(workspaceItem);
-      this.store.set('items', items);
+      setStoredItems(this.store, items);
 
       logger.info(
         { id: workspaceItem.id, name: workspaceItem.displayName, path: filePath, groupId },
@@ -210,7 +211,7 @@ export class WorkspaceItemManager {
         return;
       }
 
-      this.store.set('items', filteredItems);
+      setStoredItems(this.store, filteredItems);
       logger.info({ id }, 'Removed item from workspace');
     } catch (error) {
       logger.error({ error, id }, 'Failed to remove workspace item');
@@ -229,7 +230,7 @@ export class WorkspaceItemManager {
       }
 
       item.displayName = displayName;
-      this.store.set('items', items);
+      setStoredItems(this.store, items);
       logger.info({ id, displayName }, 'Updated workspace item display name');
     } catch (error) {
       logger.error({ error, id }, 'Failed to update workspace item display name');
@@ -257,7 +258,7 @@ export class WorkspaceItemManager {
         groupId: existing.groupId,
       };
 
-      this.store.set('items', items);
+      setStoredItems(this.store, items);
       logger.info({ id, updates }, 'Updated workspace item');
     } catch (error) {
       logger.error({ error, id }, 'Failed to update workspace item');
@@ -287,7 +288,7 @@ export class WorkspaceItemManager {
         }
       }
 
-      this.store.set('items', reorderedItems);
+      setStoredItems(this.store, reorderedItems);
       logger.info({ count: itemIds.length }, 'Reordered workspace items');
     } catch (error) {
       logger.error({ error }, 'Failed to reorder workspace items');
@@ -309,7 +310,7 @@ export class WorkspaceItemManager {
       }
 
       if (updated > 0) {
-        this.store.set('items', items);
+        setStoredItems(this.store, items);
         logger.info({ count: updated }, 'Updated item orders');
       }
     } catch (error) {
@@ -350,11 +351,10 @@ export class WorkspaceItemManager {
         addedAt: Date.now(),
         order,
         groupId: targetGroupId !== undefined ? targetGroupId : sourceItem.groupId,
-        icon: undefined,
       };
 
       items.push(duplicatedItem);
-      this.store.set('items', items);
+      setStoredItems(this.store, items);
 
       logger.info(
         { sourceId: sourceItemId, newId: duplicatedItem.id, targetGroupId },
@@ -395,7 +395,7 @@ export class WorkspaceItemManager {
 
       item.groupId = groupId;
 
-      this.store.set('items', items);
+      setStoredItems(this.store, items);
       logger.info({ itemId, groupId }, 'Moved item to group');
     } catch (error) {
       logger.error({ error, itemId, groupId }, 'Failed to move item to group');
@@ -405,7 +405,7 @@ export class WorkspaceItemManager {
 
   public clear(): void {
     try {
-      this.store.set('items', []);
+      setStoredItems(this.store, []);
       logger.info('Cleared all workspace items');
     } catch (error) {
       logger.error({ error }, 'Failed to clear workspace');

@@ -5,6 +5,7 @@ import type { Workspace, WorkspaceGroup, ArchivedWorkspaceGroup } from '@common/
 import logger from '@common/logger';
 
 import type { WorkspaceStoreInstance } from './types.js';
+import { setStoredItems } from './itemSanitizer.js';
 
 /**
  * 旧データの name → displayName マイグレーションを実行
@@ -88,7 +89,7 @@ export function migrateToMultiWorkspace(store: WorkspaceStoreInstance): void {
     return i;
   });
   if (itemsMigrated) {
-    store.set('items', migratedItems);
+    setStoredItems(store, migratedItems);
     logger.info('Migration: assigned default workspaceId to items');
   }
 }

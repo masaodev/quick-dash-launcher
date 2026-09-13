@@ -29,6 +29,7 @@ import { WorkspaceItemManager } from './WorkspaceItemManager.js';
 import { WorkspaceGroupManager } from './WorkspaceGroupManager.js';
 import { WorkspaceArchiveManager } from './WorkspaceArchiveManager.js';
 import { migrateToMultiWorkspace } from './migrationUtils.js';
+import { purgeStoredItemIcons, setStoredItems } from './itemSanitizer.js';
 
 // electron-storeを動的にインポート
 let Store: typeof ElectronStore | null = null;
@@ -117,6 +118,10 @@ export class WorkspaceService {
 
       // マルチワークスペースマイグレーション
       migrateToMultiWorkspace(this.store);
+
+      // 旧仕様で設定ファイルに埋め込まれたアイコンを除去
+      purgeStoredItemIcons(this.store, 'workspace');
+      purgeStoredItemIcons(this.archiveStore, 'workspace-archive');
 
       // マネージャーを初期化
       this.itemManager = new WorkspaceItemManager(this.store);
@@ -366,7 +371,7 @@ export class WorkspaceService {
       item.workspaceId = targetWorkspaceId;
       // グループから削除（移動先ワークスペースにはグループが存在しないため）
       item.groupId = undefined;
-      this.store!.set('items', items);
+      setStoredItems(this.store!, items);
       logger.info({ itemId, targetWorkspaceId }, 'Moved item to workspace');
       return;
     }
@@ -402,7 +407,7 @@ export class WorkspaceService {
       }
 
       this.store!.set('groups', groups);
-      this.store!.set('items', items);
+      setStoredItems(this.store!, items);
       logger.info(
         { groupId, targetWorkspaceId, groupCount: allGroupIds.size },
         'Moved group to workspace'

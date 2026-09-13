@@ -12,6 +12,7 @@ import { getDescendantGroupIds } from '@common/utils/groupTreeUtils';
 
 import type { WorkspaceStoreInstance, ArchiveStoreInstance } from './types.js';
 import { migrateGroupDisplayName } from './migrationUtils.js';
+import { setStoredItems } from './itemSanitizer.js';
 
 /**
  * ワークスペースのアーカイブ操作を担当するクラス
@@ -79,7 +80,7 @@ export class WorkspaceArchiveManager {
       archivedItemsInStore.push(...archivedItems);
 
       this.archiveStore.set('groups', archivedGroupsInStore);
-      this.archiveStore.set('items', archivedItemsInStore);
+      setStoredItems(this.archiveStore, archivedItemsInStore);
 
       // ワークスペースから削除
       const remainingGroups = groups.filter((g) => !allGroupIds.has(g.id));
@@ -88,7 +89,7 @@ export class WorkspaceArchiveManager {
       );
 
       this.store.set('groups', remainingGroups);
-      this.store.set('items', remainingItems);
+      setStoredItems(this.store, remainingItems);
 
       logger.info(
         {
@@ -243,7 +244,7 @@ export class WorkspaceArchiveManager {
       const updatedItems = [...currentItems, ...restoredItems];
 
       this.store.set('groups', updatedGroups);
-      this.store.set('items', updatedItems);
+      setStoredItems(this.store, updatedItems);
 
       // アーカイブから削除
       const remainingArchivedGroups = archivedGroups.filter((g) => !allArchivedGroupIds.has(g.id));
@@ -252,7 +253,7 @@ export class WorkspaceArchiveManager {
       );
 
       this.archiveStore.set('groups', remainingArchivedGroups);
-      this.archiveStore.set('items', remainingArchivedItems);
+      setStoredItems(this.archiveStore, remainingArchivedItems);
 
       logger.info(
         {
@@ -309,7 +310,7 @@ export class WorkspaceArchiveManager {
       );
 
       this.archiveStore.set('groups', remainingArchivedGroups);
-      this.archiveStore.set('items', remainingArchivedItems);
+      setStoredItems(this.archiveStore, remainingArchivedItems);
 
       logger.info({ groupId, groupName: group.displayName }, 'Deleted archived group permanently');
     } catch (error) {
@@ -324,7 +325,7 @@ export class WorkspaceArchiveManager {
   public clear(): void {
     try {
       this.archiveStore.set('groups', []);
-      this.archiveStore.set('items', []);
+      setStoredItems(this.archiveStore, []);
       logger.info('Cleared all archived groups and items');
     } catch (error) {
       logger.error({ error }, 'Failed to clear archive');
@@ -362,9 +363,9 @@ export class WorkspaceArchiveManager {
       order: maxOrder + 1,
     };
 
-    this.store.set('items', [...currentItems, restoredItem]);
-    this.archiveStore.set(
-      'items',
+    setStoredItems(this.store, [...currentItems, restoredItem]);
+    setStoredItems(
+      this.archiveStore,
       archivedItems.filter((i) => i.id !== itemId)
     );
 
