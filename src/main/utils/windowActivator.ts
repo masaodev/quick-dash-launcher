@@ -14,6 +14,8 @@ import {
   restoreWindow,
   setWindowBounds,
   getWindowBounds,
+  getForegroundLockTimeout,
+  FOREGROUND_LOCK_TIMEOUT_DEFAULT_MS,
 } from './nativeWindowControl.js';
 import {
   moveWindowToVirtualDesktop,
@@ -361,7 +363,16 @@ export async function tryActivateWindow(
 
   const success = activateWindow(hwnd);
   if (!success) {
-    logger.warn(logCtx, 'ウィンドウのアクティブ化に失敗。通常起動にフォールバック');
+    // SetForegroundWindowは拒否されてもGetLastErrorに理由を設定しないため、
+    // 代わりにフォアグラウンドロックの設定値を記録して原因を追えるようにする
+    const lockTimeout = getForegroundLockTimeout();
+    const blockedByLock = lockTimeout !== null && lockTimeout > FOREGROUND_LOCK_TIMEOUT_DEFAULT_MS;
+    logger.warn(
+      { ...logCtx, foregroundLockTimeout: lockTimeout },
+      blockedByLock
+        ? 'ウィンドウを前面に出せませんでした（フォアグラウンドロックが既定より長く設定されています。常駐ツールがSetForegroundWindowを拒否している可能性があります）'
+        : 'ウィンドウを前面に出せませんでした'
+    );
   }
   return { activated: success, windowFound: true };
 }

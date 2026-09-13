@@ -43,6 +43,12 @@ const GetWindowThreadProcessId = user32.func('GetWindowThreadProcessId', 'uint32
   koffi.out(koffi.pointer('uint32', 1)),
 ]);
 const SetForegroundWindow = user32.func('SetForegroundWindow', 'bool', ['void*']);
+const SystemParametersInfoW = user32.func('SystemParametersInfoW', 'bool', [
+  'uint32',
+  'uint32',
+  koffi.out(koffi.pointer('uint32', 1)),
+  'uint32',
+]);
 const ShowWindow = user32.func('ShowWindow', 'bool', ['void*', 'int']);
 const SendMessageW = user32.func('SendMessageW', 'intptr', ['void*', 'uint32', 'intptr', 'intptr']);
 const GetClassLongPtrW = user32.func('GetClassLongPtrW', 'intptr', ['void*', 'int']);
@@ -640,6 +646,35 @@ export function activateWindow(hwnd: number | bigint): boolean {
   } catch (error) {
     console.error(`Error activating window ${hwnd}:`, error);
     return false;
+  }
+}
+
+/** SPI_GETFOREGROUNDLOCKTIMEOUT */
+const SPI_GETFOREGROUNDLOCKTIMEOUT = 0x2000;
+
+/** ForegroundLockTimeoutのWindows既定値（ミリ秒） */
+export const FOREGROUND_LOCK_TIMEOUT_DEFAULT_MS = 200000;
+
+/**
+ * フォアグラウンドロックのタイムアウト設定値（ミリ秒）を取得する
+ *
+ * SetForegroundWindowは拒否されてもGetLastErrorに理由を設定しないため、
+ * 失敗時の診断材料としてこの値を参照する。
+ * 常駐ツールがSystemParametersInfoで極端に大きな値を設定していると、
+ * バックグラウンドのプロセスからの前面化は常に拒否される。
+ *
+ * @returns 設定値（ミリ秒）。取得できない場合はnull
+ */
+export function getForegroundLockTimeout(): number | null {
+  try {
+    const buffer = new Uint32Array(1);
+    if (!SystemParametersInfoW(SPI_GETFOREGROUNDLOCKTIMEOUT, 0, buffer, 0)) {
+      return null;
+    }
+    return buffer[0];
+  } catch (error) {
+    console.error('Error getting foreground lock timeout:', error);
+    return null;
   }
 }
 
