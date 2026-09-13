@@ -56,7 +56,7 @@ QuickDashLauncherは以下の3種類のファイルを使用してアプリケ�
 - **内容**: 検索クエリ履歴（最大100件）
 
 ### アイコンキャッシュ
-- **フォルダ**: `config/icon-cache/`（apps, favicons, custom, schemes, extensions）
+- **フォルダ**: `config/icon-cache/`（apps, favicons, custom, extensions）
 - **ファイル**: `config/icon-cache/icon-fetch-errors.json`
 - **内容**: アイコン取得エラー記録（`{ "errors": [{ "key": "...", "type": "...", "errorMessage": "...", "errorAt": ..., "failCount": ... }] }`）
 

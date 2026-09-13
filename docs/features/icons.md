@@ -10,7 +10,8 @@ QuickDashLauncherのアイコン処理システムは、様々な種類のアイ
 | ----------------------- | ------------------------------------------------------------- | ----------------------------- | -------------------------- |
 | **ファビコン**          | `%APPDATA%/quick-dash-launcher/config/icon-cache/favicons/`   | `{domain}_favicon_{size}.png` | 64px（推奨）/ 32px（互換） |
 | **EXEアイコン**         | `%APPDATA%/quick-dash-launcher/config/icon-cache/apps/`       | `{basename}_icon.png`         | 32px                       |
-| **カスタムURIアイコン** | `%APPDATA%/quick-dash-launcher/config/icon-cache/schemes/`    | `uri_{schema}_icon.png`       | 32px                       |
+| **カスタムURIアイコン** | `%APPDATA%/quick-dash-launcher/config/icon-cache/apps/`       | `uri_{schema}_icon.png`       | 32px                       |
+| **登録アプリアイコン**  | `%APPDATA%/quick-dash-launcher/config/icon-cache/apps/`       | `uwp_{PFN}_icon.png`          | マニフェスト依存           |
 | **拡張子アイコン**      | `%APPDATA%/quick-dash-launcher/config/icon-cache/extensions/` | `ext_{extension}_icon.png`    | 32px                       |
 | **カスタムアイコン**    | `%APPDATA%/quick-dash-launcher/config/icon-cache/custom/`     | `{MD5ハッシュ}.png`           | 任意                       |
 
@@ -25,9 +26,19 @@ QuickDashLauncherのアイコン処理システムは、様々な種類のアイ
 
 **カスタムURIアイコン:**
 
+EXEアイコンと同じ `apps/` に、`uri_` プレフィックスで保存されます。
+
 ```
 uri_{schema}_icon.png
 例: uri_obsidian_icon.png
+例: uri_ms-todo_icon.png
+```
+
+**登録アプリアイコン:**
+
+```
+uwp_{PackageFamilyName}_icon.png
+例: uwp_Microsoft.Todos_8wekyb3d8bbwe_icon.png
 ```
 
 ### 後方互換性
@@ -137,8 +148,9 @@ uri_{schema}_icon.png
 | 優先度 | 取得方法         | 説明                                                         |
 | ------ | ---------------- | ------------------------------------------------------------ |
 | 1      | レジストリベース | Windowsレジストリからスキーマハンドラーアプリを検索          |
-| 2      | 拡張子ベース     | URIに対応する拡張子のアイコン（例: `ms-excel://` → `.xlsx`） |
-| 3      | デフォルト       | 🔗絵文字                                                     |
+| 2      | 登録アプリベース | マニフェストでスキーマを宣言しているUWPアプリを逆引き        |
+| 3      | 拡張子ベース     | URIに対応する拡張子のアイコン（例: `ms-excel://` → `.xlsx`） |
+| 4      | デフォルト       | 🔗絵文字                                                     |
 
 ### レジストリクエリプロセス
 
@@ -147,6 +159,19 @@ uri_{schema}_icon.png
 3. **実行ファイルパス抽出**: コマンド文字列からEXEパスを抽出
 4. **環境変数展開**: `%PROGRAMFILES%`等を実際のパスに変換
 5. **アイコン抽出**: `extract-file-icon`ライブラリで32pxアイコンを抽出
+
+なお、スキーマ検出は `://` を持たないURI（`ms-todo:` 等）にも対応しています。
+
+### 登録アプリ（UWP）へのフォールバック
+
+UWPアプリはPackagedCOM方式で起動されるため、レジストリに `shell\open\command` を
+持ちません。この場合はレジストリから実行ファイルを解決できないため、登録アプリの
+マニフェストを参照します。
+
+1. **プロトコル宣言の収集**: 全登録アプリのマニフェストから `windows.protocol` 拡張が
+   宣言するスキーマ名を取得（プロセス内で1回だけ実行してキャッシュ）
+2. **スキーマ逆引き**: スキーマ名から対応するパッケージを特定（例: `ms-todo` → `Microsoft.Todos`）
+3. **アイコン抽出**: パッケージのロゴ（`Square44x44Logo` 等）を読み込んで保存
 
 ### 対応URIスキーマ例
 
@@ -157,6 +182,7 @@ uri_{schema}_icon.png
 | `vscode://`   | Code.exe         |
 | `steam://`    | steam.exe        |
 | `slack://`    | slack.exe        |
+| `ms-todo:`    | Microsoft.Todos（登録アプリ） |
 
 ---
 

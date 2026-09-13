@@ -34,7 +34,6 @@ describe('PathManager', () => {
       expect(PathManager.getCustomIconsFolder()).toBe(
         path.join(configFolder, 'icon-cache', 'custom')
       );
-      expect(PathManager.getSchemesFolder()).toBe(path.join(configFolder, 'icon-cache', 'schemes'));
       expect(PathManager.getExtensionsFolder()).toBe(
         path.join(configFolder, 'icon-cache', 'extensions')
       );
@@ -66,7 +65,6 @@ describe('PathManager', () => {
       expect(fs.existsSync(PathManager.getAppsFolder())).toBe(true);
       expect(fs.existsSync(PathManager.getFaviconsFolder())).toBe(true);
       expect(fs.existsSync(PathManager.getCustomIconsFolder())).toBe(true);
-      expect(fs.existsSync(PathManager.getSchemesFolder())).toBe(true);
       expect(fs.existsSync(PathManager.getExtensionsFolder())).toBe(true);
       expect(fs.existsSync(PathManager.getBackupFolder())).toBe(true);
     });

@@ -51,10 +51,6 @@ export class PathManager {
     return this.getIconCacheSubfolder('custom');
   }
 
-  static getSchemesFolder(): string {
-    return this.getIconCacheSubfolder('schemes');
-  }
-
   static getExtensionsFolder(): string {
     return this.getIconCacheSubfolder('extensions');
   }
@@ -120,7 +116,6 @@ export class PathManager {
       this.getDataFilesFolder(),
       this.getIconCacheFolder(),
       this.getAppsFolder(),
-      this.getSchemesFolder(),
       this.getExtensionsFolder(),
       this.getFaviconsFolder(),
       this.getCustomIconsFolder(),

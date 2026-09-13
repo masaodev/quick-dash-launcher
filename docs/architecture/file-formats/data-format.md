@@ -36,9 +36,10 @@ QuickDashLauncherは複数のJSON形式のデータファイルをサポート�
 | サブフォルダ | 説明 | ファイル名形式 |
 |------------|------|--------------|
 | `icon-cache/apps/` | EXEファイルのアイコン | `{basename}_icon.png` |
+| `icon-cache/apps/` | カスタムURIスキームのアイコン | `uri_{scheme}_icon.png` |
+| `icon-cache/apps/` | 登録アプリ（UWP）のアイコン | `uwp_{PackageFamilyName}_icon.png` |
 | `icon-cache/favicons/` | WebサイトのFavicon | URL由来のファイル名 |
 | `icon-cache/custom/` | カスタムアイコン（手動設定） | 任意のファイル名 |
-| `icon-cache/schemes/` | カスタムURIスキームのアイコン | スキーム由来のファイル名 |
 | `icon-cache/extensions/` | ファイル拡張子のアイコン | `ext_{ext}_icon.png` |
 
 データファイルの `customIcon` フィールドは `icon-cache/custom/` 内のファイル名を指定します。
