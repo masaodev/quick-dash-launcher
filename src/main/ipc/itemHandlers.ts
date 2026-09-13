@@ -13,6 +13,7 @@ import type { LayoutItem, LayoutWindowEntry } from '@common/types';
 import { GROUP_LAUNCH_DELAY_MS } from '@common/constants';
 import { isLauncherItem, isWindowItem } from '@common/types/guards';
 import { IPC_CHANNELS } from '@common/ipcChannels';
+import { PathUtils } from '@common/utils/pathUtils';
 
 import { tryActivateWindow } from '../utils/windowActivator.js';
 import { launchItem } from '../utils/itemLauncher.js';
@@ -317,9 +318,11 @@ async function executeLayoutEntry(
     const existingWindow = findWindowByTitle(searchTitle, entry.processName);
     if (!existingWindow) {
       // アプリ起動
+      // executablePathにはカスタムURI（ms-todo: 等）も入り得る。appとして扱うと
+      // shell.openPathでファイルパスとして開こうとして失敗するため型を判別する
       await launchItem(
         {
-          type: 'app',
+          type: PathUtils.isCustomUriScheme(entry.executablePath) ? 'customUri' : 'app',
           path: entry.executablePath,
           args: entry.args,
           displayName: entry.windowTitle,

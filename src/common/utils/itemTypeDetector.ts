@@ -26,6 +26,13 @@ function detectTypeFromPath(itemPath: string): LauncherItem['type'] {
     return 'folder';
   }
 
+  // スラッシュを持たないカスタムURI（ms-todo: 等）
+  // 上の '://' 判定では拾えず、拡張子も持たないためfolderに誤判定されてしまう。
+  // folderとして扱うとshell.openPathで起動しようとして失敗する
+  if (PathUtils.isCustomUriScheme(itemPath)) {
+    return 'customUri';
+  }
+
   const ext = PathUtils.getExtension(itemPath);
 
   // Executables and shortcuts
@@ -49,7 +56,13 @@ export async function detectItemType(
   itemPath: string,
   isDirectoryCheck?: (path: string) => Promise<boolean>
 ): Promise<LauncherItem['type']> {
-  if (isDirectoryCheck && !itemPath.includes('://') && !itemPath.startsWith('shell:')) {
+  // URI・shellパスはファイルシステム上に存在しないため、ディレクトリ照会を行わない
+  if (
+    isDirectoryCheck &&
+    !itemPath.includes('://') &&
+    !itemPath.startsWith('shell:') &&
+    !PathUtils.isCustomUriScheme(itemPath)
+  ) {
     try {
       const isDirectory = await isDirectoryCheck(itemPath);
       if (isDirectory) {
