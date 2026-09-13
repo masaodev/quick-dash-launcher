@@ -42,3 +42,12 @@ export const DESKTOP_TAB = {
  * レンダラー側の groupId 取得の両方に使う
  */
 export const DETACHED_WINDOW_NAME_PREFIX = 'detached-group:';
+
+/**
+ * アイコン取得の対象になるアイテムタイプ
+ * folder / group / windowOperation / clipboard / layout は
+ * タイプ別のデフォルトアイコンを使うため取得対象外
+ */
+export function isIconFetchTarget(type: string): boolean {
+  return type === 'url' || type === 'app' || type === 'file' || type === 'customUri';
+}

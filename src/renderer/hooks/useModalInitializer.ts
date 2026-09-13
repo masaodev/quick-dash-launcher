@@ -86,12 +86,8 @@ export function useModalInitializer() {
 
         let icon: string | undefined;
         try {
-          const isBatchFile =
-            itemType === 'app' &&
-            (filePath.endsWith('.bat') || filePath.endsWith('.cmd') || filePath.endsWith('.com'));
-          icon = isBatchFile
-            ? ((await window.electronAPI.extractFileIconByExtension(filePath)) ?? undefined)
-            : ((await window.electronAPI.getIconForItem(filePath, itemType)) ?? undefined);
+          // スクリプト系やUWPの扱いはgetIconForItem側に集約されている
+          icon = (await window.electronAPI.getIconForItem(filePath, itemType)) ?? undefined;
         } catch (error) {
           logError('Failed to extract icon:', error);
         }

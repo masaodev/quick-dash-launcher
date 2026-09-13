@@ -515,7 +515,17 @@ const channel = IPC_CHANNELS.SETTINGS_GET; // 'settings:get'
 - パラメータ: `urlItems: IconItem[]`, `items: IconItem[]`, `forceRefresh?: boolean`
 - 戻り値: `{ favicons: Record<string, string | null>, icons: Record<string, string | null> }`
 - 特徴: 複数フェーズ（ファビコン取得 + アイコン抽出）の進捗を統合管理
+- 進捗の通知先はメインウィンドウ
 - `forceRefresh`: `true`の場合、エラー記録をクリアした上でキャッシュをバイパスして再取得する（詳細は[アイコンシステム](../features/icons.md#強制更新時の挙動forcerefresh)を参照）
+
+### `ensure-icons`
+
+キャッシュに無いアイコンを取得（進捗通知なし）
+
+- パラメータ: `items: IconItem[]`
+- 戻り値: `Record<string, string>` (取得できたアイコンのみを含む、パスをキーとするマップ)
+- 用途: ワークスペースなど、メインウィンドウの一括取得の対象外にあるアイテムの補完
+- 動作: `url` / `app` / `file` / `customUri` のみを対象とし、失敗したアイテムはエラー記録に残して次回以降スキップする（詳細は[アイコンシステム](../features/icons.md#キャッシュに無いアイコンの補完)を参照）
 
 ### `select-custom-icon-file`
 

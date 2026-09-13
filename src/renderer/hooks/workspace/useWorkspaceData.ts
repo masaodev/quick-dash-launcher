@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { Workspace, WorkspaceItem, WorkspaceGroup } from '@common/types';
+import { isIconFetchTarget } from '@common/constants';
 
 import { logError } from '../../utils/debug';
 import { useGlobalLoading } from '../useGlobalLoading';
@@ -23,6 +24,17 @@ const ICON_CACHEABLE_TYPES: ReadonlySet<string> = new Set<IconCacheItem['type']>
 
 function needsIconFromCache(type: WorkspaceItem['type']): boolean {
   return ICON_CACHEABLE_TYPES.has(type);
+}
+
+/** WorkspaceItem を loadCachedIcons / ensureIcons が受け取る形式へ変換する */
+function toIconCacheItem(item: WorkspaceItem): IconCacheItem {
+  return {
+    displayName: item.displayName,
+    path: item.path,
+    type: item.type as IconCacheItem['type'],
+    customIcon: item.customIcon,
+    originalPath: item.originalPath,
+  };
 }
 
 async function mergeIconsFromCache<T extends { icon?: string }>(
@@ -84,18 +96,39 @@ export function useWorkspaceData(detachedGroupId?: string | null) {
       const itemsWithIcons = await mergeIconsFromCache(
         loadedItems,
         (item) => item.path,
-        (item) => ({
-          displayName: item.displayName,
-          path: item.path,
-          type: item.type as IconCacheItem['type'],
-          customIcon: item.customIcon,
-          originalPath: item.originalPath,
-        }),
+        toIconCacheItem,
         (item) => item.type as WorkspaceItem['type']
       );
       setItems(itemsWithIcons);
+      void fetchMissingIcons(itemsWithIcons);
     } catch (error) {
       logError('Failed to load workspace items:', error);
+    }
+  }
+
+  /**
+   * キャッシュに無かったアイコンを取得して反映する
+   *
+   * ワークスペースにしか存在しないアイテムはメインウィンドウの一括取得の対象外で
+   * キャッシュが作られないため、ここで補う。表示を待たせないよう初回描画のあとに実行し、
+   * 失敗しても画面には影響させない（取得できなかったアイテムはメイン側で記録され、
+   * 次回以降の呼び出しではスキップされる）。
+   */
+  async function fetchMissingIcons(items: WorkspaceItem[]): Promise<void> {
+    const missingItems = items.filter(
+      (item) => !item.icon && isIconFetchTarget(item.type) && !item.customIcon
+    );
+    if (missingItems.length === 0) return;
+
+    try {
+      const fetched = await window.electronAPI.ensureIcons(missingItems.map(toIconCacheItem));
+      if (Object.keys(fetched).length === 0) return;
+
+      setItems((prev) =>
+        prev.map((item) => (item.icon ? item : { ...item, icon: fetched[item.path] || undefined }))
+      );
+    } catch (error) {
+      logError('Failed to fetch missing workspace icons:', error);
     }
   }
 

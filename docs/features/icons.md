@@ -49,6 +49,29 @@ uwp_{PackageFamilyName}_icon.png
 2. なければ32pxファイルを確認
 3. どちらもなければ新規取得
 
+## アイテムタイプ別の取得経路
+
+アイコンの取得は `fetchIconForItem`（`src/main/ipc/iconHandlers.ts`）に集約されています。取得時の保存先と、表示時に読み出す候補（同ファイルの `getCachedIconCandidates`）は対になっているため、呼び出し側でタイプごとに取得関数を選び分けてはいけません。両者が食い違うと、アイコンを取得できているのに表示されない状態になります。
+
+| アイテムタイプ | 判定順                                       | 保存先                                 |
+| -------------- | -------------------------------------------- | -------------------------------------- |
+| `url`          | -                                            | `favicons/{domain}_favicon_64.png`     |
+| `app`          | 1. 登録アプリ（`shell:AppsFolder\`で始まる） | `apps/uwp_{PFN}_icon.png`              |
+|                | 2. ショートカット（`originalPath`が`.lnk`）  | `apps/{basename}_lnk_icon.png`         |
+|                | 3. スクリプト系（`.bat` / `.cmd` / `.com`）  | `extensions/ext_{extension}_icon.png`  |
+|                | 4. その他（`.exe`を含む）                    | `apps/{basename}_icon.png`             |
+| `customUri`    | 1. スキーマから解決                          | `apps/uri_{schema}_icon.png`           |
+|                | 2. 拡張子へフォールバック                    | `extensions/ext_{extension}_icon.png`  |
+| `file`         | -                                            | `extensions/ext_{extension}_icon.png`  |
+| `folder` ほか  | -                                            | 取得しない（デフォルトアイコンを表示） |
+
+### キャッシュに無いアイコンの補完
+
+メインウィンドウは「未取得アイコンの取得」で一括取得しますが、対象はデータファイルのアイテムに限られます。ワークスペースにしか存在しないアイテムは対象外のため、ワークスペースの読み込み時に不足分を `ensureIcons` で補完します。
+
+- 進捗表示はなく、取得でき次第アイコンが差し替わります（初回表示はキャッシュ分だけで先に描画されます）
+- 取得に失敗したアイテムは `IconFetchErrorService` に記録され、次回以降の呼び出しではスキップされます
+
 ## デフォルトアイコン
 
 アイコンが取得できない場合は、アイテムの種類に応じた絵文字を使用：
@@ -178,13 +201,13 @@ UWPアプリはPackagedCOM方式で起動されるため、レジストリに `s
 
 ### 対応URIスキーマ例
 
-| URIスキーマ   | ハンドラーアプリ |
-| ------------- | ---------------- |
-| `obsidian://` | Obsidian.exe     |
-| `ms-excel://` | EXCEL.EXE        |
-| `vscode://`   | Code.exe         |
-| `steam://`    | steam.exe        |
-| `slack://`    | slack.exe        |
+| URIスキーマ   | ハンドラーアプリ              |
+| ------------- | ----------------------------- |
+| `obsidian://` | Obsidian.exe                  |
+| `ms-excel://` | EXCEL.EXE                     |
+| `vscode://`   | Code.exe                      |
+| `steam://`    | steam.exe                     |
+| `slack://`    | slack.exe                     |
 | `ms-todo:`    | Microsoft.Todos（登録アプリ） |
 
 ---

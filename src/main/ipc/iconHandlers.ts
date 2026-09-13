@@ -5,13 +5,14 @@ import { promisify } from 'util';
 import * as os from 'os';
 import * as crypto from 'crypto';
 
-import { ipcMain, dialog, shell } from 'electron';
+import { ipcMain, dialog, shell, type BrowserWindow } from 'electron';
 import { iconLogger } from '@common/logger';
 import type { LauncherItem } from '@common/types';
 import { FileUtils } from '@common/utils/fileUtils';
 import { PathUtils } from '@common/utils/pathUtils';
 import extractFileIcon from 'extract-file-icon';
 import { IPC_CHANNELS } from '@common/ipcChannels';
+import { isIconFetchTarget } from '@common/constants';
 
 import { CombinedProgressManager } from '../utils/progressManager';
 import { FaviconService } from '../services/faviconService';
@@ -397,6 +398,22 @@ interface IconItem {
   customIcon?: string;
 }
 
+/** アイコンキャッシュの保存先フォルダ群 */
+interface IconFolders {
+  favicons: string;
+  icons: string;
+  extensions: string;
+}
+
+/** PathManagerからアイコンキャッシュのフォルダ群を取得する */
+function getIconFolders(): IconFolders {
+  return {
+    favicons: PathManager.getFaviconsFolder(),
+    icons: PathManager.getAppsFolder(),
+    extensions: PathManager.getExtensionsFolder(),
+  };
+}
+
 /** スクリプト系拡張子（.bat, .cmd, .com）かどうか判定する */
 function isScriptExtension(filePath: string): boolean {
   const lower = filePath.toLowerCase();
@@ -491,16 +508,15 @@ function getCachedIconCandidates(
       ];
     }
 
-    // 通常の実行ファイル
+    // スクリプト系は拡張子ベース（fetchIconForItemの保存先と揃える）
     if (item.path) {
-      if (item.path.toLowerCase().endsWith('.exe')) {
-        const iconName = path.basename(item.path, path.extname(item.path)) + '_icon.png';
-        return [path.join(iconsFolder, iconName)];
-      }
       if (isScriptExtension(item.path)) {
         const extensionName = path.extname(item.path).slice(1).toLowerCase();
         return [getExtensionIconPath(extensionsFolder, extensionName)];
       }
+      // 通常の実行ファイル（拡張子は問わない。fetchIconForItemがファイル名ベースで保存するため）
+      const iconName = path.basename(item.path, path.extname(item.path)) + '_icon.png';
+      return [path.join(iconsFolder, iconName)];
     }
   }
 
@@ -741,48 +757,64 @@ function findSmallestScaleIcon(
   return candidates.sort((a, b) => parseScale(a) - parseScale(b))[0];
 }
 
-/** アイテムからアイコンを抽出 */
-async function extractIconForItem(
+/**
+ * アイテムタイプに応じてアイコンを取得し、キャッシュへ保存する（取得系の唯一の入口）
+ *
+ * タイプごとの分岐はこの関数に集約している。呼び出し側で fetchFavicon /
+ * extractIcon / extractFileIconByExtension を選び分けると、保存先のキャッシュキーが
+ * 読み出し側（getCachedIconCandidates）の候補と食い違い、取得できているのに
+ * 表示されない状態が起きるため、必ずこの関数を経由させること。
+ *
+ * @param forceRefresh キャッシュを無視して取り直す（ファビコンのみ対象）
+ */
+async function fetchIconForItem(
   item: IconItem,
-  iconsFolder: string,
-  extensionsFolder: string
+  folders: IconFolders,
+  forceRefresh = false
 ): Promise<string | null> {
+  if (item.type === 'url') {
+    return fetchFavicon(item.path, folders.favicons, forceRefresh);
+  }
+
   if (item.type === 'app') {
     // UWPアプリ（shell:AppsFolder\パス）の場合
     if (item.path.startsWith('shell:AppsFolder\\')) {
-      return extractUwpIcon(item.path, iconsFolder);
+      return extractUwpIcon(item.path, folders.icons);
     }
     if (PathUtils.isShortcutFile(item.originalPath)) {
-      return extractIcon(item.originalPath!, iconsFolder);
+      return extractIcon(item.originalPath!, folders.icons);
     }
-    if (item.path.endsWith('.exe') || PathUtils.isShortcutFile(item.path)) {
-      return extractIcon(item.path, iconsFolder);
-    }
+    // スクリプト系は拡張子ベース（読み出し側の候補と揃えるため、実行ファイルより先に判定する）
     if (isScriptExtension(item.path)) {
-      return extractFileIconByExtension(item.path, extensionsFolder);
+      return extractFileIconByExtension(item.path, folders.extensions);
     }
+    return extractIcon(item.path, folders.icons);
   }
 
   if (item.type === 'customUri') {
-    const icon = await extractCustomUriIcon(item.path, iconsFolder);
-    return icon || extractFileIconByExtension(item.path, extensionsFolder);
+    const icon = await extractCustomUriIcon(item.path, folders.icons);
+    return icon || extractFileIconByExtension(item.path, folders.extensions);
   }
 
   if (item.type === 'file') {
-    return extractFileIconByExtension(item.path, extensionsFolder);
+    return extractFileIconByExtension(item.path, folders.extensions);
   }
 
+  // folder / group / windowOperation / clipboard / layout はデフォルトアイコンを使用
   return null;
 }
 
-/** ファビコン取得とアイコン抽出を統合して実行し、統合進捗を報告する */
+/**
+ * ファビコン取得とアイコン抽出を統合して実行する
+ *
+ * @param progressWindow 進捗の通知先。nullを渡すと進捗を送らない（バックグラウンド補完用）
+ */
 async function fetchIconsCombined(
   urlItems: IconItem[],
   items: IconItem[],
-  faviconsFolder: string,
-  iconsFolder: string,
-  extensionsFolder: string,
-  forceRefresh: boolean = false
+  folders: IconFolders,
+  forceRefresh: boolean = false,
+  progressWindow: BrowserWindow | null = null
 ): Promise<{ favicons: Record<string, string | null>; icons: Record<string, string | null> }> {
   const errorService = await IconFetchErrorService.getInstance();
 
@@ -811,7 +843,7 @@ async function fetchIconsCombined(
     phaseTotals.push(filteredItems.length);
   }
 
-  const progress = new CombinedProgressManager(phaseTypes, phaseTotals, getMainWindow());
+  const progress = new CombinedProgressManager(phaseTypes, phaseTotals, progressWindow);
   progress.start();
 
   // 各フェーズ共通の処理（フェーズ内は同時実行数を制限して並列化）
@@ -859,7 +891,7 @@ async function fetchIconsCombined(
   const faviconResults = await processPhase(
     filteredUrlItems,
     'favicon',
-    (item) => fetchFavicon(item.path, faviconsFolder, forceRefresh),
+    (item) => fetchIconForItem(item, folders, forceRefresh),
     'ファビコンが見つかりませんでした',
     'ファビコン取得に失敗しました',
     FAVICON_CONCURRENCY
@@ -868,7 +900,7 @@ async function fetchIconsCombined(
   const iconResults = await processPhase(
     filteredItems,
     'icon',
-    (item) => extractIconForItem(item, iconsFolder, extensionsFolder),
+    (item) => fetchIconForItem(item, folders, forceRefresh),
     'アイコンが見つかりませんでした',
     'アイコン抽出に失敗しました',
     ICON_EXTRACT_CONCURRENCY
@@ -876,6 +908,42 @@ async function fetchIconsCombined(
 
   progress.completeAll();
   return { favicons: faviconResults, icons: iconResults };
+}
+
+/**
+ * 渡されたアイテムのアイコンを取得する（進捗通知なし）
+ *
+ * メインウィンドウの一括取得の対象外にあるアイテム（ワークスペース専用のアイテム等）を
+ * 補完するために用意している。取得できなかったアイテムはIconFetchErrorServiceに
+ * 記録されるため、繰り返し呼び出しても同じアイテムを毎回取得し直すことはない。
+ *
+ * @returns 取得できたアイコンのみを含む path → dataURL のマップ
+ */
+async function ensureIcons(
+  items: IconItem[],
+  folders: IconFolders
+): Promise<Record<string, string>> {
+  const targets = items.filter((item) => isIconFetchTarget(item.type));
+  if (targets.length === 0) return {};
+
+  const { favicons, icons } = await fetchIconsCombined(
+    targets.filter((item) => item.type === 'url'),
+    targets.filter((item) => item.type !== 'url'),
+    folders,
+    false,
+    null
+  );
+
+  const resolved: Record<string, string> = {};
+  for (const [itemPath, icon] of [...Object.entries(favicons), ...Object.entries(icons)]) {
+    if (icon) resolved[itemPath] = icon;
+  }
+
+  iconLogger.info(
+    { requested: targets.length, resolved: Object.keys(resolved).length },
+    'Ensured missing icons'
+  );
+  return resolved;
 }
 
 /** カスタムアイコンファイルを選択するダイアログを表示 */
@@ -938,25 +1006,16 @@ function getCustomIcon(customIconFileName: string): string | null {
 /**
  * アイテムタイプに応じて適切なアイコンを取得（統合API）。
  * サービス層からは services/iconService.ts のラッパー経由で利用する
+ *
+ * urlのファビコン、UWPアプリ、スクリプト系の扱いを含めて fetchIconForItem に委譲するため、
+ * 呼び出し側でタイプごとに取得関数を選び分ける必要はない。
  */
 export async function getIconForItem(
   filePath: string,
-  itemType: LauncherItem['type']
+  itemType: LauncherItem['type'],
+  originalPath?: string
 ): Promise<string | null> {
-  const iconsFolder = PathManager.getAppsFolder();
-  const extensionsFolder = PathManager.getExtensionsFolder();
-
-  switch (itemType) {
-    case 'app':
-      return extractIcon(filePath, iconsFolder);
-    case 'file':
-      return extractFileIconByExtension(filePath, extensionsFolder);
-    case 'customUri':
-      return extractCustomUriIcon(filePath, iconsFolder);
-    default:
-      // folder / url / clipboard はデフォルトアイコンを使用
-      return null;
-  }
+  return fetchIconForItem({ type: itemType, path: filePath, originalPath }, getIconFolders());
 }
 
 export function setupIconHandlers(
@@ -964,6 +1023,12 @@ export function setupIconHandlers(
   iconsFolder: string,
   extensionsFolder: string
 ) {
+  const folders: IconFolders = {
+    favicons: faviconsFolder,
+    icons: iconsFolder,
+    extensions: extensionsFolder,
+  };
+
   ipcMain.handle(IPC_CHANNELS.FETCH_FAVICON, (_event, url: string) =>
     fetchFavicon(url, faviconsFolder)
   );
@@ -986,18 +1051,16 @@ export function setupIconHandlers(
     loadCachedIcons(items, faviconsFolder, iconsFolder, extensionsFolder)
   );
 
-  // 統合進捗API
+  // 統合進捗API（進捗はメインウィンドウの進捗バーに表示する）
   ipcMain.handle(
     IPC_CHANNELS.FETCH_ICONS_COMBINED,
     (_event, urlItems: IconItem[], items: IconItem[], forceRefresh: boolean = false) =>
-      fetchIconsCombined(
-        urlItems,
-        items,
-        faviconsFolder,
-        iconsFolder,
-        extensionsFolder,
-        forceRefresh
-      )
+      fetchIconsCombined(urlItems, items, folders, forceRefresh, getMainWindow())
+  );
+
+  // キャッシュ欠損の補完API（進捗通知なし）
+  ipcMain.handle(IPC_CHANNELS.ENSURE_ICONS, (_event, items: IconItem[]) =>
+    ensureIcons(items, folders)
   );
 
   // アイコン取得エラー記録をクリア

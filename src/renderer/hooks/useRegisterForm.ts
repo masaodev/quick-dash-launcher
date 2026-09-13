@@ -397,10 +397,8 @@ export function useRegisterForm(
 
     try {
       const itemType = item.type as 'url' | 'file' | 'app' | 'customUri';
-      const icon =
-        itemType === 'url'
-          ? await window.electronAPI.fetchFavicon(item.path)
-          : await window.electronAPI.getIconForItem(item.path, itemType);
+      // urlのファビコン取得もgetIconForItem側に集約されている
+      const icon = await window.electronAPI.getIconForItem(item.path, itemType);
 
       if (icon) {
         updateItem(index, { icon });

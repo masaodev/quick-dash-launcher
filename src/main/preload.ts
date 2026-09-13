@@ -140,6 +140,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     items: LauncherItem[],
     forceRefresh: boolean = false
   ) => ipcRenderer.invoke(IPC_CHANNELS.FETCH_ICONS_COMBINED, urlItems, items, forceRefresh),
+  // キャッシュ欠損の補完API（進捗通知なし）
+  ensureIcons: (items: LauncherItem[]) => ipcRenderer.invoke(IPC_CHANNELS.ENSURE_ICONS, items),
   // アイコン取得エラー記録をクリア
   clearIconFetchErrors: () => ipcRenderer.invoke(IPC_CHANNELS.CLEAR_ICON_FETCH_ERRORS),
   // アイコン取得エラー記録を取得
