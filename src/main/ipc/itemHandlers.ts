@@ -27,9 +27,7 @@ import {
 } from '../services/overlayWindowService.js';
 import { runWithConcurrency } from '../utils/concurrency.js';
 import { hideMainWindowOnExecute } from '../windowManager.js';
-import PathManager from '../config/pathManager.js';
-
-import { extractIcon } from './iconHandlers.js';
+import { resolveLayoutEntryIcons } from '../utils/layoutIconResolver.js';
 
 /**
  * WindowItemからWindowConfigを生成する
@@ -365,35 +363,6 @@ async function executeLayoutEntry(
 }
 
 /**
- * アイコン未設定のレイアウトエントリについて、executablePathからアイコンを解決する
- *
- * ワークスペース経由のレイアウトは保存時点のアイコンをそのまま持つため、
- * 保存時に取得できなかったエントリ（カスタムURI等）はiconを持たない。
- * 実行時に補完することで進捗オーバーレイのアイコン欠けを防ぐ
- *
- * @returns executablePath → アイコン(dataURL)のマップ。取得できなかったパスは含まない
- */
-async function resolveLayoutEntryIcons(entries: LayoutWindowEntry[]): Promise<Map<string, string>> {
-  const iconsFolder = PathManager.getAppsFolder();
-  const targets = [
-    ...new Set(entries.filter((e) => !e.icon && e.executablePath).map((e) => e.executablePath!)),
-  ];
-
-  const resolved = new Map<string, string>();
-  await Promise.all(
-    targets.map(async (execPath) => {
-      try {
-        const icon = await extractIcon(execPath, iconsFolder);
-        if (icon) resolved.set(execPath, icon);
-      } catch (error) {
-        itemLogger.warn({ execPath, error }, 'レイアウトエントリのアイコン解決に失敗');
-      }
-    })
-  );
-  return resolved;
-}
-
-/**
  * レイアウトを実行する（並列処理・進捗通知・キャンセル対応）
  */
 export async function executeLayout(item: LayoutItem): Promise<void> {
@@ -416,12 +385,11 @@ export async function executeLayout(item: LayoutItem): Promise<void> {
   ipcMain.once(IPC_CHANNELS.LAYOUT_CANCEL, cancelHandler);
 
   // 進捗オブジェクトを初期化
-  const icons = await resolveLayoutEntryIcons(item.entries);
   const entryProgresses: LayoutEntryProgress[] = item.entries.map((entry, i) => ({
     index: i,
     windowTitle: entry.windowTitle,
     processName: entry.processName,
-    icon: entry.icon ?? (entry.executablePath ? icons.get(entry.executablePath) : undefined),
+    icon: entry.icon,
     status: 'waiting' as const,
   }));
 
@@ -434,6 +402,31 @@ export async function executeLayout(item: LayoutItem): Promise<void> {
 
   // 進捗開始を通知
   sendLayoutProgress('start', progress);
+
+  // アイコン未設定のエントリは背後で解決する。
+  // アイコンは進捗表示にしか使わないため、解決を待ってレイアウトの起動を遅らせない
+  void resolveLayoutEntryIcons(item.entries)
+    .then((icons) => {
+      if (icons.size === 0) return;
+
+      let updated = false;
+      item.entries.forEach((entry, i) => {
+        if (progress.entries[i].icon || !entry.executablePath) return;
+        const icon = icons.get(entry.executablePath);
+        if (icon) {
+          progress.entries[i].icon = icon;
+          updated = true;
+        }
+      });
+
+      // 完了後に送るとオーバーレイが再表示されてしまうため、実行中のみ描き直す
+      if (updated && !progress.isComplete && !layoutCancelled) {
+        sendLayoutProgress('start', progress);
+      }
+    })
+    .catch((error) => {
+      itemLogger.warn({ error }, 'レイアウトエントリのアイコン解決に失敗');
+    });
 
   // 各エントリの実行タスクを作成
   const tasks = item.entries.map((entry, i) => async () => {

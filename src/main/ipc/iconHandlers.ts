@@ -139,9 +139,13 @@ export async function extractIcon(filePath: string, iconsFolder: string): Promis
   try {
     // カスタムURIスキーム（obsidian:// や ms-todo: 等）はファイルパスではないため専用経路に委譲する。
     // レイアウトアイテムのexecutablePathには起動用のURIが入り得るが、ここでファイルとして
-    // 解決を試みるとwhere実行とlstatが毎回失敗し、読み込みのたびにログノイズが発生する
+    // 解決を試みるとwhere実行とlstatが毎回失敗し、読み込みのたびにログノイズが発生する。
+    // フォールバック順はextractIconForItem（customUriアイテム）と揃える
     if (PathUtils.isCustomUriScheme(filePath)) {
-      return await extractCustomUriIcon(filePath, iconsFolder);
+      const uriIcon = await extractCustomUriIcon(filePath, iconsFolder);
+      return (
+        uriIcon ?? (await extractFileIconByExtension(filePath, PathManager.getExtensionsFolder()))
+      );
     }
 
     let resolvedPath = filePath;
@@ -568,6 +572,9 @@ interface AppxCache {
 }
 let appxPackageCache: AppxCache | null = null;
 let appxCachePromise: Promise<AppxCache> | null = null;
+/** 取得失敗した時刻。一時的な失敗から回復できるよう一定時間後に再試行する */
+let appxCacheFailedAt: number | null = null;
+const APPX_CACHE_RETRY_INTERVAL_MS = 5 * 60 * 1000;
 
 /**
  * 全AppxPackage情報を1回のPowerShellで一括取得してメモリにキャッシュする。
@@ -579,6 +586,11 @@ let appxCachePromise: Promise<AppxCache> | null = null;
 async function getAppxPackageCache(): Promise<AppxCache> {
   if (appxPackageCache) return appxPackageCache;
   if (appxCachePromise) return appxCachePromise;
+
+  // 直近に失敗している場合は、毎回PowerShellを起動しないよう一定時間は空の結果を返す
+  if (appxCacheFailedAt !== null && Date.now() - appxCacheFailedAt < APPX_CACHE_RETRY_INTERVAL_MS) {
+    return { byPackageName: new Map(), packageNameByProtocol: new Map() };
+  }
 
   appxCachePromise = (async () => {
     const cache: AppxCache = { byPackageName: new Map(), packageNameByProtocol: new Map() };
@@ -611,10 +623,13 @@ async function getAppxPackageCache(): Promise<AppxCache> {
         { count: cache.byPackageName.size, protocolCount: cache.packageNameByProtocol.size },
         'AppxPackage情報を一括取得完了'
       );
+      appxCacheFailedAt = null;
+      appxPackageCache = cache;
     } catch (error) {
+      // 結果をキャッシュせず、一定時間後の呼び出しで再試行できるようにする
+      appxCacheFailedAt = Date.now();
       iconLogger.warn({ error }, 'AppxPackage情報の一括取得に失敗');
     }
-    appxPackageCache = cache;
     appxCachePromise = null;
     return cache;
   })();
