@@ -35,4 +35,26 @@ export class PathUtils {
     const lastDot = fileName.lastIndexOf('.');
     return lastDot !== -1 ? fileName.substring(lastDot).toLowerCase() : '';
   }
+
+  /**
+   * カスタムURIスキーム（`obsidian://`, `ms-todo:` 等）かどうかを判定する
+   *
+   * `://` の有無では `ms-todo:` のようなスラッシュなしURIを判定できないため、
+   * RFC 3986のスキーム構文で判定した上で以下を除外する。
+   * - ドライブレター（`C:\...`）: スキーム名1文字はWindowsパスとみなす
+   * - `shell:`: `shell:AppsFolder\...` 等は専用経路で処理する
+   * - `file:`: ローカルファイル参照のためカスタムURIとして扱わない
+   */
+  static isCustomUriScheme(filePath?: string): boolean {
+    if (!filePath) return false;
+
+    const match = filePath.match(/^([A-Za-z][A-Za-z0-9+.-]*):/);
+    if (!match) return false;
+
+    const scheme = match[1].toLowerCase();
+    // 1文字スキームはドライブレター（C:\ 等）とみなす
+    if (scheme.length === 1) return false;
+
+    return scheme !== 'shell' && scheme !== 'file';
+  }
 }

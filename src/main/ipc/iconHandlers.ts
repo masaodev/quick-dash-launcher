@@ -137,6 +137,13 @@ async function extractShortcutIcon(lnkPath: string, iconsFolder: string): Promis
 /** 実行ファイルからアイコンを抽出してキャッシュに保存する */
 export async function extractIcon(filePath: string, iconsFolder: string): Promise<string | null> {
   try {
+    // カスタムURIスキーム（obsidian:// や ms-todo: 等）はファイルパスではないため専用経路に委譲する。
+    // レイアウトアイテムのexecutablePathには起動用のURIが入り得るが、ここでファイルとして
+    // 解決を試みるとwhere実行とlstatが毎回失敗し、読み込みのたびにログノイズが発生する
+    if (PathUtils.isCustomUriScheme(filePath)) {
+      return await extractCustomUriIcon(filePath, iconsFolder);
+    }
+
     let resolvedPath = filePath;
 
     // ファイルが存在するか確認、存在しない場合はパスを解決
@@ -153,16 +160,18 @@ export async function extractIcon(filePath: string, iconsFolder: string): Promis
             iconLogger.info(`PATHからファイルを解決: ${filePath} -> ${resolvedPath}`);
           }
         } catch (error) {
-          iconLogger.error({ filePath, error }, 'PATHからファイルを解決できません');
+          // PATHに存在しないのはデータ側の状態であり内部エラーではない
+          iconLogger.warn({ filePath, error }, 'PATHからファイルを解決できません');
         }
       }
 
-      // 解決後も見つからない場合はエラー
+      // 解決後も見つからない場合はアイコンなしとして扱う
+      // （アンインストール済みexe等、データ側の状態なのでwarnに留める）
       // シンボリックリンクの場合はlstatSyncを使用してリンク自体の存在をチェック
       try {
         fs.lstatSync(resolvedPath);
       } catch (error) {
-        iconLogger.error({ filePath, error }, 'ファイルが見つかりません');
+        iconLogger.warn({ filePath, error }, 'ファイルが見つかりません');
         return null;
       }
     }
@@ -230,9 +239,13 @@ export async function extractCustomUriIcon(
     if (cachedIcon) return cachedIcon;
 
     const handlerPath = await getUriSchemeHandler(scheme);
-    if (!handlerPath) return null;
+    if (handlerPath) {
+      return cacheAndConvertIcon(extractFileIcon(handlerPath, 32), iconPath);
+    }
 
-    return cacheAndConvertIcon(extractFileIcon(handlerPath, 32), iconPath);
+    // レジストリから実行ファイルを解決できないスキームはUWPアプリの可能性がある
+    // （UWPはPackagedCOM方式のため shell\open\command が存在しない）
+    return await extractUwpIconByUriScheme(scheme, iconPath);
   } catch (error) {
     iconLogger.error({ uri, error }, 'カスタムURIアイコンの抽出に失敗しました');
     return null;
@@ -548,31 +561,56 @@ interface AppxPackageInfo {
   installLocation: string;
   logoPaths: string[];
 }
-let appxPackageCache: Map<string, AppxPackageInfo> | null = null;
-let appxCachePromise: Promise<Map<string, AppxPackageInfo>> | null = null;
+/** パッケージ名で引く情報と、URIスキーム名からパッケージ名を引く逆引きの組 */
+interface AppxCache {
+  byPackageName: Map<string, AppxPackageInfo>;
+  packageNameByProtocol: Map<string, string>;
+}
+let appxPackageCache: AppxCache | null = null;
+let appxCachePromise: Promise<AppxCache> | null = null;
 
 /**
  * 全AppxPackage情報を1回のPowerShellで一括取得してメモリにキャッシュする。
  * 2回目以降はキャッシュを返す。複数同時呼び出しでも1回だけ実行される。
+ *
+ * マニフェストの windows.protocol 拡張も併せて取得し、UWPアプリが登録した
+ * URIスキーム（ms-todo: 等）からパッケージを逆引きできるようにする
  */
-async function getAppxPackageCache(): Promise<Map<string, AppxPackageInfo>> {
+async function getAppxPackageCache(): Promise<AppxCache> {
   if (appxPackageCache) return appxPackageCache;
   if (appxCachePromise) return appxCachePromise;
 
   appxCachePromise = (async () => {
-    const cache = new Map<string, AppxPackageInfo>();
+    const cache: AppxCache = { byPackageName: new Map(), packageNameByProtocol: new Map() };
     try {
       const output = await execAsync(
-        `powershell.exe -NoProfile -Command "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Get-AppxPackage | ForEach-Object { $m = Get-AppxPackageManifest -Package $_; $a = $m.Package.Applications.Application; if ($a -is [System.Array]) { $a = $a[0] }; if ($a) { $v = $a.VisualElements; Write-Output (($_.Name + '|' + $_.InstallLocation + '|' + $v.Square44x44Logo + '|' + $v.Square150x150Logo)) } }"`,
+        `powershell.exe -NoProfile -Command "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Get-AppxPackage | ForEach-Object { $m = Get-AppxPackageManifest -Package $_ -ErrorAction SilentlyContinue; if ($m) { $a = $m.Package.Applications.Application; if ($a -is [System.Array]) { $a = $a[0] }; if ($a) { $v = $a.VisualElements; $p = @(); foreach ($e in @($a.Extensions.Extension)) { if ($e.Category -eq 'windows.protocol' -and $e.Protocol.Name) { $p += $e.Protocol.Name } }; Write-Output (($_.Name + '|' + $_.InstallLocation + '|' + $v.Square44x44Logo + '|' + $v.Square150x150Logo + '|' + ($p -join ','))) } } }"`,
         { encoding: 'utf8', timeout: 30000 }
       );
 
       for (const line of output.stdout.trim().split(/\r?\n/)) {
-        const [name, installLocation, ...logos] = line.split('|').map((s) => s.trim());
+        const [name, installLocation, logo44, logo150, protocols] = line
+          .split('|')
+          .map((s) => s.trim());
         if (!name || !installLocation) continue;
-        cache.set(name, { installLocation, logoPaths: logos.filter(Boolean) });
+
+        cache.byPackageName.set(name, {
+          installLocation,
+          logoPaths: [logo44, logo150].filter(Boolean),
+        });
+
+        for (const protocol of (protocols ?? '').split(',')) {
+          const scheme = protocol.trim().toLowerCase();
+          // 同一スキームを複数パッケージが宣言した場合は先勝ち
+          if (scheme && !cache.packageNameByProtocol.has(scheme)) {
+            cache.packageNameByProtocol.set(scheme, name);
+          }
+        }
       }
-      iconLogger.info({ count: cache.size }, 'AppxPackage情報を一括取得完了');
+      iconLogger.info(
+        { count: cache.byPackageName.size, protocolCount: cache.packageNameByProtocol.size },
+        'AppxPackage情報を一括取得完了'
+      );
     } catch (error) {
       iconLogger.warn({ error }, 'AppxPackage情報の一括取得に失敗');
     }
@@ -582,6 +620,20 @@ async function getAppxPackageCache(): Promise<Map<string, AppxPackageInfo>> {
   })();
 
   return appxCachePromise;
+}
+
+/** UWPアプリのパッケージ名からマニフェスト経由でアイコンを取得し、指定パスにキャッシュする */
+async function extractUwpIconByPackageName(
+  packageName: string,
+  cachePath: string
+): Promise<string | null> {
+  const pkgInfo = (await getAppxPackageCache()).byPackageName.get(packageName);
+  if (!pkgInfo || !fs.existsSync(pkgInfo.installLocation)) return null;
+
+  const iconFilePath = findIconFromManifestLogo(pkgInfo.installLocation, pkgInfo.logoPaths);
+  if (!iconFilePath) return null;
+
+  return cacheAndConvertIcon(fs.readFileSync(iconFilePath), cachePath);
 }
 
 /** UWPアプリのパッケージ名からマニフェスト経由でアイコンを取得する */
@@ -597,15 +649,33 @@ async function extractUwpIcon(appPath: string, iconsFolder: string): Promise<str
   if (cachedIcon) return cachedIcon;
 
   try {
-    const pkgInfo = (await getAppxPackageCache()).get(packageFamilyName.split('_')[0]);
-    if (!pkgInfo || !fs.existsSync(pkgInfo.installLocation)) return null;
-
-    const iconFilePath = findIconFromManifestLogo(pkgInfo.installLocation, pkgInfo.logoPaths);
-    if (!iconFilePath) return null;
-
-    return cacheAndConvertIcon(fs.readFileSync(iconFilePath), cachePath);
+    return await extractUwpIconByPackageName(packageFamilyName.split('_')[0], cachePath);
   } catch (error) {
     iconLogger.warn({ appPath, error }, 'UWPアイコンの取得に失敗');
+    return null;
+  }
+}
+
+/**
+ * URIスキームを登録しているUWPアプリのアイコンを取得する
+ *
+ * UWPアプリはPackagedCOM方式で起動されるためレジストリの shell\open\command が無く、
+ * getUriSchemeHandler() では実行ファイルを解決できない。
+ * パッケージマニフェストの windows.protocol 宣言から逆引きする
+ */
+async function extractUwpIconByUriScheme(
+  scheme: string,
+  cachePath: string
+): Promise<string | null> {
+  try {
+    const { packageNameByProtocol } = await getAppxPackageCache();
+    const packageName = packageNameByProtocol.get(scheme.toLowerCase());
+    if (!packageName) return null;
+
+    iconLogger.info({ scheme, packageName }, 'URIスキームをUWPパッケージとして解決');
+    return await extractUwpIconByPackageName(packageName, cachePath);
+  } catch (error) {
+    iconLogger.warn({ scheme, error }, 'URIスキームからのUWPアイコン取得に失敗');
     return null;
   }
 }
