@@ -113,11 +113,18 @@ export class TestUtils {
   }
 
   /**
-   * 登録モーダルを開く（プラスボタンをクリック）
+   * 登録モーダルを開く
+   *
+   * プラスボタンはサブメニュー（簡易登録 / ブックマーク取込 / アプリ取込）を開くため、
+   * その中の「簡易登録」を選んでモーダルを表示する
    */
   async openRegisterModal(): Promise<void> {
     const registerButton = this.page.locator('.action-btn[title="アイテムを登録"]');
     await registerButton.click();
+
+    const simpleRegisterItem = this.page.locator('.dropdown-item', { hasText: '簡易登録' });
+    await simpleRegisterItem.click();
+
     await this.page.waitForSelector('.register-modal', { state: 'visible' });
   }
 
