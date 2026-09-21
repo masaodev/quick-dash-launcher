@@ -11,7 +11,11 @@ import * as path from 'path';
 
 import logger from '@common/logger';
 import { FileUtils } from '@common/utils/fileUtils';
-import { generateId, parseJsonDataFile, serializeJsonDataFile } from '@common/utils/jsonParser';
+import {
+  generateId,
+  parseJsonDataFileLenient,
+  serializeJsonDataFile,
+} from '@common/utils/jsonParser';
 import { summarizeImportResults } from '@common/utils/bookmarkImportUtils';
 import type { JsonLauncherItem, JsonDataFile } from '@common/types';
 import type {
@@ -28,6 +32,7 @@ import {
 } from '../ipc/bookmarkHandlers.js';
 import { notifyDataChanged } from '../ipc/dataHandlers.js';
 
+import { writeDataFile } from './dataFileTracker.js';
 import { SettingsService } from './settingsService.js';
 import { showToastWindow } from './overlayWindowService.js';
 
@@ -140,7 +145,7 @@ export class BookmarkAutoImportService {
 
       // データファイルの保存
       const content = serializeJsonDataFile(jsonData);
-      FileUtils.safeWriteTextFile(dataFilePath, content);
+      writeDataFile(dataFilePath, content);
 
       // UI更新通知
       notifyDataChanged();
@@ -194,7 +199,7 @@ export class BookmarkAutoImportService {
 
     if (deletedCount > 0) {
       const content = serializeJsonDataFile(jsonData);
-      FileUtils.safeWriteTextFile(dataFilePath, content);
+      writeDataFile(dataFilePath, content);
       notifyDataChanged();
     }
 
@@ -317,16 +322,25 @@ export class BookmarkAutoImportService {
     return path.join(PathManager.getConfigFolder(), targetFile);
   }
 
+  /**
+   * データファイルを読み込む（存在しなければ空データ）
+   *
+   * 寛容パースを使い、不正なアイテムはファイル上に残す。
+   * JSON として壊れているファイルは、空データで上書きすると既存アイテムが
+   * 復旧不能になるため例外にして処理を中止する。
+   */
   private loadDataFile(dataFilePath: string): JsonDataFile {
     const content = FileUtils.safeReadTextFile(dataFilePath);
     if (!content) {
       return { version: '1.0', items: [] };
     }
     try {
-      return parseJsonDataFile(content);
-    } catch {
-      logger.warn({ dataFilePath }, 'JSONファイルのパースに失敗、新規作成します');
-      return { version: '1.0', items: [] };
+      return parseJsonDataFileLenient(content).data;
+    } catch (error) {
+      logger.error({ error, dataFilePath }, 'JSONファイルのパースに失敗したため取込を中止します');
+      throw new Error(
+        `データファイルが破損している可能性があるため取込を中止しました: ${path.basename(dataFilePath)}`
+      );
     }
   }
 

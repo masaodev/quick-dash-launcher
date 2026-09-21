@@ -209,8 +209,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // EditableJsonItem API
   loadEditableItems: (): Promise<LoadEditableItemsResult> =>
     ipcRenderer.invoke(IPC_CHANNELS.LOAD_EDITABLE_ITEMS),
-  saveEditableItems: (editableItems: EditableJsonItem[]) =>
-    ipcRenderer.invoke(IPC_CHANNELS.SAVE_EDITABLE_ITEMS, editableItems),
+  saveEditableItems: (editableItems: EditableJsonItem[], expectedHashes?: Record<string, string>) =>
+    ipcRenderer.invoke(IPC_CHANNELS.SAVE_EDITABLE_ITEMS, editableItems, expectedHashes),
   // IDベースのアイテム更新
   updateDirItemById: (id: string, dirPath: string, options?: JsonDirOptions, memo?: string) =>
     ipcRenderer.invoke(IPC_CHANNELS.UPDATE_DIR_ITEM_BY_ID, id, dirPath, options, memo),
@@ -259,6 +259,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   setMultipleSettings: (settings: Partial<AppSettings>) =>
     ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_SET_MULTIPLE, settings),
   resetSettings: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_RESET),
+  reapplySettings: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_REAPPLY),
   validateHotkey: (hotkey: string) =>
     ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_VALIDATE_HOTKEY, hotkey),
   getSettingsConfigPath: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET_CONFIG_PATH),

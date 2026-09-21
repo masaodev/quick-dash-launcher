@@ -9,6 +9,12 @@ import PathManager from '../config/pathManager.js';
 
 import { SettingsService } from './settingsService.js';
 
+/** 外部変更の変更前スナップショットのフォルダ名サフィックス */
+const PRE_EXTERNAL_SUFFIX = '_pre-external';
+
+/** 変更前スナップショットの保持上限（backupRetention とは別枠） */
+const PRE_EXTERNAL_SNAPSHOT_LIMIT = 10;
+
 /**
  * スナップショット方式のバックアップサービス
  *
@@ -39,8 +45,11 @@ export class BackupService {
     const backupEnabled = await this.settingsService.get('backupEnabled');
     if (!backupEnabled) return false;
 
-    // 1日1回チェック: 直近スナップショットが今日作成済みならスキップ
-    const snapshots = await this.listSnapshots();
+    // 1日1回チェック: 直近の通常スナップショットが今日作成済みならスキップ
+    // （_pre-restore / _pre-external は部分的・臨時なので数えない）
+    const snapshots = (await this.listSnapshots()).filter((s) =>
+      this.isRegularSnapshot(s.timestamp)
+    );
     if (snapshots.length > 0) {
       const today = new Date().toISOString().substring(0, 10);
       const latestDate = snapshots[0].createdAt.toISOString().substring(0, 10);
@@ -223,12 +232,17 @@ export class BackupService {
 
   /**
    * 保持件数超過分の古いスナップショットを削除
+   *
+   * _pre-external は cleanupPreExternalSnapshots() が別枠で管理するため数に入れない
+   * （数に入れると、外部編集を繰り返したときに日次スナップショットが押し出される）
    */
   private async cleanupOldSnapshots(): Promise<void> {
     if (!this.settingsService) return;
 
     const backupRetention = await this.settingsService.get('backupRetention');
-    const snapshots = await this.listSnapshots();
+    const snapshots = (await this.listSnapshots()).filter(
+      (s) => !s.timestamp.endsWith(PRE_EXTERNAL_SUFFIX)
+    );
 
     const toDelete = snapshots.slice(backupRetention);
     if (toDelete.length === 0) return;
@@ -325,6 +339,77 @@ export class BackupService {
     return targets;
   }
 
+  /**
+   * 外部変更を検知したときに「変更前の内容」をスナップショットとして残す
+   *
+   * 検知時点でディスク上は既に変更後なので、トラッカーが記憶していた変更前の内容を
+   * 受け取って書き出す。QDL 外（人・AI）の編集で壊れたときの戻し先になる。
+   * backupEnabled が false なら何もしない。
+   *
+   * @param files - 変更前の内容（relativePath は設定フォルダからの相対パス）
+   * @returns 作成したスナップショットのフォルダ名。作らなかった場合は null
+   */
+  public async createPreExternalChangeSnapshot(
+    files: Array<{ relativePath: string; content: string }>
+  ): Promise<string | null> {
+    if (!this.settingsService || files.length === 0) return null;
+
+    const backupEnabled = await this.settingsService.get('backupEnabled');
+    if (!backupEnabled) return null;
+
+    const backupFolder = PathManager.getBackupFolder();
+    const timestamp = `${this.createTimestamp()}${PRE_EXTERNAL_SUFFIX}`;
+    const snapshotFolder = path.join(backupFolder, timestamp);
+    FileUtils.ensureDirectory(snapshotFolder);
+
+    let writtenCount = 0;
+    for (const file of files) {
+      const destPath = path.join(snapshotFolder, file.relativePath);
+      if (FileUtils.safeWriteTextFile(destPath, file.content)) {
+        writtenCount++;
+      } else {
+        logger.error({ relativePath: file.relativePath }, '変更前スナップショットの書き出しに失敗');
+      }
+    }
+
+    if (writtenCount === 0) {
+      fs.rmSync(snapshotFolder, { recursive: true, force: true });
+      return null;
+    }
+
+    logger.info(
+      { snapshotFolder, fileCount: writtenCount },
+      '外部変更を検知したため変更前スナップショットを作成しました'
+    );
+    await this.cleanupPreExternalSnapshots();
+    return timestamp;
+  }
+
+  /**
+   * 変更前スナップショット（_pre-external）だけを上限件数まで間引く
+   *
+   * 通常の保持件数（backupRetention）で数えると、外部編集を繰り返したときに
+   * 日次スナップショットを押し出してしまうため、別枠で管理する。
+   */
+  private async cleanupPreExternalSnapshots(): Promise<void> {
+    const snapshots = await this.listSnapshots();
+    const preExternal = snapshots.filter((s) => s.timestamp.endsWith(PRE_EXTERNAL_SUFFIX));
+    const toDelete = preExternal.slice(PRE_EXTERNAL_SNAPSHOT_LIMIT);
+
+    const backupFolder = PathManager.getBackupFolder();
+    for (const snapshot of toDelete) {
+      try {
+        fs.rmSync(path.join(backupFolder, snapshot.timestamp), { recursive: true, force: true });
+        logger.info({ timestamp: snapshot.timestamp }, '古い変更前スナップショットを削除しました');
+      } catch (error) {
+        logger.error(
+          { error, timestamp: snapshot.timestamp },
+          '変更前スナップショットの削除に失敗'
+        );
+      }
+    }
+  }
+
   private async createForcedSnapshot(suffix: string): Promise<void> {
     const { snapshotFolder } = await this.copyTargetsToSnapshot(suffix);
     logger.info({ snapshotFolder }, 'リストア前の自動バックアップを作成しました');
@@ -365,6 +450,11 @@ export class BackupService {
 
   private isTimestampFolder(name: string): boolean {
     return /^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}/.test(name);
+  }
+
+  /** サフィックスなしの通常（日次）スナップショットか */
+  private isRegularSnapshot(name: string): boolean {
+    return /^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}$/.test(name);
   }
 
   private parseTimestamp(name: string): Date {

@@ -16,6 +16,8 @@ import {
   setDetachedWindowSnapEnabled,
   applyDetachedVisibilityOnAllDesktops,
 } from '../detachedGroupWindowManager.js';
+import { EnvConfig } from '../config/envConfig.js';
+import { showToastWindow } from '../services/overlayWindowService.js';
 
 function notifySettingsChanged(): void {
   for (const window of BrowserWindow.getAllWindows()) {
@@ -33,6 +35,16 @@ const POSITION_KEYS: ReadonlyArray<keyof AppSettings> = [
   'workspaceTargetDisplayIndex',
   'workspacePositionX',
   'workspacePositionY',
+];
+
+/** 副作用（OS 登録・ウィンドウ状態）を持つ設定キー。ファイル再読込時に全部適用し直す */
+const EFFECT_KEYS: ReadonlyArray<keyof AppSettings> = [
+  'autoLaunch',
+  ...OPACITY_KEYS,
+  ...POSITION_KEYS,
+  'workspaceVisibleOnAllDesktops',
+  'detachedVisibleOnAllDesktops',
+  'windowSnapEnabled',
 ];
 
 async function applySettingsEffects(
@@ -75,6 +87,94 @@ async function applySettingsEffects(
     setWindowSnapEnabled(enabled);
     setDetachedWindowSnapEnabled(enabled);
   }
+}
+
+/**
+ * 登録に失敗したホットキー値（type 別）。同じ値で失敗し続ける間はトーストを繰り返さない
+ * （F5 のたびにエラーが出続けるのを防ぐ。値が変われば改めて知らせる）
+ */
+const lastFailedHotkey: Record<'main' | 'itemSearch', string | null> = {
+  main: null,
+  itemSearch: null,
+};
+
+/**
+ * ホットキー設定をディスクの値に合わせて登録し直す
+ *
+ * 値が現在の登録と同じなら何もしない。登録に失敗した場合は設定を書き戻さず、
+ * 現在の登録を維持してトーストで知らせる（外部で書かれた値を勝手に消さない）。
+ */
+async function reapplyHotkey(
+  type: 'main' | 'itemSearch',
+  settingsService: SettingsService
+): Promise<void> {
+  const hotkeyService = HotkeyService.getInstance();
+  const isMain = type === 'main';
+
+  // 環境変数で上書きされている間は settings.json の値を使わない
+  if (isMain && EnvConfig.customHotkey) return;
+
+  const desired = (await settingsService.get(isMain ? 'hotkey' : 'itemSearchHotkey')) ?? '';
+  const current =
+    (isMain ? hotkeyService.getCurrentHotkey() : hotkeyService.getCurrentItemSearchHotkey()) ?? '';
+  if (desired === current) return;
+
+  const label = isMain ? 'ホットキー' : 'ウィンドウ検索ホットキー';
+
+  if (desired.trim() === '') {
+    if (isMain) {
+      logger.warn('settings.json のホットキーが空のため、現在の登録を維持します');
+      return;
+    }
+    hotkeyService.unregisterItemSearchHotkey();
+    logger.info(`${label}を解除しました（settings.json で空）`);
+    return;
+  }
+
+  const validation = settingsService.validateHotkey(desired);
+  const success =
+    validation.isValid &&
+    (isMain ? hotkeyService.setHotkey(desired) : hotkeyService.setItemSearchHotkey(desired));
+
+  if (success) {
+    lastFailedHotkey[type] = null;
+    logger.info(`${label}を settings.json の値に合わせて登録し直しました: ${desired}`);
+    return;
+  }
+
+  // 失敗時は元の登録に戻す
+  if (current) {
+    if (isMain) hotkeyService.setHotkey(current);
+    else hotkeyService.setItemSearchHotkey(current);
+  }
+  const reason = validation.isValid ? '他のアプリで使用中の可能性' : validation.reason;
+  logger.warn({ desired, current, reason }, `${label}の登録し直しに失敗しました`);
+
+  if (lastFailedHotkey[type] === desired) return;
+  lastFailedHotkey[type] = desired;
+  showToastWindow({
+    message: `${label}「${desired}」を登録できません（${reason}）。「${current || '未設定'}」を維持します`,
+    type: 'error',
+    duration: 6000,
+  }).catch((error) => logger.error({ error }, 'ホットキー再登録トーストの表示に失敗'));
+}
+
+/**
+ * settings.json をディスクから読み直し、副作用のある設定を適用し直す
+ *
+ * 設定値そのものは electron-store が毎回ディスクを読むので常に最新だが、
+ * ホットキー登録・自動起動・ウィンドウ状態は set() 時にしか適用されない。
+ * QDL 外（人・AI）で settings.json を編集したときに、F5 でそれらを効かせる入口。
+ */
+export async function reapplySettingsFromDisk(): Promise<void> {
+  const settingsService = await SettingsService.getInstance();
+
+  await applySettingsEffects(EFFECT_KEYS, settingsService);
+  await reapplyHotkey('main', settingsService);
+  await reapplyHotkey('itemSearch', settingsService);
+
+  notifySettingsChanged();
+  logger.info('設定をディスクから再適用しました');
 }
 
 export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boolean) => void): void {
@@ -128,6 +228,8 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
       return true;
     }
   );
+
+  ipcMain.handle(IPC_CHANNELS.SETTINGS_REAPPLY, () => reapplySettingsFromDisk());
 
   ipcMain.handle(IPC_CHANNELS.SETTINGS_RESET, async () => {
     const settingsService = await SettingsService.getInstance();

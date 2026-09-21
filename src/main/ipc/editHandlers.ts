@@ -3,9 +3,11 @@ import * as path from 'path';
 
 import { IPC_CHANNELS } from '@common/ipcChannels';
 import { JsonDataFile, JsonLauncherItem, LauncherItem, isJsonClipboardItem } from '@common/types';
-import { parseJsonDataFile, serializeJsonDataFile } from '@common/utils/jsonParser';
+import { parseJsonDataFileLenient, serializeJsonDataFile } from '@common/utils/jsonParser';
+import { FileUtils } from '@common/utils/fileUtils';
 
 import { ClipboardService } from '../services/clipboardService.js';
+import { writeDataFile } from '../services/dataFileTracker.js';
 import { createSafeIpcHandler } from '../utils/ipcWrapper';
 
 import { notifyDataChanged } from './dataHandlers.js';
@@ -52,8 +54,11 @@ async function processDataFiles(
     const filePath = path.join(configFolder, fileName);
     if (!fs.existsSync(filePath)) continue;
 
-    const content = fs.readFileSync(filePath, 'utf8');
-    const jsonData = parseJsonDataFile(content);
+    const content = FileUtils.safeReadTextFile(filePath);
+    if (content === null) continue;
+
+    // 寛容パース: 不正なアイテムはファイル上に残したまま扱う
+    const jsonData = parseJsonDataFileLenient(content).data;
 
     if (!predicate(jsonData)) continue;
 
@@ -61,7 +66,8 @@ async function processDataFiles(
 
     if (result) {
       const newContent = serializeJsonDataFile(result);
-      fs.writeFileSync(filePath, newContent, 'utf8');
+      // アトミック書き込み＋トラッカーへ記憶（外部変更検知の誤検知を防ぐ）
+      writeDataFile(filePath, newContent);
     }
   }
 }

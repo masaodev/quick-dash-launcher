@@ -6,13 +6,14 @@ import { dataLogger } from '@common/logger';
 import { FileUtils } from '@common/utils/fileUtils';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import {
-  parseJsonDataFile,
+  parseJsonDataFileLenient,
   serializeJsonDataFile,
   createEmptyJsonDataFile,
 } from '@common/utils/jsonParser';
+import type { JsonItemIssue } from '@common/utils/jsonParser';
 import { jsonItemToDisplayText } from '@common/utils/displayTextConverter';
 import type { EditableJsonItem, LoadEditableItemsResult } from '@common/types/editableItem';
-import { validateEditableItem } from '@common/types/editableItem';
+import { validateEditableItem, EXTERNAL_CHANGE_CONFLICT_MARKER } from '@common/types/editableItem';
 import {
   DEFAULT_DATA_FILE,
   LauncherItem,
@@ -37,6 +38,20 @@ import {
 import { SettingsService } from '../services/settingsService.js';
 import { PathManager } from '../config/pathManager.js';
 import { showToastWindow } from '../services/overlayWindowService.js';
+import { BackupService } from '../services/backupService.js';
+import {
+  detectExternalChange,
+  forgetDataFile,
+  hashContent,
+  rememberDataFileContent,
+  writeDataFile,
+} from '../services/dataFileTracker.js';
+import {
+  buildLoadReport,
+  formatLoadReportToast,
+  writeLoadReport,
+} from '../services/loadReportService.js';
+import type { LoadReportFile } from '../services/loadReportService.js';
 
 import { setupBookmarkHandlers } from './bookmarkHandlers.js';
 import { setupAppImportHandlers } from './appImportHandlers.js';
@@ -64,41 +79,121 @@ async function loadJsonDataFile(
   filePath: string,
   fileName: string,
   seenPaths: Set<string>,
-  tabIndex: number
-): Promise<AppItem[]> {
+  tabIndex: number,
+  knownIds: Set<string>
+): Promise<{ items: AppItem[]; report: LoadReportFile; previousContent: string | null }> {
   const items: AppItem[] = [];
+  const report: LoadReportFile = {
+    file: fileName,
+    status: 'ok',
+    accepted: 0,
+    issues: [],
+    externallyChanged: false,
+    rewritten: false,
+  };
   const content = FileUtils.safeReadTextFile(filePath);
 
   if (content === null) {
     dataLogger.warn({ filePath }, 'JSONファイルが読み込めませんでした');
-    return items;
+    report.status = 'unreadable';
+    report.error = 'ファイルを読み込めませんでした';
+    return { items, report, previousContent: null };
   }
 
-  let jsonData;
+  // 前回読んだ／書いた内容と違えば外部（人・AI）で編集されている。
+  // 壊れていても記憶する（毎回の読込で変更前スナップショットを作り続けないため。
+  // 修復されれば内容が変わるので、そのとき改めて検知できる）
+  const previousContent = detectExternalChange(fileName, content);
+  report.externallyChanged = previousContent !== null;
+  rememberDataFileContent(fileName, content);
+
+  let parsed;
   try {
-    jsonData = parseJsonDataFile(content);
+    parsed = parseJsonDataFileLenient(content, { reservedIds: knownIds });
     corruptedDataFiles.delete(fileName);
   } catch (error) {
     dataLogger.error({ error, filePath }, 'JSONファイルのパースに失敗しました');
     corruptedDataFiles.add(fileName);
-    return items;
+    report.status = 'corrupted';
+    report.error = error instanceof Error ? error.message : String(error);
+    return { items, report, previousContent };
   }
 
-  for (let i = 0; i < jsonData.items.length; i++) {
-    const jsonItem = jsonData.items[i];
+  report.issues = parsed.issues;
+  logParseIssues(fileName, parsed.issues);
+
+  // 採番・補正があれば 1 回だけ書き戻す（次回以降は同じ id で読める）
+  if (parsed.modified) {
+    report.rewritten = writeDataFile(filePath, serializeJsonDataFile(parsed.data));
+  }
+
+  for (const item of parsed.data.items) {
+    knownIds.add(item.id);
+  }
+
+  // 不正なアイテムは items 配列上には残る（書き戻しで消さないため）ので、検証済みの参照で除外する
+  const validItemSet = new Set<JsonItem>(parsed.validItems);
+
+  for (let i = 0; i < parsed.data.items.length; i++) {
+    const jsonItem = parsed.data.items[i];
+    if (!validItemSet.has(jsonItem)) continue;
 
     try {
       const appItems = await convertJsonItemToAppItems(jsonItem, fileName, i, seenPaths, tabIndex);
       items.push(...appItems);
+      report.accepted++;
     } catch (error) {
       dataLogger.error(
         { error, fileName, itemIndex: i, itemId: jsonItem.id },
         'JSONアイテムの変換に失敗しました'
       );
+      report.issues.push({
+        index: i,
+        kind: 'invalid',
+        id: jsonItem.id,
+        reason: `変換に失敗: ${error instanceof Error ? error.message : String(error)}`,
+      });
     }
   }
 
-  return items;
+  return { items, report, previousContent };
+}
+
+/**
+ * 外部変更を検知したファイルの「変更前の内容」をスナップショットに残す
+ *
+ * @returns 作成したスナップショットのフォルダ名。対象なし・無効・失敗時は null
+ */
+async function snapshotExternalChanges(
+  externallyChanged: Array<{ relativePath: string; content: string }>
+): Promise<string | null> {
+  if (externallyChanged.length === 0) return null;
+
+  dataLogger.info(
+    { files: externallyChanged.map((f) => f.relativePath) },
+    'QDL 外で変更されたデータファイルを検知しました'
+  );
+  try {
+    const backupService = await BackupService.getInstance();
+    return await backupService.createPreExternalChangeSnapshot(externallyChanged);
+  } catch (error) {
+    dataLogger.error({ error }, '変更前スナップショットの作成に失敗しました');
+    return null;
+  }
+}
+
+/**
+ * 寛容パースで見つかった問題をログに出す
+ */
+function logParseIssues(fileName: string, issues: JsonItemIssue[]): void {
+  for (const issue of issues) {
+    const context = { fileName, index: issue.index, id: issue.id, reason: issue.reason };
+    if (issue.kind === 'invalid') {
+      dataLogger.warn(context, '不正なアイテムをスキップしました');
+    } else {
+      dataLogger.info(context, 'アイテムを補正しました');
+    }
+  }
 }
 
 /**
@@ -304,6 +399,11 @@ export async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
   // dataFileTabsで明示的に指定されたファイルを収集し、重複を排除
   const allFiles = Array.from(new Set([...fileToTabMap.keys(), ...autoDetectedFiles]));
 
+  // ファイル横断で id の重複を検知するための集合
+  const knownIds = new Set<string>();
+  const fileReports: LoadReportFile[] = [];
+  const externallyChanged: Array<{ relativePath: string; content: string }> = [];
+
   for (const fileName of allFiles) {
     const tabIndex = fileToTabMap.get(fileName) ?? -1;
 
@@ -315,9 +415,20 @@ export async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
     const filePath = path.join(configFolder, fileName);
 
     // JSON形式のデータファイルを読み込み
-    const jsonItems = await loadJsonDataFile(filePath, fileName, seenPaths, tabIndex);
-    items.push(...jsonItems);
+    const result = await loadJsonDataFile(filePath, fileName, seenPaths, tabIndex, knownIds);
+    items.push(...result.items);
+    fileReports.push(result.report);
+    if (result.previousContent !== null) {
+      externallyChanged.push({ relativePath: fileName, content: result.previousContent });
+    }
   }
+
+  // 外部変更があれば、変更前の内容を戻し先としてスナップショットに残す
+  const preChangeSnapshot = await snapshotExternalChanges(externallyChanged);
+
+  // 直接編集した人・AI が結果を確認できるようレポートを残す
+  const report = buildLoadReport(fileReports, preChangeSnapshot);
+  writeLoadReport(report);
 
   // 破損ファイルがあった場合は無通知でアイテムが消えたように見えないよう警告する
   if (corruptedDataFiles.size > 0) {
@@ -327,6 +438,14 @@ export async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
       duration: 6000,
     }).catch((error) => {
       dataLogger.error({ error }, '破損警告トーストの表示に失敗しました');
+    });
+  }
+
+  // スキップ・採番があったときだけ知らせる（毎回の読込では出さない）
+  const issueToast = formatLoadReportToast(report);
+  if (issueToast) {
+    showToastWindow({ message: issueToast, type: 'warning', duration: 6000 }).catch((error) => {
+      dataLogger.error({ error }, '読込結果トーストの表示に失敗しました');
     });
   }
 
@@ -360,31 +479,60 @@ export async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
  */
 async function loadEditableItems(configFolder: string): Promise<LoadEditableItemsResult> {
   const items: EditableJsonItem[] = [];
+  // 楽観ロック用: 読み込んだ時点の内容ハッシュ。保存時に一致しなければ外部で変更されている
+  const fileHashes: Record<string, string> = {};
 
   try {
     const dataFiles = PathManager.getDataFiles();
+    const knownIds = new Set<string>();
+    const externallyChanged: Array<{ relativePath: string; content: string }> = [];
 
     for (const fileName of dataFiles) {
       const filePath = path.join(configFolder, fileName);
-      const content = FileUtils.safeReadTextFile(filePath);
+      let content = FileUtils.safeReadTextFile(filePath);
 
       if (content === null) {
         dataLogger.warn({ filePath }, 'JSONファイルが読み込めませんでした');
         continue;
       }
 
-      try {
-        const jsonData = parseJsonDataFile(content);
-        corruptedDataFiles.delete(fileName);
+      // 編集画面が先に読んで書き戻すと、メイン画面の読込では外部変更を検知できなくなる。
+      // ここでも検知して変更前スナップショットを残す
+      const previousContent = detectExternalChange(fileName, content);
+      if (previousContent !== null) {
+        externallyChanged.push({ relativePath: fileName, content: previousContent });
+      }
+      rememberDataFileContent(fileName, content);
 
-        // 各JsonItemをEditableJsonItemに変換
-        for (let index = 0; index < jsonData.items.length; index++) {
-          const jsonItem = jsonData.items[index];
-          const validation = validateEditableItem(jsonItem);
+      try {
+        const parsed = parseJsonDataFileLenient(content, { reservedIds: knownIds });
+        corruptedDataFiles.delete(fileName);
+        logParseIssues(fileName, parsed.issues);
+
+        // 採番・補正があれば書き戻す（編集画面の保存が id ベースで動くように）
+        if (parsed.modified) {
+          content = serializeJsonDataFile(parsed.data);
+          writeDataFile(filePath, content);
+        }
+        fileHashes[fileName] = hashContent(content);
+
+        const invalidReasons = new Map<number, string>();
+        for (const issue of parsed.issues) {
+          if (issue.kind === 'invalid') invalidReasons.set(issue.index, issue.reason);
+        }
+
+        // 各JsonItemをEditableJsonItemに変換（不正なアイテムも編集画面で直せるよう含める）
+        for (let index = 0; index < parsed.data.items.length; index++) {
+          const jsonItem = parsed.data.items[index];
+          knownIds.add(jsonItem.id);
+          const parseError = invalidReasons.get(index);
+          const validation = parseError
+            ? { isValid: false, error: parseError }
+            : validateEditableItem(jsonItem);
 
           items.push({
             item: jsonItem,
-            displayText: jsonItemToDisplayText(jsonItem),
+            displayText: safeDisplayText(jsonItem),
             meta: {
               sourceFile: fileName,
               lineNumber: index,
@@ -403,7 +551,9 @@ async function loadEditableItems(configFolder: string): Promise<LoadEditableItem
       }
     }
 
-    return { items };
+    await snapshotExternalChanges(externallyChanged);
+
+    return { items, fileHashes };
   } catch (error) {
     dataLogger.error({ error }, 'EditableJsonItemの読み込みに失敗しました');
     return {
@@ -414,14 +564,69 @@ async function loadEditableItems(configFolder: string): Promise<LoadEditableItem
 }
 
 /**
+ * 表示テキストへの変換。不正なアイテム（type 不明など）でも落ちないようにする
+ */
+function safeDisplayText(jsonItem: JsonItem): string {
+  try {
+    return jsonItemToDisplayText(jsonItem);
+  } catch {
+    return JSON.stringify(jsonItem);
+  }
+}
+
+/**
+ * 楽観ロック: 読み込み時のハッシュと現在のファイル内容を突き合わせる
+ *
+ * 編集画面は全ファイルをメモリ内容で全量上書きするため、読み込み後に QDL 外で
+ * 変更されたファイルがあると、その変更を黙って消してしまう。ここで拒否する。
+ *
+ * @throws 不一致があれば EXTERNAL_CHANGE_CONFLICT_MARKER 付きのエラー
+ */
+function assertNoExternalChange(
+  configFolder: string,
+  dataFiles: string[],
+  expectedHashes: Record<string, string>
+): void {
+  const changed: string[] = [];
+
+  for (const fileName of dataFiles) {
+    const content = FileUtils.safeReadTextFile(path.join(configFolder, fileName));
+    const currentHash = content === null ? null : hashContent(content);
+    const expected = expectedHashes[fileName];
+
+    // 読み込み後に追加されたファイル、または内容が変わったファイル
+    if (expected === undefined || currentHash !== expected) {
+      changed.push(fileName);
+    }
+  }
+
+  // 読み込み後に削除されたファイル
+  for (const fileName of Object.keys(expectedHashes)) {
+    if (!dataFiles.includes(fileName)) {
+      changed.push(fileName);
+    }
+  }
+
+  if (changed.length > 0) {
+    dataLogger.warn({ changed }, '外部変更との競合を検知したため編集画面の保存を拒否しました');
+    throw new Error(
+      `${EXTERNAL_CHANGE_CONFLICT_MARKER} データファイルが QDL の外で変更されています: ${changed.join(', ')}。` +
+        '編集内容は保存していません。再読込してからやり直してください'
+    );
+  }
+}
+
+/**
  * EditableJsonItem配列を保存する（新しいAPI）
  *
  * @param configFolder - 設定フォルダのパス
  * @param editableItems - 保存するEditableJsonItem配列
+ * @param expectedHashes - 読み込み時のファイル内容ハッシュ（楽観ロック）。省略時は検証しない
  */
 async function saveEditableItems(
   configFolder: string,
-  editableItems: EditableJsonItem[]
+  editableItems: EditableJsonItem[],
+  expectedHashes?: Record<string, string>
 ): Promise<void> {
   // 破損ファイルがあると読み込めなかったアイテムを空データで上書きしてしまうため保存を拒否する
   if (corruptedDataFiles.size > 0) {
@@ -432,6 +637,10 @@ async function saveEditableItems(
   }
 
   const dataFiles = PathManager.getDataFiles();
+
+  if (expectedHashes) {
+    assertNoExternalChange(configFolder, dataFiles, expectedHashes);
+  }
 
   // ファイル別にグループ化
   const fileGroups = new Map<string, EditableJsonItem[]>();
@@ -457,7 +666,7 @@ async function saveEditableItems(
     // JSON形式で保存
     const jsonData = { version: '1.0', items: jsonItems };
     const content = serializeJsonDataFile(jsonData);
-    FileUtils.safeWriteTextFile(filePath, content);
+    writeDataFile(filePath, content);
   }
 }
 
@@ -483,7 +692,8 @@ async function updateItemByIdWithCallback(
 
     let jsonData;
     try {
-      jsonData = parseJsonDataFile(content);
+      // 寛容パース: 他の不正アイテムはファイル上に残したまま、対象だけ差し替える
+      jsonData = parseJsonDataFileLenient(content).data;
     } catch (error) {
       // 破損ファイルはスキップして他ファイルの検索を続行（上書きによる喪失を防ぐ）
       dataLogger.error({ error, filePath }, 'JSONファイルのパースに失敗したためスキップします');
@@ -496,7 +706,7 @@ async function updateItemByIdWithCallback(
       jsonData.items[itemIndex] = createNewItem(id);
 
       const newContent = serializeJsonDataFile(jsonData);
-      FileUtils.safeWriteTextFile(filePath, newContent);
+      writeDataFile(filePath, newContent);
       return;
     }
   }
@@ -667,7 +877,7 @@ async function registerItemsToJsonFile(
   const existingContent = FileUtils.safeReadTextFile(dataPath);
   if (existingContent) {
     try {
-      jsonData = parseJsonDataFile(existingContent);
+      jsonData = parseJsonDataFileLenient(existingContent).data;
       corruptedDataFiles.delete(fileName);
     } catch (error) {
       // 破損ファイルを新規データで上書きすると既存アイテムが復旧不能になるため中止する
@@ -688,7 +898,7 @@ async function registerItemsToJsonFile(
 
   // JSONファイルに書き込み
   const content = serializeJsonDataFile(jsonData);
-  FileUtils.safeWriteTextFile(dataPath, content);
+  writeDataFile(dataPath, content);
 }
 
 // データ変更を全ウィンドウに通知する関数
@@ -735,7 +945,7 @@ export function setupDataHandlers(configFolder: string) {
 
     try {
       const emptyData = serializeJsonDataFile(createEmptyJsonDataFile());
-      FileUtils.safeWriteTextFile(filePath, emptyData);
+      writeDataFile(filePath, emptyData);
       dataLogger.info(`File created successfully: ${filePath}`);
       return { success: true };
     } catch (error) {
@@ -753,6 +963,7 @@ export function setupDataHandlers(configFolder: string) {
 
     try {
       await fs.promises.unlink(filePath);
+      forgetDataFile(fileName);
 
       // 削除されたファイルを targetFile に持つ自動取込ルールを無効化
       const settingsService = await SettingsService.getInstance();
@@ -793,8 +1004,8 @@ export function setupDataHandlers(configFolder: string) {
 
   ipcMain.handle(
     IPC_CHANNELS.SAVE_EDITABLE_ITEMS,
-    async (_event, editableItems: EditableJsonItem[]) => {
-      await saveEditableItems(configFolder, editableItems);
+    async (_event, editableItems: EditableJsonItem[], expectedHashes?: Record<string, string>) => {
+      await saveEditableItems(configFolder, editableItems, expectedHashes);
       notifyDataChanged();
     }
   );

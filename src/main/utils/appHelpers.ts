@@ -4,6 +4,7 @@ import { generateId, serializeJsonDataFile } from '@common/utils/jsonParser';
 import type { JsonDataFile } from '@common/types';
 
 import PathManager from '../config/pathManager.js';
+import { writeDataFile } from '../services/dataFileTracker.js';
 
 /**
  * デフォルトのデータファイルを作成（JSON形式）
@@ -65,6 +66,6 @@ export function createDefaultDataFile(): void {
       ],
     };
     const content = serializeJsonDataFile(defaultData);
-    fs.writeFileSync(dataPath, content, 'utf8');
+    writeDataFile(dataPath, content);
   }
 }

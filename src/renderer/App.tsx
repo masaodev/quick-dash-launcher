@@ -193,6 +193,11 @@ function App(): React.ReactElement {
   };
 
   const handleReloadItems = async (): Promise<void> => {
+    // F5 は「QDL 外で編集した設定ファイルを反映する」入口でもある。
+    // settings.json の副作用（ホットキー等）を適用し直してからデータを読み直す
+    await window.electronAPI.reapplySettings().catch((error) => {
+      logError('設定の再適用に失敗しました:', error);
+    });
     await withLoading('データ再読込中', loadItems);
   };
 

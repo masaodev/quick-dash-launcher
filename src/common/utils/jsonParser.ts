@@ -122,6 +122,182 @@ export function parseJsonDataFile(content: string): JsonDataFile {
   };
 }
 
+// ============================================================
+// 寛容パース（外部編集されたファイル向け）
+// ============================================================
+
+/** 寛容パースで検出した問題の種別 */
+export type JsonItemIssueKind =
+  /** アイテムが不正（読み込み対象から外すが、ファイル上は保持する） */
+  | 'invalid'
+  /** id が欠落・不正・重複していたため採番した */
+  | 'idAssigned'
+  /** ファイル構造を補正した（version の補完など） */
+  | 'normalized';
+
+/** 寛容パースで検出した問題 */
+export interface JsonItemIssue {
+  /**
+   * パース結果 data.items 内のインデックス。
+   * ファイル単位の問題、およびオブジェクトでないため削除したアイテムは -1
+   * （削除したものは reason に元の位置を書く）
+   */
+  index: number;
+  kind: JsonItemIssueKind;
+  /** 問題のアイテムの id（採番後の値。id が無いアイテムは undefined） */
+  id?: string;
+  /** 人間と AI が読める理由 */
+  reason: string;
+}
+
+/** 寛容パースの結果 */
+export interface LenientParseResult {
+  /**
+   * パース結果。items には不正なアイテムも元のオブジェクトのまま含む
+   * （書き戻し時に消えないようにするため）。読み込みに使う側は
+   * validItems を参照する。
+   */
+  data: JsonDataFile;
+  /** 検証を通過した（正規化済みの）アイテムだけ */
+  validItems: JsonItem[];
+  /** 検出した問題の一覧 */
+  issues: JsonItemIssue[];
+  /** 採番・補正で内容が変わり、ファイルへの書き戻しが必要 */
+  modified: boolean;
+}
+
+export interface LenientParseOptions {
+  /** 他ファイルで既に使われている id。重複していれば採番し直す */
+  reservedIds?: Set<string>;
+}
+
+/**
+ * JSONデータファイルを寛容にパースする
+ *
+ * 人や AI が直接編集したファイルを想定し、JSON として壊れていない限り
+ * ファイル全体を捨てない。id の欠落・不正・重複は採番で補い、
+ * 不正なアイテムは項目単位でスキップして他を生かす。
+ *
+ * @param content - JSONファイルの内容（文字列）
+ * @param options - reservedIds など
+ * @returns パース結果と検出した問題
+ * @throws JSON 構文エラー、または root/items の構造が不正な場合
+ */
+export function parseJsonDataFileLenient(
+  content: string,
+  options: LenientParseOptions = {}
+): LenientParseResult {
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(content);
+  } catch (error) {
+    throw new Error(`JSON parse error: ${error instanceof Error ? error.message : String(error)}`);
+  }
+
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error('Invalid JSON structure: root must be an object');
+  }
+
+  const obj = parsed as Record<string, unknown>;
+
+  if (!Array.isArray(obj.items)) {
+    throw new Error('Invalid JSON structure: items must be an array');
+  }
+
+  const issues: JsonItemIssue[] = [];
+  let modified = false;
+
+  let version: string;
+  if (typeof obj.version === 'string') {
+    version = obj.version;
+  } else {
+    version = JSON_DATA_VERSION;
+    modified = true;
+    issues.push({
+      index: -1,
+      kind: 'normalized',
+      reason: `version が無いか文字列でないため "${JSON_DATA_VERSION}" を補いました`,
+    });
+  }
+
+  const seenIds = new Set<string>(options.reservedIds ?? []);
+  const items: JsonItem[] = [];
+  const validItems: JsonItem[] = [];
+
+  for (let i = 0; i < obj.items.length; i++) {
+    const raw = obj.items[i];
+
+    // オブジェクトでないものは保持しようがないので落とす
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+      issues.push({
+        index: -1,
+        kind: 'invalid',
+        reason: `元の items[${i}] はオブジェクトでないため削除しました`,
+      });
+      modified = true;
+      continue;
+    }
+
+    // 以降の index は data.items 上の位置（削除があると元の位置とずれる）
+    const index = items.length;
+    const itemObj = { ...(raw as Record<string, unknown>) };
+
+    // id の補完（欠落・不正・重複）
+    let id: string;
+    if (!isValidId(itemObj.id)) {
+      const reason =
+        itemObj.id === undefined
+          ? 'id が無いため採番しました'
+          : `id "${String(itemObj.id)}" が不正なため採番し直しました`;
+      id = generateUniqueId(seenIds);
+      issues.push({ index, kind: 'idAssigned', id, reason });
+      modified = true;
+    } else if (seenIds.has(itemObj.id)) {
+      id = generateUniqueId(seenIds);
+      issues.push({
+        index,
+        kind: 'idAssigned',
+        id,
+        reason: `id "${itemObj.id}" が重複しているため採番し直しました`,
+      });
+      modified = true;
+    } else {
+      id = itemObj.id;
+    }
+    itemObj.id = id;
+    seenIds.add(id);
+
+    try {
+      const validatedItem = validateJsonItem(itemObj, index);
+      items.push(validatedItem);
+      validItems.push(validatedItem);
+    } catch (error) {
+      issues.push({
+        index,
+        kind: 'invalid',
+        id,
+        reason: error instanceof Error ? error.message : String(error),
+      });
+      // 不正でもファイル上には残す（AI や人が直せるように）
+      items.push(itemObj as unknown as JsonItem);
+    }
+  }
+
+  return { data: { version, items }, validItems, issues, modified };
+}
+
+/**
+ * 使用済み id と衝突しない id を生成する
+ */
+function generateUniqueId(usedIds: Set<string>): string {
+  let id = generateId();
+  while (usedIds.has(id)) {
+    id = generateId();
+  }
+  return id;
+}
+
 /**
  * JsonDataFileを文字列にシリアライズする
  *

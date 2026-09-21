@@ -35,11 +35,24 @@ export interface EditableJsonItem {
 }
 
 /**
+ * saveEditableItems が楽観ロックの競合（読み込み後の外部変更）で保存を拒否したときに
+ * エラーメッセージへ付ける印。IPC 越しでもメッセージ文字列は残るので includes で判別する
+ */
+export const EXTERNAL_CHANGE_CONFLICT_MARKER = '[external-change]';
+
+/**
  * loadEditableItemsの戻り値型
  */
 export interface LoadEditableItemsResult {
   /** 読み込まれた編集可能アイテムの配列 */
   items: EditableJsonItem[];
+
+  /**
+   * 読み込み時のファイル内容ハッシュ（キー: 'datafiles/data.json' 形式）。
+   * saveEditableItems に渡すと、読み込み後に QDL 外で変更されたファイルへの
+   * 上書きを拒否する（楽観ロック）
+   */
+  fileHashes?: Record<string, string>;
 
   /** エラーメッセージ（エラーがある場合のみ） */
   error?: string;

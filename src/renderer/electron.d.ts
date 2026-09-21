@@ -107,6 +107,8 @@ export interface ElectronAPI {
   getSettings: () => Promise<AppSettings>;
   setMultipleSettings: (settings: Partial<AppSettings>) => Promise<void>;
   resetSettings: () => Promise<void>;
+  /** settings.json をディスクから読み直して副作用（ホットキー等）を適用し直す（F5） */
+  reapplySettings: () => Promise<void>;
   validateHotkey: (hotkey: string) => Promise<{ isValid: boolean; reason?: string }>;
   changeHotkey: (newHotkey: string) => Promise<boolean>;
   changeItemSearchHotkey: (newHotkey: string) => Promise<boolean>;
@@ -119,7 +121,11 @@ export interface ElectronAPI {
   ) => Promise<{ success: boolean }>;
   // EditableJsonItem API
   loadEditableItems: () => Promise<LoadEditableItemsResult>;
-  saveEditableItems: (editableItems: EditableJsonItem[]) => Promise<void>;
+  /** expectedHashes（loadEditableItems の fileHashes）を渡すと外部変更との競合時に保存を拒否する */
+  saveEditableItems: (
+    editableItems: EditableJsonItem[],
+    expectedHashes?: Record<string, string>
+  ) => Promise<void>;
   // IDベースのアイテム更新
   updateDirItemById: (
     id: string,

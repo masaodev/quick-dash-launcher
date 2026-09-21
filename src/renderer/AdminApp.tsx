@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import type { AppSettings } from '@common/types';
 import type { EditableJsonItem } from '@common/types/editableItem';
+import { EXTERNAL_CHANGE_CONFLICT_MARKER } from '@common/types/editableItem';
 
 import AdminTabContainer from './components/AdminTabContainer';
 import AlertDialog from './components/AlertDialog';
@@ -15,6 +16,8 @@ type AlertDialogState = {
 const AdminApp: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'settings' | 'edit' | 'other'>('settings');
   const [editableItems, setEditableItems] = useState<EditableJsonItem[]>([]);
+  // 楽観ロック用: 読み込み時のデータファイルのハッシュ。保存時に渡して外部変更との競合を検知する
+  const [fileHashes, setFileHashes] = useState<Record<string, string> | undefined>(undefined);
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -73,8 +76,10 @@ const AdminApp: React.FC = () => {
       if (itemsResult.error) {
         logError('Failed to load editable items:', itemsResult.error);
         setEditableItems([]);
+        setFileHashes(undefined);
       } else {
         setEditableItems(itemsResult.items);
+        setFileHashes(itemsResult.fileHashes);
       }
     } catch (error) {
       logError('Failed to load data:', error);
@@ -85,11 +90,29 @@ const AdminApp: React.FC = () => {
 
   async function handleEditableItemsSave(newEditableItems: EditableJsonItem[]): Promise<void> {
     try {
-      await window.electronAPI.saveEditableItems(newEditableItems);
+      await window.electronAPI.saveEditableItems(newEditableItems, fileHashes);
       setEditableItems(newEditableItems);
       debugInfo('Editable items saved successfully');
     } catch (error) {
       logError('Failed to save editable items:', error);
+      const message = error instanceof Error ? error.message : String(error);
+      if (message.includes(EXTERNAL_CHANGE_CONFLICT_MARKER)) {
+        // 読み込み後に QDL 外で変更されている。上書きせず、最新の内容を読み直す
+        setAlertDialog({
+          isOpen: true,
+          message:
+            'データファイルが QDL の外で変更されていたため、今回の編集は保存していません。' +
+            '最新の内容を読み込み直しますので、もう一度編集してください。',
+          type: 'warning',
+        });
+        await loadData(false);
+        return;
+      }
+      setAlertDialog({
+        isOpen: true,
+        message: `アイテムの保存に失敗しました。${message}`,
+        type: 'error',
+      });
     }
   }
 

@@ -106,6 +106,7 @@ export const IPC_CHANNELS = {
   SETTINGS_SET: 'settings:set',
   SETTINGS_SET_MULTIPLE: 'settings:set-multiple',
   SETTINGS_RESET: 'settings:reset',
+  SETTINGS_REAPPLY: 'settings:reapply',
   SETTINGS_VALIDATE_HOTKEY: 'settings:validate-hotkey',
   SETTINGS_GET_CONFIG_PATH: 'settings:get-config-path',
   SETTINGS_CHANGE_HOTKEY: 'settings:change-hotkey',
