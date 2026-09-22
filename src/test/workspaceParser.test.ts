@@ -320,6 +320,18 @@ describe('workspaceParser: 不正な要素', () => {
     ).toContain('Unknown item type');
   });
 
+  it('ウィンドウ操作のタイトル空・プロセス名だけは "*" に正規化して normalized にすること', () => {
+    const result = parseWorkspaceFileLenient(
+      file({ items: [{ ...windowItem, windowTitle: '', processName: 'notepad.exe' }] }),
+      createWorkspaceParseContext(NOW)
+    );
+    expect(result.data.items[0]).toMatchObject({ windowTitle: '*', processName: 'notepad.exe' });
+    expect(result.issues).toEqual([
+      expect.objectContaining({ kind: 'normalized', section: 'items', id: windowItem.id }),
+    ]);
+    expect(result.modified).toBe(true);
+  });
+
   it('アイテム本体の検証はデータファイルと同じで、未知のフィールドは落ちること', () => {
     const result = parseWorkspaceFileLenient(
       file({

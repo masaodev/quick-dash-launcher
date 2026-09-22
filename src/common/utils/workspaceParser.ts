@@ -40,6 +40,11 @@ import {
   validateJsonWindowItem,
 } from './jsonParser';
 import type { JsonItemIssue } from './jsonParser';
+import { normalizeWindowTitleForProcessOnly } from './windowTitle';
+
+/** 書き込み側の normalizeWorkspaceItemBody と同じ規則。読み込みでは normalized として報告する */
+const WINDOW_TITLE_NORMALIZED_REASON =
+  'windowTitle が空でプロセス名だけのため "*"（全一致）にしました';
 
 // ============================================================
 // 型
@@ -289,14 +294,9 @@ export function normalizeWorkspaceItemBody<T extends { type: JsonWorkspaceItem['
   id: string
 ): T {
   const raw = { ...(body as unknown as Record<string, unknown>) };
-  if (
-    raw.type === 'window' &&
-    typeof raw.windowTitle === 'string' &&
-    raw.windowTitle.trim() === '' &&
-    typeof raw.processName === 'string' &&
-    raw.processName.trim() !== ''
-  ) {
-    raw.windowTitle = '*';
+  if (raw.type === 'window') {
+    const normalized = normalizeWindowTitleForProcessOnly(raw.windowTitle, raw.processName);
+    if (normalized !== undefined) raw.windowTitle = normalized;
   }
   const validated = validateItemBody(raw, id);
   delete validated.id;
@@ -512,6 +512,11 @@ function parseItemBase(
   issues: IssueCollector
 ): ParsedItem<JsonWorkspaceItem> {
   const id = resolveId(raw, 'items', index, ctx, issues);
+  const windowTitle = normalizeWindowTitleForProcessOnly(raw.windowTitle, raw.processName);
+  if (raw.type === 'window' && windowTitle !== undefined) {
+    raw = { ...raw, windowTitle };
+    issues.normalized('items', index, WINDOW_TITLE_NORMALIZED_REASON, id);
+  }
   const body = validateItemBody(raw, id);
   delete body.updatedAt;
 

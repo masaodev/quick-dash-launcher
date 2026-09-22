@@ -17,6 +17,8 @@ import type {
 import type { ClipboardFormat } from '@common/types/clipboard';
 import { JSON_DATA_VERSION, JSON_DATA_SCHEMA_REF, JSON_ID_LENGTH } from '@common/types';
 
+import { normalizeWindowTitleForProcessOnly } from './windowTitle';
+
 // ============================================================
 // ID生成
 // ============================================================
@@ -285,6 +287,24 @@ export function parseJsonDataFileLenient(
     }
     itemObj.id = id;
     seenIds.add(id);
+
+    // ウィンドウ操作: タイトル空・プロセス名だけは全一致ワイルドカードにする（invalid にしない）
+    if (itemObj.type === 'window') {
+      const windowTitle = normalizeWindowTitleForProcessOnly(
+        itemObj.windowTitle,
+        itemObj.processName
+      );
+      if (windowTitle !== undefined) {
+        itemObj.windowTitle = windowTitle;
+        issues.push({
+          index,
+          kind: 'normalized',
+          id,
+          reason: 'windowTitle が空でプロセス名だけのため "*"（全一致）にしました',
+        });
+        modified = true;
+      }
+    }
 
     try {
       const validatedItem = validateJsonItem(itemObj, index);

@@ -32,6 +32,7 @@ import {
 } from '@common/groupColors';
 import { generateUniqueId, isValidId } from '@common/utils/jsonParser';
 import { stripIconFromLayoutEntries } from '@common/utils/dataConverters';
+import { normalizeWindowTitleForProcessOnly } from '@common/utils/windowTitle';
 import type { LayoutWindowEntry } from '@common/types/launcher';
 
 type Raw = Record<string, unknown>;
@@ -228,15 +229,13 @@ export function migrateWorkspaceV1(
 
     if (type === 'windowOperation') {
       const path = typeof item.path === 'string' ? item.path : '';
-      let windowTitle = path.match(WINDOW_OPERATION_PATH_PATTERN)?.[1] ?? path;
-      if (windowTitle === '' && typeof item.processName === 'string' && item.processName !== '') {
-        // 旧形式は「タイトルかプロセス名のどちらか」を許していた。全一致ワイルドカードで同じ意味にする
-        windowTitle = '*';
-      }
+      const windowTitle = path.match(WINDOW_OPERATION_PATH_PATTERN)?.[1] ?? path;
       return {
         ...base,
         type: 'window',
-        windowTitle,
+        // 旧形式は「タイトルかプロセス名のどちらか」を許していた。全一致ワイルドカードで同じ意味にする
+        windowTitle:
+          normalizeWindowTitleForProcessOnly(windowTitle, item.processName) ?? windowTitle,
         processName: item.processName,
         x: item.windowX,
         y: item.windowY,

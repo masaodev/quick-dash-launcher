@@ -12,6 +12,7 @@ import {
 } from '@common/utils/jsonParser';
 import type { JsonItemIssue } from '@common/utils/jsonParser';
 import { jsonItemToDisplayText } from '@common/utils/displayTextConverter';
+import { normalizeWindowTitleForProcessOnly } from '@common/utils/windowTitle';
 import type { EditableJsonItem, LoadEditableItemsResult } from '@common/types/editableItem';
 import { validateEditableItem, EXTERNAL_CHANGE_CONFLICT_MARKER } from '@common/types/editableItem';
 import {
@@ -848,7 +849,9 @@ async function updateWindowItemById(
     id: itemId,
     type: 'window' as const,
     displayName: config.displayName,
-    windowTitle: config.windowTitle,
+    windowTitle:
+      normalizeWindowTitleForProcessOnly(config.windowTitle, config.processName) ??
+      config.windowTitle,
     processName: config.processName,
     x: config.x,
     y: config.y,

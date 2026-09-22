@@ -75,7 +75,7 @@ export function createTitleMatcher(windowTitle: string): (title: string) => bool
  *
  * @example
  * // プロセス名検索
- * const hwnd = findWindowByTitle('', 'chrome');
+ * const hwnd = findWindowByTitle('*', 'chrome');
  * // → プロセス名に "chrome" を含むウィンドウに一致（例: chrome.exe）
  *
  * @example

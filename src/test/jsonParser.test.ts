@@ -551,6 +551,33 @@ describe('jsonParser: 寛容パース（parseJsonDataFileLenient）', () => {
     expect(result.modified).toBe(false);
   });
 
+  it('ウィンドウ操作のタイトル空・プロセス名だけは "*" に正規化し、書き戻し要にすること', () => {
+    const processOnly = {
+      id: 'wnAAAAA1',
+      type: 'window',
+      displayName: 'メモ帳',
+      windowTitle: '',
+      processName: 'notepad.exe',
+    };
+    const result = parseJsonDataFileLenient(fileWith([processOnly]));
+
+    expect(result.validItems).toHaveLength(1);
+    expect(result.data.items[0]).toMatchObject({ windowTitle: '*', processName: 'notepad.exe' });
+    expect(result.issues).toEqual([
+      expect.objectContaining({ index: 0, kind: 'normalized', id: 'wnAAAAA1' }),
+    ]);
+    expect(result.modified).toBe(true);
+  });
+
+  it('ウィンドウ操作のタイトル空でプロセス名も無ければ invalid のままにすること', () => {
+    const result = parseJsonDataFileLenient(
+      fileWith([{ id: 'wnAAAAA2', type: 'window', displayName: 'x', windowTitle: '' }])
+    );
+    expect(result.validItems).toHaveLength(0);
+    expect(result.issues).toEqual([expect.objectContaining({ kind: 'invalid', id: 'wnAAAAA2' })]);
+    expect(result.issues[0].reason).toContain('windowTitle');
+  });
+
   it('未知の type はスキップし、他のアイテムは生かすこと', () => {
     const result = parseJsonDataFileLenient(
       fileWith([{ id: 'aaaaaaaa', type: 'unknown', displayName: 'x' }, validItem])

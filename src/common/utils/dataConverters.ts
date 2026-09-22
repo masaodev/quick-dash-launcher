@@ -33,6 +33,7 @@ import {
 } from '../types/json-data.js';
 
 import { generateId } from './jsonParser.js';
+import { normalizeWindowTitleForProcessOnly } from './windowTitle.js';
 
 /**
  * LayoutWindowEntryの配列からiconフィールドを除去する（JSON保存用）
@@ -493,7 +494,9 @@ export function convertRegisterItemToJsonItem(
       id,
       type: 'window',
       displayName: config.displayName || registerItem.displayName,
-      windowTitle: config.windowTitle,
+      windowTitle:
+        normalizeWindowTitleForProcessOnly(config.windowTitle, config.processName) ??
+        config.windowTitle,
       processName: config.processName,
       x: config.x,
       y: config.y,
