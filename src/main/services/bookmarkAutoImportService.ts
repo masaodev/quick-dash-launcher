@@ -13,6 +13,7 @@ import logger from '@common/logger';
 import { FileUtils } from '@common/utils/fileUtils';
 import {
   generateId,
+  createEmptyJsonDataFile,
   parseJsonDataFileLenient,
   serializeJsonDataFile,
 } from '@common/utils/jsonParser';
@@ -332,7 +333,7 @@ export class BookmarkAutoImportService {
   private loadDataFile(dataFilePath: string): JsonDataFile {
     const content = FileUtils.safeReadTextFile(dataFilePath);
     if (!content) {
-      return { version: '1.0', items: [] };
+      return createEmptyJsonDataFile();
     }
     try {
       return parseJsonDataFileLenient(content).data;

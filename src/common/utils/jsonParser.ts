@@ -15,7 +15,7 @@ import type {
   JsonLayoutItem,
 } from '@common/types';
 import type { ClipboardFormat } from '@common/types/clipboard';
-import { JSON_DATA_VERSION, JSON_ID_LENGTH } from '@common/types';
+import { JSON_DATA_VERSION, JSON_DATA_SCHEMA_REF, JSON_ID_LENGTH } from '@common/types';
 
 // ============================================================
 // ID生成
@@ -116,10 +116,11 @@ export function parseJsonDataFile(content: string): JsonDataFile {
     }
   }
 
-  return {
-    version: obj.version,
-    items,
-  };
+  const result: JsonDataFile = { version: obj.version, items };
+  if (typeof obj.$schema === 'string') {
+    result.$schema = obj.$schema;
+  }
+  return result;
 }
 
 // ============================================================
@@ -132,7 +133,7 @@ export type JsonItemIssueKind =
   | 'invalid'
   /** id が欠落・不正・重複していたため採番した */
   | 'idAssigned'
-  /** ファイル構造を補正した（version の補完など） */
+  /** ファイル構造を補正した（version・$schema の補完など） */
   | 'normalized';
 
 /** 寛容パースで検出した問題 */
@@ -207,6 +208,19 @@ export function parseJsonDataFileLenient(
 
   const issues: JsonItemIssue[] = [];
   let modified = false;
+
+  // $schema はエディタ補完・検証のための参照。無い・違うときは同梱スキーマへの相対パスに揃える
+  if (obj.$schema !== JSON_DATA_SCHEMA_REF) {
+    modified = true;
+    issues.push({
+      index: -1,
+      kind: 'normalized',
+      reason:
+        obj.$schema === undefined
+          ? `$schema が無いため "${JSON_DATA_SCHEMA_REF}" を補いました`
+          : `$schema "${String(obj.$schema)}" を "${JSON_DATA_SCHEMA_REF}" に直しました`,
+    });
+  }
 
   let version: string;
   if (typeof obj.version === 'string') {
@@ -284,7 +298,12 @@ export function parseJsonDataFileLenient(
     }
   }
 
-  return { data: { version, items }, validItems, issues, modified };
+  return {
+    data: { $schema: JSON_DATA_SCHEMA_REF, version, items },
+    validItems,
+    issues,
+    modified,
+  };
 }
 
 /**
@@ -301,6 +320,9 @@ function generateUniqueId(usedIds: Set<string>): string {
 /**
  * JsonDataFileを文字列にシリアライズする
  *
+ * キー順は $schema → version → items に固定する。$schema が無ければ同梱スキーマへの
+ * 参照を補う（QDL が書くファイルには常に付く）。
+ *
  * @param data - シリアライズするJsonDataFile
  * @param pretty - 整形出力するかどうか（デフォルト: true）
  * @returns JSON文字列
@@ -308,14 +330,19 @@ function generateUniqueId(usedIds: Set<string>): string {
  * @example
  * ```typescript
  * const json = serializeJsonDataFile({ version: '1.0', items: [] });
- * // => '{\n  "version": "1.0",\n  "items": []\n}'
+ * // => '{\n  "$schema": "../schemas/data.schema.json",\n  "version": "1.0",\n  "items": []\n}'
  * ```
  */
 export function serializeJsonDataFile(data: JsonDataFile, pretty: boolean = true): string {
+  const ordered: JsonDataFile = {
+    $schema: data.$schema ?? JSON_DATA_SCHEMA_REF,
+    version: data.version,
+    items: data.items,
+  };
   if (pretty) {
-    return JSON.stringify(data, null, 2);
+    return JSON.stringify(ordered, null, 2);
   }
-  return JSON.stringify(data);
+  return JSON.stringify(ordered);
 }
 
 /**
@@ -325,6 +352,7 @@ export function serializeJsonDataFile(data: JsonDataFile, pretty: boolean = true
  */
 export function createEmptyJsonDataFile(): JsonDataFile {
   return {
+    $schema: JSON_DATA_SCHEMA_REF,
     version: JSON_DATA_VERSION,
     items: [],
   };

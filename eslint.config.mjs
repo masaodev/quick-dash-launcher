@@ -53,7 +53,7 @@ export default [
 
   // TypeScript + React設定（メインコード）
   {
-    files: ['src/**/*.{js,jsx,ts,tsx}'],
+    files: ['src/**/*.{js,jsx,ts,tsx}', 'scripts/**/*.ts'],
     languageOptions: {
       parser: tsParser,
       ecmaVersion: 'latest',

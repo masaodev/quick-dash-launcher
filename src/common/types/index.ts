@@ -61,6 +61,7 @@ export {
   isJsonClipboardItem,
   isJsonLayoutItem,
   JSON_DATA_VERSION,
+  JSON_DATA_SCHEMA_REF,
   JSON_ID_LENGTH,
   DIR_OPTIONS_DEFAULTS,
 } from './json-data';
@@ -91,6 +92,7 @@ export type {
   WorkspacePositionMode,
   DisplayInfo,
 } from './settings';
+export { SETTINGS_SCHEMA_REF } from './settings';
 
 // アイコン関連の型
 export type {

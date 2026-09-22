@@ -23,7 +23,7 @@ import type {
   JsonGroupItem,
   JsonWindowItem,
 } from '@common/types';
-import { JSON_DATA_VERSION, JSON_ID_LENGTH } from '@common/types';
+import { JSON_DATA_VERSION, JSON_DATA_SCHEMA_REF, JSON_ID_LENGTH } from '@common/types';
 
 describe('jsonParser: ID生成', () => {
   describe('generateId', () => {
@@ -245,6 +245,20 @@ describe('jsonParser: パースとシリアライズ', () => {
     });
   });
 
+  describe('parseJsonDataFile: $schema', () => {
+    it('$schema を保持すること', () => {
+      const parsed = parseJsonDataFile(
+        JSON.stringify({ $schema: JSON_DATA_SCHEMA_REF, version: '1.0', items: [] })
+      );
+      expect(parsed.$schema).toBe(JSON_DATA_SCHEMA_REF);
+    });
+
+    it('$schema が無ければ付けないこと', () => {
+      const parsed = parseJsonDataFile(JSON.stringify({ version: '1.0', items: [] }));
+      expect(parsed).not.toHaveProperty('$schema');
+    });
+  });
+
   describe('serializeJsonDataFile', () => {
     it('整形出力がデフォルトであること', () => {
       const data: JsonDataFile = {
@@ -265,8 +279,14 @@ describe('jsonParser: パースとシリアライズ', () => {
       expect(result).not.toContain('\n');
     });
 
+    it('$schema → version → items の順で出力し、$schema が無ければ補うこと', () => {
+      const result = serializeJsonDataFile({ version: '1.0', items: [] }, false);
+      expect(result).toBe(`{"$schema":"${JSON_DATA_SCHEMA_REF}","version":"1.0","items":[]}`);
+    });
+
     it('パースとシリアライズがラウンドトリップすること', () => {
       const original: JsonDataFile = {
+        $schema: JSON_DATA_SCHEMA_REF,
         version: '1.0',
         items: [
           {
@@ -286,6 +306,7 @@ describe('jsonParser: パースとシリアライズ', () => {
   describe('createEmptyJsonDataFile', () => {
     it('正しい構造の空ファイルを作成すること', () => {
       const result = createEmptyJsonDataFile();
+      expect(result.$schema).toBe(JSON_DATA_SCHEMA_REF);
       expect(result.version).toBe(JSON_DATA_VERSION);
       expect(result.items).toEqual([]);
     });
@@ -451,8 +472,12 @@ describe('jsonParser: 完全なJSONファイルの処理', () => {
 describe('jsonParser: 寛容パース（parseJsonDataFileLenient）', () => {
   const validItem = { id: 'abcdefgh', type: 'item', displayName: 'A', path: 'C:\\a.exe' };
 
+  /** $schema 付きの正常なファイル文字列を作る（補完で normalized が混ざらないように） */
+  const fileWith = (items: unknown[], extra: Record<string, unknown> = {}): string =>
+    JSON.stringify({ $schema: JSON_DATA_SCHEMA_REF, version: '1.0', items, ...extra });
+
   it('正常なファイルは問題なし・未変更として返すこと', () => {
-    const result = parseJsonDataFileLenient(JSON.stringify({ version: '1.0', items: [validItem] }));
+    const result = parseJsonDataFileLenient(fileWith([validItem]));
 
     expect(result.issues).toEqual([]);
     expect(result.modified).toBe(false);
@@ -471,7 +496,7 @@ describe('jsonParser: 寛容パース（parseJsonDataFileLenient）', () => {
 
   it('id が無いアイテムに採番して書き戻し要と判定すること', () => {
     const { id: _id, ...noId } = validItem;
-    const result = parseJsonDataFileLenient(JSON.stringify({ version: '1.0', items: [noId] }));
+    const result = parseJsonDataFileLenient(fileWith([noId]));
 
     expect(result.modified).toBe(true);
     expect(result.issues).toHaveLength(1);
@@ -483,9 +508,7 @@ describe('jsonParser: 寛容パース（parseJsonDataFileLenient）', () => {
   });
 
   it('不正な id は採番し直すこと', () => {
-    const result = parseJsonDataFileLenient(
-      JSON.stringify({ version: '1.0', items: [{ ...validItem, id: 'x' }] })
-    );
+    const result = parseJsonDataFileLenient(fileWith([{ ...validItem, id: 'x' }]));
 
     expect(result.issues[0].kind).toBe('idAssigned');
     expect(result.issues[0].reason).toContain('不正');
@@ -494,7 +517,7 @@ describe('jsonParser: 寛容パース（parseJsonDataFileLenient）', () => {
 
   it('同一ファイル内で重複する id は 2 件目以降を採番し直すこと', () => {
     const result = parseJsonDataFileLenient(
-      JSON.stringify({ version: '1.0', items: [validItem, { ...validItem, displayName: 'B' }] })
+      fileWith([validItem, { ...validItem, displayName: 'B' }])
     );
 
     expect(result.data.items[0].id).toBe('abcdefgh');
@@ -505,10 +528,9 @@ describe('jsonParser: 寛容パース（parseJsonDataFileLenient）', () => {
   });
 
   it('reservedIds（他ファイルの id）と重複する id も採番し直すこと', () => {
-    const result = parseJsonDataFileLenient(
-      JSON.stringify({ version: '1.0', items: [validItem] }),
-      { reservedIds: new Set(['abcdefgh']) }
-    );
+    const result = parseJsonDataFileLenient(fileWith([validItem]), {
+      reservedIds: new Set(['abcdefgh']),
+    });
 
     expect(result.data.items[0].id).not.toBe('abcdefgh');
     expect(result.modified).toBe(true);
@@ -516,9 +538,7 @@ describe('jsonParser: 寛容パース（parseJsonDataFileLenient）', () => {
 
   it('不正なアイテムはスキップしつつ data.items には元のまま残すこと', () => {
     const broken = { id: 'zzzzzzzz', type: 'item', displayName: 'no path' };
-    const result = parseJsonDataFileLenient(
-      JSON.stringify({ version: '1.0', items: [validItem, broken] })
-    );
+    const result = parseJsonDataFileLenient(fileWith([validItem, broken]));
 
     expect(result.validItems).toHaveLength(1);
     expect(result.data.items).toHaveLength(2);
@@ -533,10 +553,7 @@ describe('jsonParser: 寛容パース（parseJsonDataFileLenient）', () => {
 
   it('未知の type はスキップし、他のアイテムは生かすこと', () => {
     const result = parseJsonDataFileLenient(
-      JSON.stringify({
-        version: '1.0',
-        items: [{ id: 'aaaaaaaa', type: 'unknown', displayName: 'x' }, validItem],
-      })
+      fileWith([{ id: 'aaaaaaaa', type: 'unknown', displayName: 'x' }, validItem])
     );
 
     expect(result.validItems).toHaveLength(1);
@@ -545,9 +562,7 @@ describe('jsonParser: 寛容パース（parseJsonDataFileLenient）', () => {
   });
 
   it('オブジェクトでない要素は削除し、index を -1・reason に元の位置を書くこと', () => {
-    const result = parseJsonDataFileLenient(
-      JSON.stringify({ version: '1.0', items: [null, 'text', validItem] })
-    );
+    const result = parseJsonDataFileLenient(fileWith([null, 'text', validItem]));
 
     expect(result.data.items).toHaveLength(1);
     expect(result.modified).toBe(true);
@@ -559,9 +574,7 @@ describe('jsonParser: 寛容パース（parseJsonDataFileLenient）', () => {
 
   it('削除があっても issue.index は data.items 上の位置を指すこと', () => {
     const broken = { id: 'zzzzzzzz', type: 'item' };
-    const result = parseJsonDataFileLenient(
-      JSON.stringify({ version: '1.0', items: [null, validItem, broken] })
-    );
+    const result = parseJsonDataFileLenient(fileWith([null, validItem, broken]));
 
     const invalidIssue = result.issues.find((i) => i.kind === 'invalid' && i.index >= 0);
     expect(invalidIssue?.index).toBe(1);
@@ -569,16 +582,47 @@ describe('jsonParser: 寛容パース（parseJsonDataFileLenient）', () => {
   });
 
   it('version が無ければ補い、normalized として報告すること', () => {
-    const result = parseJsonDataFileLenient(JSON.stringify({ items: [validItem] }));
+    const result = parseJsonDataFileLenient(
+      JSON.stringify({ $schema: JSON_DATA_SCHEMA_REF, items: [validItem] })
+    );
 
     expect(result.data.version).toBe(JSON_DATA_VERSION);
     expect(result.modified).toBe(true);
-    expect(result.issues[0]).toEqual(expect.objectContaining({ index: -1, kind: 'normalized' }));
+    expect(result.issues).toEqual([expect.objectContaining({ index: -1, kind: 'normalized' })]);
+    expect(result.issues[0].reason).toContain('version');
+  });
+
+  it('$schema が無ければ補い、normalized として報告すること', () => {
+    const result = parseJsonDataFileLenient(JSON.stringify({ version: '1.0', items: [validItem] }));
+
+    expect(result.data.$schema).toBe(JSON_DATA_SCHEMA_REF);
+    expect(result.modified).toBe(true);
+    expect(result.issues).toEqual([expect.objectContaining({ index: -1, kind: 'normalized' })]);
+    expect(result.issues[0].reason).toContain('$schema');
+    // アイテム自体は正常なので validItems はそのまま
+    expect(result.validItems).toHaveLength(1);
+  });
+
+  it('$schema が同梱スキーマと違えば直し、normalized として報告すること', () => {
+    const result = parseJsonDataFileLenient(
+      fileWith([validItem], { $schema: 'https://example.com/other.json' })
+    );
+
+    expect(result.data.$schema).toBe(JSON_DATA_SCHEMA_REF);
+    expect(result.modified).toBe(true);
+    expect(result.issues[0].reason).toContain('https://example.com/other.json');
+  });
+
+  it('$schema が正しければ保持し、未変更として返すこと', () => {
+    const result = parseJsonDataFileLenient(fileWith([validItem]));
+
+    expect(result.data.$schema).toBe(JSON_DATA_SCHEMA_REF);
+    expect(result.modified).toBe(false);
   });
 
   it('寛容パースの結果をシリアライズすると不正アイテムも含めてラウンドトリップすること', () => {
     const broken = { id: 'zzzzzzzz', type: 'group', displayName: 'g', itemNames: 'not-array' };
-    const original = { version: '1.0', items: [validItem, broken] };
+    const original = { $schema: JSON_DATA_SCHEMA_REF, version: '1.0', items: [validItem, broken] };
     const result = parseJsonDataFileLenient(JSON.stringify(original));
 
     expect(JSON.parse(serializeJsonDataFile(result.data))).toEqual(original);

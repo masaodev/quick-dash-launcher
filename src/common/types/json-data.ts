@@ -16,8 +16,13 @@ import type { ClipboardFormat } from './clipboard';
  * JSONデータファイルのルート構造
  */
 export interface JsonDataFile {
-  /** ファイルフォーマットのバージョン */
-  version: string; // "1.0"
+  /**
+   * JSON Schema への参照（エディタ補完・検証用）。
+   * QDL が書き戻すときに "../schemas/data.schema.json" を補う
+   */
+  $schema?: string;
+  /** ファイルフォーマットのバージョン（現在は "1.0"） */
+  version: string;
   /** アイテムの配列 */
   items: JsonItem[];
 }
@@ -45,7 +50,11 @@ export type JsonItem =
  * 全アイテム共通の基底インターフェース
  */
 interface JsonItemBase {
-  /** 8文字の一意ID（英数字、ランダムに生成） */
+  /**
+   * 8文字の一意ID（英数字 A-Z a-z 0-9、ランダムに生成）。
+   * 手で書くときも新しい値を生成する。既存の id は変えない
+   * @pattern ^[A-Za-z0-9]{8}$
+   */
   id: string;
   /** 自由記述メモ（オプション） */
   memo?: string;
@@ -285,6 +294,12 @@ export function isJsonLayoutItem(item: JsonItem): item is JsonLayoutItem {
 
 /** 現在のJSONファイルフォーマットバージョン */
 export const JSON_DATA_VERSION = '1.0';
+
+/**
+ * データファイルに書き込む $schema の値
+ * （datafiles/ から見た config/schemas/data.schema.json への相対パス）
+ */
+export const JSON_DATA_SCHEMA_REF = '../schemas/data.schema.json';
 
 /** ID文字列の長さ */
 export const JSON_ID_LENGTH = 8;

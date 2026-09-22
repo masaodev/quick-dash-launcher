@@ -37,6 +37,7 @@ import { closeAllDetachedGroupWindows, setDetachedAppQuitting } from './detached
 import { destroyOverlayWindow } from './services/overlayWindowService.js';
 import { cancelAllChildWindowCreations } from './services/childWindowService.js';
 import { BookmarkAutoImportService } from './services/bookmarkAutoImportService.js';
+import { installConfigFolderDocs } from './services/configFolderDocsService.js';
 
 // 多重起動時に完全に独立したuserDataを使用
 if (EnvConfig.hasAppInstance) {
@@ -57,6 +58,9 @@ if (EnvConfig.isDevelopment) {
 app.whenReady().then(async () => {
   // 設定フォルダを先に作成（スプラッシュのアイコンパス解決に必要）
   PathManager.ensureDirectories();
+
+  // 設定フォルダを直接編集する人・AI 向けに、同梱スキーマと README.md を配置
+  installConfigFolderDocs(app.getVersion());
 
   // preload はセッション単位で登録し、全ウィンドウ（レンダラーから window.open で
   // 開く子ウィンドウを含む）に共通適用する。webPreferences.preload は window.open の

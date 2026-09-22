@@ -100,6 +100,10 @@ const AdminOtherTab: React.FC = () => {
               <Button variant="info" onClick={handleOpenConfigFolder}>
                 📂 設定フォルダを開く
               </Button>
+              <p className="help-card-description">
+                AI エージェントにデータファイルを編集させるときは、このフォルダの README.md
+                を読ませてください（編集の作法・反映方法・結果の確認先が書いてあります）。
+              </p>
             </div>
           </div>
         </div>

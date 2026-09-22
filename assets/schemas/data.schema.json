@@ -1,0 +1,522 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/masaodev/quick-dash-launcher/main/assets/schemas/data.schema.json",
+  "title": "QuickDashLauncher データファイル（datafiles/data*.json）",
+  "description": "JSONデータファイルのルート構造",
+  "$ref": "#/definitions/JsonDataFile",
+  "definitions": {
+    "JsonDataFile": {
+      "type": "object",
+      "properties": {
+        "$schema": {
+          "type": "string",
+          "description": "JSON Schema への参照（エディタ補完・検証用）。 QDL が書き戻すときに \"../schemas/data.schema.json\" を補う"
+        },
+        "version": {
+          "type": "string",
+          "description": "ファイルフォーマットのバージョン（現在は \"1.0\"）"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/JsonItem"
+          },
+          "description": "アイテムの配列"
+        }
+      },
+      "required": [
+        "version",
+        "items"
+      ],
+      "additionalProperties": false,
+      "description": "JSONデータファイルのルート構造"
+    },
+    "JsonItem": {
+      "description": "JSONデータファイル内のアイテム型（Union型）",
+      "oneOf": [
+        {
+          "$ref": "#/definitions/JsonLauncherItem"
+        },
+        {
+          "$ref": "#/definitions/JsonDirItem"
+        },
+        {
+          "$ref": "#/definitions/JsonGroupItem"
+        },
+        {
+          "$ref": "#/definitions/JsonWindowItem"
+        },
+        {
+          "$ref": "#/definitions/JsonClipboardItem"
+        },
+        {
+          "$ref": "#/definitions/JsonLayoutItem"
+        }
+      ]
+    },
+    "JsonLauncherItem": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "8文字の一意ID（英数字 A-Z a-z 0-9、ランダムに生成）。 手で書くときも新しい値を生成する。既存の id は変えない",
+          "pattern": "^[A-Za-z0-9]{8}$"
+        },
+        "memo": {
+          "type": "string",
+          "description": "自由記述メモ（オプション）"
+        },
+        "updatedAt": {
+          "type": "number",
+          "description": "更新日時（Unixタイムスタンプ ms、オプション）"
+        },
+        "type": {
+          "type": "string",
+          "const": "item",
+          "description": "アイテムタイプ"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "表示名"
+        },
+        "path": {
+          "type": "string",
+          "description": "ファイルパス、URL、またはコマンド"
+        },
+        "args": {
+          "type": "string",
+          "description": "コマンドライン引数（オプション）"
+        },
+        "customIcon": {
+          "type": "string",
+          "description": "カスタムアイコンファイル名（オプション）"
+        },
+        "windowConfig": {
+          "$ref": "#/definitions/WindowConfig",
+          "description": "ウィンドウ制御設定（オプション）"
+        },
+        "autoImportRuleId": {
+          "type": "string",
+          "description": "自動取込ルールのID（このフィールドがあるアイテムは自動管理対象）"
+        }
+      },
+      "required": [
+        "displayName",
+        "id",
+        "path",
+        "type"
+      ],
+      "additionalProperties": false,
+      "description": "通常のランチャーアイテム ファイル、アプリケーション、URL、フォルダなどを起動するアイテム"
+    },
+    "WindowConfig": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "ウィンドウタイトル（検索用、必須）"
+        },
+        "processName": {
+          "type": "string",
+          "description": "プロセス名で検索（部分一致、省略時は検索なし）"
+        },
+        "x": {
+          "type": "number",
+          "description": "X座標（仮想スクリーン座標系、省略時は位置変更なし）"
+        },
+        "y": {
+          "type": "number",
+          "description": "Y座標（仮想スクリーン座標系、省略時は位置変更なし）"
+        },
+        "width": {
+          "type": "number",
+          "description": "幅（省略時はサイズ変更なし）"
+        },
+        "height": {
+          "type": "number",
+          "description": "高さ（省略時はサイズ変更なし）"
+        },
+        "moveToActiveMonitorCenter": {
+          "type": "boolean",
+          "description": "アクティブモニター（マウスカーソルがあるモニター）の中央に移動するかどうか（省略時はfalse）"
+        },
+        "virtualDesktopNumber": {
+          "type": "number",
+          "description": "仮想デスクトップ番号（1から開始、省略時は移動なし、Windows 10以降）"
+        },
+        "activateWindow": {
+          "type": "boolean",
+          "description": "ウィンドウをアクティブにするかどうか（省略時はtrue）"
+        },
+        "pinToAllDesktops": {
+          "type": "boolean",
+          "description": "全仮想デスクトップにピン止めするかどうか（省略時はfalse）"
+        }
+      },
+      "required": [
+        "title"
+      ],
+      "additionalProperties": false,
+      "description": "ウィンドウ制御の設定情報 アイテム起動時のウィンドウ検索・位置・サイズ制御に使用\n\nワイルドカード検索:\n- タイトルにワイルドカード文字（*または?）が含まれている場合、ワイルドカードマッチングを実行   - `*`: 任意の0文字以上の文字列   - `?`: 任意の1文字\n- ワイルドカード文字が含まれていない場合、完全一致検索を実行\n- 大文字小文字は区別しない"
+    },
+    "JsonDirItem": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "8文字の一意ID（英数字 A-Z a-z 0-9、ランダムに生成）。 手で書くときも新しい値を生成する。既存の id は変えない",
+          "pattern": "^[A-Za-z0-9]{8}$"
+        },
+        "memo": {
+          "type": "string",
+          "description": "自由記述メモ（オプション）"
+        },
+        "updatedAt": {
+          "type": "number",
+          "description": "更新日時（Unixタイムスタンプ ms、オプション）"
+        },
+        "type": {
+          "type": "string",
+          "const": "dir",
+          "description": "アイテムタイプ"
+        },
+        "path": {
+          "type": "string",
+          "description": "スキャン対象のフォルダパス"
+        },
+        "options": {
+          "$ref": "#/definitions/JsonDirOptions",
+          "description": "スキャンオプション（オプション）"
+        }
+      },
+      "required": [
+        "id",
+        "path",
+        "type"
+      ],
+      "additionalProperties": false,
+      "description": "フォルダ取込アイテム 指定フォルダ内のファイル/フォルダを自動的にスキャンして取り込む"
+    },
+    "JsonDirOptions": {
+      "type": "object",
+      "properties": {
+        "depth": {
+          "type": "number",
+          "description": "スキャンする深さ（0=サブフォルダなし、デフォルト）"
+        },
+        "types": {
+          "type": "string",
+          "enum": [
+            "file",
+            "folder",
+            "both"
+          ],
+          "description": "取り込むアイテムの種類"
+        },
+        "filter": {
+          "type": "string",
+          "description": "ファイル名フィルタ（ワイルドカード対応、例: \"*.exe\"）"
+        },
+        "exclude": {
+          "type": "string",
+          "description": "除外フィルタ（ワイルドカード対応、例: \"*.tmp\"）"
+        },
+        "prefix": {
+          "type": "string",
+          "description": "表示名のプレフィックス"
+        },
+        "suffix": {
+          "type": "string",
+          "description": "表示名のサフィックス"
+        }
+      },
+      "additionalProperties": false,
+      "description": "フォルダ取込オプション（JSON保存用、すべてオプショナル）"
+    },
+    "JsonGroupItem": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "8文字の一意ID（英数字 A-Z a-z 0-9、ランダムに生成）。 手で書くときも新しい値を生成する。既存の id は変えない",
+          "pattern": "^[A-Za-z0-9]{8}$"
+        },
+        "memo": {
+          "type": "string",
+          "description": "自由記述メモ（オプション）"
+        },
+        "updatedAt": {
+          "type": "number",
+          "description": "更新日時（Unixタイムスタンプ ms、オプション）"
+        },
+        "type": {
+          "type": "string",
+          "const": "group",
+          "description": "アイテムタイプ"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "グループの表示名"
+        },
+        "itemNames": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "グループ内で参照するアイテム名のリスト"
+        }
+      },
+      "required": [
+        "displayName",
+        "id",
+        "itemNames",
+        "type"
+      ],
+      "additionalProperties": false,
+      "description": "グループアイテム 複数のアイテムをまとめて一括起動する"
+    },
+    "JsonWindowItem": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "8文字の一意ID（英数字 A-Z a-z 0-9、ランダムに生成）。 手で書くときも新しい値を生成する。既存の id は変えない",
+          "pattern": "^[A-Za-z0-9]{8}$"
+        },
+        "memo": {
+          "type": "string",
+          "description": "自由記述メモ（オプション）"
+        },
+        "updatedAt": {
+          "type": "number",
+          "description": "更新日時（Unixタイムスタンプ ms、オプション）"
+        },
+        "type": {
+          "type": "string",
+          "const": "window",
+          "description": "アイテムタイプ"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "アイテムリストでの表示名"
+        },
+        "windowTitle": {
+          "type": "string",
+          "description": "ウィンドウタイトル（検索用、ワイルドカード対応）"
+        },
+        "processName": {
+          "type": "string",
+          "description": "プロセス名で検索（部分一致、オプション）"
+        },
+        "x": {
+          "type": "number",
+          "description": "X座標（仮想スクリーン座標系、オプション）"
+        },
+        "y": {
+          "type": "number",
+          "description": "Y座標（仮想スクリーン座標系、オプション）"
+        },
+        "width": {
+          "type": "number",
+          "description": "幅（オプション）"
+        },
+        "height": {
+          "type": "number",
+          "description": "高さ（オプション）"
+        },
+        "moveToActiveMonitorCenter": {
+          "type": "boolean",
+          "description": "アクティブモニターの中央に移動するか（オプション）"
+        },
+        "virtualDesktopNumber": {
+          "type": "number",
+          "description": "仮想デスクトップ番号（1から開始、オプション）"
+        },
+        "activateWindow": {
+          "type": "boolean",
+          "description": "ウィンドウをアクティブにするか（デフォルト: true、オプション）"
+        },
+        "pinToAllDesktops": {
+          "type": "boolean",
+          "description": "全仮想デスクトップにピン止めするか（オプション）"
+        }
+      },
+      "required": [
+        "displayName",
+        "id",
+        "type",
+        "windowTitle"
+      ],
+      "additionalProperties": false,
+      "description": "ウィンドウ操作アイテム 既存のウィンドウを検索・アクティブ化し、位置・サイズを制御する"
+    },
+    "JsonClipboardItem": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "8文字の一意ID（英数字 A-Z a-z 0-9、ランダムに生成）。 手で書くときも新しい値を生成する。既存の id は変えない",
+          "pattern": "^[A-Za-z0-9]{8}$"
+        },
+        "memo": {
+          "type": "string",
+          "description": "自由記述メモ（オプション）"
+        },
+        "updatedAt": {
+          "type": "number",
+          "description": "更新日時（Unixタイムスタンプ ms、オプション）"
+        },
+        "type": {
+          "type": "string",
+          "const": "clipboard",
+          "description": "アイテムタイプ"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "アイテムの表示名"
+        },
+        "dataFileRef": {
+          "type": "string",
+          "description": "クリップボードデータファイルへの参照（clipboard-data/{id}.json）"
+        },
+        "savedAt": {
+          "type": "number",
+          "description": "保存日時（timestamp）"
+        },
+        "preview": {
+          "type": "string",
+          "description": "プレビューテキスト（最初の100文字程度）"
+        },
+        "formats": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ClipboardFormat"
+          },
+          "description": "保存されているフォーマット"
+        },
+        "customIcon": {
+          "type": "string",
+          "description": "カスタムアイコンファイル名（オプション）"
+        }
+      },
+      "required": [
+        "dataFileRef",
+        "displayName",
+        "formats",
+        "id",
+        "savedAt",
+        "type"
+      ],
+      "additionalProperties": false,
+      "description": "クリップボードアイテム クリップボードの内容を保存し、後から復元できる"
+    },
+    "ClipboardFormat": {
+      "type": "string",
+      "enum": [
+        "text",
+        "html",
+        "rtf",
+        "image",
+        "file"
+      ],
+      "description": "クリップボードデータのフォーマット"
+    },
+    "JsonLayoutItem": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "8文字の一意ID（英数字 A-Z a-z 0-9、ランダムに生成）。 手で書くときも新しい値を生成する。既存の id は変えない",
+          "pattern": "^[A-Za-z0-9]{8}$"
+        },
+        "memo": {
+          "type": "string",
+          "description": "自由記述メモ（オプション）"
+        },
+        "updatedAt": {
+          "type": "number",
+          "description": "更新日時（Unixタイムスタンプ ms、オプション）"
+        },
+        "type": {
+          "type": "string",
+          "const": "layout",
+          "description": "アイテムタイプ"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "レイアウトの表示名"
+        },
+        "entries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/LayoutWindowEntry"
+          },
+          "description": "レイアウト内のウィンドウエントリ一覧"
+        }
+      },
+      "required": [
+        "displayName",
+        "entries",
+        "id",
+        "type"
+      ],
+      "additionalProperties": false,
+      "description": "レイアウトアイテム 複数ウィンドウの位置・サイズを一括でキャプチャ・復元する"
+    },
+    "LayoutWindowEntry": {
+      "type": "object",
+      "properties": {
+        "windowTitle": {
+          "type": "string",
+          "description": "ウィンドウタイトル（検索用）"
+        },
+        "processName": {
+          "type": "string",
+          "description": "プロセス名（部分一致検索用、オプション）"
+        },
+        "executablePath": {
+          "type": "string",
+          "description": "実行ファイルのパス（アプリ起動用、オプション）"
+        },
+        "args": {
+          "type": "string",
+          "description": "コマンドライン引数（オプション）"
+        },
+        "x": {
+          "type": "number",
+          "description": "X座標（仮想スクリーン座標系、オプション）"
+        },
+        "y": {
+          "type": "number",
+          "description": "Y座標（仮想スクリーン座標系、オプション）"
+        },
+        "width": {
+          "type": "number",
+          "description": "幅（オプション）"
+        },
+        "height": {
+          "type": "number",
+          "description": "高さ（オプション）"
+        },
+        "virtualDesktopNumber": {
+          "type": "number",
+          "description": "仮想デスクトップ番号（1から開始、オプション）"
+        },
+        "launchApp": {
+          "type": "boolean",
+          "description": "アプリを起動するかどうか（falseの場合は既存ウィンドウの位置変更のみ）"
+        },
+        "icon": {
+          "type": "string",
+          "description": "アイコン（base64エンコードされたデータURL、オプション）"
+        }
+      },
+      "required": [
+        "windowTitle",
+        "launchApp"
+      ],
+      "additionalProperties": false,
+      "description": "レイアウト内の個別ウィンドウエントリ キャプチャしたウィンドウの位置・サイズ情報とアプリ起動設定を持つ"
+    }
+  }
+}

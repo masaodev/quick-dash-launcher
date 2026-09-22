@@ -57,6 +57,7 @@ QuickDashLauncherは複数のJSON形式のデータファイルをサポート�
 
 ```json
 {
+  "$schema": "../schemas/data.schema.json",
   "version": "1.0",
   "items": [
     // アイテムの配列
@@ -68,8 +69,11 @@ QuickDashLauncherは複数のJSON形式のデータファイルをサポート�
 
 | フィールド | 型 | 必須 | 説明 |
 |-----------|-----|------|------|
+| **$schema** | string | - | JSON Schema への参照（エディタ補完・検証用）。QDL が書き戻すときに `../schemas/data.schema.json`（`config/schemas/` に起動時コピーされる同梱スキーマ）を補う。無い・違う値のときは読み込み時に補正して書き戻し、レポートに `normalized` として載る |
 | **version** | string | ✓ | ファイルフォーマットのバージョン（現在は "1.0"） |
 | **items** | array | ✓ | アイテムの配列（JsonItem型） |
+
+書き戻し時のキー順は `$schema` → `version` → `items` に固定されます（`serializeJsonDataFile`）。
 
 ### 2.3. アイテムID
 
@@ -94,6 +98,7 @@ QuickDashLauncherは複数のJSON形式のデータファイルをサポート�
 
 ```json
 {
+  "$schema": "../schemas/data.schema.json",
   "version": "1.0",
   "items": [
     {
@@ -707,6 +712,8 @@ v0.4.2以降、重複排除は**タブ単位**で実行されます：
 | 変更前スナップショット | 前回読み込み時（または QDL 自身の書き込み時）と内容が違うファイルを検知すると、**変更前の内容**を `config/backup/YYYY-MM-DDTHH-MM-SS_pre-external/` に保存する（`backupEnabled` が true のとき。`backupRetention` とは別枠で最新 10 件を保持）。直接編集で壊したときの戻し先。**検知は QDL 起動中の編集 → F5 のときだけ**（前回の内容はメモリ上で覚えているため、QDL 終了中に編集した内容は起動時に反映はされるが外部変更としては検知されず、スナップショットも作られない） |
 | 楽観ロック | 編集画面の保存は全ファイルを全量上書きするため、読み込み時のファイル内容ハッシュを保存時に照合し、読み込み後に外部で変更されていれば保存を拒否して再読込する（`saveEditableItems` の `expectedHashes`） |
 | ID 指定の更新 | メイン画面からの編集・削除は毎回ディスクを読み直して該当 ID だけ差し替えるため、外部変更と共存できる |
+| JSON Schema | 同梱スキーマ（`assets/schemas/data.schema.json`）を起動時に `config/schemas/` へコピーし、データファイルの `$schema` から相対参照する。アイテムは `type` で判別する `oneOf`、各アイテムは `additionalProperties: false`（寛容パースが黙って落とす未知フィールドを、書く前にエディタで気づけるように）。**アプリ実行時にはスキーマ検証しない**（検証器を 2 つ持たない）。スキーマは型定義から `npm run schema:generate` で生成し、単体テストがドリフトを検知する。詳細は [README の「AI・手動編集」](README.md#ai手動編集) |
+| config/README.md | 直接編集する人・AI 向けの作業指示を起動時に生成する（雛形は `assets/config-readme.md`） |
 
 #### last-load-report.json の形式
 
@@ -742,7 +749,7 @@ v0.4.2以降、重複排除は**タブ単位**で実行されます：
 |-----------|------|
 | `files[].status` | `ok` / `corrupted`（JSON として壊れている。`error` に理由） / `unreadable`（読めない） |
 | `files[].accepted` | 受理したアイテム数（`dir` の展開前。JSON 上の要素数） |
-| `files[].issues[].kind` | `invalid`（スキップ） / `idAssigned`（採番） / `normalized`（構造の補正） |
+| `files[].issues[].kind` | `invalid`（スキップ） / `idAssigned`（採番） / `normalized`（構造の補正。`version` や `$schema` の補完） |
 | `files[].issues[].index` | 書き戻し後の `items` 配列内の位置。ファイル単位の問題や削除した要素は `-1`（`reason` に元の位置） |
 | `files[].rewritten` | 採番・補正のためファイルを書き戻したか |
 | `preChangeSnapshot` | 外部変更の検知時に作った変更前スナップショットのフォルダ名。なければ `null` |

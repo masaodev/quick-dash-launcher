@@ -5,6 +5,7 @@ import type { AppSettings, JsonItem, JsonLauncherItem } from '@common/types';
 
 /** データファイルのJSON構造 */
 interface DataFileContent {
+  $schema?: string;
   version: string;
   items: JsonItem[];
 }

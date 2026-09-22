@@ -2,6 +2,12 @@ import { DataFileTab } from './data';
 import { BookmarkAutoImportSettings } from './bookmarkAutoImport';
 
 /**
+ * settings.json に書き込む $schema の値
+ * （config/ から見た config/schemas/settings.schema.json への相対パス）
+ */
+export const SETTINGS_SCHEMA_REF = './schemas/settings.schema.json';
+
+/**
  * ウィンドウの固定モードを表す列挙型
  * 3段階のモードを循環的に切り替え可能
  */
@@ -54,19 +60,24 @@ export interface DisplayInfo {
  * electron-storeを使用して永続化される
  */
 export interface AppSettings {
+  /**
+   * JSON Schema への参照（エディタ補完・検証用）。
+   * QDL が起動時に "./schemas/settings.schema.json" を補う
+   */
+  $schema?: string;
   /** この設定ファイルを作成したアプリバージョン（初回作成時のみ記録） */
   createdWithVersion?: string;
   /** この設定ファイルを最後に更新したアプリバージョン */
   updatedWithVersion?: string;
-  /** ランチャー起動ホットキー（デフォルト: 'Alt+Space'） */
+  /** ランチャー起動ホットキー（例: 'Alt+Space'。未設定の空文字は初回起動扱い） */
   hotkey: string;
   /** ウィンドウの初期幅（デフォルト: 600） */
   windowWidth: number;
   /** ウィンドウの初期高さ（デフォルト: 400） */
   windowHeight: number;
-  /** 編集モード時のウィンドウ幅（デフォルト: 1000） */
+  /** 編集モード時のウィンドウ幅（デフォルト: 1200） */
   editModeWidth: number;
-  /** 編集モード時のウィンドウ高さ（デフォルト: 700） */
+  /** 編集モード時のウィンドウ高さ（デフォルト: 1000） */
   editModeHeight: number;
   /** アプリの自動起動設定 */
   autoLaunch: boolean;
@@ -76,7 +87,7 @@ export interface AppSettings {
   backupRetention: number;
   /** タブ表示の有効/無効（デフォルト: false） */
   showDataFileTabs: boolean;
-  /** デフォルトで表示するタブ（タブ表示ON時のみ有効、デフォルト: 'data.json'） */
+  /** デフォルトで表示するタブ（タブ表示ON時のみ有効、デフォルト: 'datafiles/data.json'） */
   defaultFileTab: string;
   /** データファイルタブの設定（ファイル名リスト、タブ名、表示順序） */
   dataFileTabs: DataFileTab[];

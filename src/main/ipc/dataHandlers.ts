@@ -25,7 +25,7 @@ import {
   isJsonClipboardItem,
   isJsonLayoutItem,
 } from '@common/types';
-import type { JsonItem, JsonDirOptions } from '@common/types';
+import type { JsonDataFile, JsonItem, JsonDirOptions } from '@common/types';
 import type { LayoutWindowEntry } from '@common/types/launcher';
 import type { RegisterItem } from '@common/types/register';
 import { isWindowInfo } from '@common/types/guards';
@@ -664,7 +664,7 @@ async function saveEditableItems(
     const jsonItems = sortedItems.map((item) => item.item);
 
     // JSON形式で保存
-    const jsonData = { version: '1.0', items: jsonItems };
+    const jsonData: JsonDataFile = { ...createEmptyJsonDataFile(), items: jsonItems };
     const content = serializeJsonDataFile(jsonData);
     writeDataFile(filePath, content);
   }
@@ -873,7 +873,7 @@ async function registerItemsToJsonFile(
   items: RegisterItem[]
 ): Promise<void> {
   // 既存のJSONデータを読み込む
-  let jsonData = { version: '1.0', items: [] as JsonItem[] };
+  let jsonData: JsonDataFile = createEmptyJsonDataFile();
   const existingContent = FileUtils.safeReadTextFile(dataPath);
   if (existingContent) {
     try {

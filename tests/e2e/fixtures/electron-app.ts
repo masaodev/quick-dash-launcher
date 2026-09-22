@@ -12,6 +12,16 @@ type ElectronFixtures = {
   mainWindow: Page;
 };
 
+// テスト単位で切り替えられるオプション
+type ElectronOptions = {
+  /**
+   * 起動前に読み込むテンプレート名（tests/e2e/templates/ 配下）。
+   * 起動時の挙動（設定の読み方など）を検証したいときに test.use({ configTemplate: '...' }) で指定する。
+   * 起動後に切り替えるなら configHelper.loadTemplate() + reload で足りる
+   */
+  configTemplate: string;
+};
+
 /**
  * Electronアプリケーション用のPlaywrightフィクスチャ
  *
@@ -22,12 +32,13 @@ type ElectronFixtures = {
  *
  * 一時ディレクトリを使用してテストを実行し、成功時のみクリーンアップします。
  */
-export const test = base.extend<ElectronFixtures>({
+export const test = base.extend<ElectronFixtures & ElectronOptions>({
+  configTemplate: ['base', { option: true }],
+
   // 設定ファイルヘルパーフィクスチャ（一時ディレクトリを作成）
-  // eslint-disable-next-line no-empty-pattern
-  configHelper: async ({}, use, testInfo) => {
-    // 一時ディレクトリを作成してbaseテンプレートを読み込み
-    const configHelper = ConfigFileHelper.createTempConfigDir(testInfo.testId, 'base');
+  configHelper: async ({ configTemplate }, use, testInfo) => {
+    // 一時ディレクトリを作成してテンプレートを読み込み
+    const configHelper = ConfigFileHelper.createTempConfigDir(testInfo.testId, configTemplate);
     await use(configHelper);
 
     // テスト成功時のみクリーンアップ（失敗時はデバッグ用に残す）

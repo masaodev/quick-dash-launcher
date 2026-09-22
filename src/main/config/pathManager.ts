@@ -79,6 +79,16 @@ export class PathManager {
     return path.join(this.getConfigFolder(), 'workspace.json');
   }
 
+  /** 同梱 JSON Schema のコピー先（データファイル・settings.json の $schema が参照する） */
+  static getSchemasFolder(): string {
+    return path.join(this.getConfigFolder(), 'schemas');
+  }
+
+  /** 設定フォルダを直接編集する人・AI 向けの案内（起動時に生成） */
+  static getConfigReadmePath(): string {
+    return path.join(this.getConfigFolder(), 'README.md');
+  }
+
   /** datafilesフォルダ内のすべてのdata*.jsonファイルを取得（configFolderからの相対パス） */
   static getDataFiles(): string[] {
     const dataFilesFolder = this.getDataFilesFolder();
@@ -103,11 +113,16 @@ export class PathManager {
     }
   }
 
+  /** アプリ同梱リソース（assets/）のフォルダ。パッケージ後は app.asar 内 */
+  static getAssetsFolder(): string {
+    const baseDir = EnvConfig.isDevelopment ? process.cwd() : path.join(__dirname, '../..');
+    return path.join(baseDir, 'assets');
+  }
+
   /** 開発モード時は専用アイコン（icon-dev.ico）を使用 */
   static getAppIconPath(): string {
     const iconFileName = EnvConfig.isDevelopment ? 'icon-dev.ico' : 'icon.ico';
-    const baseDir = EnvConfig.isDevelopment ? process.cwd() : path.join(__dirname, '../..');
-    return path.join(baseDir, 'assets', iconFileName);
+    return path.join(this.getAssetsFolder(), iconFileName);
   }
 
   static ensureDirectories(): void {
@@ -121,6 +136,7 @@ export class PathManager {
       this.getCustomIconsFolder(),
       this.getBackupFolder(),
       this.getClipboardDataFolder(),
+      this.getSchemasFolder(),
     ];
 
     for (const dir of dirs) {

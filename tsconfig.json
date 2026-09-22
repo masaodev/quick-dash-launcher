@@ -24,6 +24,6 @@
       "@test/*": ["./src/test/*"]
     }
   },
-  "include": ["src/**/*", "vite.config.mts", "vitest.config.mts", "playwright.config.ts", "tests/**/*"],
+  "include": ["src/**/*", "scripts/**/*.ts", "vite.config.mts", "vitest.config.mts", "playwright.config.ts", "tests/**/*"],
   "exclude": ["node_modules", "dist"]
 }

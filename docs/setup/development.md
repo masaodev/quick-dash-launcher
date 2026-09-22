@@ -124,6 +124,8 @@ QUICK_DASH_CONFIG_DIR=./tests/dev/full npm run dev
 **基本例:**
 詳細な形式仕様については上記リンク先を参照してください。JSON形式でアイテムを管理しています。
 
+**JSON Schema の再生成:** データファイル・設定ファイルの型（`src/common/types/json-data.ts`・`settings.ts`）を変えたら `npm run schema:generate` で `assets/schemas/*.schema.json` を再生成してコミットしてください。単体テスト（`tests/unit/schemas.test.ts`）が生成結果とコミット済みファイルの一致を検証しており、忘れると落ちます。詳細は [ファイル形式一覧の「AI・手動編集」](../architecture/file-formats/README.md#ai手動編集)。
+
 ### データ読み込みと重複排除
 
 #### タブ単位の重複排除（v0.4.2以降）

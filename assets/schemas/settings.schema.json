@@ -1,0 +1,364 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/masaodev/quick-dash-launcher/main/assets/schemas/settings.schema.json",
+  "title": "QuickDashLauncher 設定ファイル（settings.json）",
+  "description": "アプリケーションの設定を管理するインターフェース electron-storeを使用して永続化される",
+  "$ref": "#/definitions/AppSettings",
+  "definitions": {
+    "AppSettings": {
+      "type": "object",
+      "properties": {
+        "$schema": {
+          "type": "string",
+          "description": "JSON Schema への参照（エディタ補完・検証用）。 QDL が起動時に \"./schemas/settings.schema.json\" を補う"
+        },
+        "createdWithVersion": {
+          "type": "string",
+          "description": "この設定ファイルを作成したアプリバージョン（初回作成時のみ記録）"
+        },
+        "updatedWithVersion": {
+          "type": "string",
+          "description": "この設定ファイルを最後に更新したアプリバージョン"
+        },
+        "hotkey": {
+          "type": "string",
+          "description": "ランチャー起動ホットキー（例: 'Alt+Space'。未設定の空文字は初回起動扱い）"
+        },
+        "windowWidth": {
+          "type": "number",
+          "description": "ウィンドウの初期幅（デフォルト: 600）"
+        },
+        "windowHeight": {
+          "type": "number",
+          "description": "ウィンドウの初期高さ（デフォルト: 400）"
+        },
+        "editModeWidth": {
+          "type": "number",
+          "description": "編集モード時のウィンドウ幅（デフォルト: 1200）"
+        },
+        "editModeHeight": {
+          "type": "number",
+          "description": "編集モード時のウィンドウ高さ（デフォルト: 1000）"
+        },
+        "autoLaunch": {
+          "type": "boolean",
+          "description": "アプリの自動起動設定"
+        },
+        "backupEnabled": {
+          "type": "boolean",
+          "description": "バックアップ機能の有効/無効（デフォルト: false）"
+        },
+        "backupRetention": {
+          "type": "number",
+          "description": "バックアップファイルの保存件数上限（デフォルト: 10）"
+        },
+        "showDataFileTabs": {
+          "type": "boolean",
+          "description": "タブ表示の有効/無効（デフォルト: false）"
+        },
+        "defaultFileTab": {
+          "type": "string",
+          "description": "デフォルトで表示するタブ（タブ表示ON時のみ有効、デフォルト: 'datafiles/data.json'）"
+        },
+        "dataFileTabs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DataFileTab"
+          },
+          "description": "データファイルタブの設定（ファイル名リスト、タブ名、表示順序）"
+        },
+        "dataFileLabels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "データファイルの名前定義（物理ファイル名 → データファイル名）"
+        },
+        "windowPositionMode": {
+          "$ref": "#/definitions/WindowPositionMode",
+          "description": "ウィンドウ表示位置モード（デフォルト: 'cursorMonitorCenter'）"
+        },
+        "windowPositionX": {
+          "type": "number",
+          "description": "固定位置のX座標（windowPositionMode='fixed'時に使用、デフォルト: 0）"
+        },
+        "windowPositionY": {
+          "type": "number",
+          "description": "固定位置のY座標（windowPositionMode='fixed'時に使用、デフォルト: 0）"
+        },
+        "workspaceOpacity": {
+          "type": "number",
+          "description": "ワークスペースウィンドウの不透明度（0-100%、デフォルト: 100）"
+        },
+        "workspaceBackgroundTransparent": {
+          "type": "boolean",
+          "description": "ワークスペースウィンドウの背景のみを透過（デフォルト: false）"
+        },
+        "autoShowWorkspace": {
+          "type": "boolean",
+          "description": "メイン画面表示時にワークスペースを自動表示（デフォルト: false）"
+        },
+        "workspacePositionMode": {
+          "$ref": "#/definitions/WorkspacePositionMode",
+          "description": "ワークスペースウィンドウの表示位置モード（デフォルト: 'displayRight'）"
+        },
+        "workspaceTargetDisplayIndex": {
+          "type": "number",
+          "description": "ワークスペースのターゲットディスプレイ番号（displayLeft/displayRight時に使用、デフォルト: 0）"
+        },
+        "workspacePositionX": {
+          "type": "number",
+          "description": "固定位置のX座標（workspacePositionMode='fixed'時に使用、デフォルト: 0）"
+        },
+        "workspacePositionY": {
+          "type": "number",
+          "description": "固定位置のY座標（workspacePositionMode='fixed'時に使用、デフォルト: 0）"
+        },
+        "workspaceVisibleOnAllDesktops": {
+          "type": "boolean",
+          "description": "ワークスペースウィンドウを全仮想デスクトップに表示（デフォルト: true）"
+        },
+        "detachedVisibleOnAllDesktops": {
+          "type": "boolean",
+          "description": "切り離しウィンドウを全仮想デスクトップに表示（デフォルト: true）"
+        },
+        "parallelGroupLaunch": {
+          "type": "boolean",
+          "description": "グループアイテムを並列起動する（デフォルト: false）"
+        },
+        "itemSearchHotkey": {
+          "type": "string",
+          "description": "ウィンドウ検索で起動のホットキー（デフォルト: ''、空の場合は無効）"
+        },
+        "backupIncludeClipboard": {
+          "type": "boolean",
+          "description": "クリップボードデータもバックアップに含めるか（デフォルト: false）"
+        },
+        "bookmarkAutoImport": {
+          "$ref": "#/definitions/BookmarkAutoImportSettings",
+          "description": "ブックマーク自動取込設定"
+        },
+        "hideDetachedWithMainWindow": {
+          "type": "boolean",
+          "description": "メインウィンドウ非表示時に切り離しウィンドウも連動して非表示にする（デフォルト: true）"
+        },
+        "windowSnapEnabled": {
+          "type": "boolean",
+          "description": "ウィンドウ吸着（モニター端へのスナップ）の有効/無効（デフォルト: true）"
+        }
+      },
+      "description": "アプリケーションの設定を管理するインターフェース electron-storeを使用して永続化される"
+    },
+    "DataFileTab": {
+      "type": "object",
+      "properties": {
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "データファイル名のリスト（例: ['datafiles/data.json'], ['datafiles/data2.json', 'datafiles/data3.json']）"
+        },
+        "name": {
+          "type": "string",
+          "description": "タブに表示する名前（例: 'メイン', 'サブ1'）"
+        }
+      },
+      "required": [
+        "files",
+        "name"
+      ],
+      "description": "データファイルタブの設定項目"
+    },
+    "WindowPositionMode": {
+      "type": "string",
+      "enum": [
+        "center",
+        "cursor",
+        "cursorMonitorCenter",
+        "fixed"
+      ],
+      "description": "ウィンドウの表示位置モードを表す列挙型"
+    },
+    "WorkspacePositionMode": {
+      "type": "string",
+      "enum": [
+        "primaryLeft",
+        "primaryRight",
+        "displayLeft",
+        "displayRight",
+        "fixed"
+      ],
+      "description": "ワークスペースの表示位置モードを表す列挙型"
+    },
+    "BookmarkAutoImportSettings": {
+      "type": "object",
+      "properties": {
+        "autoRunOnStartup": {
+          "type": "boolean",
+          "description": "起動時に自動実行するかどうか"
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/BookmarkAutoImportRule"
+          },
+          "description": "ルールの配列"
+        }
+      },
+      "required": [
+        "autoRunOnStartup",
+        "rules"
+      ],
+      "description": "ブックマーク自動取込の設定全体"
+    },
+    "BookmarkAutoImportRule": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "8文字の一意ID"
+        },
+        "name": {
+          "type": "string",
+          "description": "ルール名"
+        },
+        "enabled": {
+          "type": "boolean",
+          "description": "有効/無効"
+        },
+        "browserId": {
+          "type": "string",
+          "enum": [
+            "chrome",
+            "edge"
+          ],
+          "description": "ソースブラウザ"
+        },
+        "profileIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "プロファイルID（空配列=全プロファイル）"
+        },
+        "folderPaths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "フォルダパス（例: \"bookmark_bar/開発\"）"
+        },
+        "folderFilterMode": {
+          "type": "string",
+          "enum": [
+            "include",
+            "exclude"
+          ],
+          "description": "フォルダフィルタモード"
+        },
+        "includeSubfolders": {
+          "type": "boolean",
+          "description": "サブフォルダのブックマークも含めるか（デフォルト: true）"
+        },
+        "urlPattern": {
+          "type": "string",
+          "description": "URLパターン（正規表現、空=全URL）"
+        },
+        "namePattern": {
+          "type": "string",
+          "description": "名前パターン（正規表現、空=全名前）"
+        },
+        "targetFile": {
+          "type": "string",
+          "description": "インポート先データファイル名（例: \"datafiles/data.json\"）"
+        },
+        "prefix": {
+          "type": "string",
+          "description": "インポート時にdisplayNameに付ける接頭辞"
+        },
+        "suffix": {
+          "type": "string",
+          "description": "インポート時にdisplayNameに付ける接尾辞"
+        },
+        "folderNameMode": {
+          "type": "string",
+          "enum": [
+            "none",
+            "parent",
+            "fullPath",
+            "relativePath"
+          ],
+          "description": "フォルダ名の付与モード"
+        },
+        "createdAt": {
+          "type": "number",
+          "description": "作成日時（Unixタイムスタンプ ms）"
+        },
+        "updatedAt": {
+          "type": "number",
+          "description": "更新日時（Unixタイムスタンプ ms）"
+        },
+        "lastExecutedAt": {
+          "type": "number",
+          "description": "最終実行日時（Unixタイムスタンプ ms）"
+        },
+        "lastResult": {
+          "$ref": "#/definitions/BookmarkAutoImportResult",
+          "description": "最終実行結果"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "enabled",
+        "browserId",
+        "profileIds",
+        "folderPaths",
+        "folderFilterMode",
+        "includeSubfolders",
+        "urlPattern",
+        "namePattern",
+        "targetFile",
+        "prefix",
+        "suffix",
+        "folderNameMode",
+        "createdAt",
+        "updatedAt"
+      ],
+      "description": "ブックマーク自動取込ルール"
+    },
+    "BookmarkAutoImportResult": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean",
+          "description": "成功したかどうか"
+        },
+        "importedCount": {
+          "type": "number",
+          "description": "登録件数"
+        },
+        "deletedCount": {
+          "type": "number",
+          "description": "削除件数（前回分のクリア）"
+        },
+        "errorMessage": {
+          "type": "string",
+          "description": "エラーメッセージ"
+        },
+        "executedAt": {
+          "type": "number",
+          "description": "実行日時（Unixタイムスタンプ ms）"
+        }
+      },
+      "required": [
+        "success",
+        "importedCount",
+        "deletedCount",
+        "executedAt"
+      ],
+      "description": "自動取込の実行結果"
+    }
+  }
+}

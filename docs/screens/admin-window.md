@@ -526,6 +526,9 @@ Google,https://google.com
 #### 対象フォルダ
 - `%APPDATA%/quick-dash-launcher/config/`
 
+#### 補足
+- ボタンの下に「AI エージェントにデータファイルを編集させるときは、このフォルダの README.md を読ませてください」という案内を表示する。`README.md` は起動時に生成される作業指示（[ファイル形式一覧の「AI・手動編集」](../architecture/file-formats/README.md#ai手動編集)）
+
 ### 4.21. アプリケーションを終了ボタンをクリック
 
 #### アクション

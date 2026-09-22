@@ -54,5 +54,6 @@
 		"rules": []
 	},
 	"hideDetachedWithMainWindow": true,
-	"windowSnapEnabled": true
+	"windowSnapEnabled": true,
+	"$schema": "./schemas/settings.schema.json"
 }

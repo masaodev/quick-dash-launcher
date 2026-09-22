@@ -26,6 +26,7 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
 
 ```json
 {
+  "$schema": "./schemas/settings.schema.json",
   "createdWithVersion": "0.7.0",
   "updatedWithVersion": "0.7.13",
   "hotkey": "",
@@ -68,12 +69,17 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
 
 ## 3. フィールド定義
 
-### 3.1. バージョン情報
+### 3.1. バージョン情報・スキーマ参照
 
 | フィールド | 型 | デフォルト値 | 説明 |
 |-----------|-----|-------------|------|
+| **$schema** | string | `./schemas/settings.schema.json` | JSON Schema への参照（エディタ補完・検証用）。起動時に `SettingsService` が無ければ補う。electron-store（conf）は `$` 始まりのキーをそのまま扱えるため、ファイル上は最後のキーとして書かれる |
 | **createdWithVersion** | string | - | この設定ファイルを作成したアプリバージョン（初回作成時のみ記録） |
 | **updatedWithVersion** | string | - | この設定ファイルを最後に更新したアプリバージョン |
+
+`$schema`・`createdWithVersion`・`updatedWithVersion` はメタ情報で、更新しても `updatedWithVersion` は進まない。
+
+同梱スキーマ（`assets/schemas/settings.schema.json`）はキーの欠落と未知のキーを許容する（`required` なし・`additionalProperties: true`）。欠けたキーは electron-store がデフォルトで補い、将来のキー追加で古いスキーマが赤くならないようにするため。
 
 ### 3.2. ホットキー設定
 

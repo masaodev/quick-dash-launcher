@@ -90,6 +90,10 @@ tests/fixtures/dev/*/backup/
 # Development test data runtime files
 tests/dev/full/execution-history.json
 tests/dev/full/workspace*.json
+tests/dev/full/last-load-report.json
+# 起動時に QDL が生成する（AI 編集支援）
+tests/dev/full/README.md
+tests/dev/full/schemas/
 
 # Cache
 .cache/

@@ -81,6 +81,32 @@ QuickDashLauncherは以下の3種類のファイルを使用してアプリケ�
 
 ---
 
+## AI・手動編集
+
+設定フォルダのファイルはテキストエディタや AI エージェントで直接編集できる。そのための補助ファイルを **起動時に毎回** 配置する（`installConfigFolderDocs`、`src/main/services/configFolderDocsService.ts`）。
+
+| ファイル | 内容 | 元 |
+|---------|------|-----|
+| `config/README.md` | 直接編集する人・AI 向けの作業指示（触っていいファイル、アイテムの最小例、反映方法 F5、`last-load-report.json` の読み方、壊したときの戻し方）。`{{CONFIG_DIR}}`・`{{APP_VERSION}}` を埋めて生成。内容が同じなら書かない | `assets/config-readme.md` |
+| `config/schemas/data.schema.json` | データファイルの JSON Schema。アイテムは `type` で判別する `oneOf`、`additionalProperties: false` | `assets/schemas/data.schema.json` |
+| `config/schemas/settings.schema.json` | 設定ファイルの JSON Schema。`required` なし・`additionalProperties: true` | `assets/schemas/settings.schema.json` |
+
+**`$schema` の注入**: データファイルは `"$schema": "../schemas/data.schema.json"`、`settings.json` は `"$schema": "./schemas/settings.schema.json"` を QDL が補う（相対パス。URL にすると main の最新とアプリの版がずれるため）。既存利用者のファイルはアップグレード後の初回読み込みで 1 回書き戻される（`writeDataFile` 経由なので外部変更にはならず、`_pre-external` スナップショットも作られない）。
+
+**スキーマの生成と検証**:
+
+```bash
+npm run schema:generate   # src/common/types/{json-data,settings}.ts → assets/schemas/*.schema.json
+```
+
+- 生成は `ts-json-schema-generator`（`scripts/generate-schemas.ts`）。`title` は固定、`description` は TS の JSDoc、`$id` は main の生ファイル URL（安定。アプリの版は入れない。版は隣の `config/README.md` 冒頭に書かれる）
+- `tests/unit/schemas.test.ts` が「生成結果 = コミット済みファイル」を検証する（型を変えて再生成を忘れると落ちる）。同じテストで `tests/e2e/templates/**`・`tests/dev/**`・`dev-config/` の JSON をスキーマ検証し、寛容パースの判定と一致することも確認する
+- **アプリ実行時にはスキーマ検証しない**。検証は寛容パース（`parseJsonDataFileLenient`）の一本
+
+導線: 管理画面「ヘルプ」タブの「設定フォルダを開く」の近くに、AI に `README.md` を読ませる案内がある。
+
+---
+
 ## パス管理
 
 すべてのファイルパスは `PathManager` クラスで一元管理されています。
@@ -95,6 +121,9 @@ PathManager.getWorkspaceFilePath();    // config/workspace.json
 PathManager.getBackupFolder();         // config/backup/
 PathManager.getClipboardDataFolder();  // config/clipboard-data/
 PathManager.getIconCacheFolder();      // config/icon-cache/
+PathManager.getSchemasFolder();        // config/schemas/
+PathManager.getConfigReadmePath();     // config/README.md
+PathManager.getAssetsFolder();         // アプリ同梱の assets/（パッケージ後は app.asar 内）
 ```
 
 詳細: **[src/main/config/pathManager.ts](../../../src/main/config/pathManager.ts)**
