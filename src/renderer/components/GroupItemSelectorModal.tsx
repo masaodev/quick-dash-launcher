@@ -116,7 +116,7 @@ const GroupItemSelectorModal: React.FC<GroupItemSelectorModalProps> = ({
   const loadAvailableItems = async () => {
     try {
       debugInfo('Loading available items for file:', targetFile);
-      const allItems: AppItem[] = await window.electronAPI.loadDataFiles();
+      const allItems: AppItem[] = await window.electronAPI.loadDataFiles('internal');
 
       // 対象ファイルのLauncherItemのみを抽出（グループアイテムとフォルダ取込展開アイテムは除外）
       const itemsInFile = allItems.filter((item: AppItem) => {

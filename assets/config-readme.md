@@ -140,7 +140,8 @@
 
 ## 結果の確認
 
-- 読み込みのたびに `last-load-report.json` が書き直される。編集後は必ず読む
+- 起動時・F5 のたびに `last-load-report.json` が書き直される。編集後は必ず読む
+  （QDL 内の操作による再読込では、報告することがあるときだけ更新される）
 - `files[]` にはデータファイルと `workspace.json`・`workspace-archive.json` が並ぶ。
   `summary.skipped` が 0 で、`files[].issues` に `kind: "invalid"` が無ければ全部受理された
 - ワークスペースの `issues[]` には `section`（`workspaces` / `groups` / `items`）が付き、`index` はその配列内の位置

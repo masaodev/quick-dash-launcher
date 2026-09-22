@@ -55,7 +55,8 @@ export interface ElectronAPI {
   deleteDataFile: (
     fileName: string
   ) => Promise<{ success: boolean; error?: string; disabledRules?: string[] }>;
-  loadDataFiles: () => Promise<AppItem[]>;
+  /** trigger 省略 = 起動時・F5（レポートを必ず書く）。'internal' = 変更通知・画面内の一覧取得 */
+  loadDataFiles: (trigger?: 'explicit' | 'internal') => Promise<AppItem[]>;
   openItem: (item: LauncherItem) => Promise<void>;
   openParentFolder: (item: LauncherItem) => Promise<void>;
   executeGroup: (group: GroupItem, allItems: AppItem[]) => Promise<void>;

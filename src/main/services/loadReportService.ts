@@ -11,7 +11,9 @@ import { PathManager } from '../config/pathManager.js';
  *
  * データファイルを直接編集した人や AI が「自分の編集が受け入れられたか」を
  * 確認するための出力。トーストは AI から見えないので、ファイルに残す。
- * 読み込み（起動時・F5・変更通知）のたびに上書きする。
+ * 明示的な読み込み（起動時・F5）のたびに上書きする。アプリ内部の都合による再読込
+ * （変更通知・画面内の一覧取得）では、報告することがあるときだけ更新する
+ * （起動直後の移行・採番・外部変更の記録が、直後のブックマーク自動取込などで消えないように）。
  */
 
 export const LOAD_REPORT_FILE_NAME = 'last-load-report.json';
@@ -54,6 +56,16 @@ export interface LoadReport {
 /**
  * ファイル別の結果からレポートを組み立てる
  */
+/** 読み込みのきっかけ。explicit = 起動時・F5、internal = 変更通知・画面内の一覧取得 */
+export type LoadTrigger = 'explicit' | 'internal';
+
+/** 人・AI に報告すべきこと（補正・書き戻し・外部変更・破損）があるか */
+export function hasReportableIssues(files: LoadReportFile[]): boolean {
+  return files.some(
+    (f) => f.issues.length > 0 || f.rewritten || f.externallyChanged || f.status !== 'ok'
+  );
+}
+
 export function buildLoadReport(
   files: LoadReportFile[],
   preChangeSnapshot: string | null,

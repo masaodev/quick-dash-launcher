@@ -119,7 +119,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getDataFiles: (): Promise<string[]> => ipcRenderer.invoke(IPC_CHANNELS.GET_DATA_FILES),
   createDataFile: (fileName: string) => ipcRenderer.invoke(IPC_CHANNELS.CREATE_DATA_FILE, fileName),
   deleteDataFile: (fileName: string) => ipcRenderer.invoke(IPC_CHANNELS.DELETE_DATA_FILE, fileName),
-  loadDataFiles: (): Promise<AppItem[]> => ipcRenderer.invoke(IPC_CHANNELS.LOAD_DATA_FILES),
+  // trigger: 'internal' は変更通知・画面内の一覧取得（レポートは報告事項があるときだけ更新）
+  loadDataFiles: (trigger?: 'explicit' | 'internal'): Promise<AppItem[]> =>
+    ipcRenderer.invoke(IPC_CHANNELS.LOAD_DATA_FILES, trigger),
   openItem: (item: LauncherItem) => ipcRenderer.invoke(IPC_CHANNELS.OPEN_ITEM, item),
   openParentFolder: (item: LauncherItem) =>
     ipcRenderer.invoke(IPC_CHANNELS.OPEN_PARENT_FOLDER, item),

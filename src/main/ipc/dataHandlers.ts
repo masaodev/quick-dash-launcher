@@ -50,10 +50,11 @@ import {
 } from '../services/dataFileTracker.js';
 import {
   buildLoadReport,
+  hasReportableIssues,
   formatLoadReportToast,
   writeLoadReport,
 } from '../services/loadReportService.js';
-import type { LoadReportFile } from '../services/loadReportService.js';
+import type { LoadReportFile, LoadTrigger } from '../services/loadReportService.js';
 
 import { setupBookmarkHandlers } from './bookmarkHandlers.js';
 import { notifyDataChanged, notifyWorkspaceChanged } from './notifications.js';
@@ -469,12 +470,16 @@ export async function loadDataFilesWithReport(configFolder: string): Promise<Dat
  * 外部変更があれば変更前スナップショットを 1 つ作る。ワークスペースの内容が変わっていれば
  * ワークスペース画面にも再取得を通知する。
  *
+ * @param trigger internal（変更通知・画面内の一覧取得）なら、報告することがあるときだけレポートを書く
  * @returns メイン画面に表示するアイテム
  */
-export function reloadConfigFiles(configFolder: string): Promise<AppItem[]> {
+export function reloadConfigFiles(
+  configFolder: string,
+  trigger: LoadTrigger = 'explicit'
+): Promise<AppItem[]> {
   // 同時に呼ばれたら（F5 連打・変更通知との重複）先行の結果を共有する
   if (reloadInFlight) return reloadInFlight;
-  reloadInFlight = reloadConfigFilesInternal(configFolder).finally(() => {
+  reloadInFlight = reloadConfigFilesInternal(configFolder, trigger).finally(() => {
     reloadInFlight = null;
   });
   return reloadInFlight;
@@ -482,7 +487,10 @@ export function reloadConfigFiles(configFolder: string): Promise<AppItem[]> {
 
 let reloadInFlight: Promise<AppItem[]> | null = null;
 
-async function reloadConfigFilesInternal(configFolder: string): Promise<AppItem[]> {
+async function reloadConfigFilesInternal(
+  configFolder: string,
+  trigger: LoadTrigger
+): Promise<AppItem[]> {
   const data = await loadDataFilesWithReport(configFolder);
 
   // ワークスペースも同じタイミングで読み直す（読めなくてもデータファイルの表示は止めない）
@@ -508,8 +516,12 @@ async function reloadConfigFilesInternal(configFolder: string): Promise<AppItem[
   ]);
 
   // 直接編集した人・AI が結果を確認できるようレポートを残す
-  const report = buildLoadReport([...data.fileReports, ...workspaceReports], preChangeSnapshot);
-  writeLoadReport(report);
+  // （内部の再読込では、クリーンな結果で起動時・F5 の記録を潰さない）
+  const fileReports = [...data.fileReports, ...workspaceReports];
+  const report = buildLoadReport(fileReports, preChangeSnapshot);
+  if (trigger === 'explicit' || hasReportableIssues(fileReports)) {
+    writeLoadReport(report);
+  }
 
   // 破損ファイルがあった場合は無通知でアイテムが消えたように見えないよう警告する
   const corruptedFiles = [
@@ -1039,7 +1051,9 @@ export function setupDataHandlers(configFolder: string) {
   });
 
   // メイン画面の初回読み込み・F5。ワークスペースも含めて読み直し、レポートを書く
-  ipcMain.handle(IPC_CHANNELS.LOAD_DATA_FILES, () => reloadConfigFiles(configFolder));
+  ipcMain.handle(IPC_CHANNELS.LOAD_DATA_FILES, (_event, trigger?: LoadTrigger) =>
+    reloadConfigFiles(configFolder, trigger)
+  );
 
   ipcMain.handle(IPC_CHANNELS.REGISTER_ITEMS, async (_event, items: RegisterItem[]) => {
     await registerItems(configFolder, items);

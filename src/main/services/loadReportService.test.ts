@@ -20,6 +20,7 @@ import {
   LOAD_REPORT_FILE_NAME,
   buildLoadReport,
   formatLoadReportToast,
+  hasReportableIssues,
   writeLoadReport,
 } from './loadReportService';
 import type { LoadReportFile } from './loadReportService';
@@ -113,5 +114,17 @@ describe('loadReportService', () => {
     expect(toast).toContain('2 件スキップ');
     expect(toast).toContain('1 件に ID を採番');
     expect(toast).toContain(LOAD_REPORT_FILE_NAME);
+  });
+
+  it('hasReportableIssues は補正・書き戻し・外部変更・破損のどれかがあれば true になること', () => {
+    expect(hasReportableIssues([okFile(), okFile({ file: 'workspace.json' })])).toBe(false);
+    expect(
+      hasReportableIssues([
+        okFile({ issues: [{ index: -1, kind: 'normalized', reason: 'version を補いました' }] }),
+      ])
+    ).toBe(true);
+    expect(hasReportableIssues([okFile({ rewritten: true })])).toBe(true);
+    expect(hasReportableIssues([okFile({ externallyChanged: true })])).toBe(true);
+    expect(hasReportableIssues([okFile({ status: 'corrupted', error: 'x' })])).toBe(true);
   });
 });

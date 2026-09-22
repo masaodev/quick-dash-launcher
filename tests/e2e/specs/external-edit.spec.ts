@@ -236,6 +236,47 @@ test.describe('QuickDashLauncher - 外部編集への対応', () => {
     });
   });
 
+  test('QDL 内の操作による再読込では last-load-report.json を書き直さない', async ({
+    mainWindow,
+    configHelper,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    const reportPath = path.join(configHelper.getConfigDir(), 'last-load-report.json');
+    const readReport = () => JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+
+    await test.step('起動時のレポートを控える', async () => {
+      await utils.waitForPageLoad();
+      await mainWindow.locator('.item').first().waitFor({ state: 'visible', timeout: 10000 });
+      await expect.poll(() => fs.existsSync(reportPath)).toBe(true);
+    });
+    const startupReport = readReport();
+
+    await test.step('アイテム登録（変更通知 → 内部の再読込）ではレポートが変わらない', async () => {
+      await mainWindow.evaluate(() =>
+        window.electronAPI.registerItems([
+          {
+            displayName: '内部登録アイテム',
+            path: 'https://example.com/internal',
+            type: 'url',
+            targetTab: 'datafiles/data.json',
+            itemCategory: 'item',
+          },
+        ])
+      );
+      await expect(mainWindow.locator('.item', { hasText: '内部登録アイテム' })).toBeVisible({
+        timeout: 10000,
+      });
+      // 再読込が終わってからも起動時の記録（loadedAt）のまま
+      await mainWindow.waitForTimeout(500);
+      expect(readReport()).toEqual(startupReport);
+    });
+
+    await test.step('F5（明示的な再読込）ではレポートが書き直される', async () => {
+      await utils.reloadWithF5();
+      await expect.poll(() => readReport().loadedAt).not.toBe(startupReport.loadedAt);
+    });
+  });
+
   test('編集画面を開いた後に外部で変更されたファイルは、保存時に上書きせず再読込する', async ({
     electronApp,
     mainWindow,

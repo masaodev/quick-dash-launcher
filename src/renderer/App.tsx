@@ -162,8 +162,8 @@ function App(): React.ReactElement {
     });
   }, [searchMode, withLoading]);
 
-  const loadItems = async (): Promise<AppItem[]> => {
-    const items = await window.electronAPI.loadDataFiles();
+  const loadItems = async (trigger?: 'explicit' | 'internal'): Promise<AppItem[]> => {
+    const items = await window.electronAPI.loadDataFiles(trigger);
 
     // Load cached icons (LauncherItemのみ)
     const launcherItems = items.filter(
@@ -406,7 +406,7 @@ function App(): React.ReactElement {
 
     const cleanupDataChanged = window.electronAPI.onDataChanged(async () => {
       debugLog('データ変更通知を受信、データを再読み込みします');
-      await withLoading('データ再読込中', loadItems);
+      await withLoading('データ再読込中', () => loadItems('internal'));
     });
 
     return () => {
