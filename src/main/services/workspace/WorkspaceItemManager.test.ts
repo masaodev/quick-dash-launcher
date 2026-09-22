@@ -1,7 +1,3 @@
-import * as fs from 'fs';
-import * as os from 'os';
-import * as path from 'path';
-
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 const tempRoot = vi.hoisted(() => ({ dir: '' }));
@@ -9,7 +5,7 @@ const tempRoot = vi.hoisted(() => ({ dir: '' }));
 vi.mock('../../config/pathManager.js', () => {
   const pm = {
     getConfigFolder: () => tempRoot.dir,
-    getWorkspaceUiStateFilePath: () => path.join(tempRoot.dir, 'workspace-ui-state.json'),
+    getWorkspaceUiStateFilePath: () => `${tempRoot.dir}/workspace-ui-state.json`,
   };
   return { PathManager: pm, default: pm };
 });
@@ -19,38 +15,27 @@ vi.mock('@common/logger', () => ({
   dataLogger: { info: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() },
 }));
 
-import { resetDataFileTrackerForTesting } from '../dataFileTracker';
-
-import { WorkspaceFileStore } from './WorkspaceFileStore';
+import type { WorkspaceFileStore } from './WorkspaceFileStore';
 import { WorkspaceItemManager } from './WorkspaceItemManager';
-import { WorkspaceUiStateStore } from './WorkspaceUiStateStore';
+import { createTestWorkspaceStore, type TestWorkspaceStore } from './testStore';
 
 describe('WorkspaceItemManager', () => {
+  let test: TestWorkspaceStore;
   let store: WorkspaceFileStore;
   let manager: WorkspaceItemManager;
 
   beforeEach(async () => {
-    tempRoot.dir = fs.mkdtempSync(path.join(os.tmpdir(), 'qdl-ws-items-'));
-    resetDataFileTrackerForTesting();
-    store = new WorkspaceFileStore(
-      {
-        main: path.join(tempRoot.dir, 'workspace.json'),
-        archive: path.join(tempRoot.dir, 'workspace-archive.json'),
-        legacyDetached: path.join(tempRoot.dir, 'workspace-detached.json'),
-      },
-      new WorkspaceUiStateStore(path.join(tempRoot.dir, 'workspace-ui-state.json')),
-      { createPreMigrationSnapshot: async () => {} }
-    );
-    await store.reload();
+    test = await createTestWorkspaceStore('qdl-ws-items-');
+    tempRoot.dir = test.dir;
+    store = test.store;
     manager = new WorkspaceItemManager(store);
   });
 
   afterEach(() => {
-    fs.rmSync(tempRoot.dir, { recursive: true, force: true });
+    test.cleanup();
   });
 
-  const readItems = () =>
-    JSON.parse(fs.readFileSync(path.join(tempRoot.dir, 'workspace.json'), 'utf8')).items;
+  const readItems = () => test.readMain().items as Record<string, unknown>[];
 
   it('addItem はメイン画面のアイテムをファイル形式で保存し、launcherType を持つこと', () => {
     const added = manager.addItem({
