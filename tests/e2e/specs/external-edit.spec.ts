@@ -97,7 +97,7 @@ test.describe('QuickDashLauncher - AI 編集支援ファイルの配置', () => 
     });
 
     await test.step('F5 しても再補完・外部変更扱いにはならない', async () => {
-      await utils.sendShortcut('F5');
+      await utils.reloadWithF5();
       await expect
         .poll(() => {
           const report = JSON.parse(
@@ -159,7 +159,7 @@ test.describe('QuickDashLauncher - 外部編集への対応', () => {
       // F5 の前は反映されていない（監視していない）
       await expect(mainWindow.locator('.item', { hasText: '外部追加アイテム' })).toHaveCount(0);
 
-      await utils.sendShortcut('F5');
+      await utils.reloadWithF5();
       await expect(mainWindow.locator('.item', { hasText: '外部追加アイテム' })).toBeVisible({
         timeout: 10000,
       });
@@ -221,7 +221,7 @@ test.describe('QuickDashLauncher - 外部編集への対応', () => {
     });
 
     await test.step('もう一度 F5 しても外部変更としては扱われない', async () => {
-      await utils.sendShortcut('F5');
+      await utils.reloadWithF5();
       await expect(mainWindow.locator('.item', { hasText: '外部追加アイテム' })).toBeVisible({
         timeout: 10000,
       });

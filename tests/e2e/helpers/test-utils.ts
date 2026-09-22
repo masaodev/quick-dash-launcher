@@ -87,6 +87,18 @@ export class TestUtils {
   }
 
   /**
+   * F5 でデータ再読込を要求する
+   *
+   * F5 は React の onKeyDown（.app / 検索入力）で処理されるため、フォーカスが外れていると
+   * キー入力が捨てられる。検索入力にフォーカスを戻してから押す
+   */
+  async reloadWithF5(): Promise<void> {
+    const searchInput = this.page.locator('input[type="text"]').first();
+    await searchInput.focus();
+    await this.page.keyboard.press('F5');
+  }
+
+  /**
    * 要素の存在をチェック
    */
   async elementExists(selector: string): Promise<boolean> {

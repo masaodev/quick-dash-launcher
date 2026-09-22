@@ -183,7 +183,7 @@ test.describe('QuickDashLauncher - ワークスペースファイルの 2.0 移�
     });
 
     await test.step('F5 しても再移行・外部変更扱いにはならない', async () => {
-      await utils.sendShortcut('F5');
+      await utils.reloadWithF5();
       await expect
         .poll(() => {
           const ws = configHelper
@@ -239,7 +239,7 @@ test.describe('QuickDashLauncher - ワークスペースファイルの 2.0 移�
         'utf8'
       );
 
-      await utils.sendShortcut('F5');
+      await utils.reloadWithF5();
       await expect
         .poll(
           () =>
@@ -282,7 +282,7 @@ test.describe('QuickDashLauncher - ワークスペースファイルの 2.0 移�
       const brokenContent = '{ "version": "2.0", "workspaces": [ broken';
       fs.writeFileSync(path.join(configDir, 'workspace.json'), brokenContent, 'utf8');
 
-      await utils.sendShortcut('F5');
+      await utils.reloadWithF5();
       await expect
         .poll(
           () =>
@@ -307,7 +307,7 @@ test.describe('QuickDashLauncher - ワークスペースファイルの 2.0 移�
         JSON.stringify(after, null, 2),
         'utf8'
       );
-      await utils.sendShortcut('F5');
+      await utils.reloadWithF5();
       await expect
         .poll(
           () =>
