@@ -74,6 +74,14 @@ export class WorkspaceWriteError extends Error {
   }
 }
 
+/** 再読込（起動時・F5）の途中。読み終わる前に書くと再読込の結果で上書きされて消えるため拒否する */
+export class WorkspaceReloadInProgressError extends Error {
+  constructor() {
+    super('ワークスペースを再読込中です。もう一度お試しください');
+    this.name = 'WorkspaceReloadInProgressError';
+  }
+}
+
 export class WorkspaceCorruptedError extends Error {
   constructor(fileKey: string) {
     super(
@@ -180,6 +188,7 @@ export class WorkspaceFileStore {
   private pendingReports: LoadReportFile[] = [];
   private pendingExternalChanges: Array<{ relativePath: string; content: string }> = [];
   private loaded = false;
+  private reloadPromise: Promise<WorkspaceReloadResult> | null = null;
 
   constructor(
     private readonly paths: WorkspaceFileStorePaths,
@@ -198,7 +207,16 @@ export class WorkspaceFileStore {
    *
    * 旧形式なら 2.0 に移行し、採番・補正があれば書き戻す。読み込み結果は consumeLoadReports() で取り出す。
    */
-  async reload(): Promise<WorkspaceReloadResult> {
+  reload(): Promise<WorkspaceReloadResult> {
+    // 同時に呼ばれたら 1 回に集約する（F5 連打・変更通知との重複で途中経過を壊さない）
+    if (this.reloadPromise) return this.reloadPromise;
+    this.reloadPromise = this.reloadInternal().finally(() => {
+      this.reloadPromise = null;
+    });
+    return this.reloadPromise;
+  }
+
+  private async reloadInternal(): Promise<WorkspaceReloadResult> {
     const before = this.loaded ? JSON.stringify([this.main, this.archive]) : null;
     this.pendingReports = [];
     this.pendingExternalChanges = [];
@@ -607,11 +625,11 @@ export class WorkspaceFileStore {
     });
   }
 
-  /** workspace.json を 1 回の書き込みで更新する */
-  update(mutate: (main: WorkspaceMainData) => void): void {
+  /** workspace.json を 1 回の書き込みで更新する。mutate が false を返したら書かない */
+  update(mutate: (main: WorkspaceMainData) => void | false): void {
     this.assertWritable(WORKSPACE_FILE_KEY, this.paths.main);
     const next = clone(this.main);
-    mutate(next);
+    if (mutate(next) === false) return;
     this.writeMain(next);
   }
 
@@ -653,6 +671,10 @@ export class WorkspaceFileStore {
     // （読めなかった側を空のキャッシュで上書きしないため）
     if (!this.loaded || this.corruptedFiles.size > 0) {
       throw new WorkspaceCorruptedError([...this.corruptedFiles].join(', ') || key);
+    }
+    // 再読込の await 中（旧形式の移行）に書くと、移行の書き出しで上書きされて消える
+    if (this.reloadPromise) {
+      throw new WorkspaceReloadInProgressError();
     }
     const current = FileUtils.safeReadTextFile(filePath) ?? '';
     if (detectExternalChange(key, current) !== null) {

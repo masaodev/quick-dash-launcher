@@ -19,6 +19,7 @@ import {
   WorkspaceService,
   WorkspaceCorruptedError,
   WorkspaceExternalChangeConflictError,
+  WorkspaceReloadInProgressError,
   WorkspaceWriteError,
 } from '../services/workspace/index.js';
 import { showToastWindow } from '../services/overlayWindowService.js';
@@ -59,6 +60,7 @@ async function withWorkspaceService<T>(
     if (
       error instanceof WorkspaceExternalChangeConflictError ||
       error instanceof WorkspaceCorruptedError ||
+      error instanceof WorkspaceReloadInProgressError ||
       error instanceof WorkspaceWriteError
     ) {
       showToastWindow({ message: error.message, type: 'warning', duration: 6000 }).catch(() => {});

@@ -378,7 +378,7 @@ const WorkspaceApp: React.FC = () => {
     onEditItem: (item: WorkspaceItem) => setEditModalItem(item),
     onToggleGroup: async (groupId: string) => {
       const newCollapsed = toggleGroupCollapsed(groupId);
-      if (newCollapsed !== undefined && !isDetached) {
+      if (!isDetached) {
         try {
           // 折りたたみは UI 状態（workspace-ui-state.json）として保存する
           await window.electronAPI.workspaceAPI.setGroupsCollapsed([groupId], newCollapsed);

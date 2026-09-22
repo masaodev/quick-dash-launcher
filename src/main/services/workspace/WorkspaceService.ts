@@ -27,6 +27,7 @@ import { WorkspaceUiStateStore } from './WorkspaceUiStateStore.js';
 import { WorkspaceItemManager } from './WorkspaceItemManager.js';
 import { WorkspaceGroupManager } from './WorkspaceGroupManager.js';
 import { WorkspaceArchiveManager } from './WorkspaceArchiveManager.js';
+import { applyOrders } from './orderUtils.js';
 
 /**
  * ワークスペースアイテムを管理するサービスクラス
@@ -305,15 +306,17 @@ export class WorkspaceService {
       }
     });
 
-    if (itemOrderMap.size > 0) {
-      this.itemManager!.updateItemOrders(itemOrderMap);
-    }
-    if (groupOrderMap.size > 0) {
-      this.groupManager!.updateGroupOrders(groupOrderMap);
-    }
+    // アイテムとグループを 1 回の書き込みで更新する
+    let updatedItems = 0;
+    let updatedGroups = 0;
+    this.store!.update((main) => {
+      updatedItems = applyOrders(main.items, itemOrderMap);
+      updatedGroups = applyOrders(main.groups, groupOrderMap);
+      return updatedItems + updatedGroups > 0 ? undefined : false;
+    });
 
     logger.info(
-      { parentGroupId, items: itemOrderMap.size, groups: groupOrderMap.size },
+      { parentGroupId, items: updatedItems, groups: updatedGroups },
       'Reordered mixed children'
     );
   }

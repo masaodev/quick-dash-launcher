@@ -470,7 +470,18 @@ export async function loadDataFilesWithReport(configFolder: string): Promise<Dat
  *
  * @returns メイン画面に表示するアイテム
  */
-export async function reloadConfigFiles(configFolder: string): Promise<AppItem[]> {
+export function reloadConfigFiles(configFolder: string): Promise<AppItem[]> {
+  // 同時に呼ばれたら（F5 連打・変更通知との重複）先行の結果を共有する
+  if (reloadInFlight) return reloadInFlight;
+  reloadInFlight = reloadConfigFilesInternal(configFolder).finally(() => {
+    reloadInFlight = null;
+  });
+  return reloadInFlight;
+}
+
+let reloadInFlight: Promise<AppItem[]> | null = null;
+
+async function reloadConfigFilesInternal(configFolder: string): Promise<AppItem[]> {
   const data = await loadDataFilesWithReport(configFolder);
 
   // ワークスペースも同じタイミングで読み直す（読めなくてもデータファイルの表示は止めない）

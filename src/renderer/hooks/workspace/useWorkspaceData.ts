@@ -67,12 +67,16 @@ export function useWorkspaceData(detachedGroupId?: string | null) {
     localStorage.setItem('activeWorkspaceId', id);
   }, []);
 
-  // ウィンドウごとに独立した collapsed 状態を管理
-  const collapsedOverrides = useRef<Map<string, boolean>>(new Map());
-  const overridesInitialized = useRef(false);
+  // 折りたたみ状態の出どころ:
+  // - メインのワークスペース画面: workspace-ui-state.json（loadGroups が返す collapsed）が真の状態
+  // - 切り離しウィンドウ: ウィンドウごとに独立させるため、切り離し状態に保存した値でだけ上書きする
+  const groupsRef = useRef(groups);
+  groupsRef.current = groups;
+  const detachedCollapsedOverrides = useRef<Map<string, boolean>>(new Map());
+  const detachedOverridesLoaded = useRef(false);
 
-  function applyCollapsedOverrides(loadedGroups: WorkspaceGroupView[]): WorkspaceGroupView[] {
-    const overrides = collapsedOverrides.current;
+  function applyDetachedOverrides(loadedGroups: WorkspaceGroupView[]): WorkspaceGroupView[] {
+    const overrides = detachedCollapsedOverrides.current;
     if (overrides.size === 0) return loadedGroups;
     return loadedGroups.map((g) =>
       overrides.has(g.id) ? { ...g, collapsed: overrides.get(g.id)! } : g
@@ -81,7 +85,7 @@ export function useWorkspaceData(detachedGroupId?: string | null) {
 
   function saveDetachedCollapsedStates(): void {
     if (!detachedGroupId) return;
-    const states = Object.fromEntries(collapsedOverrides.current);
+    const states = Object.fromEntries(detachedCollapsedOverrides.current);
     window.electronAPI.workspaceAPI.saveDetachedCollapsed(detachedGroupId, states).catch(() => {});
   }
 
@@ -133,56 +137,52 @@ export function useWorkspaceData(detachedGroupId?: string | null) {
   async function loadGroups(): Promise<void> {
     try {
       const loadedGroups = await window.electronAPI.workspaceAPI.loadGroups();
-      // 初回ロード: バックエンドの collapsed 値をスナップショットとして保存
-      if (!overridesInitialized.current) {
-        for (const g of loadedGroups) {
-          collapsedOverrides.current.set(g.id, g.collapsed);
-        }
-        // 切り離しウィンドウの場合: 保存済みの collapsed 状態を上書き適用
-        if (detachedGroupId) {
-          try {
-            const saved = await window.electronAPI.workspaceAPI.loadDetachedState(detachedGroupId);
-            if (saved?.collapsedStates) {
-              for (const [id, collapsed] of Object.entries(saved.collapsedStates)) {
-                collapsedOverrides.current.set(id, collapsed);
-              }
-            }
-          } catch {
-            // 保存データが無い場合は無視
+      // 切り離しウィンドウ: 保存済みの折りたたみ状態を初回だけ取り込む
+      if (detachedGroupId && !detachedOverridesLoaded.current) {
+        detachedOverridesLoaded.current = true;
+        try {
+          const saved = await window.electronAPI.workspaceAPI.loadDetachedState(detachedGroupId);
+          for (const [id, collapsed] of Object.entries(saved?.collapsedStates ?? {})) {
+            detachedCollapsedOverrides.current.set(id, collapsed);
           }
+        } catch {
+          // 保存データが無い場合は無視
         }
-        overridesInitialized.current = true;
       }
-      // ローカルオーバーライドを適用（初回はバックエンド値と同一）
-      setGroups(applyCollapsedOverrides(loadedGroups));
+      setGroups(applyDetachedOverrides(loadedGroups));
     } catch (error) {
       logError('Failed to load workspace groups:', error);
     }
   }
 
-  /** グループの collapsed 状態をトグルし、新しい collapsed 値を返す */
-  function toggleGroupCollapsed(groupId: string): boolean | undefined {
-    const current = collapsedOverrides.current.get(groupId);
-    if (current === undefined) return undefined;
+  /**
+   * グループの collapsed 状態をトグルし、新しい collapsed 値を返す
+   *
+   * 画面には即時反映する。永続化は切り離しウィンドウならここで（切り離し状態へ）、
+   * それ以外は呼び出し側が setGroupsCollapsed で行う
+   */
+  function toggleGroupCollapsed(groupId: string): boolean {
+    const current =
+      detachedCollapsedOverrides.current.get(groupId) ??
+      groupsRef.current.find((g) => g.id === groupId)?.collapsed ??
+      false;
     const newCollapsed = !current;
-    collapsedOverrides.current.set(groupId, newCollapsed);
     setGroups((prev) =>
       prev.map((g) => (g.id === groupId ? { ...g, collapsed: newCollapsed } : g))
     );
     if (isDetached) {
+      detachedCollapsedOverrides.current.set(groupId, newCollapsed);
       saveDetachedCollapsedStates();
     }
     return newCollapsed;
   }
 
   function setAllGroupsCollapsedLocal(collapsed: boolean): void {
-    setGroups((prev) => {
-      for (const g of prev) {
-        collapsedOverrides.current.set(g.id, collapsed);
-      }
-      return prev.map((g) => ({ ...g, collapsed }));
-    });
+    setGroups((prev) => prev.map((g) => ({ ...g, collapsed })));
     if (isDetached) {
+      for (const g of groupsRef.current) {
+        detachedCollapsedOverrides.current.set(g.id, collapsed);
+      }
       saveDetachedCollapsedStates();
     }
   }

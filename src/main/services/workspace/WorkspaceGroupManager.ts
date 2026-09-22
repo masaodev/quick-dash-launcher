@@ -116,7 +116,10 @@ export class WorkspaceGroupManager {
         }
         group.color = updates.color;
       }
-      if (updates.parentGroupId !== undefined) group.parentGroupId = updates.parentGroupId;
+      // 親の変更は moveGroupToParent と同じ検証（循環・深さ）を通す
+      if ('parentGroupId' in updates && updates.parentGroupId !== group.parentGroupId) {
+        this.applyParentMove(group, updates.parentGroupId, groups);
+      }
 
       this.store.set('groups', groups);
       logger.info({ id, updates }, 'Updated workspace group');
@@ -206,36 +209,7 @@ export class WorkspaceGroupManager {
       if (group.parentGroupId === newParentGroupId) {
         return;
       }
-
-      if (newParentGroupId) {
-        // 親グループの存在確認
-        if (!groups.some((g) => g.id === newParentGroupId)) {
-          throw new Error(`Parent group not found: ${newParentGroupId}`);
-        }
-
-        // 循環参照防止: 自分自身または自分の子孫には移動できない
-        const selfAndDescendants = new Set([groupId, ...getDescendantGroupIds(groupId, groups)]);
-        if (selfAndDescendants.has(newParentGroupId)) {
-          throw new Error('Cannot move a group into its own descendant');
-        }
-
-        // 深さバリデーション: 移動先でMAX_GROUP_DEPTHを超えないか確認
-        const newParentDepth = getGroupDepth(newParentGroupId, groups);
-        const subtreeDepth = getSubtreeMaxDepth(groupId, groups);
-        if (newParentDepth + 1 + subtreeDepth > MAX_GROUP_DEPTH) {
-          throw new Error('Moving this group would exceed maximum depth');
-        }
-      }
-
-      // 新しい親グループ内での末尾orderを計算
-      const siblings = groups.filter(
-        (g) => g.parentGroupId === newParentGroupId && g.id !== groupId
-      );
-      const maxOrder = siblings.length > 0 ? Math.max(...siblings.map((g) => g.order)) : -1;
-
-      if (newParentGroupId === undefined) delete group.parentGroupId;
-      else group.parentGroupId = newParentGroupId;
-      group.order = maxOrder + 1;
+      this.applyParentMove(group, newParentGroupId, groups);
 
       this.store.set('groups', groups);
       logger.info({ groupId, newParentGroupId }, 'Moved group to new parent');
@@ -243,6 +217,47 @@ export class WorkspaceGroupManager {
       logger.error({ error, groupId, newParentGroupId }, 'Failed to move group to parent');
       throw error;
     }
+  }
+
+  /**
+   * 親グループを付け替える（循環参照・深さを検証し、新しい親内の末尾に置く）
+   * @param group 移動するグループ（groups 内の要素をその場で変更する）
+   * @param newParentGroupId 新しい親グループID（undefinedならトップレベル）
+   */
+  private applyParentMove(
+    group: WorkspaceGroup,
+    newParentGroupId: string | undefined,
+    groups: WorkspaceGroup[]
+  ): void {
+    if (newParentGroupId) {
+      // 親グループの存在確認
+      if (!groups.some((g) => g.id === newParentGroupId)) {
+        throw new Error(`Parent group not found: ${newParentGroupId}`);
+      }
+
+      // 循環参照防止: 自分自身または自分の子孫には移動できない
+      const selfAndDescendants = new Set([group.id, ...getDescendantGroupIds(group.id, groups)]);
+      if (selfAndDescendants.has(newParentGroupId)) {
+        throw new Error('Cannot move a group into its own descendant');
+      }
+
+      // 深さバリデーション: 移動先でMAX_GROUP_DEPTHを超えないか確認
+      const newParentDepth = getGroupDepth(newParentGroupId, groups);
+      const subtreeDepth = getSubtreeMaxDepth(group.id, groups);
+      if (newParentDepth + 1 + subtreeDepth > MAX_GROUP_DEPTH) {
+        throw new Error('Moving this group would exceed maximum depth');
+      }
+    }
+
+    // 新しい親グループ内での末尾orderを計算
+    const siblings = groups.filter(
+      (g) => g.parentGroupId === newParentGroupId && g.id !== group.id
+    );
+    const maxOrder = siblings.length > 0 ? Math.max(...siblings.map((g) => g.order)) : -1;
+
+    if (newParentGroupId === undefined) delete group.parentGroupId;
+    else group.parentGroupId = newParentGroupId;
+    group.order = maxOrder + 1;
   }
 
   /**
@@ -272,33 +287,6 @@ export class WorkspaceGroupManager {
       logger.info({ count: groupIds.length }, 'Reordered workspace groups');
     } catch (error) {
       logger.error({ error }, 'Failed to reorder workspace groups');
-      throw error;
-    }
-  }
-
-  /**
-   * 指定グループのorderを個別更新
-   * @param orderMap グループID -> 新しいorder のマップ
-   */
-  public updateGroupOrders(orderMap: Map<string, number>): void {
-    try {
-      const groups = this.loadGroups();
-      let updated = 0;
-
-      for (const group of groups) {
-        const newOrder = orderMap.get(group.id);
-        if (newOrder !== undefined) {
-          group.order = newOrder;
-          updated++;
-        }
-      }
-
-      if (updated > 0) {
-        this.store.set('groups', groups);
-        logger.info({ count: updated }, 'Updated group orders');
-      }
-    } catch (error) {
-      logger.error({ error }, 'Failed to update group orders');
       throw error;
     }
   }

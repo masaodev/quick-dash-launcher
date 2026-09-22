@@ -32,6 +32,7 @@ import { resetDataFileTrackerForTesting } from '../dataFileTracker';
 
 import {
   WorkspaceCorruptedError,
+  WorkspaceReloadInProgressError,
   WorkspaceExternalChangeConflictError,
   WorkspaceFileStore,
   WorkspaceWriteError,
@@ -110,12 +111,13 @@ describe('WorkspaceFileStore', () => {
   let uiState: WorkspaceUiStateStore;
   let snapshotCalls: number;
 
-  function createStore(hooks: { failSnapshot?: boolean } = {}) {
+  function createStore(hooks: { failSnapshot?: boolean; holdSnapshot?: Promise<void> } = {}) {
     return new WorkspaceFileStore(paths, uiState, {
       now: () => NOW,
       createPreMigrationSnapshot: async () => {
         snapshotCalls++;
         if (hooks.failSnapshot) throw new Error('snapshot failed');
+        await hooks.holdSnapshot;
       },
     });
   }
@@ -324,6 +326,33 @@ describe('WorkspaceFileStore', () => {
     await store.reload();
     expect(snapshotCalls).toBe(1);
     expect(store.consumeLoadReports().files[0].issues).toEqual([]);
+  });
+
+  it('再読込（移行の await）の途中の書き込みは拒否し、同時の reload は 1 回に集約すること', async () => {
+    let releaseSnapshot!: () => void;
+    const held = new Promise<void>((resolve) => {
+      releaseSnapshot = resolve;
+    });
+    const store = createStore({ holdSnapshot: held });
+    // 1 回目: 2.0 の空ファイルを作って読む（移行なし）
+    await store.reload();
+    expect(store.get('items')).toEqual([]);
+
+    // F5 の前に旧形式へ差し替えられた（バックアップから手で戻した等）
+    fs.writeFileSync(paths.main, JSON.stringify(legacyFile, null, 2), 'utf8');
+    const reloading = store.reload();
+    expect(store.reload()).toBe(reloading);
+    // スナップショット待ちに入るまで進める
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(snapshotCalls).toBe(1);
+    expect(() => store.set('items', [])).toThrow(WorkspaceReloadInProgressError);
+
+    releaseSnapshot();
+    await reloading;
+    expect(readJson(paths.main).version).toBe('2.0');
+    expect(store.get('items')).toHaveLength(1);
+    // 終わったら書ける
+    expect(() => store.set('items', [])).not.toThrow();
   });
 
   it('スナップショットに失敗したら移行せず、元ファイルを無傷で残すこと', async () => {
