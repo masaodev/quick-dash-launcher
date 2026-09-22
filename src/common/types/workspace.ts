@@ -73,7 +73,11 @@ export type WorkspaceItemUpdate = DistributiveOmit<
   'id' | 'order' | 'addedAt' | 'groupId' | 'workspaceId'
 >;
 
-/** グループ編集の入力 */
+/**
+ * グループ編集の入力
+ *
+ * parentGroupId を含めると moveGroupToParent と同じ扱い（循環・深さの検証、新しい親の末尾 order）
+ */
 export type WorkspaceGroupUpdate = Partial<
   Pick<WorkspaceGroup, 'displayName' | 'color' | 'parentGroupId'>
 >;

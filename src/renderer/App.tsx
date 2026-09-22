@@ -162,6 +162,8 @@ function App(): React.ReactElement {
     });
   }, [searchMode, withLoading]);
 
+  // trigger: 起動時と F5 は省略（explicit）。アプリ内の操作に伴う再読込は 'internal'
+  //（last-load-report.json を報告事項があるときだけ更新する）
   const loadItems = async (trigger?: 'explicit' | 'internal'): Promise<AppItem[]> => {
     const items = await window.electronAPI.loadDataFiles(trigger);
 
@@ -483,7 +485,7 @@ function App(): React.ReactElement {
     } else {
       await window.electronAPI.registerItems(items);
     }
-    await withLoading('データ再読込中', loadItems);
+    await withLoading('データ再読込中', () => loadItems('internal'));
 
     if (editingItem) {
       showSuccess('アイテムを更新しました');
@@ -522,7 +524,7 @@ function App(): React.ReactElement {
       await window.electronAPI.deleteItemsById([{ id: itemToDelete.jsonItemId }]);
       closeModal();
       setDeleteConfirmDialog({ isOpen: false, item: null });
-      await withLoading('データ再読込中', loadItems);
+      await withLoading('データ再読込中', () => loadItems('internal'));
       showSuccess('アイテムを削除しました');
     } catch (error) {
       logError('Failed to delete item:', error);
@@ -602,12 +604,12 @@ function App(): React.ReactElement {
     } else {
       showSuccess(message);
     }
-    await loadItems();
+    await loadItems('internal');
   };
 
   const handleRefreshAllWrapper = async () => {
     await window.electronAPI.bookmarkAutoImportAPI.executeAll();
-    await handleRefreshAll(loadItems);
+    await handleRefreshAll(() => loadItems('internal'));
   };
 
   const handleTabRename = async (tabIndex: number, newName: string) => {

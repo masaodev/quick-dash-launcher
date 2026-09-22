@@ -18,7 +18,9 @@ export function normalizeWindowTitleForProcessOnly(
   windowTitle: unknown,
   processName: unknown
 ): string | undefined {
-  const titleEmpty = typeof windowTitle !== 'string' || windowTitle.trim() === '';
+  // 文字列でない値（数値など）は救済せず、検証で invalid にする
+  const titleEmpty =
+    windowTitle === undefined || (typeof windowTitle === 'string' && windowTitle.trim() === '');
   const hasProcess = typeof processName === 'string' && processName.trim() !== '';
   return titleEmpty && hasProcess ? ANY_WINDOW_TITLE : undefined;
 }

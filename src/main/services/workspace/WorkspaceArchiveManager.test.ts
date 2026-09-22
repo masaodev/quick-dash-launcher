@@ -30,8 +30,9 @@ describe('WorkspaceArchiveManager', () => {
   let items: WorkspaceItemManager;
 
   beforeEach(async () => {
-    test = await createTestWorkspaceStore('qdl-ws-archive-');
-    tempRoot.dir = test.dir;
+    test = await createTestWorkspaceStore('qdl-ws-archive-', (dir) => {
+      tempRoot.dir = dir;
+    });
     store = test.store;
     manager = new WorkspaceArchiveManager(store);
     groups = new WorkspaceGroupManager(store);

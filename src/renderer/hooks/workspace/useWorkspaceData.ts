@@ -69,7 +69,8 @@ export function useWorkspaceData(detachedGroupId?: string | null) {
 
   // 折りたたみ状態の出どころ:
   // - メインのワークスペース画面: workspace-ui-state.json（loadGroups が返す collapsed）が真の状態
-  // - 切り離しウィンドウ: ウィンドウごとに独立させるため、切り離し状態に保存した値でだけ上書きする
+  // - 切り離しウィンドウ: ウィンドウごとに独立。初回に全グループの値を写し、保存済みの切り離し状態で
+  //   上書きしてから、以後はこのウィンドウでの操作だけを反映する（メイン側の変更に追従しない）
   const groupsRef = useRef(groups);
   groupsRef.current = groups;
   const detachedCollapsedOverrides = useRef<Map<string, boolean>>(new Map());
@@ -137,9 +138,12 @@ export function useWorkspaceData(detachedGroupId?: string | null) {
   async function loadGroups(): Promise<void> {
     try {
       const loadedGroups = await window.electronAPI.workspaceAPI.loadGroups();
-      // 切り離しウィンドウ: 保存済みの折りたたみ状態を初回だけ取り込む
+      // 切り離しウィンドウ: 初回に現在の状態を写し、保存済みの折りたたみ状態で上書きする
       if (detachedGroupId && !detachedOverridesLoaded.current) {
         detachedOverridesLoaded.current = true;
+        for (const g of loadedGroups) {
+          detachedCollapsedOverrides.current.set(g.id, g.collapsed);
+        }
         try {
           const saved = await window.electronAPI.workspaceAPI.loadDetachedState(detachedGroupId);
           for (const [id, collapsed] of Object.entries(saved?.collapsedStates ?? {})) {

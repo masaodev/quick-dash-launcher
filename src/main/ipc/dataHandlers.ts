@@ -477,12 +477,17 @@ export function reloadConfigFiles(
   configFolder: string,
   trigger: LoadTrigger = 'explicit'
 ): Promise<AppItem[]> {
-  // 同時に呼ばれたら（F5 連打・変更通知との重複）先行の結果を共有する
-  if (reloadInFlight) return reloadInFlight;
-  reloadInFlight = reloadConfigFilesInternal(configFolder, trigger).finally(() => {
-    reloadInFlight = null;
-  });
-  return reloadInFlight;
+  // 変更通知の再読込は先行の結果を共有する（連打・重複を 1 回に）。
+  // 起動時・F5 は「今のファイルを読んでレポートを更新する」約束なので、先行があれば完了後に改めて読む
+  if (reloadInFlight && trigger === 'internal') return reloadInFlight;
+  const previous = reloadInFlight?.catch(() => undefined) ?? Promise.resolve();
+  const tracked: Promise<AppItem[]> = previous
+    .then(() => reloadConfigFilesInternal(configFolder, trigger))
+    .finally(() => {
+      if (reloadInFlight === tracked) reloadInFlight = null;
+    });
+  reloadInFlight = tracked;
+  return tracked;
 }
 
 let reloadInFlight: Promise<AppItem[]> | null = null;

@@ -23,8 +23,15 @@ export interface TestWorkspaceStore {
   cleanup: () => void;
 }
 
-export async function createTestWorkspaceStore(prefix = 'qdl-ws-'): Promise<TestWorkspaceStore> {
+/**
+ * @param onDirCreated 一時フォルダを作った直後（reload の前）に呼ぶ。pathManager の mock に反映するために使う
+ */
+export async function createTestWorkspaceStore(
+  prefix = 'qdl-ws-',
+  onDirCreated?: (dir: string) => void
+): Promise<TestWorkspaceStore> {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+  onDirCreated?.(dir);
   resetDataFileTrackerForTesting();
   const uiState = new WorkspaceUiStateStore(path.join(dir, 'workspace-ui-state.json'));
   const store = new WorkspaceFileStore(

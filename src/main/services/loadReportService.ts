@@ -53,9 +53,6 @@ export interface LoadReport {
   preChangeSnapshot: string | null;
 }
 
-/**
- * ファイル別の結果からレポートを組み立てる
- */
 /** 読み込みのきっかけ。explicit = 起動時・F5、internal = 変更通知・画面内の一覧取得 */
 export type LoadTrigger = 'explicit' | 'internal';
 
@@ -66,6 +63,9 @@ export function hasReportableIssues(files: LoadReportFile[]): boolean {
   );
 }
 
+/**
+ * ファイル別の結果からレポートを組み立てる
+ */
 export function buildLoadReport(
   files: LoadReportFile[],
   preChangeSnapshot: string | null,

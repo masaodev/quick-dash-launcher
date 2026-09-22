@@ -25,8 +25,9 @@ describe('WorkspaceItemManager', () => {
   let manager: WorkspaceItemManager;
 
   beforeEach(async () => {
-    test = await createTestWorkspaceStore('qdl-ws-items-');
-    tempRoot.dir = test.dir;
+    test = await createTestWorkspaceStore('qdl-ws-items-', (dir) => {
+      tempRoot.dir = dir;
+    });
     store = test.store;
     manager = new WorkspaceItemManager(store);
   });

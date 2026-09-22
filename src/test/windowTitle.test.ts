@@ -13,6 +13,9 @@ describe('normalizeWindowTitleForProcessOnly', () => {
     expect(normalizeWindowTitleForProcessOnly('Chrome', 'chrome.exe')).toBeUndefined();
     expect(normalizeWindowTitleForProcessOnly('', '')).toBeUndefined();
     expect(normalizeWindowTitleForProcessOnly('', undefined)).toBeUndefined();
+    // 文字列でない値は救済せず検証に任せる
+    expect(normalizeWindowTitleForProcessOnly(123, 'chrome.exe')).toBeUndefined();
+    expect(normalizeWindowTitleForProcessOnly(null, 'chrome.exe')).toBeUndefined();
   });
 
   it('登録フォームからの変換（convertRegisterItemToJsonItem）でも "*" になること', () => {
