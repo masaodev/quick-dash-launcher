@@ -36,6 +36,7 @@ import {
 } from '@common/utils/dataConverters';
 
 import { SettingsService } from '../services/settingsService.js';
+import { WorkspaceService } from '../services/workspace/WorkspaceService.js';
 import { PathManager } from '../config/pathManager.js';
 import { showToastWindow } from '../services/overlayWindowService.js';
 import { BackupService } from '../services/backupService.js';
@@ -54,7 +55,7 @@ import {
 import type { LoadReportFile } from '../services/loadReportService.js';
 
 import { setupBookmarkHandlers } from './bookmarkHandlers.js';
-import { notifyDataChanged } from './notifications.js';
+import { notifyDataChanged, notifyWorkspaceChanged } from './notifications.js';
 import { setupAppImportHandlers } from './appImportHandlers.js';
 import { processDirectoryItem, processShortcut } from './directoryScanner.js';
 import { extractIcon } from './iconHandlers.js';
@@ -355,19 +356,32 @@ async function convertJsonItemToAppItems(
   return items;
 }
 
+/** データファイル群の読み込み結果（レポート・スナップショットは呼び出し側が扱う） */
+export interface DataFilesLoadResult {
+  items: AppItem[];
+  fileReports: LoadReportFile[];
+  externallyChanged: Array<{ relativePath: string; content: string }>;
+}
+
 /**
  * 設定フォルダからデータファイル（data.json等）を読み込み、AppItem配列に変換する
- * フォルダ取込アイテムの展開、.lnkファイルの解析、CSV行のパース、重複チェック、ソートを全て実行する
+ * フォルダ取込アイテムの展開、.lnkファイルの解析、重複チェック、ソートを全て実行する
+ *
+ * 純粋な読み込みで、レポートの書き出し・トースト・スナップショットは行わない
+ * （それらは reloadConfigFiles() の役目。グループ起動などの内部利用ではレポートを上書きしない）
  *
  * @param configFolder - 設定フォルダのパス
  * @returns AppItem配列（LauncherItemとGroupItemの両方を含む）
- * @throws ファイル読み込みエラー、フォルダ取込アイテム処理エラー
- *
- * @example
- * const items = await loadDataFiles('/path/to/config');
- * // [{ name: 'Google', path: 'https://google.com', type: 'url', ... }, ...]
  */
 export async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
+  const { items } = await loadDataFilesWithReport(configFolder);
+  return items;
+}
+
+/**
+ * データファイル群を読み込み、ファイル別の結果も返す
+ */
+export async function loadDataFilesWithReport(configFolder: string): Promise<DataFilesLoadResult> {
   const items: AppItem[] = [];
 
   // タブ設定を読み込んで、データファイル → tabIndex のマップを作成
@@ -425,32 +439,6 @@ export async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
     }
   }
 
-  // 外部変更があれば、変更前の内容を戻し先としてスナップショットに残す
-  const preChangeSnapshot = await snapshotExternalChanges(externallyChanged);
-
-  // 直接編集した人・AI が結果を確認できるようレポートを残す
-  const report = buildLoadReport(fileReports, preChangeSnapshot);
-  writeLoadReport(report);
-
-  // 破損ファイルがあった場合は無通知でアイテムが消えたように見えないよう警告する
-  if (corruptedDataFiles.size > 0) {
-    showToastWindow({
-      message: `データファイルの読み込みに失敗しました（破損の可能性）: ${[...corruptedDataFiles].join(', ')}`,
-      type: 'error',
-      duration: 6000,
-    }).catch((error) => {
-      dataLogger.error({ error }, '破損警告トーストの表示に失敗しました');
-    });
-  }
-
-  // スキップ・採番があったときだけ知らせる（毎回の読込では出さない）
-  const issueToast = formatLoadReportToast(report);
-  if (issueToast) {
-    showToastWindow({ message: issueToast, type: 'warning', duration: 6000 }).catch((error) => {
-      dataLogger.error({ error }, '読込結果トーストの表示に失敗しました');
-    });
-  }
-
   // displayNameでソート
   items.sort((a, b) => {
     const aName = isWindowInfo(a) ? a.title : a.displayName;
@@ -470,7 +458,75 @@ export async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
     'データ読み込み完了（タブ別統計）'
   );
 
-  return items;
+  return { items, fileReports, externallyChanged };
+}
+
+/**
+ * 設定ファイル群（データファイル + ワークスペース）をディスクから読み直す（起動時・メイン画面の F5）
+ *
+ * データファイルとワークスペースの読み込み結果を 1 つの last-load-report.json にまとめ、
+ * 外部変更があれば変更前スナップショットを 1 つ作る。ワークスペースの内容が変わっていれば
+ * ワークスペース画面にも再取得を通知する。
+ *
+ * @returns メイン画面に表示するアイテム
+ */
+export async function reloadConfigFiles(configFolder: string): Promise<AppItem[]> {
+  const data = await loadDataFilesWithReport(configFolder);
+
+  // ワークスペースも同じタイミングで読み直す（読めなくてもデータファイルの表示は止めない）
+  let workspaceReports: LoadReportFile[] = [];
+  let workspaceExternal: Array<{ relativePath: string; content: string }> = [];
+  let workspaceChanged = false;
+  let workspaceCorrupted = false;
+  try {
+    const workspaceService = await WorkspaceService.getInstance();
+    workspaceChanged = (await workspaceService.reload()).changed;
+    const consumed = workspaceService.consumeLoadReports();
+    workspaceReports = consumed.files;
+    workspaceExternal = consumed.externallyChanged;
+    workspaceCorrupted = workspaceService.isCorrupted();
+  } catch (error) {
+    dataLogger.error({ error }, 'ワークスペースファイルの再読込に失敗しました');
+  }
+
+  // 外部変更があれば、変更前の内容を戻し先としてスナップショットに残す
+  const preChangeSnapshot = await snapshotExternalChanges([
+    ...data.externallyChanged,
+    ...workspaceExternal,
+  ]);
+
+  // 直接編集した人・AI が結果を確認できるようレポートを残す
+  const report = buildLoadReport([...data.fileReports, ...workspaceReports], preChangeSnapshot);
+  writeLoadReport(report);
+
+  // 破損ファイルがあった場合は無通知でアイテムが消えたように見えないよう警告する
+  const corruptedFiles = [
+    ...corruptedDataFiles,
+    ...workspaceReports.filter((f) => f.status !== 'ok').map((f) => f.file),
+  ];
+  if (corruptedFiles.length > 0 || workspaceCorrupted) {
+    showToastWindow({
+      message: `設定ファイルの読み込みに失敗しました（破損の可能性）: ${corruptedFiles.join(', ')}`,
+      type: 'error',
+      duration: 6000,
+    }).catch((error) => {
+      dataLogger.error({ error }, '破損警告トーストの表示に失敗しました');
+    });
+  }
+
+  // スキップ・採番があったときだけ知らせる（毎回の読込では出さない）
+  const issueToast = formatLoadReportToast(report);
+  if (issueToast) {
+    showToastWindow({ message: issueToast, type: 'warning', duration: 6000 }).catch((error) => {
+      dataLogger.error({ error }, '読込結果トーストの表示に失敗しました');
+    });
+  }
+
+  if (workspaceChanged) {
+    notifyWorkspaceChanged();
+  }
+
+  return data.items;
 }
 
 /**
@@ -968,7 +1024,8 @@ export function setupDataHandlers(configFolder: string) {
     }
   });
 
-  ipcMain.handle(IPC_CHANNELS.LOAD_DATA_FILES, () => loadDataFiles(configFolder));
+  // メイン画面の初回読み込み・F5。ワークスペースも含めて読み直し、レポートを書く
+  ipcMain.handle(IPC_CHANNELS.LOAD_DATA_FILES, () => reloadConfigFiles(configFolder));
 
   ipcMain.handle(IPC_CHANNELS.REGISTER_ITEMS, async (_event, items: RegisterItem[]) => {
     await registerItems(configFolder, items);

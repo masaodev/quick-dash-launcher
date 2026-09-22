@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import type { WorkspaceItem } from '@common/types';
+import { describeWorkspaceItem } from '@common/utils/workspaceConverters';
 
-import { getDefaultIconForItemType } from '../utils/itemTypeIcons';
+import { getDefaultIconForItem } from '../utils/itemTypeIcons';
 
 type ItemDropZone = 'before' | 'after';
 
@@ -108,20 +109,21 @@ const WorkspaceItemCard: React.FC<WorkspaceItemCardProps> = ({
   };
 
   const getTooltipText = (): string => {
-    const lines: string[] = [item.path];
+    const lines: string[] = [describeWorkspaceItem(item)];
 
-    if (item.originalPath) {
-      lines.push(`リンク先: ${item.originalPath}`);
+    if (item.type === 'item') {
+      if (item.originalPath) {
+        lines.push(`リンク先: ${item.originalPath}`);
+      }
+      if (item.args) {
+        lines.push(`引数: ${item.args}`);
+      }
     }
-    if (item.args) {
-      lines.push(`引数: ${item.args}`);
+    if (item.memo) {
+      lines.push(`メモ: ${item.memo}`);
     }
 
     lines.push('');
-
-    if (item.originalName !== item.displayName) {
-      lines.push(`元の名前: ${item.originalName}`);
-    }
 
     const addedDate = new Date(item.addedAt).toLocaleString('ja-JP', {
       year: 'numeric',
@@ -154,9 +156,7 @@ const WorkspaceItemCard: React.FC<WorkspaceItemCardProps> = ({
         {item.icon ? (
           <img src={item.icon} alt="" className="workspace-item-icon" />
         ) : (
-          <div className="workspace-item-icon-placeholder">
-            {getDefaultIconForItemType(item.type)}
-          </div>
+          <div className="workspace-item-icon-placeholder">{getDefaultIconForItem(item)}</div>
         )}
         {isEditing ? (
           <input

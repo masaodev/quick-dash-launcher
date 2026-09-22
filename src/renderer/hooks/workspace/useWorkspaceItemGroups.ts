@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
-import type { WorkspaceItem, WorkspaceGroup, MixedChild } from '@common/types';
+import type { WorkspaceItem, WorkspaceGroupView, MixedChild } from '@common/types';
 import { buildGroupTree, getMixedChildren, type GroupTreeNode } from '@common/utils/groupTreeUtils';
 
-export function useWorkspaceItemGroups(items: WorkspaceItem[], groups?: WorkspaceGroup[]) {
+export function useWorkspaceItemGroups(items: WorkspaceItem[], groups?: WorkspaceGroupView[]) {
   const itemsByGroup = useMemo(() => {
     const result: Record<string, WorkspaceItem[]> = {};
     for (const item of items) {
@@ -14,14 +14,14 @@ export function useWorkspaceItemGroups(items: WorkspaceItem[], groups?: Workspac
 
   const uncategorizedItems = itemsByGroup['uncategorized'] || [];
 
-  const groupTree: GroupTreeNode[] = useMemo(
+  const groupTree: GroupTreeNode<WorkspaceGroupView>[] = useMemo(
     () => (groups ? buildGroupTree(groups) : []),
     [groups]
   );
 
-  const mixedChildrenByGroup: Record<string, MixedChild[]> = useMemo(() => {
+  const mixedChildrenByGroup: Record<string, MixedChild<WorkspaceGroupView>[]> = useMemo(() => {
     if (!groups) return {};
-    const result: Record<string, MixedChild[]> = {};
+    const result: Record<string, MixedChild<WorkspaceGroupView>[]> = {};
     for (const group of groups) {
       const groupItems = itemsByGroup[group.id] || [];
       result[group.id] = getMixedChildren(group.id, groups, groupItems);

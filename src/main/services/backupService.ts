@@ -264,7 +264,8 @@ export class BackupService {
 
   /**
    * 変更検知のトリガーとなるファイル一覧を取得
-   * data*.json と settings.json のみ（workspace系・clipboardは含まない）
+   * 人・AI が編集するファイル: data*.json、settings.json、workspace.json、workspace-archive.json
+   * （UI 状態・clipboard は含まない）
    */
   private async getTriggerTargets(): Promise<Array<{ sourcePath: string; relativePath: string }>> {
     const configFolder = PathManager.getConfigFolder();
@@ -279,39 +280,36 @@ export class BackupService {
       });
     }
 
-    // settings.json
-    const settingsPath = path.join(configFolder, 'settings.json');
-    targets.push({
-      sourcePath: settingsPath,
-      relativePath: 'settings.json',
-    });
+    for (const sourcePath of [
+      path.join(configFolder, 'settings.json'),
+      PathManager.getWorkspaceFilePath(),
+      PathManager.getWorkspaceArchiveFilePath(),
+    ]) {
+      targets.push({ sourcePath, relativePath: path.relative(configFolder, sourcePath) });
+    }
 
     return targets;
   }
 
   /**
    * バックアップ対象ファイル/フォルダの一覧を取得
-   * トリガーファイル + workspace系 + clipboard-data を含む
+   * トリガーファイル + UI 状態 + clipboard-data を含む
    */
   private async getBackupTargets(): Promise<Array<{ sourcePath: string; relativePath: string }>> {
     const configFolder = PathManager.getConfigFolder();
 
-    // トリガーファイル（data*.json + settings.json）を基盤とする
+    // トリガーファイル（data*.json + settings.json + workspace 2 ファイル）を基盤とする
     const targets = await this.getTriggerTargets();
 
-    // workspace.json
-    const workspacePath = PathManager.getWorkspaceFilePath();
-    targets.push({
-      sourcePath: workspacePath,
-      relativePath: path.relative(configFolder, workspacePath),
-    });
-
-    // workspace-archive.json
-    const workspaceArchivePath = path.join(configFolder, 'workspace-archive.json');
-    targets.push({
-      sourcePath: workspaceArchivePath,
-      relativePath: 'workspace-archive.json',
-    });
+    // UI 状態（bounds 保存で頻繁に変わるのでトリガーにはしない）。旧形式の detached が残っていれば移行前の退避のために含める
+    for (const sourcePath of [
+      PathManager.getWorkspaceUiStateFilePath(),
+      PathManager.getLegacyWorkspaceDetachedFilePath(),
+    ]) {
+      if (FileUtils.exists(sourcePath)) {
+        targets.push({ sourcePath, relativePath: path.relative(configFolder, sourcePath) });
+      }
+    }
 
     // clipboard-data/ (任意: backupIncludeClipboard設定時のみ)
     if (this.settingsService) {
@@ -410,9 +408,18 @@ export class BackupService {
     }
   }
 
+  /**
+   * ワークスペースファイルの形式移行前に全対象をスナップショットする（_pre-migration）
+   *
+   * 不可逆な形式変更なので backupEnabled に関係なく作る。失敗したら呼び出し側は移行しない
+   */
+  public async createPreMigrationSnapshot(): Promise<void> {
+    await this.createForcedSnapshot('pre-migration');
+  }
+
   private async createForcedSnapshot(suffix: string): Promise<void> {
     const { snapshotFolder } = await this.copyTargetsToSnapshot(suffix);
-    logger.info({ snapshotFolder }, 'リストア前の自動バックアップを作成しました');
+    logger.info({ snapshotFolder, suffix }, '強制スナップショットを作成しました');
   }
 
   private async copyTargetsToSnapshot(

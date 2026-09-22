@@ -228,9 +228,11 @@ function setupWorkspaceContextMenuHandler(): void {
       if (!senderWindow) return;
 
       const menu = new Menu();
-      const isClipboardType = item.type === 'clipboard';
-      const hasParentFolder = item.type !== 'url' && item.type !== 'customUri' && !isClipboardType;
-      const isShortcut = item.originalPath !== undefined && !isClipboardType;
+      // パス系のメニューは通常アイテム（path を持つ）だけに出す
+      const isLauncher = item.type === 'item';
+      const hasParentFolder =
+        isLauncher && item.launcherType !== 'url' && item.launcherType !== 'customUri';
+      const isShortcut = isLauncher && item.originalPath !== undefined;
 
       menu.append(
         createMenuItem(
@@ -250,7 +252,7 @@ function setupWorkspaceContextMenuHandler(): void {
       );
       menu.append(createSeparator());
 
-      if (!isClipboardType) {
+      if (isLauncher) {
         menu.append(
           createMenuItem(
             '📋 パスをコピー',

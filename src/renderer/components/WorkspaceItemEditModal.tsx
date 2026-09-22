@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import type { WorkspaceItem, WindowInfo, WindowConfig } from '@common/types';
+import type { WorkspaceItem, WorkspaceItemUpdate, WindowInfo, WindowConfig } from '@common/types';
 import {
   mergeWindowInfoIntoLayoutEntry,
   buildLayoutItemFromRegisterItem,
@@ -30,7 +30,7 @@ interface WorkspaceItemEditModalProps {
   isOpen: boolean;
   onClose: () => void;
   editingItem: WorkspaceItem | null;
-  onSave: (id: string, updates: Partial<WorkspaceItem>) => Promise<void>;
+  onSave: (id: string, updates: WorkspaceItemUpdate) => Promise<void>;
 }
 
 /**

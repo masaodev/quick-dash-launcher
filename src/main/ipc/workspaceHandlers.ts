@@ -1,6 +1,13 @@
 import { ipcMain } from 'electron';
 import logger from '@common/logger';
-import type { AppItem, WorkspaceItem, WorkspaceGroup, MixedOrderEntry } from '@common/types';
+import type {
+  AppItem,
+  WorkspaceItem,
+  WorkspaceItemUpdate,
+  WorkspaceGroupUpdate,
+  MixedOrderEntry,
+} from '@common/types';
+import { describeWorkspaceItem } from '@common/utils/workspaceConverters';
 import { isLauncherItem, isWindowItem } from '@common/types/guards';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
@@ -8,7 +15,12 @@ import { getDescendantGroupIds } from '@common/utils/groupTreeUtils';
 
 import { tryActivateWindow } from '../utils/windowActivator.js';
 import { launchItem } from '../utils/itemLauncher.js';
-import { WorkspaceService } from '../services/workspace/index.js';
+import {
+  WorkspaceService,
+  WorkspaceCorruptedError,
+  WorkspaceExternalChangeConflictError,
+} from '../services/workspace/index.js';
+import { showToastWindow } from '../services/overlayWindowService.js';
 import PathManager from '../config/pathManager.js';
 import { getIconForItem } from '../services/iconService.js';
 import { closeDetachedGroupWindow } from '../detachedGroupWindowManager.js';
@@ -42,6 +54,13 @@ async function withWorkspaceService<T>(
     return await action(workspaceService);
   } catch (error) {
     logger.error({ error, ...errorContext }, errorMsg);
+    // 外部編集との競合・破損は操作者に直接伝える（ファイルは書き換えていない）
+    if (
+      error instanceof WorkspaceExternalChangeConflictError ||
+      error instanceof WorkspaceCorruptedError
+    ) {
+      showToastWindow({ message: error.message, type: 'warning', duration: 6000 }).catch(() => {});
+    }
     throw error;
   }
 }
@@ -152,7 +171,7 @@ export function setupWorkspaceHandlers(): void {
 
   ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_UPDATE_ITEM,
-    (_event, id: string, updates: Partial<WorkspaceItem>) =>
+    (_event, id: string, updates: WorkspaceItemUpdate) =>
       withWorkspaceChange(
         (service) => service.updateItem(id, updates),
         'Updated workspace item',
@@ -176,19 +195,18 @@ export function setupWorkspaceHandlers(): void {
    */
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_LAUNCH_ITEM, async (_event, item: WorkspaceItem) => {
     try {
-      // windowOperationタイプの場合
-      if (item.type === 'windowOperation') {
-        const match = item.path.match(/^\[ウィンドウ操作: (.+)\]$/);
-        const windowTitle = match ? match[1] : item.path;
+      // ウィンドウ操作アイテム
+      if (item.type === 'window') {
+        const windowTitle = item.windowTitle;
 
         const activationResult = await tryActivateWindow(
           {
             title: windowTitle,
             processName: item.processName,
-            x: item.windowX,
-            y: item.windowY,
-            width: item.windowWidth,
-            height: item.windowHeight,
+            x: item.x,
+            y: item.y,
+            width: item.width,
+            height: item.height,
             virtualDesktopNumber: item.virtualDesktopNumber,
             activateWindow: item.activateWindow,
             moveToActiveMonitorCenter: item.moveToActiveMonitorCenter,
@@ -302,7 +320,7 @@ export function setupWorkspaceHandlers(): void {
 
       // クリップボードタイプの場合
       if (item.type === 'clipboard') {
-        if (!item.clipboardDataRef) {
+        if (!item.dataFileRef) {
           logger.warn({ id: item.id, name: item.displayName }, 'Clipboard data ref not found');
           throw new Error('クリップボードデータの参照が見つかりません');
         }
@@ -312,7 +330,7 @@ export function setupWorkspaceHandlers(): void {
             type: 'clipboard',
             path: '',
             displayName: item.displayName,
-            clipboardDataRef: item.clipboardDataRef,
+            clipboardDataRef: item.dataFileRef,
           },
           logger
         );
@@ -326,7 +344,7 @@ export function setupWorkspaceHandlers(): void {
 
       // レイアウトタイプの場合
       if (item.type === 'layout') {
-        if (!item.layoutEntries || item.layoutEntries.length === 0) {
+        if (item.entries.length === 0) {
           logger.warn({ id: item.id, name: item.displayName }, 'Layout has no entries');
           throw new Error('レイアウトにエントリが登録されていません');
         }
@@ -334,12 +352,12 @@ export function setupWorkspaceHandlers(): void {
         await executeLayout({
           type: 'layout',
           displayName: item.displayName,
-          entries: item.layoutEntries,
+          entries: item.entries,
           memo: item.memo,
         });
 
         logger.info(
-          { id: item.id, name: item.displayName, entryCount: item.layoutEntries.length },
+          { id: item.id, name: item.displayName, entryCount: item.entries.length },
           'Executed layout from workspace item'
         );
         return { success: true };
@@ -354,11 +372,10 @@ export function setupWorkspaceHandlers(): void {
       }
       // アクティブ化失敗または未設定の場合は下記の通常起動処理へフォールバック
 
-      // WorkspaceItemを起動：共通のlaunchItem関数を使用
-      // この時点でwindowOperationとgroupは処理済みなので、LaunchableItemの型にキャスト
+      // 通常アイテムを起動：共通のlaunchItem関数を使用（起動種別は path から判定済み）
       await launchItem(
         {
-          type: item.type as 'url' | 'file' | 'folder' | 'app' | 'customUri',
+          type: item.launcherType,
           path: item.path,
           args: item.args,
           displayName: item.displayName,
@@ -372,7 +389,10 @@ export function setupWorkspaceHandlers(): void {
       );
       return { success: true };
     } catch (error) {
-      logger.error({ error, id: item.id, path: item.path }, 'Failed to launch workspace item');
+      logger.error(
+        { error, id: item.id, target: describeWorkspaceItem(item) },
+        'Failed to launch workspace item'
+      );
       throw error;
     }
   });
@@ -459,7 +479,7 @@ export function setupWorkspaceHandlers(): void {
 
   ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_UPDATE_GROUP,
-    (_event, id: string, updates: Partial<WorkspaceGroup>) =>
+    (_event, id: string, updates: WorkspaceGroupUpdate) =>
       withWorkspaceChange(
         (service) => service.updateGroup(id, updates),
         'Updated workspace group',

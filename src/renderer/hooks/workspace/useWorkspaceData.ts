@@ -1,5 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import type { Workspace, WorkspaceItem, WorkspaceGroup } from '@common/types';
+import type {
+  Workspace,
+  WorkspaceItem,
+  WorkspaceLauncherItem,
+  WorkspaceGroupView,
+} from '@common/types';
 import { isIconFetchTarget } from '@common/constants';
 
 import { logError } from '../../utils/debug';
@@ -13,55 +18,45 @@ type IconCacheItem = {
   originalPath?: string;
 };
 
-/** アイコンキャッシュ対象のタイプ（IconCacheItem['type']と一致） */
-const ICON_CACHEABLE_TYPES: ReadonlySet<string> = new Set<IconCacheItem['type']>([
-  'url',
-  'file',
-  'folder',
-  'app',
-  'customUri',
-]);
-
-function needsIconFromCache(type: WorkspaceItem['type']): boolean {
-  return ICON_CACHEABLE_TYPES.has(type);
+/** アイコンをキャッシュから解決するのは通常アイテム（path を持つ）だけ */
+function isLauncherItem(item: WorkspaceItem): item is WorkspaceLauncherItem {
+  return item.type === 'item';
 }
 
 /** WorkspaceItem を loadCachedIcons / ensureIcons が受け取る形式へ変換する */
-function toIconCacheItem(item: WorkspaceItem): IconCacheItem {
+function toIconCacheItem(item: WorkspaceLauncherItem): IconCacheItem {
   return {
     displayName: item.displayName,
     path: item.path,
-    type: item.type as IconCacheItem['type'],
+    type: item.launcherType,
     customIcon: item.customIcon,
     originalPath: item.originalPath,
   };
 }
 
-async function mergeIconsFromCache<T extends { icon?: string }>(
-  items: T[],
-  getPath: (item: T) => string,
-  toLauncherStyle: (item: T) => IconCacheItem,
-  getType: (item: T) => WorkspaceItem['type']
-): Promise<T[]> {
-  const itemsNeedingIcons = items.filter((item) => !item.icon && needsIconFromCache(getType(item)));
+async function mergeIconsFromCache<T extends WorkspaceItem>(items: T[]): Promise<T[]> {
+  const itemsNeedingIcons = items.filter(
+    (item): item is T & WorkspaceLauncherItem => !item.icon && isLauncherItem(item)
+  );
   if (itemsNeedingIcons.length === 0) return items;
 
-  const launcherStyleItems = itemsNeedingIcons.map(toLauncherStyle);
-  const iconCache = await window.electronAPI.loadCachedIcons(launcherStyleItems);
+  const iconCache = await window.electronAPI.loadCachedIcons(
+    itemsNeedingIcons.map(toIconCacheItem)
+  );
 
-  return items.map((item) => ({
-    ...item,
-    icon: item.icon || iconCache[getPath(item)] || undefined,
-  }));
+  return items.map((item) =>
+    isLauncherItem(item) ? { ...item, icon: item.icon || iconCache[item.path] || undefined } : item
+  );
 }
 
 export function useWorkspaceData(detachedGroupId?: string | null) {
   const isDetached = !!detachedGroupId;
   const [items, setItems] = useState<WorkspaceItem[]>([]);
-  const [groups, setGroups] = useState<WorkspaceGroup[]>([]);
+  const [groups, setGroups] = useState<WorkspaceGroupView[]>([]);
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [activeWorkspaceId, setActiveWorkspaceIdState] = useState<string>(() => {
-    return localStorage.getItem('activeWorkspaceId') || 'default';
+    // 無効な id は loadWorkspaces() で先頭のワークスペースにフォールバックする
+    return localStorage.getItem('activeWorkspaceId') || '';
   });
   const activeWorkspaceIdRef = useRef(activeWorkspaceId);
   activeWorkspaceIdRef.current = activeWorkspaceId;
@@ -76,7 +71,7 @@ export function useWorkspaceData(detachedGroupId?: string | null) {
   const collapsedOverrides = useRef<Map<string, boolean>>(new Map());
   const overridesInitialized = useRef(false);
 
-  function applyCollapsedOverrides(loadedGroups: WorkspaceGroup[]): WorkspaceGroup[] {
+  function applyCollapsedOverrides(loadedGroups: WorkspaceGroupView[]): WorkspaceGroupView[] {
     const overrides = collapsedOverrides.current;
     if (overrides.size === 0) return loadedGroups;
     return loadedGroups.map((g) =>
@@ -93,12 +88,7 @@ export function useWorkspaceData(detachedGroupId?: string | null) {
   async function loadItems(): Promise<void> {
     try {
       const loadedItems = await window.electronAPI.workspaceAPI.loadItems();
-      const itemsWithIcons = await mergeIconsFromCache(
-        loadedItems,
-        (item) => item.path,
-        toIconCacheItem,
-        (item) => item.type as WorkspaceItem['type']
-      );
+      const itemsWithIcons = await mergeIconsFromCache(loadedItems);
       setItems(itemsWithIcons);
       void fetchMissingIcons(itemsWithIcons);
     } catch (error) {
@@ -116,7 +106,11 @@ export function useWorkspaceData(detachedGroupId?: string | null) {
    */
   async function fetchMissingIcons(items: WorkspaceItem[]): Promise<void> {
     const missingItems = items.filter(
-      (item) => !item.icon && isIconFetchTarget(item.type) && !item.customIcon
+      (item): item is WorkspaceLauncherItem =>
+        isLauncherItem(item) &&
+        !item.icon &&
+        isIconFetchTarget(item.launcherType) &&
+        !item.customIcon
     );
     if (missingItems.length === 0) return;
 
@@ -125,7 +119,11 @@ export function useWorkspaceData(detachedGroupId?: string | null) {
       if (Object.keys(fetched).length === 0) return;
 
       setItems((prev) =>
-        prev.map((item) => (item.icon ? item : { ...item, icon: fetched[item.path] || undefined }))
+        prev.map((item) =>
+          item.icon || !isLauncherItem(item)
+            ? item
+            : { ...item, icon: fetched[item.path] || undefined }
+        )
       );
     } catch (error) {
       logError('Failed to fetch missing workspace icons:', error);

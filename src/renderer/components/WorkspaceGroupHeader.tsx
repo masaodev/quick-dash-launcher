@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import type { WorkspaceGroup, GroupDropZone } from '@common/types';
+import type { WorkspaceGroupView, WorkspaceGroupUpdate, GroupDropZone } from '@common/types';
 import { resolveGroupColorCss } from '@common/groupColors';
 
 interface WorkspaceGroupHeaderProps {
-  group: WorkspaceGroup;
+  group: WorkspaceGroupView;
   itemCount: number;
   isEditing: boolean;
   depth: number;
@@ -12,7 +12,7 @@ interface WorkspaceGroupHeaderProps {
   /** このグループにネスト可能か（深さ制限チェック済み） */
   canNest: boolean;
   onToggle: (groupId: string) => void;
-  onUpdate: (groupId: string, updates: Partial<WorkspaceGroup>) => void;
+  onUpdate: (groupId: string, updates: WorkspaceGroupUpdate) => void;
   onEndEdit: () => void;
   onGroupDragStart: (e: React.DragEvent) => void;
   onGroupDragEnd?: (e: React.DragEvent, groupId: string) => void;

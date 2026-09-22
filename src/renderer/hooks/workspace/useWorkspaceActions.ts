@@ -1,4 +1,10 @@
-import type { WorkspaceItem, WorkspaceGroup, MixedOrderEntry } from '@common/types';
+import type {
+  WorkspaceItem,
+  WorkspaceItemUpdate,
+  WorkspaceGroupUpdate,
+  MixedOrderEntry,
+} from '@common/types';
+import { toToastItemType } from '@common/utils/workspaceConverters';
 
 import { logError } from '../../utils/debug';
 
@@ -21,17 +27,14 @@ export function useWorkspaceActions(onDataChanged: () => void) {
   const api = window.electronAPI.workspaceAPI;
 
   const handleLaunch = withErrorHandling(async (item: WorkspaceItem) => {
-    const isGroup = item.type === 'group';
-    const hasPathInfo =
-      item.type !== 'group' && item.type !== 'clipboard' && item.type !== 'windowOperation';
     await window.electronAPI.showToastWindow({
       displayName: item.displayName,
-      itemType: item.type,
-      ...(isGroup && {
-        itemCount: item.itemNames?.length ?? 0,
-        itemNames: item.itemNames?.slice(0, 3),
+      itemType: toToastItemType(item),
+      ...(item.type === 'group' && {
+        itemCount: item.itemNames.length,
+        itemNames: item.itemNames.slice(0, 3),
       }),
-      ...(hasPathInfo && {
+      ...(item.type === 'item' && {
         path: item.path,
         icon: item.icon,
       }),
@@ -52,13 +55,13 @@ export function useWorkspaceActions(onDataChanged: () => void) {
   );
 
   const handleUpdateItem = withErrorHandling(
-    async (id: string, updates: Partial<WorkspaceItem>) => api.updateItem(id, updates),
+    async (id: string, updates: WorkspaceItemUpdate) => api.updateItem(id, updates),
     'Failed to update workspace item:',
     onDataChanged
   );
 
   const handleUpdateGroup = withErrorHandling(
-    async (groupId: string, updates: Partial<WorkspaceGroup>) => api.updateGroup(groupId, updates),
+    async (groupId: string, updates: WorkspaceGroupUpdate) => api.updateGroup(groupId, updates),
     'Failed to update workspace group:',
     onDataChanged
   );

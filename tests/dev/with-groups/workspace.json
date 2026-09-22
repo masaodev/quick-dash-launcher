@@ -1,4 +1,14 @@
 {
-	"items": [],
-	"groups": []
+  "$schema": "./schemas/workspace.schema.json",
+  "version": "2.0",
+  "workspaces": [
+    {
+      "id": "wsDevGrp",
+      "displayName": "デフォルト",
+      "order": 0,
+      "createdAt": 0
+    }
+  ],
+  "groups": [],
+  "items": []
 }

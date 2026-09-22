@@ -15,7 +15,11 @@ import type {
   BrowserInfo,
   Workspace,
   WorkspaceItem,
+  WorkspaceItemUpdate,
   WorkspaceGroup,
+  WorkspaceGroupUpdate,
+  WorkspaceGroupView,
+  DetachedWindowState,
   ArchivedWorkspaceGroup,
   ArchivedWorkspaceItem,
   WindowInfo,
@@ -388,21 +392,21 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_REMOVE_ITEM, id),
     updateDisplayName: (id: string, displayName: string): Promise<{ success: boolean }> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_UPDATE_DISPLAY_NAME, id, displayName),
-    updateItem: (id: string, updates: Partial<WorkspaceItem>): Promise<{ success: boolean }> =>
+    updateItem: (id: string, updates: WorkspaceItemUpdate): Promise<{ success: boolean }> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_UPDATE_ITEM, id, updates),
     reorderItems: (itemIds: string[]): Promise<{ success: boolean }> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_REORDER_ITEMS, itemIds),
     launchItem: (item: WorkspaceItem): Promise<{ success: boolean }> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_LAUNCH_ITEM, item),
     // グループ管理
-    loadGroups: (): Promise<WorkspaceGroup[]> =>
+    loadGroups: (): Promise<WorkspaceGroupView[]> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_LOAD_GROUPS),
     createGroup: (
       name: string,
       color?: string,
       parentGroupId?: string,
       workspaceId?: string
-    ): Promise<WorkspaceGroup> =>
+    ): Promise<WorkspaceGroupView> =>
       ipcRenderer.invoke(
         IPC_CHANNELS.WORKSPACE_CREATE_GROUP,
         name,
@@ -410,7 +414,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
         parentGroupId,
         workspaceId
       ),
-    updateGroup: (id: string, updates: Partial<WorkspaceGroup>): Promise<{ success: boolean }> =>
+    updateGroup: (id: string, updates: WorkspaceGroupUpdate): Promise<{ success: boolean }> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_UPDATE_GROUP, id, updates),
     deleteGroup: (id: string, deleteItems: boolean): Promise<{ success: boolean }> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_DELETE_GROUP, id, deleteItems),
@@ -506,12 +510,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     setCallerBounds: (x: number, y: number, width: number, height: number): Promise<boolean> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_SET_CALLER_BOUNDS, x, y, width, height),
     // 切り離しウィンドウ状態永続化
-    loadDetachedState: (
-      rootGroupId: string
-    ): Promise<{
-      collapsedStates: Record<string, boolean>;
-      bounds: { x: number; y: number; width: number; height: number };
-    } | null> => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_LOAD_DETACHED_STATE, rootGroupId),
+    loadDetachedState: (rootGroupId: string): Promise<DetachedWindowState | null> =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_LOAD_DETACHED_STATE, rootGroupId),
     saveDetachedCollapsed: (
       rootGroupId: string,
       states: Record<string, boolean>

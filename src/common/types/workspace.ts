@@ -1,126 +1,89 @@
-import type { ClipboardFormat } from './clipboard';
-
 /**
- * ワークスペース（タブ）
- * 複数のワークスペースをタブで切り替えて管理する
+ * ワークスペースの実行時の型
+ *
+ * ファイル形式（json-workspace.ts）のエンティティに、実行時にだけ持つ情報を足したもの:
+ * - アイテム: `launcherType`（type: "item" の path から判定した url/file/app/…）と `icon`
+ * - グループ: `collapsed`（workspace-ui-state.json から合成。WorkspaceGroupView）
+ *
+ * ファイルに書くときは実行時情報を落として JsonWorkspace* に戻す（WorkspaceFileStore）。
  */
-export interface Workspace {
-  /** ワークスペースの一意識別子 */
-  id: string;
-  /** ワークスペースの表示名 */
-  displayName: string;
-  /** 並び順（0から開始） */
-  order: number;
-  /** 作成日時（timestamp） */
-  createdAt: number;
-}
 
-/**
- * ワークスペースのグループ
- * アイテムを論理的にグループ化して整理する
- */
-export interface WorkspaceGroup {
-  /** グループの一意識別子（UUID） */
-  id: string;
-  /** グループ名 */
-  displayName: string;
-  /** グループの色（CSS変数名またはカラーコード） */
-  color: string;
-  /** 並び順（0から開始） */
-  order: number;
+import type {
+  JsonArchivedItemMeta,
+  JsonArchivedWorkspaceGroup,
+  JsonWorkspace,
+  JsonWorkspaceClipboardItem,
+  JsonWorkspaceGroup,
+  JsonWorkspaceGroupItem,
+  JsonWorkspaceItem,
+  JsonWorkspaceLauncherItem,
+  JsonWorkspaceLayoutItem,
+  JsonWorkspaceWindowItem,
+} from './json-workspace';
+
+/** ワークスペース（タブ）。ファイル形式と同じ */
+export type Workspace = JsonWorkspace;
+
+/** グループ。ファイル形式と同じ（折りたたみ状態は持たない） */
+export type WorkspaceGroup = JsonWorkspaceGroup;
+
+/** レンダラー表示用のグループ（UI 状態ファイルの折りたたみを合成したもの） */
+export interface WorkspaceGroupView extends WorkspaceGroup {
   /** 折りたたみ状態（true: 折りたたみ） */
   collapsed: boolean;
-  /** 作成日時（timestamp） */
-  createdAt: number;
-  /** 親グループID（undefinedならトップレベル = 後方互換） */
-  parentGroupId?: string;
-  /** 所属ワークスペースID */
-  workspaceId?: string;
 }
 
-/**
- * ワークスペースに追加されたアイテム
- * メイン画面のアイテムを完全にコピーし、独立して管理される
- * 元のアイテムが変更・削除されても影響を受けない
- */
-export interface WorkspaceItem {
-  /** アイテムの一意識別子（UUID） */
-  id: string;
-  /** ワークスペース内での表示名（編集可能） */
-  displayName: string;
-  /** 元のアイテム名（参照用） */
-  originalName: string;
-  /** アイテムのパス、URL、またはコマンド */
-  path: string;
-  /** アイテムのタイプ */
-  type:
-    | 'url'
-    | 'file'
-    | 'folder'
-    | 'app'
-    | 'customUri'
-    | 'windowOperation'
-    | 'group'
-    | 'clipboard'
-    | 'layout';
-  /** アイテムのアイコン（実行時にキャッシュから取得、ファイルには保存しない） */
+/** type: "item" の path から判定した起動種別 */
+export type LauncherItemType = 'url' | 'file' | 'folder' | 'app' | 'customUri';
+
+/** 実行時にだけ持つアイコン（icon-cache から解決。ファイルには保存しない） */
+interface RuntimeIcon {
   icon?: string;
-  /** カスタムアイコンのファイル名（オプション） */
-  customIcon?: string;
-  /** 実行時のコマンドライン引数（オプション） */
-  args?: string;
-  /** ショートカットファイルのリンク先のパス（オプション） */
-  originalPath?: string;
-  /** 並び順（0から開始） */
-  order: number;
-  /** 追加日時（timestamp） */
-  addedAt: number;
-  /** 所属グループID（未設定の場合はundefined = 未分類） */
-  groupId?: string;
-  /** グループラベル（将来的な拡張用、廃止予定） */
-  label?: string;
-  /** ウィンドウ制御設定（ウィンドウ検索・位置・サイズ制御） */
-  windowConfig?: import('./launcher').WindowConfig;
-  /** ウィンドウ操作：X座標（windowOperation専用、オプション） */
-  windowX?: number;
-  /** ウィンドウ操作：Y座標（windowOperation専用、オプション） */
-  windowY?: number;
-  /** ウィンドウ操作：幅（windowOperation専用、オプション） */
-  windowWidth?: number;
-  /** ウィンドウ操作：高さ（windowOperation専用、オプション） */
-  windowHeight?: number;
-  /** ウィンドウ操作：仮想デスクトップ番号（windowOperation専用、オプション） */
-  virtualDesktopNumber?: number;
-  /** ウィンドウ操作：ウィンドウをアクティブにするか（windowOperation専用、オプション） */
-  activateWindow?: boolean;
-  /** ウィンドウ操作：プロセス名で検索（windowOperation専用、オプション） */
-  processName?: string;
-  /** ウィンドウ操作：アクティブモニターの中央に移動するか（windowOperation専用、オプション） */
-  moveToActiveMonitorCenter?: boolean;
-  /** ウィンドウ操作：全仮想デスクトップにピン止めするか（windowOperation専用、オプション） */
-  pinToAllDesktops?: boolean;
-  /** グループ内のアイテム名リスト（group専用） */
-  itemNames?: string[];
-  /** 自由記述メモ（オプション） */
-  memo?: string;
-  /** 所属ワークスペースID */
-  workspaceId?: string;
-  /** クリップボードデータファイルへの参照（clipboard専用） */
-  clipboardDataRef?: string;
-  /** クリップボードの保存フォーマット（clipboard専用） */
-  clipboardFormats?: ClipboardFormat[];
-  /** クリップボードの保存日時（clipboard専用） */
-  clipboardSavedAt?: number;
-  /** レイアウト内のウィンドウエントリ一覧（layout専用） */
-  layoutEntries?: import('./launcher').LayoutWindowEntry[];
 }
+
+export type WorkspaceLauncherItem = JsonWorkspaceLauncherItem &
+  RuntimeIcon & {
+    /** path（ショートカットならリンク先）から判定した起動種別 */
+    launcherType: LauncherItemType;
+  };
+export type WorkspaceWindowItem = JsonWorkspaceWindowItem & RuntimeIcon;
+export type WorkspaceGroupItem = JsonWorkspaceGroupItem & RuntimeIcon;
+export type WorkspaceClipboardItem = JsonWorkspaceClipboardItem & RuntimeIcon;
+export type WorkspaceLayoutItem = JsonWorkspaceLayoutItem & RuntimeIcon;
+
+/**
+ * ワークスペースに追加されたアイテム（実行時）
+ * メイン画面のアイテムをコピーし、独立して管理される。type で判別できる union
+ */
+export type WorkspaceItem =
+  | WorkspaceLauncherItem
+  | WorkspaceWindowItem
+  | WorkspaceGroupItem
+  | WorkspaceClipboardItem
+  | WorkspaceLayoutItem;
+
+type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
+
+/**
+ * アイテム編集の入力。その type が持つ編集可能フィールドを全部渡す「置き換え」で、
+ * id・並び順・所属（groupId / workspaceId）は変えられない
+ */
+export type WorkspaceItemUpdate = DistributiveOmit<
+  JsonWorkspaceItem,
+  'id' | 'order' | 'addedAt' | 'groupId' | 'workspaceId'
+>;
+
+/** グループ編集の入力 */
+export type WorkspaceGroupUpdate = Partial<
+  Pick<WorkspaceGroup, 'displayName' | 'color' | 'parentGroupId'>
+>;
 
 /** グループヘッダーのドロップゾーン（Y位置に応じた操作区別） */
 export type GroupDropZone = 'before' | 'nest' | 'after';
 
 /** 親グループ内の混在要素（サブグループまたはアイテム） */
-export type MixedChild =
-  { kind: 'group'; group: WorkspaceGroup } | { kind: 'item'; item: WorkspaceItem };
+export type MixedChild<G extends WorkspaceGroup = WorkspaceGroup> =
+  { kind: 'group'; group: G } | { kind: 'item'; item: WorkspaceItem };
 
 /** 混在並べ替えのエントリ（APIに渡す軽量版） */
 export interface MixedOrderEntry {
@@ -128,26 +91,8 @@ export interface MixedOrderEntry {
   kind: 'item' | 'group';
 }
 
-/**
- * アーカイブされたワークスペースグループ
- * WorkspaceGroupを拡張し、アーカイブ関連の情報を追加
- */
-export interface ArchivedWorkspaceGroup extends WorkspaceGroup {
-  /** アーカイブ日時（timestamp） */
-  archivedAt: number;
-  /** アーカイブ前のorder（復元時の参考用） */
-  originalOrder: number;
-  /** アーカイブ時のアイテム数（表示用） */
-  itemCount: number;
-}
+/** アーカイブされたグループ。ファイル形式と同じ */
+export type ArchivedWorkspaceGroup = JsonArchivedWorkspaceGroup;
 
-/**
- * アーカイブされたワークスペースアイテム
- * WorkspaceItemを拡張し、アーカイブ関連の情報を追加
- */
-export interface ArchivedWorkspaceItem extends WorkspaceItem {
-  /** アーカイブ日時（timestamp） */
-  archivedAt: number;
-  /** アーカイブグループID（どのグループと一緒にアーカイブされたか） */
-  archivedGroupId: string;
-}
+/** アーカイブされたアイテム（実行時） */
+export type ArchivedWorkspaceItem = WorkspaceItem & JsonArchivedItemMeta;

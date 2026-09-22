@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import type { WorkspaceItem, WorkspaceGroup } from '@common/types';
+import type { WorkspaceItem, WorkspaceGroupView } from '@common/types';
 import { getDescendantGroupIds } from '@common/utils/groupTreeUtils';
 import { DETACHED_WINDOW_NAME_PREFIX } from '@common/constants';
 
@@ -80,7 +80,7 @@ const WorkspaceApp: React.FC = () => {
   const [activeGroupId, setActiveGroupId] = useState<string>();
   const [editModalItem, setEditModalItem] = useState<WorkspaceItem | null>(null);
   const [isArchiveMode, setIsArchiveMode] = useState(false);
-  const [archivedGroups, setArchivedGroups] = useState<WorkspaceGroup[]>([]);
+  const [archivedGroups, setArchivedGroups] = useState<WorkspaceGroupView[]>([]);
   const [archivedItems, setArchivedItems] = useState<WorkspaceItem[]>([]);
   const [isFilterVisible, setIsFilterVisible] = useState(false);
   const [filterText, setFilterText] = useState('');
@@ -127,7 +127,8 @@ const WorkspaceApp: React.FC = () => {
         window.electronAPI.workspaceAPI.loadArchivedGroups(),
         window.electronAPI.workspaceAPI.loadArchivedItems(),
       ]);
-      setArchivedGroups(groups);
+      // アーカイブ画面の折りたたみはローカル状態だけで持つ（永続化しない）
+      setArchivedGroups(groups.map((g) => ({ ...g, collapsed: false })));
       setArchivedItems(items);
     } catch (error) {
       logError('Failed to load archive data:', error);
@@ -144,12 +145,13 @@ const WorkspaceApp: React.FC = () => {
   }, [isArchiveMode, loadArchiveData]);
 
   // 表示用データ: アーカイブモード時はアーカイブデータを使用
-  // workspaceIdをクリアして全ワークスペースをコンテキストメニューの移動先候補にする
+  // workspaceId を空にして、全ワークスペースをコンテキストメニューの移動先候補にする
+  // （メイン側は「自分の workspaceId 以外」を候補にするため）
   const displayGroups = isArchiveMode
-    ? archivedGroups.map((g) => ({ ...g, workspaceId: undefined }))
+    ? archivedGroups.map((g) => ({ ...g, workspaceId: '' }))
     : filteredGroups;
   const displayItems = isArchiveMode
-    ? archivedItems.map((i) => ({ ...i, workspaceId: undefined }))
+    ? archivedItems.map((i) => ({ ...i, workspaceId: '' }))
     : filteredItems;
 
   const filterResult = useWorkspaceFilter(displayGroups, displayItems, filterText, filterScope);
@@ -378,9 +380,8 @@ const WorkspaceApp: React.FC = () => {
       const newCollapsed = toggleGroupCollapsed(groupId);
       if (newCollapsed !== undefined && !isDetached) {
         try {
-          await window.electronAPI.workspaceAPI.updateGroup(groupId, {
-            collapsed: newCollapsed,
-          });
+          // 折りたたみは UI 状態（workspace-ui-state.json）として保存する
+          await window.electronAPI.workspaceAPI.setGroupsCollapsed([groupId], newCollapsed);
         } catch (error) {
           logError('Failed to persist group collapsed state:', error);
         }

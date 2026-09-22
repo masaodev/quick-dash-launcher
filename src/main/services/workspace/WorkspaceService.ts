@@ -2,14 +2,14 @@
  * ワークスペースサービスのファサードクラス
  * 各種マネージャークラスに処理を委譲する
  */
-import { randomUUID } from 'crypto';
-
-import type ElectronStore from 'electron-store';
 import type {
   AppItem,
+  DetachedWindowState,
   Workspace,
   WorkspaceItem,
-  WorkspaceGroup,
+  WorkspaceItemUpdate,
+  WorkspaceGroupUpdate,
+  WorkspaceGroupView,
   ArchivedWorkspaceGroup,
   ArchivedWorkspaceItem,
   MixedOrderEntry,
@@ -18,30 +18,27 @@ import logger from '@common/logger';
 import { getDescendantGroupIds } from '@common/utils/groupTreeUtils';
 
 import PathManager from '../../config/pathManager.js';
+import { BackupService } from '../backupService.js';
+import type { LoadReportFile } from '../loadReportService.js';
 
-import type {
-  WorkspaceStoreInstance,
-  ArchiveStoreInstance,
-  DetachedStoreInstance,
-  DetachedWindowState,
-} from './types.js';
+import { WorkspaceFileStore } from './WorkspaceFileStore.js';
+import type { WorkspaceReloadResult } from './WorkspaceFileStore.js';
+import { WorkspaceUiStateStore } from './WorkspaceUiStateStore.js';
 import { WorkspaceItemManager } from './WorkspaceItemManager.js';
 import { WorkspaceGroupManager } from './WorkspaceGroupManager.js';
 import { WorkspaceArchiveManager } from './WorkspaceArchiveManager.js';
-import { migrateToMultiWorkspace } from './migrationUtils.js';
-import { purgeStoredItemIcons, setStoredItems } from './itemSanitizer.js';
-
-// electron-storeを動的にインポート
-let Store: typeof ElectronStore | null = null;
 
 /**
  * ワークスペースアイテムを管理するサービスクラス
- * electron-storeを使用してworkspace.jsonに永続化を行う
+ *
+ * - データ本体（workspace.json / workspace-archive.json）は WorkspaceFileStore
+ * - UI 状態（折りたたみ・切り離しウィンドウ）は WorkspaceUiStateStore
+ *
+ * ファイルの読み込みは初期化時と reload()（メイン画面の F5）のときだけ。
  */
 export class WorkspaceService {
-  private store: WorkspaceStoreInstance | null = null;
-  private archiveStore: ArchiveStoreInstance | null = null;
-  private detachedStore: DetachedStoreInstance | null = null;
+  private store: WorkspaceFileStore | null = null;
+  private uiState: WorkspaceUiStateStore | null = null;
 
   private itemManager: WorkspaceItemManager | null = null;
   private groupManager: WorkspaceGroupManager | null = null;
@@ -51,86 +48,39 @@ export class WorkspaceService {
   /** 初期化の Promise（並行呼び出しで initializeStore が二重に走らないように 1 本にまとめる） */
   private static initPromise: Promise<void> | null = null;
 
-  /**
-   * デフォルト設定値
-   */
-  private static readonly DEFAULT_DATA = {
-    items: [] as WorkspaceItem[],
-    groups: [] as WorkspaceGroup[],
-    workspaces: [] as Workspace[],
-  };
-
-  private static readonly DEFAULT_ARCHIVE_DATA = {
-    groups: [] as ArchivedWorkspaceGroup[],
-    items: [] as ArchivedWorkspaceItem[],
-  };
-
-  private static readonly DEFAULT_DETACHED_DATA = {
-    windows: {} as Record<string, DetachedWindowState>,
-  };
-
   private constructor() {}
 
   /**
-   * electron-storeを非同期で初期化
+   * ストアを初期化し、ファイルを読み込む
    */
   private async initializeStore(): Promise<void> {
-    if (this.store && this.archiveStore && this.detachedStore) return;
+    if (this.store) return;
 
     try {
-      if (!Store) {
-        const module = await import('electron-store');
-        Store = module.default;
-      }
+      const uiState = new WorkspaceUiStateStore();
+      const store = new WorkspaceFileStore(
+        {
+          main: PathManager.getWorkspaceFilePath(),
+          archive: PathManager.getWorkspaceArchiveFilePath(),
+          legacyDetached: PathManager.getLegacyWorkspaceDetachedFilePath(),
+        },
+        uiState,
+        {
+          createPreMigrationSnapshot: async () => {
+            const backupService = await BackupService.getInstance();
+            await backupService.createPreMigrationSnapshot();
+          },
+        }
+      );
+      await store.reload();
 
-      const configFolder = PathManager.getConfigFolder();
+      this.uiState = uiState;
+      this.store = store;
+      this.itemManager = new WorkspaceItemManager(store);
+      this.groupManager = new WorkspaceGroupManager(store);
+      this.archiveManager = new WorkspaceArchiveManager(store);
 
-      if (!this.store) {
-        this.store = new Store!<{
-          items: WorkspaceItem[];
-          groups: WorkspaceGroup[];
-          workspaces: Workspace[];
-        }>({
-          name: 'workspace',
-          cwd: configFolder,
-          defaults: WorkspaceService.DEFAULT_DATA,
-        }) as unknown as WorkspaceStoreInstance;
-      }
-
-      if (!this.archiveStore) {
-        this.archiveStore = new Store!<{
-          groups: ArchivedWorkspaceGroup[];
-          items: WorkspaceItem[];
-        }>({
-          name: 'workspace-archive',
-          cwd: configFolder,
-          defaults: WorkspaceService.DEFAULT_ARCHIVE_DATA,
-        }) as unknown as ArchiveStoreInstance;
-      }
-
-      if (!this.detachedStore) {
-        this.detachedStore = new Store!<{
-          windows: Record<string, DetachedWindowState>;
-        }>({
-          name: 'workspace-detached',
-          cwd: configFolder,
-          defaults: WorkspaceService.DEFAULT_DETACHED_DATA,
-        }) as unknown as DetachedStoreInstance;
-      }
-
-      // マルチワークスペースマイグレーション
-      migrateToMultiWorkspace(this.store);
-
-      // 旧仕様で設定ファイルに埋め込まれたアイコンを除去
-      purgeStoredItemIcons(this.store, 'workspace');
-      purgeStoredItemIcons(this.archiveStore, 'workspace-archive');
-
-      // マネージャーを初期化
-      this.itemManager = new WorkspaceItemManager(this.store);
-      this.groupManager = new WorkspaceGroupManager(this.store);
-      this.archiveManager = new WorkspaceArchiveManager(this.store, this.archiveStore);
-
-      logger.info(`WorkspaceService initialized successfully at ${configFolder}`);
+      logger.info(`WorkspaceService initialized successfully at ${PathManager.getConfigFolder()}`);
     } catch (error) {
       logger.error({ error }, 'Failed to initialize WorkspaceService');
       throw error;
@@ -155,20 +105,44 @@ export class WorkspaceService {
     return WorkspaceService.instance;
   }
 
+  // --- 再読込・レポート（メイン画面の F5 から呼ばれる） ---
+
+  /** ディスクから読み直す。旧形式なら移行、補正があれば書き戻す */
+  public async reload(): Promise<WorkspaceReloadResult> {
+    await this.initializeStore();
+    // 初期化時の読み込み結果がまだ取り出されていなければ、それを結果として使う
+    // （起動直後のメイン画面の読み込みで移行やレポートを二重に処理しないため）
+    if (this.store!.hasPendingReports()) {
+      return { changed: false };
+    }
+    return this.store!.reload();
+  }
+
+  /** 直近の読み込み結果（last-load-report.json に載せる） */
+  public consumeLoadReports(): {
+    files: LoadReportFile[];
+    externallyChanged: Array<{ relativePath: string; content: string }>;
+  } {
+    return this.store?.consumeLoadReports() ?? { files: [], externallyChanged: [] };
+  }
+
+  public isCorrupted(): boolean {
+    return this.store?.isCorrupted() ?? false;
+  }
+
   // --- ワークスペース（タブ）管理 ---
 
   public async loadWorkspaces(): Promise<Workspace[]> {
     await this.initializeStore();
-    const workspaces = this.store!.get('workspaces') || [];
-    return workspaces.sort((a, b) => a.order - b.order);
+    return this.store!.get('workspaces').sort((a, b) => a.order - b.order);
   }
 
   public async createWorkspace(name: string): Promise<Workspace> {
     await this.initializeStore();
-    const workspaces = this.store!.get('workspaces') || [];
+    const workspaces = this.store!.get('workspaces');
     const maxOrder = workspaces.length > 0 ? Math.max(...workspaces.map((w) => w.order)) : -1;
     const workspace: Workspace = {
-      id: randomUUID(),
+      id: this.store!.newId(),
       displayName: name,
       order: maxOrder + 1,
       createdAt: Date.now(),
@@ -181,7 +155,7 @@ export class WorkspaceService {
 
   public async renameWorkspace(id: string, name: string): Promise<void> {
     await this.initializeStore();
-    const workspaces = this.store!.get('workspaces') || [];
+    const workspaces = this.store!.get('workspaces');
     const ws = workspaces.find((w) => w.id === id);
     if (!ws) throw new Error(`Workspace not found: ${id}`);
     ws.displayName = name;
@@ -191,30 +165,24 @@ export class WorkspaceService {
 
   public async deleteWorkspace(id: string): Promise<void> {
     await this.initializeStore();
-    const workspaces = this.store!.get('workspaces') || [];
+    const workspaces = this.store!.get('workspaces');
     if (workspaces.length <= 1) throw new Error('Cannot delete the last workspace');
-    const filtered = workspaces.filter((w) => w.id !== id);
-    if (filtered.length === workspaces.length) throw new Error(`Workspace not found: ${id}`);
-    this.store!.set('workspaces', filtered);
+    if (!workspaces.some((w) => w.id === id)) throw new Error(`Workspace not found: ${id}`);
 
-    // 所属グループ・アイテムも削除
-    const groups = this.store!.get('groups') || [];
-    this.store!.set(
-      'groups',
-      groups.filter((g) => g.workspaceId !== id)
-    );
-    const items = this.store!.get('items') || [];
-    this.store!.set(
-      'items',
-      items.filter((i) => i.workspaceId !== id)
-    );
+    // 所属グループ・アイテムも削除（1 回の書き込み）
+    this.store!.update((main) => {
+      main.workspaces = main.workspaces.filter((w) => w.id !== id);
+      main.groups = main.groups.filter((g) => g.workspaceId !== id);
+      main.items = main.items.filter((i) => i.workspaceId !== id);
+    });
+    this.pruneUiState();
 
     logger.info({ id }, 'Deleted workspace with associated groups and items');
   }
 
   public async reorderWorkspaces(ids: string[]): Promise<void> {
     await this.initializeStore();
-    const workspaces = this.store!.get('workspaces') || [];
+    const workspaces = this.store!.get('workspaces');
     const wsMap = new Map(workspaces.map((w) => [w.id, w]));
     ids.forEach((id, index) => {
       const ws = wsMap.get(id);
@@ -259,9 +227,9 @@ export class WorkspaceService {
     this.itemManager!.updateDisplayName(id, displayName);
   }
 
-  public async updateItem(id: string, updates: Partial<WorkspaceItem>): Promise<void> {
+  public async updateItem(id: string, update: WorkspaceItemUpdate): Promise<void> {
     await this.initializeStore();
-    this.itemManager!.updateItem(id, updates);
+    this.itemManager!.updateItem(id, update);
   }
 
   public async reorderItems(itemIds: string[]): Promise<void> {
@@ -276,9 +244,14 @@ export class WorkspaceService {
 
   // --- グループ管理 ---
 
-  public async loadGroups(): Promise<WorkspaceGroup[]> {
+  /** グループ一覧（UI 状態の折りたたみを合成して返す） */
+  public async loadGroups(): Promise<WorkspaceGroupView[]> {
     await this.initializeStore();
-    return this.groupManager!.loadGroups();
+    const collapsed = this.uiState!.getCollapsedGroups();
+    return this.groupManager!.loadGroups().map((group) => ({
+      ...group,
+      collapsed: collapsed[group.id] === true,
+    }));
   }
 
   public async createGroup(
@@ -286,12 +259,13 @@ export class WorkspaceService {
     color?: string,
     parentGroupId?: string,
     workspaceId?: string
-  ): Promise<WorkspaceGroup> {
+  ): Promise<WorkspaceGroupView> {
     await this.initializeStore();
-    return this.groupManager!.createGroup(name, color, parentGroupId, workspaceId);
+    const group = this.groupManager!.createGroup(name, color, parentGroupId, workspaceId);
+    return { ...group, collapsed: false };
   }
 
-  public async updateGroup(id: string, updates: Partial<WorkspaceGroup>): Promise<void> {
+  public async updateGroup(id: string, updates: WorkspaceGroupUpdate): Promise<void> {
     await this.initializeStore();
     this.groupManager!.updateGroup(id, updates);
   }
@@ -300,11 +274,13 @@ export class WorkspaceService {
     await this.initializeStore();
     const items = this.itemManager!.loadItems();
     this.groupManager!.deleteGroup(id, deleteItems, items);
+    this.pruneUiState();
   }
 
+  /** グループの折りたたみ（UI 状態。データファイルには書かない） */
   public async setGroupsCollapsed(ids: string[], collapsed: boolean): Promise<void> {
     await this.initializeStore();
-    this.groupManager!.setGroupsCollapsed(ids, collapsed);
+    this.uiState!.setGroupsCollapsed(ids, collapsed);
   }
 
   public async reorderGroups(groupIds: string[]): Promise<void> {
@@ -364,49 +340,47 @@ export class WorkspaceService {
 
   public async moveItemToWorkspace(itemId: string, targetWorkspaceId: string): Promise<void> {
     await this.initializeStore();
-    const items = this.store!.get('items') || [];
+    const items = this.store!.get('items');
     const item = items.find((i) => i.id === itemId);
     if (item) {
       item.workspaceId = targetWorkspaceId;
-      // グループから削除（移動先ワークスペースにはグループが存在しないため）
-      item.groupId = undefined;
-      setStoredItems(this.store!, items);
+      // グループから外す（移動先ワークスペースにはそのグループが存在しないため）
+      delete item.groupId;
+      this.store!.set('items', items);
       logger.info({ itemId, targetWorkspaceId }, 'Moved item to workspace');
       return;
     }
 
-    // アーカイブストアから復元してワークスペースに移動
+    // アーカイブから復元してワークスペースに移動
     this.archiveManager!.restoreItemToWorkspace(itemId, targetWorkspaceId, items);
   }
 
   public async moveGroupToWorkspace(groupId: string, targetWorkspaceId: string): Promise<void> {
     await this.initializeStore();
-    const groups = this.store!.get('groups') || [];
-    const items = this.store!.get('items') || [];
+    const groups = this.store!.get('groups');
+    const items = this.store!.get('items');
 
     // メインストアにグループが存在する場合
     if (groups.some((g) => g.id === groupId)) {
       const allGroupIds = new Set([groupId, ...getDescendantGroupIds(groupId, groups)]);
 
-      // グループの workspaceId を更新（トップレベルグループは parentGroupId を解除）
-      for (const group of groups) {
-        if (allGroupIds.has(group.id)) {
-          group.workspaceId = targetWorkspaceId;
-          if (group.id === groupId) {
-            group.parentGroupId = undefined;
+      this.store!.update((main) => {
+        // グループの workspaceId を更新（トップレベルグループは parentGroupId を解除）
+        for (const group of main.groups) {
+          if (allGroupIds.has(group.id)) {
+            group.workspaceId = targetWorkspaceId;
+            if (group.id === groupId) {
+              delete group.parentGroupId;
+            }
           }
         }
-      }
-
-      // 所属アイテムの workspaceId を更新
-      for (const item of items) {
-        if (item.groupId && allGroupIds.has(item.groupId)) {
-          item.workspaceId = targetWorkspaceId;
+        // 所属アイテムの workspaceId を更新
+        for (const item of main.items) {
+          if (item.groupId && allGroupIds.has(item.groupId)) {
+            item.workspaceId = targetWorkspaceId;
+          }
         }
-      }
-
-      this.store!.set('groups', groups);
-      setStoredItems(this.store!, items);
+      });
       logger.info(
         { groupId, targetWorkspaceId, groupCount: allGroupIds.size },
         'Moved group to workspace'
@@ -414,7 +388,7 @@ export class WorkspaceService {
       return;
     }
 
-    // アーカイブストアから復元して移動
+    // アーカイブから復元して移動
     this.archiveManager!.restoreGroup(groupId, groups, items, { targetWorkspaceId });
     logger.info({ groupId, targetWorkspaceId }, 'Moved archived group to workspace');
   }
@@ -426,6 +400,7 @@ export class WorkspaceService {
     const groups = this.groupManager!.loadGroups();
     const items = this.itemManager!.loadItems();
     this.archiveManager!.archiveGroup(groupId, groups, items);
+    this.pruneUiState();
   }
 
   public async loadArchivedGroups(): Promise<ArchivedWorkspaceGroup[]> {
@@ -448,59 +423,54 @@ export class WorkspaceService {
   public async deleteArchivedGroup(groupId: string): Promise<void> {
     await this.initializeStore();
     this.archiveManager!.deleteArchivedGroup(groupId);
+    this.pruneUiState();
   }
 
-  // --- 切り離しウィンドウ状態管理 ---
+  // --- 切り離しウィンドウ状態管理（UI 状態） ---
 
   public async loadDetachedWindowState(rootGroupId: string): Promise<DetachedWindowState | null> {
     await this.initializeStore();
-    const windows = this.detachedStore!.get('windows');
-    return windows[rootGroupId] || null;
-  }
-
-  private async updateDetachedWindowState(
-    rootGroupId: string,
-    updates: Partial<DetachedWindowState>
-  ): Promise<void> {
-    await this.initializeStore();
-    const windows = this.detachedStore!.get('windows');
-    const defaultState: DetachedWindowState = {
-      collapsedStates: {},
-      bounds: { x: 0, y: 0, width: 380, height: 200 },
-    };
-    windows[rootGroupId] = { ...(windows[rootGroupId] || defaultState), ...updates };
-    this.detachedStore!.set('windows', windows);
+    return this.uiState!.getDetached(rootGroupId);
   }
 
   public async saveDetachedCollapsedStates(
     rootGroupId: string,
     states: Record<string, boolean>
   ): Promise<void> {
-    await this.updateDetachedWindowState(rootGroupId, { collapsedStates: states });
+    await this.initializeStore();
+    this.uiState!.updateDetached(rootGroupId, { collapsedStates: states });
   }
 
   public async saveDetachedBounds(
     rootGroupId: string,
-    bounds: { x: number; y: number; width: number; height: number }
+    bounds: DetachedWindowState['bounds']
   ): Promise<void> {
-    await this.updateDetachedWindowState(rootGroupId, { bounds });
+    await this.initializeStore();
+    this.uiState!.updateDetached(rootGroupId, { bounds });
   }
 
   public async saveDetachedPinMode(rootGroupId: string, pinMode: 0 | 1 | 2): Promise<void> {
-    await this.updateDetachedWindowState(rootGroupId, { pinMode });
+    await this.initializeStore();
+    this.uiState!.updateDetached(rootGroupId, { pinMode });
   }
 
   public async removeDetachedWindowState(rootGroupId: string): Promise<void> {
     await this.initializeStore();
-    const windows = this.detachedStore!.get('windows');
-    delete windows[rootGroupId];
-    this.detachedStore!.set('windows', windows);
+    this.uiState!.removeDetached(rootGroupId);
   }
 
   public async loadOpenDetachedGroupIds(): Promise<string[]> {
     await this.initializeStore();
-    const windows = this.detachedStore!.get('windows');
-    return Object.keys(windows);
+    return this.uiState!.listDetachedGroupIds();
+  }
+
+  /** 存在しなくなったグループの UI 状態を捨てる */
+  private pruneUiState(): void {
+    const groupIds = new Set([
+      ...this.store!.get('groups').map((g) => g.id),
+      ...this.store!.archiveStore.get('groups').map((g) => g.id),
+    ]);
+    this.uiState!.pruneMissingGroups(groupIds);
   }
 }
 

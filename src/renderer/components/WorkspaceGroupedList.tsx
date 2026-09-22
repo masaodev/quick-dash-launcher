@@ -3,13 +3,15 @@ import type {
   AppItem,
   Workspace,
   WorkspaceItem,
-  WorkspaceGroup,
+  WorkspaceGroupView,
+  WorkspaceGroupUpdate,
   MixedChild,
   MixedOrderEntry,
   GroupDropZone,
 } from '@common/types';
 import { PathUtils } from '@common/utils/pathUtils';
 import { resolveGroupColorCss } from '@common/groupColors';
+import { describeWorkspaceItem } from '@common/utils/workspaceConverters';
 import {
   canCreateSubgroup,
   getSubtreeMaxDepth,
@@ -63,7 +65,7 @@ interface WorkspaceGroupedListProps {
   contentRef?: React.Ref<HTMLDivElement>;
   workspaces?: Workspace[];
   data: {
-    groups: WorkspaceGroup[];
+    groups: WorkspaceGroupView[];
     items: WorkspaceItem[];
   };
   handlers: {
@@ -72,7 +74,7 @@ interface WorkspaceGroupedListProps {
     onUpdateDisplayName: (id: string, displayName: string) => void;
     onEditItem: (item: WorkspaceItem) => void;
     onToggleGroup: (groupId: string) => void;
-    onUpdateGroup: (groupId: string, updates: Partial<WorkspaceGroup>) => void;
+    onUpdateGroup: (groupId: string, updates: WorkspaceGroupUpdate) => void;
     onDeleteGroup: (groupId: string) => void;
     onArchiveGroup: (groupId: string) => void;
     onAddSubgroup: (parentGroupId: string, subgroupCount: number) => void;
@@ -166,6 +168,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
       pathType: 'item' | 'parent',
       useOriginalPath = false
     ) => {
+      if (item.type !== 'item') return;
       const basePath = useOriginalPath ? item.originalPath : item.path;
       if (!basePath) return;
 
@@ -249,7 +252,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
           /* eslint-disable no-irregular-whitespace */
           groupItems.forEach((item, index) => {
             text += `　■${item.displayName}\r\n`;
-            text += `　　${item.path}\r\n`;
+            text += `　　${describeWorkspaceItem(item)}\r\n`;
             if (index < groupItems.length - 1) {
               text += '\r\n';
             }
@@ -601,7 +604,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     window.electronAPI.showWorkspaceContextMenu(item, groups, workspaces);
   };
 
-  const handleGroupContextMenu = (group: WorkspaceGroup) => (e: React.MouseEvent) => {
+  const handleGroupContextMenu = (group: WorkspaceGroupView) => (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     const canAdd = canCreateSubgroup(group.id, groups);
@@ -620,8 +623,8 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
 
   /** 子ノードのマップ（renderGroupNode内でサブグループ再帰用） */
   const childNodeMap = React.useMemo(() => {
-    const map = new Map<string, GroupTreeNode>();
-    const buildMap = (nodes: GroupTreeNode[]) => {
+    const map = new Map<string, GroupTreeNode<WorkspaceGroupView>>();
+    const buildMap = (nodes: GroupTreeNode<WorkspaceGroupView>[]) => {
       for (const node of nodes) {
         map.set(node.group.id, node);
         buildMap(node.children);
@@ -632,7 +635,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
   }, [groupTree]);
 
   /** 再帰的にグループツリーノードをレンダリング（混在表示対応） */
-  const renderGroupNode = (node: GroupTreeNode): React.ReactNode => {
+  const renderGroupNode = (node: GroupTreeNode<WorkspaceGroupView>): React.ReactNode => {
     if (visibleGroupIds && !visibleGroupIds.has(node.group.id)) {
       return null;
     }

@@ -15,8 +15,8 @@ function makeGroup(overrides: Partial<WorkspaceGroup> & { id: string }): Workspa
     displayName: overrides.id,
     color: 'primary',
     order: 0,
-    collapsed: false,
     createdAt: Date.now(),
+    workspaceId: 'wsAAAAA1',
     ...overrides,
   };
 }

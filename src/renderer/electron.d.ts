@@ -15,7 +15,11 @@ import {
   BrowserInfo,
   Workspace,
   WorkspaceItem,
+  WorkspaceItemUpdate,
   WorkspaceGroup,
+  WorkspaceGroupUpdate,
+  WorkspaceGroupView,
+  DetachedWindowState,
   ArchivedWorkspaceGroup,
   ArchivedWorkspaceItem,
   WindowInfo,
@@ -223,18 +227,18 @@ export interface ElectronAPI {
     ) => Promise<WorkspaceItem[]>;
     removeItem: (id: string) => Promise<{ success: boolean }>;
     updateDisplayName: (id: string, displayName: string) => Promise<{ success: boolean }>;
-    updateItem: (id: string, updates: Partial<WorkspaceItem>) => Promise<{ success: boolean }>;
+    updateItem: (id: string, updates: WorkspaceItemUpdate) => Promise<{ success: boolean }>;
     reorderItems: (itemIds: string[]) => Promise<{ success: boolean }>;
     launchItem: (item: WorkspaceItem) => Promise<{ success: boolean }>;
     // グループ管理
-    loadGroups: () => Promise<WorkspaceGroup[]>;
+    loadGroups: () => Promise<WorkspaceGroupView[]>;
     createGroup: (
       name: string,
       color?: string,
       parentGroupId?: string,
       workspaceId?: string
-    ) => Promise<WorkspaceGroup>;
-    updateGroup: (id: string, updates: Partial<WorkspaceGroup>) => Promise<{ success: boolean }>;
+    ) => Promise<WorkspaceGroupView>;
+    updateGroup: (id: string, updates: WorkspaceGroupUpdate) => Promise<{ success: boolean }>;
     deleteGroup: (id: string, deleteItems: boolean) => Promise<{ success: boolean }>;
     reorderGroups: (groupIds: string[]) => Promise<{ success: boolean }>;
     reorderMixed: (
@@ -293,10 +297,7 @@ export interface ElectronAPI {
     resizeCallerWindow: (width: number, height: number) => Promise<boolean>;
     setCallerBounds: (x: number, y: number, width: number, height: number) => Promise<boolean>;
     // 切り離しウィンドウ状態永続化
-    loadDetachedState: (rootGroupId: string) => Promise<{
-      collapsedStates: Record<string, boolean>;
-      bounds: { x: number; y: number; width: number; height: number };
-    } | null>;
+    loadDetachedState: (rootGroupId: string) => Promise<DetachedWindowState | null>;
     saveDetachedCollapsed: (
       rootGroupId: string,
       states: Record<string, boolean>

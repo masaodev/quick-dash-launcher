@@ -1,8 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { WorkspaceItem, WindowConfig, RegisterItem, LayoutWindowEntry } from '@common/types';
+import type {
+  WorkspaceItem,
+  WorkspaceItemUpdate,
+  WindowConfig,
+  RegisterItem,
+  LayoutWindowEntry,
+} from '@common/types';
 import {
-  convertWorkspaceItemToRegisterItem,
-  convertRegisterItemToWorkspaceItemUpdate,
+  workspaceItemToRegisterItem,
+  registerItemToWorkspaceItemUpdate,
 } from '@common/utils/workspaceConverters';
 import { detectItemType } from '@common/utils/itemTypeDetector';
 
@@ -22,7 +28,7 @@ export function useWorkspaceItemEditForm(
   editingItem: WorkspaceItem | null,
   loadCustomIconPreview: (index: number, customIconFileName: string) => Promise<void>,
   onClose: () => void,
-  onSave: (id: string, updates: Partial<WorkspaceItem>) => Promise<void>
+  onSave: (id: string, updates: WorkspaceItemUpdate) => Promise<void>
 ) {
   const [item, setItem] = useState<RegisterItem | null>(null);
   const [loading, setLoading] = useState(false);
@@ -49,11 +55,11 @@ export function useWorkspaceItemEditForm(
 
     if (editingItem) {
       setLoading(true);
-      const registerItem = convertWorkspaceItemToRegisterItem(editingItem);
+      const registerItem = workspaceItemToRegisterItem(editingItem);
       setItem(registerItem);
 
-      if (editingItem.customIcon) {
-        loadCustomIconPreview(0, editingItem.customIcon).catch((err) => {
+      if (registerItem.customIcon) {
+        loadCustomIconPreview(0, registerItem.customIcon).catch((err) => {
           logError('Failed to load custom icon preview:', err);
         });
       }
@@ -191,7 +197,7 @@ export function useWorkspaceItemEditForm(
     if (!validate()) return;
 
     try {
-      const updates = convertRegisterItemToWorkspaceItemUpdate(item);
+      const updates = registerItemToWorkspaceItemUpdate(item);
       await onSave(editingItem.id, updates);
       onClose();
     } catch (error) {

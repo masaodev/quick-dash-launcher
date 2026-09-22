@@ -11,9 +11,9 @@ export const MAX_GROUP_DEPTH = 2;
  * ツリー構造のノード型
  * WorkspaceGroupにchildren情報を付加したもの
  */
-export interface GroupTreeNode {
-  group: WorkspaceGroup;
-  children: GroupTreeNode[];
+export interface GroupTreeNode<G extends WorkspaceGroup = WorkspaceGroup> {
+  group: G;
+  children: GroupTreeNode<G>[];
   depth: number;
 }
 
@@ -113,10 +113,10 @@ export function getAncestorGroupIds(groupId: string, groups: WorkspaceGroup[]): 
  * @param groups 全グループ配列
  * @returns トップレベルのGroupTreeNode配列
  */
-export function buildGroupTree(groups: WorkspaceGroup[]): GroupTreeNode[] {
+export function buildGroupTree<G extends WorkspaceGroup>(groups: G[]): GroupTreeNode<G>[] {
   const sortedGroups = [...groups].sort((a, b) => a.order - b.order);
 
-  function buildChildren(parentId: string | undefined, depth: number): GroupTreeNode[] {
+  function buildChildren(parentId: string | undefined, depth: number): GroupTreeNode<G>[] {
     return sortedGroups
       .filter((g) => g.parentGroupId === parentId)
       .map((g) => ({
@@ -134,7 +134,9 @@ export function buildGroupTree(groups: WorkspaceGroup[]): GroupTreeNode[] {
  * @param nodes ツリーノード配列
  * @returns 平坦化されたノード配列
  */
-export function flattenGroupTree(nodes: GroupTreeNode[]): GroupTreeNode[] {
+export function flattenGroupTree<G extends WorkspaceGroup>(
+  nodes: GroupTreeNode<G>[]
+): GroupTreeNode<G>[] {
   return nodes.flatMap((node) => [node, ...flattenGroupTree(node.children)]);
 }
 
@@ -151,16 +153,16 @@ function getMixedChildOrder(child: MixedChild): number {
  * @param groupItems 親グループ直属のアイテム配列（呼び出し元でフィルタ済み）
  * @returns MixedChild配列（order順）
  */
-export function getMixedChildren(
+export function getMixedChildren<G extends WorkspaceGroup>(
   parentGroupId: string,
-  groups: WorkspaceGroup[],
+  groups: G[],
   groupItems: WorkspaceItem[]
-): MixedChild[] {
+): MixedChild<G>[] {
   const subgroups = groups.filter((g) => g.parentGroupId === parentGroupId);
 
-  const mixed: MixedChild[] = [
-    ...subgroups.map((group): MixedChild => ({ kind: 'group', group })),
-    ...groupItems.map((item): MixedChild => ({ kind: 'item', item })),
+  const mixed: MixedChild<G>[] = [
+    ...subgroups.map((group): MixedChild<G> => ({ kind: 'group', group })),
+    ...groupItems.map((item): MixedChild<G> => ({ kind: 'item', item })),
   ];
 
   // order順にソート。同一orderではグループを先に（既存表示順序を維持 = 後方互換）
