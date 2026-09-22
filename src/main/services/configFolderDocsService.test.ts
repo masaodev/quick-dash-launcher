@@ -5,6 +5,10 @@ import * as path from 'path';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Ajv } from 'ajv';
 import { parseJsonDataFileLenient } from '@common/utils/jsonParser';
+import {
+  createWorkspaceParseContext,
+  parseWorkspaceFileLenient,
+} from '@common/utils/workspaceParser';
 
 const tempRoot = vi.hoisted(() => ({ dir: '' }));
 const ASSETS_DIR = path.join(process.cwd(), 'assets');
@@ -96,8 +100,9 @@ describe('configFolderDocsService', () => {
       appVersion: '9.9.9',
     });
 
-    it('150 行以内であること（要約ではなく作業指示に留める）', () => {
-      expect(template.split('\n').length).toBeLessThanOrEqual(150);
+    it('180 行以内であること（要約ではなく作業指示に留める）', () => {
+      // データファイル・settings・ワークスペースの 3 種を最小例付きで説明してこの長さ
+      expect(template.split('\n').length).toBeLessThanOrEqual(180);
     });
 
     it('生成の断り書きに版と設定フォルダが入り、プレースホルダが残らないこと', () => {
@@ -122,15 +127,19 @@ describe('configFolderDocsService', () => {
       expect(rendered).toContain('F5');
     });
 
-    it('JSON の例が同梱スキーマに通り、寛容パースでも問題なしになること', () => {
-      const match = rendered.match(/```json\n([\s\S]*?)\n```/);
-      expect(match, 'README に ```json ブロックがありません').not.toBeNull();
-      const example = match![1];
+    /** README 内の ```json ブロックを順に取り出す（1 つ目: データファイル、2 つ目: ワークスペース） */
+    const jsonBlocks = [...rendered.matchAll(/```json\n([\s\S]*?)\n```/g)].map((m) => m[1]);
 
-      const schema = JSON.parse(
-        fs.readFileSync(path.join(ASSETS_DIR, 'schemas', 'data.schema.json'), 'utf8')
+    const compileSchema = (name: string) =>
+      new Ajv({ allErrors: true, strict: true }).compile(
+        JSON.parse(fs.readFileSync(path.join(ASSETS_DIR, 'schemas', name), 'utf8'))
       );
-      const validate = new Ajv({ allErrors: true, strict: true }).compile(schema);
+
+    it('データファイルの JSON の例が同梱スキーマに通り、寛容パースでも問題なしになること', () => {
+      expect(jsonBlocks.length, 'README に ```json ブロックがありません').toBeGreaterThanOrEqual(1);
+      const example = jsonBlocks[0];
+
+      const validate = compileSchema('data.schema.json');
       expect(validate(JSON.parse(example)), JSON.stringify(validate.errors, null, 2)).toBe(true);
 
       const lenient = parseJsonDataFileLenient(example);
@@ -143,6 +152,22 @@ describe('configFolderDocsService', () => {
         'group',
         'window',
       ]);
+    });
+
+    it('ワークスペースの JSON の例が同梱スキーマに通り、寛容パースでも問題なしになること', () => {
+      expect(
+        jsonBlocks.length,
+        'ワークスペースの ```json ブロックがありません'
+      ).toBeGreaterThanOrEqual(2);
+      const example = jsonBlocks[1];
+
+      const validate = compileSchema('workspace.schema.json');
+      expect(validate(JSON.parse(example)), JSON.stringify(validate.errors, null, 2)).toBe(true);
+
+      const lenient = parseWorkspaceFileLenient(example, createWorkspaceParseContext());
+      expect(lenient.issues).toEqual([]);
+      expect(lenient.modified).toBe(false);
+      expect(lenient.data.items.map((i) => i.type)).toEqual(['item']);
     });
   });
 

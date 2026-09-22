@@ -1,0 +1,31 @@
+{
+	"groups": [
+		{
+			"id": "arch-group-0000-0000-000000000001",
+			"displayName": "昔の",
+			"color": "#ff5722",
+			"order": 0,
+			"collapsed": false,
+			"createdAt": 1700000000000,
+			"workspaceId": "default",
+			"archivedAt": 1700000000000,
+			"originalOrder": 2,
+			"itemCount": 1
+		}
+	],
+	"items": [
+		{
+			"id": "arch-item-0000-0000-000000000001",
+			"displayName": "Old",
+			"originalName": "Old",
+			"path": "https://old.example.com/",
+			"type": "url",
+			"order": 0,
+			"addedAt": 1700000000000,
+			"groupId": "arch-group-0000-0000-000000000001",
+			"workspaceId": "default",
+			"archivedAt": 1700000000000,
+			"archivedGroupId": "arch-group-0000-0000-000000000001"
+		}
+	]
+}

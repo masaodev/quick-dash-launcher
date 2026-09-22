@@ -47,7 +47,12 @@ test.describe('QuickDashLauncher - AI 編集支援ファイルの配置', () => 
     });
 
     await test.step('schemas/ に同梱スキーマがそのままコピーされる', async () => {
-      for (const name of ['data.schema.json', 'settings.schema.json']) {
+      for (const name of [
+        'data.schema.json',
+        'settings.schema.json',
+        'workspace.schema.json',
+        'workspace-archive.schema.json',
+      ]) {
         const copied = path.join(configDir, 'schemas', name);
         expect(fs.existsSync(copied), `${name} がありません`).toBe(true);
         expect(fs.readFileSync(copied, 'utf8')).toBe(

@@ -5,6 +5,7 @@ QuickDashLauncherでは、統一されたデザインシステムを実現する
 ## 概要
 
 ### 設計原則
+
 - **統一性**: 全てのUIコンポーネントで一貫したスタイルを使用
 - **保守性**: 色やサイズの変更を一箇所で管理
 - **拡張性**: 新しいコンポーネントを簡単にデザインシステムに統合
@@ -53,86 +54,109 @@ src/renderer/styles/
 ### 1. カラーパレット
 
 #### 基本色
+
 ```css
---color-primary: #0078d4;           /* メインカラー */
+--color-primary: #0078d4; /* メインカラー */
 --color-primary-50: rgba(0, 120, 212, 0.1); /* プライマリ薄色（選択状態等） */
---color-primary-hover: #106ebe;     /* プライマリホバー */
---color-primary-dark: #1976d2;      /* プライマリダーク */
+--color-primary-hover: #106ebe; /* プライマリホバー */
+--color-primary-dark: #1976d2; /* プライマリダーク */
 
---color-success: #28a745;           /* 成功・確定 */
---color-success-hover: #218838;     /* 成功ホバー */
+--color-success: #28a745; /* 成功・確定 */
+--color-success-hover: #218838; /* 成功ホバー */
 
---color-danger: #dc3545;            /* 危険・削除 */
---color-danger-hover: #c82333;      /* 危険ホバー */
---color-danger-alt: #ff4757;        /* 危険代替色 */
---color-danger-alt-hover: #ff5252;  /* 危険代替色ホバー */
+--color-danger: #dc3545; /* 危険・削除 */
+--color-danger-hover: #c82333; /* 危険ホバー */
+--color-danger-alt: #ff4757; /* 危険代替色 */
+--color-danger-alt-hover: #ff5252; /* 危険代替色ホバー */
 
---color-warning: #ffc107;           /* 警告 */
+--color-warning: #ffc107; /* 警告 */
 
---color-info: #2196f3;              /* 情報 */
---color-info-hover: #1976d2;        /* 情報ホバー */
---color-info-light: #42a5f5;        /* 情報ライト */
+--color-info: #2196f3; /* 情報 */
+--color-info-hover: #1976d2; /* 情報ホバー */
+--color-info-light: #42a5f5; /* 情報ライト */
 
---color-secondary: #6c757d;         /* セカンダリ */
---color-secondary-hover: #5a6268;   /* セカンダリホバー */
+--color-secondary: #6c757d; /* セカンダリ */
+--color-secondary-hover: #5a6268; /* セカンダリホバー */
+```
+
+#### ワークスペースグループの色トークン
+
+`workspace.json`の`groups[].color`に保存される色トークン（`primary`/`success`/`danger`/`warning`/`info`/`secondary`はテーマ色を参照、それ以外は固有色）。トークン→CSS変数の解決は`src/common/groupColors.ts`の`resolveGroupColorCss()`が行う。
+
+```css
+--group-color-primary: var(--color-primary);
+--group-color-success: var(--color-success);
+--group-color-danger: var(--color-danger);
+--group-color-warning: var(--color-warning);
+--group-color-info: var(--color-info);
+--group-color-secondary: var(--color-secondary);
+--group-color-purple: #9c27b0;
+--group-color-teal: #00897b;
+--group-color-pink: #e91e63;
+--group-color-indigo: #3f51b5;
+--group-color-orange: #ff5722;
+--group-color-cyan: #00bcd4;
 ```
 
 #### グレースケール
+
 ```css
 --color-white: #ffffff;
---color-gray-50: #fafafa;           /* 最も薄いグレー */
---color-gray-100: #f8f8f8;          /* 極薄グレー */
---color-gray-200: #f5f5f5;          /* 薄グレー */
---color-gray-300: #f0f0f0;          /* ライトグレー */
---color-gray-400: #e0e0e0;          /* ミディアムグレー */
---color-gray-500: #ccc;             /* グレー */
---color-gray-600: #999;             /* ダークグレー */
---color-gray-700: #666;             /* より濃いグレー */
---color-gray-800: #555;             /* 濃いグレー */
---color-gray-900: #333;             /* 最も濃いグレー */
+--color-gray-50: #fafafa; /* 最も薄いグレー */
+--color-gray-100: #f8f8f8; /* 極薄グレー */
+--color-gray-200: #f5f5f5; /* 薄グレー */
+--color-gray-300: #f0f0f0; /* ライトグレー */
+--color-gray-400: #e0e0e0; /* ミディアムグレー */
+--color-gray-500: #ccc; /* グレー */
+--color-gray-600: #999; /* ダークグレー */
+--color-gray-700: #666; /* より濃いグレー */
+--color-gray-800: #555; /* 濃いグレー */
+--color-gray-900: #333; /* 最も濃いグレー */
 ```
 
 #### 背景色
+
 ```css
---bg-body: #f0f0f0;                 /* ページ全体の背景 */
---bg-app: #ffffff;                  /* アプリケーション背景 */
---bg-header: #f8f8f8;               /* ヘッダー背景 */
---bg-section: #f9f9f9;              /* セクション背景 */
---bg-selected: #e7f3ff;             /* 選択状態 */
---bg-hover: #f0f0f0;                /* ホバー状態 */
---bg-input-disabled: #f5f5f5;       /* 無効化入力フィールド */
---bg-edited: #fff3cd;               /* 編集済みの行 */
---bg-readonly: #f5f5f5;             /* 読み取り専用 */
---bg-warning-light: #fff3cd;        /* 警告（薄） */
---bg-danger-light: #fff5f5;         /* 危険（薄） */
---bg-success-light: #e8f5e9;        /* 成功（薄） */
---bg-info-light: #e3f2fd;           /* 情報（薄） */
---bg-table-container: #fafafa;      /* テーブルコンテナ */
+--bg-body: #f0f0f0; /* ページ全体の背景 */
+--bg-app: #ffffff; /* アプリケーション背景 */
+--bg-header: #f8f8f8; /* ヘッダー背景 */
+--bg-section: #f9f9f9; /* セクション背景 */
+--bg-selected: #e7f3ff; /* 選択状態 */
+--bg-hover: #f0f0f0; /* ホバー状態 */
+--bg-input-disabled: #f5f5f5; /* 無効化入力フィールド */
+--bg-edited: #fff3cd; /* 編集済みの行 */
+--bg-readonly: #f5f5f5; /* 読み取り専用 */
+--bg-warning-light: #fff3cd; /* 警告（薄） */
+--bg-danger-light: #fff5f5; /* 危険（薄） */
+--bg-success-light: #e8f5e9; /* 成功（薄） */
+--bg-info-light: #e3f2fd; /* 情報（薄） */
+--bg-table-container: #fafafa; /* テーブルコンテナ */
 ```
 
 #### テキストカラー
+
 ```css
---text-primary: #333;               /* メインテキスト */
---text-secondary: #555;             /* サブテキスト */
---text-muted: #666;                 /* 補助テキスト */
---text-disabled: #999;              /* 無効化テキスト */
---text-error: #e74c3c;              /* エラーメッセージ */
---text-success: #388e3c;            /* 成功テキスト */
---text-info: #6c757d;               /* 情報テキスト */
---text-light-hover: #ffe6e6;        /* 危険ホバー時のライトテキスト */
+--text-primary: #333; /* メインテキスト */
+--text-secondary: #555; /* サブテキスト */
+--text-muted: #666; /* 補助テキスト */
+--text-disabled: #999; /* 無効化テキスト */
+--text-error: #e74c3c; /* エラーメッセージ */
+--text-success: #388e3c; /* 成功テキスト */
+--text-info: #6c757d; /* 情報テキスト */
+--text-light-hover: #ffe6e6; /* 危険ホバー時のライトテキスト */
 ```
 
 ### 2. スペーシング
 
 ```css
---spacing-xxs: 1px;                 /* 極小間隔 */
---spacing-xs: 4px;                  /* 最小間隔 */
---spacing-sm: 8px;                  /* 小間隔 */
---spacing-md: 12px;                 /* 中間隔 */
---spacing-lg: 16px;                 /* 大間隔 */
---spacing-xl: 20px;                 /* 特大間隔 */
---spacing-2xl: 24px;                /* 超大間隔 */
---spacing-3xl: 32px;                /* 最大間隔 */
+--spacing-xxs: 1px; /* 極小間隔 */
+--spacing-xs: 4px; /* 最小間隔 */
+--spacing-sm: 8px; /* 小間隔 */
+--spacing-md: 12px; /* 中間隔 */
+--spacing-lg: 16px; /* 大間隔 */
+--spacing-xl: 20px; /* 特大間隔 */
+--spacing-2xl: 24px; /* 超大間隔 */
+--spacing-3xl: 32px; /* 最大間隔 */
 ```
 
 ### 3. タイポグラフィ
@@ -141,77 +165,77 @@ src/renderer/styles/
 --font-family: 'Meiryo', 'メイリオ', sans-serif;
 --font-family-mono: monospace;
 
---font-size-xxs: 10px;              /* 最小フォント */
---font-size-xs: 11px;               /* 極小フォント */
---font-size-sm: 12px;               /* 小フォント */
---font-size-base: 14px;             /* 基本フォント */
---font-size-lg: 15px;               /* 大フォント */
---font-size-xl: 16px;               /* 特大フォント */
---font-size-2xl: 18px;              /* 見出し小 */
---font-size-3xl: 20px;              /* 見出し大 */
+--font-size-xxs: 10px; /* 最小フォント */
+--font-size-xs: 11px; /* 極小フォント */
+--font-size-sm: 12px; /* 小フォント */
+--font-size-base: 14px; /* 基本フォント */
+--font-size-lg: 15px; /* 大フォント */
+--font-size-xl: 16px; /* 特大フォント */
+--font-size-2xl: 18px; /* 見出し小 */
+--font-size-3xl: 20px; /* 見出し大 */
 
---line-height-tight: 1;             /* 密な行間 */
---line-height-normal: 1.4;          /* 通常の行間 */
---line-height-relaxed: 1.6;         /* ゆったりした行間 */
+--line-height-tight: 1; /* 密な行間 */
+--line-height-normal: 1.4; /* 通常の行間 */
+--line-height-relaxed: 1.6; /* ゆったりした行間 */
 ```
 
 ### 4. ボーダー・角丸
 
 ```css
---border-light: 1px solid #e0e0e0;  /* 薄ボーダー */
---border-normal: 1px solid #ccc;    /* 通常ボーダー */
---border-dark: 1px solid #999;      /* 濃ボーダー */
+--border-light: 1px solid #e0e0e0; /* 薄ボーダー */
+--border-normal: 1px solid #ccc; /* 通常ボーダー */
+--border-dark: 1px solid #999; /* 濃ボーダー */
 --border-primary: 1px solid var(--color-primary); /* プライマリボーダー */
---border-danger: 1px solid var(--color-danger);   /* 危険ボーダー */
+--border-danger: 1px solid var(--color-danger); /* 危険ボーダー */
 
---border-radius-sm: 3px;            /* 小角丸 */
---border-radius: 4px;               /* 標準角丸 */
---border-radius-lg: 6px;            /* 大角丸 */
---border-radius-xl: 8px;            /* 特大角丸 */
+--border-radius-sm: 3px; /* 小角丸 */
+--border-radius: 4px; /* 標準角丸 */
+--border-radius-lg: 6px; /* 大角丸 */
+--border-radius-xl: 8px; /* 特大角丸 */
 ```
 
 ### 5. シャドウ・エフェクト
 
 ```css
---shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);      /* 軽いシャドウ */
---shadow: 0 2px 8px rgba(0, 0, 0, 0.15);        /* 通常シャドウ */
---shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.15);    /* 大シャドウ */
---shadow-xl: 0 4px 16px rgba(0, 0, 0, 0.2);     /* 特大シャドウ */
+--shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1); /* 軽いシャドウ */
+--shadow: 0 2px 8px rgba(0, 0, 0, 0.15); /* 通常シャドウ */
+--shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.15); /* 大シャドウ */
+--shadow-xl: 0 4px 16px rgba(0, 0, 0, 0.2); /* 特大シャドウ */
 
---focus-ring: 0 0 0 1px var(--color-primary);                /* フォーカスリング */
---focus-ring-wide: 0 0 0 2px rgba(0, 122, 204, 0.25);        /* 広いフォーカスリング */
---focus-ring-danger: 0 0 0 2px rgba(255, 107, 107, 0.25);    /* 危険フォーカスリング */
+--focus-ring: 0 0 0 1px var(--color-primary); /* フォーカスリング */
+--focus-ring-wide: 0 0 0 2px rgba(0, 122, 204, 0.25); /* 広いフォーカスリング */
+--focus-ring-danger: 0 0 0 2px rgba(255, 107, 107, 0.25); /* 危険フォーカスリング */
 --focus-ring-danger-wide: 0 0 0 4px rgba(255, 107, 107, 0.15); /* 広い危険フォーカスリング */
 
---transition-fast: all 0.1s;                     /* 高速トランジション */
---transition-normal: all 0.2s;                   /* 標準トランジション */
---transition-slow: all 0.3s;                     /* 低速トランジション */
---transition-width: width 0.3s ease;             /* 幅のトランジション */
+--transition-fast: all 0.1s; /* 高速トランジション */
+--transition-normal: all 0.2s; /* 標準トランジション */
+--transition-slow: all 0.3s; /* 低速トランジション */
+--transition-width: width 0.3s ease; /* 幅のトランジション */
 ```
 
 ### 6. Z-インデックス・寸法
 
 ```css
 /* Z-インデックス */
---z-dropdown: 1000;                 /* ドロップダウンメニュー */
---z-modal: 2000;                    /* モーダル */
+--z-dropdown: 1000; /* ドロップダウンメニュー */
+--z-modal: 2000; /* モーダル */
 
 /* 寸法 */
---input-height-lg: 40px;            /* メイン検索ボックスの高さ */
---input-height-sm: 34px;            /* その他のテキスト入力欄の高さ */
---input-height: 32px;               /* 入力フィールドの高さ（標準） */
---button-height: 32px;              /* ボタンの高さ */
---icon-size-sm: 24px;               /* 小アイコン */
---icon-size: 32px;                  /* 標準アイコン */
---scrollbar-width: 8px;             /* スクロールバーの幅 */
+--input-height-lg: 40px; /* メイン検索ボックスの高さ */
+--input-height-sm: 34px; /* その他のテキスト入力欄の高さ */
+--input-height: 32px; /* 入力フィールドの高さ（標準） */
+--button-height: 32px; /* ボタンの高さ */
+--icon-size-sm: 24px; /* 小アイコン */
+--icon-size: 32px; /* 標準アイコン */
+--scrollbar-width: 8px; /* スクロールバーの幅 */
 
 /* モーダル */
---modal-max-height: 90vh;           /* モーダルの最大高さ */
+--modal-max-height: 90vh; /* モーダルの最大高さ */
 
 /* メニュー・ドロップダウン */
---menu-width-min: 350px;            /* メニューの最小幅 */
---menu-width-max: 450px;            /* メニューの最大幅 */
---menu-max-height: 400px;           /* メニューの最大高さ */
+--menu-width-min: 350px; /* メニューの最小幅 */
+--menu-width-max: 450px; /* メニューの最大幅 */
+--menu-max-height: 400px; /* メニューの最大高さ */
 ```
 
 ## 共通ユーティリティクラス
@@ -221,7 +245,9 @@ src/renderer/styles/
 > **推奨**: モーダルのアクションボタンやフォームの送信ボタンには、[Buttonコンポーネント](ui-components.md#buttonコンポーネント)を使用してください。以下のクラスは特殊なケース（ツールバー、タブ等）向けです。
 
 #### .btn-base
+
 基本的なボタンスタイル（`common.css` で定義）。ボタンバリエーション（`.btn-primary` 等）および `.btn-sm` / `.btn-lg` は `Button.css` で定義。
+
 ```css
 .btn-base {
   padding: var(--spacing-sm) var(--spacing-lg);
@@ -240,10 +266,13 @@ src/renderer/styles/
 ```
 
 #### .btn-primary / .btn-danger / .btn-info / .btn-cancel
+
 状態別ボタンスタイル（`Button.css` で定義）
 
 #### .btn-sm / .btn-lg
+
 サイズバリエーション（`Button.css` で定義）
+
 ```css
 .btn-sm {
   padding: var(--spacing-xs) var(--spacing-md);
@@ -260,7 +289,9 @@ src/renderer/styles/
 **注意**: サイズバリエーションは `-sm` / `-lg` サフィックスで統一されています。`-small` や `-large` は使用しません。
 
 #### .action-btn
+
 32x32ピクセルの正方形アクションボタン（ヘッダーのアイコンボタン用）
+
 ```css
 .action-btn {
   width: var(--button-height);
@@ -282,7 +313,9 @@ src/renderer/styles/
 ### レイアウトクラス
 
 #### .flex-center
+
 中央配置フレックスボックス
+
 ```css
 .flex-center {
   display: flex;
@@ -292,7 +325,9 @@ src/renderer/styles/
 ```
 
 #### .flex-between
+
 両端配置フレックスボックス
+
 ```css
 .flex-between {
   display: flex;
@@ -304,7 +339,9 @@ src/renderer/styles/
 ### フォームクラス
 
 #### .input-base
+
 基本的な入力フィールドスタイル（`common.css` で定義）
+
 ```css
 .input-base {
   width: 100%;
@@ -321,7 +358,9 @@ src/renderer/styles/
 ```
 
 #### .select-base
+
 セレクトボックス用スタイル（`common.css` で定義）
+
 ```css
 .select-base {
   width: 100%;
@@ -336,7 +375,9 @@ src/renderer/styles/
 ```
 
 #### .form-group
+
 ラベル付きフォームグループ（`common.css` で定義）
+
 ```css
 .form-group {
   margin-bottom: var(--spacing-md);
@@ -344,6 +385,7 @@ src/renderer/styles/
 ```
 
 #### 検索ボックスパターン
+
 クリアボタン付き検索入力欄の共通パターン
 
 ```css
@@ -409,6 +451,7 @@ src/renderer/styles/
 ### 閉じる・削除ボタンクラス
 
 #### .close-btn
+
 モーダル閉じるボタンの共通スタイル（`common.css` で定義）
 
 ```css
@@ -432,15 +475,16 @@ src/renderer/styles/
 
 **用途別の実装例:**
 
-| ボタン種類 | クラス名 | 用途 | サイズ | 色 |
-|-----------|---------|------|--------|-----|
-| `.search-clear-button` | 検索クリアボタン | ヘッダー、編集モード、ブックマークインポートの検索欄 | 24x24px | グレー |
-| `.modal-close-btn` | モーダル閉じるボタン | アイコン取得進捗詳細モーダルのヘッダー | 32x32px | グレー |
-| `.progress-close-btn` | 進捗バー閉じるボタン | アイコン取得進捗バー | 28x28px | グレー |
-| `.workspace-item-delete-btn` | ワークスペース削除ボタン | ワークスペースアイテムカード | 24x24px | 赤色（削除系） |
-| `.remove-group-item-btn` | グループアイテム削除ボタン | 登録モーダルのグループアイテムチップ | 20x20px | 赤色（削除系） |
+| ボタン種類                   | クラス名                   | 用途                                                 | サイズ  | 色             |
+| ---------------------------- | -------------------------- | ---------------------------------------------------- | ------- | -------------- |
+| `.search-clear-button`       | 検索クリアボタン           | ヘッダー、編集モード、ブックマークインポートの検索欄 | 24x24px | グレー         |
+| `.modal-close-btn`           | モーダル閉じるボタン       | アイコン取得進捗詳細モーダルのヘッダー               | 32x32px | グレー         |
+| `.progress-close-btn`        | 進捗バー閉じるボタン       | アイコン取得進捗バー                                 | 28x28px | グレー         |
+| `.workspace-item-delete-btn` | ワークスペース削除ボタン   | ワークスペースアイテムカード                         | 24x24px | 赤色（削除系） |
+| `.remove-group-item-btn`     | グループアイテム削除ボタン | 登録モーダルのグループアイテムチップ                 | 20x20px | 赤色（削除系） |
 
 **共通の特徴:**
+
 - 丸いボタンデザイン（`border-radius: 50%`）
 - 太字の×で視認性向上（`font-weight: bold`）
 - ホバー時に背景色が変化してスケールアップ（`scale(1.1)`）
@@ -467,9 +511,7 @@ import '../styles/components/MyComponent.css';
 const MyComponent = () => {
   return (
     <div className="my-component">
-      <button className="btn-base btn-primary">
-        アクション
-      </button>
+      <button className="btn-base btn-primary">アクション</button>
     </div>
   );
 };
@@ -519,10 +561,10 @@ const MyComponent = () => {
   /* 新しいカラーバリエーション */
   --color-accent: #ff6b35;
   --color-accent-hover: #e55a2b;
-  
+
   /* 新しいスペーシング */
   --spacing-4xl: 48px;
-  
+
   /* 新しいフォントウェイト */
   --font-weight-medium: 500;
   --font-weight-bold: 700;
@@ -543,15 +585,18 @@ const MyComponent = () => {
 プロジェクト全体で以下の命名パターンに統一されています：
 
 **ボタンクラス**:
+
 - 基本形: `.btn-{variant}` （例: `.btn-primary`, `.btn-danger`）
 - サイズバリエーション: `.btn-{variant}-sm` または `.btn-{variant}-lg`
   - ✅ 正: `.btn-danger-sm`, `.btn-primary-lg`
   - ❌ 誤: `.btn-danger-small`, `.btn-primary-large`
 
 **アクションボタン**:
+
 - `.action-btn` : 32x32ピクセルの正方形アイコンボタン（メインウィンドウヘッダー用、`common.css` で定義）
 
 **コンポーネント要素**:
+
 - パターン: `.{component}-{element}` （例: `.modal-overlay`, `.item-icon`）
 - 状態クラス: `.{component}.{state}` （例: `.item.selected`, `.btn-primary.disabled`）
 
@@ -587,7 +632,7 @@ const MyComponent = () => {
 }
 
 /* ダークモード用（将来実装時） */
-[data-theme="dark"] {
+[data-theme='dark'] {
   --theme-bg-primary: #1a1a1a;
   --theme-text-primary: #ffffff;
 }

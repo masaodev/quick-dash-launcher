@@ -72,12 +72,16 @@ QuickDashLauncherのアーキテクチャ概要とデータフローを説明し
 
 `WorkspaceService`は単一責務の原則に従い、以下のマネージャーに分割されています（`src/main/services/workspace/`）:
 
-| クラス                    | 役割                                 |
-| ------------------------- | ------------------------------------ |
-| `WorkspaceItemManager`    | アイテムの追加・削除・更新・並び替え |
-| `WorkspaceGroupManager`   | グループの作成・更新・削除・並び替え |
-| `WorkspaceArchiveManager` | グループのアーカイブ・復元・削除     |
-| `WorkspaceService`        | 上記マネージャーを統合するファサード |
+| クラス                    | 役割                                                                                                                            |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `WorkspaceFileStore`      | `workspace.json`/`workspace-archive.json`の読み書き（寛容パース・楽観ロック・旧形式からの移行を担う。electron-storeは使わない） |
+| `WorkspaceUiStateStore`   | `workspace-ui-state.json`（グループ折りたたみ・切り離しウィンドウの位置/ピン留め）の読み書き                                    |
+| `WorkspaceItemManager`    | アイテムの追加・削除・更新・並び替え                                                                                            |
+| `WorkspaceGroupManager`   | グループの作成・更新・削除・並び替え                                                                                            |
+| `WorkspaceArchiveManager` | グループのアーカイブ・復元・削除                                                                                                |
+| `WorkspaceService`        | 上記マネージャーを統合するファサード                                                                                            |
+
+ファイル形式（`workspace.json`のversion "2.0"）の詳細は[ワークスペースファイル形式](file-formats/workspace-format.md)を参照。
 
 ---
 
@@ -148,40 +152,42 @@ IPCハンドラーは機能ごとに分離（`src/main/ipc/`）:
 
 プロセス間で共有されるユーティリティ（`src/common/utils/`）:
 
-| モジュール             | 役割                                                                              |
-| ---------------------- | --------------------------------------------------------------------------------- |
-| `directiveUtils.ts`    | ディレクティブ（group, dir, window）の判定と解析                                  |
-| `dataConverters.ts`    | データ形式変換（dirオプション解析等、v0.5.20で型定義を`types/register.ts`に移動） |
-| `windowConfigUtils.ts` | ウィンドウ設定のJSON⇔文字列変換                                                   |
-| `itemTypeDetector.ts`  | パスからアイテムタイプを自動検出                                                  |
-| `pathUtils.ts`         | パス操作の共通処理                                                                |
+| モジュール             | 役割                                                                                      |
+| ---------------------- | ----------------------------------------------------------------------------------------- |
+| `directiveUtils.ts`    | ディレクティブ（group, dir, window）の判定と解析                                          |
+| `dataConverters.ts`    | データ形式変換（dirオプション解析等、v0.5.20で型定義を`types/register.ts`に移動）         |
+| `windowConfigUtils.ts` | ウィンドウ設定のJSON⇔文字列変換                                                           |
+| `itemTypeDetector.ts`  | パスからアイテムタイプを自動検出                                                          |
+| `pathUtils.ts`         | パス操作の共通処理                                                                        |
+| `workspaceParser.ts`   | ワークスペースファイル（workspace.json/workspace-archive.json）の寛容パース・シリアライズ |
 
 ## 共通型定義の構造
 
 型定義は機能別に分割され、`src/common/types/`に配置されています（v0.5.20で再編成）:
 
-| モジュール              | 役割                                                                                 |
-| ----------------------- | ------------------------------------------------------------------------------------ |
-| `index.ts`              | すべての型をエクスポートする統合ポイント                                             |
-| `launcher.ts`           | ランチャーアイテム関連（`LauncherItem`, `AppItem`, `ClipboardItem`等）               |
-| `json-data.ts`          | JSONデータファイル関連（`JsonDataFile`, `JsonLauncherItem`等）                       |
-| `data.ts`               | データファイルタブ関連（`DataFileTab`, `DEFAULT_DATA_FILE`）                         |
-| `register.ts`           | 登録アイテム関連（`RegisterItem`, `WindowOperationConfig`）                          |
-| `guards.ts`             | 型ガード関数（`isWindowInfo`, `isLauncherItem`, `isGroupItem`等）                    |
-| `workspace.ts`          | ワークスペース関連（`WorkspaceItem`, `WorkspaceGroup`等）                            |
-| `window.ts`             | ウィンドウ関連（`WindowInfo`, `VirtualDesktopInfo`, `WindowState`）                  |
-| `settings.ts`           | 設定関連（`AppSettings`, `WindowPinMode`, `WindowPositionMode`等）                   |
-| `search.ts`             | 検索関連（`SearchHistoryEntry`, `SearchHistoryState`, `SearchMode`）                 |
-| `clipboard.ts`          | クリップボード関連（`SerializableClipboard`, `ClipboardFormat`等）                   |
-| `icon.ts`               | アイコン関連（`IconProgressResult`, `IconFetchErrorRecord`等）                       |
-| `bookmark.ts`           | ブックマーク関連（`SimpleBookmarkItem`, `BrowserProfile`等）                         |
-| `bookmarkAutoImport.ts` | ブックマーク自動取込関連（`BookmarkAutoImportRule`, `BookmarkAutoImportSettings`等） |
-| `backup.ts`             | バックアップ関連（`SnapshotInfo`, `BackupStatus`）                                   |
-| `appImport.ts`          | アプリインポート関連（`ScannedAppItem`, `AppScanResult`）                            |
-| `toast.ts`              | トースト通知関連（`ToastItemType`）                                                  |
-| `app.ts`                | アプリケーション情報関連（`AppInfo`）                                                |
-| `editingItem.ts`        | 編集中アイテム関連（`EditingLauncherItem`, `EditingGroupItem`等）                    |
-| `editableItem.ts`       | 編集可能JSONアイテム関連（`EditableJsonItem`, `ValidationResult`等）                 |
+| モジュール              | 役割                                                                                                 |
+| ----------------------- | ---------------------------------------------------------------------------------------------------- |
+| `index.ts`              | すべての型をエクスポートする統合ポイント                                                             |
+| `launcher.ts`           | ランチャーアイテム関連（`LauncherItem`, `AppItem`, `ClipboardItem`等）                               |
+| `json-data.ts`          | JSONデータファイル関連（`JsonDataFile`, `JsonLauncherItem`等）                                       |
+| `json-workspace.ts`     | ワークスペースファイル形式関連（`JsonWorkspaceFile`, `JsonWorkspaceItem`, `WorkspaceUiStateFile`等） |
+| `data.ts`               | データファイルタブ関連（`DataFileTab`, `DEFAULT_DATA_FILE`）                                         |
+| `register.ts`           | 登録アイテム関連（`RegisterItem`, `WindowOperationConfig`）                                          |
+| `guards.ts`             | 型ガード関数（`isWindowInfo`, `isLauncherItem`, `isGroupItem`等）                                    |
+| `workspace.ts`          | ワークスペース関連（`WorkspaceItem`, `WorkspaceGroup`等）                                            |
+| `window.ts`             | ウィンドウ関連（`WindowInfo`, `VirtualDesktopInfo`, `WindowState`）                                  |
+| `settings.ts`           | 設定関連（`AppSettings`, `WindowPinMode`, `WindowPositionMode`等）                                   |
+| `search.ts`             | 検索関連（`SearchHistoryEntry`, `SearchHistoryState`, `SearchMode`）                                 |
+| `clipboard.ts`          | クリップボード関連（`SerializableClipboard`, `ClipboardFormat`等）                                   |
+| `icon.ts`               | アイコン関連（`IconProgressResult`, `IconFetchErrorRecord`等）                                       |
+| `bookmark.ts`           | ブックマーク関連（`SimpleBookmarkItem`, `BrowserProfile`等）                                         |
+| `bookmarkAutoImport.ts` | ブックマーク自動取込関連（`BookmarkAutoImportRule`, `BookmarkAutoImportSettings`等）                 |
+| `backup.ts`             | バックアップ関連（`SnapshotInfo`, `BackupStatus`）                                                   |
+| `appImport.ts`          | アプリインポート関連（`ScannedAppItem`, `AppScanResult`）                                            |
+| `toast.ts`              | トースト通知関連（`ToastItemType`）                                                                  |
+| `app.ts`                | アプリケーション情報関連（`AppInfo`）                                                                |
+| `editingItem.ts`        | 編集中アイテム関連（`EditingLauncherItem`, `EditingGroupItem`等）                                    |
+| `editableItem.ts`       | 編集可能JSONアイテム関連（`EditableJsonItem`, `ValidationResult`等）                                 |
 
 各ファイルは対応するドメインの型のみを定義し、`index.ts`が統合エクスポートポイントとして全型を再エクスポートします。
 

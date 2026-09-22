@@ -1145,9 +1145,9 @@ onWindowHidden(callback: () => void)
 
 ### `workspace:update-item`
 
-アイテムを更新（全フィールド対応）
+アイテムを更新（型ごとの編集可能フィールドを全部渡す「置き換え」。id・並び順・所属は変更不可）
 
-- パラメータ: `id: string`, `updates: Partial<WorkspaceItem>`
+- パラメータ: `id: string`, `updates: WorkspaceItemUpdate`（`JsonWorkspaceItem`から`id`/`order`/`addedAt`/`groupId`/`workspaceId`を除いたunion）
 - 戻り値: `{ success: boolean }`
 - 処理完了後、`workspace-changed`イベントを全ウィンドウに送信
 
@@ -1166,7 +1166,7 @@ onWindowHidden(callback: () => void)
 - パラメータ: `item: WorkspaceItem`
 - 戻り値: `{ success: boolean, message?: string, successCount?: number, errorCount?: number }`
 - 動作:
-  - `windowOperation`タイプ: ウィンドウタイトル・プロセス名でウィンドウを検索してアクティブ化
+  - `window`タイプ: ウィンドウタイトル・プロセス名でウィンドウを検索してアクティブ化
   - `group`タイプ: グループ内のアイテムを順次実行
   - `clipboard`タイプ: クリップボードデータを復元
   - その他: 通常の起動処理（ウィンドウ設定がある場合はウィンドウアクティブ化を先に試行）
@@ -1175,7 +1175,7 @@ onWindowHidden(callback: () => void)
 
 ワークスペースグループを読み込み
 
-- 戻り値: `WorkspaceGroup[]` (並び順にソート済み)
+- 戻り値: `WorkspaceGroupView[]`（`WorkspaceGroup`に`collapsed`（`workspace-ui-state.json`から合成した折りたたみ状態）を加えたもの。並び順にソート済み）
 
 ### `workspace:create-group`
 
@@ -1189,7 +1189,7 @@ onWindowHidden(callback: () => void)
 
 ワークスペースグループを更新
 
-- パラメータ: `id: string`, `updates: Partial<WorkspaceGroup>`
+- パラメータ: `id: string`, `updates: WorkspaceGroupUpdate`（`displayName` / `color` / `parentGroupId`のみ変更可能）
 - 戻り値: `{ success: boolean }`
 - 処理完了後、`workspace-changed`イベントを全ウィンドウに送信
 
@@ -1211,11 +1211,18 @@ onWindowHidden(callback: () => void)
 
 ### `workspace:set-groups-collapsed`
 
-複数グループの折りたたみ状態を一括更新
+複数グループの折りたたみ状態を一括更新（`workspace.json`ではなく`workspace-ui-state.json`の`collapsedGroups`に保存）
 
 - パラメータ: `ids: string[]`, `collapsed: boolean`
 - 戻り値: `{ success: boolean }`
 - 処理完了後、`workspace-changed`イベントを全ウィンドウに送信
+
+### `workspace:load-detached-state`
+
+切り離しウィンドウの永続化状態（折りたたみ・位置サイズ・ピン留めモード）を読み込み
+
+- パラメータ: `rootGroupId: string`
+- 戻り値: `DetachedWindowState | null`（`workspace-ui-state.json`の`detachedWindows`から取得。無ければ`null`）
 
 ### `workspace:move-item-to-group`
 

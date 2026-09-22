@@ -1,0 +1,95 @@
+{
+	"items": [
+		{
+			"id": "363ec5dd-798c-471e-9f41-373eb0a6a18c",
+			"displayName": "GitHub",
+			"originalName": "GitHub",
+			"path": "https://github.com/",
+			"type": "url",
+			"order": 0,
+			"addedAt": 1700000000000,
+			"groupId": "83a03470-5df2-47ff-a621-6b609edf66f2",
+			"workspaceId": "default",
+			"label": "legacy",
+			"icon": "data:image/png;base64,AAAA"
+		},
+		{
+			"id": "f1e2d3c4-0000-0000-0000-000000000001",
+			"displayName": "Chrome を左へ",
+			"originalName": "Chrome",
+			"path": "[ウィンドウ操作: *Google Chrome]",
+			"type": "windowOperation",
+			"processName": "chrome.exe",
+			"windowX": 0,
+			"windowY": 0,
+			"windowWidth": 1280,
+			"windowHeight": 1400,
+			"activateWindow": true,
+			"order": 1,
+			"addedAt": 1700000000000,
+			"groupId": "83a03470-5df2-47ff-a621-6b609edf66f2",
+			"workspaceId": "default"
+		},
+		{
+			"id": "f1e2d3c4-0000-0000-0000-000000000004",
+			"displayName": "クリップ",
+			"originalName": "クリップ",
+			"path": "[クリップボード: hello...]",
+			"type": "clipboard",
+			"clipboardDataRef": "clipboard-data/abc.json",
+			"clipboardFormats": [
+				"text"
+			],
+			"clipboardSavedAt": 1700000000000,
+			"order": 2,
+			"addedAt": 1700000000000,
+			"workspaceId": "default"
+		},
+		{
+			"id": "f1e2d3c4-0000-0000-0000-000000000005",
+			"displayName": "配置",
+			"originalName": "配置",
+			"path": "[レイアウト: 1件]",
+			"type": "layout",
+			"layoutEntries": [
+				{
+					"windowTitle": "a",
+					"launchApp": false
+				}
+			],
+			"order": 3,
+			"addedAt": 1700000000000,
+			"groupId": "9b9b9b9b-0000-0000-0000-000000000001",
+			"workspaceId": "default"
+		}
+	],
+	"groups": [
+		{
+			"id": "83a03470-5df2-47ff-a621-6b609edf66f2",
+			"displayName": "開発",
+			"color": "var(--color-primary)",
+			"order": 0,
+			"collapsed": true,
+			"createdAt": 1700000000000,
+			"workspaceId": "default"
+		},
+		{
+			"id": "9b9b9b9b-0000-0000-0000-000000000001",
+			"displayName": "サブ",
+			"color": "#00897b",
+			"order": 0,
+			"collapsed": false,
+			"createdAt": 1700000000000,
+			"parentGroupId": "83a03470-5df2-47ff-a621-6b609edf66f2",
+			"workspaceId": "default"
+		}
+	],
+	"workspaces": [
+		{
+			"id": "default",
+			"displayName": "デフォルト",
+			"order": 0,
+			"createdAt": 0
+		}
+	]
+}

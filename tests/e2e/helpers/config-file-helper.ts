@@ -189,6 +189,23 @@ export class ConfigFileHelper {
     if (fs.existsSync(settingsTemplate)) {
       fs.copyFileSync(settingsTemplate, settingsTarget);
     }
+
+    // ワークスペース系（workspace*.json）をコピー（存在する場合。旧形式の移行検証に使う）
+    for (const file of fs.readdirSync(templateDir)) {
+      if (file.startsWith('workspace') && file.endsWith('.json')) {
+        fs.copyFileSync(path.join(templateDir, file), path.join(this.configDir, file));
+      }
+    }
+  }
+
+  /**
+   * 設定フォルダ直下の JSON ファイルを読む（workspace.json・last-load-report.json など）
+   * @returns 存在しなければ null
+   */
+  readConfigJson<T = unknown>(fileName: string): T | null {
+    const filePath = path.join(this.configDir, fileName);
+    if (!fs.existsSync(filePath)) return null;
+    return JSON.parse(fs.readFileSync(filePath, 'utf8')) as T;
   }
 
   /**
