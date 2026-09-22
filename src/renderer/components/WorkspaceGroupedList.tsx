@@ -96,6 +96,8 @@ interface WorkspaceGroupedListProps {
     visibleGroupIds?: Set<string> | null;
     itemVisibility?: Map<string, boolean> | null;
     showUncategorized?: boolean;
+    /** アーカイブタブの表示中（グループの右クリックは復元・完全削除だけ） */
+    isArchiveMode?: boolean;
   };
 }
 
@@ -133,6 +135,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     activeWorkspaceId,
     visibleGroupIds,
     itemVisibility,
+    isArchiveMode,
     showUncategorized = true,
   } = ui;
 
@@ -608,7 +611,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     e.preventDefault();
     e.stopPropagation();
     const canAdd = canCreateSubgroup(group.id, groups);
-    window.electronAPI.showWorkspaceGroupContextMenu(group, canAdd, workspaces);
+    window.electronAPI.showWorkspaceGroupContextMenu(group, canAdd, workspaces, isArchiveMode);
   };
 
   const handleGroupToggle = (groupId: string) => {

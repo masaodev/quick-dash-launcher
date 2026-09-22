@@ -637,13 +637,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
   showWorkspaceGroupContextMenu: (
     group: WorkspaceGroup,
     canAddSubgroup: boolean,
-    workspaces?: Workspace[]
+    workspaces?: Workspace[],
+    isArchived?: boolean
   ): Promise<void> =>
     ipcRenderer.invoke(
       IPC_CHANNELS.SHOW_WORKSPACE_GROUP_CONTEXT_MENU,
       group,
       canAddSubgroup,
-      workspaces
+      workspaces,
+      isArchived
     ),
   onWorkspaceGroupMenuRename: (callback: (groupId: string) => void) =>
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_RENAME, callback),

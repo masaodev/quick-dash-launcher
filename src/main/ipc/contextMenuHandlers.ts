@@ -197,7 +197,8 @@ function buildMoveToWorkspaceSubmenu(
   channel: string,
   targetId: string,
   currentWorkspaceId: string | undefined,
-  workspaces: Workspace[]
+  workspaces: Workspace[],
+  label = '📁 ワークスペースを移動'
 ): MenuItem | null {
   const otherWorkspaces = workspaces.filter((ws) => ws.id !== currentWorkspaceId);
   if (otherWorkspaces.length === 0) return null;
@@ -211,7 +212,7 @@ function buildMoveToWorkspaceSubmenu(
       })
     );
   }
-  return new MenuItem({ label: '📁 ワークスペースを移動', submenu });
+  return new MenuItem({ label, submenu });
 }
 
 /** WorkspaceContextMenu用のネイティブメニューハンドラーを設定 */
@@ -368,12 +369,48 @@ function setupWorkspaceGroupContextMenuHandler(): void {
       event,
       group: WorkspaceGroup,
       canAddSubgroup: boolean,
-      workspaces?: Workspace[]
+      workspaces?: Workspace[],
+      isArchived?: boolean
     ): Promise<void> => {
       const senderWindow = getValidWindow(event);
       if (!senderWindow) return;
 
       const menu = new Menu();
+
+      // アーカイブ済みグループ: 復元（ワークスペースへ）と完全削除だけ
+      if (isArchived) {
+        menu.append(
+          createMenuItem(
+            '📋 テキストでコピー',
+            event.sender,
+            IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_COPY_AS_TEXT,
+            group.id
+          )
+        );
+        const restoreSubmenu = buildMoveToWorkspaceSubmenu(
+          event.sender,
+          IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_MOVE_TO_WORKSPACE,
+          group.id,
+          undefined,
+          workspaces ?? [],
+          '📤 ワークスペースへ復元'
+        );
+        if (restoreSubmenu) {
+          menu.append(createSeparator());
+          menu.append(restoreSubmenu);
+        }
+        menu.append(createSeparator());
+        menu.append(
+          createMenuItem(
+            '🗑️ アーカイブから削除',
+            event.sender,
+            IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_DELETE,
+            group.id
+          )
+        );
+        menu.popup({ window: senderWindow });
+        return;
+      }
 
       if (canAddSubgroup) {
         menu.append(

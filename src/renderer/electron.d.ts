@@ -370,7 +370,8 @@ export interface ElectronAPI {
   showWorkspaceGroupContextMenu: (
     group: WorkspaceGroup,
     canAddSubgroup: boolean,
-    workspaces?: Workspace[]
+    workspaces?: Workspace[],
+    isArchived?: boolean
   ) => Promise<void>;
   // WorkspaceTabContextMenu
   showWorkspaceTabContextMenu: (workspaceId: string, canDelete: boolean) => Promise<void>;

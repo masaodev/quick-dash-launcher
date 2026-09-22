@@ -235,7 +235,8 @@ const WorkspaceApp: React.FC = () => {
   const handleDeleteGroup = async (groupId: string) => {
     try {
       const { itemCount, subgroupCount } = getGroupStats(groupId);
-      if (itemCount > 0 || subgroupCount > 0) {
+      // アーカイブからの削除は元に戻せないので、空でも必ず確認する
+      if (isArchiveMode || itemCount > 0 || subgroupCount > 0) {
         setDeleteGroupDialog({
           isOpen: true,
           groupId,
@@ -255,7 +256,12 @@ const WorkspaceApp: React.FC = () => {
     const { groupId, deleteItems } = deleteGroupDialog;
     if (!groupId) return;
     try {
-      await actions.handleDeleteGroup(groupId, deleteItems);
+      if (isArchiveMode) {
+        await window.electronAPI.workspaceAPI.deleteArchivedGroup(groupId);
+        await loadArchiveData();
+      } else {
+        await actions.handleDeleteGroup(groupId, deleteItems);
+      }
       setDeleteGroupDialog(INITIAL_DELETE_DIALOG);
     } catch (error) {
       logError('Failed to delete workspace group:', error);
@@ -415,7 +421,7 @@ const WorkspaceApp: React.FC = () => {
       );
     },
     onUpdateGroup: noopAsync,
-    onDeleteGroup: noopAsync,
+    onDeleteGroup: handleDeleteGroup,
     onArchiveGroup: noop,
     onAddSubgroup: noopAsync,
     onDuplicateItem: noop,
@@ -578,6 +584,7 @@ const WorkspaceApp: React.FC = () => {
         }}
         ui={{
           ...commonUi,
+          isArchiveMode,
           activeWorkspaceId,
           visibleGroupIds: filterResult.visibleGroupIds,
           itemVisibility: filterResult.itemVisibility,
@@ -588,12 +595,12 @@ const WorkspaceApp: React.FC = () => {
         isOpen={deleteGroupDialog.isOpen}
         onClose={() => setDeleteGroupDialog(INITIAL_DELETE_DIALOG)}
         onConfirm={handleConfirmDeleteGroup}
-        title="グループの削除"
-        message={`「${displayGroups.find((g) => g.id === deleteGroupDialog.groupId)?.displayName || groups.find((g) => g.id === deleteGroupDialog.groupId)?.displayName}」を削除してもよろしいですか？\n\nこのグループには${deleteGroupDialog.subgroupCount > 0 ? `サブグループ${deleteGroupDialog.subgroupCount}個と、` : ''}${deleteGroupDialog.itemCount}個のアイテムが含まれています。`}
+        title={isArchiveMode ? 'アーカイブから削除' : 'グループの削除'}
+        message={`「${displayGroups.find((g) => g.id === deleteGroupDialog.groupId)?.displayName || groups.find((g) => g.id === deleteGroupDialog.groupId)?.displayName}」を${isArchiveMode ? 'アーカイブから完全に削除' : '削除'}してもよろしいですか？\n\nこのグループには${deleteGroupDialog.subgroupCount > 0 ? `サブグループ${deleteGroupDialog.subgroupCount}個と、` : ''}${deleteGroupDialog.itemCount}個のアイテムが含まれています。${isArchiveMode ? '\nアイテムごと削除され、元に戻せません。' : ''}`}
         confirmText="削除"
         cancelText="キャンセル"
         danger={true}
-        showCheckbox={true}
+        showCheckbox={!isArchiveMode}
         checkboxLabel="グループ内のアイテムも削除する"
         checkboxChecked={deleteGroupDialog.deleteItems}
         onCheckboxChange={(checked) =>
