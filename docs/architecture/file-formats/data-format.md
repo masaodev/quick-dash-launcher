@@ -86,13 +86,14 @@ QuickDashLauncherは複数のJSON形式のデータファイルをサポート�
 
 ### 2.4. アイテムタイプ
 
-データファイルには以下の5種類のアイテムが存在します：
+データファイルには以下の6種類のアイテムが存在します：
 
 1. **通常アイテム** (`type: "item"`) - アプリケーション、URL、ファイル、フォルダを起動
 2. **フォルダ取込アイテム** (`type: "dir"`) - 指定フォルダ内のファイル/フォルダを自動取込
 3. **グループアイテム** (`type: "group"`) - 複数のアイテムをまとめて一括起動
 4. **ウィンドウアイテム** (`type: "window"`) - 既存ウィンドウの検索・制御
 5. **クリップボードアイテム** (`type: "clipboard"`) - クリップボードの内容を保存・復元
+6. **レイアウトアイテム** (`type: "layout"`) - 複数ウィンドウの位置・サイズを一括でキャプチャ・復元
 
 ### 2.5. 基本的な使用例
 
@@ -461,9 +462,9 @@ QuickDashLauncherは複数のJSON形式のデータファイルをサポート�
 ウィンドウ操作アイテムは、既存のウィンドウを検索・制御する機能です：
 
 1. **ウィンドウ検索**: `windowTitle`で指定されたウィンドウを検索します
-   - 部分一致で検索
-   - 大文字小文字を区別しない
-   - `processName`が指定されている場合、プロセス名でも絞り込み
+   - ワイルドカード文字（`*` または `?`）が含まれている場合はワイルドカードマッチング
+   - 含まれていない場合は大文字小文字を区別しない**完全一致**検索
+   - `processName`が指定されている場合、小文字化した**部分一致**でさらに絞り込み（タイトル条件とのAND）
 2. **ウィンドウ発見時**:
    - ウィンドウを復元（最小化解除）
    - `virtualDesktopNumber`が指定されていれば仮想デスクトップを移動
@@ -471,6 +472,13 @@ QuickDashLauncherは複数のJSON形式のデータファイルをサポート�
    - `activateWindow`がtrue（デフォルト）の場合、ウィンドウをアクティブ化
    - **通常起動は実行しません**
 3. **ウィンドウ未発見時**: 警告ログを出力し、何も実行しません
+
+##### プロセス名だけで検索したいとき
+
+タイトルを指定せずプロセス名だけで探したい場合は、`windowTitle` を全一致ワイルドカード `"*"` にします（空文字は完全一致で何にもマッチしないため）。
+
+- 登録フォームでタイトルを空にしてプロセス名だけ指定すると、保存時に自動的に `"*"` へ正規化されます（`normalizeWindowTitleForProcessOnly`）
+- データファイルを直接編集してタイトルを空のままにした場合も、読み込み時（寛容パース）に `"*"` へ補正され、書き戻されます。この補正は読み込みレポート（`last-load-report.json`）に `kind: "normalized"` として記録されます
 
 #### 3.4.3. 使用例
 
@@ -625,6 +633,86 @@ QuickDashLauncherは複数のJSON形式のデータファイルをサポート�
 - **ファイル復元**: Electronの制限により、ファイルの復元は非対応（パスの参照のみ）
 - **グループからの参照**: グループアイテムからは参照できません
 
+### 3.6. レイアウトアイテム（JsonLayoutItem）
+
+複数ウィンドウの位置・サイズを一括でキャプチャ・復元するアイテムです。ウィンドウのキャプチャ操作（ウィンドウ管理画面）でQDLが生成し、通常は手で書きません。
+
+#### 3.6.1. フィールド構成
+
+| フィールド      | 型       | 必須 | 説明                                            |
+| --------------- | -------- | ---- | ----------------------------------------------- |
+| **id**          | string   | ✓    | 8文字の一意ID                                   |
+| **type**        | "layout" | ✓    | アイテムタイプ（常に "layout"）                 |
+| **displayName** | string   | ✓    | レイアウトの表示名                              |
+| **entries**     | array    | ✓    | レイアウト内のウィンドウエントリ一覧（1件以上） |
+| **customIcon**  | string   | -    | カスタムアイコンファイル名（オプション）        |
+| **memo**        | string   | -    | 自由記述メモ（オプション）                      |
+| **updatedAt**   | number   | -    | 更新日時（Unixタイムスタンプ ms、オプション）   |
+
+#### 3.6.2. ウィンドウエントリ（LayoutWindowEntry）
+
+`entries` の各要素は、キャプチャした1ウィンドウ分の位置・サイズとアプリ起動設定を保持します。
+
+| フィールド               | 型      | 必須 | 説明                                                                                                                |
+| ------------------------ | ------- | ---- | ------------------------------------------------------------------------------------------------------------------- |
+| **windowTitle**          | string  | ✓    | ウィンドウタイトル（検索用）                                                                                        |
+| **processName**          | string  | -    | プロセス名（部分一致検索用、オプション）                                                                            |
+| **executablePath**       | string  | -    | 実行ファイルのパス（アプリ起動用、オプション）                                                                      |
+| **args**                 | string  | -    | コマンドライン引数（オプション）                                                                                    |
+| **x**                    | number  | -    | X座標（仮想スクリーン座標系、オプション）                                                                           |
+| **y**                    | number  | -    | Y座標（仮想スクリーン座標系、オプション）                                                                           |
+| **width**                | number  | -    | 幅（オプション）                                                                                                    |
+| **height**               | number  | -    | 高さ（オプション）                                                                                                  |
+| **virtualDesktopNumber** | number  | -    | 仮想デスクトップ番号（1から開始、オプション）                                                                       |
+| **launchApp**            | boolean | ✓    | アプリを起動するか（falseの場合は既存ウィンドウの位置変更のみ）                                                     |
+| **icon**                 | string  | -    | アイコン（base64データURL）。**JSON保存時に除去される**（`stripIconFromLayoutEntries`）。UI表示専用のランタイム情報 |
+
+#### 3.6.3. 使用例
+
+```json
+{
+  "version": "1.0",
+  "items": [
+    {
+      "id": "n7O8p9Q0",
+      "type": "layout",
+      "displayName": "開発レイアウト",
+      "entries": [
+        {
+          "windowTitle": "Visual Studio Code",
+          "processName": "code",
+          "x": 0,
+          "y": 0,
+          "width": 960,
+          "height": 1080,
+          "launchApp": false
+        },
+        {
+          "windowTitle": "*Slack*",
+          "processName": "slack",
+          "executablePath": "C:\\Users\\Username\\AppData\\Local\\slack\\slack.exe",
+          "x": 960,
+          "y": 0,
+          "width": 960,
+          "height": 1080,
+          "launchApp": true
+        }
+      ]
+    }
+  ]
+}
+```
+
+#### 3.6.4. 検証
+
+- `validateJsonLayoutItem`（`src/common/utils/jsonParser.ts`）: `displayName` が空でない文字列であること、`entries` が配列であることを検証
+- `validateEditableItem`（`src/common/types/editableItem.ts`）: 編集画面での保存時、`entries` が空だとエラー（`layoutのentriesが空です`）
+
+#### 3.6.5. 制約事項
+
+- **グループからの参照**: グループアイテムからは参照できません（通常アイテムのみ）
+- **アイコンの非永続化**: `icon` フィールドはランタイム表示専用で、JSON保存時は常に除去されます
+
 ## 4. 重複排除ルール
 
 QuickDashLauncherは、アイテムの重複を自動的に排除します。
@@ -706,7 +794,7 @@ v0.4.2以降、重複排除は**タブ単位**で実行されます：
 | 仕組み                 | 内容                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 反映タイミング         | F5 または起動時。編集画面（アイテム管理）は表示のたびに読み直す                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| 読み込みレポート       | 起動時・F5 のたびに `config/last-load-report.json` を書き出す（アプリ内の操作による再読込では、補正・書き戻し・外部変更・破損など報告することがあるときだけ更新する）。直接編集した側が「受理されたか・何がスキップされたか」を確認する用途（トーストは AI から見えないため）。`files[]` にはデータファイルに加えてワークスペースファイル（`workspace.json` / `workspace-archive.json`）も並ぶ。詳細は[ワークスペースファイル形式](workspace-format.md)を参照                                                                                                                                                                        |
+| 読み込みレポート       | 起動時・F5 のたびに `config/last-load-report.json` を書き出す（アプリ内の操作による再読込では、補正・書き戻し・外部変更・破損など報告することがあるときだけ更新する）。直接編集した側が「受理されたか・何がスキップされたか」を確認する用途（トーストは AI から見えないため）。`files[]` にはデータファイルに加えてワークスペースファイル（`workspace.json` / `workspace-archive.json`）も並ぶ。詳細は[ワークスペースファイル形式](workspace-format.md)を参照                                                             |
 | トースト               | スキップまたは採番があったときだけ「N 件読込・M 件スキップ・K 件に ID を採番」を表示                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | 変更前スナップショット | 前回読み込み時（または QDL 自身の書き込み時）と内容が違うファイルを検知すると、**変更前の内容**を `config/backup/YYYY-MM-DDTHH-MM-SS_pre-external/` に保存する（`backupEnabled` が true のとき。`backupRetention` とは別枠で最新 10 件を保持）。直接編集で壊したときの戻し先。**検知は QDL 起動中の編集 → F5 のときだけ**（前回の内容はメモリ上で覚えているため、QDL 終了中に編集した内容は起動時に反映はされるが外部変更としては検知されず、スナップショットも作られない）                                               |
 | 楽観ロック             | 編集画面の保存は全ファイルを全量上書きするため、読み込み時のファイル内容ハッシュを保存時に照合し、読み込み後に外部で変更されていれば保存を拒否して再読込する（`saveEditableItems` の `expectedHashes`）                                                                                                                                                                                                                                                                                                                   |
@@ -805,7 +893,13 @@ interface JsonDataFile {
 #### 6.1.2. JsonItem
 
 ```typescript
-type JsonItem = JsonLauncherItem | JsonDirItem | JsonGroupItem | JsonWindowItem | JsonClipboardItem;
+type JsonItem =
+  | JsonLauncherItem
+  | JsonDirItem
+  | JsonGroupItem
+  | JsonWindowItem
+  | JsonClipboardItem
+  | JsonLayoutItem;
 ```
 
 #### 6.1.2.1. JsonItemBase（共通基底）
@@ -970,6 +1064,50 @@ interface JsonClipboardItem extends JsonItemBase {
 }
 ```
 
+#### 6.1.9. JsonLayoutItem
+
+```typescript
+interface JsonLayoutItem extends JsonItemBase {
+  /** アイテムタイプ */
+  type: 'layout';
+  /** レイアウトの表示名 */
+  displayName: string;
+  /** レイアウト内のウィンドウエントリ一覧 */
+  entries: LayoutWindowEntry[];
+  /** カスタムアイコンファイル名（オプション） */
+  customIcon?: string;
+}
+```
+
+#### 6.1.10. LayoutWindowEntry
+
+```typescript
+interface LayoutWindowEntry {
+  /** ウィンドウタイトル（検索用） */
+  windowTitle: string;
+  /** プロセス名（部分一致検索用、オプション） */
+  processName?: string;
+  /** 実行ファイルのパス（アプリ起動用、オプション） */
+  executablePath?: string;
+  /** コマンドライン引数（オプション） */
+  args?: string;
+  /** X座標（仮想スクリーン座標系、オプション） */
+  x?: number;
+  /** Y座標（仮想スクリーン座標系、オプション） */
+  y?: number;
+  /** 幅（オプション） */
+  width?: number;
+  /** 高さ（オプション） */
+  height?: number;
+  /** 仮想デスクトップ番号（1から開始、オプション） */
+  virtualDesktopNumber?: number;
+  /** アプリを起動するかどうか（falseの場合は既存ウィンドウの位置変更のみ） */
+  launchApp: boolean;
+  /** アイコン（base64エンコードされたデータURL、オプション）。JSON保存時は除去される */
+  icon?: string;
+}
+```
+
 ### 6.2. 内部型定義
 
 #### 6.2.1. LauncherItem（内部型）
@@ -1033,8 +1171,8 @@ interface ClipboardItem {
 #### 6.2.4. AppItem
 
 ```typescript
-// LauncherItem、GroupItem、WindowItem、ClipboardItem、WindowInfoの統合型
-type AppItem = LauncherItem | GroupItem | WindowItem | ClipboardItem | WindowInfo;
+// LauncherItem、GroupItem、WindowItem、ClipboardItem、LayoutItem、WindowInfoの統合型
+type AppItem = LauncherItem | GroupItem | WindowItem | ClipboardItem | LayoutItem | WindowInfo;
 ```
 
 ### 6.3. 検索関連型
