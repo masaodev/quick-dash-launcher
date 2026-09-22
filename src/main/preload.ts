@@ -16,6 +16,8 @@ import type {
   Workspace,
   WorkspaceItem,
   WorkspaceGroup,
+  ArchivedWorkspaceGroup,
+  ArchivedWorkspaceItem,
   WindowInfo,
   VirtualDesktopInfo,
   IconFetchErrorRecord,
@@ -456,9 +458,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // アーカイブ管理
     archiveGroup: (groupId: string): Promise<{ success: boolean }> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_ARCHIVE_GROUP, groupId),
-    loadArchivedGroups: (): Promise<WorkspaceGroup[]> =>
+    loadArchivedGroups: (): Promise<ArchivedWorkspaceGroup[]> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_LOAD_ARCHIVED_GROUPS),
-    loadArchivedItems: (): Promise<WorkspaceItem[]> =>
+    loadArchivedItems: (): Promise<ArchivedWorkspaceItem[]> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_LOAD_ARCHIVED_ITEMS),
     restoreGroup: (groupId: string): Promise<{ success: boolean }> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_RESTORE_GROUP, groupId),

@@ -1,6 +1,6 @@
-import type { WorkspaceItem, ExecutionHistoryItem } from '@common/types';
+import type { WorkspaceItem } from '@common/types';
 
-type ItemType = WorkspaceItem['type'] | ExecutionHistoryItem['itemType'];
+type ItemType = WorkspaceItem['type'];
 
 /**
  * アイテムタイプに応じたデフォルトアイコンを返す

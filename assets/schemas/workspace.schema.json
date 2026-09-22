@@ -1,0 +1,615 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/masaodev/quick-dash-launcher/main/assets/schemas/workspace.schema.json",
+  "title": "QuickDashLauncher ワークスペースファイル（workspace.json）",
+  "description": "ワークスペース設定ファイル（workspace.json）のルート構造",
+  "$ref": "#/definitions/JsonWorkspaceFile",
+  "definitions": {
+    "JsonWorkspaceFile": {
+      "type": "object",
+      "properties": {
+        "$schema": {
+          "type": "string",
+          "description": "JSON Schema への参照（エディタ補完・検証用）。 QDL が書き戻すときに \"./schemas/workspace.schema.json\" を補う"
+        },
+        "version": {
+          "type": "string",
+          "description": "ファイルフォーマットのバージョン（現在は \"2.0\"）"
+        },
+        "workspaces": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/JsonWorkspace"
+          },
+          "description": "ワークスペース（タブ）の一覧。1 件以上必要"
+        },
+        "groups": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/JsonWorkspaceGroup"
+          },
+          "description": "グループの一覧"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/JsonWorkspaceItem"
+          },
+          "description": "アイテムの一覧"
+        }
+      },
+      "required": [
+        "version",
+        "workspaces",
+        "groups",
+        "items"
+      ],
+      "additionalProperties": false,
+      "description": "ワークスペース設定ファイル（workspace.json）のルート構造"
+    },
+    "JsonWorkspace": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "8文字の一意ID（英数字 A-Z a-z 0-9）。workspace.json と workspace-archive.json で共通の名前空間",
+          "pattern": "^[A-Za-z0-9]{8}$"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "タブに表示する名前"
+        },
+        "order": {
+          "type": "number",
+          "description": "タブの並び順（0 から。省略時は QDL が補う）"
+        },
+        "createdAt": {
+          "type": "number",
+          "description": "作成日時（Unixタイムスタンプ ms。省略時は QDL が補う）"
+        }
+      },
+      "required": [
+        "id",
+        "displayName",
+        "order",
+        "createdAt"
+      ],
+      "additionalProperties": false,
+      "description": "ワークスペース（タブ）"
+    },
+    "JsonWorkspaceGroup": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "8文字の一意ID（英数字 A-Z a-z 0-9）",
+          "pattern": "^[A-Za-z0-9]{8}$"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "グループ名"
+        },
+        "color": {
+          "type": "string",
+          "description": "グループの色。色トークン（primary / success / danger / warning / info / secondary / purple / teal / pink / indigo / orange / cyan）または 6 桁の hex（例: \"#00897b\"）。トークン推奨",
+          "pattern": "^(primary|success|danger|warning|info|secondary|purple|teal|pink|indigo|orange|cyan|#[0-9A-Fa-f]{6})$"
+        },
+        "order": {
+          "type": "number",
+          "description": "同じ親の中での並び順（0 から。省略時は QDL が補う）"
+        },
+        "createdAt": {
+          "type": "number",
+          "description": "作成日時（Unixタイムスタンプ ms。省略時は QDL が補う）"
+        },
+        "workspaceId": {
+          "type": "string",
+          "description": "所属するワークスペースの id"
+        },
+        "parentGroupId": {
+          "type": "string",
+          "description": "親グループの id（トップレベルなら省略）"
+        }
+      },
+      "required": [
+        "id",
+        "displayName",
+        "color",
+        "order",
+        "createdAt",
+        "workspaceId"
+      ],
+      "additionalProperties": false,
+      "description": "グループ（ワークスペース内でアイテムをまとめる箱。2 段までネストできる）"
+    },
+    "JsonWorkspaceItem": {
+      "description": "ワークスペースアイテム（Union型）",
+      "oneOf": [
+        {
+          "$ref": "#/definitions/JsonWorkspaceLauncherItem"
+        },
+        {
+          "$ref": "#/definitions/JsonWorkspaceWindowItem"
+        },
+        {
+          "$ref": "#/definitions/JsonWorkspaceGroupItem"
+        },
+        {
+          "$ref": "#/definitions/JsonWorkspaceClipboardItem"
+        },
+        {
+          "$ref": "#/definitions/JsonWorkspaceLayoutItem"
+        }
+      ]
+    },
+    "JsonWorkspaceLauncherItem": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "8文字の一意ID（英数字 A-Z a-z 0-9）。省略すると QDL が採番する",
+          "pattern": "^[A-Za-z0-9]{8}$"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "表示名"
+        },
+        "memo": {
+          "type": "string",
+          "description": "自由記述メモ（オプション）"
+        },
+        "workspaceId": {
+          "type": "string",
+          "description": "所属するワークスペースの id"
+        },
+        "groupId": {
+          "type": "string",
+          "description": "所属するグループの id（未分類なら省略）"
+        },
+        "order": {
+          "type": "number",
+          "description": "同じグループ内での並び順（0 から。省略時は QDL が補う）"
+        },
+        "addedAt": {
+          "type": "number",
+          "description": "ワークスペースに追加した日時（Unixタイムスタンプ ms。省略時は QDL が補う）"
+        },
+        "type": {
+          "type": "string",
+          "const": "item",
+          "description": "アイテムタイプ"
+        },
+        "path": {
+          "type": "string",
+          "description": "ファイルパス、URL、またはコマンド"
+        },
+        "args": {
+          "type": "string",
+          "description": "コマンドライン引数（オプション）"
+        },
+        "originalPath": {
+          "type": "string",
+          "description": "ショートカット（.lnk）のリンク先パス（QDL が解決して書く。手で書かなくてよい）"
+        },
+        "customIcon": {
+          "type": "string",
+          "description": "カスタムアイコンファイル名（オプション）"
+        },
+        "windowConfig": {
+          "$ref": "#/definitions/WindowConfig",
+          "description": "ウィンドウ制御設定（起動前に既存ウィンドウを探して前面化・移動する。オプション）"
+        }
+      },
+      "required": [
+        "addedAt",
+        "displayName",
+        "id",
+        "order",
+        "path",
+        "type",
+        "workspaceId"
+      ],
+      "additionalProperties": false,
+      "description": "通常のアイテム（type: \"item\"） ファイル・アプリ・URL・フォルダなどを起動する。URL/ファイル/アプリの区別は path から QDL が判定する"
+    },
+    "WindowConfig": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "ウィンドウタイトル（検索用、必須）"
+        },
+        "processName": {
+          "type": "string",
+          "description": "プロセス名で検索（部分一致、省略時は検索なし）"
+        },
+        "x": {
+          "type": "number",
+          "description": "X座標（仮想スクリーン座標系、省略時は位置変更なし）"
+        },
+        "y": {
+          "type": "number",
+          "description": "Y座標（仮想スクリーン座標系、省略時は位置変更なし）"
+        },
+        "width": {
+          "type": "number",
+          "description": "幅（省略時はサイズ変更なし）"
+        },
+        "height": {
+          "type": "number",
+          "description": "高さ（省略時はサイズ変更なし）"
+        },
+        "moveToActiveMonitorCenter": {
+          "type": "boolean",
+          "description": "アクティブモニター（マウスカーソルがあるモニター）の中央に移動するかどうか（省略時はfalse）"
+        },
+        "virtualDesktopNumber": {
+          "type": "number",
+          "description": "仮想デスクトップ番号（1から開始、省略時は移動なし、Windows 10以降）"
+        },
+        "activateWindow": {
+          "type": "boolean",
+          "description": "ウィンドウをアクティブにするかどうか（省略時はtrue）"
+        },
+        "pinToAllDesktops": {
+          "type": "boolean",
+          "description": "全仮想デスクトップにピン止めするかどうか（省略時はfalse）"
+        }
+      },
+      "required": [
+        "title"
+      ],
+      "additionalProperties": false,
+      "description": "ウィンドウ制御の設定情報 アイテム起動時のウィンドウ検索・位置・サイズ制御に使用\n\nワイルドカード検索:\n- タイトルにワイルドカード文字（*または?）が含まれている場合、ワイルドカードマッチングを実行   - `*`: 任意の0文字以上の文字列   - `?`: 任意の1文字\n- ワイルドカード文字が含まれていない場合、完全一致検索を実行\n- 大文字小文字は区別しない"
+    },
+    "JsonWorkspaceWindowItem": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "8文字の一意ID（英数字 A-Z a-z 0-9）。省略すると QDL が採番する",
+          "pattern": "^[A-Za-z0-9]{8}$"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "表示名"
+        },
+        "memo": {
+          "type": "string",
+          "description": "自由記述メモ（オプション）"
+        },
+        "workspaceId": {
+          "type": "string",
+          "description": "所属するワークスペースの id"
+        },
+        "groupId": {
+          "type": "string",
+          "description": "所属するグループの id（未分類なら省略）"
+        },
+        "order": {
+          "type": "number",
+          "description": "同じグループ内での並び順（0 から。省略時は QDL が補う）"
+        },
+        "addedAt": {
+          "type": "number",
+          "description": "ワークスペースに追加した日時（Unixタイムスタンプ ms。省略時は QDL が補う）"
+        },
+        "type": {
+          "type": "string",
+          "const": "window",
+          "description": "アイテムタイプ"
+        },
+        "windowTitle": {
+          "type": "string",
+          "description": "ウィンドウタイトル（検索用、ワイルドカード * ? 対応）"
+        },
+        "processName": {
+          "type": "string",
+          "description": "プロセス名で検索（部分一致、オプション）"
+        },
+        "x": {
+          "type": "number",
+          "description": "X座標（仮想スクリーン座標系、オプション）"
+        },
+        "y": {
+          "type": "number",
+          "description": "Y座標（仮想スクリーン座標系、オプション）"
+        },
+        "width": {
+          "type": "number",
+          "description": "幅（オプション）"
+        },
+        "height": {
+          "type": "number",
+          "description": "高さ（オプション）"
+        },
+        "moveToActiveMonitorCenter": {
+          "type": "boolean",
+          "description": "アクティブモニターの中央に移動するか（オプション）"
+        },
+        "virtualDesktopNumber": {
+          "type": "number",
+          "description": "仮想デスクトップ番号（1から開始、オプション）"
+        },
+        "activateWindow": {
+          "type": "boolean",
+          "description": "ウィンドウをアクティブにするか（デフォルト: true、オプション）"
+        },
+        "pinToAllDesktops": {
+          "type": "boolean",
+          "description": "全仮想デスクトップにピン止めするか（オプション）"
+        }
+      },
+      "required": [
+        "addedAt",
+        "displayName",
+        "id",
+        "order",
+        "type",
+        "windowTitle",
+        "workspaceId"
+      ],
+      "additionalProperties": false,
+      "description": "ウィンドウ操作アイテム（type: \"window\"） 既存のウィンドウを検索・アクティブ化し、位置・サイズを制御する"
+    },
+    "JsonWorkspaceGroupItem": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "8文字の一意ID（英数字 A-Z a-z 0-9）。省略すると QDL が採番する",
+          "pattern": "^[A-Za-z0-9]{8}$"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "表示名"
+        },
+        "memo": {
+          "type": "string",
+          "description": "自由記述メモ（オプション）"
+        },
+        "workspaceId": {
+          "type": "string",
+          "description": "所属するワークスペースの id"
+        },
+        "groupId": {
+          "type": "string",
+          "description": "所属するグループの id（未分類なら省略）"
+        },
+        "order": {
+          "type": "number",
+          "description": "同じグループ内での並び順（0 から。省略時は QDL が補う）"
+        },
+        "addedAt": {
+          "type": "number",
+          "description": "ワークスペースに追加した日時（Unixタイムスタンプ ms。省略時は QDL が補う）"
+        },
+        "type": {
+          "type": "string",
+          "const": "group",
+          "description": "アイテムタイプ"
+        },
+        "itemNames": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "起動するアイテムの表示名リスト（データファイルの type: \"item\" / \"window\" の displayName）"
+        }
+      },
+      "required": [
+        "addedAt",
+        "displayName",
+        "id",
+        "itemNames",
+        "order",
+        "type",
+        "workspaceId"
+      ],
+      "additionalProperties": false,
+      "description": "グループアイテム（type: \"group\"） データファイル側のアイテムを表示名で参照し、まとめて起動する"
+    },
+    "JsonWorkspaceClipboardItem": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "8文字の一意ID（英数字 A-Z a-z 0-9）。省略すると QDL が採番する",
+          "pattern": "^[A-Za-z0-9]{8}$"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "表示名"
+        },
+        "memo": {
+          "type": "string",
+          "description": "自由記述メモ（オプション）"
+        },
+        "workspaceId": {
+          "type": "string",
+          "description": "所属するワークスペースの id"
+        },
+        "groupId": {
+          "type": "string",
+          "description": "所属するグループの id（未分類なら省略）"
+        },
+        "order": {
+          "type": "number",
+          "description": "同じグループ内での並び順（0 から。省略時は QDL が補う）"
+        },
+        "addedAt": {
+          "type": "number",
+          "description": "ワークスペースに追加した日時（Unixタイムスタンプ ms。省略時は QDL が補う）"
+        },
+        "type": {
+          "type": "string",
+          "const": "clipboard",
+          "description": "アイテムタイプ"
+        },
+        "dataFileRef": {
+          "type": "string",
+          "description": "クリップボードデータファイルへの参照（clipboard-data/{id}.json）"
+        },
+        "savedAt": {
+          "type": "number",
+          "description": "保存日時（timestamp）"
+        },
+        "preview": {
+          "type": "string",
+          "description": "プレビューテキスト（最初の100文字程度）"
+        },
+        "formats": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ClipboardFormat"
+          },
+          "description": "保存されているフォーマット"
+        },
+        "customIcon": {
+          "type": "string",
+          "description": "カスタムアイコンファイル名（オプション）"
+        }
+      },
+      "required": [
+        "addedAt",
+        "dataFileRef",
+        "displayName",
+        "formats",
+        "id",
+        "order",
+        "savedAt",
+        "type",
+        "workspaceId"
+      ],
+      "additionalProperties": false,
+      "description": "クリップボードアイテム（type: \"clipboard\"） QDL が画面操作で生成する。手で書かない"
+    },
+    "ClipboardFormat": {
+      "type": "string",
+      "enum": [
+        "text",
+        "html",
+        "rtf",
+        "image",
+        "file"
+      ],
+      "description": "クリップボードデータのフォーマット"
+    },
+    "JsonWorkspaceLayoutItem": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "8文字の一意ID（英数字 A-Z a-z 0-9）。省略すると QDL が採番する",
+          "pattern": "^[A-Za-z0-9]{8}$"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "表示名"
+        },
+        "memo": {
+          "type": "string",
+          "description": "自由記述メモ（オプション）"
+        },
+        "workspaceId": {
+          "type": "string",
+          "description": "所属するワークスペースの id"
+        },
+        "groupId": {
+          "type": "string",
+          "description": "所属するグループの id（未分類なら省略）"
+        },
+        "order": {
+          "type": "number",
+          "description": "同じグループ内での並び順（0 から。省略時は QDL が補う）"
+        },
+        "addedAt": {
+          "type": "number",
+          "description": "ワークスペースに追加した日時（Unixタイムスタンプ ms。省略時は QDL が補う）"
+        },
+        "type": {
+          "type": "string",
+          "const": "layout",
+          "description": "アイテムタイプ"
+        },
+        "entries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/LayoutWindowEntry"
+          },
+          "description": "レイアウト内のウィンドウエントリ一覧"
+        },
+        "customIcon": {
+          "type": "string",
+          "description": "カスタムアイコンファイル名（オプション）"
+        }
+      },
+      "required": [
+        "addedAt",
+        "displayName",
+        "entries",
+        "id",
+        "order",
+        "type",
+        "workspaceId"
+      ],
+      "additionalProperties": false,
+      "description": "レイアウトアイテム（type: \"layout\"） QDL が画面操作で生成する。手で書かない"
+    },
+    "LayoutWindowEntry": {
+      "type": "object",
+      "properties": {
+        "windowTitle": {
+          "type": "string",
+          "description": "ウィンドウタイトル（検索用）"
+        },
+        "processName": {
+          "type": "string",
+          "description": "プロセス名（部分一致検索用、オプション）"
+        },
+        "executablePath": {
+          "type": "string",
+          "description": "実行ファイルのパス（アプリ起動用、オプション）"
+        },
+        "args": {
+          "type": "string",
+          "description": "コマンドライン引数（オプション）"
+        },
+        "x": {
+          "type": "number",
+          "description": "X座標（仮想スクリーン座標系、オプション）"
+        },
+        "y": {
+          "type": "number",
+          "description": "Y座標（仮想スクリーン座標系、オプション）"
+        },
+        "width": {
+          "type": "number",
+          "description": "幅（オプション）"
+        },
+        "height": {
+          "type": "number",
+          "description": "高さ（オプション）"
+        },
+        "virtualDesktopNumber": {
+          "type": "number",
+          "description": "仮想デスクトップ番号（1から開始、オプション）"
+        },
+        "launchApp": {
+          "type": "boolean",
+          "description": "アプリを起動するかどうか（falseの場合は既存ウィンドウの位置変更のみ）"
+        },
+        "icon": {
+          "type": "string",
+          "description": "アイコン（base64エンコードされたデータURL、オプション）"
+        }
+      },
+      "required": [
+        "windowTitle",
+        "launchApp"
+      ],
+      "additionalProperties": false,
+      "description": "レイアウト内の個別ウィンドウエントリ キャプチャしたウィンドウの位置・サイズ情報とアプリ起動設定を持つ"
+    }
+  }
+}

@@ -1,4 +1,4 @@
-import { ipcMain, BrowserWindow } from 'electron';
+import { ipcMain } from 'electron';
 import logger from '@common/logger';
 import type { AppItem, WorkspaceItem, WorkspaceGroup, MixedOrderEntry } from '@common/types';
 import { isLauncherItem, isWindowItem } from '@common/types/guards';
@@ -14,6 +14,7 @@ import { getIconForItem } from '../services/iconService.js';
 import { closeDetachedGroupWindow } from '../detachedGroupWindowManager.js';
 
 import { loadDataFiles } from './dataHandlers.js';
+import { notifyWorkspaceChanged } from './notifications.js';
 import { executeLayout } from './itemHandlers.js';
 
 /**
@@ -25,15 +26,6 @@ async function closeDetachedWindowsForGroup(groupId: string): Promise<void> {
   const descendantIds = getDescendantGroupIds(groupId, groups);
   for (const id of [groupId, ...descendantIds]) {
     closeDetachedGroupWindow(id);
-  }
-}
-
-/**
- * ワークスペース変更イベントを全てのウィンドウに送信
- */
-export function notifyWorkspaceChanged(): void {
-  for (const window of BrowserWindow.getAllWindows()) {
-    window.webContents.send(IPC_CHANNELS.WORKSPACE_CHANGED);
   }
 }
 

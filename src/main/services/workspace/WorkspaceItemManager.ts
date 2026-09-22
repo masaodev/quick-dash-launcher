@@ -402,14 +402,4 @@ export class WorkspaceItemManager {
       throw error;
     }
   }
-
-  public clear(): void {
-    try {
-      setStoredItems(this.store, []);
-      logger.info('Cleared all workspace items');
-    } catch (error) {
-      logger.error({ error }, 'Failed to clear workspace');
-      throw error;
-    }
-  }
 }

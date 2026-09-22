@@ -7,11 +7,13 @@
 v0.5.20以降、開発モード実行時には赤い「DEV」オーバーレイ付きアイコンが適用されます。これにより、本番環境と視覚的に区別できます。
 
 **アイコンの仕組み**:
+
 - 開発用アイコンは`assets/icon-dev.ico`、`assets/icon-dev.png`に配置済み
 - `PathManager.getAppIconPath()`が環境に応じて`assets/`ディレクトリのアイコンを選択
 - 全ウィンドウ（メイン、トレイ、スプラッシュ、ワークスペース、管理）に適用
 
 **App User Model ID**:
+
 - 開発モード用に異なるIDを設定（アイコンキャッシュ対策）
 - 本番: `net.masaodev.quick-dash-launcher`
 - 開発: `net.masaodev.quick-dash-launcher.dev`
@@ -22,22 +24,22 @@ v0.5.3以降、開発時に複数のインスタンスを同時に起動でき�
 
 #### 利用可能なインスタンス
 
-| コマンド | ポート | ホットキー | 設定フォルダ | 用途 |
-|---------|--------|-----------|------------|------|
-| `npm run dev` | 9001 | Ctrl+Alt+A | `%APPDATA%\dev-quick-dash-launcher\config` | メイン開発環境 |
-| `npm run dev2` | 9002 | Ctrl+Alt+S | `%APPDATA%\dev2-quick-dash-launcher\config` | 比較検証用 |
-| `npm run dev:test` | 9003 | Ctrl+Alt+T | `./tests/dev/full` | テストデータでの動作確認 |
+| コマンド           | ポート | ホットキー | 設定フォルダ                                | 用途                     |
+| ------------------ | ------ | ---------- | ------------------------------------------- | ------------------------ |
+| `npm run dev`      | 9001   | Ctrl+Alt+A | `%APPDATA%\dev-quick-dash-launcher\config`  | メイン開発環境           |
+| `npm run dev2`     | 9002   | Ctrl+Alt+S | `%APPDATA%\dev2-quick-dash-launcher\config` | 比較検証用               |
+| `npm run dev:test` | 9003   | Ctrl+Alt+T | `./tests/dev/full`                          | テストデータでの動作確認 |
 
 #### 環境変数
 
 インスタンスの動作は以下の環境変数で制御されます：
 
-| 環境変数 | 説明 | 例 |
-|---------|------|-----|
-| `APP_INSTANCE` | インスタンス識別子（userDataパスに使用） | `dev`, `dev2` |
-| `VITE_PORT` | Vite開発サーバーのポート番号 | `9001`, `9002` |
-| `HOTKEY` | 起動ホットキー（設定ファイルを上書き） | `Ctrl+Alt+A`, `Ctrl+Alt+S` |
-| `QUICK_DASH_CONFIG_DIR` | 設定フォルダのパス（絶対パスまたは相対パス） | `./tests/dev/full` |
+| 環境変数                | 説明                                         | 例                         |
+| ----------------------- | -------------------------------------------- | -------------------------- |
+| `APP_INSTANCE`          | インスタンス識別子（userDataパスに使用）     | `dev`, `dev2`              |
+| `VITE_PORT`             | Vite開発サーバーのポート番号                 | `9001`, `9002`             |
+| `HOTKEY`                | 起動ホットキー（設定ファイルを上書き）       | `Ctrl+Alt+A`, `Ctrl+Alt+S` |
+| `QUICK_DASH_CONFIG_DIR` | 設定フォルダのパス（絶対パスまたは相対パス） | `./tests/dev/full`         |
 
 #### 実装の仕組み
 
@@ -82,6 +84,7 @@ const hotkey = envHotkey || (await this.settingsService.get('hotkey'));
 独自のインスタンスを作成する場合は、環境変数を指定して起動します：
 
 **PowerShellの例:**
+
 ```powershell
 # カスタムポート・ホットキーで起動
 $env:APP_INSTANCE="custom"; $env:VITE_PORT="9003"; $env:HOTKEY="Ctrl+Shift+Z"; npm run dev
@@ -91,6 +94,7 @@ $env:QUICK_DASH_CONFIG_DIR="./tests/dev/full"; npm run dev
 ```
 
 **Bashの例:**
+
 ```bash
 # カスタムポート・ホットキーで起動
 APP_INSTANCE=custom VITE_PORT=9003 HOTKEY=Ctrl+Shift+Z npm run dev
@@ -109,6 +113,7 @@ QUICK_DASH_CONFIG_DIR=./tests/dev/full npm run dev
 ## 重要な実装詳細
 
 ### ウィンドウの動作
+
 - フレームレスウィンドウ（600x400px）常に最前面
 - DevToolsが開いていない限りブラー時に非表示（固定化時・編集モード時は例外）
 - Alt+Space起動ホットキーで表示/非表示（デフォルト、設定で変更可能）
@@ -133,6 +138,7 @@ QUICK_DASH_CONFIG_DIR=./tests/dev/full npm run dev
 データ読み込み処理（`src/main/ipc/dataHandlers.ts`の`loadDataFiles()`関数）では、タブ単位で重複排除が行われます。
 
 **実装方法：**
+
 1. `SettingsService`から`dataFileTabs`設定を読み込む
 2. `sourceFile → tabIndex` のマップを作成
 3. 各データファイル処理時に、そのファイルが属するタブIndexを取得
@@ -140,16 +146,18 @@ QUICK_DASH_CONFIG_DIR=./tests/dev/full npm run dev
 5. 重複判定キー: `${name}|${path}|${args}`
 
 **重複排除ルール：**
+
 - **同一タブ内**: 重複するアイテムは1つのみ読み込む
 - **異なるタブ間**: 重複するアイテムを両方とも読み込む
 - **タブに属さないファイル**: 独立したタブ（tabIndex = -1）として扱う
 
 **実装例：**
+
 ```typescript
 // sourceFile → tabIndex のマップを作成
 const fileToTabMap = new Map<string, number>();
 dataFileTabs.forEach((tab, index) => {
-  tab.files.forEach(fileName => {
+  tab.files.forEach((fileName) => {
     fileToTabMap.set(fileName, index);
   });
 });
@@ -177,6 +185,7 @@ for (const fileName of dataFiles) {
 これにより、タブ間で独立した重複管理が可能になります。
 
 ### アイテムタイプの検出
+
 - URL: `://`を含む
 - カスタムURI: 非http(s)スキーマ（obsidian://, ms-excel://）
 - アプリ: .exe, .bat, .cmd, .com, .lnk拡張子
@@ -184,6 +193,7 @@ for (const fileName of dataFiles) {
 - ファイル: その他すべて
 
 ### 検索の実装
+
 - 大文字小文字を区別しないインクリメンタルサーチ
 - スペース区切りキーワードでAND検索
 - 表示名のみでフィルタリング
@@ -191,12 +201,14 @@ for (const fileName of dataFiles) {
 ## コード品質向上のガイドライン
 
 ### リファクタリングの原則
+
 1. **DRY（Don't Repeat Yourself）**: 同じロジックの重複を避ける
 2. **単一責任の原則**: 1つの関数は1つの責任のみ持つ
 3. **関数の小型化**: 理解しやすいサイズに関数を分割
 4. **命名の明確化**: 関数名と変数名で処理内容を明確に表現
 
 ### 共通処理の抽出手順
+
 1. **重複コードの特定**: 同様の処理が複数箇所にないか定期的に確認
 2. **共通部分の抽出**: 重複している処理を独立した関数として分離
 3. **関数の統合**: 抽出した共通関数を各箇所で使用するよう修正
@@ -206,6 +218,7 @@ for (const fileName of dataFiles) {
 
 **1. IconServiceの例（アイコン取得ロジックの共通化）:**
 ワークスペース機能のリファクタリングで、アイコン取得ロジックの重複を削除しました：
+
 - `workspaceHandlers.ts`: 36行→13行（重複削除）
 - `useModalInitializer.ts`: 24行→14行（重複削除）
 - 60行以上の重複コードを`IconService`に集約
@@ -215,10 +228,12 @@ for (const fileName of dataFiles) {
 アイテム起動処理の重複コードを共通ユーティリティに集約しました：
 
 **新規ユーティリティモジュール:**
+
 - `src/main/utils/windowActivator.ts` - ウィンドウ検索・アクティブ化・位置サイズ設定
 - `src/main/utils/itemLauncher.ts` - URL/ファイル/アプリ/カスタムURIの起動処理
 
 **改善箇所:**
+
 - `itemHandlers.ts` - アイテム起動処理を共通関数に置き換え
 - `workspaceHandlers.ts` - ワークスペースアイテム起動処理を共通関数に置き換え
 - 重複していた起動ロジックを一箇所で管理
@@ -228,20 +243,22 @@ for (const fileName of dataFiles) {
 大きなコンポーネントを小さく分割して保守性を向上しました：
 
 **新規コンポーネント:**
+
 - `src/renderer/components/WindowConfigEditor.tsx` - ウィンドウ設定エディター（115行）
 - `src/renderer/components/CustomIconEditor.tsx` - カスタムアイコンエディター（47行）
 
 **改善内容:**
+
 - `RegisterModal.tsx` - 642行の大きなコンポーネントを分割
 - ウィンドウ設定とカスタムアイコン編集を独立したコンポーネントに分離
 - 古いウィンドウタイトルフィールド（単独）を削除し、WindowConfigに統合
 - 各コンポーネントが明確な責任を持つように再設計
 
 ### パフォーマンス最適化
+
 - **バンドルサイズ**: 不要なコードの削除でアプリケーションサイズを最適化
 - **処理の一貫性**: 同じデータに対して常に同じ処理を適用
 - **エラーハンドリング**: 1箇所での修正が全体に反映される設計
-
 
 ### 依存関係管理
 
@@ -252,10 +269,12 @@ v0.5.7以降、Dependabotを導入して依存関係の自動更新を実現し�
 **設定ファイル:** `.github/dependabot.yml`
 
 **自動更新の対象:**
+
 - npm依存関係（package.json）
 - GitHub Actions（ワークフローファイル）
 
 **更新スケジュール:**
+
 - **npm依存関係**: 毎週月曜日 9:00 JST（Asia/Tokyo）
 - **GitHub Actions**: 毎週月曜日 9:00 JST（Asia/Tokyo）
 
@@ -268,6 +287,7 @@ Dependabotは依存関係を以下のグループに分けてPRを作成しま�
 4. **GitHub Actions** - CI/CDワークフローの更新
 
 **PR数の制限:**
+
 - npm依存関係: 最大10件のPR
 - GitHub Actions: 最大5件のPR
 
@@ -275,6 +295,7 @@ Dependabotは依存関係を以下のグループに分けてPRを作成しま�
 脆弱性が検出された場合、即座にPRが作成されます。
 
 **運用フロー:**
+
 1. 毎週月曜日にDependabotが依存関係をチェック
 2. 更新可能なパッケージがあればPRを自動作成
 3. PR内容をレビュー（CHANGELOGや破壊的変更を確認）
@@ -282,6 +303,7 @@ Dependabotは依存関係を以下のグループに分けてPRを作成しま�
 5. テストが自動実行され、品質が確認される
 
 **注意事項:**
+
 - メジャーバージョンアップは慎重にテスト
 - 破壊的変更がある場合は手動で対応
 - E2Eテストを実行して動作確認
@@ -291,6 +313,7 @@ Dependabotは依存関係を以下のグループに分けてPRを作成しま�
 ### Electronアプリケーション パターン
 
 #### サービスクラスの設計
+
 メインプロセスの主要機能はサービスクラスで実装されています（`src/main/services/`）:
 
 - **SettingsService**: アプリケーション設定の読み書き・管理
@@ -299,7 +322,7 @@ Dependabotは依存関係を以下のグループに分けてPRを作成しま�
 - **AutoLaunchService**: Windows起動時の自動起動設定
 - **FaviconService**: ファビコン・アイコンの取得・キャッシュ管理
 - **SearchHistoryService**: 検索履歴の保存・読み込み
-- **WorkspaceService**: ワークスペースアイテム・グループ・実行履歴の管理
+- **WorkspaceService**: ワークスペースアイテム・グループの管理
 - **IconService**: アイテムタイプに応じた適切なアイコン取得処理
 - **ClipboardService**: クリップボードデータの保存・読み込み管理
 - **IconFetchErrorService**: アイコン取得エラーの記録・管理
@@ -308,6 +331,7 @@ Dependabotは依存関係を以下のグループに分けてPRを作成しま�
 - **ToastWindowService**: トーストウィンドウの表示管理
 
 **設計パターン:**
+
 - すべてシングルトンパターンで実装（静的クラスの場合もあり）
 - `getInstance()`メソッドでインスタンスを取得（または静的メソッド）
 - 各サービスは単一責任の原則に従う
@@ -315,6 +339,7 @@ Dependabotは依存関係を以下のグループに分けてPRを作成しま�
 - 重複したロジックを一箇所に集約（DRY原則）
 
 **使用例:**
+
 ```typescript
 // AutoLaunchServiceの使用例（シングルトン）
 const autoLaunchService = AutoLaunchService.getInstance();
@@ -322,21 +347,18 @@ await autoLaunchService.setAutoLaunch(true); // 自動起動を有効化
 const status = autoLaunchService.getAutoLaunchStatus(); // 現在の状態を取得
 
 // IconServiceの使用例（静的メソッド）
-const icon = await IconService.getIconForItem(
-  filePath,
-  itemType,
-  iconsFolder,
-  extensionsFolder
-);
+const icon = await IconService.getIconForItem(filePath, itemType, iconsFolder, extensionsFolder);
 ```
 
 #### IPCハンドラーの構造化
+
 - 機能ごとにハンドラーを分離（`src/main/ipc/`）
 - 各ハンドラーは単一責任の原則に従う
 - サービスクラスを呼び出して処理を実行
 - 型安全性のため`src/common/types.ts`で共有型を定義
 
 #### プロセス間通信のベストプラクティス
+
 ```typescript
 // メインプロセス側
 ipcMain.handle('channel-name', async (event, args) => {
@@ -354,24 +376,29 @@ const result = await window.api.channelName(args);
 ```
 
 #### ファイルパスの処理
+
 - 開発/本番環境の違いを考慮
 - `app.isPackaged`を使用して環境を判定
 - パスは常に絶対パスで処理
 
 #### 設定ファイルの場所の管理
+
 設定ファイルやアイコンキャッシュなどの保存場所は`PathManager`クラスで一元管理されています。
 
 **デフォルトの動作:**
+
 - Windows: `%APPDATA%\quick-dash-launcher\config`
 - 環境変数 `QUICK_DASH_CONFIG_DIR` で任意の場所に変更可能
 
 **多重起動時のuserDataパス:**
 `APP_INSTANCE`環境変数が設定されている場合、インスタンスごとに独立したuserDataパスが使用されます：
+
 - `npm run dev`: `%APPDATA%\dev-quick-dash-launcher\config`
 - `npm run dev2`: `%APPDATA%\dev2-quick-dash-launcher\config`
 - カスタム: `%APPDATA%\{APP_INSTANCE}-quick-dash-launcher\config`
 
 **テスト時のパス管理:**
+
 ```typescript
 import { PathTestHelper } from '../../src/test/helpers/pathTestHelper';
 
@@ -394,6 +421,7 @@ describe('My Test', () => {
 ```
 
 **開発時のカスタムパス使用:**
+
 ```bash
 # 開発用の設定を別フォルダで管理
 QUICK_DASH_CONFIG_DIR=./dev-config npm run dev
@@ -405,14 +433,17 @@ QUICK_DASH_CONFIG_DIR=./prod-config npm run dev
 ### React + TypeScript パターン
 
 #### 状態管理
+
 - 小規模な状態は`useState`で管理
 - グローバル状態は必要に応じてContextを使用
 - 複雑な状態ロジックはカスタムフックに抽出
 
 #### カスタムフックによる責務分離
+
 大きなコンポーネントは、関連する状態とロジックをカスタムフックに分離してください：
 
 **ワークスペース機能の例:**
+
 ```typescript
 // データ管理フック
 const { items, groups, executionHistory, loadItems } = useWorkspaceData();
@@ -425,37 +456,39 @@ const { isDraggingOver } = useNativeDragDrop(loadItems);
 ```
 
 **カスタムフック作成のガイドライン:**
+
 - 単一責任の原則に従う（データ管理、アクション処理、UI状態など）
 - 関連するロジックをグループ化
 - 再利用可能な形で設計
 - JSDocで目的と使用例を明記
 
 **参考実装:**
+
 - `src/renderer/hooks/workspace/useWorkspaceData.ts` - データ読み込みと状態管理
 - `src/renderer/hooks/workspace/useWorkspaceActions.ts` - アクション処理の統合
 - `src/renderer/hooks/useNativeDragDrop.ts` - ネイティブドラッグ&ドロップ処理
 - `src/renderer/hooks/useClipboardPaste.ts` - クリップボードからのペースト処理
 - `src/renderer/hooks/useCollapsibleSections.ts` - 折りたたみ状態管理
 - `src/renderer/hooks/workspace/useWorkspaceItemGroups.ts` - アイテムグループ化ロジック
-- `src/renderer/hooks/workspace/useWorkspaceContextMenu.ts` - コンテキストメニュー管理（6つのパス操作を1つのジェネリック関数に統合）
-- `src/renderer/hooks/workspace/useWorkspaceDragDrop.ts` - 型安全なドラッグ&ドロップヘルパー
 - `src/renderer/hooks/workspace/useWorkspaceResize.ts` - ワークスペースウィンドウのサイズ変更処理（70行の複雑なロジックを分離）
 - `src/renderer/hooks/useFileOperations.ts` - ファイルとURL操作の共通ユーティリティ（重複コード削減）
 
 **リファクタリング成果:**
+
 - **WorkspaceApp.tsx**: 444行→216行（51%削減）- 複雑なロジックをカスタムフックに分離
 - **WorkspaceGroupedList.tsx**: 460行→385行（16%削減）- Props構造を改善（24個→3つのオブジェクト）
-- **useWorkspaceContextMenu**: 6つのパス操作ハンドラーを1つのジェネリック関数`handlePathOperation`に統合
 - **重複コード削減**: useNativeDragDropとuseClipboardPasteの共通ロジックをuseFileOperationsに抽出
 
 #### 型定義とガード関数
+
 - インターフェースは`I`プレフィックスを使用
 - 型は`src/common/types/`で機能別に分割管理（v0.5.20で再編成）
 - 型アサーションの代わりに型ガード関数を使用（`src/common/types/guards.ts`）
 
 **型ガード関数の使用例:**
+
 ```typescript
-import { isLauncherItem, isWorkspaceItem, isDragItemData } from '@common/types/guards';
+import { isLauncherItem } from '@common/types/guards';
 
 // 型アサーション（非推奨）
 const item = data as LauncherItem;
@@ -468,6 +501,7 @@ if (isLauncherItem(data)) {
 ```
 
 **型定義ファイルの構成** (v0.5.20以降、20ファイル):
+
 - `types/launcher.ts` - ランチャーアイテム関連の型
 - `types/register.ts` - 登録アイテム関連の型とユーティリティ
 - `types/guards.ts` - 型ガード関数
@@ -492,16 +526,19 @@ if (isLauncherItem(data)) {
 ### CSS開発パターン
 
 #### デザインシステムの使用
+
 QuickDashLauncherではCSS変数ベースの統一されたデザインシステムを採用しています。
 
 詳細な命名規則・ベストプラクティスは **[CSSデザインシステム](../architecture/css-design.md)** を参照してください。
 
 **基本ルール:**
+
 - ハードコード値の使用禁止（色、サイズ、間隔など）
 - 必ずvariables.cssで定義された変数を使用
 - 共通クラス（common.css）を積極的に活用
 
 **新しいコンポーネントのスタイル作成手順:**
+
 1. `src/renderer/styles/components/`に新しいCSSファイルを作成
 2. CSS変数のみを使用してスタイルを記述
 3. 共通クラスで対応できる部分は再利用
@@ -526,15 +563,18 @@ QuickDashLauncherではCSS変数ベースの統一されたデザインシステ
 ```
 
 **詳細情報:**
+
 - [CSSデザインシステム](../architecture/css-design.md) - 完全なガイドラインと使用方法
 
 ### パフォーマンス最適化パターン
 
 #### アイコンのキャッシュ
+
 - ファビコンは`%APPDATA%/quick-dash-launcher/config/icon-cache/favicons/`にキャッシュ
 - ダウンロード前にキャッシュの存在を確認
 
 #### 検索の最適化
+
 - 大文字小文字を区別しないインクリメンタルサーチ
 - フィルタリングはレンダラー側でリアルタイム実行
 
@@ -543,6 +583,7 @@ QuickDashLauncherではCSS変数ベースの統一されたデザインシステ
 ### 主要コンポーネント
 
 #### メインウィンドウ
+
 - **App.tsx**: メインアプリケーションコンポーネント
 - **LauncherSearchBox.tsx**: 検索入力フィールド
 - **LauncherActionButtons.tsx**: アクションボタンコンテナ
@@ -556,6 +597,7 @@ QuickDashLauncherではCSS変数ベースの統一されたデザインシステ
 - **AdminItemManagerList.tsx**: 編集モード用のデータ編集テーブル
 
 #### ワークスペースウィンドウ
+
 - **WorkspaceApp.tsx**: ワークスペースアプリケーションコンポーネント（444行→216行にリファクタリング）
   - カスタムフックによる責務分離でコード量を51%削減
   - データ管理、アクション処理、ドラッグ&ドロップを個別のフックに分離
@@ -563,9 +605,9 @@ QuickDashLauncherではCSS変数ベースの統一されたデザインシステ
 - **WorkspaceGroupedList.tsx**: グループ化されたアイテムリスト（460行→385行にリファクタリング）
   - グループ化ロジックとコンテキストメニュー管理をフックに抽出
 - **WorkspaceGroupHeader.tsx**: グループヘッダー（名前編集、色変更、折りたたみ、削除）
-- **ExecutionHistoryItemCard.tsx**: 実行履歴アイテムカード
 
 ### ダイアログコンポーネント
+
 ネイティブダイアログ（`window.alert()`, `window.confirm()`, `dialog.showOpenDialog()`）の代替として、カスタムReactコンポーネントを使用しています。
 
 - **AlertDialog.tsx**: 通知・警告・エラー表示
@@ -582,7 +624,9 @@ QuickDashLauncherではCSS変数ベースの統一されたデザインシステ
   - 統一されたUIでのファイル選択
 
 ### 設定メニュー
+
 設定関連機能は⚙ボタンクリックで表示されるドロップダウンメニューに集約:
+
 - ⚙️ 基本設定
 - ✏️ アイテム管理
 - ─── (区切り線)
@@ -601,9 +645,11 @@ QuickDashLauncherではCSS変数ベースの統一されたデザインシステ
 開発モードでは、以下の方法でDevToolsを開くことができます：
 
 **管理ウィンドウ:**
+
 - `Ctrl+Shift+I` で開発者ツールを開く（開発モードのみ）
 
 **メインウィンドウ:**
+
 - コードを直接編集して `mainWindow.webContents.openDevTools()` を追加する方法もありますが、通常は管理ウィンドウのDevToolsで十分です
 
 > **注意**: v0.4.4以降、開発モードでの自動DevTools起動は削除されました。必要な場合は上記の方法で手動で開いてください。
@@ -632,6 +678,7 @@ npm run debug:windows -- --all-desktops --show-excluded --output debug.txt
 ```
 
 **機能:**
+
 - ウィンドウ一覧の取得と確認
 - 除外ルールの動作確認（プロセス名・クラス名の組み合わせ）
 - 各ウィンドウのプロセス名・クラス名・実行パスの確認
@@ -642,17 +689,21 @@ npm run debug:windows -- --all-desktops --show-excluded --output debug.txt
 ### デバッグ時の問題
 
 #### 白い/空白のウィンドウ
+
 - DevToolsコンソールでエラーを確認（`Ctrl+Shift+I`で開く）
 - Viteデベロップメントサーバーが起動しているか確認（開発モード時）
 - プロダクションモードでindex.htmlパスが正しいか確認
 
 #### ウィンドウが検索で表示されない
+
 1. **除外ルールで除外されていないか確認**
+
    ```bash
    npm run debug:windows -- --show-excluded
    ```
 
 2. **全デスクトップを取得しているか確認**
+
    ```bash
    npm run debug:windows -- --all-desktops
    ```
@@ -662,6 +713,7 @@ npm run debug:windows -- --all-desktops --show-excluded --output debug.txt
    - `--all-desktops`オプションで取得可能
 
 ### よくあるビルドの問題
+
 - TypeScript設定の`@common`パスエイリアスがVite設定と一致しているか確認
 - ビルド出力が正しいディレクトリ構造になっているか確認
 - Electronのファイルパスがビルド/開発モードで適切に処理されているか確認
@@ -669,6 +721,7 @@ npm run debug:windows -- --all-desktops --show-excluded --output debug.txt
 ## ファイル入出力処理
 
 ### 改行コードの処理
+
 - **ファイル保存時**: 常にCRLF（`\r\n`）で統一
 - **ファイル読み込み時**: 正規表現`/\r\n|\n|\r/`で分割し、CRLF、LF、CRのいずれにも対応
 - **対象関数**:
@@ -676,6 +729,7 @@ npm run debug:windows -- --all-desktops --show-excluded --output debug.txt
   - `registerItems`: 新規アイテム登録時の保存（CRLF統一）
 
 ### データフォーマットの処理
+
 データファイルはJSON形式で管理されています。詳細な形式仕様については、**[データファイル形式仕様](../architecture/file-formats/data-format.md)** を参照してください。
 
 ## UI/UXガイドライン
@@ -683,6 +737,7 @@ npm run debug:windows -- --all-desktops --show-excluded --output debug.txt
 ### ユーザーインターフェースの一貫性
 
 #### 検索インターフェース
+
 - **クリアボタン**: 全ての検索ボックスに統一されたクリア機能を提供
   - テキスト入力時に「×」ボタンを表示
   - クリックで入力内容をクリア、フォーカスを維持
@@ -691,14 +746,17 @@ npm run debug:windows -- --all-desktops --show-excluded --output debug.txt
 - **キーボードナビゲーション**: 矢印キー、Enterキーでの操作
 
 #### フォーカス管理
+
 - **自動フォーカス**: ウィンドウ表示時、モーダル表示時に検索ボックスに自動フォーカス
 - **フォーカス維持**: クリアボタンクリック後も検索ボックスにフォーカスを維持
 
 ### アクセシビリティ
+
 - **aria-label**: クリアボタンに「検索をクリア」ラベルを設定
 - **キーボードアクセス**: Tabキーでフォーカス移動が可能
 
 ### 視覚的フィードバック
+
 - **ホバーエフェクト**: クリアボタンのホバー時に背景色変更
 - **クリックフィードバック**: アクティブ状態の視覚的表現
 - **統一されたデザイン**: CSSデザインシステムの変数を使用した一貫したスタイル

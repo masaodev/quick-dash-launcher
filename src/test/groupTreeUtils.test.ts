@@ -13,7 +13,7 @@ import {
 function makeGroup(overrides: Partial<WorkspaceGroup> & { id: string }): WorkspaceGroup {
   return {
     displayName: overrides.id,
-    color: 'var(--color-primary)',
+    color: 'primary',
     order: 0,
     collapsed: false,
     createdAt: Date.now(),

@@ -3,7 +3,12 @@ import * as path from 'path';
 
 import logger from '@common/logger';
 import { FileUtils } from '@common/utils/fileUtils';
-import { JSON_DATA_SCHEMA_REF, SETTINGS_SCHEMA_REF } from '@common/types';
+import {
+  JSON_DATA_SCHEMA_REF,
+  SETTINGS_SCHEMA_REF,
+  WORKSPACE_ARCHIVE_SCHEMA_REF,
+  WORKSPACE_SCHEMA_REF,
+} from '@common/types';
 
 import { PathManager } from '../config/pathManager.js';
 
@@ -21,6 +26,8 @@ import { PathManager } from '../config/pathManager.js';
 export const SCHEMA_FILE_NAMES = [
   path.basename(JSON_DATA_SCHEMA_REF),
   path.basename(SETTINGS_SCHEMA_REF),
+  path.basename(WORKSPACE_SCHEMA_REF),
+  path.basename(WORKSPACE_ARCHIVE_SCHEMA_REF),
 ];
 
 /** README 雛形のファイル名（assets/ 直下） */

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import type { WorkspaceGroup, GroupDropZone } from '@common/types';
+import { resolveGroupColorCss } from '@common/groupColors';
 
 interface WorkspaceGroupHeaderProps {
   group: WorkspaceGroup;
@@ -144,7 +145,7 @@ function WorkspaceGroupHeader({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       onContextMenu={onContextMenu}
-      style={{ '--group-color': group.color } as React.CSSProperties}
+      style={{ '--group-color': resolveGroupColorCss(group.color) } as React.CSSProperties}
     >
       <span className={`workspace-group-collapse-icon ${group.collapsed ? 'collapsed' : ''}`}>
         ▼

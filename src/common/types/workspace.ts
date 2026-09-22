@@ -1,4 +1,3 @@
-import { LauncherItem } from './launcher';
 import type { ClipboardFormat } from './clipboard';
 
 /**
@@ -114,84 +113,6 @@ export interface WorkspaceItem {
   clipboardSavedAt?: number;
   /** レイアウト内のウィンドウエントリ一覧（layout専用） */
   layoutEntries?: import('./launcher').LayoutWindowEntry[];
-}
-
-/**
- * 実行履歴アイテム
- * メインウィンドウで実行されたアイテムの履歴を記録する
- */
-export interface ExecutionHistoryItem {
-  /** 履歴アイテムの一意識別子（UUID） */
-  id: string;
-  /** アイテム名 */
-  itemName: string;
-  /** アイテムのパス、URL、またはコマンド */
-  itemPath: string;
-  /** アイテムのタイプ */
-  itemType:
-    | 'url'
-    | 'file'
-    | 'folder'
-    | 'app'
-    | 'customUri'
-    | 'group'
-    | 'windowOperation'
-    | 'clipboard'
-    | 'layout';
-  /** アイテムのアイコン（実行時にキャッシュから取得、ファイルには保存しない） */
-  icon?: string;
-  /** カスタムアイコンのファイル名（オプション） */
-  customIcon?: string;
-  /** 実行時のコマンドライン引数（オプション） */
-  args?: string;
-  /** 実行日時（timestamp） */
-  executedAt: number;
-  /** ウィンドウ操作：X座標（windowOperation専用、オプション） */
-  windowX?: number;
-  /** ウィンドウ操作：Y座標（windowOperation専用、オプション） */
-  windowY?: number;
-  /** ウィンドウ操作：幅（windowOperation専用、オプション） */
-  windowWidth?: number;
-  /** ウィンドウ操作：高さ（windowOperation専用、オプション） */
-  windowHeight?: number;
-  /** ウィンドウ操作：仮想デスクトップ番号（windowOperation専用、オプション） */
-  virtualDesktopNumber?: number;
-  /** ウィンドウ操作：ウィンドウをアクティブにするか（windowOperation専用、オプション） */
-  activateWindow?: boolean;
-  /** ウィンドウ操作：プロセス名で検索（windowOperation専用、オプション） */
-  processName?: string;
-  /** ウィンドウ操作：アクティブモニターの中央に移動するか（windowOperation専用、オプション） */
-  moveToActiveMonitorCenter?: boolean;
-  /** ウィンドウ操作：全仮想デスクトップにピン止めするか（windowOperation専用、オプション） */
-  pinToAllDesktops?: boolean;
-  /** グループ内のアイテム名リスト（group専用） */
-  itemNames?: string[];
-  /** クリップボードデータファイルへの参照（clipboard専用） */
-  clipboardDataRef?: string;
-  /** クリップボードの保存フォーマット（clipboard専用） */
-  clipboardFormats?: ClipboardFormat[];
-}
-
-/**
- * ドラッグ&ドロップで転送されるデータの型
- * ワークスペース内のアイテム、実行履歴、グループのドラッグを型安全に扱う
- */
-export type DragItemData =
-  | { type: 'workspace-item'; itemId: string; currentGroupId?: string }
-  | { type: 'history-item'; historyItem: LauncherItem }
-  | { type: 'group'; groupId: string };
-
-/**
- * ドロップターゲットのデータ型
- * ドロップ先の種別と識別子を表す
- */
-export interface DropTargetData {
-  /** ドロップ先のタイプ */
-  targetType: 'group' | 'item' | 'uncategorized';
-  /** グループID（targetType='group'の場合） */
-  groupId?: string;
-  /** アイテムID（targetType='item'の場合） */
-  itemId?: string;
 }
 
 /** グループヘッダーのドロップゾーン（Y位置に応じた操作区別） */

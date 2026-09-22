@@ -532,6 +532,7 @@ export function convertRegisterItemToJsonItem(
       type: 'layout' as const,
       displayName: registerItem.displayName,
       entries: stripIconFromLayoutEntries(registerItem.layoutEntries || []),
+      ...(registerItem.customIcon && { customIcon: registerItem.customIcon }),
       ...(memo && { memo }),
       updatedAt: now,
     };

@@ -31,7 +31,7 @@ import {
   detectInstalledBrowsers,
   parseBrowserBookmarksWithFolders,
 } from '../ipc/bookmarkHandlers.js';
-import { notifyDataChanged } from '../ipc/dataHandlers.js';
+import { notifyDataChanged } from '../ipc/notifications.js';
 
 import { writeDataFile } from './dataFileTracker.js';
 import { SettingsService } from './settingsService.js';

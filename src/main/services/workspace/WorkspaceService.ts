@@ -48,6 +48,8 @@ export class WorkspaceService {
   private archiveManager: WorkspaceArchiveManager | null = null;
 
   private static instance: WorkspaceService;
+  /** 初期化の Promise（並行呼び出しで initializeStore が二重に走らないように 1 本にまとめる） */
+  private static initPromise: Promise<void> | null = null;
 
   /**
    * デフォルト設定値
@@ -60,7 +62,7 @@ export class WorkspaceService {
 
   private static readonly DEFAULT_ARCHIVE_DATA = {
     groups: [] as ArchivedWorkspaceGroup[],
-    items: [] as WorkspaceItem[],
+    items: [] as ArchivedWorkspaceItem[],
   };
 
   private static readonly DEFAULT_DETACHED_DATA = {
@@ -141,8 +143,15 @@ export class WorkspaceService {
   public static async getInstance(): Promise<WorkspaceService> {
     if (!WorkspaceService.instance) {
       WorkspaceService.instance = new WorkspaceService();
-      await WorkspaceService.instance.initializeStore();
     }
+    if (!WorkspaceService.initPromise) {
+      WorkspaceService.initPromise = WorkspaceService.instance.initializeStore().catch((error) => {
+        // 失敗したら次の呼び出しで再試行できるようにする
+        WorkspaceService.initPromise = null;
+        throw error;
+      });
+    }
+    await WorkspaceService.initPromise;
     return WorkspaceService.instance;
   }
 
@@ -263,16 +272,6 @@ export class WorkspaceService {
   public async getItemsByGroup(groupId?: string): Promise<WorkspaceItem[]> {
     await this.initializeStore();
     return this.itemManager!.getItemsByGroup(groupId);
-  }
-
-  public async getWorkspacePath(): Promise<string> {
-    await this.initializeStore();
-    return this.store!.path;
-  }
-
-  public async clear(): Promise<void> {
-    await this.initializeStore();
-    this.itemManager!.clear();
   }
 
   // --- グループ管理 ---

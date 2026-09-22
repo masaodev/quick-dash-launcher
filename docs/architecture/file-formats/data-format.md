@@ -33,14 +33,14 @@ QuickDashLauncherは複数のJSON形式のデータファイルをサポート�
 
 アイコンは `%APPDATA%/quick-dash-launcher/config/icon-cache/` 以下にサブフォルダで分類されます：
 
-| サブフォルダ | 説明 | ファイル名形式 |
-|------------|------|--------------|
-| `icon-cache/apps/` | EXEファイルのアイコン | `{basename}_icon.png` |
-| `icon-cache/apps/` | カスタムURIスキームのアイコン | `uri_{scheme}_icon.png` |
-| `icon-cache/apps/` | 登録アプリ（UWP）のアイコン | `uwp_{PackageFamilyName}_icon.png` |
-| `icon-cache/favicons/` | WebサイトのFavicon | URL由来のファイル名 |
-| `icon-cache/custom/` | カスタムアイコン（手動設定） | 任意のファイル名 |
-| `icon-cache/extensions/` | ファイル拡張子のアイコン | `ext_{ext}_icon.png` |
+| サブフォルダ             | 説明                          | ファイル名形式                     |
+| ------------------------ | ----------------------------- | ---------------------------------- |
+| `icon-cache/apps/`       | EXEファイルのアイコン         | `{basename}_icon.png`              |
+| `icon-cache/apps/`       | カスタムURIスキームのアイコン | `uri_{scheme}_icon.png`            |
+| `icon-cache/apps/`       | 登録アプリ（UWP）のアイコン   | `uwp_{PackageFamilyName}_icon.png` |
+| `icon-cache/favicons/`   | WebサイトのFavicon            | URL由来のファイル名                |
+| `icon-cache/custom/`     | カスタムアイコン（手動設定）  | 任意のファイル名                   |
+| `icon-cache/extensions/` | ファイル拡張子のアイコン      | `ext_{ext}_icon.png`               |
 
 データファイルの `customIcon` フィールドは `icon-cache/custom/` 内のファイル名を指定します。
 
@@ -67,11 +67,11 @@ QuickDashLauncherは複数のJSON形式のデータファイルをサポート�
 
 ### 2.2. トップレベルフィールド
 
-| フィールド | 型 | 必須 | 説明 |
-|-----------|-----|------|------|
-| **$schema** | string | - | JSON Schema への参照（エディタ補完・検証用）。QDL が書き戻すときに `../schemas/data.schema.json`（`config/schemas/` に起動時コピーされる同梱スキーマ）を補う。無い・違う値のときは読み込み時に補正して書き戻し、レポートに `normalized` として載る |
-| **version** | string | ✓ | ファイルフォーマットのバージョン（現在は "1.0"） |
-| **items** | array | ✓ | アイテムの配列（JsonItem型） |
+| フィールド  | 型     | 必須 | 説明                                                                                                                                                                                                                                               |
+| ----------- | ------ | ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **$schema** | string | -    | JSON Schema への参照（エディタ補完・検証用）。QDL が書き戻すときに `../schemas/data.schema.json`（`config/schemas/` に起動時コピーされる同梱スキーマ）を補う。無い・違う値のときは読み込み時に補正して書き戻し、レポートに `normalized` として載る |
+| **version** | string | ✓    | ファイルフォーマットのバージョン（現在は "1.0"）                                                                                                                                                                                                   |
+| **items**   | array  | ✓    | アイテムの配列（JsonItem型）                                                                                                                                                                                                                       |
 
 書き戻し時のキー順は `$schema` → `version` → `items` に固定されます（`serializeJsonDataFile`）。
 
@@ -126,17 +126,17 @@ QuickDashLauncherは複数のJSON形式のデータファイルをサポート�
 
 #### 3.1.1. フィールド構成
 
-| フィールド | 型 | 必須 | 説明 |
-|-----------|-----|------|------|
-| **id** | string | ✓ | 8文字の一意ID |
-| **type** | "item" | ✓ | アイテムタイプ（常に "item"） |
-| **displayName** | string | ✓ | アプリケーション内での表示名 |
-| **path** | string | ✓ | ファイルパス、URL、またはコマンド |
-| **args** | string | - | コマンドライン引数（オプション） |
-| **customIcon** | string | - | カスタムアイコンファイル名（オプション） |
-| **windowConfig** | object | - | ウィンドウ制御設定（オプション） |
-| **memo** | string | - | 自由記述メモ（オプション） |
-| **updatedAt** | number | - | 更新日時（Unixタイムスタンプ ms、オプション） |
+| フィールド       | 型     | 必須 | 説明                                          |
+| ---------------- | ------ | ---- | --------------------------------------------- |
+| **id**           | string | ✓    | 8文字の一意ID                                 |
+| **type**         | "item" | ✓    | アイテムタイプ（常に "item"）                 |
+| **displayName**  | string | ✓    | アプリケーション内での表示名                  |
+| **path**         | string | ✓    | ファイルパス、URL、またはコマンド             |
+| **args**         | string | -    | コマンドライン引数（オプション）              |
+| **customIcon**   | string | -    | カスタムアイコンファイル名（オプション）      |
+| **windowConfig** | object | -    | ウィンドウ制御設定（オプション）              |
+| **memo**         | string | -    | 自由記述メモ（オプション）                    |
+| **updatedAt**    | number | -    | 更新日時（Unixタイムスタンプ ms、オプション） |
 
 #### 3.1.2. サポートされるパス種類
 
@@ -205,27 +205,27 @@ QuickDashLauncherは複数のJSON形式のデータファイルをサポート�
 
 ##### 3.1.5.1. フィールド詳細
 
-| フィールド | 型 | 必須 | 既定値 | 説明 |
-|-----------|-----|------|--------|------|
-| **title** | string | ✓ | - | ウィンドウ検索用のタイトル文字列（ワイルドカード対応） |
-| **processName** | string | - | - | プロセス名で検索対象を絞り込み |
-| **activateWindow** | boolean | - | true | ウィンドウを前面に表示してフォーカス |
-| **virtualDesktopNumber** | number | - | - | 対象の仮想デスクトップ番号（1から開始） |
-| **x** | number | - | - | X座標（仮想スクリーン座標系） |
-| **y** | number | - | - | Y座標（仮想スクリーン座標系） |
-| **width** | number | - | - | 幅（ピクセル単位） |
-| **height** | number | - | - | 高さ（ピクセル単位） |
-| **moveToActiveMonitorCenter** | boolean | - | false | アクティブモニター中央に移動（x/y座標は無視） |
-| **pinToAllDesktops** | boolean | - | false | 全仮想デスクトップにピン止めするか |
+| フィールド                    | 型      | 必須 | 既定値 | 説明                                                   |
+| ----------------------------- | ------- | ---- | ------ | ------------------------------------------------------ |
+| **title**                     | string  | ✓    | -      | ウィンドウ検索用のタイトル文字列（ワイルドカード対応） |
+| **processName**               | string  | -    | -      | プロセス名で検索対象を絞り込み                         |
+| **activateWindow**            | boolean | -    | true   | ウィンドウを前面に表示してフォーカス                   |
+| **virtualDesktopNumber**      | number  | -    | -      | 対象の仮想デスクトップ番号（1から開始）                |
+| **x**                         | number  | -    | -      | X座標（仮想スクリーン座標系）                          |
+| **y**                         | number  | -    | -      | Y座標（仮想スクリーン座標系）                          |
+| **width**                     | number  | -    | -      | 幅（ピクセル単位）                                     |
+| **height**                    | number  | -    | -      | 高さ（ピクセル単位）                                   |
+| **moveToActiveMonitorCenter** | boolean | -    | false  | アクティブモニター中央に移動（x/y座標は無視）          |
+| **pinToAllDesktops**          | boolean | -    | false  | 全仮想デスクトップにピン止めするか                     |
 
 ##### 3.1.5.2. ワイルドカード検索
 
 タイトル検索では以下のワイルドカード文字が使用可能です：
 
-| 文字 | 説明 | 例 |
-|------|------|-----|
-| `*` | 任意の0文字以上の文字列 | `*Chrome*` は "Google Chrome - タブ名" にマッチ |
-| `?` | 任意の1文字 | `Chrome ?` は "Chrome 1" にマッチ |
+| 文字 | 説明                    | 例                                              |
+| ---- | ----------------------- | ----------------------------------------------- |
+| `*`  | 任意の0文字以上の文字列 | `*Chrome*` は "Google Chrome - タブ名" にマッチ |
+| `?`  | 任意の1文字             | `Chrome ?` は "Chrome 1" にマッチ               |
 
 - ワイルドカード文字が含まれていない場合は完全一致検索
 - 大文字小文字は区別しない
@@ -287,25 +287,25 @@ QuickDashLauncherは複数のJSON形式のデータファイルをサポート�
 
 #### 3.2.1. フィールド構成
 
-| フィールド | 型 | 必須 | 説明 |
-|-----------|-----|------|------|
-| **id** | string | ✓ | 8文字の一意ID |
-| **type** | "dir" | ✓ | アイテムタイプ（常に "dir"） |
-| **path** | string | ✓ | スキャン対象のフォルダパス |
-| **options** | object | - | スキャンオプション（オプション） |
-| **memo** | string | - | 自由記述メモ（オプション） |
-| **updatedAt** | number | - | 更新日時（Unixタイムスタンプ ms、オプション） |
+| フィールド    | 型     | 必須 | 説明                                          |
+| ------------- | ------ | ---- | --------------------------------------------- |
+| **id**        | string | ✓    | 8文字の一意ID                                 |
+| **type**      | "dir"  | ✓    | アイテムタイプ（常に "dir"）                  |
+| **path**      | string | ✓    | スキャン対象のフォルダパス                    |
+| **options**   | object | -    | スキャンオプション（オプション）              |
+| **memo**      | string | -    | 自由記述メモ（オプション）                    |
+| **updatedAt** | number | -    | 更新日時（Unixタイムスタンプ ms、オプション） |
 
 #### 3.2.2. スキャンオプション（JsonDirOptions）
 
-| オプション | 型 | デフォルト値 | 説明 |
-|-----------|-----|-------------|------|
-| **depth** | number | 0 | スキャン深度（0=直下のみ、-1=無制限） |
-| **types** | string | "both" | `"file"`, `"folder"`, `"both"` |
-| **filter** | string | - | ファイル名フィルタ（globパターン）<br>例: `"*.ps1"`, `"*.{doc,docx,pdf}"` |
-| **exclude** | string | - | 除外フィルタ（globパターン）<br>例: `"node_modules"`, `"*.{tmp,temp,bak}"` |
-| **prefix** | string | - | 表示名のプレフィックス<br>結果: `プレフィックス: アイテム名` |
-| **suffix** | string | - | 表示名のサフィックス<br>結果: `アイテム名 (サフィックス)` |
+| オプション  | 型     | デフォルト値 | 説明                                                                       |
+| ----------- | ------ | ------------ | -------------------------------------------------------------------------- |
+| **depth**   | number | 0            | スキャン深度（0=直下のみ、-1=無制限）                                      |
+| **types**   | string | "both"       | `"file"`, `"folder"`, `"both"`                                             |
+| **filter**  | string | -            | ファイル名フィルタ（globパターン）<br>例: `"*.ps1"`, `"*.{doc,docx,pdf}"`  |
+| **exclude** | string | -            | 除外フィルタ（globパターン）<br>例: `"node_modules"`, `"*.{tmp,temp,bak}"` |
+| **prefix**  | string | -            | 表示名のプレフィックス<br>結果: `プレフィックス: アイテム名`               |
+| **suffix**  | string | -            | 表示名のサフィックス<br>結果: `アイテム名 (サフィックス)`                  |
 
 #### 3.2.3. 使用例
 
@@ -358,14 +358,14 @@ QuickDashLauncherは複数のJSON形式のデータファイルをサポート�
 
 #### 3.3.1. フィールド構成
 
-| フィールド | 型 | 必須 | 説明 |
-|-----------|-----|------|------|
-| **id** | string | ✓ | 8文字の一意ID |
-| **type** | "group" | ✓ | アイテムタイプ（常に "group"） |
-| **displayName** | string | ✓ | グループの表示名 |
-| **itemNames** | array | ✓ | 既存アイテムの名前のリスト |
-| **memo** | string | - | 自由記述メモ（オプション） |
-| **updatedAt** | number | - | 更新日時（Unixタイムスタンプ ms、オプション） |
+| フィールド      | 型      | 必須 | 説明                                          |
+| --------------- | ------- | ---- | --------------------------------------------- |
+| **id**          | string  | ✓    | 8文字の一意ID                                 |
+| **type**        | "group" | ✓    | アイテムタイプ（常に "group"）                |
+| **displayName** | string  | ✓    | グループの表示名                              |
+| **itemNames**   | array   | ✓    | 既存アイテムの名前のリスト                    |
+| **memo**        | string  | -    | 自由記述メモ（オプション）                    |
+| **updatedAt**   | number  | -    | 更新日時（Unixタイムスタンプ ms、オプション） |
 
 #### 3.3.2. 動作仕様
 
@@ -405,11 +405,7 @@ QuickDashLauncherは複数のJSON形式のデータファイルをサポート�
       "id": "w9X0y1Z2",
       "type": "group",
       "displayName": "開発環境",
-      "itemNames": [
-        "Visual Studio Code",
-        "Slack",
-        "Chrome"
-      ]
+      "itemNames": ["Visual Studio Code", "Slack", "Chrome"]
     }
   ]
 }
@@ -442,23 +438,23 @@ QuickDashLauncherは複数のJSON形式のデータファイルをサポート�
 
 #### 3.4.1. フィールド構成
 
-| フィールド | 型 | 必須 | デフォルト値 | 説明 |
-|-----------|-----|------|-------------|------|
-| **id** | string | ✓ | - | 8文字の一意ID |
-| **type** | "window" | ✓ | - | アイテムタイプ（常に "window"） |
-| **displayName** | string | ✓ | - | アイテムリストでの表示名 |
-| **windowTitle** | string | ✓ | - | ウィンドウタイトル（検索用） |
-| **processName** | string | - | - | プロセス名で検索（部分一致） |
-| **x** | number | - | - | X座標（仮想スクリーン座標系） |
-| **y** | number | - | - | Y座標（仮想スクリーン座標系） |
-| **width** | number | - | - | 幅（ピクセル単位） |
-| **height** | number | - | - | 高さ（ピクセル単位） |
-| **moveToActiveMonitorCenter** | boolean | - | false | アクティブモニター中央に移動 |
-| **virtualDesktopNumber** | number | - | - | 仮想デスクトップ番号（1から開始） |
-| **activateWindow** | boolean | - | true | ウィンドウをアクティブにするか |
-| **pinToAllDesktops** | boolean | - | - | 全仮想デスクトップにピン止めするか |
-| **memo** | string | - | - | 自由記述メモ（オプション） |
-| **updatedAt** | number | - | - | 更新日時（Unixタイムスタンプ ms、オプション） |
+| フィールド                    | 型       | 必須 | デフォルト値 | 説明                                          |
+| ----------------------------- | -------- | ---- | ------------ | --------------------------------------------- |
+| **id**                        | string   | ✓    | -            | 8文字の一意ID                                 |
+| **type**                      | "window" | ✓    | -            | アイテムタイプ（常に "window"）               |
+| **displayName**               | string   | ✓    | -            | アイテムリストでの表示名                      |
+| **windowTitle**               | string   | ✓    | -            | ウィンドウタイトル（検索用）                  |
+| **processName**               | string   | -    | -            | プロセス名で検索（部分一致）                  |
+| **x**                         | number   | -    | -            | X座標（仮想スクリーン座標系）                 |
+| **y**                         | number   | -    | -            | Y座標（仮想スクリーン座標系）                 |
+| **width**                     | number   | -    | -            | 幅（ピクセル単位）                            |
+| **height**                    | number   | -    | -            | 高さ（ピクセル単位）                          |
+| **moveToActiveMonitorCenter** | boolean  | -    | false        | アクティブモニター中央に移動                  |
+| **virtualDesktopNumber**      | number   | -    | -            | 仮想デスクトップ番号（1から開始）             |
+| **activateWindow**            | boolean  | -    | true         | ウィンドウをアクティブにするか                |
+| **pinToAllDesktops**          | boolean  | -    | -            | 全仮想デスクトップにピン止めするか            |
+| **memo**                      | string   | -    | -            | 自由記述メモ（オプション）                    |
+| **updatedAt**                 | number   | -    | -            | 更新日時（Unixタイムスタンプ ms、オプション） |
 
 #### 3.4.2. 動作仕様
 
@@ -549,7 +545,6 @@ QuickDashLauncherは複数のJSON形式のデータファイルをサポート�
 
 - **グループからの参照**: グループアイテムからは参照できません（通常アイテムのみ）
 - **ワークスペース**: 現時点ではワークスペース機能には対応していません
-- **実行履歴**: 実行履歴には記録されません
 - **インライン編集**: 管理画面（EditableRawItemList）では、JSON文字列の破損を防ぐため、ウィンドウ操作アイテムのインライン編集はできません。編集する場合は、✏️ボタンから詳細編集モーダル（RegisterModal）を開いてください。
 
 #### 3.4.8. エラーハンドリング
@@ -564,18 +559,18 @@ QuickDashLauncherは複数のJSON形式のデータファイルをサポート�
 
 #### 3.5.1. フィールド構成
 
-| フィールド | 型 | 必須 | 説明 |
-|-----------|-----|------|------|
-| **id** | string | ✓ | 8文字の一意ID |
-| **type** | "clipboard" | ✓ | アイテムタイプ（常に "clipboard"） |
-| **displayName** | string | ✓ | アプリケーション内での表示名 |
-| **dataFileRef** | string | ✓ | クリップボードデータファイルへの参照（{id}.json） |
-| **savedAt** | number | ✓ | 保存日時（Unixタイムスタンプ ms） |
-| **formats** | string[] | ✓ | 保存されているフォーマット（text, html, rtf, image, file） |
-| **preview** | string | - | プレビュー文字列（最初の100文字程度） |
-| **customIcon** | string | - | カスタムアイコンファイル名（オプション） |
-| **memo** | string | - | 自由記述メモ（オプション） |
-| **updatedAt** | number | - | 更新日時（Unixタイムスタンプ ms、オプション） |
+| フィールド      | 型          | 必須 | 説明                                                       |
+| --------------- | ----------- | ---- | ---------------------------------------------------------- |
+| **id**          | string      | ✓    | 8文字の一意ID                                              |
+| **type**        | "clipboard" | ✓    | アイテムタイプ（常に "clipboard"）                         |
+| **displayName** | string      | ✓    | アプリケーション内での表示名                               |
+| **dataFileRef** | string      | ✓    | クリップボードデータファイルへの参照（{id}.json）          |
+| **savedAt**     | number      | ✓    | 保存日時（Unixタイムスタンプ ms）                          |
+| **formats**     | string[]    | ✓    | 保存されているフォーマット（text, html, rtf, image, file） |
+| **preview**     | string      | -    | プレビュー文字列（最初の100文字程度）                      |
+| **customIcon**  | string      | -    | カスタムアイコンファイル名（オプション）                   |
+| **memo**        | string      | -    | 自由記述メモ（オプション）                                 |
+| **updatedAt**   | number      | -    | 更新日時（Unixタイムスタンプ ms、オプション）              |
 
 #### 3.5.2. 基本的な使用例
 
@@ -603,6 +598,7 @@ QuickDashLauncherは複数のJSON形式のデータファイルをサポート�
 **保存場所**: `%APPDATA%/quick-dash-launcher/config/clipboard-data/`
 
 **データ形式**:
+
 ```json
 {
   "formats": ["text", "html"],
@@ -615,13 +611,13 @@ QuickDashLauncherは複数のJSON形式のデータファイルをサポート�
 
 #### 3.5.4. サポートされるフォーマット
 
-| フォーマット | 説明 |
-|-------------|------|
-| **text** | プレーンテキスト |
-| **html** | HTML形式 |
-| **rtf** | リッチテキスト形式 |
-| **image** | 画像（Base64エンコード、最大10MB） |
-| **file** | ファイルパス（参照のみ、復元は非対応） |
+| フォーマット | 説明                                   |
+| ------------ | -------------------------------------- |
+| **text**     | プレーンテキスト                       |
+| **html**     | HTML形式                               |
+| **rtf**      | リッチテキスト形式                     |
+| **image**    | 画像（Base64エンコード、最大10MB）     |
+| **file**     | ファイルパス（参照のみ、復元は非対応） |
 
 #### 3.5.5. 制約事項
 
@@ -653,6 +649,7 @@ v0.4.2以降、重複排除は**タブ単位**で実行されます：
 ### 4.3. 具体例
 
 **設定:**
+
 ```json
 {
   "dataFileTabs": [
@@ -663,11 +660,13 @@ v0.4.2以降、重複排除は**タブ単位**で実行されます：
 ```
 
 **データファイル:**
+
 - data.json: アイテム「GitHub」（https://github.com/）
 - data2.json: アイテム「GitHub」（https://github.com/）
 - data3.json: アイテム「GitHub」（https://github.com/）
 
 **表示結果:**
+
 - **メインタブ**: GitHub 1つ（data.jsonとdata3.jsonの重複を排除）
 - **サブ1タブ**: GitHub 1つ（data2.jsonから）
 
@@ -704,16 +703,16 @@ v0.4.2以降、重複排除は**タブ単位**で実行されます：
 
 データファイルはテキストエディタや AI エージェントで直接編集できます。QDL はファイルを監視しないので、**反映はメイン画面の再読込（F5）か再起動時**です。
 
-| 仕組み | 内容 |
-|-------|------|
-| 反映タイミング | F5 または起動時。編集画面（アイテム管理）は表示のたびに読み直す |
-| 読み込みレポート | 読み込みのたびに `config/last-load-report.json` を書き出す。直接編集した側が「受理されたか・何がスキップされたか」を確認する用途（トーストは AI から見えないため） |
-| トースト | スキップまたは採番があったときだけ「N 件読込・M 件スキップ・K 件に ID を採番」を表示 |
-| 変更前スナップショット | 前回読み込み時（または QDL 自身の書き込み時）と内容が違うファイルを検知すると、**変更前の内容**を `config/backup/YYYY-MM-DDTHH-MM-SS_pre-external/` に保存する（`backupEnabled` が true のとき。`backupRetention` とは別枠で最新 10 件を保持）。直接編集で壊したときの戻し先。**検知は QDL 起動中の編集 → F5 のときだけ**（前回の内容はメモリ上で覚えているため、QDL 終了中に編集した内容は起動時に反映はされるが外部変更としては検知されず、スナップショットも作られない） |
-| 楽観ロック | 編集画面の保存は全ファイルを全量上書きするため、読み込み時のファイル内容ハッシュを保存時に照合し、読み込み後に外部で変更されていれば保存を拒否して再読込する（`saveEditableItems` の `expectedHashes`） |
-| ID 指定の更新 | メイン画面からの編集・削除は毎回ディスクを読み直して該当 ID だけ差し替えるため、外部変更と共存できる |
-| JSON Schema | 同梱スキーマ（`assets/schemas/data.schema.json`）を起動時に `config/schemas/` へコピーし、データファイルの `$schema` から相対参照する。アイテムは `type` で判別する `oneOf`、各アイテムは `additionalProperties: false`（寛容パースが黙って落とす未知フィールドを、書く前にエディタで気づけるように）。**アプリ実行時にはスキーマ検証しない**（検証器を 2 つ持たない）。スキーマは型定義から `npm run schema:generate` で生成し、単体テストがドリフトを検知する。詳細は [README の「AI・手動編集」](README.md#ai手動編集) |
-| config/README.md | 直接編集する人・AI 向けの作業指示を起動時に生成する（雛形は `assets/config-readme.md`） |
+| 仕組み                 | 内容                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 反映タイミング         | F5 または起動時。編集画面（アイテム管理）は表示のたびに読み直す                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| 読み込みレポート       | 読み込みのたびに `config/last-load-report.json` を書き出す。直接編集した側が「受理されたか・何がスキップされたか」を確認する用途（トーストは AI から見えないため）                                                                                                                                                                                                                                                                                                                                                        |
+| トースト               | スキップまたは採番があったときだけ「N 件読込・M 件スキップ・K 件に ID を採番」を表示                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| 変更前スナップショット | 前回読み込み時（または QDL 自身の書き込み時）と内容が違うファイルを検知すると、**変更前の内容**を `config/backup/YYYY-MM-DDTHH-MM-SS_pre-external/` に保存する（`backupEnabled` が true のとき。`backupRetention` とは別枠で最新 10 件を保持）。直接編集で壊したときの戻し先。**検知は QDL 起動中の編集 → F5 のときだけ**（前回の内容はメモリ上で覚えているため、QDL 終了中に編集した内容は起動時に反映はされるが外部変更としては検知されず、スナップショットも作られない）                                               |
+| 楽観ロック             | 編集画面の保存は全ファイルを全量上書きするため、読み込み時のファイル内容ハッシュを保存時に照合し、読み込み後に外部で変更されていれば保存を拒否して再読込する（`saveEditableItems` の `expectedHashes`）                                                                                                                                                                                                                                                                                                                   |
+| ID 指定の更新          | メイン画面からの編集・削除は毎回ディスクを読み直して該当 ID だけ差し替えるため、外部変更と共存できる                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| JSON Schema            | 同梱スキーマ（`assets/schemas/data.schema.json`）を起動時に `config/schemas/` へコピーし、データファイルの `$schema` から相対参照する。アイテムは `type` で判別する `oneOf`、各アイテムは `additionalProperties: false`（寛容パースが黙って落とす未知フィールドを、書く前にエディタで気づけるように）。**アプリ実行時にはスキーマ検証しない**（検証器を 2 つ持たない）。スキーマは型定義から `npm run schema:generate` で生成し、単体テストがドリフトを検知する。詳細は [README の「AI・手動編集」](README.md#ai手動編集) |
+| config/README.md       | 直接編集する人・AI 向けの作業指示を起動時に生成する（雛形は `assets/config-readme.md`）                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 
 #### last-load-report.json の形式
 
@@ -734,8 +733,18 @@ v0.4.2以降、重複排除は**タブ単位**で実行されます：
       "status": "ok",
       "accepted": 42,
       "issues": [
-        { "index": 3, "kind": "invalid", "id": "a1B2c3D4", "reason": "path is required and must be a non-empty string" },
-        { "index": 7, "kind": "idAssigned", "id": "xY9z8W7v", "reason": "id が無いため採番しました" }
+        {
+          "index": 3,
+          "kind": "invalid",
+          "id": "a1B2c3D4",
+          "reason": "path is required and must be a non-empty string"
+        },
+        {
+          "index": 7,
+          "kind": "idAssigned",
+          "id": "xY9z8W7v",
+          "reason": "id が無いため採番しました"
+        }
       ],
       "externallyChanged": true,
       "rewritten": true
@@ -745,14 +754,14 @@ v0.4.2以降、重複排除は**タブ単位**で実行されます：
 }
 ```
 
-| フィールド | 説明 |
-|-----------|------|
-| `files[].status` | `ok` / `corrupted`（JSON として壊れている。`error` に理由） / `unreadable`（読めない） |
-| `files[].accepted` | 受理したアイテム数（`dir` の展開前。JSON 上の要素数） |
-| `files[].issues[].kind` | `invalid`（スキップ） / `idAssigned`（採番） / `normalized`（構造の補正。`version` や `$schema` の補完） |
-| `files[].issues[].index` | 書き戻し後の `items` 配列内の位置。ファイル単位の問題や削除した要素は `-1`（`reason` に元の位置） |
-| `files[].rewritten` | 採番・補正のためファイルを書き戻したか |
-| `preChangeSnapshot` | 外部変更の検知時に作った変更前スナップショットのフォルダ名。なければ `null` |
+| フィールド               | 説明                                                                                                     |
+| ------------------------ | -------------------------------------------------------------------------------------------------------- |
+| `files[].status`         | `ok` / `corrupted`（JSON として壊れている。`error` に理由） / `unreadable`（読めない）                   |
+| `files[].accepted`       | 受理したアイテム数（`dir` の展開前。JSON 上の要素数）                                                    |
+| `files[].issues[].kind`  | `invalid`（スキップ） / `idAssigned`（採番） / `normalized`（構造の補正。`version` や `$schema` の補完） |
+| `files[].issues[].index` | 書き戻し後の `items` 配列内の位置。ファイル単位の問題や削除した要素は `-1`（`reason` に元の位置）        |
+| `files[].rewritten`      | 採番・補正のためファイルを書き戻したか                                                                   |
+| `preChangeSnapshot`      | 外部変更の検知時に作った変更前スナップショットのフォルダ名。なければ `null`                              |
 
 ### 5.2. フォルダ取込アイテムのエラー処理
 
@@ -778,12 +787,7 @@ interface JsonDataFile {
 #### 6.1.2. JsonItem
 
 ```typescript
-type JsonItem =
-  | JsonLauncherItem
-  | JsonDirItem
-  | JsonGroupItem
-  | JsonWindowItem
-  | JsonClipboardItem;
+type JsonItem = JsonLauncherItem | JsonDirItem | JsonGroupItem | JsonWindowItem | JsonClipboardItem;
 ```
 
 #### 6.1.2.1. JsonItemBase（共通基底）
@@ -954,23 +958,23 @@ interface JsonClipboardItem extends JsonItemBase {
 
 ```typescript
 interface LauncherItem {
-  displayName: string;       // 表示名
-  path: string;              // パス・URL・コマンド
+  displayName: string; // 表示名
+  path: string; // パス・URL・コマンド
   type: 'url' | 'file' | 'folder' | 'app' | 'customUri' | 'clipboard';
-  icon?: string;             // base64アイコンデータ
-  customIcon?: string;       // カスタムアイコンファイル名
-  args?: string;             // コマンドライン引数
-  originalPath?: string;     // ショートカットの元パス
-  sourceFile?: string;       // 元データファイル名
-  lineNumber?: number;       // データファイル内の行番号（非推奨：IDベースアクセスを推奨）
-  id?: string;               // JSONアイテムのID（JSON形式の場合）
-  isDirExpanded?: boolean;   // フォルダ取込アイテム展開フラグ
-  expandedFrom?: string;     // フォルダ取込元ディレクトリパス
-  expandedOptions?: string;  // フォルダ取込オプション（人間が読める形式）
-  expandedFromId?: string;   // フォルダ取込元のdirディレクティブID
-  isEdited?: boolean;        // 編集フラグ
+  icon?: string; // base64アイコンデータ
+  customIcon?: string; // カスタムアイコンファイル名
+  args?: string; // コマンドライン引数
+  originalPath?: string; // ショートカットの元パス
+  sourceFile?: string; // 元データファイル名
+  lineNumber?: number; // データファイル内の行番号（非推奨：IDベースアクセスを推奨）
+  id?: string; // JSONアイテムのID（JSON形式の場合）
+  isDirExpanded?: boolean; // フォルダ取込アイテム展開フラグ
+  expandedFrom?: string; // フォルダ取込元ディレクトリパス
+  expandedOptions?: string; // フォルダ取込オプション（人間が読める形式）
+  expandedFromId?: string; // フォルダ取込元のdirディレクティブID
+  isEdited?: boolean; // 編集フラグ
   windowConfig?: WindowConfig; // ウィンドウ制御設定
-  memo?: string;             // 自由記述メモ
+  memo?: string; // 自由記述メモ
 }
 ```
 
@@ -978,14 +982,14 @@ interface LauncherItem {
 
 ```typescript
 interface GroupItem {
-  displayName: string;       // グループの表示名
-  type: 'group';             // アイテムタイプ（常に'group'）
-  itemNames: string[];       // グループ内で参照するアイテム名のリスト
-  sourceFile?: string;       // 元データファイル名
-  lineNumber?: number;       // データファイル内の行番号（非推奨：IDベースアクセスを推奨）
-  id?: string;               // JSONアイテムのID（JSON形式の場合）
-  isEdited?: boolean;        // 編集フラグ
-  memo?: string;             // 自由記述メモ
+  displayName: string; // グループの表示名
+  type: 'group'; // アイテムタイプ（常に'group'）
+  itemNames: string[]; // グループ内で参照するアイテム名のリスト
+  sourceFile?: string; // 元データファイル名
+  lineNumber?: number; // データファイル内の行番号（非推奨：IDベースアクセスを推奨）
+  id?: string; // JSONアイテムのID（JSON形式の場合）
+  isEdited?: boolean; // 編集フラグ
+  memo?: string; // 自由記述メモ
 }
 ```
 
@@ -993,18 +997,18 @@ interface GroupItem {
 
 ```typescript
 interface ClipboardItem {
-  type: 'clipboard';         // アイテムタイプ（常に'clipboard'）
-  displayName: string;       // アイテムリストでの表示名
-  clipboardDataRef: string;  // クリップボードデータファイルへの参照
-  savedAt: number;           // 保存日時（Unixタイムスタンプ ms）
+  type: 'clipboard'; // アイテムタイプ（常に'clipboard'）
+  displayName: string; // アイテムリストでの表示名
+  clipboardDataRef: string; // クリップボードデータファイルへの参照
+  savedAt: number; // 保存日時（Unixタイムスタンプ ms）
   formats: ClipboardFormat[]; // 保存されているフォーマット
-  preview?: string;          // プレビューテキスト
-  customIcon?: string;       // カスタムアイコンファイル名
-  sourceFile?: string;       // 元データファイル名
-  lineNumber?: number;       // データファイル内の行番号（非推奨：IDベースアクセスを推奨）
-  id?: string;               // JSONアイテムのID（JSON形式の場合）
-  isEdited?: boolean;        // 編集フラグ
-  memo?: string;             // 自由記述メモ
+  preview?: string; // プレビューテキスト
+  customIcon?: string; // カスタムアイコンファイル名
+  sourceFile?: string; // 元データファイル名
+  lineNumber?: number; // データファイル内の行番号（非推奨：IDベースアクセスを推奨）
+  id?: string; // JSONアイテムのID（JSON形式の場合）
+  isEdited?: boolean; // 編集フラグ
+  memo?: string; // 自由記述メモ
 }
 ```
 

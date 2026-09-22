@@ -84,6 +84,35 @@ export const SCHEMA_TARGETS: SchemaTarget[] = [
     },
   },
   {
+    file: 'workspace.schema.json',
+    source: 'src/common/types/json-workspace.ts',
+    type: 'JsonWorkspaceFile',
+    title: 'QuickDashLauncher ワークスペースファイル（workspace.json）',
+    additionalProperties: false,
+    postProcess: (schema) => {
+      const item = definition(schema, 'JsonWorkspaceItem');
+      if (item.anyOf) {
+        item.oneOf = item.anyOf;
+        delete item.anyOf;
+      }
+    },
+  },
+  {
+    file: 'workspace-archive.schema.json',
+    source: 'src/common/types/json-workspace.ts',
+    type: 'JsonWorkspaceArchiveFile',
+    title: 'QuickDashLauncher ワークスペースのアーカイブ（workspace-archive.json）',
+    additionalProperties: false,
+    postProcess: (schema) => {
+      // 交差型（JsonWorkspaceItem & メタ）は type ごとに展開された anyOf になる
+      const item = definition(schema, 'JsonArchivedWorkspaceItem');
+      if (item.anyOf) {
+        item.oneOf = item.anyOf;
+        delete item.anyOf;
+      }
+    },
+  },
+  {
     file: 'settings.schema.json',
     source: 'src/common/types/settings.ts',
     type: 'AppSettings',

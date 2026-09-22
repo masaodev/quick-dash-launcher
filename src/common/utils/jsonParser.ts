@@ -149,6 +149,10 @@ export interface JsonItemIssue {
   id?: string;
   /** 人間と AI が読める理由 */
   reason: string;
+  /**
+   * 問題があった配列（ワークスペースファイルのみ。データファイルは items しか無いので省略）
+   */
+  section?: 'workspaces' | 'groups' | 'items';
 }
 
 /** 寛容パースの結果 */
@@ -309,7 +313,7 @@ export function parseJsonDataFileLenient(
 /**
  * 使用済み id と衝突しない id を生成する
  */
-function generateUniqueId(usedIds: Set<string>): string {
+export function generateUniqueId(usedIds: Set<string>): string {
   let id = generateId();
   while (usedIds.has(id)) {
     id = generateId();
@@ -455,7 +459,7 @@ function validateJsonItem(item: unknown, index: number): JsonItem {
 /**
  * JsonLauncherItemを検証
  */
-function validateJsonLauncherItem(obj: Record<string, unknown>): JsonLauncherItem {
+export function validateJsonLauncherItem(obj: Record<string, unknown>): JsonLauncherItem {
   if (typeof obj.displayName !== 'string' || !obj.displayName) {
     throw new Error('displayName is required and must be a non-empty string');
   }
@@ -534,7 +538,7 @@ function validateJsonDirItem(obj: Record<string, unknown>): JsonDirItem {
 /**
  * JsonGroupItemを検証
  */
-function validateJsonGroupItem(obj: Record<string, unknown>): JsonGroupItem {
+export function validateJsonGroupItem(obj: Record<string, unknown>): JsonGroupItem {
   if (typeof obj.displayName !== 'string' || !obj.displayName) {
     throw new Error('displayName is required and must be a non-empty string');
   }
@@ -563,7 +567,7 @@ function validateJsonGroupItem(obj: Record<string, unknown>): JsonGroupItem {
 /**
  * JsonWindowItemを検証
  */
-function validateJsonWindowItem(obj: Record<string, unknown>): JsonWindowItem {
+export function validateJsonWindowItem(obj: Record<string, unknown>): JsonWindowItem {
   if (typeof obj.displayName !== 'string' || !obj.displayName) {
     throw new Error('displayName is required and must be a non-empty string');
   }
@@ -593,7 +597,7 @@ const VALID_CLIPBOARD_FORMATS: ClipboardFormat[] = ['text', 'html', 'rtf', 'imag
 /**
  * JsonClipboardItemを検証
  */
-function validateJsonClipboardItem(obj: Record<string, unknown>): JsonClipboardItem {
+export function validateJsonClipboardItem(obj: Record<string, unknown>): JsonClipboardItem {
   if (typeof obj.displayName !== 'string' || !obj.displayName) {
     throw new Error('displayName is required and must be a non-empty string');
   }
@@ -637,7 +641,7 @@ function validateJsonClipboardItem(obj: Record<string, unknown>): JsonClipboardI
 /**
  * JsonLayoutItemを検証
  */
-function validateJsonLayoutItem(obj: Record<string, unknown>): JsonLayoutItem {
+export function validateJsonLayoutItem(obj: Record<string, unknown>): JsonLayoutItem {
   if (typeof obj.displayName !== 'string' || !obj.displayName) {
     throw new Error('displayName is required and must be a non-empty string');
   }
@@ -652,6 +656,7 @@ function validateJsonLayoutItem(obj: Record<string, unknown>): JsonLayoutItem {
     entries: obj.entries as JsonLayoutItem['entries'],
   };
 
+  validateOptionalString(obj, item, 'customIcon');
   validateOptionalString(obj, item, 'memo');
   validateTypedFields(obj, item, ['updatedAt'], 'number');
 

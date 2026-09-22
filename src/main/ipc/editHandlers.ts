@@ -10,7 +10,7 @@ import { ClipboardService } from '../services/clipboardService.js';
 import { writeDataFile } from '../services/dataFileTracker.js';
 import { createSafeIpcHandler } from '../utils/ipcWrapper';
 
-import { notifyDataChanged } from './dataHandlers.js';
+import { notifyDataChanged } from './notifications.js';
 
 interface UpdateItemByIdRequest {
   id: string;

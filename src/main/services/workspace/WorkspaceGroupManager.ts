@@ -12,7 +12,7 @@ import {
   getSubtreeMaxDepth,
   MAX_GROUP_DEPTH,
 } from '@common/utils/groupTreeUtils';
-import { getDefaultGroupColor } from '@common/constants';
+import { getDefaultGroupColor } from '@common/groupColors';
 
 import type { WorkspaceStoreInstance } from './types.js';
 import { migrateGroupDisplayName } from './migrationUtils.js';

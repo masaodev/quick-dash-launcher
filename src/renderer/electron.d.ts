@@ -16,6 +16,8 @@ import {
   Workspace,
   WorkspaceItem,
   WorkspaceGroup,
+  ArchivedWorkspaceGroup,
+  ArchivedWorkspaceItem,
   WindowInfo,
   VirtualDesktopInfo,
   RegisterItem,
@@ -260,8 +262,8 @@ export interface ElectronAPI {
     setGroupsCollapsed: (ids: string[], collapsed: boolean) => Promise<{ success: boolean }>;
     // アーカイブ管理
     archiveGroup: (groupId: string) => Promise<{ success: boolean }>;
-    loadArchivedGroups: () => Promise<WorkspaceGroup[]>;
-    loadArchivedItems: () => Promise<WorkspaceItem[]>;
+    loadArchivedGroups: () => Promise<ArchivedWorkspaceGroup[]>;
+    loadArchivedItems: () => Promise<ArchivedWorkspaceItem[]>;
     restoreGroup: (groupId: string) => Promise<{ success: boolean }>;
     deleteArchivedGroup: (groupId: string) => Promise<{ success: boolean }>;
     // ピン留め関連

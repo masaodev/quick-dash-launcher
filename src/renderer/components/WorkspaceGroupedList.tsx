@@ -9,6 +9,7 @@ import type {
   GroupDropZone,
 } from '@common/types';
 import { PathUtils } from '@common/utils/pathUtils';
+import { resolveGroupColorCss } from '@common/groupColors';
 import {
   canCreateSubgroup,
   getSubtreeMaxDepth,
@@ -749,7 +750,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
             <div
               className="workspace-group-header"
               onClick={handleUncategorizedToggle}
-              style={{ '--group-color': 'var(--color-secondary)' } as React.CSSProperties}
+              style={{ '--group-color': resolveGroupColorCss('secondary') } as React.CSSProperties}
             >
               <span
                 className={`workspace-group-collapse-icon${uncategorizedCollapsed ? ' collapsed' : ''}`}

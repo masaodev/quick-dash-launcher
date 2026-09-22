@@ -26,15 +26,38 @@ export type {
   Workspace,
   WorkspaceItem,
   WorkspaceGroup,
-  ExecutionHistoryItem,
-  DragItemData,
-  DropTargetData,
   ArchivedWorkspaceGroup,
   ArchivedWorkspaceItem,
   MixedChild,
   MixedOrderEntry,
   GroupDropZone,
 } from './workspace';
+
+// ワークスペース設定ファイル（ファイル形式 2.0）の型・定数
+export type {
+  JsonWorkspaceFile,
+  JsonWorkspace,
+  JsonWorkspaceGroup,
+  JsonWorkspaceItem,
+  JsonWorkspaceLauncherItem,
+  JsonWorkspaceWindowItem,
+  JsonWorkspaceGroupItem,
+  JsonWorkspaceClipboardItem,
+  JsonWorkspaceLayoutItem,
+  JsonWorkspaceArchiveFile,
+  JsonArchivedWorkspaceGroup,
+  JsonArchivedWorkspaceItem,
+  WorkspaceUiStateFile,
+  DetachedWindowState,
+} from './json-workspace';
+export {
+  JSON_WORKSPACE_VERSION,
+  JSON_WORKSPACE_ITEM_TYPES,
+  WORKSPACE_UI_STATE_VERSION,
+  WORKSPACE_SCHEMA_REF,
+  WORKSPACE_ARCHIVE_SCHEMA_REF,
+  DEFAULT_WORKSPACE_DISPLAY_NAME,
+} from './json-workspace';
 
 // データファイル関連の型・定数
 export { DEFAULT_DATA_FILE } from './data';
@@ -171,6 +194,4 @@ export {
   isWindowItem,
   isClipboardItem,
   isLayoutItem,
-  isWorkspaceItem,
-  isDragItemData,
 } from './guards';

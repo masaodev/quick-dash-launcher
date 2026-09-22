@@ -19,9 +19,6 @@ export type WorkspaceStoreInstance = {
   set(key: 'items', value: WorkspaceItem[]): void;
   set(key: 'groups', value: WorkspaceGroup[]): void;
   set(key: 'workspaces', value: Workspace[]): void;
-  store: { items: WorkspaceItem[]; groups: WorkspaceGroup[]; workspaces: Workspace[] };
-  clear(): void;
-  path: string;
 };
 
 /**
@@ -39,9 +36,6 @@ export type DetachedWindowState = {
 export type DetachedStoreInstance = {
   get(key: 'windows'): Record<string, DetachedWindowState>;
   set(key: 'windows', value: Record<string, DetachedWindowState>): void;
-  store: { windows: Record<string, DetachedWindowState> };
-  clear(): void;
-  path: string;
 };
 
 /**
@@ -52,7 +46,4 @@ export type ArchiveStoreInstance = {
   get(key: 'items'): ArchivedWorkspaceItem[];
   set(key: 'groups', value: ArchivedWorkspaceGroup[]): void;
   set(key: 'items', value: ArchivedWorkspaceItem[]): void;
-  store: { groups: ArchivedWorkspaceGroup[]; items: ArchivedWorkspaceItem[] };
-  clear(): void;
-  path: string;
 };

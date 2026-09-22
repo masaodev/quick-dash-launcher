@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-import { ipcMain, BrowserWindow } from 'electron';
+import { ipcMain } from 'electron';
 import { dataLogger } from '@common/logger';
 import { FileUtils } from '@common/utils/fileUtils';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
@@ -54,6 +54,7 @@ import {
 import type { LoadReportFile } from '../services/loadReportService.js';
 
 import { setupBookmarkHandlers } from './bookmarkHandlers.js';
+import { notifyDataChanged } from './notifications.js';
 import { setupAppImportHandlers } from './appImportHandlers.js';
 import { processDirectoryItem, processShortcut } from './directoryScanner.js';
 import { extractIcon } from './iconHandlers.js';
@@ -347,6 +348,7 @@ async function convertJsonItemToAppItems(
       id: jsonItem.id,
       isEdited: false,
       memo: jsonItem.memo,
+      customIcon: jsonItem.customIcon,
     });
   }
 
@@ -899,28 +901,6 @@ async function registerItemsToJsonFile(
   // JSONファイルに書き込み
   const content = serializeJsonDataFile(jsonData);
   writeDataFile(dataPath, content);
-}
-
-// データ変更を全ウィンドウに通知する関数
-export function notifyDataChanged(): void {
-  const allWindows = BrowserWindow.getAllWindows();
-
-  for (const window of allWindows) {
-    if (window.isDestroyed()) continue;
-
-    if (window.webContents.isLoading()) {
-      // 読み込み中の場合、読み込み完了後に通知
-      window.webContents.once('did-finish-load', () => {
-        if (!window.isDestroyed()) {
-          window.webContents.send(IPC_CHANNELS.EVENT_DATA_CHANGED);
-        }
-      });
-    } else {
-      window.webContents.send(IPC_CHANNELS.EVENT_DATA_CHANGED);
-    }
-  }
-
-  dataLogger.info({ windowCount: allWindows.length }, 'データ変更通知を送信しました');
 }
 
 export function setupDataHandlers(configFolder: string) {

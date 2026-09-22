@@ -452,6 +452,10 @@
             "$ref": "#/definitions/LayoutWindowEntry"
           },
           "description": "レイアウト内のウィンドウエントリ一覧"
+        },
+        "customIcon": {
+          "type": "string",
+          "description": "カスタムアイコンファイル名（オプション）"
         }
       },
       "required": [

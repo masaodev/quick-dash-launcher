@@ -13,7 +13,6 @@ import type {
   LayoutItem,
 } from './launcher';
 import type { WindowInfo } from './window';
-import type { WorkspaceItem, DragItemData } from './workspace';
 
 /**
  * WindowInfoかどうかを判定する型ガード
@@ -114,62 +113,4 @@ export function isClipboardItem(item: AppItem): item is ClipboardItem {
  */
 export function isLayoutItem(item: AppItem): item is LayoutItem {
   return !isWindowInfo(item) && item.type === 'layout';
-}
-
-/**
- * WorkspaceItem かどうかを判定する型ガード
- *
- * @param item - 判定対象
- * @returns WorkspaceItem型の場合true
- *
- * @example
- * const item = unknownData;
- * if (isWorkspaceItem(item)) {
- *   // ここではitemはWorkspaceItem型として扱われる
- *   console.log(item.displayName);
- * }
- */
-export function isWorkspaceItem(item: unknown): item is WorkspaceItem {
-  return (
-    typeof item === 'object' &&
-    item !== null &&
-    'id' in item &&
-    'displayName' in item &&
-    'path' in item &&
-    'type' in item
-  );
-}
-
-/**
- * DragItemData かどうかを判定する型ガード
- *
- * @param data - 判定対象
- * @returns DragItemData型の場合true
- *
- * @example
- * const dragData = getDragData(event);
- * if (isDragItemData(dragData)) {
- *   // ここではdragDataはDragItemData型として扱われる
- *   if (dragData.type === 'workspace-item') {
- *     console.log(dragData.itemId);
- *   }
- * }
- */
-export function isDragItemData(data: unknown): data is DragItemData {
-  if (typeof data !== 'object' || data === null || !('type' in data)) {
-    return false;
-  }
-
-  const record = data as Record<string, unknown>;
-
-  switch (record.type) {
-    case 'workspace-item':
-      return typeof record.itemId === 'string';
-    case 'history-item':
-      return typeof record.historyItem === 'object';
-    case 'group':
-      return typeof record.groupId === 'string';
-    default:
-      return false;
-  }
 }

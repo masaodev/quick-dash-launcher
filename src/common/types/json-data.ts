@@ -240,6 +240,8 @@ export interface JsonLayoutItem extends JsonItemBase {
   displayName: string;
   /** レイアウト内のウィンドウエントリ一覧 */
   entries: LayoutWindowEntry[];
+  /** カスタムアイコンファイル名（オプション） */
+  customIcon?: string;
 }
 
 // ============================================================

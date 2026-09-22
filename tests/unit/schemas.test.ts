@@ -16,6 +16,11 @@ import path from 'node:path';
 import { describe, it, expect } from 'vitest';
 import { Ajv } from 'ajv';
 import { parseJsonDataFileLenient } from '@common/utils/jsonParser';
+import {
+  createWorkspaceParseContext,
+  parseWorkspaceArchiveFileLenient,
+  parseWorkspaceFileLenient,
+} from '@common/utils/workspaceParser';
 
 import { SCHEMA_OUTPUT_DIR, SCHEMA_TARGETS, generateSchemas } from '../../scripts/generate-schemas';
 
@@ -53,6 +58,15 @@ const dataFiles = CONFIG_DIRS.flatMap((dir) =>
 const settingsFiles = CONFIG_DIRS.flatMap((dir) =>
   listJsonFiles(dir, (name) => name === 'settings.json')
 );
+/** 旧形式（version なし）は移行対象なのでスキーマ検証の対象外 */
+const isCurrentWorkspaceFile = (file: string) =>
+  typeof JSON.parse(fs.readFileSync(file, 'utf8')).version === 'string';
+const workspaceFiles = CONFIG_DIRS.flatMap((dir) =>
+  listJsonFiles(dir, (name) => name === 'workspace.json')
+).filter(isCurrentWorkspaceFile);
+const workspaceArchiveFiles = CONFIG_DIRS.flatMap((dir) =>
+  listJsonFiles(dir, (name) => name === 'workspace-archive.json')
+).filter(isCurrentWorkspaceFile);
 
 function readCommittedSchema(file: string): object {
   return JSON.parse(fs.readFileSync(path.join(SCHEMA_OUTPUT_DIR, file), 'utf8'));
@@ -162,5 +176,139 @@ describe('同梱 JSON Schema: 設定ファイル（settings.schema.json）', () 
     expect(validate({ hotkey: 'Alt+Space', futureKey: true })).toBe(true);
     expect(validate({ hotkey: 123 })).toBe(false);
     expect(validate({ windowPositionMode: 'nowhere' })).toBe(false);
+  });
+});
+
+describe('同梱 JSON Schema: ワークスペースファイル（workspace.schema.json）', () => {
+  const validate = createValidator('workspace.schema.json');
+  const validateArchive = createValidator('workspace-archive.schema.json');
+
+  const ws = { id: 'wsAAAAA1', displayName: 'メイン', order: 0, createdAt: 1 };
+  const group = {
+    id: 'grAAAAA1',
+    displayName: '開発',
+    color: 'primary',
+    order: 0,
+    createdAt: 1,
+    workspaceId: 'wsAAAAA1',
+  };
+  const item = {
+    id: 'itAAAAA1',
+    type: 'item',
+    displayName: 'GitHub',
+    path: 'https://github.com/',
+    workspaceId: 'wsAAAAA1',
+    groupId: 'grAAAAA1',
+    order: 0,
+    addedAt: 1,
+  };
+  const base = {
+    $schema: './schemas/workspace.schema.json',
+    version: '2.0',
+    workspaces: [ws],
+    groups: [group],
+  };
+
+  for (const file of workspaceFiles) {
+    it(`${path.relative(ROOT_DIR, file)} がスキーマに通り、寛容パースでも問題なしになること`, () => {
+      const content = fs.readFileSync(file, 'utf8');
+      expect(validate(JSON.parse(content)), JSON.stringify(validate.errors, null, 2)).toBe(true);
+      const lenient = parseWorkspaceFileLenient(content, createWorkspaceParseContext());
+      expect(lenient.issues).toEqual([]);
+    });
+  }
+
+  for (const file of workspaceArchiveFiles) {
+    it(`${path.relative(ROOT_DIR, file)} がスキーマに通ること`, () => {
+      const content = fs.readFileSync(file, 'utf8');
+      expect(
+        validateArchive(JSON.parse(content)),
+        JSON.stringify(validateArchive.errors, null, 2)
+      ).toBe(true);
+    });
+  }
+
+  it('type で判別され、未知のフィールド・不正な色・不正な id を拒否すること', () => {
+    expect(validate({ ...base, items: [item] })).toBe(true);
+    expect(validate({ ...base, items: [{ ...item, unknownField: 1 }] })).toBe(false);
+    expect(validate({ ...base, items: [{ ...item, originalName: 'x' }] })).toBe(false);
+    expect(validate({ ...base, items: [{ ...item, id: 'not-8-chars' }] })).toBe(false);
+    expect(validate({ ...base, items: [{ ...item, type: 'url' }] })).toBe(false);
+    expect(validate({ ...base, items: [{ ...item, type: 'dir' }] })).toBe(false);
+    expect(
+      validate({ ...base, groups: [{ ...group, color: 'var(--color-primary)' }], items: [] })
+    ).toBe(false);
+    expect(validate({ ...base, groups: [{ ...group, color: '#00897b' }], items: [] })).toBe(true);
+    expect(validate({ ...base, groups: [{ ...group, collapsed: true }], items: [] })).toBe(false);
+  });
+
+  it('ウィンドウ操作アイテムはデータファイルと同じフィールド名であること', () => {
+    const window = {
+      id: 'itAAAAA2',
+      type: 'window',
+      displayName: 'Chrome',
+      windowTitle: '*Chrome',
+      x: 0,
+      y: 0,
+      width: 800,
+      height: 600,
+      workspaceId: 'wsAAAAA1',
+      order: 1,
+      addedAt: 1,
+    };
+    expect(validate({ ...base, items: [window] })).toBe(true);
+    expect(validate({ ...base, items: [{ ...window, windowX: 0 }] })).toBe(false);
+    expect(validate({ ...base, items: [{ ...window, path: '[ウィンドウ操作: x]' }] })).toBe(false);
+  });
+
+  it('スキーマが拒否するアイテムは寛容パースも invalid にすること', () => {
+    const cases: Record<string, unknown>[] = [
+      { ...item, path: undefined },
+      { ...item, type: 'group', path: undefined, itemNames: 'not-array' },
+      { ...item, type: 'window', path: undefined },
+      { ...item, type: 'clipboard', path: undefined, dataFileRef: 'x' },
+    ];
+    for (const broken of cases) {
+      const file = { ...base, items: [broken] };
+      expect(validate(file), JSON.stringify(broken)).toBe(false);
+      const lenient = parseWorkspaceFileLenient(
+        JSON.stringify(file),
+        createWorkspaceParseContext()
+      );
+      expect(
+        lenient.issues.map((i) => i.kind),
+        JSON.stringify(broken)
+      ).toEqual(['invalid']);
+    }
+  });
+
+  it('アーカイブは archivedAt / archivedGroupId 付きのアイテムだけを受け付けること', () => {
+    const archiveBase = { $schema: './schemas/workspace-archive.schema.json', version: '2.0' };
+    const archivedGroup = {
+      ...group,
+      id: 'agAAAAA1',
+      archivedAt: 2,
+      originalOrder: 0,
+      itemCount: 1,
+    };
+    const archivedItem = {
+      ...item,
+      id: 'aiAAAAA1',
+      groupId: 'agAAAAA1',
+      archivedAt: 2,
+      archivedGroupId: 'agAAAAA1',
+    };
+    expect(
+      validateArchive({ ...archiveBase, groups: [archivedGroup], items: [archivedItem] })
+    ).toBe(true);
+    expect(validateArchive({ ...archiveBase, groups: [archivedGroup], items: [item] })).toBe(false);
+
+    const ctx = createWorkspaceParseContext();
+    parseWorkspaceFileLenient(JSON.stringify({ ...base, items: [] }), ctx);
+    const lenient = parseWorkspaceArchiveFileLenient(
+      JSON.stringify({ ...archiveBase, groups: [archivedGroup], items: [archivedItem] }),
+      ctx
+    );
+    expect(lenient.issues).toEqual([]);
   });
 });
