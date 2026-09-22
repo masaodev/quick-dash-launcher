@@ -223,6 +223,49 @@ describe('workspaceParser: id の採番と参照の追随', () => {
     expect(result.issues.filter((i) => i.kind === 'normalized')).toHaveLength(3);
   });
 
+  it('不正なグループへの参照（groupId / parentGroupId）は外さず保つこと', () => {
+    const result = parseWorkspaceFileLenient(
+      file({
+        groups: [
+          { ...group, displayName: '' }, // invalid（id: grAAAAA1）
+          { ...group, id: 'grAAAAA2', parentGroupId: 'grAAAAA1' },
+        ],
+        items: [launcher], // groupId: grAAAAA1
+      }),
+      createWorkspaceParseContext(NOW)
+    );
+    expect(result.invalid.groups).toHaveLength(1);
+    expect(result.data.groups[0].parentGroupId).toBe('grAAAAA1');
+    expect(result.data.items[0].groupId).toBe('grAAAAA1');
+    expect(result.issues.filter((i) => i.kind === 'normalized')).toEqual([]);
+  });
+
+  it('parentGroupId の循環と深さ超過は親を外して normalized にすること', () => {
+    const g = (id: string, parentGroupId?: string) => ({ ...group, id, parentGroupId });
+    const result = parseWorkspaceFileLenient(
+      file({
+        groups: [
+          g('cycleAA1', 'cycleAA2'),
+          g('cycleAA2', 'cycleAA1'),
+          g('depthAA0'),
+          g('depthAA1', 'depthAA0'),
+          g('depthAA2', 'depthAA1'),
+          g('depthAA3', 'depthAA2'), // 3 段目は超過
+        ],
+        items: [],
+      }),
+      createWorkspaceParseContext(NOW)
+    );
+    const byId = Object.fromEntries(result.data.groups.map((x) => [x.id, x]));
+    expect(byId.cycleAA1.parentGroupId ?? byId.cycleAA2.parentGroupId).toBeDefined();
+    expect(byId.cycleAA1.parentGroupId && byId.cycleAA2.parentGroupId).toBeFalsy();
+    expect(byId.depthAA2.parentGroupId).toBe('depthAA1');
+    expect(byId.depthAA3.parentGroupId).toBeUndefined();
+    const reasons = result.issues.filter((i) => i.kind === 'normalized').map((i) => i.reason);
+    expect(reasons.some((r) => r.includes('循環'))).toBe(true);
+    expect(reasons.some((r) => r.includes('段を超える'))).toBe(true);
+  });
+
   it('自分自身を親にしたグループは親を外すこと', () => {
     const result = parseWorkspaceFileLenient(
       file({ groups: [{ ...group, parentGroupId: 'grAAAAA1' }] }),
@@ -355,22 +398,36 @@ describe('workspaceParser: アーカイブ', () => {
     expect(result.issues.some((i) => i.kind === 'idAssigned')).toBe(true);
   });
 
-  it('所属するアーカイブグループが無いアイテムは削除し、archivedGroupId 欠落は invalid にすること', () => {
+  it('所属するアーカイブグループが無いアイテムと archivedGroupId 欠落は invalid として生のまま残すこと', () => {
     const ctx = createWorkspaceParseContext(NOW);
     parseWorkspaceFileLenient(file(), ctx);
     const { archivedGroupId: _omit, ...noArchivedGroup } = archivedItem;
+    const orphan = { ...archivedItem, archivedGroupId: 'missing1' };
     const result = parseWorkspaceArchiveFileLenient(
-      archiveFile({
-        items: [
-          { ...archivedItem, archivedGroupId: 'missing1' },
-          { ...noArchivedGroup, id: 'aiAAAAA2' },
-        ],
-      }),
+      archiveFile({ items: [orphan, { ...noArchivedGroup, id: 'aiAAAAA2' }] }),
       ctx
     );
     expect(result.data.items).toHaveLength(0);
-    expect(result.issues.map((i) => i.kind).sort()).toEqual(['invalid', 'normalized']);
+    expect(result.issues.map((i) => i.kind)).toEqual(['invalid', 'invalid']);
+    // 書き戻しで消えない（グループを直せば戻る）
+    expect(result.invalid.items).toHaveLength(2);
+    expect(result.invalid.items).toEqual(
+      expect.arrayContaining([orphan, { ...noArchivedGroup, id: 'aiAAAAA2' }])
+    );
+  });
+
+  it('アーカイブグループが不正でも、配下のアイテムは archivedGroupId を保ったまま invalid に残すこと', () => {
+    const ctx = createWorkspaceParseContext(NOW);
+    parseWorkspaceFileLenient(file(), ctx);
+    const result = parseWorkspaceArchiveFileLenient(
+      archiveFile({ groups: [{ ...archivedGroup, displayName: '' }] }),
+      ctx
+    );
+    expect(result.invalid.groups).toHaveLength(1);
     expect(result.invalid.items).toHaveLength(1);
+    expect((result.invalid.items[0] as { archivedGroupId: string }).archivedGroupId).toBe(
+      'agAAAAA1'
+    );
   });
 
   it('アーカイブグループの parentGroupId は main のグループも参照できること', () => {

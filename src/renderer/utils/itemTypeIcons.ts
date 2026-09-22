@@ -13,7 +13,7 @@ export function getDefaultIconForItem(item: WorkspaceItem): string {
         case 'folder':
           return '\u{1F4C1}';
         case 'app':
-          return '⚙️';
+          return '\u2699\uFE0F';
         case 'customUri':
           return '\u{1F517}';
         default:
@@ -26,6 +26,6 @@ export function getDefaultIconForItem(item: WorkspaceItem): string {
     case 'clipboard':
       return '\u{1F4CB}';
     case 'layout':
-      return '\u{1F5A5}️';
+      return '\u{1F5A5}\uFE0F';
   }
 }

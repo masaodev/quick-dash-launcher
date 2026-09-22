@@ -57,7 +57,8 @@
         },
         "displayName": {
           "type": "string",
-          "description": "タブに表示する名前"
+          "description": "タブに表示する名前",
+          "minLength": 1
         },
         "order": {
           "type": "number",
@@ -70,9 +71,7 @@
       },
       "required": [
         "id",
-        "displayName",
-        "order",
-        "createdAt"
+        "displayName"
       ],
       "additionalProperties": false,
       "description": "ワークスペース（タブ）"
@@ -87,7 +86,8 @@
         },
         "displayName": {
           "type": "string",
-          "description": "グループ名"
+          "description": "グループ名",
+          "minLength": 1
         },
         "color": {
           "type": "string",
@@ -115,8 +115,6 @@
         "id",
         "displayName",
         "color",
-        "order",
-        "createdAt",
         "workspaceId"
       ],
       "additionalProperties": false,
@@ -152,7 +150,8 @@
         },
         "displayName": {
           "type": "string",
-          "description": "表示名"
+          "description": "表示名",
+          "minLength": 1
         },
         "memo": {
           "type": "string",
@@ -181,7 +180,8 @@
         },
         "path": {
           "type": "string",
-          "description": "ファイルパス、URL、またはコマンド"
+          "description": "ファイルパス、URL、またはコマンド",
+          "minLength": 1
         },
         "args": {
           "type": "string",
@@ -201,10 +201,8 @@
         }
       },
       "required": [
-        "addedAt",
         "displayName",
         "id",
-        "order",
         "path",
         "type",
         "workspaceId"
@@ -272,7 +270,8 @@
         },
         "displayName": {
           "type": "string",
-          "description": "表示名"
+          "description": "表示名",
+          "minLength": 1
         },
         "memo": {
           "type": "string",
@@ -301,7 +300,8 @@
         },
         "windowTitle": {
           "type": "string",
-          "description": "ウィンドウタイトル（検索用、ワイルドカード * ? 対応）"
+          "description": "ウィンドウタイトル（検索用、ワイルドカード * ? 対応）",
+          "minLength": 1
         },
         "processName": {
           "type": "string",
@@ -341,10 +341,8 @@
         }
       },
       "required": [
-        "addedAt",
         "displayName",
         "id",
-        "order",
         "type",
         "windowTitle",
         "workspaceId"
@@ -362,7 +360,8 @@
         },
         "displayName": {
           "type": "string",
-          "description": "表示名"
+          "description": "表示名",
+          "minLength": 1
         },
         "memo": {
           "type": "string",
@@ -398,11 +397,9 @@
         }
       },
       "required": [
-        "addedAt",
         "displayName",
         "id",
         "itemNames",
-        "order",
         "type",
         "workspaceId"
       ],
@@ -419,7 +416,8 @@
         },
         "displayName": {
           "type": "string",
-          "description": "表示名"
+          "description": "表示名",
+          "minLength": 1
         },
         "memo": {
           "type": "string",
@@ -471,12 +469,10 @@
         }
       },
       "required": [
-        "addedAt",
         "dataFileRef",
         "displayName",
         "formats",
         "id",
-        "order",
         "savedAt",
         "type",
         "workspaceId"
@@ -505,7 +501,8 @@
         },
         "displayName": {
           "type": "string",
-          "description": "表示名"
+          "description": "表示名",
+          "minLength": 1
         },
         "memo": {
           "type": "string",
@@ -545,11 +542,9 @@
         }
       },
       "required": [
-        "addedAt",
         "displayName",
         "entries",
         "id",
-        "order",
         "type",
         "workspaceId"
       ],

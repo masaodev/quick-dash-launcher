@@ -12,6 +12,7 @@ export {
   WorkspaceFileStore,
   WorkspaceExternalChangeConflictError,
   WorkspaceCorruptedError,
+  WorkspaceWriteError,
 } from './WorkspaceFileStore.js';
 export { WorkspaceUiStateStore } from './WorkspaceUiStateStore.js';
 export { default } from './WorkspaceService.js';

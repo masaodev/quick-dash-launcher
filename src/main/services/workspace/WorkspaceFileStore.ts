@@ -26,6 +26,7 @@ import type {
   WorkspaceGroup,
   WorkspaceItem,
 } from '@common/types';
+import { JSON_WORKSPACE_VERSION } from '@common/types';
 
 import {
   detectExternalChange,
@@ -62,6 +63,14 @@ export class WorkspaceExternalChangeConflictError extends Error {
       `${fileKey} が QDL の外で変更されています。メイン画面で F5 を押して再読込してから操作してください`
     );
     this.name = 'WorkspaceExternalChangeConflictError';
+  }
+}
+
+/** ファイルへの書き込み自体に失敗した（ディスク・権限など）。データはメモリ上に残っている */
+export class WorkspaceWriteError extends Error {
+  constructor(fileKey: string) {
+    super(`${fileKey} の書き込みに失敗しました。ディスクの空き容量や権限を確認してください`);
+    this.name = 'WorkspaceWriteError';
   }
 }
 
@@ -197,36 +206,50 @@ export class WorkspaceFileStore {
     const mainReport = this.newReport(WORKSPACE_FILE_KEY);
     const archiveReport = this.newReport(WORKSPACE_ARCHIVE_FILE_KEY);
 
-    // 無ければ空ファイルを作る（既定ワークスペース 1 件）
-    let mainContent = FileUtils.safeReadTextFile(this.paths.main);
-    if (mainContent === null) {
-      const empty = createEmptyWorkspaceFile(generateUniqueId(new Set()), this.now());
-      mainContent = serializeWorkspaceFile(empty);
-      writeDataFile(this.paths.main, mainContent);
-      mainReport.rewritten = true;
-    }
-    let archiveContent = FileUtils.safeReadTextFile(this.paths.archive);
-    if (archiveContent === null) {
-      archiveContent = serializeWorkspaceArchiveFile(createEmptyWorkspaceArchiveFile());
-      writeDataFile(this.paths.archive, archiveContent);
-      archiveReport.rewritten = true;
-    }
+    // 無ければ空ファイルを作る（既定ワークスペース 1 件）。
+    // 「存在するのに読めない」（ロック・権限）は空で上書きせず unreadable にする
+    let mainContent = this.readOrCreate(this.paths.main, mainReport, () =>
+      serializeWorkspaceFile(createEmptyWorkspaceFile(generateUniqueId(new Set()), this.now()))
+    );
+    let archiveContent = this.readOrCreate(this.paths.archive, archiveReport, () =>
+      serializeWorkspaceArchiveFile(createEmptyWorkspaceArchiveFile())
+    );
 
-    this.trackExternalChange(WORKSPACE_FILE_KEY, mainContent, mainReport);
-    this.trackExternalChange(WORKSPACE_ARCHIVE_FILE_KEY, archiveContent, archiveReport);
+    if (mainContent !== null) {
+      this.trackExternalChange(WORKSPACE_FILE_KEY, mainContent, mainReport);
+    }
+    if (archiveContent !== null) {
+      this.trackExternalChange(WORKSPACE_ARCHIVE_FILE_KEY, archiveContent, archiveReport);
+    }
 
     // JSON として読めるかを先に確認する（旧形式判定のため）
     let mainRaw: unknown;
     let archiveRaw: unknown;
-    try {
-      mainRaw = JSON.parse(mainContent);
-    } catch (error) {
-      this.markCorrupted(mainReport, error);
+    if (mainContent !== null) {
+      try {
+        mainRaw = JSON.parse(mainContent);
+      } catch (error) {
+        this.markCorrupted(mainReport, error);
+      }
     }
-    try {
-      archiveRaw = JSON.parse(archiveContent);
-    } catch (error) {
-      this.markCorrupted(archiveReport, error);
+    if (archiveContent !== null) {
+      try {
+        archiveRaw = JSON.parse(archiveContent);
+      } catch (error) {
+        this.markCorrupted(archiveReport, error);
+      }
+    }
+
+    // 旧形式の main を archive が読めないまま 2.0 としてパースすると、version が付いて移行が二度と走らない。
+    // archive を直すまで main も保留する
+    if (
+      mainReport.status === 'ok' &&
+      archiveReport.status !== 'ok' &&
+      isLegacyWorkspaceFile(mainRaw)
+    ) {
+      mainReport.status = 'unreadable';
+      mainReport.error = `旧形式からの変換には ${WORKSPACE_ARCHIVE_FILE_KEY} も読める必要があります。先に直してください`;
+      this.corruptedFiles.add(WORKSPACE_FILE_KEY);
     }
 
     // 旧形式 → 2.0
@@ -258,7 +281,7 @@ export class WorkspaceFileStore {
 
     // 寛容パース
     const ctx = createWorkspaceParseContext(this.now());
-    if (mainReport.status === 'ok') {
+    if (mainReport.status === 'ok' && mainContent !== null) {
       try {
         const parsed = parseWorkspaceFileLenient(mainContent, ctx);
         mainReport.issues.push(...parsed.issues);
@@ -285,7 +308,7 @@ export class WorkspaceFileStore {
       this.invalidMain = { workspaces: [], groups: [], items: [] };
     }
 
-    if (archiveReport.status === 'ok' && mainReport.status === 'ok') {
+    if (archiveReport.status === 'ok' && mainReport.status === 'ok' && archiveContent !== null) {
       try {
         const parsed = parseWorkspaceArchiveFileLenient(archiveContent, ctx);
         archiveReport.issues.push(...parsed.issues);
@@ -351,6 +374,35 @@ export class WorkspaceFileStore {
   /** 直近の reload() の結果がまだ consumeLoadReports() で取り出されていないか */
   hasPendingReports(): boolean {
     return this.pendingReports.length > 0;
+  }
+
+  /**
+   * ファイルを読む。無ければ既定内容を書いて返す。存在するのに読めなければ unreadable にして null
+   */
+  private readOrCreate(
+    filePath: string,
+    report: LoadReportFile,
+    createDefault: () => string
+  ): string | null {
+    if (!FileUtils.exists(filePath)) {
+      const content = createDefault();
+      if (!writeDataFile(filePath, content)) {
+        report.status = 'unreadable';
+        report.error = 'ファイルを作成できませんでした';
+        this.corruptedFiles.add(report.file);
+        return null;
+      }
+      report.rewritten = true;
+      return content;
+    }
+    const content = FileUtils.safeReadTextFile(filePath);
+    if (content === null) {
+      logger.error({ filePath }, 'ワークスペースファイルを読み取れませんでした（ロック・権限）');
+      report.status = 'unreadable';
+      report.error = 'ファイルを読み込めませんでした';
+      this.corruptedFiles.add(report.file);
+    }
+    return content;
   }
 
   private newReport(file: string): LoadReportFile {
@@ -437,7 +489,17 @@ export class WorkspaceFileStore {
         },
       ])
     );
-    this.uiState.replaceAll(uiState);
+    if (isLegacyWorkspaceFile(mainRaw)) {
+      this.uiState.replaceAll(uiState);
+    } else {
+      // archive だけが旧形式（部分復元など）。main の UI 状態は生きているので上書きしない
+      const current = this.uiState.read();
+      this.uiState.replaceAll({
+        ...current,
+        collapsedGroups: { ...uiState.collapsedGroups, ...current.collapsedGroups },
+        detachedWindows: { ...uiState.detachedWindows, ...current.detachedWindows },
+      });
+    }
 
     if (detachedContent !== null) {
       try {
@@ -561,15 +623,29 @@ export class WorkspaceFileStore {
     this.writeArchive(next);
   }
 
-  /** 両ファイルをまとめて更新する（アーカイブ・復元）。書き込み前に両方の競合を確認する */
-  updateBoth(mutate: (main: WorkspaceMainData, archive: WorkspaceArchiveData) => void): void {
+  /**
+   * 両ファイルをまとめて更新する（アーカイブ・復元）。書き込み前に両方の競合を確認する
+   *
+   * 2 回の書き込みはアトミックにできないので、要素を「受け取る側」を先に書く。
+   * 2 回目（除去する側）が失敗しても要素は両方に残る（次の reload で重複 id として採番される）だけで、
+   * 消えることはない
+   */
+  updateBoth(
+    mutate: (main: WorkspaceMainData, archive: WorkspaceArchiveData) => void,
+    writeFirst: 'main' | 'archive'
+  ): void {
     this.assertWritable(WORKSPACE_FILE_KEY, this.paths.main);
     this.assertWritable(WORKSPACE_ARCHIVE_FILE_KEY, this.paths.archive);
     const nextMain = clone(this.main);
     const nextArchive = clone(this.archive);
     mutate(nextMain, nextArchive);
-    this.writeMain(nextMain);
-    this.writeArchive(nextArchive);
+    if (writeFirst === 'archive') {
+      this.writeArchive(nextArchive);
+      this.writeMain(nextMain);
+    } else {
+      this.writeMain(nextMain);
+      this.writeArchive(nextArchive);
+    }
   }
 
   private assertWritable(key: string, filePath: string): void {
@@ -587,7 +663,7 @@ export class WorkspaceFileStore {
   private writeMain(next: WorkspaceMainData): void {
     const content = serializeWorkspaceFile(
       {
-        version: '2.0',
+        version: JSON_WORKSPACE_VERSION,
         workspaces: next.workspaces,
         groups: next.groups,
         items: next.items.map((item) => toJsonItem(item)),
@@ -595,7 +671,7 @@ export class WorkspaceFileStore {
       this.invalidMain
     );
     if (!writeDataFile(this.paths.main, content)) {
-      throw new Error(`${WORKSPACE_FILE_KEY} の書き込みに失敗しました`);
+      throw new WorkspaceWriteError(WORKSPACE_FILE_KEY);
     }
     this.main = next;
   }
@@ -603,14 +679,14 @@ export class WorkspaceFileStore {
   private writeArchive(next: WorkspaceArchiveData): void {
     const content = serializeWorkspaceArchiveFile(
       {
-        version: '2.0',
+        version: JSON_WORKSPACE_VERSION,
         groups: next.groups,
         items: next.items.map((item) => toJsonItem(item) as JsonArchivedWorkspaceItem),
       },
       this.invalidArchive
     );
     if (!writeDataFile(this.paths.archive, content)) {
-      throw new Error(`${WORKSPACE_ARCHIVE_FILE_KEY} の書き込みに失敗しました`);
+      throw new WorkspaceWriteError(WORKSPACE_ARCHIVE_FILE_KEY);
     }
     this.archive = next;
   }

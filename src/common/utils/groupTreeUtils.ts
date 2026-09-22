@@ -83,8 +83,16 @@ export function getSubtreeMaxDepth(groupId: string, groups: WorkspaceGroup[]): n
  * @returns 子孫グループIDの配列（自身は含まない）
  */
 export function getDescendantGroupIds(groupId: string, groups: WorkspaceGroup[]): string[] {
-  const children = groups.filter((g) => g.parentGroupId === groupId);
-  return children.flatMap((child) => [child.id, ...getDescendantGroupIds(child.id, groups)]);
+  // 循環参照（手編集で作られうる）で無限再帰しないよう、訪問済みを持つ
+  const visited = new Set<string>([groupId]);
+  const collect = (parentId: string): string[] =>
+    groups
+      .filter((g) => g.parentGroupId === parentId && !visited.has(g.id))
+      .flatMap((child) => {
+        visited.add(child.id);
+        return [child.id, ...collect(child.id)];
+      });
+  return collect(groupId);
 }
 
 /**
@@ -96,11 +104,14 @@ export function getDescendantGroupIds(groupId: string, groups: WorkspaceGroup[])
 export function getAncestorGroupIds(groupId: string, groups: WorkspaceGroup[]): string[] {
   const groupMap = new Map(groups.map((g) => [g.id, g]));
   const result: string[] = [];
+  const visited = new Set<string>([groupId]);
   let currentId: string | undefined = groupId;
 
   while (currentId) {
     const group = groupMap.get(currentId);
-    if (!group?.parentGroupId) break;
+    // 循環参照で無限ループしないよう、訪問済みで打ち切る
+    if (!group?.parentGroupId || visited.has(group.parentGroupId)) break;
+    visited.add(group.parentGroupId);
     result.push(group.parentGroupId);
     currentId = group.parentGroupId;
   }

@@ -5,6 +5,7 @@ import {
   canCreateSubgroup,
   getChildGroups,
   getDescendantGroupIds,
+  getAncestorGroupIds,
   buildGroupTree,
   flattenGroupTree,
   MAX_GROUP_DEPTH,
@@ -130,5 +131,20 @@ describe('groupTreeUtils', () => {
     it('最大深さは2', () => {
       expect(MAX_GROUP_DEPTH).toBe(2);
     });
+  });
+});
+
+describe('groupTreeUtils: 循環参照のガード', () => {
+  const cyclic = [
+    makeGroup({ id: 'cycleAA1', parentGroupId: 'cycleAA2' }),
+    makeGroup({ id: 'cycleAA2', parentGroupId: 'cycleAA1' }),
+  ];
+
+  it('getDescendantGroupIds は循環でも止まること', () => {
+    expect(getDescendantGroupIds('cycleAA1', cyclic)).toEqual(['cycleAA2']);
+  });
+
+  it('getAncestorGroupIds は循環でも止まること', () => {
+    expect(getAncestorGroupIds('cycleAA1', cyclic)).toEqual(['cycleAA2']);
   });
 });

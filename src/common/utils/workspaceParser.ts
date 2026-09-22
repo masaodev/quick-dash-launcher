@@ -28,6 +28,7 @@ import {
   WORKSPACE_SCHEMA_REF,
 } from '@common/types/json-workspace';
 import { getDefaultGroupColor, isValidGroupColor } from '@common/groupColors';
+import { MAX_GROUP_DEPTH } from '@common/utils/groupTreeUtils';
 
 import {
   generateUniqueId,
@@ -61,6 +62,11 @@ export interface WorkspaceParseContext {
   workspaceIds: Set<string>;
   /** main で確定したグループ id */
   groupIds: Set<string>;
+  /**
+   * 検証を通らなかったグループの id（生のまま保持している要素）。
+   * これを指す参照は「存在しない」扱いにせず残す（グループを直せば元に戻るように）
+   */
+  invalidGroupIds: Set<string>;
   /** 既定ワークスペース id（order 最小）。main のパース後に確定 */
   defaultWorkspaceId: string;
   /** 補完に使う現在時刻 */
@@ -73,6 +79,7 @@ export function createWorkspaceParseContext(now: number = Date.now()): Workspace
     idMap: new Map(),
     workspaceIds: new Set(),
     groupIds: new Set(),
+    invalidGroupIds: new Set(),
     defaultWorkspaceId: '',
     now,
   };
@@ -270,6 +277,34 @@ const ITEM_META_KEYS = [
 ];
 
 /**
+ * 書き込み前のアイテム本体の正規化・検証（QDL 自身が書く経路でも、読み込みで invalid になるものを書かない）
+ *
+ * - ウィンドウ操作でタイトルが空・プロセス名だけのときは全一致ワイルドカード "*" にする（移行と同じ規則）
+ * - 通常アイテムで path が変わらない編集では、呼び出し側が渡した originalPath（.lnk のリンク先）を保つ
+ *
+ * @throws 検証を通らないとき（displayName 欠落など）
+ */
+export function normalizeWorkspaceItemBody<T extends { type: JsonWorkspaceItem['type'] }>(
+  body: T,
+  id: string
+): T {
+  const raw = { ...(body as unknown as Record<string, unknown>) };
+  if (
+    raw.type === 'window' &&
+    typeof raw.windowTitle === 'string' &&
+    raw.windowTitle.trim() === '' &&
+    typeof raw.processName === 'string' &&
+    raw.processName.trim() !== ''
+  ) {
+    raw.windowTitle = '*';
+  }
+  const validated = validateItemBody(raw, id);
+  delete validated.id;
+  delete validated.updatedAt;
+  return validated as unknown as T;
+}
+
+/**
  * ワークスペースアイテムの本体（type 固有部分）をデータファイルの検証関数で検証する
  */
 function validateItemBody(raw: Record<string, unknown>, id: string): Record<string, unknown> {
@@ -388,6 +423,8 @@ type ParsedGroup<T extends JsonWorkspaceGroup> = {
 
 type ParsedItem<T extends JsonWorkspaceItem> = {
   item: T;
+  /** 元のオブジェクト（invalid として保持するときに使う） */
+  raw: Record<string, unknown>;
   rawWorkspaceId: unknown;
   rawGroupId: unknown;
   rawArchivedGroupId?: unknown;
@@ -487,6 +524,7 @@ function parseItemBase(
 
   return {
     item,
+    raw,
     rawWorkspaceId: raw.workspaceId,
     rawGroupId: raw.groupId,
     rawArchivedGroupId: raw.archivedGroupId,
@@ -531,6 +569,8 @@ function resolveRef(
   if (rawRef === undefined) return undefined;
   const mapped = mapRef(rawRef, ctx);
   if (mapped !== undefined && mapped !== selfId && known.has(mapped)) return mapped;
+  // 検証を通らなかったグループへの参照は外さない（直せば戻る。実行時は未分類として扱われる）
+  if (mapped !== undefined && mapped !== selfId && ctx.invalidGroupIds.has(mapped)) return mapped;
 
   issues.normalized(
     section,
@@ -541,6 +581,47 @@ function resolveRef(
     selfId
   );
   return undefined;
+}
+
+/**
+ * parentGroupId の循環と深さ超過（MAX_GROUP_DEPTH）を補正する
+ *
+ * 手編集で A→B→A のような循環を作るとレンダラーの祖先探索が止まらなくなるため、
+ * 祖先を辿って循環・深さ超過を検出したグループは親を外してトップレベルにする。
+ * groups は pass 2 で参照解決済みのもの（並びは元の配列順）。
+ */
+function breakGroupCycles(
+  groups: JsonWorkspaceGroup[],
+  indexes: number[],
+  issues: IssueCollector
+): void {
+  const byId = new Map(groups.map((g) => [g.id, g]));
+  groups.forEach((group, i) => {
+    if (!group.parentGroupId) return;
+    const visited = new Set<string>([group.id]);
+    let current = group.parentGroupId;
+    let depth = 1;
+    let reason: string | undefined;
+    while (current) {
+      if (visited.has(current)) {
+        reason = `parentGroupId が循環しているため親を外しました`;
+        break;
+      }
+      if (depth > MAX_GROUP_DEPTH) {
+        reason = `parentGroupId の入れ子が ${MAX_GROUP_DEPTH} 段を超えるため親を外しました`;
+        break;
+      }
+      visited.add(current);
+      const parent = byId.get(current);
+      if (!parent) break; // 不正グループへの参照（resolveRef で残したもの）はここで打ち切る
+      current = parent.parentGroupId ?? '';
+      depth++;
+    }
+    if (reason) {
+      delete group.parentGroupId;
+      issues.normalized('groups', indexes[i], reason, group.id);
+    }
+  });
 }
 
 // ============================================================
@@ -603,6 +684,7 @@ export function parseWorkspaceFileLenient(
         typeof raw.id === 'string' ? raw.id : undefined
       );
       invalid.groups.push(raw);
+      if (typeof raw.id === 'string' && raw.id !== '') ctx.invalidGroupIds.add(raw.id);
     }
   });
   for (const { group } of parsedGroups) ctx.groupIds.add(group.id);
@@ -651,6 +733,12 @@ export function parseWorkspaceFileLenient(
       if (parentGroupId !== undefined) group.parentGroupId = parentGroupId;
       return orderGroupKeys(group);
     }
+  );
+
+  breakGroupCycles(
+    groups,
+    parsedGroups.map((g) => g.index),
+    issues
   );
 
   const items: JsonWorkspaceItem[] = parsedItems.map(
@@ -748,6 +836,7 @@ export function parseWorkspaceArchiveFileLenient(
         typeof raw.id === 'string' ? raw.id : undefined
       );
       invalid.groups.push(raw);
+      if (typeof raw.id === 'string' && raw.id !== '') ctx.invalidGroupIds.add(raw.id);
     }
   });
   const archiveGroupIds = new Set(parsedGroups.map((g) => g.group.id));
@@ -805,18 +894,25 @@ export function parseWorkspaceArchiveFileLenient(
     if (parentGroupId !== undefined) group.parentGroupId = parentGroupId;
     return orderGroupKeys(group);
   });
+  breakGroupCycles(
+    groups,
+    parsedGroups.map((g) => g.index),
+    issues
+  );
 
   const items: JsonArchivedWorkspaceItem[] = [];
-  for (const { item, rawWorkspaceId, rawGroupId, rawArchivedGroupId, index } of parsedItems) {
+  for (const { item, rawWorkspaceId, rawGroupId, rawArchivedGroupId, index, raw } of parsedItems) {
     const archivedGroupId = mapRef(rawArchivedGroupId, ctx);
     if (archivedGroupId === undefined || !archiveGroupIds.has(archivedGroupId)) {
-      // 所属するアーカイブグループが無いアイテムは画面から到達できないので落とす
-      issues.normalized(
+      // 所属するアーカイブグループが無い（グループが不正・削除済み）アイテムは画面から到達できない。
+      // 消さずに invalid として保持し、グループを直せば戻るようにする
+      issues.invalid(
         'items',
         index,
-        `archivedGroupId "${String(rawArchivedGroupId)}" のアーカイブグループが無いため削除しました`,
+        `archivedGroupId "${String(rawArchivedGroupId)}" のアーカイブグループが無いため読み込みから外しました`,
         item.id
       );
+      invalid.items.push(raw);
       continue;
     }
     item.archivedGroupId = archivedGroupId;

@@ -286,7 +286,9 @@ export function migrateWorkspaceV1(
         type: 'item',
         path: item.path,
         args: item.args,
+        originalPath: item.originalPath,
         customIcon: item.customIcon,
+        windowConfig: item.windowConfig,
       };
     }
     // 変換できないものは生のまま返し、寛容パースで invalid にする（消さない）

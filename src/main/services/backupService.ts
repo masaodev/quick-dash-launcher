@@ -414,12 +414,28 @@ export class BackupService {
    * 不可逆な形式変更なので backupEnabled に関係なく作る。失敗したら呼び出し側は移行しない
    */
   public async createPreMigrationSnapshot(): Promise<void> {
-    await this.createForcedSnapshot('pre-migration');
+    const snapshotFolder = await this.createForcedSnapshot('pre-migration');
+
+    // 移行元のワークスペースファイルが実際にコピーされたことを確認する（コピー失敗は copy 側で握られるため）
+    for (const sourcePath of [
+      PathManager.getWorkspaceFilePath(),
+      PathManager.getWorkspaceArchiveFilePath(),
+      PathManager.getLegacyWorkspaceDetachedFilePath(),
+    ]) {
+      if (!FileUtils.exists(sourcePath)) continue;
+      const copied = path.join(snapshotFolder, path.basename(sourcePath));
+      if (!FileUtils.exists(copied)) {
+        throw new Error(
+          `移行前スナップショットに ${path.basename(sourcePath)} をコピーできませんでした`
+        );
+      }
+    }
   }
 
-  private async createForcedSnapshot(suffix: string): Promise<void> {
+  private async createForcedSnapshot(suffix: string): Promise<string> {
     const { snapshotFolder } = await this.copyTargetsToSnapshot(suffix);
     logger.info({ snapshotFolder, suffix }, '強制スナップショットを作成しました');
+    return snapshotFolder;
   }
 
   private async copyTargetsToSnapshot(

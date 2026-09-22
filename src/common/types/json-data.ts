@@ -73,9 +73,15 @@ interface JsonItemBase {
 export interface JsonLauncherItem extends JsonItemBase {
   /** アイテムタイプ */
   type: 'item';
-  /** 表示名 */
+  /**
+   * 表示名
+   * @minLength 1
+   */
   displayName: string;
-  /** ファイルパス、URL、またはコマンド */
+  /**
+   * ファイルパス、URL、またはコマンド
+   * @minLength 1
+   */
   path: string;
   /** コマンドライン引数（オプション） */
   args?: string;
@@ -142,7 +148,10 @@ export interface DirOptionsForProcessing {
 export interface JsonDirItem extends JsonItemBase {
   /** アイテムタイプ */
   type: 'dir';
-  /** スキャン対象のフォルダパス */
+  /**
+   * スキャン対象のフォルダパス
+   * @minLength 1
+   */
   path: string;
   /** スキャンオプション（オプション） */
   options?: JsonDirOptions;
@@ -159,7 +168,10 @@ export interface JsonDirItem extends JsonItemBase {
 export interface JsonGroupItem extends JsonItemBase {
   /** アイテムタイプ */
   type: 'group';
-  /** グループの表示名 */
+  /**
+   * グループの表示名
+   * @minLength 1
+   */
   displayName: string;
   /** グループ内で参照するアイテム名のリスト */
   itemNames: string[];
@@ -176,9 +188,15 @@ export interface JsonGroupItem extends JsonItemBase {
 export interface JsonWindowItem extends JsonItemBase {
   /** アイテムタイプ */
   type: 'window';
-  /** アイテムリストでの表示名 */
+  /**
+   * アイテムリストでの表示名
+   * @minLength 1
+   */
   displayName: string;
-  /** ウィンドウタイトル（検索用、ワイルドカード対応） */
+  /**
+   * ウィンドウタイトル（検索用、ワイルドカード対応）
+   * @minLength 1
+   */
   windowTitle: string;
   /** プロセス名で検索（部分一致、オプション） */
   processName?: string;
@@ -211,7 +229,10 @@ export interface JsonWindowItem extends JsonItemBase {
 export interface JsonClipboardItem extends JsonItemBase {
   /** アイテムタイプ */
   type: 'clipboard';
-  /** アイテムの表示名 */
+  /**
+   * アイテムの表示名
+   * @minLength 1
+   */
   displayName: string;
   /** クリップボードデータファイルへの参照（clipboard-data/{id}.json） */
   dataFileRef: string;
@@ -236,7 +257,10 @@ export interface JsonClipboardItem extends JsonItemBase {
 export interface JsonLayoutItem extends JsonItemBase {
   /** アイテムタイプ */
   type: 'layout';
-  /** レイアウトの表示名 */
+  /**
+   * レイアウトの表示名
+   * @minLength 1
+   */
   displayName: string;
   /** レイアウト内のウィンドウエントリ一覧 */
   entries: LayoutWindowEntry[];

@@ -82,7 +82,7 @@ export class WorkspaceArchiveManager {
         archive.items.push(...archivedItems);
         main.groups = remainingGroups;
         main.items = remainingItems;
-      });
+      }, 'archive');
 
       logger.info(
         {
@@ -232,7 +232,7 @@ export class WorkspaceArchiveManager {
         archive.items = archivedItems.filter(
           (item) => !allArchivedGroupIds.has(item.archivedGroupId)
         );
-      });
+      }, 'main');
 
       logger.info(
         {
@@ -335,7 +335,7 @@ export class WorkspaceArchiveManager {
     this.store.updateBoth((main, archive) => {
       main.items = [...currentItems, restoredItem];
       archive.items = archive.items.filter((i) => i.id !== itemId);
-    });
+    }, 'main');
 
     logger.info({ itemId, targetWorkspaceId }, 'Restored archived item to workspace');
   }

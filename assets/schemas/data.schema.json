@@ -77,11 +77,13 @@
         },
         "displayName": {
           "type": "string",
-          "description": "表示名"
+          "description": "表示名",
+          "minLength": 1
         },
         "path": {
           "type": "string",
-          "description": "ファイルパス、URL、またはコマンド"
+          "description": "ファイルパス、URL、またはコマンド",
+          "minLength": 1
         },
         "args": {
           "type": "string",
@@ -182,7 +184,8 @@
         },
         "path": {
           "type": "string",
-          "description": "スキャン対象のフォルダパス"
+          "description": "スキャン対象のフォルダパス",
+          "minLength": 1
         },
         "options": {
           "$ref": "#/definitions/JsonDirOptions",
@@ -256,7 +259,8 @@
         },
         "displayName": {
           "type": "string",
-          "description": "グループの表示名"
+          "description": "グループの表示名",
+          "minLength": 1
         },
         "itemNames": {
           "type": "array",
@@ -298,11 +302,13 @@
         },
         "displayName": {
           "type": "string",
-          "description": "アイテムリストでの表示名"
+          "description": "アイテムリストでの表示名",
+          "minLength": 1
         },
         "windowTitle": {
           "type": "string",
-          "description": "ウィンドウタイトル（検索用、ワイルドカード対応）"
+          "description": "ウィンドウタイトル（検索用、ワイルドカード対応）",
+          "minLength": 1
         },
         "processName": {
           "type": "string",
@@ -373,7 +379,8 @@
         },
         "displayName": {
           "type": "string",
-          "description": "アイテムの表示名"
+          "description": "アイテムの表示名",
+          "minLength": 1
         },
         "dataFileRef": {
           "type": "string",
@@ -444,7 +451,8 @@
         },
         "displayName": {
           "type": "string",
-          "description": "レイアウトの表示名"
+          "description": "レイアウトの表示名",
+          "minLength": 1
         },
         "entries": {
           "type": "array",

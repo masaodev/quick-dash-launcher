@@ -19,6 +19,7 @@ import {
   WorkspaceService,
   WorkspaceCorruptedError,
   WorkspaceExternalChangeConflictError,
+  WorkspaceWriteError,
 } from '../services/workspace/index.js';
 import { showToastWindow } from '../services/overlayWindowService.js';
 import PathManager from '../config/pathManager.js';
@@ -54,10 +55,11 @@ async function withWorkspaceService<T>(
     return await action(workspaceService);
   } catch (error) {
     logger.error({ error, ...errorContext }, errorMsg);
-    // 外部編集との競合・破損は操作者に直接伝える（ファイルは書き換えていない）
+    // 外部編集との競合・破損・書き込み失敗は操作者に直接伝える
     if (
       error instanceof WorkspaceExternalChangeConflictError ||
-      error instanceof WorkspaceCorruptedError
+      error instanceof WorkspaceCorruptedError ||
+      error instanceof WorkspaceWriteError
     ) {
       showToastWindow({ message: error.message, type: 'warning', duration: 6000 }).catch(() => {});
     }

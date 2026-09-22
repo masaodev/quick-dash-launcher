@@ -52,7 +52,10 @@ export interface JsonWorkspace {
    * @pattern ^[A-Za-z0-9]{8}$
    */
   id: string;
-  /** タブに表示する名前 */
+  /**
+   * タブに表示する名前
+   * @minLength 1
+   */
   displayName: string;
   /** タブの並び順（0 から。省略時は QDL が補う） */
   order: number;
@@ -69,7 +72,10 @@ export interface JsonWorkspaceGroup {
    * @pattern ^[A-Za-z0-9]{8}$
    */
   id: string;
-  /** グループ名 */
+  /**
+   * グループ名
+   * @minLength 1
+   */
   displayName: string;
   /**
    * グループの色。色トークン（primary / success / danger / warning / info / secondary /
@@ -100,7 +106,10 @@ interface JsonWorkspaceItemBase {
    * @pattern ^[A-Za-z0-9]{8}$
    */
   id: string;
-  /** 表示名 */
+  /**
+   * 表示名
+   * @minLength 1
+   */
   displayName: string;
   /** 自由記述メモ（オプション） */
   memo?: string;
@@ -121,7 +130,10 @@ interface JsonWorkspaceItemBase {
 export interface JsonWorkspaceLauncherItem extends JsonWorkspaceItemBase {
   /** アイテムタイプ */
   type: 'item';
-  /** ファイルパス、URL、またはコマンド */
+  /**
+   * ファイルパス、URL、またはコマンド
+   * @minLength 1
+   */
   path: string;
   /** コマンドライン引数（オプション） */
   args?: string;
@@ -140,7 +152,10 @@ export interface JsonWorkspaceLauncherItem extends JsonWorkspaceItemBase {
 export interface JsonWorkspaceWindowItem extends JsonWorkspaceItemBase {
   /** アイテムタイプ */
   type: 'window';
-  /** ウィンドウタイトル（検索用、ワイルドカード * ? 対応） */
+  /**
+   * ウィンドウタイトル（検索用、ワイルドカード * ? 対応）
+   * @minLength 1
+   */
   windowTitle: string;
   /** プロセス名で検索（部分一致、オプション） */
   processName?: string;

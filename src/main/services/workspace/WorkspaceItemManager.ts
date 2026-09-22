@@ -4,6 +4,7 @@ import * as path from 'path';
 import type { AppItem, WorkspaceItem, WorkspaceItemUpdate } from '@common/types';
 import logger from '@common/logger';
 import { appItemToWorkspaceItemBody } from '@common/utils/workspaceConverters';
+import { normalizeWorkspaceItemBody } from '@common/utils/workspaceParser';
 
 import type { WorkspaceFileStore } from './WorkspaceFileStore.js';
 import { resolveLauncherType } from './WorkspaceFileStore.js';
@@ -32,9 +33,10 @@ export class WorkspaceItemManager {
     body: WorkspaceItemUpdate,
     meta: { order: number; groupId?: string; workspaceId?: string }
   ): WorkspaceItem {
+    const id = this.store.newId();
     const item = {
-      id: this.store.newId(),
-      ...body,
+      id,
+      ...normalizeWorkspaceItemBody(body, id),
       workspaceId: meta.workspaceId || this.store.resolveDefaultWorkspaceId(),
       ...(meta.groupId !== undefined && { groupId: meta.groupId }),
       order: meta.order,
@@ -146,9 +148,18 @@ export class WorkspaceItemManager {
       }
 
       const existing = items[itemIndex];
+      // path が変わらない編集ではショートカットのリンク先（originalPath）を保つ
+      const carried =
+        existing.type === 'item' &&
+        update.type === 'item' &&
+        existing.path === update.path &&
+        update.originalPath === undefined &&
+        existing.originalPath !== undefined
+          ? { ...update, originalPath: existing.originalPath }
+          : update;
       const replaced = {
         id: existing.id,
-        ...update,
+        ...normalizeWorkspaceItemBody(carried, existing.id),
         workspaceId: existing.workspaceId,
         ...(existing.groupId !== undefined && { groupId: existing.groupId }),
         order: existing.order,

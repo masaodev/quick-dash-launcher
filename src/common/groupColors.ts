@@ -80,9 +80,8 @@ export function getDefaultGroupColor(depth: number): GroupColorToken {
 /**
  * 保存値を CSS の色値に解決する
  *
- * トークン → `var(--group-color-<token>)`、hex → そのまま。
- * それ以外（未移行の旧形式 `var(--color-primary)` など）は CSS として解釈可能なものはそのまま返し、
- * 空や不明なものはプライマリに落とす。
+ * トークン → `var(--group-color-<token>)`。それ以外の非空文字列（hex、未移行の旧形式
+ * `var(--color-primary)` など）は CSS の値としてそのまま返し、空や undefined はプライマリに落とす。
  */
 export function resolveGroupColorCss(value: string | undefined): string {
   if (isGroupColorToken(value)) {

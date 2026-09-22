@@ -4,6 +4,7 @@ import * as path from 'path';
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { isValidId } from '@common/utils/jsonParser';
+import { FileUtils } from '@common/utils/fileUtils';
 
 const tempRoot = vi.hoisted(() => ({ dir: '' }));
 
@@ -33,6 +34,7 @@ import {
   WorkspaceCorruptedError,
   WorkspaceExternalChangeConflictError,
   WorkspaceFileStore,
+  WorkspaceWriteError,
 } from './WorkspaceFileStore';
 import { WorkspaceUiStateStore } from './WorkspaceUiStateStore';
 
@@ -198,7 +200,7 @@ describe('WorkspaceFileStore', () => {
       main.groups = [];
       archive.groups.push({ ...group, archivedAt: 5, originalOrder: 0, itemCount: 1 });
       archive.items.push({ ...item, archivedAt: 5, archivedGroupId: group.id });
-    });
+    }, 'archive');
 
     expect(readJson(paths.main).items).toEqual([]);
     expect(readJson(paths.archive).items[0]).toMatchObject({
@@ -336,6 +338,69 @@ describe('WorkspaceFileStore', () => {
     expect(files[0].status).toBe('corrupted');
     expect(files[0].error).toContain('変換に失敗');
     expect(() => store.set('items', [])).toThrow(WorkspaceCorruptedError);
+  });
+
+  it('存在するのに読めないファイルは unreadable にし、空ファイルで上書きしないこと', async () => {
+    // ディレクトリを置いて「存在するが読めない」状態を作る
+    fs.mkdirSync(paths.main);
+    const store = createStore();
+    await store.reload();
+
+    expect(fs.statSync(paths.main).isDirectory()).toBe(true);
+    const { files } = store.consumeLoadReports();
+    expect(files[0].status).toBe('unreadable');
+    expect(store.isCorrupted()).toBe(true);
+    expect(() => store.set('items', [])).toThrow(WorkspaceCorruptedError);
+  });
+
+  it('main が旧形式で archive が壊れているときは移行せず、main も書き換えないこと', async () => {
+    const content = JSON.stringify(legacyFile, null, 2);
+    fs.writeFileSync(paths.main, content, 'utf8');
+    fs.writeFileSync(paths.archive, '{ broken', 'utf8');
+    const store = createStore();
+    await store.reload();
+
+    expect(snapshotCalls).toBe(0);
+    expect(fs.readFileSync(paths.main, 'utf8')).toBe(content);
+    const { files } = store.consumeLoadReports();
+    expect(files[0].status).toBe('unreadable');
+    expect(files[0].error).toContain('workspace-archive.json');
+    expect(files[1].status).toBe('corrupted');
+    expect(() => store.set('items', [])).toThrow(WorkspaceCorruptedError);
+
+    // archive を直せば移行が走る
+    fs.writeFileSync(paths.archive, '{"groups":[],"items":[]}', 'utf8');
+    await store.reload();
+    expect(snapshotCalls).toBe(1);
+    expect(readJson(paths.main).version).toBe('2.0');
+  });
+
+  it('updateBoth は受け取る側を先に書き、2 回目が失敗しても要素が消えないこと', async () => {
+    fs.writeFileSync(paths.main, v2File(), 'utf8');
+    const store = createStore();
+    await store.reload();
+
+    // archive の書き込みだけ失敗させる
+    const original = FileUtils.safeWriteTextFile.bind(FileUtils);
+    const spy = vi
+      .spyOn(FileUtils, 'safeWriteTextFile')
+      .mockImplementation((filePath, content) =>
+        filePath === paths.archive ? false : original(filePath, content)
+      );
+    try {
+      // アーカイブ操作: archive（受け取る側）を先に書く → 失敗 → main は無傷
+      expect(() =>
+        store.updateBoth((main, archive) => {
+          const [item] = main.items;
+          main.items = [];
+          archive.items.push({ ...item, archivedAt: 5, archivedGroupId: group.id });
+        }, 'archive')
+      ).toThrow(WorkspaceWriteError);
+      expect(readJson(paths.main).items).toHaveLength(1);
+      expect(store.get('items')).toHaveLength(1);
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   it('外部で書き換えた 2.0 ファイルを reload すると changed になり、外部変更として記録されること', async () => {

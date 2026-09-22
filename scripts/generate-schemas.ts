@@ -41,6 +41,33 @@ export interface SchemaTarget {
   postProcess?: (schema: GeneratedSchema) => void;
 }
 
+/** union は type で判別できるので、判別可能な oneOf にする（エディタのエラー表示が明確になる） */
+function anyOfToOneOf(def: Definition): void {
+  if (def.anyOf) {
+    def.oneOf = def.anyOf;
+    delete def.anyOf;
+  }
+}
+
+/** 寛容パースが補完するフィールド。ワークスペース系では省略を許す（README の説明と揃える） */
+const WORKSPACE_OPTIONAL_ON_WRITE = new Set(['order', 'createdAt', 'addedAt']);
+
+/**
+ * ワークスペース系スキーマの required から、QDL が補完するフィールドを外す
+ * definitions 直下と、oneOf に展開された各バリアントの両方を処理する
+ */
+function relaxWorkspaceRequired(schema: GeneratedSchema): void {
+  const relax = (def: Definition | boolean | undefined): void => {
+    if (!def || typeof def !== 'object') return;
+    if (Array.isArray(def.required)) {
+      def.required = def.required.filter((key) => !WORKSPACE_OPTIONAL_ON_WRITE.has(key));
+      if (def.required.length === 0) delete def.required;
+    }
+    for (const variant of def.oneOf ?? def.anyOf ?? []) relax(variant);
+  };
+  for (const def of Object.values(schema.definitions)) relax(def);
+}
+
 function definition(schema: GeneratedSchema, name: string): Definition {
   const def = schema.definitions[name];
   if (!def) {
@@ -76,11 +103,7 @@ export const SCHEMA_TARGETS: SchemaTarget[] = [
     title: 'QuickDashLauncher データファイル（datafiles/data*.json）',
     additionalProperties: false,
     postProcess: (schema) => {
-      const item = definition(schema, 'JsonItem');
-      if (item.anyOf) {
-        item.oneOf = item.anyOf;
-        delete item.anyOf;
-      }
+      anyOfToOneOf(definition(schema, 'JsonItem'));
     },
   },
   {
@@ -90,11 +113,8 @@ export const SCHEMA_TARGETS: SchemaTarget[] = [
     title: 'QuickDashLauncher ワークスペースファイル（workspace.json）',
     additionalProperties: false,
     postProcess: (schema) => {
-      const item = definition(schema, 'JsonWorkspaceItem');
-      if (item.anyOf) {
-        item.oneOf = item.anyOf;
-        delete item.anyOf;
-      }
+      anyOfToOneOf(definition(schema, 'JsonWorkspaceItem'));
+      relaxWorkspaceRequired(schema);
     },
   },
   {
@@ -105,11 +125,8 @@ export const SCHEMA_TARGETS: SchemaTarget[] = [
     additionalProperties: false,
     postProcess: (schema) => {
       // 交差型（JsonWorkspaceItem & メタ）は type ごとに展開された anyOf になる
-      const item = definition(schema, 'JsonArchivedWorkspaceItem');
-      if (item.anyOf) {
-        item.oneOf = item.anyOf;
-        delete item.anyOf;
-      }
+      anyOfToOneOf(definition(schema, 'JsonArchivedWorkspaceItem'));
+      relaxWorkspaceRequired(schema);
     },
   },
   {
