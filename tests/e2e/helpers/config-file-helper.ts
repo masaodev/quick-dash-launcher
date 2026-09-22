@@ -205,7 +205,12 @@ export class ConfigFileHelper {
   readConfigJson<T = unknown>(fileName: string): T | null {
     const filePath = path.join(this.configDir, fileName);
     if (!fs.existsSync(filePath)) return null;
-    return JSON.parse(fs.readFileSync(filePath, 'utf8')) as T;
+    try {
+      return JSON.parse(fs.readFileSync(filePath, 'utf8')) as T;
+    } catch {
+      // アトミック書き込み（tmp → rename）の最中はまれに読めない。expect.poll で再試行できるよう null を返す
+      return null;
+    }
   }
 
   /**

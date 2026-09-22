@@ -186,8 +186,10 @@ test.describe('QuickDashLauncher - ワークスペースファイルの 2.0 移�
       await utils.sendShortcut('F5');
       await expect
         .poll(() => {
-          const report = configHelper.readConfigJson<LoadReport>('last-load-report.json')!;
-          const ws = report.files.find((f) => f.file === 'workspace.json')!;
+          const ws = configHelper
+            .readConfigJson<LoadReport>('last-load-report.json')
+            ?.files.find((f) => f.file === 'workspace.json');
+          if (!ws) return null;
           return {
             rewritten: ws.rewritten,
             issues: ws.issues.length,
@@ -239,10 +241,11 @@ test.describe('QuickDashLauncher - ワークスペースファイルの 2.0 移�
 
       await utils.sendShortcut('F5');
       await expect
-        .poll(() => {
-          const report = configHelper.readConfigJson<LoadReport>('last-load-report.json')!;
-          return report.summary.externallyChangedFiles;
-        })
+        .poll(
+          () =>
+            configHelper.readConfigJson<LoadReport>('last-load-report.json')?.summary
+              .externallyChangedFiles
+        )
         .toEqual(['workspace.json']);
     });
 
@@ -281,10 +284,12 @@ test.describe('QuickDashLauncher - ワークスペースファイルの 2.0 移�
 
       await utils.sendShortcut('F5');
       await expect
-        .poll(() => {
-          const report = configHelper.readConfigJson<LoadReport>('last-load-report.json')!;
-          return report.files.find((f) => f.file === 'workspace.json')?.status;
-        })
+        .poll(
+          () =>
+            configHelper
+              .readConfigJson<LoadReport>('last-load-report.json')
+              ?.files.find((f) => f.file === 'workspace.json')?.status
+        )
         .toBe('corrupted');
 
       expect(fs.readFileSync(path.join(configDir, 'workspace.json'), 'utf8')).toBe(brokenContent);
@@ -304,10 +309,12 @@ test.describe('QuickDashLauncher - ワークスペースファイルの 2.0 移�
       );
       await utils.sendShortcut('F5');
       await expect
-        .poll(() => {
-          const report = configHelper.readConfigJson<LoadReport>('last-load-report.json')!;
-          return report.files.find((f) => f.file === 'workspace.json')?.status;
-        })
+        .poll(
+          () =>
+            configHelper
+              .readConfigJson<LoadReport>('last-load-report.json')
+              ?.files.find((f) => f.file === 'workspace.json')?.status
+        )
         .toBe('ok');
     });
   });
