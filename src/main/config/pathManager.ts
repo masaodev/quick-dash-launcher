@@ -79,6 +79,20 @@ export class PathManager {
     return path.join(this.getConfigFolder(), 'workspace.json');
   }
 
+  static getWorkspaceArchiveFilePath(): string {
+    return path.join(this.getConfigFolder(), 'workspace-archive.json');
+  }
+
+  /** UI 状態（グループの折りたたみ・切り離しウィンドウの位置など。AI 編集対象外） */
+  static getWorkspaceUiStateFilePath(): string {
+    return path.join(this.getConfigFolder(), 'workspace-ui-state.json');
+  }
+
+  /** 旧形式の切り離しウィンドウ状態（2.0 で workspace-ui-state.json に統合。移行時に読むだけ） */
+  static getLegacyWorkspaceDetachedFilePath(): string {
+    return path.join(this.getConfigFolder(), 'workspace-detached.json');
+  }
+
   /** 同梱 JSON Schema のコピー先（データファイル・settings.json の $schema が参照する） */
   static getSchemasFolder(): string {
     return path.join(this.getConfigFolder(), 'schemas');
