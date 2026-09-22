@@ -54,6 +54,16 @@ QuickDashLauncherのApp IDは`net.masaodev.quick-dash-launcher`です。
 - 新版をインストールしても、旧版の設定は引き継がれません
 - 旧版をアンインストールしてから新版をインストールすることを推奨します
 
+## リリース（タグ → GitHub Release）
+
+`v*` 形式のタグをプッシュすると `.github/workflows/release.yml` がビルドし、GitHub Release を作成する（`/release-version` コマンドがこの手順を担う）。
+
+- **リリースノートの本文はタグの注釈から取る**。`git tag -a v{version} --cleanup=verbatim -F notes.md` で作った注釈付きタグのメッセージ本文（1 行目の件名を除く）が、そのまま Release の「更新内容」になる
+  - `--cleanup=verbatim` が無いと `#` で始まる Markdown 見出し行がコメント扱いで削られる
+  - 軽量タグ（注釈なし）の場合は「QuickDashLauncher vX.Y.Z のリリースです。」の定型文にフォールバックする
+- ワークフローが末尾にインストール方法・ライセンスの節を付け、`release-notes.md` として `softprops/action-gh-release` の `body_path` に渡す
+- `workflow_dispatch` の手動実行はビルド検証のみで、Release は作らない
+
 ## 重要な制約事項
 
 1. **Windows専用アプリケーション** - クロスプラットフォーム非対応

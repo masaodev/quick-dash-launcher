@@ -31,17 +31,26 @@ allowed-tools: ["Bash", "Read", "Edit", "TodoWrite", "AskUserQuestion"]
    - パラメータが指定されていない場合は、ユーザーに確認
    - セマンティックバージョニングに従って自動計算
 
-3. **バージョン更新**
+3. **リリースノートの作成**
+   - 前タグからのコミット（`git log v{prev}..HEAD --oneline`）を元に、ユーザー向けの本文を書く
+     （「## 更新内容」の下に、変更点を機能単位でまとめる。コミットの羅列にしない。
+     ファイル形式の変更・自動移行・注意事項があれば必ず書く）
+   - `--yes` でなければユーザーに本文を確認してもらう（`--yes` のときは書いた本文をそのまま使う）
+   - 本文は注釈付きタグのメッセージになり、GitHub Release の本文に使われる
+     （`release.yml` がタグ本文を取り出し、インストール方法・ライセンス節を末尾に付ける）
+
+4. **バージョン更新**
    - `package.json` のバージョン番号を更新
    - 変更をコミット
 
-4. **タグ作成とプッシュ**
-   - `v{version}` 形式のGitタグを作成
+5. **タグ作成とプッシュ**
+   - `v{version}` 形式の**注釈付き**Gitタグを作成（1 行目 `v{version}`、空行、本文）
+   - `--cleanup=verbatim` を必ず付ける（無いと `#` で始まる見出し行がコメントとして削られる）
    - メインブランチとタグをリモートにプッシュ
 
-5. **GitHub Actionsによる自動ビルド**
+6. **GitHub Actionsによる自動ビルド**
    - タグのプッシュによりGitHub Actionsが自動実行される
-   - ビルドとリリースが自動的に作成される
+   - ビルドとリリースが自動的に作成される（本文はタグのメッセージから）
 
 ## セマンティックバージョニング
 
@@ -77,6 +86,7 @@ allowed-tools: ["Bash", "Read", "Edit", "TodoWrite", "AskUserQuestion"]
 
 `--yes` オプションを指定すると、以下の確認をすべてスキップします：
 - バージョン番号の確認
+- リリースノート本文の確認
 - コミット前の確認
 - タグ作成・プッシュ前の確認
 
@@ -101,17 +111,24 @@ allowed-tools: ["Bash", "Read", "Edit", "TodoWrite", "AskUserQuestion"]
 cat package.json | grep version
 git tag --list
 
-# 2. package.json更新
+# 2. リリースノート本文を書く（作業用の一時ファイル。リポジトリには入れない）
+git log v{prev}..HEAD --oneline
+#   → 1 行目 v{version}、空行、本文（## 更新内容 …）の順で notes.md に書く
+
+# 3. package.json更新
 # version フィールドを更新
 
-# 3. コミット
+# 4. コミット
 git add package.json
 git commit -m "chore: v{version}リリース準備 - バージョン更新"
 
-# 4. タグ作成とプッシュ
-git tag v{version}
+# 5. 注釈付きタグ作成とプッシュ（--cleanup=verbatim で # 見出し行を保つ）
+git tag -a v{version} --cleanup=verbatim -F notes.md
 git push origin main
 git push origin v{version}
+
+# 確認: 本文がタグに入っているか
+git tag -l --format='%(contents:body)' v{version}
 ```
 
 ## リリース後の確認
@@ -148,8 +165,8 @@ git push origin v{version}
 
 ## 関連ドキュメント
 
-- [ビルドとデプロイ](../../../docs/guides/build-and-deploy.md) - ビルドシステムの詳細
-- [開発ガイド](../../../docs/guides/development.md) - 開発プロセス全般
+- [ビルドとデプロイ](../../../docs/setup/build-deploy.md) - ビルドシステム・リリースノートの仕組み
+- [開発ガイド](../../../docs/setup/development.md) - 開発プロセス全般
 
 ## 例
 

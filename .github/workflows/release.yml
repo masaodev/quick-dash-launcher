@@ -73,6 +73,46 @@ jobs:
         run: dir release
         shell: cmd
 
+      # リリースノートを組み立てる
+      # 本文は注釈付きタグ（git tag -a）のメッセージ本文から取る（/release-version が作る）。
+      # 軽量タグで本文が無ければ定型文にフォールバックする。末尾にインストール方法・ライセンスを付ける
+      - name: Build release notes
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        env:
+          TAG: ${{ github.ref_name }}
+          VERSION: ${{ steps.get_version.outputs.VERSION }}
+        run: |
+          # checkout はタグを剥がして取得することがあるので、注釈オブジェクトを明示的に取り直す
+          git fetch --force origin "refs/tags/$TAG:refs/tags/$TAG"
+          # 軽量タグだと %(contents:body) はコミット本文になるので、注釈付きタグのときだけ使う
+          NOTES=""
+          if [ "$(git cat-file -t "$TAG")" = "tag" ]; then
+            NOTES="$(git tag -l --format='%(contents:body)' "$TAG")"
+          fi
+          if [ -z "$(printf '%s' "$NOTES" | tr -d '[:space:]')" ]; then
+            NOTES="## 更新内容
+          QuickDashLauncher $TAG のリリースです。"
+          fi
+          {
+            printf '%s\n\n' "$NOTES"
+            cat <<EOF
+          ## インストール方法
+
+          ### インストーラー版
+          \`QuickDashLauncher-Setup-$VERSION.exe\` をダウンロードして実行してください。
+
+          ### ポータブル版
+          \`QuickDashLauncher-$VERSION.exe\` をダウンロードして任意の場所に配置してください。インストール不要で直接実行できます。
+
+          ## ライセンス情報
+          このソフトウェアはMITライセンスの下で公開されています。
+          依存パッケージのライセンスについては、\`THIRD-PARTY-NOTICES.md\`を参照してください。
+          EOF
+          } > release-notes.md
+          echo "--- release-notes.md ---"
+          cat release-notes.md
+
       # GitHub Releaseの作成と成果物のアップロード
       - name: Create Release and Upload Assets
         if: startsWith(github.ref, 'refs/tags/v')
@@ -81,26 +121,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag_name: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
-          body: |
-            ## 更新内容
-            QuickDashLauncher ${{ github.ref_name }} のリリースです。
-
-            ## インストール方法
-
-            ### インストーラー版
-            `QuickDashLauncher-Setup-${{ steps.get_version.outputs.VERSION }}.exe` をダウンロードして実行してください。
-
-            ### ポータブル版
-            `QuickDashLauncher-${{ steps.get_version.outputs.VERSION }}.exe` をダウンロードして任意の場所に配置してください。インストール不要で直接実行できます。
-
-            ## 機能
-            - Alt+Spaceでランチャー起動（デフォルト、設定で変更可能）
-            - Webサイト、アプリケーション、フォルダへの素早いアクセス
-            - フォルダ取込機能でファイル一覧の自動取得
-
-            ## ライセンス情報
-            このソフトウェアはMITライセンスの下で公開されています。
-            依存パッケージのライセンスについては、`THIRD-PARTY-NOTICES.md`を参照してください。
+          body_path: release-notes.md
           draft: false
           prerelease: false
           files: |
