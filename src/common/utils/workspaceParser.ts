@@ -629,6 +629,112 @@ function breakGroupCycles(
   });
 }
 
+/**
+ * 配列の各要素を検証する共通処理
+ *
+ * オブジェクトでない要素は削除し、parse が投げた要素は invalid として生のまま保持する
+ * （書き戻し時に末尾へ付けるので、ファイルを直せば戻る）。
+ *
+ * @param onInvalid 保持した不正な要素に対する追加処理（参照を外さないための記録など）
+ */
+function parseEach<T>(
+  rawList: unknown[],
+  section: Section,
+  issues: IssueCollector,
+  invalid: unknown[],
+  parse: (raw: Record<string, unknown>, index: number) => T,
+  onInvalid?: (raw: Record<string, unknown>) => void
+): T[] {
+  const result: T[] = [];
+  rawList.forEach((raw, index) => {
+    if (!isRecord(raw)) {
+      issues.invalid(section, index, `${section}[${index}] はオブジェクトでないため削除しました`);
+      issues.modified = true;
+      return;
+    }
+    try {
+      result.push(parse(raw, index));
+    } catch (error) {
+      issues.invalid(
+        section,
+        index,
+        error instanceof Error ? error.message : String(error),
+        typeof raw.id === 'string' ? raw.id : undefined
+      );
+      invalid.push(raw);
+      onInvalid?.(raw);
+    }
+  });
+  return result;
+}
+
+/** 検証を通らなかったグループの id を記録する（そのグループへの参照を外さないため） */
+function rememberInvalidGroupId(ctx: WorkspaceParseContext) {
+  return (raw: Record<string, unknown>): void => {
+    if (typeof raw.id === 'string' && raw.id !== '') ctx.invalidGroupIds.add(raw.id);
+  };
+}
+
+/**
+ * グループの workspaceId・parentGroupId を解決し、循環と深さ超過を補正する（pass 2）
+ *
+ * @param knownGroupIds parentGroupId として参照できるグループ
+ */
+function resolveGroups<T extends JsonWorkspaceGroup>(
+  parsedGroups: ParsedGroup<T>[],
+  knownGroupIds: Set<string>,
+  ctx: WorkspaceParseContext,
+  issues: IssueCollector
+): T[] {
+  const groups = parsedGroups.map(({ group, rawWorkspaceId, rawParentGroupId, index }) => {
+    group.workspaceId = resolveWorkspaceId(rawWorkspaceId, 'groups', index, group.id, ctx, issues);
+    const parentGroupId = resolveRef(
+      rawParentGroupId,
+      knownGroupIds,
+      group.id,
+      'parentGroupId',
+      'groups',
+      index,
+      ctx,
+      issues
+    );
+    if (parentGroupId !== undefined) group.parentGroupId = parentGroupId;
+    return orderGroupKeys(group);
+  });
+  breakGroupCycles(
+    groups,
+    parsedGroups.map((g) => g.index),
+    issues
+  );
+  return groups;
+}
+
+/**
+ * アイテムの workspaceId・groupId を解決する（pass 2）
+ *
+ * @param knownGroupIds groupId として参照できるグループ
+ */
+function resolveItem<T extends JsonWorkspaceItem>(
+  { item, rawWorkspaceId, rawGroupId, index }: ParsedItem<T>,
+  knownGroupIds: Set<string>,
+  ctx: WorkspaceParseContext,
+  issues: IssueCollector
+): T {
+  item.workspaceId = resolveWorkspaceId(rawWorkspaceId, 'items', index, item.id, ctx, issues);
+  const groupId = resolveRef(
+    rawGroupId,
+    knownGroupIds,
+    item.id,
+    'groupId',
+    'items',
+    index,
+    ctx,
+    issues
+  );
+  if (groupId !== undefined) item.groupId = groupId;
+  return orderWorkspaceItemKeys(item);
+}
+
 // ============================================================
 // workspace.json
 // ============================================================
@@ -672,97 +778,26 @@ export function parseWorkspaceFileLenient(
   for (const ws of workspaces) ctx.workspaceIds.add(ws.id);
   ctx.defaultWorkspaceId = [...workspaces].sort((a, b) => a.order - b.order)[0].id;
 
-  const parsedGroups: ParsedGroup<JsonWorkspaceGroup>[] = [];
-  rawGroups.forEach((raw, index) => {
-    if (!isRecord(raw)) {
-      issues.invalid('groups', index, `groups[${index}] はオブジェクトでないため削除しました`);
-      issues.modified = true;
-      return;
-    }
-    try {
-      parsedGroups.push({ ...parseGroupBase(raw, index, ctx, issues), index });
-    } catch (error) {
-      issues.invalid(
-        'groups',
-        index,
-        error instanceof Error ? error.message : String(error),
-        typeof raw.id === 'string' ? raw.id : undefined
-      );
-      invalid.groups.push(raw);
-      if (typeof raw.id === 'string' && raw.id !== '') ctx.invalidGroupIds.add(raw.id);
-    }
-  });
+  const parsedGroups = parseEach(
+    rawGroups,
+    'groups',
+    issues,
+    invalid.groups,
+    (raw, index): ParsedGroup<JsonWorkspaceGroup> => ({
+      ...parseGroupBase(raw, index, ctx, issues),
+      index,
+    }),
+    rememberInvalidGroupId(ctx)
+  );
   for (const { group } of parsedGroups) ctx.groupIds.add(group.id);
 
-  const parsedItems: ParsedItem<JsonWorkspaceItem>[] = [];
-  rawItems.forEach((raw, index) => {
-    if (!isRecord(raw)) {
-      issues.invalid('items', index, `items[${index}] はオブジェクトでないため削除しました`);
-      issues.modified = true;
-      return;
-    }
-    try {
-      parsedItems.push(parseItemBase(raw, index, ctx, issues));
-    } catch (error) {
-      issues.invalid(
-        'items',
-        index,
-        error instanceof Error ? error.message : String(error),
-        typeof raw.id === 'string' ? raw.id : undefined
-      );
-      invalid.items.push(raw);
-    }
-  });
+  const parsedItems = parseEach(rawItems, 'items', issues, invalid.items, (raw, index) =>
+    parseItemBase(raw, index, ctx, issues)
+  );
 
   // --- pass 2: 参照の解決 ---
-  const groups: JsonWorkspaceGroup[] = parsedGroups.map(
-    ({ group, rawWorkspaceId, rawParentGroupId, index }) => {
-      group.workspaceId = resolveWorkspaceId(
-        rawWorkspaceId,
-        'groups',
-        index,
-        group.id,
-        ctx,
-        issues
-      );
-      const parentGroupId = resolveRef(
-        rawParentGroupId,
-        ctx.groupIds,
-        group.id,
-        'parentGroupId',
-        'groups',
-        index,
-        ctx,
-        issues
-      );
-      if (parentGroupId !== undefined) group.parentGroupId = parentGroupId;
-      return orderGroupKeys(group);
-    }
-  );
-
-  breakGroupCycles(
-    groups,
-    parsedGroups.map((g) => g.index),
-    issues
-  );
-
-  const items: JsonWorkspaceItem[] = parsedItems.map(
-    ({ item, rawWorkspaceId, rawGroupId, index }) => {
-      item.workspaceId = resolveWorkspaceId(rawWorkspaceId, 'items', index, item.id, ctx, issues);
-      const groupId = resolveRef(
-        rawGroupId,
-        ctx.groupIds,
-        item.id,
-        'groupId',
-        'items',
-        index,
-        ctx,
-        issues
-      );
-      if (groupId !== undefined) item.groupId = groupId;
-      return orderWorkspaceItemKeys(item);
-    }
-  );
+  const groups = resolveGroups(parsedGroups, ctx.groupIds, ctx, issues);
+  const items = parsedItems.map((parsed) => resolveItem(parsed, ctx.groupIds, ctx, issues));
 
   if (invalid.workspaces.length + invalid.groups.length + invalid.items.length > 0) {
     // 不正な要素は書き戻し時に末尾へ寄るので内容が変わる
@@ -808,14 +843,12 @@ export function parseWorkspaceArchiveFileLenient(
   const rawGroups = takeArray(obj, 'groups', issues);
   const rawItems = takeArray(obj, 'items', issues);
 
-  const parsedGroups: ParsedGroup<JsonArchivedWorkspaceGroup>[] = [];
-  rawGroups.forEach((raw, index) => {
-    if (!isRecord(raw)) {
-      issues.invalid('groups', index, `groups[${index}] はオブジェクトでないため削除しました`);
-      issues.modified = true;
-      return;
-    }
-    try {
+  const parsedGroups = parseEach(
+    rawGroups,
+    'groups',
+    issues,
+    invalid.groups,
+    (raw, index): ParsedGroup<JsonArchivedWorkspaceGroup> => {
       const base = parseGroupBase(raw, index, ctx, issues);
       const id = base.group.id;
       const group: JsonArchivedWorkspaceGroup = {
@@ -832,29 +865,19 @@ export function parseWorkspaceArchiveFileLenient(
         ),
         itemCount: numberOrDefault(raw, 'itemCount', 0, 'groups', index, id, issues),
       };
-      parsedGroups.push({ ...base, group, index });
-    } catch (error) {
-      issues.invalid(
-        'groups',
-        index,
-        error instanceof Error ? error.message : String(error),
-        typeof raw.id === 'string' ? raw.id : undefined
-      );
-      invalid.groups.push(raw);
-      if (typeof raw.id === 'string' && raw.id !== '') ctx.invalidGroupIds.add(raw.id);
-    }
-  });
+      return { ...base, group, index };
+    },
+    rememberInvalidGroupId(ctx)
+  );
   const archiveGroupIds = new Set(parsedGroups.map((g) => g.group.id));
   const knownGroupIds = new Set([...archiveGroupIds, ...ctx.groupIds]);
 
-  const parsedItems: ParsedItem<JsonArchivedWorkspaceItem>[] = [];
-  rawItems.forEach((raw, index) => {
-    if (!isRecord(raw)) {
-      issues.invalid('items', index, `items[${index}] はオブジェクトでないため削除しました`);
-      issues.modified = true;
-      return;
-    }
-    try {
+  const parsedItems = parseEach(
+    rawItems,
+    'items',
+    issues,
+    invalid.items,
+    (raw, index): ParsedItem<JsonArchivedWorkspaceItem> => {
       const base = parseItemBase(raw, index, ctx, issues);
       if (typeof raw.archivedGroupId !== 'string' || raw.archivedGroupId === '') {
         throw new Error('archivedGroupId is required and must be a non-empty string');
@@ -872,41 +895,15 @@ export function parseWorkspaceArchiveFileLenient(
         ),
         archivedGroupId: '', // pass 2 で確定
       } as JsonArchivedWorkspaceItem;
-      parsedItems.push({ ...base, item });
-    } catch (error) {
-      issues.invalid(
-        'items',
-        index,
-        error instanceof Error ? error.message : String(error),
-        typeof raw.id === 'string' ? raw.id : undefined
-      );
-      invalid.items.push(raw);
+      return { ...base, item };
     }
-  });
-
-  const groups = parsedGroups.map(({ group, rawWorkspaceId, rawParentGroupId, index }) => {
-    group.workspaceId = resolveWorkspaceId(rawWorkspaceId, 'groups', index, group.id, ctx, issues);
-    const parentGroupId = resolveRef(
-      rawParentGroupId,
-      knownGroupIds,
-      group.id,
-      'parentGroupId',
-      'groups',
-      index,
-      ctx,
-      issues
-    );
-    if (parentGroupId !== undefined) group.parentGroupId = parentGroupId;
-    return orderGroupKeys(group);
-  });
-  breakGroupCycles(
-    groups,
-    parsedGroups.map((g) => g.index),
-    issues
   );
 
+  const groups = resolveGroups(parsedGroups, knownGroupIds, ctx, issues);
+
   const items: JsonArchivedWorkspaceItem[] = [];
-  for (const { item, rawWorkspaceId, rawGroupId, rawArchivedGroupId, index, raw } of parsedItems) {
+  for (const parsed of parsedItems) {
+    const { item, rawArchivedGroupId, index, raw } = parsed;
     const archivedGroupId = mapRef(rawArchivedGroupId, ctx);
     if (archivedGroupId === undefined || !archiveGroupIds.has(archivedGroupId)) {
       // 所属するアーカイブグループが無い（グループが不正・削除済み）アイテムは画面から到達できない。
@@ -921,19 +918,7 @@ export function parseWorkspaceArchiveFileLenient(
       continue;
     }
     item.archivedGroupId = archivedGroupId;
-    item.workspaceId = resolveWorkspaceId(rawWorkspaceId, 'items', index, item.id, ctx, issues);
-    const groupId = resolveRef(
-      rawGroupId,
-      knownGroupIds,
-      item.id,
-      'groupId',
-      'items',
-      index,
-      ctx,
-      issues
-    );
-    if (groupId !== undefined) item.groupId = groupId;
-    items.push(orderWorkspaceItemKeys(item));
+    items.push(resolveItem(parsed, knownGroupIds, ctx, issues));
   }
 
   if (invalid.groups.length + invalid.items.length > 0) {
