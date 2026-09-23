@@ -6,6 +6,7 @@ import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { EnvConfig } from './config/envConfig.js';
 import PathManager from './config/pathManager.js';
+import { DEFAULT_WEB_PREFERENCES } from './utils/managedWindow.js';
 
 let splashWindow: BrowserWindow | null = null;
 
@@ -26,11 +27,7 @@ export async function createSplashWindow(): Promise<BrowserWindow> {
     minimizable: false,
     show: true,
     icon: PathManager.getAppIconPath(),
-    webPreferences: {
-      contextIsolation: true,
-      nodeIntegration: false,
-      spellcheck: false,
-    },
+    webPreferences: DEFAULT_WEB_PREFERENCES,
   });
 
   try {

@@ -8,6 +8,11 @@ import { EnvConfig } from './config/envConfig.js';
 import PathManager from './config/pathManager.js';
 import { SettingsService } from './services/settingsService.js';
 import { WindowIdleDestroyer } from './utils/windowIdleDestroyer.js';
+import {
+  DEFAULT_WEB_PREFERENCES,
+  attachCommonKeyHandlers,
+  hideOnClose,
+} from './utils/managedWindow.js';
 
 type AdminTab = 'settings' | 'edit' | 'other';
 type ImportModalType = 'bookmark' | 'app';
@@ -18,7 +23,6 @@ let adminWindow: BrowserWindow | null = null;
 let isAdminWindowVisible = false;
 let initialTab: AdminTab = 'settings';
 let pendingImportModal: ImportModalType | null = null;
-let isAppQuitting = false;
 
 // 閉じた後も非表示で常駐するウィンドウを、放置が続いた場合のみ破棄して
 // レンダラープロセスを解放する（次回表示時に再作成される）
@@ -59,11 +63,7 @@ export async function createAdminWindow(): Promise<BrowserWindow> {
     show: false,
     title: 'QuickDashLauncher - 設定・管理',
     icon: PathManager.getAppIconPath(),
-    webPreferences: {
-      contextIsolation: true,
-      nodeIntegration: false,
-      spellcheck: false,
-    },
+    webPreferences: DEFAULT_WEB_PREFERENCES,
   });
 
   if (EnvConfig.isDevelopment) {
@@ -75,12 +75,8 @@ export async function createAdminWindow(): Promise<BrowserWindow> {
   adminWindow.setMenuBarVisibility(false);
   adminWindow.setMenu(null);
 
-  adminWindow.on('close', (event) => {
-    if (!isAppQuitting) {
-      event.preventDefault();
-      adminWindow?.hide();
-      isAdminWindowVisible = false;
-    }
+  hideOnClose(adminWindow, () => {
+    isAdminWindowVisible = false;
   });
 
   adminWindow.on('closed', () => {
@@ -98,20 +94,7 @@ export async function createAdminWindow(): Promise<BrowserWindow> {
     idleDestroyer.schedule();
   });
 
-  adminWindow.webContents.on('before-input-event', (event, input) => {
-    if (input.key === 'Escape' && input.type === 'keyDown') {
-      event.preventDefault();
-    }
-    if (
-      EnvConfig.isDevelopment &&
-      input.type === 'keyDown' &&
-      input.control &&
-      input.shift &&
-      input.key.toLowerCase() === 'i'
-    ) {
-      adminWindow?.webContents.toggleDevTools();
-    }
-  });
+  attachCommonKeyHandlers(adminWindow, { suppressEscape: true });
 
   windowLogger.info('管理ウィンドウを作成しました');
   return adminWindow;
@@ -222,11 +205,4 @@ export function getPendingImportModal(): ImportModalType | null {
   const modal = pendingImportModal;
   pendingImportModal = null;
   return modal;
-}
-
-/**
- * アプリケーション終了フラグを設定する
- */
-export function setAppQuitting(quitting: boolean): void {
-  isAppQuitting = quitting;
 }

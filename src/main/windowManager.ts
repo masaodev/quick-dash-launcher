@@ -20,6 +20,7 @@ import { SettingsService } from './services/settingsService.js';
 import { showAdminWindowWithTab } from './adminWindowManager.js';
 import PathManager from './config/pathManager.js';
 import { EnvConfig } from './config/envConfig.js';
+import { DEFAULT_WEB_PREFERENCES } from './utils/managedWindow.js';
 import { calculateModalSize } from './utils/modalSizeManager.js';
 import {
   getIsDetachedWindowFocused,
@@ -145,11 +146,7 @@ export async function createWindow(): Promise<BrowserWindow> {
     frame: false,
     show: false,
     icon: iconPath,
-    webPreferences: {
-      contextIsolation: true,
-      nodeIntegration: false,
-      spellcheck: false,
-    },
+    webPreferences: DEFAULT_WEB_PREFERENCES,
   });
 
   // タスクバーのアイコンを明示的に設定（Windowsで必要）
@@ -375,9 +372,8 @@ export function getWindowPinMode(): WindowPinMode {
 /**
  * ウィンドウピンモードを設定し、ウィンドウの動作を更新する
  * @param mode 設定するWindowPinMode
- * @internal 現在は使用されていませんが、将来の拡張のために保持
  */
-export function setWindowPinMode(mode: WindowPinMode): void {
+function setWindowPinMode(mode: WindowPinMode): void {
   windowPinMode = mode;
   updateWindowBehavior();
 }

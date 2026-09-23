@@ -2,12 +2,17 @@ import { BrowserWindow, screen } from 'electron';
 import type { BrowserWindowConstructorOptions } from 'electron';
 import { windowLogger } from '@common/logger';
 import { DETACHED_WINDOW_NAME_PREFIX } from '@common/constants';
+import type { Bounds } from '@common/types';
 
-import { EnvConfig } from './config/envConfig.js';
 import PathManager from './config/pathManager.js';
 import { SettingsService } from './services/settingsService.js';
 import { WorkspaceService } from './services/workspace/index.js';
 import { attachSnapHandler } from './utils/windowSnap.js';
+import {
+  DEFAULT_WEB_PREFERENCES,
+  attachCommonKeyHandlers,
+  isAppQuitting,
+} from './utils/managedWindow.js';
 import { pinWindow, unPinWindow } from './utils/virtualDesktop/index.js';
 import { getRendererHtmlUrl, openChildWindow } from './services/childWindowService.js';
 
@@ -29,12 +34,9 @@ const detachedPinModes = new Map<string, DetachedPinMode>();
 /** webContents.id → groupId（IPC応答用の逆引き） */
 const webContentsIdToGroupId = new Map<number, string>();
 
-type Bounds = { x: number; y: number; width: number; height: number };
-
 /** 生成中の groupId（二重要求の抑止用） */
 const creatingGroupIds = new Set<string>();
 
-let isClosingAll = false;
 let isDetachedWindowFocused = false;
 let detachedWindowSnapEnabled: boolean = true;
 
@@ -243,11 +245,7 @@ export async function createDetachedGroupWindow(
     alwaysOnTop: savedPinMode === 2,
     show: false,
     icon: PathManager.getAppIconPath(),
-    webPreferences: {
-      contextIsolation: true,
-      nodeIntegration: false,
-      spellcheck: false,
-    },
+    webPreferences: DEFAULT_WEB_PREFERENCES,
   };
 
   const skipFocus = options?.skipFocus ?? false;
@@ -336,8 +334,8 @@ function setupDetachedWindow(
     webContentsIdToGroupId.delete(wcId);
     detachedWindows.delete(groupId);
     detachedPinModes.delete(groupId);
-    // 明示的に閉じた場合はエントリごと削除（アプリ終了時は残す）
-    if (!isClosingAll) {
+    // 明示的に閉じた場合はエントリごと削除（アプリ終了時は次回復元のため残す）
+    if (!isAppQuitting()) {
       WorkspaceService.getInstance()
         .then((ws) => ws.removeDetachedWindowState(groupId))
         .catch((error) => {
@@ -347,20 +345,7 @@ function setupDetachedWindow(
     windowLogger.info(`切り離しウィンドウを閉じました: ${groupId}`);
   });
 
-  win.webContents.on('before-input-event', (event, input) => {
-    if (input.key === 'Escape' && input.type === 'keyDown') {
-      event.preventDefault();
-    }
-    if (
-      EnvConfig.isDevelopment &&
-      input.type === 'keyDown' &&
-      input.control &&
-      input.shift &&
-      input.key.toLowerCase() === 'i'
-    ) {
-      win.webContents.toggleDevTools();
-    }
-  });
+  attachCommonKeyHandlers(win, { suppressEscape: true });
 
   attachSnapHandler(win, () => detachedWindowSnapEnabled);
 
@@ -404,14 +389,6 @@ function destroyWindowIfAlive(groupId: string): void {
 export function closeDetachedGroupWindow(groupId: string): { success: boolean } {
   destroyWindowIfAlive(groupId);
   return { success: true };
-}
-
-/**
- * アプリ終了フラグを設定する（before-quit で呼ぶ）
- * これにより closed イベントでエントリが削除されるのを防ぐ
- */
-export function setDetachedAppQuitting(quitting: boolean): void {
-  isClosingAll = quitting;
 }
 
 /**

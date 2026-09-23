@@ -18,6 +18,7 @@ import { IPC_CHANNELS } from '@common/ipcChannels';
 import { windowLogger } from '@common/logger';
 
 import { WindowIdleDestroyer } from '../utils/windowIdleDestroyer.js';
+import { DEFAULT_WEB_PREFERENCES } from '../utils/managedWindow.js';
 
 import { NotificationType } from './notificationService.js';
 import { getRendererHtmlUrl, openChildWindow } from './childWindowService.js';
@@ -124,11 +125,7 @@ const OVERLAY_WINDOW_OPTIONS: BrowserWindowConstructorOptions = {
   movable: false,
   focusable: false,
   show: false,
-  webPreferences: {
-    nodeIntegration: false,
-    contextIsolation: true,
-    spellcheck: false,
-  },
+  webPreferences: DEFAULT_WEB_PREFERENCES,
 };
 
 /**

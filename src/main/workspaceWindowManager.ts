@@ -4,11 +4,15 @@ import { windowLogger } from '@common/logger';
 import type { WorkspacePositionMode } from '@common/types';
 
 import { SettingsService } from './services/settingsService.js';
-import { EnvConfig } from './config/envConfig.js';
 import PathManager from './config/pathManager.js';
 import { calculateModalSize } from './utils/modalSizeManager.js';
 import { pinWindow, unPinWindow } from './utils/virtualDesktop/index.js';
 import { attachSnapHandler } from './utils/windowSnap.js';
+import {
+  DEFAULT_WEB_PREFERENCES,
+  attachCommonKeyHandlers,
+  hideOnClose,
+} from './utils/managedWindow.js';
 import { restoreDetachedWindows } from './detachedGroupWindowManager.js';
 import {
   getRendererHtmlUrl,
@@ -26,7 +30,6 @@ let workspaceWindow: BrowserWindow | null = null;
 /** 生成中の Promise（同時呼び出し時に再利用し、二重生成を防ぐ） */
 let pendingCreate: Promise<BrowserWindow> | null = null;
 let isWorkspaceWindowVisible: boolean = false;
-let isAppQuitting: boolean = false;
 let detachedRestored: boolean = false;
 let isWorkspacePinned: boolean = false;
 let isWorkspaceFocused: boolean = false;
@@ -73,11 +76,7 @@ async function createWorkspaceWindowInternal(): Promise<BrowserWindow> {
     icon: PathManager.getAppIconPath(),
     transparent: true,
     opacity: opacityValue,
-    webPreferences: {
-      contextIsolation: true,
-      nodeIntegration: false,
-      spellcheck: false,
-    },
+    webPreferences: DEFAULT_WEB_PREFERENCES,
   };
 
   // メインウィンドウのレンダラーから window.open で開き、レンダラープロセスを共有する
@@ -106,12 +105,8 @@ async function createWorkspaceWindowInternal(): Promise<BrowserWindow> {
   // 切り離しウィンドウはこのレンダラーから window.open で開く
   registerChildWindowOpener('workspace', workspaceWindow.webContents);
 
-  workspaceWindow.on('close', (event) => {
-    if (!isAppQuitting) {
-      event.preventDefault();
-      workspaceWindow?.hide();
-      isWorkspaceWindowVisible = false;
-    }
+  hideOnClose(workspaceWindow, () => {
+    isWorkspaceWindowVisible = false;
   });
 
   workspaceWindow.on('closed', () => {
@@ -135,17 +130,7 @@ async function createWorkspaceWindowInternal(): Promise<BrowserWindow> {
     isWorkspaceFocused = false;
   });
 
-  workspaceWindow.webContents.on('before-input-event', (event, input) => {
-    if (
-      EnvConfig.isDevelopment &&
-      input.type === 'keyDown' &&
-      input.control &&
-      input.shift &&
-      input.key.toLowerCase() === 'i'
-    ) {
-      workspaceWindow?.webContents.toggleDevTools();
-    }
-  });
+  attachCommonKeyHandlers(workspaceWindow);
 
   workspaceWindow.on('moved', () => {
     void saveWorkspacePosition();
@@ -222,11 +207,6 @@ export async function toggleWorkspaceWindow(): Promise<void> {
 /** ワークスペースウィンドウの表示状態を取得する */
 export function isWorkspaceWindowShown(): boolean {
   return isWorkspaceWindowVisible;
-}
-
-/** アプリケーション終了フラグを設定する */
-export function setAppQuitting(quitting: boolean): void {
-  isAppQuitting = quitting;
 }
 
 /** ワークスペースウィンドウのピン留め状態を設定する */

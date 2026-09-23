@@ -22,18 +22,15 @@ import {
   setFirstLaunchMode,
   registerGlobalShortcut,
 } from './windowManager';
-import { closeAdminWindow, setAppQuitting as setAdminAppQuitting } from './adminWindowManager';
+import { closeAdminWindow } from './adminWindowManager';
 import {
   createSplashWindow,
   closeSplashWindow,
   notifySplashInitComplete,
 } from './splashWindowManager';
-import {
-  createWorkspaceWindow,
-  closeWorkspaceWindow,
-  setAppQuitting as setWorkspaceAppQuitting,
-} from './workspaceWindowManager';
-import { closeAllDetachedGroupWindows, setDetachedAppQuitting } from './detachedGroupWindowManager';
+import { createWorkspaceWindow, closeWorkspaceWindow } from './workspaceWindowManager';
+import { closeAllDetachedGroupWindows } from './detachedGroupWindowManager';
+import { markAppQuitting } from './utils/managedWindow.js';
 import { destroyOverlayWindow } from './services/overlayWindowService.js';
 import { cancelAllChildWindowCreations } from './services/childWindowService.js';
 import { BookmarkAutoImportService } from './services/bookmarkAutoImportService.js';
@@ -163,9 +160,7 @@ app.on('window-all-closed', () => {
 });
 
 app.on('before-quit', () => {
-  setAdminAppQuitting(true);
-  setWorkspaceAppQuitting(true);
-  setDetachedAppQuitting(true);
+  markAppQuitting();
 });
 
 app.on('will-quit', () => {
