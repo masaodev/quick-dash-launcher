@@ -1,4 +1,4 @@
-import { useEffect, type RefObject } from 'react';
+import { useEffect, useRef, type RefObject } from 'react';
 
 const EDITING_KEYS = [
   'Backspace',
@@ -9,6 +9,8 @@ const EDITING_KEYS = [
   'ArrowDown',
   'Home',
   'End',
+  // テキストエリア（メモ等）の改行
+  'Enter',
 ];
 
 const CTRL_SHORTCUTS = ['a', 'c', 'v', 'x', 'z', 'y'];
@@ -47,6 +49,9 @@ interface UseModalKeyboardOptions {
  * Tab: モーダル内でフォーカストラップ
  * 入力フィールド内の通常操作: 許可
  * その他: 背景への伝播を阻止
+ *
+ * onClose / onEscape は最新のものを ref 経由で呼ぶ。毎レンダー作り直される関数を渡しても
+ * リスナーの再登録（とモーダルへのフォーカスの移し直し）は起きず、開いたときの 1 回だけ。
  */
 export function useModalKeyboard({
   isOpen,
@@ -54,6 +59,11 @@ export function useModalKeyboard({
   onClose,
   onEscape,
 }: UseModalKeyboardOptions): void {
+  const onCloseRef = useRef(onClose);
+  const onEscapeRef = useRef(onEscape);
+  onCloseRef.current = onClose;
+  onEscapeRef.current = onEscape;
+
   useEffect(() => {
     if (!isOpen) return;
 
@@ -64,9 +74,9 @@ export function useModalKeyboard({
       if (!modal) return;
 
       if (event.key === 'Escape') {
-        if (onEscape?.()) return;
+        if (onEscapeRef.current?.()) return;
         suppressEvent(event);
-        onClose();
+        onCloseRef.current();
         return;
       }
 
@@ -101,5 +111,5 @@ export function useModalKeyboard({
     return () => {
       document.removeEventListener('keydown', handleKeyDown, true);
     };
-  }, [isOpen, onClose, onEscape, modalRef]);
+  }, [isOpen, modalRef]);
 }
