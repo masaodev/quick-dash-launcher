@@ -84,7 +84,7 @@
     "prettier": "^3.8.0",
     "ts-json-schema-generator": "^2.9.0",
     "tsx": "^4.21.0",
-    "typescript": "^6.0.3",
+    "typescript": "^7.0.2",
     "vite": "^8.3.0",
     "vite-plugin-electron": "^1.1.2",
     "vite-plugin-electron-renderer": "^1.0.0",
