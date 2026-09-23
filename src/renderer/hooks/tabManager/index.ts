@@ -26,7 +26,7 @@ interface UseTabManagerProps {
   showToast?: (message: string) => void;
 }
 
-interface UseTabManagerReturn {
+export interface UseTabManagerReturn {
   fileModalTabIndex: number | null;
   getDefaultTabName: (fileName: string) => string;
   getDefaultFileLabel: (fileName: string, tabName?: string) => string;
