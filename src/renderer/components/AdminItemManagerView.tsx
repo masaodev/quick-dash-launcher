@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   DEFAULT_DATA_FILE,
   SimpleBookmarkItem,
@@ -85,8 +85,9 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   const [selectedTabIndex, setSelectedTabIndex] = useState<number>(0);
   const [selectedDataFile, setSelectedDataFile] = useState<string>(DEFAULT_DATA_FILE);
 
-  // 保存時の整列・重複削除チェックボックスの状態
-  const [sortAndDedupChecked, setSortAndDedupChecked] = useState(true);
+  // 保存時の整列・重複削除チェックボックスの状態。
+  // 確認ダイアログの onConfirm は開いた時点のクロージャなので、確定時の値は ref から読む
+  const sortAndDedupCheckedRef = useRef(true);
 
   // ConfirmDialog状態管理
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -321,7 +322,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     if (!hasUnsavedChanges) return;
 
     // チェックボックスをデフォルトでONにリセット
-    setSortAndDedupChecked(true);
+    sortAndDedupCheckedRef.current = true;
 
     // 保存時の確認ダイアログを表示
     setConfirmDialog({
@@ -332,7 +333,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
       checkboxLabel: '整列・重複削除を実行',
       checkboxChecked: true,
       onCheckboxChange: (checked: boolean) => {
-        setSortAndDedupChecked(checked);
+        sortAndDedupCheckedRef.current = checked;
         // confirmDialogの状態も更新
         setConfirmDialog((prev) => ({ ...prev, checkboxChecked: checked }));
       },
@@ -352,7 +353,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
         });
 
         // チェックボックスがONの場合、整列・重複削除を実行
-        if (sortAndDedupChecked) {
+        if (sortAndDedupCheckedRef.current) {
           // 現在選択中のデータファイルのアイテムのみフィルタリング
           const currentDataFileItems = updatedItems.filter(
             (item) => item.meta.sourceFile === selectedDataFile
@@ -445,9 +446,6 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
         setEditedItems(new Map());
         setHasUnsavedChanges(false);
         setWorkingItems(reorderedItems);
-
-        // 保存後、チェックボックスをリセット
-        setSortAndDedupChecked(false);
 
         // 保存成功をトーストで通知
         showSuccess('変更を保存しました');
@@ -675,10 +673,14 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
         if (autoImportFilter !== 'all') {
           const ruleId = isJsonLauncherItem(item.item) ? item.item.autoImportRuleId : undefined;
 
-          if (autoImportFilter === 'auto-import-only') return !!ruleId;
-          if (autoImportFilter === 'manual-only') return !ruleId;
-          // 特定ルールIDでフィルタ
-          if (ruleId !== autoImportFilter) return false;
+          if (autoImportFilter === 'auto-import-only') {
+            if (!ruleId) return false;
+          } else if (autoImportFilter === 'manual-only') {
+            if (ruleId) return false;
+          } else if (ruleId !== autoImportFilter) {
+            // 特定ルールIDでフィルタ
+            return false;
+          }
         }
 
         // 検索クエリによるフィルタリング
