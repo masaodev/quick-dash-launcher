@@ -6,6 +6,7 @@ import type {
   WorkspaceItemUpdate,
   WorkspaceGroupUpdate,
   MixedOrderEntry,
+  Bounds,
 } from '@common/types';
 import { describeWorkspaceItem } from '@common/utils/workspaceConverters';
 import { isLauncherItem, isWindowItem } from '@common/types/guards';
@@ -26,8 +27,8 @@ import { showToastWindow } from '../services/overlayWindowService.js';
 import PathManager from '../config/pathManager.js';
 import { getIconForItem } from '../services/iconService.js';
 import { closeDetachedGroupWindow } from '../detachedGroupWindowManager.js';
+import { loadDataFiles } from '../services/data/dataFileLoader.js';
 
-import { loadDataFiles } from './dataHandlers.js';
 import { notifyWorkspaceChanged } from './notifications.js';
 import { executeLayout } from './itemHandlers.js';
 
@@ -678,11 +679,7 @@ export function setupWorkspaceHandlers(): void {
 
   ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_SAVE_DETACHED_BOUNDS,
-    (
-      _event,
-      rootGroupId: string,
-      bounds: { x: number; y: number; width: number; height: number }
-    ) =>
+    (_event, rootGroupId: string, bounds: Bounds) =>
       withWorkspaceService(
         async (service) => {
           await service.saveDetachedBounds(rootGroupId, bounds);
