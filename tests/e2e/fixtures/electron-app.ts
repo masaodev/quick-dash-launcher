@@ -116,7 +116,10 @@ export const test = base.extend<ElectronFixtures & ElectronOptions>({
       const isWorkspaceWindow = async (win: Page): Promise<boolean> => {
         const title = await win.title();
         const url = win.url();
-        return title === 'Workspace' || url.includes('workspace.html');
+        // 子ウィンドウ（ワークスペース・オーバーレイ等）は about:blank で開いてから中身を
+        // 書き込むため、書き込み前はタイトルも URL も判定に使えない。メインウィンドウは
+        // about:blank にならないので、この状態のウィンドウは除外する
+        return title === 'Workspace' || url.includes('workspace.html') || url === 'about:blank';
       };
 
       // タイトルで判定（QuickDashLauncherがメインウィンドウ）
