@@ -1,11 +1,11 @@
 import type { LauncherItem } from '@common/types';
 
-import { getIconForItem as getIconForItemByType } from '../ipc/iconHandlers.js';
+import { getIconForItem as getIconForItemByType } from './icon/iconFetcher.js';
 
 /**
  * アイテムタイプに応じて適切なアイコンを取得
  *
- * 実装は iconHandlers の統合APIに一本化されている（かつて同一ロジックの
+ * 実装は icon/iconFetcher の統合APIに一本化されている（かつて同一ロジックの
  * 別実装が存在し、仕様の分岐点が2つに分散していたため委譲に変更）。
  */
 export async function getIconForItem(

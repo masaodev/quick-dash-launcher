@@ -1,7 +1,7 @@
 import { itemLogger } from '@common/logger';
 import type { LayoutWindowEntry } from '@common/types';
 
-import { extractIcon } from '../ipc/iconHandlers.js';
+import { extractIcon } from '../services/icon/fileIconExtractor.js';
 import PathManager from '../config/pathManager.js';
 
 import { runWithConcurrency } from './concurrency.js';

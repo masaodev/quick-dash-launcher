@@ -1,7 +1,7 @@
 /**
  * アイコンキャッシュのキー決定ロジック
  *
- * 取得側（iconHandlers の fetchIconForItem）と読み出し側（getCachedIconCandidates）は
+ * 取得側（services/icon/iconFetcher の fetchIconForItem）と読み出し側（getCachedIconCandidates）は
  * 同じ判定を使う必要がある。片方だけを変更すると、アイコンを取得できているのに
  * 別のキーを探しにいって表示されない、という食い違いが起きるため、
  * 判定と候補パスの組み立てをこのファイルへ集約している。

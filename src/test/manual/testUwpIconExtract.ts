@@ -46,7 +46,7 @@ function getRegisteredApps(): { name: string; appPath: string }[] {
   return results;
 }
 
-// --- マニフェストベースのロジック（iconHandlers.ts と同等） ---
+// --- マニフェストベースのロジック（services/icon/uwpIconExtractor.ts と同等） ---
 
 type FailReason =
   | 'NO_EXCLAMATION_IN_APPID'
@@ -92,7 +92,7 @@ function filterAndSortByScale(
     });
 }
 
-/** マニフェストのロゴパスから実際のアイコンファイルを探す（iconHandlers.ts の findIconFromManifestLogo と同等） */
+/** マニフェストのロゴパスから実際のアイコンファイルを探す（uwpIconExtractor.ts の findIconFromManifestLogo と同等） */
 function findIconFromManifestLogo(installLocation: string, logoPaths: string[]): string | null {
   for (const logoRelPath of logoPaths) {
     const fullPath = path.join(installLocation, logoRelPath);

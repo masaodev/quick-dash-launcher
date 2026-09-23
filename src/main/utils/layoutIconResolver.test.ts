@@ -3,7 +3,7 @@ import type { LayoutWindowEntry } from '@common/types';
 
 const extractIcon = vi.fn<(filePath: string, iconsFolder: string) => Promise<string | null>>();
 
-vi.mock('../ipc/iconHandlers.js', () => ({
+vi.mock('../services/icon/fileIconExtractor.js', () => ({
   extractIcon: (filePath: string, iconsFolder: string) => extractIcon(filePath, iconsFolder),
 }));
 

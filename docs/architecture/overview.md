@@ -93,9 +93,9 @@ IPCハンドラーは機能ごとに分離（`src/main/ipc/`）:
 | ------------------------------- | ---------------------------------------------------------------------- |
 | `settingsHandlers.ts`           | 設定の取得・更新・ホットキー変更                                       |
 | `configHandlers.ts`             | 設定フォルダーへのアクセス・外部URL開く                                |
-| `dataHandlers.ts`               | データファイルの読み込み・保存・ブックマーク解析                       |
+| `dataHandlers.ts`               | データファイルの作成・削除、読み込み・保存・登録の受け口               |
 | `itemHandlers.ts`               | アイテムの起動・フォルダー表示・グループ実行                           |
-| `iconHandlers.ts`               | ファビコン取得・アイコン抽出・カスタムアイコン管理                     |
+| `iconHandlers.ts`               | ファビコン取得・アイコン抽出・カスタムアイコン管理の受け口             |
 | `bookmarkHandlers.ts`           | ブラウザブックマークのインポート                                       |
 | `appImportHandlers.ts`          | スタートメニューのアプリスキャン・インポート                           |
 | `bookmarkAutoImportHandlers.ts` | ブックマーク自動取込ルールの管理と実行                                 |
@@ -111,6 +111,20 @@ IPCハンドラーは機能ごとに分離（`src/main/ipc/`）:
 | `clipboardHandlers.ts`          | クリップボードのキャプチャ・確認・セッション管理                       |
 
 詳細は[IPCチャンネル](ipc-channels.md)を参照。
+
+ハンドラーは IPC の登録に専念し、処理本体はサービス層に置く。データファイルとアイコンは次のとおり:
+
+| モジュール                            | 役割                                                               |
+| ------------------------------------- | ------------------------------------------------------------------ |
+| `services/data/dataFileLoader.ts`     | データファイルの読み込み・再読込（レポート・外部変更の検知）       |
+| `services/data/jsonItemConverter.ts`  | JSON アイテムから表示用アイテムへの変換（フォルダ展開・.lnk 解析） |
+| `services/data/editableItemsStore.ts` | 管理画面の一覧の読み込み・保存（楽観ロック）                       |
+| `services/data/dataItemWriter.ts`     | ID によるアイテム更新・新規登録                                    |
+| `services/data/corruptedDataFiles.ts` | 破損ファイルの記録（上書きによる喪失を防ぐ）                       |
+| `services/icon/iconFetcher.ts`        | アイコン取得の入口（一括取得・進捗・キャッシュ読み出し）           |
+| `services/icon/fileIconExtractor.ts`  | 実行ファイル・ショートカット・拡張子・カスタム URI からの抽出      |
+| `services/icon/uwpIconExtractor.ts`   | UWP アプリのマニフェストからのアイコン取得                         |
+| `services/icon/customIconStore.ts`    | カスタムアイコンの選択・保存・削除                                 |
 
 ---
 
