@@ -8,6 +8,7 @@ import * as os from 'os';
 
 import { WindowInfo } from '@common/types';
 import koffi from 'koffi';
+import type { Bounds } from '@common/types';
 
 import { getWindowDesktopNumber, isPinnedWindow } from './virtualDesktop/index.js';
 
@@ -756,9 +757,7 @@ export function setWindowBounds(
  * @param hwnd ウィンドウハンドル
  * @returns 位置・サイズ情報。失敗時はnull
  */
-export function getWindowBounds(
-  hwnd: number | bigint
-): { x: number; y: number; width: number; height: number } | null {
+export function getWindowBounds(hwnd: number | bigint): Bounds | null {
   try {
     const rect = { left: 0, top: 0, right: 0, bottom: 0 };
     if (!GetWindowRect(toHwndNumber(hwnd), rect)) {

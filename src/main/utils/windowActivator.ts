@@ -7,6 +7,7 @@
 import { Logger } from 'pino';
 import { screen } from 'electron';
 import { WindowConfig } from '@common/types';
+import type { Bounds } from '@common/types';
 
 import { findWindowByTitle } from './windowMatcher.js';
 import {
@@ -50,14 +51,9 @@ export interface WindowActivationResult {
 }
 
 /**
- * 位置・サイズの境界値
+ * 位置・サイズの境界値（未指定の要素は現在値を維持する）
  */
-interface Bounds {
-  x?: number;
-  y?: number;
-  width?: number;
-  height?: number;
-}
+type PartialBounds = Partial<Bounds>;
 
 /**
  * アクティブモニター中央座標を計算する
@@ -120,8 +116,8 @@ function calculateActiveMonitorCenter(
  * 実際のウィンドウ位置・サイズと目標値を比較検証する
  */
 function areBoundsWithinTolerance(
-  actual: { x: number; y: number; width: number; height: number },
-  target: Bounds,
+  actual: Bounds,
+  target: PartialBounds,
   tolerance: number = WINDOW_BOUNDS_CONFIG.TOLERANCE_PX
 ): boolean {
   const ok = (actualVal: number, targetVal: number | undefined): boolean =>
@@ -147,7 +143,7 @@ function areBoundsWithinTolerance(
  */
 async function setBoundsWithRetry(
   hwnd: bigint | number,
-  targetBounds: Bounds,
+  targetBounds: PartialBounds,
   itemName: string,
   windowConfig: WindowConfig,
   logger: Logger
@@ -304,7 +300,7 @@ export async function tryActivateWindow(
     windowConfig.height !== undefined;
 
   // ウィンドウの位置・サイズを設定（指定されている場合）
-  const baseBounds: Bounds = {
+  const baseBounds: PartialBounds = {
     x: windowConfig.x,
     y: windowConfig.y,
     width: windowConfig.width,

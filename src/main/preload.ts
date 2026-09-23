@@ -8,6 +8,7 @@ import type {
   SearchHistoryEntry,
   GroupItem,
   WindowItem,
+  WindowItemConfig,
   LayoutItem,
   LayoutWindowEntry,
   AppItem,
@@ -27,6 +28,7 @@ import type {
   IconFetchErrorRecord,
   JsonDirOptions,
   ToastItemType,
+  ToastEventData,
   ClipboardCaptureResult,
   ClipboardRestoreResult,
   ClipboardPreview,
@@ -45,8 +47,10 @@ import type {
   BackupStatus,
   RegisterItem,
   MixedOrderEntry,
+  Bounds,
 } from '@common/types';
 import type { EditableJsonItem, LoadEditableItemsResult } from '@common/types/editableItem';
+import type { ElectronAPI } from '@common/types/electronApi';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
 // イベントリスナー登録のヘルパー関数
@@ -102,19 +106,7 @@ interface DeleteItemByIdRequest {
   id: string;
 }
 
-interface ToastData {
-  message?: string;
-  type: string;
-  duration: number;
-  itemType?: string;
-  displayName?: string;
-  path?: string;
-  icon?: string;
-  itemCount?: number;
-  itemNames?: string[];
-}
-
-contextBridge.exposeInMainWorld('electronAPI', {
+const electronAPI: ElectronAPI = {
   getConfigFolder: () => ipcRenderer.invoke(IPC_CHANNELS.GET_CONFIG_FOLDER),
   getDataFiles: (): Promise<string[]> => ipcRenderer.invoke(IPC_CHANNELS.GET_DATA_FILES),
   createDataFile: (fileName: string) => ipcRenderer.invoke(IPC_CHANNELS.CREATE_DATA_FILE, fileName),
@@ -138,8 +130,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke(IPC_CHANNELS.EXTRACT_FILE_ICON_BY_EXTENSION, filePath),
   extractCustomUriIcon: (uri: string) =>
     ipcRenderer.invoke(IPC_CHANNELS.EXTRACT_CUSTOM_URI_ICON, uri),
-  getIconForItem: (filePath: string, itemType: 'url' | 'file' | 'folder' | 'app' | 'customUri') =>
-    ipcRenderer.invoke(IPC_CHANNELS.GET_ICON_FOR_ITEM, filePath, itemType),
+  getIconForItem: (
+    filePath: string,
+    itemType: 'url' | 'file' | 'folder' | 'app' | 'customUri' | 'clipboard'
+  ) => ipcRenderer.invoke(IPC_CHANNELS.GET_ICON_FOR_ITEM, filePath, itemType),
   loadCachedIcons: (items: LauncherItem[]) =>
     ipcRenderer.invoke(IPC_CHANNELS.LOAD_CACHED_ICONS, items),
   // 統合進捗付きアイコン取得API
@@ -224,23 +218,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke(IPC_CHANNELS.UPDATE_DIR_ITEM_BY_ID, id, dirPath, options, memo),
   updateGroupItemById: (id: string, displayName: string, itemNames: string[], memo?: string) =>
     ipcRenderer.invoke(IPC_CHANNELS.UPDATE_GROUP_ITEM_BY_ID, id, displayName, itemNames, memo),
-  updateWindowItemById: (
-    id: string,
-    config: {
-      displayName: string;
-      windowTitle: string;
-      processName?: string;
-      x?: number;
-      y?: number;
-      width?: number;
-      height?: number;
-      moveToActiveMonitorCenter?: boolean;
-      virtualDesktopNumber?: number;
-      activateWindow?: boolean;
-      pinToAllDesktops?: boolean;
-    },
-    memo?: string
-  ) => ipcRenderer.invoke(IPC_CHANNELS.UPDATE_WINDOW_ITEM_BY_ID, id, config, memo),
+  updateWindowItemById: (id: string, config: WindowItemConfig, memo?: string) =>
+    ipcRenderer.invoke(IPC_CHANNELS.UPDATE_WINDOW_ITEM_BY_ID, id, config, memo),
   updateLayoutItemById: (
     id: string,
     displayName: string,
@@ -261,20 +240,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
   scanInstalledApps: (): Promise<AppScanResult> =>
     ipcRenderer.invoke(IPC_CHANNELS.SCAN_INSTALLED_APPS),
   // Settings API
-  getSettings: (key?: keyof AppSettings) => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET, key),
-  setSetting: (key: keyof AppSettings, value: AppSettings[keyof AppSettings]) =>
-    ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_SET, key, value),
+  getSettings: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET),
   setMultipleSettings: (settings: Partial<AppSettings>) =>
     ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_SET_MULTIPLE, settings),
   resetSettings: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_RESET),
   reapplySettings: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_REAPPLY),
   validateHotkey: (hotkey: string) =>
     ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_VALIDATE_HOTKEY, hotkey),
-  getSettingsConfigPath: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET_CONFIG_PATH),
   changeHotkey: (newHotkey: string) =>
     ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_CHANGE_HOTKEY, newHotkey),
-  checkHotkeyAvailability: (hotkey: string) =>
-    ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_CHECK_HOTKEY_AVAILABILITY, hotkey),
   changeItemSearchHotkey: (newHotkey: string) =>
     ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_CHANGE_ITEM_SEARCH_HOTKEY, newHotkey),
   getDisplays: (): Promise<DisplayInfo[]> => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET_DISPLAYS),
@@ -355,8 +329,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     itemCount?: number;
     itemNames?: string[];
   }) => ipcRenderer.invoke(IPC_CHANNELS.SHOW_TOAST_WINDOW, options),
-  onShowToast: (callback: (data: ToastData) => void) =>
-    createEventListener<ToastData>(IPC_CHANNELS.EVENT_SHOW_TOAST, callback),
+  onShowToast: (callback: (data: ToastEventData) => void) =>
+    createEventListener<ToastEventData>(IPC_CHANNELS.EVENT_SHOW_TOAST, callback),
   // ワークスペースウィンドウ制御API
   toggleWorkspaceWindow: () => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_TOGGLE_WINDOW),
   showWorkspaceWindow: () => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_SHOW_WINDOW),
@@ -519,10 +493,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
       states: Record<string, boolean>
     ): Promise<{ success: boolean }> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_SAVE_DETACHED_COLLAPSED, rootGroupId, states),
-    saveDetachedBounds: (
-      rootGroupId: string,
-      bounds: { x: number; y: number; width: number; height: number }
-    ): Promise<{ success: boolean }> =>
+    saveDetachedBounds: (rootGroupId: string, bounds: Bounds): Promise<{ success: boolean }> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_SAVE_DETACHED_BOUNDS, rootGroupId, bounds),
     getCallerPinMode: (): Promise<number> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_GET_CALLER_PIN_MODE),
@@ -726,4 +697,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke(IPC_CHANNELS.BACKUP_DELETE_SNAPSHOT, timestamp),
     getStatus: (): Promise<BackupStatus> => ipcRenderer.invoke(IPC_CHANNELS.BACKUP_GET_STATUS),
   },
-});
+};
+
+contextBridge.exposeInMainWorld('electronAPI', electronAPI);

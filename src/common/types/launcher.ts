@@ -156,6 +156,24 @@ export interface WindowItem {
 }
 
 /**
+ * IDベースで window アイテムを更新するときの設定値
+ */
+export type WindowItemConfig = Pick<
+  WindowItem,
+  | 'displayName'
+  | 'windowTitle'
+  | 'processName'
+  | 'x'
+  | 'y'
+  | 'width'
+  | 'height'
+  | 'moveToActiveMonitorCenter'
+  | 'virtualDesktopNumber'
+  | 'activateWindow'
+  | 'pinToAllDesktops'
+>;
+
+/**
  * クリップボードアイテム
  * クリップボードの内容を保存し、後から復元できる
  */

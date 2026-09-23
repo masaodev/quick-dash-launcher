@@ -1,15 +1,9 @@
 import { BrowserWindow, screen } from 'electron';
 import { windowLogger } from '@common/logger';
+import type { Bounds } from '@common/types';
 
 const DEFAULT_SNAP_THRESHOLD = 20;
 const WM_EXITSIZEMOVE = 0x0232;
-
-interface Bounds {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
 
 interface SnappedPosition {
   x: number;

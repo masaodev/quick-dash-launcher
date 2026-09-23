@@ -198,11 +198,6 @@ export class SettingsService {
     return { isValid: true };
   }
 
-  public async getConfigPath(): Promise<string> {
-    const store = await this.ensureStore();
-    return store.path;
-  }
-
   private async getAppVersion(): Promise<string> {
     try {
       const packageJson = await import('../../../package.json');

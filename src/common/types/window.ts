@@ -4,6 +4,16 @@
 export type WindowState = 'normal' | 'minimized' | 'maximized';
 
 /**
+ * ウィンドウの位置・サイズ（スクリーン座標）
+ */
+export interface Bounds {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/**
  * 仮想デスクトップ情報
  */
 export interface VirtualDesktopInfo {

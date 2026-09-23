@@ -16,3 +16,16 @@ export type ToastItemType =
   | 'clipboard'
   | 'layout'
   | 'bookmarkImport';
+
+/** トーストウィンドウへ送られる表示イベントのデータ */
+export interface ToastEventData {
+  message?: string;
+  type: string;
+  duration: number;
+  itemType?: string;
+  displayName?: string;
+  path?: string;
+  icon?: string;
+  itemCount?: number;
+  itemNames?: string[];
+}

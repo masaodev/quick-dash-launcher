@@ -60,15 +60,6 @@ const channel = IPC_CHANNELS.SETTINGS_GET; // 'settings:get'
 - パラメータ: `key?: keyof AppSettings` (省略時は全設定を取得)
 - 戻り値: 指定されたキーの値、または全設定オブジェクト
 
-### `settings:set`
-
-設定値を設定
-
-- パラメータ: `key: keyof AppSettings`, `value: AppSettings[keyof AppSettings]`
-- 戻り値: `boolean`
-- 特別な処理:
-  - `autoLaunch`: Windowsレジストリに即座に反映
-
 ### `settings:set-multiple`
 
 複数の設定項目を一括更新
@@ -96,25 +87,12 @@ const channel = IPC_CHANNELS.SETTINGS_GET; // 'settings:get'
 - パラメータ: `hotkey: string`
 - 戻り値: `{ isValid: boolean, reason?: string }`
 
-### `settings:get-config-path`
-
-設定ファイルのパスを取得
-
-- 戻り値: `string` (設定ファイルのフルパス)
-
 ### `settings:change-hotkey`
 
 起動ホットキーを変更
 
 - パラメータ: `newHotkey: string`
 - 戻り値: `boolean` (成功/失敗)
-
-### `settings:check-hotkey-availability`
-
-ホットキーの利用可能性をチェック
-
-- パラメータ: `hotkey: string`
-- 戻り値: `boolean` (利用可能かどうか)
 
 ### `settings:change-item-search-hotkey`
 

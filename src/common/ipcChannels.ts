@@ -33,7 +33,6 @@ export const IPC_CHANNELS = {
   EXTRACT_CUSTOM_URI_ICON: 'extract-custom-uri-icon',
   GET_ICON_FOR_ITEM: 'get-icon-for-item',
   LOAD_CACHED_ICONS: 'load-cached-icons',
-  LOAD_CACHED_ICONS_BY_ITEMS: 'load-cached-icons-by-items',
   FETCH_ICONS_COMBINED: 'fetch-icons-combined',
   ENSURE_ICONS: 'ensure-icons',
   CLEAR_ICON_FETCH_ERRORS: 'clear-icon-fetch-errors',
@@ -103,14 +102,11 @@ export const IPC_CHANNELS = {
   // 設定
   SETTINGS_IS_FIRST_LAUNCH: 'settings:is-first-launch',
   SETTINGS_GET: 'settings:get',
-  SETTINGS_SET: 'settings:set',
   SETTINGS_SET_MULTIPLE: 'settings:set-multiple',
   SETTINGS_RESET: 'settings:reset',
   SETTINGS_REAPPLY: 'settings:reapply',
   SETTINGS_VALIDATE_HOTKEY: 'settings:validate-hotkey',
-  SETTINGS_GET_CONFIG_PATH: 'settings:get-config-path',
   SETTINGS_CHANGE_HOTKEY: 'settings:change-hotkey',
-  SETTINGS_CHECK_HOTKEY_AVAILABILITY: 'settings:check-hotkey-availability',
   SETTINGS_CHANGE_ITEM_SEARCH_HOTKEY: 'settings:change-item-search-hotkey',
   SETTINGS_GET_DISPLAYS: 'settings:get-displays',
 

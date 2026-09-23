@@ -11,6 +11,7 @@ export type {
   LauncherItem,
   GroupItem,
   WindowItem,
+  WindowItemConfig,
   ClipboardItem,
   LayoutItem,
   LayoutWindowEntry,
@@ -161,7 +162,7 @@ export type { ScannedAppItem, AppScanResult } from './appImport';
 export type { SearchHistoryEntry, SearchHistoryState, SearchMode } from './search';
 
 // ウィンドウ関連の型
-export type { WindowInfo, VirtualDesktopInfo, WindowState } from './window';
+export type { WindowInfo, VirtualDesktopInfo, WindowState, Bounds } from './window';
 
 // アプリケーション情報
 export type { AppInfo } from './app';
@@ -190,7 +191,7 @@ export type { EditableJsonItem, LoadEditableItemsResult, ValidationResult } from
 export { validateEditableItem } from './editableItem';
 
 // トースト関連の型
-export type { ToastItemType } from './toast';
+export type { ToastItemType, ToastEventData } from './toast';
 
 // バックアップ関連の型
 export type { SnapshotInfo, BackupStatus } from './backup';

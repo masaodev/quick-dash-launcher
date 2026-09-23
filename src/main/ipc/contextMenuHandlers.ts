@@ -41,6 +41,75 @@ function getValidWindow(event: IpcMainInvokeEvent): BrowserWindow | null {
   return window;
 }
 
+/** パス系メニューの送信先チャンネル（ランチャーとワークスペースで共通の並び） */
+interface PathMenuChannels {
+  copyPath: string;
+  copyParentPath: string;
+  openParentFolder: string;
+  copyShortcutPath: string;
+  copyShortcutParentPath: string;
+  openShortcutParentFolder: string;
+}
+
+/** パスのコピー・親フォルダー・リンク先の各メニュー項目を追加する */
+function appendPathMenuItems(
+  menu: Menu,
+  sender: WebContents,
+  channels: PathMenuChannels,
+  arg: unknown,
+  options: { hasParentFolder: boolean; isShortcut: boolean }
+): void {
+  menu.append(createMenuItem('📋 パスをコピー', sender, channels.copyPath, arg));
+
+  if (options.hasParentFolder) {
+    menu.append(
+      createMenuItem('📋 親フォルダーのパスをコピー', sender, channels.copyParentPath, arg)
+    );
+    menu.append(createMenuItem('📂 親フォルダーを開く', sender, channels.openParentFolder, arg));
+  }
+
+  if (options.isShortcut) {
+    menu.append(createSeparator());
+    menu.append(
+      createMenuItem('📋 リンク先のパスをコピー', sender, channels.copyShortcutPath, arg)
+    );
+    menu.append(
+      createMenuItem(
+        '📋 リンク先の親フォルダーのパスをコピー',
+        sender,
+        channels.copyShortcutParentPath,
+        arg
+      )
+    );
+    menu.append(
+      createMenuItem(
+        '📂 リンク先の親フォルダーを開く',
+        sender,
+        channels.openShortcutParentFolder,
+        arg
+      )
+    );
+  }
+}
+
+const LAUNCHER_PATH_MENU_CHANNELS: PathMenuChannels = {
+  copyPath: IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_PATH,
+  copyParentPath: IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_PARENT_PATH,
+  openParentFolder: IPC_CHANNELS.EVENT_LAUNCHER_MENU_OPEN_PARENT_FOLDER,
+  copyShortcutPath: IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_SHORTCUT_PATH,
+  copyShortcutParentPath: IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_SHORTCUT_PARENT_PATH,
+  openShortcutParentFolder: IPC_CHANNELS.EVENT_LAUNCHER_MENU_OPEN_SHORTCUT_PARENT_FOLDER,
+};
+
+const WORKSPACE_PATH_MENU_CHANNELS: PathMenuChannels = {
+  copyPath: IPC_CHANNELS.EVENT_WORKSPACE_MENU_COPY_PATH,
+  copyParentPath: IPC_CHANNELS.EVENT_WORKSPACE_MENU_COPY_PARENT_PATH,
+  openParentFolder: IPC_CHANNELS.EVENT_WORKSPACE_MENU_OPEN_PARENT_FOLDER,
+  copyShortcutPath: IPC_CHANNELS.EVENT_WORKSPACE_MENU_COPY_SHORTCUT_PATH,
+  copyShortcutParentPath: IPC_CHANNELS.EVENT_WORKSPACE_MENU_COPY_SHORTCUT_PARENT_PATH,
+  openShortcutParentFolder: IPC_CHANNELS.EVENT_WORKSPACE_MENU_OPEN_SHORTCUT_PARENT_FOLDER,
+};
+
 /** AdminItemManagerContextMenu用のネイティブメニューハンドラーを設定 */
 function setupAdminItemContextMenuHandler(): void {
   ipcMain.handle(
@@ -130,61 +199,10 @@ function setupLauncherContextMenuHandler(): void {
       }
 
       menu.append(createSeparator());
-      menu.append(
-        createMenuItem(
-          '📋 パスをコピー',
-          event.sender,
-          IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_PATH,
-          item
-        )
-      );
-
-      if (hasParentFolder) {
-        menu.append(
-          createMenuItem(
-            '📋 親フォルダーのパスをコピー',
-            event.sender,
-            IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_PARENT_PATH,
-            item
-          )
-        );
-        menu.append(
-          createMenuItem(
-            '📂 親フォルダーを開く',
-            event.sender,
-            IPC_CHANNELS.EVENT_LAUNCHER_MENU_OPEN_PARENT_FOLDER,
-            item
-          )
-        );
-      }
-
-      if (isShortcut) {
-        menu.append(createSeparator());
-        menu.append(
-          createMenuItem(
-            '📋 リンク先のパスをコピー',
-            event.sender,
-            IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_SHORTCUT_PATH,
-            item
-          )
-        );
-        menu.append(
-          createMenuItem(
-            '📋 リンク先の親フォルダーのパスをコピー',
-            event.sender,
-            IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_SHORTCUT_PARENT_PATH,
-            item
-          )
-        );
-        menu.append(
-          createMenuItem(
-            '📂 リンク先の親フォルダーを開く',
-            event.sender,
-            IPC_CHANNELS.EVENT_LAUNCHER_MENU_OPEN_SHORTCUT_PARENT_FOLDER,
-            item
-          )
-        );
-      }
+      appendPathMenuItems(menu, event.sender, LAUNCHER_PATH_MENU_CHANNELS, item, {
+        hasParentFolder,
+        isShortcut,
+      });
 
       menu.popup({ window: senderWindow });
     }
@@ -254,61 +272,10 @@ function setupWorkspaceContextMenuHandler(): void {
       menu.append(createSeparator());
 
       if (isLauncher) {
-        menu.append(
-          createMenuItem(
-            '📋 パスをコピー',
-            event.sender,
-            IPC_CHANNELS.EVENT_WORKSPACE_MENU_COPY_PATH,
-            item.id
-          )
-        );
-      }
-
-      if (hasParentFolder) {
-        menu.append(
-          createMenuItem(
-            '📋 親フォルダーのパスをコピー',
-            event.sender,
-            IPC_CHANNELS.EVENT_WORKSPACE_MENU_COPY_PARENT_PATH,
-            item.id
-          )
-        );
-        menu.append(
-          createMenuItem(
-            '📂 親フォルダーを開く',
-            event.sender,
-            IPC_CHANNELS.EVENT_WORKSPACE_MENU_OPEN_PARENT_FOLDER,
-            item.id
-          )
-        );
-      }
-
-      if (isShortcut) {
-        menu.append(createSeparator());
-        menu.append(
-          createMenuItem(
-            '📋 リンク先のパスをコピー',
-            event.sender,
-            IPC_CHANNELS.EVENT_WORKSPACE_MENU_COPY_SHORTCUT_PATH,
-            item.id
-          )
-        );
-        menu.append(
-          createMenuItem(
-            '📋 リンク先の親フォルダーのパスをコピー',
-            event.sender,
-            IPC_CHANNELS.EVENT_WORKSPACE_MENU_COPY_SHORTCUT_PARENT_PATH,
-            item.id
-          )
-        );
-        menu.append(
-          createMenuItem(
-            '📂 リンク先の親フォルダーを開く',
-            event.sender,
-            IPC_CHANNELS.EVENT_WORKSPACE_MENU_OPEN_SHORTCUT_PARENT_FOLDER,
-            item.id
-          )
-        );
+        appendPathMenuItems(menu, event.sender, WORKSPACE_PATH_MENU_CHANNELS, item.id, {
+          hasParentFolder,
+          isShortcut,
+        });
       }
 
       menu.append(createSeparator());

@@ -199,17 +199,6 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
   });
 
   ipcMain.handle(
-    IPC_CHANNELS.SETTINGS_SET,
-    async (_event, key: keyof AppSettings, value: AppSettings[keyof AppSettings]) => {
-      const settingsService = await SettingsService.getInstance();
-      await settingsService.set(key, value);
-      logger.info(`Settings set request: ${key} = ${value}`);
-      await applySettingsEffects([key], settingsService);
-      return true;
-    }
-  );
-
-  ipcMain.handle(
     IPC_CHANNELS.SETTINGS_SET_MULTIPLE,
     async (_event, settings: Partial<AppSettings>) => {
       const settingsService = await SettingsService.getInstance();
@@ -247,27 +236,11 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
     return result;
   });
 
-  ipcMain.handle(IPC_CHANNELS.SETTINGS_GET_CONFIG_PATH, async () => {
-    const settingsService = await SettingsService.getInstance();
-    const configPath = await settingsService.getConfigPath();
-    logger.info(`Settings config path request: ${configPath}`);
-    return configPath;
-  });
-
   ipcMain.handle(IPC_CHANNELS.SETTINGS_CHANGE_HOTKEY, async (_event, newHotkey: string) => {
     const success = await HotkeyService.getInstance().changeHotkey(newHotkey);
     logger.info(`Hotkey change request: ${newHotkey} = ${success ? 'success' : 'failed'}`);
     return success;
   });
-
-  ipcMain.handle(
-    IPC_CHANNELS.SETTINGS_CHECK_HOTKEY_AVAILABILITY,
-    async (_event, hotkey: string) => {
-      const isAvailable = HotkeyService.getInstance().isHotkeyAvailable(hotkey);
-      logger.info(`Hotkey availability check: ${hotkey} = ${isAvailable}`);
-      return isAvailable;
-    }
-  );
 
   ipcMain.handle(
     IPC_CHANNELS.SETTINGS_CHANGE_ITEM_SEARCH_HOTKEY,
