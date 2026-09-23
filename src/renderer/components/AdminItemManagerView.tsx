@@ -5,38 +5,22 @@ import {
   ScannedAppItem,
   DataFileTab,
   DuplicateHandlingOption,
-  isJsonLauncherItem,
   type RegisterItem,
 } from '@common/types';
 import type { EditableJsonItem } from '@common/types/editableItem';
-import { jsonItemToDisplayText } from '@common/utils/displayTextConverter';
-import { validateEditableItem } from '@common/types/editableItem';
-import { convertRegisterItemToJsonItem } from '@common/utils/dataConverters';
-import { generateId } from '@common/utils/jsonParser';
-import {
-  checkDuplicates,
-  filterNonDuplicateBookmarks,
-  buildUrlToIdMap,
-  normalizeUrl,
-} from '@common/utils/duplicateDetector';
-import {
-  checkAppDuplicates,
-  filterNonDuplicateApps,
-  buildAppPathToIdMap,
-  normalizeAppPath,
-} from '@common/utils/appDuplicateDetector';
 
-/** EditableJsonItemの一意キーを生成 */
-function getItemKey(item: EditableJsonItem): string {
-  return `${item.meta.sourceFile}_${item.meta.lineNumber}`;
-}
-
-import { logError } from '../utils/debug';
-import { useDropdown } from '../hooks/useDropdown';
 import { useToast } from '../hooks/useToast';
 import { useBookmarkAutoImport } from '../hooks/useBookmarkAutoImport';
+import { useAdminItemEditing } from '../hooks/useAdminItemEditing';
+import {
+  filterEditableItems,
+  getItemKey,
+  type AutoImportFilter,
+} from '../utils/editableItemOperations';
 
 import AdminItemManagerList from './AdminItemManagerList';
+import AdminItemManagerHeader from './AdminItemManagerHeader';
+import AutoImportFilterDropdown from './AutoImportFilterDropdown';
 import RegisterModal from './RegisterModal';
 import BookmarkImportModal from './BookmarkImportModal';
 import AppImportModal from './AppImportModal';
@@ -53,6 +37,20 @@ interface EditModeViewProps {
   dataFileLabels?: Record<string, string>;
   pendingImportModal: 'bookmark' | 'app' | null;
   onClearPendingImportModal: () => void;
+}
+
+interface ConfirmDialogState {
+  isOpen: boolean;
+  message: string;
+  onConfirm: () => void;
+  title?: string;
+  confirmText?: string;
+  cancelText?: string;
+  danger?: boolean;
+  showCheckbox?: boolean;
+  checkboxLabel?: string;
+  checkboxChecked?: boolean;
+  onCheckboxChange?: (checked: boolean) => void;
 }
 
 const AdminItemManagerView: React.FC<EditModeViewProps> = ({
@@ -72,12 +70,12 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   const getFileLabel = (fileName: string): string => {
     return dataFileLabels[fileName] || fileName;
   };
-  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
-  const [editedItems, setEditedItems] = useState<Map<string, EditableJsonItem>>(new Map());
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  const editing = useAdminItemEditing(editableItems, onEditableItemsSave);
+  const { workingItems, mergedItems, hasUnsavedChanges, selectedItems } = editing;
+
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<EditableJsonItem | null>(null);
-  const [workingItems, setWorkingItems] = useState<EditableJsonItem[]>(editableItems);
   const [isBookmarkModalOpen, setIsBookmarkModalOpen] = useState(false);
   const [isAppImportModalOpen, setIsAppImportModalOpen] = useState(false);
 
@@ -89,24 +87,28 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   // 確認ダイアログの onConfirm は開いた時点のクロージャなので、確定時の値は ref から読む
   const sortAndDedupCheckedRef = useRef(true);
 
-  // ConfirmDialog状態管理
-  const [confirmDialog, setConfirmDialog] = useState<{
-    isOpen: boolean;
-    message: string;
-    onConfirm: () => void;
-    title?: string;
-    confirmText?: string;
-    cancelText?: string;
-    danger?: boolean;
-    showCheckbox?: boolean;
-    checkboxLabel?: string;
-    checkboxChecked?: boolean;
-    onCheckboxChange?: (checked: boolean) => void;
-  }>({
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState>({
     isOpen: false,
     message: '',
     onConfirm: () => {},
   });
+
+  const closeConfirmDialog = () => setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+
+  /** 確認ダイアログを出し、確定されたら閉じてから action を実行する */
+  const openConfirmDialog = (
+    options: Omit<ConfirmDialogState, 'isOpen' | 'onConfirm'>,
+    action: () => void
+  ) => {
+    setConfirmDialog({
+      ...options,
+      isOpen: true,
+      onConfirm: () => {
+        closeConfirmDialog();
+        action();
+      },
+    });
+  };
 
   // 自動取込設定からルールマップを構築
   const { settings: autoImportSettings } = useBookmarkAutoImport();
@@ -125,197 +127,25 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     [autoImportSettings.rules, selectedDataFile]
   );
 
-  // 自動取込フィルタの状態
-  type AutoImportFilter = 'all' | 'auto-import-only' | 'manual-only' | string;
   const [autoImportFilter, setAutoImportFilter] = useState<AutoImportFilter>('all');
 
-  // ドロップダウン状態管理
-  const tabDropdown = useDropdown();
-  const fileDropdown = useDropdown();
-  const importDropdown = useDropdown();
-  const autoImportFilterDropdown = useDropdown();
-
-  // 自動取込フィルタの表示テキストを取得
-  const getAutoImportFilterLabel = (filter: AutoImportFilter): string => {
-    switch (filter) {
-      case 'all':
-        return '取込元: 全て';
-      case 'auto-import-only':
-        return '取込元: 自動取込のみ';
-      case 'manual-only':
-        return '取込元: 手動登録のみ';
-      default:
-        return `取込元: ${autoImportRuleMap.get(filter) ?? '不明なルール'}`;
-    }
-  };
-
-  // 自動取込フィルタの選択ハンドラ
-  const handleAutoImportFilterSelect = (filter: AutoImportFilter): void => {
-    setAutoImportFilter(filter);
-    autoImportFilterDropdown.close();
-  };
-
-  const handleItemEdit = (editableItem: EditableJsonItem) => {
-    const newEditedItems = new Map(editedItems);
-    newEditedItems.set(getItemKey(editableItem), editableItem);
-    setEditedItems(newEditedItems);
-    setHasUnsavedChanges(true);
-  };
-
   // AdminItemManagerList側のIPCリスナー登録effectが依存するため、
-  // 毎レンダーの再登録を防ぐ目的でuseCallback化している（以下2つも同様）
+  // 毎レンダーの再登録を防ぐ目的でuseCallback化している
   const handleEditItemClick = useCallback((editableItem: EditableJsonItem) => {
     setEditingItem(editableItem);
     setIsRegisterModalOpen(true);
   }, []);
 
-  const handleUpdateItem = (items: RegisterItem[]) => {
-    if (editingItem && items.length > 0) {
-      const updatedRegisterItem = items[0];
-
-      // RegisterItemからJsonItemに変換（既存のIDを保持）
-      const updatedJsonItem = convertRegisterItemToJsonItem(
-        updatedRegisterItem,
-        editingItem.item.id
-      );
-
-      // バリデーション
-      const validation = validateEditableItem(updatedJsonItem);
-
-      const updatedEditableItem: EditableJsonItem = {
-        item: updatedJsonItem,
-        displayText: jsonItemToDisplayText(updatedJsonItem),
-        meta: {
-          ...editingItem.meta,
-          isValid: validation.isValid,
-          validationError: validation.error,
-        },
-      };
-
-      // 変更内容が異なる場合のみ編集として記録
-      if (updatedEditableItem.displayText !== editingItem.displayText) {
-        const newEditedItems = new Map(editedItems);
-        newEditedItems.set(getItemKey(updatedEditableItem), updatedEditableItem);
-        setEditedItems(newEditedItems);
-        setHasUnsavedChanges(true);
-      }
-    }
+  const closeRegisterModal = () => {
     setIsRegisterModalOpen(false);
     setEditingItem(null);
   };
 
-  const handleItemSelect = (editableItem: EditableJsonItem, selected: boolean) => {
-    const key = getItemKey(editableItem);
-    const newSelected = new Set(selectedItems);
-    if (selected) {
-      newSelected.add(key);
-    } else {
-      newSelected.delete(key);
+  const handleUpdateItem = (items: RegisterItem[]) => {
+    if (editingItem) {
+      editing.applyRegisterUpdate(editingItem, items);
     }
-    setSelectedItems(newSelected);
-  };
-
-  const handleSelectAll = (selected: boolean) => {
-    if (selected) {
-      setSelectedItems(new Set(filteredItems.map(getItemKey)));
-    } else {
-      setSelectedItems(new Set());
-    }
-  };
-
-  const handleDeleteItems = useCallback(
-    (itemsToDelete: EditableJsonItem[]) => {
-      const updatedItems = workingItems.filter(
-        (item) =>
-          !itemsToDelete.some(
-            (deleteThisItem) =>
-              item.meta.sourceFile === deleteThisItem.meta.sourceFile &&
-              item.meta.lineNumber === deleteThisItem.meta.lineNumber
-          )
-      );
-
-      // 行番号を振り直し
-      const reorderedItems = reorderItemNumbers(updatedItems);
-      setWorkingItems(reorderedItems);
-      setSelectedItems(new Set());
-      setHasUnsavedChanges(true);
-    },
-    [workingItems]
-  );
-
-  const handleDuplicateItems = useCallback(
-    (itemsToDuplicate: EditableJsonItem[]) => {
-      // 1. 複製対象アイテムを行番号でソート（挿入位置を正しく計算するため）
-      const sortedItems = [...itemsToDuplicate].sort(
-        (a, b) => a.meta.lineNumber - b.meta.lineNumber
-      );
-
-      // 2. 最後のアイテムの次に挿入する位置を特定
-      const lastItem = sortedItems[sortedItems.length - 1];
-      const insertAfterIndex = workingItems.findIndex(
-        (item) =>
-          item.meta.sourceFile === lastItem.meta.sourceFile &&
-          item.meta.lineNumber === lastItem.meta.lineNumber
-      );
-
-      if (insertAfterIndex === -1) {
-        logError('挿入位置の特定に失敗しました');
-        return;
-      }
-
-      // 3. 複製アイテムを作成（行番号は仮の値を設定）
-      const duplicatedItems = sortedItems.map((item) => ({
-        ...item,
-        item: { ...item.item, id: generateId(), updatedAt: Date.now() },
-        meta: {
-          ...item.meta,
-          lineNumber: -1, // 後でreorderItemNumbersで振り直される
-        },
-      }));
-
-      // 4. workingItemsに挿入
-      const updatedItems = [
-        ...workingItems.slice(0, insertAfterIndex + 1),
-        ...duplicatedItems,
-        ...workingItems.slice(insertAfterIndex + 1),
-      ];
-
-      // 5. 行番号を振り直し
-      const reorderedItems = reorderItemNumbers(updatedItems);
-
-      // 6. 状態を更新
-      setWorkingItems(reorderedItems);
-      setHasUnsavedChanges(true);
-
-      // 7. 選択状態をクリア
-      setSelectedItems(new Set());
-    },
-    [workingItems]
-  );
-
-  const handleAddItem = () => {
-    // 新しい空のアイテムを作成
-    const newItem: EditableJsonItem = {
-      item: {
-        id: `temp-${Date.now()}`,
-        type: 'item',
-        displayName: '',
-        path: '',
-        updatedAt: Date.now(),
-      },
-      displayText: ',',
-      meta: {
-        sourceFile: selectedDataFile,
-        lineNumber: 0,
-        isValid: false,
-        validationError: 'displayNameが空です',
-      },
-    };
-
-    const updatedItems = [newItem, ...workingItems];
-    const reorderedItems = reorderItemNumbers(updatedItems);
-    setWorkingItems(reorderedItems);
-    setHasUnsavedChanges(true);
+    closeRegisterModal();
   };
 
   const handleSaveChanges = () => {
@@ -324,282 +154,47 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     // チェックボックスをデフォルトでONにリセット
     sortAndDedupCheckedRef.current = true;
 
-    // 保存時の確認ダイアログを表示
-    setConfirmDialog({
-      isOpen: true,
-      message: '変更を保存しますか？',
-      confirmText: '保存',
-      showCheckbox: true,
-      checkboxLabel: '整列・重複削除を実行',
-      checkboxChecked: true,
-      onCheckboxChange: (checked: boolean) => {
-        sortAndDedupCheckedRef.current = checked;
-        // confirmDialogの状態も更新
-        setConfirmDialog((prev) => ({ ...prev, checkboxChecked: checked }));
+    openConfirmDialog(
+      {
+        message: '変更を保存しますか？',
+        confirmText: '保存',
+        showCheckbox: true,
+        checkboxLabel: '整列・重複削除を実行',
+        checkboxChecked: true,
+        onCheckboxChange: (checked: boolean) => {
+          sortAndDedupCheckedRef.current = checked;
+          // confirmDialogの状態も更新
+          setConfirmDialog((prev) => ({ ...prev, checkboxChecked: checked }));
+        },
+        danger: false,
       },
-      onConfirm: () => {
-        setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
-
-        // editedItemsの変更をworkingItemsに反映
-        let updatedItems = workingItems.map((item) => {
-          const editedItem = editedItems.get(getItemKey(item));
-          if (editedItem) {
-            return {
-              ...editedItem,
-              item: { ...editedItem.item, updatedAt: Date.now() },
-            };
-          }
-          return item;
+      () => {
+        editing.saveChanges({
+          sortAndDedupe: sortAndDedupCheckedRef.current,
+          sourceFile: selectedDataFile,
         });
-
-        // チェックボックスがONの場合、整列・重複削除を実行
-        if (sortAndDedupCheckedRef.current) {
-          // 現在選択中のデータファイルのアイテムのみフィルタリング
-          const currentDataFileItems = updatedItems.filter(
-            (item) => item.meta.sourceFile === selectedDataFile
-          );
-
-          // 他のデータファイルのアイテム
-          const otherDataFileItems = updatedItems.filter(
-            (item) => item.meta.sourceFile !== selectedDataFile
-          );
-
-          // 重複削除関数
-          const removeDuplicates = (items: EditableJsonItem[]) => {
-            const seen = new Set<string>();
-            const deduplicated: EditableJsonItem[] = [];
-
-            for (const item of items) {
-              const key = `${item.item.type}:${item.displayText}`;
-              if (!seen.has(key)) {
-                seen.add(key);
-                deduplicated.push(item);
-              }
-            }
-            return deduplicated;
-          };
-
-          const getPathAndArgs = (item: EditableJsonItem) => {
-            const jsonItem = item.item;
-            switch (jsonItem.type) {
-              case 'item': {
-                const argsPart = jsonItem.args || '';
-                return argsPart ? `${jsonItem.path || ''} ${argsPart}` : jsonItem.path || '';
-              }
-              case 'dir': {
-                const options = jsonItem.options
-                  ? Object.entries(jsonItem.options)
-                      .map(([k, v]) => `${k}=${v}`)
-                      .join(',')
-                  : '';
-                return options ? `${jsonItem.path || ''} ${options}` : jsonItem.path || '';
-              }
-              case 'group':
-              case 'window':
-                return jsonItem.displayName || '';
-              default:
-                return '';
-            }
-          };
-
-          // 現在のデータファイルのアイテムのみを整列
-          const sortedItems = [...currentDataFileItems].sort((a, b) => {
-            const typeOrder: Record<string, number> = {
-              dir: 0,
-              group: 1,
-              window: 2,
-              item: 3,
-              clipboard: 4,
-            };
-            const typeA = typeOrder[a.item.type] ?? 99;
-            const typeB = typeOrder[b.item.type] ?? 99;
-
-            if (typeA !== typeB) {
-              return typeA - typeB;
-            }
-
-            const pathAndArgsA = getPathAndArgs(a).toLowerCase();
-            const pathAndArgsB = getPathAndArgs(b).toLowerCase();
-
-            if (pathAndArgsA !== pathAndArgsB) {
-              return pathAndArgsA.localeCompare(pathAndArgsB);
-            }
-
-            const nameA = a.item.type === 'item' ? (a.item.displayName || '').toLowerCase() : '';
-            const nameB = b.item.type === 'item' ? (b.item.displayName || '').toLowerCase() : '';
-
-            return nameA.localeCompare(nameB);
-          });
-
-          // 重複削除
-          const deduplicatedItems = removeDuplicates(sortedItems);
-
-          // 他のデータファイルのアイテムと結合
-          updatedItems = [...otherDataFileItems, ...deduplicatedItems];
-        }
-
-        // 行番号を振り直して保存
-        const reorderedItems = reorderItemNumbers(updatedItems);
-
-        // 全件書き戻し
-        onEditableItemsSave(reorderedItems);
-        setEditedItems(new Map());
-        setHasUnsavedChanges(false);
-        setWorkingItems(reorderedItems);
-
-        // 保存成功をトーストで通知
         showSuccess('変更を保存しました');
-      },
-      danger: false,
-    });
-  };
-
-  // アイテム番号を振り直す関数
-  const reorderItemNumbers = (items: EditableJsonItem[]): EditableJsonItem[] => {
-    const fileCounters = new Map<string, number>();
-
-    return items.map((item) => {
-      const counter = fileCounters.get(item.meta.sourceFile) ?? 0;
-      fileCounters.set(item.meta.sourceFile, counter + 1);
-      return {
-        ...item,
-        meta: { ...item.meta, lineNumber: counter },
-      };
-    });
-  };
-
-  /** JsonItemからEditableJsonItemを生成する共通ヘルパー */
-  const toEditableItem = (jsonItem: EditableJsonItem['item']): EditableJsonItem => {
-    const validation = validateEditableItem(jsonItem);
-    return {
-      item: jsonItem,
-      displayText: jsonItemToDisplayText(jsonItem),
-      meta: {
-        sourceFile: selectedDataFile,
-        lineNumber: 0,
-        isValid: validation.isValid,
-        validationError: validation.error,
-      },
-    };
-  };
-
-  /** インポート共通: 重複ハンドリング後のworkingItemsを返す */
-  const getUpdatedWorkingItems = (
-    duplicateHandling: DuplicateHandlingOption,
-    duplicateExistingIds: string[]
-  ): EditableJsonItem[] => {
-    if (duplicateHandling === 'overwrite') {
-      const idsToRemove = new Set(duplicateExistingIds);
-      return workingItems.filter((item) => !idsToRemove.has(item.item.id));
-    }
-    return [...workingItems];
-  };
-
-  /** インポート結果をworkingItemsに反映する共通処理 */
-  const applyImport = (
-    newItems: EditableJsonItem[],
-    updatedWorkingItems: EditableJsonItem[],
-    closeModal: () => void
-  ) => {
-    const reorderedItems = reorderItemNumbers([...newItems, ...updatedWorkingItems]);
-    setWorkingItems(reorderedItems);
-    setHasUnsavedChanges(true);
-    closeModal();
+      }
+    );
   };
 
   const handleBookmarkImport = (
     bookmarks: SimpleBookmarkItem[],
     duplicateHandling: DuplicateHandlingOption
   ) => {
-    const currentFileItems = workingItems.filter(
-      (item) => item.meta.sourceFile === selectedDataFile
-    );
-    const duplicateResult = checkDuplicates(bookmarks, currentFileItems);
-
-    const bookmarksToImport =
-      duplicateHandling === 'skip'
-        ? filterNonDuplicateBookmarks(bookmarks, duplicateResult.duplicateBookmarkIds)
-        : bookmarks;
-
-    const urlToIdMap = duplicateHandling === 'overwrite' ? buildUrlToIdMap(currentFileItems) : null;
-
-    const newItems = bookmarksToImport.map((bookmark) => {
-      const existingId = urlToIdMap?.get(normalizeUrl(bookmark.url));
-      return toEditableItem({
-        id: existingId ?? generateId(),
-        type: 'item' as const,
-        displayName: bookmark.displayName,
-        path: bookmark.url,
-        updatedAt: Date.now(),
-      });
-    });
-
-    applyImport(
-      newItems,
-      getUpdatedWorkingItems(duplicateHandling, duplicateResult.duplicateExistingIds),
-      () => setIsBookmarkModalOpen(false)
-    );
+    editing.importBookmarks(bookmarks, duplicateHandling, selectedDataFile);
+    setIsBookmarkModalOpen(false);
   };
 
   const handleAppImport = (apps: ScannedAppItem[], duplicateHandling: DuplicateHandlingOption) => {
-    const currentFileItems = workingItems.filter(
-      (item) => item.meta.sourceFile === selectedDataFile
-    );
-    const duplicateResult = checkAppDuplicates(apps, currentFileItems);
-
-    const appsToImport =
-      duplicateHandling === 'skip'
-        ? filterNonDuplicateApps(apps, duplicateResult.duplicateBookmarkIds)
-        : apps;
-
-    const pathToIdMap =
-      duplicateHandling === 'overwrite' ? buildAppPathToIdMap(currentFileItems) : null;
-
-    const newItems = appsToImport.map((app) => {
-      const existingId =
-        pathToIdMap?.get(normalizeAppPath(app.shortcutPath)) ??
-        pathToIdMap?.get(normalizeAppPath(app.targetPath));
-      const jsonItem = {
-        id: existingId ?? generateId(),
-        type: 'item' as const,
-        displayName: app.displayName,
-        path: app.shortcutPath,
-        originalPath: app.targetPath,
-        args: app.args,
-        updatedAt: Date.now(),
-      };
-      const validation = validateEditableItem(jsonItem);
-      return {
-        item: jsonItem,
-        displayText: jsonItemToDisplayText(jsonItem),
-        meta: {
-          sourceFile: selectedDataFile,
-          lineNumber: 0,
-          isValid: validation.isValid,
-          validationError: validation.error,
-        },
-      };
-    });
-
-    applyImport(
-      newItems,
-      getUpdatedWorkingItems(duplicateHandling, duplicateResult.duplicateExistingIds),
-      () => setIsAppImportModalOpen(false)
-    );
+    editing.importApps(apps, duplicateHandling, selectedDataFile);
+    setIsAppImportModalOpen(false);
   };
 
   // 未保存チェック付きアクション実行ヘルパー
   const confirmIfUnsaved = (message: string, action: () => void) => {
     if (hasUnsavedChanges) {
-      setConfirmDialog({
-        isOpen: true,
-        message,
-        onConfirm: () => {
-          setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
-          action();
-        },
-        danger: true,
-      });
+      openConfirmDialog({ message, danger: true }, action);
     } else {
       action();
     }
@@ -613,34 +208,21 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     if (e.key === 'Escape') {
       handleExitEditMode();
     } else if (e.key === 'Delete' && selectedItems.size > 0) {
-      const selectedEditableItems = workingItems.filter((item) =>
-        selectedItems.has(getItemKey(item))
-      );
-      handleDeleteItems(selectedEditableItems);
+      editing.deleteItems(workingItems.filter((item) => selectedItems.has(getItemKey(item))));
     } else if (e.ctrlKey && e.key === 's') {
       e.preventDefault();
       handleSaveChanges();
     }
   };
 
-  // 毎レンダーの全件再生成は、参照変化がAdminItemManagerListのアイコン取得effect等を
-  // 連鎖発火させるためuseMemoで抑制する
-  const mergedItems = useMemo(
-    () => workingItems.map((item) => editedItems.get(getItemKey(item)) || item),
-    [workingItems, editedItems]
-  );
-
-  const discardAndSwitch = (action: () => void) => {
-    action();
-    setHasUnsavedChanges(false);
-    setEditedItems(new Map());
-  };
-
   // タブ変更時の未保存チェック
   const handleTabChange = (newTabIndex: number) => {
     confirmIfUnsaved(
       '未保存の変更があります。タブを切り替えると変更が失われます。続行しますか？',
-      () => discardAndSwitch(() => setSelectedTabIndex(newTabIndex))
+      () => {
+        setSelectedTabIndex(newTabIndex);
+        editing.discardEdits();
+      }
     );
   };
 
@@ -648,49 +230,19 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   const handleFileChange = (newFile: string) => {
     confirmIfUnsaved(
       '未保存の変更があります。ファイルを切り替えると変更が失われます。続行しますか？',
-      () => discardAndSwitch(() => setSelectedDataFile(newFile))
+      () => {
+        setSelectedDataFile(newFile);
+        editing.discardEdits();
+      }
     );
-  };
-
-  // ドロップダウンメニューアイテムクリック時の処理
-  const handleTabMenuItemClick = (newTabIndex: number) => {
-    tabDropdown.close();
-    handleTabChange(newTabIndex);
-  };
-
-  const handleFileMenuItemClick = (newFile: string) => {
-    fileDropdown.close();
-    handleFileChange(newFile);
   };
 
   const filteredItems = useMemo(
     () =>
-      mergedItems.filter((item) => {
-        // 選択されたデータファイルでフィルタリング
-        if (item.meta.sourceFile !== selectedDataFile) return false;
-
-        // 自動取込フィルタ
-        if (autoImportFilter !== 'all') {
-          const ruleId = isJsonLauncherItem(item.item) ? item.item.autoImportRuleId : undefined;
-
-          if (autoImportFilter === 'auto-import-only') {
-            if (!ruleId) return false;
-          } else if (autoImportFilter === 'manual-only') {
-            if (ruleId) return false;
-          } else if (ruleId !== autoImportFilter) {
-            // 特定ルールIDでフィルタ
-            return false;
-          }
-        }
-
-        // 検索クエリによるフィルタリング
-        if (!searchQuery) return true;
-        const keywords = searchQuery
-          .toLowerCase()
-          .split(/\s+/)
-          .filter((k) => k.length > 0);
-        const itemText = item.displayText.toLowerCase();
-        return keywords.every((keyword) => itemText.includes(keyword));
+      filterEditableItems(mergedItems, {
+        sourceFile: selectedDataFile,
+        autoImportFilter,
+        searchQuery,
       }),
     [mergedItems, selectedDataFile, autoImportFilter, searchQuery]
   );
@@ -698,6 +250,17 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   const visibleSelectedCount = filteredItems.filter((item) =>
     selectedItems.has(getItemKey(item))
   ).length;
+
+  const handleDeleteSelected = () => {
+    const selectedEditableItems = filteredItems.filter((item) =>
+      selectedItems.has(getItemKey(item))
+    );
+    if (selectedEditableItems.length === 0) return;
+    openConfirmDialog(
+      { message: `${selectedEditableItems.length}行を削除しますか？`, danger: true },
+      () => editing.deleteItems(selectedEditableItems)
+    );
+  };
 
   // タブ変更時にファイルを自動選択
   useEffect(() => {
@@ -737,25 +300,9 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     onClearPendingImportModal();
   }, [pendingImportModal]);
 
-  // editableItemsが変更されたらworkingItemsも更新
-  useEffect(() => {
-    setWorkingItems(editableItems);
-    setEditedItems(new Map());
-    setHasUnsavedChanges(false);
-  }, [editableItems]);
-
   // 検索クエリが変更されたら、非表示になったアイテムの選択状態をクリア
   useEffect(() => {
-    const filteredKeys = new Set(filteredItems.map(getItemKey));
-    setSelectedItems((prevSelected) => {
-      const newSelectedItems = new Set([...prevSelected].filter((key) => filteredKeys.has(key)));
-
-      // 変更があった場合のみ新しいSetを返す
-      if (newSelectedItems.size !== prevSelected.size) {
-        return newSelectedItems;
-      }
-      return prevSelected;
-    });
+    editing.retainVisibleSelection(filteredItems);
   }, [searchQuery, workingItems]);
 
   // 現在選択されているタブの情報を取得
@@ -771,168 +318,44 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     return tabName;
   };
 
+  const currentFileWorkingItems = workingItems.filter(
+    (item) => item.meta.sourceFile === selectedDataFile
+  );
+
   return (
     <div className="edit-mode-view" onKeyDown={handleKeyDown} tabIndex={0}>
-      <div className="edit-mode-header">
-        <div className="edit-mode-info">
-          <div className="tab-dropdown" ref={tabDropdown.ref}>
-            <label className="dropdown-label">タブ:</label>
-            <button
-              className="dropdown-trigger-btn"
-              onClick={tabDropdown.toggle}
-              title={currentTab?.name || 'タブ選択'}
-            >
-              <span className="dropdown-trigger-text">{currentTab?.name || 'タブ選択'}</span>
-              <span className="dropdown-trigger-icon">{tabDropdown.isOpen ? '▲' : '▼'}</span>
-            </button>
-            {tabDropdown.isOpen && (
-              <div className="dropdown-menu">
-                {dataFileTabs.map((tab, index) => (
-                  <button
-                    key={index}
-                    className={`dropdown-item ${selectedTabIndex === index ? 'selected' : ''}`}
-                    onClick={() => handleTabMenuItemClick(index)}
-                  >
-                    {tab.name}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-          {currentTabFiles.length > 1 && (
-            <div className="file-dropdown" ref={fileDropdown.ref}>
-              <label className="dropdown-label">データファイル:</label>
-              <button
-                className="dropdown-trigger-btn"
-                onClick={fileDropdown.toggle}
-                title={`${getFileLabel(selectedDataFile)} (${selectedDataFile})`}
-              >
-                <span className="dropdown-trigger-text">{getFileLabel(selectedDataFile)}</span>
-                <span className="dropdown-trigger-icon">{fileDropdown.isOpen ? '▲' : '▼'}</span>
-              </button>
-              {fileDropdown.isOpen && (
-                <div className="dropdown-menu">
-                  {currentTabFiles.map((fileName) => (
-                    <button
-                      key={fileName}
-                      className={`dropdown-item ${selectedDataFile === fileName ? 'selected' : ''}`}
-                      onClick={() => handleFileMenuItemClick(fileName)}
-                      title={fileName}
-                    >
-                      {getFileLabel(fileName)}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-          <div className="import-dropdown" ref={importDropdown.ref}>
-            <button className="dropdown-trigger-btn" onClick={importDropdown.toggle}>
-              <span className="dropdown-trigger-text">アイテムを一括取り込み</span>
-              <span className="dropdown-trigger-icon">{importDropdown.isOpen ? '▲' : '▼'}</span>
-            </button>
-            {importDropdown.isOpen && (
-              <div className="dropdown-menu">
-                <button
-                  className="dropdown-item"
-                  onClick={() => {
-                    importDropdown.close();
-                    setIsBookmarkModalOpen(true);
-                  }}
-                >
-                  ブラウザのブックマークを追加
-                </button>
-                <button
-                  className="dropdown-item"
-                  onClick={() => {
-                    importDropdown.close();
-                    setIsAppImportModalOpen(true);
-                  }}
-                >
-                  インストール済みアプリを追加
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+      <AdminItemManagerHeader
+        dataFileTabs={dataFileTabs}
+        selectedTabIndex={selectedTabIndex}
+        currentTabFiles={currentTabFiles}
+        selectedDataFile={selectedDataFile}
+        getFileLabel={getFileLabel}
+        onSelectTab={handleTabChange}
+        onSelectFile={handleFileChange}
+        onOpenBookmarkImport={() => setIsBookmarkModalOpen(true)}
+        onOpenAppImport={() => setIsAppImportModalOpen(true)}
+      />
 
       {/* ツールバーエリア */}
       <div className="edit-mode-toolbar">
         <div className="toolbar-left">
-          <Button variant="info" onClick={handleAddItem}>
+          <Button variant="info" onClick={() => editing.addBlankItem(selectedDataFile)}>
             ➕ 行を追加
           </Button>
           <Button
             variant="danger"
-            onClick={() => {
-              const selectedEditableItems = filteredItems.filter((item) =>
-                selectedItems.has(getItemKey(item))
-              );
-              if (selectedEditableItems.length > 0) {
-                setConfirmDialog({
-                  isOpen: true,
-                  message: `${selectedEditableItems.length}行を削除しますか？`,
-                  onConfirm: () => {
-                    setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
-                    handleDeleteItems(selectedEditableItems);
-                  },
-                  danger: true,
-                });
-              }
-            }}
+            onClick={handleDeleteSelected}
             disabled={selectedItems.size === 0}
             title="選択されている行を削除します"
           >
             🗑️ 選択行を削除
           </Button>
-          <div className="auto-import-filter" ref={autoImportFilterDropdown.ref}>
-            <button
-              className="dropdown-trigger-btn"
-              onClick={autoImportFilterDropdown.toggle}
-              title="自動取込フィルタ"
-            >
-              <span className="dropdown-trigger-text">
-                {getAutoImportFilterLabel(autoImportFilter)}
-              </span>
-              <span className="dropdown-trigger-icon">
-                {autoImportFilterDropdown.isOpen ? '▲' : '▼'}
-              </span>
-            </button>
-            {autoImportFilterDropdown.isOpen && (
-              <div className="dropdown-menu">
-                {(
-                  [
-                    { value: 'all', label: '全て' },
-                    { value: 'auto-import-only', label: '自動取込のみ' },
-                    { value: 'manual-only', label: '手動登録のみ' },
-                  ] as const
-                ).map(({ value, label }) => (
-                  <button
-                    key={value}
-                    className={`dropdown-item ${autoImportFilter === value ? 'selected' : ''}`}
-                    onClick={() => handleAutoImportFilterSelect(value)}
-                  >
-                    {label}
-                  </button>
-                ))}
-                {currentFileRules.length > 0 && (
-                  <>
-                    <div className="dropdown-separator" />
-                    {currentFileRules.map((rule) => (
-                      <button
-                        key={rule.id}
-                        className={`dropdown-item ${autoImportFilter === rule.id ? 'selected' : ''}`}
-                        onClick={() => handleAutoImportFilterSelect(rule.id)}
-                      >
-                        {rule.name}
-                      </button>
-                    ))}
-                  </>
-                )}
-              </div>
-            )}
-          </div>
+          <AutoImportFilterDropdown
+            filter={autoImportFilter}
+            onChange={setAutoImportFilter}
+            rules={currentFileRules}
+            ruleNames={autoImportRuleMap}
+          />
           <div className="toolbar-search">
             <div className="search-input-container">
               <input
@@ -965,12 +388,12 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
       <AdminItemManagerList
         editableItems={filteredItems}
         selectedItems={selectedItems}
-        onItemEdit={handleItemEdit}
-        onItemSelect={handleItemSelect}
-        onSelectAll={handleSelectAll}
-        onDeleteItems={handleDeleteItems}
+        onItemEdit={editing.recordEdit}
+        onItemSelect={editing.selectItem}
+        onSelectAll={(selected) => editing.selectAll(filteredItems, selected)}
+        onDeleteItems={editing.deleteItems}
         onEditClick={handleEditItemClick}
-        onDuplicateItems={handleDuplicateItems}
+        onDuplicateItems={editing.duplicateItems}
         autoImportRuleMap={autoImportRuleMap}
       />
 
@@ -984,10 +407,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
 
       <RegisterModal
         isOpen={isRegisterModalOpen}
-        onClose={() => {
-          setIsRegisterModalOpen(false);
-          setEditingItem(null);
-        }}
+        onClose={closeRegisterModal}
         onRegister={handleUpdateItem}
         droppedPaths={[]}
         editingItem={editingItem}
@@ -997,7 +417,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
         isOpen={isBookmarkModalOpen}
         onClose={() => setIsBookmarkModalOpen(false)}
         onImport={handleBookmarkImport}
-        existingItems={workingItems.filter((item) => item.meta.sourceFile === selectedDataFile)}
+        existingItems={currentFileWorkingItems}
         importDestination={getImportDestination()}
       />
 
@@ -1005,13 +425,13 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
         isOpen={isAppImportModalOpen}
         onClose={() => setIsAppImportModalOpen(false)}
         onImport={handleAppImport}
-        existingItems={workingItems.filter((item) => item.meta.sourceFile === selectedDataFile)}
+        existingItems={currentFileWorkingItems}
         importDestination={getImportDestination()}
       />
 
       <ConfirmDialog
         isOpen={confirmDialog.isOpen}
-        onClose={() => setConfirmDialog((prev) => ({ ...prev, isOpen: false }))}
+        onClose={closeConfirmDialog}
         onConfirm={confirmDialog.onConfirm}
         title={confirmDialog.title}
         message={confirmDialog.message}
