@@ -4,7 +4,9 @@
 }
 
 .edit-mode-view {
-  height: 100vh;
+  /* 親（.admin-content）の残り高さに収める。100vh だとタブ見出しの分だけ下のステータスバーが画面外に出る */
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   background-color: var(--bg-app);
@@ -383,7 +385,6 @@
   transform: translateY(-50%) scale(1.1);
 }
 
-
 /* 操作ボタン群のスタイル（廃止予定） */
 .edit-mode-operations {
   display: flex;
@@ -470,7 +471,6 @@
   background-color: var(--color-danger-hover) !important;
   border-color: var(--color-danger-hover) !important;
 }
-
 
 .editable-item-list {
   flex: 1;
@@ -705,6 +705,7 @@
 /* Raw Data Edit Mode Styles */
 .editable-raw-item-list {
   flex: 1;
+  min-height: 0;
   overflow: auto;
   padding: 0 var(--spacing-lg) var(--spacing-lg);
   position: relative;
@@ -887,7 +888,7 @@
   vertical-align: middle;
 }
 
-.raw-items-table .checkbox-column input[type="checkbox"] {
+.raw-items-table .checkbox-column input[type='checkbox'] {
   margin: 0;
   vertical-align: middle;
 }
@@ -1102,4 +1103,42 @@
   border-radius: var(--border-radius-sm);
   line-height: 1.4;
   vertical-align: middle;
+}
+
+/* ツールバーは幅が足りなければ折り返す（ボタンが画面外に出ないように） */
+.edit-mode-toolbar {
+  flex-wrap: wrap;
+}
+
+.edit-mode-toolbar .toolbar-left {
+  flex-wrap: wrap;
+}
+
+/* 未保存の変更がある行: 左端に印 */
+.raw-item-row.changed td.checkbox-column {
+  box-shadow: inset 3px 0 0 var(--color-warning);
+}
+
+.edit-mode-status .invalid-count {
+  color: var(--color-danger, #d32f2f);
+  margin-left: var(--spacing-lg);
+}
+
+/* データファイルの読み込みに失敗したときの表示 */
+.edit-mode-load-error {
+  flex: 1;
+  margin: var(--spacing-lg);
+  padding: var(--spacing-lg);
+  border: 1px solid var(--color-warning);
+  border-radius: var(--border-radius);
+  background-color: var(--color-gray-100);
+  color: var(--text-primary, inherit);
+}
+
+.edit-mode-load-error-detail {
+  margin-top: var(--spacing-md);
+  font-family: monospace;
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  white-space: pre-wrap;
 }

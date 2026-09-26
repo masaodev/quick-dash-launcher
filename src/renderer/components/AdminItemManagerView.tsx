@@ -11,7 +11,7 @@ import type { EditableJsonItem } from '@common/types/editableItem';
 
 import { useToast } from '../hooks/useToast';
 import { useBookmarkAutoImport } from '../hooks/useBookmarkAutoImport';
-import { useAdminItemEditing } from '../hooks/useAdminItemEditing';
+import type { AdminItemEditing } from '../hooks/useAdminItemEditing';
 import {
   filterEditableItems,
   getItemKey,
@@ -28,8 +28,8 @@ import ConfirmDialog from './ConfirmDialog';
 import { Button } from './ui/Button';
 
 interface EditModeViewProps {
-  editableItems: EditableJsonItem[];
-  onEditableItemsSave: (editableItems: EditableJsonItem[]) => void;
+  editing: AdminItemEditing;
+  loadError: string | null;
   onExitEditMode: () => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
@@ -47,15 +47,24 @@ interface ConfirmDialogState {
   confirmText?: string;
   cancelText?: string;
   danger?: boolean;
-  showCheckbox?: boolean;
-  checkboxLabel?: string;
-  checkboxChecked?: boolean;
-  onCheckboxChange?: (checked: boolean) => void;
+}
+
+/** 確認メッセージ用のアイテム名（名前が無い種類はパス） */
+function describeItem(item: EditableJsonItem): string {
+  const jsonItem = item.item as { displayName?: string; path?: string };
+  return jsonItem.displayName || jsonItem.path || '(名前なし)';
+}
+
+/** キー入力の発生元がテキスト入力欄か（入力中のキーを画面のショートカットとして扱わないため） */
+function isTextInputTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  const tag = target.tagName;
+  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target.isContentEditable;
 }
 
 const AdminItemManagerView: React.FC<EditModeViewProps> = ({
-  editableItems,
-  onEditableItemsSave,
+  editing,
+  loadError,
   onExitEditMode,
   searchQuery,
   onSearchChange,
@@ -64,15 +73,22 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   pendingImportModal,
   onClearPendingImportModal,
 }) => {
-  const { showSuccess } = useToast();
+  const { showSuccess, showInfo, showWarning } = useToast();
 
   // データファイル名を取得（設定がない場合は物理ファイル名）
   const getFileLabel = (fileName: string): string => {
     return dataFileLabels[fileName] || fileName;
   };
 
-  const editing = useAdminItemEditing(editableItems, onEditableItemsSave);
-  const { workingItems, mergedItems, hasUnsavedChanges, selectedItems } = editing;
+  const {
+    workingItems,
+    changedIds,
+    deletedCount,
+    hasUnsavedChanges,
+    invalidCount,
+    selectedItems,
+    rebaseNotice,
+  } = editing;
 
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<EditableJsonItem | null>(null);
@@ -82,10 +98,6 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   // タブとファイル選択用の状態
   const [selectedTabIndex, setSelectedTabIndex] = useState<number>(0);
   const [selectedDataFile, setSelectedDataFile] = useState<string>(DEFAULT_DATA_FILE);
-
-  // 保存時の整列・重複削除チェックボックスの状態。
-  // 確認ダイアログの onConfirm は開いた時点のクロージャなので、確定時の値は ref から読む
-  const sortAndDedupCheckedRef = useRef(true);
 
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState>({
     isOpen: false,
@@ -143,37 +155,79 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
 
   const handleUpdateItem = (items: RegisterItem[]) => {
     if (editingItem) {
-      editing.applyRegisterUpdate(editingItem, items);
+      const movedTo = editing.applyRegisterUpdate(editingItem, items);
+      if (movedTo) {
+        showInfo(
+          `「${describeItem(editingItem)}」を ${getFileLabel(movedTo)} へ移動しました（保存で確定）`
+        );
+      }
     }
     closeRegisterModal();
+  };
+
+  const runSave = async () => {
+    const saved = await editing.saveChanges();
+    if (saved) {
+      showSuccess('変更を保存しました');
+    }
   };
 
   const handleSaveChanges = () => {
     if (!hasUnsavedChanges) return;
 
-    // チェックボックスをデフォルトでONにリセット
-    sortAndDedupCheckedRef.current = true;
+    const invalidNote =
+      invalidCount > 0
+        ? `\n\n名前やパスが空など、入力に不備があるアイテムが ${invalidCount} 件あります。そのまま保存されます。`
+        : '';
 
     openConfirmDialog(
       {
-        message: '変更を保存しますか？',
+        message: `変更を保存しますか？${invalidNote}`,
         confirmText: '保存',
-        showCheckbox: true,
-        checkboxLabel: '整列・重複削除を実行',
-        checkboxChecked: true,
-        onCheckboxChange: (checked: boolean) => {
-          sortAndDedupCheckedRef.current = checked;
-          // confirmDialogの状態も更新
-          setConfirmDialog((prev) => ({ ...prev, checkboxChecked: checked }));
-        },
         danger: false,
       },
       () => {
-        editing.saveChanges({
-          sortAndDedupe: sortAndDedupCheckedRef.current,
-          sourceFile: selectedDataFile,
-        });
-        showSuccess('変更を保存しました');
+        void runSave();
+      }
+    );
+  };
+
+  // Ctrl+S をセル入力中に押したとき、入力欄を確定（blur）してから保存に進むための参照
+  const saveHandlerRef = useRef(handleSaveChanges);
+  saveHandlerRef.current = handleSaveChanges;
+
+  const handleDiscardChanges = () => {
+    if (!hasUnsavedChanges) return;
+    openConfirmDialog(
+      {
+        message: '未保存の変更をすべて捨てて、ファイルの内容に戻しますか？',
+        confirmText: '破棄',
+        danger: true,
+      },
+      () => {
+        editing.discardChanges();
+        showInfo('変更を破棄しました');
+      }
+    );
+  };
+
+  const handleDedupe = () => {
+    const count = editing.countDuplicates(selectedDataFile);
+    if (count === 0) {
+      showInfo('重複するアイテムはありません');
+      return;
+    }
+    openConfirmDialog(
+      {
+        message:
+          `${getFileLabel(selectedDataFile)} に、種類・名前・パスが同じアイテムが ${count} 件あります。` +
+          '先にある 1 件を残して削除しますか？（保存で確定）',
+        confirmText: '削除',
+        danger: true,
+      },
+      () => {
+        const removed = editing.dedupeFile(selectedDataFile);
+        showSuccess(`重複 ${removed} 件を削除しました`);
       }
     );
   };
@@ -191,87 +245,81 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     setIsAppImportModalOpen(false);
   };
 
-  // 未保存チェック付きアクション実行ヘルパー
-  const confirmIfUnsaved = (message: string, action: () => void) => {
-    if (hasUnsavedChanges) {
-      openConfirmDialog({ message, danger: true }, action);
-    } else {
-      action();
-    }
-  };
-
   const handleExitEditMode = () => {
-    confirmIfUnsaved('未保存の変更があります。アイテム管理を終了しますか？', onExitEditMode);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      handleExitEditMode();
-    } else if (e.key === 'Delete' && selectedItems.size > 0) {
-      editing.deleteItems(workingItems.filter((item) => selectedItems.has(getItemKey(item))));
-    } else if (e.ctrlKey && e.key === 's') {
-      e.preventDefault();
-      handleSaveChanges();
+    if (hasUnsavedChanges) {
+      openConfirmDialog(
+        { message: '未保存の変更があります。アイテム管理を終了しますか？', danger: true },
+        onExitEditMode
+      );
+    } else {
+      onExitEditMode();
     }
   };
 
-  // タブ変更時の未保存チェック
-  const handleTabChange = (newTabIndex: number) => {
-    confirmIfUnsaved(
-      '未保存の変更があります。タブを切り替えると変更が失われます。続行しますか？',
-      () => {
-        setSelectedTabIndex(newTabIndex);
-        editing.discardEdits();
-      }
-    );
-  };
-
-  // ファイル変更時の未保存チェック
-  const handleFileChange = (newFile: string) => {
-    confirmIfUnsaved(
-      '未保存の変更があります。ファイルを切り替えると変更が失われます。続行しますか？',
-      () => {
-        setSelectedDataFile(newFile);
-        editing.discardEdits();
-      }
-    );
-  };
+  /** 削除の確認を出してから削除する（行のボタン・右クリック・Delete キー・一括削除の共通経路） */
+  const handleRequestDelete = useCallback(
+    (items: EditableJsonItem[]) => {
+      if (items.length === 0) return;
+      const message =
+        items.length === 1
+          ? `「${describeItem(items[0])}」を削除しますか？`
+          : `${items.length} 件のアイテムを削除しますか？`;
+      openConfirmDialog({ message, confirmText: '削除', danger: true }, () =>
+        editing.deleteItems(items)
+      );
+    },
+    // openConfirmDialog は毎レンダー作られるが setState しか呼ばないので依存に含めない
+    [editing.deleteItems]
+  );
 
   const filteredItems = useMemo(
     () =>
-      filterEditableItems(mergedItems, {
+      filterEditableItems(workingItems, {
         sourceFile: selectedDataFile,
         autoImportFilter,
         searchQuery,
       }),
-    [mergedItems, selectedDataFile, autoImportFilter, searchQuery]
+    [workingItems, selectedDataFile, autoImportFilter, searchQuery]
   );
 
-  const visibleSelectedCount = filteredItems.filter((item) =>
-    selectedItems.has(getItemKey(item))
-  ).length;
+  const visibleSelectedItems = useMemo(
+    () => filteredItems.filter((item) => selectedItems.has(getItemKey(item))),
+    [filteredItems, selectedItems]
+  );
 
-  const handleDeleteSelected = () => {
-    const selectedEditableItems = filteredItems.filter((item) =>
-      selectedItems.has(getItemKey(item))
-    );
-    if (selectedEditableItems.length === 0) return;
-    openConfirmDialog(
-      { message: `${selectedEditableItems.length}行を削除しますか？`, danger: true },
-      () => editing.deleteItems(selectedEditableItems)
-    );
+  const handleDeleteSelected = () => handleRequestDelete(visibleSelectedItems);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.ctrlKey && e.key === 's') {
+      e.preventDefault();
+      if (isTextInputTarget(e.target)) {
+        // 入力中のセルを確定してから保存に進む（確定は blur の状態更新後に反映される）
+        (e.target as HTMLElement).blur();
+        setTimeout(() => saveHandlerRef.current(), 0);
+      } else {
+        handleSaveChanges();
+      }
+      return;
+    }
+    // 入力欄の中のキーは文字編集なので、画面のショートカットとして扱わない
+    if (isTextInputTarget(e.target)) return;
+
+    if (e.key === 'Escape') {
+      handleExitEditMode();
+    } else if (e.key === 'Delete') {
+      handleDeleteSelected();
+    }
   };
 
-  // タブ変更時にファイルを自動選択
+  // タブ変更時にファイルを自動選択（選択中のファイルがそのタブに無いときだけ）
   useEffect(() => {
     if (dataFileTabs.length > 0 && selectedTabIndex < dataFileTabs.length) {
-      const currentTab = dataFileTabs[selectedTabIndex];
-      if (currentTab.files && currentTab.files.length > 0) {
-        // タブの最初のファイルを選択
-        setSelectedDataFile(currentTab.files[0]);
+      const files = dataFileTabs[selectedTabIndex].files ?? [];
+      if (files.length > 0 && !files.includes(selectedDataFile)) {
+        setSelectedDataFile(files[0]);
       }
     }
-  }, [selectedTabIndex, dataFileTabs]);
+  }, [selectedTabIndex, dataFileTabs, selectedDataFile]);
 
   // ファイル変更時にフィルタをリセット
   useEffect(() => {
@@ -300,10 +348,27 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     onClearPendingImportModal();
   }, [pendingImportModal]);
 
-  // 検索クエリが変更されたら、非表示になったアイテムの選択状態をクリア
+  // 表示されなくなったアイテム（検索・フィルタ・ファイル切替）の選択を外す
   useEffect(() => {
     editing.retainVisibleSelection(filteredItems);
-  }, [searchQuery, workingItems]);
+  }, [filteredItems, editing.retainVisibleSelection]);
+
+  // 外部の変更を取り込んだときの結果を知らせる
+  useEffect(() => {
+    if (!rebaseNotice) return;
+    if (rebaseNotice.conflicts.length > 0) {
+      const names = rebaseNotice.conflicts.map((c) => `「${c.displayName}」`).join('、');
+      showWarning(
+        `他で変更・削除されたアイテムがあるため、次の未保存の変更は取り消しました: ${names}`,
+        { duration: 10000 }
+      );
+    } else {
+      showInfo(
+        `他で変更された内容を取り込みました（未保存の変更 ${rebaseNotice.applied} 件は保持）`
+      );
+    }
+    editing.clearRebaseNotice();
+  }, [rebaseNotice]);
 
   // 現在選択されているタブの情報を取得
   const currentTab = dataFileTabs[selectedTabIndex];
@@ -318,8 +383,9 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     return tabName;
   };
 
-  const currentFileWorkingItems = workingItems.filter(
-    (item) => item.meta.sourceFile === selectedDataFile
+  const currentFileWorkingItems = useMemo(
+    () => workingItems.filter((item) => item.meta.sourceFile === selectedDataFile),
+    [workingItems, selectedDataFile]
   );
 
   return (
@@ -330,8 +396,8 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
         currentTabFiles={currentTabFiles}
         selectedDataFile={selectedDataFile}
         getFileLabel={getFileLabel}
-        onSelectTab={handleTabChange}
-        onSelectFile={handleFileChange}
+        onSelectTab={setSelectedTabIndex}
+        onSelectFile={setSelectedDataFile}
         onOpenBookmarkImport={() => setIsBookmarkModalOpen(true)}
         onOpenAppImport={() => setIsAppImportModalOpen(true)}
       />
@@ -340,15 +406,23 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
       <div className="edit-mode-toolbar">
         <div className="toolbar-left">
           <Button variant="info" onClick={() => editing.addBlankItem(selectedDataFile)}>
-            ➕ 行を追加
+            ➕ アイテムを追加
           </Button>
           <Button
             variant="danger"
             onClick={handleDeleteSelected}
-            disabled={selectedItems.size === 0}
-            title="選択されている行を削除します"
+            disabled={visibleSelectedItems.length === 0}
+            title="チェックしたアイテムを削除します"
           >
-            🗑️ 選択行を削除
+            🗑️ 選択したアイテムを削除
+            {visibleSelectedItems.length > 0 ? ` (${visibleSelectedItems.length})` : ''}
+          </Button>
+          <Button
+            variant="info"
+            onClick={handleDedupe}
+            title="種類・名前・パスが同じアイテムを、先にある 1 件を残して削除します"
+          >
+            🧹 重複を削除
           </Button>
           <AutoImportFilterDropdown
             filter={autoImportFilter}
@@ -360,7 +434,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
             <div className="search-input-container">
               <input
                 type="text"
-                placeholder="行の内容を検索..."
+                placeholder="アイテムを検索..."
                 value={searchQuery}
                 onChange={(e) => onSearchChange(e.target.value)}
                 className="search-input"
@@ -379,30 +453,48 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
           </div>
         </div>
         <div className="toolbar-right">
+          <Button variant="cancel" onClick={handleDiscardChanges} disabled={!hasUnsavedChanges}>
+            変更を破棄
+          </Button>
           <Button variant="primary" onClick={handleSaveChanges} disabled={!hasUnsavedChanges}>
             変更を保存
           </Button>
         </div>
       </div>
 
-      <AdminItemManagerList
-        editableItems={filteredItems}
-        selectedItems={selectedItems}
-        onItemEdit={editing.recordEdit}
-        onItemSelect={editing.selectItem}
-        onSelectAll={(selected) => editing.selectAll(filteredItems, selected)}
-        onDeleteItems={editing.deleteItems}
-        onEditClick={handleEditItemClick}
-        onDuplicateItems={editing.duplicateItems}
-        autoImportRuleMap={autoImportRuleMap}
-      />
+      {loadError ? (
+        <div className="edit-mode-load-error" data-testid="edit-mode-load-error">
+          データファイルを読み込めませんでした。ファイルを修復してからウィンドウを開き直してください。
+          <div className="edit-mode-load-error-detail">{loadError}</div>
+        </div>
+      ) : (
+        <AdminItemManagerList
+          editableItems={filteredItems}
+          selectedItems={selectedItems}
+          changedIds={changedIds}
+          isFiltered={searchQuery.trim().length > 0 || autoImportFilter !== 'all'}
+          onItemEdit={editing.recordEdit}
+          onItemSelect={editing.selectItem}
+          onSelectAll={(selected) => editing.selectAll(filteredItems, selected)}
+          onRequestDelete={handleRequestDelete}
+          onEditClick={handleEditItemClick}
+          onDuplicateItems={editing.duplicateItems}
+          autoImportRuleMap={autoImportRuleMap}
+        />
+      )}
 
       <div className="edit-mode-status">
         <span className="selection-count">
-          {visibleSelectedCount > 0 ? `${visibleSelectedCount}行を選択中` : ''}
+          {visibleSelectedItems.length > 0 ? `${visibleSelectedItems.length} 件を選択中` : ''}
         </span>
-        <span className="total-count">合計: {filteredItems.length}行</span>
-        {hasUnsavedChanges && <span className="unsaved-changes">未保存の変更があります</span>}
+        <span className="total-count">合計: {filteredItems.length} 件</span>
+        {invalidCount > 0 && <span className="invalid-count">入力不備: {invalidCount} 件</span>}
+        {hasUnsavedChanges && (
+          <span className="unsaved-changes">
+            未保存の変更があります（変更 {changedIds.size} 件
+            {deletedCount > 0 ? `・削除 ${deletedCount} 件` : ''}）
+          </span>
+        )}
       </div>
 
       <RegisterModal
@@ -438,10 +530,6 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
         confirmText={confirmDialog.confirmText}
         cancelText={confirmDialog.cancelText}
         danger={confirmDialog.danger}
-        showCheckbox={confirmDialog.showCheckbox}
-        checkboxLabel={confirmDialog.checkboxLabel}
-        checkboxChecked={confirmDialog.checkboxChecked}
-        onCheckboxChange={confirmDialog.onCheckboxChange}
       />
     </div>
   );

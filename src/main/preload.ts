@@ -49,7 +49,11 @@ import type {
   MixedOrderEntry,
   Bounds,
 } from '@common/types';
-import type { EditableJsonItem, LoadEditableItemsResult } from '@common/types/editableItem';
+import type {
+  EditableJsonItem,
+  LoadEditableItemsResult,
+  SaveEditableItemsResult,
+} from '@common/types/editableItem';
 import type { ElectronAPI } from '@common/types/electronApi';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
@@ -211,7 +215,10 @@ const electronAPI: ElectronAPI = {
   // EditableJsonItem API
   loadEditableItems: (): Promise<LoadEditableItemsResult> =>
     ipcRenderer.invoke(IPC_CHANNELS.LOAD_EDITABLE_ITEMS),
-  saveEditableItems: (editableItems: EditableJsonItem[], expectedHashes?: Record<string, string>) =>
+  saveEditableItems: (
+    editableItems: EditableJsonItem[],
+    expectedHashes?: Record<string, string>
+  ): Promise<SaveEditableItemsResult> =>
     ipcRenderer.invoke(IPC_CHANNELS.SAVE_EDITABLE_ITEMS, editableItems, expectedHashes),
   // IDベースのアイテム更新
   updateDirItemById: (id: string, dirPath: string, options?: JsonDirOptions, memo?: string) =>
