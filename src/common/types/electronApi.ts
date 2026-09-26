@@ -111,6 +111,8 @@ export interface ElectronAPI {
   onWindowShownItemSearch: (callback: (startTime?: number) => void) => () => void;
   onWindowHidden: (callback: () => void) => () => void;
   onSetActiveTab: (callback: (tab: 'settings' | 'edit' | 'other') => void) => () => void;
+  /** 管理ウィンドウの × が押されたとき。閉じてよければ hideEditWindow を呼ぶ */
+  onAdminCloseRequested: (callback: () => void) => () => void;
   onOpenImportModal: (callback: (modal: 'bookmark' | 'app') => void) => () => void;
   onDataChanged: (callback: () => void) => () => void;
   onSettingsChanged: (callback: () => void) => () => void;

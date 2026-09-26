@@ -704,7 +704,7 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
         <div className="no-items">
           {isFiltered
             ? '条件に一致するアイテムがありません'
-            : 'このデータファイルにアイテムがありません'}
+            : 'このデータファイルにアイテムがありません。「➕ アイテムを追加」か「アイテムを一括取り込み」で追加できます'}
         </div>
       )}
     </div>

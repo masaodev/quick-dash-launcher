@@ -295,10 +295,13 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   const handleRequestDelete = useCallback(
     (items: EditableJsonItem[]) => {
       if (items.length === 0) return;
+      const names = items.map((item) => `「${describeItem(item)}」`).join('、');
       const message =
         items.length === 1
-          ? `「${describeItem(items[0])}」を削除しますか？`
-          : `${items.length} 件のアイテムを削除しますか？`;
+          ? `${names}を削除しますか？`
+          : items.length <= 3
+            ? `${names} の ${items.length} 件を削除しますか？`
+            : `${items.length} 件のアイテムを削除しますか？`;
       openConfirmDialog({ message, confirmText: '削除', danger: true }, () =>
         editing.deleteItems(items)
       );

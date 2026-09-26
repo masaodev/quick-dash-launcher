@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import type { AppSettings } from '@common/types';
 import type { EditableJsonItem } from '@common/types/editableItem';
 import { EXTERNAL_CHANGE_CONFLICT_MARKER } from '@common/types/editableItem';
 
 import AdminTabContainer from './components/AdminTabContainer';
 import AlertDialog from './components/AlertDialog';
-import { useAdminItemEditing } from './hooks/useAdminItemEditing';
+import ConfirmDialog from './components/ConfirmDialog';
+import { useAdminItemEditing, type AdminItemEditing } from './hooks/useAdminItemEditing';
 import { debugInfo, logError } from './utils/debug';
 
 type AlertDialogState = {
@@ -29,6 +30,10 @@ const AdminApp: React.FC = () => {
     message: '',
     type: 'info',
   });
+  // × が押されたときの未保存確認
+  const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
+  // イベント購読は初回だけ登録するので、最新の編集状態は ref 経由で読む
+  const editingRef = useRef<AdminItemEditing | null>(null);
 
   useEffect(() => {
     async function initialize(): Promise<void> {
@@ -56,12 +61,20 @@ const AdminApp: React.FC = () => {
       debugInfo('ウィンドウが表示されました、データを再読み込みします');
       loadData(false);
     });
+    const unsubscribeClose = window.electronAPI.onAdminCloseRequested(() => {
+      if (editingRef.current?.hasUnsavedChanges) {
+        setCloseConfirmOpen(true);
+      } else {
+        window.electronAPI.hideEditWindow();
+      }
+    });
 
     return () => {
       unsubscribeSetActiveTab?.();
       unsubscribeImportModal?.();
       unsubscribeData?.();
       unsubscribeWindow?.();
+      unsubscribeClose?.();
     };
   }, []);
 
@@ -145,6 +158,7 @@ const AdminApp: React.FC = () => {
 
   // 編集状態はタブを切り替えても消えないよう、画面ではなくここで持つ
   const editing = useAdminItemEditing(editableItems, handleEditableItemsSave);
+  editingRef.current = editing;
 
   async function handleSettingsSave(newSettings: AppSettings): Promise<void> {
     try {
@@ -210,6 +224,22 @@ const AdminApp: React.FC = () => {
         onClose={() => setAlertDialog({ ...alertDialog, isOpen: false })}
         message={alertDialog.message}
         type={alertDialog.type}
+      />
+
+      <ConfirmDialog
+        isOpen={closeConfirmOpen}
+        onClose={() => setCloseConfirmOpen(false)}
+        onConfirm={() => {
+          setCloseConfirmOpen(false);
+          editing.discardChanges();
+          window.electronAPI.hideEditWindow();
+        }}
+        message={
+          'アイテム管理に未保存の変更があります。変更を破棄してウィンドウを閉じますか？' +
+          '\n\n保存する場合はキャンセルして「変更を保存」を押してください。'
+        }
+        confirmText="破棄して閉じる"
+        danger
       />
     </div>
   );

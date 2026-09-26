@@ -214,6 +214,8 @@ export const IPC_CHANNELS = {
   EVENT_DATA_CHANGED: 'data-changed',
   EVENT_SETTINGS_CHANGED: 'settings-changed',
   EVENT_SET_ACTIVE_TAB: 'set-active-tab',
+  /** 管理ウィンドウの × が押された。未保存の確認はレンダラーが行い、閉じるなら HIDE_EDIT_WINDOW を呼ぶ */
+  EVENT_ADMIN_CLOSE_REQUESTED: 'admin-close-requested',
   EVENT_OPEN_IMPORT_MODAL: 'open-import-modal',
   EVENT_ICON_PROGRESS_START: 'icon-progress-start',
   EVENT_ICON_PROGRESS_UPDATE: 'icon-progress-update',
