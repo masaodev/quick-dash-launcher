@@ -13,9 +13,16 @@ import { useToast } from '../hooks/useToast';
 import { useBookmarkAutoImport } from '../hooks/useBookmarkAutoImport';
 import type { AdminItemEditing } from '../hooks/useAdminItemEditing';
 import {
+  applyDisplayOrder,
+  changeItemType,
   filterEditableItems,
   getItemKey,
+  sortItemIds,
+  toggleSort,
   type AutoImportFilter,
+  type InlineItemType,
+  type SortColumn,
+  type SortState,
 } from '../utils/editableItemOperations';
 
 import AdminItemManagerList from './AdminItemManagerList';
@@ -88,6 +95,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     invalidCount,
     selectedItems,
     rebaseNotice,
+    baseVersion,
   } = editing;
 
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
@@ -98,6 +106,15 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   // タブとファイル選択用の状態
   const [selectedTabIndex, setSelectedTabIndex] = useState<number>(0);
   const [selectedDataFile, setSelectedDataFile] = useState<string>(DEFAULT_DATA_FILE);
+
+  // 並べ替え。初期値はメイン画面と同じ表示名の昇順
+  const [sortState, setSortState] = useState<SortState>({
+    column: 'displayName',
+    direction: 'asc',
+  });
+
+  // 追加直後に名前セルを編集状態にするアイテム
+  const [autoEditItemId, setAutoEditItemId] = useState<string | null>(null);
 
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState>({
     isOpen: false,
@@ -163,6 +180,21 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
       }
     }
     closeRegisterModal();
+  };
+
+  const handleChangeType = (item: EditableJsonItem, newType: InlineItemType) => {
+    editing.recordEdit({ ...item, item: changeItemType(item.item, newType) });
+    if (newType === 'group') {
+      showInfo('グループに含めるアイテムは ✏️ 詳細編集で選びます');
+    }
+  };
+
+  const handleAddItem = () => {
+    // 追加した行が検索・フィルタで隠れないように、絞り込みを外してから追加する
+    if (searchQuery) onSearchChange('');
+    setAutoImportFilter('all');
+    const id = editing.addBlankItem(selectedDataFile);
+    setAutoEditItemId(id);
   };
 
   const runSave = async () => {
@@ -248,7 +280,10 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   const handleExitEditMode = () => {
     if (hasUnsavedChanges) {
       openConfirmDialog(
-        { message: '未保存の変更があります。アイテム管理を終了しますか？', danger: true },
+        {
+          message: '未保存の変更があります。アイテム管理を終了しますか？',
+          danger: true,
+        },
         onExitEditMode
       );
     } else {
@@ -281,6 +316,22 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
       }),
     [workingItems, selectedDataFile, autoImportFilter, searchQuery]
   );
+
+  // 表示順は「読み込み・保存時」と「見出しクリック時」にだけ作り直し、編集中は固定する。
+  // こうしないと、名前を入力した瞬間に行が並び順の位置へ飛んでしまう
+  const workingItemsRef = useRef(workingItems);
+  workingItemsRef.current = workingItems;
+  const displayOrder = useMemo(
+    () => sortItemIds(workingItemsRef.current, sortState),
+    // baseVersion は作り直しの契機として使う（値そのものは使わない）
+    [sortState, baseVersion]
+  );
+  const orderedItems = useMemo(
+    () => applyDisplayOrder(filteredItems, displayOrder),
+    [filteredItems, displayOrder]
+  );
+
+  const handleSortChange = (column: SortColumn) => setSortState((prev) => toggleSort(prev, column));
 
   const visibleSelectedItems = useMemo(
     () => filteredItems.filter((item) => selectedItems.has(getItemKey(item))),
@@ -388,6 +439,8 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     [workingItems, selectedDataFile]
   );
 
+  const isFiltered = searchQuery.trim().length > 0 || autoImportFilter !== 'all';
+
   return (
     <div className="edit-mode-view" onKeyDown={handleKeyDown} tabIndex={0}>
       <AdminItemManagerHeader
@@ -405,7 +458,11 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
       {/* ツールバーエリア */}
       <div className="edit-mode-toolbar">
         <div className="toolbar-left">
-          <Button variant="info" onClick={() => editing.addBlankItem(selectedDataFile)}>
+          <Button
+            variant="info"
+            onClick={handleAddItem}
+            title="単一アイテムを先頭に追加します。種類は「種類」列で、引数やメモは ✏️ 詳細編集で変えられます"
+          >
             ➕ アイテムを追加
           </Button>
           <Button
@@ -434,7 +491,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
             <div className="search-input-container">
               <input
                 type="text"
-                placeholder="アイテムを検索..."
+                placeholder="名前・パス・メモで検索..."
                 value={searchQuery}
                 onChange={(e) => onSearchChange(e.target.value)}
                 className="search-input"
@@ -469,11 +526,16 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
         </div>
       ) : (
         <AdminItemManagerList
-          editableItems={filteredItems}
+          editableItems={orderedItems}
           selectedItems={selectedItems}
           changedIds={changedIds}
-          isFiltered={searchQuery.trim().length > 0 || autoImportFilter !== 'all'}
+          isFiltered={isFiltered}
+          sortState={sortState}
+          onSortChange={handleSortChange}
+          autoEditItemId={autoEditItemId}
+          onAutoEditHandled={() => setAutoEditItemId(null)}
           onItemEdit={editing.recordEdit}
+          onChangeType={handleChangeType}
           onItemSelect={editing.selectItem}
           onSelectAll={(selected) => editing.selectAll(filteredItems, selected)}
           onRequestDelete={handleRequestDelete}

@@ -378,7 +378,8 @@ export function filterEditableItems(
       }
     }
 
-    const itemText = item.displayText.toLowerCase();
+    // メモも検索対象にする（displayText にはメモが入らない）
+    const itemText = `${item.displayText} ${item.item.memo ?? ''}`.toLowerCase();
     return keywords.every((keyword) => itemText.includes(keyword));
   });
 }
@@ -467,4 +468,144 @@ export function importApps(
   });
 
   return mergeImported(items, newItems, duplicateHandling, duplicateResult.duplicateExistingIds);
+}
+
+/** 種類セルのプルダウンでその場で切り替えられる種類（それ以外は詳細編集から） */
+export type InlineItemType = 'item' | 'dir' | 'group';
+export const INLINE_ITEM_TYPES: InlineItemType[] = ['item', 'dir', 'group'];
+
+export function isInlineItemType(type: string): type is InlineItemType {
+  return (INLINE_ITEM_TYPES as string[]).includes(type);
+}
+
+/**
+ * アイテムの種類を変える。id・メモは引き継ぎ、名前・パスは持てる範囲で残す
+ */
+export function changeItemType(jsonItem: JsonItem, newType: InlineItemType): JsonItem {
+  if (jsonItem.type === newType) return jsonItem;
+  const displayName = 'displayName' in jsonItem ? jsonItem.displayName || '' : '';
+  const path = 'path' in jsonItem ? jsonItem.path || '' : '';
+  const common = {
+    id: jsonItem.id,
+    ...(jsonItem.memo && { memo: jsonItem.memo }),
+    updatedAt: Date.now(),
+  };
+  switch (newType) {
+    case 'item':
+      return { ...common, type: 'item', displayName, path };
+    case 'dir':
+      return { ...common, type: 'dir', path };
+    case 'group':
+      return { ...common, type: 'group', displayName, itemNames: [] };
+  }
+}
+
+/** 一覧の「パスと引数」列に出す文字列（並べ替えにも使う） */
+export function describePathAndArgs(jsonItem: JsonItem): string {
+  switch (jsonItem.type) {
+    case 'item': {
+      const pathPart = jsonItem.path || '';
+      const argsPart = jsonItem.args || '';
+      if (!pathPart) return '(パスなし)';
+      return argsPart ? `${pathPart} ${argsPart}` : pathPart;
+    }
+    case 'group': {
+      const itemNames = jsonItem.itemNames || [];
+      if (itemNames.length === 0) return '(アイテムなし)';
+      return itemNames.join(', ');
+    }
+    case 'window': {
+      const windowTitle = jsonItem.windowTitle || '';
+      const settings: string[] = [];
+      if (jsonItem.x !== undefined) settings.push(`x:${jsonItem.x}`);
+      if (jsonItem.y !== undefined) settings.push(`y:${jsonItem.y}`);
+      if (jsonItem.width !== undefined) settings.push(`w:${jsonItem.width}`);
+      if (jsonItem.height !== undefined) settings.push(`h:${jsonItem.height}`);
+      if (jsonItem.virtualDesktopNumber !== undefined)
+        settings.push(`desk:${jsonItem.virtualDesktopNumber}`);
+      if (jsonItem.activateWindow !== undefined) settings.push(`active:${jsonItem.activateWindow}`);
+      if (!windowTitle) return '(ウィンドウタイトルなし)';
+      return settings.length > 0 ? `${windowTitle} [${settings.join(', ')}]` : windowTitle;
+    }
+    case 'dir': {
+      const dirPath = jsonItem.path || '';
+      const options = jsonItem.options || {};
+      const optionStrs: string[] = [];
+      if (options.depth !== undefined) optionStrs.push(`depth=${options.depth}`);
+      if (options.types) optionStrs.push(`types=${options.types}`);
+      if (options.exclude) optionStrs.push(`exclude=${options.exclude}`);
+      if (!dirPath) return '(フォルダパスなし)';
+      return optionStrs.length > 0 ? `${dirPath} [${optionStrs.join(', ')}]` : dirPath;
+    }
+    case 'clipboard': {
+      const formats = jsonItem.formats?.join(', ') || '';
+      const preview = jsonItem.preview || '';
+      if (!formats && !preview) return '(データなし)';
+      return preview ? `[${formats}] ${preview}` : `[${formats}]`;
+    }
+    case 'layout': {
+      const entries = jsonItem.entries || [];
+      if (entries.length === 0) return '(エントリなし)';
+      return `${entries.length}個のウィンドウ: ${entries.map((e) => e.windowTitle).join(', ')}`;
+    }
+    default:
+      return '(不明な型)';
+  }
+}
+
+export type SortColumn = 'type' | 'displayName' | 'pathAndArgs' | 'updatedAt';
+export interface SortState {
+  /** null はソートなし（ファイル順） */
+  column: SortColumn | null;
+  direction: 'asc' | 'desc';
+}
+
+/** 見出しクリックで asc → desc → 解除 と回す */
+export function toggleSort(prev: SortState, column: SortColumn): SortState {
+  if (prev.column !== column) return { column, direction: 'asc' };
+  if (prev.direction === 'asc') return { column, direction: 'desc' };
+  return { column: null, direction: 'asc' };
+}
+
+/**
+ * 並べ替えた結果の id 列を返す
+ *
+ * 編集中に行が動かないよう、呼び出し側はこの結果を「読み込み時・見出しクリック時」にだけ作り直し、
+ * 表示は applyDisplayOrder で固定した順に並べる。
+ */
+export function sortItemIds(items: EditableJsonItem[], sort: SortState): string[] {
+  if (!sort.column) return items.map((item) => item.item.id);
+  const column = sort.column;
+  const collator = new Intl.Collator('ja');
+  const textOf = (item: EditableJsonItem): string => {
+    if (column === 'type') return item.item.type;
+    if (column === 'displayName')
+      return 'displayName' in item.item ? item.item.displayName || '' : '';
+    return describePathAndArgs(item.item);
+  };
+  const sorted = [...items].sort((a, b) => {
+    const comparison =
+      column === 'updatedAt'
+        ? (a.item.updatedAt || 0) - (b.item.updatedAt || 0)
+        : collator.compare(textOf(a), textOf(b));
+    return sort.direction === 'asc' ? comparison : -comparison;
+  });
+  return sorted.map((item) => item.item.id);
+}
+
+/**
+ * 固定した順（orderIds）に従って並べる。順に無いアイテム（追加した行など）は先頭に、入力順のまま置く
+ */
+export function applyDisplayOrder(
+  items: EditableJsonItem[],
+  orderIds: string[]
+): EditableJsonItem[] {
+  const position = new Map(orderIds.map((id, index) => [id, index]));
+  const unknown: EditableJsonItem[] = [];
+  const known: EditableJsonItem[] = [];
+  for (const item of items) {
+    (position.has(item.item.id) ? known : unknown).push(item);
+  }
+  known.sort((a, b) => position.get(a.item.id)! - position.get(b.item.id)!);
+  return [...unknown, ...known];
 }

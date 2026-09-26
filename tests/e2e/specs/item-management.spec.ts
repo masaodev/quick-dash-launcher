@@ -82,28 +82,45 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         const addButton = adminWindow.locator('button', { hasText: 'アイテムを追加' });
         await addButton.click();
 
-        // 空行が追加されたことを確認
-        const emptyRow = adminWindow.locator('.raw-item-row').last();
-        await expect(emptyRow).toBeVisible();
+        // 先頭に追加され、名前セルがすぐ編集状態になる
+        const firstRow = adminWindow.locator('.raw-item-row').first();
+        await expect(firstRow).toHaveClass(/changed/);
+        await expect(firstRow.locator('.name-column .edit-input')).toBeFocused();
       });
 
       // 行を追加すると既に単一アイテム(type: 'item')として追加される
-      await test.step('セル編集で名前とパスを入力', async () => {
-        const lastRow = adminWindow.locator('.raw-item-row').last();
-
-        // 名前列をクリックして編集
-        const nameCell = lastRow.locator('.name-column .editable-cell');
-        await nameCell.click();
-        const nameInput = lastRow.locator('.name-column .edit-input');
+      await test.step('名前を入力して Enter でパスへ進み、入力しても行は動かない', async () => {
+        const firstRow = adminWindow.locator('.raw-item-row').first();
+        const nameInput = firstRow.locator('.name-column .edit-input');
         await nameInput.fill('新規アイテム');
         await nameInput.press('Enter');
 
-        // パスと引数列をクリックして編集
-        const pathCell = lastRow.locator('.content-column .editable-cell');
-        await pathCell.click();
-        const pathInput = lastRow.locator('.content-column .edit-input');
+        // Enter で同じ行のパスセルが編集状態になる（名前順で並び直されて行が飛ばない）
+        const pathInput = firstRow.locator('.content-column .edit-input');
+        await expect(pathInput).toBeFocused();
+        await expect(firstRow.locator('.name-column')).toContainText('新規アイテム');
         await pathInput.fill('https://new-item.com');
         await pathInput.press('Enter');
+        await expect(firstRow.locator('.content-column')).toContainText('https://new-item.com');
+      });
+
+      await test.step('種類セルのプルダウンでフォルダ取込に変えて戻せる', async () => {
+        const firstRow = adminWindow.locator('.raw-item-row').first();
+        const typeSelect = firstRow.locator('select.type-select');
+        await typeSelect.selectOption('dir');
+        // フォルダ取込は名前を持たない。パスは引き継がれる
+        await expect(firstRow.locator('.name-column')).toContainText('-');
+        await expect(firstRow.locator('.content-column')).toContainText('https://new-item.com');
+        await typeSelect.selectOption('item');
+        await expect(firstRow.locator('.name-column')).toContainText('(名前なし)');
+
+        // 名前を入れ直す
+        await firstRow.locator('.name-column .editable-cell').click();
+        const nameInput = firstRow.locator('.name-column .edit-input');
+        await nameInput.fill('新規アイテム');
+        await nameInput.press('Tab');
+        await expect(firstRow.locator('.content-column .edit-input')).toBeFocused();
+        await firstRow.locator('.content-column .edit-input').press('Enter');
       });
 
       await test.step('保存ボタンをクリック', async () => {
@@ -355,10 +372,11 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         await wikiRow.locator('.name-column .editable-cell').click();
         const nameInput = wikiRow.locator('.name-column .edit-input');
         await nameInput.fill('GitHub');
+        // 名前セルの Enter で同じ行のパスセルの編集に進む
         await nameInput.press('Enter');
 
-        await wikiRow.locator('.content-column .editable-cell').click();
         const pathInput = wikiRow.locator('.content-column .edit-input');
+        await expect(pathInput).toBeFocused();
         await pathInput.fill('https://github.com/');
         await pathInput.press('Enter');
 
@@ -498,8 +516,18 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         await adminWindow.locator('[data-testid="confirm-dialog-confirm-button"]').click();
         await expect(googleRow).not.toBeVisible();
 
-        // 行を追加（先頭に入り、行番号がずれる）
+        // 行を追加（先頭に入り、行番号がずれる）。開いた名前入力は Escape 相当で閉じず blur で確定
         await adminWindow.locator('button', { hasText: 'アイテムを追加' }).click();
+        await adminWindow
+          .locator('.raw-item-row')
+          .first()
+          .locator('.name-column .edit-input')
+          .press('Enter');
+        await adminWindow
+          .locator('.raw-item-row')
+          .first()
+          .locator('.content-column .edit-input')
+          .press('Enter');
       });
 
       await test.step('編集内容は元のアイテムに残り、他のアイテムに移っていない', async () => {

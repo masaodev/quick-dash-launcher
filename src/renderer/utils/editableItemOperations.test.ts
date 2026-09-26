@@ -3,7 +3,9 @@ import type { JsonItem } from '@common/types';
 import type { EditableJsonItem } from '@common/types/editableItem';
 
 import {
+  applyDisplayOrder,
   buildItemsForSave,
+  changeItemType,
   createBlankItem,
   dedupeFileItems,
   diffItems,
@@ -18,8 +20,10 @@ import {
   removeItems,
   reorderItemNumbers,
   replaceItem,
+  sortItemIds,
   stableStringify,
   toEditableItem,
+  toggleSort,
 } from './editableItemOperations';
 
 const FILE = 'datafiles/data.json';
@@ -270,6 +274,74 @@ describe('editableItemOperations', () => {
       expect(filter('rule1', '')).toEqual(['GitHub']);
       expect(filter('rule1', 'google')).toEqual([]);
     });
+  });
+
+  it('changeItemType は id・メモを引き継ぎ、名前・パスを持てる範囲で残すこと', () => {
+    const item = launcher('a', 'C:\\a', { memo: 'm', args: '-x' });
+    const dir = changeItemType(item, 'dir');
+    expect(dir).toMatchObject({ id: item.id, type: 'dir', path: 'C:\\a', memo: 'm' });
+    expect('displayName' in dir).toBe(false);
+    const group = changeItemType(dir, 'group');
+    expect(group).toMatchObject({
+      id: item.id,
+      type: 'group',
+      displayName: '',
+      itemNames: [],
+      memo: 'm',
+    });
+    const back = changeItemType(group, 'item');
+    expect(back).toMatchObject({ id: item.id, type: 'item', displayName: '', path: '' });
+    expect(changeItemType(item, 'item')).toBe(item);
+  });
+
+  it('sortItemIds / applyDisplayOrder は固定した順に並べ、順に無いアイテムを先頭に置くこと', () => {
+    const items = rows(
+      [launcher('b', 'C:\\b')],
+      [launcher('a', 'C:\\a')],
+      [launcher('c', 'C:\\c')]
+    );
+    const order = sortItemIds(items, { column: 'displayName', direction: 'asc' });
+    expect(order).toEqual([items[1].item.id, items[0].item.id, items[2].item.id]);
+
+    // 名前を変えても順は固定のまま。追加した行は先頭
+    const renamedB = renamed(items[0], 'z');
+    const added = createBlankItem(FILE);
+    const shown = applyDisplayOrder([added, renamedB, items[1], items[2]], order);
+    expect(shown.map((i) => i.item.id)).toEqual([
+      added.item.id,
+      items[1].item.id,
+      items[0].item.id,
+      items[2].item.id,
+    ]);
+
+    expect(sortItemIds(items, { column: null, direction: 'asc' })).toEqual(
+      items.map((i) => i.item.id)
+    );
+    expect(sortItemIds(items, { column: 'displayName', direction: 'desc' })[0]).toBe(
+      items[2].item.id
+    );
+  });
+
+  it('toggleSort は asc → desc → 解除 と回ること', () => {
+    const s1 = toggleSort({ column: null, direction: 'asc' }, 'type');
+    expect(s1).toEqual({ column: 'type', direction: 'asc' });
+    const s2 = toggleSort(s1, 'type');
+    expect(s2).toEqual({ column: 'type', direction: 'desc' });
+    expect(toggleSort(s2, 'type')).toEqual({ column: null, direction: 'asc' });
+    expect(toggleSort(s2, 'displayName')).toEqual({ column: 'displayName', direction: 'asc' });
+  });
+
+  it('filterEditableItems はメモも検索すること', () => {
+    const items = rows([launcher('a', 'C:\\a', { memo: '重要' })], [launcher('b', 'C:\\b')]);
+    expect(
+      names(
+        filterEditableItems(items, {
+          sourceFile: FILE,
+          autoImportFilter: 'all',
+          searchQuery: '重要',
+        })
+      )
+    ).toEqual(['a']);
   });
 
   it('importBookmarks は重複をスキップ／上書き（既存 ID を引き継ぐ）できること', () => {

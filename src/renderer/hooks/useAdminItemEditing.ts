@@ -40,6 +40,8 @@ interface EditingState {
   /** 選択中のアイテム id */
   selectedIds: Set<string>;
   rebaseNotice: RebaseNotice | null;
+  /** ディスクの内容を採用した回数。読み込み・保存のたびに増える（画面側が並べ替えを作り直す契機） */
+  baseVersion: number;
 }
 
 type EditingAction =
@@ -66,6 +68,7 @@ export function editingReducer(state: EditingState, action: EditingAction): Edit
           baseItems: action.items,
           workingItems: action.items,
           selectedIds: retainExisting(state.selectedIds, action.items),
+          baseVersion: state.baseVersion + 1,
         };
       }
       const rebased = rebaseWorkingItems(state.baseItems, state.workingItems, action.items);
@@ -78,6 +81,7 @@ export function editingReducer(state: EditingState, action: EditingAction): Edit
         workingItems: rebased.items,
         selectedIds: retainExisting(state.selectedIds, rebased.items),
         rebaseNotice: notice,
+        baseVersion: state.baseVersion + 1,
       };
     }
     case 'updateWorking': {
@@ -89,7 +93,12 @@ export function editingReducer(state: EditingState, action: EditingAction): Edit
       };
     }
     case 'saved':
-      return { ...state, baseItems: action.items, workingItems: action.items };
+      return {
+        ...state,
+        baseItems: action.items,
+        workingItems: action.items,
+        baseVersion: state.baseVersion + 1,
+      };
     case 'discard':
       return {
         ...state,
@@ -121,6 +130,7 @@ export function useAdminItemEditing(
     workingItems: items,
     selectedIds: new Set<string>(),
     rebaseNotice: null,
+    baseVersion: 0,
   }));
 
   // コールバックから最新の状態を読むための参照（クロージャの古い状態を使わないため）
@@ -138,7 +148,7 @@ export function useAdminItemEditing(
     dispatch({ type: 'baseChanged', items: editableItems });
   }, [editableItems]);
 
-  const { baseItems, workingItems, selectedIds, rebaseNotice } = state;
+  const { baseItems, workingItems, selectedIds, rebaseNotice, baseVersion } = state;
 
   const diff = useMemo(() => diffItems(baseItems, workingItems), [baseItems, workingItems]);
   const invalidCount = useMemo(
@@ -310,6 +320,7 @@ export function useAdminItemEditing(
     invalidCount,
     selectedItems: selectedIds,
     rebaseNotice,
+    baseVersion,
     clearRebaseNotice,
     recordEdit,
     applyRegisterUpdate,
