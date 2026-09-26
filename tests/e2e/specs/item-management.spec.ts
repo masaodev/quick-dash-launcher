@@ -78,8 +78,8 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
     try {
       const _adminUtils = new TestUtils(adminWindow);
 
-      await test.step('行を追加ボタンをクリック', async () => {
-        const addButton = adminWindow.locator('button', { hasText: '行を追加' });
+      await test.step('アイテムを追加ボタンをクリック', async () => {
+        const addButton = adminWindow.locator('button', { hasText: 'アイテムを追加' });
         await addButton.click();
 
         // 空行が追加されたことを確認
@@ -289,7 +289,9 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
       });
 
       await test.step('選択したアイテムを削除ボタンをクリック', async () => {
-        const deleteSelectedButton = adminWindow.locator('button:has-text("選択行を削除")');
+        const deleteSelectedButton = adminWindow.locator(
+          'button:has-text("選択したアイテムを削除")'
+        );
 
         // 削除ボタンをクリック（カスタムConfirmDialogが表示される）
         await deleteSelectedButton.click();
@@ -328,9 +330,9 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
     }
   });
 
-  // ==================== データ整列テスト ====================
+  // ==================== 重複削除テスト ====================
 
-  test('保存時のチェックボックスでアイテムを整列・重複削除できる', async ({
+  test('重複を削除ボタンで同じ内容のアイテムを 1 件にまとめられる', async ({
     electronApp,
     mainWindow,
     configHelper,
@@ -339,46 +341,48 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
     const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
 
     try {
-      const _adminUtils = new TestUtils(adminWindow);
-
-      await test.step('整列前のアイテム順序を確認', async () => {
-        // アイテム行を取得
-        const rows = adminWindow.locator('.raw-item-row');
-        const count = await rows.count();
-        expect(count).toBeGreaterThan(0);
+      await test.step('重複が無い状態では何も削除されない', async () => {
+        const dedupeButton = adminWindow.locator('button:has-text("重複を削除")');
+        await dedupeButton.click();
+        // 確認ダイアログは出ず、トーストで知らせる
+        await expect(adminWindow.locator('[data-testid="confirm-dialog"]')).not.toBeVisible();
+        await expect(adminWindow.getByText('重複するアイテムはありません')).toBeVisible();
       });
 
-      await test.step('軽微な変更を加える（保存ボタンを有効化するため）', async () => {
-        const githubRow = adminWindow.locator('.raw-item-row', { hasText: 'GitHub' });
-        const nameCell = githubRow.locator('.name-column .editable-cell');
-        await nameCell.click();
-
-        const nameInput = githubRow.locator('.name-column .edit-input');
-        await nameInput.fill('GitHub整列テスト');
+      await test.step('Wikipedia の名前とパスを GitHub と同じにして重複を作る', async () => {
+        // 編集中のセルは input になり行のテキストから消えるので、id で行を特定する
+        const wikiRow = adminWindow.locator('.raw-item-row[data-item-id="base0003"]');
+        await wikiRow.locator('.name-column .editable-cell').click();
+        const nameInput = wikiRow.locator('.name-column .edit-input');
+        await nameInput.fill('GitHub');
         await nameInput.press('Enter');
+
+        await wikiRow.locator('.content-column .editable-cell').click();
+        const pathInput = wikiRow.locator('.content-column .edit-input');
+        await pathInput.fill('https://github.com/');
+        await pathInput.press('Enter');
+
+        await expect(adminWindow.locator('.raw-item-row', { hasText: 'GitHub' })).toHaveCount(2);
       });
 
-      await test.step('保存ボタンをクリックして確認ダイアログを表示', async () => {
-        const saveButton = adminWindow.locator('button:has-text("変更を保存")');
-        await saveButton.click();
-
-        // 保存確認ダイアログが表示されることを確認
+      await test.step('重複を削除して保存する', async () => {
+        await adminWindow.locator('button:has-text("重複を削除")').click();
         const confirmDialog = adminWindow.locator('[data-testid="confirm-dialog"]');
         await expect(confirmDialog).toBeVisible();
-      });
+        await expect(confirmDialog).toContainText('1 件');
+        await adminWindow.locator('[data-testid="confirm-dialog-confirm-button"]').click();
 
-      await test.step('整列・重複削除チェックボックスをオンにして保存', async () => {
-        // チェックボックスをクリック
-        const checkbox = adminWindow.locator('[data-testid="confirm-dialog-checkbox"]');
-        await expect(checkbox).toBeVisible();
-        await checkbox.click();
+        await expect(adminWindow.locator('.raw-item-row', { hasText: 'GitHub' })).toHaveCount(1);
 
-        // OKボタンをクリック
+        await adminWindow.locator('button:has-text("変更を保存")').click();
         const confirmButton = adminWindow.locator('[data-testid="confirm-dialog-confirm-button"]');
+        await expect(confirmButton).toBeVisible();
         await confirmButton.click();
 
-        // 保存されたことを確認
-        expect(configHelper.hasItemByDisplayName('data.json', 'GitHub整列テスト')).toBe(true);
+        await expect
+          .poll(() => configHelper.hasItemByDisplayName('data.json', 'Wikipedia'))
+          .toBe(false);
+        expect(configHelper.hasItemByDisplayName('data.json', 'GitHub')).toBe(true);
       });
     } finally {
       await adminWindow.close();
@@ -396,6 +400,8 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
 
       await test.step('検索前の全アイテム数を確認', async () => {
         const allRows = adminWindow.locator('.raw-item-row');
+        // count() は待たないので、先に 1 行目の描画を待つ
+        await expect(allRows.first()).toBeVisible();
         const initialCount = await allRows.count();
         expect(initialCount).toBeGreaterThan(0);
       });
@@ -462,6 +468,154 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         // 元の名前は表示されない
         const originalItem = mainWindow.locator('.item .item-name', { hasText: /^GitHub$/ });
         await expect(originalItem).not.toBeVisible();
+      });
+    } finally {
+      await adminWindow.close();
+    }
+  });
+
+  // ==================== 編集状態の保持テスト ====================
+
+  test('編集は行の追加・削除で別のアイテムに移らず、タブを切り替えても残る', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }, _testInfo) => {
+    const utils = new TestUtils(mainWindow);
+    const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
+
+    try {
+      await test.step('Wikipedia の名前を編集してから、別の行を削除し、行を追加する', async () => {
+        const wikiRow = adminWindow.locator('.raw-item-row[data-item-id="base0003"]');
+        await wikiRow.locator('.name-column .editable-cell').click();
+        const nameInput = wikiRow.locator('.name-column .edit-input');
+        await nameInput.fill('Wikipedia編集後');
+        await nameInput.press('Enter');
+
+        // 別の行（Google）を削除
+        const googleRow = adminWindow.locator('.raw-item-row[data-item-id="base0002"]');
+        await googleRow.locator('button.delete-button').click();
+        await adminWindow.locator('[data-testid="confirm-dialog-confirm-button"]').click();
+        await expect(googleRow).not.toBeVisible();
+
+        // 行を追加（先頭に入り、行番号がずれる）
+        await adminWindow.locator('button', { hasText: 'アイテムを追加' }).click();
+      });
+
+      await test.step('編集内容は元のアイテムに残り、他のアイテムに移っていない', async () => {
+        const wikiRow = adminWindow.locator('.raw-item-row[data-item-id="base0003"]');
+        await expect(wikiRow.locator('.name-column')).toContainText('Wikipedia編集後');
+        await expect(wikiRow).toHaveClass(/changed/);
+        // GitHub はそのまま
+        const githubRow = adminWindow.locator('.raw-item-row[data-item-id="base0001"]');
+        await expect(githubRow.locator('.name-column')).toContainText('GitHub');
+        await expect(githubRow).not.toHaveClass(/changed/);
+      });
+
+      await test.step('基本設定タブへ移って戻っても編集が残る', async () => {
+        await adminWindow.locator('.tab-button', { hasText: '基本設定' }).click();
+        await expect(adminWindow.locator('.tab-button', { hasText: 'アイテム管理' })).toContainText(
+          '*'
+        );
+        await adminWindow.locator('.tab-button', { hasText: 'アイテム管理' }).click();
+
+        const wikiRow = adminWindow.locator('.raw-item-row[data-item-id="base0003"]');
+        await expect(wikiRow.locator('.name-column')).toContainText('Wikipedia編集後');
+        await expect(adminWindow.locator('.unsaved-changes')).toBeVisible();
+      });
+
+      await test.step('保存すると編集・削除・追加がそのままファイルに反映される', async () => {
+        await adminWindow.locator('button:has-text("変更を保存")').click();
+        await adminWindow.locator('[data-testid="confirm-dialog-confirm-button"]').click();
+
+        await expect
+          .poll(() => configHelper.hasItemByDisplayName('data.json', 'Wikipedia編集後'))
+          .toBe(true);
+        expect(configHelper.hasItemByDisplayName('data.json', 'Wikipedia')).toBe(false);
+        expect(configHelper.hasItemByDisplayName('data.json', 'Google')).toBe(false);
+        expect(configHelper.hasItemByDisplayName('data.json', 'GitHub')).toBe(true);
+      });
+    } finally {
+      await adminWindow.close();
+    }
+  });
+
+  test('変更を破棄すると追加・削除・編集がすべて元に戻る', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }, _testInfo) => {
+    const utils = new TestUtils(mainWindow);
+    const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
+
+    try {
+      await test.step('追加・削除・編集を行う', async () => {
+        await adminWindow.locator('button', { hasText: 'アイテムを追加' }).click();
+
+        const googleRow = adminWindow.locator('.raw-item-row[data-item-id="base0002"]');
+        await googleRow.locator('button.delete-button').click();
+        await adminWindow.locator('[data-testid="confirm-dialog-confirm-button"]').click();
+
+        const githubRow = adminWindow.locator('.raw-item-row[data-item-id="base0001"]');
+        await githubRow.locator('.name-column .editable-cell').click();
+        const nameInput = githubRow.locator('.name-column .edit-input');
+        await nameInput.fill('GitHub破棄テスト');
+        await nameInput.press('Enter');
+
+        await expect(adminWindow.locator('.unsaved-changes')).toBeVisible();
+      });
+
+      await test.step('変更を破棄する', async () => {
+        await adminWindow.locator('button:has-text("変更を破棄")').click();
+        await adminWindow.locator('[data-testid="confirm-dialog-confirm-button"]').click();
+
+        await expect(adminWindow.locator('.unsaved-changes')).not.toBeVisible();
+        await expect(adminWindow.locator('.raw-item-row[data-item-id="base0002"]')).toBeVisible();
+        await expect(
+          adminWindow.locator('.raw-item-row[data-item-id="base0001"] .name-column')
+        ).toContainText(/^GitHub$/);
+        // 追加した空行は消えている
+        await expect(adminWindow.locator('.raw-item-row', { hasText: '(名前なし)' })).toHaveCount(
+          0
+        );
+        expect(configHelper.hasItemByDisplayName('data.json', 'Google')).toBe(true);
+      });
+    } finally {
+      await adminWindow.close();
+    }
+  });
+
+  test('入力欄で Delete キーを押しても選択中のアイテムは削除されない', async ({
+    electronApp,
+    mainWindow,
+  }, _testInfo) => {
+    const utils = new TestUtils(mainWindow);
+    const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
+
+    try {
+      await test.step('GitHub をチェックし、検索欄で Delete キーを押す', async () => {
+        const githubRow = adminWindow.locator('.raw-item-row[data-item-id="base0001"]');
+        await githubRow.locator('input[type="checkbox"]').click();
+
+        const searchInput = adminWindow.locator('input.search-input');
+        await searchInput.fill('git');
+        await searchInput.press('ArrowLeft');
+        await searchInput.press('Delete');
+
+        await expect(githubRow).toBeVisible();
+        await expect(adminWindow.locator('.unsaved-changes')).not.toBeVisible();
+      });
+
+      await test.step('一覧にフォーカスを戻して Delete キーを押すと確認ダイアログが出る', async () => {
+        await adminWindow.locator('input.search-input').clear();
+        await adminWindow.locator('.edit-mode-view').focus();
+        await adminWindow.keyboard.press('Delete');
+
+        const confirmDialog = adminWindow.locator('[data-testid="confirm-dialog"]');
+        await expect(confirmDialog).toBeVisible();
+        await expect(confirmDialog).toContainText('GitHub');
+        await adminWindow.locator('[data-testid="confirm-dialog-cancel-button"]').click();
+        await expect(adminWindow.locator('.raw-item-row[data-item-id="base0001"]')).toBeVisible();
       });
     } finally {
       await adminWindow.close();

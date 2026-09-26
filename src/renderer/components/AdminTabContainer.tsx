@@ -1,6 +1,7 @@
 import React from 'react';
 import { AppSettings, DataFileTab } from '@common/types';
-import type { EditableJsonItem } from '@common/types/editableItem';
+
+import type { AdminItemEditing } from '../hooks/useAdminItemEditing';
 
 import AdminSettingsTab from './AdminSettingsTab';
 import AdminItemManagerView from './AdminItemManagerView';
@@ -11,8 +12,10 @@ interface AdminTabContainerProps {
   onTabChange: (tab: 'settings' | 'edit' | 'other') => void;
   settings: AppSettings | null;
   onSettingsSave: (settings: AppSettings) => Promise<void>;
-  editableItems: EditableJsonItem[];
-  onEditableItemsSave: (editableItems: EditableJsonItem[]) => Promise<void>;
+  /** アイテム管理の編集状態（AdminApp が持つ。タブを切り替えても消えない） */
+  editing: AdminItemEditing;
+  /** データファイルの読み込みエラー（あれば一覧の代わりに表示する） */
+  loadError: string | null;
   searchQuery: string;
   onSearchChange: (query: string) => void;
   dataFileTabs: DataFileTab[];
@@ -26,8 +29,8 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
   onTabChange,
   settings,
   onSettingsSave,
-  editableItems,
-  onEditableItemsSave,
+  editing,
+  loadError,
   searchQuery,
   onSearchChange,
   dataFileTabs,
@@ -49,7 +52,7 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
             className={`tab-button ${activeTab === 'edit' ? 'active' : ''}`}
             onClick={() => onTabChange('edit')}
           >
-            ✏️ アイテム管理
+            ✏️ アイテム管理{editing.hasUnsavedChanges ? ' *' : ''}
           </button>
           <button
             className={`tab-button ${activeTab === 'other' ? 'active' : ''}`}
@@ -66,8 +69,8 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
         )}
         {activeTab === 'edit' && (
           <AdminItemManagerView
-            editableItems={editableItems}
-            onEditableItemsSave={onEditableItemsSave}
+            editing={editing}
+            loadError={loadError}
             onExitEditMode={() => window.electronAPI.hideEditWindow()}
             searchQuery={searchQuery}
             onSearchChange={onSearchChange}

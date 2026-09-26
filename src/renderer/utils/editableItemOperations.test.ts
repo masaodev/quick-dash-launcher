@@ -4,13 +4,21 @@ import type { EditableJsonItem } from '@common/types/editableItem';
 
 import {
   buildItemsForSave,
+  createBlankItem,
+  dedupeFileItems,
+  diffItems,
   duplicateItems,
   filterEditableItems,
+  findDuplicateIds,
   getItemKey,
   importBookmarks,
+  isSameContent,
+  rebaseWorkingItems,
+  refreshEditableItem,
   removeItems,
   reorderItemNumbers,
-  sortAndDedupeFileItems,
+  replaceItem,
+  stableStringify,
   toEditableItem,
 } from './editableItemOperations';
 
@@ -41,7 +49,18 @@ function rows(...entries: Array<[JsonItem, string?]>): EditableJsonItem[] {
 const names = (items: EditableJsonItem[]) =>
   items.map((i) => ('displayName' in i.item ? i.item.displayName : i.item.type));
 
+/** 名前を変えた版（表示テキスト・検証も作り直す） */
+const renamed = (item: EditableJsonItem, displayName: string) =>
+  refreshEditableItem(item, { ...item.item, displayName } as JsonItem);
+
 describe('editableItemOperations', () => {
+  it('getItemKey はアイテムの id であること（行番号に依存しない）', () => {
+    const items = rows([launcher('a', 'C:\\a')]);
+    const moved = reorderItemNumbers([createBlankItem(FILE), ...items]);
+    expect(getItemKey(moved[1])).toBe(items[0].item.id);
+    expect(moved[1].meta.lineNumber).toBe(1);
+  });
+
   it('reorderItemNumbers はファイルごとに 0 から振り直すこと', () => {
     const items = rows(
       [launcher('a', 'C:\\a.exe')],
@@ -55,71 +74,177 @@ describe('editableItemOperations', () => {
     ]);
   });
 
-  it('removeItems は指定行を除いて行番号を振り直すこと', () => {
+  it('createBlankItem は本採番した id と検証エラーを持つこと', () => {
+    const blank = createBlankItem(FILE);
+    expect(blank.item.id).toMatch(/^[A-Za-z0-9]{8}$/);
+    expect(blank.meta.isValid).toBe(false);
+    expect(createBlankItem(FILE).item.id).not.toBe(blank.item.id);
+  });
+
+  it('refreshEditableItem は表示テキストと検証結果を作り直すこと', () => {
+    const [item] = rows([launcher('a', 'C:\\a')]);
+    const refreshed = refreshEditableItem(item, { ...item.item, displayName: '' } as JsonItem);
+    expect(refreshed.meta.isValid).toBe(false);
+    expect(refreshed.displayText).not.toBe(item.displayText);
+
+    const moved = refreshEditableItem(item, item.item, OTHER);
+    expect(moved.meta.sourceFile).toBe(OTHER);
+  });
+
+  it('removeItems は指定 id を除いて行番号を振り直すこと', () => {
     const items = rows(
       [launcher('a', 'C:\\a')],
       [launcher('b', 'C:\\b')],
       [launcher('c', 'C:\\c')]
     );
-    const result = removeItems(items, [items[1]]);
+    const result = removeItems(items, [items[1].item.id]);
     expect(names(result)).toEqual(['a', 'c']);
     expect(result.map((i) => i.meta.lineNumber)).toEqual([0, 1]);
   });
 
-  it('duplicateItems は対象の最後の行の直後に新しい ID で複製すること', () => {
+  it('replaceItem は同じ id のアイテムだけを差し替えること', () => {
+    const items = rows([launcher('a', 'C:\\a')], [launcher('b', 'C:\\b')]);
+    const result = replaceItem(items, renamed(items[1], 'B'));
+    expect(names(result)).toEqual(['a', 'B']);
+    expect(result[0]).toBe(items[0]);
+  });
+
+  it('duplicateItems は対象の最後のアイテムの直後に新しい ID で複製すること', () => {
     const items = rows(
       [launcher('a', 'C:\\a')],
       [launcher('b', 'C:\\b')],
       [launcher('c', 'C:\\c')]
     );
-    const result = duplicateItems(items, [items[1], items[0]])!;
+    const result = duplicateItems(items, [items[1].item.id, items[0].item.id])!;
     expect(names(result)).toEqual(['a', 'b', 'a', 'b', 'c']);
     expect(result[2].item.id).not.toBe(items[0].item.id);
     expect(result.map((i) => i.meta.lineNumber)).toEqual([0, 1, 2, 3, 4]);
   });
 
-  it('duplicateItems は挿入位置が見つからなければ null を返すこと', () => {
+  it('duplicateItems は対象が無ければ null を返すこと', () => {
     const items = rows([launcher('a', 'C:\\a')]);
-    const [stray] = rows([launcher('x', 'C:\\x'), OTHER]);
-    expect(duplicateItems(items, [stray])).toBeNull();
+    expect(duplicateItems(items, ['nope'])).toBeNull();
   });
 
-  it('sortAndDedupeFileItems は対象ファイルだけを種類・パス順に並べ、重複を除くこと', () => {
+  it('findDuplicateIds / dedupeFileItems は対象ファイル内の 2 件目以降だけを除くこと', () => {
     const items = rows(
-      [launcher('z', 'C:\\z.exe')],
-      [launcher('other', 'C:\\0.exe'), OTHER],
-      [{ id: 'grp00001', type: 'group', displayName: 'G', itemNames: [] }],
       [launcher('a', 'C:\\a.exe')],
+      [launcher('a', 'C:\\a.exe'), OTHER],
+      [launcher('a', 'C:\\a.exe')],
+      [launcher('a', 'C:\\b.exe')],
       [launcher('a', 'C:\\a.exe')]
     );
-    const result = sortAndDedupeFileItems(items, FILE);
-    // 他ファイルのアイテムは先頭にそのまま、対象ファイルは group → item（パス順）、重複は 1 件に
-    expect(names(result)).toEqual(['other', 'G', 'a', 'z']);
+    expect(findDuplicateIds(items, FILE)).toEqual([items[2].item.id, items[4].item.id]);
+    const { items: deduped, removed } = dedupeFileItems(items, FILE);
+    expect(removed).toBe(2);
+    // 他ファイルは触らない。順序は保つ
+    expect(deduped.map((i) => [i.meta.sourceFile, (i.item as { path?: string }).path])).toEqual([
+      [FILE, 'C:\\a.exe'],
+      [OTHER, 'C:\\a.exe'],
+      [FILE, 'C:\\b.exe'],
+    ]);
+    expect(dedupeFileItems(deduped, FILE).removed).toBe(0);
   });
 
-  it('buildItemsForSave は整列・重複削除の指定に従うこと', () => {
-    const items = rows(
-      [launcher('b', 'C:\\b')],
-      [launcher('a', 'C:\\a')],
-      [launcher('a', 'C:\\a')]
+  it('stableStringify はキー順と undefined の有無に依存しないこと', () => {
+    expect(stableStringify({ b: 1, a: [2, { d: 1, c: 2 }] })).toBe(
+      stableStringify({ a: [2, { c: 2, d: 1 }], b: 1, z: undefined })
     );
-
-    const kept = buildItemsForSave(items, new Map(), { sortAndDedupe: false, sourceFile: FILE });
-    expect(names(kept)).toEqual(['b', 'a', 'a']);
-
-    const sorted = buildItemsForSave(items, new Map(), { sortAndDedupe: true, sourceFile: FILE });
-    expect(names(sorted)).toEqual(['a', 'b']);
   });
 
-  it('buildItemsForSave は編集差分を反映し、更新日時を付け直すこと', () => {
-    const items = rows([launcher('a', 'C:\\a', { updatedAt: 1 })]);
-    const edited = { ...items[0], item: { ...items[0].item, displayName: 'renamed' } };
-    const result = buildItemsForSave(items, new Map([[getItemKey(items[0]), edited]]), {
-      sortAndDedupe: false,
-      sourceFile: FILE,
+  it('isSameContent は updatedAt と行番号を無視し、置き場のファイルは比較すること', () => {
+    const [a] = rows([launcher('a', 'C:\\a', { updatedAt: 1 })]);
+    const later = { ...a, item: { ...a.item, updatedAt: 2 }, meta: { ...a.meta, lineNumber: 9 } };
+    expect(isSameContent(a, later)).toBe(true);
+    expect(isSameContent(a, refreshEditableItem(a, a.item, OTHER))).toBe(false);
+    expect(isSameContent(a, renamed(a, 'x'))).toBe(false);
+  });
+
+  it('diffItems は変更・追加・削除を id で検出すること', () => {
+    const base = rows([launcher('a', 'C:\\a')], [launcher('b', 'C:\\b')], [launcher('c', 'C:\\c')]);
+    const working = reorderItemNumbers([createBlankItem(FILE), renamed(base[0], 'A'), base[2]]);
+    const diff = diffItems(base, working);
+    expect(diff.hasChanges).toBe(true);
+    expect([...diff.changedIds]).toEqual([working[0].item.id, base[0].item.id]);
+    expect([...diff.deletedIds]).toEqual([base[1].item.id]);
+    expect(diffItems(base, base).hasChanges).toBe(false);
+    // 行番号だけ違っても変更ではない
+    expect(diffItems(base, reorderItemNumbers([base[2], base[1], base[0]])).hasChanges).toBe(false);
+  });
+
+  it('buildItemsForSave は変更した id にだけ updatedAt を付け、行番号を振り直すこと', () => {
+    const items = rows(
+      [launcher('a', 'C:\\a', { updatedAt: 1 })],
+      [launcher('b', 'C:\\b', { updatedAt: 1 })]
+    );
+    const result = buildItemsForSave([items[1], items[0]], new Set([items[0].item.id]));
+    expect(names(result)).toEqual(['b', 'a']);
+    expect(result[0].item.updatedAt).toBe(1);
+    expect(result[1].item.updatedAt).toBeGreaterThan(1);
+    expect(result.map((i) => i.meta.lineNumber)).toEqual([0, 1]);
+  });
+
+  describe('rebaseWorkingItems', () => {
+    const base = () =>
+      rows([launcher('a', 'C:\\a')], [launcher('b', 'C:\\b')], [launcher('c', 'C:\\c')]);
+
+    it('自分の編集・追加・削除を、外部が触っていないアイテムの上に載せ直すこと', () => {
+      const oldBase = base();
+      const added = createBlankItem(FILE);
+      const working = reorderItemNumbers([added, renamed(oldBase[0], 'A'), oldBase[2]]); // b は削除
+      // 外部で d を追加した
+      const newBase = reorderItemNumbers([
+        ...oldBase,
+        toEditableItem(launcher('d', 'C:\\d'), FILE),
+      ]);
+
+      const result = rebaseWorkingItems(oldBase, working, newBase);
+      expect(names(result.items)).toEqual(['', 'A', 'c', 'd']);
+      expect(result.applied).toBe(3);
+      expect(result.conflicts).toEqual([]);
+      expect(result.items.map((i) => i.meta.lineNumber)).toEqual([0, 1, 2, 3]);
     });
-    expect(names(result)).toEqual(['renamed']);
-    expect(result[0].item.updatedAt).toBeGreaterThan(1);
+
+    it('外部も変えたアイテムは外部を採用し、conflicts に載せること', () => {
+      const oldBase = base();
+      const working = replaceItem(oldBase, renamed(oldBase[0], 'mine'));
+      const newBase = replaceItem(oldBase, renamed(oldBase[0], 'theirs'));
+
+      const result = rebaseWorkingItems(oldBase, working, newBase);
+      expect(names(result.items)).toEqual(['theirs', 'b', 'c']);
+      expect(result.applied).toBe(0);
+      expect(result.conflicts).toEqual([
+        { id: oldBase[0].item.id, displayName: 'mine', reason: 'changed-externally' },
+      ]);
+    });
+
+    it('外部で削除されたアイテムへの自分の編集は捨て、外部で変わったアイテムの自分の削除も取り消すこと', () => {
+      const oldBase = base();
+      // 自分: a を編集、b を削除
+      const working = replaceItem(oldBase, renamed(oldBase[0], 'A')).filter(
+        (i) => i.item.id !== oldBase[1].item.id
+      );
+      // 外部: a を削除、b を編集
+      const newBase = replaceItem(oldBase, renamed(oldBase[1], 'B')).filter(
+        (i) => i.item.id !== oldBase[0].item.id
+      );
+
+      const result = rebaseWorkingItems(oldBase, working, newBase);
+      expect(names(result.items)).toEqual(['B', 'c']);
+      expect(result.conflicts.map((c) => [c.displayName, c.reason])).toEqual([
+        ['B', 'changed-externally'],
+        ['A', 'deleted-externally'],
+      ]);
+    });
+
+    it('双方が同じ内容に変えていれば競合にしないこと', () => {
+      const oldBase = base();
+      const working = replaceItem(oldBase, renamed(oldBase[0], 'same'));
+      const newBase = replaceItem(oldBase, renamed(oldBase[0], 'same'));
+      const result = rebaseWorkingItems(oldBase, working, newBase);
+      expect(result.conflicts).toEqual([]);
+      expect(diffItems(newBase, result.items).hasChanges).toBe(false);
+    });
   });
 
   describe('filterEditableItems', () => {

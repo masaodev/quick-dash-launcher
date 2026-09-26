@@ -9,6 +9,7 @@ import type {
   JsonGroupItem,
   JsonWindowItem,
   JsonLayoutItem,
+  JsonClipboardItem,
 } from '@common/types';
 import {
   isJsonLauncherItem,
@@ -19,13 +20,14 @@ import {
   isJsonLayoutItem,
 } from '@common/types';
 
-import ConfirmDialog from './ConfirmDialog';
+import { getItemKey } from '../utils/editableItemOperations';
 
 type SortColumn = 'type' | 'displayName' | 'pathAndArgs' | 'updatedAt';
 type SortDirection = 'asc' | 'desc';
 
 // displayNameを持つアイテム型
-type JsonItemWithDisplayName = JsonLauncherItem | JsonGroupItem | JsonWindowItem | JsonLayoutItem;
+type JsonItemWithDisplayName =
+  JsonLauncherItem | JsonGroupItem | JsonWindowItem | JsonLayoutItem | JsonClipboardItem;
 
 // displayNameを持つアイテム型かどうかを判定するヘルパー関数
 function hasDisplayName(jsonItem: JsonItem): jsonItem is JsonItemWithDisplayName {
@@ -33,8 +35,14 @@ function hasDisplayName(jsonItem: JsonItem): jsonItem is JsonItemWithDisplayName
     (jsonItem.type === 'item' && isJsonLauncherItem(jsonItem)) ||
     (jsonItem.type === 'group' && isJsonGroupItem(jsonItem)) ||
     (jsonItem.type === 'window' && isJsonWindowItem(jsonItem)) ||
-    (jsonItem.type === 'layout' && isJsonLayoutItem(jsonItem))
+    (jsonItem.type === 'layout' && isJsonLayoutItem(jsonItem)) ||
+    (jsonItem.type === 'clipboard' && isJsonClipboardItem(jsonItem))
   );
+}
+
+/** パス列をセルで直接編集できる種類（それ以外は ✏️ の詳細編集から） */
+function isPathEditable(jsonItem: JsonItem): boolean {
+  return jsonItem.type === 'item' || jsonItem.type === 'dir';
 }
 
 function formatUpdatedAt(updatedAt?: number): string {
@@ -51,10 +59,15 @@ function formatUpdatedAt(updatedAt?: number): string {
 interface EditableRawItemListProps {
   editableItems: EditableJsonItem[];
   selectedItems: Set<string>;
+  /** 未保存の変更があるアイテムの id（行に印を付ける） */
+  changedIds: Set<string>;
+  /** 検索・フィルタで絞り込み中か（0 件のときの文言に使う） */
+  isFiltered: boolean;
   onItemEdit: (item: EditableJsonItem) => void;
   onItemSelect: (item: EditableJsonItem, selected: boolean) => void;
   onSelectAll: (selected: boolean) => void;
-  onDeleteItems: (items: EditableJsonItem[]) => void;
+  /** 削除の確認は呼び出し側（AdminItemManagerView）で行う */
+  onRequestDelete: (items: EditableJsonItem[]) => void;
   onEditClick: (item: EditableJsonItem) => void;
   onDuplicateItems: (items: EditableJsonItem[]) => void;
   autoImportRuleMap?: Map<string, string>;
@@ -63,10 +76,12 @@ interface EditableRawItemListProps {
 const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
   editableItems,
   selectedItems,
+  changedIds,
+  isFiltered,
   onItemEdit,
   onItemSelect,
   onSelectAll,
-  onDeleteItems,
+  onRequestDelete,
   onEditClick,
   onDuplicateItems,
   autoImportRuleMap,
@@ -79,11 +94,11 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
   const nameThRef = useRef<HTMLTableCellElement>(null);
   const resizeStateRef = useRef({ isResizing: false, startX: 0, startWidth: 0 });
 
-  // ソート状態 (column が null の場合はソートなし)
+  // ソート状態 (column が null の場合はソートなし＝ファイル順)。初期値はメイン画面と同じ表示名の昇順
   const [sortState, setSortState] = useState<{
     column: SortColumn | null;
     direction: SortDirection;
-  }>({ column: null, direction: 'asc' });
+  }>({ column: 'displayName', direction: 'asc' });
 
   // アイコンキャッシュ: Map<パス, base64データURL>
   const [itemIcons, setItemIcons] = useState<Map<string, string>>(new Map());
@@ -93,19 +108,6 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
 
   // 右クリックされたアイテムを保存（コンテキストメニューイベント用）
   const contextMenuItemsRef = useRef<EditableJsonItem[]>([]);
-
-  // ConfirmDialog状態管理
-  const [confirmDialog, setConfirmDialog] = useState<{
-    isOpen: boolean;
-    message: string;
-    onConfirm: () => void;
-    danger?: boolean;
-  }>({
-    isOpen: false,
-    message: '',
-    onConfirm: () => {},
-    danger: false,
-  });
 
   // アイテムアイコンを取得（ファビコン + 自動取得 + カスタム）
   useEffect(() => {
@@ -161,8 +163,6 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
     loadIcons();
   }, [editableItems]);
 
-  const getItemKey = (item: EditableJsonItem) => `${item.meta.sourceFile}_${item.meta.lineNumber}`;
-
   // コンテキストメニューイベントリスナーを登録
   useEffect(() => {
     // 複製
@@ -181,11 +181,11 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
       }
     });
 
-    // 削除
+    // 削除（確認は呼び出し側で出す）
     const cleanupDelete = window.electronAPI.onAdminMenuDeleteItems(() => {
       const targetItems = contextMenuItemsRef.current;
       if (targetItems.length > 0) {
-        onDeleteItems(targetItems);
+        onRequestDelete(targetItems);
       }
     });
 
@@ -195,7 +195,7 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
       cleanupEdit();
       cleanupDelete();
     };
-  }, [onDuplicateItems, onEditClick, onDeleteItems]);
+  }, [onDuplicateItems, onEditClick, onRequestDelete]);
 
   // 列リサイズ: マウスドラッグ処理
   const handleResizeMouseDown = (e: React.MouseEvent) => {
@@ -264,8 +264,6 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
   const getEditablePath = (jsonItem: JsonItem): string => {
     if (jsonItem.type === 'item' && isJsonLauncherItem(jsonItem)) {
       return jsonItem.path || '';
-    } else if (jsonItem.type === 'group' && isJsonGroupItem(jsonItem)) {
-      return jsonItem.itemNames?.join(', ') || '';
     } else if (jsonItem.type === 'dir' && isJsonDirItem(jsonItem)) {
       return jsonItem.path || '';
     }
@@ -273,8 +271,7 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
   };
 
   const handleCellEdit = (item: EditableJsonItem) => {
-    // ウィンドウ操作アイテムはパス編集不可（詳細編集のみ）
-    if (item.item.type === 'window') {
+    if (!isPathEditable(item.item)) {
       return;
     }
 
@@ -292,18 +289,13 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
 
       if (jsonItem.type === 'item' && isJsonLauncherItem(jsonItem)) {
         updatedJsonItem = { ...jsonItem, path: trimmedValue };
-      } else if (jsonItem.type === 'group' && isJsonGroupItem(jsonItem)) {
-        const itemNames = trimmedValue
-          .split(',')
-          .map((name) => name.trim())
-          .filter((name) => name);
-        updatedJsonItem = { ...jsonItem, itemNames };
       } else if (jsonItem.type === 'dir' && isJsonDirItem(jsonItem)) {
         updatedJsonItem = { ...jsonItem, path: trimmedValue };
       } else {
         updatedJsonItem = jsonItem;
       }
 
+      // 表示テキスト・検証は onItemEdit 側（useAdminItemEditing.recordEdit）で作り直す
       onItemEdit({ ...item, item: updatedJsonItem });
     }
     setEditingCell(null);
@@ -377,7 +369,7 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
     }
 
     const name = jsonItem.displayName || '';
-    const hasError = item.meta.validationError !== undefined;
+    const hasError = !item.meta.isValid;
     const cellKey = `${getItemKey(item)}_name`;
     const isEditing = editingCell === cellKey;
 
@@ -400,7 +392,7 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
         className={`editable-cell ${hasError ? 'error' : ''}`}
         onClick={() => handleNameEdit(item)}
         title={
-          hasError ? `バリデーションエラー: ${item.meta.validationError}` : 'クリックして名前を編集'
+          hasError ? `入力に不備があります: ${item.meta.validationError}` : 'クリックして名前を編集'
         }
       >
         {name || '(名前なし)'}
@@ -498,13 +490,14 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
       return getPathAndArgs(item);
     };
 
+    const collator = new Intl.Collator('ja');
     return [...editableItems].sort((a, b) => {
       if (column === 'updatedAt') {
         const aVal = a.item.updatedAt || 0;
         const bVal = b.item.updatedAt || 0;
         return direction === 'asc' ? aVal - bVal : bVal - aVal;
       }
-      const comparison = getValue(a).localeCompare(getValue(b), 'ja');
+      const comparison = collator.compare(getValue(a), getValue(b));
       return direction === 'asc' ? comparison : -comparison;
     });
   }, [editableItems, sortState]);
@@ -574,29 +567,25 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
       );
     }
 
-    // ウィンドウ操作アイテムは編集不可
-    if (item.item.type === 'window') {
+    // パスをセルで編集できない種類は、詳細編集へ誘導する
+    if (!isPathEditable(item.item)) {
       return (
         <div
           className="readonly-cell"
-          title="ウィンドウ操作アイテムは✏️ボタンから詳細編集を開いてください"
+          title={`${getItemTypeDisplayName(item)}は ✏️ ボタンから詳細編集を開いて編集してください`}
+          onDoubleClick={() => onEditClick(item)}
         >
           {getPathAndArgs(item)}
         </div>
       );
     }
 
-    // ツールチップテキストを動的に生成
-    let tooltipText = '';
-    if (item.item.type === 'group') {
-      tooltipText = 'クリックしてアイテム名リストを編集できます（カンマ区切りで入力）';
-    } else {
-      tooltipText =
-        'クリックしてパスを編集できます。引数を変更する場合は✏️ボタンから詳細編集を開いてください';
-    }
-
     return (
-      <div className="editable-cell" onClick={() => handleCellEdit(item)} title={tooltipText}>
+      <div
+        className="editable-cell"
+        onClick={() => handleCellEdit(item)}
+        title="クリックしてパスを編集できます。引数を変更する場合は✏️ボタンから詳細編集を開いてください"
+      >
         {getPathAndArgs(item)}
       </div>
     );
@@ -621,7 +610,9 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
                 onChange={(e) => onSelectAll(e.target.checked)}
               />
             </th>
-            <th className="line-number-column">#</th>
+            <th className="line-number-column" title="ファイル内の位置">
+              #
+            </th>
             <th className="type-column sortable-header" onClick={() => handleHeaderClick('type')}>
               <span className="header-content">
                 種類
@@ -652,9 +643,10 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
             <th
               className="content-column sortable-header"
               onClick={() => handleHeaderClick('pathAndArgs')}
+              title="パスはクリックして編集できます。引数は ✏️ の詳細編集から"
             >
               <span className="header-content">
-                パスと引数 (パスのみ編集可、引数編集は✏️から)
+                パスと引数
                 {renderSortIndicator('pathAndArgs')}
               </span>
             </th>
@@ -680,14 +672,17 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
             const item = sortedItems[virtualRow.index];
             const itemKey = getItemKey(item);
             const isSelected = selectedItems.has(itemKey);
+            const isChanged = changedIds.has(itemKey);
 
             return (
               <tr
                 key={itemKey}
                 data-index={virtualRow.index}
+                data-item-id={itemKey}
                 ref={rowVirtualizer.measureElement}
-                className={`raw-item-row ${isSelected ? 'selected' : ''} ${item.item.type}`}
+                className={`raw-item-row ${isSelected ? 'selected' : ''} ${isChanged ? 'changed' : ''} ${item.item.type}`}
                 onContextMenu={(e) => handleContextMenu(e, item)}
+                title={isChanged ? '未保存の変更があります' : undefined}
               >
                 <td className="checkbox-column">
                   <input
@@ -713,17 +708,7 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
                     </button>
                     <button
                       className="delete-button"
-                      onClick={() => {
-                        setConfirmDialog({
-                          isOpen: true,
-                          message: `行 ${item.meta.lineNumber + 1} を削除しますか？`,
-                          onConfirm: () => {
-                            setConfirmDialog({ ...confirmDialog, isOpen: false });
-                            onDeleteItems([item]);
-                          },
-                          danger: true,
-                        });
-                      }}
+                      onClick={() => onRequestDelete([item])}
                       title="削除"
                     >
                       🗑️
@@ -742,16 +727,12 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
       </table>
 
       {editableItems.length === 0 && (
-        <div className="no-items">データファイルにアイテムがありません</div>
+        <div className="no-items">
+          {isFiltered
+            ? '条件に一致するアイテムがありません'
+            : 'このデータファイルにアイテムがありません'}
+        </div>
       )}
-
-      <ConfirmDialog
-        isOpen={confirmDialog.isOpen}
-        onClose={() => setConfirmDialog({ ...confirmDialog, isOpen: false })}
-        onConfirm={confirmDialog.onConfirm}
-        message={confirmDialog.message}
-        danger={confirmDialog.danger}
-      />
     </div>
   );
 };

@@ -354,6 +354,8 @@ export function convertEditableJsonItemToRegisterItem(
         types: DIR_OPTIONS_DEFAULTS.types,
       },
       itemCategory: 'dir',
+      // メモを渡さないと、詳細編集で更新したときに元のメモが消える
+      memo: jsonItem.memo,
     };
   }
 
