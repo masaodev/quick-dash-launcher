@@ -2,6 +2,12 @@ import { useState, useCallback, Dispatch, SetStateAction } from 'react';
 import { AppSettings } from '@common/types';
 
 import { logError } from '../utils/debug';
+import {
+  SETTINGS_RESET_KEYS,
+  SETTINGS_RESET_LABELS,
+  SETTINGS_RESET_NOTES,
+  type ResettableSettingsCategory,
+} from '../utils/settingsResetKeys';
 
 export type HandleSettingChange = <K extends keyof AppSettings>(
   key: K,
@@ -13,7 +19,13 @@ interface UseSettingsManagerProps {
   editedSettings: AppSettings;
   setEditedSettings: Dispatch<SetStateAction<AppSettings>>;
   onSave: (settings: AppSettings) => Promise<void>;
+  /** 既定値に戻した後の設定を親（AdminApp）にも反映する。渡さないと親の状態が古いまま残る */
+  onSettingsReplaced?: (settings: AppSettings) => void;
   showAlert: (message: string, type?: 'info' | 'error' | 'warning' | 'success') => void;
+  showConfirm: (
+    message: string,
+    options?: { title?: string; confirmText?: string; cancelText?: string; danger?: boolean }
+  ) => Promise<boolean>;
   showToast?: (message: string) => void;
 }
 
@@ -21,7 +33,9 @@ export function useSettingsManager({
   editedSettings,
   setEditedSettings,
   onSave,
+  onSettingsReplaced,
   showAlert,
+  showConfirm,
   showToast,
 }: UseSettingsManagerProps) {
   const [hotkeyValidation, setHotkeyValidation] = useState<{ isValid: boolean; reason?: string }>({
@@ -75,24 +89,43 @@ export function useSettingsManager({
     setHotkeyValidation({ isValid, reason });
   }, []);
 
-  const handleReset = useCallback(async (): Promise<void> => {
-    if (!confirm('設定をデフォルト値にリセットしますか？')) {
-      return;
-    }
+  /**
+   * カテゴリ単位で設定を既定値に戻す
+   *
+   * @param category 戻すカテゴリ（戻す項目は SETTINGS_RESET_KEYS）
+   */
+  const handleReset = useCallback(
+    async (category: ResettableSettingsCategory): Promise<void> => {
+      const label = SETTINGS_RESET_LABELS[category];
+      const note = SETTINGS_RESET_NOTES[category];
+      const confirmed = await showConfirm(
+        `「${label}」の項目を既定値に戻しますか？${note ? `\n${note}` : ''}`,
+        {
+          title: '既定値に戻す',
+          confirmText: '既定値に戻す',
+          cancelText: 'キャンセル',
+          danger: true,
+        }
+      );
+      if (!confirmed) return;
 
-    try {
-      setIsLoading(true);
-      await window.electronAPI.resetSettings();
-      const resetSettings = await window.electronAPI.getSettings();
-      setEditedSettings(resetSettings);
-      showToast?.('設定をリセットしました');
-    } catch (error) {
-      logError('設定のリセットに失敗しました:', error);
-      showAlert('設定のリセットに失敗しました。', 'error');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [setEditedSettings, showAlert, showToast]);
+      try {
+        setIsLoading(true);
+        const resetSettings = await window.electronAPI.resetSettings([
+          ...SETTINGS_RESET_KEYS[category],
+        ]);
+        setEditedSettings(resetSettings);
+        onSettingsReplaced?.(resetSettings);
+        showToast?.(`「${label}」を既定値に戻しました`);
+      } catch (error) {
+        logError('設定のリセットに失敗しました:', error);
+        showAlert('設定のリセットに失敗しました。', 'error');
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [setEditedSettings, onSettingsReplaced, showAlert, showConfirm, showToast]
+  );
 
   const handleOpenConfigFolder = useCallback(async (): Promise<void> => {
     try {

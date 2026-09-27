@@ -12,6 +12,8 @@ interface AdminTabContainerProps {
   onTabChange: (tab: 'settings' | 'edit' | 'other') => void;
   settings: AppSettings | null;
   onSettingsSave: (settings: AppSettings) => Promise<void>;
+  /** 既定値に戻すなど、保存を経ずに設定が置き換わったとき */
+  onSettingsReplaced: (settings: AppSettings) => void;
   /** アイテム管理の編集状態（AdminApp が持つ。タブを切り替えても消えない） */
   editing: AdminItemEditing;
   /** データファイルの読み込みエラー（あれば一覧の代わりに表示する） */
@@ -29,6 +31,7 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
   onTabChange,
   settings,
   onSettingsSave,
+  onSettingsReplaced,
   editing,
   loadError,
   searchQuery,
@@ -65,7 +68,11 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
 
       <div className="admin-content">
         {activeTab === 'settings' && settings && (
-          <AdminSettingsTab settings={settings} onSave={onSettingsSave} />
+          <AdminSettingsTab
+            settings={settings}
+            onSave={onSettingsSave}
+            onSettingsReplaced={onSettingsReplaced}
+          />
         )}
         {activeTab === 'edit' && (
           <AdminItemManagerView

@@ -152,8 +152,10 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
         await expect(editHeightInput).toBeVisible();
       });
 
-      await test.step('リセットボタンの確認', async () => {
-        const resetButton = adminWindow.locator('button.reset-button', { hasText: 'リセット' });
+      await test.step('既定値に戻すボタンの確認（カテゴリの末尾にある）', async () => {
+        const resetButton = adminWindow.locator('button.settings-reset-button', {
+          hasText: 'ウィンドウを既定値に戻す',
+        });
         await expect(resetButton).toBeVisible();
       });
     } finally {

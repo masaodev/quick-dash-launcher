@@ -5,8 +5,6 @@ import type { AppSettings, DataFileTab } from '@common/types';
 import type { HandleSettingChange } from '../hooks/useSettingsManager';
 import type { UseTabManagerReturn } from '../hooks/tabManager';
 
-import { Button } from './ui';
-
 interface DataFileTabItemProps {
   tab: DataFileTab;
   tabIndex: number;
@@ -220,8 +218,7 @@ const AdminSettingsTabsSection: React.FC<AdminSettingsTabsSectionProps> = ({
   handleSettingChange,
   tabManager,
 }) => {
-  const { handleAddTab, hasUnsavedChanges, handleSaveTabChanges, handleCancelTabChanges } =
-    tabManager;
+  const { handleAddTab } = tabManager;
   const tabs = editedSettings.dataFileTabs || [];
 
   return (
@@ -268,27 +265,8 @@ const AdminSettingsTabsSection: React.FC<AdminSettingsTabsSectionProps> = ({
           </div>
         )}
       </div>
-
-      {/* タブ管理の保存/キャンセルボタン */}
-      {editedSettings.showDataFileTabs && (
-        <div className="tab-management-actions">
-          {hasUnsavedChanges && <span className="unsaved-indicator">未保存の変更があります</span>}
-          <Button
-            variant="cancel"
-            onClick={() => handleCancelTabChanges()}
-            disabled={!hasUnsavedChanges || isLoading}
-          >
-            ↩️ キャンセル
-          </Button>
-          <Button
-            variant="primary"
-            onClick={handleSaveTabChanges}
-            disabled={!hasUnsavedChanges || isLoading}
-          >
-            💾 保存
-          </Button>
-        </div>
-      )}
+      {/* 保存・破棄のボタンは親（AdminSettingsTab）の固定フッターに置く。
+          一覧の末尾に置くと、タブを展開したときスクロールの奥に隠れるため */}
     </>
   );
 };

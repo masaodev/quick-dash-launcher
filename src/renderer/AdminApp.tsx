@@ -209,6 +209,7 @@ const AdminApp: React.FC = () => {
         onTabChange={setActiveTab}
         settings={settings}
         onSettingsSave={handleSettingsSave}
+        onSettingsReplaced={setSettings}
         editing={editing}
         loadError={loadError}
         searchQuery={searchQuery}

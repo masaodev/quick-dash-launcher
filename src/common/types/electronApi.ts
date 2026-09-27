@@ -133,7 +133,11 @@ export interface ElectronAPI {
   getAllWindows: () => Promise<WindowInfo[]>;
   getSettings: () => Promise<AppSettings>;
   setMultipleSettings: (settings: Partial<AppSettings>) => Promise<void>;
-  resetSettings: () => Promise<void>;
+  /**
+   * 設定を既定値に戻す。keys を渡すとその項目だけ、省略すると全項目。
+   * 副作用（自動起動・ウィンドウ状態・ホットキー）も適用し直し、戻した後の設定を返す
+   */
+  resetSettings: (keys?: Array<keyof AppSettings>) => Promise<AppSettings>;
   /** settings.json をディスクから読み直して副作用（ホットキー等）を適用し直す（F5） */
   reapplySettings: () => Promise<void>;
   validateHotkey: (hotkey: string) => Promise<{ isValid: boolean; reason?: string }>;

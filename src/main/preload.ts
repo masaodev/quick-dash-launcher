@@ -255,7 +255,8 @@ const electronAPI: ElectronAPI = {
   getSettings: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET),
   setMultipleSettings: (settings: Partial<AppSettings>) =>
     ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_SET_MULTIPLE, settings),
-  resetSettings: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_RESET),
+  resetSettings: (keys?: Array<keyof AppSettings>) =>
+    ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_RESET, keys),
   reapplySettings: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_REAPPLY),
   validateHotkey: (hotkey: string) =>
     ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_VALIDATE_HOTKEY, hotkey),
