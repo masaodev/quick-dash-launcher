@@ -310,11 +310,12 @@
   margin-top: var(--spacing-sm);
 }
 
+/* 画面下の固定フッター（タブ管理の保存・破棄。他のカテゴリは即時保存なので出さない） */
 .settings-footer {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
-  padding: var(--spacing-xl);
+  padding: var(--spacing-lg) var(--spacing-xl);
   background-color: var(--bg-header);
   border-top: var(--border-light);
 }
@@ -324,51 +325,23 @@
   gap: 10px;
 }
 
-.reset-button,
-.revert-button,
-.save-button {
-  padding: 10px var(--spacing-xl);
-  border: none;
-  border-radius: var(--border-radius);
-  font-family: inherit;
-  font-size: var(--font-size-base);
-  cursor: pointer;
-  transition: var(--transition-normal);
+/* カテゴリ末尾の「既定値に戻す」。戻る範囲がそのカテゴリだと分かる位置に置く */
+.settings-reset-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-lg);
+  border-color: var(--color-danger);
 }
 
-.reset-button {
-  background-color: var(--color-danger);
-  color: var(--color-white);
+.settings-reset-description {
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
 }
 
-.reset-button:hover:not(:disabled) {
-  background-color: var(--color-danger-hover);
-}
-
-.revert-button {
-  background-color: var(--color-gray-200);
-  color: var(--text-primary);
-  border: var(--border-light);
-}
-
-.revert-button:hover:not(:disabled) {
-  background-color: var(--color-gray-400);
-}
-
-.save-button {
-  background-color: var(--color-success);
-  color: var(--color-white);
-}
-
-.save-button:hover:not(:disabled) {
-  background-color: var(--color-success-hover);
-}
-
-.reset-button:disabled,
-.revert-button:disabled,
-.save-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.settings-reset-button {
+  flex-shrink: 0;
 }
 
 /* その他タブ用スタイル */
@@ -521,7 +494,6 @@
   border-top: var(--border-light);
   margin-top: var(--spacing-md);
 }
-
 
 /* データファイル管理 */
 .data-file-manager {
@@ -1938,13 +1910,13 @@
   cursor: not-allowed;
 }
 
-/* タブ管理の保存/キャンセルボタン */
+/* タブ管理の保存・破棄ボタン（.settings-footer の中に置く） */
 .tab-management-actions {
   display: flex;
   gap: var(--spacing-md);
   align-items: center;
   justify-content: flex-end;
-  margin-top: var(--spacing-lg);
+  width: 100%;
 }
 
 .unsaved-indicator {

@@ -220,14 +220,31 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
 
   ipcMain.handle(IPC_CHANNELS.SETTINGS_REAPPLY, () => reapplySettingsFromDisk());
 
-  ipcMain.handle(IPC_CHANNELS.SETTINGS_RESET, async () => {
-    const settingsService = await SettingsService.getInstance();
-    await settingsService.reset();
-    logger.info('Settings reset request');
-    await AutoLaunchService.getInstance().setAutoLaunch(false);
-    notifySettingsChanged();
-    return true;
-  });
+  ipcMain.handle(
+    IPC_CHANNELS.SETTINGS_RESET,
+    async (_event, keys?: Array<keyof AppSettings>): Promise<AppSettings> => {
+      const settingsService = await SettingsService.getInstance();
+
+      if (keys && keys.length > 0) {
+        // 一部だけ戻す（設定画面のカテゴリ単位）。ホットキーは含めない前提だが、
+        // 含まれていても reapplyHotkey が空値を無視するので登録は消えない
+        await settingsService.resetKeys(keys);
+        logger.info({ keys }, 'Settings reset request (partial)');
+        await applySettingsEffects(keys, settingsService);
+      } else {
+        // 全項目を戻す。副作用も再適用しないと、ホットキー登録やウィンドウ状態が
+        // ディスクの値と食い違ったままになる
+        await settingsService.reset();
+        logger.info('Settings reset request (all)');
+        await applySettingsEffects(EFFECT_KEYS, settingsService);
+      }
+
+      await reapplyHotkey('main', settingsService);
+      await reapplyHotkey('itemSearch', settingsService);
+      notifySettingsChanged();
+      return settingsService.getAll();
+    }
+  );
 
   ipcMain.handle(IPC_CHANNELS.SETTINGS_VALIDATE_HOTKEY, async (_event, hotkey: string) => {
     const settingsService = await SettingsService.getInstance();

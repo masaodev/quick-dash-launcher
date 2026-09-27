@@ -4,6 +4,7 @@ import type { AppSettings } from '@common/types';
 import { useDialogManager } from '../hooks/useDialogManager';
 import { useSettingsManager } from '../hooks/useSettingsManager';
 import { useTabManager } from '../hooks/tabManager';
+import { isResettableCategory, type SettingsCategory } from '../utils/settingsResetKeys';
 
 import AlertDialog from './AlertDialog';
 import ConfirmDialog from './ConfirmDialog';
@@ -12,8 +13,8 @@ import AdminSettingsBasicSection from './AdminSettingsBasicSection';
 import AdminSettingsWindowSection from './AdminSettingsWindowSection';
 import AdminSettingsBackupSection from './AdminSettingsBackupSection';
 import AdminSettingsTabsSection from './AdminSettingsTabsSection';
-
-type SettingsCategory = 'basic' | 'window' | 'tabs' | 'backup' | 'bookmarkAutoImport';
+import AdminSettingsResetSection from './AdminSettingsResetSection';
+import { Button } from './ui';
 
 const SETTINGS_CATEGORIES: Array<{ key: SettingsCategory; label: string }> = [
   { key: 'basic', label: '⚙️ 基本設定' },
@@ -26,9 +27,11 @@ const SETTINGS_CATEGORIES: Array<{ key: SettingsCategory; label: string }> = [
 interface SettingsTabProps {
   settings: AppSettings;
   onSave: (settings: AppSettings) => Promise<void>;
+  /** 既定値に戻すなど、保存を経ずに設定が置き換わったとき親の状態も合わせる */
+  onSettingsReplaced?: (settings: AppSettings) => void;
 }
 
-const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
+const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave, onSettingsReplaced }) => {
   const [editedSettings, setEditedSettings] = useState<AppSettings>(settings);
   const [selectedCategory, setSelectedCategory] = useState<SettingsCategory>('basic');
 
@@ -87,7 +90,9 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
     editedSettings,
     setEditedSettings,
     onSave,
+    onSettingsReplaced,
     showAlert,
+    showConfirm,
     showToast: toast.success,
   });
 
@@ -101,7 +106,14 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
     showToast: toast.success,
   });
 
-  const { hasUnsavedChanges: hasUnsavedTabChanges, handleCancelTabChanges } = tabManager;
+  const {
+    hasUnsavedChanges: hasUnsavedTabChanges,
+    handleCancelTabChanges,
+    handleSaveTabChanges,
+  } = tabManager;
+
+  // タブ管理だけ明示保存（ファイルの作成・削除を伴うため）。他のカテゴリは変更のたびに保存される
+  const showTabFooter = selectedCategory === 'tabs' && editedSettings.showDataFileTabs;
 
   // カテゴリ切り替えハンドラ
   const handleCategoryChange = useCallback(
@@ -200,14 +212,40 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave }) => {
               tabManager={tabManager}
             />
           )}
+
+          {isResettableCategory(selectedCategory) && (
+            <AdminSettingsResetSection
+              category={selectedCategory}
+              isLoading={isLoading}
+              onReset={handleReset}
+            />
+          )}
         </div>
       </div>
 
-      <div className="settings-footer">
-        <button className="reset-button" onClick={handleReset} disabled={isLoading}>
-          リセット
-        </button>
-      </div>
+      {showTabFooter && (
+        <div className="settings-footer">
+          <div className="tab-management-actions">
+            {hasUnsavedTabChanges && (
+              <span className="unsaved-indicator">未保存の変更があります</span>
+            )}
+            <Button
+              variant="cancel"
+              onClick={() => handleCancelTabChanges()}
+              disabled={!hasUnsavedTabChanges || isLoading}
+            >
+              変更を破棄
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleSaveTabChanges}
+              disabled={!hasUnsavedTabChanges || isLoading}
+            >
+              変更を保存
+            </Button>
+          </div>
+        </div>
+      )}
 
       <AlertDialog
         isOpen={alertDialog.isOpen}

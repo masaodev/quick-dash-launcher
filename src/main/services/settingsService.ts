@@ -176,6 +176,21 @@ export class SettingsService {
     logger.info('Settings reset to defaults');
   }
 
+  /** 指定した項目だけ既定値に戻す（他の項目・メタ情報は残す） */
+  public async resetKeys(keys: ReadonlyArray<keyof AppSettings>): Promise<void> {
+    const defaults: Partial<AppSettings> = {};
+    for (const key of keys) {
+      if (SettingsService.isMetadataKey(key)) continue;
+      const value = SettingsService.DEFAULT_SETTINGS[key];
+      if (value !== undefined) {
+        // 既定値はオブジェクトを含むので、ストアと共有しないようコピーする
+        (defaults as Record<string, unknown>)[key] = structuredClone(value);
+      }
+    }
+    await this.setMultiple(defaults);
+    logger.info({ keys }, 'Settings reset to defaults (partial)');
+  }
+
   public validateHotkey(hotkey: string): { isValid: boolean; reason?: string } {
     if (!hotkey || typeof hotkey !== 'string') {
       return { isValid: false, reason: 'ホットキーが指定されていません' };
