@@ -34,9 +34,9 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
       });
 
       await test.step('テーブルヘッダーが正しく表示されることを確認', async () => {
-        // 行番号列
-        const numberHeader = adminWindow.locator('th.line-number-column');
-        await expect(numberHeader).toBeVisible();
+        // 操作列（先頭）
+        const actionsHeader = adminWindow.locator('th.actions-column');
+        await expect(actionsHeader).toBeVisible();
 
         // 種類列
         const typeHeader = adminWindow.locator('th.type-column');
@@ -121,6 +121,19 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         await nameInput.press('Tab');
         await expect(firstRow.locator('.content-column .edit-input')).toBeFocused();
         await firstRow.locator('.content-column .edit-input').press('Enter');
+      });
+
+      await test.step('種類でウィンドウ操作を選ぶと、その種別で詳細編集が開く', async () => {
+        const firstRow = adminWindow.locator('.raw-item-row').first();
+        await firstRow.locator('select.type-select').selectOption('window');
+        const modal = adminWindow.locator('.register-modal');
+        await expect(modal).toBeVisible();
+        // 種別の select（最初の select は保存先タブ）
+        await expect(modal.locator('select:has(option[value="window"])')).toHaveValue('window');
+        await adminWindow.keyboard.press('Escape');
+        await expect(modal).not.toBeVisible();
+        // 一覧側の種類は変わっていない
+        await expect(firstRow.locator('select.type-select')).toHaveValue('item');
       });
 
       await test.step('保存ボタンをクリック', async () => {

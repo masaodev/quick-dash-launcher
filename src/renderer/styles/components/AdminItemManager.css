@@ -1143,12 +1143,9 @@
   white-space: pre-wrap;
 }
 
-/* 操作列は先頭。✏️ には「詳細編集」の文字を付けて見つけやすくする */
-.raw-items-table .action-buttons .detail-edit-button {
-  width: auto;
-  padding: 0 6px;
-  white-space: nowrap;
-  font-size: var(--font-size-xs);
+/* 操作列は先頭。アイコンだけにして幅を詰め、左に寄せる */
+.raw-items-table .action-buttons {
+  justify-content: flex-start;
 }
 
 /* 種類セルのプルダウン（単一・フォルダ取込・グループはその場で切替） */
@@ -1195,8 +1192,9 @@
 /* 「✏️ 詳細編集」の文字分だけ操作列を広げる（🗑 が隣の列に食い込まないように） */
 .raw-items-table th.actions-column,
 .raw-items-table td.actions-column {
-  width: 150px;
-  min-width: 150px;
+  width: 64px;
+  min-width: 64px;
+  text-align: left;
 }
 
 /* 種類プルダウンの文字が切れないように種類列を広げる */
@@ -1208,4 +1206,10 @@
 
 .type-select {
   max-width: 112px;
+}
+
+/* 種類セルは折り返さない */
+.type-cell,
+.type-cell .type-name {
+  white-space: nowrap;
 }

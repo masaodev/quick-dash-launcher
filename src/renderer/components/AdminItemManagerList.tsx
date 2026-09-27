@@ -23,8 +23,6 @@ import {
 import {
   describePathAndArgs,
   getItemKey,
-  isInlineItemType,
-  type InlineItemType,
   type SortColumn,
   type SortState,
 } from '../utils/editableItemOperations';
@@ -66,7 +64,7 @@ const itemTypeInfo: Record<string, { icon: string; name: string }> = {
   dir: { icon: '🗂️', name: 'フォルダ取込' },
   window: { icon: '🪟', name: 'ウィンドウ操作' },
   clipboard: { icon: '📋', name: 'クリップボード' },
-  layout: { icon: '🖥️', name: 'ウィンドウレイアウト' },
+  layout: { icon: '🖥️', name: 'ウィンドウ配置' },
 };
 
 interface EditableRawItemListProps {
@@ -83,7 +81,7 @@ interface EditableRawItemListProps {
   autoEditItemId: string | null;
   onAutoEditHandled: () => void;
   onItemEdit: (item: EditableJsonItem) => void;
-  onChangeType: (item: EditableJsonItem, newType: InlineItemType) => void;
+  onChangeType: (item: EditableJsonItem, newType: JsonItem['type']) => void;
   onItemSelect: (item: EditableJsonItem, selected: boolean) => void;
   onSelectAll: (selected: boolean) => void;
   /** 削除の確認は呼び出し側（AdminItemManagerView）で行う */
@@ -375,36 +373,27 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
   const getItemTypeDisplayName = (item: EditableJsonItem) =>
     itemTypeInfo[item.item.type]?.name ?? '不明';
 
-  const renderTypeCell = (item: EditableJsonItem) => {
-    const type = item.item.type;
-    if (isInlineItemType(type)) {
-      return (
-        <span className="type-cell">
-          <span className="type-icon">{getItemTypeIcon(item)}</span>
-          <select
-            className="type-select"
-            value={type}
-            onChange={(e) => onChangeType(item, e.target.value as InlineItemType)}
-            title="種類を変更（ウィンドウ操作・クリップボード・レイアウトにするには ✏️ 詳細編集）"
-          >
-            <option value="item">{itemTypeInfo.item.name}</option>
-            <option value="dir">{itemTypeInfo.dir.name}</option>
-            <option value="group">{itemTypeInfo.group.name}</option>
-          </select>
-        </span>
-      );
-    }
-    return (
-      <span
-        className="type-cell readonly"
-        onClick={() => onEditClick(item)}
-        title="この種類は ✏️ 詳細編集から編集します（クリックで開く）"
+  const renderTypeCell = (item: EditableJsonItem) => (
+    <span className="type-cell">
+      <span className="type-icon">{getItemTypeIcon(item)}</span>
+      <select
+        className="type-select"
+        value={item.item.type}
+        onChange={(e) => onChangeType(item, e.target.value as JsonItem['type'])}
+        title={
+          '種類を変更します。単一アイテム・フォルダ取込・グループはその場で切り替わり、' +
+          'ウィンドウ操作・クリップボード・ウィンドウ配置（複数のウィンドウを保存した位置に一括で並べる）は詳細編集が開きます'
+        }
       >
-        <span className="type-icon">{getItemTypeIcon(item)}</span>
-        <span className="type-name">{getItemTypeDisplayName(item)}</span>
-      </span>
-    );
-  };
+        <option value="item">{itemTypeInfo.item.name}</option>
+        <option value="dir">{itemTypeInfo.dir.name}</option>
+        <option value="group">{itemTypeInfo.group.name}</option>
+        <option value="window">{itemTypeInfo.window.name}…</option>
+        <option value="clipboard">{itemTypeInfo.clipboard.name}…</option>
+        <option value="layout">{itemTypeInfo.layout.name}…</option>
+      </select>
+    </span>
+  );
 
   const renderNameCell = (item: EditableJsonItem) => {
     const jsonItem = item.item;
@@ -580,9 +569,6 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
               />
             </th>
             <th className="actions-column">操作</th>
-            <th className="line-number-column" title="ファイル内の位置">
-              #
-            </th>
             <th
               className="type-column sortable-header"
               onClick={() => onSortChange('type')}
@@ -639,7 +625,7 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
         <tbody>
           {paddingTop > 0 && (
             <tr aria-hidden="true">
-              <td colSpan={8} style={{ height: paddingTop, padding: 0, border: 'none' }} />
+              <td colSpan={7} style={{ height: paddingTop, padding: 0, border: 'none' }} />
             </tr>
           )}
           {virtualRows.map((virtualRow) => {
@@ -672,7 +658,7 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
                       onClick={() => onEditClick(item)}
                       title="詳細編集（種類・引数・メモ・保存先など、すべての項目を編集）"
                     >
-                      ✏️ 詳細編集
+                      ✏️
                     </button>
                     <button
                       className="delete-button"
@@ -683,7 +669,6 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
                     </button>
                   </div>
                 </td>
-                <td className="line-number-column">{item.meta.lineNumber + 1}</td>
                 <td className="type-column">{renderTypeCell(item)}</td>
                 <td className="icon-column">{renderIconCell(item)}</td>
                 <td className="name-column">{renderNameCell(item)}</td>
@@ -694,7 +679,7 @@ const AdminItemManagerList: React.FC<EditableRawItemListProps> = ({
           })}
           {paddingBottom > 0 && (
             <tr aria-hidden="true">
-              <td colSpan={8} style={{ height: paddingBottom, padding: 0, border: 'none' }} />
+              <td colSpan={7} style={{ height: paddingBottom, padding: 0, border: 'none' }} />
             </tr>
           )}
         </tbody>

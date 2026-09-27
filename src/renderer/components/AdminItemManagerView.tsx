@@ -5,6 +5,7 @@ import {
   ScannedAppItem,
   DataFileTab,
   DuplicateHandlingOption,
+  type JsonItem,
   type RegisterItem,
 } from '@common/types';
 import type { EditableJsonItem } from '@common/types/editableItem';
@@ -17,10 +18,10 @@ import {
   changeItemType,
   filterEditableItems,
   getItemKey,
+  isInlineItemType,
   sortItemIds,
   toggleSort,
   type AutoImportFilter,
-  type InlineItemType,
   type SortColumn,
   type SortState,
 } from '../utils/editableItemOperations';
@@ -100,6 +101,10 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
 
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<EditableJsonItem | null>(null);
+  // 種類プルダウンで「詳細編集でしか作れない種別」を選んだとき、その種別でモーダルを開く
+  const [presetCategory, setPresetCategory] = useState<RegisterItem['itemCategory'] | undefined>(
+    undefined
+  );
   const [isBookmarkModalOpen, setIsBookmarkModalOpen] = useState(false);
   const [isAppImportModalOpen, setIsAppImportModalOpen] = useState(false);
 
@@ -168,6 +173,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   const closeRegisterModal = () => {
     setIsRegisterModalOpen(false);
     setEditingItem(null);
+    setPresetCategory(undefined);
   };
 
   const handleUpdateItem = (items: RegisterItem[]) => {
@@ -182,11 +188,18 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     closeRegisterModal();
   };
 
-  const handleChangeType = (item: EditableJsonItem, newType: InlineItemType) => {
-    editing.recordEdit({ ...item, item: changeItemType(item.item, newType) });
-    if (newType === 'group') {
-      showInfo('グループに含めるアイテムは ✏️ 詳細編集で選びます');
+  const handleChangeType = (item: EditableJsonItem, newType: JsonItem['type']) => {
+    if (isInlineItemType(newType)) {
+      editing.recordEdit({ ...item, item: changeItemType(item.item, newType) });
+      if (newType === 'group') {
+        showInfo('グループに含めるアイテムは ✏️ 詳細編集で選びます');
+      }
+      return;
     }
+    // ウィンドウ操作・クリップボード・ウィンドウ配置は必須データを詳細編集で入れる
+    setPresetCategory(newType);
+    setEditingItem(item);
+    setIsRegisterModalOpen(true);
   };
 
   const handleAddItem = () => {
@@ -568,6 +581,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
         onRegister={handleUpdateItem}
         droppedPaths={[]}
         editingItem={editingItem}
+        initialCategory={presetCategory}
       />
 
       <BookmarkImportModal

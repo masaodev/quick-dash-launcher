@@ -31,6 +31,8 @@ interface RegisterModalProps {
   onRegister: (items: RegisterItem[]) => void;
   droppedPaths: string[];
   editingItem?: EditingAppItem | EditableJsonItem | null;
+  /** 開いたときにこの種別へ切り替える（管理画面の種類プルダウンから、詳細編集でしか作れない種別を選んだとき） */
+  initialCategory?: RegisterItem['itemCategory'];
   currentTab?: string; // 現在開いているタブ
   onDelete?: (item: EditingAppItem | EditableJsonItem) => void; // 削除ハンドラー
 }
@@ -54,6 +56,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
   onRegister,
   droppedPaths,
   editingItem,
+  initialCategory,
   currentTab,
   onDelete,
 }) => {
@@ -110,6 +113,15 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     setSelectorModalOpen,
     replaceFirstItemFromPath,
   } = form;
+
+  // 種別を指定して開かれたときは、編集対象の読み込みが済んでから種別を切り替える
+  useEffect(() => {
+    if (!isOpen || !initialCategory || loading || items.length === 0) return;
+    if (items[0].itemCategory !== initialCategory) {
+      handleItemChange(0, 'itemCategory', initialCategory);
+    }
+    // items.length と loading の変化だけを契機にする（items 全体を見ると切替のたびに発火する）
+  }, [isOpen, initialCategory, loading, items.length]);
 
   useEffect(() => {
     setOptionsSectionOpen(items.map(() => false));
