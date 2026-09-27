@@ -1,7 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { IconProgressResult } from '@common/types';
 
 import '../styles/components/IconProgressDetailModal.css';
+import { useModalKeyboard } from '../hooks/useModalKeyboard';
+
 import { Button } from './ui';
 
 interface IconProgressDetailModalProps {
@@ -21,51 +23,7 @@ const IconProgressDetailModal: React.FC<IconProgressDetailModalProps> = ({
   const [filter, setFilter] = useState<'all' | 'success' | 'error'>('all');
   const modalRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!isOpen) return;
-
-    modalRef.current?.focus();
-
-    const stopEvent = (event: KeyboardEvent): void => {
-      event.preventDefault();
-      event.stopPropagation();
-      event.stopImmediatePropagation();
-    };
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      const modal = modalRef.current;
-      if (!modal) return;
-
-      if (event.key === 'Escape') {
-        stopEvent(event);
-        onClose();
-        return;
-      }
-
-      if (event.key === 'Tab') {
-        const focusableElements = modal.querySelectorAll(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-        );
-        const firstElement = focusableElements[0] as HTMLElement;
-        const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
-
-        if (event.shiftKey && document.activeElement === firstElement) {
-          lastElement.focus();
-        } else if (!event.shiftKey && document.activeElement === lastElement) {
-          firstElement.focus();
-        }
-        stopEvent(event);
-        return;
-      }
-
-      if (modal.contains(document.activeElement)) {
-        stopEvent(event);
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown, true);
-    return () => document.removeEventListener('keydown', handleKeyDown, true);
-  }, [isOpen, onClose]);
+  useModalKeyboard({ isOpen, modalRef, onClose });
 
   if (!isOpen) return null;
 
