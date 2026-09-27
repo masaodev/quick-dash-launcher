@@ -29,11 +29,22 @@ interface SettingsTabProps {
   onSave: (settings: AppSettings) => Promise<void>;
   /** 既定値に戻すなど、保存を経ずに設定が置き換わったとき親の状態も合わせる */
   onSettingsReplaced?: (settings: AppSettings) => void;
+  /** 開いているカテゴリ（親が持つ。他のタブから「ブックマーク自動取込」を直接開くため） */
+  selectedCategory: SettingsCategory;
+  onSelectCategory: (category: SettingsCategory) => void;
+  /** 「一度だけ取り込む」→ アイテム管理の手動取込モーダルを開く */
+  onOpenManualBookmarkImport?: () => void;
 }
 
-const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave, onSettingsReplaced }) => {
+const AdminSettingsTab: React.FC<SettingsTabProps> = ({
+  settings,
+  onSave,
+  onSettingsReplaced,
+  selectedCategory,
+  onSelectCategory,
+  onOpenManualBookmarkImport,
+}) => {
   const [editedSettings, setEditedSettings] = useState<AppSettings>(settings);
-  const [selectedCategory, setSelectedCategory] = useState<SettingsCategory>('basic');
 
   // settingsプロパティが変更されたときにeditedSettingsを更新
   useEffect(() => {
@@ -136,9 +147,9 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave, onSett
         await handleCancelTabChanges(true);
       }
 
-      setSelectedCategory(newCategory);
+      onSelectCategory(newCategory);
     },
-    [selectedCategory, hasUnsavedTabChanges, showConfirm, handleCancelTabChanges]
+    [selectedCategory, hasUnsavedTabChanges, showConfirm, handleCancelTabChanges, onSelectCategory]
   );
 
   return (
@@ -200,7 +211,7 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({ settings, onSave, onSett
               <p className="settings-section-description">
                 Chrome / Edge のブックマークを読み取り、ランチャーのアイテムとして自動取込します。
               </p>
-              <BookmarkAutoImportSettings />
+              <BookmarkAutoImportSettings onOpenManualImport={onOpenManualBookmarkImport} />
             </div>
           )}
 

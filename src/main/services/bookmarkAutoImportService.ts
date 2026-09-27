@@ -18,6 +18,7 @@ import {
   serializeJsonDataFile,
 } from '@common/utils/jsonParser';
 import { summarizeImportResults } from '@common/utils/bookmarkImportUtils';
+import { normalizeUrl } from '@common/utils/duplicateDetector';
 import type { JsonLauncherItem, JsonDataFile } from '@common/types';
 import type {
   BookmarkAutoImportRule,
@@ -66,20 +67,23 @@ export class BookmarkAutoImportService {
       );
 
       const results = await this.executeRules(enabledRules);
-      const { totalImported, totalDeleted, hasError } = summarizeImportResults(results);
+      const { totalImported, totalDeleted, totalManualDuplicates, hasError } =
+        summarizeImportResults(results);
 
       // トースト通知
       if (totalImported > 0 || totalDeleted > 0) {
+        const duplicates =
+          totalManualDuplicates > 0 ? `, 手動分と重複${totalManualDuplicates}件` : '';
         await showToastWindow({
           itemType: 'bookmarkImport',
           displayName: 'ブックマーク取込',
-          message: `${totalImported}件登録${totalDeleted > 0 ? `, ${totalDeleted}件削除` : ''}${hasError ? ' (一部エラーあり)' : ''}`,
-          duration: 3000,
+          message: `${totalImported}件登録${totalDeleted > 0 ? `, ${totalDeleted}件削除` : ''}${duplicates}${hasError ? ' (一部エラーあり)' : ''}`,
+          duration: totalManualDuplicates > 0 ? 5000 : 3000,
         });
       }
 
       logger.info(
-        { totalImported, totalDeleted, hasError },
+        { totalImported, totalDeleted, totalManualDuplicates, hasError },
         'ブックマーク自動取込: 起動時実行が完了しました'
       );
     } catch (error) {
@@ -129,6 +133,9 @@ export class BookmarkAutoImportService {
       // autoImportRuleId === rule.id のアイテムを全削除
       const deletedCount = this.removeItemsByRuleId(jsonData, rule.id);
 
+      // 手動（ルール外）で登録済みの URL と重なる件数。入れ替えはしないが知らせる
+      const manualDuplicateCount = this.countManualDuplicates(jsonData, allBookmarks);
+
       // 新しいアイテムを作成して追加
       const now = Date.now();
       for (const bookmark of allBookmarks) {
@@ -155,6 +162,7 @@ export class BookmarkAutoImportService {
         success: true,
         importedCount: allBookmarks.length,
         deletedCount,
+        ...(manualDuplicateCount > 0 && { manualDuplicateCount }),
         executedAt: startTime,
       };
 
@@ -162,7 +170,13 @@ export class BookmarkAutoImportService {
       await this.updateRuleResult(rule.id, result);
 
       logger.info(
-        { ruleId: rule.id, ruleName: rule.name, importedCount: allBookmarks.length, deletedCount },
+        {
+          ruleId: rule.id,
+          ruleName: rule.name,
+          importedCount: allBookmarks.length,
+          deletedCount,
+          manualDuplicateCount,
+        },
         'ブックマーク自動取込: ルール実行完了'
       );
 
@@ -354,6 +368,22 @@ export class BookmarkAutoImportService {
     }
 
     return results;
+  }
+
+  /**
+   * 取り込む URL のうち、ルール外（手動または別ルール）で登録済みのものを数える
+   *
+   * ルールは自分が入れた分しか入れ替えないので、同じ URL が手動分と二重になりうる。
+   * ここでは消さずに件数だけ返し、結果で知らせる（手動分を勝手に消さない）
+   */
+  private countManualDuplicates(jsonData: JsonDataFile, bookmarks: BookmarkWithFolder[]): number {
+    const existingUrls = new Set<string>();
+    for (const item of jsonData.items) {
+      if (item.type !== 'item') continue;
+      const launcher = item as JsonLauncherItem;
+      if (launcher.path) existingUrls.add(normalizeUrl(launcher.path));
+    }
+    return bookmarks.filter((bookmark) => existingUrls.has(normalizeUrl(bookmark.url))).length;
   }
 
   /**

@@ -23,6 +23,8 @@ interface BookmarkImportModalProps {
   onImport: (bookmarks: SimpleBookmarkItem[], duplicateHandling: DuplicateHandlingOption) => void;
   existingItems: EditableJsonItem[];
   importDestination: string;
+  /** 「同じ取込を毎回するなら自動取込に」→ 設定の該当カテゴリを開く（モーダルは閉じる） */
+  onOpenAutoImportSettings?: () => void;
 }
 
 function BookmarkImportModal({
@@ -31,6 +33,7 @@ function BookmarkImportModal({
   onImport,
   existingItems,
   importDestination,
+  onOpenAutoImportSettings,
 }: BookmarkImportModalProps): ReactElement | null {
   const [bookmarks, setBookmarks] = useState<SimpleBookmarkItem[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -281,6 +284,25 @@ function BookmarkImportModal({
           <span className="import-destination-label">インポート先:</span>
           <span className="import-destination-value">{importDestination}</span>
         </div>
+
+        {onOpenAutoImportSettings && (
+          <div className="import-hint-bar">
+            <span>
+              ここで取り込んだアイテムは 1 回きりで、あとは自分で編集します。
+              同じフォルダを毎回取り込むなら、設定の「ブックマーク自動取込」でルールにできます。
+            </span>
+            <Button
+              variant="info"
+              size="sm"
+              onClick={() => {
+                handleClose();
+                onOpenAutoImportSettings();
+              }}
+            >
+              自動取込の設定を開く
+            </Button>
+          </div>
+        )}
 
         <div className="bookmark-import-controls">
           {/* インポート元選択セクション */}

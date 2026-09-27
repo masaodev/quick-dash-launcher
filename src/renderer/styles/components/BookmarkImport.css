@@ -57,6 +57,23 @@
   font-weight: 600;
 }
 
+/* 自動取込への案内（手動取込との使い分け） */
+.import-hint-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-sm) var(--spacing-2xl);
+  border-bottom: var(--border-light);
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.import-hint-bar .btn {
+  flex-shrink: 0;
+}
+
 .bookmark-import-controls {
   padding: var(--spacing-lg) var(--spacing-2xl) var(--spacing-md);
   border-bottom: var(--border-light);

@@ -17,7 +17,14 @@ import ConfirmDialog from './ConfirmDialog';
 
 import '../styles/components/BookmarkAutoImport.css';
 
-const BookmarkAutoImportSettings: React.FC = () => {
+interface BookmarkAutoImportSettingsProps {
+  /** 「一度だけ取り込む」→ アイテム管理の手動取込モーダルを開く */
+  onOpenManualImport?: () => void;
+}
+
+const BookmarkAutoImportSettings: React.FC<BookmarkAutoImportSettingsProps> = ({
+  onOpenManualImport,
+}) => {
   const {
     settings,
     isLoading,
@@ -77,14 +84,19 @@ const BookmarkAutoImportSettings: React.FC = () => {
     async (rule: BookmarkAutoImportRule) => {
       const result = await executeRule(rule);
       if (result.success) {
-        showSuccess(
-          `ブックマーク取込（${rule.name}）: ${result.importedCount}件登録, ${result.deletedCount}件削除`
-        );
+        const message = `ブックマーク取込（${rule.name}）: ${result.importedCount}件登録, ${result.deletedCount}件削除`;
+        if (result.manualDuplicateCount) {
+          showWarning(
+            `${message}（手動で登録済みの URL と ${result.manualDuplicateCount} 件重複しています）`
+          );
+        } else {
+          showSuccess(message);
+        }
       } else {
         showError(`ブックマーク取込（${rule.name}）: エラー - ${result.errorMessage}`);
       }
     },
-    [executeRule, showSuccess, showError]
+    [executeRule, showSuccess, showWarning, showError]
   );
 
   const handleExecuteAll = useCallback(async () => {
@@ -104,7 +116,10 @@ const BookmarkAutoImportSettings: React.FC = () => {
     const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 
     if (rule.lastResult?.success) {
-      return `${dateStr} - ${rule.lastResult.importedCount}件登録, ${rule.lastResult.deletedCount}件削除`;
+      const duplicates = rule.lastResult.manualDuplicateCount
+        ? `, 手動分と重複 ${rule.lastResult.manualDuplicateCount}件`
+        : '';
+      return `${dateStr} - ${rule.lastResult.importedCount}件登録, ${rule.lastResult.deletedCount}件削除${duplicates}`;
     } else if (rule.lastResult) {
       return `${dateStr} - エラー: ${rule.lastResult.errorMessage}`;
     }
@@ -141,6 +156,19 @@ const BookmarkAutoImportSettings: React.FC = () => {
         >
           {executingRuleId === 'all' ? '実行中...' : '今すぐ全ルール実行'}
         </Button>
+      </div>
+
+      {/* 手動取込との使い分け。ルールは「そのルールで入れた分を全削除して入れ直す」置き換え方式 */}
+      <div className="auto-import-hint">
+        <span>
+          ルールは実行のたびに、そのルールで取り込んだアイテムを入れ替えます。
+          一度だけ取り込んで自分で編集するなら、アイテム管理の手動取込を使ってください。
+        </span>
+        {onOpenManualImport && (
+          <Button variant="info" size="sm" onClick={onOpenManualImport}>
+            手動で取り込む
+          </Button>
+        )}
       </div>
 
       {/* ルール一覧 */}
