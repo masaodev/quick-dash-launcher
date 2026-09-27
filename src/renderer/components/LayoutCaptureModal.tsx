@@ -168,7 +168,7 @@ const LayoutCaptureModal: React.FC<LayoutCaptureModalProps> = ({ isOpen, onClose
         tabIndex={-1}
       >
         <div className="layout-capture-header">
-          <h3>ウィンドウをキャプチャ</h3>
+          <h3>今のウィンドウから追加</h3>
           <button className="close-button" onClick={onClose}>
             ×
           </button>
@@ -284,7 +284,7 @@ const LayoutCaptureModal: React.FC<LayoutCaptureModalProps> = ({ isOpen, onClose
               キャンセル
             </Button>
             <Button variant="primary" onClick={handleCapture} disabled={selectedHwnds.size === 0}>
-              取り込み
+              追加
             </Button>
           </div>
         </div>

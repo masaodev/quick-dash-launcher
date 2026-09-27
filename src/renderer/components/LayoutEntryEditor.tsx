@@ -50,10 +50,10 @@ const LayoutEntryEditor: React.FC<LayoutEntryEditorProps> = ({
   return (
     <div className="layout-entry-editor">
       <div className="form-group vertical-layout">
-        <label>レイアウトエントリ:</label>
+        <label>並べるウィンドウ:</label>
 
         {entries.length === 0 ? (
-          <div className="layout-no-entries">ウィンドウがキャプチャされていません</div>
+          <div className="layout-no-entries">まだウィンドウを追加していません</div>
         ) : (
           <div className="layout-entry-list">
             {entries.map((entry, index) => (
@@ -202,7 +202,7 @@ const LayoutEntryEditor: React.FC<LayoutEntryEditorProps> = ({
 
         <div className="layout-capture-button">
           <button type="button" className="add-group-item-btn" onClick={onCaptureClick}>
-            + ウィンドウをキャプチャ
+            + 今のウィンドウから追加
           </button>
         </div>
       </div>
