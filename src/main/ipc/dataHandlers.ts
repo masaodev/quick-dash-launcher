@@ -14,6 +14,7 @@ import { IPC_CHANNELS } from '@common/ipcChannels';
 import { SettingsService } from '../services/settingsService.js';
 import { PathManager } from '../config/pathManager.js';
 import { forgetDataFile, writeDataFile } from '../services/dataFileTracker.js';
+import { expandEnvironmentVariables } from '../services/icon/iconFileCache.js';
 import type { LoadTrigger } from '../services/loadReportService.js';
 import { reloadConfigFiles } from '../services/data/dataFileLoader.js';
 import { loadEditableItems, saveEditableItems } from '../services/data/editableItemsStore.js';
@@ -110,6 +111,19 @@ export function setupDataHandlers(configFolder: string) {
   ipcMain.handle(IPC_CHANNELS.IS_DIRECTORY, (_event, filePath: string) =>
     FileUtils.isDirectory(filePath)
   );
+
+  // アイテム管理のリンク切れ表示。確認対象の絞り込み（URL・shell:・裸のコマンド名を除く）は呼び出し側が行う
+  ipcMain.handle(IPC_CHANNELS.CHECK_PATHS_EXIST, (_event, paths: string[]) => {
+    const result: Record<string, boolean> = {};
+    for (const itemPath of paths) {
+      try {
+        result[itemPath] = fs.existsSync(expandEnvironmentVariables(itemPath));
+      } catch {
+        result[itemPath] = false;
+      }
+    }
+    return result;
+  });
 
   // EditableJsonItem API
   ipcMain.handle(IPC_CHANNELS.LOAD_EDITABLE_ITEMS, () => loadEditableItems(configFolder));

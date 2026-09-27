@@ -663,6 +663,60 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
     }
   });
 
+  // ==================== リンク切れ表示テスト ====================
+
+  test('存在しないパスのアイテムに印が付き、リンク切れのみで絞り込める', async ({
+    electronApp,
+    mainWindow,
+  }, _testInfo) => {
+    const utils = new TestUtils(mainWindow);
+    const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
+
+    try {
+      await test.step('最初はリンク切れが無い（URL・shell:・裸のコマンド名は確認対象外）', async () => {
+        await expect(adminWindow.locator('.raw-item-row').first()).toBeVisible();
+        await expect(adminWindow.locator('.raw-item-row.missing-path')).toHaveCount(0);
+        await expect(adminWindow.locator('.edit-mode-status .missing-count')).toHaveCount(0);
+      });
+
+      await test.step('存在しないパスのアイテムを追加すると印が付く', async () => {
+        await adminWindow.locator('button', { hasText: 'アイテムを追加' }).click();
+        const firstRow = adminWindow.locator('.raw-item-row').first();
+        await firstRow.locator('.name-column .edit-input').fill('壊れたリンク');
+        await firstRow.locator('.name-column .edit-input').press('Enter');
+        await firstRow
+          .locator('.content-column .edit-input')
+          .fill('C:\\qdl-e2e\\not-exist\\missing.exe');
+        await firstRow.locator('.content-column .edit-input').press('Enter');
+
+        await expect(firstRow.locator('.missing-path-label')).toBeVisible({ timeout: 10000 });
+        await expect(firstRow).toHaveClass(/missing-path/);
+        await expect(adminWindow.locator('.edit-mode-status .missing-count')).toContainText('1 件');
+      });
+
+      await test.step('リンク切れのみで絞り込み、解除で全件に戻る', async () => {
+        await adminWindow.locator('button', { hasText: 'リンク切れのみ' }).click();
+        await expect(adminWindow.locator('.raw-item-row')).toHaveCount(1);
+        await expect(adminWindow.locator('.raw-item-row').first()).toContainText('壊れたリンク');
+
+        await adminWindow.locator('button', { hasText: 'リンク切れのみ' }).click();
+        await expect
+          .poll(async () => adminWindow.locator('.raw-item-row').count())
+          .toBeGreaterThan(1);
+      });
+
+      await test.step('実在するパスに直すと印が消える', async () => {
+        const row = adminWindow.locator('.raw-item-row', { hasText: '壊れたリンク' });
+        await row.locator('.content-column .editable-cell').click();
+        await row.locator('.content-column .edit-input').fill('C:\\Windows');
+        await row.locator('.content-column .edit-input').press('Enter');
+        await expect(row.locator('.missing-path-label')).toHaveCount(0, { timeout: 10000 });
+      });
+    } finally {
+      await adminWindow.close();
+    }
+  });
+
   // ==================== タブ選択テスト ====================
 
   // 注: マルチタブ環境でのテストはUI状態の複雑さからスキップ

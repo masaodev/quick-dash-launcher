@@ -21,6 +21,8 @@ interface AdminItemManagerListProps {
   selectedItems: Set<string>;
   /** 未保存の変更があるアイテムの id（行に印を付ける） */
   changedIds: Set<string>;
+  /** パスが実在しないアイテムの id（リンク切れの印） */
+  missingIds: Set<string>;
   /** 検索・フィルタで絞り込み中か（0 件のときの文言に使う） */
   isFiltered: boolean;
   sortState: SortState;
@@ -49,6 +51,7 @@ const AdminItemManagerList: React.FC<AdminItemManagerListProps> = ({
   editableItems,
   selectedItems,
   changedIds,
+  missingIds,
   isFiltered,
   sortState,
   onSortChange,
@@ -148,6 +151,7 @@ const AdminItemManagerList: React.FC<AdminItemManagerListProps> = ({
                 index={virtualRow.index}
                 isSelected={selectedItems.has(itemKey)}
                 isChanged={changedIds.has(itemKey)}
+                pathMissing={missingIds.has(itemKey)}
                 iconData={jsonItem.type === 'item' ? itemIcons.get(jsonItem.path || '') : undefined}
                 autoImportRuleName={
                   jsonItem.type === 'item' && jsonItem.autoImportRuleId

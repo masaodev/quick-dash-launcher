@@ -1213,3 +1213,23 @@
 .type-cell .type-name {
   white-space: nowrap;
 }
+
+/* リンク切れ（パスが実在しない）アイテムの印 */
+.missing-path-label {
+  display: inline-block;
+  margin-right: var(--spacing-xs);
+  padding: 0 var(--spacing-xs);
+  font-size: var(--font-size-xs);
+  font-family: var(--font-family);
+  color: var(--color-danger);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--border-radius-sm);
+  line-height: 1.4;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.edit-mode-status .missing-count {
+  color: var(--color-danger);
+  margin-left: var(--spacing-lg);
+}

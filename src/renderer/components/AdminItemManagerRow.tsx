@@ -24,6 +24,8 @@ export interface AdminItemManagerRowProps {
   iconData?: string;
   /** 自動取込ルール名（自動取込で登録されたアイテムのみ） */
   autoImportRuleName?: string;
+  /** パスが実在しない（リンク切れ）か */
+  pathMissing: boolean;
   /** この行で編集中のセル。編集中でなければ null */
   editingColumn: 'name' | 'path' | null;
   /** 編集中の入力値（この行が編集中のときだけ意味を持つ） */
@@ -60,6 +62,7 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
   isChanged,
   iconData,
   autoImportRuleName,
+  pathMissing,
   editingColumn,
   editingValue,
   measureRef,
@@ -160,6 +163,14 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
 
   const renderPathCell = () => {
     const text = describePathAndArgs(jsonItem);
+    const missingBadge = pathMissing ? (
+      <span
+        className="missing-path-label"
+        title="パスが見つかりません（移動・削除された可能性があります）"
+      >
+        ⚠ 見つかりません
+      </span>
+    ) : null;
 
     if (editingColumn === 'path') {
       return (
@@ -188,6 +199,7 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
           title={`${text}\n${hint}`}
           onDoubleClick={() => onEditClick(item)}
         >
+          {missingBadge}
           {text}
         </div>
       );
@@ -197,8 +209,9 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
       <div
         className="editable-cell"
         onClick={() => onStartPathEdit(item)}
-        title={`${text}\nクリックしてパスを編集。引数は ✏️ 詳細編集から`}
+        title={`${text}\n${pathMissing ? 'パスが見つかりません。' : ''}クリックしてパスを編集。引数は ✏️ 詳細編集から`}
       >
+        {missingBadge}
         {text}
       </div>
     );
@@ -209,7 +222,7 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
       data-index={index}
       data-item-id={itemKey}
       ref={measureRef}
-      className={`raw-item-row ${isSelected ? 'selected' : ''} ${isChanged ? 'changed' : ''} ${jsonItem.type}`}
+      className={`raw-item-row ${isSelected ? 'selected' : ''} ${isChanged ? 'changed' : ''} ${pathMissing ? 'missing-path' : ''} ${jsonItem.type}`}
       onContextMenu={(e) => onContextMenu(e, item)}
       title={isChanged ? '未保存の変更があります' : undefined}
     >

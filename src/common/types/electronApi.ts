@@ -122,6 +122,8 @@ export interface ElectronAPI {
   cycleWindowPinMode: () => Promise<WindowPinMode>;
   registerItems: (items: RegisterItem[]) => Promise<void>;
   isDirectory: (filePath: string) => Promise<boolean>;
+  /** パスが実在するかをまとめて確認する。環境変数（%VAR%）は展開して調べる */
+  checkPathsExist: (paths: string[]) => Promise<Record<string, boolean>>;
   getPathForFile: (file: File) => string;
   quitApp: () => Promise<void>;
   getAllWindows: () => Promise<WindowInfo[]>;

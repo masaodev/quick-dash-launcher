@@ -12,6 +12,7 @@ import type { EditableJsonItem } from '@common/types/editableItem';
 
 import { useToast } from '../hooks/useToast';
 import { useBookmarkAutoImport } from '../hooks/useBookmarkAutoImport';
+import { useAdminPathExistence, checkablePathOf } from '../hooks/useAdminPathExistence';
 import type { AdminItemEditing } from '../hooks/useAdminItemEditing';
 import {
   applyDisplayOrder,
@@ -163,6 +164,18 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
 
   const [autoImportFilter, setAutoImportFilter] = useState<AutoImportFilter>('all');
 
+  // パスが実在しないアイテム（リンク切れ）。読み込み・保存のたびに確認し直す
+  const [missingOnly, setMissingOnly] = useState(false);
+  const pathExistence = useAdminPathExistence(workingItems, baseVersion);
+  const missingIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const item of workingItems) {
+      const itemPath = checkablePathOf(item);
+      if (itemPath && pathExistence.get(itemPath) === false) ids.add(getItemKey(item));
+    }
+    return ids;
+  }, [workingItems, pathExistence]);
+
   // AdminItemManagerList側のIPCリスナー登録effectが依存するため、
   // 毎レンダーの再登録を防ぐ目的でuseCallback化している
   const handleEditItemClick = useCallback((editableItem: EditableJsonItem) => {
@@ -206,6 +219,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     // 追加した行が検索・フィルタで隠れないように、絞り込みを外してから追加する
     if (searchQuery) onSearchChange('');
     setAutoImportFilter('all');
+    setMissingOnly(false);
     const id = editing.addBlankItem(selectedDataFile);
     setAutoEditItemId(id);
   };
@@ -323,15 +337,14 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     [editing.deleteItems]
   );
 
-  const filteredItems = useMemo(
-    () =>
-      filterEditableItems(workingItems, {
-        sourceFile: selectedDataFile,
-        autoImportFilter,
-        searchQuery,
-      }),
-    [workingItems, selectedDataFile, autoImportFilter, searchQuery]
-  );
+  const filteredItems = useMemo(() => {
+    const filtered = filterEditableItems(workingItems, {
+      sourceFile: selectedDataFile,
+      autoImportFilter,
+      searchQuery,
+    });
+    return missingOnly ? filtered.filter((item) => missingIds.has(getItemKey(item))) : filtered;
+  }, [workingItems, selectedDataFile, autoImportFilter, searchQuery, missingOnly, missingIds]);
 
   // 表示順は「読み込み・保存時」と「見出しクリック時」にだけ作り直し、編集中は固定する。
   // こうしないと、名前を入力した瞬間に行が並び順の位置へ飛んでしまう
@@ -455,7 +468,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     [workingItems, selectedDataFile]
   );
 
-  const isFiltered = searchQuery.trim().length > 0 || autoImportFilter !== 'all';
+  const isFiltered = searchQuery.trim().length > 0 || autoImportFilter !== 'all' || missingOnly;
 
   return (
     <div className="edit-mode-view" onKeyDown={handleKeyDown} tabIndex={0}>
@@ -496,6 +509,13 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
             title="種類・名前・パスが同じアイテムを、先にある 1 件を残して削除します"
           >
             🧹 重複を削除
+          </Button>
+          <Button
+            variant={missingOnly ? 'primary' : 'info'}
+            onClick={() => setMissingOnly((prev) => !prev)}
+            title="パスが見つからないアイテム（移動・削除されたファイルやフォルダ）だけを表示します。URL や shell: のパスは確認しません"
+          >
+            ⚠ リンク切れのみ{missingIds.size > 0 ? ` (${missingIds.size})` : ''}
           </Button>
           <AutoImportFilterDropdown
             filter={autoImportFilter}
@@ -545,6 +565,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
           editableItems={orderedItems}
           selectedItems={selectedItems}
           changedIds={changedIds}
+          missingIds={missingIds}
           isFiltered={isFiltered}
           sortState={sortState}
           onSortChange={handleSortChange}
@@ -567,6 +588,9 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
         </span>
         <span className="total-count">合計: {filteredItems.length} 件</span>
         {invalidCount > 0 && <span className="invalid-count">入力不備: {invalidCount} 件</span>}
+        {missingIds.size > 0 && (
+          <span className="missing-count">リンク切れ: {missingIds.size} 件</span>
+        )}
         {hasUnsavedChanges && (
           <span className="unsaved-changes">
             未保存の変更があります（変更 {changedIds.size} 件
