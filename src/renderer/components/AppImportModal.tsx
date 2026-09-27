@@ -443,20 +443,20 @@ function AppImportModal({
                   )}
                 </div>
                 <div className="app-filtered-actions">
-                  <button onClick={handleSelectFiltered} className="app-action-button">
+                  <Button variant="info" size="sm" onClick={handleSelectFiltered}>
                     表示中を選択
-                  </button>
-                  <button onClick={handleDeselectFiltered} className="app-action-button">
+                  </Button>
+                  <Button variant="info" size="sm" onClick={handleDeselectFiltered}>
                     表示中を解除
-                  </button>
+                  </Button>
                 </div>
                 <div className="app-all-actions">
-                  <button onClick={handleSelectAll} className="app-action-button">
+                  <Button variant="info" size="sm" onClick={handleSelectAll}>
                     全て選択
-                  </button>
-                  <button onClick={handleDeselectAll} className="app-action-button">
+                  </Button>
+                  <Button variant="info" size="sm" onClick={handleDeselectAll}>
                     全て解除
-                  </button>
+                  </Button>
                 </div>
               </div>
             </>

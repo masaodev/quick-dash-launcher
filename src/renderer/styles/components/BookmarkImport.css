@@ -248,29 +248,11 @@
   transform: translateY(-50%) scale(0.95);
 }
 
+/* 選択ボタン群（ボタン自体は共通の Button コンポーネント） */
 .bookmark-import-modal .bookmark-filtered-actions,
 .bookmark-import-modal .bookmark-all-actions {
   display: flex;
   gap: var(--spacing-sm);
-}
-
-.bookmark-import-modal .bookmark-action-button {
-  padding: var(--spacing-xs) var(--spacing-md);
-  background-color: var(--color-gray-200);
-  border: var(--border-normal);
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  font-size: var(--font-size-sm);
-  display: inline-block;
-  text-align: center;
-  white-space: nowrap;
-  font-family: inherit;
-  line-height: 1.4;
-  transition: var(--transition-normal);
-}
-
-.bookmark-import-modal .bookmark-action-button:hover {
-  background-color: var(--bg-hover);
 }
 
 .bookmark-list-container {
@@ -355,46 +337,10 @@
   font-size: var(--font-size-base);
 }
 
+/* フッターのキャンセル／インポートは共通の Button コンポーネント */
 .bookmark-import-modal .bookmark-modal-actions {
   display: flex;
   gap: var(--spacing-sm);
-}
-
-.bookmark-import-modal .bookmark-cancel-button {
-  padding: var(--spacing-sm) var(--spacing-xl);
-  background-color: var(--color-gray-200);
-  color: var(--text-primary);
-  border: var(--border-normal);
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  font-size: var(--font-size-base);
-  font-family: inherit;
-  transition: var(--transition-normal);
-}
-
-.bookmark-import-modal .bookmark-cancel-button:hover {
-  background-color: var(--bg-hover);
-}
-
-.bookmark-import-modal .bookmark-import-button {
-  padding: var(--spacing-sm) var(--spacing-xl);
-  background-color: var(--color-success);
-  color: var(--color-white);
-  border: none;
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  font-size: var(--font-size-base);
-  font-family: inherit;
-  transition: var(--transition-normal);
-}
-
-.bookmark-import-modal .bookmark-import-button:hover:not(:disabled) {
-  background-color: var(--color-success-hover);
-}
-
-.bookmark-import-modal .bookmark-import-button:disabled {
-  background-color: var(--color-gray-400);
-  cursor: not-allowed;
 }
 
 /* 重複警告セクション */
@@ -442,7 +388,7 @@
   font-size: var(--font-size-base);
 }
 
-.duplicate-option input[type="radio"] {
+.duplicate-option input[type='radio'] {
   cursor: pointer;
   margin: 0;
 }

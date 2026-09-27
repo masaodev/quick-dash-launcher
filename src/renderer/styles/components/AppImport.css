@@ -102,29 +102,11 @@
   font-weight: 600;
 }
 
+/* 選択ボタン群（ボタン自体は共通の Button コンポーネント） */
 .app-import-modal .app-filtered-actions,
 .app-import-modal .app-all-actions {
   display: flex;
   gap: var(--spacing-sm);
-}
-
-.app-import-modal .app-action-button {
-  padding: var(--spacing-xs) var(--spacing-md);
-  background-color: var(--color-gray-200);
-  border: var(--border-normal);
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  font-size: var(--font-size-sm);
-  display: inline-block;
-  text-align: center;
-  white-space: nowrap;
-  font-family: inherit;
-  line-height: 1.4;
-  transition: var(--transition-normal);
-}
-
-.app-import-modal .app-action-button:hover {
-  background-color: var(--bg-hover);
 }
 
 .app-list-container {
