@@ -198,6 +198,7 @@ export type {
   MainChildWindowResult,
   MainChildWindowReturn,
 } from './mainChildWindow';
+export type { ConfirmWindowRequest, ConfirmWindowResult } from './confirmWindow';
 
 // トースト関連の型
 export type { ToastItemType, ToastEventData } from './toast';

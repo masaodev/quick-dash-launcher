@@ -60,6 +60,8 @@ import type {
   MainChildWindowRequest,
   MainChildWindowResult,
   MainChildWindowReturn,
+  ConfirmWindowRequest,
+  ConfirmWindowResult,
 } from './index';
 
 export interface ElectronAPI {
@@ -293,16 +295,17 @@ export interface ElectronAPI {
     // ピン留め関連
     getAlwaysOnTop: () => Promise<boolean>;
     toggleAlwaysOnTop: () => Promise<boolean>;
-    /**
-     * 確認ダイアログ用のモーダルモード。ウィンドウが要求サイズより小さいときだけ、
-     * 位置を動かさずに広げる（閉じると元のサイズに戻す）
-     */
-    setModalMode: (
-      isModal: boolean,
-      requiredSize?: { width: number; height: number }
-    ) => Promise<void>;
     /** アイテムの編集を独立した子ウィンドウで開く（開き元のウィンドウは動かさない） */
     openItemEditor: (itemId: string) => Promise<void>;
+    /**
+     * 確認を独立した子ウィンドウで開く（開き元のウィンドウは動かさない）
+     * 確認されたら結果、キャンセル・閉じたときは null で解決する
+     */
+    openConfirm: (request: ConfirmWindowRequest) => Promise<ConfirmWindowResult | null>;
+    /** 確認ウィンドウが自分の requestId で要求（表示内容）を受け取る */
+    getConfirmRequest: (requestId: string) => Promise<ConfirmWindowRequest | null>;
+    /** 確認ウィンドウが結果を預ける（この後 window.close する） */
+    returnConfirmResult: (requestId: string, result: ConfirmWindowResult) => Promise<void>;
     // 透過度関連
     setOpacity: (opacityPercent: number) => Promise<boolean>;
     getOpacity: () => Promise<number>;

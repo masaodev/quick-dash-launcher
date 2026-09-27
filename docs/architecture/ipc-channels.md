@@ -1319,19 +1319,6 @@ onWindowHidden(callback: () => void)
 - 戻り値: `boolean`
 - 処理内容: 設定に保存し、ウィンドウにも即時反映
 
-### `workspace:set-modal-mode`
-
-ワークスペースウィンドウのモーダルモードを設定（ダイアログ表示時のウィンドウサイズ制御）
-
-- パラメータ: `isModal: boolean`, `requiredSize?: { width: number; height: number }`
-- 戻り値: なし
-- 処理内容:
-  - モーダル表示時（`isModal: true`）: 現在のウィンドウサイズを保存し、必要な場合のみ拡大
-  - モーダルを閉じる時（`isModal: false`）: 保存した元のサイズに自動復元
-- 実装場所: `src/main/workspaceWindowManager.ts:228-284`（`setWorkspaceModalMode`関数）
-
-詳細は [ワークスペースウィンドウ制御](window-control.md#ワークスペースウィンドウ制御) を参照してください。
-
 ### `workspace:open-item-editor`
 
 ワークスペースアイテムの編集を独立した子ウィンドウで開く
@@ -1340,6 +1327,28 @@ onWindowHidden(callback: () => void)
 - 戻り値: なし
 - 処理内容: 送信元（ワークスペース本体または切り離しウィンドウ）を親にした編集ウィンドウを、同じディスプレイの中央に開く。開き元のウィンドウは動かさない。同じアイテムの編集が開いていれば前面に出す
 - 実装場所: `src/main/workspaceItemEditorWindowManager.ts`
+
+### `workspace:open-confirm`
+
+確認（グループの削除・アーカイブ）を独立した子ウィンドウで開く
+
+- パラメータ: `request: ConfirmWindowRequest`（`{ title, message, confirmText?, cancelText?, danger?, checkbox?: { label, checked } }`）
+- 戻り値: `ConfirmWindowResult | null`（閉じたときに解決。確定なら `{ confirmed: true, checkboxChecked }`、キャンセル・閉じたときは `null`）
+- 処理内容: 送信元（ワークスペース本体または切り離しウィンドウ）を親にした確認ウィンドウを開く。開き元のウィンドウは動かさない
+- 実装場所: `src/main/workspaceConfirmWindowManager.ts`
+
+### `workspace:get-confirm-request`
+
+確認ウィンドウが自分の要求（表示内容）を受け取る
+
+- パラメータ: `requestId: string`（`window.name` の `workspace-confirm:` 以降、またはフォールバック時の URL クエリ `confirmRequestId`）
+- 戻り値: `ConfirmWindowRequest | null`
+
+### `workspace:return-confirm-result`
+
+確認ウィンドウが確定した結果を預ける（この後 `window.close()` する）
+
+- パラメータ: `requestId: string`、`result: ConfirmWindowResult`
 
 詳細は [アイテム編集ウィンドウ](window-control.md#アイテム編集ウィンドウ独立した子ウィンドウ) を参照してください。
 

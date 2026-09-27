@@ -31,6 +31,8 @@ import { markAppQuitting } from './utils/managedWindow.js';
 import { destroyOverlayWindow } from './services/overlayWindowService.js';
 import { cancelAllChildWindowCreations } from './services/childWindowService.js';
 import { closeAllMainChildWindows } from './mainChildWindowManager.js';
+import { closeAllWorkspaceItemEditors } from './workspaceItemEditorWindowManager.js';
+import { closeAllWorkspaceConfirms } from './workspaceConfirmWindowManager.js';
 import { BookmarkAutoImportService } from './services/bookmarkAutoImportService.js';
 import { installConfigFolderDocs } from './services/configFolderDocsService.js';
 
@@ -162,6 +164,8 @@ app.on('will-quit', () => {
   globalShortcut.unregisterAll();
   cancelAllChildWindowCreations();
   closeAllMainChildWindows();
+  closeAllWorkspaceItemEditors();
+  closeAllWorkspaceConfirms();
   closeAdminWindow();
   closeWorkspaceWindow();
   closeAllDetachedGroupWindows();

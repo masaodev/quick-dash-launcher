@@ -17,6 +17,8 @@ interface ConfirmDialogProps {
   checkboxLabel?: string;
   checkboxChecked?: boolean;
   onCheckboxChange?: (checked: boolean) => void;
+  /** 独立した確認ウィンドウの中身として描く（オーバーレイなしでウィンドウいっぱいに広げる） */
+  asPage?: boolean;
 }
 
 function ConfirmDialog({
@@ -32,6 +34,7 @@ function ConfirmDialog({
   checkboxLabel = '',
   checkboxChecked = false,
   onCheckboxChange,
+  asPage = false,
 }: ConfirmDialogProps): React.ReactElement | null {
   useEffect(() => {
     if (!isOpen) return;
@@ -51,9 +54,13 @@ function ConfirmDialog({
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose} data-testid="confirm-dialog-overlay">
+    <div
+      className={asPage ? 'confirm-window-page' : 'modal-overlay'}
+      onClick={asPage ? undefined : onClose}
+      data-testid="confirm-dialog-overlay"
+    >
       <div
-        className={`modal-content confirm-dialog ${danger ? 'confirm-danger' : ''}`}
+        className={`modal-content confirm-dialog${danger ? ' confirm-danger' : ''}${asPage ? ' confirm-window-content' : ''}`}
         onClick={(e) => e.stopPropagation()}
         data-testid="confirm-dialog"
       >
