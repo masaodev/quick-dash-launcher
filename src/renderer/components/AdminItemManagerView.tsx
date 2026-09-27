@@ -12,6 +12,7 @@ import type { EditableJsonItem } from '@common/types/editableItem';
 
 import { useToast } from '../hooks/useToast';
 import { useBookmarkAutoImport } from '../hooks/useBookmarkAutoImport';
+import { useAdminPathExistence, checkablePathOf } from '../hooks/useAdminPathExistence';
 import type { AdminItemEditing } from '../hooks/useAdminItemEditing';
 import {
   applyDisplayOrder,
@@ -163,6 +164,50 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
 
   const [autoImportFilter, setAutoImportFilter] = useState<AutoImportFilter>('all');
 
+  const currentFileWorkingItems = useMemo(
+    () => workingItems.filter((item) => item.meta.sourceFile === selectedDataFile),
+    [workingItems, selectedDataFile]
+  );
+
+  // リンク切れ（パスが実在しない）。ネットワークパスは応答に時間がかかることがあるので、
+  // 自動では確認せず、ツールメニューの「リンク切れを確認」を押したときだけ確認する
+  const [missingOnly, setMissingOnly] = useState(false);
+  const pathCheck = useAdminPathExistence(baseVersion);
+  const missingIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const item of workingItems) {
+      const itemPath = checkablePathOf(item);
+      if (itemPath && pathCheck.results.get(itemPath) === 'missing') ids.add(getItemKey(item));
+    }
+    return ids;
+  }, [workingItems, pathCheck.results]);
+
+  // 読み込み・保存で結果が捨てられたら絞り込みも解く
+  useEffect(() => {
+    if (!pathCheck.hasChecked) setMissingOnly(false);
+  }, [pathCheck.hasChecked]);
+
+  const handleCheckMissingPaths = async () => {
+    const summary = await pathCheck.runCheck(currentFileWorkingItems);
+    if (summary.checked === 0) {
+      showInfo('確認対象のローカルパスがありません（URL・shell:・コマンド名は確認しません）');
+      return;
+    }
+    const unknownNote =
+      summary.unknown > 0
+        ? `、応答なし ${summary.unknown} 件（ネットワークパスなど。リンク切れとは数えません）`
+        : '';
+    if (summary.missing === 0) {
+      showSuccess(`${summary.checked} 件を確認しました。リンク切れはありません${unknownNote}`);
+    } else {
+      showWarning(
+        `${summary.checked} 件を確認し、リンク切れが ${summary.missing} 件ありました${unknownNote}。` +
+          '「🧰 ツール ▼ リンク切れのみ表示」で絞り込めます',
+        { duration: 8000 }
+      );
+    }
+  };
+
   // AdminItemManagerList側のIPCリスナー登録effectが依存するため、
   // 毎レンダーの再登録を防ぐ目的でuseCallback化している
   const handleEditItemClick = useCallback((editableItem: EditableJsonItem) => {
@@ -206,6 +251,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     // 追加した行が検索・フィルタで隠れないように、絞り込みを外してから追加する
     if (searchQuery) onSearchChange('');
     setAutoImportFilter('all');
+    setMissingOnly(false);
     const id = editing.addBlankItem(selectedDataFile);
     setAutoEditItemId(id);
   };
@@ -323,15 +369,14 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     [editing.deleteItems]
   );
 
-  const filteredItems = useMemo(
-    () =>
-      filterEditableItems(workingItems, {
-        sourceFile: selectedDataFile,
-        autoImportFilter,
-        searchQuery,
-      }),
-    [workingItems, selectedDataFile, autoImportFilter, searchQuery]
-  );
+  const filteredItems = useMemo(() => {
+    const filtered = filterEditableItems(workingItems, {
+      sourceFile: selectedDataFile,
+      autoImportFilter,
+      searchQuery,
+    });
+    return missingOnly ? filtered.filter((item) => missingIds.has(getItemKey(item))) : filtered;
+  }, [workingItems, selectedDataFile, autoImportFilter, searchQuery, missingOnly, missingIds]);
 
   // 表示順は「読み込み・保存時」と「見出しクリック時」にだけ作り直し、編集中は固定する。
   // こうしないと、名前を入力した瞬間に行が並び順の位置へ飛んでしまう
@@ -450,12 +495,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     return tabName;
   };
 
-  const currentFileWorkingItems = useMemo(
-    () => workingItems.filter((item) => item.meta.sourceFile === selectedDataFile),
-    [workingItems, selectedDataFile]
-  );
-
-  const isFiltered = searchQuery.trim().length > 0 || autoImportFilter !== 'all';
+  const isFiltered = searchQuery.trim().length > 0 || autoImportFilter !== 'all' || missingOnly;
 
   return (
     <div className="edit-mode-view" onKeyDown={handleKeyDown} tabIndex={0}>
@@ -469,6 +509,12 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
         onSelectFile={setSelectedDataFile}
         onOpenBookmarkImport={() => setIsBookmarkModalOpen(true)}
         onOpenAppImport={() => setIsAppImportModalOpen(true)}
+        onCheckMissingPaths={() => void handleCheckMissingPaths()}
+        checkingMissingPaths={pathCheck.checking}
+        missingOnly={missingOnly}
+        missingOnlyAvailable={pathCheck.hasChecked}
+        onToggleMissingOnly={() => setMissingOnly((prev) => !prev)}
+        onDedupe={handleDedupe}
       />
 
       {/* ツールバーエリア */}
@@ -489,13 +535,6 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
           >
             🗑️ 選択したアイテムを削除
             {visibleSelectedItems.length > 0 ? ` (${visibleSelectedItems.length})` : ''}
-          </Button>
-          <Button
-            variant="info"
-            onClick={handleDedupe}
-            title="種類・名前・パスが同じアイテムを、先にある 1 件を残して削除します"
-          >
-            🧹 重複を削除
           </Button>
           <AutoImportFilterDropdown
             filter={autoImportFilter}
@@ -545,6 +584,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
           editableItems={orderedItems}
           selectedItems={selectedItems}
           changedIds={changedIds}
+          missingIds={missingIds}
           isFiltered={isFiltered}
           sortState={sortState}
           onSortChange={handleSortChange}
@@ -567,6 +607,9 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
         </span>
         <span className="total-count">合計: {filteredItems.length} 件</span>
         {invalidCount > 0 && <span className="invalid-count">入力不備: {invalidCount} 件</span>}
+        {pathCheck.hasChecked && (
+          <span className="missing-count">リンク切れ: {missingIds.size} 件</span>
+        )}
         {hasUnsavedChanges && (
           <span className="unsaved-changes">
             未保存の変更があります（変更 {changedIds.size} 件

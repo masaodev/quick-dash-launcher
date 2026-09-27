@@ -372,8 +372,10 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
 
     try {
       await test.step('重複が無い状態では何も削除されない', async () => {
-        const dedupeButton = adminWindow.locator('button:has-text("重複を削除")');
-        await dedupeButton.click();
+        await adminWindow.locator('.tools-dropdown .dropdown-trigger-btn').click();
+        await adminWindow
+          .locator('.tools-dropdown .dropdown-item', { hasText: '重複を削除' })
+          .click();
         // 確認ダイアログは出ず、トーストで知らせる
         await expect(adminWindow.locator('[data-testid="confirm-dialog"]')).not.toBeVisible();
         await expect(adminWindow.getByText('重複するアイテムはありません')).toBeVisible();
@@ -397,7 +399,10 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
       });
 
       await test.step('重複を削除して保存する', async () => {
-        await adminWindow.locator('button:has-text("重複を削除")').click();
+        await adminWindow.locator('.tools-dropdown .dropdown-trigger-btn').click();
+        await adminWindow
+          .locator('.tools-dropdown .dropdown-item', { hasText: '重複を削除' })
+          .click();
         const confirmDialog = adminWindow.locator('[data-testid="confirm-dialog"]');
         await expect(confirmDialog).toBeVisible();
         await expect(confirmDialog).toContainText('1 件');
@@ -657,6 +662,73 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         await expect(confirmDialog).toContainText('GitHub');
         await adminWindow.locator('[data-testid="confirm-dialog-cancel-button"]').click();
         await expect(adminWindow.locator('.raw-item-row[data-item-id="base0001"]')).toBeVisible();
+      });
+    } finally {
+      await adminWindow.close();
+    }
+  });
+
+  // ==================== リンク切れ確認テスト ====================
+
+  test('ツールメニューの「リンク切れを確認」で印が付き、「リンク切れのみ表示」で絞り込める', async ({
+    electronApp,
+    mainWindow,
+  }, _testInfo) => {
+    const utils = new TestUtils(mainWindow);
+    const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
+    const openTools = async () =>
+      adminWindow.locator('.tools-dropdown .dropdown-trigger-btn').click();
+    const toolItem = (text: string) =>
+      adminWindow.locator('.tools-dropdown .dropdown-item', { hasText: text });
+
+    try {
+      await test.step('確認するまでは印も件数も出ず、「リンク切れのみ表示」は選べない', async () => {
+        await adminWindow.locator('button', { hasText: 'アイテムを追加' }).click();
+        const firstRow = adminWindow.locator('.raw-item-row').first();
+        await firstRow.locator('.name-column .edit-input').fill('壊れたリンク');
+        await firstRow.locator('.name-column .edit-input').press('Enter');
+        await firstRow
+          .locator('.content-column .edit-input')
+          .fill('C:\\qdl-e2e\\not-exist\\missing.exe');
+        await firstRow.locator('.content-column .edit-input').press('Enter');
+
+        await expect(adminWindow.locator('.raw-item-row.missing-path')).toHaveCount(0);
+        await expect(adminWindow.locator('.edit-mode-status .missing-count')).toHaveCount(0);
+        await openTools();
+        await expect(toolItem('リンク切れのみ表示')).toBeDisabled();
+        // メニューを閉じる（トグル）
+        await adminWindow.locator('.tools-dropdown .dropdown-trigger-btn').click();
+        await expect(toolItem('リンク切れのみ表示')).toHaveCount(0);
+      });
+
+      await test.step('「リンク切れを確認」で存在しないパスに印が付く（URL・shell:・コマンド名は対象外）', async () => {
+        await openTools();
+        await toolItem('リンク切れを確認').click();
+        const firstRow = adminWindow.locator('.raw-item-row').first();
+        await expect(firstRow.locator('.missing-path-label')).toBeVisible({ timeout: 15000 });
+        await expect(adminWindow.locator('.raw-item-row.missing-path')).toHaveCount(1);
+        await expect(adminWindow.locator('.edit-mode-status .missing-count')).toContainText('1 件');
+      });
+
+      await test.step('「リンク切れのみ表示」で絞り込み、もう一度で全件に戻る', async () => {
+        await openTools();
+        await toolItem('リンク切れのみ表示').click();
+        await expect(adminWindow.locator('.raw-item-row')).toHaveCount(1);
+        await expect(adminWindow.locator('.raw-item-row').first()).toContainText('壊れたリンク');
+
+        await openTools();
+        await toolItem('リンク切れのみ表示').click();
+        await expect
+          .poll(async () => adminWindow.locator('.raw-item-row').count())
+          .toBeGreaterThan(1);
+      });
+
+      await test.step('パスを直すと印が消える（直した結果は次の確認で反映）', async () => {
+        const row = adminWindow.locator('.raw-item-row', { hasText: '壊れたリンク' });
+        await row.locator('.content-column .editable-cell').click();
+        await row.locator('.content-column .edit-input').fill('C:\\Windows');
+        await row.locator('.content-column .edit-input').press('Enter');
+        await expect(row.locator('.missing-path-label')).toHaveCount(0);
       });
     } finally {
       await adminWindow.close();

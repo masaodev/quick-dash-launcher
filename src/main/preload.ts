@@ -52,6 +52,7 @@ import type {
 import type {
   EditableJsonItem,
   LoadEditableItemsResult,
+  PathExistenceStatus,
   SaveEditableItemsResult,
 } from '@common/types/editableItem';
 import type { ElectronAPI } from '@common/types/electronApi';
@@ -201,6 +202,8 @@ const electronAPI: ElectronAPI = {
   cycleWindowPinMode: () => ipcRenderer.invoke(IPC_CHANNELS.CYCLE_WINDOW_PIN_MODE),
   registerItems: (items: RegisterItem[]) => ipcRenderer.invoke(IPC_CHANNELS.REGISTER_ITEMS, items),
   isDirectory: (filePath: string) => ipcRenderer.invoke(IPC_CHANNELS.IS_DIRECTORY, filePath),
+  checkPathsExist: (paths: string[]): Promise<Record<string, PathExistenceStatus>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.CHECK_PATHS_EXIST, paths),
   getPathForFile: (file: File) => webUtils.getPathForFile(file),
   quitApp: () => ipcRenderer.invoke(IPC_CHANNELS.QUIT_APP),
   getAllWindows: (): Promise<WindowInfo[]> => ipcRenderer.invoke(IPC_CHANNELS.GET_ALL_WINDOWS),
