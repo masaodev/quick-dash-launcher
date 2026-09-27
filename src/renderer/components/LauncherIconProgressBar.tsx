@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { IconProgress } from '@common/types';
 
-import IconProgressDetailModal from './IconProgressDetailModal';
 import { Button } from './ui/Button';
 import '../styles/components/LauncherIconProgress.css';
 
@@ -11,8 +10,6 @@ interface IconProgressBarProps {
 }
 
 const LauncherIconProgressBar: React.FC<IconProgressBarProps> = ({ progress, onClose }) => {
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-
   const formatElapsedTime = (startTime: number, completedTime?: number): string => {
     const endTime = completedTime ?? Date.now();
     const elapsed = Math.floor((endTime - startTime) / 1000);
@@ -66,6 +63,14 @@ const LauncherIconProgressBar: React.FC<IconProgressBarProps> = ({ progress, onC
   // 全結果を統合
   const allResults = progress.phases.flatMap((phase) => phase.results || []);
 
+  // 詳細は独立した子ウィンドウで開く（メインウィンドウを広げない）
+  const openDetail = () => {
+    void window.electronAPI.openMainChildWindow({
+      kind: 'iconProgressDetail',
+      results: allResults,
+    });
+  };
+
   return (
     <>
       <div className="icon-progress-bar">
@@ -99,12 +104,7 @@ const LauncherIconProgressBar: React.FC<IconProgressBarProps> = ({ progress, onC
           </div>
           <div className="progress-actions">
             {progress.isComplete && allResults.length > 0 && (
-              <Button
-                variant="info"
-                size="sm"
-                onClick={() => setIsDetailModalOpen(true)}
-                aria-label="詳細を表示"
-              >
+              <Button variant="info" size="sm" onClick={openDetail} aria-label="詳細を表示">
                 詳細
               </Button>
             )}
@@ -133,12 +133,6 @@ const LauncherIconProgressBar: React.FC<IconProgressBarProps> = ({ progress, onC
           </div>
         )}
       </div>
-
-      <IconProgressDetailModal
-        isOpen={isDetailModalOpen}
-        onClose={() => setIsDetailModalOpen(false)}
-        results={allResults}
-      />
     </>
   );
 };

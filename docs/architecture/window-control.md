@@ -68,6 +68,7 @@ ipcMain.handle(IPC_CHANNELS.OPEN_ITEM, async (_event, item: LauncherItem) => {
   - **実装場所**: `src/main/windowManager.ts:487-509`（`hideMainWindow`関数）
 - **フォーカスアウト**: `normal`モードの場合、フォーカスを失うと自動的に非表示
 - **編集モード時のフォーカス制御**: 編集モード中はフォーカスアウトでもウィンドウが非表示にならない
+- **モーダルモード時のフォーカス制御**: メイン画面の子ウィンドウ（アイテムの登録・編集、アイコン取得結果）が開いている間はフォーカスアウトでもウィンドウが非表示にならない（下記「メイン画面の子ウィンドウ」）
 - **Escapeキー**: 以下の場合を**除き**、Escapeキーで非表示可能
   - 初回起動モード
   - 編集モード
@@ -208,6 +209,21 @@ ipcMain.handle(IPC_CHANNELS.OPEN_ITEM, async (_event, item: LauncherItem) => {
 3. ウィンドウサイズとフォーカス制御を自動調整
 4. レンダラーが編集モード状態を取得 → `get-edit-mode`
 
+## メイン画面の子ウィンドウ（アイテムの登録・編集、アイコン取得結果）
+
+メイン画面の「アイテムの登録・編集」（➕ 簡易登録 / 右クリック「編集」/ ドラッグ&ドロップ）と「アイコン取得結果」（進捗バーの詳細）は、メインウィンドウの中のモーダルではなく、独立した子ウィンドウで開きます（v0.7.38 以降）。
+
+- **実装場所**: `src/main/mainChildWindowManager.ts`（メインプロセス）、`src/renderer/components/MainChildPage.tsx`・`RegisterWindowPage.tsx`（レンダラー）
+- IPC `window:open-main-child`（要求 `MainChildWindowRequest`）を受け、メインウィンドウを親にした子ウィンドウを開く。子ウィンドウが閉じるまで解決しない
+- 要求（何を表示するか。登録ならドロップしたパス・編集対象・今のタブ）はメインプロセスが requestId で預かり、子ウィンドウは `window.name`（`main-child:<requestId>`）から requestId を取り出して `window:get-main-child-request` で受け取る
+- 位置はメインウィンドウと同じディスプレイの作業領域の中央、サイズは登録 850x900・アイコン取得結果 760x700 を作業領域で切り詰める（`utils/mainChildWindowSpec.ts`・`utils/editorWindowBounds.ts`）。**メインウィンドウのサイズ・位置は変えない**
+- 親に対してモーダル（`parent` + `modal: true`）。閉じると破棄
+- 開いている間はメインウィンドウを**モーダルモード**にする（`windowManager.setModalMode(true)`）: フォーカスアウト・Escape・ホットキー・アイテム実行で隠れず、最前面に固定。閉じたら戻す
+- 保存は子ウィンドウが `register-items` / `update-*-by-id` / `delete-items-by-id` で行い、メイン画面は `data-changed` で読み直す。結果（登録・更新・削除）は `window:notify-main-child-result` → `window:main-child-result` でメイン画面に中継され、メイン画面がトーストを出す
+- 子ウィンドウはメインのレンダラーから `window.open` で開く（レンダラープロセス共有、[システム概要](overview.md#ウィンドウとレンダラープロセスの対応)）。開き元が使えないときは `index.html?childRequestId=` で直接生成する
+
+以前は `set-modal-mode` でメインウィンドウを 850x1000（アイコン取得結果は 800x700）に広げて中央へ動かし、閉じると元のサイズに戻していた（位置は中央のまま。カーソル位置・固定位置の設定と食い違う）。管理ウィンドウの詳細編集・バックアップ一覧も同じ IPC を送っていたため、管理画面でモーダルを開くだけでメインウィンドウが動いていた。管理ウィンドウのモーダルは今もウィンドウ内に描くが、メインウィンドウには触らない。
+
 ## 管理ウィンドウ制御
 
 ### 実装場所
@@ -277,35 +293,17 @@ adminWindow.webContents.on('before-input-event', (event, input) => {
 
 以前は `set-workspace-modal-mode` でワークスペースを 850x800 に広げ、x 座標をプライマリの右端に決め打ちしていたため、左端配置・別ディスプレイ・固定位置で位置がずれ、切り離しウィンドウからは本体が動いていた。
 
-### モーダルモードのウィンドウサイズ制御
+### 確認ダイアログ（グループの削除・アーカイブ）のウィンドウサイズ制御
 
-ワークスペースウィンドウで確認ダイアログ（グループの削除・アーカイブ）が表示される際、必要に応じてウィンドウサイズを自動的に拡大・復元します。アイテムの編集はこの仕組みを使いません（上記の独立ウィンドウ）。
+ワークスペースウィンドウの中に `ConfirmDialog` を描きます。ワークスペースは中身の高さに合わせて縮むので、ダイアログが収まらないときだけウィンドウを広げ、閉じると元のサイズに戻します。アイテムの編集はこの仕組みを使いません（上記の独立ウィンドウ）。
 
-**実装場所**: `src/main/workspaceWindowManager.ts:228-284`（`setWorkspaceModalMode`関数）
+**実装場所**: `src/main/workspaceWindowManager.ts`（`setWorkspaceModalMode`関数）
 
-**動作フロー:**
-1. **モーダル表示時**: 現在のウィンドウサイズを保存し、必要な場合のみ拡大
-   - モーダルの要求サイズ（`requiredSize`）と現在のサイズを比較
-   - 現在のサイズが小さい場合のみ拡大（不要な場合は変更しない）
-   - ウィンドウの位置を右端に維持（X座標を調整）
+- **モーダル表示時**: 要求サイズ（600x400）より小さいときだけ、**位置を動かさずに**その場で広げる（ウィンドウのあるディスプレイの作業領域からはみ出す分だけ寄せる）。足りていれば何もしない
+- **モーダルを閉じる時**: 広げていた場合だけ、保存した元のサイズに戻す（位置は維持）
+- 以前は x をプライマリの右端に決め打ちしていたため、左端配置・別ディスプレイで位置がずれていた（v0.7.38 で修正）
 
-2. **モーダルを閉じる時**: 保存した元のサイズに自動復元
-   - `normalWorkspaceWindowBounds`から元のサイズを復元
-   - ウィンドウの位置を右端に維持（X座標を調整）
-   - 元のサイズ情報をクリア（`normalWorkspaceWindowBounds = null`）
-
-**IPC通信:**
-- レンダラーから`set-workspace-modal-mode`イベントで制御
-- パラメータ: `{ isModal: boolean, requiredSize?: { width: number, height: number } }`
-
-**使用例:**
-```typescript
-// モーダル表示時
-window.electronAPI.workspaceAPI.setModalMode(true, { width: 600, height: 500 });
-
-// モーダルを閉じる時
-window.electronAPI.workspaceAPI.setModalMode(false);
-```
+**IPC通信**: `workspace:set-modal-mode`（`isModal: boolean`, `requiredSize?: { width, height }`）
 
 ## ウィンドウ位置・サイズ制御
 

@@ -3,10 +3,37 @@ import type { Page, TestInfo, ElectronApplication } from '@playwright/test';
 import { IPC_CHANNELS } from '../../../src/common/ipcChannels';
 
 /**
+ * ウィンドウを閉じる操作（登録・キャンセル・Escape）は、操作の完了報告より先に
+ * 子ウィンドウが閉じることがあり「Target page ... has been closed」で落ちる。
+ * 閉じるのが目的の操作ではこのエラーだけ無視する
+ */
+function ignoreClosedError(error: unknown): void {
+  const message = error instanceof Error ? error.message : String(error);
+  if (!message.includes('has been closed')) {
+    throw error;
+  }
+}
+
+/**
  * テスト用のユーティリティ関数
  */
 export class TestUtils {
+  /**
+   * メイン画面から開いた登録・編集ウィンドウ（独立した子ウィンドウ）
+   * openRegisterModal() で取得し、フォーム操作はこのページに対して行う。
+   * 管理画面のように同じウィンドウ内にモーダルを描く場合は null のまま
+   */
+  private registerWindow: Page | null = null;
+
+  /** 一度使った登録・編集ウィンドウ（閉じかけのものを次の検出で拾わないため） */
+  private usedRegisterWindows = new WeakSet<Page>();
+
   constructor(private page: Page) {}
+
+  /** 登録フォームを描いているページ（子ウィンドウがあればそれ、なければ自分） */
+  get registerPage(): Page {
+    return this.registerWindow ?? this.page;
+  }
 
   /**
    * 指定されたセレクタの要素が表示されるまで待機
@@ -125,31 +152,93 @@ export class TestUtils {
   }
 
   /**
+   * メイン画面から開かれた登録・編集ウィンドウ（子ウィンドウ）を待つ
+   *
+   * 子ウィンドウは about:blank で開いてから中身を書き込むため、`.register-modal` が
+   * 描かれるまで待つ。開いたページを registerPage として記憶する
+   */
+  async waitForRegisterWindow(electronApp: ElectronApplication, timeout = 15000): Promise<Page> {
+    // 子ウィンドウは open 直後に window イベントが飛ぶが、中身（.register-modal）が描かれるのは
+    // 少し後。イベント待ちだと取りこぼすことがあるので、既存ウィンドウを含めて描画を繰り返し探す
+    const deadline = Date.now() + timeout;
+    while (Date.now() < deadline) {
+      for (const win of electronApp.windows()) {
+        if (win === this.page || win.isClosed() || this.usedRegisterWindows.has(win)) continue;
+        try {
+          if ((await win.locator('.register-modal').count()) > 0) {
+            await win.locator('.register-modal').waitFor({ state: 'visible', timeout: 5000 });
+            this.usedRegisterWindows.add(win);
+            this.registerWindow = win;
+            return win;
+          }
+        } catch {
+          // 書き込み前・閉じた直後のウィンドウは無視して次を見る
+        }
+      }
+      await this.page.waitForTimeout(200);
+    }
+    throw new Error('登録・編集ウィンドウが開きませんでした');
+  }
+
+  /**
    * 登録モーダルを開く
    *
    * プラスボタンはサブメニュー（簡易登録 / ブックマーク取込 / アプリ取込）を開くため、
-   * その中の「簡易登録」を選んでモーダルを表示する
+   * その中の「簡易登録」を選ぶ。メイン画面では登録フォームは独立した子ウィンドウで開くので、
+   * electronApp を渡すとその子ウィンドウを待って返す（以降のフォーム操作はそのページに対して行う）
    */
-  async openRegisterModal(): Promise<void> {
+  async openRegisterModal(electronApp?: ElectronApplication): Promise<Page> {
     const registerButton = this.page.locator('.action-btn[title="アイテムを登録"]');
     await registerButton.click();
 
     const simpleRegisterItem = this.page.locator('.dropdown-item', { hasText: '簡易登録' });
     await simpleRegisterItem.click();
 
+    if (electronApp) {
+      return this.waitForRegisterWindow(electronApp);
+    }
     await this.page.waitForSelector('.register-modal', { state: 'visible' });
+    return this.page;
   }
 
   /**
-   * 登録モーダルが表示されているか確認
+   * 登録モーダル（または登録ウィンドウ）が表示されているか確認
    */
   async isRegisterModalVisible(): Promise<boolean> {
+    const win = this.registerWindow;
+    if (win) {
+      if (win.isClosed()) {
+        this.registerWindow = null;
+        return false;
+      }
+      try {
+        await win.waitForSelector('.register-modal', { timeout: 1000, state: 'visible' });
+        return true;
+      } catch {
+        return false;
+      }
+    }
     try {
       await this.page.waitForSelector('.register-modal', { timeout: 1000, state: 'visible' });
       return true;
     } catch {
       return false;
     }
+  }
+
+  /**
+   * 登録モーダルが閉じるのを待つ（子ウィンドウならウィンドウが閉じるのを待つ）
+   */
+  private async waitForRegisterModalClosed(timeout = 5000): Promise<void> {
+    const win = this.registerWindow;
+    if (win) {
+      if (!win.isClosed()) {
+        await win.waitForEvent('close', { timeout });
+      }
+      this.registerWindow = null;
+      return;
+    }
+    await this.page.waitForSelector('.register-modal', { state: 'hidden', timeout });
   }
 
   /**
@@ -161,25 +250,26 @@ export class TestUtils {
     args?: string;
     targetTab?: string;
   }): Promise<void> {
+    const page = this.registerPage;
     if (data.name !== undefined) {
-      const nameInput = this.page.locator('.register-modal input[placeholder*="表示名"]').first();
+      const nameInput = page.locator('.register-modal input[placeholder*="表示名"]').first();
       await nameInput.fill(data.name);
     }
 
     if (data.path !== undefined) {
-      const pathInput = this.page
+      const pathInput = page
         .locator('.register-modal input[placeholder*="パス"], input[placeholder*="URL"]')
         .first();
       await pathInput.fill(data.path);
     }
 
     if (data.args !== undefined) {
-      const argsInput = this.page.locator('.register-modal input[placeholder*="引数"]').first();
+      const argsInput = page.locator('.register-modal input[placeholder*="引数"]').first();
       await argsInput.fill(data.args);
     }
 
     if (data.targetTab !== undefined) {
-      const tabSelect = this.page.locator('.register-modal select').first();
+      const tabSelect = page.locator('.register-modal select').first();
       await tabSelect.selectOption({ label: data.targetTab });
     }
   }
@@ -189,23 +279,36 @@ export class TestUtils {
    */
   async clickRegisterButton(): Promise<void> {
     // ボタンのテキスト「登録」で検索（.primaryクラスではなくテキストで探す）
-    const registerButton = this.page.locator('.register-modal button', { hasText: '登録' }).first();
-    await registerButton.click();
-    // モーダルが閉じるまで待機
-    await this.page.waitForSelector('.register-modal', { state: 'hidden', timeout: 5000 });
+    const registerButton = this.registerPage
+      .locator('.register-modal button', { hasText: '登録' })
+      .first();
+    await this.closeRegisterModalBy(() => registerButton.click());
+  }
+
+  /**
+   * 登録モーダル（子ウィンドウ）を閉じる操作を行い、閉じるまで待つ
+   * 子ウィンドウが操作の途中で閉じても落とさない
+   */
+  async closeRegisterModalBy(action: () => Promise<void>): Promise<void> {
+    await Promise.all([this.waitForRegisterModalClosed(), action().catch(ignoreClosedError)]);
+  }
+
+  /**
+   * Escape で登録モーダル（子ウィンドウ）を閉じる
+   */
+  async pressEscapeToCloseRegisterModal(): Promise<void> {
+    await this.closeRegisterModalBy(() => this.registerPage.keyboard.press('Escape'));
   }
 
   /**
    * 登録モーダルのキャンセルボタンをクリック
    */
   async clickCancelButton(): Promise<void> {
-    const cancelButton = this.page
+    const cancelButton = this.registerPage
       .locator('.register-modal button')
       .filter({ hasText: 'キャンセル' })
       .first();
-    await cancelButton.click();
-    // モーダルが閉じるまで待機
-    await this.page.waitForSelector('.register-modal', { state: 'hidden', timeout: 5000 });
+    await this.closeRegisterModalBy(() => cancelButton.click());
   }
 
   /**

@@ -1,8 +1,24 @@
-import type { Page } from '@playwright/test';
+import type { ElectronApplication, Page } from '@playwright/test';
 import { isJsonLauncherItem } from '@common/types';
 
 import { test, expect } from '../fixtures/electron-app';
 import { TestUtils } from '../helpers/test-utils';
+
+/**
+ * メインウィンドウの bounds をメインプロセスから読む
+ * 子ウィンドウ（登録・編集）は index.html を書き込んだ直後は同じタイトルになるので、
+ * 親を持たないウィンドウに限って探す
+ */
+async function getMainWindowBounds(
+  electronApp: ElectronApplication
+): Promise<{ x: number; y: number; width: number; height: number } | null> {
+  return electronApp.evaluate(({ BrowserWindow }) => {
+    const win = BrowserWindow.getAllWindows().find(
+      (w) => w.getTitle() === 'QuickDashLauncher' && w.getParentWindow() === null
+    );
+    return win ? win.getBounds() : null;
+  });
+}
 
 test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', () => {
   test.beforeEach(async ({ configHelper, mainWindow }) => {
@@ -17,33 +33,47 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
 
   // ==================== 登録モーダル表示テスト ====================
 
-  test('登録モーダルの表示と基本操作', async ({ mainWindow }, _testInfo) => {
+  test('登録モーダルの表示と基本操作', async ({ electronApp, mainWindow }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
 
-    await test.step('プラスボタンをクリックすると登録モーダルが開く', async () => {
-      await utils.openRegisterModal();
+    const boundsBefore = await getMainWindowBounds(electronApp);
+
+    await test.step('プラスボタンをクリックすると登録ウィンドウ（独立した子ウィンドウ）が開く', async () => {
+      const registerWindow = await utils.openRegisterModal(electronApp);
+      expect(registerWindow).not.toBe(mainWindow);
+      await expect(registerWindow).toHaveTitle('アイテムの登録');
 
       const isVisible = await utils.isRegisterModalVisible();
       expect(isVisible).toBe(true);
     });
 
+    await test.step('メインウィンドウのサイズ・位置は変わらない', async () => {
+      // 以前は 850x1000 に広げて中央へ動かしていた
+      const boundsAfter = await getMainWindowBounds(electronApp);
+      expect(boundsAfter).toEqual(boundsBefore);
+    });
+
     await test.step('登録モーダルに必要なフィールドが表示されている', async () => {
       // 名前入力フィールドが存在することを確認
-      const nameInput = mainWindow.locator('.register-modal input[placeholder*="表示名"]').first();
+      const nameInput = utils.registerPage
+        .locator('.register-modal input[placeholder*="表示名"]')
+        .first();
       await expect(nameInput).toBeVisible();
 
       // パス入力フィールドが存在することを確認
-      const pathInput = mainWindow
+      const pathInput = utils.registerPage
         .locator('.register-modal input[placeholder*="パス"], input[placeholder*="URL"]')
         .first();
       await expect(pathInput).toBeVisible();
 
       // 登録ボタンが存在することを確認
-      const registerButton = mainWindow.locator('.register-modal button:has-text("登録")').first();
+      const registerButton = utils.registerPage
+        .locator('.register-modal button:has-text("登録")')
+        .first();
       await expect(registerButton).toBeVisible();
 
       // キャンセルボタンが存在することを確認
-      const cancelButton = mainWindow
+      const cancelButton = utils.registerPage
         .locator('.register-modal button')
         .filter({ hasText: 'キャンセル' })
         .first();
@@ -59,13 +89,13 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
 
     await test.step('ESCキーを押すとモーダルが閉じる', async () => {
       // モーダルを再度開く
-      await utils.openRegisterModal();
+      await utils.openRegisterModal(electronApp);
 
       let isVisible = await utils.isRegisterModalVisible();
       expect(isVisible).toBe(true);
 
-      // ESCキーを押す
-      await mainWindow.keyboard.press('Escape');
+      // ESCキーを押す（登録ウィンドウ側で受け、ウィンドウが閉じる）
+      await utils.pressEscapeToCloseRegisterModal();
 
       isVisible = await utils.isRegisterModalVisible();
       expect(isVisible).toBe(false);
@@ -74,7 +104,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
 
   // ==================== アイテム登録テスト ====================
 
-  test('新規アイテムを登録できる', async ({ mainWindow, configHelper }, _testInfo) => {
+  test('新規アイテムを登録できる', async ({ electronApp, mainWindow, configHelper }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
     let countBefore: number;
 
@@ -84,7 +114,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
     });
 
     await test.step('新しいWebサイトアイテムを登録できる', async () => {
-      await utils.openRegisterModal();
+      await utils.openRegisterModal(electronApp);
       await utils.fillRegisterForm({
         name: '新規Webサイト',
         path: 'https://example.com',
@@ -102,7 +132,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
     });
 
     await test.step('新しいアプリケーションアイテムを登録できる', async () => {
-      await utils.openRegisterModal();
+      await utils.openRegisterModal(electronApp);
       await utils.fillRegisterForm({
         name: 'マイアプリ',
         path: 'notepad.exe',
@@ -117,7 +147,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
     // await test.step('引数付きでアプリケーションアイテムを登録できる', async () => { ... });
 
     await test.step('登録したアイテムがdata.jsonに保存される', async () => {
-      await utils.openRegisterModal();
+      await utils.openRegisterModal(electronApp);
       await utils.fillRegisterForm({
         name: 'テスト保存',
         path: 'https://test-save.com',
@@ -128,7 +158,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
     });
 
     await test.step('登録したアイテムがリロード後も表示される', async () => {
-      await utils.openRegisterModal();
+      await utils.openRegisterModal(electronApp);
       await utils.fillRegisterForm({
         name: 'リロードテスト',
         path: 'https://reload-test.com',
@@ -140,7 +170,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
     });
   });
 
-  test('不正な入力では登録できない', async ({ mainWindow }, _testInfo) => {
+  test('不正な入力では登録できない', async ({ electronApp, mainWindow }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
     let countBefore: number;
 
@@ -150,12 +180,14 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
     });
 
     await test.step('空の名前では登録できない', async () => {
-      await utils.openRegisterModal();
+      await utils.openRegisterModal(electronApp);
       await utils.fillRegisterForm({
         path: 'https://example.com',
       });
 
-      const registerButton = mainWindow.locator('.register-modal button:has-text("登録")').first();
+      const registerButton = utils.registerPage
+        .locator('.register-modal button:has-text("登録")')
+        .first();
       await registerButton.click();
 
       // モーダルが閉じていない（エラーで登録できない）
@@ -163,7 +195,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       expect(isVisible).toBe(true);
 
       // エラーメッセージが表示されていることを確認
-      const errorMessage = mainWindow.locator('.error-message');
+      const errorMessage = utils.registerPage.locator('.error-message');
       await expect(errorMessage.first()).toBeVisible();
       const errorText = await errorMessage.first().textContent();
       expect(errorText).toContain('アイテム表示名を入力してください');
@@ -172,12 +204,14 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
     });
 
     await test.step('空のパスでは登録できない', async () => {
-      await utils.openRegisterModal();
+      await utils.openRegisterModal(electronApp);
       await utils.fillRegisterForm({
         name: 'テストアイテム',
       });
 
-      const registerButton = mainWindow.locator('.register-modal button:has-text("登録")').first();
+      const registerButton = utils.registerPage
+        .locator('.register-modal button:has-text("登録")')
+        .first();
       await registerButton.click();
 
       // モーダルが閉じていない（エラーで登録できない）
@@ -185,7 +219,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       expect(isVisible).toBe(true);
 
       // エラーメッセージが表示されていることを確認
-      const errorMessage = mainWindow.locator('.error-message');
+      const errorMessage = utils.registerPage.locator('.error-message');
       await expect(errorMessage.first()).toBeVisible();
       const errorText = await errorMessage.first().textContent();
       expect(errorText).toContain('パスを入力してください');
@@ -224,12 +258,14 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
 
     await test.step('編集モーダルには既存アイテムの情報が入力されている', async () => {
       // 名前フィールドに既存の値が入力されていることを確認
-      const nameInput = mainWindow.locator('.register-modal input[placeholder*="表示名"]').first();
+      const nameInput = utils.registerPage
+        .locator('.register-modal input[placeholder*="表示名"]')
+        .first();
       const nameValue = await nameInput.inputValue();
       expect(nameValue).toBe('GitHub');
 
       // パスフィールドに既存の値が入力されていることを確認
-      const pathInput = mainWindow
+      const pathInput = utils.registerPage
         .locator('.register-modal input[placeholder*="パス"], input[placeholder*="URL"]')
         .first();
       const pathValue = await pathInput.inputValue();
@@ -240,7 +276,11 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
     });
   });
 
-  test.skip('アイテムを編集できる', async ({ mainWindow, configHelper }, _testInfo) => {
+  test.skip('アイテムを編集できる', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('アイテムの名前を編集できる', async () => {
@@ -272,7 +312,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
 
     await test.step('アイテムの引数を編集できる', async () => {
       // まず引数付きアイテムを登録
-      await utils.openRegisterModal();
+      await utils.openRegisterModal(electronApp);
       await utils.fillRegisterForm({
         name: '引数テスト',
         path: 'notepad.exe',
@@ -308,7 +348,9 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
         name: '',
       });
 
-      const registerButton = mainWindow.locator('.register-modal button:has-text("登録")').first();
+      const registerButton = utils.registerPage
+        .locator('.register-modal button:has-text("登録")')
+        .first();
       await registerButton.click();
 
       // モーダルが閉じていない（エラーで保存できない）
@@ -316,7 +358,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       expect(isVisible).toBe(true);
 
       // エラーメッセージが表示されていることを確認
-      const errorMessage = mainWindow.locator('.error-message');
+      const errorMessage = utils.registerPage.locator('.error-message');
       await expect(errorMessage.first()).toBeVisible();
       const errorText = await errorMessage.first().textContent();
       expect(errorText).toContain('アイテム表示名を入力してください');
@@ -330,7 +372,9 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
         path: '',
       });
 
-      const registerButton = mainWindow.locator('.register-modal button:has-text("登録")').first();
+      const registerButton = utils.registerPage
+        .locator('.register-modal button:has-text("登録")')
+        .first();
       await registerButton.click();
 
       // モーダルが閉じていない（エラーで保存できない）
@@ -338,7 +382,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       expect(isVisible).toBe(true);
 
       // エラーメッセージが表示されていることを確認
-      const errorMessage = mainWindow.locator('.error-message');
+      const errorMessage = utils.registerPage.locator('.error-message');
       await expect(errorMessage.first()).toBeVisible();
       const errorText = await errorMessage.first().textContent();
       expect(errorText).toContain('パスを入力してください');
@@ -366,6 +410,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
   // 現時点ではスキップしています。
 
   test.skip('現在開いているタブがデフォルトの登録先になる', async ({
+    electronApp,
     mainWindow,
     configHelper,
   }, _testInfo) => {
@@ -382,12 +427,12 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       const mainTab = mainWindow.locator('.file-tab.active', { hasText: 'メイン' });
       await expect(mainTab).toBeVisible();
 
-      await utils.openRegisterModal();
+      await utils.openRegisterModal(electronApp);
     });
 
     await test.step('デフォルトの保存先がメインタブ（data.json）になっている', async () => {
       // 保存先セレクトボックスの値を確認
-      const targetTabSelect = mainWindow.locator('.register-modal select').last();
+      const targetTabSelect = utils.registerPage.locator('.register-modal select').last();
       const selectedValue = await targetTabSelect.inputValue();
       expect(selectedValue).toBe('data.json');
 
@@ -404,12 +449,12 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       const subTab1 = mainWindow.locator('.file-tab.active', { hasText: 'サブ1' });
       await expect(subTab1).toBeVisible();
 
-      await utils.openRegisterModal();
+      await utils.openRegisterModal(electronApp);
     });
 
     await test.step('デフォルトの保存先がサブタブ（data2.json）になっている', async () => {
       // 保存先セレクトボックスの値を確認
-      const targetTabSelect = mainWindow.locator('.register-modal select').last();
+      const targetTabSelect = utils.registerPage.locator('.register-modal select').last();
       const selectedValue = await targetTabSelect.inputValue();
       expect(selectedValue).toBe('data2.json');
 
@@ -417,7 +462,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
     });
 
     await test.step('サブタブでアイテムを登録', async () => {
-      await utils.openRegisterModal();
+      await utils.openRegisterModal(electronApp);
       await utils.fillRegisterForm({
         name: 'サブタブ登録テスト',
         path: 'https://sub-tab-test.com',
@@ -467,7 +512,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
     const utils = new TestUtils(mainWindow);
 
     await test.step('メイン画面で新規アイテムを登録', async () => {
-      await utils.openRegisterModal();
+      await utils.openRegisterModal(electronApp);
       await utils.fillRegisterForm({
         name: '同期テストアイテム',
         path: 'https://sync-test.com',

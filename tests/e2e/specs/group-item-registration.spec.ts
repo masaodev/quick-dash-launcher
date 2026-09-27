@@ -42,11 +42,15 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
 
   // ==================== グループアイテム新規登録テスト ====================
 
-  test('新規グループアイテムを登録できる', async ({ mainWindow, configHelper }, _testInfo) => {
+  test('新規グループアイテムを登録できる', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('登録モーダルを開く', async () => {
-      await utils.openRegisterModal();
+      await utils.openRegisterModal(electronApp);
 
       const isVisible = await utils.isRegisterModalVisible();
       expect(isVisible).toBe(true);
@@ -54,18 +58,18 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
 
     await test.step('種別選択でグループを選択', async () => {
       // 種別選択ドロップダウンを探す
-      const typeSelect = mainWindow.locator('.register-modal select').nth(1);
+      const typeSelect = utils.registerPage.locator('.register-modal select').nth(1);
       await typeSelect.selectOption({ value: 'group' });
 
       // グループアイテム名入力フィールドが表示されることを確認
-      const groupNameInput = mainWindow
+      const groupNameInput = utils.registerPage
         .locator('.register-modal input[placeholder*="グループ名を入力"]')
         .first();
       await expect(groupNameInput).toBeVisible();
     });
 
     await test.step('グループ名を入力', async () => {
-      const groupNameInput = mainWindow
+      const groupNameInput = utils.registerPage
         .locator('.register-modal input[placeholder*="グループ名を入力"]')
         .first();
       await groupNameInput.fill('テストグループ');
@@ -73,51 +77,57 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
 
     await test.step('グループアイテムを追加', async () => {
       // グループアイテム追加ボタンをクリック
-      const addItemButton = mainWindow.locator('.register-modal button', {
+      const addItemButton = utils.registerPage.locator('.register-modal button', {
         hasText: 'アイテムを追加',
       });
       await addItemButton.click();
 
       // グループアイテム選択モーダルが表示されることを確認
-      const selectorModal = mainWindow.locator('.group-item-selector-modal');
+      const selectorModal = utils.registerPage.locator('.group-item-selector-modal');
       await expect(selectorModal).toBeVisible();
     });
 
     await test.step('アイテムを選択してグループに追加', async () => {
       // 利用可能なアイテム（GitHub）をクリック
-      const githubItem = mainWindow.locator('.group-item-selector-modal .item-row', {
+      const githubItem = utils.registerPage.locator('.group-item-selector-modal .item-row', {
         hasText: 'GitHub',
       });
       await githubItem.click();
 
       // モーダルが閉じていることを確認
-      const selectorModal = mainWindow.locator('.group-item-selector-modal');
+      const selectorModal = utils.registerPage.locator('.group-item-selector-modal');
       await expect(selectorModal).not.toBeVisible();
 
       // 選択されたアイテムが表示されることを確認
-      const selectedItem = mainWindow.locator('.register-modal .selected-items .item-chip', {
-        hasText: 'GitHub',
-      });
+      const selectedItem = utils.registerPage.locator(
+        '.register-modal .selected-items .item-chip',
+        {
+          hasText: 'GitHub',
+        }
+      );
       await expect(selectedItem).toBeVisible();
     });
 
     await test.step('さらにアイテムを追加', async () => {
       // グループアイテム追加ボタンを再度クリック
-      const addItemButton = mainWindow.locator('.register-modal button', {
+      const addItemButton = utils.registerPage.locator('.register-modal button', {
         hasText: 'アイテムを追加',
       });
       await addItemButton.click();
 
       // Googleを選択
-      const googleItem = mainWindow.locator('.group-item-selector-modal .item-row', {
+      const googleItem = utils.registerPage.locator('.group-item-selector-modal .item-row', {
         hasText: 'Google',
       });
       await googleItem.click();
 
       // 選択されたアイテムが表示されることを確認
-      const selectedItem = mainWindow.locator('.register-modal .selected-items .item-chip', {
-        hasText: 'Google',
-      });
+      const selectedItem = utils.registerPage.locator(
+        '.register-modal .selected-items .item-chip',
+        {
+          hasText: 'Google',
+        }
+      );
       await expect(selectedItem).toBeVisible();
     });
 
@@ -149,18 +159,18 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
     });
   });
 
-  test('グループアイテム登録時のバリデーション', async ({ mainWindow }, _testInfo) => {
+  test('グループアイテム登録時のバリデーション', async ({ electronApp, mainWindow }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('グループ名が空では登録できない', async () => {
-      await utils.openRegisterModal();
+      await utils.openRegisterModal(electronApp);
 
       // 種別選択でグループを選択
-      const typeSelect = mainWindow.locator('.register-modal select').nth(1);
+      const typeSelect = utils.registerPage.locator('.register-modal select').nth(1);
       await typeSelect.selectOption({ value: 'group' });
 
       // グループ名を空のままで登録を試みる
-      const registerButton = mainWindow
+      const registerButton = utils.registerPage
         .locator('.register-modal button:is(:has-text("登録"), :has-text("更新"))')
         .first();
       await registerButton.click();
@@ -170,7 +180,7 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
       expect(isVisible).toBe(true);
 
       // エラーメッセージが表示されていることを確認
-      const errorMessage = mainWindow.locator('.error-message');
+      const errorMessage = utils.registerPage.locator('.error-message');
       await expect(errorMessage.first()).toBeVisible();
       const errorText = await errorMessage.first().textContent();
       expect(errorText).toContain('グループ名を入力してください');
@@ -179,20 +189,20 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
     });
 
     await test.step('グループアイテムが空では登録できない', async () => {
-      await utils.openRegisterModal();
+      await utils.openRegisterModal(electronApp);
 
       // 種別選択でグループを選択
-      const typeSelect = mainWindow.locator('.register-modal select').nth(1);
+      const typeSelect = utils.registerPage.locator('.register-modal select').nth(1);
       await typeSelect.selectOption({ value: 'group' });
 
       // グループ名のみ入力
-      const groupNameInput = mainWindow
+      const groupNameInput = utils.registerPage
         .locator('.register-modal input[placeholder*="グループ名を入力"]')
         .first();
       await groupNameInput.fill('空のグループ');
 
       // グループアイテムを追加せずに登録を試みる
-      const registerButton = mainWindow
+      const registerButton = utils.registerPage
         .locator('.register-modal button:is(:has-text("登録"), :has-text("更新"))')
         .first();
       await registerButton.click();
@@ -202,7 +212,7 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
       expect(isVisible).toBe(true);
 
       // エラーメッセージが表示されていることを確認
-      const errorMessage = mainWindow.locator('.error-message');
+      const errorMessage = utils.registerPage.locator('.error-message');
       await expect(errorMessage.first()).toBeVisible();
       const errorText = await errorMessage.first().textContent();
       expect(errorText).toContain('グループアイテムを追加してください');
@@ -226,20 +236,22 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
 
     await test.step('編集モーダルに既存の情報が入力されている', async () => {
       // グループ名フィールドに既存の値が入力されていることを確認
-      const groupNameInput = mainWindow
+      const groupNameInput = utils.registerPage
         .locator('.register-modal input[placeholder*="グループ名を入力"]')
         .first();
       const groupNameValue = await groupNameInput.inputValue();
       expect(groupNameValue).toBe('開発環境スタート');
 
       // 選択されたアイテムが表示されていることを確認
-      const selectedItems = mainWindow.locator('.register-modal .selected-items .item-chip');
+      const selectedItems = utils.registerPage.locator(
+        '.register-modal .selected-items .item-chip'
+      );
       const count = await selectedItems.count();
       expect(count).toBeGreaterThan(0);
     });
 
     await test.step('グループ名を編集', async () => {
-      const groupNameInput = mainWindow
+      const groupNameInput = utils.registerPage
         .locator('.register-modal input[placeholder*="グループ名を入力"]')
         .first();
       await groupNameInput.fill('開発環境スタート編集');
@@ -247,7 +259,7 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
 
     await test.step('グループアイテムを削除', async () => {
       // 最初のアイテムの削除ボタンをクリック
-      const removeButton = mainWindow
+      const removeButton = utils.registerPage
         .locator('.register-modal .selected-items .item-chip button')
         .first();
       await removeButton.click();
@@ -255,13 +267,13 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
 
     await test.step('新しいアイテムを追加', async () => {
       // グループアイテム追加ボタンをクリック
-      const addItemButton = mainWindow.locator('.register-modal button', {
+      const addItemButton = utils.registerPage.locator('.register-modal button', {
         hasText: 'アイテムを追加',
       });
       await addItemButton.click();
 
       // Wikipediaを選択
-      const wikipediaItem = mainWindow.locator('.group-item-selector-modal .item-row', {
+      const wikipediaItem = utils.registerPage.locator('.group-item-selector-modal .item-row', {
         hasText: 'Wikipedia',
       });
       await wikipediaItem.click();
@@ -295,7 +307,7 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
       const dataBefore = configHelper.readDataFileRaw('data.json');
 
       await utils.editItemByRightClick('開発環境スタート');
-      const groupNameInput = mainWindow
+      const groupNameInput = utils.registerPage
         .locator('.register-modal input[placeholder*="グループ名を入力"]')
         .first();
       await groupNameInput.fill('キャンセルテスト');
@@ -310,68 +322,72 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
 
   // ==================== グループアイテム選択モーダルテスト ====================
 
-  test('グループアイテム選択モーダルの機能', async ({ mainWindow }, _testInfo) => {
+  test('グループアイテム選択モーダルの機能', async ({ electronApp, mainWindow }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('登録モーダルを開いてグループを選択', async () => {
-      await utils.openRegisterModal();
+      await utils.openRegisterModal(electronApp);
 
-      const typeSelect = mainWindow.locator('.register-modal select').nth(1);
+      const typeSelect = utils.registerPage.locator('.register-modal select').nth(1);
       await typeSelect.selectOption({ value: 'group' });
 
-      const groupNameInput = mainWindow
+      const groupNameInput = utils.registerPage
         .locator('.register-modal input[placeholder*="グループ名を入力"]')
         .first();
       await groupNameInput.fill('選択テスト');
     });
 
     await test.step('グループアイテム選択モーダルを開く', async () => {
-      const addItemButton = mainWindow.locator('.register-modal button', {
+      const addItemButton = utils.registerPage.locator('.register-modal button', {
         hasText: 'アイテムを追加',
       });
       await addItemButton.click();
 
-      const selectorModal = mainWindow.locator('.group-item-selector-modal');
+      const selectorModal = utils.registerPage.locator('.group-item-selector-modal');
       await expect(selectorModal).toBeVisible();
     });
 
     await test.step('検索機能でアイテムを絞り込み', async () => {
-      const searchInput = mainWindow.locator('.group-item-selector-modal input[type="text"]');
+      const searchInput = utils.registerPage.locator(
+        '.group-item-selector-modal input[type="text"]'
+      );
       await searchInput.fill('GitHub');
 
       // GitHubアイテムが表示されることを確認
-      const githubItem = mainWindow.locator('.group-item-selector-modal .item-row', {
+      const githubItem = utils.registerPage.locator('.group-item-selector-modal .item-row', {
         hasText: 'GitHub',
       });
       await expect(githubItem).toBeVisible();
 
       // 検索にマッチしないアイテムは表示されない
-      const allItems = mainWindow.locator('.group-item-selector-modal .item-row');
+      const allItems = utils.registerPage.locator('.group-item-selector-modal .item-row');
       const count = await allItems.count();
       expect(count).toBe(1);
     });
 
     await test.step('検索をクリアすると全アイテムが表示される', async () => {
-      const searchInput = mainWindow.locator('.group-item-selector-modal input[type="text"]');
+      const searchInput = utils.registerPage.locator(
+        '.group-item-selector-modal input[type="text"]'
+      );
       await searchInput.fill('');
 
-      const allItems = mainWindow.locator('.group-item-selector-modal .item-row');
+      const allItems = utils.registerPage.locator('.group-item-selector-modal .item-row');
       const count = await allItems.count();
       expect(count).toBeGreaterThan(1);
     });
 
     await test.step('アイコンが正しく表示される', async () => {
       // アイテム行にアイコンが表示されていることを確認
-      const itemIcon = mainWindow
+      const itemIcon = utils.registerPage
         .locator('.group-item-selector-modal .item-row .item-icon')
         .first();
       await expect(itemIcon).toBeVisible();
     });
 
     await test.step('ESCキーでモーダルを閉じる', async () => {
-      await mainWindow.keyboard.press('Escape');
+      await utils.registerPage.keyboard.press('Escape');
 
-      const selectorModal = mainWindow.locator('.group-item-selector-modal');
+      const selectorModal = utils.registerPage.locator('.group-item-selector-modal');
       await expect(selectorModal).not.toBeVisible();
     });
 
@@ -380,34 +396,34 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
     });
   });
 
-  test('既に追加済みのアイテムは選択不可になる', async ({ mainWindow }, _testInfo) => {
+  test('既に追加済みのアイテムは選択不可になる', async ({ electronApp, mainWindow }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
 
     await test.step('グループを作成してアイテムを追加', async () => {
-      await utils.openRegisterModal();
+      await utils.openRegisterModal(electronApp);
 
-      const typeSelect = mainWindow.locator('.register-modal select').nth(1);
+      const typeSelect = utils.registerPage.locator('.register-modal select').nth(1);
       await typeSelect.selectOption({ value: 'group' });
 
-      const groupNameInput = mainWindow
+      const groupNameInput = utils.registerPage
         .locator('.register-modal input[placeholder*="グループ名を入力"]')
         .first();
       await groupNameInput.fill('選択不可テスト');
 
       // GitHubを追加
-      const addItemButton = mainWindow.locator('.register-modal button', {
+      const addItemButton = utils.registerPage.locator('.register-modal button', {
         hasText: 'アイテムを追加',
       });
       await addItemButton.click();
 
-      const githubItem = mainWindow.locator('.group-item-selector-modal .item-row', {
+      const githubItem = utils.registerPage.locator('.group-item-selector-modal .item-row', {
         hasText: 'GitHub',
       });
       await githubItem.click();
     });
 
     await test.step('再度アイテム追加モーダルを開く', async () => {
-      const addItemButton = mainWindow.locator('.register-modal button', {
+      const addItemButton = utils.registerPage.locator('.register-modal button', {
         hasText: 'アイテムを追加',
       });
       await addItemButton.click();
@@ -415,9 +431,12 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
 
     await test.step('既に追加したアイテムが選択不可になっている', async () => {
       // GitHubアイテムが excluded クラスを持っていることを確認
-      const githubItem = mainWindow.locator('.group-item-selector-modal .item-row.excluded', {
-        hasText: 'GitHub',
-      });
+      const githubItem = utils.registerPage.locator(
+        '.group-item-selector-modal .item-row.excluded',
+        {
+          hasText: 'GitHub',
+        }
+      );
       await expect(githubItem).toBeVisible();
 
       // 「追加済み」ラベルが表示されていることを確認
@@ -429,18 +448,21 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
 
     await test.step('追加済みアイテムはクリックできない', async () => {
       // GitHubアイテムをクリックしても何も起こらない
-      const githubItem = mainWindow.locator('.group-item-selector-modal .item-row.excluded', {
-        hasText: 'GitHub',
-      });
+      const githubItem = utils.registerPage.locator(
+        '.group-item-selector-modal .item-row.excluded',
+        {
+          hasText: 'GitHub',
+        }
+      );
       await githubItem.click();
 
       // モーダルが閉じていないことを確認
-      const selectorModal = mainWindow.locator('.group-item-selector-modal');
+      const selectorModal = utils.registerPage.locator('.group-item-selector-modal');
       await expect(selectorModal).toBeVisible();
     });
 
     await test.step('キャンセル', async () => {
-      await mainWindow.keyboard.press('Escape');
+      await utils.registerPage.keyboard.press('Escape');
       await utils.clickCancelButton();
     });
   });

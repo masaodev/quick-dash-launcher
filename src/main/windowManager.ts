@@ -21,7 +21,6 @@ import { showAdminWindowWithTab } from './adminWindowManager.js';
 import PathManager from './config/pathManager.js';
 import { EnvConfig } from './config/envConfig.js';
 import { DEFAULT_WEB_PREFERENCES } from './utils/managedWindow.js';
-import { calculateModalSize } from './utils/modalSizeManager.js';
 import {
   getIsDetachedWindowFocused,
   setManagedWindowCheckers,
@@ -437,41 +436,22 @@ export function getEditMode(): boolean {
 
 /**
  * モーダルモードの切り替え
- * モーダル表示時は必要に応じてウィンドウサイズを拡大し、閉じる時は元のサイズに戻す
- * モーダル表示中はフォーカス喪失時に自動非表示されないように制御される
- * また、モーダル表示中はウィンドウを最前面に固定する
+ *
+ * メイン画面の子ウィンドウ（アイテムの登録・編集、アイコン取得結果）が開いている間に
+ * メインプロセスが ON にする（`mainChildWindowManager.ts`）。モーダルモード中は
+ * フォーカス喪失・Escape・ホットキー・アイテム実行でウィンドウが隠れず、最前面に固定される。
+ * ウィンドウのサイズ・位置は変えない（以前はモーダルの要求サイズに広げて中央へ動かしていた）。
  */
-export async function setModalMode(
-  isModal: boolean,
-  requiredSize?: { width: number; height: number }
-): Promise<void> {
+export async function setModalMode(isModal: boolean): Promise<void> {
   isModalMode = isModal;
-  if (!mainWindow) return;
+  if (!mainWindow || mainWindow.isDestroyed()) return;
 
   if (isModal) {
     // モーダル表示中は最前面に固定
     mainWindow.setAlwaysOnTop(true);
-
-    if (requiredSize) {
-      if (!normalWindowBounds) {
-        const { width, height } = mainWindow.getBounds();
-        normalWindowBounds = { width, height };
-      }
-      const { needsResize, newSize } = calculateModalSize(mainWindow.getBounds(), requiredSize);
-      if (needsResize) {
-        mainWindow.setSize(newSize.width, newSize.height);
-        mainWindow.center();
-      }
-    }
   } else {
     // 元のピンモードに応じて最前面設定を復元
     mainWindow.setAlwaysOnTop(windowPinMode === 'alwaysOnTop');
-
-    if (normalWindowBounds) {
-      mainWindow.setSize(normalWindowBounds.width, normalWindowBounds.height);
-      mainWindow.center();
-      normalWindowBounds = null;
-    }
   }
 }
 
