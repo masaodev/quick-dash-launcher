@@ -13,6 +13,8 @@ interface AdminItemManagerHeaderProps {
   onSelectFile: (fileName: string) => void;
   onOpenBookmarkImport: () => void;
   onOpenAppImport: () => void;
+  /** 一括取込メニュー: 設定「ブックマーク自動取込」を開く */
+  onOpenAutoImportSettings?: () => void;
   /** ツールメニュー: リンク切れの確認（押したときだけ確認する） */
   onCheckMissingPaths: () => void;
   checkingMissingPaths: boolean;
@@ -35,6 +37,7 @@ const AdminItemManagerHeader: React.FC<AdminItemManagerHeaderProps> = ({
   onSelectFile,
   onOpenBookmarkImport,
   onOpenAppImport,
+  onOpenAutoImportSettings,
   onCheckMissingPaths,
   checkingMissingPaths,
   missingOnly,
@@ -133,6 +136,18 @@ const AdminItemManagerHeader: React.FC<AdminItemManagerHeaderProps> = ({
               >
                 インストール済みアプリを追加
               </button>
+              {onOpenAutoImportSettings && (
+                <button
+                  className="dropdown-item"
+                  onClick={() => {
+                    importDropdown.close();
+                    onOpenAutoImportSettings();
+                  }}
+                  title="ブラウザのブックマークを、ルールに従って起動時などに自動で取り込む設定"
+                >
+                  ブックマーク自動取込の設定…
+                </button>
+              )}
             </div>
           )}
         </div>

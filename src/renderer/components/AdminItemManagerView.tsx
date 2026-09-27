@@ -46,6 +46,8 @@ interface EditModeViewProps {
   dataFileLabels?: Record<string, string>;
   pendingImportModal: 'bookmark' | 'app' | null;
   onClearPendingImportModal: () => void;
+  /** 設定「ブックマーク自動取込」を開く（一括取込メニュー・手動取込モーダルの案内から） */
+  onOpenAutoImportSettings?: () => void;
 }
 
 interface ConfirmDialogState {
@@ -81,6 +83,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   dataFileLabels = {},
   pendingImportModal,
   onClearPendingImportModal,
+  onOpenAutoImportSettings,
 }) => {
   const { showSuccess, showInfo, showWarning } = useToast();
 
@@ -509,6 +512,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
         onSelectFile={setSelectedDataFile}
         onOpenBookmarkImport={() => setIsBookmarkModalOpen(true)}
         onOpenAppImport={() => setIsAppImportModalOpen(true)}
+        onOpenAutoImportSettings={onOpenAutoImportSettings}
         onCheckMissingPaths={() => void handleCheckMissingPaths()}
         checkingMissingPaths={pathCheck.checking}
         missingOnly={missingOnly}
@@ -633,6 +637,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
         onImport={handleBookmarkImport}
         existingItems={currentFileWorkingItems}
         importDestination={getImportDestination()}
+        onOpenAutoImportSettings={onOpenAutoImportSettings}
       />
 
       <AppImportModal

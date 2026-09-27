@@ -2,6 +2,7 @@ import React from 'react';
 import { AppSettings, DataFileTab } from '@common/types';
 
 import type { AdminItemEditing } from '../hooks/useAdminItemEditing';
+import type { SettingsCategory } from '../utils/settingsResetKeys';
 
 import AdminSettingsTab from './AdminSettingsTab';
 import AdminItemManagerView from './AdminItemManagerView';
@@ -24,6 +25,13 @@ interface AdminTabContainerProps {
   dataFileLabels?: Record<string, string>;
   pendingImportModal: 'bookmark' | 'app' | null;
   onClearPendingImportModal: () => void;
+  /** 設定タブで開いているカテゴリ（AdminApp が持つ。他のタブから指定して開ける） */
+  settingsCategory: SettingsCategory;
+  onSettingsCategoryChange: (category: SettingsCategory) => void;
+  /** 設定タブの指定カテゴリを開く（手動取込 → 自動取込の設定） */
+  onOpenSettingsCategory: (category: SettingsCategory) => void;
+  /** アイテム管理タブで手動のブックマーク取込を開く（自動取込の設定 → 一度だけ取り込む） */
+  onOpenManualBookmarkImport: () => void;
 }
 
 const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
@@ -40,6 +48,10 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
   dataFileLabels = {},
   pendingImportModal,
   onClearPendingImportModal,
+  settingsCategory,
+  onSettingsCategoryChange,
+  onOpenSettingsCategory,
+  onOpenManualBookmarkImport,
 }) => {
   return (
     <div className="admin-tab-container">
@@ -72,6 +84,9 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
             settings={settings}
             onSave={onSettingsSave}
             onSettingsReplaced={onSettingsReplaced}
+            selectedCategory={settingsCategory}
+            onSelectCategory={onSettingsCategoryChange}
+            onOpenManualBookmarkImport={onOpenManualBookmarkImport}
           />
         )}
         {activeTab === 'edit' && (
@@ -85,6 +100,7 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
             dataFileLabels={dataFileLabels}
             pendingImportModal={pendingImportModal}
             onClearPendingImportModal={onClearPendingImportModal}
+            onOpenAutoImportSettings={() => onOpenSettingsCategory('bookmarkAutoImport')}
           />
         )}
         {activeTab === 'other' && <AdminOtherTab />}

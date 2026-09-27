@@ -415,19 +415,27 @@ export function importBookmarks(
       ? filterNonDuplicateBookmarks(bookmarks, duplicateResult.duplicateBookmarkIds)
       : bookmarks;
   const urlToIdMap = duplicateHandling === 'overwrite' ? buildUrlToIdMap(currentFileItems) : null;
+  // 上書きで自動取込分を置き換えるときは、ルールとの紐づけ（autoImportRuleId）を残す。
+  // 消すと次回の自動取込で「自分のアイテム」と認識されず、同じ URL が二重に登録される
+  const idToExisting = new Map(currentFileItems.map((item) => [item.item.id, item.item]));
 
-  const newItems = bookmarksToImport.map((bookmark) =>
-    toEditableItem(
+  const newItems = bookmarksToImport.map((bookmark) => {
+    const existingId = urlToIdMap?.get(normalizeUrl(bookmark.url));
+    const existing = existingId ? idToExisting.get(existingId) : undefined;
+    const autoImportRuleId =
+      existing && isJsonLauncherItem(existing) ? existing.autoImportRuleId : undefined;
+    return toEditableItem(
       {
-        id: urlToIdMap?.get(normalizeUrl(bookmark.url)) ?? generateId(),
+        id: existingId ?? generateId(),
         type: 'item',
         displayName: bookmark.displayName,
         path: bookmark.url,
+        ...(autoImportRuleId && { autoImportRuleId }),
         updatedAt: Date.now(),
       },
       sourceFile
-    )
-  );
+    );
+  });
 
   return mergeImported(items, newItems, duplicateHandling, duplicateResult.duplicateExistingIds);
 }

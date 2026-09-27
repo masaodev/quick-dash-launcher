@@ -359,4 +359,23 @@ describe('editableItemOperations', () => {
     expect(names(overwritten)).toEqual(['GitHub 新', 'MDN']);
     expect(overwritten[0].item.id).toBe(existing.id);
   });
+
+  it('importBookmarks の上書きは自動取込との紐づけ（autoImportRuleId）を残すこと', () => {
+    const auto = launcher('GitHub', 'https://github.com', { autoImportRuleId: 'rule-1' });
+    const items = rows([auto]);
+    const bookmarks = [
+      { id: 'b1', displayName: 'GitHub 新', url: 'https://github.com/', checked: true },
+      { id: 'b2', displayName: 'MDN', url: 'https://developer.mozilla.org', checked: true },
+    ];
+
+    const overwritten = importBookmarks(items, bookmarks, 'overwrite', FILE);
+    const github = overwritten.find((row) => row.item.id === auto.id)?.item as {
+      autoImportRuleId?: string;
+    };
+    expect(github.autoImportRuleId).toBe('rule-1');
+    const mdn = overwritten.find((row) => names([row])[0] === 'MDN')?.item as {
+      autoImportRuleId?: string;
+    };
+    expect(mdn.autoImportRuleId).toBeUndefined();
+  });
 });

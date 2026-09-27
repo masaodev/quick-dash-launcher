@@ -7,6 +7,7 @@ import AdminTabContainer from './components/AdminTabContainer';
 import AlertDialog from './components/AlertDialog';
 import ConfirmDialog from './components/ConfirmDialog';
 import { useAdminItemEditing, type AdminItemEditing } from './hooks/useAdminItemEditing';
+import type { SettingsCategory } from './utils/settingsResetKeys';
 import { debugInfo, logError } from './utils/debug';
 
 type AlertDialogState = {
@@ -25,6 +26,8 @@ const AdminApp: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [pendingImportModal, setPendingImportModal] = useState<'bookmark' | 'app' | null>(null);
+  // 設定タブで開いているカテゴリ。アイテム管理（手動取込）から「ブックマーク自動取込」を直接開けるよう、ここで持つ
+  const [settingsCategory, setSettingsCategory] = useState<SettingsCategory>('basic');
   const [alertDialog, setAlertDialog] = useState<AlertDialogState>({
     isOpen: false,
     message: '',
@@ -191,6 +194,18 @@ const AdminApp: React.FC = () => {
     }
   }
 
+  /** 設定タブの指定カテゴリを開く（手動取込モーダル → 自動取込の設定、など） */
+  function openSettingsCategory(category: SettingsCategory): void {
+    setSettingsCategory(category);
+    setActiveTab('settings');
+  }
+
+  /** アイテム管理タブで手動のブックマーク取込モーダルを開く（自動取込の設定 → 一度だけ取り込む、など） */
+  function openManualBookmarkImport(): void {
+    setPendingImportModal('bookmark');
+    setActiveTab('edit');
+  }
+
   const dataFileTabs = useMemo(() => settings?.dataFileTabs ?? [], [settings?.dataFileTabs]);
   const dataFileLabels = useMemo(() => settings?.dataFileLabels ?? {}, [settings?.dataFileLabels]);
 
@@ -218,6 +233,10 @@ const AdminApp: React.FC = () => {
         dataFileLabels={dataFileLabels}
         pendingImportModal={pendingImportModal}
         onClearPendingImportModal={() => setPendingImportModal(null)}
+        settingsCategory={settingsCategory}
+        onSettingsCategoryChange={setSettingsCategory}
+        onOpenSettingsCategory={openSettingsCategory}
+        onOpenManualBookmarkImport={openManualBookmarkImport}
       />
 
       <AlertDialog

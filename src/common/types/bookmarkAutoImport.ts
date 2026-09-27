@@ -57,6 +57,11 @@ export interface BookmarkAutoImportResult {
   importedCount: number;
   /** 削除件数（前回分のクリア） */
   deletedCount: number;
+  /**
+   * 取り込んだ URL のうち、同じデータファイルに手動（ルール外）で登録済みのものの件数。
+   * ルールは自分の分しか入れ替えないので、手動分と二重になっていることを知らせる
+   */
+  manualDuplicateCount?: number;
   /** エラーメッセージ */
   errorMessage?: string;
   /** 実行日時（Unixタイムスタンプ ms） */
