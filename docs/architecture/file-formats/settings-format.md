@@ -93,8 +93,8 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
 |-----------|-----|-------------|------|
 | **windowWidth** | number | 600 | ウィンドウの初期幅（ピクセル） |
 | **windowHeight** | number | 400 | ウィンドウの初期高さ（ピクセル） |
-| **editModeWidth** | number | 1200 | 編集モード時のウィンドウ幅（ピクセル） |
-| **editModeHeight** | number | 1000 | 編集モード時のウィンドウ高さ（ピクセル） |
+| **editModeWidth** | number | 1200 | 管理ウィンドウの幅（ピクセル） |
+| **editModeHeight** | number | 1000 | 管理ウィンドウの高さ（ピクセル） |
 
 ### 3.4. 自動起動設定
 
@@ -204,9 +204,9 @@ export interface AppSettings {
   windowWidth: number;
   /** ウィンドウの初期高さ（デフォルト: 400） */
   windowHeight: number;
-  /** 編集モード時のウィンドウ幅（デフォルト: 1200） */
+  /** 管理ウィンドウの幅（デフォルト: 1200） */
   editModeWidth: number;
-  /** 編集モード時のウィンドウ高さ（デフォルト: 1000） */
+  /** 管理ウィンドウの高さ（デフォルト: 1000） */
   editModeHeight: number;
   /** アプリの自動起動設定 */
   autoLaunch: boolean;

@@ -102,7 +102,7 @@ IPCハンドラーは機能ごとに分離（`src/main/ipc/`）:
 | `appImportHandlers.ts`          | スタートメニューのアプリスキャン・インポート                           |
 | `bookmarkAutoImportHandlers.ts` | ブックマーク自動取込ルールの管理と実行                                 |
 | `backupHandlers.ts`             | スナップショットバックアップの管理・リストア                           |
-| `windowHandlers.ts`             | ウィンドウ固定化・編集モード・メイン画面の子ウィンドウ（登録・編集）    |
+| `windowHandlers.ts`             | ウィンドウ固定化・メイン画面の子ウィンドウ（登録・編集）    |
 | `historyHandlers.ts`            | 検索履歴の読み書き                                                     |
 | `editHandlers.ts`               | アイテム編集（更新・削除・一括更新）                                   |
 | `splashHandlers.ts`             | スプラッシュウィンドウ制御                                             |
@@ -264,7 +264,7 @@ IPCハンドラーは機能ごとに分離（`src/main/ipc/`）:
 
 ### 編集モード（生データ編集）
 
-1. 編集モード開始時にウィンドウサイズを自動拡大
+1. 管理ウィンドウ（`editModeWidth`×`editModeHeight`）でアイテム管理を開く
 2. `load-editable-items`でデータファイルをJSON形式で読み込み
 3. テーブル形式コンポーネントで編集可能に表示
 4. ユーザーが行の追加・削除・編集を実行
