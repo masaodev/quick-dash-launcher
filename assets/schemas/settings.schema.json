@@ -34,11 +34,11 @@
         },
         "editModeWidth": {
           "type": "number",
-          "description": "編集モード時のウィンドウ幅（デフォルト: 1200）"
+          "description": "管理ウィンドウの幅（デフォルト: 1200）"
         },
         "editModeHeight": {
           "type": "number",
-          "description": "編集モード時のウィンドウ高さ（デフォルト: 1000）"
+          "description": "管理ウィンドウの高さ（デフォルト: 1000）"
         },
         "autoLaunch": {
           "type": "boolean",

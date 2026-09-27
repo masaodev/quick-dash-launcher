@@ -137,19 +137,6 @@ const channel = IPC_CHANNELS.SETTINGS_GET; // 'settings:get'
 - 戻り値: `WindowPinMode` (新しいモード)
 - 順序: `normal` → `alwaysOnTop` → `stayVisible` → `normal`
 
-### `set-edit-mode`
-
-編集モードの状態を設定（ウィンドウサイズとフォーカス制御用）
-
-- パラメータ: `editMode: boolean`
-- 戻り値: なし
-
-### `get-edit-mode`
-
-編集モードの状態を取得
-
-- 戻り値: `boolean`
-
 ### `show-edit-window`
 
 管理ウィンドウを表示

@@ -180,8 +180,6 @@ export interface ElectronAPI {
     entries: LayoutWindowEntry[],
     memo?: string
   ) => Promise<void>;
-  setEditMode: (editMode: boolean) => Promise<void>;
-  getEditMode: () => Promise<boolean>;
   selectBookmarkFile: () => Promise<string | null>;
   /** HTML ブックマークファイル（Netscape 形式）をフォルダ付きで読む（取込画面用） */
   parseBookmarkFileWithFolders: (filePath: string) => Promise<BookmarkWithFolder[]>;

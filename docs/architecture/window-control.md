@@ -62,16 +62,13 @@ ipcMain.handle(IPC_CHANNELS.OPEN_ITEM, async (_event, item: LauncherItem) => {
 - **起動ホットキー**: 設定したホットキー（デフォルト: `Alt+Space`）でウィンドウ表示/非表示
   - **非表示制限**: 以下の場合はホットキーでも非表示にできません
     - 初回起動モード
-    - 編集モード
     - モーダルモード
     - ピン留めモードが`alwaysOnTop`または`stayVisible`の場合
   - **実装場所**: `src/main/windowManager.ts:487-509`（`hideMainWindow`関数）
 - **フォーカスアウト**: `normal`モードの場合、フォーカスを失うと自動的に非表示
-- **編集モード時のフォーカス制御**: 編集モード中はフォーカスアウトでもウィンドウが非表示にならない
 - **モーダルモード時のフォーカス制御**: メイン画面の子ウィンドウ（アイテムの登録・編集、アイコン取得結果）が開いている間はフォーカスアウトでもウィンドウが非表示にならない（下記「メイン画面の子ウィンドウ」）
 - **Escapeキー**: 以下の場合を**除き**、Escapeキーで非表示可能
   - 初回起動モード
-  - 編集モード
   - モーダルモード
   - ピン留めモードが`alwaysOnTop`または`stayVisible`の場合
   - **実装場所**: `src/main/windowManager.ts:85-104`
@@ -192,28 +189,15 @@ ipcMain.handle(IPC_CHANNELS.OPEN_ITEM, async (_event, item: LauncherItem) => {
 
 ### ウィンドウ非表示の判定
 
-- **blur イベント**: `windowPinMode === 'normal'` かつ `isEditMode === false` の場合のみ非表示
+- **blur イベント**: `windowPinMode === 'normal'` で、初回起動モード・モーダルモードでない場合のみ非表示
 - **アイテム起動時**: `windowPinMode === 'normal'`の場合のみ非表示
-- **編集モード時**: `isEditMode`フラグで判定 → 編集モード中は非表示にしない
-
-## 編集モードのウィンドウ制御
-
-- **ウィンドウサイズ管理**: 通常モードのサイズを保存し、編集モード時に拡大
-- **フォーカス制御**: 編集モード中は`isEditMode`フラグでフォーカスアウトを無効化
-- **サイズ復元**: 編集モード終了時に保存した元のサイズに自動復元
-
-### 編集モードのIPC通信フロー
-
-1. レンダラーが編集モード切り替え → `set-edit-mode`
-2. メインプロセスが編集モード状態を更新 → `windowManager.setEditMode()`
-3. ウィンドウサイズとフォーカス制御を自動調整
-4. レンダラーが編集モード状態を取得 → `get-edit-mode`
+- **モーダルモード時**: `isModalMode`フラグで判定 → 子ウィンドウが開いている間は非表示にしない
 
 ## メイン画面の子ウィンドウ（アイテムの登録・編集、アイコン取得結果）
 
 メイン画面の「アイテムの登録・編集」（➕ 簡易登録 / 右クリック「編集」/ ドラッグ&ドロップ）と「アイコン取得結果」（進捗バーの詳細）は、メインウィンドウの中のモーダルではなく、独立した子ウィンドウで開きます（v0.7.38 以降）。
 
-- **実装場所**: `src/main/mainChildWindowManager.ts`（メインプロセス）、`src/renderer/components/MainChildPage.tsx`・`RegisterWindowPage.tsx`（レンダラー）
+- **実装場所**: `src/main/mainChildWindowManager.ts`（メインプロセス。生成・表示・破棄はワークスペースの編集ウィンドウと共通の `src/main/utils/modalChildWindows.ts`）、`src/renderer/components/MainChildPage.tsx`・`RegisterWindowPage.tsx`（レンダラー）
 - IPC `window:open-main-child`（要求 `MainChildWindowRequest`）を受け、メインウィンドウを親にした子ウィンドウを開く。子ウィンドウが閉じるまで解決しない
 - 要求（何を表示するか。登録ならドロップしたパス・編集対象・今のタブ）はメインプロセスが requestId で預かり、子ウィンドウは `window.name`（`main-child:<requestId>`）から requestId を取り出して `window:get-main-child-request` で受け取る
 - 位置はメインウィンドウと同じディスプレイの作業領域の中央、サイズは登録 850x900・アイコン取得結果 760x700 を作業領域で切り詰める（`utils/mainChildWindowSpec.ts`・`utils/editorWindowBounds.ts`）。**メインウィンドウのサイズ・位置は変えない**
@@ -283,7 +267,7 @@ adminWindow.webContents.on('before-input-event', (event, input) => {
 
 ワークスペースアイテムの「編集」は、ワークスペースウィンドウの中のモーダルではなく、独立した子ウィンドウで開きます（v0.7.37 以降）。
 
-**実装場所**: `src/main/workspaceItemEditorWindowManager.ts`（`openWorkspaceItemEditor`）、`src/main/utils/editorWindowBounds.ts`（位置計算）、`src/renderer/components/WorkspaceItemEditPage.tsx`（中身）
+**実装場所**: `src/main/workspaceItemEditorWindowManager.ts`（`openWorkspaceItemEditor`）、`src/main/utils/modalChildWindows.ts`（生成・表示・破棄。メイン画面の子ウィンドウと共通）、`src/main/utils/editorWindowBounds.ts`（位置計算）、`src/renderer/components/WorkspaceItemEditPage.tsx`（中身）
 
 - IPC `workspace:open-item-editor`（itemId）を受け、送信元（ワークスペース本体または切り離しウィンドウ）を親にした子ウィンドウを開く
 - ワークスペースのレンダラーから `window.open` で開く（`childWindowService`。レンダラープロセス共有）。`window.name` は `workspace-editor:<itemId>` で、フォールバック時は URL クエリ `editItemId`

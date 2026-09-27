@@ -48,19 +48,11 @@ export function toLauncherItem(item: RegisterItem): LauncherItem | null {
 /**
  * 登録フォームの内容を保存前に実行してみる
  *
- * 実行中にメインウィンドウが隠れて登録フォームが閉じないよう、ピンモードが通常なら
- * 一時的に切り替え、終わったら戻す。
+ * 登録フォームは独立した子ウィンドウで開き、開いている間はメインウィンドウがモーダル
+ * モードになる（フォーカスが外れても隠れない）ので、ピンモードの切り替えは不要。
  */
 export async function tryExecuteRegisterItem(item: RegisterItem): Promise<void> {
-  const originalPinMode = await window.electronAPI.getWindowPinMode();
-  let pinModeChanged = false;
-
   try {
-    if (originalPinMode === 'normal') {
-      await window.electronAPI.cycleWindowPinMode();
-      pinModeChanged = true;
-    }
-
     if (item.itemCategory === 'window') {
       if (!item.windowOperationConfig) {
         logError('ウィンドウ操作設定が不足しています');
@@ -85,9 +77,5 @@ export async function tryExecuteRegisterItem(item: RegisterItem): Promise<void> 
     }
   } catch (error) {
     logError('アイテムの実行に失敗しました:', error);
-  } finally {
-    if (pinModeChanged) {
-      await window.electronAPI.cycleWindowPinMode();
-    }
   }
 }

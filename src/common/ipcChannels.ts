@@ -71,8 +71,6 @@ export const IPC_CHANNELS = {
   GET_WINDOW_PIN_MODE: 'get-window-pin-mode',
   CYCLE_WINDOW_PIN_MODE: 'cycle-window-pin-mode',
   QUIT_APP: 'quit-app',
-  SET_EDIT_MODE: 'set-edit-mode',
-  GET_EDIT_MODE: 'get-edit-mode',
   SHOW_EDIT_WINDOW: 'show-edit-window',
   HIDE_EDIT_WINDOW: 'hide-edit-window',
   TOGGLE_EDIT_WINDOW: 'toggle-edit-window',

@@ -75,9 +75,9 @@ export interface AppSettings {
   windowWidth: number;
   /** ウィンドウの初期高さ（デフォルト: 400） */
   windowHeight: number;
-  /** 編集モード時のウィンドウ幅（デフォルト: 1200） */
+  /** 管理ウィンドウの幅（デフォルト: 1200） */
   editModeWidth: number;
-  /** 編集モード時のウィンドウ高さ（デフォルト: 1000） */
+  /** 管理ウィンドウの高さ（デフォルト: 1000） */
   editModeHeight: number;
   /** アプリの自動起動設定 */
   autoLaunch: boolean;

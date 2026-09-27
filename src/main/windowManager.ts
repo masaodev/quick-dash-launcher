@@ -34,10 +34,8 @@ let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 
 let windowPinMode: WindowPinMode = EnvConfig.windowPinMode ?? 'normal';
-let isEditMode: boolean = false;
 let isFirstLaunchMode: boolean = false;
 let isModalMode: boolean = false;
-let normalWindowBounds: { width: number; height: number } | null = null;
 let isShowingWindow: boolean = false; // ウィンドウ表示中フラグ（blur無視用）
 let showingWindowTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
@@ -171,7 +169,6 @@ export async function createWindow(): Promise<BrowserWindow> {
       mainWindow &&
       !mainWindow.webContents.isDevToolsOpened() &&
       windowPinMode === 'normal' &&
-      !isEditMode &&
       !isFirstLaunchMode &&
       !isModalMode &&
       !isShowingWindow;
@@ -196,12 +193,10 @@ export async function createWindow(): Promise<BrowserWindow> {
       event.preventDefault();
       // 以下の場合はEscapeキーで閉じない
       // - 初回起動モード
-      // - 編集モード
       // - モーダルモード
       // - ピン留めモードがalwaysOnTopまたはstayVisible
       const shouldNotHide =
         isFirstLaunchMode ||
-        isEditMode ||
         isModalMode ||
         windowPinMode === 'alwaysOnTop' ||
         windowPinMode === 'stayVisible';
@@ -400,38 +395,6 @@ function updateWindowBehavior(): void {
 
   // alwaysOnTopモードのみ最前面に固定、他は通常表示
   mainWindow.setAlwaysOnTop(windowPinMode === 'alwaysOnTop');
-}
-
-/**
- * アプリケーションの編集モードを設定し、それに応じてウィンドウサイズを調整する
- * 編集モード時はウィンドウサイズを拡大し、通常モード時は元のサイズに戻す
- * 編集モード中はフォーカス喪失時に自動非表示されないように制御される
- */
-export async function setEditMode(editMode: boolean): Promise<void> {
-  isEditMode = editMode;
-  if (!mainWindow) return;
-
-  const settingsService = await SettingsService.getInstance();
-
-  if (editMode) {
-    const currentBounds = mainWindow.getBounds();
-    normalWindowBounds = { width: currentBounds.width, height: currentBounds.height };
-    const editWidth = await settingsService.get('editModeWidth');
-    const editHeight = await settingsService.get('editModeHeight');
-    mainWindow.setSize(editWidth, editHeight);
-  } else if (normalWindowBounds) {
-    mainWindow.setSize(normalWindowBounds.width, normalWindowBounds.height);
-  } else {
-    const normalWidth = await settingsService.get('windowWidth');
-    const normalHeight = await settingsService.get('windowHeight');
-    mainWindow.setSize(normalWidth, normalHeight);
-  }
-
-  mainWindow.center();
-}
-
-export function getEditMode(): boolean {
-  return isEditMode;
 }
 
 /**
@@ -701,12 +664,12 @@ export async function showMainWindowWithItemSearch(startTime?: number): Promise<
  * アイテム実行時にメインウィンドウを即座に非表示にする
  * 起動したアプリがフォーカスを奪う（blur）のを待たずに閉じることで、
  * 起動待ちの間にEnterを連打して多重起動してしまうのを防ぐ
- * ピン留めモード、編集モード、モーダルモード、初回起動モード時は非表示にしない
+ * ピン留めモード、モーダルモード、初回起動モード時は非表示にしない
  */
 export function hideMainWindowOnExecute(): void {
   if (!mainWindow || mainWindow.isDestroyed() || !mainWindow.isVisible()) return;
 
-  if (windowPinMode !== 'normal' || isFirstLaunchMode || isEditMode || isModalMode) {
+  if (windowPinMode !== 'normal' || isFirstLaunchMode || isModalMode) {
     return;
   }
 
@@ -716,7 +679,7 @@ export function hideMainWindowOnExecute(): void {
 
 /**
  * メインウィンドウを非表示にする（ホットキー用）
- * ピン留めモード、編集モード、モーダルモード、初回起動モード時は非表示にしない
+ * ピン留めモード、モーダルモード、初回起動モード時は非表示にしない
  */
 export async function hideMainWindow(): Promise<void> {
   if (!mainWindow) return;
@@ -726,7 +689,7 @@ export async function hideMainWindow(): Promise<void> {
     return;
   }
 
-  if (isFirstLaunchMode || isEditMode || isModalMode) {
+  if (isFirstLaunchMode || isModalMode) {
     windowLogger.info('現在のモードではホットキーで非表示にできません');
     return;
   }

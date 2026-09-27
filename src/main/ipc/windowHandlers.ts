@@ -49,8 +49,6 @@ import { WorkspaceService } from '../services/workspace/index.js';
 import { getTray } from '../windowManager.js';
 
 export function setupWindowHandlers(
-  setEditMode: (editMode: boolean) => Promise<void>,
-  getEditMode: () => boolean,
   getWindowPinMode: () => WindowPinMode,
   cycleWindowPinMode: () => WindowPinMode
 ) {
@@ -64,11 +62,6 @@ export function setupWindowHandlers(
     }
     app.quit();
   });
-
-  ipcMain.handle(IPC_CHANNELS.SET_EDIT_MODE, async (_event, editMode: boolean) => {
-    await setEditMode(editMode);
-  });
-  ipcMain.handle(IPC_CHANNELS.GET_EDIT_MODE, () => getEditMode());
 
   ipcMain.handle(IPC_CHANNELS.SHOW_EDIT_WINDOW, () => showAdminWindow());
   ipcMain.handle(IPC_CHANNELS.HIDE_EDIT_WINDOW, () => hideAdminWindow());

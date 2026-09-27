@@ -8,6 +8,7 @@ import PathManager from './config/pathManager.js';
 import { SettingsService } from './services/settingsService.js';
 import { WorkspaceService } from './services/workspace/index.js';
 import { attachSnapHandler } from './utils/windowSnap.js';
+import { scheduleFallbackShow } from './utils/modalChildWindows.js';
 import {
   DEFAULT_WEB_PREFERENCES,
   attachCommonKeyHandlers,
@@ -290,15 +291,11 @@ function setupDetachedWindow(
   const wcId = win.webContents.id;
   webContentsIdToGroupId.set(wcId, groupId);
 
-  const showFallback = setTimeout(() => {
-    if (!win.isDestroyed() && !win.isVisible()) {
-      if (skipFocus) {
-        showWithoutFocus(win);
-      } else {
-        win.show();
-      }
-    }
-  }, SHOW_FALLBACK_TIMEOUT_MS);
+  const cancelFallbackShow = scheduleFallbackShow(
+    win,
+    () => (skipFocus ? showWithoutFocus(win) : win.show()),
+    SHOW_FALLBACK_TIMEOUT_MS
+  );
 
   // bounds 保存用のデバウンスタイマー
   let boundsTimer: ReturnType<typeof setTimeout> | null = null;
@@ -329,7 +326,7 @@ function setupDetachedWindow(
   });
 
   win.on('closed', () => {
-    clearTimeout(showFallback);
+    cancelFallbackShow();
     if (boundsTimer) clearTimeout(boundsTimer);
     webContentsIdToGroupId.delete(wcId);
     detachedWindows.delete(groupId);
