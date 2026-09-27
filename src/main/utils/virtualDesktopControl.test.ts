@@ -6,6 +6,7 @@ import { describe, it, expect } from 'vitest';
 import {
   isVirtualDesktopSupported,
   getVirtualDesktopGUIDs,
+  getDesktopCount,
   moveWindowToVirtualDesktop,
 } from './virtualDesktop/index.js';
 import { findWindowByTitle } from './windowMatcher.js';
@@ -50,7 +51,8 @@ describe('virtualDesktopControl', () => {
       expect(typeof result).toBe('boolean');
     });
 
-    it('範囲外のデスクトップ番号でfalseを返すべき', () => {
+    // デスクトップ数を取得できない環境（GitHub Actionsのランナーなど）では上限チェックが働かないためスキップ
+    it.skipIf(getDesktopCount() <= 0)('範囲外のデスクトップ番号でfalseを返すべき', () => {
       // 存在しないデスクトップ番号を使用
       const result = moveWindowToVirtualDesktop(1, 999);
       console.log('範囲外のデスクトップ番号での移動結果:', result);
