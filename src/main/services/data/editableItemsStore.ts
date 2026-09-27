@@ -8,11 +8,16 @@ import {
   createEmptyJsonDataFile,
 } from '@common/utils/jsonParser';
 import { jsonItemToDisplayText } from '@common/utils/displayTextConverter';
-import type { EditableJsonItem, LoadEditableItemsResult } from '@common/types/editableItem';
+import type {
+  EditableJsonItem,
+  LoadEditableItemsResult,
+  SaveEditableItemsResult,
+} from '@common/types/editableItem';
 import { validateEditableItem, EXTERNAL_CHANGE_CONFLICT_MARKER } from '@common/types/editableItem';
-import type { JsonDataFile, JsonItem } from '@common/types';
+import { isJsonClipboardItem, type JsonDataFile, type JsonItem } from '@common/types';
 
 import { PathManager } from '../../config/pathManager.js';
+import { ClipboardService } from '../clipboardService.js';
 import {
   detectExternalChange,
   hashContent,
@@ -173,7 +178,37 @@ function assertNoExternalChange(
 }
 
 /**
+ * 保存前のファイル内容から、保存後に残らないクリップボードアイテムの実データを消す
+ *
+ * メイン画面の削除（deleteItemsById）と同じ後始末。編集画面は全件を書き戻すので、ここで差分を取る。
+ */
+async function deleteOrphanedClipboardData(
+  previousContents: Map<string, string>,
+  remainingIds: Set<string>
+): Promise<void> {
+  const clipboardService = ClipboardService.getInstance();
+  for (const [fileName, content] of previousContents) {
+    try {
+      const parsed = parseJsonDataFileLenient(content);
+      for (const item of parsed.data.items) {
+        if (isJsonClipboardItem(item) && !remainingIds.has(item.id)) {
+          await clipboardService.deleteClipboardData(item.dataFileRef);
+        }
+      }
+    } catch (error) {
+      dataLogger.warn(
+        { error, fileName },
+        'クリップボード実データの後始末で読み取りに失敗しました'
+      );
+    }
+  }
+}
+
+/**
  * 編集画面の EditableJsonItem 配列を保存する
+ *
+ * 内容が変わったファイルだけを書き換える。保存後の全ファイルのハッシュを返すので、
+ * 呼び出し側は次回の保存の expectedHashes に使える。
  *
  * @param configFolder - 設定フォルダのパス
  * @param editableItems - 保存するEditableJsonItem配列
@@ -183,7 +218,7 @@ export async function saveEditableItems(
   configFolder: string,
   editableItems: EditableJsonItem[],
   expectedHashes?: Record<string, string>
-): Promise<void> {
+): Promise<SaveEditableItemsResult> {
   // 破損ファイルがあると読み込めなかったアイテムを空データで上書きしてしまうため保存を拒否する
   const corruptedFiles = getCorruptedDataFiles();
   if (corruptedFiles.length > 0) {
@@ -209,20 +244,40 @@ export async function saveEditableItems(
     fileGroups.get(sourceFile)!.push(item);
   }
 
-  // 管理対象のすべてのファイルを保存（空になったファイルも含む）
+  const fileHashes: Record<string, string> = {};
+  const writtenFiles: string[] = [];
+  const previousContents = new Map<string, string>();
+
+  // 管理対象のすべてのファイルを確認し、内容が変わるものだけ書く（空になったファイルも含む）
   for (const fileName of dataFiles) {
     const filePath = path.join(configFolder, fileName);
     const items = fileGroups.get(fileName) || [];
 
     // lineNumberでソート
-    const sortedItems = items.sort((a, b) => a.meta.lineNumber - b.meta.lineNumber);
-
-    // JsonItem配列を抽出
+    const sortedItems = [...items].sort((a, b) => a.meta.lineNumber - b.meta.lineNumber);
     const jsonItems = sortedItems.map((item) => item.item);
 
-    // JSON形式で保存
     const jsonData: JsonDataFile = { ...createEmptyJsonDataFile(), items: jsonItems };
     const content = serializeJsonDataFile(jsonData);
-    writeDataFile(filePath, content);
+    const currentContent = FileUtils.safeReadTextFile(filePath);
+
+    if (currentContent !== content) {
+      if (!writeDataFile(filePath, content)) {
+        throw new Error(`データファイルの書き込みに失敗しました: ${fileName}`);
+      }
+      writtenFiles.push(fileName);
+      if (currentContent !== null) {
+        previousContents.set(fileName, currentContent);
+      }
+    }
+    fileHashes[fileName] = hashContent(content);
   }
+
+  if (previousContents.size > 0) {
+    const remainingIds = new Set(editableItems.map((item) => item.item.id));
+    await deleteOrphanedClipboardData(previousContents, remainingIds);
+  }
+
+  dataLogger.info({ writtenFiles }, '編集画面のアイテムを保存しました');
+  return { fileHashes, writtenFiles };
 }

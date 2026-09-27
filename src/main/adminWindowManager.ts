@@ -11,7 +11,7 @@ import { WindowIdleDestroyer } from './utils/windowIdleDestroyer.js';
 import {
   DEFAULT_WEB_PREFERENCES,
   attachCommonKeyHandlers,
-  hideOnClose,
+  isAppQuitting,
 } from './utils/managedWindow.js';
 
 type AdminTab = 'settings' | 'edit' | 'other';
@@ -75,8 +75,19 @@ export async function createAdminWindow(): Promise<BrowserWindow> {
   adminWindow.setMenuBarVisibility(false);
   adminWindow.setMenu(null);
 
-  hideOnClose(adminWindow, () => {
-    isAdminWindowVisible = false;
+  // 閉じる操作は隠すだけ（アプリ終了時は実際に閉じる）。未保存の変更があれば閉じる前に確認したいので、
+  // 画面が動いているときはレンダラーに知らせ、閉じてよければ HIDE_EDIT_WINDOW で隠してもらう
+  adminWindow.on('close', (event) => {
+    if (isAppQuitting()) return;
+    event.preventDefault();
+    const win = adminWindow;
+    if (!win || win.isDestroyed()) return;
+    if (win.webContents.isDestroyed() || win.webContents.isLoading()) {
+      win.hide();
+      isAdminWindowVisible = false;
+      return;
+    }
+    win.webContents.send(IPC_CHANNELS.EVENT_ADMIN_CLOSE_REQUESTED);
   });
 
   adminWindow.on('closed', () => {

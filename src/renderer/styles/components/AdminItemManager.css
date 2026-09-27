@@ -4,7 +4,9 @@
 }
 
 .edit-mode-view {
-  height: 100vh;
+  /* 親（.admin-content）の残り高さに収める。100vh だとタブ見出しの分だけ下のステータスバーが画面外に出る */
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   background-color: var(--bg-app);
@@ -383,7 +385,6 @@
   transform: translateY(-50%) scale(1.1);
 }
 
-
 /* 操作ボタン群のスタイル（廃止予定） */
 .edit-mode-operations {
   display: flex;
@@ -470,7 +471,6 @@
   background-color: var(--color-danger-hover) !important;
   border-color: var(--color-danger-hover) !important;
 }
-
 
 .editable-item-list {
   flex: 1;
@@ -705,6 +705,7 @@
 /* Raw Data Edit Mode Styles */
 .editable-raw-item-list {
   flex: 1;
+  min-height: 0;
   overflow: auto;
   padding: 0 var(--spacing-lg) var(--spacing-lg);
   position: relative;
@@ -887,7 +888,7 @@
   vertical-align: middle;
 }
 
-.raw-items-table .checkbox-column input[type="checkbox"] {
+.raw-items-table .checkbox-column input[type='checkbox'] {
   margin: 0;
   vertical-align: middle;
 }
@@ -1102,4 +1103,113 @@
   border-radius: var(--border-radius-sm);
   line-height: 1.4;
   vertical-align: middle;
+}
+
+/* ツールバーは幅が足りなければ折り返す（ボタンが画面外に出ないように） */
+.edit-mode-toolbar {
+  flex-wrap: wrap;
+}
+
+.edit-mode-toolbar .toolbar-left {
+  flex-wrap: wrap;
+}
+
+/* 未保存の変更がある行: 左端に印 */
+.raw-item-row.changed td.checkbox-column {
+  box-shadow: inset 3px 0 0 var(--color-warning);
+}
+
+.edit-mode-status .invalid-count {
+  color: var(--color-danger, #d32f2f);
+  margin-left: var(--spacing-lg);
+}
+
+/* データファイルの読み込みに失敗したときの表示 */
+.edit-mode-load-error {
+  flex: 1;
+  margin: var(--spacing-lg);
+  padding: var(--spacing-lg);
+  border: 1px solid var(--color-warning);
+  border-radius: var(--border-radius);
+  background-color: var(--color-gray-100);
+  color: var(--text-primary, inherit);
+}
+
+.edit-mode-load-error-detail {
+  margin-top: var(--spacing-md);
+  font-family: monospace;
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  white-space: pre-wrap;
+}
+
+/* 操作列は先頭。アイコンだけにして幅を詰め、左に寄せる */
+.raw-items-table .action-buttons {
+  justify-content: flex-start;
+}
+
+/* 種類セルのプルダウン（単一・フォルダ取込・グループはその場で切替） */
+.type-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.type-select {
+  font-size: var(--font-size-xs);
+  font-family: inherit;
+  color: var(--text-info);
+  height: 22px;
+  border: 1px solid transparent;
+  border-radius: var(--border-radius);
+  background: transparent;
+  cursor: pointer;
+  max-width: 76px;
+}
+
+.type-select:hover,
+.type-select:focus {
+  border-color: var(--color-primary);
+  background-color: var(--color-white);
+}
+
+.type-cell.readonly {
+  cursor: pointer;
+}
+
+/* パス列は 1 行に収めて省略し、全文はツールチップで見せる */
+.raw-items-table td.content-column {
+  max-width: 0;
+}
+
+.raw-items-table .content-column .editable-cell,
+.raw-items-table .content-column .readonly-cell {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 「✏️ 詳細編集」の文字分だけ操作列を広げる（🗑 が隣の列に食い込まないように） */
+.raw-items-table th.actions-column,
+.raw-items-table td.actions-column {
+  width: 64px;
+  min-width: 64px;
+  text-align: left;
+}
+
+/* 種類プルダウンの文字が切れないように種類列を広げる */
+.raw-items-table th.type-column,
+.raw-items-table td.type-column {
+  width: 140px;
+  min-width: 140px;
+}
+
+.type-select {
+  max-width: 112px;
+}
+
+/* 種類セルは折り返さない */
+.type-cell,
+.type-cell .type-name {
+  white-space: nowrap;
 }

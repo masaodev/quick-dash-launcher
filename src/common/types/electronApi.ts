@@ -2,7 +2,11 @@
  * preload（contextBridge）がレンダラーへ公開する API の型。
  * preload 側はこの型で注釈しているため、実装とのずれは型チェックで検出される。
  */
-import type { EditableJsonItem, LoadEditableItemsResult } from './editableItem';
+import type {
+  EditableJsonItem,
+  LoadEditableItemsResult,
+  SaveEditableItemsResult,
+} from './editableItem';
 
 import type {
   LauncherItem,
@@ -107,6 +111,8 @@ export interface ElectronAPI {
   onWindowShownItemSearch: (callback: (startTime?: number) => void) => () => void;
   onWindowHidden: (callback: () => void) => () => void;
   onSetActiveTab: (callback: (tab: 'settings' | 'edit' | 'other') => void) => () => void;
+  /** 管理ウィンドウの × が押されたとき。閉じてよければ hideEditWindow を呼ぶ */
+  onAdminCloseRequested: (callback: () => void) => () => void;
   onOpenImportModal: (callback: (modal: 'bookmark' | 'app') => void) => () => void;
   onDataChanged: (callback: () => void) => () => void;
   onSettingsChanged: (callback: () => void) => () => void;
@@ -136,11 +142,14 @@ export interface ElectronAPI {
   ) => Promise<{ success: boolean }>;
   // EditableJsonItem API
   loadEditableItems: () => Promise<LoadEditableItemsResult>;
-  /** expectedHashes（loadEditableItems の fileHashes）を渡すと外部変更との競合時に保存を拒否する */
+  /**
+   * expectedHashes（loadEditableItems の fileHashes）を渡すと外部変更との競合時に保存を拒否する。
+   * 内容が変わったファイルだけ書き、保存後のハッシュを返す
+   */
   saveEditableItems: (
     editableItems: EditableJsonItem[],
     expectedHashes?: Record<string, string>
-  ) => Promise<void>;
+  ) => Promise<SaveEditableItemsResult>;
   // IDベースのアイテム更新
   updateDirItemById: (
     id: string,

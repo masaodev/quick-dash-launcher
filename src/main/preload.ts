@@ -49,7 +49,11 @@ import type {
   MixedOrderEntry,
   Bounds,
 } from '@common/types';
-import type { EditableJsonItem, LoadEditableItemsResult } from '@common/types/editableItem';
+import type {
+  EditableJsonItem,
+  LoadEditableItemsResult,
+  SaveEditableItemsResult,
+} from '@common/types/editableItem';
 import type { ElectronAPI } from '@common/types/electronApi';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
@@ -181,6 +185,8 @@ const electronAPI: ElectronAPI = {
     createEventListenerNoArg(IPC_CHANNELS.EVENT_WINDOW_HIDDEN, callback),
   onSetActiveTab: (callback: (tab: 'settings' | 'edit' | 'other') => void) =>
     createEventListener<'settings' | 'edit' | 'other'>(IPC_CHANNELS.EVENT_SET_ACTIVE_TAB, callback),
+  onAdminCloseRequested: (callback: () => void) =>
+    createEventListenerNoArg(IPC_CHANNELS.EVENT_ADMIN_CLOSE_REQUESTED, callback),
   onOpenImportModal: (callback: (modal: 'bookmark' | 'app') => void) =>
     createEventListener<'bookmark' | 'app'>(IPC_CHANNELS.EVENT_OPEN_IMPORT_MODAL, callback),
   onDataChanged: (callback: () => void) =>
@@ -211,7 +217,10 @@ const electronAPI: ElectronAPI = {
   // EditableJsonItem API
   loadEditableItems: (): Promise<LoadEditableItemsResult> =>
     ipcRenderer.invoke(IPC_CHANNELS.LOAD_EDITABLE_ITEMS),
-  saveEditableItems: (editableItems: EditableJsonItem[], expectedHashes?: Record<string, string>) =>
+  saveEditableItems: (
+    editableItems: EditableJsonItem[],
+    expectedHashes?: Record<string, string>
+  ): Promise<SaveEditableItemsResult> =>
     ipcRenderer.invoke(IPC_CHANNELS.SAVE_EDITABLE_ITEMS, editableItems, expectedHashes),
   // IDベースのアイテム更新
   updateDirItemById: (id: string, dirPath: string, options?: JsonDirOptions, memo?: string) =>

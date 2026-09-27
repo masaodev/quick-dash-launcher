@@ -59,6 +59,16 @@ export interface LoadEditableItemsResult {
 }
 
 /**
+ * saveEditableItemsの戻り値型
+ */
+export interface SaveEditableItemsResult {
+  /** 保存後のファイル内容ハッシュ。次回の保存で expectedHashes として渡す */
+  fileHashes: Record<string, string>;
+  /** 実際に書き換えたファイル（内容が変わらなかったファイルは書かない） */
+  writtenFiles: string[];
+}
+
+/**
  * EditableJsonItemのバリデーション結果
  */
 export interface ValidationResult {

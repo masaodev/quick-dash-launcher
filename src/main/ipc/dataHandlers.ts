@@ -53,6 +53,8 @@ export function setupDataHandlers(configFolder: string) {
       const emptyData = serializeJsonDataFile(createEmptyJsonDataFile());
       writeDataFile(filePath, emptyData);
       dataLogger.info(`File created successfully: ${filePath}`);
+      // 編集画面は読み込み時のハッシュ表を持つので、ファイル構成の変化も知らせる
+      notifyDataChanged();
       return { success: true };
     } catch (error) {
       dataLogger.error({ error, filePath }, 'Failed to create file');
@@ -88,6 +90,7 @@ export function setupDataHandlers(configFolder: string) {
         );
       }
 
+      notifyDataChanged();
       return { success: true, disabledRules: rulesToDisable.map((r) => r.name) };
     } catch (error) {
       return { success: false, error: `ファイルの削除に失敗しました: ${error}` };
@@ -114,8 +117,11 @@ export function setupDataHandlers(configFolder: string) {
   ipcMain.handle(
     IPC_CHANNELS.SAVE_EDITABLE_ITEMS,
     async (_event, editableItems: EditableJsonItem[], expectedHashes?: Record<string, string>) => {
-      await saveEditableItems(configFolder, editableItems, expectedHashes);
-      notifyDataChanged();
+      const result = await saveEditableItems(configFolder, editableItems, expectedHashes);
+      if (result.writtenFiles.length > 0) {
+        notifyDataChanged();
+      }
+      return result;
     }
   );
 

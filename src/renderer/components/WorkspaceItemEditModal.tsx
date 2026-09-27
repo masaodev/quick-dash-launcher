@@ -248,7 +248,7 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
                       <option value="group">グループ</option>
                       <option value="window">ウィンドウ操作</option>
                       <option value="clipboard">クリップボード</option>
-                      <option value="layout">ウィンドウレイアウト</option>
+                      <option value="layout">ウィンドウ配置</option>
                     </select>
                   </div>
 
