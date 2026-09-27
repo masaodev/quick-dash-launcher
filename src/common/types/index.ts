@@ -196,6 +196,7 @@ export type {
   RegisterWindowRequest,
   IconProgressDetailWindowRequest,
   MainChildWindowResult,
+  MainChildWindowReturn,
 } from './mainChildWindow';
 
 // トースト関連の型

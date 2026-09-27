@@ -32,7 +32,6 @@ import {
 import AdminItemManagerList from './AdminItemManagerList';
 import AdminItemManagerHeader from './AdminItemManagerHeader';
 import AutoImportFilterDropdown from './AutoImportFilterDropdown';
-import RegisterModal from './RegisterModal';
 import BookmarkAutoImportRuleModal from './BookmarkAutoImportRuleModal';
 import AppImportModal from './AppImportModal';
 import ConfirmDialog from './ConfirmDialog';
@@ -105,12 +104,6 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     baseVersion,
   } = editing;
 
-  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<EditableJsonItem | null>(null);
-  // 種類プルダウンで「詳細編集でしか作れない種別」を選んだとき、その種別でモーダルを開く
-  const [presetCategory, setPresetCategory] = useState<RegisterItem['itemCategory'] | undefined>(
-    undefined
-  );
   const [isBookmarkModalOpen, setIsBookmarkModalOpen] = useState(false);
   const [isAppImportModalOpen, setIsAppImportModalOpen] = useState(false);
 
@@ -227,30 +220,53 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     }
   };
 
+  // 詳細編集で受け取った内容を未保存の編集状態に反映する（最新の editing を使うため ref 経由）
+  const applyDetailEditRef = useRef<(target: EditableJsonItem, items: RegisterItem[]) => void>(
+    () => {}
+  );
+  applyDetailEditRef.current = (target, items) => {
+    const movedTo = editing.applyRegisterUpdate(target, items);
+    if (movedTo) {
+      showInfo(
+        `「${describeItem(target)}」を ${getFileLabel(movedTo)} へ移動しました（保存で確定）`
+      );
+    }
+  };
+
+  /**
+   * 詳細編集を独立した子ウィンドウで開く（管理ウィンドウが親。閉じるまで管理画面は操作できない）
+   * 子ウィンドウは保存せずフォームの内容を返すので、ここで未保存の編集状態に反映する
+   *
+   * @param initialCategory 種類プルダウンで「詳細編集でしか作れない種別」を選んだとき、その種別で開く
+   */
+  const openDetailEditor = useCallback(
+    async (target: EditableJsonItem, initialCategory?: RegisterItem['itemCategory']) => {
+      try {
+        const result = await window.electronAPI.openMainChildWindow({
+          kind: 'register',
+          droppedPaths: [],
+          editingItem: target,
+          initialCategory,
+          returnToOpener: true,
+        });
+        if (result?.kind === 'register') {
+          applyDetailEditRef.current(target, result.items);
+        }
+      } catch (error) {
+        logError('詳細編集ウィンドウを開けませんでした:', error);
+      }
+    },
+    []
+  );
+
   // AdminItemManagerList側のIPCリスナー登録effectが依存するため、
   // 毎レンダーの再登録を防ぐ目的でuseCallback化している
-  const handleEditItemClick = useCallback((editableItem: EditableJsonItem) => {
-    setEditingItem(editableItem);
-    setIsRegisterModalOpen(true);
-  }, []);
-
-  const closeRegisterModal = () => {
-    setIsRegisterModalOpen(false);
-    setEditingItem(null);
-    setPresetCategory(undefined);
-  };
-
-  const handleUpdateItem = (items: RegisterItem[]) => {
-    if (editingItem) {
-      const movedTo = editing.applyRegisterUpdate(editingItem, items);
-      if (movedTo) {
-        showInfo(
-          `「${describeItem(editingItem)}」を ${getFileLabel(movedTo)} へ移動しました（保存で確定）`
-        );
-      }
-    }
-    closeRegisterModal();
-  };
+  const handleEditItemClick = useCallback(
+    (editableItem: EditableJsonItem) => {
+      void openDetailEditor(editableItem);
+    },
+    [openDetailEditor]
+  );
 
   const handleChangeType = (item: EditableJsonItem, newType: JsonItem['type']) => {
     if (isInlineItemType(newType)) {
@@ -261,9 +277,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
       return;
     }
     // ウィンドウ操作・クリップボード・ウィンドウ配置は必須データを詳細編集で入れる
-    setPresetCategory(newType);
-    setEditingItem(item);
-    setIsRegisterModalOpen(true);
+    void openDetailEditor(item, newType);
   };
 
   const handleAddItem = () => {
@@ -661,15 +675,6 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
           </span>
         )}
       </div>
-
-      <RegisterModal
-        isOpen={isRegisterModalOpen}
-        onClose={closeRegisterModal}
-        onRegister={handleUpdateItem}
-        droppedPaths={[]}
-        editingItem={editingItem}
-        initialCategory={presetCategory}
-      />
 
       {isBookmarkModalOpen && (
         <BookmarkAutoImportRuleModal

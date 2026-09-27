@@ -2,6 +2,7 @@ import { ipcMain, app, clipboard, screen, BrowserWindow } from 'electron';
 import type {
   MainChildWindowRequest,
   MainChildWindowResult,
+  MainChildWindowReturn,
   WindowPinMode,
   WorkspacePositionMode,
 } from '@common/types';
@@ -34,6 +35,7 @@ import {
   openMainChildWindow,
   getMainChildWindowRequest,
   relayMainChildWindowResult,
+  setMainChildWindowReturn,
 } from '../mainChildWindowManager.js';
 import {
   createDetachedGroupWindow,
@@ -86,9 +88,9 @@ export function setupWindowHandlers(
     return true;
   });
 
-  // メイン画面の子ウィンドウ（アイテムの登録・編集、アイコン取得結果）。閉じるまで待つ
-  ipcMain.handle(IPC_CHANNELS.OPEN_MAIN_CHILD_WINDOW, (_event, request: MainChildWindowRequest) =>
-    openMainChildWindow(request)
+  // メイン画面・管理画面の子ウィンドウ（アイテムの登録・編集、アイコン取得結果）。閉じるまで待つ
+  ipcMain.handle(IPC_CHANNELS.OPEN_MAIN_CHILD_WINDOW, (event, request: MainChildWindowRequest) =>
+    openMainChildWindow(request, event.sender)
   );
   ipcMain.handle(IPC_CHANNELS.GET_MAIN_CHILD_WINDOW_REQUEST, (_event, requestId: string) =>
     getMainChildWindowRequest(requestId)
@@ -96,6 +98,11 @@ export function setupWindowHandlers(
   ipcMain.on(
     IPC_CHANNELS.NOTIFY_MAIN_CHILD_WINDOW_RESULT,
     (_event, result: MainChildWindowResult) => relayMainChildWindowResult(result)
+  );
+  ipcMain.handle(
+    IPC_CHANNELS.RETURN_MAIN_CHILD_WINDOW_VALUE,
+    (_event, requestId: string, value: MainChildWindowReturn) =>
+      setMainChildWindowReturn(requestId, value)
   );
 
   ipcMain.handle(IPC_CHANNELS.LOG_PERFORMANCE_TIMING, (_event, label: string, duration: number) => {

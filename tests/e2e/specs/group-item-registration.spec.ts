@@ -497,32 +497,32 @@ test.describe('QuickDashLauncher - グループアイテム登録・編集機能
         expect(iconText?.includes('📦')).toBe(true);
       });
 
+      const adminUtils = new TestUtils(adminWindow);
+      let detailWindow = adminWindow;
+
       await test.step('グループアイテムの詳細編集ボタンをクリック', async () => {
         const groupRow = adminWindow.locator('.raw-item-row', { hasText: '開発環境スタート' });
         const editButton = groupRow.locator('button.detail-edit-button');
         await editButton.click();
 
-        // 登録モーダルが開いたことを確認
-        const modal = adminWindow.locator('.register-modal');
-        await expect(modal).toBeVisible();
+        // 詳細編集が独立した子ウィンドウで開いたことを確認
+        detailWindow = await adminUtils.waitForRegisterWindow(electronApp);
+        await expect(adminWindow.locator('.register-modal')).toHaveCount(0);
       });
 
       await test.step('モーダルでグループ名を編集', async () => {
-        const groupNameInput = adminWindow
+        const groupNameInput = detailWindow
           .locator('.register-modal input[placeholder*="グループ名を入力"]')
           .first();
         await groupNameInput.fill('開発環境スタート管理画面編集');
       });
 
       await test.step('更新ボタンをクリック', async () => {
-        const updateButton = adminWindow
+        const updateButton = detailWindow
           .locator('.register-modal button:is(:has-text("登録"), :has-text("更新"))')
           .first();
-        await updateButton.click();
-
-        // モーダルが閉じるのを待機
-        const modal = adminWindow.locator('.register-modal');
-        await expect(modal).not.toBeVisible({ timeout: 5000 });
+        // 詳細編集ウィンドウが閉じるのを待機
+        await adminUtils.closeRegisterModalBy(() => updateButton.click());
       });
 
       await test.step('変更を保存', async () => {

@@ -30,6 +30,7 @@ import type {
   ToastItemType,
   MainChildWindowRequest,
   MainChildWindowResult,
+  MainChildWindowReturn,
   ToastEventData,
   ClipboardCaptureResult,
   ClipboardRestoreResult,
@@ -277,12 +278,14 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.invoke(IPC_CHANNELS.GET_PENDING_IMPORT_MODAL),
   copyToClipboard: (text: string) => ipcRenderer.invoke(IPC_CHANNELS.COPY_TO_CLIPBOARD, text),
   // メイン画面の子ウィンドウ（アイテムの登録・編集、アイコン取得結果）
-  openMainChildWindow: (request: MainChildWindowRequest): Promise<void> =>
+  openMainChildWindow: (request: MainChildWindowRequest): Promise<MainChildWindowReturn | null> =>
     ipcRenderer.invoke(IPC_CHANNELS.OPEN_MAIN_CHILD_WINDOW, request),
   getMainChildWindowRequest: (requestId: string): Promise<MainChildWindowRequest | null> =>
     ipcRenderer.invoke(IPC_CHANNELS.GET_MAIN_CHILD_WINDOW_REQUEST, requestId),
   notifyMainChildWindowResult: (result: MainChildWindowResult): void =>
     ipcRenderer.send(IPC_CHANNELS.NOTIFY_MAIN_CHILD_WINDOW_RESULT, result),
+  returnMainChildWindowValue: (requestId: string, value: MainChildWindowReturn): Promise<void> =>
+    ipcRenderer.invoke(IPC_CHANNELS.RETURN_MAIN_CHILD_WINDOW_VALUE, requestId, value),
   onMainChildWindowResult: (callback: (result: MainChildWindowResult) => void) =>
     createEventListener<MainChildWindowResult>(
       IPC_CHANNELS.EVENT_MAIN_CHILD_WINDOW_RESULT,
