@@ -24,6 +24,7 @@ import {
   getWorkspaceWindow,
   setWorkspacePosition,
 } from '../workspaceWindowManager.js';
+import { openWorkspaceItemEditor } from '../workspaceItemEditorWindowManager.js';
 import {
   createDetachedGroupWindow,
   closeDetachedGroupWindow,
@@ -112,6 +113,11 @@ export function setupWindowHandlers(
     (_event, isModal: boolean, requiredSize?: { width: number; height: number }) => {
       setWorkspaceModalMode(isModal, requiredSize);
     }
+  );
+
+  // 編集は送信元（ワークスペース本体または切り離しウィンドウ）を親にした子ウィンドウで開く
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_OPEN_ITEM_EDITOR, (event, itemId: string) =>
+    openWorkspaceItemEditor(event.sender, itemId)
   );
 
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_SET_OPACITY, async (_event, opacityPercent: number) => {

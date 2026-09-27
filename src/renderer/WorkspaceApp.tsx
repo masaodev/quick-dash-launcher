@@ -7,7 +7,6 @@ import ConfirmDialog from './components/ConfirmDialog';
 import WorkspaceFilterBar from './components/WorkspaceFilterBar';
 import WorkspaceGroupedList from './components/WorkspaceGroupedList';
 import WorkspaceHeader from './components/WorkspaceHeader';
-import WorkspaceItemEditModal from './components/WorkspaceItemEditModal';
 import WorkspaceTabBar from './components/WorkspaceTabBar';
 import { useClipboardPaste } from './hooks/useClipboardPaste';
 import { useCollapsibleSections } from './hooks/useCollapsibleSections';
@@ -78,7 +77,6 @@ const WorkspaceApp: React.FC = () => {
   const [detachedPinMode, setDetachedPinMode] = useState(0);
   const [backgroundTransparent, setBackgroundTransparent] = useState(false);
   const [activeGroupId, setActiveGroupId] = useState<string>();
-  const [editModalItem, setEditModalItem] = useState<WorkspaceItem | null>(null);
   const [isArchiveMode, setIsArchiveMode] = useState(false);
   const [archivedGroups, setArchivedGroups] = useState<WorkspaceGroupView[]>([]);
   const [archivedItems, setArchivedItems] = useState<WorkspaceItem[]>([]);
@@ -217,10 +215,10 @@ const WorkspaceApp: React.FC = () => {
     const isAnyModalOpen = deleteGroupDialog.isOpen || archiveGroupDialog.isOpen;
     if (isAnyModalOpen) {
       window.electronAPI.workspaceAPI.setModalMode(true, { width: 600, height: 400 });
-    } else if (!editModalItem) {
+    } else {
       window.electronAPI.workspaceAPI.setModalMode(false);
     }
-  }, [deleteGroupDialog.isOpen, archiveGroupDialog.isOpen, editModalItem]);
+  }, [deleteGroupDialog.isOpen, archiveGroupDialog.isOpen]);
 
   /** グループとそのサブグループに含まれるアイテム数・サブグループ数を算出 */
   const getGroupStats = (groupId: string): { itemCount: number; subgroupCount: number } => {
@@ -381,7 +379,12 @@ const WorkspaceApp: React.FC = () => {
       actions.handleUpdateDisplayName(id, displayName);
       setEditingId(null);
     },
-    onEditItem: (item: WorkspaceItem) => setEditModalItem(item),
+    // 編集は独立した子ウィンドウで開く（このウィンドウのサイズ・位置は変えない）
+    onEditItem: (item: WorkspaceItem) => {
+      window.electronAPI.workspaceAPI.openItemEditor(item.id).catch((error) => {
+        logError('編集ウィンドウを開けませんでした:', error);
+      });
+    },
     onToggleGroup: async (groupId: string) => {
       const newCollapsed = toggleGroupCollapsed(groupId);
       if (!isDetached) {
@@ -440,15 +443,6 @@ const WorkspaceApp: React.FC = () => {
     activeGroupId,
     setActiveGroupId,
   };
-
-  const editModal = (
-    <WorkspaceItemEditModal
-      isOpen={editModalItem !== null}
-      onClose={() => setEditModalItem(null)}
-      editingItem={editModalItem}
-      onSave={actions.handleUpdateItem}
-    />
-  );
 
   const resizeHandles = RESIZE_DIRECTIONS.map((direction) => (
     <div
@@ -524,7 +518,6 @@ const WorkspaceApp: React.FC = () => {
             ×
           </button>
         </div>
-        {editModal}
         {resizeHandles}
       </div>
     );
@@ -620,7 +613,6 @@ const WorkspaceApp: React.FC = () => {
         cancelText="キャンセル"
         danger={false}
       />
-      {editModal}
       {resizeHandles}
     </div>
   );

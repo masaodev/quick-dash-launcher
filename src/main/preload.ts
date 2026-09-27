@@ -467,6 +467,8 @@ const electronAPI: ElectronAPI = {
     // モーダルモード関連
     setModalMode: (isModal: boolean, requiredSize?: { width: number; height: number }) =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_SET_MODAL_MODE, isModal, requiredSize),
+    openItemEditor: (itemId: string): Promise<void> =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_OPEN_ITEM_EDITOR, itemId),
     // 透過度関連
     setOpacity: (opacityPercent: number): Promise<boolean> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_SET_OPACITY, opacityPercent),
