@@ -81,11 +81,13 @@ $Shortcut.Save()
       type: 'url',
     });
 
-    await mainWindow.waitForSelector('.register-modal', { state: 'visible', timeout: 5000 });
-    await expect(mainWindow.locator('.register-modal')).toBeVisible();
+    // 編集は独立した子ウィンドウで開く（メインウィンドウは動かさない）
+    const editor = await utils.waitForRegisterWindow(electronApp);
+    await expect(editor.locator('.register-modal h2')).toHaveText('アイテムの編集');
+    await expect(editor).toHaveTitle('アイテムの編集');
 
-    await mainWindow.keyboard.press('Escape');
-    await utils.wait(300);
+    await utils.pressEscapeToCloseRegisterModal();
+    expect(editor.isClosed()).toBe(true);
   });
 
   test('パスをコピーメニュー操作でクリップボードにコピーされる', async ({

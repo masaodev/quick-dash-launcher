@@ -57,7 +57,7 @@ export interface EditingLayoutItem extends Omit<LayoutItem, 'sourceFile'>, Editi
 /**
  * 編集用アイテムの統合型
  *
- * RegisterModal、useRegisterModal、useRegisterFormで使用される。
+ * RegisterModal、useRegisterWindow、useRegisterFormで使用される。
  * LauncherItem/GroupItem/WindowItem/ClipboardItemのいずれかに、
  * 編集に必要なメタデータ（sourceFile, jsonItemId）を付加したもの。
  */

@@ -28,17 +28,13 @@ export function setupIPCHandlers(
   getEditMode: () => boolean,
   getWindowPinMode: () => WindowPinMode,
   cycleWindowPinMode: () => WindowPinMode,
-  setModalMode: (
-    isModal: boolean,
-    requiredSize?: { width: number; height: number }
-  ) => Promise<void>,
   setFirstLaunchMode: (isFirstLaunch: boolean) => void
 ) {
   setupDataHandlers(configFolder);
   setupItemHandlers();
   setupConfigHandlers(configFolder);
   setupIconHandlers(faviconsFolder, iconsFolder, extensionsFolder);
-  setupWindowHandlers(setEditMode, getEditMode, getWindowPinMode, cycleWindowPinMode, setModalMode);
+  setupWindowHandlers(setEditMode, getEditMode, getWindowPinMode, cycleWindowPinMode);
   registerEditHandlers(configFolder);
   setupSettingsHandlers(setFirstLaunchMode);
   setupSplashHandlers(getMainWindow);

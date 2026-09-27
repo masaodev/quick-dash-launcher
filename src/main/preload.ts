@@ -28,6 +28,8 @@ import type {
   IconFetchErrorRecord,
   JsonDirOptions,
   ToastItemType,
+  MainChildWindowRequest,
+  MainChildWindowResult,
   ToastEventData,
   ClipboardCaptureResult,
   ClipboardRestoreResult,
@@ -276,8 +278,18 @@ const electronAPI: ElectronAPI = {
   getPendingImportModal: (): Promise<'bookmark' | 'app' | null> =>
     ipcRenderer.invoke(IPC_CHANNELS.GET_PENDING_IMPORT_MODAL),
   copyToClipboard: (text: string) => ipcRenderer.invoke(IPC_CHANNELS.COPY_TO_CLIPBOARD, text),
-  setModalMode: (isModal: boolean, requiredSize?: { width: number; height: number }) =>
-    ipcRenderer.invoke(IPC_CHANNELS.SET_MODAL_MODE, isModal, requiredSize),
+  // メイン画面の子ウィンドウ（アイテムの登録・編集、アイコン取得結果）
+  openMainChildWindow: (request: MainChildWindowRequest): Promise<void> =>
+    ipcRenderer.invoke(IPC_CHANNELS.OPEN_MAIN_CHILD_WINDOW, request),
+  getMainChildWindowRequest: (requestId: string): Promise<MainChildWindowRequest | null> =>
+    ipcRenderer.invoke(IPC_CHANNELS.GET_MAIN_CHILD_WINDOW_REQUEST, requestId),
+  notifyMainChildWindowResult: (result: MainChildWindowResult): void =>
+    ipcRenderer.send(IPC_CHANNELS.NOTIFY_MAIN_CHILD_WINDOW_RESULT, result),
+  onMainChildWindowResult: (callback: (result: MainChildWindowResult) => void) =>
+    createEventListener<MainChildWindowResult>(
+      IPC_CHANNELS.EVENT_MAIN_CHILD_WINDOW_RESULT,
+      callback
+    ),
   // パフォーマンス計測API
   logPerformanceTiming: (label: string, duration: number) =>
     ipcRenderer.invoke(IPC_CHANNELS.LOG_PERFORMANCE_TIMING, label, duration),
@@ -461,7 +473,7 @@ const electronAPI: ElectronAPI = {
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_GET_ALWAYS_ON_TOP),
     toggleAlwaysOnTop: (): Promise<boolean> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_TOGGLE_ALWAYS_ON_TOP),
-    // モーダルモード関連
+    // モーダルモード関連（確認ダイアログ用。ウィンドウを動かさず、足りない分だけ広げる）
     setModalMode: (isModal: boolean, requiredSize?: { width: number; height: number }) =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_SET_MODAL_MODE, isModal, requiredSize),
     openItemEditor: (itemId: string): Promise<void> =>

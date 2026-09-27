@@ -8,29 +8,18 @@ interface IconProgressDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   results: IconProgressResult[];
+  /** 独立した子ウィンドウの中身として描く（オーバーレイなしでウィンドウいっぱいに広げる） */
+  asPage?: boolean;
 }
 
 const IconProgressDetailModal: React.FC<IconProgressDetailModalProps> = ({
   isOpen,
   onClose,
   results,
+  asPage = false,
 }) => {
   const [filter, setFilter] = useState<'all' | 'success' | 'error'>('all');
   const modalRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (isOpen) {
-      // モーダル表示時にウィンドウサイズを拡大
-      window.electronAPI.setModalMode(true, { width: 800, height: 700 });
-    }
-
-    return () => {
-      // モーダルを閉じた時にウィンドウサイズを元に戻す
-      if (isOpen) {
-        window.electronAPI.setModalMode(false);
-      }
-    };
-  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -87,9 +76,12 @@ const IconProgressDetailModal: React.FC<IconProgressDetailModalProps> = ({
   const filteredResults = filterMap[filter];
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div
+      className={asPage ? 'main-child-page' : 'modal-overlay'}
+      onClick={asPage ? undefined : onClose}
+    >
       <div
-        className="modal-content icon-detail-modal"
+        className={`modal-content icon-detail-modal${asPage ? ' main-child-content' : ''}`}
         onClick={(e) => e.stopPropagation()}
         ref={modalRef}
         tabIndex={-1}

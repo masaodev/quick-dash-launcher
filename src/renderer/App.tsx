@@ -1,15 +1,12 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { DEFAULT_DATA_FILE } from '@common/types';
 import type {
-  RegisterItem,
   LauncherItem,
   AppItem,
   WindowPinMode,
   SearchMode,
   WindowInfo,
   IconFetchErrorRecord,
-  EditingAppItem,
-  EditableJsonItem,
 } from '@common/types';
 import {
   isWindowInfo,
@@ -24,7 +21,6 @@ import { summarizeImportResults } from '@common/utils/bookmarkImportUtils';
 import LauncherSearchBox from './components/LauncherSearchBox';
 import LauncherItemList from './components/LauncherItemList';
 import LauncherActionButtons from './components/LauncherActionButtons';
-import RegisterModal from './components/RegisterModal';
 import LauncherIconProgressBar from './components/LauncherIconProgressBar';
 import LauncherFileTabBar from './components/LauncherFileTabBar';
 import LauncherDesktopTabBar from './components/LauncherDesktopTabBar';
@@ -32,13 +28,12 @@ import LauncherItemCountDisplay from './components/LauncherItemCountDisplay';
 import MissingIconNotice from './components/MissingIconNotice';
 import { SetupFirstLaunch } from './components/SetupFirstLaunch';
 import AlertDialog from './components/AlertDialog';
-import ConfirmDialog from './components/ConfirmDialog';
 import { filterItems } from './utils/dataParser';
 import { filterWindowsByDesktopTab } from './utils/windowFilter';
 import { debugLog, logError } from './utils/debug';
 import { useIconProgress } from './hooks/useIconProgress';
 import { useSearchHistory } from './hooks/useSearchHistory';
-import { useRegisterModal } from './hooks/useRegisterModal';
+import { useRegisterWindow } from './hooks/useRegisterWindow';
 import { useItemActions } from './hooks/useItemActions';
 import { useDataFileTabs } from './hooks/useDataFileTabs';
 import { useIconFetcher } from './hooks/useIconFetcher';
@@ -79,15 +74,6 @@ function App(): React.ReactElement {
     setAlertDialog({ isOpen: true, message, type: 'error' });
   };
 
-  // 削除確認ダイアログ状態管理
-  const [deleteConfirmDialog, setDeleteConfirmDialog] = useState<{
-    isOpen: boolean;
-    item: EditingAppItem | null;
-  }>({
-    isOpen: false,
-    item: null,
-  });
-
   // アイコン取得エラー記録
   const [iconFetchErrors, setIconFetchErrors] = useState<IconFetchErrorRecord[]>([]);
 
@@ -95,15 +81,10 @@ function App(): React.ReactElement {
   const { progressState, resetProgress } = useIconProgress();
   const { navigateToPrevious, navigateToNext, resetNavigation, addHistoryEntry } =
     useSearchHistory();
-  const {
-    isRegisterModalOpen,
-    droppedPaths,
-    editingItem,
-    openRegisterModal,
-    openEditModal,
-    openWithDroppedPaths,
-    closeModal,
-  } = useRegisterModal();
+  // 登録・編集は独立した子ウィンドウで行う（メインウィンドウは動かさない）。保存先の初期値は今のタブ
+  const activeTabRef = useRef<string | undefined>(undefined);
+  const { isRegisterWindowOpen, openRegisterWindow, openEditWindow, openWithDroppedPaths } =
+    useRegisterWindow(useCallback(() => activeTabRef.current, []));
   const {
     handleCopyPath,
     handleCopyParentPath,
@@ -123,11 +104,12 @@ function App(): React.ReactElement {
     handleTabClick,
     getTabFilteredItems,
   } = useDataFileTabs();
+  activeTabRef.current = activeTab;
 
   const { isDraggingOver } = useDragAndDrop(
     (paths: string[]) => openWithDroppedPaths(paths),
     showErrorAlert,
-    isRegisterModalOpen
+    isRegisterWindowOpen
   );
 
   const loadIconFetchErrors = useCallback(async () => {
@@ -411,11 +393,23 @@ function App(): React.ReactElement {
       await withLoading('データ再読込中', () => loadItems('internal'));
     });
 
+    // 登録・編集ウィンドウ（子ウィンドウ）での結果。データ自体は data-changed で読み直す
+    const cleanupChildResult = window.electronAPI.onMainChildWindowResult((result) => {
+      if (result.kind !== 'register') return;
+      const messages = {
+        registered: 'アイテムを登録しました',
+        updated: 'アイテムを更新しました',
+        deleted: 'アイテムを削除しました',
+      } as const;
+      showSuccess(messages[result.action]);
+    });
+
     return () => {
       cleanupWindowShown();
       cleanupWindowShownItemSearch();
       cleanupWindowHidden();
       cleanupDataChanged();
+      cleanupChildResult();
     };
   }, []);
 
@@ -428,109 +422,6 @@ function App(): React.ReactElement {
   const handleTogglePin = async () => {
     const newPinMode = await window.electronAPI.cycleWindowPinMode();
     setWindowPinMode(newPinMode);
-  };
-
-  const handleRegisterItems = async (items: RegisterItem[]) => {
-    if (editingItem && items.length === 1) {
-      const item = items[0];
-      const targetFile = item.targetFile || item.targetTab;
-      const isFileChanged = targetFile !== editingItem.sourceFile;
-
-      if (!editingItem.jsonItemId) {
-        throw new Error('アイテムIDが見つかりません');
-      }
-      const itemId = editingItem.jsonItemId;
-
-      if (isFileChanged) {
-        await window.electronAPI.deleteItemsById([{ id: itemId }]);
-        await window.electronAPI.registerItems([item]);
-      } else if (item.itemCategory === 'dir') {
-        await window.electronAPI.updateDirItemById(itemId, item.path, item.dirOptions, item.memo);
-      } else if (item.itemCategory === 'group') {
-        await window.electronAPI.updateGroupItemById(
-          itemId,
-          item.displayName,
-          item.groupItemNames || [],
-          item.memo
-        );
-      } else if (item.itemCategory === 'window') {
-        const cfg = item.windowOperationConfig;
-        if (!cfg) throw new Error('windowOperationConfig is required for window items');
-        await window.electronAPI.updateWindowItemById(
-          itemId,
-          { ...cfg, displayName: item.displayName },
-          item.memo
-        );
-      } else if (item.itemCategory === 'layout') {
-        await window.electronAPI.updateLayoutItemById(
-          itemId,
-          item.displayName,
-          item.layoutEntries || [],
-          item.memo
-        );
-      } else {
-        await window.electronAPI.updateItemById({
-          id: itemId,
-          newItem: {
-            displayName: item.displayName,
-            path: item.path,
-            type: item.type,
-            args: item.args,
-            customIcon: item.customIcon,
-            windowConfig: item.windowConfig,
-            memo: item.memo,
-          },
-        });
-      }
-    } else {
-      await window.electronAPI.registerItems(items);
-    }
-    await withLoading('データ再読込中', () => loadItems('internal'));
-
-    if (editingItem) {
-      showSuccess('アイテムを更新しました');
-    } else {
-      showSuccess('アイテムを登録しました');
-    }
-  };
-
-  const handleDeleteItemFromModal = (item: EditingAppItem | EditableJsonItem) => {
-    if ('item' in item && 'meta' in item) {
-      const editableItem = item as EditableJsonItem;
-      setDeleteConfirmDialog({
-        isOpen: true,
-        item: {
-          ...editableItem.item,
-          sourceFile: editableItem.meta.sourceFile,
-          jsonItemId: editableItem.item.id,
-        } as EditingAppItem,
-      });
-    } else {
-      setDeleteConfirmDialog({
-        isOpen: true,
-        item: item as EditingAppItem,
-      });
-    }
-  };
-
-  const handleConfirmDelete = async () => {
-    const itemToDelete = deleteConfirmDialog.item;
-    if (!itemToDelete) return;
-
-    try {
-      if (!itemToDelete.jsonItemId) {
-        throw new Error('アイテムIDが見つかりません');
-      }
-      await window.electronAPI.deleteItemsById([{ id: itemToDelete.jsonItemId }]);
-      closeModal();
-      setDeleteConfirmDialog({ isOpen: false, item: null });
-      await withLoading('データ再読込中', () => loadItems('internal'));
-      showSuccess('アイテムを削除しました');
-    } catch (error) {
-      logError('Failed to delete item:', error);
-      showErrorAlert('アイテムの削除に失敗しました。');
-      setDeleteConfirmDialog({ isOpen: false, item: null });
-    }
   };
 
   const handleOpenBasicSettings = async () => {
@@ -550,7 +441,7 @@ function App(): React.ReactElement {
       if (isWindowInfo(item)) return;
 
       if (isGroupItem(item) || isWindowItem(item)) {
-        openEditModal({
+        void openEditWindow({
           ...item,
           sourceFile: item.sourceFile || DEFAULT_DATA_FILE,
           jsonItemId: item.id ?? undefined,
@@ -560,13 +451,13 @@ function App(): React.ReactElement {
 
       const launcherItem = item as LauncherItem;
       const jsonItemId = launcherItem.isDirExpanded ? launcherItem.expandedFromId : launcherItem.id;
-      openEditModal({
+      void openEditWindow({
         ...launcherItem,
         sourceFile: launcherItem.sourceFile || DEFAULT_DATA_FILE,
         jsonItemId: jsonItemId ?? undefined,
       });
     },
-    [openEditModal]
+    [openEditWindow]
   );
 
   const handleFirstLaunchComplete = async (settings: {
@@ -679,7 +570,7 @@ function App(): React.ReactElement {
           onOpenBasicSettings={handleOpenBasicSettings}
           onOpenItemManagement={handleOpenItemManagement}
           onToggleWorkspace={handleToggleWorkspace}
-          onOpenRegisterModal={openRegisterModal}
+          onOpenRegisterModal={() => void openRegisterWindow()}
           windowPinMode={windowPinMode}
         />
         <div className="drag-handle">⋮⋮</div>
@@ -753,16 +644,6 @@ function App(): React.ReactElement {
         <LauncherIconProgressBar progress={progressState.progress} onClose={resetProgress} />
       )}
 
-      <RegisterModal
-        isOpen={isRegisterModalOpen}
-        onClose={closeModal}
-        onRegister={handleRegisterItems}
-        droppedPaths={droppedPaths}
-        editingItem={editingItem}
-        currentTab={activeTab}
-        onDelete={handleDeleteItemFromModal}
-      />
-
       {isDraggingOver && (
         <div className="drag-overlay">
           <div className="drag-message">ファイル / URLをドロップして登録</div>
@@ -774,18 +655,6 @@ function App(): React.ReactElement {
         onClose={() => setAlertDialog({ ...alertDialog, isOpen: false })}
         message={alertDialog.message}
         type={alertDialog.type}
-      />
-
-      <ConfirmDialog
-        isOpen={deleteConfirmDialog.isOpen}
-        onClose={() => setDeleteConfirmDialog({ isOpen: false, item: null })}
-        onConfirm={handleConfirmDelete}
-        message={
-          deleteConfirmDialog.item
-            ? `「${deleteConfirmDialog.item.displayName}」を削除してもよろしいですか？`
-            : ''
-        }
-        danger={true}
       />
     </div>
   );

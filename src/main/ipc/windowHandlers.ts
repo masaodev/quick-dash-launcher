@@ -1,5 +1,10 @@
 import { ipcMain, app, clipboard, screen, BrowserWindow } from 'electron';
-import type { WindowPinMode, WorkspacePositionMode } from '@common/types';
+import type {
+  MainChildWindowRequest,
+  MainChildWindowResult,
+  WindowPinMode,
+  WorkspacePositionMode,
+} from '@common/types';
 import { windowLogger } from '@common/logger';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
@@ -26,6 +31,11 @@ import {
 } from '../workspaceWindowManager.js';
 import { openWorkspaceItemEditor } from '../workspaceItemEditorWindowManager.js';
 import {
+  openMainChildWindow,
+  getMainChildWindowRequest,
+  relayMainChildWindowResult,
+} from '../mainChildWindowManager.js';
+import {
   createDetachedGroupWindow,
   closeDetachedGroupWindow,
   showWithoutFocus,
@@ -42,11 +52,7 @@ export function setupWindowHandlers(
   setEditMode: (editMode: boolean) => Promise<void>,
   getEditMode: () => boolean,
   getWindowPinMode: () => WindowPinMode,
-  cycleWindowPinMode: () => WindowPinMode,
-  setModalMode: (
-    isModal: boolean,
-    requiredSize?: { width: number; height: number }
-  ) => Promise<void>
+  cycleWindowPinMode: () => WindowPinMode
 ) {
   ipcMain.handle(IPC_CHANNELS.GET_WINDOW_PIN_MODE, () => getWindowPinMode());
   ipcMain.handle(IPC_CHANNELS.CYCLE_WINDOW_PIN_MODE, () => cycleWindowPinMode());
@@ -87,11 +93,16 @@ export function setupWindowHandlers(
     return true;
   });
 
-  ipcMain.handle(
-    IPC_CHANNELS.SET_MODAL_MODE,
-    async (_event, isModal: boolean, requiredSize?: { width: number; height: number }) => {
-      await setModalMode(isModal, requiredSize);
-    }
+  // メイン画面の子ウィンドウ（アイテムの登録・編集、アイコン取得結果）。閉じるまで待つ
+  ipcMain.handle(IPC_CHANNELS.OPEN_MAIN_CHILD_WINDOW, (_event, request: MainChildWindowRequest) =>
+    openMainChildWindow(request)
+  );
+  ipcMain.handle(IPC_CHANNELS.GET_MAIN_CHILD_WINDOW_REQUEST, (_event, requestId: string) =>
+    getMainChildWindowRequest(requestId)
+  );
+  ipcMain.on(
+    IPC_CHANNELS.NOTIFY_MAIN_CHILD_WINDOW_RESULT,
+    (_event, result: MainChildWindowResult) => relayMainChildWindowResult(result)
   );
 
   ipcMain.handle(IPC_CHANNELS.LOG_PERFORMANCE_TIMING, (_event, label: string, duration: number) => {

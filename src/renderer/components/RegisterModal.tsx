@@ -35,6 +35,8 @@ interface RegisterModalProps {
   initialCategory?: RegisterItem['itemCategory'];
   currentTab?: string; // 現在開いているタブ
   onDelete?: (item: EditingAppItem | EditableJsonItem) => void; // 削除ハンドラー
+  /** 独立した子ウィンドウの中身として描く（オーバーレイなしでウィンドウいっぱいに広げる） */
+  asPage?: boolean;
 }
 
 /**
@@ -59,6 +61,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
   initialCategory,
   currentTab,
   onDelete,
+  asPage = false,
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -150,7 +153,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
   useEffect(() => {
     if (!isOpen) {
       document.body.style.overflow = 'auto';
-      window.electronAPI.setModalMode(false);
       clearCustomIconPreviews();
       return;
     }
@@ -160,12 +162,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
       document.body.style.overflow = 'auto';
     };
   }, [isOpen]);
-
-  useEffect(() => {
-    if (!isOpen || items.length === 0) return;
-
-    window.electronAPI.setModalMode(true, { width: 850, height: 1000 });
-  }, [isOpen, items]);
 
   const onCustomIconSelected = async (filePath: string): Promise<void> => {
     const item = items[filePickerState.itemIndex!];
@@ -278,9 +274,12 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
 
   return (
     <>
-      <div className="modal-overlay" onClick={(e) => e.stopPropagation()}>
+      <div
+        className={asPage ? 'main-child-page' : 'modal-overlay'}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div
-          className={`modal-content register-modal ${isDraggingOverModal ? 'dragging-over' : ''}`}
+          className={`modal-content register-modal${asPage ? ' main-child-content' : ''} ${isDraggingOverModal ? 'dragging-over' : ''}`}
           onClick={(e) => e.stopPropagation()}
           onDragOver={handleModalDragOver}
           onDragLeave={handleModalDragLeave}

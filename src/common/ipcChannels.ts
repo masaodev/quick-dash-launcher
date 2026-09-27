@@ -86,7 +86,11 @@ export const IPC_CHANNELS = {
   GET_VIRTUAL_DESKTOP_INFO: 'get-virtual-desktop-info',
   ACTIVATE_WINDOW: 'activate-window',
   COPY_TO_CLIPBOARD: 'copy-to-clipboard',
-  SET_MODAL_MODE: 'set-modal-mode',
+  // メイン画面の子ウィンドウ（アイテムの登録・編集、アイコン取得結果）
+  OPEN_MAIN_CHILD_WINDOW: 'window:open-main-child',
+  GET_MAIN_CHILD_WINDOW_REQUEST: 'window:get-main-child-request',
+  NOTIFY_MAIN_CHILD_WINDOW_RESULT: 'window:notify-main-child-result',
+  EVENT_MAIN_CHILD_WINDOW_RESULT: 'window:main-child-result',
   LOG_PERFORMANCE_TIMING: 'log-performance-timing',
 
   // 編集操作（IDベース）
