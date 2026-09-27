@@ -383,20 +383,20 @@ function BookmarkImportModal({
                 )}
               </div>
               <div className="bookmark-filtered-actions">
-                <button onClick={handleSelectFiltered} className="bookmark-action-button">
+                <Button variant="info" size="sm" onClick={handleSelectFiltered}>
                   表示中を選択
-                </button>
-                <button onClick={handleDeselectFiltered} className="bookmark-action-button">
+                </Button>
+                <Button variant="info" size="sm" onClick={handleDeselectFiltered}>
                   表示中を解除
-                </button>
+                </Button>
               </div>
               <div className="bookmark-all-actions">
-                <button onClick={handleSelectAll} className="bookmark-action-button">
+                <Button variant="info" size="sm" onClick={handleSelectAll}>
                   全て選択
-                </button>
-                <button onClick={handleDeselectAll} className="bookmark-action-button">
+                </Button>
+                <Button variant="info" size="sm" onClick={handleDeselectAll}>
                   全て解除
-                </button>
+                </Button>
               </div>
             </div>
           )}
