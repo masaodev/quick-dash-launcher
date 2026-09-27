@@ -11,7 +11,6 @@ import type {
 
 import type {
   LauncherItem,
-  SimpleBookmarkItem,
   AppSettings,
   IconProgress,
   LayoutExecutionProgress,
@@ -53,7 +52,6 @@ import type {
   BookmarkAutoImportSettings,
   BookmarkAutoImportRule,
   BookmarkAutoImportResult,
-  BookmarkFolder,
   BookmarkWithFolder,
   SnapshotInfo,
   BackupStatus,
@@ -183,10 +181,10 @@ export interface ElectronAPI {
   setEditMode: (editMode: boolean) => Promise<void>;
   getEditMode: () => Promise<boolean>;
   selectBookmarkFile: () => Promise<string | null>;
-  parseBookmarkFile: (filePath: string) => Promise<SimpleBookmarkItem[]>;
+  /** HTML ブックマークファイル（Netscape 形式）をフォルダ付きで読む（取込画面用） */
+  parseBookmarkFileWithFolders: (filePath: string) => Promise<BookmarkWithFolder[]>;
   // ブラウザブックマーク直接インポートAPI
   detectInstalledBrowsers: () => Promise<BrowserInfo[]>;
-  parseBrowserBookmarks: (filePath: string) => Promise<SimpleBookmarkItem[]>;
   // アプリインポートAPI
   scanInstalledApps: () => Promise<AppScanResult>;
   showEditWindow: () => Promise<void>;
@@ -445,8 +443,6 @@ export interface ElectronAPI {
     saveSettings: (settings: BookmarkAutoImportSettings) => Promise<void>;
     executeRule: (rule: BookmarkAutoImportRule) => Promise<BookmarkAutoImportResult>;
     executeAll: () => Promise<BookmarkAutoImportResult[]>;
-    previewRule: (rule: BookmarkAutoImportRule) => Promise<BookmarkWithFolder[]>;
-    getFolders: (bookmarkPath: string) => Promise<BookmarkFolder[]>;
     getBookmarksWithFolders: (bookmarkPath: string) => Promise<BookmarkWithFolder[]>;
     deleteRuleItems: (ruleId: string, targetFile: string) => Promise<number>;
   };

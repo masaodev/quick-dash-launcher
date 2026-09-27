@@ -9,8 +9,10 @@ import {
   type RegisterItem,
 } from '@common/types';
 import type { EditableJsonItem } from '@common/types/editableItem';
+import type { BookmarkAutoImportRule } from '@common/types/bookmarkAutoImport';
 
 import { useToast } from '../hooks/useToast';
+import { logError } from '../utils/debug';
 import { useBookmarkAutoImport } from '../hooks/useBookmarkAutoImport';
 import { useAdminPathExistence, checkablePathOf } from '../hooks/useAdminPathExistence';
 import type { AdminItemEditing } from '../hooks/useAdminItemEditing';
@@ -31,7 +33,7 @@ import AdminItemManagerList from './AdminItemManagerList';
 import AdminItemManagerHeader from './AdminItemManagerHeader';
 import AutoImportFilterDropdown from './AutoImportFilterDropdown';
 import RegisterModal from './RegisterModal';
-import BookmarkImportModal from './BookmarkImportModal';
+import BookmarkAutoImportRuleModal from './BookmarkAutoImportRuleModal';
 import AppImportModal from './AppImportModal';
 import ConfirmDialog from './ConfirmDialog';
 import { Button } from './ui/Button';
@@ -148,8 +150,22 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     });
   };
 
-  // 自動取込設定からルールマップを構築
-  const { settings: autoImportSettings } = useBookmarkAutoImport();
+  // 自動取込設定からルールマップを構築。取込画面の「ルールとして保存」もここから行う
+  const {
+    settings: autoImportSettings,
+    addRule: addAutoImportRule,
+    executeRule: executeAutoImportRule,
+  } = useBookmarkAutoImport();
+
+  // 取込画面のインポート先の選択肢（設定のルール編集と同じく物理ファイル一覧）
+  const [importDataFiles, setImportDataFiles] = useState<string[]>([]);
+  useEffect(() => {
+    if (!isBookmarkModalOpen) return;
+    window.electronAPI
+      .getDataFiles()
+      .then(setImportDataFiles)
+      .catch((error) => logError('データファイル一覧の取得に失敗しました:', error));
+  }, [isBookmarkModalOpen]);
 
   const autoImportRuleMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -326,12 +342,36 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     );
   };
 
-  const handleBookmarkImport = (
+  /** 取込画面「今回だけ取り込む」: 未保存の変更として追加（印は付かない） */
+  const handleBookmarkImportOnce = (
     bookmarks: SimpleBookmarkItem[],
-    duplicateHandling: DuplicateHandlingOption
+    duplicateHandling: DuplicateHandlingOption,
+    targetFile: string
   ) => {
-    editing.importBookmarks(bookmarks, duplicateHandling, selectedDataFile);
+    editing.importBookmarks(bookmarks, duplicateHandling, targetFile);
     setIsBookmarkModalOpen(false);
+    showInfo(`${bookmarks.length} 件を ${getFileLabel(targetFile)} に追加しました（保存で確定）`);
+  };
+
+  /** 取込画面「ルールとして保存」: 設定にルールを足してすぐ実行する（自動取込と同じ置き換え方式） */
+  const handleBookmarkSaveAsRule = async (rule: BookmarkAutoImportRule) => {
+    await addAutoImportRule(rule);
+    setIsBookmarkModalOpen(false);
+    const result = await executeAutoImportRule(rule);
+    if (result.success) {
+      const message = `ルール「${rule.name}」を保存して実行しました: ${result.importedCount}件登録`;
+      if (result.manualDuplicateCount) {
+        showWarning(
+          `${message}（手動で登録済みの URL と ${result.manualDuplicateCount} 件重複しています）`
+        );
+      } else {
+        showSuccess(message);
+      }
+    } else {
+      showWarning(
+        `ルール「${rule.name}」を保存しましたが実行に失敗しました: ${result.errorMessage}`
+      );
+    }
   };
 
   const handleAppImport = (apps: ScannedAppItem[], duplicateHandling: DuplicateHandlingOption) => {
@@ -631,14 +671,20 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
         initialCategory={presetCategory}
       />
 
-      <BookmarkImportModal
-        isOpen={isBookmarkModalOpen}
-        onClose={() => setIsBookmarkModalOpen(false)}
-        onImport={handleBookmarkImport}
-        existingItems={currentFileWorkingItems}
-        importDestination={getImportDestination()}
-        onOpenAutoImportSettings={onOpenAutoImportSettings}
-      />
+      {isBookmarkModalOpen && (
+        <BookmarkAutoImportRuleModal
+          mode="import"
+          rule={null}
+          dataFiles={importDataFiles.length > 0 ? importDataFiles : [selectedDataFile]}
+          dataFileLabels={dataFileLabels}
+          defaultTargetFile={selectedDataFile}
+          existingItems={workingItems}
+          onSave={handleBookmarkSaveAsRule}
+          onCancel={() => setIsBookmarkModalOpen(false)}
+          onImportOnce={handleBookmarkImportOnce}
+          onOpenAutoImportSettings={onOpenAutoImportSettings}
+        />
+      )}
 
       <AppImportModal
         isOpen={isAppImportModalOpen}

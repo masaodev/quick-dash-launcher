@@ -41,7 +41,6 @@ import type {
   BookmarkAutoImportSettings,
   BookmarkAutoImportRule,
   BookmarkAutoImportResult,
-  BookmarkFolder,
   BookmarkWithFolder,
   SnapshotInfo,
   BackupStatus,
@@ -241,13 +240,11 @@ const electronAPI: ElectronAPI = {
   setEditMode: (editMode: boolean) => ipcRenderer.invoke(IPC_CHANNELS.SET_EDIT_MODE, editMode),
   getEditMode: () => ipcRenderer.invoke(IPC_CHANNELS.GET_EDIT_MODE),
   selectBookmarkFile: () => ipcRenderer.invoke(IPC_CHANNELS.SELECT_BOOKMARK_FILE),
-  parseBookmarkFile: (filePath: string) =>
-    ipcRenderer.invoke(IPC_CHANNELS.PARSE_BOOKMARK_FILE, filePath),
+  parseBookmarkFileWithFolders: (filePath: string): Promise<BookmarkWithFolder[]> =>
+    ipcRenderer.invoke(IPC_CHANNELS.PARSE_BOOKMARK_FILE_WITH_FOLDERS, filePath),
   // ブラウザブックマーク直接インポートAPI
   detectInstalledBrowsers: (): Promise<BrowserInfo[]> =>
     ipcRenderer.invoke(IPC_CHANNELS.DETECT_INSTALLED_BROWSERS),
-  parseBrowserBookmarks: (filePath: string) =>
-    ipcRenderer.invoke(IPC_CHANNELS.PARSE_BROWSER_BOOKMARKS, filePath),
   // アプリインポートAPI
   scanInstalledApps: (): Promise<AppScanResult> =>
     ipcRenderer.invoke(IPC_CHANNELS.SCAN_INSTALLED_APPS),
@@ -677,10 +674,6 @@ const electronAPI: ElectronAPI = {
       ipcRenderer.invoke(IPC_CHANNELS.BOOKMARK_AUTO_IMPORT_EXECUTE_RULE, rule),
     executeAll: (): Promise<BookmarkAutoImportResult[]> =>
       ipcRenderer.invoke(IPC_CHANNELS.BOOKMARK_AUTO_IMPORT_EXECUTE_ALL),
-    previewRule: (rule: BookmarkAutoImportRule): Promise<BookmarkWithFolder[]> =>
-      ipcRenderer.invoke(IPC_CHANNELS.BOOKMARK_AUTO_IMPORT_PREVIEW_RULE, rule),
-    getFolders: (bookmarkPath: string): Promise<BookmarkFolder[]> =>
-      ipcRenderer.invoke(IPC_CHANNELS.BOOKMARK_AUTO_IMPORT_GET_FOLDERS, bookmarkPath),
     getBookmarksWithFolders: (bookmarkPath: string): Promise<BookmarkWithFolder[]> =>
       ipcRenderer.invoke(
         IPC_CHANNELS.BOOKMARK_AUTO_IMPORT_GET_BOOKMARKS_WITH_FOLDERS,

@@ -3,7 +3,6 @@ import type {
   BookmarkAutoImportSettings,
   BookmarkAutoImportRule,
   BookmarkAutoImportResult,
-  BookmarkWithFolder,
 } from '@common/types/bookmarkAutoImport';
 import { DEFAULT_BOOKMARK_AUTO_IMPORT_SETTINGS } from '@common/types/bookmarkAutoImport';
 
@@ -115,12 +114,6 @@ export function useBookmarkAutoImport() {
     }
   }, [loadSettings]);
 
-  const previewRule = useCallback(
-    (rule: BookmarkAutoImportRule): Promise<BookmarkWithFolder[]> =>
-      window.electronAPI.bookmarkAutoImportAPI.previewRule(rule),
-    []
-  );
-
   return {
     settings,
     isLoading,
@@ -132,6 +125,5 @@ export function useBookmarkAutoImport() {
     deleteRule,
     executeRule,
     executeAllRules,
-    previewRule,
   };
 }

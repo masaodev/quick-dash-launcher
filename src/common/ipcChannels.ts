@@ -46,9 +46,8 @@ export const IPC_CHANNELS = {
 
   // ブックマークインポート
   SELECT_BOOKMARK_FILE: 'select-bookmark-file',
-  PARSE_BOOKMARK_FILE: 'parse-bookmark-file',
+  PARSE_BOOKMARK_FILE_WITH_FOLDERS: 'parse-bookmark-file-with-folders',
   DETECT_INSTALLED_BROWSERS: 'detect-installed-browsers',
-  PARSE_BROWSER_BOOKMARKS: 'parse-browser-bookmarks',
 
   // アプリインポート
   SCAN_INSTALLED_APPS: 'scan-installed-apps',
@@ -58,8 +57,6 @@ export const IPC_CHANNELS = {
   BOOKMARK_AUTO_IMPORT_SAVE_SETTINGS: 'bookmark-auto-import:save-settings',
   BOOKMARK_AUTO_IMPORT_EXECUTE_RULE: 'bookmark-auto-import:execute-rule',
   BOOKMARK_AUTO_IMPORT_EXECUTE_ALL: 'bookmark-auto-import:execute-all',
-  BOOKMARK_AUTO_IMPORT_PREVIEW_RULE: 'bookmark-auto-import:preview-rule',
-  BOOKMARK_AUTO_IMPORT_GET_FOLDERS: 'bookmark-auto-import:get-folders',
   BOOKMARK_AUTO_IMPORT_GET_BOOKMARKS_WITH_FOLDERS:
     'bookmark-auto-import:get-bookmarks-with-folders',
   BOOKMARK_AUTO_IMPORT_DELETE_RULE_ITEMS: 'bookmark-auto-import:delete-rule-items',
