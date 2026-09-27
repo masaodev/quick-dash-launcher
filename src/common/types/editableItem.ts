@@ -58,6 +58,9 @@ export interface LoadEditableItemsResult {
   error?: string;
 }
 
+/** パスの存在確認の結果。unknown は時間内に応答が無かった（ネットワークパスなど。リンク切れとは数えない） */
+export type PathExistenceStatus = 'exists' | 'missing' | 'unknown';
+
 /**
  * saveEditableItemsの戻り値型
  */

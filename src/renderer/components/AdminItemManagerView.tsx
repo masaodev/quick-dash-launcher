@@ -164,17 +164,49 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
 
   const [autoImportFilter, setAutoImportFilter] = useState<AutoImportFilter>('all');
 
-  // パスが実在しないアイテム（リンク切れ）。読み込み・保存のたびに確認し直す
+  const currentFileWorkingItems = useMemo(
+    () => workingItems.filter((item) => item.meta.sourceFile === selectedDataFile),
+    [workingItems, selectedDataFile]
+  );
+
+  // リンク切れ（パスが実在しない）。ネットワークパスは応答に時間がかかることがあるので、
+  // 自動では確認せず、ツールメニューの「リンク切れを確認」を押したときだけ確認する
   const [missingOnly, setMissingOnly] = useState(false);
-  const pathExistence = useAdminPathExistence(workingItems, baseVersion);
+  const pathCheck = useAdminPathExistence(baseVersion);
   const missingIds = useMemo(() => {
     const ids = new Set<string>();
     for (const item of workingItems) {
       const itemPath = checkablePathOf(item);
-      if (itemPath && pathExistence.get(itemPath) === false) ids.add(getItemKey(item));
+      if (itemPath && pathCheck.results.get(itemPath) === 'missing') ids.add(getItemKey(item));
     }
     return ids;
-  }, [workingItems, pathExistence]);
+  }, [workingItems, pathCheck.results]);
+
+  // 読み込み・保存で結果が捨てられたら絞り込みも解く
+  useEffect(() => {
+    if (!pathCheck.hasChecked) setMissingOnly(false);
+  }, [pathCheck.hasChecked]);
+
+  const handleCheckMissingPaths = async () => {
+    const summary = await pathCheck.runCheck(currentFileWorkingItems);
+    if (summary.checked === 0) {
+      showInfo('確認対象のローカルパスがありません（URL・shell:・コマンド名は確認しません）');
+      return;
+    }
+    const unknownNote =
+      summary.unknown > 0
+        ? `、応答なし ${summary.unknown} 件（ネットワークパスなど。リンク切れとは数えません）`
+        : '';
+    if (summary.missing === 0) {
+      showSuccess(`${summary.checked} 件を確認しました。リンク切れはありません${unknownNote}`);
+    } else {
+      showWarning(
+        `${summary.checked} 件を確認し、リンク切れが ${summary.missing} 件ありました${unknownNote}。` +
+          '「🧰 ツール ▼ リンク切れのみ表示」で絞り込めます',
+        { duration: 8000 }
+      );
+    }
+  };
 
   // AdminItemManagerList側のIPCリスナー登録effectが依存するため、
   // 毎レンダーの再登録を防ぐ目的でuseCallback化している
@@ -463,11 +495,6 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     return tabName;
   };
 
-  const currentFileWorkingItems = useMemo(
-    () => workingItems.filter((item) => item.meta.sourceFile === selectedDataFile),
-    [workingItems, selectedDataFile]
-  );
-
   const isFiltered = searchQuery.trim().length > 0 || autoImportFilter !== 'all' || missingOnly;
 
   return (
@@ -482,6 +509,12 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
         onSelectFile={setSelectedDataFile}
         onOpenBookmarkImport={() => setIsBookmarkModalOpen(true)}
         onOpenAppImport={() => setIsAppImportModalOpen(true)}
+        onCheckMissingPaths={() => void handleCheckMissingPaths()}
+        checkingMissingPaths={pathCheck.checking}
+        missingOnly={missingOnly}
+        missingOnlyAvailable={pathCheck.hasChecked}
+        onToggleMissingOnly={() => setMissingOnly((prev) => !prev)}
+        onDedupe={handleDedupe}
       />
 
       {/* ツールバーエリア */}
@@ -502,20 +535,6 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
           >
             🗑️ 選択したアイテムを削除
             {visibleSelectedItems.length > 0 ? ` (${visibleSelectedItems.length})` : ''}
-          </Button>
-          <Button
-            variant="info"
-            onClick={handleDedupe}
-            title="種類・名前・パスが同じアイテムを、先にある 1 件を残して削除します"
-          >
-            🧹 重複を削除
-          </Button>
-          <Button
-            variant={missingOnly ? 'primary' : 'info'}
-            onClick={() => setMissingOnly((prev) => !prev)}
-            title="パスが見つからないアイテム（移動・削除されたファイルやフォルダ）だけを表示します。URL や shell: のパスは確認しません"
-          >
-            ⚠ リンク切れのみ{missingIds.size > 0 ? ` (${missingIds.size})` : ''}
           </Button>
           <AutoImportFilterDropdown
             filter={autoImportFilter}
@@ -588,7 +607,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
         </span>
         <span className="total-count">合計: {filteredItems.length} 件</span>
         {invalidCount > 0 && <span className="invalid-count">入力不備: {invalidCount} 件</span>}
-        {missingIds.size > 0 && (
+        {pathCheck.hasChecked && (
           <span className="missing-count">リンク切れ: {missingIds.size} 件</span>
         )}
         {hasUnsavedChanges && (

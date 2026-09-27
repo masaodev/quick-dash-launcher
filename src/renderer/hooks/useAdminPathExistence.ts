@@ -1,72 +1,66 @@
-import { useEffect, useRef, useState } from 'react';
-import type { EditableJsonItem } from '@common/types/editableItem';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { EditableJsonItem, PathExistenceStatus } from '@common/types/editableItem';
 import { isPathExistenceCheckable } from '@common/utils/pathExistence';
 
 /** 存在確認の対象になるパス（単一アイテムとフォルダ取込のローカルパス） */
-function checkablePathOf(item: EditableJsonItem): string | null {
+export function checkablePathOf(item: EditableJsonItem): string | null {
   const jsonItem = item.item;
   if (jsonItem.type !== 'item' && jsonItem.type !== 'dir') return null;
   const itemPath = jsonItem.path || '';
   return isPathExistenceCheckable(itemPath) ? itemPath : null;
 }
 
+export interface PathCheckSummary {
+  /** 確認したパスの数（重複は 1 つに数える） */
+  checked: number;
+  missing: number;
+  /** 時間内に応答が無かった数（ネットワークパスなど。リンク切れとは数えない） */
+  unknown: number;
+}
+
 /**
- * アイテムのパスが実在するかを取得する（リンク切れの印に使う）
+ * アイテムのパスが実在するかを、求められたときだけ確認する（「リンク切れを確認」）
  *
- * 未確認のパスだけを IPC でまとめて確認する。refreshKey が変わったら（読み込み・保存）全部を確認し直す。
- *
- * @returns Map<パス, 実在するか>。確認対象外のパスは含まない
+ * 自動では確認しない。ネットワークパスは応答に時間がかかることがあるため。
+ * 結果は refreshKey が変わったら（読み込み・保存）捨てる。
  */
-export function useAdminPathExistence(
-  items: EditableJsonItem[],
-  refreshKey: number
-): Map<string, boolean> {
-  const [existence, setExistence] = useState<Map<string, boolean>>(new Map());
-  const checkedRef = useRef<Set<string>>(new Set());
+export function useAdminPathExistence(refreshKey: number) {
+  const [results, setResults] = useState<Map<string, PathExistenceStatus>>(new Map());
+  const [checking, setChecking] = useState(false);
+  const [hasChecked, setHasChecked] = useState(false);
   const lastRefreshKeyRef = useRef(refreshKey);
 
   useEffect(() => {
-    if (lastRefreshKeyRef.current !== refreshKey) {
-      lastRefreshKeyRef.current = refreshKey;
-      checkedRef.current = new Set();
-    }
+    if (lastRefreshKeyRef.current === refreshKey) return;
+    lastRefreshKeyRef.current = refreshKey;
+    setResults(new Map());
+    setHasChecked(false);
+  }, [refreshKey]);
 
-    const pending = new Set<string>();
+  const runCheck = useCallback(async (items: EditableJsonItem[]): Promise<PathCheckSummary> => {
+    const paths = new Set<string>();
     for (const item of items) {
       const itemPath = checkablePathOf(item);
-      if (itemPath && !checkedRef.current.has(itemPath)) {
-        pending.add(itemPath);
-      }
+      if (itemPath) paths.add(itemPath);
     }
-    if (pending.size === 0) return;
 
-    const paths = [...pending];
-    paths.forEach((p) => checkedRef.current.add(p));
-    let cancelled = false;
+    setChecking(true);
+    try {
+      const result = paths.size > 0 ? await window.electronAPI.checkPathsExist([...paths]) : {};
+      const next = new Map<string, PathExistenceStatus>(Object.entries(result));
+      setResults(next);
+      setHasChecked(true);
+      let missing = 0;
+      let unknown = 0;
+      for (const status of next.values()) {
+        if (status === 'missing') missing++;
+        else if (status === 'unknown') unknown++;
+      }
+      return { checked: next.size, missing, unknown };
+    } finally {
+      setChecking(false);
+    }
+  }, []);
 
-    window.electronAPI
-      .checkPathsExist(paths)
-      .then((result) => {
-        if (cancelled) return;
-        setExistence((prev) => {
-          const next = new Map(prev);
-          for (const [p, exists] of Object.entries(result)) {
-            next.set(p, exists);
-          }
-          return next;
-        });
-      })
-      .catch(() => {
-        // 確認できなかったパスは次の機会にもう一度確認する
-        paths.forEach((p) => checkedRef.current.delete(p));
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [items, refreshKey]);
-
-  return existence;
+  return { results, checking, hasChecked, runCheck };
 }
-
-export { checkablePathOf };

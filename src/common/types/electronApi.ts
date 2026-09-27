@@ -5,6 +5,7 @@
 import type {
   EditableJsonItem,
   LoadEditableItemsResult,
+  PathExistenceStatus,
   SaveEditableItemsResult,
 } from './editableItem';
 
@@ -122,8 +123,11 @@ export interface ElectronAPI {
   cycleWindowPinMode: () => Promise<WindowPinMode>;
   registerItems: (items: RegisterItem[]) => Promise<void>;
   isDirectory: (filePath: string) => Promise<boolean>;
-  /** パスが実在するかをまとめて確認する。環境変数（%VAR%）は展開して調べる */
-  checkPathsExist: (paths: string[]) => Promise<Record<string, boolean>>;
+  /**
+   * パスが実在するかをまとめて確認する（押したときだけ呼ぶ）。環境変数（%VAR%）は展開して調べ、
+   * 応答しないパスは時間切れで unknown にする
+   */
+  checkPathsExist: (paths: string[]) => Promise<Record<string, PathExistenceStatus>>;
   getPathForFile: (file: File) => string;
   quitApp: () => Promise<void>;
   getAllWindows: () => Promise<WindowInfo[]>;

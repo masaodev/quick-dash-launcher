@@ -13,9 +13,18 @@ interface AdminItemManagerHeaderProps {
   onSelectFile: (fileName: string) => void;
   onOpenBookmarkImport: () => void;
   onOpenAppImport: () => void;
+  /** ツールメニュー: リンク切れの確認（押したときだけ確認する） */
+  onCheckMissingPaths: () => void;
+  checkingMissingPaths: boolean;
+  /** ツールメニュー: リンク切れのみ表示（確認した後だけ選べる） */
+  missingOnly: boolean;
+  missingOnlyAvailable: boolean;
+  onToggleMissingOnly: () => void;
+  /** ツールメニュー: 重複を削除 */
+  onDedupe: () => void;
 }
 
-/** アイテム管理のヘッダー: 編集対象のタブ・データファイルの選択と一括取り込み */
+/** アイテム管理のヘッダー: 編集対象のタブ・データファイルの選択、一括取り込み、ツールメニュー */
 const AdminItemManagerHeader: React.FC<AdminItemManagerHeaderProps> = ({
   dataFileTabs,
   selectedTabIndex,
@@ -26,10 +35,17 @@ const AdminItemManagerHeader: React.FC<AdminItemManagerHeaderProps> = ({
   onSelectFile,
   onOpenBookmarkImport,
   onOpenAppImport,
+  onCheckMissingPaths,
+  checkingMissingPaths,
+  missingOnly,
+  missingOnlyAvailable,
+  onToggleMissingOnly,
+  onDedupe,
 }) => {
   const tabDropdown = useDropdown();
   const fileDropdown = useDropdown();
   const importDropdown = useDropdown();
+  const toolsDropdown = useDropdown();
   const currentTab = dataFileTabs[selectedTabIndex];
 
   return (
@@ -116,6 +132,56 @@ const AdminItemManagerHeader: React.FC<AdminItemManagerHeaderProps> = ({
                 }}
               >
                 インストール済みアプリを追加
+              </button>
+            </div>
+          )}
+        </div>
+        <div className="import-dropdown tools-dropdown" ref={toolsDropdown.ref}>
+          <button
+            className="dropdown-trigger-btn"
+            onClick={toolsDropdown.toggle}
+            title="一覧全体に対する補助機能（リンク切れの確認、重複の削除）"
+          >
+            <span className="dropdown-trigger-text">🧰 ツール</span>
+            <span className="dropdown-trigger-icon">{toolsDropdown.isOpen ? '▲' : '▼'}</span>
+          </button>
+          {toolsDropdown.isOpen && (
+            <div className="dropdown-menu">
+              <button
+                className="dropdown-item"
+                disabled={checkingMissingPaths}
+                onClick={() => {
+                  toolsDropdown.close();
+                  onCheckMissingPaths();
+                }}
+                title="表示中のデータファイルのローカルパスが実在するかを確認します（URL・shell:・コマンド名は対象外。押したときだけ確認します）"
+              >
+                {checkingMissingPaths ? '🔍 確認中...' : '🔍 リンク切れを確認'}
+              </button>
+              <button
+                className={`dropdown-item ${missingOnly ? 'selected' : ''}`}
+                disabled={!missingOnlyAvailable}
+                onClick={() => {
+                  toolsDropdown.close();
+                  onToggleMissingOnly();
+                }}
+                title={
+                  missingOnlyAvailable
+                    ? 'パスが見つからなかったアイテムだけを表示します'
+                    : '先に「リンク切れを確認」を実行してください'
+                }
+              >
+                {missingOnly ? '☑' : '☐'} リンク切れのみ表示
+              </button>
+              <button
+                className="dropdown-item"
+                onClick={() => {
+                  toolsDropdown.close();
+                  onDedupe();
+                }}
+                title="種類・名前・パスが同じアイテムを、先にある 1 件を残して削除します"
+              >
+                🧹 重複を削除
               </button>
             </div>
           )}
