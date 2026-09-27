@@ -1,16 +1,14 @@
 import { randomUUID } from 'crypto';
 
-import { BrowserWindow, screen } from 'electron';
-import type { BrowserWindowConstructorOptions, Rectangle } from 'electron';
+import type { BrowserWindow } from 'electron';
 import { windowLogger } from '@common/logger';
 import { MAIN_CHILD_WINDOW_NAME_PREFIX } from '@common/constants';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 import type { MainChildWindowRequest, MainChildWindowResult } from '@common/types';
 
-import { DEFAULT_WEB_PREFERENCES } from './utils/managedWindow.js';
 import { calculateEditorBounds } from './utils/editorWindowBounds.js';
 import { resolveMainChildWindowSpec } from './utils/mainChildWindowSpec.js';
-import { getRendererHtmlUrl, openChildWindow } from './services/childWindowService.js';
+import { ModalChildWindows, resolveWorkArea } from './utils/modalChildWindows.js';
 import { getMainWindow, setModalMode } from './windowManager.js';
 
 /**
@@ -30,25 +28,14 @@ import { getMainWindow, setModalMode } from './windowManager.js';
  * 外れても隠れないようにする（ウィンドウのサイズ・位置は変えない）。
  */
 
-/** ready-to-show が来ないときに表示する上限（ms） */
-const SHOW_FALLBACK_TIMEOUT_MS = 1500;
-
 /** requestId → 要求（ウィンドウが閉じるまで保持） */
 const requests = new Map<string, MainChildWindowRequest>();
 
 /** requestId → 子ウィンドウ */
-const windows = new Map<string, BrowserWindow>();
+const windows = new ModalChildWindows();
 
 /** 開いている子ウィンドウの数（0 → 1 でモーダルモード ON、1 → 0 で OFF） */
 let openCount = 0;
-
-/** メインウィンドウのあるディスプレイの作業領域（取れなければカーソルのあるディスプレイ） */
-function resolveWorkArea(mainWindow: BrowserWindow | null): Rectangle {
-  if (mainWindow && !mainWindow.isDestroyed()) {
-    return screen.getDisplayMatching(mainWindow.getBounds()).workArea;
-  }
-  return screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).workArea;
-}
 
 async function enterModal(): Promise<void> {
   openCount += 1;
@@ -90,44 +77,23 @@ export async function openMainChildWindow(request: MainChildWindowRequest): Prom
   const mainWindow = getMainWindow();
   const requestId = randomUUID();
   const spec = resolveMainChildWindowSpec(request);
-  const bounds = calculateEditorBounds(resolveWorkArea(mainWindow), spec.size);
-  const hasParent = mainWindow !== null && !mainWindow.isDestroyed();
-
-  const options: BrowserWindowConstructorOptions = {
-    ...bounds,
-    title: spec.title,
-    frame: true,
-    resizable: true,
-    minimizable: false,
-    maximizable: false,
-    fullscreenable: false,
-    autoHideMenuBar: true,
-    show: false,
-    backgroundColor: '#ffffff',
-    // メインウィンドウに対してモーダルにする（前に出て、閉じるまでメイン画面を操作させない）
-    ...(hasParent && { parent: mainWindow, modal: true }),
-    webPreferences: DEFAULT_WEB_PREFERENCES,
-  };
 
   requests.set(requestId, request);
   await enterModal();
 
-  const name = `${MAIN_CHILD_WINDOW_NAME_PREFIX}${requestId}`;
-  let win: BrowserWindow | null = null;
+  let win: BrowserWindow;
   try {
-    win = await openChildWindow('main', { name, html: 'index.html', options });
-    if (win) {
-      windowLogger.info({ kind: request.kind }, '子ウィンドウをレンダラー共有で作成しました');
-    } else {
-      windowLogger.warn(
-        { kind: request.kind },
-        'レンダラー共有での生成に失敗したため子ウィンドウを直接生成します'
-      );
-      win = new BrowserWindow(options);
-      void win.loadURL(
-        `${getRendererHtmlUrl('index.html')}?childRequestId=${encodeURIComponent(requestId)}`
-      );
-    }
+    win = await windows.open(requestId, {
+      opener: 'main',
+      name: `${MAIN_CHILD_WINDOW_NAME_PREFIX}${requestId}`,
+      html: 'index.html',
+      fallbackQuery: `childRequestId=${encodeURIComponent(requestId)}`,
+      title: spec.title,
+      bounds: calculateEditorBounds(resolveWorkArea(mainWindow), spec.size),
+      // メインウィンドウに対してモーダルにする（前に出て、閉じるまでメイン画面を操作させない）
+      parent: mainWindow,
+      logContext: { kind: request.kind },
+    });
   } catch (error) {
     windowLogger.error({ error, kind: request.kind }, '子ウィンドウの生成に失敗しました');
     requests.delete(requestId);
@@ -135,31 +101,9 @@ export async function openMainChildWindow(request: MainChildWindowRequest): Prom
     return;
   }
 
-  const created = win;
-  created.setMenuBarVisibility(false);
-  created.setMenu(null);
-  windows.set(requestId, created);
-
-  const showFallback = setTimeout(() => {
-    if (!created.isDestroyed() && !created.isVisible()) {
-      created.show();
-    }
-  }, SHOW_FALLBACK_TIMEOUT_MS);
-  created.once('ready-to-show', () => {
-    clearTimeout(showFallback);
-    if (!created.isDestroyed()) {
-      created.show();
-      created.focus();
-    }
-  });
-
   await new Promise<void>((resolve) => {
-    created.once('closed', () => {
-      clearTimeout(showFallback);
+    win.once('closed', () => {
       requests.delete(requestId);
-      if (windows.get(requestId) === created) {
-        windows.delete(requestId);
-      }
       void leaveModal().finally(resolve);
     });
   });
@@ -167,9 +111,6 @@ export async function openMainChildWindow(request: MainChildWindowRequest): Prom
 
 /** 開いている子ウィンドウをすべて閉じる（アプリ終了時用） */
 export function closeAllMainChildWindows(): void {
-  for (const win of windows.values()) {
-    if (!win.isDestroyed()) win.destroy();
-  }
-  windows.clear();
+  windows.closeAll();
   requests.clear();
 }
