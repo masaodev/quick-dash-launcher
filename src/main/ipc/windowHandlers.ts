@@ -3,6 +3,8 @@ import type {
   MainChildWindowRequest,
   MainChildWindowResult,
   MainChildWindowReturn,
+  ConfirmWindowRequest,
+  ConfirmWindowResult,
   WindowPinMode,
   WorkspacePositionMode,
 } from '@common/types';
@@ -26,11 +28,15 @@ import {
   hideWorkspaceWindow,
   getWorkspaceAlwaysOnTop,
   toggleWorkspaceAlwaysOnTop,
-  setWorkspaceModalMode,
   getWorkspaceWindow,
   setWorkspacePosition,
 } from '../workspaceWindowManager.js';
 import { openWorkspaceItemEditor } from '../workspaceItemEditorWindowManager.js';
+import {
+  getWorkspaceConfirmRequest,
+  openWorkspaceConfirm,
+  setWorkspaceConfirmResult,
+} from '../workspaceConfirmWindowManager.js';
 import {
   openMainChildWindow,
   getMainChildWindowRequest,
@@ -119,16 +125,22 @@ export function setupWindowHandlers(
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_GET_ALWAYS_ON_TOP, () => getWorkspaceAlwaysOnTop());
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_TOGGLE_ALWAYS_ON_TOP, () => toggleWorkspaceAlwaysOnTop());
 
-  ipcMain.handle(
-    IPC_CHANNELS.WORKSPACE_SET_MODAL_MODE,
-    (_event, isModal: boolean, requiredSize?: { width: number; height: number }) => {
-      setWorkspaceModalMode(isModal, requiredSize);
-    }
-  );
-
   // 編集は送信元（ワークスペース本体または切り離しウィンドウ）を親にした子ウィンドウで開く
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_OPEN_ITEM_EDITOR, (event, itemId: string) =>
     openWorkspaceItemEditor(event.sender, itemId)
+  );
+
+  // 確認（グループの削除・アーカイブ）も送信元を親にした子ウィンドウで開く。閉じるまで待つ
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_OPEN_CONFIRM, (event, request: ConfirmWindowRequest) =>
+    openWorkspaceConfirm(event.sender, request)
+  );
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_GET_CONFIRM_REQUEST, (_event, requestId: string) =>
+    getWorkspaceConfirmRequest(requestId)
+  );
+  ipcMain.handle(
+    IPC_CHANNELS.WORKSPACE_RETURN_CONFIRM_RESULT,
+    (_event, requestId: string, result: ConfirmWindowResult) =>
+      setWorkspaceConfirmResult(requestId, result)
   );
 
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_SET_OPACITY, async (_event, opacityPercent: number) => {

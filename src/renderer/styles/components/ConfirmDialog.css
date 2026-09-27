@@ -75,3 +75,36 @@
 .confirm-dialog.confirm-danger .confirm-checkbox-label input[type='checkbox'] {
   accent-color: var(--color-danger);
 }
+
+/* 独立した確認ウィンドウ（ワークスペースのグループの削除・アーカイブ）。オーバーレイの代わりにウィンドウ全体を使う */
+.confirm-window-page {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  background-color: var(--bg-body);
+  overflow: auto;
+}
+
+.confirm-window-page .modal-content.confirm-window-content {
+  max-width: none;
+  width: 100%;
+  max-height: none;
+  min-height: 100%;
+  border-radius: 0;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.confirm-window-page .confirm-window-content .confirm-body {
+  flex: 1;
+}
+
+.confirm-window-missing {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-xl);
+  color: var(--text-muted);
+}

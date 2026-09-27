@@ -3,7 +3,6 @@ import type { WorkspaceItem, WorkspaceGroupView } from '@common/types';
 import { getDescendantGroupIds } from '@common/utils/groupTreeUtils';
 import { DETACHED_WINDOW_NAME_PREFIX } from '@common/constants';
 
-import ConfirmDialog from './components/ConfirmDialog';
 import WorkspaceFilterBar from './components/WorkspaceFilterBar';
 import WorkspaceGroupedList from './components/WorkspaceGroupedList';
 import WorkspaceHeader from './components/WorkspaceHeader';
@@ -31,36 +30,6 @@ const RESIZE_DIRECTIONS = [
   'bottom-left',
   'left',
 ] as const;
-
-type DeleteGroupDialog = {
-  isOpen: boolean;
-  groupId: string | null;
-  itemCount: number;
-  subgroupCount: number;
-  deleteItems: boolean;
-};
-
-type ArchiveGroupDialog = {
-  isOpen: boolean;
-  groupId: string | null;
-  itemCount: number;
-  subgroupCount: number;
-};
-
-const INITIAL_DELETE_DIALOG: DeleteGroupDialog = {
-  isOpen: false,
-  groupId: null,
-  itemCount: 0,
-  subgroupCount: 0,
-  deleteItems: false,
-};
-
-const INITIAL_ARCHIVE_DIALOG: ArchiveGroupDialog = {
-  isOpen: false,
-  groupId: null,
-  itemCount: 0,
-  subgroupCount: 0,
-};
 
 /** 切り離しウィンドウの groupId を window.name または URL クエリから取得する */
 function getDetachedGroupIdFromWindow(): string | null {
@@ -169,8 +138,6 @@ const WorkspaceApp: React.FC = () => {
       : undefined,
     isDetached ? 0 : undefined
   );
-  const [deleteGroupDialog, setDeleteGroupDialog] = useState(INITIAL_DELETE_DIALOG);
-  const [archiveGroupDialog, setArchiveGroupDialog] = useState(INITIAL_ARCHIVE_DIALOG);
 
   useEffect(() => {
     if (isDetached) {
@@ -211,16 +178,6 @@ const WorkspaceApp: React.FC = () => {
     return () => document.removeEventListener('keydown', handleCtrlF);
   }, [isDetached]);
 
-  // 確認ダイアログが収まるよう、足りないときだけウィンドウを（動かさずに）広げる
-  useEffect(() => {
-    const isAnyModalOpen = deleteGroupDialog.isOpen || archiveGroupDialog.isOpen;
-    if (isAnyModalOpen) {
-      window.electronAPI.workspaceAPI.setModalMode(true, { width: 600, height: 400 });
-    } else {
-      window.electronAPI.workspaceAPI.setModalMode(false);
-    }
-  }, [deleteGroupDialog.isOpen, archiveGroupDialog.isOpen]);
-
   /** グループとそのサブグループに含まれるアイテム数・サブグループ数を算出 */
   const getGroupStats = (groupId: string): { itemCount: number; subgroupCount: number } => {
     const descendantIds = getDescendantGroupIds(groupId, displayGroups);
@@ -231,58 +188,59 @@ const WorkspaceApp: React.FC = () => {
     return { itemCount, subgroupCount: descendantIds.length };
   };
 
+  const getGroupName = (groupId: string): string =>
+    displayGroups.find((g) => g.id === groupId)?.displayName ||
+    groups.find((g) => g.id === groupId)?.displayName ||
+    '';
+
+  /** 含まれるものの説明（確認の文面用） */
+  const describeContents = (itemCount: number, subgroupCount: number): string =>
+    `このグループには${subgroupCount > 0 ? `サブグループ${subgroupCount}個と、` : ''}${itemCount}個のアイテムが含まれています。`;
+
+  // 確認は独立した子ウィンドウで行う（このウィンドウは動かさない。閉じるまで操作できない）
   const handleDeleteGroup = async (groupId: string) => {
     try {
       const { itemCount, subgroupCount } = getGroupStats(groupId);
       // アーカイブからの削除は元に戻せないので、空でも必ず確認する
-      if (isArchiveMode || itemCount > 0 || subgroupCount > 0) {
-        setDeleteGroupDialog({
-          isOpen: true,
-          groupId,
-          itemCount,
-          subgroupCount,
-          deleteItems: false,
-        });
-      } else {
+      if (!isArchiveMode && itemCount === 0 && subgroupCount === 0) {
         await actions.handleDeleteGroup(groupId, false);
+        return;
       }
-    } catch (error) {
-      logError('Failed to delete workspace group:', error);
-    }
-  };
-
-  const handleConfirmDeleteGroup = async () => {
-    const { groupId, deleteItems } = deleteGroupDialog;
-    if (!groupId) return;
-    try {
+      const name = getGroupName(groupId);
+      const result = await window.electronAPI.workspaceAPI.openConfirm({
+        title: isArchiveMode ? 'アーカイブから削除' : 'グループの削除',
+        message: `「${name}」を${isArchiveMode ? 'アーカイブから完全に削除' : '削除'}してもよろしいですか？\n\n${describeContents(itemCount, subgroupCount)}${isArchiveMode ? '\nアイテムごと削除され、元に戻せません。' : ''}`,
+        confirmText: '削除',
+        cancelText: 'キャンセル',
+        danger: true,
+        checkbox: isArchiveMode
+          ? undefined
+          : { label: 'グループ内のアイテムも削除する', checked: false },
+      });
+      if (!result) return;
       if (isArchiveMode) {
         await window.electronAPI.workspaceAPI.deleteArchivedGroup(groupId);
         await loadArchiveData();
       } else {
-        await actions.handleDeleteGroup(groupId, deleteItems);
+        await actions.handleDeleteGroup(groupId, result.checkboxChecked);
       }
-      setDeleteGroupDialog(INITIAL_DELETE_DIALOG);
     } catch (error) {
       logError('Failed to delete workspace group:', error);
     }
   };
 
-  const handleArchiveGroup = (groupId: string): void => {
-    const { itemCount, subgroupCount } = getGroupStats(groupId);
-    setArchiveGroupDialog({
-      isOpen: true,
-      groupId,
-      itemCount,
-      subgroupCount,
-    });
-  };
-
-  const handleConfirmArchiveGroup = async () => {
-    const { groupId } = archiveGroupDialog;
-    if (!groupId) return;
+  const handleArchiveGroup = async (groupId: string): Promise<void> => {
     try {
+      const { itemCount, subgroupCount } = getGroupStats(groupId);
+      const result = await window.electronAPI.workspaceAPI.openConfirm({
+        title: 'グループのアーカイブ',
+        message: `「${getGroupName(groupId)}」をアーカイブしてもよろしいですか？\n\n${describeContents(itemCount, subgroupCount)}\nアーカイブしたグループは後で復元できます。`,
+        confirmText: 'アーカイブ',
+        cancelText: 'キャンセル',
+        danger: false,
+      });
+      if (!result) return;
       await actions.handleArchiveGroup(groupId);
-      setArchiveGroupDialog(INITIAL_ARCHIVE_DIALOG);
     } catch (error) {
       logError('Failed to archive workspace group:', error);
     }
@@ -584,35 +542,6 @@ const WorkspaceApp: React.FC = () => {
           itemVisibility: filterResult.itemVisibility,
           showUncategorized: filterResult.showUncategorized,
         }}
-      />
-      <ConfirmDialog
-        isOpen={deleteGroupDialog.isOpen}
-        onClose={() => setDeleteGroupDialog(INITIAL_DELETE_DIALOG)}
-        onConfirm={handleConfirmDeleteGroup}
-        title={isArchiveMode ? 'アーカイブから削除' : 'グループの削除'}
-        message={`「${displayGroups.find((g) => g.id === deleteGroupDialog.groupId)?.displayName || groups.find((g) => g.id === deleteGroupDialog.groupId)?.displayName}」を${isArchiveMode ? 'アーカイブから完全に削除' : '削除'}してもよろしいですか？\n\nこのグループには${deleteGroupDialog.subgroupCount > 0 ? `サブグループ${deleteGroupDialog.subgroupCount}個と、` : ''}${deleteGroupDialog.itemCount}個のアイテムが含まれています。${isArchiveMode ? '\nアイテムごと削除され、元に戻せません。' : ''}`}
-        confirmText="削除"
-        cancelText="キャンセル"
-        danger={true}
-        showCheckbox={!isArchiveMode}
-        checkboxLabel="グループ内のアイテムも削除する"
-        checkboxChecked={deleteGroupDialog.deleteItems}
-        onCheckboxChange={(checked) =>
-          setDeleteGroupDialog({
-            ...deleteGroupDialog,
-            deleteItems: checked,
-          })
-        }
-      />
-      <ConfirmDialog
-        isOpen={archiveGroupDialog.isOpen}
-        onClose={() => setArchiveGroupDialog(INITIAL_ARCHIVE_DIALOG)}
-        onConfirm={handleConfirmArchiveGroup}
-        title="グループのアーカイブ"
-        message={`「${displayGroups.find((g) => g.id === archiveGroupDialog.groupId)?.displayName || groups.find((g) => g.id === archiveGroupDialog.groupId)?.displayName}」をアーカイブしてもよろしいですか？\n\nこのグループには${archiveGroupDialog.subgroupCount > 0 ? `サブグループ${archiveGroupDialog.subgroupCount}個と、` : ''}${archiveGroupDialog.itemCount}個のアイテムが含まれています。\nアーカイブしたグループは後で復元できます。`}
-        confirmText="アーカイブ"
-        cancelText="キャンセル"
-        danger={false}
       />
       {resizeHandles}
     </div>

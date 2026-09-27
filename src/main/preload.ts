@@ -31,6 +31,8 @@ import type {
   MainChildWindowRequest,
   MainChildWindowResult,
   MainChildWindowReturn,
+  ConfirmWindowRequest,
+  ConfirmWindowResult,
   ToastEventData,
   ClipboardCaptureResult,
   ClipboardRestoreResult,
@@ -474,11 +476,14 @@ const electronAPI: ElectronAPI = {
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_GET_ALWAYS_ON_TOP),
     toggleAlwaysOnTop: (): Promise<boolean> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_TOGGLE_ALWAYS_ON_TOP),
-    // モーダルモード関連（確認ダイアログ用。ウィンドウを動かさず、足りない分だけ広げる）
-    setModalMode: (isModal: boolean, requiredSize?: { width: number; height: number }) =>
-      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_SET_MODAL_MODE, isModal, requiredSize),
     openItemEditor: (itemId: string): Promise<void> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_OPEN_ITEM_EDITOR, itemId),
+    openConfirm: (request: ConfirmWindowRequest): Promise<ConfirmWindowResult | null> =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_OPEN_CONFIRM, request),
+    getConfirmRequest: (requestId: string): Promise<ConfirmWindowRequest | null> =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_GET_CONFIRM_REQUEST, requestId),
+    returnConfirmResult: (requestId: string, result: ConfirmWindowResult): Promise<void> =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_RETURN_CONFIRM_RESULT, requestId, result),
     // 透過度関連
     setOpacity: (opacityPercent: number): Promise<boolean> =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_SET_OPACITY, opacityPercent),

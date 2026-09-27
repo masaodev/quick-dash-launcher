@@ -388,6 +388,13 @@ export function closeDetachedGroupWindow(groupId: string): { success: boolean } 
   return { success: true };
 }
 
+/** フォーカスのあるウィンドウが、切り離しウィンドウを親に持つ子ウィンドウか */
+function isChildOfDetachedWindowFocused(): boolean {
+  const parent = BrowserWindow.getFocusedWindow()?.getParentWindow();
+  if (!parent) return false;
+  return [...detachedWindows.values()].includes(parent);
+}
+
 /**
  * 切り離しウィンドウのblur後に連動非表示を判定する
  * 50ms後にチェックし、どの管理ウィンドウにもフォーカスがなければ全非表示
@@ -395,6 +402,8 @@ export function closeDetachedGroupWindow(groupId: string): { success: boolean } 
 function hideDetachedWindowsAfterOwnBlur(): void {
   setTimeout(async () => {
     if (isDetachedWindowFocused) return;
+    // 切り離しウィンドウから開いた編集・確認ウィンドウ（子）にフォーカスが移っただけなら隠さない
+    if (isChildOfDetachedWindowFocused()) return;
     try {
       const settingsService = await SettingsService.getInstance();
       const hideWithMain = await settingsService.get('hideDetachedWithMainWindow');

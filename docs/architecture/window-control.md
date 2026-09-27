@@ -285,17 +285,18 @@ adminWindow.webContents.on('before-input-event', (event, input) => {
 
 以前は `set-workspace-modal-mode` でワークスペースを 850x800 に広げ、x 座標をプライマリの右端に決め打ちしていたため、左端配置・別ディスプレイ・固定位置で位置がずれ、切り離しウィンドウからは本体が動いていた。
 
-### 確認ダイアログ（グループの削除・アーカイブ）のウィンドウサイズ制御
+### 確認ウィンドウ（グループの削除・アーカイブ）
 
-ワークスペースウィンドウの中に `ConfirmDialog` を描きます。ワークスペースは中身の高さに合わせて縮むので、ダイアログが収まらないときだけウィンドウを広げ、閉じると元のサイズに戻します。アイテムの編集はこの仕組みを使いません（上記の独立ウィンドウ）。
+グループの削除・アーカイブの確認は、ワークスペースウィンドウの中のダイアログではなく、独立した子ウィンドウで行います（v0.7.39 以降）。ワークスペース本体・切り離しウィンドウのどちらから開いても同じです。
 
-**実装場所**: `src/main/workspaceWindowManager.ts`（`setWorkspaceModalMode`関数）
+**実装場所**: `src/main/workspaceConfirmWindowManager.ts`（`openWorkspaceConfirm`）、`src/renderer/components/WorkspaceConfirmPage.tsx`（中身。`ConfirmDialog` をページとして描く）
 
-- **モーダル表示時**: 要求サイズ（600x400）より小さいときだけ、**位置を動かさずに**その場で広げる（ウィンドウのあるディスプレイの作業領域からはみ出す分だけ寄せる）。足りていれば何もしない
-- **モーダルを閉じる時**: 広げていた場合だけ、保存した元のサイズに戻す（位置は維持）
-- 以前は x をプライマリの右端に決め打ちしていたため、左端配置・別ディスプレイで位置がずれていた（v0.7.38 で修正）
+- IPC `workspace:open-confirm`（要求 `ConfirmWindowRequest`: タイトル・文面・ボタン名・`danger`・チェックボックス）を受け、送信元を親にしたモーダルな子ウィンドウを同じディスプレイの中央に開く（520x320 を作業領域で切り詰める）。**開き元のウィンドウのサイズ・位置は変えない**
+- ワークスペースのレンダラーから `window.open` で開く。`window.name` は `workspace-confirm:<requestId>` で、要求は `workspace:get-confirm-request` で受け取る（フォールバック時は URL クエリ `confirmRequestId`）
+- 確定したら `workspace:return-confirm-result` で結果（チェックボックスの状態）を預けて閉じる。`workspace:open-confirm` は閉じたときに結果を返す。キャンセル・Escape・閉じたときは `null`
+- 切り離しウィンドウから開いたとき、フォーカスが子ウィンドウへ移っても「メインと連動して隠す」で切り離しウィンドウが隠れないようにしている（アイテムの編集ウィンドウも同じ）
 
-**IPC通信**: `workspace:set-modal-mode`（`isModal: boolean`, `requiredSize?: { width, height }`）
+以前はワークスペースの中に `ConfirmDialog` を描き、収まらないときは `workspace:set-modal-mode` でウィンドウを 600x400 まで広げていた（閉じると戻す）。切り離しウィンドウでは確認ダイアログが描かれず、削除・アーカイブを選んでも何も起きなかった。
 
 ## ウィンドウ位置・サイズ制御
 

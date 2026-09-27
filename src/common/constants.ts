@@ -40,6 +40,13 @@ export const DETACHED_WINDOW_NAME_PREFIX = 'detached-group:';
 export const WORKSPACE_EDITOR_WINDOW_NAME_PREFIX = 'workspace-editor:';
 
 /**
+ * ワークスペースの確認ウィンドウ（グループの削除・アーカイブ）の window.name 接頭辞
+ * ワークスペースのレンダラーが window.open で開く子ウィンドウに `<接頭辞><requestId>` という名前を付け、
+ * レンダラー側で requestId を取り出して表示内容（要求）をメインプロセスから受け取る
+ */
+export const WORKSPACE_CONFIRM_WINDOW_NAME_PREFIX = 'workspace-confirm:';
+
+/**
  * メイン画面が開く子ウィンドウ（アイテムの登録・編集、アイコン取得結果）の window.name 接頭辞
  * メインのレンダラーが window.open で開く子ウィンドウに `<接頭辞><requestId>` という名前を付け、
  * レンダラー側で requestId を取り出して表示内容（要求）をメインプロセスから受け取る
