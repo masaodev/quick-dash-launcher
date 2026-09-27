@@ -1,0 +1,61 @@
+# PRチェックワークフロー
+# PRとmainへのpushで、型チェック・lint・単体テストを実行する
+# （スキーマの再生成漏れも tests/unit/schemas.test.ts のドリフト検知で落ちる）
+# E2Eは重いため対象外。リリース前にローカルで実行する
+
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# 同じブランチで新しいpushがあれば、実行中のチェックを取り消す
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    # ネイティブモジュール（koffi・extract-file-icon など）のビルドを release.yml と揃えるため
+    # 同じ windows-2022 で実行する
+    runs-on: windows-2022
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      # node-gyp安定化のため3.11を固定（release.yml と同じ理由）
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: npm ci
+        env:
+          GYP_MSVS_VERSION: '2022'
+
+      - name: Type check
+        run: npm run type-check
+
+      - name: Lint
+        run: npm run lint
+
+      # HTMLレポートはCIでは不要なので、標準出力とPRへの注釈だけにする
+      - name: Unit tests
+        run: npx vitest run --reporter=default --reporter=github-actions

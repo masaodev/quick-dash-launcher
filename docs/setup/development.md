@@ -260,6 +260,10 @@ for (const fileName of dataFiles) {
 - **処理の一貫性**: 同じデータに対して常に同じ処理を適用
 - **エラーハンドリング**: 1箇所での修正が全体に反映される設計
 
+### PRの自動チェック
+
+PRとmainへのpushで、GitHub Actions（`.github/workflows/ci.yml`）が型チェック（`npm run type-check`）・lint（`npm run lint`）・単体テスト（`vitest run`）を実行します。JSON Schemaの再生成漏れも `tests/unit/schemas.test.ts` のドリフト検知で失敗として出ます。E2Eは対象外なので、リリース前にローカルで `npm run test:e2e` を実行してください。
+
 ### 依存関係管理
 
 #### Dependabotによる自動更新
