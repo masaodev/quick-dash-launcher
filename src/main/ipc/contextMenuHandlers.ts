@@ -504,6 +504,26 @@ function setupWindowContextMenuHandler(): void {
       );
       menu.append(createSeparator());
 
+      // ワークスペースへの登録（通常アイテムと同じ入口を用意する）。
+      // 既定はタイトルとプロセス名でアクティブ化するだけ。位置の記録は明示的に選ばせる
+      menu.append(
+        createMenuItem(
+          '⭐ ワークスペースに追加',
+          event.sender,
+          IPC_CHANNELS.EVENT_WINDOW_MENU_ADD_TO_WORKSPACE,
+          { windowInfo, includePosition: false }
+        )
+      );
+      menu.append(
+        createMenuItem(
+          '⭐ 位置・サイズも記録してワークスペースに追加',
+          event.sender,
+          IPC_CHANNELS.EVENT_WINDOW_MENU_ADD_TO_WORKSPACE,
+          { windowInfo, includePosition: true }
+        )
+      );
+      menu.append(createSeparator());
+
       const canMoveToDesktop = desktopInfo.supported && desktopInfo.desktopCount > 1;
 
       if (canMoveToDesktop) {

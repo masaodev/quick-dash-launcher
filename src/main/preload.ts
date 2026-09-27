@@ -571,6 +571,13 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.invoke(IPC_CHANNELS.SHOW_WINDOW_CONTEXT_MENU, windowInfo, desktopInfo, isPinned),
   onWindowMenuActivate: (callback: (windowInfo: WindowInfo) => void) =>
     createEventListener<WindowInfo>(IPC_CHANNELS.EVENT_WINDOW_MENU_ACTIVATE, callback),
+  onWindowMenuAddToWorkspace: (
+    callback: (payload: { windowInfo: WindowInfo; includePosition: boolean }) => void
+  ) =>
+    createEventListener<{ windowInfo: WindowInfo; includePosition: boolean }>(
+      IPC_CHANNELS.EVENT_WINDOW_MENU_ADD_TO_WORKSPACE,
+      callback
+    ),
   onMoveWindowToDesktop: (callback: (hwnd: number | bigint, desktopNumber: number) => void) =>
     createEventListener2<number | bigint, number>(IPC_CHANNELS.MOVE_WINDOW_TO_DESKTOP, callback),
   onPinWindow: (callback: (hwnd: number | bigint) => void) =>

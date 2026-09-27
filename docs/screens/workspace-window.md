@@ -569,6 +569,7 @@ C:\Program Files\Code\Code.exe --new-window
 - アイテムのグループ間移動
 - グループの並び替え
 - ネイティブファイル・フォルダ・URLの追加
+- メイン画面からのアイテム追加（ウィンドウ検索結果を含む）
 
 #### 4.12.1. アイテムの並び替え（同じグループ内）
 
@@ -668,6 +669,25 @@ C:\Program Files\Code\Code.exe --new-window
 - **ファイル**: .exe, .lnk, .pdf, .docx, など全てのファイル
 - **フォルダ**: ディレクトリ
 - **URL**: http://, https://, およびカスタムURIスキーマ（obsidian://, vscode://, など）
+
+#### 4.12.5. メイン画面からのアイテム追加
+
+##### アクション
+
+- メイン画面（`LauncherItemList`）のアイテムをワークスペースウィンドウのグループまたは未分類にドラッグ&ドロップ
+
+##### 処理フロー
+
+1. 送り側は `dataTransfer` の `launcherItem` に AppItem を JSON で入れる（`effectAllowed: copy`）
+   - ウィンドウ検索結果（`WindowInfo`）は hwnd が bigint で JSON にできないため、`windowInfoToWindowItem` でウィンドウ操作アイテム（タイトル＋プロセス名）に変換してから入れる。今の位置・サイズは `windowPosition` に別で入れる
+2. 受け側（`WorkspaceGroupedList.handleGroupDrop`）は `launcherItem` があれば `workspace:add-item` で追加する
+   - `windowPosition` があり、Ctrl を押してドロップしたときだけ x/y/width/height を合成する（既定はアクティブ化のみ）
+3. トースト（workspaceAdd）で知らせる
+
+##### 対応アイテム
+
+- 通常アイテム・グループ・ウィンドウ操作・クリップボード・ウィンドウ配置（メイン画面のアイテム）
+- ウィンドウ検索結果（開いているウィンドウ）。右クリックの「ワークスペースに追加」「位置・サイズも記録してワークスペースに追加」でも同じ結果になる
 
 ### 4.13. Ctrl+Vでペースト
 

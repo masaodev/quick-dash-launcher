@@ -8,7 +8,9 @@ import type {
   MixedChild,
   MixedOrderEntry,
   GroupDropZone,
+  WindowItem,
 } from '@common/types';
+import { isWindowItem } from '@common/types/guards';
 import { PathUtils } from '@common/utils/pathUtils';
 import { resolveGroupColorCss } from '@common/groupColors';
 import { describeWorkspaceItem } from '@common/utils/workspaceConverters';
@@ -530,16 +532,35 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     }
   };
 
-  /** AppItem（LauncherItem/GroupItem/WindowItem/ClipboardItem）をワークスペースに追加 */
-  async function addAppItemToWorkspace(appItemData: string, groupId?: string): Promise<void> {
-    const item: AppItem = JSON.parse(appItemData);
+  /**
+   * AppItem（LauncherItem/GroupItem/WindowItem/ClipboardItem）をワークスペースに追加
+   *
+   * ウィンドウ検索結果は送り側でウィンドウ操作アイテム（タイトル＋プロセス名）に変換済み。
+   * windowPosition が付いていて Ctrl を押してドロップしたときだけ、今の位置・サイズも記録する
+   */
+  async function addAppItemToWorkspace(
+    appItemData: string,
+    groupId?: string,
+    windowPositionData?: string,
+    includePosition = false
+  ): Promise<void> {
+    let item: AppItem = JSON.parse(appItemData);
+    if (includePosition && windowPositionData && isWindowItem(item)) {
+      const position = JSON.parse(windowPositionData) as Pick<
+        WindowItem,
+        'x' | 'y' | 'width' | 'height'
+      >;
+      item = { ...item, ...position };
+    }
     await window.electronAPI.workspaceAPI.addItem(item, groupId, activeWorkspaceId);
-    // WindowInfoはドラッグ不可のため実際には来ないが、型安全のためinチェックを使用
+    // 型安全のためinチェックを使用（WindowInfo は来ない）
     await window.electronAPI.showToastWindow({
       displayName: 'displayName' in item ? item.displayName : '',
       itemType: 'workspaceAdd',
       path: 'path' in item ? item.path : undefined,
       icon: 'icon' in item ? item.icon : undefined,
+      message:
+        isWindowItem(item) && includePosition ? '記録した位置に戻して前面に出します' : undefined,
     });
   }
 
@@ -563,6 +584,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     const draggedGroupId = e.dataTransfer.getData('groupId');
     const currentParentGroupId = e.dataTransfer.getData('currentParentGroupId');
     const launcherItemData = e.dataTransfer.getData('launcherItem');
+    const windowPositionData = e.dataTransfer.getData('windowPosition');
 
     // dataTransferは未設定値を空文字列で返すため、groupId(undefined)と比較する際に正規化
     const normalizeGroupId = (id: string): string | undefined => id || undefined;
@@ -576,8 +598,8 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
       }
 
       if (launcherItemData) {
-        // ランチャーからのアイテム追加
-        await addAppItemToWorkspace(launcherItemData, groupId);
+        // ランチャーからのアイテム追加（ウィンドウ検索結果は Ctrl+ドロップで位置も記録）
+        await addAppItemToWorkspace(launcherItemData, groupId, windowPositionData, e.ctrlKey);
       } else if (
         draggedGroupId &&
         draggedGroupId !== groupId &&
