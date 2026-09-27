@@ -30,6 +30,10 @@ jobs:
     timeout-minutes: 20
 
     steps:
+      # Windowsランナーは既定で改行をCRLFに変換し、prettier（LF）のlintが全行で落ちるため止める
+      - name: Keep LF line endings
+        run: git config --global core.autocrlf false
+
       - name: Checkout code
         uses: actions/checkout@v7
 
