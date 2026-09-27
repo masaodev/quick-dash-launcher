@@ -120,9 +120,23 @@ describe('workspaceConverters: appItemToWorkspaceItemBody', () => {
     });
   });
 
-  it('WindowInfo は受け付けないこと', () => {
-    const windowInfo = { hwnd: 1, title: 't', processName: 'p' } as unknown as AppItem;
-    expect(() => appItemToWorkspaceItemBody(windowInfo)).toThrow('WindowInfo');
+  it('WindowInfo（ウィンドウ検索結果）はタイトルとプロセス名だけのウィンドウ操作アイテムになること', () => {
+    // #327 でウィンドウ検索結果をワークスペースに登録できるようにした（位置は付けない）
+    const windowInfo = {
+      hwnd: 1,
+      title: 't',
+      processName: 'p',
+      x: 10,
+      y: 20,
+      width: 300,
+      height: 200,
+    } as unknown as AppItem;
+    expect(appItemToWorkspaceItemBody(windowInfo)).toEqual({
+      type: 'window',
+      displayName: 't',
+      windowTitle: 't',
+      processName: 'p',
+    });
   });
 });
 
