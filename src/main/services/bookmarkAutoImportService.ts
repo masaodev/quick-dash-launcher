@@ -18,6 +18,10 @@ import {
   serializeJsonDataFile,
 } from '@common/utils/jsonParser';
 import { summarizeImportResults } from '@common/utils/bookmarkImportUtils';
+import {
+  applyBookmarkRuleFilters,
+  buildBookmarkDisplayName,
+} from '@common/utils/bookmarkRuleFilter';
 import { normalizeUrl } from '@common/utils/duplicateDetector';
 import type { JsonLauncherItem, JsonDataFile } from '@common/types';
 import type {
@@ -139,7 +143,7 @@ export class BookmarkAutoImportService {
       // 新しいアイテムを作成して追加
       const now = Date.now();
       for (const bookmark of allBookmarks) {
-        const displayName = this.buildDisplayName(bookmark, rule);
+        const displayName = buildBookmarkDisplayName(bookmark, rule);
         const newItem: JsonLauncherItem = {
           id: generateId(),
           type: 'item',
@@ -227,20 +231,6 @@ export class BookmarkAutoImportService {
   }
 
   /**
-   * ルールのプレビュー（マッチするブックマーク一覧を返す）
-   */
-  async previewRule(rule: BookmarkAutoImportRule): Promise<BookmarkWithFolder[]> {
-    const profiles = await this.resolveTargetProfiles(rule);
-    const bookmarks = await this.collectBookmarksFromProfiles(profiles, rule);
-
-    // プレビューでもdisplayName変換を適用
-    return bookmarks.map((bookmark) => ({
-      ...bookmark,
-      displayName: this.buildDisplayName(bookmark, rule),
-    }));
-  }
-
-  /**
    * プロファイルからブックマークを収集・フィルタリング
    */
   private async collectBookmarksFromProfiles(
@@ -260,7 +250,8 @@ export class BookmarkAutoImportService {
       }
     }
 
-    return this.applyFilters(allBookmarks, rule);
+    // 絞り込みは取込画面のプレビューと同じ関数（@common/utils/bookmarkRuleFilter）
+    return applyBookmarkRuleFilters(allBookmarks, rule);
   }
 
   /**
@@ -279,58 +270,6 @@ export class BookmarkAutoImportService {
     return rule.profileIds.length === 0
       ? browser.profiles
       : browser.profiles.filter((p) => rule.profileIds.includes(p.id));
-  }
-
-  /**
-   * フィルタの適用
-   */
-  private applyFilters(
-    bookmarks: BookmarkWithFolder[],
-    rule: BookmarkAutoImportRule
-  ): BookmarkWithFolder[] {
-    let filtered = bookmarks;
-
-    // フォルダフィルタ
-    if (rule.folderPaths.length > 0) {
-      const matchesFolder = (folderPath: string, filterPath: string): boolean => {
-        if (rule.includeSubfolders) {
-          return folderPath === filterPath || folderPath.startsWith(filterPath + '/');
-        }
-        return folderPath === filterPath;
-      };
-
-      if (rule.folderFilterMode === 'include') {
-        filtered = filtered.filter((b) =>
-          rule.folderPaths.some((fp) => matchesFolder(b.folderPath, fp))
-        );
-      } else {
-        filtered = filtered.filter(
-          (b) => !rule.folderPaths.some((fp) => matchesFolder(b.folderPath, fp))
-        );
-      }
-    }
-
-    // URLパターンフィルタ
-    if (rule.urlPattern) {
-      try {
-        const urlRegex = new RegExp(rule.urlPattern, 'i');
-        filtered = filtered.filter((b) => urlRegex.test(b.url));
-      } catch {
-        logger.warn({ urlPattern: rule.urlPattern }, '無効なURLパターンです');
-      }
-    }
-
-    // 名前パターンフィルタ
-    if (rule.namePattern) {
-      try {
-        const nameRegex = new RegExp(rule.namePattern, 'i');
-        filtered = filtered.filter((b) => nameRegex.test(b.displayName));
-      } catch {
-        logger.warn({ namePattern: rule.namePattern }, '無効な名前パターンです');
-      }
-    }
-
-    return filtered;
   }
 
   private getDataFilePath(targetFile: string): string {
@@ -396,40 +335,6 @@ export class BookmarkAutoImportService {
       return (item as JsonLauncherItem).autoImportRuleId !== ruleId;
     });
     return beforeCount - jsonData.items.length;
-  }
-
-  /**
-   * ブックマークのdisplayNameを生成（フォルダ名付与・接頭辞・接尾辞）
-   */
-  private buildDisplayName(bookmark: BookmarkWithFolder, rule: BookmarkAutoImportRule): string {
-    let name = bookmark.displayName;
-
-    // フォルダ名付与
-    if (rule.folderNameMode !== 'none' && bookmark.folderPath) {
-      let folderLabel = '';
-      switch (rule.folderNameMode) {
-        case 'parent':
-          folderLabel = bookmark.folderPath.split('/').pop() || '';
-          break;
-        case 'fullPath':
-          folderLabel = bookmark.folderPath;
-          break;
-        case 'relativePath': {
-          const parts = bookmark.folderPath.split('/');
-          folderLabel = parts.length > 1 ? parts.slice(1).join('/') : parts[0];
-          break;
-        }
-      }
-      if (folderLabel) {
-        name = `[${folderLabel}] ${name}`;
-      }
-    }
-
-    // 接頭辞・接尾辞
-    if (rule.prefix) name = rule.prefix + name;
-    if (rule.suffix) name = name + rule.suffix;
-
-    return name;
   }
 
   /**

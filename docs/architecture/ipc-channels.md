@@ -654,18 +654,6 @@ OS標準通知を表示
 - プロファイル名取得: 各プロファイルの`Preferences`ファイルから`profile.name`を取得
 - セキュリティ: `LOCALAPPDATA`配下のみアクセス許可、パストラバーサル対策
 
-### `parse-browser-bookmarks`
-
-ブラウザのブックマークJSONファイルをパース
-
-- パラメータ: `filePath: string` (ブックマークJSONファイルのパス)
-- 戻り値: `SimpleBookmarkItem[]`
-- 解析対象: Chrome/EdgeのブックマークJSON形式
-- ファイルサイズ上限: 50MB
-- セキュリティチェック: `LOCALAPPDATA`配下のみアクセス許可、パストラバーサル対策
-- JSON構造: `{ "roots": { "bookmark_bar": {...}, "other": {...}, "synced": {...} } }`
-- 抽出ロジック: `roots`配下を再帰的に走査し、`type: "url"`のノードを抽出
-
 ### `select-bookmark-file`
 
 ブックマークファイル選択ダイアログを表示
@@ -673,13 +661,14 @@ OS標準通知を表示
 - 戻り値: `string | null` (選択されたファイルパス)
 - 対応形式: HTML, HTM
 
-### `parse-bookmark-file`
+### `parse-bookmark-file-with-folders`
 
-ブックマークファイルをパース
+HTML ブックマークファイル（Netscape 形式。Chrome / Edge / Firefox のエクスポート）をフォルダパス付きでパース
 
 - パラメータ: `filePath: string`
-- 戻り値: `SimpleBookmarkItem[]`
-- パース方法: HTMLの`<A>`タグからURL/名前を抽出
+- 戻り値: `BookmarkWithFolder[]`（`folderPath` は "フォルダ/サブフォルダ"。ルート直下は空文字）
+- パース方法: `<H3>` と `</DL>` でフォルダの出入りを追い、`<A HREF>` をそのときのフォルダに紐づける（`@common/utils/netscapeBookmarkParser.ts`）
+- 用途: 取込画面で HTML ファイルを取込元に選んだとき。ブラウザ直読み（`bookmark-auto-import:get-bookmarks-with-folders`）と同じ形で返すので、絞り込みとプレビューは共通
 
 ## 検索履歴関連
 
@@ -820,13 +809,6 @@ OS標準通知を表示
 
 - 戻り値: `BookmarkAutoImportResult[]`
 
-### `bookmark-auto-import:preview-rule`
-
-ルールを実行した場合の取込プレビューを取得（実際には取込まない）
-
-- パラメータ: `rule: BookmarkAutoImportRule`
-- 戻り値: `BookmarkWithFolder[]`
-
 ### `bookmark-auto-import:delete-rule-items`
 
 指定ルールに紐づくアイテムを削除
@@ -834,19 +816,13 @@ OS標準通知を表示
 - パラメータ: `ruleId: string`, `targetFile: string`
 - 戻り値: `number` (削除件数)
 
-### `bookmark-auto-import:get-folders`
-
-ブックマークファイルのフォルダ構造を取得
-
-- パラメータ: `bookmarkPath: string`
-- 戻り値: `BookmarkFolder[]`
-
 ### `bookmark-auto-import:get-bookmarks-with-folders`
 
-フォルダパス付きブックマーク一覧を取得
+フォルダパス付きブックマーク一覧を取得（Chrome / Edge のブックマーク JSON）
 
 - パラメータ: `bookmarkPath: string`
 - 戻り値: `BookmarkWithFolder[]`
+- 用途: 取込画面・ルール編集画面。フォルダツリーの組み立て、絞り込み、プレビューはこの一覧からレンダラー側で行う（`@common/utils/bookmarkRuleFilter.ts`）。以前あった `preview-rule` / `get-folders` は v0.7.38 で廃止
 
 ## バックアップ
 

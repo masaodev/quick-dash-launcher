@@ -36,7 +36,6 @@ const BookmarkAutoImportSettings: React.FC<BookmarkAutoImportSettingsProps> = ({
     deleteRule,
     executeRule,
     executeAllRules,
-    previewRule,
   } = useBookmarkAutoImport();
 
   const { showSuccess, showError, showWarning } = useToast();
@@ -253,7 +252,6 @@ const BookmarkAutoImportSettings: React.FC<BookmarkAutoImportSettingsProps> = ({
           dataFileLabels={dataFileLabels}
           onSave={handleSaveRule}
           onCancel={() => setEditingRule(null)}
-          onPreview={previewRule}
         />
       )}
 

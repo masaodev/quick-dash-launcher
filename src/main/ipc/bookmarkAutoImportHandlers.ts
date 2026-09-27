@@ -8,10 +8,7 @@ import type {
 import { SettingsService } from '../services/settingsService.js';
 import { BookmarkAutoImportService } from '../services/bookmarkAutoImportService.js';
 
-import {
-  parseBrowserBookmarkFolders,
-  parseBrowserBookmarksWithFolders,
-} from './bookmarkHandlers.js';
+import { parseBrowserBookmarksWithFolders } from './bookmarkHandlers.js';
 
 const autoImportService = new BookmarkAutoImportService();
 
@@ -42,18 +39,9 @@ export function setupBookmarkAutoImportHandlers(): void {
   );
 
   ipcMain.handle(
-    IPC_CHANNELS.BOOKMARK_AUTO_IMPORT_PREVIEW_RULE,
-    (_event, rule: BookmarkAutoImportRule) => autoImportService.previewRule(rule)
-  );
-
-  ipcMain.handle(
     IPC_CHANNELS.BOOKMARK_AUTO_IMPORT_DELETE_RULE_ITEMS,
     (_event, ruleId: string, targetFile: string) =>
       autoImportService.deleteItemsByRuleId(ruleId, targetFile)
-  );
-
-  ipcMain.handle(IPC_CHANNELS.BOOKMARK_AUTO_IMPORT_GET_FOLDERS, (_event, bookmarkPath: string) =>
-    parseBrowserBookmarkFolders(bookmarkPath)
   );
 
   ipcMain.handle(

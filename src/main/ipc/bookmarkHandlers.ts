@@ -4,9 +4,10 @@ import * as fs from 'fs';
 import { ipcMain, dialog } from 'electron';
 import { dataLogger } from '@common/logger';
 import { FileUtils } from '@common/utils/fileUtils';
+import { parseNetscapeBookmarkHtml } from '@common/utils/netscapeBookmarkParser';
 import { MAX_BOOKMARK_FILE_SIZE } from '@common/constants';
-import { SimpleBookmarkItem, BrowserInfo, BrowserProfile } from '@common/types';
-import type { BookmarkFolder, BookmarkWithFolder } from '@common/types/bookmarkAutoImport';
+import { BrowserInfo, BrowserProfile } from '@common/types';
+import type { BookmarkWithFolder } from '@common/types/bookmarkAutoImport';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { EnvConfig } from '../config/envConfig.js';
@@ -191,122 +192,6 @@ async function readAndValidateBookmarkFile(filePath: string): Promise<Record<str
 }
 
 /**
- * ブラウザのブックマークJSONファイルをパースしてSimpleBookmarkItemの配列に変換する
- * @param filePath - ブックマークファイルのパス
- * @returns SimpleBookmarkItemの配列
- */
-export async function parseBrowserBookmarks(filePath: string): Promise<SimpleBookmarkItem[]> {
-  try {
-    const roots = await readAndValidateBookmarkFile(filePath);
-
-    const bookmarks: SimpleBookmarkItem[] = [];
-    let index = 0;
-
-    // 再帰的にブックマークを抽出
-    function traverse(node: unknown) {
-      if (!isBookmarkNode(node)) return;
-
-      if (node.type === 'url' && typeof node.url === 'string' && typeof node.name === 'string') {
-        const url = node.url;
-        // http/https のみ許可
-        if (url.startsWith('http://') || url.startsWith('https://')) {
-          bookmarks.push({
-            id: `browser-bookmark-${index++}`,
-            displayName: node.name.trim() || url,
-            url: url,
-            checked: false,
-          });
-        }
-      }
-      if (node.children && Array.isArray(node.children)) {
-        for (const child of node.children) {
-          traverse(child);
-        }
-      }
-    }
-
-    // roots内の各ノードを探索
-    for (const key of BOOKMARK_ROOT_KEYS) {
-      if (roots[key]) {
-        traverse(roots[key]);
-      }
-    }
-
-    dataLogger.info(
-      { filePath, bookmarkCount: bookmarks.length },
-      'ブラウザブックマークをパースしました'
-    );
-
-    return bookmarks;
-  } catch (error) {
-    if (
-      error instanceof Error &&
-      (error.message.includes('EBUSY') || error.message.includes('EACCES'))
-    ) {
-      throw new Error('ブラウザが起動中です。ブラウザを閉じてから再試行してください。');
-    }
-    dataLogger.error({ filePath, error }, 'ブラウザブックマークのパースに失敗');
-    throw error;
-  }
-}
-
-/**
- * ブラウザのブックマークJSONファイルからフォルダ構造のみを返す（ツリーUI用）
- * @param filePath - ブックマークファイルのパス
- * @returns BookmarkFolder配列
- */
-export async function parseBrowserBookmarkFolders(filePath: string): Promise<BookmarkFolder[]> {
-  const roots = await readAndValidateBookmarkFile(filePath);
-  const folders: BookmarkFolder[] = [];
-
-  function traverseFolders(node: unknown, currentPath: string): BookmarkFolder | null {
-    if (!isBookmarkNode(node)) return null;
-
-    // フォルダノードの場合
-    if (node.children && Array.isArray(node.children)) {
-      const name = node.name || path.basename(currentPath) || '';
-      let bookmarkCount = 0;
-      const children: BookmarkFolder[] = [];
-
-      for (const child of node.children) {
-        if (!isBookmarkNode(child)) continue;
-
-        if (child.type === 'url') {
-          bookmarkCount++;
-        } else if (child.children && Array.isArray(child.children)) {
-          const childName = child.name || '';
-          const childPath = currentPath ? `${currentPath}/${childName}` : childName;
-          const childFolder = traverseFolders(child, childPath);
-          if (childFolder) {
-            children.push(childFolder);
-          }
-        }
-      }
-
-      return {
-        path: currentPath,
-        name,
-        children,
-        bookmarkCount,
-      };
-    }
-
-    return null;
-  }
-
-  for (const key of BOOKMARK_ROOT_KEYS) {
-    if (roots[key]) {
-      const folder = traverseFolders(roots[key], key);
-      if (folder) {
-        folders.push(folder);
-      }
-    }
-  }
-
-  return folders;
-}
-
-/**
  * ブラウザのブックマークJSONファイルをフォルダパス付きでパースする（フィルタ用）
  * @param filePath - ブックマークファイルのパス
  * @returns BookmarkWithFolder配列
@@ -356,46 +241,18 @@ export async function parseBrowserBookmarksWithFolders(
 }
 
 /**
- * HTMLブックマークファイルをパースしてSimpleBookmarkItemの配列に変換する
+ * HTML ブックマークファイル（Netscape Bookmark File Format）をフォルダパス付きでパースする
+ * 解析の本体は @common/utils/netscapeBookmarkParser（取込画面と共有）
+ *
  * @param filePath - ブックマークファイルのパス
- * @returns SimpleBookmarkItemの配列
+ * @returns BookmarkWithFolder 配列
  */
-export function parseBookmarkFile(filePath: string): SimpleBookmarkItem[] {
-  try {
-    const htmlContent = FileUtils.safeReadTextFile(filePath);
-    if (!htmlContent) {
-      throw new Error('ファイルの読み込みに失敗しました');
-    }
-
-    // 簡易的なHTMLパーサーでブックマークを抽出
-    const bookmarks: SimpleBookmarkItem[] = [];
-
-    // <A>タグを正規表現で抽出
-    const linkRegex = /<A\s+[^>]*HREF="([^"]*)"[^>]*>([^<]*)<\/A>/gi;
-    let match;
-    let index = 0;
-
-    while ((match = linkRegex.exec(htmlContent)) !== null) {
-      const url = match[1];
-      const name = match[2].trim();
-
-      // URLが有効な場合のみ追加
-      if (url && name && (url.startsWith('http://') || url.startsWith('https://'))) {
-        bookmarks.push({
-          id: `bookmark-${index}`,
-          displayName: name,
-          url: url,
-          checked: false,
-        });
-        index++;
-      }
-    }
-
-    return bookmarks;
-  } catch (error) {
-    dataLogger.error({ error }, 'ブックマークファイルのパースに失敗');
-    throw error;
+export function parseBookmarkFileWithFolders(filePath: string): BookmarkWithFolder[] {
+  const htmlContent = FileUtils.safeReadTextFile(filePath);
+  if (!htmlContent) {
+    throw new Error('ファイルの読み込みに失敗しました');
   }
+  return parseNetscapeBookmarkHtml(htmlContent);
 }
 
 /**
@@ -415,14 +272,10 @@ export function setupBookmarkHandlers() {
     return result.canceled ? null : (result.filePaths[0] ?? null);
   });
 
-  ipcMain.handle(IPC_CHANNELS.PARSE_BOOKMARK_FILE, (_event, filePath: string) =>
-    parseBookmarkFile(filePath)
+  ipcMain.handle(IPC_CHANNELS.PARSE_BOOKMARK_FILE_WITH_FOLDERS, (_event, filePath: string) =>
+    parseBookmarkFileWithFolders(filePath)
   );
 
   // ブラウザブックマーク直接インポートAPI
   ipcMain.handle(IPC_CHANNELS.DETECT_INSTALLED_BROWSERS, detectInstalledBrowsers);
-
-  ipcMain.handle(IPC_CHANNELS.PARSE_BROWSER_BOOKMARKS, (_event, filePath: string) =>
-    parseBrowserBookmarks(filePath)
-  );
 }
