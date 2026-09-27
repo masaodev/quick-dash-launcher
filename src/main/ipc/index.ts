@@ -24,8 +24,6 @@ export function setupIPCHandlers(
   iconsFolder: string,
   extensionsFolder: string,
   getMainWindow: () => BrowserWindow | null,
-  setEditMode: (editMode: boolean) => Promise<void>,
-  getEditMode: () => boolean,
   getWindowPinMode: () => WindowPinMode,
   cycleWindowPinMode: () => WindowPinMode,
   setFirstLaunchMode: (isFirstLaunch: boolean) => void
@@ -34,7 +32,7 @@ export function setupIPCHandlers(
   setupItemHandlers();
   setupConfigHandlers(configFolder);
   setupIconHandlers(faviconsFolder, iconsFolder, extensionsFolder);
-  setupWindowHandlers(setEditMode, getEditMode, getWindowPinMode, cycleWindowPinMode);
+  setupWindowHandlers(getWindowPinMode, cycleWindowPinMode);
   registerEditHandlers(configFolder);
   setupSettingsHandlers(setFirstLaunchMode);
   setupSplashHandlers(getMainWindow);

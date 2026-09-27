@@ -14,8 +14,6 @@ import {
   createWindow,
   createTray,
   getMainWindow,
-  setEditMode,
-  getEditMode,
   getWindowPinMode,
   cycleWindowPinMode,
   setFirstLaunchMode,
@@ -117,8 +115,6 @@ app.whenReady().then(async () => {
     PathManager.getAppsFolder(),
     PathManager.getExtensionsFolder(),
     getMainWindow,
-    setEditMode,
-    getEditMode,
     getWindowPinMode,
     cycleWindowPinMode,
     setFirstLaunchMode

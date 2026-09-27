@@ -239,8 +239,6 @@ const electronAPI: ElectronAPI = {
     entries: LayoutWindowEntry[],
     memo?: string
   ) => ipcRenderer.invoke(IPC_CHANNELS.UPDATE_LAYOUT_ITEM_BY_ID, id, displayName, entries, memo),
-  setEditMode: (editMode: boolean) => ipcRenderer.invoke(IPC_CHANNELS.SET_EDIT_MODE, editMode),
-  getEditMode: () => ipcRenderer.invoke(IPC_CHANNELS.GET_EDIT_MODE),
   selectBookmarkFile: () => ipcRenderer.invoke(IPC_CHANNELS.SELECT_BOOKMARK_FILE),
   parseBookmarkFileWithFolders: (filePath: string): Promise<BookmarkWithFolder[]> =>
     ipcRenderer.invoke(IPC_CHANNELS.PARSE_BOOKMARK_FILE_WITH_FOLDERS, filePath),
