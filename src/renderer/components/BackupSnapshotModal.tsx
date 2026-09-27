@@ -53,14 +53,7 @@ const BackupSnapshotModal: React.FC<BackupSnapshotModalProps> = ({ isOpen, onClo
       loadSnapshots();
       setSelectedTimestamp(null);
       setMessage(null);
-      window.electronAPI.setModalMode(true, { width: 700, height: 600 });
     }
-
-    return () => {
-      if (isOpen) {
-        window.electronAPI.setModalMode(false);
-      }
-    };
   }, [isOpen, loadSnapshots]);
 
   useEffect(() => {

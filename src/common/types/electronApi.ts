@@ -59,6 +59,8 @@ import type {
   BackupStatus,
   MixedOrderEntry,
   Bounds,
+  MainChildWindowRequest,
+  MainChildWindowResult,
 } from './index';
 
 export interface ElectronAPI {
@@ -198,10 +200,16 @@ export interface ElectronAPI {
   getInitialTab: () => Promise<'settings' | 'edit' | 'other'>;
   getPendingImportModal: () => Promise<'bookmark' | 'app' | null>;
   copyToClipboard: (text: string) => Promise<boolean>;
-  setModalMode: (
-    isModal: boolean,
-    requiredSize?: { width: number; height: number }
-  ) => Promise<void>;
+  /**
+   * メイン画面の子ウィンドウ（アイテムの登録・編集、アイコン取得結果）を開く
+   * メインウィンドウは動かさない。子ウィンドウが閉じたら解決する
+   */
+  openMainChildWindow: (request: MainChildWindowRequest) => Promise<void>;
+  /** 子ウィンドウが自分の requestId で要求（表示内容）を受け取る */
+  getMainChildWindowRequest: (requestId: string) => Promise<MainChildWindowRequest | null>;
+  /** 子ウィンドウでの操作結果をメイン画面へ知らせる（トースト表示用） */
+  notifyMainChildWindowResult: (result: MainChildWindowResult) => void;
+  onMainChildWindowResult: (callback: (result: MainChildWindowResult) => void) => () => void;
   // パフォーマンス計測API
   logPerformanceTiming: (label: string, duration: number) => Promise<void>;
   // カスタムアイコン関連API
@@ -285,7 +293,10 @@ export interface ElectronAPI {
     // ピン留め関連
     getAlwaysOnTop: () => Promise<boolean>;
     toggleAlwaysOnTop: () => Promise<boolean>;
-    // モーダルモード関連
+    /**
+     * 確認ダイアログ用のモーダルモード。ウィンドウが要求サイズより小さいときだけ、
+     * 位置を動かさずに広げる（閉じると元のサイズに戻す）
+     */
     setModalMode: (
       isModal: boolean,
       requiredSize?: { width: number; height: number }

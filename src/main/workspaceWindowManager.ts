@@ -5,9 +5,9 @@ import type { WorkspacePositionMode } from '@common/types';
 
 import { SettingsService } from './services/settingsService.js';
 import PathManager from './config/pathManager.js';
-import { calculateModalSize } from './utils/modalSizeManager.js';
 import { pinWindow, unPinWindow } from './utils/virtualDesktop/index.js';
 import { attachSnapHandler } from './utils/windowSnap.js';
+import { calculateModalSize } from './utils/modalSizeManager.js';
 import {
   DEFAULT_WEB_PREFERENCES,
   attachCommonKeyHandlers,
@@ -32,8 +32,9 @@ let pendingCreate: Promise<BrowserWindow> | null = null;
 let isWorkspaceWindowVisible: boolean = false;
 let detachedRestored: boolean = false;
 let isWorkspacePinned: boolean = false;
-let isWorkspaceFocused: boolean = false;
+/** 確認ダイアログ表示前のサイズ（広げたときだけ保持し、閉じるときに戻す） */
 let normalWorkspaceWindowBounds: { width: number; height: number } | null = null;
+let isWorkspaceFocused: boolean = false;
 let windowSnapEnabled: boolean = true;
 
 /**
@@ -231,8 +232,12 @@ export function getWorkspaceAlwaysOnTop(): boolean {
 }
 
 /**
- * ワークスペースウィンドウのモーダルモードを切り替え
- * モーダル表示時はサイズを拡大し、閉じる時は元のサイズに戻す
+ * ワークスペースウィンドウのモーダルモードを切り替える（確認ダイアログ用）
+ *
+ * ワークスペースは中身の高さに合わせて縮むので、確認ダイアログが収まらないことがある。
+ * 要求サイズより小さいときだけ、**位置を動かさずに**その場で広げる（作業領域からはみ出す分だけ
+ * 寄せる）。閉じるときは元のサイズに戻す。以前は x をプライマリの右端に決め打ちしていたため、
+ * 左端配置・別ディスプレイで位置がずれていた。アイテムの編集はこの仕組みを使わない（独立ウィンドウ）
  */
 export function setWorkspaceModalMode(
   isModal: boolean,
@@ -240,33 +245,30 @@ export function setWorkspaceModalMode(
 ): void {
   if (!workspaceWindow || workspaceWindow.isDestroyed()) return;
 
-  const screenWidth = screen.getPrimaryDisplay().workAreaSize.width;
   const currentBounds = workspaceWindow.getBounds();
+  const workArea = screen.getDisplayMatching(currentBounds).workArea;
+  const clampToWorkArea = (x: number, y: number, width: number, height: number) => ({
+    x: Math.max(workArea.x, Math.min(x, workArea.x + workArea.width - width)),
+    y: Math.max(workArea.y, Math.min(y, workArea.y + workArea.height - height)),
+    width,
+    height,
+  });
 
   if (isModal && requiredSize) {
+    const { needsResize, newSize } = calculateModalSize(currentBounds, requiredSize);
+    if (!needsResize) return;
     if (!normalWorkspaceWindowBounds) {
       normalWorkspaceWindowBounds = { width: currentBounds.width, height: currentBounds.height };
     }
-    const { needsResize, newSize } = calculateModalSize(currentBounds, requiredSize);
-    if (needsResize) {
-      workspaceWindow.setBounds({
-        x: screenWidth - newSize.width,
-        y: currentBounds.y,
-        width: newSize.width,
-        height: newSize.height,
-      });
-      windowLogger.info(
-        `モーダルモードON: ${currentBounds.width}x${currentBounds.height} -> ${newSize.width}x${newSize.height}`
-      );
-    }
-  } else if (normalWorkspaceWindowBounds) {
+    const width = Math.min(newSize.width, workArea.width);
+    const height = Math.min(newSize.height, workArea.height);
+    workspaceWindow.setBounds(clampToWorkArea(currentBounds.x, currentBounds.y, width, height));
+    windowLogger.info(
+      `モーダルモードON: ${currentBounds.width}x${currentBounds.height} -> ${width}x${height}（位置は維持）`
+    );
+  } else if (!isModal && normalWorkspaceWindowBounds) {
     const { width, height } = normalWorkspaceWindowBounds;
-    workspaceWindow.setBounds({
-      x: screenWidth - width,
-      y: currentBounds.y,
-      width,
-      height,
-    });
+    workspaceWindow.setBounds(clampToWorkArea(currentBounds.x, currentBounds.y, width, height));
     windowLogger.info(`モーダルモードOFF: ${width}x${height}に復元`);
     normalWorkspaceWindowBounds = null;
   }

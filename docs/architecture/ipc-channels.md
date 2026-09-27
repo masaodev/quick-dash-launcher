@@ -209,13 +209,37 @@ const channel = IPC_CHANNELS.SETTINGS_GET; // 'settings:get'
 - 戻り値: `'bookmark' | 'app' | null`
 - 処理内容: `open-edit-window-with-import-modal`で設定された値を一度だけ取得してクリア
 
-### `set-modal-mode`
+### `window:open-main-child`
 
-モーダルモードを設定（ウィンドウの自動非表示を制御）
+メイン画面の子ウィンドウ（アイテムの登録・編集、アイコン取得結果）を開く
 
-- パラメータ: `isModal: boolean`, `requiredSize?: { width: number; height: number }`
-- 戻り値: なし
-- 用途: ダイアログ表示中のウィンドウ制御
+- パラメータ: `request: MainChildWindowRequest`（`{ kind: 'register', droppedPaths, editingItem, currentTab? }` または `{ kind: 'iconProgressDetail', results }`）
+- 戻り値: なし（子ウィンドウが閉じたときに解決）
+- 処理内容: メインウィンドウを親にしたモーダルな子ウィンドウを同じディスプレイの中央に開く。メインウィンドウのサイズ・位置は変えない。開いている間はメインウィンドウをモーダルモード（フォーカスアウト・Escape・ホットキーで隠れない）にする
+- 実装場所: `src/main/mainChildWindowManager.ts`
+
+詳細は [メイン画面の子ウィンドウ](window-control.md#メイン画面の子ウィンドウアイテムの登録編集アイコン取得結果) を参照してください。
+
+### `window:get-main-child-request`
+
+子ウィンドウが自分の要求（表示内容）を受け取る
+
+- パラメータ: `requestId: string`（`window.name` の `main-child:` 以降、またはフォールバック時の URL クエリ `childRequestId`）
+- 戻り値: `MainChildWindowRequest | null`（ウィンドウが閉じるまで保持されるので複数回呼んでよい）
+
+### `window:notify-main-child-result`
+
+子ウィンドウでの操作結果をメイン画面へ知らせる（`ipcRenderer.send`）
+
+- パラメータ: `result: MainChildWindowResult`（`{ kind: 'register', action: 'registered' | 'updated' | 'deleted' }`）
+- 処理内容: メインウィンドウへ `window:main-child-result` イベントとして中継する。データ自体の反映は `data-changed` で行われる
+
+### `window:main-child-result` (イベント)
+
+子ウィンドウでの操作結果（メインプロセス → メイン画面）
+
+- パラメータ: `result: MainChildWindowResult`
+- 用途: メイン画面が「アイテムを登録しました」等のトーストを出す
 
 ### `copy-to-clipboard`
 

@@ -31,7 +31,7 @@ import { EnvConfig } from '../config/envConfig.js';
 export type ChildWindowOpenerKey = 'main' | 'workspace';
 
 /** 子ウィンドウとして書き込む HTML ファイル名（dist 直下） */
-export type ChildWindowHtml = 'workspace.html' | 'overlay.html';
+export type ChildWindowHtml = 'index.html' | 'workspace.html' | 'overlay.html';
 
 export interface OpenChildWindowRequest {
   /** window.name として使う名前。同名の生成が進行中の間は新しい要求を受け付けない */

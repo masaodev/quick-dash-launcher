@@ -211,6 +211,7 @@ const WorkspaceApp: React.FC = () => {
     return () => document.removeEventListener('keydown', handleCtrlF);
   }, [isDetached]);
 
+  // 確認ダイアログが収まるよう、足りないときだけウィンドウを（動かさずに）広げる
   useEffect(() => {
     const isAnyModalOpen = deleteGroupDialog.isOpen || archiveGroupDialog.isOpen;
     if (isAnyModalOpen) {

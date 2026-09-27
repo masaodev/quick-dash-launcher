@@ -190,6 +190,14 @@ export {
 export type { EditableJsonItem, LoadEditableItemsResult, ValidationResult } from './editableItem';
 export { validateEditableItem } from './editableItem';
 
+// メイン画面が開く子ウィンドウ（登録・編集、アイコン取得結果）の型
+export type {
+  MainChildWindowRequest,
+  RegisterWindowRequest,
+  IconProgressDetailWindowRequest,
+  MainChildWindowResult,
+} from './mainChildWindow';
+
 // トースト関連の型
 export type { ToastItemType, ToastEventData } from './toast';
 

@@ -20,13 +20,14 @@ QuickDashLauncherのアーキテクチャ概要とデータフローを説明し
 | オーバーレイ（トースト・レイアウト進捗） | メインのレンダラーが `window.open` で生成                         | **メインと共有**          |
 | 切り離しグループウィンドウ               | ワークスペースのレンダラーが `window.open` で生成                 | **メインと共有**          |
 | ワークスペースアイテムの編集ウィンドウ   | ワークスペースのレンダラーが `window.open` で生成（閉じると破棄） | **メインと共有**          |
+| メイン画面の子ウィンドウ（アイテムの登録・編集、アイコン取得結果） | メインのレンダラーが `window.open` で生成（閉じると破棄） | **メインと共有**          |
 | 管理 / スプラッシュ                      | メインプロセスの `BrowserWindow`                                  | ウィンドウごとに1プロセス |
 
 レンダラープロセスは1枚あたり約60MB以上の固定メモリを消費するため、常駐するウィンドウは
 `src/main/services/childWindowService.ts` の `openChildWindow()` でメインウィンドウのレンダラーから開き、プロセスを共有する。
 流れは次のとおり:
 
-1. メインプロセスが対象HTML（`workspace.html` / `overlay.html`）の内容を読み込み、IPC（`WINDOW_OPEN_CHILD`）で開き元レンダラーに渡す
+1. メインプロセスが対象HTML（`index.html` / `workspace.html` / `overlay.html`）の内容を読み込み、IPC（`WINDOW_OPEN_CHILD`）で開き元レンダラーに渡す
 2. preload が `window.open('about:blank', name)` を実行し、`document.write` でHTMLを書き込む（相対パスは開き元URL基準で解決される）
 3. メインプロセスが `did-create-window` で `BrowserWindow` を受け取り、以降の表示・位置・イベント管理は従来どおり行う
 4. 開き元が使えない場合はタイムアウト後に `new BrowserWindow` で直接生成する（フォールバック）
@@ -101,7 +102,7 @@ IPCハンドラーは機能ごとに分離（`src/main/ipc/`）:
 | `appImportHandlers.ts`          | スタートメニューのアプリスキャン・インポート                           |
 | `bookmarkAutoImportHandlers.ts` | ブックマーク自動取込ルールの管理と実行                                 |
 | `backupHandlers.ts`             | スナップショットバックアップの管理・リストア                           |
-| `windowHandlers.ts`             | ウィンドウ固定化・編集モード・モーダルモード制御                       |
+| `windowHandlers.ts`             | ウィンドウ固定化・編集モード・メイン画面の子ウィンドウ（登録・編集）    |
 | `historyHandlers.ts`            | 検索履歴の読み書き                                                     |
 | `editHandlers.ts`               | アイテム編集（更新・削除・一括更新）                                   |
 | `splashHandlers.ts`             | スプラッシュウィンドウ制御                                             |
