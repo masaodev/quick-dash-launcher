@@ -30,6 +30,7 @@ import {
 import type { RegisterItem, WindowOperationConfig } from '../types/register';
 
 import { stripIconFromLayoutEntries } from './dataConverters';
+import { windowInfoToWindowItem } from './windowInfoConverter';
 
 /** undefined の値を持つキーを落とす（ファイルに `"args": undefined` のような穴を残さないため） */
 function compact<T extends object>(obj: T): T {
@@ -106,11 +107,12 @@ function layoutBody(item: LayoutItem): WorkspaceItemUpdate {
 /**
  * メイン画面のアイテムをワークスペースアイテムの本体に変換する（id・並び順・所属は呼び出し側が付ける）
  *
- * @throws WindowInfo（ウィンドウ検索結果）はワークスペースに入れられない
+ * WindowInfo（ウィンドウ検索結果）はタイトルとプロセス名だけのウィンドウ操作アイテムにする。
+ * 位置も記録したいときは呼び出し側で windowInfoToWindowItem(info, { includePosition: true }) を通す
  */
 export function appItemToWorkspaceItemBody(item: AppItem): WorkspaceItemUpdate {
   if (isWindowInfo(item)) {
-    throw new Error('WindowInfo is not supported in workspace');
+    return windowBody(windowInfoToWindowItem(item));
   }
   if (isWindowItem(item)) return windowBody(item);
   if (isGroupItem(item)) return groupBody(item);

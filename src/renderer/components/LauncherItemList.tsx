@@ -8,6 +8,7 @@ import {
   isClipboardItem,
 } from '@common/types/guards';
 import { LauncherItem, GroupItem, AppItem } from '@common/types';
+import { windowInfoToWindowItem } from '@common/utils/windowInfoConverter';
 
 import { getTooltipText } from '../utils/tooltipTextGenerator';
 import { logError } from '../utils/debug';
@@ -215,6 +216,27 @@ const LauncherItemList: React.FC<ItemListProps> = ({
       ),
       window.electronAPI.onLauncherMenuShowMemo(openMemoModal),
       window.electronAPI.onWindowMenuActivate((item) => latestRef.current.onItemExecute(item)),
+      window.electronAPI.onWindowMenuAddToWorkspace(async ({ windowInfo, includePosition }) => {
+        const windowItem = windowInfoToWindowItem(windowInfo, { includePosition });
+        try {
+          await window.electronAPI.workspaceAPI.addItem(windowItem);
+          await window.electronAPI.showToastWindow({
+            displayName: windowItem.displayName,
+            itemType: 'workspaceAdd',
+            icon: windowInfo.icon,
+            message: includePosition
+              ? 'タイトルとプロセス名で探し、記録した位置に戻して前面に出します'
+              : 'タイトルとプロセス名で探して前面に出します（タイトルは編集できます）',
+          });
+        } catch (error) {
+          logError('ウィンドウのワークスペースへの追加に失敗しました:', error);
+          await window.electronAPI.showToastWindow({
+            displayName: windowItem.displayName,
+            itemType: 'workspaceAdd',
+            message: 'ワークスペースへの追加に失敗しました',
+          });
+        }
+      }),
       window.electronAPI.onMoveWindowToDesktop(async (hwnd, desktopNumber) => {
         await handleWindowOperation(
           (h) => window.electronAPI.moveWindowToDesktop(h, desktopNumber),
@@ -266,14 +288,21 @@ const LauncherItemList: React.FC<ItemListProps> = ({
 
   // ドラッグ&ドロップハンドラー（ワークスペースへの追加用）
   const handleDragStart = (e: React.DragEvent, item: AppItem, index: number) => {
+    setDraggedItemIndex(index);
+    e.dataTransfer.effectAllowed = 'copy';
+
     if (isWindowInfo(item)) {
-      e.preventDefault();
+      // ウィンドウ検索結果は hwnd（bigint）を持ち JSON にできないので、先にウィンドウ操作アイテムへ変換する。
+      // 既定はアクティブ化のみ。位置は別データで渡し、ドロップ側が Ctrl 押下時だけ採用する
+      e.dataTransfer.setData('launcherItem', JSON.stringify(windowInfoToWindowItem(item)));
+      e.dataTransfer.setData(
+        'windowPosition',
+        JSON.stringify({ x: item.x, y: item.y, width: item.width, height: item.height })
+      );
       return;
     }
 
-    setDraggedItemIndex(index);
-    e.dataTransfer.effectAllowed = 'copy';
-    // AppItemをワークスペース側にJSON転送（WindowInfoはドラッグ不可のため除外済み）
+    // AppItemをワークスペース側にJSON転送
     e.dataTransfer.setData('launcherItem', JSON.stringify(item));
   };
 
@@ -313,7 +342,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
             const isGroup = isGroupItem(item);
             const isWindowOperation = isWindowItem(item);
             const isClipboard = isClipboardItem(item);
-            const isDraggable = !isWindow;
+            const isDraggable = true;
             const isDragging = draggedItemIndex === index;
 
             let itemName: string;

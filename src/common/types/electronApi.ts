@@ -396,6 +396,10 @@ export interface ElectronAPI {
   onLauncherMenuShowMemo: (callback: (item: AppItem) => void) => () => void;
   // WindowContextMenuイベントリスナー
   onWindowMenuActivate: (callback: (windowInfo: WindowInfo) => void) => () => void;
+  /** ウィンドウ検索結果の右クリック「ワークスペースに追加」（includePosition: 今の位置・サイズも記録） */
+  onWindowMenuAddToWorkspace: (
+    callback: (payload: { windowInfo: WindowInfo; includePosition: boolean }) => void
+  ) => () => void;
   onMoveWindowToDesktop: (
     callback: (hwnd: number | bigint, desktopNumber: number) => void
   ) => () => void;
