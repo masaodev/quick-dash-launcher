@@ -31,19 +31,26 @@ interface WorkspaceItemEditModalProps {
   onClose: () => void;
   editingItem: WorkspaceItem | null;
   onSave: (id: string, updates: WorkspaceItemUpdate) => Promise<void>;
+  /**
+   * 独立した編集ウィンドウの中身として描画する（オーバーレイなし・ウィンドウいっぱい）。
+   * 現在の編集はこの形でしか使わない。ワークスペースウィンドウ内にモーダルとして重ねると
+   * ウィンドウを広げて動かす必要があったため、その経路はやめた
+   */
+  asPage?: boolean;
 }
 
 /**
- * ワークスペースアイテム編集モーダル
+ * ワークスペースアイテム編集フォーム
  *
- * ワークスペースアイテムの全フィールド（path, args, customIcon, windowConfig等）を
- * 編集するためのモーダルダイアログ。
+ * ワークスペースアイテムの全フィールド（path, args, customIcon, windowConfig等）を編集する。
+ * 独立した編集ウィンドウ（WorkspaceItemEditPage）に描画される
  */
 const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
   isOpen,
   onClose,
   editingItem,
   onSave,
+  asPage = false,
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
   const [windowSelectorOpen, setWindowSelectorOpen] = useState(false);
@@ -89,7 +96,6 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
   useEffect(() => {
     if (!isOpen) {
       document.body.style.overflow = 'auto';
-      window.electronAPI.workspaceAPI.setModalMode(false);
       clearCustomIconPreviews();
       return;
     }
@@ -100,18 +106,6 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
       document.body.style.overflow = 'auto';
     };
   }, [isOpen, editingItem]);
-
-  useEffect(() => {
-    if (!isOpen || !item) return;
-
-    const requiredWidth = 850;
-    const requiredHeight = 800;
-
-    window.electronAPI.workspaceAPI.setModalMode(true, {
-      width: requiredWidth,
-      height: requiredHeight,
-    });
-  }, [isOpen, item]);
 
   const onCustomIconSelected = async (filePath: string) => {
     if (!item) return;
@@ -226,9 +220,12 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
 
   return (
     <>
-      <div className="modal-overlay" onClick={(e) => e.stopPropagation()}>
+      <div
+        className={asPage ? 'workspace-editor-page' : 'modal-overlay'}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div
-          className="modal-content register-modal"
+          className={`modal-content register-modal${asPage ? ' workspace-editor-content' : ''}`}
           onClick={(e) => e.stopPropagation()}
           ref={modalRef}
           tabIndex={-1}

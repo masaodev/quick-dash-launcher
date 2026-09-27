@@ -149,6 +149,7 @@ export const IPC_CHANNELS = {
   WORKSPACE_SET_POSITION_AND_SIZE: 'workspace:set-position-and-size',
   WORKSPACE_SET_POSITION_MODE: 'workspace:set-position-mode',
   WORKSPACE_SET_MODAL_MODE: 'workspace:set-modal-mode',
+  WORKSPACE_OPEN_ITEM_EDITOR: 'workspace:open-item-editor',
   WORKSPACE_SET_OPACITY: 'workspace:set-opacity',
   WORKSPACE_GET_OPACITY: 'workspace:get-opacity',
 

@@ -263,9 +263,23 @@ adminWindow.webContents.on('before-input-event', (event, input) => {
 - **メインプロセス**: `src/main/workspaceWindowManager.ts`
 - **レンダラー**: `src/renderer/WorkspaceApp.tsx`
 
+### アイテム編集ウィンドウ（独立した子ウィンドウ）
+
+ワークスペースアイテムの「編集」は、ワークスペースウィンドウの中のモーダルではなく、独立した子ウィンドウで開きます（v0.7.37 以降）。
+
+**実装場所**: `src/main/workspaceItemEditorWindowManager.ts`（`openWorkspaceItemEditor`）、`src/main/utils/editorWindowBounds.ts`（位置計算）、`src/renderer/components/WorkspaceItemEditPage.tsx`（中身）
+
+- IPC `workspace:open-item-editor`（itemId）を受け、送信元（ワークスペース本体または切り離しウィンドウ）を親にした子ウィンドウを開く
+- ワークスペースのレンダラーから `window.open` で開く（`childWindowService`。レンダラープロセス共有）。`window.name` は `workspace-editor:<itemId>` で、フォールバック時は URL クエリ `editItemId`
+- 位置は開き元と同じディスプレイの作業領域の中央、サイズは 850x800 を作業領域で切り詰める。**開き元のウィンドウのサイズ・位置は変えない**
+- 親に対してモーダル（`parent` + `modal: true`）。同じアイテムの編集が開いていれば前面に出す。閉じると破棄
+- 保存は `workspace:update-item` で行い、変更通知でワークスペース側が読み直す。編集ウィンドウは `window.close()` するだけ
+
+以前は `set-workspace-modal-mode` でワークスペースを 850x800 に広げ、x 座標をプライマリの右端に決め打ちしていたため、左端配置・別ディスプレイ・固定位置で位置がずれ、切り離しウィンドウからは本体が動いていた。
+
 ### モーダルモードのウィンドウサイズ制御
 
-ワークスペースウィンドウで各種ダイアログ（グループアイテムセレクター、アーカイブ選択など）が表示される際、必要に応じてウィンドウサイズを自動的に拡大・復元します。
+ワークスペースウィンドウで確認ダイアログ（グループの削除・アーカイブ）が表示される際、必要に応じてウィンドウサイズを自動的に拡大・復元します。アイテムの編集はこの仕組みを使いません（上記の独立ウィンドウ）。
 
 **実装場所**: `src/main/workspaceWindowManager.ts:228-284`（`setWorkspaceModalMode`関数）
 

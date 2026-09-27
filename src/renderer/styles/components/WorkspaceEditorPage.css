@@ -1,0 +1,29 @@
+/* ワークスペースアイテムの編集ウィンドウ（独立ウィンドウの中身） */
+
+/* モーダルのオーバーレイの代わりに、ウィンドウ全体を編集フォームにする */
+.workspace-editor-page {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  background-color: var(--bg-body);
+  overflow: hidden;
+}
+
+/* register-modal の幅・高さの上限を外し、ウィンドウいっぱいに広げる */
+.workspace-editor-page .modal-content.workspace-editor-content {
+  max-width: none;
+  width: 100%;
+  max-height: none;
+  height: 100%;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.workspace-editor-missing {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-xl);
+  color: var(--text-muted);
+}

@@ -290,6 +290,8 @@ export interface ElectronAPI {
       isModal: boolean,
       requiredSize?: { width: number; height: number }
     ) => Promise<void>;
+    /** アイテムの編集を独立した子ウィンドウで開く（開き元のウィンドウは動かさない） */
+    openItemEditor: (itemId: string) => Promise<void>;
     // 透過度関連
     setOpacity: (opacityPercent: number) => Promise<boolean>;
     getOpacity: () => Promise<number>;

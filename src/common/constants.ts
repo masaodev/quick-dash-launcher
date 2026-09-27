@@ -33,6 +33,13 @@ export const DESKTOP_TAB = {
 export const DETACHED_WINDOW_NAME_PREFIX = 'detached-group:';
 
 /**
+ * ワークスペースアイテム編集ウィンドウの window.name 接頭辞
+ * ワークスペースのレンダラーが window.open で開く子ウィンドウに
+ * `<接頭辞><itemId>` という名前を付け、レンダラー側で編集対象を判定する
+ */
+export const WORKSPACE_EDITOR_WINDOW_NAME_PREFIX = 'workspace-editor:';
+
+/**
  * アイコン取得の対象になるアイテムタイプ
  * folder / group / windowOperation / clipboard / layout は
  * タイプ別のデフォルトアイコンを使うため取得対象外
