@@ -7,6 +7,7 @@ import { IPC_CHANNELS } from '@common/ipcChannels';
 import { EnvConfig } from './config/envConfig.js';
 import PathManager from './config/pathManager.js';
 import { SettingsService } from './services/settingsService.js';
+import { registerChildWindowOpener } from './services/childWindowService.js';
 import { WindowIdleDestroyer } from './utils/windowIdleDestroyer.js';
 import {
   DEFAULT_WEB_PREFERENCES,
@@ -75,6 +76,9 @@ export async function createAdminWindow(): Promise<BrowserWindow> {
   adminWindow.setMenuBarVisibility(false);
   adminWindow.setMenu(null);
 
+  // 詳細編集（アイテムの登録・編集フォーム）はこのレンダラーから window.open で開き、プロセスを共有する
+  registerChildWindowOpener('admin', adminWindow.webContents);
+
   // 閉じる操作は隠すだけ（アプリ終了時は実際に閉じる）。未保存の変更があれば閉じる前に確認したいので、
   // 画面が動いているときはレンダラーに知らせ、閉じてよければ HIDE_EDIT_WINDOW で隠してもらう
   adminWindow.on('close', (event) => {
@@ -109,6 +113,11 @@ export async function createAdminWindow(): Promise<BrowserWindow> {
 
   windowLogger.info('管理ウィンドウを作成しました');
   return adminWindow;
+}
+
+/** 管理ウィンドウ（なければ null） */
+export function getAdminWindow(): BrowserWindow | null {
+  return isWindowValid() ? adminWindow : null;
 }
 
 /**

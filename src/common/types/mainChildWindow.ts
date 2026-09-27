@@ -1,8 +1,10 @@
 import type { EditingAppItem } from './editingItem';
+import type { EditableJsonItem } from './editableItem';
+import type { RegisterItem } from './register';
 import type { IconProgressResult } from './icon';
 
 /**
- * メイン画面が独立した子ウィンドウで開く画面の要求
+ * メイン画面（と管理画面）が独立した子ウィンドウで開く画面の要求
  *
  * 以前はメインウィンドウの中にモーダルを描き、ウィンドウを 850x1000 等に広げて中央へ
  * 動かしていた。今はメインウィンドウを動かさず、メインのレンダラーが window.open で開いた
@@ -16,16 +18,29 @@ export interface RegisterWindowRequest {
   kind: 'register';
   /** ドロップされたファイル・URL（新規登録の初期値。なければ空配列） */
   droppedPaths: string[];
-  /** 編集対象（新規登録なら null） */
-  editingItem: EditingAppItem | null;
+  /** 編集対象（新規登録なら null。管理画面からは EditableJsonItem） */
+  editingItem: EditingAppItem | EditableJsonItem | null;
   /** 開いたときにメイン画面で選ばれていたタブ（保存先の初期値） */
   currentTab?: string;
+  /** 開いたときにこの種別へ切り替える（管理画面の種類プルダウンから、詳細編集でしか作れない種別を選んだとき） */
+  initialCategory?: RegisterItem['itemCategory'];
+  /**
+   * 保存せず、フォームの内容を開き元へ返して閉じる（管理画面の詳細編集用）
+   * 管理画面は返ってきた内容を未保存の編集状態に反映し、「変更を保存」で確定する
+   */
+  returnToOpener?: boolean;
 }
 
 /** アイコン取得結果の詳細ウィンドウ */
 export interface IconProgressDetailWindowRequest {
   kind: 'iconProgressDetail';
   results: IconProgressResult[];
+}
+
+/** 子ウィンドウが開き元へ返す内容（returnToOpener のとき。閉じるまでに返さなければ null） */
+export interface MainChildWindowReturn {
+  kind: 'register';
+  items: RegisterItem[];
 }
 
 /**

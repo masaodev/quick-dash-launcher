@@ -28,7 +28,7 @@ import { EnvConfig } from '../config/envConfig.js';
  */
 
 /** 開き元レンダラーの識別子 */
-export type ChildWindowOpenerKey = 'main' | 'workspace';
+export type ChildWindowOpenerKey = 'main' | 'workspace' | 'admin';
 
 /** 子ウィンドウとして書き込む HTML ファイル名（dist 直下） */
 export type ChildWindowHtml = 'index.html' | 'workspace.html' | 'overlay.html';

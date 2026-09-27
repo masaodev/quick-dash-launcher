@@ -69,7 +69,7 @@ const MainChildPage: React.FC<MainChildPageProps> = ({ requestId }) => {
 
   switch (request.kind) {
     case 'register':
-      return <RegisterWindowPage request={request} />;
+      return <RegisterWindowPage requestId={requestId} request={request} />;
     case 'iconProgressDetail':
       return (
         <IconProgressDetailModal

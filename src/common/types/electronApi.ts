@@ -59,6 +59,7 @@ import type {
   Bounds,
   MainChildWindowRequest,
   MainChildWindowResult,
+  MainChildWindowReturn,
 } from './index';
 
 export interface ElectronAPI {
@@ -198,13 +199,16 @@ export interface ElectronAPI {
   copyToClipboard: (text: string) => Promise<boolean>;
   /**
    * メイン画面の子ウィンドウ（アイテムの登録・編集、アイコン取得結果）を開く
-   * メインウィンドウは動かさない。子ウィンドウが閉じたら解決する
+   * 開き元（メイン画面・管理画面）は動かさない。子ウィンドウが閉じたら、子が返した内容
+   * （returnToOpener のとき。なければ null）で解決する
    */
-  openMainChildWindow: (request: MainChildWindowRequest) => Promise<void>;
+  openMainChildWindow: (request: MainChildWindowRequest) => Promise<MainChildWindowReturn | null>;
   /** 子ウィンドウが自分の requestId で要求（表示内容）を受け取る */
   getMainChildWindowRequest: (requestId: string) => Promise<MainChildWindowRequest | null>;
   /** 子ウィンドウでの操作結果をメイン画面へ知らせる（トースト表示用） */
   notifyMainChildWindowResult: (result: MainChildWindowResult) => void;
+  /** 子ウィンドウが開き元へ返す内容を預ける（returnToOpener のとき。この後 window.close する） */
+  returnMainChildWindowValue: (requestId: string, value: MainChildWindowReturn) => Promise<void>;
   onMainChildWindowResult: (callback: (result: MainChildWindowResult) => void) => () => void;
   // パフォーマンス計測API
   logPerformanceTiming: (label: string, duration: number) => Promise<void>;

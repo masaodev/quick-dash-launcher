@@ -126,12 +126,14 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
       await test.step('種類でウィンドウ操作を選ぶと、その種別で詳細編集が開く', async () => {
         const firstRow = adminWindow.locator('.raw-item-row').first();
         await firstRow.locator('select.type-select').selectOption('window');
-        const modal = adminWindow.locator('.register-modal');
-        await expect(modal).toBeVisible();
+        // 詳細編集は独立した子ウィンドウで開く（管理ウィンドウの中には描かない）
+        const adminUtils = new TestUtils(adminWindow);
+        const detailWindow = await adminUtils.waitForRegisterWindow(electronApp);
+        const modal = detailWindow.locator('.register-modal');
+        await expect(adminWindow.locator('.register-modal')).toHaveCount(0);
         // 種別の select（最初の select は保存先タブ）
         await expect(modal.locator('select:has(option[value="window"])')).toHaveValue('window');
-        await adminWindow.keyboard.press('Escape');
-        await expect(modal).not.toBeVisible();
+        await adminUtils.pressEscapeToCloseRegisterModal();
         // 一覧側の種類は変わっていない
         await expect(firstRow.locator('select.type-select')).toHaveValue('item');
       });
@@ -166,7 +168,8 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
     const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
 
     try {
-      const _adminUtils = new TestUtils(adminWindow);
+      const adminUtils = new TestUtils(adminWindow);
+      let detailWindow = adminWindow;
 
       await test.step('セル編集でGitHubアイテムの名前を変更', async () => {
         const githubRow = adminWindow.locator('.raw-item-row', { hasText: 'GitHub' });
@@ -195,23 +198,23 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         const editButton = googleRow.locator('button.detail-edit-button');
         await editButton.click();
 
-        // 登録モーダルが開いたことを確認
-        const modal = adminWindow.locator('.register-modal');
-        await expect(modal).toBeVisible();
+        // 詳細編集が独立した子ウィンドウで開いたことを確認
+        detailWindow = await adminUtils.waitForRegisterWindow(electronApp);
+        await expect(adminWindow.locator('.register-modal')).toHaveCount(0);
       });
 
-      await test.step('モーダルで名前と引数を編集', async () => {
-        const nameInput = adminWindow
+      await test.step('詳細編集ウィンドウで名前と引数を編集', async () => {
+        const nameInput = detailWindow
           .locator('.register-modal input[placeholder*="表示名"]')
           .first();
         await nameInput.fill('Google詳細編集');
 
         // オプションセクションを開く
-        const optionsToggle = adminWindow.locator('.register-modal .options-toggle').first();
+        const optionsToggle = detailWindow.locator('.register-modal .options-toggle').first();
         await optionsToggle.click();
 
         // 引数入力フィールドが表示されるまで待機
-        const argsInput = adminWindow
+        const argsInput = detailWindow
           .locator('.register-modal input[placeholder*="コマンドライン引数"]')
           .first();
         await expect(argsInput).toBeVisible();
@@ -219,14 +222,15 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
       });
 
       await test.step('更新ボタンをクリック', async () => {
-        const updateButton = adminWindow
+        const updateButton = detailWindow
           .locator('.register-modal button', { hasText: '更新' })
           .first();
-        await updateButton.click();
-
-        // モーダルが閉じるのを待機
-        const modal = adminWindow.locator('.register-modal');
-        await expect(modal).not.toBeVisible({ timeout: 5000 });
+        // 詳細編集ウィンドウが閉じ、内容は未保存の変更として一覧に反映される（まだ保存しない）
+        await adminUtils.closeRegisterModalBy(() => updateButton.click());
+        await expect(
+          adminWindow.locator('.raw-item-row', { hasText: 'Google詳細編集' })
+        ).toBeVisible();
+        expect(configHelper.hasItemByDisplayName('data.json', 'Google詳細編集')).toBe(false);
       });
 
       await test.step('変更を保存して確認', async () => {

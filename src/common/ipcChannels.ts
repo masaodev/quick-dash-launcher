@@ -88,6 +88,7 @@ export const IPC_CHANNELS = {
   OPEN_MAIN_CHILD_WINDOW: 'window:open-main-child',
   GET_MAIN_CHILD_WINDOW_REQUEST: 'window:get-main-child-request',
   NOTIFY_MAIN_CHILD_WINDOW_RESULT: 'window:notify-main-child-result',
+  RETURN_MAIN_CHILD_WINDOW_VALUE: 'window:return-main-child-value',
   EVENT_MAIN_CHILD_WINDOW_RESULT: 'window:main-child-result',
   LOG_PERFORMANCE_TIMING: 'log-performance-timing',
 

@@ -198,10 +198,11 @@ const channel = IPC_CHANNELS.SETTINGS_GET; // 'settings:get'
 
 ### `window:open-main-child`
 
-メイン画面の子ウィンドウ（アイテムの登録・編集、アイコン取得結果）を開く
+メイン画面・管理画面の子ウィンドウ（アイテムの登録・編集、アイコン取得結果）を開く
 
-- パラメータ: `request: MainChildWindowRequest`（`{ kind: 'register', droppedPaths, editingItem, currentTab? }` または `{ kind: 'iconProgressDetail', results }`）
-- 戻り値: なし（子ウィンドウが閉じたときに解決）
+- パラメータ: `request: MainChildWindowRequest`（`{ kind: 'register', droppedPaths, editingItem, currentTab?, initialCategory?, returnToOpener? }` または `{ kind: 'iconProgressDetail', results }`）
+- 戻り値: `MainChildWindowReturn | null`（子ウィンドウが閉じたときに解決。`returnToOpener` で子が内容を返したときだけ `{ kind: 'register', items }`）
+- 管理ウィンドウから呼ぶと、管理ウィンドウを親・開き元にして開き、メインウィンドウには触らない（管理画面の詳細編集）
 - 処理内容: メインウィンドウを親にしたモーダルな子ウィンドウを同じディスプレイの中央に開く。メインウィンドウのサイズ・位置は変えない。開いている間はメインウィンドウをモーダルモード（フォーカスアウト・Escape・ホットキーで隠れない）にする
 - 実装場所: `src/main/mainChildWindowManager.ts`
 
@@ -220,6 +221,13 @@ const channel = IPC_CHANNELS.SETTINGS_GET; // 'settings:get'
 
 - パラメータ: `result: MainChildWindowResult`（`{ kind: 'register', action: 'registered' | 'updated' | 'deleted' }`）
 - 処理内容: メインウィンドウへ `window:main-child-result` イベントとして中継する。データ自体の反映は `data-changed` で行われる
+
+### `window:return-main-child-value`
+
+子ウィンドウが開き元へ返す内容を預ける（`returnToOpener` のとき。この後 `window.close()` する）
+
+- パラメータ: `requestId: string`、`value: MainChildWindowReturn`（`{ kind: 'register', items: RegisterItem[] }`）
+- 処理内容: 子ウィンドウが閉じたときに `window:open-main-child` の戻り値として開き元へ渡す
 
 ### `window:main-child-result` (イベント)
 
