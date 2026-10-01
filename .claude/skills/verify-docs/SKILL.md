@@ -61,7 +61,6 @@ Glob: docs/**/*.md
 ```
 
 以下のファイルは除外します：
-- TEMPLATE.md
 - WRITING-GUIDE.md
 - その他のテンプレートファイル
 
