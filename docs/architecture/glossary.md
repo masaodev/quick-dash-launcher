@@ -98,4 +98,4 @@ QuickDashLauncherで使用されるドメイン用語の定義です。開発時
 
 - **[データ形式仕様](file-formats/data-format.md)** - データファイルの詳細仕様
 - **[システム概要](overview.md)** - アーキテクチャの全体像
-- **[コンポーネント命名規則](component-naming.md)** - コンポーネントの命名規則
+- **[コンポーネント命名規則](ui-components.md#コンポーネント命名規則)** - コンポーネントの命名規則

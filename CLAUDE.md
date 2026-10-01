@@ -37,29 +37,26 @@ npm run lint && npm run type-check  # 品質チェック
 - **カスタムURIスキーマ対応**: `obsidian://`, `vscode://`等の非HTTPスキーマをサポート
 - **Electron MCP使用**: QuickDashLauncherのブラウザ操作には`electron-playwright`を使用（Chrome MCPではない）
 
-## コミット前の確認事項
+## コミット・PR
 
-- コミット・プッシュ前にユーザー承認を得る
-- 品質チェックを実施するか確認する
+- 作業ブランチへのコミットと PR 作成までは進めてよい。main へのマージとリリースはユーザーの承認を得てから行う
+- PR では CI（型チェック・lint・単体テスト）が走る。編集時は hook（`.claude/settings.json`）が eslint・prettier を自動で実行する
+- コードレビューは組み込みの `/code-review` を使う
 
 ## サブエージェント
 
 | エージェント | 用途 |
 |-------------|------|
-| `quality-checker` | コミット前の軽量チェック（型・Lint） |
-| `code-reviewer` | 包括的コードレビュー（設計・セキュリティ） |
-| `e2e-test-runner` | E2Eテスト実行・失敗分析 |
+| `e2e-test-runner` | E2Eテスト実行・失敗分析（出力が大きいので分離する） |
 | `documentation-updater` | 機能変更時のドキュメント更新 |
+| `doc-verifier` | ドキュメント 1 本とコードの照合（`verify-docs` スキルが使う） |
 
-## カスタムコマンド（/スラッシュコマンド）
+## カスタムコマンド・スキル
 
-- `/start-branch` - ブランチ作成
-- `/commit-pr` - コミット・PR作成
-- `/refactor` - 対話型リファクタリング
-- `/quality-check-all` - 総合品質チェック
-- `/test-e2e-all` - 全E2Eテスト
-
-全コマンド一覧: `.claude/commands/`
+- `/release-version` - バージョン更新・タグ作成・リリース
+- `/create-issue` - GitHub Issue の作成
+- `/create-screen-spec` - 画面仕様書の作成
+- `verify-docs`（スキル） - docs とコードの整合性検証
 
 ## ドキュメント
 
