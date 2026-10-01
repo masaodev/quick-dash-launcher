@@ -17,7 +17,7 @@ allowed-tools: ['Bash', 'Read', 'Edit', 'TodoWrite', 'AskUserQuestion']
 | モード                   | 例                          | 内容                                                           |
 | ------------------------ | --------------------------- | -------------------------------------------------------------- |
 | `beta`（引数なしも同じ） | 0.8.0-beta.1 → 0.8.0-beta.2 | 次のベータ版。GitHub ではプレリリースになり、winget には出ない |
-| `stable`                 | 0.8.0-beta.2 → 0.8.0        | ベータ版を正式版にする。winget は自動更新ボットが反映する      |
+| `stable`                 | 0.8.0-beta.2 → 0.8.0        | ベータ版を正式版にする。winget-pkgs にも自分で更新 PR を出す   |
 
 ### 次のバージョン番号の決め方
 
@@ -60,7 +60,12 @@ allowed-tools: ['Bash', 'Read', 'Edit', 'TodoWrite', 'AskUserQuestion']
    - タグのプッシュによりGitHub Actionsが自動実行される
    - ビルドとリリースが自動的に作成される（本文はタグのメッセージから。タグに `-` があればプレリリース）
 
-7. **正式版にするかの確認（ベータ版のとき）**
+7. **winget への提出（正式版のとき）**
+   - Actions が終わり、Release にインストーラーが載ったのを確かめてから、`wingetcreate update … --submit` で winget-pkgs に更新 PR を出す（下の処理フロー 6）
+   - トークンは `gh auth token` をその場で渡す（保存しない。`repo` 権限が要る）。フォークの作成・同期と PR 作成は wingetcreate が行う
+   - 出た PR の URL をユーザーに報告する。失敗しても、コミュニティの自動更新ボットが半日〜1 日で拾うので、リリース自体はやり直さない
+
+8. **正式版にするかの確認（ベータ版のとき）**
    - 直前の正式版から何本のベータ版が出ているかと、その間の主な変更を短く示し、そろそろ正式版にするかをユーザーに尋ねる（毎回でなくてよい。テーマが一区切りついたとき・ベータ版が何本かたまったときに）
 
 ## 事前要件
@@ -97,6 +102,13 @@ git push origin v{version}
 
 # 確認: 本文がタグに入っているか
 git tag -l --format='%(contents:body)' v{version}
+
+# 6. winget への提出（正式版のときだけ。Actions の完了を待ってから）
+gh run watch $(gh run list --workflow release.yml --limit 1 --json databaseId -q '.[0].databaseId')
+wingetcreate update masaodev.quick-dash-launcher --version {version} \
+  --urls "https://github.com/masaodev/quick-dash-launcher/releases/download/v{version}/QuickDashLauncher.Setup.{version}.exe|x64" \
+  --release-notes-url "https://github.com/masaodev/quick-dash-launcher/releases/tag/v{version}" \
+  --submit --token "$(gh auth token)"
 ```
 
 ## リリース後の確認
@@ -110,7 +122,7 @@ git tag -l --format='%(contents:body)' v{version}
    - インストーラーファイルが添付されていること、ベータ版ならプレリリース・正式版なら Latest になっていることを確認
 
 3. **winget の確認（正式版のとき）**
-   - 半日〜1 日後に `winget show masaodev.quick-dash-launcher` で版が上がっているか確認（すぐには反映されない）
+   - 出した PR が Microsoft 側の検証とモデレーターの承認を経てマージされると反映される（数時間かかる）。マージ後に `winget show masaodev.quick-dash-launcher` で版を確認
 
 ## トラブルシューティング
 
