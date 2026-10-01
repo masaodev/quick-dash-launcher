@@ -61,11 +61,7 @@ tests/e2e/
     └── settings-tab.spec.ts
 ```
 
-### 3. 手動テスト
-
-リリース前の確認項目は [手動テストチェックリスト](./manual-checklist.md) を参照。
-
-### 4. ブラウザ自動操作（Playwright MCP）
+### 3. ブラウザ自動操作（Playwright MCP）
 
 Claude Codeから直接QuickDashLauncherを操作してテストできます。
 
@@ -267,7 +263,6 @@ echo '{"showDataFileTabs": false}' > tests/e2e/templates/my-test/settings.json
 ## 関連ドキュメント
 
 - [ブラウザ自動操作ガイド](./browser-automation.md)
-- [手動テストチェックリスト](./manual-checklist.md)
 - [開発ガイド](../setup/development.md)
 - [tests/e2e/README.md](../../tests/e2e/README.md)
 - [tests/dev/README.md](../../tests/dev/README.md)
