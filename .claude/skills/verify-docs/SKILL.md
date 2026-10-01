@@ -61,8 +61,7 @@ Glob: docs/**/*.md
 ```
 
 以下のファイルは除外します：
-- WRITING-GUIDE.md
-- その他のテンプレートファイル
+- docs/screens/WRITING-GUIDE.md（執筆ルールであり、検証対象の仕様書ではない）
 
 ### 3. チェックリストファイルの作成（新規の場合のみ）
 
@@ -142,7 +141,7 @@ Glob: docs/**/*.md
 | setup/ | docs/setup/*.md | package.jsonスクリプト、環境変数 |
 | screens/ | docs/screens/*.md | **体系:** 全画面網羅、画面単位の分割<br>**内容:** コンポーネント存在確認、UI仕様 |
 | features/ | docs/features/*.md | **体系:** 横断的機能のみ配置、screens/への参照なし<br>**内容:** サービス・ハンドラー、IPCチャンネル |
-| architecture/ | docs/architecture/*.md | ディレクトリ構造、データ形式 |
+| architecture/ | docs/architecture/**/*.md（file-formats/ を含む） | ディレクトリ構造、データ形式、IPCチャンネル |
 | testing/ | docs/testing/*.md | テストコマンド、テストファイル |
 | その他 | docs/*.md | リンク切れ確認 |
 
@@ -185,7 +184,7 @@ Task tool:
 
 - [x] docs/features/icons.md ⚠️
 - [x] docs/features/group-launch.md
-- [ ] docs/features/folder-import.md  ← 次はこのファイル
+- [ ] docs/features/bookmark-import.md  ← 次はこのファイル
 
 **不整合メモ:**
 ```

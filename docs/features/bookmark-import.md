@@ -31,6 +31,4 @@
 
 ## 関連ドキュメント
 
-- [ブックマーク取込画面](../screens/bookmark-import-modal.md) - 画面仕様（取込画面とルール編集）
-- [管理ウィンドウ](../screens/admin-window.md) - 設定タブ・アイテム管理タブ
 - [IPC チャンネル](../architecture/ipc-channels.md) - `bookmark-auto-import:*`、`parse-bookmark-file-with-folders`

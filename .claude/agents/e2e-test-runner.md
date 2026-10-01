@@ -29,7 +29,10 @@ npm run test:e2e        # ヘッドレスモードで実行（CI/通常テスト
 npm run test:e2e:ui     # Playwright UIモードで実行（インタラクティブ）
 npm run test:e2e:debug  # デバッグモードで実行（詳細ログ付き）
 npm run test:e2e:headed # ヘッド付きモードで実行（ブラウザ表示）
+npm run test:e2e:single <テスト名>  # 1ファイルだけ実行（例: first-launch, basic-ui。引数なしで一覧表示）
 ```
+
+`test:e2e` 系はすべて先に `npm run build` を実行する（テストはビルド済みの `dist/main/main.js` を起動するため）。`npx playwright test` を直接使う場合は、事前に `npm run build` を済ませておく。
 
 ## 🚨 最重要原則 🚨
 
@@ -72,6 +75,7 @@ npm run test:e2e:headed # ヘッド付きモードで実行（ブラウザ表示
    # テスト結果の確認
    ls test-results/
    ls test-results/test-artifacts/
+   ls test-results/traces/
    ```
 
 2. **スクリーンショットの確認**
@@ -107,7 +111,7 @@ npm run test:e2e:headed # ヘッド付きモードで実行（ブラウザ表示
    ```
 
 3. **環境依存の問題確認**
-   - テスト用設定ファイルの確認: `tests/fixtures/`
+   - テスト用設定の確認: 使用テンプレート `tests/e2e/templates/<テンプレート名>/` と、失敗時に残る一時設定ディレクトリ `tests/e2e/configs/.temp/<テストID>/`
    - 環境変数の確認
    - データファイルの状態確認
 
@@ -160,7 +164,7 @@ npm run test:e2e:headed # ヘッド付きモードで実行（ブラウザ表示
 ## 失敗したテスト
 
 ### 1. [テストファイル名] > [テストケース名]
-**ファイル**: `tests/e2e/path/to/test.spec.ts:行番号`
+**ファイル**: `tests/e2e/specs/<名前>.spec.ts:行番号`
 
 **エラー種別**: [タイムアウト/要素未検出/アサーション失敗/その他]
 
@@ -218,7 +222,7 @@ npm run test:e2e:headed # ヘッド付きモードで実行（ブラウザ表示
    npm run test:e2e:debug
 
    # 特定のテストのみ実行
-   npx playwright test tests/e2e/path/to/test.spec.ts
+   npx playwright test tests/e2e/specs/<名前>.spec.ts  # 事前に npm run build が必要
 
    # UIモードでインタラクティブに確認
    npm run test:e2e:ui
@@ -237,7 +241,7 @@ npm run test:e2e:headed # ヘッド付きモードで実行（ブラウザ表示
 - Node.js バージョン: [確認]
 - Playwright バージョン: [確認]
 - Electron バージョン: [確認]
-- テスト用設定: `tests/fixtures/[使用された設定]`
+- 使用テンプレート: `tests/e2e/templates/[テンプレート名]`
 ```
 
 ## 重要な原則
@@ -255,33 +259,30 @@ npm run test:e2e:headed # ヘッド付きモードで実行（ブラウザ表示
 - `node_modules/`
 - `dist/`
 - `out/`
-- 単体テスト（`*.test.ts`, `*.spec.ts`）- これは別のコマンド
+- 単体テスト（`tests/unit/**`、`src/**/*.test.ts`）- Vitest（`npm run test:unit`）で別に実行する
 
 ## 補足: プロジェクト固有のテスト構成
 
 ### QuickDashLauncher特有の確認事項
 
-1. **テストフィクスチャ**: `tests/fixtures/`のテンプレートデータを使用
-2. **設定ディレクトリ**: 環境変数`QUICK_DASH_CONFIG_DIR`でテスト用設定を分離
-3. **データファイル**: テスト実行前にテンプレートから復元（`before-test-restore.sh`）
-4. **スクリーンショット**: 各テストで自動的に撮影（失敗時・成功時の両方）
-5. **トレース**: 失敗時のみ記録（`trace: 'on-first-retry'`設定）
+1. **テンプレート**: `tests/e2e/templates/<名前>/`（`datafiles/data*.json`・`settings.json` など）。既定は `base`。テストごとに `test.use({ configTemplate: '...' })` または `configHelper.loadTemplate()` で切り替える
+2. **設定ディレクトリ**: フィクスチャ（`tests/e2e/fixtures/electron-app.ts`）がテストごとに `tests/e2e/configs/.temp/<テストID>/` を作り、環境変数 `QUICK_DASH_CONFIG_DIR` で渡す
+3. **後始末**: 成功したテストの一時ディレクトリは削除し、失敗したテストの分はデバッグ用に残す
+4. **スクリーンショット・動画**: 失敗時のみ保存（`screenshot: 'only-on-failure'`、`video: 'retain-on-failure'`）
+5. **トレース**: Playwright 設定は `trace: 'retain-on-failure'`。加えてフィクスチャが `test-results/traces/` にトレースを保存する
 
 ### テストファイル構成
 
 ```
-tests/
-├── e2e/
-│   ├── item-registration.spec.ts   # アイテム登録テスト
-│   ├── search.spec.ts               # 検索機能テスト
-│   ├── item-edit.spec.ts            # アイテム編集テスト
-│   └── ...
-├── fixtures/
-│   ├── test-config/                 # テスト用設定テンプレート
-│   ├── dev-config/                  # 開発用設定テンプレート
-│   └── README.md
-└── test-results/
-    └── test-artifacts/              # スクリーンショット・トレースの保存先
+tests/e2e/
+├── specs/          # テスト本体（*.spec.ts。playwright.config.ts の testDir）
+├── fixtures/       # Electron 起動フィクスチャ（electron-app.ts、first-launch-app.ts）
+├── helpers/        # config-file-helper.ts、test-utils.ts
+├── templates/      # 目的別の設定テンプレート（base、with-tabs、with-groups など）
+└── configs/.temp/  # テスト実行時の一時設定ディレクトリ（Git 管理外）
+test-results/
+├── test-artifacts/ # スクリーンショット・動画・トレース（outputDir）
+└── traces/         # フィクスチャが保存するトレース
 ```
 
 これらの構成を理解した上で、テスト失敗時の原因特定を行ってください。

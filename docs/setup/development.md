@@ -318,40 +318,26 @@ Dependabotは依存関係を以下のグループに分けてPRを作成しま�
 
 #### サービスクラスの設計
 
-メインプロセスの主要機能はサービスクラスで実装されています（`src/main/services/`）:
-
-- **SettingsService**: アプリケーション設定の読み書き・管理
-- **HotkeyService**: 起動ホットキーの登録・変更
-- **BackupService**: データファイルの自動バックアップ
-- **AutoLaunchService**: Windows起動時の自動起動設定
-- **FaviconService**: ファビコン・アイコンの取得・キャッシュ管理
-- **SearchHistoryService**: 検索履歴の保存・読み込み
-- **WorkspaceService**: ワークスペースアイテム・グループの管理
-- **IconService**: アイテムタイプに応じた適切なアイコン取得処理
-- **ClipboardService**: クリップボードデータの保存・読み込み管理
-- **IconFetchErrorService**: アイコン取得エラーの記録・管理
-- **BookmarkAutoImportService**: ブックマーク自動インポートルールの管理
-- **NotificationService**: システム通知の送信
-- **ToastWindowService**: トーストウィンドウの表示管理
+メインプロセスの処理本体は `src/main/services/` に置く。層の分担と構成は[システム概要](../architecture/overview.md#主要な責務の分担)を参照。
 
 **設計パターン:**
 
-- すべてシングルトンパターンで実装（静的クラスの場合もあり）
-- `getInstance()`メソッドでインスタンスを取得（または静的メソッド）
-- 各サービスは単一責任の原則に従う
-- IPCハンドラーから呼び出される
-- 重複したロジックを一箇所に集約（DRY原則）
+- 状態を持つサービスはシングルトンで、`getInstance()` で取得する
+- 状態を持たない処理は関数を直接エクスポートするモジュールにする（アイコン取得など）
+- IPCハンドラーから呼び出し、ハンドラー側にはロジックを置かない
+- 各サービスは単一責任の原則に従い、重複したロジックは一箇所に集約する
 
 **使用例:**
 
 ```typescript
-// AutoLaunchServiceの使用例（シングルトン）
+// シングルトンの例（AutoLaunchService）
 const autoLaunchService = AutoLaunchService.getInstance();
 await autoLaunchService.setAutoLaunch(true); // 自動起動を有効化
 const status = autoLaunchService.getAutoLaunchStatus(); // 現在の状態を取得
 
-// IconServiceの使用例（静的メソッド）
-const icon = await IconService.getIconForItem(filePath, itemType, iconsFolder, extensionsFolder);
+// 関数エクスポートの例（services/iconService.ts）
+import { getIconForItem } from '../services/iconService.js';
+const icon = await getIconForItem(filePath, itemType);
 ```
 
 #### IPCハンドラーの構造化
@@ -359,24 +345,24 @@ const icon = await IconService.getIconForItem(filePath, itemType, iconsFolder, e
 - 機能ごとにハンドラーを分離（`src/main/ipc/`）
 - 各ハンドラーは単一責任の原則に従う
 - サービスクラスを呼び出して処理を実行
-- 型安全性のため`src/common/types.ts`で共有型を定義
+- 型安全性のため共有型は`src/common/types/`（`index.ts`から再エクスポート）、チャンネル名は`src/common/ipcChannels.ts`の`IPC_CHANNELS`で定義
 
 #### プロセス間通信のベストプラクティス
 
+チャンネル名は文字列を直書きせず `IPC_CHANNELS` を使い、レンダラーにはプリロードで `window.electronAPI` として公開した関数だけを見せる。設計の詳細は[IPCチャンネル](../architecture/ipc-channels.md)を参照。
+
 ```typescript
-// メインプロセス側
-ipcMain.handle('channel-name', async (event, args) => {
-  try {
-    // 処理
-    return { success: true, data: result };
-  } catch (error) {
-    console.error('Error in channel-name:', error);
-    return { success: false, error: error.message };
-  }
+// メインプロセス側（src/main/ipc/*Handlers.ts）
+ipcMain.handle(IPC_CHANNELS.SETTINGS_GET, async (_event, key?: keyof AppSettings) => {
+  const settingsService = await SettingsService.getInstance();
+  return key ? settingsService.get(key) : settingsService.getAll();
 });
 
-// レンダラー側（preload経由）
-const result = await window.api.channelName(args);
+// プリロード（src/main/preload.ts）
+getSettings: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET),
+
+// レンダラー側
+const settings = await window.electronAPI.getSettings();
 ```
 
 #### ファイルパスの処理
@@ -485,7 +471,6 @@ const { isDraggingOver } = useNativeDragDrop(loadItems);
 
 #### 型定義とガード関数
 
-- インターフェースは`I`プレフィックスを使用
 - 型は`src/common/types/`で機能別に分割管理（v0.5.20で再編成）
 - 型アサーションの代わりに型ガード関数を使用（`src/common/types/guards.ts`）
 
@@ -504,28 +489,7 @@ if (isLauncherItem(data)) {
 }
 ```
 
-**型定義ファイルの構成** (v0.5.20以降、20ファイル):
-
-- `types/launcher.ts` - ランチャーアイテム関連の型
-- `types/register.ts` - 登録アイテム関連の型とユーティリティ
-- `types/guards.ts` - 型ガード関数
-- `types/workspace.ts` - ワークスペース関連の型
-- `types/window.ts` - ウィンドウ関連の型
-- `types/settings.ts` - 設定関連の型
-- `types/json-data.ts` - JSONデータファイル形式の型
-- `types/data.ts` - データ処理関連の型
-- `types/icon.ts` - アイコン関連の型
-- `types/clipboard.ts` - クリップボード関連の型
-- `types/editableItem.ts` - 編集可能アイテムの型
-- `types/editingItem.ts` - 編集中アイテムの型
-- `types/search.ts` - 検索関連の型
-- `types/app.ts` - アプリケーション全体の型
-- `types/bookmark.ts` - ブックマーク関連の型
-- `types/bookmarkAutoImport.ts` - ブックマーク自動インポートの型
-- `types/toast.ts` - トースト通知の型
-- `types/backup.ts` - バックアップ関連の型
-- `types/appImport.ts` - アプリインポートの型
-- `types/index.ts` - 統合エクスポート
+型定義ファイルは `src/common/types/` に機能別に分かれている（一覧はディレクトリを参照）。新しい型は該当ドメインのファイルに追加し、`index.ts` から再エクスポートする。
 
 ### CSS開発パターン
 
@@ -636,12 +600,6 @@ QuickDashLauncherではCSS変数ベースの統一されたデザインシステ
 - ─── (区切り線)
 - 🚪 アプリを終了
 
-## 現在の制限事項とTODO
-
-1. **最小限のエラーハンドリング** - エラーはコンソールにのみログ出力
-2. **Windows専用パス** - クロスプラットフォーム非対応
-3. **テストフレームワーク**: Playwright（E2E）+ Vitest（ユニット）導入済み
-
 ## デバッグ
 
 ### DevToolsの開き方
@@ -723,14 +681,6 @@ npm run debug:windows -- --all-desktops --show-excluded --output debug.txt
 - Electronのファイルパスがビルド/開発モードで適切に処理されているか確認
 
 ## ファイル入出力処理
-
-### 改行コードの処理
-
-- **ファイル保存時**: 常にCRLF（`\r\n`）で統一
-- **ファイル読み込み時**: 正規表現`/\r\n|\n|\r/`で分割し、CRLF、LF、CRのいずれにも対応
-- **対象関数**:
-  - `loadDataFiles`: データファイルの読み込み（フォルダ取込アイテム展開含む）
-  - `registerItems`: 新規アイテム登録時の保存（CRLF統一）
 
 ### データフォーマットの処理
 

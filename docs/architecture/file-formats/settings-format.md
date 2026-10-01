@@ -59,9 +59,16 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
   "workspacePositionX": 0,
   "workspacePositionY": 0,
   "workspaceVisibleOnAllDesktops": true,
+  "detachedVisibleOnAllDesktops": true,
   "parallelGroupLaunch": false,
   "itemSearchHotkey": "",
-  "backupIncludeClipboard": false
+  "backupIncludeClipboard": false,
+  "bookmarkAutoImport": {
+    "autoRunOnStartup": false,
+    "rules": []
+  },
+  "hideDetachedWithMainWindow": true,
+  "windowSnapEnabled": true
 }
 ```
 
@@ -159,6 +166,9 @@ interface DataFileTab {
 | **workspacePositionX** | number | 0 | 固定位置のX座標（workspacePositionMode='fixed'時に使用） |
 | **workspacePositionY** | number | 0 | 固定位置のY座標（workspacePositionMode='fixed'時に使用） |
 | **workspaceVisibleOnAllDesktops** | boolean | true | ワークスペースウィンドウを全仮想デスクトップに表示するか |
+| **detachedVisibleOnAllDesktops** | boolean | true | 切り離しウィンドウ（ワークスペースから切り離したグループのウィンドウ）を全仮想デスクトップに表示するか |
+| **hideDetachedWithMainWindow** | boolean | true | メインウィンドウの表示/非表示に連動して切り離しウィンドウも表示/非表示にするか<br>切り離しウィンドウ（またはそこから開いた編集・確認ウィンドウ）を操作中は、メインウィンドウが非表示でも隠さない |
+| **windowSnapEnabled** | boolean | true | ワークスペースウィンドウ・切り離しウィンドウをモニター端に近づけたときに吸着（スナップ）させるか |
 
 #### 3.8.1. WorkspacePositionMode 値
 
@@ -182,6 +192,12 @@ interface DataFileTab {
 |-----------|-----|-------------|------|
 | **itemSearchHotkey** | string | "" | ウィンドウ検索の起動ホットキー<br>空の場合は無効<br>例: "Ctrl+Alt+W" |
 
+### 3.11. ブックマーク自動取込設定
+
+| フィールド | 型 | デフォルト値 | 説明 |
+|-----------|-----|-------------|------|
+| **bookmarkAutoImport** | BookmarkAutoImportSettings | `{autoRunOnStartup: false, rules: []}` | ブックマーク自動取込の設定<br>`autoRunOnStartup`: 起動時に有効なルール（`enabled: true`）を自動実行するか<br>`rules`: 取込ルール（`BookmarkAutoImportRule[]`）の配列。ルールの項目は `src/common/types/bookmarkAutoImport.ts` を参照 |
+
 ---
 
 ## 4. データ型定義（TypeScript）
@@ -194,6 +210,8 @@ interface DataFileTab {
  * electron-storeを使用して永続化される
  */
 export interface AppSettings {
+  /** JSON Schema への参照（QDL が起動時に "./schemas/settings.schema.json" を補う） */
+  $schema?: string;
   /** この設定ファイルを作成したアプリバージョン（初回作成時のみ記録） */
   createdWithVersion?: string;
   /** この設定ファイルを最後に更新したアプリバージョン */
@@ -246,12 +264,18 @@ export interface AppSettings {
   workspacePositionY: number;
   /** ワークスペースウィンドウを全仮想デスクトップに表示（デフォルト: true） */
   workspaceVisibleOnAllDesktops: boolean;
+  /** 切り離しウィンドウを全仮想デスクトップに表示（デフォルト: true） */
+  detachedVisibleOnAllDesktops: boolean;
   /** グループアイテムを並列起動する（デフォルト: false） */
   parallelGroupLaunch: boolean;
   /** ウィンドウ検索の起動ホットキー（デフォルト: ''、空の場合は無効） */
   itemSearchHotkey: string;
   /** ブックマーク自動取込設定 */
   bookmarkAutoImport: BookmarkAutoImportSettings;
+  /** メインウィンドウ非表示時に切り離しウィンドウも連動して非表示にする（デフォルト: true） */
+  hideDetachedWithMainWindow: boolean;
+  /** ウィンドウ吸着（モニター端へのスナップ）の有効/無効（デフォルト: true） */
+  windowSnapEnabled: boolean;
 }
 ```
 
@@ -336,7 +360,7 @@ await settings.setMultiple({
 window.webContents.send('settings-changed');
 
 // レンダラープロセス側（preload経由）
-window.electron.onSettingsChanged(() => {
+window.electronAPI.onSettingsChanged(() => {
   // コールバックに引数はない。必要な設定は別途IPCで取得する。
 });
 ```

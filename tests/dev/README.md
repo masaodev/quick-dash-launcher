@@ -22,12 +22,9 @@ npm run dev:test   # テストデータで起動（全機能を含む）
 
 | テンプレート | 説明 | 用途 |
 |------------|------|------|
-| `minimal` | 最小限のアイテム（5個） | 基本動作確認 |
-| `full` | 全機能を含む（30個+グループ） | デモ・機能確認 |
-| `multi-tab` | 3タブ構成 | タブ機能の確認 |
-| `with-groups` | グループ起動特化 | グループ機能の確認 |
-| `large-dataset` | 大量データ（100個以上） | パフォーマンステスト |
-| `empty` | 空データ | 初期状態の確認 |
+| `full` | 全機能を含む（複数タブ・グループ・ワークスペース） | デモ・機能確認（`npm run dev:test` が使う。詳細は [full/README.md](./full/README.md)） |
+
+E2E テスト用のテンプレートは `tests/e2e/templates/` にあります（[tests/e2e/README.md](../e2e/README.md)）。
 
 ## カスタムテンプレートの作成
 
@@ -37,8 +34,8 @@ npm run dev:test   # テストデータで起動（全機能を含む）
 # 1. 新しいフォルダを作成
 mkdir tests/dev/my-custom
 
-# 2. data.txtを作成
-# 自分用のアイテムを記述
+# 2. datafiles/data.json を作成
+# 自分用のアイテムを記述（形式は docs/architecture/file-formats/data-format.md）
 
 # 3. settings.jsonを作成（オプション）
 

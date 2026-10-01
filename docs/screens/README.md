@@ -45,6 +45,7 @@ QuickDashLauncher
     ├── アイテム登録・編集モーダル
     │   ├── グループアイテム選択モーダル
     │   ├── ウィンドウ選択モーダル
+    │   ├── 今のウィンドウから追加（LayoutCaptureModal）
     │   └── フォルダ取込オプションエディタ
     ├── ブックマーク取込画面（ルール編集と共通）
     ├── アプリインポートモーダル
@@ -94,7 +95,8 @@ QuickDashLauncher
 | **ワークスペースアイテム編集モーダル** | ワークスペースウィンドウでアイテム編集時 | （仕様書なし） |
 | **グループアイテム選択モーダル** | アイテム登録モーダルでグループの「+ アイテムを追加」クリック時 | [group-item-selector-modal.md](./group-item-selector-modal.md) |
 | **ウィンドウ選択モーダル** | アイテム登録モーダルのウィンドウ設定で「ウィンドウから取得」クリック時 | [register-modal.md](./register-modal.md#ウィンドウ選択モーダルwindowselectormodal) |
-| **アイコン取得進捗詳細モーダル** | アイコン一括取得完了後、詳細ボタンクリック時 | [icon-progress-detail-modal.md](./icon-progress-detail-modal.md) |
+| **今のウィンドウから追加（LayoutCaptureModal）** | アイテム登録モーダルのウィンドウ配置で「+ 今のウィンドウから追加」クリック時 | [register-modal.md](./register-modal.md#4161-今のウィンドウから追加) |
+| **アイコン取得進捗詳細モーダル** | アイコン一括取得完了後、進捗バーの「詳細」ボタンクリック時（独立した子ウィンドウで開く） | [icon-progress-detail-modal.md](./icon-progress-detail-modal.md) |
 
 ### 共通ダイアログ
 
