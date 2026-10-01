@@ -1186,7 +1186,7 @@ type SearchMode = 'normal' | 'window';
 
 #### 関連ドキュメント
 - [キーボードショートカット](../features/keyboard-shortcuts.md) - ウィンドウ検索モードの操作方法
-- [IPCチャンネル](../architecture/ipc-channels.md) - `get-all-windows`、`activate-window` の詳細
+- [IPCチャンネル](../architecture/ipc-channels.md) - IPC の構成と命名規則（`get-all-windows`、`activate-window` の定義は `src/common/ipcChannels.ts`）
 
 ### 4.27. 検索モード切り替え
 

@@ -43,182 +43,34 @@ QuickDashLauncherのアーキテクチャ概要とデータフローを説明し
 
 ---
 
-## サービスクラス構造
+## 主要な責務の分担
 
-アプリケーションの主要機能は`src/main/services/`のサービスクラスで実装：
+メインプロセス側は「ウィンドウ管理」「IPC ハンドラー」「サービス」「ユーティリティ」の層に分かれる。個々のファイルは増減するので、網羅的な一覧はディレクトリを直接参照すること。
 
-| サービス                    | 役割                                         | パターン             |
-| --------------------------- | -------------------------------------------- | -------------------- |
-| `SettingsService`           | アプリケーション設定の読み書き・管理         | シングルトン         |
-| `HotkeyService`             | 起動ホットキーの登録・変更                   | シングルトン         |
-| `BackupService`             | データファイルのスナップショット保存・復元   | シングルトン         |
-| `AutoLaunchService`         | Windows起動時の自動起動設定                  | シングルトン         |
-| `FaviconService`            | ファビコン・アイコンの取得・キャッシュ管理   | 通常クラス           |
-| `SearchHistoryService`      | 検索履歴の保存・読み込み                     | 通常クラス           |
-| `WorkspaceService`          | ワークスペースアイテム・グループの管理       | シングルトン         |
-| `ClipboardService`          | クリップボードの内容のキャプチャ・保存・復元 | シングルトン         |
-| `BookmarkAutoImportService` | ルールに基づくブックマーク自動インポート     | シングルトン         |
-| `IconService`               | アイテムタイプに応じた適切なアイコン取得処理 | 関数群（モジュール） |
-| `IconFetchErrorService`     | アイコン取得エラーの記録・管理               | シングルトン         |
-| `NotificationService`       | システム通知・トースト通知の表示管理         | 関数群（モジュール） |
-| `ToastWindowService`        | トースト専用ウィンドウの管理                 | 通常クラス           |
+| 層             | 場所                         | 責務                                                                                                                                                             |
+| -------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ウィンドウ管理 | `src/main/*WindowManager.ts` | ウィンドウごとの生成・表示・位置・破棄（`windowManager.ts`＝メイン、`workspaceWindowManager.ts`・`adminWindowManager.ts`・`detachedGroupWindowManager.ts` など） |
+| IPC ハンドラー | `src/main/ipc/`              | 機能ごとの `*Handlers.ts` が IPC の受け口を登録する。処理本体はサービス層に委ねる                                                                                |
+| サービス       | `src/main/services/`         | 設定・データファイル・ワークスペース・アイコン・クリップボード・バックアップ・通知などの処理本体                                                                 |
+| ユーティリティ | `src/main/utils/`            | アイテムの起動（`itemLauncher.ts`）、ウィンドウ検索・制御（`windowActivator.ts`・`windowMatcher.ts`）、仮想デスクトップ制御（`virtualDesktop/`）など             |
+| 設定・パス     | `src/main/config/`           | ファイルパスの一元管理（`pathManager.ts`）と環境変数（`envConfig.ts`、`QUICK_DASH_*`）                                                                           |
+| 共通           | `src/common/`                | プロセス間で共有する型（`types/`）・ユーティリティ（`utils/`）・IPC チャンネル定数（`ipcChannels.ts`）                                                           |
 
 **設計原則:**
 
-- シングルトンパターン: `getInstance()`で取得
-- 関数群モジュール: モジュール内の関数を直接呼び出し
-- 単一責任の原則に従う
-- 重複したロジックを一箇所に集約（DRY原則）
+- ハンドラーは IPC の登録に専念し、処理本体はサービス層に置く
+- サービスは `getInstance()` で取得するシングルトンか、関数を直接エクスポートするモジュールのどちらか（例: アイコン取得は `services/icon/` の関数群）
+- パスは `PathManager` の静的メソッドから取得し、各所で組み立てない
+- 型は `src/common/types/` に機能別に分割し、`index.ts` から再エクスポートする
 
-### ワークスペースサービスの内部構造
+### 構成上のポイント
 
-`WorkspaceService`は単一責務の原則に従い、以下のマネージャーに分割されています（`src/main/services/workspace/`）:
+- **データファイル**: 読み込み・変換・保存は `src/main/services/data/` に分かれる（読み込みと外部変更の検知、JSON アイテムから表示用アイテムへの変換、管理画面の一覧の保存と楽観ロック、破損ファイルの記録）
+- **ワークスペース**: `WorkspaceService` はファサードで、ファイルの読み書き（`WorkspaceFileStore`）・UI 状態（`WorkspaceUiStateStore`）・アイテム／グループ／アーカイブの各マネージャーに分割されている（`src/main/services/workspace/`）。ファイル形式は[ワークスペースファイル形式](file-formats/workspace-format.md)を参照
+- **トースト通知**: トーストとレイアウト進捗は 1 枚のオーバーレイウィンドウを共用し、`overlayWindowService.ts` が管理する。OS 標準の通知は `notificationService.ts`
+- **子ウィンドウ**: メインのレンダラーを共有する子ウィンドウは `childWindowService.ts` で開く（[ウィンドウとレンダラープロセスの対応](#ウィンドウとレンダラープロセスの対応)）
 
-| クラス                    | 役割                                                                                                                            |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `WorkspaceFileStore`      | `workspace.json`/`workspace-archive.json`の読み書き（寛容パース・楽観ロック・旧形式からの移行を担う。electron-storeは使わない） |
-| `WorkspaceUiStateStore`   | `workspace-ui-state.json`（グループ折りたたみ・切り離しウィンドウの位置/ピン留め）の読み書き                                    |
-| `WorkspaceItemManager`    | アイテムの追加・削除・更新・並び替え                                                                                            |
-| `WorkspaceGroupManager`   | グループの作成・更新・削除・並び替え                                                                                            |
-| `WorkspaceArchiveManager` | グループのアーカイブ・復元・削除                                                                                                |
-| `WorkspaceService`        | 上記マネージャーを統合するファサード                                                                                            |
-
-ファイル形式（`workspace.json`のversion "2.0"）の詳細は[ワークスペースファイル形式](file-formats/workspace-format.md)を参照。
-
----
-
-## IPCハンドラー構造
-
-IPCハンドラーは機能ごとに分離（`src/main/ipc/`）:
-
-| ハンドラー                      | 役割                                                                   |
-| ------------------------------- | ---------------------------------------------------------------------- |
-| `settingsHandlers.ts`           | 設定の取得・更新・ホットキー変更                                       |
-| `configHandlers.ts`             | 設定フォルダーへのアクセス・外部URL開く                                |
-| `dataHandlers.ts`               | データファイルの作成・削除、読み込み・保存・登録の受け口               |
-| `itemHandlers.ts`               | アイテムの起動・フォルダー表示・グループ実行                           |
-| `iconHandlers.ts`               | ファビコン取得・アイコン抽出・カスタムアイコン管理の受け口             |
-| `bookmarkHandlers.ts`           | ブラウザブックマークのインポート                                       |
-| `appImportHandlers.ts`          | スタートメニューのアプリスキャン・インポート                           |
-| `bookmarkAutoImportHandlers.ts` | ブックマーク自動取込ルールの管理と実行                                 |
-| `backupHandlers.ts`             | スナップショットバックアップの管理・リストア                           |
-| `windowHandlers.ts`             | ウィンドウ固定化・メイン画面の子ウィンドウ（登録・編集）    |
-| `historyHandlers.ts`            | 検索履歴の読み書き                                                     |
-| `editHandlers.ts`               | アイテム編集（更新・削除・一括更新）                                   |
-| `splashHandlers.ts`             | スプラッシュウィンドウ制御                                             |
-| `workspaceHandlers.ts`          | ワークスペースアイテム・グループの操作                                 |
-| `windowSearchHandlers.ts`       | ウィンドウ検索（ウィンドウ一覧取得・アクティブ化）                     |
-| `notificationHandlers.ts`       | システム通知・トースト通知の表示                                       |
-| `contextMenuHandlers.ts`        | ネイティブコンテキストメニュー（ランチャー、ワークスペース、管理画面） |
-| `clipboardHandlers.ts`          | クリップボードのキャプチャ・確認・セッション管理                       |
-
-詳細は[IPCチャンネル](ipc-channels.md)を参照。
-
-ハンドラーは IPC の登録に専念し、処理本体はサービス層に置く。データファイルとアイコンは次のとおり:
-
-| モジュール                            | 役割                                                               |
-| ------------------------------------- | ------------------------------------------------------------------ |
-| `services/data/dataFileLoader.ts`     | データファイルの読み込み・再読込（レポート・外部変更の検知）       |
-| `services/data/jsonItemConverter.ts`  | JSON アイテムから表示用アイテムへの変換（フォルダ展開・.lnk 解析） |
-| `services/data/editableItemsStore.ts` | 管理画面の一覧の読み込み・保存（楽観ロック）                       |
-| `services/data/dataItemWriter.ts`     | ID によるアイテム更新・新規登録                                    |
-| `services/data/corruptedDataFiles.ts` | 破損ファイルの記録（上書きによる喪失を防ぐ）                       |
-| `services/icon/iconFetcher.ts`        | アイコン取得の入口（一括取得・進捗・キャッシュ読み出し）           |
-| `services/icon/fileIconExtractor.ts`  | 実行ファイル・ショートカット・拡張子・カスタム URI からの抽出      |
-| `services/icon/uwpIconExtractor.ts`   | UWP アプリのマニフェストからのアイコン取得                         |
-| `services/icon/customIconStore.ts`    | カスタムアイコンの選択・保存・削除                                 |
-
----
-
-## ユーティリティモジュール構造
-
-共通処理は再利用可能なユーティリティモジュールとして実装（`src/main/utils/`）:
-
-| モジュール               | 役割                                                   | 使用箇所                                        |
-| ------------------------ | ------------------------------------------------------ | ----------------------------------------------- |
-| `windowActivator.ts`     | ウィンドウ検索・アクティブ化・位置サイズ設定の一元管理 | `itemHandlers.ts`, `workspaceHandlers.ts`       |
-| `itemLauncher.ts`        | URL/ファイル/アプリ/カスタムURIの起動処理を統一        | `itemHandlers.ts`, `workspaceHandlers.ts`       |
-| `windowMatcher.ts`       | ウィンドウタイトルによるウィンドウ検索                 | `windowActivator.ts`                            |
-| `nativeWindowControl.ts` | ネイティブWindows API経由のウィンドウ制御              | `windowActivator.ts`                            |
-| `virtualDesktop/`        | 仮想デスクトップ制御の機能別モジュール群               | `windowActivator.ts`, `windowSearchHandlers.ts` |
-
-### virtualDesktopモジュールの内部構造
-
-仮想デスクトップ制御は単一責務の原則に従い分割されています（`src/main/utils/virtualDesktop/`）:
-
-| モジュール            | 役割                                     |
-| --------------------- | ---------------------------------------- |
-| `dllLoader.ts`        | Windows DLLの動的ロード（koffi経由）     |
-| `guidUtils.ts`        | GUID文字列とバイナリの相互変換           |
-| `registryAccess.ts`   | レジストリからの仮想デスクトップ情報取得 |
-| `windowOperations.ts` | ウィンドウの仮想デスクトップ所属判定     |
-| `types.ts`            | 型定義とデバッグログ                     |
-| `index.ts`            | 公開API（統合エントリーポイント）        |
-
-**設計原則:**
-
-- **DRY（Don't Repeat Yourself）**: 重複コードを共通関数に集約
-- **単一責任の原則**: 各モジュールは明確に定義された単一の責任を持つ
-- **型安全性**: TypeScriptの型システムを活用した安全な実装
-- **テスタビリティ**: 独立したモジュールとして単体テストが容易
-
----
-
-## 共通ユーティリティ構造
-
-プロセス間で共有されるユーティリティ（`src/common/utils/`）:
-
-| モジュール             | 役割                                                                                      |
-| ---------------------- | ----------------------------------------------------------------------------------------- |
-| `directiveUtils.ts`    | ディレクティブ（group, dir, window）の判定と解析                                          |
-| `dataConverters.ts`    | データ形式変換（dirオプション解析等、v0.5.20で型定義を`types/register.ts`に移動）         |
-| `windowConfigUtils.ts` | ウィンドウ設定のJSON⇔文字列変換                                                           |
-| `itemTypeDetector.ts`  | パスからアイテムタイプを自動検出                                                          |
-| `pathUtils.ts`         | パス操作の共通処理                                                                        |
-| `workspaceParser.ts`   | ワークスペースファイル（workspace.json/workspace-archive.json）の寛容パース・シリアライズ |
-
-## 共通型定義の構造
-
-型定義は機能別に分割され、`src/common/types/`に配置されています（v0.5.20で再編成）:
-
-| モジュール              | 役割                                                                                                 |
-| ----------------------- | ---------------------------------------------------------------------------------------------------- |
-| `index.ts`              | すべての型をエクスポートする統合ポイント                                                             |
-| `launcher.ts`           | ランチャーアイテム関連（`LauncherItem`, `AppItem`, `ClipboardItem`等）                               |
-| `json-data.ts`          | JSONデータファイル関連（`JsonDataFile`, `JsonLauncherItem`等）                                       |
-| `json-workspace.ts`     | ワークスペースファイル形式関連（`JsonWorkspaceFile`, `JsonWorkspaceItem`, `WorkspaceUiStateFile`等） |
-| `data.ts`               | データファイルタブ関連（`DataFileTab`, `DEFAULT_DATA_FILE`）                                         |
-| `register.ts`           | 登録アイテム関連（`RegisterItem`, `WindowOperationConfig`）                                          |
-| `guards.ts`             | 型ガード関数（`isWindowInfo`, `isLauncherItem`, `isGroupItem`等）                                    |
-| `workspace.ts`          | ワークスペース関連（`WorkspaceItem`, `WorkspaceGroup`等）                                            |
-| `window.ts`             | ウィンドウ関連（`WindowInfo`, `VirtualDesktopInfo`, `WindowState`）                                  |
-| `settings.ts`           | 設定関連（`AppSettings`, `WindowPinMode`, `WindowPositionMode`等）                                   |
-| `search.ts`             | 検索関連（`SearchHistoryEntry`, `SearchHistoryState`, `SearchMode`）                                 |
-| `clipboard.ts`          | クリップボード関連（`SerializableClipboard`, `ClipboardFormat`等）                                   |
-| `icon.ts`               | アイコン関連（`IconProgressResult`, `IconFetchErrorRecord`等）                                       |
-| `bookmark.ts`           | ブックマーク関連（`SimpleBookmarkItem`, `BrowserProfile`等）                                         |
-| `bookmarkAutoImport.ts` | ブックマーク自動取込関連（`BookmarkAutoImportRule`, `BookmarkAutoImportSettings`等）                 |
-| `backup.ts`             | バックアップ関連（`SnapshotInfo`, `BackupStatus`）                                                   |
-| `appImport.ts`          | アプリインポート関連（`ScannedAppItem`, `AppScanResult`）                                            |
-| `toast.ts`              | トースト通知関連（`ToastItemType`）                                                                  |
-| `app.ts`                | アプリケーション情報関連（`AppInfo`）                                                                |
-| `editingItem.ts`        | 編集中アイテム関連（`EditingLauncherItem`, `EditingGroupItem`等）                                    |
-| `editableItem.ts`       | 編集可能JSONアイテム関連（`EditableJsonItem`, `ValidationResult`等）                                 |
-
-各ファイルは対応するドメインの型のみを定義し、`index.ts`が統合エクスポートポイントとして全型を再エクスポートします。
-
----
-
-## 設定・パス管理
-
-環境変数とファイルパスは専用モジュールで一元管理（`src/main/config/`）:
-
-| モジュール       | 役割                                                           |
-| ---------------- | -------------------------------------------------------------- |
-| `pathManager.ts` | ファイルパス管理（設定フォルダ、データファイル、キャッシュ等） |
-| `envConfig.ts`   | 環境変数の一元管理（`QUICK_DASH_*`）                           |
-
-**PathManager**はシングルトンパターンで、アプリケーション全体で一貫したパスを提供します。
+IPC の設計とチャンネル定義の置き場所は[IPCチャンネル](ipc-channels.md)を参照。
 
 ---
 
@@ -232,11 +84,11 @@ IPCハンドラーは機能ごとに分離（`src/main/ipc/`）:
 
 ### 処理パターン
 
-| パターン           | 説明                                           |
-| ------------------ | ---------------------------------------------- |
-| ディレクトリベース | `dir,パス`形式でディレクトリ内容を動的に取得   |
-| ファイル変換       | 特定の拡張子ファイルを実行可能な形式に自動変換 |
-| 直接指定           | 明示的に指定されたパスをそのまま使用           |
+| パターン           | 説明                                                        |
+| ------------------ | ----------------------------------------------------------- |
+| ディレクトリベース | フォルダ取込（`type: "dir"`）でディレクトリ内容を動的に取得 |
+| ファイル変換       | 特定の拡張子ファイルを実行可能な形式に自動変換              |
+| 直接指定           | 明示的に指定されたパスをそのまま使用                        |
 
 ### データ変換の仕組み
 
@@ -256,8 +108,8 @@ IPCハンドラーは機能ごとに分離（`src/main/ipc/`）:
 
 ### 通常モード（表示・起動）
 
-1. メインプロセスが`%APPDATA%/quick-dash-launcher/config/`からデータファイルを読み込む
-2. 特殊形式を自動変換（`dir,`フォルダ取込、`.lnk`ショートカット等）
+1. メインプロセスが設定フォルダの`datafiles/`（既定: `%APPDATA%/quick-dash-launcher/config/datafiles/`）からデータファイルを読み込む
+2. 特殊形式を自動変換（フォルダ取込、`.lnk`ショートカット等）
 3. パーサーがマージ・重複削除・ソート
 4. レンダラーがリアルタイムフィルタリングで表示
 5. ユーザーアクションがIPCコールをトリガー
@@ -312,5 +164,5 @@ IPCハンドラーは機能ごとに分離（`src/main/ipc/`）:
 - [ファイル形式一覧](file-formats/README.md) - すべてのファイル形式の概要
 - [データファイル形式](file-formats/data-format.md) - data.json仕様
 - [ワークスペースファイル形式](file-formats/workspace-format.md) - workspace.json仕様
-- [設定ファイル形式](file-formats/settings-format.md) - config.json仕様
+- [設定ファイル形式](file-formats/settings-format.md) - settings.json仕様
 - [CSSデザインシステム](css-design.md) - スタイル管理

@@ -2,6 +2,17 @@
 
 開発用のユーティリティスクリプト集
 
+## スクリプト一覧
+
+npm scripts から呼ばれる主なもの：
+
+| スクリプト | npm script | 用途 |
+|-----------|-----------|------|
+| `create-dev-icon.ps1` | `npm run create-dev-icon` | `assets/icon.png`に「DEV」を重ねた開発用アイコン（`icon-dev.png`・`icon-dev.ico`）を生成 |
+| `generate-schemas.ts` | `npm run schema:generate` | 型定義から設定ファイル用 JSON Schema を`assets/schemas/`に生成。型を変えたら再生成する（`tests/unit/schemas.test.ts`が一致を検証） |
+| `run-e2e-test.js` | `npm run test:e2e:single <テスト名>` | ビルド後に E2E テストを1ファイルだけ実行（引数なしでテスト名の一覧を表示） |
+| `debug-windows.mjs` | `npm run debug:windows` | ウィンドウ検索のデバッグ（下記） |
+
 ## ウィンドウデバッグツール
 
 ### debug-windows.mjs

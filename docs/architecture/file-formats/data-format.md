@@ -270,7 +270,7 @@ QuickDashLauncherは複数のJSON形式のデータファイルをサポート�
 - セカンダリモニターは相対位置に配置（例: プライマリが1920x1080、セカンダリが右側なら X=1920 から開始）
 - 負の座標も使用可能（プライマリの左側・上側にモニターがある場合）
 
-詳細は **[ウィンドウ制御システム](window-control.md#ウィンドウ位置サイズ制御)** を参照してください。
+詳細は **[ウィンドウ制御システム](../window-control.md#ウィンドウ位置サイズ制御)** を参照してください。
 
 #### 3.1.6. ショートカットファイルの自動解析
 
@@ -532,7 +532,7 @@ QuickDashLauncherは複数のJSON形式のデータファイルをサポート�
 - セカンダリモニターは相対位置に配置（例: プライマリが1920x1080、セカンダリが右側なら X=1920 から開始）
 - 負の座標も使用可能（プライマリの左側・上側にモニターがある場合）
 
-詳細は **[ウィンドウ制御システム](window-control.md#ウィンドウ位置サイズ制御)** を参照してください。
+詳細は **[ウィンドウ制御システム](../window-control.md#ウィンドウ位置サイズ制御)** を参照してください。
 
 #### 3.4.5. 表示形式
 
@@ -787,6 +787,12 @@ v0.4.2以降、重複排除は**タブ単位**で実行されます：
 - **存在しないパス**: ログに警告を出力してアイテムリストから除外
 - **アクセス権限エラー**: 該当アイテムをスキップして処理続行
 
+### 5.2. フォルダ取込アイテムのエラー処理
+
+- **存在しないディレクトリ**: 該当アイテムをスキップ
+- **アクセス権限不足**: アクセス可能なアイテムのみ処理
+- **無効なオプション値**: デフォルト値を使用して処理続行
+
 ### 5.3. 外部編集（人・AI による直接編集）への対応
 
 データファイルはテキストエディタや AI エージェントで直接編集できます。QDL はファイルを監視しないので、**反映はメイン画面の再読込（F5）か再起動時**です。
@@ -869,360 +875,30 @@ v0.4.2以降、重複排除は**タブ単位**で実行されます：
 | `files[].rewritten`        | 採番・補正のためファイルを書き戻したか                                                                                                     |
 | `preChangeSnapshot`        | 外部変更の検知時に作った変更前スナップショットのフォルダ名。なければ `null`                                                                |
 
-### 5.2. フォルダ取込アイテムのエラー処理
-
-- **存在しないディレクトリ**: 該当アイテムをスキップ
-- **アクセス権限不足**: アクセス可能なアイテムのみ処理
-- **無効なオプション値**: デフォルト値を使用して処理続行
-
 ## 6. データ型定義（TypeScript）
 
-### 6.1. JSON形式の型定義
+型定義の正本はコードです。フィールドの一覧・型・コメントは次のファイルを参照してください（このドキュメントには写しを置きません）。
 
-#### 6.1.1. JsonDataFile
+| 対象                     | 場所                              | 主な型                                                                                                                                                                                       |
+| ------------------------ | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ファイルに書く JSON の形 | `src/common/types/json-data.ts`   | `JsonDataFile`、`JsonItem`（union）、`JsonLauncherItem`・`JsonDirItem`・`JsonGroupItem`・`JsonWindowItem`・`JsonClipboardItem`・`JsonLayoutItem`、`JsonDirOptions`、型ガード `isJson*Item()` |
+| JSON Schema              | `assets/schemas/data.schema.json` | `json-data.ts` から `npm run schema:generate`（`scripts/generate-schemas.ts`）で生成。起動時に設定フォルダの `schemas/` へコピーされ、データファイルの `$schema` から参照される              |
+| 表示・実行用の内部型     | `src/common/types/launcher.ts`    | `LauncherItem`・`GroupItem`・`WindowItem`・`ClipboardItem`・`LayoutItem`・`AppItem`、`WindowConfig`、`LayoutWindowEntry`                                                                     |
+| 検索                     | `src/common/types/search.ts`      | `SearchMode`・`SearchHistoryEntry`・`SearchHistoryState`                                                                                                                                     |
 
-```typescript
-interface JsonDataFile {
-  /** ファイルフォーマットのバージョン */
-  version: string; // "1.0"
-  /** アイテムの配列 */
-  items: JsonItem[];
-}
-```
+**要点:**
 
-#### 6.1.2. JsonItem
-
-```typescript
-type JsonItem =
-  | JsonLauncherItem
-  | JsonDirItem
-  | JsonGroupItem
-  | JsonWindowItem
-  | JsonClipboardItem
-  | JsonLayoutItem;
-```
-
-#### 6.1.2.1. JsonItemBase（共通基底）
-
-すべてのJSON型は以下の共通フィールドを持ちます：
-
-```typescript
-interface JsonItemBase {
-  /** 8文字の一意ID（英数字、ランダムに生成） */
-  id: string;
-  /** 自由記述メモ（オプション） */
-  memo?: string;
-  /** 更新日時（Unixタイムスタンプ ms、オプション） */
-  updatedAt?: number;
-}
-```
-
-#### 6.1.3. JsonLauncherItem
-
-```typescript
-interface JsonLauncherItem extends JsonItemBase {
-  /** アイテムタイプ */
-  type: 'item';
-  /** 表示名 */
-  displayName: string;
-  /** ファイルパス、URL、またはコマンド */
-  path: string;
-  /** コマンドライン引数（オプション） */
-  args?: string;
-  /** カスタムアイコンファイル名（オプション） */
-  customIcon?: string;
-  /** ウィンドウ制御設定（オプション） */
-  windowConfig?: WindowConfig;
-}
-```
-
-#### 6.1.4. JsonDirItem
-
-```typescript
-interface JsonDirItem extends JsonItemBase {
-  /** アイテムタイプ */
-  type: 'dir';
-  /** スキャン対象のフォルダパス */
-  path: string;
-  /** スキャンオプション（オプション） */
-  options?: JsonDirOptions;
-}
-
-interface JsonDirOptions {
-  /** スキャンする深さ（0=サブフォルダなし、デフォルト） */
-  depth?: number;
-  /** 取り込むアイテムの種類 */
-  types?: 'file' | 'folder' | 'both';
-  /** ファイル名フィルタ（ワイルドカード対応、例: "*.exe"） */
-  filter?: string;
-  /** 除外フィルタ（ワイルドカード対応、例: "*.tmp"） */
-  exclude?: string;
-  /** 表示名のプレフィックス */
-  prefix?: string;
-  /** 表示名のサフィックス */
-  suffix?: string;
-}
-```
-
-#### 6.1.5. JsonGroupItem
-
-```typescript
-interface JsonGroupItem extends JsonItemBase {
-  /** アイテムタイプ */
-  type: 'group';
-  /** グループの表示名 */
-  displayName: string;
-  /** グループ内で参照するアイテム名のリスト */
-  itemNames: string[];
-}
-```
-
-#### 6.1.6. JsonWindowItem
-
-```typescript
-interface JsonWindowItem extends JsonItemBase {
-  /** アイテムタイプ */
-  type: 'window';
-  /** アイテムリストでの表示名 */
-  displayName: string;
-  /** ウィンドウタイトル（検索用、ワイルドカード対応） */
-  windowTitle: string;
-  /** プロセス名で検索（部分一致、オプション） */
-  processName?: string;
-  /** X座標（仮想スクリーン座標系、オプション） */
-  x?: number;
-  /** Y座標（仮想スクリーン座標系、オプション） */
-  y?: number;
-  /** 幅（オプション） */
-  width?: number;
-  /** 高さ（オプション） */
-  height?: number;
-  /** アクティブモニターの中央に移動するか（オプション） */
-  moveToActiveMonitorCenter?: boolean;
-  /** 仮想デスクトップ番号（1から開始、オプション） */
-  virtualDesktopNumber?: number;
-  /** ウィンドウをアクティブにするか（デフォルト: true、オプション） */
-  activateWindow?: boolean;
-  /** 全仮想デスクトップにピン止めするか（オプション） */
-  pinToAllDesktops?: boolean;
-}
-```
-
-#### 6.1.7. WindowConfig
-
-```typescript
-/**
- * ワイルドカード検索:
- * - タイトルにワイルドカード文字（*または?）が含まれている場合、ワイルドカードマッチングを実行
- *   - `*`: 任意の0文字以上の文字列
- *   - `?`: 任意の1文字
- * - ワイルドカード文字が含まれていない場合、完全一致検索を実行
- * - 大文字小文字は区別しない
- */
-interface WindowConfig {
-  /** ウィンドウタイトル（検索用、必須、ワイルドカード対応） */
-  title: string;
-  /** プロセス名で検索（部分一致、省略時は検索なし） */
-  processName?: string;
-  /** X座標（仮想スクリーン座標系、省略時は位置変更なし） */
-  x?: number;
-  /** Y座標（仮想スクリーン座標系、省略時は位置変更なし） */
-  y?: number;
-  /** 幅（省略時はサイズ変更なし） */
-  width?: number;
-  /** 高さ（省略時はサイズ変更なし） */
-  height?: number;
-  /** アクティブモニター中央に移動するか（省略時はfalse） */
-  moveToActiveMonitorCenter?: boolean;
-  /** 仮想デスクトップ番号（1から開始、省略時は移動なし） */
-  virtualDesktopNumber?: number;
-  /** ウィンドウをアクティブにするかどうか（省略時はtrue） */
-  activateWindow?: boolean;
-  /** 全仮想デスクトップにピン止めするか（省略時はfalse） */
-  pinToAllDesktops?: boolean;
-}
-```
-
-#### 6.1.8. JsonClipboardItem
-
-```typescript
-interface JsonClipboardItem extends JsonItemBase {
-  /** アイテムタイプ */
-  type: 'clipboard';
-  /** アイテムの表示名 */
-  displayName: string;
-  /** クリップボードデータファイルへの参照（{id}.json） */
-  dataFileRef: string;
-  /** 保存日時（Unixタイムスタンプ ms） */
-  savedAt: number;
-  /** 保存されているフォーマット */
-  formats: ClipboardFormat[];
-  /** プレビューテキスト（最初の100文字程度、オプション） */
-  preview?: string;
-  /** カスタムアイコンファイル名（オプション） */
-  customIcon?: string;
-}
-```
-
-#### 6.1.9. JsonLayoutItem
-
-```typescript
-interface JsonLayoutItem extends JsonItemBase {
-  /** アイテムタイプ */
-  type: 'layout';
-  /** レイアウトの表示名 */
-  displayName: string;
-  /** レイアウト内のウィンドウエントリ一覧 */
-  entries: LayoutWindowEntry[];
-  /** カスタムアイコンファイル名（オプション） */
-  customIcon?: string;
-}
-```
-
-#### 6.1.10. LayoutWindowEntry
-
-```typescript
-interface LayoutWindowEntry {
-  /** ウィンドウタイトル（検索用） */
-  windowTitle: string;
-  /** プロセス名（部分一致検索用、オプション） */
-  processName?: string;
-  /** 実行ファイルのパス（アプリ起動用、オプション） */
-  executablePath?: string;
-  /** コマンドライン引数（オプション） */
-  args?: string;
-  /** X座標（仮想スクリーン座標系、オプション） */
-  x?: number;
-  /** Y座標（仮想スクリーン座標系、オプション） */
-  y?: number;
-  /** 幅（オプション） */
-  width?: number;
-  /** 高さ（オプション） */
-  height?: number;
-  /** 仮想デスクトップ番号（1から開始、オプション） */
-  virtualDesktopNumber?: number;
-  /** アプリを起動するかどうか（falseの場合は既存ウィンドウの位置変更のみ） */
-  launchApp: boolean;
-  /** アイコン（base64エンコードされたデータURL、オプション）。JSON保存時は除去される */
-  icon?: string;
-}
-```
-
-### 6.2. 内部型定義
-
-#### 6.2.1. LauncherItem（内部型）
-
-```typescript
-interface LauncherItem {
-  displayName: string; // 表示名
-  path: string; // パス・URL・コマンド
-  type: 'url' | 'file' | 'folder' | 'app' | 'customUri' | 'clipboard';
-  icon?: string; // base64アイコンデータ
-  customIcon?: string; // カスタムアイコンファイル名
-  args?: string; // コマンドライン引数
-  originalPath?: string; // ショートカットの元パス
-  sourceFile?: string; // 元データファイル名
-  lineNumber?: number; // データファイル内の行番号（非推奨：IDベースアクセスを推奨）
-  id?: string; // JSONアイテムのID（JSON形式の場合）
-  isDirExpanded?: boolean; // フォルダ取込アイテム展開フラグ
-  expandedFrom?: string; // フォルダ取込元ディレクトリパス
-  expandedOptions?: string; // フォルダ取込オプション（人間が読める形式）
-  expandedFromId?: string; // フォルダ取込元のdirディレクティブID
-  isEdited?: boolean; // 編集フラグ
-  windowConfig?: WindowConfig; // ウィンドウ制御設定
-  memo?: string; // 自由記述メモ
-}
-```
-
-#### 6.2.2. GroupItem（内部型）
-
-```typescript
-interface GroupItem {
-  displayName: string; // グループの表示名
-  type: 'group'; // アイテムタイプ（常に'group'）
-  itemNames: string[]; // グループ内で参照するアイテム名のリスト
-  sourceFile?: string; // 元データファイル名
-  lineNumber?: number; // データファイル内の行番号（非推奨：IDベースアクセスを推奨）
-  id?: string; // JSONアイテムのID（JSON形式の場合）
-  isEdited?: boolean; // 編集フラグ
-  memo?: string; // 自由記述メモ
-}
-```
-
-#### 6.2.3. ClipboardItem（内部型）
-
-```typescript
-interface ClipboardItem {
-  type: 'clipboard'; // アイテムタイプ（常に'clipboard'）
-  displayName: string; // アイテムリストでの表示名
-  clipboardDataRef: string; // クリップボードデータファイルへの参照
-  savedAt: number; // 保存日時（Unixタイムスタンプ ms）
-  formats: ClipboardFormat[]; // 保存されているフォーマット
-  preview?: string; // プレビューテキスト
-  customIcon?: string; // カスタムアイコンファイル名
-  sourceFile?: string; // 元データファイル名
-  lineNumber?: number; // データファイル内の行番号（非推奨：IDベースアクセスを推奨）
-  id?: string; // JSONアイテムのID（JSON形式の場合）
-  isEdited?: boolean; // 編集フラグ
-  memo?: string; // 自由記述メモ
-}
-```
-
-#### 6.2.4. AppItem
-
-```typescript
-// LauncherItem、GroupItem、WindowItem、ClipboardItem、LayoutItem、WindowInfoの統合型
-type AppItem = LauncherItem | GroupItem | WindowItem | ClipboardItem | LayoutItem | WindowInfo;
-```
-
-### 6.3. 検索関連型
-
-#### 6.3.1. SearchMode
-
-```typescript
-/**
- * 検索モードを表す型
- * normal: 通常のアイテム検索モード
- * window: ウィンドウ検索モード
- */
-export type SearchMode = 'normal' | 'window';
-```
-
-#### 6.3.2. SearchHistoryEntry
-
-```typescript
-/**
- * 検索履歴のエントリーを表すインターフェース
- * ユーザーが実行時に入力した検索クエリと実行日時を保持する
- */
-export interface SearchHistoryEntry {
-  /** 検索クエリ文字列 */
-  query: string;
-  /** 実行日時（ISO文字列形式） */
-  timestamp: string;
-}
-```
-
-#### 6.3.3. SearchHistoryState
-
-```typescript
-/**
- * 検索履歴の状態管理用インターフェース
- * キーボードナビゲーションでの履歴巡回に使用される
- */
-export interface SearchHistoryState {
-  /** 履歴エントリーのリスト（最新が先頭） */
-  entries: SearchHistoryEntry[];
-  /** 現在選択中の履歴インデックス（-1は履歴を使用していない状態） */
-  currentIndex: number;
-}
-```
+- `JsonItem` は `type`（`item` / `dir` / `group` / `window` / `clipboard` / `layout`）で判別する union。全アイテム共通のフィールドは `id`（8 文字の英数字）・`memo`・`updatedAt`
+- ファイル上の型（`Json*`）と画面で扱う内部型は別。読み込み時に `src/main/services/data/jsonItemConverter.ts` が JSON アイテムを内部型へ変換する（フォルダ取込の展開・`.lnk` の解析を含む）
+- 内部型の `type` は JSON 側と語彙が違う。`JsonLauncherItem`（`type: "item"`）は、パスから判定した実行タイプ（`url` / `file` / `folder` / `app` / `customUri`）を `type` に持つ `LauncherItem` になる
+- 内部型の `sourceFile`・`id` は、編集・削除のときに元のファイルとアイテムを特定するために使う（`lineNumber` は非推奨）
+- `json-data.ts` を変えたら `npm run schema:generate` でスキーマを再生成してコミットする。生成結果とコミット済みファイルの一致は単体テストが検証する
 
 ## 7. 関連ドキュメント
 
-- **[アイテム管理](../screens/admin-window.md#6-アイテム管理の詳細)** - データファイルの編集機能
-- **[フォルダ取込](../screens/register-modal.md#6-フォルダ取込アイテムの詳細)** - フォルダ取込機能の詳細
+- **[アイテム管理](../../screens/admin-window.md#6-アイテム管理の詳細)** - データファイルの編集機能
+- **[フォルダ取込](../../screens/register-modal.md#6-フォルダ取込アイテムの詳細)** - フォルダ取込機能の詳細
 - **[ワークスペースファイル形式](workspace-format.md)** - workspace.json仕様
-- **[設定ファイル形式](settings-format.md)** - config.json仕様
+- **[設定ファイル形式](settings-format.md)** - settings.json仕様
 - **[ファイル形式一覧](README.md)** - すべてのファイル形式の概要
-- **[開発ガイド](../setup/development.md)** - 開発時の注意事項
+- **[開発ガイド](../../setup/development.md)** - 開発時の注意事項
