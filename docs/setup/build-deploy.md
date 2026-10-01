@@ -64,6 +64,27 @@ QuickDashLauncherのApp IDは`net.masaodev.quick-dash-launcher`です。
 - ワークフローが末尾にインストール方法・ライセンスの節を付け、`release-notes.md` として `softprops/action-gh-release` の `body_path` に渡す
 - `workflow_dispatch` の手動実行はビルド検証のみで、Release は作らない
 
+### 正式版とベータ版
+
+細かい変更はベータ版として出し、ある程度まとまったところで正式版を出す。
+
+| 種類 | タグの例 | GitHub Release | winget |
+| --- | --- | --- | --- |
+| ベータ版 | `v0.8.0-beta.1`、`v0.8.0-beta.2` | プレリリース（Latest にならない） | 出ない |
+| 正式版 | `v0.8.0` | 正式（Latest） | 自動で更新される（下記） |
+
+- タグに `-` が入っていると `release.yml` がプレリリースとして公開する
+- 正式版のリリースノートは、前の正式版からの変更（ベータ版の分を含む）をまとめて書く
+- 手順は `/release-version beta`・`/release-version stable`（`.claude/commands/git-workflow/release-version.md`）
+
+### winget
+
+[winget](https://github.com/microsoft/winget-pkgs) には `masaodev.quick-dash-launcher` として公開している（インストーラー版 `QuickDashLauncher.Setup.{VERSION}.exe`）。
+
+- 正式版を出すと、コミュニティの自動更新ボット（[damn-good-b0t](https://github.com/b0t-at/winget-pkgs-updates)）が winget-pkgs に更新 PR を出し、Microsoft 側の検証とモデレーターの承認を経て反映される。こちらの作業は不要
+- ボットは数時間おきに最新の正式版を見ていて、リリース直後はしばらく待ってから出す。反映まで半日〜1 日程度かかる。プレリリースは拾わない
+- 反映を確かめるには `winget show masaodev.quick-dash-launcher` で版を見る。長く反映されないときは、[winget-pkgs の PR](https://github.com/microsoft/winget-pkgs/pulls?q=masaodev.quick-dash-launcher) を確認し、必要なら `wingetcreate update` で手動で出す
+
 ## 重要な制約事項
 
 1. **Windows専用アプリケーション** - クロスプラットフォーム非対応
