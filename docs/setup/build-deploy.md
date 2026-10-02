@@ -64,6 +64,37 @@ QuickDashLauncherのApp IDは`net.masaodev.quick-dash-launcher`です。
 - ワークフローが末尾にインストール方法・ライセンスの節を付け、`release-notes.md` として `softprops/action-gh-release` の `body_path` に渡す
 - `workflow_dispatch` の手動実行はビルド検証のみで、Release は作らない
 
+### 正式版とベータ版
+
+細かい変更はベータ版として出し、ある程度まとまったところで正式版を出す。
+
+| 種類 | タグの例 | GitHub Release | winget |
+| --- | --- | --- | --- |
+| ベータ版 | `v0.8.0-beta.1`、`v0.8.0-beta.2` | プレリリース（Latest にならない） | 出ない |
+| 正式版 | `v0.8.0` | 正式（Latest） | 自分で更新 PR を出す（下記） |
+
+- タグに `-` が入っていると `release.yml` がプレリリースとして公開する
+- 正式版のリリースノートは、前の正式版からの変更（ベータ版の分を含む）をまとめて書く
+- 手順は `/release-version beta`・`/release-version stable`（`.claude/commands/git-workflow/release-version.md`）
+
+### winget
+
+[winget](https://github.com/microsoft/winget-pkgs) には `masaodev.quick-dash-launcher` として公開している（インストーラー版 `QuickDashLauncher.Setup.{VERSION}.exe`）。
+
+- **正式版を出したら、自分で winget-pkgs に更新 PR を出す**（`/release-version stable` の手順に含む）。Actions の完了後に次を実行する。Microsoft 側の検証とモデレーターの承認を経てマージされると反映される
+
+  ```bash
+  wingetcreate update masaodev.quick-dash-launcher --version {version} \
+    --urls "https://github.com/masaodev/quick-dash-launcher/releases/download/v{version}/QuickDashLauncher.Setup.{version}.exe|x64" \
+    --release-notes-url "https://github.com/masaodev/quick-dash-launcher/releases/tag/v{version}" \
+    --submit --token "$(gh auth token)"
+  ```
+
+  - `wingetcreate`（`winget install wingetcreate`）と、`repo` 権限のある `gh` のログインが要る。トークンはその場で渡し、保存しない
+  - `--submit` を外して `--out <フォルダ>` を付けると、提出せずにマニフェストの生成と検証だけを試せる
+- **予備としてコミュニティの自動更新ボット**（[damn-good-b0t](https://github.com/b0t-at/winget-pkgs-updates)）も QDL を見ている。ボットはリリース直後しばらく待ち、同じ版の PR がすでにあれば出さないので、自分で出せばぶつからない。出し忘れたときは半日〜1 日でボットが出す。プレリリースは拾わない
+- 反映を確かめるには `winget show masaodev.quick-dash-launcher` で版を見る。PR の状況は [winget-pkgs の PR](https://github.com/microsoft/winget-pkgs/pulls?q=masaodev.quick-dash-launcher) で確認する
+
 ## 重要な制約事項
 
 1. **Windows専用アプリケーション** - クロスプラットフォーム非対応
