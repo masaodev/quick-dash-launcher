@@ -94,7 +94,7 @@ npm run dev:test
 「メインタブをクリックしてください」
 ```
 
-詳細な操作方法は **[ブラウザ自動操作ガイド](../../../docs/testing/browser-automation.md)** を参照してください。
+詳細な操作方法は **[テストガイド - ブラウザ自動操作](../../../docs/testing/README.md#3-ブラウザ自動操作playwright-mcp)** を参照してください。
 
 ## 注意事項
 

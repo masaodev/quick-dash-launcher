@@ -1,82 +1,24 @@
 # UIコンポーネント
 
-QuickDashLauncherで使用する共通UIコンポーネントのドキュメントです。
+QuickDashLauncherで使う共通UIコンポーネントの規約を書く。実装は `src/renderer/components/ui/` が正である。
 
-## 概要
+## 設計思想
 
-### 設計思想
-
-- **一貫性**: 全画面で統一されたUI体験を提供
-- **型安全**: TypeScriptによるprops定義で誤用を防止
-- **CSS変数連携**: `variables.css`のデザイントークンを使用
-- **段階的移行**: 既存コードと共存しながら順次適用
-
-### ファイル構成
-
-```
-src/renderer/
-├── components/
-│   └── ui/
-│       ├── Button.tsx      # ボタンコンポーネント
-│       └── index.ts        # エクスポート
-└── styles/
-    └── components/
-        └── Button.css      # ボタンスタイル
-```
-
----
+- **一貫性**: 全画面で同じ見た目・操作感のUI部品を使う
+- **型安全**: props を TypeScript で定義し、誤用を防ぐ
+- **CSS変数連携**: スタイルは `variables.css` のデザイントークンで書く
+- **段階的移行**: 既存のCSSクラスによる実装と共存させ、触る箇所から順次置き換える
 
 ## Buttonコンポーネント
 
-汎用ボタンコンポーネント。モーダルのアクションボタン、フォームの送信ボタンなどに使用します。
+汎用ボタン。実装は `src/renderer/components/ui/Button.tsx`、スタイルは `src/renderer/styles/components/Button.css`（クラスの対応は同ファイルを参照）。
 
-### インポート
+- `variant`: `primary`（主要アクション：確定・保存・登録）／`danger`（削除・リセットなど危険な操作）／`info`（補助アクション）／`cancel`（キャンセル）。既定は `info`
+- `size`: `sm`／`md`／`lg`。既定は `md`
+- `fullWidth`: 幅いっぱいに広げる。既定は `false`
+- 標準の `<button>` 属性（`type`、`disabled`、`aria-*` など）はそのまま渡せる
 
-```tsx
-import { Button } from './ui';
-```
-
-### インターフェース
-
-```tsx
-type ButtonVariant = 'primary' | 'danger' | 'info' | 'cancel';
-type ButtonSize = 'sm' | 'md' | 'lg';
-
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: ButtonVariant;  // デフォルト: 'info'
-  size?: ButtonSize;        // デフォルト: 'md'
-  fullWidth?: boolean;      // デフォルト: false
-}
-```
-
-### バリエーション
-
-| variant | 用途 | 背景色 |
-|---------|------|--------|
-| `primary` | 主要アクション（確定、保存、登録） | 青 (`--color-primary`) |
-| `danger` | 危険な操作（削除、リセット） | 赤 (`--color-danger`) |
-| `info` | 補助アクション（デフォルト） | 水色 (`--color-info`) |
-| `cancel` | キャンセル | グレー (`--color-gray-400`) |
-
-### サイズ
-
-| size | padding | font-size | 用途 |
-|------|---------|-----------|------|
-| `sm` | `4px 12px` | 12px | コンパクトなUI |
-| `md` | `8px 16px` | 14px | 標準（デフォルト） |
-| `lg` | `12px 20px` | 15px | 強調したいボタン |
-
-### 使用例
-
-#### 基本
-
-```tsx
-<Button variant="primary" onClick={handleSave}>
-  保存
-</Button>
-```
-
-#### モーダルのアクションボタン
+インポートは `import { Button } from './ui';`。
 
 ```tsx
 <div className="modal-actions">
@@ -89,81 +31,6 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 </div>
 ```
 
-#### 削除確認ダイアログ
-
-```tsx
-<div className="modal-actions">
-  <Button variant="cancel" onClick={onClose}>
-    キャンセル
-  </Button>
-  <Button variant="danger" onClick={onDelete}>
-    削除
-  </Button>
-</div>
-```
-
-#### disabled状態
-
-```tsx
-<Button variant="primary" onClick={onSubmit} disabled={!isValid}>
-  送信
-</Button>
-```
-
-#### フル幅ボタン
-
-```tsx
-<Button variant="primary" fullWidth onClick={onAction}>
-  アクションを実行
-</Button>
-```
-
-#### サイズ指定
-
-```tsx
-<Button variant="primary" size="sm">小さいボタン</Button>
-<Button variant="primary" size="md">標準ボタン</Button>
-<Button variant="primary" size="lg">大きいボタン</Button>
-```
-
-#### 追加属性
-
-`ButtonProps`は`React.ButtonHTMLAttributes<HTMLButtonElement>`を継承しているため、標準のbutton属性をすべて使用できます。
-
-```tsx
-<Button
-  variant="primary"
-  type="submit"
-  data-testid="submit-button"
-  aria-label="フォームを送信"
->
-  送信
-</Button>
-```
-
-### 生成されるHTML
-
-```tsx
-<Button variant="primary" size="sm" fullWidth>テスト</Button>
-```
-
-↓
-
-```html
-<button class="btn btn-primary btn-sm btn-full-width">テスト</button>
-```
-
-### CSSクラス
-
-| クラス | 説明 |
-|--------|------|
-| `.btn` | ベーススタイル |
-| `.btn-{variant}` | バリエーション（例: `.btn-primary`） |
-| `.btn-sm` / `.btn-lg` | サイズ（mdはクラスなし） |
-| `.btn-full-width` | フル幅 |
-
----
-
 ## 使い分けガイド
 
 ### Buttonコンポーネントを使う場合
@@ -174,35 +41,35 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 
 ### 従来のCSSクラスを使う場合
 
-以下のような特殊なボタンは、専用のCSSクラスを使用してください：
+以下のような特殊なボタンは、専用のCSSクラスを使う。
 
-| 用途 | 推奨クラス |
-|------|-----------|
-| ヘッダーの正方形アイコンボタン | `.action-btn` |
-| タブ切り替えボタン | `.menu-item`, `.desktop-tab` |
-| 検索クリアボタン | `.search-clear-button` |
-| ドロップダウントリガー | `.dropdown-trigger-btn` |
+| 用途                           | 推奨クラス                   |
+| ------------------------------ | ---------------------------- |
+| ヘッダーの正方形アイコンボタン | `.action-btn`                |
+| タブ切り替えボタン             | `.menu-item`, `.desktop-tab` |
+| 検索クリアボタン               | `.search-clear-button`       |
+| ドロップダウントリガー         | `.dropdown-trigger-btn`      |
 
 ## コンポーネント命名規則
 
-Rendererプロセス（`src/renderer/`）のコンポーネント命名規則を定義します。
+Rendererプロセス（`src/renderer/`）のコンポーネント命名規則を定義する。
 
 ### プレフィックス体系
 
-| 所属 | プレフィックス |
-|------|---------------|
-| メインウィンドウ | `Launcher*` |
-| 管理ウィンドウ（共通） | `Admin*` |
-| 管理 > 基本設定タブ | `AdminSettings*` |
-| 管理 > アイテム管理タブ | `AdminItemManager*` |
-| 管理 > ヘルプタブ | `AdminOther*` |
-| ワークスペースウィンドウ | `Workspace*` |
-| 初回設定 | `Setup*` |
-| 共通コンポーネント | なし |
+| 所属                     | プレフィックス      |
+| ------------------------ | ------------------- |
+| メインウィンドウ         | `Launcher*`         |
+| 管理ウィンドウ（共通）   | `Admin*`            |
+| 管理 > 基本設定タブ      | `AdminSettings*`    |
+| 管理 > アイテム管理タブ  | `AdminItemManager*` |
+| 管理 > ヘルプタブ        | `AdminOther*`       |
+| ワークスペースウィンドウ | `Workspace*`        |
+| 初回設定                 | `Setup*`            |
+| 共通コンポーネント       | なし                |
 
 ### 共通コンポーネントの定義
 
-以下のいずれかに該当するコンポーネントは「共通」としてプレフィックスなしとする：
+以下のいずれかに該当するコンポーネントは「共通」としてプレフィックスなしとする。
 
 1. **2つ以上のウィンドウで使用される**
 2. **ビジネスロジックを持たない純粋なUI部品**（ダイアログ、入力部品など）
@@ -213,9 +80,9 @@ Rendererプロセス（`src/renderer/`）のコンポーネント命名規則を
 
 以下のコンポーネントは管理ウィンドウ専用かつビジネスロジックを持つが、プレフィックスが付いていない。新規作成時は `Admin*` プレフィックスを使用すること。
 
-| コンポーネント | 使用箇所 | 本来あるべきプレフィックス |
-|---------------|---------|--------------------------|
-| `BookmarkAutoImportSettings` | `AdminSettingsTab` | `Admin*` |
-| `BackupSnapshotModal` | `AdminSettingsTab` | `Admin*` |
-| `BookmarkAutoImportRuleModal` | `BookmarkAutoImportSettings`、`AdminItemManagerView`（取込モード） | `Admin*` |
-| `AppImportModal` | `AdminItemManagerView` | `Admin*` |
+| コンポーネント                | 使用箇所                                                           | 本来あるべきプレフィックス |
+| ----------------------------- | ------------------------------------------------------------------ | -------------------------- |
+| `BookmarkAutoImportSettings`  | `AdminSettingsTab`                                                 | `Admin*`                   |
+| `BackupSnapshotModal`         | `AdminSettingsTab`                                                 | `Admin*`                   |
+| `BookmarkAutoImportRuleModal` | `BookmarkAutoImportSettings`、`AdminItemManagerView`（取込モード） | `Admin*`                   |
+| `AppImportModal`              | `AdminItemManagerView`                                             | `Admin*`                   |

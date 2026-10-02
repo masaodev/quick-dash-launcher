@@ -22,12 +22,15 @@ npm run test:e2e:headed # ヘッド付き実行
 ### 特定のテストを実行
 
 ```bash
-# 特定のファイル
-npx playwright test tests/e2e/specs/item-registration.spec.ts
+# 1ファイルだけ実行（ビルド込み。引数なしで指定できる名前の一覧を表示）
+npm run test:e2e:single first-launch
 
-# 特定のテストケース
-npx playwright test -g "アイテムの名前を編集できる"
+# npx で直接実行する場合は事前に npm run build が必要
+npx playwright test tests/e2e/specs/item-registration.spec.ts   # 特定のファイル
+npx playwright test -g "アイテムの名前を編集できる"               # 特定のテストケース
 ```
+
+`test:e2e:single` は `scripts/run-e2e-test.js` に登録された名前（`first-launch`、`basic-ui`、`item-register` など）だけを受け付けます。登録されていない spec は `npx playwright test` で指定してください。
 
 ---
 
@@ -45,69 +48,38 @@ npx playwright test -g "アイテムの名前を編集できる"
 
 エンドツーエンドのシナリオテスト。
 
-```
-tests/e2e/
-├── fixtures/     # テスト用フィクスチャ
-├── helpers/      # ヘルパークラス
-└── specs/        # テスト仕様
-    ├── basic-ui.spec.ts
-    ├── context-menu.spec.ts
-    ├── dialogs.spec.ts
-    ├── first-launch-setup.spec.ts
-    ├── group-item-registration.spec.ts
-    ├── item-management.spec.ts
-    ├── item-registration.spec.ts
-    ├── multi-tab.spec.ts
-    └── settings-tab.spec.ts
-```
+- **テストファイル**: `tests/e2e/specs/*.spec.ts`（機能別）
+- **フィクスチャ・ヘルパー・テンプレートの構成**: [tests/e2e/README.md](../../tests/e2e/README.md)
+- **実行**: `npm run test:e2e`（ビルド込み）
 
 ### 3. ブラウザ自動操作（Playwright MCP）
 
-Claude Codeから直接QuickDashLauncherを操作してテストできます。
+Claude Code から、起動中の QuickDashLauncher を MCP 経由でその場で操作する仕組みです。画面のスナップショット（アクセシビリティツリー）の取得、クリック・文字入力、タブ切り替え、スクリーンショット撮影ができます。テストコードを書いて繰り返し実行する E2E テストとは別物で、変更の動作確認や不具合の再現に使います。
 
-- **セットアップ**: `.mcp.json`でPlaywright MCPサーバーを設定
-- **起動**: `npm run dev:test`でリモートデバッグポート有効化
-- **操作**: Claude Codeから画面の確認・クリック・スクリーンショット撮影が可能
+**つなぎ方**: リポジトリ直下の `.mcp.json` に MCP サーバー `electron-playwright` が定義されています。中身は `npx @playwright/mcp@latest --cdp-endpoint http://localhost:9222` で、ポート 9222 のリモートデバッグ（Chrome DevTools Protocol）に接続して Electron の画面を操作します。Chrome MCP（claude-in-chrome）は Chrome の拡張機能経由で動くため、Electron アプリは操作できません。
 
-詳細は [ブラウザ自動操作ガイド](./browser-automation.md) を参照。
+**起動**: QDL を `npm run dev:test` で起動します。`src/main/main.ts` は開発モードのときだけリモートデバッグポートを開き、設定フォルダが `tests/dev/full` のとき（＝`dev:test`）は 9222 に固定、それ以外（`dev`・`dev2`）は空きポートを自動で割り当てます。したがって MCP がつながるのは `dev:test` のインスタンスだけで、ビルド済みの本番版ではポート自体が開きません。
+
+操作は Claude Code に自然文で頼みます（例: 「仕事タブに切り替えて、表示されているアイテムを確認して」「検索ボックスに GitHub と入力してスクリーンショットを撮って」）。管理画面など別ウィンドウは MCP 側ではタブとして見えるので、タブを切り替えてから操作します。
+
+**つながらないとき**:
+
+- **ポート 9222 が使用中**: 前回の `dev:test` の Electron が残っているか、別のアプリが 9222 を使っています。残った Electron を終了してから起動し直します（`taskkill //F //IM electron.exe` は他の Electron アプリも終了させる点に注意）。
+- **MCP のツールが出てこない**: `.mcp.json` の設定を確認し、Claude Code を再起動します。`npx @playwright/mcp@latest` が実行できるかも確認します。
+- **クリックがタイムアウトする**: 要素がまだ表示されていないことが多いので、スナップショットで現在の状態を確かめてから再試行します。
+
+9222 はローカルの開発用ポートです。外部から接続できる状態にしないでください。
 
 ---
 
-## テストフィクスチャ
+## テストデータ（テンプレート）
 
-### 開発用インスタンス
+| 置き場 | 用途 | 一覧・使い方 |
+|--------|------|-------------|
+| `tests/dev/` | 開発時に手で動かすデータ（`npm run dev:test` は `tests/dev/full` を使う） | [tests/dev/README.md](../../tests/dev/README.md) |
+| `tests/e2e/templates/` | E2E テストが一時ディレクトリにコピーして使うデータ（既定は `base`） | [tests/e2e/README.md](../../tests/e2e/README.md#テンプレートシステム) |
 
-v0.5.3以降、開発時に複数のインスタンスを同時に起動できます：
-
-```bash
-npm run dev        # メイン開発環境（ポート9001、ホットキー: Ctrl+Alt+A）
-npm run dev2       # 比較検証用（ポート9002、ホットキー: Ctrl+Alt+S）
-npm run dev:test   # テストデータで起動（全機能を含む）
-```
-
-詳細は **[開発ガイド - 多重起動](../setup/development.md#多重起動)** を参照してください。
-
-### テンプレート一覧
-
-| テンプレート | 説明 | 用途 |
-|-------------|------|------|
-| `full` | 全機能（30個+グループ） | デモ、機能確認 |
-| `with-groups` | グループ起動特化 | グループ機能の確認 |
-
-### E2Eテスト用テンプレート
-
-| テンプレート | 説明 |
-|-------------|------|
-| `base` | 基本的なアイテムセット |
-| `with-tabs` | マルチタブ機能有効（data.json + data2.json） |
-| `with-multi-file-tabs` | 複数ファイルタブ（data.json + data2.json + data3.json） |
-| `empty` | 空のデータファイル |
-| `with-groups` | グループアイテム含む |
-| `with-backup` | バックアップ機能有効 |
-| `first-launch` | 初回起動用 |
-| `custom-hotkey` | カスタムホットキー設定 |
-| `with-folder-import` | フォルダ取込アイテム含む |
-| `with-shortcuts` | ショートカットファイル含む |
+dev / dev2 / dev:test のポート・ホットキー・設定フォルダは [開発ガイド - 多重起動](../setup/development.md#多重起動) を参照してください。
 
 ---
 
@@ -190,9 +162,11 @@ await utils.attachScreenshot(testInfo, 'モーダル表示');
 
 ### トレースビューアーの使用
 
+失敗したテストのスクリーンショット・動画・トレースは `test-results/test-artifacts/` に、フィクスチャが記録するトレースは `test-results/traces/` に保存されます。
+
 ```bash
-# 特定のトレースを開く
 npx playwright show-trace test-results/test-artifacts/<テスト名>/trace.zip
+npx playwright show-trace test-results/traces/trace-<タイムスタンプ>.zip
 ```
 
 ---
@@ -221,20 +195,8 @@ npx playwright show-trace test-results/test-artifacts/<テスト名>/trace.zip
 
 ## カスタムテンプレートの作成
 
-### 開発用テンプレート
-
-```bash
-mkdir tests/dev/my-custom
-echo "My App,C:\path\to\app.exe" > tests/dev/my-custom/data.json
-```
-
-### E2Eテスト用テンプレート
-
-```bash
-mkdir tests/e2e/templates/my-test
-echo "My Item,https://example.com" > tests/e2e/templates/my-test/data.json
-echo '{"showDataFileTabs": false}' > tests/e2e/templates/my-test/settings.json
-```
+- **開発用**: [tests/dev/README.md の手順](../../tests/dev/README.md#カスタムテンプレートの作成) に従い、`tests/dev/<名前>/` を作って `QUICK_DASH_CONFIG_DIR` で指定して起動します。
+- **E2E 用**: `tests/e2e/templates/<名前>/` に `datafiles/data.json`（必要なら `settings.json`）を置き、テスト側で `test.use({ configTemplate: '<名前>' })` または `configHelper.loadTemplate('<名前>')` で指定します。データの形式は [data-format.md](../architecture/file-formats/data-format.md) を参照してください。
 
 ---
 
@@ -262,7 +224,6 @@ echo '{"showDataFileTabs": false}' > tests/e2e/templates/my-test/settings.json
 
 ## 関連ドキュメント
 
-- [ブラウザ自動操作ガイド](./browser-automation.md)
 - [開発ガイド](../setup/development.md)
 - [tests/e2e/README.md](../../tests/e2e/README.md)
 - [tests/dev/README.md](../../tests/dev/README.md)

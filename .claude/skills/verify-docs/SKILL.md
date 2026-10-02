@@ -90,7 +90,6 @@ Glob: docs/**/*.md
 
 ## 1. セットアップ・開発 (setup/)
 
-- [ ] docs/setup/getting-started.md
 - [ ] docs/setup/development.md
 - [ ] docs/setup/build-deploy.md
 
