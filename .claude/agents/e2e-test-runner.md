@@ -137,10 +137,10 @@ npm run test:e2e:single <テスト名>  # 1ファイルだけ実行（例: first
 ✅ すべてのE2Eテストが成功しました
 
 ### 実行されたテストスイート
-1. アイテム登録機能テスト
-2. 検索機能テスト
-3. アイテム編集機能テスト
-4. グループ起動機能テスト
+1. basic-ui.spec.ts（基本UI機能テスト）
+2. item-registration.spec.ts（アイテム登録・編集機能テスト）
+3. group-item-registration.spec.ts（グループアイテム登録・編集機能テスト）
+4. multi-tab.spec.ts（マルチタブ機能テスト）
 ...
 
 ## 次のステップ
