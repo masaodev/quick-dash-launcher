@@ -126,12 +126,12 @@ QUICK_DASH_CONFIG_DIR=./tests/dev/full npm run dev
 
 ### ウィンドウの動作
 
-- フレームレスウィンドウ（600x400px）常に最前面
-- DevToolsが開いていない限りブラー時に非表示（固定化時・編集モード時は例外）
-- Alt+Space起動ホットキーで表示/非表示（デフォルト、設定で変更可能）
-- 表示時に検索ボックスが自動クリア＆フォーカス
-- 📌ボタンでウィンドウ固定化可能（固定中はフォーカスアウトしても非表示にならない）
-- 編集モード時のウィンドウ自動拡大（1200x1000px）と復元機能
+- フレームレスウィンドウ。サイズは設定の `windowWidth`×`windowHeight`（既定 600x400px）
+- フォーカスが外れると非表示になる。DevTools を開いているとき・固定モードが「通常」以外のとき・初回設定中・モーダル表示中は例外
+- 表示／非表示はグローバルホットキー（既定は未設定で、初回起動時に設定する）
+- 表示時に検索ボックスをクリアしてフォーカスする
+- 📌ボタンで固定モードを「通常 → 常に最前面 → 表示固定」の順に切り替える（`WindowPinMode`）。最前面になるのは「常に最前面」とモーダル表示中だけ
+- アイテム管理は別の管理ウィンドウで開き、サイズは設定の `editModeWidth`×`editModeHeight`（既定 1200x1000px）
 
 ### データファイル形式
 
@@ -198,10 +198,12 @@ for (const fileName of dataFiles) {
 
 ### アイテムタイプの検出
 
-- URL: `://`を含む
-- カスタムURI: 非http(s)スキーマ（obsidian://, ms-excel://）
-- アプリ: .exe, .bat, .cmd, .com, .lnk拡張子
-- フォルダ: 拡張子なしまたはスラッシュで終わる
+判定は `src/common/utils/itemTypeDetector.ts`。パスの文字列から次の順で決める。
+
+- URL: `://` を含み、スキーマが `http`・`https`・`ftp`
+- カスタムURI: それ以外のスキーマ（`obsidian://`、`ms-excel:` など）
+- アプリ: `shell:AppsFolder\` で始まる、または拡張子が `.exe`・`.bat`・`.cmd`・`.com`・`.lnk`
+- フォルダ: `shell:` で始まる、拡張子がない、または `/`・`\` で終わる
 - ファイル: その他すべて
 
 ### 検索の実装
@@ -226,45 +228,12 @@ for (const fileName of dataFiles) {
 3. **関数の統合**: 抽出した共通関数を各箇所で使用するよう修正
 4. **動作確認**: ビルドとテストで機能が維持されることを検証
 
-**リファクタリング事例:**
+**共通化した処理の置き場所（新しく書く前に確認する）:**
 
-**1. IconServiceの例（アイコン取得ロジックの共通化）:**
-ワークスペース機能のリファクタリングで、アイコン取得ロジックの重複を削除しました：
-
-- `workspaceHandlers.ts`: 36行→13行（重複削除）
-- `useModalInitializer.ts`: 24行→14行（重複削除）
-- 60行以上の重複コードを`IconService`に集約
-- アイテムタイプに応じた適切なアイコン取得処理を一箇所で管理
-
-**2. ウィンドウ処理とアイテム起動の共通化（v0.5.4）:**
-アイテム起動処理の重複コードを共通ユーティリティに集約しました：
-
-**新規ユーティリティモジュール:**
-
-- `src/main/utils/windowActivator.ts` - ウィンドウ検索・アクティブ化・位置サイズ設定
-- `src/main/utils/itemLauncher.ts` - URL/ファイル/アプリ/カスタムURIの起動処理
-
-**改善箇所:**
-
-- `itemHandlers.ts` - アイテム起動処理を共通関数に置き換え
-- `workspaceHandlers.ts` - ワークスペースアイテム起動処理を共通関数に置き換え
-- 重複していた起動ロジックを一箇所で管理
-- ウィンドウ制御処理の一貫性向上
-
-**3. RegisterModalのコンポーネント分割（v0.5.4）:**
-大きなコンポーネントを小さく分割して保守性を向上しました：
-
-**新規コンポーネント:**
-
-- `src/renderer/components/WindowConfigEditor.tsx` - ウィンドウ設定エディター（115行）
-- `src/renderer/components/CustomIconEditor.tsx` - カスタムアイコンエディター（47行）
-
-**改善内容:**
-
-- `RegisterModal.tsx` - 642行の大きなコンポーネントを分割
-- ウィンドウ設定とカスタムアイコン編集を独立したコンポーネントに分離
-- 古いウィンドウタイトルフィールド（単独）を削除し、WindowConfigに統合
-- 各コンポーネントが明確な責任を持つように再設計
+- アイコン取得: `src/main/services/iconService.ts` の `getIconForItem()`（アイコン用 IPC とワークスペースの IPC が共用）
+- アイテムの起動: `src/main/utils/itemLauncher.ts`（URL・ファイル・アプリ・カスタムURI。`itemHandlers.ts` と `workspaceHandlers.ts` が共用）
+- ウィンドウの検索・アクティブ化・位置とサイズの設定: `src/main/utils/windowActivator.ts`
+- 登録・編集フォームの部品: `src/renderer/components/WindowConfigEditor.tsx`（ウィンドウ設定）と `CustomIconEditor.tsx`（カスタムアイコン）。`RegisterItemForm.tsx` とワークスペースのアイテム編集が使う
 
 ### パフォーマンス最適化
 
@@ -447,14 +416,17 @@ QUICK_DASH_CONFIG_DIR=./prod-config npm run dev
 **ワークスペース機能の例:**
 
 ```typescript
-// データ管理フック
-const { items, groups, executionHistory, loadItems } = useWorkspaceData();
+// データ管理フック（切り離しウィンドウでは対象グループの id を渡す）
+const { items, groups, workspaces, activeWorkspaceId, loadAllDataWithLoading } =
+  useWorkspaceData(detachedGroupId);
 
-// アクション統合フック
-const actions = useWorkspaceActions(onDataChanged);
+// アクション統合フック（データ変更後に呼ぶコールバックを渡す）
+const actions = useWorkspaceActions(() => {
+  loadAllDataWithLoading();
+});
 
-// ドラッグ&ドロップフック
-const { isDraggingOver } = useNativeDragDrop(loadItems);
+// ネイティブドラッグ&ドロップフック（グループで処理されなかったドロップを受ける）
+useNativeDragDrop(handleNativeFileDrop);
 ```
 
 **カスタムフック作成のガイドライン:**
@@ -472,14 +444,8 @@ const { isDraggingOver } = useNativeDragDrop(loadItems);
 - `src/renderer/hooks/useClipboardPaste.ts` - クリップボードからのペースト処理
 - `src/renderer/hooks/useCollapsibleSections.ts` - 折りたたみ状態管理
 - `src/renderer/hooks/workspace/useWorkspaceItemGroups.ts` - アイテムグループ化ロジック
-- `src/renderer/hooks/workspace/useWorkspaceResize.ts` - ワークスペースウィンドウのサイズ変更処理（70行の複雑なロジックを分離）
-- `src/renderer/hooks/useFileOperations.ts` - ファイルとURL操作の共通ユーティリティ（重複コード削減）
-
-**リファクタリング成果:**
-
-- **WorkspaceApp.tsx**: 444行→216行（51%削減）- 複雑なロジックをカスタムフックに分離
-- **WorkspaceGroupedList.tsx**: 460行→385行（16%削減）- Props構造を改善（24個→3つのオブジェクト）
-- **重複コード削減**: useNativeDragDropとuseClipboardPasteの共通ロジックをuseFileOperationsに抽出
+- `src/renderer/hooks/workspace/useWorkspaceResize.ts` - ワークスペースウィンドウのサイズ変更処理
+- `src/renderer/hooks/useFileOperations.ts` - ファイルパスの取り出しとアイテム追加の共通処理（ドロップ処理とクリップボードのペーストが共用）
 
 #### 型定義とガード関数
 
@@ -505,46 +471,7 @@ if (isLauncherItem(data)) {
 
 ### CSS開発パターン
 
-#### デザインシステムの使用
-
-QuickDashLauncherではCSS変数ベースの統一されたデザインシステムを採用しています。
-
-詳細な命名規則・ベストプラクティスは **[CSSデザインシステム](../architecture/css-design.md)** を参照してください。
-
-**基本ルール:**
-
-- ハードコード値の使用禁止（色、サイズ、間隔など）
-- 必ずvariables.cssで定義された変数を使用
-- 共通クラス（common.css）を積極的に活用
-
-**新しいコンポーネントのスタイル作成手順:**
-
-1. `src/renderer/styles/components/`に新しいCSSファイルを作成
-2. CSS変数のみを使用してスタイルを記述
-3. 共通クラスで対応できる部分は再利用
-4. コンポーネントファイルでCSSをインポート
-
-```css
-/* 良い例 */
-.my-component {
-  padding: var(--spacing-lg);
-  background-color: var(--bg-section);
-  border: var(--border-light);
-  color: var(--text-primary);
-}
-
-/* 悪い例 */
-.my-component {
-  padding: 16px;
-  background-color: #f9f9f9;
-  border: 1px solid #e0e0e0;
-  color: #333;
-}
-```
-
-**詳細情報:**
-
-- [CSSデザインシステム](../architecture/css-design.md) - 完全なガイドラインと使用方法
+スタイルの規約（CSS 変数・共通クラス・命名・ファイル構成・値の直書き禁止）は **[CSSデザインシステム](../architecture/css-design.md)**、コンポーネントの命名と `Button` コンポーネントの使い分けは **[UIコンポーネント](../architecture/ui-components.md)** を正とする。ここには重ねて書かない。
 
 ### パフォーマンス最適化パターン
 
@@ -571,19 +498,20 @@ QuickDashLauncherではCSS変数ベースの統一されたデザインシステ
 - **LauncherFileTabBar.tsx**: ファイルタブの切り替え
 - **LauncherItemList.tsx**: アイテムリスト表示
 - **RegisterModal.tsx**: ドラッグ&ドロップ登録用モーダル
-  - **WindowConfigEditor.tsx**: ウィンドウ設定エディター
-  - **CustomIconEditor.tsx**: カスタムアイコンエディター
-- **AdminItemManagerView.tsx**: 編集モード用のアイテム管理ビュー
-- **AdminItemManagerList.tsx**: 編集モード用のデータ編集テーブル
+  - **RegisterItemForm.tsx**: アイテム 1 件分の入力フォーム（**WindowConfigEditor.tsx**・**CustomIconEditor.tsx** を含む）
+
+#### 管理ウィンドウ（アイテム管理タブ）
+
+- **AdminItemManagerView.tsx**: アイテム管理のビュー
+- **AdminItemManagerList.tsx**: データ編集テーブル
 
 #### ワークスペースウィンドウ
 
-- **WorkspaceApp.tsx**: ワークスペースアプリケーションコンポーネント（444行→216行にリファクタリング）
-  - カスタムフックによる責務分離でコード量を51%削減
+- **WorkspaceApp.tsx**: ワークスペースアプリケーションコンポーネント
   - データ管理、アクション処理、ドラッグ&ドロップを個別のフックに分離
 - **WorkspaceHeader.tsx**: ヘッダーコンポーネント（タイトル、展開/折りたたみ、ピン留めボタン）
-- **WorkspaceGroupedList.tsx**: グループ化されたアイテムリスト（460行→385行にリファクタリング）
-  - グループ化ロジックとコンテキストメニュー管理をフックに抽出
+- **WorkspaceGroupedList.tsx**: グループ化されたアイテムリスト
+  - グループ化ロジックは `useWorkspaceItemGroups` に分離
 - **WorkspaceGroupHeader.tsx**: グループヘッダー（名前編集、色変更、折りたたみ、削除）
 
 ### ダイアログコンポーネント
@@ -609,6 +537,7 @@ QuickDashLauncherではCSS変数ベースの統一されたデザインシステ
 
 - ⚙️ 基本設定
 - ✏️ アイテム管理
+- 🗂️ ワークスペースを表示
 - ─── (区切り線)
 - 🚪 アプリを終了
 
@@ -704,17 +633,14 @@ npm run debug:windows -- --all-desktops --show-excluded --output debug.txt
 
 #### 検索インターフェース
 
-- **クリアボタン**: 全ての検索ボックスに統一されたクリア機能を提供
-  - テキスト入力時に「×」ボタンを表示
-  - クリックで入力内容をクリア、フォーカスを維持
-  - 各画面で統一されたスタイルと動作
+- **クリアボタン**: メイン画面の検索ボックス・アイテム管理の検索・アプリ取込の検索は、入力があるときだけ「×」（`.search-clear-button`）を表示し、クリックで入力を消す。新しく検索欄を作るときもこの形にそろえる
 - **リアルタイム検索**: 入力と同時に結果をフィルタリング
 - **キーボードナビゲーション**: 矢印キー、Enterキーでの操作
 
 #### フォーカス管理
 
-- **自動フォーカス**: ウィンドウ表示時、モーダル表示時に検索ボックスに自動フォーカス
-- **フォーカス維持**: クリアボタンクリック後も検索ボックスにフォーカスを維持
+- **自動フォーカス**: メインウィンドウの表示時に検索ボックスへ、検索欄を持つモーダル（ウィンドウ選択・レイアウト取得・グループのアイテム選択）やワークスペースのフィルタ欄は表示時にその欄へフォーカスする
+- **フォーカス維持**: メイン画面の検索ボックスは、クリアボタンを押した後もフォーカスを保つ
 
 ### アクセシビリティ
 
@@ -734,4 +660,4 @@ npm run debug:windows -- --all-desktops --show-excluded --output debug.txt
 - [ビルドとデプロイ](build-deploy.md) - ビルドシステムと配布方法
 - [テストガイド](../testing/README.md) - テストの実行方法
 - [アイコンシステム](../features/icons.md) - アイコン取得・管理システム
-- [フォルダ取込](../screens/register-modal.md#6-フォルダ取込アイテムの詳細) - フォルダ内容のインポート機能
+- [フォルダ取込](../screens/register-modal.md#12-フォルダ取込アイテムの詳細) - フォルダ内容のインポート機能
