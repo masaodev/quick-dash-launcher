@@ -1,21 +1,6 @@
-# E2Eテスト - クイックリファレンス
+# E2Eテスト - 構成
 
-QuickDashLauncherのE2Eテスト（End-to-End Test）のクイックリファレンスです。
-
-## テスト実行コマンド
-
-```bash
-# 基本コマンド
-npm run test:e2e        # ヘッドレス実行
-npm run test:e2e:ui     # テストUI表示
-npm run test:e2e:debug  # デバッグモード
-npm run test:e2e:headed # ヘッド付き実行
-npm run test:e2e:single first-launch  # 1ファイルだけ実行（引数なしで一覧表示）
-
-# 特定のテストを実行（npx で直接実行する場合は事前に npm run build が必要）
-npx playwright test tests/e2e/specs/item-registration.spec.ts
-npx playwright test -g "アイテムの名前を編集できる"
-```
+QuickDashLauncherのE2Eテスト（End-to-End Test）のフィクスチャ・ヘルパー・テンプレートの構成です。実行コマンド・テストの書き方・トレースの見方は [テストガイド](../../docs/testing/README.md) を参照してください。
 
 ## テストファイル構成
 
@@ -57,21 +42,11 @@ E2Eテストでは目的別のテンプレートを使用します：
 - テンプレートから設定ファイルがコピーされます
 - テスト成功時は自動削除、失敗時はデバッグ用に残されます
 
-## トレース・スクリーンショット
-
-失敗したテストのスクリーンショット・動画・トレースは`test-results/test-artifacts/`に、フィクスチャが記録するトレースは`test-results/traces/`に保存されます。
-
-```bash
-# トレースファイルを開く
-npx playwright show-trace test-results/test-artifacts/<テスト名>/trace.zip
-npx playwright show-trace test-results/traces/trace-<タイムスタンプ>.zip
-```
-
 ## 詳細ドキュメント
 
 より詳しい情報は以下を参照してください：
 
-- **[テストガイド](../../docs/testing/README.md)** - E2Eテストの書き方、ConfigFileHelperの使い方、トレース機能、トラブルシューティング
+- **[テストガイド](../../docs/testing/README.md)** - 実行コマンド、E2Eテストの書き方、ConfigFileHelperの使い方、トレース機能、トラブルシューティング
 - **[テスト関連ディレクトリの概要](../README.md)** - tests/ 全体の構成
 
 ## 関連リンク

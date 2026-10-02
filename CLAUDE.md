@@ -62,8 +62,7 @@ npm run lint && npm run type-check  # 品質チェック
 
 詳細は **[docs/README.md](docs/README.md)** を参照。
 
-- [はじめに](docs/setup/getting-started.md) - 環境構築
-- [開発ガイド](docs/setup/development.md) - 開発フロー・多重起動
+- [開発ガイド](docs/setup/development.md) - 技術スタック・開発フロー・多重起動
 - [システム概要](docs/architecture/overview.md) - アーキテクチャ
 - [CSSデザイン](docs/architecture/css-design.md) - スタイル規則
 - [テストガイド](docs/testing/README.md) - テスト実行方法

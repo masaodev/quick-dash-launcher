@@ -12,6 +12,7 @@ docs/
 ├── screens/        # 画面仕様（主軸：具体的な操作・UI仕様）
 ├── features/       # 横断的機能（補助：複数画面にまたがる機能・概念）
 ├── architecture/   # システム設計（技術実装の詳細）
+│                   #   設計（overview 等）・規約（css-design・ui-components）・辞書（glossary）
 └── testing/        # テスト関連
 ```
 
@@ -26,13 +27,24 @@ docs/
 
 ## クイックリンク
 
-- **[セットアップ・開発](setup/)** - 環境構築・開発フロー・ビルド方法
+- **[セットアップ・開発](setup/README.md)** - 環境構築・開発フロー・ビルド方法
 - **[画面仕様](screens/)** - 画面単位の操作とUI仕様（仕様書の主軸）
 - **[横断的機能](features/)** - 複数画面にまたがる機能・概念
-- **[アーキテクチャ](architecture/)** - 技術実装の詳細
+- **[アーキテクチャ](architecture/README.md)** - 技術実装の詳細（設計・規約・辞書）
   - **[ファイル形式](architecture/file-formats/)** - data.json、workspace.json、settings.jsonの仕様
 - **[テスト](testing/)** - テスト関連
 - **[ドメイン用語集](architecture/glossary.md)** - プロジェクトで使用される用語の定義
+
+## docs の外にある文書
+
+| 文書 | 役割 |
+|------|------|
+| [README.md](../README.md) | 利用者向けの紹介・インストール方法 |
+| [CLAUDE.md](../CLAUDE.md) | Claude Code 向けの作業指示 |
+| [tests/README.md](../tests/README.md) ほか tests/ 配下の各 README | そのフォルダの案内（テストの正本は [テスト](testing/README.md)） |
+| [scripts/README.md](../scripts/README.md) | 開発用スクリプトの説明 |
+| [src/test/manual/README.md](../src/test/manual/README.md) | 手動確認用スクリプトの説明 |
+| [assets/config-readme.md](../assets/config-readme.md) | アプリが実行時に設定フォルダへ `config/README.md` として書き出す雛形 |
 
 ---
 

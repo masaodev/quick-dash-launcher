@@ -50,7 +50,7 @@ model: sonnet
 | 共通UIコンポーネント・CSS の変更 | architecture/ui-components.md、architecture/css-design.md |
 | プロセス構成・データフローの変更 | architecture/overview.md |
 | 用語の追加・変更 | architecture/glossary.md |
-| npm scripts・環境変数・開発手順の変更 | setup/development.md、setup/getting-started.md |
+| npm scripts・環境変数・開発手順の変更 | setup/development.md |
 | ビルド・配布プロセスの変更 | setup/build-deploy.md |
 | テスト構成・テストコマンドの変更 | testing/README.md（リポジトリ直下の tests/README.md・tests/e2e/README.md も） |
 

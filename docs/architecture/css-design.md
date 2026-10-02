@@ -1,617 +1,111 @@
 # CSSデザインシステム
 
-QuickDashLauncherでは、統一されたデザインシステムを実現するため、CSS変数（カスタムプロパティ）ベースのアーキテクチャを採用しています。
+QuickDashLauncherのスタイルは、CSS変数（カスタムプロパティ）を土台にしている。このドキュメントは、コードを読んでも分からない規約を書く。変数やクラスの定義そのものはソースファイルが正である。
 
-## 概要
+## 設計原則
 
-### 設計原則
+- **統一性**: 全てのUIコンポーネントで一貫したスタイルを使う
+- **保守性**: 色やサイズは一箇所（`variables.css`）で管理する
+- **拡張性**: 新しいコンポーネントも同じ変数・共通クラスの上に作る
+- **再利用性**: 繰り返し現れるスタイルは共通クラスにする
 
-- **統一性**: 全てのUIコンポーネントで一貫したスタイルを使用
-- **保守性**: 色やサイズの変更を一箇所で管理
-- **拡張性**: 新しいコンポーネントを簡単にデザインシステムに統合
-- **再利用性**: 共通のスタイルパターンを再利用可能なクラスとして提供
+## ファイル構成
 
-### ファイル構成
+正は `src/renderer/styles/` 以下。構成の考え方は次の 3 層である。
 
-```
-src/renderer/styles/
-├── index.css                    # グローバルリセット・ベーススタイル
-├── variables.css                # CSS変数定義（色・サイズ・間隔など）
-├── common.css                   # 共通ユーティリティクラス
-├── splash.css                   # スプラッシュ画面
-└── components/                  # コンポーネント別スタイル
-    ├── AdminItemManager.css     # アイテム管理（編集モード）
-    ├── AdminWindow.css          # 管理ウィンドウ
-    ├── AlertDialog.css          # 通知ダイアログ
-    ├── AppImport.css            # アプリインポート
-    ├── BackupSnapshotModal.css  # バックアップスナップショットモーダル
-    ├── BookmarkAutoImport.css   # ブックマーク自動インポート
-    ├── BookmarkImport.css       # ブックマークインポート
-    ├── Button.css               # 共通ボタンコンポーネント
-    ├── ClipboardItemEditor.css  # クリップボードアイテムエディター
-    ├── ColorPicker.css          # カラーピッカー
-    ├── ConfirmDialog.css        # 確認ダイアログ
-    ├── FilePickerDialog.css     # ファイル選択ダイアログ
-    ├── GroupItemSelectorModal.css  # グループアイテム選択モーダル
-    ├── Header.css               # ヘッダー
-    ├── HotkeyInput.css          # ホットキー入力
-    ├── IconProgressDetailModal.css # アイコン進捗詳細モーダル
-    ├── LauncherIconProgress.css # アイコン進捗バー
-    ├── LauncherItemCountDisplay.css # アイテム数表示
-    ├── LauncherItemList.css     # アイテムリスト
-    ├── MemoViewModal.css        # メモ表示モーダル
-    ├── MissingIconNotice.css    # アイコン欠落通知
-    ├── Modal.css                # モーダル共通
-    ├── RegisterModal.css        # 登録モーダル
-    ├── SetupFirstLaunch.css     # 初回起動セットアップ
-    ├── UrlConverterMenu.css     # URL変換メニュー
-    ├── WindowSelectorModal.css  # ウィンドウ選択モーダル
-    └── WorkspaceWindow.css      # ワークスペースウィンドウ
-```
+| ファイル                | 役割                                                                                        |
+| ----------------------- | ------------------------------------------------------------------------------------------- |
+| `index.css`             | グローバルリセット・ベーススタイル。`variables.css` と `common.css` をここで `@import` する |
+| `variables.css`         | CSS変数（デザイントークン）の定義                                                           |
+| `common.css`            | 複数画面で使う共通クラス                                                                    |
+| `components/{名前}.css` | コンポーネント単位のスタイル。対応するコンポーネント（`.tsx`）でインポートする              |
+
+新しいコンポーネントのスタイルは `components/` に1ファイル作り、変数と共通クラスを使って書く。
 
 ## CSS変数システム
 
-### 1. カラーパレット
+正は `src/renderer/styles/variables.css`。カテゴリと命名の型は次のとおり。具体的な値は同ファイルを参照する。
 
-#### 基本色
+| カテゴリ                           | 命名の型                                                                                                           |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| 色                                 | `--color-{primary\|success\|danger\|warning\|info\|secondary}`、派生は `-hover` / `-dark` / `-light` / `-alt` など |
+| グレースケール                     | `--color-white`、`--color-gray-{50〜900}`（数字が大きいほど濃い）                                                  |
+| 背景                               | `--bg-{用途}`（例 `--bg-app`、`--bg-selected`、`--bg-hover`、`--bg-danger-light`）                                 |
+| 文字色                             | `--text-{用途}`（例 `--text-primary`、`--text-muted`、`--text-error`）                                             |
+| 余白                               | `--spacing-{xxs\|xs\|sm\|md\|lg\|xl\|2xl\|3xl}`                                                                    |
+| タイポグラフィ                     | `--font-family`、`--font-family-mono`、`--font-size-{xxs〜3xl\|base}`、`--line-height-{tight\|normal\|relaxed}`    |
+| 枠と角丸                           | `--border-{light\|normal\|dark\|primary\|danger}`、`--border-radius`、`--border-radius-{sm\|lg\|xl}`               |
+| 影・フォーカス・トランジション     | `--shadow`、`--shadow-{sm\|lg\|xl}`、`--focus-ring*`、`--transition-{fast\|normal\|slow\|width}`                   |
+| z-index と寸法                     | `--z-{dropdown\|modal}`、`--input-height*`、`--button-height`、`--icon-size*`、`--modal-*`、`--menu-*`             |
+| ワークスペースのグループ色トークン | `--group-color-{トークン}`                                                                                         |
 
-```css
---color-primary: #0078d4; /* メインカラー */
---color-primary-50: rgba(0, 120, 212, 0.1); /* プライマリ薄色（選択状態等） */
---color-primary-hover: #106ebe; /* プライマリホバー */
---color-primary-dark: #1976d2; /* プライマリダーク */
-
---color-success: #28a745; /* 成功・確定 */
---color-success-hover: #218838; /* 成功ホバー */
-
---color-danger: #dc3545; /* 危険・削除 */
---color-danger-hover: #c82333; /* 危険ホバー */
---color-danger-alt: #ff4757; /* 危険代替色 */
---color-danger-alt-hover: #ff5252; /* 危険代替色ホバー */
-
---color-warning: #ffc107; /* 警告 */
-
---color-info: #2196f3; /* 情報 */
---color-info-hover: #1976d2; /* 情報ホバー */
---color-info-light: #42a5f5; /* 情報ライト */
-
---color-secondary: #6c757d; /* セカンダリ */
---color-secondary-hover: #5a6268; /* セカンダリホバー */
-```
-
-#### ワークスペースグループの色トークン
-
-`workspace.json`の`groups[].color`に保存される色トークン（`primary`/`success`/`danger`/`warning`/`info`/`secondary`はテーマ色を参照、それ以外は固有色）。トークン→CSS変数の解決は`src/common/groupColors.ts`の`resolveGroupColorCss()`が行う。
-
-```css
---group-color-primary: var(--color-primary);
---group-color-success: var(--color-success);
---group-color-danger: var(--color-danger);
---group-color-warning: var(--color-warning);
---group-color-info: var(--color-info);
---group-color-secondary: var(--color-secondary);
---group-color-purple: #9c27b0;
---group-color-teal: #00897b;
---group-color-pink: #e91e63;
---group-color-indigo: #3f51b5;
---group-color-orange: #ff5722;
---group-color-cyan: #00bcd4;
-```
-
-#### グレースケール
-
-```css
---color-white: #ffffff;
---color-gray-50: #fafafa; /* 最も薄いグレー */
---color-gray-100: #f8f8f8; /* 極薄グレー */
---color-gray-200: #f5f5f5; /* 薄グレー */
---color-gray-300: #f0f0f0; /* ライトグレー */
---color-gray-400: #e0e0e0; /* ミディアムグレー */
---color-gray-500: #ccc; /* グレー */
---color-gray-600: #999; /* ダークグレー */
---color-gray-700: #666; /* より濃いグレー */
---color-gray-800: #555; /* 濃いグレー */
---color-gray-900: #333; /* 最も濃いグレー */
-```
-
-#### 背景色
-
-```css
---bg-body: #f0f0f0; /* ページ全体の背景 */
---bg-app: #ffffff; /* アプリケーション背景 */
---bg-header: #f8f8f8; /* ヘッダー背景 */
---bg-section: #f9f9f9; /* セクション背景 */
---bg-selected: #e7f3ff; /* 選択状態 */
---bg-hover: #f0f0f0; /* ホバー状態 */
---bg-input-disabled: #f5f5f5; /* 無効化入力フィールド */
---bg-edited: #fff3cd; /* 編集済みの行 */
---bg-readonly: #f5f5f5; /* 読み取り専用 */
---bg-warning-light: #fff3cd; /* 警告（薄） */
---bg-danger-light: #fff5f5; /* 危険（薄） */
---bg-success-light: #e8f5e9; /* 成功（薄） */
---bg-info-light: #e3f2fd; /* 情報（薄） */
---bg-table-container: #fafafa; /* テーブルコンテナ */
-```
-
-#### テキストカラー
-
-```css
---text-primary: #333; /* メインテキスト */
---text-secondary: #555; /* サブテキスト */
---text-muted: #666; /* 補助テキスト */
---text-disabled: #999; /* 無効化テキスト */
---text-error: #e74c3c; /* エラーメッセージ */
---text-success: #388e3c; /* 成功テキスト */
---text-info: #6c757d; /* 情報テキスト */
---text-light-hover: #ffe6e6; /* 危険ホバー時のライトテキスト */
-```
-
-### 2. スペーシング
-
-```css
---spacing-xxs: 1px; /* 極小間隔 */
---spacing-xs: 4px; /* 最小間隔 */
---spacing-sm: 8px; /* 小間隔 */
---spacing-md: 12px; /* 中間隔 */
---spacing-lg: 16px; /* 大間隔 */
---spacing-xl: 20px; /* 特大間隔 */
---spacing-2xl: 24px; /* 超大間隔 */
---spacing-3xl: 32px; /* 最大間隔 */
-```
-
-### 3. タイポグラフィ
-
-```css
---font-family: 'Meiryo', 'メイリオ', sans-serif;
---font-family-mono: monospace;
-
---font-size-xxs: 10px; /* 最小フォント */
---font-size-xs: 11px; /* 極小フォント */
---font-size-sm: 12px; /* 小フォント */
---font-size-base: 14px; /* 基本フォント */
---font-size-lg: 15px; /* 大フォント */
---font-size-xl: 16px; /* 特大フォント */
---font-size-2xl: 18px; /* 見出し小 */
---font-size-3xl: 20px; /* 見出し大 */
-
---line-height-tight: 1; /* 密な行間 */
---line-height-normal: 1.4; /* 通常の行間 */
---line-height-relaxed: 1.6; /* ゆったりした行間 */
-```
-
-### 4. ボーダー・角丸
-
-```css
---border-light: 1px solid #e0e0e0; /* 薄ボーダー */
---border-normal: 1px solid #ccc; /* 通常ボーダー */
---border-dark: 1px solid #999; /* 濃ボーダー */
---border-primary: 1px solid var(--color-primary); /* プライマリボーダー */
---border-danger: 1px solid var(--color-danger); /* 危険ボーダー */
-
---border-radius-sm: 3px; /* 小角丸 */
---border-radius: 4px; /* 標準角丸 */
---border-radius-lg: 6px; /* 大角丸 */
---border-radius-xl: 8px; /* 特大角丸 */
-```
-
-### 5. シャドウ・エフェクト
-
-```css
---shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1); /* 軽いシャドウ */
---shadow: 0 2px 8px rgba(0, 0, 0, 0.15); /* 通常シャドウ */
---shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.15); /* 大シャドウ */
---shadow-xl: 0 4px 16px rgba(0, 0, 0, 0.2); /* 特大シャドウ */
-
---focus-ring: 0 0 0 1px var(--color-primary); /* フォーカスリング */
---focus-ring-wide: 0 0 0 2px rgba(0, 122, 204, 0.25); /* 広いフォーカスリング */
---focus-ring-danger: 0 0 0 2px rgba(255, 107, 107, 0.25); /* 危険フォーカスリング */
---focus-ring-danger-wide: 0 0 0 4px rgba(255, 107, 107, 0.15); /* 広い危険フォーカスリング */
-
---transition-fast: all 0.1s; /* 高速トランジション */
---transition-normal: all 0.2s; /* 標準トランジション */
---transition-slow: all 0.3s; /* 低速トランジション */
---transition-width: width 0.3s ease; /* 幅のトランジション */
-```
-
-### 6. Z-インデックス・寸法
-
-```css
-/* Z-インデックス */
---z-dropdown: 1000; /* ドロップダウンメニュー */
---z-modal: 2000; /* モーダル */
-
-/* 寸法 */
---input-height-lg: 40px; /* メイン検索ボックスの高さ */
---input-height-sm: 34px; /* その他のテキスト入力欄の高さ */
---input-height: 32px; /* 入力フィールドの高さ（標準） */
---button-height: 32px; /* ボタンの高さ */
---icon-size-sm: 24px; /* 小アイコン */
---icon-size: 32px; /* 標準アイコン */
---scrollbar-width: 8px; /* スクロールバーの幅 */
-
-/* モーダル */
---modal-max-height: 90vh; /* モーダルの最大高さ */
-
-/* メニュー・ドロップダウン */
---menu-width-min: 350px; /* メニューの最小幅 */
---menu-width-max: 450px; /* メニューの最大幅 */
---menu-max-height: 400px; /* メニューの最大高さ */
-```
+- ワークスペースのグループ色トークンは、`workspace.json` の `groups[].color` に保存される値に対応する。`primary`/`success`/`danger`/`warning`/`info`/`secondary` はテーマ色（`--color-*`）を参照し、それ以外（`purple` など）は固有色を持つ。トークンから CSS 変数への解決は `src/common/groupColors.ts` の `resolveGroupColorCss()` が行う。
+- 必要な値が変数にないときは、直書きせず `variables.css` に既存の命名の型に沿って変数を足す。
 
 ## 共通ユーティリティクラス
 
+正は `src/renderer/styles/common.css` と `src/renderer/styles/components/Button.css`。
+
 ### ボタンクラス
 
-> **推奨**: モーダルのアクションボタンやフォームの送信ボタンには、[Buttonコンポーネント](ui-components.md#buttonコンポーネント)を使用してください。以下のクラスは特殊なケース（ツールバー、タブ等）向けです。
+> **推奨**: モーダルのアクションボタンやフォームの送信ボタンには、[Buttonコンポーネント](ui-components.md#buttonコンポーネント)を使用する。以下のクラスは特殊なケース（ツールバー、タブ等）向けである。
 
-#### .btn-base
+| クラス                                                       | 定義         | 用途                                                                                       |
+| ------------------------------------------------------------ | ------------ | ------------------------------------------------------------------------------------------ |
+| `.btn`                                                       | `Button.css` | Buttonコンポーネントのベース                                                               |
+| `.btn-primary` / `.btn-danger` / `.btn-info` / `.btn-cancel` | `Button.css` | 状態別の色（Buttonコンポーネントの `variant`）                                             |
+| `.btn-sm` / `.btn-lg`                                        | `Button.css` | サイズ（`md` はクラスなし）                                                                |
+| `.btn-full-width`                                            | `Button.css` | 幅いっぱいに広げる                                                                         |
+| `.btn-base`                                                  | `common.css` | Buttonコンポーネントを使わないボタン向けのベース（レガシー）                               |
+| `.action-btn`                                                | `common.css` | 32x32 の正方形アイコンボタン（メインウィンドウのヘッダー：登録・設定・更新・ピン留めなど） |
 
-基本的なボタンスタイル（`common.css` で定義）。ボタンバリエーション（`.btn-primary` 等）および `.btn-sm` / `.btn-lg` は `Button.css` で定義。
+### その他の共通クラス
 
-```css
-.btn-base {
-  padding: var(--spacing-sm) var(--spacing-lg);
-  font-size: var(--font-size-base);
-  font-family: var(--font-family);
-  border: var(--border-normal);
-  border-radius: var(--border-radius);
-  background-color: var(--color-white);
-  cursor: pointer;
-  transition: var(--transition-normal);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 400;
-}
-```
-
-#### .btn-primary / .btn-danger / .btn-info / .btn-cancel
-
-状態別ボタンスタイル（`Button.css` で定義）
-
-#### .btn-sm / .btn-lg
-
-サイズバリエーション（`Button.css` で定義）
-
-```css
-.btn-sm {
-  padding: var(--spacing-xs) var(--spacing-md);
-  font-size: var(--font-size-sm);
-  height: var(--input-height-sm); /* 34px */
-}
-
-.btn-lg {
-  padding: var(--spacing-md) var(--spacing-xl);
-  font-size: var(--font-size-lg);
-}
-```
-
-**注意**: サイズバリエーションは `-sm` / `-lg` サフィックスで統一されています。`-small` や `-large` は使用しません。
-
-#### .action-btn
-
-32x32ピクセルの正方形アクションボタン（ヘッダーのアイコンボタン用）
-
-```css
-.action-btn {
-  width: var(--button-height);
-  height: var(--button-height);
-  border: var(--border-normal);
-  background-color: var(--color-white);
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  font-size: var(--font-size-lg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: var(--transition-normal);
-}
-```
-
-**用途**: 登録ボタン、設定ボタン、更新ボタン、ピン留めボタンなど
-
-### レイアウトクラス
-
-#### .flex-center
-
-中央配置フレックスボックス
-
-```css
-.flex-center {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-```
-
-#### .flex-between
-
-両端配置フレックスボックス
-
-```css
-.flex-between {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-```
-
-### フォームクラス
-
-#### .input-base
-
-基本的な入力フィールドスタイル（`common.css` で定義）
-
-```css
-.input-base {
-  width: 100%;
-  height: var(--input-height-sm);
-  padding: var(--spacing-xs) var(--spacing-md);
-  font-size: var(--font-size-base);
-  font-family: var(--font-family);
-  border: var(--border-normal);
-  border-radius: var(--border-radius);
-  outline: none;
-  transition: var(--transition-normal);
-  box-sizing: border-box;
-}
-```
-
-#### .select-base
-
-セレクトボックス用スタイル（`common.css` で定義）
-
-```css
-.select-base {
-  width: 100%;
-  padding: var(--spacing-sm) var(--spacing-sm);
-  font-size: var(--font-size-base);
-  font-family: var(--font-family);
-  border: var(--border-normal);
-  border-radius: var(--border-radius);
-  outline: none;
-  transition: var(--transition-normal);
-}
-```
-
-#### .form-group
-
-ラベル付きフォームグループ（`common.css` で定義）
-
-```css
-.form-group {
-  margin-bottom: var(--spacing-md);
-}
-```
-
-#### 検索ボックスパターン
-
-クリアボタン付き検索入力欄の共通パターン
-
-```css
-/* コンテナ */
-.search-input-container {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-/* 入力フィールド */
-.search-input {
-  width: 100%;
-  padding: var(--spacing-sm) var(--spacing-md);
-  padding-right: calc(var(--spacing-md) + 24px); /* クリアボタン分の余白 */
-  font-size: var(--font-size-base);
-  border: var(--border-normal);
-  border-radius: var(--border-radius);
-  outline: none;
-  transition: var(--transition-normal);
-}
-
-.search-input:focus {
-  border-color: var(--color-primary);
-  box-shadow: var(--focus-ring);
-}
-
-/* クリアボタン */
-.search-clear-button {
-  position: absolute;
-  right: var(--spacing-sm);
-  top: 50%;
-  transform: translateY(-50%);
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  background: transparent;
-  border: none;
-  border-radius: 50%; /* 丸いボタン */
-  font-size: 18px;
-  font-weight: bold; /* 太字で視認性向上 */
-  line-height: 1;
-  color: var(--color-gray-600);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all var(--transition-normal);
-}
-
-.search-clear-button:hover {
-  background-color: var(--color-gray-600);
-  color: var(--color-white);
-  transform: translateY(-50%) scale(1.1); /* ホバー時に拡大 */
-}
-
-.search-clear-button:active {
-  background-color: var(--color-gray-700);
-  transform: translateY(-50%) scale(0.95); /* クリック時に縮小 */
-}
-```
+| 区分             | クラス                                                                                                             | 用途                                                   |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------ |
+| タブバー         | `.tab-bar`、`.tab-button`、`.tab-count`、`.tab-name-input`                                                         | タブ切り替えとアイテム数表示、タブ名の編集             |
+| フォーム         | `.input-base`、`.select-base`、`.form-group`、`.validation-error`                                                  | 入力欄・セレクト・ラベル付きの行・エラー表示           |
+| レイアウト       | `.flex-center`、`.flex-between`、`.flex-start`、`.flex-end`、`.flex-col`、`.flex-wrap`、`.flex-1`、`.gap-{xs〜xl}` | フレックスボックスの配置と間隔                         |
+| テーブル         | `.table-base`                                                                                                      | 一覧表（行の `selected`/`readonly`/`edited` 状態つき） |
+| モーダル         | `.modal-overlay-base`、`.modal-content-base`、`.modal-header-base`、`.modal-footer-base`                           | モーダルの骨格                                         |
+| ユーティリティ   | `.loading-overlay`、`.text-*`、`.font-*`、`.mb-*`、`.cursor-*`、`.overflow-*`、`.no-drag`/`.drag`                  | 単一目的の小さな指定                                   |
+| 透過度スライダー | `.opacity-control`、`.opacity-slider`、`.opacity-value`                                                            | ワークスペース設定の透過度                             |
 
 ### 閉じる・削除ボタンクラス
 
-#### .close-btn
+`.close-btn`（`common.css`）はモーダルを閉じるボタンの共通クラスである。背景・枠なしで、ホバー時に背景色と文字色が変わる。
 
-モーダル閉じるボタンの共通スタイル（`common.css` で定義）
+画面ごとの×ボタン（`.search-clear-button`、`.modal-close-btn`、`.progress-close-btn`、`.workspace-item-delete-btn`、`.remove-group-item-btn` など）は各コンポーネントの CSS で定義している。これらは次の規約でそろえる。
 
-```css
-.close-btn {
-  background: none;
-  border: none;
-  font-size: var(--font-size-2xl);
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: var(--spacing-xs);
-  border-radius: var(--border-radius);
-  line-height: var(--line-height-tight);
-  transition: var(--transition-normal);
-}
+- 丸いボタンにする（`border-radius: 50%`）
+- ×は太字にする（`font-weight: bold`）
+- ホバー時は背景色を変えて拡大し（`scale(1.1)`）、クリック時は縮小する（`scale(0.95)`）
+- 削除系は赤、それ以外（閉じる・クリア）はグレーにする
+- カードの上に重ねる削除ボタンは、白背景・枠線・影で背景から浮かせる（例 `.workspace-item-delete-btn`）
 
-.close-btn:hover {
-  background-color: var(--bg-hover);
-  color: var(--text-primary);
-}
-```
+## 命名規則
 
-**用途別の実装例:**
+- **変数名**: `--category-property-variant` 形式（例 `--color-primary-hover`、`--spacing-lg`、`--border-radius-xl`）
+- **クラス名**: ハイフン区切りのケバブケース（例 `.btn-primary`、`.modal-overlay`、`.form-group`）
+- **サイズのサフィックス**: `-sm` / `-lg` に統一する。`-small` / `-large` は使わない
+  - 正: `.btn-sm`、`.btn-danger-sm`、`.btn-primary-lg`
+  - 誤: `.btn-danger-small`、`.btn-primary-large`
+- **ボタン**: 基本形は `.btn-{variant}`。コンポーネント固有のサイズ違いは `.btn-{variant}-sm` / `.btn-{variant}-lg`
+- **アクションボタン**: 32x32 の正方形アイコンボタンは `.action-btn` に一本化する。`.action-button` のような紛らわしい別名は作らない
+- **コンポーネント要素**: `.{component}-{element}`（例 `.modal-overlay`、`.item-icon`）
+- **状態クラス**: `.{component}.{state}`（例 `.item.selected`、`.tab-button.active`）
 
-| ボタン種類                   | クラス名                   | 用途                                                 | サイズ  | 色             |
-| ---------------------------- | -------------------------- | ---------------------------------------------------- | ------- | -------------- |
-| `.search-clear-button`       | 検索クリアボタン           | ヘッダー、編集モード、ブックマークインポートの検索欄 | 24x24px | グレー         |
-| `.modal-close-btn`           | モーダル閉じるボタン       | アイコン取得進捗詳細モーダルのヘッダー               | 32x32px | グレー         |
-| `.progress-close-btn`        | 進捗バー閉じるボタン       | アイコン取得進捗バー                                 | 28x28px | グレー         |
-| `.workspace-item-delete-btn` | ワークスペース削除ボタン   | ワークスペースアイテムカード                         | 24x24px | 赤色（削除系） |
-| `.remove-group-item-btn`     | グループアイテム削除ボタン | 登録モーダルのグループアイテムチップ                 | 20x20px | 赤色（削除系） |
+## 値の使用優先順位
 
-**共通の特徴:**
+1. **CSS変数を最優先**: 色・サイズ・余白などは `variables.css` の変数を使う
+2. **共通クラスを活用**: 書く前に `common.css` に既存のクラスがないか確認する
+3. **値の直書きは禁止**: 色やサイズを直接書かない。必要な値は変数として追加する
 
-- 丸いボタンデザイン（`border-radius: 50%`）
-- 太字の×で視認性向上（`font-weight: bold`）
-- ホバー時に背景色が変化してスケールアップ（`scale(1.1)`）
-- クリック時のフィードバック（`scale(0.95)`に縮小）
-- 削除系は赤色、その他はグレー色で用途を明確化
-- 白い縁取りや影を追加してコントラスト向上（削除ボタン）
+## レスポンシブ対応
 
-## 使用方法
-
-### 1. 新しいコンポーネントの作成
-
-新しいコンポーネントを作成する際は：
-
-1. `src/renderer/styles/components/` にCSSファイルを作成
-2. CSS変数を使用してスタイルを定義
-3. 可能な限り共通クラスを活用
-4. コンポーネントファイルでCSSをインポート
-
-```tsx
-// MyComponent.tsx
-import React from 'react';
-import '../styles/components/MyComponent.css';
-
-const MyComponent = () => {
-  return (
-    <div className="my-component">
-      <button className="btn-base btn-primary">アクション</button>
-    </div>
-  );
-};
-```
+メディアクエリの条件部分では CSS 変数が使えないため、ブレークポイントは px を直接書く。ブロック内のプロパティ値には通常どおり変数を使う。
 
 ```css
-/* MyComponent.css */
-.my-component {
-  padding: var(--spacing-lg);
-  background-color: var(--bg-section);
-  border: var(--border-light);
-  border-radius: var(--border-radius-xl);
-}
-
-.my-component .custom-element {
-  color: var(--text-secondary);
-  font-size: var(--font-size-sm);
-  margin-bottom: var(--spacing-md);
-}
-```
-
-### 2. 色の変更
-
-デザインシステム全体の色を変更する場合：
-
-1. `variables.css` の該当する変数を編集
-2. 変更は全コンポーネントに自動適用
-
-```css
-/* variables.css */
-:root {
-  --color-primary: #0066cc; /* 青を変更 */
-  --color-success: #22c55e; /* 緑を変更 */
-}
-```
-
-### 3. 新しい変数の追加
-
-新しいスタイル値が必要な場合：
-
-1. `variables.css` に新しい変数を追加
-2. 既存のパターンに従った命名規則を使用
-
-```css
-/* variables.css */
-:root {
-  /* 新しいカラーバリエーション */
-  --color-accent: #ff6b35;
-  --color-accent-hover: #e55a2b;
-
-  /* 新しいスペーシング */
-  --spacing-4xl: 48px;
-
-  /* 新しいフォントウェイト */
-  --font-weight-medium: 500;
-  --font-weight-bold: 700;
-}
-```
-
-## ベストプラクティス
-
-### 1. 命名規則
-
-- **変数名**: `--category-property-variant` 形式
-  - 例: `--color-primary-hover`, `--spacing-lg`, `--border-radius-xl`
-- **クラス名**: シンプルなケバブケース（ハイフン区切り）
-  - 例: `.btn-primary`, `.modal-overlay`, `.form-group`, `.action-btn`
-
-#### 命名規則の統一ガイドライン
-
-プロジェクト全体で以下の命名パターンに統一されています：
-
-**ボタンクラス**:
-
-- 基本形: `.btn-{variant}` （例: `.btn-primary`, `.btn-danger`）
-- サイズバリエーション: `.btn-{variant}-sm` または `.btn-{variant}-lg`
-  - ✅ 正: `.btn-danger-sm`, `.btn-primary-lg`
-  - ❌ 誤: `.btn-danger-small`, `.btn-primary-large`
-
-**アクションボタン**:
-
-- `.action-btn` : 32x32ピクセルの正方形アイコンボタン（メインウィンドウヘッダー用、`common.css` で定義）
-
-**コンポーネント要素**:
-
-- パターン: `.{component}-{element}` （例: `.modal-overlay`, `.item-icon`）
-- 状態クラス: `.{component}.{state}` （例: `.item.selected`, `.btn-primary.disabled`）
-
-### 2. 値の使用優先順位
-
-1. **CSS変数を最優先**: 必ずvariables.cssの変数を使用
-2. **共通クラスを活用**: 既存のユーティリティクラスがないか確認
-3. **ハードコード値は禁止**: 直接的な色指定やサイズ指定は避ける
-
-### 3. レスポンシブ対応
-
-メディアクエリのブレークポイントは直接ピクセル値で記述します（CSS変数はメディアクエリ内では使用できないため）：
-
-```css
-/* メディアクエリの記述例 */
 @media (max-width: 600px) {
   .responsive-element {
     font-size: var(--font-size-sm);
@@ -619,107 +113,3 @@ const MyComponent = () => {
   }
 }
 ```
-
-### 4. ダークモード準備
-
-将来のダークモード対応を考慮した変数設計：
-
-```css
-/* variables.css */
-:root {
-  --theme-bg-primary: var(--bg-app);
-  --theme-text-primary: var(--text-primary);
-}
-
-/* ダークモード用（将来実装時） */
-[data-theme='dark'] {
-  --theme-bg-primary: #1a1a1a;
-  --theme-text-primary: #ffffff;
-}
-```
-
-## トラブルシューティング
-
-### よくある問題
-
-1. **スタイルが適用されない**
-   - CSS変数が正しく定義されているか確認
-   - import文の順序を確認（variables.css → common.css → component.css）
-
-2. **色が意図したものと違う**
-   - ブラウザの開発者ツールで実際の変数値を確認
-   - カスケードの優先順位を確認
-
-3. **レスポンシブ対応がうまくいかない**
-   - メディアクエリの書き方を確認
-   - メディアクエリ内ではCSS変数は使用できないため、直接ピクセル値で記述すること
-
-### デバッグ方法
-
-```css
-/* デバッグ用クラス */
-.debug-vars {
-  --debug-primary: var(--color-primary);
-  --debug-spacing: var(--spacing-lg);
-}
-
-/* ブラウザ開発者ツールでComputed Styleを確認 */
-```
-
-## 命名規則の変更履歴
-
-### Phase 4.2 (2025-12) - CSS命名規則の統一
-
-プロジェクト全体のCSS命名規則を調査し、不整合を修正しました。
-
-**修正内容**:
-
-1. **アクションボタンの命名整理**
-   - `.action-btn` : 32x32正方形アイコンボタン（メインウィンドウヘッダー用、`common.css`で定義）
-   - 紛らわしかった `.action-button` と `.section-action-button` は削除済み
-
-2. **サイズバリエーションの統一**
-   - 変更前: `AdminWindow.css`で `.btn-secondary-small`, `.btn-danger-small` を使用
-   - 変更後: `.btn-secondary-sm`, `.btn-danger-sm` に統一（`common.css`の`.btn-sm`に合わせる）
-   - 影響範囲: 1つのコンポーネント（SettingsTab）
-
-**結果**: 全てのCSSクラス名が一貫したハイフン区切り命名規則に統一され、保守性が向上しました。
-
-### Phase 4.5 (2025-12-14) - ×ボタンスタイルの統一
-
-全画面の×ボタン（削除ボタン、検索クリアボタン、モーダル閉じるボタン）のスタイルを統一しました。
-
-**修正内容**:
-
-1. **共通デザインパターンの確立**
-   - 丸いボタンデザイン（`border-radius: 50%`）に統一
-   - 太字の×で視認性向上（`font-weight: bold`）
-   - ホバー時に背景色が変化してスケールアップ（`scale(1.1)`）
-   - クリック時のフィードバック（`scale(0.95)`に縮小）
-   - 削除系は赤色、その他はグレー色で用途を明確化
-
-2. **修正したCSSクラス**
-   - `.workspace-item-delete-btn` - ワークスペースアイテムの削除ボタン
-   - `.remove-group-item-btn` - 登録モーダルのグループアイテム削除ボタン
-   - `.search-clear-button` - ヘッダー、編集モード、ブックマークインポートの検索クリアボタン
-   - `.progress-close-btn` - アイコン取得進捗バーの閉じるボタン
-   - `.modal-close-btn` - アイコン取得進捗詳細モーダルの閉じるボタン
-
-3. **影響範囲**
-   - 7つのCSSファイル（WorkspaceWindow.css、RegisterModal.css、Header.css、BookmarkImport.css、AdminItemManager.css、LauncherIconProgress.css、IconProgressDetailModal.css）
-   - UX改善: ボタンが押せることをより明確に伝達、操作時の視覚的フィードバックを追加
-
-**結果**: 全画面で統一された×ボタンのデザインパターンが確立され、ユーザビリティが向上しました。
-
----
-
-## まとめ
-
-このCSSデザインシステムにより、QuickDashLauncherは：
-
-- **一貫したUI体験**を提供
-- **効率的な開発プロセス**を実現
-- **容易なメンテナンス**を可能にする
-- **将来の機能拡張**に柔軟に対応
-
-新しい機能や修正を行う際は、このドキュメントを参照して統一されたスタイルを維持してください。
