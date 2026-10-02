@@ -244,18 +244,26 @@ GIFシナリオ3: ウィンドウ制御（マルチディスプレイでの価�
 
 ### インストール方法
 
-#### 1. インストーラー版（推奨）
+#### 1. winget
+
+```powershell
+winget install masaodev.quick-dash-launcher
+```
+
+更新は `winget upgrade masaodev.quick-dash-launcher`。winget には正式版だけを公開しています（ベータ版は Releases のプレリリースから入手できます）。
+
+#### 2. インストーラー版
 
 1. [Releases](https://github.com/masaodev/quick-dash-launcher/releases)から最新版をダウンロード
 2. `QuickDashLauncher.Setup.x.x.x.exe`を実行
 3. インストール完了後、自動的に起動します
 
-#### 2. ポータブル版
+#### 3. ポータブル版
 
 1. [Releases](https://github.com/masaodev/quick-dash-launcher/releases)から`QuickDashLauncher.x.x.x.exe`をダウンロード
 2. 任意のフォルダに置いて実行（インストール不要）
 
-#### 3. ソースからビルド
+#### 4. ソースからビルド
 
 ```bash
 git clone https://github.com/masaodev/quick-dash-launcher.git
