@@ -39,8 +39,19 @@ let isModalMode: boolean = false;
 let isShowingWindow: boolean = false; // ウィンドウ表示中フラグ（blur無視用）
 let showingWindowTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
-/** ワークスペース＋切り離しウィンドウ復元完了までのフォーカス安定猶予（ms） */
+let windowShownAt = 0; // メインウィンドウを最後に表示した時刻（blur無視用）
+
+/**
+ * ワークスペース＋切り離しウィンドウ復元完了までのフォーカス安定猶予（ms）
+ * この間のblurは、フォーカスがQDLの外へ移ったときだけ非表示にする
+ */
 const WINDOW_FOCUS_STABILIZATION_DELAY_MS = 1500;
+
+/** 表示直後のフォーカスの揺れを無条件に無視する時間（ms） */
+const BLUR_IGNORE_AFTER_SHOW_MS = 200;
+
+/** blur後にフォーカスの移動先を確認するまでの待ち時間（ms） */
+const BLUR_FOCUS_CHECK_DELAY_MS = 50;
 
 /**
  * hideDetachedWithMainWindow 設定が有効なら切り離しウィンドウを表示/非表示にする（即座）
@@ -119,6 +130,36 @@ function hideMainWindowInternal(): void {
 }
 
 /**
+ * フォーカス喪失時にメインウィンドウを非表示にしてよい状態か
+ */
+function shouldHideOnBlur(): boolean {
+  return (
+    !!mainWindow &&
+    !mainWindow.webContents.isDevToolsOpened() &&
+    windowPinMode === 'normal' &&
+    !isFirstLaunchMode &&
+    !isModalMode
+  );
+}
+
+/**
+ * blur後、フォーカスがQDLの外へ移っていればメインウィンドウを非表示にする
+ * ワークスペース・切り離しウィンドウへの移動や、メインウィンドウへの復帰では非表示にしない
+ */
+function hideMainWindowIfFocusLeftApp(): void {
+  setTimeout(() => {
+    if (!mainWindow || mainWindow.isDestroyed() || !mainWindow.isVisible()) return;
+    if (!shouldHideOnBlur()) return;
+    if (mainWindow.isFocused()) return;
+    if (getIsDetachedWindowFocused()) return;
+    if (getIsWorkspaceWindowFocused()) return;
+
+    hideMainWindowInternal();
+    hideDetachedWindowsAfterBlur();
+  }, BLUR_FOCUS_CHECK_DELAY_MS);
+}
+
+/**
  * アプリケーションのメインウィンドウを作成し、初期設定を行う
  * 初期状態では通常モード（非最前面）で、フレームレスで中央に配置される
  * フォーカス喪失時の自動非表示やESCキーでの終了など、ランチャーアプリとしての動作を設定
@@ -164,19 +205,23 @@ export async function createWindow(): Promise<BrowserWindow> {
   // ワークスペース・オーバーレイはこのレンダラーから window.open で開き、プロセスを共有する
   registerChildWindowOpener('main', mainWindow.webContents);
 
-  mainWindow.on('blur', () => {
-    const shouldHide =
-      mainWindow &&
-      !mainWindow.webContents.isDevToolsOpened() &&
-      windowPinMode === 'normal' &&
-      !isFirstLaunchMode &&
-      !isModalMode &&
-      !isShowingWindow;
+  mainWindow.on('show', () => {
+    windowShownAt = Date.now();
+  });
 
-    if (shouldHide) {
+  mainWindow.on('blur', () => {
+    if (!shouldHideOnBlur()) return;
+
+    if (!isShowingWindow) {
       hideMainWindowInternal();
       hideDetachedWindowsAfterBlur();
+      return;
     }
+
+    // 表示直後（フォーカス安定猶予中）は、QDL自身のウィンドウへのフォーカス移動を無視し、
+    // QDLの外へ移ったときだけ非表示にする
+    if (Date.now() - windowShownAt < BLUR_IGNORE_AFTER_SHOW_MS) return;
+    hideMainWindowIfFocusLeftApp();
   });
 
   mainWindow.on('closed', () => {

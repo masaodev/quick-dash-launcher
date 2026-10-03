@@ -9,17 +9,20 @@
 ### ピン留めモードの種類
 
 **通常モード (`normal`)**
+
 - フォーカスが外れると自動的に非表示になります
 - アイテム起動後も自動的に非表示になります
 - 最上面には表示されません（`alwaysOnTop: false`）
 - デフォルトモードです
 
 **常に最上面モード (`alwaysOnTop`)**
+
 - 常に最上面に表示されます（`alwaysOnTop: true`）
 - フォーカスが外れても非表示になりません
 - アイテム起動後も表示されたままです
 
 **表示固定モード (`stayVisible`)**
+
 - 最上面には表示されません（`alwaysOnTop: false`）
 - フォーカスが外れても非表示になりません
 - アイテム起動後も表示されたままです
@@ -53,6 +56,7 @@ ipcMain.handle(IPC_CHANNELS.OPEN_ITEM, async (_event, item: LauncherItem) => {
 - `alwaysOnTop`/`stayVisible`モード: ウィンドウを表示したまま
 
 この動作は以下の操作すべてに適用されます：
+
 - 個別アイテムの起動 (`open-item`)
 - 親フォルダを開く (`open-parent-folder`)
 - グループアイテムの実行 (`execute-group`)
@@ -79,6 +83,7 @@ ipcMain.handle(IPC_CHANNELS.OPEN_ITEM, async (_event, item: LauncherItem) => {
 ウィンドウが非表示になる際、レンダラープロセスに`window-hidden`イベントが送信されます。これにより、ウィンドウ非表示時に必要な前処理（タブのリセット、ウィンドウ検索モードのリセット等）を実行できます。
 
 **処理フロー:**
+
 1. ユーザーがホットキーを押下、またはフォーカスアウト等でウィンドウが非表示になる
 2. メインプロセスの`hideMainWindow`関数が実行される
 3. ウィンドウを非表示にする直前に、`window-hidden`イベントを全レンダラープロセスに送信
@@ -88,11 +93,13 @@ ipcMain.handle(IPC_CHANNELS.OPEN_ITEM, async (_event, item: LauncherItem) => {
 5. ウィンドウが非表示になる
 
 **メリット:**
+
 - 次回ウィンドウを表示する際、既に前処理が完了しているため、表示遅延が発生しない
 - 例1: タブをデフォルト位置にリセットする処理をウィンドウ非表示時に実行することで、次回表示時は既にリセット済み
 - 例2: ウィンドウ検索モード（`searchMode='window'`）を通常モードにリセットすることで、次回表示時にモード切り替えのラグが発生しない
 
 **実装場所:**
+
 - メインプロセス: `src/main/windowManager.ts` - `hideMainWindowInternal()`関数
 - プリロードAPI: `src/main/preload.ts` - `onWindowHidden`イベントハンドラー
 - レンダラー:
@@ -108,11 +115,13 @@ ipcMain.handle(IPC_CHANNELS.OPEN_ITEM, async (_event, item: LauncherItem) => {
 ウィンドウの表示位置は`windowPositionMode`設定によって以下の4つのモードから選択できます：
 
 **1. 画面中央（固定）モード (`center`)**
+
 - 常にプライマリモニターの中央にウィンドウを表示します
 - デフォルトモードです
 - 実装: `mainWindow.center()`を呼び出し
 
 **2. 画面中央（自動切替）モード (`cursorMonitorCenter`)**
+
 - マウスカーソルがあるモニターの中央にウィンドウを表示します（マルチモニター推奨）
 - マルチモニター環境で、作業中のモニターにウィンドウを表示したい場合に便利です
 - シングルモニター環境では「画面中央（固定）」モードと同じ動作になります
@@ -120,6 +129,7 @@ ipcMain.handle(IPC_CHANNELS.OPEN_ITEM, async (_event, item: LauncherItem) => {
 - 実装: `screen.getCursorScreenPoint()`でカーソル位置を取得し、`screen.getDisplayNearestPoint()`で対象モニターを特定、その中央座標を計算してウィンドウを配置
 
 **3. カーソル付近モード (`cursor`)**
+
 - マウスカーソルの近くにウィンドウを表示します（検索入力がしやすい位置）
 - カーソル位置がウィンドウの左上から右へ100px、下へ40px付近（検索入力欄の位置）に来るように計算されます
 - 画面外にはみ出さないように自動的に位置調整が行われます
@@ -127,6 +137,7 @@ ipcMain.handle(IPC_CHANNELS.OPEN_ITEM, async (_event, item: LauncherItem) => {
 - 実装: `screen.getCursorScreenPoint()`でカーソル位置を取得し、オフセット（X: 100px, Y: 40px）を考慮してウィンドウ位置を計算
 
 **4. 固定位置（手動設定）モード (`fixed`)**
+
 - ウィンドウを移動した位置を記憶して、次回も同じ位置に表示します
 - 初回表示時（`windowPositionX=0, windowPositionY=0`の場合）は画面中央に配置され、その位置が自動保存されます
 - ウィンドウの`moved`イベントを監視し、ユーザーがウィンドウを移動すると自動的に位置を保存します
@@ -135,21 +146,25 @@ ipcMain.handle(IPC_CHANNELS.OPEN_ITEM, async (_event, item: LauncherItem) => {
 #### 実装詳細
 
 **関数: `setWindowPosition(mode?: WindowPositionMode)`**
+
 - 指定されたモードに応じてウィンドウを適切な位置に配置します
 - `mode`が省略された場合は、設定ファイルから`windowPositionMode`を読み込みます
 - 実装場所: `src/main/windowManager.ts`
 
 **関数: `saveWindowPosition()`**
+
 - `fixed`モードの場合のみ、現在のウィンドウ位置を設定ファイルに保存します
 - ウィンドウの`moved`イベントハンドラーから自動的に呼び出されます
 - 実装場所: `src/main/windowManager.ts`
 
 **関数: `showMainWindow()`**
+
 - ホットキー押下時にウィンドウを表示する際に使用されます
 - 内部で`setWindowPosition()`を呼び出して位置を設定してから表示します
 - 実装場所: `src/main/windowManager.ts`
 
 **関数: `showWindowAtCenter()`**
+
 - タスクトレイメニューの「画面中央に表示」から呼び出されます
 - 設定に関係なく、強制的に画面中央に表示します
 - 実装場所: `src/main/windowManager.ts`
@@ -190,6 +205,7 @@ ipcMain.handle(IPC_CHANNELS.OPEN_ITEM, async (_event, item: LauncherItem) => {
 ### ウィンドウ非表示の判定
 
 - **blur イベント**: `windowPinMode === 'normal'` で、初回起動モード・モーダルモードでない場合のみ非表示
+  - 表示直後 1500ms（ワークスペース・切り離しウィンドウの表示待ち）は、50ms 後にフォーカスの移動先を確認し、QDL の外へ移ったときだけ非表示にする（メインウィンドウへの復帰・ワークスペース・切り離しウィンドウへの移動では隠れない）。表示から 200ms 以内の blur は無視する
 - **アイテム起動時**: `windowPinMode === 'normal'`の場合のみ非表示
 - **モーダルモード時**: `isModalMode`フラグで判定 → 子ウィンドウが開いている間は非表示にしない
 
@@ -219,6 +235,7 @@ ipcMain.handle(IPC_CHANNELS.OPEN_ITEM, async (_event, item: LauncherItem) => {
 ## 管理ウィンドウ制御
 
 ### 実装場所
+
 - **メインプロセス**: `src/main/adminWindowManager.ts`
 - **レンダラー**: `src/renderer/AdminApp.tsx`
 
@@ -252,6 +269,7 @@ adminWindow.webContents.on('before-input-event', (event, input) => {
 ```
 
 管理ウィンドウを閉じるには、以下の方法を使用します：
+
 - ウィンドウ右上の閉じるボタン（×）をクリック
 - 再度Ctrl+Eを押してトグル
 - 設定メニューから「閉じる」を選択
@@ -268,6 +286,7 @@ adminWindow.webContents.on('before-input-event', (event, input) => {
 ## ワークスペースウィンドウ制御
 
 ### 実装場所
+
 - **メインプロセス**: `src/main/workspaceWindowManager.ts`
 - **レンダラー**: `src/renderer/WorkspaceApp.tsx`
 
@@ -307,6 +326,7 @@ adminWindow.webContents.on('before-input-event', (event, input) => {
 ### 機能概要
 
 **基本動作:**
+
 1. アイテム起動前に、指定されたウィンドウタイトルでウィンドウを検索
 2. ウィンドウが見つかった場合:
    - ウィンドウをアクティブ化（前面に表示）
@@ -325,6 +345,7 @@ adminWindow.webContents.on('before-input-event', (event, input) => {
 ```
 
 **例:**
+
 ```
 VSCode,code.exe,,,Visual Studio Code
 Chrome,chrome.exe,,,Google Chrome
@@ -337,14 +358,15 @@ Chrome,chrome.exe,,,Google Chrome
 ```
 
 **JSON構造:**
+
 ```json
 {
   "title": "ウィンドウタイトル（必須）",
-  "x": 100,      // X座標（省略可能）
-  "y": 200,      // Y座標（省略可能）
-  "width": 800,  // 幅（省略可能）
+  "x": 100, // X座標（省略可能）
+  "y": 200, // Y座標（省略可能）
+  "width": 800, // 幅（省略可能）
   "height": 600, // 高さ（省略可能）
-  "moveToActiveMonitorCenter": true  // アクティブモニター中央に移動（省略可能、デフォルト: false）
+  "moveToActiveMonitorCenter": true // アクティブモニター中央に移動（省略可能、デフォルト: false）
 }
 ```
 
@@ -355,6 +377,7 @@ Chrome,chrome.exe,,,Google Chrome
 `moveToActiveMonitorCenter`フィールドを使用することで、マウスカーソルがあるモニター（アクティブモニター）の中央にウィンドウを自動的に移動できます。
 
 **動作仕様:**
+
 - `moveToActiveMonitorCenter: true` の場合、マウスカーソルがあるモニターの中央にウィンドウを移動
 - X座標とY座標の指定は無視されます（優先順位: `moveToActiveMonitorCenter` > `x/y座標`）
 - 幅と高さの指定は引き続き有効です
@@ -362,6 +385,7 @@ Chrome,chrome.exe,,,Google Chrome
 - 画面外に出ないように自動調整されます
 
 **使用例:**
+
 ```
 // アクティブモニターの中央に移動（サイズ指定あり）
 VSCode,code.exe,,,"{""title"":""Visual Studio Code"",""moveToActiveMonitorCenter"":true,""width"":1600,""height"":900}"
@@ -375,12 +399,14 @@ Chrome,chrome.exe,,,"{""title"":""Google Chrome"",""moveToActiveMonitorCenter"":
 座標系は仮想スクリーン座標（Virtual Screen Coordinates）を使用します。
 
 **座標系の仕様:**
+
 - プライマリモニターの左上が原点 (0, 0)
 - セカンダリモニターは相対位置に配置
   - 例: プライマリが1920x1080、セカンダリが右側なら X=1920 から開始
 - 負の座標も使用可能（プライマリの左側・上側にモニターがある場合）
 
 **使用例（デュアルモニタ、固定座標）:**
+
 ```
 Chrome (セカンダリ),chrome.exe,,,"{""title"":""Google Chrome"",""x"":1920,""y"":0,""width"":1920,""height"":1080}"
 VSCode (左半分),code.exe,,,"{""title"":""Visual Studio Code"",""x"":0,""y"":0,""width"":960,""height"":1080}"
@@ -393,15 +419,15 @@ Slack (右半分),slack://,,,"{""title"":""Slack"",""x"":960,""y"":0,""width"":9
 
 アイテム起動時のウィンドウアクティブ化は、以下のモジュール構成で実装されています：
 
-| モジュール | 役割 |
-|-----------|------|
-| `src/main/ipc/itemHandlers.ts` | アイテム起動のエントリーポイント |
-| `src/main/ipc/workspaceHandlers.ts` | ワークスペースアイテム起動のエントリーポイント |
-| `src/main/utils/windowActivator.ts` | ウィンドウ検索・アクティブ化・位置サイズ設定の一元管理 |
-| `src/main/utils/itemLauncher.ts` | URL/ファイル/アプリ/カスタムURIの起動処理を統一 |
-| `src/main/utils/windowMatcher.ts` | ウィンドウタイトルによるウィンドウ検索 |
-| `src/main/utils/nativeWindowControl.ts` | ネイティブWindows API経由のウィンドウ制御 |
-| `src/common/utils/windowConfigUtils.ts` | JSON⇔文字列変換、ウィンドウ設定の処理 |
+| モジュール                              | 役割                                                   |
+| --------------------------------------- | ------------------------------------------------------ |
+| `src/main/ipc/itemHandlers.ts`          | アイテム起動のエントリーポイント                       |
+| `src/main/ipc/workspaceHandlers.ts`     | ワークスペースアイテム起動のエントリーポイント         |
+| `src/main/utils/windowActivator.ts`     | ウィンドウ検索・アクティブ化・位置サイズ設定の一元管理 |
+| `src/main/utils/itemLauncher.ts`        | URL/ファイル/アプリ/カスタムURIの起動処理を統一        |
+| `src/main/utils/windowMatcher.ts`       | ウィンドウタイトルによるウィンドウ検索                 |
+| `src/main/utils/nativeWindowControl.ts` | ネイティブWindows API経由のウィンドウ制御              |
+| `src/common/utils/windowConfigUtils.ts` | JSON⇔文字列変換、ウィンドウ設定の処理                  |
 
 **処理フロー:**
 
@@ -435,6 +461,7 @@ Slack (右半分),slack://,,,"{""title"":""Slack"",""x"":960,""y"":0,""width"":9
    - 仮想スクリーン座標系でマルチモニタ対応
 
 **リファクタリング成果（v0.5.4）:**
+
 - 重複していたウィンドウ制御処理を `windowActivator.ts` に集約
 - 重複していたアイテム起動処理を `itemLauncher.ts` に集約
 - `itemHandlers.ts` と `workspaceHandlers.ts` で共通関数を使用
@@ -457,6 +484,7 @@ Slack (右半分),slack://,,,"{""title"":""Slack"",""x"":960,""y"":0,""width"":9
    - ウィンドウが見つからない場合は何も実行しない（警告ログのみ）
 
 **共通の設定項目:**
+
 - ウィンドウタイトル入力欄（検索用、部分一致）
 - 位置・サイズ調整（X座標、Y座標、幅、高さ）
 - 仮想デスクトップ移動（デスクトップ番号）
@@ -464,6 +492,7 @@ Slack (右半分),slack://,,,"{""title"":""Slack"",""x"":960,""y"":0,""width"":9
 - 「ウィンドウから取得」ボタン（実行中ウィンドウから情報取得）
 
 **ウィンドウ選択ダイアログ（WindowSelectorModal）:**
+
 - 実行中のウィンドウ一覧を表示
 - ウィンドウを選択すると、タイトル・位置・サイズが自動入力される
 
@@ -475,12 +504,14 @@ Slack (右半分),slack://,,,"{""title"":""Slack"",""x"":960,""y"":0,""width"":9
 仮想デスクトップ機能を使用して、ウィンドウを指定されたデスクトップに移動できます。
 
 **動作仕様:**
+
 1. `virtualDesktopNumber`フィールドに移動先のデスクトップ番号を指定（1から開始）
 2. ウィンドウが見つかった場合、位置・サイズ調整の前に仮想デスクトップに移動
 3. **現在のデスクトップは変更されません**（移動前のデスクトップに自動的に戻ります）
 4. デスクトップ番号が範囲外の場合、警告ログを出力して移動をスキップ
 
 **使用例:**
+
 ```
 // デスクトップ2にウィンドウを移動
 VSCode,code.exe,,,"{""title"":""Visual Studio Code"",""virtualDesktopNumber"":2}"
@@ -494,6 +525,7 @@ Chrome (Desktop2),chrome.exe,,,"{""title"":""Google Chrome"",""virtualDesktopNum
 ```
 
 **技術実装:**
+
 - VirtualDesktopAccessor.dll（C++版、skottmckayフォーク）を使用
 - koffiライブラリでネイティブDLL呼び出し
 - レジストリから仮想デスクトップGUID一覧を取得し、番号からGUIDに変換
@@ -518,6 +550,7 @@ v0.5.12以降、仮想デスクトップ機能が大幅に強化され、以下�
    - 設定失敗時は自動的に再試行
 
 **処理フロー（v0.5.12以降）:**
+
 ```
 1. includeAllVirtualDesktops: true で全仮想デスクトップからウィンドウを検索
 2. ウィンドウが見つかったら、SetWindowPos()で位置・サイズを直接設定
@@ -528,18 +561,19 @@ v0.5.12以降、仮想デスクトップ機能が大幅に強化され、以下�
 ```
 
 **実装場所:**
+
 - `src/main/utils/virtualDesktop/`: `includeAllVirtualDesktops`パラメータの処理（`index.ts`, `windowOperations.ts`等）
 - `src/main/utils/windowActivator.ts`: リトライロジックと位置・サイズ設定
 
 **従来の動作との違い:**
 
-| 項目 | v0.5.11以前 | v0.5.12以降 |
-|-----|-----------|-----------|
-| **検索範囲** | 現在のデスクトップのみ | すべての仮想デスクトップ |
+| 項目                     | v0.5.11以前                        | v0.5.12以降                              |
+| ------------------------ | ---------------------------------- | ---------------------------------------- |
+| **検索範囲**             | 現在のデスクトップのみ             | すべての仮想デスクトップ                 |
 | **デスクトップ切り替え** | ウィンドウのデスクトップに切り替え | 切り替えなし（現在のデスクトップを維持） |
-| **位置・サイズ設定** | デスクトップ移動後に設定 | 直接設定（移動不要） |
-| **ユーザー体験** | 画面が一瞬切り替わる | 作業を中断しない |
-| **設定確実性** | 1回のみ試行 | 最大3回リトライ |
+| **位置・サイズ設定**     | デスクトップ移動後に設定           | 直接設定（移動不要）                     |
+| **ユーザー体験**         | 画面が一瞬切り替わる               | 作業を中断しない                         |
+| **設定確実性**           | 1回のみ試行                        | 最大3回リトライ                          |
 
 ### ウィンドウアクティブ化制御
 
@@ -547,16 +581,19 @@ v0.5.12以降、仮想デスクトップ機能が大幅に強化され、以下�
 ウィンドウをアクティブ化（前面に表示）するかどうかを制御できます。
 
 **動作仕様:**
+
 - `activateWindow`フィールドで制御（省略時は`true`）
 - `true`: ウィンドウをアクティブ化（前面に表示）【デフォルト】
 - `false`: 位置・サイズ調整や仮想デスクトップ移動のみ実行、アクティブ化しない
 
 **ユースケース:**
+
 - バックグラウンドでウィンドウを準備したい場合
 - 位置調整のみ行い、現在の作業を中断したくない場合
 - 複数ウィンドウを順次配置する際、最後のウィンドウのみアクティブ化したい場合
 
 **使用例:**
+
 ```
 // 位置・サイズ調整のみ実行（アクティブ化しない）
 Slack (Background),slack://,,,"{""title"":""Slack"",""x"":960,""y"":0,""width"":960,""height"":1080,""activateWindow"":false}"
@@ -579,6 +616,7 @@ Chrome,chrome.exe,,,"{""title"":""Google Chrome"",""activateWindow"":true}"
 v0.5.10以降、ウィンドウ操作アイテムはJSON形式専用となりました。
 
 **JSON形式の利点:**
+
 - フィールド順序エラー（設定値のズレ）を完全に解消
 - 管理画面でのインライン編集を禁止し、データ破損を防止
 - 詳細編集モーダル（RegisterModal）からの編集で、正しいJSON形式を保証
