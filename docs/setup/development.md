@@ -665,4 +665,4 @@ npm run debug:windows -- --all-desktops --show-excluded --output debug.txt
 - [ビルドとデプロイ](build-deploy.md) - ビルドシステムと配布方法
 - [テストガイド](../testing/README.md) - テストの実行方法
 - [アイコンシステム](../features/icons.md) - アイコン取得・管理システム
-- [フォルダ取込](../screens/register-modal.md#11-フォルダ取込アイテムの詳細) - フォルダ内容のインポート機能
+- [フォルダ取込](../screens/register-modal.md#10-フォルダ取込アイテムの詳細) - フォルダ内容のインポート機能
