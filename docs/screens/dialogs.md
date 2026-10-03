@@ -295,58 +295,7 @@ OSのファイル選択ダイアログでキャンセルした場合は、ファ
 
 ---
 
-## 5. スタイル共通仕様
-
-### モーダルオーバーレイ
-
-すべてのダイアログは`Modal.css`で定義された共通のオーバーレイスタイルを使用します。
-
-```css
-.modal-overlay {
-  /* 画面全体を覆う半透明の背景 */
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: var(--z-modal);
-  backdrop-filter: blur(2px);
-}
-
-.modal-content {
-  /* ダイアログ本体のベーススタイル */
-  background-color: var(--color-white);
-  border-radius: var(--border-radius-xl);
-  box-shadow: var(--shadow-xl);
-  max-width: 600px;
-  width: 90%;
-  max-height: var(--modal-max-height);
-  display: flex;
-  flex-direction: column;
-}
-```
-
-### アクションボタン配置
-
-すべてのダイアログのフッターボタンは右寄せで配置されます。
-
-```css
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--spacing-sm);
-  padding-top: var(--spacing-lg);
-  border-top: var(--border-light);
-}
-```
-
----
-
-## 6. エラーハンドリング
+## 5. エラーハンドリング
 
 ### FilePickerDialog
 
@@ -360,7 +309,7 @@ OSのファイル選択ダイアログでキャンセルした場合は、ファ
 
 ---
 
-## 7. アクセシビリティ
+## 6. アクセシビリティ
 
 ### フォーカス管理
 

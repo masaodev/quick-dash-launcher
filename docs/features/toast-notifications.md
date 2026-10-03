@@ -178,3 +178,4 @@
 
 - [ワークスペース機能](./workspace.md) - ワークスペースの操作
 - [CSSデザインシステム](../architecture/css-design.md) - CSS変数の定義
+- [IPC の設計](../architecture/ipc-channels.md) - 通知と進捗のチャンネル
