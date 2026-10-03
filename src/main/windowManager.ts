@@ -22,12 +22,11 @@ import PathManager from './config/pathManager.js';
 import { EnvConfig } from './config/envConfig.js';
 import { DEFAULT_WEB_PREFERENCES } from './utils/managedWindow.js';
 import {
-  getIsDetachedWindowFocused,
-  setManagedWindowCheckers,
   hideAllDetachedGroupWindows,
+  isDetachedGroupWindow,
   showAllDetachedGroupWindows,
 } from './detachedGroupWindowManager.js';
-import { getIsWorkspaceWindowFocused } from './workspaceWindowManager.js';
+import { getWorkspaceWindow } from './workspaceWindowManager.js';
 import { registerChildWindowOpener } from './services/childWindowService.js';
 
 let mainWindow: BrowserWindow | null = null;
@@ -36,16 +35,7 @@ let tray: Tray | null = null;
 let windowPinMode: WindowPinMode = EnvConfig.windowPinMode ?? 'normal';
 let isFirstLaunchMode: boolean = false;
 let isModalMode: boolean = false;
-let isShowingWindow: boolean = false; // ウィンドウ表示中フラグ（blur無視用）
-let showingWindowTimeoutId: ReturnType<typeof setTimeout> | null = null;
-
-let windowShownAt = 0; // メインウィンドウを最後に表示した時刻（blur無視用）
-
-/**
- * ワークスペース＋切り離しウィンドウ復元完了までのフォーカス安定猶予（ms）
- * この間のblurは、フォーカスがQDLの外へ移ったときだけ非表示にする
- */
-const WINDOW_FOCUS_STABILIZATION_DELAY_MS = 1500;
+let windowShownAt = 0; // メインウィンドウを最後に表示した時刻（表示直後のフォーカスの揺れ対策）
 
 /** 表示直後のフォーカスの揺れが収まるまでの時間（ms）。この間のblurは収まってから移動先を確認する */
 const BLUR_SETTLE_AFTER_SHOW_MS = 200;
@@ -69,48 +59,33 @@ async function toggleDetachedWindowsIfEnabled(show: boolean): Promise<void> {
 }
 
 /**
- * blur後の連動非表示（50ms遅延 + 管理ウィンドウフォーカスチェック付き）
- * 切り離しウィンドウやワークスペースウィンドウにフォーカスがある場合は非表示にしない
+ * QDLのウィンドウ群（メイン・ワークスペース・切り離しウィンドウと、それらの子ウィンドウ）に
+ * フォーカスがあるかどうかを返す。管理ウィンドウ（設定画面）は含めない
+ */
+function isQdlWindowFocused(): boolean {
+  let win = BrowserWindow.getFocusedWindow();
+  while (win) {
+    if (win === mainWindow || win === getWorkspaceWindow() || isDetachedGroupWindow(win)) {
+      return true;
+    }
+    win = win.getParentWindow();
+  }
+  return false;
+}
+
+/**
+ * メインウィンドウを隠した後の連動非表示（50ms遅延 + フォーカスチェック付き）
+ * QDLのウィンドウ群にフォーカスがある場合は切り離しウィンドウを非表示にしない
  */
 function hideDetachedWindowsAfterBlur(): void {
   setTimeout(async () => {
     try {
-      if (getIsDetachedWindowFocused()) return;
-      if (getIsWorkspaceWindowFocused()) return;
+      if (isQdlWindowFocused()) return;
       await toggleDetachedWindowsIfEnabled(false);
     } catch (error) {
       windowLogger.warn({ error }, 'blur時の切り離しウィンドウ連動非表示チェックに失敗');
     }
-  }, 50);
-}
-
-/**
- * ウィンドウ表示中フラグを設定し、一定時間後に自動解除する
- * 既存のタイムアウトがあれば先にクリアする
- */
-function setShowingWindowFlag(): void {
-  // 既存のタイムアウトをクリア
-  if (showingWindowTimeoutId !== null) {
-    clearTimeout(showingWindowTimeoutId);
-  }
-
-  isShowingWindow = true;
-
-  showingWindowTimeoutId = setTimeout(() => {
-    isShowingWindow = false;
-    showingWindowTimeoutId = null;
-  }, WINDOW_FOCUS_STABILIZATION_DELAY_MS);
-}
-
-/**
- * ウィンドウ表示中フラグを即座にリセットする
- */
-function clearShowingWindowFlag(): void {
-  if (showingWindowTimeoutId !== null) {
-    clearTimeout(showingWindowTimeoutId);
-    showingWindowTimeoutId = null;
-  }
-  isShowingWindow = false;
+  }, BLUR_FOCUS_CHECK_DELAY_MS);
 }
 
 /**
@@ -119,8 +94,6 @@ function clearShowingWindowFlag(): void {
  */
 function hideMainWindowInternal(): void {
   if (!mainWindow) return;
-
-  clearShowingWindowFlag();
 
   // レンダラープロセスに非表示通知を送る
   mainWindow.webContents.send('window-hidden');
@@ -143,21 +116,34 @@ function shouldHideOnBlur(): boolean {
 }
 
 /**
- * blur後、フォーカスがQDLの外へ移っていればメインウィンドウを非表示にする
- * ワークスペース・切り離しウィンドウへの移動や、メインウィンドウへの復帰では非表示にしない
- * @param delayMs フォーカスの移動先を確認するまでの待ち時間
+ * フォーカスがQDLのウィンドウ群の外へ出ていれば、メインウィンドウと（連動設定時は）切り離しウィンドウを隠す
+ * ウィンドウ群の中でフォーカスが移っただけなら何もしない
  */
-function hideMainWindowIfFocusLeftApp(delayMs: number): void {
-  setTimeout(() => {
-    if (!mainWindow || mainWindow.isDestroyed() || !mainWindow.isVisible()) return;
-    if (!shouldHideOnBlur()) return;
-    if (mainWindow.isFocused()) return;
-    if (getIsDetachedWindowFocused()) return;
-    if (getIsWorkspaceWindowFocused()) return;
+async function hideWindowsIfFocusLeftQdl(): Promise<void> {
+  if (isQdlWindowFocused()) return;
 
+  if (mainWindow && !mainWindow.isDestroyed() && mainWindow.isVisible()) {
+    // メインウィンドウを表示し続けるモード（ピン留め等）では切り離しウィンドウも残す
+    if (!shouldHideOnBlur()) return;
     hideMainWindowInternal();
-    hideDetachedWindowsAfterBlur();
-  }, delayMs);
+  }
+  await toggleDetachedWindowsIfEnabled(false);
+}
+
+/**
+ * QDLのいずれかのウィンドウのblur後に、フォーカスの移動先を確認して連動非表示する
+ * 表示直後のblurは、フォーカスの揺れが収まってから確認する
+ */
+function scheduleHideIfFocusLeftQdl(): void {
+  const untilSettled = BLUR_SETTLE_AFTER_SHOW_MS - (Date.now() - windowShownAt);
+  setTimeout(
+    () => {
+      hideWindowsIfFocusLeftQdl().catch((error) => {
+        windowLogger.warn({ error }, 'blur時の連動非表示チェックに失敗');
+      });
+    },
+    Math.max(BLUR_FOCUS_CHECK_DELAY_MS, untilSettled)
+  );
 }
 
 /**
@@ -210,20 +196,10 @@ export async function createWindow(): Promise<BrowserWindow> {
     windowShownAt = Date.now();
   });
 
-  mainWindow.on('blur', () => {
-    if (!shouldHideOnBlur()) return;
-
-    if (!isShowingWindow) {
-      hideMainWindowInternal();
-      hideDetachedWindowsAfterBlur();
-      return;
-    }
-
-    // 表示直後（フォーカス安定猶予中）は、QDL自身のウィンドウへのフォーカス移動を無視し、
-    // QDLの外へ移ったときだけ非表示にする
-    const untilSettled = BLUR_SETTLE_AFTER_SHOW_MS - (Date.now() - windowShownAt);
-    hideMainWindowIfFocusLeftApp(Math.max(BLUR_FOCUS_CHECK_DELAY_MS, untilSettled));
-  });
+  // メイン・ワークスペース・切り離しウィンドウのどれのblurでも、フォーカスがQDLの外へ出たかを確認する
+  // （ウィンドウ群の中での移動では隠さない）
+  app.removeListener('browser-window-blur', scheduleHideIfFocusLeftQdl);
+  app.on('browser-window-blur', scheduleHideIfFocusLeftQdl);
 
   mainWindow.on('closed', () => {
     mainWindow = null;
@@ -264,12 +240,6 @@ export async function createWindow(): Promise<BrowserWindow> {
     updateWindowBehavior();
     windowLogger.info(`初期ピンモードを設定しました: ${windowPinMode}`);
   }
-
-  // 管理ウィンドウチェッカーを登録（切り離しウィンドウの連動非表示用）
-  setManagedWindowCheckers({
-    isMainWindowVisible: () => mainWindow?.isVisible() ?? false,
-    isWorkspaceWindowFocused: () => getIsWorkspaceWindowFocused(),
-  });
 
   return mainWindow;
 }
@@ -592,8 +562,6 @@ export async function setWindowPosition(mode?: WindowPositionMode): Promise<void
 export function showWindowAtCenter(): void {
   if (!mainWindow) return;
 
-  setShowingWindowFlag();
-
   mainWindow.center();
   mainWindow.show();
   mainWindow.focus();
@@ -667,8 +635,6 @@ async function showMainWindowInternal(
     ? new PerformanceTimer(startTime, (msg) => windowLogger.info(msg))
     : null;
   timer?.log(`hotkey-pressed: 0.00ms (start: ${startTime})`);
-
-  setShowingWindowFlag();
 
   await setWindowPosition();
   timer?.log('position-set');

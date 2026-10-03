@@ -38,10 +38,8 @@ const webContentsIdToGroupId = new Map<number, string>();
 /** 生成中の groupId（二重要求の抑止用） */
 const creatingGroupIds = new Set<string>();
 
-let isDetachedWindowFocused = false;
 let detachedWindowSnapEnabled: boolean = true;
 
-/** メインウィンドウ・ワークスペースウィンドウの状態チェック用コールバック（循環依存回避） */
 function applyVirtualDesktopPinToWindow(win: BrowserWindow, enabled: boolean): void {
   if (win.isDestroyed()) return;
   const hwnd = win.getNativeWindowHandle().readBigUInt64LE();
@@ -54,30 +52,16 @@ function applyVirtualDesktopPinToWindow(win: BrowserWindow, enabled: boolean): v
   }
 }
 
-let isMainWindowVisibleFn: (() => boolean) | null = null;
-let isWorkspaceWindowFocusedFn: (() => boolean) | null = null;
-
-/**
- * 管理ウィンドウの状態チェック関数を注入する（循環依存回避用）
- */
-export function setManagedWindowCheckers(checkers: {
-  isMainWindowVisible: () => boolean;
-  isWorkspaceWindowFocused: () => boolean;
-}): void {
-  isMainWindowVisibleFn = checkers.isMainWindowVisible;
-  isWorkspaceWindowFocusedFn = checkers.isWorkspaceWindowFocused;
-}
-
 /** 切り離しウィンドウのスナップ有効/無効キャッシュを更新する */
 export function setDetachedWindowSnapEnabled(enabled: boolean): void {
   detachedWindowSnapEnabled = enabled;
 }
 
 /**
- * 切り離しウィンドウにフォーカスがあるかどうかを返す
+ * 指定ウィンドウが切り離しウィンドウかどうかを返す
  */
-export function getIsDetachedWindowFocused(): boolean {
-  return isDetachedWindowFocused;
+export function isDetachedGroupWindow(win: BrowserWindow): boolean {
+  return [...detachedWindows.values()].includes(win);
 }
 
 /**
@@ -316,15 +300,6 @@ function setupDetachedWindow(
   win.on('moved', saveBoundsDebounced);
   win.on('resized', saveBoundsDebounced);
 
-  // フォーカス追跡（連動表示/非表示用）
-  win.on('focus', () => {
-    isDetachedWindowFocused = true;
-  });
-  win.on('blur', () => {
-    isDetachedWindowFocused = false;
-    hideDetachedWindowsAfterOwnBlur();
-  });
-
   win.on('closed', () => {
     cancelFallbackShow();
     if (boundsTimer) clearTimeout(boundsTimer);
@@ -386,35 +361,6 @@ function destroyWindowIfAlive(groupId: string): void {
 export function closeDetachedGroupWindow(groupId: string): { success: boolean } {
   destroyWindowIfAlive(groupId);
   return { success: true };
-}
-
-/** フォーカスのあるウィンドウが、切り離しウィンドウを親に持つ子ウィンドウか */
-function isChildOfDetachedWindowFocused(): boolean {
-  const parent = BrowserWindow.getFocusedWindow()?.getParentWindow();
-  if (!parent) return false;
-  return [...detachedWindows.values()].includes(parent);
-}
-
-/**
- * 切り離しウィンドウのblur後に連動非表示を判定する
- * 50ms後にチェックし、どの管理ウィンドウにもフォーカスがなければ全非表示
- */
-function hideDetachedWindowsAfterOwnBlur(): void {
-  setTimeout(async () => {
-    if (isDetachedWindowFocused) return;
-    // 切り離しウィンドウから開いた編集・確認ウィンドウ（子）にフォーカスが移っただけなら隠さない
-    if (isChildOfDetachedWindowFocused()) return;
-    try {
-      const settingsService = await SettingsService.getInstance();
-      const hideWithMain = await settingsService.get('hideDetachedWithMainWindow');
-      if (!hideWithMain) return;
-      if (isMainWindowVisibleFn?.()) return;
-      if (isWorkspaceWindowFocusedFn?.()) return;
-      hideAllDetachedGroupWindows();
-    } catch (error) {
-      windowLogger.warn({ error }, '切り離しウィンドウblur時の連動非表示チェックに失敗');
-    }
-  }, 50);
 }
 
 /**
