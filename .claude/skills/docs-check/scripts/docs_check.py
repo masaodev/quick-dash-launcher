@@ -146,21 +146,28 @@ def check_screens():
     return problems
 
 
+def ignored(path):
+    """git の管理外（実行時に作られる一時フォルダなど）なら True。"""
+    return subprocess.run(["git", "check-ignore", "-q", path], capture_output=True).returncode == 0
+
+
 def check_code_refs(files, scope):
     problems = []
+    skill_dir = Path(__file__).resolve().parent.parent
     pkg = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))
     scripts = set(pkg.get("scripts", {}))
     for f in files:
-        if not in_scope(f, scope):
-            continue
+        if not in_scope(f, scope) or skill_dir in f.resolve().parents:
+            continue  # このスキル自身の手順書は、例や実行時に作るファイルを書いているので対象外
         text = f.read_text(encoding="utf-8")
         for m in re.finditer(r"`([^`\s]+)`", text):
             ref = re.sub(r":\d+(-\d+)?$", "", m.group(1).rstrip(".,:;）)"))  # 行番号は外す
             if ref.startswith(CODE_REF_PREFIXES) and not PLACEHOLDER.search(ref):
-                if not (ROOT / ref.split("#")[0]).exists():
+                target = ref.split("#")[0]
+                if not (ROOT / target).exists() and not ignored(target):
                     problems.append(f"`{rel(f)}`: 書かれたパスが実在しない `{ref}`")
         for m in re.finditer(r"npm run ([A-Za-z0-9:_-]+)", text):
-            if m.group(1) not in scripts:
+            if m.group(1) not in scripts and len(m.group(1)) > 1:  # 1 文字は例として書いた仮の名前
                 problems.append(f"`{rel(f)}`: package.json にない `npm run {m.group(1)}`")
     return sorted(set(problems))
 
