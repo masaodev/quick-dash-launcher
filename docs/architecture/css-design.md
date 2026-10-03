@@ -13,12 +13,13 @@ QuickDashLauncherのスタイルは、CSS変数（カスタムプロパティ）
 
 正は `src/renderer/styles/` 以下。構成の考え方は次の 3 層である。
 
-| ファイル                | 役割                                                                                        |
-| ----------------------- | ------------------------------------------------------------------------------------------- |
-| `index.css`             | グローバルリセット・ベーススタイル。`variables.css` と `common.css` をここで `@import` する |
-| `variables.css`         | CSS変数（デザイントークン）の定義                                                           |
-| `common.css`            | 複数画面で使う共通クラス                                                                    |
-| `components/{名前}.css` | コンポーネント単位のスタイル。対応するコンポーネント（`.tsx`）でインポートする              |
+| ファイル                | 役割                                                                                                                    |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `index.css`             | グローバルリセット・ベーススタイル。`variables.css`・`common.css`（と一部のコンポーネント CSS）をここで `@import` する  |
+| `variables.css`         | CSS変数（デザイントークン）の定義                                                                                       |
+| `common.css`            | 複数画面で使う共通クラス                                                                                                |
+| `components/{名前}.css` | コンポーネント単位のスタイル。対応するコンポーネント（`.tsx`）でインポートする（一部は `index.css` でまとめて読み込む） |
+| `splash.css`            | スプラッシュ画面専用。`index.css` を経由せず `src/renderer/splash/index.tsx` で読み込む                                 |
 
 新しいコンポーネントのスタイルは `components/` に1ファイル作り、変数と共通クラスを使って書く。
 
@@ -69,7 +70,7 @@ QuickDashLauncherのスタイルは、CSS変数（カスタムプロパティ）
 | テーブル         | `.table-base`                                                                                                      | 一覧表（行の `selected`/`readonly`/`edited` 状態つき） |
 | モーダル         | `.modal-overlay-base`、`.modal-content-base`、`.modal-header-base`、`.modal-footer-base`                           | モーダルの骨格                                         |
 | ユーティリティ   | `.loading-overlay`、`.text-*`、`.font-*`、`.mb-*`、`.cursor-*`、`.overflow-*`、`.no-drag`/`.drag`                  | 単一目的の小さな指定                                   |
-| 透過度スライダー | `.opacity-control`、`.opacity-slider`、`.opacity-value`                                                            | ワークスペース設定の透過度                             |
+| 透過度スライダー | `.opacity-control`、`.opacity-slider`、`.opacity-value`                                                            | 設定画面のワークスペース透過度                         |
 
 ### 閉じる・削除ボタンクラス
 
@@ -88,7 +89,7 @@ QuickDashLauncherのスタイルは、CSS変数（カスタムプロパティ）
 - **変数名**: `--category-property-variant` 形式（例 `--color-primary-hover`、`--spacing-lg`、`--border-radius-xl`）
 - **クラス名**: ハイフン区切りのケバブケース（例 `.btn-primary`、`.modal-overlay`、`.form-group`）
 - **サイズのサフィックス**: `-sm` / `-lg` に統一する。`-small` / `-large` は使わない
-  - 正: `.btn-sm`、`.btn-danger-sm`、`.btn-primary-lg`
+  - 正: `.btn-sm`、`.btn-danger-sm`、`.btn-secondary-sm`
   - 誤: `.btn-danger-small`、`.btn-primary-large`
 - **ボタン**: 基本形は `.btn-{variant}`。コンポーネント固有のサイズ違いは `.btn-{variant}-sm` / `.btn-{variant}-lg`
 - **アクションボタン**: 32x32 の正方形アイコンボタンは `.action-btn` に一本化する。`.action-button` のような紛らわしい別名は作らない

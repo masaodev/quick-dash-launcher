@@ -6,14 +6,15 @@ QuickDashLauncherのアイコン処理システムは、様々な種類のアイ
 
 アイコンは種類ごとに専用のディレクトリに保存されます：
 
-| アイコン種類            | 保存場所                                                      | ファイル名形式                | サイズ                     |
-| ----------------------- | ------------------------------------------------------------- | ----------------------------- | -------------------------- |
-| **ファビコン**          | `%APPDATA%/quick-dash-launcher/config/icon-cache/favicons/`   | `{domain}_favicon_{size}.png` | 64px（推奨）/ 32px（互換） |
-| **EXEアイコン**         | `%APPDATA%/quick-dash-launcher/config/icon-cache/apps/`       | `{basename}_icon.png`         | 32px                       |
-| **カスタムURIアイコン** | `%APPDATA%/quick-dash-launcher/config/icon-cache/apps/`       | `uri_{schema}_icon.png`       | 32px                       |
-| **登録アプリアイコン**  | `%APPDATA%/quick-dash-launcher/config/icon-cache/apps/`       | `uwp_{PFN}_icon.png`          | マニフェスト依存           |
-| **拡張子アイコン**      | `%APPDATA%/quick-dash-launcher/config/icon-cache/extensions/` | `ext_{extension}_icon.png`    | 32px                       |
-| **カスタムアイコン**    | `%APPDATA%/quick-dash-launcher/config/icon-cache/custom/`     | `{MD5ハッシュ}.png`           | 任意                       |
+| アイコン種類               | 保存場所                                                      | ファイル名形式                | サイズ                     |
+| -------------------------- | ------------------------------------------------------------- | ----------------------------- | -------------------------- |
+| **ファビコン**             | `%APPDATA%/quick-dash-launcher/config/icon-cache/favicons/`   | `{domain}_favicon_{size}.png` | 64px（推奨）/ 32px（互換） |
+| **EXEアイコン**            | `%APPDATA%/quick-dash-launcher/config/icon-cache/apps/`       | `{basename}_icon.png`         | 32px                       |
+| **ショートカットアイコン** | `%APPDATA%/quick-dash-launcher/config/icon-cache/apps/`       | `{basename}_lnk_icon.png`     | 32px                       |
+| **カスタムURIアイコン**    | `%APPDATA%/quick-dash-launcher/config/icon-cache/apps/`       | `uri_{schema}_icon.png`       | 32px                       |
+| **登録アプリアイコン**     | `%APPDATA%/quick-dash-launcher/config/icon-cache/apps/`       | `uwp_{PFN}_icon.png`          | マニフェスト依存           |
+| **拡張子アイコン**         | `%APPDATA%/quick-dash-launcher/config/icon-cache/extensions/` | `ext_{extension}_icon.png`    | 32px                       |
+| **カスタムアイコン**       | `%APPDATA%/quick-dash-launcher/config/icon-cache/custom/`     | `{MD5先頭8文字}.png`          | 任意                       |
 
 ### ファイル名形式の詳細
 
@@ -43,7 +44,7 @@ uwp_{PackageFamilyName}_icon.png
 
 ### 後方互換性
 
-既存の32pxキャッシュも引き続き使用可能にするため、以下の順序でチェック：
+既存の32pxキャッシュも引き続き使用可能にするため、ファビコンの読み出し時に以下の順序でチェック：
 
 1. 64pxファイルが存在するか確認
 2. なければ32pxファイルを確認
@@ -53,17 +54,17 @@ uwp_{PackageFamilyName}_icon.png
 
 どの取得方法を使うかは `classifyIconTarget`（`src/main/utils/iconCacheKeys.ts`）が判定し、取得側（`fetchIconForItem`）と読み出し側（`getCachedIconCandidates`）がこの判定を共有します。保存先と読み出し先が食い違うと、アイコンを取得できているのに表示されない状態になるため、呼び出し側でタイプごとに取得関数を選び分けてはいけません。
 
-| アイテムタイプ | 判定順                                       | 保存先                                 |
-| -------------- | -------------------------------------------- | -------------------------------------- |
-| `url`          | -                                            | `favicons/{domain}_favicon_64.png`     |
-| `app`          | 1. 登録アプリ（`shell:AppsFolder\`で始まる） | `apps/uwp_{PFN}_icon.png`              |
-|                | 2. ショートカット（`originalPath`が`.lnk`）  | `apps/{basename}_lnk_icon.png`         |
-|                | 3. スクリプト系（`.bat` / `.cmd` / `.com`）  | `extensions/ext_{extension}_icon.png`  |
-|                | 4. その他（`.exe`を含む）                    | `apps/{basename}_icon.png`             |
-| `customUri`    | 1. スキーマから解決                          | `apps/uri_{schema}_icon.png`           |
-|                | 2. 拡張子へフォールバック                    | `extensions/ext_{extension}_icon.png`  |
-| `file`         | -                                            | `extensions/ext_{extension}_icon.png`  |
-| `folder` ほか  | -                                            | 取得しない（デフォルトアイコンを表示） |
+| アイテムタイプ | 判定順                                              | 保存先                                 |
+| -------------- | --------------------------------------------------- | -------------------------------------- |
+| `url`          | -                                                   | `favicons/{domain}_favicon_64.png`     |
+| `app`          | 1. 登録アプリ（`shell:AppsFolder\`で始まる）        | `apps/uwp_{PFN}_icon.png`              |
+|                | 2. ショートカット（`originalPath`か`path`が`.lnk`） | `apps/{basename}_lnk_icon.png`         |
+|                | 3. スクリプト系（`.bat` / `.cmd` / `.com`）         | `extensions/ext_{extension}_icon.png`  |
+|                | 4. その他（`.exe`を含む）                           | `apps/{basename}_icon.png`             |
+| `customUri`    | 1. スキーマから解決                                 | `apps/uri_{schema}_icon.png`           |
+|                | 2. 拡張子へフォールバック                           | `extensions/ext_{extension}_icon.png`  |
+| `file`         | -                                                   | `extensions/ext_{extension}_icon.png`  |
+| `folder` ほか  | -                                                   | 取得しない（デフォルトアイコンを表示） |
 
 ### キャッシュに無いアイコンの補完
 
@@ -84,6 +85,9 @@ uwp_{PackageFamilyName}_icon.png
 | アプリケーション | ⚙️     |
 | カスタムURI      | 🔗     |
 | グループ         | 📦     |
+| ウィンドウ       | 🪟     |
+| クリップボード   | 📋     |
+| レイアウト       | 🖥️     |
 
 ---
 
@@ -106,12 +110,16 @@ uwp_{PackageFamilyName}_icon.png
 
 #### 1. HTMLメタタグの解析
 
-| 優先度 | タグ                                       |
-| ------ | ------------------------------------------ |
-| 1      | `<link rel="icon" href="...">`             |
-| 2      | `<link rel="shortcut icon" href="...">`    |
-| 3      | `<link rel="apple-touch-icon" href="...">` |
-| 4      | `<meta property="og:image" content="...">` |
+見つかった候補は次の順に並べ替えて試行します（`sortFaviconSources`）。
+
+| 優先度 | 条件                                                                                              |
+| ------ | ------------------------------------------------------------------------------------------------- |
+| 1      | URLに `apple-touch-icon` を含む（`<link rel="apple-touch-icon">` 等）                             |
+| 2      | URLに `favicon` を含む                                                                            |
+| 3      | 上記以外の `<link rel="icon">` / `<link rel="shortcut icon">`（サイズ指定があれば64px前後を優先） |
+| 4      | `<meta property="og:image" content="...">`（最低優先度）                                          |
+
+HTMLの取得がネットワークエラーで失敗した場合は、次の標準的な場所は試さずスキップします。
 
 #### 2. 標準的な場所の確認
 
@@ -164,12 +172,12 @@ uwp_{PackageFamilyName}_icon.png
 
 ### 取得優先順位
 
-| 優先度 | 取得方法         | 説明                                                         |
-| ------ | ---------------- | ------------------------------------------------------------ |
-| 1      | レジストリベース | Windowsレジストリからスキーマハンドラーアプリを検索          |
-| 2      | 登録アプリベース | マニフェストでスキーマを宣言しているUWPアプリを逆引き        |
-| 3      | 拡張子ベース     | URIに対応する拡張子のアイコン（例: `ms-excel://` → `.xlsx`） |
-| 4      | デフォルト       | 🔗絵文字                                                     |
+| 優先度 | 取得方法         | 説明                                                                                                              |
+| ------ | ---------------- | ----------------------------------------------------------------------------------------------------------------- |
+| 1      | レジストリベース | Windowsレジストリからスキーマハンドラーアプリを検索                                                               |
+| 2      | 登録アプリベース | マニフェストでスキーマを宣言しているUWPアプリを逆引き                                                             |
+| 3      | 拡張子ベース     | URIに埋め込まれたURLのファイル名の拡張子のアイコン（例: URI内の `https://example.com/Book.xlsx?web=1` → `.xlsx`） |
+| 4      | デフォルト       | 🔗絵文字                                                                                                          |
 
 ### レジストリクエリプロセス
 
@@ -188,7 +196,7 @@ UWPアプリはPackagedCOM方式で起動されるため、レジストリに `s
 マニフェストを参照します。
 
 1. **プロトコル宣言の収集**: 全登録アプリのマニフェストから `windows.protocol` 拡張が
-   宣言するスキーマ名を取得（プロセス内で1回だけ実行してキャッシュ）
+   宣言するスキーマ名を取得（プロセス内でキャッシュ。取得に失敗した場合は、5分経過後の次の呼び出しで再試行）
 2. **スキーマ逆引き**: スキーマ名から対応するパッケージを特定（例: `ms-todo` → `Microsoft.Todos`）
 3. **アイコン抽出**: パッケージのロゴ（`Square44x44Logo` 等）を読み込んで保存
 
@@ -255,9 +263,9 @@ WindowsAppsフォルダ等のシンボリックリンクを自動解決してア
 
 **保存場所:** `%APPDATA%/quick-dash-launcher/config/icon-cache/custom/`
 
-**ファイル名形式:** `{MD5ハッシュ}.png`（アイテム識別子からMD5ハッシュを生成）
+**ファイル名形式:** `{MD5ハッシュ先頭8文字}.png`（アイテム識別子からMD5ハッシュを生成し、先頭8文字を使う）
 
-**対応形式:** ファイル選択ダイアログの「画像ファイル」フィルタは `.png`, `.jpg`, `.jpeg`, `.ico`, `.svg`（「すべてのファイル」に切り替えれば他の拡張子も選べる）。選んだファイルは変換せずにそのままコピーし、元の形式にかかわらず `{MD5ハッシュ}.png` の名前で保存する。サイズの上限は 5MB
+**対応形式:** ファイル選択ダイアログの「画像ファイル」フィルタは `.png`, `.jpg`, `.jpeg`, `.ico`, `.svg`（「すべてのファイル」に切り替えれば他の拡張子も選べる）。選んだファイルは変換せずにそのままコピーし、元の形式にかかわらず `{MD5ハッシュ先頭8文字}.png` の名前で保存する。サイズの上限は 5MB
 
 **設定方法:**
 
@@ -267,10 +275,7 @@ WindowsAppsフォルダ等のシンボリックリンクを自動解決してア
 
 **データファイル指定方法:**
 
-```
-表示名,パス,引数,カスタムアイコンファイル名
-MyApp,C:\MyApp\app.exe,,{hash}.png
-```
+データファイルではアイテムの `customIcon` フィールドに `icon-cache/custom/` 内のファイル名を指定する。
 
 詳細は[データファイル形式仕様](../architecture/file-formats/data-format.md#314-カスタムアイコンの使用)を参照。
 
@@ -309,15 +314,16 @@ MyApp,C:\MyApp\app.exe,,{hash}.png
 - **フェーズ管理**: ファビコン取得 + アイコン抽出を統合管理
 - **非モーダル設計**: メイン画面下部に表示され、他の操作を継続可能
 - **リアルタイム更新**: 各アイテム処理完了時に即座に進捗を更新
-- **自動非表示**: 処理完了後3秒で自動的に非表示
+- **手動で閉じる**: 処理完了後も表示を続け、×ボタンで閉じる
+- **経過時間・推定残り時間**: 進捗バー側に表示
 
-### 詳細モーダル
+### 詳細（アイコン取得結果）
 
-進捗バーをクリックすると詳細情報を表示：
+完了時に出る「詳細」ボタンを押すと、子ウィンドウ「アイコン取得結果」が開きます：
 
-- フェーズごとの進捗（成功・失敗件数）
-- エラー一覧（アイテム名、パス/URL、エラーメッセージ）
-- 経過時間・推定残り時間
+- 成功・エラー件数のサマリー
+- 全件・成功・エラーの絞り込み
+- エラーのアイテムごとのエラーメッセージ
 
 ### 表示例
 
@@ -340,16 +346,15 @@ MyApp,C:\MyApp\app.exe,,{hash}.png
 
 ### fetchIconsCombined
 
-ファビコンとアイコンを統合的に一括取得する統合API。
+ファビコンとアイコンを統合的に一括取得する統合API（`src/main/services/icon/iconFetcher.ts`）。`progressWindow` に `null`（既定）を渡すと進捗を送らない（バックグラウンド補完用）。
 
 ```typescript
 async function fetchIconsCombined(
   urlItems: IconItem[],
   items: IconItem[],
-  faviconsFolder: string,
-  iconsFolder: string,
-  extensionsFolder: string,
-  forceRefresh?: boolean
+  folders: IconFolders, // { favicons, icons, extensions }
+  forceRefresh: boolean = false,
+  progressWindow: BrowserWindow | null = null
 ): Promise<{
   favicons: Record<string, string | null>;
   icons: Record<string, string | null>;
@@ -384,6 +389,7 @@ interface IconProgress {
   phases: IconPhaseProgress[];
   isComplete: boolean;
   startTime: number;
+  completedTime?: number; // 全体の処理完了時刻（完了時のみ設定）
 }
 
 interface IconPhaseProgress {
@@ -448,8 +454,8 @@ Windows APIを使用してウィンドウからアイコンハンドル（HICON�
 
 **実装ファイル:**
 
-- `src/main/utils/nativeWindowControl.ts`: `getWindowIcon()`, `convertIconToBase64()`, `getExecutablePathFromProcessId()`
-- `src/main/ipc/windowSearchHandlers.ts`: アイコン取得処理の統合
+- `src/main/utils/nativeWindowControl.ts`: `getWindowIcon()`, `convertIconToBase64()`, `getExecutablePathFromProcessId()`。アイコンの取得と変換は `getAllWindows()` の中で行う
+- `src/main/ipc/windowSearchHandlers.ts`: `getAllWindows()` を呼ぶだけ（アイコン処理は持たない）
 - `src/common/types/window.ts`: `WindowInfo`型に`icon`, `executablePath`フィールドを追加
 
 ### 表示
@@ -553,4 +559,4 @@ Windows APIを使用してウィンドウからアイコンハンドル（HICON�
 | HTTPエラー             | サーバーエラー（4xx, 5xx） | -            |
 | ネットワークエラー     | DNS、SSL証明書など         | -            |
 
-これらのエラー情報は、進捗モーダルのエラー一覧で確認できます。
+これらのエラー情報は、アイコン取得結果（詳細）のエラー一覧で確認できます。

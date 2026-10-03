@@ -2,17 +2,17 @@
 
 メインプロセスとレンダラープロセス間の IPC の設計と、挙動に注意が要る主要チャンネルを説明します。
 
-**全チャンネルの一覧はコードを正とします。** チャンネル名は `src/common/ipcChannels.ts` の `IPC_CHANNELS`、レンダラーに公開している API とその型は `src/common/types/electronApi.ts`（`ElectronAPI`）と `src/main/preload.ts`、受け口は `src/main/ipc/*Handlers.ts` を参照してください。このドキュメントにはチャンネルの網羅表を置きません。
+**全チャンネルの一覧はコードを正とします。** チャンネル名は `src/common/ipcChannels.ts` の `IPC_CHANNELS`、レンダラーに公開している API とその型は `src/common/types/electronApi.ts`（`ElectronAPI`）と `src/main/preload.ts`、受け口は `src/main/ipc/*Handlers.ts`（`window:child-written` のみ `src/main/services/childWindowService.ts`）を参照してください。このドキュメントにはチャンネルの網羅表を置きません。
 
 ## IPC の構成
 
-| 役割                 | 場所                                 | 内容                                                                                             |
-| -------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------ |
-| チャンネル名の定義   | `src/common/ipcChannels.ts`          | `IPC_CHANNELS` オブジェクト（`as const`）と、チャンネル名の型 `IpcChannelName`                   |
-| レンダラー向け API   | `src/main/preload.ts`                | `contextBridge.exposeInMainWorld('electronAPI', electronAPI)` で `window.electronAPI` として公開 |
-| API の型             | `src/common/types/electronApi.ts`    | `ElectronAPI`。preload の実装はこの型で注釈しているので、ずれは型チェックで検出される            |
-| 受け口               | `src/main/ipc/*Handlers.ts`          | 機能ごとに `ipcMain.handle` / `ipcMain.on` を登録する。登録は `src/main/ipc/index.ts` から呼ぶ   |
-| 全ウィンドウへの通知 | `src/main/ipc/notifications.ts` など | `webContents.send` でイベントを送る（`notifyDataChanged()`・`notifyWorkspaceChanged()`）         |
+| 役割                 | 場所                                 | 内容                                                                                                                                                                                                              |
+| -------------------- | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| チャンネル名の定義   | `src/common/ipcChannels.ts`          | `IPC_CHANNELS` オブジェクト（`as const`）と、チャンネル名の型 `IpcChannelName`                                                                                                                                    |
+| レンダラー向け API   | `src/main/preload.ts`                | `contextBridge.exposeInMainWorld('electronAPI', electronAPI)` で `window.electronAPI` として公開                                                                                                                  |
+| API の型             | `src/common/types/electronApi.ts`    | `ElectronAPI`。preload の実装はこの型で注釈しているので、ずれは型チェックで検出される                                                                                                                             |
+| 受け口               | `src/main/ipc/*Handlers.ts`          | 機能ごとに `ipcMain.handle` / `ipcMain.on` を登録する。登録は `src/main/ipc/index.ts` を起点に呼ぶ（ブックマーク・アプリ取込は `dataHandlers.ts` 経由。`window:child-written` は `childWindowService.ts` が登録） |
+| 全ウィンドウへの通知 | `src/main/ipc/notifications.ts` など | `webContents.send` でイベントを送る（`notifyDataChanged()`・`notifyWorkspaceChanged()`）                                                                                                                          |
 
 レンダラーは `ipcRenderer` を直接使わず、必ず `window.electronAPI` の関数を呼ぶ。新しいチャンネルを足すときは、`IPC_CHANNELS` への追加 → ハンドラーの登録 → `ElectronAPI` 型と preload への追加、の順で揃える。
 
@@ -71,7 +71,7 @@ F5 では、レンダラーが `settings:reapply` を呼んでから `load-data-
 
 管理画面のアイテム一覧の読み込みと保存。楽観ロックで外部編集との競合を防ぐ。
 
-- `load-editable-items` の戻り値: `LoadEditableItemsResult`（`items: EditableJsonItem[]`、ファイルごとの内容ハッシュ `fileHashes`）
+- `load-editable-items` の戻り値: `LoadEditableItemsResult`（`items: EditableJsonItem[]`、省略可能な `fileHashes?`（ファイルごとの内容ハッシュ）、`error?: string`）
 - `save-editable-items` のパラメータ: `editableItems: EditableJsonItem[]`、`expectedHashes?: Record<string, string>`（読み込み時の `fileHashes`）
 - `save-editable-items` の戻り値: `SaveEditableItemsResult`（保存後の `fileHashes`、実際に書き換えた `writtenFiles`）。次回の保存では返ってきた `fileHashes` を渡す
 - 読み込み後に QDL の外でファイルが変わっていた場合は保存を拒否し、エラーメッセージに `EXTERNAL_CHANGE_CONFLICT_MARKER`（`[external-change]`）を含める
@@ -91,7 +91,7 @@ F5 では、レンダラーが `settings:reapply` を呼んでから `load-data-
 - **方向**: メインプロセス → レンダラープロセス（全ウィンドウ。読み込み中のウィンドウには読み込み完了後に送る）
 - **パラメータ**: なし
 - **受け手の動作**: メイン画面は `load-data-files` を `internal` で呼び直す。管理画面は一覧を読み直す
-- **送信元**: `notifyDataChanged()`（`src/main/ipc/notifications.ts`）
+- **送信元**: `notifyDataChanged()`（`src/main/ipc/notifications.ts`）。アイテムの登録・更新・削除のほか、データファイルの作成・削除、ブックマーク自動取込の後にも呼ばれる
 
 ## 設定
 
@@ -129,7 +129,7 @@ F5 では、レンダラーが `settings:reapply` を呼んでから `load-data-
 
 ### 変更操作と `workspace-changed` (イベント)
 
-`workspace:*` の変更系チャンネル（アイテム・グループ・ワークスペース（タブ）・アーカイブの追加・更新・削除・並び替え）は、成功すると `workspace-changed` を全ウィンドウに送る（`withWorkspaceChange()`、`src/main/ipc/workspaceHandlers.ts`）。受け手のワークスペース画面は一覧を読み直す。
+`workspace:*` の変更系チャンネル（アイテム・グループ・ワークスペース（タブ）・アーカイブの追加・更新・削除・並び替え）は、成功すると `workspace-changed` を全ウィンドウに送る（`src/main/ipc/workspaceHandlers.ts`）。主に `withWorkspaceChange()` を使い、追加系（`workspace:add-item`・`workspace:add-items-from-paths`）は `notifyWorkspaceChanged()` を直接呼ぶ。受け手のワークスペース画面は一覧を読み直す。
 
 - **方向**: メインプロセス → レンダラープロセス（全ウィンドウ）
 - **パラメータ**: なし
@@ -145,7 +145,7 @@ F5 では、レンダラーが `settings:reapply` を呼んでから `load-data-
 
 開き元レンダラーに子ウィンドウの生成を依頼する（レンダラープロセス共有）。
 
-- **方向**: メインプロセス → レンダラープロセス（開き元: メインまたはワークスペース）
+- **方向**: メインプロセス → レンダラープロセス（開き元: メイン・ワークスペース・管理画面）
 - **パラメータ**: `{ html: string, name: string }`（書き込むHTMLの内容と `window.name`）
 - **処理**: preload が `window.open('about:blank', name)` を実行し、`document.write` で HTML を書き込む
 - **実装**: `src/main/services/childWindowService.ts`、`src/main/preload.ts`
@@ -163,13 +163,14 @@ F5 では、レンダラーが `settings:reapply` を呼んでから `load-data-
 
 閉じると破棄する子ウィンドウ（メイン画面の登録・編集、ワークスペースの確認）は、同じ手順で開き元とやり取りする。
 
-| 手順                                      | メイン画面の子ウィンドウ                                                               | ワークスペースの確認ウィンドウ                                                     |
+| 手順                                      | メイン画面・管理画面の子ウィンドウ                                                     | ワークスペースの確認ウィンドウ                                                     |
 | ----------------------------------------- | -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | 1. 開き元が開く（閉じたときに結果で解決） | `window:open-main-child`（`MainChildWindowRequest` → `MainChildWindowReturn \| null`） | `workspace:open-confirm`（`ConfirmWindowRequest` → `ConfirmWindowResult \| null`） |
 | 2. 子が自分の要求を受け取る               | `window:get-main-child-request`                                                        | `workspace:get-confirm-request`                                                    |
 | 3. 子が結果を預けて閉じる                 | `window:return-main-child-value`                                                       | `workspace:return-confirm-result`                                                  |
 | `window.name` の接頭辞（以降が要求 ID）   | `main-child:`                                                                          | `workspace-confirm:`                                                               |
 
+- 管理画面から `window:open-main-child` で開いたときは、管理ウィンドウを親・開き元にする。登録フォームは内容を保存せず、`window:return-main-child-value` で返した内容が閉じたときに管理画面へ渡る
 - 要求は子ウィンドウが閉じるまで保持されるので、手順 2 は何度呼んでもよい
 - メイン画面の子ウィンドウでの操作結果（登録・更新・削除）は `window:notify-main-child-result`（`send`）でメインへ伝え、メインは `window:main-child-result` イベントとしてメイン画面に中継する（トースト表示用）。データ自体の反映は `data-changed` で行う
 - 実装: `src/main/mainChildWindowManager.ts`、`src/main/workspaceConfirmWindowManager.ts`。ワークスペースアイテムの編集ウィンドウは `workspace:open-item-editor`（`src/main/workspaceItemEditorWindowManager.ts`）
@@ -182,10 +183,7 @@ F5 では、レンダラーが `settings:reapply` を呼んでから `load-data-
 - **アイコン取得の進捗**: `icon-progress-start` / `icon-progress-update` / `icon-progress-complete`。データは `IconProgress`（`src/common/types/icon.ts`）
 - **レイアウト実行の進捗**: `layout-progress-start` / `layout-progress-update` / `layout-progress-complete`。中止は `layout-cancel`（`send`）
 
-詳細は[トースト通知](../features/toast-notifications.md)を参照。
-
 ## 関連ドキュメント
 
 - [システム概要](overview.md) - システム全体の構造とデータフロー
 - [ウィンドウ制御](window-control.md) - ウィンドウ管理の詳細
-- [ワークスペース](../features/workspace.md) - ワークスペース機能の使い方

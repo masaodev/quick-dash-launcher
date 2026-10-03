@@ -11,6 +11,8 @@
   D. コードへの参照: docs に書かれた `src/...` などのパスと `npm run X` が実在するか
   E. 前回の点検（--since か docs/.docs-check.json）以降に変わったコードと、それに触れている文書
   F. 長い文書（行数の多いもの）の一覧
+  G. 参照方向: features から screens、architecture から features・screens へのリンク（逆向き）
+  H. 見出し番号: 「## N.」の下の「### M.」の M が N と合わない見出し
 
 ファイルは書き換えない。--record を付けたときだけ docs/.docs-check.json に HEAD を記録する。
 """
@@ -204,6 +206,48 @@ def changes_since(ref):
     return note, hits
 
 
+# 参照してはいけない向き（参照元のフォルダ → 参照先のフォルダ）。docs/README.md の「参照方向」に合わせる
+REVERSE = {"features": ("screens",), "architecture": ("features", "screens")}
+
+
+def check_direction(scope):
+    problems = []
+    docs = ROOT / "docs"
+    for f in sorted(docs.rglob("*.md")):
+        if not in_scope(f, scope):
+            continue
+        parts = f.relative_to(docs).parts
+        banned = REVERSE.get(parts[0]) if len(parts) > 1 else None
+        if not banned:
+            continue
+        body = strip_code(f.read_text(encoding="utf-8"))
+        for m in re.finditer(r"\]\(([^)\s#]+\.md)(#[^)\s]*)?\)", body):
+            dest = (f.parent / unquote(m.group(1))).resolve()
+            try:
+                dparts = dest.relative_to(docs.resolve()).parts
+            except ValueError:
+                continue
+            if len(dparts) > 1 and dparts[0] in banned:
+                problems.append(f"`{rel(f)}`: 逆向きの参照 `{m.group(1)}`（{parts[0]} → {dparts[0]}）")
+    return problems
+
+
+def check_heading_numbers(scope):
+    problems = []
+    for f in sorted((ROOT / "docs").rglob("*.md")):
+        if not in_scope(f, scope):
+            continue
+        chapter, bad = None, []
+        for m in re.finditer(r"^(##|###) (\d+)\.(.*)$", strip_code(f.read_text(encoding="utf-8")), flags=re.M):
+            if m.group(1) == "##":
+                chapter = m.group(2)
+            elif chapter and m.group(2) != chapter:
+                bad.append(f"## {chapter}. の下の ### {m.group(2)}.{m.group(3)[:20].rstrip()}")
+        if bad:
+            problems.append(f"`{rel(f)}`: 章番号と合わない小見出し {len(bad)} 件（最初の例: {bad[0]}）")
+    return problems
+
+
 def long_docs():
     out = []
     for p in sorted((ROOT / "docs").rglob("*.md")):
@@ -252,6 +296,8 @@ def main():
         for code, related in hits:
             print(f"- `{code}` → " + ("、".join(f"`{r}`" for r in related) if related else "触れている文書なし"))
     section("F. 長い文書（" + str(LONG_DOC_LINES) + " 行以上）", [f"`{p}`（{n} 行）" for p, n in long_docs()], empty="なし")
+    section("G. 参照方向", check_direction(scope))
+    section("H. 見出し番号", check_heading_numbers(scope))
 
     if a.record:
         STATE.write_text(json.dumps({"last_checked_commit": git("rev-parse", "HEAD").strip(), "date": date.today().isoformat()},

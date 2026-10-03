@@ -6,8 +6,8 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
 
 ### 1.1. 対象ファイル
 
-| ファイル名 | 用途 | 管理方法 |
-|-----------|------|---------|
+| ファイル名        | 用途                 | 管理方法       |
+| ----------------- | -------------------- | -------------- |
 | **settings.json** | アプリケーション設定 | electron-store |
 
 **保存場所**: `%APPDATA%/quick-dash-launcher/config/settings.json`
@@ -78,53 +78,53 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
 
 ### 3.1. バージョン情報・スキーマ参照
 
-| フィールド | 型 | デフォルト値 | 説明 |
-|-----------|-----|-------------|------|
-| **$schema** | string | `./schemas/settings.schema.json` | JSON Schema への参照（エディタ補完・検証用）。起動時に `SettingsService` が無ければ補う。electron-store（conf）は `$` 始まりのキーをそのまま扱えるため、ファイル上は最後のキーとして書かれる |
-| **createdWithVersion** | string | - | この設定ファイルを作成したアプリバージョン（初回作成時のみ記録） |
-| **updatedWithVersion** | string | - | この設定ファイルを最後に更新したアプリバージョン |
+| フィールド             | 型     | デフォルト値                     | 説明                                                                                    |
+| ---------------------- | ------ | -------------------------------- | --------------------------------------------------------------------------------------- |
+| **$schema**            | string | `./schemas/settings.schema.json` | JSON Schema への参照（エディタ補完・検証用）。起動時に `SettingsService` が無ければ補う |
+| **createdWithVersion** | string | -                                | この設定ファイルを作成したアプリバージョン（初回作成時のみ記録）                        |
+| **updatedWithVersion** | string | -                                | この設定ファイルを最後に更新したアプリバージョン                                        |
 
 `$schema`・`createdWithVersion`・`updatedWithVersion` はメタ情報で、更新しても `updatedWithVersion` は進まない。
 
-同梱スキーマ（`assets/schemas/settings.schema.json`）はキーの欠落と未知のキーを許容する（`required` なし・`additionalProperties: true`）。欠けたキーは electron-store がデフォルトで補い、将来のキー追加で古いスキーマが赤くならないようにするため。
+同梱スキーマ（`assets/schemas/settings.schema.json`）はキーの欠落と未知のキーを許容する（`required`・`additionalProperties` を指定しない。既定で欠落・未知のキーを許容）。欠けたキーは electron-store がデフォルトで補い、将来のキー追加で古いスキーマが赤くならないようにするため。
 
 ### 3.2. ホットキー設定
 
-| フィールド | 型 | デフォルト値 | 説明 |
-|-----------|-----|-------------|------|
-| **hotkey** | string | "" | ランチャー起動ホットキー<br>空の場合はホットキー未設定（初回セットアップで設定）<br>例: "Alt+Space", "Ctrl+Shift+L" |
+| フィールド | 型     | デフォルト値 | 説明                                                                                                                |
+| ---------- | ------ | ------------ | ------------------------------------------------------------------------------------------------------------------- |
+| **hotkey** | string | ""           | ランチャー起動ホットキー<br>空の場合はホットキー未設定（初回セットアップで設定）<br>例: "Alt+Space", "Ctrl+Shift+L" |
 
 ### 3.3. ウィンドウサイズ設定
 
-| フィールド | 型 | デフォルト値 | 説明 |
-|-----------|-----|-------------|------|
-| **windowWidth** | number | 600 | ウィンドウの初期幅（ピクセル） |
-| **windowHeight** | number | 400 | ウィンドウの初期高さ（ピクセル） |
-| **editModeWidth** | number | 1200 | 管理ウィンドウの幅（ピクセル） |
-| **editModeHeight** | number | 1000 | 管理ウィンドウの高さ（ピクセル） |
+| フィールド         | 型     | デフォルト値 | 説明                             |
+| ------------------ | ------ | ------------ | -------------------------------- |
+| **windowWidth**    | number | 600          | ウィンドウの初期幅（ピクセル）   |
+| **windowHeight**   | number | 400          | ウィンドウの初期高さ（ピクセル） |
+| **editModeWidth**  | number | 1200         | 管理ウィンドウの幅（ピクセル）   |
+| **editModeHeight** | number | 1000         | 管理ウィンドウの高さ（ピクセル） |
 
 ### 3.4. 自動起動設定
 
-| フィールド | 型 | デフォルト値 | 説明 |
-|-----------|-----|-------------|------|
-| **autoLaunch** | boolean | false | Windows起動時にアプリを自動起動するか |
+| フィールド     | 型      | デフォルト値 | 説明                                  |
+| -------------- | ------- | ------------ | ------------------------------------- |
+| **autoLaunch** | boolean | false        | Windows起動時にアプリを自動起動するか |
 
 ### 3.5. バックアップ設定
 
-| フィールド | 型 | デフォルト値 | 説明 |
-|-----------|-----|-------------|------|
-| **backupEnabled** | boolean | false | バックアップ機能の有効/無効 |
-| **backupRetention** | number | 10 | バックアップファイルの保存件数上限<br>古いバックアップから自動削除 |
-| **backupIncludeClipboard** | boolean | false | クリップボードデータもバックアップに含めるか |
+| フィールド                 | 型      | デフォルト値 | 説明                                                               |
+| -------------------------- | ------- | ------------ | ------------------------------------------------------------------ |
+| **backupEnabled**          | boolean | false        | バックアップ機能の有効/無効                                        |
+| **backupRetention**        | number  | 10           | バックアップファイルの保存件数上限<br>古いバックアップから自動削除 |
+| **backupIncludeClipboard** | boolean | false        | クリップボードデータもバックアップに含めるか                       |
 
 ### 3.6. データファイルタブ設定
 
-| フィールド | 型 | デフォルト値 | 説明 |
-|-----------|-----|-------------|------|
-| **showDataFileTabs** | boolean | false | タブ表示の有効/無効 |
-| **defaultFileTab** | string | "datafiles/data.json" | デフォルトで表示するタブ（タブ表示ON時のみ有効） |
-| **dataFileTabs** | DataFileTab[] | `[{files: ["datafiles/data.json"], name: "メイン"}]` | データファイルタブの設定 |
-| **dataFileLabels** | Record<string, string> | `{"datafiles/data.json": "メイン用データファイル"}` | データファイルの名前定義（物理ファイル名 → 表示名） |
+| フィールド           | 型                     | デフォルト値                                         | 説明                                                |
+| -------------------- | ---------------------- | ---------------------------------------------------- | --------------------------------------------------- |
+| **showDataFileTabs** | boolean                | false                                                | タブ表示の有効/無効                                 |
+| **defaultFileTab**   | string                 | "datafiles/data.json"                                | デフォルトで表示するタブ（タブ表示ON時のみ有効）    |
+| **dataFileTabs**     | DataFileTab[]          | `[{files: ["datafiles/data.json"], name: "メイン"}]` | データファイルタブの設定                            |
+| **dataFileLabels**   | Record<string, string> | `{"datafiles/data.json": "メイン用データファイル"}`  | データファイルの名前定義（物理ファイル名 → 表示名） |
 
 #### 3.6.1. DataFileTab 構造
 
@@ -139,63 +139,63 @@ interface DataFileTab {
 
 ### 3.7. ウィンドウ表示位置設定
 
-| フィールド | 型 | デフォルト値 | 説明 |
-|-----------|-----|-------------|------|
-| **windowPositionMode** | WindowPositionMode | "cursorMonitorCenter" | ウィンドウ表示位置モード |
-| **windowPositionX** | number | 0 | 固定位置のX座標（windowPositionMode='fixed'時に使用） |
-| **windowPositionY** | number | 0 | 固定位置のY座標（windowPositionMode='fixed'時に使用） |
+| フィールド             | 型                 | デフォルト値          | 説明                                                  |
+| ---------------------- | ------------------ | --------------------- | ----------------------------------------------------- |
+| **windowPositionMode** | WindowPositionMode | "cursorMonitorCenter" | ウィンドウ表示位置モード                              |
+| **windowPositionX**    | number             | 0                     | 固定位置のX座標（windowPositionMode='fixed'時に使用） |
+| **windowPositionY**    | number             | 0                     | 固定位置のY座標（windowPositionMode='fixed'時に使用） |
 
 #### 3.7.1. WindowPositionMode 値
 
-| 値 | 説明 |
-|----|------|
-| **center** | 画面中央に表示 |
-| **cursor** | マウスカーソルの位置に表示 |
-| **cursorMonitorCenter** | カーソルのモニター中央に表示 |
-| **fixed** | 固定位置に表示（手動で移動した位置を記憶） |
+| 値                      | 説明                                       |
+| ----------------------- | ------------------------------------------ |
+| **center**              | 画面中央に表示                             |
+| **cursor**              | マウスカーソルの位置に表示                 |
+| **cursorMonitorCenter** | カーソルのモニター中央に表示               |
+| **fixed**               | 固定位置に表示（手動で移動した位置を記憶） |
 
 ### 3.8. ワークスペース設定
 
-| フィールド | 型 | デフォルト値 | 説明 |
-|-----------|-----|-------------|------|
-| **workspaceOpacity** | number | 100 | ワークスペースウィンドウの不透明度（0-100%） |
-| **workspaceBackgroundTransparent** | boolean | false | ワークスペースウィンドウの背景のみを透過するか |
-| **autoShowWorkspace** | boolean | false | メイン画面表示時にワークスペースを自動表示するか |
-| **workspacePositionMode** | WorkspacePositionMode | "displayRight" | ワークスペースウィンドウの表示位置モード |
-| **workspaceTargetDisplayIndex** | number | 0 | ターゲットディスプレイ番号（displayLeft/displayRight時に使用、0始まり） |
-| **workspacePositionX** | number | 0 | 固定位置のX座標（workspacePositionMode='fixed'時に使用） |
-| **workspacePositionY** | number | 0 | 固定位置のY座標（workspacePositionMode='fixed'時に使用） |
-| **workspaceVisibleOnAllDesktops** | boolean | true | ワークスペースウィンドウを全仮想デスクトップに表示するか |
-| **detachedVisibleOnAllDesktops** | boolean | true | 切り離しウィンドウ（ワークスペースから切り離したグループのウィンドウ）を全仮想デスクトップに表示するか |
-| **hideDetachedWithMainWindow** | boolean | true | メインウィンドウの表示/非表示に連動して切り離しウィンドウも表示/非表示にするか<br>切り離しウィンドウ（またはそこから開いた編集・確認ウィンドウ）を操作中は、メインウィンドウが非表示でも隠さない |
-| **windowSnapEnabled** | boolean | true | ワークスペースウィンドウ・切り離しウィンドウをモニター端に近づけたときに吸着（スナップ）させるか |
+| フィールド                         | 型                    | デフォルト値   | 説明                                                                                                                                                                                                                                                                                                                                           |
+| ---------------------------------- | --------------------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **workspaceOpacity**               | number                | 100            | ワークスペースウィンドウの不透明度（0-100%）                                                                                                                                                                                                                                                                                                   |
+| **workspaceBackgroundTransparent** | boolean               | false          | ワークスペースウィンドウの背景のみを透過するか                                                                                                                                                                                                                                                                                                 |
+| **autoShowWorkspace**              | boolean               | false          | メイン画面表示時にワークスペースを自動表示するか                                                                                                                                                                                                                                                                                               |
+| **workspacePositionMode**          | WorkspacePositionMode | "displayRight" | ワークスペースウィンドウの表示位置モード                                                                                                                                                                                                                                                                                                       |
+| **workspaceTargetDisplayIndex**    | number                | 0              | ターゲットディスプレイ番号（displayLeft/displayRight時に使用、0始まり）                                                                                                                                                                                                                                                                        |
+| **workspacePositionX**             | number                | 0              | 固定位置のX座標（workspacePositionMode='fixed'時に使用）                                                                                                                                                                                                                                                                                       |
+| **workspacePositionY**             | number                | 0              | 固定位置のY座標（workspacePositionMode='fixed'時に使用）                                                                                                                                                                                                                                                                                       |
+| **workspaceVisibleOnAllDesktops**  | boolean               | true           | ワークスペースウィンドウを全仮想デスクトップに表示するか                                                                                                                                                                                                                                                                                       |
+| **detachedVisibleOnAllDesktops**   | boolean               | true           | 切り離しウィンドウ（ワークスペースから切り離したグループのウィンドウ）を全仮想デスクトップに表示するか                                                                                                                                                                                                                                         |
+| **hideDetachedWithMainWindow**     | boolean               | true           | メインウィンドウの表示/非表示に連動して、固定していない切り離しウィンドウも表示/非表示にするか<br>フォーカスがメイン・ワークスペース・切り離しウィンドウ（とそこから開いた編集・確認ウィンドウ）の中にある間は隠さず、外へ出たときに隠す（管理ウィンドウは外扱い）。判定の詳細は [ウィンドウ制御](../window-control.md#ウィンドウ非表示の判定) |
+| **windowSnapEnabled**              | boolean               | true           | ワークスペースウィンドウ・切り離しウィンドウをモニター端に近づけたときに吸着（スナップ）させるか                                                                                                                                                                                                                                               |
 
 #### 3.8.1. WorkspacePositionMode 値
 
-| 値 | 説明 |
-|----|------|
-| **displayLeft** | 指定ディスプレイの左端に配置 |
-| **displayRight** | 指定ディスプレイの右端に配置（デフォルト） |
-| **fixed** | 固定位置に表示（手動で移動した位置を記憶） |
-| **primaryLeft** | @deprecated プライマリディスプレイの左端に配置（後方互換性のため、displayLeftに移行） |
+| 値               | 説明                                                                                   |
+| ---------------- | -------------------------------------------------------------------------------------- |
+| **displayLeft**  | 指定ディスプレイの左端に配置                                                           |
+| **displayRight** | 指定ディスプレイの右端に配置（デフォルト）                                             |
+| **fixed**        | 固定位置に表示（手動で移動した位置を記憶）                                             |
+| **primaryLeft**  | @deprecated プライマリディスプレイの左端に配置（後方互換性のため、displayLeftに移行）  |
 | **primaryRight** | @deprecated プライマリディスプレイの右端に配置（後方互換性のため、displayRightに移行） |
 
 ### 3.9. グループ起動設定
 
-| フィールド | 型 | デフォルト値 | 説明 |
-|-----------|-----|-------------|------|
-| **parallelGroupLaunch** | boolean | false | グループアイテムを並列起動するか<br>true: 全アイテムを同時起動<br>false: 順次起動（500msディレイ） |
+| フィールド              | 型      | デフォルト値 | 説明                                                                                               |
+| ----------------------- | ------- | ------------ | -------------------------------------------------------------------------------------------------- |
+| **parallelGroupLaunch** | boolean | false        | グループアイテムを並列起動するか<br>true: 全アイテムを同時起動<br>false: 順次起動（500msディレイ） |
 
 ### 3.10. 追加ホットキー設定
 
-| フィールド | 型 | デフォルト値 | 説明 |
-|-----------|-----|-------------|------|
-| **itemSearchHotkey** | string | "" | ウィンドウ検索の起動ホットキー<br>空の場合は無効<br>例: "Ctrl+Alt+W" |
+| フィールド           | 型     | デフォルト値 | 説明                                                                 |
+| -------------------- | ------ | ------------ | -------------------------------------------------------------------- |
+| **itemSearchHotkey** | string | ""           | ウィンドウ検索の起動ホットキー<br>空の場合は無効<br>例: "Ctrl+Alt+W" |
 
 ### 3.11. ブックマーク自動取込設定
 
-| フィールド | 型 | デフォルト値 | 説明 |
-|-----------|-----|-------------|------|
+| フィールド             | 型                         | デフォルト値                           | 説明                                                                                                                                                                                                                                 |
+| ---------------------- | -------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **bookmarkAutoImport** | BookmarkAutoImportSettings | `{autoRunOnStartup: false, rules: []}` | ブックマーク自動取込の設定<br>`autoRunOnStartup`: 起動時に有効なルール（`enabled: true`）を自動実行するか<br>`rules`: 取込ルール（`BookmarkAutoImportRule[]`）の配列。ルールの項目は `src/common/types/bookmarkAutoImport.ts` を参照 |
 
 ---
@@ -216,7 +216,7 @@ export interface AppSettings {
   createdWithVersion?: string;
   /** この設定ファイルを最後に更新したアプリバージョン */
   updatedWithVersion?: string;
-  /** ランチャー起動ホットキー（デフォルト: ''、空の場合は未設定） */
+  /** ランチャー起動ホットキー（例: 'Alt+Space'。未設定の空文字は初回起動扱い） */
   hotkey: string;
   /** ウィンドウの初期幅（デフォルト: 600） */
   windowWidth: number;
@@ -232,8 +232,6 @@ export interface AppSettings {
   backupEnabled: boolean;
   /** バックアップファイルの保存件数上限（デフォルト: 10） */
   backupRetention: number;
-  /** クリップボードデータもバックアップに含めるか（デフォルト: false） */
-  backupIncludeClipboard: boolean;
   /** タブ表示の有効/無効（デフォルト: false） */
   showDataFileTabs: boolean;
   /** デフォルトで表示するタブ（タブ表示ON時のみ有効、デフォルト: 'datafiles/data.json'） */
@@ -268,8 +266,10 @@ export interface AppSettings {
   detachedVisibleOnAllDesktops: boolean;
   /** グループアイテムを並列起動する（デフォルト: false） */
   parallelGroupLaunch: boolean;
-  /** ウィンドウ検索の起動ホットキー（デフォルト: ''、空の場合は無効） */
+  /** ウィンドウ検索で起動のホットキー（デフォルト: ''、空の場合は無効） */
   itemSearchHotkey: string;
+  /** クリップボードデータもバックアップに含めるか（デフォルト: false） */
+  backupIncludeClipboard: boolean;
   /** ブックマーク自動取込設定 */
   bookmarkAutoImport: BookmarkAutoImportSettings;
   /** メインウィンドウ非表示時に切り離しウィンドウも連動して非表示にする（デフォルト: true） */
@@ -286,10 +286,10 @@ export interface AppSettings {
  * ウィンドウの表示位置モードを表す列挙型
  */
 export type WindowPositionMode =
-  | 'center'              // 画面中央に表示
-  | 'cursor'              // マウスカーソルの位置に表示
+  | 'center' // 画面中央に表示
+  | 'cursor' // マウスカーソルの位置に表示
   | 'cursorMonitorCenter' // カーソルのモニター中央に表示
-  | 'fixed';              // 固定位置に表示（手動で移動した位置を記憶）
+  | 'fixed'; // 固定位置に表示（手動で移動した位置を記憶）
 ```
 
 ### 4.3. WorkspacePositionMode
@@ -299,11 +299,11 @@ export type WindowPositionMode =
  * ワークスペースの表示位置モードを表す列挙型
  */
 export type WorkspacePositionMode =
-  | 'primaryLeft'   // @deprecated 後方互換性のため残存。displayLeftに移行
-  | 'primaryRight'  // @deprecated 後方互換性のため残存。displayRightに移行
-  | 'displayLeft'   // 指定ディスプレイの左端に配置
-  | 'displayRight'  // 指定ディスプレイの右端に配置（デフォルト）
-  | 'fixed';        // 固定位置に表示（手動で移動した位置を記憶）
+  | 'primaryLeft' // @deprecated 後方互換性のため残存。displayLeftに移行
+  | 'primaryRight' // @deprecated 後方互換性のため残存。displayRightに移行
+  | 'displayLeft' // 指定ディスプレイの左端に配置
+  | 'displayRight' // 指定ディスプレイの右端に配置（デフォルト）
+  | 'fixed'; // 固定位置に表示（手動で移動した位置を記憶）
 ```
 
 ### 4.4. DataFileTab
@@ -346,18 +346,18 @@ import { SettingsService } from '@main/services/settingsService';
 const settings = await SettingsService.getInstance();
 await settings.setMultiple({
   hotkey: 'Ctrl+Shift+L',
-  autoLaunch: true
+  autoLaunch: true,
 });
 ```
 
 ### 5.3. 設定変更の即座反映
 
-設定変更時、`settings-changed` イベントが全ウィンドウに送信され、各ウィンドウが設定を再読み込みして画面に反映します。このイベントはデータを伴わない通知のみで、受信側が改めて設定を取得します。
+設定の変更・リセット・ファイルからの再適用（F5）のたびに、`settings-changed` イベント（`IPC_CHANNELS.EVENT_SETTINGS_CHANGED`）が全ウィンドウに送信され、各ウィンドウが設定を再読み込みして画面に反映します。このイベントはデータを伴わない通知のみで、受信側が改めて設定を取得します。
 
 ```typescript
 // メインプロセス側（settingsHandlers.ts）
-// setMultiple() 実行後に全ウィンドウへ通知
-window.webContents.send('settings-changed');
+// 設定の変更・リセット・再適用の後に全ウィンドウへ通知
+window.webContents.send(IPC_CHANNELS.EVENT_SETTINGS_CHANGED);
 
 // レンダラープロセス側（preload経由）
 window.electronAPI.onSettingsChanged(() => {
@@ -377,8 +377,6 @@ window.electronAPI.onSettingsChanged(() => {
 
 ## 6. 関連ドキュメント
 
-- **[アプリケーション設定](../../screens/admin-window.md)** - 設定画面の使い方
-- **[初回起動セットアップ](../../screens/first-launch-setup.md)** - ホットキー初期設定
 - **[データファイル形式](data-format.md)** - data.json仕様
 - **[ワークスペースファイル形式](workspace-format.md)** - workspace.json仕様
 - **[ファイル形式一覧](README.md)** - すべてのファイル形式の概要

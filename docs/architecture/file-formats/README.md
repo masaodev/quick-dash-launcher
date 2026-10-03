@@ -4,7 +4,7 @@ QuickDashLauncherで使用される主要なファイル形式の概要とドキ
 
 ## 概要
 
-QuickDashLauncherは以下の3種類のファイルを使用してアプリケーションの状態を管理します：
+QuickDashLauncherは主に以下の 3 種類のファイルを使用してアプリケーションの状態を管理します：
 
 | ファイル種別                                      | 主な用途                   | 対象ファイル                                                                      |
 | ------------------------------------------------- | -------------------------- | --------------------------------------------------------------------------------- |
@@ -12,7 +12,7 @@ QuickDashLauncherは以下の3種類のファイルを使用してアプリケ�
 | **[データファイル](data-format.md)**              | ランチャーアイテムの定義   | `datafiles/data.json`, `datafiles/data2.json`, ...                                |
 | **[ワークスペースファイル](workspace-format.md)** | ワークスペース機能のデータ | `workspace.json`, `workspace-archive.json`（UI 状態は `workspace-ui-state.json`） |
 
-すべてのファイルは **UTF-8（BOMなし）** のJSON形式で保存されます。
+JSON ファイルはすべて **UTF-8（BOMなし）** で保存されます。
 
 ---
 
@@ -67,18 +67,18 @@ QuickDashLauncherは以下の3種類のファイルを使用してアプリケ�
 
 - **フォルダ**: `config/clipboard-data/`
 - **ファイル**: `config/clipboard-data/{id}.json`
-- **内容**: クリップボードアイテムのデータ本体（アイテムIDごとに1ファイル）
+- **内容**: クリップボードアイテムのデータ本体（保存のたびに採番した ID ごとに 1 ファイル。アイテムの `dataFileRef` から参照する）
 
 ### バックアップ
 
 - **フォルダ**: `config/backup/`
 - **形式**: スナップショット方式。タイムスタンプ名のサブフォルダ（`YYYY-MM-DDTHH-MM-SS/`）に対象ファイルをまとめて保存
-- **バックアップ対象**: `datafiles/data*.json`、`settings.json`、`workspace.json`、`workspace-archive.json`、`workspace-ui-state.json`、（設定により）`clipboard-data/*.json`
+- **バックアップ対象**: `datafiles/data*.json`、`settings.json`、`workspace.json`、`workspace-archive.json`、`workspace-ui-state.json`、（旧形式の `workspace-detached.json` が残っていれば）それも、（設定により）`clipboard-data/*.json`
 - **変更検知トリガー**: `datafiles/data*.json`・`settings.json`・`workspace.json`・`workspace-archive.json`（人・AI が編集するファイル）の変更で判定
-- **作成タイミング**: 起動時に1日1回、変更がある場合のみ
+- **作成タイミング**: 起動時に1日1回、変更がある場合のみ（`backupEnabled` が無効なら作らない）
 - **保持件数**: 設定可能（`backupRetention`、デフォルト値は設定ファイルを参照）
-- **リストア前自動バックアップ**: リストア実行時に `YYYY-MM-DDTHH-MM-SS_pre-restore/` フォルダを自動作成
-- **外部変更前スナップショット**: データファイル・ワークスペースファイルが QDL 外で変更されたことを読み込み時に検知すると、変更前の内容を `YYYY-MM-DDTHH-MM-SS_pre-external/` に保存（変更されたファイルのみ。`backupRetention` とは別枠で最新 10 件を保持。QDL 起動中の編集のみ検知し、終了中の編集は対象外）
+- **リストア前自動バックアップ**: リストア実行時に `YYYY-MM-DDTHH-MM-SS_pre-restore/` フォルダを自動作成（`backupEnabled` に関係なく作る）
+- **外部変更前スナップショット**: データファイル・ワークスペースファイルが QDL 外で変更されたことを読み込み時に検知すると、変更前の内容を `YYYY-MM-DDTHH-MM-SS_pre-external/` に保存（`backupEnabled` が無効なら作らない。変更されたファイルのみ。`backupRetention` とは別枠で最新 10 件を保持。QDL 起動中の編集のみ検知し、終了中の編集は対象外）
 - **移行前スナップショット**: ワークスペースファイルを旧形式から 2.0 に変換する前に `YYYY-MM-DDTHH-MM-SS_pre-migration/` を作成（`backupEnabled` に関係なく作る）
 
 ### 読み込みレポート
@@ -100,7 +100,7 @@ QuickDashLauncherは以下の3種類のファイルを使用してアプリケ�
 | `config/schemas/workspace.schema.json`         | ワークスペースファイルの JSON Schema。アイテムはデータファイルと同じ語彙の `oneOf`                                                                                                                                     | `assets/schemas/workspace.schema.json`         |
 | `config/schemas/workspace-archive.schema.json` | アーカイブファイルの JSON Schema                                                                                                                                                                                       | `assets/schemas/workspace-archive.schema.json` |
 
-**`$schema` の注入**: データファイルは `"$schema": "../schemas/data.schema.json"`、`settings.json` は `"$schema": "./schemas/settings.schema.json"`、ワークスペースは `"./schemas/workspace.schema.json"` / `"./schemas/workspace-archive.schema.json"` を QDL が補う（相対パス。URL にすると main の最新とアプリの版がずれるため）。既存利用者のファイルはアップグレード後の初回読み込みで 1 回書き戻される（`writeDataFile` 経由なので外部変更にはならず、`_pre-external` スナップショットも作られない）。
+**`$schema` の注入**: データファイルは `"$schema": "../schemas/data.schema.json"`、`settings.json` は `"$schema": "./schemas/settings.schema.json"`、ワークスペースは `"./schemas/workspace.schema.json"` / `"./schemas/workspace-archive.schema.json"` を QDL が補う。無いときだけでなく値が違うときも揃える（相対パス。URL にすると main の最新とアプリの版がずれるため）。既存利用者のファイルはアップグレード後の初回読み込みで 1 回書き戻される（データファイル・ワークスペースファイルは `writeDataFile` 経由なので外部変更にはならず、`_pre-external` スナップショットも作られない。`settings.json` は `settingsService` が electron-store 経由で書く）。
 
 **スキーマの生成と検証**:
 
