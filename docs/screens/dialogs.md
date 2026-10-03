@@ -109,6 +109,10 @@
 | **スタイル** | `src/renderer/styles/components/ConfirmDialog.css` |
 | **用途** | 重要な操作の前にユーザーへの確認を求める |
 
+### 画面イメージ
+
+![ConfirmDialog（タブ削除の確認）](./images/dialogs-confirm.png)
+
 ### Props
 
 | プロパティ | 型 | 必須 | デフォルト | 説明 |
@@ -214,6 +218,10 @@
 | **コンポーネント名** | `FilePickerDialog` |
 | **スタイル** | `src/renderer/styles/components/FilePickerDialog.css` |
 | **用途** | ファイル選択ダイアログの表示（Electron APIを利用） |
+
+### 画面イメージ
+
+![FilePickerDialog（カスタムアイコンの選択）](./images/dialogs-file-picker.png)
 
 ### Props
 

@@ -1,0 +1,18 @@
+{
+  "version": "1.0",
+  "items": [
+    { "id": "shot0001", "type": "item", "displayName": "GitHub", "path": "https://github.com/" },
+    { "id": "shot0002", "type": "item", "displayName": "Google", "path": "https://www.google.com/" },
+    { "id": "shot0003", "type": "item", "displayName": "Wikipedia", "path": "https://ja.wikipedia.org/" },
+    { "id": "shot0004", "type": "item", "displayName": "YouTube", "path": "https://www.youtube.com/" },
+    { "id": "shot0005", "type": "item", "displayName": "メモ帳", "path": "notepad.exe", "memo": "ちょっとしたメモ用" },
+    { "id": "shot0006", "type": "item", "displayName": "電卓", "path": "calc.exe" },
+    { "id": "shot0007", "type": "item", "displayName": "ペイント", "path": "mspaint.exe" },
+    { "id": "shot0008", "type": "item", "displayName": "デスクトップ", "path": "shell:Desktop" },
+    { "id": "shot0009", "type": "item", "displayName": "ドキュメント", "path": "shell:Documents" },
+    { "id": "shot0010", "type": "item", "displayName": "ダウンロード", "path": "shell:Downloads" },
+    { "id": "shot0011", "type": "item", "displayName": "VS Code", "path": "vscode://" },
+    { "id": "shot0012", "type": "group", "displayName": "朝の定番セット", "itemNames": ["GitHub", "Google", "メモ帳"] },
+    { "id": "shot0013", "type": "window", "displayName": "メモ帳のウィンドウ", "windowTitle": "*メモ帳*" }
+  ]
+}

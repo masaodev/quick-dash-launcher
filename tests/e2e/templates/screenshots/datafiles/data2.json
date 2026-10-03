@@ -1,0 +1,8 @@
+{
+  "version": "1.0",
+  "items": [
+    { "id": "shot0101", "type": "item", "displayName": "Stack Overflow", "path": "https://stackoverflow.com/" },
+    { "id": "shot0102", "type": "item", "displayName": "MDN Web Docs", "path": "https://developer.mozilla.org/ja/" },
+    { "id": "shot0103", "type": "item", "displayName": "コマンドプロンプト", "path": "cmd.exe" }
+  ]
+}
