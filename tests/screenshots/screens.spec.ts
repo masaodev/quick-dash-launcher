@@ -176,6 +176,8 @@ test.describe('画面仕様書の画面イメージ', () => {
   test('ワークスペースウィンドウ', async ({ electronApp, mainWindow }) => {
     const utils = new TestUtils(mainWindow);
     await utils.waitForPageLoad();
+    // ワークスペースはメイン画面と同じアイコンキャッシュを使うので、先に取得しておく
+    await fetchIcons(mainWindow);
     await electronApp.evaluate(({ BrowserWindow }) => {
       BrowserWindow.getAllWindows()
         .find((w) => w.getTitle() === 'Workspace')
