@@ -183,10 +183,7 @@ F5 では、レンダラーが `settings:reapply` を呼んでから `load-data-
 - **アイコン取得の進捗**: `icon-progress-start` / `icon-progress-update` / `icon-progress-complete`。データは `IconProgress`（`src/common/types/icon.ts`）
 - **レイアウト実行の進捗**: `layout-progress-start` / `layout-progress-update` / `layout-progress-complete`。中止は `layout-cancel`（`send`）
 
-詳細は[トースト通知](../features/toast-notifications.md)を参照。
-
 ## 関連ドキュメント
 
 - [システム概要](overview.md) - システム全体の構造とデータフロー
 - [ウィンドウ制御](window-control.md) - ウィンドウ管理の詳細
-- [ワークスペース](../features/workspace.md) - ワークスペース機能の使い方

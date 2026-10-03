@@ -836,8 +836,6 @@ v0.4.2以降、重複排除は**タブ単位**で実行されます：
 
 ## 7. 関連ドキュメント
 
-- **[アイテム管理](../../screens/admin-window.md#6-アイテム管理の詳細)** - データファイルの編集機能
-- **[フォルダ取込](../../screens/register-modal.md#12-フォルダ取込アイテムの詳細)** - フォルダ取込機能の詳細
 - **[ワークスペースファイル形式](workspace-format.md)** - workspace.json仕様
 - **[設定ファイル形式](settings-format.md)** - settings.json仕様
 - **[ファイル形式一覧](README.md)** - すべてのファイル形式の概要

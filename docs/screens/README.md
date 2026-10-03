@@ -66,7 +66,7 @@
 | **メモ表示モーダル**（`MemoViewModal`）                                       | メインウィンドウのアイテム一覧で 📝 バッジのクリック<br>右クリックメニューの「📝 メモを表示」                                | なし                                                                               |
 | **グループアイテム選択モーダル**                                              | アイテム登録・編集、ワークスペースアイテム編集でグループの「+ アイテムを追加」クリック時                                     | [group-item-selector-modal.md](./group-item-selector-modal.md)                     |
 | **ウィンドウ選択モーダル**                                                    | アイテム登録・編集、ワークスペースアイテム編集のウィンドウ設定で「ウィンドウから取得」クリック時                             | [register-modal.md](./register-modal.md#ウィンドウ選択モーダルwindowselectormodal) |
-| **今のウィンドウから追加（LayoutCaptureModal）**                              | アイテム登録・編集、ワークスペースアイテム編集のウィンドウ配置で「+ 今のウィンドウから追加」クリック時                       | [register-modal.md](./register-modal.md#4161-今のウィンドウから追加)               |
+| **今のウィンドウから追加（LayoutCaptureModal）**                              | アイテム登録・編集、ワークスペースアイテム編集のウィンドウ配置で「+ 今のウィンドウから追加」クリック時                       | [register-modal.md](./register-modal.md#5161-今のウィンドウから追加)               |
 
 ### 共通ダイアログ
 
