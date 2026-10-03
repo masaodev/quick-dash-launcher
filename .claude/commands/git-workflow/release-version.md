@@ -42,9 +42,9 @@ allowed-tools: ['Bash', 'Read', 'Edit', 'TodoWrite', 'AskUserQuestion', 'Skill',
 3. **docs の点検**（`--yes` のときは省略）
    - `/docs-check`（既定の深さ・報告だけ）を実行し、前回の点検以降に変わったコードと docs が食い違っていないかを見る
    - 結果をユーザーに示し、次のどちらにするかを確認する
-     - **直してから出す**: リリースを中断し、`/docs-check fix-all` で直して PR を出す。マージ後に `/release-version` をやり直す
-     - **このまま出す**: 残った指摘はそのままにして先へ進む（直すべきものはオープンな課題として残す）
-   - 指摘がなく先へ進むときは `--record` で点検の記録（`docs/.docs-check.json`）を更新し、手順 5 のバージョン更新のコミットに含める
+     - **直してから出す**: リリースを中断し、`/docs-check fix-all` で直して PR を出す（docs-check が更新した点検の記録 `docs/.docs-check.json` もこの PR に含める）。マージ後に `/release-version` をやり直す
+     - **このまま出す**: 残った指摘はそのままにして先へ進む（直すべきものはオープンな課題として控える）
+   - 点検の記録は docs-check が自分で更新する（指摘が残っていても更新する）。更新されたら、手順 5 のバージョン更新のコミットに含める
 
 4. **リリースノートの作成**
    - ベータ版: 前のタグ（ベータ版でも正式版でも）からのコミット（`git log v{prev}..HEAD --oneline`）を元に書く
@@ -56,7 +56,7 @@ allowed-tools: ['Bash', 'Read', 'Edit', 'TodoWrite', 'AskUserQuestion', 'Skill',
 
 5. **バージョン更新**
    - `npm version {version} --no-git-tag-version` で `package.json` と `package-lock.json` を更新
-   - 変更をコミット（手順 3 で点検の記録を更新したときは `docs/.docs-check.json` も含める）
+   - 変更をコミット（手順 3 で docs-check が点検の記録を更新したときは `docs/.docs-check.json` も含める）
 
 6. **タグ作成とプッシュ**
    - `v{version}` 形式の**注釈付き**Gitタグを作成（1 行目 `v{version}`、空行、本文）
@@ -91,8 +91,7 @@ git tag --list 'v*' --sort=-v:refname | head
 git tag --list 'v*' --sort=-v:refname | grep -v -- '-' | head -1   # 直前の正式版
 
 # 2. docs の点検（--yes のときは省略。結果を見てユーザーに確認する）
-/docs-check
-PYTHONIOENCODING=utf-8 python .claude/skills/docs-check/scripts/docs_check.py --record   # 指摘がなく先へ進むとき
+/docs-check   # 点検の記録（docs/.docs-check.json）は docs-check が更新する
 
 # 3. リリースノート本文を書く（作業用の一時ファイル。リポジトリには入れない）
 git log v{prev}..HEAD --oneline          # ベータ版
@@ -102,7 +101,7 @@ git log v{prevStable}..HEAD --oneline    # 正式版
 # 4. バージョン更新
 npm version {version} --no-git-tag-version
 
-# 5. コミット（点検の記録を更新したときは docs/.docs-check.json も）
+# 5. コミット（docs-check が点検の記録を更新したときは docs/.docs-check.json も）
 git add package.json package-lock.json docs/.docs-check.json
 git commit -m "chore: v{version}リリース準備 - バージョン更新"
 
