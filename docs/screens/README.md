@@ -70,11 +70,11 @@
 
 ### 共通ダイアログ
 
-| 画面名               | 表示条件                                                         | 仕様書                                        |
-| -------------------- | ---------------------------------------------------------------- | --------------------------------------------- |
-| **AlertDialog**      | エラー・警告・成功・情報メッセージの表示                         | [dialogs.md](./dialogs.md#2-alertdialog)      |
-| **ConfirmDialog**    | ユーザー確認が必要な操作<br>（削除、変更破棄など）               | [dialogs.md](./dialogs.md#3-confirmdialog)    |
-| **FilePickerDialog** | ファイル選択<br>（ブックマークインポート、カスタムアイコン選択） | [dialogs.md](./dialogs.md#4-filepickerdialog) |
+| 画面名               | 表示条件                                           | 仕様書                                        |
+| -------------------- | -------------------------------------------------- | --------------------------------------------- |
+| **AlertDialog**      | エラー・警告・成功・情報メッセージの表示           | [dialogs.md](./dialogs.md#2-alertdialog)      |
+| **ConfirmDialog**    | ユーザー確認が必要な操作<br>（削除、変更破棄など） | [dialogs.md](./dialogs.md#3-confirmdialog)    |
+| **FilePickerDialog** | ファイル選択<br>（カスタムアイコン選択）           | [dialogs.md](./dialogs.md#4-filepickerdialog) |
 
 ### 部品
 
@@ -85,7 +85,7 @@
 | **右クリックメニュー**               | アイテムの右クリック操作<br>（パスコピー、フォルダーを開く、編集） | [context-menu.md](./context-menu.md)                        |
 | **URLコンバーターメニュー**          | URLの変換・加工操作メニュー                                        | なし                                                        |
 | **フォルダ取込オプションエディタ**   | フォルダ取込アイテムのオプション設定                               | [dir-options-editor.md](./dir-options-editor.md)            |
-| **ホットキー入力**                   | 起動ホットキーの設定入力                                           | [hotkey-input.md](./hotkey-input.md)                        |
+| **ホットキー入力**                   | 起動ホットキー・アイテム検索ホットキーの設定入力                   | [hotkey-input.md](./hotkey-input.md)                        |
 | **クリップボードアイテムエディター** | クリップボードアイテムの編集                                       | なし                                                        |
 | **カラーピッカー**                   | カラー選択コンポーネント                                           | なし                                                        |
 | **ウィンドウ設定エディター**         | ウィンドウ設定（タイトル・位置・サイズ）の編集                     | [register-modal.md](./register-modal.md#windowconfigeditor) |
