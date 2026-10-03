@@ -49,7 +49,7 @@ npm run lint && npm run type-check  # 品質チェック
 |-------------|------|
 | `e2e-test-runner` | E2Eテスト実行・失敗分析（出力が大きいので分離する） |
 | `documentation-updater` | 機能変更時のドキュメント更新 |
-| `doc-verifier` | ドキュメント 1 本とコードの照合（`docs-check` スキルが使う） |
+| `doc-verifier` | ドキュメント 1 本をコードと照合し、指定の範囲で直して報告（`docs-check` スキルが、照合する文書が多いときに使う） |
 
 ## カスタムコマンド・スキル
 
