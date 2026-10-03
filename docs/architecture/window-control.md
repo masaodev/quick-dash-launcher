@@ -28,7 +28,7 @@
 
 - **実装場所**: `src/main/windowManager.ts`, `src/main/ipc/itemHandlers.ts`
 - **状態管理**: メインプロセスで`windowPinMode: WindowPinMode`を管理
-- **型定義**: `src/common/types.ts`で`WindowPinMode`型を定義
+- **型定義**: `src/common/types/settings.ts`で`WindowPinMode`型を定義
 - **制御ロジック**:
   - ピン留めモードに応じてウィンドウのblurイベントで非表示制御
   - アイテム起動時、`normal`モードの場合のみウィンドウを非表示
