@@ -21,7 +21,7 @@ docs/
 - **screens/** - 画面単位の具体的な操作とUI仕様（仕様書の主軸）
 - **features/** - 複数画面にまたがる横断的な機能や概念の説明
 - **architecture/** - 開発者向けの技術実装・内部仕様
-- **参照方向** - screens → features → architecture の順に参照
+- **参照方向** - screens → features → architecture の順に参照（一方向。features から screens、architecture から features・screens へのリンクは逆向きになるので張らない。setup・testing からはどこを参照してもよい）
 
 > 注意: 参照方向のルールとして、features/ から screens/ への逆方向参照は避けてください。features/ のドキュメントが特定の画面の詳細を参照する必要がある場合は、screens/ 側に情報をまとめ、features/ からはその概念や仕組みのみを説明してください。
 
