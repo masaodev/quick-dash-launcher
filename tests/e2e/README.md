@@ -28,6 +28,7 @@ tests/e2e/
 │   ├── with-folder-import/  # フォルダ取込テスト用
 │   ├── custom-hotkey/   # カスタムホットキーテスト用
 │   ├── empty/           # 空データテスト用
+│   ├── screenshots/     # 画面仕様書の画面イメージ撮影用（tests/screenshots/ が使う）
 │   └── first-launch/    # 初回起動テスト用
 └── specs/               # テスト仕様（機能別の *.spec.ts。playwright.config.ts の testDir）
 ```
