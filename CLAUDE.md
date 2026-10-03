@@ -49,14 +49,14 @@ npm run lint && npm run type-check  # 品質チェック
 |-------------|------|
 | `e2e-test-runner` | E2Eテスト実行・失敗分析（出力が大きいので分離する） |
 | `documentation-updater` | 機能変更時のドキュメント更新 |
-| `doc-verifier` | ドキュメント 1 本とコードの照合（`verify-docs` スキルが使う） |
+| `doc-verifier` | ドキュメント 1 本とコードの照合（`docs-check` スキルが使う） |
 
 ## カスタムコマンド・スキル
 
 - `/release-version` - バージョン更新・タグ作成・リリース
 - `/create-issue` - GitHub Issue の作成
 - `/create-screen-spec` - 画面仕様書の作成
-- `verify-docs`（スキル） - docs とコードの整合性検証
+- `docs-check`（スキル） - docs の点検と修正（体系・画面一覧の網羅・リンク・コードとの食い違い。`quick`／`full`、`fix`／`fix-all` で深さと直す範囲を選ぶ）
 
 ## ドキュメント
 
