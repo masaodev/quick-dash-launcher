@@ -47,8 +47,8 @@ let windowShownAt = 0; // メインウィンドウを最後に表示した時刻
  */
 const WINDOW_FOCUS_STABILIZATION_DELAY_MS = 1500;
 
-/** 表示直後のフォーカスの揺れを無条件に無視する時間（ms） */
-const BLUR_IGNORE_AFTER_SHOW_MS = 200;
+/** 表示直後のフォーカスの揺れが収まるまでの時間（ms）。この間のblurは収まってから移動先を確認する */
+const BLUR_SETTLE_AFTER_SHOW_MS = 200;
 
 /** blur後にフォーカスの移動先を確認するまでの待ち時間（ms） */
 const BLUR_FOCUS_CHECK_DELAY_MS = 50;
@@ -145,8 +145,9 @@ function shouldHideOnBlur(): boolean {
 /**
  * blur後、フォーカスがQDLの外へ移っていればメインウィンドウを非表示にする
  * ワークスペース・切り離しウィンドウへの移動や、メインウィンドウへの復帰では非表示にしない
+ * @param delayMs フォーカスの移動先を確認するまでの待ち時間
  */
-function hideMainWindowIfFocusLeftApp(): void {
+function hideMainWindowIfFocusLeftApp(delayMs: number): void {
   setTimeout(() => {
     if (!mainWindow || mainWindow.isDestroyed() || !mainWindow.isVisible()) return;
     if (!shouldHideOnBlur()) return;
@@ -156,7 +157,7 @@ function hideMainWindowIfFocusLeftApp(): void {
 
     hideMainWindowInternal();
     hideDetachedWindowsAfterBlur();
-  }, BLUR_FOCUS_CHECK_DELAY_MS);
+  }, delayMs);
 }
 
 /**
@@ -220,8 +221,8 @@ export async function createWindow(): Promise<BrowserWindow> {
 
     // 表示直後（フォーカス安定猶予中）は、QDL自身のウィンドウへのフォーカス移動を無視し、
     // QDLの外へ移ったときだけ非表示にする
-    if (Date.now() - windowShownAt < BLUR_IGNORE_AFTER_SHOW_MS) return;
-    hideMainWindowIfFocusLeftApp();
+    const untilSettled = BLUR_SETTLE_AFTER_SHOW_MS - (Date.now() - windowShownAt);
+    hideMainWindowIfFocusLeftApp(Math.max(BLUR_FOCUS_CHECK_DELAY_MS, untilSettled));
   });
 
   mainWindow.on('closed', () => {
