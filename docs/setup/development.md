@@ -36,22 +36,26 @@ v0.5.3以降、開発時に複数のインスタンスを同時に起動でき�
 
 #### 利用可能なインスタンス
 
-| コマンド           | ポート | ホットキー | 設定フォルダ                                | 用途                     |
-| ------------------ | ------ | ---------- | ------------------------------------------- | ------------------------ |
-| `npm run dev`      | 9001   | Ctrl+Alt+A | `%APPDATA%\dev-quick-dash-launcher\config`  | メイン開発環境           |
-| `npm run dev2`     | 9002   | Ctrl+Alt+S | `%APPDATA%\dev2-quick-dash-launcher\config` | 比較検証用               |
-| `npm run dev:test` | 9003   | Ctrl+Alt+T | `./tests/dev/full`                          | テストデータでの動作確認 |
+| コマンド           | ポート | ホットキー | 設定フォルダ                                | 用途                                                     |
+| ------------------ | ------ | ---------- | ------------------------------------------- | -------------------------------------------------------- |
+| `npm run dev`      | 9001   | Ctrl+Alt+A | `%APPDATA%\dev-quick-dash-launcher\config`  | メイン開発環境                                           |
+| `npm run dev2`     | 9002   | Ctrl+Alt+S | `%APPDATA%\dev2-quick-dash-launcher\config` | 比較検証用                                               |
+| `npm run dev:test` | 9003   | Ctrl+Alt+T | `./tests/dev/full`                          | テストデータでの動作確認（起動時に表示・表示固定モード） |
 
 #### 環境変数
 
 インスタンスの動作は以下の環境変数で制御されます：
 
-| 環境変数                | 説明                                         | 例                         |
-| ----------------------- | -------------------------------------------- | -------------------------- |
-| `APP_INSTANCE`          | インスタンス識別子（userDataパスに使用）     | `dev`, `dev2`              |
-| `VITE_PORT`             | Vite開発サーバーのポート番号                 | `9001`, `9002`             |
-| `HOTKEY`                | 起動ホットキー（設定ファイルを上書き）       | `Ctrl+Alt+A`, `Ctrl+Alt+S` |
-| `QUICK_DASH_CONFIG_DIR` | 設定フォルダのパス（絶対パスまたは相対パス） | `./tests/dev/full`         |
+| 環境変数                 | 説明                                                                         | 例                         |
+| ------------------------ | ---------------------------------------------------------------------------- | -------------------------- |
+| `APP_INSTANCE`           | インスタンス識別子（userDataパスに使用）                                     | `dev`, `dev2`              |
+| `VITE_PORT`              | Vite開発サーバーのポート番号                                                 | `9001`, `9002`             |
+| `HOTKEY`                 | 起動ホットキー（設定ファイルを上書き）                                       | `Ctrl+Alt+A`, `Ctrl+Alt+S` |
+| `QUICK_DASH_CONFIG_DIR`  | 設定フォルダのパス（絶対パスまたは相対パス）                                 | `./tests/dev/full`         |
+| `WINDOW_PIN_MODE`        | 起動時の固定モード（`normal`・`alwaysOnTop`・`stayVisible`。それ以外は無視） | `stayVisible`              |
+| `SHOW_WINDOW_ON_STARTUP` | `1` で起動時にメインウィンドウを表示する                                     | `1`                        |
+| `SKIP_SPLASH_WINDOW`     | `1` でスプラッシュウィンドウを出さない                                       | `1`                        |
+| `DISABLE_GLOBAL_HOTKEY`  | `1` でグローバルホットキーを登録しない                                       | `1`                        |
 
 #### 実装の仕組み
 
@@ -127,7 +131,7 @@ QUICK_DASH_CONFIG_DIR=./tests/dev/full npm run dev
 ### ウィンドウの動作
 
 - フレームレスウィンドウ。サイズは設定の `windowWidth`×`windowHeight`（既定 600x400px）
-- フォーカスが外れると非表示になる。DevTools を開いているとき・固定モードが「通常」以外のとき・初回設定中・モーダル表示中は例外
+- フォーカスがメイン・ワークスペース・切り離しウィンドウ（とその子ウィンドウ）の外へ出ると非表示になる（群の中での移動では隠れない。管理ウィンドウは群の外）。DevTools を開いているとき・固定モードが「通常」以外のとき・初回設定中・モーダル表示中は例外。詳細は [ウィンドウ制御](../architecture/window-control.md)
 - 表示／非表示はグローバルホットキー（既定は未設定で、初回起動時に設定する）
 - 表示時に検索ボックスをクリアしてフォーカスする
 - 📌ボタンで固定モードを「通常 → 常に最前面 → 表示固定」の順に切り替える（`WindowPinMode`）。最前面になるのは「常に最前面」とモーダル表示中だけ
@@ -147,7 +151,7 @@ QUICK_DASH_CONFIG_DIR=./tests/dev/full npm run dev
 
 #### タブ単位の重複排除（v0.4.2以降）
 
-データ読み込み処理（`src/main/services/data/dataFileLoader.ts`の`loadDataFiles()`関数）では、タブ単位で重複排除が行われます。
+データ読み込み処理（`src/main/services/data/dataFileLoader.ts`の`loadDataFilesWithReport()`関数。`loadDataFiles()`が呼び出す）では、タブ単位で重複排除が行われます。
 
 **実装方法：**
 
@@ -155,7 +159,7 @@ QUICK_DASH_CONFIG_DIR=./tests/dev/full npm run dev
 2. `sourceFile → tabIndex` のマップを作成
 3. 各データファイル処理時に、そのファイルが属するタブIndexを取得
 4. タブ別の`Set<string>`で重複チェック
-5. 重複判定キー: `${name}|${path}|${args}`
+5. 重複判定キー（`jsonItemConverter.ts`）: `${displayName}|${path}`。`args` があるときは `${displayName}|${path}|${args}`
 
 **重複排除ルール：**
 
@@ -188,7 +192,7 @@ for (const fileName of dataFiles) {
 
 #### 管理画面の重複削除
 
-管理画面の「🧰 ツール ▼ 重複を削除」（`AdminItemManagerView.tsx` → `useAdminItemEditing.dedupeFile`）は、選択中のデータファイルのみを対象に処理します：
+管理画面の「🧰 ツール」メニューの「🧹 重複を削除」（`AdminItemManagerView.tsx` → `useAdminItemEditing.dedupeFile`）は、選択中のデータファイルのみを対象に処理します：
 
 1. 現在選択中のデータファイルのアイテムを抽出
 2. 種類と表示テキストが同じアイテムのうち、ファイル内で後にあるものを除く（`editableItemOperations.dedupeFileItems`）
@@ -230,7 +234,7 @@ for (const fileName of dataFiles) {
 
 **共通化した処理の置き場所（新しく書く前に確認する）:**
 
-- アイコン取得: `src/main/services/iconService.ts` の `getIconForItem()`（アイコン用 IPC とワークスペースの IPC が共用）
+- アイコン取得: `src/main/services/icon/iconFetcher.ts` の `getIconForItem()`（アイコン用 IPC が直接、ワークスペースの IPC は `services/iconService.ts` 経由で使う）
 - アイテムの起動: `src/main/utils/itemLauncher.ts`（URL・ファイル・アプリ・カスタムURI。`itemHandlers.ts` と `workspaceHandlers.ts` が共用）
 - ウィンドウの検索・アクティブ化・位置とサイズの設定: `src/main/utils/windowActivator.ts`
 - 登録・編集フォームの部品: `src/renderer/components/WindowConfigEditor.tsx`（ウィンドウ設定）と `CustomIconEditor.tsx`（カスタムアイコン）。`RegisterItemForm.tsx` とワークスペースのアイテム編集が使う
@@ -268,8 +272,9 @@ Dependabotは依存関係を以下のグループに分けてPRを作成しま�
 
 1. **production-major** - 本番依存関係のメジャーバージョンアップ
 2. **production-minor-patch** - 本番依存関係のマイナー・パッチ更新
-3. **development** - 開発依存関係の更新
-4. **GitHub Actions** - CI/CDワークフローの更新
+3. **development-dependencies** - 開発依存関係のマイナー・パッチ更新
+
+開発依存関係のメジャーバージョンアップはグループに入らず、個別のPRになります。GitHub Actionsの更新はグループ化せず、個別にPRが作成されます。
 
 **PR数の制限:**
 
@@ -516,7 +521,7 @@ if (isLauncherItem(data)) {
 
 ### ダイアログコンポーネント
 
-ネイティブダイアログ（`window.alert()`, `window.confirm()`, `dialog.showOpenDialog()`）の代替として、カスタムReactコンポーネントを使用しています。
+ネイティブダイアログ（`window.alert()`, `window.confirm()`）の代替として、カスタムReactコンポーネントを使用しています。ファイル選択は、カスタムのダイアログからネイティブのファイル選択を開く二段構成です。
 
 - **AlertDialog.tsx**: 通知・警告・エラー表示
   - 4つのタイプ: `info`, `error`, `warning`, `success`
@@ -526,10 +531,10 @@ if (isLauncherItem(data)) {
   - ESCキー（キャンセル）とEnterキー（確認）のサポート
   - `danger`モード: 破壊的操作時の警告スタイル
   - カスタマイズ可能なボタンテキスト
-- **FilePickerDialog.tsx**: ファイル選択ダイアログ
-  - Electronの`dialog.showOpenDialog()`をラップ
-  - ファイルタイプフィルター（HTML、Image）
-  - 統一されたUIでのファイル選択
+- **FilePickerDialog.tsx**: ネイティブのファイル選択を開く前段のダイアログ
+  - 「ファイルを参照...」ボタンで、IPC 経由でメインプロセスのネイティブ選択を開く（`fileTypes` が `html` なら `selectBookmarkFile`、`image` なら `selectCustomIconFile`）
+  - ファイルタイプ（HTML、Image）ごとに呼ぶ IPC を切り替える
+  - 選択したパスを `onFileSelect` で返して閉じる
 
 ### 設定メニュー
 
@@ -547,13 +552,13 @@ if (isLauncherItem(data)) {
 
 開発モードでは、以下の方法でDevToolsを開くことができます：
 
-**管理ウィンドウ:**
+**管理・ワークスペース・切り離しウィンドウ:**
 
-- `Ctrl+Shift+I` で開発者ツールを開く（開発モードのみ）
+- `Ctrl+Shift+I` で開発者ツールを開閉する（開発モードのみ。`attachCommonKeyHandlers`（`src/main/utils/managedWindow.ts`）を付けたウィンドウで使える）
 
 **メインウィンドウ:**
 
-- コードを直接編集して `mainWindow.webContents.openDevTools()` を追加する方法もありますが、通常は管理ウィンドウのDevToolsで十分です
+- `attachCommonKeyHandlers` が付いていないため `Ctrl+Shift+I` は使えません。コードを直接編集して `mainWindow.webContents.openDevTools()` を追加する方法もありますが、通常は管理ウィンドウのDevToolsで十分です
 
 > **注意**: v0.4.4以降、開発モードでの自動DevTools起動は削除されました。必要な場合は上記の方法で手動で開いてください。
 
@@ -593,7 +598,7 @@ npm run debug:windows -- --all-desktops --show-excluded --output debug.txt
 
 #### 白い/空白のウィンドウ
 
-- DevToolsコンソールでエラーを確認（`Ctrl+Shift+I`で開く）
+- DevToolsコンソールでエラーを確認（管理・ワークスペース・切り離しウィンドウは `Ctrl+Shift+I` で開く。メインウィンドウは `Ctrl+Shift+I` が使えないため、上記の方法で開く）
 - Viteデベロップメントサーバーが起動しているか確認（開発モード時）
 - プロダクションモードでindex.htmlパスが正しいか確認
 

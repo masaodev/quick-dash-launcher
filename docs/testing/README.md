@@ -8,8 +8,9 @@ QuickDashLauncherのテスト関連ドキュメントです。
 
 ```bash
 # 単体テスト（Vitest）
-npm run test            # インタラクティブモード
+npm run test            # ウォッチモード（ファイル変更のたびに再実行）
 npm run test:unit       # ワンショット実行
+npm run test:ui         # Vitest UI（ブラウザで結果を確認）
 npm run test:coverage   # カバレッジレポート付き
 
 # E2Eテスト（Playwright）
@@ -17,6 +18,10 @@ npm run test:e2e        # ヘッドレス実行
 npm run test:e2e:ui     # テストUI表示
 npm run test:e2e:debug  # デバッグモード
 npm run test:e2e:headed # ヘッド付き実行
+
+# 手動確認用スクリプト（src/test/manual/。自動テストの対象外）
+npm run test:window-move "ウィンドウタイトル" [x] [y] [width] [height] [desktopNumber]  # 指定ウィンドウの移動
+npm run test:window-list [--all-desktops]                                                # ウィンドウ一覧の取得
 ```
 
 ### 特定のテストを実行
@@ -27,7 +32,7 @@ npm run test:e2e:single first-launch
 
 # npx で直接実行する場合は事前に npm run build が必要
 npx playwright test tests/e2e/specs/item-registration.spec.ts   # 特定のファイル
-npx playwright test -g "アイテムの名前を編集できる"               # 特定のテストケース
+npx playwright test -g "新規アイテムを登録できる"                     # 特定のテストケース
 ```
 
 `test:e2e:single` は `scripts/run-e2e-test.js` に登録された名前（`first-launch`、`basic-ui`、`item-register` など）だけを受け付けます。登録されていない spec は `npx playwright test` で指定してください。
@@ -40,7 +45,8 @@ npx playwright test -g "アイテムの名前を編集できる"               #
 
 個別モジュールや関数レベルのテスト。
 
-- **テストファイル**: `src/**/*.test.ts`
+- **テストファイル**: `src/**/*.{test,spec}.{js,ts,jsx,tsx}` と `tests/unit/**/*.{test,spec}.{js,ts,jsx,tsx}`（`vitest.config.mts` の `include`）。`tests/e2e/` は対象外
+- **セットアップ**: `tests/unit/setup.ts`（jsdom 環境。React Testing Library のクリーンアップと `window.matchMedia`・`electronAPI` のモックを設定）
 - **ヘルパー**: `src/test/helpers/pathTestHelper.ts`
 - **実行**: `npm run test:unit`
 
@@ -74,10 +80,10 @@ Claude Code から、起動中の QuickDashLauncher を MCP 経由でその場�
 
 ## テストデータ（テンプレート）
 
-| 置き場 | 用途 | 一覧・使い方 |
-|--------|------|-------------|
-| `tests/dev/` | 開発時に手で動かすデータ（`npm run dev:test` は `tests/dev/full` を使う） | [tests/dev/README.md](../../tests/dev/README.md) |
-| `tests/e2e/templates/` | E2E テストが一時ディレクトリにコピーして使うデータ（既定は `base`） | [tests/e2e/README.md](../../tests/e2e/README.md#テンプレートシステム) |
+| 置き場                 | 用途                                                                      | 一覧・使い方                                                          |
+| ---------------------- | ------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `tests/dev/`           | 開発時に手で動かすデータ（`npm run dev:test` は `tests/dev/full` を使う） | [tests/dev/README.md](../../tests/dev/README.md)                      |
+| `tests/e2e/templates/` | E2E テストが一時ディレクトリにコピーして使うデータ（既定は `base`）       | [tests/e2e/README.md](../../tests/e2e/README.md#テンプレートシステム) |
 
 dev / dev2 / dev:test のポート・ホットキー・設定フォルダは [開発ガイド - 多重起動](../setup/development.md#多重起動) を参照してください。
 
@@ -88,7 +94,7 @@ dev / dev2 / dev:test のポート・ホットキー・設定フォルダは [�
 ### 基本パターン
 
 ```typescript
-import { test } from '@playwright/test';
+import { test } from '../fixtures/electron-app';
 import { TestUtils } from '../helpers/test-utils';
 
 test('テスト名', async ({ mainWindow }, testInfo) => {
@@ -175,21 +181,20 @@ npx playwright show-trace test-results/traces/trace-<タイムスタンプ>.zip
 
 ### 管理対象（コミットする）
 
-| ファイル | 理由 |
-|---------|------|
-| `tests/e2e/templates/*/datafiles/*.json` | テストの基礎データ |
-| `tests/e2e/templates/*/settings.json` | テンプレート設定 |
-| `tests/dev/*/datafiles/*.json` | 開発用初期データ |
-| `tests/dev/*/settings.json` | テンプレート設定 |
-| `README.md` | ドキュメント |
+| ファイル                                                      | 理由               |
+| ------------------------------------------------------------- | ------------------ |
+| `tests/e2e/templates/*/datafiles/*.json`                      | テストの基礎データ |
+| `tests/e2e/templates/*/settings.json`                         | テンプレート設定   |
+| `tests/dev/*/datafiles/*.json`、`tests/dev/*/datafiles/*.txt` | 開発用初期データ   |
+| `tests/dev/*/settings.json`                                   | テンプレート設定   |
+| `README.md`                                                   | ドキュメント       |
 
 ### 管理対象外（除外する）
 
-| ファイル | 理由 |
-|---------|------|
-| `tests/e2e/configs/.temp/` | テスト実行時の一時ディレクトリ |
-| `tests/dev/*/icon-cache/` | 自動生成 |
-| `tests/dev/*/backup/` | 自動生成 |
+| ファイル                                                                                      | 理由                                                         |
+| --------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| `tests/e2e/configs/.temp/`                                                                    | テスト実行時の一時ディレクトリ                               |
+| `tests/dev/` 配下の自動生成物（`*/icons/`・`*/favicons/`・`*/custom-icons/`・`backup/` など） | 実行時に自動生成。除外の一覧は `tests/dev/.gitignore` を参照 |
 
 ---
 

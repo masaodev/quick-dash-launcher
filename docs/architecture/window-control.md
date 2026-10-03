@@ -10,7 +10,7 @@
 
 **通常モード (`normal`)**
 
-- フォーカスが外れると自動的に非表示になります
+- フォーカスが QDL のウィンドウ群（メイン・ワークスペース・切り離しウィンドウ）の外へ出ると自動的に非表示になります（[ウィンドウ非表示の判定](#ウィンドウ非表示の判定)）
 - アイテム起動後も自動的に非表示になります
 - 最上面には表示されません（`alwaysOnTop: false`）
 - デフォルトモードです
@@ -43,16 +43,9 @@
 
 **実装場所**: `src/main/ipc/itemHandlers.ts`
 
-```typescript
-// setupItemHandlers内でアイテム起動を処理
-ipcMain.handle(IPC_CHANNELS.OPEN_ITEM, async (_event, item: LauncherItem) => {
-  await openItem(item);
-});
-```
+各実行ハンドラは起動前に `hideMainWindowOnExecute()`（`src/main/windowManager.ts`）を呼びます。`normal` モード（初回起動モード・モーダルモードでない場合）のときだけ、起動先がフォーカスを奪うのを待たずにメインウィンドウを隠します。
 
-`openItem()` 関数内で `tryActivateWindow()` によるウィンドウアクティブ化を試行し、失敗時に `launchItem()` で通常起動します。ウィンドウの非表示制御はピン留めモードに基づいて別途行われます。
-
-- `normal`モード: アイテム起動後、ウィンドウを非表示
+- `normal`モード: アイテム起動時、ウィンドウを非表示
 - `alwaysOnTop`/`stayVisible`モード: ウィンドウを表示したまま
 
 この動作は以下の操作すべてに適用されます：
@@ -60,6 +53,8 @@ ipcMain.handle(IPC_CHANNELS.OPEN_ITEM, async (_event, item: LauncherItem) => {
 - 個別アイテムの起動 (`open-item`)
 - 親フォルダを開く (`open-parent-folder`)
 - グループアイテムの実行 (`execute-group`)
+- レイアウトの実行 (`execute-layout`)
+- ウィンドウ操作アイテムの実行 (`execute-window-operation`)
 
 ## ウィンドウ表示制御
 
@@ -68,14 +63,14 @@ ipcMain.handle(IPC_CHANNELS.OPEN_ITEM, async (_event, item: LauncherItem) => {
     - 初回起動モード
     - モーダルモード
     - ピン留めモードが`alwaysOnTop`または`stayVisible`の場合
-  - **実装場所**: `src/main/windowManager.ts:487-509`（`hideMainWindow`関数）
+  - **実装場所**: `src/main/windowManager.ts`（`hideMainWindow()`）
 - **フォーカスアウト**: `normal`モードの場合、フォーカスを失うと自動的に非表示
 - **モーダルモード時のフォーカス制御**: メイン画面の子ウィンドウ（アイテムの登録・編集、アイコン取得結果）が開いている間はフォーカスアウトでもウィンドウが非表示にならない（下記「メイン画面の子ウィンドウ」）
 - **Escapeキー**: 以下の場合を**除き**、Escapeキーで非表示可能
   - 初回起動モード
   - モーダルモード
   - ピン留めモードが`alwaysOnTop`または`stayVisible`の場合
-  - **実装場所**: `src/main/windowManager.ts:85-104`
+  - **実装場所**: `src/main/windowManager.ts`（`createWindow()` 内の `before-input-event`）
 - **システムトレイ**: ダブルクリックでウィンドウ表示、右クリックでメニュー表示
 
 ### ウィンドウ非表示時の処理フロー
@@ -85,8 +80,8 @@ ipcMain.handle(IPC_CHANNELS.OPEN_ITEM, async (_event, item: LauncherItem) => {
 **処理フロー:**
 
 1. ユーザーがホットキーを押下、またはフォーカスアウト等でウィンドウが非表示になる
-2. メインプロセスの`hideMainWindow`関数が実行される
-3. ウィンドウを非表示にする直前に、`window-hidden`イベントを全レンダラープロセスに送信
+2. メインプロセスの`hideMainWindowInternal()`が実行される（ホットキー・フォーカスアウト・Escape・アイテム実行の共通処理）
+3. 非表示にする直前に、メインウィンドウのレンダラーへ`window-hidden`を送信
 4. レンダラープロセスが`onWindowHidden`イベントハンドラーで前処理を実行
    - 例1: タブをデフォルト位置にリセット
    - 例2: ウィンドウ検索モードを通常モードにリセット（次回表示時のラグ防止）
@@ -206,7 +201,7 @@ ipcMain.handle(IPC_CHANNELS.OPEN_ITEM, async (_event, item: LauncherItem) => {
 
 - **blur イベント**: メイン・ワークスペース・切り離しウィンドウを 1 つのまとまり（ウィンドウ群）として扱い、フォーカスがウィンドウ群の外へ出たときだけ隠す（`windowManager.ts` の `app.on('browser-window-blur')`）
   - どのウィンドウの blur でも、50ms 後にフォーカスの移動先を確認する。移動先がメイン・ワークスペース・切り離しウィンドウ、またはそれらの子ウィンドウなら何もしない。管理ウィンドウ（設定画面）はウィンドウ群に含めない
-  - 外へ出ていれば、メインウィンドウを隠す（`windowPinMode === 'normal'` で、初回起動モード・モーダルモードでない場合のみ）。続けて `hideDetachedWithMainWindow` がオンなら、固定していない切り離しウィンドウも隠す。メインウィンドウを隠さないモードのときは切り離しウィンドウも残す
+  - 外へ出ていれば、メインウィンドウを隠す（`windowPinMode === 'normal'` で、初回起動モード・モーダルモードでなく、DevTools を開いていない場合のみ）。続けて `hideDetachedWithMainWindow` がオンなら、固定していない切り離しウィンドウも隠す。メインウィンドウが表示中でこれを隠さないモードのときは、切り離しウィンドウも残す（メインが既に隠れているときは、連動設定に従って切り離しウィンドウを隠す）
   - ワークスペースはこの連動では隠さない
   - メインウィンドウの表示から 200ms 以内の blur は、200ms を過ぎてから確認する（表示直後の一時的なフォーカスの揺れで隠れないため）
 - **アイテム起動時**: `windowPinMode === 'normal'`の場合のみ非表示
@@ -245,8 +240,8 @@ ipcMain.handle(IPC_CHANNELS.OPEN_ITEM, async (_event, item: LauncherItem) => {
 ### タブ指定での表示機能
 
 1. **メニューからのタブ指定**
-   - 「基本設定」メニュー → `openEditWindowWithTab('settings')`
-   - 「アイテム管理」メニュー → `openEditWindowWithTab('edit')`
+   - 「基本設定」メニュー → `window.electronAPI.openEditWindowWithTab('settings')`（IPC → メインの `showAdminWindowWithTab()`）
+   - 「アイテム管理」メニュー → `window.electronAPI.openEditWindowWithTab('edit')`（同上）
 
 2. **タブ変更の通信フロー**
    - メインプロセスから`set-active-tab`イベントを送信
@@ -258,18 +253,9 @@ ipcMain.handle(IPC_CHANNELS.OPEN_ITEM, async (_event, item: LauncherItem) => {
 
 ### 管理ウィンドウのEscapeキー動作
 
-**実装場所**: `src/main/adminWindowManager.ts:90-96`
+**実装場所**: `src/main/adminWindowManager.ts` の `attachCommonKeyHandlers(..., { suppressEscape: true })`（本体は `src/main/utils/managedWindow.ts`）
 
 管理ウィンドウでは、編集作業中の誤操作を防止するため、**Escapeキーで閉じる機能を無効化**しています。
-
-```typescript
-adminWindow.webContents.on('before-input-event', (event, input) => {
-  if (input.key === 'Escape' && input.type === 'keyDown') {
-    event.preventDefault();
-    // Escapeキーでは閉じない（編集作業中の誤操作を防止）
-  }
-});
-```
 
 管理ウィンドウを閉じるには、以下の方法を使用します：
 
