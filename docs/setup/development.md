@@ -10,9 +10,25 @@
 | パッケージング | electron-builder |
 | テスト | Playwright（E2E）+ Vitest（単体） |
 
-動作環境は Windows のみです。開発には Node.js 22.12.0 以上が必要です（`package.json` の `engines`）。
+動作環境は Windows のみです。開発に必要なツールは[必要なツール](#必要なツール)を参照してください。
 
 ## 開発環境のセットアップ
+
+### 必要なツール
+
+| ツール | 用途 |
+| --- | --- |
+| Node.js 22.12.0 以上 | `package.json` の `engines` |
+| Visual Studio Build Tools 2022（C++ ワークロード） | ネイティブモジュール（clipboard-files・extract-file-icon）のコンパイル |
+| Python 3 | node-gyp が使う |
+
+clipboard-files と extract-file-icon は完成品を同梱しておらず、`npm install`・`npm ci` のたびに C++ のソースをコンパイルする。C++ のビルド環境が無いと、node-gyp の「Could not find any Visual Studio installation to use」で失敗する。CI（`.github/workflows/ci.yml`）も windows-2022 の Visual Studio 2022 と Python 3.11 でビルドしている。
+
+Build Tools は IDE なしで、C++ ワークロードだけ入れれば足りる。
+
+```powershell
+winget install --id Microsoft.VisualStudio.2022.BuildTools --source winget --override "--quiet --wait --norestart --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
+```
 
 ### 開発モード用アイコン
 

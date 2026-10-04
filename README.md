@@ -266,6 +266,8 @@ winget install masaodev.quick-dash-launcher
 
 #### 4. ソースからビルド
 
+Node.js に加えて、ネイティブモジュールのコンパイルに Visual Studio Build Tools（C++）と Python が必要です。詳しくは[開発ガイドの「必要なツール」](docs/setup/development.md#必要なツール)を参照してください。
+
 ```bash
 git clone https://github.com/masaodev/quick-dash-launcher.git
 cd quick-dash-launcher
