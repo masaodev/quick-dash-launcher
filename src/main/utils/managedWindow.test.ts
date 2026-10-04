@@ -77,14 +77,11 @@ describe('managedWindow', () => {
     expect(win.webContents.toggleDevTools).not.toHaveBeenCalled();
   });
 
-  it('suppressEscape を指定したときだけ Escape を止めること', async () => {
+  it('Escape はページに渡すこと（ダイアログを閉じる・編集を取り消すのはページ側）', async () => {
     const { attachCommonKeyHandlers } = await import('./managedWindow');
-    const suppressed = createFakeWindow();
-    const passed = createFakeWindow();
-    attachCommonKeyHandlers(asWindow(suppressed), { suppressEscape: true });
-    attachCommonKeyHandlers(asWindow(passed));
+    const win = createFakeWindow();
+    attachCommonKeyHandlers(asWindow(win));
 
-    expect(pressKey(suppressed, { key: 'Escape' }).preventDefault).toHaveBeenCalled();
-    expect(pressKey(passed, { key: 'Escape' }).preventDefault).not.toHaveBeenCalled();
+    expect(pressKey(win, { key: 'Escape' }).preventDefault).not.toHaveBeenCalled();
   });
 });

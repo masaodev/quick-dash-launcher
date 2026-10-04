@@ -55,7 +55,15 @@ export async function convertJsonItemToAppItems(
     if (jsonItem.path.toLowerCase().endsWith('.lnk') && FileUtils.exists(jsonItem.path)) {
       const lnkItem = processShortcut(jsonItem.path, sourceFile, lineNumber, jsonItem.displayName);
       if (lnkItem) {
-        addIfUnique(lnkItem);
+        // リンク先・引数はショートカットから読み、それ以外の登録内容はデータファイルのものを使う
+        addIfUnique({
+          ...lnkItem,
+          id: jsonItem.id,
+          customIcon: jsonItem.customIcon,
+          windowConfig: jsonItem.windowConfig,
+          memo: jsonItem.memo,
+          autoImportRuleId: jsonItem.autoImportRuleId,
+        });
         return items;
       }
     }

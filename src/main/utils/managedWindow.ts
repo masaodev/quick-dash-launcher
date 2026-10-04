@@ -44,18 +44,13 @@ export function hideOnClose(win: BrowserWindow, onHidden?: () => void): void {
  * ウィンドウ共通のキー操作を設定する
  *
  * - 開発時は Ctrl+Shift+I で DevTools を開閉する
- * - suppressEscape: Escape をページに渡さない（ウィンドウ既定の動作を止める）
+ *
+ * Escape はページに渡す（ダイアログを閉じる・編集を取り消すのはページ側の役目）
  */
-export function attachCommonKeyHandlers(
-  win: BrowserWindow,
-  options: { suppressEscape?: boolean } = {}
-): void {
-  win.webContents.on('before-input-event', (event, input) => {
+export function attachCommonKeyHandlers(win: BrowserWindow): void {
+  win.webContents.on('before-input-event', (_event, input) => {
     if (input.type !== 'keyDown') return;
 
-    if (options.suppressEscape && input.key === 'Escape') {
-      event.preventDefault();
-    }
     if (
       EnvConfig.isDevelopment &&
       input.control &&

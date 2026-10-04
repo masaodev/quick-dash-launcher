@@ -116,7 +116,7 @@ const DataFileTabItem: React.FC<DataFileTabItemProps> = ({
               const isLastFile = tab.files.length === 1;
               // data.json は最低 1 つのタブに必要なので、他のタブにもある場合だけ削除できる
               const canDelete =
-                fileName === DEFAULT_DATA_FILE &&
+                fileName !== DEFAULT_DATA_FILE ||
                 allTabs.some((t, idx) => idx !== tabIndex && t.files.includes(DEFAULT_DATA_FILE));
 
               return (

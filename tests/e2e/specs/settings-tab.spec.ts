@@ -1,3 +1,5 @@
+import type { ElectronApplication } from '@playwright/test';
+
 import { test, expect } from '../fixtures/electron-app';
 import { TestUtils } from '../helpers/test-utils';
 
@@ -455,5 +457,86 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
     } finally {
       await adminWindow.close();
     }
+  });
+});
+
+/**
+ * タブ管理: データファイルの削除ボタン
+ * - data.json 以外のデータファイルには削除ボタンが出る
+ * - data.json は最低 1 つのタブに必要なので「既定」と表示する（他のタブにもあれば削除できる）
+ */
+test.describe('QuickDashLauncher - タブ管理のデータファイル削除ボタン', () => {
+  test.use({ configTemplate: 'with-multi-file-tabs' });
+
+  test('data.json 以外には削除ボタン、data.json には「既定」が出る', async ({
+    electronApp,
+    mainWindow,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    const adminWindow = await utils.openAdminWindow(electronApp, 'settings');
+    await adminWindow.locator('.menu-item', { hasText: 'タブ管理' }).click();
+
+    // 統合タブ（data.json + data3.json）を展開
+    const firstTab = adminWindow.locator('.tab-accordion-item').first();
+    await firstTab.locator('.tab-expand-button').click();
+    await expect(firstTab.locator('.tab-accordion-content')).toBeVisible({ timeout: 5000 });
+
+    const row = (fileName: string) =>
+      firstTab.locator('.data-file-item', { hasText: `datafiles/${fileName}` });
+    await expect(row('data.json').locator('.data-file-default-badge')).toBeVisible();
+    await expect(row('data.json').locator('.data-file-delete-button')).toHaveCount(0);
+    await expect(row('data3.json').locator('.data-file-delete-button')).toBeVisible();
+    await expect(row('data3.json').locator('.data-file-delete-button')).toBeEnabled();
+    await expect(row('data3.json').locator('.data-file-default-badge')).toHaveCount(0);
+  });
+});
+
+/**
+ * 管理ウィンドウでの Escape はページに届く（セル編集の取り消し・確認ダイアログを閉じる）
+ *
+ * Playwright の keyboard.press は DevTools 経由でページに直接届き、メインプロセスの
+ * before-input-event を通らない。実際のキー入力と同じ経路を通すため sendInputEvent で送る
+ */
+async function pressEscapeAsRealInput(electronApp: ElectronApplication): Promise<void> {
+  await electronApp.evaluate(({ BrowserWindow }) => {
+    const win = BrowserWindow.getAllWindows().find((w) => w.getTitle().includes('設定・管理'));
+    win?.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Escape' });
+    win?.webContents.sendInputEvent({ type: 'keyUp', keyCode: 'Escape' });
+  });
+}
+
+test.describe('QuickDashLauncher - 管理ウィンドウの Escape', () => {
+  test('セル編集を Escape で取り消せる', async ({ electronApp, mainWindow, configHelper }) => {
+    const utils = new TestUtils(mainWindow);
+    const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
+    const githubRow = adminWindow.locator('.raw-item-row', { hasText: 'GitHub' }).first();
+    await expect(githubRow).toBeVisible();
+
+    await githubRow.locator('.name-column .editable-cell').click();
+    const nameInput = githubRow.locator('.name-column .edit-input');
+    await nameInput.fill('取り消す名前');
+    await pressEscapeAsRealInput(electronApp);
+
+    await expect(nameInput).toHaveCount(0);
+    await expect(adminWindow.locator('.raw-item-row', { hasText: '取り消す名前' })).toHaveCount(0);
+    expect(configHelper.hasItemByDisplayName('data.json', 'GitHub')).toBe(true);
+  });
+
+  test('確認ダイアログを Escape で閉じられる', async ({ electronApp, mainWindow }) => {
+    const utils = new TestUtils(mainWindow);
+    const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
+    const githubRow = adminWindow.locator('.raw-item-row', { hasText: 'GitHub' }).first();
+    await expect(githubRow).toBeVisible();
+
+    await githubRow.locator('.name-column .editable-cell').click();
+    const nameInput = githubRow.locator('.name-column .edit-input');
+    await nameInput.fill('GitHub編集後');
+    await nameInput.press('Enter');
+    await adminWindow.locator('button:has-text("変更を保存")').click();
+    const confirm = adminWindow.locator('[data-testid="confirm-dialog-overlay"]');
+    await expect(confirm).toBeVisible();
+
+    await pressEscapeAsRealInput(electronApp);
+    await expect(confirm).toHaveCount(0);
   });
 });
