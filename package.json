@@ -153,6 +153,6 @@
     "electron-winstaller@5.4.0": true,
     "esbuild@0.28.2": true,
     "extract-file-icon@0.3.2": true,
-    "koffi@3.2.1": true
+    "koffi@3.3.2": true
   }
 }
