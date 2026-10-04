@@ -9,12 +9,16 @@
   C. 画面の網羅: 画面系コンポーネント（*Modal / *Page / *Dialog）が画面仕様のどこにも出てこないか、
      *WindowManager.ts と直下の *.html が docs のどこにも出てこないか
   D. コードへの参照: docs に書かれた `src/...` などのパスと `npm run X` が実在するか
-  E. 前回の点検（--since か docs/.docs-check.json）以降に変わったコードと、それに触れている文書
+  E. 前回の点検（--since か docs/.docs-check.json）以降に変わったコードと、それに関わる文書。
+     まず、そのファイルか import をさかのぼった最寄りのファイルにある「画面仕様:」コメントの画面仕様を当てる。
+     次に、ファイル名で触れている文書を当てる。どちらもなければ、文書に出てくる最寄りのファイル経由で当てる
   F. 長い文書（行数の多いもの）の一覧
   G. 参照方向: features から screens、architecture から features・screens へのリンク（逆向き）
   H. 見出し番号: 「## N.」の下の「### M.」の M が N と合わない見出し
+  I. 画面仕様とコードの対応: 画面仕様を指す「画面仕様:」コメントがコードにあるか、コメントの指す先が実在するか
 
-ファイルは書き換えない。--record を付けたときだけ docs/.docs-check.json に HEAD を記録する。
+ファイルは書き換えない。--record を付けたときだけ docs/.docs-check.json に点検した位置を記録する。
+記録するのは main に入っているコミット（origin/main との分岐点。作業ブランチの HEAD は squash マージで消えるため）。
 """
 
 import argparse
@@ -35,6 +39,8 @@ CODE_REF_PREFIXES = ("src/", "tests/", "scripts/", "assets/", ".github/", "docs/
 PLACEHOLDER = re.compile(r"[*?{}<>]|Xxx|xxx|\[.*\]|path/to/")
 # 画面系コンポーネントのうち、画面ではないもの（必要に応じて足す）
 SCREEN_IGNORE = set()
+# 画面仕様ではない文書（「画面仕様:」コメントで指されなくてよい）
+SPEC_COMMENT_EXEMPT = {"README.md", "WRITING-GUIDE.md", "screen-transitions.md"}
 
 
 def md_files():
@@ -96,6 +102,8 @@ def check_links(files, scope):
             if target.startswith(("http://", "https://", "mailto:", "file:")):
                 continue
             path, _, frag = target.partition("#")
+            if PLACEHOLDER.search(path):
+                continue  # テンプレートや書き方の例として書いたリンク（./images/xxx.png など）
             dest = f if path == "" else (f.parent / unquote(path))
             if not dest.exists():
                 problems.append(f"`{rel(f)}`: リンク先がない `{target}`")
@@ -178,11 +186,141 @@ def git(*args):
     return subprocess.run(["git", *args], capture_output=True, text=True, encoding="utf-8").stdout
 
 
+IMPORT_RX = re.compile(r"""(?:from\s+|import\s*\(\s*|import\s+)['"]([^'"]+)['"]""")
+ALIASES = {"@common/": "src/common/", "@main/": "src/main/", "@renderer/": "src/renderer/"}
+# import 経由で当たる文書がこれより多いものは、共通部品として 1 行にまとめる
+VIA_DOCS_LIMIT = 4
+_importers = None
+
+
+def importers():
+    """src のファイル → それを import しているファイルの集合（相対パスとエイリアスを解決する）"""
+    global _importers
+    if _importers is not None:
+        return _importers
+    _importers = {}
+    for f in ROOT.glob("src/**/*"):
+        if f.suffix not in (".ts", ".tsx") or ".test." in f.name:
+            continue
+        src = rel(f)
+        for spec in IMPORT_RX.findall(f.read_text(encoding="utf-8", errors="ignore")):
+            base = None
+            for a, real in ALIASES.items():
+                if spec.startswith(a):
+                    base = ROOT / (real + spec[len(a):])
+            if base is None and spec.startswith("."):
+                base = f.parent / spec
+            if base is None:
+                continue
+            base = Path(str(base).removesuffix(".js"))
+            for cand in (base, base.with_name(base.name + ".ts"), base.with_name(base.name + ".tsx"), base / "index.ts", base / "index.tsx"):
+                if cand.is_file():
+                    _importers.setdefault(rel(cand.resolve()), set()).add(src)
+                    break
+    return _importers
+
+
+def name_pattern(c):
+    name = Path(c).name
+    stem = Path(c).stem
+    if stem in ("index", "types", "constants", "utils"):
+        # どこにでもある名前は、親フォルダつき（例 types/index.ts）で照合する
+        name = "/".join(Path(c).parts[-2:])
+    # ファイル名（拡張子つき）か、識別子らしい名前（大文字を含む）だけで照合する。main・settings のような短い一般語は拡張子つきでしか当てない
+    pats = [re.escape(name)] + ([r"(?<![A-Za-z0-9])" + re.escape(stem) + r"(?![A-Za-z0-9])"] if re.search(r"[A-Z]", stem) else [])
+    return re.compile("|".join(pats))
+
+
+def docs_via_imports(c, texts, max_depth=6):
+    """c を import しているファイルをさかのぼり、文書に出てくる最寄りのファイルとその文書を返す。
+    画面側（src/renderer）のファイルは、画面仕様（docs/screens）に出てくるファイルまでさかのぼる"""
+    if c.startswith("src/renderer/"):
+        texts = {d: t for d, t in texts.items() if rel(d).startswith("docs/screens/")}
+    graph, seen, frontier, found = importers(), {c}, [c], {}
+    for _ in range(max_depth):
+        nxt = []
+        for node in frontier:
+            for parent in sorted(graph.get(node, ())):
+                if parent in seen:
+                    continue
+                seen.add(parent)
+                rx = name_pattern(parent)
+                hits = [rel(d) for d, t in texts.items() if rx.search(t)]
+                if hits:
+                    found[parent] = hits  # 文書に出てくるファイルで止める（その先はたどらない）
+                else:
+                    nxt.append(parent)
+        if found or not nxt:
+            break
+        frontier = nxt
+    return found
+
+
+SPEC_COMMENT_RX = re.compile(r"画面仕様:\s*(docs/[^\s*]+)")
+_spec_comments = None
+
+
+def spec_comments():
+    """src のファイル → そのファイルの「画面仕様:」コメントが指す先（docs/screens/xxx.md#アンカー）の一覧"""
+    global _spec_comments
+    if _spec_comments is None:
+        _spec_comments = {}
+        for f in ROOT.glob("src/**/*"):
+            if f.suffix in (".ts", ".tsx"):
+                found = SPEC_COMMENT_RX.findall(f.read_text(encoding="utf-8", errors="ignore"))
+                if found:
+                    _spec_comments[rel(f)] = found
+    return _spec_comments
+
+
+def specs_via_comments(c, max_depth=8):
+    """c 自身か、c を import しているファイルをさかのぼった最寄りのファイルの「画面仕様:」コメント → {ファイル: 画面仕様}"""
+    comments = spec_comments()
+    if c in comments:
+        return {c: comments[c]}
+    graph, seen, frontier, found = importers(), {c}, [c], {}
+    for _ in range(max_depth):
+        nxt = []
+        for node in frontier:
+            for parent in sorted(graph.get(node, ())):
+                if parent in seen:
+                    continue
+                seen.add(parent)
+                if parent in comments:
+                    found[parent] = comments[parent]
+                else:
+                    nxt.append(parent)
+        if found or not nxt:
+            break
+        frontier = nxt
+    return found
+
+
+def check_spec_comments(scope):
+    problems = []
+    comments = spec_comments()
+    pointed = set()
+    for f, targets in sorted(comments.items()):
+        for t in targets:
+            doc, _, frag = t.partition("#")
+            pointed.add(doc)
+            if not (ROOT / doc).is_file():
+                problems.append(f"`{f}`: 「画面仕様:」コメントの指す先がない `{t}`")
+            elif frag and unquote(frag).lower() not in anchors(ROOT / doc):
+                problems.append(f"`{f}`: 「画面仕様:」コメントのアンカーが見出しと合わない `{t}`")
+    for d in sorted((ROOT / "docs" / "screens").glob("*.md")):
+        if d.name in SPEC_COMMENT_EXEMPT or not in_scope(d, scope):
+            continue
+        if rel(d) not in pointed:
+            problems.append(f"`{rel(d)}`: この画面仕様を指す「画面仕様:」コメントがコードにない（画面のいちばん上のコンポーネントに書く）")
+    return problems
+
+
 def changes_since(ref):
     if not ref:
         return None, []
     if not git("rev-parse", "--verify", "--quiet", ref + "^{commit}").strip():
-        return f"起点 `{ref}` が見つからない", []
+        return f"起点 `{ref}` が見つからない（squash マージで消えたコミットの可能性がある。--since に main のコミットやタグを指定する）", []
     changed = [l for l in git("diff", "--name-only", f"{ref}..HEAD").splitlines() if l]
     code = [c for c in changed if c.startswith(("src/", ".github/")) or c == "package.json"]
     docs = [p for p in (ROOT / "docs").rglob("*.md")]
@@ -192,15 +330,14 @@ def changes_since(ref):
         name = Path(c).name
         if ".test." in name or name.endswith(".disabled"):
             continue
-        stem = Path(c).stem
-        if stem in ("index", "types", "constants", "utils"):
-            # どこにでもある名前は、親フォルダつき（例 types/index.ts）で照合する
-            name = "/".join(Path(c).parts[-2:])
-        # ファイル名（拡張子つき）か、識別子らしい名前（大文字を含む）だけで照合する。main・settings のような短い一般語は拡張子つきでしか当てない
-        pats = [re.escape(name)] + ([r"(?<![A-Za-z0-9])" + re.escape(stem) + r"(?![A-Za-z0-9])"] if re.search(r"[A-Z]", stem) else [])
-        rx = re.compile("|".join(pats))
+        rx = name_pattern(c)
         related = [rel(d) for d, t in texts.items() if rx.search(t)]
-        hits.append((c, related))
+        specs = specs_via_comments(c) if c.startswith("src/") else {}
+        if specs:
+            # 画面仕様はコメントで決まるので、名前で当たった画面仕様は外す（別の画面にたまたま名前が出ているだけのことが多い）
+            related = [r for r in related if not r.startswith("docs/screens/")]
+        via = {} if related or specs or not c.startswith("src/") else docs_via_imports(c, texts)
+        hits.append((c, related, specs, via))
     changed_docs = [c for c in changed if c.startswith("docs/")]
     note = f"起点 `{ref}` から HEAD までに変わったファイル {len(changed)} 件（コード {len(code)} 件、docs {len(changed_docs)} 件）"
     return note, hits
@@ -293,16 +430,37 @@ def main():
         print("- 起点がない（初回。--since で指定するか、点検後に --record で記録する）")
     else:
         print(f"- {note}")
-        for code, related in hits:
-            print(f"- `{code}` → " + ("、".join(f"`{r}`" for r in related) if related else "触れている文書なし"))
+        for code, related, specs, via in hits:
+            if specs or related:
+                parts = []
+                for f, targets in specs.items():
+                    how = "このファイルのコメント" if f == code else f"`{Path(f).name}` のコメント"
+                    parts += [f"`{t.split('#')[0]}`（{how}）" for t in targets]
+                parts += [f"`{r}`" for r in related]
+                print(f"- `{code}` → " + "、".join(dict.fromkeys(parts)))
+            elif via:
+                by_doc = {}
+                for v, ds in via.items():
+                    for d in ds:
+                        by_doc.setdefault(d, []).append(Path(v).name)
+                if len(by_doc) > VIA_DOCS_LIMIT:
+                    names = "、".join(f"`{Path(v).name}`" for v in list(via)[:3])
+                    print(f"- `{code}` → 多くの部品から使われる共通部品（{names} などを経由して {len(by_doc)} 文書）。挙動が変わったときだけ照合する")
+                else:
+                    print(f"- `{code}` → " + "、".join(f"`{d}`（" + "・".join(f"`{n}`" for n in ns[:2]) + " 経由）" for d, ns in by_doc.items()))
+            else:
+                print(f"- `{code}` → 触れている文書なし")
     section("F. 長い文書（" + str(LONG_DOC_LINES) + " 行以上）", [f"`{p}`（{n} 行）" for p, n in long_docs()], empty="なし")
     section("G. 参照方向", check_direction(scope))
     section("H. 見出し番号", check_heading_numbers(scope))
+    section("I. 画面仕様とコードの対応", check_spec_comments(scope))
 
     if a.record:
-        STATE.write_text(json.dumps({"last_checked_commit": git("rev-parse", "HEAD").strip(), "date": date.today().isoformat()},
+        # 作業ブランチのコミットは squash マージで main から消えるので、main に入っているコミットを記録する
+        point = git("merge-base", "HEAD", "origin/main").strip() or git("rev-parse", "HEAD").strip()
+        STATE.write_text(json.dumps({"last_checked_commit": point, "date": date.today().isoformat()},
                                     ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
-        print(f"\n（docs/.docs-check.json に HEAD を記録した）")
+        print(f"\n（docs/.docs-check.json に {point[:7]} を記録した。origin/main との分岐点）")
 
 
 if __name__ == "__main__":

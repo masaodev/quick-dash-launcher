@@ -1,3 +1,7 @@
+/**
+ * 画面: ホットキー入力
+ * 画面仕様: docs/screens/hotkey-input.md
+ */
 import React, { useState, useRef, useEffect } from 'react';
 import '../styles/components/HotkeyInput.css';
 

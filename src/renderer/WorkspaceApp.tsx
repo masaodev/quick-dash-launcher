@@ -1,3 +1,7 @@
+/**
+ * 画面: ワークスペースウィンドウ
+ * 画面仕様: docs/screens/workspace-window.md
+ */
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import type { WorkspaceItem, WorkspaceGroupView } from '@common/types';
 import { getDescendantGroupIds } from '@common/utils/groupTreeUtils';

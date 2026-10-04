@@ -1,3 +1,7 @@
+/**
+ * 画面: 共通ダイアログ（確認）
+ * 画面仕様: docs/screens/dialogs.md#3-confirmdialog
+ */
 import React, { useEffect } from 'react';
 
 import '../styles/components/Modal.css';

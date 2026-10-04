@@ -1,3 +1,7 @@
+/**
+ * 画面: 初回設定画面
+ * 画面仕様: docs/screens/first-launch-setup.md
+ */
 import React, { useState } from 'react';
 
 import '../styles/components/SetupFirstLaunch.css';

@@ -1,3 +1,7 @@
+/**
+ * 画面: フォルダ取込オプションエディタ
+ * 画面仕様: docs/screens/dir-options-editor.md
+ */
 import React from 'react';
 import type { RegisterItem } from '@common/types';
 

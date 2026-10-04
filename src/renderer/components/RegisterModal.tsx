@@ -1,3 +1,7 @@
+/**
+ * 画面: アイテム登録・編集モーダル
+ * 画面仕様: docs/screens/register-modal.md
+ */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type {
   RegisterItem,

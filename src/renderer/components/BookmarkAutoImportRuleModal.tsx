@@ -9,6 +9,9 @@
  *
  * ブックマークは取込元を決めた時点でフォルダ付きの一覧を 1 回読み、絞り込みと表示名の生成は
  * レンダラー側（@common/utils/bookmarkRuleFilter）で行う。条件を変えるたびにプレビューが更新される
+ *
+ * 画面: ブックマーク取込画面（ルール編集と共通）
+ * 画面仕様: docs/screens/bookmark-import-modal.md
  */
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';

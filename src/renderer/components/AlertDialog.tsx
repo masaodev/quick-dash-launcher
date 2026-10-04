@@ -1,3 +1,7 @@
+/**
+ * 画面: 共通ダイアログ（アラート）
+ * 画面仕様: docs/screens/dialogs.md#2-alertdialog
+ */
 import React, { useEffect } from 'react';
 
 import '../styles/components/Modal.css';

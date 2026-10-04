@@ -1,3 +1,7 @@
+/**
+ * 画面: ウィンドウ選択モーダル
+ * 画面仕様: docs/screens/register-modal.md#ウィンドウ選択モーダルwindowselectormodal
+ */
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import type { WindowInfo, VirtualDesktopInfo } from '@common/types';
 
