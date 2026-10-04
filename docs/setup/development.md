@@ -151,7 +151,7 @@ QUICK_DASH_CONFIG_DIR=./tests/dev/full npm run dev
 
 #### タブ単位の重複排除（v0.4.2以降）
 
-データ読み込み処理（`src/main/services/data/dataFileLoader.ts`の`loadDataFilesWithReport()`関数。`loadDataFiles()`が呼び出す）では、タブ単位で重複排除が行われます。
+データ読み込み処理（`src/main/services/data/dataFileLoader.ts`の`loadDataFilesWithReport()`関数。起動時・F5 などの読み込み（`reloadConfigFiles()`）が呼び出す）では、タブ単位で重複排除が行われます。
 
 **実装方法：**
 
