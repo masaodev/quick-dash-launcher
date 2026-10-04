@@ -10,9 +10,20 @@
 
 | テンプレート | 説明 | 用途 |
 | --- | --- | --- |
-| `full` | 全機能を含む（複数タブ・グループ・ワークスペース） | デモ・機能確認（`npm run dev:test` が使う。詳細は [full/README.md](./full/README.md)） |
+| `full` | 複数タブ・ワークスペースの設定入り | デモ・機能確認（`npm run dev:test` が使う。下記） |
 
 E2E テスト用のテンプレートは `tests/e2e/templates/` にあります（[tests/e2e/README.md](../e2e/README.md)）。
+
+### full
+
+`npm run dev:test` で起動する設定フォルダです。
+
+- 起動ホットキーは Ctrl+Alt+T、Vite のポートは 9003（`dev`・`dev2` と重ならない）
+- タブは「メイン」「仕事」「プライベート」の 3 つ（`datafiles/data.json`・`data2.json`・`data3.json`）
+- バックアップは無効（テストデータを書き換えないため）
+- 開発モードで起動するとリモートデバッグポート 9222 が開き、Playwright MCP から操作できる（[テストガイド - ブラウザ自動操作](../../docs/testing/README.md#3-ブラウザ自動操作playwright-mcp)）
+
+起動すると、アプリがこのフォルダに設定ファイル用の `README.md` と `schemas/` を書き出します。履歴・ワークスペース・アイコンキャッシュなどと同じく実行時にできるファイルなので、git では管理しません（`.gitignore`）。
 
 ## カスタムテンプレートの作成
 
