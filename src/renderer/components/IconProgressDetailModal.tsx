@@ -1,3 +1,7 @@
+/**
+ * 画面: アイコン取得結果
+ * 画面仕様: docs/screens/icon-progress-detail-modal.md
+ */
 import React, { useState, useRef } from 'react';
 import { IconProgressResult } from '@common/types';
 

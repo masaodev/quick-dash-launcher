@@ -1,3 +1,7 @@
+/**
+ * 画面: メインウィンドウ
+ * 画面仕様: docs/screens/main-window.md
+ */
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { DEFAULT_DATA_FILE } from '@common/types';
 import type {

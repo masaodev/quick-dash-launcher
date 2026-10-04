@@ -1,6 +1,9 @@
 /**
  * コンテキストメニュー用IPCハンドラー
  * 全てのReactコンテキストメニューをElectronのネイティブメニューに変換
+ *
+ * 画面: 右クリックメニュー
+ * 画面仕様: docs/screens/context-menu.md
  */
 import { ipcMain, BrowserWindow, Menu, MenuItem, IpcMainInvokeEvent, WebContents } from 'electron';
 import type {

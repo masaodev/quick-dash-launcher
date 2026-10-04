@@ -1,3 +1,7 @@
+/**
+ * 画面: 共通ダイアログ（ファイル選択）
+ * 画面仕様: docs/screens/dialogs.md#4-filepickerdialog
+ */
 import React, { useEffect } from 'react';
 
 import '../styles/components/Modal.css';

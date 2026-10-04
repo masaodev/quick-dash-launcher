@@ -1,3 +1,7 @@
+/**
+ * 画面: グループアイテム選択モーダル
+ * 画面仕様: docs/screens/group-item-selector-modal.md
+ */
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { LauncherItem, AppItem } from '@common/types';
 import { isWindowInfo, isGroupItem, isLauncherItem, isWindowItem } from '@common/types/guards';

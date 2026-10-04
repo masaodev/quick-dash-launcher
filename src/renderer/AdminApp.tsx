@@ -1,3 +1,7 @@
+/**
+ * 画面: 管理ウィンドウ
+ * 画面仕様: docs/screens/admin-window.md
+ */
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import type { AppSettings } from '@common/types';
 import type { EditableJsonItem } from '@common/types/editableItem';

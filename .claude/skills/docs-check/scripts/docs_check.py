@@ -9,11 +9,13 @@
   C. 画面の網羅: 画面系コンポーネント（*Modal / *Page / *Dialog）が画面仕様のどこにも出てこないか、
      *WindowManager.ts と直下の *.html が docs のどこにも出てこないか
   D. コードへの参照: docs に書かれた `src/...` などのパスと `npm run X` が実在するか
-  E. 前回の点検（--since か docs/.docs-check.json）以降に変わったコードと、それに触れている文書。
-     ファイル名で触れている文書がなければ、import をさかのぼって、文書に出てくる最寄りのファイル経由で当てる
+  E. 前回の点検（--since か docs/.docs-check.json）以降に変わったコードと、それに関わる文書。
+     まず、そのファイルか import をさかのぼった最寄りのファイルにある「画面仕様:」コメントの画面仕様を当てる。
+     次に、ファイル名で触れている文書を当てる。どちらもなければ、文書に出てくる最寄りのファイル経由で当てる
   F. 長い文書（行数の多いもの）の一覧
   G. 参照方向: features から screens、architecture から features・screens へのリンク（逆向き）
   H. 見出し番号: 「## N.」の下の「### M.」の M が N と合わない見出し
+  I. 画面仕様とコードの対応: 画面仕様を指す「画面仕様:」コメントがコードにあるか、コメントの指す先が実在するか
 
 ファイルは書き換えない。--record を付けたときだけ docs/.docs-check.json に点検した位置を記録する。
 記録するのは main に入っているコミット（origin/main との分岐点。作業ブランチの HEAD は squash マージで消えるため）。
@@ -37,6 +39,8 @@ CODE_REF_PREFIXES = ("src/", "tests/", "scripts/", "assets/", ".github/", "docs/
 PLACEHOLDER = re.compile(r"[*?{}<>]|Xxx|xxx|\[.*\]|path/to/")
 # 画面系コンポーネントのうち、画面ではないもの（必要に応じて足す）
 SCREEN_IGNORE = set()
+# 画面仕様ではない文書（「画面仕様:」コメントで指されなくてよい）
+SPEC_COMMENT_EXEMPT = {"README.md", "WRITING-GUIDE.md", "screen-transitions.md"}
 
 
 def md_files():
@@ -252,6 +256,66 @@ def docs_via_imports(c, texts, max_depth=6):
     return found
 
 
+SPEC_COMMENT_RX = re.compile(r"画面仕様:\s*(docs/[^\s*]+)")
+_spec_comments = None
+
+
+def spec_comments():
+    """src のファイル → そのファイルの「画面仕様:」コメントが指す先（docs/screens/xxx.md#アンカー）の一覧"""
+    global _spec_comments
+    if _spec_comments is None:
+        _spec_comments = {}
+        for f in ROOT.glob("src/**/*"):
+            if f.suffix in (".ts", ".tsx"):
+                found = SPEC_COMMENT_RX.findall(f.read_text(encoding="utf-8", errors="ignore"))
+                if found:
+                    _spec_comments[rel(f)] = found
+    return _spec_comments
+
+
+def specs_via_comments(c, max_depth=8):
+    """c 自身か、c を import しているファイルをさかのぼった最寄りのファイルの「画面仕様:」コメント → {ファイル: 画面仕様}"""
+    comments = spec_comments()
+    if c in comments:
+        return {c: comments[c]}
+    graph, seen, frontier, found = importers(), {c}, [c], {}
+    for _ in range(max_depth):
+        nxt = []
+        for node in frontier:
+            for parent in sorted(graph.get(node, ())):
+                if parent in seen:
+                    continue
+                seen.add(parent)
+                if parent in comments:
+                    found[parent] = comments[parent]
+                else:
+                    nxt.append(parent)
+        if found or not nxt:
+            break
+        frontier = nxt
+    return found
+
+
+def check_spec_comments(scope):
+    problems = []
+    comments = spec_comments()
+    pointed = set()
+    for f, targets in sorted(comments.items()):
+        for t in targets:
+            doc, _, frag = t.partition("#")
+            pointed.add(doc)
+            if not (ROOT / doc).is_file():
+                problems.append(f"`{f}`: 「画面仕様:」コメントの指す先がない `{t}`")
+            elif frag and unquote(frag).lower() not in anchors(ROOT / doc):
+                problems.append(f"`{f}`: 「画面仕様:」コメントのアンカーが見出しと合わない `{t}`")
+    for d in sorted((ROOT / "docs" / "screens").glob("*.md")):
+        if d.name in SPEC_COMMENT_EXEMPT or not in_scope(d, scope):
+            continue
+        if rel(d) not in pointed:
+            problems.append(f"`{rel(d)}`: この画面仕様を指す「画面仕様:」コメントがコードにない（画面のいちばん上のコンポーネントに書く）")
+    return problems
+
+
 def changes_since(ref):
     if not ref:
         return None, []
@@ -268,8 +332,12 @@ def changes_since(ref):
             continue
         rx = name_pattern(c)
         related = [rel(d) for d, t in texts.items() if rx.search(t)]
-        via = {} if related or not c.startswith("src/") else docs_via_imports(c, texts)
-        hits.append((c, related, via))
+        specs = specs_via_comments(c) if c.startswith("src/") else {}
+        if specs:
+            # 画面仕様はコメントで決まるので、名前で当たった画面仕様は外す（別の画面にたまたま名前が出ているだけのことが多い）
+            related = [r for r in related if not r.startswith("docs/screens/")]
+        via = {} if related or specs or not c.startswith("src/") else docs_via_imports(c, texts)
+        hits.append((c, related, specs, via))
     changed_docs = [c for c in changed if c.startswith("docs/")]
     note = f"起点 `{ref}` から HEAD までに変わったファイル {len(changed)} 件（コード {len(code)} 件、docs {len(changed_docs)} 件）"
     return note, hits
@@ -362,9 +430,14 @@ def main():
         print("- 起点がない（初回。--since で指定するか、点検後に --record で記録する）")
     else:
         print(f"- {note}")
-        for code, related, via in hits:
-            if related:
-                print(f"- `{code}` → " + "、".join(f"`{r}`" for r in related))
+        for code, related, specs, via in hits:
+            if specs or related:
+                parts = []
+                for f, targets in specs.items():
+                    how = "このファイルのコメント" if f == code else f"`{Path(f).name}` のコメント"
+                    parts += [f"`{t.split('#')[0]}`（{how}）" for t in targets]
+                parts += [f"`{r}`" for r in related]
+                print(f"- `{code}` → " + "、".join(dict.fromkeys(parts)))
             elif via:
                 by_doc = {}
                 for v, ds in via.items():
@@ -380,6 +453,7 @@ def main():
     section("F. 長い文書（" + str(LONG_DOC_LINES) + " 行以上）", [f"`{p}`（{n} 行）" for p, n in long_docs()], empty="なし")
     section("G. 参照方向", check_direction(scope))
     section("H. 見出し番号", check_heading_numbers(scope))
+    section("I. 画面仕様とコードの対応", check_spec_comments(scope))
 
     if a.record:
         # 作業ブランチのコミットは squash マージで main から消えるので、main に入っているコミットを記録する
