@@ -3,6 +3,7 @@
  */
 
 import { spawn } from 'child_process';
+import * as path from 'path';
 
 import { shell } from 'electron';
 import { Logger } from 'pino';
@@ -72,7 +73,7 @@ export async function launchItem(item: LaunchableItem, logger: Logger): Promise<
 function spawnDetached(
   command: string,
   args: string[],
-  options: { shell?: boolean },
+  options: { shell?: boolean; cwd?: string },
   logger: Logger,
   logContext: Record<string, unknown>,
   errorMessage: string
@@ -81,6 +82,7 @@ function spawnDetached(
     detached: true,
     stdio: 'ignore',
     shell: options.shell,
+    cwd: options.cwd,
   });
   child.unref();
   child.on('error', (error) => {
@@ -116,11 +118,21 @@ async function launchApp(item: LaunchableItem, logger: Logger): Promise<void> {
   spawnDetached(
     item.path,
     args,
-    { shell: needsShell },
+    { shell: needsShell, cwd: getWorkingDirectory(item.path) },
     logger,
     { ...logContext, args: item.args },
     'アイテムの起動に失敗しました (spawn)'
   );
+}
+
+/**
+ * 引数ありで起動するときの作業フォルダ（実行ファイルのあるフォルダ）
+ *
+ * 引数なし（shell.openPath）で開いたときと同じく、実行ファイルのフォルダで起動する。
+ * 作業フォルダの設定ファイルを読むツールのため。PATH 上のコマンド名など絶対パスでないときは指定しない
+ */
+export function getWorkingDirectory(executablePath: string): string | undefined {
+  return path.win32.isAbsolute(executablePath) ? path.win32.dirname(executablePath) : undefined;
 }
 
 async function restoreClipboard(item: LaunchableItem, logger: Logger): Promise<void> {

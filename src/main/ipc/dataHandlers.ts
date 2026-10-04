@@ -4,6 +4,7 @@ import * as path from 'path';
 import { ipcMain } from 'electron';
 import { dataLogger } from '@common/logger';
 import { FileUtils } from '@common/utils/fileUtils';
+import { isValidDataFileName } from '@common/utils/dataFileName';
 import { serializeJsonDataFile, createEmptyJsonDataFile } from '@common/utils/jsonParser';
 import type { EditableJsonItem } from '@common/types/editableItem';
 import { DEFAULT_DATA_FILE } from '@common/types';
@@ -42,6 +43,11 @@ export function setupDataHandlers(configFolder: string) {
   ipcMain.handle(IPC_CHANNELS.GET_DATA_FILES, () => PathManager.getDataFiles());
 
   ipcMain.handle(IPC_CHANNELS.CREATE_DATA_FILE, async (_event, fileName: string) => {
+    if (!isValidDataFileName(fileName)) {
+      dataLogger.warn({ fileName }, 'データファイル名が不正なため作成しません');
+      return { success: false, error: 'データファイル名が正しくありません' };
+    }
+
     const filePath = path.join(configFolder, fileName);
     dataLogger.info(`create-data-file called: ${fileName} at ${filePath}`);
 
@@ -66,6 +72,10 @@ export function setupDataHandlers(configFolder: string) {
   ipcMain.handle(IPC_CHANNELS.DELETE_DATA_FILE, async (_event, fileName: string) => {
     if (fileName === DEFAULT_DATA_FILE) {
       return { success: false, error: 'メインデータファイルは削除できません' };
+    }
+    if (!isValidDataFileName(fileName)) {
+      dataLogger.warn({ fileName }, 'データファイル名が不正なため削除しません');
+      return { success: false, error: 'データファイル名が正しくありません' };
     }
 
     const filePath = path.join(configFolder, fileName);

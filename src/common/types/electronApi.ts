@@ -230,7 +230,10 @@ export interface ElectronAPI {
   clearSearchHistory: () => Promise<void>;
   // アプリ情報関連API
   getAppInfo: () => Promise<AppInfo>;
+  /** http・https の URL を既定のブラウザで開く（それ以外のスキームは開かない） */
   openExternalUrl: (url: string) => Promise<void>;
+  /** 存在するフォルダをエクスプローラーで開く（フォルダ以外は開かない） */
+  openFolder: (folderPath: string) => Promise<void>;
   // ワークスペース関連API
   workspaceAPI: {
     // ワークスペース（タブ）管理

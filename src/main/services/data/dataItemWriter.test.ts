@@ -143,4 +143,31 @@ describe('dataItemWriter', () => {
     expect(readItems('datafiles/data.json').map((i) => i.displayName)).toEqual(['X']);
     expect(readItems('datafiles/data2.json').map((i) => i.displayName)).toEqual(['Y']);
   });
+
+  it('datafiles 直下の .json 以外が登録先に混ざっていたら、どのファイルにも書かないこと', () => {
+    writeFile('datafiles/data.json', JSON.stringify({ version: '1.0', items: [] }));
+
+    expect(() =>
+      registerItems(tempRoot.dir, [
+        {
+          displayName: 'X',
+          path: 'C:\\x.exe',
+          type: 'app',
+          targetTab: 'datafiles/data.json',
+          itemCategory: 'item',
+        },
+        {
+          displayName: 'Y',
+          path: 'C:\\y.exe',
+          type: 'app',
+          targetTab: 'datafiles/data.json',
+          targetFile: '../outside.json',
+          itemCategory: 'item',
+        },
+      ])
+    ).toThrow('登録先のデータファイル名が正しくありません: ../outside.json');
+
+    expect(readItems('datafiles/data.json')).toEqual([]);
+    expect(fs.existsSync(path.join(tempRoot.dir, 'outside.json'))).toBe(false);
+  });
 });
