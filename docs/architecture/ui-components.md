@@ -34,13 +34,13 @@ props はコードを正とし、ここには写さない。決まりとして�
 
 以下のような特殊なボタンは、専用のCSSクラスを使う。
 
-| 用途                              | 推奨クラス                   |
-| --------------------------------- | ---------------------------- |
-| ヘッダーの正方形アイコンボタン    | `.action-btn`                |
-| タブ切り替えボタン                | `.menu-item`, `.desktop-tab` |
-| 検索クリアボタン                  | `.search-clear-button`       |
-| ドロップダウントリガー            | `.dropdown-trigger-btn`      |
-| 一覧の行の削除アイコンボタン（🗑） | `.delete-button`             |
+| 用途 | 推奨クラス |
+| --- | --- |
+| ヘッダーの正方形アイコンボタン | `.action-btn` |
+| タブ切り替えボタン | `.menu-item`, `.desktop-tab` |
+| 検索クリアボタン | `.search-clear-button` |
+| ドロップダウントリガー | `.dropdown-trigger-btn` |
+| 一覧の行の削除アイコンボタン（🗑） | `.delete-button` |
 
 ## コンポーネント命名規則
 
@@ -48,16 +48,16 @@ Rendererプロセス（`src/renderer/`）のコンポーネント命名規則を
 
 ### プレフィックス体系
 
-| 所属                     | プレフィックス      |
-| ------------------------ | ------------------- |
-| メインウィンドウ         | `Launcher*`         |
-| 管理ウィンドウ（共通）   | `Admin*`            |
-| 管理 > 基本設定タブ      | `AdminSettings*`    |
-| 管理 > アイテム管理タブ  | `AdminItemManager*` |
-| 管理 > ヘルプタブ        | `AdminOther*`       |
-| ワークスペースウィンドウ | `Workspace*`        |
-| 初回設定                 | `Setup*`            |
-| 共通コンポーネント       | なし                |
+| 所属 | プレフィックス |
+| --- | --- |
+| メインウィンドウ | `Launcher*` |
+| 管理ウィンドウ（共通） | `Admin*` |
+| 管理 > 基本設定タブ | `AdminSettings*` |
+| 管理 > アイテム管理タブ | `AdminItemManager*` |
+| 管理 > ヘルプタブ | `AdminOther*` |
+| ワークスペースウィンドウ | `Workspace*` |
+| 初回設定 | `Setup*` |
+| 共通コンポーネント | なし |
 
 ### 共通コンポーネントの定義
 
@@ -72,14 +72,14 @@ Rendererプロセス（`src/renderer/`）のコンポーネント命名規則を
 
 以下のコンポーネントは 1 つのウィンドウ専用でビジネスロジックを持つが、プレフィックスが付いていない。新規作成時は所属のプレフィックスを使うこと。
 
-| コンポーネント                | 使用箇所                                                           | 本来あるべきプレフィックス |
-| ----------------------------- | ------------------------------------------------------------------ | -------------------------- |
-| `BookmarkAutoImportSettings`  | `AdminSettingsTab`                                                 | `Admin*`                   |
-| `BackupSnapshotModal`         | `AdminSettingsBackupSection`                                       | `Admin*`                   |
-| `BookmarkAutoImportRuleModal` | `BookmarkAutoImportSettings`、`AdminItemManagerView`（取込モード） | `Admin*`                   |
-| `AppImportModal`              | `AdminItemManagerView`                                             | `Admin*`                   |
-| `AutoImportFilterDropdown`    | `AdminItemManagerView`                                             | `AdminItemManager*`        |
-| `MissingIconNotice`           | `App`（メインウィンドウ）                                          | `Launcher*`                |
-| `MemoViewModal`               | `LauncherItemList`                                                 | `Launcher*`                |
+| コンポーネント | 使用箇所 | 本来あるべきプレフィックス |
+| --- | --- | --- |
+| `BookmarkAutoImportSettings` | `AdminSettingsTab` | `Admin*` |
+| `BackupSnapshotModal` | `AdminSettingsBackupSection` | `Admin*` |
+| `BookmarkAutoImportRuleModal` | `BookmarkAutoImportSettings`、`AdminItemManagerView`（取込モード） | `Admin*` |
+| `AppImportModal` | `AdminItemManagerView` | `Admin*` |
+| `AutoImportFilterDropdown` | `AdminItemManagerView` | `AdminItemManager*` |
+| `MissingIconNotice` | `App`（メインウィンドウ） | `Launcher*` |
+| `MemoViewModal` | `LauncherItemList` | `Launcher*` |
 
 メインウィンドウの子ウィンドウ（登録・編集、アイコン取得結果）の部品（`RegisterModal`・`RegisterWindowPage`・`IconProgressDetailModal`・`MainChildPage`）はプレフィックスなしで、子ウィンドウに付けるプレフィックスはまだ決めていない。

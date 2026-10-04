@@ -13,13 +13,13 @@ QuickDashLauncherのスタイルは、CSS変数（カスタムプロパティ）
 
 正は `src/renderer/styles/` 以下。構成の考え方は次の 3 層である。
 
-| ファイル                | 役割                                                                                                                    |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `index.css`             | グローバルリセット・ベーススタイル。`variables.css`・`common.css`（と一部のコンポーネント CSS）をここで `@import` する  |
-| `variables.css`         | CSS変数（デザイントークン）の定義                                                                                       |
-| `common.css`            | 複数画面で使う共通クラス                                                                                                |
+| ファイル | 役割 |
+| --- | --- |
+| `index.css` | グローバルリセット・ベーススタイル。`variables.css`・`common.css`（と一部のコンポーネント CSS）をここで `@import` する |
+| `variables.css` | CSS変数（デザイントークン）の定義 |
+| `common.css` | 複数画面で使う共通クラス |
 | `components/{名前}.css` | コンポーネント単位のスタイル。対応するコンポーネント（`.tsx`）でインポートする（一部は `index.css` でまとめて読み込む） |
-| `splash.css`            | スプラッシュ画面専用。`index.css` を経由せず `src/renderer/splash/index.tsx` で読み込む                                 |
+| `splash.css` | スプラッシュ画面専用。`index.css` を経由せず `src/renderer/splash/index.tsx` で読み込む |
 
 新しいコンポーネントのスタイルは `components/` に1ファイル作り、変数と共通クラスを使って書く。
 
@@ -27,18 +27,18 @@ QuickDashLauncherのスタイルは、CSS変数（カスタムプロパティ）
 
 正は `src/renderer/styles/variables.css`。カテゴリと命名の型は次のとおり。具体的な値は同ファイルを参照する。
 
-| カテゴリ                           | 命名の型                                                                                                           |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| 色                                 | `--color-{primary\|success\|danger\|warning\|info\|secondary}`、派生は `-hover` / `-dark` / `-light` / `-alt` など |
-| グレースケール                     | `--color-white`、`--color-gray-{50〜900}`（数字が大きいほど濃い）                                                  |
-| 背景                               | `--bg-{用途}`（例 `--bg-app`、`--bg-selected`、`--bg-hover`、`--bg-danger-light`）                                 |
-| 文字色                             | `--text-{用途}`（例 `--text-primary`、`--text-muted`、`--text-error`）                                             |
-| 余白                               | `--spacing-{xxs\|xs\|sm\|md\|lg\|xl\|2xl\|3xl}`                                                                    |
-| タイポグラフィ                     | `--font-family`、`--font-family-mono`、`--font-size-{xxs〜3xl\|base}`、`--line-height-{tight\|normal\|relaxed}`    |
-| 枠と角丸                           | `--border-{light\|normal\|dark\|primary\|danger}`、`--border-radius`、`--border-radius-{sm\|lg\|xl}`               |
-| 影・フォーカス・トランジション     | `--shadow`、`--shadow-{sm\|lg\|xl}`、`--focus-ring*`、`--transition-{fast\|normal\|slow\|width}`                   |
-| z-index と寸法                     | `--z-{dropdown\|modal}`、`--input-height*`、`--button-height`、`--icon-size*`、`--modal-*`、`--menu-*`             |
-| ワークスペースのグループ色トークン | `--group-color-{トークン}`                                                                                         |
+| カテゴリ | 命名の型 |
+| --- | --- |
+| 色 | `--color-{primary\|success\|danger\|warning\|info\|secondary}`、派生は `-hover` / `-dark` / `-light` / `-alt` など |
+| グレースケール | `--color-white`、`--color-gray-{50〜900}`（数字が大きいほど濃い） |
+| 背景 | `--bg-{用途}`（例 `--bg-app`、`--bg-selected`、`--bg-hover`、`--bg-danger-light`） |
+| 文字色 | `--text-{用途}`（例 `--text-primary`、`--text-muted`、`--text-error`） |
+| 余白 | `--spacing-{xxs\|xs\|sm\|md\|lg\|xl\|2xl\|3xl}` |
+| タイポグラフィ | `--font-family`、`--font-family-mono`、`--font-size-{xxs〜3xl\|base}`、`--line-height-{tight\|normal\|relaxed}` |
+| 枠と角丸 | `--border-{light\|normal\|dark\|primary\|danger}`、`--border-radius`、`--border-radius-{sm\|lg\|xl}` |
+| 影・フォーカス・トランジション | `--shadow`、`--shadow-{sm\|lg\|xl}`、`--focus-ring*`、`--transition-{fast\|normal\|slow\|width}` |
+| z-index と寸法 | `--z-{dropdown\|modal}`、`--input-height*`、`--button-height`、`--icon-size*`、`--modal-*`、`--menu-*` |
+| ワークスペースのグループ色トークン | `--group-color-{トークン}` |
 
 - ワークスペースのグループ色トークンは、`workspace.json` の `groups[].color` に保存される値に対応する。`primary`/`success`/`danger`/`warning`/`info`/`secondary` はテーマ色（`--color-*`）を参照し、それ以外（`purple` など）は固有色を持つ。トークンから CSS 変数への解決は `src/common/groupColors.ts` の `resolveGroupColorCss()` が行う。
 - 必要な値が変数にないときは、直書きせず `variables.css` に既存の命名の型に沿って変数を足す。
@@ -51,26 +51,26 @@ QuickDashLauncherのスタイルは、CSS変数（カスタムプロパティ）
 
 > **推奨**: モーダルのアクションボタンやフォームの送信ボタンには、[Buttonコンポーネント](ui-components.md#buttonコンポーネント)を使用する。以下のクラスは特殊なケース（ツールバー、タブ等）向けである。
 
-| クラス                                                       | 定義         | 用途                                                                                       |
-| ------------------------------------------------------------ | ------------ | ------------------------------------------------------------------------------------------ |
-| `.btn`                                                       | `Button.css` | Buttonコンポーネントのベース                                                               |
-| `.btn-primary` / `.btn-danger` / `.btn-info` / `.btn-cancel` | `Button.css` | 状態別の色（Buttonコンポーネントの `variant`）                                             |
-| `.btn-sm` / `.btn-lg`                                        | `Button.css` | サイズ（`md` はクラスなし）                                                                |
-| `.btn-full-width`                                            | `Button.css` | 幅いっぱいに広げる                                                                         |
-| `.btn-base`                                                  | `common.css` | Buttonコンポーネントを使わないボタン向けのベース（レガシー）                               |
-| `.action-btn`                                                | `common.css` | 32x32 の正方形アイコンボタン（メインウィンドウのヘッダー：登録・設定・更新・ピン留めなど） |
+| クラス | 定義 | 用途 |
+| --- | --- | --- |
+| `.btn` | `Button.css` | Buttonコンポーネントのベース |
+| `.btn-primary` / `.btn-danger` / `.btn-info` / `.btn-cancel` | `Button.css` | 状態別の色（Buttonコンポーネントの `variant`） |
+| `.btn-sm` / `.btn-lg` | `Button.css` | サイズ（`md` はクラスなし） |
+| `.btn-full-width` | `Button.css` | 幅いっぱいに広げる |
+| `.btn-base` | `common.css` | Buttonコンポーネントを使わないボタン向けのベース（レガシー） |
+| `.action-btn` | `common.css` | 32x32 の正方形アイコンボタン（メインウィンドウのヘッダー：登録・設定・更新・ピン留めなど） |
 
 ### その他の共通クラス
 
-| 区分             | クラス                                                                                                             | 用途                                                   |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------ |
-| タブバー         | `.tab-bar`、`.tab-button`、`.tab-count`、`.tab-name-input`                                                         | タブ切り替えとアイテム数表示、タブ名の編集             |
-| フォーム         | `.input-base`、`.select-base`、`.form-group`、`.validation-error`                                                  | 入力欄・セレクト・ラベル付きの行・エラー表示           |
-| レイアウト       | `.flex-center`、`.flex-between`、`.flex-start`、`.flex-end`、`.flex-col`、`.flex-wrap`、`.flex-1`、`.gap-{xs〜xl}` | フレックスボックスの配置と間隔                         |
-| テーブル         | `.table-base`                                                                                                      | 一覧表（行の `selected`/`readonly`/`edited` 状態つき） |
-| モーダル         | `.modal-overlay-base`、`.modal-content-base`、`.modal-header-base`、`.modal-footer-base`                           | モーダルの骨格                                         |
-| ユーティリティ   | `.loading-overlay`、`.text-*`、`.font-*`、`.mb-*`、`.cursor-*`、`.overflow-*`、`.no-drag`/`.drag`                  | 単一目的の小さな指定                                   |
-| 透過度スライダー | `.opacity-control`、`.opacity-slider`、`.opacity-value`                                                            | 設定画面のワークスペース透過度                         |
+| 区分 | クラス | 用途 |
+| --- | --- | --- |
+| タブバー | `.tab-bar`、`.tab-button`、`.tab-count`、`.tab-name-input` | タブ切り替えとアイテム数表示、タブ名の編集 |
+| フォーム | `.input-base`、`.select-base`、`.form-group`、`.validation-error` | 入力欄・セレクト・ラベル付きの行・エラー表示 |
+| レイアウト | `.flex-center`、`.flex-between`、`.flex-start`、`.flex-end`、`.flex-col`、`.flex-wrap`、`.flex-1`、`.gap-{xs〜xl}` | フレックスボックスの配置と間隔 |
+| テーブル | `.table-base` | 一覧表（行の `selected`/`readonly`/`edited` 状態つき） |
+| モーダル | `.modal-overlay-base`、`.modal-content-base`、`.modal-header-base`、`.modal-footer-base` | モーダルの骨格 |
+| ユーティリティ | `.loading-overlay`、`.text-*`、`.font-*`、`.mb-*`、`.cursor-*`、`.overflow-*`、`.no-drag`/`.drag` | 単一目的の小さな指定 |
+| 透過度スライダー | `.opacity-control`、`.opacity-slider`、`.opacity-value` | 設定画面のワークスペース透過度 |
 
 ### 閉じる・削除ボタンクラス
 
