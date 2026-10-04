@@ -2,7 +2,7 @@
  * 画面: アイテム登録・編集モーダル
  * 画面仕様: docs/screens/register-modal.md
  */
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type {
   RegisterItem,
   EditingAppItem,
@@ -142,16 +142,11 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     return () => document.removeEventListener('dragend', resetDragState);
   }, [isOpen]);
 
-  // GroupItemSelectorModalが表示されている場合は、Escapeはそちらに任せる
-  const deferEscapeToGroupSelector = useCallback(
-    () => !!document.querySelector('.group-item-selector-modal'),
-    []
-  );
+  // 上に重ねたダイアログ（グループのアイテム選択・ウィンドウ選択など）の Escape は useModalKeyboard がそちらに任せる
   useModalKeyboard({
     isOpen,
     modalRef,
     onClose: handleCancel,
-    onEscape: deferEscapeToGroupSelector,
   });
 
   useEffect(() => {

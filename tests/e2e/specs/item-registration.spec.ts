@@ -2,7 +2,7 @@ import type { ElectronApplication, Page } from '@playwright/test';
 import { isJsonLauncherItem } from '@common/types';
 
 import { test, expect } from '../fixtures/electron-app';
-import { TestUtils } from '../helpers/test-utils';
+import { NativeMenuTestHelper, TestUtils } from '../helpers/test-utils';
 
 /**
  * メインウィンドウの bounds をメインプロセスから読む
@@ -556,5 +556,116 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       // 管理画面を閉じる
       await adminWindow.close();
     });
+  });
+});
+
+/**
+ * 「⚡ 試しに実行」でのウィンドウ操作
+ * - タイトルが空でプロセス名だけのときは、保存時と同じく "*" で探す
+ *
+ * 実際のウィンドウは動かさないよう、メインプロセスのウィンドウ操作ハンドラを差し替えて引数を記録する
+ */
+test.describe('QuickDashLauncher - 試しに実行（ウィンドウ操作）', () => {
+  test('タイトルが空でプロセス名だけなら "*" で探す', async ({ electronApp, mainWindow }) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+
+    await electronApp.evaluate(({ ipcMain }) => {
+      const g = globalThis as { __e2eWindowOps?: unknown[] };
+      g.__e2eWindowOps = [];
+      ipcMain.removeHandler('execute-window-operation');
+      ipcMain.handle('execute-window-operation', (_event, item: unknown) => {
+        g.__e2eWindowOps!.push(item);
+      });
+    });
+
+    const registerPage = await utils.openRegisterModal(electronApp);
+    await registerPage.locator('select:has(option[value="window"])').first().selectOption('window');
+    await registerPage.locator('input[placeholder^="プロセス名"]').first().fill('notepad');
+    await registerPage.locator('button', { hasText: '試しに実行' }).click();
+
+    await expect
+      .poll(() =>
+        electronApp.evaluate(
+          () => (globalThis as { __e2eWindowOps?: unknown[] }).__e2eWindowOps ?? []
+        )
+      )
+      .toEqual([expect.objectContaining({ windowTitle: '*', processName: 'notepad' })]);
+  });
+});
+
+/**
+ * 登録画面のキー操作: Tab で次の入力欄へ移る（端では折り返す）
+ */
+test.describe('QuickDashLauncher - 登録画面の Tab 移動', () => {
+  test('Tab で次の要素へ、Shift+Tab で前の要素へフォーカスが移る', async ({
+    electronApp,
+    mainWindow,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    const registerPage = await utils.openRegisterModal(electronApp);
+
+    const nameInput = registerPage.locator('input[type="text"]').first();
+    await nameInput.focus();
+    const describeFocus = () =>
+      registerPage.evaluate(() => {
+        const el = document.activeElement as HTMLElement | null;
+        return el ? `${el.tagName}:${el.getAttribute('placeholder') ?? el.textContent ?? ''}` : '';
+      });
+    const start = await describeFocus();
+
+    await registerPage.keyboard.press('Tab');
+    const next = await describeFocus();
+    expect(next).not.toBe(start);
+
+    await registerPage.keyboard.press('Shift+Tab');
+    expect(await describeFocus()).toBe(start);
+  });
+});
+
+/**
+ * 登録画面の上に重ねて開いたダイアログでの Escape
+ * - 閉じるのは上に重なったダイアログだけで、登録画面は開いたまま
+ */
+test.describe('QuickDashLauncher - 登録画面の子ダイアログの Escape', () => {
+  test('ウィンドウ選択を Escape で閉じても登録画面は残る', async ({ electronApp, mainWindow }) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    const registerPage = await utils.openRegisterModal(electronApp);
+
+    await registerPage.locator('select:has(option[value="window"])').first().selectOption('window');
+    await registerPage.locator('button', { hasText: 'ウィンドウを選択' }).first().click();
+    const selector = registerPage.locator('.window-selector-modal-overlay');
+    await expect(selector).toBeVisible({ timeout: 10000 });
+
+    await registerPage.keyboard.press('Escape');
+    await expect(selector).toHaveCount(0);
+    expect(registerPage.isClosed()).toBe(false);
+    await expect(registerPage.locator('.register-modal')).toBeVisible();
+  });
+
+  test('削除の確認を Escape で閉じても編集画面は残る', async ({ electronApp, mainWindow }) => {
+    const utils = new TestUtils(mainWindow);
+    const menuHelper = new NativeMenuTestHelper(electronApp, mainWindow);
+    await utils.waitForPageLoad();
+    await expect(mainWindow.locator('.item', { hasText: 'GitHub' })).toBeVisible();
+
+    const github = await mainWindow.evaluate(async () => {
+      const items = await window.electronAPI.loadDataFiles('internal');
+      return items.find((i) => 'path' in i && i.displayName === 'GitHub');
+    });
+    expect(github).toBeDefined();
+    await menuHelper.simulateLauncherMenu('edit', github as unknown as Record<string, unknown>);
+    const editor = await utils.waitForRegisterWindow(electronApp);
+
+    await editor.locator('.modal-actions button', { hasText: '削除' }).click();
+    const confirm = editor.locator('[data-testid="confirm-dialog-overlay"]');
+    await expect(confirm).toBeVisible();
+
+    await editor.keyboard.press('Escape');
+    await expect(confirm).toHaveCount(0);
+    expect(editor.isClosed()).toBe(false);
+    await expect(editor.locator('.register-modal')).toBeVisible();
   });
 });

@@ -38,7 +38,7 @@ export class FileUtils {
   /**
    * バイナリファイルを読み込み、Base64エンコードされたデータURLとして返す
    */
-  static readCachedBinaryAsBase64(filePath: string, mimeType = 'image/png'): string | null {
+  static readCachedBinaryAsBase64(filePath: string, mimeType?: string): string | null {
     try {
       if (!fs.existsSync(filePath)) {
         return null;
@@ -132,8 +132,23 @@ export class FileUtils {
 
   /**
    * バッファをBase64エンコードされたデータURLに変換する
+   *
+   * @param mimeType 省略時は中身から決める（SVG なら image/svg+xml、それ以外は image/png）
    */
-  static bufferToBase64DataUrl(buffer: Buffer, mimeType = 'image/png'): string {
-    return `data:${mimeType};base64,${buffer.toString('base64')}`;
+  static bufferToBase64DataUrl(buffer: Buffer, mimeType?: string): string {
+    const type = mimeType ?? this.detectImageMimeType(buffer);
+    return `data:${type};base64,${buffer.toString('base64')}`;
+  }
+
+  /**
+   * 画像の MIME タイプを中身から決める
+   *
+   * カスタムアイコンは種類に関係なく .png の名前で保存するため、拡張子では決められない。
+   * PNG・JPEG・ICO は image/png としてもブラウザが中身から判別して表示するが、
+   * SVG は image/svg+xml でないと表示されないので、SVG だけを見分ける
+   */
+  static detectImageMimeType(buffer: Buffer): string {
+    const head = buffer.subarray(0, 1024).toString('utf8').toLowerCase();
+    return head.includes('<svg') ? 'image/svg+xml' : 'image/png';
   }
 }

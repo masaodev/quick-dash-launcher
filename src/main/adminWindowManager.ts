@@ -109,7 +109,7 @@ export async function createAdminWindow(): Promise<BrowserWindow> {
     idleDestroyer.schedule();
   });
 
-  attachCommonKeyHandlers(adminWindow, { suppressEscape: true });
+  attachCommonKeyHandlers(adminWindow);
 
   windowLogger.info('管理ウィンドウを作成しました');
   return adminWindow;

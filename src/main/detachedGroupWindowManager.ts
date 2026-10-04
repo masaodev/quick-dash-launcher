@@ -317,7 +317,7 @@ function setupDetachedWindow(
     windowLogger.info(`切り離しウィンドウを閉じました: ${groupId}`);
   });
 
-  attachCommonKeyHandlers(win, { suppressEscape: true });
+  attachCommonKeyHandlers(win);
 
   attachSnapHandler(win, () => detachedWindowSnapEnabled);
 

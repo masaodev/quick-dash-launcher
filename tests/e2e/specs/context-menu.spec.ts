@@ -1,6 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
+import type { ElectronApplication, Page } from '@playwright/test';
+
 import { test, expect } from '../fixtures/electron-app';
 import { TestUtils, NativeMenuTestHelper } from '../helpers/test-utils';
 
@@ -65,6 +67,48 @@ $Shortcut.Save()
         }
       }
     }
+  });
+
+  test('ショートカット（.lnk）のアイテムでも id・メモが保たれる', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }) => {
+    configHelper.addItemToFile('data.json', {
+      id: 'e2elnk01',
+      type: 'item',
+      displayName: 'メモつきショートカット',
+      path: shortcutPath,
+      memo: 'ショートカットのメモ',
+    });
+    await mainWindow.reload();
+    await new TestUtils(mainWindow).waitForPageLoad();
+    await expect(mainWindow.locator('.item', { hasText: 'メモつきショートカット' })).toBeVisible();
+
+    const loaded = await mainWindow.evaluate(async () => {
+      const items = await window.electronAPI.loadDataFiles('internal');
+      return items.find((i) => 'displayName' in i && i.displayName === 'メモつきショートカット');
+    });
+    expect(loaded).toMatchObject({ id: 'e2elnk01', memo: 'ショートカットのメモ' });
+    expect(loaded).toHaveProperty('originalPath', expect.stringMatching(/notepad\.exe$/i));
+
+    await electronApp.evaluate(({ Menu }) => {
+      const g = globalThis as { __e2eMenuLabels?: string[] | null };
+      g.__e2eMenuLabels = null;
+      Menu.prototype.popup = function (this: { items: Array<{ type: string; label: string }> }) {
+        g.__e2eMenuLabels = this.items.filter((i) => i.type !== 'separator').map((i) => i.label);
+      };
+    });
+    await mainWindow
+      .locator('.item', { hasText: 'メモつきショートカット' })
+      .click({ button: 'right' });
+    await expect
+      .poll(() =>
+        electronApp.evaluate(
+          () => (globalThis as { __e2eMenuLabels?: string[] | null }).__e2eMenuLabels ?? []
+        )
+      )
+      .toContain('📝 メモを表示');
   });
 
   test('編集メニュー操作で編集モーダルが開く', async ({ electronApp, mainWindow }) => {
@@ -192,4 +236,70 @@ test.describe('QuickDashLauncher - 管理ウィンドウのコンテキストメ
 
     await adminWindow.close();
   });
+});
+
+/**
+ * 右クリックメニューに出る項目（パスを持たないアイテムにはパス系の項目を出さない）
+ *
+ * ネイティブメニューの中身は Playwright から見えないため、メインプロセスの Menu.popup を
+ * 差し替えて、組み立てたメニューの項目名を記録する
+ */
+test.describe('QuickDashLauncher - 右クリックメニューの項目', () => {
+  test.beforeEach(async ({ configHelper, mainWindow }) => {
+    configHelper.addItemToFile('data.json', {
+      id: 'e2ewin01',
+      type: 'window',
+      displayName: 'E2Eウィンドウ操作',
+      windowTitle: 'E2E存在しないウィンドウ',
+    });
+    configHelper.addItemToFile('data.json', {
+      id: 'e2elay01',
+      type: 'layout',
+      displayName: 'E2Eウィンドウ配置',
+      entries: [{ windowTitle: 'E2E存在しないウィンドウ', launchApp: false }],
+    });
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    await mainWindow.reload();
+    await utils.waitForPageLoad();
+  });
+
+  /** 右クリックして、組み立てられたメニューの項目名（区切り線を除く）を返す */
+  async function captureMenuLabels(
+    electronApp: ElectronApplication,
+    mainWindow: Page,
+    itemName: string
+  ): Promise<string[]> {
+    await electronApp.evaluate(({ Menu }) => {
+      const g = globalThis as { __e2eMenuLabels?: string[] | null };
+      g.__e2eMenuLabels = null;
+      Menu.prototype.popup = function (this: { items: Array<{ type: string; label: string }> }) {
+        g.__e2eMenuLabels = this.items.filter((i) => i.type !== 'separator').map((i) => i.label);
+      };
+    });
+    await mainWindow.locator('.item', { hasText: itemName }).click({ button: 'right' });
+    await expect
+      .poll(() =>
+        electronApp.evaluate(
+          () => (globalThis as { __e2eMenuLabels?: string[] | null }).__e2eMenuLabels ?? null
+        )
+      )
+      .not.toBeNull();
+    return (await electronApp.evaluate(
+      () => (globalThis as { __e2eMenuLabels?: string[] | null }).__e2eMenuLabels
+    )) as string[];
+  }
+
+  test('通常アイテムにはパス系の項目が出る', async ({ electronApp, mainWindow }) => {
+    const labels = await captureMenuLabels(electronApp, mainWindow, 'メモ帳');
+    expect(labels).toContain('📋 パスをコピー');
+    expect(labels).toContain('📂 親フォルダーを開く');
+  });
+
+  for (const name of ['E2Eウィンドウ操作', 'E2Eウィンドウ配置']) {
+    test(`${name}にはパス系の項目が出ない`, async ({ electronApp, mainWindow }) => {
+      const labels = await captureMenuLabels(electronApp, mainWindow, name);
+      expect(labels).toEqual(['✏️ 編集', '⭐ ワークスペースに追加']);
+    });
+  }
 });

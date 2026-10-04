@@ -27,6 +27,24 @@ function isInputElement(element: Element | null): boolean {
   return element !== null && INPUT_TAGS.has(element.tagName);
 }
 
+/** モーダル・ダイアログの外枠（重ねて開いたダイアログを見分けるため） */
+const OVERLAY_SELECTOR =
+  '.modal-overlay, .window-selector-modal-overlay, .layout-capture-modal-overlay';
+
+/**
+ * このモーダルより後に描かれた（上に重なった）ダイアログが開いているか
+ *
+ * 登録画面から開くウィンドウ選択・ファイル選択・削除の確認などは、登録画面の外に後から描かれる
+ */
+function hasOverlayAbove(modal: HTMLElement): boolean {
+  return Array.from(document.querySelectorAll(OVERLAY_SELECTOR)).some(
+    (overlay) =>
+      !overlay.contains(modal) &&
+      !modal.contains(overlay) &&
+      (modal.compareDocumentPosition(overlay) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0
+  );
+}
+
 function isEditingKey(event: KeyboardEvent): boolean {
   return (
     event.key.length === 1 ||
@@ -45,7 +63,7 @@ interface UseModalKeyboardOptions {
 /**
  * モーダル共通のキーボードハンドラ
  *
- * Escape: モーダルを閉じる（onEscapeが定義されていてtrueを返した場合はスキップ）
+ * Escape: モーダルを閉じる（上に重ねたダイアログが開いているとき、onEscapeがtrueを返したときはスキップ）
  * Tab: モーダル内でフォーカストラップ
  * 入力フィールド内の通常操作: 許可
  * その他: 背景への伝播を阻止
@@ -74,7 +92,8 @@ export function useModalKeyboard({
       if (!modal) return;
 
       if (event.key === 'Escape') {
-        if (onEscapeRef.current?.()) return;
+        // 上に重ねたダイアログが開いていれば、Escape はそちらに任せる
+        if (hasOverlayAbove(modal) || onEscapeRef.current?.()) return;
         suppressEvent(event);
         onCloseRef.current();
         return;
@@ -87,12 +106,16 @@ export function useModalKeyboard({
         const firstEl = focusableElements[0] as HTMLElement;
         const lastEl = focusableElements[focusableElements.length - 1] as HTMLElement;
 
+        // 端では反対の端へ折り返す。それ以外はブラウザの既定のフォーカス移動に任せる
         if (event.shiftKey && document.activeElement === firstEl) {
           lastEl.focus();
+          suppressEvent(event);
         } else if (!event.shiftKey && document.activeElement === lastEl) {
           firstEl.focus();
+          suppressEvent(event);
+        } else {
+          suppressEvent(event, false);
         }
-        suppressEvent(event);
         return;
       }
 

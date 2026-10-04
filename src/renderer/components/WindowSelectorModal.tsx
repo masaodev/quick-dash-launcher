@@ -94,12 +94,16 @@ const WindowSelectorModal: React.FC<WindowSelectorModalProps> = ({ isOpen, onClo
         const firstElement = focusableElements[0] as HTMLElement;
         const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
 
+        // 端では反対の端へ折り返す。それ以外はブラウザの既定のフォーカス移動に任せる
         if (event.shiftKey && document.activeElement === firstElement) {
           lastElement.focus();
+          stopEvent(event);
         } else if (!event.shiftKey && document.activeElement === lastElement) {
           firstElement.focus();
+          stopEvent(event);
+        } else {
+          stopEvent(event, false);
         }
-        stopEvent(event);
         return;
       }
 

@@ -88,3 +88,51 @@ test.describe('QuickDashLauncher - ワークスペースアイテムの編集ウ
     });
   });
 });
+
+/**
+ * アイテム名のその場編集（ダブルクリック）
+ * - 空のまま確定すると元の名前に戻る（Enter でもフォーカスを外しても同じ）
+ */
+test.describe('QuickDashLauncher - ワークスペースアイテム名のその場編集', () => {
+  for (const commit of ['Enter', 'blur'] as const) {
+    test(`名前を空にして確定（${commit}）すると元の名前に戻る`, async ({
+      electronApp,
+      mainWindow,
+    }) => {
+      const utils = new TestUtils(mainWindow);
+      await utils.waitForPageLoad();
+      const workspaceWindow = await getWorkspaceWindow(electronApp);
+      await workspaceWindow.waitForLoadState('domcontentloaded');
+
+      const added = await workspaceWindow.evaluate(() =>
+        window.electronAPI.workspaceAPI.addItem({
+          displayName: '元の名前',
+          path: 'C:\\Windows\\System32\\notepad.exe',
+          type: 'app',
+        })
+      );
+      const card = workspaceWindow.locator('.workspace-item-card', { hasText: '元の名前' });
+      await expect(card).toBeVisible({ timeout: 10000 });
+
+      await card.locator('.workspace-item-name').dblclick();
+      const input = workspaceWindow.locator('.workspace-item-name-input');
+      await expect(input).toBeVisible();
+      await input.fill('');
+      if (commit === 'Enter') {
+        await input.press('Enter');
+      } else {
+        await input.evaluate((el) => (el as HTMLInputElement).blur());
+      }
+
+      await expect(input).toHaveCount(0);
+      await expect(
+        workspaceWindow.locator('.workspace-item-card', { hasText: '元の名前' })
+      ).toBeVisible();
+      await workspaceWindow.waitForTimeout(300);
+      const items = await workspaceWindow.evaluate(() =>
+        window.electronAPI.workspaceAPI.loadItems()
+      );
+      expect(items.find((i) => i.id === added.id)?.displayName).toBe('元の名前');
+    });
+  }
+});

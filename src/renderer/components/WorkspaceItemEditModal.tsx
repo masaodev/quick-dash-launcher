@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type { WorkspaceItem, WorkspaceItemUpdate, WindowInfo, WindowConfig } from '@common/types';
 import {
   mergeWindowInfoIntoLayoutEntry,
@@ -86,12 +86,8 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
     setSelectorModalOpen,
   } = useWorkspaceItemEditForm(isOpen, editingItem, loadCustomIconPreview, onClose, onSave);
 
-  const handleEscape = useCallback(() => {
-    if (document.querySelector('.group-item-selector-modal')) return true;
-    return false;
-  }, []);
-
-  useModalKeyboard({ isOpen, modalRef, onClose: handleCancel, onEscape: handleEscape });
+  // 上に重ねたグループのアイテム選択の Escape は useModalKeyboard がそちらに任せる
+  useModalKeyboard({ isOpen, modalRef, onClose: handleCancel });
 
   useEffect(() => {
     if (!isOpen) {

@@ -251,9 +251,9 @@
 
 ### 管理ウィンドウのEscapeキー動作
 
-**実装場所**: `src/main/adminWindowManager.ts` の `attachCommonKeyHandlers(..., { suppressEscape: true })`（本体は `src/main/utils/managedWindow.ts`）
+管理ウィンドウでは、編集作業中の誤操作を防止するため、**Escapeキーでは閉じません**（Escape でウィンドウを隠す処理を持たない）。
 
-管理ウィンドウでは、編集作業中の誤操作を防止するため、**Escapeキーで閉じる機能を無効化**しています。
+Escape はページに届き、セル編集の取り消しや確認ダイアログを閉じるのに使います。切り離しウィンドウも同じです（v0.8.0 より前はメインプロセスで Escape を止めていたため、ページの中でも効かなかった）。
 
 管理ウィンドウを閉じるには、以下の方法を使用します：
 

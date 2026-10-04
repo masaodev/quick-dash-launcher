@@ -1,3 +1,6 @@
+import * as fs from 'fs';
+import * as path from 'path';
+
 import { test, expect } from '../fixtures/electron-app';
 import { TestUtils } from '../helpers/test-utils';
 
@@ -238,5 +241,37 @@ test.describe('QuickDashLauncher - 基本UI機能テスト', () => {
       // アイテム数が初期値に戻ることを確認
       expect(restoredCount).toBe(initialCount);
     });
+  });
+});
+
+/**
+ * カスタムアイコン: SVG も表示できる（保存名は .png でも中身で見分ける）
+ */
+test.describe('QuickDashLauncher - カスタムアイコンの表示', () => {
+  test('SVG のカスタムアイコンが描画される', async ({ mainWindow, configHelper }) => {
+    const customDir = path.join(configHelper.getConfigDir(), 'icon-cache', 'custom');
+    fs.mkdirSync(customDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(customDir, 'e2esvg01.png'),
+      '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><rect width="24" height="24" fill="red"/></svg>'
+    );
+    configHelper.addItemToFile('data.json', {
+      id: 'e2esvg01',
+      type: 'item',
+      displayName: 'SVGアイコンのアイテム',
+      path: 'https://example.com/svg',
+      customIcon: 'e2esvg01.png',
+    });
+
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    await mainWindow.reload();
+    await utils.waitForPageLoad();
+
+    const img = mainWindow.locator('.item', { hasText: 'SVGアイコンのアイテム' }).locator('img');
+    await expect(img).toHaveAttribute('src', /^data:image\/svg\+xml;base64,/, { timeout: 10000 });
+    await expect
+      .poll(() => img.evaluate((el) => (el as HTMLImageElement).naturalWidth))
+      .toBeGreaterThan(0);
   });
 });

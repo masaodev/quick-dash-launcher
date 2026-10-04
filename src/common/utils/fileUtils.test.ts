@@ -82,3 +82,28 @@ describe('FileUtils アトミック書き込み', () => {
     ).toBe(false);
   });
 });
+
+describe('FileUtils.bufferToBase64DataUrl', () => {
+  it('SVG は image/svg+xml にすること（XML 宣言・BOM 付きも含む）', () => {
+    for (const svg of [
+      '<svg xmlns="http://www.w3.org/2000/svg"></svg>',
+      '<?xml version="1.0"?>\n<svg xmlns="http://www.w3.org/2000/svg"></svg>',
+      '﻿<svg></svg>',
+    ]) {
+      expect(FileUtils.bufferToBase64DataUrl(Buffer.from(svg))).toMatch(
+        /^data:image\/svg\+xml;base64,/
+      );
+    }
+  });
+
+  it('SVG 以外は image/png にすること', () => {
+    const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    expect(FileUtils.bufferToBase64DataUrl(png)).toMatch(/^data:image\/png;base64,/);
+  });
+
+  it('MIME タイプを指定したときはそれを使うこと', () => {
+    expect(FileUtils.bufferToBase64DataUrl(Buffer.from('<svg></svg>'), 'image/x-icon')).toMatch(
+      /^data:image\/x-icon;base64,/
+    );
+  });
+});

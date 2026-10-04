@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import { isJsonLauncherItem, JSON_DATA_SCHEMA_REF, SETTINGS_SCHEMA_REF } from '@common/types';
+import type { Page } from '@playwright/test';
 
 import { test, expect } from '../fixtures/electron-app';
 import { TestUtils } from '../helpers/test-utils';
@@ -338,6 +339,79 @@ test.describe('QuickDashLauncher - 外部編集への対応', () => {
         .poll(() => configHelper.hasItemByDisplayName('data.json', 'GitHub編集後'))
         .toBe(true);
       expect(configHelper.hasItemByDisplayName('data.json', '外部で追加')).toBe(true);
+    });
+  });
+});
+
+/**
+ * データファイルを読むのは F5 だけではない（ワークスペースからのグループ起動も読み直す）。
+ * どの経路で読んでも、外部変更の検知と変更前スナップショットを取りこぼさない
+ */
+test.describe('QuickDashLauncher - 外部変更の検知（F5 以外の読み込み）', () => {
+  test('ワークスペースからグループを起動しても、変更前スナップショットが残る', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    const configDir = configHelper.getConfigDir();
+    configHelper.updateSettings({ backupEnabled: true });
+
+    await test.step('初期表示を待つ', async () => {
+      await utils.waitForPageLoad();
+      await mainWindow.locator('.item').first().waitFor({ state: 'visible', timeout: 10000 });
+    });
+
+    const originalRaw = configHelper.readDataFileRaw('data.json');
+
+    await test.step('QDL の外でデータファイルを書き換える', async () => {
+      configHelper.addSimpleItem('data.json', '外部で追加', 'https://example.com/outside');
+    });
+
+    await test.step('ワークスペースからグループを起動する（中身は存在しない名前なので何も起動しない）', async () => {
+      const isWorkspace = async (win: Page) =>
+        (await win.title()) === 'Workspace' || win.url().includes('workspace.html');
+      let workspaceWindow: Page | undefined;
+      for (const win of electronApp.windows()) {
+        if (await isWorkspace(win)) workspaceWindow = win;
+      }
+      workspaceWindow ??= await electronApp.waitForEvent('window', {
+        predicate: isWorkspace,
+        timeout: 10000,
+      });
+      await workspaceWindow.waitForLoadState('domcontentloaded');
+      await workspaceWindow.evaluate(() =>
+        window.electronAPI.workspaceAPI.launchItem({
+          id: 'e2egroup',
+          type: 'group',
+          displayName: 'E2Eグループ',
+          itemNames: ['E2E存在しないアイテム'],
+          workspaceId: 'default',
+          order: 0,
+          addedAt: Date.now(),
+        })
+      );
+    });
+
+    await test.step('変更前の内容がスナップショットに残る', async () => {
+      await expect.poll(() => listPreExternalSnapshots(configDir).length).toBe(1);
+      const snapshotFile = path.join(
+        configDir,
+        'backup',
+        listPreExternalSnapshots(configDir)[0],
+        'datafiles',
+        'data.json'
+      );
+      expect(fs.readFileSync(snapshotFile, 'utf8')).toBe(originalRaw);
+    });
+
+    await test.step('その後の F5 で外部追加分が表示され、二重には検知しない', async () => {
+      await utils.reloadWithF5();
+      await expect(mainWindow.locator('.item', { hasText: '外部で追加' })).toBeVisible({
+        timeout: 10000,
+      });
+      await mainWindow.waitForTimeout(500);
+      expect(listPreExternalSnapshots(configDir)).toHaveLength(1);
     });
   });
 });

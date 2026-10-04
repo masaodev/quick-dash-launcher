@@ -27,7 +27,7 @@ import { showToastWindow } from '../services/overlayWindowService.js';
 import PathManager from '../config/pathManager.js';
 import { getIconForItem } from '../services/iconService.js';
 import { closeDetachedGroupWindow } from '../detachedGroupWindowManager.js';
-import { loadDataFiles } from '../services/data/dataFileLoader.js';
+import { reloadConfigFiles } from '../services/data/dataFileLoader.js';
 
 import { notifyWorkspaceChanged } from './notifications.js';
 import { executeLayout } from './itemHandlers.js';
@@ -245,7 +245,8 @@ export function setupWorkspaceHandlers(): void {
         }
 
         const configFolder = PathManager.getConfigFolder();
-        const allItems = await loadDataFiles(configFolder);
+        // 外部変更の検知・スナップショットを取りこぼさないよう、F5 と同じ読み込みを通す
+        const allItems = await reloadConfigFiles(configFolder, 'internal');
 
         logger.info(
           { groupName: item.displayName, itemCount: item.itemNames.length },

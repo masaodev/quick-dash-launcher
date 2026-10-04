@@ -1,5 +1,6 @@
 import type { LauncherItem, RegisterItem } from '@common/types';
 import { buildLayoutItemFromRegisterItem } from '@common/utils/layoutUtils';
+import { normalizeWindowTitleForProcessOnly } from '@common/utils/windowTitle';
 
 import { debugLog, logError } from './debug';
 
@@ -58,8 +59,11 @@ export async function tryExecuteRegisterItem(item: RegisterItem): Promise<void> 
         logError('ウィンドウ操作設定が不足しています');
         return;
       }
+      const { windowTitle, processName } = item.windowOperationConfig;
       await window.electronAPI.executeWindowOperation({
         ...item.windowOperationConfig,
+        // 保存時と同じく、タイトルが空でプロセス名だけなら "*" で探す
+        windowTitle: normalizeWindowTitleForProcessOnly(windowTitle, processName) ?? windowTitle,
         displayName: item.displayName,
         type: 'window',
       });

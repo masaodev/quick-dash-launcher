@@ -15,7 +15,7 @@ import type {
   VirtualDesktopInfo,
 } from '@common/types';
 import { IPC_CHANNELS } from '@common/ipcChannels';
-import { isGroupItem, isClipboardItem } from '@common/types/guards';
+import { isLauncherItem } from '@common/types/guards';
 
 /** メニューアイテムを作成するヘルパー */
 function createMenuItem(
@@ -161,11 +161,10 @@ function setupLauncherContextMenuHandler(): void {
       if (!senderWindow) return;
 
       const menu = new Menu();
-      const isGroupOrClipboard = isGroupItem(item) || isClipboardItem(item);
-      const hasParentFolder =
-        !isGroupOrClipboard && 'type' in item && item.type !== 'url' && item.type !== 'customUri';
-      const isShortcut =
-        !isGroupOrClipboard && 'originalPath' in item && item.originalPath !== undefined;
+      // パス系の項目はパスを持つアイテムだけ（グループ・クリップボード・ウィンドウ操作・ウィンドウ配置には出さない）
+      const hasPathMenu = isLauncherItem(item);
+      const hasParentFolder = hasPathMenu && item.type !== 'url' && item.type !== 'customUri';
+      const isShortcut = hasPathMenu && item.originalPath !== undefined;
       const hasMemo = 'memo' in item && item.memo && item.memo.trim().length > 0;
 
       menu.append(
@@ -183,7 +182,7 @@ function setupLauncherContextMenuHandler(): void {
         );
       }
 
-      if (!isGroupOrClipboard) {
+      if (hasPathMenu) {
         menu.append(createSeparator());
       }
 
@@ -196,7 +195,7 @@ function setupLauncherContextMenuHandler(): void {
         )
       );
 
-      if (isGroupOrClipboard) {
+      if (!hasPathMenu) {
         menu.popup({ window: senderWindow });
         return;
       }

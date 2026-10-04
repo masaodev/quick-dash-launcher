@@ -87,3 +87,50 @@ test.describe('QuickDashLauncher - アイテム実行時のウィンドウ動作
     });
   });
 });
+
+/**
+ * ウィンドウ配置アイテムを実行したときのトースト（🖥️「ウィンドウ配置を実行します」）
+ *
+ * 実際の配置はしないよう、メインプロセスのウィンドウ配置ハンドラを差し替える
+ */
+test.describe('QuickDashLauncher - ウィンドウ配置の実行', () => {
+  test('ウィンドウ配置用のアイコンと文言でトーストが出る', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    configHelper.addItemToFile('data.json', {
+      id: 'e2elay01',
+      type: 'layout',
+      displayName: 'E2Eウィンドウ配置',
+      entries: [{ windowTitle: 'E2E存在しないウィンドウ', launchApp: false }],
+    });
+    await utils.waitForPageLoad();
+    await mainWindow.reload();
+    await utils.waitForPageLoad();
+
+    await electronApp.evaluate(({ ipcMain }) => {
+      ipcMain.removeHandler('execute-layout');
+      ipcMain.handle('execute-layout', () => undefined);
+    });
+
+    await utils.searchFor('E2Eウィンドウ配置');
+    await expect(mainWindow.locator('.item', { hasText: 'E2Eウィンドウ配置' })).toBeVisible();
+    await mainWindow.keyboard.press('Enter');
+
+    await expect
+      .poll(
+        async () => {
+          // オーバーレイはメインのレンダラーから window.open で開く（URL では見分けられない）
+          for (const win of electronApp.windows()) {
+            if (win.isClosed() || (await win.locator('#toast').count()) === 0) continue;
+            return win.locator('#toast').innerText();
+          }
+          return '';
+        },
+        { timeout: 5000 }
+      )
+      .toMatch(/🖥️[\s\S]*E2Eウィンドウ配置[\s\S]*ウィンドウ配置を実行します/);
+  });
+});
