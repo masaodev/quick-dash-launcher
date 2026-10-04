@@ -80,7 +80,7 @@ F5 では、レンダラーが `settings:reapply` を呼んでから `load-data-
 
 ### `register-items` と ID ベースの更新
 
-- `register-items`: `RegisterItem[]` をデータファイルに追加する。`RegisterItem` の項目は `src/common/types/register.ts` を参照
+- `register-items`: `RegisterItem[]` をデータファイルに追加する。`RegisterItem` の項目は `src/common/types/register.ts` を参照。登録先が `datafiles/` 直下の `.json` でないアイテムが 1 件でもあれば、何も書かずに例外を返す（`create-data-file`・`delete-data-file` も同じ名前の制約で、外れると `{ success: false, error }` を返す。判定は `src/common/utils/dataFileName.ts`）
 - `update-item-by-id`・`update-dir-item-by-id`・`update-group-item-by-id`・`update-window-item-by-id`・`update-layout-item-by-id`・`delete-items-by-id`・`batch-update-items-by-id`: アイテムの `id` で対象を特定して書き換える（行番号では特定しない）。`delete-items-by-id` はクリップボードアイテムの保存データも消す
 - いずれも処理後に `data-changed` を全ウィンドウへ送る
 
@@ -175,6 +175,13 @@ F5 では、レンダラーが `settings:reapply` を呼んでから `load-data-
 - メイン画面の子ウィンドウでの操作結果（登録・更新・削除）は `window:notify-main-child-result`（`send`）でメインへ伝え、メインは `window:main-child-result` イベントとしてメイン画面に中継する（トースト表示用）。データ自体の反映は `data-changed` で行う
 - 実装: `src/main/mainChildWindowManager.ts`、`src/main/workspaceConfirmWindowManager.ts`。ワークスペースアイテムの編集ウィンドウは `workspace:open-item-editor`（`src/main/workspaceItemEditorWindowManager.ts`）
 - 詳細は [ウィンドウ制御](window-control.md) を参照
+
+## 外部で開く
+
+画面から渡された URL やパスをそのまま OS に渡さないよう、受け付けるものを絞っている（`src/main/ipc/configHandlers.ts`）。
+
+- `open-external-url`: http・https の URL だけを既定のブラウザで開く。それ以外のスキーム（`file:`・カスタム URI など）は開かずにログだけ残す。アイテムの起動（カスタム URI を開く機能）はこのチャンネルを通らない
+- `shell:open-folder`: 存在するフォルダの絶対パスだけをエクスプローラーで開く。ファイル・存在しないパス・相対パスは開かない。ドライブ直下のアイテムの親として届く `C:` の形は `C:\` として扱う
 
 ## 通知と進捗
 

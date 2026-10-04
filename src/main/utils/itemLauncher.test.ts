@@ -55,6 +55,13 @@ describe('launchItem（app）', () => {
     );
   });
 
+  it('ショートカットは拡張子の大文字・小文字を問わず、引数があっても shell.openPath で開く', async () => {
+    await launchItem({ type: 'app', path: 'C:\\Tools\\Tool.LNK', args: '--x' }, logger);
+
+    expect(shellMock.openPath).toHaveBeenCalledWith('C:\\Tools\\Tool.LNK');
+    expect(spawnMock).not.toHaveBeenCalled();
+  });
+
   it('引数なしは shell.openPath で開く（spawn しない）', async () => {
     await launchItem({ type: 'app', path: 'C:\\Tools\\tool.exe' }, logger);
 

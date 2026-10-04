@@ -42,6 +42,11 @@ props はコードを正とし、ここには写さない。決まりとして�
 | ドロップダウントリガー | `.dropdown-trigger-btn` |
 | 一覧の行の削除アイコンボタン（🗑） | `.delete-button` |
 
+### ダイアログのフッター
+
+- `.modal-actions` は `Modal.css` の右寄せを全ダイアログで共通にする。画面ごとの CSS でグローバルに上書きしない（同じ CSS を読むウィンドウの全ダイアログに効いてしまう）。配置を変えたい画面は `.icon-detail-modal .modal-actions` のようにスコープを付ける
+- 左端に置くボタン（登録・編集ウィンドウの「⚡ 試しに実行」）があるときは、残りを `.modal-actions-right`（`margin-left: auto`）で包んで右に寄せる
+
 ## コンポーネント命名規則
 
 Rendererプロセス（`src/renderer/`）のコンポーネント命名規則を定義する。

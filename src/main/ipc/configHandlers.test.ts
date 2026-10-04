@@ -71,15 +71,15 @@ describe('configHandlers', () => {
     });
   });
 
-  describe('OPEN_FOLDER', () => {
+  describe('SHELL_OPEN_FOLDER', () => {
     it('存在するフォルダは開く', async () => {
-      await invoke(IPC_CHANNELS.OPEN_FOLDER, tempDir);
+      await invoke(IPC_CHANNELS.SHELL_OPEN_FOLDER, tempDir);
       expect(shellMock.openPath).toHaveBeenCalledWith(tempDir);
     });
 
     it('ドライブ直下のアイテムの親（C: の形）はドライブのルートとして開く', async () => {
       const drive = path.parse(tempDir).root.slice(0, 2);
-      await invoke(IPC_CHANNELS.OPEN_FOLDER, drive);
+      await invoke(IPC_CHANNELS.SHELL_OPEN_FOLDER, drive);
       expect(shellMock.openPath).toHaveBeenCalledWith(`${drive}\\`);
     });
 
@@ -87,10 +87,10 @@ describe('configHandlers', () => {
       const filePath = path.join(tempDir, 'app.exe');
       fs.writeFileSync(filePath, '');
 
-      await invoke(IPC_CHANNELS.OPEN_FOLDER, filePath);
-      await invoke(IPC_CHANNELS.OPEN_FOLDER, path.join(tempDir, 'missing'));
-      await invoke(IPC_CHANNELS.OPEN_FOLDER, 'relative/folder');
-      await invoke(IPC_CHANNELS.OPEN_FOLDER, undefined);
+      await invoke(IPC_CHANNELS.SHELL_OPEN_FOLDER, filePath);
+      await invoke(IPC_CHANNELS.SHELL_OPEN_FOLDER, path.join(tempDir, 'missing'));
+      await invoke(IPC_CHANNELS.SHELL_OPEN_FOLDER, 'relative/folder');
+      await invoke(IPC_CHANNELS.SHELL_OPEN_FOLDER, undefined);
 
       expect(shellMock.openPath).not.toHaveBeenCalled();
     });

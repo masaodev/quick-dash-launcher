@@ -116,7 +116,7 @@ export const IPC_CHANNELS = {
   OPEN_CONFIG_FOLDER: 'open-config-folder',
   GET_APP_INFO: 'get-app-info',
   OPEN_EXTERNAL_URL: 'open-external-url',
-  OPEN_FOLDER: 'open-folder',
+  SHELL_OPEN_FOLDER: 'shell:open-folder',
 
   // スプラッシュ画面
   SPLASH_READY: 'splash-ready',

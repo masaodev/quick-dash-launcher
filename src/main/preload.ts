@@ -319,7 +319,8 @@ const electronAPI: ElectronAPI = {
   // アプリ情報関連API
   getAppInfo: (): Promise<AppInfo> => ipcRenderer.invoke(IPC_CHANNELS.GET_APP_INFO),
   openExternalUrl: (url: string) => ipcRenderer.invoke(IPC_CHANNELS.OPEN_EXTERNAL_URL, url),
-  openFolder: (folderPath: string) => ipcRenderer.invoke(IPC_CHANNELS.OPEN_FOLDER, folderPath),
+  openFolder: (folderPath: string) =>
+    ipcRenderer.invoke(IPC_CHANNELS.SHELL_OPEN_FOLDER, folderPath),
   // ウィンドウ検索API
   getWindowList: (): Promise<WindowInfo[]> => ipcRenderer.invoke(IPC_CHANNELS.GET_ALL_WINDOWS),
   activateWindowByHwnd: (hwnd: number | bigint): Promise<{ success: boolean; error?: string }> =>
