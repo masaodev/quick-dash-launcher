@@ -155,6 +155,8 @@ v0.2.10 で `com.example.quick-dash-launcher` から変えた。App ID は自動
 npm rebuild extract-file-icon
 ```
 
+再ビルドには C++ のビルド環境が要る（[開発ガイド - 必要なツール](development.md#必要なツール)）。
+
 ## 関連ドキュメント
 
 - [開発ガイド](development.md) - 基本的な開発情報
