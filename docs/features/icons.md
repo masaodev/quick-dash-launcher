@@ -44,11 +44,7 @@ uwp_{PackageFamilyName}_icon.png
 
 ### 後方互換性
 
-既存の32pxキャッシュも引き続き使用可能にするため、ファビコンの読み出し時に以下の順序でチェック：
-
-1. 64pxファイルが存在するか確認
-2. なければ32pxファイルを確認
-3. どちらもなければ新規取得
+既存の32pxキャッシュも表示には使えるよう、キャッシュの読み出し（起動時の一括読み込み）では 64px ファイル → 32px ファイルの順に探します。一方、取得（一括取得・不足分の補完）は 64px ファイルの有無だけを見るため、32px しかないドメインは取り直され、64px ファイルが保存されます（読み出し側 `getCachedIconCandidates`＝`src/main/utils/iconCacheKeys.ts`、取得側 `FaviconService.fetchFavicon`＝`src/main/services/faviconService.ts`）。
 
 ## アイテムタイプ別の取得経路
 
@@ -222,12 +218,12 @@ UWPアプリはPackagedCOM方式で起動されるため、レジストリに `s
 
 ### 技術仕様
 
-| 項目                     | 値                     |
-| ------------------------ | ---------------------- |
-| 使用ライブラリ           | `extract-file-icon`    |
-| 抽出サイズ               | 32px                   |
-| 対応形式（直接抽出）     | `.exe`, `.lnk`, `.dll` |
-| 対応形式（拡張子ベース） | `.bat`, `.cmd`, `.com` |
+| 項目                     | 値                                                                                                        |
+| ------------------------ | --------------------------------------------------------------------------------------------------------- |
+| 使用ライブラリ           | `extract-file-icon`                                                                                       |
+| 抽出サイズ               | 32px                                                                                                      |
+| 直接抽出                 | `.lnk`（ショートカット専用の処理）と、スクリプト系以外のアプリのパス（`.exe` 等。拡張子では絞っていない） |
+| 対応形式（拡張子ベース） | `.bat`, `.cmd`, `.com`                                                                                    |
 
 ### パス解決機能
 
@@ -344,65 +340,11 @@ WindowsAppsフォルダ等のシンボリックリンクを自動解決してア
 
 ## API仕様
 
-### fetchIconsCombined
+シグネチャや型はコードを正とし、ここには写さない。
 
-ファビコンとアイコンを統合的に一括取得する統合API（`src/main/services/icon/iconFetcher.ts`）。`progressWindow` に `null`（既定）を渡すと進捗を送らない（バックグラウンド補完用）。
-
-```typescript
-async function fetchIconsCombined(
-  urlItems: IconItem[],
-  items: IconItem[],
-  folders: IconFolders, // { favicons, icons, extensions }
-  forceRefresh: boolean = false,
-  progressWindow: BrowserWindow | null = null
-): Promise<{
-  favicons: Record<string, string | null>;
-  icons: Record<string, string | null>;
-}>;
-```
-
-### CombinedProgressManager
-
-複数フェーズの進捗を統合管理するクラス。
-
-```typescript
-constructor(
-  phaseTypes: ('favicon' | 'icon')[],
-  phaseTotals: number[],
-  window: BrowserWindow | null
-)
-```
-
-**メソッド:**
-
-- `start()`: 処理開始イベントを送信
-- `update(currentItem: string, incrementErrors?: boolean, errorMessage?: string)`: 進捗更新
-- `completePhase()`: 現在のフェーズ完了（次のフェーズへ自動的に移行）
-- `completeAll()`: 全体完了イベントを送信
-
-### 型定義
-
-```typescript
-interface IconProgress {
-  currentPhase: number; // 現在のフェーズ番号（1から開始）
-  totalPhases: number; // 総フェーズ数
-  phases: IconPhaseProgress[];
-  isComplete: boolean;
-  startTime: number;
-  completedTime?: number; // 全体の処理完了時刻（完了時のみ設定）
-}
-
-interface IconPhaseProgress {
-  type: 'favicon' | 'icon';
-  current: number;
-  total: number;
-  currentItem: string;
-  errors: number;
-  startTime: number;
-  isComplete: boolean;
-  results?: IconProgressResult[];
-}
-```
+- `fetchIconsCombined`（`src/main/services/icon/iconFetcher.ts`）: ファビコン取得とアイコン抽出を統合して一括実行する入口。進捗の通知先ウィンドウに `null`（既定）を渡すと進捗を送らない（バックグラウンド補完用）
+- `CombinedProgressManager`（`src/main/utils/progressManager.ts`）: 複数フェーズ（ファビコン取得 → アイコン抽出）の進捗をまとめて管理し、フェーズの開始・更新・完了・全体完了を進捗表示へ通知する
+- 進捗の型（`IconProgress`・`IconPhaseProgress`・`IconProgressResult`）: `src/common/types/icon.ts`
 
 ---
 
@@ -464,74 +406,9 @@ Windows APIを使用してウィンドウからアイコンハンドル（HICON�
 
 ### GDI+エラーハンドリング
 
-ウィンドウアイコン取得処理では、詳細なエラーログを出力してトラブルシューティングを支援します。
+ウィンドウアイコン取得処理では、GDI+ の各ステップ（初期化・ビットマップ作成・PNG 保存）が失敗したとき、失敗したステップ名、ステータスコードの番号と名前、文脈（アイコンハンドル、保存先パス、例外メッセージ）をエラーログに出力します。ステータスコードと名前の対応は `src/main/utils/nativeWindowControl.ts` の `GDI_STATUS_MESSAGES`（正）を参照。アイコンが変換できなくても、そのウィンドウはアイコンなし（デフォルトの🪟絵文字）で一覧に載ります。
 
-#### GDI+ステータスコード一覧
-
-| コード | 説明                      | 主な原因                                |
-| ------ | ------------------------- | --------------------------------------- |
-| 0      | Ok                        | 正常終了                                |
-| 1      | GenericError              | 一般的なエラー                          |
-| 2      | InvalidParameter          | 無効なパラメータ（hIconが無効など）     |
-| 3      | OutOfMemory               | メモリ不足                              |
-| 4      | ObjectBusy                | オブジェクトがビジー状態                |
-| 5      | InsufficientBuffer        | バッファ不足                            |
-| 6      | NotImplemented            | 未実装の機能                            |
-| 7      | Win32Error                | Win32 APIエラー（ファイル保存失敗など） |
-| 8      | WrongState                | 不正な状態                              |
-| 9      | Aborted                   | 処理中断                                |
-| 10     | FileNotFound              | ファイルが見つからない                  |
-| 11     | ValueOverflow             | 値のオーバーフロー                      |
-| 12     | AccessDenied              | アクセス拒否（権限不足）                |
-| 13     | UnknownImageFormat        | 未知の画像形式                          |
-| 14     | FontFamilyNotFound        | フォントファミリーが見つからない        |
-| 15     | FontStyleNotFound         | フォントスタイルが見つからない          |
-| 16     | NotTrueTypeFont           | TrueTypeフォントではない                |
-| 17     | UnsupportedGdiplusVersion | サポートされていないGDI+バージョン      |
-| 18     | GdiplusNotInitialized     | GDI+が初期化されていない                |
-| 19     | PropertyNotFound          | プロパティが見つからない                |
-| 20     | PropertyNotSupported      | サポートされていないプロパティ          |
-
-#### エラーログの形式
-
-エラーログには、ステータスコード番号と説明、関連する文脈情報が含まれます：
-
-```
-[convertIconToBase64] GdiplusStartup failed: status=3 (OutOfMemory), hIcon=12345678
-[convertIconToBase64] GdipCreateBitmapFromHICON failed: status=2 (InvalidParameter), hIcon=12345678, bitmap=null
-[convertIconToBase64] GdipSaveImageToFile failed: status=7 (Win32Error), path=C:\Users\...\icon_xxx.png
-[convertIconToBase64] Unexpected error: hIcon=12345678, error=EACCES: permission denied
-```
-
-#### エラーログの読み方
-
-**GdiplusStartup失敗の場合:**
-
-- `status=3 (OutOfMemory)` → メモリ不足。他のアプリケーションを閉じてメモリを確保
-- `status=17 (UnsupportedGdiplusVersion)` → システム更新が必要
-
-**GdipCreateBitmapFromHICON失敗の場合:**
-
-- `status=2 (InvalidParameter), bitmap=null` → ウィンドウのアイコンハンドルが無効
-- 一部のアプリケーションは標準的なアイコンを提供しない場合があります
-
-**GdipSaveImageToFile失敗の場合:**
-
-- `status=7 (Win32Error)` → 一時フォルダへの書き込み権限を確認
-- `status=12 (AccessDenied)` → ユーザー権限の確認が必要
-
-**Unexpected error:**
-
-- `error=EACCES` → ファイルシステムの権限問題
-- `error=ENOSPC` → ディスク容量不足
-
-#### トラブルシューティングへの活用
-
-エラーログを確認することで、アイコン取得失敗の原因を特定できます：
-
-1. **頻繁に同じステータスコードが出る場合**: システムレベルの問題（メモリ不足、権限問題など）
-2. **特定のアプリケーションでのみ失敗**: そのアプリが標準的なアイコンを提供していない可能性
-3. **一時的なエラー**: 再起動で解決する場合があります
+同じステータスコードが繰り返し出るときはメモリ不足や権限などシステム側の問題、特定のアプリでだけ失敗するときはそのアプリが標準的なアイコンを持たない可能性が高い。
 
 ---
 
@@ -548,7 +425,7 @@ Windows APIを使用してウィンドウからアイコンハンドル（HICON�
    - CORSポリシー
 
 3. **キャッシュをクリア**
-   - `%APPDATA%/quick-dash-launcher/config/icon-cache/favicons/`のファイルを削除
+   - 設定フォルダの `icon-cache/favicons/` のファイルを削除（設定フォルダの場所は [ファイル形式一覧](../architecture/file-formats/README.md#設定フォルダの場所)）
 
 ### エラーの種類
 

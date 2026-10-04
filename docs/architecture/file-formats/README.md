@@ -4,7 +4,7 @@ QuickDashLauncherで使用される主要なファイル形式の概要とドキ
 
 ## 概要
 
-QuickDashLauncherは主に以下の 3 種類のファイルを使用してアプリケーションの状態を管理します：
+QuickDashLauncherは主に以下の 3 種類のファイルを使用してアプリケーションの状態を管理します（置き場所は [設定フォルダの場所](#設定フォルダの場所)）：
 
 | ファイル種別                                      | 主な用途                   | 対象ファイル                                                                      |
 | ------------------------------------------------- | -------------------------- | --------------------------------------------------------------------------------- |
@@ -21,7 +21,7 @@ JSON ファイルはすべて **UTF-8（BOMなし）** で保存されます。
 **→ [設定ファイル形式](settings-format.md)**
 
 - **ファイル**: `settings.json`
-- **パス**: `%APPDATA%/quick-dash-launcher/config/settings.json`
+- **パス**: 設定フォルダ直下の `settings.json`（[設定フォルダの場所](#設定フォルダの場所)）
 - **内容**: ホットキー、ウィンドウサイズ、バックアップ設定、タブ設定、ワークスペース設定など
 
 ---
@@ -116,28 +116,15 @@ npm run schema:generate   # src/common/types/{json-data,settings,json-workspace}
 
 ---
 
-## パス管理
+## 設定フォルダの場所
 
-すべてのファイルパスは `PathManager` クラスで一元管理されています。
+このページの `config/` は設定フォルダを指す。設定フォルダは次の順で決まる（[src/main/config/pathManager.ts](../../../src/main/config/pathManager.ts)、[src/main/main.ts](../../../src/main/main.ts) の起動直後）。
 
-```typescript
-import { PathManager } from '@main/config/pathManager';
+1. 環境変数 `QUICK_DASH_CONFIG_DIR` があれば、そのフォルダ。Windows のシステムフォルダ（`C:\Windows`・`C:\Program Files` など）を指したときは無視して既定に戻す
+2. なければ、userData フォルダの下の `config\`。userData は既定で `%APPDATA%\quick-dash-launcher\`（`package.json` の `name`）なので、設定フォルダは `%APPDATA%\quick-dash-launcher\config\`
+3. 多重起動用の環境変数 `APP_INSTANCE` があると、userData が `%APPDATA%\<APP_INSTANCE>-quick-dash-launcher\` に変わり、設定フォルダもその下の `config\` になる（`npm run dev` は `APP_INSTANCE=dev` なので `%APPDATA%\dev-quick-dash-launcher\config\`）
 
-PathManager.getConfigFolder(); // %APPDATA%/quick-dash-launcher/config/
-PathManager.getDataFilesFolder(); // config/datafiles/
-PathManager.getDataFilePath(); // config/datafiles/data.json
-PathManager.getWorkspaceFilePath(); // config/workspace.json
-PathManager.getWorkspaceArchiveFilePath(); // config/workspace-archive.json
-PathManager.getWorkspaceUiStateFilePath(); // config/workspace-ui-state.json
-PathManager.getBackupFolder(); // config/backup/
-PathManager.getClipboardDataFolder(); // config/clipboard-data/
-PathManager.getIconCacheFolder(); // config/icon-cache/
-PathManager.getSchemasFolder(); // config/schemas/
-PathManager.getConfigReadmePath(); // config/README.md
-PathManager.getAssetsFolder(); // アプリ同梱の assets/（パッケージ後は app.asar 内）
-```
-
-詳細: **[src/main/config/pathManager.ts](../../../src/main/config/pathManager.ts)**
+データファイル・ワークスペースファイル・バックアップなど、このページに出てくるファイルとフォルダはすべて設定フォルダの下に置かれる。パスの組み立ては `PathManager` にまとまっている。
 
 ---
 
