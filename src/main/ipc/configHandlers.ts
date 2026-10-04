@@ -26,10 +26,18 @@ function isAllowedExternalUrl(url: unknown): url is string {
   }
 }
 
-async function isExistingFolder(folderPath: unknown): Promise<boolean> {
-  if (typeof folderPath !== 'string' || !path.isAbsolute(folderPath)) return false;
-  const stat = await fs.stat(folderPath).catch(() => null);
-  return stat?.isDirectory() ?? false;
+/**
+ * 開いてよいフォルダなら絶対パスを返す（存在しない・フォルダでない・相対パスなら null）
+ *
+ * ドライブ直下のアイテムの親は「C:」の形で届くので「C:\」にしてから確かめる
+ * （「C:」のままだと相対パス扱いになる）
+ */
+async function resolveExistingFolder(folderPath: unknown): Promise<string | null> {
+  if (typeof folderPath !== 'string') return null;
+  const normalized = /^[a-zA-Z]:$/.test(folderPath) ? `${folderPath}\\` : folderPath;
+  if (!path.isAbsolute(normalized)) return null;
+  const stat = await fs.stat(normalized).catch(() => null);
+  return stat?.isDirectory() ? normalized : null;
 }
 
 export function setupConfigHandlers(configFolder: string): void {
@@ -60,13 +68,14 @@ export function setupConfigHandlers(configFolder: string): void {
   });
 
   ipcMain.handle(IPC_CHANNELS.OPEN_FOLDER, async (_event, folderPath: string) => {
-    if (!(await isExistingFolder(folderPath))) {
+    const folder = await resolveExistingFolder(folderPath);
+    if (!folder) {
       logger.warn({ folderPath }, '存在するフォルダではないので開きません');
       return;
     }
-    const error = await shell.openPath(folderPath);
+    const error = await shell.openPath(folder);
     if (error) {
-      logger.error({ folderPath, error }, 'フォルダを開けませんでした');
+      logger.error({ folderPath: folder, error }, 'フォルダを開けませんでした');
     }
   });
 }

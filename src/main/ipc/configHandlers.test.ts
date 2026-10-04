@@ -77,6 +77,12 @@ describe('configHandlers', () => {
       expect(shellMock.openPath).toHaveBeenCalledWith(tempDir);
     });
 
+    it('ドライブ直下のアイテムの親（C: の形）はドライブのルートとして開く', async () => {
+      const drive = path.parse(tempDir).root.slice(0, 2);
+      await invoke(IPC_CHANNELS.OPEN_FOLDER, drive);
+      expect(shellMock.openPath).toHaveBeenCalledWith(`${drive}\\`);
+    });
+
     it('ファイル・存在しないパス・相対パスは開かない', async () => {
       const filePath = path.join(tempDir, 'app.exe');
       fs.writeFileSync(filePath, '');
