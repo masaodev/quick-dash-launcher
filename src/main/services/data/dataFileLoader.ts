@@ -171,22 +171,12 @@ export interface DataFilesLoadResult {
 }
 
 /**
- * 設定フォルダからデータファイル（data.json等）を読み込み、AppItem配列に変換する
+ * 設定フォルダからデータファイル（data.json等）を読み込み、AppItem配列とファイル別の結果を返す
  * フォルダ取込アイテムの展開、.lnkファイルの解析、重複チェック、ソートを全て実行する
  *
- * 純粋な読み込みで、レポートの書き出し・トースト・スナップショットは行わない
- * （それらは reloadConfigFiles() の役目。グループ起動などの内部利用ではレポートを上書きしない）
- *
- * @param configFolder - 設定フォルダのパス
- * @returns AppItem配列（LauncherItemとGroupItemの両方を含む）
- */
-export async function loadDataFiles(configFolder: string): Promise<AppItem[]> {
-  const { items } = await loadDataFilesWithReport(configFolder);
-  return items;
-}
-
-/**
- * データファイル群を読み込み、ファイル別の結果も返す
+ * レポートの書き出し・トースト・スナップショットは行わない（reloadConfigFiles() の役目）。
+ * 読むたびに外部変更の検知用の「前回の内容」を更新するので、結果の externallyChanged を
+ * 捨てる呼び出し方をしない（捨てると以後の読み込みで外部変更として検知されない）。
  */
 export async function loadDataFilesWithReport(configFolder: string): Promise<DataFilesLoadResult> {
   const items: AppItem[] = [];

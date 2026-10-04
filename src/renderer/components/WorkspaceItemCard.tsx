@@ -90,19 +90,20 @@ const WorkspaceItemCard: React.FC<WorkspaceItemCardProps> = ({
     onRemove(item.id);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+  // Enter とフォーカスを外したときで同じ扱い（空・変更なしなら元の名前に戻す）
+  const commitEdit = () => {
+    if (editValue.trim() && editValue !== item.displayName) {
       onUpdateDisplayName(item.id, editValue);
-    } else if (e.key === 'Escape') {
+    } else {
       setEditValue(item.displayName);
       onStartEdit(); // 編集モード終了
     }
   };
 
-  const handleBlur = () => {
-    if (editValue.trim() && editValue !== item.displayName) {
-      onUpdateDisplayName(item.id, editValue);
-    } else {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      commitEdit();
+    } else if (e.key === 'Escape') {
       setEditValue(item.displayName);
       onStartEdit(); // 編集モード終了
     }
@@ -166,7 +167,7 @@ const WorkspaceItemCard: React.FC<WorkspaceItemCardProps> = ({
             value={editValue}
             onChange={(e) => setEditValue(e.target.value)}
             onKeyDown={handleKeyDown}
-            onBlur={handleBlur}
+            onBlur={commitEdit}
             onClick={(e) => e.stopPropagation()}
           />
         ) : (

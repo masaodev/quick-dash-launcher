@@ -74,7 +74,7 @@ export const HotkeyInput: React.FC<HotkeyInputProps> = ({
     event.preventDefault();
     event.stopPropagation();
 
-    // キーが3つ以上組み合わされている場合、ホットキーとして確定
+    // キーが2つ以上組み合わされている場合、ホットキーとして確定
     if (currentKeys.size >= 2) {
       const keysArray = Array.from(currentKeys);
       const modifiers = keysArray.filter((k) => MODIFIERS.includes(k));

@@ -78,7 +78,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all var(--transition-normal);
+  transition: var(--transition-normal);
 }
 
 .search-clear-button:hover {

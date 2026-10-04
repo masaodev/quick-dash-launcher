@@ -134,7 +134,7 @@
         color: #666;
       }
 
-      /* 従来のシンプルメッセージ用（非推奨: 新規追加時は itemType + displayName のリッチ形式を使うこと） */
+      /* シンプルメッセージ用（メインプロセスの警告・エラー。アイテムの操作は itemType + displayName のリッチ形式を使うこと） */
       .toast-simple {
         display: flex;
         align-items: center;
@@ -393,6 +393,7 @@
         customUri: { icon: '🔗', action: '起動中...' },
         group: { icon: '📦', action: null },
         windowOperation: { icon: '🪟', action: 'ウィンドウ操作を実行します' },
+        layout: { icon: '🖥️', action: 'ウィンドウ配置を実行します' },
         windowActivate: { icon: '🔄', action: 'ウィンドウをアクティブ化しました' },
         windowClose: { icon: '✖️', action: 'ウィンドウを閉じました' },
         windowPin: { icon: '📌', action: 'ウィンドウを全デスクトップに固定しました' },
@@ -405,7 +406,7 @@
 
       const DEFAULT_ICON = '📋';
 
-      // 従来のアイコン（シンプルメッセージ用）
+      // シンプルメッセージ用のアイコン
       const legacyIcons = {
         success: '✓',
         error: '✕',
@@ -507,7 +508,7 @@
             buildItemContent(data) +
             '</div>';
         } else {
-          // 旧形式フォールバック（非推奨: 現在使用箇所なし）
+          // シンプル形式（メインプロセスの警告・エラー: データファイル破損・読込警告・ホットキー再登録失敗など）
           toast.innerHTML =
             '<div class="toast-simple">' +
             `<span class="toast-simple-icon">${legacyIcons[type] || legacyIcons.success}</span>` +

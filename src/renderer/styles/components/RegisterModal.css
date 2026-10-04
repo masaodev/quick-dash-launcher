@@ -315,7 +315,7 @@
   padding: var(--spacing-xxs) var(--spacing-xs);
   line-height: 1;
   border-radius: 50%;
-  transition: all var(--transition-fast);
+  transition: var(--transition-fast);
   flex-shrink: 0;
   width: 20px;
   height: 20px;

@@ -144,7 +144,7 @@
   border: var(--border-light);
   border-radius: var(--border-radius-sm);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: var(--transition-fast);
 }
 
 .window-item:hover {

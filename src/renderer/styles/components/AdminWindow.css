@@ -928,15 +928,6 @@
   color: var(--text-primary);
 }
 
-.default-badge {
-  font-size: var(--font-size-xs);
-  color: var(--color-warning);
-  padding: 2px 6px;
-  background-color: var(--color-yellow-100);
-  border-radius: var(--border-radius-sm);
-  font-weight: 600;
-}
-
 .add-file-controls {
   display: flex;
   gap: var(--spacing-sm);
@@ -1398,15 +1389,6 @@
   font-size: var(--font-size-sm);
   color: var(--text-secondary);
   white-space: nowrap;
-}
-
-.default-badge-small {
-  font-size: var(--font-size-xs);
-  color: var(--color-warning);
-  background-color: var(--color-yellow-100);
-  padding: 2px 8px;
-  border-radius: var(--border-radius-sm);
-  font-weight: 600;
 }
 
 .file-actions {
