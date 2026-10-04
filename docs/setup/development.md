@@ -216,6 +216,11 @@ Dependabotは依存関係を以下のグループに分けてPRを作成しま�
 - 破壊的変更がある場合は手動で対応
 - E2Eテストを実行して動作確認
 
+#### 依存を更新するときの注意
+
+- install script を持つパッケージは、`package.json` の `allowScripts` に版を固定して承認している。npm 12 は承認されていない install script を実行しないので、ここに載っているパッケージを更新したら `npm install-scripts approve <パッケージ>` で承認し直す。承認待ちのものは `npm install-scripts ls` で分かる
+- koffi はメインプロセスのバンドルに含めず、実行時に `node_modules` から読む（`vite.config.mts` の `external`）。配布版に入るのは dependencies だけなので、koffi を devDependencies に移すと配布版で動かなくなる
+
 ## 実装パターンとベストプラクティス
 
 ### Electronアプリケーション パターン
