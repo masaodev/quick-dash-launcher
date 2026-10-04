@@ -3,8 +3,17 @@ import { AppInfo } from '@common/types';
 
 import { Button } from './ui/Button';
 
+/** 設定のホットキー（"Alt+Space"）を表示用（"Alt + Space"）にする */
+function formatHotkey(hotkey: string): string {
+  return hotkey.split('+').join(' + ');
+}
+
 const AdminOtherTab: React.FC = () => {
   const [appInfo, setAppInfo] = useState<AppInfo | null>(null);
+  const [hotkeys, setHotkeys] = useState<{ launch: string; itemSearch: string }>({
+    launch: '',
+    itemSearch: '',
+  });
 
   useEffect(() => {
     const loadAppInfo = async () => {
@@ -12,6 +21,16 @@ const AdminOtherTab: React.FC = () => {
       setAppInfo(info);
     };
     loadAppInfo();
+  }, []);
+
+  // ショートカット一覧のホットキーは設定の値を表示する（設定が変わったら読み直す）
+  useEffect(() => {
+    const loadHotkeys = async () => {
+      const settings = await window.electronAPI.getSettings();
+      setHotkeys({ launch: settings.hotkey, itemSearch: settings.itemSearchHotkey });
+    };
+    loadHotkeys();
+    return window.electronAPI.onSettingsChanged(loadHotkeys);
   }, []);
 
   const handleOpenConfigFolder = () => {
@@ -38,12 +57,22 @@ const AdminOtherTab: React.FC = () => {
           <h3>⌨️ キーボードショートカット</h3>
           <div className="shortcuts-grid">
             <div className="shortcut-item">
-              <kbd>Ctrl + Alt + W</kbd>
+              <kbd>{hotkeys.launch ? formatHotkey(hotkeys.launch) : '（未設定）'}</kbd>
               <span>メインウィンドウの表示/非表示</span>
             </div>
+            {hotkeys.itemSearch && (
+              <div className="shortcut-item">
+                <kbd>{formatHotkey(hotkeys.itemSearch)}</kbd>
+                <span>ウィンドウ検索で起動</span>
+              </div>
+            )}
             <div className="shortcut-item">
               <kbd>Ctrl + E</kbd>
-              <span>管理ウィンドウの表示/非表示</span>
+              <span>管理ウィンドウの表示/非表示（メイン画面で）</span>
+            </div>
+            <div className="shortcut-item">
+              <kbd>Ctrl + W</kbd>
+              <span>ワークスペースの表示/非表示（メイン画面で）</span>
             </div>
             <div className="shortcut-item">
               <kbd>Enter</kbd>
@@ -58,12 +87,20 @@ const AdminOtherTab: React.FC = () => {
               <span>アイテムを選択</span>
             </div>
             <div className="shortcut-item">
-              <kbd>Tab / Shift + Tab</kbd>
+              <kbd>Tab</kbd>
               <span>タブを切り替え（タブ表示有効時）</span>
             </div>
             <div className="shortcut-item">
+              <kbd>Shift + Tab</kbd>
+              <span>検索モードを切り替え（通常 / ウィンドウ）</span>
+            </div>
+            <div className="shortcut-item">
+              <kbd>F5</kbd>
+              <span>再読込</span>
+            </div>
+            <div className="shortcut-item">
               <kbd>Esc</kbd>
-              <span>ウィンドウを閉じる</span>
+              <span>メインウィンドウを閉じる</span>
             </div>
           </div>
         </div>

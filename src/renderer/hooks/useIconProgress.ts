@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { IconProgress, IconProgressState } from '@common/types';
 
 export function useIconProgress(): {
@@ -9,10 +9,16 @@ export function useIconProgress(): {
     isActive: false,
     progress: null,
   });
+  // × で閉じた取得の開始時刻。同じ取得の進捗が届いても再表示しない（次の取得では表示する）
+  const dismissedStartTimeRef = useRef<number | null>(null);
 
   useEffect(() => {
+    const isDismissed = (data: IconProgress) => data.startTime === dismissedStartTimeRef.current;
+
     // IPCイベントリスナーを設定
     const handleProgressStart = (data: IconProgress) => {
+      if (isDismissed(data)) return;
+      dismissedStartTimeRef.current = null;
       setProgressState({
         isActive: true,
         progress: data,
@@ -20,13 +26,15 @@ export function useIconProgress(): {
     };
 
     const handleProgressUpdate = (data: IconProgress) => {
-      setProgressState((_prevState) => ({
+      if (isDismissed(data)) return;
+      setProgressState({
         isActive: true,
         progress: data,
-      }));
+      });
     };
 
     const handleProgressComplete = (data: IconProgress) => {
+      if (isDismissed(data)) return;
       setProgressState({
         isActive: true,
         progress: {
@@ -54,6 +62,7 @@ export function useIconProgress(): {
   }, []);
 
   function resetProgress(): void {
+    dismissedStartTimeRef.current = progressState.progress?.startTime ?? null;
     setProgressState({
       isActive: false,
       progress: null,

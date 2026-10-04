@@ -15,7 +15,8 @@ interface FilePickerDialogProps {
   onClose: () => void;
   onFileSelect: (filePath: string) => void;
   title?: string;
-  fileTypes?: 'html' | 'image' | 'all'; // ファイルタイプフィルター
+  /** 選べるファイルの種類（呼び出し元が必ず指定する） */
+  fileTypes: 'html' | 'image';
   description?: string;
 }
 
@@ -24,7 +25,7 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
   onClose,
   onFileSelect,
   title = 'ファイルを選択',
-  fileTypes = 'all',
+  fileTypes,
   description,
 }) => {
   useEffect(() => {

@@ -540,3 +540,30 @@ test.describe('QuickDashLauncher - 管理ウィンドウの Escape', () => {
     await expect(confirm).toHaveCount(0);
   });
 });
+
+/**
+ * ヘルプタブのショートカット一覧は、設定のホットキーを表示する
+ */
+test.describe('QuickDashLauncher - ヘルプタブのショートカット一覧', () => {
+  test('起動ホットキーとウィンドウ検索のホットキーを設定の値で表示する', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }) => {
+    configHelper.updateSettings({ itemSearchHotkey: 'Ctrl+Alt+Q' });
+    const utils = new TestUtils(mainWindow);
+    const adminWindow = await utils.openAdminWindow(electronApp, 'settings');
+    await adminWindow.locator('button', { hasText: '📖 ヘルプ' }).click();
+    const shortcuts = adminWindow.locator('.shortcuts-grid');
+
+    await expect(
+      shortcuts
+        .locator('.shortcut-item', { hasText: 'メインウィンドウの表示/非表示' })
+        .locator('kbd')
+    ).toHaveText('Alt + Space');
+    await expect(
+      shortcuts.locator('.shortcut-item', { hasText: 'ウィンドウ検索で起動' }).locator('kbd')
+    ).toHaveText('Ctrl + Alt + Q');
+    await expect(shortcuts).not.toContainText('Ctrl + Alt + W');
+  });
+});
