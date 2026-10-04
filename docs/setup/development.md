@@ -430,7 +430,7 @@ npm run debug:windows -- --all-desktops --show-excluded --output debug.txt
 
 ## 関連ドキュメント
 
-- [アイテム管理](../screens/admin-window.md#6-アイテム管理の詳細) - 編集モードの操作方法と技術実装
+- [アイテム管理](../screens/admin-window.md) - アイテム管理タブでの編集
 - [CSSデザインシステム](../architecture/css-design.md) - 統一されたスタイル管理システム
 - [ビルドとデプロイ](build-deploy.md) - ビルドシステムと配布方法
 - [テストガイド](../testing/README.md) - テストの実行方法
