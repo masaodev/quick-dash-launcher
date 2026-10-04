@@ -4,17 +4,17 @@ QuickDashLauncherのアイコン処理システムは、様々な種類のアイ
 
 ## アイコンの保存先・形式
 
-アイコンは種類ごとに専用のディレクトリに保存されます：
+アイコンは種類ごとに専用のディレクトリに保存されます（`config/` は設定フォルダ。場所は [設定フォルダの場所](../architecture/file-formats/README.md#設定フォルダの場所)）：
 
-| アイコン種類               | 保存場所                                                      | ファイル名形式                | サイズ                     |
-| -------------------------- | ------------------------------------------------------------- | ----------------------------- | -------------------------- |
-| **ファビコン**             | `%APPDATA%/quick-dash-launcher/config/icon-cache/favicons/`   | `{domain}_favicon_{size}.png` | 64px（推奨）/ 32px（互換） |
-| **EXEアイコン**            | `%APPDATA%/quick-dash-launcher/config/icon-cache/apps/`       | `{basename}_icon.png`         | 32px                       |
-| **ショートカットアイコン** | `%APPDATA%/quick-dash-launcher/config/icon-cache/apps/`       | `{basename}_lnk_icon.png`     | 32px                       |
-| **カスタムURIアイコン**    | `%APPDATA%/quick-dash-launcher/config/icon-cache/apps/`       | `uri_{schema}_icon.png`       | 32px                       |
-| **登録アプリアイコン**     | `%APPDATA%/quick-dash-launcher/config/icon-cache/apps/`       | `uwp_{PFN}_icon.png`          | マニフェスト依存           |
-| **拡張子アイコン**         | `%APPDATA%/quick-dash-launcher/config/icon-cache/extensions/` | `ext_{extension}_icon.png`    | 32px                       |
-| **カスタムアイコン**       | `%APPDATA%/quick-dash-launcher/config/icon-cache/custom/`     | `{MD5先頭8文字}.png`          | 任意                       |
+| アイコン種類 | 保存場所 | ファイル名形式 | サイズ |
+| --- | --- | --- | --- |
+| **ファビコン** | `config/icon-cache/favicons/` | `{domain}_favicon_{size}.png` | 64px（推奨）/ 32px（互換） |
+| **EXEアイコン** | `config/icon-cache/apps/` | `{basename}_icon.png` | 32px |
+| **ショートカットアイコン** | `config/icon-cache/apps/` | `{basename}_lnk_icon.png` | 32px |
+| **カスタムURIアイコン** | `config/icon-cache/apps/` | `uri_{schema}_icon.png` | 32px |
+| **登録アプリアイコン** | `config/icon-cache/apps/` | `uwp_{PFN}_icon.png` | マニフェスト依存 |
+| **拡張子アイコン** | `config/icon-cache/extensions/` | `ext_{extension}_icon.png` | 32px |
+| **カスタムアイコン** | `config/icon-cache/custom/` | `{MD5先頭8文字}.png` | 任意 |
 
 ### ファイル名形式の詳細
 
@@ -44,27 +44,23 @@ uwp_{PackageFamilyName}_icon.png
 
 ### 後方互換性
 
-既存の32pxキャッシュも引き続き使用可能にするため、ファビコンの読み出し時に以下の順序でチェック：
-
-1. 64pxファイルが存在するか確認
-2. なければ32pxファイルを確認
-3. どちらもなければ新規取得
+既存の32pxキャッシュも表示には使えるよう、キャッシュの読み出し（起動時の一括読み込み）では 64px ファイル → 32px ファイルの順に探します。一方、取得（一括取得・不足分の補完）は 64px ファイルの有無だけを見るため、32px しかないドメインは取り直され、64px ファイルが保存されます（読み出し側 `getCachedIconCandidates`＝`src/main/utils/iconCacheKeys.ts`、取得側 `FaviconService.fetchFavicon`＝`src/main/services/faviconService.ts`）。
 
 ## アイテムタイプ別の取得経路
 
 どの取得方法を使うかは `classifyIconTarget`（`src/main/utils/iconCacheKeys.ts`）が判定し、取得側（`fetchIconForItem`）と読み出し側（`getCachedIconCandidates`）がこの判定を共有します。保存先と読み出し先が食い違うと、アイコンを取得できているのに表示されない状態になるため、呼び出し側でタイプごとに取得関数を選び分けてはいけません。
 
-| アイテムタイプ | 判定順                                              | 保存先                                 |
-| -------------- | --------------------------------------------------- | -------------------------------------- |
-| `url`          | -                                                   | `favicons/{domain}_favicon_64.png`     |
-| `app`          | 1. 登録アプリ（`shell:AppsFolder\`で始まる）        | `apps/uwp_{PFN}_icon.png`              |
-|                | 2. ショートカット（`originalPath`か`path`が`.lnk`） | `apps/{basename}_lnk_icon.png`         |
-|                | 3. スクリプト系（`.bat` / `.cmd` / `.com`）         | `extensions/ext_{extension}_icon.png`  |
-|                | 4. その他（`.exe`を含む）                           | `apps/{basename}_icon.png`             |
-| `customUri`    | 1. スキーマから解決                                 | `apps/uri_{schema}_icon.png`           |
-|                | 2. 拡張子へフォールバック                           | `extensions/ext_{extension}_icon.png`  |
-| `file`         | -                                                   | `extensions/ext_{extension}_icon.png`  |
-| `folder` ほか  | -                                                   | 取得しない（デフォルトアイコンを表示） |
+| アイテムタイプ | 判定順 | 保存先 |
+| --- | --- | --- |
+| `url` | - | `favicons/{domain}_favicon_64.png` |
+| `app` | 1. 登録アプリ（`shell:AppsFolder\`で始まる） | `apps/uwp_{PFN}_icon.png` |
+| | 2. ショートカット（`originalPath`か`path`が`.lnk`） | `apps/{basename}_lnk_icon.png` |
+| | 3. スクリプト系（`.bat` / `.cmd` / `.com`） | `extensions/ext_{extension}_icon.png` |
+| | 4. その他（`.exe`を含む） | `apps/{basename}_icon.png` |
+| `customUri` | 1. スキーマから解決 | `apps/uri_{schema}_icon.png` |
+| | 2. 拡張子へフォールバック | `extensions/ext_{extension}_icon.png` |
+| `file` | - | `extensions/ext_{extension}_icon.png` |
+| `folder` ほか | - | 取得しない（デフォルトアイコンを表示） |
 
 ### キャッシュに無いアイコンの補完
 
@@ -77,17 +73,17 @@ uwp_{PackageFamilyName}_icon.png
 
 アイコンが取得できない場合は、アイテムの種類に応じた絵文字を使用：
 
-| アイテム種類     | 絵文字 |
-| ---------------- | ------ |
-| ファイル         | 📄     |
-| フォルダ         | 📁     |
-| ウェブ           | 🌐     |
-| アプリケーション | ⚙️     |
-| カスタムURI      | 🔗     |
-| グループ         | 📦     |
-| ウィンドウ       | 🪟     |
-| クリップボード   | 📋     |
-| レイアウト       | 🖥️     |
+| アイテム種類 | 絵文字 |
+| --- | --- |
+| ファイル | 📄 |
+| フォルダ | 📁 |
+| ウェブ | 🌐 |
+| アプリケーション | ⚙️ |
+| カスタムURI | 🔗 |
+| グループ | 📦 |
+| ウィンドウ | 🪟 |
+| クリップボード | 📋 |
+| レイアウト | 🖥️ |
 
 ---
 
@@ -95,14 +91,9 @@ uwp_{PackageFamilyName}_icon.png
 
 `FaviconService`クラスが複数のソースから高品質なファビコンを取得します。
 
-### 使い方
+### 取得のきっかけ
 
-**個別取得:**
-
-アイテムの登録・編集画面で、パス欄の横の「🎨 アイコン取得」を押す（パスが URL のとき）
-
-**一括取得:**
-ヘッダーの🔄ボタン → 「🎨 アイコン取得（現在のタブ）」または「🎨 アイコン取得（全タブ）」を選択（違いは[一括取得機能](#一括取得機能)を参照）
+登録・編集画面の「🎨 アイコン取得」で 1 件ずつ、またはメイン画面の一括取得（[一括取得機能](#一括取得機能)）でまとめて取得する。
 
 ### 取得順序
 
@@ -112,34 +103,34 @@ uwp_{PackageFamilyName}_icon.png
 
 見つかった候補は次の順に並べ替えて試行します（`sortFaviconSources`）。
 
-| 優先度 | 条件                                                                                              |
-| ------ | ------------------------------------------------------------------------------------------------- |
-| 1      | URLに `apple-touch-icon` を含む（`<link rel="apple-touch-icon">` 等）                             |
-| 2      | URLに `favicon` を含む                                                                            |
-| 3      | 上記以外の `<link rel="icon">` / `<link rel="shortcut icon">`（サイズ指定があれば64px前後を優先） |
-| 4      | `<meta property="og:image" content="...">`（最低優先度）                                          |
+| 優先度 | 条件 |
+| --- | --- |
+| 1 | URLに `apple-touch-icon` を含む（`<link rel="apple-touch-icon">` 等） |
+| 2 | URLに `favicon` を含む |
+| 3 | 上記以外の `<link rel="icon">` / `<link rel="shortcut icon">`（サイズ指定があれば64px前後を優先） |
+| 4 | `<meta property="og:image" content="...">`（最低優先度） |
 
 HTMLの取得がネットワークエラーで失敗した場合は、次の標準的な場所は試さずスキップします。
 
 #### 2. 標準的な場所の確認
 
-| 優先度 | パス                                |
-| ------ | ----------------------------------- |
-| 1      | `/favicon.ico`                      |
-| 2      | `/favicon.png`                      |
-| 3      | `/apple-touch-icon.png`             |
-| 4      | `/apple-touch-icon-precomposed.png` |
-| 5      | `/icon.png`                         |
-| 6      | `/logo.png`                         |
+| 優先度 | パス |
+| --- | --- |
+| 1 | `/favicon.ico` |
+| 2 | `/favicon.png` |
+| 3 | `/apple-touch-icon.png` |
+| 4 | `/apple-touch-icon-precomposed.png` |
+| 5 | `/icon.png` |
+| 6 | `/logo.png` |
 
 ### 技術仕様
 
-| 項目                               | 値            |
-| ---------------------------------- | ------------- |
-| デフォルト解像度                   | 64px          |
-| HTML読み込みサイズ                 | 最初の5KBのみ |
-| HTMLダウンロードタイムアウト       | 5秒           |
-| ファビコンダウンロードタイムアウト | 3秒           |
+| 項目 | 値 |
+| --- | --- |
+| デフォルト解像度 | 64px |
+| HTML読み込みサイズ | 最初の5KBのみ |
+| HTMLダウンロードタイムアウト | 5秒 |
+| ファビコンダウンロードタイムアウト | 3秒 |
 
 ### ICO形式の処理
 
@@ -161,23 +152,18 @@ HTMLの取得がネットワークエラーで失敗した場合は、次の標�
 
 カスタムURIスキーマ（例: `obsidian://`、`ms-excel://`）のアイコンは、Windowsレジストリから関連付けられたアプリケーションを検索して取得します。
 
-### 使い方
+### 取得のきっかけ
 
-**個別取得:**
-
-アイテムの登録・編集画面で、パス欄の横の「🎨 アイコン取得」を押す（パスがカスタムURIのとき）
-
-**一括取得:**
-ヘッダーの🔄ボタン → 「🎨 アイコン取得（現在のタブ）」または「🎨 アイコン取得（全タブ）」を選択（違いは[一括取得機能](#一括取得機能)を参照）
+登録・編集画面の「🎨 アイコン取得」で 1 件ずつ、またはメイン画面の一括取得（[一括取得機能](#一括取得機能)）でまとめて取得する。
 
 ### 取得優先順位
 
-| 優先度 | 取得方法         | 説明                                                                                                              |
-| ------ | ---------------- | ----------------------------------------------------------------------------------------------------------------- |
-| 1      | レジストリベース | Windowsレジストリからスキーマハンドラーアプリを検索                                                               |
-| 2      | 登録アプリベース | マニフェストでスキーマを宣言しているUWPアプリを逆引き                                                             |
-| 3      | 拡張子ベース     | URIに埋め込まれたURLのファイル名の拡張子のアイコン（例: URI内の `https://example.com/Book.xlsx?web=1` → `.xlsx`） |
-| 4      | デフォルト       | 🔗絵文字                                                                                                          |
+| 優先度 | 取得方法 | 説明 |
+| --- | --- | --- |
+| 1 | レジストリベース | Windowsレジストリからスキーマハンドラーアプリを検索 |
+| 2 | 登録アプリベース | マニフェストでスキーマを宣言しているUWPアプリを逆引き |
+| 3 | 拡張子ベース | URIに埋め込まれたURLのファイル名の拡張子のアイコン（例: URI内の `https://example.com/Book.xlsx?web=1` → `.xlsx`） |
+| 4 | デフォルト | 🔗絵文字 |
 
 ### レジストリクエリプロセス
 
@@ -205,14 +191,14 @@ UWPアプリはPackagedCOM方式で起動されるため、レジストリに `s
 
 ### 対応URIスキーマ例
 
-| URIスキーマ   | ハンドラーアプリ              |
-| ------------- | ----------------------------- |
-| `obsidian://` | Obsidian.exe                  |
-| `ms-excel://` | EXCEL.EXE                     |
-| `vscode://`   | Code.exe                      |
-| `steam://`    | steam.exe                     |
-| `slack://`    | slack.exe                     |
-| `ms-todo:`    | Microsoft.Todos（登録アプリ） |
+| URIスキーマ | ハンドラーアプリ |
+| --- | --- |
+| `obsidian://` | Obsidian.exe |
+| `ms-excel://` | EXCEL.EXE |
+| `vscode://` | Code.exe |
+| `steam://` | steam.exe |
+| `slack://` | slack.exe |
+| `ms-todo:` | Microsoft.Todos（登録アプリ） |
 
 ---
 
@@ -222,11 +208,11 @@ UWPアプリはPackagedCOM方式で起動されるため、レジストリに `s
 
 ### 技術仕様
 
-| 項目                     | 値                     |
-| ------------------------ | ---------------------- |
-| 使用ライブラリ           | `extract-file-icon`    |
-| 抽出サイズ               | 32px                   |
-| 対応形式（直接抽出）     | `.exe`, `.lnk`, `.dll` |
+| 項目 | 値 |
+| --- | --- |
+| 使用ライブラリ | `extract-file-icon` |
+| 抽出サイズ | 32px |
+| 直接抽出 | `.lnk`（ショートカット専用の処理）と、スクリプト系以外のアプリのパス（`.exe` 等。拡張子では絞っていない） |
 | 対応形式（拡張子ベース） | `.bat`, `.cmd`, `.com` |
 
 ### パス解決機能
@@ -248,11 +234,11 @@ WindowsAppsフォルダ等のシンボリックリンクを自動解決してア
 
 ファイルアイテムは、拡張子に基づいてシステムから関連付けられたアイコンを取得します。
 
-| 拡張子  | アイコン                |
-| ------- | ----------------------- |
-| `.txt`  | メモ帳アイコン          |
-| `.pdf`  | PDFリーダーアイコン     |
-| `.docx` | Microsoft Wordアイコン  |
+| 拡張子 | アイコン |
+| --- | --- |
+| `.txt` | メモ帳アイコン |
+| `.pdf` | PDFリーダーアイコン |
+| `.docx` | Microsoft Wordアイコン |
 | `.xlsx` | Microsoft Excelアイコン |
 
 ---
@@ -261,17 +247,13 @@ WindowsAppsフォルダ等のシンボリックリンクを自動解決してア
 
 ユーザーが手動で指定するカスタムアイコン機能もサポートします。
 
-**保存場所:** `%APPDATA%/quick-dash-launcher/config/icon-cache/custom/`
+**保存場所:** `config/icon-cache/custom/`
 
 **ファイル名形式:** `{MD5ハッシュ先頭8文字}.png`（アイテム識別子からMD5ハッシュを生成し、先頭8文字を使う）
 
 **対応形式:** ファイル選択ダイアログの「画像ファイル」フィルタは `.png`, `.jpg`, `.jpeg`, `.ico`, `.svg`（「すべてのファイル」に切り替えれば他の拡張子も選べる）。選んだファイルは変換せずにそのままコピーし、元の形式にかかわらず `{MD5ハッシュ先頭8文字}.png` の名前で保存する。表示するときは中身で SVG を見分けて SVG として渡す（PNG・JPEG・ICO はそのまま表示できる）。サイズの上限は 5MB
 
-**設定方法:**
-
-1. アイテムの登録・編集画面を開く
-2. 「カスタムアイコン」の「ファイルから選択」を押す
-3. 開いたダイアログの「ファイルを参照...」を押し、画像ファイルを選択
+**設定方法:** 登録・編集画面の「カスタムアイコン」で画像ファイルを選ぶ。
 
 **データファイル指定方法:**
 
@@ -283,9 +265,7 @@ WindowsAppsフォルダ等のシンボリックリンクを自動解決してア
 
 ## 一括取得機能
 
-### アクセス方法
-
-メインウィンドウのヘッダーにある🔄ボタンをクリックしてドロップダウンメニューを開き、アイコン取得オプションを選択します。
+メイン画面のヘッダーの🔄メニューから、取得する範囲（現在のタブ／全タブ）を選んで始める。
 
 ### 🎨 アイコン取得（現在のタブ）
 
@@ -307,102 +287,17 @@ WindowsAppsフォルダ等のシンボリックリンクを自動解決してア
 
 アイコン取得処理の進行状況をリアルタイムで確認できる統合進捗表示機能を提供します。
 
-### 統合進捗バー
-
-**主な特徴:**
-
-- **フェーズ管理**: ファビコン取得 + アイコン抽出を統合管理
-- **非モーダル設計**: メイン画面下部に表示され、他の操作を継続可能
-- **リアルタイム更新**: 各アイテム処理完了時に即座に進捗を更新
-- **手動で閉じる**: 処理完了後も表示を続け、×ボタンで閉じる
-- **経過時間・推定残り時間**: 進捗バー側に表示
-
-### 詳細（アイコン取得結果）
-
-完了時に出る「詳細」ボタンを押すと、子ウィンドウ「アイコン取得結果」が開きます：
-
-- 成功・エラー件数のサマリー
-- 全件・成功・エラーの絞り込み
-- エラーのアイテムごとのエラーメッセージ
-
-### 表示例
-
-**処理中:**
-
-```
-[▓▓▓▓▓▓░░░░] 60% - フェーズ 1/2
-ファビコン取得中: 12/20
-```
-
-**完了時:**
-
-```
-✓ アイコン取得完了
-```
+ファビコン取得とアイコン抽出の 2 つのフェーズをまとめて 1 つの進捗として扱い、メイン画面の下部に表示する（取得中も他の操作を続けられる）。終わると、成功・エラーの件数と、エラーになったアイテムごとの理由を「アイコン取得結果」で確かめられる。
 
 ---
 
 ## API仕様
 
-### fetchIconsCombined
+シグネチャや型はコードを正とし、ここには写さない。
 
-ファビコンとアイコンを統合的に一括取得する統合API（`src/main/services/icon/iconFetcher.ts`）。`progressWindow` に `null`（既定）を渡すと進捗を送らない（バックグラウンド補完用）。
-
-```typescript
-async function fetchIconsCombined(
-  urlItems: IconItem[],
-  items: IconItem[],
-  folders: IconFolders, // { favicons, icons, extensions }
-  forceRefresh: boolean = false,
-  progressWindow: BrowserWindow | null = null
-): Promise<{
-  favicons: Record<string, string | null>;
-  icons: Record<string, string | null>;
-}>;
-```
-
-### CombinedProgressManager
-
-複数フェーズの進捗を統合管理するクラス。
-
-```typescript
-constructor(
-  phaseTypes: ('favicon' | 'icon')[],
-  phaseTotals: number[],
-  window: BrowserWindow | null
-)
-```
-
-**メソッド:**
-
-- `start()`: 処理開始イベントを送信
-- `update(currentItem: string, incrementErrors?: boolean, errorMessage?: string)`: 進捗更新
-- `completePhase()`: 現在のフェーズ完了（次のフェーズへ自動的に移行）
-- `completeAll()`: 全体完了イベントを送信
-
-### 型定義
-
-```typescript
-interface IconProgress {
-  currentPhase: number; // 現在のフェーズ番号（1から開始）
-  totalPhases: number; // 総フェーズ数
-  phases: IconPhaseProgress[];
-  isComplete: boolean;
-  startTime: number;
-  completedTime?: number; // 全体の処理完了時刻（完了時のみ設定）
-}
-
-interface IconPhaseProgress {
-  type: 'favicon' | 'icon';
-  current: number;
-  total: number;
-  currentItem: string;
-  errors: number;
-  startTime: number;
-  isComplete: boolean;
-  results?: IconProgressResult[];
-}
-```
+- `fetchIconsCombined`（`src/main/services/icon/iconFetcher.ts`）: ファビコン取得とアイコン抽出を統合して一括実行する入口。進捗の通知先ウィンドウに `null`（既定）を渡すと進捗を送らない（バックグラウンド補完用）
+- `CombinedProgressManager`（`src/main/utils/progressManager.ts`）: 複数フェーズ（ファビコン取得 → アイコン抽出）の進捗をまとめて管理し、フェーズの開始・更新・完了・全体完了を進捗表示へ通知する
+- 進捗の型（`IconProgress`・`IconPhaseProgress`・`IconProgressResult`）: `src/common/types/icon.ts`
 
 ---
 
@@ -424,12 +319,12 @@ Windows APIを使用してウィンドウからアイコンハンドル（HICON�
 
 ### アイコン取得の優先順位
 
-| 優先度 | 取得方法                      | 説明                   |
-| ------ | ----------------------------- | ---------------------- |
-| 1      | WM_GETICON (ICON_BIG)         | 大きいアイコン         |
-| 2      | WM_GETICON (ICON_SMALL2)      | 小さいアイコン（32px） |
-| 3      | WM_GETICON (ICON_SMALL)       | 小さいアイコン（16px） |
-| 4      | GetClassLongPtrW (GCLP_HICON) | クラスアイコン         |
+| 優先度 | 取得方法 | 説明 |
+| --- | --- | --- |
+| 1 | WM_GETICON (ICON_BIG) | 大きいアイコン |
+| 2 | WM_GETICON (ICON_SMALL2) | 小さいアイコン（32px） |
+| 3 | WM_GETICON (ICON_SMALL) | 小さいアイコン（16px） |
+| 4 | GetClassLongPtrW (GCLP_HICON) | クラスアイコン |
 
 ### 変換処理
 
@@ -464,74 +359,9 @@ Windows APIを使用してウィンドウからアイコンハンドル（HICON�
 
 ### GDI+エラーハンドリング
 
-ウィンドウアイコン取得処理では、詳細なエラーログを出力してトラブルシューティングを支援します。
+ウィンドウアイコン取得処理では、GDI+ の各ステップ（初期化・ビットマップ作成・PNG 保存）が失敗したとき、失敗したステップ名、ステータスコードの番号と名前、文脈（アイコンハンドル、保存先パス、例外メッセージ）をエラーログに出力します。ステータスコードと名前の対応は `src/main/utils/nativeWindowControl.ts` の `GDI_STATUS_MESSAGES`（正）を参照。アイコンが変換できなくても、そのウィンドウはアイコンなし（デフォルトの🪟絵文字）で一覧に載ります。
 
-#### GDI+ステータスコード一覧
-
-| コード | 説明                      | 主な原因                                |
-| ------ | ------------------------- | --------------------------------------- |
-| 0      | Ok                        | 正常終了                                |
-| 1      | GenericError              | 一般的なエラー                          |
-| 2      | InvalidParameter          | 無効なパラメータ（hIconが無効など）     |
-| 3      | OutOfMemory               | メモリ不足                              |
-| 4      | ObjectBusy                | オブジェクトがビジー状態                |
-| 5      | InsufficientBuffer        | バッファ不足                            |
-| 6      | NotImplemented            | 未実装の機能                            |
-| 7      | Win32Error                | Win32 APIエラー（ファイル保存失敗など） |
-| 8      | WrongState                | 不正な状態                              |
-| 9      | Aborted                   | 処理中断                                |
-| 10     | FileNotFound              | ファイルが見つからない                  |
-| 11     | ValueOverflow             | 値のオーバーフロー                      |
-| 12     | AccessDenied              | アクセス拒否（権限不足）                |
-| 13     | UnknownImageFormat        | 未知の画像形式                          |
-| 14     | FontFamilyNotFound        | フォントファミリーが見つからない        |
-| 15     | FontStyleNotFound         | フォントスタイルが見つからない          |
-| 16     | NotTrueTypeFont           | TrueTypeフォントではない                |
-| 17     | UnsupportedGdiplusVersion | サポートされていないGDI+バージョン      |
-| 18     | GdiplusNotInitialized     | GDI+が初期化されていない                |
-| 19     | PropertyNotFound          | プロパティが見つからない                |
-| 20     | PropertyNotSupported      | サポートされていないプロパティ          |
-
-#### エラーログの形式
-
-エラーログには、ステータスコード番号と説明、関連する文脈情報が含まれます：
-
-```
-[convertIconToBase64] GdiplusStartup failed: status=3 (OutOfMemory), hIcon=12345678
-[convertIconToBase64] GdipCreateBitmapFromHICON failed: status=2 (InvalidParameter), hIcon=12345678, bitmap=null
-[convertIconToBase64] GdipSaveImageToFile failed: status=7 (Win32Error), path=C:\Users\...\icon_xxx.png
-[convertIconToBase64] Unexpected error: hIcon=12345678, error=EACCES: permission denied
-```
-
-#### エラーログの読み方
-
-**GdiplusStartup失敗の場合:**
-
-- `status=3 (OutOfMemory)` → メモリ不足。他のアプリケーションを閉じてメモリを確保
-- `status=17 (UnsupportedGdiplusVersion)` → システム更新が必要
-
-**GdipCreateBitmapFromHICON失敗の場合:**
-
-- `status=2 (InvalidParameter), bitmap=null` → ウィンドウのアイコンハンドルが無効
-- 一部のアプリケーションは標準的なアイコンを提供しない場合があります
-
-**GdipSaveImageToFile失敗の場合:**
-
-- `status=7 (Win32Error)` → 一時フォルダへの書き込み権限を確認
-- `status=12 (AccessDenied)` → ユーザー権限の確認が必要
-
-**Unexpected error:**
-
-- `error=EACCES` → ファイルシステムの権限問題
-- `error=ENOSPC` → ディスク容量不足
-
-#### トラブルシューティングへの活用
-
-エラーログを確認することで、アイコン取得失敗の原因を特定できます：
-
-1. **頻繁に同じステータスコードが出る場合**: システムレベルの問題（メモリ不足、権限問題など）
-2. **特定のアプリケーションでのみ失敗**: そのアプリが標準的なアイコンを提供していない可能性
-3. **一時的なエラー**: 再起動で解決する場合があります
+同じステータスコードが繰り返し出るときはメモリ不足や権限などシステム側の問題、特定のアプリでだけ失敗するときはそのアプリが標準的なアイコンを持たない可能性が高い。
 
 ---
 
@@ -548,15 +378,15 @@ Windows APIを使用してウィンドウからアイコンハンドル（HICON�
    - CORSポリシー
 
 3. **キャッシュをクリア**
-   - `%APPDATA%/quick-dash-launcher/config/icon-cache/favicons/`のファイルを削除
+   - 設定フォルダの `icon-cache/favicons/` のファイルを削除（設定フォルダの場所は [ファイル形式一覧](../architecture/file-formats/README.md#設定フォルダの場所)）
 
 ### エラーの種類
 
-| エラー種類             | 説明                       | タイムアウト |
-| ---------------------- | -------------------------- | ------------ |
-| HTMLダウンロード       | ページの取得失敗           | 5秒          |
-| ファビコンダウンロード | アイコンの取得失敗         | 3秒          |
-| HTTPエラー             | サーバーエラー（4xx, 5xx） | -            |
-| ネットワークエラー     | DNS、SSL証明書など         | -            |
+| エラー種類 | 説明 | タイムアウト |
+| --- | --- | --- |
+| HTMLダウンロード | ページの取得失敗 | 5秒 |
+| ファビコンダウンロード | アイコンの取得失敗 | 3秒 |
+| HTTPエラー | サーバーエラー（4xx, 5xx） | - |
+| ネットワークエラー | DNS、SSL証明書など | - |
 
 これらのエラー情報は、アイコン取得結果（詳細）のエラー一覧で確認できます。

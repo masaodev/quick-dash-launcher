@@ -1,0 +1,2 @@
+# Markdown は markdownlint-cli2 で整形する（.markdownlint-cli2.jsonc）。prettier の表の桁揃えを避けるため対象外にする
+*.md

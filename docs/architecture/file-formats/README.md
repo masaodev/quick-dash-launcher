@@ -4,12 +4,12 @@ QuickDashLauncherで使用される主要なファイル形式の概要とドキ
 
 ## 概要
 
-QuickDashLauncherは主に以下の 3 種類のファイルを使用してアプリケーションの状態を管理します：
+QuickDashLauncherは主に以下の 3 種類のファイルを使用してアプリケーションの状態を管理します（置き場所は [設定フォルダの場所](#設定フォルダの場所)）：
 
-| ファイル種別                                      | 主な用途                   | 対象ファイル                                                                      |
-| ------------------------------------------------- | -------------------------- | --------------------------------------------------------------------------------- |
-| **[設定ファイル](settings-format.md)**            | アプリケーション設定       | `settings.json`                                                                   |
-| **[データファイル](data-format.md)**              | ランチャーアイテムの定義   | `datafiles/data.json`, `datafiles/data2.json`, ...                                |
+| ファイル種別 | 主な用途 | 対象ファイル |
+| --- | --- | --- |
+| **[設定ファイル](settings-format.md)** | アプリケーション設定 | `settings.json` |
+| **[データファイル](data-format.md)** | ランチャーアイテムの定義 | `datafiles/data.json`, `datafiles/data2.json`, ... |
 | **[ワークスペースファイル](workspace-format.md)** | ワークスペース機能のデータ | `workspace.json`, `workspace-archive.json`（UI 状態は `workspace-ui-state.json`） |
 
 JSON ファイルはすべて **UTF-8（BOMなし）** で保存されます。
@@ -21,7 +21,7 @@ JSON ファイルはすべて **UTF-8（BOMなし）** で保存されます。
 **→ [設定ファイル形式](settings-format.md)**
 
 - **ファイル**: `settings.json`
-- **パス**: `%APPDATA%/quick-dash-launcher/config/settings.json`
+- **パス**: 設定フォルダ直下の `settings.json`（[設定フォルダの場所](#設定フォルダの場所)）
 - **内容**: ホットキー、ウィンドウサイズ、バックアップ設定、タブ設定、ワークスペース設定など
 
 ---
@@ -92,13 +92,13 @@ JSON ファイルはすべて **UTF-8（BOMなし）** で保存されます。
 
 設定フォルダのファイル（`datafiles/data*.json`・`settings.json`・`workspace.json`・`workspace-archive.json`）はテキストエディタや AI エージェントで直接編集できる。そのための補助ファイルを **起動時に毎回** 配置する（`installConfigFolderDocs`、`src/main/services/configFolderDocsService.ts`）。
 
-| ファイル                                       | 内容                                                                                                                                                                                                                   | 元                                             |
-| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| `config/README.md`                             | 直接編集する人・AI 向けの作業指示（触っていいファイル、アイテムの最小例、反映方法 F5、`last-load-report.json` の読み方、壊したときの戻し方）。`{{CONFIG_DIR}}`・`{{APP_VERSION}}` を埋めて生成。内容が同じなら書かない | `assets/config-readme.md`                      |
-| `config/schemas/data.schema.json`              | データファイルの JSON Schema。アイテムは `type` で判別する `oneOf`、`additionalProperties: false`                                                                                                                      | `assets/schemas/data.schema.json`              |
-| `config/schemas/settings.schema.json`          | 設定ファイルの JSON Schema。`required` なし・`additionalProperties: true`                                                                                                                                              | `assets/schemas/settings.schema.json`          |
-| `config/schemas/workspace.schema.json`         | ワークスペースファイルの JSON Schema。アイテムはデータファイルと同じ語彙の `oneOf`                                                                                                                                     | `assets/schemas/workspace.schema.json`         |
-| `config/schemas/workspace-archive.schema.json` | アーカイブファイルの JSON Schema                                                                                                                                                                                       | `assets/schemas/workspace-archive.schema.json` |
+| ファイル | 内容 | 元 |
+| --- | --- | --- |
+| `config/README.md` | 直接編集する人・AI 向けの作業指示（触っていいファイル、アイテムの最小例、反映方法 F5、`last-load-report.json` の読み方、壊したときの戻し方）。`{{CONFIG_DIR}}`・`{{APP_VERSION}}` を埋めて生成。内容が同じなら書かない | `assets/config-readme.md` |
+| `config/schemas/data.schema.json` | データファイルの JSON Schema。アイテムは `type` で判別する `oneOf`、`additionalProperties: false` | `assets/schemas/data.schema.json` |
+| `config/schemas/settings.schema.json` | 設定ファイルの JSON Schema。`required` なし・`additionalProperties: true` | `assets/schemas/settings.schema.json` |
+| `config/schemas/workspace.schema.json` | ワークスペースファイルの JSON Schema。アイテムはデータファイルと同じ語彙の `oneOf` | `assets/schemas/workspace.schema.json` |
+| `config/schemas/workspace-archive.schema.json` | アーカイブファイルの JSON Schema | `assets/schemas/workspace-archive.schema.json` |
 
 **`$schema` の注入**: データファイルは `"$schema": "../schemas/data.schema.json"`、`settings.json` は `"$schema": "./schemas/settings.schema.json"`、ワークスペースは `"./schemas/workspace.schema.json"` / `"./schemas/workspace-archive.schema.json"` を QDL が補う。無いときだけでなく値が違うときも揃える（相対パス。URL にすると main の最新とアプリの版がずれるため）。既存利用者のファイルはアップグレード後の初回読み込みで 1 回書き戻される（データファイル・ワークスペースファイルは `writeDataFile` 経由なので外部変更にはならず、`_pre-external` スナップショットも作られない。`settings.json` は `settingsService` が electron-store 経由で書く）。
 
@@ -116,28 +116,15 @@ npm run schema:generate   # src/common/types/{json-data,settings,json-workspace}
 
 ---
 
-## パス管理
+## 設定フォルダの場所
 
-すべてのファイルパスは `PathManager` クラスで一元管理されています。
+このページの `config/` は設定フォルダを指す。設定フォルダは次の順で決まる（[src/main/config/pathManager.ts](../../../src/main/config/pathManager.ts)、[src/main/main.ts](../../../src/main/main.ts) の起動直後）。
 
-```typescript
-import { PathManager } from '@main/config/pathManager';
+1. 環境変数 `QUICK_DASH_CONFIG_DIR` があれば、そのフォルダ。Windows のシステムフォルダ（`C:\Windows`・`C:\Program Files` など）を指したときは無視して既定に戻す
+2. なければ、userData フォルダの下の `config\`。userData は既定で `%APPDATA%\quick-dash-launcher\`（`package.json` の `name`）なので、設定フォルダは `%APPDATA%\quick-dash-launcher\config\`
+3. 多重起動用の環境変数 `APP_INSTANCE` があると、userData が `%APPDATA%\<APP_INSTANCE>-quick-dash-launcher\` に変わり、設定フォルダもその下の `config\` になる（`npm run dev` は `APP_INSTANCE=dev` なので `%APPDATA%\dev-quick-dash-launcher\config\`）
 
-PathManager.getConfigFolder(); // %APPDATA%/quick-dash-launcher/config/
-PathManager.getDataFilesFolder(); // config/datafiles/
-PathManager.getDataFilePath(); // config/datafiles/data.json
-PathManager.getWorkspaceFilePath(); // config/workspace.json
-PathManager.getWorkspaceArchiveFilePath(); // config/workspace-archive.json
-PathManager.getWorkspaceUiStateFilePath(); // config/workspace-ui-state.json
-PathManager.getBackupFolder(); // config/backup/
-PathManager.getClipboardDataFolder(); // config/clipboard-data/
-PathManager.getIconCacheFolder(); // config/icon-cache/
-PathManager.getSchemasFolder(); // config/schemas/
-PathManager.getConfigReadmePath(); // config/README.md
-PathManager.getAssetsFolder(); // アプリ同梱の assets/（パッケージ後は app.asar 内）
-```
-
-詳細: **[src/main/config/pathManager.ts](../../../src/main/config/pathManager.ts)**
+データファイル・ワークスペースファイル・バックアップなど、このページに出てくるファイルとフォルダはすべて設定フォルダの下に置かれる。パスの組み立ては `PathManager` にまとまっている。
 
 ---
 

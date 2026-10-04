@@ -19,6 +19,9 @@ npm run test:e2e:ui     # テストUI表示
 npm run test:e2e:debug  # デバッグモード
 npm run test:e2e:headed # ヘッド付き実行
 
+# 画面仕様の画面イメージ（通常の E2E とは別。ビルドしてから撮影）
+npm run docs:screenshots
+
 # 手動確認用スクリプト（src/test/manual/。自動テストの対象外）
 npm run test:window-move "ウィンドウタイトル" [x] [y] [width] [height] [desktopNumber]  # 指定ウィンドウの移動
 npm run test:window-list [--all-desktops]                                                # ウィンドウ一覧の取得
@@ -57,6 +60,7 @@ npx playwright test -g "新規アイテムを登録できる"                   
 - **テストファイル**: `tests/e2e/specs/*.spec.ts`（機能別）
 - **フィクスチャ・ヘルパー・テンプレートの構成**: [tests/e2e/README.md](../../tests/e2e/README.md)
 - **実行**: `npm run test:e2e`（ビルド込み）
+- **画面イメージの撮影**: `npm run docs:screenshots`（`tests/screenshots/`。通常の E2E には含めない。決まりは [画面仕様書 執筆ガイドライン - 画面イメージ](../screens/WRITING-GUIDE.md#画面イメージ)）
 
 ### 3. ブラウザ自動操作（Playwright MCP）
 
@@ -80,10 +84,10 @@ Claude Code から、起動中の QuickDashLauncher を MCP 経由でその場�
 
 ## テストデータ（テンプレート）
 
-| 置き場                 | 用途                                                                      | 一覧・使い方                                                          |
-| ---------------------- | ------------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| `tests/dev/`           | 開発時に手で動かすデータ（`npm run dev:test` は `tests/dev/full` を使う） | [tests/dev/README.md](../../tests/dev/README.md)                      |
-| `tests/e2e/templates/` | E2E テストが一時ディレクトリにコピーして使うデータ（既定は `base`）       | [tests/e2e/README.md](../../tests/e2e/README.md#テンプレートシステム) |
+| 置き場 | 用途 | 一覧・使い方 |
+| --- | --- | --- |
+| `tests/dev/` | 開発時に手で動かすデータ（`npm run dev:test` は `tests/dev/full` を使う） | [tests/dev/README.md](../../tests/dev/README.md) |
+| `tests/e2e/templates/` | E2E テストが一時ディレクトリにコピーして使うデータ（既定は `base`） | [tests/e2e/README.md](../../tests/e2e/README.md#テンプレートシステム) |
 
 dev / dev2 / dev:test のポート・ホットキー・設定フォルダは [開発ガイド - 多重起動](../setup/development.md#多重起動) を参照してください。
 
@@ -181,19 +185,19 @@ npx playwright show-trace test-results/traces/trace-<タイムスタンプ>.zip
 
 ### 管理対象（コミットする）
 
-| ファイル                                                      | 理由               |
-| ------------------------------------------------------------- | ------------------ |
-| `tests/e2e/templates/*/datafiles/*.json`                      | テストの基礎データ |
-| `tests/e2e/templates/*/settings.json`                         | テンプレート設定   |
-| `tests/dev/*/datafiles/*.json`、`tests/dev/*/datafiles/*.txt` | 開発用初期データ   |
-| `tests/dev/*/settings.json`                                   | テンプレート設定   |
-| `README.md`                                                   | ドキュメント       |
+| ファイル | 理由 |
+| --- | --- |
+| `tests/e2e/templates/*/datafiles/*.json` | テストの基礎データ |
+| `tests/e2e/templates/*/settings.json` | テンプレート設定 |
+| `tests/dev/*/datafiles/*.json`、`tests/dev/*/datafiles/*.txt` | 開発用初期データ |
+| `tests/dev/*/settings.json` | テンプレート設定 |
+| `README.md` | ドキュメント |
 
 ### 管理対象外（除外する）
 
-| ファイル                                                                                      | 理由                                                         |
-| --------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| `tests/e2e/configs/.temp/`                                                                    | テスト実行時の一時ディレクトリ                               |
+| ファイル | 理由 |
+| --- | --- |
+| `tests/e2e/configs/.temp/` | テスト実行時の一時ディレクトリ |
 | `tests/dev/` 配下の自動生成物（`*/icons/`・`*/favicons/`・`*/custom-icons/`・`backup/` など） | 実行時に自動生成。除外の一覧は `tests/dev/.gitignore` を参照 |
 
 ---

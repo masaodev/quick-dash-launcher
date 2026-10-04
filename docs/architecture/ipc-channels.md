@@ -6,13 +6,13 @@
 
 ## IPC の構成
 
-| 役割                 | 場所                                 | 内容                                                                                                                                                                                                              |
-| -------------------- | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| チャンネル名の定義   | `src/common/ipcChannels.ts`          | `IPC_CHANNELS` オブジェクト（`as const`）と、チャンネル名の型 `IpcChannelName`                                                                                                                                    |
-| レンダラー向け API   | `src/main/preload.ts`                | `contextBridge.exposeInMainWorld('electronAPI', electronAPI)` で `window.electronAPI` として公開                                                                                                                  |
-| API の型             | `src/common/types/electronApi.ts`    | `ElectronAPI`。preload の実装はこの型で注釈しているので、ずれは型チェックで検出される                                                                                                                             |
-| 受け口               | `src/main/ipc/*Handlers.ts`          | 機能ごとに `ipcMain.handle` / `ipcMain.on` を登録する。登録は `src/main/ipc/index.ts` を起点に呼ぶ（ブックマーク・アプリ取込は `dataHandlers.ts` 経由。`window:child-written` は `childWindowService.ts` が登録） |
-| 全ウィンドウへの通知 | `src/main/ipc/notifications.ts` など | `webContents.send` でイベントを送る（`notifyDataChanged()`・`notifyWorkspaceChanged()`）                                                                                                                          |
+| 役割 | 場所 | 内容 |
+| --- | --- | --- |
+| チャンネル名の定義 | `src/common/ipcChannels.ts` | `IPC_CHANNELS` オブジェクト（`as const`）と、チャンネル名の型 `IpcChannelName` |
+| レンダラー向け API | `src/main/preload.ts` | `contextBridge.exposeInMainWorld('electronAPI', electronAPI)` で `window.electronAPI` として公開 |
+| API の型 | `src/common/types/electronApi.ts` | `ElectronAPI`。preload の実装はこの型で注釈しているので、ずれは型チェックで検出される |
+| 受け口 | `src/main/ipc/*Handlers.ts` | 機能ごとに `ipcMain.handle` / `ipcMain.on` を登録する。登録は `src/main/ipc/index.ts` を起点に呼ぶ（ブックマーク・アプリ取込は `dataHandlers.ts` 経由。`window:child-written` は `childWindowService.ts` が登録） |
+| 全ウィンドウへの通知 | `src/main/ipc/notifications.ts` など | `webContents.send` でイベントを送る（`notifyDataChanged()`・`notifyWorkspaceChanged()`） |
 
 レンダラーは `ipcRenderer` を直接使わず、必ず `window.electronAPI` の関数を呼ぶ。新しいチャンネルを足すときは、`IPC_CHANNELS` への追加 → ハンドラーの登録 → `ElectronAPI` 型と preload への追加、の順で揃える。
 
@@ -29,11 +29,11 @@ const settings = await window.electronAPI.getSettings();
 
 ## 通信の種類と使い分け
 
-| 種類                              | メイン側           | レンダラー側         | 使う場面                                                                                                                         |
-| --------------------------------- | ------------------ | -------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| 呼び出し（要求→応答）             | `ipcMain.handle`   | `ipcRenderer.invoke` | 大半のチャンネル。戻り値または例外が `Promise` で返る                                                                            |
-| 一方向の通知（レンダラー→メイン） | `ipcMain.on`       | `ipcRenderer.send`   | 応答を待たない合図（`window:child-written`・`window:notify-main-child-result`・`layout-cancel`・`close-layout-progress-window`） |
-| イベント（メイン→レンダラー）     | `webContents.send` | `ipcRenderer.on`     | 状態変化の通知（`data-changed`・`settings-changed`・`workspace-changed`・進捗など）                                              |
+| 種類 | メイン側 | レンダラー側 | 使う場面 |
+| --- | --- | --- | --- |
+| 呼び出し（要求→応答） | `ipcMain.handle` | `ipcRenderer.invoke` | 大半のチャンネル。戻り値または例外が `Promise` で返る |
+| 一方向の通知（レンダラー→メイン） | `ipcMain.on` | `ipcRenderer.send` | 応答を待たない合図（`window:child-written`・`window:notify-main-child-result`・`layout-cancel`・`close-layout-progress-window`） |
+| イベント（メイン→レンダラー） | `webContents.send` | `ipcRenderer.on` | 状態変化の通知（`data-changed`・`settings-changed`・`workspace-changed`・進捗など） |
 
 - **エラーの返し方**: 失敗は例外として `invoke` 側に伝わる（`createSafeIpcHandler`（`src/main/utils/ipcWrapper.ts`）はログを出してから再スローする）。一部のチャンネルは `{ success: boolean, error?: string }` を返す。どちらの形かはハンドラーと `ElectronAPI` の型で確認する
 - **イベントの購読**: preload の `on*` 関数（`onDataChanged` など）は購読解除用の関数を返す。React の `useEffect` のクリーンアップで必ず呼ぶ
@@ -41,16 +41,16 @@ const settings = await window.electronAPI.getSettings();
 
 ## 命名規則
 
-チャンネル名（文字列）と定数名には次の規則がある。
+チャンネル名（文字列）と定数名の規則。**新しく追加するチャンネルに適用する。** 既存のチャンネルには規則より前に作られて合わないものがあるが、名前を変えると受け口と preload をそろえて直す必要があるため、そのまま残す（例: イベントなのに定数名が `EVENT_` で始まらない `WORKSPACE_CHANGED`、過去形でないイベント `show-toast`・`open-import-modal`）。
 
-| 対象                               | 規則                                                                | 例                                                                                                                                           |
-| ---------------------------------- | ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| 定数名                             | `UPPER_SNAKE_CASE`。メイン→レンダラーのイベントは `EVENT_` で始める | `SETTINGS_GET`、`EVENT_DATA_CHANGED`                                                                                                         |
-| 機能単位で名前空間を持つチャンネル | `<機能>:<動作>`（kebab-case）                                       | `settings:get`、`workspace:add-item`、`clipboard:capture`、`backup:list-snapshots`、`bookmark-auto-import:execute-rule`、`window:open-child` |
-| 古くからあるチャンネル             | 名前空間なしの kebab-case                                           | `open-item`、`load-data-files`、`fetch-icons-combined`                                                                                       |
-| イベント                           | 過去形・状態を表す kebab-case                                       | `data-changed`、`settings-changed`、`workspace-changed`、`window-shown`                                                                      |
+| 対象 | 規則 | 例 |
+| --- | --- | --- |
+| 定数名 | `UPPER_SNAKE_CASE`。メイン→レンダラーのイベントは `EVENT_` で始める | `SETTINGS_GET`、`EVENT_DATA_CHANGED` |
+| 機能単位で名前空間を持つチャンネル | `<機能>:<動作>`（kebab-case） | `settings:get`、`workspace:add-item`、`clipboard:capture`、`backup:list-snapshots`、`bookmark-auto-import:execute-rule`、`window:open-child` |
+| 古くからあるチャンネル | 名前空間なしの kebab-case | `open-item`、`load-data-files`、`fetch-icons-combined` |
+| イベント | 過去形・状態を表す kebab-case | `data-changed`、`settings-changed`、`workspace-changed`、`window-shown` |
 
-新しく追加するチャンネルは `<機能>:<動作>` の形にする。定数名の接頭辞（`WORKSPACE_`・`CLIPBOARD_`・`BACKUP_` など）は名前空間に合わせる。
+新しく追加するチャンネルは `<機能>:<動作>` の形にし、メイン→レンダラーのイベントは定数名を `EVENT_` で始め、名前を過去形・状態にする。定数名の接頭辞（`WORKSPACE_`・`CLIPBOARD_`・`BACKUP_` など）は名前空間に合わせる。
 
 ## データの読み込みと保存
 
@@ -163,12 +163,12 @@ F5 では、レンダラーが `settings:reapply` を呼んでから `load-data-
 
 閉じると破棄する子ウィンドウ（メイン画面の登録・編集、ワークスペースの確認）は、同じ手順で開き元とやり取りする。
 
-| 手順                                      | メイン画面・管理画面の子ウィンドウ                                                     | ワークスペースの確認ウィンドウ                                                     |
-| ----------------------------------------- | -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| 手順 | メイン画面・管理画面の子ウィンドウ | ワークスペースの確認ウィンドウ |
+| --- | --- | --- |
 | 1. 開き元が開く（閉じたときに結果で解決） | `window:open-main-child`（`MainChildWindowRequest` → `MainChildWindowReturn \| null`） | `workspace:open-confirm`（`ConfirmWindowRequest` → `ConfirmWindowResult \| null`） |
-| 2. 子が自分の要求を受け取る               | `window:get-main-child-request`                                                        | `workspace:get-confirm-request`                                                    |
-| 3. 子が結果を預けて閉じる                 | `window:return-main-child-value`                                                       | `workspace:return-confirm-result`                                                  |
-| `window.name` の接頭辞（以降が要求 ID）   | `main-child:`                                                                          | `workspace-confirm:`                                                               |
+| 2. 子が自分の要求を受け取る | `window:get-main-child-request` | `workspace:get-confirm-request` |
+| 3. 子が結果を預けて閉じる | `window:return-main-child-value` | `workspace:return-confirm-result` |
+| `window.name` の接頭辞（以降が要求 ID） | `main-child:` | `workspace-confirm:` |
 
 - 管理画面から `window:open-main-child` で開いたときは、管理ウィンドウを親・開き元にする。登録フォームは内容を保存せず、`window:return-main-child-value` で返した内容が閉じたときに管理画面へ渡る
 - 要求は子ウィンドウが閉じるまで保持されるので、手順 2 は何度呼んでもよい
