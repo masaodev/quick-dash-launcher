@@ -11,6 +11,10 @@ npm run build           # 型チェック（tsc）→ Viteビルド。prebuild�
 npm run preview         # ビルド済みアプリケーションのプレビュー
 npm run start           # ビルドして実行
 npm run dist            # Windowsインストーラー（NSIS）とポータブル版の作成（x64）
+npm run generate-licenses # THIRD-PARTY-NOTICES.md の生成（build の前に自動で実行）
+npm run schema:generate # 型から JSON Schema（assets/schemas/）を生成
+npm run create-dev-icon # 開発モード用アイコンの作成
+npm run docs:screenshots # 画面仕様の画面イメージを撮影（ビルド込み）
 ```
 
 詳細は **[開発ガイド - 多重起動](development.md#多重起動)** を参照してください。
@@ -42,21 +46,11 @@ QuickDashLauncherのApp IDは`net.masaodev.quick-dash-launcher`です。
 - `src/main/main.ts`: `app.setAppUserModelId()`（開発モードでは末尾に`.dev`を付けたIDを使う）
 - `src/main/services/autoLaunchService.ts`: 自動起動設定
 
-**v0.2.10での変更**:
-
-- **変更前**: `com.example.quick-dash-launcher`
-- **変更後**: `net.masaodev.quick-dash-launcher`
-- **理由**: masaodev.netドメインを保有しているため、正式なリバースドメイン形式のApp IDに変更
-
-**影響範囲**:
-
-- Windowsレジストリの自動起動設定パス
-- Windowsタスクバーでのアプリケーション識別
-- インストールディレクトリ構造
+v0.2.10 で `com.example.quick-dash-launcher` から変えた。App ID は自動起動の登録・タスクバーでの識別・インストール先に使われる。
 
 **既存インストール版との互換性**:
 
-- App ID変更により、旧版（v0.2.9以前）と新版（v0.2.10以降）は別アプリケーションとして認識されます
+- 旧版（v0.2.9以前）と新版（v0.2.10以降）は別アプリケーションとして認識されます
 - 設定フォルダ（`app.getPath('userData')/config`）はアプリ名で決まり、App IDには左右されません
 - 旧版をアンインストールしてから新版をインストールすることを推奨します
 
@@ -87,15 +81,7 @@ QuickDashLauncherのApp IDは`net.masaodev.quick-dash-launcher`です。
 
 [winget](https://github.com/microsoft/winget-pkgs) には `masaodev.quick-dash-launcher` として公開している（インストーラー版 `QuickDashLauncher.Setup.{VERSION}.exe`）。
 
-- **正式版を出したら、自分で winget-pkgs に更新 PR を出す**（`/release-version stable` の手順に含む）。Actions の完了後に次を実行する。Microsoft 側の検証とモデレーターの承認を経てマージされると反映される
-
-  ```bash
-  wingetcreate update masaodev.quick-dash-launcher --version {version} \
-    --urls "https://github.com/masaodev/quick-dash-launcher/releases/download/v{version}/QuickDashLauncher.Setup.{version}.exe|x64" \
-    --release-notes-url "https://github.com/masaodev/quick-dash-launcher/releases/tag/v{version}" \
-    --submit --token "$(gh auth token)"
-  ```
-
+- **正式版を出したら、自分で winget-pkgs に更新 PR を出す**。リリースの Actions が終わってから `wingetcreate update … --submit` を実行する（コマンドは [`/release-version`](../../.claude/commands/git-workflow/release-version.md) の処理フロー 7）。Microsoft 側の検証とモデレーターの承認を経てマージされると反映される
   - `wingetcreate`（`winget install wingetcreate`）と、`repo` 権限のある `gh` のログインが要る。トークンはその場で渡し、保存しない
   - `--submit` を外して `--out <フォルダ>` を付けると、提出せずにマニフェストの生成と検証だけを試せる
 
@@ -143,6 +129,7 @@ QuickDashLauncherのApp IDは`net.masaodev.quick-dash-launcher`です。
 - タスクマネージャーで複数のインスタンスが起動していないか確認
 - 他のアプリケーションが同じホットキーを使用していないか確認
 - 設定画面で別のホットキーに変更してみる
+- 開発モード（`npm run dev` など）では、環境変数 `HOTKEY` のホットキー（`Ctrl+Alt+A` など）が設定ファイルより優先される（[開発ガイド - 多重起動](development.md#多重起動)）
 
 #### アイコンが表示されない
 

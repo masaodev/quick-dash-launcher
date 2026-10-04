@@ -19,6 +19,9 @@ npm run test:e2e:ui     # テストUI表示
 npm run test:e2e:debug  # デバッグモード
 npm run test:e2e:headed # ヘッド付き実行
 
+# 画面仕様の画面イメージ（通常の E2E とは別。ビルドしてから撮影）
+npm run docs:screenshots
+
 # 手動確認用スクリプト（src/test/manual/。自動テストの対象外）
 npm run test:window-move "ウィンドウタイトル" [x] [y] [width] [height] [desktopNumber]  # 指定ウィンドウの移動
 npm run test:window-list [--all-desktops]                                                # ウィンドウ一覧の取得
@@ -57,6 +60,7 @@ npx playwright test -g "新規アイテムを登録できる"                   
 - **テストファイル**: `tests/e2e/specs/*.spec.ts`（機能別）
 - **フィクスチャ・ヘルパー・テンプレートの構成**: [tests/e2e/README.md](../../tests/e2e/README.md)
 - **実行**: `npm run test:e2e`（ビルド込み）
+- **画面イメージの撮影**: `npm run docs:screenshots`（`tests/screenshots/`。通常の E2E には含めない。決まりは [画面仕様書 執筆ガイドライン - 画面イメージ](../screens/WRITING-GUIDE.md#画面イメージ)）
 
 ### 3. ブラウザ自動操作（Playwright MCP）
 

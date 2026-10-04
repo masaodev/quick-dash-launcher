@@ -59,41 +59,11 @@ v0.5.3以降、開発時に複数のインスタンスを同時に起動でき�
 
 #### 実装の仕組み
 
-**1. 独立したuserDataパス**
+メインプロセスは環境変数を `EnvConfig`（`src/main/config/envConfig.ts`）から読む。
 
-`src/main/main.ts`で、`APP_INSTANCE`環境変数に基づいて各インスタンスが独立したuserDataパスを使用します。環境変数へのアクセスは`EnvConfig`クラス経由で行います：
-
-```typescript
-if (EnvConfig.hasAppInstance) {
-  const appName = `${EnvConfig.appInstance}-quick-dash-launcher`;
-  const userDataPath = path.join(app.getPath('appData'), appName);
-  app.setPath('userData', userDataPath);
-}
-```
-
-**2. ポート番号の環境変数対応**
-
-`vite.config.mts`および`EnvConfig`クラス経由で、`VITE_PORT`環境変数からポート番号を読み込みます：
-
-```typescript
-// vite.config.mts
-server: {
-  port: Number(process.env.VITE_PORT) || 9000,
-}
-
-// EnvConfig経由（windowManager.tsなど）
-const devServerUrl = EnvConfig.devServerUrl; // http://localhost:{VITE_PORT}
-mainWindow.loadURL(devServerUrl);
-```
-
-**3. ホットキーの環境変数上書き**
-
-`src/main/services/hotkeyService.ts`で、`EnvConfig.customHotkey`が設定されている場合、設定ファイルの値を上書きします：
-
-```typescript
-const envHotkey = EnvConfig.customHotkey;
-const hotkey = envHotkey || (await this.settingsService.get('hotkey'));
-```
+- `APP_INSTANCE`: 起動直後に userData をインスタンスごとのフォルダに切り替える（`src/main/main.ts`）。設定フォルダもその下になる（[設定フォルダの場所](../architecture/file-formats/README.md#設定フォルダの場所)）
+- `VITE_PORT`: Vite の開発サーバー（`vite.config.mts`）と、メインプロセスが読み込む URL の両方に使う
+- `HOTKEY`: 設定ファイルの起動ホットキーより優先する（`src/main/services/hotkeyService.ts`）
 
 #### カスタムインスタンスの作成
 
@@ -130,12 +100,7 @@ QUICK_DASH_CONFIG_DIR=./tests/dev/full npm run dev
 
 ### ウィンドウの動作
 
-- フレームレスウィンドウ。サイズは設定の `windowWidth`×`windowHeight`（既定 600x400px）
-- フォーカスがメイン・ワークスペース・切り離しウィンドウ（とその子ウィンドウ）の外へ出ると非表示になる（群の中での移動では隠れない。管理ウィンドウは群の外）。DevTools を開いているとき・固定モードが「通常」以外のとき・初回設定中・モーダル表示中は例外。詳細は [ウィンドウ制御](../architecture/window-control.md)
-- 表示／非表示はグローバルホットキー（既定は未設定で、初回起動時に設定する）
-- 表示時に検索ボックスをクリアしてフォーカスする
-- 📌ボタンで固定モードを「通常 → 常に最前面 → 表示固定」の順に切り替える（`WindowPinMode`）。最前面になるのは「常に最前面」とモーダル表示中だけ
-- アイテム管理は別の管理ウィンドウで開き、サイズは設定の `editModeWidth`×`editModeHeight`（既定 1200x1000px）
+メインウィンドウの表示・非表示・固定モード・子ウィンドウの扱いは [ウィンドウ制御](../architecture/window-control.md) を正とする。サイズと表示位置の設定項目は [設定ファイルの形式](../architecture/file-formats/settings-format.md) を参照。
 
 ### データファイル形式
 
@@ -145,60 +110,13 @@ QUICK_DASH_CONFIG_DIR=./tests/dev/full npm run dev
 **基本例:**
 詳細な形式仕様については上記リンク先を参照してください。JSON形式でアイテムを管理しています。
 
+**画面イメージの撮り直し:** 画面の見た目を変えたら `npm run docs:screenshots` で画面仕様の画像を撮り直す（[画面仕様書 執筆ガイドライン - 画面イメージ](../screens/WRITING-GUIDE.md#画面イメージ)）。
+
 **JSON Schema の再生成:** データファイル・設定ファイルの型（`src/common/types/json-data.ts`・`settings.ts`）を変えたら `npm run schema:generate` で `assets/schemas/*.schema.json` を再生成してコミットしてください。単体テスト（`tests/unit/schemas.test.ts`）が生成結果とコミット済みファイルの一致を検証しており、忘れると落ちます。詳細は [ファイル形式一覧の「AI・手動編集」](../architecture/file-formats/README.md#ai手動編集)。
 
 ### データ読み込みと重複排除
 
-#### タブ単位の重複排除（v0.4.2以降）
-
-データ読み込み処理（`src/main/services/data/dataFileLoader.ts`の`loadDataFilesWithReport()`関数。起動時・F5 などの読み込み（`reloadConfigFiles()`）が呼び出す）では、タブ単位で重複排除が行われます。
-
-**実装方法：**
-
-1. `SettingsService`から`dataFileTabs`設定を読み込む
-2. `sourceFile → tabIndex` のマップを作成
-3. 各データファイル処理時に、そのファイルが属するタブIndexを取得
-4. タブ別の`Set<string>`で重複チェック
-5. 重複判定キー（`jsonItemConverter.ts`）: `${displayName}|${path}`。`args` があるときは `${displayName}|${path}|${args}`
-
-**重複排除ルール：**
-
-- **同一タブ内**: 重複するアイテムは1つのみ読み込む
-- **異なるタブ間**: 重複するアイテムを両方とも読み込む
-- **タブに属さないファイル**: 独立したタブ（tabIndex = -1）として扱う
-
-**実装例：**
-
-```typescript
-// sourceFile → tabIndex のマップを作成
-const fileToTabMap = new Map<string, number>();
-dataFileTabs.forEach((tab, index) => {
-  tab.files.forEach((fileName) => {
-    fileToTabMap.set(fileName, index);
-  });
-});
-
-// タブ別の重複チェック
-const seenPathsByTab = new Map<number, Set<string>>();
-for (const fileName of dataFiles) {
-  const tabIndex = fileToTabMap.get(fileName) ?? -1;
-  if (!seenPathsByTab.has(tabIndex)) {
-    seenPathsByTab.set(tabIndex, new Set<string>());
-  }
-  const seenPaths = seenPathsByTab.get(tabIndex)!;
-  // 重複チェック...
-}
-```
-
-#### 管理画面の重複削除
-
-管理画面の「🧰 ツール」メニューの「🧹 重複を削除」（`AdminItemManagerView.tsx` → `useAdminItemEditing.dedupeFile`）は、選択中のデータファイルのみを対象に処理します：
-
-1. 現在選択中のデータファイルのアイテムを抽出
-2. 種類と表示テキストが同じアイテムのうち、ファイル内で後にあるものを除く（`editableItemOperations.dedupeFileItems`）
-3. 他のデータファイルのアイテムには触れない。結果は未保存の変更として扱い、保存で確定
-
-整列（並べ替えて保存する機能）は v0.7.34 で廃止しました。メイン画面は常に表示名の昇順で表示するため、ファイル内の並びは見た目に影響しません。
+データファイルの読み込み（`src/main/services/data/dataFileLoader.ts`。起動時と F5 で呼ばれる）は、タブ単位で重複を除く。同じタブの中で重複したアイテムは 1 つだけ読み、別のタブにあるものは両方読む。重複の判定とタブに属さないファイルの扱いは [データファイル形式 - 重複排除ルール](../architecture/file-formats/data-format.md#4-重複排除ルール) を参照（判定キーの組み立ては `jsonItemConverter.ts`）。
 
 ### アイテムタイプの検出
 
@@ -313,18 +231,7 @@ Dependabotは依存関係を以下のグループに分けてPRを作成しま�
 - IPCハンドラーから呼び出し、ハンドラー側にはロジックを置かない
 - 各サービスは単一責任の原則に従い、重複したロジックは一箇所に集約する
 
-**使用例:**
-
-```typescript
-// シングルトンの例（AutoLaunchService）
-const autoLaunchService = AutoLaunchService.getInstance();
-await autoLaunchService.setAutoLaunch(true); // 自動起動を有効化
-const status = autoLaunchService.getAutoLaunchStatus(); // 現在の状態を取得
-
-// 関数エクスポートの例（services/iconService.ts）
-import { getIconForItem } from '../services/iconService.js';
-const icon = await getIconForItem(filePath, itemType);
-```
+例: 状態を持つ `AutoLaunchService`（シングルトン）、関数をエクスポートする `services/iconService.ts`。
 
 #### IPCハンドラーの構造化
 
@@ -335,21 +242,7 @@ const icon = await getIconForItem(filePath, itemType);
 
 #### プロセス間通信のベストプラクティス
 
-チャンネル名は文字列を直書きせず `IPC_CHANNELS` を使い、レンダラーにはプリロードで `window.electronAPI` として公開した関数だけを見せる。設計の詳細は[IPCチャンネル](../architecture/ipc-channels.md)を参照。
-
-```typescript
-// メインプロセス側（src/main/ipc/*Handlers.ts）
-ipcMain.handle(IPC_CHANNELS.SETTINGS_GET, async (_event, key?: keyof AppSettings) => {
-  const settingsService = await SettingsService.getInstance();
-  return key ? settingsService.get(key) : settingsService.getAll();
-});
-
-// プリロード（src/main/preload.ts）
-getSettings: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET),
-
-// レンダラー側
-const settings = await window.electronAPI.getSettings();
-```
+チャンネル名は文字列を直書きせず `IPC_CHANNELS` を使い、レンダラーにはプリロードで `window.electronAPI` として公開した関数だけを見せる。受け口・公開・呼び出しの書き方の例と設計の詳細は[IPCチャンネル](../architecture/ipc-channels.md)を参照。
 
 #### ファイルパスの処理
 
@@ -359,52 +252,10 @@ const settings = await window.electronAPI.getSettings();
 
 #### 設定ファイルの場所の管理
 
-設定ファイルやアイコンキャッシュなどの保存場所は`PathManager`クラスで一元管理されています。
+設定ファイルやアイコンキャッシュなどの保存場所は `PathManager`（`src/main/config/pathManager.ts`）で一元管理している。設定フォルダの決まり方（既定の場所、`QUICK_DASH_CONFIG_DIR`、多重起動の `APP_INSTANCE`）は [ファイル形式一覧 - 設定フォルダの場所](../architecture/file-formats/README.md#設定フォルダの場所) を正とする。
 
-**デフォルトの動作:**
-
-- Windows: `%APPDATA%\quick-dash-launcher\config`
-- 環境変数 `QUICK_DASH_CONFIG_DIR` で任意の場所に変更可能
-
-**多重起動時のuserDataパス:**
-`APP_INSTANCE`環境変数が設定されている場合、インスタンスごとに独立したuserDataパスが使用されます：
-
-- `npm run dev`: `%APPDATA%\dev-quick-dash-launcher\config`
-- `npm run dev2`: `%APPDATA%\dev2-quick-dash-launcher\config`
-- カスタム: `%APPDATA%\{APP_INSTANCE}-quick-dash-launcher\config`
-
-**テスト時のパス管理:**
-
-```typescript
-import { PathTestHelper } from '../../src/test/helpers/pathTestHelper';
-
-describe('My Test', () => {
-  let pathHelper: PathTestHelper;
-
-  beforeEach(() => {
-    pathHelper = new PathTestHelper();
-    pathHelper.setup('my-test'); // 一時フォルダを作成
-  });
-
-  afterEach(() => {
-    pathHelper.cleanup(); // 一時フォルダを削除
-  });
-
-  it('should work', () => {
-    // テストコード
-  });
-});
-```
-
-**開発時のカスタムパス使用:**
-
-```bash
-# 開発用の設定を別フォルダで管理
-QUICK_DASH_CONFIG_DIR=./dev-config npm run dev
-
-# 本番環境の設定をテスト
-QUICK_DASH_CONFIG_DIR=./prod-config npm run dev
-```
+- テストでは `PathTestHelper`（`src/test/helpers/pathTestHelper.ts`）で一時フォルダに切り替え、終わったら片付ける
+- 開発中に別の設定フォルダで試すときは、`QUICK_DASH_CONFIG_DIR` を付けて `npm run dev` する（[多重起動](#多重起動)）
 
 ### React + TypeScript パターン
 
@@ -418,21 +269,7 @@ QUICK_DASH_CONFIG_DIR=./prod-config npm run dev
 
 大きなコンポーネントは、関連する状態とロジックをカスタムフックに分離してください：
 
-**ワークスペース機能の例:**
-
-```typescript
-// データ管理フック（切り離しウィンドウでは対象グループの id を渡す）
-const { items, groups, workspaces, activeWorkspaceId, loadAllDataWithLoading } =
-  useWorkspaceData(detachedGroupId);
-
-// アクション統合フック（データ変更後に呼ぶコールバックを渡す）
-const actions = useWorkspaceActions(() => {
-  loadAllDataWithLoading();
-});
-
-// ネイティブドラッグ&ドロップフック（グループで処理されなかったドロップを受ける）
-useNativeDragDrop(handleNativeFileDrop);
-```
+例: ワークスペースウィンドウは、データの読み込み（`useWorkspaceData`）・操作（`useWorkspaceActions`）・ネイティブのドラッグ&ドロップ（`useNativeDragDrop`）をフックに分けている。
 
 **カスタムフック作成のガイドライン:**
 
@@ -457,21 +294,6 @@ useNativeDragDrop(handleNativeFileDrop);
 - 型は`src/common/types/`で機能別に分割管理（v0.5.20で再編成）
 - 型アサーションの代わりに型ガード関数を使用（`src/common/types/guards.ts`）
 
-**型ガード関数の使用例:**
-
-```typescript
-import { isLauncherItem } from '@common/types/guards';
-
-// 型アサーション（非推奨）
-const item = data as LauncherItem;
-
-// 型ガード関数（推奨）
-if (isLauncherItem(data)) {
-  // ここではdataはLauncherItem型として扱われる
-  console.log(data.path);
-}
-```
-
 型定義ファイルは `src/common/types/` に機能別に分かれている（一覧はディレクトリを参照）。新しい型は該当ドメインのファイルに追加し、`index.ts` から再エクスポートする。
 
 ### CSS開発パターン
@@ -482,7 +304,7 @@ if (isLauncherItem(data)) {
 
 #### アイコンのキャッシュ
 
-- ファビコンは`%APPDATA%/quick-dash-launcher/config/icon-cache/favicons/`にキャッシュ
+- ファビコンは設定フォルダの `icon-cache/favicons/` にキャッシュ（詳細は [アイコンシステム](../features/icons.md)）
 - ダウンロード前にキャッシュの存在を確認
 
 #### 検索の最適化
@@ -492,59 +314,7 @@ if (isLauncherItem(data)) {
 
 ## UIコンポーネント構造
 
-### 主要コンポーネント
-
-#### メインウィンドウ
-
-- **App.tsx**: メインアプリケーションコンポーネント
-- **LauncherSearchBox.tsx**: 検索入力フィールド
-- **LauncherActionButtons.tsx**: アクションボタンコンテナ
-- **LauncherSettingsDropdown.tsx**: 設定関連機能のドロップダウンメニュー
-- **LauncherFileTabBar.tsx**: ファイルタブの切り替え
-- **LauncherItemList.tsx**: アイテムリスト表示
-- **RegisterModal.tsx**: ドラッグ&ドロップ登録用モーダル
-  - **RegisterItemForm.tsx**: アイテム 1 件分の入力フォーム（**WindowConfigEditor.tsx**・**CustomIconEditor.tsx** を含む）
-
-#### 管理ウィンドウ（アイテム管理タブ）
-
-- **AdminItemManagerView.tsx**: アイテム管理のビュー
-- **AdminItemManagerList.tsx**: データ編集テーブル
-
-#### ワークスペースウィンドウ
-
-- **WorkspaceApp.tsx**: ワークスペースアプリケーションコンポーネント
-  - データ管理、アクション処理、ドラッグ&ドロップを個別のフックに分離
-- **WorkspaceHeader.tsx**: ヘッダーコンポーネント（タイトル、展開/折りたたみ、ピン留めボタン）
-- **WorkspaceGroupedList.tsx**: グループ化されたアイテムリスト
-  - グループ化ロジックは `useWorkspaceItemGroups` に分離
-- **WorkspaceGroupHeader.tsx**: グループヘッダー（名前編集、色変更、折りたたみ、削除）
-
-### ダイアログコンポーネント
-
-ネイティブダイアログ（`window.alert()`, `window.confirm()`）の代替として、カスタムReactコンポーネントを使用しています。ファイル選択は、カスタムのダイアログからネイティブのファイル選択を開く二段構成です。
-
-- **AlertDialog.tsx**: 通知・警告・エラー表示
-  - 4つのタイプ: `info`, `error`, `warning`, `success`
-  - ESCキーとEnterキーで閉じる
-  - `data-testid`属性によるE2Eテスト対応
-- **ConfirmDialog.tsx**: ユーザー確認ダイアログ
-  - ESCキー（キャンセル）とEnterキー（確認）のサポート
-  - `danger`モード: 破壊的操作時の警告スタイル
-  - カスタマイズ可能なボタンテキスト
-- **FilePickerDialog.tsx**: ネイティブのファイル選択を開く前段のダイアログ
-  - 「ファイルを参照...」ボタンで、IPC 経由でメインプロセスのネイティブ選択を開く（`fileTypes` が `html` なら `selectBookmarkFile`、`image` なら `selectCustomIconFile`）
-  - ファイルタイプ（HTML、Image）ごとに呼ぶ IPC を切り替える
-  - 選択したパスを `onFileSelect` で返して閉じる
-
-### 設定メニュー
-
-設定関連機能は⚙ボタンクリックで表示されるドロップダウンメニューに集約:
-
-- ⚙️ 基本設定
-- ✏️ アイテム管理
-- 🗂️ ワークスペースを表示
-- ─── (区切り線)
-- 🚪 アプリを終了
+画面とコンポーネントの対応は、[画面一覧](../screens/README.md) と各画面仕様の「基本情報」を正とする（画面のいちばん上のコンポーネントには「画面仕様:」コメントがある）。共通ダイアログは [共通ダイアログ](../screens/dialogs.md)、メイン画面の ⚙️ メニューは [メインウィンドウ](../screens/main-window.md) を参照。
 
 ## デバッグ
 
