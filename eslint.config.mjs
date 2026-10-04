@@ -31,7 +31,7 @@ export default [
 
   // スクリプトファイル設定（Node.js専用）
   {
-    files: ['scripts/**/*.{js,mjs}'],
+    files: ['scripts/**/*.{js,mjs}', '.claude/hooks/**/*.mjs'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
