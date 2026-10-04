@@ -19,7 +19,7 @@ export interface SerializableClipboard {
   rtf?: string;
   /** 画像データ（Base64エンコード） */
   imageBase64?: string;
-  /** ファイルパス（参照用のみ、復元は非対応） */
+  /** ファイルパス（復元時は実在するものだけをファイルとしてクリップボードに戻す） */
   filePaths?: string[];
   /** 保存日時（timestamp） */
   savedAt: number;

@@ -67,7 +67,7 @@ export function setupConfigHandlers(configFolder: string): void {
     await shell.openExternal(url);
   });
 
-  ipcMain.handle(IPC_CHANNELS.OPEN_FOLDER, async (_event, folderPath: string) => {
+  ipcMain.handle(IPC_CHANNELS.SHELL_OPEN_FOLDER, async (_event, folderPath: string) => {
     const folder = await resolveExistingFolder(folderPath);
     if (!folder) {
       logger.warn({ folderPath }, '存在するフォルダではないので開きません');

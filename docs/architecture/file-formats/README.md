@@ -96,7 +96,7 @@ JSON ファイルはすべて **UTF-8（BOMなし）** で保存されます。
 | --- | --- | --- |
 | `config/README.md` | 直接編集する人・AI 向けの作業指示（触っていいファイル、アイテムの最小例、反映方法 F5、`last-load-report.json` の読み方、壊したときの戻し方）。`{{CONFIG_DIR}}`・`{{APP_VERSION}}` を埋めて生成。内容が同じなら書かない | `assets/config-readme.md` |
 | `config/schemas/data.schema.json` | データファイルの JSON Schema。アイテムは `type` で判別する `oneOf`、`additionalProperties: false` | `assets/schemas/data.schema.json` |
-| `config/schemas/settings.schema.json` | 設定ファイルの JSON Schema。`required` なし・`additionalProperties: true` | `assets/schemas/settings.schema.json` |
+| `config/schemas/settings.schema.json` | 設定ファイルの JSON Schema。`required`・`additionalProperties` の指定なし（欠落・未知のキーを許容） | `assets/schemas/settings.schema.json` |
 | `config/schemas/workspace.schema.json` | ワークスペースファイルの JSON Schema。アイテムはデータファイルと同じ語彙の `oneOf` | `assets/schemas/workspace.schema.json` |
 | `config/schemas/workspace-archive.schema.json` | アーカイブファイルの JSON Schema | `assets/schemas/workspace-archive.schema.json` |
 

@@ -107,7 +107,7 @@ async function launchApp(item: LaunchableItem, logger: Logger): Promise<void> {
   }
 
   // ショートカットファイルまたは引数なしの場合
-  if (item.path.endsWith('.lnk') || !item.args) {
+  if (/\.lnk$/i.test(item.path) || !item.args) {
     await shell.openPath(item.path);
     return;
   }
