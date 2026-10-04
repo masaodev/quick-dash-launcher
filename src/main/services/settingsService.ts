@@ -7,6 +7,7 @@ import {
   SETTINGS_SCHEMA_REF,
 } from '@common/types';
 import type { AppSettings } from '@common/types';
+import { validateHotkey } from '@common/utils/hotkeyValidator';
 import logger from '@common/logger';
 
 import PathManager from '../config/pathManager.js';
@@ -191,26 +192,9 @@ export class SettingsService {
     logger.info({ keys }, 'Settings reset to defaults (partial)');
   }
 
+  /** 判定は src/common/utils/hotkeyValidator.ts（修飾キー 1 つ以上 + 通常キーちょうど 1 つ） */
   public validateHotkey(hotkey: string): { isValid: boolean; reason?: string } {
-    if (!hotkey || typeof hotkey !== 'string') {
-      return { isValid: false, reason: 'ホットキーが指定されていません' };
-    }
-
-    // 基本的なパターンチェック
-    const pattern =
-      /^(Ctrl|Alt|Shift|CmdOrCtrl|Command|Cmd)\+(Ctrl|Alt|Shift|CmdOrCtrl|Command|Cmd|[A-Z0-9]|Space|Enter|Tab|Escape|Delete|Backspace|F[1-9]|F1[0-2])+(\+([A-Z0-9]|Space|Enter|Tab|Escape|Delete|Backspace|F[1-9]|F1[0-2]))*$/;
-    if (!pattern.test(hotkey)) {
-      return { isValid: false, reason: 'ホットキーの形式が正しくありません' };
-    }
-
-    // 修飾キーが最低1つ含まれているかチェック
-    const modifiers = ['Ctrl', 'Alt', 'Shift', 'CmdOrCtrl', 'Command', 'Cmd'];
-    const hasModifier = modifiers.some((modifier) => hotkey.includes(modifier));
-    if (!hasModifier) {
-      return { isValid: false, reason: '修飾キー（Ctrl、Alt、Shift等）が必要です' };
-    }
-
-    return { isValid: true };
+    return validateHotkey(hotkey);
   }
 
   private async getAppVersion(): Promise<string> {

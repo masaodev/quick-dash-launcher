@@ -363,10 +363,8 @@ const RegisterItemForm: React.FC<RegisterItemFormProps> = ({
         </>
       )}
 
-      {(item.itemCategory === 'group' ||
-        item.itemCategory === 'clipboard' ||
-        item.itemCategory === 'layout') &&
-        customIconEditor}
+      {/* グループはカスタムアイコンを保存できない（データファイルの形式に項目がない）ので出さない */}
+      {(item.itemCategory === 'clipboard' || item.itemCategory === 'layout') && customIconEditor}
 
       <div className="form-group">
         <label>メモ:</label>

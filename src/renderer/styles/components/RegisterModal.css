@@ -381,16 +381,12 @@
   font-weight: 500;
 }
 
-/* モーダルアクションボタンのレイアウト調整 */
-.modal-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--spacing-sm);
-  padding-top: var(--spacing-lg);
-  border-top: var(--border-light);
-}
-
+/*
+ * フッターの右側のボタン群（キャンセル・登録など）。
+ * .modal-actions 自体は Modal.css の右寄せを使い、左に置く「試しに実行」とは
+ * margin-left: auto で離す。ここで .modal-actions を上書きすると、このファイルを読む
+ * ウィンドウの全ダイアログのフッターが両端寄せになるので、上書きしない。
+ */
 .modal-actions-right {
   display: flex;
   gap: var(--spacing-sm);
@@ -476,7 +472,6 @@
   color: var(--text-disabled);
   cursor: not-allowed;
 }
-
 
 /* ヘルプボックス */
 .help-box {

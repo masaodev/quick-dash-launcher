@@ -334,9 +334,8 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
                     </div>
                   )}
 
-                  {(item.itemCategory === 'item' ||
-                    item.itemCategory === 'group' ||
-                    item.itemCategory === 'layout') && (
+                  {/* グループはカスタムアイコンを保存できない（ワークスペースファイルの形式に項目がない）ので出さない */}
+                  {(item.itemCategory === 'item' || item.itemCategory === 'layout') && (
                     <CustomIconEditor
                       customIconPreview={customIconPreviews[0]}
                       onSelectClick={() => openCustomIconPicker(0)}

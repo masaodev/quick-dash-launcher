@@ -202,11 +202,11 @@
   cursor: text;
 }
 
-.modal-actions {
+/* この画面のフッターだけ（グローバルに書くと、同じウィンドウのダイアログにも効いてしまう） */
+.icon-detail-modal .modal-actions {
   display: flex;
   justify-content: flex-end;
   gap: var(--spacing-sm);
   padding: var(--spacing-lg);
   border-top: var(--border-light);
 }
-
