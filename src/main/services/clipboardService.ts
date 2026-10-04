@@ -426,6 +426,15 @@ export class ClipboardService {
         }
       }
 
+      // 書き込む形式が 1 つもないまま書き込むと、今のクリップボードを空にしてしまう
+      if (restoredFormats.length === 0) {
+        const error = data.filePaths?.length
+          ? '保存したファイルがすべて見つかりません（移動・削除された可能性があります）'
+          : '復元できるデータがありません';
+        logger.warn({ id }, error);
+        return { success: false, error };
+      }
+
       await clipboard.write([new ClipboardItem(writeData)]);
       logger.info({ id, restoredFormats }, 'クリップボードを復元しました');
 

@@ -182,7 +182,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
       if (operation === 'copy') {
         window.electronAPI.copyToClipboard(targetPath);
       } else {
-        await window.electronAPI.openExternalUrl(`file:///${targetPath}`);
+        await window.electronAPI.openFolder(targetPath);
       }
     },
     []

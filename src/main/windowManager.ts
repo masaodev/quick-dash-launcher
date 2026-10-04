@@ -230,11 +230,6 @@ export async function createWindow(): Promise<BrowserWindow> {
     }
   });
 
-  // Enable webSecurity for file drag and drop
-  mainWindow.webContents.session.webRequest.onBeforeRequest((_details, callback) => {
-    callback({ cancel: false });
-  });
-
   // 環境変数でピンモードが指定されている場合、ウィンドウ動作を更新
   if (EnvConfig.hasWindowPinMode) {
     updateWindowBehavior();

@@ -8,6 +8,7 @@ import {
   createEmptyJsonDataFile,
 } from '@common/utils/jsonParser';
 import { normalizeWindowTitleForProcessOnly } from '@common/utils/windowTitle';
+import { isValidDataFileName } from '@common/utils/dataFileName';
 import { DEFAULT_DATA_FILE } from '@common/types';
 import type {
   JsonDataFile,
@@ -153,13 +154,13 @@ export function updateLayoutItemById(
  *
  * @param configFolder - 設定フォルダのパス
  * @param items - 登録するアイテムの配列
- * @throws ファイル書き込みエラー、破損ファイルへの登録
+ * @throws ファイル書き込みエラー、破損ファイルへの登録、datafiles 直下の .json 以外への登録（何も書かない）
  *
  * @example
  * registerItems('/path/to/config', [
- *   { name: 'VSCode', type: 'app', path: 'code.exe', targetTab: 'data.json', itemCategory: 'item' },
- *   { name: 'Documents', type: 'folder', path: '/docs', targetTab: 'data2.json', itemCategory: 'dir', dirOptions: {...} },
- *   { name: 'DevTools', type: 'app', path: '', targetTab: 'data.json', itemCategory: 'group', groupItemNames: ['VSCode', 'Chrome'] }
+ *   { name: 'VSCode', type: 'app', path: 'code.exe', targetTab: 'datafiles/data.json', itemCategory: 'item' },
+ *   { name: 'Documents', type: 'folder', path: '/docs', targetTab: 'datafiles/data2.json', itemCategory: 'dir', dirOptions: {...} },
+ *   { name: 'DevTools', type: 'app', path: '', targetTab: 'datafiles/data.json', itemCategory: 'group', groupItemNames: ['VSCode', 'Chrome'] }
  * ]);
  */
 export function registerItems(configFolder: string, items: RegisterItem[]): void {
@@ -172,6 +173,12 @@ export function registerItems(configFolder: string, items: RegisterItem[]): void
       itemsByFile.set(targetFile, []);
     }
     itemsByFile.get(targetFile)!.push(item);
+  }
+
+  // 画面から受け取った名前なので、書き込む前にすべて確かめる（datafiles フォルダの外に書かせない）
+  const invalidFiles = [...itemsByFile.keys()].filter((fileName) => !isValidDataFileName(fileName));
+  if (invalidFiles.length > 0) {
+    throw new Error(`登録先のデータファイル名が正しくありません: ${invalidFiles.join(', ')}`);
   }
 
   for (const [targetFile, targetItems] of itemsByFile) {
