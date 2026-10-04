@@ -66,6 +66,7 @@ Good: 録画中は入力欄の見た目が変わる
 - Props や型定義の一覧、使用例のコード
 - CSS の宣言やクラス名の一覧（スタイルの決まりは [CSS設計](../architecture/css-design.md)）
 - IPC チャンネルや設定キーの一覧（[IPC の設計](../architecture/ipc-channels.md)、[ファイル形式](../architecture/file-formats/README.md)）
+- `data-testid` の一覧（テストの識別子。E2E テストが正）
 - 処理フローの中のコードブロック
 
 ````

@@ -12,7 +12,7 @@ QuickDashLauncher のワークスペース機能で使用されるファイル�
 | **workspace-archive.json**  | アーカイブしたグループとアイテム                    | 可（通常は触らない） | `config/schemas/workspace-archive.schema.json` |
 | **workspace-ui-state.json** | グループの折りたたみ・切り離しウィンドウの位置/ピン | 不可（QDL 管理）     | なし                                           |
 
-保存場所は `%APPDATA%/quick-dash-launcher/config/` 直下。すべて **UTF-8（BOMなし）** の JSON。
+保存場所は設定フォルダ直下（[設定フォルダの場所](README.md#設定フォルダの場所)）。すべて **UTF-8（BOMなし）** の JSON。
 
 旧形式（`version` を持たない v1: UUID の id、`path` に埋め込んだ疑似文字列、`groups[].collapsed`、別ファイル `workspace-detached.json`）は起動時に 1 回だけ 2.0 に変換される（[6. 旧形式からの移行](#6-旧形式からの移行)）。
 
@@ -88,15 +88,15 @@ QuickDashLauncher のワークスペース機能で使用されるファイル�
 
 ### 2.4. WorkspaceGroup
 
-| フィールド        | 型     | 必須 | 説明                                                                                                                                                                           |
-| ----------------- | ------ | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **id**            | string | ✓    | 8 文字英数字                                                                                                                                                                   |
-| **displayName**   | string | ✓    | グループ名                                                                                                                                                                     |
-| **color**         | string | ✓    | 色トークン（`primary / success / danger / warning / info / secondary / purple / teal / pink / indigo / orange / cyan`）または 6 桁 hex。不正な値は既定色に補正（`normalized`） |
-| **order**         | number | ✓*   | 同じ親の中での並び順                                                                                                                                                           |
-| **createdAt**     | number | ✓*   | 作成日時（ms）                                                                                                                                                                 |
-| **workspaceId**   | string | ✓    | 所属ワークスペース。存在しなければ既定ワークスペースへ寄せる（`normalized`）                                                                                                   |
-| **parentGroupId** | string | -    | 親グループ（2 段まで）。存在しない・自分自身・循環・深さ超過（`MAX_GROUP_DEPTH`）なら外す（`normalized`）。不正（`invalid`）なグループへの参照は残す                           |
+| フィールド        | 型     | 必須 | 説明                                                                                                                                                                |
+| ----------------- | ------ | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **id**            | string | ✓    | 8 文字英数字                                                                                                                                                        |
+| **displayName**   | string | ✓    | グループ名                                                                                                                                                          |
+| **color**         | string | ✓    | 色トークン（一覧は [src/common/groupColors.ts](../../../src/common/groupColors.ts) の `GROUP_COLOR_TOKENS`）または 6 桁 hex。不正な値は既定色に補正（`normalized`） |
+| **order**         | number | ✓*   | 同じ親の中での並び順                                                                                                                                                |
+| **createdAt**     | number | ✓*   | 作成日時（ms）                                                                                                                                                      |
+| **workspaceId**   | string | ✓    | 所属ワークスペース。存在しなければ既定ワークスペースへ寄せる（`normalized`）                                                                                        |
+| **parentGroupId** | string | -    | 親グループ（2 段まで）。存在しない・自分自身・循環・深さ超過（`MAX_GROUP_DEPTH`）なら外す（`normalized`）。不正（`invalid`）なグループへの参照は残す                |
 
 折りたたみ状態（旧 `collapsed`）はここには無い（[4. workspace-ui-state.json](#4-workspace-ui-statejson)）。
 
@@ -115,15 +115,11 @@ QuickDashLauncher のワークスペース機能で使用されるファイル�
 | **order**       | number | ✓*   | 同じグループ内での並び順                               |
 | **addedAt**     | number | ✓*   | 追加日時（ms）                                         |
 
-型固有フィールド（データファイルと同じ。詳細は [データファイル形式 3 章](data-format.md#3-アイテムタイプ詳細)）:
+型固有フィールドはデータファイルと同じなので、[データファイル形式 3 章](data-format.md#3-アイテムタイプ詳細) の各アイテムタイプ（`item`＝[3.1](data-format.md#31-通常アイテムjsonlauncheritem)、`window`＝[3.4](data-format.md#34-ウィンドウアイテムjsonwindowitem)、`group`＝[3.3](data-format.md#33-グループアイテムjsongroupitem)、`clipboard`＝[3.5](data-format.md#35-クリップボードアイテムjsonclipboarditem)、`layout`＝[3.6](data-format.md#36-レイアウトアイテムjsonlayoutitem)）を参照。ワークスペースに固有の違いは次のとおり。
 
-| type          | フィールド                                                                                                                                                    | 備考                                                                                                                                                  |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **item**      | `path`, `args?`, `originalPath?`, `customIcon?`, `windowConfig?`                                                                                              | `originalPath` はショートカット（.lnk）のリンク先。実行時の起動種別 `launcherType`（url/file/folder/app/customUri）は `originalPath ?? path` から判定 |
-| **window**    | `windowTitle`, `processName?`, `x?`, `y?`, `width?`, `height?`, `moveToActiveMonitorCenter?`, `virtualDesktopNumber?`, `activateWindow?`, `pinToAllDesktops?` | `windowTitle` はワイルドカード対応                                                                                                                    |
-| **group**     | `itemNames`                                                                                                                                                   | データファイル側の `type: item / window` を表示名で参照                                                                                               |
-| **clipboard** | `dataFileRef`, `savedAt`, `preview?`, `formats`, `customIcon?`                                                                                                | QDL が生成。手で書かない                                                                                                                              |
-| **layout**    | `entries`, `customIcon?`                                                                                                                                      | QDL が生成。手で書かない                                                                                                                              |
+- `type: item` は、ショートカット（.lnk）のリンク先 `originalPath` を持てる。実行時の起動種別（url/file/folder/app/customUri）は `originalPath` があればそれ、なければ `path` から判定する
+- データファイルの `updatedAt`・`autoImportRuleId` は持たない
+- `clipboard`・`layout` は QDL が生成する。手で書かない
 
 アイテム本体の検証はデータファイルの検証関数（`validateJson*Item`）を共用しており、判定はデータファイルと一致する。
 
@@ -186,7 +182,7 @@ QDL が管理する UI 状態。AI 編集対象外・スキーマなし。壊れ
 | レポート           | `config/last-load-report.json` の `files[]` に `workspace.json` / `workspace-archive.json` がデータファイルと並ぶ。ワークスペースの `issues[]` は `section`（`workspaces` / `groups` / `items`）を持ち、`index` はその配列内の位置                                                                                                                                                                                                                                                         |
 | 外部変更検知       | データファイルと同じ `dataFileTracker`。前回読んだ/書いた内容と違えば `externallyChanged`、`backupEnabled` なら変更前を `backup/*_pre-external/` に残す                                                                                                                                                                                                                                                                                                                                    |
 | 楽観ロック         | 書き込み前に現在のファイル内容を確認し、QDL の外で変更されていれば書かずに拒否（メイン画面で F5 を押して再読込するよう促すトーストを出す）。読み直せば再び書ける                                                                                                                                                                                                                                                                                                                           |
-| 破損時             | どちらか 1 ファイルでも読めなければ両ファイルの書き込みを拒否する（空のキャッシュで上書きして復旧不能にしない）。ワークスペース画面は空になり、トーストで通知                                                                                                                                                                                                                                                                                                                              |
+| 破損時             | どちらか 1 ファイルでも読めなければ両ファイルの書き込みを拒否する（空のキャッシュで上書きして復旧不能にしない）。ワークスペース画面は空になり、エラーのトースト「設定ファイルの読み込みに失敗しました（破損の可能性）: <ファイル名>」で通知（`src/main/services/data/dataFileLoader.ts`）                                                                                                                                                                                                  |
 | バックアップ       | `workspace.json` / `workspace-archive.json` は日次スナップショットの変更検知トリガー。`workspace-ui-state.json` はバックアップには含むがトリガーではない                                                                                                                                                                                                                                                                                                                                   |
 
 ---

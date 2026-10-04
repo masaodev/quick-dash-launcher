@@ -258,8 +258,7 @@ Escape はページに届き、セル編集の取り消しや確認ダイアロ�
 管理ウィンドウを閉じるには、以下の方法を使用します：
 
 - ウィンドウ右上の閉じるボタン（×）をクリック
-- 再度Ctrl+Eを押してトグル
-- 設定メニューから「閉じる」を選択
+- メインウィンドウで再度 Ctrl+E を押す（表示/非表示の切り替え。Ctrl+E はメインウィンドウのキー操作なので、管理ウィンドウの中で押しても閉じない）
 
 ### 管理ウィンドウのIPC通信
 
@@ -589,6 +588,22 @@ Teams,teams://,,,"{""title"":""Teams"",""virtualDesktopNumber"":2,""activateWind
 // 明示的にアクティブ化を指定（デフォルトと同じ）
 Chrome,chrome.exe,,,"{""title"":""Google Chrome"",""activateWindow"":true}"
 ```
+
+### システムウィンドウの除外
+
+ウィンドウ検索・ウィンドウ選択の一覧と、ウィンドウ操作で探すウィンドウから、次のシステムウィンドウを外す（`src/main/utils/nativeWindowControl.ts` の `EXCLUDED_WINDOWS`）。
+
+| ウィンドウ                    | プロセス名                  | クラス名                   | 説明                                |
+| ----------------------------- | --------------------------- | -------------------------- | ----------------------------------- |
+| Windows入力エクスペリエンス   | TextInputHost.exe           | Windows.UI.Core.CoreWindow | IME・タッチキーボード等             |
+| Windowsシェルエクスペリエンス | ShellExperienceHost.exe     | Windows.UI.Core.CoreWindow | スタートメニュー・通知センター等    |
+| デスクトップ壁紙              | explorer.exe                | Progman                    | Program Manager（デスクトップ背景） |
+| Windowsロック画面             | LockApp.exe                 | Windows.UI.Core.CoreWindow | ロック画面                          |
+| Windowsスタートメニュー       | StartMenuExperienceHost.exe | Windows.UI.Core.CoreWindow | スタートメニュー                    |
+| Windows検索                   | SearchHost.exe              | Windows.UI.Core.CoreWindow | 検索ウィンドウ                      |
+
+- プロセス名とクラス名の**両方**が一致し、かつウィンドウがクロークされている（画面に描画されていない）ときだけ外す。描画されている間は一覧に出る（誤検知を防ぐため）
+- これとは別に、QuickDashLauncher 自身のウィンドウ、タイトルのないウィンドウ、非表示のウィンドウ、Alt+Tab に出ないツールウィンドウも一覧に出ない
 
 ### データ形式の変更履歴
 

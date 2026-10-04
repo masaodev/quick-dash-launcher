@@ -4,9 +4,9 @@
 
 - [画面一覧](./README.md) - 全画面構成の概要
 - [ワークスペース機能](../features/workspace.md) - 機能の使い方
-- [ワークスペースファイル形式](../architecture/file-formats/workspace-format.md) - workspace.json形式
+- [ワークスペースファイル形式](../architecture/file-formats/workspace-format.md) - 保存先のファイル（ワークスペース・グループ・アイテム、アーカイブ、折りたたみなどの UI 状態）と保存場所・形式
 - [IPC通信](../architecture/ipc-channels.md) - ワークスペース関連のIPCチャンネル
-- [ウィンドウ制御](../architecture/window-control.md) - ウィンドウの表示・位置・子ウィンドウの制御
+- [ウィンドウ制御](../architecture/window-control.md#ワークスペースウィンドウ制御) - ウィンドウの表示・位置・子ウィンドウの制御
 - [キーボードショートカット](../features/keyboard-shortcuts.md) - 全ショートカット一覧
 - [CSSデザインシステム](../architecture/css-design.md) - スタイルガイドライン
 
@@ -33,17 +33,18 @@
 
 ## 2. 基本情報
 
-| 項目                 | 内容                                                                                                                                                                                      |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **ファイル名**       | `src/renderer/WorkspaceApp.tsx`                                                                                                                                                           |
-| **コンポーネント名** | `WorkspaceApp`                                                                                                                                                                            |
-| **スタイル**         | `src/renderer/styles/components/WorkspaceWindow.css`                                                                                                                                      |
-| **表示条件**         | メイン画面で`Ctrl+W`、メイン画面の ⚙️ メニュー「🗂️ ワークスペースを表示」、設定「メイン画面表示時にワークスペースを自動表示」が有効なときのメイン画面表示時（トレイメニューに項目はない） |
-| **画面タイプ**       | ウィンドウ（AlwaysOnTop切り替え可能、フレームレス）                                                                                                                                       |
-| **初期サイズ**       | 幅380px × 画面の高さに合わせて自動調整                                                                                                                                                    |
-| **サイズ変更**       | 8方向のハンドルで自由にリサイズ可能（最小: 300x400px）                                                                                                                                    |
-| **配置位置**         | 既定は画面右端。⚙️ メニューの「左端に寄せる」「右端に寄せる」で切り替え、ドラッグで移動可能                                                                                               |
-| **透過機能**         | 0-100%の透過度調整、背景のみ透過モード                                                                                                                                                    |
+| 項目                 | 内容                                                                                                                                                                                                                                           |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **ファイル名**       | `src/renderer/WorkspaceApp.tsx`                                                                                                                                                                                                                |
+| **コンポーネント名** | `WorkspaceApp`                                                                                                                                                                                                                                 |
+| **スタイル**         | `src/renderer/styles/components/WorkspaceWindow.css`                                                                                                                                                                                           |
+| **子ウィンドウ**     | アイテムの編集: `src/renderer/components/WorkspaceItemEditPage.tsx`（フォームは `WorkspaceItemEditModal`）                                                                                                                                     |
+| **表示条件**         | メイン画面で`Ctrl+W`、メイン画面の ⚙️ メニュー「🗂️ ワークスペースを表示」、設定「メイン画面表示時にワークスペースを自動表示」が有効なときのメイン画面表示時（トレイメニューに項目はない）                                                      |
+| **画面タイプ**       | ウィンドウ（AlwaysOnTop切り替え可能、フレームレス）                                                                                                                                                                                            |
+| **サイズ**           | 幅380px。高さは開いたときは画面の作業領域いっぱいで、以後は内容の高さに合わせて自動で変わる（最小150px、最大は画面の作業領域の高さ）                                                                                                           |
+| **サイズ変更**       | 8方向（4隅・4辺）のハンドルをドラッグしてリサイズできる。4隅は隣り合う2辺、4辺はその辺が動く（最小: 幅300px × 高さ400px）                                                                                                                      |
+| **配置位置**         | 既定は画面右端。⚙️ メニューの「左端に寄せる」「右端に寄せる」で切り替え、ドラッグで移動可能                                                                                                                                                    |
+| **透過**             | 設定画面の「透過度」スライダー（0%=完全透明、100%=完全不透明）で調整。「背景のみを透過（アイテムやグループは通常表示）」を有効にするとウィンドウ背景だけが透過され、アイテムやボタンは不透明のまま表示。設定の変更は開き直さなくても反映される |
 
 ## 3. 画面項目一覧
 
@@ -834,93 +835,3 @@ C:\Users\Desktop\app.lnk
 | `Ctrl+V` | クリップボードからファイル・フォルダ・URL・テキスト・画像をペーストして追加（v0.5.1以降。テキスト・画像はクリップボードアイテム） |
 | `Enter`  | 編集モードで名前を確定                                                                                                            |
 | `Escape` | フィルタバーの入力欄にフォーカスがあるとき: キーワードをクリアしてフィルタバーを閉じる。編集モード中: 編集をキャンセル            |
-
-## 7. コンポーネント構成
-
-ワークスペースウィンドウはカスタムフックとコンポーネント分離により、保守性と可読性を向上させています。
-
-### 主要コンポーネント
-
-| コンポーネント             | ファイル                                | 役割                                                                                     |
-| -------------------------- | --------------------------------------- | ---------------------------------------------------------------------------------------- |
-| **WorkspaceApp**           | `WorkspaceApp.tsx`                      | メインコンポーネント（データ・アクション・フィルタ・D&D の統合）                         |
-| **WorkspaceTabBar**        | `components/WorkspaceTabBar.tsx`        | ワークスペースタブバー（切替・作成・名前変更・削除・並べ替え）                           |
-| **WorkspaceHeader**        | `components/WorkspaceHeader.tsx`        | ヘッダー（タイトル、フィルタ、展開/折りたたみ、ピン留め、設定、アーカイブボタン）        |
-| **WorkspaceFilterBar**     | `components/WorkspaceFilterBar.tsx`     | フィルタバー（キーワード入力・スコープ選択）                                             |
-| **WorkspaceGroupedList**   | `components/WorkspaceGroupedList.tsx`   | グループ化アイテムリスト（グループ・未分類セクション管理）                               |
-| **WorkspaceGroupHeader**   | `components/WorkspaceGroupHeader.tsx`   | グループヘッダー（折りたたみ・グループ名編集。操作は右クリックコンテキストメニュー経由） |
-| **WorkspaceItemCard**      | `components/WorkspaceItemCard.tsx`      | ワークスペースアイテムカード                                                             |
-| **WorkspaceItemEditModal** | `components/WorkspaceItemEditModal.tsx` | アイテム編集モーダル                                                                     |
-| **WorkspaceItemEditPage**  | `components/WorkspaceItemEditPage.tsx`  | アイテム編集ウィンドウの中身（編集モーダルをページとして描画）                           |
-| **WorkspaceConfirmPage**   | `components/WorkspaceConfirmPage.tsx`   | 確認ウィンドウの中身（グループの削除・アーカイブ）                                       |
-
-### カスタムフック
-
-| フック                       | ファイル                                      | 責務                                               |
-| ---------------------------- | --------------------------------------------- | -------------------------------------------------- |
-| **useWorkspaceData**         | `hooks/workspace/useWorkspaceData.ts`         | データ読み込みと状態管理                           |
-| **useWorkspaceActions**      | `hooks/workspace/useWorkspaceActions.ts`      | アクション処理の統合                               |
-| **useNativeDragDrop**        | `hooks/useNativeDragDrop.ts`                  | ネイティブドラッグ&ドロップ処理                    |
-| **useClipboardPaste**        | `hooks/useClipboardPaste.ts`                  | クリップボードペースト処理（Ctrl+V）               |
-| **useCollapsibleSections**   | `hooks/useCollapsibleSections.ts`             | 折りたたみ状態管理                                 |
-| **useWorkspaceItemGroups**   | `hooks/workspace/useWorkspaceItemGroups.ts`   | アイテムグループ化ロジック                         |
-| **useWorkspaceResize**       | `hooks/workspace/useWorkspaceResize.ts`       | ウィンドウのサイズ変更処理                         |
-| **useWorkspaceAutoFit**      | `hooks/workspace/useWorkspaceAutoFit.ts`      | コンテンツの高さに合わせたウィンドウ高さの自動調整 |
-| **useWorkspaceFilter**       | `hooks/useWorkspaceFilter.ts`                 | キーワード・スコープによる絞り込み                 |
-| **useWorkspaceItemEditForm** | `hooks/workspace/useWorkspaceItemEditForm.ts` | アイテム編集フォーム                               |
-| **useFileOperations**        | `hooks/useFileOperations.ts`                  | ファイルとURL操作の共通ユーティリティ              |
-
-## 8. データ保存
-
-ワークスペースのデータは以下のファイルに保存されます：
-
-| ファイル                    | 内容                                                        |
-| --------------------------- | ----------------------------------------------------------- |
-| **workspace.json**          | ワークスペース（タブ）・グループ・アイテム                  |
-| **workspace-archive.json**  | アーカイブされたグループとアイテム                          |
-| **workspace-ui-state.json** | グループの折りたたみ状態・切り離しウィンドウの位置/ピン留め |
-
-### 保存場所
-
-```
-%APPDATA%/quick-dash-launcher/config/
-├── workspace.json
-├── workspace-archive.json
-└── workspace-ui-state.json
-```
-
-### データ形式
-
-詳細なデータ形式は[ワークスペースファイル形式](../architecture/file-formats/workspace-format.md)を参照してください。
-
-## 9. ウィンドウカスタマイズ機能
-
-ウィンドウの表示・位置の制御の仕組みは [ウィンドウ制御](../architecture/window-control.md#ワークスペースウィンドウ制御) を参照してください。
-
-### 透過機能
-
-ワークスペースウィンドウの透過度を調整できます：
-
-- **透過度**: 0-100%で調整（設定画面のスライダーで変更）
-- **背景のみ透過**: チェックボックスで有効化すると、ウィンドウ背景のみが透過され、アイテムやボタンは不透明のまま表示
-- **即座反映**: 設定変更は即座にワークスペースウィンドウに反映
-
-### サイズ変更ハンドル
-
-8方向のカスタムハンドルでウィンドウを自由にリサイズ：
-
-| ハンドル位置 | 動作                  |
-| ------------ | --------------------- |
-| 左上         | 左辺+上辺を同時に移動 |
-| 上           | 上辺を移動            |
-| 右上         | 右辺+上辺を同時に移動 |
-| 右           | 右辺を移動            |
-| 右下         | 右辺+下辺を同時に移動 |
-| 下           | 下辺を移動            |
-| 左下         | 左辺+下辺を同時に移動 |
-| 左           | 左辺を移動            |
-
-**最小サイズ制約:**
-
-- 幅: 300px
-- 高さ: 400px

@@ -30,7 +30,7 @@
 | **絞り込みの処理**   | `src/common/utils/bookmarkRuleFilter.ts`（自動取込の実行と共通）                                                                                                                                                      |
 | **スタイル**         | `src/renderer/styles/components/BookmarkAutoImport.css`（重複警告は `BookmarkImport.css` を共用）                                                                                                                     |
 | **表示条件**         | 取込モード: アイテム管理の一括取込メニュー、メインウィンドウの ➕ の「🔖 ブラウザのブックマークを追加」、設定の「手動で取り込む」（アイテム管理タブへ切り替えて開く）／ルールモード: 設定の「+ ルールを追加」「編集」 |
-| **モーダルタイプ**   | オーバーレイ型モーダル（管理ウィンドウ内）                                                                                                                                                                            |
+| **画面タイプ**       | オーバーレイ型モーダル（管理ウィンドウ内）                                                                                                                                                                            |
 | **親画面**           | AdminItemManagerView（取込モード）、BookmarkAutoImportSettings（ルールモード）                                                                                                                                        |
 
 ## 3. 画面項目一覧
