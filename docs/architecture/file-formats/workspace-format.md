@@ -6,11 +6,11 @@ QuickDashLauncher のワークスペース機能で使用されるファイル�
 
 ### 1.1. 対象ファイル
 
-| ファイル名                  | 用途                                                | 人・AI の編集        | スキーマ                                       |
-| --------------------------- | --------------------------------------------------- | -------------------- | ---------------------------------------------- |
-| **workspace.json**          | ワークスペース（タブ）・グループ・アイテム          | 可                   | `config/schemas/workspace.schema.json`         |
-| **workspace-archive.json**  | アーカイブしたグループとアイテム                    | 可（通常は触らない） | `config/schemas/workspace-archive.schema.json` |
-| **workspace-ui-state.json** | グループの折りたたみ・切り離しウィンドウの位置/ピン | 不可（QDL 管理）     | なし                                           |
+| ファイル名 | 用途 | 人・AI の編集 | スキーマ |
+| --- | --- | --- | --- |
+| **workspace.json** | ワークスペース（タブ）・グループ・アイテム | 可 | `config/schemas/workspace.schema.json` |
+| **workspace-archive.json** | アーカイブしたグループとアイテム | 可（通常は触らない） | `config/schemas/workspace-archive.schema.json` |
+| **workspace-ui-state.json** | グループの折りたたみ・切り離しウィンドウの位置/ピン | 不可（QDL 管理） | なし |
 
 保存場所は設定フォルダ直下（[設定フォルダの場所](README.md#設定フォルダの場所)）。すべて **UTF-8（BOMなし）** の JSON。
 
@@ -65,38 +65,38 @@ QuickDashLauncher のワークスペース機能で使用されるファイル�
 
 ### 2.2. トップレベル
 
-| フィールド     | 型               | 必須 | 説明                                                                       |
-| -------------- | ---------------- | ---- | -------------------------------------------------------------------------- |
-| **$schema**    | string           | -    | `./schemas/workspace.schema.json`。無い・違えば QDL が補う（`normalized`） |
-| **version**    | string           | ✓    | `"2.0"`。無いファイルは旧形式として移行される                              |
-| **workspaces** | Workspace[]      | ✓    | 1 件以上。0 件なら既定ワークスペース「デフォルト」を作る                   |
-| **groups**     | WorkspaceGroup[] | ✓    |                                                                            |
-| **items**      | WorkspaceItem[]  | ✓    |                                                                            |
+| フィールド | 型 | 必須 | 説明 |
+| --- | --- | --- | --- |
+| **$schema** | string | - | `./schemas/workspace.schema.json`。無い・違えば QDL が補う（`normalized`） |
+| **version** | string | ✓ | `"2.0"`。無いファイルは旧形式として移行される |
+| **workspaces** | Workspace[] | ✓ | 1 件以上。0 件なら既定ワークスペース「デフォルト」を作る |
+| **groups** | WorkspaceGroup[] | ✓ | |
+| **items** | WorkspaceItem[] | ✓ | |
 
 書き出し時のキー順は固定（`$schema` → `version` → `workspaces` → `groups` → `items`。アイテム内は `id, type, displayName, <型固有>, memo, workspaceId, groupId, order, addedAt`）。
 
 ### 2.3. Workspace（タブ）
 
-| フィールド      | 型     | 必須 | 説明                                |
-| --------------- | ------ | ---- | ----------------------------------- |
-| **id**          | string | ✓    | 8 文字英数字                        |
-| **displayName** | string | ✓    | タブ名                              |
-| **order**       | number | ✓*   | 並び順。省略時は QDL が補う         |
-| **createdAt**   | number | ✓*   | 作成日時（ms）。省略時は QDL が補う |
+| フィールド | 型 | 必須 | 説明 |
+| --- | --- | --- | --- |
+| **id** | string | ✓ | 8 文字英数字 |
+| **displayName** | string | ✓ | タブ名 |
+| **order** | number | ✓* | 並び順。省略時は QDL が補う |
+| **createdAt** | number | ✓* | 作成日時（ms）。省略時は QDL が補う |
 
 `*` スキーマ上は必須だが、寛容パースは省略を補完する（`normalized`）。
 
 ### 2.4. WorkspaceGroup
 
-| フィールド        | 型     | 必須 | 説明                                                                                                                                                                |
-| ----------------- | ------ | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **id**            | string | ✓    | 8 文字英数字                                                                                                                                                        |
-| **displayName**   | string | ✓    | グループ名                                                                                                                                                          |
-| **color**         | string | ✓    | 色トークン（一覧は [src/common/groupColors.ts](../../../src/common/groupColors.ts) の `GROUP_COLOR_TOKENS`）または 6 桁 hex。不正な値は既定色に補正（`normalized`） |
-| **order**         | number | ✓*   | 同じ親の中での並び順                                                                                                                                                |
-| **createdAt**     | number | ✓*   | 作成日時（ms）                                                                                                                                                      |
-| **workspaceId**   | string | ✓    | 所属ワークスペース。存在しなければ既定ワークスペースへ寄せる（`normalized`）                                                                                        |
-| **parentGroupId** | string | -    | 親グループ（2 段まで）。存在しない・自分自身・循環・深さ超過（`MAX_GROUP_DEPTH`）なら外す（`normalized`）。不正（`invalid`）なグループへの参照は残す                |
+| フィールド | 型 | 必須 | 説明 |
+| --- | --- | --- | --- |
+| **id** | string | ✓ | 8 文字英数字 |
+| **displayName** | string | ✓ | グループ名 |
+| **color** | string | ✓ | 色トークン（一覧は [src/common/groupColors.ts](../../../src/common/groupColors.ts) の `GROUP_COLOR_TOKENS`）または 6 桁 hex。不正な値は既定色に補正（`normalized`） |
+| **order** | number | ✓* | 同じ親の中での並び順 |
+| **createdAt** | number | ✓* | 作成日時（ms） |
+| **workspaceId** | string | ✓ | 所属ワークスペース。存在しなければ既定ワークスペースへ寄せる（`normalized`） |
+| **parentGroupId** | string | - | 親グループ（2 段まで）。存在しない・自分自身・循環・深さ超過（`MAX_GROUP_DEPTH`）なら外す（`normalized`）。不正（`invalid`）なグループへの参照は残す |
 
 折りたたみ状態（旧 `collapsed`）はここには無い（[4. workspace-ui-state.json](#4-workspace-ui-statejson)）。
 
@@ -104,16 +104,16 @@ QuickDashLauncher のワークスペース機能で使用されるファイル�
 
 共通フィールド:
 
-| フィールド      | 型     | 必須 | 説明                                                   |
-| --------------- | ------ | ---- | ------------------------------------------------------ |
-| **id**          | string | ✓    | 8 文字英数字。無い・不正・重複なら採番（`idAssigned`） |
-| **type**        | string | ✓    | `item` / `window` / `group` / `clipboard` / `layout`   |
-| **displayName** | string | ✓    | 表示名                                                 |
-| **memo**        | string | -    | 自由記述                                               |
-| **workspaceId** | string | ✓    | 所属ワークスペース                                     |
-| **groupId**     | string | -    | 所属グループ（未分類なら省略）。存在しなければ外す     |
-| **order**       | number | ✓*   | 同じグループ内での並び順                               |
-| **addedAt**     | number | ✓*   | 追加日時（ms）                                         |
+| フィールド | 型 | 必須 | 説明 |
+| --- | --- | --- | --- |
+| **id** | string | ✓ | 8 文字英数字。無い・不正・重複なら採番（`idAssigned`） |
+| **type** | string | ✓ | `item` / `window` / `group` / `clipboard` / `layout` |
+| **displayName** | string | ✓ | 表示名 |
+| **memo** | string | - | 自由記述 |
+| **workspaceId** | string | ✓ | 所属ワークスペース |
+| **groupId** | string | - | 所属グループ（未分類なら省略）。存在しなければ外す |
+| **order** | number | ✓* | 同じグループ内での並び順 |
+| **addedAt** | number | ✓* | 追加日時（ms） |
 
 型固有フィールドはデータファイルと同じなので、[データファイル形式 3 章](data-format.md#3-アイテムタイプ詳細) の各アイテムタイプ（`item`＝[3.1](data-format.md#31-通常アイテムjsonlauncheritem)、`window`＝[3.4](data-format.md#34-ウィンドウアイテムjsonwindowitem)、`group`＝[3.3](data-format.md#33-グループアイテムjsongroupitem)、`clipboard`＝[3.5](data-format.md#35-クリップボードアイテムjsonclipboarditem)、`layout`＝[3.6](data-format.md#36-レイアウトアイテムjsonlayoutitem)）を参照。ワークスペースに固有の違いは次のとおり。
 
@@ -136,12 +136,12 @@ QuickDashLauncher のワークスペース機能で使用されるファイル�
 }
 ```
 
-| 追加フィールド      | 対象           | 説明                                                                                                                                    |
-| ------------------- | -------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| **archivedAt**      | groups / items | アーカイブ日時（ms）                                                                                                                    |
-| **originalOrder**   | groups         | アーカイブ前の `order`                                                                                                                  |
-| **itemCount**       | groups         | アーカイブ時のアイテム数（表示用）                                                                                                      |
-| **archivedGroupId** | items          | 所属していたアーカイブグループ。無い・存在しなければそのアイテムは読み込みから外す（`invalid`。ファイルには残り、グループを直せば戻る） |
+| 追加フィールド | 対象 | 説明 |
+| --- | --- | --- |
+| **archivedAt** | groups / items | アーカイブ日時（ms） |
+| **originalOrder** | groups | アーカイブ前の `order` |
+| **itemCount** | groups | アーカイブ時のアイテム数（表示用） |
+| **archivedGroupId** | items | 所属していたアーカイブグループ。無い・存在しなければそのアイテムは読み込みから外す（`invalid`。ファイルには残り、グループを直せば戻る） |
 
 参照解決: `workspaceId` は `workspace.json` のワークスペース、`parentGroupId` はアーカイブ内＋`workspace.json` のグループで解決する。アーカイブ・復元は 2 ファイルを 1 トランザクションで書く（`WorkspaceFileStore.updateBoth`）。
 
@@ -175,15 +175,15 @@ QDL が管理する UI 状態。AI 編集対象外・スキーマなし。壊れ
 
 実装: `src/main/services/workspace/WorkspaceFileStore.ts`（データ本体）、`WorkspaceUiStateStore.ts`（UI 状態）、`src/common/utils/workspaceParser.ts`（寛容パース）。
 
-| 仕組み             | 内容                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 読み込みタイミング | 起動時と**メイン画面の F5**（`reloadConfigFiles`）。ファイルは監視しない。electron-store のように操作のたびにディスクを読むことはない                                                                                                                                                                                                                                                                                                                                                      |
-| 寛容パース         | JSON 構文エラー・ルート構造の不正・配列フィールドの型違い（配列以外）だけ `corrupted`。配列フィールドが無ければ空配列を補う（`normalized`）。要素単位の不正は `invalid`（読み込みから外し、書き戻し時に配列の末尾へ残す）。ただしオブジェクトでない要素は残さず削除する。id の欠落/不正/重複は採番（`idAssigned`）し、参照（`groupId` / `parentGroupId` / `workspaceId` / `archivedGroupId`）を追随させる。宙に浮いた参照・`$schema`・`version`・省略した `order` 等は補正（`normalized`） |
-| レポート           | `config/last-load-report.json` の `files[]` に `workspace.json` / `workspace-archive.json` がデータファイルと並ぶ。ワークスペースの `issues[]` は `section`（`workspaces` / `groups` / `items`）を持ち、`index` はその配列内の位置                                                                                                                                                                                                                                                         |
-| 外部変更検知       | データファイルと同じ `dataFileTracker`。前回読んだ/書いた内容と違えば `externallyChanged`、`backupEnabled` なら変更前を `backup/*_pre-external/` に残す                                                                                                                                                                                                                                                                                                                                    |
-| 楽観ロック         | 書き込み前に現在のファイル内容を確認し、QDL の外で変更されていれば書かずに拒否（メイン画面で F5 を押して再読込するよう促すトーストを出す）。読み直せば再び書ける                                                                                                                                                                                                                                                                                                                           |
-| 破損時             | どちらか 1 ファイルでも読めなければ両ファイルの書き込みを拒否する（空のキャッシュで上書きして復旧不能にしない）。ワークスペース画面は空になり、エラーのトースト「設定ファイルの読み込みに失敗しました（破損の可能性）: <ファイル名>」で通知（`src/main/services/data/dataFileLoader.ts`）                                                                                                                                                                                                  |
-| バックアップ       | `workspace.json` / `workspace-archive.json` は日次スナップショットの変更検知トリガー。`workspace-ui-state.json` はバックアップには含むがトリガーではない                                                                                                                                                                                                                                                                                                                                   |
+| 仕組み | 内容 |
+| --- | --- |
+| 読み込みタイミング | 起動時と**メイン画面の F5**（`reloadConfigFiles`）。ファイルは監視しない。electron-store のように操作のたびにディスクを読むことはない |
+| 寛容パース | JSON 構文エラー・ルート構造の不正・配列フィールドの型違い（配列以外）だけ `corrupted`。配列フィールドが無ければ空配列を補う（`normalized`）。要素単位の不正は `invalid`（読み込みから外し、書き戻し時に配列の末尾へ残す）。ただしオブジェクトでない要素は残さず削除する。id の欠落/不正/重複は採番（`idAssigned`）し、参照（`groupId` / `parentGroupId` / `workspaceId` / `archivedGroupId`）を追随させる。宙に浮いた参照・`$schema`・`version`・省略した `order` 等は補正（`normalized`） |
+| レポート | `config/last-load-report.json` の `files[]` に `workspace.json` / `workspace-archive.json` がデータファイルと並ぶ。ワークスペースの `issues[]` は `section`（`workspaces` / `groups` / `items`）を持ち、`index` はその配列内の位置 |
+| 外部変更検知 | データファイルと同じ `dataFileTracker`。前回読んだ/書いた内容と違えば `externallyChanged`、`backupEnabled` なら変更前を `backup/*_pre-external/` に残す |
+| 楽観ロック | 書き込み前に現在のファイル内容を確認し、QDL の外で変更されていれば書かずに拒否（メイン画面で F5 を押して再読込するよう促すトーストを出す）。読み直せば再び書ける |
+| 破損時 | どちらか 1 ファイルでも読めなければ両ファイルの書き込みを拒否する（空のキャッシュで上書きして復旧不能にしない）。ワークスペース画面は空になり、エラーのトースト「設定ファイルの読み込みに失敗しました（破損の可能性）: <ファイル名>」で通知（`src/main/services/data/dataFileLoader.ts`） |
+| バックアップ | `workspace.json` / `workspace-archive.json` は日次スナップショットの変更検知トリガー。`workspace-ui-state.json` はバックアップには含むがトリガーではない |
 
 ---
 
@@ -191,20 +191,20 @@ QDL が管理する UI 状態。AI 編集対象外・スキーマなし。壊れ
 
 `workspace.json` / `workspace-archive.json` のどちらか片方でも `version` を持たない旧形式なら、`WorkspaceFileStore` が変換・検証したあと、書き込む前に `backup/<日時>_pre-migration/`（`backupEnabled` に関係なく作る）へスナップショットを取り、書き戻す。スナップショットに失敗したら移行せず `corrupted` として扱う。変換は純粋関数 `workspaceMigration.ts` で、`last-load-report.json` に `normalized` として 1 行載る。
 
-| 旧形式（v1）                                                   | 2.0                                                                                                                       |
-| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `id`: UUID、ワークスペース `"default"`                         | 8 文字英数字に採番し直し、全参照（`groupId` / `parentGroupId` / `workspaceId` / `archivedGroupId` / UI 状態のキー）を追随 |
-| `type: "url" / "file" / "folder" / "app" / "customUri"`        | `type: "item"`（起動種別は読込時に判定）                                                                                  |
-| `type: "windowOperation"`、`path: "[ウィンドウ操作: <title>]"` | `type: "window"`、`windowTitle: "<title>"`。タイトル空で `processName` だけなら `windowTitle: "*"`                        |
-| `windowX / windowY / windowWidth / windowHeight`               | `x / y / width / height`                                                                                                  |
-| `clipboardDataRef / clipboardFormats / clipboardSavedAt`       | `dataFileRef / formats / savedAt`                                                                                         |
-| `layoutEntries`                                                | `entries`（`icon` は除去）                                                                                                |
-| `path: "[グループ: N件]"` 等の表示用文字列                     | 保存しない（表示時に組み立てる）                                                                                          |
-| `originalName`, `label`, `icon`                                | 削除                                                                                                                      |
-| `groups[].collapsed`                                           | `workspace-ui-state.json` の `collapsedGroups`                                                                            |
-| `groups[].name`（さらに古い形式）                              | `displayName`                                                                                                             |
-| `color: "var(--color-primary)"` / パレットの hex               | 色トークン（`primary` / `teal` など）。その他の hex はそのまま                                                            |
-| `workspace-detached.json`                                      | `workspace-ui-state.json` の `detachedWindows`（移行後に削除）                                                            |
+| 旧形式（v1） | 2.0 |
+| --- | --- |
+| `id`: UUID、ワークスペース `"default"` | 8 文字英数字に採番し直し、全参照（`groupId` / `parentGroupId` / `workspaceId` / `archivedGroupId` / UI 状態のキー）を追随 |
+| `type: "url" / "file" / "folder" / "app" / "customUri"` | `type: "item"`（起動種別は読込時に判定） |
+| `type: "windowOperation"`、`path: "[ウィンドウ操作: <title>]"` | `type: "window"`、`windowTitle: "<title>"`。タイトル空で `processName` だけなら `windowTitle: "*"` |
+| `windowX / windowY / windowWidth / windowHeight` | `x / y / width / height` |
+| `clipboardDataRef / clipboardFormats / clipboardSavedAt` | `dataFileRef / formats / savedAt` |
+| `layoutEntries` | `entries`（`icon` は除去） |
+| `path: "[グループ: N件]"` 等の表示用文字列 | 保存しない（表示時に組み立てる） |
+| `originalName`, `label`, `icon` | 削除 |
+| `groups[].collapsed` | `workspace-ui-state.json` の `collapsedGroups` |
+| `groups[].name`（さらに古い形式） | `displayName` |
+| `color: "var(--color-primary)"` / パレットの hex | 色トークン（`primary` / `teal` など）。その他の hex はそのまま |
+| `workspace-detached.json` | `workspace-ui-state.json` の `detachedWindows`（移行後に削除） |
 
 ---
 

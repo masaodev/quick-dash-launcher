@@ -1,0 +1,25 @@
+{
+  // markdownlint-cli2 の設定（.claude/hooks/format.mjs が編集のたびに --fix で使う）。
+  // false にした規則は、自動修正が中身を変えるもの（MD018・MD026・MD029・MD038・MD049・MD050・MD053）と、
+  // この文書群の書き方に合わないもの。表は桁揃えせず詰める（MD060 compact）
+  "ignores": ["node_modules/**", "dist/**", "build/**", "out/**", "release/**"],
+  "config": {
+    "default": true,
+    "MD013": false,
+    "MD033": false,
+    "MD034": false,
+    "MD036": false,
+    "MD040": false,
+    "MD041": false,
+    "MD018": false,
+    "MD026": false,
+    "MD038": false,
+    "MD053": false,
+    "MD029": false,
+    "MD049": false,
+    "MD050": false,
+    "MD024": { "siblings_only": true },
+    "MD010": { "code_blocks": false },
+    "MD060": { "style": "compact" },
+  },
+}

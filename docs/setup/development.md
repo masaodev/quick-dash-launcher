@@ -2,13 +2,13 @@
 
 ## 技術スタック
 
-| 項目           | 技術                                                                            |
-| -------------- | ------------------------------------------------------------------------------- |
-| フロントエンド | React + TypeScript + Vite                                                       |
-| バックエンド   | Electron（メインプロセス）                                                      |
-| スタイリング   | CSS変数ベースのデザインシステム（[CSSデザイン](../architecture/css-design.md)） |
-| パッケージング | electron-builder                                                                |
-| テスト         | Playwright（E2E）+ Vitest（単体）                                               |
+| 項目 | 技術 |
+| --- | --- |
+| フロントエンド | React + TypeScript + Vite |
+| バックエンド | Electron（メインプロセス） |
+| スタイリング | CSS変数ベースのデザインシステム（[CSSデザイン](../architecture/css-design.md)） |
+| パッケージング | electron-builder |
+| テスト | Playwright（E2E）+ Vitest（単体） |
 
 動作環境は Windows のみです。開発には Node.js 22.12.0 以上が必要です（`package.json` の `engines`）。
 
@@ -36,26 +36,26 @@ v0.5.3以降、開発時に複数のインスタンスを同時に起動でき�
 
 #### 利用可能なインスタンス
 
-| コマンド           | ポート | ホットキー | 設定フォルダ                                | 用途                                                     |
-| ------------------ | ------ | ---------- | ------------------------------------------- | -------------------------------------------------------- |
-| `npm run dev`      | 9001   | Ctrl+Alt+A | `%APPDATA%\dev-quick-dash-launcher\config`  | メイン開発環境                                           |
-| `npm run dev2`     | 9002   | Ctrl+Alt+S | `%APPDATA%\dev2-quick-dash-launcher\config` | 比較検証用                                               |
-| `npm run dev:test` | 9003   | Ctrl+Alt+T | `./tests/dev/full`                          | テストデータでの動作確認（起動時に表示・表示固定モード） |
+| コマンド | ポート | ホットキー | 設定フォルダ | 用途 |
+| --- | --- | --- | --- | --- |
+| `npm run dev` | 9001 | Ctrl+Alt+A | `%APPDATA%\dev-quick-dash-launcher\config` | メイン開発環境 |
+| `npm run dev2` | 9002 | Ctrl+Alt+S | `%APPDATA%\dev2-quick-dash-launcher\config` | 比較検証用 |
+| `npm run dev:test` | 9003 | Ctrl+Alt+T | `./tests/dev/full` | テストデータでの動作確認（起動時に表示・表示固定モード） |
 
 #### 環境変数
 
 インスタンスの動作は以下の環境変数で制御されます：
 
-| 環境変数                 | 説明                                                                         | 例                         |
-| ------------------------ | ---------------------------------------------------------------------------- | -------------------------- |
-| `APP_INSTANCE`           | インスタンス識別子（userDataパスに使用）                                     | `dev`, `dev2`              |
-| `VITE_PORT`              | Vite開発サーバーのポート番号                                                 | `9001`, `9002`             |
-| `HOTKEY`                 | 起動ホットキー（設定ファイルを上書き）                                       | `Ctrl+Alt+A`, `Ctrl+Alt+S` |
-| `QUICK_DASH_CONFIG_DIR`  | 設定フォルダのパス（絶対パスまたは相対パス）                                 | `./tests/dev/full`         |
-| `WINDOW_PIN_MODE`        | 起動時の固定モード（`normal`・`alwaysOnTop`・`stayVisible`。それ以外は無視） | `stayVisible`              |
-| `SHOW_WINDOW_ON_STARTUP` | `1` で起動時にメインウィンドウを表示する                                     | `1`                        |
-| `SKIP_SPLASH_WINDOW`     | `1` でスプラッシュウィンドウを出さない                                       | `1`                        |
-| `DISABLE_GLOBAL_HOTKEY`  | `1` でグローバルホットキーを登録しない                                       | `1`                        |
+| 環境変数 | 説明 | 例 |
+| --- | --- | --- |
+| `APP_INSTANCE` | インスタンス識別子（userDataパスに使用） | `dev`, `dev2` |
+| `VITE_PORT` | Vite開発サーバーのポート番号 | `9001`, `9002` |
+| `HOTKEY` | 起動ホットキー（設定ファイルを上書き） | `Ctrl+Alt+A`, `Ctrl+Alt+S` |
+| `QUICK_DASH_CONFIG_DIR` | 設定フォルダのパス（絶対パスまたは相対パス） | `./tests/dev/full` |
+| `WINDOW_PIN_MODE` | 起動時の固定モード（`normal`・`alwaysOnTop`・`stayVisible`。それ以外は無視） | `stayVisible` |
+| `SHOW_WINDOW_ON_STARTUP` | `1` で起動時にメインウィンドウを表示する | `1` |
+| `SKIP_SPLASH_WINDOW` | `1` でスプラッシュウィンドウを出さない | `1` |
+| `DISABLE_GLOBAL_HOTKEY` | `1` でグローバルホットキーを登録しない | `1` |
 
 #### 実装の仕組み
 

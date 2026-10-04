@@ -6,12 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.tool_input.file_path' | xargs -d '\\n' npx eslint --fix 2>/dev/null || true",
-            "timeout": 30
-          },
-          {
-            "type": "command",
-            "command": "jq -r '.tool_input.file_path' | xargs -d '\\n' npx prettier --write 2>/dev/null || true",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/format.mjs\"",
             "timeout": 30
           }
         ]

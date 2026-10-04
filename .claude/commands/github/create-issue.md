@@ -16,6 +16,7 @@ GitHub Issueを対話的に作成するコマンドです。
    - 優先度の設定（オプション）
 
 2. **GitHub Issue作成**
+
    ```bash
    !gh issue create --title "$TITLE" --body "$BODY" $LABELS
    ```
@@ -25,16 +26,19 @@ GitHub Issueを対話的に作成するコマンドです。
 ## 使用方法
 
 ### 基本的な使用
+
 ```
 /create-issue
 ```
 
 ### 引数付きでの使用
+
 ```
 /create-issue "バグ修正: ログイン機能が動作しない" "ログイン画面で認証エラーが発生する問題を修正する"
 ```
 
 ### ラベル付きでの使用
+
 ```
 /create-issue "新機能: ダークモード対応" "アプリケーションにダークモードを追加する" --label="enhancement,ui"
 ```

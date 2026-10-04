@@ -402,15 +402,15 @@ Slack (右半分),slack://,,,"{""title"":""Slack"",""x"":960,""y"":0,""width"":9
 
 アイテム起動時のウィンドウアクティブ化は、以下のモジュール構成で実装されています：
 
-| モジュール                              | 役割                                                   |
-| --------------------------------------- | ------------------------------------------------------ |
-| `src/main/ipc/itemHandlers.ts`          | アイテム起動のエントリーポイント                       |
-| `src/main/ipc/workspaceHandlers.ts`     | ワークスペースアイテム起動のエントリーポイント         |
-| `src/main/utils/windowActivator.ts`     | ウィンドウ検索・アクティブ化・位置サイズ設定の一元管理 |
-| `src/main/utils/itemLauncher.ts`        | URL/ファイル/アプリ/カスタムURIの起動処理を統一        |
-| `src/main/utils/windowMatcher.ts`       | ウィンドウタイトルによるウィンドウ検索                 |
-| `src/main/utils/nativeWindowControl.ts` | ネイティブWindows API経由のウィンドウ制御              |
-| `src/common/utils/windowConfigUtils.ts` | JSON⇔文字列変換、ウィンドウ設定の処理                  |
+| モジュール | 役割 |
+| --- | --- |
+| `src/main/ipc/itemHandlers.ts` | アイテム起動のエントリーポイント |
+| `src/main/ipc/workspaceHandlers.ts` | ワークスペースアイテム起動のエントリーポイント |
+| `src/main/utils/windowActivator.ts` | ウィンドウ検索・アクティブ化・位置サイズ設定の一元管理 |
+| `src/main/utils/itemLauncher.ts` | URL/ファイル/アプリ/カスタムURIの起動処理を統一 |
+| `src/main/utils/windowMatcher.ts` | ウィンドウタイトルによるウィンドウ検索 |
+| `src/main/utils/nativeWindowControl.ts` | ネイティブWindows API経由のウィンドウ制御 |
+| `src/common/utils/windowConfigUtils.ts` | JSON⇔文字列変換、ウィンドウ設定の処理 |
 
 **処理フロー:**
 
@@ -519,13 +519,13 @@ v0.5.12以降、仮想デスクトップ機能が大幅に強化され、以下�
 
 **従来の動作との違い:**
 
-| 項目                     | v0.5.11以前                        | v0.5.12以降                              |
-| ------------------------ | ---------------------------------- | ---------------------------------------- |
-| **検索範囲**             | 現在のデスクトップのみ             | すべての仮想デスクトップ                 |
+| 項目 | v0.5.11以前 | v0.5.12以降 |
+| --- | --- | --- |
+| **検索範囲** | 現在のデスクトップのみ | すべての仮想デスクトップ |
 | **デスクトップ切り替え** | ウィンドウのデスクトップに切り替え | 切り替えなし（現在のデスクトップを維持） |
-| **位置・サイズ設定**     | デスクトップ移動後に設定           | 直接設定（移動不要）                     |
-| **ユーザー体験**         | 画面が一瞬切り替わる               | 作業を中断しない                         |
-| **設定確実性**           | 1回のみ試行                        | 最大3回リトライ                          |
+| **位置・サイズ設定** | デスクトップ移動後に設定 | 直接設定（移動不要） |
+| **ユーザー体験** | 画面が一瞬切り替わる | 作業を中断しない |
+| **設定確実性** | 1回のみ試行 | 最大3回リトライ |
 
 ### ウィンドウアクティブ化制御
 
@@ -561,14 +561,14 @@ Chrome,chrome.exe,,,"{""title"":""Google Chrome"",""activateWindow"":true}"
 
 ウィンドウ検索・ウィンドウ選択の一覧と、ウィンドウ操作で探すウィンドウから、次のシステムウィンドウを外す（`src/main/utils/nativeWindowControl.ts` の `EXCLUDED_WINDOWS`）。
 
-| ウィンドウ                    | プロセス名                  | クラス名                   | 説明                                |
-| ----------------------------- | --------------------------- | -------------------------- | ----------------------------------- |
-| Windows入力エクスペリエンス   | TextInputHost.exe           | Windows.UI.Core.CoreWindow | IME・タッチキーボード等             |
-| Windowsシェルエクスペリエンス | ShellExperienceHost.exe     | Windows.UI.Core.CoreWindow | スタートメニュー・通知センター等    |
-| デスクトップ壁紙              | explorer.exe                | Progman                    | Program Manager（デスクトップ背景） |
-| Windowsロック画面             | LockApp.exe                 | Windows.UI.Core.CoreWindow | ロック画面                          |
-| Windowsスタートメニュー       | StartMenuExperienceHost.exe | Windows.UI.Core.CoreWindow | スタートメニュー                    |
-| Windows検索                   | SearchHost.exe              | Windows.UI.Core.CoreWindow | 検索ウィンドウ                      |
+| ウィンドウ | プロセス名 | クラス名 | 説明 |
+| --- | --- | --- | --- |
+| Windows入力エクスペリエンス | TextInputHost.exe | Windows.UI.Core.CoreWindow | IME・タッチキーボード等 |
+| Windowsシェルエクスペリエンス | ShellExperienceHost.exe | Windows.UI.Core.CoreWindow | スタートメニュー・通知センター等 |
+| デスクトップ壁紙 | explorer.exe | Progman | Program Manager（デスクトップ背景） |
+| Windowsロック画面 | LockApp.exe | Windows.UI.Core.CoreWindow | ロック画面 |
+| Windowsスタートメニュー | StartMenuExperienceHost.exe | Windows.UI.Core.CoreWindow | スタートメニュー |
+| Windows検索 | SearchHost.exe | Windows.UI.Core.CoreWindow | 検索ウィンドウ |
 
 - プロセス名とクラス名の**両方**が一致し、かつウィンドウがクロークされている（画面に描画されていない）ときだけ外す。描画されている間は一覧に出る（誤検知を防ぐため）
 - これとは別に、QuickDashLauncher 自身のウィンドウ、タイトルのないウィンドウ、非表示のウィンドウ、Alt+Tab に出ないツールウィンドウも一覧に出ない

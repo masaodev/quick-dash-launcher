@@ -14,13 +14,13 @@
 
 ## ファイル
 
-| ファイル                 | 役割                                                    | スキーマ                                |
-| ------------------------ | ------------------------------------------------------- | --------------------------------------- |
-| `datafiles/data.json`    | ランチャーのアイテム（必須）                            | `schemas/data.schema.json`              |
-| `datafiles/data2.json` … | 追加のデータファイル（タブ。ファイル名は `data*.json`） | 同上                                    |
-| `settings.json`          | ホットキー・ウィンドウ・バックアップ・タブ設定          | `schemas/settings.schema.json`          |
-| `workspace.json`         | ワークスペース画面のタブ・グループ・アイテム            | `schemas/workspace.schema.json`         |
-| `workspace-archive.json` | アーカイブしたグループとアイテム（通常は触らない）      | `schemas/workspace-archive.schema.json` |
+| ファイル | 役割 | スキーマ |
+| --- | --- | --- |
+| `datafiles/data.json` | ランチャーのアイテム（必須） | `schemas/data.schema.json` |
+| `datafiles/data2.json` … | 追加のデータファイル（タブ。ファイル名は `data*.json`） | 同上 |
+| `settings.json` | ホットキー・ウィンドウ・バックアップ・タブ設定 | `schemas/settings.schema.json` |
+| `workspace.json` | ワークスペース画面のタブ・グループ・アイテム | `schemas/workspace.schema.json` |
+| `workspace-archive.json` | アーカイブしたグループとアイテム（通常は触らない） | `schemas/workspace-archive.schema.json` |
 
 フィールドの意味・必須/任意・取れる値はスキーマの `description` に書いてある。迷ったらスキーマを読む。
 

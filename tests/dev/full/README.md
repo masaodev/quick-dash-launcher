@@ -11,12 +11,15 @@ npm run dev:test
 ## 設定内容
 
 ### ホットキー
+
 - **Ctrl+Alt+T** - QuickDashLauncherを表示/非表示
 
 ### Viteポート
+
 - **9003** - 開発サーバーポート（devやdev2と重複しない）
 
 ### ウィンドウサイズ
+
 - メインウィンドウ: 700x500
 - 編集モード: 1200x700
 
@@ -26,6 +29,7 @@ npm run dev:test
 ファイル名は変更できず、アプリケーションが自動的に管理します。
 
 ### 1. data.txt（メイン）
+
 全機能を含む充実したサンプルデータ：
 
 - **Webサイト**: GitHub、Google、YouTube、Zenn
@@ -38,6 +42,7 @@ npm run dev:test
 - **ウィンドウ操作**: メモ帳（中央配置）、電卓（左上配置）
 
 ### 2. data2.txt（仕事）
+
 仕事用のアイテム：
 
 - プロジェクト管理: GitHub Projects、Notion
@@ -47,6 +52,7 @@ npm run dev:test
 - プロジェクトフォルダ
 
 ### 3. data3.txt（プライベート）
+
 プライベート用のアイテム：
 
 - エンタメ: YouTube Music、Netflix、Amazon Prime

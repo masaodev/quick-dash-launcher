@@ -6,15 +6,15 @@ QuickDashLauncherのアイコン処理システムは、様々な種類のアイ
 
 アイコンは種類ごとに専用のディレクトリに保存されます（`config/` は設定フォルダ。場所は [設定フォルダの場所](../architecture/file-formats/README.md#設定フォルダの場所)）：
 
-| アイコン種類               | 保存場所                        | ファイル名形式                | サイズ                     |
-| -------------------------- | ------------------------------- | ----------------------------- | -------------------------- |
-| **ファビコン**             | `config/icon-cache/favicons/`   | `{domain}_favicon_{size}.png` | 64px（推奨）/ 32px（互換） |
-| **EXEアイコン**            | `config/icon-cache/apps/`       | `{basename}_icon.png`         | 32px                       |
-| **ショートカットアイコン** | `config/icon-cache/apps/`       | `{basename}_lnk_icon.png`     | 32px                       |
-| **カスタムURIアイコン**    | `config/icon-cache/apps/`       | `uri_{schema}_icon.png`       | 32px                       |
-| **登録アプリアイコン**     | `config/icon-cache/apps/`       | `uwp_{PFN}_icon.png`          | マニフェスト依存           |
-| **拡張子アイコン**         | `config/icon-cache/extensions/` | `ext_{extension}_icon.png`    | 32px                       |
-| **カスタムアイコン**       | `config/icon-cache/custom/`     | `{MD5先頭8文字}.png`          | 任意                       |
+| アイコン種類 | 保存場所 | ファイル名形式 | サイズ |
+| --- | --- | --- | --- |
+| **ファビコン** | `config/icon-cache/favicons/` | `{domain}_favicon_{size}.png` | 64px（推奨）/ 32px（互換） |
+| **EXEアイコン** | `config/icon-cache/apps/` | `{basename}_icon.png` | 32px |
+| **ショートカットアイコン** | `config/icon-cache/apps/` | `{basename}_lnk_icon.png` | 32px |
+| **カスタムURIアイコン** | `config/icon-cache/apps/` | `uri_{schema}_icon.png` | 32px |
+| **登録アプリアイコン** | `config/icon-cache/apps/` | `uwp_{PFN}_icon.png` | マニフェスト依存 |
+| **拡張子アイコン** | `config/icon-cache/extensions/` | `ext_{extension}_icon.png` | 32px |
+| **カスタムアイコン** | `config/icon-cache/custom/` | `{MD5先頭8文字}.png` | 任意 |
 
 ### ファイル名形式の詳細
 
@@ -50,17 +50,17 @@ uwp_{PackageFamilyName}_icon.png
 
 どの取得方法を使うかは `classifyIconTarget`（`src/main/utils/iconCacheKeys.ts`）が判定し、取得側（`fetchIconForItem`）と読み出し側（`getCachedIconCandidates`）がこの判定を共有します。保存先と読み出し先が食い違うと、アイコンを取得できているのに表示されない状態になるため、呼び出し側でタイプごとに取得関数を選び分けてはいけません。
 
-| アイテムタイプ | 判定順                                              | 保存先                                 |
-| -------------- | --------------------------------------------------- | -------------------------------------- |
-| `url`          | -                                                   | `favicons/{domain}_favicon_64.png`     |
-| `app`          | 1. 登録アプリ（`shell:AppsFolder\`で始まる）        | `apps/uwp_{PFN}_icon.png`              |
-|                | 2. ショートカット（`originalPath`か`path`が`.lnk`） | `apps/{basename}_lnk_icon.png`         |
-|                | 3. スクリプト系（`.bat` / `.cmd` / `.com`）         | `extensions/ext_{extension}_icon.png`  |
-|                | 4. その他（`.exe`を含む）                           | `apps/{basename}_icon.png`             |
-| `customUri`    | 1. スキーマから解決                                 | `apps/uri_{schema}_icon.png`           |
-|                | 2. 拡張子へフォールバック                           | `extensions/ext_{extension}_icon.png`  |
-| `file`         | -                                                   | `extensions/ext_{extension}_icon.png`  |
-| `folder` ほか  | -                                                   | 取得しない（デフォルトアイコンを表示） |
+| アイテムタイプ | 判定順 | 保存先 |
+| --- | --- | --- |
+| `url` | - | `favicons/{domain}_favicon_64.png` |
+| `app` | 1. 登録アプリ（`shell:AppsFolder\`で始まる） | `apps/uwp_{PFN}_icon.png` |
+| | 2. ショートカット（`originalPath`か`path`が`.lnk`） | `apps/{basename}_lnk_icon.png` |
+| | 3. スクリプト系（`.bat` / `.cmd` / `.com`） | `extensions/ext_{extension}_icon.png` |
+| | 4. その他（`.exe`を含む） | `apps/{basename}_icon.png` |
+| `customUri` | 1. スキーマから解決 | `apps/uri_{schema}_icon.png` |
+| | 2. 拡張子へフォールバック | `extensions/ext_{extension}_icon.png` |
+| `file` | - | `extensions/ext_{extension}_icon.png` |
+| `folder` ほか | - | 取得しない（デフォルトアイコンを表示） |
 
 ### キャッシュに無いアイコンの補完
 
@@ -73,17 +73,17 @@ uwp_{PackageFamilyName}_icon.png
 
 アイコンが取得できない場合は、アイテムの種類に応じた絵文字を使用：
 
-| アイテム種類     | 絵文字 |
-| ---------------- | ------ |
-| ファイル         | 📄     |
-| フォルダ         | 📁     |
-| ウェブ           | 🌐     |
-| アプリケーション | ⚙️     |
-| カスタムURI      | 🔗     |
-| グループ         | 📦     |
-| ウィンドウ       | 🪟     |
-| クリップボード   | 📋     |
-| レイアウト       | 🖥️     |
+| アイテム種類 | 絵文字 |
+| --- | --- |
+| ファイル | 📄 |
+| フォルダ | 📁 |
+| ウェブ | 🌐 |
+| アプリケーション | ⚙️ |
+| カスタムURI | 🔗 |
+| グループ | 📦 |
+| ウィンドウ | 🪟 |
+| クリップボード | 📋 |
+| レイアウト | 🖥️ |
 
 ---
 
@@ -103,34 +103,34 @@ uwp_{PackageFamilyName}_icon.png
 
 見つかった候補は次の順に並べ替えて試行します（`sortFaviconSources`）。
 
-| 優先度 | 条件                                                                                              |
-| ------ | ------------------------------------------------------------------------------------------------- |
-| 1      | URLに `apple-touch-icon` を含む（`<link rel="apple-touch-icon">` 等）                             |
-| 2      | URLに `favicon` を含む                                                                            |
-| 3      | 上記以外の `<link rel="icon">` / `<link rel="shortcut icon">`（サイズ指定があれば64px前後を優先） |
-| 4      | `<meta property="og:image" content="...">`（最低優先度）                                          |
+| 優先度 | 条件 |
+| --- | --- |
+| 1 | URLに `apple-touch-icon` を含む（`<link rel="apple-touch-icon">` 等） |
+| 2 | URLに `favicon` を含む |
+| 3 | 上記以外の `<link rel="icon">` / `<link rel="shortcut icon">`（サイズ指定があれば64px前後を優先） |
+| 4 | `<meta property="og:image" content="...">`（最低優先度） |
 
 HTMLの取得がネットワークエラーで失敗した場合は、次の標準的な場所は試さずスキップします。
 
 #### 2. 標準的な場所の確認
 
-| 優先度 | パス                                |
-| ------ | ----------------------------------- |
-| 1      | `/favicon.ico`                      |
-| 2      | `/favicon.png`                      |
-| 3      | `/apple-touch-icon.png`             |
-| 4      | `/apple-touch-icon-precomposed.png` |
-| 5      | `/icon.png`                         |
-| 6      | `/logo.png`                         |
+| 優先度 | パス |
+| --- | --- |
+| 1 | `/favicon.ico` |
+| 2 | `/favicon.png` |
+| 3 | `/apple-touch-icon.png` |
+| 4 | `/apple-touch-icon-precomposed.png` |
+| 5 | `/icon.png` |
+| 6 | `/logo.png` |
 
 ### 技術仕様
 
-| 項目                               | 値            |
-| ---------------------------------- | ------------- |
-| デフォルト解像度                   | 64px          |
-| HTML読み込みサイズ                 | 最初の5KBのみ |
-| HTMLダウンロードタイムアウト       | 5秒           |
-| ファビコンダウンロードタイムアウト | 3秒           |
+| 項目 | 値 |
+| --- | --- |
+| デフォルト解像度 | 64px |
+| HTML読み込みサイズ | 最初の5KBのみ |
+| HTMLダウンロードタイムアウト | 5秒 |
+| ファビコンダウンロードタイムアウト | 3秒 |
 
 ### ICO形式の処理
 
@@ -158,12 +158,12 @@ HTMLの取得がネットワークエラーで失敗した場合は、次の標�
 
 ### 取得優先順位
 
-| 優先度 | 取得方法         | 説明                                                                                                              |
-| ------ | ---------------- | ----------------------------------------------------------------------------------------------------------------- |
-| 1      | レジストリベース | Windowsレジストリからスキーマハンドラーアプリを検索                                                               |
-| 2      | 登録アプリベース | マニフェストでスキーマを宣言しているUWPアプリを逆引き                                                             |
-| 3      | 拡張子ベース     | URIに埋め込まれたURLのファイル名の拡張子のアイコン（例: URI内の `https://example.com/Book.xlsx?web=1` → `.xlsx`） |
-| 4      | デフォルト       | 🔗絵文字                                                                                                          |
+| 優先度 | 取得方法 | 説明 |
+| --- | --- | --- |
+| 1 | レジストリベース | Windowsレジストリからスキーマハンドラーアプリを検索 |
+| 2 | 登録アプリベース | マニフェストでスキーマを宣言しているUWPアプリを逆引き |
+| 3 | 拡張子ベース | URIに埋め込まれたURLのファイル名の拡張子のアイコン（例: URI内の `https://example.com/Book.xlsx?web=1` → `.xlsx`） |
+| 4 | デフォルト | 🔗絵文字 |
 
 ### レジストリクエリプロセス
 
@@ -191,14 +191,14 @@ UWPアプリはPackagedCOM方式で起動されるため、レジストリに `s
 
 ### 対応URIスキーマ例
 
-| URIスキーマ   | ハンドラーアプリ              |
-| ------------- | ----------------------------- |
-| `obsidian://` | Obsidian.exe                  |
-| `ms-excel://` | EXCEL.EXE                     |
-| `vscode://`   | Code.exe                      |
-| `steam://`    | steam.exe                     |
-| `slack://`    | slack.exe                     |
-| `ms-todo:`    | Microsoft.Todos（登録アプリ） |
+| URIスキーマ | ハンドラーアプリ |
+| --- | --- |
+| `obsidian://` | Obsidian.exe |
+| `ms-excel://` | EXCEL.EXE |
+| `vscode://` | Code.exe |
+| `steam://` | steam.exe |
+| `slack://` | slack.exe |
+| `ms-todo:` | Microsoft.Todos（登録アプリ） |
 
 ---
 
@@ -208,12 +208,12 @@ UWPアプリはPackagedCOM方式で起動されるため、レジストリに `s
 
 ### 技術仕様
 
-| 項目                     | 値                                                                                                        |
-| ------------------------ | --------------------------------------------------------------------------------------------------------- |
-| 使用ライブラリ           | `extract-file-icon`                                                                                       |
-| 抽出サイズ               | 32px                                                                                                      |
-| 直接抽出                 | `.lnk`（ショートカット専用の処理）と、スクリプト系以外のアプリのパス（`.exe` 等。拡張子では絞っていない） |
-| 対応形式（拡張子ベース） | `.bat`, `.cmd`, `.com`                                                                                    |
+| 項目 | 値 |
+| --- | --- |
+| 使用ライブラリ | `extract-file-icon` |
+| 抽出サイズ | 32px |
+| 直接抽出 | `.lnk`（ショートカット専用の処理）と、スクリプト系以外のアプリのパス（`.exe` 等。拡張子では絞っていない） |
+| 対応形式（拡張子ベース） | `.bat`, `.cmd`, `.com` |
 
 ### パス解決機能
 
@@ -234,11 +234,11 @@ WindowsAppsフォルダ等のシンボリックリンクを自動解決してア
 
 ファイルアイテムは、拡張子に基づいてシステムから関連付けられたアイコンを取得します。
 
-| 拡張子  | アイコン                |
-| ------- | ----------------------- |
-| `.txt`  | メモ帳アイコン          |
-| `.pdf`  | PDFリーダーアイコン     |
-| `.docx` | Microsoft Wordアイコン  |
+| 拡張子 | アイコン |
+| --- | --- |
+| `.txt` | メモ帳アイコン |
+| `.pdf` | PDFリーダーアイコン |
+| `.docx` | Microsoft Wordアイコン |
 | `.xlsx` | Microsoft Excelアイコン |
 
 ---
@@ -319,12 +319,12 @@ Windows APIを使用してウィンドウからアイコンハンドル（HICON�
 
 ### アイコン取得の優先順位
 
-| 優先度 | 取得方法                      | 説明                   |
-| ------ | ----------------------------- | ---------------------- |
-| 1      | WM_GETICON (ICON_BIG)         | 大きいアイコン         |
-| 2      | WM_GETICON (ICON_SMALL2)      | 小さいアイコン（32px） |
-| 3      | WM_GETICON (ICON_SMALL)       | 小さいアイコン（16px） |
-| 4      | GetClassLongPtrW (GCLP_HICON) | クラスアイコン         |
+| 優先度 | 取得方法 | 説明 |
+| --- | --- | --- |
+| 1 | WM_GETICON (ICON_BIG) | 大きいアイコン |
+| 2 | WM_GETICON (ICON_SMALL2) | 小さいアイコン（32px） |
+| 3 | WM_GETICON (ICON_SMALL) | 小さいアイコン（16px） |
+| 4 | GetClassLongPtrW (GCLP_HICON) | クラスアイコン |
 
 ### 変換処理
 
@@ -382,11 +382,11 @@ Windows APIを使用してウィンドウからアイコンハンドル（HICON�
 
 ### エラーの種類
 
-| エラー種類             | 説明                       | タイムアウト |
-| ---------------------- | -------------------------- | ------------ |
-| HTMLダウンロード       | ページの取得失敗           | 5秒          |
-| ファビコンダウンロード | アイコンの取得失敗         | 3秒          |
-| HTTPエラー             | サーバーエラー（4xx, 5xx） | -            |
-| ネットワークエラー     | DNS、SSL証明書など         | -            |
+| エラー種類 | 説明 | タイムアウト |
+| --- | --- | --- |
+| HTMLダウンロード | ページの取得失敗 | 5秒 |
+| ファビコンダウンロード | アイコンの取得失敗 | 3秒 |
+| HTTPエラー | サーバーエラー（4xx, 5xx） | - |
+| ネットワークエラー | DNS、SSL証明書など | - |
 
 これらのエラー情報は、アイコン取得結果（詳細）のエラー一覧で確認できます。
