@@ -1,6 +1,6 @@
 /**
- * test-results/demo-gif/<name>/ のスクリーンショットと frames.json（表示時間）から
- * docs/images/demo-<name>.gif を作る。ffmpeg が PATH にあること
+ * test-results/demo-gif/<name>/ の動画（meta.json が指す範囲）から docs/images/demo-<name>.gif を作る。
+ * ffmpeg が PATH にあること
  *
  * 使い方: node scripts/make-demo-gif.mjs [name]（既定は main）
  */
@@ -9,54 +9,52 @@ import fs from 'fs';
 import path from 'path';
 
 const name = process.argv[2] ?? 'main';
-const frameDir = path.join(process.cwd(), 'test-results', 'demo-gif', name);
-const frames = JSON.parse(fs.readFileSync(path.join(frameDir, 'frames.json'), 'utf8'));
+const FPS = 15;
+// 高 DPI の画面で撮った動画も、README では 800px 幅にそろえる
+const SCALE = 'scale=800:-1:flags=lanczos';
+const dir = path.join(process.cwd(), 'test-results', 'demo-gif', name);
+const meta = JSON.parse(fs.readFileSync(path.join(dir, 'meta.json'), 'utf8'));
+const video = path.join(dir, meta.video);
 const output = path.join(process.cwd(), 'docs', 'images', `demo-${name}.gif`);
 fs.mkdirSync(path.dirname(output), { recursive: true });
 
-// concat デマルチプレクサ用のリスト。最後のフレームは duration が効かないので 2 回書く
-const lines = frames.flatMap((f) => [`file '${f.file}'`, `duration ${f.durationMs / 1000}`]);
-lines.push(`file '${frames[frames.length - 1].file}'`);
-const listFile = path.join(frameDir, 'list.txt');
-fs.writeFileSync(listFile, lines.join('\n') + '\n');
-
-const palette = path.join(frameDir, 'palette.png');
+const range = ['-ss', String(meta.startSec), '-to', String(meta.endSec)];
+const palette = path.join(dir, 'palette.png');
 execFileSync(
   'ffmpeg',
   [
     '-y',
-    '-f',
-    'concat',
-    '-safe',
-    '0',
+    '-v',
+    'error',
+    ...range,
     '-i',
-    listFile,
+    video,
     '-vf',
-    'palettegen=stats_mode=full',
+    `fps=${FPS},${SCALE},palettegen=stats_mode=diff`,
     palette,
   ],
-  { cwd: frameDir, stdio: 'inherit' }
+  { stdio: 'inherit' }
 );
 execFileSync(
   'ffmpeg',
   [
     '-y',
-    '-f',
-    'concat',
-    '-safe',
-    '0',
+    '-v',
+    'error',
+    ...range,
     '-i',
-    listFile,
+    video,
     '-i',
     palette,
     '-lavfi',
-    'fps=10,paletteuse=dither=none',
+    `fps=${FPS},${SCALE}[x];[x][1:v]paletteuse=dither=none:diff_mode=rectangle`,
     '-loop',
     '0',
     output,
   ],
-  { cwd: frameDir, stdio: 'inherit' }
+  { stdio: 'inherit' }
 );
 
 const sizeKb = Math.round(fs.statSync(output).size / 1024);
-console.log(`作成: ${path.relative(process.cwd(), output)}（${sizeKb} KB）`);
+const seconds = (meta.endSec - meta.startSec).toFixed(1);
+console.log(`作成: ${path.relative(process.cwd(), output)}（${seconds} 秒・${sizeKb} KB）`);
