@@ -60,6 +60,7 @@ npx playwright test -g "新規アイテムを登録できる"                   
 - **テストファイル**: `tests/e2e/specs/*.spec.ts`（機能別）
 - **フィクスチャ・ヘルパー・テンプレートの構成**: [tests/e2e/README.md](../../tests/e2e/README.md)
 - **実行**: `npm run test:e2e`（ビルド込み）
+- **README のデモ GIF の撮影**: `npm run docs:demo-gif`（`tests/demo-gif/` で 1 操作ごとに撮り、`scripts/make-demo-gif.mjs` が ffmpeg で `docs/images/demo-main.gif` にまとめる。デモデータは `tests/e2e/templates/demo/`。ffmpeg が要る。通常の E2E には含めない）
 - **画面イメージの撮影**: `npm run docs:screenshots`（`tests/screenshots/`。通常の E2E には含めない。決まりは [画面仕様書 執筆ガイドライン - 画面イメージ](../screens/WRITING-GUIDE.md#画面イメージ)）
 
 ### 3. ブラウザ自動操作（Playwright MCP）

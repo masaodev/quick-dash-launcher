@@ -15,6 +15,7 @@ npm run generate-licenses # THIRD-PARTY-NOTICES.md の生成（build の前に�
 npm run schema:generate # 型から JSON Schema（assets/schemas/）を生成
 npm run create-dev-icon # 開発モード用アイコンの作成
 npm run docs:screenshots # 画面仕様の画面イメージを撮影（ビルド込み）
+npm run docs:demo-gif    # README のデモ GIF を撮影（ビルド込み。ffmpeg が要る）
 ```
 
 詳細は **[開発ガイド - 多重起動](development.md#多重起動)** を参照してください。

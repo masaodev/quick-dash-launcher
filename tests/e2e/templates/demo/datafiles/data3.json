@@ -1,0 +1,41 @@
+{
+  "version": "1.0",
+  "items": [
+    {
+      "id": "demoC001",
+      "type": "item",
+      "displayName": "Gmail",
+      "path": "https://mail.google.com/"
+    },
+    {
+      "id": "demoC002",
+      "type": "item",
+      "displayName": "Google カレンダー",
+      "path": "https://calendar.google.com/"
+    },
+    {
+      "id": "demoC003",
+      "type": "item",
+      "displayName": "YouTube",
+      "path": "https://www.youtube.com/"
+    },
+    {
+      "id": "demoC004",
+      "type": "item",
+      "displayName": "メモ帳",
+      "path": "notepad.exe"
+    },
+    {
+      "id": "demoC005",
+      "type": "item",
+      "displayName": "電卓",
+      "path": "calc.exe"
+    },
+    {
+      "id": "demoC006",
+      "type": "item",
+      "displayName": "ダウンロード",
+      "path": "shell:Downloads"
+    }
+  ]
+}
