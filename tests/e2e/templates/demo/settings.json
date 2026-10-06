@@ -1,0 +1,70 @@
+{
+	"hotkey": "Alt+Space",
+	"editModeWidth": 1200,
+	"editModeHeight": 700,
+	"autoLaunch": false,
+	"backupEnabled": false,
+	"backupRetention": 10,
+	"showDataFileTabs": true,
+	"defaultFileTab": "datafiles/data.json",
+	"dataFileTabs": [
+		{
+			"files": [
+				"datafiles/data.json"
+			],
+			"name": "メイン"
+		},
+		{
+			"files": [
+				"datafiles/data2.json"
+			],
+			"name": "A：基幹刷新Prj"
+		},
+		{
+			"files": [
+				"datafiles/data3.json"
+			],
+			"name": "B：EC改修Prj"
+		},
+		{
+			"files": [
+				"datafiles/data4.json"
+			],
+			"name": "ブックマーク"
+		},
+		{
+			"files": [
+				"datafiles/data5.json"
+			],
+			"name": "アプリ"
+		}
+	],
+	"dataFileLabels": {
+		"datafiles/data.json": "メイン",
+		"datafiles/data2.json": "A：基幹システム刷新",
+		"datafiles/data3.json": "B：ECサイト改修",
+		"datafiles/data4.json": "ブラウザのブックマーク",
+		"datafiles/data5.json": "アプリ"
+	},
+	"windowPositionMode": "cursorMonitorCenter",
+	"windowPositionX": 0,
+	"windowPositionY": 0,
+	"workspaceOpacity": 100,
+	"workspaceBackgroundTransparent": false,
+	"autoShowWorkspace": false,
+	"workspacePositionMode": "displayRight",
+	"workspaceTargetDisplayIndex": 0,
+	"workspacePositionX": 0,
+	"workspacePositionY": 0,
+	"workspaceVisibleOnAllDesktops": true,
+	"detachedVisibleOnAllDesktops": true,
+	"backupIncludeClipboard": false,
+	"parallelGroupLaunch": false,
+	"itemSearchHotkey": "",
+	"bookmarkAutoImport": {
+		"autoRunOnStartup": false,
+		"rules": []
+	},
+	"hideDetachedWithMainWindow": true,
+	"windowSnapEnabled": true
+}

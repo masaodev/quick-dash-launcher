@@ -1,0 +1,23 @@
+{
+  "$schema": "./schemas/workspace.schema.json",
+  "version": "2.0",
+  "workspaces": [
+    { "id": "WsShot01", "displayName": "メイン", "order": 0, "createdAt": 1759449600000 },
+    { "id": "WsShot02", "displayName": "趣味", "order": 1, "createdAt": 1759449600000 }
+  ],
+  "groups": [
+    { "id": "GrShot01", "displayName": "毎日使う", "color": "primary", "order": 0, "createdAt": 1759449600000, "workspaceId": "WsShot01" },
+    { "id": "GrShot02", "displayName": "調べもの", "color": "success", "order": 1, "createdAt": 1759449600000, "workspaceId": "WsShot01" },
+    { "id": "GrShot03", "displayName": "ツール", "color": "warning", "order": 2, "createdAt": 1759449600000, "workspaceId": "WsShot01" }
+  ],
+  "items": [
+    { "id": "ItShot01", "type": "item", "displayName": "GitHub", "path": "https://github.com/", "workspaceId": "WsShot01", "groupId": "GrShot01", "order": 0, "addedAt": 1759449600000 },
+    { "id": "ItShot02", "type": "item", "displayName": "Google", "path": "https://www.google.com/", "workspaceId": "WsShot01", "groupId": "GrShot01", "order": 1, "addedAt": 1759449600000 },
+    { "id": "ItShot03", "type": "item", "displayName": "ドキュメント", "path": "shell:Documents", "workspaceId": "WsShot01", "groupId": "GrShot01", "order": 2, "addedAt": 1759449600000 },
+    { "id": "ItShot04", "type": "item", "displayName": "Wikipedia", "path": "https://ja.wikipedia.org/", "workspaceId": "WsShot01", "groupId": "GrShot02", "order": 0, "addedAt": 1759449600000 },
+    { "id": "ItShot05", "type": "item", "displayName": "MDN Web Docs", "path": "https://developer.mozilla.org/ja/", "workspaceId": "WsShot01", "groupId": "GrShot02", "order": 1, "addedAt": 1759449600000 },
+    { "id": "ItShot06", "type": "item", "displayName": "メモ帳", "path": "notepad.exe", "workspaceId": "WsShot01", "groupId": "GrShot03", "order": 0, "addedAt": 1759449600000 },
+    { "id": "ItShot07", "type": "item", "displayName": "電卓", "path": "calc.exe", "workspaceId": "WsShot01", "groupId": "GrShot03", "order": 1, "addedAt": 1759449600000 },
+    { "id": "ItShot08", "type": "item", "displayName": "YouTube", "path": "https://www.youtube.com/", "workspaceId": "WsShot01", "order": 0, "addedAt": 1759449600000 }
+  ]
+}

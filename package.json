@@ -29,6 +29,7 @@
     "test:e2e:headed": "npm run build && playwright test --headed",
     "test:e2e:single": "node scripts/run-e2e-test.js",
     "docs:screenshots": "npm run build && playwright test -c playwright.screenshots.config.ts",
+    "docs:demo-gif": "npm run build && playwright test -c playwright.demo-gif.config.ts && node scripts/make-demo-gif.mjs",
     "test:window-move": "tsx src/test/manual/testWindowMove.ts",
     "test:window-list": "tsx src/test/manual/testWindowList.ts",
     "debug:windows": "node scripts/debug-windows.mjs"
