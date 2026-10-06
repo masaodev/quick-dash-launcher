@@ -10,10 +10,10 @@ import path from 'path';
 
 const name = process.argv[2] ?? 'main';
 const FPS = 15;
-// 高 DPI の画面で撮った動画も、README では 800px 幅にそろえる
-const SCALE = 'scale=800:-1:flags=lanczos';
 const dir = path.join(process.cwd(), 'test-results', 'demo-gif', name);
 const meta = JSON.parse(fs.readFileSync(path.join(dir, 'meta.json'), 'utf8'));
+// 高 DPI の画面で撮った動画は、ウィンドウの論理サイズ（meta.width）に縮める
+const SCALE = `scale=${meta.width}:-2:flags=lanczos`;
 const video = path.join(dir, meta.video);
 const output = path.join(process.cwd(), 'docs', 'images', `demo-${name}.gif`);
 fs.mkdirSync(path.dirname(output), { recursive: true });

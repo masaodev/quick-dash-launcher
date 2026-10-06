@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 
 /**
- * README のデモ GIF 用のデータ（5 タブ・約 300 件）
+ * README のデモ GIF 用のデータ（5 タブ。メインに約 140 件、ブックマークに 90 件）
  *
  * 「仕事で開くものを全部ここに登録し、案件ごとのタブに整理して、名前の一部で探す」使い方を見せるため、
  * システム開発の案件フォルダ（フォルダ取込で中のファイルを丸ごと読み込む）・ブラウザのブックマーク・
@@ -108,7 +108,19 @@ const PROJECT_B_FILES: Record<string, string[]> = {
 const teams = (name: string, user: string): DemoItem =>
   item(`チャット: ${name}`, `https://teams.microsoft.com/l/chat/0/0?users=${user}@example.com`);
 
+/** メインタブ。普段使うものに加えて、案件・アプリも全部入れる（案件タブ・アプリタブは同じものの絞り込み用） */
 function mainItems(root: string): DemoItem[] {
+  const all = [...dailyItems(root), ...projectAItems(root), ...projectBItems(root), ...appItems()];
+  const seen = new Set<string>();
+  return all.filter((it) => {
+    const key = it.type === 'dir' ? `dir:${it.path}` : it.displayName;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function dailyItems(root: string): DemoItem[] {
   return [
     item('勤怠システム', 'https://www.jobcan.ne.jp/'),
     item('経費精算', 'https://www.rakus.co.jp/rakurakuseisan/'),
@@ -150,7 +162,7 @@ function mainItems(root: string): DemoItem[] {
 function projectAItems(root: string): DemoItem[] {
   const dir = path.join(root, 'A_基幹システム刷新');
   return [
-    { type: 'dir', path: dir, options: { depth: -1, types: 'file' } },
+    { type: 'dir', path: dir, options: { depth: -1, types: 'file', prefix: '基幹刷新' } },
     item('A：案件フォルダ', dir),
     item('A：議事録フォルダ', path.join(dir, '06_議事録')),
     item('A：課題管理（Backlog）', 'https://backlog.com/ja/'),
@@ -165,7 +177,7 @@ function projectAItems(root: string): DemoItem[] {
 function projectBItems(root: string): DemoItem[] {
   const dir = path.join(root, 'B_ECサイト改修');
   return [
-    { type: 'dir', path: dir, options: { depth: -1, types: 'file' } },
+    { type: 'dir', path: dir, options: { depth: -1, types: 'file', prefix: 'EC改修' } },
     item('B：案件フォルダ', dir),
     item('B：課題管理（Redmine）', 'https://www.redmine.org/'),
     item('B：ステージング', 'https://www.shopify.com/jp'),
@@ -324,7 +336,7 @@ function createProjectFiles(root: string): void {
 }
 
 /**
- * demoRoot にデモ用のフォルダとファイルを作り、configDir の datafiles にデータを書く。候補の総数を返す
+ * demoRoot にデモ用のフォルダとファイルを作り、configDir の datafiles にデータを書く。メインタブの候補数を返す
  *
  * タブの割り当ては tests/e2e/templates/demo/settings.json（data.json＝メイン、data2＝A、data3＝B、
  * data4＝ブックマーク、data5＝アプリ）
@@ -350,10 +362,10 @@ export function writeDemoData(configDir: string, demoRoot: string): number {
       JSON.stringify({ version: '1.0', items: withIds }, null, 2) + '\n'
     );
   });
-  // フォルダ取込は中のファイルが 1 件ずつ候補になるので、その数で数える
+  // メインタブの候補数（フォルダ取込は中のファイルが 1 件ずつ候補になる）
   const countFiles = (tree: Record<string, string[]>): number =>
     Object.values(tree).reduce((sum, list) => sum + list.length, 0);
-  const allItems = files.flatMap(([, items]) => items);
-  const dirCount = allItems.filter((it) => it.type === 'dir').length;
-  return allItems.length - dirCount + countFiles(PROJECT_A_FILES) + countFiles(PROJECT_B_FILES);
+  const main = files[0][1];
+  const dirCount = main.filter((it) => it.type === 'dir').length;
+  return main.length - dirCount + countFiles(PROJECT_A_FILES) + countFiles(PROJECT_B_FILES);
 }

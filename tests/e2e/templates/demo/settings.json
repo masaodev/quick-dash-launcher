@@ -1,7 +1,5 @@
 {
 	"hotkey": "Alt+Space",
-	"windowWidth": 800,
-	"windowHeight": 560,
 	"editModeWidth": 1200,
 	"editModeHeight": 700,
 	"autoLaunch": false,

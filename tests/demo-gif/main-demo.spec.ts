@@ -13,7 +13,7 @@ import { writeDemoData } from './demo-data';
 /**
  * README のメインデモ GIF の素材（メインウィンドウの動画）を撮る
  *
- * デモデータ（5 タブ・約 230 件）は demo-data.ts。案件フォルダは %TEMP%\qdl-demo\ に空のファイルで作る。
+ * デモデータ（5 タブ。メインに約 140 件）は demo-data.ts。案件フォルダは %TEMP%\qdl-demo\ に空のファイルで作る。
  * 録画は ffmpeg の gdigrab で、メインウィンドウの範囲だけを 30fps・劣化なしで撮る（Playwright の動画は
  * 圧縮の残像が出るため使わない）。撮影中はウィンドウを最前面に固定するので、その範囲に他の物を重ねないこと。
  * 動画のどこから使うかを test-results/demo-gif/main/meta.json に書き、scripts/make-demo-gif.mjs がその範囲を
@@ -116,6 +116,7 @@ test('メインデモ', async () => {
       const b = w.getContentBounds();
       const scale = screen.getDisplayMatching(b).scaleFactor;
       return {
+        logicalWidth: b.width,
         x: Math.round(b.x * scale),
         y: Math.round(b.y * scale),
         width: Math.round(b.width * scale),
@@ -166,13 +167,10 @@ test('メインデモ', async () => {
       await win.waitForTimeout(i === 4 ? 900 : 750);
     }
 
-    // 2. 名前の一部で絞り込む。メインには無く、ほかのタブに件数が出る → Tab で移る
+    // 2. メインに全部入っているので、名前の一部を打つだけで案件の資料まで絞り込める
     await caption(win, `名前の一部を打つと、${total} 件から絞り込み`);
     await win.keyboard.type('基本設計', { delay: TYPE_DELAY_MS });
-    await win.waitForTimeout(1300);
-    await caption(win, 'ほかのタブの一致件数を見て、Tab で移動');
-    await win.keyboard.press('Tab');
-    await win.waitForTimeout(1700);
+    await win.waitForTimeout(1500);
 
     // 3. スペース区切りでさらに絞る
     await caption(win, 'スペースで区切って、さらに絞る');
@@ -186,13 +184,21 @@ test('メインデモ', async () => {
     await clearSearch(win);
     await caption(win, '議事録も、すぐ見つかる');
     await win.keyboard.type('定例', { delay: TYPE_DELAY_MS });
-    await win.waitForTimeout(1900);
+    await win.waitForTimeout(1800);
 
     // 5. Teams のチャット
     await clearSearch(win);
     await caption(win, 'Teams のチャットも、同じ場所から');
     await win.keyboard.type('チャット', { delay: TYPE_DELAY_MS });
-    await win.waitForTimeout(2200);
+    await win.waitForTimeout(1800);
+
+    // 6. メインに無いもの（ブックマーク）は、件数の出たタブへ Tab で移る
+    await clearSearch(win);
+    await caption(win, 'ほかのタブにあれば、Tab で移動');
+    await win.keyboard.type('TypeScript', { delay: 90 });
+    await win.waitForTimeout(1000);
+    await win.keyboard.press('Tab');
+    await win.waitForTimeout(2000);
 
     const endSec = (Date.now() - recordStart) / 1000;
     await new Promise<void>((resolve) => {
@@ -201,7 +207,7 @@ test('メインデモ', async () => {
     });
     fs.writeFileSync(
       path.join(OUT_DIR, 'meta.json'),
-      JSON.stringify({ video: videoFile, startSec, endSec }, null, 2)
+      JSON.stringify({ video: videoFile, startSec, endSec, width: rect.logicalWidth }, null, 2)
     );
   } finally {
     // 正常時は上で閉じ済み。途中で失敗したときだけ閉じる（2 回目の close は失敗するので握りつぶす）
