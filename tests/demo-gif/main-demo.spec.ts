@@ -61,7 +61,7 @@ async function clearSearch(page: Page): Promise<void> {
 test('メインデモ', async () => {
   test.setTimeout(300000);
   const helper = ConfigFileHelper.createTempConfigDir('demo-gif-main', 'demo');
-  const total = writeDemoData(helper.getConfigDir(), DEMO_ROOT);
+  writeDemoData(helper.getConfigDir(), DEMO_ROOT);
   fs.rmSync(OUT_DIR, { recursive: true, force: true });
   fs.mkdirSync(OUT_DIR, { recursive: true });
 
@@ -103,7 +103,7 @@ test('メインデモ', async () => {
     // 一度入力して消し、選択を先頭に戻す
     await win.keyboard.type('x');
     await clearSearch(win);
-    await caption(win, '仕事で開くものを、全部ここに');
+    await caption(win, 'フォルダも資料も Web もアプリも、ここから開く');
 
     // メインウィンドウを最前面に固定し、画面上の範囲（物理ピクセル）を求めて録画を始める
     const rect = await app.evaluate(({ BrowserWindow, screen }) => {
@@ -161,19 +161,19 @@ test('メインデモ', async () => {
     const startSec = Math.max(0, (Date.now() - recordStart) / 1000 - 0.7);
 
     // 1. メインタブ → タブを一巡して、案件・ブックマーク・アプリに整理されている様子を見せる
-    await caption(win, '案件・ブックマーク・アプリを、タブで整理');
+    await caption(win, '案件・ブックマーク・アプリは、タブで分けて整理');
     for (let i = 0; i < 5; i++) {
       await win.keyboard.press('Tab');
       await win.waitForTimeout(i === 4 ? 900 : 750);
     }
 
     // 2. メインに全部入っているので、名前の一部を打つだけで案件の資料まで絞り込める
-    await caption(win, `名前の一部を打つと、${total} 件から絞り込み`);
+    await caption(win, '名前の一部を打つと、候補が絞られる');
     await win.keyboard.type('基本設計', { delay: TYPE_DELAY_MS });
     await win.waitForTimeout(1500);
 
     // 3. スペース区切りでさらに絞る
-    await caption(win, 'スペースで区切って、さらに絞る');
+    await caption(win, 'スペースで区切れば、さらに絞れる');
     await win.keyboard.type(' 画面', { delay: TYPE_DELAY_MS });
     await win.waitForTimeout(900);
     await win.keyboard.press('ArrowDown');
@@ -182,20 +182,20 @@ test('メインデモ', async () => {
 
     // 4. 議事録
     await clearSearch(win);
-    await caption(win, '議事録も、すぐ見つかる');
-    await win.keyboard.type('定例', { delay: TYPE_DELAY_MS });
+    await caption(win, '議事録も、日付を足せばすぐ見つかる');
+    await win.keyboard.type('定例 09-30', { delay: TYPE_DELAY_MS });
     await win.waitForTimeout(1800);
 
     // 5. Teams のチャット
     await clearSearch(win);
-    await caption(win, 'Teams のチャットも、同じ場所から');
+    await caption(win, 'Teams のチャットも、ここから開く');
     await win.keyboard.type('チャット', { delay: TYPE_DELAY_MS });
     await win.waitForTimeout(1800);
 
     // 6. メインに無いもの（ブックマーク）は、件数の出たタブへ Tab で移る
     await clearSearch(win);
-    await caption(win, 'ほかのタブにあれば、Tab で移動');
-    await win.keyboard.type('TypeScript', { delay: 90 });
+    await caption(win, 'ほかのタブにあるものは、Tab で移る');
+    await win.keyboard.type('TypeS', { delay: TYPE_DELAY_MS });
     await win.waitForTimeout(1000);
     await win.keyboard.press('Tab');
     await win.waitForTimeout(2000);
