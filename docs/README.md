@@ -41,6 +41,7 @@ docs/
 | メイン画面の見た目・検索・タブの動作の変更 | `npm run docs:demo-gif` で README のデモ GIF を撮り直す（[テストガイド](testing/README.md)） |
 | 画面・モーダルの追加・削除 | screens/ の仕様書を追加・削除し、screens/README.md の一覧と screens/screen-transitions.md を直す（[新しい画面を足したとき](screens/WRITING-GUIDE.md#新しい画面を足したとき)） |
 | 複数画面にまたがる機能の追加・変更 | features/<該当機能>.md、features/README.md |
+| 登録種別の追加・変更、種別ごとにできることの変更 | features/item-categories.md（README の「ほかにできること」も） |
 | キーボードショートカットの変更 | features/keyboard-shortcuts.md |
 | アイコン処理の変更 | features/icons.md |
 | ワークスペース機能の変更 | features/workspace.md、screens/workspace-window.md |
@@ -72,7 +73,7 @@ docs/
 
 | 文書 | 役割 |
 | --- | --- |
-| [README.md](../README.md) | 利用者向けの紹介・インストール方法 |
+| [README.md](../README.md) | 利用者向けの入口（紹介・使い方の流れ・インストール）。細かい説明は features/ に置き、README からリンクする |
 | [CLAUDE.md](../CLAUDE.md) | Claude Code 向けの作業指示 |
 | [tests/README.md](../tests/README.md) ほか tests/ 配下の各 README | そのフォルダの案内（テストの正本は [テスト](testing/README.md)） |
 | [scripts/README.md](../scripts/README.md) | 開発用スクリプトの説明 |
