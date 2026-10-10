@@ -4,9 +4,9 @@
 
 <h1 align="center">QuickDashLauncher</h1>
 
-> **使うものだけを。タブで整理できる登録型ランチャー**
->
-> 候補に出るのは、自分で登録したフォルダ・ファイル・URL・アプリだけ。「仕事」「個人」「A社」のように自由にタブで分けて、名前の一部で開く
+**使うものだけを。タブで整理できる登録型ランチャー**
+
+候補に出るのは、自分で登録したフォルダ・ファイル・URL・アプリだけ。「仕事」「個人」「A社」のように自由にタブで分けて、名前の一部で開く
 
 <p align="center">
   <a href="https://github.com/masaodev/quick-dash-launcher/releases"><img src="https://img.shields.io/github/release/masaodev/quick-dash-launcher.svg" alt="GitHub Release" /></a>
