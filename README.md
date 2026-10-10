@@ -21,7 +21,9 @@
   <a href="https://github.com/masaodev/quick-dash-launcher/releases">リリース</a>
 </p>
 
-![QuickDashLauncher のメインデモ](./docs/images/demo-main.gif)
+<p align="center">
+  <img src="docs/images/demo-main.gif" alt="QuickDashLauncher のメインデモ" />
+</p>
 
 <!-- メインデモ GIF は `npm run docs:demo-gif` で撮り直す（デモデータ＝tests/demo-gif/demo-data.ts と tests/e2e/templates/demo/） -->
 
