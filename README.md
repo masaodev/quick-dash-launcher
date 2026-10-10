@@ -1,18 +1,31 @@
-# QuickDashLauncher
+<p align="center">
+  <img src="assets/icon.svg" width="96" alt="" />
+</p>
+
+<h1 align="center">QuickDashLauncher</h1>
 
 > **使うものだけを。タブで整理できる登録型ランチャー**
 >
 > 候補に出るのは、自分で登録したフォルダ・ファイル・URL・アプリだけ。「仕事」「個人」「A社」のように自由にタブで分けて、名前の一部で開く
 
-フォルダはエクスプローラー、チャットは Teams、管理画面はブラウザのブックマーク。開く先ごとに探す場所が違うと、そのたびに手が止まります。QuickDashLauncher なら、それらを 1 か所に登録してタブで分けておき、Alt+Space で呼び出して名前の一部を打つだけで開けます。
+<p align="center">
+  <a href="https://github.com/masaodev/quick-dash-launcher/releases"><img src="https://img.shields.io/github/release/masaodev/quick-dash-launcher.svg" alt="GitHub Release" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>
+  <a href="https://github.com/masaodev/quick-dash-launcher/releases"><img src="https://img.shields.io/github/downloads/masaodev/quick-dash-launcher/total.svg" alt="Downloads" /></a>
+</p>
 
-[![GitHub Release](https://img.shields.io/github/release/masaodev/quick-dash-launcher.svg)](https://github.com/masaodev/quick-dash-launcher/releases)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Downloads](https://img.shields.io/github/downloads/masaodev/quick-dash-launcher/total.svg)](https://github.com/masaodev/quick-dash-launcher/releases)
+<p align="center">
+  <a href="#インストール">インストール</a> ·
+  <a href="#使い方の流れ">使い方</a> ·
+  <a href="docs/README.md">ドキュメント</a> ·
+  <a href="https://github.com/masaodev/quick-dash-launcher/releases">リリース</a>
+</p>
 
 ![QuickDashLauncher のメインデモ](./docs/images/demo-main.gif)
 
 <!-- メインデモ GIF は `npm run docs:demo-gif` で撮り直す（デモデータ＝tests/demo-gif/demo-data.ts と tests/e2e/templates/demo/） -->
+
+フォルダはエクスプローラー、チャットは Teams、管理画面はブラウザのブックマーク。開く先ごとに探す場所が違うと、そのたびに手が止まります。QuickDashLauncher なら、それらを 1 か所に登録してタブで分けておき、Alt+Space で呼び出して名前の一部を打つだけで開けます。
 
 ## 特徴
 
