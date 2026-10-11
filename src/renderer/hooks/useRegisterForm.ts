@@ -219,10 +219,12 @@ export function useRegisterForm(
           item.folderProcessing = 'expand';
           item.dirOptions ??= { ...DEFAULT_DIR_OPTIONS };
           delete item.groupItemNames;
+          clearClipboardFields();
           break;
         case 'group':
           clearCommonFields();
           item.groupItemNames ??= [];
+          clearClipboardFields();
           break;
         case 'window':
           clearCommonFields();
