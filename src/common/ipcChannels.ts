@@ -110,6 +110,7 @@ export const IPC_CHANNELS = {
   SETTINGS_VALIDATE_HOTKEY: 'settings:validate-hotkey',
   SETTINGS_CHANGE_HOTKEY: 'settings:change-hotkey',
   SETTINGS_CHANGE_ITEM_SEARCH_HOTKEY: 'settings:change-item-search-hotkey',
+  SETTINGS_SET_HOTKEY_RECORDING: 'settings:set-hotkey-recording',
   SETTINGS_GET_DISPLAYS: 'settings:get-displays',
 
   // 設定ファイル操作
