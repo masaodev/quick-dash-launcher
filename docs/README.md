@@ -39,6 +39,7 @@ docs/
 | 画面・モーダル・ダイアログの UI や操作の変更 | screens/<該当画面>.md |
 | 画面の見た目の変更（画面イメージのある画面） | `npm run docs:screenshots` で撮り直す（[画面イメージ](screens/WRITING-GUIDE.md#画面イメージ)） |
 | メイン画面の見た目・検索・タブの動作の変更 | `npm run docs:demo-gif` で README のデモ GIF を撮り直す（[テストガイド](testing/README.md)） |
+| 登録画面・管理画面（アイテム管理）の見た目の変更 | `npm run docs:readme-images` で README の画面イメージを撮り直す（[テストガイド](testing/README.md)） |
 | 画面・モーダルの追加・削除 | screens/ の仕様書を追加・削除し、screens/README.md の一覧と screens/screen-transitions.md を直す（[新しい画面を足したとき](screens/WRITING-GUIDE.md#新しい画面を足したとき)） |
 | 複数画面にまたがる機能の追加・変更 | features/<該当機能>.md、features/README.md |
 | 登録種別の追加・変更、種別ごとにできることの変更 | features/item-categories.md（README の「ほかにできること」も） |

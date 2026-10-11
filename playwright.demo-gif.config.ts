@@ -1,10 +1,12 @@
 import { defineConfig } from '@playwright/test';
 
 /**
- * README のデモ GIF の素材を撮る設定
+ * README のデモ GIF の素材と画面イメージを撮る設定
  *
  * `npm run docs:demo-gif` で手動実行する。撮った画像は test-results/demo-gif/ に置き、
- * scripts/make-demo-gif.mjs が docs/images/ の GIF にまとめる
+ * scripts/make-demo-gif.mjs が docs/images/ の GIF にまとめる。
+ * README の「使い方」の画面イメージ（登録画面・管理画面）は `npm run docs:readme-images` で
+ * docs/images/readme-*.png に直接保存する
  */
 export default defineConfig({
   testDir: './tests/demo-gif',

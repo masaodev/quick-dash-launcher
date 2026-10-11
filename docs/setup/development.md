@@ -126,7 +126,7 @@ QUICK_DASH_CONFIG_DIR=./tests/dev/full npm run dev
 **基本例:**
 詳細な形式仕様については上記リンク先を参照してください。JSON形式でアイテムを管理しています。
 
-**画面イメージの撮り直し:** 画面の見た目を変えたら `npm run docs:screenshots` で画面仕様の画像を撮り直す（[画面仕様書 執筆ガイドライン - 画面イメージ](../screens/WRITING-GUIDE.md#画面イメージ)）。
+**画面イメージの撮り直し:** 画面の見た目を変えたら `npm run docs:screenshots` で画面仕様の画像を撮り直す（[画面仕様書 執筆ガイドライン - 画面イメージ](../screens/WRITING-GUIDE.md#画面イメージ)）。README のデモ GIF は `npm run docs:demo-gif`、README の「使い方」の画面イメージ（登録画面・管理画面）は `npm run docs:readme-images` で撮り直す（[テストガイド](../testing/README.md)）。
 
 **JSON Schema の再生成:** データファイル・設定ファイルの型（`src/common/types/json-data.ts`・`settings.ts`）を変えたら `npm run schema:generate` で `assets/schemas/*.schema.json` を再生成してコミットしてください。単体テスト（`tests/unit/schemas.test.ts`）が生成結果とコミット済みファイルの一致を検証しており、忘れると落ちます。詳細は [ファイル形式一覧の「AI・手動編集」](../architecture/file-formats/README.md#ai手動編集)。
 
