@@ -140,20 +140,20 @@ async function takeShots(configDir: string, demoRoot: string): Promise<void> {
     await dirOptions.locator('input[placeholder="アイテム名の前に付ける文字"]').fill('基幹刷新');
     await shot(register, path.join(ALT_DIR, 'register-dir-full.png'));
     await resizeWindow(app, register, 760);
-    await shot(register, path.join(IMAGE_DIR, 'readme-register.png'));
+    await shot(register, path.join(IMAGE_DIR, 'readme-register-dir.png'));
 
-    // 別案: 単一アイテム（名前にローマ字を添える例）
+    // 登録画面（単一アイテム）: 名前にローマ字を添える例
     await selects.nth(0).selectOption({ label: 'メイン' });
     await selects.nth(1).selectOption({ value: 'item' });
     await register.locator('.register-modal input').first().fill('勤怠（kintai）');
     await register
       .locator('input[placeholder="ファイルパス、URL、またはカスタムURIを入力"]')
-      .fill('https://www.jobcan.ne.jp/');
+      .fill('https://intranet.example.com/kintai');
     // フォルダ取込のときに開いたオプション設定は単一アイテムでも開いたままなので閉じる
     const optionsToggle = register.locator('.options-toggle', { hasText: '引数・アイコン' });
     if ((await optionsToggle.textContent())?.includes('▼')) await optionsToggle.click();
-    await resizeWindow(app, register, 470);
-    await shot(register, path.join(ALT_DIR, 'register-item.png'));
+    await resizeWindow(app, register, 540);
+    await shot(register, path.join(IMAGE_DIR, 'readme-register-item.png'));
     await register.close();
 
     // 管理画面（アイテム管理）: 案件 A のタブ。フォルダ取込・URL・Teams のチャットが並ぶ
