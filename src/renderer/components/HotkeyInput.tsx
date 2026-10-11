@@ -74,9 +74,16 @@ export const HotkeyInput: React.FC<HotkeyInputProps> = ({
     event.preventDefault();
     event.stopPropagation();
 
+    // Alt+Space の Space は、押したとき（keydown）を Windows が受け取ってしまい離したとき（keyup）しか
+    // 届かないので、ここで拾う
+    let keys = currentKeys;
+    if (normalizeKey(event.key) === 'Space' && keys.has('Alt') && !keys.has('Space')) {
+      keys = new Set([...keys, 'Space']);
+    }
+
     // キーが2つ以上組み合わされている場合、ホットキーとして確定
-    if (currentKeys.size >= 2) {
-      const keysArray = Array.from(currentKeys);
+    if (keys.size >= 2) {
+      const keysArray = Array.from(keys);
       const modifiers = keysArray.filter((k) => MODIFIERS.includes(k));
       const nonModifiers = keysArray.filter((k) => !MODIFIERS.includes(k));
 
@@ -89,6 +96,16 @@ export const HotkeyInput: React.FC<HotkeyInputProps> = ({
       }
     }
   };
+
+  // 録画中は本体に伝え、QDL 自身のホットキーと Windows のウィンドウメニュー（Alt+Space）を止めてもらう。
+  // 録画の終了・画面を閉じたときに戻す
+  useEffect(() => {
+    if (!isRecording) return;
+    void window.electronAPI.setHotkeyRecording(true);
+    return () => {
+      void window.electronAPI.setHotkeyRecording(false);
+    };
+  }, [isRecording]);
 
   // バリデーション
   useEffect(() => {

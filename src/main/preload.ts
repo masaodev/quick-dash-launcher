@@ -264,6 +264,8 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_CHANGE_HOTKEY, newHotkey),
   changeItemSearchHotkey: (newHotkey: string) =>
     ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_CHANGE_ITEM_SEARCH_HOTKEY, newHotkey),
+  setHotkeyRecording: (recording: boolean) =>
+    ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_SET_HOTKEY_RECORDING, recording),
   getDisplays: (): Promise<DisplayInfo[]> => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET_DISPLAYS),
   isFirstLaunch: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_IS_FIRST_LAUNCH),
   // 編集ウィンドウ関連API

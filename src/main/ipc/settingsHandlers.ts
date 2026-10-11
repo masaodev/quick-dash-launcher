@@ -5,6 +5,7 @@ import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { SettingsService } from '../services/settingsService.js';
 import { HotkeyService } from '../services/hotkeyService.js';
+import { setHotkeyRecording } from '../services/hotkeyRecording.js';
 import { AutoLaunchService } from '../services/autoLaunchService.js';
 import {
   getWorkspaceWindow,
@@ -269,6 +270,10 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
       return success;
     }
   );
+
+  ipcMain.handle(IPC_CHANNELS.SETTINGS_SET_HOTKEY_RECORDING, (event, recording: boolean) => {
+    setHotkeyRecording(event.sender, recording);
+  });
 
   ipcMain.handle(IPC_CHANNELS.SETTINGS_GET_DISPLAYS, () => {
     const displays = screen.getAllDisplays();

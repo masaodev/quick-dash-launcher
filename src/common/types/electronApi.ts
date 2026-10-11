@@ -146,6 +146,8 @@ export interface ElectronAPI {
   validateHotkey: (hotkey: string) => Promise<{ isValid: boolean; reason?: string }>;
   changeHotkey: (newHotkey: string) => Promise<boolean>;
   changeItemSearchHotkey: (newHotkey: string) => Promise<boolean>;
+  /** ホットキー入力欄の録画の開始・終了を伝える（録画中は QDL のホットキーとウィンドウメニューを止める） */
+  setHotkeyRecording: (recording: boolean) => Promise<void>;
   getDisplays: () => Promise<DisplayInfo[]>;
   isFirstLaunch: () => Promise<boolean>;
   updateItemById: (request: { id: string; newItem: LauncherItem }) => Promise<{ success: boolean }>;

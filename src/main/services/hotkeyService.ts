@@ -20,6 +20,8 @@ export class HotkeyService {
   private readonly showWindowCallback: (startTime?: number) => Promise<void>;
   private readonly hideWindowCallback: () => Promise<void>;
   private showItemSearchCallback: ((startTime?: number) => Promise<void>) | null = null;
+  /** suspendHotkeys で外したホットキー（外していないときは null） */
+  private suspendedHotkeys: Record<HotkeyType, string | null> | null = null;
 
   private constructor(
     getMainWindow: () => BrowserWindow | null,
@@ -110,6 +112,11 @@ export class HotkeyService {
     const isMain = type === 'main';
     const label = isMain ? 'Hotkey' : 'Item search hotkey';
 
+    // 外している間に設定から登録し直されたら、そちらを優先する（resumeHotkeys で元に戻さない）
+    if (this.suspendedHotkeys) {
+      this.suspendedHotkeys[type] = null;
+    }
+
     try {
       this.unregisterHotkeyInternal(type);
 
@@ -174,6 +181,28 @@ export class HotkeyService {
     } catch (error) {
       logger.error({ error }, 'Error unregistering all hotkeys');
     }
+  }
+
+  /**
+   * 登録中のホットキーを一時的に外す
+   * ホットキー入力欄の録画中に今のホットキーを押しても、ランチャーが開かずに入力欄へ届くようにする
+   */
+  public suspendHotkeys(): void {
+    if (this.suspendedHotkeys) return;
+    this.suspendedHotkeys = { main: this.currentHotkey, itemSearch: this.currentItemSearchHotkey };
+    this.unregisterHotkeyInternal('main');
+    this.unregisterHotkeyInternal('itemSearch');
+    logger.info('ホットキーの録画中のため、ホットキーを一時的に外しました');
+  }
+
+  /** suspendHotkeys で外したホットキーを登録し直す */
+  public resumeHotkeys(): void {
+    const suspended = this.suspendedHotkeys;
+    if (!suspended) return;
+    this.suspendedHotkeys = null;
+    if (suspended.main) this.registerHotkeyInternal(suspended.main, 'main');
+    if (suspended.itemSearch) this.registerHotkeyInternal(suspended.itemSearch, 'itemSearch');
+    logger.info('ホットキーの録画が終わったため、ホットキーを登録し直しました');
   }
 
   public isHotkeyAvailable(hotkey: string, forItemSearch: boolean = false): boolean {
