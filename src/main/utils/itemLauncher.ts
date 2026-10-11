@@ -2,14 +2,36 @@
  * アイテム起動ユーティリティ
  */
 
-import { spawn } from 'child_process';
+import { execFile, spawn } from 'child_process';
 import * as path from 'path';
+import { promisify } from 'util';
 
 import { shell } from 'electron';
 import { Logger } from 'pino';
 import { parseArgs } from '@common/utils/argsParser';
 
 import { ClipboardService } from '../services/clipboardService.js';
+
+const execFileAsync = promisify(execFile);
+
+/** フォルダの区切りを含まない、ファイル名だけのパスか（calc.exe など） */
+function isBareFileName(itemPath: string): boolean {
+  return !/[\\/]/.test(itemPath);
+}
+
+/**
+ * ファイル名だけのパスを PATH から探してフルパスにする（見つからなければ null）
+ * `$PATH:` を付けてカレントフォルダは探さない。ワイルドカード入りの名前は探さない
+ */
+async function resolveFromPath(fileName: string): Promise<string | null> {
+  if (/[*?]/.test(fileName)) return null;
+  try {
+    const { stdout } = await execFileAsync('where', [`$PATH:${fileName}`], { encoding: 'utf8' });
+    return stdout.split(/\r?\n/)[0]?.trim() || null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * 起動可能なアイテムの最小インターフェース
@@ -108,13 +130,14 @@ async function launchApp(item: LaunchableItem, logger: Logger): Promise<void> {
 
   // ショートカットファイルまたは引数なしの場合
   if (/\.lnk$/i.test(item.path) || !item.args) {
-    // ファイル名だけ（calc.exe など）は shell.openPath では開けないので、spawn で PATH から探して起動する
-    if (!/[\\/]/.test(item.path)) {
-      spawnDetached(item.path, [], {}, logger, logContext, 'アイテムの起動に失敗しました (spawn)');
+    // shell.openPath はフルパスでないと開けないので、ファイル名だけ（calc.exe など）は PATH から探す
+    const target = isBareFileName(item.path) ? await resolveFromPath(item.path) : item.path;
+    if (!target) {
+      logger.error(logContext, 'PATH にアプリが見つからないため起動できません');
       return;
     }
     // shell.openPath は失敗しても例外を投げず、エラーメッセージを返す
-    const error = await shell.openPath(item.path);
+    const error = await shell.openPath(target);
     if (error) {
       logger.error({ ...logContext, error }, 'アイテムの起動に失敗しました');
     }
