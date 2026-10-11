@@ -2,9 +2,8 @@
  * アイテム起動ユーティリティ
  */
 
-import { execFile, spawn } from 'child_process';
+import { spawn } from 'child_process';
 import * as path from 'path';
-import { promisify } from 'util';
 
 import { shell } from 'electron';
 import { Logger } from 'pino';
@@ -12,26 +11,7 @@ import { parseArgs } from '@common/utils/argsParser';
 
 import { ClipboardService } from '../services/clipboardService.js';
 
-const execFileAsync = promisify(execFile);
-
-/** フォルダの区切りを含まない、ファイル名だけのパスか（calc.exe など） */
-function isBareFileName(itemPath: string): boolean {
-  return !/[\\/]/.test(itemPath);
-}
-
-/**
- * ファイル名だけのパスを PATH から探してフルパスにする（見つからなければ null）
- * `$PATH:` を付けてカレントフォルダは探さない。ワイルドカード入りの名前は探さない
- */
-async function resolveFromPath(fileName: string): Promise<string | null> {
-  if (/[*?]/.test(fileName)) return null;
-  try {
-    const { stdout } = await execFileAsync('where', [`$PATH:${fileName}`], { encoding: 'utf8' });
-    return stdout.split(/\r?\n/)[0]?.trim() || null;
-  } catch {
-    return null;
-  }
-}
+import { isBareFileName, resolveFromPath } from './pathResolver.js';
 
 /**
  * 起動可能なアイテムの最小インターフェース
@@ -57,7 +37,7 @@ export async function launchItem(item: LaunchableItem, logger: Logger): Promise<
 
       case 'file':
       case 'folder':
-        await shell.openPath(item.path);
+        await openPathOrLog(item.path, logger, { path: item.path, name: item.displayName });
         break;
 
       case 'app':
@@ -112,6 +92,21 @@ function spawnDetached(
   });
 }
 
+/**
+ * shell.openPath で開き、開けなかったらログに残す
+ * shell.openPath は失敗しても例外を投げず、エラーメッセージを返すため
+ */
+async function openPathOrLog(
+  target: string,
+  logger: Logger,
+  logContext: Record<string, unknown>
+): Promise<void> {
+  const error = await shell.openPath(target);
+  if (error) {
+    logger.error({ ...logContext, error }, 'アイテムの起動に失敗しました');
+  }
+}
+
 async function launchApp(item: LaunchableItem, logger: Logger): Promise<void> {
   const logContext = { path: item.path, name: item.displayName };
 
@@ -136,11 +131,7 @@ async function launchApp(item: LaunchableItem, logger: Logger): Promise<void> {
       logger.error(logContext, 'PATH にアプリが見つからないため起動できません');
       return;
     }
-    // shell.openPath は失敗しても例外を投げず、エラーメッセージを返す
-    const error = await shell.openPath(target);
-    if (error) {
-      logger.error({ ...logContext, error }, 'アイテムの起動に失敗しました');
-    }
+    await openPathOrLog(target, logger, logContext);
     return;
   }
 

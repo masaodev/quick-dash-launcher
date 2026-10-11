@@ -125,3 +125,25 @@ describe('launchItem（app）', () => {
     );
   });
 });
+
+describe('launchItem（file・folder）', () => {
+  beforeEach(() => {
+    shellMock.openPath.mockClear();
+    vi.mocked(logger.error).mockClear();
+  });
+
+  it.each(['file', 'folder'] as const)(
+    '%s を開けなかったときは、shell.openPath が返したエラーをログに残す',
+    async (type) => {
+      shellMock.openPath.mockResolvedValueOnce('Failed to open path');
+
+      await launchItem({ type, path: 'C:\\Docs\\missing.xlsx' }, logger);
+
+      expect(shellMock.openPath).toHaveBeenCalledWith('C:\\Docs\\missing.xlsx');
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.objectContaining({ path: 'C:\\Docs\\missing.xlsx', error: 'Failed to open path' }),
+        'アイテムの起動に失敗しました'
+      );
+    }
+  );
+});

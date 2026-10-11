@@ -13,6 +13,7 @@ import extractFileIcon from 'extract-file-icon';
 
 import PathManager from '../../config/pathManager.js';
 import { extractExtensionFromUri } from '../../utils/iconCacheKeys.js';
+import { isBareFileName, resolveFromPath } from '../../utils/pathResolver.js';
 
 import { cacheAndConvertIcon, expandEnvironmentVariables } from './iconFileCache.js';
 import { extractUwpIconByUriScheme } from './uwpIconExtractor.js';
@@ -121,27 +122,23 @@ export async function extractIcon(filePath: string, iconsFolder: string): Promis
 
     let resolvedPath = filePath;
 
-    // ファイルが存在するか確認、存在しない場合はパスを解決
-    if (!FileUtils.exists(filePath)) {
-      // ファイルが見つからない場合、PATHから検索を試みる
-      if (process.platform === 'win32' && !filePath.includes('\\') && !filePath.includes('/')) {
-        iconLogger.info(`ファイル名のみが指定されています。PATHから検索を試みます: ${filePath}`);
-        try {
-          // shell経由のexecは"や&入りファイル名でコマンドインジェクションが起き得るため引数配列で渡す
-          const { stdout } = await execFileAsync('where', [filePath], { encoding: 'utf8' });
-          const paths = stdout.trim().split('\n');
-          if (paths.length > 0 && paths[0]) {
-            resolvedPath = paths[0].trim();
-            iconLogger.info(`PATHからファイルを解決: ${filePath} -> ${resolvedPath}`);
-          }
-        } catch (error) {
-          // PATHに存在しないのはデータ側の状態であり内部エラーではない
-          iconLogger.warn({ filePath, error }, 'PATHからファイルを解決できません');
-        }
+    // ファイル名だけ（notepad.exe など）は PATH から探す。起動（itemLauncher）と同じ探し方にそろえ、
+    // カレントフォルダは見ない
+    if (process.platform === 'win32' && isBareFileName(filePath)) {
+      iconLogger.info(`ファイル名のみが指定されています。PATHから検索を試みます: ${filePath}`);
+      const found = await resolveFromPath(filePath);
+      if (!found) {
+        // PATHに存在しないのはデータ側の状態であり内部エラーではない
+        iconLogger.warn({ filePath }, 'PATHからファイルを解決できません');
+        return null;
       }
+      resolvedPath = found;
+      iconLogger.info(`PATHからファイルを解決: ${filePath} -> ${resolvedPath}`);
+    }
 
-      // 解決後も見つからない場合はアイコンなしとして扱う
-      // （アンインストール済みexe等、データ側の状態なのでwarnに留める）
+    // 見つからない場合はアイコンなしとして扱う
+    // （アンインストール済みexe等、データ側の状態なのでwarnに留める）
+    if (!FileUtils.exists(resolvedPath)) {
       // シンボリックリンクの場合はlstatSyncを使用してリンク自体の存在をチェック
       try {
         fs.lstatSync(resolvedPath);
