@@ -11,6 +11,14 @@ import { logError } from '../utils/debug';
 import AlertDialog from './AlertDialog';
 import { Button } from './ui';
 
+/**
+ * 画面: アプリ取込画面
+ * 画面仕様: docs/screens/app-import-modal.md
+ *
+ * スタートメニューのアプリから使うものを選び、アイテム管理で開いているデータファイルに取り込む。
+ * 区画と言葉はブックマーク取込画面にそろえ、選び方は 1 件ずつのチェック（初期は未選択）。
+ */
+
 interface FilterOptions {
   excludeUninstallers: boolean;
   deduplicateLnkPriority: boolean;
@@ -39,17 +47,20 @@ function AppImportModal({
   importDestination,
 }: AppImportModalProps): ReactElement | null {
   const [apps, setApps] = useState<ScannedAppItem[]>([]);
+  // 初期は未選択。使うアプリだけを選んで取り込む（登録型のランチャーなので全部は入れない）
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
-  const [scanDuration, setScanDuration] = useState<number | null>(null);
+  // 再スキャンのたびに増やし、スキャンの effect を走らせ直す
+  const [scanCount, setScanCount] = useState(0);
   // アイコンはrefのMapに蓄積し、バッチごとにバージョン更新で再描画する
   // （stateのオブジェクトコピーだとバッチ毎に全件コピーでO(N²)になるため）
   const iconsRef = useRef<Map<string, string | null>>(new Map());
   const [, setIconVersion] = useState(0);
   const [filterOptions, setFilterOptions] = useState<FilterOptions>(DEFAULT_FILTER_OPTIONS);
-  const [viewMode, setViewMode] = useState<'filtered' | 'all' | 'excluded'>('filtered');
+  const [showExcluded, setShowExcluded] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
+  const headerCheckboxRef = useRef<HTMLInputElement>(null);
 
   // 重複処理オプション
   const [duplicateHandling, setDuplicateHandling] = useState<DuplicateHandlingOption>('skip');
@@ -92,9 +103,9 @@ function AppImportModal({
     return { uninstallerCount, deduplicateCount, nonAppCount };
   }, [apps]);
 
-  // フィルタ適用結果と除外済みアイテムを計算
-  const { coreFiltered, coreExcluded } = useMemo(() => {
-    const excludedIds = new Set<string>();
+  // 除外条件に当たるアイテムの id
+  const excludedIds = useMemo(() => {
+    const excluded = new Set<string>();
 
     // 条件に合致するアイテムを除外対象としてマーク
     function markExcluded(
@@ -103,7 +114,7 @@ function AppImportModal({
     ): ScannedAppItem[] {
       const kept: ScannedAppItem[] = [];
       for (const a of items) {
-        if (shouldExclude(a)) excludedIds.add(a.id);
+        if (shouldExclude(a)) excluded.add(a.id);
         else kept.push(a);
       }
       return kept;
@@ -126,46 +137,42 @@ function AppImportModal({
         group.push(app);
         nameGroups.set(app.displayName, group);
       }
-      const deduplicated: ScannedAppItem[] = [];
       for (const group of nameGroups.values()) {
         const kept =
           (group.length > 1 ? group.find((a) => a.source === 'lnk') : undefined) || group[0];
-        deduplicated.push(kept);
         for (const a of group) {
-          if (a !== kept) excludedIds.add(a.id);
+          if (a !== kept) excluded.add(a.id);
         }
       }
-      result = deduplicated;
     }
 
-    return {
-      coreFiltered: result,
-      coreExcluded: apps.filter((a) => excludedIds.has(a.id)),
-    };
+    return excluded;
   }, [apps, filterOptions]);
 
-  // ビューモードに応じた表示アプリ（+ 検索フィルタ）
-  const filteredApps = useMemo(() => {
-    let result: ScannedAppItem[];
-    if (viewMode === 'filtered') result = coreFiltered;
-    else if (viewMode === 'excluded') result = coreExcluded;
-    else result = apps;
+  // 取込先にすでにあるアプリの id
+  const registeredIds = useMemo(
+    () => new Set(checkAppDuplicates(apps, existingItems).duplicateBookmarkIds),
+    [apps, existingItems]
+  );
 
-    if (!searchQuery) return result;
-
+  // 一覧に出すアプリ（除外条件 + 検索）
+  const visibleApps = useMemo(() => {
     const searchLower = searchQuery.toLowerCase();
-    return result.filter(
-      (app) =>
+    return apps.filter((app) => {
+      if (!showExcluded && excludedIds.has(app.id)) return false;
+      if (!searchLower) return true;
+      return (
         app.displayName.toLowerCase().includes(searchLower) ||
         app.targetPath.toLowerCase().includes(searchLower)
-    );
-  }, [apps, coreFiltered, coreExcluded, viewMode, searchQuery]);
+      );
+    });
+  }, [apps, excludedIds, showExcluded, searchQuery]);
 
   // 行の仮想化: スクロールコンテナは .app-list-container。
   // テーブル構造（sticky thead・列幅）を保つため、可視範囲外は上下のスペーサー行で高さを確保する
   const listRef = useRef<HTMLDivElement>(null);
   const rowVirtualizer = useVirtualizer({
-    count: filteredApps.length,
+    count: visibleApps.length,
     getScrollElement: () => listRef.current,
     estimateSize: () => 34, // パディング + 1行分のテキスト。折り返し行はmeasureElementで実測補正
     overscan: 10,
@@ -177,7 +184,7 @@ function AppImportModal({
       ? rowVirtualizer.getTotalSize() - virtualRows[virtualRows.length - 1].end
       : 0;
 
-  // モーダル表示時にスタートメニューを自動スキャン
+  // モーダル表示時と再スキャン時にスタートメニューをスキャン
   useEffect(() => {
     if (!isOpen) return;
 
@@ -185,11 +192,12 @@ function AppImportModal({
     const controller = new AbortController();
     const scanApps = async () => {
       setLoading(true);
+      // スキャンのたびに id が振り直されるので、選択は持ち越さない
+      setSelectedIds(new Set());
       try {
         const result = await window.electronAPI.scanInstalledApps();
         if (controller.signal.aborted) return;
         setApps(result.apps);
-        setScanDuration(result.scanDuration);
 
         if (result.apps.length === 0) {
           setAlertDialog({
@@ -216,14 +224,7 @@ function AppImportModal({
     scanApps();
 
     return () => controller.abort();
-  }, [isOpen]);
-
-  // フィルタ適用後のアプリが変わったら初期選択を更新
-  useEffect(() => {
-    if (apps.length > 0 && !loading) {
-      setSelectedIds(new Set(coreFiltered.map((a) => a.id)));
-    }
-  }, [coreFiltered, apps.length, loading]);
+  }, [isOpen, scanCount]);
 
   // バックグラウンドでアイコンを非同期取得
   const fetchIcons = async (appList: ScannedAppItem[], signal: AbortSignal) => {
@@ -249,24 +250,31 @@ function AppImportModal({
     }
   };
 
-  // 選択されたアプリの重複チェック
-  const duplicateCheckResult = useMemo(() => {
-    const selectedApps = apps.filter((a) => selectedIds.has(a.id));
-    if (selectedApps.length === 0) {
-      return null;
-    }
-    return checkAppDuplicates(selectedApps, existingItems);
-  }, [apps, selectedIds, existingItems]);
+  const selectedApps = useMemo(
+    () => apps.filter((a) => selectedIds.has(a.id)),
+    [apps, selectedIds]
+  );
+  const selectedRegisteredCount = selectedApps.filter((a) => registeredIds.has(a.id)).length;
 
-  // 選択操作の共通処理
-  const updateSelection = (ids: string[], action: 'add' | 'remove' | 'set') => {
+  // 見出しのチェック: 一覧に出ている分をまとめて選ぶ・外す
+  const visibleSelectedCount = visibleApps.filter((a) => selectedIds.has(a.id)).length;
+  const allVisibleSelected = visibleApps.length > 0 && visibleSelectedCount === visibleApps.length;
+  const someVisibleSelected = visibleSelectedCount > 0 && !allVisibleSelected;
+
+  useEffect(() => {
+    if (headerCheckboxRef.current) {
+      headerCheckboxRef.current.indeterminate = someVisibleSelected;
+    }
+  }, [someVisibleSelected]);
+
+  const handleToggleVisible = () => {
     setSelectedIds((prev) => {
-      if (action === 'set') {
-        return new Set(ids);
+      const next = new Set(prev);
+      for (const app of visibleApps) {
+        if (allVisibleSelected) next.delete(app.id);
+        else next.add(app.id);
       }
-      const newSet = new Set(prev);
-      ids.forEach((id) => (action === 'add' ? newSet.add(id) : newSet.delete(id)));
-      return newSet;
+      return next;
     });
   };
 
@@ -282,58 +290,30 @@ function AppImportModal({
     });
   };
 
-  const handleSelectFiltered = () =>
-    updateSelection(
-      filteredApps.map((a) => a.id),
-      'add'
-    );
-  const handleDeselectFiltered = () =>
-    updateSelection(
-      filteredApps.map((a) => a.id),
-      'remove'
-    );
-  const handleSelectAll = () =>
-    updateSelection(
-      apps.map((a) => a.id),
-      'set'
-    );
-  const handleDeselectAll = () => setSelectedIds(new Set());
-
-  // インポート実行
-  const handleImport = () => {
-    const selectedApps = apps.filter((a) => selectedIds.has(a.id));
-    if (selectedApps.length === 0) {
-      setAlertDialog({
-        isOpen: true,
-        message: 'インポートするアプリを選択してください',
-        type: 'warning',
-      });
-      return;
-    }
-
-    onImport(selectedApps, duplicateHandling);
-    handleClose();
-  };
-
   // モーダルを閉じる
   const handleClose = useCallback(() => {
     setApps([]);
     setSelectedIds(new Set());
     setSearchQuery('');
-    setScanDuration(null);
     iconsRef.current = new Map();
     setFilterOptions(DEFAULT_FILTER_OPTIONS);
-    setViewMode('filtered');
+    setShowExcluded(false);
     setDuplicateHandling('skip');
     onClose();
   }, [onClose]);
+
+  // 取り込む
+  const handleImport = () => {
+    if (selectedApps.length === 0) return;
+    onImport(selectedApps, duplicateHandling);
+    handleClose();
+  };
 
   useModalKeyboard({ isOpen, modalRef, onClose: handleClose });
 
   if (!isOpen) return null;
 
-  const selectedCount = selectedIds.size;
-  const filteredSelectedCount = filteredApps.filter((a) => selectedIds.has(a.id)).length;
+  const selectedCount = selectedApps.length;
 
   return (
     <div className="modal-overlay" onClick={handleClose}>
@@ -343,194 +323,216 @@ function AppImportModal({
         ref={modalRef}
         tabIndex={-1}
       >
-        <div className="modal-header">
-          <h2>インストール済みアプリの追加</h2>
-          <button className="close-button" onClick={handleClose}>
-            &#10005;
-          </button>
+        <h3>インストール済みアプリの追加</h3>
+
+        <div className="app-import-hint">
+          使うアプリにチェックを入れて取り込みます。取り込んだアプリは未保存の変更として追加され、「変更を保存」で確定します。
         </div>
 
-        <div className="import-destination-bar">
-          <span className="import-destination-label">インポート先:</span>
-          <span className="import-destination-value">{importDestination}</span>
-        </div>
-
-        <div className="app-import-controls">
-          {loading && (
-            <div className="app-scan-status">
-              <span className="loading-text">スタートメニューをスキャン中...</span>
+        <div className="app-import-body">
+          {/* 取込元と取込先は横に並べ、一覧の高さを残す */}
+          <div className="app-import-row">
+            {/* 取込元 */}
+            <div className="app-import-section">
+              <h4>取込元</h4>
+              <div className="app-import-source">
+                <span className="app-import-status">
+                  {loading
+                    ? 'スタートメニューをスキャン中...'
+                    : `スタートメニューから ${apps.length} 件見つかりました`}
+                </span>
+                <Button
+                  variant="info"
+                  size="sm"
+                  onClick={() => setScanCount((c) => c + 1)}
+                  disabled={loading}
+                >
+                  再スキャン
+                </Button>
+              </div>
             </div>
-          )}
-
-          {!loading && apps.length > 0 && (
-            <>
-              <div className="app-scan-status">
-                <span className="app-scan-info">
-                  {apps.length}件のアプリが見つかりました
-                  {scanDuration !== null && ` (${scanDuration}ms)`}
+            {/* 取込先（アイテム管理で開いているデータファイルに固定） */}
+            <div className="app-import-section">
+              <h4>取込先</h4>
+              <div className="app-import-destination">
+                <span className="app-import-destination-value">{importDestination}</span>
+                <span className="app-import-note">
+                  別のファイルへは、アイテム管理で切り替えてから開いてください
                 </span>
               </div>
-              <div className="app-filter-checkboxes">
-                {(
-                  [
-                    {
-                      key: 'excludeUninstallers',
-                      label: 'アンインストーラーを除外',
-                      count: filterCounts.uninstallerCount,
-                    },
-                    {
-                      key: 'deduplicateLnkPriority',
-                      label: '重複を統合（ショートカット版を優先）',
-                      count: filterCounts.deduplicateCount,
-                    },
-                    {
-                      key: 'excludeNonApps',
-                      label: 'アプリ以外を除外',
-                      count: filterCounts.nonAppCount,
-                    },
-                  ] as const
-                ).map(({ key, label, count }) => (
-                  <label key={key} className="app-filter-checkbox">
-                    <input
-                      type="checkbox"
-                      checked={filterOptions[key]}
-                      onChange={(e) =>
-                        setFilterOptions((prev) => ({ ...prev, [key]: e.target.checked }))
-                      }
-                    />
-                    <span>
-                      {label}
-                      {count > 0 && ` (${count}件)`}
-                    </span>
-                  </label>
-                ))}
-              </div>
-              <div className="app-view-mode-buttons">
-                {(
-                  [
-                    { mode: 'filtered', label: 'フィルタ適用', count: coreFiltered.length },
-                    { mode: 'all', label: '全体', count: apps.length },
-                    { mode: 'excluded', label: '除外済み', count: coreExcluded.length },
-                  ] as const
-                ).map(({ mode, label, count }) => (
-                  <button
-                    key={mode}
-                    className={`app-view-mode-button ${viewMode === mode ? 'selected' : ''}`}
-                    onClick={() => setViewMode(mode)}
-                  >
-                    {label} ({count})
-                  </button>
-                ))}
-              </div>
-              <div className="search-and-actions">
-                <div className="search-input-container">
+            </div>
+          </div>
+
+          {/* 絞り込み */}
+          <div className="app-import-section">
+            <h4>絞り込み</h4>
+            <div className="search-input-container">
+              <input
+                type="text"
+                placeholder="アプリ名またはパスで検索..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="search-input"
+              />
+              {searchQuery && (
+                <button
+                  className="search-clear-button"
+                  onClick={() => setSearchQuery('')}
+                  type="button"
+                  aria-label="検索をクリア"
+                >
+                  ×
+                </button>
+              )}
+            </div>
+            <div className="app-filter-checkboxes">
+              {(
+                [
+                  {
+                    key: 'excludeUninstallers',
+                    label: 'アンインストーラーを除外',
+                    count: filterCounts.uninstallerCount,
+                  },
+                  {
+                    key: 'deduplicateLnkPriority',
+                    label: '重複を統合（ショートカット版を優先）',
+                    count: filterCounts.deduplicateCount,
+                  },
+                  {
+                    key: 'excludeNonApps',
+                    label: 'アプリ以外を除外',
+                    count: filterCounts.nonAppCount,
+                  },
+                ] as const
+              ).map(({ key, label, count }) => (
+                <label key={key} className="app-filter-checkbox">
                   <input
-                    type="text"
-                    placeholder="アプリ名またはパスで検索..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="search-input"
+                    type="checkbox"
+                    checked={filterOptions[key]}
+                    onChange={(e) =>
+                      setFilterOptions((prev) => ({ ...prev, [key]: e.target.checked }))
+                    }
                   />
-                  {searchQuery && (
-                    <button
-                      className="search-clear-button"
-                      onClick={() => setSearchQuery('')}
-                      type="button"
-                      aria-label="検索をクリア"
-                    >
-                      ×
-                    </button>
+                  <span>
+                    {label}
+                    {count > 0 && ` (${count}件)`}
+                  </span>
+                </label>
+              ))}
+              <label className="app-filter-checkbox">
+                <input
+                  type="checkbox"
+                  checked={showExcluded}
+                  onChange={(e) => setShowExcluded(e.target.checked)}
+                />
+                <span>
+                  除外したものも表示
+                  {excludedIds.size > 0 && ` (${excludedIds.size}件)`}
+                </span>
+              </label>
+            </div>
+          </div>
+
+          {/* アプリ一覧 */}
+          <div className="app-import-section app-import-list-section">
+            <h4>アプリ一覧（{visibleApps.length}件）</h4>
+            <div className="app-list-container" ref={listRef}>
+              <table className="app-table">
+                <thead>
+                  <tr>
+                    <th className="checkbox-column">
+                      <input
+                        ref={headerCheckboxRef}
+                        type="checkbox"
+                        checked={allVisibleSelected}
+                        onChange={handleToggleVisible}
+                        disabled={visibleApps.length === 0}
+                        title="表示中のアプリをまとめて選ぶ・外す"
+                        aria-label="表示中のアプリをまとめて選ぶ・外す"
+                      />
+                    </th>
+                    <th className="icon-column"></th>
+                    <th className="name-column">アプリ名</th>
+                    <th className="type-column">種別</th>
+                    <th className="path-column">ターゲットパス</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paddingTop > 0 && (
+                    <tr aria-hidden="true">
+                      <td colSpan={5} style={{ height: paddingTop, padding: 0, border: 'none' }} />
+                    </tr>
                   )}
-                </div>
-                <div className="app-filtered-actions">
-                  <Button variant="info" size="sm" onClick={handleSelectFiltered}>
-                    表示中を選択
-                  </Button>
-                  <Button variant="info" size="sm" onClick={handleDeselectFiltered}>
-                    表示中を解除
-                  </Button>
-                </div>
-                <div className="app-all-actions">
-                  <Button variant="info" size="sm" onClick={handleSelectAll}>
-                    全て選択
-                  </Button>
-                  <Button variant="info" size="sm" onClick={handleDeselectAll}>
-                    全て解除
-                  </Button>
-                </div>
-              </div>
-            </>
-          )}
+                  {virtualRows.map((virtualRow) => {
+                    const app = visibleApps[virtualRow.index];
+                    const icon = iconsRef.current.get(app.shortcutPath);
+                    const rowClasses = [
+                      selectedIds.has(app.id) ? 'selected' : '',
+                      excludedIds.has(app.id) ? 'excluded' : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ');
+                    return (
+                      <tr
+                        key={app.id}
+                        data-index={virtualRow.index}
+                        ref={rowVirtualizer.measureElement}
+                        className={rowClasses}
+                        onClick={() => handleToggleApp(app.id)}
+                      >
+                        <td className="checkbox-column">
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(app.id)}
+                            onChange={() => handleToggleApp(app.id)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </td>
+                        <td className="icon-column">
+                          {icon ? (
+                            <img src={icon} alt="" className="app-icon" />
+                          ) : (
+                            <span className="app-icon-placeholder" />
+                          )}
+                        </td>
+                        <td className="name-column">
+                          {app.displayName}
+                          {registeredIds.has(app.id) && (
+                            <span className="app-registered-badge">登録済み</span>
+                          )}
+                        </td>
+                        <td className="type-column">
+                          <span className="app-type-badge" title={app.targetPath}>
+                            {app.targetExtension}
+                          </span>
+                        </td>
+                        <td className="path-column">{app.targetPath}</td>
+                      </tr>
+                    );
+                  })}
+                  {paddingBottom > 0 && (
+                    <tr aria-hidden="true">
+                      <td
+                        colSpan={5}
+                        style={{ height: paddingBottom, padding: 0, border: 'none' }}
+                      />
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+              {!loading && apps.length > 0 && visibleApps.length === 0 && (
+                <div className="app-list-empty">条件に一致するアプリはありません</div>
+              )}
+            </div>
+          </div>
         </div>
 
-        {apps.length > 0 && (
-          <div className="app-list-container" ref={listRef}>
-            <table className="app-table">
-              <thead>
-                <tr>
-                  <th className="checkbox-column">選択</th>
-                  <th className="icon-column"></th>
-                  <th className="name-column">アプリ名</th>
-                  <th className="type-column">種別</th>
-                  <th className="path-column">ターゲットパス</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paddingTop > 0 && (
-                  <tr aria-hidden="true">
-                    <td colSpan={5} style={{ height: paddingTop, padding: 0, border: 'none' }} />
-                  </tr>
-                )}
-                {virtualRows.map((virtualRow) => {
-                  const app = filteredApps[virtualRow.index];
-                  const icon = iconsRef.current.get(app.shortcutPath);
-                  return (
-                    <tr
-                      key={app.id}
-                      data-index={virtualRow.index}
-                      ref={rowVirtualizer.measureElement}
-                      className={selectedIds.has(app.id) ? 'selected' : ''}
-                    >
-                      <td className="checkbox-column">
-                        <input
-                          type="checkbox"
-                          checked={selectedIds.has(app.id)}
-                          onChange={() => handleToggleApp(app.id)}
-                        />
-                      </td>
-                      <td className="icon-column">
-                        {icon ? (
-                          <img src={icon} alt="" className="app-icon" />
-                        ) : (
-                          <span className="app-icon-placeholder" />
-                        )}
-                      </td>
-                      <td className="name-column">{app.displayName}</td>
-                      <td className="type-column">
-                        <span className="app-type-badge" title={app.targetPath}>
-                          {app.targetExtension}
-                        </span>
-                      </td>
-                      <td className="path-column">{app.targetPath}</td>
-                    </tr>
-                  );
-                })}
-                {paddingBottom > 0 && (
-                  <tr aria-hidden="true">
-                    <td colSpan={5} style={{ height: paddingBottom, padding: 0, border: 'none' }} />
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* 重複警告セクション */}
-        {duplicateCheckResult && duplicateCheckResult.duplicateCount > 0 && (
+        {/* 登録済みを選んだときの扱い */}
+        {selectedRegisteredCount > 0 && (
           <div className="duplicate-warning-section">
             <div className="duplicate-warning-message">
               <span className="duplicate-warning-icon">&#9888;</span>
-              <span>{duplicateCheckResult.duplicateCount}件の重複が検出されました</span>
+              <span>選んだアプリのうち {selectedRegisteredCount} 件は取込先に登録済みです</span>
             </div>
             <div className="duplicate-options-section">
               <span className="duplicate-options-label">重複時の処理:</span>
@@ -558,13 +560,19 @@ function AppImportModal({
           </div>
         )}
 
-        <div className="modal-footer">
+        <div className="app-import-footer">
           <div className="status-info">
-            {apps.length > 0 && (
-              <span>
-                {filteredApps.length}件中{filteredSelectedCount}件を選択中
-                {searchQuery && ` (全体: ${apps.length}件中${selectedCount}件)`}
-              </span>
+            {selectedCount > 0 && (
+              <>
+                <span>{selectedCount} 件を選択中</span>
+                <button
+                  type="button"
+                  className="app-clear-selection"
+                  onClick={() => setSelectedIds(new Set())}
+                >
+                  選択を解除
+                </button>
+              </>
             )}
           </div>
           <div className="app-modal-actions">
@@ -572,7 +580,7 @@ function AppImportModal({
               キャンセル
             </Button>
             <Button variant="primary" onClick={handleImport} disabled={selectedCount === 0}>
-              インポート ({selectedCount}件)
+              取り込む ({selectedCount}件)
             </Button>
           </div>
         </div>

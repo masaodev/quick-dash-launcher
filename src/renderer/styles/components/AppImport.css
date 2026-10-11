@@ -1,57 +1,92 @@
-/* アプリインポートモーダルのスタイル */
+/* アプリ取込画面のスタイル
+ * 見出し・案内・区画の見た目はブックマーク取込画面（BookmarkAutoImport.css の auto-import-*）に合わせる。
+ * 一覧が長いので、画面全体ではなく一覧だけをスクロールさせる。
+ * 検索欄・重複警告・状態表示は BookmarkImport.css の共通スタイルを使う。 */
 .app-import-modal {
-  width: 90%;
-  max-width: 1200px;
+  max-width: 960px;
   height: var(--modal-max-height);
+  padding: var(--spacing-xl);
+}
+
+.app-import-modal h3 {
+  margin: 0 0 var(--spacing-lg) 0;
+  font-size: var(--font-size-xl);
+  color: var(--text-primary);
+}
+
+.app-import-hint {
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--bg-section);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+/* 窓が低いときは一覧の最低の高さを保ち、中身全体をスクロールさせる */
+.app-import-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  padding: 0;
+  gap: var(--spacing-md);
 }
 
-.app-import-modal .modal-header {
+/* 取込元と取込先を横に並べる */
+.app-import-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-xl);
+}
+
+.app-import-section {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--spacing-xl) var(--spacing-2xl);
-  border-bottom: var(--border-light);
-}
-
-.app-import-modal .modal-header h2 {
-  margin: 0;
-  font-size: var(--font-size-2xl);
-  color: var(--text-primary);
-}
-
-.app-import-modal .close-button {
-  background: none;
-  border: none;
-  font-size: var(--font-size-3xl);
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: var(--spacing-xs) var(--spacing-sm);
-  line-height: 1;
-}
-
-.app-import-modal .close-button:hover {
-  color: var(--text-primary);
-}
-
-.app-import-controls {
-  padding: var(--spacing-lg) var(--spacing-2xl) var(--spacing-md);
-  border-bottom: var(--border-light);
-}
-
-.app-scan-status {
-  display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: var(--spacing-sm);
-  margin-bottom: var(--spacing-sm);
 }
 
-.app-scan-info {
+.app-import-section h4 {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  border-bottom: var(--border-light);
+  padding-bottom: var(--spacing-xs);
+}
+
+/* 一覧の区画が残りの高さを使う */
+.app-import-list-section {
+  flex: 1;
+  min-height: 0;
+}
+
+.app-import-source {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.app-import-status {
   font-size: var(--font-size-base);
   color: var(--text-primary);
+}
+
+.app-import-destination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--spacing-xxs) var(--spacing-md);
+}
+
+.app-import-note {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+.app-import-destination-value {
+  font-size: var(--font-size-base);
   font-weight: 600;
+  color: var(--text-primary);
 }
 
 /* チェックボックスフィルタ */
@@ -59,7 +94,6 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--spacing-sm) var(--spacing-lg);
-  margin-bottom: var(--spacing-sm);
 }
 
 .app-filter-checkbox {
@@ -72,49 +106,20 @@
   white-space: nowrap;
 }
 
-/* ビューモードボタン */
-.app-view-mode-buttons {
-  display: flex;
-  gap: var(--spacing-xs);
-  margin-bottom: var(--spacing-sm);
-}
-
-.app-view-mode-button {
-  padding: var(--spacing-xs) var(--spacing-md);
-  background-color: var(--color-gray-200);
-  border: var(--border-normal);
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  font-size: var(--font-size-sm);
-  font-family: inherit;
-  white-space: nowrap;
-  transition: var(--transition-normal);
-}
-
-.app-view-mode-button:hover {
-  background-color: var(--bg-hover);
-}
-
-.app-view-mode-button.selected {
-  background-color: var(--color-info-light);
-  border-color: var(--color-info);
-  color: var(--color-info);
-  font-weight: 600;
-}
-
-/* 選択ボタン群（ボタン自体は共通の Button コンポーネント） */
-.app-import-modal .app-filtered-actions,
-.app-import-modal .app-all-actions {
-  display: flex;
-  gap: var(--spacing-sm);
-}
-
 .app-list-container {
   flex: 1;
+  min-height: 160px;
   overflow-y: auto;
   margin: 0;
   border: var(--border-light);
   background-color: var(--bg-table-container);
+}
+
+.app-list-empty {
+  padding: var(--spacing-lg);
+  text-align: center;
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
 }
 
 .app-table {
@@ -146,12 +151,21 @@
   line-height: 1.4;
 }
 
+.app-table tbody tr {
+  cursor: pointer;
+}
+
 .app-table tbody tr:hover {
   background-color: var(--bg-hover);
 }
 
 .app-table tbody tr.selected {
   background-color: var(--bg-selected);
+}
+
+/* 「除外したものも表示」で出した行 */
+.app-table tbody tr.excluded {
+  color: var(--text-muted);
 }
 
 .app-table .checkbox-column {
@@ -189,6 +203,17 @@
   white-space: normal;
 }
 
+.app-registered-badge {
+  display: inline-block;
+  margin-left: var(--spacing-sm);
+  padding: var(--spacing-xxs) var(--spacing-sm);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-xs);
+  white-space: nowrap;
+  background-color: var(--color-info-light);
+  color: var(--color-info);
+}
+
 /* タイプ列 */
 .app-table .type-column {
   width: 100px;
@@ -216,12 +241,46 @@
   white-space: normal;
 }
 
-.app-import-modal .modal-footer {
+/* 重複警告は区画の幅に合わせ、一覧の高さを奪わないよう 1 行に詰める（共通スタイルは画面端までの 2 段の帯） */
+.app-import-modal .duplicate-warning-section {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-xs) var(--spacing-lg);
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: var(--border-light);
+  border-radius: var(--border-radius);
+}
+
+.app-import-modal .duplicate-warning-message {
+  margin-bottom: 0;
+}
+
+.app-import-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--spacing-lg) var(--spacing-2xl);
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
   border-top: var(--border-light);
+}
+
+.app-import-footer .status-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.app-clear-selection {
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--color-info);
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 .app-import-modal .app-modal-actions {
