@@ -329,6 +329,12 @@ const RegisterItemForm: React.FC<RegisterItemFormProps> = ({
                 : undefined
             }
             onCapture={(result) => {
+              // 取り直したら、前の未確定のキャプチャは使わないので捨てる
+              if (item.clipboardSessionId && item.clipboardSessionId !== result.sessionId) {
+                window.electronAPI.clipboardAPI
+                  .discardSession(item.clipboardSessionId)
+                  .catch(() => undefined);
+              }
               const updates: Partial<RegisterItem> = {
                 clipboardSessionId: result.sessionId,
                 clipboardFormats: result.formats,

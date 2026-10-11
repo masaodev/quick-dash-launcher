@@ -98,6 +98,9 @@ export default defineConfig({
   },
   server: {
     port: Number(process.env.VITE_PORT) || 9000,
+    // dev:test（tests/dev/full）と E2E（tests/e2e/configs/.temp）が実行中に書き込むので、監視から外す。
+    // レンダラーは tests/ を import しない
+    watch: { ignored: ['**/tests/**'] },
   },
   resolve: {
     alias: {

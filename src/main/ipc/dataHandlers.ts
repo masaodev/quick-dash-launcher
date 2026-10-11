@@ -54,7 +54,7 @@ export function setupDataHandlers(configFolder: string) {
 
     if (FileUtils.exists(filePath)) {
       dataLogger.warn(`File already exists: ${filePath}`);
-      return { success: false, error: 'ファイルは既に存在します' };
+      return { success: false, error: 'ファイルは既に存在します', alreadyExists: true };
     }
 
     try {

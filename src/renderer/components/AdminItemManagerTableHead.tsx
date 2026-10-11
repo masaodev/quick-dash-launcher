@@ -1,6 +1,7 @@
 import React from 'react';
 
 import type { SortColumn, SortState } from '../utils/editableItemOperations';
+import { activateOnEnterOrSpace } from '../utils/keyboardActivation';
 
 interface AdminItemManagerTableHeadProps {
   sortState: SortState;
@@ -28,6 +29,19 @@ const AdminItemManagerTableHead: React.FC<AdminItemManagerTableHeadProps> = ({
   nameHeaderRef,
   onNameResizeMouseDown,
 }) => {
+  /** 見出しをキーボードでも並べ替えられるようにする属性（Tab で移り、Enter／Space で並べ替え） */
+  const sortableProps = (column: SortColumn) => ({
+    tabIndex: 0,
+    'aria-sort':
+      sortState.column === column
+        ? sortState.direction === 'asc'
+          ? ('ascending' as const)
+          : ('descending' as const)
+        : ('none' as const),
+    onClick: () => onSortChange(column),
+    onKeyDown: activateOnEnterOrSpace(() => onSortChange(column)),
+  });
+
   const renderSortIndicator = (column: SortColumn): React.ReactNode => {
     const isActive = sortState.column === column;
     const icon = isActive ? (sortState.direction === 'asc' ? '▲' : '▼') : '⇅';
@@ -48,11 +62,7 @@ const AdminItemManagerTableHead: React.FC<AdminItemManagerTableHeadProps> = ({
           />
         </th>
         <th className="actions-column">操作</th>
-        <th
-          className="type-column sortable-header"
-          onClick={() => onSortChange('type')}
-          title={SORT_HINT}
-        >
+        <th className="type-column sortable-header" {...sortableProps('type')} title={SORT_HINT}>
           <span className="header-content">
             種類
             {renderSortIndicator('type')}
@@ -61,7 +71,7 @@ const AdminItemManagerTableHead: React.FC<AdminItemManagerTableHeadProps> = ({
         <th className="icon-column"></th>
         <th
           className="name-column sortable-header"
-          onClick={() => onSortChange('displayName')}
+          {...sortableProps('displayName')}
           ref={nameHeaderRef}
           style={
             nameColumnWidth !== null
@@ -82,7 +92,7 @@ const AdminItemManagerTableHead: React.FC<AdminItemManagerTableHeadProps> = ({
         </th>
         <th
           className="content-column sortable-header"
-          onClick={() => onSortChange('pathAndArgs')}
+          {...sortableProps('pathAndArgs')}
           title="パスはクリックして編集できます。引数は ✏️ 詳細編集から"
         >
           <span className="header-content">
@@ -90,7 +100,7 @@ const AdminItemManagerTableHead: React.FC<AdminItemManagerTableHeadProps> = ({
             {renderSortIndicator('pathAndArgs')}
           </span>
         </th>
-        <th className="updated-at-column sortable-header" onClick={() => onSortChange('updatedAt')}>
+        <th className="updated-at-column sortable-header" {...sortableProps('updatedAt')}>
           <span className="header-content">
             更新日
             {renderSortIndicator('updatedAt')}

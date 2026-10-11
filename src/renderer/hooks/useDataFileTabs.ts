@@ -4,6 +4,8 @@ import { isWindowInfo } from '@common/types/guards';
 
 import { debugLog, logError } from '../utils/debug';
 
+import { useToast } from './useToast';
+
 /**
  * タブ設定から全ファイルのユニークリストを生成
  * data.jsonが含まれていない場合は先頭に追加
@@ -42,13 +44,28 @@ export function useDataFileTabs() {
   const [dataFileTabs, setDataFileTabs] = useState<DataFileTab[]>([]);
   const [dataFileLabels, setDataFileLabels] = useState<Record<string, string>>({});
 
+  const { showError } = useToast();
+
+  /** タブ設定にあるデータファイルを、無ければ作る。作れなかったものは画面に知らせる */
   async function ensureDataFilesExist(fileNames: string[]): Promise<void> {
+    const failed: string[] = [];
     for (const fileName of fileNames) {
       try {
-        await window.electronAPI.createDataFile(fileName);
+        const result = await window.electronAPI.createDataFile(fileName);
+        if (!result.success && !result.alreadyExists) {
+          logError(`${fileName}を作成できませんでした:`, result.error);
+          failed.push(`${fileName}（${result.error ?? '理由不明'}）`);
+        }
       } catch (error) {
         logError(`${fileName}の作成/確認に失敗しました:`, error);
+        failed.push(fileName);
       }
+    }
+    if (failed.length > 0) {
+      showError(`タブのデータファイルを作成できませんでした: ${failed.join('、')}`, {
+        id: 'data-file-create-error', // 設定の再適用のたびに重ねて出さない
+        duration: 10000,
+      });
     }
   }
 

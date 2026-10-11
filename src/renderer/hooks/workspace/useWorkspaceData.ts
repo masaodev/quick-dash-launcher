@@ -75,6 +75,12 @@ export function useWorkspaceData(detachedGroupId?: string | null) {
   groupsRef.current = groups;
   const detachedCollapsedOverrides = useRef<Map<string, boolean>>(new Map());
   const detachedOverridesLoaded = useRef(false);
+  /**
+   * 折りたたみの楽観更新の世代と、その値。開閉より前に送った読み込みの応答は開閉前の状態なので、
+   * 応答が届くまでに開閉があったら、その分の collapsed は手元の値を残す（一瞬戻るのを防ぐ）
+   */
+  const collapseGeneration = useRef(0);
+  const pendingCollapsed = useRef<Map<string, boolean>>(new Map());
 
   function applyDetachedOverrides(loadedGroups: WorkspaceGroupView[]): WorkspaceGroupView[] {
     const overrides = detachedCollapsedOverrides.current;
@@ -136,6 +142,7 @@ export function useWorkspaceData(detachedGroupId?: string | null) {
   }
 
   async function loadGroups(): Promise<void> {
+    const generationAtRequest = collapseGeneration.current;
     try {
       const loadedGroups = await window.electronAPI.workspaceAPI.loadGroups();
       // 切り離しウィンドウ: 初回に現在の状態を写し、保存済みの折りたたみ状態で上書きする
@@ -153,7 +160,18 @@ export function useWorkspaceData(detachedGroupId?: string | null) {
           // 保存データが無い場合は無視
         }
       }
-      setGroups(applyDetachedOverrides(loadedGroups));
+      let nextGroups = applyDetachedOverrides(loadedGroups);
+      if (generationAtRequest !== collapseGeneration.current) {
+        nextGroups = nextGroups.map((g) =>
+          pendingCollapsed.current.has(g.id)
+            ? { ...g, collapsed: pendingCollapsed.current.get(g.id)! }
+            : g
+        );
+      } else {
+        // 開閉の後に送った読み込みなので、保存済みの状態が正しい
+        pendingCollapsed.current.clear();
+      }
+      setGroups(nextGroups);
     } catch (error) {
       logError('Failed to load workspace groups:', error);
     }
@@ -171,6 +189,8 @@ export function useWorkspaceData(detachedGroupId?: string | null) {
       groupsRef.current.find((g) => g.id === groupId)?.collapsed ??
       false;
     const newCollapsed = !current;
+    collapseGeneration.current++;
+    pendingCollapsed.current.set(groupId, newCollapsed);
     setGroups((prev) =>
       prev.map((g) => (g.id === groupId ? { ...g, collapsed: newCollapsed } : g))
     );
@@ -182,6 +202,10 @@ export function useWorkspaceData(detachedGroupId?: string | null) {
   }
 
   function setAllGroupsCollapsedLocal(collapsed: boolean): void {
+    collapseGeneration.current++;
+    for (const g of groupsRef.current) {
+      pendingCollapsed.current.set(g.id, collapsed);
+    }
     setGroups((prev) => prev.map((g) => ({ ...g, collapsed })));
     if (isDetached) {
       for (const g of groupsRef.current) {

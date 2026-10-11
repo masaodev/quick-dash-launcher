@@ -54,6 +54,13 @@ interface ClipboardContents {
   image: NativeImage;
 }
 
+/**
+ * 未確定のキャプチャを残しておく期限と件数。登録画面を × で閉じたときなど、確定も破棄もされない
+ * セッションが溜まらないよう、新しくキャプチャするときに古いものを捨てる
+ */
+const SESSION_TTL_MS = 24 * 60 * 60 * 1000;
+const MAX_PENDING_SESSIONS = 20;
+
 const MIME_TEXT = 'text/plain';
 const MIME_HTML = 'text/html';
 const MIME_RTF = 'text/rtf';
@@ -317,6 +324,7 @@ export class ClipboardService {
       const sessionId = generateId();
       const capturedAt = Date.now();
 
+      this.prunePendingSessions(capturedAt);
       this.pendingSessions.set(sessionId, { clipboardData, preview, capturedAt });
 
       logger.info(
@@ -364,6 +372,21 @@ export class ClipboardService {
         success: false,
         error: error instanceof Error ? error.message : 'コミットに失敗しました',
       };
+    }
+  }
+
+  /** 期限切れのセッションと、件数の上限を超える古いセッションを捨てる（新しい 1 件を足す前に呼ぶ） */
+  private prunePendingSessions(now: number): void {
+    for (const [id, session] of this.pendingSessions) {
+      if (now - session.capturedAt > SESSION_TTL_MS) {
+        this.pendingSessions.delete(id);
+      }
+    }
+    // Map は挿入順なので、先頭から古い
+    while (this.pendingSessions.size >= MAX_PENDING_SESSIONS) {
+      const oldestId = this.pendingSessions.keys().next().value;
+      if (oldestId === undefined) break;
+      this.pendingSessions.delete(oldestId);
     }
   }
 
