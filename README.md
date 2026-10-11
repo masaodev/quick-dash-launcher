@@ -97,13 +97,13 @@ PowerToys Run のような多くのランチャーは、インストール済み
 ➕ の「簡易登録」か、ドラッグ＆ドロップで開きます。
 
 <p align="center">
-  <img src="docs/images/readme-register-item.png" width="600" alt="登録画面。名前「勤怠（kintai）」で URL を登録するところ" />
+  <img src="docs/images/readme-register-item.png" alt="登録画面。名前「勤怠（kintai）」で URL を登録するところ" />
 </p>
 
 種別を「フォルダ取込」にすると、フォルダの中のファイルをまとめて取り込めます。
 
 <p align="center">
-  <img src="docs/images/readme-register-dir.png" width="600" alt="登録画面。種別をフォルダ取込にして、Excel だけを取り込み、旧版を除く設定にしたところ" />
+  <img src="docs/images/readme-register-dir.png" alt="登録画面。種別をフォルダ取込にして、Excel だけを取り込み、旧版を除く設定にしたところ" />
 </p>
 
 ### 呼び出して開く
