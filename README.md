@@ -16,7 +16,7 @@
 
 <p align="center">
   <a href="#インストール">インストール</a> ·
-  <a href="#使い方">使い方</a> ·
+  <a href="#画面">画面</a> ·
   <a href="docs/README.md">ドキュメント</a> ·
   <a href="https://github.com/masaodev/quick-dash-launcher/releases">リリース</a>
 </p>
@@ -61,7 +61,7 @@ PowerToys Run のような多くのランチャーは、インストール済み
 
 とはいえ、1 件ずつ登録するのは手間です。そのため、まとめて登録する手段も用意しています。フォルダを指定すれば中のファイルがまとめて候補に並び（フォルダ取込）、スタートメニューのアプリやブラウザのブックマークも一覧から選んで取り込めます。
 
-登録したものは、[専用の管理画面](#管理画面でまとめて整える)に一覧で並び、まとめて直せます。
+登録したものは、[専用の管理画面](#画面)に一覧で並び、まとめて直せます。
 
 | 観点 | 検索型（PowerToys Run など） | QuickDashLauncher |
 | --- | --- | --- |
@@ -80,35 +80,22 @@ PowerToys Run のような多くのランチャーは、インストール済み
 
 ---
 
-## 使い方
-
-初回起動の画面で、ランチャーを呼び出すホットキー（初期値は Alt+Space）を決めます。
-
-### 管理画面でまとめて整える
-
-⚙ の「アイテム管理」で開きます。登録したものがタブごとに並び、その場で直せます。
+## 画面
 
 <p align="center">
-  <img src="docs/images/readme-admin.png" alt="管理画面。プロジェクトのタブに、フォルダ取込・Web ページ・Teams のチャットなどが表で並んでいる" />
+  <img src="docs/images/readme-admin.png" alt="管理画面。プロジェクトのタブに、フォルダ取込・Web ページ・Teams のチャットなどが表で並んでいる" /><br />
+  <b>管理画面</b>（⚙ →「アイテム管理」）: 登録したものをタブごとに一覧で直せる
 </p>
-
-### 登録画面で追加する
-
-➕ の「簡易登録」か、ドラッグ＆ドロップで開きます。
 
 <p align="center">
-  <img src="docs/images/readme-register-item.png" alt="登録画面。名前「勤怠（kintai）」で URL を登録するところ" />
+  <img src="docs/images/readme-register-item.png" alt="登録画面。名前「勤怠（kintai）」で URL を登録するところ" /><br />
+  <b>登録画面</b>（➕ →「簡易登録」、またはドラッグ＆ドロップ）
 </p>
-
-種別を「フォルダ取込」にすると、フォルダの中のファイルをまとめて取り込めます。
 
 <p align="center">
-  <img src="docs/images/readme-register-dir.png" alt="登録画面。種別をフォルダ取込にして、Excel だけを取り込み、旧版を除く設定にしたところ" />
+  <img src="docs/images/readme-register-dir.png" alt="登録画面。種別をフォルダ取込にして、Excel だけを取り込み、旧版を除く設定にしたところ" /><br />
+  <b>フォルダ取込</b>: フォルダの中のファイルをまとめて候補に並べる
 </p>
-
-### 呼び出して開く
-
-ホットキーで呼び出し、名前の一部を打って Enter で開きます。ほかのキー操作は[キーボードショートカット](docs/features/keyboard-shortcuts.md)を参照してください。
 
 <!-- 画面イメージは `npm run docs:readme-images` で撮り直す（デモデータ＝tests/demo-gif/demo-data.ts） -->
 
@@ -148,6 +135,8 @@ winget install masaodev.quick-dash-launcher
 - ポータブル版: `QuickDashLauncher.x.x.x.exe` を好きなフォルダに置いて実行します（インストール不要）。
 
 インストーラー版・ポータブル版は署名していないため、初回の実行時に Windows SmartScreen の警告が出ることがあります。そのときは「詳細情報」→「実行」で起動できます。
+
+初回起動の画面で、ランチャーを呼び出すホットキー（初期値は Alt+Space）を決めます。キー操作は[キーボードショートカット](docs/features/keyboard-shortcuts.md)を参照してください。
 
 うまく動かないときは[困ったとき](docs/features/troubleshooting.md)を参照してください。
 

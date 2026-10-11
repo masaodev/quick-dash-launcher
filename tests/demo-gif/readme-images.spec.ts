@@ -12,7 +12,7 @@ import { TestUtils } from '../e2e/helpers/test-utils';
 import { writeDemoData } from './demo-data';
 
 /**
- * README の「使い方」に載せる画面イメージ（登録画面・管理画面）を撮る
+ * README の「画面」に載せる画面イメージ（登録画面・管理画面）を撮る
  *
  * メインデモ GIF と同じデモデータ（demo-data.ts）で起動し、docs/images/readme-*.png に保存する。
  * 見比べ用の別案は test-results/readme-images/ に置く（README では使わない）。

@@ -74,7 +74,7 @@ docs/
 
 | 文書 | 役割 |
 | --- | --- |
-| [README.md](../README.md) | 利用者向けの入口（紹介・使い方の流れ・インストール）。細かい説明は features/ に置き、README からリンクする |
+| [README.md](../README.md) | 利用者向けの入口（紹介・画面・インストール）。細かい説明は features/ に置き、README からリンクする |
 | [CLAUDE.md](../CLAUDE.md) | Claude Code 向けの作業指示 |
 | [tests/README.md](../tests/README.md) ほか tests/ 配下の各 README | そのフォルダの案内（テストの正本は [テスト](testing/README.md)） |
 | [scripts/README.md](../scripts/README.md) | 開発用スクリプトの説明 |
