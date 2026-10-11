@@ -1,5 +1,83 @@
 {
   "$schema": "../schemas/data.schema.json",
   "version": "1.0",
-  "items": []
+  "items": [
+    {
+      "id": "dev20001",
+      "type": "item",
+      "displayName": "Stack Overflow",
+      "path": "https://stackoverflow.com/"
+    },
+    {
+      "id": "dev20002",
+      "type": "item",
+      "displayName": "MDN Web Docs",
+      "path": "https://developer.mozilla.org/ja/"
+    },
+    {
+      "id": "dev20003",
+      "type": "item",
+      "displayName": "Electron ドキュメント",
+      "path": "https://www.electronjs.org/ja/docs/latest/"
+    },
+    {
+      "id": "dev20004",
+      "type": "item",
+      "displayName": "React",
+      "path": "https://ja.react.dev/"
+    },
+    {
+      "id": "dev20005",
+      "type": "item",
+      "displayName": "TypeScript",
+      "path": "https://www.typescriptlang.org/ja/docs/"
+    },
+    {
+      "id": "dev20006",
+      "type": "item",
+      "displayName": "GitHub 通知",
+      "path": "https://github.com/notifications"
+    },
+    {
+      "id": "dev20007",
+      "type": "item",
+      "displayName": "タスクマネージャー",
+      "path": "taskmgr.exe"
+    },
+    {
+      "id": "dev20008",
+      "type": "item",
+      "displayName": "リソースモニター",
+      "path": "resmon.exe"
+    },
+    {
+      "id": "dev20009",
+      "type": "item",
+      "displayName": "イベントビューアー",
+      "path": "eventvwr.msc"
+    },
+    {
+      "id": "dev20010",
+      "type": "item",
+      "displayName": "環境変数",
+      "path": "rundll32.exe",
+      "args": "sysdm.cpl,EditEnvironmentVariables"
+    },
+    {
+      "id": "dev20011",
+      "type": "group",
+      "displayName": "開発の調べもの",
+      "itemNames": [
+        "Stack Overflow",
+        "MDN Web Docs",
+        "Electron ドキュメント"
+      ]
+    },
+    {
+      "id": "dev20012",
+      "type": "window",
+      "displayName": "タスクマネージャーを前面に",
+      "windowTitle": "タスク マネージャー"
+    }
+  ]
 }

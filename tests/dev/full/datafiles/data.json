@@ -1,5 +1,155 @@
 {
   "$schema": "../schemas/data.schema.json",
   "version": "1.0",
-  "items": []
+  "items": [
+    {
+      "id": "dev10001",
+      "type": "item",
+      "displayName": "GitHub",
+      "path": "https://github.com/"
+    },
+    {
+      "id": "dev10002",
+      "type": "item",
+      "displayName": "Google",
+      "path": "https://www.google.com/"
+    },
+    {
+      "id": "dev10003",
+      "type": "item",
+      "displayName": "Wikipedia（wikipedia）",
+      "path": "https://ja.wikipedia.org/"
+    },
+    {
+      "id": "dev10004",
+      "type": "item",
+      "displayName": "YouTube",
+      "path": "https://www.youtube.com/"
+    },
+    {
+      "id": "dev10005",
+      "type": "item",
+      "displayName": "メモ帳（memo）",
+      "path": "notepad.exe",
+      "memo": "ちょっとしたメモ用"
+    },
+    {
+      "id": "dev10006",
+      "type": "item",
+      "displayName": "電卓（dentaku）",
+      "path": "calc.exe"
+    },
+    {
+      "id": "dev10007",
+      "type": "item",
+      "displayName": "ペイント",
+      "path": "mspaint.exe"
+    },
+    {
+      "id": "dev10008",
+      "type": "item",
+      "displayName": "コマンドプロンプト",
+      "path": "cmd.exe"
+    },
+    {
+      "id": "dev10009",
+      "type": "item",
+      "displayName": "PowerShell（ホームで開く）",
+      "path": "powershell.exe",
+      "args": "-NoExit -Command Set-Location ~"
+    },
+    {
+      "id": "dev10010",
+      "type": "item",
+      "displayName": "エクスプローラー（C ドライブ）",
+      "path": "explorer.exe",
+      "args": "C:\\"
+    },
+    {
+      "id": "dev10011",
+      "type": "item",
+      "displayName": "デスクトップ",
+      "path": "shell:Desktop"
+    },
+    {
+      "id": "dev10012",
+      "type": "item",
+      "displayName": "ドキュメント",
+      "path": "shell:Documents"
+    },
+    {
+      "id": "dev10013",
+      "type": "item",
+      "displayName": "ダウンロード",
+      "path": "shell:Downloads"
+    },
+    {
+      "id": "dev10014",
+      "type": "item",
+      "displayName": "Windows フォルダ",
+      "path": "C:\\Windows\\"
+    },
+    {
+      "id": "dev10015",
+      "type": "item",
+      "displayName": "win.ini",
+      "path": "C:\\Windows\\win.ini"
+    },
+    {
+      "id": "dev10016",
+      "type": "item",
+      "displayName": "Windows の設定",
+      "path": "ms-settings:"
+    },
+    {
+      "id": "dev10017",
+      "type": "item",
+      "displayName": "ディスプレイの設定",
+      "path": "ms-settings:display"
+    },
+    {
+      "id": "dev10018",
+      "type": "item",
+      "displayName": "VS Code（URI）",
+      "path": "vscode://"
+    },
+    {
+      "id": "dev10019",
+      "type": "group",
+      "displayName": "朝の定番セット",
+      "itemNames": ["GitHub", "Google", "メモ帳（memo）"]
+    },
+    {
+      "id": "dev10020",
+      "type": "group",
+      "displayName": "調べもの",
+      "itemNames": ["Google", "Wikipedia（wikipedia）"]
+    },
+    {
+      "id": "dev10021",
+      "type": "window",
+      "displayName": "メモ帳のウィンドウ",
+      "windowTitle": "*メモ帳*"
+    },
+    {
+      "id": "dev10022",
+      "type": "window",
+      "displayName": "電卓を右上に",
+      "windowTitle": "電卓",
+      "x": 1200,
+      "y": 0,
+      "width": 400,
+      "height": 600
+    },
+    {
+      "id": "dev10023",
+      "type": "dir",
+      "path": "C:\\Windows\\Media",
+      "options": {
+        "types": "file",
+        "filter": "Windows Notify*.wav",
+        "prefix": "通知音"
+      }
+    }
+  ]
 }
