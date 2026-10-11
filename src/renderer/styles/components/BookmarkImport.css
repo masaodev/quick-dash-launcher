@@ -1,45 +1,8 @@
 /* 取込画面（ブックマーク・アプリ）の共通スタイル */
 
-/* インポート先表示バー */
-.import-destination-bar {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-sm) var(--spacing-2xl);
-  background-color: var(--bg-info-light);
-  border-bottom: var(--border-light);
-  font-size: var(--font-size-sm);
-}
-
-.import-destination-label {
-  color: var(--text-muted);
-  white-space: nowrap;
-}
-
-.import-destination-value {
-  color: var(--text-primary);
-  font-weight: 600;
-}
-
 .loading-text {
   color: var(--text-muted);
   font-size: var(--font-size-sm);
-}
-
-.file-name {
-  color: var(--text-muted);
-  font-size: var(--font-size-sm);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* 検索と一括操作を1行にまとめたセクション */
-.search-and-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-md);
-  margin-bottom: 0;
 }
 
 .search-input-container {

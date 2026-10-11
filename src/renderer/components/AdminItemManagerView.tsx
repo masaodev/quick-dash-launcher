@@ -10,6 +10,7 @@ import {
 } from '@common/types';
 import type { EditableJsonItem } from '@common/types/editableItem';
 import type { BookmarkAutoImportRule } from '@common/types/bookmarkAutoImport';
+import { checkAppDuplicates } from '@common/utils/appDuplicateDetector';
 
 import { useToast } from '../hooks/useToast';
 import { logError } from '../utils/debug';
@@ -389,8 +390,14 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   };
 
   const handleAppImport = (apps: ScannedAppItem[], duplicateHandling: DuplicateHandlingOption) => {
+    // スキップのときは取込先に登録済みの分は入らない
+    const addedCount =
+      duplicateHandling === 'skip'
+        ? checkAppDuplicates(apps, currentFileWorkingItems).newCount
+        : apps.length;
     editing.importApps(apps, duplicateHandling, selectedDataFile);
     setIsAppImportModalOpen(false);
+    showInfo(`${addedCount} 件を ${getFileLabel(selectedDataFile)} に追加しました（保存で確定）`);
   };
 
   const handleExitEditMode = () => {

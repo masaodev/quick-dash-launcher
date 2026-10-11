@@ -134,6 +134,53 @@ test.describe('画面仕様書の画面イメージ', () => {
     await shot(admin, 'bookmark-import-modal');
   });
 
+  test('アプリ取込画面', async ({ electronApp, mainWindow }) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    const admin = await utils.openAdminWindow(electronApp, 'edit');
+    await admin.waitForLoadState('domcontentloaded');
+
+    // 本人のスタートメニューが写らないよう、スキャン結果を Windows 標準のアプリに差し替える。
+    // アイコンはショートカットの代わりに実在する exe から取る。メモ帳は撮影用データにあるので「登録済み」になる
+    const system32 = 'C:\\Windows\\System32';
+    const app = (id: string, displayName: string, exe: string, targetPath?: string) => ({
+      id,
+      displayName,
+      shortcutPath: `${system32}\\${exe}`,
+      targetPath: targetPath ?? `${system32}\\${exe}`,
+      checked: false,
+      targetType: 'app',
+      targetExtension: '.exe',
+      source: 'lnk',
+      isUninstaller: false,
+    });
+    const apps = [
+      app('s1', 'コマンド プロンプト', 'cmd.exe'),
+      app('s2', 'コントロール パネル', 'control.exe'),
+      app('s3', 'タスク マネージャー', 'taskmgr.exe'),
+      app('s4', '電卓', 'calc.exe'),
+      app('s5', 'メモ帳', 'notepad.exe', 'notepad.exe'),
+      app('s6', '文字コード表', 'charmap.exe'),
+      { ...app('s7', 'Sample Tool のアンインストール', 'cmd.exe'), isUninstaller: true },
+    ];
+    await electronApp.evaluate(({ ipcMain }, scanned) => {
+      ipcMain.removeHandler('scan-installed-apps');
+      ipcMain.handle('scan-installed-apps', () => ({ apps: scanned, scanDuration: 1 }));
+    }, apps);
+
+    await admin
+      .locator('.dropdown-trigger-btn', { hasText: 'アイテムを一括取り込み' })
+      .first()
+      .click();
+    await admin.locator('.dropdown-item', { hasText: 'インストール済みアプリを追加' }).click();
+    const modal = admin.locator('.app-import-modal');
+    await modal.waitFor({ state: 'visible' });
+    await modal.locator('.app-table tbody tr', { hasText: '電卓' }).click();
+    await modal.locator('.app-table tbody tr', { hasText: 'タスク マネージャー' }).click();
+    await modal.locator('.app-table tbody tr img.app-icon').first().waitFor({ state: 'visible' });
+    await shot(admin, 'app-import-modal');
+  });
+
   test('アイテム登録・編集と子画面', async ({ electronApp, mainWindow }) => {
     const utils = new TestUtils(mainWindow);
     await utils.waitForPageLoad();
