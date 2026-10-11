@@ -4,23 +4,25 @@ import { render, screen } from '@testing-library/react';
 import LauncherHintBar from './LauncherHintBar';
 
 function hintTexts(): string[] {
-  return Array.from(screen.getByTestId('keyboard-hint-bar').querySelectorAll('kbd')).map(
-    (kbd) => kbd.textContent ?? ''
+  return Array.from(screen.getByTestId('keyboard-hint-bar').querySelectorAll('strong')).map(
+    (strong) => strong.textContent ?? ''
   );
 }
 
 describe('LauncherHintBar', () => {
-  it('通常モードは起動・フォルダ・管理画面・ワークスペースを出し、タブが無ければ Tab は出さない', () => {
+  it('通常モードは編集・親フォルダー・検索履歴を出し、タブが無ければ Tab は出さない', () => {
     render(
       <LauncherHintBar searchMode="normal" canSwitchDataFileTab={false} canMoveToDesktop={false} />
     );
-    expect(hintTexts()).toEqual(['Enter', 'Shift+Enter', 'Ctrl+E', 'Ctrl+W']);
-    expect(screen.getByText('管理画面')).toBeTruthy();
+    expect(hintTexts()).toEqual(['F2', 'Shift+Enter', 'Ctrl+↑/↓']);
+    expect(screen.getByTestId('keyboard-hint-bar').textContent).toBe(
+      'F2:編集\u3000Shift+Enter:親フォルダーを開く\u3000Ctrl+↑/↓:検索履歴'
+    );
   });
 
   it('通常モードでタブが 2 つ以上あるときは Tab も出す', () => {
     render(<LauncherHintBar searchMode="normal" canSwitchDataFileTab canMoveToDesktop={false} />);
-    expect(hintTexts()).toEqual(['Enter', 'Shift+Enter', 'Tab', 'Ctrl+E', 'Ctrl+W']);
+    expect(hintTexts()).toEqual(['F2', 'Shift+Enter', 'Ctrl+↑/↓', 'Tab']);
   });
 
   it('ウィンドウ検索モードはピン留め・閉じるを出し、デスクトップのタブ表示中だけ移動を出す', () => {

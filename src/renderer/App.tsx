@@ -312,6 +312,30 @@ function App(): React.ReactElement {
     return filterItems(itemsToFilter, searchQuery, searchMode);
   }, [searchMode, windowList, activeDesktopTab, tabFilteredItems, searchQuery]);
 
+  const handleEditItem = useCallback(
+    (item: AppItem) => {
+      if (isWindowInfo(item)) return;
+
+      if (isGroupItem(item) || isWindowItem(item)) {
+        void openEditWindow({
+          ...item,
+          sourceFile: item.sourceFile || DEFAULT_DATA_FILE,
+          jsonItemId: item.id ?? undefined,
+        });
+        return;
+      }
+
+      const launcherItem = item as LauncherItem;
+      const jsonItemId = launcherItem.isDirExpanded ? launcherItem.expandedFromId : launcherItem.id;
+      void openEditWindow({
+        ...launcherItem,
+        sourceFile: launcherItem.sourceFile || DEFAULT_DATA_FILE,
+        jsonItemId: jsonItemId ?? undefined,
+      });
+    },
+    [openEditWindow]
+  );
+
   const { handleKeyDown } = useKeyboardShortcuts({
     showDataFileTabs,
     activeTab,
@@ -326,6 +350,7 @@ function App(): React.ReactElement {
     navigateToNext,
     setSearchQuery,
     handleExecuteItem,
+    handleEditItem,
     searchMode,
     windowList,
     toggleSearchMode: handleToggleSearchMode,
@@ -442,30 +467,6 @@ function App(): React.ReactElement {
   const handleToggleWorkspace = async () => {
     await window.electronAPI.toggleWorkspaceWindow();
   };
-
-  const handleEditItem = useCallback(
-    (item: AppItem) => {
-      if (isWindowInfo(item)) return;
-
-      if (isGroupItem(item) || isWindowItem(item)) {
-        void openEditWindow({
-          ...item,
-          sourceFile: item.sourceFile || DEFAULT_DATA_FILE,
-          jsonItemId: item.id ?? undefined,
-        });
-        return;
-      }
-
-      const launcherItem = item as LauncherItem;
-      const jsonItemId = launcherItem.isDirExpanded ? launcherItem.expandedFromId : launcherItem.id;
-      void openEditWindow({
-        ...launcherItem,
-        sourceFile: launcherItem.sourceFile || DEFAULT_DATA_FILE,
-        jsonItemId: jsonItemId ?? undefined,
-      });
-    },
-    [openEditWindow]
-  );
 
   const handleFirstLaunchComplete = async (settings: {
     hotkey: string;
@@ -631,6 +632,14 @@ function App(): React.ReactElement {
         onRefreshWindows={handleRefreshWindows}
       />
 
+      {!progressState.isActive && missingIconCount > 0 && (
+        <MissingIconNotice missingCount={missingIconCount} onFetchClick={handleFetchMissingIcons} />
+      )}
+
+      {progressState.isActive && progressState.progress && (
+        <LauncherIconProgressBar progress={progressState.progress} onClose={resetProgress} />
+      )}
+
       {showKeyboardHints && (
         <LauncherHintBar
           searchMode={searchMode}
@@ -639,14 +648,6 @@ function App(): React.ReactElement {
             !!desktopInfo?.desktopCount && desktopInfo.desktopCount > 1 && activeDesktopTab > 0
           }
         />
-      )}
-
-      {!progressState.isActive && missingIconCount > 0 && (
-        <MissingIconNotice missingCount={missingIconCount} onFetchClick={handleFetchMissingIcons} />
-      )}
-
-      {progressState.isActive && progressState.progress && (
-        <LauncherIconProgressBar progress={progressState.progress} onClose={resetProgress} />
       )}
 
       {isDraggingOver && (

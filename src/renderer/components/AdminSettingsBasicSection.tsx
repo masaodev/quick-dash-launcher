@@ -96,8 +96,8 @@ const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
             操作のヒントを表示
           </label>
           <div className="setting-description">
-            メインウィンドウの下に、主なキー操作（Enter で起動、Ctrl+E
-            で管理画面など）を表示します。
+            メインウィンドウの下に、気づきにくいキー操作（F2 で編集、Shift+Enter
+            で親フォルダーを開くなど）を表示します。
           </div>
         </div>
       </div>

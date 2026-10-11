@@ -74,18 +74,6 @@ body {
   text-overflow: ellipsis;
 }
 
-.shortcut-hint-item {
-  margin-right: var(--spacing-lg);
-}
-
-.shortcut-hint-item:last-child {
-  margin-right: 0;
-}
-
-.shortcut-hint-item kbd {
-  margin-right: var(--spacing-xs);
-}
-
 .shortcut-hint kbd {
   background-color: var(--bg-input);
   border: 1px solid var(--border-color);

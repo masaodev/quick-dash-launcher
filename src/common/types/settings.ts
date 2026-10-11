@@ -119,7 +119,7 @@ export interface AppSettings {
   detachedVisibleOnAllDesktops: boolean;
   /** グループアイテムを並列起動する（デフォルト: false） */
   parallelGroupLaunch: boolean;
-  /** メインウィンドウの下に主なキー操作のヒントを表示する（デフォルト: true） */
+  /** メインウィンドウの下に、気づきにくいキー操作のヒントを表示する（デフォルト: true） */
   showKeyboardHints: boolean;
   /** ウィンドウ検索で起動のホットキー（デフォルト: 'Ctrl+Alt+Space'、空の場合は無効） */
   itemSearchHotkey: string;
