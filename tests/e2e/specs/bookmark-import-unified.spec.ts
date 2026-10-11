@@ -21,6 +21,46 @@ async function stubOpenDialog(electronApp: ElectronApplication, filePath: string
   }, filePath);
 }
 
+/** 3 つのプロファイルを持つ Chrome（各プロファイルに 1〜2 件のブックマーク） */
+const FAKE_PROFILES = [
+  { id: 'Default', displayName: '仕事', bookmarkPath: 'fake://Default' },
+  { id: 'Profile 1', displayName: '個人', bookmarkPath: 'fake://Profile 1' },
+  { id: 'Profile 2', displayName: '検証', bookmarkPath: 'fake://Profile 2' },
+];
+const FAKE_BOOKMARKS: Record<string, { displayName: string; url: string; folderPath: string }[]> = {
+  'fake://Default': [
+    { displayName: '社内Wiki', url: 'https://wiki.example.com/', folderPath: 'bookmark_bar' },
+    { displayName: '勤怠', url: 'https://kintai.example.com/', folderPath: 'bookmark_bar' },
+  ],
+  'fake://Profile 1': [
+    { displayName: 'ニュース', url: 'https://news.example.com/', folderPath: 'bookmark_bar' },
+  ],
+  'fake://Profile 2': [
+    { displayName: '検証環境', url: 'https://stg.example.com/', folderPath: 'bookmark_bar' },
+  ],
+};
+
+/**
+ * 実行環境のブラウザに依存しないよう、ブラウザ検出とブックマークの読み込みを固定の結果に差し替える
+ */
+async function stubBrowsers(electronApp: ElectronApplication): Promise<void> {
+  await electronApp.evaluate(
+    ({ ipcMain }, { profiles, bookmarks }) => {
+      ipcMain.removeHandler('detect-installed-browsers');
+      ipcMain.handle('detect-installed-browsers', () => [
+        { id: 'chrome', displayName: 'Google Chrome', installed: true, profiles },
+        { id: 'edge', displayName: 'Microsoft Edge', installed: false, profiles: [] },
+      ]);
+      ipcMain.removeHandler('bookmark-auto-import:get-bookmarks-with-folders');
+      ipcMain.handle(
+        'bookmark-auto-import:get-bookmarks-with-folders',
+        (_event, bookmarkPath: string) => bookmarks[bookmarkPath] ?? []
+      );
+    },
+    { profiles: FAKE_PROFILES, bookmarks: FAKE_BOOKMARKS }
+  );
+}
+
 /** アイテム管理の「アイテムを一括取り込み ▼」から項目を選ぶ */
 async function chooseImportMenu(adminWindow: Page, itemText: string): Promise<void> {
   await adminWindow
@@ -127,6 +167,91 @@ test.describe('QuickDashLauncher - ブックマーク取込（入口統合）', 
         await expect(adminWindow.locator('.unsaved-changes')).toContainText(
           '未保存の変更があります'
         );
+      });
+    } finally {
+      await adminWindow.close();
+    }
+  });
+
+  test('プロファイルを複数・すべて選べ、選んだ分のブックマークが読み込まれる', async ({
+    electronApp,
+    mainWindow,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
+    await adminWindow.waitForLoadState('domcontentloaded');
+    await stubBrowsers(electronApp);
+
+    const modal = adminWindow.locator(IMPORT_MODAL);
+    const profileBox = (name: string) =>
+      modal.locator('.profile-checkboxes label', { hasText: name }).locator('input');
+    const loadStatus = modal.locator('.auto-import-load-status');
+
+    try {
+      await test.step('開いた直後は最初のプロファイルだけが選ばれ、外せない', async () => {
+        await chooseImportMenu(adminWindow, 'ブラウザのブックマークを追加');
+        await modal.waitFor({ state: 'visible', timeout: 10000 });
+        await expect(loadStatus).toHaveText('2 件のブックマークを読み込みました');
+        await expect(profileBox('すべてのプロファイル')).not.toBeChecked();
+        await expect(profileBox('仕事')).toBeChecked();
+        await expect(profileBox('仕事')).toBeDisabled();
+        await expect(profileBox('個人')).not.toBeChecked();
+      });
+
+      await test.step('2 つ目を足すと両方のブックマークが読み込まれる', async () => {
+        await profileBox('個人').check();
+        await expect(loadStatus).toHaveText('3 件のブックマークを読み込みました');
+        await expect(profileBox('仕事')).toBeEnabled();
+        await profileBox('仕事').uncheck();
+        await expect(loadStatus).toHaveText('1 件のブックマークを読み込みました');
+        await expect(profileBox('個人')).toBeDisabled();
+      });
+
+      await test.step('「すべてのプロファイル」で全部が対象になり、外すと最初の 1 つに戻る', async () => {
+        await profileBox('すべてのプロファイル').check();
+        await expect(loadStatus).toHaveText('4 件のブックマークを読み込みました');
+        for (const name of ['仕事', '個人', '検証']) {
+          await expect(profileBox(name)).toBeChecked();
+          await expect(profileBox(name)).toBeDisabled();
+        }
+        await profileBox('すべてのプロファイル').uncheck();
+        await expect(loadStatus).toHaveText('2 件のブックマークを読み込みました');
+        await expect(profileBox('仕事')).toBeChecked();
+        await expect(profileBox('個人')).not.toBeChecked();
+      });
+
+      // 「ルールとして保存」はすぐ実行し、実行側は本物のブラウザを読むので、保存は設定側（保存だけ）で確かめる
+      await test.step('「すべて」で保存したルールは一覧に「全プロファイル」と出て、開き直しても「すべて」のまま', async () => {
+        await modal.locator('.auto-import-modal-footer button', { hasText: 'キャンセル' }).click();
+        await chooseImportMenu(adminWindow, 'ブックマーク自動取込の設定');
+        await adminWindow.locator('.auto-import-add-rule button').click();
+        const ruleModal = adminWindow.locator('.auto-import-rule-modal');
+        const ruleBox = (name: string) =>
+          ruleModal.locator('.profile-checkboxes label', { hasText: name }).locator('input');
+        await ruleModal.waitFor({ state: 'visible', timeout: 10000 });
+        await ruleModal
+          .locator('input[placeholder="例: 開発系ブックマーク"]')
+          .fill('全プロファイルのルール');
+        await ruleBox('すべてのプロファイル').check();
+        await ruleModal.locator('.auto-import-modal-footer button', { hasText: '保存' }).click();
+        await expect(ruleModal).toHaveCount(0, { timeout: 10000 });
+
+        const ruleCard = adminWindow.locator('.auto-import-rule-card', {
+          hasText: '全プロファイルのルール',
+        });
+        await expect(ruleCard.locator('.rule-source')).toContainText('全プロファイル');
+        await ruleCard.locator('button', { hasText: '編集' }).click();
+        await ruleModal.waitFor({ state: 'visible', timeout: 10000 });
+        await expect(ruleBox('すべてのプロファイル')).toBeChecked();
+
+        await test.step('個別に選び直すと、一覧ではプロファイルを表示名で出す', async () => {
+          await ruleBox('すべてのプロファイル').uncheck();
+          await ruleBox('検証').check();
+          await ruleModal.locator('.auto-import-modal-footer button', { hasText: '保存' }).click();
+          await expect(ruleModal).toHaveCount(0, { timeout: 10000 });
+          await expect(ruleCard.locator('.rule-source')).toContainText('仕事, 検証');
+        });
       });
     } finally {
       await adminWindow.close();

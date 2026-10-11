@@ -119,8 +119,8 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
       .detectInstalledBrowsers()
       .then((detected) => {
         setBrowsers(detected);
-        // プロファイル未選択の場合、最初のプロファイルを自動選択
-        if (editingRule.profileIds.length === 0) {
+        // 新規のときだけ最初のプロファイルを選ぶ。既存ルールの空配列は「全プロファイル」なのでそのまま
+        if (!rule && editingRule.profileIds.length === 0) {
           const browser = detected.find((b) => b.id === editingRule.browserId);
           if (browser?.installed && browser.profiles.length > 0) {
             updateRule({ profileIds: [browser.profiles[0].id] });
@@ -226,8 +226,27 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
     updateRule({ browserId, profileIds: firstProfileId, folderPaths: [] });
   };
 
-  const handleProfileChange = (profileId: string) => {
-    updateRule({ profileIds: profileId === '' ? [] : [profileId], folderPaths: [] });
+  /** 「すべてのプロファイル」（空配列）の切り替え。外したら最初のプロファイルだけにする */
+  const handleAllProfilesToggle = () => {
+    if (editingRule.profileIds.length === 0) {
+      const first = selectedBrowser?.profiles[0];
+      updateRule({ profileIds: first ? [first.id] : [], folderPaths: [] });
+    } else {
+      updateRule({ profileIds: [], folderPaths: [] });
+    }
+  };
+
+  /** 個別のプロファイルの切り替え。最後の 1 つは外せない（空配列は「すべて」の意味になるため） */
+  const handleProfileToggle = (profileId: string) => {
+    // 今は無いプロファイルの ID（削除済みなど）は、触った時点で落とす
+    const current = editingRule.profileIds.filter((id) =>
+      selectedBrowser?.profiles.some((p) => p.id === id)
+    );
+    const next = current.includes(profileId)
+      ? current.filter((id) => id !== profileId)
+      : [...current, profileId];
+    if (next.length === 0) return;
+    updateRule({ profileIds: next, folderPaths: [] });
   };
 
   const handleSourceKindChange = (kind: SourceKind) => {
@@ -306,6 +325,12 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
   };
 
   const installedBrowsers = browsers.filter((b) => b.installed);
+  /** 空配列＝すべてのプロファイル（あとから増えたプロファイルも対象） */
+  const isAllProfiles = editingRule.profileIds.length === 0;
+  /** 選択中のうち、今のブラウザに実在するプロファイル */
+  const selectedProfileIds = editingRule.profileIds.filter((id) =>
+    selectedBrowser?.profiles.some((p) => p.id === id)
+  );
 
   return (
     <div className="modal-overlay" onClick={onCancel}>
@@ -414,19 +439,43 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
                   <div className="auto-import-form-field">
                     <label>プロファイル:</label>
                     <div className="profile-checkboxes">
-                      {selectedBrowser.profiles.map((profile) => (
-                        <label key={profile.id}>
+                      {selectedBrowser.profiles.length > 1 && (
+                        <label>
                           <input
-                            type="radio"
-                            name="profileId"
-                            value={profile.id}
-                            checked={editingRule.profileIds[0] === profile.id}
-                            onChange={() => handleProfileChange(profile.id)}
+                            type="checkbox"
+                            checked={isAllProfiles}
+                            onChange={handleAllProfilesToggle}
                           />
-                          {profile.displayName}
+                          すべてのプロファイル
                         </label>
-                      ))}
+                      )}
+                      {selectedBrowser.profiles.map((profile) => {
+                        const checked =
+                          isAllProfiles || editingRule.profileIds.includes(profile.id);
+                        const isLastChecked =
+                          !isAllProfiles &&
+                          selectedProfileIds.length === 1 &&
+                          selectedProfileIds[0] === profile.id;
+                        return (
+                          <label key={profile.id}>
+                            <input
+                              type="checkbox"
+                              value={profile.id}
+                              checked={checked}
+                              disabled={isAllProfiles || isLastChecked}
+                              onChange={() => handleProfileToggle(profile.id)}
+                            />
+                            {profile.displayName}
+                          </label>
+                        );
+                      })}
                     </div>
+                    {!isAllProfiles && selectedProfileIds.length === 0 && (
+                      <span className="field-description">
+                        保存されているプロファイル（{editingRule.profileIds.join(', ')}
+                        ）が見つかりません。選び直してください
+                      </span>
+                    )}
                   </div>
                 )}
               </>

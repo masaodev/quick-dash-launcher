@@ -5,6 +5,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import type { BrowserInfo } from '@common/types';
 import type { BookmarkAutoImportRule } from '@common/types/bookmarkAutoImport';
 import { summarizeImportResults } from '@common/utils/bookmarkImportUtils';
 
@@ -45,6 +46,7 @@ const BookmarkAutoImportSettings: React.FC<BookmarkAutoImportSettingsProps> = ({
   const [dataFileLabels, setDataFileLabels] = useState<Record<string, string>>({});
   const [deleteConfirmRuleId, setDeleteConfirmRuleId] = useState<string | null>(null);
   const [deleteAlsoItems, setDeleteAlsoItems] = useState(false);
+  const [browsers, setBrowsers] = useState<BrowserInfo[]>([]);
 
   // データファイル一覧とラベルを取得
   useEffect(() => {
@@ -53,6 +55,8 @@ const BookmarkAutoImportSettings: React.FC<BookmarkAutoImportSettingsProps> = ({
       .getSettings()
       .then((appSettings) => setDataFileLabels(appSettings.dataFileLabels || {}))
       .catch(console.error);
+    // ルール一覧でプロファイルを表示名で出すため（見つからなければ ID のまま）
+    window.electronAPI.detectInstalledBrowsers().then(setBrowsers).catch(console.error);
   }, []);
 
   const handleSaveRule = useCallback(
@@ -127,6 +131,13 @@ const BookmarkAutoImportSettings: React.FC<BookmarkAutoImportSettingsProps> = ({
 
   const getBrowserDisplayName = (browserId: string): string => {
     return browserId === 'chrome' ? 'Chrome' : 'Edge';
+  };
+
+  const getProfileNames = (rule: BookmarkAutoImportRule): string => {
+    const profiles = browsers.find((b) => b.id === rule.browserId)?.profiles ?? [];
+    return rule.profileIds
+      .map((id) => profiles.find((p) => p.id === id)?.displayName ?? id)
+      .join(', ');
   };
 
   if (isLoading) {
@@ -216,9 +227,7 @@ const BookmarkAutoImportSettings: React.FC<BookmarkAutoImportSettingsProps> = ({
               <div className="auto-import-rule-detail">
                 <div className="rule-source">
                   {getBrowserDisplayName(rule.browserId)}
-                  {rule.profileIds.length > 0
-                    ? ` > ${rule.profileIds.join(', ')}`
-                    : ' > 全プロファイル'}
+                  {rule.profileIds.length > 0 ? ` > ${getProfileNames(rule)}` : ' > 全プロファイル'}
                   {rule.folderPaths.length > 0
                     ? ` > ${rule.folderPaths.join(', ')}`
                     : ' > 全フォルダ'}
