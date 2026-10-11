@@ -1,5 +1,63 @@
 {
   "$schema": "../schemas/data.schema.json",
   "version": "1.0",
-  "items": []
+  "items": [
+    {
+      "id": "dev30001",
+      "type": "item",
+      "displayName": "天気（tenki）",
+      "path": "https://tenki.jp/"
+    },
+    {
+      "id": "dev30002",
+      "type": "item",
+      "displayName": "地図",
+      "path": "https://www.google.com/maps"
+    },
+    {
+      "id": "dev30003",
+      "type": "item",
+      "displayName": "乗換案内",
+      "path": "https://transit.yahoo.co.jp/"
+    },
+    {
+      "id": "dev30004",
+      "type": "item",
+      "displayName": "Amazon",
+      "path": "https://www.amazon.co.jp/"
+    },
+    {
+      "id": "dev30005",
+      "type": "item",
+      "displayName": "ピクチャ",
+      "path": "shell:My Pictures"
+    },
+    {
+      "id": "dev30006",
+      "type": "item",
+      "displayName": "ミュージック",
+      "path": "shell:My Music"
+    },
+    {
+      "id": "dev30007",
+      "type": "item",
+      "displayName": "ビデオ",
+      "path": "shell:My Video"
+    },
+    {
+      "id": "dev30008",
+      "type": "item",
+      "displayName": "Snipping Tool",
+      "path": "ms-screenclip:"
+    },
+    {
+      "id": "dev30009",
+      "type": "group",
+      "displayName": "お出かけ前",
+      "itemNames": [
+        "天気（tenki）",
+        "乗換案内"
+      ]
+    }
+  ]
 }
