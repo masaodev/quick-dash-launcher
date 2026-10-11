@@ -119,7 +119,7 @@ export interface AppSettings {
   detachedVisibleOnAllDesktops: boolean;
   /** グループアイテムを並列起動する（デフォルト: false） */
   parallelGroupLaunch: boolean;
-  /** ウィンドウ検索で起動のホットキー（デフォルト: ''、空の場合は無効） */
+  /** ウィンドウ検索で起動のホットキー（デフォルト: 'Ctrl+Alt+Space'、空の場合は無効） */
   itemSearchHotkey: string;
   /** クリップボードデータもバックアップに含めるか（デフォルト: false） */
   backupIncludeClipboard: boolean;

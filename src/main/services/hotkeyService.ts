@@ -79,6 +79,15 @@ export class HotkeyService {
       }
 
       const mainSuccess = this.registerHotkeyInternal(hotkey, 'main');
+
+      // ランチャーのホットキーが未設定（初回設定の画面を出している間）は、ウィンドウ検索のホットキーも
+      // 登録しない。ウィンドウ検索には既定値があるので、登録すると初回設定の途中で開いてしまう。
+      // 初回設定の完了時に登録する
+      if (!hotkey?.trim()) {
+        logger.info('初回設定が終わっていないため、ウィンドウ検索のホットキーの登録を見送りました');
+        return mainSuccess;
+      }
+
       const itemSearchHotkey = await this.settingsService.get('itemSearchHotkey');
       const itemSearchSuccess = this.registerHotkeyInternal(itemSearchHotkey, 'itemSearch');
 

@@ -9,8 +9,8 @@ export type ResettableSettingsCategory = Extract<SettingsCategory, 'basic' | 'wi
 /**
  * カテゴリごとに「既定値に戻す」で戻す項目
  *
- * ホットキー（hotkey / itemSearchHotkey）は含めない。既定値が空で、空に戻すと
- * 次回起動が初回起動扱いになるうえ、利用者が意図して決めた値だから。
+ * ホットキー（hotkey / itemSearchHotkey）は含めない。利用者が意図して決めた値で、
+ * しかも hotkey は既定値が空なので、戻すと次回起動が初回起動扱いになるから。
  * タブ構成（dataFileTabs 等）とブックマーク自動取込も、それぞれのカテゴリで管理するので含めない。
  */
 export const SETTINGS_RESET_KEYS: Record<
