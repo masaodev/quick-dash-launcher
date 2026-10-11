@@ -4,6 +4,7 @@ import { dataLogger } from '@common/logger';
 import { FileUtils } from '@common/utils/fileUtils';
 import { parseJsonDataFileLenient, serializeJsonDataFile } from '@common/utils/jsonParser';
 import type { JsonItemIssue } from '@common/utils/jsonParser';
+import { isJsonLauncherItem } from '@common/types';
 import type { AppItem, JsonItem } from '@common/types';
 import { isWindowInfo } from '@common/types/guards';
 
@@ -25,6 +26,7 @@ import {
 } from '../loadReportService.js';
 import type { LoadReportFile, LoadTrigger } from '../loadReportService.js';
 import { notifyWorkspaceChanged } from '../../ipc/notifications.js';
+import { clearFolderProbeCache, prefetchFolderProbes } from '../../utils/folderPathProbe.js';
 
 import {
   clearDataFileCorrupted,
@@ -100,6 +102,11 @@ async function loadJsonDataFile(
 
   // 不正なアイテムは items 配列上には残る（書き戻しで消さないため）ので、検証済みの参照で除外する
   const validItemSet = new Set<JsonItem>(parsed.validItems);
+
+  // ドット入りのフォルダ名を見分けるディスク確認を、変換の前にまとめて並行で済ませる
+  await prefetchFolderProbes(
+    parsed.validItems.filter(isJsonLauncherItem).map((jsonItem) => jsonItem.path)
+  );
 
   for (let i = 0; i < parsed.data.items.length; i++) {
     const jsonItem = parsed.data.items[i];
@@ -291,6 +298,8 @@ async function reloadConfigFilesInternal(
   configFolder: string,
   trigger: LoadTrigger
 ): Promise<AppItem[]> {
+  // 起動時・F5 はディスクの今の状態で判定し直す（アプリ内の変更に伴う再読込では覚えた結果を使う）
+  if (trigger === 'explicit') clearFolderProbeCache();
   const data = await loadDataFilesWithReport(configFolder);
 
   // ワークスペースも同じタイミングで読み直す（読めなくてもデータファイルの表示は止めない）

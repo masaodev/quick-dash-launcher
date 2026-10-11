@@ -16,6 +16,7 @@ import { SettingsService } from '../services/settingsService.js';
 import { PathManager } from '../config/pathManager.js';
 import { forgetDataFile, writeDataFile } from '../services/dataFileTracker.js';
 import { checkPathsExist } from '../services/data/pathExistenceChecker.js';
+import { withFolderMarker } from '../utils/folderPathProbe.js';
 import type { LoadTrigger } from '../services/loadReportService.js';
 import { reloadConfigFiles } from '../services/data/dataFileLoader.js';
 import { loadEditableItems, saveEditableItems } from '../services/data/editableItemsStore.js';
@@ -114,7 +115,14 @@ export function setupDataHandlers(configFolder: string) {
   );
 
   ipcMain.handle(IPC_CHANNELS.REGISTER_ITEMS, async (_event, items: RegisterItem[]) => {
-    await registerItems(configFolder, items);
+    const marked = await Promise.all(
+      items.map(async (item) => {
+        if (item.itemCategory !== 'item') return item;
+        const path = await withFolderMarker(item.path);
+        return path === item.path ? item : { ...item, path, type: 'folder' as const };
+      })
+    );
+    await registerItems(configFolder, marked);
     notifyDataChanged();
   });
 

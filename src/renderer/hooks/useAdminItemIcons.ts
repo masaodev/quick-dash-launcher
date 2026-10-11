@@ -32,7 +32,7 @@ export function useAdminItemIcons(items: EditableJsonItem[]): Map<string, string
             return {
               displayName: jsonItem.displayName || '',
               path: jsonItem.path || '',
-              type: detectItemTypeSync(jsonItem.path || ''),
+              type: editableItem.meta.launcherType ?? detectItemTypeSync(jsonItem.path || ''),
             } as LauncherItem;
           }
           return null;

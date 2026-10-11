@@ -12,7 +12,12 @@ function getDefaultTab(currentTab: string | undefined, tabs: DataFileTab[]): str
   return currentTab || (tabs.length > 0 ? tabs[0].files[0] : DEFAULT_DATA_FILE);
 }
 
-function extractDefaultName(filePath: string): string {
+/**
+ * ドロップされたパスから表示名の初期値を作る
+ *
+ * ファイルは拡張子を除く。フォルダは名前にドットがあっても削らない（`j-gate3.0` を `j-gate3` にしない）
+ */
+function extractDefaultName(filePath: string, itemType: RegisterItem['type']): string {
   if (filePath.includes('://')) {
     try {
       const url = new URL(filePath);
@@ -22,8 +27,9 @@ function extractDefaultName(filePath: string): string {
     }
   }
 
-  const parts = filePath.split(/[\\/]/);
+  const parts = filePath.replace(/[\\/]+$/, '').split(/[\\/]/);
   const basename = parts[parts.length - 1] || filePath;
+  if (itemType === 'folder') return basename;
   const lastDot = basename.lastIndexOf('.');
   const ext = lastDot !== -1 ? basename.substring(lastDot) : '';
   return ext ? basename.slice(0, -ext.length) : basename;
@@ -81,7 +87,7 @@ export function useModalInitializer() {
         debugInfo('Processing dropped path:', filePath);
         const itemType = await detectItemType(filePath, window.electronAPI.isDirectory);
         debugInfo('Detected item type:', itemType);
-        const name = extractDefaultName(filePath);
+        const name = extractDefaultName(filePath, itemType);
         debugInfo('Extracted name:', name);
 
         let icon: string | undefined;

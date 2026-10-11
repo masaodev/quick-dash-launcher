@@ -40,3 +40,19 @@ describe('PathUtils.isCustomUriScheme', () => {
     expect(PathUtils.isCustomUriScheme('://example.com')).toBe(false);
   });
 });
+
+describe('PathUtils.getParentPath', () => {
+  it('ファイルパスの親フォルダを返す', () => {
+    expect(PathUtils.getParentPath('C:\\work\\memo.txt')).toBe('C:\\work');
+  });
+
+  it('末尾の区切り文字は無視する（末尾に区切り文字を付けて保存したドット入りのフォルダ）', () => {
+    expect(PathUtils.getParentPath('C:\\work\\j-gate3.0\\')).toBe('C:\\work');
+    expect(PathUtils.getParentPath('\\\\server\\share\\v1.2\\')).toBe('\\\\server\\share');
+    expect(PathUtils.getParentPath('/home/user/v1.2/')).toBe('/home/user');
+  });
+
+  it('親がないときは空文字を返す', () => {
+    expect(PathUtils.getParentPath('memo.txt')).toBe('');
+  });
+});

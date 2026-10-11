@@ -9,6 +9,7 @@ import { FileUtils } from '@common/utils/fileUtils';
 import { ClipboardService } from '../services/clipboardService.js';
 import { writeDataFile } from '../services/dataFileTracker.js';
 import { createSafeIpcHandler } from '../utils/ipcWrapper';
+import { withFolderMarker } from '../utils/folderPathProbe.js';
 
 import { notifyDataChanged } from './notifications.js';
 
@@ -89,7 +90,12 @@ export async function updateItemById(
       if (itemIndex === -1) return null;
 
       found = true;
-      jsonData.items[itemIndex] = convertLauncherItemToJsonItem(newItem, id);
+      // 1 件の編集は利用者の操作なので、パスが変わっていなくても確かめる（既存のアイテムも編集で直る）
+      const path = await withFolderMarker(newItem.path);
+      jsonData.items[itemIndex] = convertLauncherItemToJsonItem(
+        path === newItem.path ? newItem : { ...newItem, path, type: 'folder' },
+        id
+      );
       return jsonData;
     }
   );
@@ -130,10 +136,24 @@ export async function batchUpdateItemsById(
     configFolder,
     (jsonData) => jsonData.items.some((item) => updateMap.has(item.id)),
     async ({ jsonData }) => {
-      const newItems = jsonData.items.map((item) => {
+      const newItems = [];
+      for (const item of jsonData.items) {
         const newItem = updateMap.get(item.id);
-        return newItem ? convertLauncherItemToJsonItem(newItem, item.id) : item;
-      });
+        if (!newItem) {
+          newItems.push(item);
+          continue;
+        }
+        // 一括更新はパスが変わったものだけ確かめる
+        const previousPath = 'path' in item ? item.path : undefined;
+        const path =
+          newItem.path === previousPath ? newItem.path : await withFolderMarker(newItem.path);
+        newItems.push(
+          convertLauncherItemToJsonItem(
+            path === newItem.path ? newItem : { ...newItem, path, type: 'folder' },
+            item.id
+          )
+        );
+      }
       return { ...jsonData, items: newItems };
     }
   );

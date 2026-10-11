@@ -107,9 +107,9 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
     if (iconData) {
       return <img src={iconData} alt="" className="item-icon-image" />;
     }
-    // アイコンがない場合、パスから型を判定してフォルダなら絵文字表示
+    // アイコンがない場合、フォルダなら絵文字表示（読み込み時の判定がなければパスから判定）
     const path = jsonItem.path || '';
-    if (path && detectItemTypeSync(path) === 'folder') {
+    if (path && (item.meta.launcherType ?? detectItemTypeSync(path)) === 'folder') {
       return <span className="folder-emoji">📁</span>;
     }
     return null;
