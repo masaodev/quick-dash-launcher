@@ -16,7 +16,7 @@ import { Button } from './ui';
  * 画面仕様: docs/screens/app-import-modal.md
  *
  * スタートメニューのアプリから使うものを選び、アイテム管理で開いているデータファイルに取り込む。
- * 区画の並びと言葉はブックマーク取込画面にそろえ、選び方は 1 件ずつのチェック（初期は未選択）。
+ * 区画と言葉はブックマーク取込画面にそろえ、選び方は 1 件ずつのチェック（初期は未選択）。
  */
 
 interface FilterOptions {
@@ -330,23 +330,36 @@ function AppImportModal({
         </div>
 
         <div className="app-import-body">
-          {/* 取込元 */}
-          <div className="app-import-section">
-            <h4>取込元</h4>
-            <div className="app-import-source">
-              <span className="app-import-status">
-                {loading
-                  ? 'スタートメニューをスキャン中...'
-                  : `スタートメニューから ${apps.length} 件見つかりました`}
-              </span>
-              <Button
-                variant="info"
-                size="sm"
-                onClick={() => setScanCount((c) => c + 1)}
-                disabled={loading}
-              >
-                再スキャン
-              </Button>
+          {/* 取込元と取込先は横に並べ、一覧の高さを残す */}
+          <div className="app-import-row">
+            {/* 取込元 */}
+            <div className="app-import-section">
+              <h4>取込元</h4>
+              <div className="app-import-source">
+                <span className="app-import-status">
+                  {loading
+                    ? 'スタートメニューをスキャン中...'
+                    : `スタートメニューから ${apps.length} 件見つかりました`}
+                </span>
+                <Button
+                  variant="info"
+                  size="sm"
+                  onClick={() => setScanCount((c) => c + 1)}
+                  disabled={loading}
+                >
+                  再スキャン
+                </Button>
+              </div>
+            </div>
+            {/* 取込先（アイテム管理で開いているデータファイルに固定） */}
+            <div className="app-import-section">
+              <h4>取込先</h4>
+              <div className="app-import-destination">
+                <span className="app-import-destination-value">{importDestination}</span>
+                <span className="app-import-note">
+                  別のファイルへは、アイテム管理で切り替えてから開いてください
+                </span>
+              </div>
             </div>
           </div>
 
@@ -417,17 +430,6 @@ function AppImportModal({
                   {excludedIds.size > 0 && ` (${excludedIds.size}件)`}
                 </span>
               </label>
-            </div>
-          </div>
-
-          {/* 取込先（アイテム管理で開いているデータファイルに固定） */}
-          <div className="app-import-section">
-            <h4>取込先</h4>
-            <div className="app-import-destination">
-              <span className="app-import-destination-value">{importDestination}</span>
-              <span className="field-description">
-                別のデータファイルに取り込むときは、アイテム管理で切り替えてから開いてください
-              </span>
             </div>
           </div>
 

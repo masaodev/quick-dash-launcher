@@ -23,12 +23,21 @@
   color: var(--text-secondary);
 }
 
+/* 窓が低いときは一覧の最低の高さを保ち、中身全体をスクロールさせる */
 .app-import-body {
   flex: 1;
   min-height: 0;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-lg);
+  gap: var(--spacing-md);
+}
+
+/* 取込元と取込先を横に並べる */
+.app-import-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-xl);
 }
 
 .app-import-section {
@@ -64,8 +73,14 @@
 
 .app-import-destination {
   display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xxs);
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--spacing-xxs) var(--spacing-md);
+}
+
+.app-import-note {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
 }
 
 .app-import-destination-value {
@@ -93,7 +108,7 @@
 
 .app-list-container {
   flex: 1;
-  min-height: 0;
+  min-height: 160px;
   overflow-y: auto;
   margin: 0;
   border: var(--border-light);
@@ -226,12 +241,20 @@
   white-space: normal;
 }
 
-/* 重複警告は区画の幅に合わせる（共通スタイルは画面端までの帯） */
+/* 重複警告は区画の幅に合わせ、一覧の高さを奪わないよう 1 行に詰める（共通スタイルは画面端までの 2 段の帯） */
 .app-import-modal .duplicate-warning-section {
-  margin-top: var(--spacing-lg);
-  padding: var(--spacing-md);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-xs) var(--spacing-lg);
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
   border: var(--border-light);
   border-radius: var(--border-radius);
+}
+
+.app-import-modal .duplicate-warning-message {
+  margin-bottom: 0;
 }
 
 .app-import-footer {
