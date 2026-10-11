@@ -284,6 +284,17 @@ export function useAdminItemEditing(
   /** 未保存の変更（追加・削除・編集すべて）を捨てて、ディスクの内容に戻す */
   const discardChanges = useCallback(() => dispatch({ type: 'discard' }), []);
 
+  /**
+   * 消すデータファイルのアイテムを作業中の一覧から除く
+   *
+   * 未保存の追加が残ったまま保存すると、消したファイルが作り直されるため
+   */
+  const dropFileItems = useCallback(
+    (fileName: string) =>
+      updateWorking((working) => working.filter((item) => item.meta.sourceFile !== fileName)),
+    [updateWorking]
+  );
+
   const clearRebaseNotice = useCallback(() => dispatch({ type: 'clearNotice' }), []);
 
   const selectItem = useCallback((editableItem: EditableJsonItem, selected: boolean) => {
@@ -333,6 +344,7 @@ export function useAdminItemEditing(
     dedupeFile,
     saveChanges,
     discardChanges,
+    dropFileItems,
     selectItem,
     selectAll,
     retainVisibleSelection,

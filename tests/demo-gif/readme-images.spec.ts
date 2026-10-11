@@ -160,8 +160,7 @@ async function takeShots(configDir: string, demoRoot: string): Promise<void> {
     const admin = await utils.openAdminWindow(app, 'edit');
     await admin.locator('.raw-item-row').first().waitFor({ state: 'visible' });
     await shot(admin, path.join(ALT_DIR, 'admin-main.png'));
-    await admin.locator('.tab-dropdown .dropdown-trigger-btn').click();
-    await admin.locator('.tab-dropdown .dropdown-item', { hasText: 'A：基幹刷新Prj' }).click();
+    await admin.getByTestId('admin-tab').filter({ hasText: 'A：基幹刷新Prj' }).click();
     await admin.locator('.raw-item-row').first().waitFor({ state: 'visible' });
     await shot(admin, path.join(ALT_DIR, 'admin-a-full.png'));
     await resizeWindow(app, admin, 560);
