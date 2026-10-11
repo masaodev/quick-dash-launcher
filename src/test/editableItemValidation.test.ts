@@ -138,7 +138,7 @@ describe('validateEditableItem', () => {
       expect(result.isValid).toBe(true);
     });
 
-    it('depthが負の値の場合、エラーを返す', () => {
+    it('depthが-1（無制限）の場合、有効', () => {
       const item: JsonItem = {
         id: 'test-12',
         type: 'dir',
@@ -146,8 +146,19 @@ describe('validateEditableItem', () => {
         options: { depth: -1 },
       };
       const result = validateEditableItem(item);
+      expect(result.isValid).toBe(true);
+    });
+
+    it('depthが-1より小さい場合、エラーを返す', () => {
+      const item: JsonItem = {
+        id: 'test-12b',
+        type: 'dir',
+        path: 'C:\\Documents',
+        options: { depth: -2 },
+      };
+      const result = validateEditableItem(item);
       expect(result.isValid).toBe(false);
-      expect(result.error).toBe('depthは0以上である必要があります');
+      expect(result.error).toBe('depthは-1（無制限）または0以上である必要があります');
     });
 
     it('typesがfileの場合、有効', () => {

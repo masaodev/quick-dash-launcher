@@ -112,8 +112,9 @@ export function validateEditableItem(item: JsonItem): ValidationResult {
         return { isValid: false, error: 'dirのpathが空です' };
       }
       if (item.options) {
-        if (item.options.depth !== undefined && item.options.depth < 0) {
-          return { isValid: false, error: 'depthは0以上である必要があります' };
+        // -1 は無制限（登録画面の「無制限」）。それ未満の負の値だけを不正とする
+        if (item.options.depth !== undefined && item.options.depth < -1) {
+          return { isValid: false, error: 'depthは-1（無制限）または0以上である必要があります' };
         }
         if (item.options.types && !['file', 'folder', 'both'].includes(item.options.types)) {
           return {
