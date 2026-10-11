@@ -1259,7 +1259,10 @@
   border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
   background-color: var(--color-gray-300);
   color: var(--text-secondary);
+  font-family: inherit;
   font-size: var(--font-size-base);
+  /* 英字だけのタブも日本語のタブと同じ高さにする（既定の行の高さはフォントで変わる） */
+  line-height: var(--line-height-normal);
   cursor: pointer;
 }
 
@@ -1322,7 +1325,9 @@
   border-radius: var(--border-radius-xl);
   background-color: var(--bg-app);
   color: var(--text-primary);
+  font-family: inherit;
   font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
   cursor: pointer;
 }
 
