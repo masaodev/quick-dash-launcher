@@ -15,7 +15,14 @@ const globalShortcutMock = vi.hoisted(() => ({
 
 vi.mock('electron', () => ({ globalShortcut: globalShortcutMock, BrowserWindow: {} }));
 vi.mock('@common/logger', () => ({ default: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
-vi.mock('./settingsService.js', () => ({ SettingsService: { getInstance: vi.fn() } }));
+const settingsValues = vi.hoisted(
+  () => ({ hotkey: '', itemSearchHotkey: '' }) as Record<string, string>
+);
+vi.mock('./settingsService.js', () => ({
+  SettingsService: {
+    getInstance: vi.fn(async () => ({ get: async (key: string) => settingsValues[key] })),
+  },
+}));
 
 import { HotkeyService } from './hotkeyService';
 
@@ -84,5 +91,32 @@ describe('HotkeyService の一時解除（ホットキー入力欄の録画中�
     service.resumeHotkeys();
 
     expect(globalShortcutMock.register).not.toHaveBeenCalled();
+  });
+});
+
+describe('HotkeyService.registerHotkey（起動時の登録）', () => {
+  beforeEach(() => {
+    service.unregisterAllHotkeys();
+    vi.clearAllMocks();
+  });
+
+  it('ランチャーのホットキーが未設定（初回設定の途中）なら、ウィンドウ検索のホットキーも登録しない', async () => {
+    settingsValues.hotkey = '';
+    settingsValues.itemSearchHotkey = 'Ctrl+Alt+Space';
+
+    await service.registerHotkey();
+
+    expect(registered.size).toBe(0);
+    expect(service.getCurrentItemSearchHotkey()).toBeNull();
+  });
+
+  it('ランチャーのホットキーがあれば、ウィンドウ検索のホットキーも登録する', async () => {
+    settingsValues.hotkey = 'Alt+Space';
+    settingsValues.itemSearchHotkey = 'Ctrl+Alt+Space';
+
+    await service.registerHotkey();
+
+    expect(service.getCurrentHotkey()).toBe('Alt+Space');
+    expect(service.getCurrentItemSearchHotkey()).toBe('Ctrl+Alt+Space');
   });
 });

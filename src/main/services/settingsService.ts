@@ -59,7 +59,7 @@ export class SettingsService {
     detachedVisibleOnAllDesktops: true,
     backupIncludeClipboard: false,
     parallelGroupLaunch: false,
-    itemSearchHotkey: '',
+    itemSearchHotkey: 'Ctrl+Alt+Space',
     bookmarkAutoImport: DEFAULT_BOOKMARK_AUTO_IMPORT_SETTINGS,
     hideDetachedWithMainWindow: true,
     windowSnapEnabled: true,

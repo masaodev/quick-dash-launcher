@@ -61,7 +61,7 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
   "workspaceVisibleOnAllDesktops": true,
   "detachedVisibleOnAllDesktops": true,
   "parallelGroupLaunch": false,
-  "itemSearchHotkey": "",
+  "itemSearchHotkey": "Ctrl+Alt+Space",
   "backupIncludeClipboard": false,
   "bookmarkAutoImport": {
     "autoRunOnStartup": false,
@@ -192,7 +192,7 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
 
 | フィールド | 型 | デフォルト値 | 説明 |
 | --- | --- | --- | --- |
-| **itemSearchHotkey** | string | "" | ウィンドウ検索の起動ホットキー<br>空の場合は無効<br>例: "Ctrl+Alt+W" |
+| **itemSearchHotkey** | string | "Ctrl+Alt+Space" | ウィンドウ検索の起動ホットキー<br>空の場合は無効<br>例: "Ctrl+Alt+W" |
 
 ### 3.11. ブックマーク自動取込設定
 

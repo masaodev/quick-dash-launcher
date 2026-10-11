@@ -128,7 +128,7 @@
         },
         "itemSearchHotkey": {
           "type": "string",
-          "description": "ウィンドウ検索で起動のホットキー（デフォルト: ''、空の場合は無効）"
+          "description": "ウィンドウ検索で起動のホットキー（デフォルト: 'Ctrl+Alt+Space'、空の場合は無効）"
         },
         "backupIncludeClipboard": {
           "type": "boolean",

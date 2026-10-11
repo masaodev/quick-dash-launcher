@@ -31,7 +31,7 @@ interface FirstLaunchSetupProps {
 export const SetupFirstLaunch: React.FC<FirstLaunchSetupProps> = ({ onComplete }) => {
   const [hotkey, setHotkey] = useState('Alt+Space');
   const [hotkeyValidation, setHotkeyValidation] = useState<HotkeyValidation>({ isValid: true });
-  const [itemSearchHotkey, setItemSearchHotkey] = useState('');
+  const [itemSearchHotkey, setItemSearchHotkey] = useState('Ctrl+Alt+Space');
   const [itemSearchHotkeyValidation, setItemSearchHotkeyValidation] = useState<HotkeyValidation>({
     isValid: true,
   });
@@ -81,7 +81,7 @@ export const SetupFirstLaunch: React.FC<FirstLaunchSetupProps> = ({ onComplete }
             ウィンドウ検索で起動のホットキー
           </label>
           <p className="section-description">
-            ウィンドウ検索モードで直接起動するためのキーです（デフォルト: 未設定）
+            ウィンドウ検索モードで直接起動するためのキーです（デフォルト: Ctrl+Alt+Space）
           </p>
           <HotkeyInput
             value={itemSearchHotkey}
@@ -98,7 +98,7 @@ export const SetupFirstLaunch: React.FC<FirstLaunchSetupProps> = ({ onComplete }
             <div className="validation-error">{itemSearchHotkeyValidation.reason}</div>
           )}
           <p className="hotkey-hint">
-            設定するとこのキーでウィンドウ検索モードが直接開きます。後から設定することもできます。
+            このキーでウィンドウ検索モードが直接開きます。使わないときは「クリア」で外せます。後から変えることもできます。
           </p>
         </div>
 
