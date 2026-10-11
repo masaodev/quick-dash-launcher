@@ -115,6 +115,13 @@ async function takeShots(configDir: string, demoRoot: string): Promise<void> {
     await fetchIcons(main);
     const utils = new TestUtils(main);
 
+    // 別案用: 検索中のメイン画面（リポジトリのプレビュー画像の素材。説明文は入れない）
+    await main.mouse.move(5, 5);
+    const input = main.locator('input[type="text"]').first();
+    await input.fill('基本設計');
+    await shot(main, path.join(ALT_DIR, 'main-search.png'));
+    await input.fill('');
+
     // 登録画面（フォルダ取込）: 案件の設計書フォルダを、Excel だけ・旧版を除いて取り込むところ
     const register = await utils.openRegisterModal(app);
     const selects = register.locator('.register-modal select');
