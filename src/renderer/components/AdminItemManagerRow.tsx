@@ -13,6 +13,7 @@ import {
   isPathEditable,
 } from '../utils/adminItemDisplay';
 import { describePathAndArgs, getItemKey } from '../utils/editableItemOperations';
+import { activateOnEnterOrSpace } from '../utils/keyboardActivation';
 
 export interface AdminItemManagerRowProps {
   item: EditableJsonItem;
@@ -146,7 +147,10 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
     return (
       <div
         className={`editable-cell ${hasError ? 'error' : ''}`}
+        role="button"
+        tabIndex={0}
         onClick={() => onStartNameEdit(item)}
+        onKeyDown={activateOnEnterOrSpace(() => onStartNameEdit(item))}
         title={
           hasError ? `入力に不備があります: ${item.meta.validationError}` : 'クリックして名前を編集'
         }
@@ -197,7 +201,10 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
         <div
           className="readonly-cell"
           title={`${text}\n${hint}`}
+          role="button"
+          tabIndex={0}
           onDoubleClick={() => onEditClick(item)}
+          onKeyDown={activateOnEnterOrSpace(() => onEditClick(item))}
         >
           {missingBadge}
           {text}
@@ -208,7 +215,10 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
     return (
       <div
         className="editable-cell"
+        role="button"
+        tabIndex={0}
         onClick={() => onStartPathEdit(item)}
+        onKeyDown={activateOnEnterOrSpace(() => onStartPathEdit(item))}
         title={`${text}\n${pathMissing ? 'パスが見つかりません。' : ''}クリックしてパスを編集。引数は ✏️ 詳細編集から`}
       >
         {missingBadge}

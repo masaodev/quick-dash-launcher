@@ -672,6 +672,44 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
     }
   });
 
+  test('見出しとセルはキーボード（Enter／Space）でも並べ替え・編集できる', async ({
+    electronApp,
+    mainWindow,
+  }, _testInfo) => {
+    const utils = new TestUtils(mainWindow);
+    const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
+
+    try {
+      await test.step('名前の見出しにフォーカスして Enter・Space で並べ替えが 昇順 → 降順 → 解除 と回る', async () => {
+        const nameHeader = adminWindow.locator('th.name-column');
+        // 開いた直後は名前の昇順
+        await expect(nameHeader).toHaveAttribute('aria-sort', 'ascending');
+        await nameHeader.focus();
+        await adminWindow.keyboard.press('Enter');
+        await expect(nameHeader).toHaveAttribute('aria-sort', 'descending');
+        await adminWindow.keyboard.press(' ');
+        await expect(nameHeader).toHaveAttribute('aria-sort', 'none');
+        await adminWindow.keyboard.press('Enter');
+        await expect(nameHeader).toHaveAttribute('aria-sort', 'ascending');
+      });
+
+      await test.step('名前のセルにフォーカスして Enter で編集を始め、Escape で抜ける', async () => {
+        const githubRow = adminWindow.locator('.raw-item-row[data-item-id="base0001"]');
+        const nameCell = githubRow.locator('.name-column .editable-cell');
+        await nameCell.focus();
+        await adminWindow.keyboard.press('Enter');
+        const nameInput = githubRow.locator('.name-column .edit-input');
+        await expect(nameInput).toBeFocused();
+        await expect(nameInput).toHaveValue('GitHub');
+        await nameInput.press('Escape');
+        await expect(nameInput).toHaveCount(0);
+        await expect(adminWindow.locator('.unsaved-changes')).not.toBeVisible();
+      });
+    } finally {
+      await adminWindow.close();
+    }
+  });
+
   // ==================== リンク切れ確認テスト ====================
 
   test('ツールメニューの「リンク切れを確認」で印が付き、「リンク切れのみ表示」で絞り込める', async ({

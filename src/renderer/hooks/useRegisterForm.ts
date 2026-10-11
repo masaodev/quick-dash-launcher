@@ -201,6 +201,12 @@ export function useRegisterForm(
         delete item.windowOperationConfig;
       };
       const clearClipboardFields = () => {
+        // 未確定のキャプチャは使われなくなるので、メインプロセス側の保持も捨てる
+        if (item.clipboardSessionId) {
+          window.electronAPI.clipboardAPI
+            .discardSession(item.clipboardSessionId)
+            .catch((error) => debugInfo('クリップボードセッションの破棄に失敗:', error));
+        }
         delete item.clipboardDataRef;
         delete item.clipboardFormats;
         delete item.clipboardSavedAt;

@@ -137,6 +137,8 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
 | **files** | string[] | ✓ | タブにまとめるデータファイルの一覧（設定フォルダからの相対パス）。例: `["datafiles/data.json"]`、`["datafiles/data2.json", "datafiles/data3.json"]` |
 | **name** | string | ✓ | タブに表示する名前。例: `"メイン"`、`"サブ1"` |
 
+メイン画面は設定を読むたびに、`files` にあって存在しないデータファイルを空で作る。`datafiles/` 直下の `.json` 以外の名前など、作れなかったファイルがあればメイン画面にエラーのトースト（「タブのデータファイルを作成できませんでした: 〈ファイル名〉（〈理由〉）」）を出す。
+
 型定義: [src/common/types/data.ts](../../../src/common/types/data.ts) の `DataFileTab`
 
 ### 3.7. ウィンドウ表示位置設定

@@ -22,6 +22,8 @@ export class FaviconService {
   private defaultSize = 64;
   private htmlDownloadTimeout = 5000;
   private faviconDownloadTimeout = 3000;
+  /** ファビコン（og:image を含む）1 件の上限。超えたら打ち切って次の取得元へ進む */
+  private faviconMaxBytes = 5 * 1024 * 1024;
 
   constructor(faviconsFolder: string) {
     this.faviconsFolder = faviconsFolder;
@@ -229,6 +231,9 @@ export class FaviconService {
     if (error.message.includes('タイムアウト')) {
       return 'ファビコンダウンロードがタイムアウト';
     }
+    if (error.message.includes('大きすぎます')) {
+      return 'ファビコンが大きすぎるためスキップ';
+    }
     if (error.message.startsWith('HTTP ')) {
       return `HTTPエラー (${error.message})`;
     }
@@ -384,13 +389,23 @@ export class FaviconService {
 
   private async downloadFavicon(url: string): Promise<Buffer | null> {
     const chunks: Buffer[] = [];
+    const maxBytes = this.faviconMaxBytes;
+    const tooLarge = () => new Error(`ファビコンが大きすぎます（上限 ${maxBytes} バイト）: ${url}`);
+    let received = 0;
 
     await this.makeRequest({
       url,
       timeout: this.faviconDownloadTimeout,
       timeoutMessage: `ファビコンダウンロードがタイムアウトしました: ${url}`,
       checkStatus: true,
-      onData(chunk) {
+      maxBytes,
+      tooLargeError: tooLarge,
+      onData(chunk, finish) {
+        received += chunk.length;
+        if (received > maxBytes) {
+          finish(tooLarge());
+          return;
+        }
         chunks.push(chunk);
       },
     });
@@ -403,7 +418,11 @@ export class FaviconService {
     timeout: number;
     timeoutMessage: string;
     checkStatus?: boolean;
-    onData: (chunk: Buffer, finish: () => void) => void;
+    /** Content-Length がこれを超えていたら、本文を読まずに tooLargeError で打ち切る */
+    maxBytes?: number;
+    tooLargeError?: () => Error;
+    /** finish() は成功として、finish(error) は失敗として読み込みを終える */
+    onData: (chunk: Buffer, finish: (error?: Error) => void) => void;
   }): Promise<void> {
     return new Promise((resolve, reject) => {
       const request = net.request(options.url);
@@ -436,9 +455,18 @@ export class FaviconService {
           return;
         }
 
+        if (options.maxBytes !== undefined) {
+          const header = response.headers['content-length'];
+          const contentLength = Number(Array.isArray(header) ? header[0] : header);
+          if (Number.isFinite(contentLength) && contentLength > options.maxBytes) {
+            finish(options.tooLargeError?.() ?? new Error('レスポンスが大きすぎます'));
+            return;
+          }
+        }
+
         response.on('data', (chunk) => {
           if (!isFinished) {
-            options.onData(chunk, () => finish());
+            options.onData(chunk, finish);
           }
         });
 

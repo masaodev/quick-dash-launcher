@@ -67,7 +67,10 @@ import type {
 export interface ElectronAPI {
   getConfigFolder: () => Promise<string>;
   getDataFiles: () => Promise<string[]>;
-  createDataFile: (fileName: string) => Promise<{ success: boolean; error?: string }>;
+  /** 既にあるときは success: false・alreadyExists: true（作成済みかどうかの確認にも使う） */
+  createDataFile: (
+    fileName: string
+  ) => Promise<{ success: boolean; error?: string; alreadyExists?: boolean }>;
   deleteDataFile: (
     fileName: string
   ) => Promise<{ success: boolean; error?: string; disabledRules?: string[] }>;
