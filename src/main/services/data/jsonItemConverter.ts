@@ -14,6 +14,7 @@ import {
 import type { JsonItem } from '@common/types';
 
 import { processDirectoryItem, processShortcut } from '../../ipc/directoryScanner.js';
+import { refineItemType } from '../../utils/folderPathProbe.js';
 import { resolveLayoutEntryIcons } from '../../utils/layoutIconResolver.js';
 
 /**
@@ -71,7 +72,7 @@ export async function convertJsonItemToAppItems(
     const item: LauncherItem = {
       displayName: jsonItem.displayName,
       path: jsonItem.path,
-      type: detectItemTypeSync(jsonItem.path),
+      type: await refineItemType(jsonItem.path, detectItemTypeSync(jsonItem.path)),
       args: jsonItem.args,
       customIcon: jsonItem.customIcon,
       windowConfig: jsonItem.windowConfig,

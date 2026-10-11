@@ -26,6 +26,7 @@ import {
 import { showToastWindow } from '../services/overlayWindowService.js';
 import PathManager from '../config/pathManager.js';
 import { getIconForItem } from '../services/iconService.js';
+import { withFolderMarker } from '../utils/folderPathProbe.js';
 import { closeDetachedGroupWindow } from '../detachedGroupWindowManager.js';
 import { reloadConfigFiles } from '../services/data/dataFileLoader.js';
 
@@ -131,9 +132,11 @@ export function setupWorkspaceHandlers(): void {
 
         for (const filePath of filePaths) {
           try {
-            const itemType = detectItemTypeSync(filePath);
-            await getIconForItem(filePath, itemType);
-            const addedItem = await service.addItemFromPath(filePath, groupId, workspaceId);
+            // ドット入りのフォルダ名は末尾に区切り文字を付けてから判定する（拡張子のアイコンを取りに行かない）
+            const markedPath = await withFolderMarker(filePath);
+            const itemType = detectItemTypeSync(markedPath);
+            await getIconForItem(markedPath, itemType);
+            const addedItem = await service.addItemFromPath(markedPath, groupId, workspaceId);
             addedItems.push(addedItem);
             logger.info(
               { id: addedItem.id, name: addedItem.displayName, path: filePath, type: itemType },

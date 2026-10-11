@@ -12,10 +12,15 @@ export class PathUtils {
     return item.args ? `${item.path} ${item.args}` : item.path;
   }
 
-  /** ファイルパスから親ディレクトリのパスを取得 */
+  /**
+   * ファイルパスから親ディレクトリのパスを取得
+   *
+   * 末尾の区切り文字は無視する（ドット入りのフォルダ名は `…\j-gate3.0\` のように末尾に付けて保存するため）
+   */
   static getParentPath(filePath: string): string {
-    const index = lastSeparatorIndex(filePath);
-    return index > 0 ? filePath.substring(0, index) : '';
+    const trimmed = filePath.replace(/[\\/]+$/, '');
+    const index = lastSeparatorIndex(trimmed);
+    return index > 0 ? trimmed.substring(0, index) : '';
   }
 
   /** パスがショートカットファイル（.lnk）かどうかを判定 */

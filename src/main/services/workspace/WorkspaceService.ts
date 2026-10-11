@@ -20,6 +20,7 @@ import { getDescendantGroupIds } from '@common/utils/groupTreeUtils';
 import PathManager from '../../config/pathManager.js';
 import { BackupService } from '../backupService.js';
 import type { LoadReportFile } from '../loadReportService.js';
+import { markKnownFolderPath, withFolderMarker } from '../../utils/folderPathProbe.js';
 
 import { WorkspaceFileStore } from './WorkspaceFileStore.js';
 import type { WorkspaceReloadResult } from './WorkspaceFileStore.js';
@@ -206,7 +207,12 @@ export class WorkspaceService {
     workspaceId?: string
   ): Promise<WorkspaceItem> {
     await this.initializeStore();
-    return this.itemManager!.addItem(item, groupId, workspaceId);
+    // メイン画面の判定でフォルダと分かっているもの（ドット入りのフォルダ名）は、見た目でも分かるようにして保存する
+    const marked =
+      'type' in item && item.type === 'folder' && 'path' in item && !item.originalPath
+        ? { ...item, path: markKnownFolderPath(item.path) }
+        : item;
+    return this.itemManager!.addItem(marked, groupId, workspaceId);
   }
 
   public async addItemFromPath(
@@ -215,7 +221,11 @@ export class WorkspaceService {
     workspaceId?: string
   ): Promise<WorkspaceItem> {
     await this.initializeStore();
-    return this.itemManager!.addItemFromPath(filePath, groupId, workspaceId);
+    return this.itemManager!.addItemFromPath(
+      await withFolderMarker(filePath),
+      groupId,
+      workspaceId
+    );
   }
 
   public async removeItem(id: string): Promise<void> {
@@ -230,7 +240,9 @@ export class WorkspaceService {
 
   public async updateItem(id: string, update: WorkspaceItemUpdate): Promise<void> {
     await this.initializeStore();
-    this.itemManager!.updateItem(id, update);
+    const marked =
+      update.type === 'item' ? { ...update, path: await withFolderMarker(update.path) } : update;
+    this.itemManager!.updateItem(id, marked);
   }
 
   public async reorderItems(itemIds: string[]): Promise<void> {

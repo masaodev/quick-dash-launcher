@@ -34,6 +34,7 @@ import {
   writeDataFile,
 } from '../dataFileTracker.js';
 import type { LoadReportFile } from '../loadReportService.js';
+import { prefetchFolderProbes, refineItemType } from '../../utils/folderPathProbe.js';
 
 import { isLegacyWorkspaceFile, migrateWorkspaceV1 } from './workspaceMigration.js';
 import { coerceWorkspaceUiState, type WorkspaceUiStateStore } from './WorkspaceUiStateStore.js';
@@ -145,6 +146,25 @@ export function resolveLauncherType(item: {
   }
   const detected = detectItemTypeSync(target);
   return detected === 'clipboard' ? 'file' : detected;
+}
+
+/**
+ * パスの見た目ではファイルの起動種別を、ディスクの状態で補正する（ドット入りのフォルダ名）
+ *
+ * resolveLauncherType はパスの文字列だけで決めるため、読み込み時にまとめて補う
+ */
+async function refineLauncherTypes(items: Array<{ type: string }>): Promise<void> {
+  const targets = items.filter(
+    (item): item is JsonWorkspaceItem & { type: 'item'; launcherType?: LauncherItemType } =>
+      item.type === 'item' && (item as { launcherType?: string }).launcherType === 'file'
+  );
+  const targetPath = (item: { path: string; originalPath?: string }) =>
+    item.originalPath ?? item.path;
+  await prefetchFolderProbes(targets.map(targetPath));
+  for (const item of targets) {
+    item.launcherType =
+      (await refineItemType(targetPath(item), 'file')) === 'folder' ? 'folder' : 'file';
+  }
 }
 
 function toRuntimeItem<T extends JsonWorkspaceItem>(
@@ -366,6 +386,8 @@ export class WorkspaceFileStore {
       ]);
       this.uiState.pruneMissingGroups(groupIds);
     }
+
+    await refineLauncherTypes([...this.main.items, ...this.archive.items]);
 
     this.pendingReports.push(mainReport, archiveReport);
     this.loaded = true;

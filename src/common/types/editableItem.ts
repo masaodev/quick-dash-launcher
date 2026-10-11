@@ -4,7 +4,7 @@
  * RawDataLine型を廃止し、JSON構造を直接扱うための新しい型定義
  */
 
-import type { JsonItem } from '@common/types';
+import type { JsonItem, LauncherItem } from '@common/types';
 
 /**
  * 編集可能なJSONアイテム
@@ -31,6 +31,13 @@ export interface EditableJsonItem {
 
     /** バリデーションエラーメッセージ（エラーがある場合のみ） */
     validationError?: string;
+
+    /**
+     * 起動種別（type: "item" のみ。読み込み時にメイン画面と同じ判定で決める）
+     *
+     * ドット入りのフォルダ名はパスの文字列だけではファイルと区別できないため、ディスクで確かめた結果を渡す
+     */
+    launcherType?: LauncherItem['type'];
   };
 }
 

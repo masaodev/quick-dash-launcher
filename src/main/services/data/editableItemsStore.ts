@@ -14,9 +14,20 @@ import type {
   SaveEditableItemsResult,
 } from '@common/types/editableItem';
 import { validateEditableItem, EXTERNAL_CHANGE_CONFLICT_MARKER } from '@common/types/editableItem';
-import { isJsonClipboardItem, type JsonDataFile, type JsonItem } from '@common/types';
+import {
+  isJsonClipboardItem,
+  isJsonLauncherItem,
+  type JsonDataFile,
+  type JsonItem,
+  type JsonLauncherItem,
+} from '@common/types';
 
 import { PathManager } from '../../config/pathManager.js';
+import {
+  prefetchFolderProbes,
+  refineItemType,
+  withFolderMarker,
+} from '../../utils/folderPathProbe.js';
 import { ClipboardService } from '../clipboardService.js';
 import {
   detectExternalChange,
@@ -112,6 +123,7 @@ export async function loadEditableItems(configFolder: string): Promise<LoadEdita
       }
     }
 
+    await resolveLauncherTypes(items);
     await snapshotExternalChanges(externallyChanged);
 
     return { items, fileHashes };
@@ -205,6 +217,56 @@ async function deleteOrphanedClipboardData(
 }
 
 /**
+ * 起動種別をメイン画面と同じ判定（ドット入りのフォルダ名はディスクで確かめる）で meta に入れる
+ *
+ * 画面側はパスの文字列しか見られないため、アイコンやフォルダの絵文字がメイン画面と食い違わないようにする
+ */
+async function resolveLauncherTypes(items: EditableJsonItem[]): Promise<void> {
+  const launcherEntries = items.filter((entry) => isJsonLauncherItem(entry.item));
+  const pathOf = (entry: EditableJsonItem) => (entry.item as JsonLauncherItem).path;
+  await prefetchFolderProbes(launcherEntries.map(pathOf));
+  for (const entry of launcherEntries) {
+    entry.meta.launcherType = await refineItemType(pathOf(entry));
+  }
+}
+
+/**
+ * パスが変わった（新規を含む）アイテムのうち、ドット入りのフォルダ名に末尾の区切り文字を付ける
+ *
+ * 一覧の保存では全件が届くので、保存済みのパスと同じものは確かめない
+ */
+async function markChangedFolderPaths(
+  configFolder: string,
+  dataFiles: string[],
+  editableItems: EditableJsonItem[]
+): Promise<EditableJsonItem[]> {
+  const savedPaths = new Map<string, string>();
+  for (const fileName of dataFiles) {
+    const content = FileUtils.safeReadTextFile(path.join(configFolder, fileName));
+    if (!content) continue;
+    try {
+      for (const item of parseJsonDataFileLenient(content).data.items) {
+        if (isJsonLauncherItem(item)) savedPaths.set(item.id, item.path);
+      }
+    } catch {
+      // 読めないファイルは比較できないだけなので、すべて変更として扱う
+    }
+  }
+
+  return Promise.all(
+    editableItems.map(async (editableItem) => {
+      const jsonItem = editableItem.item;
+      if (!isJsonLauncherItem(jsonItem) || savedPaths.get(jsonItem.id) === jsonItem.path) {
+        return editableItem;
+      }
+      const markedPath = await withFolderMarker(jsonItem.path);
+      if (markedPath === jsonItem.path) return editableItem;
+      return { ...editableItem, item: { ...jsonItem, path: markedPath } };
+    })
+  );
+}
+
+/**
  * 編集画面の EditableJsonItem 配列を保存する
  *
  * 内容が変わったファイルだけを書き換える。保存後の全ファイルのハッシュを返すので、
@@ -234,9 +296,11 @@ export async function saveEditableItems(
     assertNoExternalChange(configFolder, dataFiles, expectedHashes);
   }
 
+  const markedItems = await markChangedFolderPaths(configFolder, dataFiles, editableItems);
+
   // ファイル別にグループ化
   const fileGroups = new Map<string, EditableJsonItem[]>();
-  for (const item of editableItems) {
+  for (const item of markedItems) {
     const sourceFile = item.meta.sourceFile;
     if (!fileGroups.has(sourceFile)) {
       fileGroups.set(sourceFile, []);
