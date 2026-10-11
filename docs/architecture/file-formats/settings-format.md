@@ -61,6 +61,7 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
   "workspaceVisibleOnAllDesktops": true,
   "detachedVisibleOnAllDesktops": true,
   "parallelGroupLaunch": false,
+  "showKeyboardHints": true,
   "itemSearchHotkey": "Ctrl+Alt+Space",
   "backupIncludeClipboard": false,
   "bookmarkAutoImport": {
@@ -201,6 +202,12 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
 | フィールド | 型 | デフォルト値 | 説明 |
 | --- | --- | --- | --- |
 | **bookmarkAutoImport** | BookmarkAutoImportSettings | `{autoRunOnStartup: false, rules: []}` | ブックマーク自動取込の設定<br>`autoRunOnStartup`: 起動時に有効なルール（`enabled: true`）を自動実行するか<br>`rules`: 取込ルール（`BookmarkAutoImportRule[]`）の配列。ルールの項目は `src/common/types/bookmarkAutoImport.ts` を参照 |
+
+### 3.12. 表示設定
+
+| フィールド | 型 | デフォルト値 | 説明 |
+| --- | --- | --- | --- |
+| **showKeyboardHints** | boolean | true | メインウィンドウの下に主なキー操作のヒントを表示するか（通常モード・ウィンドウ検索モードの両方） |
 
 ---
 

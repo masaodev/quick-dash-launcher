@@ -23,6 +23,7 @@ import {
 import { summarizeImportResults } from '@common/utils/bookmarkImportUtils';
 
 import LauncherSearchBox from './components/LauncherSearchBox';
+import LauncherHintBar from './components/LauncherHintBar';
 import LauncherItemList from './components/LauncherItemList';
 import LauncherActionButtons from './components/LauncherActionButtons';
 import LauncherIconProgressBar from './components/LauncherIconProgressBar';
@@ -40,6 +41,7 @@ import { useSearchHistory } from './hooks/useSearchHistory';
 import { useRegisterWindow } from './hooks/useRegisterWindow';
 import { useItemActions } from './hooks/useItemActions';
 import { useDataFileTabs } from './hooks/useDataFileTabs';
+import { useShowKeyboardHints } from './hooks/useShowKeyboardHints';
 import { useIconFetcher } from './hooks/useIconFetcher';
 import { useDragAndDrop } from './hooks/useDragAndDrop';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
@@ -109,6 +111,7 @@ function App(): React.ReactElement {
     getTabFilteredItems,
   } = useDataFileTabs();
   activeTabRef.current = activeTab;
+  const showKeyboardHints = useShowKeyboardHints();
 
   const { isDraggingOver } = useDragAndDrop(
     (paths: string[]) => openWithDroppedPaths(paths),
@@ -628,19 +631,15 @@ function App(): React.ReactElement {
         onRefreshWindows={handleRefreshWindows}
       />
 
-      {/* eslint-disable no-irregular-whitespace */}
-      {searchMode === 'window' && (
-        <div className="shortcut-hint">
-          {/* prettier-ignore */}
-          <span>
-            <strong>Ctrl+P</strong>:ピン留め/解除　<strong>Ctrl+D</strong>:ウィンドウを閉じる
-            {desktopInfo?.desktopCount && desktopInfo.desktopCount > 1 && activeDesktopTab > 0 && (
-              <>　<strong>Ctrl+←/→</strong>:仮想デスクトップ移動</>
-            )}
-          </span>
-        </div>
+      {showKeyboardHints && (
+        <LauncherHintBar
+          searchMode={searchMode}
+          canSwitchDataFileTab={showDataFileTabs && dataFileTabs.length > 1}
+          canMoveToDesktop={
+            !!desktopInfo?.desktopCount && desktopInfo.desktopCount > 1 && activeDesktopTab > 0
+          }
+        />
       )}
-      {/* eslint-enable no-irregular-whitespace */}
 
       {!progressState.isActive && missingIconCount > 0 && (
         <MissingIconNotice missingCount={missingIconCount} onFetchClick={handleFetchMissingIcons} />
