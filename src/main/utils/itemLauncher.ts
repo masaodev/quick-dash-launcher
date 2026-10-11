@@ -11,6 +11,8 @@ import { parseArgs } from '@common/utils/argsParser';
 
 import { ClipboardService } from '../services/clipboardService.js';
 
+import { isBareFileName, resolveFromPath } from './pathResolver.js';
+
 /**
  * 起動可能なアイテムの最小インターフェース
  */
@@ -35,7 +37,7 @@ export async function launchItem(item: LaunchableItem, logger: Logger): Promise<
 
       case 'file':
       case 'folder':
-        await shell.openPath(item.path);
+        await openPathOrLog(item.path, logger, { path: item.path, name: item.displayName });
         break;
 
       case 'app':
@@ -90,6 +92,21 @@ function spawnDetached(
   });
 }
 
+/**
+ * shell.openPath で開き、開けなかったらログに残す
+ * shell.openPath は失敗しても例外を投げず、エラーメッセージを返すため
+ */
+async function openPathOrLog(
+  target: string,
+  logger: Logger,
+  logContext: Record<string, unknown>
+): Promise<void> {
+  const error = await shell.openPath(target);
+  if (error) {
+    logger.error({ ...logContext, error }, 'アイテムの起動に失敗しました');
+  }
+}
+
 async function launchApp(item: LaunchableItem, logger: Logger): Promise<void> {
   const logContext = { path: item.path, name: item.displayName };
 
@@ -108,7 +125,13 @@ async function launchApp(item: LaunchableItem, logger: Logger): Promise<void> {
 
   // ショートカットファイルまたは引数なしの場合
   if (/\.lnk$/i.test(item.path) || !item.args) {
-    await shell.openPath(item.path);
+    // shell.openPath はフルパスでないと開けないので、ファイル名だけ（calc.exe など）は PATH から探す
+    const target = isBareFileName(item.path) ? await resolveFromPath(item.path) : item.path;
+    if (!target) {
+      logger.error(logContext, 'PATH にアプリが見つからないため起動できません');
+      return;
+    }
+    await openPathOrLog(target, logger, logContext);
     return;
   }
 

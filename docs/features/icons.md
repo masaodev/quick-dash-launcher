@@ -221,9 +221,11 @@ UWPアプリはPackagedCOM方式で起動されるため、レジストリに `s
 
 ```
 入力: notepad.exe
-検索: where "notepad.exe"
+検索: where "$PATH:notepad.exe"
 結果: C:\Windows\System32\notepad.exe
 ```
+
+PATH だけを探し、カレントフォルダは探さない。アイテムを起動するときも同じ探し方でフルパスにしてから開くので、アイコンが出るアプリは起動もできる。
 
 **シンボリックリンクの解決:**
 WindowsAppsフォルダ等のシンボリックリンクを自動解決してアイコンを抽出。
