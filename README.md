@@ -83,18 +83,18 @@ PowerToys Run のような多くのランチャーは、インストール済み
 ## 画面
 
 <p align="center">
-  <img src="docs/images/readme-admin.png" alt="管理画面。プロジェクトのタブに、フォルダ取込・Web ページ・Teams のチャットなどが表で並んでいる" /><br />
-  <b>管理画面</b>（⚙ →「アイテム管理」）: 登録したものをタブごとに一覧で直せる
+  <b>管理画面</b>（⚙ →「アイテム管理」）: 登録したものをタブごとに一覧で直せる<br />
+  <img src="docs/images/readme-admin.png" alt="管理画面。プロジェクトのタブに、フォルダ取込・Web ページ・Teams のチャットなどが表で並んでいる" />
 </p>
 
 <p align="center">
-  <img src="docs/images/readme-register-item.png" alt="登録画面。名前「勤怠（kintai）」で URL を登録するところ" /><br />
-  <b>登録画面</b>（➕ →「簡易登録」、またはドラッグ＆ドロップ）
+  <b>登録画面</b>（➕ →「簡易登録」、またはドラッグ＆ドロップ）<br />
+  <img src="docs/images/readme-register-item.png" alt="登録画面。名前「勤怠（kintai）」で URL を登録するところ" />
 </p>
 
 <p align="center">
-  <img src="docs/images/readme-register-dir.png" alt="登録画面。種別をフォルダ取込にして、Excel だけを取り込み、旧版を除く設定にしたところ" /><br />
-  <b>フォルダ取込</b>: フォルダの中のファイルをまとめて候補に並べる
+  <b>フォルダ取込</b>: フォルダの中のファイルをまとめて候補に並べる<br />
+  <img src="docs/images/readme-register-dir.png" alt="登録画面。種別をフォルダ取込にして、Excel だけを取り込み、旧版を除く設定にしたところ" />
 </p>
 
 <!-- 画面イメージは `npm run docs:readme-images` で撮り直す（デモデータ＝tests/demo-gif/demo-data.ts） -->
