@@ -481,6 +481,8 @@ function App(): React.ReactElement {
         await window.electronAPI.changeItemSearchHotkey(settings.itemSearchHotkey);
       }
       setIsFirstLaunch(false);
+      // 初回のサンプルにはアイコンがまだ無いので、「取得」を押さなくても出るように取りに行く
+      void handleFetchMissingIcons();
     } catch (error) {
       logError('初回設定の保存に失敗しました:', error);
       showErrorAlert('設定の保存に失敗しました。');
