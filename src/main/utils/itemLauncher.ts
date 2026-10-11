@@ -108,7 +108,16 @@ async function launchApp(item: LaunchableItem, logger: Logger): Promise<void> {
 
   // ショートカットファイルまたは引数なしの場合
   if (/\.lnk$/i.test(item.path) || !item.args) {
-    await shell.openPath(item.path);
+    // ファイル名だけ（calc.exe など）は shell.openPath では開けないので、spawn で PATH から探して起動する
+    if (!/[\\/]/.test(item.path)) {
+      spawnDetached(item.path, [], {}, logger, logContext, 'アイテムの起動に失敗しました (spawn)');
+      return;
+    }
+    // shell.openPath は失敗しても例外を投げず、エラーメッセージを返す
+    const error = await shell.openPath(item.path);
+    if (error) {
+      logger.error({ ...logContext, error }, 'アイテムの起動に失敗しました');
+    }
     return;
   }
 

@@ -1,6 +1,5 @@
 import * as fs from 'fs';
 
-import { app } from 'electron';
 import { FileUtils } from '@common/utils/fileUtils';
 import { generateId, serializeJsonDataFile } from '@common/utils/jsonParser';
 import type { JsonDataFile, JsonItem, SerializableClipboard } from '@common/types';
@@ -46,7 +45,7 @@ function createSampleClipboardItem(): JsonItem | null {
 
 /**
  * デフォルトのデータファイルを作成（JSON形式）
- * 名前にローマ字を添える・フォルダ取込・クリップボードを、初回起動のサンプルで試せるようにする
+ * 名前にローマ字を添える・クリップボードを、初回起動のサンプルで試せるようにする
  */
 export function createDefaultDataFile(): void {
   const dataPath = PathManager.getDataFilePath();
@@ -99,14 +98,6 @@ export function createDefaultDataFile(): void {
         type: 'item',
         displayName: 'メモ帳（memo）',
         path: 'notepad.exe',
-      },
-      // ドキュメントの直下のファイルを取り込む（フォルダ取込は環境変数を展開しないので絶対パスで書く）
-      {
-        id: generateId(),
-        type: 'dir',
-        path: app.getPath('documents'),
-        // desktop.ini（Windows のフォルダ設定）と ~$ で始まる Office の一時ファイルは除く
-        options: { depth: 0, types: 'file', exclude: '{desktop.ini,~$*}', prefix: 'ドキュメント' },
       },
     ];
     const clipboardItem = createSampleClipboardItem();

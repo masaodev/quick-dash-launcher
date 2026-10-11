@@ -68,4 +68,23 @@ describe('launchItem（app）', () => {
     expect(shellMock.openPath).toHaveBeenCalledWith('C:\\Tools\\tool.exe');
     expect(spawnMock).not.toHaveBeenCalled();
   });
+
+  it('引数なしでもファイル名だけ（calc.exe）は、PATH から探せるよう spawn で起動する', async () => {
+    await launchItem({ type: 'app', path: 'calc.exe' }, logger);
+
+    expect(spawnMock).toHaveBeenCalledWith('calc.exe', [], expect.anything());
+    expect(shellMock.openPath).not.toHaveBeenCalled();
+  });
+
+  it('shell.openPath が返したエラーをログに残す', async () => {
+    shellMock.openPath.mockResolvedValueOnce('Failed to open path');
+    vi.mocked(logger.error).mockClear();
+
+    await launchItem({ type: 'app', path: 'C:\\Tools\\missing.exe' }, logger);
+
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.objectContaining({ error: 'Failed to open path' }),
+      'アイテムの起動に失敗しました'
+    );
+  });
 });
