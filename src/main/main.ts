@@ -22,11 +22,9 @@ import {
   registerGlobalShortcut,
   showMainWindow,
 } from './windowManager';
-import { reapplySettingsFromDisk } from './ipc/settingsHandlers';
-import { notifyDataChanged } from './ipc/notifications';
-import { getLastLoadReport, reloadConfigFiles } from './services/data/dataFileLoader.js';
 import { getCliPipeName } from './services/cli/cliProtocol.js';
 import { runCliCommand } from './services/cli/cliCommands.js';
+import { createCliContext } from './services/cli/cliStores.js';
 import { startCliServer } from './services/cli/cliServer.js';
 import { resolveAppExePath, writeCliLauncherInfo } from './services/cli/cliLauncherInfo.js';
 import { applyCliSetting } from './services/cli/cliInstallService.js';
@@ -102,6 +100,10 @@ app.whenReady().then(async () => {
   if (useSingleInstance) {
     const configFolder = PathManager.getConfigFolder();
     const userName = process.env.USERNAME || os.userInfo().username;
+    const cliContext = createCliContext(configFolder, {
+      appVersion: app.getVersion(),
+      pid: process.pid,
+    });
     cliServer = await startCliServer(
       getCliPipeName(path.basename(app.getPath('userData')), userName),
       async (req) => {
@@ -111,20 +113,7 @@ app.whenReady().then(async () => {
             setTimeout(() => reject(new Error('本体の初期化が終わりません')), 60_000)
           ),
         ]);
-        return runCliCommand(req, {
-          appVersion: app.getVersion(),
-          pid: process.pid,
-          configFolder,
-          reload: async () => {
-            // メイン画面の F5 と同じく、設定の再適用に失敗してもデータの読み直しは続ける
-            await reapplySettingsFromDisk().catch((error) =>
-              console.error('CLI の reload で設定の再適用に失敗:', error)
-            );
-            await reloadConfigFiles(configFolder, 'explicit');
-            notifyDataChanged();
-            return getLastLoadReport();
-          },
-        });
+        return runCliCommand(req, cliContext);
       }
     );
     if (app.isPackaged) {

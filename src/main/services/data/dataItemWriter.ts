@@ -35,7 +35,7 @@ import { clearDataFileCorrupted, markDataFileCorrupted } from './corruptedDataFi
  * @param newItem - 差し替え後のアイテム（id で対象を特定する）
  * @throws アイテムが見つからない場合、またはファイル操作エラー
  */
-function replaceItemById(configFolder: string, newItem: JsonItem): void {
+export function replaceItemById(configFolder: string, newItem: JsonItem): void {
   const dataFiles = PathManager.getDataFiles();
 
   for (const fileName of dataFiles) {
@@ -194,6 +194,14 @@ export function registerItems(configFolder: string, items: RegisterItem[]): void
  * @param items - 登録するアイテム
  */
 function registerItemsToJsonFile(dataPath: string, fileName: string, items: RegisterItem[]): void {
+  appendToJsonFile(
+    dataPath,
+    fileName,
+    items.map((item) => convertRegisterItemToJsonItem(item))
+  );
+}
+
+function appendToJsonFile(dataPath: string, fileName: string, items: JsonItem[]): void {
   // 既存のJSONデータを読み込む
   let jsonData: JsonDataFile = createEmptyJsonDataFile();
   const existingContent = FileUtils.safeReadTextFile(dataPath);
@@ -212,9 +220,18 @@ function registerItemsToJsonFile(dataPath: string, fileName: string, items: Regi
     }
   }
 
-  for (const item of items) {
-    jsonData.items.push(convertRegisterItemToJsonItem(item));
-  }
-
+  jsonData.items.push(...items);
   writeDataFile(dataPath, serializeJsonDataFile(jsonData));
+}
+
+/**
+ * id まで決めた JsonItem をデータファイルの末尾に足す（CLI の追加。足した id を呼び出し側が知っている）
+ *
+ * @throws データファイル名が正しくない、またはファイルが破損している場合
+ */
+export function appendJsonItems(configFolder: string, fileName: string, items: JsonItem[]): void {
+  if (!isValidDataFileName(fileName)) {
+    throw new Error(`登録先のデータファイル名が正しくありません: ${fileName}`);
+  }
+  appendToJsonFile(path.join(configFolder, fileName), fileName, items);
 }

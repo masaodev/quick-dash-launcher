@@ -49,6 +49,24 @@ function context(overrides: Partial<CliContext> = {}): CliContext {
     pid: 1234,
     configFolder: 'C:\\config',
     reload: vi.fn().mockResolvedValue(report()),
+    lastReport: vi.fn(() => report()),
+    syncBeforeWrite: vi.fn(async () => {}),
+    launcher: {
+      load: vi.fn(async () => {
+        throw new Error('ディスクが読めない');
+      }),
+      dataFiles: () => [],
+      tabs: async () => [],
+      append: vi.fn(),
+      replace: vi.fn(),
+      remove: vi.fn(),
+      markFolder: async (p: string) => p,
+      newId: () => 'NewId001',
+    },
+    workspace: {} as CliContext['workspace'],
+    markFolder: async (p) => p,
+    changed: vi.fn(),
+    beforeGroupRemoved: vi.fn(),
     ...overrides,
   };
 }
@@ -60,6 +78,13 @@ describe('runCliCommand', () => {
       expect(res.exitCode).toBe(CLI_EXIT.ok);
       expect(res.stdout).toContain('使い方: qdl');
     }
+  });
+
+  it('launcher・workspace の --help はそれぞれの説明を出す', async () => {
+    const launcher = await runCliCommand(request(['launcher', '--help']), context());
+    expect(launcher.stdout).toContain('qdl launcher item');
+    const workspace = await runCliCommand(request(['workspace', 'item', '--help']), context());
+    expect(workspace.stdout).toContain('qdl workspace item add');
   });
 
   it('status は版と設定フォルダを JSON で返す', async () => {
@@ -80,29 +105,63 @@ describe('runCliCommand', () => {
     expect(ctx.reload).toHaveBeenCalledOnce();
     const body = JSON.parse(res.stdout);
     expect(body.reloaded).toBe(true);
-    expect(body.summary.skipped).toBe(1);
     expect(body.filesWithIssues.map((f: { file: string }) => f.file)).toEqual([
       'datafiles/data2.json',
     ]);
   });
 
-  it('不明なコマンドは usage の終了コードで、標準エラーに案内を出す', async () => {
-    const res = await runCliCommand(request(['add']), context());
-    expect(res.exitCode).toBe(CLI_EXIT.usage);
-    expect(res.stdout).toBe('');
-    expect(res.stderr).toContain('不明なコマンドです: add');
+  it('check は読み直さずに直近の結果を返す', async () => {
+    const ctx = context();
+    const body = JSON.parse((await runCliCommand(request(['check']), ctx)).stdout);
+    expect(ctx.reload).not.toHaveBeenCalled();
+    expect(body.summary.skipped).toBe(1);
   });
 
-  it('不明なコマンドに引数が付いていても、不明なコマンドとして案内する', async () => {
+  it('不明なコマンドは、標準出力に error の JSON、標準エラーに案内、終了コード 2', async () => {
     const res = await runCliCommand(request(['add', 'foo']), context());
     expect(res.exitCode).toBe(CLI_EXIT.usage);
-    expect(res.stderr).toContain('不明なコマンドです: add');
+    expect(JSON.parse(res.stdout)).toEqual({
+      error: { code: 'usage', message: '不明なコマンドです: add' },
+    });
+    expect(res.stderr).toContain('qdl: 不明なコマンドです: add');
+    expect(res.stderr).toContain('qdl help');
   });
 
-  it('引数を取らないコマンドに引数があれば usage で断る', async () => {
+  it('引数を取らないコマンドに引数があれば usage', async () => {
     const ctx = context();
     const res = await runCliCommand(request(['reload', 'now']), ctx);
     expect(res.exitCode).toBe(CLI_EXIT.usage);
     expect(ctx.reload).not.toHaveBeenCalled();
+  });
+
+  it('想定外の例外は internal で、終了コード 1', async () => {
+    const res = await runCliCommand(request(['launcher', 'item', 'list']), context());
+    expect(res.exitCode).toBe(CLI_EXIT.failure);
+    expect(JSON.parse(res.stdout).error).toEqual({
+      code: 'internal',
+      message: 'ディスクが読めない',
+    });
+  });
+
+  it('候補のある失敗は、標準エラーにも候補を並べる', async () => {
+    const ctx = context({
+      launcher: {
+        ...context().launcher,
+        load: async () => [
+          {
+            item: { id: 'Aaaaaaa1', type: 'item', displayName: 'x', path: 'C:\\a' },
+            file: 'datafiles/data.json',
+          },
+          {
+            item: { id: 'Bbbbbbb2', type: 'item', displayName: 'x', path: 'C:\\b' },
+            file: 'datafiles/data.json',
+          },
+        ],
+      },
+    });
+    const res = await runCliCommand(request(['launcher', 'item', 'remove', 'x']), ctx);
+    expect(res.exitCode).toBe(CLI_EXIT.usage);
+    expect(JSON.parse(res.stdout).error.code).toBe('ambiguous');
+    expect(res.stderr).toContain('Aaaaaaa1');
   });
 });
