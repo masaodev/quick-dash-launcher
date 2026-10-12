@@ -17,12 +17,12 @@ import { writeDemoData } from './demo-data';
  * 録画は ffmpeg の gdigrab で、メインウィンドウの範囲だけを 30fps・劣化なしで撮る（Playwright の動画は
  * 圧縮の残像が出るため使わない）。撮影中はウィンドウを最前面に固定するので、その範囲に他の物を重ねないこと。
  * 動画のどこから使うかを test-results/demo-gif/main/meta.json に書き、scripts/make-demo-gif.mjs がその範囲を
- * GIF にする。DEMO_CAPTIONS=0 で画面下の説明文を出さない
+ * GIF にする。画面下の説明文（字幕）は既定では出さず、DEMO_CAPTIONS=1 のときだけ出す
  */
 
 const OUT_DIR = path.join(process.cwd(), 'test-results', 'demo-gif', 'main');
 const DEMO_ROOT = path.join(os.tmpdir(), 'qdl-demo');
-const SHOW_CAPTIONS = process.env.DEMO_CAPTIONS !== '0';
+const SHOW_CAPTIONS = process.env.DEMO_CAPTIONS === '1';
 const TYPE_DELAY_MS = 200;
 
 /** 画面下に操作の説明を出す（撮影用。アプリの画面には残らない） */
