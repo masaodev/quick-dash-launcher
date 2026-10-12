@@ -10,6 +10,7 @@ type LaunchStubState = {
 declare global {
   var __e2eLaunchStub: LaunchStubState | undefined;
   var __e2eOpenItemCalls: number | undefined;
+  var __e2eShownInFolder: string[] | undefined;
 }
 
 /** 起動処理をシミュレートする待機時間（ms） */
@@ -168,5 +169,69 @@ test.describe('QuickDashLauncher - 実行に失敗したときのエラーダイ
 
     await expect(alertDialog).not.toBeVisible();
     expect(await openItemCalls()).toBe(1);
+  });
+});
+
+/**
+ * Shift+Enter（親フォルダーを開く）
+ * 実際にエクスプローラーを開かないよう shell.showItemInFolder を差し替え、渡したパスを記録する
+ */
+test.describe('QuickDashLauncher - Shift+Enter で親フォルダーを開く', () => {
+  test('ファイル名だけで登録したアプリは PATH から探し、見つからないパスはトーストで知らせる', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    configHelper.addItemToFile('data.json', {
+      id: 'e2epar01',
+      type: 'item',
+      displayName: 'E2Eメモ帳',
+      path: 'notepad.exe',
+    });
+    configHelper.addItemToFile('data.json', {
+      id: 'e2epar02',
+      type: 'item',
+      displayName: 'E2E存在しないファイル',
+      path: 'C:\\E2E存在しないフォルダ\\none.txt',
+    });
+    await utils.waitForPageLoad();
+    await mainWindow.reload();
+    await utils.waitForPageLoad();
+
+    await electronApp.evaluate(({ shell }) => {
+      globalThis.__e2eShownInFolder = [];
+      shell.showItemInFolder = (fullPath: string) => {
+        globalThis.__e2eShownInFolder!.push(fullPath);
+      };
+    });
+
+    await test.step('ファイル名だけのアプリは PATH から探したフルパスで開く', async () => {
+      await utils.searchFor('E2Eメモ帳');
+      await expect(mainWindow.locator('.item', { hasText: 'E2Eメモ帳' })).toBeVisible();
+      await mainWindow.keyboard.press('Shift+Enter');
+      await expect
+        .poll(() => electronApp.evaluate(() => globalThis.__e2eShownInFolder ?? []))
+        .toEqual([expect.stringMatching(/\\notepad\.exe$/i)]);
+    });
+
+    await test.step('見つからないパスは開かずにトーストで知らせる', async () => {
+      await utils.searchFor('E2E存在しないファイル');
+      await expect(mainWindow.locator('.item', { hasText: 'E2E存在しないファイル' })).toBeVisible();
+      await mainWindow.keyboard.press('Shift+Enter');
+      await expect
+        .poll(
+          async () => {
+            for (const win of electronApp.windows()) {
+              if (win.isClosed() || (await win.locator('#toast').count()) === 0) continue;
+              return win.locator('#toast').innerText();
+            }
+            return '';
+          },
+          { timeout: 5000 }
+        )
+        .toMatch(/E2E存在しないファイル[\s\S]*親フォルダーが見つかりませんでした/);
+      expect(await electronApp.evaluate(() => globalThis.__e2eShownInFolder?.length)).toBe(1);
+    });
   });
 });

@@ -14,8 +14,10 @@ import { GROUP_LAUNCH_DELAY_MS } from '@common/constants';
 import { isLauncherItem, isWindowItem } from '@common/types/guards';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 import { PathUtils } from '@common/utils/pathUtils';
+import { FileUtils } from '@common/utils/fileUtils';
 
 import { tryActivateWindow } from '../utils/windowActivator.js';
+import { isBareFileName, resolveFromPath } from '../utils/pathResolver.js';
 import { launchItem } from '../utils/itemLauncher.js';
 import { SettingsService } from '../services/settingsService.js';
 import { findWindowByTitle, createTitleMatcher } from '../utils/windowMatcher.js';
@@ -24,6 +26,7 @@ import {
   showLayoutProgressWindow,
   hideLayoutProgressWindow,
   getLayoutProgressWindow,
+  showToastWindow,
 } from '../services/overlayWindowService.js';
 import { runWithConcurrency } from '../utils/concurrency.js';
 import { hideMainWindowOnExecute } from '../windowManager.js';
@@ -85,9 +88,20 @@ async function openParentFolder(item: LauncherItem): Promise<void> {
     '親フォルダーを開く'
   );
 
-  if (item.type === 'file' || item.type === 'folder' || item.type === 'app') {
-    shell.showItemInFolder(item.path);
+  if (item.type !== 'file' && item.type !== 'folder' && item.type !== 'app') return;
+
+  // ファイル名だけで登録したアプリ（notepad.exe など）は、起動と同じく PATH から探す
+  const target = isBareFileName(item.path) ? await resolveFromPath(item.path) : item.path;
+  if (!target || !FileUtils.exists(target)) {
+    // 押しても無反応だと故障に見えるので知らせる（ランチャーは隠れた後なのでトーストで出す）
+    await showToastWindow({
+      displayName: item.displayName,
+      itemType: item.type,
+      message: '親フォルダーが見つかりませんでした',
+    });
+    return;
   }
+  shell.showItemInFolder(target);
 }
 
 /**

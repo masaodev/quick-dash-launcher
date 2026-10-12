@@ -176,6 +176,29 @@ describe('useKeyboardShortcuts', () => {
     }
   );
 
+  it('グループの Shift+Enter は実行せず、親フォルダーが無いことを知らせる', async () => {
+    const group = { type: 'group', displayName: '朝のセット', itemNames: ['GitHub'] } as AppItem;
+    const { params, handleKeyDown } = setup([group]);
+
+    await handleKeyDown(keyEvent('Enter', { shiftKey: true }));
+
+    expect(params.handleExecuteItem).not.toHaveBeenCalled();
+    expect(openParentFolder).not.toHaveBeenCalled();
+    expect(showToastWindow).toHaveBeenCalledWith({
+      type: 'info',
+      message: '「朝のセット」には親フォルダーがありません',
+    });
+  });
+
+  it('ウィンドウ検索の結果の Shift+Enter は、今までどおりウィンドウを前に出す', async () => {
+    const { params, handleKeyDown } = setup([notepad(100)], 'window');
+
+    await handleKeyDown(keyEvent('Enter', { shiftKey: true }));
+
+    expect(params.handleExecuteItem).toHaveBeenCalledWith(notepad(100));
+    expect(showToastWindow).not.toHaveBeenCalled();
+  });
+
   it('ファイルの Shift+Enter は親フォルダーを開く', async () => {
     const item = launcherItem('file', 'C:\\Windows\\win.ini');
     const { handleKeyDown } = setup([item]);
