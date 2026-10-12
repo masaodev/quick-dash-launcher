@@ -1,0 +1,44 @@
+import { test, expect } from '../fixtures/electron-app';
+import { TestUtils } from '../helpers/test-utils';
+
+/**
+ * 表示言語の切り替え
+ * - settings.json の language を変えて F5 すると、メインウィンドウがその言語になる
+ * - 基本設定の「表示言語」で変えると、開いているメインウィンドウにその場で反映される
+ */
+test.describe('QuickDashLauncher - 表示言語', () => {
+  test('言語を切り替えると、開いているウィンドウにその場で反映される', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    const searchBox = mainWindow.locator('input.search-box');
+
+    await test.step('E2E のひな形は日本語で始まる', async () => {
+      await utils.waitForPageLoad();
+      await expect(searchBox).toHaveAttribute('placeholder', '検索...');
+      await expect(mainWindow.locator('html')).toHaveAttribute('lang', 'ja');
+    });
+
+    await test.step('settings.json を English にして F5 すると英語になる', async () => {
+      configHelper.updateSettings({ language: 'en' });
+      await utils.reloadWithF5();
+      await expect(searchBox).toHaveAttribute('placeholder', 'Search...');
+      await expect(mainWindow.locator('.search-mode-label')).toHaveText('Normal search');
+      await expect(mainWindow.locator('html')).toHaveAttribute('lang', 'en');
+    });
+
+    await test.step('基本設定の表示言語で日本語に戻すと、メインウィンドウも戻る', async () => {
+      const adminWindow = await utils.openAdminWindow(electronApp, 'settings');
+      const select = adminWindow.locator('select#language');
+      // 管理ウィンドウも英語で開く
+      await expect(adminWindow.locator('label[for="language"]')).toHaveText('Display language:');
+      await select.selectOption('ja');
+
+      await expect(adminWindow.locator('label[for="language"]')).toHaveText('表示言語:');
+      await expect(searchBox).toHaveAttribute('placeholder', '検索...');
+      expect(configHelper.readSettings().language).toBe('ja');
+    });
+  });
+});

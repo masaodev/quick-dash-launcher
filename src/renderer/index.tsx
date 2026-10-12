@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { MAIN_CHILD_WINDOW_NAME_PREFIX } from '@common/constants';
 
 import App from './App';
+import { initRendererI18n } from './i18n';
 import MainChildPage from './components/MainChildPage';
 import { ToastProvider } from './components/ToastProvider';
 import './styles/index.css';
@@ -36,10 +37,12 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 const childRequestId = getChildRequestIdFromWindow();
 
-root.render(
-  <React.StrictMode>
-    <ToastProvider position="bottom-right">
-      {childRequestId ? <MainChildPage requestId={childRequestId} /> : <App />}
-    </ToastProvider>
-  </React.StrictMode>
-);
+void initRendererI18n().then(() => {
+  root.render(
+    <React.StrictMode>
+      <ToastProvider position="bottom-right">
+        {childRequestId ? <MainChildPage requestId={childRequestId} /> : <App />}
+      </ToastProvider>
+    </React.StrictMode>
+  );
+});

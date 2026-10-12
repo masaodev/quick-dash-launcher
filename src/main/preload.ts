@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron';
+import type { AppLanguage } from '@common/i18n/languages';
 import type {
   LauncherItem,
   AppSettings,
@@ -274,6 +275,7 @@ const electronAPI: ElectronAPI = {
   getDisplays: (): Promise<DisplayInfo[]> => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET_DISPLAYS),
   getAutoLaunchStatus: (): Promise<AutoLaunchStatus> =>
     ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET_AUTO_LAUNCH_STATUS),
+  getLanguage: (): Promise<AppLanguage> => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET_LANGUAGE),
   isFirstLaunch: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_IS_FIRST_LAUNCH),
   // 編集ウィンドウ関連API
   showEditWindow: () => ipcRenderer.invoke(IPC_CHANNELS.SHOW_EDIT_WINDOW),

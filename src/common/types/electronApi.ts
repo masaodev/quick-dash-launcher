@@ -3,6 +3,7 @@
  * preload 側はこの型で注釈しているため、実装とのずれは型チェックで検出される。
  */
 import type { PathKind } from '../utils/itemTypeDetector';
+import type { AppLanguage } from '../i18n/languages';
 
 import type {
   EditableJsonItem,
@@ -163,6 +164,8 @@ export interface ElectronAPI {
   getDisplays: () => Promise<DisplayInfo[]>;
   /** OS 側の自動起動の状態（Store 版では Windows の StartupTask の状態） */
   getAutoLaunchStatus: () => Promise<AutoLaunchStatus>;
+  /** 今の表示言語（設定と Windows の表示言語から決めたもの） */
+  getLanguage: () => Promise<AppLanguage>;
   isFirstLaunch: () => Promise<boolean>;
   updateItemById: (request: { id: string; newItem: LauncherItem }) => Promise<{ success: boolean }>;
   deleteItemsById: (requests: { id: string }[]) => Promise<{ success: boolean }>;

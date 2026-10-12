@@ -1,3 +1,5 @@
+import type { LanguageSetting } from '../i18n/languages';
+
 import { DataFileTab } from './data';
 import { BookmarkAutoImportSettings } from './bookmarkAutoImport';
 
@@ -73,6 +75,8 @@ export interface AppSettings {
   createdWithVersion?: string;
   /** この設定ファイルを最後に更新したアプリバージョン */
   updatedWithVersion?: string;
+  /** 表示言語（auto は Windows の表示言語に合わせる。デフォルト: 'auto'） */
+  language: LanguageSetting;
   /** ランチャー起動ホットキー（例: 'Alt+Space'。未設定の空文字は初回起動扱い） */
   hotkey: string;
   /** ウィンドウの初期幅（デフォルト: 600） */

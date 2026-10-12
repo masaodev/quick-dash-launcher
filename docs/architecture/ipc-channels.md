@@ -115,6 +115,12 @@ F5 では、レンダラーが `settings:reapply` を呼んでから `load-data-
 - 戻り値: 戻した後の `AppSettings`
 - 処理内容: 副作用とホットキー登録を適用し直し、`settings-changed` を送る
 
+### `settings:get-language`
+
+- 方向: Renderer → Main（invoke）
+- 戻り値: `'ja' | 'en'`（設定 `language` と Windows の表示言語から決めた今の表示言語）
+- 処理内容: 設定を読んで言語を決め、main の言語もそれに合わせる。スプラッシュは設定の読み込みより先に開くので、ウィンドウを開く前に登録する。各ウィンドウは描画の前にこれを呼び、`settings-changed` を受けたら呼び直す
+
 ### `settings:reapply`
 
 `settings.json` をディスクの内容で適用し直す。設定値そのものは毎回ディスクから読むが、ホットキー登録・自動起動・CLI の PATH 登録・ウィンドウ状態は保存時にしか適用されないため、QDL の外で `settings.json` を編集したときに F5 から呼ぶ（CLI の `qdl reload` も同じ処理を呼ぶ）。処理後に `settings-changed` を送る。

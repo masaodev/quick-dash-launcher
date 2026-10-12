@@ -53,7 +53,7 @@ docs/
 | ウィンドウ制御の変更 | architecture/window-control.md |
 | 共通UIコンポーネント・CSS の変更 | architecture/ui-components.md、architecture/css-design.md |
 | プロセス構成・データフローの変更 | architecture/overview.md |
-| 用語の追加・変更 | architecture/glossary.md |
+| 画面に出す文言・用語の追加・変更 | `src/common/i18n/locales/` の辞書（ja.ts・en.ts）、architecture/glossary.md（[多言語化](setup/development.md#多言語化画面の文言)） |
 | npm scripts・環境変数・開発手順の変更 | setup/development.md |
 | ビルド・配布の変更 | setup/build-deploy.md |
 | テスト構成・テストコマンドの変更 | testing/README.md（リポジトリ直下の tests/README.md・tests/e2e/README.md も） |
@@ -68,7 +68,7 @@ docs/
 - **[アーキテクチャ](architecture/README.md)** - 技術実装の詳細（設計・規約・辞書）
   - **[ファイル形式](architecture/file-formats/README.md)** - settings.json・データファイル・workspace.json などの形式と置き場所
 - **[テスト](testing/README.md)** - テスト関連
-- **[ドメイン用語集](architecture/glossary.md)** - プロジェクトで使用される用語の定義
+- **[用語集](architecture/glossary.md)** - 画面の言葉と英訳の対応（対訳表）
 
 ## docs の外にある文書
 

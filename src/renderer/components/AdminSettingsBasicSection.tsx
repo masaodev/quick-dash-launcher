@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { AppSettings, AutoLaunchStatus } from '@common/types';
+import { LANGUAGE_SETTINGS, isLanguageSetting } from '@common/i18n/languages';
 
 import type { HandleSettingChange } from '../hooks/useSettingsManager';
 
@@ -14,7 +16,7 @@ interface AdminSettingsBasicSectionProps {
   onItemSearchHotkeyChange: (hotkey: string) => void;
 }
 
-/** 設定画面「基本設定」: 起動ホットキー・システム・表示・グループ起動 */
+/** 設定画面「基本設定」: 言語・起動ホットキー・システム・表示・グループ起動 */
 const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
   editedSettings,
   isLoading,
@@ -23,6 +25,7 @@ const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
   onHotkeyValidation,
   onItemSearchHotkeyChange,
 }) => {
+  const { t } = useTranslation();
   // アイテム検索ホットキーのバリデーション状態
   const [itemSearchHotkeyValidation, setItemSearchHotkeyValidation] = useState<{
     isValid: boolean;
@@ -56,6 +59,30 @@ const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
 
   return (
     <>
+      <div className="settings-section">
+        <h3>{t('settings.language.heading')}</h3>
+        <div className="setting-item">
+          <label htmlFor="language">{t('settings.language.label')}</label>
+          <select
+            id="language"
+            value={editedSettings.language}
+            onChange={(e) => {
+              if (isLanguageSetting(e.target.value)) {
+                handleSettingChange('language', e.target.value);
+              }
+            }}
+            disabled={isLoading}
+          >
+            {LANGUAGE_SETTINGS.map((value) => (
+              <option key={value} value={value}>
+                {t(`settings.language.options.${value}`)}
+              </option>
+            ))}
+          </select>
+          <div className="setting-description">{t('settings.language.description')}</div>
+        </div>
+      </div>
+
       <div className="settings-section">
         <h3>起動ホットキー</h3>
         <div className="setting-item">

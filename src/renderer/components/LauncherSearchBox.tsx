@@ -5,6 +5,7 @@ import {
   type ReactElement,
   type KeyboardEvent,
 } from 'react';
+import { useTranslation } from 'react-i18next';
 import { SearchMode } from '@common/types/search';
 
 interface SearchBoxProps {
@@ -17,10 +18,10 @@ interface SearchBoxProps {
   onReloadData?: () => void;
 }
 
-const SEARCH_MODE_LABELS: Record<SearchMode, string> = {
-  normal: '通常検索モード',
-  window: '🪟 ウィンドウ検索モード',
-};
+const SEARCH_MODE_LABEL_KEYS = {
+  normal: 'launcher.search.modeNormal',
+  window: 'launcher.search.modeWindow',
+} as const satisfies Record<SearchMode, string>;
 
 function F5Hint({ label, onClick }: { label: string; onClick: () => void }): ReactElement {
   return (
@@ -47,6 +48,7 @@ const LauncherSearchBox = forwardRef<HTMLInputElement, SearchBoxProps>(
     },
     ref
   ) => {
+    const { t } = useTranslation();
     const inputRef = useRef<HTMLInputElement>(null);
 
     useImperativeHandle(ref, () => inputRef.current!);
@@ -66,7 +68,7 @@ const LauncherSearchBox = forwardRef<HTMLInputElement, SearchBoxProps>(
             value={value}
             onChange={(e) => onChange(e.target.value)}
             onKeyDown={onKeyDown}
-            placeholder="検索..."
+            placeholder={t('launcher.search.placeholder')}
             autoFocus
           />
           {value && (
@@ -74,7 +76,7 @@ const LauncherSearchBox = forwardRef<HTMLInputElement, SearchBoxProps>(
               className="search-clear-button"
               onClick={handleClear}
               type="button"
-              aria-label="検索をクリア"
+              aria-label={t('launcher.search.clear')}
             >
               ×
             </button>
@@ -82,17 +84,17 @@ const LauncherSearchBox = forwardRef<HTMLInputElement, SearchBoxProps>(
         </div>
 
         <div className="search-mode-indicator">
-          <span className="search-mode-label">{SEARCH_MODE_LABELS[searchMode]}</span>
+          <span className="search-mode-label">{t(SEARCH_MODE_LABEL_KEYS[searchMode])}</span>
           <span>
             {searchMode === 'window' && onRefreshWindows && (
-              <F5Hint label="更新" onClick={onRefreshWindows} />
+              <F5Hint label={t('launcher.search.refreshWindows')} onClick={onRefreshWindows} />
             )}
             {searchMode === 'normal' && onReloadData && (
-              <F5Hint label="データ再読込" onClick={onReloadData} />
+              <F5Hint label={t('launcher.search.reloadData')} onClick={onReloadData} />
             )}
             Shift+Tab:
             <button type="button" className="search-mode-hint-link" onClick={onToggleSearchMode}>
-              モード切り替え
+              {t('launcher.search.toggleMode')}
             </button>
           </span>
         </div>

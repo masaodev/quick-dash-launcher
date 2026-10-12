@@ -6,6 +6,7 @@ import {
 } from '@common/constants';
 
 import WorkspaceApp from '../WorkspaceApp';
+import { initRendererI18n } from '../i18n';
 import WorkspaceItemEditPage from '../components/WorkspaceItemEditPage';
 import WorkspaceConfirmPage from '../components/WorkspaceConfirmPage';
 import { ToastProvider } from '../components/ToastProvider';
@@ -57,8 +58,10 @@ if (!rootElement) {
   throw new Error('Workspace root element not found');
 }
 const root = ReactDOM.createRoot(rootElement);
-root.render(
-  <React.StrictMode>
-    <ToastProvider position="bottom-right">{renderPage()}</ToastProvider>
-  </React.StrictMode>
-);
+void initRendererI18n().then(() => {
+  root.render(
+    <React.StrictMode>
+      <ToastProvider position="bottom-right">{renderPage()}</ToastProvider>
+    </React.StrictMode>
+  );
+});
