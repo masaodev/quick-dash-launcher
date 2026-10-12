@@ -588,6 +588,69 @@ function setupWindowContextMenuHandler(): void {
   );
 }
 
+/**
+ * ウィンドウ検索で 2 つ以上を選んでいるときの右クリックメニュー
+ * 1 つのときのメニューから、まとめてできる操作（固定・移動・閉じる）だけを出す。
+ * どのウィンドウに効かせるかはレンダラー側の選択で決める
+ */
+function setupWindowsContextMenuHandler(): void {
+  ipcMain.handle(
+    IPC_CHANNELS.SHOW_WINDOWS_CONTEXT_MENU,
+    async (event, count: number, desktopInfo: VirtualDesktopInfo): Promise<void> => {
+      const senderWindow = getValidWindow(event);
+      if (!senderWindow) return;
+
+      const menu = new Menu();
+      menu.append(new MenuItem({ label: `${count} 個のウィンドウ`, enabled: false }));
+      menu.append(createSeparator());
+
+      if (desktopInfo.supported && desktopInfo.desktopCount > 1) {
+        const submenu = new Menu();
+        for (let i = 1; i <= desktopInfo.desktopCount; i++) {
+          submenu.append(
+            createMenuItem(
+              `🖥️ デスクトップ ${i}`,
+              event.sender,
+              IPC_CHANNELS.EVENT_WINDOWS_MENU_MOVE_TO_DESKTOP,
+              i
+            )
+          );
+        }
+        menu.append(new MenuItem({ label: '🖥️ 仮想デスクトップへの移動', submenu }));
+      } else {
+        menu.append(new MenuItem({ label: '🖥️ 仮想デスクトップへの移動', enabled: false }));
+      }
+
+      if (desktopInfo.supported) {
+        menu.append(createSeparator());
+        menu.append(
+          createMenuItem(
+            '📌 全デスクトップに固定',
+            event.sender,
+            IPC_CHANNELS.EVENT_WINDOWS_MENU_PIN,
+            true
+          )
+        );
+        menu.append(
+          createMenuItem('📌 固定を解除', event.sender, IPC_CHANNELS.EVENT_WINDOWS_MENU_PIN, false)
+        );
+      }
+
+      menu.append(createSeparator());
+      menu.append(
+        new MenuItem({
+          label: `❌ ${count} 個のウィンドウを閉じる`,
+          accelerator: 'Ctrl+D',
+          registerAccelerator: false,
+          click: () => event.sender.send(IPC_CHANNELS.EVENT_WINDOWS_MENU_CLOSE),
+        })
+      );
+
+      menu.popup({ window: senderWindow });
+    }
+  );
+}
+
 /** WorkspaceTabContextMenu用のネイティブメニューハンドラーを設定 */
 function setupWorkspaceTabContextMenuHandler(): void {
   ipcMain.handle(
@@ -633,4 +696,5 @@ export function setupContextMenuHandlers(): void {
   setupWorkspaceTabContextMenuHandler();
   setupFileTabContextMenuHandler();
   setupWindowContextMenuHandler();
+  setupWindowsContextMenuHandler();
 }

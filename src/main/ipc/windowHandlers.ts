@@ -54,7 +54,7 @@ import {
   cycleDetachedPinMode,
 } from '../detachedGroupWindowManager.js';
 import { WorkspaceService } from '../services/workspace/index.js';
-import { getTray } from '../windowManager.js';
+import { getTray, setEscapeHandledByPage } from '../windowManager.js';
 
 export function setupWindowHandlers(
   getWindowPinMode: () => WindowPinMode,
@@ -100,6 +100,9 @@ export function setupWindowHandlers(
   );
   ipcMain.handle(IPC_CHANNELS.GET_MAIN_CHILD_WINDOW_REQUEST, (_event, requestId: string) =>
     getMainChildWindowRequest(requestId)
+  );
+  ipcMain.on(IPC_CHANNELS.SET_ESCAPE_HANDLED_BY_PAGE, (_event, handled: boolean) =>
+    setEscapeHandledByPage(handled)
   );
   ipcMain.on(
     IPC_CHANNELS.NOTIFY_MAIN_CHILD_WINDOW_RESULT,

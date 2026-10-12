@@ -61,6 +61,19 @@ body {
   background: var(--color-gray-600);
 }
 
+/* ウィンドウ検索: 2 つ以上を閉じる前の確認の帯（一覧の下。Enter で閉じる・Esc でやめる） */
+.window-close-confirm {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs) var(--spacing-md);
+  padding: var(--spacing-xs) var(--spacing-lg);
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  background-color: var(--bg-warning-light);
+  border-top: 1px solid var(--color-warning);
+}
+
 /* 操作ヒント（メインウィンドウ下部。幅が足りないときは折り返さず右側を省略） */
 .shortcut-hint {
   flex-shrink: 0;

@@ -101,6 +101,28 @@
   border-left: 3px solid var(--color-accent);
 }
 
+/* ウィンドウ検索の複数選択: 選んだ行は淡い背景とチェック。カーソル（.selected）は塗りのまま */
+.item.marked {
+  background-color: var(--bg-selected);
+}
+
+.item.marked.selected {
+  background-color: var(--color-primary);
+}
+
+.item-mark {
+  width: var(--spacing-md);
+  margin-right: var(--spacing-xs);
+  color: var(--color-primary);
+  font-weight: bold;
+  flex-shrink: 0;
+  text-align: center;
+}
+
+.item.selected .item-mark {
+  color: var(--color-white);
+}
+
 /* ツールチップ付きアイテムのカーソル表示 */
 .item[title]:hover {
   cursor: pointer;

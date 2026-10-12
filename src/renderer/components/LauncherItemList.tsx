@@ -40,9 +40,25 @@ interface ItemListProps {
   onCopyShortcutParentPath?: (item: LauncherItem) => void;
   onOpenShortcutParentFolder?: (item: LauncherItem) => void;
   onEditItem?: (item: AppItem) => void | Promise<void>;
-  onRefreshWindows?: () => Promise<void>;
   /** ウィンドウを閉じる（右クリックの「ウィンドウを閉じる」） */
   onCloseWindow?: (win: WindowInfo) => Promise<void>;
+  /** 右クリックの固定・固定解除（pin: true で固定） */
+  onPinWindows?: (wins: WindowInfo[], pin: boolean) => Promise<void>;
+  /** 右クリックの仮想デスクトップへの移動 */
+  onMoveWindows?: (wins: WindowInfo[], desktopNumber: number) => Promise<void>;
+  /** ウィンドウ検索の複数選択（Ctrl+クリック・Shift+クリック・選んだ行の右クリック） */
+  windowSelection?: WindowListSelection;
+}
+
+export interface WindowListSelection {
+  isMarked: (hwnd: WindowInfo['hwnd']) => boolean;
+  markedCount: number;
+  toggle: (index: number) => void;
+  selectRangeTo: (index: number) => void;
+  /** 2 つ以上を選んでいるときの右クリックメニューの操作（対象は選んでいるウィンドウ） */
+  onMenuClose: () => void;
+  onMenuPin: (pin: boolean) => void;
+  onMenuMove: (desktopNumber: number) => void;
 }
 
 const LauncherItemList: React.FC<ItemListProps> = ({
@@ -57,8 +73,10 @@ const LauncherItemList: React.FC<ItemListProps> = ({
   onCopyShortcutParentPath,
   onOpenShortcutParentFolder,
   onEditItem,
-  onRefreshWindows,
   onCloseWindow,
+  onPinWindows,
+  onMoveWindows,
+  windowSelection,
 }) => {
   const listRef = useRef<HTMLDivElement>(null);
   const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
@@ -100,8 +118,10 @@ const LauncherItemList: React.FC<ItemListProps> = ({
     onCopyShortcutParentPath,
     onOpenShortcutParentFolder,
     onEditItem,
-    onRefreshWindows,
     onCloseWindow,
+    onPinWindows,
+    onMoveWindows,
+    windowSelection,
   });
   latestRef.current = {
     items,
@@ -113,19 +133,13 @@ const LauncherItemList: React.FC<ItemListProps> = ({
     onCopyShortcutParentPath,
     onOpenShortcutParentFolder,
     onEditItem,
-    onRefreshWindows,
     onCloseWindow,
+    onPinWindows,
+    onMoveWindows,
+    windowSelection,
   };
 
   useEffect(() => {
-    /** hwndからウィンドウタイトルを検索する */
-    function findWindowTitle(hwnd: number | bigint): string {
-      const found = latestRef.current.items.find(
-        (item) => isWindowInfo(item) && item.hwnd === hwnd
-      );
-      return found && isWindowInfo(found) ? found.title : '不明なウィンドウ';
-    }
-
     const cleanupEditItem = window.electronAPI.onLauncherMenuEditItem((item) => {
       latestRef.current.onEditItem?.(item);
     });
@@ -170,35 +184,11 @@ const LauncherItemList: React.FC<ItemListProps> = ({
       };
     }
 
-    async function handleWindowOperation(
-      fn: (hwnd: number | bigint) => Promise<{ success: boolean; error?: string }>,
-      itemType: 'windowMoveDesktop' | 'windowPin' | 'windowUnpin',
-      errorPrefix: string,
-      hwnd: number | bigint,
-      successMessage?: string
-    ): Promise<void> {
-      try {
-        const windowTitle = findWindowTitle(hwnd);
-        const result = await fn(hwnd);
-        await window.electronAPI.showToastWindow({
-          displayName: windowTitle,
-          itemType,
-          message: result.success
-            ? successMessage
-            : `${errorPrefix}に失敗しました: ${result.error || '不明なエラー'}`,
-        });
-        // 固定・固定解除も一覧の表示（固定の印・ピン止めタブ）が変わるので、キー操作と同じく取り直す
-        if (result.success) {
-          await latestRef.current.onRefreshWindows?.();
-        }
-      } catch (error) {
-        logError(`${errorPrefix}に失敗しました:`, error);
-        await window.electronAPI.showToastWindow({
-          displayName: '不明なウィンドウ',
-          itemType,
-          message: `${errorPrefix}に失敗しました`,
-        });
-      }
+    /** hwnd から今の一覧のウィンドウを探す（メニューを開いた後に一覧が変わっていれば見つからない） */
+    function findWindow(hwnd: number | bigint): WindowInfo | undefined {
+      return latestRef.current.items.find(
+        (item): item is WindowInfo => isWindowInfo(item) && item.hwnd === hwnd
+      );
     }
 
     const cleanups = [
@@ -246,31 +236,25 @@ const LauncherItemList: React.FC<ItemListProps> = ({
       window.electronAPI.onWindowMenuClose((windowInfo) => {
         void latestRef.current.onCloseWindow?.(windowInfo);
       }),
-      window.electronAPI.onMoveWindowToDesktop(async (hwnd, desktopNumber) => {
-        await handleWindowOperation(
-          (h) => window.electronAPI.moveWindowToDesktop(h, desktopNumber),
-          'windowMoveDesktop',
-          'ウィンドウの移動',
-          hwnd,
-          `ウィンドウをデスクトップ ${desktopNumber} に移動しました`
-        );
+      window.electronAPI.onMoveWindowToDesktop((hwnd, desktopNumber) => {
+        const win = findWindow(hwnd);
+        if (win) void latestRef.current.onMoveWindows?.([win], desktopNumber);
       }),
       window.electronAPI.onPinWindow((hwnd) => {
-        return handleWindowOperation(
-          window.electronAPI.pinWindow,
-          'windowPin',
-          'ウィンドウの固定',
-          hwnd
-        );
+        const win = findWindow(hwnd);
+        if (win) void latestRef.current.onPinWindows?.([win], true);
       }),
       window.electronAPI.onUnPinWindow((hwnd) => {
-        return handleWindowOperation(
-          window.electronAPI.unPinWindow,
-          'windowUnpin',
-          'ウィンドウの固定解除',
-          hwnd
-        );
+        const win = findWindow(hwnd);
+        if (win) void latestRef.current.onPinWindows?.([win], false);
       }),
+      window.electronAPI.onWindowsMenuClose(() => latestRef.current.windowSelection?.onMenuClose()),
+      window.electronAPI.onWindowsMenuPin((pin) =>
+        latestRef.current.windowSelection?.onMenuPin(pin)
+      ),
+      window.electronAPI.onWindowsMenuMoveToDesktop((desktopNumber) =>
+        latestRef.current.windowSelection?.onMenuMove(desktopNumber)
+      ),
     ];
 
     return () => {
@@ -328,6 +312,18 @@ const LauncherItemList: React.FC<ItemListProps> = ({
     event.preventDefault();
     event.stopPropagation();
 
+    const selection = latestRef.current.windowSelection;
+    if (
+      isWindowInfo(item) &&
+      selection &&
+      selection.markedCount >= 2 &&
+      selection.isMarked(item.hwnd)
+    ) {
+      const desktopInfo = await window.electronAPI.getVirtualDesktopInfo();
+      window.electronAPI.showWindowsContextMenu(selection.markedCount, desktopInfo);
+      return;
+    }
+
     if (isWindowInfo(item)) {
       const [desktopInfo, isPinned] = await Promise.all([
         window.electronAPI.getVirtualDesktopInfo(),
@@ -353,6 +349,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
             const isClipboard = isClipboardItem(item);
             const isDraggable = true;
             const isDragging = draggedItemIndex === index;
+            const isMarked = isWindow && !!windowSelection?.isMarked(item.hwnd);
 
             let itemName: string;
             if (isWindow) {
@@ -378,6 +375,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
               isWindowOperation && 'window-operation-item',
               isClipboard && 'clipboard-item',
               isDragging && 'dragging',
+              isMarked && 'marked',
             ]
               .filter(Boolean)
               .join(' ');
@@ -394,14 +392,29 @@ const LauncherItemList: React.FC<ItemListProps> = ({
                 draggable={isDraggable}
                 onDragStart={(e) => handleDragStart(e, item, index)}
                 onDragEnd={handleDragEnd}
-                onClick={() => {
+                onMouseDown={(e) => {
+                  // Shift+クリックで文字列が選択されないように
+                  if (e.shiftKey && isWindow) e.preventDefault();
+                }}
+                onClick={(e) => {
                   onItemSelect(index);
+                  // ウィンドウ検索: Ctrl+クリックで 1 行ずつ、Shift+クリックで範囲を選ぶ（実行しない）
+                  if (isWindow && windowSelection && (e.ctrlKey || e.shiftKey)) {
+                    if (e.ctrlKey) windowSelection.toggle(index);
+                    else windowSelection.selectRangeTo(index);
+                    return;
+                  }
                   onItemExecute(item);
                 }}
                 onMouseEnter={() => onItemSelect(index)}
                 onContextMenu={(e) => handleContextMenu(e, item)}
                 title={getTooltipText(item)}
               >
+                {isMarked && (
+                  <span className="item-mark" aria-label="選択中">
+                    ✓
+                  </span>
+                )}
                 <span className="item-icon">{getItemIcon(item)}</span>
                 <span className="item-name">
                   {itemName}

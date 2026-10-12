@@ -205,6 +205,8 @@ const electronAPI: ElectronAPI = {
   getWindowPinMode: (): Promise<WindowPinMode> =>
     ipcRenderer.invoke(IPC_CHANNELS.GET_WINDOW_PIN_MODE),
   cycleWindowPinMode: () => ipcRenderer.invoke(IPC_CHANNELS.CYCLE_WINDOW_PIN_MODE),
+  setEscapeHandledByPage: (handled: boolean) =>
+    ipcRenderer.send(IPC_CHANNELS.SET_ESCAPE_HANDLED_BY_PAGE, handled),
   registerItems: (items: RegisterItem[]) => ipcRenderer.invoke(IPC_CHANNELS.REGISTER_ITEMS, items),
   isDirectory: (filePath: string) => ipcRenderer.invoke(IPC_CHANNELS.IS_DIRECTORY, filePath),
   checkPathsExist: (paths: string[]): Promise<Record<string, PathExistenceStatus>> =>
@@ -602,6 +604,14 @@ const electronAPI: ElectronAPI = {
       IPC_CHANNELS.EVENT_WINDOW_MENU_ADD_TO_WORKSPACE,
       callback
     ),
+  showWindowsContextMenu: (count: number, desktopInfo: VirtualDesktopInfo): Promise<void> =>
+    ipcRenderer.invoke(IPC_CHANNELS.SHOW_WINDOWS_CONTEXT_MENU, count, desktopInfo),
+  onWindowsMenuClose: (callback: () => void) =>
+    createEventListenerNoArg(IPC_CHANNELS.EVENT_WINDOWS_MENU_CLOSE, callback),
+  onWindowsMenuPin: (callback: (pin: boolean) => void) =>
+    createEventListener<boolean>(IPC_CHANNELS.EVENT_WINDOWS_MENU_PIN, callback),
+  onWindowsMenuMoveToDesktop: (callback: (desktopNumber: number) => void) =>
+    createEventListener<number>(IPC_CHANNELS.EVENT_WINDOWS_MENU_MOVE_TO_DESKTOP, callback),
   onWindowMenuClose: (callback: (windowInfo: WindowInfo) => void) =>
     createEventListener<WindowInfo>(IPC_CHANNELS.EVENT_WINDOW_MENU_CLOSE, callback),
   onMoveWindowToDesktop: (callback: (hwnd: number | bigint, desktopNumber: number) => void) =>

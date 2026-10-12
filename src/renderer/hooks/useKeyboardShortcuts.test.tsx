@@ -1,33 +1,43 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type React from 'react';
-import { renderHook } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import type { AppItem, LauncherItem, SearchMode, WindowInfo } from '@common/types';
 
 import { useKeyboardShortcuts, type UseKeyboardShortcutsParams } from './useKeyboardShortcuts';
+import { useWindowOperations } from './useWindowOperations';
+import { useWindowMultiSelect } from './useWindowMultiSelect';
 
 const showToastWindow = vi.fn();
 const openParentFolder = vi.fn();
 const closeWindow = vi.fn();
+const isWindowPinned = vi.fn();
+const pinWindow = vi.fn();
+const unPinWindow = vi.fn();
+const setEscapeHandledByPage = vi.fn();
 
 function launcherItem(type: LauncherItem['type'], path: string): LauncherItem {
   return { displayName: `${type} のアイテム`, path, type } as LauncherItem;
 }
 
-function setup(
-  items: AppItem[],
-  searchMode: SearchMode = 'normal'
-): {
-  params: UseKeyboardShortcutsParams;
-  handleKeyDown: (e: React.KeyboardEvent) => Promise<void>;
-} {
-  const params: UseKeyboardShortcutsParams = {
+function notepad(hwnd: number): WindowInfo {
+  return { hwnd, title: `${hwnd} - メモ帳`, processName: 'Notepad.exe' } as WindowInfo;
+}
+
+type Params = Omit<UseKeyboardShortcutsParams, 'windowOps' | 'windowSelection'> & {
+  removeWindowFromList: (hwnd: WindowInfo['hwnd']) => void;
+  refreshWindowsKeepingSelection: () => Promise<void>;
+};
+
+/** App と同じく、ウィンドウ操作・複数選択・キー操作のフックを組み合わせて使う */
+function setup(items: AppItem[], searchMode: SearchMode = 'normal', selectedIndex = 0) {
+  const params: Params = {
     showDataFileTabs: false,
     activeTab: 'datafiles/data.json',
     dataFileTabs: [],
     mainItems: items,
     filteredItems: items,
     searchQuery: '',
-    selectedIndex: 0,
+    selectedIndex,
     setSelectedIndex: vi.fn(),
     setActiveTab: vi.fn(),
     navigateToPrevious: vi.fn(() => null),
@@ -46,8 +56,24 @@ function setup(
     activeDesktopTab: 0,
     setActiveDesktopTab: vi.fn(),
   };
-  const { result } = renderHook(() => useKeyboardShortcuts(params));
-  return { params, handleKeyDown: result.current.handleKeyDown };
+  const { result } = renderHook(() => {
+    const windowOps = useWindowOperations(params);
+    const windowSelection = useWindowMultiSelect({
+      searchMode: params.searchMode,
+      filteredItems: params.filteredItems,
+      selectedIndex: params.selectedIndex,
+    });
+    const { handleKeyDown } = useKeyboardShortcuts({ ...params, windowOps, windowSelection });
+    return { handleKeyDown, windowSelection };
+  });
+  return {
+    params,
+    /** 最新の描画の handleKeyDown で押す（state の変化を反映させる） */
+    press: (e: React.KeyboardEvent) => act(() => result.current.handleKeyDown(e)),
+    /** 同じ描画のまま押す（処理が詰まっていて、一覧が更新される前に押されたキー） */
+    handleKeyDown: result.current.handleKeyDown,
+    selection: () => result.current.windowSelection,
+  };
 }
 
 function keyEvent(
@@ -67,9 +93,20 @@ beforeEach(() => {
   showToastWindow.mockReset();
   openParentFolder.mockReset();
   closeWindow.mockReset();
+  isWindowPinned.mockReset();
+  pinWindow.mockReset();
+  unPinWindow.mockReset();
   Object.defineProperty(window, 'electronAPI', {
     configurable: true,
-    value: { showToastWindow, openParentFolder, closeWindow },
+    value: {
+      showToastWindow,
+      openParentFolder,
+      closeWindow,
+      isWindowPinned,
+      pinWindow,
+      unPinWindow,
+      setEscapeHandledByPage,
+    },
   });
 });
 
@@ -130,11 +167,10 @@ describe('useKeyboardShortcuts', () => {
   });
 
   it('ウィンドウ検索モードの Ctrl+D で閉じたウィンドウは、再取得を待たずに一覧から外す', async () => {
-    const win = { hwnd: 100, title: '無題 - メモ帳', processName: 'Notepad.exe' } as WindowInfo;
     closeWindow.mockResolvedValue({ success: true });
-    const { params, handleKeyDown } = setup([win], 'window');
+    const { params, press } = setup([notepad(100)], 'window');
 
-    await handleKeyDown(keyEvent('d', { ctrlKey: true }));
+    await press(keyEvent('d', { ctrlKey: true }));
 
     expect(closeWindow).toHaveBeenCalledWith(100);
     expect(params.removeWindowFromList).toHaveBeenCalledWith(100);
@@ -143,13 +179,11 @@ describe('useKeyboardShortcuts', () => {
   });
 
   it('一覧が更新される前に続けて押した Ctrl+D は、閉じている途中のウィンドウを飛ばして次を閉じる', async () => {
-    const first = { hwnd: 100, title: '1 - メモ帳', processName: 'Notepad.exe' } as WindowInfo;
-    const second = { hwnd: 200, title: '2 - メモ帳', processName: 'Notepad.exe' } as WindowInfo;
     let finishFirst: (value: { success: boolean }) => void = () => undefined;
     closeWindow
       .mockImplementationOnce(() => new Promise((resolve) => (finishFirst = resolve)))
       .mockResolvedValue({ success: true });
-    const { handleKeyDown } = setup([first, second], 'window');
+    const { handleKeyDown } = setup([notepad(100), notepad(200)], 'window');
 
     // 1 回目の処理が終わる前（同じ描画のまま）に 2 回目を押す
     const pressing = handleKeyDown(keyEvent('d', { ctrlKey: true }));
@@ -161,12 +195,69 @@ describe('useKeyboardShortcuts', () => {
   });
 
   it('ウィンドウを閉じるのに失敗したときは一覧から外さない', async () => {
-    const win = { hwnd: 100, title: '無題 - メモ帳', processName: 'Notepad.exe' } as WindowInfo;
     closeWindow.mockResolvedValue({ success: false, error: 'x' });
-    const { params, handleKeyDown } = setup([win], 'window');
+    const { params, press } = setup([notepad(100)], 'window');
 
-    await handleKeyDown(keyEvent('d', { ctrlKey: true }));
+    await press(keyEvent('d', { ctrlKey: true }));
 
     expect(params.removeWindowFromList).not.toHaveBeenCalled();
+  });
+
+  it('Ctrl+Shift+A で表示中をすべて選び、Ctrl+D は確認の帯を出して Enter で全部閉じる', async () => {
+    closeWindow.mockResolvedValue({ success: true });
+    const wins = [notepad(100), notepad(200), notepad(300)];
+    const { press, selection } = setup(wins, 'window');
+
+    await press(keyEvent('A', { ctrlKey: true, shiftKey: true }));
+    expect(selection().markedWindows).toEqual(wins);
+
+    await press(keyEvent('d', { ctrlKey: true }));
+    expect(closeWindow).not.toHaveBeenCalled();
+    expect(selection().pendingClose).toEqual(wins);
+
+    await press(keyEvent('Enter'));
+    expect(closeWindow.mock.calls).toEqual([[100], [200], [300]]);
+    expect(selection().pendingClose).toBeNull();
+    // トーストは 1 回だけ
+    expect(showToastWindow).toHaveBeenCalledTimes(1);
+    expect(showToastWindow).toHaveBeenCalledWith(
+      expect.objectContaining({ displayName: '3 個のウィンドウ', itemType: 'windowClose' })
+    );
+  });
+
+  it('Esc は確認の帯をやめ、もう一度で選択を外す', async () => {
+    const { press, selection } = setup([notepad(100), notepad(200)], 'window');
+
+    await press(keyEvent('A', { ctrlKey: true, shiftKey: true }));
+    await press(keyEvent('d', { ctrlKey: true }));
+    await press(keyEvent('Escape'));
+    expect(selection().pendingClose).toBeNull();
+    expect(selection().markedWindows).toHaveLength(2);
+
+    await press(keyEvent('Escape'));
+    expect(selection().markedWindows).toHaveLength(0);
+    expect(closeWindow).not.toHaveBeenCalled();
+  });
+
+  it('Shift+↓ でカーソルの行と次の行を選ぶ', async () => {
+    const wins = [notepad(100), notepad(200), notepad(300)];
+    const { params, press, selection } = setup(wins, 'window');
+
+    await press(keyEvent('ArrowDown', { shiftKey: true }));
+
+    expect(params.setSelectedIndex).toHaveBeenCalledWith(1);
+    expect(selection().markedWindows).toEqual([wins[0], wins[1]]);
+  });
+
+  it('選んでいるときの Ctrl+P は、1 つでも固定していなければ全部固定する', async () => {
+    isWindowPinned.mockImplementation(async (hwnd: number) => hwnd === 100);
+    pinWindow.mockResolvedValue({ success: true });
+    const { press } = setup([notepad(100), notepad(200)], 'window');
+
+    await press(keyEvent('A', { ctrlKey: true, shiftKey: true }));
+    await press(keyEvent('p', { ctrlKey: true }));
+
+    expect(pinWindow.mock.calls).toEqual([[100], [200]]);
+    expect(unPinWindow).not.toHaveBeenCalled();
   });
 });

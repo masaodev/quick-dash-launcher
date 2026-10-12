@@ -12,12 +12,7 @@ function hintTexts(): string[] {
 describe('LauncherHintBar', () => {
   it('通常モードは編集・親フォルダー・検索履歴を出し、タブが無ければ Tab は出さない', () => {
     render(
-      <LauncherHintBar
-        searchMode="normal"
-        canSwitchDataFileTab={false}
-        canSwitchDesktopTab={false}
-        canMoveToDesktop={false}
-      />
+      <LauncherHintBar searchMode="normal" canSwitchDataFileTab={false} canMoveToDesktop={false} />
     );
     expect(hintTexts()).toEqual(['F2', 'Shift+Enter', 'Ctrl+↑/↓']);
     expect(screen.getByTestId('keyboard-hint-bar').textContent).toBe(
@@ -26,35 +21,29 @@ describe('LauncherHintBar', () => {
   });
 
   it('通常モードでタブが 2 つ以上あるときは Tab も出す', () => {
-    render(
-      <LauncherHintBar
-        searchMode="normal"
-        canSwitchDataFileTab
-        canSwitchDesktopTab={false}
-        canMoveToDesktop={false}
-      />
-    );
+    render(<LauncherHintBar searchMode="normal" canSwitchDataFileTab canMoveToDesktop={false} />);
     expect(hintTexts()).toEqual(['F2', 'Shift+Enter', 'Ctrl+↑/↓', 'Tab']);
   });
 
-  it('ウィンドウ検索モードはピン留め・閉じるを出し、デスクトップのタブ表示中だけ移動を出す', () => {
+  it('ウィンドウ検索モードは閉じる・ピン留め・複数選択の順に出し、デスクトップのタブ表示中だけ最後に移動を出す', () => {
     const { rerender } = render(
+      <LauncherHintBar searchMode="window" canSwitchDataFileTab canMoveToDesktop={false} />
+    );
+    expect(hintTexts()).toEqual(['Ctrl+D', 'Ctrl+P', 'Shift+↑/↓']);
+    rerender(<LauncherHintBar searchMode="window" canSwitchDataFileTab canMoveToDesktop />);
+    expect(hintTexts()).toEqual(['Ctrl+D', 'Ctrl+P', 'Shift+↑/↓', 'Ctrl+←/→']);
+  });
+  it('ウィンドウ検索で選んでいるときは、選んだものへの操作と Esc を出す', () => {
+    render(
       <LauncherHintBar
         searchMode="window"
-        canSwitchDataFileTab
-        canSwitchDesktopTab={false}
+        canSwitchDataFileTab={false}
         canMoveToDesktop={false}
+        markedCount={3}
       />
     );
-    expect(hintTexts()).toEqual(['Ctrl+P', 'Ctrl+D']);
-    rerender(
-      <LauncherHintBar
-        searchMode="window"
-        canSwitchDataFileTab
-        canSwitchDesktopTab
-        canMoveToDesktop
-      />
+    expect(screen.getByTestId('keyboard-hint-bar').textContent).toBe(
+      'Ctrl+D:3 件を閉じる　Ctrl+P:3 件を固定/解除　Esc:選択を外す'
     );
-    expect(hintTexts()).toEqual(['Ctrl+P', 'Ctrl+D', 'Tab', 'Ctrl+←/→']);
   });
 });
