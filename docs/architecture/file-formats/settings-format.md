@@ -112,6 +112,8 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
 | --- | --- | --- | --- |
 | **autoLaunch** | boolean | false | Windows起動時にアプリを自動起動するか |
 
+OS への登録はポータブル版・インストーラー版ではスタートアップフォルダのショートカット、Store 版（MSIX）では Windows のスタートアップ アプリ（StartupTask）。Store 版で利用者が Windows 側で無効にしていると、この値が `true` でも自動起動しない（[管理ウィンドウ 5.4](../../screens/admin-window.md#54-自動起動チェックボックスを変更)）。
+
 ### 3.5. バックアップ設定
 
 | フィールド | 型 | デフォルト値 | 説明 |

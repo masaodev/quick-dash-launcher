@@ -160,6 +160,8 @@
       "publisher": "CN=masaodev",
       "publisherDisplayName": "masaodev",
       "backgroundColor": "transparent",
+      "minVersion": "10.0.17763.0",
+      "maxVersionTested": "10.0.26100.0",
       "languages": [
         "ja-JP",
         "en-US"
