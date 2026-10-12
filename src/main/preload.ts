@@ -347,6 +347,8 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.invoke(IPC_CHANNELS.IS_WINDOW_PINNED, hwnd),
   closeWindow: (hwnd: number | bigint): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke(IPC_CHANNELS.CLOSE_WINDOW, hwnd),
+  waitForWindowsClosed: (hwnds: (number | bigint)[]): Promise<void> =>
+    ipcRenderer.invoke(IPC_CHANNELS.WAIT_FOR_WINDOWS_CLOSED, hwnds),
   // システム通知API
   showNotification: (
     title: string,

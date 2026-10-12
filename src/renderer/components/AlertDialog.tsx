@@ -32,17 +32,21 @@ function AlertDialog({
   message,
   type = 'info',
 }: AlertDialogProps): React.ReactElement | null {
+  // Enter・Esc は capture 段階で受けて止める。後ろの画面のキー処理（メイン画面で Enter がアイテムを
+  // 実行するなど）に先に取られると、ダイアログが閉じずに後ろの操作が走る
   useEffect(() => {
     if (!isOpen) return;
 
     function handleKeyDown(e: KeyboardEvent): void {
       if (e.key === 'Escape' || e.key === 'Enter') {
+        e.preventDefault();
+        e.stopPropagation();
         onClose();
       }
     }
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
