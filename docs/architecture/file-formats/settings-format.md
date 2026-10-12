@@ -35,7 +35,7 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
   "editModeHeight": 1000,
   "autoLaunch": false,
   "cliEnabled": false,
-  "backupEnabled": false,
+  "backupEnabled": true,
   "backupRetention": 10,
   "showDataFileTabs": true,
   "defaultFileTab": "datafiles/data.json",
@@ -126,7 +126,7 @@ OS への登録はポータブル版・インストーラー版ではスター�
 
 | フィールド | 型 | デフォルト値 | 説明 |
 | --- | --- | --- | --- |
-| **backupEnabled** | boolean | false | バックアップ機能の有効/無効 |
+| **backupEnabled** | boolean | true | バックアップ機能の有効/無効（2026-10 に既定を true にした。それより前に初回起動した人の設定ファイルには false が書き込まれているので変わらない） |
 | **backupRetention** | number | 10 | バックアップファイルの保存件数上限<br>古いバックアップから自動削除 |
 | **backupIncludeClipboard** | boolean | false | クリップボードデータもバックアップに含めるか |
 
