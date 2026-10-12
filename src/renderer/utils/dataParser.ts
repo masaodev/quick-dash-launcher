@@ -12,11 +12,12 @@ function parseKeywords(query: string): string[] {
 
 /**
  * アイテムから検索対象テキストを取得する
- * WindowInfo は title、それ以外は displayName を使用
+ * WindowInfo は title と processName（一覧に表示している exe 名）、それ以外は displayName を使用
  */
 function getSearchText(item: AppItem): string {
   if ('hwnd' in item) {
-    return (item as WindowInfo).title;
+    const { title, processName } = item as WindowInfo;
+    return processName ? `${title} ${processName}` : title;
   }
   return (item as { displayName: string }).displayName;
 }

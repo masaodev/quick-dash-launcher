@@ -197,7 +197,12 @@ function applyBounds(
 function applyToastMode(win: BrowserWindow): void {
   const { x, y } = getToastPosition();
   win.setIgnoreMouseEvents(true, { forward: true });
-  win.setFocusable(false);
+  // 表示中のウィンドウに setFocusable(false) を呼ぶと、Electron が Z 順で次のウィンドウ（最前面の
+  // トーストの下はタスクバー）を前面に出し、メインウィンドウがフォーカスを失って隠れる。
+  // トーストを続けて出すと毎回これが起きるので、フォーカスを受け取れる状態のときだけ切り替える
+  if (win.isFocusable()) {
+    win.setFocusable(false);
+  }
   win.setMovable(false);
   applyBounds(win, TOAST_WIDTH, TOAST_HEIGHT, x, y);
   currentMode = 'toast';

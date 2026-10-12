@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { DESKTOP_TAB } from '@common/constants';
 import {
   AppItem,
@@ -34,6 +34,8 @@ export interface UseKeyboardShortcutsParams {
   windowList: WindowInfo[];
   toggleSearchMode: () => Promise<void>;
   refreshWindows: () => Promise<void>;
+  /** 閉じたウィンドウを再取得を待たずに一覧から外す */
+  removeWindowFromList: (hwnd: WindowInfo['hwnd']) => void;
   reloadData: () => Promise<void>;
   desktopCount: number;
   activeDesktopTab: number;
@@ -62,11 +64,16 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
     windowList,
     toggleSearchMode,
     refreshWindows,
+    removeWindowFromList,
     reloadData,
     desktopCount,
     activeDesktopTab,
     setActiveDesktopTab,
   } = params;
+
+  // Ctrl+D で閉じている途中のウィンドウ。処理が詰まっている間に押された Ctrl+D は
+  // 一覧が更新される前の同じ描画のまま続けて実行されるので、ここで覚えて対象から外す
+  const closingHwndsRef = useRef(new Set<WindowInfo['hwnd']>());
 
   function buildDesktopTabIds(): number[] {
     const tabIds: number[] = [DESKTOP_TAB.ALL];
@@ -238,16 +245,27 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
       e.preventDefault();
       e.stopPropagation();
 
-      const selectedWindow = filteredItems[selectedIndex] as WindowInfo | undefined;
+      // 閉じている途中のウィンドウを除いた一覧は、閉じ終えて一覧から外した後の一覧と同じ並びになる
+      const closing = closingHwndsRef.current;
+      const candidates = (filteredItems as WindowInfo[]).filter((w) => !closing.has(w.hwnd));
+      const selectedWindow = candidates[selectedIndex];
       if (!selectedWindow) return;
 
-      const result = await window.electronAPI.closeWindow(selectedWindow.hwnd);
-      await showWindowToastAndRefresh(
-        result,
-        selectedWindow,
-        'windowClose',
-        'ウィンドウを閉じるのに失敗しました'
-      );
+      closing.add(selectedWindow.hwnd);
+      try {
+        const result = await window.electronAPI.closeWindow(selectedWindow.hwnd);
+        if (result.success) {
+          removeWindowFromList(selectedWindow.hwnd);
+        }
+        await showWindowToastAndRefresh(
+          result,
+          selectedWindow,
+          'windowClose',
+          'ウィンドウを閉じるのに失敗しました'
+        );
+      } finally {
+        closing.delete(selectedWindow.hwnd);
+      }
       return;
     }
 

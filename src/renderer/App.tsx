@@ -136,20 +136,32 @@ function App(): React.ReactElement {
 
   const { withLoading } = useGlobalLoading();
 
+  // ウィンドウリストの世代。取得中に新しい取得や削除があれば、古い取得結果は捨てる
+  // （Ctrl+D の連打で、閉じる前に取得した一覧が後から届いて閉じたウィンドウが戻るのを防ぐ）
+  const windowListVersionRef = useRef(0);
+
   const handleRefreshWindows = useCallback(async () => {
     if (searchMode !== 'window') return;
 
+    const version = ++windowListVersionRef.current;
     await withLoading('ウィンドウ更新中', async () => {
       // ウィンドウリストと仮想デスクトップ情報を再取得
       const [windows, info] = await Promise.all([
         window.electronAPI.getAllWindowsAllDesktops(),
         window.electronAPI.getVirtualDesktopInfo(),
       ]);
+      if (version !== windowListVersionRef.current) return;
       setWindowList(windows);
       setDesktopInfo(info);
       setSelectedIndex(0); // 選択インデックスをリセット
     });
   }, [searchMode, withLoading]);
+
+  /** 閉じたウィンドウを再取得を待たずに一覧から外す（連打したとき次の Ctrl+D が同じウィンドウを狙わないように） */
+  const removeWindowFromList = useCallback((hwnd: WindowInfo['hwnd']) => {
+    windowListVersionRef.current++;
+    setWindowList((prev) => prev.filter((w) => w.hwnd !== hwnd));
+  }, []);
 
   // trigger: 起動時と F5 は省略（explicit）。アプリ内の操作に伴う再読込は 'internal'
   //（last-load-report.json を報告事項があるときだけ更新する）
@@ -355,6 +367,7 @@ function App(): React.ReactElement {
     windowList,
     toggleSearchMode: handleToggleSearchMode,
     refreshWindows: handleRefreshWindows,
+    removeWindowFromList,
     reloadData: handleReloadItems,
     desktopCount: desktopInfo?.desktopCount || 0,
     activeDesktopTab,
