@@ -9,16 +9,19 @@ const MODIFIER_KEYS = new Set(['Ctrl', 'Alt', 'Shift', 'CmdOrCtrl', 'Command', '
 
 const KEY_PATTERN = /^(?:[A-Z0-9]|Space|Enter|Tab|Escape|Delete|Backspace|F[1-9]|F1[0-2])$/;
 
+/** 弾いた理由（文言は辞書の hotkey.invalid.*。main の SettingsService.validateHotkey が訳す） */
+export type HotkeyInvalidReason = 'missing' | 'format' | 'needKey' | 'needModifier' | 'oneKey';
+
 export interface HotkeyValidationResult {
   isValid: boolean;
-  reason?: string;
+  reason?: HotkeyInvalidReason;
 }
 
-const INVALID_FORMAT = 'ホットキーの形式が正しくありません';
+const INVALID_FORMAT = 'format';
 
 export function validateHotkey(hotkey: unknown): HotkeyValidationResult {
   if (!hotkey || typeof hotkey !== 'string') {
-    return { isValid: false, reason: 'ホットキーが指定されていません' };
+    return { isValid: false, reason: 'missing' };
   }
 
   const parts = hotkey.split('+');
@@ -30,16 +33,16 @@ export function validateHotkey(hotkey: unknown): HotkeyValidationResult {
   const modifiers = parts.slice(0, -1);
 
   if (MODIFIER_KEYS.has(key)) {
-    return { isValid: false, reason: '修飾キーのほかに通常キーが 1 つ必要です' };
+    return { isValid: false, reason: 'needKey' };
   }
   if (!KEY_PATTERN.test(key)) {
     return { isValid: false, reason: INVALID_FORMAT };
   }
   if (modifiers.length === 0) {
-    return { isValid: false, reason: '修飾キー（Ctrl、Alt、Shift等）が必要です' };
+    return { isValid: false, reason: 'needModifier' };
   }
   if (modifiers.some((modifier) => KEY_PATTERN.test(modifier))) {
-    return { isValid: false, reason: '通常キーは 1 つだけにしてください' };
+    return { isValid: false, reason: 'oneKey' };
   }
   if (!modifiers.every((modifier) => MODIFIER_KEYS.has(modifier))) {
     return { isValid: false, reason: INVALID_FORMAT };

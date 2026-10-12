@@ -17,6 +17,7 @@ import { PerformanceTimer } from '@common/utils/performanceTimer';
 
 import { HotkeyService } from './services/hotkeyService.js';
 import { SettingsService } from './services/settingsService.js';
+import { mainI18n } from './services/mainI18n.js';
 import { showAdminWindowWithTab } from './adminWindowManager.js';
 import PathManager from './config/pathManager.js';
 import { EnvConfig } from './config/envConfig.js';
@@ -31,6 +32,7 @@ import { registerChildWindowOpener } from './services/childWindowService.js';
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
+let trayLanguageListenerAdded = false;
 
 let windowPinMode: WindowPinMode = EnvConfig.windowPinMode ?? 'normal';
 let isFirstLaunchMode: boolean = false;
@@ -258,6 +260,31 @@ export async function createTray(): Promise<void> {
   const icon = nativeImage.createFromPath(iconPath);
 
   tray = new Tray(icon);
+  tray.setToolTip('QuickDashLauncher');
+  await updateTrayMenu();
+
+  // 表示言語が変わったらメニューを作り直す（トレイを作り直しても登録は 1 回だけ）
+  if (!trayLanguageListenerAdded) {
+    trayLanguageListenerAdded = true;
+    mainI18n.on('languageChanged', () => {
+      updateTrayMenu().catch((error) =>
+        windowLogger.error({ error }, 'トレイのメニューの更新に失敗')
+      );
+    });
+  }
+
+  tray.on('double-click', () => {
+    if (mainWindow) {
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  });
+}
+
+/** トレイの右クリックメニューを今の表示言語・ホットキーで作り直す */
+async function updateTrayMenu(): Promise<void> {
+  if (!tray || tray.isDestroyed()) return;
+  const t = mainI18n.t.bind(mainI18n);
 
   // package.jsonからバージョンを取得
   const packageJson = await import('../../package.json');
@@ -275,7 +302,7 @@ export async function createTray(): Promise<void> {
     },
     { type: 'separator' },
     {
-      label: `表示${hotkeyLabel}`,
+      label: `${t('tray.show')}${hotkeyLabel}`,
       click: () => {
         if (mainWindow) {
           void showMainWindow();
@@ -283,20 +310,20 @@ export async function createTray(): Promise<void> {
       },
     },
     {
-      label: '画面中央に表示',
+      label: t('tray.showAtCenter'),
       click: () => {
         showWindowAtCenter();
       },
     },
     {
-      label: '設定...',
+      label: t('tray.settings'),
       click: async () => {
         await showAdminWindowWithTab('settings');
       },
     },
     { type: 'separator' },
     {
-      label: 'データフォルダを開く',
+      label: t('tray.openSettingsFolder'),
       click: async () => {
         const configFolder = PathManager.getConfigFolder();
         await shell.openPath(configFolder);
@@ -304,23 +331,22 @@ export async function createTray(): Promise<void> {
     },
     { type: 'separator' },
     {
-      label: 'ヘルプ',
+      label: t('tray.help'),
       click: async () => {
         await shell.openExternal('https://github.com/masaodev/quick-dash-launcher');
       },
     },
     { type: 'separator' },
     {
-      label: '再起動',
+      label: t('tray.restart'),
       click: async () => {
         if (EnvConfig.isDevelopment) {
           const result = await dialog.showMessageBox({
             type: 'warning',
-            title: '再起動（開発モード）',
-            message: '開発モードでは自動再起動をサポートしていません',
-            detail:
-              'アプリを終了後、ターミナルで以下のコマンドを実行してください：\n\n  npm run dev\n\nアプリを終了しますか？',
-            buttons: ['キャンセル', '終了'],
+            title: t('tray.devRestart.title'),
+            message: t('tray.devRestart.message'),
+            detail: t('tray.devRestart.detail'),
+            buttons: [t('common.cancel'), t('tray.devRestart.quit')],
             defaultId: 0,
             cancelId: 0,
           });
@@ -336,22 +362,16 @@ export async function createTray(): Promise<void> {
       },
     },
     {
-      label: '終了',
+      label: t('tray.quit'),
       click: () => {
         app.quit();
       },
     },
   ]);
 
-  tray.setToolTip('QuickDashLauncher');
+  // await の間に終了処理でトレイが破棄されていることがある
+  if (!tray || tray.isDestroyed()) return;
   tray.setContextMenu(contextMenu);
-
-  tray.on('double-click', () => {
-    if (mainWindow) {
-      mainWindow.show();
-      mainWindow.focus();
-    }
-  });
 }
 
 export async function registerGlobalShortcut(): Promise<void> {
@@ -460,7 +480,7 @@ export function getTray(): Tray | null {
  */
 export function setFirstLaunchMode(isFirstLaunch: boolean): void {
   isFirstLaunchMode = isFirstLaunch;
-  windowLogger.info(`初回起動モード: ${isFirstLaunch ? '有効' : '無効'}`);
+  windowLogger.info({ isFirstLaunch }, '初回起動モードを切り替えました');
 }
 
 /**

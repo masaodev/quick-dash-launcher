@@ -17,6 +17,11 @@ import type {
 import { IPC_CHANNELS } from '@common/ipcChannels';
 import { isLauncherItem } from '@common/types/guards';
 
+import { mainI18n } from '../services/mainI18n.js';
+
+/** メニューの文言（開くたびに作るので、今の表示言語になる） */
+const t = mainI18n.t.bind(mainI18n);
+
 /** メニューアイテムを作成するヘルパー */
 function createMenuItem(
   label: string,
@@ -62,31 +67,22 @@ function appendPathMenuItems(
   arg: unknown,
   options: { hasParentFolder: boolean; isShortcut: boolean }
 ): void {
-  menu.append(createMenuItem('📋 パスをコピー', sender, channels.copyPath, arg));
+  menu.append(createMenuItem(t('menu.copyPath'), sender, channels.copyPath, arg));
 
   if (options.hasParentFolder) {
-    menu.append(
-      createMenuItem('📋 親フォルダのパスをコピー', sender, channels.copyParentPath, arg)
-    );
-    menu.append(createMenuItem('📂 親フォルダを開く', sender, channels.openParentFolder, arg));
+    menu.append(createMenuItem(t('menu.copyParentPath'), sender, channels.copyParentPath, arg));
+    menu.append(createMenuItem(t('menu.openParentFolder'), sender, channels.openParentFolder, arg));
   }
 
   if (options.isShortcut) {
     menu.append(createSeparator());
+    menu.append(createMenuItem(t('menu.copyShortcutPath'), sender, channels.copyShortcutPath, arg));
     menu.append(
-      createMenuItem('📋 リンク先のパスをコピー', sender, channels.copyShortcutPath, arg)
+      createMenuItem(t('menu.copyShortcutParentPath'), sender, channels.copyShortcutParentPath, arg)
     );
     menu.append(
       createMenuItem(
-        '📋 リンク先の親フォルダのパスをコピー',
-        sender,
-        channels.copyShortcutParentPath,
-        arg
-      )
-    );
-    menu.append(
-      createMenuItem(
-        '📂 リンク先の親フォルダを開く',
+        t('menu.openShortcutParentFolder'),
         sender,
         channels.openShortcutParentFolder,
         arg
@@ -122,11 +118,12 @@ function setupAdminItemContextMenuHandler(): void {
       if (!senderWindow) return;
 
       const menu = new Menu();
-      const countSuffix = isSingleLine ? '' : ` (${selectedCount}行)`;
 
       menu.append(
         createMenuItem(
-          `📋 複製${countSuffix}`,
+          isSingleLine
+            ? t('menu.admin.duplicate')
+            : t('menu.admin.duplicateRows', { count: selectedCount }),
           event.sender,
           IPC_CHANNELS.EVENT_ADMIN_MENU_DUPLICATE_ITEMS
         )
@@ -134,14 +131,20 @@ function setupAdminItemContextMenuHandler(): void {
 
       if (isSingleLine) {
         menu.append(
-          createMenuItem('✏️ 詳細編集', event.sender, IPC_CHANNELS.EVENT_ADMIN_MENU_EDIT_ITEM)
+          createMenuItem(
+            t('menu.admin.editDetails'),
+            event.sender,
+            IPC_CHANNELS.EVENT_ADMIN_MENU_EDIT_ITEM
+          )
         );
       }
 
       menu.append(createSeparator());
       menu.append(
         createMenuItem(
-          `🗑️ 削除${countSuffix}`,
+          isSingleLine
+            ? t('menu.admin.delete')
+            : t('menu.admin.deleteRows', { count: selectedCount }),
           event.sender,
           IPC_CHANNELS.EVENT_ADMIN_MENU_DELETE_ITEMS
         )
@@ -170,7 +173,7 @@ function setupLauncherContextMenuHandler(): void {
       // F2 はメインウィンドウのキー処理で受けるので、ここでは右端に表示するだけ（登録しない）
       menu.append(
         new MenuItem({
-          label: '✏️ 編集',
+          label: t('menu.edit'),
           accelerator: 'F2',
           registerAccelerator: false,
           click: () => event.sender.send(IPC_CHANNELS.EVENT_LAUNCHER_MENU_EDIT_ITEM, item),
@@ -180,7 +183,7 @@ function setupLauncherContextMenuHandler(): void {
       if (hasMemo) {
         menu.append(
           createMenuItem(
-            '📝 メモを表示',
+            t('menu.showNote'),
             event.sender,
             IPC_CHANNELS.EVENT_LAUNCHER_MENU_SHOW_MEMO,
             item
@@ -194,7 +197,7 @@ function setupLauncherContextMenuHandler(): void {
 
       menu.append(
         createMenuItem(
-          '⭐ ワークスペースに追加',
+          t('menu.addToWorkspace'),
           event.sender,
           IPC_CHANNELS.EVENT_LAUNCHER_MENU_ADD_TO_WORKSPACE,
           item
@@ -224,7 +227,7 @@ function buildMoveToWorkspaceSubmenu(
   targetId: string,
   currentWorkspaceId: string | undefined,
   workspaces: Workspace[],
-  label = '📁 ワークスペースを移動'
+  label: string = t('menu.workspaceItem.moveToWorkspace')
 ): MenuItem | null {
   const otherWorkspaces = workspaces.filter((ws) => ws.id !== currentWorkspaceId);
   if (otherWorkspaces.length === 0) return null;
@@ -263,7 +266,7 @@ function setupWorkspaceContextMenuHandler(): void {
 
       menu.append(
         createMenuItem(
-          '✏️ 表示名を変更',
+          t('menu.workspaceItem.rename'),
           event.sender,
           IPC_CHANNELS.EVENT_WORKSPACE_MENU_RENAME_ITEM,
           item.id
@@ -271,7 +274,7 @@ function setupWorkspaceContextMenuHandler(): void {
       );
       menu.append(
         createMenuItem(
-          '▶️ 起動',
+          t('menu.workspaceItem.open'),
           event.sender,
           IPC_CHANNELS.EVENT_WORKSPACE_MENU_LAUNCH_ITEM,
           item.id
@@ -289,7 +292,7 @@ function setupWorkspaceContextMenuHandler(): void {
       menu.append(createSeparator());
       menu.append(
         createMenuItem(
-          '🔧 編集',
+          t('menu.workspaceItem.edit'),
           event.sender,
           IPC_CHANNELS.EVENT_WORKSPACE_MENU_EDIT_ITEM,
           item.id
@@ -313,7 +316,7 @@ function setupWorkspaceContextMenuHandler(): void {
       if (item.groupId !== undefined) {
         menu.append(
           createMenuItem(
-            '📤 グループから削除',
+            t('menu.workspaceItem.removeFromGroup'),
             event.sender,
             IPC_CHANNELS.EVENT_WORKSPACE_MENU_REMOVE_FROM_GROUP,
             item.id
@@ -324,7 +327,7 @@ function setupWorkspaceContextMenuHandler(): void {
       menu.append(createSeparator());
       menu.append(
         createMenuItem(
-          '🗑️ ワークスペースから削除',
+          t('menu.workspaceItem.remove'),
           event.sender,
           IPC_CHANNELS.EVENT_WORKSPACE_MENU_REMOVE_ITEM,
           item.id
@@ -356,7 +359,7 @@ function setupWorkspaceGroupContextMenuHandler(): void {
       if (isArchived) {
         menu.append(
           createMenuItem(
-            '📋 テキストでコピー',
+            t('menu.workspaceGroup.copyAsText'),
             event.sender,
             IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_COPY_AS_TEXT,
             group.id
@@ -368,7 +371,7 @@ function setupWorkspaceGroupContextMenuHandler(): void {
           group.id,
           undefined,
           workspaces ?? [],
-          '📤 ワークスペースへ復元'
+          t('menu.workspaceGroup.restore')
         );
         if (restoreSubmenu) {
           menu.append(createSeparator());
@@ -377,7 +380,7 @@ function setupWorkspaceGroupContextMenuHandler(): void {
         menu.append(createSeparator());
         menu.append(
           createMenuItem(
-            '🗑️ アーカイブから削除',
+            t('menu.workspaceGroup.deleteFromArchive'),
             event.sender,
             IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_DELETE,
             group.id
@@ -390,7 +393,7 @@ function setupWorkspaceGroupContextMenuHandler(): void {
       if (canAddSubgroup) {
         menu.append(
           createMenuItem(
-            '📂 サブグループを追加',
+            t('menu.workspaceGroup.addSubgroup'),
             event.sender,
             IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_ADD_SUBGROUP,
             group.id
@@ -401,7 +404,7 @@ function setupWorkspaceGroupContextMenuHandler(): void {
 
       menu.append(
         createMenuItem(
-          '✏️ グループ名を変更',
+          t('menu.workspaceGroup.rename'),
           event.sender,
           IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_RENAME,
           group.id
@@ -409,7 +412,7 @@ function setupWorkspaceGroupContextMenuHandler(): void {
       );
       menu.append(
         createMenuItem(
-          '🎨 カラーを変更',
+          t('menu.workspaceGroup.changeColor'),
           event.sender,
           IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_SHOW_COLOR_PICKER,
           group.id
@@ -418,7 +421,7 @@ function setupWorkspaceGroupContextMenuHandler(): void {
       menu.append(createSeparator());
       menu.append(
         createMenuItem(
-          '📋 テキストでコピー',
+          t('menu.workspaceGroup.copyAsText'),
           event.sender,
           IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_COPY_AS_TEXT,
           group.id
@@ -443,7 +446,7 @@ function setupWorkspaceGroupContextMenuHandler(): void {
       menu.append(createSeparator());
       menu.append(
         createMenuItem(
-          '📦 グループをアーカイブ',
+          t('menu.workspaceGroup.archive'),
           event.sender,
           IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_ARCHIVE,
           group.id
@@ -451,7 +454,7 @@ function setupWorkspaceGroupContextMenuHandler(): void {
       );
       menu.append(
         createMenuItem(
-          '🗑️ グループを削除',
+          t('menu.workspaceGroup.delete'),
           event.sender,
           IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_DELETE,
           group.id
@@ -475,7 +478,7 @@ function setupFileTabContextMenuHandler(): void {
 
       menu.append(
         createMenuItem(
-          '✏️ 名前を変更',
+          t('menu.tab.rename'),
           event.sender,
           IPC_CHANNELS.EVENT_FILE_TAB_MENU_RENAME,
           tabIndex
@@ -504,7 +507,7 @@ function setupWindowContextMenuHandler(): void {
 
       menu.append(
         createMenuItem(
-          '▶️ アクティブにする',
+          t('menu.window.activate'),
           event.sender,
           IPC_CHANNELS.EVENT_WINDOW_MENU_ACTIVATE,
           windowInfo
@@ -516,7 +519,7 @@ function setupWindowContextMenuHandler(): void {
       // 既定はタイトルとプロセス名でアクティブ化するだけ。位置の記録は明示的に選ばせる
       menu.append(
         createMenuItem(
-          '⭐ ワークスペースに追加',
+          t('menu.addToWorkspace'),
           event.sender,
           IPC_CHANNELS.EVENT_WINDOW_MENU_ADD_TO_WORKSPACE,
           { windowInfo, includePosition: false }
@@ -524,7 +527,7 @@ function setupWindowContextMenuHandler(): void {
       );
       menu.append(
         createMenuItem(
-          '⭐ 位置・サイズも記録してワークスペースに追加',
+          t('menu.window.addToWorkspaceWithPosition'),
           event.sender,
           IPC_CHANNELS.EVENT_WINDOW_MENU_ADD_TO_WORKSPACE,
           { windowInfo, includePosition: true }
@@ -539,7 +542,9 @@ function setupWindowContextMenuHandler(): void {
 
         for (let i = 1; i <= desktopInfo.desktopCount; i++) {
           const isCurrentDesktop = windowInfo.desktopNumber === i;
-          const label = isCurrentDesktop ? `✓ デスクトップ ${i} (現在)` : `🖥️ デスクトップ ${i}`;
+          const label = isCurrentDesktop
+            ? t('menu.window.currentDesktop', { number: i })
+            : t('menu.window.desktop', { number: i });
 
           virtualDesktopSubmenu.append(
             new MenuItem({
@@ -552,15 +557,17 @@ function setupWindowContextMenuHandler(): void {
         }
 
         menu.append(
-          new MenuItem({ label: '🖥️ 仮想デスクトップへの移動', submenu: virtualDesktopSubmenu })
+          new MenuItem({ label: t('menu.window.moveToDesktop'), submenu: virtualDesktopSubmenu })
         );
       } else {
-        menu.append(new MenuItem({ label: '🖥️ 仮想デスクトップへの移動', enabled: false }));
+        menu.append(new MenuItem({ label: t('menu.window.moveToDesktop'), enabled: false }));
       }
 
       if (desktopInfo.supported) {
         menu.append(createSeparator());
-        const pinLabel = isPinned ? '📌 全デスクトップへの表示を解除' : '📌 全デスクトップに表示';
+        const pinLabel = isPinned
+          ? t('menu.window.stopShowingOnAllDesktops')
+          : t('menu.window.showOnAllDesktops');
         const pinChannel = isPinned ? IPC_CHANNELS.UNPIN_WINDOW : IPC_CHANNELS.PIN_WINDOW;
         // Ctrl+P・Ctrl+D はメインウィンドウのキー処理で受けるので、右端に表示するだけ（登録しない）
         menu.append(
@@ -576,7 +583,7 @@ function setupWindowContextMenuHandler(): void {
       menu.append(createSeparator());
       menu.append(
         new MenuItem({
-          label: '❌ ウィンドウを閉じる',
+          label: t('menu.window.close'),
           accelerator: 'Ctrl+D',
           registerAccelerator: false,
           click: () => event.sender.send(IPC_CHANNELS.EVENT_WINDOW_MENU_CLOSE, windowInfo),
@@ -601,7 +608,7 @@ function setupWindowsContextMenuHandler(): void {
       if (!senderWindow) return;
 
       const menu = new Menu();
-      menu.append(new MenuItem({ label: `${count} 個のウィンドウ`, enabled: false }));
+      menu.append(new MenuItem({ label: t('menu.window.count', { count }), enabled: false }));
       menu.append(createSeparator());
 
       if (desktopInfo.supported && desktopInfo.desktopCount > 1) {
@@ -609,23 +616,23 @@ function setupWindowsContextMenuHandler(): void {
         for (let i = 1; i <= desktopInfo.desktopCount; i++) {
           submenu.append(
             createMenuItem(
-              `🖥️ デスクトップ ${i}`,
+              t('menu.window.desktop', { number: i }),
               event.sender,
               IPC_CHANNELS.EVENT_WINDOWS_MENU_MOVE_TO_DESKTOP,
               i
             )
           );
         }
-        menu.append(new MenuItem({ label: '🖥️ 仮想デスクトップへの移動', submenu }));
+        menu.append(new MenuItem({ label: t('menu.window.moveToDesktop'), submenu }));
       } else {
-        menu.append(new MenuItem({ label: '🖥️ 仮想デスクトップへの移動', enabled: false }));
+        menu.append(new MenuItem({ label: t('menu.window.moveToDesktop'), enabled: false }));
       }
 
       if (desktopInfo.supported) {
         menu.append(createSeparator());
         menu.append(
           createMenuItem(
-            '📌 全デスクトップに表示',
+            t('menu.window.showOnAllDesktops'),
             event.sender,
             IPC_CHANNELS.EVENT_WINDOWS_MENU_PIN,
             true
@@ -633,7 +640,7 @@ function setupWindowsContextMenuHandler(): void {
         );
         menu.append(
           createMenuItem(
-            '📌 全デスクトップへの表示を解除',
+            t('menu.window.stopShowingOnAllDesktops'),
             event.sender,
             IPC_CHANNELS.EVENT_WINDOWS_MENU_PIN,
             false
@@ -644,7 +651,7 @@ function setupWindowsContextMenuHandler(): void {
       menu.append(createSeparator());
       menu.append(
         new MenuItem({
-          label: `❌ ${count} 個のウィンドウを閉じる`,
+          label: t('menu.window.closeCount', { count }),
           accelerator: 'Ctrl+D',
           registerAccelerator: false,
           click: () => event.sender.send(IPC_CHANNELS.EVENT_WINDOWS_MENU_CLOSE),
@@ -668,7 +675,7 @@ function setupWorkspaceTabContextMenuHandler(): void {
 
       menu.append(
         createMenuItem(
-          '✏️ 名前を変更',
+          t('menu.tab.rename'),
           event.sender,
           IPC_CHANNELS.EVENT_WORKSPACE_TAB_MENU_RENAME,
           workspaceId
@@ -679,7 +686,7 @@ function setupWorkspaceTabContextMenuHandler(): void {
         menu.append(createSeparator());
         menu.append(
           createMenuItem(
-            '🗑️ 削除',
+            t('menu.tab.delete'),
             event.sender,
             IPC_CHANNELS.EVENT_WORKSPACE_TAB_MENU_DELETE,
             workspaceId
