@@ -10,9 +10,11 @@ npm run dev:test        # テストデータで開発モード起動（全機能
 npm run build           # 型チェック（tsc）→ Viteビルド。prebuildでTHIRD-PARTY-NOTICES.mdを生成
 npm run preview         # ビルド済みアプリケーションのプレビュー
 npm run start           # ビルドして実行
-npm run dist            # Windowsインストーラー（NSIS）とポータブル版の作成（x64）
-npm run dist:appx       # Store 版（MSIX の appx、x64）の作成。ロゴ画像を build/appx/ に作ってからパッケージにする（試作中）
+npm run dist            # Windowsインストーラー（NSIS）とポータブル版の作成（x64）。build と build:cli を含む
+npm run dist:appx       # Store 版（MSIX の appx、x64）の作成。ロゴ画像を build/appx/ に作ってからパッケージにする（試作中）。build と build:cli を含む
 npm run winrt:generate  # Store 版で使う WinRT の呼び出しコード（src/main/winrt/generated/）を作り直す
+npm run build:cli       # CLI（qdl.exe）のビルド（cargo build --release。Rust が要る）
+npm run test:cli        # CLI の単体テスト（cargo test）
 npm run generate-licenses # THIRD-PARTY-NOTICES.md の生成（build の前に自動で実行）
 npm run schema:generate # 型から JSON Schema（assets/schemas/）を生成
 npm run create-dev-icon # 開発モード用アイコンの作成
@@ -38,6 +40,16 @@ Viteベースのビルドシステムを使用:
 - **Windows専用**: クロスプラットフォーム非対応
 - **ターゲット**: NSISインストーラーとポータブル版（いずれもx64）。Store 版（appx）は別のコマンドで作る（下記）
 - **App ID**: `net.masaodev.quick-dash-launcher`（masaodev.netドメイン所有者のため）
+- **CLI の同梱**: `npm run dist` は `build:cli` で `cli/target/release/qdl.exe` を作り、electron-builder の `extraResources` でインストール先の `resources\bin\qdl.exe` に同梱する（`package.json` の `build.extraResources`）。Rust が無いと `dist` は失敗する（[開発ガイド - 必要なツール](development.md#必要なツール)）
+
+### CLI（qdl.exe）
+
+CLI は Rust の Cargo プロジェクト（`cli/`）で、本体とは別の実行ファイルになる。本体の Vite ビルド（`npm run build`）には含まれない。
+
+- 出力: `cli/target/release/qdl.exe`（リリースビルドはサイズ優先の設定。`cli/Cargo.toml` の `[profile.release]`）
+- 同梱先: インストーラー版は `<インストール先>\resources\bin\qdl.exe`。ポータブル版にも同じく入るが、起動のたびに一時フォルダへ展開されるので、今は外から呼べない
+- パッケージ版の本体は起動のたびに、`qdl.exe` が本体を起動するときに使う本体の場所を userData の `cli-launcher.json` に書き出す（`src/main/services/cli/cliLauncherInfo.ts`）
+- やり取りの形を変えたら、本体の `CLI_PROTOCOL_VERSION`（`src/main/services/cli/cliProtocol.ts`）と `cli/src/main.rs` の `PROTOCOL_VERSION` を一緒に上げる
 
 ### App ID（アプリケーション識別子）
 
@@ -147,7 +159,7 @@ v0.2.10 で `com.example.quick-dash-launcher` から変えた。App ID は自動
 **原因**: 他のアプリケーションとの競合
 **解決策**:
 
-- タスクマネージャーで複数のインスタンスが起動していないか確認
+- タスクマネージャーで複数のインスタンスが起動していないか確認（同じ userData の本体は二重起動の防止で 1 つしか動かないが、開発用のインスタンスや `QUICK_DASH_CONFIG_DIR` を指定した起動は同時に動く。[開発ガイド - 二重起動の防止](development.md#二重起動の防止)）
 - 他のアプリケーションが同じホットキーを使用していないか確認
 - 設定画面で別のホットキーに変更してみる
 - 開発モード（`npm run dev` など）では、環境変数 `HOTKEY` のホットキー（`Ctrl+Alt+A` など）が設定ファイルより優先される（[開発ガイド - 多重起動](development.md#多重起動)）

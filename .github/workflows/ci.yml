@@ -63,3 +63,8 @@ jobs:
       # HTMLレポートはCIでは不要なので、標準出力とPRへの注釈だけにする
       - name: Unit tests
         run: npx vitest run --reporter=default --reporter=github-actions
+
+      # CLI（cli/、Rust）。windows-2022 のランナーには Rust が入っている。
+      # リリースでは npm run dist が build:cli で qdl.exe を作り、extraResources で同梱する
+      - name: CLI tests
+        run: npm run test:cli

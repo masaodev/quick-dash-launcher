@@ -73,6 +73,10 @@ QuickDashLauncherで使用されるドメイン用語の定義です。開発時
 | 画面 | `AdminApp.tsx` | 管理ウィンドウ | 管理 | 設定・アイテム管理画面。メインウィンドウの ⚙️ メニュー（「⚙️ 基本設定」「✏️ アイテム管理」）や Ctrl+E で開く。`src/main/adminWindowManager.ts`が生成し、`src/renderer/AdminApp.tsx`で実装。 |
 | 画面 | `RegisterModal` | 登録モーダル | - | アイテム登録・編集フォーム。メインウィンドウまたは管理ウィンドウを親とする子ウィンドウ（`RegisterWindowPage`）に表示する（`src/main/mainChildWindowManager.ts`が生成）。新規登録と編集の両方に対応。 |
 | 画面 | `DirOptionsEditor` | フォルダ取込オプションエディタ | フォルダ取込オプション | フォルダ取込の詳細設定コンポーネント。RegisterModal内で使用。depth、types、filter等を設定。 |
+| CLI | `qdl.exe` | CLI | - | コマンドラインから起動中の本体に依頼する実行ファイル（`cli/`、Rust）。引数を解釈せず名前付きパイプで本体に送り、返ってきた標準出力・標準エラー・終了コードをそのまま出す中継役。コマンドの解釈は本体の`src/main/services/cli/cliCommands.ts`。配布物では`resources\bin\qdl.exe`に同梱。 |
+| CLI | `CLI_PROTOCOL_VERSION` | やり取りの版 | - | `qdl.exe`と本体の間の依頼・応答（JSON 1 行）の形の版。`src/main/services/cli/cliProtocol.ts`で定義し、`cli/src/main.rs`の`PROTOCOL_VERSION`と合わせる。合わないときは終了コード 4。 |
+| CLI | `--launched-by-cli` | CLI からの起動 | - | `qdl.exe`が本体を起動するときに付ける引数。この起動ではスプラッシュを出さず、二重起動で既存の本体に渡ったときもメインウィンドウを表示しない。`src/main/main.ts`で判定。 |
+| CLI | `cli-launcher.json` | CLI 用の起動情報 | - | パッケージ版の本体が起動のたびに userData に書き出す、本体の exe の場所（ポータブル版は展開前の exe）。本体が動いていないときに`qdl.exe`が起動する exe を探すのに使う。`src/main/services/cli/cliLauncherInfo.ts`。 |
 
 ---
 

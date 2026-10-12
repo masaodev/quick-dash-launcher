@@ -13,6 +13,9 @@ npm run test:unit       # ワンショット実行
 npm run test:ui         # Vitest UI（ブラウザで結果を確認）
 npm run test:coverage   # カバレッジレポート付き
 
+# CLI（cli/、Rust の cargo test。Rust が要る）
+npm run test:cli
+
 # E2Eテスト（Playwright）
 npm run test:e2e        # ヘッドレス実行
 npm run test:e2e:ui     # テストUI表示
@@ -81,6 +84,15 @@ Claude Code から、起動中の QuickDashLauncher を MCP 経由でその場�
 - **クリックがタイムアウトする**: 要素がまだ表示されていないことが多いので、スナップショットで現在の状態を確かめてから再試行します。
 
 9222 はローカルの開発用ポートです。外部から接続できる状態にしないでください。
+
+### 4. CLI のテスト（cargo test）
+
+CLI（`qdl.exe`）は Rust なので、Vitest とは別に `cargo test` で単体テストを回す。
+
+- **テスト**: `cli/src/main.rs` の `#[cfg(test)]`（パイプ名・userData のフォルダ名の規則、依頼と応答の JSON の形）
+- **本体側**: パイプ名・依頼の読み取り・パイプでの待ち受けと応答・コマンドの解釈・起動情報に記録する exe の決め方は `src/main/services/cli/*.test.ts` で、Vitest（`npm run test:unit`）の対象
+- **実行**: `npm run test:cli`（`cargo test --manifest-path cli/Cargo.toml`）。CI でも実行する（`.github/workflows/ci.yml`）
+- **手で試す**: 起動中の開発インスタンスに `qdl.exe` を向けて試す方法は [開発ガイド - CLI を試す](../setup/development.md#cli-を試す)
 
 ---
 

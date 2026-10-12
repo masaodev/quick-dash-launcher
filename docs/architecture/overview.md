@@ -10,6 +10,9 @@ QuickDashLauncherのアーキテクチャ概要とデータフローを説明し
 | **レンダラープロセス** | `src/renderer/` | UIのためのReactアプリケーション |
 | **プリロードスクリプト** | `src/main/preload.ts` | レンダラーに限定的なAPIを公開するセキュアブリッジ |
 | **共通型定義** | `src/common/types/` | プロセス間で共有される型定義（機能別に分割） |
+| **CLI（qdl.exe）** | `cli/`（Rust） | 本体とは別の実行ファイル。引数を名前付きパイプでメインプロセスに送り、返ってきた出力と終了コードをそのまま出す中継役。受け口と解釈はメインプロセスの `src/main/services/cli/`（[CLI からの依頼](#cli-からの依頼)） |
+
+本体は userData ごとに 1 つしか動かない（`src/main/main.ts` の `app.requestSingleInstanceLock()`）。2 つ目を起動するとすぐに終了し、動いている側がメインウィンドウを表示する。`QUICK_DASH_CONFIG_DIR` を指定した起動（E2E・`npm run dev:test`）は対象外。
 
 ### ウィンドウとレンダラープロセスの対応
 
@@ -135,6 +138,15 @@ IPC の設計とチャンネル定義の置き場所は[IPCチャンネル](ipc-
 1. ワークスペースウィンドウ・切り離しウィンドウ・メイン画面からの追加・編集は、IPC でメインプロセスのワークスペースのサービスに依頼する
 2. サービスが `workspace.json`・`workspace-archive.json` に書き込み、`workspace-changed` イベントで各ウィンドウに知らせる
 3. 形式と読み書きの仕組みは [ワークスペースファイル形式](file-formats/workspace-format.md)を参照
+
+### CLI からの依頼
+
+1. メインプロセスは起動の早い段階で、名前付きパイプ `\\.\pipe\<userData のフォルダ名>-cli-<ユーザー名>` で待ち受ける（`services/cli/cliServer.ts`。パイプ名は `cliProtocol.ts` の `getCliPipeName()`）。`QUICK_DASH_CONFIG_DIR` を指定した起動では待ち受けない
+2. `qdl.exe` が引数・実行したフォルダ・やり取りの版を JSON 1 行で送る。本体が動いていなければ、`qdl.exe` が本体を `--launched-by-cli` 付きで起動し（スプラッシュを出さない）、パイプが開くのを待つ
+3. メインプロセスは初期化が終わるのを待ってから（最大 60 秒）、コマンドを解釈して実行する（`services/cli/cliCommands.ts`）。`reload` はメイン画面の F5 と同じく設定の再適用とデータファイル・ワークスペースの読み直しをし、`data-changed` で全ウィンドウに知らせる
+4. 終了コード・標準出力・標準エラーを JSON 1 行で返し、接続を閉じる（1 接続 1 往復）。やり取りの形を変えたら、`cliProtocol.ts` の `CLI_PROTOCOL_VERSION` と `cli/src/main.rs` の `PROTOCOL_VERSION` を一緒に上げる
+
+パッケージ版のメインプロセスは起動のたびに、`qdl.exe` が本体を起動するときに使う exe の場所を userData の `cli-launcher.json` に書き出す（`services/cli/cliLauncherInfo.ts`）。
 
 ---
 

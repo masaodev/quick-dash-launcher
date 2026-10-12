@@ -24,7 +24,7 @@ import {
   formatLoadReportToast,
   writeLoadReport,
 } from '../loadReportService.js';
-import type { LoadReportFile, LoadTrigger } from '../loadReportService.js';
+import type { LoadReport, LoadReportFile, LoadTrigger } from '../loadReportService.js';
 import { notifyWorkspaceChanged } from '../../ipc/notifications.js';
 import { clearFolderProbeCache, prefetchFolderProbes } from '../../utils/folderPathProbe.js';
 
@@ -267,6 +267,13 @@ export async function loadDataFilesWithReport(configFolder: string): Promise<Dat
 
 let reloadInFlight: Promise<AppItem[]> | null = null;
 
+let lastLoadReport: LoadReport | null = null;
+
+/** 直近の reloadConfigFiles() の読み込みレポート（CLI の reload が結果を返すのに使う） */
+export function getLastLoadReport(): LoadReport | null {
+  return lastLoadReport;
+}
+
 /**
  * 設定ファイル群（データファイル + ワークスペース）をディスクから読み直す（起動時・メイン画面の F5）
  *
@@ -331,6 +338,7 @@ async function reloadConfigFilesInternal(
   if (trigger === 'explicit' || hasReportableIssues(fileReports)) {
     writeLoadReport(report);
   }
+  lastLoadReport = report;
 
   // 破損ファイルがあった場合は無通知でアイテムが消えたように見えないよう警告する
   const corruptedFiles = [
