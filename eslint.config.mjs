@@ -8,6 +8,28 @@ import importPlugin from 'eslint-plugin-import';
 import prettierPlugin from 'eslint-plugin-prettier';
 import prettierConfig from 'eslint-config-prettier';
 
+/** 日本語（ひらがな・カタカナ・漢字）を含むか */
+const JAPANESE = '/[\u3040-\u30ff\u3400-\u9fff]/';
+/** ログの呼び出し（logger.info(...) など。引数の文言は訳さない） */
+const LOG_CALL = 'CallExpression[callee.property.name=/^(trace|debug|info|warn|error|fatal)$/]';
+const I18N_MESSAGE = '画面に出す文言は辞書（src/common/i18n/locales/ja.ts・en.ts）に書き、t() で引いてください';
+const I18N_RESTRICTED_SYNTAX = [
+  { selector: `JSXText[value=${JAPANESE}]`, message: I18N_MESSAGE },
+  { selector: `Literal[value=${JAPANESE}]:not(${LOG_CALL} > Literal)`, message: I18N_MESSAGE },
+  {
+    selector: `TemplateElement[value.raw=${JAPANESE}]:not(${LOG_CALL} > TemplateLiteral > TemplateElement)`,
+    message: I18N_MESSAGE
+  }
+];
+/** 日本語の直書きを禁止するファイル（辞書へ移し終えたもの） */
+const I18N_ENFORCED_FILES = [
+  'src/common/i18n/languages.ts',
+  'src/common/i18n/index.ts',
+  'src/main/services/i18nService.ts',
+  'src/renderer/i18n.ts',
+  'src/renderer/components/LauncherSearchBox.tsx'
+];
+
 export default [
   // 基本設定
   js.configs.recommended,
@@ -238,6 +260,15 @@ export default [
       react: {
         version: 'detect'
       }
+    }
+  },
+
+  // 多言語化: 画面に出す日本語をコードに直接書かない（文言は src/common/i18n/locales/ の辞書に書き、t() で引く）。
+  // ログ（logger.info など）の文言は訳さないので対象外。辞書へ移し終えたファイル・フォルダから順に files へ足す
+  {
+    files: I18N_ENFORCED_FILES,
+    rules: {
+      'no-restricted-syntax': ['error', ...I18N_RESTRICTED_SYNTAX]
     }
   },
 

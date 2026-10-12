@@ -104,12 +104,14 @@
     "clipboard-files": "^3.0.0",
     "electron-store": "^11.0.2",
     "extract-file-icon": "^0.3.2",
+    "i18next": "^26.4.4",
     "koffi": "^3.3.2",
     "minimatch": "^10.1.2",
     "pino": "^10.4.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
-    "react-hot-toast": "^2.6.1"
+    "react-hot-toast": "^2.6.1",
+    "react-i18next": "^17.0.16"
   },
   "build": {
     "appId": "net.masaodev.quick-dash-launcher",

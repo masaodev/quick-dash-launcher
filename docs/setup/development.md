@@ -359,6 +359,17 @@ Dependabotは依存関係を以下のグループに分けてPRを作成しま�
 
 スタイルの規約（CSS 変数・共通クラス・命名・ファイル構成・値の直書き禁止）は **[CSSデザインシステム](../architecture/css-design.md)**、コンポーネントの命名と `Button` コンポーネントの使い分けは **[UIコンポーネント](../architecture/ui-components.md)** を正とする。ここには重ねて書かない。
 
+### 多言語化（画面の文言）
+
+画面は日本語と英語に対応する。日本語が正本で、英語はその訳。
+
+- **文言の置き場**: `src/common/i18n/locales/ja.ts` に書き、`en.ts` に同じキーで訳す（`en.ts` は `ja.ts` と同じ形でないと型エラーになる）。キーは英語の意味名で、領域ごとに分ける（`launcher`・`settings` など）。差し込みは `{{name}}`
+- **引き方**: renderer は `react-i18next` の `useTranslation()` の `t`、main は `services/i18nService.ts` の `mainI18n.t()`。キーは型チェックされる
+- **言語の決め方**: 設定 `language`（`auto`・`ja`・`en`）。`auto` は Windows の最初の表示言語が日本語なら日本語、それ以外は英語（`src/common/i18n/languages.ts`）。各ウィンドウは描画の前に `src/renderer/i18n.ts` で初期化し、設定が変わったら言語を取り直す
+- **用語**: [用語集](../architecture/glossary.md)の言葉にそろえる。「使わない表記」が辞書に出ると単体テスト（`src/common/i18n/glossary.test.ts`）が失敗する。英語は Microsoft Writing Style Guide に合わせる（用語集の「書き方の決まり」）
+- **直書きの禁止**: 辞書へ移し終えたファイルは `eslint.config.mjs` の `I18N_ENFORCED_FILES` に足す。足したファイルでは、日本語の文字列・JSX のテキストを直接書くと lint が失敗する（`logger.info` などログの文言は訳さないので対象外）
+- **訳さないもの**: ログ・docs・Issues・コードのコメント
+
 ### パフォーマンス最適化パターン
 
 #### アイコンのキャッシュ

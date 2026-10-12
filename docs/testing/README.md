@@ -105,6 +105,8 @@ CLI（`qdl.exe`）は Rust なので、Vitest とは別に `cargo test` で単�
 
 dev / dev2 / dev:test のポート・ホットキー・設定フォルダは [開発ガイド - 多重起動](../setup/development.md#多重起動) を参照してください。
 
+E2E は日本語の画面で動かします。テンプレートと `tests/dev/full` の `settings.json` には `"language": "ja"` を入れてあります（`settings.json` の無い `first-launch` は Windows の表示言語に従うので、日本語の Windows で動かします）。英語の画面は `tests/e2e/specs/language.spec.ts` と単体テストで確かめます。単体テストでは `tests/unit/setup.ts` が i18next を日本語で初期化します。
+
 ---
 
 ## E2Eテストの書き方
@@ -219,7 +221,7 @@ npx playwright show-trace test-results/traces/trace-<タイムスタンプ>.zip
 ## カスタムテンプレートの作成
 
 - **開発用**: [tests/dev/README.md の手順](../../tests/dev/README.md#カスタムテンプレートの作成) に従い、`tests/dev/<名前>/` を作って `QUICK_DASH_CONFIG_DIR` で指定して起動します。
-- **E2E 用**: `tests/e2e/templates/<名前>/` に `datafiles/data.json`（必要なら `settings.json`）を置き、テスト側で `test.use({ configTemplate: '<名前>' })` または `configHelper.loadTemplate('<名前>')` で指定します。データの形式は [data-format.md](../architecture/file-formats/data-format.md) を参照してください。
+- **E2E 用**: `tests/e2e/templates/<名前>/` に `datafiles/data.json`（必要なら `settings.json`。置くときは `"language": "ja"` を入れる）を置き、テスト側で `test.use({ configTemplate: '<名前>' })` または `configHelper.loadTemplate('<名前>')` で指定します。データの形式は [data-format.md](../architecture/file-formats/data-format.md) を参照してください。
 
 ---
 

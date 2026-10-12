@@ -1,108 +1,97 @@
-# ドメイン用語集
+# 用語集（画面の言葉と英訳）
 
-QuickDashLauncherで使用されるドメイン用語の定義です。開発時の用語の揺れを防ぐために参照してください。
+画面・README・Store の掲載文に出る QuickDashLauncher の言葉と、その英訳の正本です。日本語の辞書（`src/common/i18n/locales/ja.ts`）・英語の辞書（`en.ts`）・docs は、この表の言葉にそろえます。
 
-## 凡例
+## この表に載せる言葉
 
-| 列名 | 説明 |
-| --- | --- |
-| 分類 | 用語のカテゴリ |
-| 物理名 | コード上の型名・変数名・ファイル名 |
-| 和名 | 日本語での正式名称 |
-| UI表記 | アプリケーション画面上での表示 |
-| 説明 | 用語の定義・役割・使用場所 |
+- 画面・README・Store の掲載文に出てくる言葉のうち、QuickDashLauncher 特有のもの、または表記がゆれやすいもの
+- 「保存」「キャンセル」のような一般的な言葉は載せない
+- 型・フィールド・ファイルの説明は載せない（正本は型定義のコメントと各仕様書。「コード上の名前」の列は探すときの手がかりとして名前だけ書く）
 
----
+## 書き方の決まり
+
+### 日本語
+
+- 「日本語」の列の表記を使い、「使わない表記」は使わない
+- 送り仮名を省いた形（取込・再読込）を使う
+
+### 英語
+
+[Microsoft Writing Style Guide](https://learn.microsoft.com/style-guide/welcome/) に合わせる。
+
+- ボタン・メニュー・見出し・ラベルは、文の最初だけ大文字（sentence case。例 "Add item"）。この表の英語は文の途中で使う形で書く。画面の名前として固有名詞のように扱うもの（Item Manager）だけ大文字で始める
+- マウスでもキーボードでも使える操作は "select" と書く（"click" と書かない）
+- 呼びかけは "you"。短く、能動態で書く
+- 省略形（don't・can't）は使ってよい
 
 ## 用語一覧
 
-| 分類 | 物理名 | 和名 | UI表記 | 説明 |
+「使わない表記」は「、」で区切る。日本語の表記は `ja.ts` に、英語の表記は `en.ts` に出てきたら単体テスト（`src/common/i18n/glossary.test.ts`）が失敗する。
+
+### アイテムと登録
+
+| 日本語 | English | 使わない表記 | 意味 | コード上の名前 |
 | --- | --- | --- | --- | --- |
-| アイテム | - | アイテム | アイテム | ランチャーで起動・操作できる対象の総称。ランチャーアイテム（単一起動）、グループアイテム（一括起動）、ウィンドウ操作アイテム（既存ウィンドウ制御）、クリップボードアイテム（クリップボード内容の保存・復元）、ウィンドウ配置アイテム（複数ウィンドウの位置・サイズの一括復元）の5種類がある。メインウィンドウのアイテムリストに表示され、クリックまたはEnterキーで実行する。 |
-| アイテム | `LauncherItem` | ランチャーアイテム | アイテム | 起動対象（URL/ファイル/フォルダ/アプリ/カスタムURI）を表す基本型。メインウィンドウのアイテムリストに表示される。`src/common/types/launcher.ts`で定義。 |
-| アイテム | `GroupItem` | グループアイテム | グループ | 複数アイテムをまとめて一括起動するアイテム。GroupDirectiveで定義。実行すると、既定では参照アイテムを100ms間隔で順次起動（設定`parallelGroupLaunch`で並列起動）。 |
-| アイテム | `WindowItem` | ウィンドウアイテム | ウィンドウ操作 | 既存ウィンドウを検索・制御するアイテム。アプリを起動せずウィンドウのみ操作。`src/common/types/launcher.ts`で定義。 |
-| アイテム | `ClipboardItem` | クリップボードアイテム | クリップボード | クリップボード内容を保存・復元するアイテム。テキスト、HTML、RTF、画像、ファイルリストを保存可能。実行すると保存内容をクリップボードに復元する。 |
-| アイテム | `LayoutItem` | ウィンドウ配置アイテム | ウィンドウ配置 | 複数ウィンドウの位置・サイズを一括でキャプチャ・復元するアイテム。`entries`にウィンドウごとの検索条件と位置・サイズを持つ。`src/common/types/launcher.ts`で定義。 |
-| アイテム | `AppItem` | アプリアイテム | - | `LauncherItem \| GroupItem \| WindowItem \| ClipboardItem \| LayoutItem \| WindowInfo`の統合型。アイテムリスト表示時に使用。`src/common/types/launcher.ts`で定義。 |
-| アイテム | `WorkspaceItem` | ワークスペースアイテム | - | ワークスペースに追加されたアイテムの独立コピー。元アイテムが削除されても影響を受けない。`type`で判別するunion（`item`/`window`/`group`/`clipboard`/`layout`）で、データファイルの`JsonItem`と同じ語彙・フィールド名を使う。workspace.json（`JsonWorkspaceFile`）に保存。`src/common/types/workspace.ts`で定義。 |
-| アイテム | `launcherType` | 起動種別 | - | `type: "item"`のワークスペースアイテムで、`path`（ショートカットなら`originalPath`）から実行時に判定する起動種別（`url`/`file`/`folder`/`app`/`customUri`）。ファイルには保存しない実行時専用フィールド。`WorkspaceFileStore.ts`の`resolveLauncherType()`で判定し、読み込み時にディスクの状態と`path-type-cache.json`で補正する（`refineLauncherTypes()`）。 |
-| アイテム | `RegisterItem` | 登録アイテム | - | アイテム登録・編集時に使用される型。`RegisterModal`や`useRegisterForm`で使用。`src/common/types/register.ts`で定義（v0.5.20で型定義を再配置）。 |
-| 登録項目 | `displayName` | アイテム名 | アイテム表示名 | メインウィンドウのアイテムリストに表示される名前。`RegisterItem.displayName`および`LauncherItem.displayName`で使用。ユーザーが自由に設定可能。 |
-| 登録項目 | `path` | 起動パス | パス/URL | 起動対象を指定するパスまたはURL。ファイルパス、フォルダパス、HTTPS URL、カスタムURIなど。`RegisterItem.path`および`LauncherItem.path`で使用。この値から実行タイプ（`LauncherItem.type`）が自動判定される。 |
-| 登録種別 | `itemCategory` | アイテム登録種別 | 登録種別 | アイテム登録画面での「種別」選択。`RegisterItem.itemCategory`のフィールド（独立した型はない）。ユーザーが登録方法を選択する。<br>値:<br>• `item` - 単一アイテム（1つのアイテムを個別に登録）<br>• `dir` - フォルダ取込（フォルダ内のファイルを一括登録）<br>• `group` - グループ（複数アイテムをまとめて一括起動）<br>• `window` - ウィンドウ操作（既存ウィンドウを検索・制御）<br>• `clipboard` - クリップボード（クリップボード内容を保存・復元）<br>• `layout` - ウィンドウ配置（複数ウィンドウの位置・サイズを一括復元）<br><br>**`LauncherItem.type`との違い**: `itemCategory`は「登録方法」、`LauncherItem.type`は「実行方法」を表す。例: itemCategory='item'かつtype='url'は「単一アイテムとしてURLを登録」を意味する。 |
-| アイテムタイプ | `LauncherItem.type` | アイテム実行タイプ | - | アイテムの実行方法を表すフィールド（`src/common/types/launcher.ts`。独立した型名はない）。パスから自動検出され、起動時の動作を決定する。<br>値:<br>• `url` - URL（HTTPまたはHTTPS URL、デフォルトブラウザで開く）<br>• `file` - ファイル（実行ファイル・ドキュメント等、関連付けされたアプリで開く）<br>• `folder` - フォルダ（ディレクトリ、エクスプローラーで開く）<br>• `app` - アプリケーション（実行可能ファイル、直接実行）<br>• `customUri` - カスタムURI（`obsidian://`、`vscode://`等の独自スキーマ）<br>• `clipboard` - クリップボード（クリップボード内容の保存・復元）<br><br>**注**: `GroupItem`は`type: 'group'`、`WindowItem`は`type: 'window'`、`ClipboardItem`は`type: 'clipboard'`、`LayoutItem`は`type: 'layout'`を持つ独立した型として定義される。ワークスペースの`launcherType`は`clipboard`を除いた`LauncherItemType`（`src/common/types/workspace.ts`）を使う。`LauncherItem.type`の`'clipboard'`は`ClipboardItem`とは別に、LauncherItemとしてクリップボード機能を提供する場合に使用。 |
-| データファイル | `JsonDataFile` | データファイル | - | アイテム定義を保存するファイル（data.json, data2.json, data3.json等）。JSON形式で記述し、items配列にアイテムを定義する。設定フォルダ直下の`datafiles/`に配置。`src/common/types/json-data.ts`で定義。data.jsonは必須で、少なくとも 1 つのタブに含める必要がある（タブから外せるのは、ほかのタブにも含まれているときだけ）。`PathManager.getDataFilePath()`でdata.jsonのパス取得。タブ表示で切り替え可能。 |
-| データファイル | `DataFileTab` | データファイルタブ | タブ | 複数データファイルをグループ化したタブ設定。管理ウィンドウのアイテム管理（タブの列・データファイルの札）で編集する。`src/common/types/data.ts`で定義。 |
-| ディレクティブ | - | ディレクティブ | - | データファイル内で特殊な処理を指示するアイテムの総称。各アイテムの`type`フィールドで識別される。フォルダ取込（`type: "dir"`）、グループ（`type: "group"`）、ウィンドウ操作（`type: "window"`）、クリップボード（`type: "clipboard"`）、ウィンドウ配置（`type: "layout"`）の5種類がある。 |
-| ディレクティブ | `JsonDirItem` | フォルダ取込ディレクティブ | フォルダ取込 | 指定フォルダ内のアイテムを自動取込するディレクティブ。`type: "dir"`として定義。型ガード関数`isJsonDirItem()`で判定。`src/common/types/json-data.ts`で定義。 |
-| ディレクティブ | `JsonGroupItem` | グループディレクティブ | グループ | 複数アイテムをグループ化するディレクティブ。`type: "group"`として定義。型ガード関数`isJsonGroupItem()`で判定。`src/common/types/json-data.ts`で定義。 |
-| ディレクティブ | `JsonWindowItem` | ウィンドウ操作ディレクティブ | ウィンドウ操作 | ウィンドウ検索・制御を定義するディレクティブ。`type: "window"`として定義。型ガード関数`isJsonWindowItem()`で判定。`src/common/types/json-data.ts`で定義。 |
-| ディレクティブ | `JsonClipboardItem` | クリップボードディレクティブ | クリップボード | クリップボード内容を保存・復元するディレクティブ。`type: "clipboard"`として定義。型ガード関数`isJsonClipboardItem()`で判定。`src/common/types/json-data.ts`で定義。 |
-| ディレクティブ | `JsonLayoutItem` | ウィンドウ配置ディレクティブ | ウィンドウ配置 | 複数ウィンドウの位置・サイズを一括復元するディレクティブ。`type: "layout"`として定義。型ガード関数`isJsonLayoutItem()`で判定。`src/common/types/json-data.ts`で定義。 |
-| ワークスペース | - | ワークスペース機能 | ワークスペース | よく使うアイテムを整理・保存する機能の総称。メインウィンドウとは独立したウィンドウで表示される。アイテムをグループ分けして管理でき、ドラッグ&ドロップで整理できる。データファイルのアイテムとは独立したコピーとして保存される。 |
-| ワークスペース | `Workspace` | ワークスペース | ワークスペース | ワークスペース機能の作業領域。ワークスペースウィンドウに表示される。 |
-| ワークスペース | `WorkspaceGroup` | ワークスペースグループ | グループ | ワークスペース内のアイテムをグループ化。色分け・折りたたみ可能。色は`GroupColorToken`または6桁hexで保存する。 |
-| ワークスペース | `GroupColorToken` | グループ色トークン | - | ワークスペースグループの色として`workspace.json`の`groups[].color`に保存する識別子（`primary` など。一覧は`src/common/groupColors.ts`の`GROUP_COLOR_TOKENS`）。CSS変数名は保存しない。`src/common/groupColors.ts`の`resolveGroupColorCss()`で`variables.css`の`--group-color-<token>`に解決する。 |
-| ワークスペース | `ArchivedWorkspaceGroup` | アーカイブグループ | - | アーカイブされたグループ。workspace-archive.json（`JsonWorkspaceArchiveFile`）に保存。復元可能。 |
-| ワークスペース | `ArchivedWorkspaceItem` | アーカイブアイテム | - | アーカイブされたアイテム。グループと一緒にアーカイブ・復元される。 |
-| ワークスペース | `JsonWorkspaceFile` | ワークスペースファイル | - | ワークスペースの内容を保存するファイル（workspace.json、`version: "2.0"`）。トップレベルに`workspaces`（タブ）・`groups`・`items`の3配列を持つ。アイテムは`type`で判別するunion（`item`/`window`/`group`/`clipboard`/`layout`）で、データファイルと同じ語彙・フィールド名を使う。idは8文字英数字（UUIDではない）。`src/common/types/json-workspace.ts`で定義。`WorkspaceFileStore`で読み書き。設定フォルダ直下に配置。`PathManager.getWorkspaceFilePath()`でパス取得。詳細は[ワークスペースファイル形式](file-formats/workspace-format.md)を参照。 |
-| ワークスペース | `JsonWorkspaceArchiveFile` | アーカイブファイル | - | アーカイブされたグループ・アイテムを保存するファイル（workspace-archive.json、`version: "2.0"`）。`groups`（`archivedAt`/`originalOrder`/`itemCount`付き）と`items`（`archivedAt`/`archivedGroupId`付き）を持つ。復元時に参照。`src/common/types/json-workspace.ts`で定義。`WorkspaceFileStore`で読み書きし、`WorkspaceArchiveManager`がアーカイブ・復元を担う。 |
-| ワークスペース | `WorkspaceUiStateFile` | ワークスペースUI状態ファイル | - | グループの折りたたみ状態・切り離しウィンドウの位置とピン留めを保存するファイル（workspace-ui-state.json）。QDL が管理する。`WorkspaceUiStateStore`で管理。 |
-| ウィンドウ | `WindowInfo` | ウィンドウ情報 | - | ウィンドウ検索機能で取得されるウィンドウの情報。hwnd、タイトル、位置、サイズ等を含む。`src/common/types/window.ts`で定義。 |
-| ウィンドウ | `WindowConfig` | ウィンドウ設定 | - | アイテム起動時のウィンドウ制御設定。`LauncherItem.windowConfig`で使用。タイトル検索（ワイルドカード対応）と位置・サイズ制御を定義。 |
-| ウィンドウ | - | ワイルドカード検索 | - | ウィンドウタイトル検索で使用できるパターンマッチング機能。`*`（任意の0文字以上）と`?`（任意の1文字）が使用可能。ワイルドカード文字が含まれない場合は完全一致検索。大文字小文字は区別しない。 |
-| ウィンドウ | `WindowState` | ウィンドウ状態 | - | ウィンドウの表示状態を表す列挙型。`WindowInfo.windowState`で使用。<br>値:<br>• `normal` - 通常<br>• `minimized` - 最小化<br>• `maximized` - 最大化 |
-| ウィンドウ | `WindowPinMode` | ウィンドウ固定モード | 固定モード | メインウィンドウの固定状態。検索欄横のピンボタンで切り替え。設定に保存しない（初期値は環境変数`WINDOW_PIN_MODE`で指定可）。メインウィンドウ専用で、切り離しウィンドウは`DetachedPinMode`（0=通常・1=表示固定・2=最上面固定）を持つ。<br>値:<br>• `normal` - 通常モード（フォーカスがQDLのウィンドウ群（メイン・ワークスペース・切り離しウィンドウ）の外へ出たら非表示。群の中での移動では隠れない。管理ウィンドウは群に含まない）<br>• `alwaysOnTop` - 常に最上面モード（常に最上面に表示、他ウィンドウより前面。切り離しウィンドウの連動非表示も行わない）<br>• `stayVisible` - 表示固定モード（フォーカスが外れても表示継続、他ウィンドウの背面に隠れる可能性あり。切り離しウィンドウの連動非表示も行わない） |
-| ウィンドウ | `WindowPositionMode` | ウィンドウ表示位置モード | 表示位置 | メインウィンドウの表示位置設定。設定画面の「表示位置」で変更。<br>値:<br>• `center` - 画面中央（プライマリモニターの中央）<br>• `cursor` - カーソル位置（マウスカーソル中心）<br>• `cursorMonitorCenter` - カーソルモニター中央（カーソルがあるモニターの中央、デフォルト）<br>• `fixed` - 固定位置（手動で移動した位置を記憶、`windowPositionX/Y`に座標保存） |
-| ウィンドウ | `WorkspacePositionMode` | ワークスペース表示位置モード | 表示位置 | ワークスペースウィンドウの表示位置設定。設定画面で変更。<br>値:<br>• `displayLeft` - 指定ディスプレイの左端<br>• `displayRight` - 指定ディスプレイの右端（デフォルト）<br>• `fixed` - 固定位置（手動で移動した位置を記憶、`workspacePositionX/Y`に座標保存）<br>旧値`primaryLeft`/`primaryRight`は後方互換のため型に残る（deprecated。`displayLeft`/`displayRight`に移行） |
-| クリップボード | `ClipboardFormat` | クリップボード形式 | 形式 | クリップボードアイテムで保存するデータ形式。<br>値:<br>• `text` - テキスト<br>• `html` - HTML<br>• `rtf` - リッチテキスト<br>• `image` - 画像<br>• `file` - ファイルリスト |
-| 検索 | - | アイテム検索機能 | - | メインウィンドウの検索ボックスで行う絞り込み機能の総称。通常検索（アイテム）、ウィンドウ検索（実行中ウィンドウ）の2モードがある。検索ボックス左のアイコンまたはショートカットキーでモードを切り替える。 |
-| 検索 | `SearchMode` | 検索モード | - | 検索ボックスの動作モード。`src/common/types/search.ts`で定義。検索ボックス左のアイコンで切り替え。<br>値:<br>• `normal` - 通常検索（データファイルのアイテムを検索、デフォルト）<br>• `window` - ウィンドウ検索（実行中ウィンドウを検索、`Shift+Tab`で切り替え） |
-| 検索 | `SearchHistoryEntry` | 検索履歴エントリ | - | 検索クエリと実行日時のペア。上下キーで履歴を遡れる。 |
-| 検索 | `SearchHistoryState` | 検索履歴状態 | - | 検索履歴のリストと現在のインデックス。キーボードナビゲーション用。 |
-| 設定 | `AppSettings` | アプリケーション設定 | 設定 | 全設定項目を管理するインターフェース。`electron-store`で永続化。`src/common/types/settings.ts`で定義。 |
-| 設定 | `hotkey` | 起動ホットキー | ランチャー起動 | ランチャー起動ホットキー。初回セットアップでの既定値は`Alt+Space`（未設定の空文字は初回起動扱い）。設定画面で変更可能。 |
-| 設定 | `itemSearchHotkey` | ウィンドウ検索の起動ホットキー | ウィンドウ検索で起動 | ウィンドウ検索モードで起動するオプションのホットキー。空文字列で無効。設定画面で変更可能。 |
-| 設定 | `autoLaunch` | 自動起動 | 自動起動 | Windows起動時に自動起動するか。設定画面のチェックボックスで切り替え。Store 版は Windows のスタートアップ アプリ（StartupTask）で、Windows 側で無効にされていると有効にできない（設定画面に OS 側の状態を出す）。 |
-| 設定 | `cliEnabled` | CLI を使えるようにする | QuickDashLauncher CLI を使えるようにする | `qdl` コマンドをユーザーの PATH から使えるようにするか（既定: false）。有効なら、起動のたびに同梱の `qdl.exe` と置いてあるものを比べて入れ替える。 |
-| 設定 | `backupEnabled` | バックアップ有効 | バックアップ | バックアップ機能の有効/無効。設定画面で変更。 |
-| 通知 | - | トースト通知 | - | 操作完了時に、マウスカーソルがある画面の下部中央に表示される一時的な通知。既定で 2.5 秒後に自動で消える（種類によって長さが変わる）。アイテム実行、クリップボード保存などの操作結果を表示。 |
-| 画面 | - | 画面 | - | アプリケーションのウィンドウの総称。メインウィンドウ（ホットキーで表示）、ワークスペースウィンドウ（アイテム整理）、管理ウィンドウ（設定・アイテム管理）が主な画面。ほかに切り離しグループウィンドウ・アイテム登録・編集ウィンドウ（メイン画面の子ウィンドウ）・確認ウィンドウ・スプラッシュ等がある（`src/main/*WindowManager.ts`が生成を担う）。 |
-| 画面 | `App.tsx` | メインウィンドウ | - | ホットキーで表示されるメイン画面。検索ボックスとアイテムリストを持つ。`src/main/windowManager.ts`が生成し、`src/renderer/App.tsx`で実装。 |
-| 画面 | `WorkspaceApp.tsx` | ワークスペースウィンドウ | ワークスペース | ワークスペース専用ウィンドウ。メインウィンドウとは独立。`src/main/workspaceWindowManager.ts`が生成し、`src/renderer/WorkspaceApp.tsx`で実装。 |
-| 画面 | `AdminApp.tsx` | 管理ウィンドウ | 管理 | 設定・アイテム管理画面。メインウィンドウの ⚙️ メニュー（「⚙️ 基本設定」「✏️ アイテム管理」）や Ctrl+E で開く。`src/main/adminWindowManager.ts`が生成し、`src/renderer/AdminApp.tsx`で実装。 |
-| 画面 | `RegisterModal` | 登録モーダル | - | アイテム登録・編集フォーム。メインウィンドウまたは管理ウィンドウを親とする子ウィンドウ（`RegisterWindowPage`）に表示する（`src/main/mainChildWindowManager.ts`が生成）。新規登録と編集の両方に対応。 |
-| 画面 | `DirOptionsEditor` | フォルダ取込オプションエディタ | フォルダ取込オプション | フォルダ取込の詳細設定コンポーネント。RegisterModal内で使用。depth、types、filter等を設定。 |
-| CLI | `qdl.exe` | QuickDashLauncher CLI | - | コマンドラインから起動中の本体に依頼する実行ファイル（`cli/`、Rust）。引数を解釈せず名前付きパイプで本体に送り、返ってきた標準出力・標準エラー・終了コードをそのまま出す中継役。コマンドの解釈は本体の`src/main/services/cli/cliCommands.ts`。配布物では`resources\bin\qdl.exe`に同梱。 |
-| CLI | `CLI_PROTOCOL_VERSION` | やり取りの版 | - | `qdl.exe`と本体の間の依頼・応答（JSON 1 行）の形の版。`src/main/services/cli/cliProtocol.ts`で定義し、`cli/src/main.rs`の`PROTOCOL_VERSION`と合わせる。合わないときは終了コード 4。 |
-| CLI | `--launched-by-cli` | CLI からの起動 | - | `qdl.exe`が本体を起動するときに付ける引数。この起動ではスプラッシュを出さず、二重起動で既存の本体に渡ったときもメインウィンドウを表示しない。`src/main/main.ts`で判定。 |
-| CLI | `cli-launcher.json` | CLI 用の起動情報 | - | パッケージ版の本体が起動のたびに userData に書き出す、本体の exe の場所（ポータブル版は展開前の exe）。本体が動いていないときに`qdl.exe`が起動する exe を探すのに使う。`src/main/services/cli/cliLauncherInfo.ts`。 |
+| アイテム | item | ランチャーアイテム、項目、entry | 登録して起動するものの総称 | `LauncherItem`・`AppItem` |
+| 表示名 | display name | アイテム名、アイテム表示名、item name | 一覧に出るアイテムの名前 | `displayName` |
+| パス | path | 起動パス | アイテムが開くファイル・フォルダ・URL・アプリ | `path` |
+| 引数 | arguments | パラメーター | アプリに渡す引数 | `args` |
+| メモ | note | 備考、comment | アイテムに付けるメモ | `memo` |
+| 種別 | type | 登録種別、カテゴリ | 登録するアイテムの種類（アイテム・フォルダ取込・グループなど） | `itemCategory` |
+| フォルダ取込 | folder import | フォルダ取り込み、フォルダインポート、dir | フォルダの中身をまとめてアイテムにする種別 | `JsonDirItem` |
+| グループ | group | — | 複数のアイテムをまとめて起動する種別 | `GroupItem` |
+| ウィンドウ操作 | window action | ウィンドウアイテム、window item | 既にあるウィンドウを探して前に出す・動かす種別 | `WindowItem` |
+| ウィンドウ配置 | window layout | レイアウト | 複数のウィンドウの位置と大きさをまとめて戻す種別 | `LayoutItem` |
+| クリップボードアイテム | clipboard item | — | 保存したクリップボードの中身を戻す種別 | `ClipboardItem` |
+| 登録 | add | 追加登録 | アイテムを新しく作ること | `RegisterModal` |
+| 起動 | open | 実行（アイテムを開く意味で） | アイテムを開くこと。グループ・ウィンドウ操作も「起動」と呼ぶ | — |
+| 親フォルダを開く | open containing folder | 親フォルダーを開く、フォルダを開く（親の意味で） | アイテムのあるフォルダを開くこと | — |
+| アイコン | icon | — | アイテムの横に出る絵 | — |
+| フォルダ | folder | フォルダー、ディレクトリ、directory | Windows のフォルダ | — |
 
----
+### メインウィンドウと検索
 
-## 用語使用ガイドライン
+| 日本語 | English | 使わない表記 | 意味 | コード上の名前 |
+| --- | --- | --- | --- | --- |
+| メインウィンドウ | launcher | メイン画面、ランチャー画面、main window | 起動ホットキーで出る、検索とアイテムの一覧の画面 | `App.tsx` |
+| タブ | tab | — | メインウィンドウでデータファイルを切り替える見出し | `DataFileTab` |
+| データファイル | data file | — | アイテムを保存する `datafiles/data*.json` | `JsonDataFile` |
+| 通常検索 | normal search | アイテム検索 | 登録したアイテムを名前で絞り込む検索 | `SearchMode` の `normal` |
+| ウィンドウ検索 | window search | ウィンドウ一覧 | 開いているウィンドウを探す検索 | `SearchMode` の `window` |
+| 検索履歴 | search history | — | 以前に検索した言葉の履歴 | `SearchHistoryEntry` |
+| ピン留め | pin | ピン止め、固定（ピンの意味で） | メインウィンドウを隠さずに残すこと | `WindowPinMode` |
+| 再読込 | reload | 再読み込み、リロード、refresh（データの意味で） | 設定フォルダのファイルを読み直すこと（F5） | — |
+| 操作のヒント | keyboard hints | キーヒント | メインウィンドウの下に出るキー操作の案内 | `showKeyboardHints` |
 
-### コード内での使用
+### ワークスペース
 
-- **型名・インターフェース名**: 英語の物理名をそのまま使用（例: `LauncherItem`）
-- **変数名**: キャメルケースで物理名を使用（例: `launcherItem`, `groupItems`）
-- **コメント**: 和名を使用（例: `// ランチャーアイテムを取得`）
+| 日本語 | English | 使わない表記 | 意味 | コード上の名前 |
+| --- | --- | --- | --- | --- |
+| ワークスペース | workspace | — | アイテムをグループに分けて並べておく、メインウィンドウとは別の画面とその中身 | `Workspace` |
+| 切り離し | detach | 分離、ポップアウト、pop out | ワークスペースのグループを別のウィンドウに出すこと | `detachedGroup…` |
+| 切り離しウィンドウ | detached window | 分離ウィンドウ | 切り離したグループのウィンドウ | `DetachedPinMode` |
+| アーカイブ | archive | 保管 | ワークスペースのグループをしまっておき、あとで戻せるようにすること | `ArchivedWorkspaceGroup` |
+| 仮想デスクトップ | virtual desktop | デスクトップ（仮想デスクトップの意味で） | Windows の仮想デスクトップ | — |
 
-### ドキュメント内での使用
+### 設定と管理
 
-- **技術ドキュメント**: 和名を基本とし、初出時に物理名を併記（例: ランチャーアイテム（`LauncherItem`））
-- **ユーザー向けドキュメント**: UI表記または和名を使用
+| 日本語 | English | 使わない表記 | 意味 | コード上の名前 |
+| --- | --- | --- | --- | --- |
+| 管理ウィンドウ | settings window | 管理画面、設定画面、admin window | 基本設定・アイテム管理・ヘルプのタブを持つウィンドウ | `AdminApp.tsx` |
+| 基本設定 | Settings | 設定タブ | 管理ウィンドウの設定のタブ | `AdminSettingsTab` |
+| アイテム管理 | Item Manager | 編集画面、編集モード、アイテム編集 | 管理ウィンドウでアイテムとタブを編集するタブ（Ctrl+E） | `AdminItemManagerView` |
+| 起動ホットキー | launch hotkey | ショートカットキー、hot key | メインウィンドウを出すキーの組み合わせ | `hotkey` |
+| 表示言語 | display language | — | 画面に使う言語（自動・日本語・English） | `language` |
+| 自動起動 | start with Windows | スタートアップ起動 | Windows の起動時に QuickDashLauncher を起動すること | `autoLaunch` |
+| ブックマーク取込 | bookmark import | ブックマークインポート、ブックマーク取り込み | ブラウザのブックマークをアイテムにすること | — |
+| アプリ取込 | app import | アプリインポート、アプリ取り込み | インストール済みのアプリをアイテムにすること | — |
+| バックアップ | backup | — | 設定フォルダのファイルを残しておく機能 | `BackupService` |
+| スナップショット | snapshot | — | バックアップで残した、ある時点のファイル一式 | — |
+| 設定フォルダ | settings folder | 設定ディレクトリ、config folder | 設定とデータを保存するフォルダ | `PathManager.getConfigFolder()` |
+| トースト | notification | トースト通知、toast | 画面の下に少しの間だけ出る知らせ | `showToastWindow` |
+| QuickDashLauncher CLI | QuickDashLauncher CLI | コマンドライン（qdl を指す意味で） | ターミナルや AI から使う `qdl` コマンド | `qdl.exe` |
 
-### UI上での使用
+## 直すとき
 
-- **ボタン・ラベル**: UI表記を使用（簡潔な表現を優先）
-- **ツールチップ・ヘルプ**: 和名または詳細な説明を使用
-
----
-
-## 関連ドキュメント
-
-- **[データ形式仕様](file-formats/data-format.md)** - データファイルの詳細仕様
-- **[システム概要](overview.md)** - アーキテクチャの全体像
-- **[コンポーネント命名規則](ui-components.md#コンポーネント命名規則)** - コンポーネントの命名規則
+- 画面に出す言葉を足す・変えるときは、辞書と同じ PR でこの表も直す
+- 「使わない表記」は、辞書の中のどこにも出てこない言葉だけにする（一般的な言葉の一部になっていないか確かめる）

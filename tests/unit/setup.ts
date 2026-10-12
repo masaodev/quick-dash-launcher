@@ -3,6 +3,14 @@ import '@testing-library/jest-dom';
 // React Testing Libraryのクリーンアップを自動化
 import { cleanup } from '@testing-library/react';
 import { afterEach, beforeAll, afterAll, vi } from 'vitest';
+import i18next from 'i18next';
+import { initReactI18next } from 'react-i18next';
+import { createI18nOptions } from '@common/i18n';
+
+// 画面の部品は useTranslation で文言を引くので、テストでは日本語（正本）で初期化しておく
+void i18next
+  .use(initReactI18next)
+  .init({ ...createI18nOptions('ja'), react: { useSuspense: false } });
 
 afterEach(() => {
   cleanup();

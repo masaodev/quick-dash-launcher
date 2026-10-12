@@ -43,6 +43,7 @@ import { closeAllMainChildWindows } from './mainChildWindowManager.js';
 import { closeAllWorkspaceItemEditors } from './workspaceItemEditorWindowManager.js';
 import { closeAllWorkspaceConfirms } from './workspaceConfirmWindowManager.js';
 import { BookmarkAutoImportService } from './services/bookmarkAutoImportService.js';
+import { applyLanguageSetting, registerLanguageHandler } from './services/i18nService.js';
 
 // 多重起動時に完全に独立したuserDataを使用
 if (EnvConfig.hasAppInstance) {
@@ -90,6 +91,9 @@ if (EnvConfig.isDevelopment) {
 app.whenReady().then(async () => {
   // 設定フォルダを先に作成（スプラッシュのアイコンパス解決に必要）
   PathManager.ensureDirectories();
+
+  // 表示言語の問い合わせはスプラッシュから来るので、ウィンドウを開く前に受け付ける
+  registerLanguageHandler();
 
   // CLI の待ち受けは早めに始める（qdl.exe は本体を起動した後、パイプが開くのを待つ）。
   // 依頼の処理は初期化が終わるまで待たせる。dev:test・E2E では待ち受けない
@@ -141,6 +145,7 @@ app.whenReady().then(async () => {
 
   // 以下はスプラッシュ表示後にバックグラウンドで初期化
   const settingsService = await SettingsService.getInstance();
+  await applyLanguageSetting();
 
   // 初回起動判定: ホットキーが未設定なら初回起動
   const hotkey = await settingsService.get('hotkey');

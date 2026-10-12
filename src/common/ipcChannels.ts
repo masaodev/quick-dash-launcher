@@ -115,6 +115,8 @@ export const IPC_CHANNELS = {
   SETTINGS_SET_HOTKEY_RECORDING: 'settings:set-hotkey-recording',
   SETTINGS_GET_DISPLAYS: 'settings:get-displays',
   SETTINGS_GET_AUTO_LAUNCH_STATUS: 'settings:get-auto-launch-status',
+  /** 今の表示言語（設定 language と OS の表示言語から決めたもの。'ja' | 'en'） */
+  SETTINGS_GET_LANGUAGE: 'settings:get-language',
 
   // 設定ファイル操作
   OPEN_CONFIG_FOLDER: 'open-config-folder',

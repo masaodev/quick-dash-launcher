@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 
 import SplashApp from '../SplashApp';
+import { initRendererI18n } from '../i18n';
 import '../styles/splash.css';
 
 const rootElement = document.getElementById('root');
@@ -15,8 +16,10 @@ const handleReady = () => {
   window.electronAPI?.splashReady?.();
 };
 
-root.render(
-  <React.StrictMode>
-    <SplashApp onReady={handleReady} />
-  </React.StrictMode>
-);
+void initRendererI18n().then(() => {
+  root.render(
+    <React.StrictMode>
+      <SplashApp onReady={handleReady} />
+    </React.StrictMode>
+  );
+});

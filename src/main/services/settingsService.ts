@@ -4,6 +4,7 @@ import path from 'node:path';
 import { DEFAULT_DATA_FILE, DEFAULT_BOOKMARK_AUTO_IMPORT_SETTINGS } from '@common/types';
 import type { AppSettings } from '@common/types';
 import { validateHotkey } from '@common/utils/hotkeyValidator';
+import { DEFAULT_LANGUAGE_SETTING } from '@common/i18n/languages';
 import logger from '@common/logger';
 
 import PathManager from '../config/pathManager.js';
@@ -29,6 +30,7 @@ export class SettingsService {
   private static instance: SettingsService;
 
   private static readonly DEFAULT_SETTINGS: AppSettings = {
+    language: DEFAULT_LANGUAGE_SETTING,
     hotkey: '',
     windowWidth: 600,
     windowHeight: 400,

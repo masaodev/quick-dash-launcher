@@ -20,6 +20,7 @@ import {
 } from '../detachedGroupWindowManager.js';
 import { EnvConfig } from '../config/envConfig.js';
 import { showToastWindow } from '../services/overlayWindowService.js';
+import { applyLanguageSetting } from '../services/i18nService.js';
 
 function notifySettingsChanged(): void {
   for (const window of BrowserWindow.getAllWindows()) {
@@ -41,6 +42,7 @@ const POSITION_KEYS: ReadonlyArray<keyof AppSettings> = [
 
 /** 副作用（OS 登録・ウィンドウ状態）を持つ設定キー。ファイル再読込時に全部適用し直す */
 const EFFECT_KEYS: ReadonlyArray<keyof AppSettings> = [
+  'language',
   'autoLaunch',
   'cliEnabled',
   ...OPACITY_KEYS,
@@ -54,6 +56,10 @@ async function applySettingsEffects(
   changedKeys: ReadonlyArray<keyof AppSettings>,
   settingsService: SettingsService
 ): Promise<void> {
+  // 言語は main の文言を切り替える。renderer は設定の変更通知で言語を取り直す
+  if (changedKeys.includes('language')) {
+    await applyLanguageSetting();
+  }
   if (changedKeys.includes('autoLaunch')) {
     const autoLaunch = await settingsService.get('autoLaunch');
     await AutoLaunchService.getInstance().setAutoLaunch(autoLaunch);
@@ -185,10 +191,13 @@ export async function reapplySettingsFromDisk(): Promise<void> {
   const settingsService = await SettingsService.getInstance();
 
   await applySettingsEffects(EFFECT_KEYS, settingsService);
-  await reapplyHotkey('main', settingsService);
-  await reapplyHotkey('itemSearch', settingsService);
-
-  notifySettingsChanged();
+  try {
+    await reapplyHotkey('main', settingsService);
+    await reapplyHotkey('itemSearch', settingsService);
+  } finally {
+    // ホットキーを登録し直せなくても、他の設定（言語など）の変更は各ウィンドウに伝える
+    notifySettingsChanged();
+  }
   logger.info('設定をディスクから再適用しました');
 }
 
