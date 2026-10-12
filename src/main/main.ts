@@ -1,6 +1,7 @@
 import * as os from 'os';
 import * as path from 'path';
 import type { Server } from 'net';
+import { pathToFileURL } from 'url';
 
 import { app, globalShortcut, ipcMain, session } from 'electron';
 import { IPC_CHANNELS } from '@common/ipcChannels';
@@ -44,6 +45,7 @@ import { closeAllWorkspaceItemEditors } from './workspaceItemEditorWindowManager
 import { closeAllWorkspaceConfirms } from './workspaceConfirmWindowManager.js';
 import { BookmarkAutoImportService } from './services/bookmarkAutoImportService.js';
 import { applyLanguageSetting, registerLanguageHandler } from './services/i18nService.js';
+import { installNavigationGuard } from './utils/navigationGuard.js';
 
 // 多重起動時に完全に独立したuserDataを使用
 if (EnvConfig.hasAppInstance) {
@@ -89,6 +91,12 @@ if (EnvConfig.isDevelopment) {
 }
 
 app.whenReady().then(async () => {
+  // 画面が QDL の HTML の外へ移らないようにする（ウィンドウを作る前に付ける）
+  installNavigationGuard({
+    devServerUrl: EnvConfig.isDevelopment ? EnvConfig.devServerUrl : undefined,
+    appRootUrl: pathToFileURL(path.join(__dirname, '..') + path.sep).href,
+  });
+
   // 設定フォルダを先に作成（スプラッシュのアイコンパス解決に必要）
   PathManager.ensureDirectories();
 
