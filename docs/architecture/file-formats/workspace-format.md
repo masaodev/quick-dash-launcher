@@ -6,11 +6,13 @@ QuickDashLauncher のワークスペース機能で使用されるファイル�
 
 ### 1.1. 対象ファイル
 
-| ファイル名 | 用途 | 人・AI の編集 | スキーマ |
-| --- | --- | --- | --- |
-| **workspace.json** | ワークスペース（タブ）・グループ・アイテム | 可 | `config/schemas/workspace.schema.json` |
-| **workspace-archive.json** | アーカイブしたグループとアイテム | 可（通常は触らない） | `config/schemas/workspace-archive.schema.json` |
-| **workspace-ui-state.json** | グループの折りたたみ・切り離しウィンドウの位置/ピン | 不可（QDL 管理） | なし |
+| ファイル名 | 用途 |
+| --- | --- |
+| **workspace.json** | ワークスペース（タブ）・グループ・アイテム |
+| **workspace-archive.json** | アーカイブしたグループとアイテム |
+| **workspace-ui-state.json** | グループの折りたたみ・切り離しウィンドウの位置/ピン |
+
+手で編集する使い方はサポートしない。AI にアイテム・グループを変えさせたいときは CLI（[qdl](../../features/cli.md)）を使う。QDL の外で変わったときの備えは 5 章。
 
 保存場所は設定フォルダ直下（[設定フォルダの場所](README.md#設定フォルダの場所)）。すべて **UTF-8（BOMなし）** の JSON。
 
@@ -32,7 +34,6 @@ QuickDashLauncher のワークスペース機能で使用されるファイル�
 
 ```json
 {
-  "$schema": "./schemas/workspace.schema.json",
   "version": "2.0",
   "workspaces": [
     { "id": "Ws1Ab2Cd", "displayName": "メイン", "order": 0, "createdAt": 1700000000000 }
@@ -67,13 +68,14 @@ QuickDashLauncher のワークスペース機能で使用されるファイル�
 
 | フィールド | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
-| **$schema** | string | - | `./schemas/workspace.schema.json`。無い・違えば QDL が補う（`normalized`） |
 | **version** | string | ✓ | `"2.0"`。無いファイルは旧形式として移行される |
 | **workspaces** | Workspace[] | ✓ | 1 件以上。0 件なら既定ワークスペース「デフォルト」を作る |
 | **groups** | WorkspaceGroup[] | ✓ | |
 | **items** | WorkspaceItem[] | ✓ | |
 
-書き出し時のキー順は固定（`$schema` → `version` → `workspaces` → `groups` → `items`。アイテム内は `id, type, displayName, <型固有>, memo, workspaceId, groupId, order, addedAt`）。
+v0.8.0-beta.5 までの QDL が書いた `$schema` は読み飛ばし、次に QDL が書き戻すときに消える。
+
+書き出し時のキー順は固定（`version` → `workspaces` → `groups` → `items`。アイテム内は `id, type, displayName, <型固有>, memo, workspaceId, groupId, order, addedAt`）。
 
 ### 2.3. Workspace（タブ）
 
@@ -129,7 +131,6 @@ QuickDashLauncher のワークスペース機能で使用されるファイル�
 
 ```json
 {
-  "$schema": "./schemas/workspace-archive.schema.json",
   "version": "2.0",
   "groups": [/* WorkspaceGroup + archivedAt, originalOrder, itemCount */],
   "items": [/* WorkspaceItem + archivedAt, archivedGroupId */]
@@ -149,7 +150,7 @@ QuickDashLauncher のワークスペース機能で使用されるファイル�
 
 ## 4. workspace-ui-state.json
 
-QDL が管理する UI 状態。AI 編集対象外・スキーマなし。壊れていれば警告して空として扱う（上書きしない）。
+QDL が管理する UI 状態。壊れていれば警告して空として扱う（上書きしない）。
 
 ```json
 {
@@ -178,8 +179,8 @@ QDL が管理する UI 状態。AI 編集対象外・スキーマなし。壊れ
 | 仕組み | 内容 |
 | --- | --- |
 | 読み込みタイミング | 起動時と**メイン画面の F5**（`reloadConfigFiles`）。ファイルは監視しない。electron-store のように操作のたびにディスクを読むことはない |
-| 寛容パース | JSON 構文エラー・ルート構造の不正・配列フィールドの型違い（配列以外）だけ `corrupted`。配列フィールドが無ければ空配列を補う（`normalized`）。要素単位の不正は `invalid`（読み込みから外し、書き戻し時に配列の末尾へ残す）。ただしオブジェクトでない要素は残さず削除する。id の欠落/不正/重複は採番（`idAssigned`）し、参照（`groupId` / `parentGroupId` / `workspaceId` / `archivedGroupId`）を追随させる。宙に浮いた参照・`$schema`・`version`・省略した `order` 等は補正（`normalized`） |
-| レポート | `config/last-load-report.json` の `files[]` に `workspace.json` / `workspace-archive.json` がデータファイルと並ぶ。ワークスペースの `issues[]` は `section`（`workspaces` / `groups` / `items`）を持ち、`index` はその配列内の位置 |
+| 寛容パース | JSON 構文エラー・ルート構造の不正・配列フィールドの型違い（配列以外）だけ `corrupted`。配列フィールドが無ければ空配列を補う（`normalized`）。要素単位の不正は `invalid`（読み込みから外し、書き戻し時に配列の末尾へ残す）。ただしオブジェクトでない要素は残さず削除する。id の欠落/不正/重複は採番（`idAssigned`）し、参照（`groupId` / `parentGroupId` / `workspaceId` / `archivedGroupId`）を追随させる。宙に浮いた参照・`version`・省略した `order` 等は補正（`normalized`） |
+| レポート | 読み込みレポート（[データファイル形式 5.3](data-format.md#53-qdl-の外での変更への備え)。CLI の `qdl reload`・`qdl check` が返す）の `files[]` に `workspace.json` / `workspace-archive.json` がデータファイルと並ぶ。ワークスペースの `issues[]` は `section`（`workspaces` / `groups` / `items`）を持ち、`index` はその配列内の位置 |
 | 外部変更検知 | データファイルと同じ `dataFileTracker`。前回読んだ/書いた内容と違えば `externallyChanged`、`backupEnabled` なら変更前を `backup/*_pre-external/` に残す |
 | 楽観ロック | 書き込み前に現在のファイル内容を確認し、QDL の外で変更されていれば書かずに拒否（メイン画面で F5 を押して再読込するよう促すトーストを出す）。読み直せば再び書ける |
 | 破損時 | どちらか 1 ファイルでも読めなければ両ファイルの書き込みを拒否する（空のキャッシュで上書きして復旧不能にしない）。ワークスペース画面は空になり、エラーのトースト「設定ファイルの読み込みに失敗しました（破損の可能性）: <ファイル名>」で通知（`src/main/services/data/dataFileLoader.ts`） |
@@ -189,7 +190,7 @@ QDL が管理する UI 状態。AI 編集対象外・スキーマなし。壊れ
 
 ## 6. 旧形式からの移行
 
-`workspace.json` / `workspace-archive.json` のどちらか片方でも `version` を持たない旧形式なら、`WorkspaceFileStore` が変換・検証したあと、書き込む前に `backup/<日時>_pre-migration/`（`backupEnabled` に関係なく作る）へスナップショットを取り、書き戻す。スナップショットに失敗したら移行せず `corrupted` として扱う。変換は純粋関数 `workspaceMigration.ts` で、`last-load-report.json` に `normalized` として 1 行載る。
+`workspace.json` / `workspace-archive.json` のどちらか片方でも `version` を持たない旧形式なら、`WorkspaceFileStore` が変換・検証したあと、書き込む前に `backup/<日時>_pre-migration/`（`backupEnabled` に関係なく作る）へスナップショットを取り、書き戻す。スナップショットに失敗したら移行せず `corrupted` として扱う。変換は純粋関数 `workspaceMigration.ts` で、読み込みレポートに `normalized` として 1 行載る。
 
 | 旧形式（v1） | 2.0 |
 | --- | --- |
@@ -210,7 +211,7 @@ QDL が管理する UI 状態。AI 編集対象外・スキーマなし。壊れ
 
 ## 7. データ型定義（TypeScript）
 
-- ファイル形式: `src/common/types/json-workspace.ts`（`JsonWorkspaceFile`, `JsonWorkspaceItem`, `JsonWorkspaceArchiveFile`, `WorkspaceUiStateFile`）。JSON Schema はここから生成（`npm run schema:generate`）
+- ファイル形式: `src/common/types/json-workspace.ts`（`JsonWorkspaceFile`, `JsonWorkspaceItem`, `JsonWorkspaceArchiveFile`, `WorkspaceUiStateFile`）
 - 実行時: `src/common/types/workspace.ts`（`WorkspaceItem` = ファイル形式 + `launcherType` / `icon`、`WorkspaceGroupView` = グループ + `collapsed`）
 - 変換: `src/common/utils/workspaceConverters.ts`（AppItem → 本体、WorkspaceItem ⇄ RegisterItem、表示文字列 `describeWorkspaceItem`）
 

@@ -43,7 +43,7 @@ JSON ファイルはすべて **UTF-8（BOMなし）** で保存されます。
 
 - **workspace.json**（version 2.0）: ワークスペース（タブ）・グループ・アイテム。アイテムはデータファイルと同じ語彙（`type: item / window / group / clipboard / layout`）
 - **workspace-archive.json**（version 2.0）: アーカイブされたグループとアイテム
-- **workspace-ui-state.json**: グループの折りたたみ・切り離しウィンドウの位置（QDL 管理、AI 編集対象外）
+- **workspace-ui-state.json**: グループの折りたたみ・切り離しウィンドウの位置（QDL 管理）
 
 ワークスペースアイテムはメイン画面のアイテムをコピーし、独立して管理されます。旧形式（version なし）は起動時に 1 回だけ 2.0 に変換され、変換前は `backup/*_pre-migration/` に残ります。
 
@@ -61,7 +61,7 @@ JSON ファイルはすべて **UTF-8（BOMなし）** で保存されます。
 
 - **ファイル**: `path-type-cache.json`
 - **形式**: `{ "version": 1, "extensionlessFiles": ["C:\\Windows\\System32\\drivers\\etc\\hosts", ...] }`
-- **内容**: 拡張子が無いのにファイルだったパスの一覧（QDL 管理、AI 編集対象外）。読み込みのたびにディスクを読まずに、拡張子の無いファイルをフォルダと取り違えないためのもの。書き換えるタイミングは [データファイル形式 3.1.2](data-format.md#312-サポートされるパス種類)
+- **内容**: 拡張子が無いのにファイルだったパスの一覧（QDL 管理）。読み込みのたびにディスクを読まずに、拡張子の無いファイルをフォルダと取り違えないためのもの。書き換えるタイミングは [データファイル形式 3.1.2](data-format.md#312-サポートされるパス種類)
 
 ### アイコンキャッシュ
 
@@ -80,7 +80,7 @@ JSON ファイルはすべて **UTF-8（BOMなし）** で保存されます。
 - **フォルダ**: `config/backup/`
 - **形式**: スナップショット方式。タイムスタンプ名のサブフォルダ（`YYYY-MM-DDTHH-MM-SS/`）に対象ファイルをまとめて保存
 - **バックアップ対象**: `datafiles/data*.json`、`settings.json`、`workspace.json`、`workspace-archive.json`、`workspace-ui-state.json`、（旧形式の `workspace-detached.json` が残っていれば）それも、（設定により）`clipboard-data/*.json`
-- **変更検知トリガー**: `datafiles/data*.json`・`settings.json`・`workspace.json`・`workspace-archive.json`（人・AI が編集するファイル）の変更で判定
+- **変更検知トリガー**: `datafiles/data*.json`・`settings.json`・`workspace.json`・`workspace-archive.json`の変更で判定
 - **作成タイミング**: 起動時に1日1回、変更がある場合のみ（`backupEnabled` が無効なら作らない）
 - **保持件数**: 設定可能（`backupRetention`、デフォルト値は設定ファイルを参照）
 - **リストア前自動バックアップ**: リストア実行時に `YYYY-MM-DDTHH-MM-SS_pre-restore/` フォルダを自動作成（`backupEnabled` に関係なく作る）
@@ -89,36 +89,17 @@ JSON ファイルはすべて **UTF-8（BOMなし）** で保存されます。
 
 ### 読み込みレポート
 
-- **ファイル**: `last-load-report.json`
-- **内容**: 直近の読み込み結果（受理数・スキップしたアイテムと理由・採番した ID・外部変更の有無）。`files[]` にはデータファイルと `workspace.json`・`workspace-archive.json` が並ぶ。ファイルを直接編集した人や AI が結果を確認するためのもの。詳細は [データファイル形式 5.3](data-format.md#53-外部編集人ai-による直接編集への対応)
+ファイルには書き出さない。直近の読み込み結果（受理数・スキップしたアイテムと理由・採番した ID・外部変更の有無）をメモリに持ち、CLI の `qdl reload`・`qdl check` が返す（[CLI（qdl）](../../features/cli.md)）。形式は [データファイル形式 5.3](data-format.md#53-qdl-の外での変更への備え)。
 
 ---
 
-## AI・手動編集
+## QDL の外での変更
 
-設定フォルダのファイル（`datafiles/data*.json`・`settings.json`・`workspace.json`・`workspace-archive.json`）はテキストエディタや AI エージェントで直接編集できる。そのための補助ファイルを **起動時に毎回** 配置する（`installConfigFolderDocs`、`src/main/services/configFolderDocsService.ts`）。
+設定フォルダのファイルを手で編集する使い方はサポートしない。AI にアイテムやワークスペースを変えさせたいときは CLI（[qdl](../../features/cli.md)）を使い、CLI に無い操作（設定・タブ構成・ワークスペース自体・アーカイブ・アイテムを別のタブへ移す）は画面から行う。
 
-| ファイル | 内容 | 元 |
-| --- | --- | --- |
-| `config/README.md` | 直接編集する人・AI 向けの作業指示（CLI（qdl）が使えるならそれを先に使うこと、触っていいファイル、アイテムの最小例、反映方法（`qdl reload` か F5）、`last-load-report.json` の読み方、壊したときの戻し方）。`{{CONFIG_DIR}}`・`{{APP_VERSION}}` を埋めて生成。内容が同じなら書かない | `assets/config-readme.md` |
-| `config/schemas/data.schema.json` | データファイルの JSON Schema。アイテムは `type` で判別する `oneOf`、`additionalProperties: false` | `assets/schemas/data.schema.json` |
-| `config/schemas/settings.schema.json` | 設定ファイルの JSON Schema。`required`・`additionalProperties` の指定なし（欠落・未知のキーを許容） | `assets/schemas/settings.schema.json` |
-| `config/schemas/workspace.schema.json` | ワークスペースファイルの JSON Schema。アイテムはデータファイルと同じ語彙の `oneOf` | `assets/schemas/workspace.schema.json` |
-| `config/schemas/workspace-archive.schema.json` | アーカイブファイルの JSON Schema | `assets/schemas/workspace-archive.schema.json` |
+それでもファイルが QDL の外で変わることはある（古い版の QDL・同期ツール・手で直した場合）。そのときの備えとして、寛容な読み込み・採番・変更前スナップショット・破損時に上書きしない・保存時の楽観ロックが働く（[データファイル形式 5.3](data-format.md#53-qdl-の外での変更への備え)、[ワークスペースファイル形式](workspace-format.md)）。
 
-**`$schema` の注入**: データファイルは `"$schema": "../schemas/data.schema.json"`、`settings.json` は `"$schema": "./schemas/settings.schema.json"`、ワークスペースは `"./schemas/workspace.schema.json"` / `"./schemas/workspace-archive.schema.json"` を QDL が補う。無いときだけでなく値が違うときも揃える（相対パス。URL にすると main の最新とアプリの版がずれるため）。既存利用者のファイルはアップグレード後の初回読み込みで 1 回書き戻される（データファイル・ワークスペースファイルは `writeDataFile` 経由なので外部変更にはならず、`_pre-external` スナップショットも作られない。`settings.json` は `settingsService` が electron-store 経由で書く）。
-
-**スキーマの生成と検証**:
-
-```bash
-npm run schema:generate   # src/common/types/{json-data,settings,json-workspace}.ts → assets/schemas/*.schema.json
-```
-
-- 生成は `ts-json-schema-generator`（`scripts/generate-schemas.ts`）。`title` は固定、`description` は TS の JSDoc、`$id` は main の生ファイル URL（安定。アプリの版は入れない。版は隣の `config/README.md` 冒頭に書かれる）
-- `tests/unit/schemas.test.ts` が「生成結果 = コミット済みファイル」を検証する（型を変えて再生成を忘れると落ちる）。同じテストで `tests/e2e/templates/**`・`tests/dev/**`・`dev-config/` の JSON をスキーマ検証し、寛容パースの判定と一致することも確認する
-- **アプリ実行時にはスキーマ検証しない**。検証は寛容パース（`parseJsonDataFileLenient` / `parseWorkspaceFileLenient`）の一本。ワークスペースのアイテム本体はデータファイルの検証関数を共用する
-
-導線: 管理画面「ヘルプ」タブの「設定フォルダを開く」の近くに、AI に `README.md` を読ませる案内がある。
+v0.8.0-beta.5 までの QDL は、直接編集する人・AI 向けに `config/README.md`・`config/schemas/*.schema.json`・`config/last-load-report.json` を書き出し、各ファイルに `$schema` を補っていた。今の版はこれらを作らず、残っていても消さない（使わない）。ファイル内の `$schema` は読み飛ばす。
 
 ---
 

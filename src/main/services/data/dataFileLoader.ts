@@ -18,12 +18,7 @@ import {
   rememberDataFileContent,
   writeDataFile,
 } from '../dataFileTracker.js';
-import {
-  buildLoadReport,
-  hasReportableIssues,
-  formatLoadReportToast,
-  writeLoadReport,
-} from '../loadReportService.js';
+import { buildLoadReport, formatLoadReportToast } from '../loadReportService.js';
 import type { LoadReport, LoadReportFile, LoadTrigger } from '../loadReportService.js';
 import { notifyWorkspaceChanged } from '../../ipc/notifications.js';
 import {
@@ -303,11 +298,11 @@ export function getLastLoadReport(): LoadReport | null {
 /**
  * 設定ファイル群（データファイル + ワークスペース）をディスクから読み直す（起動時・メイン画面の F5・完全リフレッシュ）
  *
- * データファイルとワークスペースの読み込み結果を 1 つの last-load-report.json にまとめ、
+ * データファイルとワークスペースの読み込み結果を 1 つのレポートにまとめ、
  * 外部変更があれば変更前スナップショットを 1 つ作る。ワークスペースの内容が変わっていれば
  * ワークスペース画面にも再取得を通知する。
  *
- * @param trigger internal（変更通知・画面内の一覧取得）なら、報告することがあるときだけレポートを書く
+ * @param trigger 読み込みのきっかけ。internal（変更通知・画面内の一覧取得）は先行の再読込の結果を共有する
  * @returns メイン画面に表示するアイテム
  */
 export function reloadConfigFiles(
@@ -376,13 +371,8 @@ async function reloadConfigFilesInternal(
     ...workspaceExternal,
   ]);
 
-  // 直接編集した人・AI が結果を確認できるようレポートを残す
-  // （内部の再読込では、クリーンな結果で起動時・F5 の記録を潰さない）
-  const fileReports = [...data.fileReports, ...workspaceReports];
-  const report = buildLoadReport(fileReports, preChangeSnapshot);
-  if (trigger !== 'internal' || hasReportableIssues(fileReports)) {
-    writeLoadReport(report);
-  }
+  // CLI の reload・check が返せるよう、直近の結果を覚えておく
+  const report = buildLoadReport([...data.fileReports, ...workspaceReports], preChangeSnapshot);
   lastLoadReport = report;
 
   // 破損ファイルがあった場合は無通知でアイテムが消えたように見えないよう警告する

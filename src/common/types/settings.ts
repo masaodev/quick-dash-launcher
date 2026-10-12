@@ -2,12 +2,6 @@ import { DataFileTab } from './data';
 import { BookmarkAutoImportSettings } from './bookmarkAutoImport';
 
 /**
- * settings.json に書き込む $schema の値
- * （config/ から見た config/schemas/settings.schema.json への相対パス）
- */
-export const SETTINGS_SCHEMA_REF = './schemas/settings.schema.json';
-
-/**
  * ウィンドウの固定モードを表す列挙型
  * 3段階のモードを循環的に切り替え可能
  */
@@ -75,11 +69,6 @@ export type AutoLaunchStatus =
  * electron-storeを使用して永続化される
  */
 export interface AppSettings {
-  /**
-   * JSON Schema への参照（エディタ補完・検証用）。
-   * QDL が起動時に "./schemas/settings.schema.json" を補う
-   */
-  $schema?: string;
   /** この設定ファイルを作成したアプリバージョン（初回作成時のみ記録） */
   createdWithVersion?: string;
   /** この設定ファイルを最後に更新したアプリバージョン */

@@ -79,7 +79,6 @@ docs/
 | [tests/README.md](../tests/README.md) ほか tests/ 配下の各 README | そのフォルダの案内（テストの正本は [テスト](testing/README.md)） |
 | [scripts/README.md](../scripts/README.md) | 開発用スクリプトの説明 |
 | [src/test/manual/README.md](../src/test/manual/README.md) | 手動確認用スクリプトの説明 |
-| [assets/config-readme.md](../assets/config-readme.md) | アプリが実行時に設定フォルダへ `config/README.md` として書き出す雛形 |
 
 ---
 

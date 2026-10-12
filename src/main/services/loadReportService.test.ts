@@ -1,28 +1,6 @@
-import * as fs from 'fs';
-import * as os from 'os';
-import * as path from 'path';
+import { describe, it, expect } from 'vitest';
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-
-const tempRoot = vi.hoisted(() => ({ dir: '' }));
-
-vi.mock('../config/pathManager.js', () => ({
-  PathManager: { getConfigFolder: () => tempRoot.dir },
-  default: { getConfigFolder: () => tempRoot.dir },
-}));
-
-vi.mock('@common/logger', () => ({
-  default: { info: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() },
-  dataLogger: { info: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() },
-}));
-
-import {
-  LOAD_REPORT_FILE_NAME,
-  buildLoadReport,
-  formatLoadReportToast,
-  hasReportableIssues,
-  writeLoadReport,
-} from './loadReportService';
+import { buildLoadReport, formatLoadReportToast } from './loadReportService';
 import type { LoadReportFile } from './loadReportService';
 
 function okFile(overrides: Partial<LoadReportFile> = {}): LoadReportFile {
@@ -38,14 +16,6 @@ function okFile(overrides: Partial<LoadReportFile> = {}): LoadReportFile {
 }
 
 describe('loadReportService', () => {
-  beforeEach(() => {
-    tempRoot.dir = fs.mkdtempSync(path.join(os.tmpdir(), 'qdl-report-'));
-  });
-
-  afterEach(() => {
-    fs.rmSync(tempRoot.dir, { recursive: true, force: true });
-  });
-
   it('buildLoadReport はファイル別の結果を集計すること', () => {
     const report = buildLoadReport(
       [
@@ -77,22 +47,11 @@ describe('loadReportService', () => {
     expect(report.preChangeSnapshot).toBe('2026-09-21T00-00-00_pre-external');
   });
 
-  it('writeLoadReport は設定フォルダ直下に JSON を書き出すこと', () => {
-    const report = buildLoadReport([okFile()], null);
-    writeLoadReport(report);
-
-    const written = JSON.parse(
-      fs.readFileSync(path.join(tempRoot.dir, LOAD_REPORT_FILE_NAME), 'utf8')
-    );
-    expect(written.summary.accepted).toBe(3);
-    expect(written.files[0].file).toBe('datafiles/data.json');
-  });
-
   it('formatLoadReportToast は問題がなければ null を返すこと', () => {
     expect(formatLoadReportToast(buildLoadReport([okFile()], null))).toBeNull();
   });
 
-  it('formatLoadReportToast はスキップ・採番の件数とレポート名を含めること', () => {
+  it('formatLoadReportToast はスキップ・採番の件数を含めること', () => {
     const report = buildLoadReport(
       [
         okFile({
@@ -113,18 +72,5 @@ describe('loadReportService', () => {
     expect(toast).toContain('5 件読込');
     expect(toast).toContain('2 件スキップ');
     expect(toast).toContain('1 件に ID を採番');
-    expect(toast).toContain(LOAD_REPORT_FILE_NAME);
-  });
-
-  it('hasReportableIssues は補正・書き戻し・外部変更・破損のどれかがあれば true になること', () => {
-    expect(hasReportableIssues([okFile(), okFile({ file: 'workspace.json' })])).toBe(false);
-    expect(
-      hasReportableIssues([
-        okFile({ issues: [{ index: -1, kind: 'normalized', reason: 'version を補いました' }] }),
-      ])
-    ).toBe(true);
-    expect(hasReportableIssues([okFile({ rewritten: true })])).toBe(true);
-    expect(hasReportableIssues([okFile({ externallyChanged: true })])).toBe(true);
-    expect(hasReportableIssues([okFile({ status: 'corrupted', error: 'x' })])).toBe(true);
   });
 });

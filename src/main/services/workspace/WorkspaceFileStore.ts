@@ -55,7 +55,7 @@ import { coerceWorkspaceUiState, type WorkspaceUiStateStore } from './WorkspaceU
  * （空データで上書きして復旧不能にしないため）。
  *
  * データファイルと同じ dataFileTracker / writeDataFile を通すので、外部変更検知・変更前スナップショット・
- * last-load-report.json への記載が同じ仕組みで効く。
+ * 読み込みレポートへの記載が同じ仕組みで効く。
  */
 
 /** 設定フォルダからの相対パス（トラッカーのキー・レポートのファイル名） */

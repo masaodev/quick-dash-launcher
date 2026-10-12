@@ -1,6 +1,5 @@
 # PRチェックワークフロー
 # PRとmainへのpushで、型チェック・lint・単体テストを実行する
-# （スキーマの再生成漏れも tests/unit/schemas.test.ts のドリフト検知で落ちる）
 # E2Eは重いため対象外。リリース前にローカルで実行する
 
 name: CI

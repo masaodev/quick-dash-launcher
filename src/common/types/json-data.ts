@@ -16,11 +16,6 @@ import type { ClipboardFormat } from './clipboard';
  * JSONデータファイルのルート構造
  */
 export interface JsonDataFile {
-  /**
-   * JSON Schema への参照（エディタ補完・検証用）。
-   * QDL が書き戻すときに "../schemas/data.schema.json" を補う
-   */
-  $schema?: string;
   /** ファイルフォーマットのバージョン（現在は "1.0"） */
   version: string;
   /** アイテムの配列 */
@@ -324,12 +319,6 @@ export function isJsonLayoutItem(item: JsonItem): item is JsonLayoutItem {
 
 /** 現在のJSONファイルフォーマットバージョン */
 export const JSON_DATA_VERSION = '1.0';
-
-/**
- * データファイルに書き込む $schema の値
- * （datafiles/ から見た config/schemas/data.schema.json への相対パス）
- */
-export const JSON_DATA_SCHEMA_REF = '../schemas/data.schema.json';
 
 /** ID文字列の長さ */
 export const JSON_ID_LENGTH = 8;

@@ -12,18 +12,6 @@ import { TestUtils } from '../helpers/test-utils';
 
 const ID_PATTERN = /^[A-Za-z0-9]{8}$/;
 
-interface LoadReport {
-  summary: { skipped: number; idAssigned: number; externallyChangedFiles: string[] };
-  files: Array<{
-    file: string;
-    status: string;
-    rewritten: boolean;
-    externallyChanged: boolean;
-    issues: Array<{ kind: string; reason: string; section?: string; id?: string }>;
-  }>;
-  preChangeSnapshot: string | null;
-}
-
 function listBackupFolders(configDir: string, suffix: string): string[] {
   const backupDir = path.join(configDir, 'backup');
   if (!fs.existsSync(backupDir)) return [];
@@ -32,7 +20,7 @@ function listBackupFolders(configDir: string, suffix: string): string[] {
 
 /**
  * ワークスペースファイルの旧形式（UUID id・path 疑似文字列・collapsed 混在・detached 別ファイル）が
- * 起動時に 2.0 へ移行され、以後はデータファイルと同じ外部編集の扱い（レポート・スナップショット・
+ * 起動時に 2.0 へ移行され、以後はデータファイルと同じ外部変更の扱い（採番・スナップショット・
  * 破損時の保護）を受けること
  */
 test.describe('QuickDashLauncher - ワークスペースファイルの 2.0 移行と外部編集', () => {
@@ -54,21 +42,20 @@ test.describe('QuickDashLauncher - ワークスペースファイルの 2.0 移�
       await mainWindow.locator('.item').first().waitFor({ state: 'visible', timeout: 10000 });
     });
 
-    // 移行はワークスペースサービスの初期化（起動時）で走る。レポートが書かれるまで待つ
+    // 移行はワークスペースサービスの初期化（起動時）で走る。書き戻されるまで待つ
     await expect
-      .poll(() => configHelper.readConfigJson<LoadReport>('last-load-report.json') !== null, {
+      .poll(() => configHelper.readConfigJson<JsonWorkspaceFile>('workspace.json')?.version, {
         timeout: 10000,
       })
-      .toBe(true);
+      .toBe('2.0');
 
     const main = configHelper.readConfigJson<JsonWorkspaceFile>('workspace.json')!;
     const archive =
       configHelper.readConfigJson<JsonWorkspaceArchiveFile>('workspace-archive.json')!;
     const uiState = configHelper.readConfigJson<WorkspaceUiStateFile>('workspace-ui-state.json')!;
 
-    await test.step('version / $schema が付き、全 id が 8 文字英数字になる', async () => {
+    await test.step('version が付き、全 id が 8 文字英数字になる', async () => {
       expect(main.version).toBe('2.0');
-      expect(main.$schema).toBe('./schemas/workspace.schema.json');
       const ids = [
         ...main.workspaces.map((w) => w.id),
         ...main.groups.map((g) => g.id),
@@ -163,41 +150,11 @@ test.describe('QuickDashLauncher - ワークスペースファイルの 2.0 移�
       expect(listBackupFolders(configDir, '_pre-external')).toEqual([]);
     });
 
-    await test.step('レポートに移行が normalized として載る', async () => {
-      const report = configHelper.readConfigJson<LoadReport>('last-load-report.json')!;
-      const files = report.files.map((f) => f.file);
-      expect(files).toEqual(
-        expect.arrayContaining(['datafiles/data.json', 'workspace.json', 'workspace-archive.json'])
-      );
-      for (const file of ['workspace.json', 'workspace-archive.json']) {
-        const fileReport = report.files.find((f) => f.file === file)!;
-        expect(fileReport.status).toBe('ok');
-        expect(fileReport.rewritten).toBe(true);
-        expect(fileReport.externallyChanged).toBe(false);
-        expect(
-          fileReport.issues.some((i) => i.kind === 'normalized' && i.reason.includes('2.0'))
-        ).toBe(true);
-      }
-      expect(report.summary.externallyChangedFiles).toEqual([]);
-      expect(report.preChangeSnapshot).toBeNull();
-    });
-
     await test.step('F5 しても再移行・外部変更扱いにはならない', async () => {
       await utils.reloadWithF5();
-      await expect
-        .poll(() => {
-          const ws = configHelper
-            .readConfigJson<LoadReport>('last-load-report.json')
-            ?.files.find((f) => f.file === 'workspace.json');
-          if (!ws) return null;
-          return {
-            rewritten: ws.rewritten,
-            issues: ws.issues.length,
-            external: ws.externallyChanged,
-          };
-        })
-        .toEqual({ rewritten: false, issues: 0, external: false });
+      await mainWindow.waitForTimeout(500);
       expect(listBackupFolders(configDir, '_pre-migration')).toHaveLength(1);
+      expect(listBackupFolders(configDir, '_pre-external')).toEqual([]);
       expect(fs.readFileSync(path.join(configDir, 'workspace.json'), 'utf8')).toBe(
         JSON.stringify(main, null, 2)
       );
@@ -240,64 +197,43 @@ test.describe('QuickDashLauncher - ワークスペースファイルの 2.0 移�
       );
 
       await utils.reloadWithF5();
-      await expect
-        .poll(
-          () =>
-            configHelper.readConfigJson<LoadReport>('last-load-report.json')?.summary
-              .externallyChangedFiles
-        )
-        .toEqual(['workspace.json']);
+      await expect.poll(() => listBackupFolders(configDir, '_pre-external').length).toBe(1);
     });
 
-    await test.step('採番されて書き戻され、レポートと変更前スナップショットが残る', async () => {
-      const after = configHelper.readConfigJson<JsonWorkspaceFile>('workspace.json')!;
-      const added = after.items.find((i) => i.displayName === '外部追加')!;
-      expect(added.id).toMatch(ID_PATTERN);
-      expect(after.items.find((i) => i.displayName === 'GitHub（外部編集）')).toBeDefined();
-
-      const report = configHelper.readConfigJson<LoadReport>('last-load-report.json')!;
-      const ws = report.files.find((f) => f.file === 'workspace.json')!;
-      expect(ws.externallyChanged).toBe(true);
-      expect(ws.rewritten).toBe(true);
-      // id は採番、省略した order / addedAt は補完（normalized）される
-      expect(ws.issues).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({ kind: 'idAssigned', section: 'items', id: added.id }),
-        ])
-      );
-      expect(ws.issues.filter((i) => i.kind === 'invalid')).toEqual([]);
-      expect(report.summary.idAssigned).toBe(1);
-      expect(report.summary.skipped).toBe(0);
-
-      expect(report.preChangeSnapshot).toMatch(/_pre-external$/);
-      expect(
-        fs.readFileSync(
-          path.join(configDir, 'backup', report.preChangeSnapshot!, 'workspace.json'),
-          'utf8'
-        )
-      ).toBe(migratedRaw);
-    });
-
-    await test.step('JSON として壊すと corrupted になり、ファイルは上書きされない', async () => {
-      const brokenContent = '{ "version": "2.0", "workspaces": [ broken';
-      fs.writeFileSync(path.join(configDir, 'workspace.json'), brokenContent, 'utf8');
-
-      await utils.reloadWithF5();
+    await test.step('採番されて書き戻され、変更前スナップショットが残る', async () => {
       await expect
         .poll(
           () =>
             configHelper
-              .readConfigJson<LoadReport>('last-load-report.json')
-              ?.files.find((f) => f.file === 'workspace.json')?.status
+              .readConfigJson<JsonWorkspaceFile>('workspace.json')
+              ?.items.find((i) => i.displayName === '外部追加')?.id
         )
-        .toBe('corrupted');
+        .toMatch(ID_PATTERN);
+      const after = configHelper.readConfigJson<JsonWorkspaceFile>('workspace.json')!;
+      expect(after.items.find((i) => i.displayName === 'GitHub（外部編集）')).toBeDefined();
+      // 省略した order / addedAt も補われる
+      const added = after.items.find((i) => i.displayName === '外部追加')!;
+      expect(typeof added.order).toBe('number');
+      expect(typeof added.addedAt).toBe('number');
+
+      const snapshot = listBackupFolders(configDir, '_pre-external')[0];
+      expect(
+        fs.readFileSync(path.join(configDir, 'backup', snapshot, 'workspace.json'), 'utf8')
+      ).toBe(migratedRaw);
+    });
+
+    await test.step('JSON として壊すと読み込まず、ファイルは上書きされない', async () => {
+      const brokenContent = '{ "version": "2.0", "workspaces": [ broken';
+      const archivePath = path.join(configDir, 'workspace-archive.json');
+      const archiveBefore = fs.readFileSync(archivePath, 'utf8');
+      fs.writeFileSync(path.join(configDir, 'workspace.json'), brokenContent, 'utf8');
+
+      await utils.reloadWithF5();
+      await mainWindow.waitForTimeout(1000);
 
       expect(fs.readFileSync(path.join(configDir, 'workspace.json'), 'utf8')).toBe(brokenContent);
       // 破損中もアーカイブは書き換えない
-      const archiveReport = configHelper
-        .readConfigJson<LoadReport>('last-load-report.json')!
-        .files.find((f) => f.file === 'workspace-archive.json')!;
-      expect(archiveReport.status).toBe('unreadable');
+      expect(fs.readFileSync(archivePath, 'utf8')).toBe(archiveBefore);
     });
 
     await test.step('直して F5 すれば復帰する', async () => {
@@ -308,14 +244,9 @@ test.describe('QuickDashLauncher - ワークスペースファイルの 2.0 移�
         'utf8'
       );
       await utils.reloadWithF5();
-      await expect
-        .poll(
-          () =>
-            configHelper
-              .readConfigJson<LoadReport>('last-load-report.json')
-              ?.files.find((f) => f.file === 'workspace.json')?.status
-        )
-        .toBe('ok');
+      await mainWindow.waitForTimeout(500);
+      // 読み込めたので、外部変更として変更前（壊れた内容）のスナップショットが増える
+      await expect.poll(() => listBackupFolders(configDir, '_pre-external').length).toBe(2);
     });
   });
 });

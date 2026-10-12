@@ -59,18 +59,18 @@ const settings = await window.electronAPI.getSettings();
 データファイル（`datafiles/data*.json`）とワークスペースを読み直し、メイン画面に表示する `AppItem[]` を返す。
 
 - パラメータ: `trigger?: 'explicit' | 'full' | 'internal'`（既定 `explicit`）
-  - `explicit`: 起動時・F5。毎回 `last-load-report.json` を書く
-  - `full`: メイン画面の「完全リフレッシュ」。`explicit` と同じくレポートを書き、ドライブ文字で始まる拡張子の無いパスもすべてディスクで確かめ直す（`explicit` で確かめ直すのは `path-type-cache.json` に載っているパスだけ）（[データファイル形式 3.1.2](file-formats/data-format.md#312-サポートされるパス種類)）
-  - `internal`: 変更通知を受けた再読込・画面内の一覧取得。報告すること（補正・外部変更・破損）があるときだけレポートを書く。先行する `internal` の読み込みがあれば結果を共有する
+  - `explicit`: 起動時・F5
+  - `full`: メイン画面の「完全リフレッシュ」。`explicit` に加えて、ドライブ文字で始まる拡張子の無いパスもすべてディスクで確かめ直す（`explicit` で確かめ直すのは `path-type-cache.json` に載っているパスだけ）（[データファイル形式 3.1.2](file-formats/data-format.md#312-サポートされるパス種類)）
+  - `internal`: 変更通知を受けた再読込・画面内の一覧取得。先行する `internal` の読み込みがあれば結果を共有する
 - 処理内容: フォルダ取込の展開・`.lnk` の解析・タブ単位の重複排除のあと、ワークスペースも読み直す（内容が変わっていれば `workspace-changed` を送る）
-- 外部変更（人・AI による直接編集）を検知した場合は、変更前の内容をスナップショットに残す。破損ファイルや読み込み時の補正はトーストで知らせる
+- 外部変更（QDL の外での変更）を検知した場合は、変更前の内容をスナップショットに残す。破損ファイルや読み込み時の補正はトーストで知らせる
 - 実装: `src/main/services/data/dataFileLoader.ts`（`reloadConfigFiles()`）
 
-F5 では、レンダラーが `settings:reapply` を呼んでから `load-data-files` を `explicit` で呼ぶ。ファイル監視はしないので、QDL の外で編集したファイルが反映されるのは F5 か再起動のときだけ。外部編集への対応は[データファイル形式](file-formats/data-format.md#53-外部編集人ai-による直接編集への対応)を参照。
+F5 では、レンダラーが `settings:reapply` を呼んでから `load-data-files` を `explicit` で呼ぶ。ファイル監視はしないので、QDL の外で編集したファイルが反映されるのは F5 か再起動のときだけ。QDL の外での変更への備えは[データファイル形式](file-formats/data-format.md#53-qdl-の外での変更への備え)を参照。
 
 ### `load-editable-items` / `save-editable-items`
 
-管理画面のアイテム一覧の読み込みと保存。楽観ロックで外部編集との競合を防ぐ。
+管理画面のアイテム一覧の読み込みと保存。楽観ロックで QDL の外での変更との競合を防ぐ。
 
 - `load-editable-items` の戻り値: `LoadEditableItemsResult`（`items: EditableJsonItem[]`、省略可能な `fileHashes?`（ファイルごとの内容ハッシュ）、`error?: string`）
 - `save-editable-items` のパラメータ: `editableItems: EditableJsonItem[]`、`expectedHashes?: Record<string, string>`（読み込み時の `fileHashes`）
@@ -146,7 +146,7 @@ F5 では、レンダラーが `settings:reapply` を呼んでから `load-data-
 
 ### 失敗時の扱い
 
-`workspace.json` / `workspace-archive.json` の書き込みは楽観ロックで、前回読んだ／書いた内容と現在のファイルが違えば書かずに失敗する。外部編集との競合・ファイルの破損・再読込中・書き込み失敗のときは、ハンドラーがトーストで操作者に知らせたうえで例外を `invoke` 側へ返す。実装は `src/main/services/workspace/WorkspaceFileStore.ts`。ファイル形式は[ワークスペースファイル形式](file-formats/workspace-format.md)を参照。
+`workspace.json` / `workspace-archive.json` の書き込みは楽観ロックで、前回読んだ／書いた内容と現在のファイルが違えば書かずに失敗する。QDL の外での変更との競合・ファイルの破損・再読込中・書き込み失敗のときは、ハンドラーがトーストで操作者に知らせたうえで例外を `invoke` 側へ返す。実装は `src/main/services/workspace/WorkspaceFileStore.ts`。ファイル形式は[ワークスペースファイル形式](file-formats/workspace-format.md)を参照。
 
 ## 子ウィンドウとの受け渡し
 

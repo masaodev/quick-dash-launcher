@@ -73,11 +73,10 @@ CSV 形式（`data*.txt`）は v0.6.1 で廃止しました。経緯は v0.6.1 �
 
 | フィールド | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
-| **$schema** | string | - | JSON Schema への参照（エディタ補完・検証用）。QDL が書き戻すときに `../schemas/data.schema.json`（`config/schemas/` に起動時コピーされる同梱スキーマ）を補う。無い・違う値のときは読み込み時に補正して書き戻し、レポートに `normalized` として載る |
 | **version** | string | ✓ | ファイルフォーマットのバージョン（現在は "1.0"） |
 | **items** | array | ✓ | アイテムの配列（JsonItem型） |
 
-書き戻し時のキー順は `$schema` → `version` → `items` に固定されます（`serializeJsonDataFile`）。
+書き戻し時のキー順は `version` → `items` に固定されます（`serializeJsonDataFile`）。v0.8.0-beta.5 までの QDL が書いた `$schema` は読み飛ばし、次に QDL が書き戻すときに消えます。
 
 ### 2.3. アイテムID
 
@@ -125,7 +124,7 @@ CSV 形式（`data*.txt`）は v0.6.1 で廃止しました。経緯は v0.6.1 �
 
 ## 3. アイテムタイプ詳細
 
-フィールドの一覧・型は、型定義（`src/common/types/json-data.ts`。`WindowConfig`・`LayoutWindowEntry` は `src/common/types/launcher.ts`）と JSON Schema（`assets/schemas/data.schema.json`）を正とします（[6 章](#6-データ型定義typescript)）。この章には、各アイテムの必須フィールド・既定値・省略時の扱い・注意点と、実行時の挙動だけを書きます。
+フィールドの一覧・型は、型定義（`src/common/types/json-data.ts`。`WindowConfig`・`LayoutWindowEntry` は `src/common/types/launcher.ts`）を正とします（[6 章](#6-データ型定義typescript)）。この章には、各アイテムの必須フィールド・既定値・省略時の扱い・注意点と、実行時の挙動だけを書きます。
 
 - 全アイテムが `id`（必須。8 文字の英数字、2.3）と、任意の `memo`（自由記述メモ）・`updatedAt`（更新日時、Unix タイムスタンプ ms）を持つ
 - 読み込み時の検証は `src/common/utils/jsonParser.ts` が行う。必須フィールドが欠けた・型が違うアイテムはスキップされる（5.1）。スキーマにない未知のフィールドは黙って落ちる
@@ -215,7 +214,7 @@ CSV 形式（`data*.txt`）は v0.6.1 で廃止しました。経緯は v0.6.1 �
 
 ##### 3.1.5.1. フィールドの要点
 
-- **`title`**: 検索するウィンドウタイトル（ワイルドカード可、3.1.5.2）。型定義と JSON Schema では必須だが、読み込み時は古いデータとの互換のため省略を許し、`''` で補う（`validateWindowConfig`）
+- **`title`**: 検索するウィンドウタイトル（ワイルドカード可、3.1.5.2）。型定義では必須だが、読み込み時は古いデータとの互換のため省略を許し、`''` で補う（`validateWindowConfig`）
 - **`processName`**: プロセス名で絞り込む（部分一致）
 - **`x`・`y`・`width`・`height`**: 指定した値だけ変更する（仮想スクリーン座標、3.1.5.5）。省略時は変更しない
 - **`moveToActiveMonitorCenter`**（既定 false）: マウスカーソルのあるモニターの中央へ移動する。`x`・`y` は計算した中央座標で置き換わる
@@ -442,7 +441,7 @@ CSV 形式（`data*.txt`）は v0.6.1 で廃止しました。経緯は v0.6.1 �
 タイトルを指定せずプロセス名だけで探したい場合は、`windowTitle` を全一致ワイルドカード `"*"` にします（空文字は完全一致で何にもマッチしないため）。
 
 - 登録フォームでタイトルを空にしてプロセス名だけ指定すると、保存時に自動的に `"*"` へ正規化されます（`normalizeWindowTitleForProcessOnly`）
-- データファイルを直接編集してタイトルを空のままにした場合も、読み込み時（寛容パース）に `"*"` へ補正され、書き戻されます。この補正は読み込みレポート（`last-load-report.json`）に `kind: "normalized"` として記録されます
+- QDL の外で変わったファイルでタイトルが空のままだった場合も、読み込み時（寛容パース）に `"*"` へ補正され、書き戻されます。この補正は読み込みレポート（5.3）に `kind: "normalized"` として記録されます
 
 #### 3.4.3. 使用例
 
@@ -698,10 +697,9 @@ QuickDashLauncherは、アイテムの重複を自動的に排除します。
 読み込みは「寛容パース」（`parseJsonDataFileLenient`）で行い、JSON として壊れていない限りファイル全体を捨てません。
 
 - **JSON 構文エラー・root/items の構造不正**: ファイル全体を「破損」として扱い、読み込みをスキップ。破損中は編集画面の保存・アイテム登録を拒否する（空データでの上書きを防ぐため）
-- **必須フィールド不足・未知の `type` などのアイテム単位の不正**: そのアイテムだけスキップし、他のアイテムは読み込む。不正なアイテムはファイル上には残す（人や AI が直せるように）。編集画面ではエラー付きで表示される
+- **必須フィールド不足・未知の `type` などのアイテム単位の不正**: そのアイテムだけスキップし、他のアイテムは読み込む。不正なアイテムはファイル上には残す（消さずに直せるように）。編集画面ではエラー付きで表示される
 - **`id` の欠落・不正・重複**: 8 文字の英数字 ID を採番し、ファイルへ 1 回だけ書き戻す。重複はファイル横断で判定し、2 件目以降を採番し直す
 - **`version` の欠落**: `"1.0"` を補って書き戻す
-- **`$schema` の欠落・不一致**: 同梱スキーマへの相対参照（`../schemas/data.schema.json`）に直して書き戻す
 - **`items` の要素がオブジェクトでない（`null` や文字列）**: 保持しようがないため削除して書き戻す
 - **JSON アイテムから表示用アイテムへの変換に失敗**: そのアイテムだけスキップし、読み込みレポートに `invalid` として記録する
 - **存在しないパス**: 読み込み時には確かめず、そのまま表示する。リンク切れはアイテム管理の「リンク切れを確認」で調べる。`.lnk` のパスが存在しないときは、リンク先を解析せず通常のアイテムとして扱う
@@ -713,22 +711,22 @@ QuickDashLauncherは、アイテムの重複を自動的に排除します。
 - **オプションの省略**: `depth`・`types` は既定値で展開する
 - **オプションの値が不正**（`depth` が -1 か 0 以上の整数でない、`types` が `file`/`folder`/`both` 以外など）: アイテム単位の不正として、フォルダ取込アイテムごとスキップする（5.1）
 
-### 5.3. 外部編集（人・AI による直接編集）への対応
+### 5.3. QDL の外での変更への備え
 
-データファイルはテキストエディタや AI エージェントで直接編集できます。QDL はファイルを監視しないので、**反映は起動時・メイン画面の再読込（F5）・アプリ内の操作に伴う再読込のとき**です。
+データファイルを手で編集する使い方はサポートしません。AI にアイテムを変えさせたいときは CLI（[qdl](../../features/cli.md)）を使います。それでも、古い版の QDL・同期ツール・手で直した場合など、ファイルが QDL の外で変わることはあるので、次の備えがあります。QDL はファイルを監視しないので、**反映は起動時・メイン画面の再読込（F5）・アプリ内の操作に伴う再読込のとき**です。
 
 | 仕組み | 内容 |
 | --- | --- |
 | 反映タイミング | 起動時・F5・完全リフレッシュ・CLI の `qdl reload`、またはアプリ内の操作・CLI の書き込みに伴う再読込。編集画面（アイテム管理）は表示のたびに読み直す |
-| 読み込みレポート | 起動時・F5・完全リフレッシュ・CLI の `reload` のたびに `config/last-load-report.json` を書き出す（アプリ内の操作による再読込では、補正・書き戻し・外部変更・破損など報告することがあるときだけ更新する）。直接編集した側が「受理されたか・何がスキップされたか」を確認する用途（トーストは AI から見えないため）。`files[]` にはデータファイルに加えてワークスペースファイル（`workspace.json` / `workspace-archive.json`）も並ぶ。詳細は[ワークスペースファイル形式](workspace-format.md)を参照 |
-| トースト | スキップまたは採番があったときだけ「データ: N 件読込・M 件スキップ・K 件に ID を採番（詳細: last-load-report.json）」の形で表示する（外部変更を検知したときは先頭が「外部編集されたデータ:」になる） |
-| 変更前スナップショット | 前回読み込み時（または QDL 自身の書き込み時）と内容が違うファイルを検知すると、**変更前の内容**を `config/backup/YYYY-MM-DDTHH-MM-SS_pre-external/` に保存する（`backupEnabled` が true のとき。`backupRetention` とは別枠で最新 10 件を保持）。直接編集で壊したときの戻し先。**検知は QDL 起動中の編集 → 次の再読込（F5・CLI の `qdl reload`、またはアプリ内の操作・CLI の書き込みに伴う再読込）のときだけ**（前回の内容はメモリ上で覚えているため、QDL 終了中に編集した内容は起動時に反映はされるが外部変更としては検知されず、スナップショットも作られない） |
+| 読み込みレポート | 読み込みのたびに結果（受理・スキップ・採番・補正・外部変更・破損）をまとめ、直近の 1 回分をメモリに持つ。ファイルには書き出さない。CLI の `qdl reload`・`qdl check` が返す（[CLI（qdl）](../../features/cli.md)）。データファイルに加えてワークスペースファイル（`workspace.json` / `workspace-archive.json`）も並ぶ。詳細は[ワークスペースファイル形式](workspace-format.md)を参照 |
+| トースト | スキップまたは採番があったときだけ「データ: N 件読込・M 件スキップ・K 件に ID を採番」の形で表示する（外部変更を検知したときは先頭が「外部編集されたデータ:」になる） |
+| 変更前スナップショット | 前回読み込み時（または QDL 自身の書き込み時）と内容が違うファイルを検知すると、**変更前の内容**を `config/backup/YYYY-MM-DDTHH-MM-SS_pre-external/` に保存する（`backupEnabled` が true のとき。`backupRetention` とは別枠で最新 10 件を保持）。QDL の外の変更で壊れたときの戻し先。**検知は QDL 起動中の編集 → 次の再読込（F5・CLI の `qdl reload`、またはアプリ内の操作・CLI の書き込みに伴う再読込）のときだけ**（前回の内容はメモリ上で覚えているため、QDL 終了中に編集した内容は起動時に反映はされるが外部変更としては検知されず、スナップショットも作られない） |
 | 楽観ロック | 編集画面の保存は全ファイルを全量上書きするため、読み込み時のファイル内容ハッシュを保存時に照合し、読み込み後に外部で変更されていれば保存を拒否して再読込する（`saveEditableItems` の `expectedHashes`） |
 | ID 指定の更新 | メイン画面と CLI からの編集・削除は毎回ディスクを読み直して該当 ID だけ差し替えるため、外部変更と共存できる |
-| JSON Schema | 同梱スキーマ（`assets/schemas/data.schema.json`）を起動時に `config/schemas/` へコピーし、データファイルの `$schema` から相対参照する。アイテムは `type` で判別する `oneOf`、各アイテムは `additionalProperties: false`（寛容パースが黙って落とす未知フィールドを、書く前にエディタで気づけるように）。**アプリ実行時にはスキーマ検証しない**（検証器を 2 つ持たない）。スキーマは型定義から `npm run schema:generate` で生成し、単体テストがドリフトを検知する。詳細は [README の「AI・手動編集」](README.md#ai手動編集) |
-| config/README.md | 直接編集する人・AI 向けの作業指示を起動時に生成する（雛形は `assets/config-readme.md`） |
 
-#### last-load-report.json の形式
+#### 読み込みレポートの形式
+
+CLI の `qdl check` が返す `filesWithIssues` などは、この形式の一部です（[CLI（qdl）](../../features/cli.md)）。
 
 ```json
 {
@@ -789,7 +787,7 @@ QuickDashLauncherは、アイテムの重複を自動的に排除します。
 | `files[]` | データファイル（`datafiles/data*.json`）に加えて、ワークスペースファイル（`workspace.json` / `workspace-archive.json`）も同じ形式で並ぶ |
 | `files[].status` | `ok` / `corrupted`（JSON として壊れている。`error` に理由） / `unreadable`（読めない） |
 | `files[].accepted` | 受理したアイテム数（`dir` の展開前。JSON 上の要素数） |
-| `files[].issues[].kind` | `invalid`（スキップ） / `idAssigned`（採番） / `normalized`（構造の補正。`version` や `$schema` の補完、プロセス名だけのウィンドウ操作の `windowTitle` を `"*"` にする補正） |
+| `files[].issues[].kind` | `invalid`（スキップ） / `idAssigned`（採番） / `normalized`（構造の補正。`version` の補完、プロセス名だけのウィンドウ操作の `windowTitle` を `"*"` にする補正） |
 | `files[].issues[].index` | 書き戻し後の `items` 配列内の位置。ファイル単位の問題や削除した要素は `-1`（`reason` に元の位置） |
 | `files[].issues[].section` | 問題があった配列名（`workspaces` / `groups` / `items`）。ワークスペースファイルのときだけ付く（データファイルは `items` しか無いため省略） |
 | `files[].rewritten` | 採番・補正のためファイルを書き戻したか |
@@ -802,7 +800,6 @@ QuickDashLauncherは、アイテムの重複を自動的に排除します。
 | 対象 | 場所 | 主な型 |
 | --- | --- | --- |
 | ファイルに書く JSON の形 | `src/common/types/json-data.ts` | `JsonDataFile`、`JsonItem`（union）、`JsonLauncherItem`・`JsonDirItem`・`JsonGroupItem`・`JsonWindowItem`・`JsonClipboardItem`・`JsonLayoutItem`、`JsonDirOptions`、型ガード `isJson*Item()` |
-| JSON Schema | `assets/schemas/data.schema.json` | `json-data.ts` から `npm run schema:generate`（`scripts/generate-schemas.ts`）で生成。起動時に設定フォルダの `schemas/` へコピーされ、データファイルの `$schema` から参照される |
 | 表示・実行用の内部型 | `src/common/types/launcher.ts` | `LauncherItem`・`GroupItem`・`WindowItem`・`ClipboardItem`・`LayoutItem`・`AppItem`、`WindowConfig`、`LayoutWindowEntry` |
 | 検索 | `src/common/types/search.ts` | `SearchMode`・`SearchHistoryEntry`・`SearchHistoryState` |
 
@@ -812,7 +809,6 @@ QuickDashLauncherは、アイテムの重複を自動的に排除します。
 - ファイル上の型（`Json*`）と画面で扱う内部型は別。読み込み時に `src/main/services/data/jsonItemConverter.ts` が JSON アイテムを内部型へ変換する（フォルダ取込の展開・`.lnk` の解析を含む）
 - 内部型の `type` は JSON 側と語彙が違う。`JsonLauncherItem`（`type: "item"`）は、パスから判定した実行タイプ（`url` / `file` / `folder` / `app` / `customUri`）を `type` に持つ `LauncherItem` になる
 - 内部型の `sourceFile`・`id` は、編集・削除のときに元のファイルとアイテムを特定するために使う（`lineNumber` は非推奨）
-- `json-data.ts` を変えたら `npm run schema:generate` でスキーマを再生成してコミットする。生成結果とコミット済みファイルの一致は単体テストが検証する
 
 ## 7. 関連ドキュメント
 

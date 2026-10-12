@@ -676,7 +676,7 @@ CLI でできることは [QuickDashLauncher CLI](../features/cli.md) を参照�
 
 #### 補足
 
-- ボタンの下に「AI エージェントにデータファイルを編集させるときは、このフォルダの README.md を読ませてください」という案内を表示する。`README.md` は起動時に生成される作業指示（[ファイル形式一覧の「AI・手動編集」](../architecture/file-formats/README.md#ai手動編集)）
+- ボタンの下に「AI エージェントにアイテムやワークスペースを変えさせるときは、ファイルを直接書かせずに CLI（qdl）を使わせてください」という案内を表示する。ファイルを直接書き換える使い方はサポートしない（[ファイル形式一覧の「QDL の外での変更」](../architecture/file-formats/README.md#qdl-の外での変更)・[CLI を使えるようにする](#quickdashlauncher-cli-を使えるようにする)）
 
 #### うまくいかないとき
 

@@ -151,8 +151,10 @@ const AdminOtherTab: React.FC = () => {
                 📂 設定フォルダを開く
               </Button>
               <p className="help-card-description">
-                AI エージェントにデータファイルを編集させるときは、このフォルダの README.md
-                を読ませてください（編集の作法・反映方法・結果の確認先が書いてあります）。
+                AI
+                エージェントにアイテムやワークスペースを変えさせるときは、ファイルを直接書かせずに
+                CLI（qdl）を使わせてください（基本設定の「QuickDashLauncher CLI
+                を使えるようにする」をオンにします）。
               </p>
             </div>
           </div>
