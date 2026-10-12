@@ -43,7 +43,6 @@ import { Button } from './ui/Button';
 interface EditModeViewProps {
   editing: AdminItemEditing;
   loadError: string | null;
-  onExitEditMode: () => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
   dataFileTabs: DataFileTab[];
@@ -86,7 +85,6 @@ function isTextInputTarget(target: EventTarget | null): boolean {
 const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   editing,
   loadError,
-  onExitEditMode,
   searchQuery,
   onSearchChange,
   dataFileTabs,
@@ -459,20 +457,6 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     showInfo(`${addedCount} 件を ${getFileLabel(selectedDataFile)} に追加しました（保存で確定）`);
   };
 
-  const handleExitEditMode = () => {
-    if (hasUnsavedChanges) {
-      openConfirmDialog(
-        {
-          message: '未保存の変更があります。アイテム管理を終了しますか？',
-          danger: true,
-        },
-        onExitEditMode
-      );
-    } else {
-      onExitEditMode();
-    }
-  };
-
   /** 削除の確認を出してから削除する（行のボタン・右クリック・Delete キー・一括削除の共通経路） */
   const handleRequestDelete = useCallback(
     (items: EditableJsonItem[]) => {
@@ -539,9 +523,8 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     // 入力欄の中のキーは文字編集なので、画面のショートカットとして扱わない
     if (isTextInputTarget(e.target)) return;
 
-    if (e.key === 'Escape') {
-      handleExitEditMode();
-    } else if (e.key === 'Delete') {
+    // Escape では管理ウィンドウを閉じない（誤操作防止。閉じるのは × かホットキー）
+    if (e.key === 'Delete') {
       handleDeleteSelected();
     }
   };
