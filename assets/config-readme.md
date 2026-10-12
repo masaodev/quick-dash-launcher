@@ -3,11 +3,24 @@
 > このファイルは QuickDashLauncher v{{APP_VERSION}} が起動時に生成します。編集しても次回起動で上書きされます。
 > 設定フォルダ: `{{CONFIG_DIR}}`
 
+## CLI（qdl）が使えるなら、まずそれを使う
+
+メイン画面のアイテムとワークスペースのアイテム・グループの追加・変更・削除は、ファイルを書かずに CLI（`qdl`）で行う。QuickDashLauncher（以下 QDL）が検証して保存し、結果を JSON で返し、画面にも反映する（F5 不要。QDL が未起動なら起動する）。
+
+- 最初に `qdl status` を実行し、`configFolder` がこのフォルダ（`{{CONFIG_DIR}}`）と同じか確かめる。開発用のインスタンス
+  （`<名前>-quick-dash-launcher`）は `QDL_INSTANCE=<名前>` を付けて呼ぶ。`qdl` が見つからなければ、使う人に
+  「基本設定」→「コマンドライン（qdl）を使えるようにする」をオンにしてもらう（それまではこの先のとおりファイルを書く）
+- 使い方は `qdl help` と各段の `--help`。`qdl launcher item`・`qdl workspace item`・`qdl workspace group` に `list`／`add`／`update`／`remove`、ほかに `qdl reload`・`qdl check`
+- 対象は id か表示名の完全一致（複数に当たると何も変えず `ambiguous` と候補が返るので、id で指定し直す）。
+  `--path` の相対パスは実行したフォルダが基準。`--dry-run` を付けると書かずに結果だけ返る
+- 失敗すると標準出力に `{"error":{"code":…,"message":…}}`（終了コード 1 か 2。`code` で分岐する）。3（QDL に接続できない）・4（版が合わない）は標準エラーの文だけ
+- CLI に無い変更（`settings.json`・タブの構成・ワークスペース自体・アーカイブ）は、この先の決まりでファイルを書き `qdl reload` で反映する
+
 ## まず守ること
 
 - 編集していいのは `datafiles/data*.json`・`settings.json`・`workspace.json`・`workspace-archive.json` だけ。
   `icon-cache/`・`backup/`・`clipboard-data/`・`workspace-ui-state.json`・`last-load-report.json`・`schemas/`・この `README.md` は触らない
-- QuickDashLauncher（以下 QDL）の「アイテム管理」画面やワークスペース画面を操作しながら編集しない
+- QDL の「アイテム管理」画面やワークスペース画面を操作しながら編集しない
   （QDL 側の保存が競合として拒否される。QDL が起動中でも、操作していなければ編集してよい）
 - ファイルは丸ごと有効な JSON として書く（途中状態で保存しない）。文字コードは UTF-8（BOM なし）
 - `"$schema"` キーはそのまま残す。エディタがこれを見て補完・検証する（無ければ QDL が補う）
@@ -135,15 +148,15 @@
 
 ## 反映
 
-- QDL はファイルを監視しない。編集後はメイン画面で **F5**、または QDL を再起動する
+- QDL はファイルを監視しない。編集後は `qdl reload`、またはメイン画面で **F5**、または QDL を再起動する
   （`workspace.json` も F5 で読み直され、ワークスペース画面に反映される）
 - `settings.json` の変更も F5 で再適用される（ホットキー・自動起動・ワークスペースの位置/透過など）。
   ウィンドウサイズ・タブ構成などは QDL の再起動が必要
 
 ## 結果の確認
 
-- 起動時・F5 のたびに `last-load-report.json` が書き直される。編集後は必ず読む
-  （QDL 内の操作による再読込では、報告することがあるときだけ更新される）
+- 起動時・F5・`qdl reload` のたびに `last-load-report.json` が書き直される。編集後は必ず読む（`qdl reload` の応答にも
+  問題のあったファイルだけが入る。QDL 内の操作による再読込では、報告することがあるときだけ更新される）
 - `files[]` にはデータファイルと `workspace.json`・`workspace-archive.json` が並ぶ。
   `summary.skipped` が 0 で、`files[].issues` に `kind: "invalid"` が無ければ全部受理された
 - ワークスペースの `issues[]` には `section`（`workspaces` / `groups` / `items`）が付き、`index` はその配列内の位置
