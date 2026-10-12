@@ -42,7 +42,7 @@ export class SettingsService {
     cliEnabled: false,
     backupEnabled: false,
     backupRetention: 10,
-    showDataFileTabs: false,
+    showDataFileTabs: true,
     defaultFileTab: DEFAULT_DATA_FILE,
     dataFileTabs: [{ files: [DEFAULT_DATA_FILE], name: 'メイン' }],
     dataFileLabels: { [DEFAULT_DATA_FILE]: 'メイン用データファイル' },
