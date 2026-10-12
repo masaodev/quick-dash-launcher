@@ -85,7 +85,7 @@ export interface AppSettings {
   backupEnabled: boolean;
   /** バックアップファイルの保存件数上限（デフォルト: 10） */
   backupRetention: number;
-  /** タブ表示の有効/無効（デフォルト: false） */
+  /** タブ表示の有効/無効（デフォルト: true） */
   showDataFileTabs: boolean;
   /** デフォルトで表示するタブ（タブ表示ON時のみ有効、デフォルト: 'datafiles/data.json'） */
   defaultFileTab: string;
