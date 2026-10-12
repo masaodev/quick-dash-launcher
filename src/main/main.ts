@@ -1,7 +1,6 @@
 import * as os from 'os';
 import * as path from 'path';
 import type { Server } from 'net';
-import { pathToFileURL } from 'url';
 
 import { app, globalShortcut, ipcMain, session } from 'electron';
 import { IPC_CHANNELS } from '@common/ipcChannels';
@@ -91,11 +90,8 @@ if (EnvConfig.isDevelopment) {
 }
 
 app.whenReady().then(async () => {
-  // 画面が QDL の HTML の外へ移らないようにする（ウィンドウを作る前に付ける）
-  installNavigationGuard({
-    devServerUrl: EnvConfig.isDevelopment ? EnvConfig.devServerUrl : undefined,
-    appRootUrl: pathToFileURL(path.join(__dirname, '..') + path.sep).href,
-  });
+  // 画面がページ側から別の URL へ移らないようにする（ウィンドウを作る前に付ける）
+  installNavigationGuard();
 
   // 設定フォルダを先に作成（スプラッシュのアイコンパス解決に必要）
   PathManager.ensureDirectories();

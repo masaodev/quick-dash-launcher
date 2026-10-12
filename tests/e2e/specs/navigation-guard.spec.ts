@@ -4,39 +4,38 @@ import { test, expect } from '../fixtures/electron-app';
 import { TestUtils } from '../helpers/test-utils';
 
 /**
- * 画面が QDL の HTML の外へ移らない（main の installNavigationGuard）
+ * 画面がページ側から別の URL へ移らない（main の installNavigationGuard）
  *
  * 止めた移動は Playwright の側で「移動中」のまま残り、ページへのロケーターが待ち続けるので、
- * 確かめるのはメインプロセスから webContents に直接聞く
+ * メインプロセスから webContents に直接聞く。ガードが壊れていれば、通信できなくてもエラーページが
+ * 開いて URL が変わるので落ちる（about:blank への移動は Electron が通知を出さず止められないので試さない）
  */
-async function mainPageState(
-  electronApp: ElectronApplication
-): Promise<{ url: string; itemCount: number }> {
-  return electronApp.evaluate(async ({ BrowserWindow }) => {
+async function mainWindowUrl(electronApp: ElectronApplication): Promise<string> {
+  return electronApp.evaluate(({ BrowserWindow }) => {
     const win = BrowserWindow.getAllWindows().find((w) => w.getTitle() === 'QuickDashLauncher');
-    if (!win) return { url: '', itemCount: 0 };
-    const itemCount = await win.webContents.executeJavaScript(
-      'document.querySelectorAll(".item").length'
-    );
-    return { url: win.webContents.getURL(), itemCount };
+    return win?.webContents.getURL() ?? '';
   });
 }
 
+async function runInMainWindow(electronApp: ElectronApplication, script: string): Promise<void> {
+  await electronApp.evaluate(({ BrowserWindow }, js) => {
+    const win = BrowserWindow.getAllWindows().find((w) => w.getTitle() === 'QuickDashLauncher');
+    void win?.webContents.executeJavaScript(js);
+  }, script);
+}
+
 test.describe('QuickDashLauncher - ナビゲーションの制御', () => {
-  test('メインウィンドウから外部のページへは移らない', async ({ electronApp, mainWindow }) => {
+  test('メインウィンドウはページ側から外部のページへ移らない', async ({
+    electronApp,
+    mainWindow,
+  }) => {
     const utils = new TestUtils(mainWindow);
     await utils.waitForPageLoad();
-    const before = await mainPageState(electronApp);
-    expect(before.itemCount).toBeGreaterThan(0);
+    const before = await mainWindowUrl(electronApp);
+    expect(before).toMatch(/index\.html$/);
 
-    await electronApp.evaluate(({ BrowserWindow }) => {
-      const win = BrowserWindow.getAllWindows().find((w) => w.getTitle() === 'QuickDashLauncher');
-      void win?.webContents.executeJavaScript("window.location.href = 'https://example.com/'");
-    });
+    await runInMainWindow(electronApp, "window.location.href = 'https://example.com/'");
     await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    const after = await mainPageState(electronApp);
-    expect(after.url).toBe(before.url);
-    expect(after.itemCount).toBe(before.itemCount);
+    expect(await mainWindowUrl(electronApp)).toBe(before);
   });
 });

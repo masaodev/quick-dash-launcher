@@ -1,39 +1,60 @@
 import { describe, it, expect, vi } from 'vitest';
+import type { WebContents } from 'electron';
 
-vi.mock('electron', () => ({ app: { on: vi.fn() } }));
+const appOn = vi.hoisted(() => vi.fn());
+vi.mock('electron', () => ({ app: { on: appOn } }));
 
-import { isAllowedNavigation } from './navigationGuard';
+import { guardNavigation, installNavigationGuard } from './navigationGuard';
 
-const prod = {
-  appRootUrl: 'file:///C:/Users/me/AppData/Local/Programs/qdl/resources/app.asar/dist/',
-};
-const dev = { ...prod, devServerUrl: 'http://localhost:9001' };
+type Listener = (
+  event: { preventDefault: () => void; url?: string; isMainFrame?: boolean },
+  url?: string
+) => void;
 
-describe('isAllowedNavigation', () => {
-  it('本番の HTML のフォルダの中は許す（大文字・小文字は区別しない）', () => {
-    expect(isAllowedNavigation(`${prod.appRootUrl}index.html`, prod)).toBe(true);
-    expect(
-      isAllowedNavigation(
-        'file:///c:/users/me/appdata/local/programs/qdl/resources/app.asar/dist/workspace.html?groupId=a',
-        prod
-      )
-    ).toBe(true);
+/** on で登録されたリスナーを覚える、偽の webContents */
+function fakeContents(type: string) {
+  const listeners = new Map<string, Listener>();
+  const contents = {
+    getType: () => type,
+    on: vi.fn((name: string, listener: Listener) => listeners.set(name, listener)),
+  };
+  return { contents: contents as unknown as WebContents, listeners };
+}
+
+describe('guardNavigation', () => {
+  it('画面では、メインフレームの移動（will-navigate）と iframe の移動（will-frame-navigate）を止める', () => {
+    const { contents, listeners } = fakeContents('window');
+    guardNavigation(contents);
+
+    const navigate = { preventDefault: vi.fn() };
+    listeners.get('will-navigate')!(navigate, 'https://example.com/');
+    expect(navigate.preventDefault).toHaveBeenCalled();
+
+    const frame = { preventDefault: vi.fn(), url: 'https://example.com/frame', isMainFrame: false };
+    listeners.get('will-frame-navigate')!(frame);
+    expect(frame.preventDefault).toHaveBeenCalled();
+
+    // メインフレームは will-navigate が止めるので、will-frame-navigate では扱わない
+    const main = { preventDefault: vi.fn(), url: 'https://example.com/', isMainFrame: true };
+    listeners.get('will-frame-navigate')!(main);
+    expect(main.preventDefault).not.toHaveBeenCalled();
   });
 
-  it('about:blank は許す（子ウィンドウは about:blank で開いて HTML を書き込む）', () => {
-    expect(isAllowedNavigation('about:blank', prod)).toBe(true);
+  it('DevTools など画面でないものには付けない', () => {
+    const { contents, listeners } = fakeContents('remote');
+    guardNavigation(contents);
+    expect(listeners.size).toBe(0);
   });
+});
 
-  it('外部のページ・フォルダの外のファイル・壊れた URL は止める', () => {
-    expect(isAllowedNavigation('https://example.com/', prod)).toBe(false);
-    expect(isAllowedNavigation('file:///C:/Windows/win.ini', prod)).toBe(false);
-    expect(isAllowedNavigation('javascript:alert(1)', prod)).toBe(false);
-    expect(isAllowedNavigation('not a url', prod)).toBe(false);
-  });
+describe('installNavigationGuard', () => {
+  it('作られた webContents に guardNavigation を付ける', () => {
+    installNavigationGuard();
+    expect(appOn).toHaveBeenCalledWith('web-contents-created', expect.any(Function));
 
-  it('開発時は Vite の URL（同じポート）だけを許す', () => {
-    expect(isAllowedNavigation('http://localhost:9001/admin.html', dev)).toBe(true);
-    expect(isAllowedNavigation('http://localhost:9002/admin.html', dev)).toBe(false);
-    expect(isAllowedNavigation('http://localhost:9001/admin.html', prod)).toBe(false);
+    const { contents, listeners } = fakeContents('window');
+    const onCreated = appOn.mock.calls[0][1] as (event: unknown, c: WebContents) => void;
+    onCreated({}, contents);
+    expect([...listeners.keys()]).toEqual(['will-navigate', 'will-frame-navigate']);
   });
 });
