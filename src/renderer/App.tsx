@@ -45,6 +45,8 @@ import { useShowKeyboardHints } from './hooks/useShowKeyboardHints';
 import { useIconFetcher } from './hooks/useIconFetcher';
 import { useDragAndDrop } from './hooks/useDragAndDrop';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { useWindowOperations } from './hooks/useWindowOperations';
+import { useWindowMultiSelect } from './hooks/useWindowMultiSelect';
 import { useGlobalLoading } from './hooks/useGlobalLoading';
 import { useToast } from './hooks/useToast';
 
@@ -326,6 +328,9 @@ function App(): React.ReactElement {
   // ウィンドウ検索モードで仮想デスクトップのタブを出すか（2 つ以上あるとき）
   const showDesktopTabs =
     searchMode === 'window' && !!desktopInfo?.supported && desktopInfo.desktopCount > 1;
+  // 件数（n件）を出すか: 通常モードでタブ表示 OFF／ウィンドウ検索でデスクトップのタブが出ていない
+  const showCountBar =
+    (!showDataFileTabs && searchMode === 'normal') || (searchMode === 'window' && !showDesktopTabs);
 
   const filteredItems = useMemo(() => {
     const itemsToFilter =
@@ -366,7 +371,18 @@ function App(): React.ReactElement {
     [openEditWindow]
   );
 
-  const { handleKeyDown, closeWindowItem } = useKeyboardShortcuts({
+  const windowOps = useWindowOperations({ removeWindowFromList, refreshWindowsKeepingSelection });
+  const windowSelection = useWindowMultiSelect({ searchMode, filteredItems, selectedIndex });
+  const markedCount = windowSelection.markedWindows.length;
+
+  /** 右クリック（2 つ以上を選んでいるとき）の「閉じる」。キーの Ctrl+D と同じく確認の帯を出す */
+  const handleMenuCloseMarked = () => {
+    const targets = windowSelection.markedWindows;
+    if (targets.length >= 2) windowSelection.setPendingClose(targets);
+    else void windowOps.closeWindows(targets);
+  };
+
+  const { handleKeyDown } = useKeyboardShortcuts({
     showDataFileTabs,
     activeTab,
     dataFileTabs,
@@ -385,8 +401,8 @@ function App(): React.ReactElement {
     windowList,
     toggleSearchMode: handleToggleSearchMode,
     refreshWindows: handleRefreshWindows,
-    refreshWindowsKeepingSelection,
-    removeWindowFromList,
+    windowOps,
+    windowSelection,
     reloadData: handleReloadItems,
     desktopCount: desktopInfo?.desktopCount || 0,
     activeDesktopTab,
@@ -645,10 +661,14 @@ function App(): React.ReactElement {
         />
       )}
 
-      {((!showDataFileTabs && searchMode === 'normal') ||
-        (searchMode === 'window' && !showDesktopTabs)) && (
+      {(showCountBar || markedCount > 0) && (
         <div className="search-info-bar">
-          <LauncherItemCountDisplay count={filteredItems.length} />
+          {showCountBar && <LauncherItemCountDisplay count={filteredItems.length} />}
+          {markedCount > 0 && (
+            <span className="selection-badge" data-testid="window-selection-badge">
+              {markedCount} 件を選択中
+            </span>
+          )}
         </div>
       )}
 
@@ -677,9 +697,32 @@ function App(): React.ReactElement {
         onCopyShortcutParentPath={handleCopyShortcutParentPath}
         onOpenShortcutParentFolder={handleOpenShortcutParentFolder}
         onEditItem={handleEditItem}
-        onRefreshWindows={refreshWindowsKeepingSelection}
-        onCloseWindow={closeWindowItem}
+        onCloseWindow={async (win) => {
+          await windowOps.closeWindows([win]);
+        }}
+        onPinWindows={windowOps.togglePinned}
+        onMoveWindows={(wins, desktopNumber) => windowOps.moveToDesktop(wins, desktopNumber)}
+        windowSelection={{
+          isMarked: windowSelection.isMarked,
+          markedCount,
+          toggle: windowSelection.toggle,
+          selectRangeTo: windowSelection.selectRangeTo,
+          onMenuClose: handleMenuCloseMarked,
+          onMenuPin: (pin) => void windowOps.togglePinned(windowSelection.markedWindows, pin),
+          onMenuMove: (desktopNumber) =>
+            void windowOps.moveToDesktop(windowSelection.markedWindows, desktopNumber),
+        }}
       />
+
+      {searchMode === 'window' && windowSelection.pendingClose && (
+        <div className="window-close-confirm" role="alert" data-testid="window-close-confirm">
+          <span>{windowSelection.pendingClose.length} 個のウィンドウを閉じます</span>
+          <span>
+            <strong>Enter</strong>:閉じる{'　'}
+            <strong>Esc</strong>:やめる
+          </span>
+        </div>
+      )}
 
       {!progressState.isActive && missingIconCount > 0 && (
         <MissingIconNotice missingCount={missingIconCount} onFetchClick={handleFetchMissingIcons} />
@@ -694,6 +737,7 @@ function App(): React.ReactElement {
           searchMode={searchMode}
           canSwitchDataFileTab={showDataFileTabs && dataFileTabs.length > 1}
           canSwitchDesktopTab={showDesktopTabs}
+          markedCount={markedCount}
           canMoveToDesktop={
             !!desktopInfo?.desktopCount && desktopInfo.desktopCount > 1 && activeDesktopTab > 0
           }

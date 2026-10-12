@@ -35,6 +35,8 @@ let tray: Tray | null = null;
 let windowPinMode: WindowPinMode = EnvConfig.windowPinMode ?? 'normal';
 let isFirstLaunchMode: boolean = false;
 let isModalMode: boolean = false;
+// メインウィンドウのページで Esc を受けるか（複数選択・確認の帯があるあいだ。レンダラーが知らせる）
+let escapeHandledByPage = false;
 let windowShownAt = 0; // メインウィンドウを最後に表示した時刻（表示直後のフォーカスの揺れ対策）
 
 /** 表示直後のフォーカスの揺れが収まるまでの時間（ms）。この間のblurは収まってから移動先を確認する */
@@ -212,6 +214,8 @@ export async function createWindow(): Promise<BrowserWindow> {
 
   mainWindow.webContents.on('before-input-event', (event, input) => {
     if (input.key === 'Escape' && input.type === 'keyDown') {
+      // ページで取り消すものがある（複数選択・確認の帯）あいだは、ページに渡して隠さない
+      if (escapeHandledByPage) return;
       event.preventDefault();
       // 以下の場合はEscapeキーで閉じない
       // - 初回起動モード
@@ -360,6 +364,13 @@ export async function registerGlobalShortcut(): Promise<void> {
   } catch (error) {
     windowLogger.error({ error }, 'ホットキーサービスの初期化に失敗しました');
   }
+}
+
+/**
+ * メインウィンドウの Esc をページで受けるかを設定する（true のあいだは Esc で隠さない）
+ */
+export function setEscapeHandledByPage(handled: boolean): void {
+  escapeHandledByPage = handled;
 }
 
 export function getMainWindow(): BrowserWindow | null {

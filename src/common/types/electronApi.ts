@@ -128,6 +128,8 @@ export interface ElectronAPI {
   // 3段階ピンモードAPI
   getWindowPinMode: () => Promise<WindowPinMode>;
   cycleWindowPinMode: () => Promise<WindowPinMode>;
+  /** true のあいだ、メインウィンドウの Esc を隠す処理に回さずページで受ける（複数選択の解除・確認の取り消し） */
+  setEscapeHandledByPage: (handled: boolean) => void;
   registerItems: (items: RegisterItem[]) => Promise<void>;
   isDirectory: (filePath: string) => Promise<boolean>;
   /**
@@ -431,6 +433,12 @@ export interface ElectronAPI {
   onWindowMenuAddToWorkspace: (
     callback: (payload: { windowInfo: WindowInfo; includePosition: boolean }) => void
   ) => () => void;
+  /** ウィンドウ検索で 2 つ以上を選んでいるときの右クリックメニュー */
+  showWindowsContextMenu: (count: number, desktopInfo: VirtualDesktopInfo) => Promise<void>;
+  onWindowsMenuClose: (callback: () => void) => () => void;
+  /** pin: true で固定、false で固定解除 */
+  onWindowsMenuPin: (callback: (pin: boolean) => void) => () => void;
+  onWindowsMenuMoveToDesktop: (callback: (desktopNumber: number) => void) => () => void;
   /** ウィンドウ検索結果の右クリック「ウィンドウを閉じる」（Ctrl+D と同じ） */
   onWindowMenuClose: (callback: (windowInfo: WindowInfo) => void) => () => void;
   onMoveWindowToDesktop: (

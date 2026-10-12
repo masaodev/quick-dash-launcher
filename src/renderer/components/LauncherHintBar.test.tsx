@@ -46,7 +46,7 @@ describe('LauncherHintBar', () => {
         canMoveToDesktop={false}
       />
     );
-    expect(hintTexts()).toEqual(['Ctrl+P', 'Ctrl+D']);
+    expect(hintTexts()).toEqual(['Ctrl+P', 'Ctrl+D', 'Shift+↑/↓']);
     rerender(
       <LauncherHintBar
         searchMode="window"
@@ -55,6 +55,20 @@ describe('LauncherHintBar', () => {
         canMoveToDesktop
       />
     );
-    expect(hintTexts()).toEqual(['Ctrl+P', 'Ctrl+D', 'Tab', 'Ctrl+←/→']);
+    expect(hintTexts()).toEqual(['Ctrl+P', 'Ctrl+D', 'Tab', 'Ctrl+←/→', 'Shift+↑/↓']);
+  });
+  it('ウィンドウ検索で選んでいるときは、選んだものへの操作と Esc を出す', () => {
+    render(
+      <LauncherHintBar
+        searchMode="window"
+        canSwitchDataFileTab={false}
+        canSwitchDesktopTab
+        canMoveToDesktop={false}
+        markedCount={3}
+      />
+    );
+    expect(screen.getByTestId('keyboard-hint-bar').textContent).toBe(
+      'Ctrl+D:3 件を閉じる　Ctrl+P:3 件を固定/解除　Esc:選択を外す'
+    );
   });
 });

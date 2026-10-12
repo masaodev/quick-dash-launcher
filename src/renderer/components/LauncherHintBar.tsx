@@ -22,6 +22,8 @@ interface LauncherHintBarProps {
   canSwitchDesktopTab: boolean;
   /** ウィンドウ検索モード: 仮想デスクトップ番号のタブを表示中（Ctrl+←/→ で移動できる） */
   canMoveToDesktop: boolean;
+  /** ウィンドウ検索モード: 選んでいるウィンドウの数（1 つ以上なら、選んだものへの操作を出す） */
+  markedCount?: number;
 }
 
 interface Hint {
@@ -34,21 +36,30 @@ const LauncherHintBar: React.FC<LauncherHintBarProps> = ({
   canSwitchDataFileTab,
   canSwitchDesktopTab,
   canMoveToDesktop,
+  markedCount = 0,
 }) => {
   const hints: Hint[] =
-    searchMode === 'window'
+    searchMode === 'window' && markedCount > 0
       ? [
-          { keys: 'Ctrl+P', label: 'ピン留め/解除' },
-          { keys: 'Ctrl+D', label: 'ウィンドウを閉じる' },
-          ...(canSwitchDesktopTab ? [{ keys: 'Tab', label: 'デスクトップ切替' }] : []),
+          { keys: 'Ctrl+D', label: `${markedCount} 件を閉じる` },
+          { keys: 'Ctrl+P', label: `${markedCount} 件を固定/解除` },
+          { keys: 'Esc', label: '選択を外す' },
           ...(canMoveToDesktop ? [{ keys: 'Ctrl+←/→', label: '仮想デスクトップ移動' }] : []),
         ]
-      : [
-          { keys: 'F2', label: '編集' },
-          { keys: 'Shift+Enter', label: '親フォルダーを開く' },
-          { keys: 'Ctrl+↑/↓', label: '検索履歴' },
-          ...(canSwitchDataFileTab ? [{ keys: 'Tab', label: 'タブ切替' }] : []),
-        ];
+      : searchMode === 'window'
+        ? [
+            { keys: 'Ctrl+P', label: 'ピン留め/解除' },
+            { keys: 'Ctrl+D', label: 'ウィンドウを閉じる' },
+            ...(canSwitchDesktopTab ? [{ keys: 'Tab', label: 'デスクトップ切替' }] : []),
+            ...(canMoveToDesktop ? [{ keys: 'Ctrl+←/→', label: '仮想デスクトップ移動' }] : []),
+            { keys: 'Shift+↑/↓', label: '複数選択' },
+          ]
+        : [
+            { keys: 'F2', label: '編集' },
+            { keys: 'Shift+Enter', label: '親フォルダーを開く' },
+            { keys: 'Ctrl+↑/↓', label: '検索履歴' },
+            ...(canSwitchDataFileTab ? [{ keys: 'Tab', label: 'タブ切替' }] : []),
+          ];
 
   return (
     <div className="shortcut-hint" data-testid="keyboard-hint-bar">

@@ -263,3 +263,11 @@
   border-bottom: var(--border-light);
 }
 
+/* ウィンドウ検索の複数選択: 選んでいる数 */
+.selection-badge {
+  padding: 0 var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  font-weight: bold;
+}

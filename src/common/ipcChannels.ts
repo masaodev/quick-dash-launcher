@@ -70,6 +70,7 @@ export const IPC_CHANNELS = {
   // ウィンドウ操作
   GET_WINDOW_PIN_MODE: 'get-window-pin-mode',
   CYCLE_WINDOW_PIN_MODE: 'cycle-window-pin-mode',
+  SET_ESCAPE_HANDLED_BY_PAGE: 'set-escape-handled-by-page',
   QUIT_APP: 'quit-app',
   SHOW_EDIT_WINDOW: 'show-edit-window',
   HIDE_EDIT_WINDOW: 'hide-edit-window',
@@ -292,6 +293,11 @@ export const IPC_CHANNELS = {
   EVENT_WINDOW_MENU_ACTIVATE: 'window-menu-activate',
   EVENT_WINDOW_MENU_ADD_TO_WORKSPACE: 'window-menu-add-to-workspace',
   EVENT_WINDOW_MENU_CLOSE: 'window-menu-close',
+  // コンテキストメニュー - 複数のウィンドウ（ウィンドウ検索で 2 つ以上を選んでいるとき）
+  SHOW_WINDOWS_CONTEXT_MENU: 'show-windows-context-menu',
+  EVENT_WINDOWS_MENU_CLOSE: 'windows-menu-close',
+  EVENT_WINDOWS_MENU_PIN: 'windows-menu-pin',
+  EVENT_WINDOWS_MENU_MOVE_TO_DESKTOP: 'windows-menu-move-to-desktop',
   MOVE_WINDOW_TO_DESKTOP: 'move-window-to-desktop',
   PIN_WINDOW: 'pin-window',
   UNPIN_WINDOW: 'unpin-window',
