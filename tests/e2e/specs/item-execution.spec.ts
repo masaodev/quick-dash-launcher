@@ -195,6 +195,12 @@ test.describe('QuickDashLauncher - Shift+Enter で親フォルダーを開く', 
       displayName: 'E2E存在しないファイル',
       path: 'C:\\E2E存在しないフォルダ\\none.txt',
     });
+    configHelper.addItemToFile('data.json', {
+      id: 'e2epar03',
+      type: 'item',
+      displayName: 'E2E環境変数のパス',
+      path: '%WINDIR%\\win.ini',
+    });
     await utils.waitForPageLoad();
     await mainWindow.reload();
     await utils.waitForPageLoad();
@@ -215,6 +221,15 @@ test.describe('QuickDashLauncher - Shift+Enter で親フォルダーを開く', 
         .toEqual([expect.stringMatching(/\\notepad\.exe$/i)]);
     });
 
+    await test.step('環境変数を含むパスは展開して開く', async () => {
+      await utils.searchFor('E2E環境変数のパス');
+      await expect(mainWindow.locator('.item', { hasText: 'E2E環境変数のパス' })).toBeVisible();
+      await mainWindow.keyboard.press('Shift+Enter');
+      await expect
+        .poll(() => electronApp.evaluate(() => globalThis.__e2eShownInFolder?.[1] ?? ''))
+        .toMatch(/^[A-Z]:\\Windows\\win\.ini$/i);
+    });
+
     await test.step('見つからないパスは開かずにトーストで知らせる', async () => {
       await utils.searchFor('E2E存在しないファイル');
       await expect(mainWindow.locator('.item', { hasText: 'E2E存在しないファイル' })).toBeVisible();
@@ -231,7 +246,8 @@ test.describe('QuickDashLauncher - Shift+Enter で親フォルダーを開く', 
           { timeout: 5000 }
         )
         .toMatch(/E2E存在しないファイル[\s\S]*親フォルダーが見つかりませんでした/);
-      expect(await electronApp.evaluate(() => globalThis.__e2eShownInFolder?.length)).toBe(1);
+      // 見つからないパスでは開かない（前の 2 ステップの分だけ）
+      expect(await electronApp.evaluate(() => globalThis.__e2eShownInFolder?.length)).toBe(2);
     });
   });
 });

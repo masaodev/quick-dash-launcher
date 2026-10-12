@@ -190,6 +190,20 @@ describe('useKeyboardShortcuts', () => {
     });
   });
 
+  it('ウィンドウ操作アイテムの Shift+Enter は実行せず、URL と同じ文言で知らせる', async () => {
+    const item = { type: 'window', displayName: 'メール', windowTitle: 'Outlook' } as AppItem;
+    const { params, handleKeyDown } = setup([item]);
+
+    await handleKeyDown(keyEvent('Enter', { shiftKey: true }));
+
+    expect(params.handleExecuteItem).not.toHaveBeenCalled();
+    expect(showToastWindow).toHaveBeenCalledWith({
+      displayName: 'メール',
+      itemType: 'windowOperation',
+      message: 'このアイテムには親フォルダーがありません',
+    });
+  });
+
   it('ウィンドウ検索の結果の Shift+Enter は、今までどおりウィンドウを前に出す', async () => {
     const { params, handleKeyDown } = setup([notepad(100)], 'window');
 

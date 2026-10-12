@@ -14,10 +14,11 @@ import { GROUP_LAUNCH_DELAY_MS } from '@common/constants';
 import { isLauncherItem, isWindowItem } from '@common/types/guards';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 import { PathUtils } from '@common/utils/pathUtils';
-import { FileUtils } from '@common/utils/fileUtils';
 
 import { tryActivateWindow } from '../utils/windowActivator.js';
 import { isBareFileName, resolveFromPath } from '../utils/pathResolver.js';
+import { checkPathsExist } from '../services/data/pathExistenceChecker.js';
+import { expandEnvironmentVariables } from '../services/icon/iconFileCache.js';
 import { launchItem } from '../utils/itemLauncher.js';
 import { SettingsService } from '../services/settingsService.js';
 import { findWindowByTitle, createTitleMatcher } from '../utils/windowMatcher.js';
@@ -90,18 +91,37 @@ async function openParentFolder(item: LauncherItem): Promise<void> {
 
   if (item.type !== 'file' && item.type !== 'folder' && item.type !== 'app') return;
 
+  // ストアアプリなど（shell:AppsFolder\...）は、URL と同じく親フォルダーを持たない
+  if (/^shell:/i.test(item.path)) {
+    await notifyParentFolder(item, 'このアイテムには親フォルダーがありません');
+    return;
+  }
+
   // ファイル名だけで登録したアプリ（notepad.exe など）は、起動と同じく PATH から探す
-  const target = isBareFileName(item.path) ? await resolveFromPath(item.path) : item.path;
-  if (!target || !FileUtils.exists(target)) {
-    // 押しても無反応だと故障に見えるので知らせる（ランチャーは隠れた後なのでトーストで出す）
-    await showToastWindow({
-      displayName: item.displayName,
-      itemType: item.type,
-      message: '親フォルダーが見つかりませんでした',
-    });
+  //（ファイル・フォルダは PATH から探さない。別のフォルダーの同名ファイルを選んでしまう）
+  const target =
+    item.type === 'app' && isBareFileName(item.path)
+      ? await resolveFromPath(item.path)
+      : expandEnvironmentVariables(item.path);
+  // 応答しないネットワークパスで止まらないよう、時間切れつきで確かめる。
+  // 時間切れ（unknown）のときは、あるものとして開いてみる
+  const status = target ? (await checkPathsExist([target]))[target] : 'missing';
+  if (!target || status === 'missing') {
+    // 押しても無反応だと故障に見えるので知らせる
+    await notifyParentFolder(item, '親フォルダーが見つかりませんでした');
     return;
   }
   shell.showItemInFolder(target);
+}
+
+/** 親フォルダーを開けないことを知らせる（ランチャーは隠れた後なので、画面内ではなくトーストで出す） */
+async function notifyParentFolder(item: LauncherItem, message: string): Promise<void> {
+  await showToastWindow({
+    displayName: item.displayName,
+    itemType: item.type,
+    type: 'warning',
+    message,
+  });
 }
 
 /**
