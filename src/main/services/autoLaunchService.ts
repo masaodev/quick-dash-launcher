@@ -59,6 +59,13 @@ export class AutoLaunchService {
       logger.warn('Auto launch is only supported on packaged Windows builds');
       return;
     }
+    // Store 版（MSIX）の自動起動はマニフェストの StartupTask が担い、Windows の設定で切り替える。
+    // MSIX でも既にある %APPDATA% のファイルは本物が書き換わるため、ショートカットに触れると
+    // 同じ PC のポータブル版・インストーラー版のショートカットを上書き・削除してしまう
+    if (process.windowsStore) {
+      logger.info('Auto launch is managed by the StartupTask in the Store build');
+      return;
+    }
 
     const shortcutPath = this.getShortcutPath();
 

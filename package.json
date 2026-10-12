@@ -12,7 +12,7 @@
     "preview": "vite preview",
     "start": "npm run build && electron .",
     "dist": "npm run build && electron-builder",
-    "dist:appx": "npm run build && electron-builder --win appx --x64",
+    "dist:appx": "npm run build && electron scripts/generate-appx-assets.mjs && electron-builder --win appx --x64",
     "generate-licenses": "license-checker --production --markdown --out THIRD-PARTY-NOTICES.md",
     "schema:generate": "tsx scripts/generate-schemas.ts",
     "lint": "eslint .",
@@ -154,8 +154,9 @@
       "identityName": "QuickDashLauncher",
       "applicationId": "QuickDashLauncher",
       "displayName": "QuickDashLauncher",
-      "publisher": "CN=masaodev, OID.2.25.311729368913984317654407730594956997722=1",
+      "publisher": "CN=masaodev",
       "publisherDisplayName": "masaodev",
+      "backgroundColor": "transparent",
       "languages": [
         "ja-JP",
         "en-US"
