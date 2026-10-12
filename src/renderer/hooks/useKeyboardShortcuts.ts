@@ -276,7 +276,8 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
       case 'Enter':
         e.preventDefault();
         e.stopPropagation();
-        if (!selectedItem) return;
+        // 押しっぱなしのキーリピートでは実行しない（多重起動や、失敗のダイアログを閉じた直後の実行し直しを防ぐ）
+        if (e.repeat || !selectedItem) return;
         if (e.shiftKey && isLauncherItem(selectedItem)) {
           // URL・カスタム URI には親フォルダーが無い。押しても無反応だと故障に見えるので知らせる
           if (selectedItem.type === 'url' || selectedItem.type === 'customUri') {

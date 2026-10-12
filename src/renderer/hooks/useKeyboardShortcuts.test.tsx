@@ -14,6 +14,7 @@ const isWindowPinned = vi.fn();
 const pinWindow = vi.fn();
 const unPinWindow = vi.fn();
 const setEscapeHandledByPage = vi.fn();
+const waitForWindowsClosed = vi.fn(async () => undefined);
 
 function launcherItem(type: LauncherItem['type'], path: string): LauncherItem {
   return { displayName: `${type} のアイテム`, path, type } as LauncherItem;
@@ -97,6 +98,7 @@ function keyEvent(
 
 beforeEach(() => {
   showToastWindow.mockReset();
+  waitForWindowsClosed.mockClear();
   openParentFolder.mockReset();
   closeWindow.mockReset();
   isWindowPinned.mockReset();
@@ -112,6 +114,7 @@ beforeEach(() => {
       pinWindow,
       unPinWindow,
       setEscapeHandledByPage,
+      waitForWindowsClosed,
     },
   });
 });
@@ -121,6 +124,17 @@ afterEach(() => {
 });
 
 describe('useKeyboardShortcuts', () => {
+  it('Enter のキーリピート（押しっぱなし）では実行しない', async () => {
+    const item = launcherItem('file', 'C:\\Windows\\win.ini');
+    const { params, handleKeyDown } = setup([item]);
+
+    await handleKeyDown({ ...keyEvent('Enter'), repeat: true } as unknown as React.KeyboardEvent);
+    expect(params.handleExecuteItem).not.toHaveBeenCalled();
+
+    await handleKeyDown(keyEvent('Enter'));
+    expect(params.handleExecuteItem).toHaveBeenCalledWith(item);
+  });
+
   it('通常モードの F2 で選択中のアイテムの編集画面を開く', async () => {
     const item = launcherItem('file', 'C:\\Windows\\win.ini');
     const { params, handleKeyDown } = setup([item]);
@@ -223,6 +237,8 @@ describe('useKeyboardShortcuts', () => {
 
     await press(keyEvent('Enter'));
     expect(closeWindow.mock.calls).toEqual([[100], [200], [300]]);
+    // 閉じるのを待つのは、全部に頼んだ後の 1 回だけ
+    expect(waitForWindowsClosed.mock.calls).toEqual([[[100, 200, 300]]]);
     expect(selection().pendingClose).toBeNull();
     // トーストは 1 回だけ
     expect(showToastWindow).toHaveBeenCalledTimes(1);
