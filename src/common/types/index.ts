@@ -64,8 +64,6 @@ export {
   JSON_WORKSPACE_VERSION,
   JSON_WORKSPACE_ITEM_TYPES,
   WORKSPACE_UI_STATE_VERSION,
-  WORKSPACE_SCHEMA_REF,
-  WORKSPACE_ARCHIVE_SCHEMA_REF,
   DEFAULT_WORKSPACE_DISPLAY_NAME,
 } from './json-workspace';
 
@@ -94,7 +92,6 @@ export {
   isJsonClipboardItem,
   isJsonLayoutItem,
   JSON_DATA_VERSION,
-  JSON_DATA_SCHEMA_REF,
   JSON_ID_LENGTH,
   DIR_OPTIONS_DEFAULTS,
 } from './json-data';
@@ -127,7 +124,6 @@ export type {
   AutoLaunchStatus,
   StoreAutoLaunchState,
 } from './settings';
-export { SETTINGS_SCHEMA_REF } from './settings';
 
 // アイコン関連の型
 export type {

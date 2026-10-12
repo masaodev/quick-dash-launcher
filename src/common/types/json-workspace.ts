@@ -7,7 +7,6 @@
  *
  * アイテムはデータファイル（json-data.ts の JsonItem）と**同じ語彙・同じフィールド名**を使う。
  * 末尾のコンパイル時アサーションで語彙のずれを検出する。
- * この型から JSON Schema を生成する（scripts/generate-schemas.ts）。
  */
 
 import type { WindowConfig, LayoutWindowEntry } from './launcher';
@@ -28,11 +27,6 @@ import type {
  * ワークスペース設定ファイル（workspace.json）のルート構造
  */
 export interface JsonWorkspaceFile {
-  /**
-   * JSON Schema への参照（エディタ補完・検証用）。
-   * QDL が書き戻すときに "./schemas/workspace.schema.json" を補う
-   */
-  $schema?: string;
   /** ファイルフォーマットのバージョン（現在は "2.0"） */
   version: string;
   /** ワークスペース（タブ）の一覧。1 件以上必要 */
@@ -247,8 +241,6 @@ export const JSON_WORKSPACE_ITEM_TYPES = [
  * アーカイブファイル（workspace-archive.json）のルート構造
  */
 export interface JsonWorkspaceArchiveFile {
-  /** JSON Schema への参照（QDL が "./schemas/workspace-archive.schema.json" を補う） */
-  $schema?: string;
   /** ファイルフォーマットのバージョン（現在は "2.0"） */
   version: string;
   /** アーカイブしたグループ */
@@ -321,12 +313,6 @@ export const JSON_WORKSPACE_VERSION = '2.0';
 
 /** UI 状態ファイルのバージョン */
 export const WORKSPACE_UI_STATE_VERSION = 1;
-
-/** workspace.json に書き込む $schema の値（config/ から見た相対パス） */
-export const WORKSPACE_SCHEMA_REF = './schemas/workspace.schema.json';
-
-/** workspace-archive.json に書き込む $schema の値 */
-export const WORKSPACE_ARCHIVE_SCHEMA_REF = './schemas/workspace-archive.schema.json';
 
 /** 既定ワークスペースの表示名（ファイルに 1 件も無いときに作る） */
 export const DEFAULT_WORKSPACE_DISPLAY_NAME = 'デフォルト';

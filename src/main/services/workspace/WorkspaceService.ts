@@ -120,7 +120,7 @@ export class WorkspaceService {
     return this.store!.reload();
   }
 
-  /** 直近の読み込み結果（last-load-report.json に載せる） */
+  /** 直近の読み込み結果（読み込みレポートに載せる） */
   public consumeLoadReports(): {
     files: LoadReportFile[];
     externallyChanged: Array<{ relativePath: string; content: string }>;

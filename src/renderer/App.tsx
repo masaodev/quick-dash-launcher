@@ -173,7 +173,7 @@ function App(): React.ReactElement {
   }, []);
 
   // trigger: 起動時と F5 は省略（explicit）。完全リフレッシュは 'full'（パスの種類も確かめ直す）。
-  // アプリ内の操作に伴う再読込は 'internal'（last-load-report.json を報告事項があるときだけ更新する）
+  // アプリ内の操作に伴う再読込は 'internal'（先行の再読込があれば結果を共有する）
   const loadItems = async (trigger?: 'explicit' | 'full' | 'internal'): Promise<AppItem[]> => {
     const items = await window.electronAPI.loadDataFiles(trigger);
 

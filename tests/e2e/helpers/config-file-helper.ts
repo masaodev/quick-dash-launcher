@@ -5,7 +5,6 @@ import type { AppSettings, JsonItem, JsonLauncherItem } from '@common/types';
 
 /** データファイルのJSON構造 */
 interface DataFileContent {
-  $schema?: string;
   version: string;
   items: JsonItem[];
 }
@@ -199,7 +198,7 @@ export class ConfigFileHelper {
   }
 
   /**
-   * 設定フォルダ直下の JSON ファイルを読む（workspace.json・last-load-report.json など）
+   * 設定フォルダ直下の JSON ファイルを読む（workspace.json など）
    * @returns 存在しなければ null
    */
   readConfigJson<T = unknown>(fileName: string): T | null {

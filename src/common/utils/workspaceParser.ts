@@ -24,8 +24,6 @@ import {
   DEFAULT_WORKSPACE_DISPLAY_NAME,
   JSON_WORKSPACE_ITEM_TYPES,
   JSON_WORKSPACE_VERSION,
-  WORKSPACE_ARCHIVE_SCHEMA_REF,
-  WORKSPACE_SCHEMA_REF,
 } from '@common/types/json-workspace';
 import { getDefaultGroupColor, isValidGroupColor } from '@common/groupColors';
 import { MAX_GROUP_DEPTH } from '@common/utils/groupTreeUtils';
@@ -163,20 +161,7 @@ function takeArray(obj: Record<string, unknown>, key: Section, issues: IssueColl
   return value;
 }
 
-function normalizeHeader(
-  obj: Record<string, unknown>,
-  schemaRef: string,
-  issues: IssueCollector
-): void {
-  if (obj.$schema !== schemaRef) {
-    issues.normalized(
-      undefined,
-      -1,
-      obj.$schema === undefined
-        ? `$schema が無いため "${schemaRef}" を補いました`
-        : `$schema "${String(obj.$schema)}" を "${schemaRef}" に直しました`
-    );
-  }
+function normalizeHeader(obj: Record<string, unknown>, issues: IssueCollector): void {
   if (obj.version !== JSON_WORKSPACE_VERSION) {
     issues.normalized(
       undefined,
@@ -752,7 +737,7 @@ export function parseWorkspaceFileLenient(
   const issues = new IssueCollector();
   const invalid: InvalidWorkspaceEntries = { workspaces: [], groups: [], items: [] };
 
-  normalizeHeader(obj, WORKSPACE_SCHEMA_REF, issues);
+  normalizeHeader(obj, issues);
   const rawWorkspaces = takeArray(obj, 'workspaces', issues);
   const rawGroups = takeArray(obj, 'groups', issues);
   const rawItems = takeArray(obj, 'items', issues);
@@ -806,7 +791,6 @@ export function parseWorkspaceFileLenient(
 
   return {
     data: {
-      $schema: WORKSPACE_SCHEMA_REF,
       version: JSON_WORKSPACE_VERSION,
       workspaces: workspaces.map(orderWorkspaceKeys),
       groups,
@@ -839,7 +823,7 @@ export function parseWorkspaceArchiveFileLenient(
   const issues = new IssueCollector();
   const invalid = { groups: [] as unknown[], items: [] as unknown[] };
 
-  normalizeHeader(obj, WORKSPACE_ARCHIVE_SCHEMA_REF, issues);
+  normalizeHeader(obj, issues);
   const rawGroups = takeArray(obj, 'groups', issues);
   const rawItems = takeArray(obj, 'items', issues);
 
@@ -927,7 +911,6 @@ export function parseWorkspaceArchiveFileLenient(
 
   return {
     data: {
-      $schema: WORKSPACE_ARCHIVE_SCHEMA_REF,
       version: JSON_WORKSPACE_VERSION,
       groups,
       items,
@@ -950,7 +933,6 @@ export function serializeWorkspaceFile(
   invalid: Partial<InvalidWorkspaceEntries> = {}
 ): string {
   const out = {
-    $schema: data.$schema ?? WORKSPACE_SCHEMA_REF,
     version: data.version,
     workspaces: [...data.workspaces.map(orderWorkspaceKeys), ...(invalid.workspaces ?? [])],
     groups: [...data.groups.map(orderGroupKeys), ...(invalid.groups ?? [])],
@@ -964,7 +946,6 @@ export function serializeWorkspaceArchiveFile(
   invalid: Partial<Pick<InvalidWorkspaceEntries, 'groups' | 'items'>> = {}
 ): string {
   const out = {
-    $schema: data.$schema ?? WORKSPACE_ARCHIVE_SCHEMA_REF,
     version: data.version,
     groups: [...data.groups.map(orderGroupKeys), ...(invalid.groups ?? [])],
     items: [...data.items.map(orderWorkspaceItemKeys), ...(invalid.items ?? [])],
@@ -978,7 +959,6 @@ export function createEmptyWorkspaceFile(
   now: number = Date.now()
 ): JsonWorkspaceFile {
   return {
-    $schema: WORKSPACE_SCHEMA_REF,
     version: JSON_WORKSPACE_VERSION,
     workspaces: [
       { id: workspaceId, displayName: DEFAULT_WORKSPACE_DISPLAY_NAME, order: 0, createdAt: now },
@@ -990,7 +970,6 @@ export function createEmptyWorkspaceFile(
 
 export function createEmptyWorkspaceArchiveFile(): JsonWorkspaceArchiveFile {
   return {
-    $schema: WORKSPACE_ARCHIVE_SCHEMA_REF,
     version: JSON_WORKSPACE_VERSION,
     groups: [],
     items: [],

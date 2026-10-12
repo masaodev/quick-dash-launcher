@@ -13,11 +13,7 @@ import {
   serializeWorkspaceFile,
 } from '@common/utils/workspaceParser';
 import { isValidId } from '@common/utils/jsonParser';
-import {
-  JSON_WORKSPACE_VERSION,
-  WORKSPACE_ARCHIVE_SCHEMA_REF,
-  WORKSPACE_SCHEMA_REF,
-} from '@common/types';
+import { JSON_WORKSPACE_VERSION } from '@common/types';
 
 const NOW = 1_700_000_000_000;
 
@@ -56,7 +52,6 @@ const windowItem = {
 
 function file(overrides: Record<string, unknown> = {}): string {
   return JSON.stringify({
-    $schema: WORKSPACE_SCHEMA_REF,
     version: JSON_WORKSPACE_VERSION,
     workspaces: [ws],
     groups: [group],
@@ -95,7 +90,7 @@ describe('workspaceParser: 正常系', () => {
 
     expect(second.modified).toBe(false);
     expect(second.data).toEqual(first.data);
-    expect(serialized.startsWith('{\n  "$schema": ')).toBe(true);
+    expect(serialized.startsWith('{\n  "version": ')).toBe(true);
   });
 
   it('createEmptyWorkspaceFile は既定ワークスペース 1 件を持ち、パースで問題なしになること', () => {
@@ -130,18 +125,24 @@ describe('workspaceParser: 構造エラー', () => {
 });
 
 describe('workspaceParser: ヘッダ・ワークスペースの補完', () => {
-  it('$schema / version が無ければ補うこと', () => {
+  it('version が無ければ補うこと', () => {
     const result = parseWorkspaceFileLenient(
       JSON.stringify({ workspaces: [ws], groups: [], items: [] }),
       createWorkspaceParseContext(NOW)
     );
-    expect(result.data.$schema).toBe(WORKSPACE_SCHEMA_REF);
     expect(result.data.version).toBe(JSON_WORKSPACE_VERSION);
     expect(result.modified).toBe(true);
-    expect(result.issues.map((i) => i.reason)).toEqual([
-      expect.stringContaining('$schema'),
-      expect.stringContaining('version'),
-    ]);
+    expect(result.issues.map((i) => i.reason)).toEqual([expect.stringContaining('version')]);
+  });
+
+  it('旧版が書いた $schema は読み飛ばし、補正にも書き戻しの理由にもしないこと', () => {
+    const result = parseWorkspaceFileLenient(
+      file({ $schema: './schemas/workspace.schema.json' }),
+      createWorkspaceParseContext(NOW)
+    );
+    expect(result.data).not.toHaveProperty('$schema');
+    expect(result.modified).toBe(false);
+    expect(result.issues).toEqual([]);
   });
 
   it('ワークスペースが 0 件なら既定ワークスペースを作ること', () => {
@@ -364,7 +365,6 @@ describe('workspaceParser: アーカイブ', () => {
 
   function archiveFile(overrides: Record<string, unknown> = {}): string {
     return JSON.stringify({
-      $schema: WORKSPACE_ARCHIVE_SCHEMA_REF,
       version: JSON_WORKSPACE_VERSION,
       groups: [archivedGroup],
       items: [archivedItem],

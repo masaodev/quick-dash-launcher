@@ -90,8 +90,8 @@ tests/fixtures/dev/*/backup/
 # Development test data runtime files
 tests/dev/full/execution-history.json
 tests/dev/full/workspace*.json
+# v0.8.0-beta.5 までの QDL が生成していた（AI 編集支援。廃止済み）
 tests/dev/full/last-load-report.json
-# 起動時に QDL が生成する（AI 編集支援）
 tests/dev/full/README.md
 tests/dev/full/schemas/
 

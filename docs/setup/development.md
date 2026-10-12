@@ -166,8 +166,6 @@ QDL_INSTANCE=dev cli/target/release/qdl.exe reload
 
 **画面イメージの撮り直し:** 画面の見た目を変えたら `npm run docs:screenshots` で画面仕様の画像を撮り直す（[画面仕様書 執筆ガイドライン - 画面イメージ](../screens/WRITING-GUIDE.md#画面イメージ)）。README のデモ GIF は `npm run docs:demo-gif`、README の「画面」の画面イメージ（登録画面・管理画面）は `npm run docs:readme-images` で撮り直す（[テストガイド](../testing/README.md)）。
 
-**JSON Schema の再生成:** データファイル・設定ファイルの型（`src/common/types/json-data.ts`・`settings.ts`）を変えたら `npm run schema:generate` で `assets/schemas/*.schema.json` を再生成してコミットしてください。単体テスト（`tests/unit/schemas.test.ts`）が生成結果とコミット済みファイルの一致を検証しており、忘れると落ちます。詳細は [ファイル形式一覧の「AI・手動編集」](../architecture/file-formats/README.md#ai手動編集)。
-
 ### データ読み込みと重複排除
 
 データファイルの読み込み（`src/main/services/data/dataFileLoader.ts`。起動時と F5 で呼ばれる）は、タブ単位で重複を除く。同じタブの中で重複したアイテムは 1 つだけ読み、別のタブにあるものは両方読む。重複の判定とタブに属さないファイルの扱いは [データファイル形式 - 重複排除ルール](../architecture/file-formats/data-format.md#4-重複排除ルール) を参照（判定キーの組み立ては `jsonItemConverter.ts`）。
@@ -221,7 +219,7 @@ QDL_INSTANCE=dev cli/target/release/qdl.exe reload
 
 ### PRの自動チェック
 
-PRとmainへのpushで、GitHub Actions（`.github/workflows/ci.yml`）が型チェック（`npm run type-check`）・lint（`npm run lint`）・単体テスト（`vitest run`）・CLI のテスト（`npm run test:cli`）を実行します。JSON Schemaの再生成漏れも `tests/unit/schemas.test.ts` のドリフト検知で失敗として出ます。E2Eは対象外なので、リリース前にローカルで `npm run test:e2e` を実行してください。
+PRとmainへのpushで、GitHub Actions（`.github/workflows/ci.yml`）が型チェック（`npm run type-check`）・lint（`npm run lint`）・単体テスト（`vitest run`）・CLI のテスト（`npm run test:cli`）を実行します。E2Eは対象外なので、リリース前にローカルで `npm run test:e2e` を実行してください。
 
 ### 依存関係管理
 

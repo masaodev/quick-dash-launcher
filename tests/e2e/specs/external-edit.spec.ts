@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-import { isJsonLauncherItem, JSON_DATA_SCHEMA_REF, SETTINGS_SCHEMA_REF } from '@common/types';
+import { isJsonLauncherItem } from '@common/types';
 import type { Page } from '@playwright/test';
 
 import { test, expect } from '../fixtures/electron-app';
@@ -15,119 +15,13 @@ function listPreExternalSnapshots(configDir: string): string[] {
 }
 
 /**
- * 設定ファイルを直接編集する人・AI 向けの補助（起動時の配置と $schema の補完）
- * - README.md と schemas/ が起動時に配置される
- * - $schema の無いデータファイル（旧版からのアップグレード）は起動時に補って書き戻され、
- *   レポートに normalized が載る。QDL 自身の書き戻しなので外部変更にはならず、
- *   backupEnabled でも *_pre-external スナップショットは作られない
- * - settings.json にも $schema が入る
- */
-test.describe('QuickDashLauncher - AI 編集支援ファイルの配置', () => {
-  // アップグレード直後の既存利用者を再現: backupEnabled かつ $schema の無いファイルで起動
-  test.use({ configTemplate: 'with-backup' });
-
-  test('起動時に README.md と schemas/ が配置され、$schema の無いファイルは補完される', async ({
-    mainWindow,
-    configHelper,
-  }) => {
-    const utils = new TestUtils(mainWindow);
-    const configDir = configHelper.getConfigDir();
-
-    await test.step('初期表示を待つ', async () => {
-      await utils.waitForPageLoad();
-      await mainWindow.locator('.item').first().waitFor({ state: 'visible', timeout: 10000 });
-    });
-
-    await test.step('README.md が設定フォルダの絶対パス入りで生成される', async () => {
-      const readmePath = path.join(configDir, 'README.md');
-      expect(fs.existsSync(readmePath)).toBe(true);
-      const readme = fs.readFileSync(readmePath, 'utf8');
-      expect(readme).toContain('QuickDashLauncher 設定フォルダ');
-      expect(readme).toContain(configDir);
-      expect(readme).not.toMatch(/\{\{[A-Z_]+\}\}/);
-    });
-
-    await test.step('schemas/ に同梱スキーマがそのままコピーされる', async () => {
-      for (const name of [
-        'data.schema.json',
-        'settings.schema.json',
-        'workspace.schema.json',
-        'workspace-archive.schema.json',
-      ]) {
-        const copied = path.join(configDir, 'schemas', name);
-        expect(fs.existsSync(copied), `${name} がありません`).toBe(true);
-        expect(fs.readFileSync(copied, 'utf8')).toBe(
-          fs.readFileSync(path.join(process.cwd(), 'assets', 'schemas', name), 'utf8')
-        );
-      }
-    });
-
-    await test.step('データファイルの先頭に $schema が補われて書き戻される', async () => {
-      const raw = configHelper.readDataFileRaw('data.json');
-      expect(raw.startsWith('{\n  "$schema": ')).toBe(true);
-      expect(configHelper.readDataFile('data.json').$schema).toBe(JSON_DATA_SCHEMA_REF);
-      // スキーマの相対パスが実在のファイルを指す
-      expect(
-        fs.existsSync(path.resolve(configHelper.getDataFilesDir(), JSON_DATA_SCHEMA_REF))
-      ).toBe(true);
-    });
-
-    await test.step('settings.json にも $schema が入る', async () => {
-      expect(configHelper.readSettings().$schema).toBe(SETTINGS_SCHEMA_REF);
-      expect(fs.existsSync(path.resolve(configDir, SETTINGS_SCHEMA_REF))).toBe(true);
-    });
-
-    await test.step('レポートに normalized が載り、外部変更・変更前スナップショットにはならない', async () => {
-      const report = JSON.parse(
-        fs.readFileSync(path.join(configDir, 'last-load-report.json'), 'utf8')
-      );
-      const fileReport = report.files.find(
-        (f: { file: string }) => f.file === 'datafiles/data.json'
-      );
-      expect(fileReport.rewritten).toBe(true);
-      expect(fileReport.issues).toEqual([
-        expect.objectContaining({ kind: 'normalized', reason: expect.stringContaining('$schema') }),
-      ]);
-      // アイテムはすべて受理（normalized はスキップでも採番でもない）
-      expect(report.summary.skipped).toBe(0);
-      expect(report.summary.idAssigned).toBe(0);
-
-      expect(report.summary.externallyChangedFiles).toEqual([]);
-      expect(report.preChangeSnapshot).toBeNull();
-      expect(listPreExternalSnapshots(configDir)).toEqual([]);
-    });
-
-    await test.step('F5 しても再補完・外部変更扱いにはならない', async () => {
-      await utils.reloadWithF5();
-      await expect
-        .poll(() => {
-          const report = JSON.parse(
-            fs.readFileSync(path.join(configDir, 'last-load-report.json'), 'utf8')
-          );
-          const fileReport = report.files.find(
-            (f: { file: string }) => f.file === 'datafiles/data.json'
-          );
-          return {
-            rewritten: fileReport.rewritten,
-            issues: fileReport.issues,
-            external: report.summary.externallyChangedFiles,
-          };
-        })
-        .toEqual({ rewritten: false, issues: [], external: [] });
-      expect(listPreExternalSnapshots(configDir)).toEqual([]);
-    });
-  });
-});
-
-/**
  * データファイルを QDL の外（人・AI）で直接編集したときの挙動
  * - F5 で反映される
  * - id 欠落は採番して書き戻す、不正アイテムはスキップして他を生かす
- * - last-load-report.json に結果が残る
  * - 変更前の内容が backup/*_pre-external/ に残る（backupEnabled のとき）
  */
 test.describe('QuickDashLauncher - 外部編集への対応', () => {
-  test('外部で編集したデータファイルが F5 で反映され、レポートとスナップショットが残る', async ({
+  test('外部で編集したデータファイルが F5 で反映され、変更前スナップショットが残る', async ({
     mainWindow,
     configHelper,
   }) => {
@@ -180,44 +74,16 @@ test.describe('QuickDashLauncher - 外部編集への対応', () => {
       expect(broken).toBeDefined();
     });
 
-    await test.step('last-load-report.json に結果が残る', async () => {
-      const reportPath = path.join(configHelper.getConfigDir(), 'last-load-report.json');
-      expect(fs.existsSync(reportPath)).toBe(true);
-
-      const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
-      expect(report.reportVersion).toBe(1);
-      expect(report.summary.skipped).toBe(1);
-      expect(report.summary.idAssigned).toBe(1);
-      expect(report.summary.corruptedFiles).toEqual([]);
-      expect(report.summary.externallyChangedFiles).toEqual(['datafiles/data.json']);
-
-      const fileReport = report.files.find(
-        (f: { file: string }) => f.file === 'datafiles/data.json'
-      );
-      expect(fileReport.status).toBe('ok');
-      expect(fileReport.rewritten).toBe(true);
-      expect(fileReport.issues.map((i: { kind: string }) => i.kind).sort()).toEqual([
-        'idAssigned',
-        'invalid',
-      ]);
-      const invalid = fileReport.issues.find((i: { kind: string }) => i.kind === 'invalid');
-      expect(invalid.id).toBe('brokenit');
-      expect(invalid.reason).toContain('path');
-    });
-
     await test.step('変更前の内容が backup/*_pre-external/ に残る', async () => {
-      const reportPath = path.join(configHelper.getConfigDir(), 'last-load-report.json');
-      const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
-      expect(report.preChangeSnapshot).toMatch(/_pre-external$/);
-
+      const snapshots = listPreExternalSnapshots(configHelper.getConfigDir());
+      expect(snapshots).toHaveLength(1);
       const snapshotFile = path.join(
         configHelper.getConfigDir(),
         'backup',
-        report.preChangeSnapshot,
+        snapshots[0],
         'datafiles',
         'data.json'
       );
-      expect(fs.existsSync(snapshotFile)).toBe(true);
       expect(fs.readFileSync(snapshotFile, 'utf8')).toBe(originalRaw);
     });
 
@@ -226,55 +92,9 @@ test.describe('QuickDashLauncher - 外部編集への対応', () => {
       await expect(mainWindow.locator('.item', { hasText: '外部追加アイテム' })).toBeVisible({
         timeout: 10000,
       });
-      // 書き戻し後の内容は QDL 自身の書き込みとして記憶されているはず
-      await expect
-        .poll(() => {
-          const reportPath = path.join(configHelper.getConfigDir(), 'last-load-report.json');
-          const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
-          return report.summary.externallyChangedFiles;
-        })
-        .toEqual([]);
-    });
-  });
-
-  test('QDL 内の操作による再読込では last-load-report.json を書き直さない', async ({
-    mainWindow,
-    configHelper,
-  }) => {
-    const utils = new TestUtils(mainWindow);
-    const reportPath = path.join(configHelper.getConfigDir(), 'last-load-report.json');
-    const readReport = () => JSON.parse(fs.readFileSync(reportPath, 'utf8'));
-
-    await test.step('起動時のレポートを控える', async () => {
-      await utils.waitForPageLoad();
-      await mainWindow.locator('.item').first().waitFor({ state: 'visible', timeout: 10000 });
-      await expect.poll(() => fs.existsSync(reportPath)).toBe(true);
-    });
-    const startupReport = readReport();
-
-    await test.step('アイテム登録（変更通知 → 内部の再読込）ではレポートが変わらない', async () => {
-      await mainWindow.evaluate(() =>
-        window.electronAPI.registerItems([
-          {
-            displayName: '内部登録アイテム',
-            path: 'https://example.com/internal',
-            type: 'url',
-            targetTab: 'datafiles/data.json',
-            itemCategory: 'item',
-          },
-        ])
-      );
-      await expect(mainWindow.locator('.item', { hasText: '内部登録アイテム' })).toBeVisible({
-        timeout: 10000,
-      });
-      // 再読込が終わってからも起動時の記録（loadedAt）のまま
+      // 書き戻し後の内容は QDL 自身の書き込みとして記憶されているので、スナップショットは増えない
       await mainWindow.waitForTimeout(500);
-      expect(readReport()).toEqual(startupReport);
-    });
-
-    await test.step('F5（明示的な再読込）ではレポートが書き直される', async () => {
-      await utils.reloadWithF5();
-      await expect.poll(() => readReport().loadedAt).not.toBe(startupReport.loadedAt);
+      expect(listPreExternalSnapshots(configHelper.getConfigDir())).toHaveLength(1);
     });
   });
 
