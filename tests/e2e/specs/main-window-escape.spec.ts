@@ -40,8 +40,9 @@ async function pressEscape(electronApp: ElectronApplication): Promise<void> {
 /** Shift+Tab でウィンドウ検索モードに切り替え、OS のウィンドウの一覧が出るのを待つ */
 async function enterWindowSearch(mainWindow: Page): Promise<number> {
   await mainWindow.keyboard.press('Shift+Tab');
-  await expect(mainWindow.locator('.item').first()).toBeVisible({ timeout: 10000 });
-  return mainWindow.locator('.item').count();
+  // 通常モードのアイテムと見分けるため、ウィンドウの行（.window-item）が出るのを待って数える
+  await expect(mainWindow.locator('.window-item').first()).toBeVisible({ timeout: 10000 });
+  return mainWindow.locator('.window-item').count();
 }
 
 test.describe('QuickDashLauncher - Esc でメインウィンドウを隠す', () => {

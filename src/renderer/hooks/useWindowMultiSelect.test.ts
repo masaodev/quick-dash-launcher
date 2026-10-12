@@ -68,6 +68,16 @@ describe('useWindowMultiSelect', () => {
     expect(hwnds(result.current.markedWindows)).toEqual([1, 3, 4]);
   });
 
+  it('Shift+↑↓ の途中でカーソルがマウスのホバーで動いても、起点は Shift を押し始めた行のまま', () => {
+    const { result, rerender } = setup({ selectedIndex: 0 });
+
+    act(() => result.current.extendTo(1));
+    rerender({ items: wins, selectedIndex: 2, mode: 'window' }); // 一覧が動いてホバーで 3 行目へ
+    act(() => result.current.extendTo(1));
+    act(() => result.current.extendTo(0)); // 起点まで戻れば縮む
+    expect(hwnds(result.current.markedWindows)).toEqual([1]);
+  });
+
   it('Ctrl+クリックした行からそのまま Shift+↑↓ を押せば、その行から選ぶ', () => {
     const { result, rerender } = setup({ selectedIndex: 1 });
 

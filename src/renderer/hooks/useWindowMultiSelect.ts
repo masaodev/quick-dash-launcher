@@ -48,11 +48,12 @@ export function useWindowMultiSelect({
 }: UseWindowMultiSelectParams): WindowMultiSelect {
   const [marked, setMarked] = useState<Set<Hwnd>>(() => new Set());
   const [pendingClose, setPendingClose] = useState<WindowInfo[] | null>(null);
+  // Shift+↑↓ の起点（Shift を押し始めた行）と、そのとき選んでいた行
   const anchorRef = useRef<number | null>(null);
   const baseRef = useRef<Set<Hwnd>>(new Set());
-  // 起点を決めた操作（Shift+↑↓・Ctrl+クリック）のあとにカーソルがいるはずの行。
-  // カーソルがここに無ければ、マウスのホバーなどほかの操作で動いたので起点を置き直す
-  const anchorCursorRef = useRef<number | null>(null);
+  // Shift+クリックの起点（最後に Ctrl+クリックした行）。Shift+↑↓ の起点とは分ける。
+  // Ctrl+クリックの後にマウスのホバーでカーソルが動いても、Shift+↑↓ は今の行から選ぶように
+  const clickAnchorRef = useRef<number | null>(null);
 
   const windows = useMemo(
     () => (searchMode === 'window' ? filteredItems.filter(isWindowInfo) : []),
@@ -77,7 +78,8 @@ export function useWindowMultiSelect({
   useEffect(() => {
     window.electronAPI.setEscapeHandledByPage?.(escapeHandledByPage);
   }, [escapeHandledByPage]);
-  // 画面が外れる（読み直し・アンマウント）ときは戻す。残るとメインプロセスが Esc で隠さなくなる
+  // アンマウント（開発中のホットリロードなど）のときは戻す。残るとメインプロセスが Esc で隠さなくなる。
+  // ページの読み直し・クラッシュでは cleanup が走らないので、メインプロセス側でも戻している
   useEffect(() => () => window.electronAPI?.setEscapeHandledByPage?.(false), []);
 
   function rangeHwnds(a: number, b: number): Hwnd[] {
@@ -87,19 +89,18 @@ export function useWindowMultiSelect({
 
   function extendTo(index: number): void {
     if (windows.length === 0) return;
-    if (anchorRef.current === null || anchorCursorRef.current !== selectedIndex) {
+    if (anchorRef.current === null) {
       anchorRef.current = selectedIndex;
       baseRef.current = new Set(marked);
     }
     const next = new Set(baseRef.current);
     rangeHwnds(anchorRef.current, index).forEach((h) => next.add(h));
     setMarked(next);
-    anchorCursorRef.current = index;
   }
 
   function resetAnchor(): void {
     anchorRef.current = null;
-    anchorCursorRef.current = null;
+    clickAnchorRef.current = null;
   }
 
   function toggle(index: number): void {
@@ -109,13 +110,13 @@ export function useWindowMultiSelect({
     if (next.has(win.hwnd)) next.delete(win.hwnd);
     else next.add(win.hwnd);
     setMarked(next);
-    anchorRef.current = index;
-    anchorCursorRef.current = index;
-    baseRef.current = next;
+    clickAnchorRef.current = index;
+    // 次の Shift+↑↓ は、その時点のカーソルの行と選択から始める
+    anchorRef.current = null;
   }
 
   function selectRangeTo(index: number): void {
-    const from = anchorRef.current ?? selectedIndex;
+    const from = clickAnchorRef.current ?? anchorRef.current ?? selectedIndex;
     const next = new Set(marked);
     rangeHwnds(from, index).forEach((h) => next.add(h));
     setMarked(next);

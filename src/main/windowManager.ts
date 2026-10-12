@@ -212,8 +212,12 @@ export async function createWindow(): Promise<BrowserWindow> {
     void saveWindowPosition();
   });
 
-  // ページを読み直すときは、ページで受ける印を戻す（クラッシュ後の読み直しなどでページ側の後始末が走らなくても Esc で隠れるように）
+  // ページを読み直すとき・ページが落ちたときは、ページで受ける印を戻す
+  //（ページ側の後始末が走らなくても Esc で隠れるように）
   mainWindow.webContents.on('did-start-loading', () => {
+    escapeHandledByPage = false;
+  });
+  mainWindow.webContents.on('render-process-gone', () => {
     escapeHandledByPage = false;
   });
 

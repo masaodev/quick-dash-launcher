@@ -325,8 +325,8 @@ function App(): React.ReactElement {
     [getTabFilteredItems, mainItems]
   );
 
-  // ウィンドウの固定（全デスクトップに表示）が使えるか。仮想デスクトップ非対応の環境では使えない
-  // （読み込み前は対応しているとみなし、ヒントがちらつかないようにする）
+  // Ctrl+P でウィンドウを固定（全デスクトップに表示）してよいか。非対応と分かっているときだけ止める
+  //（読み込み前は固定を試し、失敗すればそのトーストが出る）。ヒントは対応と分かってから出す
   const canPinWindow = desktopInfo?.supported !== false;
 
   // ウィンドウ検索モードで仮想デスクトップのタブを出すか（2 つ以上あるとき）
@@ -742,7 +742,7 @@ function App(): React.ReactElement {
           searchMode={searchMode}
           canSwitchDataFileTab={showDataFileTabs && dataFileTabs.length > 1}
           markedCount={markedCount}
-          canPinWindow={canPinWindow}
+          canPinWindow={desktopInfo?.supported === true}
           canMoveToDesktop={
             !!desktopInfo?.desktopCount && desktopInfo.desktopCount > 1 && activeDesktopTab > 0
           }
