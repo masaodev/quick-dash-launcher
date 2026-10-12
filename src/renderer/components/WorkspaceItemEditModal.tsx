@@ -261,9 +261,11 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
                     )}
                   </div>
 
+                  {/* クリップボードはパスを持たない（中身は別ファイル）。出しても保存されない */}
                   {item.itemCategory !== 'group' &&
                     item.itemCategory !== 'window' &&
-                    item.itemCategory !== 'layout' && (
+                    item.itemCategory !== 'layout' &&
+                    item.itemCategory !== 'clipboard' && (
                       <div className="form-group">
                         <label>パス:</label>
                         <input

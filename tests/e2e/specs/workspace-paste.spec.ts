@@ -116,4 +116,56 @@ test.describe('QuickDashLauncher - ワークスペースへの貼り付け', () 
     // ただの文字列がフォルダになっていないこと（以前の不具合の再発防止）
     expect(items.some((item) => item.type === 'item' && item.path === 'https')).toBe(false);
   });
+
+  test('クリップボードアイテムの編集画面にはパス欄を出さず、名前を変えても中身の参照は保つ', async ({
+    electronApp,
+    mainWindow,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    const workspaceWindow = await getWorkspaceWindow(electronApp);
+    await workspaceWindow.waitForLoadState('domcontentloaded');
+
+    await pasteText(electronApp, workspaceWindow, '編集するメモ');
+    await expect(
+      workspaceWindow.locator('.workspace-item-card', { hasText: '編集するメモ' })
+    ).toBeVisible({ timeout: 10000 });
+    const before = (
+      await workspaceWindow.evaluate(() => window.electronAPI.workspaceAPI.loadItems())
+    ).find((item) => item.displayName === '編集するメモ');
+    if (before?.type !== 'clipboard') throw new Error('クリップボードアイテムになっていない');
+
+    const [editor] = await Promise.all([
+      electronApp.waitForEvent('window', { timeout: 15000 }),
+      workspaceWindow.evaluate(
+        (id) => window.electronAPI.workspaceAPI.openItemEditor(id),
+        before.id
+      ),
+    ]);
+    await editor.locator('.workspace-editor-page').waitFor({ state: 'visible', timeout: 15000 });
+    await expect(editor.locator('label', { hasText: 'パス:' })).toHaveCount(0);
+
+    const nameInput = editor.locator('input[type="text"]').first();
+    await expect(nameInput).toHaveValue('編集するメモ');
+    await nameInput.fill('編集したメモ');
+    await Promise.all([
+      editor.waitForEvent('close', { timeout: 10000 }),
+      editor.locator('.modal-actions button', { hasText: '更新' }).click(),
+    ]);
+
+    await expect
+      .poll(async () => {
+        const items = await workspaceWindow.evaluate(() =>
+          window.electronAPI.workspaceAPI.loadItems()
+        );
+        return items.find((item) => item.id === before.id)?.displayName;
+      })
+      .toBe('編集したメモ');
+    const after = (
+      await workspaceWindow.evaluate(() => window.electronAPI.workspaceAPI.loadItems())
+    ).find((item) => item.id === before.id);
+    expect(after?.type).toBe('clipboard');
+    if (after?.type !== 'clipboard') return;
+    expect(after.dataFileRef).toBe(before.dataFileRef);
+  });
 });
