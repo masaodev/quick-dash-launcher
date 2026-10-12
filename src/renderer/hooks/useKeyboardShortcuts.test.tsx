@@ -39,6 +39,7 @@ function setup(
     windowList: [],
     toggleSearchMode: vi.fn(async () => undefined),
     refreshWindows: vi.fn(async () => undefined),
+    refreshWindowsKeepingSelection: vi.fn(async () => undefined),
     removeWindowFromList: vi.fn(),
     reloadData: vi.fn(async () => undefined),
     desktopCount: 0,
@@ -137,7 +138,8 @@ describe('useKeyboardShortcuts', () => {
 
     expect(closeWindow).toHaveBeenCalledWith(100);
     expect(params.removeWindowFromList).toHaveBeenCalledWith(100);
-    expect(params.refreshWindows).toHaveBeenCalled();
+    expect(params.refreshWindowsKeepingSelection).toHaveBeenCalled();
+    expect(params.refreshWindows).not.toHaveBeenCalled();
   });
 
   it('一覧が更新される前に続けて押した Ctrl+D は、閉じている途中のウィンドウを飛ばして次を閉じる', async () => {

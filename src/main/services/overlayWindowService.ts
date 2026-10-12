@@ -299,6 +299,13 @@ export function getLayoutProgressWindow(): BrowserWindow | null {
 }
 
 /**
+ * オーバーレイウィンドウ（トースト・進捗）を取得する。ウィンドウ検索の一覧から外すのに使う
+ */
+export function getOverlayWindow(): BrowserWindow | null {
+  return isWindowValid() ? overlayWindow : null;
+}
+
+/**
  * オーバーレイウィンドウを完全に破棄する（アプリケーション終了時にも使用）
  */
 export function destroyOverlayWindow(): void {

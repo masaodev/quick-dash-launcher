@@ -38,7 +38,7 @@ export function setupIPCHandlers(
   setupSplashHandlers(getMainWindow);
   setupHistoryHandlers(configFolder);
   setupWorkspaceHandlers();
-  setupWindowSearchHandlers(getMainWindow, getWindowPinMode);
+  setupWindowSearchHandlers(getMainWindow);
   setupNotificationHandlers();
   setupContextMenuHandlers();
   setupClipboardHandlers();

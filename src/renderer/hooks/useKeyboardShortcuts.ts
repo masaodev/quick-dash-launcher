@@ -34,6 +34,8 @@ export interface UseKeyboardShortcutsParams {
   windowList: WindowInfo[];
   toggleSearchMode: () => Promise<void>;
   refreshWindows: () => Promise<void>;
+  /** 閉じる・固定・移動の後の取り直し（選択の位置を保つ） */
+  refreshWindowsKeepingSelection: () => Promise<void>;
   /** 閉じたウィンドウを再取得を待たずに一覧から外す */
   removeWindowFromList: (hwnd: WindowInfo['hwnd']) => void;
   reloadData: () => Promise<void>;
@@ -66,6 +68,7 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
     windowList,
     toggleSearchMode,
     refreshWindows,
+    refreshWindowsKeepingSelection,
     removeWindowFromList,
     reloadData,
     desktopCount,
@@ -102,7 +105,7 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
         itemType,
         message: successMessage,
       });
-      await refreshWindows();
+      await refreshWindowsKeepingSelection();
     } else {
       await window.electronAPI.showToastWindow({
         displayName: win.title,

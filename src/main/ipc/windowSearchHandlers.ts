@@ -1,5 +1,5 @@
 import { ipcMain, BrowserWindow } from 'electron';
-import type { WindowPinMode, WindowInfo, VirtualDesktopInfo } from '@common/types';
+import type { WindowInfo, VirtualDesktopInfo } from '@common/types';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import {
@@ -18,6 +18,8 @@ import {
   isPinnedWindow,
   getAllDesktopNames,
 } from '../utils/virtualDesktop/index.js';
+import { hideMainWindowOnExecute } from '../windowManager.js';
+import { getOverlayWindow } from '../services/overlayWindowService.js';
 
 type OperationResult = { success: boolean; error?: string };
 
@@ -35,22 +37,27 @@ function safeWindowOperation<T extends unknown[]>(
   };
 }
 
-function excludeMainWindow(windows: WindowInfo[], mainWindow: BrowserWindow | null): WindowInfo[] {
-  if (!mainWindow || mainWindow.isDestroyed()) {
-    return windows;
-  }
-  const mainHwndValue = mainWindow.getNativeWindowHandle().readBigInt64LE(0);
-  return windows.filter((win) => win.hwnd !== mainHwndValue);
+/**
+ * QDL 自身のメインウィンドウとトースト（オーバーレイ）を一覧から外す。
+ * ワークスペース・アイテム管理などは切り替え先として残す
+ */
+function excludeQdlWindows(
+  windows: WindowInfo[],
+  qdlWindows: (BrowserWindow | null)[]
+): WindowInfo[] {
+  const excluded = new Set(
+    qdlWindows
+      .filter((w): w is BrowserWindow => !!w && !w.isDestroyed())
+      .map((w) => w.getNativeWindowHandle().readBigInt64LE(0))
+  );
+  return windows.filter((win) => !excluded.has(BigInt(win.hwnd)));
 }
 
-export function setupWindowSearchHandlers(
-  getMainWindow: () => BrowserWindow | null,
-  getWindowPinMode: () => WindowPinMode
-): void {
+export function setupWindowSearchHandlers(getMainWindow: () => BrowserWindow | null): void {
   function getWindowList(includeAllDesktops: boolean): WindowInfo[] {
     try {
       const options = includeAllDesktops ? { includeAllVirtualDesktops: true } : undefined;
-      return excludeMainWindow(getAllWindows(options), getMainWindow());
+      return excludeQdlWindows(getAllWindows(options), [getMainWindow(), getOverlayWindow()]);
     } catch (error) {
       console.error('Failed to get window list:', error);
       return [];
@@ -84,11 +91,10 @@ export function setupWindowSearchHandlers(
       restoreWindow(hwnd);
       const success = activateWindow(hwnd);
 
-      if (success && getWindowPinMode() === 'normal') {
-        const mainWindow = getMainWindow();
-        if (mainWindow && !mainWindow.isDestroyed()) {
-          mainWindow.hide();
-        }
+      // アイテムの実行と同じ隠し方にする（固定・モーダル・初回起動中は隠さない。
+      // 隠したことをレンダラーへ知らせ、検索語とモードを戻す）
+      if (success) {
+        hideMainWindowOnExecute();
       }
 
       return { success };

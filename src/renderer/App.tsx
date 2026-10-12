@@ -140,22 +140,29 @@ function App(): React.ReactElement {
   // （Ctrl+D の連打で、閉じる前に取得した一覧が後から届いて閉じたウィンドウが戻るのを防ぐ）
   const windowListVersionRef = useRef(0);
 
-  const handleRefreshWindows = useCallback(async () => {
-    if (searchMode !== 'window') return;
+  // resetSelection: F5・リンクでの取り直しは選択を先頭に戻す。閉じる・固定・移動の後は位置を保つ
+  //（Ctrl+D を続けたとき、先頭ではなく今の位置のウィンドウを閉じるように）
+  const loadWindowList = useCallback(
+    async (resetSelection: boolean) => {
+      if (searchMode !== 'window') return;
 
-    const version = ++windowListVersionRef.current;
-    await withLoading('ウィンドウ更新中', async () => {
-      // ウィンドウリストと仮想デスクトップ情報を再取得
-      const [windows, info] = await Promise.all([
-        window.electronAPI.getAllWindowsAllDesktops(),
-        window.electronAPI.getVirtualDesktopInfo(),
-      ]);
-      if (version !== windowListVersionRef.current) return;
-      setWindowList(windows);
-      setDesktopInfo(info);
-      setSelectedIndex(0); // 選択インデックスをリセット
-    });
-  }, [searchMode, withLoading]);
+      const version = ++windowListVersionRef.current;
+      await withLoading('ウィンドウ更新中', async () => {
+        // ウィンドウリストと仮想デスクトップ情報を再取得
+        const [windows, info] = await Promise.all([
+          window.electronAPI.getAllWindowsAllDesktops(),
+          window.electronAPI.getVirtualDesktopInfo(),
+        ]);
+        if (version !== windowListVersionRef.current) return;
+        setWindowList(windows);
+        setDesktopInfo(info);
+        if (resetSelection) setSelectedIndex(0);
+      });
+    },
+    [searchMode, withLoading]
+  );
+  const handleRefreshWindows = useCallback(() => loadWindowList(true), [loadWindowList]);
+  const refreshWindowsKeepingSelection = useCallback(() => loadWindowList(false), [loadWindowList]);
 
   /** 閉じたウィンドウを再取得を待たずに一覧から外す（連打したとき次の Ctrl+D が同じウィンドウを狙わないように） */
   const removeWindowFromList = useCallback((hwnd: WindowInfo['hwnd']) => {
@@ -316,6 +323,10 @@ function App(): React.ReactElement {
     [getTabFilteredItems, mainItems]
   );
 
+  // ウィンドウ検索モードで仮想デスクトップのタブを出すか（2 つ以上あるとき）
+  const showDesktopTabs =
+    searchMode === 'window' && !!desktopInfo?.supported && desktopInfo.desktopCount > 1;
+
   const filteredItems = useMemo(() => {
     const itemsToFilter =
       searchMode === 'window'
@@ -323,6 +334,13 @@ function App(): React.ReactElement {
         : tabFilteredItems;
     return filterItems(itemsToFilter, searchQuery, searchMode);
   }, [searchMode, windowList, activeDesktopTab, tabFilteredItems, searchQuery]);
+
+  // 一覧が縮んで選択が範囲外になったら末尾に合わせる（末尾のウィンドウを閉じた後など）
+  useEffect(() => {
+    if (filteredItems.length > 0 && selectedIndex >= filteredItems.length) {
+      setSelectedIndex(filteredItems.length - 1);
+    }
+  }, [filteredItems.length, selectedIndex]);
 
   const handleEditItem = useCallback(
     (item: AppItem) => {
@@ -367,6 +385,7 @@ function App(): React.ReactElement {
     windowList,
     toggleSearchMode: handleToggleSearchMode,
     refreshWindows: handleRefreshWindows,
+    refreshWindowsKeepingSelection,
     removeWindowFromList,
     reloadData: handleReloadItems,
     desktopCount: desktopInfo?.desktopCount || 0,
@@ -626,13 +645,14 @@ function App(): React.ReactElement {
         />
       )}
 
-      {!showDataFileTabs && searchMode === 'normal' && (
+      {((!showDataFileTabs && searchMode === 'normal') ||
+        (searchMode === 'window' && !showDesktopTabs)) && (
         <div className="search-info-bar">
           <LauncherItemCountDisplay count={filteredItems.length} />
         </div>
       )}
 
-      {searchMode === 'window' && desktopInfo?.supported && desktopInfo.desktopCount > 1 && (
+      {showDesktopTabs && desktopInfo && (
         <LauncherDesktopTabBar
           desktopInfo={desktopInfo}
           activeDesktopTab={activeDesktopTab}
@@ -657,7 +677,7 @@ function App(): React.ReactElement {
         onCopyShortcutParentPath={handleCopyShortcutParentPath}
         onOpenShortcutParentFolder={handleOpenShortcutParentFolder}
         onEditItem={handleEditItem}
-        onRefreshWindows={handleRefreshWindows}
+        onRefreshWindows={refreshWindowsKeepingSelection}
         onCloseWindow={closeWindowItem}
       />
 
@@ -673,6 +693,7 @@ function App(): React.ReactElement {
         <LauncherHintBar
           searchMode={searchMode}
           canSwitchDataFileTab={showDataFileTabs && dataFileTabs.length > 1}
+          canSwitchDesktopTab={showDesktopTabs}
           canMoveToDesktop={
             !!desktopInfo?.desktopCount && desktopInfo.desktopCount > 1 && activeDesktopTab > 0
           }
