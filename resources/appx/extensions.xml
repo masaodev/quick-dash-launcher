@@ -1,4 +1,4 @@
 
         <desktop:Extension Category="windows.startupTask" Executable="app\QuickDashLauncher.exe" EntryPoint="Windows.FullTrustApplication">
-          <desktop:StartupTask TaskId="QuickDashLauncherStartup" Enabled="true" DisplayName="QuickDashLauncher" />
+          <desktop:StartupTask TaskId="QuickDashLauncherStartup" Enabled="false" DisplayName="QuickDashLauncher" />
         </desktop:Extension>

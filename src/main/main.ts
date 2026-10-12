@@ -90,7 +90,7 @@ app.whenReady().then(async () => {
   // 自動起動設定を適用（設定ファイルの値をシステムに反映）
   const autoLaunchService = AutoLaunchService.getInstance();
   const autoLaunchEnabled = await settingsService.get('autoLaunch');
-  await autoLaunchService.setAutoLaunch(autoLaunchEnabled);
+  await autoLaunchService.applyOnStartup(autoLaunchEnabled);
 
   // 初回起動モードを設定（初回起動時はフォーカス喪失やEscapeで閉じないようにする）
   setFirstLaunchMode(isFirstLaunch);

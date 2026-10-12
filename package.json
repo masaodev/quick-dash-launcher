@@ -15,6 +15,7 @@
     "dist:appx": "npm run build && electron scripts/generate-appx-assets.mjs && electron-builder --win appx --x64",
     "generate-licenses": "license-checker --production --markdown --out THIRD-PARTY-NOTICES.md",
     "schema:generate": "tsx scripts/generate-schemas.ts",
+    "winrt:generate": "dynwinrt-codegen generate --namespace Windows.ApplicationModel --class-name StartupTask --output src/main/winrt/generated",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "lint:md": "markdownlint-cli2 \"**/*.md\"",
@@ -57,6 +58,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
+    "@microsoft/dynwinrt-codegen": "0.1.0-preview.23",
     "@playwright/test": "^1.64.0",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.1",
@@ -97,6 +99,7 @@
     "wait-on": "^9.5.1"
   },
   "dependencies": {
+    "@microsoft/dynwinrt": "0.1.0-preview.23",
     "@tanstack/react-virtual": "^3.14.13",
     "clipboard-files": "^3.0.0",
     "electron-store": "^11.0.2",

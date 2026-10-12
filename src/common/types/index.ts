@@ -124,6 +124,7 @@ export type {
   WindowPositionMode,
   WorkspacePositionMode,
   DisplayInfo,
+  AutoLaunchStatus,
 } from './settings';
 export { SETTINGS_SCHEMA_REF } from './settings';
 

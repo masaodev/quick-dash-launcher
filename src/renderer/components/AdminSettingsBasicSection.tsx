@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import type { AppSettings } from '@common/types';
+import React, { useEffect, useState } from 'react';
+import type { AppSettings, AutoLaunchStatus } from '@common/types';
 
 import type { HandleSettingChange } from '../hooks/useSettingsManager';
 
@@ -28,6 +28,18 @@ const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
     isValid: boolean;
     reason?: string;
   }>({ isValid: true });
+
+  // OS 側の自動起動の状態（Store 版で、Windows 側で無効にされているときに案内する）
+  const [autoLaunchStatus, setAutoLaunchStatus] = useState<AutoLaunchStatus | null>(null);
+  useEffect(() => {
+    window.electronAPI
+      .getAutoLaunchStatus()
+      .then(setAutoLaunchStatus)
+      .catch(() => setAutoLaunchStatus(null));
+  }, [editedSettings.autoLaunch]);
+  const blockedByWindows =
+    autoLaunchStatus?.mode === 'store' &&
+    (autoLaunchStatus.state === 'disabledByUser' || autoLaunchStatus.state === 'disabledByPolicy');
 
   return (
     <>
@@ -80,6 +92,13 @@ const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
             />
             起動時に自動実行
           </label>
+          {blockedByWindows && (
+            <div className="validation-error">
+              {autoLaunchStatus.state === 'disabledByPolicy'
+                ? '組織のポリシーで自動起動が無効になっているため、ここからは有効にできません。'
+                : 'Windows の設定で自動起動が無効になっているため、ここからは有効にできません。Windows の［設定］→［アプリ］→［スタートアップ］で QuickDashLauncher をオンにしてください。'}
+            </div>
+          )}
         </div>
       </div>
 
