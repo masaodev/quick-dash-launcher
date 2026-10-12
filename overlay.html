@@ -455,7 +455,8 @@
       function buildIconHtml(icon, itemType) {
         const fallback = getDefaultIcon(itemType);
         if (icon) {
-          return `<img src="${escapeHtml(icon)}" alt="" onerror="this.parentElement.innerHTML='<span class=\\'default-icon\\'>${fallback}</span>'" />`;
+          // 読み込めなかったときは下の error の監視が既定のアイコンに差し替える（CSP がインラインのハンドラーを許さないため）
+          return `<img src="${escapeHtml(icon)}" alt="" data-fallback="${escapeHtml(fallback)}" />`;
         }
         return `<span class="default-icon">${fallback}</span>`;
       }
@@ -652,6 +653,22 @@
           }, 2000);
         }
       });
+
+      document.getElementById('actionBtn').addEventListener('click', handleAction);
+
+      // トーストのアイコンが読み込めなかったら既定のアイコンに差し替える（error は泡立たないので捕捉段階で受ける）
+      document.addEventListener(
+        'error',
+        (e) => {
+          const img = e.target;
+          if (!(img instanceof HTMLImageElement) || img.dataset.fallback === undefined) return;
+          const span = document.createElement('span');
+          span.className = 'default-icon';
+          span.textContent = img.dataset.fallback;
+          img.replaceWith(span);
+        },
+        true
+      );
 
       // Escapeキー（進捗モードのみ。トーストモードはfocusable:falseでキー入力なし）
       document.addEventListener('keydown', (e) => {
