@@ -11,6 +11,8 @@ npm run build           # 型チェック（tsc）→ Viteビルド。prebuild�
 npm run preview         # ビルド済みアプリケーションのプレビュー
 npm run start           # ビルドして実行
 npm run dist            # Windowsインストーラー（NSIS）とポータブル版の作成（x64）。build と build:cli を含む
+npm run dist:appx       # Store 版（MSIX の appx、x64）の作成。ロゴ画像を build/appx/ に作ってからパッケージにする（試作中）。build と build:cli を含む
+npm run winrt:generate  # Store 版で使う WinRT の呼び出しコード（src/main/winrt/generated/）を作り直す
 npm run build:cli       # CLI（qdl.exe）のビルド（cargo build --release。Rust が要る）
 npm run test:cli        # CLI の単体テスト（cargo test）
 npm run generate-licenses # THIRD-PARTY-NOTICES.md の生成（build の前に自動で実行）
@@ -36,7 +38,7 @@ Viteベースのビルドシステムを使用:
 - **パッケージングツール**: electron-builder
 - **出力先**: `release/`ディレクトリ
 - **Windows専用**: クロスプラットフォーム非対応
-- **ターゲット**: NSISインストーラーとポータブル版（いずれもx64）
+- **ターゲット**: NSISインストーラーとポータブル版（いずれもx64）。Store 版（appx）は別のコマンドで作る（下記）
 - **App ID**: `net.masaodev.quick-dash-launcher`（masaodev.netドメイン所有者のため）
 - **CLI の同梱**: `npm run dist` は `build:cli` で `cli/target/release/qdl.exe` を作り、electron-builder の `extraResources` でインストール先の `resources\bin\qdl.exe` に同梱する（`package.json` の `build.extraResources`）。Rust が無いと `dist` は失敗する（[開発ガイド - 必要なツール](development.md#必要なツール)）
 
@@ -66,6 +68,24 @@ v0.2.10 で `com.example.quick-dash-launcher` から変えた。App ID は自動
 - 旧版（v0.2.9以前）と新版（v0.2.10以降）は別アプリケーションとして認識されます
 - 設定フォルダ（`app.getPath('userData')/config`）はアプリ名で決まり、App IDには左右されません
 - 旧版をアンインストールしてから新版をインストールすることを推奨します
+
+### Store 版（MSIX）
+
+試作中。Microsoft Store に出すための appx を `npm run dist:appx` で作る（設定は `package.json` の `build.appx`）。
+
+- **ロゴ**: `scripts/generate-appx-assets.mjs` が `assets/icon.svg` から拡大率・大きさ別の画像を `build/appx/` に作る（Electron で描くので `electron` コマンドで実行する）
+- **自動起動**: マニフェストに StartupTask を書く（`resources/appx/extensions.xml`。初期値は無効）。アプリからは `@microsoft/dynwinrt`（プレビュー版）で WinRT の StartupTask を切り替える。呼び出しコードは `npm run winrt:generate` で作り、git に入れる。生成物の `index.js` は変数を `require` するのでバンドルできず、クラスのファイルを直接読み込む
+- **設定フォルダ**: `%APPDATA%` 直下に新しく作るフォルダは、パッケージ専用の場所（`%LOCALAPPDATA%\Packages\<パッケージ>\LocalCache\Roaming\`）に振り替えられる。既にある `%APPDATA%\quick-dash-launcher` は振り替えられず、ポータブル版・インストーラー版と共有する
+- **Publisher・Identity**: Partner Center に登録する前の仮の値。提出前に Partner Center の値にする
+
+ローカルで試すとき（署名なしの appx は実行ファイルを含められないので、開発者モードで展開したフォルダを登録する）:
+
+1. Windows の［設定］→［システム］→［開発者向け］で開発者モードをオンにする
+2. `release/` の appx を展開し、`AppxBlockMap.xml`・`[Content_Types].xml` を消す（unzip では `@scope` のフォルダ名が `%40scope` になるので戻す）
+3. `Add-AppxPackage -Register <展開したフォルダ>\AppxManifest.xml` で登録し、`Start-Process "shell:AppsFolder\<パッケージファミリー名>!QuickDashLauncher"` で起動する
+4. 外すときは `Get-AppxPackage -Name QuickDashLauncher | Remove-AppxPackage`
+
+ポータブル版と同時には起動しない（同じ設定フォルダとホットキーを使う）。
 
 ## リリース（タグ → GitHub Release）
 

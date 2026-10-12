@@ -58,7 +58,7 @@
         },
         "showDataFileTabs": {
           "type": "boolean",
-          "description": "タブ表示の有効/無効（デフォルト: false）"
+          "description": "タブ表示の有効/無効（デフォルト: true）"
         },
         "defaultFileTab": {
           "type": "string",

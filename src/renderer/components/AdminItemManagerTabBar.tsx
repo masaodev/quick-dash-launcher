@@ -42,7 +42,7 @@ const PopupMenu: React.FC<{ menu: MenuState; onClose: () => void }> = ({ menu, o
     function handleMouseDown(event: MouseEvent): void {
       if (ref.current && !ref.current.contains(event.target as Node)) onClose();
     }
-    // Esc はメニューを閉じるだけにする（画面の Esc＝管理ウィンドウを閉じる、に渡さない）
+    // Esc はメニューを閉じるだけにする（画面のキー操作に渡さない）
     function handleKeyDown(event: KeyboardEvent): void {
       if (event.key !== 'Escape') return;
       event.preventDefault();

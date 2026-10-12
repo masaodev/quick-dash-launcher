@@ -39,6 +39,7 @@ import type {
   ClipboardPreview,
   CurrentClipboardState,
   DisplayInfo,
+  AutoLaunchStatus,
   ClipboardSessionCaptureResult,
   ClipboardSessionCommitResult,
   AppScanResult,
@@ -267,6 +268,8 @@ const electronAPI: ElectronAPI = {
   setHotkeyRecording: (recording: boolean) =>
     ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_SET_HOTKEY_RECORDING, recording),
   getDisplays: (): Promise<DisplayInfo[]> => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET_DISPLAYS),
+  getAutoLaunchStatus: (): Promise<AutoLaunchStatus> =>
+    ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET_AUTO_LAUNCH_STATUS),
   isFirstLaunch: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_IS_FIRST_LAUNCH),
   // 編集ウィンドウ関連API
   showEditWindow: () => ipcRenderer.invoke(IPC_CHANNELS.SHOW_EDIT_WINDOW),
