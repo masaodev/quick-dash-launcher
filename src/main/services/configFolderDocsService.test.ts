@@ -113,6 +113,7 @@ describe('configFolderDocsService', () => {
 
     it('AI への作業指示として必要な節が揃っていること', () => {
       for (const heading of [
+        '## CLI（qdl）が使えるなら、まずそれを使う',
         '## まず守ること',
         '## ファイル',
         '## アイテムの書き方',
@@ -125,6 +126,7 @@ describe('configFolderDocsService', () => {
       expect(rendered).toContain('last-load-report.json');
       expect(rendered).toContain('_pre-external');
       expect(rendered).toContain('F5');
+      expect(rendered).toContain('qdl reload');
     });
 
     /** README 内の ```json ブロックを順に取り出す（1 つ目: データファイル、2 つ目: ワークスペース） */
