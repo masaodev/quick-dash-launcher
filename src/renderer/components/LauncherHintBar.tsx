@@ -18,8 +18,6 @@ interface LauncherHintBarProps {
   searchMode: SearchMode;
   /** 通常モード: データファイルのタブが 2 つ以上表示されている（Tab で切り替えられる） */
   canSwitchDataFileTab: boolean;
-  /** ウィンドウ検索モード: 仮想デスクトップのタブが表示されている（Tab で切り替えられる） */
-  canSwitchDesktopTab: boolean;
   /** ウィンドウ検索モード: 仮想デスクトップ番号のタブを表示中（Ctrl+←/→ で移動できる） */
   canMoveToDesktop: boolean;
   /** ウィンドウ検索モード: 選んでいるウィンドウの数（1 つ以上なら、選んだものへの操作を出す） */
@@ -34,7 +32,6 @@ interface Hint {
 const LauncherHintBar: React.FC<LauncherHintBarProps> = ({
   searchMode,
   canSwitchDataFileTab,
-  canSwitchDesktopTab,
   canMoveToDesktop,
   markedCount = 0,
 }) => {
@@ -47,12 +44,12 @@ const LauncherHintBar: React.FC<LauncherHintBarProps> = ({
           ...(canMoveToDesktop ? [{ keys: 'Ctrl+←/→', label: '仮想デスクトップ移動' }] : []),
         ]
       : searchMode === 'window'
-        ? [
-            { keys: 'Ctrl+P', label: 'ピン留め/解除' },
+        ? // よく使う順。Tab（デスクトップ切替）はタブの表示で分かるので出さない
+          [
             { keys: 'Ctrl+D', label: 'ウィンドウを閉じる' },
-            ...(canSwitchDesktopTab ? [{ keys: 'Tab', label: 'デスクトップ切替' }] : []),
-            ...(canMoveToDesktop ? [{ keys: 'Ctrl+←/→', label: '仮想デスクトップ移動' }] : []),
+            { keys: 'Ctrl+P', label: 'ピン留め/解除' },
             { keys: 'Shift+↑/↓', label: '複数選択' },
+            ...(canMoveToDesktop ? [{ keys: 'Ctrl+←/→', label: '仮想デスクトップ移動' }] : []),
           ]
         : [
             { keys: 'F2', label: '編集' },

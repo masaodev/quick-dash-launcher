@@ -736,7 +736,6 @@ function App(): React.ReactElement {
         <LauncherHintBar
           searchMode={searchMode}
           canSwitchDataFileTab={showDataFileTabs && dataFileTabs.length > 1}
-          canSwitchDesktopTab={showDesktopTabs}
           markedCount={markedCount}
           canMoveToDesktop={
             !!desktopInfo?.desktopCount && desktopInfo.desktopCount > 1 && activeDesktopTab > 0
