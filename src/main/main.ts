@@ -1,4 +1,6 @@
+import * as os from 'os';
 import * as path from 'path';
+import type { Server } from 'net';
 
 import { app, globalShortcut, ipcMain, session } from 'electron';
 import { IPC_CHANNELS } from '@common/ipcChannels';
@@ -18,7 +20,15 @@ import {
   cycleWindowPinMode,
   setFirstLaunchMode,
   registerGlobalShortcut,
+  showMainWindow,
 } from './windowManager';
+import { reapplySettingsFromDisk } from './ipc/settingsHandlers';
+import { notifyDataChanged } from './ipc/notifications';
+import { getLastLoadReport, reloadConfigFiles } from './services/data/dataFileLoader.js';
+import { getCliPipeName } from './services/cli/cliProtocol.js';
+import { runCliCommand } from './services/cli/cliCommands.js';
+import { startCliServer } from './services/cli/cliServer.js';
+import { resolveAppExePath, writeCliLauncherInfo } from './services/cli/cliLauncherInfo.js';
 import { closeAdminWindow } from './adminWindowManager';
 import {
   createSplashWindow,
@@ -43,6 +53,28 @@ if (EnvConfig.hasAppInstance) {
   app.setPath('userData', userDataPath);
 }
 
+// CLI（qdl.exe）が本体を起動したときの印。スプラッシュを出さず、二重起動時もウィンドウを出さない
+const CLI_LAUNCH_ARG = '--launched-by-cli';
+const launchedByCli = process.argv.includes(CLI_LAUNCH_ARG);
+
+// 二重起動の防止（userData ごと）。E2E と dev:test は userData を変えずに設定フォルダだけを
+// 差し替えて起動するため、本番の QDL と同時に動かせるよう対象外にする
+const useSingleInstance = !EnvConfig.customConfigDir;
+if (useSingleInstance && !app.requestSingleInstanceLock()) {
+  app.exit(0);
+} else if (useSingleInstance) {
+  app.on('second-instance', (_event, argv) => {
+    if (argv.includes(CLI_LAUNCH_ARG)) return;
+    showMainWindow().catch((error) => console.error('二重起動時のウィンドウ表示でエラー:', error));
+  });
+}
+
+let cliServer: Server | null = null;
+let resolveAppReady: () => void = () => {};
+const appReady = new Promise<void>((resolve) => {
+  resolveAppReady = resolve;
+});
+
 // 開発モード時にリモートデバッグポートを有効化（Playwright MCP用）
 if (EnvConfig.isDevelopment) {
   // APP_INSTANCEごとに異なるポートを使用してポート競合を回避
@@ -59,6 +91,49 @@ app.whenReady().then(async () => {
   // 設定フォルダを直接編集する人・AI 向けに、同梱スキーマと README.md を配置
   installConfigFolderDocs(app.getVersion());
 
+  // CLI の待ち受けは早めに始める（qdl.exe は本体を起動した後、パイプが開くのを待つ）。
+  // 依頼の処理は初期化が終わるまで待たせる。dev:test・E2E では待ち受けない
+  if (useSingleInstance) {
+    const configFolder = PathManager.getConfigFolder();
+    const userName = process.env.USERNAME || os.userInfo().username;
+    cliServer = await startCliServer(
+      getCliPipeName(path.basename(app.getPath('userData')), userName),
+      async (req) => {
+        await Promise.race([
+          appReady,
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('本体の初期化が終わりません')), 60_000)
+          ),
+        ]);
+        return runCliCommand(req, {
+          appVersion: app.getVersion(),
+          pid: process.pid,
+          configFolder,
+          reload: async () => {
+            // メイン画面の F5 と同じく、設定の再適用に失敗してもデータの読み直しは続ける
+            await reapplySettingsFromDisk().catch((error) =>
+              console.error('CLI の reload で設定の再適用に失敗:', error)
+            );
+            await reloadConfigFiles(configFolder, 'explicit');
+            notifyDataChanged();
+            return getLastLoadReport();
+          },
+        });
+      }
+    );
+    if (app.isPackaged) {
+      try {
+        writeCliLauncherInfo(
+          app.getPath('userData'),
+          resolveAppExePath(process.execPath, process.env, os.tmpdir()),
+          app.getVersion()
+        );
+      } catch (error) {
+        console.error('CLI 用の起動情報の書き出しでエラー:', error);
+      }
+    }
+  }
+
   // preload はセッション単位で登録し、全ウィンドウ（レンダラーから window.open で
   // 開く子ウィンドウを含む）に共通適用する。webPreferences.preload は window.open の
   // 子ウィンドウに引き継がれないため、各 BrowserWindow では個別指定しない
@@ -69,7 +144,7 @@ app.whenReady().then(async () => {
   });
 
   // スプラッシュウィンドウを最速で表示（E2Eテスト環境ではスキップ）
-  if (!EnvConfig.skipSplashWindow) {
+  if (!EnvConfig.skipSplashWindow && !launchedByCli) {
     await createSplashWindow();
   }
 
@@ -133,6 +208,7 @@ app.whenReady().then(async () => {
   // レンダラーの準備完了を待ってからスプラッシュに初期化完了を通知
   await rendererReadyPromise;
   notifySplashInitComplete();
+  resolveAppReady();
 
   // テスト環境の場合、ウィンドウを自動表示（createWindow完了後に実行）
   if (EnvConfig.showWindowOnStartup) {
@@ -161,6 +237,7 @@ app.on('before-quit', () => {
 });
 
 app.on('will-quit', () => {
+  cliServer?.close();
   globalShortcut.unregisterAll();
   cancelAllChildWindowCreations();
   closeAllMainChildWindows();

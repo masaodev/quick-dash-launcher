@@ -72,6 +72,7 @@
   - ピン留めモードが`alwaysOnTop`または`stayVisible`の場合
   - **実装場所**: `src/main/windowManager.ts`（`createWindow()` 内の `before-input-event`）
 - **システムトレイ**: ダブルクリックでウィンドウ表示、右クリックでメニュー表示
+- **二重起動**: 同じ userData で動いている本体があるときに 2 つ目を起動すると、2 つ目はすぐに終了し、動いている側がメインウィンドウを表示する（`src/main/main.ts` の `second-instance` から `showMainWindow()`）。2 つ目が CLI（`qdl.exe`）から `--launched-by-cli` 付きで起動されたものなら表示しない。`QUICK_DASH_CONFIG_DIR` を指定した起動（E2E・`npm run dev:test`）は二重起動の防止の対象外
 
 ### ウィンドウ非表示時の処理フロー
 

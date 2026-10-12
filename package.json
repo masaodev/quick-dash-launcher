@@ -11,7 +11,9 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "start": "npm run build && electron .",
-    "dist": "npm run build && electron-builder",
+    "build:cli": "cargo build --release --manifest-path cli/Cargo.toml",
+    "test:cli": "cargo test --manifest-path cli/Cargo.toml",
+    "dist": "npm run build && npm run build:cli && electron-builder",
     "generate-licenses": "license-checker --production --markdown --out THIRD-PARTY-NOTICES.md",
     "schema:generate": "tsx scripts/generate-schemas.ts",
     "lint": "eslint .",
@@ -119,6 +121,10 @@
       "THIRD-PARTY-NOTICES.md"
     ],
     "extraResources": [
+      {
+        "from": "cli/target/release/qdl.exe",
+        "to": "bin/qdl.exe"
+      },
       {
         "from": "resources/native",
         "to": "resources/native",

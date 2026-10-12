@@ -21,6 +21,7 @@
 | Node.js 22.12.0 以上 | `package.json` の `engines` |
 | Visual Studio Build Tools 2022（C++ ワークロード） | ネイティブモジュール（clipboard-files・extract-file-icon）のコンパイル |
 | Python 3 | node-gyp が使う |
+| Rust（rustup、MSVC ツールチェーン） | CLI（`cli/`、`qdl.exe`）のビルドとテスト（`npm run build:cli`・`npm run test:cli`。`npm run dist` も `build:cli` を含む） |
 
 clipboard-files と extract-file-icon は完成品を同梱しておらず、`npm install`・`npm ci` のたびに C++ のソースをコンパイルする。C++ のビルド環境が無いと、node-gyp の「Could not find any Visual Studio installation to use」で失敗する。CI（`.github/workflows/ci.yml`）も windows-2022 の Visual Studio 2022 と Python 3.11 でビルドしている。
 
@@ -28,6 +29,12 @@ Build Tools は IDE なしで、C++ ワークロードだけ入れれば足り�
 
 ```powershell
 winget install --id Microsoft.VisualStudio.2022.BuildTools --source winget --override "--quiet --wait --norestart --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
+```
+
+Rust は CLI に触るとき・配布物を作るときだけ要る（`npm run dev` や単体テストには要らない）。rustup で入れ、Windows の既定の MSVC ツールチェーン（`stable-x86_64-pc-windows-msvc`）を使う。リンクには上の Build Tools の C++ ワークロードを使う。CI の windows-2022 ランナーには Rust が入っている。
+
+```powershell
+winget install --id Rustlang.Rustup --source winget
 ```
 
 ### 開発モード用アイコン
@@ -112,6 +119,35 @@ QUICK_DASH_CONFIG_DIR=./tests/dev/full npm run dev
 - `HOTKEY`環境変数が設定されている場合、設定ファイルの値は無視されます
 - インスタンスを停止する際は、各ターミナルで`Ctrl+C`を押してください
 
+#### 二重起動の防止
+
+同じ userData で 2 つ目を起動すると、2 つ目はすぐに終了し、動いている側がメインウィンドウを表示する（`src/main/main.ts` の `app.requestSingleInstanceLock()` と `second-instance`。CLI が `--launched-by-cli` を付けて起動したときは表示しない）。
+
+- 防止は userData ごとなので、`APP_INSTANCE` が違うインスタンス（`dev`・`dev2`・本番）は同時に動かせる。同じ `npm run dev` を 2 回起動すると、2 つ目は終了する
+- `QUICK_DASH_CONFIG_DIR` を指定した起動（`npm run dev:test`・E2E テスト）は対象外で、何個でも同時に動かせる。その代わり CLI の待ち受けもしない
+
+#### CLI を試す
+
+`npm run build:cli` で `cli/target/release/qdl.exe` を作り、起動中のインスタンスに向けて実行する。`qdl.exe` が既定でつなぐのは本番（`quick-dash-launcher`）なので、開発中のインスタンスには `QDL_INSTANCE` を指定する。
+
+```bash
+# npm run dev（APP_INSTANCE=dev）を起動した状態で
+QDL_INSTANCE=dev cli/target/release/qdl.exe status
+QDL_INSTANCE=dev cli/target/release/qdl.exe reload
+```
+
+`npm run dev:test` は CLI の待ち受けをしないので試せない。開発モードの本体は起動情報（`cli-launcher.json`）を書かないため、本体が起動していないと `qdl.exe` は起動する exe を見つけられない。先に `npm run dev` を起動しておくか、`QDL_NO_LAUNCH=1` で起動させないようにする。
+
+`qdl.exe` が読む環境変数は次のとおり（本体は読まない。`cli/src/main.rs`）。
+
+| 環境変数 | 説明 | 例 |
+| --- | --- | --- |
+| `QDL_INSTANCE` | つなぐインスタンス。本体の `APP_INSTANCE` と同じ値を指定する（未指定なら本番） | `dev` |
+| `QDL_APP_EXE` | 本体が起動していないときに起動する exe（`cli-launcher.json` やインストール先より優先） | `C:\path\to\QuickDashLauncher.exe` |
+| `QDL_NO_LAUNCH` | `1` で、本体が起動していなくても起動しない（終了コード 3 で終わる） | `1` |
+
+コマンド・終了コード・本体の探し方は [CLI（qdl）](../features/cli.md) を参照。
+
 ## 重要な実装詳細
 
 ### ウィンドウの動作
@@ -181,7 +217,7 @@ QUICK_DASH_CONFIG_DIR=./tests/dev/full npm run dev
 
 ### PRの自動チェック
 
-PRとmainへのpushで、GitHub Actions（`.github/workflows/ci.yml`）が型チェック（`npm run type-check`）・lint（`npm run lint`）・単体テスト（`vitest run`）を実行します。JSON Schemaの再生成漏れも `tests/unit/schemas.test.ts` のドリフト検知で失敗として出ます。E2Eは対象外なので、リリース前にローカルで `npm run test:e2e` を実行してください。
+PRとmainへのpushで、GitHub Actions（`.github/workflows/ci.yml`）が型チェック（`npm run type-check`）・lint（`npm run lint`）・単体テスト（`vitest run`）・CLI のテスト（`npm run test:cli`）を実行します。JSON Schemaの再生成漏れも `tests/unit/schemas.test.ts` のドリフト検知で失敗として出ます。E2Eは対象外なので、リリース前にローカルで `npm run test:e2e` を実行してください。
 
 ### 依存関係管理
 
