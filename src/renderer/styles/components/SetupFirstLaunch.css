@@ -70,6 +70,7 @@
   border-top: var(--border-light);
 }
 
+
 .validation-error {
   margin-top: var(--spacing-xs);
   font-size: var(--font-size-sm);

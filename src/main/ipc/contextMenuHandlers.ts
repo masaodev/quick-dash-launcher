@@ -632,7 +632,12 @@ function setupWindowsContextMenuHandler(): void {
           )
         );
         menu.append(
-          createMenuItem('📌 全デスクトップへの表示を解除', event.sender, IPC_CHANNELS.EVENT_WINDOWS_MENU_PIN, false)
+          createMenuItem(
+            '📌 全デスクトップへの表示を解除',
+            event.sender,
+            IPC_CHANNELS.EVENT_WINDOWS_MENU_PIN,
+            false
+          )
         );
       }
 

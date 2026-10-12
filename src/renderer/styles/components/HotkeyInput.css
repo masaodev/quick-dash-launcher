@@ -68,6 +68,7 @@
   z-index: var(--z-dropdown);
 }
 
+
 @keyframes pulse {
   0% {
     box-shadow: var(--focus-ring-danger);
