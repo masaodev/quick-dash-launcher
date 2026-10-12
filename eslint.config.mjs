@@ -23,9 +23,10 @@ const LOG_CALL =
 const I18N_MESSAGE = '画面に出す文言は辞書（src/common/i18n/locales/ja.ts・en.ts）に書き、t() で引いてください';
 const I18N_RESTRICTED_SYNTAX = [
   { selector: `JSXText[value=${JAPANESE}]`, message: I18N_MESSAGE },
-  { selector: `Literal[value=${JAPANESE}]:not(${LOG_CALL} > Literal)`, message: I18N_MESSAGE },
+  // ログの呼び出しの中（メッセージ・添える値のオブジェクト）は対象外
+  { selector: `Literal[value=${JAPANESE}]:not(${LOG_CALL} Literal)`, message: I18N_MESSAGE },
   {
-    selector: `TemplateElement[value.raw=${JAPANESE}]:not(${LOG_CALL} > TemplateLiteral > TemplateElement)`,
+    selector: `TemplateElement[value.raw=${JAPANESE}]:not(${LOG_CALL} TemplateElement)`,
     message: I18N_MESSAGE
   }
 ];
@@ -53,7 +54,16 @@ const I18N_ENFORCED_FILES = [
   'src/renderer/hooks/useItemActions.ts',
   'src/renderer/hooks/useKeyboardShortcuts.ts',
   'src/renderer/hooks/useWindowOperations.ts',
-  'src/renderer/utils/tooltipTextGenerator.ts'
+  'src/renderer/utils/tooltipTextGenerator.ts',
+  // メインプロセスの画面に出る文言（段階 2）
+  'src/common/utils/hotkeyValidator.ts',
+  'src/main/ipc/contextMenuHandlers.ts',
+  'src/main/ipc/dataHandlers.ts',
+  'src/main/ipc/settingsHandlers.ts',
+  'src/main/services/bookmarkAutoImportService.ts',
+  'src/main/services/mainI18n.ts',
+  'src/main/services/overlayWindowService.ts',
+  'src/main/windowManager.ts'
 ];
 
 export default [

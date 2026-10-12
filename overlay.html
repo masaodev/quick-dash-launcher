@@ -377,31 +377,32 @@
       </div>
       <div class="entry-list" id="entryList"></div>
       <div class="progress-actions">
-        <button class="btn btn-cancel" id="actionBtn" onclick="handleAction()">キャンセル</button>
+        <button class="btn btn-cancel" id="actionBtn" onclick="handleAction()"></button>
       </div>
     </div>
 
     <script>
       // ===== トースト =====
 
-      // タイプ別設定（アイコンとアクション文言を統合管理）
-      const itemTypeConfig = {
-        url: { icon: '🌐', action: 'URLを開いています...' },
-        app: { icon: '⚙️', action: 'アプリを起動中...' },
-        file: { icon: '📄', action: 'ファイルを開いています...' },
-        folder: { icon: '📁', action: 'フォルダを開いています...' },
-        customUri: { icon: '🔗', action: '起動中...' },
-        group: { icon: '📦', action: null },
-        windowOperation: { icon: '🪟', action: 'ウィンドウ操作を実行します' },
-        layout: { icon: '🖥️', action: 'ウィンドウ配置を実行します' },
-        windowActivate: { icon: '🔄', action: 'ウィンドウをアクティブ化しました' },
-        windowClose: { icon: '✖️', action: 'ウィンドウを閉じました' },
-        windowPin: { icon: '📌', action: 'ウィンドウをすべてのデスクトップに表示しました' },
-        windowUnpin: { icon: '🔓', action: 'ウィンドウをすべてのデスクトップに表示するのをやめました' },
-        windowMoveDesktop: { icon: '➡️', action: null },
-        workspaceAdd: { icon: '⭐', action: 'ワークスペースに追加しました' },
-        clipboard: { icon: '📋', action: 'クリップボードに復元しています...' },
-        bookmarkImport: { icon: '🔖', action: null },
+      // 種別ごとのアイコン。文言は表示言語に合わせて main が決めて data.text で送る
+      //（overlayWindowService.ts の buildToastText。辞書の toast.*）
+      const itemTypeIcons = {
+        url: '🌐',
+        app: '⚙️',
+        file: '📄',
+        folder: '📁',
+        customUri: '🔗',
+        group: '📦',
+        windowOperation: '🪟',
+        layout: '🖥️',
+        windowActivate: '🔄',
+        windowClose: '✖️',
+        windowPin: '📌',
+        windowUnpin: '🔓',
+        windowMoveDesktop: '➡️',
+        workspaceAdd: '⭐',
+        clipboard: '📋',
+        bookmarkImport: '🔖',
       };
 
       const DEFAULT_ICON = '📋';
@@ -415,32 +416,13 @@
       };
 
       function getDefaultIcon(itemType) {
-        const config = itemTypeConfig[itemType];
-        return config ? config.icon : DEFAULT_ICON;
-      }
-
-      function getActionText(itemType) {
-        const config = itemTypeConfig[itemType];
-        return config ? config.action : '起動中...';
+        return itemTypeIcons[itemType] || DEFAULT_ICON;
       }
 
       // パス省略（40文字超で中間省略）
       function truncatePath(path, maxLength = 40) {
         if (!path || path.length <= maxLength) return path;
         return path.substring(0, 15) + '...' + path.substring(path.length - 20);
-      }
-
-      // グループアイテム名のフォーマット
-      function formatGroupItems(itemNames, itemCount) {
-        if (!itemNames || itemNames.length === 0) {
-          return `${itemCount || 0}件のアイテムを起動します`;
-        }
-        const displayNames = itemNames.slice(0, 3).join(', ');
-        const remaining = (itemCount || itemNames.length) - 3;
-        if (remaining > 0) {
-          return `${displayNames}... 他${remaining}件`;
-        }
-        return displayNames;
       }
 
       // HTMLエスケープ
@@ -462,22 +444,20 @@
 
       // 新形式トーストのコンテンツ部分を生成
       function buildItemContent(data) {
-        const { itemType, displayName, path, itemCount, itemNames, message } = data;
+        const { itemType, displayName, path } = data;
+        const text = data.text || { action: data.message || '' };
         let html = `<div class="toast-title">${escapeHtml(displayName)}</div>`;
 
         if (itemType === 'group') {
-          const count = itemCount || (itemNames ? itemNames.length : 0);
-          html += `<div class="toast-items">${escapeHtml(formatGroupItems(itemNames, itemCount))}</div>`;
+          html += `<div class="toast-items">${escapeHtml(text.groupItems || '')}</div>`;
           html += '<div class="toast-separator"></div>';
-          html += `<div class="toast-action">${count}件のアイテムを起動します</div>`;
+          html += `<div class="toast-action">${escapeHtml(text.action)}</div>`;
         } else {
           if (path) {
             html += `<div class="toast-path">${escapeHtml(truncatePath(path))}</div>`;
           }
           html += '<div class="toast-separator"></div>';
-          // messageが指定されていればそれを使用、なければitemTypeから取得
-          const actionText = message || getActionText(itemType);
-          html += `<div class="toast-action">${escapeHtml(actionText)}</div>`;
+          html += `<div class="toast-action">${escapeHtml(text.action)}</div>`;
         }
 
         return html;
@@ -596,11 +576,12 @@
 
         isComplete = data.isComplete;
         const btn = document.getElementById('actionBtn');
+        const labels = data.labels || { cancel: '×', close: '×' };
         if (isComplete) {
-          btn.textContent = '閉じる';
+          btn.textContent = labels.close;
           btn.className = 'btn btn-close';
         } else {
-          btn.textContent = 'キャンセル';
+          btn.textContent = labels.cancel;
           btn.className = 'btn btn-cancel';
         }
       }

@@ -17,37 +17,37 @@ describe('validateHotkey', () => {
   it('空や文字列でない値は「指定されていません」', () => {
     expect(validateHotkey('')).toEqual({
       isValid: false,
-      reason: 'ホットキーが指定されていません',
+      reason: 'missing',
     });
     expect(validateHotkey(undefined)).toEqual({
       isValid: false,
-      reason: 'ホットキーが指定されていません',
+      reason: 'missing',
     });
   });
 
   it('通常キーが 2 つ以上あると弾く', () => {
     expect(validateHotkey('Ctrl+A+B')).toEqual({
       isValid: false,
-      reason: '通常キーは 1 つだけにしてください',
+      reason: 'oneKey',
     });
   });
 
   it('通常キーが無いと弾く', () => {
     expect(validateHotkey('Ctrl+Shift')).toEqual({
       isValid: false,
-      reason: '修飾キーのほかに通常キーが 1 つ必要です',
+      reason: 'needKey',
     });
   });
 
   it('修飾キーが無いと弾く', () => {
     expect(validateHotkey('A')).toEqual({
       isValid: false,
-      reason: '修飾キー（Ctrl、Alt、Shift等）が必要です',
+      reason: 'needModifier',
     });
   });
 
   it('知らないキー名・空の区切り・同じ修飾キーの重複は形式エラー', () => {
-    const invalidFormat = { isValid: false, reason: 'ホットキーの形式が正しくありません' };
+    const invalidFormat = { isValid: false, reason: 'format' };
     expect(validateHotkey('Ctrl+PageUp')).toEqual(invalidFormat);
     expect(validateHotkey('Ctrl++A')).toEqual(invalidFormat);
     expect(validateHotkey('Ctrl+a')).toEqual(invalidFormat);

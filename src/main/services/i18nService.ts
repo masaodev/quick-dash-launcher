@@ -1,19 +1,18 @@
 import { app, ipcMain } from 'electron';
-import type { i18n } from 'i18next';
 import logger from '@common/logger';
 import { IPC_CHANNELS } from '@common/ipcChannels';
-import { createI18n, FALLBACK_LANGUAGE, resolveLanguage, type AppLanguage } from '@common/i18n';
+import { resolveLanguage, type AppLanguage } from '@common/i18n';
 
 import { SettingsService } from './settingsService.js';
+import { mainI18n } from './mainI18n.js';
 
-/**
- * main プロセスの i18next（トースト・メニュー・ダイアログ・CLI の応答を `mainI18n.t()` で訳す）
- *
- * 言語は設定（language）と OS の表示言語から決める。起動直後は正本の言語で作り、設定を読んだら
- * applyLanguageSetting() で切り替える。renderer は IPC（SETTINGS_GET_LANGUAGE）で今の言語を取り、
- * 設定の変更通知で取り直す。
+export { mainI18n };
+
+/*
+ * main プロセスの言語は設定（language）と OS の表示言語から決める。起動直後は正本の言語
+ * （mainI18n.ts）で、設定を読んだら applyLanguageSetting() で切り替える。renderer は
+ * IPC（SETTINGS_GET_LANGUAGE）で今の言語を取り、設定の変更通知で取り直す。
  */
-export const mainI18n: i18n = createI18n(FALLBACK_LANGUAGE);
 
 /** 設定と OS の表示言語から、今使うべき言語を求める */
 async function resolveFromSettings(): Promise<AppLanguage> {
