@@ -7,6 +7,7 @@ import { SettingsService } from '../services/settingsService.js';
 import { HotkeyService } from '../services/hotkeyService.js';
 import { setHotkeyRecording } from '../services/hotkeyRecording.js';
 import { AutoLaunchService } from '../services/autoLaunchService.js';
+import { applyCliSetting } from '../services/cli/cliInstallService.js';
 import {
   getWorkspaceWindow,
   setWorkspacePosition,
@@ -41,6 +42,7 @@ const POSITION_KEYS: ReadonlyArray<keyof AppSettings> = [
 /** 副作用（OS 登録・ウィンドウ状態）を持つ設定キー。ファイル再読込時に全部適用し直す */
 const EFFECT_KEYS: ReadonlyArray<keyof AppSettings> = [
   'autoLaunch',
+  'cliEnabled',
   ...OPACITY_KEYS,
   ...POSITION_KEYS,
   'workspaceVisibleOnAllDesktops',
@@ -55,6 +57,18 @@ async function applySettingsEffects(
   if (changedKeys.includes('autoLaunch')) {
     const autoLaunch = await settingsService.get('autoLaunch');
     await AutoLaunchService.getInstance().setAutoLaunch(autoLaunch);
+  }
+
+  if (changedKeys.includes('cliEnabled')) {
+    const cliEnabled = await settingsService.get('cliEnabled');
+    if (await applyCliSetting(cliEnabled)) {
+      showToastWindow({
+        message: cliEnabled
+          ? 'qdl コマンドを PATH に追加しました。新しく開いたターミナルから使えます'
+          : 'qdl コマンドを PATH から外しました',
+        type: 'success',
+      }).catch((error) => logger.error({ error }, 'CLI の設定のトーストの表示に失敗'));
+    }
   }
 
   if (changedKeys.some((key) => OPACITY_KEYS.includes(key))) {
