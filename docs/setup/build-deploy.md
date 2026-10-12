@@ -16,7 +16,6 @@ npm run winrt:generate  # Store 版で使う WinRT の呼び出しコード（sr
 npm run build:cli       # CLI（qdl.exe）のビルド（cargo build --release。Rust が要る）
 npm run test:cli        # CLI の単体テスト（cargo test）
 npm run generate-licenses # THIRD-PARTY-NOTICES.md の生成（build の前に自動で実行）
-npm run schema:generate # 型から JSON Schema（assets/schemas/）を生成
 npm run create-dev-icon # 開発モード用アイコンの作成
 npm run docs:screenshots # 画面仕様の画面イメージを撮影（ビルド込み）
 npm run docs:demo-gif    # README のデモ GIF を撮影（ビルド込み。ffmpeg が要る。撮影中は画面を触らない）

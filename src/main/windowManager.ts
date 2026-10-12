@@ -212,6 +212,15 @@ export async function createWindow(): Promise<BrowserWindow> {
     void saveWindowPosition();
   });
 
+  // ページを読み直すとき・ページが落ちたときは、ページで受ける印を戻す
+  //（ページ側の後始末が走らなくても Esc で隠れるように）
+  mainWindow.webContents.on('did-start-loading', () => {
+    escapeHandledByPage = false;
+  });
+  mainWindow.webContents.on('render-process-gone', () => {
+    escapeHandledByPage = false;
+  });
+
   mainWindow.webContents.on('before-input-event', (event, input) => {
     if (input.key === 'Escape' && input.type === 'keyDown') {
       // ページで取り消すものがある（複数選択・確認の帯）あいだは、ページに渡して隠さない

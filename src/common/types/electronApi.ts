@@ -368,7 +368,10 @@ export interface ElectronAPI {
   pinWindow: (hwnd: number | bigint) => Promise<{ success: boolean; error?: string }>;
   unPinWindow: (hwnd: number | bigint) => Promise<{ success: boolean; error?: string }>;
   isWindowPinned: (hwnd: number | bigint) => Promise<boolean>;
+  /** WM_CLOSE を送るだけで、相手の処理は待たない。閉じたかは waitForWindowsClosed の後に一覧を取り直して見る */
   closeWindow: (hwnd: number | bigint) => Promise<{ success: boolean; error?: string }>;
+  /** ウィンドウが閉じる（か隠れる）のを、まとめて最大 1 秒待つ */
+  waitForWindowsClosed: (hwnds: (number | bigint)[]) => Promise<void>;
   // システム通知API
   showNotification: (
     title: string,

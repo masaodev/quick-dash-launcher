@@ -98,16 +98,6 @@ export class PathManager {
     return path.join(this.getConfigFolder(), 'path-type-cache.json');
   }
 
-  /** 同梱 JSON Schema のコピー先（データファイル・settings.json の $schema が参照する） */
-  static getSchemasFolder(): string {
-    return path.join(this.getConfigFolder(), 'schemas');
-  }
-
-  /** 設定フォルダを直接編集する人・AI 向けの案内（起動時に生成） */
-  static getConfigReadmePath(): string {
-    return path.join(this.getConfigFolder(), 'README.md');
-  }
-
   /** datafilesフォルダ内のすべてのdata*.jsonファイルを取得（configFolderからの相対パス） */
   static getDataFiles(): string[] {
     const dataFilesFolder = this.getDataFilesFolder();
@@ -155,7 +145,6 @@ export class PathManager {
       this.getCustomIconsFolder(),
       this.getBackupFolder(),
       this.getClipboardDataFolder(),
-      this.getSchemasFolder(),
     ];
 
     for (const dir of dirs) {

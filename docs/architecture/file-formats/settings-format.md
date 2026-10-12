@@ -26,7 +26,6 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
 
 ```json
 {
-  "$schema": "./schemas/settings.schema.json",
   "createdWithVersion": "0.7.0",
   "updatedWithVersion": "0.7.13",
   "hotkey": "",
@@ -78,19 +77,18 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
 
 ## 3. フィールド定義
 
-フィールドの一覧・型・コメントは [src/common/types/settings.ts](../../../src/common/types/settings.ts) の `AppSettings` を正とします（`WindowPositionMode`・`WorkspacePositionMode` も同じファイル。`DataFileTab` は [data.ts](../../../src/common/types/data.ts)、`BookmarkAutoImportSettings` は [bookmarkAutoImport.ts](../../../src/common/types/bookmarkAutoImport.ts)）。JSON Schema（`assets/schemas/settings.schema.json`）もここから生成します。この章には項目の意味・既定値・制約だけを書き、型定義の写しは置きません。
+フィールドの一覧・型・コメントは [src/common/types/settings.ts](../../../src/common/types/settings.ts) の `AppSettings` を正とします（`WindowPositionMode`・`WorkspacePositionMode` も同じファイル。`DataFileTab` は [data.ts](../../../src/common/types/data.ts)、`BookmarkAutoImportSettings` は [bookmarkAutoImport.ts](../../../src/common/types/bookmarkAutoImport.ts)）。この章には項目の意味・既定値・制約だけを書き、型定義の写しは置きません。
 
-### 3.1. バージョン情報・スキーマ参照
+### 3.1. バージョン情報
 
 | フィールド | 型 | デフォルト値 | 説明 |
 | --- | --- | --- | --- |
-| **$schema** | string | `./schemas/settings.schema.json` | JSON Schema への参照（エディタ補完・検証用）。起動時に `SettingsService` が無ければ補う |
 | **createdWithVersion** | string | - | この設定ファイルを作成したアプリバージョン（初回作成時のみ記録） |
 | **updatedWithVersion** | string | - | この設定ファイルを最後に更新したアプリバージョン |
 
-`$schema`・`createdWithVersion`・`updatedWithVersion` はメタ情報で、更新しても `updatedWithVersion` は進まない。
+`createdWithVersion`・`updatedWithVersion` はメタ情報で、更新しても `updatedWithVersion` は進まない。
 
-同梱スキーマ（`assets/schemas/settings.schema.json`）はキーの欠落と未知のキーを許容する（`required`・`additionalProperties` を指定しない。既定で欠落・未知のキーを許容）。欠けたキーは electron-store がデフォルトで補い、将来のキー追加で古いスキーマが赤くならないようにするため。
+v0.8.0-beta.5 までの QDL が書いた `$schema` は使わない（electron-store が未知のキーとして残すので、ファイルからは消えない）。
 
 ### 3.2. ホットキー設定
 
@@ -227,13 +225,13 @@ OS への登録はポータブル版・インストーラー版ではスター�
 
 設定の変更・リセット・ファイルからの再適用（F5）のたびに、設定が変わったことを知らせるイベント（`IPC_CHANNELS.EVENT_SETTINGS_CHANGED`）を全ウィンドウへ送る。イベントはデータを伴わない通知だけで、受け取った各ウィンドウが設定を取得し直して画面に反映する。
 
-### 4.3. 外部編集（人・AI による直接編集）の反映
+### 4.3. QDL の外での変更の反映
 
-`settings.json` を直接編集した場合、設定値そのものは次の取得時から反映されます（electron-store は取得のたびにファイルを読みます）。ただし OS やウィンドウに作用する設定（ホットキー登録・自動起動・CLI（qdl）の PATH 登録・ワークスペースの不透明度と位置・全デスクトップ表示・スナップ）は `set()` 時にしか適用されないため、**`qdl reload`、メイン画面の F5、または再起動**で適用し直されます（`settings:reapply` IPC → `reapplySettingsFromDisk()`）。
+`settings.json` を手で編集する使い方はサポートしない（設定は画面から変える）。それでも QDL の外でファイルが変わった場合、設定値そのものは次の取得時から反映されます（electron-store は取得のたびにファイルを読みます）。ただし OS やウィンドウに作用する設定（ホットキー登録・自動起動・CLI（qdl）の PATH 登録・ワークスペースの不透明度と位置・全デスクトップ表示・スナップ）は `set()` 時にしか適用されないため、**`qdl reload`、メイン画面の F5、または再起動**で適用し直されます（`settings:reapply` IPC → `reapplySettingsFromDisk()`）。
 
-- ホットキーの値が不正、または他のアプリが使用中で登録できない場合は、現在の登録を維持し、トーストで知らせます。`settings.json` の値は書き戻しません（直接編集した値を勝手に消さないため）
+- ホットキーの値が不正、または他のアプリが使用中で登録できない場合は、現在の登録を維持し、トーストで知らせます。`settings.json` の値は書き戻しません（外で書かれた値を勝手に消さないため）
 - 環境変数 `HOTKEY` で上書きしている間は `settings.json` のホットキーは使いません
-- データファイル（`datafiles/data*.json`）の外部編集については [データファイル形式 5.3](data-format.md#53-外部編集人ai-による直接編集への対応) を参照
+- データファイル（`datafiles/data*.json`）が QDL の外で変わったときについては [データファイル形式 5.3](data-format.md#53-qdl-の外での変更への備え) を参照
 
 ---
 

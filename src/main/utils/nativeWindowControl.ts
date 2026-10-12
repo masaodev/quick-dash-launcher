@@ -52,6 +52,8 @@ const SystemParametersInfoW = user32.func('SystemParametersInfoW', 'bool', [
 ]);
 const ShowWindow = user32.func('ShowWindow', 'bool', ['void*', 'int']);
 const SendMessageW = user32.func('SendMessageW', 'intptr', ['void*', 'uint32', 'intptr', 'intptr']);
+const PostMessageW = user32.func('PostMessageW', 'bool', ['void*', 'uint32', 'intptr', 'intptr']);
+const IsWindow = user32.func('IsWindow', 'bool', ['void*']);
 const GetClassLongPtrW = user32.func('GetClassLongPtrW', 'intptr', ['void*', 'int']);
 const GetWindowLongW = user32.func('GetWindowLongW', 'long', ['void*', 'int']);
 const GetWindow = user32.func('GetWindow', 'void*', ['void*', 'uint32']);
@@ -780,16 +782,40 @@ export function getWindowBounds(hwnd: number | bigint): Bounds | null {
 }
 
 /**
- * ウィンドウにWM_CLOSEメッセージを送信してウィンドウを閉じる
+ * ウィンドウに WM_CLOSE を送って閉じるよう頼む
+ *
+ * 相手の処理を待たない（PostMessageW）。SendMessageW だと、相手が「保存しますか」を出したり
+ * 応答しなかったりすると、閉じ終わるまで QDL のメインプロセスごと止まる。
+ * 閉じたかどうかは分からないので、一覧を取り直す前に waitForWindowsGone で待つ
  * @param hwnd ウィンドウハンドル
- * @returns 成功したらtrue
+ * @returns 送れたら true。ウィンドウがもう無いときも、閉じたのと同じなので true
+ * @throws 送れなかったとき（管理者として実行中のアプリには、権限の低い QDL からは送れない）
  */
 export function closeWindow(hwnd: number | bigint): boolean {
-  try {
-    SendMessageW(toHwndNumber(hwnd), WM_CLOSE, 0, 0);
-    return true;
-  } catch (error) {
-    console.error(`Error closing window ${hwnd}:`, error);
-    return false;
+  const handle = toHwndNumber(hwnd);
+  if (PostMessageW(handle, WM_CLOSE, 0, 0) || !IsWindow(handle)) return true;
+  throw new Error('閉じる要求を送れませんでした（管理者として実行中のアプリなど）');
+}
+
+/** 閉じたか、トレイに隠れた（一覧に出ない）か */
+function isWindowGone(handle: number): boolean {
+  return !IsWindow(handle) || !IsWindowVisible(handle);
+}
+
+/**
+ * ウィンドウが閉じる（かトレイに隠れる）のを待つ。closeWindow の後、一覧を取り直す前に使う
+ * @returns 時間内に全部そうなったら true。「保存しますか」などで残っていれば false
+ */
+export async function waitForWindowsGone(
+  hwnds: (number | bigint)[],
+  timeoutMs: number,
+  intervalMs = 50
+): Promise<boolean> {
+  const handles = hwnds.map(toHwndNumber);
+  const deadline = Date.now() + timeoutMs;
+  while (!handles.every(isWindowGone)) {
+    if (Date.now() >= deadline) return false;
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
   }
+  return true;
 }

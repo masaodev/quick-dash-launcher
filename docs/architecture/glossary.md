@@ -48,7 +48,7 @@ QuickDashLauncherで使用されるドメイン用語の定義です。開発時
 | ワークスペース | `ArchivedWorkspaceItem` | アーカイブアイテム | - | アーカイブされたアイテム。グループと一緒にアーカイブ・復元される。 |
 | ワークスペース | `JsonWorkspaceFile` | ワークスペースファイル | - | ワークスペースの内容を保存するファイル（workspace.json、`version: "2.0"`）。トップレベルに`workspaces`（タブ）・`groups`・`items`の3配列を持つ。アイテムは`type`で判別するunion（`item`/`window`/`group`/`clipboard`/`layout`）で、データファイルと同じ語彙・フィールド名を使う。idは8文字英数字（UUIDではない）。`src/common/types/json-workspace.ts`で定義。`WorkspaceFileStore`で読み書き。設定フォルダ直下に配置。`PathManager.getWorkspaceFilePath()`でパス取得。詳細は[ワークスペースファイル形式](file-formats/workspace-format.md)を参照。 |
 | ワークスペース | `JsonWorkspaceArchiveFile` | アーカイブファイル | - | アーカイブされたグループ・アイテムを保存するファイル（workspace-archive.json、`version: "2.0"`）。`groups`（`archivedAt`/`originalOrder`/`itemCount`付き）と`items`（`archivedAt`/`archivedGroupId`付き）を持つ。復元時に参照。`src/common/types/json-workspace.ts`で定義。`WorkspaceFileStore`で読み書きし、`WorkspaceArchiveManager`がアーカイブ・復元を担う。 |
-| ワークスペース | `WorkspaceUiStateFile` | ワークスペースUI状態ファイル | - | グループの折りたたみ状態・切り離しウィンドウの位置とピン留めを保存するファイル（workspace-ui-state.json）。AIによる編集対象外（JSON Schema同梱なし）。`WorkspaceUiStateStore`で管理。 |
+| ワークスペース | `WorkspaceUiStateFile` | ワークスペースUI状態ファイル | - | グループの折りたたみ状態・切り離しウィンドウの位置とピン留めを保存するファイル（workspace-ui-state.json）。QDL が管理する。`WorkspaceUiStateStore`で管理。 |
 | ウィンドウ | `WindowInfo` | ウィンドウ情報 | - | ウィンドウ検索機能で取得されるウィンドウの情報。hwnd、タイトル、位置、サイズ等を含む。`src/common/types/window.ts`で定義。 |
 | ウィンドウ | `WindowConfig` | ウィンドウ設定 | - | アイテム起動時のウィンドウ制御設定。`LauncherItem.windowConfig`で使用。タイトル検索（ワイルドカード対応）と位置・サイズ制御を定義。 |
 | ウィンドウ | - | ワイルドカード検索 | - | ウィンドウタイトル検索で使用できるパターンマッチング機能。`*`（任意の0文字以上）と`?`（任意の1文字）が使用可能。ワイルドカード文字が含まれない場合は完全一致検索。大文字小文字は区別しない。 |

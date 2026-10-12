@@ -70,13 +70,14 @@ export function useWindowOperations({
 
   /**
    * 結果をトーストで知らせ、1 つでも成功していれば一覧を取り直す。
-   * すべて失敗したときは「<失敗の見出し>: <理由>」、一部だけ失敗したときは件数を添える
+   * すべて失敗したときは「<失敗の見出し>: <理由>」、一部だけ失敗したときは成功の文言に件数を添える
+   * （成功の文言を省くとトーストの既定の文言になるので、件数だけのトーストにならないよう必ず渡す）
    */
   async function report(
     outcome: { done: WindowInfo[]; failed: WindowInfo[]; firstError?: string },
     itemType: ToastItemType,
     errorLabel: string,
-    successMessage?: string
+    successMessage: string
   ): Promise<void> {
     const { done, failed, firstError } = outcome;
     if (done.length === 0) {
@@ -91,7 +92,7 @@ export function useWindowOperations({
     await window.electronAPI.showToastWindow({
       displayName: displayNameOf(done),
       itemType,
-      message: successMessage || partial ? `${successMessage ?? ''}${partial}` : undefined,
+      message: `${successMessage}${partial}`,
     });
     await refreshWindowsKeepingSelection();
   }
@@ -108,7 +109,16 @@ export function useWindowOperations({
         }
         return result;
       });
-      await report(outcome, 'windowClose', 'ウィンドウを閉じるのに失敗しました');
+      // 閉じるよう頼んだだけなので、閉じる（隠れる）のを待ってから一覧を取り直す
+      if (outcome.done.length > 0) {
+        await window.electronAPI.waitForWindowsClosed(outcome.done.map((w) => w.hwnd));
+      }
+      await report(
+        outcome,
+        'windowClose',
+        'ウィンドウを閉じるのに失敗しました',
+        'ウィンドウを閉じました'
+      );
       return outcome.done;
     } finally {
       wins.forEach((w) => closing.delete(w.hwnd));
@@ -129,7 +139,8 @@ export function useWindowOperations({
     await report(
       outcome,
       shouldPin ? 'windowPin' : 'windowUnpin',
-      shouldPin ? '固定に失敗しました' : '固定解除に失敗しました'
+      shouldPin ? '固定に失敗しました' : '固定解除に失敗しました',
+      shouldPin ? 'ウィンドウを全デスクトップに固定しました' : 'ウィンドウの固定を解除しました'
     );
   }
 

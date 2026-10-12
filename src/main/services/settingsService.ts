@@ -1,11 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import {
-  DEFAULT_DATA_FILE,
-  DEFAULT_BOOKMARK_AUTO_IMPORT_SETTINGS,
-  SETTINGS_SCHEMA_REF,
-} from '@common/types';
+import { DEFAULT_DATA_FILE, DEFAULT_BOOKMARK_AUTO_IMPORT_SETTINGS } from '@common/types';
 import type { AppSettings } from '@common/types';
 import { validateHotkey } from '@common/utils/hotkeyValidator';
 import logger from '@common/logger';
@@ -71,7 +67,7 @@ export class SettingsService {
 
   /** 設定値ではないメタ情報のキー（更新しても updatedWithVersion を進めない） */
   private static isMetadataKey(key: keyof AppSettings): boolean {
-    return key === '$schema' || key === 'createdWithVersion' || key === 'updatedWithVersion';
+    return key === 'createdWithVersion' || key === 'updatedWithVersion';
   }
 
   private async initializeStore(): Promise<void> {
@@ -96,16 +92,7 @@ export class SettingsService {
       await this.setCreatedWithVersion();
     }
 
-    this.ensureSchemaRef(this.store);
-
     logger.info(`SettingsService initialized successfully at ${configFolder}`);
-  }
-
-  /** エディタ補完・検証用の $schema（同梱スキーマへの相対パス）。無い・違えば揃える */
-  private ensureSchemaRef(store: StoreInstance): void {
-    if (store.get('$schema') !== SETTINGS_SCHEMA_REF) {
-      store.set('$schema', SETTINGS_SCHEMA_REF);
-    }
   }
 
   /** ストアが初期化されていることを保証し、インスタンスを返す */
@@ -174,8 +161,6 @@ export class SettingsService {
   public async reset(): Promise<void> {
     const store = await this.ensureStore();
     store.clear();
-    // clear() で $schema も消えるので、次回起動を待たずに戻す
-    this.ensureSchemaRef(store);
     logger.info('Settings reset to defaults');
   }
 

@@ -45,7 +45,7 @@ SPEC_COMMENT_EXEMPT = {"README.md", "WRITING-GUIDE.md", "screen-transitions.md"}
 
 def md_files():
     files = list(ROOT.glob("docs/**/*.md")) + list(ROOT.glob(".claude/**/*.md")) + list(ROOT.glob("tests/**/README.md"))
-    for extra in ("README.md", "CLAUDE.md", "scripts/README.md", "src/test/manual/README.md", "assets/config-readme.md"):
+    for extra in ("README.md", "CLAUDE.md", "scripts/README.md", "src/test/manual/README.md"):
         if (ROOT / extra).exists():
             files.append(ROOT / extra)
     return sorted({f for f in files if ".temp" not in f.parts and "node_modules" not in f.parts})

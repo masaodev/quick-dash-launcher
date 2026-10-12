@@ -14,6 +14,7 @@ const isWindowPinned = vi.fn();
 const pinWindow = vi.fn();
 const unPinWindow = vi.fn();
 const setEscapeHandledByPage = vi.fn();
+const waitForWindowsClosed = vi.fn(async () => undefined);
 
 function launcherItem(type: LauncherItem['type'], path: string): LauncherItem {
   return { displayName: `${type} のアイテム`, path, type } as LauncherItem;
@@ -29,7 +30,12 @@ type Params = Omit<UseKeyboardShortcutsParams, 'windowOps' | 'windowSelection'> 
 };
 
 /** App と同じく、ウィンドウ操作・複数選択・キー操作のフックを組み合わせて使う */
-function setup(items: AppItem[], searchMode: SearchMode = 'normal', selectedIndex = 0) {
+function setup(
+  items: AppItem[],
+  searchMode: SearchMode = 'normal',
+  selectedIndex = 0,
+  canPinWindow = true
+) {
   const params: Params = {
     showDataFileTabs: false,
     activeTab: 'datafiles/data.json',
@@ -53,6 +59,7 @@ function setup(items: AppItem[], searchMode: SearchMode = 'normal', selectedInde
     removeWindowFromList: vi.fn(),
     reloadData: vi.fn(async () => undefined),
     desktopCount: 0,
+    canPinWindow,
     activeDesktopTab: 0,
     setActiveDesktopTab: vi.fn(),
   };
@@ -91,6 +98,7 @@ function keyEvent(
 
 beforeEach(() => {
   showToastWindow.mockReset();
+  waitForWindowsClosed.mockClear();
   openParentFolder.mockReset();
   closeWindow.mockReset();
   isWindowPinned.mockReset();
@@ -106,6 +114,7 @@ beforeEach(() => {
       pinWindow,
       unPinWindow,
       setEscapeHandledByPage,
+      waitForWindowsClosed,
     },
   });
 });
@@ -115,6 +124,17 @@ afterEach(() => {
 });
 
 describe('useKeyboardShortcuts', () => {
+  it('Enter のキーリピート（押しっぱなし）では実行しない', async () => {
+    const item = launcherItem('file', 'C:\\Windows\\win.ini');
+    const { params, handleKeyDown } = setup([item]);
+
+    await handleKeyDown({ ...keyEvent('Enter'), repeat: true } as unknown as React.KeyboardEvent);
+    expect(params.handleExecuteItem).not.toHaveBeenCalled();
+
+    await handleKeyDown(keyEvent('Enter'));
+    expect(params.handleExecuteItem).toHaveBeenCalledWith(item);
+  });
+
   it('通常モードの F2 で選択中のアイテムの編集画面を開く', async () => {
     const item = launcherItem('file', 'C:\\Windows\\win.ini');
     const { params, handleKeyDown } = setup([item]);
@@ -217,6 +237,8 @@ describe('useKeyboardShortcuts', () => {
 
     await press(keyEvent('Enter'));
     expect(closeWindow.mock.calls).toEqual([[100], [200], [300]]);
+    // 閉じるのを待つのは、全部に頼んだ後の 1 回だけ
+    expect(waitForWindowsClosed.mock.calls).toEqual([[[100, 200, 300]]]);
     expect(selection().pendingClose).toBeNull();
     // トーストは 1 回だけ
     expect(showToastWindow).toHaveBeenCalledTimes(1);
@@ -259,5 +281,35 @@ describe('useKeyboardShortcuts', () => {
 
     expect(pinWindow.mock.calls).toEqual([[100], [200]]);
     expect(unPinWindow).not.toHaveBeenCalled();
+  });
+
+  it('仮想デスクトップ非対応の環境の Ctrl+P は固定せず、対応していないことをトーストで知らせる', async () => {
+    const { press } = setup([notepad(100)], 'window', 0, false);
+
+    await press(keyEvent('p', { ctrlKey: true }));
+
+    expect(isWindowPinned).not.toHaveBeenCalled();
+    expect(pinWindow).not.toHaveBeenCalled();
+    expect(showToastWindow).toHaveBeenCalledWith({
+      type: 'warning',
+      message: 'この環境は仮想デスクトップに対応していません。',
+    });
+  });
+
+  it('一部のウィンドウだけ固定に失敗したときは、成功の文言に失敗した数を添える', async () => {
+    isWindowPinned.mockResolvedValue(false);
+    pinWindow.mockImplementation(async (hwnd: number) =>
+      hwnd === 300 ? { success: false, error: 'アクセスが拒否されました' } : { success: true }
+    );
+    const { press } = setup([notepad(100), notepad(200), notepad(300)], 'window');
+
+    await press(keyEvent('A', { ctrlKey: true, shiftKey: true }));
+    await press(keyEvent('p', { ctrlKey: true }));
+
+    expect(showToastWindow).toHaveBeenCalledWith({
+      displayName: '2 個のウィンドウ',
+      itemType: 'windowPin',
+      message: 'ウィンドウを全デスクトップに固定しました（1 個は固定に失敗しました）',
+    });
   });
 });

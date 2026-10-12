@@ -52,10 +52,40 @@ describe('useWindowMultiSelect', () => {
     rerender({ items: wins, selectedIndex: 1, mode: 'window' });
     act(() => result.current.resetAnchor());
     act(() => result.current.extendTo(2));
+    rerender({ items: wins, selectedIndex: 2, mode: 'window' }); // カーソルも動く
     expect(hwnds(result.current.markedWindows)).toEqual([2, 3, 4]);
 
     act(() => result.current.extendTo(1)); // 起点まで戻る
     expect(hwnds(result.current.markedWindows)).toEqual([2, 4]);
+  });
+
+  it('Ctrl+クリックのあとカーソルがほかの操作（マウスのホバーなど）で動いたら、Shift+↑↓ は今の行から選ぶ', () => {
+    const { result, rerender } = setup({ selectedIndex: 0 });
+
+    act(() => result.current.toggle(0)); // 1 行目を Ctrl+クリック
+    rerender({ items: wins, selectedIndex: 2, mode: 'window' }); // ホバーで 3 行目へ
+    act(() => result.current.extendTo(3));
+    expect(hwnds(result.current.markedWindows)).toEqual([1, 3, 4]);
+  });
+
+  it('Shift+↑↓ の途中でカーソルがマウスのホバーで動いても、起点は Shift を押し始めた行のまま', () => {
+    const { result, rerender } = setup({ selectedIndex: 0 });
+
+    act(() => result.current.extendTo(1));
+    rerender({ items: wins, selectedIndex: 2, mode: 'window' }); // 一覧が動いてホバーで 3 行目へ
+    act(() => result.current.extendTo(1));
+    act(() => result.current.extendTo(0)); // 起点まで戻れば縮む
+    expect(hwnds(result.current.markedWindows)).toEqual([1]);
+  });
+
+  it('Ctrl+クリックした行からそのまま Shift+↑↓ を押せば、その行から選ぶ', () => {
+    const { result, rerender } = setup({ selectedIndex: 1 });
+
+    act(() => result.current.toggle(1));
+    act(() => result.current.extendTo(2));
+    rerender({ items: wins, selectedIndex: 2, mode: 'window' });
+    act(() => result.current.extendTo(3));
+    expect(hwnds(result.current.markedWindows)).toEqual([2, 3, 4]);
   });
 
   it('Ctrl+クリックで 1 行ずつ付け外しし、Shift+クリックで範囲を足す', () => {
@@ -96,6 +126,15 @@ describe('useWindowMultiSelect', () => {
     expect(setEscapeHandledByPage).toHaveBeenLastCalledWith(true);
 
     act(() => result.current.clear());
+    expect(setEscapeHandledByPage).toHaveBeenLastCalledWith(false);
+  });
+
+  it('選択中に画面が外れたら（読み直し・アンマウント）、Esc をページで受ける印を戻す', () => {
+    const { result, unmount } = setup();
+    act(() => result.current.toggle(0));
+    expect(setEscapeHandledByPage).toHaveBeenLastCalledWith(true);
+
+    unmount();
     expect(setEscapeHandledByPage).toHaveBeenLastCalledWith(false);
   });
 

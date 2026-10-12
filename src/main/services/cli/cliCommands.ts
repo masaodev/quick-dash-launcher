@@ -182,7 +182,7 @@ function reloadResult(report: LoadReport | null): Record<string, unknown> {
     reloaded: true,
     loadedAt: report?.loadedAt ?? null,
     summary: report?.summary ?? null,
-    // 問題のあったファイルだけ詳しく返す（全件の詳細は last-load-report.json）
+    // 問題のあったファイルだけ詳しく返す
     filesWithIssues:
       report?.files.filter(
         (f) => f.status !== 'ok' || f.issues.length > 0 || f.externallyChanged || f.rewritten

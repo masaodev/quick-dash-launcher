@@ -173,7 +173,7 @@ function App(): React.ReactElement {
   }, []);
 
   // trigger: 起動時と F5 は省略（explicit）。完全リフレッシュは 'full'（パスの種類も確かめ直す）。
-  // アプリ内の操作に伴う再読込は 'internal'（last-load-report.json を報告事項があるときだけ更新する）
+  // アプリ内の操作に伴う再読込は 'internal'（先行の再読込があれば結果を共有する）
   const loadItems = async (trigger?: 'explicit' | 'full' | 'internal'): Promise<AppItem[]> => {
     const items = await window.electronAPI.loadDataFiles(trigger);
 
@@ -325,6 +325,10 @@ function App(): React.ReactElement {
     [getTabFilteredItems, mainItems]
   );
 
+  // Ctrl+P でウィンドウを固定（全デスクトップに表示）してよいか。非対応と分かっているときだけ止める
+  //（読み込み前は固定を試し、失敗すればそのトーストが出る）。ヒントは対応と分かってから出す
+  const canPinWindow = desktopInfo?.supported !== false;
+
   // ウィンドウ検索モードで仮想デスクトップのタブを出すか（2 つ以上あるとき）
   const showDesktopTabs =
     searchMode === 'window' && !!desktopInfo?.supported && desktopInfo.desktopCount > 1;
@@ -405,6 +409,7 @@ function App(): React.ReactElement {
     windowSelection,
     reloadData: handleReloadItems,
     desktopCount: desktopInfo?.desktopCount || 0,
+    canPinWindow,
     activeDesktopTab,
     setActiveDesktopTab,
   });
@@ -737,6 +742,7 @@ function App(): React.ReactElement {
           searchMode={searchMode}
           canSwitchDataFileTab={showDataFileTabs && dataFileTabs.length > 1}
           markedCount={markedCount}
+          canPinWindow={desktopInfo?.supported === true}
           canMoveToDesktop={
             !!desktopInfo?.desktopCount && desktopInfo.desktopCount > 1 && activeDesktopTab > 0
           }

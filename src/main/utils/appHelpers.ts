@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import { FileUtils } from '@common/utils/fileUtils';
 import { generateId, serializeJsonDataFile } from '@common/utils/jsonParser';
 import type { JsonDataFile, JsonItem, SerializableClipboard } from '@common/types';
-import { JSON_DATA_SCHEMA_REF, JSON_DATA_VERSION } from '@common/types';
+import { JSON_DATA_VERSION } from '@common/types';
 
 import PathManager from '../config/pathManager.js';
 import { writeDataFile } from '../services/dataFileTracker.js';
@@ -104,7 +104,6 @@ export function createDefaultDataFile(): void {
     if (clipboardItem) items.push(clipboardItem);
 
     const defaultData: JsonDataFile = {
-      $schema: JSON_DATA_SCHEMA_REF,
       version: JSON_DATA_VERSION,
       items,
     };

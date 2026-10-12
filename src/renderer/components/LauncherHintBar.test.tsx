@@ -46,4 +46,26 @@ describe('LauncherHintBar', () => {
       'Ctrl+D:3 件を閉じる　Ctrl+P:3 件を固定/解除　Esc:選択を外す'
     );
   });
+
+  it('仮想デスクトップ非対応の環境では、ウィンドウ検索のヒントに Ctrl+P を出さない', () => {
+    const { rerender } = render(
+      <LauncherHintBar
+        searchMode="window"
+        canSwitchDataFileTab={false}
+        canMoveToDesktop={false}
+        canPinWindow={false}
+      />
+    );
+    expect(hintTexts()).toEqual(['Ctrl+D', 'Shift+↑/↓']);
+    rerender(
+      <LauncherHintBar
+        searchMode="window"
+        canSwitchDataFileTab={false}
+        canMoveToDesktop={false}
+        canPinWindow={false}
+        markedCount={2}
+      />
+    );
+    expect(hintTexts()).toEqual(['Ctrl+D', 'Esc']);
+  });
 });

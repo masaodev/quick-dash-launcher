@@ -1,22 +1,11 @@
-import * as path from 'path';
-
-import { dataLogger } from '@common/logger';
-import { FileUtils } from '@common/utils/fileUtils';
 import type { JsonItemIssue } from '@common/utils/jsonParser';
 
-import { PathManager } from '../config/pathManager.js';
-
 /**
- * データファイル読み込みレポート（config/last-load-report.json）
+ * 設定ファイルの読み込みレポート
  *
- * データファイルを直接編集した人や AI が「自分の編集が受け入れられたか」を
- * 確認するための出力。トーストは AI から見えないので、ファイルに残す。
- * 明示的な読み込み（起動時・F5）のたびに上書きする。アプリ内部の都合による再読込
- * （変更通知・画面内の一覧取得）では、報告することがあるときだけ更新する
- * （起動直後の移行・採番・外部変更の記録が、直後のブックマーク自動取込などで消えないように）。
+ * 読み込みのたびにデータファイルとワークスペースの結果（受理数・スキップ・採番・外部変更・破損）を
+ * まとめる。メモリにだけ持ち、CLI の `reload`・`check` が返す。問題があるときは人向けにトーストも出す。
  */
-
-export const LOAD_REPORT_FILE_NAME = 'last-load-report.json';
 
 export type LoadReportFileStatus = 'ok' | 'corrupted' | 'unreadable';
 
@@ -59,13 +48,6 @@ export interface LoadReport {
  */
 export type LoadTrigger = 'explicit' | 'full' | 'internal';
 
-/** 人・AI に報告すべきこと（補正・書き戻し・外部変更・破損）があるか */
-export function hasReportableIssues(files: LoadReportFile[]): boolean {
-  return files.some(
-    (f) => f.issues.length > 0 || f.rewritten || f.externallyChanged || f.status !== 'ok'
-  );
-}
-
 /**
  * ファイル別の結果からレポートを組み立てる
  */
@@ -102,16 +84,6 @@ export function buildLoadReport(
 }
 
 /**
- * レポートを config/last-load-report.json に書き出す
- */
-export function writeLoadReport(report: LoadReport): void {
-  const reportPath = path.join(PathManager.getConfigFolder(), LOAD_REPORT_FILE_NAME);
-  if (!FileUtils.safeWriteTextFile(reportPath, JSON.stringify(report, null, 2))) {
-    dataLogger.warn({ reportPath }, '読み込みレポートの書き出しに失敗しました');
-  }
-}
-
-/**
  * 人向けのトースト文言（問題があるときだけ返す）
  */
 export function formatLoadReportToast(report: LoadReport): string | null {
@@ -125,5 +97,5 @@ export function formatLoadReportToast(report: LoadReport): string | null {
   if (idAssigned > 0) parts.push(`${idAssigned} 件に ID を採番`);
   const source = externallyChangedFiles.length > 0 ? '外部編集されたデータ' : 'データ';
 
-  return `${source}: ${parts.join('・')}（詳細: ${LOAD_REPORT_FILE_NAME}）`;
+  return `${source}: ${parts.join('・')}`;
 }

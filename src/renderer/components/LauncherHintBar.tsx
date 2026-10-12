@@ -22,6 +22,8 @@ interface LauncherHintBarProps {
   canMoveToDesktop: boolean;
   /** ウィンドウ検索モード: 選んでいるウィンドウの数（1 つ以上なら、選んだものへの操作を出す） */
   markedCount?: number;
+  /** ウィンドウ検索モード: ウィンドウの固定（Ctrl+P）が使える（仮想デスクトップ非対応の環境では出さない） */
+  canPinWindow?: boolean;
 }
 
 interface Hint {
@@ -34,12 +36,13 @@ const LauncherHintBar: React.FC<LauncherHintBarProps> = ({
   canSwitchDataFileTab,
   canMoveToDesktop,
   markedCount = 0,
+  canPinWindow = true,
 }) => {
   const hints: Hint[] =
     searchMode === 'window' && markedCount > 0
       ? [
           { keys: 'Ctrl+D', label: `${markedCount} 件を閉じる` },
-          { keys: 'Ctrl+P', label: `${markedCount} 件を固定/解除` },
+          ...(canPinWindow ? [{ keys: 'Ctrl+P', label: `${markedCount} 件を固定/解除` }] : []),
           { keys: 'Esc', label: '選択を外す' },
           ...(canMoveToDesktop ? [{ keys: 'Ctrl+←/→', label: '仮想デスクトップ移動' }] : []),
         ]
@@ -47,7 +50,7 @@ const LauncherHintBar: React.FC<LauncherHintBarProps> = ({
         ? // よく使う順。Tab（デスクトップ切替）はタブの表示で分かるので出さない
           [
             { keys: 'Ctrl+D', label: 'ウィンドウを閉じる' },
-            { keys: 'Ctrl+P', label: 'ピン留め/解除' },
+            ...(canPinWindow ? [{ keys: 'Ctrl+P', label: 'ピン留め/解除' }] : []),
             { keys: 'Shift+↑/↓', label: '複数選択' },
             ...(canMoveToDesktop ? [{ keys: 'Ctrl+←/→', label: '仮想デスクトップ移動' }] : []),
           ]

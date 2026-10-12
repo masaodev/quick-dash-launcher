@@ -20,8 +20,6 @@ import type { DetachedWindowState, WorkspaceUiStateFile } from '@common/types/js
 import {
   DEFAULT_WORKSPACE_DISPLAY_NAME,
   JSON_WORKSPACE_VERSION,
-  WORKSPACE_ARCHIVE_SCHEMA_REF,
-  WORKSPACE_SCHEMA_REF,
   WORKSPACE_UI_STATE_VERSION,
 } from '@common/types/json-workspace';
 import {
@@ -334,14 +332,12 @@ export function migrateWorkspaceV1(
 
   return {
     main: {
-      $schema: WORKSPACE_SCHEMA_REF,
       version: JSON_WORKSPACE_VERSION,
       workspaces: newWorkspaces,
       groups: newGroups,
       items: newItems,
     },
     archive: {
-      $schema: WORKSPACE_ARCHIVE_SCHEMA_REF,
       version: JSON_WORKSPACE_VERSION,
       groups: newArchivedGroups,
       items: newArchivedItems,

@@ -71,7 +71,7 @@
   - 初回起動モード
   - モーダルモード
   - ピン留めモードが`alwaysOnTop`または`stayVisible`の場合
-  - ウィンドウ検索で選択中、または閉じる確認の帯を表示中（Esc をページに渡し、選択の解除・確認の取り消しに使う。レンダラーが `window:set-escape-handled-by-page` で知らせる）
+  - ウィンドウ検索で選択中、または閉じる確認の帯を表示中（Esc をページに渡し、選択の解除・確認の取り消しに使う。レンダラーが `window:set-escape-handled-by-page` で知らせる。ページの読み直し（`did-start-loading`）・ページが落ちたとき（`render-process-gone`）は戻す）
   - **実装場所**: `src/main/windowManager.ts`（`createWindow()` 内の `before-input-event`）
 - **システムトレイ**: ダブルクリックでウィンドウ表示、右クリックでメニュー表示
 - **二重起動**: 同じ userData で動いている本体があるときに 2 つ目を起動すると、2 つ目はすぐに終了し、動いている側がメインウィンドウを表示する（`src/main/main.ts` の `second-instance` から `showMainWindow()`）。2 つ目が CLI（`qdl.exe`）から `--launched-by-cli` 付きで起動されたものなら表示しない。`QUICK_DASH_CONFIG_DIR` を指定した起動（E2E・`npm run dev:test`）は二重起動の防止の対象外
