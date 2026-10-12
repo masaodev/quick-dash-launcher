@@ -101,7 +101,7 @@ F5 では、レンダラーが `settings:reapply` を呼んでから `load-data-
 
 - パラメータ: `settings: Partial<AppSettings>`
 - 戻り値: `true`
-- 処理内容: 保存後、変更されたキーに応じて副作用（自動起動・ワークスペースの不透明度と表示位置・全デスクトップ表示・ウィンドウスナップ）を適用し、`settings-changed` を全ウィンドウに送る。`hotkey` が設定されたら初回起動モードを解除する
+- 処理内容: 保存後、変更されたキーに応じて副作用（自動起動・CLI（`qdl` コマンド）の PATH への追加と除去・ワークスペースの不透明度と表示位置・全デスクトップ表示・ウィンドウスナップ）を適用し、`settings-changed` を全ウィンドウに送る。`hotkey` が設定されたら初回起動モードを解除する
 
 ### `settings:reset`
 
@@ -113,7 +113,7 @@ F5 では、レンダラーが `settings:reapply` を呼んでから `load-data-
 
 ### `settings:reapply`
 
-`settings.json` をディスクの内容で適用し直す。設定値そのものは毎回ディスクから読むが、ホットキー登録・自動起動・ウィンドウ状態は保存時にしか適用されないため、QDL の外で `settings.json` を編集したときに F5 から呼ぶ。処理後に `settings-changed` を送る。
+`settings.json` をディスクの内容で適用し直す。設定値そのものは毎回ディスクから読むが、ホットキー登録・自動起動・CLI の PATH 登録・ウィンドウ状態は保存時にしか適用されないため、QDL の外で `settings.json` を編集したときに F5 から呼ぶ（CLI の `qdl reload` も同じ処理を呼ぶ）。処理後に `settings-changed` を送る。
 
 ### `settings:set-hotkey-recording`
 

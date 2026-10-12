@@ -35,6 +35,7 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
   "editModeWidth": 1200,
   "editModeHeight": 1000,
   "autoLaunch": false,
+  "cliEnabled": false,
   "backupEnabled": false,
   "backupRetention": 10,
   "showDataFileTabs": true,
@@ -111,9 +112,9 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
 | フィールド | 型 | デフォルト値 | 説明 |
 | --- | --- | --- | --- |
 | **autoLaunch** | boolean | false | Windows起動時にアプリを自動起動するか |
-| **cliEnabled** | boolean | false | CLI（`qdl` コマンド）を PATH から使えるようにするか（[CLI](../../features/cli.md#qdl-を使えるようにする)） |
+| **cliEnabled** | boolean | false | CLI（`qdl` コマンド）を PATH から使えるようにするか |
 
-OS への登録はポータブル版・インストーラー版ではスタートアップフォルダのショートカット、Store 版（MSIX）では Windows のスタートアップ アプリ（StartupTask）。Store 版で利用者が Windows 側で無効にしていると、この値が `true` でも自動起動しない（[管理ウィンドウ 5.4](../../screens/admin-window.md#54-自動起動チェックボックスを変更)）。
+OS への登録はポータブル版・インストーラー版ではスタートアップフォルダのショートカット、Store 版（MSIX）では Windows のスタートアップ アプリ（StartupTask）。Store 版で利用者が Windows 側で無効にしていると、この値が `true` でも自動起動しない。
 
 ショートカット（`QuickDashLauncher.lnk`）はインスタンスを区別しない 1 つだけなので、パッケージ版でも `APP_INSTANCE` を付けて起動したインスタンスは自動起動の登録に触らず、この設定は効きません（試験用のインスタンスの設定で、本番のショートカットを作り直したり消したりしないため）。`cliEnabled` も、PATH と `qdl.exe` のコピー先がインスタンスを区別しない 1 つだけなので、同じく `APP_INSTANCE` 付きの起動とパッケージ化されていない起動では効きません。
 
@@ -228,7 +229,7 @@ OS への登録はポータブル版・インストーラー版ではスター�
 
 ### 4.3. 外部編集（人・AI による直接編集）の反映
 
-`settings.json` を直接編集した場合、設定値そのものは次の取得時から反映されます（electron-store は取得のたびにファイルを読みます）。ただし OS やウィンドウに作用する設定（ホットキー登録・自動起動・ワークスペースの不透明度と位置・全デスクトップ表示・スナップ）は `set()` 時にしか適用されないため、**メイン画面で F5 を押すか再起動**すると適用し直されます（`settings:reapply` IPC → `reapplySettingsFromDisk()`）。
+`settings.json` を直接編集した場合、設定値そのものは次の取得時から反映されます（electron-store は取得のたびにファイルを読みます）。ただし OS やウィンドウに作用する設定（ホットキー登録・自動起動・CLI（qdl）の PATH 登録・ワークスペースの不透明度と位置・全デスクトップ表示・スナップ）は `set()` 時にしか適用されないため、**`qdl reload`、メイン画面の F5、または再起動**で適用し直されます（`settings:reapply` IPC → `reapplySettingsFromDisk()`）。
 
 - ホットキーの値が不正、または他のアプリが使用中で登録できない場合は、現在の登録を維持し、トーストで知らせます。`settings.json` の値は書き戻しません（直接編集した値を勝手に消さないため）
 - 環境変数 `HOTKEY` で上書きしている間は `settings.json` のホットキーは使いません
