@@ -64,7 +64,8 @@ QuickDashLauncherで使用されるドメイン用語の定義です。開発時
 | 設定 | `AppSettings` | アプリケーション設定 | 設定 | 全設定項目を管理するインターフェース。`electron-store`で永続化。`src/common/types/settings.ts`で定義。 |
 | 設定 | `hotkey` | 起動ホットキー | ランチャー起動 | ランチャー起動ホットキー。初回セットアップでの既定値は`Alt+Space`（未設定の空文字は初回起動扱い）。設定画面で変更可能。 |
 | 設定 | `itemSearchHotkey` | ウィンドウ検索の起動ホットキー | ウィンドウ検索で起動 | ウィンドウ検索モードで起動するオプションのホットキー。空文字列で無効。設定画面で変更可能。 |
-| 設定 | `autoLaunch` | 自動起動 | 自動起動 | Windows起動時に自動起動するか。設定画面のチェックボックスで切り替え。 |
+| 設定 | `autoLaunch` | 自動起動 | 自動起動 | Windows起動時に自動起動するか。設定画面のチェックボックスで切り替え。Store 版は Windows のスタートアップ アプリ（StartupTask）で、Windows 側で無効にされていると有効にできない（設定画面に OS 側の状態を出す）。 |
+| 設定 | `cliEnabled` | CLI を使えるようにする | QuickDashLauncher CLI を使えるようにする | `qdl` コマンドをユーザーの PATH から使えるようにするか（既定: false）。有効なら、起動のたびに同梱の `qdl.exe` と置いてあるものを比べて入れ替える。 |
 | 設定 | `backupEnabled` | バックアップ有効 | バックアップ | バックアップ機能の有効/無効。設定画面で変更。 |
 | 通知 | - | トースト通知 | - | 操作完了時に、マウスカーソルがある画面の下部中央に表示される一時的な通知。既定で 2.5 秒後に自動で消える（種類によって長さが変わる）。アイテム実行、クリップボード保存などの操作結果を表示。 |
 | 画面 | - | 画面 | - | アプリケーションのウィンドウの総称。メインウィンドウ（ホットキーで表示）、ワークスペースウィンドウ（アイテム整理）、管理ウィンドウ（設定・アイテム管理）が主な画面。ほかに切り離しグループウィンドウ・アイテム登録・編集ウィンドウ（メイン画面の子ウィンドウ）・確認ウィンドウ・スプラッシュ等がある（`src/main/*WindowManager.ts`が生成を担う）。 |
@@ -73,7 +74,7 @@ QuickDashLauncherで使用されるドメイン用語の定義です。開発時
 | 画面 | `AdminApp.tsx` | 管理ウィンドウ | 管理 | 設定・アイテム管理画面。メインウィンドウの ⚙️ メニュー（「⚙️ 基本設定」「✏️ アイテム管理」）や Ctrl+E で開く。`src/main/adminWindowManager.ts`が生成し、`src/renderer/AdminApp.tsx`で実装。 |
 | 画面 | `RegisterModal` | 登録モーダル | - | アイテム登録・編集フォーム。メインウィンドウまたは管理ウィンドウを親とする子ウィンドウ（`RegisterWindowPage`）に表示する（`src/main/mainChildWindowManager.ts`が生成）。新規登録と編集の両方に対応。 |
 | 画面 | `DirOptionsEditor` | フォルダ取込オプションエディタ | フォルダ取込オプション | フォルダ取込の詳細設定コンポーネント。RegisterModal内で使用。depth、types、filter等を設定。 |
-| CLI | `qdl.exe` | CLI | - | コマンドラインから起動中の本体に依頼する実行ファイル（`cli/`、Rust）。引数を解釈せず名前付きパイプで本体に送り、返ってきた標準出力・標準エラー・終了コードをそのまま出す中継役。コマンドの解釈は本体の`src/main/services/cli/cliCommands.ts`。配布物では`resources\bin\qdl.exe`に同梱。 |
+| CLI | `qdl.exe` | QuickDashLauncher CLI | - | コマンドラインから起動中の本体に依頼する実行ファイル（`cli/`、Rust）。引数を解釈せず名前付きパイプで本体に送り、返ってきた標準出力・標準エラー・終了コードをそのまま出す中継役。コマンドの解釈は本体の`src/main/services/cli/cliCommands.ts`。配布物では`resources\bin\qdl.exe`に同梱。 |
 | CLI | `CLI_PROTOCOL_VERSION` | やり取りの版 | - | `qdl.exe`と本体の間の依頼・応答（JSON 1 行）の形の版。`src/main/services/cli/cliProtocol.ts`で定義し、`cli/src/main.rs`の`PROTOCOL_VERSION`と合わせる。合わないときは終了コード 4。 |
 | CLI | `--launched-by-cli` | CLI からの起動 | - | `qdl.exe`が本体を起動するときに付ける引数。この起動ではスプラッシュを出さず、二重起動で既存の本体に渡ったときもメインウィンドウを表示しない。`src/main/main.ts`で判定。 |
 | CLI | `cli-launcher.json` | CLI 用の起動情報 | - | パッケージ版の本体が起動のたびに userData に書き出す、本体の exe の場所（ポータブル版は展開前の exe）。本体が動いていないときに`qdl.exe`が起動する exe を探すのに使う。`src/main/services/cli/cliLauncherInfo.ts`。 |

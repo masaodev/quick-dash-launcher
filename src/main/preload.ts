@@ -207,10 +207,10 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.invoke(IPC_CHANNELS.GET_WINDOW_PIN_MODE),
   cycleWindowPinMode: () => ipcRenderer.invoke(IPC_CHANNELS.CYCLE_WINDOW_PIN_MODE),
   setEscapeHandledByPage: (handled: boolean) =>
-    ipcRenderer.send(IPC_CHANNELS.SET_ESCAPE_HANDLED_BY_PAGE, handled),
+    ipcRenderer.send(IPC_CHANNELS.WINDOW_SET_ESCAPE_HANDLED_BY_PAGE, handled),
   registerItems: (items: RegisterItem[]) => ipcRenderer.invoke(IPC_CHANNELS.REGISTER_ITEMS, items),
   getPathKind: (filePath: string): Promise<PathKind> =>
-    ipcRenderer.invoke(IPC_CHANNELS.GET_PATH_KIND, filePath),
+    ipcRenderer.invoke(IPC_CHANNELS.PATH_GET_KIND, filePath),
   checkPathsExist: (paths: string[]): Promise<Record<string, PathExistenceStatus>> =>
     ipcRenderer.invoke(IPC_CHANNELS.CHECK_PATHS_EXIST, paths),
   getPathForFile: (file: File) => webUtils.getPathForFile(file),

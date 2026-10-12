@@ -39,14 +39,14 @@ Viteベースのビルドシステムを使用:
 - **Windows専用**: クロスプラットフォーム非対応
 - **ターゲット**: NSISインストーラーとポータブル版（いずれもx64）。Store 版（appx）は別のコマンドで作る（下記）
 - **App ID**: `net.masaodev.quick-dash-launcher`（masaodev.netドメイン所有者のため）
-- **CLI の同梱**: `npm run dist` は `build:cli` で `cli/target/release/qdl.exe` を作り、electron-builder の `extraResources` でインストール先の `resources\bin\qdl.exe` に同梱する（`package.json` の `build.extraResources`）。Rust が無いと `dist` は失敗する（[開発ガイド - 必要なツール](development.md#必要なツール)）
+- **CLI の同梱**: `npm run dist`・`dist:appx` は `build:cli` で `qdl.exe` を作ってから同梱する（`package.json` の `build.extraResources`。同梱先は下の「CLI（qdl.exe）」）。Rust が無いと失敗する（[開発ガイド - 必要なツール](development.md#必要なツール)）
 
 ### CLI（qdl.exe）
 
 CLI は Rust の Cargo プロジェクト（`cli/`）で、本体とは別の実行ファイルになる。本体の Vite ビルド（`npm run build`）には含まれない。
 
 - 出力: `cli/target/release/qdl.exe`（リリースビルドはサイズ優先の設定。`cli/Cargo.toml` の `[profile.release]`）
-- 同梱先: インストーラー版は `<インストール先>\resources\bin\qdl.exe`。ポータブル版にも同じく入るが、起動のたびに一時フォルダへ展開されて場所が変わる。ターミナルから `qdl` で呼ぶには、どちらも設定「QuickDashLauncher CLI を使えるようにする」で `%LOCALAPPDATA%\quick-dash-launcherin` にコピーしてから PATH で呼ぶ（[CLI](../features/cli.md#qdl-を使えるようにする)）
+- 同梱先: インストーラー版は `<インストール先>\resources\bin\qdl.exe`。ポータブル版にも同じく入るが、起動のたびに一時フォルダへ展開されて場所が変わる。ターミナルから `qdl` で呼ぶには、どちらも設定「QuickDashLauncher CLI を使えるようにする」で `%LOCALAPPDATA%\quick-dash-launcher\bin` にコピーしてから PATH で呼ぶ（[CLI](../features/cli.md#qdl-を使えるようにする)）
 - パッケージ版の本体は起動のたびに、`qdl.exe` が本体を起動するときに使う本体の場所を userData の `cli-launcher.json` に書き出す（`src/main/services/cli/cliLauncherInfo.ts`）
 - やり取りの形を変えたら、本体の `CLI_PROTOCOL_VERSION`（`src/main/services/cli/cliProtocol.ts`）と `cli/src/main.rs` の `PROTOCOL_VERSION` を一緒に上げる
 

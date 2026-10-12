@@ -10,7 +10,7 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
 | --- | --- | --- |
 | **settings.json** | アプリケーション設定 | electron-store |
 
-**保存場所**: 設定フォルダ直下の `settings.json`。設定フォルダは既定で `%APPDATA%\quick-dash-launcher\config\`（パッケージ版も同じ。フォルダ名は `package.json` の `name`）だが、環境変数 `QUICK_DASH_CONFIG_DIR` や多重起動（`APP_INSTANCE`）で変わる。決まり方は [ファイル形式一覧の「設定フォルダの場所」](README.md#設定フォルダの場所) を参照
+**保存場所**: 設定フォルダ直下の `settings.json`。設定フォルダは既定で `%APPDATA%\quick-dash-launcher\config\`（パッケージ版も同じ。フォルダ名は `package.json` の `name`。Store 版は例外があり、[ビルドとデプロイ - Store 版（MSIX）](../../setup/build-deploy.md#store-版msix)を参照）だが、環境変数 `QUICK_DASH_CONFIG_DIR` や多重起動（`APP_INSTANCE`）で変わる。決まり方は [ファイル形式一覧の「設定フォルダの場所」](README.md#設定フォルダの場所) を参照
 
 ### 1.2. 文字エンコーディング
 
@@ -105,7 +105,7 @@ v0.8.0-beta.5 までの QDL が書いた `$schema` は使わない（electron-st
 | **editModeWidth** | number | 1200 | 管理ウィンドウの幅（ピクセル） |
 | **editModeHeight** | number | 1000 | 管理ウィンドウの高さ（ピクセル） |
 
-### 3.4. 自動起動設定
+### 3.4. 自動起動・CLI 設定
 
 | フィールド | 型 | デフォルト値 | 説明 |
 | --- | --- | --- | --- |

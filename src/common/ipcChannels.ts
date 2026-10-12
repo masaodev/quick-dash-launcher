@@ -25,7 +25,7 @@ export const IPC_CHANNELS = {
   CREATE_DATA_FILE: 'create-data-file',
   DELETE_DATA_FILE: 'delete-data-file',
   /** パスがフォルダ・ファイル・存在しないのどれかを確かめる（登録画面へのドロップ） */
-  GET_PATH_KIND: 'get-path-kind',
+  PATH_GET_KIND: 'path:get-kind',
   /** パスが実在するかをまとめて確認する（アイテム管理のリンク切れ表示） */
   CHECK_PATHS_EXIST: 'check-paths-exist',
 
@@ -71,7 +71,7 @@ export const IPC_CHANNELS = {
   // ウィンドウ操作
   GET_WINDOW_PIN_MODE: 'get-window-pin-mode',
   CYCLE_WINDOW_PIN_MODE: 'cycle-window-pin-mode',
-  SET_ESCAPE_HANDLED_BY_PAGE: 'set-escape-handled-by-page',
+  WINDOW_SET_ESCAPE_HANDLED_BY_PAGE: 'window:set-escape-handled-by-page',
   QUIT_APP: 'quit-app',
   SHOW_EDIT_WINDOW: 'show-edit-window',
   HIDE_EDIT_WINDOW: 'hide-edit-window',
