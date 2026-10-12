@@ -51,7 +51,12 @@ export interface ToastOptions {
   itemNames?: string[];
 }
 
-/** 種別ごとの既定の文言のキー（message が無いときに出す。無い種別は message を必ず渡す） */
+/**
+ * 種別ごとの既定の文言のキー（message が無いときに出す）。
+ * デスクトップ移動・ブックマーク取込は message を必ず渡す種別なので、無ければ空にする
+ */
+const NO_DEFAULT_ACTION: ReadonlySet<string> = new Set(['windowMoveDesktop', 'bookmarkImport']);
+
 const ACTION_KEYS = {
   url: 'toast.actions.url',
   app: 'toast.actions.app',
@@ -94,7 +99,7 @@ function buildToastText(options: ToastOptions): ToastText {
     };
   }
   if (options.message) return { action: options.message };
-  if (!options.itemType) return { action: '' };
+  if (!options.itemType || NO_DEFAULT_ACTION.has(options.itemType)) return { action: '' };
   const key = ACTION_KEYS[options.itemType as keyof typeof ACTION_KEYS];
   return { action: key ? t(key) : t('toast.actions.default') };
 }

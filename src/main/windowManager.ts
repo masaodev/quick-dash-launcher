@@ -32,6 +32,7 @@ import { registerChildWindowOpener } from './services/childWindowService.js';
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
+let trayLanguageListenerAdded = false;
 
 let windowPinMode: WindowPinMode = EnvConfig.windowPinMode ?? 'normal';
 let isFirstLaunchMode: boolean = false;
@@ -262,12 +263,15 @@ export async function createTray(): Promise<void> {
   tray.setToolTip('QuickDashLauncher');
   await updateTrayMenu();
 
-  // 表示言語が変わったらメニューを作り直す
-  mainI18n.on('languageChanged', () => {
-    updateTrayMenu().catch((error) =>
-      windowLogger.error({ error }, 'トレイのメニューの更新に失敗')
-    );
-  });
+  // 表示言語が変わったらメニューを作り直す（トレイを作り直しても登録は 1 回だけ）
+  if (!trayLanguageListenerAdded) {
+    trayLanguageListenerAdded = true;
+    mainI18n.on('languageChanged', () => {
+      updateTrayMenu().catch((error) =>
+        windowLogger.error({ error }, 'トレイのメニューの更新に失敗')
+      );
+    });
+  }
 
   tray.on('double-click', () => {
     if (mainWindow) {
@@ -365,6 +369,8 @@ async function updateTrayMenu(): Promise<void> {
     },
   ]);
 
+  // await の間に終了処理でトレイが破棄されていることがある
+  if (!tray || tray.isDestroyed()) return;
   tray.setContextMenu(contextMenu);
 }
 
@@ -474,7 +480,7 @@ export function getTray(): Tray | null {
  */
 export function setFirstLaunchMode(isFirstLaunch: boolean): void {
   isFirstLaunchMode = isFirstLaunch;
-  windowLogger.info(`初回起動モード: ${isFirstLaunch ? '有効' : '無効'}`);
+  windowLogger.info({ isFirstLaunch }, '初回起動モードを切り替えました');
 }
 
 /**

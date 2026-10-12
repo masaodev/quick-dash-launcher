@@ -1,8 +1,22 @@
 import { describe, it, expect } from 'vitest';
 
+import { ja } from '../i18n/locales/ja';
+
 import { validateHotkey } from './hotkeyValidator';
+import type { HotkeyInvalidReason } from './hotkeyValidator';
 
 describe('validateHotkey', () => {
+  it('弾いた理由のコードごとに、辞書（hotkey.invalid.*）に文言がある', () => {
+    const reasons: Record<HotkeyInvalidReason, true> = {
+      missing: true,
+      format: true,
+      needKey: true,
+      needModifier: true,
+      oneKey: true,
+    };
+    expect(Object.keys(ja.hotkey.invalid).sort()).toEqual(Object.keys(reasons).sort());
+  });
+
   it('修飾キー 1 つ以上と通常キー 1 つの組み合わせを受け付ける', () => {
     expect(validateHotkey('Alt+Space')).toEqual({ isValid: true });
     expect(validateHotkey('Ctrl+Alt+A')).toEqual({ isValid: true });

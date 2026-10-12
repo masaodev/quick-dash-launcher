@@ -20,13 +20,26 @@ const LOG_CALL =
   'CallExpression[callee.object.name=/^(console|[a-z]*[lL]ogger)$/][callee.property.name=/^(trace|debug|info|warn|error|fatal|log)$/], ' +
   'CallExpression[callee.name=/^(debugLog|debugInfo|logWarn|logError)$/]' +
   ')';
+/**
+ * ログの文言の置き場（訳さないので直書きを許す）: 引数そのもの・文字列の連結、添える値のオブジェクトの値
+ * （`a || 'なし'` のような既定値も）。ログの引数の中でも、関数の呼び出しの中などは対象のまま
+ */
+const LOG_LITERAL = [
+  `${LOG_CALL} > Literal`,
+  `${LOG_CALL} > BinaryExpression > Literal`,
+  `${LOG_CALL} > ObjectExpression > Property > Literal`,
+  `${LOG_CALL} > ObjectExpression > Property > :matches(LogicalExpression, ConditionalExpression) > Literal`
+].join(', ');
+const LOG_TEMPLATE_ELEMENT = [
+  `${LOG_CALL} > TemplateLiteral > TemplateElement`,
+  `${LOG_CALL} > ObjectExpression > Property > TemplateLiteral > TemplateElement`
+].join(', ');
 const I18N_MESSAGE = '画面に出す文言は辞書（src/common/i18n/locales/ja.ts・en.ts）に書き、t() で引いてください';
 const I18N_RESTRICTED_SYNTAX = [
   { selector: `JSXText[value=${JAPANESE}]`, message: I18N_MESSAGE },
-  // ログの呼び出しの中（メッセージ・添える値のオブジェクト）は対象外
-  { selector: `Literal[value=${JAPANESE}]:not(${LOG_CALL} Literal)`, message: I18N_MESSAGE },
+  { selector: `Literal[value=${JAPANESE}]:not(${LOG_LITERAL})`, message: I18N_MESSAGE },
   {
-    selector: `TemplateElement[value.raw=${JAPANESE}]:not(${LOG_CALL} TemplateElement)`,
+    selector: `TemplateElement[value.raw=${JAPANESE}]:not(${LOG_TEMPLATE_ELEMENT})`,
     message: I18N_MESSAGE
   }
 ];
