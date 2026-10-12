@@ -151,8 +151,8 @@ test.describe('QuickDashLauncher - 基本UI機能テスト', () => {
       expect(filteredCount).toBeGreaterThan(0);
 
       // GitHubを含むアイテムが表示されていることを確認
-      const hasGitHub = await mainWindow.locator('text=GitHub').isVisible();
-      expect(hasGitHub).toBe(true);
+      // isVisible() は待たずに 1 回だけ見るので、描画が遅れると落ちる。表示されるまで待つ
+      await expect(mainWindow.locator('text=GitHub').first()).toBeVisible();
     });
 
     await test.step('検索ボックスをクリアして全アイテムが表示される', async () => {

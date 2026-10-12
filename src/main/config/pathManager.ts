@@ -59,6 +59,11 @@ export class PathManager {
     return path.join(this.getConfigFolder(), 'backup');
   }
 
+  /** ログファイル（main.log と古い世代）を置くフォルダ */
+  static getLogsFolder(): string {
+    return path.join(this.getConfigFolder(), 'logs');
+  }
+
   static getClipboardDataFolder(): string {
     return path.join(this.getConfigFolder(), 'clipboard-data');
   }

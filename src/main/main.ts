@@ -45,6 +45,7 @@ import { closeAllWorkspaceConfirms } from './workspaceConfirmWindowManager.js';
 import { BookmarkAutoImportService } from './services/bookmarkAutoImportService.js';
 import { applyLanguageSetting, registerLanguageHandler } from './services/i18nService.js';
 import { installNavigationGuard } from './utils/navigationGuard.js';
+import { startFileLogging } from './services/fileLogging.js';
 
 // 多重起動時に完全に独立したuserDataを使用
 if (EnvConfig.hasAppInstance) {
@@ -67,11 +68,19 @@ if (useSingleInstance && !app.requestSingleInstanceLock()) {
       '同時に動かすには APP_INSTANCE を変えて起動してください'
   );
   app.exit(0);
-} else if (useSingleInstance) {
-  app.on('second-instance', (_event, argv) => {
-    if (argv.includes(CLI_LAUNCH_ARG)) return;
-    showMainWindow().catch((error) => console.error('二重起動時のウィンドウ表示でエラー:', error));
-  });
+} else {
+  // ログをファイルにも残す（1MB で回し、古いものは 2 世代まで）。起動直後のログも残るよう、
+  // 準備完了を待たずに始める。二重起動で終わる側では始めない（動いている側とファイルを取り合うため）
+  startFileLogging(PathManager.getLogsFolder());
+
+  if (useSingleInstance) {
+    app.on('second-instance', (_event, argv) => {
+      if (argv.includes(CLI_LAUNCH_ARG)) return;
+      showMainWindow().catch((error) =>
+        console.error('二重起動時のウィンドウ表示でエラー:', error)
+      );
+    });
+  }
 }
 
 let cliServer: Server | null = null;
