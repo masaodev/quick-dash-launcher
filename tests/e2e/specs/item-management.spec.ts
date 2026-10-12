@@ -672,6 +672,35 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
     }
   });
 
+  test('一覧で Escape キーを押しても管理ウィンドウは閉じない', async ({
+    electronApp,
+    mainWindow,
+  }, _testInfo) => {
+    const utils = new TestUtils(mainWindow);
+    const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
+    const adminUrl = adminWindow.url();
+    const isAdminWindowVisible = () =>
+      electronApp.evaluate(({ BrowserWindow }, url) => {
+        const win = BrowserWindow.getAllWindows().find((w) => w.webContents.getURL() === url);
+        return win ? win.isVisible() : false;
+      }, adminUrl);
+
+    try {
+      await test.step('一覧にフォーカスして Escape キーを押しても、確認も出ず閉じない', async () => {
+        await adminWindow.locator('.edit-mode-view').focus();
+        await adminWindow.keyboard.press('Escape');
+
+        // 閉じる処理は IPC 経由で非同期に走るので、少し待ってから確かめる
+        await adminWindow.waitForTimeout(500);
+        await expect(adminWindow.locator('[data-testid="confirm-dialog"]')).not.toBeVisible();
+        expect(await isAdminWindowVisible()).toBe(true);
+        await expect(adminWindow.locator('.raw-item-row[data-item-id="base0001"]')).toBeVisible();
+      });
+    } finally {
+      await adminWindow.close();
+    }
+  });
+
   test('見出しとセルはキーボード（Enter／Space）でも並べ替え・編集できる', async ({
     electronApp,
     mainWindow,
