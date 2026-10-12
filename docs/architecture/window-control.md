@@ -486,7 +486,7 @@ Chrome (Desktop2),chrome.exe,,,"{""title"":""Google Chrome"",""virtualDesktopNum
 
 **技術実装:**
 
-- VirtualDesktopAccessor.dll（C++版、skottmckayフォーク）を使用
+- VirtualDesktopAccessor.dll（Rust 版、Ciantic 版。`resources/native/`）を使用。デスクトップの作成・削除・名前の変更（`CreateDesktop`・`RemoveDesktop`・`SetDesktopName`）も公開しているが、今は使っていない
 - koffiライブラリでネイティブDLL呼び出し
 - レジストリから仮想デスクトップGUID一覧を取得し、番号からGUIDに変換
 
