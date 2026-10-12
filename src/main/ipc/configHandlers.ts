@@ -1,9 +1,10 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
-import { ipcMain, shell } from 'electron';
+import { app, ipcMain, shell } from 'electron';
 import logger from '@common/logger';
 import { IPC_CHANNELS } from '@common/ipcChannels';
+import type { AppDistribution } from '@common/types';
 
 const DEFAULT_APP_INFO = {
   version: '0.0.0',
@@ -13,6 +14,17 @@ const DEFAULT_APP_INFO = {
   license: 'MIT',
   repository: 'https://github.com/masaodev/quick-dash-launcher',
 };
+
+/**
+ * 配布形式を判定する。Store 版は process.windowsStore、
+ * ポータブル版はランチャーが設定する PORTABLE_EXECUTABLE_FILE で見分ける
+ */
+export function getAppDistribution(): AppDistribution {
+  if (!app.isPackaged) return 'dev';
+  if (process.windowsStore === true) return 'store';
+  if (process.env.PORTABLE_EXECUTABLE_FILE) return 'portable';
+  return 'installer';
+}
 
 /** 画面から外部で開いてよい URL のスキーム（アイテムの起動は別経路で、カスタム URI も開く） */
 const ALLOWED_EXTERNAL_PROTOCOLS = new Set(['http:', 'https:']);
@@ -46,7 +58,7 @@ export function setupConfigHandlers(configFolder: string): void {
   ipcMain.handle(IPC_CHANNELS.GET_APP_INFO, async () => {
     const packageJsonPath = path.join(__dirname, '../../package.json');
     const content = await fs.readFile(packageJsonPath, 'utf-8').catch(() => null);
-    if (!content) return DEFAULT_APP_INFO;
+    if (!content) return { ...DEFAULT_APP_INFO, distribution: getAppDistribution() };
 
     const pkg = JSON.parse(content);
     return {
@@ -56,6 +68,7 @@ export function setupConfigHandlers(configFolder: string): void {
       author: pkg.author,
       license: pkg.license,
       repository: pkg.repository?.url || DEFAULT_APP_INFO.repository,
+      distribution: getAppDistribution(),
     };
   });
 
