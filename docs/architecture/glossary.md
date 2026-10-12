@@ -38,7 +38,7 @@
 | 引数 | arguments | パラメーター | アプリに渡す引数 | `args` |
 | メモ | note | 備考、comment | アイテムに付けるメモ | `memo` |
 | 種別 | type | 登録種別、カテゴリ | 登録するアイテムの種類（アイテム・フォルダ取込・グループなど） | `itemCategory` |
-| フォルダ取込 | folder import | フォルダ取り込み、フォルダインポート、dir | フォルダの中身をまとめてアイテムにする種別 | `JsonDirItem` |
+| フォルダ取込 | folder import | フォルダ取り込み、フォルダインポート | フォルダの中身をまとめてアイテムにする種別 | `JsonDirItem` |
 | グループ | group | — | 複数のアイテムをまとめて起動する種別 | `GroupItem` |
 | ウィンドウ操作 | window action | ウィンドウアイテム、window item | 既にあるウィンドウを探して前に出す・動かす種別 | `WindowItem` |
 | ウィンドウ配置 | window layout | レイアウト | 複数のウィンドウの位置と大きさをまとめて戻す種別 | `LayoutItem` |

@@ -81,7 +81,7 @@ describe('launcher item add', () => {
       expect.objectContaining({ id: 'NewId001' })
     );
     expect(ctx.syncBeforeWrite).toHaveBeenCalled();
-    expect(ctx.changed).toHaveBeenCalledWith('CLI: メイン画面に「資料」を追加しました');
+    expect(ctx.changed).toHaveBeenCalledWith('CLI: メインウィンドウに「資料」を追加しました');
   });
 
   it('PATH から探すコマンド・URL・%VAR% のパスはそのまま', async () => {
@@ -137,7 +137,7 @@ describe('launcher item add', () => {
     );
     expect(window.code).toBe('invalid');
     expect(window.message).toContain(
-      '項目 windowTitle がありません（--set windowTitle=… で渡してください）'
+      'キー windowTitle がありません（--set windowTitle=… で渡してください）'
     );
     const group = await errorOf(
       runLauncherItemCommand('add', ['--type', 'group', '--name', 'g'], ctx)
@@ -146,7 +146,7 @@ describe('launcher item add', () => {
     const path = await errorOf(
       runLauncherItemCommand('update', ['Memo0001', '--unset', 'path'], ctx)
     );
-    expect(path.message).toContain('項目 path がありません（--path で渡してください）');
+    expect(path.message).toContain('キー path がありません（--path で渡してください）');
   });
 
   it('必須の欠け・知らないファイル・知らない種類は断る', async () => {
