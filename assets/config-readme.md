@@ -3,13 +3,13 @@
 > このファイルは QuickDashLauncher v{{APP_VERSION}} が起動時に生成します。編集しても次回起動で上書きされます。
 > 設定フォルダ: `{{CONFIG_DIR}}`
 
-## CLI（qdl）が使えるなら、まずそれを使う
+## QuickDashLauncher CLI（qdl）が使えるなら、まずそれを使う
 
 メイン画面のアイテムとワークスペースのアイテム・グループの追加・変更・削除は、ファイルを書かずに CLI（`qdl`）で行う。QuickDashLauncher（以下 QDL）が検証して保存し、結果を JSON で返し、画面にも反映する（F5 不要。QDL が未起動なら起動する）。
 
 - 最初に `qdl status` を実行し、`configFolder` がこのフォルダ（`{{CONFIG_DIR}}`）と同じか確かめる。開発用のインスタンス
   （`<名前>-quick-dash-launcher`）は `QDL_INSTANCE=<名前>` を付けて呼ぶ。`qdl` が見つからなければ、使う人に
-  「基本設定」→「コマンドライン（qdl）を使えるようにする」をオンにしてもらう（それまではこの先のとおりファイルを書く）
+  「基本設定」→「QuickDashLauncher CLI を使えるようにする」をオンにしてもらう（それまではこの先のとおりファイルを書く）
 - 使い方は `qdl help` と各段の `--help`。`qdl launcher item`・`qdl workspace item`・`qdl workspace group` に `list`／`add`／`update`／`remove`、ほかに `qdl reload`・`qdl check`
 - 対象は id か表示名の完全一致（複数に当たると何も変えず `ambiguous` と候補が返るので、id で指定し直す）。
   `--path` の相対パスは実行したフォルダが基準。`--dry-run` を付けると書かずに結果だけ返る

@@ -64,8 +64,8 @@ async function applySettingsEffects(
     if (await applyCliSetting(cliEnabled)) {
       showToastWindow({
         message: cliEnabled
-          ? 'qdl コマンドを PATH に追加しました。新しく開いたターミナルから使えます'
-          : 'qdl コマンドを PATH から外しました',
+          ? 'QuickDashLauncher CLI を使えるようにしました。新しく開いたターミナルから qdl で使えます'
+          : 'QuickDashLauncher CLI を使えないようにしました（qdl コマンドを PATH から外しました）',
         type: 'success',
       }).catch((error) => logger.error({ error }, 'CLI の設定のトーストの表示に失敗'));
     }

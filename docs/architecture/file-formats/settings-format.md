@@ -112,7 +112,7 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
 | フィールド | 型 | デフォルト値 | 説明 |
 | --- | --- | --- | --- |
 | **autoLaunch** | boolean | false | Windows起動時にアプリを自動起動するか |
-| **cliEnabled** | boolean | false | CLI（`qdl` コマンド）を PATH から使えるようにするか |
+| **cliEnabled** | boolean | false | QuickDashLauncher CLI（`qdl` コマンド）を PATH から使えるようにするか |
 
 OS への登録はポータブル版・インストーラー版ではスタートアップフォルダのショートカット、Store 版（MSIX）では Windows のスタートアップ アプリ（StartupTask）。Store 版で利用者が Windows 側で無効にしていると、この値が `true` でも自動起動しない。
 

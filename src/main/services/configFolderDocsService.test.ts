@@ -113,7 +113,7 @@ describe('configFolderDocsService', () => {
 
     it('AI への作業指示として必要な節が揃っていること', () => {
       for (const heading of [
-        '## CLI（qdl）が使えるなら、まずそれを使う',
+        '## QuickDashLauncher CLI（qdl）が使えるなら、まずそれを使う',
         '## まず守ること',
         '## ファイル',
         '## アイテムの書き方',

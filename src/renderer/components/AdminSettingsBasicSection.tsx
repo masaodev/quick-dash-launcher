@@ -128,11 +128,12 @@ const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
               onChange={(e) => handleSettingChange('cliEnabled', e.target.checked)}
               disabled={isLoading}
             />
-            コマンドライン（qdl）を使えるようにする
+            QuickDashLauncher CLI を使えるようにする
           </label>
           <div className="setting-description">
-            qdl コマンドを PATH に追加し、ターミナルや AI から QuickDashLauncher
-            に依頼できるようにします（新しく開いたターミナルから使えます）。
+            ターミナルや AI から qdl
+            コマンドで、アイテムやワークスペースを操作できるようにします（qdl を PATH
+            に追加します。新しく開いたターミナルから使えます）。
           </div>
         </div>
       </div>
