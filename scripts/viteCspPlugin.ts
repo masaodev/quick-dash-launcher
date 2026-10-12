@@ -15,22 +15,30 @@
 
 import { createHash } from 'crypto';
 
-import type { Plugin } from 'vite';
+import type { Plugin, Rollup } from 'vite';
 
-const INLINE_SCRIPT_PATTERN = /<script\b(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)<\/script>/gi;
+// src 属性の有無は空白に続く `src=` で見る（data-src などを src と取り違えない）
+const INLINE_SCRIPT_PATTERN = /<script\b(?![^>]*\ssrc\s*=)[^>]*>([\s\S]*?)<\/script>/gi;
 
-/** HTML のインラインスクリプト（src の無い <script>）の中身を取り出す */
+/**
+ * HTML のインラインスクリプト（src の無い <script>）の中身を取り出す。
+ * 空白だけの中身もブラウザーは CSP で確かめるので、空でなければ含める
+ */
 export function extractInlineScripts(html: string): string[] {
   const scripts: string[] = [];
   for (const match of html.matchAll(INLINE_SCRIPT_PATTERN)) {
-    if (match[1].trim() !== '') scripts.push(match[1]);
+    if (match[1] !== '') scripts.push(match[1]);
   }
   return scripts;
 }
 
-/** CSP の 'sha256-…' の値を作る（ブラウザーと同じく、タグの中身をそのまま UTF-8 でハッシュする） */
+/**
+ * CSP の 'sha256-…' の値を作る。ブラウザーは HTML を読むときに改行を LF にそろえてから
+ * ハッシュを取るので、CRLF のまま出力された HTML でも合うよう同じようにそろえる
+ */
 export function hashScript(script: string): string {
-  return `'sha256-${createHash('sha256').update(script, 'utf8').digest('base64')}'`;
+  const normalized = script.replace(/\r\n?/g, '\n');
+  return `'sha256-${createHash('sha256').update(normalized, 'utf8').digest('base64')}'`;
 }
 
 /** インラインスクリプトのハッシュから CSP の文字列を作る */
@@ -71,16 +79,17 @@ export function cspPlugin(): Plugin {
     enforce: 'post',
     generateBundle(_options, bundle) {
       const htmlAssets = Object.values(bundle).filter(
-        (output) => output.type === 'asset' && output.fileName.endsWith('.html')
+        (output): output is Rollup.OutputAsset =>
+          output.type === 'asset' && output.fileName.endsWith('.html')
       );
       if (htmlAssets.length === 0) return;
 
       const sources = htmlAssets.map((asset) =>
-        asset.type === 'asset' ? String(asset.source) : ''
+        typeof asset.source === 'string' ? asset.source : new TextDecoder().decode(asset.source)
       );
       const csp = buildCsp(sources.flatMap(extractInlineScripts).map(hashScript));
       htmlAssets.forEach((asset, i) => {
-        if (asset.type === 'asset') asset.source = injectCspMeta(sources[i], csp);
+        asset.source = injectCspMeta(sources[i], csp);
       });
     },
   };

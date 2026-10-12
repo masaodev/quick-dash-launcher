@@ -22,6 +22,14 @@ describe('extractInlineScripts', () => {
   it('インラインスクリプトが無ければ空', () => {
     expect(extractInlineScripts('<script src="x.js"></script>')).toEqual([]);
   });
+
+  it('data-src などは src とみなさない', () => {
+    expect(extractInlineScripts('<script data-src="x.js">init()</script>')).toEqual(['init()']);
+  });
+
+  it('空白だけの中身も含める（ブラウザーは CSP で確かめる）', () => {
+    expect(extractInlineScripts('<script>\n</script>')).toEqual(['\n']);
+  });
 });
 
 describe('hashScript', () => {
@@ -29,6 +37,10 @@ describe('hashScript', () => {
     expect(hashScript("alert('Hello, world.');")).toBe(
       "'sha256-qznLcsROx4GACP2dm0UCKCzCG+HiZ1guq6ZZDob/Tng='"
     );
+  });
+
+  it('改行は LF にそろえてからハッシュを取る（CRLF の HTML でも合う）', () => {
+    expect(hashScript('a();\r\nb();\rc();')).toBe(hashScript('a();\nb();\nc();'));
   });
 });
 
