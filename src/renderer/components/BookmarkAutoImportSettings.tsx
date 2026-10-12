@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import i18next from 'i18next';
+import { useTranslation } from 'react-i18next';
 import type { BrowserInfo } from '@common/types';
 import type { BookmarkAutoImportRule } from '@common/types/bookmarkAutoImport';
 import { formatImportSummary, summarizeImportResults } from '@common/utils/bookmarkImportUtils';
@@ -27,6 +27,7 @@ interface BookmarkAutoImportSettingsProps {
 const BookmarkAutoImportSettings: React.FC<BookmarkAutoImportSettingsProps> = ({
   onOpenManualImport,
 }) => {
+  const { t } = useTranslation();
   const {
     settings,
     isLoading,
@@ -106,13 +107,13 @@ const BookmarkAutoImportSettings: React.FC<BookmarkAutoImportSettingsProps> = ({
   const handleExecuteAll = useCallback(async () => {
     const results = await executeAllRules();
     const summary = summarizeImportResults(results);
-    const message = formatImportSummary(summary, i18next.t);
+    const message = formatImportSummary(summary, t);
     if (summary.hasError) {
       showWarning(message);
     } else {
       showSuccess(message);
     }
-  }, [executeAllRules, showSuccess, showWarning]);
+  }, [executeAllRules, showSuccess, showWarning, t]);
 
   const formatLastResult = (rule: BookmarkAutoImportRule): string => {
     if (!rule.lastExecutedAt) return '未実行';

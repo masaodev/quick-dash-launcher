@@ -6,6 +6,13 @@ import LauncherSettingsDropdown from './LauncherSettingsDropdown';
 import LauncherRefreshActionsDropdown from './LauncherRefreshActionsDropdown';
 import LauncherRegisterDropdown from './LauncherRegisterDropdown';
 
+/** ピンモード別のツールチップ（今のモード → 押した後のモード） */
+const PIN_MODE_TITLE_KEYS = {
+  normal: 'launcher.pinMode.normal',
+  alwaysOnTop: 'launcher.pinMode.alwaysOnTop',
+  stayVisible: 'launcher.pinMode.stayVisible',
+} as const satisfies Record<WindowPinMode, string>;
+
 interface ActionButtonsProps {
   onReload: () => void;
   onFetchMissingIcons: () => void;
@@ -47,13 +54,6 @@ const LauncherActionButtons: React.FC<ActionButtonsProps> = ({
         return 'action-btn';
     }
   }
-
-  // ピンモード別のツールチップ（今のモード → 押した後のモード）
-  const PIN_MODE_TITLE_KEYS = {
-    normal: 'launcher.pinMode.normal',
-    alwaysOnTop: 'launcher.pinMode.alwaysOnTop',
-    stayVisible: 'launcher.pinMode.stayVisible',
-  } as const satisfies Record<WindowPinMode, string>;
 
   return (
     <div className="action-buttons">

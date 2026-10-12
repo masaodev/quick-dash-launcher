@@ -163,7 +163,7 @@ function App(): React.ReactElement {
         if (resetSelection) setSelectedIndex(0);
       });
     },
-    [searchMode, withLoading]
+    [searchMode, withLoading, t]
   );
   const handleRefreshWindows = useCallback(() => loadWindowList(true), [loadWindowList]);
   const refreshWindowsKeepingSelection = useCallback(() => loadWindowList(false), [loadWindowList]);

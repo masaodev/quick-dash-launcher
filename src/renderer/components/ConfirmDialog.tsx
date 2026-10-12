@@ -72,7 +72,7 @@ function ConfirmDialog({
         data-testid="confirm-dialog"
       >
         <div className="confirm-header">
-          <h2>{title ?? t('common.confirm')}</h2>
+          <h2>{title || t('common.confirm')}</h2>
         </div>
 
         <div className="confirm-body">
@@ -94,14 +94,14 @@ function ConfirmDialog({
 
         <div className="modal-actions">
           <Button variant="cancel" onClick={onClose} data-testid="confirm-dialog-cancel-button">
-            {cancelText ?? t('common.cancel')}
+            {cancelText || t('common.cancel')}
           </Button>
           <Button
             variant={danger ? 'danger' : 'primary'}
             onClick={onConfirm}
             data-testid="confirm-dialog-confirm-button"
           >
-            {confirmText ?? t('common.ok')}
+            {confirmText || t('common.ok')}
           </Button>
         </div>
       </div>
