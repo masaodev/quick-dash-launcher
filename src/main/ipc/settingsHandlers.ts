@@ -275,6 +275,10 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
     setHotkeyRecording(event.sender, recording);
   });
 
+  ipcMain.handle(IPC_CHANNELS.SETTINGS_GET_AUTO_LAUNCH_STATUS, () =>
+    AutoLaunchService.getInstance().getAutoLaunchStatus()
+  );
+
   ipcMain.handle(IPC_CHANNELS.SETTINGS_GET_DISPLAYS, () => {
     const displays = screen.getAllDisplays();
     const primaryId = screen.getPrimaryDisplay().id;

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import type { AppSettings } from '@common/types';
+import React, { useEffect, useState } from 'react';
+import type { AppSettings, AutoLaunchStatus } from '@common/types';
 
 import type { HandleSettingChange } from '../hooks/useSettingsManager';
 
@@ -28,6 +28,31 @@ const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
     isValid: boolean;
     reason?: string;
   }>({ isValid: true });
+
+  // OS 側の自動起動の状態（Store 版で、設定と Windows 側の状態が食い違うときに案内する）
+  // 保存が終わった後（設定の変更通知）と、Windows の設定から戻ってきたとき（フォーカス）に読み直す
+  const [autoLaunchStatus, setAutoLaunchStatus] = useState<AutoLaunchStatus | null>(null);
+  useEffect(() => {
+    const loadStatus = () => {
+      window.electronAPI
+        .getAutoLaunchStatus()
+        .then(setAutoLaunchStatus)
+        .catch(() => setAutoLaunchStatus(null));
+    };
+    loadStatus();
+    window.addEventListener('focus', loadStatus);
+    const unsubscribe = window.electronAPI.onSettingsChanged(loadStatus);
+    return () => {
+      window.removeEventListener('focus', loadStatus);
+      unsubscribe();
+    };
+  }, []);
+  const storeState = autoLaunchStatus?.mode === 'store' ? autoLaunchStatus.state : null;
+  const blockedByWindows =
+    editedSettings.autoLaunch &&
+    (storeState === 'disabledByUser' || storeState === 'disabledByPolicy');
+  const enabledByWindows =
+    !editedSettings.autoLaunch && (storeState === 'enabled' || storeState === 'enabledByPolicy');
 
   return (
     <>
@@ -80,6 +105,20 @@ const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
             />
             起動時に自動実行
           </label>
+          {blockedByWindows && (
+            <div className="validation-error">
+              {storeState === 'disabledByPolicy'
+                ? '組織のポリシーで自動起動が無効になっているため、ここからは有効にできません。'
+                : 'Windows の設定で自動起動が無効になっているため、ここからは有効にできません。Windows の［設定］→［アプリ］→［スタートアップ］で QuickDashLauncher をオンにしてください。'}
+            </div>
+          )}
+          {enabledByWindows && (
+            <div className="setting-description">
+              {storeState === 'enabledByPolicy'
+                ? '組織のポリシーで自動起動が有効になっています。'
+                : 'Windows の設定で自動起動が有効になっています。止めるときは、チェックを付けてから外すか、Windows の［設定］→［アプリ］→［スタートアップ］でオフにしてください。'}
+            </div>
+          )}
         </div>
       </div>
 

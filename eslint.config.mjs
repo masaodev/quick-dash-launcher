@@ -25,7 +25,8 @@ export default [
       'coverage/',
       '*.min.js',
       'src/common/types.js',
-      'src/common/types.js.map'
+      'src/common/types.js.map',
+      'src/main/winrt/generated/'
     ]
   },
 

@@ -1,0 +1,34 @@
+{
+  "name": "@winapp/bindings",
+  "type": "commonjs",
+  "sideEffects": false,
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.mjs",
+      "require": "./index.js"
+    },
+    "./proxy": {
+      "types": "./index.d.ts",
+      "require": "./index.proxy.js"
+    },
+    "./lifetime": {
+      "types": "./lifetime.d.ts",
+      "default": "./lifetime.js"
+    },
+    "./windows/application-model/StartupTask": {
+      "types": "./windows/application-model/StartupTask.d.ts",
+      "default": "./windows/application-model/StartupTask.js"
+    },
+    "./windows/application-model/StartupTaskState": {
+      "types": "./windows/application-model/StartupTaskState.d.ts",
+      "default": "./windows/application-model/StartupTaskState.js"
+    },
+    "./windows/foundation/collections/IVectorView_WindowsApplicationModelStartupTask_g213762a6fd9a9707": {
+      "types": "./windows/foundation/collections/IVectorView_WindowsApplicationModelStartupTask_g213762a6fd9a9707.d.ts",
+      "default": "./windows/foundation/collections/IVectorView_WindowsApplicationModelStartupTask_g213762a6fd9a9707.js"
+    }
+  }
+}

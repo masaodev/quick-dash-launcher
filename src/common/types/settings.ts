@@ -55,6 +55,21 @@ export interface DisplayInfo {
   y: number;
 }
 
+/** Store 版の StartupTask の状態（WinRT の StartupTaskState に対応） */
+export type StoreAutoLaunchState =
+  'disabled' | 'disabledByUser' | 'enabled' | 'disabledByPolicy' | 'enabledByPolicy';
+
+/**
+ * OS 側の自動起動の状態（設定画面の案内に使う）
+ * - store: Store 版（MSIX）。Windows の StartupTask の状態を持つ
+ * - shortcut: ポータブル版・インストーラー版（スタートアップのショートカット）
+ * - unsupported: 開発モードなど
+ */
+export type AutoLaunchStatus =
+  | { mode: 'store'; state: StoreAutoLaunchState }
+  | { mode: 'shortcut'; enabled: boolean }
+  | { mode: 'unsupported' };
+
 /**
  * アプリケーションの設定を管理するインターフェース
  * electron-storeを使用して永続化される
@@ -85,7 +100,7 @@ export interface AppSettings {
   backupEnabled: boolean;
   /** バックアップファイルの保存件数上限（デフォルト: 10） */
   backupRetention: number;
-  /** タブ表示の有効/無効（デフォルト: false） */
+  /** タブ表示の有効/無効（デフォルト: true） */
   showDataFileTabs: boolean;
   /** デフォルトで表示するタブ（タブ表示ON時のみ有効、デフォルト: 'datafiles/data.json'） */
   defaultFileTab: string;

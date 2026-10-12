@@ -34,6 +34,7 @@ export default defineConfig({
                 'electron',
                 'electron-store',
                 'koffi',
+                '@microsoft/dynwinrt',
                 'extract-file-icon',
                 'clipboard-files',
               ],

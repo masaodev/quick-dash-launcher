@@ -97,7 +97,6 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
           <AdminItemManagerView
             editing={editing}
             loadError={loadError}
-            onExitEditMode={() => window.electronAPI.hideEditWindow()}
             searchQuery={searchQuery}
             onSearchChange={onSearchChange}
             dataFileTabs={dataFileTabs}

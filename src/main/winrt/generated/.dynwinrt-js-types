@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "records": [
+    {
+      "identity": {
+        "namespace": "Windows.ApplicationModel",
+        "name": "StartupTask",
+        "kind": "class",
+        "variant": ""
+      },
+      "projected_name": "StartupTask",
+      "implementation_name": "StartupTask",
+      "abi_identity": "type",
+      "compatibility_aliases": [],
+      "implementation_helpers": [],
+      "reserved_symbols": []
+    },
+    {
+      "identity": {
+        "namespace": "Windows.ApplicationModel",
+        "name": "StartupTaskState",
+        "kind": "enum",
+        "variant": ""
+      },
+      "projected_name": "StartupTaskState",
+      "implementation_name": "StartupTaskState",
+      "abi_identity": "type",
+      "compatibility_aliases": [],
+      "implementation_helpers": [],
+      "reserved_symbols": []
+    },
+    {
+      "identity": {
+        "namespace": "Windows.Foundation.Collections",
+        "name": "IVectorView_WindowsApplicationModelStartupTask_g213762a6fd9a9707",
+        "kind": "interface",
+        "variant": "piid:bbe1fa4c-b0e3-4583-baef-1f1b2e483e56:args:[class(Windows.ApplicationModel.StartupTask;default=interface(Windows.ApplicationModel.IStartupTask,f75c23c8-b5f2-4f6c-88dd-36cb1d599d17))]"
+      },
+      "projected_name": "IVectorView_WindowsApplicationModelStartupTask_g213762a6fd9a9707",
+      "implementation_name": "IVectorView_WindowsApplicationModelStartupTask_g213762a6fd9a9707",
+      "abi_identity": "piid:bbe1fa4c-b0e3-4583-baef-1f1b2e483e56:iid:bbe1fa4c-b0e3-4583-baef-1f1b2e483e56:args:[class(Windows.ApplicationModel.StartupTask;default=interface(Windows.ApplicationModel.IStartupTask,f75c23c8-b5f2-4f6c-88dd-36cb1d599d17))]",
+      "compatibility_aliases": [],
+      "implementation_helpers": [],
+      "reserved_symbols": []
+    }
+  ]
+}

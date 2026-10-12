@@ -37,7 +37,7 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
   "autoLaunch": false,
   "backupEnabled": false,
   "backupRetention": 10,
-  "showDataFileTabs": false,
+  "showDataFileTabs": true,
   "defaultFileTab": "datafiles/data.json",
   "dataFileTabs": [
     {
@@ -112,7 +112,9 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
 | --- | --- | --- | --- |
 | **autoLaunch** | boolean | false | Windows起動時にアプリを自動起動するか |
 
-自動起動はスタートアップフォルダーのショートカット（`QuickDashLauncher.lnk`）で実現しており、ショートカットはインスタンスを区別しない 1 つだけです。そのため、パッケージ版でも `APP_INSTANCE` を付けて起動したインスタンスはショートカットに触らず、この設定は効きません（試験用のインスタンスの設定で、本番のショートカットを作り直したり消したりしないため）。
+OS への登録はポータブル版・インストーラー版ではスタートアップフォルダのショートカット、Store 版（MSIX）では Windows のスタートアップ アプリ（StartupTask）。Store 版で利用者が Windows 側で無効にしていると、この値が `true` でも自動起動しない（[管理ウィンドウ 5.4](../../screens/admin-window.md#54-自動起動チェックボックスを変更)）。
+
+ショートカット（`QuickDashLauncher.lnk`）はインスタンスを区別しない 1 つだけなので、パッケージ版でも `APP_INSTANCE` を付けて起動したインスタンスは自動起動の登録に触らず、この設定は効きません（試験用のインスタンスの設定で、本番のショートカットを作り直したり消したりしないため）。
 
 ### 3.5. バックアップ設定
 
@@ -126,8 +128,8 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
 
 | フィールド | 型 | デフォルト値 | 説明 |
 | --- | --- | --- | --- |
-| **showDataFileTabs** | boolean | false | タブ表示の有効/無効 |
-| **defaultFileTab** | string | "datafiles/data.json" | デフォルトで表示するタブ（タブ表示ON時のみ有効） |
+| **showDataFileTabs** | boolean | true | タブ表示の有効/無効<br>設定画面では基本設定の「表示」にある「複数タブを表示」 |
+| **defaultFileTab** | string | "datafiles/data.json" | メイン画面を開いたとき（隠したあとも）に選ぶデータファイル。`dataFileTabs` のどれかに含まれていないときは `datafiles/data.json`、それもなければ最初のファイルになる<br>タブ表示が OFF のときは、このファイルのアイテムだけを表示する<br>設定画面に入力欄はなく、`settings.json` を直接書いたときだけ変わる |
 | **dataFileTabs** | DataFileTab[] | `[{files: ["datafiles/data.json"], name: "メイン"}]` | データファイルタブの設定 |
 | **dataFileLabels** | Record<string, string> | `{"datafiles/data.json": "メイン用データファイル"}` | データファイルの名前定義（物理ファイル名 → 表示名） |
 
@@ -191,7 +193,7 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
 
 | フィールド | 型 | デフォルト値 | 説明 |
 | --- | --- | --- | --- |
-| **parallelGroupLaunch** | boolean | false | グループアイテムを並列起動するか<br>true: 全アイテムを同時起動<br>false: 順次起動（500msディレイ） |
+| **parallelGroupLaunch** | boolean | false | グループアイテムを並列起動するか<br>true: 全アイテムを同時起動<br>false: 順次起動（各アイテムの間に100ms待つ） |
 
 ### 3.10. 追加ホットキー設定
 
