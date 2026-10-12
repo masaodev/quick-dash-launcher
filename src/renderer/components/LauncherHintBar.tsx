@@ -18,6 +18,8 @@ interface LauncherHintBarProps {
   searchMode: SearchMode;
   /** 通常モード: データファイルのタブが 2 つ以上表示されている（Tab で切り替えられる） */
   canSwitchDataFileTab: boolean;
+  /** ウィンドウ検索モード: 仮想デスクトップのタブが表示されている（Tab で切り替えられる） */
+  canSwitchDesktopTab: boolean;
   /** ウィンドウ検索モード: 仮想デスクトップ番号のタブを表示中（Ctrl+←/→ で移動できる） */
   canMoveToDesktop: boolean;
 }
@@ -30,6 +32,7 @@ interface Hint {
 const LauncherHintBar: React.FC<LauncherHintBarProps> = ({
   searchMode,
   canSwitchDataFileTab,
+  canSwitchDesktopTab,
   canMoveToDesktop,
 }) => {
   const hints: Hint[] =
@@ -37,6 +40,7 @@ const LauncherHintBar: React.FC<LauncherHintBarProps> = ({
       ? [
           { keys: 'Ctrl+P', label: 'ピン留め/解除' },
           { keys: 'Ctrl+D', label: 'ウィンドウを閉じる' },
+          ...(canSwitchDesktopTab ? [{ keys: 'Tab', label: 'デスクトップ切替' }] : []),
           ...(canMoveToDesktop ? [{ keys: 'Ctrl+←/→', label: '仮想デスクトップ移動' }] : []),
         ]
       : [

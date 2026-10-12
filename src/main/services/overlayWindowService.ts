@@ -197,7 +197,12 @@ function applyBounds(
 function applyToastMode(win: BrowserWindow): void {
   const { x, y } = getToastPosition();
   win.setIgnoreMouseEvents(true, { forward: true });
-  win.setFocusable(false);
+  // 表示中のウィンドウに setFocusable(false) を呼ぶと、Electron が Z 順で次のウィンドウ（最前面の
+  // トーストの下はタスクバー）を前面に出し、メインウィンドウがフォーカスを失って隠れる。
+  // トーストを続けて出すと毎回これが起きるので、フォーカスを受け取れる状態のときだけ切り替える
+  if (win.isFocusable()) {
+    win.setFocusable(false);
+  }
   win.setMovable(false);
   applyBounds(win, TOAST_WIDTH, TOAST_HEIGHT, x, y);
   currentMode = 'toast';
@@ -290,6 +295,13 @@ export function hideLayoutProgressWindow(): void {
  * レイアウト進捗イベントの送信先ウィンドウを取得する
  */
 export function getLayoutProgressWindow(): BrowserWindow | null {
+  return isWindowValid() ? overlayWindow : null;
+}
+
+/**
+ * オーバーレイウィンドウ（トースト・進捗）を取得する。ウィンドウ検索の一覧から外すのに使う
+ */
+export function getOverlayWindow(): BrowserWindow | null {
   return isWindowValid() ? overlayWindow : null;
 }
 

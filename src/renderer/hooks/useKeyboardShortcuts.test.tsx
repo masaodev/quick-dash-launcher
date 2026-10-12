@@ -1,12 +1,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type React from 'react';
 import { renderHook } from '@testing-library/react';
-import type { AppItem, LauncherItem, SearchMode } from '@common/types';
+import type { AppItem, LauncherItem, SearchMode, WindowInfo } from '@common/types';
 
 import { useKeyboardShortcuts, type UseKeyboardShortcutsParams } from './useKeyboardShortcuts';
 
 const showToastWindow = vi.fn();
 const openParentFolder = vi.fn();
+const closeWindow = vi.fn();
 
 function launcherItem(type: LauncherItem['type'], path: string): LauncherItem {
   return { displayName: `${type} のアイテム`, path, type } as LauncherItem;
@@ -38,6 +39,8 @@ function setup(
     windowList: [],
     toggleSearchMode: vi.fn(async () => undefined),
     refreshWindows: vi.fn(async () => undefined),
+    refreshWindowsKeepingSelection: vi.fn(async () => undefined),
+    removeWindowFromList: vi.fn(),
     reloadData: vi.fn(async () => undefined),
     desktopCount: 0,
     activeDesktopTab: 0,
@@ -47,11 +50,14 @@ function setup(
   return { params, handleKeyDown: result.current.handleKeyDown };
 }
 
-function keyEvent(key: string, init: { shiftKey?: boolean } = {}): React.KeyboardEvent {
+function keyEvent(
+  key: string,
+  init: { shiftKey?: boolean; ctrlKey?: boolean } = {}
+): React.KeyboardEvent {
   return {
     key,
     shiftKey: init.shiftKey ?? false,
-    ctrlKey: false,
+    ctrlKey: init.ctrlKey ?? false,
     preventDefault: vi.fn(),
     stopPropagation: vi.fn(),
   } as unknown as React.KeyboardEvent;
@@ -60,9 +66,10 @@ function keyEvent(key: string, init: { shiftKey?: boolean } = {}): React.Keyboar
 beforeEach(() => {
   showToastWindow.mockReset();
   openParentFolder.mockReset();
+  closeWindow.mockReset();
   Object.defineProperty(window, 'electronAPI', {
     configurable: true,
-    value: { showToastWindow, openParentFolder },
+    value: { showToastWindow, openParentFolder, closeWindow },
   });
 });
 
@@ -120,5 +127,46 @@ describe('useKeyboardShortcuts', () => {
 
     expect(openParentFolder).toHaveBeenCalledWith(item);
     expect(showToastWindow).not.toHaveBeenCalled();
+  });
+
+  it('ウィンドウ検索モードの Ctrl+D で閉じたウィンドウは、再取得を待たずに一覧から外す', async () => {
+    const win = { hwnd: 100, title: '無題 - メモ帳', processName: 'Notepad.exe' } as WindowInfo;
+    closeWindow.mockResolvedValue({ success: true });
+    const { params, handleKeyDown } = setup([win], 'window');
+
+    await handleKeyDown(keyEvent('d', { ctrlKey: true }));
+
+    expect(closeWindow).toHaveBeenCalledWith(100);
+    expect(params.removeWindowFromList).toHaveBeenCalledWith(100);
+    expect(params.refreshWindowsKeepingSelection).toHaveBeenCalled();
+    expect(params.refreshWindows).not.toHaveBeenCalled();
+  });
+
+  it('一覧が更新される前に続けて押した Ctrl+D は、閉じている途中のウィンドウを飛ばして次を閉じる', async () => {
+    const first = { hwnd: 100, title: '1 - メモ帳', processName: 'Notepad.exe' } as WindowInfo;
+    const second = { hwnd: 200, title: '2 - メモ帳', processName: 'Notepad.exe' } as WindowInfo;
+    let finishFirst: (value: { success: boolean }) => void = () => undefined;
+    closeWindow
+      .mockImplementationOnce(() => new Promise((resolve) => (finishFirst = resolve)))
+      .mockResolvedValue({ success: true });
+    const { handleKeyDown } = setup([first, second], 'window');
+
+    // 1 回目の処理が終わる前（同じ描画のまま）に 2 回目を押す
+    const pressing = handleKeyDown(keyEvent('d', { ctrlKey: true }));
+    await handleKeyDown(keyEvent('d', { ctrlKey: true }));
+    finishFirst({ success: true });
+    await pressing;
+
+    expect(closeWindow.mock.calls).toEqual([[100], [200]]);
+  });
+
+  it('ウィンドウを閉じるのに失敗したときは一覧から外さない', async () => {
+    const win = { hwnd: 100, title: '無題 - メモ帳', processName: 'Notepad.exe' } as WindowInfo;
+    closeWindow.mockResolvedValue({ success: false, error: 'x' });
+    const { params, handleKeyDown } = setup([win], 'window');
+
+    await handleKeyDown(keyEvent('d', { ctrlKey: true }));
+
+    expect(params.removeWindowFromList).not.toHaveBeenCalled();
   });
 });

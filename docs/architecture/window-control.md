@@ -577,7 +577,7 @@ Chrome,chrome.exe,,,"{""title"":""Google Chrome"",""activateWindow"":true}"
 | Windows検索 | SearchHost.exe | Windows.UI.Core.CoreWindow | 検索ウィンドウ |
 
 - プロセス名とクラス名の**両方**が一致し、かつウィンドウがクロークされている（画面に描画されていない）ときだけ外す。描画されている間は一覧に出る（誤検知を防ぐため）
-- これとは別に、QuickDashLauncher 自身のウィンドウ、タイトルのないウィンドウ、非表示のウィンドウ、Alt+Tab に出ないツールウィンドウも一覧に出ない
+- これとは別に、QuickDashLauncher 自身のメインウィンドウとトースト（オーバーレイ）、タイトルのないウィンドウ、非表示のウィンドウ、Alt+Tab に出ないツールウィンドウも一覧に出ない
 
 ### データ形式の変更履歴
 

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { DESKTOP_TAB } from '@common/constants';
 import {
   AppItem,
@@ -34,6 +34,10 @@ export interface UseKeyboardShortcutsParams {
   windowList: WindowInfo[];
   toggleSearchMode: () => Promise<void>;
   refreshWindows: () => Promise<void>;
+  /** 閉じる・固定・移動の後の取り直し（選択の位置を保つ） */
+  refreshWindowsKeepingSelection: () => Promise<void>;
+  /** 閉じたウィンドウを再取得を待たずに一覧から外す */
+  removeWindowFromList: (hwnd: WindowInfo['hwnd']) => void;
   reloadData: () => Promise<void>;
   desktopCount: number;
   activeDesktopTab: number;
@@ -42,6 +46,8 @@ export interface UseKeyboardShortcutsParams {
 
 export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
   handleKeyDown: (e: React.KeyboardEvent) => Promise<void>;
+  /** ウィンドウを閉じる（Ctrl+D と右クリックの「ウィンドウを閉じる」で共通） */
+  closeWindowItem: (win: WindowInfo) => Promise<void>;
 } {
   const {
     showDataFileTabs,
@@ -62,11 +68,17 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
     windowList,
     toggleSearchMode,
     refreshWindows,
+    refreshWindowsKeepingSelection,
+    removeWindowFromList,
     reloadData,
     desktopCount,
     activeDesktopTab,
     setActiveDesktopTab,
   } = params;
+
+  // Ctrl+D で閉じている途中のウィンドウ。処理が詰まっている間に押された Ctrl+D は
+  // 一覧が更新される前の同じ描画のまま続けて実行されるので、ここで覚えて対象から外す
+  const closingHwndsRef = useRef(new Set<WindowInfo['hwnd']>());
 
   function buildDesktopTabIds(): number[] {
     const tabIds: number[] = [DESKTOP_TAB.ALL];
@@ -93,13 +105,32 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
         itemType,
         message: successMessage,
       });
-      await refreshWindows();
+      await refreshWindowsKeepingSelection();
     } else {
       await window.electronAPI.showToastWindow({
         displayName: win.title,
         itemType,
         message: `${errorMessage}: ${result.error || '不明なエラー'}`,
       });
+    }
+  }
+
+  async function closeWindowItem(win: WindowInfo): Promise<void> {
+    const closing = closingHwndsRef.current;
+    closing.add(win.hwnd);
+    try {
+      const result = await window.electronAPI.closeWindow(win.hwnd);
+      if (result.success) {
+        removeWindowFromList(win.hwnd);
+      }
+      await showWindowToastAndRefresh(
+        result,
+        win,
+        'windowClose',
+        'ウィンドウを閉じるのに失敗しました'
+      );
+    } finally {
+      closing.delete(win.hwnd);
     }
   }
 
@@ -238,16 +269,13 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
       e.preventDefault();
       e.stopPropagation();
 
-      const selectedWindow = filteredItems[selectedIndex] as WindowInfo | undefined;
+      // 閉じている途中のウィンドウを除いた一覧は、閉じ終えて一覧から外した後の一覧と同じ並びになる
+      const closing = closingHwndsRef.current;
+      const candidates = (filteredItems as WindowInfo[]).filter((w) => !closing.has(w.hwnd));
+      const selectedWindow = candidates[selectedIndex];
       if (!selectedWindow) return;
 
-      const result = await window.electronAPI.closeWindow(selectedWindow.hwnd);
-      await showWindowToastAndRefresh(
-        result,
-        selectedWindow,
-        'windowClose',
-        'ウィンドウを閉じるのに失敗しました'
-      );
+      await closeWindowItem(selectedWindow);
       return;
     }
 
@@ -325,5 +353,5 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
     }
   }
 
-  return { handleKeyDown };
+  return { handleKeyDown, closeWindowItem };
 }
