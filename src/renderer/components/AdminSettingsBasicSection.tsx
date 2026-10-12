@@ -14,7 +14,7 @@ interface AdminSettingsBasicSectionProps {
   onItemSearchHotkeyChange: (hotkey: string) => void;
 }
 
-/** 設定画面「基本設定」: 起動ホットキー・システム・グループ起動 */
+/** 設定画面「基本設定」: 起動ホットキー・システム・表示・グループ起動 */
 const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
   editedSettings,
   isLoading,
@@ -98,6 +98,20 @@ const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
           <div className="setting-description">
             メインウィンドウの下に、気づきにくいキー操作（F2 で編集、Shift+Enter
             で親フォルダーを開くなど）を表示します。
+          </div>
+        </div>
+        <div className="setting-item">
+          <label>
+            <input
+              type="checkbox"
+              checked={editedSettings.showDataFileTabs}
+              onChange={(e) => handleSettingChange('showDataFileTabs', e.target.checked)}
+              disabled={isLoading}
+            />
+            複数タブを表示
+          </label>
+          <div className="setting-description">
+            メインウィンドウでタブを切り替えて、別のデータファイルのアイテムを表示します。タブとデータファイルの追加・変更は「アイテム管理」で行います。
           </div>
         </div>
       </div>

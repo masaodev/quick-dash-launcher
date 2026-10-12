@@ -1,9 +1,9 @@
 import type { AppSettings } from '@common/types';
 
 /** 設定画面の左メニューのカテゴリ */
-export type SettingsCategory = 'basic' | 'window' | 'tabs' | 'backup' | 'bookmarkAutoImport';
+export type SettingsCategory = 'basic' | 'window' | 'backup' | 'bookmarkAutoImport';
 
-/** 「既定値に戻す」を置くカテゴリ（タブ管理・ブックマーク自動取込は自前の保存単位を持つので対象外） */
+/** 「既定値に戻す」を置くカテゴリ（ブックマーク自動取込は自前の保存単位を持つので対象外） */
 export type ResettableSettingsCategory = Extract<SettingsCategory, 'basic' | 'window' | 'backup'>;
 
 /**
@@ -11,7 +11,8 @@ export type ResettableSettingsCategory = Extract<SettingsCategory, 'basic' | 'wi
  *
  * ホットキー（hotkey / itemSearchHotkey）は含めない。利用者が意図して決めた値で、
  * しかも hotkey は既定値が空なので、戻すと次回起動が初回起動扱いになるから。
- * タブ構成（dataFileTabs 等）とブックマーク自動取込も、それぞれのカテゴリで管理するので含めない。
+ * タブ構成（dataFileTabs 等）はアイテム管理で、ブックマーク自動取込はそのカテゴリで管理するので含めない。
+ * 「複数タブを表示」（showDataFileTabs）も、戻すと作ったタブが急に見えなくなるので含めない。
  */
 export const SETTINGS_RESET_KEYS: Record<
   ResettableSettingsCategory,

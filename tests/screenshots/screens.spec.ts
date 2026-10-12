@@ -89,18 +89,17 @@ test.describe('画面仕様書の画面イメージ', () => {
     await shot(hotkeySection, 'hotkey-input-recording');
     await admin.keyboard.press('Escape');
 
-    // 確認ダイアログ（タブ管理で「仕事」タブを削除しようとする）
-    await admin.locator('.settings-menu .menu-item', { hasText: 'タブ管理' }).first().click();
-    const workTab = admin.locator('.tab-accordion-item', { hasText: '仕事' });
-    await workTab.locator('.tab-delete-button').click();
-    await admin.locator('[data-testid="confirm-dialog"]').waitFor({ state: 'visible' });
-    await shot(admin, 'dialogs-confirm');
-    await admin.locator('[data-testid="confirm-dialog-cancel-button"]').click();
-
     // アイテム管理タブ・ヘルプタブ
     await admin.locator('button', { hasText: 'アイテム管理' }).first().click();
     await admin.locator('.raw-item-row').first().waitFor({ state: 'visible' });
     await shot(admin, 'admin-window-items');
+
+    // 確認ダイアログ（アイテム管理で「仕事」タブを削除しようとする）
+    await admin.getByTestId('admin-tab').filter({ hasText: '仕事' }).click({ button: 'right' });
+    await admin.getByTestId('admin-tab-delete').click();
+    await admin.locator('[data-testid="confirm-dialog"]').waitFor({ state: 'visible' });
+    await shot(admin, 'dialogs-confirm');
+    await admin.locator('[data-testid="confirm-dialog-cancel-button"]').click();
     await admin.locator('button', { hasText: 'ヘルプ' }).first().click();
     await shot(admin, 'admin-window-help');
   });

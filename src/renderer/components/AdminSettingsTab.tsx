@@ -3,7 +3,6 @@ import type { AppSettings } from '@common/types';
 
 import { useDialogManager } from '../hooks/useDialogManager';
 import { useSettingsManager } from '../hooks/useSettingsManager';
-import { useTabManager } from '../hooks/tabManager';
 import { isResettableCategory, type SettingsCategory } from '../utils/settingsResetKeys';
 
 import AlertDialog from './AlertDialog';
@@ -12,14 +11,11 @@ import BookmarkAutoImportSettings from './BookmarkAutoImportSettings';
 import AdminSettingsBasicSection from './AdminSettingsBasicSection';
 import AdminSettingsWindowSection from './AdminSettingsWindowSection';
 import AdminSettingsBackupSection from './AdminSettingsBackupSection';
-import AdminSettingsTabsSection from './AdminSettingsTabsSection';
 import AdminSettingsResetSection from './AdminSettingsResetSection';
-import { Button } from './ui';
 
 const SETTINGS_CATEGORIES: Array<{ key: SettingsCategory; label: string }> = [
   { key: 'basic', label: '⚙️ 基本設定' },
   { key: 'window', label: '🪟 ウィンドウ' },
-  { key: 'tabs', label: '📑 タブ管理' },
   { key: 'backup', label: '💾 バックアップ' },
   { key: 'bookmarkAutoImport', label: '🔖 ブックマーク自動取込' },
 ];
@@ -107,51 +103,6 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({
     showToast: toast.success,
   });
 
-  // カスタムフック: タブ管理（未保存の変更はカテゴリ切り替え時にも確認する）
-  const tabManager = useTabManager({
-    editedSettings,
-    setEditedSettings,
-    handleSettingChange,
-    showAlert,
-    showConfirm,
-    showToast: toast.success,
-  });
-
-  const {
-    hasUnsavedChanges: hasUnsavedTabChanges,
-    handleCancelTabChanges,
-    handleSaveTabChanges,
-  } = tabManager;
-
-  // タブ管理だけ明示保存（ファイルの作成・削除を伴うため）。他のカテゴリは変更のたびに保存される
-  const showTabFooter = selectedCategory === 'tabs' && editedSettings.showDataFileTabs;
-
-  // カテゴリ切り替えハンドラ
-  const handleCategoryChange = useCallback(
-    async (newCategory: SettingsCategory) => {
-      // タブ管理カテゴリから離脱する際、未保存の変更がある場合は警告
-      if (selectedCategory === 'tabs' && hasUnsavedTabChanges) {
-        const confirmed = await showConfirm(
-          'タブ管理に未保存の変更があります。変更を破棄してカテゴリを切り替えますか？',
-          {
-            title: '未保存の変更',
-            confirmText: 'カテゴリを切り替える',
-            cancelText: 'キャンセル',
-            danger: true,
-          }
-        );
-
-        if (!confirmed) return;
-
-        // 変更を破棄（確認済みなのでスキップ）
-        await handleCancelTabChanges(true);
-      }
-
-      onSelectCategory(newCategory);
-    },
-    [selectedCategory, hasUnsavedTabChanges, showConfirm, handleCancelTabChanges, onSelectCategory]
-  );
-
   return (
     <div className="settings-tab">
       {isLoading && <div className="loading-overlay">処理中...</div>}
@@ -164,7 +115,7 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({
               <button
                 key={key}
                 className={`menu-item ${selectedCategory === key ? 'active' : ''}`}
-                onClick={() => handleCategoryChange(key)}
+                onClick={() => onSelectCategory(key)}
               >
                 {label}
               </button>
@@ -215,15 +166,6 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({
             </div>
           )}
 
-          {selectedCategory === 'tabs' && (
-            <AdminSettingsTabsSection
-              editedSettings={editedSettings}
-              isLoading={isLoading}
-              handleSettingChange={handleSettingChange}
-              tabManager={tabManager}
-            />
-          )}
-
           {isResettableCategory(selectedCategory) && (
             <AdminSettingsResetSection
               category={selectedCategory}
@@ -233,30 +175,6 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({
           )}
         </div>
       </div>
-
-      {showTabFooter && (
-        <div className="settings-footer">
-          <div className="tab-management-actions">
-            {hasUnsavedTabChanges && (
-              <span className="unsaved-indicator">未保存の変更があります</span>
-            )}
-            <Button
-              variant="cancel"
-              onClick={() => handleCancelTabChanges()}
-              disabled={!hasUnsavedTabChanges || isLoading}
-            >
-              変更を破棄
-            </Button>
-            <Button
-              variant="primary"
-              onClick={handleSaveTabChanges}
-              disabled={!hasUnsavedTabChanges || isLoading}
-            >
-              変更を保存
-            </Button>
-          </div>
-        </div>
-      )}
 
       <AlertDialog
         isOpen={alertDialog.isOpen}
