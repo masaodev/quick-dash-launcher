@@ -62,7 +62,10 @@ export function errorResponse(error: CliError): CliResponse {
   const lines = [`qdl: ${error.message}`];
   for (const c of error.candidates ?? []) {
     lines.push(
-      `  - ${c.id}  ${c.displayName}${c.location.length ? `  （${c.location.join(' / ')}）` : ''}`
+      `  - ${c.id}  ${c.displayName}` +
+        (c.location.length
+          ? mainI18n.t('cli.candidateLocation', { location: c.location.join(' / ') })
+          : '')
     );
   }
   if (error.code === 'usage') lines.push(mainI18n.t('cli.help.seeHelp'));

@@ -382,6 +382,7 @@ export const en: LocaleMessages = {
       'Couldn\'t register the {{label}} "{{desired}}" ({{reason}}). Keeping "{{current}}".',
   },
   cli: {
+    candidateLocation: '  ({{location}})',
     help: {
       main: `Usage: qdl <command> [arguments]
 

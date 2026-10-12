@@ -382,6 +382,7 @@ export const ja = {
       '{{label}}「{{desired}}」を登録できません（{{reason}}）。「{{current}}」を維持します',
   },
   cli: {
+    candidateLocation: '  （{{location}}）',
     help: {
       main: `使い方: qdl <コマンド> [引数]
 
