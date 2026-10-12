@@ -84,6 +84,37 @@ export function applyPatch(
   return { merged, setKeys };
 }
 
+/** 専用のオプションがある項目（それ以外は --set で渡す） */
+const OPTION_OF_KEY: Record<string, string> = {
+  displayName: '--name',
+  path: '--path',
+  args: '--args',
+  memo: '--memo',
+};
+
+function howToPass(key: string, example: string): string {
+  const root = key.split(/[.[]/)[0];
+  return OPTION_OF_KEY[root] ?? `--set ${root}=${example}`;
+}
+
+/**
+ * 読み込み時の検証の文言（英語）を、どの項目をどう渡せばよいかの案内に直す。知らない形はそのまま返す
+ */
+export function describeValidationError(message: string): string {
+  const required = /^([\w.[\]]+) is required and must be (?:a |an )?(.+)$/.exec(message);
+  if (required) {
+    const [, key, expected] = required;
+    const example = expected.includes('array') ? '\'["…"]\'' : '…';
+    return `項目 ${key} がありません（${howToPass(key, example)} で渡してください）`;
+  }
+  const wrongType = /^([\w.[\]]+) must be (?:a |an )?(.+)$/.exec(message);
+  if (wrongType) {
+    const [, key, expected] = wrongType;
+    return `項目 ${key} の値が正しくありません（${expected} にしてください）`;
+  }
+  return message;
+}
+
 /**
  * データファイルのアイテムとして検証し、正規化した形を返す（読み込み時と同じ検証）。
  * --set で書いた項目のうち、その種類に無いものは「知らない項目」として断る（黙って落とさない）
@@ -96,7 +127,10 @@ export function validateAsDataItem(
   try {
     cleaned = validateJsonItem(candidate, 0);
   } catch (error) {
-    throw new CliError('invalid', `内容が正しくありません: ${(error as Error).message}`);
+    throw new CliError(
+      'invalid',
+      `内容が正しくありません: ${describeValidationError((error as Error).message)}`
+    );
   }
   const unknown = setKeys.filter((key) => !(key in cleaned));
   if (unknown.length > 0) {

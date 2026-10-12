@@ -131,6 +131,24 @@ describe('launcher item add', () => {
     expect(store.append).not.toHaveBeenCalled();
   });
 
+  it('その種類に要る項目が無ければ、どう渡すかを日本語で案内する', async () => {
+    const window = await errorOf(
+      runLauncherItemCommand('add', ['--type', 'window', '--name', 'w'], ctx)
+    );
+    expect(window.code).toBe('invalid');
+    expect(window.message).toContain(
+      '項目 windowTitle がありません（--set windowTitle=… で渡してください）'
+    );
+    const group = await errorOf(
+      runLauncherItemCommand('add', ['--type', 'group', '--name', 'g'], ctx)
+    );
+    expect(group.message).toContain(`--set itemNames='["…"]'`);
+    const path = await errorOf(
+      runLauncherItemCommand('update', ['Memo0001', '--unset', 'path'], ctx)
+    );
+    expect(path.message).toContain('項目 path がありません（--path で渡してください）');
+  });
+
   it('必須の欠け・知らないファイル・知らない種類は断る', async () => {
     expect((await errorOf(runLauncherItemCommand('add', ['--path', 'C:\\x'], ctx))).code).toBe(
       'usage'
