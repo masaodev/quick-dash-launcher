@@ -167,8 +167,14 @@ function setupLauncherContextMenuHandler(): void {
       const isShortcut = hasPathMenu && item.originalPath !== undefined;
       const hasMemo = 'memo' in item && item.memo && item.memo.trim().length > 0;
 
+      // F2 はメインウィンドウのキー処理で受けるので、ここでは右端に表示するだけ（登録しない）
       menu.append(
-        createMenuItem('✏️ 編集', event.sender, IPC_CHANNELS.EVENT_LAUNCHER_MENU_EDIT_ITEM, item)
+        new MenuItem({
+          label: '✏️ 編集',
+          accelerator: 'F2',
+          registerAccelerator: false,
+          click: () => event.sender.send(IPC_CHANNELS.EVENT_LAUNCHER_MENU_EDIT_ITEM, item),
+        })
       );
 
       if (hasMemo) {

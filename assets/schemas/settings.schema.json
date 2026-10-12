@@ -126,6 +126,10 @@
           "type": "boolean",
           "description": "グループアイテムを並列起動する（デフォルト: false）"
         },
+        "showKeyboardHints": {
+          "type": "boolean",
+          "description": "メインウィンドウの下に、気づきにくいキー操作のヒントを表示する（デフォルト: true）"
+        },
         "itemSearchHotkey": {
           "type": "string",
           "description": "ウィンドウ検索で起動のホットキー（デフォルト: 'Ctrl+Alt+Space'、空の場合は無効）"

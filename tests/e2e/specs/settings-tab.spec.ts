@@ -217,6 +217,42 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
     }
   });
 
+  test('「操作のヒントを表示」でメインウィンドウ下のヒントを出し入れできる', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }) => {
+    const hintBar = mainWindow.locator('[data-testid="keyboard-hint-bar"]');
+
+    await test.step('既定ではメインウィンドウの下に通常モードのヒントが出る', async () => {
+      await expect(hintBar).toBeVisible();
+      await expect(hintBar).toContainText('F2:編集');
+      await expect(hintBar).toContainText('Shift+Enter:親フォルダーを開く');
+    });
+
+    const utils = new TestUtils(mainWindow);
+    const adminWindow = await utils.openAdminWindow(electronApp, 'settings');
+    try {
+      const hintLabel = adminWindow.locator('label', { hasText: '操作のヒントを表示' });
+      const hintCheckbox = hintLabel.locator('input[type="checkbox"]');
+
+      await test.step('基本設定でオフにすると、ヒントが消えて設定に保存される', async () => {
+        await expect(hintCheckbox).toBeChecked();
+        await hintLabel.click();
+        await expect(hintBar).toHaveCount(0);
+        expect(configHelper.readSettings().showKeyboardHints).toBe(false);
+      });
+
+      await test.step('オンに戻すと、またヒントが出る', async () => {
+        await hintLabel.click();
+        await expect(hintBar).toBeVisible();
+        expect(configHelper.readSettings().showKeyboardHints).toBe(true);
+      });
+    } finally {
+      await adminWindow.close();
+    }
+  });
+
   // ==================== タブ管理機能テスト ====================
   // 注: これらのテストはタブ管理UIの複雑な状態遷移を含むため、
   // 現時点ではスキップしています。UIの動作確認は手動で行うことを推奨します。

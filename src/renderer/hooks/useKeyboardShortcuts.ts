@@ -28,6 +28,8 @@ export interface UseKeyboardShortcutsParams {
   navigateToNext: () => string | null;
   setSearchQuery: (query: string) => void;
   handleExecuteItem: (item: AppItem) => Promise<void>;
+  /** 選択中のアイテムの編集画面を開く（F2。右クリックメニューの「編集」と同じ） */
+  handleEditItem: (item: AppItem) => void;
   searchMode: SearchMode;
   windowList: WindowInfo[];
   toggleSearchMode: () => Promise<void>;
@@ -55,6 +57,7 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
     navigateToNext,
     setSearchQuery,
     handleExecuteItem,
+    handleEditItem,
     searchMode,
     windowList,
     toggleSearchMode,
@@ -256,10 +259,26 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
         e.stopPropagation();
         if (!selectedItem) return;
         if (e.shiftKey && isLauncherItem(selectedItem)) {
+          // URL・カスタム URI には親フォルダーが無い。押しても無反応だと故障に見えるので知らせる
+          if (selectedItem.type === 'url' || selectedItem.type === 'customUri') {
+            await window.electronAPI.showToastWindow({
+              displayName: selectedItem.displayName,
+              itemType: selectedItem.type,
+              message: 'このアイテムには親フォルダーがありません',
+            });
+            return;
+          }
           await window.electronAPI.openParentFolder(selectedItem as LauncherItem);
         } else {
           await handleExecuteItem(selectedItem);
         }
+        return;
+
+      case 'F2':
+        if (searchMode !== 'normal' || !selectedItem) return;
+        e.preventDefault();
+        e.stopPropagation();
+        handleEditItem(selectedItem);
         return;
 
       case 'F5':

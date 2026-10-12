@@ -54,10 +54,10 @@ const LauncherSettingsDropdown: React.FC<SettingsDropdownProps> = ({
             className="dropdown-item"
             onClick={() => handleMenuItemClick(onOpenItemManagement)}
           >
-            ✏️ アイテム管理
+            ✏️ アイテム管理（Ctrl+E）
           </button>
           <button className="dropdown-item" onClick={() => handleMenuItemClick(onToggleWorkspace)}>
-            🗂️ ワークスペースを表示
+            🗂️ ワークスペースを表示（Ctrl+W）
           </button>
           <div className="dropdown-divider"></div>
           <button className="dropdown-item" onClick={() => handleMenuItemClick(onQuitApp)}>
