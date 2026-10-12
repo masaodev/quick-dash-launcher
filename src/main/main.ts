@@ -44,6 +44,7 @@ import { closeAllWorkspaceItemEditors } from './workspaceItemEditorWindowManager
 import { closeAllWorkspaceConfirms } from './workspaceConfirmWindowManager.js';
 import { BookmarkAutoImportService } from './services/bookmarkAutoImportService.js';
 import { applyLanguageSetting, registerLanguageHandler } from './services/i18nService.js';
+import { installNavigationGuard } from './utils/navigationGuard.js';
 
 // 多重起動時に完全に独立したuserDataを使用
 if (EnvConfig.hasAppInstance) {
@@ -89,6 +90,9 @@ if (EnvConfig.isDevelopment) {
 }
 
 app.whenReady().then(async () => {
+  // 画面がページ側から別の URL へ移らないようにする（ウィンドウを作る前に付ける）
+  installNavigationGuard();
+
   // 設定フォルダを先に作成（スプラッシュのアイコンパス解決に必要）
   PathManager.ensureDirectories();
 
