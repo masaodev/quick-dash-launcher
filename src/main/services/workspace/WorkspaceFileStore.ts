@@ -2,7 +2,7 @@ import * as fs from 'fs';
 
 import logger from '@common/logger';
 import { FileUtils } from '@common/utils/fileUtils';
-import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
+import { detectFileItemTypeSync, detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { stripIconFromLayoutEntries } from '@common/utils/dataConverters';
 import { generateUniqueId } from '@common/utils/jsonParser';
 import {
@@ -34,7 +34,11 @@ import {
   writeDataFile,
 } from '../dataFileTracker.js';
 import type { LoadReportFile } from '../loadReportService.js';
-import { prefetchFolderProbes, refineItemType } from '../../utils/folderPathProbe.js';
+import {
+  applyExtensionlessFileMemo,
+  prefetchFolderProbes,
+  refineItemType,
+} from '../../utils/folderPathProbe.js';
 
 import { isLegacyWorkspaceFile, migrateWorkspaceV1 } from './workspaceMigration.js';
 import { coerceWorkspaceUiState, type WorkspaceUiStateStore } from './WorkspaceUiStateStore.js';
@@ -141,29 +145,42 @@ export function resolveLauncherType(item: {
   originalPath?: string;
 }): LauncherItemType {
   const target = item.originalPath ?? item.path;
-  if (item.originalPath && FileUtils.exists(target) && FileUtils.isDirectory(target)) {
-    return 'folder';
+  // ショートカットはリンク先をディスクで確かめる（拡張子の無いファイルをフォルダにしない）
+  if (item.originalPath && FileUtils.exists(target)) {
+    if (FileUtils.isDirectory(target)) return 'folder';
+    const detected = detectFileItemTypeSync(target);
+    return detected === 'clipboard' ? 'file' : detected;
   }
-  const detected = detectItemTypeSync(target);
+  const detected = applyExtensionlessFileMemo(target, detectItemTypeSync(target));
   return detected === 'clipboard' ? 'file' : detected;
 }
 
 /**
- * パスの見た目ではファイルの起動種別を、ディスクの状態で補正する（ドット入りのフォルダ名）
+ * パスの文字列で決めた起動種別を、ディスクの状態とメモで補正する
+ * （ドット入りのフォルダ名・拡張子の無いファイル）
  *
- * resolveLauncherType はパスの文字列だけで決めるため、読み込み時にまとめて補う
+ * resolveLauncherType はパスの文字列だけで決めるため、読み込み時にまとめて補う。
+ * ショートカットはリンク先がファイルと判定されたものだけ（フォルダかどうかを確かめる）
  */
 async function refineLauncherTypes(items: Array<{ type: string }>): Promise<void> {
   const targets = items.filter(
-    (item): item is JsonWorkspaceItem & { type: 'item'; launcherType?: LauncherItemType } =>
-      item.type === 'item' && (item as { launcherType?: string }).launcherType === 'file'
+    (item): item is JsonWorkspaceItem & { type: 'item'; launcherType?: LauncherItemType } => {
+      if (item.type !== 'item') return false;
+      const { launcherType, originalPath } = item as {
+        launcherType?: string;
+        originalPath?: string;
+      };
+      return launcherType === 'file' || (!originalPath && launcherType === 'folder');
+    }
   );
   const targetPath = (item: { path: string; originalPath?: string }) =>
     item.originalPath ?? item.path;
   await prefetchFolderProbes(targets.map(targetPath));
   for (const item of targets) {
-    item.launcherType =
-      (await refineItemType(targetPath(item), 'file')) === 'folder' ? 'folder' : 'file';
+    // ショートカットのリンク先は resolveLauncherType でディスクを確かめ済みなので、ファイルとして補正する
+    const detected = item.originalPath ? 'file' : detectItemTypeSync(item.path);
+    const refined = await refineItemType(targetPath(item), detected);
+    item.launcherType = refined === 'folder' ? 'folder' : 'file';
   }
 }
 

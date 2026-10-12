@@ -58,8 +58,9 @@ const settings = await window.electronAPI.getSettings();
 
 データファイル（`datafiles/data*.json`）とワークスペースを読み直し、メイン画面に表示する `AppItem[]` を返す。
 
-- パラメータ: `trigger?: 'explicit' | 'internal'`（既定 `explicit`）
+- パラメータ: `trigger?: 'explicit' | 'full' | 'internal'`（既定 `explicit`）
   - `explicit`: 起動時・F5。毎回 `last-load-report.json` を書く
+  - `full`: メイン画面の「完全リフレッシュ」。`explicit` と同じくレポートを書き、拡張子の無いパスもすべてディスクで確かめ直す（[データファイル形式 3.1.2](file-formats/data-format.md#312-サポートされるパス種類)）
   - `internal`: 変更通知を受けた再読込・画面内の一覧取得。報告すること（補正・外部変更・破損）があるときだけレポートを書く。先行する `internal` の読み込みがあれば結果を共有する
 - 処理内容: フォルダ取込の展開・`.lnk` の解析・タブ単位の重複排除のあと、ワークスペースも読み直す（内容が変わっていれば `workspace-changed` を送る）
 - 外部変更（人・AI による直接編集）を検知した場合は、変更前の内容をスナップショットに残す。破損ファイルや読み込み時の補正はトーストで知らせる

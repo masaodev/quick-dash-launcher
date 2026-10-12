@@ -19,7 +19,7 @@
 ## まず守ること
 
 - 編集していいのは `datafiles/data*.json`・`settings.json`・`workspace.json`・`workspace-archive.json` だけ。
-  `icon-cache/`・`backup/`・`clipboard-data/`・`workspace-ui-state.json`・`last-load-report.json`・`schemas/`・この `README.md` は触らない
+  `icon-cache/`・`backup/`・`clipboard-data/`・`workspace-ui-state.json`・`last-load-report.json`・`path-type-cache.json`・`schemas/`・この `README.md` は触らない
 - QDL の「アイテム管理」画面やワークスペース画面を操作しながら編集しない
   （QDL 側の保存が競合として拒否される。QDL が起動中でも、操作していなければ編集してよい）
 - ファイルは丸ごと有効な JSON として書く（途中状態で保存しない）。文字コードは UTF-8（BOM なし）

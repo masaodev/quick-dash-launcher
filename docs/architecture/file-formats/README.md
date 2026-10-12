@@ -57,6 +57,12 @@ JSON ファイルはすべて **UTF-8（BOMなし）** で保存されます。
 - **形式**: `{ "version": "1.0", "entries": [{ "query": "...", "timestamp": "..." }, ...] }`
 - **内容**: 検索クエリ履歴（最大100件）
 
+### 拡張子の無いファイルのメモ
+
+- **ファイル**: `path-type-cache.json`
+- **形式**: `{ "version": 1, "extensionlessFiles": ["C:\\Windows\\System32\\drivers\\etc\\hosts", ...] }`
+- **内容**: 拡張子が無いのにファイルだったパスの一覧（QDL 管理、AI 編集対象外）。読み込みのたびにディスクを読まずに、拡張子の無いファイルをフォルダと取り違えないためのもの。書き換えるタイミングは [データファイル形式 3.1.2](data-format.md#312-サポートされるパス種類)
+
 ### アイコンキャッシュ
 
 - **フォルダ**: `config/icon-cache/`（apps, favicons, custom, extensions）

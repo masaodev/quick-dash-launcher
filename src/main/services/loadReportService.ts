@@ -53,8 +53,11 @@ export interface LoadReport {
   preChangeSnapshot: string | null;
 }
 
-/** 読み込みのきっかけ。explicit = 起動時・F5、internal = 変更通知・画面内の一覧取得 */
-export type LoadTrigger = 'explicit' | 'internal';
+/**
+ * 読み込みのきっかけ。explicit = 起動時・F5、full = 完全リフレッシュ、
+ * internal = 変更通知・画面内の一覧取得
+ */
+export type LoadTrigger = 'explicit' | 'full' | 'internal';
 
 /** 人・AI に報告すべきこと（補正・書き戻し・外部変更・破損）があるか */
 export function hasReportableIssues(files: LoadReportFile[]): boolean {

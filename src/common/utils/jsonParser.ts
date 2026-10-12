@@ -530,8 +530,9 @@ function validateJsonDirItem(obj: Record<string, unknown>): JsonDirItem {
     item.options = {};
 
     if (opts.depth !== undefined) {
-      if (typeof opts.depth !== 'number') {
-        throw new Error('options.depth must be a number');
+      // -2 以下や小数を通すと、エラーも出さずに取込が 0 件になる（編集画面と同じく -1 か 0 以上の整数だけ）
+      if (typeof opts.depth !== 'number' || !Number.isInteger(opts.depth) || opts.depth < -1) {
+        throw new Error('options.depth must be -1 (unlimited) or an integer of 0 or more');
       }
       item.options.depth = opts.depth;
     }

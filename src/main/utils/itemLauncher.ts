@@ -11,6 +11,7 @@ import { parseArgs } from '@common/utils/argsParser';
 
 import { ClipboardService } from '../services/clipboardService.js';
 
+import { noteLaunchedPath } from './folderPathProbe.js';
 import { isBareFileName, resolveFromPath } from './pathResolver.js';
 
 /**
@@ -38,6 +39,10 @@ export async function launchItem(item: LaunchableItem, logger: Logger): Promise<
       case 'file':
       case 'folder':
         await openPathOrLog(item.path, logger, { path: item.path, name: item.displayName });
+        // 拡張子の無いパスは、ファイルかどうかを確かめて次の読み込みの種別に反映する（起動は待たせない）
+        void noteLaunchedPath(item.path).catch((error) => {
+          logger.warn({ error, path: item.path }, '起動したパスの種類を確かめられませんでした');
+        });
         break;
 
       case 'app':

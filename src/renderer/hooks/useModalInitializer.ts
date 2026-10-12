@@ -85,7 +85,7 @@ export function useModalInitializer() {
           continue;
         }
         debugInfo('Processing dropped path:', filePath);
-        const itemType = await detectItemType(filePath, window.electronAPI.isDirectory);
+        const itemType = await detectItemType(filePath, window.electronAPI.getPathKind);
         debugInfo('Detected item type:', itemType);
         const name = extractDefaultName(filePath, itemType);
         debugInfo('Extracted name:', name);

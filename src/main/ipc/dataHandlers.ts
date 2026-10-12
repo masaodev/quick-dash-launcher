@@ -16,7 +16,7 @@ import { SettingsService } from '../services/settingsService.js';
 import { PathManager } from '../config/pathManager.js';
 import { forgetDataFile, writeDataFile } from '../services/dataFileTracker.js';
 import { checkPathsExist } from '../services/data/pathExistenceChecker.js';
-import { withFolderMarker } from '../utils/folderPathProbe.js';
+import { getPathKind, withFolderMarker } from '../utils/folderPathProbe.js';
 import type { LoadTrigger } from '../services/loadReportService.js';
 import { reloadConfigFiles } from '../services/data/dataFileLoader.js';
 import { loadEditableItems, saveEditableItems } from '../services/data/editableItemsStore.js';
@@ -126,9 +126,7 @@ export function setupDataHandlers(configFolder: string) {
     notifyDataChanged();
   });
 
-  ipcMain.handle(IPC_CHANNELS.IS_DIRECTORY, (_event, filePath: string) =>
-    FileUtils.isDirectory(filePath)
-  );
+  ipcMain.handle(IPC_CHANNELS.GET_PATH_KIND, (_event, filePath: string) => getPathKind(filePath));
 
   // アイテム管理の「リンク切れを確認」。確認対象の絞り込み（URL・shell:・裸のコマンド名を除く）は呼び出し側が行う。
   // 応答しないネットワークパスで止まらないよう、時間切れ付きの非同期確認にしている

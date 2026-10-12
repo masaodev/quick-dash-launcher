@@ -182,6 +182,8 @@ QDL_INSTANCE=dev cli/target/release/qdl.exe reload
 - フォルダ: `shell:` で始まる、拡張子がない、または `/`・`\` で終わる
 - ファイル: その他すべて
 
+文字列だけでは決まらないものは、メインプロセスでディスクの状態で補う（`src/main/utils/folderPathProbe.ts`）。ドット入りのフォルダ名は登録時に末尾へ区切り文字を付け、拡張子の無いファイルは `config/path-type-cache.json`（`src/main/utils/extensionlessFileMemo.ts`）に残す。仕様は[データファイル形式 3.1.2](../architecture/file-formats/data-format.md#312-サポートされるパス種類)。
+
 ### 検索の実装
 
 - 大文字小文字を区別しないインクリメンタルサーチ

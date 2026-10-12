@@ -29,12 +29,14 @@ vi.mock('@common/logger', () => ({
 }));
 
 import { resetDataFileTrackerForTesting } from '../dataFileTracker';
+import { setExtensionlessFileMemoStorage } from '../../utils/extensionlessFileMemo';
 
 import {
   WorkspaceCorruptedError,
   WorkspaceReloadInProgressError,
   WorkspaceExternalChangeConflictError,
   WorkspaceFileStore,
+  resolveLauncherType,
   WorkspaceWriteError,
 } from './WorkspaceFileStore';
 import { WorkspaceUiStateStore } from './WorkspaceUiStateStore';
@@ -450,5 +452,36 @@ describe('WorkspaceFileStore', () => {
     expect(files[0].externallyChanged).toBe(true);
     expect(files[0].issues.map((i) => i.kind)).toEqual(['idAssigned']);
     expect(files[0].rewritten).toBe(true);
+  });
+});
+
+describe('resolveLauncherType', () => {
+  let dir: string;
+
+  beforeEach(() => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'qdl-ws-type-'));
+  });
+
+  afterEach(() => {
+    setExtensionlessFileMemoStorage(null);
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('ショートカットのリンク先が拡張子の無いファイルなら file にすること', () => {
+    const target = path.join(dir, 'LICENSE');
+    fs.writeFileSync(target, 'MIT');
+    expect(resolveLauncherType({ path: path.join(dir, 'a.lnk'), originalPath: target })).toBe(
+      'file'
+    );
+    expect(resolveLauncherType({ path: path.join(dir, 'b.lnk'), originalPath: dir })).toBe(
+      'folder'
+    );
+  });
+
+  it('拡張子の無いパスは、メモにあれば file・無ければ folder にすること', () => {
+    const hosts = 'C:\\Windows\\System32\\drivers\\etc\\hosts';
+    setExtensionlessFileMemoStorage({ read: () => [hosts], write: () => {} });
+    expect(resolveLauncherType({ path: hosts })).toBe('file');
+    expect(resolveLauncherType({ path: 'C:\\work\\folder' })).toBe('folder');
   });
 });

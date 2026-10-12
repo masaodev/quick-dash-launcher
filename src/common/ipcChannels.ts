@@ -24,7 +24,8 @@ export const IPC_CHANNELS = {
   GET_DATA_FILES: 'get-data-files',
   CREATE_DATA_FILE: 'create-data-file',
   DELETE_DATA_FILE: 'delete-data-file',
-  IS_DIRECTORY: 'is-directory',
+  /** パスがフォルダ・ファイル・存在しないのどれかを確かめる（登録画面へのドロップ） */
+  GET_PATH_KIND: 'get-path-kind',
   /** パスが実在するかをまとめて確認する（アイテム管理のリンク切れ表示） */
   CHECK_PATHS_EXIST: 'check-paths-exist',
 

@@ -204,8 +204,9 @@
       "type": "object",
       "properties": {
         "depth": {
-          "type": "number",
-          "description": "スキャンする深さ（0=サブフォルダなし、デフォルト。-1=無制限）"
+          "type": "integer",
+          "description": "スキャンする深さ（0=サブフォルダなし、デフォルト。-1=無制限）",
+          "minimum": -1
         },
         "types": {
           "type": "string",

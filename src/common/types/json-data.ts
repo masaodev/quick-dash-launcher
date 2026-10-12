@@ -109,7 +109,11 @@ export const DIR_OPTIONS_DEFAULTS = {
  * フォルダ取込オプション（JSON保存用、すべてオプショナル）
  */
 export interface JsonDirOptions {
-  /** スキャンする深さ（0=サブフォルダなし、デフォルト。-1=無制限） */
+  /**
+   * スキャンする深さ（0=サブフォルダなし、デフォルト。-1=無制限）
+   * @asType integer
+   * @minimum -1
+   */
   depth?: number;
   /** 取り込むアイテムの種類 */
   types?: 'file' | 'folder' | 'both';

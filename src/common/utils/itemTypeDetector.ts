@@ -48,28 +48,30 @@ function detectTypeFromPath(itemPath: string): LauncherItem['type'] {
   return 'file';
 }
 
+/** ディスクで確かめたパスの種類 */
+export type PathKind = 'folder' | 'file' | 'missing';
+
 /**
  * アイテムのパスからタイプを検出する（クライアント側用）
  * ファイルシステムへの問い合わせを行い、より正確なタイプ検出を実行します。
  */
 export async function detectItemType(
   itemPath: string,
-  isDirectoryCheck?: (path: string) => Promise<boolean>
+  pathKindCheck?: (path: string) => Promise<PathKind>
 ): Promise<LauncherItem['type']> {
-  // URI・shellパスはファイルシステム上に存在しないため、ディレクトリ照会を行わない
+  // URI・shellパスはファイルシステム上に存在しないため、ディスクへの照会を行わない
   if (
-    isDirectoryCheck &&
+    pathKindCheck &&
     !itemPath.includes('://') &&
     !itemPath.startsWith('shell:') &&
     !PathUtils.isCustomUriScheme(itemPath)
   ) {
     try {
-      const isDirectory = await isDirectoryCheck(itemPath);
-      if (isDirectory) {
-        return 'folder';
-      }
+      const kind = await pathKindCheck(itemPath);
+      if (kind === 'folder') return 'folder';
+      if (kind === 'file') return detectFileItemTypeSync(itemPath);
     } catch (error) {
-      console.error('Error checking if directory:', error);
+      console.error('Error checking path kind:', error);
     }
   }
 
@@ -82,4 +84,13 @@ export async function detectItemType(
  */
 export function detectItemTypeSync(itemPath: string): LauncherItem['type'] {
   return detectTypeFromPath(itemPath);
+}
+
+/**
+ * ディスクでファイルと分かっているパスのタイプを検出する
+ * 拡張子の無いファイル（hosts など）を、パスの見た目でフォルダと判定しないようにする。
+ */
+export function detectFileItemTypeSync(itemPath: string): LauncherItem['type'] {
+  const detected = detectTypeFromPath(itemPath);
+  return detected === 'folder' ? 'file' : detected;
 }

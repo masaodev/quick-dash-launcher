@@ -172,9 +172,9 @@ function App(): React.ReactElement {
     setWindowList((prev) => prev.filter((w) => w.hwnd !== hwnd));
   }, []);
 
-  // trigger: 起動時と F5 は省略（explicit）。アプリ内の操作に伴う再読込は 'internal'
-  //（last-load-report.json を報告事項があるときだけ更新する）
-  const loadItems = async (trigger?: 'explicit' | 'internal'): Promise<AppItem[]> => {
+  // trigger: 起動時と F5 は省略（explicit）。完全リフレッシュは 'full'（パスの種類も確かめ直す）。
+  // アプリ内の操作に伴う再読込は 'internal'（last-load-report.json を報告事項があるときだけ更新する）
+  const loadItems = async (trigger?: 'explicit' | 'full' | 'internal'): Promise<AppItem[]> => {
     const items = await window.electronAPI.loadDataFiles(trigger);
 
     // Load cached icons (LauncherItemのみ)
@@ -573,7 +573,7 @@ function App(): React.ReactElement {
 
   const handleRefreshAllWrapper = async () => {
     await window.electronAPI.bookmarkAutoImportAPI.executeAll();
-    await handleRefreshAll(() => loadItems('internal'));
+    await handleRefreshAll(() => loadItems('full'));
   };
 
   const handleTabRename = async (tabIndex: number, newName: string) => {

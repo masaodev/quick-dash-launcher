@@ -7,7 +7,7 @@ import { dataLogger } from '@common/logger';
 import { FileUtils } from '@common/utils/fileUtils';
 import type { DirOptionsForProcessing, JsonDirOptions } from '@common/types/json-data';
 import { DIR_OPTIONS_DEFAULTS } from '@common/types/json-data';
-import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
+import { detectFileItemTypeSync, detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { LauncherItem } from '@common/types';
 
 /**
@@ -77,7 +77,8 @@ function processItem(
   return {
     displayName: applyPrefixSuffix(path.basename(itemPath), prefix, suffix),
     path: itemPath,
-    type: itemType === 'folder' ? 'folder' : detectItemTypeSync(itemPath),
+    // ディスクでファイルと分かっているので、拡張子が無くてもフォルダにしない
+    type: itemType === 'folder' ? 'folder' : detectFileItemTypeSync(itemPath),
     sourceFile,
     lineNumber,
     isDirExpanded: !!expandedFrom,
@@ -112,10 +113,13 @@ export function processShortcut(
         suffix
       );
 
-      const targetType: LauncherItem['type'] =
-        FileUtils.exists(shortcutDetails.target) && FileUtils.isDirectory(shortcutDetails.target)
+      // リンク先が実在すればディスクの種類に従う（拡張子の無いファイルをフォルダにしない）
+      const targetExists = FileUtils.exists(shortcutDetails.target);
+      const targetType: LauncherItem['type'] = !targetExists
+        ? detectItemTypeSync(shortcutDetails.target)
+        : FileUtils.isDirectory(shortcutDetails.target)
           ? 'folder'
-          : detectItemTypeSync(shortcutDetails.target);
+          : detectFileItemTypeSync(shortcutDetails.target);
 
       return {
         displayName: name,
