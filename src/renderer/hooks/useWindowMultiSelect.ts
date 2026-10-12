@@ -50,6 +50,9 @@ export function useWindowMultiSelect({
   const [pendingClose, setPendingClose] = useState<WindowInfo[] | null>(null);
   const anchorRef = useRef<number | null>(null);
   const baseRef = useRef<Set<Hwnd>>(new Set());
+  // 起点を決めた操作（Shift+↑↓・Ctrl+クリック）のあとにカーソルがいるはずの行。
+  // カーソルがここに無ければ、マウスのホバーなどほかの操作で動いたので起点を置き直す
+  const anchorCursorRef = useRef<number | null>(null);
 
   const windows = useMemo(
     () => (searchMode === 'window' ? filteredItems.filter(isWindowInfo) : []),
@@ -74,6 +77,8 @@ export function useWindowMultiSelect({
   useEffect(() => {
     window.electronAPI.setEscapeHandledByPage?.(escapeHandledByPage);
   }, [escapeHandledByPage]);
+  // 画面が外れる（読み直し・アンマウント）ときは戻す。残るとメインプロセスが Esc で隠さなくなる
+  useEffect(() => () => window.electronAPI?.setEscapeHandledByPage?.(false), []);
 
   function rangeHwnds(a: number, b: number): Hwnd[] {
     const [start, end] = a < b ? [a, b] : [b, a];
@@ -82,17 +87,19 @@ export function useWindowMultiSelect({
 
   function extendTo(index: number): void {
     if (windows.length === 0) return;
-    if (anchorRef.current === null) {
+    if (anchorRef.current === null || anchorCursorRef.current !== selectedIndex) {
       anchorRef.current = selectedIndex;
       baseRef.current = new Set(marked);
     }
     const next = new Set(baseRef.current);
     rangeHwnds(anchorRef.current, index).forEach((h) => next.add(h));
     setMarked(next);
+    anchorCursorRef.current = index;
   }
 
   function resetAnchor(): void {
     anchorRef.current = null;
+    anchorCursorRef.current = null;
   }
 
   function toggle(index: number): void {
@@ -103,6 +110,7 @@ export function useWindowMultiSelect({
     else next.add(win.hwnd);
     setMarked(next);
     anchorRef.current = index;
+    anchorCursorRef.current = index;
     baseRef.current = next;
   }
 
@@ -115,12 +123,12 @@ export function useWindowMultiSelect({
 
   function selectAll(): void {
     setMarked(new Set(windows.map((w) => w.hwnd)));
-    anchorRef.current = null;
+    resetAnchor();
   }
 
   function clear(): void {
     setMarked(new Set());
-    anchorRef.current = null;
+    resetAnchor();
   }
 
   function targetsFor(cursorWindow: WindowInfo | undefined): WindowInfo[] {
