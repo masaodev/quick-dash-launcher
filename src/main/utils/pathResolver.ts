@@ -32,7 +32,7 @@ async function isFile(fullPath: string): Promise<boolean> {
  */
 export async function resolveFromPath(
   fileName: string,
-  env: NodeJS.ProcessEnv = process.env
+  env: Record<string, string | undefined> = process.env
 ): Promise<string | null> {
   if (/[*?]/.test(fileName)) return null;
 

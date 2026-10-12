@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
+
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 
 import { isBareFileName, resolveFromPath } from './pathResolver';
 
