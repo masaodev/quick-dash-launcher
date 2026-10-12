@@ -38,7 +38,9 @@ export class SettingsService {
     editModeHeight: 1000,
     autoLaunch: false,
     cliEnabled: false,
-    backupEnabled: false,
+    // 既定で有効（起動時に 1 日 1 回・変更があるときだけ・保持件数で頭打ち）。2026-10 に false から変更。
+    // 設定ファイルには初回起動時に既定値が書き込まれるので、それより前から使っている人の設定は変わらない
+    backupEnabled: true,
     backupRetention: 10,
     showDataFileTabs: true,
     defaultFileTab: DEFAULT_DATA_FILE,
