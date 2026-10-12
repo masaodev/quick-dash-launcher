@@ -36,6 +36,8 @@ export interface UseKeyboardShortcutsParams {
   windowSelection: WindowMultiSelect;
   reloadData: () => Promise<void>;
   desktopCount: number;
+  /** ウィンドウの固定（Ctrl+P）が使えるか。仮想デスクトップ非対応の環境では false */
+  canPinWindow: boolean;
   activeDesktopTab: number;
   setActiveDesktopTab: React.Dispatch<React.SetStateAction<number>>;
 }
@@ -66,6 +68,7 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
     windowSelection,
     reloadData,
     desktopCount,
+    canPinWindow,
     activeDesktopTab,
     setActiveDesktopTab,
   } = params;
@@ -240,6 +243,14 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
       e.preventDefault();
       e.stopPropagation();
 
+      if (!canPinWindow) {
+        // 対象のウィンドウに関係なく出す知らせなので、アイテム名のないシンプルな形にする
+        await window.electronAPI.showToastWindow({
+          type: 'warning',
+          message: 'この環境は仮想デスクトップに対応していません。',
+        });
+        return;
+      }
       await windowOps.togglePinned(windowTargets());
       return;
     }

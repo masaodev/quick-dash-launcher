@@ -29,7 +29,12 @@ type Params = Omit<UseKeyboardShortcutsParams, 'windowOps' | 'windowSelection'> 
 };
 
 /** App と同じく、ウィンドウ操作・複数選択・キー操作のフックを組み合わせて使う */
-function setup(items: AppItem[], searchMode: SearchMode = 'normal', selectedIndex = 0) {
+function setup(
+  items: AppItem[],
+  searchMode: SearchMode = 'normal',
+  selectedIndex = 0,
+  canPinWindow = true
+) {
   const params: Params = {
     showDataFileTabs: false,
     activeTab: 'datafiles/data.json',
@@ -53,6 +58,7 @@ function setup(items: AppItem[], searchMode: SearchMode = 'normal', selectedInde
     removeWindowFromList: vi.fn(),
     reloadData: vi.fn(async () => undefined),
     desktopCount: 0,
+    canPinWindow,
     activeDesktopTab: 0,
     setActiveDesktopTab: vi.fn(),
   };
@@ -259,5 +265,35 @@ describe('useKeyboardShortcuts', () => {
 
     expect(pinWindow.mock.calls).toEqual([[100], [200]]);
     expect(unPinWindow).not.toHaveBeenCalled();
+  });
+
+  it('仮想デスクトップ非対応の環境の Ctrl+P は固定せず、対応していないことをトーストで知らせる', async () => {
+    const { press } = setup([notepad(100)], 'window', 0, false);
+
+    await press(keyEvent('p', { ctrlKey: true }));
+
+    expect(isWindowPinned).not.toHaveBeenCalled();
+    expect(pinWindow).not.toHaveBeenCalled();
+    expect(showToastWindow).toHaveBeenCalledWith({
+      type: 'warning',
+      message: 'この環境は仮想デスクトップに対応していません。',
+    });
+  });
+
+  it('一部のウィンドウだけ固定に失敗したときは、成功の文言に失敗した数を添える', async () => {
+    isWindowPinned.mockResolvedValue(false);
+    pinWindow.mockImplementation(async (hwnd: number) =>
+      hwnd === 300 ? { success: false, error: 'アクセスが拒否されました' } : { success: true }
+    );
+    const { press } = setup([notepad(100), notepad(200), notepad(300)], 'window');
+
+    await press(keyEvent('A', { ctrlKey: true, shiftKey: true }));
+    await press(keyEvent('p', { ctrlKey: true }));
+
+    expect(showToastWindow).toHaveBeenCalledWith({
+      displayName: '2 個のウィンドウ',
+      itemType: 'windowPin',
+      message: 'ウィンドウを全デスクトップに固定しました（1 個は固定に失敗しました）',
+    });
   });
 });
