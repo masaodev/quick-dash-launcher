@@ -102,7 +102,7 @@
     "extract-file-icon": "^0.3.2",
     "koffi": "^3.3.2",
     "minimatch": "^10.1.2",
-    "pino": "^10.2.0",
+    "pino": "^10.4.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-hot-toast": "^2.6.1"
