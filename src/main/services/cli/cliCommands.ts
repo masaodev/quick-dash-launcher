@@ -38,7 +38,7 @@ export interface CliContext {
 
 const HELP = `使い方: qdl <コマンド> [引数]
 
-QuickDashLauncher（起動中の本体）に依頼します。起動していなければ起動します。
+QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼します。起動していなければ起動します。
 
 コマンド:
   launcher item list|add|update|remove     メイン画面のアイテム（qdl launcher --help）

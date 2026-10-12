@@ -46,7 +46,7 @@
         },
         "cliEnabled": {
           "type": "boolean",
-          "description": "CLI（qdl コマンド）を PATH から使えるようにする（デフォルト: false）"
+          "description": "QuickDashLauncher CLI（qdl コマンド）を PATH から使えるようにする（デフォルト: false）"
         },
         "backupEnabled": {
           "type": "boolean",
