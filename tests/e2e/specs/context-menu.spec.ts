@@ -134,6 +134,25 @@ $Shortcut.Save()
     expect(editor.isClosed()).toBe(true);
   });
 
+  test('F2 で選択中のアイテムの編集画面が開く（右クリックの「編集」と同じ）', async ({
+    electronApp,
+    mainWindow,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+
+    await utils.searchFor('Google');
+    await expect(mainWindow.locator('.item.selected .item-name')).toHaveText('Google');
+    await mainWindow.locator('input[type="text"]').first().focus();
+    await mainWindow.keyboard.press('F2');
+
+    const editor = await utils.waitForRegisterWindow(electronApp);
+    await expect(editor.locator('.register-modal h2')).toHaveText('アイテムの編集');
+    await expect(editor.locator('input[value="Google"]').first()).toBeVisible();
+
+    await utils.pressEscapeToCloseRegisterModal();
+    expect(editor.isClosed()).toBe(true);
+  });
+
   test('パスをコピーメニュー操作でクリップボードにコピーされる', async ({
     electronApp,
     mainWindow,

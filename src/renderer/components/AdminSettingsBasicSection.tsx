@@ -84,6 +84,25 @@ const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
       </div>
 
       <div className="settings-section">
+        <h3>表示</h3>
+        <div className="setting-item">
+          <label>
+            <input
+              type="checkbox"
+              checked={editedSettings.showKeyboardHints}
+              onChange={(e) => handleSettingChange('showKeyboardHints', e.target.checked)}
+              disabled={isLoading}
+            />
+            操作のヒントを表示
+          </label>
+          <div className="setting-description">
+            メインウィンドウの下に、気づきにくいキー操作（F2 で編集、Shift+Enter
+            で親フォルダーを開くなど）を表示します。
+          </div>
+        </div>
+      </div>
+
+      <div className="settings-section">
         <h3>グループ起動</h3>
         <div className="setting-item">
           <label>
