@@ -157,10 +157,13 @@ app.whenReady().then(async () => {
     : 'net.masaodev.quick-dash-launcher';
   app.setAppUserModelId(appUserModelId);
 
-  // 自動起動設定を適用（設定ファイルの値をシステムに反映）
-  const autoLaunchService = AutoLaunchService.getInstance();
+  // 自動起動設定を適用（設定ファイルの値をシステムに反映。fire-and-forget: Store 版の WinRT 呼び出しを待たない）
   const autoLaunchEnabled = await settingsService.get('autoLaunch');
-  await autoLaunchService.setAutoLaunch(autoLaunchEnabled);
+  AutoLaunchService.getInstance()
+    .applyOnStartup(autoLaunchEnabled)
+    .catch((error) => {
+      console.error('起動時の自動起動設定の適用でエラー:', error);
+    });
 
   // CLI を使えるようにしているなら、同梱の qdl.exe と置いてあるものを比べて入れ替える
   //（本体の更新に追従させる。PowerShell を起動することがあるので待たない）

@@ -124,6 +124,8 @@ export type {
   WindowPositionMode,
   WorkspacePositionMode,
   DisplayInfo,
+  AutoLaunchStatus,
+  StoreAutoLaunchState,
 } from './settings';
 export { SETTINGS_SCHEMA_REF } from './settings';
 
@@ -165,7 +167,7 @@ export type { SearchHistoryEntry, SearchHistoryState, SearchMode } from './searc
 export type { WindowInfo, VirtualDesktopInfo, WindowState, Bounds } from './window';
 
 // アプリケーション情報
-export type { AppInfo } from './app';
+export type { AppInfo, AppDistribution } from './app';
 
 // 登録関連の型
 export type { RegisterItem, WindowOperationConfig } from './register';

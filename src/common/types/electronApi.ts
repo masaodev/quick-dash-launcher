@@ -45,6 +45,7 @@ import type {
   ClipboardPreview,
   CurrentClipboardState,
   DisplayInfo,
+  AutoLaunchStatus,
   ClipboardSessionCaptureResult,
   ClipboardSessionCommitResult,
   AppScanResult,
@@ -152,6 +153,8 @@ export interface ElectronAPI {
   /** ホットキー入力欄の録画の開始・終了を伝える（録画中は QDL のホットキーとウィンドウメニューを止める） */
   setHotkeyRecording: (recording: boolean) => Promise<void>;
   getDisplays: () => Promise<DisplayInfo[]>;
+  /** OS 側の自動起動の状態（Store 版では Windows の StartupTask の状態） */
+  getAutoLaunchStatus: () => Promise<AutoLaunchStatus>;
   isFirstLaunch: () => Promise<boolean>;
   updateItemById: (request: { id: string; newItem: LauncherItem }) => Promise<{ success: boolean }>;
   deleteItemsById: (requests: { id: string }[]) => Promise<{ success: boolean }>;

@@ -61,7 +61,7 @@
 | 画面名 | 表示条件 | 仕様書 |
 | --- | --- | --- |
 | **ブックマーク取込画面（ルール編集と共通）**（`BookmarkAutoImportRuleModal`） | 管理ウィンドウの一括取込メニュー「ブラウザのブックマークを追加」<br>設定「ブックマーク自動取込」の「+ ルールを追加」「編集」 | [bookmark-import-modal.md](./bookmark-import-modal.md) |
-| **アプリ取込画面**（`AppImportModal`） | 管理ウィンドウの一括取込メニュー「インストール済みアプリを追加」 | [app-import-modal.md](./app-import-modal.md) |
+| **アプリ取込画面**（`AppImportModal`） | 管理ウィンドウの一括取込メニュー「インストール済みアプリを追加」<br>メインウィンドウの ➕ の「💻 インストール済みアプリを追加」 | [app-import-modal.md](./app-import-modal.md) |
 | **バックアップスナップショットモーダル**（`BackupSnapshotModal`） | 設定のバックアップ欄の「スナップショット一覧」ボタン | なし |
 | **メモ表示モーダル**（`MemoViewModal`） | メインウィンドウのアイテム一覧で 📝 バッジのクリック<br>右クリックメニューの「📝 メモを表示」 | なし |
 | **グループアイテム選択モーダル** | アイテム登録・編集、ワークスペースアイテム編集でグループの「+ アイテムを追加」クリック時 | [group-item-selector-modal.md](./group-item-selector-modal.md) |

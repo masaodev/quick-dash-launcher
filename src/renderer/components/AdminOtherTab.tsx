@@ -1,7 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { AppInfo } from '@common/types';
+import { AppDistribution, AppInfo } from '@common/types';
 
 import { Button } from './ui/Button';
+
+const DISTRIBUTION_LABELS: Record<AppDistribution, string> = {
+  store: 'Microsoft Store 版',
+  portable: 'ポータブル版',
+  installer: 'インストーラー版',
+  dev: '開発版',
+};
 
 /** 設定のホットキー（"Alt+Space"）を表示用（"Alt + Space"）にする */
 function formatHotkey(hotkey: string): string {
@@ -115,6 +122,12 @@ const AdminOtherTab: React.FC = () => {
                 <div className="app-info-item">
                   <span className="app-info-label">バージョン</span>
                   <span className="app-info-value">{appInfo?.version || '読込中...'}</span>
+                </div>
+                <div className="app-info-item">
+                  <span className="app-info-label">配布形式</span>
+                  <span className="app-info-value">
+                    {appInfo ? DISTRIBUTION_LABELS[appInfo.distribution] : '読込中...'}
+                  </span>
                 </div>
                 <div className="app-info-item">
                   <span className="app-info-label">ライセンス</span>

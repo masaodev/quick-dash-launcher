@@ -112,6 +112,7 @@ export const IPC_CHANNELS = {
   SETTINGS_CHANGE_ITEM_SEARCH_HOTKEY: 'settings:change-item-search-hotkey',
   SETTINGS_SET_HOTKEY_RECORDING: 'settings:set-hotkey-recording',
   SETTINGS_GET_DISPLAYS: 'settings:get-displays',
+  SETTINGS_GET_AUTO_LAUNCH_STATUS: 'settings:get-auto-launch-status',
 
   // 設定ファイル操作
   OPEN_CONFIG_FOLDER: 'open-config-folder',
