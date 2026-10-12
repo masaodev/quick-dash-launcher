@@ -32,7 +32,7 @@ const settings = await window.electronAPI.getSettings();
 | 種類 | メイン側 | レンダラー側 | 使う場面 |
 | --- | --- | --- | --- |
 | 呼び出し（要求→応答） | `ipcMain.handle` | `ipcRenderer.invoke` | 大半のチャンネル。戻り値または例外が `Promise` で返る |
-| 一方向の通知（レンダラー→メイン） | `ipcMain.on` | `ipcRenderer.send` | 応答を待たない合図（`window:child-written`・`window:notify-main-child-result`・`layout-cancel`・`close-layout-progress-window`） |
+| 一方向の通知（レンダラー→メイン） | `ipcMain.on` | `ipcRenderer.send` | 応答を待たない合図（`window:child-written`・`window:notify-main-child-result`・`set-escape-handled-by-page`・`layout-cancel`・`close-layout-progress-window`） |
 | イベント（メイン→レンダラー） | `webContents.send` | `ipcRenderer.on` | 状態変化の通知（`data-changed`・`settings-changed`・`workspace-changed`・進捗など） |
 
 - **エラーの返し方**: 失敗は例外として `invoke` 側に伝わる（`createSafeIpcHandler`（`src/main/utils/ipcWrapper.ts`）はログを出してから再スローする）。一部のチャンネルは `{ success: boolean, error?: string }` を返す。どちらの形かはハンドラーと `ElectronAPI` の型で確認する
@@ -60,7 +60,7 @@ const settings = await window.electronAPI.getSettings();
 
 - パラメータ: `trigger?: 'explicit' | 'full' | 'internal'`（既定 `explicit`）
   - `explicit`: 起動時・F5。毎回 `last-load-report.json` を書く
-  - `full`: メイン画面の「完全リフレッシュ」。`explicit` と同じくレポートを書き、拡張子の無いパスもすべてディスクで確かめ直す（[データファイル形式 3.1.2](file-formats/data-format.md#312-サポートされるパス種類)）
+  - `full`: メイン画面の「完全リフレッシュ」。`explicit` と同じくレポートを書き、ドライブ文字で始まる拡張子の無いパスもすべてディスクで確かめ直す（`explicit` で確かめ直すのは `path-type-cache.json` に載っているパスだけ）（[データファイル形式 3.1.2](file-formats/data-format.md#312-サポートされるパス種類)）
   - `internal`: 変更通知を受けた再読込・画面内の一覧取得。報告すること（補正・外部変更・破損）があるときだけレポートを書く。先行する `internal` の読み込みがあれば結果を共有する
 - 処理内容: フォルダ取込の展開・`.lnk` の解析・タブ単位の重複排除のあと、ワークスペースも読み直す（内容が変わっていれば `workspace-changed` を送る）
 - 外部変更（人・AI による直接編集）を検知した場合は、変更前の内容をスナップショットに残す。破損ファイルや読み込み時の補正はトーストで知らせる

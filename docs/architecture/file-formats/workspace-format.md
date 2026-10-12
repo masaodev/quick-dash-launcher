@@ -117,7 +117,7 @@ QuickDashLauncher のワークスペース機能で使用されるファイル�
 
 型固有フィールドはデータファイルと同じなので、[データファイル形式 3 章](data-format.md#3-アイテムタイプ詳細) の各アイテムタイプ（`item`＝[3.1](data-format.md#31-通常アイテムjsonlauncheritem)、`window`＝[3.4](data-format.md#34-ウィンドウアイテムjsonwindowitem)、`group`＝[3.3](data-format.md#33-グループアイテムjsongroupitem)、`clipboard`＝[3.5](data-format.md#35-クリップボードアイテムjsonclipboarditem)、`layout`＝[3.6](data-format.md#36-レイアウトアイテムjsonlayoutitem)）を参照。ワークスペースに固有の違いは次のとおり。
 
-- `type: item` は、ショートカット（.lnk）のリンク先 `originalPath` を持てる。実行時の起動種別（url/file/folder/app/customUri）は `originalPath` があればそれ、なければ `path` から判定する。ドット入りのフォルダ名の扱い（末尾の区切り文字・読み込み時のディスク確認）はデータファイルと同じ（[データファイル形式 3.1.2](data-format.md#312-サポートされるパス種類)）
+- `type: item` は、ショートカット（.lnk）のリンク先 `originalPath` を持てる。実行時の起動種別（url/file/folder/app/customUri）は `originalPath` があればそれ、なければ `path` から判定する。ドット入りのフォルダ名と拡張子の無いファイルの扱い（末尾の区切り文字・読み込み時のディスク確認・`path-type-cache.json`）はデータファイルと同じ（[データファイル形式 3.1.2](data-format.md#312-サポートされるパス種類)）
 - データファイルの `updatedAt`・`autoImportRuleId` は持たない
 - `clipboard`・`layout` は QDL が生成する。手で書かない
 

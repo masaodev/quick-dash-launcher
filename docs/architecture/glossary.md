@@ -26,7 +26,7 @@ QuickDashLauncherで使用されるドメイン用語の定義です。開発時
 | アイテム | `LayoutItem` | ウィンドウ配置アイテム | ウィンドウ配置 | 複数ウィンドウの位置・サイズを一括でキャプチャ・復元するアイテム。`entries`にウィンドウごとの検索条件と位置・サイズを持つ。`src/common/types/launcher.ts`で定義。 |
 | アイテム | `AppItem` | アプリアイテム | - | `LauncherItem \| GroupItem \| WindowItem \| ClipboardItem \| LayoutItem \| WindowInfo`の統合型。アイテムリスト表示時に使用。`src/common/types/launcher.ts`で定義。 |
 | アイテム | `WorkspaceItem` | ワークスペースアイテム | - | ワークスペースに追加されたアイテムの独立コピー。元アイテムが削除されても影響を受けない。`type`で判別するunion（`item`/`window`/`group`/`clipboard`/`layout`）で、データファイルの`JsonItem`と同じ語彙・フィールド名を使う。workspace.json（`JsonWorkspaceFile`）に保存。`src/common/types/workspace.ts`で定義。 |
-| アイテム | `launcherType` | 起動種別 | - | `type: "item"`のワークスペースアイテムで、`path`（ショートカットなら`originalPath`）から実行時に判定する起動種別（`url`/`file`/`folder`/`app`/`customUri`）。ファイルには保存しない実行時専用フィールド。`WorkspaceFileStore.ts`の`resolveLauncherType()`で判定。 |
+| アイテム | `launcherType` | 起動種別 | - | `type: "item"`のワークスペースアイテムで、`path`（ショートカットなら`originalPath`）から実行時に判定する起動種別（`url`/`file`/`folder`/`app`/`customUri`）。ファイルには保存しない実行時専用フィールド。`WorkspaceFileStore.ts`の`resolveLauncherType()`で判定し、読み込み時にディスクの状態と`path-type-cache.json`で補正する（`refineLauncherTypes()`）。 |
 | アイテム | `RegisterItem` | 登録アイテム | - | アイテム登録・編集時に使用される型。`RegisterModal`や`useRegisterForm`で使用。`src/common/types/register.ts`で定義（v0.5.20で型定義を再配置）。 |
 | 登録項目 | `displayName` | アイテム名 | アイテム表示名 | メインウィンドウのアイテムリストに表示される名前。`RegisterItem.displayName`および`LauncherItem.displayName`で使用。ユーザーが自由に設定可能。 |
 | 登録項目 | `path` | 起動パス | パス/URL | 起動対象を指定するパスまたはURL。ファイルパス、フォルダパス、HTTPS URL、カスタムURIなど。`RegisterItem.path`および`LauncherItem.path`で使用。この値から実行タイプ（`LauncherItem.type`）が自動判定される。 |
