@@ -386,7 +386,7 @@ function App(): React.ReactElement {
     else void windowOps.closeWindows(targets);
   };
 
-  const { handleKeyDown } = useKeyboardShortcuts({
+  const { handleKeyDown: handleShortcutKeyDown } = useKeyboardShortcuts({
     showDataFileTabs,
     activeTab,
     dataFileTabs,
@@ -413,6 +413,11 @@ function App(): React.ReactElement {
     activeDesktopTab,
     setActiveDesktopTab,
   });
+
+  // エラーのダイアログが出ているあいだは、キーをダイアログ（window の keydown で Enter・Esc を受ける）に任せる。
+  // ここで Enter を処理すると止めてしまい、ダイアログに届かず選択中のアイテムをもう一度実行する
+  const handleKeyDown = (e: React.KeyboardEvent): Promise<void> =>
+    alertDialog.isOpen ? Promise.resolve() : handleShortcutKeyDown(e);
 
   // リストの行や余白（フォーカスを受け取らない要素）をクリックするとフォーカスが body に移り、
   // .app の onKeyDown にキーが届かなくなる。body に来たキーは検索欄にフォーカスを戻してから処理する

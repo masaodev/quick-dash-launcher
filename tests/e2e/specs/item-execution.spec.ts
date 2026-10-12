@@ -9,6 +9,7 @@ type LaunchStubState = {
 
 declare global {
   var __e2eLaunchStub: LaunchStubState | undefined;
+  var __e2eOpenItemCalls: number | undefined;
 }
 
 /** 起動処理をシミュレートする待機時間（ms） */
@@ -132,5 +133,40 @@ test.describe('QuickDashLauncher - ウィンドウ配置の実行', () => {
         { timeout: 5000 }
       )
       .toMatch(/🖥️[\s\S]*E2Eウィンドウ配置[\s\S]*ウィンドウ配置を実行します/);
+  });
+});
+
+test.describe('QuickDashLauncher - 実行に失敗したときのエラーダイアログ', () => {
+  test('エラーのダイアログが出ているときの Enter はダイアログを閉じるだけで、アイテムを実行し直さない', async ({
+    electronApp,
+    mainWindow,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    await mainWindow.locator('.item').first().waitFor({ state: 'visible', timeout: 10000 });
+
+    // アイテムを開く処理を「必ず失敗する」スタブに差し替え、呼ばれた回数を数える
+    await electronApp.evaluate(({ ipcMain }) => {
+      globalThis.__e2eOpenItemCalls = 0;
+      ipcMain.removeHandler('open-item');
+      ipcMain.handle('open-item', () => {
+        globalThis.__e2eOpenItemCalls = (globalThis.__e2eOpenItemCalls ?? 0) + 1;
+        throw new Error('E2E の起動失敗');
+      });
+    });
+    const openItemCalls = () => electronApp.evaluate(() => globalThis.__e2eOpenItemCalls ?? 0);
+
+    await utils.searchFor('GitHub');
+    await expect(mainWindow.locator('.item', { hasText: 'GitHub' })).toBeVisible();
+    await mainWindow.keyboard.press('Enter');
+
+    const alertDialog = mainWindow.getByTestId('alert-dialog');
+    await expect(alertDialog).toBeVisible({ timeout: 5000 });
+    expect(await openItemCalls()).toBe(1);
+
+    await mainWindow.keyboard.press('Enter');
+
+    await expect(alertDialog).not.toBeVisible();
+    expect(await openItemCalls()).toBe(1);
   });
 });
