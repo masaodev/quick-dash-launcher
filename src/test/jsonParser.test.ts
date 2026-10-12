@@ -551,6 +551,33 @@ describe('jsonParser: 寛容パース（parseJsonDataFileLenient）', () => {
     expect(result.modified).toBe(false);
   });
 
+  it('フォルダ取込の depth は -1 か 0 以上の整数だけ受け付け、それ以外はスキップすること', () => {
+    const dirWith = (id: string, depth: unknown) => ({
+      id,
+      type: 'dir',
+      path: 'C:\\work',
+      options: { depth },
+    });
+    const result = parseJsonDataFileLenient(
+      fileWith([
+        dirWith('dirAAAA1', -1),
+        dirWith('dirAAAA2', 0),
+        dirWith('dirAAAA3', 3),
+        dirWith('dirAAAA4', -2),
+        dirWith('dirAAAA5', 1.5),
+        dirWith('dirAAAA6', '1'),
+      ])
+    );
+
+    expect(result.validItems.map((item) => item.id)).toEqual(['dirAAAA1', 'dirAAAA2', 'dirAAAA3']);
+    expect(result.issues.map((issue) => [issue.id, issue.kind])).toEqual([
+      ['dirAAAA4', 'invalid'],
+      ['dirAAAA5', 'invalid'],
+      ['dirAAAA6', 'invalid'],
+    ]);
+    expect(result.issues[0].reason).toContain('options.depth');
+  });
+
   it('ウィンドウ操作のタイトル空・プロセス名だけは "*" に正規化し、書き戻し要にすること', () => {
     const processOnly = {
       id: 'wnAAAAA1',
