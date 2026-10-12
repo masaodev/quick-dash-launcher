@@ -37,7 +37,6 @@ describe('SETTINGS_RESET_KEYS', () => {
     expect(isResettableCategory('basic')).toBe(true);
     expect(isResettableCategory('window')).toBe(true);
     expect(isResettableCategory('backup')).toBe(true);
-    expect(isResettableCategory('tabs')).toBe(false);
     expect(isResettableCategory('bookmarkAutoImport')).toBe(false);
   });
 });

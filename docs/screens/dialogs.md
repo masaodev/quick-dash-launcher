@@ -75,7 +75,7 @@
 
 ### 3.1. 画面イメージ
 
-![ConfirmDialog（タブ削除の確認）](./images/dialogs-confirm.png)
+![ConfirmDialog（タブの削除）](./images/dialogs-confirm.png)
 
 ### 3.2. 基本情報
 
