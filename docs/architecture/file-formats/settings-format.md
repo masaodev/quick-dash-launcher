@@ -124,8 +124,8 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
 
 | フィールド | 型 | デフォルト値 | 説明 |
 | --- | --- | --- | --- |
-| **showDataFileTabs** | boolean | false | タブ表示の有効/無効 |
-| **defaultFileTab** | string | "datafiles/data.json" | デフォルトで表示するタブ（タブ表示ON時のみ有効） |
+| **showDataFileTabs** | boolean | false | タブ表示の有効/無効<br>設定画面では基本設定の「表示」にある「複数タブを表示」 |
+| **defaultFileTab** | string | "datafiles/data.json" | メイン画面を開いたとき（隠したあとも）に選ぶデータファイル。`dataFileTabs` のどれかに含まれていないときは `datafiles/data.json`、それもなければ最初のファイルになる<br>タブ表示が OFF のときは、このファイルのアイテムだけを表示する<br>設定画面に入力欄はなく、`settings.json` を直接書いたときだけ変わる |
 | **dataFileTabs** | DataFileTab[] | `[{files: ["datafiles/data.json"], name: "メイン"}]` | データファイルタブの設定 |
 | **dataFileLabels** | Record<string, string> | `{"datafiles/data.json": "メイン用データファイル"}` | データファイルの名前定義（物理ファイル名 → 表示名） |
 
@@ -189,7 +189,7 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
 
 | フィールド | 型 | デフォルト値 | 説明 |
 | --- | --- | --- | --- |
-| **parallelGroupLaunch** | boolean | false | グループアイテムを並列起動するか<br>true: 全アイテムを同時起動<br>false: 順次起動（500msディレイ） |
+| **parallelGroupLaunch** | boolean | false | グループアイテムを並列起動するか<br>true: 全アイテムを同時起動<br>false: 順次起動（各アイテムの間に100ms待つ） |
 
 ### 3.10. 追加ホットキー設定
 
