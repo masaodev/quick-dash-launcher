@@ -3,7 +3,7 @@ import { TestUtils } from '../helpers/test-utils';
 
 /**
  * 表示言語の切り替え
- * - settings.json の language を変えて F5 すると、メインウィンドウがその言語になる
+ * - settings.json の language を変えて F5 すると、メインウィンドウ（検索欄・ヒント行）がその言語になる
  * - 基本設定の「表示言語」で変えると、開いているメインウィンドウにその場で反映される
  */
 test.describe('QuickDashLauncher - 表示言語', () => {
@@ -27,6 +27,10 @@ test.describe('QuickDashLauncher - 表示言語', () => {
       await expect(searchBox).toHaveAttribute('placeholder', 'Search...');
       await expect(mainWindow.locator('.search-mode-label')).toHaveText('Normal search');
       await expect(mainWindow.locator('html')).toHaveAttribute('lang', 'en');
+      // メインウィンドウの他の文言（ヒント行）も英語になる
+      await expect(mainWindow.getByTestId('keyboard-hint-bar')).toContainText(
+        'Shift+Enter:Open containing folder'
+      );
     });
 
     await test.step('基本設定の表示言語で日本語に戻すと、メインウィンドウも戻る', async () => {

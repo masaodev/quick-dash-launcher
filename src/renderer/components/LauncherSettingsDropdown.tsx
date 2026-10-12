@@ -53,12 +53,14 @@ const LauncherSettingsDropdown: React.FC<SettingsDropdownProps> = ({
           <button
             className="dropdown-item"
             onClick={() => handleMenuItemClick(onOpenBasicSettings)}
+            data-testid="settings-menu-settings"
           >
             {t('launcher.settingsMenu.settings')}
           </button>
           <button
             className="dropdown-item"
             onClick={() => handleMenuItemClick(onOpenItemManagement)}
+            data-testid="settings-menu-item-manager"
           >
             {t('launcher.settingsMenu.itemManager')}
           </button>

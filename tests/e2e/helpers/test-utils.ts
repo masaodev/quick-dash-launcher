@@ -364,9 +364,13 @@ export class TestUtils {
     await settingsButton.click();
     await this.wait(200);
 
-    // ドロップダウンから選択
-    const menuText = tab === 'settings' ? '基本設定' : tab === 'edit' ? 'アイテム管理' : 'その他';
-    const menuItem = this.page.locator('.dropdown-item', { hasText: menuText });
+    // ドロップダウンから選択（表示言語によらないよう data-testid で選ぶ。その他タブはメニューに無い）
+    const menuItem =
+      tab === 'settings'
+        ? this.page.getByTestId('settings-menu-settings')
+        : tab === 'edit'
+          ? this.page.getByTestId('settings-menu-item-manager')
+          : this.page.locator('.dropdown-item', { hasText: 'その他' });
     await menuItem.click();
   }
 
