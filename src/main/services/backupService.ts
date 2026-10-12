@@ -107,8 +107,12 @@ export class BackupService {
         });
       }
 
-      // 新しい順にソート
-      snapshots.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      // 新しい順にソート（同じ秒のものは連番の大きい方が新しい）
+      snapshots.sort(
+        (a, b) =>
+          b.createdAt.getTime() - a.createdAt.getTime() ||
+          this.parseSequence(b.timestamp) - this.parseSequence(a.timestamp)
+      );
       return snapshots;
     } catch (error) {
       logger.error({ error }, 'スナップショット一覧の取得に失敗');
@@ -356,9 +360,10 @@ export class BackupService {
     if (!backupEnabled) return null;
 
     const backupFolder = PathManager.getBackupFolder();
-    const timestamp = `${this.createTimestamp()}${PRE_EXTERNAL_SUFFIX}`;
-    const snapshotFolder = path.join(backupFolder, timestamp);
-    FileUtils.ensureDirectory(snapshotFolder);
+    const { timestamp, snapshotFolder } = this.allocateSuffixedSnapshotFolder(
+      backupFolder,
+      PRE_EXTERNAL_SUFFIX
+    );
 
     let writtenCount = 0;
     for (const file of files) {
@@ -444,9 +449,16 @@ export class BackupService {
     const backupFolder = PathManager.getBackupFolder();
     FileUtils.ensureDirectory(backupFolder);
 
-    const timestamp = suffix ? `${this.createTimestamp()}_${suffix}` : this.createTimestamp();
-    const snapshotFolder = path.join(backupFolder, timestamp);
-    FileUtils.ensureDirectory(snapshotFolder);
+    let snapshotFolder: string;
+    if (suffix) {
+      snapshotFolder = this.allocateSuffixedSnapshotFolder(
+        backupFolder,
+        `_${suffix}`
+      ).snapshotFolder;
+    } else {
+      snapshotFolder = path.join(backupFolder, this.createTimestamp());
+      FileUtils.ensureDirectory(snapshotFolder);
+    }
 
     const targets = await this.getBackupTargets();
     let copiedCount = 0;
@@ -469,6 +481,33 @@ export class BackupService {
 
   private createTimestamp(): string {
     return new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
+  }
+
+  /**
+   * サフィックス付きのスナップショットのフォルダを作る。
+   * フォルダ名は秒単位なので、同じ秒にもう 1 つ作ると前のものを上書きしてしまう
+   * （外部で壊した直後に直して読み込むと、壊れる前の内容が消える）。
+   * 同じ名前があれば `<タイムスタンプ>-2<サフィックス>` のように連番を付ける
+   */
+  private allocateSuffixedSnapshotFolder(
+    backupFolder: string,
+    suffix: string
+  ): { timestamp: string; snapshotFolder: string } {
+    const base = this.createTimestamp();
+    for (let sequence = 1; ; sequence++) {
+      const timestamp = sequence === 1 ? `${base}${suffix}` : `${base}-${sequence}${suffix}`;
+      const snapshotFolder = path.join(backupFolder, timestamp);
+      if (!FileUtils.exists(snapshotFolder)) {
+        FileUtils.ensureDirectory(snapshotFolder);
+        return { timestamp, snapshotFolder };
+      }
+    }
+  }
+
+  /** 同じ秒に作ったスナップショットの連番（連番なしは 1） */
+  private parseSequence(name: string): number {
+    const match = /^.{19}-(\d+)/.exec(name);
+    return match ? Number(match[1]) : 1;
   }
 
   private isTimestampFolder(name: string): boolean {

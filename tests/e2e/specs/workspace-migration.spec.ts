@@ -234,6 +234,8 @@ test.describe('QuickDashLauncher - ワークスペースファイルの 2.0 移�
       expect(fs.readFileSync(path.join(configDir, 'workspace.json'), 'utf8')).toBe(brokenContent);
       // 破損中もアーカイブは書き換えない
       expect(fs.readFileSync(archivePath, 'utf8')).toBe(archiveBefore);
+      // 読めなくても外部変更は検知するので、壊れる前の内容がスナップショットに残る
+      await expect.poll(() => listBackupFolders(configDir, '_pre-external').length).toBe(2);
     });
 
     await test.step('直して F5 すれば復帰する', async () => {
@@ -245,8 +247,9 @@ test.describe('QuickDashLauncher - ワークスペースファイルの 2.0 移�
       );
       await utils.reloadWithF5();
       await mainWindow.waitForTimeout(500);
-      // 読み込めたので、外部変更として変更前（壊れた内容）のスナップショットが増える
-      await expect.poll(() => listBackupFolders(configDir, '_pre-external').length).toBe(2);
+      // 外部変更として変更前（壊れた内容）のスナップショットが増える。
+      // 前のステップのものと同じ秒にできても、上書きせず別のフォルダになる
+      await expect.poll(() => listBackupFolders(configDir, '_pre-external').length).toBe(3);
     });
   });
 });
