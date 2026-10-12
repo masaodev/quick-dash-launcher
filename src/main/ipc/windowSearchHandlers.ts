@@ -7,6 +7,7 @@ import {
   activateWindow,
   restoreWindow,
   closeWindow,
+  waitForWindowGone,
 } from '../utils/nativeWindowControl';
 import {
   getDesktopCount,
@@ -22,6 +23,9 @@ import { hideMainWindowOnExecute } from '../windowManager.js';
 import { getOverlayWindow } from '../services/overlayWindowService.js';
 
 type OperationResult = { success: boolean; error?: string };
+
+/** ウィンドウを閉じるよう頼んだ後、無くなるのを待つ上限（ms） */
+const CLOSE_WAIT_MS = 1000;
 
 function safeWindowOperation<T extends unknown[]>(
   fn: (...args: T) => boolean,
@@ -127,7 +131,11 @@ export function setupWindowSearchHandlers(getMainWindow: () => BrowserWindow | n
     }
   });
 
-  ipcMain.handle(IPC_CHANNELS.CLOSE_WINDOW, (_event, hwnd: number | bigint) =>
-    safeWindowOperation(closeWindow, 'close window')(hwnd)
-  );
+  ipcMain.handle(IPC_CHANNELS.CLOSE_WINDOW, async (_event, hwnd: number | bigint) => {
+    const result = safeWindowOperation(closeWindow, 'close window')(hwnd);
+    // 閉じるのを頼んだだけなので、少し待ってから返す（すぐ一覧を取り直すと閉じる前のウィンドウが戻ってくる）。
+    // 「保存しますか」などで閉じなければ待つのをやめ、相手の処理を待って止まらないようにする
+    if (result.success) await waitForWindowGone(hwnd, CLOSE_WAIT_MS);
+    return result;
+  });
 }
