@@ -84,3 +84,43 @@ test.describe('QuickDashLauncher - ウィンドウ検索結果をワークスペ
     }
   });
 });
+
+/**
+ * メイン画面の右クリック「ワークスペースに追加」は、LauncherItem 以外（グループなど）でもトーストで知らせる
+ */
+test.describe('QuickDashLauncher - グループをワークスペースに追加', () => {
+  test('グループを追加するとワークスペースに入り、トーストで知らせる', async ({
+    electronApp,
+    mainWindow,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    const workspaceWindow = await getWorkspaceWindow(electronApp);
+    await workspaceWindow.waitForLoadState('domcontentloaded');
+    const menuHelper = new NativeMenuTestHelper(electronApp, mainWindow);
+
+    await menuHelper.sendIpcToRenderer(IPC_CHANNELS.EVENT_LAUNCHER_MENU_ADD_TO_WORKSPACE, {
+      type: 'group',
+      displayName: 'E2E朝のセット',
+      itemNames: ['GitHub', 'Google'],
+    });
+
+    await expect(
+      workspaceWindow.locator('.workspace-item-card', { hasText: 'E2E朝のセット' })
+    ).toBeVisible({ timeout: 10000 });
+
+    await expect
+      .poll(
+        async () => {
+          // オーバーレイはメインのレンダラーから window.open で開く（item-execution.spec.ts と同じ探し方）
+          for (const win of electronApp.windows()) {
+            if (win.isClosed() || (await win.locator('#toast').count()) === 0) continue;
+            return win.locator('#toast').innerText();
+          }
+          return '';
+        },
+        { timeout: 5000 }
+      )
+      .toMatch(/⭐[\s\S]*E2E朝のセット[\s\S]*ワークスペースに追加しました/);
+  });
+});

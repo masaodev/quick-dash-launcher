@@ -48,8 +48,12 @@ export function useWindowMultiSelect({
 }: UseWindowMultiSelectParams): WindowMultiSelect {
   const [marked, setMarked] = useState<Set<Hwnd>>(() => new Set());
   const [pendingClose, setPendingClose] = useState<WindowInfo[] | null>(null);
+  // Shift+↑↓ の起点（Shift を押し始めた行）と、そのとき選んでいた行
   const anchorRef = useRef<number | null>(null);
   const baseRef = useRef<Set<Hwnd>>(new Set());
+  // Shift+クリックの起点（最後に Ctrl+クリックした行）。Shift+↑↓ の起点とは分ける。
+  // Ctrl+クリックの後にマウスのホバーでカーソルが動いても、Shift+↑↓ は今の行から選ぶように
+  const clickAnchorRef = useRef<number | null>(null);
 
   const windows = useMemo(
     () => (searchMode === 'window' ? filteredItems.filter(isWindowInfo) : []),
@@ -74,6 +78,9 @@ export function useWindowMultiSelect({
   useEffect(() => {
     window.electronAPI.setEscapeHandledByPage?.(escapeHandledByPage);
   }, [escapeHandledByPage]);
+  // アンマウント（開発中のホットリロードなど）のときは戻す。残るとメインプロセスが Esc で隠さなくなる。
+  // ページの読み直し・クラッシュでは cleanup が走らないので、メインプロセス側でも戻している
+  useEffect(() => () => window.electronAPI?.setEscapeHandledByPage?.(false), []);
 
   function rangeHwnds(a: number, b: number): Hwnd[] {
     const [start, end] = a < b ? [a, b] : [b, a];
@@ -93,6 +100,7 @@ export function useWindowMultiSelect({
 
   function resetAnchor(): void {
     anchorRef.current = null;
+    clickAnchorRef.current = null;
   }
 
   function toggle(index: number): void {
@@ -102,12 +110,13 @@ export function useWindowMultiSelect({
     if (next.has(win.hwnd)) next.delete(win.hwnd);
     else next.add(win.hwnd);
     setMarked(next);
-    anchorRef.current = index;
-    baseRef.current = next;
+    clickAnchorRef.current = index;
+    // 次の Shift+↑↓ は、その時点のカーソルの行と選択から始める
+    anchorRef.current = null;
   }
 
   function selectRangeTo(index: number): void {
-    const from = anchorRef.current ?? selectedIndex;
+    const from = clickAnchorRef.current ?? anchorRef.current ?? selectedIndex;
     const next = new Set(marked);
     rangeHwnds(from, index).forEach((h) => next.add(h));
     setMarked(next);
@@ -115,12 +124,12 @@ export function useWindowMultiSelect({
 
   function selectAll(): void {
     setMarked(new Set(windows.map((w) => w.hwnd)));
-    anchorRef.current = null;
+    resetAnchor();
   }
 
   function clear(): void {
     setMarked(new Set());
-    anchorRef.current = null;
+    resetAnchor();
   }
 
   function targetsFor(cursorWindow: WindowInfo | undefined): WindowInfo[] {

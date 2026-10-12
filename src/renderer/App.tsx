@@ -325,6 +325,10 @@ function App(): React.ReactElement {
     [getTabFilteredItems, mainItems]
   );
 
+  // Ctrl+P でウィンドウを固定（全デスクトップに表示）してよいか。非対応と分かっているときだけ止める
+  //（読み込み前は固定を試し、失敗すればそのトーストが出る）。ヒントは対応と分かってから出す
+  const canPinWindow = desktopInfo?.supported !== false;
+
   // ウィンドウ検索モードで仮想デスクトップのタブを出すか（2 つ以上あるとき）
   const showDesktopTabs =
     searchMode === 'window' && !!desktopInfo?.supported && desktopInfo.desktopCount > 1;
@@ -405,6 +409,7 @@ function App(): React.ReactElement {
     windowSelection,
     reloadData: handleReloadItems,
     desktopCount: desktopInfo?.desktopCount || 0,
+    canPinWindow,
     activeDesktopTab,
     setActiveDesktopTab,
   });
@@ -737,6 +742,7 @@ function App(): React.ReactElement {
           searchMode={searchMode}
           canSwitchDataFileTab={showDataFileTabs && dataFileTabs.length > 1}
           markedCount={markedCount}
+          canPinWindow={desktopInfo?.supported === true}
           canMoveToDesktop={
             !!desktopInfo?.desktopCount && desktopInfo.desktopCount > 1 && activeDesktopTab > 0
           }

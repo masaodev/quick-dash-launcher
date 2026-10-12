@@ -145,25 +145,24 @@ const LauncherItemList: React.FC<ItemListProps> = ({
     });
 
     const cleanupAddToWorkspace = window.electronAPI.onLauncherMenuAddToWorkspace(async (item) => {
+      // どの種類でも結果を知らせる。パスは LauncherItem だけ、アイコンは持っていれば添える
+      //（ウィンドウ検索の結果は別のイベント onWindowMenuAddToWorkspace で来るが、型の上では来うる）
+      const displayName = isWindowInfo(item) ? item.title : item.displayName;
       try {
         await window.electronAPI.workspaceAPI.addItem(item);
-        if (isLauncherItem(item)) {
-          await window.electronAPI.showToastWindow({
-            displayName: item.displayName,
-            itemType: 'workspaceAdd',
-            path: item.path,
-            icon: item.icon,
-          });
-        }
+        await window.electronAPI.showToastWindow({
+          displayName,
+          itemType: 'workspaceAdd',
+          ...(isLauncherItem(item) && { path: item.path }),
+          ...('icon' in item && item.icon && { icon: item.icon }),
+        });
       } catch (error) {
         logError('ワークスペースへの追加に失敗しました:', error);
-        if (isLauncherItem(item)) {
-          await window.electronAPI.showToastWindow({
-            displayName: item.displayName,
-            itemType: 'workspaceAdd',
-            message: 'ワークスペースへの追加に失敗しました',
-          });
-        }
+        await window.electronAPI.showToastWindow({
+          displayName,
+          itemType: 'workspaceAdd',
+          message: 'ワークスペースへの追加に失敗しました',
+        });
       }
     });
 
