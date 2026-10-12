@@ -21,7 +21,7 @@
 | Node.js 22.12.0 以上 | `package.json` の `engines` |
 | Visual Studio Build Tools 2022（C++ ワークロード） | ネイティブモジュール（clipboard-files・extract-file-icon）のコンパイル |
 | Python 3 | node-gyp が使う |
-| Rust（rustup、MSVC ツールチェーン） | CLI（`cli/`、`qdl.exe`）のビルドとテスト（`npm run build:cli`・`npm run test:cli`。`npm run dist` も `build:cli` を含む） |
+| Rust（rustup、MSVC ツールチェーン） | CLI（`cli/`、`qdl.exe`）のビルドとテスト（`npm run build:cli`・`npm run test:cli`。`npm run dist`・`dist:appx` も `build:cli` を含む） |
 
 clipboard-files と extract-file-icon は完成品を同梱しておらず、`npm install`・`npm ci` のたびに C++ のソースをコンパイルする。C++ のビルド環境が無いと、node-gyp の「Could not find any Visual Studio installation to use」で失敗する。CI（`.github/workflows/ci.yml`）も windows-2022 の Visual Studio 2022 と Python 3.11 でビルドしている。
 
@@ -125,7 +125,7 @@ QUICK_DASH_CONFIG_DIR=./tests/dev/full npm run dev
 
 - 防止は userData ごとなので、`APP_INSTANCE` が違うインスタンス（`dev`・`dev2`・本番）は同時に動かせる。同じ `npm run dev` を 2 回起動すると（別の作業ツリーで同時に起動した場合も）、2 つ目は終了する。終了するときは、理由と userData の場所を標準エラーに出す
 - 作業ツリーを複数使って同時に試すときは、2 つ目を別の `APP_INSTANCE`・`VITE_PORT`・`HOTKEY` で起動する（[カスタムインスタンスの作成](#カスタムインスタンスの作成)）
-- パッケージ版（`release/win-unpacked` など）を手元で試すときも、本番と同時に動かすなら `APP_INSTANCE` を付ける。`APP_INSTANCE` 付きの起動は自動起動のショートカットに触らないので、本番のショートカットは変わらない（[設定ファイル形式 - 自動起動設定](../architecture/file-formats/settings-format.md#34-自動起動設定)）
+- パッケージ版（`release/win-unpacked` など）を手元で試すときも、本番と同時に動かすなら `APP_INSTANCE` を付ける。`APP_INSTANCE` 付きの起動は自動起動のショートカットに触らないので、本番のショートカットは変わらない（[設定ファイル形式 - 自動起動設定](../architecture/file-formats/settings-format.md#34-自動起動cli-設定)）
 - `QUICK_DASH_CONFIG_DIR` を指定した起動（`npm run dev:test`・E2E テスト）は対象外で、何個でも同時に動かせる。その代わり CLI の待ち受けもしない
 
 #### CLI を試す

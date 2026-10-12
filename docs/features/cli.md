@@ -14,7 +14,7 @@ CLI の実行ファイルは `qdl.exe` です。`qdl.exe` は引数を解釈せ�
 
 ## qdl を使えるようにする
 
-`qdl.exe` は本体に同梱されていますが、そのままではターミナルから `qdl` と打っても見つかりません（ポータブル版は起動のたびに一時フォルダへ展開されて動くので、同梱の場所も毎回変わります）。管理画面の基本設定「QuickDashLauncher CLI を使えるようにする」（設定項目 `cliEnabled`。[設定ファイル形式](../architecture/file-formats/settings-format.md#34-自動起動設定)）をオンにすると、次のことが起きます。
+`qdl.exe` は本体に同梱されていますが、そのままではターミナルから `qdl` と打っても見つかりません（ポータブル版は起動のたびに一時フォルダへ展開されて動くので、同梱の場所も毎回変わります）。管理画面の基本設定「QuickDashLauncher CLI を使えるようにする」（設定項目 `cliEnabled`。[設定ファイル形式](../architecture/file-formats/settings-format.md#34-自動起動cli-設定)）をオンにすると、次のことが起きます。
 
 - 同梱の `qdl.exe` を `%LOCALAPPDATA%\quick-dash-launcher\bin` にコピーし、そのフォルダをユーザーの環境変数 PATH に足す。新しく開いたターミナルから `qdl` で呼べる
 - 本体を起動するたびに、同梱の `qdl.exe` とコピー済みのものを比べ、違えば入れ替える。本体を更新しても、CLI と本体のやり取りの版はずれない

@@ -74,6 +74,8 @@ QuickDashLauncherのアーキテクチャ概要とデータフローを説明し
 - **ワークスペース**: `WorkspaceService` はファサードで、ファイルの読み書き（`WorkspaceFileStore`）・UI 状態（`WorkspaceUiStateStore`）・アイテム／グループ／アーカイブの各マネージャーに分割されている（`src/main/services/workspace/`）。ファイル形式は[ワークスペースファイル形式](file-formats/workspace-format.md)を参照
 - **トースト通知**: トーストとレイアウト進捗は 1 枚のオーバーレイウィンドウを共用し、`overlayWindowService.ts` が管理する。OS 標準の通知は `notificationService.ts`
 - **子ウィンドウ**: メインのレンダラーを共有する子ウィンドウは `childWindowService.ts` で開く（[ウィンドウとレンダラープロセスの対応](#ウィンドウとレンダラープロセスの対応)）
+- **配布形式**: 開発版・Store 版・ポータブル版・インストーラー版の判定は `utils/appDistribution.ts`。自動起動はこれで分かれ、Store 版は WinRT の StartupTask、それ以外はスタートアップフォルダのショートカットを使う（`services/autoLaunchService.ts`）
+- **CLI の組み込み**: 設定 `cliEnabled` が有効なら、起動のたびに同梱の `qdl.exe` を置き場へ入れ替えて PATH を保つ（`services/cli/cliInstallService.ts`）
 
 IPC の設計とチャンネル定義の置き場所は[IPCチャンネル](ipc-channels.md)を参照。
 
@@ -84,7 +86,7 @@ IPC の設計とチャンネル定義の置き場所は[IPCチャンネル](ipc-
 設定フォルダのデータファイル（`datafiles/data*.json`）とワークスペースファイルは、人や AI がエディタで直接編集する前提で読み書きする。各処理の仕様は[データファイル形式 5 章](file-formats/data-format.md#5-エラー処理とフォールバック)と[ワークスペースファイル形式](file-formats/workspace-format.md)を参照。
 
 - **読み込み**: 起動時・メイン画面の F5・完全リフレッシュで、データファイルとワークスペースをまとめて読み直す（`services/data/dataFileLoader.ts` の `reloadConfigFiles`）。寛容パース（`common/utils/jsonParser.ts`）で、JSON 構文が壊れたファイルは「破損」として読まず、不正なアイテムはアイテム単位でスキップし、`id` の欠落・重複は採番する。採番・補正があれば 1 回だけ書き戻す
-- **変換**: JSON アイテムを表示用の `AppItem` に変換する（`services/data/jsonItemConverter.ts`）。フォルダ取込（`type: "dir"`）はフォルダを走査して展開し、`.lnk` はリンク先を解析する（`ipc/directoryScanner.ts`）。タブ単位で重複を除き、表示名でソートする
+- **変換**: JSON アイテムを表示用の `AppItem` に変換する（`services/data/jsonItemConverter.ts`）。フォルダ取込（`type: "dir"`）はフォルダを走査して展開し、`.lnk` はリンク先を解析する（`ipc/directoryScanner.ts`）。タブ単位で重複を除き、表示名でソートする。種別はパスから決めるが、見た目だけでは分からないもの（ドット入りのフォルダ名・拡張子の無いファイル）は `utils/folderPathProbe.ts` がディスクの状態と記録（`config/path-type-cache.json`）で補う（[データファイル形式 3.1.2](file-formats/data-format.md#312-サポートされるパス種類)）
 - **保存**: QDL 自身の書き込みは `services/dataFileTracker.ts` の `writeDataFile()` を通し、書いた内容を記憶する。管理画面の一覧保存は読み込み時のハッシュと照合する楽観ロック付き（`editableItemsStore.ts`）。メイン画面からの登録・編集は都度ディスクを読み直して ID で差し替える（`dataItemWriter.ts`）。破損中のファイルへの保存・登録は拒否する
 - **外部変更**: ファイル監視はしない。読み込んだ内容が記憶と違えば QDL の外で編集されたとみなし、変更前の内容をスナップショット（`backup/*_pre-external/`。`backupEnabled` が true のとき）に残す。読み込み結果は `config/last-load-report.json` に書き出す（`services/loadReportService.ts`）
 - **形式の移行**: データファイルには形式の移行がなく、`$schema`・`version` の補完だけを行う。ワークスペースファイルは旧形式（`version` なし）を検知すると、移行前スナップショット（`_pre-migration`）を作ってから 2.0 に変換して書き戻す（`services/workspace/WorkspaceFileStore.ts`・`workspaceMigration.ts`）

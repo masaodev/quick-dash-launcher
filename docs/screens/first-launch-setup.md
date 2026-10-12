@@ -195,7 +195,7 @@
 
 #### 設定の反映
 
-- 完了ボタン押下時に設定ファイルへ保存（保存先の項目は[設定ファイル形式](../architecture/file-formats/settings-format.md#34-自動起動設定)）
+- 完了ボタン押下時に設定ファイルへ保存（保存先の項目は[設定ファイル形式](../architecture/file-formats/settings-format.md#34-自動起動cli-設定)）
 - 有効ならWindowsのスタートアップフォルダにショートカットを作成し、無効なら削除（Store 版の動きは[管理ウィンドウ 5.4](./admin-window.md#54-自動起動チェックボックスを変更)）
 - 設定タブでいつでも変更可能
 

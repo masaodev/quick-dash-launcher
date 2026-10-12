@@ -32,11 +32,12 @@ const settings = await window.electronAPI.getSettings();
 | 種類 | メイン側 | レンダラー側 | 使う場面 |
 | --- | --- | --- | --- |
 | 呼び出し（要求→応答） | `ipcMain.handle` | `ipcRenderer.invoke` | 大半のチャンネル。戻り値または例外が `Promise` で返る |
-| 一方向の通知（レンダラー→メイン） | `ipcMain.on` | `ipcRenderer.send` | 応答を待たない合図（`window:child-written`・`window:notify-main-child-result`・`set-escape-handled-by-page`・`layout-cancel`・`close-layout-progress-window`） |
+| 一方向の通知（レンダラー→メイン） | `ipcMain.on` | `ipcRenderer.send` | 応答を待たない合図（`window:child-written`・`window:notify-main-child-result`・`window:set-escape-handled-by-page`・`layout-cancel`・`close-layout-progress-window`） |
 | イベント（メイン→レンダラー） | `webContents.send` | `ipcRenderer.on` | 状態変化の通知（`data-changed`・`settings-changed`・`workspace-changed`・進捗など） |
 
 - **エラーの返し方**: 失敗は例外として `invoke` 側に伝わる（`createSafeIpcHandler`（`src/main/utils/ipcWrapper.ts`）はログを出してから再スローする）。一部のチャンネルは `{ success: boolean, error?: string }` を返す。どちらの形かはハンドラーと `ElectronAPI` の型で確認する
 - **イベントの購読**: preload の `on*` 関数（`onDataChanged` など）は購読解除用の関数を返す。React の `useEffect` のクリーンアップで必ず呼ぶ
+- **Esc の扱い**: メインウィンドウの Esc は、メインプロセスの `before-input-event` が受けて隠す。レンダラーが `window:set-escape-handled-by-page` で true を送っているあいだ（ウィンドウ検索で選択中・閉じる確認の帯を表示中）は、隠さずにページへ渡す。状態はメインプロセスが 1 つだけ持ち、レンダラーは変わるたびに送る
 - **ファイルのパス取得**: ドロップされた `File` からパスを得る `getPathForFile` は IPC ではなく、preload 内で `webUtils.getPathForFile` を呼ぶ
 
 ## 命名規則
@@ -49,6 +50,8 @@ const settings = await window.electronAPI.getSettings();
 | 機能単位で名前空間を持つチャンネル | `<機能>:<動作>`（kebab-case） | `settings:get`、`workspace:add-item`、`clipboard:capture`、`backup:list-snapshots`、`bookmark-auto-import:execute-rule`、`window:open-child` |
 | 古くからあるチャンネル | 名前空間なしの kebab-case | `open-item`、`load-data-files`、`fetch-icons-combined` |
 | イベント | 過去形・状態を表す kebab-case | `data-changed`、`settings-changed`、`workspace-changed`、`window-shown` |
+
+コンテキストメニューは例外で、既存の同じ形にそろえる（表示の依頼は `show-<対象>-context-menu`、メニューで選ばれたことのイベントは `<対象>-menu-<動作>`。例: `show-windows-context-menu`・`windows-menu-close`）。
 
 新しく追加するチャンネルは `<機能>:<動作>` の形にし、メイン→レンダラーのイベントは定数名を `EVENT_` で始め、名前を過去形・状態にする。定数名の接頭辞（`WORKSPACE_`・`CLIPBOARD_`・`BACKUP_` など）は名前空間に合わせる。
 
