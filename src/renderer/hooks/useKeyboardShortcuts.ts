@@ -44,6 +44,8 @@ export interface UseKeyboardShortcutsParams {
 
 export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
   handleKeyDown: (e: React.KeyboardEvent) => Promise<void>;
+  /** ウィンドウを閉じる（Ctrl+D と右クリックの「ウィンドウを閉じる」で共通） */
+  closeWindowItem: (win: WindowInfo) => Promise<void>;
 } {
   const {
     showDataFileTabs,
@@ -107,6 +109,25 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
         itemType,
         message: `${errorMessage}: ${result.error || '不明なエラー'}`,
       });
+    }
+  }
+
+  async function closeWindowItem(win: WindowInfo): Promise<void> {
+    const closing = closingHwndsRef.current;
+    closing.add(win.hwnd);
+    try {
+      const result = await window.electronAPI.closeWindow(win.hwnd);
+      if (result.success) {
+        removeWindowFromList(win.hwnd);
+      }
+      await showWindowToastAndRefresh(
+        result,
+        win,
+        'windowClose',
+        'ウィンドウを閉じるのに失敗しました'
+      );
+    } finally {
+      closing.delete(win.hwnd);
     }
   }
 
@@ -251,21 +272,7 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
       const selectedWindow = candidates[selectedIndex];
       if (!selectedWindow) return;
 
-      closing.add(selectedWindow.hwnd);
-      try {
-        const result = await window.electronAPI.closeWindow(selectedWindow.hwnd);
-        if (result.success) {
-          removeWindowFromList(selectedWindow.hwnd);
-        }
-        await showWindowToastAndRefresh(
-          result,
-          selectedWindow,
-          'windowClose',
-          'ウィンドウを閉じるのに失敗しました'
-        );
-      } finally {
-        closing.delete(selectedWindow.hwnd);
-      }
+      await closeWindowItem(selectedWindow);
       return;
     }
 
@@ -343,5 +350,5 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
     }
   }
 
-  return { handleKeyDown };
+  return { handleKeyDown, closeWindowItem };
 }

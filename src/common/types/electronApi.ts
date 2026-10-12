@@ -431,6 +431,8 @@ export interface ElectronAPI {
   onWindowMenuAddToWorkspace: (
     callback: (payload: { windowInfo: WindowInfo; includePosition: boolean }) => void
   ) => () => void;
+  /** ウィンドウ検索結果の右クリック「ウィンドウを閉じる」（Ctrl+D と同じ） */
+  onWindowMenuClose: (callback: (windowInfo: WindowInfo) => void) => () => void;
   onMoveWindowToDesktop: (
     callback: (hwnd: number | bigint, desktopNumber: number) => void
   ) => () => void;

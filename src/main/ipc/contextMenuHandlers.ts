@@ -562,8 +562,26 @@ function setupWindowContextMenuHandler(): void {
         menu.append(createSeparator());
         const pinLabel = isPinned ? '📌 固定を解除' : '📌 全デスクトップに固定';
         const pinChannel = isPinned ? IPC_CHANNELS.UNPIN_WINDOW : IPC_CHANNELS.PIN_WINDOW;
-        menu.append(createMenuItem(pinLabel, event.sender, pinChannel, windowInfo.hwnd));
+        // Ctrl+P・Ctrl+D はメインウィンドウのキー処理で受けるので、右端に表示するだけ（登録しない）
+        menu.append(
+          new MenuItem({
+            label: pinLabel,
+            accelerator: 'Ctrl+P',
+            registerAccelerator: false,
+            click: () => event.sender.send(pinChannel, windowInfo.hwnd),
+          })
+        );
       }
+
+      menu.append(createSeparator());
+      menu.append(
+        new MenuItem({
+          label: '❌ ウィンドウを閉じる',
+          accelerator: 'Ctrl+D',
+          registerAccelerator: false,
+          click: () => event.sender.send(IPC_CHANNELS.EVENT_WINDOW_MENU_CLOSE, windowInfo),
+        })
+      );
 
       menu.popup({ window: senderWindow });
     }

@@ -7,7 +7,7 @@ import {
   isWindowItem,
   isClipboardItem,
 } from '@common/types/guards';
-import { LauncherItem, GroupItem, AppItem } from '@common/types';
+import { LauncherItem, GroupItem, AppItem, WindowInfo } from '@common/types';
 import { windowInfoToWindowItem } from '@common/utils/windowInfoConverter';
 
 import { getTooltipText } from '../utils/tooltipTextGenerator';
@@ -41,6 +41,8 @@ interface ItemListProps {
   onOpenShortcutParentFolder?: (item: LauncherItem) => void;
   onEditItem?: (item: AppItem) => void | Promise<void>;
   onRefreshWindows?: () => Promise<void>;
+  /** ウィンドウを閉じる（右クリックの「ウィンドウを閉じる」） */
+  onCloseWindow?: (win: WindowInfo) => Promise<void>;
 }
 
 const LauncherItemList: React.FC<ItemListProps> = ({
@@ -56,6 +58,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
   onOpenShortcutParentFolder,
   onEditItem,
   onRefreshWindows,
+  onCloseWindow,
 }) => {
   const listRef = useRef<HTMLDivElement>(null);
   const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
@@ -98,6 +101,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
     onOpenShortcutParentFolder,
     onEditItem,
     onRefreshWindows,
+    onCloseWindow,
   });
   latestRef.current = {
     items,
@@ -110,6 +114,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
     onOpenShortcutParentFolder,
     onEditItem,
     onRefreshWindows,
+    onCloseWindow,
   };
 
   useEffect(() => {
@@ -182,7 +187,8 @@ const LauncherItemList: React.FC<ItemListProps> = ({
             ? successMessage
             : `${errorPrefix}に失敗しました: ${result.error || '不明なエラー'}`,
         });
-        if (result.success && itemType === 'windowMoveDesktop') {
+        // 固定・固定解除も一覧の表示（固定の印・ピン止めタブ）が変わるので、キー操作と同じく取り直す
+        if (result.success) {
           await latestRef.current.onRefreshWindows?.();
         }
       } catch (error) {
@@ -236,6 +242,9 @@ const LauncherItemList: React.FC<ItemListProps> = ({
             message: 'ワークスペースへの追加に失敗しました',
           });
         }
+      }),
+      window.electronAPI.onWindowMenuClose((windowInfo) => {
+        void latestRef.current.onCloseWindow?.(windowInfo);
       }),
       window.electronAPI.onMoveWindowToDesktop(async (hwnd, desktopNumber) => {
         await handleWindowOperation(

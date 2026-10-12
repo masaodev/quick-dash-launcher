@@ -291,6 +291,7 @@ export const IPC_CHANNELS = {
   SHOW_WINDOW_CONTEXT_MENU: 'show-window-context-menu',
   EVENT_WINDOW_MENU_ACTIVATE: 'window-menu-activate',
   EVENT_WINDOW_MENU_ADD_TO_WORKSPACE: 'window-menu-add-to-workspace',
+  EVENT_WINDOW_MENU_CLOSE: 'window-menu-close',
   MOVE_WINDOW_TO_DESKTOP: 'move-window-to-desktop',
   PIN_WINDOW: 'pin-window',
   UNPIN_WINDOW: 'unpin-window',

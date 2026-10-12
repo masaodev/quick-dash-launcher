@@ -602,6 +602,8 @@ const electronAPI: ElectronAPI = {
       IPC_CHANNELS.EVENT_WINDOW_MENU_ADD_TO_WORKSPACE,
       callback
     ),
+  onWindowMenuClose: (callback: (windowInfo: WindowInfo) => void) =>
+    createEventListener<WindowInfo>(IPC_CHANNELS.EVENT_WINDOW_MENU_CLOSE, callback),
   onMoveWindowToDesktop: (callback: (hwnd: number | bigint, desktopNumber: number) => void) =>
     createEventListener2<number | bigint, number>(IPC_CHANNELS.MOVE_WINDOW_TO_DESKTOP, callback),
   onPinWindow: (callback: (hwnd: number | bigint) => void) =>

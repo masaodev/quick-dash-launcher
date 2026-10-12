@@ -89,6 +89,23 @@ test.describe('QuickDashLauncher - 基本UI機能テスト', () => {
       expect(backSelectedItemText).not.toBe(currentItemText);
     });
 
+    await test.step('検索欄からフォーカスが外れていても矢印キーで選択が移動する', async () => {
+      // リストの行や余白をクリックしたときと同じく、フォーカスを body に移す
+      await mainWindow.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+      await expect
+        .poll(() => mainWindow.evaluate(() => document.activeElement === document.body))
+        .toBe(true);
+      const before = await mainWindow.locator('.item.selected').textContent();
+
+      await utils.sendShortcut('ArrowDown');
+
+      await expect(mainWindow.locator('.item.selected')).not.toHaveText(before ?? '');
+      // 検索欄にフォーカスが戻るので、以後のキーは検索欄で受ける
+      await expect(mainWindow.locator('input.search-box')).toBeFocused();
+      await utils.sendShortcut('ArrowUp');
+      await expect(mainWindow.locator('.item.selected')).toHaveText(before ?? '');
+    });
+
     await test.step('マウスホバーでアイテム選択が変わる', async () => {
       const secondItem = mainWindow.locator('.item').nth(1);
       await secondItem.hover();

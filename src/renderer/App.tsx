@@ -348,7 +348,7 @@ function App(): React.ReactElement {
     [openEditWindow]
   );
 
-  const { handleKeyDown } = useKeyboardShortcuts({
+  const { handleKeyDown, closeWindowItem } = useKeyboardShortcuts({
     showDataFileTabs,
     activeTab,
     dataFileTabs,
@@ -373,6 +373,21 @@ function App(): React.ReactElement {
     activeDesktopTab,
     setActiveDesktopTab,
   });
+
+  // リストの行や余白（フォーカスを受け取らない要素）をクリックするとフォーカスが body に移り、
+  // .app の onKeyDown にキーが届かなくなる。body に来たキーは検索欄にフォーカスを戻してから処理する
+  //（文字キーも検索欄に入る）
+  const handleKeyDownRef = useRef(handleKeyDown);
+  handleKeyDownRef.current = handleKeyDown;
+  useEffect(() => {
+    const handleBodyKeyDown = (e: KeyboardEvent) => {
+      if (e.target !== document.body || !searchInputRef.current) return;
+      searchInputRef.current.focus();
+      void handleKeyDownRef.current(e as unknown as React.KeyboardEvent);
+    };
+    document.addEventListener('keydown', handleBodyKeyDown);
+    return () => document.removeEventListener('keydown', handleBodyKeyDown);
+  }, []);
 
   useEffect(() => {
     const initialize = async () => {
@@ -643,6 +658,7 @@ function App(): React.ReactElement {
         onOpenShortcutParentFolder={handleOpenShortcutParentFolder}
         onEditItem={handleEditItem}
         onRefreshWindows={handleRefreshWindows}
+        onCloseWindow={closeWindowItem}
       />
 
       {!progressState.isActive && missingIconCount > 0 && (
