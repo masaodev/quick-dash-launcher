@@ -18,8 +18,12 @@ vi.mock('@common/logger', () => ({
   default: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
 }));
 
+const startupTaskMock = vi.hoisted(() => ({
+  getAsync: vi.fn<() => Promise<unknown>>(),
+}));
+
 vi.mock('../winrt/generated/windows/application-model/StartupTask.js', () => ({
-  StartupTask: { getAsync: vi.fn(async () => task) },
+  StartupTask: startupTaskMock,
 }));
 
 import { AutoLaunchService } from './autoLaunchService';
@@ -41,6 +45,9 @@ describe('AutoLaunchService（Store 版）', () => {
     setStoreBuild(true);
     electronMock.app.isPackaged = true;
     task.state = 0;
+    // 最後に反映した値はシングルトンに残るので、テストごとに戻す
+    (service as unknown as { storeAppliedValue?: boolean }).storeAppliedValue = undefined;
+    startupTaskMock.getAsync.mockReset().mockImplementation(async () => task);
     task.requestEnableAsync.mockReset().mockImplementation(async () => {
       task.state = 2;
       return 2;
@@ -102,5 +109,22 @@ describe('AutoLaunchService（Store 版）', () => {
     await expect(service.getAutoLaunchStatus()).resolves.toEqual({ mode: 'unsupported' });
     await service.setAutoLaunch(true);
     expect(task.requestEnableAsync).not.toHaveBeenCalled();
+  });
+
+  it('自動起動以外の設定の保存で同じ値が届いても、Windows 側でオンにしたものを無効に戻さない', async () => {
+    await service.applyOnStartup(false);
+    task.state = 2; // 利用者が Windows の設定でオンにした
+    await service.setAutoLaunch(false);
+    expect(task.disable).not.toHaveBeenCalled();
+  });
+
+  it('StartupTask の取得に失敗しても例外にしない（設定の保存を止めない）', async () => {
+    startupTaskMock.getAsync.mockRejectedValue(new Error('load failed'));
+    await expect(service.setAutoLaunch(true)).resolves.toBeUndefined();
+  });
+
+  it('TaskId がマニフェストに無く null が返ったときは状態の取得をエラーにする', async () => {
+    startupTaskMock.getAsync.mockResolvedValue(null);
+    await expect(service.getAutoLaunchStatus()).rejects.toThrow('not declared');
   });
 });

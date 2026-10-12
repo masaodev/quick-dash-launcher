@@ -55,6 +55,10 @@ export interface DisplayInfo {
   y: number;
 }
 
+/** Store 版の StartupTask の状態（WinRT の StartupTaskState に対応） */
+export type StoreAutoLaunchState =
+  'disabled' | 'disabledByUser' | 'enabled' | 'disabledByPolicy' | 'enabledByPolicy';
+
 /**
  * OS 側の自動起動の状態（設定画面の案内に使う）
  * - store: Store 版（MSIX）。Windows の StartupTask の状態を持つ
@@ -62,10 +66,7 @@ export interface DisplayInfo {
  * - unsupported: 開発モードなど
  */
 export type AutoLaunchStatus =
-  | {
-      mode: 'store';
-      state: 'enabled' | 'disabled' | 'disabledByUser' | 'disabledByPolicy' | 'enabledByPolicy';
-    }
+  | { mode: 'store'; state: StoreAutoLaunchState }
   | { mode: 'shortcut'; enabled: boolean }
   | { mode: 'unsupported' };
 

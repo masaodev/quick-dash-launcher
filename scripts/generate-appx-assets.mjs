@@ -29,19 +29,21 @@ for (const t of [16, 20, 24, 30, 32, 36, 40, 48, 60, 64, 72, 80, 96, 256]) {
   targets.push([`Square44x44Logo.targetsize-${t}_altform-unplated.png`, t, t, 1]);
 }
 
-app.whenReady().then(async () => {
-  fs.rmSync(outDir, { recursive: true, force: true });
-  fs.mkdirSync(outDir, { recursive: true });
+app
+  .whenReady()
+  .then(async () => {
+    fs.rmSync(outDir, { recursive: true, force: true });
+    fs.mkdirSync(outDir, { recursive: true });
 
-  const win = new BrowserWindow({ show: false });
-  await win.loadURL('data:text/html,<html></html>');
-  const svgUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
-  for (const [name, w, h, ratio] of targets) {
-    const width = Math.round(w);
-    const height = Math.round(h);
-    const size = Math.round(height * ratio);
-    // ページの canvas に SVG を描き、PNG の data URL で受け取る
-    const dataUrl = await win.webContents.executeJavaScript(`
+    const win = new BrowserWindow({ show: false });
+    await win.loadURL('data:text/html,<html></html>');
+    const svgUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+    for (const [name, w, h, ratio] of targets) {
+      const width = Math.round(w);
+      const height = Math.round(h);
+      const size = Math.round(height * ratio);
+      // ページの canvas に SVG を描き、PNG の data URL で受け取る
+      const dataUrl = await win.webContents.executeJavaScript(`
       new Promise((resolve, reject) => {
         const img = new Image();
         img.onload = () => {
@@ -55,9 +57,14 @@ app.whenReady().then(async () => {
         img.src = ${JSON.stringify(svgUrl)};
       })
     `);
-    fs.writeFileSync(path.join(outDir, name), Buffer.from(dataUrl.split(',')[1], 'base64'));
-  }
-  win.destroy();
-  console.log(`${targets.length} images -> ${path.relative(process.cwd(), outDir)}`);
-  app.quit();
-});
+      fs.writeFileSync(path.join(outDir, name), Buffer.from(dataUrl.split(',')[1], 'base64'));
+    }
+    win.destroy();
+    console.log(`${targets.length} images -> ${path.relative(process.cwd(), outDir)}`);
+    app.quit();
+  })
+  .catch((error) => {
+    // 失敗しても隠しウィンドウが残って終わらなくならないよう、終了コード 1 で抜ける
+    console.error(error);
+    app.exit(1);
+  });

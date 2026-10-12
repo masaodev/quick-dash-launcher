@@ -125,6 +125,7 @@ export type {
   WorkspacePositionMode,
   DisplayInfo,
   AutoLaunchStatus,
+  StoreAutoLaunchState,
 } from './settings';
 export { SETTINGS_SCHEMA_REF } from './settings';
 

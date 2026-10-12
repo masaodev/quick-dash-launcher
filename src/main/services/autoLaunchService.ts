@@ -3,24 +3,24 @@ import path from 'path';
 
 import { app, shell } from 'electron';
 import logger from '@common/logger';
-import type { AutoLaunchStatus } from '@common/types';
+import type { AutoLaunchStatus, StoreAutoLaunchState } from '@common/types';
 
 import { EnvConfig } from '../config/envConfig.js';
+import { getAppDistribution } from '../utils/appDistribution.js';
 import type { StartupTask as StartupTaskType } from '../winrt/generated/windows/application-model/StartupTask.js';
+import type { StartupTaskState } from '../winrt/generated/windows/application-model/StartupTaskState.js';
 
 /** Store 版のマニフェスト（resources/appx/extensions.xml）に書いた StartupTask の TaskId */
 const STARTUP_TASK_ID = 'QuickDashLauncherStartup';
 
-/** WinRT の StartupTaskState（数値）を AutoLaunchStatus の state に読み替える */
-const STARTUP_TASK_STATES = [
-  'disabled',
-  'disabledByUser',
-  'enabled',
-  'disabledByPolicy',
-  'enabledByPolicy',
-] as const;
-
-type StoreState = (typeof STARTUP_TASK_STATES)[number];
+/** WinRT の StartupTaskState（数値）を AutoLaunchStatus の state に読み替える（キーは生成物の型で網羅を確かめる） */
+const STARTUP_TASK_STATES: Record<StartupTaskState, StoreAutoLaunchState> = {
+  0: 'disabled',
+  1: 'disabledByUser',
+  2: 'enabled',
+  3: 'disabledByPolicy',
+  4: 'enabledByPolicy',
+};
 
 /**
  * 自動起動機能を管理するサービスクラス（Windows専用）
@@ -30,6 +30,11 @@ type StoreState = (typeof STARTUP_TASK_STATES)[number];
 export class AutoLaunchService {
   private static instance: AutoLaunchService;
   private readonly SHORTCUT_NAME = 'QuickDashLauncher.lnk';
+  /**
+   * Store 版で最後に OS へ反映した設定の値。設定の保存は自動起動以外の変更でも autoLaunch を含めて届くので、
+   * 値が変わらないのに StartupTask を触って、Windows 側で利用者がオンにしたものを無効に戻さないようにする
+   */
+  private storeAppliedValue: boolean | undefined;
 
   private constructor() {}
 
@@ -50,7 +55,7 @@ export class AutoLaunchService {
    * 同じ PC のポータブル版・インストーラー版のショートカットを上書き・削除してしまう。Store 版は StartupTask だけを使う
    */
   private isStoreBuild(): boolean {
-    return process.windowsStore === true;
+    return getAppDistribution() === 'store';
   }
 
   private getShortcutPath(): string {
@@ -87,11 +92,30 @@ export class AutoLaunchService {
   private async getStartupTask(): Promise<StartupTaskType> {
     const { StartupTask } =
       await import('../winrt/generated/windows/application-model/StartupTask.js');
-    return StartupTask.getAsync(STARTUP_TASK_ID);
+    // 生成物の型は null を含まないが、TaskId がマニフェストと合わないと null が返る
+    const task: StartupTaskType | null = await StartupTask.getAsync(STARTUP_TASK_ID);
+    if (!task) {
+      throw new Error(`StartupTask "${STARTUP_TASK_ID}" is not declared in the package manifest`);
+    }
+    return task;
   }
 
-  private toStoreState(state: number): StoreState {
-    return STARTUP_TASK_STATES[state] ?? 'disabled';
+  private toStoreState(state: number): StoreAutoLaunchState {
+    return STARTUP_TASK_STATES[state as StartupTaskState] ?? 'disabled';
+  }
+
+  /**
+   * Store 版の StartupTask を設定の値に合わせる
+   * 失敗しても設定の保存は止めない（結果は設定画面が getAutoLaunchStatus で読み直して案内する）
+   */
+  private async applyToStartupTask(task: StartupTaskType, enabled: boolean): Promise<void> {
+    if (enabled) {
+      const state = this.toStoreState(await task.requestEnableAsync());
+      logger.info(`Auto launch (StartupTask) requested: ${state}`);
+    } else {
+      task.disable();
+      logger.info(`Auto launch (StartupTask) disabled: ${this.toStoreState(task.state)}`);
+    }
   }
 
   /**
@@ -106,13 +130,12 @@ export class AutoLaunchService {
     }
 
     if (this.isStoreBuild()) {
-      const task = await this.getStartupTask();
-      if (enabled) {
-        const state = this.toStoreState(await task.requestEnableAsync());
-        logger.info(`Auto launch (StartupTask) requested: ${state}`);
-      } else {
-        task.disable();
-        logger.info(`Auto launch (StartupTask) disabled: ${this.toStoreState(task.state)}`);
+      if (this.storeAppliedValue === enabled) return;
+      this.storeAppliedValue = enabled;
+      try {
+        await this.applyToStartupTask(await this.getStartupTask(), enabled);
+      } catch (error) {
+        logger.error({ error }, 'Failed to apply auto launch (StartupTask)');
       }
       return;
     }
@@ -151,10 +174,11 @@ export class AutoLaunchService {
       await this.setAutoLaunch(enabled);
       return;
     }
+    this.storeAppliedValue = enabled;
     try {
       const task = await this.getStartupTask();
       if (enabled && this.toStoreState(task.state) === 'disabled') {
-        await this.setAutoLaunch(true);
+        await this.applyToStartupTask(task, true);
       }
     } catch (error) {
       logger.error({ error }, 'Failed to apply auto launch (StartupTask) on startup');
