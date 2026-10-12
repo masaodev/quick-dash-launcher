@@ -120,6 +120,21 @@ const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
             </div>
           )}
         </div>
+        <div className="setting-item">
+          <label>
+            <input
+              type="checkbox"
+              checked={editedSettings.cliEnabled}
+              onChange={(e) => handleSettingChange('cliEnabled', e.target.checked)}
+              disabled={isLoading}
+            />
+            コマンドライン（qdl）を使えるようにする
+          </label>
+          <div className="setting-description">
+            qdl コマンドを PATH に追加し、ターミナルや AI から QuickDashLauncher
+            に依頼できるようにします（新しく開いたターミナルから使えます）。
+          </div>
+        </div>
       </div>
 
       <div className="settings-section">

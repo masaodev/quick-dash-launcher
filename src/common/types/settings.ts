@@ -96,6 +96,8 @@ export interface AppSettings {
   editModeHeight: number;
   /** アプリの自動起動設定 */
   autoLaunch: boolean;
+  /** CLI（qdl コマンド）を PATH から使えるようにする（デフォルト: false） */
+  cliEnabled: boolean;
   /** バックアップ機能の有効/無効（デフォルト: false） */
   backupEnabled: boolean;
   /** バックアップファイルの保存件数上限（デフォルト: 10） */

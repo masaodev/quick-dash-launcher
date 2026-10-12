@@ -29,6 +29,7 @@ import { getCliPipeName } from './services/cli/cliProtocol.js';
 import { runCliCommand } from './services/cli/cliCommands.js';
 import { startCliServer } from './services/cli/cliServer.js';
 import { resolveAppExePath, writeCliLauncherInfo } from './services/cli/cliLauncherInfo.js';
+import { applyCliSetting } from './services/cli/cliInstallService.js';
 import { closeAdminWindow } from './adminWindowManager';
 import {
   createSplashWindow,
@@ -174,6 +175,13 @@ app.whenReady().then(async () => {
     .catch((error) => {
       console.error('起動時の自動起動設定の適用でエラー:', error);
     });
+
+  // CLI を使えるようにしているなら、同梱の qdl.exe と置いてあるものを比べて入れ替える
+  //（本体の更新に追従させる。PowerShell を起動することがあるので待たない）
+  settingsService
+    .get('cliEnabled')
+    .then((enabled) => (enabled ? applyCliSetting(true) : false))
+    .catch((error) => console.error('CLI の設定の反映でエラー:', error));
 
   // 初回起動モードを設定（初回起動時はフォーカス喪失やEscapeで閉じないようにする）
   setFirstLaunchMode(isFirstLaunch);

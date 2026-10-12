@@ -18,7 +18,7 @@ export const SETTINGS_RESET_KEYS: Record<
   ResettableSettingsCategory,
   ReadonlyArray<keyof AppSettings>
 > = {
-  basic: ['autoLaunch', 'parallelGroupLaunch', 'showKeyboardHints'],
+  basic: ['autoLaunch', 'cliEnabled', 'parallelGroupLaunch', 'showKeyboardHints'],
   window: [
     'windowWidth',
     'windowHeight',

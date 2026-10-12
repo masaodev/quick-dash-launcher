@@ -39,6 +39,7 @@ export class SettingsService {
     editModeWidth: 1200,
     editModeHeight: 1000,
     autoLaunch: false,
+    cliEnabled: false,
     backupEnabled: false,
     backupRetention: 10,
     showDataFileTabs: true,

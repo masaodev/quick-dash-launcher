@@ -44,6 +44,10 @@
           "type": "boolean",
           "description": "アプリの自動起動設定"
         },
+        "cliEnabled": {
+          "type": "boolean",
+          "description": "CLI（qdl コマンド）を PATH から使えるようにする（デフォルト: false）"
+        },
         "backupEnabled": {
           "type": "boolean",
           "description": "バックアップ機能の有効/無効（デフォルト: false）"
