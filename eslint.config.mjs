@@ -76,7 +76,9 @@ const I18N_ENFORCED_FILES = [
   'src/main/services/bookmarkAutoImportService.ts',
   'src/main/services/mainI18n.ts',
   'src/main/services/overlayWindowService.ts',
-  'src/main/windowManager.ts'
+  'src/main/windowManager.ts',
+  // CLI の応答（段階 2）。cliInstallService.ts は PATH の登録の内部エラーだけなので対象外
+  'src/main/services/cli/cli{Args,Commands,LauncherCommands,Protocol,Server,Shared,Stores,WorkspaceCommands}.ts'
 ];
 
 export default [

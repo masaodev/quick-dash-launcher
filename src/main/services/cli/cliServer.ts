@@ -2,6 +2,8 @@ import * as net from 'net';
 
 import { createChildLogger } from '@common/logger';
 
+import { mainI18n } from '../mainI18n.js';
+
 import {
   CLI_EXIT,
   CLI_MAX_REQUEST_BYTES,
@@ -41,7 +43,7 @@ export function startCliServer(
       if (done) return;
       buffer += chunk;
       if (Buffer.byteLength(buffer, 'utf8') > CLI_MAX_REQUEST_BYTES) {
-        reply(cliResponse(CLI_EXIT.protocol, '', '依頼が大きすぎます\n'));
+        reply(cliResponse(CLI_EXIT.protocol, '', mainI18n.t('cli.errors.tooLarge') + '\n'));
         return;
       }
       const newline = buffer.indexOf('\n');
@@ -58,7 +60,9 @@ export function startCliServer(
         .catch((error: unknown) => {
           cliLogger.error({ error }, 'CLI の依頼の処理に失敗しました');
           const message = error instanceof Error ? error.message : String(error);
-          reply(cliResponse(CLI_EXIT.failure, '', `処理に失敗しました: ${message}\n`));
+          reply(
+            cliResponse(CLI_EXIT.failure, '', mainI18n.t('cli.errors.failed', { message }) + '\n')
+          );
         });
     });
     socket.on('error', (error) => {

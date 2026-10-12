@@ -382,6 +382,137 @@ export const ja = {
       '{{label}}「{{desired}}」を登録できません（{{reason}}）。「{{current}}」を維持します',
   },
   cli: {
+    candidateLocation: '  （{{location}}）',
+    help: {
+      main: `使い方: qdl <コマンド> [引数]
+
+QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼します。起動していなければ起動します。
+
+コマンド:
+  launcher item list|add|update|remove     メインウィンドウのアイテム（qdl launcher --help）
+  workspace list                           ワークスペースの一覧
+  workspace item list|add|update|remove    ワークスペースのアイテム（qdl workspace --help）
+  workspace group list|add|update|remove   ワークスペースのグループ
+  check                                    直近の読み込み結果（不正・採番・外部変更）を表示する（読み直さない）
+  reload                                   設定ファイルを読み直す（メインウィンドウの F5 と同じ）
+  status                                   本体の版・設定フォルダなどを表示する
+  help                                     この説明を表示する
+
+出力: 成功したら標準出力に JSON。失敗したら標準出力に {"error": {"code", "message", "candidates"?}}、
+標準エラーに説明。code は usage / not_found / ambiguous / invalid / conflict / unavailable / internal。
+書き込むコマンドは --dry-run で、書き込まずに結果だけを確かめられます。
+
+終了コード: 0 成功 / 1 失敗 / 2 コマンドの誤り・対象の指定の誤り / 3 本体に接続できない / 4 CLI と本体の版の不一致
+`,
+      launcher: `使い方: qdl launcher item <操作> [引数]
+
+メインウィンドウのアイテム（datafiles/data*.json）を扱います。
+
+操作:
+  list                     一覧（--file <data2.json> | --tab <タブ名>、--grep <語>）
+  add                      追加（--name・--path は必須。--args --memo、--file | --tab、
+                           --type item|dir|group|window、--set key=value、--dry-run）
+  update <id か表示名>     変更（--name --path --args --memo --set key=value --unset key --dry-run）
+  remove <id か表示名>     削除（--dry-run）
+
+--path の相対パスは qdl を実行したフォルダが基準です。--type dir|group|window のときに要るキーは
+--set で渡します（例 --set itemNames='["メモ","ブラウザ"]'、--set windowTitle=メモ帳）。
+`,
+      workspace: `使い方: qdl workspace <もの> <操作> [引数]
+
+ワークスペース（workspace.json）を扱います。
+
+  qdl workspace list                          ワークスペースの一覧
+  qdl workspace item list                     アイテムの一覧（--workspace --group --grep）
+  qdl workspace item add                      追加（--name・--path は必須。--args --memo --group
+                                              --workspace --position <0 始まり> --set key=value --dry-run）
+  qdl workspace item update <id か表示名>     変更（--name --path --args --memo --set --unset、
+                                              --group <グループ>（"" で未分類へ）--workspace --position --dry-run）
+  qdl workspace item remove <id か表示名>     削除（--dry-run）
+  qdl workspace group list                    グループの一覧（--workspace --grep）
+  qdl workspace group add                     追加（--name は必須。--color --parent --workspace --dry-run）
+  qdl workspace group update <id か名前>      変更（--name --color --parent <親>（"" で最上位へ）--dry-run）
+  qdl workspace group remove <id か名前>      空のグループを削除（--dry-run）
+
+--group・--parent・--workspace は id か表示名の完全一致です。--color は primary success danger warning
+info secondary purple teal pink indigo orange cyan か #rrggbb。グループは 2 段まで入れ子にできます。
+`,
+      seeHelp: 'qdl help で使い方を確認できます',
+    },
+    args: {
+      missingValue: '--{{name}} に値がありません',
+      setFormat: '--set は key=value の形で書いてください: {{value}}',
+      noValue: '--{{name}} は値を取りません',
+      duplicate: '--{{name}} が 2 回指定されています',
+      unknownOption: '知らないオプションです: --{{name}}',
+      notInteger: '--{{name}} は整数で指定してください: {{value}}',
+      missingArg: '{{name}} を指定してください',
+      extraArgs: '余分な引数があります: {{args}}',
+      idOrName: '<id か表示名>',
+      idOrGroupName: '<id か名前>',
+    },
+    errors: {
+      relativePath: '相対パスを解決できません（実行したフォルダが分かりません）: {{value}}',
+      setNotJson: '--set の値を JSON として読めません: {{value}}',
+      setProtected: '--set では {{key}} を変えられません',
+      unsetProtected: '--unset では {{key}} を外せません',
+      fieldMissing: 'キー {{key}} がありません（{{how}} で渡してください）',
+      fieldInvalid: 'キー {{key}} の値が正しくありません（{{expected}} にしてください）',
+      invalidContent: '内容が正しくありません: {{reason}}',
+      unknownFields:
+        '種類 {{type}} には無いキーです: {{fields}}（docs の設定ファイルの形式を確認してください）',
+      notFound: '{{what}}「{{key}}」が見つかりません（id か表示名の完全一致で指定します）',
+      ambiguous: '{{what}}「{{key}}」が {{count}} 件あります。id で指定してください',
+      unknownCommand: '不明なコマンドです: {{command}}',
+      unknownLauncherNoun: '不明なコマンドです: launcher {{noun}}（launcher item のみ）',
+      unknownVerb: '不明な操作です: {{command}}',
+      missingVerb: '操作を指定してください（list / add / update / remove）',
+      missingWorkspaceNoun: 'workspace の後に list / item / group を指定してください',
+      badJson: '依頼を JSON として読めません',
+      badShape: '依頼の形が正しくありません',
+      versionMismatch:
+        'CLI と QuickDashLauncher の版が合いません（CLI: {{cli}}、本体: {{app}}）。同じ版の QuickDashLauncher に付属する qdl を使ってください',
+      badArgv: '依頼の argv が正しくありません',
+      tooLarge: '依頼が大きすぎます',
+      failed: '処理に失敗しました: {{message}}',
+      invalidItem: '不正なアイテム',
+      fileAndTab: '--file と --tab はどちらか一方を指定してください',
+      noDataFile: 'データファイル {{file}} がありません（既存: {{files}}）',
+      noTab: 'タブ「{{tab}}」がありません（既存: {{tabs}}）',
+      noTabSimple: 'タブ「{{tab}}」がありません',
+      tabHasNoFile: 'タブ「{{tab}}」にデータファイルがありません',
+      badType: '--type は {{types}} のいずれかです: {{type}}',
+      dirHasNoName: 'フォルダ取込（dir）は表示名を持ちません',
+      needName: '--name を指定してください',
+      needPath: '--path を指定してください',
+      argsOnlyItem: '--args は通常のアイテム（item）だけに指定できます',
+      typeNotEditable:
+        '種類 {{type}} のアイテムは CLI では変更できません（画面で操作してください）',
+      needChanges: '変えるものを指定してください（{{options}}）',
+      noPath: '種類 {{type}} は --path を持ちません',
+      noWorkspace: 'ワークスペースがありません',
+      badColor: '--color が正しくありません: {{color}}（qdl workspace --help で一覧）',
+      emptyName: '--name が空です',
+      groupNotEmpty:
+        'グループ「{{name}}」は空ではありません（アイテム {{items}} 件、サブグループ {{subgroups}} 件）。中身を移すか消してから削除してください',
+    },
+    targets: {
+      launcherItem: 'メインウィンドウのアイテム',
+      workspace: 'ワークスペース',
+      group: 'グループ',
+      workspaceItem: 'ワークスペースのアイテム',
+    },
+    changed: {
+      launcherAdded: 'CLI: メインウィンドウに「{{name}}」を追加しました',
+      launcherUpdated: 'CLI: メインウィンドウの「{{name}}」を変更しました',
+      launcherRemoved: 'CLI: メインウィンドウの「{{name}}」を削除しました',
+      workspaceItemAdded: 'CLI: ワークスペースに「{{name}}」を追加しました',
+      workspaceItemUpdated: 'CLI: ワークスペースの「{{name}}」を変更しました',
+      workspaceItemRemoved: 'CLI: ワークスペースの「{{name}}」を削除しました',
+      groupAdded: 'CLI: ワークスペースにグループ「{{name}}」を追加しました',
+      groupUpdated: 'CLI: ワークスペースのグループ「{{name}}」を変更しました',
+      groupRemoved: 'CLI: ワークスペースのグループ「{{name}}」を削除しました',
+    },
     enabled:
       'QuickDashLauncher CLI を使えるようにしました。新しく開いたターミナルから qdl で使えます',
     disabled:

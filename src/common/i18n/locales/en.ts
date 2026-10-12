@@ -382,6 +382,136 @@ export const en: LocaleMessages = {
       'Couldn\'t register the {{label}} "{{desired}}" ({{reason}}). Keeping "{{current}}".',
   },
   cli: {
+    candidateLocation: '  ({{location}})',
+    help: {
+      main: `Usage: qdl <command> [arguments]
+
+QuickDashLauncher CLI. Sends requests to the running QuickDashLauncher app, and starts the app if it isn't running.
+
+Commands:
+  launcher item list|add|update|remove     Items in the launcher (qdl launcher --help)
+  workspace list                           List workspaces
+  workspace item list|add|update|remove    Items in workspaces (qdl workspace --help)
+  workspace group list|add|update|remove   Groups in workspaces
+  check                                    Show the result of the last load (invalid entries, new IDs, outside changes) without reloading
+  reload                                   Reload the settings files (same as F5 in the launcher)
+  status                                   Show the app version, the settings folder, and more
+  help                                     Show this help
+
+Output: On success, JSON on standard output. On failure, {"error": {"code", "message", "candidates"?}} on
+standard output and a description on standard error. code is usage / not_found / ambiguous / invalid / conflict / unavailable / internal.
+Commands that write accept --dry-run to check the result without writing.
+
+Exit codes: 0 success / 1 failure / 2 wrong command or target / 3 can't connect to the app / 4 CLI and app versions don't match
+`,
+      launcher: `Usage: qdl launcher item <action> [arguments]
+
+Works with the items in the launcher (datafiles/data*.json).
+
+Actions:
+  list                     List items (--file <data2.json> | --tab <tab name>, --grep <text>)
+  add                      Add an item (--name and --path are required. --args --memo, --file | --tab,
+                           --type item|dir|group|window, --set key=value, --dry-run)
+  update <id or name>      Change an item (--name --path --args --memo --set key=value --unset key --dry-run)
+  remove <id or name>      Delete an item (--dry-run)
+
+A relative --path is resolved from the folder where you run qdl. For --type dir|group|window, pass the
+required fields with --set (for example --set itemNames='["Notes","Browser"]', --set windowTitle=Notepad).
+`,
+      workspace: `Usage: qdl workspace <target> <action> [arguments]
+
+Works with workspaces (workspace.json).
+
+  qdl workspace list                          List workspaces
+  qdl workspace item list                     List items (--workspace --group --grep)
+  qdl workspace item add                      Add an item (--name and --path are required. --args --memo --group
+                                              --workspace --position <0-based> --set key=value --dry-run)
+  qdl workspace item update <id or name>      Change an item (--name --path --args --memo --set --unset,
+                                              --group <group> ("" for ungrouped) --workspace --position --dry-run)
+  qdl workspace item remove <id or name>      Delete an item (--dry-run)
+  qdl workspace group list                    List groups (--workspace --grep)
+  qdl workspace group add                     Add a group (--name is required. --color --parent --workspace --dry-run)
+  qdl workspace group update <id or name>     Change a group (--name --color --parent <parent> ("" for top level) --dry-run)
+  qdl workspace group remove <id or name>     Delete an empty group (--dry-run)
+
+--group, --parent, and --workspace take an id or an exact display name. --color is primary, success, danger,
+warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. Groups can be nested two levels deep.
+`,
+      seeHelp: 'Run qdl help to see how to use it',
+    },
+    args: {
+      missingValue: '--{{name}} needs a value',
+      setFormat: 'Write --set as key=value: {{value}}',
+      noValue: "--{{name}} doesn't take a value",
+      duplicate: '--{{name}} is specified twice',
+      unknownOption: 'Unknown option: --{{name}}',
+      notInteger: '--{{name}} must be an integer: {{value}}',
+      missingArg: 'Specify {{name}}',
+      extraArgs: 'Too many arguments: {{args}}',
+      idOrName: '<id or name>',
+      idOrGroupName: '<id or name>',
+    },
+    errors: {
+      relativePath: "Can't resolve the relative path (the current folder is unknown): {{value}}",
+      setNotJson: "Can't read the --set value as JSON: {{value}}",
+      setProtected: "--set can't change {{key}}",
+      unsetProtected: "--unset can't remove {{key}}",
+      fieldMissing: '{{key}} is missing (pass it with {{how}})',
+      fieldInvalid: '{{key}} has an invalid value (use {{expected}})',
+      invalidContent: 'The content is invalid: {{reason}}',
+      unknownFields:
+        'Fields not allowed for type {{type}}: {{fields}} (see the settings file format in the docs)',
+      notFound: 'Couldn\'t find the {{what}} "{{key}}" (use the id or the exact display name)',
+      ambiguous: '{{count}} matches for the {{what}} "{{key}}". Use the id',
+      unknownCommand: 'Unknown command: {{command}}',
+      unknownLauncherNoun: 'Unknown command: launcher {{noun}} (only launcher item)',
+      unknownVerb: 'Unknown action: {{command}}',
+      missingVerb: 'Specify an action (list / add / update / remove)',
+      missingWorkspaceNoun: 'After workspace, specify list, item, or group',
+      badJson: "Can't read the request as JSON",
+      badShape: 'The request is malformed',
+      versionMismatch:
+        "The CLI and QuickDashLauncher versions don't match (CLI: {{cli}}, app: {{app}}). Use the qdl that comes with the same version of QuickDashLauncher",
+      badArgv: 'The argv in the request is invalid',
+      tooLarge: 'The request is too large',
+      failed: 'The request failed: {{message}}',
+      invalidItem: 'Invalid item',
+      fileAndTab: 'Specify either --file or --tab, not both',
+      noDataFile: "The data file {{file}} doesn't exist (existing: {{files}})",
+      noTab: 'There\'s no tab "{{tab}}" (existing: {{tabs}})',
+      noTabSimple: 'There\'s no tab "{{tab}}"',
+      tabHasNoFile: 'The tab "{{tab}}" has no data file',
+      badType: '--type must be one of {{types}}: {{type}}',
+      dirHasNoName: "Folder imports (dir) don't have a display name",
+      needName: 'Specify --name',
+      needPath: 'Specify --path',
+      argsOnlyItem: '--args can be used only with regular items (item)',
+      typeNotEditable: "Items of type {{type}} can't be changed from the CLI (use the app instead)",
+      needChanges: 'Specify what to change ({{options}})',
+      noPath: "Type {{type}} doesn't have --path",
+      noWorkspace: 'There are no workspaces',
+      badColor: '--color is invalid: {{color}} (see qdl workspace --help for the list)',
+      emptyName: '--name is empty',
+      groupNotEmpty:
+        'The group "{{name}}" isn\'t empty ({{items}} items, {{subgroups}} subgroups). Move or delete its contents first',
+    },
+    targets: {
+      launcherItem: 'launcher item',
+      workspace: 'workspace',
+      group: 'group',
+      workspaceItem: 'workspace item',
+    },
+    changed: {
+      launcherAdded: 'CLI: Added "{{name}}" to the launcher',
+      launcherUpdated: 'CLI: Changed "{{name}}" in the launcher',
+      launcherRemoved: 'CLI: Deleted "{{name}}" from the launcher',
+      workspaceItemAdded: 'CLI: Added "{{name}}" to the workspace',
+      workspaceItemUpdated: 'CLI: Changed "{{name}}" in the workspace',
+      workspaceItemRemoved: 'CLI: Deleted "{{name}}" from the workspace',
+      groupAdded: 'CLI: Added the group "{{name}}" to the workspace',
+      groupUpdated: 'CLI: Changed the group "{{name}}" in the workspace',
+      groupRemoved: 'CLI: Deleted the group "{{name}}" from the workspace',
+    },
     enabled: 'QuickDashLauncher CLI is turned on. Use qdl from a new terminal window.',
     disabled: 'QuickDashLauncher CLI is turned off (qdl was removed from PATH).',
   },

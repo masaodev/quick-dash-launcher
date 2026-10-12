@@ -6,6 +6,8 @@
  * 形を変えたら CLI_PROTOCOL_VERSION を上げ、cli/src/main.rs の PROTOCOL_VERSION も合わせる。
  */
 
+import { mainI18n } from '../mainI18n.js';
+
 export const CLI_PROTOCOL_VERSION = 1;
 
 /** 依頼 1 件の上限。設定の変更系の依頼はこれより十分小さい */
@@ -59,21 +61,24 @@ export function parseCliRequest(line: string): CliRequest | CliResponse {
   try {
     value = JSON.parse(line);
   } catch {
-    return cliResponse(CLI_EXIT.protocol, '', '依頼を JSON として読めません\n');
+    return cliResponse(CLI_EXIT.protocol, '', mainI18n.t('cli.errors.badJson') + '\n');
   }
   if (typeof value !== 'object' || value === null) {
-    return cliResponse(CLI_EXIT.protocol, '', '依頼の形が正しくありません\n');
+    return cliResponse(CLI_EXIT.protocol, '', mainI18n.t('cli.errors.badShape') + '\n');
   }
   const req = value as Partial<CliRequest>;
   if (req.protocol !== CLI_PROTOCOL_VERSION) {
     return cliResponse(
       CLI_EXIT.protocol,
       '',
-      `CLI と QuickDashLauncher の版が合いません（CLI: ${String(req.protocol)}、本体: ${CLI_PROTOCOL_VERSION}）。同じ版の QuickDashLauncher に付属する qdl を使ってください\n`
+      mainI18n.t('cli.errors.versionMismatch', {
+        cli: String(req.protocol),
+        app: CLI_PROTOCOL_VERSION,
+      }) + '\n'
     );
   }
   if (!Array.isArray(req.argv) || !req.argv.every((a) => typeof a === 'string')) {
-    return cliResponse(CLI_EXIT.protocol, '', '依頼の argv が正しくありません\n');
+    return cliResponse(CLI_EXIT.protocol, '', mainI18n.t('cli.errors.badArgv') + '\n');
   }
   return {
     protocol: req.protocol,
