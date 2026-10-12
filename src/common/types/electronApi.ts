@@ -2,6 +2,8 @@
  * preload（contextBridge）がレンダラーへ公開する API の型。
  * preload 側はこの型で注釈しているため、実装とのずれは型チェックで検出される。
  */
+import type { PathKind } from '../utils/itemTypeDetector';
+
 import type {
   EditableJsonItem,
   LoadEditableItemsResult,
@@ -75,8 +77,11 @@ export interface ElectronAPI {
   deleteDataFile: (
     fileName: string
   ) => Promise<{ success: boolean; error?: string; disabledRules?: string[] }>;
-  /** trigger 省略 = 起動時・F5（レポートを必ず書く）。'internal' = 変更通知・画面内の一覧取得 */
-  loadDataFiles: (trigger?: 'explicit' | 'internal') => Promise<AppItem[]>;
+  /**
+   * trigger 省略 = 起動時・F5（レポートを必ず書く）。'full' = 完全リフレッシュ（レポートを書き、パスの種類も確かめ直す）。
+   * 'internal' = 変更通知・画面内の一覧取得
+   */
+  loadDataFiles: (trigger?: 'explicit' | 'full' | 'internal') => Promise<AppItem[]>;
   openItem: (item: LauncherItem) => Promise<void>;
   openParentFolder: (item: LauncherItem) => Promise<void>;
   executeGroup: (group: GroupItem, allItems: AppItem[]) => Promise<void>;
@@ -131,7 +136,8 @@ export interface ElectronAPI {
   /** true のあいだ、メインウィンドウの Esc を隠す処理に回さずページで受ける（複数選択の解除・確認の取り消し） */
   setEscapeHandledByPage: (handled: boolean) => void;
   registerItems: (items: RegisterItem[]) => Promise<void>;
-  isDirectory: (filePath: string) => Promise<boolean>;
+  /** パスがフォルダ・ファイル・存在しないのどれかを確かめる（登録画面へのドロップ） */
+  getPathKind: (filePath: string) => Promise<PathKind>;
   /**
    * パスが実在するかをまとめて確認する（押したときだけ呼ぶ）。環境変数（%VAR%）は展開して調べ、
    * 応答しないパスは時間切れで unknown にする

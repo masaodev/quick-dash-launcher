@@ -6,7 +6,7 @@ import { parseJsonDataFileLenient, serializeJsonDataFile } from '@common/utils/j
 import type { JsonItemIssue } from '@common/utils/jsonParser';
 import { isJsonLauncherItem } from '@common/types';
 import type { AppItem, JsonItem } from '@common/types';
-import { isWindowInfo } from '@common/types/guards';
+import { isLauncherItem, isWindowInfo } from '@common/types/guards';
 
 import { SettingsService } from '../settingsService.js';
 import { WorkspaceService } from '../workspace/WorkspaceService.js';
@@ -26,7 +26,12 @@ import {
 } from '../loadReportService.js';
 import type { LoadReport, LoadReportFile, LoadTrigger } from '../loadReportService.js';
 import { notifyWorkspaceChanged } from '../../ipc/notifications.js';
-import { clearFolderProbeCache, prefetchFolderProbes } from '../../utils/folderPathProbe.js';
+import {
+  beginLoadProbeSession,
+  endLoadProbeSession,
+  prefetchFolderProbes,
+  type LoadProbeMode,
+} from '../../utils/folderPathProbe.js';
 
 import {
   clearDataFileCorrupted,
@@ -267,6 +272,27 @@ export async function loadDataFilesWithReport(configFolder: string): Promise<Dat
 
 let reloadInFlight: Promise<AppItem[]> | null = null;
 
+/** 読み込みのきっかけごとの、パスの種類の確かめ方（folderPathProbe） */
+const LOAD_PROBE_MODES: Record<LoadTrigger, LoadProbeMode> = {
+  explicit: 'recheck',
+  full: 'rebuild',
+  internal: 'normal',
+};
+
+/** メイン画面のアイテムのうち、パスを持つ起動アイテムのパス */
+function collectLauncherPaths(items: AppItem[]): string[] {
+  return items.filter(isLauncherItem).map((item) => item.path);
+}
+
+/** ワークスペース（アーカイブを含む）のアイテムのパス（ショートカットはリンク先も） */
+async function collectWorkspaceItemPaths(service: WorkspaceService): Promise<string[]> {
+  const items = [...(await service.loadItems()), ...(await service.loadArchivedItems())];
+  return items.flatMap((item) => {
+    const { path: itemPath, originalPath } = item as { path?: unknown; originalPath?: unknown };
+    return [itemPath, originalPath].filter((p): p is string => typeof p === 'string');
+  });
+}
+
 let lastLoadReport: LoadReport | null = null;
 
 /** 直近の reloadConfigFiles() の読み込みレポート（CLI の reload が結果を返すのに使う） */
@@ -275,7 +301,7 @@ export function getLastLoadReport(): LoadReport | null {
 }
 
 /**
- * 設定ファイル群（データファイル + ワークスペース）をディスクから読み直す（起動時・メイン画面の F5）
+ * 設定ファイル群（データファイル + ワークスペース）をディスクから読み直す（起動時・メイン画面の F5・完全リフレッシュ）
  *
  * データファイルとワークスペースの読み込み結果を 1 つの last-load-report.json にまとめ、
  * 外部変更があれば変更前スナップショットを 1 つ作る。ワークスペースの内容が変わっていれば
@@ -305,15 +331,23 @@ async function reloadConfigFilesInternal(
   configFolder: string,
   trigger: LoadTrigger
 ): Promise<AppItem[]> {
-  // 起動時・F5 はディスクの今の状態で判定し直す（アプリ内の変更に伴う再読込では覚えた結果を使う）
-  if (trigger === 'explicit') clearFolderProbeCache();
-  const data = await loadDataFilesWithReport(configFolder);
+  // 起動時・F5・完全リフレッシュはディスクの今の状態で判定し直す
+  // （アプリ内の変更に伴う再読込では覚えた結果を使う）
+  await beginLoadProbeSession(LOAD_PROBE_MODES[trigger]);
+  let data: Awaited<ReturnType<typeof loadDataFilesWithReport>>;
+  try {
+    data = await loadDataFilesWithReport(configFolder);
+  } catch (error) {
+    endLoadProbeSession(null);
+    throw error;
+  }
 
   // ワークスペースも同じタイミングで読み直す（読めなくてもデータファイルの表示は止めない）
   let workspaceReports: LoadReportFile[] = [];
   let workspaceExternal: Array<{ relativePath: string; content: string }> = [];
   let workspaceChanged = false;
   let workspaceCorrupted = false;
+  let workspacePaths: string[] | null = null;
   try {
     const workspaceService = await WorkspaceService.getInstance();
     workspaceChanged = (await workspaceService.reload()).changed;
@@ -321,9 +355,20 @@ async function reloadConfigFilesInternal(
     workspaceReports = consumed.files;
     workspaceExternal = consumed.externallyChanged;
     workspaceCorrupted = workspaceService.isCorrupted();
+    workspacePaths = await collectWorkspaceItemPaths(workspaceService);
   } catch (error) {
     dataLogger.error({ error }, 'ワークスペースファイルの再読込に失敗しました');
   }
+
+  // すべて読めたときだけ、どこからも消えたパスの拡張子なしファイルのメモを捨てる
+  const allFilesOk =
+    workspacePaths !== null &&
+    !workspaceCorrupted &&
+    getCorruptedDataFiles().length === 0 &&
+    [...data.fileReports, ...workspaceReports].every((f) => f.status === 'ok');
+  endLoadProbeSession(
+    allFilesOk ? [...collectLauncherPaths(data.items), ...(workspacePaths ?? [])] : null
+  );
 
   // 外部変更があれば、変更前の内容を戻し先としてスナップショットに残す
   const preChangeSnapshot = await snapshotExternalChanges([
@@ -335,7 +380,7 @@ async function reloadConfigFilesInternal(
   // （内部の再読込では、クリーンな結果で起動時・F5 の記録を潰さない）
   const fileReports = [...data.fileReports, ...workspaceReports];
   const report = buildLoadReport(fileReports, preChangeSnapshot);
-  if (trigger === 'explicit' || hasReportableIssues(fileReports)) {
+  if (trigger !== 'internal' || hasReportableIssues(fileReports)) {
     writeLoadReport(report);
   }
   lastLoadReport = report;

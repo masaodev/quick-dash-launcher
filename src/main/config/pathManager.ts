@@ -93,6 +93,11 @@ export class PathManager {
     return path.join(this.getConfigFolder(), 'workspace-detached.json');
   }
 
+  /** 拡張子の無いファイルのメモ（utils/extensionlessFileMemo） */
+  static getPathTypeCacheFilePath(): string {
+    return path.join(this.getConfigFolder(), 'path-type-cache.json');
+  }
+
   /** 同梱 JSON Schema のコピー先（データファイル・settings.json の $schema が参照する） */
   static getSchemasFolder(): string {
     return path.join(this.getConfigFolder(), 'schemas');

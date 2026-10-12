@@ -26,6 +26,7 @@ vi.mock('child_process', async (importOriginal) => {
 });
 vi.mock('electron', () => ({ shell: shellMock }));
 vi.mock('../services/clipboardService.js', () => ({ ClipboardService: { getInstance: vi.fn() } }));
+vi.mock('./folderPathProbe.js', () => ({ noteLaunchedPath: vi.fn().mockResolvedValue(undefined) }));
 
 import { getWorkingDirectory, launchItem } from './itemLauncher';
 

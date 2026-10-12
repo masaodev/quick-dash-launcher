@@ -61,6 +61,7 @@ import type {
   SaveEditableItemsResult,
 } from '@common/types/editableItem';
 import type { ElectronAPI } from '@common/types/electronApi';
+import type { PathKind } from '@common/utils/itemTypeDetector';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
 // イベントリスナー登録のヘルパー関数
@@ -121,8 +122,8 @@ const electronAPI: ElectronAPI = {
   getDataFiles: (): Promise<string[]> => ipcRenderer.invoke(IPC_CHANNELS.GET_DATA_FILES),
   createDataFile: (fileName: string) => ipcRenderer.invoke(IPC_CHANNELS.CREATE_DATA_FILE, fileName),
   deleteDataFile: (fileName: string) => ipcRenderer.invoke(IPC_CHANNELS.DELETE_DATA_FILE, fileName),
-  // trigger: 'internal' は変更通知・画面内の一覧取得（レポートは報告事項があるときだけ更新）
-  loadDataFiles: (trigger?: 'explicit' | 'internal'): Promise<AppItem[]> =>
+  // trigger: 'full' は完全リフレッシュ、'internal' は変更通知・画面内の一覧取得（レポートは報告事項があるときだけ更新）
+  loadDataFiles: (trigger?: 'explicit' | 'full' | 'internal'): Promise<AppItem[]> =>
     ipcRenderer.invoke(IPC_CHANNELS.LOAD_DATA_FILES, trigger),
   openItem: (item: LauncherItem) => ipcRenderer.invoke(IPC_CHANNELS.OPEN_ITEM, item),
   openParentFolder: (item: LauncherItem) =>
@@ -208,7 +209,8 @@ const electronAPI: ElectronAPI = {
   setEscapeHandledByPage: (handled: boolean) =>
     ipcRenderer.send(IPC_CHANNELS.SET_ESCAPE_HANDLED_BY_PAGE, handled),
   registerItems: (items: RegisterItem[]) => ipcRenderer.invoke(IPC_CHANNELS.REGISTER_ITEMS, items),
-  isDirectory: (filePath: string) => ipcRenderer.invoke(IPC_CHANNELS.IS_DIRECTORY, filePath),
+  getPathKind: (filePath: string): Promise<PathKind> =>
+    ipcRenderer.invoke(IPC_CHANNELS.GET_PATH_KIND, filePath),
   checkPathsExist: (paths: string[]): Promise<Record<string, PathExistenceStatus>> =>
     ipcRenderer.invoke(IPC_CHANNELS.CHECK_PATHS_EXIST, paths),
   getPathForFile: (file: File) => webUtils.getPathForFile(file),

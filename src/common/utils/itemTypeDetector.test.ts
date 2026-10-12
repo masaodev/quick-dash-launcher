@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 
-import { detectItemTypeSync, detectItemType } from './itemTypeDetector';
+import { detectFileItemTypeSync, detectItemTypeSync, detectItemType } from './itemTypeDetector';
 
 describe('detectItemTypeSync', () => {
   it('標準URLスキーマはurlと判定する', () => {
@@ -51,29 +51,54 @@ describe('detectItemTypeSync', () => {
 });
 
 describe('detectItemType', () => {
-  it('ディレクトリ判定がtrueならfolderを返す', async () => {
-    const isDirectory = vi.fn().mockResolvedValue(true);
-    await expect(detectItemType('C:\\Users\\daido\\Downloads', isDirectory)).resolves.toBe(
-      'folder'
-    );
-    expect(isDirectory).toHaveBeenCalledOnce();
+  it('ディスクでフォルダと分かればfolderを返す', async () => {
+    const pathKind = vi.fn().mockResolvedValue('folder');
+    await expect(detectItemType('C:\\Users\\daido\\Downloads', pathKind)).resolves.toBe('folder');
+    await expect(detectItemType('C:\\work\\v1.2', pathKind)).resolves.toBe('folder');
+    expect(pathKind).toHaveBeenCalledTimes(2);
   });
 
-  it('カスタムURIに対してはディレクトリ照会を行わない', async () => {
-    const isDirectory = vi.fn().mockResolvedValue(false);
-    await expect(detectItemType('ms-todo:', isDirectory)).resolves.toBe('customUri');
-    await expect(detectItemType('obsidian://vault', isDirectory)).resolves.toBe('customUri');
-    expect(isDirectory).not.toHaveBeenCalled();
+  it('ディスクでファイルと分かれば、拡張子が無くてもfolderにしない', async () => {
+    const pathKind = vi.fn().mockResolvedValue('file');
+    await expect(
+      detectItemType('C:\\Windows\\System32\\drivers\\etc\\hosts', pathKind)
+    ).resolves.toBe('file');
+    await expect(detectItemType('C:\\Windows\\explorer.exe', pathKind)).resolves.toBe('app');
   });
 
-  it('shellパスに対してはディレクトリ照会を行わない', async () => {
-    const isDirectory = vi.fn().mockResolvedValue(false);
-    await expect(detectItemType('shell:Downloads', isDirectory)).resolves.toBe('folder');
-    expect(isDirectory).not.toHaveBeenCalled();
+  it('存在しないパスはパスパターンで判定する', async () => {
+    const pathKind = vi.fn().mockResolvedValue('missing');
+    await expect(detectItemType('C:\\work\\gone', pathKind)).resolves.toBe('folder');
+    await expect(detectItemType('C:\\work\\gone.txt', pathKind)).resolves.toBe('file');
   });
 
-  it('ディレクトリ照会が失敗してもパスパターンで判定を続行する', async () => {
-    const isDirectory = vi.fn().mockRejectedValue(new Error('access denied'));
-    await expect(detectItemType('C:\\Windows\\explorer.exe', isDirectory)).resolves.toBe('app');
+  it('カスタムURIに対してはディスク照会を行わない', async () => {
+    const pathKind = vi.fn().mockResolvedValue('missing');
+    await expect(detectItemType('ms-todo:', pathKind)).resolves.toBe('customUri');
+    await expect(detectItemType('obsidian://vault', pathKind)).resolves.toBe('customUri');
+    expect(pathKind).not.toHaveBeenCalled();
+  });
+
+  it('shellパスに対してはディスク照会を行わない', async () => {
+    const pathKind = vi.fn().mockResolvedValue('missing');
+    await expect(detectItemType('shell:Downloads', pathKind)).resolves.toBe('folder');
+    expect(pathKind).not.toHaveBeenCalled();
+  });
+
+  it('ディスク照会が失敗してもパスパターンで判定を続行する', async () => {
+    const pathKind = vi.fn().mockRejectedValue(new Error('access denied'));
+    await expect(detectItemType('C:\\Windows\\explorer.exe', pathKind)).resolves.toBe('app');
+  });
+});
+
+describe('detectFileItemTypeSync', () => {
+  it('拡張子の無いファイルをfileと判定する', () => {
+    expect(detectFileItemTypeSync('C:\\Windows\\System32\\drivers\\etc\\hosts')).toBe('file');
+    expect(detectFileItemTypeSync('D:\\repo\\LICENSE')).toBe('file');
+  });
+
+  it('拡張子つきのものは通常の判定と同じ', () => {
+    expect(detectFileItemTypeSync('C:\\tools\\app.exe')).toBe('app');
+    expect(detectFileItemTypeSync('C:\\work\\memo.txt')).toBe('file');
   });
 });
