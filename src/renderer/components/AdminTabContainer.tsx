@@ -2,6 +2,7 @@ import React from 'react';
 import { AppSettings, DataFileTab } from '@common/types';
 
 import type { AdminItemEditing } from '../hooks/useAdminItemEditing';
+import type { TabStructureSettings } from '../hooks/useAdminTabStructure';
 import type { SettingsCategory } from '../utils/settingsResetKeys';
 
 import AdminSettingsTab from './AdminSettingsTab';
@@ -15,6 +16,8 @@ interface AdminTabContainerProps {
   onSettingsSave: (settings: AppSettings) => Promise<void>;
   /** 既定値に戻すなど、保存を経ずに設定が置き換わったとき */
   onSettingsReplaced: (settings: AppSettings) => void;
+  /** アイテム管理でタブ・データファイルの構成を保存したとき */
+  onTabStructureSaved: (settings: Partial<TabStructureSettings>) => void;
   /** アイテム管理の編集状態（AdminApp が持つ。タブを切り替えても消えない） */
   editing: AdminItemEditing;
   /** データファイルの読み込みエラー（あれば一覧の代わりに表示する） */
@@ -40,6 +43,7 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
   settings,
   onSettingsSave,
   onSettingsReplaced,
+  onTabStructureSaved,
   editing,
   loadError,
   searchQuery,
@@ -98,6 +102,8 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
             onSearchChange={onSearchChange}
             dataFileTabs={dataFileTabs}
             dataFileLabels={dataFileLabels}
+            showDataFileTabs={settings?.showDataFileTabs ?? false}
+            onTabStructureSaved={onTabStructureSaved}
             pendingImportModal={pendingImportModal}
             onClearPendingImportModal={onClearPendingImportModal}
             onOpenAutoImportSettings={() => onOpenSettingsCategory('bookmarkAutoImport')}

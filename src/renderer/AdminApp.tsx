@@ -229,6 +229,9 @@ const AdminApp: React.FC = () => {
         settings={settings}
         onSettingsSave={handleSettingsSave}
         onSettingsReplaced={setSettings}
+        onTabStructureSaved={(changed) =>
+          setSettings((prev) => (prev ? { ...prev, ...changed } : prev))
+        }
         editing={editing}
         loadError={loadError}
         searchQuery={searchQuery}

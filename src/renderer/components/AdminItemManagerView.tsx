@@ -16,6 +16,7 @@ import { useToast } from '../hooks/useToast';
 import { logError } from '../utils/debug';
 import { useBookmarkAutoImport } from '../hooks/useBookmarkAutoImport';
 import { useAdminPathExistence, checkablePathOf } from '../hooks/useAdminPathExistence';
+import { useAdminTabStructure, type TabStructureSettings } from '../hooks/useAdminTabStructure';
 import type { AdminItemEditing } from '../hooks/useAdminItemEditing';
 import {
   applyDisplayOrder,
@@ -32,6 +33,7 @@ import {
 
 import AdminItemManagerList from './AdminItemManagerList';
 import AdminItemManagerHeader from './AdminItemManagerHeader';
+import AdminItemManagerTabBar from './AdminItemManagerTabBar';
 import AutoImportFilterDropdown from './AutoImportFilterDropdown';
 import BookmarkAutoImportRuleModal from './BookmarkAutoImportRuleModal';
 import AppImportModal from './AppImportModal';
@@ -46,6 +48,10 @@ interface EditModeViewProps {
   onSearchChange: (query: string) => void;
   dataFileTabs: DataFileTab[];
   dataFileLabels?: Record<string, string>;
+  /** メイン画面でタブを表示する設定か（タブを作るときに、表示しない設定なら確認する） */
+  showDataFileTabs: boolean;
+  /** タブ・データファイルの構成を保存したとき（管理画面全体の設定に反映する） */
+  onTabStructureSaved: (settings: Partial<TabStructureSettings>) => void;
   pendingImportModal: 'bookmark' | 'app' | null;
   onClearPendingImportModal: () => void;
   /** 設定「ブックマーク自動取込」を開く（一括取込メニュー・手動取込モーダルの案内から） */
@@ -56,6 +62,8 @@ interface ConfirmDialogState {
   isOpen: boolean;
   message: string;
   onConfirm: () => void;
+  /** キャンセル（閉じる）したとき */
+  onCancel?: () => void;
   title?: string;
   confirmText?: string;
   cancelText?: string;
@@ -83,6 +91,8 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   onSearchChange,
   dataFileTabs,
   dataFileLabels = {},
+  showDataFileTabs,
+  onTabStructureSaved,
   pendingImportModal,
   onClearPendingImportModal,
   onOpenAutoImportSettings,
@@ -128,6 +138,32 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   });
 
   const closeConfirmDialog = () => setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+
+  const cancelConfirmDialog = () => {
+    confirmDialog.onCancel?.();
+    closeConfirmDialog();
+  };
+
+  /** 確認ダイアログを出し、確定なら true・キャンセルなら false で解決する */
+  const confirmAsync = useCallback(
+    (
+      message: string,
+      options: Omit<ConfirmDialogState, 'isOpen' | 'onConfirm' | 'onCancel' | 'message'> = {}
+    ) =>
+      new Promise<boolean>((resolve) => {
+        setConfirmDialog({
+          ...options,
+          message,
+          isOpen: true,
+          onConfirm: () => {
+            setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+            resolve(true);
+          },
+          onCancel: () => resolve(false),
+        });
+      }),
+    []
+  );
 
   /** 確認ダイアログを出し、確定されたら閉じてから action を実行する */
   const openConfirmDialog = (
@@ -176,6 +212,29 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   );
 
   const [autoImportFilter, setAutoImportFilter] = useState<AutoImportFilter>('all');
+
+  // タブ・データファイルの構成の変更（その場で確定する）
+  const countItems = useCallback(
+    (fileName: string) => {
+      const items = workingItems.filter((item) => item.meta.sourceFile === fileName);
+      return {
+        total: items.length,
+        unsaved: items.filter((item) => changedIds.has(getItemKey(item))).length,
+      };
+    },
+    [workingItems, changedIds]
+  );
+  const tabStructure = useAdminTabStructure({
+    dataFileTabs,
+    dataFileLabels,
+    showDataFileTabs,
+    onSaved: onTabStructureSaved,
+    confirm: confirmAsync,
+    showSuccess,
+    showWarning,
+    countItems,
+    dropFileItems: editing.dropFileItems,
+  });
 
   const currentFileWorkingItems = useMemo(
     () => workingItems.filter((item) => item.meta.sourceFile === selectedDataFile),
@@ -502,6 +561,13 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     setAutoImportFilter('all');
   }, [selectedDataFile]);
 
+  // タブを消したなどで選択中のタブが無くなったら、最後のタブを選ぶ
+  useEffect(() => {
+    if (dataFileTabs.length > 0 && selectedTabIndex >= dataFileTabs.length) {
+      setSelectedTabIndex(dataFileTabs.length - 1);
+    }
+  }, [dataFileTabs.length, selectedTabIndex]);
+
   // 初回マウント時のみ最初のタブを選択
   useEffect(() => {
     if (dataFileTabs.length > 0) {
@@ -563,14 +629,16 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
 
   return (
     <div className="edit-mode-view" onKeyDown={handleKeyDown} tabIndex={0}>
-      <AdminItemManagerHeader
+      <AdminItemManagerTabBar
         dataFileTabs={dataFileTabs}
         selectedTabIndex={selectedTabIndex}
-        currentTabFiles={currentTabFiles}
         selectedDataFile={selectedDataFile}
         getFileLabel={getFileLabel}
         onSelectTab={setSelectedTabIndex}
         onSelectFile={setSelectedDataFile}
+        structure={tabStructure}
+      />
+      <AdminItemManagerHeader
         onOpenBookmarkImport={() => setIsBookmarkModalOpen(true)}
         onOpenAppImport={() => setIsAppImportModalOpen(true)}
         onOpenAutoImportSettings={onOpenAutoImportSettings}
@@ -708,7 +776,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
 
       <ConfirmDialog
         isOpen={confirmDialog.isOpen}
-        onClose={closeConfirmDialog}
+        onClose={cancelConfirmDialog}
         onConfirm={confirmDialog.onConfirm}
         title={confirmDialog.title}
         message={confirmDialog.message}

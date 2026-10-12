@@ -65,6 +65,9 @@
   --bg-success-light: #e8f5e9;
   --bg-info-light: #e3f2fd;
   --bg-table-container: #fafafa;
+  /* アイテム管理のデータファイルの札の列 */
+  --bg-file-bar: #e0f2ef;
+  --color-file: var(--group-color-teal);
 
   /* テキストカラー */
   --text-primary: #333;
