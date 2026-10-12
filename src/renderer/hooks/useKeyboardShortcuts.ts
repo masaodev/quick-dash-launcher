@@ -289,6 +289,22 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
             return;
           }
           await window.electronAPI.openParentFolder(selectedItem as LauncherItem);
+        } else if (e.shiftKey && !isWindowInfo(selectedItem)) {
+          // グループ・ウィンドウ操作・クリップボード・ウィンドウ配置にも親フォルダーは無い。
+          // Enter と同じく実行すると思わぬ起動になるので、実行せずに URL と同じ文言で知らせる
+          //（グループのトーストは中身の一覧を出す形なので、名前を本文に入れたシンプルな形にする）
+          await window.electronAPI.showToastWindow(
+            selectedItem.type === 'group'
+              ? {
+                  type: 'info',
+                  message: `「${selectedItem.displayName}」には親フォルダーがありません`,
+                }
+              : {
+                  displayName: selectedItem.displayName,
+                  itemType: selectedItem.type === 'window' ? 'windowOperation' : selectedItem.type,
+                  message: 'このアイテムには親フォルダーがありません',
+                }
+          );
         } else {
           await handleExecuteItem(selectedItem);
         }

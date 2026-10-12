@@ -2,16 +2,9 @@ import type { Logger } from 'pino';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const spawnMock = vi.hoisted(() => vi.fn(() => ({ unref: vi.fn(), on: vi.fn() })));
-// where の結果を返す（promisify されるので、コールバックの第 2 引数が resolve される）
-const execFileMock = vi.hoisted(() =>
-  vi.fn(
-    (
-      _cmd: string,
-      _args: string[],
-      _opts: unknown,
-      cb: (err: Error | null, out?: { stdout: string; stderr: string }) => void
-    ) => cb(null, { stdout: 'C:\\Windows\\System32\\calc.exe\r\n', stderr: '' })
-  )
+// PATH から探した結果を返す
+const resolveFromPathMock = vi.hoisted(() =>
+  vi.fn(async (_name: string): Promise<string | null> => 'C:\\Windows\\System32\\calc.exe')
 );
 const shellMock = vi.hoisted(() => ({
   openExternal: vi.fn(async () => {}),
@@ -21,10 +14,14 @@ const shellMock = vi.hoisted(() => ({
 // 組み込みモジュールの名前付き import は default 経由で解決されるので、default 側も差し替える
 vi.mock('child_process', async (importOriginal) => {
   const actual = await importOriginal<typeof import('child_process')>();
-  const mocks = { spawn: spawnMock, execFile: execFileMock };
+  const mocks = { spawn: spawnMock };
   return { ...actual, default: { ...actual, ...mocks }, ...mocks };
 });
 vi.mock('electron', () => ({ shell: shellMock }));
+vi.mock('./pathResolver.js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./pathResolver.js')>()),
+  resolveFromPath: resolveFromPathMock,
+}));
 vi.mock('../services/clipboardService.js', () => ({ ClipboardService: { getInstance: vi.fn() } }));
 vi.mock('./folderPathProbe.js', () => ({ noteLaunchedPath: vi.fn().mockResolvedValue(undefined) }));
 
@@ -52,7 +49,7 @@ describe('getWorkingDirectory', () => {
 describe('launchItem（app）', () => {
   beforeEach(() => {
     spawnMock.mockClear();
-    execFileMock.mockClear();
+    resolveFromPathMock.mockClear();
     shellMock.openPath.mockClear();
     vi.mocked(logger.error).mockClear();
   });
@@ -87,18 +84,13 @@ describe('launchItem（app）', () => {
   it('引数なしでファイル名だけ（calc.exe）は、PATH から探したフルパスを shell.openPath で開く', async () => {
     await launchItem({ type: 'app', path: 'calc.exe' }, logger);
 
-    expect(execFileMock).toHaveBeenCalledWith(
-      'where',
-      ['$PATH:calc.exe'],
-      expect.anything(),
-      expect.any(Function)
-    );
+    expect(resolveFromPathMock).toHaveBeenCalledWith('calc.exe');
     expect(shellMock.openPath).toHaveBeenCalledWith('C:\\Windows\\System32\\calc.exe');
     expect(spawnMock).not.toHaveBeenCalled();
   });
 
   it('PATH に見つからないファイル名は開かず、ログに残す', async () => {
-    execFileMock.mockImplementationOnce((_cmd, _args, _opts, cb) => cb(new Error('not found')));
+    resolveFromPathMock.mockResolvedValueOnce(null);
 
     await launchItem({ type: 'app', path: 'missing.exe' }, logger);
 
@@ -112,7 +104,7 @@ describe('launchItem（app）', () => {
   it('フルパスは PATH を探さない', async () => {
     await launchItem({ type: 'app', path: 'C:\\Tools\\tool.exe' }, logger);
 
-    expect(execFileMock).not.toHaveBeenCalled();
+    expect(resolveFromPathMock).not.toHaveBeenCalled();
   });
 
   it('shell.openPath が返したエラーをログに残す', async () => {

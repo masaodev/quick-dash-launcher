@@ -1,22 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
 
-type ExecFileCallback = (err: Error | null, out?: { stdout: string; stderr: string }) => void;
-
-// where の結果を返す（promisify されるので、コールバックの第 2 引数が resolve される）
-const execFileMock = vi.hoisted(() =>
-  vi.fn((_cmd: string, _args: string[], _opts: unknown, cb: ExecFileCallback) =>
-    cb(null, {
-      stdout: 'C:\\Windows\\System32\\notepad.exe\r\nC:\\Windows\\notepad.exe\r\n',
-      stderr: '',
-    })
-  )
-);
-
-// 組み込みモジュールの名前付き import は default 経由で解決されるので、default 側も差し替える
-vi.mock('child_process', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('child_process')>();
-  return { ...actual, default: { ...actual, execFile: execFileMock }, execFile: execFileMock };
-});
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 
 import { isBareFileName, resolveFromPath } from './pathResolver';
 
@@ -36,32 +22,46 @@ describe('isBareFileName', () => {
 });
 
 describe('resolveFromPath', () => {
-  beforeEach(() => {
-    execFileMock.mockClear();
+  // PATH に見立てたフォルダ（日本語の名前も含める）
+  let root: string;
+  let first: string;
+  let second: string;
+
+  beforeAll(() => {
+    root = fs.mkdtempSync(path.join(os.tmpdir(), 'qdl-path-'));
+    first = path.join(root, 'ツール');
+    second = path.join(root, 'bin');
+    fs.mkdirSync(first);
+    fs.mkdirSync(second);
+    fs.writeFileSync(path.join(first, 'tool.exe'), '');
+    fs.writeFileSync(path.join(second, 'tool.exe'), '');
+    fs.writeFileSync(path.join(second, 'run.cmd'), '');
+    fs.mkdirSync(path.join(second, 'dir.exe'));
   });
 
-  it('$PATH: を付けて where で探し、最初に見つかったフルパスを返す', async () => {
-    await expect(resolveFromPath('notepad.exe')).resolves.toBe(
-      'C:\\Windows\\System32\\notepad.exe'
-    );
-    expect(execFileMock).toHaveBeenCalledWith(
-      'where',
-      ['$PATH:notepad.exe'],
-      expect.anything(),
-      expect.any(Function)
+  afterAll(() => {
+    fs.rmSync(root, { recursive: true, force: true });
+  });
+
+  const env = () => ({ PATH: `${first};"${second}"`, PATHEXT: '.EXE;.CMD' });
+
+  it('PATH のフォルダを順に探し、最初に見つかったフルパスを返す（日本語のフォルダ名も化けない）', async () => {
+    await expect(resolveFromPath('tool.exe', env())).resolves.toBe(path.join(first, 'tool.exe'));
+  });
+
+  it('拡張子が無ければ PATHEXT の拡張子を付けて探す', async () => {
+    // Windows のファイル名は大文字・小文字を区別しないので、PATHEXT の表記（.CMD）のまま返る
+    expect((await resolveFromPath('run', env()))?.toLowerCase()).toBe(
+      path.join(second, 'run.cmd').toLowerCase()
     );
   });
 
-  it('見つからないときは null を返す', async () => {
-    execFileMock.mockImplementationOnce((_cmd, _args, _opts, cb: ExecFileCallback) =>
-      cb(new Error('not found'))
-    );
-
-    await expect(resolveFromPath('missing.exe')).resolves.toBeNull();
+  it('見つからないとき・フォルダしか無いときは null を返す', async () => {
+    await expect(resolveFromPath('missing.exe', env())).resolves.toBeNull();
+    await expect(resolveFromPath('dir.exe', env())).resolves.toBeNull();
   });
 
   it('ワイルドカード入りの名前は探さない', async () => {
-    await expect(resolveFromPath('*.exe')).resolves.toBeNull();
-    expect(execFileMock).not.toHaveBeenCalled();
+    await expect(resolveFromPath('*.exe', env())).resolves.toBeNull();
   });
 });
