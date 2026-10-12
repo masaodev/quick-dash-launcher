@@ -30,9 +30,6 @@ export function useDialogManager() {
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState>({
     isOpen: false,
     message: '',
-    title: '確認',
-    confirmText: 'OK',
-    cancelText: 'キャンセル',
     danger: false,
   });
 
@@ -65,9 +62,9 @@ export function useDialogManager() {
         setConfirmDialog({
           isOpen: true,
           message,
-          title: options?.title || '確認',
-          confirmText: options?.confirmText || 'OK',
-          cancelText: options?.cancelText || 'キャンセル',
+          title: options?.title,
+          confirmText: options?.confirmText,
+          cancelText: options?.cancelText,
           danger: options?.danger || false,
         });
       });

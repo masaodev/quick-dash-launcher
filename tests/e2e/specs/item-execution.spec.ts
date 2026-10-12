@@ -173,10 +173,10 @@ test.describe('QuickDashLauncher - 実行に失敗したときのエラーダイ
 });
 
 /**
- * Shift+Enter（親フォルダーを開く）
+ * Shift+Enter（親フォルダを開く）
  * 実際にエクスプローラーを開かないよう shell.showItemInFolder を差し替え、渡したパスを記録する
  */
-test.describe('QuickDashLauncher - Shift+Enter で親フォルダーを開く', () => {
+test.describe('QuickDashLauncher - Shift+Enter で親フォルダを開く', () => {
   test('ファイル名だけで登録したアプリは PATH から探し、見つからないパスはトーストで知らせる', async ({
     electronApp,
     mainWindow,
@@ -245,7 +245,7 @@ test.describe('QuickDashLauncher - Shift+Enter で親フォルダーを開く', 
           },
           { timeout: 5000 }
         )
-        .toMatch(/E2E存在しないファイル[\s\S]*親フォルダーが見つかりませんでした/);
+        .toMatch(/E2E存在しないファイル[\s\S]*親フォルダが見つかりませんでした/);
       // 見つからないパスでは開かない（前の 2 ステップの分だけ）
       expect(await electronApp.evaluate(() => globalThis.__e2eShownInFolder?.length)).toBe(2);
     });

@@ -84,21 +84,18 @@ async function openItem(item: LauncherItem): Promise<void> {
 }
 
 async function openParentFolder(item: LauncherItem): Promise<void> {
-  itemLogger.info(
-    { name: item.displayName, type: item.type, path: item.path },
-    '親フォルダーを開く'
-  );
+  itemLogger.info({ name: item.displayName, type: item.type, path: item.path }, '親フォルダを開く');
 
   if (item.type !== 'file' && item.type !== 'folder' && item.type !== 'app') return;
 
-  // ストアアプリなど（shell:AppsFolder\...）は、URL と同じく親フォルダーを持たない
+  // ストアアプリなど（shell:AppsFolder\...）は、URL と同じく親フォルダを持たない
   if (/^shell:/i.test(item.path)) {
-    await notifyParentFolder(item, 'このアイテムには親フォルダーがありません');
+    await notifyParentFolder(item, 'このアイテムには親フォルダがありません');
     return;
   }
 
   // ファイル名だけで登録したアプリ（notepad.exe など）は、起動と同じく PATH から探す
-  //（ファイル・フォルダは PATH から探さない。別のフォルダーの同名ファイルを選んでしまう）
+  //（ファイル・フォルダは PATH から探さない。別のフォルダの同名ファイルを選んでしまう）
   const target =
     item.type === 'app' && isBareFileName(item.path)
       ? await resolveFromPath(item.path)
@@ -108,13 +105,13 @@ async function openParentFolder(item: LauncherItem): Promise<void> {
   const status = target ? (await checkPathsExist([target]))[target] : 'missing';
   if (!target || status === 'missing') {
     // 押しても無反応だと故障に見えるので知らせる
-    await notifyParentFolder(item, '親フォルダーが見つかりませんでした');
+    await notifyParentFolder(item, '親フォルダが見つかりませんでした');
     return;
   }
   shell.showItemInFolder(target);
 }
 
-/** 親フォルダーを開けないことを知らせる（ランチャーは隠れた後なので、画面内ではなくトーストで出す） */
+/** 親フォルダを開けないことを知らせる（ランチャーは隠れた後なので、画面内ではなくトーストで出す） */
 async function notifyParentFolder(item: LauncherItem, message: string): Promise<void> {
   await showToastWindow({
     displayName: item.displayName,

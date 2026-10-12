@@ -3,6 +3,7 @@
  * 画面仕様: docs/screens/icon-progress-detail-modal.md
  */
 import React, { useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { IconProgressResult } from '@common/types';
 
 import '../styles/components/IconProgressDetailModal.css';
@@ -24,6 +25,7 @@ const IconProgressDetailModal: React.FC<IconProgressDetailModalProps> = ({
   results,
   asPage = false,
 }) => {
+  const { t } = useTranslation();
   const [filter, setFilter] = useState<'all' | 'success' | 'error'>('all');
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -49,24 +51,30 @@ const IconProgressDetailModal: React.FC<IconProgressDetailModalProps> = ({
         tabIndex={-1}
       >
         <div className="modal-header">
-          <h2>アイコン取得結果</h2>
-          <button className="modal-close-btn" onClick={onClose} aria-label="閉じる">
+          <h2>{t('launcher.iconResults.title')}</h2>
+          <button className="modal-close-btn" onClick={onClose} aria-label={t('common.close')}>
             ×
           </button>
         </div>
 
         <div className="modal-summary">
           <div className="summary-item success">
-            <span className="summary-label">成功:</span>
-            <span className="summary-value">{successResults.length}件</span>
+            <span className="summary-label">{t('launcher.iconResults.succeeded')}</span>
+            <span className="summary-value">
+              {t('common.itemCount', { count: successResults.length })}
+            </span>
           </div>
           <div className="summary-item error">
-            <span className="summary-label">エラー:</span>
-            <span className="summary-value">{errorResults.length}件</span>
+            <span className="summary-label">{t('launcher.iconResults.failed')}</span>
+            <span className="summary-value">
+              {t('common.itemCount', { count: errorResults.length })}
+            </span>
           </div>
           <div className="summary-item total">
-            <span className="summary-label">全体:</span>
-            <span className="summary-value">{results.length}件</span>
+            <span className="summary-label">{t('launcher.iconResults.total')}</span>
+            <span className="summary-value">
+              {t('common.itemCount', { count: results.length })}
+            </span>
           </div>
         </div>
 
@@ -75,25 +83,25 @@ const IconProgressDetailModal: React.FC<IconProgressDetailModalProps> = ({
             className={`filter-btn ${filter === 'all' ? 'active' : ''}`}
             onClick={() => setFilter('all')}
           >
-            すべて ({results.length})
+            {t('launcher.iconResults.filterAll', { count: results.length })}
           </button>
           <button
             className={`filter-btn ${filter === 'success' ? 'active' : ''}`}
             onClick={() => setFilter('success')}
           >
-            成功 ({successResults.length})
+            {t('launcher.iconResults.filterSucceeded', { count: successResults.length })}
           </button>
           <button
             className={`filter-btn ${filter === 'error' ? 'active' : ''}`}
             onClick={() => setFilter('error')}
           >
-            エラー ({errorResults.length})
+            {t('launcher.iconResults.filterFailed', { count: errorResults.length })}
           </button>
         </div>
 
         <div className="results-list">
           {filteredResults.length === 0 ? (
-            <div className="no-results">結果がありません</div>
+            <div className="no-results">{t('launcher.iconResults.empty')}</div>
           ) : (
             filteredResults.map((result, index) => (
               <div key={index} className={`result-item ${result.success ? 'success' : 'error'}`}>
@@ -116,7 +124,7 @@ const IconProgressDetailModal: React.FC<IconProgressDetailModalProps> = ({
 
         <div className="modal-actions">
           <Button variant="primary" onClick={onClose}>
-            閉じる
+            {t('common.close')}
           </Button>
         </div>
       </div>

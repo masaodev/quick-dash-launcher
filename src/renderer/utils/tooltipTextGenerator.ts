@@ -1,3 +1,4 @@
+import i18next from 'i18next';
 import type {
   AppItem,
   WindowInfo,
@@ -8,6 +9,10 @@ import type {
 } from '@common/types';
 import { isWindowInfo, isGroupItem, isWindowItem, isClipboardItem } from '@common/types/guards';
 import { PathUtils } from '@common/utils/pathUtils';
+
+// 一覧を描く部品（LauncherItemList）が useTranslation で言語の切り替えに合わせて描き直すので、
+// ここでは描くときの言語で i18next.t から引く
+const t = i18next.t.bind(i18next);
 
 interface MetaInfo {
   sourceFile?: string;
@@ -29,26 +34,26 @@ function appendMetaInfo(lines: string[], meta: MetaInfo): void {
   }
 
   if (sourceFile) {
-    lines.push(`データファイル: ${sourceFile}`);
+    lines.push(t('launcher.tooltip.dataFile', { value: sourceFile }));
   }
 
   if (id) {
-    lines.push(`ID: ${id}`);
+    lines.push(t('launcher.tooltip.id', { value: id }));
   }
 
   if (expandedFromId) {
-    lines.push(`展開元ID: ${expandedFromId}`);
+    lines.push(t('launcher.tooltip.expandedFromId', { value: expandedFromId }));
   }
 
   if (!id && !expandedFromId && lineNumber) {
-    lines.push(`行番号: ${lineNumber}`);
+    lines.push(t('launcher.tooltip.lineNumber', { value: lineNumber }));
   }
 
   if (expandedFrom) {
-    lines.push(`取込元: ${expandedFrom}`);
+    lines.push(t('launcher.tooltip.expandedFrom', { value: expandedFrom }));
   }
   if (expandedOptions) {
-    lines.push(`設定: ${expandedOptions}`);
+    lines.push(t('launcher.tooltip.expandedOptions', { value: expandedOptions }));
   }
 }
 
@@ -57,29 +62,30 @@ function appendMetaInfo(lines: string[], meta: MetaInfo): void {
  */
 function getWindowInfoTooltip(win: WindowInfo): string {
   const lines: string[] = [];
-  lines.push(`ウィンドウタイトル: ${win.title}`);
+  lines.push(t('launcher.tooltip.windowTitle', { value: win.title }));
 
   if (win.processName) {
-    lines.push(`プロセス名: ${win.processName}`);
+    lines.push(t('launcher.tooltip.processName', { value: win.processName }));
   }
 
   if (win.executablePath) {
-    lines.push(`実行ファイルパス: ${win.executablePath}`);
+    lines.push(t('launcher.tooltip.executablePath', { value: win.executablePath }));
   }
 
   if (win.windowState) {
-    const stateLabels: Record<string, string> = {
-      minimized: '最小化',
-      maximized: '最大化',
-      normal: '通常',
-    };
-    lines.push(`状態: ${stateLabels[win.windowState] || '通常'}`);
+    const state =
+      win.windowState === 'minimized' || win.windowState === 'maximized'
+        ? win.windowState
+        : 'normal';
+    lines.push(
+      t('launcher.tooltip.windowState', { value: t(`launcher.tooltip.windowStates.${state}`) })
+    );
   }
 
   lines.push('');
-  lines.push(`位置: (${win.x}, ${win.y})`);
-  lines.push(`サイズ: ${win.width}x${win.height}`);
-  lines.push(`プロセスID: ${win.processId}`);
+  lines.push(t('launcher.tooltip.position', { x: win.x, y: win.y }));
+  lines.push(t('launcher.tooltip.size', { width: win.width, height: win.height }));
+  lines.push(t('launcher.tooltip.processId', { value: win.processId }));
 
   return lines.join('\n');
 }
@@ -89,7 +95,7 @@ function getWindowInfoTooltip(win: WindowInfo): string {
  */
 function getGroupItemTooltip(groupItem: GroupItem): string {
   const lines: string[] = [];
-  lines.push(`グループ: ${groupItem.itemNames.join(', ')}`);
+  lines.push(t('launcher.tooltip.group', { value: groupItem.itemNames.join(', ') }));
 
   appendMetaInfo(lines, {
     sourceFile: groupItem.sourceFile,
@@ -105,20 +111,20 @@ function getGroupItemTooltip(groupItem: GroupItem): string {
  */
 function getWindowItemTooltip(windowItem: WindowItem): string {
   const lines: string[] = [];
-  lines.push(`ウィンドウタイトル: ${windowItem.windowTitle}`);
+  lines.push(t('launcher.tooltip.windowTitle', { value: windowItem.windowTitle }));
   lines.push('');
 
   if (windowItem.x !== undefined && windowItem.y !== undefined) {
-    lines.push(`位置: (${windowItem.x}, ${windowItem.y})`);
+    lines.push(t('launcher.tooltip.position', { x: windowItem.x, y: windowItem.y }));
   }
   if (windowItem.width !== undefined && windowItem.height !== undefined) {
-    lines.push(`サイズ: ${windowItem.width}x${windowItem.height}`);
+    lines.push(t('launcher.tooltip.size', { width: windowItem.width, height: windowItem.height }));
   }
   if (windowItem.virtualDesktopNumber !== undefined) {
-    lines.push(`仮想デスクトップ: ${windowItem.virtualDesktopNumber}`);
+    lines.push(t('launcher.tooltip.virtualDesktop', { value: windowItem.virtualDesktopNumber }));
   }
   if (windowItem.activateWindow === false) {
-    lines.push(`アクティブ化: しない`);
+    lines.push(t('launcher.tooltip.noActivate'));
   }
 
   appendMetaInfo(lines, {
@@ -154,27 +160,27 @@ function getLauncherItemTooltip(launcherItem: LauncherItem): string {
  */
 function getClipboardItemTooltip(clipboardItem: ClipboardItem): string {
   const lines: string[] = [];
-  const formatLabels: Record<string, string> = {
-    text: 'テキスト',
-    html: 'HTML',
-    rtf: 'RTF',
-    image: '画像',
-    file: 'ファイル',
-  };
-  const formats = (clipboardItem.formats || []).map((f) => formatLabels[f] || f).join(', ');
-  lines.push(`フォーマット: ${formats}`);
+  const formatKeys = ['text', 'html', 'rtf', 'image', 'file'] as const;
+  const formats = (clipboardItem.formats || [])
+    .map((f) =>
+      (formatKeys as readonly string[]).includes(f)
+        ? t(`launcher.tooltip.clipboardFormatNames.${f as (typeof formatKeys)[number]}`)
+        : f
+    )
+    .join(', ');
+  lines.push(t('launcher.tooltip.clipboardFormats', { value: formats }));
 
   if (clipboardItem.preview) {
     const preview =
       clipboardItem.preview.length > 50
         ? clipboardItem.preview.substring(0, 50) + '...'
         : clipboardItem.preview;
-    lines.push(`プレビュー: ${preview}`);
+    lines.push(t('launcher.tooltip.preview', { value: preview }));
   }
 
   if (clipboardItem.savedAt) {
-    const date = new Date(clipboardItem.savedAt).toLocaleString('ja-JP');
-    lines.push(`保存日時: ${date}`);
+    const date = new Date(clipboardItem.savedAt).toLocaleString(i18next.language);
+    lines.push(t('launcher.tooltip.savedAt', { value: date }));
   }
 
   appendMetaInfo(lines, {
