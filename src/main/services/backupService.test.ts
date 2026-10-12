@@ -35,25 +35,37 @@ describe('BackupService の変更前スナップショット', () => {
     fs.rmSync(tempDir, { recursive: true, force: true });
   });
 
-  it('同じ秒に 2 回作っても上書きせず、連番を付けた別のフォルダにする', async () => {
+  it('同じ秒に何回作っても上書きせず、連番を付けた別のフォルダにする', async () => {
     const service = await BackupService.getInstance();
+    const create = (content: string) =>
+      service.createPreExternalChangeSnapshot([{ relativePath: 'workspace.json', content }]);
 
-    const first = await service.createPreExternalChangeSnapshot([
-      { relativePath: 'workspace.json', content: '壊れる前' },
-    ]);
-    const second = await service.createPreExternalChangeSnapshot([
-      { relativePath: 'workspace.json', content: '壊れた内容' },
-    ]);
+    const first = await create('壊れる前');
+    const second = await create('壊れた内容');
+    const third = await create('3 回目');
 
     expect(first).toBe('2026-10-13T01-30-00_pre-external');
     expect(second).toBe('2026-10-13T01-30-00-2_pre-external');
+    expect(third).toBe('2026-10-13T01-30-00-3_pre-external');
     const read = (name: string) =>
       fs.readFileSync(path.join(paths.backupFolder, name, 'workspace.json'), 'utf8');
     expect(read(first!)).toBe('壊れる前');
     expect(read(second!)).toBe('壊れた内容');
+    expect(read(third!)).toBe('3 回目');
 
-    // 一覧は新しい順（同じ秒なら連番の大きい方が先）
+    // 一覧は新しい順（同じ秒なら後から作った方が先）
     const listed = (await service.listSnapshots()).map((s) => s.timestamp);
-    expect(listed).toEqual([second, first]);
+    expect(listed).toEqual([third, second, first]);
+  });
+
+  it('連番の付いたフォルダも、サフィックスの無いものは通常のスナップショットとして数える', async () => {
+    const service = await BackupService.getInstance();
+    const isRegular = (name: string) =>
+      (service as unknown as { isRegularSnapshot(n: string): boolean }).isRegularSnapshot(name);
+
+    expect(isRegular('2026-10-13T01-30-00')).toBe(true);
+    expect(isRegular('2026-10-13T01-30-00-2')).toBe(true);
+    expect(isRegular('2026-10-13T01-30-00-2_pre-restore')).toBe(false);
+    expect(isRegular('2026-10-13T01-30-00_pre-external')).toBe(false);
   });
 });
