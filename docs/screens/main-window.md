@@ -1285,6 +1285,7 @@ Escapeキーでウィンドウを閉じられない状態でも、以下の方�
 
 - [キーボードショートカット](../features/keyboard-shortcuts.md) - ウィンドウ検索モードの操作方法
 - [ウィンドウ制御](../architecture/window-control.md) - ウィンドウの検索・アクティブ化・仮想デスクトップ移動の仕組み
+- [仮想デスクトップ](../features/virtual-desktop.md) - 仮想デスクトップに関わる機能のまとめと使える環境
 
 ### 5.27. 検索モード切り替え
 
