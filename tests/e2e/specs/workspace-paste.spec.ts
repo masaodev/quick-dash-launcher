@@ -143,27 +143,30 @@ test.describe('QuickDashLauncher - ワークスペースへの貼り付け', () 
       ),
     ]);
     await editor.locator('.workspace-editor-page').waitFor({ state: 'visible', timeout: 15000 });
-    await expect(editor.locator('label', { hasText: 'パス:' })).toHaveCount(0);
-
-    const nameInput = editor.locator('input[type="text"]').first();
+    const nameInput = editor.getByPlaceholder('アイテム表示名を入力');
     await expect(nameInput).toHaveValue('編集するメモ');
+    // パスの入力欄そのものが無い（ラベルの文言に頼らない）
+    await expect(editor.getByPlaceholder('ファイルパス、URL、またはカスタムURIを入力')).toHaveCount(
+      0
+    );
+
     await nameInput.fill('編集したメモ');
     await Promise.all([
       editor.waitForEvent('close', { timeout: 10000 }),
       editor.locator('.modal-actions button', { hasText: '更新' }).click(),
     ]);
 
+    let after:
+      Awaited<ReturnType<typeof window.electronAPI.workspaceAPI.loadItems>>[number] | undefined;
     await expect
       .poll(async () => {
         const items = await workspaceWindow.evaluate(() =>
           window.electronAPI.workspaceAPI.loadItems()
         );
-        return items.find((item) => item.id === before.id)?.displayName;
+        after = items.find((item) => item.id === before.id);
+        return after?.displayName;
       })
       .toBe('編集したメモ');
-    const after = (
-      await workspaceWindow.evaluate(() => window.electronAPI.workspaceAPI.loadItems())
-    ).find((item) => item.id === before.id);
     expect(after?.type).toBe('clipboard');
     if (after?.type !== 'clipboard') return;
     expect(after.dataFileRef).toBe(before.dataFileRef);
