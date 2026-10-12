@@ -61,6 +61,11 @@ const launchedByCli = process.argv.includes(CLI_LAUNCH_ARG);
 // 差し替えて起動するため、本番の QDL と同時に動かせるよう対象外にする
 const useSingleInstance = !EnvConfig.customConfigDir;
 if (useSingleInstance && !app.requestSingleInstanceLock()) {
+  // 黙って終わると原因が分からないので、理由と回避のしかたを出しておく
+  console.error(
+    `QuickDashLauncher は同じ userData（${app.getPath('userData')}）で既に起動しているため終了します。` +
+      '同時に動かすには APP_INSTANCE を変えて起動してください'
+  );
   app.exit(0);
 } else if (useSingleInstance) {
   app.on('second-instance', (_event, argv) => {

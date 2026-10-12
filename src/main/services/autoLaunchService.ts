@@ -23,8 +23,13 @@ export class AutoLaunchService {
     return AutoLaunchService.instance;
   }
 
+  /**
+   * スタートアップのショートカットはインスタンスを区別しない 1 つだけなので、
+   * APP_INSTANCE 付きの起動（試験用の別インスタンス）では触らない。
+   * 触ると、その設定の「自動起動オフ」で本番のショートカットを消してしまう
+   */
   private isSupported(): boolean {
-    return app.isPackaged && process.platform === 'win32';
+    return app.isPackaged && process.platform === 'win32' && !EnvConfig.hasAppInstance;
   }
 
   private getShortcutPath(): string {
@@ -56,7 +61,7 @@ export class AutoLaunchService {
 
   public async setAutoLaunch(enabled: boolean): Promise<void> {
     if (!this.isSupported()) {
-      logger.warn('Auto launch is only supported on packaged Windows builds');
+      logger.warn('Auto launch is only supported on packaged Windows builds without APP_INSTANCE');
       return;
     }
 
