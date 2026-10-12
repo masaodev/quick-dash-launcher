@@ -179,7 +179,7 @@ const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
           </label>
           <div className="setting-description">
             メインウィンドウの下に、気づきにくいキー操作（F2 で編集、Shift+Enter
-            で親フォルダーを開くなど）を表示します。
+            で親フォルダを開くなど）を表示します。
           </div>
         </div>
         <div className="setting-item">

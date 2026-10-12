@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   isLauncherItem,
@@ -78,6 +79,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
   onMoveWindows,
   windowSelection,
 }) => {
+  const { t } = useTranslation();
   const listRef = useRef<HTMLDivElement>(null);
   const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
   const [memoModalOpen, setMemoModalOpen] = useState(false);
@@ -161,7 +163,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
         await window.electronAPI.showToastWindow({
           displayName,
           itemType: 'workspaceAdd',
-          message: 'ワークスペースへの追加に失敗しました',
+          message: t('launcher.messages.addToWorkspaceFailed'),
         });
       }
     });
@@ -220,15 +222,15 @@ const LauncherItemList: React.FC<ItemListProps> = ({
             itemType: 'workspaceAdd',
             icon: windowInfo.icon,
             message: includePosition
-              ? 'タイトルとプロセス名で探し、記録した位置に戻して前面に出します'
-              : 'タイトルとプロセス名で探して前面に出します（タイトルは編集できます）',
+              ? t('launcher.messages.windowAddedWithPosition')
+              : t('launcher.messages.windowAdded'),
           });
         } catch (error) {
           logError('ウィンドウのワークスペースへの追加に失敗しました:', error);
           await window.electronAPI.showToastWindow({
             displayName: windowItem.displayName,
             itemType: 'workspaceAdd',
-            message: 'ワークスペースへの追加に失敗しました',
+            message: t('launcher.messages.addToWorkspaceFailed'),
           });
         }
       }),
@@ -410,7 +412,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
                 title={getTooltipText(item)}
               >
                 {isMarked && (
-                  <span className="item-mark" aria-label="選択中">
+                  <span className="item-mark" aria-label={t('launcher.list.selected')}>
                     ✓
                   </span>
                 )}
@@ -418,12 +420,18 @@ const LauncherItemList: React.FC<ItemListProps> = ({
                 <span className="item-name">
                   {itemName}
                   {isGroup && (
-                    <span className="group-count"> ({(item as GroupItem).itemNames.length}個)</span>
+                    <span className="group-count">
+                      {t('launcher.list.groupCount', {
+                        count: (item as GroupItem).itemNames.length,
+                      })}
+                    </span>
                   )}
                   {isLauncherItem(item) && item.windowConfig?.title && (
                     <span
                       className="window-title-badge"
-                      title={`ウィンドウ検索: ${item.windowConfig.title}`}
+                      title={t('launcher.list.windowSearchBadge', {
+                        title: item.windowConfig.title,
+                      })}
                     >
                       🔍
                     </span>
@@ -432,7 +440,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
                     <span
                       className="memo-badge"
                       onClick={(e) => handleMemoClick(e, item)}
-                      title="メモを表示"
+                      title={t('launcher.list.showNote')}
                     >
                       📝
                     </span>

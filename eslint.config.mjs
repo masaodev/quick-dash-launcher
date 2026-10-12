@@ -10,8 +10,16 @@ import prettierConfig from 'eslint-config-prettier';
 
 /** 日本語（ひらがな・カタカナ・漢字）を含むか */
 const JAPANESE = '/[\u3040-\u30ff\u3400-\u9fff]/';
-/** ログの呼び出し（logger.info(...) など。引数の文言は訳さない） */
-const LOG_CALL = 'CallExpression[callee.property.name=/^(trace|debug|info|warn|error|fatal)$/]';
+/**
+ * ログの呼び出し（引数の文言は訳さない）。logger.info(...)・console.error(...) のようなロガーのメソッドと、
+ * renderer のログ関数（logError(...) など。src/renderer/utils/debug.ts）。
+ * toast.error(...) のような画面に出す呼び出しは含めない
+ */
+const LOG_CALL =
+  ':matches(' +
+  'CallExpression[callee.object.name=/^(console|[a-z]*[lL]ogger)$/][callee.property.name=/^(trace|debug|info|warn|error|fatal|log)$/], ' +
+  'CallExpression[callee.name=/^(debugLog|debugInfo|logWarn|logError)$/]' +
+  ')';
 const I18N_MESSAGE = '画面に出す文言は辞書（src/common/i18n/locales/ja.ts・en.ts）に書き、t() で引いてください';
 const I18N_RESTRICTED_SYNTAX = [
   { selector: `JSXText[value=${JAPANESE}]`, message: I18N_MESSAGE },
@@ -27,7 +35,25 @@ const I18N_ENFORCED_FILES = [
   'src/common/i18n/index.ts',
   'src/main/services/i18nService.ts',
   'src/renderer/i18n.ts',
-  'src/renderer/components/LauncherSearchBox.tsx'
+  'src/common/utils/bookmarkImportUtils.ts',
+  // メインウィンドウ（段階 2）
+  'src/renderer/App.tsx',
+  'src/renderer/SplashApp.tsx',
+  'src/renderer/components/Launcher*.tsx',
+  'src/renderer/components/AlertDialog.tsx',
+  'src/renderer/components/ConfirmDialog.tsx',
+  'src/renderer/components/HotkeyInput.tsx',
+  'src/renderer/components/IconProgressDetailModal.tsx',
+  'src/renderer/components/MemoViewModal.tsx',
+  'src/renderer/components/MissingIconNotice.tsx',
+  'src/renderer/components/SetupFirstLaunch.tsx',
+  'src/renderer/hooks/useDataFileTabs.ts',
+  'src/renderer/hooks/useDialogManager.ts',
+  'src/renderer/hooks/useDragAndDrop.ts',
+  'src/renderer/hooks/useItemActions.ts',
+  'src/renderer/hooks/useKeyboardShortcuts.ts',
+  'src/renderer/hooks/useWindowOperations.ts',
+  'src/renderer/utils/tooltipTextGenerator.ts'
 ];
 
 export default [
@@ -267,6 +293,8 @@ export default [
   // ログ（logger.info など）の文言は訳さないので対象外。辞書へ移し終えたファイル・フォルダから順に files へ足す
   {
     files: I18N_ENFORCED_FILES,
+    // テストは日本語の画面を確かめるので対象外
+    ignores: ['**/*.test.ts', '**/*.test.tsx'],
     rules: {
       'no-restricted-syntax': ['error', ...I18N_RESTRICTED_SYNTAX]
     }

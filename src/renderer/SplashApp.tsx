@@ -1,15 +1,20 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const MIN_DISPLAY_TIME = 600; // 最低表示時間（ms）
 const COMPLETION_DISPLAY_TIME = 150; // 完了表示後の待機時間（ms）
 const FALLBACK_TIMEOUT = 30000; // フォールバックタイムアウト（ms）
+
+/** 起動中に出す段階（文言は辞書の splash.*） */
+type SplashStep = 'starting' | 'loadingSettings' | 'preparing' | 'ready';
 
 interface SplashAppProps {
   onReady?: () => void;
 }
 
 function SplashApp({ onReady }: SplashAppProps): React.ReactElement {
-  const [loadingText, setLoadingText] = useState('起動中');
+  const { t } = useTranslation();
+  const [loadingText, setLoadingText] = useState<SplashStep>('starting');
   const [progress, setProgress] = useState(0);
 
   const initCompleteRef = useRef(false);
@@ -22,7 +27,7 @@ function SplashApp({ onReady }: SplashAppProps): React.ReactElement {
       if (!initCompleteRef.current || !minTimeElapsedRef.current) return;
 
       hasCalledReadyRef.current = true;
-      setLoadingText('初期化完了');
+      setLoadingText('ready');
       setProgress(100);
 
       setTimeout(() => {
@@ -32,10 +37,10 @@ function SplashApp({ onReady }: SplashAppProps): React.ReactElement {
 
     // 短縮アニメーション（450ms間で進捗を表示）
     const animSteps = [
-      { delay: 100, text: '起動中', progress: 20 },
-      { delay: 250, text: '設定を読み込み中', progress: 50 },
-      { delay: 450, text: 'アプリケーションを準備中', progress: 75 },
-    ];
+      { delay: 100, text: 'starting', progress: 20 },
+      { delay: 250, text: 'loadingSettings', progress: 50 },
+      { delay: 450, text: 'preparing', progress: 75 },
+    ] as const;
 
     const timeouts: ReturnType<typeof setTimeout>[] = [];
 
@@ -85,14 +90,14 @@ function SplashApp({ onReady }: SplashAppProps): React.ReactElement {
     <div className="splash-container">
       <div className="app-logo">Q</div>
       <h1 className="app-title">QuickDashLauncher</h1>
-      <p className="app-subtitle">素早いアクセスを実現するランチャーアプリ</p>
+      <p className="app-subtitle">{t('splash.subtitle')}</p>
 
       <div className="loading-container">
         <div className="loading-bar">
           <div className="loading-progress" style={{ width: `${progress}%`, animation: 'none' }} />
         </div>
         <div className="loading-text">
-          {loadingText}
+          {t(`splash.${loadingText}`)}
           <span className="loading-dots">...</span>
         </div>
       </div>

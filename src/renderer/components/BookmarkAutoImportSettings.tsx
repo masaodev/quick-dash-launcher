@@ -5,9 +5,10 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import i18next from 'i18next';
 import type { BrowserInfo } from '@common/types';
 import type { BookmarkAutoImportRule } from '@common/types/bookmarkAutoImport';
-import { summarizeImportResults } from '@common/utils/bookmarkImportUtils';
+import { formatImportSummary, summarizeImportResults } from '@common/utils/bookmarkImportUtils';
 
 import { useBookmarkAutoImport } from '../hooks/useBookmarkAutoImport';
 import { useToast } from '../hooks/useToast';
@@ -104,8 +105,9 @@ const BookmarkAutoImportSettings: React.FC<BookmarkAutoImportSettingsProps> = ({
 
   const handleExecuteAll = useCallback(async () => {
     const results = await executeAllRules();
-    const { message, hasError } = summarizeImportResults(results);
-    if (hasError) {
+    const summary = summarizeImportResults(results);
+    const message = formatImportSummary(summary, i18next.t);
+    if (summary.hasError) {
       showWarning(message);
     } else {
       showSuccess(message);

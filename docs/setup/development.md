@@ -363,11 +363,11 @@ Dependabotは依存関係を以下のグループに分けてPRを作成しま�
 
 画面は日本語と英語に対応する。日本語が正本で、英語はその訳。
 
-- **文言の置き場**: `src/common/i18n/locales/ja.ts` に書き、`en.ts` に同じキーで訳す（`en.ts` は `ja.ts` と同じ形でないと型エラーになる）。キーは英語の意味名で、領域ごとに分ける（`launcher`・`settings` など）。差し込みは `{{name}}`
-- **引き方**: renderer は `react-i18next` の `useTranslation()` の `t`、main は `services/i18nService.ts` の `mainI18n.t()`。キーは型チェックされる
+- **文言の置き場**: `src/common/i18n/locales/ja.ts` に書き、`en.ts` に同じキーで訳す（`en.ts` は `ja.ts` と同じ形でないと型エラーになる）。キーは英語の意味名で、領域ごとに分ける（`common`・`launcher`・`settings` など）。差し込みは `{{name}}`。英語で数によって形が変わる文言（1 item／2 items）は、キーに `_one`・`_other` を付けて `t('key', { count })` で引く（日本語は両方に同じ文言を書く）
+- **引き方**: renderer の部品・hook は `react-i18next` の `useTranslation()` の `t`、部品の外の関数（ツールチップの生成など）は `i18next.t`、main は `services/i18nService.ts` の `mainI18n.t()`。main と renderer の両方で使う `src/common` の関数は `t` を引数で受け取る。キーは型チェックされる
 - **言語の決め方**: 設定 `language`（`auto`・`ja`・`en`）。`auto` は Windows の最初の表示言語が日本語なら日本語、それ以外は英語（`src/common/i18n/languages.ts`）。各ウィンドウは描画の前に `src/renderer/i18n.ts` で初期化し、設定が変わったら言語を取り直す
 - **用語**: [用語集](../architecture/glossary.md)の言葉にそろえる。「使わない表記」が辞書に出ると単体テスト（`src/common/i18n/glossary.test.ts`）が失敗する。英語は Microsoft Writing Style Guide に合わせる（用語集の「書き方の決まり」）
-- **直書きの禁止**: 辞書へ移し終えたファイルは `eslint.config.mjs` の `I18N_ENFORCED_FILES` に足す。足したファイルでは、日本語の文字列・JSX のテキストを直接書くと lint が失敗する（`logger.info` などログの文言は訳さないので対象外）
+- **直書きの禁止**: 辞書へ移し終えたファイルは `eslint.config.mjs` の `I18N_ENFORCED_FILES` に足す。足したファイルでは、日本語の文字列・JSX のテキストを直接書くと lint が失敗する（`logger.info`・`console.error` やログ関数 `logError` などのログの文言は訳さないので対象外。テストファイルも対象外）
 - **訳さないもの**: ログ・docs・Issues・コードのコメント
 
 ### パフォーマンス最適化パターン

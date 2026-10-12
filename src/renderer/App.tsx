@@ -3,6 +3,7 @@
  * 画面仕様: docs/screens/main-window.md
  */
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { DEFAULT_DATA_FILE } from '@common/types';
 import type {
   LauncherItem,
@@ -20,7 +21,7 @@ import {
   isLayoutItem,
   isLauncherItem,
 } from '@common/types/guards';
-import { summarizeImportResults } from '@common/utils/bookmarkImportUtils';
+import { formatImportSummary, summarizeImportResults } from '@common/utils/bookmarkImportUtils';
 
 import LauncherSearchBox from './components/LauncherSearchBox';
 import LauncherHintBar from './components/LauncherHintBar';
@@ -51,6 +52,7 @@ import { useGlobalLoading } from './hooks/useGlobalLoading';
 import { useToast } from './hooks/useToast';
 
 function App(): React.ReactElement {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [mainItems, setMainItems] = useState<AppItem[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -149,7 +151,7 @@ function App(): React.ReactElement {
       if (searchMode !== 'window') return;
 
       const version = ++windowListVersionRef.current;
-      await withLoading('ウィンドウ更新中', async () => {
+      await withLoading(t('launcher.loading.windows'), async () => {
         // ウィンドウリストと仮想デスクトップ情報を再取得
         const [windows, info] = await Promise.all([
           window.electronAPI.getAllWindowsAllDesktops(),
@@ -210,7 +212,7 @@ function App(): React.ReactElement {
     await window.electronAPI.reapplySettings().catch((error) => {
       logError('設定の再適用に失敗しました:', error);
     });
-    await withLoading('データ再読込中', loadItems);
+    await withLoading(t('launcher.loading.data'), loadItems);
   };
 
   const handleToggleSearchMode = async () => {
@@ -290,7 +292,7 @@ function App(): React.ReactElement {
           const result = await window.electronAPI.activateWindowByHwnd(windowItem.hwnd);
 
           if (!result.success) {
-            showErrorAlert('ウィンドウのアクティブ化に失敗しました');
+            showErrorAlert(t('launcher.messages.activateWindowFailed'));
           } else {
             await window.electronAPI.showToastWindow({
               displayName: windowItem.title,
@@ -313,11 +315,13 @@ function App(): React.ReactElement {
         }
       } catch (error) {
         showErrorAlert(
-          `アイテムの実行に失敗しました: ${error instanceof Error ? error.message : String(error)}`
+          t('launcher.messages.openFailed', {
+            reason: error instanceof Error ? error.message : String(error),
+          })
         );
       }
     },
-    [searchMode, searchQuery, executeAppItem, addHistoryEntry]
+    [searchMode, searchQuery, executeAppItem, addHistoryEntry, t]
   );
 
   const tabFilteredItems = useMemo(
@@ -490,18 +494,18 @@ function App(): React.ReactElement {
 
     const cleanupDataChanged = window.electronAPI.onDataChanged(async () => {
       debugLog('データ変更通知を受信、データを再読み込みします');
-      await withLoading('データ再読込中', () => loadItems('internal'));
+      await withLoading(t('launcher.loading.data'), () => loadItems('internal'));
     });
 
     // 登録・編集ウィンドウ（子ウィンドウ）での結果。データ自体は data-changed で読み直す
     const cleanupChildResult = window.electronAPI.onMainChildWindowResult((result) => {
       if (result.kind !== 'register') return;
-      const messages = {
-        registered: 'アイテムを登録しました',
-        updated: 'アイテムを更新しました',
-        deleted: 'アイテムを削除しました',
+      const messageKeys = {
+        registered: 'launcher.messages.itemAdded',
+        updated: 'launcher.messages.itemUpdated',
+        deleted: 'launcher.messages.itemDeleted',
       } as const;
-      showSuccess(messages[result.action]);
+      showSuccess(t(messageKeys[result.action]));
     });
 
     return () => {
@@ -546,7 +550,7 @@ function App(): React.ReactElement {
         hotkey: settings.hotkey,
         autoLaunch: settings.autoLaunch,
         itemSearchHotkey: settings.itemSearchHotkey,
-        dataFileTabs: [{ files: [DEFAULT_DATA_FILE], name: 'メイン' }],
+        dataFileTabs: [{ files: [DEFAULT_DATA_FILE], name: t('firstLaunch.defaultTabName') }],
       });
       await window.electronAPI.changeHotkey(settings.hotkey);
       if (settings.itemSearchHotkey) {
@@ -557,18 +561,19 @@ function App(): React.ReactElement {
       void handleFetchMissingIcons();
     } catch (error) {
       logError('初回設定の保存に失敗しました:', error);
-      showErrorAlert('設定の保存に失敗しました。');
+      showErrorAlert(t('firstLaunch.saveFailed'));
     }
   };
 
   const handleBookmarkAutoImport = async () => {
     const results = await window.electronAPI.bookmarkAutoImportAPI.executeAll();
     if (results.length === 0) {
-      showWarning('有効なブックマーク取込ルールがありません');
+      showWarning(t('launcher.messages.noBookmarkRules'));
       return;
     }
-    const { message, hasError } = summarizeImportResults(results);
-    if (hasError) {
+    const summary = summarizeImportResults(results);
+    const message = formatImportSummary(summary, t);
+    if (summary.hasError) {
       showWarning(message);
     } else {
       showSuccess(message);
@@ -618,7 +623,7 @@ function App(): React.ReactElement {
   }, [mainItems, errorKeySet]);
 
   if (isFirstLaunch === null) {
-    return <div className="app">読み込み中...</div>;
+    return <div className="app">{t('common.loading')}</div>;
   }
 
   if (isFirstLaunch) {
@@ -671,7 +676,7 @@ function App(): React.ReactElement {
           {showCountBar && <LauncherItemCountDisplay count={filteredItems.length} />}
           {markedCount > 0 && (
             <span className="selection-badge" data-testid="window-selection-badge">
-              {markedCount} 件を選択中
+              {t('launcher.selectedCount', { count: markedCount })}
             </span>
           )}
         </div>
@@ -721,10 +726,13 @@ function App(): React.ReactElement {
 
       {searchMode === 'window' && windowSelection.pendingClose && (
         <div className="window-close-confirm" role="alert" data-testid="window-close-confirm">
-          <span>{windowSelection.pendingClose.length} 個のウィンドウを閉じます</span>
           <span>
-            <strong>Enter</strong>:閉じる{'　'}
-            <strong>Esc</strong>:やめる
+            {t('launcher.closeConfirm.message', { count: windowSelection.pendingClose.length })}
+          </span>
+          <span>
+            <strong>Enter</strong>:{t('launcher.closeConfirm.close')}
+            {'\u3000'}
+            <strong>Esc</strong>:{t('launcher.closeConfirm.cancel')}
           </span>
         </div>
       )}
@@ -751,7 +759,7 @@ function App(): React.ReactElement {
 
       {isDraggingOver && (
         <div className="drag-overlay">
-          <div className="drag-message">ファイル / URLをドロップして登録</div>
+          <div className="drag-message">{t('launcher.dropToAdd')}</div>
         </div>
       )}
 

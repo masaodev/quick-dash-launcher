@@ -54,7 +54,7 @@ interface PathMenuChannels {
   openShortcutParentFolder: string;
 }
 
-/** パスのコピー・親フォルダー・リンク先の各メニュー項目を追加する */
+/** パスのコピー・親フォルダ・リンク先の各メニュー項目を追加する */
 function appendPathMenuItems(
   menu: Menu,
   sender: WebContents,
@@ -66,9 +66,9 @@ function appendPathMenuItems(
 
   if (options.hasParentFolder) {
     menu.append(
-      createMenuItem('📋 親フォルダーのパスをコピー', sender, channels.copyParentPath, arg)
+      createMenuItem('📋 親フォルダのパスをコピー', sender, channels.copyParentPath, arg)
     );
-    menu.append(createMenuItem('📂 親フォルダーを開く', sender, channels.openParentFolder, arg));
+    menu.append(createMenuItem('📂 親フォルダを開く', sender, channels.openParentFolder, arg));
   }
 
   if (options.isShortcut) {
@@ -78,7 +78,7 @@ function appendPathMenuItems(
     );
     menu.append(
       createMenuItem(
-        '📋 リンク先の親フォルダーのパスをコピー',
+        '📋 リンク先の親フォルダのパスをコピー',
         sender,
         channels.copyShortcutParentPath,
         arg
@@ -86,7 +86,7 @@ function appendPathMenuItems(
     );
     menu.append(
       createMenuItem(
-        '📂 リンク先の親フォルダーを開く',
+        '📂 リンク先の親フォルダを開く',
         sender,
         channels.openShortcutParentFolder,
         arg
@@ -560,7 +560,7 @@ function setupWindowContextMenuHandler(): void {
 
       if (desktopInfo.supported) {
         menu.append(createSeparator());
-        const pinLabel = isPinned ? '📌 固定を解除' : '📌 全デスクトップに固定';
+        const pinLabel = isPinned ? '📌 全デスクトップへの表示を解除' : '📌 全デスクトップに表示';
         const pinChannel = isPinned ? IPC_CHANNELS.UNPIN_WINDOW : IPC_CHANNELS.PIN_WINDOW;
         // Ctrl+P・Ctrl+D はメインウィンドウのキー処理で受けるので、右端に表示するだけ（登録しない）
         menu.append(
@@ -625,14 +625,14 @@ function setupWindowsContextMenuHandler(): void {
         menu.append(createSeparator());
         menu.append(
           createMenuItem(
-            '📌 全デスクトップに固定',
+            '📌 全デスクトップに表示',
             event.sender,
             IPC_CHANNELS.EVENT_WINDOWS_MENU_PIN,
             true
           )
         );
         menu.append(
-          createMenuItem('📌 固定を解除', event.sender, IPC_CHANNELS.EVENT_WINDOWS_MENU_PIN, false)
+          createMenuItem('📌 全デスクトップへの表示を解除', event.sender, IPC_CHANNELS.EVENT_WINDOWS_MENU_PIN, false)
         );
       }
 
