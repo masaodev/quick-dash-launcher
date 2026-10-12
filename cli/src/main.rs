@@ -114,8 +114,36 @@ fn find_app_exe(base: &str) -> Option<PathBuf> {
     candidate.is_file().then_some(candidate)
 }
 
+/// 自分の標準入出力のハンドルを、これから起動するプロセスに引き継がせない
+///
+/// Windows では、継承可能なハンドルは CreateProcess で子に引き継がれる。qdl の標準出力が呼び出し元の
+/// パイプ（AI のシェルなど）だと、起動した本体がそのパイプを持ち続け、qdl が終わっても呼び出し元が
+/// 出力の終わりを受け取れずに待ち続ける。
+fn stop_inheriting_std_handles() {
+    use std::ffi::c_void;
+    #[link(name = "kernel32")]
+    extern "system" {
+        fn GetStdHandle(std_handle: u32) -> *mut c_void;
+        fn SetHandleInformation(handle: *mut c_void, mask: u32, flags: u32) -> i32;
+    }
+    const STD_INPUT_HANDLE: u32 = -10i32 as u32;
+    const STD_OUTPUT_HANDLE: u32 = -11i32 as u32;
+    const STD_ERROR_HANDLE: u32 = -12i32 as u32;
+    const HANDLE_FLAG_INHERIT: u32 = 0x0000_0001;
+    for which in [STD_INPUT_HANDLE, STD_OUTPUT_HANDLE, STD_ERROR_HANDLE] {
+        // SAFETY: 自プロセスの標準ハンドルの属性を変えるだけ。無効なハンドルなら失敗して何も起きない
+        unsafe {
+            let handle = GetStdHandle(which);
+            if !handle.is_null() && handle as isize != -1 {
+                SetHandleInformation(handle, HANDLE_FLAG_INHERIT, 0);
+            }
+        }
+    }
+}
+
 fn launch_app(exe: &PathBuf) -> io::Result<()> {
     use std::os::windows::process::CommandExt;
+    stop_inheriting_std_handles();
     const DETACHED_PROCESS: u32 = 0x0000_0008;
     const CREATE_NEW_PROCESS_GROUP: u32 = 0x0000_0200;
     Command::new(exe)
