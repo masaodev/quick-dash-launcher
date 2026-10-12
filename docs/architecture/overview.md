@@ -12,7 +12,7 @@ QuickDashLauncherのアーキテクチャ概要とデータフローを説明し
 | **共通型定義** | `src/common/types/` | プロセス間で共有される型定義（機能別に分割） |
 | **CLI（qdl.exe）** | `cli/`（Rust） | 本体とは別の実行ファイル。引数を名前付きパイプでメインプロセスに送り、返ってきた出力と終了コードをそのまま出す中継役。受け口と解釈はメインプロセスの `src/main/services/cli/`（[CLI からの依頼](#cli-からの依頼)） |
 
-本体は userData ごとに 1 つしか動かない（`src/main/main.ts` の `app.requestSingleInstanceLock()`）。2 つ目を起動するとすぐに終了し、動いている側がメインウィンドウを表示する。`QUICK_DASH_CONFIG_DIR` を指定した起動（E2E・`npm run dev:test`）は対象外。
+本体は userData ごとに 1 つしか動かない（`src/main/main.ts` の `app.requestSingleInstanceLock()`）。2 つ目を起動するとすぐに終了し、動いている側がメインウィンドウを表示する（CLI が `--launched-by-cli` 付きで起動した場合は表示しない）。`QUICK_DASH_CONFIG_DIR` を指定した起動（E2E・`npm run dev:test`）は対象外。
 
 ### ウィンドウとレンダラープロセスの対応
 
@@ -143,7 +143,7 @@ IPC の設計とチャンネル定義の置き場所は[IPCチャンネル](ipc-
 
 1. メインプロセスは起動の早い段階で、名前付きパイプ `\\.\pipe\<userData のフォルダ名>-cli-<ユーザー名>` で待ち受ける（`services/cli/cliServer.ts`。パイプ名は `cliProtocol.ts` の `getCliPipeName()`）。`QUICK_DASH_CONFIG_DIR` を指定した起動では待ち受けない
 2. `qdl.exe` が引数・実行したフォルダ・やり取りの版を JSON 1 行で送る。本体が動いていなければ、`qdl.exe` が本体を `--launched-by-cli` 付きで起動し（スプラッシュを出さない）、パイプが開くのを待つ
-3. メインプロセスは初期化が終わるのを待ってから（最大 60 秒）、コマンドを解釈して実行する（振り分けとエラーの形は `services/cli/cliCommands.ts`、メイン画面のアイテムは `cliLauncherCommands.ts`、ワークスペースは `cliWorkspaceCommands.ts`、本体の処理へのつなぎは `cliStores.ts`）。`reload` はメイン画面の F5 と同じく設定の再適用とデータファイル・ワークスペースの読み直しをし、`data-changed` で全ウィンドウに知らせる。書き込むコマンドは、まず読み直して外部変更を検知してから、画面の登録・編集と同じ書き込み処理（データファイルは `dataItemWriter.ts`、ワークスペースは `WorkspaceService`）を通し、`data-changed`／`workspace-changed` とトーストで知らせる
+3. メインプロセスは初期化が終わるのを待ってから（最大 60 秒）、コマンドを解釈して実行する（振り分けとエラーの形は `services/cli/cliCommands.ts`、メイン画面のアイテムは `cliLauncherCommands.ts`、ワークスペースは `cliWorkspaceCommands.ts`、本体の処理へのつなぎは `cliStores.ts`）。`reload` はメイン画面の F5 と同じく設定の再適用とデータファイル・ワークスペースの読み直しをし、`data-changed` で全ウィンドウに知らせる。書き込むコマンドは、まず読み直して外部変更を検知してから、画面の登録・編集と同じ書き込み処理（データファイルは `dataItemWriter.ts`。削除は管理画面の ID 指定の削除と同じ `ipc/editHandlers.ts` の `deleteItemsById`。ワークスペースは `WorkspaceService`）を通し、`data-changed`／`workspace-changed` とトーストで知らせる
 4. 終了コード・標準出力・標準エラーを JSON 1 行で返し、接続を閉じる（1 接続 1 往復）。やり取りの形を変えたら、`cliProtocol.ts` の `CLI_PROTOCOL_VERSION` と `cli/src/main.rs` の `PROTOCOL_VERSION` を一緒に上げる
 
 パッケージ版のメインプロセスは起動のたびに、`qdl.exe` が本体を起動するときに使う exe の場所を userData の `cli-launcher.json` に書き出す（`services/cli/cliLauncherInfo.ts`）。
