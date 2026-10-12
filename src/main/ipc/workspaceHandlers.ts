@@ -36,7 +36,7 @@ import { executeLayout } from './itemHandlers.js';
 /**
  * 指定グループとその子孫の切り離しウィンドウをすべて閉じる
  */
-async function closeDetachedWindowsForGroup(groupId: string): Promise<void> {
+export async function closeDetachedWindowsForGroup(groupId: string): Promise<void> {
   const workspaceService = await WorkspaceService.getInstance();
   const groups = await workspaceService.loadGroups();
   const descendantIds = getDescendantGroupIds(groupId, groups);

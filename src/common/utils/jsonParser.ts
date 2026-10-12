@@ -441,7 +441,7 @@ function validateTypedFields(
 /**
  * JSONアイテムを検証し、型付きオブジェクトとして返す
  */
-function validateJsonItem(item: unknown, index: number): JsonItem {
+export function validateJsonItem(item: unknown, index: number): JsonItem {
   if (!item || typeof item !== 'object') {
     throw new Error('Item must be an object');
   }

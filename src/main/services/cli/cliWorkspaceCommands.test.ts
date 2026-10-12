@@ -1,0 +1,252 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type {
+  AppItem,
+  Workspace,
+  WorkspaceGroupView,
+  WorkspaceItem,
+  WorkspaceItemUpdate,
+} from '@common/types';
+
+import { CliError } from './cliArgs';
+import { runWorkspaceCommand } from './cliWorkspaceCommands';
+import type { WorkspaceCommandContext, WorkspaceStore } from './cliWorkspaceCommands';
+
+let workspaces: Workspace[];
+let groups: WorkspaceGroupView[];
+let items: WorkspaceItem[];
+let ctx: WorkspaceCommandContext;
+let nextId: number;
+
+function group(id: string, name: string, order: number, extra: Partial<WorkspaceGroupView> = {}) {
+  return {
+    id,
+    displayName: name,
+    color: 'primary',
+    order,
+    createdAt: 0,
+    workspaceId: 'Ws000001',
+    collapsed: false,
+    ...extra,
+  } as WorkspaceGroupView;
+}
+
+function item(id: string, name: string, order: number, groupId?: string, workspaceId = 'Ws000001') {
+  return {
+    id,
+    type: 'item',
+    displayName: name,
+    path: `C:\\${name}`,
+    launcherType: 'folder',
+    icon: 'data:image/png;base64,AAAA',
+    workspaceId,
+    groupId,
+    order,
+    addedAt: 0,
+  } as WorkspaceItem;
+}
+
+beforeEach(() => {
+  nextId = 1;
+  workspaces = [
+    { id: 'Ws000001', displayName: '仕事', order: 0, createdAt: 0 },
+    { id: 'Ws000002', displayName: '私用', order: 1, createdAt: 0 },
+  ];
+  groups = [
+    group('GrA00001', '案件A', 0),
+    group('GrSub001', '資料', 1, { parentGroupId: 'GrA00001' }),
+    group('GrEmpty1', '空', 2),
+  ];
+  items = [item('It000001', '議事録', 0, 'GrA00001'), item('It000002', '設計', 2, 'GrA00001')];
+
+  const store: WorkspaceStore = {
+    loadWorkspaces: async () => workspaces,
+    loadGroups: async () => groups,
+    loadItems: async () => items,
+    addItem: async (app: AppItem, groupId?: string, workspaceId?: string) => {
+      const a = app as AppItem & { displayName: string; path: string; type: string };
+      const added = {
+        ...item(`New${String(nextId++).padStart(5, '0')}`, a.displayName, 99, groupId, workspaceId),
+        path: a.path,
+        launcherType: a.type,
+      } as WorkspaceItem;
+      items.push(added);
+      return added;
+    },
+    updateItem: async (id: string, update: WorkspaceItemUpdate) => {
+      items = items.map((i) => (i.id === id ? ({ ...i, ...update } as WorkspaceItem) : i));
+    },
+    removeItem: async (id: string) => {
+      items = items.filter((i) => i.id !== id);
+    },
+    moveItemToGroup: async (id: string, groupId?: string) => {
+      items = items.map((i) => (i.id === id ? { ...i, groupId } : i));
+    },
+    moveItemToWorkspace: async (id: string, workspaceId: string) => {
+      items = items.map((i) => (i.id === id ? { ...i, workspaceId, groupId: undefined } : i));
+    },
+    reorderMixed: async (_parent, entries) => {
+      entries.forEach((e, index) => {
+        if (e.kind === 'item')
+          items = items.map((i) => (i.id === e.id ? { ...i, order: index } : i));
+        else groups = groups.map((g) => (g.id === e.id ? { ...g, order: index } : g));
+      });
+    },
+    createGroup: async (name, color, parentGroupId, workspaceId) => {
+      const created = group('GrNew001', name, 9, {
+        color: color ?? 'primary',
+        parentGroupId,
+        workspaceId: workspaceId ?? 'Ws000001',
+      });
+      groups.push(created);
+      return created;
+    },
+    updateGroup: async (id, updates) => {
+      groups = groups.map((g) => (g.id === id ? { ...g, ...updates } : g));
+    },
+    deleteGroup: async (id) => {
+      groups = groups.filter((g) => g.id !== id);
+    },
+  };
+  ctx = {
+    store,
+    cwd: 'C:\\work',
+    markFolder: async (p) => p,
+    syncBeforeWrite: vi.fn(async () => {}),
+    changed: vi.fn(),
+    beforeGroupRemoved: vi.fn(async () => {}),
+  };
+});
+
+async function errorOf(promise: Promise<unknown>): Promise<CliError> {
+  try {
+    await promise;
+  } catch (error) {
+    if (error instanceof CliError) return error;
+    throw error;
+  }
+  throw new Error('例外が出なかった');
+}
+
+describe('workspace item', () => {
+  it('グループに追加して位置を指定すると、サブグループも含めた並びのその位置に入る', async () => {
+    const r = (await runWorkspaceCommand(
+      'item',
+      'add',
+      ['--name', 'メモ', '--path', '.\\メモ', '--group', '案件A', '--position', '1'],
+      ctx
+    )) as Record<string, unknown>;
+    expect(r).toMatchObject({
+      displayName: 'メモ',
+      path: 'C:\\work\\メモ',
+      kind: 'folder',
+      location: ['仕事', '案件A'],
+    });
+    expect(r).not.toHaveProperty('icon');
+    expect(r).not.toHaveProperty('launcherType');
+    // 並び: 議事録(0) → メモ(1) → 資料(サブグループ) → 設計
+    const order = (id: string) =>
+      items.find((i) => i.id === id)?.order ?? groups.find((g) => g.id === id)?.order;
+    expect([order('It000001'), order(String(r.id)), order('GrSub001'), order('It000002')]).toEqual([
+      0, 1, 2, 3,
+    ]);
+    expect(ctx.changed).toHaveBeenCalledWith('CLI: ワークスペースに「メモ」を追加しました');
+  });
+
+  it('--group "" で未分類へ、--workspace だけなら移った先の未分類へ移す', async () => {
+    await runWorkspaceCommand('item', 'update', ['議事録', '--group', ''], ctx);
+    expect(items.find((i) => i.id === 'It000001')?.groupId).toBeUndefined();
+    const r = (await runWorkspaceCommand(
+      'item',
+      'update',
+      ['設計', '--workspace', '私用'],
+      ctx
+    )) as {
+      item: Record<string, unknown>;
+    };
+    expect(r.item.location).toEqual(['私用']);
+  });
+
+  it('本文の変更は今の内容に当て、変える前の内容も返す', async () => {
+    const r = (await runWorkspaceCommand(
+      'item',
+      'update',
+      ['It000001', '--memo', '毎週'],
+      ctx
+    )) as {
+      before: Record<string, unknown>;
+      item: Record<string, unknown>;
+    };
+    expect(r.before.memo).toBeUndefined();
+    expect(r.item).toMatchObject({
+      displayName: '議事録',
+      memo: '毎週',
+      location: ['仕事', '案件A'],
+    });
+  });
+
+  it('知らないグループは not_found、変える項目が無ければ usage', async () => {
+    expect(
+      (
+        await errorOf(
+          runWorkspaceCommand(
+            'item',
+            'add',
+            ['--name', 'x', '--path', 'C:\\x', '--group', '無い'],
+            ctx
+          )
+        )
+      ).code
+    ).toBe('not_found');
+    expect((await errorOf(runWorkspaceCommand('item', 'update', ['議事録'], ctx))).code).toBe(
+      'usage'
+    );
+  });
+
+  it('list は場所付きの平らな配列で、グループで絞れる', async () => {
+    const r = (await runWorkspaceCommand('item', 'list', ['--group', '案件A'], ctx)) as Array<
+      Record<string, unknown>
+    >;
+    expect(r.map((i) => i.displayName)).toEqual(['議事録', '設計']);
+  });
+});
+
+describe('workspace group', () => {
+  it('親を指定して追加でき、不正な色は invalid', async () => {
+    const r = await runWorkspaceCommand(
+      'group',
+      'add',
+      ['--name', '会議', '--parent', '案件A'],
+      ctx
+    );
+    expect(r).toMatchObject({ displayName: '会議', location: ['仕事', '案件A', '会議'] });
+    expect(
+      (await errorOf(runWorkspaceCommand('group', 'add', ['--name', 'x', '--color', 'red'], ctx)))
+        .code
+    ).toBe('invalid');
+  });
+
+  it('空でないグループは消さずに conflict、空のグループは切り離しウィンドウを閉じてから消す', async () => {
+    expect((await errorOf(runWorkspaceCommand('group', 'remove', ['案件A'], ctx))).code).toBe(
+      'conflict'
+    );
+    await runWorkspaceCommand('group', 'remove', ['空'], ctx);
+    expect(ctx.beforeGroupRemoved).toHaveBeenCalledWith('GrEmpty1');
+    expect(groups.map((g) => g.id)).not.toContain('GrEmpty1');
+  });
+
+  it('--parent "" で最上位へ移す', async () => {
+    const r = (await runWorkspaceCommand('group', 'update', ['資料', '--parent', ''], ctx)) as {
+      group: Record<string, unknown>;
+    };
+    expect(r.group.parentGroupId).toBeNull();
+  });
+});
+
+describe('workspace list', () => {
+  it('ワークスペースごとの件数を返す', async () => {
+    expect(await runWorkspaceCommand('list', undefined, [], ctx)).toEqual([
+      { id: 'Ws000001', displayName: '仕事', order: 0, groupCount: 3, itemCount: 2 },
+      { id: 'Ws000002', displayName: '私用', order: 1, groupCount: 0, itemCount: 0 },
+    ]);
+  });
+});
