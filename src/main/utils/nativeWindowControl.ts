@@ -786,31 +786,34 @@ export function getWindowBounds(hwnd: number | bigint): Bounds | null {
  *
  * 相手の処理を待たない（PostMessageW）。SendMessageW だと、相手が「保存しますか」を出したり
  * 応答しなかったりすると、閉じ終わるまで QDL のメインプロセスごと止まる。
- * 閉じたかどうかは分からないので、必要なら waitForWindowGone で確かめる
+ * 閉じたかどうかは分からないので、一覧を取り直す前に waitForWindowsGone で待つ
  * @param hwnd ウィンドウハンドル
- * @returns WM_CLOSE を送れたら true（ウィンドウがもう無いときは false）
+ * @returns 送れたら true。ウィンドウがもう無いときも、閉じたのと同じなので true
+ * @throws 送れなかったとき（管理者として実行中のアプリには、権限の低い QDL からは送れない）
  */
 export function closeWindow(hwnd: number | bigint): boolean {
-  try {
-    return PostMessageW(toHwndNumber(hwnd), WM_CLOSE, 0, 0);
-  } catch (error) {
-    console.error(`Error closing window ${hwnd}:`, error);
-    return false;
-  }
+  const handle = toHwndNumber(hwnd);
+  if (PostMessageW(handle, WM_CLOSE, 0, 0) || !IsWindow(handle)) return true;
+  throw new Error('閉じる要求を送れませんでした（管理者として実行中のアプリなど）');
+}
+
+/** 閉じたか、トレイに隠れた（一覧に出ない）か */
+function isWindowGone(handle: number): boolean {
+  return !IsWindow(handle) || !IsWindowVisible(handle);
 }
 
 /**
- * ウィンドウが無くなるのを待つ（closeWindow の後に、一覧を取り直す前に使う）
- * @returns 時間内に無くなったら true。「保存しますか」などで残っていれば false
+ * ウィンドウが閉じる（かトレイに隠れる）のを待つ。closeWindow の後、一覧を取り直す前に使う
+ * @returns 時間内に全部そうなったら true。「保存しますか」などで残っていれば false
  */
-export async function waitForWindowGone(
-  hwnd: number | bigint,
+export async function waitForWindowsGone(
+  hwnds: (number | bigint)[],
   timeoutMs: number,
   intervalMs = 50
 ): Promise<boolean> {
-  const handle = toHwndNumber(hwnd);
+  const handles = hwnds.map(toHwndNumber);
   const deadline = Date.now() + timeoutMs;
-  while (IsWindow(handle)) {
+  while (!handles.every(isWindowGone)) {
     if (Date.now() >= deadline) return false;
     await new Promise((resolve) => setTimeout(resolve, intervalMs));
   }

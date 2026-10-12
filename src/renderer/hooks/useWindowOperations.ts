@@ -109,6 +109,10 @@ export function useWindowOperations({
         }
         return result;
       });
+      // 閉じるよう頼んだだけなので、閉じる（隠れる）のを待ってから一覧を取り直す
+      if (outcome.done.length > 0) {
+        await window.electronAPI.waitForWindowsClosed(outcome.done.map((w) => w.hwnd));
+      }
       await report(
         outcome,
         'windowClose',
