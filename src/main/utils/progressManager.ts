@@ -1,4 +1,5 @@
 import { BrowserWindow } from 'electron';
+import { ICON_PROGRESS_CHANNELS } from '@common/ipcChannels';
 import { IconProgress, IconPhaseProgress } from '@common/types';
 
 /**
@@ -141,6 +142,6 @@ export class CombinedProgressManager {
         ? 'start'
         : 'update';
 
-    this.mainWindow.webContents.send(`icon-progress-${eventType}`, progress);
+    this.mainWindow.webContents.send(ICON_PROGRESS_CHANNELS[eventType], progress);
   }
 }

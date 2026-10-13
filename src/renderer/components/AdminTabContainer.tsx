@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { AppSettings, DataFileTab } from '@common/types';
+import { AdminTab, AppSettings, DataFileTab } from '@common/types';
 
 import type { AdminItemEditing } from '../hooks/useAdminItemEditing';
 import type { TabStructureSettings } from '../hooks/useAdminTabStructure';
@@ -11,8 +11,8 @@ import AdminItemManagerView from './AdminItemManagerView';
 import AdminOtherTab from './AdminOtherTab';
 
 interface AdminTabContainerProps {
-  activeTab: 'settings' | 'edit' | 'other';
-  onTabChange: (tab: 'settings' | 'edit' | 'other') => void;
+  activeTab: AdminTab;
+  onTabChange: (tab: AdminTab) => void;
   settings: AppSettings | null;
   onSettingsSave: (settings: AppSettings) => Promise<void>;
   /** 既定値に戻すなど、保存を経ずに設定が置き換わったとき */

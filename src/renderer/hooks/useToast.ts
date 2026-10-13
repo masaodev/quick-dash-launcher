@@ -7,8 +7,9 @@
  */
 
 import toast, { ToastOptions } from 'react-hot-toast';
+import type { NotificationType } from '@common/types';
 
-export type ToastType = 'success' | 'error' | 'info' | 'warning';
+export type ToastType = NotificationType;
 
 interface UseToastReturn {
   /** 成功トーストを表示 */

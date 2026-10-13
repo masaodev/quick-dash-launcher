@@ -1,8 +1,9 @@
 import { ipcMain } from 'electron';
 import { IPC_CHANNELS } from '@common/ipcChannels';
+import type { ToastOptions } from '@common/types';
 
 import { showNotification, NotificationOptions } from '../services/notificationService.js';
-import { showToastWindow, ToastOptions } from '../services/overlayWindowService.js';
+import { showToastWindow } from '../services/overlayWindowService.js';
 
 export function setupNotificationHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.SHOW_NOTIFICATION, (_event, options: NotificationOptions) => {

@@ -555,7 +555,11 @@ function setupWindowContextMenuHandler(): void {
               label,
               enabled: !isCurrentDesktop,
               click: () =>
-                event.sender.send(IPC_CHANNELS.MOVE_WINDOW_TO_DESKTOP, windowInfo.hwnd, i),
+                event.sender.send(
+                  IPC_CHANNELS.EVENT_WINDOW_MENU_MOVE_TO_DESKTOP,
+                  windowInfo.hwnd,
+                  i
+                ),
             })
           );
         }
@@ -572,7 +576,9 @@ function setupWindowContextMenuHandler(): void {
         const pinLabel = isPinned
           ? t('menu.window.stopShowingOnAllDesktops')
           : t('menu.window.showOnAllDesktops');
-        const pinChannel = isPinned ? IPC_CHANNELS.UNPIN_WINDOW : IPC_CHANNELS.PIN_WINDOW;
+        const pinChannel = isPinned
+          ? IPC_CHANNELS.EVENT_WINDOW_MENU_UNPIN
+          : IPC_CHANNELS.EVENT_WINDOW_MENU_PIN;
         // Ctrl+P・Ctrl+D はメインウィンドウのキー処理で受けるので、右端に表示するだけ（登録しない）
         menu.append(
           new MenuItem({

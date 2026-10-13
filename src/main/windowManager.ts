@@ -11,6 +11,7 @@ import {
   dialog,
   Rectangle,
 } from 'electron';
+import { IPC_CHANNELS, type IpcChannelName } from '@common/ipcChannels';
 import { windowLogger } from '@common/logger';
 import type { WindowPinMode, WindowPositionMode } from '@common/types';
 import { PerformanceTimer } from '@common/utils/performanceTimer';
@@ -100,7 +101,7 @@ function hideMainWindowInternal(): void {
   if (!mainWindow) return;
 
   // レンダラープロセスに非表示通知を送る
-  mainWindow.webContents.send('window-hidden');
+  mainWindow.webContents.send(IPC_CHANNELS.EVENT_WINDOW_HIDDEN);
 
   // ウィンドウを非表示にする
   mainWindow.hide();
@@ -646,7 +647,7 @@ async function activateMainWindowWithFocus(): Promise<void> {
   mainWindow.focus();
 
   // 検索欄にフォーカスを当てるため、window-shownイベントを送信
-  mainWindow.webContents.send('window-shown');
+  mainWindow.webContents.send(IPC_CHANNELS.EVENT_WINDOW_SHOWN);
   windowLogger.info('メインウィンドウをアクティブにしました');
 }
 
@@ -657,7 +658,7 @@ async function activateMainWindowWithFocus(): Promise<void> {
  * @param enableTimer パフォーマンスタイマーを有効にするか
  */
 async function showMainWindowInternal(
-  eventName: string,
+  eventName: IpcChannelName,
   startTime?: number,
   enableTimer: boolean = false
 ): Promise<void> {
@@ -691,7 +692,7 @@ async function showMainWindowInternal(
  * 設定されたモードに応じてウィンドウ位置を設定してから表示する
  */
 export async function showMainWindow(startTime?: number): Promise<void> {
-  await showMainWindowInternal('window-shown', startTime, true);
+  await showMainWindowInternal(IPC_CHANNELS.EVENT_WINDOW_SHOWN, startTime, true);
   windowLogger.info('メインウィンドウを表示しました');
 }
 
@@ -700,7 +701,7 @@ export async function showMainWindow(startTime?: number): Promise<void> {
  * 設定されたモードに応じてウィンドウ位置を設定してから表示する
  */
 export async function showMainWindowWithItemSearch(startTime?: number): Promise<void> {
-  await showMainWindowInternal('window-shown-item-search', startTime);
+  await showMainWindowInternal(IPC_CHANNELS.EVENT_WINDOW_SHOWN_ITEM_SEARCH, startTime);
   windowLogger.info('メインウィンドウをアイテム検索モードで表示しました');
 }
 
