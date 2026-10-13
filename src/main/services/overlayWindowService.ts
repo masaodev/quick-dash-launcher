@@ -108,6 +108,9 @@ const TOAST_WIDTH = 400;
 const TOAST_HEIGHT = 100;
 const TOAST_MARGIN = 16;
 const DEFAULT_DURATION = 2500;
+const GROUP_DURATION = 3000;
+/** 警告など、読み終えるまで少し長く出しておくトーストの表示時間 */
+export const LONG_TOAST_DURATION_MS = 6000;
 const PROGRESS_WIDTH = 400;
 const PROGRESS_HEIGHT = 300;
 const IDLE_DESTROY_MS = 5 * 60 * 1000;
@@ -284,7 +287,8 @@ export async function showToastWindow(options: ToastOptions): Promise<void> {
   }
 
   // グループ起動時は表示時間を長め（3秒）に設定
-  const duration = options.duration ?? (options.itemType === 'group' ? 3000 : DEFAULT_DURATION);
+  const duration =
+    options.duration ?? (options.itemType === 'group' ? GROUP_DURATION : DEFAULT_DURATION);
   const type = options.type ?? 'success';
 
   clearToastHideTimeout();

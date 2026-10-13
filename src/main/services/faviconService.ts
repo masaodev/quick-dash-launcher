@@ -17,6 +17,12 @@ interface FaviconSource {
   isOgImage?: boolean;
 }
 
+/** ダウンロードが時間内に終わらなかった（失敗理由の判定に使う） */
+class FaviconTimeoutError extends Error {}
+
+/** 応答が上限より大きかった（失敗理由の判定に使う） */
+class FaviconTooLargeError extends Error {}
+
 export class FaviconService {
   private faviconsFolder: string;
   private defaultSize = 64;
@@ -228,10 +234,10 @@ export class FaviconService {
     if (!(error instanceof Error)) {
       return 'ファビコンソースの取得に失敗';
     }
-    if (error.message.includes('タイムアウト')) {
+    if (error instanceof FaviconTimeoutError) {
       return 'ファビコンダウンロードがタイムアウト';
     }
-    if (error.message.includes('大きすぎます')) {
+    if (error instanceof FaviconTooLargeError) {
       return 'ファビコンが大きすぎるためスキップ';
     }
     if (error.message.startsWith('HTTP ')) {
@@ -390,7 +396,8 @@ export class FaviconService {
   private async downloadFavicon(url: string): Promise<Buffer | null> {
     const chunks: Buffer[] = [];
     const maxBytes = this.faviconMaxBytes;
-    const tooLarge = () => new Error(`ファビコンが大きすぎます（上限 ${maxBytes} バイト）: ${url}`);
+    const tooLarge = () =>
+      new FaviconTooLargeError(`ファビコンが大きすぎます（上限 ${maxBytes} バイト）: ${url}`);
     let received = 0;
 
     await this.makeRequest({
@@ -420,7 +427,7 @@ export class FaviconService {
     checkStatus?: boolean;
     /** Content-Length がこれを超えていたら、本文を読まずに tooLargeError で打ち切る */
     maxBytes?: number;
-    tooLargeError?: () => Error;
+    tooLargeError?: () => FaviconTooLargeError;
     /** finish() は成功として、finish(error) は失敗として読み込みを終える */
     onData: (chunk: Buffer, finish: (error?: Error) => void) => void;
   }): Promise<void> {
@@ -446,7 +453,7 @@ export class FaviconService {
       }
 
       const timeoutId = setTimeout(() => {
-        finish(new Error(options.timeoutMessage));
+        finish(new FaviconTimeoutError(options.timeoutMessage));
       }, options.timeout);
 
       request.on('response', (response) => {
@@ -459,7 +466,9 @@ export class FaviconService {
           const header = response.headers['content-length'];
           const contentLength = Number(Array.isArray(header) ? header[0] : header);
           if (Number.isFinite(contentLength) && contentLength > options.maxBytes) {
-            finish(options.tooLargeError?.() ?? new Error('レスポンスが大きすぎます'));
+            finish(
+              options.tooLargeError?.() ?? new FaviconTooLargeError('レスポンスが大きすぎます')
+            );
             return;
           }
         }
@@ -498,10 +507,12 @@ export class FaviconService {
     if (!(error instanceof Error)) {
       return false;
     }
+    if (error instanceof FaviconTimeoutError) {
+      return true;
+    }
 
     const message = error.message.toLowerCase();
     const networkErrorPatterns = [
-      'タイムアウト',
       'enotfound',
       'getaddrinfo',
       'econnrefused',
