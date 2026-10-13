@@ -3,6 +3,7 @@
  *
  * 種類の表示名・アイコン、セルで編集できる項目の判定、更新日の書式など。状態を持たない。
  */
+import i18next from 'i18next';
 import type {
   JsonItem,
   JsonLauncherItem,
@@ -20,22 +21,29 @@ import {
   isJsonLayoutItem,
 } from '@common/types';
 
-/** 種類ごとのアイコンと表示名 */
-export const ITEM_TYPE_INFO: Record<JsonItem['type'], { icon: string; name: string }> = {
-  item: { icon: '📄', name: '単一アイテム' },
-  group: { icon: '📦', name: 'グループ' },
-  dir: { icon: '🗂️', name: 'フォルダ取込' },
-  window: { icon: '🪟', name: 'ウィンドウ操作' },
-  clipboard: { icon: '📋', name: 'クリップボード' },
-  layout: { icon: '🖥️', name: 'ウィンドウ配置' },
+/** 種類ごとのアイコン（表示名は辞書の itemManager.types） */
+export const ITEM_TYPE_INFO: Record<JsonItem['type'], { icon: string }> = {
+  item: { icon: '📄' },
+  group: { icon: '📦' },
+  dir: { icon: '🗂️' },
+  window: { icon: '🪟' },
+  clipboard: { icon: '📋' },
+  layout: { icon: '🖥️' },
 };
+
+/** 種類の表示名（今の表示言語で） */
+export function getItemTypeLabel(type: JsonItem['type']): string {
+  return type in ITEM_TYPE_INFO
+    ? i18next.t(`itemManager.types.${type}`)
+    : i18next.t('itemManager.types.unknown');
+}
 
 export function getItemTypeIcon(jsonItem: JsonItem): string {
   return ITEM_TYPE_INFO[jsonItem.type]?.icon ?? '❓';
 }
 
 export function getItemTypeName(jsonItem: JsonItem): string {
-  return ITEM_TYPE_INFO[jsonItem.type]?.name ?? '不明';
+  return getItemTypeLabel(jsonItem.type);
 }
 
 // displayNameを持つアイテム型
@@ -82,7 +90,7 @@ export function withEditedPath(jsonItem: JsonItem, path: string): JsonItem {
 
 export function formatUpdatedAt(updatedAt?: number): string {
   if (!updatedAt) return '-';
-  return new Date(updatedAt).toLocaleString('ja-JP', {
+  return new Date(updatedAt).toLocaleString(i18next.language, {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',

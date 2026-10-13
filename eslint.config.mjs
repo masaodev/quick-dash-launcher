@@ -76,6 +76,12 @@ const I18N_ENFORCED_FILES = [
   'src/renderer/components/BackupSnapshotModal.tsx',
   'src/renderer/hooks/useSettingsManager.ts',
   'src/renderer/utils/settingsResetKeys.ts',
+  // アイテム管理（段階 3-2）
+  'src/renderer/components/AdminItemManager*.tsx',
+  'src/renderer/hooks/useAdminTabStructure.ts',
+  'src/renderer/utils/adminItemDisplay.ts',
+  'src/renderer/utils/editableItemOperations.ts',
+  'src/renderer/utils/tabManager/{fileNameGenerator,tabStructureEdits,tabValidator}.ts',
   // メインプロセスの画面に出る文言（段階 2）
   'src/common/utils/hotkeyValidator.ts',
   'src/main/ipc/contextMenuHandlers.ts',

@@ -1,3 +1,4 @@
+import i18next from 'i18next';
 import { DEFAULT_DATA_FILE, DataFileTab } from '@common/types';
 
 import { FileNameGenerator } from './fileNameGenerator';
@@ -58,7 +59,10 @@ function swapWithNeighbor<T>(items: T[], index: number, direction: MoveDirection
 /** 既存のラベルと重ならない、新しいファイルのラベル */
 function uniqueDefaultLabel(labels: Record<string, string>, tabName: string): string {
   const used = new Set(Object.values(labels).filter((label) => label && label.trim() !== ''));
-  return FileNameGenerator.generateUniqueLabel(`${tabName}用データファイル`, used);
+  return FileNameGenerator.generateUniqueLabel(
+    i18next.t('itemManager.tabStructure.defaultNames.fileForTab', { tab: tabName }),
+    used
+  );
 }
 
 /** 次に作るデータファイル名（タブに入っていないディスク上のファイルとも重ならないもの） */
@@ -100,9 +104,10 @@ export function renameTab(
   tabIndex: number,
   tabName: string
 ): TabStructureEdit {
-  if (!isValidTabIndex(structure.tabs, tabIndex)) return fail('タブが見つかりません。');
+  if (!isValidTabIndex(structure.tabs, tabIndex))
+    return fail(i18next.t('itemManager.tabStructure.errors.tabNotFound'));
   const name = tabName.trim();
-  if (!name) return fail('タブ名を入力してください。');
+  if (!name) return fail(i18next.t('itemManager.tabStructure.errors.tabNameRequired'));
   const tabs = [...structure.tabs];
   tabs[tabIndex] = { ...tabs[tabIndex], name };
   return done({ ...structure, tabs });
@@ -114,20 +119,21 @@ export function moveTab(
   direction: MoveDirection
 ): TabStructureEdit {
   const tabs = swapWithNeighbor(structure.tabs, tabIndex, direction);
-  if (!tabs) return fail('これ以上移動できません。');
+  if (!tabs) return fail(i18next.t('itemManager.tabStructure.errors.cannotMove'));
   return done({ ...structure, tabs });
 }
 
 /** タブを消せない理由（消せるなら null） */
 export function getDeleteTabBlocker(tabs: DataFileTab[], tabIndex: number): string | null {
-  if (!isValidTabIndex(tabs, tabIndex)) return 'タブが見つかりません。';
-  if (tabs.length <= 1) return 'タブは最低 1 つ必要です。';
+  if (!isValidTabIndex(tabs, tabIndex))
+    return i18next.t('itemManager.tabStructure.errors.tabNotFound');
+  if (tabs.length <= 1) return i18next.t('itemManager.tabStructure.errors.lastTab');
   const tab = tabs[tabIndex];
   if (
     tab.files.includes(DEFAULT_DATA_FILE) &&
     !isFileUsedInOtherTabs(tabs, tabIndex, DEFAULT_DATA_FILE)
   ) {
-    return 'メインのデータファイル（data.json）が入っているタブは削除できません。';
+    return i18next.t('itemManager.tabStructure.errors.mainTabDelete');
   }
   return null;
 }
@@ -156,7 +162,8 @@ export function addNewFileToTab(
   tabIndex: number,
   filesOnDisk: string[]
 ): TabStructureEdit {
-  if (!isValidTabIndex(structure.tabs, tabIndex)) return fail('タブが見つかりません。');
+  if (!isValidTabIndex(structure.tabs, tabIndex))
+    return fail(i18next.t('itemManager.tabStructure.errors.tabNotFound'));
   const fileName = nextFileName(structure.tabs, filesOnDisk);
   const tab = structure.tabs[tabIndex];
   const tabs = [...structure.tabs];
@@ -176,10 +183,12 @@ export function addExistingFileToTab(
   tabIndex: number,
   fileName: string
 ): TabStructureEdit {
-  if (!isValidTabIndex(structure.tabs, tabIndex)) return fail('タブが見つかりません。');
+  if (!isValidTabIndex(structure.tabs, tabIndex))
+    return fail(i18next.t('itemManager.tabStructure.errors.tabNotFound'));
   const tab = structure.tabs[tabIndex];
   const validation = TabValidator.canAddFileToTab(fileName, tab);
-  if (!validation.valid) return fail(validation.reason || 'ファイルを追加できません。');
+  if (!validation.valid)
+    return fail(validation.reason || i18next.t('itemManager.tabStructure.errors.cannotAddFile'));
   const tabs = [...structure.tabs];
   tabs[tabIndex] = { ...tab, files: [...tab.files, fileName] };
   const labels = { ...structure.labels };
@@ -196,7 +205,7 @@ export function renameFile(
   label: string
 ): TabStructureEdit {
   const name = label.trim();
-  if (!name) return fail('データファイルの名前を入力してください。');
+  if (!name) return fail(i18next.t('itemManager.tabStructure.errors.fileNameRequired'));
   return done({ ...structure, labels: { ...structure.labels, [fileName]: name } });
 }
 
@@ -206,10 +215,11 @@ export function moveFileInTab(
   fileName: string,
   direction: MoveDirection
 ): TabStructureEdit {
-  if (!isValidTabIndex(structure.tabs, tabIndex)) return fail('タブが見つかりません。');
+  if (!isValidTabIndex(structure.tabs, tabIndex))
+    return fail(i18next.t('itemManager.tabStructure.errors.tabNotFound'));
   const tab = structure.tabs[tabIndex];
   const files = swapWithNeighbor(tab.files, tab.files.indexOf(fileName), direction);
-  if (!files) return fail('これ以上移動できません。');
+  if (!files) return fail(i18next.t('itemManager.tabStructure.errors.cannotMove'));
   const tabs = [...structure.tabs];
   tabs[tabIndex] = { ...tab, files };
   return done({ ...structure, tabs });
@@ -222,9 +232,10 @@ export function getRemoveFileBlocker(
   fileName: string
 ): string | null {
   const validation = TabValidator.canRemoveFileFromTab(fileName, tabIndex, tabs);
-  if (!validation.valid) return validation.reason || 'ファイルを外せません。';
+  if (!validation.valid)
+    return validation.reason || i18next.t('itemManager.tabStructure.errors.cannotRemoveFile');
   if (fileName === DEFAULT_DATA_FILE && !isFileUsedInOtherTabs(tabs, tabIndex, fileName)) {
-    return 'メインのデータファイル（data.json）は削除できません。';
+    return i18next.t('itemManager.tabStructure.errors.mainFileDelete');
   }
   return null;
 }

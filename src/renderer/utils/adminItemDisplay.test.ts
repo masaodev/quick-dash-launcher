@@ -3,6 +3,7 @@ import type { JsonItem } from '@common/types';
 
 import {
   ITEM_TYPE_INFO,
+  getItemTypeLabel,
   formatUpdatedAt,
   getEditablePath,
   hasDisplayName,
@@ -19,7 +20,7 @@ describe('adminItemDisplay', () => {
     expect(Object.keys(ITEM_TYPE_INFO).sort()).toEqual(
       ['clipboard', 'dir', 'group', 'item', 'layout', 'window'].sort()
     );
-    expect(ITEM_TYPE_INFO.layout.name).toBe('ウィンドウ配置');
+    expect(getItemTypeLabel('layout')).toBe('ウィンドウ配置');
   });
 
   it('hasDisplayName はフォルダ取込だけ false になること', () => {

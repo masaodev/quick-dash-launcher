@@ -1,4 +1,5 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { DataFileTab } from '@common/types';
 
 import type { AdminTabStructure } from '../hooks/useAdminTabStructure';
@@ -171,6 +172,7 @@ const AdminItemManagerTabBar: React.FC<AdminItemManagerTabBarProps> = ({
   onSelectFile,
   structure,
 }) => {
+  const { t } = useTranslation();
   const [menu, setMenu] = useState<MenuState | null>(null);
   const [addingTab, setAddingTab] = useState(false);
   const [renamingTabIndex, setRenamingTabIndex] = useState<number | null>(null);
@@ -179,6 +181,12 @@ const AdminItemManagerTabBar: React.FC<AdminItemManagerTabBarProps> = ({
   const currentTab = dataFileTabs[selectedTabIndex];
   const currentFiles = currentTab?.files ?? [];
   const closeMenu = (): void => setMenu(null);
+  /** 「表示名（data2.json）」の形 */
+  const fileWithName = (fileName: string): string =>
+    t('itemManager.tabs.fileWithName', {
+      label: getFileLabel(fileName),
+      file: fileName.replace(/^datafiles\//, ''),
+    });
 
   /** タブに入れられる既存のデータファイル（ディスクにあり、このタブに入っていないもの） */
   const existingFileEntries = async (tabIndex: number): Promise<MenuEntry[]> => {
@@ -188,14 +196,14 @@ const AdminItemManagerTabBar: React.FC<AdminItemManagerTabBarProps> = ({
     if (candidates.length === 0) {
       return [
         {
-          label: '（入れられる既存のファイルはありません）',
+          label: t('itemManager.tabs.noExistingFiles'),
           onSelect: () => {},
           disabled: true,
         },
       ];
     }
     return candidates.map((fileName) => ({
-      label: `📂 ${getFileLabel(fileName)}（${fileName.replace(/^datafiles\//, '')}）`,
+      label: `📂 ${fileWithName(fileName)}`,
       onSelect: () => {
         void structure.addExistingFile(tabIndex, fileName).then((saved) => {
           if (saved) {
@@ -209,7 +217,7 @@ const AdminItemManagerTabBar: React.FC<AdminItemManagerTabBarProps> = ({
 
   const addFileEntries = async (tabIndex: number): Promise<MenuEntry[]> => [
     {
-      label: '📄 新しいデータファイルを作る',
+      label: t('itemManager.tabs.newFile'),
       testId: 'admin-file-create',
       onSelect: () => {
         void structure.addNewFile(tabIndex).then((fileName) => {
@@ -220,7 +228,7 @@ const AdminItemManagerTabBar: React.FC<AdminItemManagerTabBarProps> = ({
         });
       },
     },
-    { heading: '既存のファイルを入れる' },
+    { heading: t('itemManager.tabs.existingFiles') },
     ...(await existingFileEntries(tabIndex)),
   ];
 
@@ -229,14 +237,14 @@ const AdminItemManagerTabBar: React.FC<AdminItemManagerTabBarProps> = ({
     const { clientX: x, clientY: y } = event;
     const deleteBlocker = TabStructureEdits.getDeleteTabBlocker(dataFileTabs, tabIndex);
     const entries: MenuEntry[] = [
-      { heading: `タブ「${dataFileTabs[tabIndex]?.name ?? ''}」` },
+      { heading: t('itemManager.tabs.tabHeading', { name: dataFileTabs[tabIndex]?.name ?? '' }) },
       {
-        label: '✏️ 名前を変更',
+        label: t('itemManager.tabs.rename'),
         testId: 'admin-tab-rename',
         onSelect: () => setRenamingTabIndex(tabIndex),
       },
       {
-        label: '◀ 左へ移動',
+        label: t('itemManager.tabs.moveLeft'),
         disabled: tabIndex === 0,
         onSelect: () => {
           void structure.moveTab(tabIndex, -1).then((saved) => {
@@ -246,7 +254,7 @@ const AdminItemManagerTabBar: React.FC<AdminItemManagerTabBarProps> = ({
         },
       },
       {
-        label: '▶ 右へ移動',
+        label: t('itemManager.tabs.moveRight'),
         disabled: tabIndex === dataFileTabs.length - 1,
         onSelect: () => {
           void structure.moveTab(tabIndex, 1).then((saved) => {
@@ -256,11 +264,11 @@ const AdminItemManagerTabBar: React.FC<AdminItemManagerTabBarProps> = ({
         },
       },
       'separator',
-      { heading: 'データファイルを追加' },
+      { heading: t('itemManager.tabs.addFile') },
       ...(await addFileEntries(tabIndex)),
       'separator',
       {
-        label: '🗑️ タブを削除…',
+        label: t('itemManager.tabs.deleteTab'),
         danger: true,
         disabled: deleteBlocker !== null,
         title: deleteBlocker ?? undefined,
@@ -295,33 +303,38 @@ const AdminItemManagerTabBar: React.FC<AdminItemManagerTabBarProps> = ({
       x: event.clientX,
       y: event.clientY,
       entries: [
-        { heading: `「${getFileLabel(fileName)}」（${fileName.replace(/^datafiles\//, '')}）` },
         {
-          label: '✏️ 名前を変更',
+          heading: t('itemManager.tabs.fileHeading', {
+            label: getFileLabel(fileName),
+            file: fileName.replace(/^datafiles\//, ''),
+          }),
+        },
+        {
+          label: t('itemManager.tabs.rename'),
           testId: 'admin-file-rename',
           onSelect: () => setRenamingFile(fileName),
         },
         {
-          label: '◀ 左へ移動',
+          label: t('itemManager.tabs.moveLeft'),
           disabled: index <= 0,
           onSelect: () => void structure.moveFile(selectedTabIndex, fileName, -1),
         },
         {
-          label: '▶ 右へ移動',
+          label: t('itemManager.tabs.moveRight'),
           disabled: index >= currentFiles.length - 1,
           onSelect: () => void structure.moveFile(selectedTabIndex, fileName, 1),
         },
         'separator',
         usedElsewhere
           ? {
-              label: '↗ このタブから外す…',
+              label: t('itemManager.tabs.removeFromTab'),
               disabled: removeBlocker !== null,
-              title: removeBlocker ?? 'ほかのタブでも使っているため、ファイルは残ります',
+              title: removeBlocker ?? t('itemManager.tabs.removeKeepsFile'),
               testId: 'admin-file-remove',
               onSelect: () => void structure.removeFile(selectedTabIndex, fileName),
             }
           : {
-              label: '🗑️ ファイルを削除…',
+              label: t('itemManager.tabs.deleteFile'),
               danger: true,
               disabled: removeBlocker !== null,
               title: removeBlocker ?? undefined,
@@ -350,11 +363,7 @@ const AdminItemManagerTabBar: React.FC<AdminItemManagerTabBarProps> = ({
       <div className="admin-tab-bar" data-testid="admin-tab-bar">
         {dataFileTabs.map((tab, index) => {
           const isActive = index === selectedTabIndex;
-          const filesTitle = tab.files
-            .map(
-              (fileName) => `${getFileLabel(fileName)}（${fileName.replace(/^datafiles\//, '')}）`
-            )
-            .join('\n');
+          const filesTitle = tab.files.map(fileWithName).join('\n');
           return (
             <button
               key={`${index}-${tab.files[0] ?? ''}`}
@@ -362,7 +371,7 @@ const AdminItemManagerTabBar: React.FC<AdminItemManagerTabBarProps> = ({
               className={`admin-tab${isActive ? ' active' : ''}`}
               onClick={() => onSelectTab(index)}
               onContextMenu={(e) => void openTabMenu(e, index)}
-              title={`${filesTitle}\n右クリックで名前の変更・移動・削除`}
+              title={t('itemManager.tabs.tabTitle', { files: filesTitle })}
               data-testid="admin-tab"
             >
               {renamingTabIndex === index ? (
@@ -391,7 +400,7 @@ const AdminItemManagerTabBar: React.FC<AdminItemManagerTabBarProps> = ({
           <span className="admin-tab adding">
             <InlineNameInput
               initialValue=""
-              placeholder="新しいタブ名"
+              placeholder={t('itemManager.tabs.newTabPlaceholder')}
               commitOnBlur={false}
               testId="admin-tab-new-input"
               onCommit={commitNewTab}
@@ -403,7 +412,7 @@ const AdminItemManagerTabBar: React.FC<AdminItemManagerTabBarProps> = ({
             type="button"
             className="admin-tab admin-tab-add"
             onClick={() => setAddingTab(true)}
-            title="タブを追加（名前を入れて Enter で作成、Esc で取り消し）"
+            title={t('itemManager.tabs.addTabTitle')}
             data-testid="admin-tab-add"
           >
             ＋
@@ -413,7 +422,7 @@ const AdminItemManagerTabBar: React.FC<AdminItemManagerTabBarProps> = ({
 
       {currentFiles.length > 1 && (
         <div className="admin-file-bar" data-testid="admin-file-bar">
-          <span className="admin-file-bar-label">データファイル</span>
+          <span className="admin-file-bar-label">{t('itemManager.tabs.dataFiles')}</span>
           {currentFiles.map((fileName) => (
             <button
               key={fileName}
@@ -421,7 +430,9 @@ const AdminItemManagerTabBar: React.FC<AdminItemManagerTabBarProps> = ({
               className={`admin-file-chip${fileName === selectedDataFile ? ' active' : ''}`}
               onClick={() => onSelectFile(fileName)}
               onContextMenu={(e) => openFileMenu(e, fileName)}
-              title={`${fileName.replace(/^datafiles\//, '')}\n右クリックで名前の変更・移動・外す`}
+              title={t('itemManager.tabs.fileTitle', {
+                file: fileName.replace(/^datafiles\//, ''),
+              })}
               data-testid="admin-file-chip"
             >
               {renamingFile === fileName ? (
@@ -445,10 +456,10 @@ const AdminItemManagerTabBar: React.FC<AdminItemManagerTabBarProps> = ({
             type="button"
             className="admin-file-chip admin-file-add"
             onClick={(e) => void openAddFileMenu(e)}
-            title="このタブにデータファイルを追加"
+            title={t('itemManager.tabs.addFileTitle')}
             data-testid="admin-file-add"
           >
-            ＋ ファイル
+            {t('itemManager.tabs.addFileButton')}
           </button>
           <span className="admin-file-bar-path">
             {selectedDataFile.replace(/^datafiles\//, '')}

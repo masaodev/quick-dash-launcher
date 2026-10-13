@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { useDropdown } from '../hooks/useDropdown';
 
@@ -30,6 +31,7 @@ const AdminItemManagerHeader: React.FC<AdminItemManagerHeaderProps> = ({
   onToggleMissingOnly,
   onDedupe,
 }) => {
+  const { t } = useTranslation();
   const importDropdown = useDropdown();
   const toolsDropdown = useDropdown();
 
@@ -38,7 +40,7 @@ const AdminItemManagerHeader: React.FC<AdminItemManagerHeaderProps> = ({
       <div className="edit-mode-info">
         <div className="import-dropdown" ref={importDropdown.ref}>
           <button className="dropdown-trigger-btn" onClick={importDropdown.toggle}>
-            <span className="dropdown-trigger-text">アイテムを一括取り込み</span>
+            <span className="dropdown-trigger-text">{t('itemManager.header.bulkImport')}</span>
             <span className="dropdown-trigger-icon">{importDropdown.isOpen ? '▲' : '▼'}</span>
           </button>
           {importDropdown.isOpen && (
@@ -50,7 +52,7 @@ const AdminItemManagerHeader: React.FC<AdminItemManagerHeaderProps> = ({
                   onOpenBookmarkImport();
                 }}
               >
-                ブラウザのブックマークを追加
+                {t('itemManager.header.addBookmarks')}
               </button>
               <button
                 className="dropdown-item"
@@ -59,7 +61,7 @@ const AdminItemManagerHeader: React.FC<AdminItemManagerHeaderProps> = ({
                   onOpenAppImport();
                 }}
               >
-                インストール済みアプリを追加
+                {t('itemManager.header.addApps')}
               </button>
               {onOpenAutoImportSettings && (
                 <button
@@ -68,9 +70,9 @@ const AdminItemManagerHeader: React.FC<AdminItemManagerHeaderProps> = ({
                     importDropdown.close();
                     onOpenAutoImportSettings();
                   }}
-                  title="ブラウザのブックマークを、ルールに従って起動時などに自動で取り込む設定"
+                  title={t('itemManager.header.autoImportSettingsTitle')}
                 >
-                  ブックマーク自動取込の設定…
+                  {t('itemManager.header.autoImportSettings')}
                 </button>
               )}
             </div>
@@ -80,9 +82,9 @@ const AdminItemManagerHeader: React.FC<AdminItemManagerHeaderProps> = ({
           <button
             className="dropdown-trigger-btn"
             onClick={toolsDropdown.toggle}
-            title="一覧全体に対する補助機能（リンク切れの確認、重複の削除）"
+            title={t('itemManager.header.toolsTitle')}
           >
-            <span className="dropdown-trigger-text">🧰 ツール</span>
+            <span className="dropdown-trigger-text">{t('itemManager.header.tools')}</span>
             <span className="dropdown-trigger-icon">{toolsDropdown.isOpen ? '▲' : '▼'}</span>
           </button>
           {toolsDropdown.isOpen && (
@@ -94,9 +96,11 @@ const AdminItemManagerHeader: React.FC<AdminItemManagerHeaderProps> = ({
                   toolsDropdown.close();
                   onCheckMissingPaths();
                 }}
-                title="表示中のデータファイルのローカルパスが実在するかを確認します（URL・shell:・コマンド名は対象外。押したときだけ確認します）"
+                title={t('itemManager.header.checkMissingTitle')}
               >
-                {checkingMissingPaths ? '🔍 確認中...' : '🔍 リンク切れを確認'}
+                {checkingMissingPaths
+                  ? t('itemManager.header.checkingMissing')
+                  : t('itemManager.header.checkMissing')}
               </button>
               <button
                 className={`dropdown-item ${missingOnly ? 'selected' : ''}`}
@@ -107,11 +111,11 @@ const AdminItemManagerHeader: React.FC<AdminItemManagerHeaderProps> = ({
                 }}
                 title={
                   missingOnlyAvailable
-                    ? 'パスが見つからなかったアイテムだけを表示します'
-                    : '先に「リンク切れを確認」を実行してください'
+                    ? t('itemManager.header.missingOnlyTitle')
+                    : t('itemManager.header.missingOnlyUnavailable')
                 }
               >
-                {missingOnly ? '☑' : '☐'} リンク切れのみ表示
+                {missingOnly ? '☑' : '☐'} {t('itemManager.header.missingOnly')}
               </button>
               <button
                 className="dropdown-item"
@@ -119,9 +123,9 @@ const AdminItemManagerHeader: React.FC<AdminItemManagerHeaderProps> = ({
                   toolsDropdown.close();
                   onDedupe();
                 }}
-                title="種類・名前・パスが同じアイテムを、先にある 1 件を残して削除します"
+                title={t('itemManager.header.dedupeTitle')}
               >
-                🧹 重複を削除
+                {t('itemManager.header.dedupe')}
               </button>
             </div>
           )}
