@@ -13,6 +13,7 @@ import { useWorkspaceItemEditForm } from '../hooks/workspace/useWorkspaceItemEdi
 import { logError } from '../utils/debug';
 import { getPathsFromDropEvent } from '../utils/fileDropUtils';
 import { fetchMatchingWindow } from '../utils/windowFilter';
+import { toTrialWorkspaceItem } from '../utils/workspaceTrialItem';
 
 import GroupItemSelectorModal from './GroupItemSelectorModal';
 import FilePickerDialog from './FilePickerDialog';
@@ -205,7 +206,8 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
       } else if (item.itemCategory === 'layout') {
         await window.electronAPI.executeLayout(buildLayoutItemFromRegisterItem(item));
       } else if (item.itemCategory !== 'group') {
-        await window.electronAPI.workspaceAPI.launchItem(editingItem);
+        // 保存済みの内容ではなく、編集中の内容で試す
+        await window.electronAPI.workspaceAPI.launchItem(toTrialWorkspaceItem(editingItem, item));
       }
     } catch (error) {
       logError('アイテムの実行に失敗しました:', error);
