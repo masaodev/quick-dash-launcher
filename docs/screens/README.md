@@ -62,8 +62,8 @@
 | --- | --- | --- |
 | **ブックマーク取込画面（ルール編集と共通）**（`BookmarkAutoImportRuleModal`） | 管理ウィンドウの一括取込メニュー「ブラウザのブックマークを追加」<br>設定「ブックマーク自動取込」の「+ ルールを追加」「編集」 | [bookmark-import-modal.md](./bookmark-import-modal.md) |
 | **アプリ取込画面**（`AppImportModal`） | 管理ウィンドウの一括取込メニュー「インストール済みアプリを追加」<br>メインウィンドウの ➕ の「💻 インストール済みアプリを追加」 | [app-import-modal.md](./app-import-modal.md) |
-| **バックアップスナップショットモーダル**（`BackupSnapshotModal`） | 設定のバックアップ欄の「スナップショット一覧」ボタン | なし |
-| **メモ表示モーダル**（`MemoViewModal`） | メインウィンドウのアイテム一覧で 📝 バッジのクリック<br>右クリックメニューの「📝 メモを表示」 | なし |
+| **バックアップスナップショットモーダル**（`BackupSnapshotModal`） | 設定のバックアップ欄の「スナップショット一覧」ボタン | [admin-window.md](./admin-window.md#551-スナップショット一覧) |
+| **メモ表示モーダル**（`MemoViewModal`） | メインウィンドウのアイテム一覧で 📝 バッジのクリック<br>右クリックメニューの「📝 メモを表示」 | [main-window.md](./main-window.md#5101-メモを表示) |
 | **グループアイテム選択モーダル** | アイテム登録・編集、ワークスペースアイテム編集でグループの「+ アイテムを追加」クリック時 | [group-item-selector-modal.md](./group-item-selector-modal.md) |
 | **ウィンドウ選択モーダル** | アイテム登録・編集、ワークスペースアイテム編集のウィンドウ設定で「ウィンドウから取得」クリック時 | [register-modal.md](./register-modal.md#522-ウィンドウ選択モーダル) |
 | **今のウィンドウから追加（LayoutCaptureModal）** | アイテム登録・編集、ワークスペースアイテム編集のウィンドウ配置で「+ 今のウィンドウから追加」クリック時 | [register-modal.md](./register-modal.md#5161-今のウィンドウから追加) |
@@ -83,11 +83,11 @@
 | 画面名 | 表示条件 | 仕様書 |
 | --- | --- | --- |
 | **右クリックメニュー** | アイテムの右クリック操作<br>（パスコピー、フォルダを開く、編集） | [context-menu.md](./context-menu.md) |
-| **URLコンバーターメニュー** | URLの変換・加工操作メニュー | なし |
+| **URLコンバーターメニュー**（`UrlConverterMenu`） | アイテム登録・編集、ワークスペースアイテム編集のパス入力欄の「🔗 URL変換」 | [register-modal.md](./register-modal.md#533-url変換ボタンをクリック) |
 | **フォルダ取込オプションエディタ** | フォルダ取込アイテムのオプション設定 | [dir-options-editor.md](./dir-options-editor.md) |
 | **ホットキー入力** | 起動ホットキー・アイテム検索ホットキーの設定入力 | [hotkey-input.md](./hotkey-input.md) |
-| **クリップボードアイテムエディター** | クリップボードアイテムの編集 | なし |
-| **カラーピッカー** | カラー選択コンポーネント | なし |
+| **クリップボードアイテムエディター**（`ClipboardItemEditor`） | アイテム登録・編集で種別「📋 クリップボード」を選んだとき | [register-modal.md](./register-modal.md#519-クリップボードを取り込む) |
+| **カラーピッカー**（`ColorPicker`） | ワークスペースウィンドウ・切り離しウィンドウでグループを右クリック→「🎨 カラーを変更」 | [workspace-window.md](./workspace-window.md#583-グループを右クリックして色を変更) |
 | **ウィンドウ設定エディター** | ウィンドウ設定（タイトル・位置・サイズ）の編集 | [register-modal.md](./register-modal.md#55-ウィンドウ設定を入力) |
 | **カスタムアイコンエディター** | カスタムアイコンの選択・削除 | [register-modal.md](./register-modal.md#512-カスタムアイコンを設定) |
 
