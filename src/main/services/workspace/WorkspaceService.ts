@@ -250,11 +250,6 @@ export class WorkspaceService {
     this.itemManager!.reorderItems(itemIds);
   }
 
-  public async getItemsByGroup(groupId?: string): Promise<WorkspaceItem[]> {
-    await this.initializeStore();
-    return this.itemManager!.getItemsByGroup(groupId);
-  }
-
   // --- グループ管理 ---
 
   /** グループ一覧（UI 状態の折りたたみを合成して返す） */

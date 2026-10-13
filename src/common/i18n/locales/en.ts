@@ -1029,7 +1029,6 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       clipboardSaveFailed: "Couldn't save the clipboard data",
       iconNotFound: "Couldn't get the icon",
       iconFetchError: 'An error occurred while getting the icon',
-      addFileError: 'An error occurred while adding the files',
       readFileError: 'An error occurred while reading the files',
       initEditFailed: 'An error occurred while loading the item to edit: {{error}}',
       initFailed: 'An error occurred while preparing the item: {{error}}',

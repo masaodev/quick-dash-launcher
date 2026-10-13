@@ -687,11 +687,6 @@ const electronAPI: ElectronAPI = {
       IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_SHOW_COLOR_PICKER,
       callback
     ),
-  onWorkspaceGroupMenuChangeColor: (callback: (groupId: string, color: string) => void) =>
-    createEventListener2<string, string>(
-      IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_CHANGE_COLOR,
-      callback
-    ),
   onWorkspaceGroupMenuCopyAsText: (callback: (groupId: string) => void) =>
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_COPY_AS_TEXT, callback),
   onWorkspaceGroupMenuArchive: (callback: (groupId: string) => void) =>

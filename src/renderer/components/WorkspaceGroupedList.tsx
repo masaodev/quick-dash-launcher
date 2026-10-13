@@ -249,9 +249,6 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     const cleanups = [
       window.electronAPI.onWorkspaceGroupMenuRename(setEditingGroupId),
       window.electronAPI.onWorkspaceGroupMenuShowColorPicker(setColorPickerGroupId),
-      window.electronAPI.onWorkspaceGroupMenuChangeColor((groupId, color) =>
-        onUpdateGroup(groupId, { color })
-      ),
       window.electronAPI.onWorkspaceGroupMenuCopyAsText((groupId) => {
         const group = groupsMap.get(groupId);
         if (group) {
@@ -285,16 +282,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     ];
 
     return () => cleanups.forEach((cleanup) => cleanup());
-  }, [
-    groupsMap,
-    groups,
-    itemsByGroup,
-    onUpdateGroup,
-    onArchiveGroup,
-    onDeleteGroup,
-    onAddSubgroup,
-    t,
-  ]);
+  }, [groupsMap, groups, itemsByGroup, onArchiveGroup, onDeleteGroup, onAddSubgroup, t]);
 
   /** グループヘッダーの dragEnd でウィンドウ外ドロップを検出 */
   const handleGroupDragEndForDetach = (e: React.DragEvent, groupId: string) => {

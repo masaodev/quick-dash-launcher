@@ -476,9 +476,6 @@ export interface ElectronAPI {
   // WorkspaceGroupContextMenuイベントリスナー
   onWorkspaceGroupMenuRename: (callback: (groupId: string) => void) => () => void;
   onWorkspaceGroupMenuShowColorPicker: (callback: (groupId: string) => void) => () => void;
-  onWorkspaceGroupMenuChangeColor: (
-    callback: (groupId: string, color: string) => void
-  ) => () => void;
   onWorkspaceGroupMenuCopyAsText: (callback: (groupId: string) => void) => () => void;
   onWorkspaceGroupMenuArchive: (callback: (groupId: string) => void) => () => void;
   onWorkspaceGroupMenuDelete: (callback: (groupId: string) => void) => () => void;
