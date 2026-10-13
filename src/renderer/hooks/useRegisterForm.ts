@@ -10,20 +10,12 @@ import type {
   LayoutWindowEntry,
 } from '@common/types';
 import { detectItemType } from '@common/utils/itemTypeDetector';
+import { DIR_OPTIONS_DEFAULTS } from '@common/types';
 
 import { debugInfo } from '../utils/debug';
 
 import { useModalInitializer } from './useModalInitializer';
 import { useToast } from './useToast';
-
-const DEFAULT_DIR_OPTIONS: RegisterItem['dirOptions'] = {
-  depth: 0,
-  types: 'both',
-  filter: undefined,
-  exclude: undefined,
-  prefix: undefined,
-  suffix: undefined,
-};
 
 async function loadCachedIconsForItems(items: RegisterItem[]): Promise<Record<string, string>> {
   const itemsNeedingIcons = items.filter(
@@ -219,7 +211,7 @@ export function useRegisterForm(
       switch (value) {
         case 'dir':
           item.folderProcessing = 'expand';
-          item.dirOptions ??= { ...DEFAULT_DIR_OPTIONS };
+          item.dirOptions ??= { ...DIR_OPTIONS_DEFAULTS };
           delete item.groupItemNames;
           clearClipboardFields();
           break;
@@ -265,7 +257,7 @@ export function useRegisterForm(
 
     if (newType === 'folder') {
       newItems[index].folderProcessing ??= 'folder';
-      newItems[index].dirOptions ??= { ...DEFAULT_DIR_OPTIONS };
+      newItems[index].dirOptions ??= { ...DIR_OPTIONS_DEFAULTS };
     } else {
       delete newItems[index].folderProcessing;
       delete newItems[index].dirOptions;
