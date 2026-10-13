@@ -79,7 +79,10 @@ async function loadJsonDataFile(
 
   let parsed;
   try {
-    parsed = parseJsonDataFileLenient(content, { reservedIds: knownIds });
+    parsed = parseJsonDataFileLenient(content, {
+      reservedIds: knownIds,
+      t: mainI18n.t,
+    });
     clearDataFileCorrupted(fileName);
   } catch (error) {
     dataLogger.error({ error, filePath }, 'JSONファイルのパースに失敗しました');

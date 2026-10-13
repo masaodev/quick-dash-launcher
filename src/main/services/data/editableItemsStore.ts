@@ -78,7 +78,10 @@ export async function loadEditableItems(configFolder: string): Promise<LoadEdita
       rememberDataFileContent(fileName, content);
 
       try {
-        const parsed = parseJsonDataFileLenient(content, { reservedIds: knownIds });
+        const parsed = parseJsonDataFileLenient(content, {
+          reservedIds: knownIds,
+          t: mainI18n.t,
+        });
         clearDataFileCorrupted(fileName);
         logParseIssues(fileName, parsed.issues);
 

@@ -16,6 +16,8 @@ import type {
 } from '@common/types';
 import type { ClipboardFormat } from '@common/types/clipboard';
 import { JSON_DATA_VERSION, JSON_ID_LENGTH } from '@common/types';
+import { getFallbackT } from '@common/i18n';
+import type { TFunction } from 'i18next';
 
 import { normalizeWindowTitleForProcessOnly } from './windowTitle';
 
@@ -172,6 +174,8 @@ export interface LenientParseResult {
 export interface LenientParseOptions {
   /** 他ファイルで既に使われている id。重複していれば採番し直す */
   reservedIds?: Set<string>;
+  /** 理由（issues の reason）の文言を引く関数（main は mainI18n.t。省略時は正本の言語） */
+  t?: TFunction;
 }
 
 /**
@@ -190,6 +194,7 @@ export function parseJsonDataFileLenient(
   content: string,
   options: LenientParseOptions = {}
 ): LenientParseResult {
+  const t = options.t ?? getFallbackT();
   let parsed: unknown;
 
   try {
@@ -220,7 +225,7 @@ export function parseJsonDataFileLenient(
     issues.push({
       index: -1,
       kind: 'normalized',
-      reason: `version が無いか文字列でないため "${JSON_DATA_VERSION}" を補いました`,
+      reason: t('parseReasons.versionFilled', { version: JSON_DATA_VERSION }),
     });
   }
 
@@ -236,7 +241,7 @@ export function parseJsonDataFileLenient(
       issues.push({
         index: -1,
         kind: 'invalid',
-        reason: `元の items[${i}] はオブジェクトでないため削除しました`,
+        reason: t('parseReasons.originalItemNotObject', { index: i }),
       });
       modified = true;
       continue;
@@ -251,8 +256,8 @@ export function parseJsonDataFileLenient(
     if (!isValidId(itemObj.id)) {
       const reason =
         itemObj.id === undefined
-          ? 'id が無いため採番しました'
-          : `id "${String(itemObj.id)}" が不正なため採番し直しました`;
+          ? t('parseReasons.idMissing')
+          : t('parseReasons.idInvalid', { id: String(itemObj.id) });
       id = generateUniqueId(seenIds);
       issues.push({ index, kind: 'idAssigned', id, reason });
       modified = true;
@@ -262,7 +267,7 @@ export function parseJsonDataFileLenient(
         index,
         kind: 'idAssigned',
         id,
-        reason: `id "${itemObj.id}" が重複しているため採番し直しました`,
+        reason: t('parseReasons.idDuplicate', { id: itemObj.id }),
       });
       modified = true;
     } else {
@@ -283,7 +288,7 @@ export function parseJsonDataFileLenient(
           index,
           kind: 'normalized',
           id,
-          reason: 'windowTitle が空でプロセス名だけのため "*"（全一致）にしました',
+          reason: t('parseReasons.windowTitleWildcard'),
         });
         modified = true;
       }

@@ -1,4 +1,4 @@
-import i18next, { type i18n, type InitOptions } from 'i18next';
+import i18next, { type i18n, type InitOptions, type TFunction } from 'i18next';
 
 import { en } from './locales/en';
 import { ja } from './locales/ja';
@@ -34,4 +34,14 @@ export function createI18n(language: AppLanguage): i18n {
   const instance = i18next.createInstance();
   void instance.init(createI18nOptions(language));
   return instance;
+}
+
+let fallbackT: TFunction | undefined;
+
+/**
+ * 正本の言語の t（t を渡されなかった common の関数の既定。テストや、言語を決める前の呼び出し用）
+ */
+export function getFallbackT(): TFunction {
+  fallbackT ??= createI18n(FALLBACK_LANGUAGE).t;
+  return fallbackT;
 }

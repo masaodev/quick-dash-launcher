@@ -4,6 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { createI18n } from '@common/i18n';
 import {
   generateId,
   isValidId,
@@ -480,6 +481,16 @@ describe('jsonParser: 寛容パース（parseJsonDataFileLenient）', () => {
     expect(result.modified).toBe(false);
     expect(result.validItems).toHaveLength(1);
     expect(result.data.items).toHaveLength(1);
+  });
+
+  it('理由は渡した t の言語で書くこと（省略時は日本語）', () => {
+    const { id: _id, ...noId } = validItem;
+    const content = fileWith([noId]);
+
+    expect(parseJsonDataFileLenient(content).issues[0].reason).toBe('id が無いため採番しました');
+    expect(parseJsonDataFileLenient(content, { t: createI18n('en').t }).issues[0].reason).toBe(
+      'id was missing, so a new one was assigned'
+    );
   });
 
   it('JSON 構文エラーはファイル全体のエラーとしてスローすること', () => {
