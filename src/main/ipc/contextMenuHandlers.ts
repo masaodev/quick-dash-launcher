@@ -263,7 +263,18 @@ function setupWorkspaceContextMenuHandler(): void {
       const hasParentFolder =
         isLauncher && item.launcherType !== 'url' && item.launcherType !== 'customUri';
       const isShortcut = isLauncher && item.originalPath !== undefined;
+      const hasMemo = !!item.memo && item.memo.trim().length > 0;
 
+      // 並びはメインウィンドウの右クリックに合わせる（編集・メモ → 置き場の操作 → パス → 削除）。
+      // 起動はクリックでできるので置かない
+      menu.append(
+        createMenuItem(
+          t('menu.edit'),
+          event.sender,
+          IPC_CHANNELS.EVENT_WORKSPACE_MENU_EDIT_ITEM,
+          item.id
+        )
+      );
       menu.append(
         createMenuItem(
           t('menu.workspaceItem.rename'),
@@ -272,34 +283,18 @@ function setupWorkspaceContextMenuHandler(): void {
           item.id
         )
       );
-      menu.append(
-        createMenuItem(
-          t('menu.workspaceItem.open'),
-          event.sender,
-          IPC_CHANNELS.EVENT_WORKSPACE_MENU_LAUNCH_ITEM,
-          item.id
-        )
-      );
-      menu.append(createSeparator());
-
-      if (isLauncher) {
-        appendPathMenuItems(menu, event.sender, WORKSPACE_PATH_MENU_CHANNELS, item.id, {
-          hasParentFolder,
-          isShortcut,
-        });
+      if (hasMemo) {
+        menu.append(
+          createMenuItem(
+            t('menu.showNote'),
+            event.sender,
+            IPC_CHANNELS.EVENT_WORKSPACE_MENU_SHOW_MEMO,
+            item.id
+          )
+        );
       }
 
-      menu.append(createSeparator());
-      menu.append(
-        createMenuItem(
-          t('menu.workspaceItem.edit'),
-          event.sender,
-          IPC_CHANNELS.EVENT_WORKSPACE_MENU_EDIT_ITEM,
-          item.id
-        )
-      );
-
-      // ワークスペース移動サブメニュー
+      const placementItems: MenuItem[] = [];
       if (workspaces && workspaces.length >= 1) {
         const moveSubmenu = buildMoveToWorkspaceSubmenu(
           event.sender,
@@ -308,13 +303,10 @@ function setupWorkspaceContextMenuHandler(): void {
           item.workspaceId,
           workspaces
         );
-        if (moveSubmenu) {
-          menu.append(moveSubmenu);
-        }
+        if (moveSubmenu) placementItems.push(moveSubmenu);
       }
-
       if (item.groupId !== undefined) {
-        menu.append(
+        placementItems.push(
           createMenuItem(
             t('menu.workspaceItem.removeFromGroup'),
             event.sender,
@@ -322,6 +314,18 @@ function setupWorkspaceContextMenuHandler(): void {
             item.id
           )
         );
+      }
+      if (placementItems.length > 0) {
+        menu.append(createSeparator());
+        placementItems.forEach((menuItem) => menu.append(menuItem));
+      }
+
+      if (isLauncher) {
+        menu.append(createSeparator());
+        appendPathMenuItems(menu, event.sender, WORKSPACE_PATH_MENU_CHANNELS, item.id, {
+          hasParentFolder,
+          isShortcut,
+        });
       }
 
       menu.append(createSeparator());

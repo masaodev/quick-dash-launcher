@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { logError } from '../utils/debug';
 
 import { Button } from './ui';
+import '../styles/components/Modal.css';
 import '../styles/components/MemoViewModal.css';
 
 interface MemoViewModalProps {

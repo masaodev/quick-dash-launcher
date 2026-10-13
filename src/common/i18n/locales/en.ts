@@ -293,9 +293,7 @@ export const en: LocaleMessages = {
       deleteRows_other: '🗑️ Delete ({{count}} rows)',
     },
     workspaceItem: {
-      rename: '✏️ Rename',
-      open: '▶️ Open',
-      edit: '🔧 Edit',
+      rename: '🏷️ Rename',
       moveToWorkspace: '📁 Move to workspace',
       removeFromGroup: '📤 Remove from group',
       remove: '🗑️ Remove from workspace',

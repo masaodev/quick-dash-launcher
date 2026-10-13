@@ -29,6 +29,7 @@ import { logError } from '../utils/debug';
 import WorkspaceGroupHeader from './WorkspaceGroupHeader';
 import WorkspaceItemCard from './WorkspaceItemCard';
 import ColorPicker from './ColorPicker';
+import MemoViewModal from './MemoViewModal';
 
 /**
  * カラーピッカーモーダル専用コンポーネント
@@ -149,6 +150,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
   } | null>(null);
   const [editingGroupId, setEditingGroupId] = React.useState<string | null>(null);
   const [colorPickerGroupId, setColorPickerGroupId] = React.useState<string | null>(null);
+  const [memoItem, setMemoItem] = React.useState<WorkspaceItem | null>(null);
   const [dragOverGroupId, setDragOverGroupId] = React.useState<string | null>(null);
   const dragOverTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -199,7 +201,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     const cleanups = [
       window.electronAPI.onWorkspaceMenuRenameItem(setEditingItemId),
       window.electronAPI.onWorkspaceMenuEditItem(withItem(onEditItem)),
-      window.electronAPI.onWorkspaceMenuLaunchItem(withItem(onLaunch)),
+      window.electronAPI.onWorkspaceMenuShowMemo(withItem(setMemoItem)),
       window.electronAPI.onWorkspaceMenuCopyPath(
         withItem((item) => handlePathOperation(item, 'copy', 'item'))
       ),
@@ -238,7 +240,6 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     itemsMap,
     handlePathOperation,
     setEditingItemId,
-    onLaunch,
     onMoveItemToGroup,
     onRemoveItem,
     onEditItem,
@@ -822,6 +823,13 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
             onClose={() => setColorPickerGroupId(null)}
           />
         )}
+
+        <MemoViewModal
+          isOpen={memoItem !== null}
+          onClose={() => setMemoItem(null)}
+          itemName={memoItem?.displayName || ''}
+          memo={memoItem?.memo || ''}
+        />
       </div>
     </div>
   );
