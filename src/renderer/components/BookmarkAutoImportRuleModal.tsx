@@ -33,6 +33,7 @@ import { useModalKeyboard } from '../hooks/useModalKeyboard';
 import { logError } from '../utils/debug';
 
 import { Button } from './ui';
+import DuplicateHandlingSection from './DuplicateHandlingSection';
 
 /** 取込元の種類。ルールにできるのはブラウザだけ */
 type SourceKind = 'browser' | 'html';
@@ -682,39 +683,12 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
 
           {/* 重複（今回だけ取り込むときの扱い） */}
           {duplicateCheckResult && duplicateCheckResult.duplicateCount > 0 && (
-            <div className="duplicate-warning-section">
-              <div className="duplicate-warning-message">
-                <span className="duplicate-warning-icon">&#9888;</span>
-                <span>
-                  {t('bookmarkRule.duplicates', { count: duplicateCheckResult.duplicateCount })}
-                </span>
-              </div>
-              <div className="duplicate-options-section">
-                <span className="duplicate-options-label">
-                  {t('importCommon.duplicateHandling')}
-                </span>
-                <label className="duplicate-option">
-                  <input
-                    type="radio"
-                    name="duplicateHandling"
-                    value="skip"
-                    checked={duplicateHandling === 'skip'}
-                    onChange={() => setDuplicateHandling('skip')}
-                  />
-                  <span>{t('importCommon.skip')}</span>
-                </label>
-                <label className="duplicate-option">
-                  <input
-                    type="radio"
-                    name="duplicateHandling"
-                    value="overwrite"
-                    checked={duplicateHandling === 'overwrite'}
-                    onChange={() => setDuplicateHandling('overwrite')}
-                  />
-                  <span>{t('importCommon.overwrite')}</span>
-                </label>
-              </div>
-            </div>
+            <DuplicateHandlingSection
+              message={t('bookmarkRule.duplicates', { count: duplicateCheckResult.duplicateCount })}
+              value={duplicateHandling}
+              onChange={setDuplicateHandling}
+              name="duplicateHandling"
+            />
           )}
         </div>
 

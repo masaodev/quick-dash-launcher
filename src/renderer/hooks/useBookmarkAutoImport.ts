@@ -6,6 +6,8 @@ import type {
 } from '@common/types/bookmarkAutoImport';
 import { DEFAULT_BOOKMARK_AUTO_IMPORT_SETTINGS } from '@common/types/bookmarkAutoImport';
 
+import { logError } from '../utils/debug';
+
 export function useBookmarkAutoImport() {
   const [settings, setSettings] = useState<BookmarkAutoImportSettings>(
     DEFAULT_BOOKMARK_AUTO_IMPORT_SETTINGS
@@ -18,7 +20,7 @@ export function useBookmarkAutoImport() {
       const loaded = await window.electronAPI.bookmarkAutoImportAPI.getSettings();
       setSettings(loaded || DEFAULT_BOOKMARK_AUTO_IMPORT_SETTINGS);
     } catch (error) {
-      console.error('自動取込設定の読み込みに失敗:', error);
+      logError('自動取込設定の読み込みに失敗:', error);
     } finally {
       setIsLoading(false);
     }
@@ -33,7 +35,7 @@ export function useBookmarkAutoImport() {
       await window.electronAPI.bookmarkAutoImportAPI.saveSettings(newSettings);
       setSettings(newSettings);
     } catch (error) {
-      console.error('自動取込設定の保存に失敗:', error);
+      logError('自動取込設定の保存に失敗:', error);
       throw error;
     }
   }, []);

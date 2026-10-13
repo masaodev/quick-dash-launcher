@@ -12,6 +12,7 @@ import { formatImportSummary, summarizeImportResults } from '@common/utils/bookm
 
 import { useBookmarkAutoImport } from '../hooks/useBookmarkAutoImport';
 import { useToast } from '../hooks/useToast';
+import { logError } from '../utils/debug';
 
 import { Button } from './ui';
 import BookmarkAutoImportRuleModal from './BookmarkAutoImportRuleModal';
@@ -52,13 +53,19 @@ const BookmarkAutoImportSettings: React.FC<BookmarkAutoImportSettingsProps> = ({
 
   // データファイル一覧とラベルを取得
   useEffect(() => {
-    window.electronAPI.getDataFiles().then(setDataFiles).catch(console.error);
+    window.electronAPI
+      .getDataFiles()
+      .then(setDataFiles)
+      .catch((error) => logError('データファイル一覧の取得に失敗:', error));
     window.electronAPI
       .getSettings()
       .then((appSettings) => setDataFileLabels(appSettings.dataFileLabels || {}))
-      .catch(console.error);
+      .catch((error) => logError('設定の取得に失敗:', error));
     // ルール一覧でプロファイルを表示名で出すため（見つからなければ ID のまま）
-    window.electronAPI.detectInstalledBrowsers().then(setBrowsers).catch(console.error);
+    window.electronAPI
+      .detectInstalledBrowsers()
+      .then(setBrowsers)
+      .catch((error) => logError('ブラウザの検出に失敗:', error));
   }, []);
 
   const handleSaveRule = useCallback(
