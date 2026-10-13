@@ -462,7 +462,7 @@ type LauncherMenuAction =
   | 'openShortcutParentFolder';
 
 /** ワークスペースメニュー操作タイプ */
-type WorkspaceMenuAction = 'rename' | 'launch' | 'remove';
+type WorkspaceMenuAction = 'edit' | 'rename' | 'showMemo' | 'remove';
 
 /** 管理画面メニュー操作タイプ */
 type AdminMenuAction = 'duplicate' | 'edit' | 'delete';
@@ -479,8 +479,9 @@ const LAUNCHER_MENU_CHANNELS: Record<LauncherMenuAction, string> = {
 };
 
 const WORKSPACE_MENU_CHANNELS: Record<WorkspaceMenuAction, string> = {
+  edit: IPC_CHANNELS.EVENT_WORKSPACE_MENU_EDIT_ITEM,
   rename: IPC_CHANNELS.EVENT_WORKSPACE_MENU_RENAME_ITEM,
-  launch: IPC_CHANNELS.EVENT_WORKSPACE_MENU_LAUNCH_ITEM,
+  showMemo: IPC_CHANNELS.EVENT_WORKSPACE_MENU_SHOW_MEMO,
   remove: IPC_CHANNELS.EVENT_WORKSPACE_MENU_REMOVE_ITEM,
 };
 

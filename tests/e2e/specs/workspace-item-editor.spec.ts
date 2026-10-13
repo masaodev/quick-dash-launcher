@@ -1,7 +1,7 @@
 import type { ElectronApplication, Page } from '@playwright/test';
 
 import { test, expect } from '../fixtures/electron-app';
-import { TestUtils } from '../helpers/test-utils';
+import { NativeMenuTestHelper, TestUtils } from '../helpers/test-utils';
 
 /**
  * 常駐しているワークスペースウィンドウを取得する（workspace-groups.spec.ts と同じ）
@@ -90,8 +90,9 @@ test.describe('QuickDashLauncher - ワークスペースアイテムの編集ウ
 });
 
 /**
- * アイテム名のその場編集（ダブルクリック）
+ * アイテム名のその場編集（右クリック「表示名を変更」）
  * - 空のまま確定すると元の名前に戻る（Enter でもフォーカスを外しても同じ）
+ * - ダブルクリックでは名前の編集に入らない（クリックで起動するので、メインウィンドウと同じく何もしない）
  */
 test.describe('QuickDashLauncher - ワークスペースアイテム名のその場編集', () => {
   for (const commit of ['Enter', 'blur'] as const) {
@@ -103,6 +104,7 @@ test.describe('QuickDashLauncher - ワークスペースアイテム名のその
       await utils.waitForPageLoad();
       const workspaceWindow = await getWorkspaceWindow(electronApp);
       await workspaceWindow.waitForLoadState('domcontentloaded');
+      const menu = new NativeMenuTestHelper(electronApp, workspaceWindow);
 
       const added = await workspaceWindow.evaluate(() =>
         window.electronAPI.workspaceAPI.addItem({
@@ -114,7 +116,7 @@ test.describe('QuickDashLauncher - ワークスペースアイテム名のその
       const card = workspaceWindow.locator('.workspace-item-card', { hasText: '元の名前' });
       await expect(card).toBeVisible({ timeout: 10000 });
 
-      await card.locator('.workspace-item-name').dblclick();
+      await menu.simulateWorkspaceMenu('rename', added.id);
       const input = workspaceWindow.locator('.workspace-item-name-input');
       await expect(input).toBeVisible();
       await input.fill('');
@@ -135,4 +137,60 @@ test.describe('QuickDashLauncher - ワークスペースアイテム名のその
       expect(items.find((i) => i.id === added.id)?.displayName).toBe('元の名前');
     });
   }
+
+  test('ダブルクリックでは名前の編集に入らない', async ({ electronApp, mainWindow }) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    const workspaceWindow = await getWorkspaceWindow(electronApp);
+    await workspaceWindow.waitForLoadState('domcontentloaded');
+
+    // 起動しても何も開かないよう、存在しないパスにする
+    await workspaceWindow.evaluate(() =>
+      window.electronAPI.workspaceAPI.addItem({
+        displayName: 'ダブルクリック',
+        path: 'C:\\qdl-e2e-not-exist\\dummy.txt',
+        type: 'file',
+      })
+    );
+    const card = workspaceWindow.locator('.workspace-item-card', { hasText: 'ダブルクリック' });
+    await expect(card).toBeVisible({ timeout: 10000 });
+
+    await card.locator('.workspace-item-name').dblclick();
+    await workspaceWindow.waitForTimeout(300);
+    await expect(workspaceWindow.locator('.workspace-item-name-input')).toHaveCount(0);
+  });
+});
+
+/**
+ * 右クリック「メモを表示」
+ */
+test.describe('QuickDashLauncher - ワークスペースアイテムのメモ', () => {
+  test('メモを表示で、メモがモーダルに出る', async ({ electronApp, mainWindow }) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    const workspaceWindow = await getWorkspaceWindow(electronApp);
+    await workspaceWindow.waitForLoadState('domcontentloaded');
+    const menu = new NativeMenuTestHelper(electronApp, workspaceWindow);
+
+    const added = await workspaceWindow.evaluate(() =>
+      window.electronAPI.workspaceAPI.addItem({
+        displayName: 'メモ付き',
+        path: 'C:\\Windows\\System32\\notepad.exe',
+        type: 'app',
+        memo: 'メモの本文',
+      })
+    );
+    await expect(
+      workspaceWindow.locator('.workspace-item-card', { hasText: 'メモ付き' })
+    ).toBeVisible({ timeout: 10000 });
+
+    await menu.simulateWorkspaceMenu('showMemo', added.id);
+    const modal = workspaceWindow.locator('.memo-view-modal');
+    await expect(modal).toBeVisible();
+    await expect(modal.locator('h2')).toHaveText('メモ付き');
+    await expect(modal.locator('.memo-text')).toHaveText('メモの本文');
+
+    await workspaceWindow.keyboard.press('Escape');
+    await expect(modal).toHaveCount(0);
+  });
 });

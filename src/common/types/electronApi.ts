@@ -461,7 +461,7 @@ export interface ElectronAPI {
   // WorkspaceContextMenuイベントリスナー
   onWorkspaceMenuRenameItem: (callback: (itemId: string) => void) => () => void;
   onWorkspaceMenuEditItem: (callback: (itemId: string) => void) => () => void;
-  onWorkspaceMenuLaunchItem: (callback: (itemId: string) => void) => () => void;
+  onWorkspaceMenuShowMemo: (callback: (itemId: string) => void) => () => void;
   onWorkspaceMenuCopyPath: (callback: (itemId: string) => void) => () => void;
   onWorkspaceMenuCopyParentPath: (callback: (itemId: string) => void) => () => void;
   onWorkspaceMenuOpenParentFolder: (callback: (itemId: string) => void) => () => void;

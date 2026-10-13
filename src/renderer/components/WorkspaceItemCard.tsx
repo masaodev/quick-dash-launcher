@@ -83,10 +83,6 @@ const WorkspaceItemCard: React.FC<WorkspaceItemCardProps> = ({
     }
   };
 
-  const handleDoubleClick = () => {
-    onStartEdit();
-  };
-
   const handleRemoveClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onRemove(item.id);
@@ -145,7 +141,6 @@ const WorkspaceItemCard: React.FC<WorkspaceItemCardProps> = ({
       className="workspace-item-card"
       data-drop-zone={dropZone || undefined}
       onClick={handleClick}
-      onDoubleClick={handleDoubleClick}
       onContextMenu={onContextMenu}
       draggable={!isEditing}
       onDragStart={onDragStart}

@@ -637,8 +637,8 @@ const electronAPI: ElectronAPI = {
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_MENU_RENAME_ITEM, callback),
   onWorkspaceMenuEditItem: (callback: (itemId: string) => void) =>
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_MENU_EDIT_ITEM, callback),
-  onWorkspaceMenuLaunchItem: (callback: (itemId: string) => void) =>
-    createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_MENU_LAUNCH_ITEM, callback),
+  onWorkspaceMenuShowMemo: (callback: (itemId: string) => void) =>
+    createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_MENU_SHOW_MEMO, callback),
   onWorkspaceMenuCopyPath: (callback: (itemId: string) => void) =>
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_MENU_COPY_PATH, callback),
   onWorkspaceMenuCopyParentPath: (callback: (itemId: string) => void) =>

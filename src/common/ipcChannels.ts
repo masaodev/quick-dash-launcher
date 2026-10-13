@@ -260,7 +260,7 @@ export const IPC_CHANNELS = {
   SHOW_WORKSPACE_CONTEXT_MENU: 'show-workspace-context-menu',
   EVENT_WORKSPACE_MENU_RENAME_ITEM: 'workspace-menu-rename-item',
   EVENT_WORKSPACE_MENU_EDIT_ITEM: 'workspace-menu-edit-item',
-  EVENT_WORKSPACE_MENU_LAUNCH_ITEM: 'workspace-menu-launch-item',
+  EVENT_WORKSPACE_MENU_SHOW_MEMO: 'workspace-menu-show-memo',
   EVENT_WORKSPACE_MENU_COPY_PATH: 'workspace-menu-copy-path',
   EVENT_WORKSPACE_MENU_COPY_PARENT_PATH: 'workspace-menu-copy-parent-path',
   EVENT_WORKSPACE_MENU_OPEN_PARENT_FOLDER: 'workspace-menu-open-parent-folder',

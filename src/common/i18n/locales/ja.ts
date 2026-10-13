@@ -293,9 +293,7 @@ export const ja = {
       deleteRows_other: '🗑️ 削除 ({{count}}行)',
     },
     workspaceItem: {
-      rename: '✏️ 表示名を変更',
-      open: '▶️ 起動',
-      edit: '🔧 編集',
+      rename: '🏷️ 表示名を変更',
       moveToWorkspace: '📁 ワークスペースを移動',
       removeFromGroup: '📤 グループから削除',
       remove: '🗑️ ワークスペースから削除',
