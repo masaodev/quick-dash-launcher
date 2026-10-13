@@ -122,7 +122,7 @@ const LauncherIconProgressBar: React.FC<IconProgressBarProps> = ({ progress, onC
           <div className="progress-actions">
             {progress.isComplete && allResults.length > 0 && (
               <Button
-                variant="info"
+                variant="secondary"
                 size="sm"
                 onClick={openDetail}
                 aria-label={t('common.showDetails')}

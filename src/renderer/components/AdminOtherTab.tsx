@@ -112,7 +112,7 @@ const AdminOtherTab: React.FC = () => {
                   <span className="app-info-value">{appInfo?.license || t('help.loading')}</span>
                 </div>
               </div>
-              <Button variant="info" onClick={handleOpenGitHub} disabled={!appInfo}>
+              <Button variant="secondary" onClick={handleOpenGitHub} disabled={!appInfo}>
                 🔗 GitHub
               </Button>
             </div>
@@ -123,7 +123,7 @@ const AdminOtherTab: React.FC = () => {
             <h3>{t('help.data')}</h3>
             <div className="help-card-content">
               <p className="help-card-description">{t('help.dataDescription')}</p>
-              <Button variant="info" onClick={handleOpenConfigFolder}>
+              <Button variant="secondary" onClick={handleOpenConfigFolder}>
                 {t('help.openSettingsFolder')}
               </Button>
               <p className="help-card-description">{t('help.cliNote')}</p>

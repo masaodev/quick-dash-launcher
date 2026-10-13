@@ -91,7 +91,7 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
         </div>
 
         <div className="modal-actions">
-          <Button variant="cancel" onClick={onClose} data-testid="file-picker-cancel-button">
+          <Button variant="secondary" onClick={onClose} data-testid="file-picker-cancel-button">
             {t('common.cancel')}
           </Button>
         </div>

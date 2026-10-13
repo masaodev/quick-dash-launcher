@@ -54,7 +54,7 @@ QuickDashLauncherのスタイルは、CSS変数（カスタムプロパティ）
 | クラス | 定義 | 用途 |
 | --- | --- | --- |
 | `.btn` | `Button.css` | Buttonコンポーネントのベース |
-| `.btn-primary` / `.btn-danger` / `.btn-info` / `.btn-cancel` | `Button.css` | 状態別の色（Buttonコンポーネントの `variant`） |
+| `.btn-primary` / `.btn-secondary` / `.btn-danger` / `.btn-danger-solid` | `Button.css` | 種類別の色（Buttonコンポーネントの `variant`。使い分けは [ui-components.md](ui-components.md#buttonコンポーネント)）。無効の見た目は `.btn:disabled` で全種類共通 |
 | `.btn-sm` / `.btn-lg` | `Button.css` | サイズ（`md` はクラスなし） |
 | `.btn-full-width` | `Button.css` | 幅いっぱいに広げる |
 | `.btn-base` | `common.css` | Buttonコンポーネントを使わないボタン向けのベース（レガシー） |

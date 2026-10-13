@@ -340,7 +340,7 @@ function AppImportModal({
                   {loading ? t('appImport.scanning') : t('appImport.found', { count: apps.length })}
                 </span>
                 <Button
-                  variant="info"
+                  variant="secondary"
                   size="sm"
                   onClick={() => setScanCount((c) => c + 1)}
                   disabled={loading}
@@ -574,7 +574,7 @@ function AppImportModal({
             )}
           </div>
           <div className="app-modal-actions">
-            <Button variant="cancel" onClick={handleClose}>
+            <Button variant="secondary" onClick={handleClose}>
               {t('common.cancel')}
             </Button>
             <Button variant="primary" onClick={handleImport} disabled={selectedCount === 0}>

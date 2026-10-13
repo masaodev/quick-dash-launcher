@@ -647,7 +647,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
       <div className="edit-mode-toolbar">
         <div className="toolbar-left">
           <Button
-            variant="info"
+            variant="primary"
             onClick={handleAddItem}
             title={t('itemManager.toolbar.addItemTitle')}
           >
@@ -691,7 +691,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
           </div>
         </div>
         <div className="toolbar-right">
-          <Button variant="cancel" onClick={handleDiscardChanges} disabled={!hasUnsavedChanges}>
+          <Button variant="secondary" onClick={handleDiscardChanges} disabled={!hasUnsavedChanges}>
             {t('itemManager.toolbar.discard')}
           </Button>
           <Button variant="primary" onClick={handleSaveChanges} disabled={!hasUnsavedChanges}>

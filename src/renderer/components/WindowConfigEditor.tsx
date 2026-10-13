@@ -92,7 +92,7 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
           <div className="window-config-group">
             <div className="window-config-group-header">
               <h4 className="window-config-group-title">{t('windowConfig.searchHeading')}</h4>
-              <Button variant="info" type="button" size="sm" onClick={onGetWindowClick}>
+              <Button variant="secondary" type="button" size="sm" onClick={onGetWindowClick}>
                 {t('windowConfig.selectWindow')}
               </Button>
             </div>
@@ -161,7 +161,7 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
                   {t('windowConfig.positionHeading')}
                 </h5>
                 {onFetchFromWindow && (
-                  <Button variant="info" type="button" size="sm" onClick={handleFetchPosition}>
+                  <Button variant="secondary" type="button" size="sm" onClick={handleFetchPosition}>
                     {t('windowConfig.fetchFromWindow')}
                   </Button>
                 )}
@@ -217,7 +217,7 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
               <div className="window-config-subgroup-header">
                 <h5 className="window-config-subgroup-title">{t('windowConfig.sizeHeading')}</h5>
                 {onFetchFromWindow && (
-                  <Button variant="info" type="button" size="sm" onClick={handleFetchSize}>
+                  <Button variant="secondary" type="button" size="sm" onClick={handleFetchSize}>
                     {t('windowConfig.fetchFromWindow')}
                   </Button>
                 )}

@@ -177,7 +177,7 @@ export const HotkeyInput: React.FC<HotkeyInputProps> = ({
       />
       {showClearButton && value && !isRecording && (
         <Button
-          variant="cancel"
+          variant="secondary"
           size="sm"
           type="button"
           onClick={handleClear}
@@ -190,7 +190,7 @@ export const HotkeyInput: React.FC<HotkeyInputProps> = ({
       {isRecording && (
         <div className="hotkey-recording-indicator">
           {t('hotkeyInput.recording')}
-          <Button variant="cancel" size="sm" type="button" onClick={stopRecording}>
+          <Button variant="secondary" size="sm" type="button" onClick={stopRecording}>
             {t('common.cancel')}
           </Button>
         </div>

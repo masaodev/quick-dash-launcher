@@ -56,7 +56,7 @@ const MemoViewModal: React.FC<MemoViewModalProps> = ({ isOpen, onClose, itemName
         </div>
         <div className="modal-actions">
           <Button onClick={handleCopyToClipboard}>{t('common.copy')}</Button>
-          <Button variant="cancel" onClick={onClose}>
+          <Button variant="secondary" onClick={onClose}>
             {t('common.close')}
           </Button>
         </div>

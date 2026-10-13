@@ -177,7 +177,7 @@ const BackupSnapshotModal: React.FC<BackupSnapshotModalProps> = ({ isOpen, onClo
           >
             {t('settings.snapshots.restore')}
           </Button>
-          <Button variant="cancel" onClick={onClose}>
+          <Button variant="secondary" onClick={onClose}>
             {t('common.close')}
           </Button>
         </div>

@@ -16,11 +16,6 @@
   line-height: 1;
 }
 
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 .btn:focus-visible {
   outline: none;
   box-shadow: var(--focus-ring-wide);
@@ -35,7 +30,7 @@
    バリエーション
    ========================= */
 
-/* Primary */
+/* Primary（主操作。1 つの領域に 1 個まで） */
 .btn-primary {
   background-color: var(--color-primary);
   color: var(--color-white);
@@ -45,46 +40,49 @@
 .btn-primary:hover:not(:disabled) {
   background-color: var(--color-primary-hover);
   border-color: var(--color-primary-hover);
-  color: var(--color-white);
 }
 
-/* Danger */
+/* Secondary（キャンセル・閉じる・補助の操作） */
+.btn-secondary {
+  background-color: var(--color-white);
+  color: var(--text-primary);
+  border-color: var(--color-gray-500);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: var(--bg-hover);
+  border-color: var(--color-gray-600);
+}
+
+/* Danger（削除などの危険な操作。赤の枠） */
 .btn-danger {
+  background-color: var(--color-white);
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background-color: var(--bg-danger-light);
+}
+
+/* Danger の塗り（元に戻せない操作の最終確認だけ） */
+.btn-danger-solid {
   background-color: var(--color-danger);
   color: var(--color-white);
   border-color: var(--color-danger);
 }
 
-.btn-danger:hover:not(:disabled) {
+.btn-danger-solid:hover:not(:disabled) {
   background-color: var(--color-danger-hover);
   border-color: var(--color-danger-hover);
-  color: var(--color-white);
 }
 
-/* Info */
-.btn-info {
-  background-color: var(--color-info);
-  color: var(--color-white);
-  border-color: var(--color-info);
-}
-
-.btn-info:hover:not(:disabled) {
-  background-color: var(--color-info-hover);
-  border-color: var(--color-info-hover);
-  color: var(--color-white);
-}
-
-/* Cancel（グレー系、キャンセルボタン用） */
-.btn-cancel {
-  background-color: var(--color-gray-400);
-  color: var(--color-white);
+/* 無効（種類にかかわらず同じ見た目。文字は読めるまま残す） */
+.btn:disabled {
+  background-color: var(--bg-input-disabled);
+  color: var(--text-disabled);
   border-color: var(--color-gray-400);
-}
-
-.btn-cancel:hover:not(:disabled) {
-  background-color: var(--color-gray-500);
-  border-color: var(--color-gray-500);
-  color: var(--color-white);
+  cursor: not-allowed;
 }
 
 /* =========================

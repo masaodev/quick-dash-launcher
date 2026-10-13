@@ -230,7 +230,7 @@ const GroupItemSelectorModal: React.FC<GroupItemSelectorModalProps> = ({
         </div>
 
         <div className="modal-actions">
-          <Button variant="cancel" onClick={onClose}>
+          <Button variant="secondary" onClick={onClose}>
             {t('common.cancel')}
           </Button>
         </div>

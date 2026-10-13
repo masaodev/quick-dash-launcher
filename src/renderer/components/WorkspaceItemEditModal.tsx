@@ -300,7 +300,7 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
 
               <div className="modal-actions">
                 {item.itemCategory !== 'group' && (
-                  <Button variant="primary" onClick={handleExecute}>
+                  <Button variant="secondary" onClick={handleExecute}>
                     {t('register.tryRun')}
                   </Button>
                 )}
@@ -308,7 +308,7 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
                   <Button variant="danger" onClick={handleDelete}>
                     {t('workspace.edit.remove')}
                   </Button>
-                  <Button variant="cancel" onClick={handleCancel}>
+                  <Button variant="secondary" onClick={handleCancel}>
                     {t('common.cancel')}
                   </Button>
                   <Button variant="primary" onClick={handleSave}>

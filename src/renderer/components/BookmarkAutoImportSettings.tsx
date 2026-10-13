@@ -201,7 +201,7 @@ const BookmarkAutoImportSettings: React.FC<BookmarkAutoImportSettingsProps> = ({
       <div className="auto-import-hint">
         <span>{t('bookmarkAutoImport.hint')}</span>
         {onOpenManualImport && (
-          <Button variant="info" size="sm" onClick={onOpenManualImport}>
+          <Button variant="secondary" size="sm" onClick={onOpenManualImport}>
             {t('bookmarkAutoImport.manualImport')}
           </Button>
         )}

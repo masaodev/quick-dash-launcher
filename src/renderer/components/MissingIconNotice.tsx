@@ -31,7 +31,7 @@ const MissingIconNotice: React.FC<MissingIconNoticeProps> = ({ missingCount, onF
         </span>
       </div>
       <Button
-        variant="info"
+        variant="secondary"
         size="sm"
         onClick={onFetchClick}
         title={t('launcher.missingIcons.fetchTooltip')}
