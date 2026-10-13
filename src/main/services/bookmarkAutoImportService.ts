@@ -32,12 +32,9 @@ import type {
 } from '@common/types/bookmarkAutoImport';
 
 import PathManager from '../config/pathManager.js';
-import {
-  detectInstalledBrowsers,
-  parseBrowserBookmarksWithFolders,
-} from '../ipc/bookmarkHandlers.js';
 import { notifyDataChanged } from '../ipc/notifications.js';
 
+import { detectInstalledBrowsers, parseBrowserBookmarksWithFolders } from './bookmarkReader.js';
 import { writeDataFile } from './dataFileTracker.js';
 import { SettingsService } from './settingsService.js';
 import { showToastWindow } from './overlayWindowService.js';

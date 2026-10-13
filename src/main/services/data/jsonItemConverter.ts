@@ -13,9 +13,10 @@ import {
 } from '@common/types';
 import type { JsonItem } from '@common/types';
 
-import { processDirectoryItem, processShortcut } from '../../ipc/directoryScanner.js';
 import { refineItemType } from '../../utils/folderPathProbe.js';
 import { resolveLayoutEntryIcons } from '../../utils/layoutIconResolver.js';
+
+import { processDirectoryItem, processShortcut } from './directoryScanner.js';
 
 /**
  * JsonItemをAppItem（複数の場合あり）に変換
