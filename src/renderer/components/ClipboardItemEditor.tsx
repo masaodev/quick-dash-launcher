@@ -96,7 +96,7 @@ function CapturedDataSection({
         </div>
 
         <div className="recapture-action">
-          <Button variant="info" onClick={onRecapture} disabled={capturing || !canCapture}>
+          <Button variant="secondary" onClick={onRecapture} disabled={capturing || !canCapture}>
             {capturing ? t('clipboardEditor.capturing') : t('clipboardEditor.overwrite')}
           </Button>
         </div>
@@ -183,7 +183,7 @@ const ClipboardItemEditor: React.FC<ClipboardItemEditorProps> = ({
       <div className="clipboard-current-state">
         <div className="section-header">
           <h4>{t('clipboardEditor.current')}</h4>
-          <Button variant="info" size="sm" onClick={checkClipboard} disabled={loading}>
+          <Button variant="secondary" size="sm" onClick={checkClipboard} disabled={loading}>
             {loading ? t('clipboardEditor.checking') : t('clipboardEditor.refresh')}
           </Button>
         </div>

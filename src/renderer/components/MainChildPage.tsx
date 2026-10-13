@@ -58,7 +58,7 @@ const MainChildPage: React.FC<MainChildPageProps> = ({ requestId }) => {
     return (
       <div className="main-child-page main-child-missing">
         <p>{t('register.notFound')}</p>
-        <Button variant="cancel" onClick={() => window.close()}>
+        <Button variant="secondary" onClick={() => window.close()}>
           {t('common.close')}
         </Button>
       </div>

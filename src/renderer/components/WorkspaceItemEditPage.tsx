@@ -64,7 +64,7 @@ const WorkspaceItemEditPage: React.FC<WorkspaceItemEditPageProps> = ({ itemId })
     return (
       <div className="workspace-editor-page workspace-editor-missing">
         <p>{t('workspace.edit.pageNotFound')}</p>
-        <Button variant="cancel" onClick={close}>
+        <Button variant="secondary" onClick={close}>
           {t('common.close')}
         </Button>
       </div>

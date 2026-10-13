@@ -93,11 +93,11 @@ function ConfirmDialog({
         </div>
 
         <div className="modal-actions">
-          <Button variant="cancel" onClick={onClose} data-testid="confirm-dialog-cancel-button">
+          <Button variant="secondary" onClick={onClose} data-testid="confirm-dialog-cancel-button">
             {cancelText || t('common.cancel')}
           </Button>
           <Button
-            variant={danger ? 'danger' : 'primary'}
+            variant={danger ? 'danger-solid' : 'primary'}
             onClick={onConfirm}
             data-testid="confirm-dialog-confirm-button"
           >

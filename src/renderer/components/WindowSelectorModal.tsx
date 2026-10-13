@@ -324,7 +324,7 @@ const WindowSelectorModal: React.FC<WindowSelectorModalProps> = ({ isOpen, onClo
         </div>
 
         <div className="window-selector-footer">
-          <Button variant="cancel" onClick={onClose}>
+          <Button variant="secondary" onClick={onClose}>
             {t('common.cancel')}
           </Button>
         </div>

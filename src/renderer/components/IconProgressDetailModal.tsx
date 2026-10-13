@@ -123,7 +123,7 @@ const IconProgressDetailModal: React.FC<IconProgressDetailModalProps> = ({
         </div>
 
         <div className="modal-actions">
-          <Button variant="primary" onClick={onClose}>
+          <Button variant="secondary" onClick={onClose}>
             {t('common.close')}
           </Button>
         </div>

@@ -341,7 +341,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
 
               <div className="modal-actions">
                 {canTryExecute(items[0]) && (
-                  <Button variant="primary" onClick={() => tryExecuteRegisterItem(items[0])}>
+                  <Button variant="secondary" onClick={() => tryExecuteRegisterItem(items[0])}>
                     {t('register.tryRun')}
                   </Button>
                 )}
@@ -351,7 +351,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                       {t('register.delete')}
                     </Button>
                   )}
-                  <Button variant="cancel" onClick={handleCancel}>
+                  <Button variant="secondary" onClick={handleCancel}>
                     {t('common.cancel')}
                   </Button>
                   <Button variant="primary" onClick={validateAndRegister}>

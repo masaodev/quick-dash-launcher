@@ -1033,7 +1033,7 @@
   box-shadow: var(--focus-ring);
 }
 
-/* .btn-primary と .btn-secondary は common.css で定義 */
+/* .btn-primary と .btn-secondary は Button.css で定義 */
 
 .modal-info {
   margin-top: var(--spacing-lg);

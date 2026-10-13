@@ -67,7 +67,7 @@ const WorkspaceConfirmPage: React.FC<WorkspaceConfirmPageProps> = ({ requestId }
     return (
       <div className="confirm-window-page confirm-window-missing">
         <p>{t('workspace.confirmNotFound')}</p>
-        <Button variant="cancel" onClick={close}>
+        <Button variant="secondary" onClick={close}>
           {t('common.close')}
         </Button>
       </div>

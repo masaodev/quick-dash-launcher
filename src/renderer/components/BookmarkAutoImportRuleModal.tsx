@@ -349,7 +349,7 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
             <span>{t('bookmarkRule.importHint')}</span>
             {onOpenAutoImportSettings && (
               <Button
-                variant="info"
+                variant="secondary"
                 size="sm"
                 onClick={() => {
                   onCancel();
@@ -480,7 +480,7 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
               <div className="auto-import-form-field">
                 <label>{t('bookmarkRule.file')}</label>
                 <div className="auto-import-file-select">
-                  <Button variant="info" size="sm" onClick={handleSelectHtmlFile}>
+                  <Button variant="secondary" size="sm" onClick={handleSelectHtmlFile}>
                     {t('bookmarkRule.selectFile')}
                   </Button>
                   <span className="auto-import-file-name">
@@ -720,7 +720,7 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
 
         {/* フッター */}
         <div className="auto-import-modal-footer">
-          <Button variant="cancel" onClick={onCancel}>
+          <Button variant="secondary" onClick={onCancel}>
             {t('common.cancel')}
           </Button>
           {isImportMode ? (
@@ -734,7 +734,7 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
                 {t('bookmarkRule.importOnce', { count: importCandidates.length })}
               </Button>
               <Button
-                variant="info"
+                variant="secondary"
                 onClick={handleSave}
                 disabled={!canSaveAsRule || isSaving}
                 title={saveDisabledReason ?? t('bookmarkRule.saveAsRuleTitle')}

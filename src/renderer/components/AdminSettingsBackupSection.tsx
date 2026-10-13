@@ -105,7 +105,11 @@ const AdminSettingsBackupSection: React.FC<AdminSettingsBackupSectionProps> = ({
           )}
 
           <div className="setting-item indent">
-            <Button variant="info" onClick={() => setShowSnapshotModal(true)} disabled={isLoading}>
+            <Button
+              variant="secondary"
+              onClick={() => setShowSnapshotModal(true)}
+              disabled={isLoading}
+            >
               {t('settings.backup.openSnapshots')}
             </Button>
           </div>

@@ -286,7 +286,7 @@ const LayoutCaptureModal: React.FC<LayoutCaptureModalProps> = ({ isOpen, onClose
             {t('windowPicker.selected', { count: selectedHwnds.size })}
           </span>
           <div className="footer-actions">
-            <Button variant="cancel" onClick={onClose}>
+            <Button variant="secondary" onClick={onClose}>
               {t('common.cancel')}
             </Button>
             <Button variant="primary" onClick={handleCapture} disabled={selectedHwnds.size === 0}>
