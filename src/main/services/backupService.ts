@@ -18,6 +18,11 @@ const PRE_EXTERNAL_SUFFIX = '_pre-external';
  */
 const SNAPSHOT_NAME_PATTERN = /^(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2})(?:-(\d+))?(_.+)?$/;
 
+/** ローカル時刻の日付（1 日 1 回の判定に使う） */
+function toLocalDateKey(date: Date): string {
+  return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+}
+
 /** 変更前スナップショットの保持上限（backupRetention とは別枠） */
 const PRE_EXTERNAL_SNAPSHOT_LIMIT = 10;
 
@@ -57,9 +62,7 @@ export class BackupService {
       this.isRegularSnapshot(s.timestamp)
     );
     if (snapshots.length > 0) {
-      const today = new Date().toISOString().substring(0, 10);
-      const latestDate = snapshots[0].createdAt.toISOString().substring(0, 10);
-      if (today === latestDate) {
+      if (toLocalDateKey(new Date()) === toLocalDateKey(snapshots[0].createdAt)) {
         logger.info('スナップショットをスキップ: 本日すでに作成済み');
         return false;
       }
@@ -135,10 +138,9 @@ export class BackupService {
    * リストア前に自動的にバックアップを作成する
    */
   public async restoreSnapshot(timestamp: string): Promise<{ success: boolean; error?: string }> {
-    const backupFolder = PathManager.getBackupFolder();
-    const snapshotFolder = path.join(backupFolder, timestamp);
+    const snapshotFolder = this.resolveSnapshotFolder(timestamp);
 
-    if (!FileUtils.exists(snapshotFolder)) {
+    if (!snapshotFolder || !FileUtils.exists(snapshotFolder)) {
       return { success: false, error: mainI18n.t('backupErrors.snapshotNotFound') };
     }
 
@@ -180,10 +182,9 @@ export class BackupService {
    * スナップショットを削除する
    */
   public async deleteSnapshot(timestamp: string): Promise<{ success: boolean; error?: string }> {
-    const backupFolder = PathManager.getBackupFolder();
-    const snapshotFolder = path.join(backupFolder, timestamp);
+    const snapshotFolder = this.resolveSnapshotFolder(timestamp);
 
-    if (!FileUtils.exists(snapshotFolder)) {
+    if (!snapshotFolder || !FileUtils.exists(snapshotFolder)) {
       return { success: false, error: mainI18n.t('backupErrors.snapshotNotFound') };
     }
 
@@ -485,6 +486,7 @@ export class BackupService {
     return { snapshotFolder, copiedCount };
   }
 
+  /** フォルダ名に使う UTC の日時（2026-02-11T08-30-00） */
   private createTimestamp(): string {
     return new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
   }
@@ -540,10 +542,21 @@ export class BackupService {
     return match !== null && match[3] === undefined;
   }
 
+  /**
+   * renderer から受け取ったスナップショット名を、バックアップフォルダ直下のパスにする。
+   * 名前の規則に合わない・フォルダの外を指す名前（`..` や区切り文字を含む）は null
+   */
+  private resolveSnapshotFolder(name: string): string | null {
+    if (!SNAPSHOT_NAME_PATTERN.test(name) || path.basename(name) !== name || name.includes('..')) {
+      return null;
+    }
+    return path.join(PathManager.getBackupFolder(), name);
+  }
+
   private parseTimestamp(name: string): Date {
-    // 2026-02-11T08-30-00 → 2026-02-11T08:30:00
+    // フォルダ名は createTimestamp が UTC で作る: 2026-02-11T08-30-00 → 2026-02-11T08:30:00Z
     const isoLike = name.substring(0, 19).replace(/T(\d{2})-(\d{2})-(\d{2})/, 'T$1:$2:$3');
-    return new Date(isoLike);
+    return new Date(`${isoLike}Z`);
   }
 
   /**

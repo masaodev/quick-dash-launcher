@@ -674,7 +674,9 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     discardButton: 'Discard',
     discarded: 'Changes discarded',
     noDuplicates: 'No duplicate items',
-    dedupeConfirm:
+    dedupeConfirm_one:
+      '{{file}} has {{count}} item with the same type, name, and path as another. Delete it, keeping the first one? (Save to keep this change.)',
+    dedupeConfirm_other:
       '{{file}} has {{count}} items with the same type, name, and path. Delete them, keeping the first one? (Save to keep this change.)',
     deduped_one: 'Deleted {{count}} duplicate',
     deduped_other: 'Deleted {{count}} duplicates',
@@ -690,7 +692,8 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     quotedName: '"{{name}}"',
     rebaseConflicts:
       'Some items were changed or deleted elsewhere, so these unsaved changes were undone: {{names}}',
-    rebaseApplied: 'Loaded changes made elsewhere ({{count}} unsaved changes kept)',
+    rebaseApplied_one: 'Loaded changes made elsewhere ({{count}} unsaved change kept)',
+    rebaseApplied_other: 'Loaded changes made elsewhere ({{count}} unsaved changes kept)',
     tabs: {
       noExistingFiles: '(No existing files to add)',
       newFile: '📄 Create a data file',
@@ -715,8 +718,10 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       fileHeading: '"{{label}}" ({{file}})',
     },
     tabStructure: {
-      deletionLine: '• "{{label}}" ({{file}}): {{count}} items{{unsaved}}',
-      deletionUnsaved: '; {{count}} unsaved changes will also be lost',
+      deletionLine_one: '• "{{label}}" ({{file}}): {{count}} item{{unsaved}}',
+      deletionLine_other: '• "{{label}}" ({{file}}): {{count}} items{{unsaved}}',
+      deletionUnsaved_one: '; {{count}} unsaved change will also be lost',
+      deletionUnsaved_other: '; {{count}} unsaved changes will also be lost',
       deletionWarning:
         "⚠️ These data files will be deleted from disk. You can't undo this.\n{{lines}}",
       createFailed: "Couldn't create {{file}}",
