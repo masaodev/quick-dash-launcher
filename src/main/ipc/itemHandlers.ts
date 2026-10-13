@@ -172,8 +172,14 @@ async function executeGroupItem(
 
 /**
  * グループ内のアイテムを実行する（並列または順次）
+ *
+ * メイン画面とワークスペースの両方から使う。設定の「並列で起動」、順次のときのアイテム間の待ち、
+ * ウィンドウ設定つきアイテムの既存ウィンドウのアクティブ化（openItem）が効く
  */
-async function executeGroup(group: GroupItem, allItems: AppItem[]): Promise<void> {
+export async function executeGroup(
+  group: Pick<GroupItem, 'displayName' | 'itemNames'>,
+  allItems: AppItem[]
+): Promise<{ successCount: number; errorCount: number }> {
   itemLogger.info(
     { groupName: group.displayName, itemCount: group.itemNames.length, itemNames: group.itemNames },
     'グループを実行中'
@@ -214,16 +220,18 @@ async function executeGroup(group: GroupItem, allItems: AppItem[]): Promise<void
   }
 
   const successCount = results.filter((r) => r.success).length;
+  const errorCount = results.length - successCount;
   itemLogger.info(
     {
       groupName: group.displayName,
       total: group.itemNames.length,
       success: successCount,
-      error: results.length - successCount,
+      error: errorCount,
       mode,
     },
     'グループ実行完了'
   );
+  return { successCount, errorCount };
 }
 
 /** レイアウトのウィンドウ出現待機の設定 */

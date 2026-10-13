@@ -8,7 +8,6 @@ import type {
   MixedOrderEntry,
   Bounds,
 } from '@common/types';
-import { isLauncherItem, isWindowItem } from '@common/types/guards';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { getDescendantGroupIds } from '@common/utils/groupTreeUtils';
@@ -30,7 +29,7 @@ import { closeDetachedGroupWindow } from '../detachedGroupWindowManager.js';
 import { reloadConfigFiles } from '../services/data/dataFileLoader.js';
 
 import { notifyWorkspaceChanged } from './notifications.js';
-import { executeLayout } from './itemHandlers.js';
+import { executeGroup, executeLayout } from './itemHandlers.js';
 
 /**
  * 指定グループとその子孫の切り離しウィンドウをすべて閉じる
@@ -238,7 +237,7 @@ export function setupWorkspaceHandlers(): void {
         throw new Error(`ウィンドウが見つかりませんでした: ${windowTitle}`);
       }
 
-      // groupタイプの場合：グループ内のアイテムを順次実行
+      // groupタイプの場合：グループ内のアイテムを実行
       if (item.type === 'group') {
         logger.info(
           { groupName: item.displayName, itemNames: item.itemNames },
@@ -259,74 +258,8 @@ export function setupWorkspaceHandlers(): void {
           'Executing group from workspace'
         );
 
-        let successCount = 0;
-        let errorCount = 0;
-
-        // アイテム名からLauncherItemまたはWindowItemを検索するマップを作成
-        const itemMap = new Map<string, AppItem>();
-        for (const appItem of allItems) {
-          if (isLauncherItem(appItem) || isWindowItem(appItem)) {
-            itemMap.set(appItem.displayName, appItem);
-          }
-        }
-
-        // グループ内のアイテムを順次実行
-        for (const itemName of item.itemNames) {
-          const targetItem = itemMap.get(itemName);
-
-          if (!targetItem) {
-            logger.warn(
-              { groupName: item.displayName, itemName },
-              'Group item not found in launcher items'
-            );
-            errorCount++;
-            continue;
-          }
-
-          try {
-            if (isWindowItem(targetItem)) {
-              await tryActivateWindow(
-                {
-                  title: targetItem.windowTitle,
-                  processName: targetItem.processName,
-                  x: targetItem.x,
-                  y: targetItem.y,
-                  width: targetItem.width,
-                  height: targetItem.height,
-                  moveToActiveMonitorCenter: targetItem.moveToActiveMonitorCenter,
-                  virtualDesktopNumber: targetItem.virtualDesktopNumber,
-                  activateWindow: targetItem.activateWindow,
-                  pinToAllDesktops: targetItem.pinToAllDesktops,
-                },
-                targetItem.displayName,
-                logger
-              );
-            } else if (isLauncherItem(targetItem)) {
-              // 通常のLauncherItemの場合
-              await launchItem(
-                {
-                  type: targetItem.type,
-                  path: targetItem.path,
-                  args: targetItem.args,
-                  displayName: targetItem.displayName,
-                },
-                logger
-              );
-            }
-            successCount++;
-          } catch (error) {
-            logger.error(
-              { groupName: item.displayName, itemName, error },
-              'Failed to execute group item'
-            );
-            errorCount++;
-          }
-        }
-
-        logger.info(
-          { groupName: item.displayName, successCount, errorCount },
-          'Group execution completed'
-        );
+        // メイン画面と同じ実行処理を使う（並列起動の設定・アイテム間の待ち・既存ウィンドウのアクティブ化）
+        const { successCount, errorCount } = await executeGroup(item, allItems);
         return { success: true, successCount, errorCount };
       }
 
