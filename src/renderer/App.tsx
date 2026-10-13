@@ -187,13 +187,7 @@ function App(): React.ReactElement {
 
     // Apply cached icons to items
     const itemsWithIcons = items.map((item) => {
-      if (
-        isWindowInfo(item) ||
-        isGroupItem(item) ||
-        isWindowItem(item) ||
-        isClipboardItem(item) ||
-        isLayoutItem(item)
-      ) {
+      if (!isLauncherItem(item)) {
         return item;
       }
       return {
@@ -309,7 +303,7 @@ function App(): React.ReactElement {
           // バックグラウンドで履歴追加（fire-and-forget）
           if (searchQueryForHistory) {
             addHistoryEntry(searchQueryForHistory).catch((error) => {
-              console.error('検索履歴の追加に失敗しました:', error);
+              logError('検索履歴の追加に失敗しました:', error);
             });
           }
         }
@@ -607,16 +601,10 @@ function App(): React.ReactElement {
 
   const missingIconCount = useMemo(() => {
     return mainItems.filter((item) => {
-      if (
-        isWindowInfo(item) ||
-        isGroupItem(item) ||
-        isWindowItem(item) ||
-        isClipboardItem(item) ||
-        isLayoutItem(item)
-      ) {
+      if (!isLauncherItem(item)) {
         return false;
       }
-      const launcherItem = item as LauncherItem;
+      const launcherItem = item;
       if (launcherItem.type === 'folder' || launcherItem.type === 'customUri') {
         return false;
       }

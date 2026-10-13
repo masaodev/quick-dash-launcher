@@ -8,6 +8,7 @@ import type {
 } from '@common/types';
 
 import type { HandleSettingChange } from '../hooks/useSettingsManager';
+import { logError } from '../utils/debug';
 
 type WindowSizeKey = 'windowWidth' | 'windowHeight' | 'editModeWidth' | 'editModeHeight';
 
@@ -83,7 +84,7 @@ const AdminSettingsWindowSection: React.FC<AdminSettingsWindowSectionProps> = ({
       try {
         setDisplays(await window.electronAPI.getDisplays());
       } catch (error) {
-        console.error('ディスプレイ一覧の取得に失敗:', error);
+        logError('ディスプレイ一覧の取得に失敗:', error);
       }
     };
     loadDisplays();

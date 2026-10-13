@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { AppSettings, BackupStatus } from '@common/types';
 
 import type { HandleSettingChange } from '../hooks/useSettingsManager';
+import { logError } from '../utils/debug';
 
 import { Button } from './ui';
 import BackupSnapshotModal from './BackupSnapshotModal';
@@ -33,7 +34,7 @@ const AdminSettingsBackupSection: React.FC<AdminSettingsBackupSectionProps> = ({
       try {
         setBackupStatus(await window.electronAPI.backupAPI.getStatus());
       } catch (error) {
-        console.error('バックアップ状態の取得に失敗:', error);
+        logError('バックアップ状態の取得に失敗:', error);
       }
     };
     loadBackupStatus();

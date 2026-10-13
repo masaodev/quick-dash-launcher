@@ -5,6 +5,7 @@ import type { AppSettings } from '@common/types';
 import { useDialogManager } from '../hooks/useDialogManager';
 import { useSettingsManager } from '../hooks/useSettingsManager';
 import { isResettableCategory, type SettingsCategory } from '../utils/settingsResetKeys';
+import { logError } from '../utils/debug';
 
 import AlertDialog from './AlertDialog';
 import ConfirmDialog from './ConfirmDialog';
@@ -76,7 +77,7 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({
           showAlert(t('settings.hotkeys.windowSearchSameAsLauncher'), 'error');
         }
       } catch (error) {
-        console.error('ウィンドウ検索の起動ホットキーの変更に失敗しました:', error);
+        logError('ウィンドウ検索の起動ホットキーの変更に失敗しました:', error);
         showAlert(t('settings.hotkeys.windowSearchChangeFailed'), 'error');
       }
     },

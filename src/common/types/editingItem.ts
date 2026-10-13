@@ -7,6 +7,7 @@
 
 import type { LauncherItem, GroupItem, WindowItem, ClipboardItem, LayoutItem } from './launcher';
 import type { DirOptionsForProcessing } from './json-data';
+import type { EditableJsonItem } from './editableItem';
 
 /**
  * 編集可能なアイテムの共通メタデータ
@@ -103,4 +104,13 @@ export function isEditingClipboardItem(item: EditingAppItem): item is EditingCli
  */
 export function isEditingLayoutItem(item: EditingAppItem): item is EditingLayoutItem {
   return item.type === 'layout';
+}
+
+/**
+ * 管理画面から渡された編集対象（EditableJsonItem）か。メイン画面からは EditingAppItem が渡される
+ */
+export function isEditableJsonItem(
+  item: EditingAppItem | EditableJsonItem
+): item is EditableJsonItem {
+  return 'item' in item && 'meta' in item;
 }

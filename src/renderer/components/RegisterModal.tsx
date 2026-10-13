@@ -11,7 +11,7 @@ import type {
   WindowInfo,
   LauncherItem,
 } from '@common/types';
-import { isJsonLauncherItem } from '@common/types';
+import { isEditableJsonItem, isJsonLauncherItem } from '@common/types';
 import { mergeWindowInfoIntoLayoutEntry } from '@common/utils/layoutUtils';
 
 import { useCustomIcon } from '../hooks/useCustomIcon';
@@ -49,8 +49,8 @@ interface RegisterModalProps {
  */
 function isAutoImportItem(editingItem: EditingAppItem | EditableJsonItem): boolean {
   // EditableJsonItem（管理画面から）
-  if ('item' in editingItem && 'meta' in editingItem) {
-    const jsonItem = (editingItem as EditableJsonItem).item;
+  if (isEditableJsonItem(editingItem)) {
+    const jsonItem = editingItem.item;
     return isJsonLauncherItem(jsonItem) && !!jsonItem.autoImportRuleId;
   }
   // EditingAppItem（ランチャーから）

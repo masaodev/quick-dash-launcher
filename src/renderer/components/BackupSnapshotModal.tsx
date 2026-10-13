@@ -4,6 +4,8 @@ import type { SnapshotInfo } from '@common/types';
 
 import '../styles/components/Modal.css';
 import '../styles/components/BackupSnapshotModal.css';
+import { logError } from '../utils/debug';
+
 import { Button } from './ui';
 import ConfirmDialog from './ConfirmDialog';
 
@@ -33,7 +35,7 @@ const BackupSnapshotModal: React.FC<BackupSnapshotModalProps> = ({ isOpen, onClo
       const list = await window.electronAPI.backupAPI.listSnapshots();
       setSnapshots(list);
     } catch (error) {
-      console.error('スナップショット一覧の取得に失敗:', error);
+      logError('スナップショット一覧の取得に失敗:', error);
     } finally {
       setIsLoading(false);
     }
@@ -90,7 +92,7 @@ const BackupSnapshotModal: React.FC<BackupSnapshotModalProps> = ({ isOpen, onClo
       }
     } catch (error) {
       setMessage(errorMessage);
-      console.error(error);
+      logError('スナップショットの操作に失敗:', error);
     } finally {
       setIsLoading(false);
       await loadSnapshots();
