@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { WorkspaceItem } from '@common/types';
 import { describeWorkspaceItem } from '@common/utils/workspaceConverters';
 
@@ -35,6 +36,7 @@ const WorkspaceItemCard: React.FC<WorkspaceItemCardProps> = ({
   onDrop,
   onContextMenu,
 }) => {
+  const { t, i18n } = useTranslation();
   const [editValue, setEditValue] = useState(item.displayName);
   const [dropZone, setDropZone] = useState<ItemDropZone | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -110,30 +112,30 @@ const WorkspaceItemCard: React.FC<WorkspaceItemCardProps> = ({
   };
 
   const getTooltipText = (): string => {
-    const lines: string[] = [describeWorkspaceItem(item)];
+    const lines: string[] = [describeWorkspaceItem(item, t)];
 
     if (item.type === 'item') {
       if (item.originalPath) {
-        lines.push(`リンク先: ${item.originalPath}`);
+        lines.push(t('workspace.itemCard.linkTarget', { path: item.originalPath }));
       }
       if (item.args) {
-        lines.push(`引数: ${item.args}`);
+        lines.push(t('workspace.itemCard.args', { args: item.args }));
       }
     }
     if (item.memo) {
-      lines.push(`メモ: ${item.memo}`);
+      lines.push(t('workspace.itemCard.note', { note: item.memo }));
     }
 
     lines.push('');
 
-    const addedDate = new Date(item.addedAt).toLocaleString('ja-JP', {
+    const addedDate = new Date(item.addedAt).toLocaleString(i18n.language, {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
       hour: '2-digit',
       minute: '2-digit',
     });
-    lines.push(`追加日時: ${addedDate}`);
+    lines.push(t('workspace.itemCard.addedAt', { date: addedDate }));
 
     return lines.join('\n');
   };
@@ -174,7 +176,11 @@ const WorkspaceItemCard: React.FC<WorkspaceItemCardProps> = ({
           <div className="workspace-item-name">{item.displayName}</div>
         )}
       </div>
-      <button className="workspace-item-delete-btn" onClick={handleRemoveClick} title="削除">
+      <button
+        className="workspace-item-delete-btn"
+        onClick={handleRemoveClick}
+        title={t('workspace.itemCard.remove')}
+      >
         x
       </button>
     </div>

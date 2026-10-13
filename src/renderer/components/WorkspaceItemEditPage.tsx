@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { WorkspaceItem, WorkspaceItemUpdate } from '@common/types';
 
 import { logError } from '../utils/debug';
@@ -18,11 +19,12 @@ interface WorkspaceItemEditPageProps {
  * ここではウィンドウを閉じるだけでよい。
  */
 const WorkspaceItemEditPage: React.FC<WorkspaceItemEditPageProps> = ({ itemId }) => {
+  const { t } = useTranslation();
   const [item, setItem] = useState<WorkspaceItem | null>(null);
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
-    document.title = 'アイテムの編集';
+    document.title = t('register.editTitle');
     let cancelled = false;
     (async () => {
       try {
@@ -42,25 +44,28 @@ const WorkspaceItemEditPage: React.FC<WorkspaceItemEditPageProps> = ({ itemId })
     return () => {
       cancelled = true;
     };
-  }, [itemId]);
+  }, [itemId, t]);
 
   const close = useCallback(() => {
     window.close();
   }, []);
 
-  const save = useCallback(async (id: string, updates: WorkspaceItemUpdate) => {
-    const result = await window.electronAPI.workspaceAPI.updateItem(id, updates);
-    if (!result.success) {
-      throw new Error('ワークスペースアイテムの更新に失敗しました');
-    }
-  }, []);
+  const save = useCallback(
+    async (id: string, updates: WorkspaceItemUpdate) => {
+      const result = await window.electronAPI.workspaceAPI.updateItem(id, updates);
+      if (!result.success) {
+        throw new Error(t('workspace.edit.updateFailed'));
+      }
+    },
+    [t]
+  );
 
   if (notFound) {
     return (
       <div className="workspace-editor-page workspace-editor-missing">
-        <p>編集するアイテムが見つかりません（削除された可能性があります）。</p>
+        <p>{t('workspace.edit.pageNotFound')}</p>
         <Button variant="cancel" onClick={close}>
-          閉じる
+          {t('common.close')}
         </Button>
       </div>
     );

@@ -3,6 +3,7 @@
  * 画面仕様: docs/screens/workspace-window.md
  */
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { WorkspaceItem, WorkspaceGroupView } from '@common/types';
 import { getDescendantGroupIds } from '@common/utils/groupTreeUtils';
 import { DETACHED_WINDOW_NAME_PREFIX } from '@common/constants';
@@ -45,6 +46,7 @@ function getDetachedGroupIdFromWindow(): string | null {
 }
 
 const WorkspaceApp: React.FC = () => {
+  const { t } = useTranslation();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isPinned, setIsPinned] = useState(false);
   const [detachedPinMode, setDetachedPinMode] = useState(0);
@@ -198,8 +200,15 @@ const WorkspaceApp: React.FC = () => {
     '';
 
   /** 含まれるものの説明（確認の文面用） */
-  const describeContents = (itemCount: number, subgroupCount: number): string =>
-    `このグループには${subgroupCount > 0 ? `サブグループ${subgroupCount}個と、` : ''}${itemCount}個のアイテムが含まれています。`;
+  const describeContents = (itemCount: number, subgroupCount: number): string => {
+    const items = t('workspace.groups.contentItems', { count: itemCount });
+    return subgroupCount > 0
+      ? t('workspace.groups.contentsWithSubgroups', {
+          subgroups: t('workspace.groups.contentSubgroups', { count: subgroupCount }),
+          items,
+        })
+      : t('workspace.groups.contents', { items });
+  };
 
   // 確認は独立した子ウィンドウで行う（このウィンドウは動かさない。閉じるまで操作できない）
   const handleDeleteGroup = async (groupId: string) => {
@@ -212,14 +221,18 @@ const WorkspaceApp: React.FC = () => {
       }
       const name = getGroupName(groupId);
       const result = await window.electronAPI.workspaceAPI.openConfirm({
-        title: isArchiveMode ? 'アーカイブから削除' : 'グループの削除',
-        message: `「${name}」を${isArchiveMode ? 'アーカイブから完全に削除' : '削除'}してもよろしいですか？\n\n${describeContents(itemCount, subgroupCount)}${isArchiveMode ? '\nアイテムごと削除され、元に戻せません。' : ''}`,
-        confirmText: '削除',
-        cancelText: 'キャンセル',
+        title: isArchiveMode
+          ? t('workspace.groups.deleteFromArchiveTitle')
+          : t('workspace.groups.deleteTitle'),
+        message: isArchiveMode
+          ? `${t('workspace.groups.deleteFromArchiveConfirm', { name })}\n\n${describeContents(itemCount, subgroupCount)}\n${t('workspace.groups.deleteFromArchiveIrreversible')}`
+          : `${t('workspace.groups.deleteConfirm', { name })}\n\n${describeContents(itemCount, subgroupCount)}`,
+        confirmText: t('workspace.groups.delete'),
+        cancelText: t('common.cancel'),
         danger: true,
         checkbox: isArchiveMode
           ? undefined
-          : { label: 'グループ内のアイテムも削除する', checked: false },
+          : { label: t('workspace.groups.deleteItems'), checked: false },
       });
       if (!result) return;
       if (isArchiveMode) {
@@ -237,10 +250,10 @@ const WorkspaceApp: React.FC = () => {
     try {
       const { itemCount, subgroupCount } = getGroupStats(groupId);
       const result = await window.electronAPI.workspaceAPI.openConfirm({
-        title: 'グループのアーカイブ',
-        message: `「${getGroupName(groupId)}」をアーカイブしてもよろしいですか？\n\n${describeContents(itemCount, subgroupCount)}\nアーカイブしたグループは後で復元できます。`,
-        confirmText: 'アーカイブ',
-        cancelText: 'キャンセル',
+        title: t('workspace.groups.archiveTitle'),
+        message: `${t('workspace.groups.archiveConfirm', { name: getGroupName(groupId) })}\n\n${describeContents(itemCount, subgroupCount)}\n${t('workspace.groups.archiveRestorable')}`,
+        confirmText: t('workspace.groups.archive'),
+        cancelText: t('common.cancel'),
         danger: false,
       });
       if (!result) return;
@@ -423,11 +436,11 @@ const WorkspaceApp: React.FC = () => {
   function getPinLabel(mode: number): string {
     switch (mode) {
       case 1:
-        return '最前面に固定';
+        return t('workspace.detached.pinAlwaysOnTop');
       case 2:
-        return 'ピン留め解除';
+        return t('workspace.detached.unpin');
       default:
-        return '表示固定';
+        return t('workspace.detached.pinStayVisible');
     }
   }
 
@@ -475,8 +488,8 @@ const WorkspaceApp: React.FC = () => {
           <button
             className="workspace-close-btn"
             onClick={handleCloseDetached}
-            title="閉じる"
-            aria-label="切り離しウィンドウを閉じる"
+            title={t('workspace.detached.close')}
+            aria-label={t('workspace.detached.closeLabel')}
           >
             ×
           </button>

@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import type { FilterScope } from '../hooks/useWorkspaceFilter';
 
@@ -19,6 +20,7 @@ const WorkspaceFilterBar: React.FC<WorkspaceFilterBarProps> = ({
   onClose,
   focusTrigger,
 }) => {
+  const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -39,7 +41,7 @@ const WorkspaceFilterBar: React.FC<WorkspaceFilterBarProps> = ({
           ref={inputRef}
           type="text"
           className="workspace-filter-input"
-          placeholder="フィルタ..."
+          placeholder={t('workspace.filter.placeholder')}
           value={filterText}
           onChange={(e) => onFilterTextChange(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -50,11 +52,15 @@ const WorkspaceFilterBar: React.FC<WorkspaceFilterBarProps> = ({
         value={filterScope}
         onChange={(e) => onFilterScopeChange(e.target.value as FilterScope)}
       >
-        <option value="all">全て</option>
-        <option value="group">グループ</option>
-        <option value="item">アイテム</option>
+        <option value="all">{t('workspace.filter.scopes.all')}</option>
+        <option value="group">{t('workspace.filter.scopes.group')}</option>
+        <option value="item">{t('workspace.filter.scopes.item')}</option>
       </select>
-      <button className="workspace-filter-close-btn" onClick={onClose} title="フィルタを閉じる">
+      <button
+        className="workspace-filter-close-btn"
+        onClick={onClose}
+        title={t('workspace.filter.close')}
+      >
         ×
       </button>
     </div>

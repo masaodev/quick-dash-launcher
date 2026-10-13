@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type {
   WorkspaceItem,
   WorkspaceItemUpdate,
@@ -24,6 +25,7 @@ function withErrorHandling<T extends unknown[]>(
 }
 
 export function useWorkspaceActions(onDataChanged: () => void) {
+  const { t } = useTranslation();
   const api = window.electronAPI.workspaceAPI;
 
   const handleLaunch = withErrorHandling(async (item: WorkspaceItem) => {
@@ -80,7 +82,12 @@ export function useWorkspaceActions(onDataChanged: () => void) {
 
   const handleAddGroup = withErrorHandling(
     async (groupCount: number, parentGroupId?: string, workspaceId?: string) =>
-      api.createGroup(`グループ ${groupCount + 1}`, undefined, parentGroupId, workspaceId),
+      api.createGroup(
+        t('workspace.groups.defaultName', { number: groupCount + 1 }),
+        undefined,
+        parentGroupId,
+        workspaceId
+      ),
     'Failed to create workspace group:',
     onDataChanged
   );
@@ -111,7 +118,12 @@ export function useWorkspaceActions(onDataChanged: () => void) {
 
   const handleAddSubgroup = withErrorHandling(
     async (parentGroupId: string, subgroupCount: number) =>
-      api.createGroup(`サブグループ ${subgroupCount + 1}`, undefined, parentGroupId),
+      api.createGroup(
+        t('workspace.groups.defaultSubgroupName', { number: subgroupCount + 1 }),
+        undefined,
+        parentGroupId
+      ),
+
     'Failed to create workspace subgroup:',
     onDataChanged
   );

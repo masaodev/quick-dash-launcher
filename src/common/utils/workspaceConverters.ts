@@ -9,6 +9,8 @@
  * 詰め替えではなく「メタ情報の付け外し」が中心になる。
  */
 
+import type { TFunction } from 'i18next';
+
 import type {
   AppItem,
   ClipboardItem,
@@ -279,20 +281,25 @@ export function registerItemToWorkspaceItemUpdate(registerItem: RegisterItem): W
  *
  * 旧形式ではこれを path に保存していたが、2.0 では表示時にここで組み立てる。
  */
-export function describeWorkspaceItem(item: WorkspaceItem): string {
+export function describeWorkspaceItem(item: WorkspaceItem, t: TFunction): string {
   switch (item.type) {
     case 'item':
       return item.path;
     case 'window':
       return item.processName
-        ? `ウィンドウ操作: ${item.windowTitle}（${item.processName}）`
-        : `ウィンドウ操作: ${item.windowTitle}`;
+        ? t('workspace.describe.windowWithProcess', {
+            title: item.windowTitle,
+            process: item.processName,
+          })
+        : t('workspace.describe.window', { title: item.windowTitle });
     case 'group':
-      return `グループ: ${item.itemNames.length}件`;
+      return t('workspace.describe.group', { count: item.itemNames.length });
     case 'clipboard':
-      return item.preview ? `クリップボード: ${item.preview}` : 'クリップボード';
+      return item.preview
+        ? t('workspace.describe.clipboardWithPreview', { preview: item.preview })
+        : t('workspace.describe.clipboard');
     case 'layout':
-      return `レイアウト: ${item.entries.length}件`;
+      return t('workspace.describe.layout', { count: item.entries.length });
   }
 }
 

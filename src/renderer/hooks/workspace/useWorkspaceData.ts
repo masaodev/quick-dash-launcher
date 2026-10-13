@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import type {
   Workspace,
   WorkspaceItem,
@@ -50,6 +51,7 @@ async function mergeIconsFromCache<T extends WorkspaceItem>(items: T[]): Promise
 }
 
 export function useWorkspaceData(detachedGroupId?: string | null) {
+  const { t } = useTranslation();
   const isDetached = !!detachedGroupId;
   const [items, setItems] = useState<WorkspaceItem[]>([]);
   const [groups, setGroups] = useState<WorkspaceGroupView[]>([]);
@@ -235,7 +237,7 @@ export function useWorkspaceData(detachedGroupId?: string | null) {
   }
 
   async function loadAllDataWithLoading(): Promise<void> {
-    await withLoading('データ読込中', loadAllData);
+    await withLoading(t('workspace.loading'), loadAllData);
   }
 
   useEffect(() => {

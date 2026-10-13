@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import type {
   AppItem,
   Workspace,
@@ -110,6 +111,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
   handlers,
   ui,
 }) => {
+  const { t } = useTranslation();
   const { groups, items } = data;
   const {
     onLaunch,
@@ -257,7 +259,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
           /* eslint-disable no-irregular-whitespace */
           groupItems.forEach((item, index) => {
             text += `　■${item.displayName}\r\n`;
-            text += `　　${describeWorkspaceItem(item)}\r\n`;
+            text += `　　${describeWorkspaceItem(item, t)}\r\n`;
             if (index < groupItems.length - 1) {
               text += '\r\n';
             }
@@ -290,6 +292,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     onArchiveGroup,
     onDeleteGroup,
     onAddSubgroup,
+    t,
   ]);
 
   /** グループヘッダーの dragEnd でウィンドウ外ドロップを検出 */
@@ -559,8 +562,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
       itemType: 'workspaceAdd',
       path: 'path' in item ? item.path : undefined,
       icon: 'icon' in item ? item.icon : undefined,
-      message:
-        isWindowItem(item) && includePosition ? '記録した位置に戻して前面に出します' : undefined,
+      message: isWindowItem(item) && includePosition ? t('workspace.restoresPosition') : undefined,
     });
   }
 
@@ -614,9 +616,9 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     } catch (error) {
       logError('ワークスペースへのアイテム追加に失敗:', error);
       await window.electronAPI.showToastWindow({
-        displayName: 'ワークスペース',
+        displayName: t('workspace.title'),
         itemType: 'workspaceAdd',
-        message: 'ワークスペースへの追加に失敗しました',
+        message: t('launcher.messages.addToWorkspaceFailed'),
       });
     }
 
@@ -753,12 +755,8 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
   if (items.length === 0 && groups.length === 0) {
     return (
       <div className="workspace-empty">
-        <p>ワークスペースは空です</p>
-        <p className="workspace-empty-hint">
-          メイン画面のアイテムを右クリックして
-          <br />
-          「ワークスペースに追加」を選択してください
-        </p>
+        <p>{t('workspace.empty.title')}</p>
+        <p className="workspace-empty-hint">{t('workspace.empty.hint')}</p>
       </div>
     );
   }
@@ -785,7 +783,8 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
               >
                 ▼
               </span>
-              <span className="workspace-group-name">未分類</span>
+              <span className="workspace-group-name">{t('workspace.groups.uncategorized')}</span>
+
               <span className="workspace-group-badge">{filteredUncategorizedItems.length}</span>
             </div>
             {!uncategorizedCollapsed && (

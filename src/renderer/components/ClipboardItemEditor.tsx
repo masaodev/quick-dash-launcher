@@ -64,7 +64,7 @@ function CapturedDataSection({
   capturing,
   canCapture,
 }: CapturedDataSectionProps): React.ReactElement {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const preview = capturedData?.preview || sessionData?.preview;
   const formats = capturedData?.formats || sessionData?.formats || [];
   const timestamp = capturedData?.savedAt || sessionData?.capturedAt || Date.now();
@@ -92,7 +92,7 @@ function CapturedDataSection({
           <span className="label">
             {isPersisted ? t('clipboardEditor.savedAt') : t('clipboardEditor.capturedAt')}
           </span>
-          <span className="date">{new Date(timestamp).toLocaleString('ja-JP')}</span>
+          <span className="date">{new Date(timestamp).toLocaleString(i18n.language)}</span>
         </div>
 
         <div className="recapture-action">
