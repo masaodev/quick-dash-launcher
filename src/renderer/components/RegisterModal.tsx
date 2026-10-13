@@ -26,7 +26,7 @@ import GroupItemSelectorModal from './GroupItemSelectorModal';
 import FilePickerDialog from './FilePickerDialog';
 import WindowSelectorModal from './WindowSelectorModal';
 import LayoutCaptureModal from './LayoutCaptureModal';
-import RegisterItemForm from './RegisterItemForm';
+import ItemEditFields from './ItemEditFields';
 import { Button } from './ui';
 import '../styles/components/UrlConverterMenu.css';
 
@@ -300,12 +300,17 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
             <>
               <div className="register-items">
                 {items.map((item, index) => (
-                  <RegisterItemForm
+                  <ItemEditFields
                     key={index}
                     item={item}
-                    index={index}
                     errors={errors[index]}
-                    form={form}
+                    onFieldChange={(field, value) => handleItemChange(index, field, value)}
+                    onUpdate={(fields) => updateItem(index, fields)}
+                    onPathBlur={() => form.handlePathBlur(index)}
+                    onTargetTabChange={(targetTab) => form.handleTargetTabChange(index, targetTab)}
+                    onFetchIcon={() => form.handleFetchIcon(index)}
+                    onAddGroupItem={() => form.handleAddGroupItem(index)}
+                    onRemoveGroupItem={(nameIndex) => form.handleRemoveGroupItem(index, nameIndex)}
                     availableTabs={availableTabs}
                     dataFileLabels={dataFileLabels}
                     isPathReadOnly={!!droppedPaths && droppedPaths.length > 0}
