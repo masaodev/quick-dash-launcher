@@ -787,6 +787,7 @@ CLI の `qdl check` が返す `filesWithIssues` などは、この形式の一�
 | `files[].accepted` | 受理したアイテム数（`dir` の展開前。JSON 上の要素数） |
 | `files[].issues[].kind` | `invalid`（スキップ） / `idAssigned`（採番） / `normalized`（構造の補正。`version` の補完、プロセス名だけのウィンドウ操作の `windowTitle` を `"*"` にする補正） |
 | `files[].issues[].index` | 書き戻し後の `items` 配列内の位置。ファイル単位の問題や削除した要素は `-1`（`reason` に元の位置） |
+| `files[].issues[].reason` | 問題の説明。表示言語の文（例は日本語）。項目の形の検証（必須の項目が無い等）は英語 |
 | `files[].issues[].section` | 問題があった配列名（`workspaces` / `groups` / `items`）。ワークスペースファイルのときだけ付く（データファイルは `items` しか無いため省略） |
 | `files[].rewritten` | 採番・補正のためファイルを書き戻したか |
 | `preChangeSnapshot` | 外部変更の検知時に作った変更前スナップショットのフォルダ名。なければ `null` |

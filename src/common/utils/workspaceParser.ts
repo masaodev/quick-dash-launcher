@@ -27,6 +27,8 @@ import {
 } from '@common/types/json-workspace';
 import { getDefaultGroupColor, isValidGroupColor } from '@common/groupColors';
 import { MAX_GROUP_DEPTH } from '@common/utils/groupTreeUtils';
+import { getFallbackT } from '@common/i18n';
+import type { TFunction } from 'i18next';
 
 import {
   generateUniqueId,
@@ -39,10 +41,6 @@ import {
 } from './jsonParser';
 import type { JsonItemIssue } from './jsonParser';
 import { normalizeWindowTitleForProcessOnly } from './windowTitle';
-
-/** 書き込み側の normalizeWorkspaceItemBody と同じ規則。読み込みでは normalized として報告する */
-const WINDOW_TITLE_NORMALIZED_REASON =
-  'windowTitle が空でプロセス名だけのため "*"（全一致）にしました';
 
 // ============================================================
 // 型
@@ -76,11 +74,14 @@ export interface WorkspaceParseContext {
   now: number;
   /** ワークスペースが 1 件も無いときに作る既定ワークスペースの名前（main が表示言語で渡す） */
   defaultWorkspaceName: string;
+  /** 理由（issues の reason）の文言を引く関数（main は mainI18n.t） */
+  t: TFunction;
 }
 
 export function createWorkspaceParseContext(
   now: number = Date.now(),
-  defaultWorkspaceName: string = DEFAULT_WORKSPACE_DISPLAY_NAME
+  defaultWorkspaceName: string = DEFAULT_WORKSPACE_DISPLAY_NAME,
+  t: TFunction = getFallbackT()
 ): WorkspaceParseContext {
   return {
     reservedIds: new Set(),
@@ -91,6 +92,7 @@ export function createWorkspaceParseContext(
     defaultWorkspaceId: '',
     now,
     defaultWorkspaceName,
+    t,
   };
 }
 
@@ -126,6 +128,9 @@ class IssueCollector {
   readonly issues: JsonItemIssue[] = [];
   modified = false;
 
+  /** @param t - 理由の文言を引く関数 */
+  constructor(readonly t: TFunction) {}
+
   normalized(section: Section | undefined, index: number, reason: string, id?: string): void {
     this.issues.push({ index, kind: 'normalized', id, reason, ...(section && { section }) });
     this.modified = true;
@@ -158,7 +163,7 @@ function parseRoot(content: string): Record<string, unknown> {
 function takeArray(obj: Record<string, unknown>, key: Section, issues: IssueCollector): unknown[] {
   const value = obj[key];
   if (value === undefined) {
-    issues.normalized(key, -1, `${key} が無いため空の配列を補いました`);
+    issues.normalized(key, -1, issues.t('parseReasons.arrayFilled', { key }));
     return [];
   }
   if (!Array.isArray(value)) {
@@ -173,8 +178,11 @@ function normalizeHeader(obj: Record<string, unknown>, issues: IssueCollector): 
       undefined,
       -1,
       obj.version === undefined
-        ? `version が無いため "${JSON_WORKSPACE_VERSION}" を補いました`
-        : `version "${String(obj.version)}" を "${JSON_WORKSPACE_VERSION}" に直しました`
+        ? issues.t('parseReasons.versionAdded', { version: JSON_WORKSPACE_VERSION })
+        : issues.t('parseReasons.versionFixed', {
+            from: String(obj.version),
+            to: JSON_WORKSPACE_VERSION,
+          })
     );
   }
 }
@@ -206,19 +214,19 @@ function resolveId(
   ctx.reservedIds.add(id);
 
   if (original === undefined) {
-    issues.idAssigned(section, index, id, 'id が無いため採番しました');
+    issues.idAssigned(section, index, id, issues.t('parseReasons.idMissing'));
   } else if (!isValidId(original)) {
     issues.idAssigned(
       section,
       index,
       id,
-      `id "${String(original)}" が不正なため採番し直しました（8 文字の英数字）`
+      issues.t('parseReasons.idInvalidFormat', { id: String(original) })
     );
     if (typeof original === 'string' && original !== '' && !ctx.idMap.has(original)) {
       ctx.idMap.set(original, id);
     }
   } else {
-    issues.idAssigned(section, index, id, `id "${original}" が重複しているため採番し直しました`);
+    issues.idAssigned(section, index, id, issues.t('parseReasons.idDuplicate', { id: original }));
   }
   return id;
 }
@@ -245,7 +253,12 @@ function numberOrDefault(
   if (value !== undefined) {
     throw new Error(`${key} must be a number`);
   }
-  issues.normalized(section, index, `${key} が無いため ${fallback} を補いました`, id);
+  issues.normalized(
+    section,
+    index,
+    issues.t('parseReasons.valueFilled', { key, value: fallback }),
+    id
+  );
   return fallback;
 }
 
@@ -320,7 +333,7 @@ function validateItemBody(raw: Record<string, unknown>, id: string): Record<stri
       return validateJsonLayoutItem(body) as unknown as Record<string, unknown>;
     default:
       throw new Error(
-        `Unknown item type: ${String(raw.type)}（${JSON_WORKSPACE_ITEM_TYPES.join(' / ')} のいずれか）`
+        `Unknown item type: ${String(raw.type)} (one of ${JSON_WORKSPACE_ITEM_TYPES.join(' / ')})`
       );
   }
 }
@@ -434,7 +447,7 @@ function parseWorkspaces(
       issues.invalid(
         'workspaces',
         index,
-        `workspaces[${index}] はオブジェクトでないため削除しました`
+        issues.t('parseReasons.notObject', { section: 'workspaces', index })
       );
       issues.modified = true;
       return;
@@ -479,8 +492,8 @@ function parseGroupBase(
       'groups',
       index,
       raw.color === undefined
-        ? `color が無いため "${color}" を補いました`
-        : `color "${String(raw.color)}" は色トークンでも 6 桁 hex でもないため "${color}" にしました`,
+        ? issues.t('parseReasons.colorFilled', { color })
+        : issues.t('parseReasons.colorFixed', { from: String(raw.color), color }),
       id
     );
   }
@@ -506,7 +519,8 @@ function parseItemBase(
   const windowTitle = normalizeWindowTitleForProcessOnly(raw.windowTitle, raw.processName);
   if (raw.type === 'window' && windowTitle !== undefined) {
     raw = { ...raw, windowTitle };
-    issues.normalized('items', index, WINDOW_TITLE_NORMALIZED_REASON, id);
+    // 書き込み側の normalizeWorkspaceItemBody と同じ規則。読み込みでは normalized として報告する
+    issues.normalized('items', index, issues.t('parseReasons.windowTitleWildcard'), id);
   }
   const body = validateItemBody(raw, id);
   delete body.updatedAt;
@@ -544,8 +558,8 @@ function resolveWorkspaceId(
     section,
     index,
     mapped === undefined
-      ? 'workspaceId が無いため既定のワークスペースに入れました'
-      : `workspaceId "${mapped}" のワークスペースが無いため既定のワークスペースに移しました`,
+      ? issues.t('parseReasons.workspaceIdMissing')
+      : issues.t('parseReasons.workspaceIdNotFound', { id: mapped }),
     id
   );
   return ctx.defaultWorkspaceId;
@@ -572,8 +586,8 @@ function resolveRef(
     section,
     index,
     mapped === undefined
-      ? `${label} が文字列でないため外しました`
-      : `${label} "${mapped}" のグループが無いため外しました`,
+      ? issues.t('parseReasons.refNotString', { label })
+      : issues.t('parseReasons.refGroupNotFound', { label, id: mapped }),
     selfId
   );
   return undefined;
@@ -600,11 +614,11 @@ function breakGroupCycles(
     let reason: string | undefined;
     while (current) {
       if (visited.has(current)) {
-        reason = `parentGroupId が循環しているため親を外しました`;
+        reason = issues.t('parseReasons.parentCycle');
         break;
       }
       if (depth > MAX_GROUP_DEPTH) {
-        reason = `parentGroupId の入れ子が ${MAX_GROUP_DEPTH} 段を超えるため親を外しました`;
+        reason = issues.t('parseReasons.parentTooDeep', { max: MAX_GROUP_DEPTH });
         break;
       }
       visited.add(current);
@@ -639,7 +653,7 @@ function parseEach<T>(
   const result: T[] = [];
   rawList.forEach((raw, index) => {
     if (!isRecord(raw)) {
-      issues.invalid(section, index, `${section}[${index}] はオブジェクトでないため削除しました`);
+      issues.invalid(section, index, issues.t('parseReasons.notObject', { section, index }));
       issues.modified = true;
       return;
     }
@@ -740,7 +754,7 @@ export function parseWorkspaceFileLenient(
   ctx: WorkspaceParseContext = createWorkspaceParseContext()
 ): WorkspaceLenientParseResult {
   const obj = parseRoot(content);
-  const issues = new IssueCollector();
+  const issues = new IssueCollector(ctx.t);
   const invalid: InvalidWorkspaceEntries = { workspaces: [], groups: [], items: [] };
 
   normalizeHeader(obj, issues);
@@ -759,12 +773,7 @@ export function parseWorkspaceFileLenient(
       order: 0,
       createdAt: ctx.now,
     });
-    issues.normalized(
-      'workspaces',
-      -1,
-      'ワークスペースが 1 件も無いため既定のワークスペースを作りました',
-      id
-    );
+    issues.normalized('workspaces', -1, issues.t('parseReasons.defaultWorkspaceCreated'), id);
   }
   for (const ws of workspaces) ctx.workspaceIds.add(ws.id);
   ctx.defaultWorkspaceId = [...workspaces].sort((a, b) => a.order - b.order)[0].id;
@@ -823,10 +832,10 @@ export function parseWorkspaceArchiveFileLenient(
   ctx: WorkspaceParseContext
 ): WorkspaceArchiveLenientParseResult {
   if (ctx.defaultWorkspaceId === '') {
-    throw new Error('parseWorkspaceArchiveFileLenient は workspace.json のパース後に呼ぶこと');
+    throw new Error('parseWorkspaceArchiveFileLenient must be called after parsing workspace.json');
   }
   const obj = parseRoot(content);
-  const issues = new IssueCollector();
+  const issues = new IssueCollector(ctx.t);
   const invalid = { groups: [] as unknown[], items: [] as unknown[] };
 
   normalizeHeader(obj, issues);
@@ -901,7 +910,7 @@ export function parseWorkspaceArchiveFileLenient(
       issues.invalid(
         'items',
         index,
-        `archivedGroupId "${String(rawArchivedGroupId)}" のアーカイブグループが無いため読み込みから外しました`,
+        issues.t('parseReasons.archivedGroupNotFound', { id: String(rawArchivedGroupId) }),
         item.id
       );
       invalid.items.push(raw);

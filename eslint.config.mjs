@@ -53,9 +53,6 @@ const I18N_RESTRICTED_SYNTAX = [
 const I18N_EXEMPT_FILES = [
   // 辞書の正本
   'src/common/i18n/locales/ja.ts',
-  // CLI の qdl reload・check にだけ出る読み込み時の理由（段階 4-3 で移す）
-  'src/common/utils/jsonParser.ts',
-  'src/common/utils/workspaceParser.ts',
   // 既定の名前（初回起動で表示言語の名前に置き換える。workspace は main が表示言語の名前を渡す）
   'src/common/types/json-workspace.ts',
   'src/main/services/settingsService.ts',

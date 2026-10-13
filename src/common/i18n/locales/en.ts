@@ -1335,6 +1335,35 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     greetingName: 'Snippet: thanks',
     greetingText: 'Thank you for your message.',
   },
+  parseReasons: {
+    versionFilled: 'version was missing or not a string, so "{{version}}" was added',
+    versionAdded: 'version was missing, so "{{version}}" was added',
+    versionFixed: 'Changed version "{{from}}" to "{{to}}"',
+    originalItemNotObject: 'The original items[{{index}}] was removed because it was not an object',
+    notObject: '{{section}}[{{index}}] was removed because it was not an object',
+    idMissing: 'id was missing, so a new one was assigned',
+    idInvalid: 'id "{{id}}" was invalid, so a new one was assigned',
+    idInvalidFormat:
+      'id "{{id}}" was invalid, so a new one was assigned (8 alphanumeric characters)',
+    idDuplicate: 'id "{{id}}" was a duplicate, so a new one was assigned',
+    windowTitleWildcard:
+      'windowTitle was empty with only a process name, so it was set to "*" (match all)',
+    arrayFilled: '{{key}} was missing, so an empty array was added',
+    valueFilled: '{{key}} was missing, so {{value}} was added',
+    colorFilled: 'color was missing, so "{{color}}" was added',
+    colorFixed:
+      'color "{{from}}" is neither a color token nor a 6-digit hex, so it was set to "{{color}}"',
+    workspaceIdMissing: 'workspaceId was missing, so it was put in the default workspace',
+    workspaceIdNotFound:
+      'The workspace for workspaceId "{{id}}" doesn\'t exist, so it was moved to the default workspace',
+    refNotString: '{{label}} was removed because it was not a string',
+    refGroupNotFound: '{{label}} was removed because the group "{{id}}" doesn\'t exist',
+    parentCycle: 'parentGroupId was removed because it was circular',
+    parentTooDeep: 'parentGroupId was removed because the nesting was deeper than {{max}} levels',
+    defaultWorkspaceCreated: 'There were no workspaces, so the default workspace was created',
+    archivedGroupNotFound:
+      'Excluded from loading because the archived group "{{id}}" for archivedGroupId doesn\'t exist',
+  },
   validation: {
     emptyField: '{{field}} is empty',
     emptyTypedField: '{{field}} of the {{type}} item is empty',

@@ -340,7 +340,8 @@ export class WorkspaceFileStore {
     // 寛容パース
     const ctx = createWorkspaceParseContext(
       this.now(),
-      mainI18n.t('workspace.defaultWorkspaceName')
+      mainI18n.t('workspace.defaultWorkspaceName'),
+      mainI18n.t
     );
     if (mainReport.status === 'ok' && mainContent !== null) {
       try {
@@ -521,7 +522,11 @@ export class WorkspaceFileStore {
     );
 
     // 変換結果を通常のパースに通してから書く（ここで問題が出るのは変換のバグ）
-    const ctx = createWorkspaceParseContext(now, mainI18n.t('workspace.defaultWorkspaceName'));
+    const ctx = createWorkspaceParseContext(
+      now,
+      mainI18n.t('workspace.defaultWorkspaceName'),
+      mainI18n.t
+    );
     const parsedMain = parseWorkspaceFileLenient(JSON.stringify(migrated.main), ctx);
     const parsedArchive = parseWorkspaceArchiveFileLenient(JSON.stringify(migrated.archive), ctx);
 
