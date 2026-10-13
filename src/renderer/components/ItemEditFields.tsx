@@ -55,12 +55,19 @@ interface ItemEditFieldsProps {
   onFieldChange: (field: keyof RegisterItem, value: ItemFieldValue) => void;
   onUpdate: (fields: Partial<RegisterItem>) => void;
   onPathBlur: () => void;
-  onTargetTabChange: (targetTab: string) => void;
   onFetchIcon: () => void;
   onAddGroupItem: () => void;
   onRemoveGroupItem: (groupItemNameIndex: number) => void;
-  availableTabs: DataFileTab[];
-  dataFileLabels: Record<string, string>;
+  /** 保存先（タブ・データファイル）の選択。省略すると出さない（ワークスペースは保存先が決まっている） */
+  placement?: {
+    availableTabs: DataFileTab[];
+    dataFileLabels: Record<string, string>;
+    onTargetTabChange: (targetTab: string) => void;
+  };
+  /** 種別を表示だけにする（ワークスペースのアイテムは種別を変えない） */
+  typeLocked?: boolean;
+  /** グループのアイテム欄の説明（省略時はメインのデータ向けの説明） */
+  groupItemsHint?: string;
   /** ドロップしたファイルから登録するときはパスを書き換えさせない */
   isPathReadOnly: boolean;
   iconFetchLoading: boolean;
@@ -87,12 +94,12 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
   onFieldChange,
   onUpdate,
   onPathBlur,
-  onTargetTabChange,
   onFetchIcon,
   onAddGroupItem,
   onRemoveGroupItem,
-  availableTabs,
-  dataFileLabels,
+  placement,
+  typeLocked = false,
+  groupItemsHint,
   isPathReadOnly,
   iconFetchLoading,
   optionsOpen,
@@ -108,7 +115,7 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
   showSeparator,
 }) => {
   const { t } = useTranslation();
-  const selectedTab = availableTabs.find((tab) => tab.files.includes(item.targetTab));
+  const selectedTab = placement?.availableTabs.find((tab) => tab.files.includes(item.targetTab));
   const hasPath =
     item.itemCategory !== 'group' &&
     item.itemCategory !== 'window' &&
@@ -129,39 +136,45 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
         {item.icon && <img src={item.icon} alt="" className="item-icon" />}
       </div>
 
-      <div className="form-row">
-        <div className="form-group">
-          <label>{t('register.targetTab')}</label>
-          <select value={item.targetTab} onChange={(e) => onTargetTabChange(e.target.value)}>
-            {availableTabs.map((tab) => (
-              <option key={tab.files[0]} value={tab.files[0]}>
-                {tab.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {selectedTab && selectedTab.files.length > 1 && (
+      {placement && (
+        <div className="form-row">
           <div className="form-group">
-            <label>{t('register.targetFile')}</label>
+            <label>{t('register.targetTab')}</label>
             <select
-              value={item.targetFile || selectedTab.files[0]}
-              onChange={(e) => onFieldChange('targetFile', e.target.value)}
+              value={item.targetTab}
+              onChange={(e) => placement.onTargetTabChange(e.target.value)}
             >
-              {selectedTab.files.map((file) => (
-                <option key={file} value={file}>
-                  {dataFileLabels[file] || file}
+              {placement.availableTabs.map((tab) => (
+                <option key={tab.files[0]} value={tab.files[0]}>
+                  {tab.name}
                 </option>
               ))}
             </select>
           </div>
-        )}
-      </div>
+
+          {selectedTab && selectedTab.files.length > 1 && (
+            <div className="form-group">
+              <label>{t('register.targetFile')}</label>
+              <select
+                value={item.targetFile || selectedTab.files[0]}
+                onChange={(e) => onFieldChange('targetFile', e.target.value)}
+              >
+                {selectedTab.files.map((file) => (
+                  <option key={file} value={file}>
+                    {placement.dataFileLabels[file] || file}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="form-group">
         <label>{t('register.type')}</label>
         <select
           value={item.itemCategory}
+          disabled={typeLocked}
           onChange={(e) =>
             onFieldChange('itemCategory', e.target.value as RegisterItem['itemCategory'])
           }
@@ -244,7 +257,7 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
             </button>
           </div>
           {errors?.groupItemNames && <span className="error-message">{errors.groupItemNames}</span>}
-          <small>{t('register.groupItemsHint')}</small>
+          <small>{groupItemsHint ?? t('register.groupItemsHint')}</small>
         </div>
       )}
 

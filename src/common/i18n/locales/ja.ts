@@ -1466,6 +1466,9 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       groupItemsHint:
         'メインデータの既存アイテムから選択してください。グループ実行時に順番に起動されます。',
       updateFailed: 'ワークスペースアイテムの更新に失敗しました',
+      remove: 'ワークスペースから削除',
+      removeFailed: 'ワークスペースからの削除に失敗しました',
+      dropToReplacePath: 'ドロップしてパスを置き換え',
     },
   },
   settings: {

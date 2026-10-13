@@ -209,7 +209,7 @@ QDL_INSTANCE=dev cli/target/release/qdl.exe reload
 - アイコン取得: `src/main/services/icon/iconFetcher.ts` の `getIconForItem()`（アイコン用 IPC が直接、ワークスペースの IPC は `services/iconService.ts` 経由で使う）
 - アイテムの起動: `src/main/utils/itemLauncher.ts`（URL・ファイル・アプリ・カスタムURI。`itemHandlers.ts` と `workspaceHandlers.ts` が共用）
 - ウィンドウの検索・アクティブ化・位置とサイズの設定: `src/main/utils/windowActivator.ts`
-- 登録・編集フォームの部品: `src/renderer/components/WindowConfigEditor.tsx`（ウィンドウ設定）と `CustomIconEditor.tsx`（カスタムアイコン）。`ItemEditFields.tsx`（アイテム 1 件分の編集欄。状態は持たず、読み込み・保存は呼び出し側）とワークスペースのアイテム編集が使う
+- 登録・編集フォームの部品: `src/renderer/components/ItemEditFields.tsx`（アイテム 1 件分の編集欄。状態は持たず、読み込み・保存は呼び出し側）。メインの登録・編集（`RegisterModal`）とワークスペースのアイテム編集（`WorkspaceItemEditModal`）の両方が使う。ワークスペースは `placement` を渡さず（保存先の欄を出さない）、`typeLocked` で種別を固定する。中の部品に `WindowConfigEditor.tsx`（ウィンドウ設定）・`CustomIconEditor.tsx`（カスタムアイコン）など
 
 ### パフォーマンス最適化
 

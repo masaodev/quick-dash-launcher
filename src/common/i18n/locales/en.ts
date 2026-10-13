@@ -1468,6 +1468,9 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       groupItemsHint:
         'Choose from the items in your data files. They open in order when the group runs.',
       updateFailed: "Couldn't update the workspace item",
+      remove: 'Remove from workspace',
+      removeFailed: "Couldn't remove the item from the workspace",
+      dropToReplacePath: 'Drop to replace the path',
     },
   },
   settings: {

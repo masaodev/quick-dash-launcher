@@ -307,12 +307,15 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                     onFieldChange={(field, value) => handleItemChange(index, field, value)}
                     onUpdate={(fields) => updateItem(index, fields)}
                     onPathBlur={() => form.handlePathBlur(index)}
-                    onTargetTabChange={(targetTab) => form.handleTargetTabChange(index, targetTab)}
                     onFetchIcon={() => form.handleFetchIcon(index)}
                     onAddGroupItem={() => form.handleAddGroupItem(index)}
                     onRemoveGroupItem={(nameIndex) => form.handleRemoveGroupItem(index, nameIndex)}
-                    availableTabs={availableTabs}
-                    dataFileLabels={dataFileLabels}
+                    placement={{
+                      availableTabs,
+                      dataFileLabels,
+                      onTargetTabChange: (targetTab) =>
+                        form.handleTargetTabChange(index, targetTab),
+                    }}
                     isPathReadOnly={!!droppedPaths && droppedPaths.length > 0}
                     iconFetchLoading={iconFetchLoading[index] || false}
                     optionsOpen={!!optionsSectionOpen[index]}

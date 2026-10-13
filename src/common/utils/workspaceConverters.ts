@@ -197,6 +197,7 @@ export function workspaceItemToRegisterItem(item: WorkspaceItem): RegisterItem {
         path: item.path,
         type: item.launcherType,
         args: item.args,
+        icon: item.icon,
         targetTab: '',
         customIcon: item.customIcon,
         windowConfig: item.windowConfig,
