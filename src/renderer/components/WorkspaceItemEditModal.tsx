@@ -261,26 +261,25 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
                     )}
                   </div>
 
-                  {item.itemCategory !== 'group' &&
-                    item.itemCategory !== 'window' &&
-                    item.itemCategory !== 'layout' && (
-                      <div className="form-group">
-                        <label>パス:</label>
-                        <input
-                          type="text"
-                          value={item.path}
-                          className={errors.path ? 'error' : ''}
-                          onChange={(e) => handleFieldChange('path', e.target.value)}
-                          onBlur={() => handlePathBlur()}
-                          placeholder="ファイルパス、URL、またはカスタムURIを入力"
-                        />
-                        {errors.path && <span className="error-message">{errors.path}</span>}
-                        <UrlConverterMenu
-                          url={item.path}
-                          onConvert={(convertedUrl) => handleFieldChange('path', convertedUrl)}
-                        />
-                      </div>
-                    )}
+                  {/* パスを持つのは通常のアイテムだけ（クリップボードの中身は別ファイル） */}
+                  {item.itemCategory === 'item' && (
+                    <div className="form-group">
+                      <label>パス:</label>
+                      <input
+                        type="text"
+                        value={item.path}
+                        className={errors.path ? 'error' : ''}
+                        onChange={(e) => handleFieldChange('path', e.target.value)}
+                        onBlur={() => handlePathBlur()}
+                        placeholder="ファイルパス、URL、またはカスタムURIを入力"
+                      />
+                      {errors.path && <span className="error-message">{errors.path}</span>}
+                      <UrlConverterMenu
+                        url={item.path}
+                        onConvert={(convertedUrl) => handleFieldChange('path', convertedUrl)}
+                      />
+                    </div>
+                  )}
 
                   {item.itemCategory === 'item' && (
                     <div className="form-group">

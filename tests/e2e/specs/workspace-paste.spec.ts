@@ -116,4 +116,59 @@ test.describe('QuickDashLauncher - ワークスペースへの貼り付け', () 
     // ただの文字列がフォルダになっていないこと（以前の不具合の再発防止）
     expect(items.some((item) => item.type === 'item' && item.path === 'https')).toBe(false);
   });
+
+  test('クリップボードアイテムの編集画面にはパス欄を出さず、名前を変えても中身の参照は保つ', async ({
+    electronApp,
+    mainWindow,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    const workspaceWindow = await getWorkspaceWindow(electronApp);
+    await workspaceWindow.waitForLoadState('domcontentloaded');
+
+    await pasteText(electronApp, workspaceWindow, '編集するメモ');
+    await expect(
+      workspaceWindow.locator('.workspace-item-card', { hasText: '編集するメモ' })
+    ).toBeVisible({ timeout: 10000 });
+    const before = (
+      await workspaceWindow.evaluate(() => window.electronAPI.workspaceAPI.loadItems())
+    ).find((item) => item.displayName === '編集するメモ');
+    if (before?.type !== 'clipboard') throw new Error('クリップボードアイテムになっていない');
+
+    const [editor] = await Promise.all([
+      electronApp.waitForEvent('window', { timeout: 15000 }),
+      workspaceWindow.evaluate(
+        (id) => window.electronAPI.workspaceAPI.openItemEditor(id),
+        before.id
+      ),
+    ]);
+    await editor.locator('.workspace-editor-page').waitFor({ state: 'visible', timeout: 15000 });
+    const nameInput = editor.getByPlaceholder('アイテム表示名を入力');
+    await expect(nameInput).toHaveValue('編集するメモ');
+    // パスの入力欄そのものが無い（ラベルの文言に頼らない）
+    await expect(editor.getByPlaceholder('ファイルパス、URL、またはカスタムURIを入力')).toHaveCount(
+      0
+    );
+
+    await nameInput.fill('編集したメモ');
+    await Promise.all([
+      editor.waitForEvent('close', { timeout: 10000 }),
+      editor.locator('.modal-actions button', { hasText: '更新' }).click(),
+    ]);
+
+    let after:
+      Awaited<ReturnType<typeof window.electronAPI.workspaceAPI.loadItems>>[number] | undefined;
+    await expect
+      .poll(async () => {
+        const items = await workspaceWindow.evaluate(() =>
+          window.electronAPI.workspaceAPI.loadItems()
+        );
+        after = items.find((item) => item.id === before.id);
+        return after?.displayName;
+      })
+      .toBe('編集したメモ');
+    expect(after?.type).toBe('clipboard');
+    if (after?.type !== 'clipboard') return;
+    expect(after.dataFileRef).toBe(before.dataFileRef);
+  });
 });
