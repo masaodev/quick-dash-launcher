@@ -1,5 +1,7 @@
 import type { JsonItemIssue } from '@common/utils/jsonParser';
 
+import { mainI18n } from './mainI18n.js';
+
 /**
  * 設定ファイルの読み込みレポート
  *
@@ -92,10 +94,11 @@ export function formatLoadReportToast(report: LoadReport): string | null {
     return null;
   }
 
-  const parts: string[] = [`${report.summary.accepted} 件読込`];
-  if (skipped > 0) parts.push(`${skipped} 件スキップ`);
-  if (idAssigned > 0) parts.push(`${idAssigned} 件に ID を採番`);
-  const source = externallyChangedFiles.length > 0 ? '外部編集されたデータ' : 'データ';
-
-  return `${source}: ${parts.join('・')}`;
+  const t = mainI18n.t;
+  const parts: string[] = [t('loadReport.accepted', { count: report.summary.accepted })];
+  if (skipped > 0) parts.push(t('loadReport.skipped', { count: skipped }));
+  if (idAssigned > 0) parts.push(t('loadReport.idAssigned', { count: idAssigned }));
+  const key =
+    externallyChangedFiles.length > 0 ? 'loadReport.externalSummary' : 'loadReport.summary';
+  return t(key, { parts: parts.join(t('loadReport.separator')) });
 }

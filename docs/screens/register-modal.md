@@ -344,9 +344,9 @@ SharePoint・OneDrive 上の Office ファイルの URL を、Office アプリ�
 
 | ルール名 | 拡張子 | 候補（付ける文字列） |
 | --- | --- | --- |
-| SharePoint/OneDrive Excel | .xlsx・.xls | 編集モード（SharePoint標準）（`ms-excel:ofe\|ofc\|u\|`）、編集モード（`ms-excel:ofe\|u\|`）、読み取り専用（`ms-excel:ofv\|u\|`） |
-| SharePoint/OneDrive Word | .docx・.doc | 編集モード（`ms-word:ofe\|u\|`）、読み取り専用（`ms-word:ofv\|u\|`） |
-| SharePoint/OneDrive PowerPoint | .pptx・.ppt | 編集モード（`ms-powerpoint:ofe\|u\|`）、読み取り専用（`ms-powerpoint:ofv\|u\|`） |
+| SharePoint/OneDrive Excel | .xlsx・.xls | 編集用に開く（SharePoint標準）（`ms-excel:ofe\|ofc\|u\|`）、編集用に開く（`ms-excel:ofe\|u\|`）、読み取り専用（`ms-excel:ofv\|u\|`） |
+| SharePoint/OneDrive Word | .docx・.doc | 編集用に開く（`ms-word:ofe\|u\|`）、読み取り専用（`ms-word:ofv\|u\|`） |
+| SharePoint/OneDrive PowerPoint | .pptx・.ppt | 編集用に開く（`ms-powerpoint:ofe\|u\|`）、読み取り専用（`ms-powerpoint:ofv\|u\|`） |
 
 ワークスペースアイテムの編集ウィンドウのパス入力欄にも同じボタンがある（[ワークスペースウィンドウ - 編集](./workspace-window.md#各メニュー項目の処理)）。こちらはパスが空のときだけ押せない。
 

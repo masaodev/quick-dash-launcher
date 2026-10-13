@@ -23,6 +23,7 @@ import {
 } from '@common/types';
 
 import { PathManager } from '../../config/pathManager.js';
+import { mainI18n } from '../mainI18n.js';
 import {
   prefetchFolderProbes,
   refineItemType,
@@ -100,7 +101,7 @@ export async function loadEditableItems(configFolder: string): Promise<LoadEdita
           const parseError = invalidReasons.get(index);
           const validation = parseError
             ? { isValid: false, error: parseError }
-            : validateEditableItem(jsonItem);
+            : validateEditableItem(jsonItem, mainI18n.t);
 
           items.push({
             item: jsonItem,
@@ -118,7 +119,7 @@ export async function loadEditableItems(configFolder: string): Promise<LoadEdita
         markDataFileCorrupted(fileName);
         return {
           items: [],
-          error: `JSONファイルのパースに失敗しました: ${fileName}`,
+          error: mainI18n.t('dataErrors.jsonParseFailed', { file: fileName }),
         };
       }
     }
@@ -131,7 +132,7 @@ export async function loadEditableItems(configFolder: string): Promise<LoadEdita
     dataLogger.error({ error }, 'EditableJsonItemの読み込みに失敗しました');
     return {
       items: [],
-      error: `読み込みに失敗しました: ${error}`,
+      error: mainI18n.t('dataErrors.loadFailed', { error: String(error) }),
     };
   }
 }
@@ -183,8 +184,7 @@ function assertNoExternalChange(
   if (changed.length > 0) {
     dataLogger.warn({ changed }, '外部変更との競合を検知したため編集画面の保存を拒否しました');
     throw new Error(
-      `${EXTERNAL_CHANGE_CONFLICT_MARKER} データファイルが QDL の外で変更されています: ${changed.join(', ')}。` +
-        '編集内容は保存していません。再読込してからやり直してください'
+      `${EXTERNAL_CHANGE_CONFLICT_MARKER} ${mainI18n.t('dataErrors.externalChange', { files: changed.join(', ') })}`
     );
   }
 }
@@ -285,8 +285,7 @@ export async function saveEditableItems(
   const corruptedFiles = getCorruptedDataFiles();
   if (corruptedFiles.length > 0) {
     throw new Error(
-      `データファイルが破損している可能性があるため保存を中止しました: ${corruptedFiles.join(', ')}。` +
-        'ファイルを修復（または削除）してから再試行してください'
+      mainI18n.t('dataErrors.saveBlockedCorrupted', { files: corruptedFiles.join(', ') })
     );
   }
 
@@ -327,7 +326,7 @@ export async function saveEditableItems(
 
     if (currentContent !== content) {
       if (!writeDataFile(filePath, content)) {
-        throw new Error(`データファイルの書き込みに失敗しました: ${fileName}`);
+        throw new Error(mainI18n.t('dataErrors.writeFailed', { file: fileName }));
       }
       writtenFiles.push(fileName);
       if (currentContent !== null) {

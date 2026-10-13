@@ -6,6 +6,7 @@
  */
 
 import type { LauncherItem, GroupItem, WindowItem, ClipboardItem, LayoutItem } from './launcher';
+import type { DirOptionsForProcessing } from './json-data';
 
 /**
  * 編集可能なアイテムの共通メタデータ
@@ -26,8 +27,8 @@ export interface EditingLauncherItem extends Omit<LauncherItem, 'sourceFile'>, E
   isDirExpanded?: boolean;
   /** フォルダ取込の元パス */
   expandedFrom?: string;
-  /** フォルダ取込のオプション文字列 */
-  expandedOptions?: string;
+  /** フォルダ取込の設定 */
+  expandedOptions?: DirOptionsForProcessing;
 }
 
 /**

@@ -10,6 +10,8 @@ import { WindowInfo } from '@common/types';
 import koffi from 'koffi';
 import type { Bounds } from '@common/types';
 
+import { mainI18n } from '../services/mainI18n.js';
+
 import { getWindowDesktopNumber, isPinnedWindow } from './virtualDesktop/index.js';
 
 // user32.dll、kernel32.dll、gdiplus.dll、dwmapi.dllをロード
@@ -794,7 +796,7 @@ export function getWindowBounds(hwnd: number | bigint): Bounds | null {
 export function closeWindow(hwnd: number | bigint): boolean {
   const handle = toHwndNumber(hwnd);
   if (PostMessageW(handle, WM_CLOSE, 0, 0) || !IsWindow(handle)) return true;
-  throw new Error('閉じる要求を送れませんでした（管理者として実行中のアプリなど）');
+  throw new Error(mainI18n.t('windowErrors.closeRequestFailed'));
 }
 
 /** 閉じたか、トレイに隠れた（一覧に出ない）か */

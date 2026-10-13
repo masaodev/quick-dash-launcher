@@ -53,7 +53,7 @@ export function reorderItemNumbers(items: EditableJsonItem[]): EditableJsonItem[
 
 /** JsonItem から、指定データファイルに置く EditableJsonItem を作る */
 export function toEditableItem(jsonItem: JsonItem, sourceFile: string): EditableJsonItem {
-  const validation = validateEditableItem(jsonItem);
+  const validation = validateEditableItem(jsonItem, i18next.t);
   return {
     item: jsonItem,
     displayText: safeDisplayText(jsonItem),
@@ -76,7 +76,7 @@ export function refreshEditableItem(
   jsonItem: JsonItem,
   sourceFile: string = item.meta.sourceFile
 ): EditableJsonItem {
-  const validation = validateEditableItem(jsonItem);
+  const validation = validateEditableItem(jsonItem, i18next.t);
   return {
     item: jsonItem,
     displayText: safeDisplayText(jsonItem),

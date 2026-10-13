@@ -1,5 +1,6 @@
 import { WindowInfo } from './window';
 import type { ClipboardFormat } from './clipboard';
+import type { DirOptionsForProcessing } from './json-data';
 
 /**
  * ウィンドウ制御の設定情報
@@ -64,8 +65,8 @@ export interface LauncherItem {
   isDirExpanded?: boolean;
   /** フォルダ取込アイテムから展開された場合の元ディレクトリパス */
   expandedFrom?: string;
-  /** フォルダ取込アイテムから展開された場合のオプション情報（人間が読める形式） */
-  expandedOptions?: string;
+  /** フォルダ取込アイテムから展開された場合の取込の設定（ツールチップと、展開元の編集に使う） */
+  expandedOptions?: DirOptionsForProcessing;
   /** フォルダ取込アイテムから展開された場合の元のdirディレクティブID */
   expandedFromId?: string;
   /** 編集モードで変更されたかどうか */

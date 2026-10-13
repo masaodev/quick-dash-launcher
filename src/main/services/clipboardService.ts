@@ -30,6 +30,8 @@ import {
 
 import PathManager from '../config/pathManager.js';
 
+import { mainI18n } from './mainI18n.js';
+
 const DATA_FILE_REF_PATTERN = /clipboard-data\/(.+)\.json$/;
 
 interface SessionData {
@@ -151,7 +153,10 @@ export class ClipboardService {
 
       if (!preview) {
         const size = image.getSize();
-        preview = `画像 (${size.width}x${size.height})`;
+        preview = mainI18n.t('clipboardService.imagePreview', {
+          width: size.width,
+          height: size.height,
+        });
       }
     }
 
@@ -162,7 +167,10 @@ export class ClipboardService {
         const filePreview =
           filePaths.length === 1
             ? filePaths[0]
-            : `${filePaths.length}個のファイル: ${filePaths[0]}...`;
+            : mainI18n.t('clipboardService.filesPreview', {
+                count: filePaths.length,
+                first: filePaths[0],
+              });
         preview = this.truncatePreview(filePreview);
       }
       estimatedSize += this.calculatePathsSize(filePaths);
@@ -224,7 +232,10 @@ export class ClipboardService {
 
       if (pngBuffer.length > MAX_IMAGE_SIZE_BYTES) {
         const maxMB = Math.round(MAX_IMAGE_SIZE_BYTES / 1024 / 1024);
-        return { success: false, error: `画像サイズが上限（${maxMB}MB）を超えています` };
+        return {
+          success: false,
+          error: mainI18n.t('clipboardService.imageTooLarge', { max: maxMB }),
+        };
       }
 
       formats.push('image');
@@ -233,7 +244,10 @@ export class ClipboardService {
 
       if (!preview) {
         const size = image.getSize();
-        preview = `画像 (${size.width}x${size.height})`;
+        preview = mainI18n.t('clipboardService.imagePreview', {
+          width: size.width,
+          height: size.height,
+        });
       }
     }
 
@@ -252,13 +266,16 @@ export class ClipboardService {
         const filePreview =
           filePaths.length === 1
             ? filePaths[0]
-            : `${filePaths.length}個のファイル: ${filePaths[0]}...`;
+            : mainI18n.t('clipboardService.filesPreview', {
+                count: filePaths.length,
+                first: filePaths[0],
+              });
         preview = this.truncatePreview(filePreview);
       }
     }
 
     if (formats.length === 0) {
-      return { success: false, error: 'クリップボードが空です' };
+      return { success: false, error: mainI18n.t('clipboardService.empty') };
     }
 
     return {
@@ -276,7 +293,7 @@ export class ClipboardService {
     const filePath = PathManager.getClipboardDataFilePath(id);
 
     if (!FileUtils.safeWriteTextFile(filePath, JSON.stringify(clipboardData, null, 2))) {
-      throw new Error(`クリップボードデータの保存に失敗しました: ${filePath}`);
+      throw new Error(mainI18n.t('clipboardService.saveFailed', { file: filePath }));
     }
     return dataFileRef;
   }
@@ -308,7 +325,8 @@ export class ClipboardService {
       logger.error({ error }, 'クリップボードのキャプチャに失敗しました');
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'キャプチャに失敗しました',
+        error:
+          error instanceof Error ? error.message : mainI18n.t('clipboardService.captureFailed'),
       };
     }
   }
@@ -344,7 +362,8 @@ export class ClipboardService {
       logger.error({ error }, 'セッションキャプチャに失敗しました');
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'キャプチャに失敗しました',
+        error:
+          error instanceof Error ? error.message : mainI18n.t('clipboardService.captureFailed'),
       };
     }
   }
@@ -353,7 +372,7 @@ export class ClipboardService {
     try {
       const session = this.pendingSessions.get(sessionId);
       if (!session) {
-        return { success: false, error: 'セッションが見つかりません' };
+        return { success: false, error: mainI18n.t('clipboardService.sessionNotFound') };
       }
 
       const dataFileRef = this.saveClipboardDataToFile(session.clipboardData);
@@ -370,7 +389,7 @@ export class ClipboardService {
       logger.error({ error, sessionId }, 'セッションのコミットに失敗しました');
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'コミットに失敗しました',
+        error: error instanceof Error ? error.message : mainI18n.t('clipboardService.commitFailed'),
       };
     }
   }
@@ -402,12 +421,12 @@ export class ClipboardService {
     try {
       const id = this.extractIdFromRef(dataFileRef);
       if (!id) {
-        return { success: false, error: '無効なデータファイル参照です' };
+        return { success: false, error: mainI18n.t('clipboardService.invalidRef') };
       }
 
       const filePath = PathManager.getClipboardDataFilePath(id);
       if (!fs.existsSync(filePath)) {
-        return { success: false, error: 'クリップボードデータが見つかりません' };
+        return { success: false, error: mainI18n.t('clipboardService.dataNotFound') };
       }
 
       const content = fs.readFileSync(filePath, 'utf8');
@@ -452,8 +471,8 @@ export class ClipboardService {
       // 書き込む形式が 1 つもないまま書き込むと、今のクリップボードを空にしてしまう
       if (restoredFormats.length === 0) {
         const error = data.filePaths?.length
-          ? '保存したファイルがすべて見つかりません（移動・削除された可能性があります）'
-          : '復元できるデータがありません';
+          ? mainI18n.t('clipboardService.filesMissing')
+          : mainI18n.t('clipboardService.nothingToRestore');
         logger.warn({ id }, error);
         return { success: false, error };
       }
@@ -466,7 +485,8 @@ export class ClipboardService {
       logger.error({ error, dataFileRef }, 'クリップボードの復元に失敗しました');
       return {
         success: false,
-        error: error instanceof Error ? error.message : '復元に失敗しました',
+        error:
+          error instanceof Error ? error.message : mainI18n.t('clipboardService.restoreFailed'),
       };
     }
   }
@@ -549,7 +569,7 @@ export class ClipboardService {
       return this.truncatePreview(data.text);
     }
     if (data.imageBase64) {
-      return '画像データ';
+      return mainI18n.t('clipboardService.imageData');
     }
     if (data.html) {
       const textContent = data.html.replace(/<[^>]*>/g, '').trim();

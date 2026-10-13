@@ -11,6 +11,7 @@ import type { BookmarkWithFolder } from '@common/types/bookmarkAutoImport';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { EnvConfig } from '../config/envConfig.js';
+import { mainI18n } from '../services/mainI18n.js';
 
 /**
  * Chromeのプリファレンスファイルの型定義
@@ -175,17 +176,17 @@ function isValidBookmarkPath(filePath: string): boolean {
  */
 async function readAndValidateBookmarkFile(filePath: string): Promise<Record<string, unknown>> {
   if (!isValidBookmarkPath(filePath)) {
-    throw new Error('許可されていないファイルパスです');
+    throw new Error(mainI18n.t('bookmarkErrors.pathNotAllowed'));
   }
 
   const content = await fs.promises.readFile(filePath, 'utf-8');
   if (content.length > MAX_BOOKMARK_FILE_SIZE) {
-    throw new Error('ファイルサイズが大きすぎます');
+    throw new Error(mainI18n.t('bookmarkErrors.tooLarge'));
   }
 
   const data = JSON.parse(content) as BookmarkData;
   if (!data.roots || typeof data.roots !== 'object') {
-    throw new Error('無効なブックマークファイル形式です');
+    throw new Error(mainI18n.t('bookmarkErrors.invalidFormat'));
   }
 
   return data.roots;
@@ -250,7 +251,7 @@ export async function parseBrowserBookmarksWithFolders(
 export function parseBookmarkFileWithFolders(filePath: string): BookmarkWithFolder[] {
   const htmlContent = FileUtils.safeReadTextFile(filePath);
   if (!htmlContent) {
-    throw new Error('ファイルの読み込みに失敗しました');
+    throw new Error(mainI18n.t('bookmarkErrors.readFailed'));
   }
   return parseNetscapeBookmarkHtml(htmlContent);
 }
@@ -261,7 +262,7 @@ export function parseBookmarkFileWithFolders(filePath: string): BookmarkWithFold
 export function setupBookmarkHandlers() {
   ipcMain.handle(IPC_CHANNELS.SELECT_BOOKMARK_FILE, async () => {
     const result = await dialog.showOpenDialog({
-      title: 'ブックマークファイルを選択',
+      title: mainI18n.t('bookmarkErrors.selectFileTitle'),
       filters: [
         { name: 'HTML Files', extensions: ['html', 'htm'] },
         { name: 'All Files', extensions: ['*'] },

@@ -34,6 +34,7 @@ import {
   writeDataFile,
 } from '../dataFileTracker.js';
 import type { LoadReportFile } from '../loadReportService.js';
+import { mainI18n } from '../mainI18n.js';
 import {
   applyExtensionlessFileMemo,
   prefetchFolderProbes,
@@ -64,9 +65,7 @@ export const WORKSPACE_ARCHIVE_FILE_KEY = 'workspace-archive.json';
 
 export class WorkspaceExternalChangeConflictError extends Error {
   constructor(fileKey: string) {
-    super(
-      `${fileKey} が QDL の外で変更されています。メイン画面で F5 を押して再読込してから操作してください`
-    );
+    super(mainI18n.t('workspaceErrors.externalChange', { file: fileKey }));
     this.name = 'WorkspaceExternalChangeConflictError';
   }
 }
@@ -74,7 +73,7 @@ export class WorkspaceExternalChangeConflictError extends Error {
 /** ファイルへの書き込み自体に失敗した（ディスク・権限など）。データはメモリ上に残っている */
 export class WorkspaceWriteError extends Error {
   constructor(fileKey: string) {
-    super(`${fileKey} の書き込みに失敗しました。ディスクの空き容量や権限を確認してください`);
+    super(mainI18n.t('workspaceErrors.writeFailed', { file: fileKey }));
     this.name = 'WorkspaceWriteError';
   }
 }
@@ -82,16 +81,14 @@ export class WorkspaceWriteError extends Error {
 /** 再読込（起動時・F5）の途中。読み終わる前に書くと再読込の結果で上書きされて消えるため拒否する */
 export class WorkspaceReloadInProgressError extends Error {
   constructor() {
-    super('ワークスペースを再読込中です。もう一度お試しください');
+    super(mainI18n.t('workspaceErrors.reloadInProgress'));
     this.name = 'WorkspaceReloadInProgressError';
   }
 }
 
 export class WorkspaceCorruptedError extends Error {
   constructor(fileKey: string) {
-    super(
-      `${fileKey} が壊れているため書き込めません。ファイルを修復してから F5 で再読込してください`
-    );
+    super(mainI18n.t('workspaceErrors.corrupted', { file: fileKey }));
     this.name = 'WorkspaceCorruptedError';
   }
 }
@@ -125,12 +122,6 @@ export interface WorkspaceReloadResult {
   /** 前回の読み込み結果からデータが変わったか（画面の再取得が必要か） */
   changed: boolean;
 }
-
-/** 移行の要約（レポートの normalized として 1 行で載せる） */
-const MIGRATION_REASON =
-  '旧形式（version なし）から 2.0 に変換しました: id を 8 文字英数字に採番し直し、' +
-  'ウィンドウ操作の座標名とクリップボード/レイアウトのフィールド名をデータファイルと揃え、' +
-  'グループの折りたたみと切り離しウィンドウの状態を workspace-ui-state.json に移しました';
 
 // ============================================================
 // 実行時 ⇄ ファイル形式の変換
@@ -264,7 +255,13 @@ export class WorkspaceFileStore {
     // 無ければ空ファイルを作る（既定ワークスペース 1 件）。
     // 「存在するのに読めない」（ロック・権限）は空で上書きせず unreadable にする
     let mainContent = this.readOrCreate(this.paths.main, mainReport, () =>
-      serializeWorkspaceFile(createEmptyWorkspaceFile(generateUniqueId(new Set()), this.now()))
+      serializeWorkspaceFile(
+        createEmptyWorkspaceFile(
+          generateUniqueId(new Set()),
+          this.now(),
+          mainI18n.t('workspace.defaultWorkspaceName')
+        )
+      )
     );
     let archiveContent = this.readOrCreate(this.paths.archive, archiveReport, () =>
       serializeWorkspaceArchiveFile(createEmptyWorkspaceArchiveFile())
@@ -303,7 +300,9 @@ export class WorkspaceFileStore {
       isLegacyWorkspaceFile(mainRaw)
     ) {
       mainReport.status = 'unreadable';
-      mainReport.error = `旧形式からの変換には ${WORKSPACE_ARCHIVE_FILE_KEY} も読める必要があります。先に直してください`;
+      mainReport.error = mainI18n.t('workspaceErrors.migrationNeedsArchive', {
+        file: WORKSPACE_ARCHIVE_FILE_KEY,
+      });
       this.corruptedFiles.add(WORKSPACE_FILE_KEY);
     }
 
@@ -319,14 +318,18 @@ export class WorkspaceFileStore {
         archiveContent = migrated.archiveContent;
         for (const report of [mainReport, archiveReport]) {
           report.rewritten = true;
-          report.issues.push({ index: -1, kind: 'normalized', reason: MIGRATION_REASON });
+          report.issues.push({
+            index: -1,
+            kind: 'normalized',
+            reason: mainI18n.t('workspaceErrors.migrated'),
+          });
         }
       } catch (error) {
         logger.error({ error }, 'ワークスペースファイルの旧形式からの変換に失敗しました');
         const message = error instanceof Error ? error.message : String(error);
         for (const report of [mainReport, archiveReport]) {
           report.status = 'corrupted';
-          report.error = `旧形式から 2.0 への変換に失敗しました: ${message}`;
+          report.error = mainI18n.t('workspaceErrors.migrationFailed', { error: message });
           this.corruptedFiles.add(report.file);
         }
       }
@@ -335,7 +338,10 @@ export class WorkspaceFileStore {
     }
 
     // 寛容パース
-    const ctx = createWorkspaceParseContext(this.now());
+    const ctx = createWorkspaceParseContext(
+      this.now(),
+      mainI18n.t('workspace.defaultWorkspaceName')
+    );
     if (mainReport.status === 'ok' && mainContent !== null) {
       try {
         const parsed = parseWorkspaceFileLenient(mainContent, ctx);
@@ -390,7 +396,9 @@ export class WorkspaceFileStore {
       if (mainReport.status !== 'ok' && archiveReport.status === 'ok') {
         // main が読めないと archive の参照を解決できないので、archive も読み込まない
         archiveReport.status = 'unreadable';
-        archiveReport.error = `${WORKSPACE_FILE_KEY} が読めないため読み込みを保留しました`;
+        archiveReport.error = mainI18n.t('workspaceErrors.archiveDeferred', {
+          file: WORKSPACE_FILE_KEY,
+        });
       }
       this.corruptedFiles.add(WORKSPACE_ARCHIVE_FILE_KEY);
     }
@@ -445,7 +453,7 @@ export class WorkspaceFileStore {
       const content = createDefault();
       if (!writeDataFile(filePath, content)) {
         report.status = 'unreadable';
-        report.error = 'ファイルを作成できませんでした';
+        report.error = mainI18n.t('workspaceErrors.createFailed');
         this.corruptedFiles.add(report.file);
         return null;
       }
@@ -456,7 +464,7 @@ export class WorkspaceFileStore {
     if (content === null) {
       logger.error({ filePath }, 'ワークスペースファイルを読み取れませんでした（ロック・権限）');
       report.status = 'unreadable';
-      report.error = 'ファイルを読み込めませんでした';
+      report.error = mainI18n.t('dataErrors.fileUnreadable');
       this.corruptedFiles.add(report.file);
     }
     return content;
@@ -509,11 +517,11 @@ export class WorkspaceFileStore {
     const now = this.now();
     const migrated = migrateWorkspaceV1(
       { main: mainRaw, archive: archiveRaw, detached: detachedRaw },
-      { now }
+      { now, defaultWorkspaceName: mainI18n.t('workspace.defaultWorkspaceName') }
     );
 
     // 変換結果を通常のパースに通してから書く（ここで問題が出るのは変換のバグ）
-    const ctx = createWorkspaceParseContext(now);
+    const ctx = createWorkspaceParseContext(now, mainI18n.t('workspace.defaultWorkspaceName'));
     const parsedMain = parseWorkspaceFileLenient(JSON.stringify(migrated.main), ctx);
     const parsedArchive = parseWorkspaceArchiveFileLenient(JSON.stringify(migrated.archive), ctx);
 
@@ -523,10 +531,14 @@ export class WorkspaceFileStore {
     const mainContent = serializeWorkspaceFile(parsedMain.data, parsedMain.invalid);
     const archiveContent = serializeWorkspaceArchiveFile(parsedArchive.data, parsedArchive.invalid);
     if (!writeDataFile(this.paths.main, mainContent)) {
-      throw new Error(`${WORKSPACE_FILE_KEY} の書き込みに失敗しました`);
+      throw new Error(
+        mainI18n.t('workspaceErrors.migrationWriteFailed', { file: WORKSPACE_FILE_KEY })
+      );
     }
     if (!writeDataFile(this.paths.archive, archiveContent)) {
-      throw new Error(`${WORKSPACE_ARCHIVE_FILE_KEY} の書き込みに失敗しました`);
+      throw new Error(
+        mainI18n.t('workspaceErrors.migrationWriteFailed', { file: WORKSPACE_ARCHIVE_FILE_KEY })
+      );
     }
 
     // 移行時に採番し直した id に UI 状態のキーを追随させる（パースでさらに採番された分）

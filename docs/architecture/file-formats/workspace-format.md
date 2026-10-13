@@ -69,7 +69,7 @@ QuickDashLauncher のワークスペース機能で使用されるファイル�
 | フィールド | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
 | **version** | string | ✓ | `"2.0"`。無いファイルは旧形式として移行される |
-| **workspaces** | Workspace[] | ✓ | 1 件以上。0 件なら既定ワークスペース「デフォルト」を作る |
+| **workspaces** | Workspace[] | ✓ | 1 件以上。0 件なら既定ワークスペースを作る（名前は作るときの表示言語で「デフォルト」／「Default」） |
 | **groups** | WorkspaceGroup[] | ✓ | |
 | **items** | WorkspaceItem[] | ✓ | |
 

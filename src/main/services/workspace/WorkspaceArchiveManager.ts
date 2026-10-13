@@ -10,6 +10,8 @@ import type {
 import logger from '@common/logger';
 import { getDescendantGroupIds } from '@common/utils/groupTreeUtils';
 
+import { mainI18n } from '../mainI18n.js';
+
 import type { WorkspaceFileStore } from './WorkspaceFileStore.js';
 
 /**
@@ -157,7 +159,9 @@ export class WorkspaceArchiveManager {
       if (!targetWorkspaceId) {
         const existingNames = currentGroups.map((g) => g.displayName);
         if (existingNames.includes(restoredGroupName)) {
-          restoredGroupName = `${restoredGroupName} (復元)`;
+          restoredGroupName = mainI18n.t('workspace.restoredGroupName', {
+            name: restoredGroupName,
+          });
           logger.info(
             { originalName: archivedGroup.displayName, newName: restoredGroupName },
             'Group name was duplicated, added suffix'

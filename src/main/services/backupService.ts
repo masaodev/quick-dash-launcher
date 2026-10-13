@@ -8,6 +8,7 @@ import { FileUtils } from '@common/utils/fileUtils';
 import PathManager from '../config/pathManager.js';
 
 import { SettingsService } from './settingsService.js';
+import { mainI18n } from './mainI18n.js';
 
 /** 外部変更の変更前スナップショットのフォルダ名サフィックス */
 const PRE_EXTERNAL_SUFFIX = '_pre-external';
@@ -138,7 +139,7 @@ export class BackupService {
     const snapshotFolder = path.join(backupFolder, timestamp);
 
     if (!FileUtils.exists(snapshotFolder)) {
-      return { success: false, error: 'スナップショットが見つかりません' };
+      return { success: false, error: mainI18n.t('backupErrors.snapshotNotFound') };
     }
 
     // リストア前の自動バックアップ（設定に関係なく強制作成）
@@ -168,7 +169,8 @@ export class BackupService {
       logger.info({ timestamp, fileCount: files.length }, 'スナップショットからリストアしました');
       return { success: true };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'リストアに失敗しました';
+      const errorMessage =
+        error instanceof Error ? error.message : mainI18n.t('backupErrors.restoreFailed');
       logger.error({ error, timestamp }, 'スナップショットのリストアに失敗');
       return { success: false, error: errorMessage };
     }
@@ -182,7 +184,7 @@ export class BackupService {
     const snapshotFolder = path.join(backupFolder, timestamp);
 
     if (!FileUtils.exists(snapshotFolder)) {
-      return { success: false, error: 'スナップショットが見つかりません' };
+      return { success: false, error: mainI18n.t('backupErrors.snapshotNotFound') };
     }
 
     try {
@@ -190,7 +192,8 @@ export class BackupService {
       logger.info({ timestamp }, 'スナップショットを削除しました');
       return { success: true };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : '削除に失敗しました';
+      const errorMessage =
+        error instanceof Error ? error.message : mainI18n.t('backupErrors.deleteFailed');
       logger.error({ error, timestamp }, 'スナップショットの削除に失敗');
       return { success: false, error: errorMessage };
     }
@@ -440,7 +443,7 @@ export class BackupService {
       const copied = path.join(snapshotFolder, path.basename(sourcePath));
       if (!FileUtils.exists(copied)) {
         throw new Error(
-          `移行前スナップショットに ${path.basename(sourcePath)} をコピーできませんでした`
+          mainI18n.t('backupErrors.preMigrationCopyFailed', { file: path.basename(sourcePath) })
         );
       }
     }

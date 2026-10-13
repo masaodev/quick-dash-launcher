@@ -382,8 +382,9 @@ export class TestUtils {
     const [adminWindow] = await Promise.all([
       electronApp.waitForEvent('window', {
         predicate: async (window) => {
+          // タイトルは表示言語で変わるので、ページの URL でも見分ける
           const title = await window.title();
-          return title.includes('設定・管理');
+          return window.url().includes('admin.html') || title.includes('設定・管理');
         },
         timeout: 10000,
       }),

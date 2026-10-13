@@ -7,6 +7,7 @@ import { iconLogger } from '@common/logger';
 import { FileUtils } from '@common/utils/fileUtils';
 
 import PathManager from '../../config/pathManager.js';
+import { mainI18n } from '../mainI18n.js';
 
 /** カスタムアイコンとして受け付ける最大ファイルサイズ */
 const MAX_CUSTOM_ICON_SIZE = 5 * 1024 * 1024; // 5MB
@@ -14,10 +15,10 @@ const MAX_CUSTOM_ICON_SIZE = 5 * 1024 * 1024; // 5MB
 /** カスタムアイコンファイルを選択するダイアログを表示 */
 export async function selectCustomIconFile(): Promise<string | null> {
   const result = await dialog.showOpenDialog({
-    title: 'カスタムアイコンを選択',
+    title: mainI18n.t('register.customIconPickerTitle'),
     filters: [
-      { name: '画像ファイル', extensions: ['png', 'jpg', 'jpeg', 'ico', 'svg'] },
-      { name: 'すべてのファイル', extensions: ['*'] },
+      { name: mainI18n.t('fileDialog.images'), extensions: ['png', 'jpg', 'jpeg', 'ico', 'svg'] },
+      { name: mainI18n.t('fileDialog.allFiles'), extensions: ['*'] },
     ],
     properties: ['openFile'],
   });
@@ -31,12 +32,12 @@ export async function saveCustomIcon(
   itemIdentifier: string
 ): Promise<string> {
   if (!fs.existsSync(sourceFilePath)) {
-    throw new Error(`ソースファイルが見つかりません: ${sourceFilePath}`);
+    throw new Error(mainI18n.t('iconErrors.sourceNotFound', { file: sourceFilePath }));
   }
 
   const stats = await fs.promises.stat(sourceFilePath);
   if (stats.size > MAX_CUSTOM_ICON_SIZE) {
-    throw new Error('ファイルサイズが大きすぎます（最大5MB）');
+    throw new Error(mainI18n.t('iconErrors.tooLarge', { max: 5 }));
   }
 
   const hash = crypto.createHash('md5').update(itemIdentifier).digest('hex').substring(0, 8);

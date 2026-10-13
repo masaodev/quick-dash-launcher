@@ -121,10 +121,8 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       });
       await utils.clickRegisterButton();
 
-      // アイテム数が増えていることを確認
-      const itemsAfter = mainWindow.locator('.item');
-      const countAfter = await itemsAfter.count();
-      expect(countAfter).toBe(countBefore + 1);
+      // アイテム数が増えていることを確認（一覧の更新を待つ）
+      await expect(mainWindow.locator('.item')).toHaveCount(countBefore + 1);
 
       // 新しいアイテムが表示されていることを確認
       const newItem = mainWindow.locator('.item', { hasText: '新規Webサイト' });

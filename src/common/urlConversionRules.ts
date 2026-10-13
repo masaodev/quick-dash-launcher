@@ -8,12 +8,10 @@
  * 変換オプション
  */
 export interface ConversionOption {
-  /** 表示名 */
-  label: string;
+  /** 開き方（画面の表示名と説明は辞書の urlConverter.options・urlConverter.descriptions から引く） */
+  kind: 'sharePointEdit' | 'edit' | 'readOnly';
   /** プレフィックス */
   prefix: string;
-  /** 説明（オプショナル） */
-  description?: string;
 }
 
 /**
@@ -22,6 +20,8 @@ export interface ConversionOption {
 export interface ConversionRule {
   /** ルール名 */
   name: string;
+  /** 開くアプリ（説明の文言に差し込む） */
+  app: 'Excel' | 'Word' | 'PowerPoint';
   /** URLパターン（正規表現） */
   pattern: RegExp;
   /** 変換オプションのリスト */
@@ -33,22 +33,20 @@ export interface ConversionRule {
  */
 const sharepointExcelRule: ConversionRule = {
   name: 'SharePoint/OneDrive Excel',
+  app: 'Excel',
   pattern: /(sharepoint\.com|docs\.live\.net).*\.(xlsx|xls)(\?|$|\/)/i,
   options: [
     {
-      label: '編集モード（SharePoint標準）',
+      kind: 'sharePointEdit',
       prefix: 'ms-excel:ofe|ofc|u|',
-      description: 'SharePointで使用される標準的な編集モード',
     },
     {
-      label: '編集モード',
+      kind: 'edit',
       prefix: 'ms-excel:ofe|u|',
-      description: 'Excelアプリで編集用に開く',
     },
     {
-      label: '読み取り専用',
+      kind: 'readOnly',
       prefix: 'ms-excel:ofv|u|',
-      description: 'Excelアプリで読み取り専用で開く',
     },
   ],
 };
@@ -58,17 +56,16 @@ const sharepointExcelRule: ConversionRule = {
  */
 const sharepointWordRule: ConversionRule = {
   name: 'SharePoint/OneDrive Word',
+  app: 'Word',
   pattern: /(sharepoint\.com|docs\.live\.net).*\.(docx|doc)(\?|$|\/)/i,
   options: [
     {
-      label: '編集モード',
+      kind: 'edit',
       prefix: 'ms-word:ofe|u|',
-      description: 'Wordアプリで編集用に開く',
     },
     {
-      label: '読み取り専用',
+      kind: 'readOnly',
       prefix: 'ms-word:ofv|u|',
-      description: 'Wordアプリで読み取り専用で開く',
     },
   ],
 };
@@ -78,17 +75,16 @@ const sharepointWordRule: ConversionRule = {
  */
 const sharepointPowerPointRule: ConversionRule = {
   name: 'SharePoint/OneDrive PowerPoint',
+  app: 'PowerPoint',
   pattern: /(sharepoint\.com|docs\.live\.net).*\.(pptx|ppt)(\?|$|\/)/i,
   options: [
     {
-      label: '編集モード',
+      kind: 'edit',
       prefix: 'ms-powerpoint:ofe|u|',
-      description: 'PowerPointアプリで編集用に開く',
     },
     {
-      label: '読み取り専用',
+      kind: 'readOnly',
       prefix: 'ms-powerpoint:ofv|u|',
-      description: 'PowerPointアプリで読み取り専用で開く',
     },
   ],
 };

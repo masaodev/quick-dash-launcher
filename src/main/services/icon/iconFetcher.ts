@@ -17,6 +17,7 @@ import {
   type IconFolders,
   type IconTargetItem,
 } from '../../utils/iconCacheKeys.js';
+import { mainI18n } from '../mainI18n.js';
 
 import { readFirstExistingFileAsBase64 } from './iconFileCache.js';
 import {
@@ -248,8 +249,8 @@ export async function fetchIconsCombined(
     filteredUrlItems,
     'favicon',
     (item) => fetchIconForItem(item, folders, forceRefresh),
-    'ファビコンが見つかりませんでした',
-    'ファビコン取得に失敗しました',
+    mainI18n.t('iconErrors.faviconNotFound'),
+    mainI18n.t('iconErrors.faviconFailed'),
     FAVICON_CONCURRENCY
   );
 
@@ -257,8 +258,8 @@ export async function fetchIconsCombined(
     filteredItems,
     'icon',
     (item) => fetchIconForItem(item, folders, forceRefresh),
-    'アイコンが見つかりませんでした',
-    'アイコン抽出に失敗しました',
+    mainI18n.t('iconErrors.iconNotFound'),
+    mainI18n.t('iconErrors.iconFailed'),
     ICON_EXTRACT_CONCURRENCY
   );
 

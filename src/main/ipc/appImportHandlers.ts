@@ -8,6 +8,8 @@ import { dataLogger } from '@common/logger';
 import type { ScannedAppItem, AppScanResult, AppTargetType } from '@common/types/appImport';
 import { generateId } from '@common/utils/jsonParser';
 
+import { mainI18n } from '../services/mainI18n.js';
+
 /** 実行可能ファイルの拡張子（app種別として分類） */
 const APP_EXTENSIONS = new Set([
   '.exe',
@@ -92,7 +94,9 @@ function scanStartApps(): ScannedAppItem[] {
       // URIスキーマ形式（例: ms-settings://）はtargetType: 'other'として分類
       const isUri = entry.AppID.includes('://');
       const targetType: AppTargetType = isUri ? 'other' : 'app';
-      const targetExtension = isUri ? entry.AppID.split('://')[0] + ':' : '(登録アプリ)';
+      const targetExtension = isUri
+        ? entry.AppID.split('://')[0] + ':'
+        : mainI18n.t('appImport.registeredApp');
 
       startApps.push({
         id: generateId(),
@@ -154,7 +158,7 @@ function scanInstalledApps(): AppScanResult {
         args: shortcutDetails.args?.trim() || undefined,
         checked: false,
         targetType,
-        targetExtension: targetExtension || '(なし)',
+        targetExtension: targetExtension || mainI18n.t('appImport.noExtension'),
         source: 'lnk',
         isUninstaller: isUninstaller(shortcutDetails.target, baseName),
       });
