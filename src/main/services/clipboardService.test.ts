@@ -74,3 +74,19 @@ describe('ClipboardService の未確定のキャプチャ', () => {
     expect(pendingCount()).toBe(2);
   });
 });
+
+describe('ClipboardService のデータファイル参照', () => {
+  const extractId = (ref: string) =>
+    (service as unknown as { extractIdFromRef(r: string): string | null }).extractIdFromRef(ref);
+
+  it('clipboard-data/<ID>.json から ID を取り出す', () => {
+    expect(extractId('clipboard-data/Ab3dEf9h.json')).toBe('Ab3dEf9h');
+  });
+
+  it('フォルダの外を指す参照・形の違う参照は受け付けない', () => {
+    expect(extractId('clipboard-data/../settings.json')).toBeNull();
+    expect(extractId('clipboard-data/sub/x.json')).toBeNull();
+    expect(extractId('other/clipboard-data/x.json')).toBeNull();
+    expect(extractId('clipboard-data/x.txt')).toBeNull();
+  });
+});
