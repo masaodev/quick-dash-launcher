@@ -127,11 +127,11 @@ export function useIconFetcher(options: UseIconFetcherOptions): UseIconFetcherRe
   }
 
   function handleFetchMissingIcons(): Promise<void> {
-    return fetchMissingIconsFor(mainItems, '全タブ');
+    return fetchMissingIconsFor(mainItems, 'all tabs');
   }
 
   function handleFetchMissingIconsCurrentTab(): Promise<void> {
-    return fetchMissingIconsFor(getCurrentTabItems(), '現在のタブ');
+    return fetchMissingIconsFor(getCurrentTabItems(), 'current tab');
   }
 
   return {

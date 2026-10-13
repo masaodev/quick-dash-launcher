@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { WorkspaceItem, WorkspaceItemUpdate, WindowInfo, WindowConfig } from '@common/types';
 import {
   mergeWindowInfoIntoLayoutEntry,
@@ -52,6 +53,7 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
   onSave,
   asPage = false,
 }) => {
+  const { t } = useTranslation();
   const modalRef = useRef<HTMLDivElement>(null);
   const [windowSelectorOpen, setWindowSelectorOpen] = useState(false);
   const [layoutCaptureOpen, setLayoutCaptureOpen] = useState(false);
@@ -226,34 +228,36 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
           ref={modalRef}
           tabIndex={-1}
         >
-          <h2>ワークスペースアイテムの編集</h2>
+          <h2>{t('workspace.edit.title')}</h2>
 
           {loading ? (
-            <div className="loading">アイテム情報を読み込み中...</div>
+            <div className="loading">{t('register.loading')}</div>
           ) : item ? (
             <>
               <div className="register-items">
                 <div className="register-item">
                   <div className="form-group">
-                    <label>種別:</label>
+                    <label>{t('register.type')}</label>
                     <select value={item.itemCategory} disabled>
-                      <option value="item">単一アイテム</option>
-                      <option value="group">グループ</option>
-                      <option value="window">ウィンドウ操作</option>
-                      <option value="clipboard">クリップボード</option>
-                      <option value="layout">ウィンドウ配置</option>
+                      <option value="item">{t('register.types.item')}</option>
+                      <option value="group">{t('register.types.group')}</option>
+                      <option value="window">{t('register.types.window')}</option>
+                      <option value="clipboard">{t('register.types.clipboard')}</option>
+                      <option value="layout">{t('register.types.layout')}</option>
                     </select>
                   </div>
 
                   <div className="form-group">
-                    <label>アイテム表示名:</label>
+                    <label>{t('register.displayName')}</label>
                     <input
                       type="text"
                       value={item.displayName}
                       className={errors.displayName ? 'error' : ''}
                       onChange={(e) => handleFieldChange('displayName', e.target.value)}
                       placeholder={
-                        item.itemCategory === 'group' ? 'グループ名を入力' : 'アイテム表示名を入力'
+                        item.itemCategory === 'group'
+                          ? t('register.placeholders.group')
+                          : t('register.placeholders.item')
                       }
                     />
                     {errors.displayName && (
@@ -264,14 +268,14 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
                   {/* パスを持つのは通常のアイテムだけ（クリップボードの中身は別ファイル） */}
                   {item.itemCategory === 'item' && (
                     <div className="form-group">
-                      <label>パス:</label>
+                      <label>{t('register.path')}</label>
                       <input
                         type="text"
                         value={item.path}
                         className={errors.path ? 'error' : ''}
                         onChange={(e) => handleFieldChange('path', e.target.value)}
                         onBlur={() => handlePathBlur()}
-                        placeholder="ファイルパス、URL、またはカスタムURIを入力"
+                        placeholder={t('register.pathPlaceholder')}
                       />
                       {errors.path && <span className="error-message">{errors.path}</span>}
                       <UrlConverterMenu
@@ -283,19 +287,19 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
 
                   {item.itemCategory === 'item' && (
                     <div className="form-group">
-                      <label>引数:</label>
+                      <label>{t('register.args')}</label>
                       <input
                         type="text"
                         value={item.args || ''}
                         onChange={(e) => handleFieldChange('args', e.target.value)}
-                        placeholder="コマンドライン引数（実行ファイルやアプリの場合のみ有効）"
+                        placeholder={t('register.argsPlaceholder')}
                       />
                     </div>
                   )}
 
                   {item.itemCategory === 'group' && (
                     <div className="form-group vertical-layout">
-                      <label>グループアイテムリスト:</label>
+                      <label>{t('register.groupItems')}</label>
                       <div className="group-item-list">
                         {item.groupItemNames && item.groupItemNames.length > 0 ? (
                           <div className="selected-items">
@@ -306,7 +310,7 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
                                   type="button"
                                   className="remove-group-item-btn"
                                   onClick={() => handleRemoveGroupItem(nameIndex)}
-                                  title="削除"
+                                  title={t('register.removeGroupItem')}
                                 >
                                   x
                                 </button>
@@ -314,22 +318,20 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
                             ))}
                           </div>
                         ) : (
-                          <div className="no-group-items">アイテムが追加されていません</div>
+                          <div className="no-group-items">{t('register.noGroupItems')}</div>
                         )}
                         <button
                           type="button"
                           className="add-group-item-btn"
                           onClick={handleAddGroupItem}
                         >
-                          + アイテムを追加
+                          {t('register.addGroupItem')}
                         </button>
                       </div>
                       {errors.groupItemNames && (
                         <span className="error-message">{errors.groupItemNames}</span>
                       )}
-                      <small>
-                        メインデータの既存アイテムから選択してください。グループ実行時に順番に起動されます。
-                      </small>
+                      <small>{t('workspace.edit.groupItemsHint')}</small>
                     </div>
                   )}
 
@@ -392,11 +394,11 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
                   )}
 
                   <div className="form-group">
-                    <label>メモ:</label>
+                    <label>{t('register.note')}</label>
                     <textarea
                       value={item.memo || ''}
                       onChange={(e) => handleFieldChange('memo', e.target.value)}
-                      placeholder="自由にメモを入力（任意）"
+                      placeholder={t('register.notePlaceholder')}
                       rows={3}
                       className="memo-textarea"
                     />
@@ -407,21 +409,21 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
               <div className="modal-actions">
                 {item.itemCategory !== 'group' && (
                   <Button variant="primary" onClick={handleExecute}>
-                    試しに実行
+                    {t('register.tryRun')}
                   </Button>
                 )}
                 <div className="modal-actions-right">
                   <Button variant="cancel" onClick={handleCancel}>
-                    キャンセル
+                    {t('common.cancel')}
                   </Button>
                   <Button variant="primary" onClick={handleSave}>
-                    更新
+                    {t('register.update')}
                   </Button>
                 </div>
               </div>
             </>
           ) : (
-            <div className="loading">アイテムが見つかりません</div>
+            <div className="loading">{t('workspace.edit.notFound')}</div>
           )}
         </div>
       </div>
@@ -437,9 +439,9 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
         isOpen={filePickerState.isOpen}
         onClose={closeCustomIconPicker}
         onFileSelect={onCustomIconSelected}
-        title="カスタムアイコンを選択"
+        title={t('register.customIconPickerTitle')}
         fileTypes="image"
-        description="アイコンとして使用する画像ファイルを選択してください。"
+        description={t('register.customIconPickerDescription')}
       />
 
       <WindowSelectorModal

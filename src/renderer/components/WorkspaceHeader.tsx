@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface WorkspaceHeaderProps {
   isFilterVisible: boolean;
@@ -21,6 +22,7 @@ const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
   onTogglePin,
   onClose,
 }) => {
+  const { t } = useTranslation();
   const [isSettingsMenuOpen, setIsSettingsMenuOpen] = useState(false);
   const settingsMenuRef = useRef<HTMLDivElement>(null);
 
@@ -53,23 +55,35 @@ const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
         <button
           className={`workspace-control-btn ${isFilterVisible ? 'active' : ''}`}
           onClick={onToggleFilter}
-          title="フィルタ"
+          title={t('workspace.header.filter')}
         >
           🔍
         </button>
-        <button className="workspace-control-btn" onClick={onExpandAll} title="全て展開">
+        <button
+          className="workspace-control-btn"
+          onClick={onExpandAll}
+          title={t('workspace.header.expandAll')}
+        >
           🔽
         </button>
-        <button className="workspace-control-btn" onClick={onCollapseAll} title="全て閉じる">
+        <button
+          className="workspace-control-btn"
+          onClick={onCollapseAll}
+          title={t('workspace.header.collapseAll')}
+        >
           🔼
         </button>
-        <button className="workspace-control-btn" onClick={onAddGroup} title="グループを追加">
+        <button
+          className="workspace-control-btn"
+          onClick={onAddGroup}
+          title={t('workspace.header.addGroup')}
+        >
           ➕
         </button>
         <button
           className={`workspace-pin-btn ${isPinned ? 'pinned' : ''}`}
           onClick={onTogglePin}
-          title={isPinned ? 'ピン留めを解除' : 'ピン留めして最前面に固定'}
+          title={isPinned ? t('workspace.header.unpin') : t('workspace.header.pin')}
         >
           📌
         </button>
@@ -77,7 +91,7 @@ const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
           <button
             className={`workspace-control-btn ${isSettingsMenuOpen ? 'active' : ''}`}
             onClick={() => setIsSettingsMenuOpen(!isSettingsMenuOpen)}
-            title="設定"
+            title={t('workspace.header.menu')}
           >
             ⚙️
           </button>
@@ -89,7 +103,7 @@ const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
                   handleMenuAction(() => window.electronAPI.openEditWindowWithTab('settings'))
                 }
               >
-                ⚙️ 設定
+                {t('workspace.header.openSettings')}
               </button>
               <div className="workspace-settings-menu-divider" />
               <button
@@ -100,7 +114,7 @@ const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
                   )
                 }
               >
-                左端に寄せる
+                {t('workspace.header.alignLeft')}
               </button>
               <button
                 className="workspace-settings-menu-item"
@@ -110,7 +124,7 @@ const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
                   )
                 }
               >
-                右端に寄せる
+                {t('workspace.header.alignRight')}
               </button>
               <div className="workspace-settings-menu-divider" />
               <button
@@ -119,7 +133,7 @@ const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
                   handleMenuAction(() => window.electronAPI.workspaceAPI.hideAllDetached())
                 }
               >
-                切り離しウィンドウをすべて非表示
+                {t('workspace.header.hideAllDetached')}
               </button>
               <button
                 className="workspace-settings-menu-item"
@@ -127,12 +141,16 @@ const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
                   handleMenuAction(() => window.electronAPI.workspaceAPI.showAllDetached())
                 }
               >
-                切り離しウィンドウをすべて表示
+                {t('workspace.header.showAllDetached')}
               </button>
             </div>
           )}
         </div>
-        <button className="workspace-close-btn" onClick={onClose} title="閉じる">
+        <button
+          className="workspace-close-btn"
+          onClick={onClose}
+          title={t('workspace.header.close')}
+        >
           ×
         </button>
       </div>

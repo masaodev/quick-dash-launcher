@@ -8,7 +8,6 @@ import type {
   MixedOrderEntry,
   Bounds,
 } from '@common/types';
-import { describeWorkspaceItem } from '@common/utils/workspaceConverters';
 import { isLauncherItem, isWindowItem } from '@common/types/guards';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
@@ -399,7 +398,7 @@ export function setupWorkspaceHandlers(): void {
       return { success: true };
     } catch (error) {
       logger.error(
-        { error, id: item.id, target: describeWorkspaceItem(item) },
+        { error, id: item.id, type: item.type, name: item.displayName },
         'Failed to launch workspace item'
       );
       throw error;

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Workspace } from '@common/types';
 
 import ConfirmDialog from './ConfirmDialog';
@@ -26,6 +27,7 @@ const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({
   isArchiveActive,
   onArchiveClick,
 }) => {
+  const { t } = useTranslation();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
@@ -94,7 +96,7 @@ const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({
   };
 
   const handleAddWorkspace = () => {
-    const name = `ワークスペース ${workspaces.length + 1}`;
+    const name = t('workspace.tabs.defaultName', { number: workspaces.length + 1 });
     onCreateWorkspace(name);
   };
 
@@ -197,7 +199,7 @@ const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({
           <button
             className={`tab-button archive-tab ${isArchiveActive ? 'active' : ''}`}
             onClick={onArchiveClick}
-            title="アーカイブ"
+            title={t('workspace.tabs.archive')}
           >
             📦
           </button>
@@ -205,7 +207,7 @@ const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({
         <button
           className="tab-button workspace-add-tab-btn"
           onClick={handleAddWorkspace}
-          title="新しいワークスペースを追加"
+          title={t('workspace.tabs.add')}
         >
           +
         </button>
@@ -214,10 +216,11 @@ const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({
         isOpen={deleteConfirmId !== null && deleteTargetWs !== null}
         onClose={() => setDeleteConfirmId(null)}
         onConfirm={handleConfirmDelete}
-        title="ワークスペースの削除"
-        message={`ワークスペース「${deleteTargetWs?.displayName}」を削除しますか？\n所属するグループとアイテムも全て削除されます。`}
-        confirmText="削除"
-        cancelText="キャンセル"
+        title={t('workspace.tabs.deleteTitle')}
+        message={t('workspace.tabs.deleteConfirm', { name: deleteTargetWs?.displayName ?? '' })}
+        confirmText={t('workspace.tabs.delete')}
+        cancelText={t('common.cancel')}
+
         danger={true}
       />
     </>

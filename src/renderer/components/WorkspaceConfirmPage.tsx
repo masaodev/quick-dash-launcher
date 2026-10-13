@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { ConfirmWindowRequest } from '@common/types';
 
 import { logError } from '../utils/debug';
@@ -18,6 +19,7 @@ interface WorkspaceConfirmPageProps {
  * 確認されたら結果を預けて閉じる。キャンセル・Escape は閉じるだけ（開き元には null が返る）
  */
 const WorkspaceConfirmPage: React.FC<WorkspaceConfirmPageProps> = ({ requestId }) => {
+  const { t } = useTranslation();
   const [request, setRequest] = useState<ConfirmWindowRequest | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [checked, setChecked] = useState(false);
@@ -64,9 +66,9 @@ const WorkspaceConfirmPage: React.FC<WorkspaceConfirmPageProps> = ({ requestId }
   if (notFound) {
     return (
       <div className="confirm-window-page confirm-window-missing">
-        <p>確認する内容が見つかりません。</p>
+        <p>{t('workspace.confirmNotFound')}</p>
         <Button variant="cancel" onClick={close}>
-          閉じる
+          {t('common.close')}
         </Button>
       </div>
     );

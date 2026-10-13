@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { WorkspaceGroupView, WorkspaceGroupUpdate, GroupDropZone } from '@common/types';
 import { resolveGroupColorCss } from '@common/groupColors';
 
@@ -37,6 +38,7 @@ function WorkspaceGroupHeader({
   onGroupDropForReorder,
   onContextMenu,
 }: WorkspaceGroupHeaderProps): React.ReactElement {
+  const { t } = useTranslation();
   const [editName, setEditName] = useState(group.displayName);
   const [dropZone, setDropZone] = useState<GroupDropZone | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -173,7 +175,9 @@ function WorkspaceGroupHeader({
         </span>
       )}
 
-      <span className="workspace-group-badge">{itemCount}個</span>
+      <span className="workspace-group-badge">
+        {t('workspace.groups.itemCount', { count: itemCount })}
+      </span>
     </div>
   );
 }

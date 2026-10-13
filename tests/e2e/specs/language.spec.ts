@@ -1,10 +1,22 @@
+import type { ElectronApplication, Page } from '@playwright/test';
+
 import { test, expect } from '../fixtures/electron-app';
 import { TestUtils } from '../helpers/test-utils';
+
+/** 常駐しているワークスペースウィンドウ（起動時に生成される。タイトルで判定する） */
+async function getWorkspaceWindow(electronApp: ElectronApplication): Promise<Page> {
+  const isWorkspace = async (win: Page) =>
+    (await win.title()) === 'Workspace' || win.url().includes('workspace.html');
+  for (const win of electronApp.windows()) {
+    if (await isWorkspace(win)) return win;
+  }
+  return electronApp.waitForEvent('window', { predicate: isWorkspace, timeout: 10000 });
+}
 
 /**
  * 表示言語の切り替え
  * - settings.json の language を変えて F5 すると、メインウィンドウ（検索欄・ヒント行）がその言語になる
- * - 設定タブの「表示言語」で変えると、開いているメインウィンドウ・管理ウィンドウにその場で反映される
+ * - 設定タブの「表示言語」で変えると、開いているメインウィンドウ・管理ウィンドウ・ワークスペースにその場で反映される
  */
 test.describe('QuickDashLauncher - 表示言語', () => {
   test('言語を切り替えると、開いているウィンドウにその場で反映される', async ({
@@ -30,6 +42,12 @@ test.describe('QuickDashLauncher - 表示言語', () => {
       // メインウィンドウの他の文言（ヒント行）も英語になる
       await expect(mainWindow.getByTestId('keyboard-hint-bar')).toContainText(
         'Shift+Enter:Open containing folder'
+      );
+      // ワークスペースも英語になる
+      const workspaceWindow = await getWorkspaceWindow(electronApp);
+      await expect(workspaceWindow.locator('.workspace-control-btn').first()).toHaveAttribute(
+        'title',
+        'Filter'
       );
     });
 
@@ -61,6 +79,11 @@ test.describe('QuickDashLauncher - 表示言語', () => {
         '⚙️ 基本設定'
       );
       await expect(searchBox).toHaveAttribute('placeholder', '検索...');
+      const workspaceWindow = await getWorkspaceWindow(electronApp);
+      await expect(workspaceWindow.locator('.workspace-control-btn').first()).toHaveAttribute(
+        'title',
+        'フィルタ'
+      );
       expect(configHelper.readSettings().language).toBe('ja');
     });
   });

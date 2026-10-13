@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import type {
   WorkspaceItem,
   WorkspaceItemUpdate,
@@ -30,6 +31,7 @@ export function useWorkspaceItemEditForm(
   onClose: () => void,
   onSave: (id: string, updates: WorkspaceItemUpdate) => Promise<void>
 ) {
+  const { t } = useTranslation();
   const [item, setItem] = useState<RegisterItem | null>(null);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -158,8 +160,8 @@ export function useWorkspaceItemEditForm(
     if (!item.displayName.trim()) {
       newErrors.displayName =
         item.itemCategory === 'group'
-          ? 'グループ名を入力してください'
-          : 'アイテム表示名を入力してください';
+          ? t('register.errors.groupNameRequired')
+          : t('register.errors.displayNameRequired');
     }
 
     if (
@@ -169,13 +171,13 @@ export function useWorkspaceItemEditForm(
       item.itemCategory !== 'layout' &&
       !item.path?.trim()
     ) {
-      newErrors.path = 'パスを入力してください';
+      newErrors.path = t('register.errors.pathRequired');
     }
 
     if (item.itemCategory === 'group') {
       const itemNames = item.groupItemNames || [];
       if (itemNames.length === 0) {
-        newErrors.groupItemNames = 'グループアイテムを追加してください';
+        newErrors.groupItemNames = t('register.errors.groupItemsRequired');
       }
     }
 
@@ -183,13 +185,13 @@ export function useWorkspaceItemEditForm(
       const hasWindowTitle = item.windowOperationConfig?.windowTitle?.trim();
       const hasProcessName = item.windowOperationConfig?.processName?.trim();
       if (!hasWindowTitle && !hasProcessName) {
-        newErrors.displayName = 'ウィンドウタイトルまたはプロセス名を入力してください';
+        newErrors.displayName = t('register.errors.windowRequired');
       }
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [item]);
+  }, [item, t]);
 
   const handleSave = useCallback(async () => {
     if (!item || !editingItem) return;

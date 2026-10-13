@@ -4,6 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { createI18n } from '@common/i18n';
 import {
   appItemToWorkspaceItemBody,
   describeWorkspaceItem,
@@ -218,11 +219,19 @@ describe('workspaceConverters: WorkspaceItem ⇄ RegisterItem', () => {
 
 describe('workspaceConverters: 表示', () => {
   it('describeWorkspaceItem は種別に応じた 1 行を返すこと', () => {
-    expect(describeWorkspaceItem(launcher)).toBe('https://github.com/');
-    expect(describeWorkspaceItem(windowItem)).toBe('ウィンドウ操作: *Chrome（chrome.exe）');
-    expect(describeWorkspaceItem(groupItem)).toBe('グループ: 2件');
-    expect(describeWorkspaceItem(clipboardItem)).toBe('クリップボード: hello');
-    expect(describeWorkspaceItem(layoutItem)).toBe('レイアウト: 1件');
+    const t = createI18n('ja').t;
+    expect(describeWorkspaceItem(launcher, t)).toBe('https://github.com/');
+    expect(describeWorkspaceItem(windowItem, t)).toBe('ウィンドウ操作: *Chrome（chrome.exe）');
+    expect(describeWorkspaceItem(groupItem, t)).toBe('グループ: 2件');
+    expect(describeWorkspaceItem(clipboardItem, t)).toBe('クリップボード: hello');
+    expect(describeWorkspaceItem(layoutItem, t)).toBe('ウィンドウ配置: 1件');
+  });
+
+  it('describeWorkspaceItem は表示言語が英語なら英語の 1 行を返すこと', () => {
+    const t = createI18n('en').t;
+    expect(describeWorkspaceItem(windowItem, t)).toBe('Window action: *Chrome (chrome.exe)');
+    expect(describeWorkspaceItem(groupItem, t)).toBe('Group: 2 items');
+    expect(describeWorkspaceItem(layoutItem, t)).toBe('Window layout: 1 window');
   });
 
   it('toToastItemType は通常アイテムに launcherType、ウィンドウ操作に windowOperation を返すこと', () => {
