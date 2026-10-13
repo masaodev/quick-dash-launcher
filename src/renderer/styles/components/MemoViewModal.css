@@ -27,7 +27,7 @@
 .memo-text {
   margin: 0;
   padding: var(--spacing-md);
-  background-color: var(--color-bg-secondary);
+  background-color: var(--bg-section);
   border-radius: var(--border-radius);
   font-family: inherit;
   font-size: var(--font-size-base);

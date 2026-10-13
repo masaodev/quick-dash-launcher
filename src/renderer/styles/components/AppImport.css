@@ -276,7 +276,7 @@
   padding: 0;
   background: none;
   border: none;
-  color: var(--color-info);
+  color: var(--color-primary);
   font-family: inherit;
   font-size: var(--font-size-sm);
   text-decoration: underline;

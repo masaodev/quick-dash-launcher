@@ -13,7 +13,7 @@
   background-color: var(--color-white);
   border: var(--border-normal);
   border-radius: var(--border-radius);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow);
   min-width: var(--menu-width-min);
   max-width: var(--menu-width-max);
   z-index: var(--z-dropdown);

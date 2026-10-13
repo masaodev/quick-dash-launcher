@@ -23,7 +23,7 @@
 .backup-snapshot-message {
   padding: var(--spacing-sm) var(--spacing-md);
   margin-bottom: var(--spacing-md);
-  background-color: var(--bg-info);
+  background-color: var(--bg-info-light);
   border-radius: var(--border-radius);
   font-size: var(--font-size-sm);
   color: var(--text-primary);

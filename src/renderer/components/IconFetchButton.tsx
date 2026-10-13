@@ -1,6 +1,8 @@
 import { useTranslation } from 'react-i18next';
 import React from 'react';
 
+import { Button } from './ui';
+
 interface IconFetchButtonProps {
   path: string;
   loading: boolean;
@@ -13,7 +15,9 @@ const IconFetchButton: React.FC<IconFetchButtonProps> = ({ path, loading, onFetc
   const isDisabled = !path?.trim() || loading || itemType === 'folder' || itemType === 'clipboard';
 
   return (
-    <button
+    <Button
+      variant="secondary"
+      size="sm"
       type="button"
       className="icon-fetch-btn"
       onClick={onFetch}
@@ -26,7 +30,7 @@ const IconFetchButton: React.FC<IconFetchButtonProps> = ({ path, loading, onFetc
         <span className="icon-fetch-emoji">🎨</span>
       )}
       <span>{t('iconFetch.button')}</span>
-    </button>
+    </Button>
   );
 };
 

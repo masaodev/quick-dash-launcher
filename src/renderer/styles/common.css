@@ -62,7 +62,7 @@
 }
 
 .tab-button.drag-over {
-  border-left: 2px solid var(--color-accent);
+  border-left: 2px solid var(--color-primary);
 }
 
 .tab-count {
@@ -117,31 +117,7 @@
 /* =========================
    ボタン共通スタイル
    ========================= */
-/* 注意: .btn-* クラスは Button.css で定義。
-   ここでは Button コンポーネントを使わないレガシー用に .btn-base のみ残す */
-.btn-base {
-  padding: var(--spacing-sm) var(--spacing-lg);
-  font-size: var(--font-size-base);
-  font-family: var(--font-family);
-  border: var(--border-normal);
-  border-radius: var(--border-radius);
-  background-color: var(--color-white);
-  cursor: pointer;
-  transition: var(--transition-normal);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 400;
-}
-
-.btn-base:hover:not(:disabled) {
-  background-color: var(--bg-hover);
-}
-
-.btn-base:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
+/* 注意: .btn-* クラスは Button.css で定義 */
 
 /* アクションボタン（32x32の正方形） */
 .action-btn {
@@ -391,23 +367,6 @@
   gap: var(--spacing-sm);
   padding: var(--spacing-lg) var(--spacing-2xl);
   border-top: var(--border-light);
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  font-size: var(--font-size-2xl);
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: var(--spacing-xs);
-  border-radius: var(--border-radius);
-  line-height: var(--line-height-tight);
-  transition: var(--transition-normal);
-}
-
-.close-btn:hover {
-  background-color: var(--bg-hover);
-  color: var(--text-primary);
 }
 
 /* =========================

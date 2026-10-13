@@ -40,7 +40,7 @@
   overflow-y: auto;
   border: var(--border-light);
   border-radius: var(--border-radius);
-  background-color: var(--bg-secondary);
+  background-color: var(--bg-section);
   min-height: 300px;
   max-height: 400px;
 }
@@ -64,7 +64,7 @@
 }
 
 .item-row.excluded {
-  background-color: var(--bg-disabled);
+  background-color: var(--bg-input-disabled);
   cursor: not-allowed;
   opacity: 0.6;
 }
