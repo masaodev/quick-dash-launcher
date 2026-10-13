@@ -159,7 +159,7 @@ describe('useKeyboardShortcuts', () => {
     ['url', 'https://github.com/'],
     ['customUri', 'ms-settings:'],
   ] as const)(
-    '%s の Shift+Enter は親フォルダーが無いことをトーストで知らせる',
+    '%s の Shift+Enter は親フォルダが無いことをトーストで知らせる',
     async (type, path) => {
       const { params, handleKeyDown } = setup([launcherItem(type, path)]);
 
@@ -170,13 +170,13 @@ describe('useKeyboardShortcuts', () => {
       expect(showToastWindow).toHaveBeenCalledWith(
         expect.objectContaining({
           itemType: type,
-          message: 'このアイテムには親フォルダーがありません',
+          message: 'このアイテムには親フォルダがありません',
         })
       );
     }
   );
 
-  it('グループの Shift+Enter は実行せず、親フォルダーが無いことを知らせる', async () => {
+  it('グループの Shift+Enter は実行せず、親フォルダが無いことを知らせる', async () => {
     const group = { type: 'group', displayName: '朝のセット', itemNames: ['GitHub'] } as AppItem;
     const { params, handleKeyDown } = setup([group]);
 
@@ -186,7 +186,7 @@ describe('useKeyboardShortcuts', () => {
     expect(openParentFolder).not.toHaveBeenCalled();
     expect(showToastWindow).toHaveBeenCalledWith({
       type: 'info',
-      message: '「朝のセット」には親フォルダーがありません',
+      message: '「朝のセット」には親フォルダがありません',
     });
   });
 
@@ -200,7 +200,7 @@ describe('useKeyboardShortcuts', () => {
     expect(showToastWindow).toHaveBeenCalledWith({
       displayName: 'メール',
       itemType: 'windowOperation',
-      message: 'このアイテムには親フォルダーがありません',
+      message: 'このアイテムには親フォルダがありません',
     });
   });
 
@@ -213,7 +213,7 @@ describe('useKeyboardShortcuts', () => {
     expect(showToastWindow).not.toHaveBeenCalled();
   });
 
-  it('ファイルの Shift+Enter は親フォルダーを開く', async () => {
+  it('ファイルの Shift+Enter は親フォルダを開く', async () => {
     const item = launcherItem('file', 'C:\\Windows\\win.ini');
     const { handleKeyDown } = setup([item]);
 
@@ -346,7 +346,7 @@ describe('useKeyboardShortcuts', () => {
     expect(showToastWindow).toHaveBeenCalledWith({
       displayName: '2 個のウィンドウ',
       itemType: 'windowPin',
-      message: 'ウィンドウを全デスクトップに固定しました（1 個は固定に失敗しました）',
+      message: 'ウィンドウをすべてのデスクトップに表示しました（1 個は失敗）',
     });
   });
 });

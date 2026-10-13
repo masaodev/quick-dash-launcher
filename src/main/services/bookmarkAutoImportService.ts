@@ -41,6 +41,7 @@ import { notifyDataChanged } from '../ipc/notifications.js';
 import { writeDataFile } from './dataFileTracker.js';
 import { SettingsService } from './settingsService.js';
 import { showToastWindow } from './overlayWindowService.js';
+import { mainI18n } from './mainI18n.js';
 
 /**
  * ブックマーク自動取込サービス
@@ -76,12 +77,18 @@ export class BookmarkAutoImportService {
 
       // トースト通知
       if (totalImported > 0 || totalDeleted > 0) {
-        const duplicates =
-          totalManualDuplicates > 0 ? `, 手動分と重複${totalManualDuplicates}件` : '';
+        const t = mainI18n.t.bind(mainI18n);
+        const message =
+          t('bookmarkImport.added', { count: totalImported }) +
+          (totalDeleted > 0 ? t('bookmarkImport.deleted', { count: totalDeleted }) : '') +
+          (totalManualDuplicates > 0
+            ? t('bookmarkImport.manualDuplicates', { count: totalManualDuplicates })
+            : '') +
+          (hasError ? t('bookmarkImport.partlyFailed') : '');
         await showToastWindow({
           itemType: 'bookmarkImport',
-          displayName: 'ブックマーク取込',
-          message: `${totalImported}件登録${totalDeleted > 0 ? `, ${totalDeleted}件削除` : ''}${duplicates}${hasError ? ' (一部エラーあり)' : ''}`,
+          displayName: t('bookmarkImport.title'),
+          message,
           duration: totalManualDuplicates > 0 ? 5000 : 3000,
         });
       }
@@ -124,7 +131,7 @@ export class BookmarkAutoImportService {
           success: false,
           importedCount: 0,
           deletedCount: 0,
-          errorMessage: `ブラウザ ${rule.browserId} が見つからないか、対象プロファイルがありません`,
+          errorMessage: mainI18n.t('bookmarkImport.browserNotFound', { browser: rule.browserId }),
           executedAt: startTime,
         };
       }
@@ -187,7 +194,7 @@ export class BookmarkAutoImportService {
       return result;
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : 'ブックマーク自動取込でエラーが発生しました';
+        error instanceof Error ? error.message : mainI18n.t('bookmarkImport.failed');
       logger.error({ error, ruleId: rule.id }, 'ブックマーク自動取込: ルール実行エラー');
 
       const result: BookmarkAutoImportResult = {
@@ -293,7 +300,7 @@ export class BookmarkAutoImportService {
     } catch (error) {
       logger.error({ error, dataFilePath }, 'JSONファイルのパースに失敗したため取込を中止します');
       throw new Error(
-        `データファイルが破損している可能性があるため取込を中止しました: ${path.basename(dataFilePath)}`
+        mainI18n.t('bookmarkImport.dataFileCorrupted', { file: path.basename(dataFilePath) })
       );
     }
   }

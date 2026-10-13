@@ -3,6 +3,7 @@
  * 画面仕様: docs/screens/hotkey-input.md
  */
 import React, { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import '../styles/components/HotkeyInput.css';
 
 import { Button } from './ui/Button';
@@ -24,10 +25,12 @@ export const HotkeyInput: React.FC<HotkeyInputProps> = ({
   onChange,
   onValidationChange,
   disabled = false,
-  placeholder = 'ホットキーを入力...',
+  placeholder: placeholderProp,
   allowEmpty = false,
   showClearButton = false,
 }) => {
+  const { t } = useTranslation();
+  const placeholder = placeholderProp ?? t('hotkeyInput.placeholder');
   const [isRecording, setIsRecording] = useState(false);
   const [currentKeys, setCurrentKeys] = useState<Set<string>>(new Set());
   const inputRef = useRef<HTMLInputElement>(null);
@@ -122,7 +125,7 @@ export const HotkeyInput: React.FC<HotkeyInputProps> = ({
       const result = await window.electronAPI.validateHotkey(hotkey);
       onValidationChange(result.isValid, result.reason);
     } catch {
-      onValidationChange(false, 'ホットキーの検証に失敗しました');
+      onValidationChange(false, t('hotkeyInput.validationFailed'));
     }
   };
 
@@ -152,7 +155,7 @@ export const HotkeyInput: React.FC<HotkeyInputProps> = ({
       if (currentKeys.size > 0) {
         return Array.from(currentKeys).join(' + ');
       }
-      return 'キーを押してください...';
+      return t('hotkeyInput.pressKeys');
     }
     return value || placeholder;
   };
@@ -181,14 +184,14 @@ export const HotkeyInput: React.FC<HotkeyInputProps> = ({
           disabled={disabled}
           className="hotkey-clear-button"
         >
-          クリア
+          {t('common.clear')}
         </Button>
       )}
       {isRecording && (
         <div className="hotkey-recording-indicator">
-          録画中...
+          {t('hotkeyInput.recording')}
           <Button variant="cancel" size="sm" type="button" onClick={stopRecording}>
-            キャンセル
+            {t('common.cancel')}
           </Button>
         </div>
       )}

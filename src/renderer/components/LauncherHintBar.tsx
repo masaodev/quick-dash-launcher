@@ -12,6 +12,7 @@
  */
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import type { SearchMode } from '@common/types';
 
 interface LauncherHintBarProps {
@@ -38,27 +39,40 @@ const LauncherHintBar: React.FC<LauncherHintBarProps> = ({
   markedCount = 0,
   canPinWindow = true,
 }) => {
+  const { t } = useTranslation();
+  const moveToDesktopHint = { keys: 'Ctrl+←/→', label: t('launcher.hints.moveToDesktop') };
   const hints: Hint[] =
     searchMode === 'window' && markedCount > 0
       ? [
-          { keys: 'Ctrl+D', label: `${markedCount} 件を閉じる` },
-          ...(canPinWindow ? [{ keys: 'Ctrl+P', label: `${markedCount} 件を固定/解除` }] : []),
-          { keys: 'Esc', label: '選択を外す' },
-          ...(canMoveToDesktop ? [{ keys: 'Ctrl+←/→', label: '仮想デスクトップ移動' }] : []),
+          { keys: 'Ctrl+D', label: t('launcher.hints.closeMarked', { count: markedCount }) },
+          ...(canPinWindow
+            ? [
+                {
+                  keys: 'Ctrl+P',
+                  label: t('launcher.hints.showMarkedOnAllDesktops', { count: markedCount }),
+                },
+              ]
+            : []),
+          { keys: 'Esc', label: t('launcher.hints.clearSelection') },
+          ...(canMoveToDesktop ? [moveToDesktopHint] : []),
         ]
       : searchMode === 'window'
         ? // よく使う順。Tab（デスクトップ切替）はタブの表示で分かるので出さない
           [
-            { keys: 'Ctrl+D', label: 'ウィンドウを閉じる' },
-            ...(canPinWindow ? [{ keys: 'Ctrl+P', label: 'ピン留め/解除' }] : []),
-            { keys: 'Shift+↑/↓', label: '複数選択' },
-            ...(canMoveToDesktop ? [{ keys: 'Ctrl+←/→', label: '仮想デスクトップ移動' }] : []),
+            { keys: 'Ctrl+D', label: t('launcher.hints.closeWindow') },
+            ...(canPinWindow
+              ? [{ keys: 'Ctrl+P', label: t('launcher.hints.showOnAllDesktops') }]
+              : []),
+            { keys: 'Shift+↑/↓', label: t('launcher.hints.selectMultiple') },
+            ...(canMoveToDesktop ? [moveToDesktopHint] : []),
           ]
         : [
-            { keys: 'F2', label: '編集' },
-            { keys: 'Shift+Enter', label: '親フォルダーを開く' },
-            { keys: 'Ctrl+↑/↓', label: '検索履歴' },
-            ...(canSwitchDataFileTab ? [{ keys: 'Tab', label: 'タブ切替' }] : []),
+            { keys: 'F2', label: t('launcher.hints.edit') },
+            { keys: 'Shift+Enter', label: t('launcher.hints.openContainingFolder') },
+            { keys: 'Ctrl+↑/↓', label: t('launcher.hints.searchHistory') },
+            ...(canSwitchDataFileTab
+              ? [{ keys: 'Tab', label: t('launcher.hints.switchTab') }]
+              : []),
           ];
 
   return (

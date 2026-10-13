@@ -20,7 +20,7 @@ import {
 } from '../detachedGroupWindowManager.js';
 import { EnvConfig } from '../config/envConfig.js';
 import { showToastWindow } from '../services/overlayWindowService.js';
-import { applyLanguageSetting } from '../services/i18nService.js';
+import { applyLanguageSetting, mainI18n } from '../services/i18nService.js';
 
 function notifySettingsChanged(): void {
   for (const window of BrowserWindow.getAllWindows()) {
@@ -69,9 +69,7 @@ async function applySettingsEffects(
     const cliEnabled = await settingsService.get('cliEnabled');
     if (await applyCliSetting(cliEnabled)) {
       showToastWindow({
-        message: cliEnabled
-          ? 'QuickDashLauncher CLI を使えるようにしました。新しく開いたターミナルから qdl で使えます'
-          : 'QuickDashLauncher CLI を使えないようにしました（qdl コマンドを PATH から外しました）',
+        message: cliEnabled ? mainI18n.t('cli.enabled') : mainI18n.t('cli.disabled'),
         type: 'success',
       }).catch((error) => logger.error({ error }, 'CLI の設定のトーストの表示に失敗'));
     }
@@ -140,7 +138,9 @@ async function reapplyHotkey(
     (isMain ? hotkeyService.getCurrentHotkey() : hotkeyService.getCurrentItemSearchHotkey()) ?? '';
   if (desired === current) return;
 
-  const label = isMain ? 'ホットキー' : 'ウィンドウ検索ホットキー';
+  // ログには設定のキー名を出す（画面のトーストは表示言語の文言）
+  const label = isMain ? 'hotkey' : 'itemSearchHotkey';
+  const toastLabel = mainI18n.t(isMain ? 'hotkey.launchLabel' : 'hotkey.windowSearchLabel');
 
   if (desired.trim() === '') {
     if (isMain) {
@@ -148,7 +148,7 @@ async function reapplyHotkey(
       return;
     }
     hotkeyService.unregisterItemSearchHotkey();
-    logger.info(`${label}を解除しました（settings.json で空）`);
+    logger.info(`${label} を解除しました（settings.json で空）`);
     return;
   }
 
@@ -159,7 +159,7 @@ async function reapplyHotkey(
 
   if (success) {
     lastFailedHotkey[type] = null;
-    logger.info(`${label}を settings.json の値に合わせて登録し直しました: ${desired}`);
+    logger.info(`${label} を settings.json の値に合わせて登録し直しました: ${desired}`);
     return;
   }
 
@@ -168,13 +168,18 @@ async function reapplyHotkey(
     if (isMain) hotkeyService.setHotkey(current);
     else hotkeyService.setItemSearchHotkey(current);
   }
-  const reason = validation.isValid ? '他のアプリで使用中の可能性' : validation.reason;
-  logger.warn({ desired, current, reason }, `${label}の登録し直しに失敗しました`);
+  const reason = validation.isValid ? mainI18n.t('hotkey.mayBeInUse') : validation.reason;
+  logger.warn({ desired, current, reason }, `${label} の登録し直しに失敗しました`);
 
   if (lastFailedHotkey[type] === desired) return;
   lastFailedHotkey[type] = desired;
   showToastWindow({
-    message: `${label}「${desired}」を登録できません（${reason}）。「${current || '未設定'}」を維持します`,
+    message: mainI18n.t('hotkey.registerFailed', {
+      label: toastLabel,
+      desired,
+      reason: reason ?? '',
+      current: current || mainI18n.t('hotkey.notSet'),
+    }),
     type: 'error',
     duration: 6000,
   }).catch((error) => logger.error({ error }, 'ホットキー再登録トーストの表示に失敗'));
@@ -310,7 +315,7 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
       const isPrimary = display.id === primaryId;
       return {
         index,
-        label: `ディスプレイ ${index + 1}${isPrimary ? ' (プライマリ)' : ''}`,
+        label: mainI18n.t(isPrimary ? 'display.primary' : 'display.label', { number: index + 1 }),
         isPrimary,
         width: display.workArea.width,
         height: display.workArea.height,

@@ -4,8 +4,33 @@
  * 画面に出す文言はここに書き、英語は en.ts に同じ形で書く（en.ts は型でこの形に縛られる）。
  * キーは英語の意味名で、領域ごとに分ける。用語は docs/architecture/glossary.md にそろえる。
  * 差し込みは {{name}} で書く（i18next の書式）。
+ * 数で英語の形が変わるもの（1 item／2 items）は、キーに _one・_other を付けて t('key', { count }) で引く。
+ * 日本語は数で形が変わらないので、両方に同じ文言を書く（i18next は日本語では _other だけを使う）。
  */
 export const ja = {
+  common: {
+    ok: 'OK',
+    cancel: 'キャンセル',
+    close: '閉じる',
+    confirm: '確認',
+    clear: 'クリア',
+    copy: '📋 コピー',
+    details: '詳細',
+    showDetails: '詳細を表示',
+    loading: '読み込み中...',
+    unknownError: '不明なエラー',
+    unknownReason: '理由不明',
+    listSeparator: '、',
+    withReason: '{{name}}（{{reason}}）',
+    itemCount_one: '{{count}}件',
+    itemCount_other: '{{count}}件',
+    alertTitle: {
+      error: 'エラー',
+      warning: '警告',
+      success: '成功',
+      info: 'お知らせ',
+    },
+  },
   launcher: {
     search: {
       placeholder: '検索...',
@@ -16,6 +41,501 @@ export const ja = {
       reloadData: 'データ再読込',
       toggleMode: 'モード切り替え',
     },
+    loading: {
+      windows: 'ウィンドウ更新中',
+      data: 'データ再読込中',
+    },
+    selectedCount_one: '{{count}} 件を選択中',
+    selectedCount_other: '{{count}} 件を選択中',
+    closeConfirm: {
+      message_one: '{{count}} 個のウィンドウを閉じます',
+      message_other: '{{count}} 個のウィンドウを閉じます',
+      close: '閉じる',
+      cancel: 'やめる',
+    },
+    dropToAdd: 'ファイル / URLをドロップして登録',
+    dropPathUnavailable:
+      'ファイルパスを取得できませんでした。\nファイルを直接エクスプローラーからドラッグしてください。',
+    hints: {
+      closeMarked: '{{count}} 件を閉じる',
+      showMarkedOnAllDesktops: '{{count}} 件を全デスクトップ表示/解除',
+      clearSelection: '選択を外す',
+      moveToDesktop: '仮想デスクトップ移動',
+      closeWindow: 'ウィンドウを閉じる',
+      showOnAllDesktops: '全デスクトップ表示/解除',
+      selectMultiple: '複数選択',
+      edit: '編集',
+      openContainingFolder: '親フォルダを開く',
+      searchHistory: '検索履歴',
+      switchTab: 'タブ切替',
+    },
+    pinMode: {
+      normal: '通常モード → 常に最上面モード',
+      alwaysOnTop: '常に最上面モード → 表示固定モード',
+      stayVisible: '表示固定モード → 通常モード',
+    },
+    refreshMenu: {
+      title: '更新・取得',
+      reloadData: '📋 データ再読込',
+      fetchIconsCurrentTab: '🎨 アイコン取得（現在のタブ）',
+      fetchIconsAllTabs: '🎨 アイコン取得（全タブ）',
+      importBookmarks: '🔖 ブックマーク取込',
+      reloadAll: '🔄 完全リフレッシュ',
+    },
+    registerMenu: {
+      title: 'アイテムを登録',
+      quickAdd: '📄 簡易登録',
+      addBookmarks: '🔖 ブラウザのブックマークを追加',
+      addApps: '💻 インストール済みアプリを追加',
+    },
+    settingsMenu: {
+      title: '設定',
+      settings: '⚙️ 基本設定',
+      itemManager: '✏️ アイテム管理（Ctrl+E）',
+      toggleWorkspace: '🗂️ ワークスペースを表示（Ctrl+W）',
+      quit: '🚪 アプリを終了',
+    },
+    desktopTabs: {
+      all: 'すべて',
+      onAllDesktops: '全デスクトップ',
+      current: '{{name}} (現在)',
+      allTooltip: 'すべてのデスクトップのウィンドウ',
+      onAllDesktopsTooltip: 'すべてのデスクトップに表示するウィンドウ',
+      desktopTooltip: 'デスクトップ {{number}} のウィンドウ',
+      namedDesktopTooltip: 'デスクトップ {{number}}「{{name}}」のウィンドウ',
+    },
+    list: {
+      selected: '選択中',
+      groupCount_one: ' ({{count}}個)',
+      groupCount_other: ' ({{count}}個)',
+      windowSearchBadge: 'ウィンドウ検索: {{title}}',
+      showNote: 'メモを表示',
+    },
+    missingIcons: {
+      label: 'アイコン未取得:',
+      fetch: '取得',
+      fetchTooltip: 'アイコンを取得',
+    },
+    iconProgress: {
+      complete: 'アイコン取得完了',
+      phase: 'フェーズ {{current}}/{{total}}: {{name}}',
+      phaseNames: {
+        favicon: 'ファビコン取得',
+        icon: 'アイコン抽出',
+        other: '処理',
+      },
+      succeeded: '成功: {{count}}件',
+      failed: 'エラー: {{count}}件',
+      total: '全体: {{count}}件',
+      elapsed: '経過: {{time}}',
+      remaining: '残り: {{time}}',
+      processing: '処理中:',
+      calculating: '計算中...',
+      seconds: '{{seconds}}秒',
+      aboutSeconds: '約{{seconds}}秒',
+      aboutMinutes: '約{{minutes}}分{{seconds}}秒',
+    },
+    iconResults: {
+      title: 'アイコン取得結果',
+      succeeded: '成功:',
+      failed: 'エラー:',
+      total: '全体:',
+      filterAll: 'すべて ({{count}})',
+      filterSucceeded: '成功 ({{count}})',
+      filterFailed: 'エラー ({{count}})',
+      empty: '結果がありません',
+    },
+    tooltip: {
+      dataFile: 'データファイル: {{value}}',
+      id: 'ID: {{value}}',
+      expandedFromId: '展開元ID: {{value}}',
+      lineNumber: '行番号: {{value}}',
+      expandedFrom: '取込元: {{value}}',
+      expandedOptions: '設定: {{value}}',
+      windowTitle: 'ウィンドウタイトル: {{value}}',
+      processName: 'プロセス名: {{value}}',
+      executablePath: '実行ファイルパス: {{value}}',
+      windowState: '状態: {{value}}',
+      windowStates: {
+        minimized: '最小化',
+        maximized: '最大化',
+        normal: '通常',
+      },
+      position: '位置: ({{x}}, {{y}})',
+      size: 'サイズ: {{width}}x{{height}}',
+      processId: 'プロセスID: {{value}}',
+      group: 'グループ: {{value}}',
+      virtualDesktop: '仮想デスクトップ: {{value}}',
+      noActivate: 'アクティブ化: しない',
+      clipboardFormats: 'フォーマット: {{value}}',
+      clipboardFormatNames: {
+        text: 'テキスト',
+        html: 'HTML',
+        rtf: 'RTF',
+        image: '画像',
+        file: 'ファイル',
+      },
+      preview: 'プレビュー: {{value}}',
+      savedAt: '保存日時: {{value}}',
+    },
+    messages: {
+      itemAdded: 'アイテムを登録しました',
+      itemUpdated: 'アイテムを更新しました',
+      itemDeleted: 'アイテムを削除しました',
+      openFailed: 'アイテムの起動に失敗しました: {{reason}}',
+      activateWindowFailed: 'ウィンドウのアクティブ化に失敗しました',
+      noBookmarkRules: '有効なブックマーク取込ルールがありません',
+      addToWorkspaceFailed: 'ワークスペースへの追加に失敗しました',
+      windowAddedWithPosition: 'タイトルとプロセス名で探し、記録した位置に戻して前面に出します',
+      windowAdded: 'タイトルとプロセス名で探して前面に出します（タイトルは編集できます）',
+      dataFilesCreateFailed: 'タブのデータファイルを作成できませんでした: {{files}}',
+      virtualDesktopUnsupported: 'この環境は仮想デスクトップに対応していません。',
+      noContainingFolder: 'このアイテムには親フォルダがありません',
+      noContainingFolderNamed: '「{{name}}」には親フォルダがありません',
+    },
+    itemActions: {
+      targets: {
+        path: 'パス',
+        parentPath: '親フォルダのパス',
+        shortcutPath: 'ショートカットのパス',
+        shortcutParentPath: 'ショートカットの親フォルダのパス',
+      },
+      copied: '{{target}}をコピーしました',
+      copyFailed: '{{target}}のコピーに失敗しました',
+      noContainingFolderForUrl: 'URLおよびカスタムURIには親フォルダがありません',
+      parentPathUnavailable: '親フォルダのパスを取得できませんでした',
+      shortcutPathNotFound: 'ショートカットのパスが見つかりません',
+      shortcutParentPathUnavailable: 'ショートカットの親フォルダのパスを取得できませんでした',
+      openContainingFolderFailed: '親フォルダを開くのに失敗しました',
+      openShortcutContainingFolderFailed: 'リンク先の親フォルダを開くのに失敗しました',
+    },
+    windowActions: {
+      windowCount_one: '{{count}} 個のウィンドウ',
+      windowCount_other: '{{count}} 個のウィンドウ',
+      failedWithReason: '{{label}}: {{reason}}',
+      partlyFailed_one: '（{{count}} 個は失敗）',
+      partlyFailed_other: '（{{count}} 個は失敗）',
+      closeFailed: 'ウィンドウを閉じるのに失敗しました',
+      closed: 'ウィンドウを閉じました',
+      showOnAllDesktopsFailed: '全デスクトップへの表示に失敗しました',
+      stopShowingOnAllDesktopsFailed: '全デスクトップへの表示の解除に失敗しました',
+      shownOnAllDesktops: 'ウィンドウをすべてのデスクトップに表示しました',
+      stoppedShowingOnAllDesktops: 'ウィンドウをすべてのデスクトップに表示するのをやめました',
+      moveFailed: 'ウィンドウの移動に失敗しました',
+      movedOneToDesktop: 'ウィンドウをデスクトップ {{desktop}} に移動しました',
+      movedManyToDesktop_one: '{{count}} 個のウィンドウをデスクトップ {{desktop}} に移動しました',
+      movedManyToDesktop_other: '{{count}} 個のウィンドウをデスクトップ {{desktop}} に移動しました',
+      moved_one: '{{count}} 個のウィンドウを移動しました',
+      moved_other: '{{count}} 個のウィンドウを移動しました',
+    },
+  },
+  bookmarkImport: {
+    summary: 'ブックマーク取込: {{imported}}件登録, {{deleted}}件削除',
+    manualDuplicates: ', 手動分と重複{{count}}件',
+    partlyFailed: ' (一部エラー)',
+    title: 'ブックマーク取込',
+    added: '{{count}}件登録',
+    deleted: ', {{count}}件削除',
+    browserNotFound: 'ブラウザ {{browser}} が見つからないか、対象プロファイルがありません',
+    failed: 'ブックマーク自動取込でエラーが発生しました',
+    dataFileCorrupted: 'データファイルが破損している可能性があるため取込を中止しました: {{file}}',
+  },
+  firstLaunch: {
+    title: 'QuickDashLauncher へようこそ',
+    description: '初回起動時の設定を行います。',
+    hotkeyLabel: '起動ホットキー',
+    hotkeyDescription: 'メインウィンドウを出すキーです（既定: Alt+Space）',
+    hotkeyHint: '修飾キー（Ctrl、Alt、Shift等）と通常キーを組み合わせてください。',
+    hotkeyExample: '例: Alt+Space、Ctrl+Alt+W、Ctrl+Shift+L など',
+    windowSearchHotkeyLabel: 'ウィンドウ検索で起動のホットキー',
+    windowSearchHotkeyDescription:
+      'ウィンドウ検索モードで直接起動するためのキーです（既定: Ctrl+Alt+Space）',
+    windowSearchHotkeyHint:
+      'このキーでウィンドウ検索モードが直接開きます。使わないときは「クリア」で外せます。後から変えることもできます。',
+    notSet: '未設定',
+    autoLaunch: '起動時に自動実行',
+    autoLaunchHint: 'Windowsログイン時に自動的に起動します',
+    complete: '設定を完了',
+    saveFailed: '設定の保存に失敗しました。',
+    defaultTabName: 'メイン',
+  },
+  hotkeyInput: {
+    placeholder: 'ホットキーを入力...',
+    pressKeys: 'キーを押してください...',
+    recording: '録画中...',
+    validationFailed: 'ホットキーの検証に失敗しました',
+  },
+  splash: {
+    subtitle: '素早いアクセスを実現するランチャーアプリ',
+    starting: '起動中',
+    loadingSettings: '設定を読み込み中',
+    preparing: 'アプリケーションを準備中',
+    ready: '初期化完了',
+  },
+  menu: {
+    copyPath: '📋 パスをコピー',
+    copyParentPath: '📋 親フォルダのパスをコピー',
+    openParentFolder: '📂 親フォルダを開く',
+    copyShortcutPath: '📋 リンク先のパスをコピー',
+    copyShortcutParentPath: '📋 リンク先の親フォルダのパスをコピー',
+    openShortcutParentFolder: '📂 リンク先の親フォルダを開く',
+    edit: '✏️ 編集',
+    showNote: '📝 メモを表示',
+    addToWorkspace: '⭐ ワークスペースに追加',
+    admin: {
+      duplicate: '📋 複製',
+      duplicateRows_one: '📋 複製 ({{count}}行)',
+      duplicateRows_other: '📋 複製 ({{count}}行)',
+      editDetails: '✏️ 詳細編集',
+      delete: '🗑️ 削除',
+      deleteRows_one: '🗑️ 削除 ({{count}}行)',
+      deleteRows_other: '🗑️ 削除 ({{count}}行)',
+    },
+    workspaceItem: {
+      rename: '✏️ 表示名を変更',
+      open: '▶️ 起動',
+      edit: '🔧 編集',
+      moveToWorkspace: '📁 ワークスペースを移動',
+      removeFromGroup: '📤 グループから削除',
+      remove: '🗑️ ワークスペースから削除',
+    },
+    workspaceGroup: {
+      copyAsText: '📋 テキストでコピー',
+      restore: '📤 ワークスペースへ復元',
+      deleteFromArchive: '🗑️ アーカイブから削除',
+      addSubgroup: '📂 サブグループを追加',
+      rename: '✏️ グループ名を変更',
+      changeColor: '🎨 カラーを変更',
+      archive: '📦 グループをアーカイブ',
+      delete: '🗑️ グループを削除',
+    },
+    tab: {
+      rename: '✏️ 名前を変更',
+      delete: '🗑️ 削除',
+    },
+    window: {
+      activate: '▶️ アクティブにする',
+      addToWorkspaceWithPosition: '⭐ 位置・サイズも記録してワークスペースに追加',
+      moveToDesktop: '🖥️ 仮想デスクトップへの移動',
+      desktop: '🖥️ デスクトップ {{number}}',
+      currentDesktop: '✓ デスクトップ {{number}} (現在)',
+      showOnAllDesktops: '📌 全デスクトップに表示',
+      stopShowingOnAllDesktops: '📌 全デスクトップへの表示を解除',
+      close: '❌ ウィンドウを閉じる',
+      count_one: '{{count}} 個のウィンドウ',
+      count_other: '{{count}} 個のウィンドウ',
+      closeCount_one: '❌ {{count}} 個のウィンドウを閉じる',
+      closeCount_other: '❌ {{count}} 個のウィンドウを閉じる',
+    },
+  },
+  tray: {
+    show: '表示',
+    showAtCenter: '画面中央に表示',
+    settings: '設定...',
+    openSettingsFolder: '設定フォルダを開く',
+    help: 'ヘルプ',
+    restart: '再起動',
+    quit: '終了',
+    devRestart: {
+      title: '再起動（開発モード）',
+      message: '開発モードでは自動再起動をサポートしていません',
+      detail:
+        'アプリを終了後、ターミナルで以下のコマンドを実行してください：\n\n  npm run dev\n\nアプリを終了しますか？',
+      quit: '終了',
+    },
+  },
+  toast: {
+    actions: {
+      url: 'URLを開いています...',
+      app: 'アプリを起動中...',
+      file: 'ファイルを開いています...',
+      folder: 'フォルダを開いています...',
+      customUri: '起動中...',
+      windowOperation: 'ウィンドウ操作を実行します',
+      layout: 'ウィンドウ配置を実行します',
+      windowActivate: 'ウィンドウをアクティブ化しました',
+      windowClose: 'ウィンドウを閉じました',
+      windowPin: 'ウィンドウをすべてのデスクトップに表示しました',
+      windowUnpin: 'ウィンドウをすべてのデスクトップに表示するのをやめました',
+      workspaceAdd: 'ワークスペースに追加しました',
+      clipboard: 'クリップボードに復元しています...',
+      default: '起動中...',
+    },
+    groupOpening_one: '{{count}}件のアイテムを起動します',
+    groupOpening_other: '{{count}}件のアイテムを起動します',
+    groupMore_one: '{{names}}... 他{{count}}件',
+    groupMore_other: '{{names}}... 他{{count}}件',
+  },
+  hotkey: {
+    invalid: {
+      missing: 'ホットキーが指定されていません',
+      format: 'ホットキーの形式が正しくありません',
+      needKey: '修飾キーのほかに通常キーが 1 つ必要です',
+      needModifier: '修飾キー（Ctrl、Alt、Shift等）が必要です',
+      oneKey: '通常キーは 1 つだけにしてください',
+    },
+    launchLabel: 'ホットキー',
+    windowSearchLabel: 'ウィンドウ検索ホットキー',
+    mayBeInUse: '他のアプリで使用中の可能性',
+    notSet: '未設定',
+    registerFailed:
+      '{{label}}「{{desired}}」を登録できません（{{reason}}）。「{{current}}」を維持します',
+  },
+  cli: {
+    candidateLocation: '  （{{location}}）',
+    help: {
+      main: `使い方: qdl <コマンド> [引数]
+
+QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼します。起動していなければ起動します。
+
+コマンド:
+  launcher item list|add|update|remove     メインウィンドウのアイテム（qdl launcher --help）
+  workspace list                           ワークスペースの一覧
+  workspace item list|add|update|remove    ワークスペースのアイテム（qdl workspace --help）
+  workspace group list|add|update|remove   ワークスペースのグループ
+  check                                    直近の読み込み結果（不正・採番・外部変更）を表示する（読み直さない）
+  reload                                   設定ファイルを読み直す（メインウィンドウの F5 と同じ）
+  status                                   本体の版・設定フォルダなどを表示する
+  help                                     この説明を表示する
+
+出力: 成功したら標準出力に JSON。失敗したら標準出力に {"error": {"code", "message", "candidates"?}}、
+標準エラーに説明。code は usage / not_found / ambiguous / invalid / conflict / unavailable / internal。
+書き込むコマンドは --dry-run で、書き込まずに結果だけを確かめられます。
+
+終了コード: 0 成功 / 1 失敗 / 2 コマンドの誤り・対象の指定の誤り / 3 本体に接続できない / 4 CLI と本体の版の不一致
+`,
+      launcher: `使い方: qdl launcher item <操作> [引数]
+
+メインウィンドウのアイテム（datafiles/data*.json）を扱います。
+
+操作:
+  list                     一覧（--file <data2.json> | --tab <タブ名>、--grep <語>）
+  add                      追加（--name・--path は必須。--args --memo、--file | --tab、
+                           --type item|dir|group|window、--set key=value、--dry-run）
+  update <id か表示名>     変更（--name --path --args --memo --set key=value --unset key --dry-run）
+  remove <id か表示名>     削除（--dry-run）
+
+--path の相対パスは qdl を実行したフォルダが基準です。--type dir|group|window のときに要るキーは
+--set で渡します（例 --set itemNames='["メモ","ブラウザ"]'、--set windowTitle=メモ帳）。
+`,
+      workspace: `使い方: qdl workspace <もの> <操作> [引数]
+
+ワークスペース（workspace.json）を扱います。
+
+  qdl workspace list                          ワークスペースの一覧
+  qdl workspace item list                     アイテムの一覧（--workspace --group --grep）
+  qdl workspace item add                      追加（--name・--path は必須。--args --memo --group
+                                              --workspace --position <0 始まり> --set key=value --dry-run）
+  qdl workspace item update <id か表示名>     変更（--name --path --args --memo --set --unset、
+                                              --group <グループ>（"" で未分類へ）--workspace --position --dry-run）
+  qdl workspace item remove <id か表示名>     削除（--dry-run）
+  qdl workspace group list                    グループの一覧（--workspace --grep）
+  qdl workspace group add                     追加（--name は必須。--color --parent --workspace --dry-run）
+  qdl workspace group update <id か名前>      変更（--name --color --parent <親>（"" で最上位へ）--dry-run）
+  qdl workspace group remove <id か名前>      空のグループを削除（--dry-run）
+
+--group・--parent・--workspace は id か表示名の完全一致です。--color は primary success danger warning
+info secondary purple teal pink indigo orange cyan か #rrggbb。グループは 2 段まで入れ子にできます。
+`,
+      seeHelp: 'qdl help で使い方を確認できます',
+    },
+    args: {
+      missingValue: '--{{name}} に値がありません',
+      setFormat: '--set は key=value の形で書いてください: {{value}}',
+      noValue: '--{{name}} は値を取りません',
+      duplicate: '--{{name}} が 2 回指定されています',
+      unknownOption: '知らないオプションです: --{{name}}',
+      notInteger: '--{{name}} は整数で指定してください: {{value}}',
+      missingArg: '{{name}} を指定してください',
+      extraArgs: '余分な引数があります: {{args}}',
+      idOrName: '<id か表示名>',
+      idOrGroupName: '<id か名前>',
+    },
+    errors: {
+      relativePath: '相対パスを解決できません（実行したフォルダが分かりません）: {{value}}',
+      setNotJson: '--set の値を JSON として読めません: {{value}}',
+      setProtected: '--set では {{key}} を変えられません',
+      unsetProtected: '--unset では {{key}} を外せません',
+      fieldMissing: 'キー {{key}} がありません（{{how}} で渡してください）',
+      fieldInvalid: 'キー {{key}} の値が正しくありません（{{expected}} にしてください）',
+      invalidContent: '内容が正しくありません: {{reason}}',
+      unknownFields:
+        '種類 {{type}} には無いキーです: {{fields}}（docs の設定ファイルの形式を確認してください）',
+      notFound: '{{what}}「{{key}}」が見つかりません（id か表示名の完全一致で指定します）',
+      ambiguous: '{{what}}「{{key}}」が {{count}} 件あります。id で指定してください',
+      unknownCommand: '不明なコマンドです: {{command}}',
+      unknownLauncherNoun: '不明なコマンドです: launcher {{noun}}（launcher item のみ）',
+      unknownVerb: '不明な操作です: {{command}}',
+      missingVerb: '操作を指定してください（list / add / update / remove）',
+      missingWorkspaceNoun: 'workspace の後に list / item / group を指定してください',
+      badJson: '依頼を JSON として読めません',
+      badShape: '依頼の形が正しくありません',
+      versionMismatch:
+        'CLI と QuickDashLauncher の版が合いません（CLI: {{cli}}、本体: {{app}}）。同じ版の QuickDashLauncher に付属する qdl を使ってください',
+      badArgv: '依頼の argv が正しくありません',
+      tooLarge: '依頼が大きすぎます',
+      failed: '処理に失敗しました: {{message}}',
+      invalidItem: '不正なアイテム',
+      fileAndTab: '--file と --tab はどちらか一方を指定してください',
+      noDataFile: 'データファイル {{file}} がありません（既存: {{files}}）',
+      noTab: 'タブ「{{tab}}」がありません（既存: {{tabs}}）',
+      noTabSimple: 'タブ「{{tab}}」がありません',
+      tabHasNoFile: 'タブ「{{tab}}」にデータファイルがありません',
+      badType: '--type は {{types}} のいずれかです: {{type}}',
+      dirHasNoName: 'フォルダ取込（dir）は表示名を持ちません',
+      needName: '--name を指定してください',
+      needPath: '--path を指定してください',
+      argsOnlyItem: '--args は通常のアイテム（item）だけに指定できます',
+      typeNotEditable:
+        '種類 {{type}} のアイテムは CLI では変更できません（画面で操作してください）',
+      needChanges: '変えるものを指定してください（{{options}}）',
+      noPath: '種類 {{type}} は --path を持ちません',
+      noWorkspace: 'ワークスペースがありません',
+      badColor: '--color が正しくありません: {{color}}（qdl workspace --help で一覧）',
+      emptyName: '--name が空です',
+      groupNotEmpty:
+        'グループ「{{name}}」は空ではありません（アイテム {{items}} 件、サブグループ {{subgroups}} 件）。中身を移すか消してから削除してください',
+    },
+    targets: {
+      launcherItem: 'メインウィンドウのアイテム',
+      workspace: 'ワークスペース',
+      group: 'グループ',
+      workspaceItem: 'ワークスペースのアイテム',
+    },
+    changed: {
+      launcherAdded: 'CLI: メインウィンドウに「{{name}}」を追加しました',
+      launcherUpdated: 'CLI: メインウィンドウの「{{name}}」を変更しました',
+      launcherRemoved: 'CLI: メインウィンドウの「{{name}}」を削除しました',
+      workspaceItemAdded: 'CLI: ワークスペースに「{{name}}」を追加しました',
+      workspaceItemUpdated: 'CLI: ワークスペースの「{{name}}」を変更しました',
+      workspaceItemRemoved: 'CLI: ワークスペースの「{{name}}」を削除しました',
+      groupAdded: 'CLI: ワークスペースにグループ「{{name}}」を追加しました',
+      groupUpdated: 'CLI: ワークスペースのグループ「{{name}}」を変更しました',
+      groupRemoved: 'CLI: ワークスペースのグループ「{{name}}」を削除しました',
+    },
+    enabled:
+      'QuickDashLauncher CLI を使えるようにしました。新しく開いたターミナルから qdl で使えます',
+    disabled:
+      'QuickDashLauncher CLI を使えないようにしました（qdl コマンドを PATH から外しました）',
+  },
+  display: {
+    label: 'ディスプレイ {{number}}',
+    primary: 'ディスプレイ {{number}} (プライマリ)',
+  },
+  items: {
+    containingFolderNotFound: '親フォルダが見つかりませんでした',
+  },
+  layout: {
+    cancelled: 'キャンセルされました',
+    timedOut: 'ウィンドウ出現待機がタイムアウトしました',
+    windowNotFound: 'ウィンドウが見つかりませんでした',
+  },
+  dataFile: {
+    invalidName: 'データファイル名が正しくありません',
+    alreadyExists: 'ファイルは既に存在します',
+    createFailed: 'ファイルの作成に失敗しました: {{error}}',
+    cannotDeleteMain: 'メインデータファイルは削除できません',
+    deleteFailed: 'ファイルの削除に失敗しました: {{error}}',
   },
   settings: {
     language: {

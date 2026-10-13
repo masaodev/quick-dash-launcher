@@ -27,6 +27,7 @@ import {
   updateLayoutItemById,
   updateWindowItemById,
 } from '../services/data/dataItemWriter.js';
+import { mainI18n } from '../services/mainI18n.js';
 
 import { setupBookmarkHandlers } from './bookmarkHandlers.js';
 import { notifyDataChanged } from './notifications.js';
@@ -46,7 +47,7 @@ export function setupDataHandlers(configFolder: string) {
   ipcMain.handle(IPC_CHANNELS.CREATE_DATA_FILE, async (_event, fileName: string) => {
     if (!isValidDataFileName(fileName)) {
       dataLogger.warn({ fileName }, 'データファイル名が不正なため作成しません');
-      return { success: false, error: 'データファイル名が正しくありません' };
+      return { success: false, error: mainI18n.t('dataFile.invalidName') };
     }
 
     const filePath = path.join(configFolder, fileName);
@@ -54,7 +55,7 @@ export function setupDataHandlers(configFolder: string) {
 
     if (FileUtils.exists(filePath)) {
       dataLogger.warn(`File already exists: ${filePath}`);
-      return { success: false, error: 'ファイルは既に存在します', alreadyExists: true };
+      return { success: false, error: mainI18n.t('dataFile.alreadyExists'), alreadyExists: true };
     }
 
     try {
@@ -66,17 +67,20 @@ export function setupDataHandlers(configFolder: string) {
       return { success: true };
     } catch (error) {
       dataLogger.error({ error, filePath }, 'Failed to create file');
-      return { success: false, error: `ファイルの作成に失敗しました: ${error}` };
+      return {
+        success: false,
+        error: mainI18n.t('dataFile.createFailed', { error: String(error) }),
+      };
     }
   });
 
   ipcMain.handle(IPC_CHANNELS.DELETE_DATA_FILE, async (_event, fileName: string) => {
     if (fileName === DEFAULT_DATA_FILE) {
-      return { success: false, error: 'メインデータファイルは削除できません' };
+      return { success: false, error: mainI18n.t('dataFile.cannotDeleteMain') };
     }
     if (!isValidDataFileName(fileName)) {
       dataLogger.warn({ fileName }, 'データファイル名が不正なため削除しません');
-      return { success: false, error: 'データファイル名が正しくありません' };
+      return { success: false, error: mainI18n.t('dataFile.invalidName') };
     }
 
     const filePath = path.join(configFolder, fileName);
@@ -105,7 +109,10 @@ export function setupDataHandlers(configFolder: string) {
       notifyDataChanged();
       return { success: true, disabledRules: rulesToDisable.map((r) => r.name) };
     } catch (error) {
-      return { success: false, error: `ファイルの削除に失敗しました: ${error}` };
+      return {
+        success: false,
+        error: mainI18n.t('dataFile.deleteFailed', { error: String(error) }),
+      };
     }
   });
 

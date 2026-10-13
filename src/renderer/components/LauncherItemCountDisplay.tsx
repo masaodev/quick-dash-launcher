@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface ItemCountDisplayProps {
   count: number;
@@ -9,7 +10,8 @@ interface ItemCountDisplayProps {
  * タブ内やステータスバー等で使用される
  */
 const LauncherItemCountDisplay: React.FC<ItemCountDisplayProps> = ({ count }) => {
-  return <span className="item-count-display">{count}件</span>;
+  const { t } = useTranslation();
+  return <span className="item-count-display">{t('common.itemCount', { count })}</span>;
 };
 
 export default LauncherItemCountDisplay;

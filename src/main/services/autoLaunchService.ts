@@ -24,7 +24,7 @@ const STARTUP_TASK_STATES: Record<StartupTaskState, StoreAutoLaunchState> = {
 
 /**
  * 自動起動機能を管理するサービスクラス（Windows専用）
- * - ポータブル版・インストーラー版: スタートアップフォルダーにショートカットを作る
+ * - ポータブル版・インストーラー版: スタートアップフォルダにショートカットを作る
  * - Store 版（MSIX）: マニフェストの StartupTask を WinRT の API（dynwinrt 経由）で切り替える
  */
 export class AutoLaunchService {
