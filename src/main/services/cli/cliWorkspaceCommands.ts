@@ -10,6 +10,8 @@ import type {
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { isValidGroupColor } from '@common/groupColors';
 
+import { mainI18n } from '../mainI18n.js';
+
 import {
   CliError,
   expectPositionals,
@@ -130,7 +132,7 @@ function findWorkspace(key: string, s: Snapshot): Workspace {
   return resolveOne(
     key,
     s.workspaces,
-    'ワークスペース',
+    mainI18n.t('cli.targets.workspace'),
     (w) => w.id,
     (w) => w.displayName,
     (w): CliCandidate => ({ id: w.id, displayName: w.displayName, location: [] })
@@ -142,7 +144,7 @@ function findGroup(key: string, s: Snapshot, workspaceId?: string): WorkspaceGro
   return resolveOne(
     key,
     groups,
-    'グループ',
+    mainI18n.t('cli.targets.group'),
     (g) => g.id,
     (g) => g.displayName,
     (g): CliCandidate => ({ id: g.id, displayName: g.displayName, location: groupLocation(g, s) })
@@ -153,7 +155,7 @@ function findItem(key: string, s: Snapshot): WorkspaceItem {
   return resolveOne(
     key,
     s.items,
-    'ワークスペースのアイテム',
+    mainI18n.t('cli.targets.workspaceItem'),
     (i) => i.id,
     (i) => i.displayName,
     (i): CliCandidate => ({ id: i.id, displayName: i.displayName, location: itemLocation(i, s) })
@@ -162,7 +164,7 @@ function findItem(key: string, s: Snapshot): WorkspaceItem {
 
 function defaultWorkspace(s: Snapshot): Workspace {
   const sorted = [...s.workspaces].sort((a, b) => a.order - b.order);
-  if (sorted.length === 0) throw new CliError('not_found', 'ワークスペースがありません');
+  if (sorted.length === 0) throw new CliError('not_found', mainI18n.t('cli.errors.noWorkspace'));
   return sorted[0];
 }
 
@@ -212,26 +214,6 @@ async function placeAt(
   );
 }
 
-export const WORKSPACE_HELP = `使い方: qdl workspace <もの> <操作> [引数]
-
-ワークスペース（workspace.json）を扱います。
-
-  qdl workspace list                          ワークスペースの一覧
-  qdl workspace item list                     アイテムの一覧（--workspace --group --grep）
-  qdl workspace item add                      追加（--name・--path は必須。--args --memo --group
-                                              --workspace --position <0 始まり> --set key=value --dry-run）
-  qdl workspace item update <id か表示名>     変更（--name --path --args --memo --set --unset、
-                                              --group <グループ>（"" で未分類へ）--workspace --position --dry-run）
-  qdl workspace item remove <id か表示名>     削除（--dry-run）
-  qdl workspace group list                    グループの一覧（--workspace --grep）
-  qdl workspace group add                     追加（--name は必須。--color --parent --workspace --dry-run）
-  qdl workspace group update <id か名前>      変更（--name --color --parent <親>（"" で最上位へ）--dry-run）
-  qdl workspace group remove <id か名前>      空のグループを削除（--dry-run）
-
---group・--parent・--workspace は id か表示名の完全一致です。--color は primary success danger warning
-info secondary purple teal pink indigo orange cyan か #rrggbb。グループは 2 段まで入れ子にできます。
-`;
-
 export async function runWorkspaceCommand(
   noun: string | undefined,
   verb: string | undefined,
@@ -280,15 +262,15 @@ export async function runWorkspaceCommand(
     throw new CliError(
       'usage',
       noun
-        ? `不明なコマンドです: workspace ${noun}`
-        : 'workspace の後に list / item / group を指定してください'
+        ? mainI18n.t('cli.errors.unknownCommand', { command: `workspace ${noun}` })
+        : mainI18n.t('cli.errors.missingWorkspaceNoun')
     );
   }
   throw new CliError(
     'usage',
     verb
-      ? `不明な操作です: workspace ${noun} ${verb}`
-      : '操作を指定してください（list / add / update / remove）'
+      ? mainI18n.t('cli.errors.unknownVerb', { command: `workspace ${noun} ${verb}` })
+      : mainI18n.t('cli.errors.missingVerb')
   );
 }
 
@@ -317,8 +299,8 @@ async function addItem(args: readonly string[], ctx: WorkspaceCommandContext): P
   expectPositionals(parsed, []);
   const name = optionString(parsed, 'name');
   const rawPath = optionString(parsed, 'path');
-  if (!name) throw new CliError('usage', '--name を指定してください');
-  if (!rawPath) throw new CliError('usage', '--path を指定してください');
+  if (!name) throw new CliError('usage', mainI18n.t('cli.errors.needName'));
+  if (!rawPath) throw new CliError('usage', mainI18n.t('cli.errors.needPath'));
   const position = optionInt(parsed, 'position');
   const dryRun = optionFlag(parsed, 'dry-run');
 
@@ -366,7 +348,7 @@ async function addItem(args: readonly string[], ctx: WorkspaceCommandContext): P
   }
   const after = await snapshot(ctx.store);
   const item = after.items.find((i) => i.id === added.id) ?? added;
-  ctx.changed(`CLI: ワークスペースに「${item.displayName}」を追加しました`);
+  ctx.changed(mainI18n.t('cli.changed.workspaceItemAdded', { name: item.displayName }));
   return itemView(item, after);
 }
 
@@ -376,23 +358,20 @@ async function updateItem(args: readonly string[], ctx: WorkspaceCommandContext)
     flags: ['dry-run'],
     allowSet: true,
   });
-  const [key] = expectPositionals(parsed, ['<id か表示名>']);
+  const [key] = expectPositionals(parsed, [mainI18n.t('cli.args.idOrName')]);
   const dryRun = optionFlag(parsed, 'dry-run');
   if (!dryRun) await ctx.syncBeforeWrite();
   const s = await snapshot(ctx.store);
   const current = findItem(key, s);
   if (current.type === 'clipboard' || current.type === 'layout') {
-    throw new CliError(
-      'invalid',
-      `種類 ${current.type} のアイテムは CLI では変更できません（画面で操作してください）`
-    );
+    throw new CliError('invalid', mainI18n.t('cli.errors.typeNotEditable', { type: current.type }));
   }
 
   const rawPath = optionString(parsed, 'path');
   let itemPath: string | undefined;
   if (rawPath !== undefined) {
     if (current.type !== 'item')
-      throw new CliError('usage', `種類 ${current.type} は --path を持ちません`);
+      throw new CliError('usage', mainI18n.t('cli.errors.noPath', { type: current.type }));
     itemPath = await ctx.markFolder(resolveCliPath(rawPath, ctx.cwd));
   }
   const fields = {
@@ -416,7 +395,9 @@ async function updateItem(args: readonly string[], ctx: WorkspaceCommandContext)
   ) {
     throw new CliError(
       'usage',
-      '変える項目を指定してください（--name --path --args --memo --set --unset --group --workspace --position）'
+      mainI18n.t('cli.errors.needChanges', {
+        options: '--name --path --args --memo --set --unset --group --workspace --position',
+      })
     );
   }
 
@@ -473,13 +454,13 @@ async function updateItem(args: readonly string[], ctx: WorkspaceCommandContext)
 
   const after = await snapshot(ctx.store);
   const item = after.items.find((i) => i.id === id) ?? current;
-  ctx.changed(`CLI: ワークスペースの「${item.displayName}」を変更しました`);
+  ctx.changed(mainI18n.t('cli.changed.workspaceItemUpdated', { name: item.displayName }));
   return { before, item: itemView(item, after) };
 }
 
 async function removeItem(args: readonly string[], ctx: WorkspaceCommandContext): Promise<unknown> {
   const parsed = parseArgs(args, { flags: ['dry-run'] });
-  const [key] = expectPositionals(parsed, ['<id か表示名>']);
+  const [key] = expectPositionals(parsed, [mainI18n.t('cli.args.idOrName')]);
   const dryRun = optionFlag(parsed, 'dry-run');
   if (!dryRun) await ctx.syncBeforeWrite();
   const s = await snapshot(ctx.store);
@@ -487,7 +468,7 @@ async function removeItem(args: readonly string[], ctx: WorkspaceCommandContext)
   const removed = itemView(item, s);
   if (dryRun) return { dryRun: true, removed };
   await ctx.store.removeItem(item.id);
-  ctx.changed(`CLI: ワークスペースの「${item.displayName}」を削除しました`);
+  ctx.changed(mainI18n.t('cli.changed.workspaceItemRemoved', { name: item.displayName }));
   return { removed };
 }
 
@@ -506,10 +487,7 @@ async function listGroups(args: readonly string[], ctx: WorkspaceCommandContext)
 
 function checkColor(color: string | undefined): void {
   if (color !== undefined && !isValidGroupColor(color)) {
-    throw new CliError(
-      'invalid',
-      `--color が正しくありません: ${color}（qdl workspace --help で一覧）`
-    );
+    throw new CliError('invalid', mainI18n.t('cli.errors.badColor', { color }));
   }
 }
 
@@ -520,7 +498,7 @@ async function addGroup(args: readonly string[], ctx: WorkspaceCommandContext): 
   });
   expectPositionals(parsed, []);
   const name = optionString(parsed, 'name');
-  if (!name?.trim()) throw new CliError('usage', '--name を指定してください');
+  if (!name?.trim()) throw new CliError('usage', mainI18n.t('cli.errors.needName'));
   const color = optionString(parsed, 'color');
   checkColor(color);
   const dryRun = optionFlag(parsed, 'dry-run');
@@ -549,7 +527,7 @@ async function addGroup(args: readonly string[], ctx: WorkspaceCommandContext): 
     // 深さの超過など
     throw new CliError('invalid', (error as Error).message);
   }
-  ctx.changed(`CLI: ワークスペースにグループ「${name}」を追加しました`);
+  ctx.changed(mainI18n.t('cli.changed.groupAdded', { name }));
   const after = await snapshot(ctx.store);
   return groupView(after.groups.find((g) => g.id === created.id) ?? created, after);
 }
@@ -559,14 +537,18 @@ async function updateGroup(
   ctx: WorkspaceCommandContext
 ): Promise<unknown> {
   const parsed = parseArgs(args, { values: ['name', 'color', 'parent'], flags: ['dry-run'] });
-  const [key] = expectPositionals(parsed, ['<id か名前>']);
+  const [key] = expectPositionals(parsed, [mainI18n.t('cli.args.idOrGroupName')]);
   const name = optionString(parsed, 'name');
   const color = optionString(parsed, 'color');
   const parentKey = optionString(parsed, 'parent');
   if (name === undefined && color === undefined && parentKey === undefined) {
-    throw new CliError('usage', '変える項目を指定してください（--name --color --parent）');
+    throw new CliError(
+      'usage',
+      mainI18n.t('cli.errors.needChanges', { options: '--name --color --parent' })
+    );
   }
-  if (name !== undefined && !name.trim()) throw new CliError('usage', '--name が空です');
+  if (name !== undefined && !name.trim())
+    throw new CliError('usage', mainI18n.t('cli.errors.emptyName'));
   checkColor(color);
   const dryRun = optionFlag(parsed, 'dry-run');
   if (!dryRun) await ctx.syncBeforeWrite();
@@ -587,7 +569,7 @@ async function updateGroup(
     // 循環・深さの超過など
     throw new CliError('invalid', (error as Error).message);
   }
-  ctx.changed(`CLI: ワークスペースのグループ「${name ?? group.displayName}」を変更しました`);
+  ctx.changed(mainI18n.t('cli.changed.groupUpdated', { name: name ?? group.displayName }));
   const after = await snapshot(ctx.store);
   return { before, group: groupView(after.groups.find((g) => g.id === group.id) ?? group, after) };
 }
@@ -597,7 +579,7 @@ async function removeGroup(
   ctx: WorkspaceCommandContext
 ): Promise<unknown> {
   const parsed = parseArgs(args, { flags: ['dry-run'] });
-  const [key] = expectPositionals(parsed, ['<id か名前>']);
+  const [key] = expectPositionals(parsed, [mainI18n.t('cli.args.idOrGroupName')]);
   const dryRun = optionFlag(parsed, 'dry-run');
   if (!dryRun) await ctx.syncBeforeWrite();
   const s = await snapshot(ctx.store);
@@ -606,12 +588,16 @@ async function removeGroup(
   if ((view.itemCount as number) > 0 || (view.subgroupCount as number) > 0) {
     throw new CliError(
       'conflict',
-      `グループ「${group.displayName}」は空ではありません（アイテム ${String(view.itemCount)} 件、サブグループ ${String(view.subgroupCount)} 件）。中身を移すか消してから削除してください`
+      mainI18n.t('cli.errors.groupNotEmpty', {
+        name: group.displayName,
+        items: String(view.itemCount),
+        subgroups: String(view.subgroupCount),
+      })
     );
   }
   if (dryRun) return { dryRun: true, removed: view };
   await ctx.beforeGroupRemoved(group.id);
   await ctx.store.deleteGroup(group.id, false);
-  ctx.changed(`CLI: ワークスペースのグループ「${group.displayName}」を削除しました`);
+  ctx.changed(mainI18n.t('cli.changed.groupRemoved', { name: group.displayName }));
   return { removed: view };
 }

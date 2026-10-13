@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { logError } from '../utils/debug';
 
@@ -17,6 +18,7 @@ interface MemoViewModalProps {
  * アイテムのメモ内容を閲覧するためのシンプルなモーダル
  */
 const MemoViewModal: React.FC<MemoViewModalProps> = ({ isOpen, onClose, itemName, memo }) => {
+  const { t } = useTranslation();
   useEffect(() => {
     if (!isOpen) return;
 
@@ -52,9 +54,9 @@ const MemoViewModal: React.FC<MemoViewModalProps> = ({ isOpen, onClose, itemName
           <pre className="memo-text">{memo}</pre>
         </div>
         <div className="modal-actions">
-          <Button onClick={handleCopyToClipboard}>📋 コピー</Button>
+          <Button onClick={handleCopyToClipboard}>{t('common.copy')}</Button>
           <Button variant="cancel" onClick={onClose}>
-            閉じる
+            {t('common.close')}
           </Button>
         </div>
       </div>

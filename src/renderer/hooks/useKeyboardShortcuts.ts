@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { DESKTOP_TAB } from '@common/constants';
 import { AppItem, DataFileTab, LauncherItem, SearchMode, WindowInfo } from '@common/types';
 import { isLauncherItem, isWindowInfo } from '@common/types/guards';
@@ -45,6 +46,7 @@ export interface UseKeyboardShortcutsParams {
 export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
   handleKeyDown: (e: React.KeyboardEvent) => Promise<void>;
 } {
+  const { t } = useTranslation();
   const {
     showDataFileTabs,
     activeTab,
@@ -247,7 +249,7 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
         // 対象のウィンドウに関係なく出す知らせなので、アイテム名のないシンプルな形にする
         await window.electronAPI.showToastWindow({
           type: 'warning',
-          message: 'この環境は仮想デスクトップに対応していません。',
+          message: t('launcher.messages.virtualDesktopUnsupported'),
         });
         return;
       }
@@ -279,30 +281,32 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
         // 押しっぱなしのキーリピートでは実行しない（多重起動や、失敗のダイアログを閉じた直後の実行し直しを防ぐ）
         if (e.repeat || !selectedItem) return;
         if (e.shiftKey && isLauncherItem(selectedItem)) {
-          // URL・カスタム URI には親フォルダーが無い。押しても無反応だと故障に見えるので知らせる
+          // URL・カスタム URI には親フォルダが無い。押しても無反応だと故障に見えるので知らせる
           if (selectedItem.type === 'url' || selectedItem.type === 'customUri') {
             await window.electronAPI.showToastWindow({
               displayName: selectedItem.displayName,
               itemType: selectedItem.type,
-              message: 'このアイテムには親フォルダーがありません',
+              message: t('launcher.messages.noContainingFolder'),
             });
             return;
           }
           await window.electronAPI.openParentFolder(selectedItem as LauncherItem);
         } else if (e.shiftKey && !isWindowInfo(selectedItem)) {
-          // グループ・ウィンドウ操作・クリップボード・ウィンドウ配置にも親フォルダーは無い。
+          // グループ・ウィンドウ操作・クリップボード・ウィンドウ配置にも親フォルダは無い。
           // Enter と同じく実行すると思わぬ起動になるので、実行せずに URL と同じ文言で知らせる
           //（グループのトーストは中身の一覧を出す形なので、名前を本文に入れたシンプルな形にする）
           await window.electronAPI.showToastWindow(
             selectedItem.type === 'group'
               ? {
                   type: 'info',
-                  message: `「${selectedItem.displayName}」には親フォルダーがありません`,
+                  message: t('launcher.messages.noContainingFolderNamed', {
+                    name: selectedItem.displayName,
+                  }),
                 }
               : {
                   displayName: selectedItem.displayName,
                   itemType: selectedItem.type === 'window' ? 'windowOperation' : selectedItem.type,
-                  message: 'このアイテムには親フォルダーがありません',
+                  message: t('launcher.messages.noContainingFolder'),
                 }
           );
         } else {

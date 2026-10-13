@@ -9,6 +9,8 @@ import logger from '@common/logger';
 
 import PathManager from '../config/pathManager.js';
 
+import { mainI18n } from './mainI18n.js';
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let Store: any = null;
 
@@ -183,9 +185,14 @@ export class SettingsService {
     logger.info({ keys }, 'Settings reset to defaults (partial)');
   }
 
-  /** 判定は src/common/utils/hotkeyValidator.ts（修飾キー 1 つ以上 + 通常キーちょうど 1 つ） */
+  /**
+   * 判定は src/common/utils/hotkeyValidator.ts（修飾キー 1 つ以上 + 通常キーちょうど 1 つ）。
+   * 弾いた理由は今の表示言語の文言にして返す
+   */
   public validateHotkey(hotkey: string): { isValid: boolean; reason?: string } {
-    return validateHotkey(hotkey);
+    const result = validateHotkey(hotkey);
+    if (result.isValid || !result.reason) return { isValid: result.isValid };
+    return { isValid: false, reason: mainI18n.t(`hotkey.invalid.${result.reason}`) };
   }
 
   private async getAppVersion(): Promise<string> {

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface RefreshActionsDropdownProps {
   onReload: () => void;
@@ -15,6 +16,7 @@ const LauncherRefreshActionsDropdown: React.FC<RefreshActionsDropdownProps> = ({
   onBookmarkAutoImport,
   onRefreshAll,
 }) => {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -41,35 +43,39 @@ const LauncherRefreshActionsDropdown: React.FC<RefreshActionsDropdownProps> = ({
 
   return (
     <div className="settings-dropdown" ref={dropdownRef}>
-      <button className="action-btn" onClick={() => setIsOpen(!isOpen)} title="更新・取得">
+      <button
+        className="action-btn"
+        onClick={() => setIsOpen(!isOpen)}
+        title={t('launcher.refreshMenu.title')}
+      >
         🔄
       </button>
       {isOpen && (
         <div className="dropdown-menu">
           <button className="dropdown-item" onClick={() => handleMenuItemClick(onReload)}>
-            📋 データ再読込
+            {t('launcher.refreshMenu.reloadData')}
           </button>
           <button
             className="dropdown-item"
             onClick={() => handleMenuItemClick(onFetchMissingIconsCurrentTab)}
           >
-            🎨 アイコン取得（現在のタブ）
+            {t('launcher.refreshMenu.fetchIconsCurrentTab')}
           </button>
           <button
             className="dropdown-item"
             onClick={() => handleMenuItemClick(onFetchMissingIcons)}
           >
-            🎨 アイコン取得（全タブ）
+            {t('launcher.refreshMenu.fetchIconsAllTabs')}
           </button>
           <button
             className="dropdown-item"
             onClick={() => handleMenuItemClick(onBookmarkAutoImport)}
           >
-            🔖 ブックマーク取込
+            {t('launcher.refreshMenu.importBookmarks')}
           </button>
           <div className="dropdown-divider"></div>
           <button className="dropdown-item" onClick={() => handleMenuItemClick(onRefreshAll)}>
-            🔄 完全リフレッシュ
+            {t('launcher.refreshMenu.reloadAll')}
           </button>
         </div>
       )}

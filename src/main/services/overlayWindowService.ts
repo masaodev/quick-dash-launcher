@@ -21,6 +21,7 @@ import { WindowIdleDestroyer } from '../utils/windowIdleDestroyer.js';
 import { DEFAULT_WEB_PREFERENCES } from '../utils/managedWindow.js';
 
 import { NotificationType } from './notificationService.js';
+import { mainI18n } from './mainI18n.js';
 import { getRendererHtmlUrl, openChildWindow } from './childWindowService.js';
 
 /**
@@ -48,6 +49,59 @@ export interface ToastOptions {
   itemCount?: number;
   /** グループ内アイテム名（最大3件） */
   itemNames?: string[];
+}
+
+/**
+ * 種別ごとの既定の文言のキー（message が無いときに出す）。
+ * デスクトップ移動・ブックマーク取込は message を必ず渡す種別なので、無ければ空にする
+ */
+const NO_DEFAULT_ACTION: ReadonlySet<string> = new Set(['windowMoveDesktop', 'bookmarkImport']);
+
+const ACTION_KEYS = {
+  url: 'toast.actions.url',
+  app: 'toast.actions.app',
+  file: 'toast.actions.file',
+  folder: 'toast.actions.folder',
+  customUri: 'toast.actions.customUri',
+  windowOperation: 'toast.actions.windowOperation',
+  layout: 'toast.actions.layout',
+  windowActivate: 'toast.actions.windowActivate',
+  windowClose: 'toast.actions.windowClose',
+  windowPin: 'toast.actions.windowPin',
+  windowUnpin: 'toast.actions.windowUnpin',
+  workspaceAdd: 'toast.actions.workspaceAdd',
+  clipboard: 'toast.actions.clipboard',
+} as const satisfies Partial<Record<ToastItemType, string>>;
+
+/** overlay.html に渡す、表示言語に合わせた文言 */
+interface ToastText {
+  /** 区切り線の下の 1 行（グループは「N件のアイテムを起動します」） */
+  action: string;
+  /** グループの中身（先頭の 3 件。残りは「… 他 N 件」） */
+  groupItems?: string;
+}
+
+function buildToastText(options: ToastOptions): ToastText {
+  const t = mainI18n.t.bind(mainI18n);
+  if (options.itemType === 'group') {
+    const names = options.itemNames ?? [];
+    const count = options.itemCount || names.length;
+    const shown = names.slice(0, 3).join(', ');
+    const remaining = count - 3;
+    return {
+      action: t('toast.groupOpening', { count }),
+      groupItems:
+        names.length === 0
+          ? t('toast.groupOpening', { count })
+          : remaining > 0
+            ? t('toast.groupMore', { names: shown, count: remaining })
+            : shown,
+    };
+  }
+  if (options.message) return { action: options.message };
+  if (!options.itemType || NO_DEFAULT_ACTION.has(options.itemType)) return { action: '' };
+  const key = ACTION_KEYS[options.itemType as keyof typeof ACTION_KEYS];
+  return { action: key ? t(key) : t('toast.actions.default') };
 }
 
 const TOAST_WIDTH = 400;
@@ -239,7 +293,12 @@ export async function showToastWindow(options: ToastOptions): Promise<void> {
   const win = await ensureWindow();
 
   // トーストメッセージを送信して表示
-  win.webContents.send(IPC_CHANNELS.EVENT_SHOW_TOAST, { ...options, type, duration });
+  win.webContents.send(IPC_CHANNELS.EVENT_SHOW_TOAST, {
+    ...options,
+    type,
+    duration,
+    text: buildToastText(options),
+  });
 
   applyToastMode(win);
 

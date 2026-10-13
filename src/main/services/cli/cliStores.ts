@@ -13,6 +13,7 @@ import { closeDetachedWindowsForGroup } from '../../ipc/workspaceHandlers.js';
 import { getLastLoadReport, reloadConfigFiles } from '../data/dataFileLoader.js';
 import { WorkspaceService } from '../workspace/WorkspaceService.js';
 import { showToastWindow } from '../overlayWindowService.js';
+import { mainI18n } from '../mainI18n.js';
 
 import { CliError } from './cliArgs.js';
 import type { LauncherStore } from './cliLauncherCommands.js';
@@ -32,7 +33,9 @@ export function createLauncherStore(configFolder: string): LauncherStore {
       return result.items.map((e) => ({
         item: e.item,
         file: e.meta.sourceFile,
-        ...(e.meta.isValid ? {} : { invalid: e.meta.validationError ?? '不正なアイテム' }),
+        ...(e.meta.isValid
+          ? {}
+          : { invalid: e.meta.validationError ?? mainI18n.t('cli.errors.invalidItem') }),
       }));
     },
     dataFiles: () => PathManager.getDataFiles(),

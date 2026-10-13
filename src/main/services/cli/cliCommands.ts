@@ -1,12 +1,13 @@
 import type { LoadReport } from '../loadReportService.js';
+import { mainI18n } from '../mainI18n.js';
 
 import { CliError, expectPositionals, parseArgs } from './cliArgs.js';
 import type { CliErrorCode } from './cliArgs.js';
 import { CLI_EXIT, cliResponse } from './cliProtocol.js';
 import type { CliRequest, CliResponse } from './cliProtocol.js';
-import { LAUNCHER_HELP, runLauncherItemCommand } from './cliLauncherCommands.js';
+import { runLauncherItemCommand } from './cliLauncherCommands.js';
 import type { LauncherStore } from './cliLauncherCommands.js';
-import { WORKSPACE_HELP, runWorkspaceCommand } from './cliWorkspaceCommands.js';
+import { runWorkspaceCommand } from './cliWorkspaceCommands.js';
 import type { WorkspaceStore } from './cliWorkspaceCommands.js';
 
 /**
@@ -36,27 +37,6 @@ export interface CliContext {
   beforeGroupRemoved: (groupId: string) => Promise<void>;
 }
 
-const HELP = `使い方: qdl <コマンド> [引数]
-
-QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼します。起動していなければ起動します。
-
-コマンド:
-  launcher item list|add|update|remove     メイン画面のアイテム（qdl launcher --help）
-  workspace list                           ワークスペースの一覧
-  workspace item list|add|update|remove    ワークスペースのアイテム（qdl workspace --help）
-  workspace group list|add|update|remove   ワークスペースのグループ
-  check                                    直近の読み込み結果（不正・採番・外部変更）を表示する（読み直さない）
-  reload                                   設定ファイルを読み直す（メイン画面の F5 と同じ）
-  status                                   本体の版・設定フォルダなどを表示する
-  help                                     この説明を表示する
-
-出力: 成功したら標準出力に JSON。失敗したら標準出力に {"error": {"code", "message", "candidates"?}}、
-標準エラーに説明。code は usage / not_found / ambiguous / invalid / conflict / unavailable / internal。
-書き込むコマンドは --dry-run で、書き込まずに結果だけを確かめられます。
-
-終了コード: 0 成功 / 1 失敗 / 2 コマンドの誤り・対象の指定の誤り / 3 本体に接続できない / 4 CLI と本体の版の不一致
-`;
-
 const EXIT_BY_CODE: Record<CliErrorCode, number> = {
   usage: CLI_EXIT.usage,
   not_found: CLI_EXIT.usage,
@@ -82,10 +62,13 @@ export function errorResponse(error: CliError): CliResponse {
   const lines = [`qdl: ${error.message}`];
   for (const c of error.candidates ?? []) {
     lines.push(
-      `  - ${c.id}  ${c.displayName}${c.location.length ? `  （${c.location.join(' / ')}）` : ''}`
+      `  - ${c.id}  ${c.displayName}` +
+        (c.location.length
+          ? mainI18n.t('cli.candidateLocation', { location: c.location.join(' / ') })
+          : '')
     );
   }
-  if (error.code === 'usage') lines.push('qdl help で使い方を確認できます');
+  if (error.code === 'usage') lines.push(mainI18n.t('cli.help.seeHelp'));
   return cliResponse(
     EXIT_BY_CODE[error.code],
     JSON.stringify(body, null, 2) + '\n',
@@ -103,7 +86,7 @@ function noArgs(args: readonly string[]): void {
 
 export async function runCliCommand(req: CliRequest, ctx: CliContext): Promise<CliResponse> {
   const [command, ...rest] = req.argv;
-  if (isHelp(command)) return cliResponse(CLI_EXIT.ok, HELP);
+  if (isHelp(command)) return cliResponse(CLI_EXIT.ok, mainI18n.t('cli.help.main'));
 
   try {
     return json(await dispatch(command, rest, req, ctx));
@@ -148,9 +131,9 @@ async function dispatch(
 
     case 'launcher': {
       const [noun, verb, ...args] = rest;
-      if (wantsHelp || noun === undefined) throw helpAsResult(LAUNCHER_HELP);
+      if (wantsHelp || noun === undefined) throw helpAsResult(mainI18n.t('cli.help.launcher'));
       if (noun !== 'item')
-        throw new CliError('usage', `不明なコマンドです: launcher ${noun}（launcher item のみ）`);
+        throw new CliError('usage', mainI18n.t('cli.errors.unknownLauncherNoun', { noun }));
       return runLauncherItemCommand(verb, args, {
         store: ctx.launcher,
         cwd: req.cwd,
@@ -161,7 +144,7 @@ async function dispatch(
 
     case 'workspace': {
       const [noun, verb, ...args] = rest;
-      if (wantsHelp || noun === undefined) throw helpAsResult(WORKSPACE_HELP);
+      if (wantsHelp || noun === undefined) throw helpAsResult(mainI18n.t('cli.help.workspace'));
       return runWorkspaceCommand(noun, verb, args, {
         store: ctx.workspace,
         cwd: req.cwd,
@@ -173,7 +156,7 @@ async function dispatch(
     }
 
     default:
-      throw new CliError('usage', `不明なコマンドです: ${command}`);
+      throw new CliError('usage', mainI18n.t('cli.errors.unknownCommand', { command }));
   }
 }
 

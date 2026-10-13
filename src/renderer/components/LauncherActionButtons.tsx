@@ -1,9 +1,17 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import type { WindowPinMode } from '@common/types';
 
 import LauncherSettingsDropdown from './LauncherSettingsDropdown';
 import LauncherRefreshActionsDropdown from './LauncherRefreshActionsDropdown';
 import LauncherRegisterDropdown from './LauncherRegisterDropdown';
+
+/** ピンモード別のツールチップ（今のモード → 押した後のモード） */
+const PIN_MODE_TITLE_KEYS = {
+  normal: 'launcher.pinMode.normal',
+  alwaysOnTop: 'launcher.pinMode.alwaysOnTop',
+  stayVisible: 'launcher.pinMode.stayVisible',
+} as const satisfies Record<WindowPinMode, string>;
 
 interface ActionButtonsProps {
   onReload: () => void;
@@ -32,6 +40,7 @@ const LauncherActionButtons: React.FC<ActionButtonsProps> = ({
   onOpenRegisterModal,
   windowPinMode,
 }) => {
+  const { t } = useTranslation();
   // ピンモード別のクラス名を取得
   // normal: デフォルトのaction-btnスタイルを使用
   // alwaysOnTop/stayVisible: 専用の色付きスタイルを適用
@@ -43,18 +52,6 @@ const LauncherActionButtons: React.FC<ActionButtonsProps> = ({
         return 'action-btn pin-stay-visible';
       default:
         return 'action-btn';
-    }
-  }
-
-  // ピンモード別のツールチップを取得
-  function getPinModeTitle(mode: WindowPinMode): string {
-    switch (mode) {
-      case 'normal':
-        return '通常モード → 常に最上面モード';
-      case 'alwaysOnTop':
-        return '常に最上面モード → 表示固定モード';
-      case 'stayVisible':
-        return '表示固定モード → 通常モード';
     }
   }
 
@@ -71,7 +68,7 @@ const LauncherActionButtons: React.FC<ActionButtonsProps> = ({
       <button
         className={getPinModeClassName(windowPinMode)}
         onClick={onTogglePin}
-        title={getPinModeTitle(windowPinMode)}
+        title={t(PIN_MODE_TITLE_KEYS[windowPinMode])}
       >
         📌
       </button>

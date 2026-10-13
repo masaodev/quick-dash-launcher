@@ -3,6 +3,7 @@
  * 画面仕様: docs/screens/dialogs.md#3-confirmdialog
  */
 import React, { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import '../styles/components/Modal.css';
 import '../styles/components/ConfirmDialog.css';
@@ -29,10 +30,10 @@ function ConfirmDialog({
   isOpen,
   onClose,
   onConfirm,
-  title = '確認',
+  title,
   message,
-  confirmText = 'OK',
-  cancelText = 'キャンセル',
+  confirmText,
+  cancelText,
   danger = false,
   showCheckbox = false,
   checkboxLabel = '',
@@ -40,6 +41,8 @@ function ConfirmDialog({
   onCheckboxChange,
   asPage = false,
 }: ConfirmDialogProps): React.ReactElement | null {
+  const { t } = useTranslation();
+
   useEffect(() => {
     if (!isOpen) return;
 
@@ -69,7 +72,7 @@ function ConfirmDialog({
         data-testid="confirm-dialog"
       >
         <div className="confirm-header">
-          <h2>{title}</h2>
+          <h2>{title || t('common.confirm')}</h2>
         </div>
 
         <div className="confirm-body">
@@ -91,14 +94,14 @@ function ConfirmDialog({
 
         <div className="modal-actions">
           <Button variant="cancel" onClick={onClose} data-testid="confirm-dialog-cancel-button">
-            {cancelText}
+            {cancelText || t('common.cancel')}
           </Button>
           <Button
             variant={danger ? 'danger' : 'primary'}
             onClick={onConfirm}
             data-testid="confirm-dialog-confirm-button"
           >
-            {confirmText}
+            {confirmText || t('common.ok')}
           </Button>
         </div>
       </div>
