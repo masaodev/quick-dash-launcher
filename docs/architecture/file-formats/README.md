@@ -86,6 +86,7 @@ JSON ファイルはすべて **UTF-8（BOMなし）** で保存されます。
 - **リストア前自動バックアップ**: リストア実行時に `YYYY-MM-DDTHH-MM-SS_pre-restore/` フォルダを自動作成（`backupEnabled` に関係なく作る）
 - **外部変更前スナップショット**: データファイル・ワークスペースファイルが QDL 外で変更されたことを読み込み時に検知すると、変更前の内容を `YYYY-MM-DDTHH-MM-SS_pre-external/` に保存（`backupEnabled` が無効なら作らない。変更されたファイルのみ。`backupRetention` とは別枠で最新 10 件を保持。QDL 起動中の編集のみ検知し、終了中の編集は対象外）
 - **移行前スナップショット**: ワークスペースファイルを旧形式から 2.0 に変換する前に `YYYY-MM-DDTHH-MM-SS_pre-migration/` を作成（`backupEnabled` に関係なく作る）
+- **同じ秒に作ったとき**: サフィックス付き（`_pre-restore`・`_pre-external`・`_pre-migration`）のフォルダは、同じ名前がすでにあれば `YYYY-MM-DDTHH-MM-SS-2_pre-external/` のように連番を付けて別に作る（上書きしない）。一覧では連番の大きい方を新しいものとして並べる
 
 ### ログ
 
