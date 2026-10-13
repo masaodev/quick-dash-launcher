@@ -30,6 +30,7 @@ import {
 } from './detachedGroupWindowManager.js';
 import { getWorkspaceWindow } from './workspaceWindowManager.js';
 import { registerChildWindowOpener } from './services/childWindowService.js';
+import { isPositionOnScreen } from './utils/screenPosition.js';
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
@@ -571,14 +572,21 @@ export async function setWindowPosition(mode?: WindowPositionMode): Promise<void
       const savedX = await settingsService.get('windowPositionX');
       const savedY = await settingsService.get('windowPositionY');
 
-      // 保存された位置が有効かチェック（初回は0,0なので中央に配置）
-      if (savedX === 0 && savedY === 0) {
+      // 初回（0,0）と、保存位置が画面外（モニターを外した後など）のときは中央に置き直す
+      const isFirstLaunch = savedX === 0 && savedY === 0;
+      if (isFirstLaunch || !isPositionOnScreen(savedX, savedY)) {
         mainWindow.center();
         // 中央配置後の位置を保存
         const bounds = mainWindow.getBounds();
         await settingsService.set('windowPositionX', bounds.x);
         await settingsService.set('windowPositionY', bounds.y);
-        windowLogger.info('初回起動: ウィンドウを画面中央に配置し、位置を保存しました');
+        if (isFirstLaunch) {
+          windowLogger.info('初回起動: ウィンドウを画面中央に配置し、位置を保存しました');
+        } else {
+          windowLogger.warn(
+            `保存位置 (${savedX}, ${savedY}) が画面外のため、画面中央に配置し直しました`
+          );
+        }
       } else {
         mainWindow.setPosition(savedX, savedY);
         windowLogger.info(`ウィンドウを固定位置に配置しました: (${savedX}, ${savedY})`);

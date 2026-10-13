@@ -64,12 +64,14 @@ const GroupItemSelectorModal: React.FC<GroupItemSelectorModalProps> = ({
         const firstFocusableElement = focusableElements[0] as HTMLElement;
         const lastFocusableElement = focusableElements[focusableElements.length - 1] as HTMLElement;
 
+        // 端では反対の端へ折り返す。それ以外はブラウザの既定のフォーカス移動に任せる
         if (event.shiftKey && document.activeElement === firstFocusableElement) {
           lastFocusableElement.focus();
+          event.preventDefault();
         } else if (!event.shiftKey && document.activeElement === lastFocusableElement) {
           firstFocusableElement.focus();
+          event.preventDefault();
         }
-        event.preventDefault();
         event.stopPropagation();
         event.stopImmediatePropagation();
         return;
