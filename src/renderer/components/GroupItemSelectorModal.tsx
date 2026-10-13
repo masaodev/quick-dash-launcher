@@ -2,6 +2,7 @@
  * 画面: グループアイテム選択モーダル
  * 画面仕様: docs/screens/group-item-selector-modal.md
  */
+import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { LauncherItem, AppItem } from '@common/types';
 import { isWindowInfo, isGroupItem, isLauncherItem, isWindowItem } from '@common/types/guards';
@@ -25,6 +26,7 @@ const GroupItemSelectorModal: React.FC<GroupItemSelectorModalProps> = ({
   targetFile,
   excludeNames,
 }) => {
+  const { t } = useTranslation();
   const [availableItems, setAvailableItems] = useState<LauncherItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const modalRef = useRef<HTMLDivElement>(null);
@@ -186,7 +188,7 @@ const GroupItemSelectorModal: React.FC<GroupItemSelectorModalProps> = ({
         ref={modalRef}
         tabIndex={-1}
       >
-        <h3>グループアイテムを選択</h3>
+        <h3>{t('groupSelector.title')}</h3>
 
         <div className="search-box">
           <input
@@ -194,14 +196,14 @@ const GroupItemSelectorModal: React.FC<GroupItemSelectorModalProps> = ({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="アイテム名で検索..."
+            placeholder={t('groupSelector.searchPlaceholder')}
           />
         </div>
 
         <div className="item-list">
           {filteredItems.length === 0 ? (
             <div className="no-items">
-              {searchQuery ? '検索結果がありません' : 'このファイルにはアイテムがありません'}
+              {searchQuery ? t('groupSelector.noResults') : t('groupSelector.noItems')}
             </div>
           ) : (
             filteredItems.map((item, index) => {
@@ -220,7 +222,7 @@ const GroupItemSelectorModal: React.FC<GroupItemSelectorModalProps> = ({
                     )}
                   </span>
                   <span className="item-name">{item.displayName}</span>
-                  {excluded && <span className="excluded-label">追加済み</span>}
+                  {excluded && <span className="excluded-label">{t('groupSelector.added')}</span>}
                 </div>
               );
             })
@@ -229,7 +231,7 @@ const GroupItemSelectorModal: React.FC<GroupItemSelectorModalProps> = ({
 
         <div className="modal-actions">
           <Button variant="cancel" onClick={onClose}>
-            キャンセル
+            {t('common.cancel')}
           </Button>
         </div>
       </div>

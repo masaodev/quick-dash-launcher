@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react';
 import type {
   RegisterItem,
@@ -52,6 +53,7 @@ export function useRegisterForm(
   onClose: () => void,
   onRegister: (items: RegisterItem[]) => void
 ) {
+  const { t } = useTranslation();
   const [items, setItems] = useState<RegisterItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [availableTabs, setAvailableTabs] = useState<DataFileTab[]>([]);
@@ -97,11 +99,11 @@ export function useRegisterForm(
               clipboardSessionId: undefined,
             };
           }
-          showError(result.error || 'クリップボードデータの保存に失敗しました');
+          showError(result.error || t('register.errors.clipboardSaveFailed'));
           return item;
         } catch (error) {
           debugInfo('クリップボードセッションのコミットに失敗:', error);
-          showError('クリップボードデータの保存に失敗しました');
+          showError(t('register.errors.clipboardSaveFailed'));
           return item;
         }
       })
@@ -287,8 +289,8 @@ export function useRegisterForm(
       if (item.itemCategory !== 'dir' && !item.displayName.trim()) {
         newErrors[i].displayName =
           item.itemCategory === 'group'
-            ? 'グループ名を入力してください'
-            : 'アイテム表示名を入力してください';
+            ? t('register.errors.groupNameRequired')
+            : t('register.errors.displayNameRequired');
       }
 
       if (
@@ -298,13 +300,13 @@ export function useRegisterForm(
         item.itemCategory !== 'layout' &&
         !item.path.trim()
       ) {
-        newErrors[i].path = 'パスを入力してください';
+        newErrors[i].path = t('register.errors.pathRequired');
       }
 
       if (item.itemCategory === 'group') {
         const itemNames = item.groupItemNames || [];
         if (itemNames.length === 0) {
-          newErrors[i].groupItemNames = 'グループアイテムを追加してください';
+          newErrors[i].groupItemNames = t('register.errors.groupItemsRequired');
         }
       }
 
@@ -312,19 +314,19 @@ export function useRegisterForm(
         const hasWindowTitle = item.windowOperationConfig?.windowTitle?.trim();
         const hasProcessName = item.windowOperationConfig?.processName?.trim();
         if (!hasWindowTitle && !hasProcessName) {
-          newErrors[i].displayName = 'ウィンドウタイトルまたはプロセス名を入力してください';
+          newErrors[i].displayName = t('register.errors.windowRequired');
         }
       }
 
       if (item.itemCategory === 'clipboard') {
         if (!item.clipboardSessionId && !item.clipboardDataRef) {
-          newErrors[i].path = 'クリップボードをキャプチャしてください';
+          newErrors[i].path = t('register.errors.clipboardRequired');
         }
       }
 
       if (item.itemCategory === 'layout') {
         if (!item.layoutEntries || item.layoutEntries.length === 0) {
-          newErrors[i].path = 'ウィンドウをキャプチャしてください';
+          newErrors[i].path = t('register.errors.layoutRequired');
         }
       }
     }
@@ -411,11 +413,11 @@ export function useRegisterForm(
       if (icon) {
         updateItem(index, { icon });
       } else {
-        showWarning('アイコンを取得できませんでした');
+        showWarning(t('register.errors.iconNotFound'));
       }
     } catch (error) {
       debugInfo(`アイコン取得エラー (index: ${index}):`, error);
-      showError('アイコン取得中にエラーが発生しました');
+      showError(t('register.errors.iconFetchError'));
     } finally {
       setLoadingAt(index, false);
     }
@@ -439,7 +441,7 @@ export function useRegisterForm(
       setIconFetchLoading((prev) => [...prev, ...itemsWithIcons.map(() => false)]);
     } catch (error) {
       debugInfo('ファイル追加エラー:', error);
-      showError('ファイルの追加中にエラーが発生しました');
+      showError(t('register.errors.addFileError'));
     } finally {
       setLoading(false);
     }
@@ -459,7 +461,7 @@ export function useRegisterForm(
       setErrors({});
     } catch (error) {
       debugInfo('ファイル置き換えエラー:', error);
-      showError('ファイルの読み込み中にエラーが発生しました');
+      showError(t('register.errors.readFileError'));
     } finally {
       setLoading(false);
     }

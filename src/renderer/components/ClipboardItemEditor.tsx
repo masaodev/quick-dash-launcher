@@ -1,3 +1,5 @@
+import i18next from 'i18next';
+import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect } from 'react';
 import type { CurrentClipboardState, ClipboardFormat } from '@common/types';
 
@@ -33,16 +35,10 @@ interface ClipboardItemEditorProps {
   onError?: (error: string) => void;
 }
 
-const FORMAT_LABELS: Record<ClipboardFormat, string> = {
-  text: 'テキスト',
-  html: 'HTML',
-  rtf: 'RTF',
-  image: '画像',
-  file: 'ファイル',
-};
+const FORMATS: readonly ClipboardFormat[] = ['text', 'html', 'rtf', 'image', 'file'];
 
 function formatToLabel(format: ClipboardFormat): string {
-  return FORMAT_LABELS[format] || format;
+  return FORMATS.includes(format) ? i18next.t(`clipboardEditor.formats.${format}`) : format;
 }
 
 function formatDataSize(bytes: number): string {
@@ -68,6 +64,7 @@ function CapturedDataSection({
   capturing,
   canCapture,
 }: CapturedDataSectionProps): React.ReactElement {
+  const { t } = useTranslation();
   const preview = capturedData?.preview || sessionData?.preview;
   const formats = capturedData?.formats || sessionData?.formats || [];
   const timestamp = capturedData?.savedAt || sessionData?.capturedAt || Date.now();
@@ -76,7 +73,7 @@ function CapturedDataSection({
   return (
     <div className="clipboard-captured-data">
       <div className="section-header">
-        <h4>{isPersisted ? '保存済みデータ' : 'キャプチャ済みデータ'}</h4>
+        <h4>{isPersisted ? t('clipboardEditor.savedData') : t('clipboardEditor.capturedData')}</h4>
       </div>
 
       <div className="captured-info">
@@ -87,18 +84,20 @@ function CapturedDataSection({
         )}
 
         <div className="format-info">
-          <span className="label">フォーマット:</span>
+          <span className="label">{t('clipboardEditor.format')}</span>
           <span className="formats">{formats.map(formatToLabel).join(', ')}</span>
         </div>
 
         <div className="saved-info">
-          <span className="label">{isPersisted ? '保存日時:' : 'キャプチャ日時:'}</span>
+          <span className="label">
+            {isPersisted ? t('clipboardEditor.savedAt') : t('clipboardEditor.capturedAt')}
+          </span>
           <span className="date">{new Date(timestamp).toLocaleString('ja-JP')}</span>
         </div>
 
         <div className="recapture-action">
           <Button variant="info" onClick={onRecapture} disabled={capturing || !canCapture}>
-            {capturing ? 'キャプチャ中...' : '現在のクリップボードで上書き'}
+            {capturing ? t('clipboardEditor.capturing') : t('clipboardEditor.overwrite')}
           </Button>
         </div>
       </div>
@@ -107,10 +106,11 @@ function CapturedDataSection({
 }
 
 function ClipboardPreview({ state }: { state: CurrentClipboardState }): React.ReactElement {
+  const { t } = useTranslation();
   if (state.imageThumbnail) {
     return (
       <div className="image-preview">
-        <img src={state.imageThumbnail} alt="クリップボード画像" />
+        <img src={state.imageThumbnail} alt={t('clipboardEditor.imageAlt')} />
       </div>
     );
   }
@@ -121,7 +121,7 @@ function ClipboardPreview({ state }: { state: CurrentClipboardState }): React.Re
       </div>
     );
   }
-  return <div className="no-preview">プレビューなし</div>;
+  return <div className="no-preview">{t('clipboardEditor.noPreview')}</div>;
 }
 
 const ClipboardItemEditor: React.FC<ClipboardItemEditorProps> = ({
@@ -130,6 +130,7 @@ const ClipboardItemEditor: React.FC<ClipboardItemEditorProps> = ({
   onCapture,
   onError,
 }) => {
+  const { t } = useTranslation();
   const [currentState, setCurrentState] = useState<CurrentClipboardState | null>(null);
   const [loading, setLoading] = useState(false);
   const [capturing, setCapturing] = useState(false);
@@ -166,10 +167,10 @@ const ClipboardItemEditor: React.FC<ClipboardItemEditorProps> = ({
           dataSize: result.dataSize || 0,
         });
       } else {
-        onError?.(result.error || 'キャプチャに失敗しました');
+        onError?.(result.error || t('clipboardEditor.captureFailed'));
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'キャプチャに失敗しました';
+      const message = error instanceof Error ? error.message : t('clipboardEditor.captureFailed');
       onError?.(message);
     } finally {
       setCapturing(false);
@@ -181,9 +182,9 @@ const ClipboardItemEditor: React.FC<ClipboardItemEditorProps> = ({
       {/* 現在のクリップボード状態 */}
       <div className="clipboard-current-state">
         <div className="section-header">
-          <h4>現在のクリップボード</h4>
+          <h4>{t('clipboardEditor.current')}</h4>
           <Button variant="info" size="sm" onClick={checkClipboard} disabled={loading}>
-            {loading ? '確認中...' : '更新'}
+            {loading ? t('clipboardEditor.checking') : t('clipboardEditor.refresh')}
           </Button>
         </div>
 
@@ -194,7 +195,7 @@ const ClipboardItemEditor: React.FC<ClipboardItemEditorProps> = ({
 
               {/* フォーマット情報 */}
               <div className="format-info">
-                <span className="label">フォーマット:</span>
+                <span className="label">{t('clipboardEditor.format')}</span>
                 <span className="formats">
                   {currentState.formats.map(formatToLabel).join(', ')}
                 </span>
@@ -203,7 +204,7 @@ const ClipboardItemEditor: React.FC<ClipboardItemEditorProps> = ({
               {/* サイズ情報 */}
               {currentState.estimatedSize && (
                 <div className="size-info">
-                  <span className="label">推定サイズ:</span>
+                  <span className="label">{t('clipboardEditor.estimatedSize')}</span>
                   <span className="size">{formatDataSize(currentState.estimatedSize)}</span>
                 </div>
               )}
@@ -211,18 +212,18 @@ const ClipboardItemEditor: React.FC<ClipboardItemEditorProps> = ({
               {/* キャプチャボタン */}
               <div className="capture-action">
                 <Button variant="primary" onClick={handleCapture} disabled={capturing}>
-                  {capturing ? 'キャプチャ中...' : 'このクリップボードを保存'}
+                  {capturing ? t('clipboardEditor.capturing') : t('clipboardEditor.save')}
                 </Button>
               </div>
             </div>
           ) : (
             <div className="clipboard-empty">
-              <p>クリップボードは空です</p>
-              <p className="hint">テキストや画像をコピーしてからキャプチャしてください</p>
+              <p>{t('clipboardEditor.empty')}</p>
+              <p className="hint">{t('clipboardEditor.emptyHint')}</p>
             </div>
           )
         ) : (
-          <div className="clipboard-loading">読み込み中...</div>
+          <div className="clipboard-loading">{t('clipboardEditor.loading')}</div>
         )}
       </div>
 
@@ -239,8 +240,7 @@ const ClipboardItemEditor: React.FC<ClipboardItemEditorProps> = ({
       {/* 注意事項 */}
       <div className="clipboard-notes">
         <p>
-          <strong>注意:</strong> 画像は最大10MBまで保存できます。
-          ファイルの参照情報は保存されますが、復元には対応していません。
+          <strong>{t('clipboardEditor.notesLabel')}</strong> {t('clipboardEditor.notes')}
         </p>
       </div>
     </div>

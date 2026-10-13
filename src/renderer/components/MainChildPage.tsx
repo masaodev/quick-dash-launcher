@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useEffect, useState } from 'react';
 import type { MainChildWindowRequest } from '@common/types';
 
@@ -18,6 +19,7 @@ interface MainChildPageProps {
  * 種類に応じたページを描く。要求が見つからなければ（開き元が閉じた等）閉じるだけ
  */
 const MainChildPage: React.FC<MainChildPageProps> = ({ requestId }) => {
+  const { t } = useTranslation();
   const [request, setRequest] = useState<MainChildWindowRequest | null>(null);
   const [notFound, setNotFound] = useState(false);
 
@@ -47,24 +49,24 @@ const MainChildPage: React.FC<MainChildPageProps> = ({ requestId }) => {
     document.title =
       request.kind === 'register'
         ? request.editingItem
-          ? 'アイテムの編集'
-          : 'アイテムの登録'
-        : 'アイコン取得結果';
-  }, [request]);
+          ? t('register.editTitle')
+          : t('register.addTitle')
+        : t('register.iconResultTitle');
+  }, [request, t]);
 
   if (notFound) {
     return (
       <div className="main-child-page main-child-missing">
-        <p>表示する内容が見つかりません。</p>
+        <p>{t('register.notFound')}</p>
         <Button variant="cancel" onClick={() => window.close()}>
-          閉じる
+          {t('common.close')}
         </Button>
       </div>
     );
   }
 
   if (!request) {
-    return <div className="main-child-page main-child-loading">読み込み中...</div>;
+    return <div className="main-child-page main-child-loading">{t('common.loading')}</div>;
   }
 
   switch (request.kind) {

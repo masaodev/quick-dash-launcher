@@ -130,14 +130,14 @@ async function takeShots(configDir: string, demoRoot: string): Promise<void> {
     await register
       .locator('input[placeholder="ファイルパス、URL、またはカスタムURIを入力"]')
       .fill(path.join(demoRoot, 'A_基幹システム刷新'));
-    await register.locator('.options-toggle', { hasText: 'フォルダ取り込みオプション' }).click();
+    await register.locator('.options-toggle', { hasText: 'フォルダ取込のオプション' }).click();
     const dirOptions = register.locator('.dir-options');
     await dirOptions.waitFor({ state: 'visible' });
     await dirOptions.locator('select').nth(0).selectOption({ value: '-1' });
     await dirOptions.locator('select').nth(1).selectOption({ value: 'file' });
     await dirOptions.locator('input[placeholder="ワイルドカードパターン"]').fill('*.xlsx');
     await dirOptions.locator('input[placeholder="除外するパターン"]').fill('旧*');
-    await dirOptions.locator('input[placeholder="アイテム名の前に付ける文字"]').fill('基幹刷新');
+    await dirOptions.locator('input[placeholder="表示名の前に付ける文字"]').fill('基幹刷新');
     await shot(register, path.join(ALT_DIR, 'register-dir-full.png'));
     await resizeWindow(app, register, 760);
     await shot(register, path.join(IMAGE_DIR, 'readme-register-dir.png'));

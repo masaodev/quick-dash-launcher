@@ -2,6 +2,7 @@
  * 画面: アイテム登録・編集モーダル
  * 画面仕様: docs/screens/register-modal.md
  */
+import { useTranslation } from 'react-i18next';
 import React, { useEffect, useRef, useState } from 'react';
 import type {
   RegisterItem,
@@ -67,6 +68,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
   onDelete,
   asPage = false,
 }) => {
+  const { t } = useTranslation();
   const modalRef = useRef<HTMLDivElement>(null);
 
   const [windowSelectorOpen, setWindowSelectorOpen] = useState(false);
@@ -286,16 +288,14 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
           ref={modalRef}
           tabIndex={-1}
         >
-          <h2>{editingItem ? 'アイテムの編集' : 'アイテムの登録'}</h2>
+          <h2>{editingItem ? t('register.editTitle') : t('register.addTitle')}</h2>
 
           {editingItem && isAutoImportItem(editingItem) && (
-            <div className="auto-import-warning">
-              このアイテムはブックマーク自動取込で管理されています。編集しても、次回の自動取込実行時に上書きされます。
-            </div>
+            <div className="auto-import-warning">{t('register.autoImportWarning')}</div>
           )}
 
           {loading ? (
-            <div className="loading">アイテム情報を読み込み中...</div>
+            <div className="loading">{t('register.loading')}</div>
           ) : (
             <>
               <div className="register-items">
@@ -334,20 +334,20 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
               <div className="modal-actions">
                 {canTryExecute(items[0]) && (
                   <Button variant="primary" onClick={() => tryExecuteRegisterItem(items[0])}>
-                    ⚡ 試しに実行
+                    {t('register.tryRun')}
                   </Button>
                 )}
                 <div className="modal-actions-right">
                   {editingItem && onDelete && (
                     <Button variant="danger" onClick={handleDelete}>
-                      削除
+                      {t('register.delete')}
                     </Button>
                   )}
                   <Button variant="cancel" onClick={handleCancel}>
-                    キャンセル
+                    {t('common.cancel')}
                   </Button>
                   <Button variant="primary" onClick={validateAndRegister}>
-                    {editingItem ? '更新' : '登録'}
+                    {editingItem ? t('register.update') : t('register.add')}
                   </Button>
                 </div>
               </div>
@@ -356,7 +356,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
 
           {isDraggingOverModal && (
             <div className="drag-overlay">
-              <div className="drag-message">ファイルをドロップして追加</div>
+              <div className="drag-message">{t('register.dropFiles')}</div>
             </div>
           )}
         </div>
@@ -379,9 +379,9 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
         isOpen={filePickerState.isOpen}
         onClose={closeCustomIconPicker}
         onFileSelect={onCustomIconSelected}
-        title="カスタムアイコンを選択"
+        title={t('register.customIconPickerTitle')}
         fileTypes="image"
-        description="アイコンとして使用する画像ファイルを選択してください。"
+        description={t('register.customIconPickerDescription')}
       />
 
       <WindowSelectorModal

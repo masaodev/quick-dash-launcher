@@ -2,6 +2,7 @@
  * 画面: 共通ダイアログ（ファイル選択）
  * 画面仕様: docs/screens/dialogs.md#4-filepickerdialog
  */
+import { useTranslation } from 'react-i18next';
 import React, { useEffect } from 'react';
 
 import '../styles/components/Modal.css';
@@ -24,10 +25,11 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
   isOpen,
   onClose,
   onFileSelect,
-  title = 'ファイルを選択',
+  title,
   fileTypes,
   description,
 }) => {
+  const { t } = useTranslation();
   useEffect(() => {
     if (!isOpen) return;
 
@@ -74,7 +76,7 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
         data-testid="file-picker-dialog"
       >
         <div className="file-picker-header">
-          <h2>{title}</h2>
+          <h2>{title ?? t('filePicker.title')}</h2>
         </div>
 
         <div className="file-picker-body">
@@ -84,13 +86,13 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
             onClick={handleBrowseClick}
             data-testid="file-picker-browse-button"
           >
-            ファイルを参照...
+            {t('filePicker.browse')}
           </button>
         </div>
 
         <div className="modal-actions">
           <Button variant="cancel" onClick={onClose} data-testid="file-picker-cancel-button">
-            キャンセル
+            {t('common.cancel')}
           </Button>
         </div>
       </div>

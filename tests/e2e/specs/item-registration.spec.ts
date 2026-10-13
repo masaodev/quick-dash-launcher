@@ -198,7 +198,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       const errorMessage = utils.registerPage.locator('.error-message');
       await expect(errorMessage.first()).toBeVisible();
       const errorText = await errorMessage.first().textContent();
-      expect(errorText).toContain('アイテム表示名を入力してください');
+      expect(errorText).toContain('表示名を入力してください');
 
       await utils.clickCancelButton();
     });
@@ -361,7 +361,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       const errorMessage = utils.registerPage.locator('.error-message');
       await expect(errorMessage.first()).toBeVisible();
       const errorText = await errorMessage.first().textContent();
-      expect(errorText).toContain('アイテム表示名を入力してください');
+      expect(errorText).toContain('表示名を入力してください');
 
       await utils.clickCancelButton();
     });

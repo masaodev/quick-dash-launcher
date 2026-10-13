@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useRef, useEffect } from 'react';
 import { findMatchingRule, applyConversionPrefix } from '@common/urlConversionRules';
 import type { ConversionRule } from '@common/urlConversionRules';
@@ -9,6 +10,7 @@ interface UrlConverterMenuProps {
 }
 
 const UrlConverterMenu: React.FC<UrlConverterMenuProps> = ({ url, onConvert, itemType }) => {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [matchedRule, setMatchedRule] = useState<ConversionRule | undefined>(undefined);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -52,10 +54,10 @@ const UrlConverterMenu: React.FC<UrlConverterMenuProps> = ({ url, onConvert, ite
         className="url-converter-btn"
         onClick={handleButtonClick}
         disabled={isDisabled}
-        title="URL形式を変換（SharePoint等）"
+        title={t('urlConverter.title')}
       >
         <span className="url-converter-emoji">🔗</span>
-        <span>URL変換</span>
+        <span>{t('urlConverter.button')}</span>
       </button>
 
       {isOpen && (
@@ -81,12 +83,8 @@ const UrlConverterMenu: React.FC<UrlConverterMenuProps> = ({ url, onConvert, ite
             </>
           ) : (
             <div className="url-converter-menu-empty">
-              <div className="url-converter-menu-empty-message">
-                このURLに対応する変換ルールが見つかりませんでした
-              </div>
-              <div className="url-converter-menu-empty-hint">
-                SharePoint上のOfficeファイル（Excel、Word、PowerPoint）のURLに対応しています
-              </div>
+              <div className="url-converter-menu-empty-message">{t('urlConverter.noRule')}</div>
+              <div className="url-converter-menu-empty-hint">{t('urlConverter.hint')}</div>
             </div>
           )}
         </div>

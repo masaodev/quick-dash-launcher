@@ -1,3 +1,4 @@
+import i18next from 'i18next';
 import { useEffect } from 'react';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { PathUtils } from '@common/utils/pathUtils';
@@ -81,7 +82,8 @@ export function useClipboardPaste(
         logWarn('Clipboard capture for paste failed:', result.error);
         return;
       }
-      const displayName = displayNameHint ?? result.preview ?? 'クリップボード';
+      const displayName =
+        displayNameHint ?? result.preview ?? i18next.t('register.clipboardFallbackName');
       const item: ClipboardItem = {
         type: 'clipboard',
         displayName,

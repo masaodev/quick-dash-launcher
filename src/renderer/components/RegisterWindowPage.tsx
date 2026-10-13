@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useCallback, useRef, useState } from 'react';
 import type {
   RegisterItem,
@@ -34,6 +35,7 @@ function isEditableJsonItem(item: EditingAppItem | EditableJsonItem): item is Ed
  * 管理画面が未保存の編集状態に反映し、「変更を保存」で確定する。削除はここでは出さない
  */
 const RegisterWindowPage: React.FC<RegisterWindowPageProps> = ({ requestId, request }) => {
+  const { t } = useTranslation();
   const { showError } = useToast();
   const [deleteTarget, setDeleteTarget] = useState<EditingAppItem | null>(null);
   /** 保存中に閉じる要求が来ても、保存が終わってから閉じるための待ち */
@@ -68,14 +70,14 @@ const RegisterWindowPage: React.FC<RegisterWindowPageProps> = ({ requestId, requ
           window.electronAPI.notifyMainChildWindowResult({ kind: 'register', action });
         } catch (error) {
           logError('アイテムの保存に失敗しました:', error);
-          showError('アイテムの保存に失敗しました');
+          showError(t('register.saveFailed'));
           throw error;
         }
       })();
       // 失敗してもウィンドウは閉じる（エラーはログに残す。close 側の finally で閉じる）
       pendingSave.current.catch(() => {});
     },
-    [request.editingItem, request.returnToOpener, requestId, showError]
+    [request.editingItem, request.returnToOpener, requestId, showError, t]
   );
 
   const handleDeleteRequest = useCallback((item: EditingAppItem | EditableJsonItem) => {
@@ -96,7 +98,7 @@ const RegisterWindowPage: React.FC<RegisterWindowPageProps> = ({ requestId, requ
     if (!target) return;
     try {
       if (!target.jsonItemId) {
-        throw new Error('アイテムIDが見つかりません');
+        throw new Error(t('register.itemIdNotFound'));
       }
       await window.electronAPI.deleteItemsById([{ id: target.jsonItemId }]);
       window.electronAPI.notifyMainChildWindowResult({ kind: 'register', action: 'deleted' });
@@ -104,10 +106,10 @@ const RegisterWindowPage: React.FC<RegisterWindowPageProps> = ({ requestId, requ
       window.close();
     } catch (error) {
       logError('Failed to delete item:', error);
-      showError('アイテムの削除に失敗しました。');
+      showError(t('register.deleteFailed'));
       setDeleteTarget(null);
     }
-  }, [deleteTarget, showError]);
+  }, [deleteTarget, showError, t]);
 
   return (
     <>
@@ -126,7 +128,9 @@ const RegisterWindowPage: React.FC<RegisterWindowPageProps> = ({ requestId, requ
         isOpen={deleteTarget !== null}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleConfirmDelete}
-        message={deleteTarget ? `「${deleteTarget.displayName}」を削除してもよろしいですか？` : ''}
+        message={
+          deleteTarget ? t('register.deleteConfirm', { name: deleteTarget.displayName }) : ''
+        }
         danger={true}
       />
     </>
