@@ -32,6 +32,7 @@ import {
 import { runWithConcurrency } from '../utils/concurrency.js';
 import { hideMainWindowOnExecute } from '../windowManager.js';
 import { resolveLayoutEntryIcons } from '../utils/layoutIconResolver.js';
+import { mainI18n } from '../services/mainI18n.js';
 
 /**
  * WindowItemからWindowConfigを生成する
@@ -84,21 +85,18 @@ async function openItem(item: LauncherItem): Promise<void> {
 }
 
 async function openParentFolder(item: LauncherItem): Promise<void> {
-  itemLogger.info(
-    { name: item.displayName, type: item.type, path: item.path },
-    '親フォルダーを開く'
-  );
+  itemLogger.info({ name: item.displayName, type: item.type, path: item.path }, '親フォルダを開く');
 
   if (item.type !== 'file' && item.type !== 'folder' && item.type !== 'app') return;
 
-  // ストアアプリなど（shell:AppsFolder\...）は、URL と同じく親フォルダーを持たない
+  // ストアアプリなど（shell:AppsFolder\...）は、URL と同じく親フォルダを持たない
   if (/^shell:/i.test(item.path)) {
-    await notifyParentFolder(item, 'このアイテムには親フォルダーがありません');
+    await notifyParentFolder(item, mainI18n.t('launcher.messages.noContainingFolder'));
     return;
   }
 
   // ファイル名だけで登録したアプリ（notepad.exe など）は、起動と同じく PATH から探す
-  //（ファイル・フォルダは PATH から探さない。別のフォルダーの同名ファイルを選んでしまう）
+  //（ファイル・フォルダは PATH から探さない。別のフォルダの同名ファイルを選んでしまう）
   const target =
     item.type === 'app' && isBareFileName(item.path)
       ? await resolveFromPath(item.path)
@@ -108,13 +106,13 @@ async function openParentFolder(item: LauncherItem): Promise<void> {
   const status = target ? (await checkPathsExist([target]))[target] : 'missing';
   if (!target || status === 'missing') {
     // 押しても無反応だと故障に見えるので知らせる
-    await notifyParentFolder(item, '親フォルダーが見つかりませんでした');
+    await notifyParentFolder(item, mainI18n.t('items.containingFolderNotFound'));
     return;
   }
   shell.showItemInFolder(target);
 }
 
-/** 親フォルダーを開けないことを知らせる（ランチャーは隠れた後なので、画面内ではなくトーストで出す） */
+/** 親フォルダを開けないことを知らせる（ランチャーは隠れた後なので、画面内ではなくトーストで出す） */
 async function notifyParentFolder(item: LauncherItem, message: string): Promise<void> {
   await showToastWindow({
     displayName: item.displayName,
@@ -253,13 +251,16 @@ function sendLayoutProgress(
 ): void {
   const win = getLayoutProgressWindow();
   if (!win) return;
+  // overlay.html のボタンの文言（表示言語に合わせる）
+  const labels = { cancel: mainI18n.t('common.cancel'), close: mainI18n.t('common.close') };
 
   if (eventType === 'start') {
-    win.webContents.send(LAYOUT_PROGRESS_CHANNELS[eventType], progress);
+    win.webContents.send(LAYOUT_PROGRESS_CHANNELS[eventType], { ...progress, labels });
   } else {
     // update/completeではiconを除外してIPC転送量を削減
     const lightweight = {
       ...progress,
+      labels,
       entries: progress.entries.map(({ icon: _icon, ...rest }) => rest),
     };
     win.webContents.send(LAYOUT_PROGRESS_CHANNELS[eventType], lightweight);
@@ -324,7 +325,7 @@ async function executeLayoutEntry(
 ): Promise<void> {
   // キャンセルチェック
   if (layoutCancelled) {
-    failLayoutEntry(progress, index, 'キャンセルされました');
+    failLayoutEntry(progress, index, mainI18n.t('layout.cancelled'));
     return;
   }
 
@@ -366,8 +367,8 @@ async function executeLayoutEntry(
       const appeared = await waitForWindow(searchTitle, entry.processName);
       if (!appeared) {
         const errorMsg = layoutCancelled
-          ? 'キャンセルされました'
-          : 'ウィンドウ出現待機がタイムアウトしました';
+          ? mainI18n.t('layout.cancelled')
+          : mainI18n.t('layout.timedOut');
         itemLogger.warn({ windowTitle: entry.windowTitle }, `レイアウト: ${errorMsg}`);
         failLayoutEntry(progress, index, errorMsg);
         return;
@@ -377,7 +378,7 @@ async function executeLayoutEntry(
 
   // キャンセルチェック
   if (layoutCancelled) {
-    failLayoutEntry(progress, index, 'キャンセルされました');
+    failLayoutEntry(progress, index, mainI18n.t('layout.cancelled'));
     return;
   }
 
@@ -388,7 +389,7 @@ async function executeLayoutEntry(
       { windowTitle: entry.windowTitle },
       'レイアウト: ウィンドウが見つかりませんでした'
     );
-    failLayoutEntry(progress, index, 'ウィンドウが見つかりませんでした');
+    failLayoutEntry(progress, index, mainI18n.t('layout.windowNotFound'));
     return;
   }
 

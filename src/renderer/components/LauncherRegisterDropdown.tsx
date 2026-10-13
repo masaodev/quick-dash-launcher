@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { useDropdown } from '../hooks/useDropdown';
 
@@ -7,6 +8,7 @@ interface RegisterDropdownProps {
 }
 
 const LauncherRegisterDropdown: React.FC<RegisterDropdownProps> = ({ onOpenRegisterModal }) => {
+  const { t } = useTranslation();
   const dropdown = useDropdown();
 
   function handleSimpleRegister(): void {
@@ -26,19 +28,23 @@ const LauncherRegisterDropdown: React.FC<RegisterDropdownProps> = ({ onOpenRegis
 
   return (
     <div className="settings-dropdown" ref={dropdown.ref}>
-      <button className="action-btn" onClick={dropdown.toggle} title="アイテムを登録">
+      <button
+        className="action-btn"
+        onClick={dropdown.toggle}
+        title={t('launcher.registerMenu.title')}
+      >
         ➕
       </button>
       {dropdown.isOpen && (
         <div className="dropdown-menu">
           <button className="dropdown-item" onClick={handleSimpleRegister}>
-            📄 簡易登録
+            {t('launcher.registerMenu.quickAdd')}
           </button>
           <button className="dropdown-item" onClick={handleImportBookmarks}>
-            🔖 ブラウザのブックマークを追加
+            {t('launcher.registerMenu.addBookmarks')}
           </button>
           <button className="dropdown-item" onClick={handleImportApps}>
-            💻 インストール済みアプリを追加
+            {t('launcher.registerMenu.addApps')}
           </button>
         </div>
       )}

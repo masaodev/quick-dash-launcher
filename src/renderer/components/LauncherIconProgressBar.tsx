@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { IconProgress } from '@common/types';
 
 import { Button } from './ui/Button';
@@ -9,15 +10,22 @@ interface IconProgressBarProps {
   onClose: () => void;
 }
 
+const PHASE_NAME_KEYS = {
+  favicon: 'launcher.iconProgress.phaseNames.favicon',
+  icon: 'launcher.iconProgress.phaseNames.icon',
+} as const;
+
 const LauncherIconProgressBar: React.FC<IconProgressBarProps> = ({ progress, onClose }) => {
+  const { t } = useTranslation();
+
   const formatElapsedTime = (startTime: number, completedTime?: number): string => {
     const endTime = completedTime ?? Date.now();
     const elapsed = Math.floor((endTime - startTime) / 1000);
-    return `${elapsed}秒`;
+    return t('launcher.iconProgress.seconds', { seconds: elapsed });
   };
 
   const formatEstimatedTime = (startTime: number, current: number, total: number): string => {
-    if (current === 0) return '計算中...';
+    if (current === 0) return t('launcher.iconProgress.calculating');
 
     const elapsed = Date.now() - startTime;
     const avgTimePerItem = elapsed / current;
@@ -26,23 +34,17 @@ const LauncherIconProgressBar: React.FC<IconProgressBarProps> = ({ progress, onC
     const estimatedSeconds = Math.ceil(estimatedMs / 1000);
 
     if (estimatedSeconds < 60) {
-      return `約${estimatedSeconds}秒`;
+      return t('launcher.iconProgress.aboutSeconds', { seconds: estimatedSeconds });
     } else {
       const minutes = Math.floor(estimatedSeconds / 60);
       const seconds = estimatedSeconds % 60;
-      return `約${minutes}分${seconds}秒`;
+      return t('launcher.iconProgress.aboutMinutes', { minutes, seconds });
     }
   };
 
   const getPhaseDisplayName = (type: string): string => {
-    switch (type) {
-      case 'favicon':
-        return 'ファビコン取得';
-      case 'icon':
-        return 'アイコン抽出';
-      default:
-        return '処理';
-    }
+    const key = PHASE_NAME_KEYS[type as keyof typeof PHASE_NAME_KEYS];
+    return key ? t(key) : t('launcher.iconProgress.phaseNames.other');
   };
 
   // 現在のフェーズを取得
@@ -78,37 +80,57 @@ const LauncherIconProgressBar: React.FC<IconProgressBarProps> = ({ progress, onC
           <div className="progress-info">
             <span className="progress-type">
               {progress.isComplete
-                ? 'アイコン取得完了'
-                : `フェーズ ${progress.currentPhase}/${progress.totalPhases}: ${getPhaseDisplayName(currentPhase?.type || '')}`}
+                ? t('launcher.iconProgress.complete')
+                : t('launcher.iconProgress.phase', {
+                    current: progress.currentPhase,
+                    total: progress.totalPhases,
+                    name: getPhaseDisplayName(currentPhase?.type || ''),
+                  })}
             </span>
             <div className="progress-counts">
-              <span className="success-count">成功: {totalSuccess}件</span>
-              {totalErrors > 0 && <span className="error-count">エラー: {totalErrors}件</span>}
-              <span className="total-count">全体: {totalItems}件</span>
+              <span className="success-count">
+                {t('launcher.iconProgress.succeeded', { count: totalSuccess })}
+              </span>
+              {totalErrors > 0 && (
+                <span className="error-count">
+                  {t('launcher.iconProgress.failed', { count: totalErrors })}
+                </span>
+              )}
+              <span className="total-count">
+                {t('launcher.iconProgress.total', { count: totalItems })}
+              </span>
             </div>
           </div>
           <div className="progress-stats">
             <span className="elapsed-time">
-              経過: {formatElapsedTime(progress.startTime, progress.completedTime)}
+              {t('launcher.iconProgress.elapsed', {
+                time: formatElapsedTime(progress.startTime, progress.completedTime),
+              })}
             </span>
             {currentPhase && currentPhase.current > 0 && !progress.isComplete && (
               <span className="estimated-time">
-                残り:{' '}
-                {formatEstimatedTime(
-                  currentPhase.startTime,
-                  currentPhase.current,
-                  currentPhase.total
-                )}
+                {t('launcher.iconProgress.remaining', {
+                  time: formatEstimatedTime(
+                    currentPhase.startTime,
+                    currentPhase.current,
+                    currentPhase.total
+                  ),
+                })}
               </span>
             )}
           </div>
           <div className="progress-actions">
             {progress.isComplete && allResults.length > 0 && (
-              <Button variant="info" size="sm" onClick={openDetail} aria-label="詳細を表示">
-                詳細
+              <Button
+                variant="info"
+                size="sm"
+                onClick={openDetail}
+                aria-label={t('common.showDetails')}
+              >
+                {t('common.details')}
               </Button>
             )}
-            <button className="progress-close-btn" onClick={onClose} aria-label="閉じる">
+            <button className="progress-close-btn" onClick={onClose} aria-label={t('common.close')}>
               ×
             </button>
           </div>
@@ -123,7 +145,7 @@ const LauncherIconProgressBar: React.FC<IconProgressBarProps> = ({ progress, onC
 
         {currentPhase && currentPhase.currentItem && !progress.isComplete && (
           <div className="current-item">
-            処理中:{' '}
+            {t('launcher.iconProgress.processing')}{' '}
             {currentPhase.currentItem.split('\n').map((line, i) => (
               <React.Fragment key={i}>
                 {line.length > 80 ? line.substring(0, 80) + '...' : line}

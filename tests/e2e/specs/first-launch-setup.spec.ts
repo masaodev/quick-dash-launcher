@@ -19,7 +19,7 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
       expect(titleExists).toBe(true);
 
       const titleText = await utils.getElementText('.first-launch-title');
-      expect(titleText).toContain('QuickDash Launcher');
+      expect(titleText).toContain('QuickDashLauncher へようこそ');
     });
 
     await test.step('必要な要素が全て表示されていることを確認', async () => {

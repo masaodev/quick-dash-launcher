@@ -3,6 +3,7 @@
  * 画面仕様: docs/screens/first-launch-setup.md
  */
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import '../styles/components/SetupFirstLaunch.css';
 
@@ -29,6 +30,7 @@ interface FirstLaunchSetupProps {
  * ユーザーがランチャー起動ホットキーをカスタマイズできるようにする
  */
 export const SetupFirstLaunch: React.FC<FirstLaunchSetupProps> = ({ onComplete }) => {
+  const { t } = useTranslation();
   const [hotkey, setHotkey] = useState('Alt+Space');
   const [hotkeyValidation, setHotkeyValidation] = useState<HotkeyValidation>({ isValid: true });
   const [itemSearchHotkey, setItemSearchHotkey] = useState('Ctrl+Alt+Space');
@@ -49,16 +51,14 @@ export const SetupFirstLaunch: React.FC<FirstLaunchSetupProps> = ({ onComplete }
   return (
     <div className="first-launch-setup">
       <div className="first-launch-content">
-        <h1 className="first-launch-title">QuickDash Launcherへようこそ</h1>
-        <p className="first-launch-description">初回起動時の設定を行います。</p>
+        <h1 className="first-launch-title">{t('firstLaunch.title')}</h1>
+        <p className="first-launch-description">{t('firstLaunch.description')}</p>
 
         <div className="hotkey-setup-section">
           <label htmlFor="hotkey-input" className="hotkey-label">
-            ランチャー起動ホットキー
+            {t('firstLaunch.hotkeyLabel')}
           </label>
-          <p className="section-description">
-            ランチャーを起動するためのキーです（デフォルト: Alt+Space）
-          </p>
+          <p className="section-description">{t('firstLaunch.hotkeyDescription')}</p>
           <HotkeyInput
             value={hotkey}
             onChange={setHotkey}
@@ -70,19 +70,17 @@ export const SetupFirstLaunch: React.FC<FirstLaunchSetupProps> = ({ onComplete }
             <div className="validation-error">{hotkeyValidation.reason}</div>
           )}
           <p className="hotkey-hint">
-            修飾キー（Ctrl、Alt、Shift等）と通常キーを組み合わせてください。
+            {t('firstLaunch.hotkeyHint')}
             <br />
-            例: Alt+Space、Ctrl+Alt+W、Ctrl+Shift+L など
+            {t('firstLaunch.hotkeyExample')}
           </p>
         </div>
 
         <div className="hotkey-setup-section">
           <label htmlFor="item-search-hotkey-input" className="hotkey-label">
-            ウィンドウ検索で起動のホットキー
+            {t('firstLaunch.windowSearchHotkeyLabel')}
           </label>
-          <p className="section-description">
-            ウィンドウ検索モードで直接起動するためのキーです（デフォルト: Ctrl+Alt+Space）
-          </p>
+          <p className="section-description">{t('firstLaunch.windowSearchHotkeyDescription')}</p>
           <HotkeyInput
             value={itemSearchHotkey}
             onChange={setItemSearchHotkey}
@@ -90,16 +88,14 @@ export const SetupFirstLaunch: React.FC<FirstLaunchSetupProps> = ({ onComplete }
               setItemSearchHotkeyValidation({ isValid: valid, reason })
             }
             disabled={isLoading}
-            placeholder="未設定"
+            placeholder={t('firstLaunch.notSet')}
             allowEmpty={true}
             showClearButton={true}
           />
           {!itemSearchHotkeyValidation.isValid && (
             <div className="validation-error">{itemSearchHotkeyValidation.reason}</div>
           )}
-          <p className="hotkey-hint">
-            このキーでウィンドウ検索モードが直接開きます。使わないときは「クリア」で外せます。後から変えることもできます。
-          </p>
+          <p className="hotkey-hint">{t('firstLaunch.windowSearchHotkeyHint')}</p>
         </div>
 
         <div className="auto-launch-setup-section">
@@ -111,9 +107,9 @@ export const SetupFirstLaunch: React.FC<FirstLaunchSetupProps> = ({ onComplete }
               disabled={isLoading}
               className="auto-launch-checkbox"
             />
-            起動時に自動実行
+            {t('firstLaunch.autoLaunch')}
           </label>
-          <p className="auto-launch-hint">Windowsログイン時に自動的に起動します</p>
+          <p className="auto-launch-hint">{t('firstLaunch.autoLaunchHint')}</p>
         </div>
 
         <div className="first-launch-actions">
@@ -123,7 +119,7 @@ export const SetupFirstLaunch: React.FC<FirstLaunchSetupProps> = ({ onComplete }
             disabled={isLoading || !isValid}
             type="button"
           >
-            設定を完了
+            {t('firstLaunch.complete')}
           </Button>
         </div>
       </div>

@@ -2,6 +2,8 @@ import { DEFAULT_DATA_FILE } from '@common/types';
 import type { DataFileTab, JsonItem } from '@common/types';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 
+import { mainI18n } from '../mainI18n.js';
+
 import { CliError, expectPositionals, optionFlag, optionString, parseArgs } from './cliArgs.js';
 import type { CliCandidate } from './cliArgs.js';
 import {
@@ -90,14 +92,14 @@ async function resolveTargetFile(
   file: string | undefined,
   tab: string | undefined
 ): Promise<string> {
-  if (file && tab) throw new CliError('usage', '--file と --tab はどちらか一方を指定してください');
+  if (file && tab) throw new CliError('usage', mainI18n.t('cli.errors.fileAndTab'));
   const files = ctx.store.dataFiles();
   if (file) {
     const normalized = normalizeFileName(file);
     if (!files.includes(normalized)) {
       throw new CliError(
         'not_found',
-        `データファイル ${normalized} がありません（既存: ${files.join(', ')}）`
+        mainI18n.t('cli.errors.noDataFile', { file: normalized, files: files.join(', ') })
       );
     }
     return normalized;
@@ -108,30 +110,15 @@ async function resolveTargetFile(
     if (found.length === 0) {
       throw new CliError(
         'not_found',
-        `タブ「${tab}」がありません（既存: ${tabs.map((t) => t.name).join(', ')}）`
+        mainI18n.t('cli.errors.noTab', { tab, tabs: tabs.map((x) => x.name).join(', ') })
       );
     }
     const target = found[0].files.find((f) => files.includes(f));
-    if (!target) throw new CliError('not_found', `タブ「${tab}」にデータファイルがありません`);
+    if (!target) throw new CliError('not_found', mainI18n.t('cli.errors.tabHasNoFile', { tab }));
     return target;
   }
   return DEFAULT_DATA_FILE;
 }
-
-export const LAUNCHER_HELP = `使い方: qdl launcher item <操作> [引数]
-
-メイン画面のアイテム（datafiles/data*.json）を扱います。
-
-操作:
-  list                     一覧（--file <data2.json> | --tab <タブ名>、--grep <語>）
-  add                      追加（--name・--path は必須。--args --memo、--file | --tab、
-                           --type item|dir|group|window、--set key=value、--dry-run）
-  update <id か表示名>     変更（--name --path --args --memo --set key=value --unset key --dry-run）
-  remove <id か表示名>     削除（--dry-run）
-
---path の相対パスは qdl を実行したフォルダが基準です。--type dir|group|window のときに要る項目は
---set で渡します（例 --set itemNames='["メモ","ブラウザ"]'、--set windowTitle=メモ帳）。
-`;
 
 export async function runLauncherItemCommand(
   verb: string | undefined,
@@ -151,8 +138,8 @@ export async function runLauncherItemCommand(
       throw new CliError(
         'usage',
         verb
-          ? `不明な操作です: launcher item ${verb}`
-          : '操作を指定してください（list / add / update / remove）'
+          ? mainI18n.t('cli.errors.unknownVerb', { command: `launcher item ${verb}` })
+          : mainI18n.t('cli.errors.missingVerb')
       );
   }
 }
@@ -165,12 +152,12 @@ async function list(args: readonly string[], ctx: LauncherCommandContext): Promi
   const tabs = await ctx.store.tabs();
   let entries = await ctx.store.load();
   if (file || tab) {
-    if (file && tab)
-      throw new CliError('usage', '--file と --tab はどちらか一方を指定してください');
+    if (file && tab) throw new CliError('usage', mainI18n.t('cli.errors.fileAndTab'));
     const files = file
       ? [normalizeFileName(file)]
       : tabs.filter((t) => t.name === tab).flatMap((t) => t.files);
-    if (tab && files.length === 0) throw new CliError('not_found', `タブ「${tab}」がありません`);
+    if (tab && files.length === 0)
+      throw new CliError('not_found', mainI18n.t('cli.errors.noTabSimple', { tab }));
     entries = entries.filter((e) => files.includes(e.file));
   }
   const grep = optionString(parsed, 'grep');
@@ -186,17 +173,19 @@ async function add(args: readonly string[], ctx: LauncherCommandContext): Promis
   expectPositionals(parsed, []);
   const type = optionString(parsed, 'type') ?? 'item';
   if (!(EDITABLE_TYPES as readonly string[]).includes(type)) {
-    throw new CliError('usage', `--type は ${EDITABLE_TYPES.join(' / ')} のいずれかです: ${type}`);
+    throw new CliError(
+      'usage',
+      mainI18n.t('cli.errors.badType', { types: EDITABLE_TYPES.join(' / '), type })
+    );
   }
   const name = optionString(parsed, 'name');
   const rawPath = optionString(parsed, 'path');
-  if (type === 'dir' && name)
-    throw new CliError('usage', 'フォルダ取込（dir）は表示名を持ちません');
-  if (type !== 'dir' && !name) throw new CliError('usage', '--name を指定してください');
+  if (type === 'dir' && name) throw new CliError('usage', mainI18n.t('cli.errors.dirHasNoName'));
+  if (type !== 'dir' && !name) throw new CliError('usage', mainI18n.t('cli.errors.needName'));
   if ((type === 'item' || type === 'dir') && !rawPath)
-    throw new CliError('usage', '--path を指定してください');
+    throw new CliError('usage', mainI18n.t('cli.errors.needPath'));
   if (type !== 'item' && optionString(parsed, 'args') !== undefined) {
-    throw new CliError('usage', '--args は通常のアイテム（item）だけに指定できます');
+    throw new CliError('usage', mainI18n.t('cli.errors.argsOnlyItem'));
   }
 
   let itemPath: string | undefined;
@@ -231,7 +220,7 @@ async function add(args: readonly string[], ctx: LauncherCommandContext): Promis
   if (dryRun) return { dryRun: true, item: result };
 
   ctx.store.append(targetFile, item);
-  ctx.changed(`CLI: メイン画面に「${itemName(item)}」を追加しました`);
+  ctx.changed(mainI18n.t('cli.changed.launcherAdded', { name: itemName(item) }));
   return result;
 }
 
@@ -240,7 +229,7 @@ async function findEntry(key: string, ctx: LauncherCommandContext): Promise<Laun
   return resolveOne(
     key,
     await ctx.store.load(),
-    'メイン画面のアイテム',
+    mainI18n.t('cli.targets.launcherItem'),
     (e) => e.item.id,
     (e) => itemName(e.item),
     (e) => candidate(e, tabs)
@@ -253,16 +242,13 @@ async function update(args: readonly string[], ctx: LauncherCommandContext): Pro
     flags: ['dry-run'],
     allowSet: true,
   });
-  const [key] = expectPositionals(parsed, ['<id か表示名>']);
+  const [key] = expectPositionals(parsed, [mainI18n.t('cli.args.idOrName')]);
   const dryRun = optionFlag(parsed, 'dry-run');
   if (!dryRun) await ctx.syncBeforeWrite();
   const entry = await findEntry(key, ctx);
   const current = entry.item;
   if (!(EDITABLE_TYPES as readonly string[]).includes(current.type)) {
-    throw new CliError(
-      'invalid',
-      `種類 ${current.type} のアイテムは CLI では変更できません（画面で操作してください）`
-    );
+    throw new CliError('invalid', mainI18n.t('cli.errors.typeNotEditable', { type: current.type }));
   }
 
   const rawPath = optionString(parsed, 'path');
@@ -284,7 +270,7 @@ async function update(args: readonly string[], ctx: LauncherCommandContext): Pro
   ) {
     throw new CliError(
       'usage',
-      '変える項目を指定してください（--name --path --args --memo --set --unset）'
+      mainI18n.t('cli.errors.needChanges', { options: '--name --path --args --memo --set --unset' })
     );
   }
   const { merged, setKeys } = applyPatch(
@@ -299,13 +285,13 @@ async function update(args: readonly string[], ctx: LauncherCommandContext): Pro
   if (dryRun) return { dryRun: true, ...result };
 
   ctx.store.replace(item);
-  ctx.changed(`CLI: メイン画面の「${itemName(item)}」を変更しました`);
+  ctx.changed(mainI18n.t('cli.changed.launcherUpdated', { name: itemName(item) }));
   return result;
 }
 
 async function remove(args: readonly string[], ctx: LauncherCommandContext): Promise<unknown> {
   const parsed = parseArgs(args, { flags: ['dry-run'] });
-  const [key] = expectPositionals(parsed, ['<id か表示名>']);
+  const [key] = expectPositionals(parsed, [mainI18n.t('cli.args.idOrName')]);
   const dryRun = optionFlag(parsed, 'dry-run');
   if (!dryRun) await ctx.syncBeforeWrite();
   const entry = await findEntry(key, ctx);
@@ -313,6 +299,6 @@ async function remove(args: readonly string[], ctx: LauncherCommandContext): Pro
   if (dryRun) return { dryRun: true, removed };
 
   await ctx.store.remove(entry.item.id);
-  ctx.changed(`CLI: メイン画面の「${itemName(entry.item)}」を削除しました`);
+  ctx.changed(mainI18n.t('cli.changed.launcherRemoved', { name: itemName(entry.item) }));
   return { removed };
 }

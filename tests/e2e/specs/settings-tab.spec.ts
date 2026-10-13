@@ -227,7 +227,7 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
     await test.step('既定ではメインウィンドウの下に通常モードのヒントが出る', async () => {
       await expect(hintBar).toBeVisible();
       await expect(hintBar).toContainText('F2:編集');
-      await expect(hintBar).toContainText('Shift+Enter:親フォルダーを開く');
+      await expect(hintBar).toContainText('Shift+Enter:親フォルダを開く');
     });
 
     const utils = new TestUtils(mainWindow);

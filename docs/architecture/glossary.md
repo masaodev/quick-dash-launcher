@@ -38,7 +38,7 @@
 | 引数 | arguments | パラメーター | アプリに渡す引数 | `args` |
 | メモ | note | 備考、comment | アイテムに付けるメモ | `memo` |
 | 種別 | type | 登録種別、カテゴリ | 登録するアイテムの種類（アイテム・フォルダ取込・グループなど） | `itemCategory` |
-| フォルダ取込 | folder import | フォルダ取り込み、フォルダインポート、dir | フォルダの中身をまとめてアイテムにする種別 | `JsonDirItem` |
+| フォルダ取込 | folder import | フォルダ取り込み、フォルダインポート | フォルダの中身をまとめてアイテムにする種別 | `JsonDirItem` |
 | グループ | group | — | 複数のアイテムをまとめて起動する種別 | `GroupItem` |
 | ウィンドウ操作 | window action | ウィンドウアイテム、window item | 既にあるウィンドウを探して前に出す・動かす種別 | `WindowItem` |
 | ウィンドウ配置 | window layout | レイアウト | 複数のウィンドウの位置と大きさをまとめて戻す種別 | `LayoutItem` |
@@ -59,7 +59,8 @@
 | 通常検索 | normal search | アイテム検索 | 登録したアイテムを名前で絞り込む検索 | `SearchMode` の `normal` |
 | ウィンドウ検索 | window search | ウィンドウ一覧 | 開いているウィンドウを探す検索 | `SearchMode` の `window` |
 | 検索履歴 | search history | — | 以前に検索した言葉の履歴 | `SearchHistoryEntry` |
-| ピン留め | pin | ピン止め、固定（ピンの意味で） | メインウィンドウを隠さずに残すこと | `WindowPinMode` |
+| ピン留め | pin | ピン止め、固定（ピンの意味で） | メインウィンドウを隠さずに残すこと（通常・常に最上面・表示固定の 3 つを切り替える） | `WindowPinMode` |
+| 全デスクトップに表示 | show on all desktops | 全デスクトップに固定、全仮想デスクトップにピン止め | ウィンドウ検索で、ウィンドウをどの仮想デスクトップでも出るようにすること（Windows の「このウィンドウをすべてのデスクトップに表示する」と同じ） | `pinWindow`・`isPinned` |
 | 再読込 | reload | 再読み込み、リロード、refresh（データの意味で） | 設定フォルダのファイルを読み直すこと（F5） | — |
 | 操作のヒント | keyboard hints | キーヒント | メインウィンドウの下に出るキー操作の案内 | `showKeyboardHints` |
 

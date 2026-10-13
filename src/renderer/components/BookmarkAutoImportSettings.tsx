@@ -5,9 +5,10 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { BrowserInfo } from '@common/types';
 import type { BookmarkAutoImportRule } from '@common/types/bookmarkAutoImport';
-import { summarizeImportResults } from '@common/utils/bookmarkImportUtils';
+import { formatImportSummary, summarizeImportResults } from '@common/utils/bookmarkImportUtils';
 
 import { useBookmarkAutoImport } from '../hooks/useBookmarkAutoImport';
 import { useToast } from '../hooks/useToast';
@@ -26,6 +27,7 @@ interface BookmarkAutoImportSettingsProps {
 const BookmarkAutoImportSettings: React.FC<BookmarkAutoImportSettingsProps> = ({
   onOpenManualImport,
 }) => {
+  const { t } = useTranslation();
   const {
     settings,
     isLoading,
@@ -104,13 +106,14 @@ const BookmarkAutoImportSettings: React.FC<BookmarkAutoImportSettingsProps> = ({
 
   const handleExecuteAll = useCallback(async () => {
     const results = await executeAllRules();
-    const { message, hasError } = summarizeImportResults(results);
-    if (hasError) {
+    const summary = summarizeImportResults(results);
+    const message = formatImportSummary(summary, t);
+    if (summary.hasError) {
       showWarning(message);
     } else {
       showSuccess(message);
     }
-  }, [executeAllRules, showSuccess, showWarning]);
+  }, [executeAllRules, showSuccess, showWarning, t]);
 
   const formatLastResult = (rule: BookmarkAutoImportRule): string => {
     if (!rule.lastExecutedAt) return '未実行';
