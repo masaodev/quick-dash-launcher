@@ -7,8 +7,7 @@ import type {
 
 import { SettingsService } from '../services/settingsService.js';
 import { BookmarkAutoImportService } from '../services/bookmarkAutoImportService.js';
-
-import { parseBrowserBookmarksWithFolders } from './bookmarkHandlers.js';
+import { parseBrowserBookmarksWithFolders } from '../services/bookmarkReader.js';
 
 const autoImportService = new BookmarkAutoImportService();
 

@@ -22,7 +22,7 @@ import {
   WorkspaceReloadInProgressError,
   WorkspaceWriteError,
 } from '../services/workspace/index.js';
-import { showToastWindow } from '../services/overlayWindowService.js';
+import { LONG_TOAST_DURATION_MS, showToastWindow } from '../services/overlayWindowService.js';
 import PathManager from '../config/pathManager.js';
 import { getIconForItem } from '../services/iconService.js';
 import { withFolderMarker } from '../utils/folderPathProbe.js';
@@ -64,7 +64,11 @@ async function withWorkspaceService<T>(
       error instanceof WorkspaceReloadInProgressError ||
       error instanceof WorkspaceWriteError
     ) {
-      showToastWindow({ message: error.message, type: 'warning', duration: 6000 }).catch(() => {});
+      showToastWindow({
+        message: error.message,
+        type: 'warning',
+        duration: LONG_TOAST_DURATION_MS,
+      }).catch(() => {});
     }
     throw error;
   }

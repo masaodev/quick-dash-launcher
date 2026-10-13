@@ -274,7 +274,7 @@ CSV 形式（`data*.txt`）は v0.6.1 で廃止しました。経緯は v0.6.1 �
 
 #### 3.1.6. ショートカットファイルの自動解析
 
-`path` が実在する `.lnk` ファイルのとき、読み込み時にショートカットを解析します（`processShortcut`、`src/main/ipc/directoryScanner.ts`）：
+`path` が実在する `.lnk` ファイルのとき、読み込み時にショートカットを解析します（`processShortcut`、`src/main/services/data/directoryScanner.ts`）：
 
 1. **ターゲットパス抽出**: ショートカットが指すファイル・フォルダのパスを取り出す（`path` は `.lnk` のまま）
 2. **引数抽出**: ショートカットに設定されたコマンドライン引数を使う（JSON の `args` は使わない）
@@ -342,7 +342,7 @@ CSV 形式（`data*.txt`）は v0.6.1 で廃止しました。経緯は v0.6.1 �
 
 #### 3.2.4. 展開時の動作
 
-フォルダ取込アイテムはデータファイルの読み込み時に以下のように展開されます（`processDirectoryItem`、`src/main/ipc/directoryScanner.ts`）：
+フォルダ取込アイテムはデータファイルの読み込み時に以下のように展開されます（`processDirectoryItem`、`src/main/services/data/directoryScanner.ts`）：
 
 1. **スキャン実行**: 指定されたフォルダをオプションに従ってスキャン
 2. **アイテム生成**: 検出されたファイル/フォルダをアイテムとして生成（`.lnk` は 3.1.6 の解析を行い、ファイル名を表示名にする）
