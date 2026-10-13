@@ -1,13 +1,14 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import type { JsonItem } from '@common/types';
 import { isJsonLauncherItem } from '@common/types';
 import type { EditableJsonItem } from '@common/types/editableItem';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 
 import {
-  ITEM_TYPE_INFO,
   formatUpdatedAt,
   getItemTypeIcon,
+  getItemTypeLabel,
   getItemTypeName,
   hasDisplayName,
   isPathEditable,
@@ -47,9 +48,15 @@ export interface AdminItemManagerRowProps {
   onPathKeyDown: (e: React.KeyboardEvent, item: EditableJsonItem) => void;
 }
 
-const TYPE_SELECT_TITLE =
-  '種類を変更します。単一アイテム・フォルダ取込・グループはその場で切り替わり、' +
-  'ウィンドウ操作・クリップボード・ウィンドウ配置（複数のウィンドウを保存した位置に一括で並べる）は詳細編集が開きます';
+/** 種類のプルダウンの選択肢（詳細編集が開くものは名前の後に … を付ける） */
+const TYPE_OPTIONS: ReadonlyArray<{ type: JsonItem['type']; opensDetail: boolean }> = [
+  { type: 'item', opensDetail: false },
+  { type: 'dir', opensDetail: false },
+  { type: 'group', opensDetail: false },
+  { type: 'window', opensDetail: true },
+  { type: 'clipboard', opensDetail: true },
+  { type: 'layout', opensDetail: true },
+];
 
 /**
  * アイテム管理の一覧の 1 行
@@ -80,6 +87,7 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
   onNameKeyDown,
   onPathKeyDown,
 }) => {
+  const { t } = useTranslation();
   const jsonItem = item.item;
   const itemKey = getItemKey(item);
 
@@ -90,14 +98,14 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
         className="type-select"
         value={jsonItem.type}
         onChange={(e) => onChangeType(item, e.target.value as JsonItem['type'])}
-        title={TYPE_SELECT_TITLE}
+        title={t('itemManager.row.typeSelectTitle')}
       >
-        <option value="item">{ITEM_TYPE_INFO.item.name}</option>
-        <option value="dir">{ITEM_TYPE_INFO.dir.name}</option>
-        <option value="group">{ITEM_TYPE_INFO.group.name}</option>
-        <option value="window">{ITEM_TYPE_INFO.window.name}…</option>
-        <option value="clipboard">{ITEM_TYPE_INFO.clipboard.name}…</option>
-        <option value="layout">{ITEM_TYPE_INFO.layout.name}…</option>
+        {TYPE_OPTIONS.map(({ type, opensDetail }) => (
+          <option key={type} value={type}>
+            {getItemTypeLabel(type)}
+            {opensDetail ? '…' : ''}
+          </option>
+        ))}
       </select>
     </span>
   );
@@ -119,10 +127,7 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
   const renderNameCell = () => {
     if (!hasDisplayName(jsonItem)) {
       return (
-        <div
-          className="readonly-cell"
-          title="フォルダ取込は名前を持ちません（取り込んだファイル名で表示）"
-        >
+        <div className="readonly-cell" title={t('itemManager.row.dirHasNoName')}>
           -
         </div>
       );
@@ -137,7 +142,7 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
           onBlur={() => onCommitName(item)}
           onKeyDown={(e) => onNameKeyDown(e, item)}
           className="edit-input"
-          placeholder="名前を入力（Enter でパスへ）"
+          placeholder={t('itemManager.row.namePlaceholder')}
           autoFocus
         />
       );
@@ -152,13 +157,18 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
         onClick={() => onStartNameEdit(item)}
         onKeyDown={activateOnEnterOrSpace(() => onStartNameEdit(item))}
         title={
-          hasError ? `入力に不備があります: ${item.meta.validationError}` : 'クリックして名前を編集'
+          hasError
+            ? t('itemManager.row.invalid', { error: item.meta.validationError ?? '' })
+            : t('itemManager.row.editNameTitle')
         }
       >
-        {jsonItem.displayName || '(名前なし)'}
+        {jsonItem.displayName || t('itemManager.noName')}
         {isJsonLauncherItem(jsonItem) && jsonItem.autoImportRuleId && (
-          <span className="auto-import-label" title={autoImportRuleName ?? '不明なルール'}>
-            自動取込
+          <span
+            className="auto-import-label"
+            title={autoImportRuleName ?? t('itemManager.row.unknownRule')}
+          >
+            {t('itemManager.row.autoImport')}
           </span>
         )}
       </div>
@@ -168,11 +178,8 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
   const renderPathCell = () => {
     const text = describePathAndArgs(jsonItem);
     const missingBadge = pathMissing ? (
-      <span
-        className="missing-path-label"
-        title="パスが見つかりません（移動・削除された可能性があります）"
-      >
-        ⚠ 見つかりません
+      <span className="missing-path-label" title={t('itemManager.row.pathMissingTitle')}>
+        {t('itemManager.row.pathMissing')}
       </span>
     ) : null;
 
@@ -185,7 +192,11 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
           onBlur={() => onCommitPath(item)}
           onKeyDown={(e) => onPathKeyDown(e, item)}
           className="edit-input"
-          placeholder={jsonItem.type === 'dir' ? 'フォルダのパスを入力' : 'パスまたは URL を入力'}
+          placeholder={
+            jsonItem.type === 'dir'
+              ? t('itemManager.row.dirPathPlaceholder')
+              : t('itemManager.row.pathPlaceholder')
+          }
           autoFocus
         />
       );
@@ -195,8 +206,8 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
     if (!isPathEditable(jsonItem)) {
       const hint =
         jsonItem.type === 'group'
-          ? 'グループに含めるアイテムは ✏️ 詳細編集で選びます（ダブルクリックで開く）'
-          : `${getItemTypeName(jsonItem)}は ✏️ 詳細編集から編集します（ダブルクリックで開く）`;
+          ? t('itemManager.row.groupDetailOnly')
+          : t('itemManager.row.detailOnly', { type: getItemTypeName(jsonItem) });
       return (
         <div
           className="readonly-cell"
@@ -219,7 +230,10 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
         tabIndex={0}
         onClick={() => onStartPathEdit(item)}
         onKeyDown={activateOnEnterOrSpace(() => onStartPathEdit(item))}
-        title={`${text}\n${pathMissing ? 'パスが見つかりません。' : ''}クリックしてパスを編集。引数は ✏️ 詳細編集から`}
+        title={t('itemManager.row.pathTitle', {
+          text,
+          missing: pathMissing ? t('itemManager.row.pathTitleMissing') : '',
+        })}
       >
         {missingBadge}
         {text}
@@ -234,7 +248,7 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
       ref={measureRef}
       className={`raw-item-row ${isSelected ? 'selected' : ''} ${isChanged ? 'changed' : ''} ${pathMissing ? 'missing-path' : ''} ${jsonItem.type}`}
       onContextMenu={(e) => onContextMenu(e, item)}
-      title={isChanged ? '未保存の変更があります' : undefined}
+      title={isChanged ? t('itemManager.row.unsaved') : undefined}
     >
       <td className="checkbox-column">
         <input
@@ -248,11 +262,15 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
           <button
             className="detail-edit-button"
             onClick={() => onEditClick(item)}
-            title="詳細編集（種類・引数・メモ・保存先など、すべての項目を編集）"
+            title={t('itemManager.row.detailEditTitle')}
           >
             ✏️
           </button>
-          <button className="delete-button" onClick={() => onRequestDelete([item])} title="削除">
+          <button
+            className="delete-button"
+            onClick={() => onRequestDelete([item])}
+            title={t('itemManager.row.delete')}
+          >
             🗑️
           </button>
         </div>

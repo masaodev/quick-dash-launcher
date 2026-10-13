@@ -4,6 +4,7 @@
  * 状態を持たないため、コンポーネントやフックから切り離してテストできる。
  * アイテムの同一性は item.id で判定する（行番号は表示用で、操作のたびに振り直す）。
  */
+import i18next from 'i18next';
 import {
   isJsonLauncherItem,
   type DuplicateHandlingOption,
@@ -514,12 +515,12 @@ export function describePathAndArgs(jsonItem: JsonItem): string {
     case 'item': {
       const pathPart = jsonItem.path || '';
       const argsPart = jsonItem.args || '';
-      if (!pathPart) return '(パスなし)';
+      if (!pathPart) return i18next.t('itemManager.pathSummary.noPath');
       return argsPart ? `${pathPart} ${argsPart}` : pathPart;
     }
     case 'group': {
       const itemNames = jsonItem.itemNames || [];
-      if (itemNames.length === 0) return '(アイテムなし)';
+      if (itemNames.length === 0) return i18next.t('itemManager.pathSummary.noItems');
       return itemNames.join(', ');
     }
     case 'window': {
@@ -532,7 +533,7 @@ export function describePathAndArgs(jsonItem: JsonItem): string {
       if (jsonItem.virtualDesktopNumber !== undefined)
         settings.push(`desk:${jsonItem.virtualDesktopNumber}`);
       if (jsonItem.activateWindow !== undefined) settings.push(`active:${jsonItem.activateWindow}`);
-      if (!windowTitle) return '(ウィンドウタイトルなし)';
+      if (!windowTitle) return i18next.t('itemManager.pathSummary.noWindowTitle');
       return settings.length > 0 ? `${windowTitle} [${settings.join(', ')}]` : windowTitle;
     }
     case 'dir': {
@@ -542,22 +543,25 @@ export function describePathAndArgs(jsonItem: JsonItem): string {
       if (options.depth !== undefined) optionStrs.push(`depth=${options.depth}`);
       if (options.types) optionStrs.push(`types=${options.types}`);
       if (options.exclude) optionStrs.push(`exclude=${options.exclude}`);
-      if (!dirPath) return '(フォルダパスなし)';
+      if (!dirPath) return i18next.t('itemManager.pathSummary.noFolderPath');
       return optionStrs.length > 0 ? `${dirPath} [${optionStrs.join(', ')}]` : dirPath;
     }
     case 'clipboard': {
       const formats = jsonItem.formats?.join(', ') || '';
       const preview = jsonItem.preview || '';
-      if (!formats && !preview) return '(データなし)';
+      if (!formats && !preview) return i18next.t('itemManager.pathSummary.noData');
       return preview ? `[${formats}] ${preview}` : `[${formats}]`;
     }
     case 'layout': {
       const entries = jsonItem.entries || [];
-      if (entries.length === 0) return '(エントリなし)';
-      return `${entries.length}個のウィンドウ: ${entries.map((e) => e.windowTitle).join(', ')}`;
+      if (entries.length === 0) return i18next.t('itemManager.pathSummary.noEntries');
+      return i18next.t('itemManager.pathSummary.layoutWindows', {
+        count: entries.length,
+        titles: entries.map((e) => e.windowTitle).join(', '),
+      });
     }
     default:
-      return '(不明な型)';
+      return i18next.t('itemManager.pathSummary.unknownType');
   }
 }
 

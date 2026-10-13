@@ -1,3 +1,4 @@
+import i18next from 'i18next';
 import { DataFileTab } from '@common/types';
 
 const DATAFILES_PREFIX = 'datafiles/';
@@ -12,7 +13,7 @@ function stripPrefix(fileName: string): string {
  */
 export const FileNameGenerator = {
   /**
-   * デフォルトのタブ名を生成
+   * デフォルトのタブ名を生成（今の表示言語で。既にあるタブの名前は変えない）
    * @param fileName - ファイル名（例: datafiles/data.json, datafiles/data2.json）
    * @returns デフォルトのタブ名（例: メイン、サブ1）
    *
@@ -25,12 +26,12 @@ export const FileNameGenerator = {
     const baseName = stripPrefix(fileName);
 
     if (baseName === 'data.json') {
-      return 'メイン';
+      return i18next.t('itemManager.tabStructure.defaultNames.main');
     }
     const match = baseName.match(/^data(\d+)\.json$/);
     if (match) {
       const num = parseInt(match[1]);
-      return `サブ${num - 1}`;
+      return i18next.t('itemManager.tabStructure.defaultNames.sub', { number: num - 1 });
     }
     return fileName;
   },
@@ -52,7 +53,7 @@ export const FileNameGenerator = {
       const linkedTab = tabs?.find((tab) => tab.files.includes(fileName));
       tabName = linkedTab?.name ?? this.getDefaultTabName(fileName);
     }
-    return `${tabName}用データファイル`;
+    return i18next.t('itemManager.tabStructure.defaultNames.fileForTab', { tab: tabName });
   },
 
   /**

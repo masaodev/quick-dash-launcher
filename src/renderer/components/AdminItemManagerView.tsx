@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import i18next from 'i18next';
+import { useTranslation } from 'react-i18next';
 import {
   DEFAULT_DATA_FILE,
   SimpleBookmarkItem,
@@ -72,7 +74,7 @@ interface ConfirmDialogState {
 /** 確認メッセージ用のアイテム名（名前が無い種類はパス） */
 function describeItem(item: EditableJsonItem): string {
   const jsonItem = item.item as { displayName?: string; path?: string };
-  return jsonItem.displayName || jsonItem.path || '(名前なし)';
+  return jsonItem.displayName || jsonItem.path || i18next.t('itemManager.noName');
 }
 
 /** キー入力の発生元がテキスト入力欄か（入力中のキーを画面のショートカットとして扱わないため） */
@@ -95,6 +97,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   onClearPendingImportModal,
   onOpenAutoImportSettings,
 }) => {
+  const { t } = useTranslation();
   const { showSuccess, showInfo, showWarning } = useToast();
 
   // データファイル名を取得（設定がない場合は物理ファイル名）
@@ -260,19 +263,24 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   const handleCheckMissingPaths = async () => {
     const summary = await pathCheck.runCheck(currentFileWorkingItems);
     if (summary.checked === 0) {
-      showInfo('確認対象のローカルパスがありません（URL・shell:・コマンド名は確認しません）');
+      showInfo(t('itemManager.missingCheck.nothingToCheck'));
       return;
     }
     const unknownNote =
       summary.unknown > 0
-        ? `、応答なし ${summary.unknown} 件（ネットワークパスなど。リンク切れとは数えません）`
+        ? t('itemManager.missingCheck.unknownNote', { count: summary.unknown })
         : '';
     if (summary.missing === 0) {
-      showSuccess(`${summary.checked} 件を確認しました。リンク切れはありません${unknownNote}`);
+      showSuccess(
+        t('itemManager.missingCheck.noneMissing', { checked: summary.checked, unknownNote })
+      );
     } else {
       showWarning(
-        `${summary.checked} 件を確認し、リンク切れが ${summary.missing} 件ありました${unknownNote}。` +
-          '「🧰 ツール ▼ リンク切れのみ表示」で絞り込めます',
+        t('itemManager.missingCheck.someMissing', {
+          checked: summary.checked,
+          missing: summary.missing,
+          unknownNote,
+        }),
         { duration: 8000 }
       );
     }
@@ -286,7 +294,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     const movedTo = editing.applyRegisterUpdate(target, items);
     if (movedTo) {
       showInfo(
-        `「${describeItem(target)}」を ${getFileLabel(movedTo)} へ移動しました（保存で確定）`
+        t('itemManager.movedTo', { name: describeItem(target), file: getFileLabel(movedTo) })
       );
     }
   };
@@ -330,7 +338,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     if (isInlineItemType(newType)) {
       editing.recordEdit({ ...item, item: changeItemType(item.item, newType) });
       if (newType === 'group') {
-        showInfo('グループに含めるアイテムは ✏️ 詳細編集で選びます');
+        showInfo(t('itemManager.groupSelectHint'));
       }
       return;
     }
@@ -350,7 +358,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   const runSave = async () => {
     const saved = await editing.saveChanges();
     if (saved) {
-      showSuccess('変更を保存しました');
+      showSuccess(t('itemManager.saved'));
     }
   };
 
@@ -358,14 +366,12 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     if (!hasUnsavedChanges) return;
 
     const invalidNote =
-      invalidCount > 0
-        ? `\n\n名前やパスが空など、入力に不備があるアイテムが ${invalidCount} 件あります。そのまま保存されます。`
-        : '';
+      invalidCount > 0 ? t('itemManager.saveConfirmInvalid', { count: invalidCount }) : '';
 
     openConfirmDialog(
       {
-        message: `変更を保存しますか？${invalidNote}`,
-        confirmText: '保存',
+        message: `${t('itemManager.saveConfirm')}${invalidNote}`,
+        confirmText: t('itemManager.saveButton'),
         danger: false,
       },
       () => {
@@ -382,13 +388,13 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     if (!hasUnsavedChanges) return;
     openConfirmDialog(
       {
-        message: '未保存の変更をすべて捨てて、ファイルの内容に戻しますか？',
-        confirmText: '破棄',
+        message: t('itemManager.discardConfirm'),
+        confirmText: t('itemManager.discardButton'),
         danger: true,
       },
       () => {
         editing.discardChanges();
-        showInfo('変更を破棄しました');
+        showInfo(t('itemManager.discarded'));
       }
     );
   };
@@ -396,20 +402,18 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   const handleDedupe = () => {
     const count = editing.countDuplicates(selectedDataFile);
     if (count === 0) {
-      showInfo('重複するアイテムはありません');
+      showInfo(t('itemManager.noDuplicates'));
       return;
     }
     openConfirmDialog(
       {
-        message:
-          `${getFileLabel(selectedDataFile)} に、種類・名前・パスが同じアイテムが ${count} 件あります。` +
-          '先にある 1 件を残して削除しますか？（保存で確定）',
-        confirmText: '削除',
+        message: t('itemManager.dedupeConfirm', { file: getFileLabel(selectedDataFile), count }),
+        confirmText: t('itemManager.deleteButton'),
         danger: true,
       },
       () => {
         const removed = editing.dedupeFile(selectedDataFile);
-        showSuccess(`重複 ${removed} 件を削除しました`);
+        showSuccess(t('itemManager.deduped', { count: removed }));
       }
     );
   };
@@ -422,7 +426,9 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   ) => {
     editing.importBookmarks(bookmarks, duplicateHandling, targetFile);
     setIsBookmarkModalOpen(false);
-    showInfo(`${bookmarks.length} 件を ${getFileLabel(targetFile)} に追加しました（保存で確定）`);
+    showInfo(
+      t('itemManager.imported', { count: bookmarks.length, file: getFileLabel(targetFile) })
+    );
   };
 
   /** 取込画面「ルールとして保存」: 設定にルールを足してすぐ実行する（自動取込と同じ置き換え方式） */
@@ -431,17 +437,20 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     setIsBookmarkModalOpen(false);
     const result = await executeAutoImportRule(rule);
     if (result.success) {
-      const message = `ルール「${rule.name}」を保存して実行しました: ${result.importedCount}件登録`;
+      const message = t('itemManager.ruleSavedAndRun', {
+        name: rule.name,
+        count: result.importedCount,
+      });
       if (result.manualDuplicateCount) {
         showWarning(
-          `${message}（手動で登録済みの URL と ${result.manualDuplicateCount} 件重複しています）`
+          t('itemManager.ruleManualDuplicates', { message, count: result.manualDuplicateCount })
         );
       } else {
         showSuccess(message);
       }
     } else {
       showWarning(
-        `ルール「${rule.name}」を保存しましたが実行に失敗しました: ${result.errorMessage}`
+        t('itemManager.ruleRunFailed', { name: rule.name, error: result.errorMessage ?? '' })
       );
     }
   };
@@ -454,26 +463,30 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
         : apps.length;
     editing.importApps(apps, duplicateHandling, selectedDataFile);
     setIsAppImportModalOpen(false);
-    showInfo(`${addedCount} 件を ${getFileLabel(selectedDataFile)} に追加しました（保存で確定）`);
+    showInfo(
+      t('itemManager.imported', { count: addedCount, file: getFileLabel(selectedDataFile) })
+    );
   };
 
   /** 削除の確認を出してから削除する（行のボタン・右クリック・Delete キー・一括削除の共通経路） */
   const handleRequestDelete = useCallback(
     (items: EditableJsonItem[]) => {
       if (items.length === 0) return;
-      const names = items.map((item) => `「${describeItem(item)}」`).join('、');
+      const names = items
+        .map((item) => t('itemManager.quotedName', { name: describeItem(item) }))
+        .join(t('common.listSeparator'));
       const message =
         items.length === 1
-          ? `${names}を削除しますか？`
+          ? t('itemManager.deleteConfirmOne', { names })
           : items.length <= 3
-            ? `${names} の ${items.length} 件を削除しますか？`
-            : `${items.length} 件のアイテムを削除しますか？`;
-      openConfirmDialog({ message, confirmText: '削除', danger: true }, () =>
+            ? t('itemManager.deleteConfirmFew', { names, count: items.length })
+            : t('itemManager.deleteConfirmMany', { count: items.length });
+      openConfirmDialog({ message, confirmText: t('itemManager.deleteButton'), danger: true }, () =>
         editing.deleteItems(items)
       );
     },
     // openConfirmDialog は毎レンダー作られるが setState しか呼ばないので依存に含めない
-    [editing.deleteItems]
+    [editing.deleteItems, t]
   );
 
   const filteredItems = useMemo(() => {
@@ -582,15 +595,12 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   useEffect(() => {
     if (!rebaseNotice) return;
     if (rebaseNotice.conflicts.length > 0) {
-      const names = rebaseNotice.conflicts.map((c) => `「${c.displayName}」`).join('、');
-      showWarning(
-        `他で変更・削除されたアイテムがあるため、次の未保存の変更は取り消しました: ${names}`,
-        { duration: 10000 }
-      );
+      const names = rebaseNotice.conflicts
+        .map((c) => t('itemManager.quotedName', { name: c.displayName }))
+        .join(t('common.listSeparator'));
+      showWarning(t('itemManager.rebaseConflicts', { names }), { duration: 10000 });
     } else {
-      showInfo(
-        `他で変更された内容を取り込みました（未保存の変更 ${rebaseNotice.applied} 件は保持）`
-      );
+      showInfo(t('itemManager.rebaseApplied', { count: rebaseNotice.applied }));
     }
     editing.clearRebaseNotice();
   }, [rebaseNotice]);
@@ -639,17 +649,17 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
           <Button
             variant="info"
             onClick={handleAddItem}
-            title="単一アイテムを先頭に追加します。種類は「種類」列で、引数やメモは ✏️ 詳細編集で変えられます"
+            title={t('itemManager.toolbar.addItemTitle')}
           >
-            ➕ アイテムを追加
+            {t('itemManager.toolbar.addItem')}
           </Button>
           <Button
             variant="danger"
             onClick={handleDeleteSelected}
             disabled={visibleSelectedItems.length === 0}
-            title="チェックしたアイテムを削除します"
+            title={t('itemManager.toolbar.deleteSelectedTitle')}
           >
-            🗑️ 選択したアイテムを削除
+            {t('itemManager.toolbar.deleteSelected')}
             {visibleSelectedItems.length > 0 ? ` (${visibleSelectedItems.length})` : ''}
           </Button>
           <AutoImportFilterDropdown
@@ -662,7 +672,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
             <div className="search-input-container">
               <input
                 type="text"
-                placeholder="名前・パス・メモで検索..."
+                placeholder={t('itemManager.toolbar.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => onSearchChange(e.target.value)}
                 className="search-input"
@@ -672,7 +682,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
                   className="search-clear-button"
                   onClick={() => onSearchChange('')}
                   type="button"
-                  aria-label="検索をクリア"
+                  aria-label={t('itemManager.toolbar.clearSearch')}
                 >
                   ×
                 </button>
@@ -682,17 +692,17 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
         </div>
         <div className="toolbar-right">
           <Button variant="cancel" onClick={handleDiscardChanges} disabled={!hasUnsavedChanges}>
-            変更を破棄
+            {t('itemManager.toolbar.discard')}
           </Button>
           <Button variant="primary" onClick={handleSaveChanges} disabled={!hasUnsavedChanges}>
-            変更を保存
+            {t('itemManager.toolbar.save')}
           </Button>
         </div>
       </div>
 
       {loadError ? (
         <div className="edit-mode-load-error" data-testid="edit-mode-load-error">
-          データファイルを読み込めませんでした。ファイルを修復してからウィンドウを開き直してください。
+          {t('itemManager.loadError')}
           <div className="edit-mode-load-error-detail">{loadError}</div>
         </div>
       ) : (
@@ -719,17 +729,32 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
 
       <div className="edit-mode-status">
         <span className="selection-count">
-          {visibleSelectedItems.length > 0 ? `${visibleSelectedItems.length} 件を選択中` : ''}
+          {visibleSelectedItems.length > 0
+            ? t('itemManager.status.selected', { count: visibleSelectedItems.length })
+            : ''}
         </span>
-        <span className="total-count">合計: {filteredItems.length} 件</span>
-        {invalidCount > 0 && <span className="invalid-count">入力不備: {invalidCount} 件</span>}
+        <span className="total-count">
+          {t('itemManager.status.total', { count: filteredItems.length })}
+        </span>
+        {invalidCount > 0 && (
+          <span className="invalid-count">
+            {t('itemManager.status.invalid', { count: invalidCount })}
+          </span>
+        )}
         {pathCheck.hasChecked && (
-          <span className="missing-count">リンク切れ: {missingIds.size} 件</span>
+          <span className="missing-count">
+            {t('itemManager.status.missing', { count: missingIds.size })}
+          </span>
         )}
         {hasUnsavedChanges && (
           <span className="unsaved-changes">
-            未保存の変更があります（変更 {changedIds.size} 件
-            {deletedCount > 0 ? `・削除 ${deletedCount} 件` : ''}）
+            {t('itemManager.status.unsaved', {
+              changed: changedIds.size,
+              deleted:
+                deletedCount > 0
+                  ? t('itemManager.status.unsavedDeleted', { count: deletedCount })
+                  : '',
+            })}
           </span>
         )}
       </div>

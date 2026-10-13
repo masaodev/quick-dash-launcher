@@ -1,4 +1,5 @@
 import { useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { AppSettings, DataFileTab } from '@common/types';
 
 import { logError } from '../utils/debug';
@@ -55,6 +56,7 @@ export function useAdminTabStructure({
   countItems,
   dropFileItems,
 }: UseAdminTabStructureProps) {
+  const { t } = useTranslation();
   // 続けて操作したときに古い構成から計算しないよう、保存した構成をすぐ覚えておく
   const structureRef = useRef<TabStructure>({ tabs: dataFileTabs, labels: dataFileLabels });
   structureRef.current = { tabs: dataFileTabs, labels: dataFileLabels };
@@ -70,12 +72,18 @@ export function useAdminTabStructure({
     (files: string[]): string => {
       const lines = files.map((fileName) => {
         const { total, unsaved } = countItems(fileName);
-        const unsavedNote = unsaved > 0 ? `。保存していない変更 ${unsaved} 件も失われます` : '';
-        return `・「${fileLabel(fileName)}」（${fileName.replace(/^datafiles\//, '')}）: アイテム ${total} 件${unsavedNote}`;
+        const unsavedNote =
+          unsaved > 0 ? t('itemManager.tabStructure.deletionUnsaved', { count: unsaved }) : '';
+        return t('itemManager.tabStructure.deletionLine', {
+          label: fileLabel(fileName),
+          file: fileName.replace(/^datafiles\//, ''),
+          count: total,
+          unsaved: unsavedNote,
+        });
       });
-      return `⚠️ 次のデータファイルがディスクから消えます。元に戻せません。\n${lines.join('\n')}`;
+      return t('itemManager.tabStructure.deletionWarning', { lines: lines.join('\n') });
     },
-    [countItems, fileLabel]
+    [countItems, fileLabel, t]
   );
 
   /** 計算した構成を確定する。成功したら true */
@@ -95,7 +103,9 @@ export function useAdminTabStructure({
         for (const fileName of edit.filesToCreate) {
           const result = await window.electronAPI.createDataFile(fileName);
           if (!result.success) {
-            throw new Error(result.error || `${fileName} を作れませんでした`);
+            throw new Error(
+              result.error || t('itemManager.tabStructure.createFailed', { file: fileName })
+            );
           }
         }
 
@@ -113,7 +123,12 @@ export function useAdminTabStructure({
           dropFileItems(fileName);
           const result = await window.electronAPI.deleteDataFile(fileName);
           if (!result.success) {
-            showWarning(`${fileName} を削除できませんでした。${result.error ?? ''}`);
+            showWarning(
+              t('itemManager.tabStructure.deleteFailed', {
+                file: fileName,
+                error: result.error ?? '',
+              })
+            );
           }
           disabledRules.push(...(result.disabledRules ?? []));
         }
@@ -121,20 +136,22 @@ export function useAdminTabStructure({
         showSuccess(successMessage);
         if (disabledRules.length > 0) {
           showWarning(
-            `取込先のデータファイルが無くなったため、自動取込のルールを無効にしました: ${disabledRules.join('、')}`
+            t('itemManager.tabStructure.rulesDisabled', {
+              rules: disabledRules.join(t('common.listSeparator')),
+            })
           );
         }
         return true;
       } catch (error) {
         logError('タブ構成の保存に失敗しました:', error);
         const message = error instanceof Error ? error.message : String(error);
-        showWarning(`タブ設定の保存に失敗しました。${message}`);
+        showWarning(t('itemManager.tabStructure.saveFailed', { error: message }));
         return false;
       } finally {
         busyRef.current = false;
       }
     },
-    [onSaved, showSuccess, showWarning, dropFileItems]
+    [onSaved, showSuccess, showWarning, dropFileItems, t]
   );
 
   /** タブを末尾に足す。足したタブの位置を返す（やめた・失敗したら null） */
@@ -144,35 +161,36 @@ export function useAdminTabStructure({
       const edit = TabStructureEdits.addTab(structureRef.current, tabName, filesOnDisk);
       const extra: Partial<TabStructureSettings> = {};
       if (edit.ok && !showDataFileTabs) {
-        const show = await confirm(
-          'メイン画面にタブを表示しない設定になっています。\nこのままでは、作ったタブはメイン画面に出ません。タブを表示しますか？',
-          { title: 'タブの表示', confirmText: '表示する', cancelText: '表示しない' }
-        );
+        const show = await confirm(t('itemManager.tabStructure.showTabsConfirm'), {
+          title: t('itemManager.tabStructure.showTabsTitle'),
+          confirmText: t('itemManager.tabStructure.showTabsYes'),
+          cancelText: t('itemManager.tabStructure.showTabsNo'),
+        });
         if (show) extra.showDataFileTabs = true;
       }
       const name = edit.ok ? edit.structure.tabs[edit.structure.tabs.length - 1].name : '';
-      const saved = await commit(edit, `タブ「${name}」を作りました`, extra);
+      const saved = await commit(edit, t('itemManager.tabStructure.tabCreated', { name }), extra);
       return saved && edit.ok ? edit.structure.tabs.length - 1 : null;
     },
-    [commit, confirm, showDataFileTabs]
+    [commit, confirm, showDataFileTabs, t]
   );
 
   const renameTab = useCallback(
     (tabIndex: number, tabName: string) =>
       commit(
         TabStructureEdits.renameTab(structureRef.current, tabIndex, tabName),
-        'タブ名を変えました'
+        t('itemManager.tabStructure.tabRenamed')
       ),
-    [commit]
+    [commit, t]
   );
 
   const moveTab = useCallback(
     (tabIndex: number, direction: MoveDirection) =>
       commit(
         TabStructureEdits.moveTab(structureRef.current, tabIndex, direction),
-        'タブを移動しました'
+        t('itemManager.tabStructure.tabMoved')
       ),
-    [commit]
+    [commit, t]
   );
 
   const deleteTab = useCallback(
@@ -183,16 +201,19 @@ export function useAdminTabStructure({
       const detail =
         edit.filesToDelete.length > 0
           ? describeDeletion(edit.filesToDelete)
-          : 'データファイルはほかのタブでも使っているため、消えません。';
-      const confirmed = await confirm(`タブ「${tab.name}」を削除しますか？\n\n${detail}`, {
-        title: 'タブの削除',
-        confirmText: '削除',
-        danger: edit.filesToDelete.length > 0,
-      });
+          : t('itemManager.tabStructure.tabDeleteKeepsFiles');
+      const confirmed = await confirm(
+        t('itemManager.tabStructure.tabDeleteConfirm', { name: tab.name, detail }),
+        {
+          title: t('itemManager.tabStructure.tabDeleteTitle'),
+          confirmText: t('itemManager.deleteButton'),
+          danger: edit.filesToDelete.length > 0,
+        }
+      );
       if (!confirmed) return false;
-      return commit(edit, `タブ「${tab.name}」を削除しました`);
+      return commit(edit, t('itemManager.tabStructure.tabDeleted', { name: tab.name }));
     },
-    [commit, confirm, describeDeletion]
+    [commit, confirm, describeDeletion, t]
   );
 
   /** 新しいデータファイルを作ってタブに入れる。作ったファイル名を返す */
@@ -202,37 +223,37 @@ export function useAdminTabStructure({
       const edit = TabStructureEdits.addNewFileToTab(structureRef.current, tabIndex, filesOnDisk);
       const fileName = edit.ok ? edit.filesToCreate[0] : '';
       const label = edit.ok ? edit.structure.labels[fileName] : '';
-      const saved = await commit(edit, `データファイル「${label}」を作りました`);
+      const saved = await commit(edit, t('itemManager.tabStructure.fileCreated', { label }));
       return saved ? fileName : null;
     },
-    [commit]
+    [commit, t]
   );
 
   const addExistingFile = useCallback(
     async (tabIndex: number, fileName: string): Promise<boolean> =>
       commit(
         TabStructureEdits.addExistingFileToTab(structureRef.current, tabIndex, fileName),
-        `データファイル「${fileLabel(fileName)}」をタブに入れました`
+        t('itemManager.tabStructure.fileAdded', { label: fileLabel(fileName) })
       ),
-    [commit, fileLabel]
+    [commit, fileLabel, t]
   );
 
   const renameFile = useCallback(
     (fileName: string, label: string) =>
       commit(
         TabStructureEdits.renameFile(structureRef.current, fileName, label),
-        'データファイルの名前を変えました'
+        t('itemManager.tabStructure.fileRenamed')
       ),
-    [commit]
+    [commit, t]
   );
 
   const moveFile = useCallback(
     (tabIndex: number, fileName: string, direction: MoveDirection) =>
       commit(
         TabStructureEdits.moveFileInTab(structureRef.current, tabIndex, fileName, direction),
-        'データファイルを移動しました'
+        t('itemManager.tabStructure.fileMoved')
       ),
-    [commit]
+    [commit, t]
   );
 
   /** ファイルをタブから外す（ほかのタブで使っていなければディスクからも消す） */
@@ -244,19 +265,31 @@ export function useAdminTabStructure({
       const deletes = edit.filesToDelete.length > 0;
       const confirmed = await confirm(
         deletes
-          ? `データファイル「${label}」を削除しますか？\n\n${describeDeletion(edit.filesToDelete)}`
-          : `データファイル「${label}」をこのタブから外しますか？\n\nほかのタブでも使っているため、ファイルとアイテムはそのまま残ります。`,
+          ? t('itemManager.tabStructure.fileDeleteConfirm', {
+              label,
+              detail: describeDeletion(edit.filesToDelete),
+            })
+          : t('itemManager.tabStructure.fileRemoveConfirm', { label }),
         deletes
-          ? { title: 'データファイルの削除', confirmText: '削除', danger: true }
-          : { title: 'タブから外す', confirmText: '外す' }
+          ? {
+              title: t('itemManager.tabStructure.fileDeleteTitle'),
+              confirmText: t('itemManager.deleteButton'),
+              danger: true,
+            }
+          : {
+              title: t('itemManager.tabStructure.fileRemoveTitle'),
+              confirmText: t('itemManager.tabStructure.removeButton'),
+            }
       );
       if (!confirmed) return false;
       return commit(
         edit,
-        deletes ? `データファイル「${label}」を削除しました` : `「${label}」をタブから外しました`
+        deletes
+          ? t('itemManager.tabStructure.fileDeleted', { label })
+          : t('itemManager.tabStructure.fileRemoved', { label })
       );
     },
-    [commit, confirm, describeDeletion, fileLabel]
+    [commit, confirm, describeDeletion, fileLabel, t]
   );
 
   return {

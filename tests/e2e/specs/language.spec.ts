@@ -42,6 +42,12 @@ test.describe('QuickDashLauncher - 表示言語', () => {
       await expect(adminWindow.locator('.settings-menu .menu-item').first()).toHaveText(
         '⚙️ General'
       );
+      // アイテム管理も英語になる
+      await adminWindow.locator('.tab-button').nth(1).click();
+      await expect(adminWindow.locator('.tab-button').nth(1)).toHaveText('✏️ Item Manager');
+      await expect(adminWindow.locator('th.name-column')).toContainText('Name');
+      await expect(adminWindow.locator('.total-count')).toContainText('Total:');
+      await adminWindow.locator('.tab-button').first().click();
       await select.selectOption('ja');
 
       await expect(adminWindow.locator('label[for="language"]')).toHaveText('表示言語:');

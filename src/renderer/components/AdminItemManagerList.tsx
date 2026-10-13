@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { JsonItem } from '@common/types';
 import type { EditableJsonItem } from '@common/types/editableItem';
@@ -66,6 +67,7 @@ const AdminItemManagerList: React.FC<AdminItemManagerListProps> = ({
   onDuplicateItems,
   autoImportRuleMap,
 }) => {
+  const { t } = useTranslation();
   const editing = useAdminCellEditing(onItemEdit);
   const itemIcons = useAdminItemIcons(editableItems);
   const nameColumn = useColumnResize(100);
@@ -189,9 +191,7 @@ const AdminItemManagerList: React.FC<AdminItemManagerListProps> = ({
 
       {editableItems.length === 0 && (
         <div className="no-items">
-          {isFiltered
-            ? '条件に一致するアイテムがありません'
-            : 'このデータファイルにアイテムがありません。「➕ アイテムを追加」か「アイテムを一括取り込み」で追加できます'}
+          {isFiltered ? t('itemManager.table.emptyFiltered') : t('itemManager.table.empty')}
         </div>
       )}
     </div>
