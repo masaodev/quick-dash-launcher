@@ -1,3 +1,5 @@
+import i18next from 'i18next';
+import { useTranslation } from 'react-i18next';
 import React from 'react';
 import type { DataFileTab, RegisterItem, WindowInfo } from '@common/types';
 
@@ -18,11 +20,11 @@ type RegisterFormApi = ReturnType<typeof useRegisterForm>;
 function getDisplayNamePlaceholder(itemCategory: string): string {
   switch (itemCategory) {
     case 'group':
-      return 'グループ名を入力';
+      return i18next.t('register.placeholders.group');
     case 'clipboard':
-      return 'クリップボードアイテム名を入力';
+      return i18next.t('register.placeholders.clipboard');
     default:
-      return 'アイテム表示名を入力';
+      return i18next.t('register.placeholders.item');
   }
 }
 
@@ -80,6 +82,7 @@ const RegisterItemForm: React.FC<RegisterItemFormProps> = ({
   onClipboardError,
   showSeparator,
 }) => {
+  const { t } = useTranslation();
   const { handleItemChange, updateItem } = form;
   const selectedTab = availableTabs.find((tab) => tab.files.includes(item.targetTab));
   const hasPath =
@@ -104,7 +107,7 @@ const RegisterItemForm: React.FC<RegisterItemFormProps> = ({
 
       <div className="form-row">
         <div className="form-group">
-          <label>保存先タブ:</label>
+          <label>{t('register.targetTab')}</label>
           <select
             value={item.targetTab}
             onChange={(e) => form.handleTargetTabChange(index, e.target.value)}
@@ -119,7 +122,7 @@ const RegisterItemForm: React.FC<RegisterItemFormProps> = ({
 
         {selectedTab && selectedTab.files.length > 1 && (
           <div className="form-group">
-            <label>保存先ファイル:</label>
+            <label>{t('register.targetFile')}</label>
             <select
               value={item.targetFile || selectedTab.files[0]}
               onChange={(e) => handleItemChange(index, 'targetFile', e.target.value)}
@@ -135,25 +138,25 @@ const RegisterItemForm: React.FC<RegisterItemFormProps> = ({
       </div>
 
       <div className="form-group">
-        <label>種別:</label>
+        <label>{t('register.type')}</label>
         <select
           value={item.itemCategory}
           onChange={(e) =>
             handleItemChange(index, 'itemCategory', e.target.value as RegisterItem['itemCategory'])
           }
         >
-          <option value="item">📄 単一アイテム</option>
-          <option value="dir">🗂️ フォルダ取込</option>
-          <option value="group">📦 グループ</option>
-          <option value="window">🪟 ウィンドウ操作</option>
-          <option value="clipboard">📋 クリップボード</option>
-          <option value="layout">🖥️ ウィンドウ配置</option>
+          <option value="item">{t('register.types.item')}</option>
+          <option value="dir">{t('register.types.dir')}</option>
+          <option value="group">{t('register.types.group')}</option>
+          <option value="window">{t('register.types.window')}</option>
+          <option value="clipboard">{t('register.types.clipboard')}</option>
+          <option value="layout">{t('register.types.layout')}</option>
         </select>
       </div>
 
       {item.itemCategory !== 'dir' && (
         <div className="form-group">
-          <label>アイテム表示名:</label>
+          <label>{t('register.displayName')}</label>
           <input
             type="text"
             value={item.displayName}
@@ -167,7 +170,7 @@ const RegisterItemForm: React.FC<RegisterItemFormProps> = ({
 
       {hasPath && (
         <div className="form-group path-input-group">
-          <label>パス:</label>
+          <label>{t('register.path')}</label>
           <input
             type="text"
             value={item.path}
@@ -175,7 +178,7 @@ const RegisterItemForm: React.FC<RegisterItemFormProps> = ({
             className={errors?.path ? 'error' : isPathReadOnly ? 'readonly' : ''}
             onChange={(e) => handleItemChange(index, 'path', e.target.value)}
             onBlur={() => form.handlePathBlur(index)}
-            placeholder="ファイルパス、URL、またはカスタムURIを入力"
+            placeholder={t('register.pathPlaceholder')}
           />
           <IconFetchButton
             path={item.path}
@@ -194,7 +197,7 @@ const RegisterItemForm: React.FC<RegisterItemFormProps> = ({
 
       {item.itemCategory === 'group' && (
         <div className="form-group vertical-layout">
-          <label>グループアイテムリスト:</label>
+          <label>{t('register.groupItems')}</label>
           <div className="group-item-list">
             {item.groupItemNames && item.groupItemNames.length > 0 ? (
               <div className="selected-items">
@@ -205,7 +208,7 @@ const RegisterItemForm: React.FC<RegisterItemFormProps> = ({
                       type="button"
                       className="remove-group-item-btn"
                       onClick={() => form.handleRemoveGroupItem(index, nameIndex)}
-                      title="削除"
+                      title={t('register.removeGroupItem')}
                     >
                       ×
                     </button>
@@ -213,20 +216,18 @@ const RegisterItemForm: React.FC<RegisterItemFormProps> = ({
                 ))}
               </div>
             ) : (
-              <div className="no-group-items">アイテムが追加されていません</div>
+              <div className="no-group-items">{t('register.noGroupItems')}</div>
             )}
             <button
               type="button"
               className="add-group-item-btn"
               onClick={() => form.handleAddGroupItem(index)}
             >
-              + アイテムを追加
+              {t('register.addGroupItem')}
             </button>
           </div>
           {errors?.groupItemNames && <span className="error-message">{errors.groupItemNames}</span>}
-          <small>
-            同じファイル内の既存アイテムから選択してください。グループ実行時に順番に起動されます。
-          </small>
+          <small>{t('register.groupItemsHint')}</small>
         </div>
       )}
 
@@ -234,9 +235,7 @@ const RegisterItemForm: React.FC<RegisterItemFormProps> = ({
         <div className="options-section">
           <button type="button" className="options-toggle" onClick={onToggleOptions}>
             <span className="toggle-icon">{optionsOpen ? '▼' : '▶'}</span>
-            {item.itemCategory === 'item'
-              ? 'オプション設定（引数・アイコン）'
-              : 'フォルダ取り込みオプション'}
+            {item.itemCategory === 'item' ? t('register.itemOptions') : t('register.dirOptions')}
           </button>
 
           {optionsOpen && (
@@ -244,12 +243,12 @@ const RegisterItemForm: React.FC<RegisterItemFormProps> = ({
               {item.itemCategory === 'item' && (
                 <>
                   <div className="form-group">
-                    <label>引数:</label>
+                    <label>{t('register.args')}</label>
                     <input
                       type="text"
                       value={item.args || ''}
                       onChange={(e) => handleItemChange(index, 'args', e.target.value)}
-                      placeholder="コマンドライン引数（実行ファイルやアプリの場合のみ有効）"
+                      placeholder={t('register.argsPlaceholder')}
                     />
                   </div>
                   {customIconEditor}
@@ -342,7 +341,7 @@ const RegisterItemForm: React.FC<RegisterItemFormProps> = ({
                 clipboardPreview: result.preview || '',
               };
               if (!item.displayName) {
-                const preview = result.preview || 'クリップボード';
+                const preview = result.preview || t('register.clipboardFallbackName');
                 updates.displayName =
                   preview.length > 30 ? preview.substring(0, 30) + '...' : preview;
               }
@@ -373,11 +372,11 @@ const RegisterItemForm: React.FC<RegisterItemFormProps> = ({
       {(item.itemCategory === 'clipboard' || item.itemCategory === 'layout') && customIconEditor}
 
       <div className="form-group">
-        <label>メモ:</label>
+        <label>{t('register.note')}</label>
         <textarea
           value={item.memo || ''}
           onChange={(e) => handleItemChange(index, 'memo', e.target.value)}
-          placeholder="自由にメモを入力（任意）"
+          placeholder={t('register.notePlaceholder')}
           rows={3}
           className="memo-textarea"
         />

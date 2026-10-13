@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import type { WindowInfo, VirtualDesktopInfo, LayoutWindowEntry } from '@common/types';
 
@@ -18,6 +19,7 @@ interface LayoutCaptureModalProps {
  * 実行中の全ウィンドウを表示し、チェックボックスで複数選択して取り込む
  */
 const LayoutCaptureModal: React.FC<LayoutCaptureModalProps> = ({ isOpen, onClose, onCapture }) => {
+  const { t } = useTranslation();
   const [windows, setWindows] = useState<WindowInfo[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,7 +53,7 @@ const LayoutCaptureModal: React.FC<LayoutCaptureModalProps> = ({ isOpen, onClose
         }
       } catch (err) {
         logError('Failed to fetch windows:', err);
-        setError('ウィンドウ一覧の取得に失敗しました');
+        setError(t('windowPicker.loadFailed'));
       } finally {
         setLoading(false);
       }
@@ -79,7 +81,7 @@ const LayoutCaptureModal: React.FC<LayoutCaptureModalProps> = ({ isOpen, onClose
 
   const tabs = useMemo(() => {
     const tabList: { id: number; label: string; count: number }[] = [];
-    tabList.push({ id: 0, label: 'すべて', count: windows.length });
+    tabList.push({ id: 0, label: t('windowPicker.all'), count: windows.length });
 
     if (desktopInfo?.supported && desktopInfo.desktopCount > 0) {
       for (let i = 1; i <= desktopInfo.desktopCount; i++) {
@@ -87,14 +89,16 @@ const LayoutCaptureModal: React.FC<LayoutCaptureModalProps> = ({ isOpen, onClose
         const isCurrent = i === desktopInfo.currentDesktop;
         tabList.push({
           id: i,
-          label: isCurrent ? `デスクトップ ${i} (現在)` : `デスクトップ ${i}`,
+          label: isCurrent
+            ? t('windowPicker.currentDesktop', { number: i })
+            : t('windowPicker.desktop', { number: i }),
           count,
         });
       }
     }
 
     return tabList;
-  }, [windows, desktopInfo]);
+  }, [windows, desktopInfo, t]);
 
   const filteredWindows = useMemo(() => {
     let result = windows;
@@ -168,7 +172,7 @@ const LayoutCaptureModal: React.FC<LayoutCaptureModalProps> = ({ isOpen, onClose
         tabIndex={-1}
       >
         <div className="layout-capture-header">
-          <h3>今のウィンドウから追加</h3>
+          <h3>{t('windowPicker.captureTitle')}</h3>
           <button className="close-button" onClick={onClose}>
             ×
           </button>
@@ -196,14 +200,14 @@ const LayoutCaptureModal: React.FC<LayoutCaptureModalProps> = ({ isOpen, onClose
           <div className="filter-section">
             <input
               type="text"
-              placeholder="タイトルまたはプロセス名で絞り込み..."
+              placeholder={t('windowPicker.filterPlaceholder')}
               value={filterText}
               onChange={(e) => setFilterText(e.target.value)}
               className="filter-input"
             />
           </div>
 
-          {loading && <p>ウィンドウ一覧を取得中...</p>}
+          {loading && <p>{t('windowPicker.loading')}</p>}
           {error && <p>{error}</p>}
 
           {!loading && !error && (
@@ -217,13 +221,13 @@ const LayoutCaptureModal: React.FC<LayoutCaptureModalProps> = ({ isOpen, onClose
                     }
                     onChange={toggleAll}
                   />
-                  すべて選択
+                  {t('windowPicker.selectAll')}
                 </label>
               </div>
 
               <div className="layout-capture-window-list">
                 {filteredWindows.length === 0 ? (
-                  <p>表示可能なウィンドウが見つかりませんでした</p>
+                  <p>{t('windowPicker.noWindows')}</p>
                 ) : (
                   filteredWindows.map((win) => {
                     const hwndStr = String(win.hwnd);
@@ -249,11 +253,9 @@ const LayoutCaptureModal: React.FC<LayoutCaptureModalProps> = ({ isOpen, onClose
                         <div className="window-info">
                           <div className="window-title">{win.title}</div>
                           <div className="window-details">
+                            <span>{t('windowPicker.position', { x: win.x, y: win.y })}</span>
                             <span>
-                              位置: ({win.x}, {win.y})
-                            </span>
-                            <span>
-                              サイズ: {win.width} × {win.height}
+                              {t('windowPicker.size', { width: win.width, height: win.height })}
                             </span>
                             {win.executablePath && (
                               <span title={win.executablePath}>
@@ -264,7 +266,9 @@ const LayoutCaptureModal: React.FC<LayoutCaptureModalProps> = ({ isOpen, onClose
                               activeTab === 0 &&
                               win.desktopNumber &&
                               win.desktopNumber > 0 && (
-                                <span>デスクトップ {win.desktopNumber}</span>
+                                <span>
+                                  {t('windowPicker.desktop', { number: win.desktopNumber })}
+                                </span>
                               )}
                           </div>
                         </div>
@@ -278,13 +282,15 @@ const LayoutCaptureModal: React.FC<LayoutCaptureModalProps> = ({ isOpen, onClose
         </div>
 
         <div className="layout-capture-footer">
-          <span className="selection-count">{selectedHwnds.size} 件選択中</span>
+          <span className="selection-count">
+            {t('windowPicker.selected', { count: selectedHwnds.size })}
+          </span>
           <div className="footer-actions">
             <Button variant="cancel" onClick={onClose}>
-              キャンセル
+              {t('common.cancel')}
             </Button>
             <Button variant="primary" onClick={handleCapture} disabled={selectedHwnds.size === 0}>
-              追加
+              {t('windowPicker.add')}
             </Button>
           </div>
         </div>

@@ -2,6 +2,7 @@
  * 画面: ウィンドウ選択モーダル
  * 画面仕様: docs/screens/register-modal.md#522-ウィンドウ選択モーダル
  */
+import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import type { WindowInfo, VirtualDesktopInfo } from '@common/types';
 
@@ -23,6 +24,7 @@ interface WindowSelectorModalProps {
  * 仮想デスクトップごとにタブで分類表示
  */
 const WindowSelectorModal: React.FC<WindowSelectorModalProps> = ({ isOpen, onClose, onSelect }) => {
+  const { t } = useTranslation();
   const [windows, setWindows] = useState<WindowInfo[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,7 +58,7 @@ const WindowSelectorModal: React.FC<WindowSelectorModalProps> = ({ isOpen, onClo
         }
       } catch (err) {
         logError('Failed to fetch windows:', err);
-        setError('ウィンドウ一覧の取得に失敗しました');
+        setError(t('windowPicker.loadFailed'));
       } finally {
         setLoading(false);
       }
@@ -147,7 +149,7 @@ const WindowSelectorModal: React.FC<WindowSelectorModalProps> = ({ isOpen, onClo
     const tabList: { id: number; label: string; count: number }[] = [];
 
     // 「すべて」タブ
-    tabList.push({ id: 0, label: 'すべて', count: windows.length });
+    tabList.push({ id: 0, label: t('windowPicker.all'), count: windows.length });
 
     // 仮想デスクトップが有効な場合、各デスクトップのタブを追加
     if (desktopInfo?.supported && desktopInfo.desktopCount > 0) {
@@ -156,7 +158,9 @@ const WindowSelectorModal: React.FC<WindowSelectorModalProps> = ({ isOpen, onClo
         const isCurrent = i === desktopInfo.currentDesktop;
         tabList.push({
           id: i,
-          label: isCurrent ? `デスクトップ ${i} (現在)` : `デスクトップ ${i}`,
+          label: isCurrent
+            ? t('windowPicker.currentDesktop', { number: i })
+            : t('windowPicker.desktop', { number: i }),
           count,
         });
       }
@@ -166,12 +170,12 @@ const WindowSelectorModal: React.FC<WindowSelectorModalProps> = ({ isOpen, onClo
         (w) => w.desktopNumber === undefined || w.desktopNumber === -1
       ).length;
       if (unknownCount > 0) {
-        tabList.push({ id: -1, label: '不明', count: unknownCount });
+        tabList.push({ id: -1, label: t('windowPicker.unknown'), count: unknownCount });
       }
     }
 
     return tabList;
-  }, [windows, desktopInfo]);
+  }, [windows, desktopInfo, t]);
 
   // フィルタリングされたウィンドウ一覧（タブとテキストフィルタ適用）
   const filteredWindows = useMemo(() => {
@@ -220,7 +224,7 @@ const WindowSelectorModal: React.FC<WindowSelectorModalProps> = ({ isOpen, onClo
         tabIndex={-1}
       >
         <div className="window-selector-header">
-          <h3>ウィンドウを選択</h3>
+          <h3>{t('windowPicker.selectTitle')}</h3>
           <button className="close-button" onClick={onClose}>
             ×
           </button>
@@ -249,7 +253,7 @@ const WindowSelectorModal: React.FC<WindowSelectorModalProps> = ({ isOpen, onClo
           <div className="filter-section">
             <input
               type="text"
-              placeholder="タイトルまたはプロセス名で絞り込み..."
+              placeholder={t('windowPicker.filterPlaceholder')}
               value={filterText}
               onChange={(e) => setFilterText(e.target.value)}
               className="filter-input"
@@ -258,7 +262,7 @@ const WindowSelectorModal: React.FC<WindowSelectorModalProps> = ({ isOpen, onClo
 
           {loading && (
             <div className="loading-message">
-              <p>ウィンドウ一覧を取得中...</p>
+              <p>{t('windowPicker.loading')}</p>
             </div>
           )}
 
@@ -272,7 +276,7 @@ const WindowSelectorModal: React.FC<WindowSelectorModalProps> = ({ isOpen, onClo
             <div className="window-list">
               {filteredWindows.length === 0 ? (
                 <div className="no-windows-message">
-                  <p>表示可能なウィンドウが見つかりませんでした</p>
+                  <p>{t('windowPicker.noWindows')}</p>
                 </div>
               ) : (
                 filteredWindows.map((win) => (
@@ -290,10 +294,10 @@ const WindowSelectorModal: React.FC<WindowSelectorModalProps> = ({ isOpen, onClo
                       <div className="window-title">{win.title}</div>
                       <div className="window-details">
                         <span className="window-position">
-                          位置: ({win.x}, {win.y})
+                          {t('windowPicker.position', { x: win.x, y: win.y })}
                         </span>
                         <span className="window-size">
-                          サイズ: {win.width} × {win.height}
+                          {t('windowPicker.size', { width: win.width, height: win.height })}
                         </span>
                         {win.executablePath && (
                           <span className="window-process" title={win.executablePath}>
@@ -305,8 +309,9 @@ const WindowSelectorModal: React.FC<WindowSelectorModalProps> = ({ isOpen, onClo
                           win.desktopNumber &&
                           win.desktopNumber > 0 && (
                             <span className="window-desktop">
-                              デスクトップ {win.desktopNumber}
-                              {win.desktopNumber === desktopInfo?.currentDesktop && ' (現在)'}
+                              {t('windowPicker.desktop', { number: win.desktopNumber })}
+                              {win.desktopNumber === desktopInfo?.currentDesktop &&
+                                t('windowPicker.current')}
                             </span>
                           )}
                       </div>
@@ -320,7 +325,7 @@ const WindowSelectorModal: React.FC<WindowSelectorModalProps> = ({ isOpen, onClo
 
         <div className="window-selector-footer">
           <Button variant="cancel" onClick={onClose}>
-            キャンセル
+            {t('common.cancel')}
           </Button>
         </div>
       </div>

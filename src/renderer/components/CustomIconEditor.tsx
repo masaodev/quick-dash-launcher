@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React from 'react';
 
 interface CustomIconEditorProps {
@@ -19,26 +20,27 @@ const CustomIconEditor: React.FC<CustomIconEditorProps> = ({
   onSelectClick,
   onDeleteClick,
 }) => {
+  const { t } = useTranslation();
   return (
     <div className="form-group">
-      <label>カスタムアイコン:</label>
+      <label>{t('customIcon.label')}</label>
       <div className="custom-icon-section">
         {customIconPreview ? (
           <>
             <img
               src={customIconPreview}
-              alt="カスタムアイコン"
+              alt={t('customIcon.alt')}
               className="custom-icon-img-inline"
             />
             <button type="button" className="delete-icon-btn-inline" onClick={onDeleteClick}>
-              削除
+              {t('customIcon.delete')}
             </button>
           </>
         ) : (
-          <span className="no-custom-icon-inline">未設定</span>
+          <span className="no-custom-icon-inline">{t('customIcon.notSet')}</span>
         )}
         <button type="button" className="select-icon-btn-inline" onClick={onSelectClick}>
-          ファイルから選択
+          {t('customIcon.selectFile')}
         </button>
       </div>
     </div>

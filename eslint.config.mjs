@@ -85,6 +85,13 @@ const I18N_ENFORCED_FILES = [
   // 取込・ヘルプ（段階 3-3）
   'src/renderer/components/{AdminOtherTab,AppImportModal,AutoImportFilterDropdown}.tsx',
   'src/renderer/components/BookmarkAutoImport{RuleModal,Settings}.tsx',
+  // 登録・編集の子ウィンドウ（段階 3-4）
+  'src/renderer/components/{ClipboardItemEditor,CustomIconEditor,DirOptionsEditor,FilePickerDialog}.tsx',
+  'src/renderer/components/{GroupItemSelectorModal,IconFetchButton,LayoutCaptureModal,LayoutEntryEditor}.tsx',
+  'src/renderer/components/{MainChildPage,RegisterItemForm,RegisterModal,RegisterWindowPage}.tsx',
+  'src/renderer/components/{UrlConverterMenu,WindowConfigEditor,WindowSelectorModal}.tsx',
+  'src/renderer/hooks/{useClipboardPaste,useCustomIcon,useModalInitializer,useRegisterForm}.ts',
+  'src/renderer/utils/{pasteClassifier,registerItemSave}.ts',
   // メインプロセスの画面に出る文言（段階 2）
   'src/common/utils/hotkeyValidator.ts',
   'src/main/ipc/contextMenuHandlers.ts',

@@ -1,3 +1,4 @@
+import i18next from 'i18next';
 import {
   convertEditingAppItemToRegisterItem,
   convertEditableJsonItemToRegisterItem,
@@ -65,7 +66,7 @@ export function useModalInitializer() {
       return [item];
     } catch (error) {
       logError('Error initializing from editing item:', error);
-      alert('編集アイテムの初期化中にエラーが発生しました: ' + error);
+      alert(i18next.t('register.errors.initEditFailed', { error: String(error) }));
       return [];
     }
   };
@@ -124,7 +125,7 @@ export function useModalInitializer() {
       return newItems;
     } catch (error) {
       logError('Error initializing items:', error);
-      alert('アイテムの初期化中にエラーが発生しました: ' + error);
+      alert(i18next.t('register.errors.initFailed', { error: String(error) }));
       return [];
     }
   };

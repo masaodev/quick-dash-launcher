@@ -1,3 +1,4 @@
+import i18next from 'i18next';
 import { useState, useCallback } from 'react';
 
 import { logError } from '../utils/debug';
@@ -41,7 +42,7 @@ export function useCustomIcon() {
         }
       } catch (error) {
         logError('カスタムアイコン選択エラー:', error);
-        alert('カスタムアイコンの選択に失敗しました: ' + error);
+        alert(i18next.t('register.errors.customIconSelectFailed', { error: String(error) }));
       }
     },
     [filePickerState.itemIndex]
@@ -60,7 +61,7 @@ export function useCustomIcon() {
         });
       } catch (error) {
         logError('カスタムアイコン削除エラー:', error);
-        alert('カスタムアイコンの削除に失敗しました: ' + error);
+        alert(i18next.t('register.errors.customIconDeleteFailed', { error: String(error) }));
       }
     },
     []

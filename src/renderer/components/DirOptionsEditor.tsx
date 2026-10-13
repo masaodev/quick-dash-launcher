@@ -2,6 +2,7 @@
  * 画面: フォルダ取込オプションエディタ
  * 画面仕様: docs/screens/dir-options-editor.md
  */
+import { useTranslation } from 'react-i18next';
 import React from 'react';
 import type { RegisterItem } from '@common/types';
 
@@ -17,6 +18,7 @@ interface DirOptionsEditorProps {
  * プレフィックス、サフィックスの設定を提供します。
  */
 const DirOptionsEditor: React.FC<DirOptionsEditorProps> = ({ dirOptions, onChange }) => {
+  const { t } = useTranslation();
   if (!dirOptions) return null;
 
   const handleChange = <K extends keyof NonNullable<RegisterItem['dirOptions']>>(
@@ -32,68 +34,68 @@ const DirOptionsEditor: React.FC<DirOptionsEditorProps> = ({ dirOptions, onChang
   return (
     <div className="dir-options">
       <div className="form-group">
-        <label>階層深度:</label>
+        <label>{t('dirOptions.depth')}</label>
         <select
           value={dirOptions.depth}
           onChange={(e) => handleChange('depth', parseInt(e.target.value))}
         >
-          <option value="0">現在のフォルダのみ</option>
-          <option value="1">1階層下まで</option>
-          <option value="2">2階層下まで</option>
-          <option value="3">3階層下まで</option>
-          <option value="-1">無制限</option>
+          <option value="0">{t('dirOptions.depths.current')}</option>
+          <option value="1">{t('dirOptions.depths.one')}</option>
+          <option value="2">{t('dirOptions.depths.two')}</option>
+          <option value="3">{t('dirOptions.depths.three')}</option>
+          <option value="-1">{t('dirOptions.depths.unlimited')}</option>
         </select>
       </div>
 
       <div className="form-group">
-        <label>取得タイプ:</label>
+        <label>{t('dirOptions.types')}</label>
         <select
           value={dirOptions.types}
           onChange={(e) => handleChange('types', e.target.value as 'file' | 'folder' | 'both')}
         >
-          <option value="file">ファイルのみ</option>
-          <option value="folder">フォルダのみ</option>
-          <option value="both">ファイルとフォルダ</option>
+          <option value="file">{t('dirOptions.typeOptions.file')}</option>
+          <option value="folder">{t('dirOptions.typeOptions.folder')}</option>
+          <option value="both">{t('dirOptions.typeOptions.both')}</option>
         </select>
       </div>
 
       <div className="form-group">
-        <label>フィルター (例: *.txt):</label>
+        <label>{t('dirOptions.filter')}</label>
         <input
           type="text"
           value={dirOptions.filter || ''}
           onChange={(e) => handleChange('filter', e.target.value || undefined)}
-          placeholder="ワイルドカードパターン"
+          placeholder={t('dirOptions.filterPlaceholder')}
         />
       </div>
 
       <div className="form-group">
-        <label>除外パターン (例: temp*):</label>
+        <label>{t('dirOptions.exclude')}</label>
         <input
           type="text"
           value={dirOptions.exclude || ''}
           onChange={(e) => handleChange('exclude', e.target.value || undefined)}
-          placeholder="除外するパターン"
+          placeholder={t('dirOptions.excludePlaceholder')}
         />
       </div>
 
       <div className="form-group">
-        <label>プレフィックス (例: 仕事):</label>
+        <label>{t('dirOptions.prefix')}</label>
         <input
           type="text"
           value={dirOptions.prefix || ''}
           onChange={(e) => handleChange('prefix', e.target.value || undefined)}
-          placeholder="アイテム名の前に付ける文字"
+          placeholder={t('dirOptions.prefixPlaceholder')}
         />
       </div>
 
       <div className="form-group">
-        <label>サフィックス (例: Dev):</label>
+        <label>{t('dirOptions.suffix')}</label>
         <input
           type="text"
           value={dirOptions.suffix || ''}
           onChange={(e) => handleChange('suffix', e.target.value || undefined)}
-          placeholder="アイテム名の後に付ける文字"
+          placeholder={t('dirOptions.suffixPlaceholder')}
         />
       </div>
     </div>

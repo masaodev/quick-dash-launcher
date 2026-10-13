@@ -1,3 +1,4 @@
+import i18next from 'i18next';
 import type { RegisterItem, EditingAppItem } from '@common/types';
 
 /**
@@ -23,7 +24,7 @@ export async function saveRegisterItems(
   const isFileChanged = targetFile !== editingItem.sourceFile;
 
   if (!editingItem.jsonItemId) {
-    throw new Error('アイテムIDが見つかりません');
+    throw new Error(i18next.t('register.itemIdNotFound'));
   }
   const itemId = editingItem.jsonItemId;
 

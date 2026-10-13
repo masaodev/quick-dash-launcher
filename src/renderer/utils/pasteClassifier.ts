@@ -1,3 +1,4 @@
+import i18next from 'i18next';
 import { PathUtils } from '@common/utils/pathUtils';
 
 /**
@@ -86,7 +87,7 @@ export function makeClipboardDisplayName(text: string): string {
     .split(/\r?\n/)
     .map((l) => l.trim())
     .find((l) => l !== '');
-  if (!firstLine) return 'テキスト';
+  if (!firstLine) return i18next.t('clipboardEditor.textFallbackName');
   return firstLine.length > DISPLAY_NAME_MAX_LENGTH
     ? `${firstLine.slice(0, DISPLAY_NAME_MAX_LENGTH)}…`
     : firstLine;

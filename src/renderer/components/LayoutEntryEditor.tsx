@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import type { LayoutWindowEntry } from '@common/types';
 
@@ -20,6 +21,7 @@ const LayoutEntryEditor: React.FC<LayoutEntryEditorProps> = ({
   onCaptureClick,
   onSelectWindow,
 }) => {
+  const { t } = useTranslation();
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
   const updateEntry = (index: number, updates: Partial<LayoutWindowEntry>) => {
@@ -50,10 +52,10 @@ const LayoutEntryEditor: React.FC<LayoutEntryEditorProps> = ({
   return (
     <div className="layout-entry-editor">
       <div className="form-group vertical-layout">
-        <label>並べるウィンドウ:</label>
+        <label>{t('layoutEditor.windows')}</label>
 
         {entries.length === 0 ? (
-          <div className="layout-no-entries">まだウィンドウを追加していません</div>
+          <div className="layout-no-entries">{t('layoutEditor.noEntries')}</div>
         ) : (
           <div className="layout-entry-list">
             {entries.map((entry, index) => (
@@ -63,7 +65,11 @@ const LayoutEntryEditor: React.FC<LayoutEntryEditorProps> = ({
                     type="button"
                     className="entry-expand-btn"
                     onClick={() => toggleExpand(index)}
-                    title={expandedIndex === index ? '折りたたむ' : '詳細を展開'}
+                    title={
+                      expandedIndex === index
+                        ? t('layoutEditor.collapse')
+                        : t('layoutEditor.expand')
+                    }
                   >
                     {expandedIndex === index ? '▼' : '▶'}
                   </button>
@@ -88,28 +94,28 @@ const LayoutEntryEditor: React.FC<LayoutEntryEditorProps> = ({
                           type="number"
                           value={entry.x ?? ''}
                           onChange={(e) => handleNumberChange(index, 'x', e.target.value)}
-                          title="X座標"
+                          title={t('layoutEditor.x')}
                         />
                         <span>Y:</span>
                         <input
                           type="number"
                           value={entry.y ?? ''}
                           onChange={(e) => handleNumberChange(index, 'y', e.target.value)}
-                          title="Y座標"
+                          title={t('layoutEditor.y')}
                         />
                         <span>W:</span>
                         <input
                           type="number"
                           value={entry.width ?? ''}
                           onChange={(e) => handleNumberChange(index, 'width', e.target.value)}
-                          title="幅"
+                          title={t('layoutEditor.width')}
                         />
                         <span>H:</span>
                         <input
                           type="number"
                           value={entry.height ?? ''}
                           onChange={(e) => handleNumberChange(index, 'height', e.target.value)}
-                          title="高さ"
+                          title={t('layoutEditor.height')}
                         />
                       </div>
                     </div>
@@ -122,13 +128,13 @@ const LayoutEntryEditor: React.FC<LayoutEntryEditorProps> = ({
                         checked={entry.launchApp}
                         onChange={(e) => updateEntry(index, { launchApp: e.target.checked })}
                       />
-                      起動
+                      {t('layoutEditor.launch')}
                     </label>
                     <button
                       type="button"
                       className="remove-entry-btn"
                       onClick={() => removeEntry(index)}
-                      title="削除"
+                      title={t('layoutEditor.delete')}
                     >
                       ×
                     </button>
@@ -138,7 +144,7 @@ const LayoutEntryEditor: React.FC<LayoutEntryEditorProps> = ({
                 {expandedIndex === index && (
                   <div className="entry-expanded-details">
                     <div className="entry-field">
-                      <label>ウィンドウタイトル:</label>
+                      <label>{t('layoutEditor.windowTitle')}</label>
                       <input
                         type="text"
                         value={entry.windowTitle}
@@ -146,7 +152,7 @@ const LayoutEntryEditor: React.FC<LayoutEntryEditorProps> = ({
                       />
                     </div>
                     <div className="entry-field">
-                      <label>プロセス名:</label>
+                      <label>{t('layoutEditor.processName')}</label>
                       <input
                         type="text"
                         value={entry.processName || ''}
@@ -156,7 +162,7 @@ const LayoutEntryEditor: React.FC<LayoutEntryEditorProps> = ({
                       />
                     </div>
                     <div className="entry-field">
-                      <label>実行ファイルパス:</label>
+                      <label>{t('layoutEditor.executablePath')}</label>
                       <input
                         type="text"
                         value={entry.executablePath || ''}
@@ -166,7 +172,7 @@ const LayoutEntryEditor: React.FC<LayoutEntryEditorProps> = ({
                       />
                     </div>
                     <div className="entry-field">
-                      <label>引数:</label>
+                      <label>{t('layoutEditor.args')}</label>
                       <input
                         type="text"
                         value={entry.args || ''}
@@ -174,7 +180,7 @@ const LayoutEntryEditor: React.FC<LayoutEntryEditorProps> = ({
                       />
                     </div>
                     <div className="entry-field">
-                      <label>仮想デスクトップ番号:</label>
+                      <label>{t('layoutEditor.desktopNumber')}</label>
                       <input
                         type="number"
                         value={entry.virtualDesktopNumber ?? ''}
@@ -190,7 +196,7 @@ const LayoutEntryEditor: React.FC<LayoutEntryEditorProps> = ({
                         className="add-group-item-btn"
                         onClick={() => onSelectWindow(index)}
                       >
-                        ウィンドウを選択
+                        {t('layoutEditor.selectWindow')}
                       </button>
                     )}
                   </div>
@@ -202,7 +208,7 @@ const LayoutEntryEditor: React.FC<LayoutEntryEditorProps> = ({
 
         <div className="layout-capture-button">
           <button type="button" className="add-group-item-btn" onClick={onCaptureClick}>
-            + 今のウィンドウから追加
+            {t('layoutEditor.addFromCurrent')}
           </button>
         </div>
       </div>
