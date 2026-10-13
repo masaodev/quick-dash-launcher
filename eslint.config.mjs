@@ -67,6 +67,70 @@ const I18N_EXEMPT_FILES = [
   'src/main/utils/virtualDesktop/{dllLoader,guidUtils,windowOperations}.ts',
 ];
 
+/** TypeScript のコード（本体・テスト）に共通の設定 */
+const TS_LANGUAGE_OPTIONS = {
+  parser: tsParser,
+  ecmaVersion: 'latest',
+  sourceType: 'module',
+  globals: {
+    ...globals.browser,
+    ...globals.node,
+    ...globals.es2021,
+  },
+  parserOptions: {
+    ecmaFeatures: {
+      jsx: true,
+    },
+    project: './tsconfig.json',
+  },
+};
+const TS_PLUGINS = {
+  '@typescript-eslint': tsPlugin,
+  react: reactPlugin,
+  import: importPlugin,
+  prettier: prettierPlugin,
+};
+const TS_RULES = {
+  // TypeScript推奨ルール
+  ...tsPlugin.configs.recommended.rules,
+
+  // React推奨ルール
+  ...reactPlugin.configs.recommended.rules,
+  ...reactPlugin.configs['jsx-runtime'].rules,
+
+  // カスタムルール
+  '@typescript-eslint/explicit-module-boundary-types': 'off',
+  '@typescript-eslint/no-explicit-any': 'error',
+  '@typescript-eslint/no-deprecated': 'warn',
+  '@typescript-eslint/no-unused-vars': [
+    'warn',
+    {
+      argsIgnorePattern: '^_',
+      varsIgnorePattern: '^_',
+      caughtErrorsIgnorePattern: '^_',
+      destructuredArrayIgnorePattern: '^_',
+    },
+  ],
+  '@typescript-eslint/no-var-requires': 'off',
+  '@typescript-eslint/no-require-imports': 'off',
+  'import/order': [
+    'error',
+    {
+      groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
+      'newlines-between': 'always',
+    },
+  ],
+  'import/no-duplicates': 'error',
+
+  // Prettier統合
+  'prettier/prettier': 'error',
+};
+const REACT_SETTINGS = {
+  react: {
+    version: 'detect',
+  },
+};
+
 export default [
   // 基本設定
   js.configs.recommended,
@@ -117,308 +181,28 @@ export default [
   // TypeScript + React設定（メインコード）
   {
     files: ['src/**/*.{js,jsx,ts,tsx}', 'scripts/**/*.ts'],
-    languageOptions: {
-      parser: tsParser,
-      ecmaVersion: 'latest',
-      sourceType: 'module',
-      globals: {
-        ...globals.browser,
-        ...globals.node,
-        ...globals.es2021,
-      },
-      parserOptions: {
-        ecmaFeatures: {
-          jsx: true,
-        },
-        project: './tsconfig.json',
-      },
-    },
-    plugins: {
-      '@typescript-eslint': tsPlugin,
-      react: reactPlugin,
-      'react-hooks': reactHooksPlugin,
-      import: importPlugin,
-      prettier: prettierPlugin,
-    },
+    languageOptions: TS_LANGUAGE_OPTIONS,
+    plugins: { ...TS_PLUGINS, 'react-hooks': reactHooksPlugin },
     rules: {
-      // TypeScript推奨ルール
-      ...tsPlugin.configs.recommended.rules,
-
-      // React推奨ルール
-      ...reactPlugin.configs.recommended.rules,
-      ...reactPlugin.configs['jsx-runtime'].rules,
-
+      ...TS_RULES,
       // React Hooks推奨ルール
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'off',
-
-      // カスタムルール
-      '@typescript-eslint/explicit-module-boundary-types': 'off',
-      '@typescript-eslint/no-explicit-any': 'error',
-      '@typescript-eslint/no-deprecated': 'warn',
-      '@typescript-eslint/no-unused-vars': [
-        'warn',
-        {
-          argsIgnorePattern: '^_',
-          varsIgnorePattern: '^_',
-          caughtErrorsIgnorePattern: '^_',
-          destructuredArrayIgnorePattern: '^_',
-        },
-      ],
-      '@typescript-eslint/no-var-requires': 'off',
-      '@typescript-eslint/no-require-imports': 'off',
-      'import/order': [
-        'error',
-        {
-          groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
-          'newlines-between': 'always',
-        },
-      ],
-      'import/no-duplicates': 'error',
       'no-console': ['warn', { allow: ['warn', 'error'] }],
-      'no-restricted-imports': [
-        'error',
-        {
-          paths: [
-            {
-              name: '@common/ipcChannels',
-              importNames: [
-                'OPEN_ITEM',
-                'OPEN_PARENT_FOLDER',
-                'EXECUTE_GROUP',
-                'EXECUTE_WINDOW_OPERATION',
-                'LOAD_DATA_FILES',
-                'LOAD_RAW_DATA_FILES',
-                'SAVE_RAW_DATA_FILES',
-                'REGISTER_ITEMS',
-                'GET_CONFIG_FOLDER',
-                'GET_DATA_FILES',
-                'CREATE_DATA_FILE',
-                'DELETE_DATA_FILE',
-                'IS_DIRECTORY',
-                'FETCH_FAVICON',
-                'EXTRACT_ICON',
-                'EXTRACT_FILE_ICON_BY_EXTENSION',
-                'EXTRACT_CUSTOM_URI_ICON',
-                'GET_ICON_FOR_ITEM',
-                'LOAD_CACHED_ICONS',
-                'LOAD_CACHED_ICONS_BY_ITEMS',
-                'FETCH_ICONS_COMBINED',
-                'SELECT_CUSTOM_ICON_FILE',
-                'SAVE_CUSTOM_ICON',
-                'DELETE_CUSTOM_ICON',
-                'GET_CUSTOM_ICON',
-                'SELECT_BOOKMARK_FILE',
-                'PARSE_BOOKMARK_FILE',
-                'DETECT_INSTALLED_BROWSERS',
-                'PARSE_BROWSER_BOOKMARKS',
-                'GET_WINDOW_PIN_MODE',
-                'CYCLE_WINDOW_PIN_MODE',
-                'QUIT_APP',
-                'SET_EDIT_MODE',
-                'GET_EDIT_MODE',
-                'SHOW_EDIT_WINDOW',
-                'HIDE_EDIT_WINDOW',
-                'TOGGLE_EDIT_WINDOW',
-                'IS_EDIT_WINDOW_SHOWN',
-                'OPEN_EDIT_WINDOW_WITH_TAB',
-                'GET_INITIAL_TAB',
-                'GET_ALL_WINDOWS',
-                'GET_ALL_WINDOWS_ALL_DESKTOPS',
-                'GET_VIRTUAL_DESKTOP_INFO',
-                'ACTIVATE_WINDOW',
-                'COPY_TO_CLIPBOARD',
-                'SET_MODAL_MODE',
-                'LOG_PERFORMANCE_TIMING',
-                'UPDATE_ITEM',
-                'UPDATE_RAW_LINE',
-                'DELETE_ITEMS',
-                'BATCH_UPDATE_ITEMS',
-                'SETTINGS_IS_FIRST_LAUNCH',
-                'SETTINGS_GET',
-                'SETTINGS_SET',
-                'SETTINGS_SET_MULTIPLE',
-                'SETTINGS_RESET',
-                'SETTINGS_VALIDATE_HOTKEY',
-                'SETTINGS_GET_CONFIG_PATH',
-                'SETTINGS_CHANGE_HOTKEY',
-                'SETTINGS_CHECK_HOTKEY_AVAILABILITY',
-                'OPEN_CONFIG_FOLDER',
-                'GET_APP_INFO',
-                'OPEN_EXTERNAL_URL',
-                'SPLASH_READY',
-                'LOAD_SEARCH_HISTORY',
-                'LOAD_SEARCH_HISTORY_BY_TAB',
-                'SAVE_SEARCH_HISTORY',
-                'ADD_SEARCH_HISTORY_ENTRY',
-                'CLEAR_SEARCH_HISTORY',
-              ],
-              message:
-                'IPC定数の個別インポートは禁止されています。IPC_CHANNELSオブジェクトを使用してください。',
-            },
-          ],
-        },
-      ],
-
-      // Prettier統合
-      'prettier/prettier': 'error',
     },
-    settings: {
-      react: {
-        version: 'detect',
-      },
-    },
+    settings: REACT_SETTINGS,
   },
 
-  // テストファイル設定（より具体的なパターンなので後に配置）
+  // テストファイル設定（より具体的なパターンなので後に配置。react-hooks は使わない）
   {
     files: ['tests/**/*.{js,jsx,ts,tsx}', 'src/**/*.test.{ts,tsx}'],
-    languageOptions: {
-      parser: tsParser,
-      ecmaVersion: 'latest',
-      sourceType: 'module',
-      globals: {
-        ...globals.browser,
-        ...globals.node,
-        ...globals.es2021,
-      },
-      parserOptions: {
-        ecmaFeatures: {
-          jsx: true,
-        },
-        project: './tsconfig.json',
-      },
-    },
-    plugins: {
-      '@typescript-eslint': tsPlugin,
-      react: reactPlugin,
-      import: importPlugin,
-      prettier: prettierPlugin,
-    },
+    languageOptions: TS_LANGUAGE_OPTIONS,
+    plugins: TS_PLUGINS,
     rules: {
-      // TypeScript推奨ルール
-      ...tsPlugin.configs.recommended.rules,
-
-      // React推奨ルール（テストファイルではreact-hooksを無効化）
-      ...reactPlugin.configs.recommended.rules,
-      ...reactPlugin.configs['jsx-runtime'].rules,
-
-      // カスタムルール
-      '@typescript-eslint/explicit-module-boundary-types': 'off',
-      '@typescript-eslint/no-explicit-any': 'error',
-      '@typescript-eslint/no-deprecated': 'warn',
-      '@typescript-eslint/no-unused-vars': [
-        'warn',
-        {
-          argsIgnorePattern: '^_',
-          varsIgnorePattern: '^_',
-          caughtErrorsIgnorePattern: '^_',
-          destructuredArrayIgnorePattern: '^_',
-        },
-      ],
-      '@typescript-eslint/no-var-requires': 'off',
-      '@typescript-eslint/no-require-imports': 'off',
-      'import/order': [
-        'error',
-        {
-          groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
-          'newlines-between': 'always',
-        },
-      ],
-      'import/no-duplicates': 'error',
+      ...TS_RULES,
       'no-console': 'off', // テストファイルではconsole.logを許可
-      'no-restricted-imports': [
-        'error',
-        {
-          paths: [
-            {
-              name: '@common/ipcChannels',
-              importNames: [
-                'OPEN_ITEM',
-                'OPEN_PARENT_FOLDER',
-                'EXECUTE_GROUP',
-                'EXECUTE_WINDOW_OPERATION',
-                'LOAD_DATA_FILES',
-                'LOAD_RAW_DATA_FILES',
-                'SAVE_RAW_DATA_FILES',
-                'REGISTER_ITEMS',
-                'GET_CONFIG_FOLDER',
-                'GET_DATA_FILES',
-                'CREATE_DATA_FILE',
-                'DELETE_DATA_FILE',
-                'IS_DIRECTORY',
-                'FETCH_FAVICON',
-                'EXTRACT_ICON',
-                'EXTRACT_FILE_ICON_BY_EXTENSION',
-                'EXTRACT_CUSTOM_URI_ICON',
-                'GET_ICON_FOR_ITEM',
-                'LOAD_CACHED_ICONS',
-                'LOAD_CACHED_ICONS_BY_ITEMS',
-                'FETCH_ICONS_COMBINED',
-                'SELECT_CUSTOM_ICON_FILE',
-                'SAVE_CUSTOM_ICON',
-                'DELETE_CUSTOM_ICON',
-                'GET_CUSTOM_ICON',
-                'SELECT_BOOKMARK_FILE',
-                'PARSE_BOOKMARK_FILE',
-                'DETECT_INSTALLED_BROWSERS',
-                'PARSE_BROWSER_BOOKMARKS',
-                'GET_WINDOW_PIN_MODE',
-                'CYCLE_WINDOW_PIN_MODE',
-                'QUIT_APP',
-                'SET_EDIT_MODE',
-                'GET_EDIT_MODE',
-                'SHOW_EDIT_WINDOW',
-                'HIDE_EDIT_WINDOW',
-                'TOGGLE_EDIT_WINDOW',
-                'IS_EDIT_WINDOW_SHOWN',
-                'OPEN_EDIT_WINDOW_WITH_TAB',
-                'GET_INITIAL_TAB',
-                'GET_ALL_WINDOWS',
-                'GET_ALL_WINDOWS_ALL_DESKTOPS',
-                'GET_VIRTUAL_DESKTOP_INFO',
-                'ACTIVATE_WINDOW',
-                'COPY_TO_CLIPBOARD',
-                'SET_MODAL_MODE',
-                'LOG_PERFORMANCE_TIMING',
-                'UPDATE_ITEM',
-                'UPDATE_RAW_LINE',
-                'DELETE_ITEMS',
-                'BATCH_UPDATE_ITEMS',
-                'SETTINGS_IS_FIRST_LAUNCH',
-                'SETTINGS_GET',
-                'SETTINGS_SET',
-                'SETTINGS_SET_MULTIPLE',
-                'SETTINGS_RESET',
-                'SETTINGS_VALIDATE_HOTKEY',
-                'SETTINGS_GET_CONFIG_PATH',
-                'SETTINGS_CHANGE_HOTKEY',
-                'SETTINGS_CHECK_HOTKEY_AVAILABILITY',
-                'OPEN_CONFIG_FOLDER',
-                'GET_APP_INFO',
-                'OPEN_EXTERNAL_URL',
-                'SPLASH_READY',
-                'LOAD_SEARCH_HISTORY',
-                'LOAD_SEARCH_HISTORY_BY_TAB',
-                'SAVE_SEARCH_HISTORY',
-                'ADD_SEARCH_HISTORY_ENTRY',
-                'CLEAR_SEARCH_HISTORY',
-              ],
-              message:
-                'IPC定数の個別インポートは禁止されています。IPC_CHANNELSオブジェクトを使用してください。',
-            },
-          ],
-        },
-      ],
-
-      // Prettier統合
-      'prettier/prettier': 'error',
     },
-    settings: {
-      react: {
-        version: 'detect',
-      },
-    },
+    settings: REACT_SETTINGS,
   },
 
   // 多言語化: 画面に出す日本語をコードに直接書かない（文言は src/common/i18n/locales/ の辞書に書き、t() で引く）。
