@@ -188,11 +188,9 @@ export class TestUtils {
    * electronApp を渡すとその子ウィンドウを待って返す（以降のフォーム操作はそのページに対して行う）
    */
   async openRegisterModal(electronApp?: ElectronApplication): Promise<Page> {
-    const registerButton = this.page.locator('.action-btn[title="アイテムを登録"]');
-    await registerButton.click();
-
-    const simpleRegisterItem = this.page.locator('.dropdown-item', { hasText: '簡易登録' });
-    await simpleRegisterItem.click();
+    // 表示言語によらないよう data-testid で選ぶ
+    await this.page.getByTestId('register-menu-button').click();
+    await this.page.getByTestId('register-menu-quick-add').click();
 
     if (electronApp) {
       return this.waitForRegisterWindow(electronApp);

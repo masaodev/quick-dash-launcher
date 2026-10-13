@@ -34,6 +34,8 @@
     "docs:screenshots": "npm run build && playwright test -c playwright.screenshots.config.ts",
     "docs:demo-gif": "npm run build && playwright test -c playwright.demo-gif.config.ts main-demo && node scripts/make-demo-gif.mjs",
     "docs:readme-images": "npm run build && playwright test -c playwright.demo-gif.config.ts readme-images",
+    "docs:demo-gif:en": "cross-env DEMO_LANG=en npm run docs:demo-gif",
+    "docs:readme-images:en": "cross-env DEMO_LANG=en npm run docs:readme-images",
     "test:window-move": "tsx src/test/manual/testWindowMove.ts",
     "test:window-list": "tsx src/test/manual/testWindowList.ts",
     "debug:windows": "node scripts/debug-windows.mjs"

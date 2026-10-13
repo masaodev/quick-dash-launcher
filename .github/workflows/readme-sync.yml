@@ -1,0 +1,44 @@
+# README の日英の同期チェック
+# README.ja.md（日本語。正本）を変えた PR では、README.md（英語の訳）も直す。
+# 片方だけ変わっていたら失敗させる。英語だけの手直し（訳の誤字など）は通す。
+# 英語に影響しない日本語だけの手直し（誤字など）は、PR にラベル readme-ja-only を付けると通る
+
+name: README sync
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Check that README.md changes with README.ja.md
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+          JA_ONLY: ${{ contains(github.event.pull_request.labels.*.name, 'readme-ja-only') }}
+        run: |
+          changed="$(git diff --name-only "$BASE...$HEAD")"
+          if printf '%s\n' "$changed" | grep -qx 'README.ja.md' \
+            && ! printf '%s\n' "$changed" | grep -qx 'README.md'; then
+            if [ "$JA_ONLY" = "true" ]; then
+              echo "README.ja.md だけが変わっていますが、ラベル readme-ja-only があるので通します"
+              exit 0
+            fi
+            echo "::error file=README.ja.md::README.ja.md を変えたら README.md（英語の訳）も同じ PR で直してください。英語に影響しない手直しなら、PR にラベル readme-ja-only を付けてください"
+            exit 1
+          fi
+          echo "OK"

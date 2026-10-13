@@ -4,9 +4,11 @@
 
 <h1 align="center">QuickDashLauncher</h1>
 
-**使うものだけを。タブで整理できる登録型ランチャー**
+<p align="center"><b>English</b> | <a href="README.ja.md">日本語</a></p>
 
-候補に出るのは、自分で登録したフォルダ・ファイル・URL・アプリだけ。「仕事」「個人」「A社」のように自由にタブで分けて、名前の一部で開く
+**Only the things you use. A launcher you fill yourself and organize with tabs.**
+
+The list shows only the folders, files, URLs, and apps you've added. Sort them into tabs such as "Work," "Personal," or "Client A," and open any of them by typing part of its name.
 
 <p align="center">
   <a href="https://github.com/masaodev/quick-dash-launcher/releases"><img src="https://img.shields.io/github/release/masaodev/quick-dash-launcher.svg" alt="GitHub Release" /></a>
@@ -15,39 +17,38 @@
 </p>
 
 <p align="center">
-  <a href="#インストール">インストール</a> ·
-  <a href="#画面">画面</a> ·
-  <a href="docs/README.md">ドキュメント</a> ·
-  <a href="https://github.com/masaodev/quick-dash-launcher/releases">リリース</a>
+  <a href="#installation">Installation</a> ·
+  <a href="#screenshots">Screenshots</a> ·
+  <a href="docs/README.md">Documentation (Japanese)</a> ·
+  <a href="https://github.com/masaodev/quick-dash-launcher/releases">Releases</a>
 </p>
 
 <p align="center">
-  <img src="docs/images/demo-main.gif" alt="QuickDashLauncher のメインデモ" />
+  <img src="docs/images/demo-main-en.gif" alt="QuickDashLauncher demo" />
 </p>
 
-<!-- メインデモ GIF は `npm run docs:demo-gif` で撮り直す（デモデータ＝tests/demo-gif/demo-data.ts と tests/e2e/templates/demo/） -->
+<!-- Translation of README.ja.md (the source). Change both in the same PR. Re-record the demo GIF with `npm run docs:demo-gif:en` (demo data: tests/demo-gif/demo-content-en.ts and tests/e2e/templates/demo/) -->
 
-## 特徴
+## Features
 
-- **全部ここから開ける**
-  - アプリ、フォルダ、ファイル、Web ページに加えて、Teams のチャットのようなリンクも同じ画面から開けます。
-  - 保存しておいた定型文や画像も、ここから呼び出してクリップボードに戻せます。
-- **登録して、タブで整理できる**
-  - ドラッグ＆ドロップで 1 件ずつ登録するほか、スタートメニューのアプリやブラウザのブックマークもまとめて取り込めます。
-  - タブは「仕事」「個人」「A社」のように自由に分けられます。
-  - 候補に出るのは登録したものだけなので、一覧が散らかりません。
-  - 名前は自由に付けられるので、長いパスや URL も「勤怠（kintai）」「経費精算（keihi）」のような普段の呼び方で開けます。
-    - 💡 ローマ字を添えておくと、かなを変換せずに「kin」と打つだけで開けます。
-- **フォルダを丸ごと取り込める**
-  - フォルダを指定すると、中のファイルがまとめて候補に並びます。サブフォルダの中まで取り込むかどうかも選べます。
-  - 「Excel だけ（`*.xlsx`）」「旧版フォルダは除く（`旧*`）」のように、入れるものと入れないものをワイルドカードで決められます。
-  - 後からファイルが増えても、登録し直す必要はありません。
-- **打ちかけで候補が出て、すぐ開ける**
-  - 名前の一部を打つと、1 文字ごとに候補が絞り込まれます。先頭から打たなくても当たり、「基本設計 画面」のようにスペースで区切ればさらに絞れます。
-  - 目当てを選んで Enter で開きます。
-  - 今のタブに無いものも、一致した件数がほかのタブに出るので、Tab キーで移れます。
+- **Open everything from one place**
+  - Open apps, folders, files, and websites, plus links such as Teams chats, from the same window.
+  - Save snippets of text or images and copy them back to the clipboard when you need them.
+- **Add what you use and organize it with tabs**
+  - Add items one at a time with drag and drop, or import apps from the Start menu and your browser bookmarks in bulk.
+  - Create whatever tabs you like, such as "Work," "Personal," or "Client A."
+  - Only the items you've added show up, so the list stays tidy.
+  - Give each item any name you like, so long paths and URLs open by the name you actually use, such as "Timesheet" or "Expenses."
+- **Import a whole folder**
+  - Point to a folder, and the files in it show up in the list. You can choose whether to include subfolders.
+  - Use wildcards to choose what to include and what to skip, such as "Excel files only (`*.xlsx`)" or "skip old versions (`Old*`)."
+  - When files are added to the folder later, there's no need to add them again.
+- **Matches appear as you type, ready to open**
+  - Type part of a name, and the list narrows with each character. The match doesn't have to be at the start, and you can narrow it further with more words separated by spaces, such as "basic design screen."
+  - Select what you want and press Enter to open it.
+  - If a match is in another tab, the number of matches shows on that tab, and you can press Tab to switch to it.
 
-無料のオープンソース（MIT）です。winget ですぐに試せます（ほかの入れ方は[インストール](#インストール)）。
+It's free and open source (MIT). Try it right away with winget (for other ways, see [Installation](#installation)).
 
 ```powershell
 winget install masaodev.quick-dash-launcher
@@ -55,78 +56,78 @@ winget install masaodev.quick-dash-launcher
 
 ---
 
-## なぜ登録型なのか
+## Why you add items yourself
 
-PowerToys Run のような多くのランチャーは、インストール済みのアプリやファイルを自動で全部読み込みます。そのため、使わないものまで候補に並び、目当てを探す手間が残ります。QuickDashLauncher は、作者がこのノイズを嫌って作り始めたランチャーで、使うものを自分で選んで登録する「登録型」をとっています。登録したものだけが候補に出るので、数文字で目当てにたどり着けます。
+Many launchers, such as PowerToys Run, index every installed app and file automatically. Things you never use end up in the results, and you still have to hunt for what you want. The author built QuickDashLauncher to get rid of that noise: you choose and add the things you use. Because only those items show up, a few keystrokes get you there.
 
-とはいえ、1 件ずつ登録するのは手間です。そのため、まとめて登録する手段も用意しています。フォルダを指定すれば中のファイルがまとめて候補に並び（フォルダ取込）、スタートメニューのアプリやブラウザのブックマークも一覧から選んで取り込めます。
+Adding items one at a time takes effort, so there are ways to add many at once. Point to a folder, and the files in it show up in the list (folder import). You can also pick apps from the Start menu and your browser bookmarks from a list and import them.
 
-登録したものは、[専用の管理画面](#画面)に一覧で並び、まとめて直せます。
+Everything you've added appears in a list in the [settings window](#screenshots), where you can edit it all together.
 
-| 観点 | 検索型（PowerToys Run など） | QuickDashLauncher |
+| | Search-based launchers (PowerToys Run and others) | QuickDashLauncher |
 | --- | --- | --- |
-| 候補に出るもの | インストール済みのもの全部 | 自分で登録したものだけ |
-| 登録の手間 | なし（自動で入る） | フォルダ・アプリ・ブックマークはまとめて取り込める |
-| 整理のしかた | なし | タブで自由に分ける |
-| 名前 | アプリ名やファイル名のまま | 自分で付ける |
-| フォルダの中身 | 出ない | 取り込めば候補に出る |
+| What shows up | Everything installed | Only what you've added |
+| Setup effort | None (added automatically) | Import folders, apps, and bookmarks in bulk |
+| Organization | None | Sort into tabs as you like |
+| Names | App and file names as they are | Names you choose |
+| Files inside folders | Not shown | Shown once you import the folder |
 
-### こんな人におすすめ
+### Who it's for
 
-- いくつもの仕事を並行して進めていて、フォルダ・資料・Web の管理画面を開くたびに探している
-- 共有フォルダの深い階層を毎回たどっている
-- Teams のチャットやよく使う Web ページを、アプリやブックマークを開いて探している
-- 使わないアプリやファイルが候補に出てくるのを避けたい
-
----
-
-## 画面
-
-### アイテム管理画面
-
-登録したものをタブごとに一覧で直せます。メイン画面の ⚙ →「アイテム管理」で開きます。
-
-<p align="center">
-  <img src="docs/images/readme-admin.png" alt="管理画面。プロジェクトのタブに、フォルダ取込・Web ページ・Teams のチャットなどが表で並んでいる" />
-</p>
-
-### アイテム登録画面
-
-1 件ずつ登録します。メイン画面の ➕ →「簡易登録」か、ドラッグ＆ドロップで開きます。
-
-<p align="center">
-  <img src="docs/images/readme-register-item.png" alt="登録画面。名前「勤怠（kintai）」で URL を登録するところ" />
-</p>
-
-### アイテム登録画面（フォルダ取込）
-
-種別を「フォルダ取込」にすると、フォルダの中のファイルをまとめて候補に並べられます。
-
-<p align="center">
-  <img src="docs/images/readme-register-dir.png" alt="登録画面。種別をフォルダ取込にして、Excel だけを取り込み、旧版を除く設定にしたところ" />
-</p>
-
-<!-- 画面イメージは `npm run docs:readme-images` で撮り直す（デモデータ＝tests/demo-gif/demo-data.ts） -->
+- You juggle several projects and keep searching for the same folders, documents, and web admin pages.
+- You click through deep shared-folder paths every time.
+- You open apps or bookmarks just to find a Teams chat or a webpage you use often.
+- You don't want apps and files you never use showing up in the results.
 
 ---
 
-## ほかにできること
+## Screenshots
 
-登録画面の種別を変えると、ファイルや URL を開く以外の使い方もできます。種別ごとの説明は[アイテムの種別](docs/features/item-categories.md)にまとめています。
+### Item Manager
 
-| 機能 | できること |
+Edit everything you've added, tab by tab. To open it, select ⚙ > **Item Manager** in the launcher.
+
+<p align="center">
+  <img src="docs/images/readme-admin-en.png" alt="Item Manager in the settings window. A project tab lists a folder import, webpages, Teams chats, and more in a table." />
+</p>
+
+### Add item
+
+Add one item at a time. To open it, select ➕ > **Add item** in the launcher, or drag and drop a file onto it.
+
+<p align="center">
+  <img src="docs/images/readme-register-item-en.png" alt="The Add item window, adding a URL named Timesheet." />
+</p>
+
+### Add item (folder import)
+
+Set the type to **Folder import** to add all the files in a folder to the list.
+
+<p align="center">
+  <img src="docs/images/readme-register-dir-en.png" alt="The Add item window with the type set to Folder import, including only Excel files and skipping old versions." />
+</p>
+
+<!-- Re-take the screenshots with `npm run docs:readme-images:en` (demo data: tests/demo-gif/demo-content-en.ts) -->
+
+---
+
+## More you can do
+
+Change the type in the Add item window to do more than open files and URLs. For details on each type, see [Item types](docs/features/item-categories.md) (Japanese).
+
+| Feature | What it does |
 | --- | --- |
-| [グループ](docs/features/group-launch.md) | 登録済みのアイテムをまとめて一度に開く |
-| ウィンドウ操作 | すでに開いているウィンドウを探して、前面に出したり位置・サイズを変えたりする |
-| ウィンドウ配置 | 複数のウィンドウの位置・サイズを記録しておき、まとめて並べ直す |
-| クリップボード | テキストや画像を保存しておき、選ぶとクリップボードに戻す |
-| [ブックマークの取り込み](docs/features/bookmark-import.md) | ブラウザのブックマークを取り込む。自動で取り込み直す設定もできる |
+| [Group](docs/features/group-launch.md) | Open several items you've added at once |
+| Window action | Find a window that's already open, then bring it to the front or change its position and size |
+| Window layout | Save the positions and sizes of several windows and restore them all at once |
+| Clipboard item | Save text or images and copy them back to the clipboard when you select them |
+| [Bookmark import](docs/features/bookmark-import.md) | Import your browser bookmarks, and optionally keep them up to date automatically |
 
 ---
 
-## インストール
+## Installation
 
-Windows 10 以降で動きます。
+Runs on Windows 10 or later. The display language follows Windows (English or Japanese), and you can change it in **Settings**.
 
 ### winget
 
@@ -134,39 +135,39 @@ Windows 10 以降で動きます。
 winget install masaodev.quick-dash-launcher
 ```
 
-更新は `winget upgrade masaodev.quick-dash-launcher`。winget には正式版だけを公開しています（ベータ版は Releases のプレリリースから入手できます）。
+To update, run `winget upgrade masaodev.quick-dash-launcher`. Only stable releases are published to winget (beta versions are available as pre-releases on the Releases page).
 
-### インストーラー版・ポータブル版
+### Installer and portable versions
 
-[Releases](https://github.com/masaodev/quick-dash-launcher/releases) からダウンロードします。
+Download them from [Releases](https://github.com/masaodev/quick-dash-launcher/releases).
 
-- インストーラー版: `QuickDashLauncher.Setup.x.x.x.exe` を実行します。インストールが終わると起動します。
-- ポータブル版: `QuickDashLauncher.x.x.x.exe` を好きなフォルダに置いて実行します（インストール不要）。
+- Installer: Run `QuickDashLauncher.Setup.x.x.x.exe`. The app starts when the installation finishes.
+- Portable: Put `QuickDashLauncher.x.x.x.exe` in any folder and run it (no installation needed).
 
-インストーラー版・ポータブル版は署名していないため、初回の実行時に Windows SmartScreen の警告が出ることがあります。そのときは「詳細情報」→「実行」で起動できます。
+The installer and portable versions aren't signed, so Windows SmartScreen may show a warning the first time you run them. If it does, select **More info** > **Run anyway**.
 
-初回起動の画面で、ランチャーを呼び出すホットキー（初期値は Alt+Space）を決めます。キー操作は[キーボードショートカット](docs/features/keyboard-shortcuts.md)を参照してください。
+When you first start the app, choose the launch hotkey that opens the launcher (Alt+Space by default). For keyboard operations, see [Keyboard shortcuts](docs/features/keyboard-shortcuts.md) (Japanese).
 
-うまく動かないときは[困ったとき](docs/features/troubleshooting.md)を参照してください。
+If something isn't working, see [Troubleshooting](docs/features/troubleshooting.md) (Japanese).
 
 ---
 
-## バグ報告・開発への参加
+## Bug reports and contributing
 
-バグ報告と機能の要望は [GitHub Issues](https://github.com/masaodev/quick-dash-launcher/issues) へお願いします。プルリクエストも歓迎します。
+Please report bugs and request features in [GitHub Issues](https://github.com/masaodev/quick-dash-launcher/issues). Issues in English are welcome, and so are pull requests.
 
-ソースからビルドするには、Node.js に加えて、ネイティブモジュールのコンパイルに Visual Studio Build Tools（C++）と Python が必要です。詳しくは[開発ガイド](docs/setup/development.md)を、設計やテストは [docs](docs/README.md) を参照してください。
+To build from source, you need Node.js, plus Visual Studio Build Tools (C++) and Python to compile native modules. For details, see the [development guide](docs/setup/development.md). For design and testing, see the [docs](docs/README.md). The documentation is in Japanese.
 
 ```bash
 git clone https://github.com/masaodev/quick-dash-launcher.git
 cd quick-dash-launcher
 npm install
-npm run dev          # 開発モード起動
-npm run test:unit    # 単体テスト
+npm run dev          # Start in development mode
+npm run test:unit    # Run unit tests
 ```
 
 ---
 
-## ライセンス
+## License
 
-[MIT ライセンス](./LICENSE)で公開しています。
+Released under the [MIT License](./LICENSE).

@@ -6,23 +6,37 @@ import path from 'path';
 import { test, _electron as electron } from '@playwright/test';
 import type { ElectronApplication, Locator, Page } from '@playwright/test';
 
+import { en } from '../../src/common/i18n/locales/en';
+import { ja } from '../../src/common/i18n/locales/ja';
 import { ConfigFileHelper } from '../e2e/helpers/config-file-helper';
 import { TestUtils } from '../e2e/helpers/test-utils';
 
-import { writeDemoData } from './demo-data';
+import { demoContent, demoLang, writeDemoData } from './demo-data';
 
 /**
  * README の「画面」に載せる画面イメージ（登録画面・管理画面）を撮る
  *
  * メインデモ GIF と同じデモデータ（demo-data.ts）で起動し、docs/images/readme-*.png に保存する。
- * 見比べ用の別案は test-results/readme-images/ に置く（README では使わない）。
+ * 環境変数 DEMO_LANG=en で英語の画面とデータで撮り、docs/images/readme-*-en.png に保存する。
+ * 見比べ用の別案は test-results/readme-images/（英語は readme-images-en/）に置く（README では使わない）。
  * 画面にパスが写るので、デモ用のフォルダを subst で空いているドライブ（S: など）に割り当て、
  * ユーザー名を含む %TEMP% のパスが写らないようにする（終わったら割り当てを外す）
  */
 
+const LANG = demoLang();
+const CONTENT = demoContent(LANG);
+const MESSAGES = LANG === 'en' ? en : ja;
 const IMAGE_DIR = path.join(process.cwd(), 'docs', 'images');
-const ALT_DIR = path.join(process.cwd(), 'test-results', 'readme-images');
-const DEMO_DIR = path.join(os.tmpdir(), 'qdl-demo-readme');
+const ALT_DIR = path.join(
+  process.cwd(),
+  'test-results',
+  LANG === 'en' ? 'readme-images-en' : 'readme-images'
+);
+const DEMO_DIR = path.join(os.tmpdir(), LANG === 'en' ? 'qdl-demo-readme-en' : 'qdl-demo-readme');
+
+/** README に載せる画像のパス（英語は名前の末尾に -en を付ける） */
+const imagePath = (name: string): string =>
+  path.join(IMAGE_DIR, LANG === 'en' ? `${name}-en.png` : `${name}.png`);
 
 /** DEMO_DIR を空いているドライブに割り当て、そのルート（例: S:\）を返す */
 function mapDemoDrive(): string {
@@ -72,11 +86,13 @@ async function launch(configDir: string): Promise<{ app: ElectronApplication; ma
 
 /** アイコンを取得してから撮る（Web サイトのファビコン取得にネットワークを使う） */
 async function fetchIcons(main: Page): Promise<void> {
-  const notice = main.locator('.missing-icon-notice button', { hasText: '取得' });
+  const notice = main.locator('.missing-icon-notice button', {
+    hasText: MESSAGES.launcher.missingIcons.fetch,
+  });
   if (!(await notice.isVisible().catch(() => false))) return;
   await notice.click();
   await main
-    .locator('button[aria-label="詳細を表示"]')
+    .locator(`button[aria-label="${MESSAGES.common.showDetails}"]`)
     .waitFor({ state: 'visible', timeout: 240000 });
   await main.locator('.progress-close-btn').click();
 }
@@ -100,7 +116,7 @@ test('README の画面イメージ', async () => {
   const helper = ConfigFileHelper.createTempConfigDir('readme-images', 'demo');
   const demoRoot = mapDemoDrive();
   try {
-    writeDemoData(helper.getConfigDir(), demoRoot);
+    writeDemoData(helper.getConfigDir(), demoRoot, LANG);
     fs.rmSync(ALT_DIR, { recursive: true, force: true });
     await takeShots(helper.getConfigDir(), demoRoot);
   } finally {
@@ -118,53 +134,54 @@ async function takeShots(configDir: string, demoRoot: string): Promise<void> {
     // 別案用: 検索中のメイン画面（リポジトリのプレビュー画像の素材。説明文は入れない）
     await main.mouse.move(5, 5);
     const input = main.locator('input[type="text"]').first();
-    await input.fill('基本設計');
+    await input.fill(CONTENT.demo.search);
     await shot(main, path.join(ALT_DIR, 'main-search.png'));
     await input.fill('');
 
     // 登録画面（フォルダ取込）: 案件の設計書フォルダを、Excel だけ・旧版を除いて取り込むところ
+    const { dir, item } = CONTENT.shots;
+    const pathInput = `input[placeholder="${MESSAGES.register.pathPlaceholder}"]`;
     const register = await utils.openRegisterModal(app);
     const selects = register.locator('.register-modal select');
-    await selects.nth(0).selectOption({ label: 'A：基幹刷新Prj' });
+    await selects.nth(0).selectOption({ label: dir.tab });
     await selects.nth(1).selectOption({ value: 'dir' });
-    await register
-      .locator('input[placeholder="ファイルパス、URL、またはカスタムURIを入力"]')
-      .fill(path.join(demoRoot, 'A_基幹システム刷新'));
-    await register.locator('.options-toggle', { hasText: 'フォルダ取込のオプション' }).click();
+    await register.locator(pathInput).fill(path.join(demoRoot, dir.folder));
+    await register.locator('.options-toggle', { hasText: MESSAGES.register.dirOptions }).click();
     const dirOptions = register.locator('.dir-options');
     await dirOptions.waitFor({ state: 'visible' });
     await dirOptions.locator('select').nth(0).selectOption({ value: '-1' });
     await dirOptions.locator('select').nth(1).selectOption({ value: 'file' });
-    await dirOptions.locator('input[placeholder="ワイルドカードパターン"]').fill('*.xlsx');
-    await dirOptions.locator('input[placeholder="除外するパターン"]').fill('旧*');
-    await dirOptions.locator('input[placeholder="表示名の前に付ける文字"]').fill('基幹刷新');
+    const { filterPlaceholder, excludePlaceholder, prefixPlaceholder } = MESSAGES.dirOptions;
+    await dirOptions.locator(`input[placeholder="${filterPlaceholder}"]`).fill(dir.filter);
+    await dirOptions.locator(`input[placeholder="${excludePlaceholder}"]`).fill(dir.exclude);
+    await dirOptions.locator(`input[placeholder="${prefixPlaceholder}"]`).fill(dir.prefix);
     await shot(register, path.join(ALT_DIR, 'register-dir-full.png'));
     await resizeWindow(app, register, 760);
-    await shot(register, path.join(IMAGE_DIR, 'readme-register-dir.png'));
+    await shot(register, imagePath('readme-register-dir'));
 
-    // 登録画面（単一アイテム）: 名前にローマ字を添える例
-    await selects.nth(0).selectOption({ label: 'メイン' });
+    // 登録画面（単一アイテム）: 日本語は名前にローマ字を添える例
+    await selects.nth(0).selectOption({ label: item.tab });
     await selects.nth(1).selectOption({ value: 'item' });
-    await register.locator('.register-modal input').first().fill('勤怠（kintai）');
-    await register
-      .locator('input[placeholder="ファイルパス、URL、またはカスタムURIを入力"]')
-      .fill('https://intranet.example.com/kintai');
+    await register.locator('.register-modal input').first().fill(item.name);
+    await register.locator(pathInput).fill(item.url);
     // フォルダ取込のときに開いたオプション設定は単一アイテムでも開いたままなので閉じる
-    const optionsToggle = register.locator('.options-toggle', { hasText: '引数・アイコン' });
+    const optionsToggle = register.locator('.options-toggle', {
+      hasText: MESSAGES.register.itemOptions,
+    });
     if ((await optionsToggle.textContent())?.includes('▼')) await optionsToggle.click();
     await resizeWindow(app, register, 540);
-    await shot(register, path.join(IMAGE_DIR, 'readme-register-item.png'));
+    await shot(register, imagePath('readme-register-item'));
     await register.close();
 
     // 管理画面（アイテム管理）: 案件 A のタブ。フォルダ取込・URL・Teams のチャットが並ぶ
     const admin = await utils.openAdminWindow(app, 'edit');
     await admin.locator('.raw-item-row').first().waitFor({ state: 'visible' });
     await shot(admin, path.join(ALT_DIR, 'admin-main.png'));
-    await admin.getByTestId('admin-tab').filter({ hasText: 'A：基幹刷新Prj' }).click();
+    await admin.getByTestId('admin-tab').filter({ hasText: CONTENT.shots.adminTab }).click();
     await admin.locator('.raw-item-row').first().waitFor({ state: 'visible' });
     await shot(admin, path.join(ALT_DIR, 'admin-a-full.png'));
     await resizeWindow(app, admin, 560);
-    await shot(admin, path.join(IMAGE_DIR, 'readme-admin.png'));
+    await shot(admin, imagePath('readme-admin'));
   } finally {
     await app.close().catch(() => {});
   }

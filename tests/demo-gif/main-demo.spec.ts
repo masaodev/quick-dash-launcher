@@ -6,22 +6,33 @@ import path from 'path';
 import { test, _electron as electron } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
+import { en } from '../../src/common/i18n/locales/en';
+import { ja } from '../../src/common/i18n/locales/ja';
 import { ConfigFileHelper } from '../e2e/helpers/config-file-helper';
 
-import { writeDemoData } from './demo-data';
+import { demoContent, demoLang, writeDemoData } from './demo-data';
 
 /**
  * README のメインデモ GIF の素材（メインウィンドウの動画）を撮る
  *
  * デモデータ（5 タブ。メインに約 140 件）は demo-data.ts。案件フォルダは %TEMP%\qdl-demo\ に空のファイルで作る。
+ * 環境変数 DEMO_LANG=en で英語の画面とデータで撮る（GIF は docs/images/demo-main-en.gif。既定は日本語で demo-main.gif）。
  * 録画は ffmpeg の gdigrab で、メインウィンドウの範囲だけを 30fps・劣化なしで撮る（Playwright の動画は
  * 圧縮の残像が出るため使わない）。撮影中はウィンドウを最前面に固定するので、その範囲に他の物を重ねないこと。
- * 動画のどこから使うかを test-results/demo-gif/main/meta.json に書き、scripts/make-demo-gif.mjs がその範囲を
+ * 動画のどこから使うかを test-results/demo-gif/<main か main-en>/meta.json に書き、scripts/make-demo-gif.mjs がその範囲を
  * GIF にする。画面下の説明文（字幕）は既定では出さず、DEMO_CAPTIONS=1 のときだけ出す
  */
 
-const OUT_DIR = path.join(process.cwd(), 'test-results', 'demo-gif', 'main');
-const DEMO_ROOT = path.join(os.tmpdir(), 'qdl-demo');
+const LANG = demoLang();
+const CONTENT = demoContent(LANG);
+const MESSAGES = LANG === 'en' ? en : ja;
+const OUT_DIR = path.join(
+  process.cwd(),
+  'test-results',
+  'demo-gif',
+  LANG === 'en' ? 'main-en' : 'main'
+);
+const DEMO_ROOT = path.join(os.tmpdir(), LANG === 'en' ? 'qdl-demo-en' : 'qdl-demo');
 const SHOW_CAPTIONS = process.env.DEMO_CAPTIONS === '1';
 const TYPE_DELAY_MS = 200;
 
@@ -61,7 +72,7 @@ async function clearSearch(page: Page): Promise<void> {
 test('メインデモ', async () => {
   test.setTimeout(300000);
   const helper = ConfigFileHelper.createTempConfigDir('demo-gif-main', 'demo');
-  writeDemoData(helper.getConfigDir(), DEMO_ROOT);
+  writeDemoData(helper.getConfigDir(), DEMO_ROOT, LANG);
   fs.rmSync(OUT_DIR, { recursive: true, force: true });
   fs.mkdirSync(OUT_DIR, { recursive: true });
 
@@ -88,11 +99,13 @@ test('メインデモ', async () => {
     await win.waitForLoadState('networkidle');
 
     // アイコンを取得してから撮る（Web サイトのファビコン取得にネットワークを使う）
-    const notice = win.locator('.missing-icon-notice button', { hasText: '取得' });
+    const notice = win.locator('.missing-icon-notice button', {
+      hasText: MESSAGES.launcher.missingIcons.fetch,
+    });
     if (await notice.isVisible().catch(() => false)) {
       await notice.click();
       await win
-        .locator('button[aria-label="詳細を表示"]')
+        .locator(`button[aria-label="${MESSAGES.common.showDetails}"]`)
         .waitFor({ state: 'visible', timeout: 240000 });
       await win.locator('.progress-close-btn').click();
     }
@@ -103,7 +116,7 @@ test('メインデモ', async () => {
     // 一度入力して消し、選択を先頭に戻す
     await win.keyboard.type('x');
     await clearSearch(win);
-    await caption(win, 'フォルダも資料も Web もアプリも、ここから開く');
+    await caption(win, CONTENT.demo.captions.intro);
 
     // メインウィンドウを最前面に固定し、画面上の範囲（物理ピクセル）を求めて録画を始める
     const rect = await app.evaluate(({ BrowserWindow, screen }) => {
@@ -161,41 +174,41 @@ test('メインデモ', async () => {
     const startSec = Math.max(0, (Date.now() - recordStart) / 1000 - 0.7);
 
     // 1. メインタブ → タブを一巡して、案件・ブックマーク・アプリに整理されている様子を見せる
-    await caption(win, '案件・ブックマーク・アプリは、タブで分けて整理');
+    await caption(win, CONTENT.demo.captions.tabs);
     for (let i = 0; i < 5; i++) {
       await win.keyboard.press('Tab');
       await win.waitForTimeout(i === 4 ? 900 : 750);
     }
 
     // 2. メインに全部入っているので、名前の一部を打つだけで案件の資料まで絞り込める
-    await caption(win, '名前の一部を打つと、候補が絞られる');
-    await win.keyboard.type('基本設計', { delay: TYPE_DELAY_MS });
+    await caption(win, CONTENT.demo.captions.search);
+    await win.keyboard.type(CONTENT.demo.search, { delay: TYPE_DELAY_MS });
     await win.waitForTimeout(1500);
 
     // 3. スペース区切りでさらに絞る
-    await caption(win, 'スペースで区切れば、さらに絞れる');
-    await win.keyboard.type(' 画面', { delay: TYPE_DELAY_MS });
+    await caption(win, CONTENT.demo.captions.refine);
+    await win.keyboard.type(CONTENT.demo.refine, { delay: TYPE_DELAY_MS });
     await win.waitForTimeout(900);
     await win.keyboard.press('ArrowDown');
-    await caption(win, '選んで Enter で開く');
+    await caption(win, CONTENT.demo.captions.open);
     await win.waitForTimeout(1500);
 
     // 4. 議事録
     await clearSearch(win);
-    await caption(win, '議事録も、日付を足せばすぐ見つかる');
-    await win.keyboard.type('定例 09-30', { delay: TYPE_DELAY_MS });
+    await caption(win, CONTENT.demo.captions.minutes);
+    await win.keyboard.type(CONTENT.demo.minutes, { delay: TYPE_DELAY_MS });
     await win.waitForTimeout(1800);
 
     // 5. Teams のチャット
     await clearSearch(win);
-    await caption(win, 'Teams のチャットも、ここから開く');
-    await win.keyboard.type('チャット', { delay: TYPE_DELAY_MS });
+    await caption(win, CONTENT.demo.captions.chat);
+    await win.keyboard.type(CONTENT.demo.chat, { delay: TYPE_DELAY_MS });
     await win.waitForTimeout(1800);
 
     // 6. メインに無いもの（ブックマーク）は、件数の出たタブへ Tab で移る
     await clearSearch(win);
-    await caption(win, 'ほかのタブにあるものは、Tab で移る');
-    await win.keyboard.type('TypeS', { delay: TYPE_DELAY_MS });
+    await caption(win, CONTENT.demo.captions.otherTab);
+    await win.keyboard.type(CONTENT.demo.otherTab, { delay: TYPE_DELAY_MS });
     await win.waitForTimeout(1000);
     await win.keyboard.press('Tab');
     await win.waitForTimeout(2000);
