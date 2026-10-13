@@ -1031,7 +1031,6 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       clipboardSaveFailed: 'クリップボードデータの保存に失敗しました',
       iconNotFound: 'アイコンを取得できませんでした',
       iconFetchError: 'アイコン取得中にエラーが発生しました',
-      addFileError: 'ファイルの追加中にエラーが発生しました',
       readFileError: 'ファイルの読み込み中にエラーが発生しました',
       initEditFailed: '編集アイテムの初期化中にエラーが発生しました: {{error}}',
       initFailed: 'アイテムの初期化中にエラーが発生しました: {{error}}',

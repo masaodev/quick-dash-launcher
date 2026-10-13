@@ -19,7 +19,6 @@ import { getRendererHtmlUrl, openChildWindow } from './services/childWindowServi
 
 /**
  * 初回autofit前のフォールバック表示までの待機時間（ms）
- * windowManager.ts の WINDOW_FOCUS_STABILIZATION_DELAY_MS (1500ms) 以上にすること
  */
 const SHOW_FALLBACK_TIMEOUT_MS = 1500;
 
