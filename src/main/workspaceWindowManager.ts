@@ -7,6 +7,7 @@ import { SettingsService } from './services/settingsService.js';
 import PathManager from './config/pathManager.js';
 import { pinWindow, unPinWindow } from './utils/virtualDesktop/index.js';
 import { attachSnapHandler } from './utils/windowSnap.js';
+import { isPositionOnScreen } from './utils/screenPosition.js';
 import {
   DEFAULT_WEB_PREFERENCES,
   attachCommonKeyHandlers,
@@ -231,14 +232,6 @@ function getPrimaryDisplayIndex(): number {
   const displays = screen.getAllDisplays();
   const primaryDisplay = screen.getPrimaryDisplay();
   return displays.findIndex((d) => d.id === primaryDisplay.id);
-}
-
-/** 指定座標がいずれかのディスプレイ内にあるか確認 */
-function isPositionOnScreen(x: number, y: number): boolean {
-  return screen.getAllDisplays().some((display) => {
-    const wb = display.workArea;
-    return x >= wb.x && x < wb.x + wb.width && y >= wb.y && y < wb.y + wb.height;
-  });
 }
 
 /** ワークスペースウィンドウを指定されたモードに応じた位置に配置する */
