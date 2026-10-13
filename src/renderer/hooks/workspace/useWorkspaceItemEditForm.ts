@@ -1,19 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import type {
-  WorkspaceItem,
-  WorkspaceItemUpdate,
-  WindowConfig,
-  RegisterItem,
-  LayoutWindowEntry,
-} from '@common/types';
+import type { WorkspaceItem, WorkspaceItemUpdate, RegisterItem } from '@common/types';
 import {
   workspaceItemToRegisterItem,
   registerItemToWorkspaceItemUpdate,
 } from '@common/utils/workspaceConverters';
 import { detectItemType } from '@common/utils/itemTypeDetector';
 
+import type { ItemFieldValue } from '../../components/ItemEditFields';
 import { logError } from '../../utils/debug';
+import { useToast } from '../useToast';
 
 interface FormErrors {
   displayName?: string;
@@ -36,6 +32,8 @@ export function useWorkspaceItemEditForm(
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [selectorModalOpen, setSelectorModalOpen] = useState(false);
+  const [iconFetchLoading, setIconFetchLoading] = useState(false);
+  const { showError, showWarning } = useToast();
 
   const clearErrorField = (field: keyof FormErrors) => {
     setErrors((prev) => {
@@ -111,16 +109,7 @@ export function useWorkspaceItemEditForm(
   }, [isOpen, editingItem, loadCustomIconPreview]);
 
   const handleFieldChange = useCallback(
-    (
-      field: keyof RegisterItem,
-      value:
-        | string
-        | boolean
-        | RegisterItem['dirOptions']
-        | WindowConfig
-        | RegisterItem['windowOperationConfig']
-        | LayoutWindowEntry[]
-    ) => {
+    (field: keyof RegisterItem, value: ItemFieldValue) => {
       if (!item) return;
 
       let newItem: RegisterItem;
@@ -189,29 +178,122 @@ export function useWorkspaceItemEditForm(
       }
     }
 
+    if (item.itemCategory === 'clipboard' && !item.clipboardSessionId && !item.clipboardDataRef) {
+      newErrors.path = t('register.errors.clipboardRequired');
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }, [item, t]);
 
+  /** クリップボードを取り直していたら、取り込んだ中身をファイルに確定する。失敗したら null */
+  const commitClipboardSession = useCallback(
+    async (target: RegisterItem): Promise<RegisterItem | null> => {
+      if (target.itemCategory !== 'clipboard' || !target.clipboardSessionId) return target;
+      try {
+        const result = await window.electronAPI.clipboardAPI.commitSession(
+          target.clipboardSessionId
+        );
+        if (result.success && result.dataFileRef) {
+          return {
+            ...target,
+            clipboardDataRef: result.dataFileRef,
+            clipboardSavedAt: result.savedAt || target.clipboardSavedAt,
+            clipboardSessionId: undefined,
+          };
+        }
+        showError(result.error || t('register.errors.clipboardSaveFailed'));
+      } catch (error) {
+        logError('Failed to commit clipboard session:', error);
+        showError(t('register.errors.clipboardSaveFailed'));
+      }
+      return null;
+    },
+    [showError, t]
+  );
+
+  // 失敗したときは画面を開いたままにして、直してもう一度保存できるようにする
   const handleSave = useCallback(async () => {
     if (!item || !editingItem) return;
 
     if (!validate()) return;
 
+    const committed = await commitClipboardSession(item);
+    if (!committed) return;
+    if (committed !== item) setItem(committed);
+
     try {
-      const updates = registerItemToWorkspaceItemUpdate(item);
+      const updates = registerItemToWorkspaceItemUpdate(committed);
       await onSave(editingItem.id, updates);
       onClose();
     } catch (error) {
       logError('Failed to save workspace item:', error);
+      showError(t('workspace.edit.updateFailed'));
     }
-  }, [item, editingItem, validate, onSave, onClose]);
+  }, [item, editingItem, validate, commitClipboardSession, onSave, onClose, showError, t]);
 
-  const handleCancel = useCallback(() => {
+  const discardClipboardSession = useCallback(async () => {
+    if (!item?.clipboardSessionId) return;
+    try {
+      await window.electronAPI.clipboardAPI.discardSession(item.clipboardSessionId);
+    } catch (error) {
+      logError('Failed to discard clipboard session:', error);
+    }
+  }, [item]);
+
+  const handleCancel = useCallback(async () => {
+    await discardClipboardSession();
     setItem(null);
     setErrors({});
     onClose();
-  }, [onClose]);
+  }, [discardClipboardSession, onClose]);
+
+  const handleDelete = useCallback(async () => {
+    if (!editingItem) return;
+    try {
+      const result = await window.electronAPI.workspaceAPI.removeItem(editingItem.id);
+      if (!result.success) throw new Error('removeItem returned success: false');
+      await discardClipboardSession();
+      onClose();
+    } catch (error) {
+      logError('Failed to remove workspace item:', error);
+      showError(t('workspace.edit.removeFailed'));
+    }
+  }, [editingItem, discardClipboardSession, onClose, showError, t]);
+
+  const handleFetchIcon = useCallback(async () => {
+    if (!item || !item.path?.trim() || item.type === 'folder' || item.type === 'clipboard') return;
+
+    setIconFetchLoading(true);
+    try {
+      // 取得したアイコンは icon-cache に入り、ワークスペースは読み直すときにそこから引く
+      const icon = await window.electronAPI.getIconForItem(item.path, item.type);
+      if (icon) {
+        setItem((prev) => (prev ? { ...prev, icon } : null));
+      } else {
+        showWarning(t('register.errors.iconNotFound'));
+      }
+    } catch (error) {
+      logError('Failed to fetch icon:', error);
+      showError(t('register.errors.iconFetchError'));
+    } finally {
+      setIconFetchLoading(false);
+    }
+  }, [item, showError, showWarning, t]);
+
+  /** ドロップしたファイル・フォルダでパスを置き換える（通常のアイテムだけ。名前などはそのまま） */
+  const replacePathFromDrop = useCallback(
+    async (path: string) => {
+      if (!item || item.itemCategory !== 'item') return;
+      const type = await detectItemType(path);
+      const cached = await window.electronAPI
+        .loadCachedIcons([{ path, type, displayName: item.displayName }])
+        .catch(() => ({}) as Record<string, string>);
+      setItem((prev) => (prev ? { ...prev, path, type, icon: cached[path] } : null));
+      clearErrorField('path');
+    },
+    [item]
+  );
 
   const handleAddGroupItem = useCallback(() => {
     setSelectorModalOpen(true);
@@ -257,10 +339,14 @@ export function useWorkspaceItemEditForm(
     loading,
     errors,
     selectorModalOpen,
+    iconFetchLoading,
     handleFieldChange,
     handlePathBlur,
     handleSave,
     handleCancel,
+    handleDelete,
+    handleFetchIcon,
+    replacePathFromDrop,
     handleAddGroupItem,
     handleSelectGroupItem,
     handleRemoveGroupItem,

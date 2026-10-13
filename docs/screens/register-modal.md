@@ -348,7 +348,7 @@ SharePoint・OneDrive 上の Office ファイルの URL を、Office アプリ�
 | SharePoint/OneDrive Word | .docx・.doc | 編集用に開く（`ms-word:ofe\|u\|`）、読み取り専用（`ms-word:ofv\|u\|`） |
 | SharePoint/OneDrive PowerPoint | .pptx・.ppt | 編集用に開く（`ms-powerpoint:ofe\|u\|`）、読み取り専用（`ms-powerpoint:ofv\|u\|`） |
 
-ワークスペースアイテムの編集ウィンドウのパス入力欄にも同じボタンがある（[ワークスペースウィンドウ - 編集](./workspace-window.md#各メニュー項目の処理)）。こちらはパスが空のときだけ押せない。
+ワークスペースアイテムの編集ウィンドウも同じ欄を使うので、このボタンも同じように働く（[ワークスペースウィンドウ - 編集](./workspace-window.md#各メニュー項目の処理)）。
 
 ### 5.4. 引数を入力
 

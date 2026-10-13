@@ -8,22 +8,17 @@ import {
 
 import { useCustomIcon } from '../hooks/useCustomIcon';
 import { useModalKeyboard } from '../hooks/useModalKeyboard';
+import { useToast } from '../hooks/useToast';
 import { useWorkspaceItemEditForm } from '../hooks/workspace/useWorkspaceItemEditForm';
 import { logError } from '../utils/debug';
-import {
-  fetchMatchingWindow,
-  toWindowConfig,
-  toWindowOperationConfig,
-} from '../utils/windowFilter';
+import { getPathsFromDropEvent } from '../utils/fileDropUtils';
+import { fetchMatchingWindow } from '../utils/windowFilter';
 
 import GroupItemSelectorModal from './GroupItemSelectorModal';
 import FilePickerDialog from './FilePickerDialog';
 import WindowSelectorModal from './WindowSelectorModal';
-import WindowConfigEditor from './WindowConfigEditor';
-import CustomIconEditor from './CustomIconEditor';
-import LayoutEntryEditor from './LayoutEntryEditor';
 import LayoutCaptureModal from './LayoutCaptureModal';
-import UrlConverterMenu from './UrlConverterMenu';
+import ItemEditFields from './ItemEditFields';
 import { Button } from './ui';
 import '../styles/components/UrlConverterMenu.css';
 
@@ -60,6 +55,9 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
   const [layoutEntryWindowSelectorIndex, setLayoutEntryWindowSelectorIndex] = useState<
     number | null
   >(null);
+  const [optionsOpen, setOptionsOpen] = useState(false);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const { showError } = useToast();
 
   const {
     customIconPreviews,
@@ -77,10 +75,14 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
     loading,
     errors,
     selectorModalOpen,
+    iconFetchLoading,
     handleFieldChange,
     handlePathBlur,
     handleSave,
     handleCancel,
+    handleDelete,
+    handleFetchIcon,
+    replacePathFromDrop,
     handleAddGroupItem,
     handleSelectGroupItem,
     handleRemoveGroupItem,
@@ -214,6 +216,34 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
     }
   };
 
+  // ファイルのドロップでパスを置き換えられるのは、パスを持つ通常のアイテムだけ
+  const acceptsDrop = item?.itemCategory === 'item';
+
+  const handleDragOver = (e: React.DragEvent) => {
+    if (!acceptsDrop) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    if (!acceptsDrop) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const relatedTarget = e.relatedTarget as Node | null;
+    if (relatedTarget && e.currentTarget.contains(relatedTarget)) return;
+    setIsDraggingOver(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    if (!acceptsDrop) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOver(false);
+    const paths = getPathsFromDropEvent(e);
+    if (paths.length > 0) await replacePathFromDrop(paths[0]);
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -223,8 +253,11 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         <div
-          className={`modal-content register-modal${asPage ? ' workspace-editor-content' : ''}`}
+          className={`modal-content register-modal${asPage ? ' workspace-editor-content' : ''}${isDraggingOver ? ' dragging-over' : ''}`}
           onClick={(e) => e.stopPropagation()}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
           ref={modalRef}
           tabIndex={-1}
         >
@@ -235,175 +268,34 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
           ) : item ? (
             <>
               <div className="register-items">
-                <div className="register-item">
-                  <div className="form-group">
-                    <label>{t('register.type')}</label>
-                    <select value={item.itemCategory} disabled>
-                      <option value="item">{t('register.types.item')}</option>
-                      <option value="group">{t('register.types.group')}</option>
-                      <option value="window">{t('register.types.window')}</option>
-                      <option value="clipboard">{t('register.types.clipboard')}</option>
-                      <option value="layout">{t('register.types.layout')}</option>
-                    </select>
-                  </div>
-
-                  <div className="form-group">
-                    <label>{t('register.displayName')}</label>
-                    <input
-                      type="text"
-                      value={item.displayName}
-                      className={errors.displayName ? 'error' : ''}
-                      onChange={(e) => handleFieldChange('displayName', e.target.value)}
-                      placeholder={
-                        item.itemCategory === 'group'
-                          ? t('register.placeholders.group')
-                          : t('register.placeholders.item')
-                      }
-                    />
-                    {errors.displayName && (
-                      <span className="error-message">{errors.displayName}</span>
-                    )}
-                  </div>
-
-                  {/* パスを持つのは通常のアイテムだけ（クリップボードの中身は別ファイル） */}
-                  {item.itemCategory === 'item' && (
-                    <div className="form-group">
-                      <label>{t('register.path')}</label>
-                      <input
-                        type="text"
-                        value={item.path}
-                        className={errors.path ? 'error' : ''}
-                        onChange={(e) => handleFieldChange('path', e.target.value)}
-                        onBlur={() => handlePathBlur()}
-                        placeholder={t('register.pathPlaceholder')}
-                      />
-                      {errors.path && <span className="error-message">{errors.path}</span>}
-                      <UrlConverterMenu
-                        url={item.path}
-                        onConvert={(convertedUrl) => handleFieldChange('path', convertedUrl)}
-                      />
-                    </div>
-                  )}
-
-                  {item.itemCategory === 'item' && (
-                    <div className="form-group">
-                      <label>{t('register.args')}</label>
-                      <input
-                        type="text"
-                        value={item.args || ''}
-                        onChange={(e) => handleFieldChange('args', e.target.value)}
-                        placeholder={t('register.argsPlaceholder')}
-                      />
-                    </div>
-                  )}
-
-                  {item.itemCategory === 'group' && (
-                    <div className="form-group vertical-layout">
-                      <label>{t('register.groupItems')}</label>
-                      <div className="group-item-list">
-                        {item.groupItemNames && item.groupItemNames.length > 0 ? (
-                          <div className="selected-items">
-                            {item.groupItemNames.map((itemName, nameIndex) => (
-                              <div key={nameIndex} className="item-chip">
-                                <span>{itemName}</span>
-                                <button
-                                  type="button"
-                                  className="remove-group-item-btn"
-                                  onClick={() => handleRemoveGroupItem(nameIndex)}
-                                  title={t('register.removeGroupItem')}
-                                >
-                                  x
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="no-group-items">{t('register.noGroupItems')}</div>
-                        )}
-                        <button
-                          type="button"
-                          className="add-group-item-btn"
-                          onClick={handleAddGroupItem}
-                        >
-                          {t('register.addGroupItem')}
-                        </button>
-                      </div>
-                      {errors.groupItemNames && (
-                        <span className="error-message">{errors.groupItemNames}</span>
-                      )}
-                      <small>{t('workspace.edit.groupItemsHint')}</small>
-                    </div>
-                  )}
-
-                  {/* グループはカスタムアイコンを保存できない（ワークスペースファイルの形式に項目がない）ので出さない */}
-                  {(item.itemCategory === 'item' || item.itemCategory === 'layout') && (
-                    <CustomIconEditor
-                      customIconPreview={customIconPreviews[0]}
-                      onSelectClick={() => openCustomIconPicker(0)}
-                      onDeleteClick={onCustomIconDeleted}
-                    />
-                  )}
-
-                  {item.itemCategory === 'item' && (
-                    <WindowConfigEditor
-                      windowConfig={item.windowConfig}
-                      onChange={(windowConfig) => handleFieldChange('windowConfig', windowConfig)}
-                      onGetWindowClick={() => setWindowSelectorOpen(true)}
-                      onFetchFromWindow={fetchFromWindow}
-                      defaultExpanded={false}
-                    />
-                  )}
-
-                  {item.itemCategory === 'window' && (
-                    <div>
-                      <WindowConfigEditor
-                        windowConfig={
-                          item.windowOperationConfig
-                            ? toWindowConfig(item.windowOperationConfig)
-                            : { title: '' }
-                        }
-                        onChange={(wc) =>
-                          handleFieldChange(
-                            'windowOperationConfig',
-                            toWindowOperationConfig(item.displayName, wc)
-                          )
-                        }
-                        onGetWindowClick={() => setWindowSelectorOpen(true)}
-                        onFetchFromWindow={fetchFromWindow}
-                        showToggle={false}
-                        defaultExpanded={false}
-                      />
-                      {errors.displayName && (
-                        <div className="form-group">
-                          <span className="error-message">{errors.displayName}</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {item.itemCategory === 'layout' && (
-                    <LayoutEntryEditor
-                      entries={item.layoutEntries || []}
-                      onChange={(entries) => handleFieldChange('layoutEntries', entries)}
-                      onCaptureClick={() => setLayoutCaptureOpen(true)}
-                      onSelectWindow={(entryIndex) => {
-                        setLayoutEntryWindowSelectorIndex(entryIndex);
-                        setWindowSelectorOpen(true);
-                      }}
-                    />
-                  )}
-
-                  <div className="form-group">
-                    <label>{t('register.note')}</label>
-                    <textarea
-                      value={item.memo || ''}
-                      onChange={(e) => handleFieldChange('memo', e.target.value)}
-                      placeholder={t('register.notePlaceholder')}
-                      rows={3}
-                      className="memo-textarea"
-                    />
-                  </div>
-                </div>
+                <ItemEditFields
+                  item={item}
+                  errors={errors}
+                  onFieldChange={handleFieldChange}
+                  onUpdate={updateItem}
+                  onPathBlur={handlePathBlur}
+                  onFetchIcon={handleFetchIcon}
+                  onAddGroupItem={handleAddGroupItem}
+                  onRemoveGroupItem={handleRemoveGroupItem}
+                  typeLocked
+                  groupItemsHint={t('workspace.edit.groupItemsHint')}
+                  isPathReadOnly={false}
+                  iconFetchLoading={iconFetchLoading}
+                  optionsOpen={optionsOpen}
+                  onToggleOptions={() => setOptionsOpen((open) => !open)}
+                  customIconPreview={customIconPreviews[0]}
+                  onCustomIconSelect={() => openCustomIconPicker(0)}
+                  onCustomIconDelete={onCustomIconDeleted}
+                  onOpenWindowSelector={() => setWindowSelectorOpen(true)}
+                  onFetchFromWindow={fetchFromWindow}
+                  onLayoutCapture={() => setLayoutCaptureOpen(true)}
+                  onLayoutEntryWindowSelect={(entryIndex) => {
+                    setLayoutEntryWindowSelectorIndex(entryIndex);
+                    setWindowSelectorOpen(true);
+                  }}
+                  onClipboardError={showError}
+                  showSeparator={false}
+                />
               </div>
 
               <div className="modal-actions">
@@ -413,6 +305,9 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
                   </Button>
                 )}
                 <div className="modal-actions-right">
+                  <Button variant="danger" onClick={handleDelete}>
+                    {t('workspace.edit.remove')}
+                  </Button>
                   <Button variant="cancel" onClick={handleCancel}>
                     {t('common.cancel')}
                   </Button>
@@ -424,6 +319,12 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
             </>
           ) : (
             <div className="loading">{t('workspace.edit.notFound')}</div>
+          )}
+
+          {isDraggingOver && (
+            <div className="drag-overlay">
+              <div className="drag-message">{t('workspace.edit.dropToReplacePath')}</div>
+            </div>
           )}
         </div>
       </div>

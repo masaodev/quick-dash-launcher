@@ -143,12 +143,15 @@ test.describe('QuickDashLauncher - ワークスペースへの貼り付け', () 
       ),
     ]);
     await editor.locator('.workspace-editor-page').waitFor({ state: 'visible', timeout: 15000 });
-    const nameInput = editor.getByPlaceholder('表示名を入力');
+    const nameInput = editor.getByPlaceholder('クリップボードアイテムの表示名を入力');
     await expect(nameInput).toHaveValue('編集するメモ');
     // パスの入力欄そのものが無い（ラベルの文言に頼らない）
     await expect(editor.getByPlaceholder('ファイルパス、URL、またはカスタムURIを入力')).toHaveCount(
       0
     );
+    // メインの編集画面と同じく、取り込んだ中身とカスタムアイコンの欄が出る
+    await expect(editor.locator('.clipboard-captured-data')).toBeVisible();
+    await expect(editor.locator('.custom-icon-section')).toBeVisible();
 
     await nameInput.fill('編集したメモ');
     await Promise.all([

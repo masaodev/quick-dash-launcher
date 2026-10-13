@@ -87,6 +87,91 @@ test.describe('QuickDashLauncher - ワークスペースアイテムの編集ウ
       expect(items.find((i) => i.id === added.id)?.displayName).toBe('編集後');
     });
   });
+
+  test('欄の並びはメインの編集画面と同じで、保存先は出さず種別は変えられない', async ({
+    electronApp,
+    mainWindow,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    const workspaceWindow = await getWorkspaceWindow(electronApp);
+    await workspaceWindow.waitForLoadState('domcontentloaded');
+
+    const added = await workspaceWindow.evaluate(() =>
+      window.electronAPI.workspaceAPI.addItem({
+        displayName: '欄の確認',
+        path: 'C:\\Windows\\System32\\notepad.exe',
+        type: 'app',
+        args: '--sample',
+      })
+    );
+    await expect(
+      workspaceWindow.locator('.workspace-item-card', { hasText: '欄の確認' })
+    ).toBeVisible({ timeout: 10000 });
+
+    const [editor] = await Promise.all([
+      electronApp.waitForEvent('window', { timeout: 15000 }),
+      workspaceWindow.evaluate(
+        (id) => window.electronAPI.workspaceAPI.openItemEditor(id),
+        added.id
+      ),
+    ]);
+    await editor.locator('.workspace-editor-page').waitFor({ state: 'visible', timeout: 15000 });
+
+    // 保存先（タブ）の選択は無く、種別は表示だけ
+    await expect(editor.getByText('保存先タブ:')).toHaveCount(0);
+    await expect(editor.locator('select').first()).toBeDisabled();
+    // パス欄にアイコン取得ボタンが付く
+    await expect(editor.locator('.icon-fetch-btn')).toBeVisible();
+    // 引数は「オプション設定」の折りたたみの中
+    const argsInput = editor.getByPlaceholder(
+      'コマンドライン引数（実行ファイルやアプリの場合のみ有効）'
+    );
+    await expect(argsInput).toHaveCount(0);
+    await editor
+      .locator('.options-toggle', { hasText: 'オプション設定（引数・アイコン）' })
+      .click();
+    await expect(argsInput).toHaveValue('--sample');
+    await expect(editor.locator('.custom-icon-section')).toBeVisible();
+  });
+
+  test('「ワークスペースから削除」でアイテムが消え、編集ウィンドウが閉じる', async ({
+    electronApp,
+    mainWindow,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    const workspaceWindow = await getWorkspaceWindow(electronApp);
+    await workspaceWindow.waitForLoadState('domcontentloaded');
+
+    const added = await workspaceWindow.evaluate(() =>
+      window.electronAPI.workspaceAPI.addItem({
+        displayName: '消すアイテム',
+        path: 'C:\\Windows\\System32\\notepad.exe',
+        type: 'app',
+      })
+    );
+    await expect(
+      workspaceWindow.locator('.workspace-item-card', { hasText: '消すアイテム' })
+    ).toBeVisible({ timeout: 10000 });
+
+    const [editor] = await Promise.all([
+      electronApp.waitForEvent('window', { timeout: 15000 }),
+      workspaceWindow.evaluate(
+        (id) => window.electronAPI.workspaceAPI.openItemEditor(id),
+        added.id
+      ),
+    ]);
+    await editor.locator('.workspace-editor-page').waitFor({ state: 'visible', timeout: 15000 });
+
+    await Promise.all([
+      editor.waitForEvent('close', { timeout: 10000 }),
+      editor.locator('.modal-actions button', { hasText: 'ワークスペースから削除' }).click(),
+    ]);
+    await expect(
+      workspaceWindow.locator('.workspace-item-card', { hasText: '消すアイテム' })
+    ).toHaveCount(0, { timeout: 10000 });
+  });
 });
 
 /**
