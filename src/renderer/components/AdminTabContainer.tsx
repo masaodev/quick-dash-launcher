@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { AppSettings, DataFileTab } from '@common/types';
 
 import type { AdminItemEditing } from '../hooks/useAdminItemEditing';
@@ -57,6 +58,7 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
   onOpenSettingsCategory,
   onOpenManualBookmarkImport,
 }) => {
+  const { t } = useTranslation();
   return (
     <div className="admin-tab-container">
       <div className="admin-header">
@@ -65,19 +67,20 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
             className={`tab-button ${activeTab === 'settings' ? 'active' : ''}`}
             onClick={() => onTabChange('settings')}
           >
-            ⚙️ 基本設定
+            {t('admin.tabs.settings')}
           </button>
           <button
             className={`tab-button ${activeTab === 'edit' ? 'active' : ''}`}
             onClick={() => onTabChange('edit')}
           >
-            ✏️ アイテム管理{editing.hasUnsavedChanges ? ' *' : ''}
+            {t('admin.tabs.itemManager')}
+            {editing.hasUnsavedChanges ? ' *' : ''}
           </button>
           <button
             className={`tab-button ${activeTab === 'other' ? 'active' : ''}`}
             onClick={() => onTabChange('other')}
           >
-            📖 ヘルプ
+            {t('admin.tabs.help')}
           </button>
         </div>
       </div>

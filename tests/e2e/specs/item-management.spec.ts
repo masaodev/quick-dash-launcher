@@ -562,8 +562,8 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         await expect(githubRow).not.toHaveClass(/changed/);
       });
 
-      await test.step('基本設定タブへ移って戻っても編集が残る', async () => {
-        await adminWindow.locator('.tab-button', { hasText: '基本設定' }).click();
+      await test.step('設定タブへ移って戻っても編集が残る', async () => {
+        await adminWindow.locator('.tab-button', { hasText: '⚙️ 設定' }).click();
         await expect(adminWindow.locator('.tab-button', { hasText: 'アイテム管理' })).toContainText(
           '*'
         );

@@ -84,9 +84,9 @@ const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
       </div>
 
       <div className="settings-section">
-        <h3>起動ホットキー</h3>
+        <h3>{t('settings.hotkeys.heading')}</h3>
         <div className="setting-item">
-          <label htmlFor="hotkey">ランチャー起動:</label>
+          <label htmlFor="hotkey">{t('settings.hotkeys.launcher')}</label>
           <HotkeyInput
             value={editedSettings.hotkey}
             onChange={(hotkey) => handleSettingChange('hotkey', hotkey)}
@@ -99,7 +99,7 @@ const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
           )}
         </div>
         <div className="setting-item">
-          <label htmlFor="itemSearchHotkey">ウィンドウ検索で起動:</label>
+          <label htmlFor="itemSearchHotkey">{t('settings.hotkeys.windowSearch')}</label>
           <HotkeyInput
             value={editedSettings.itemSearchHotkey || ''}
             onChange={onItemSearchHotkeyChange}
@@ -107,21 +107,19 @@ const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
               setItemSearchHotkeyValidation({ isValid, reason })
             }
             disabled={isLoading}
-            placeholder="設定なし（オプション）"
+            placeholder={t('settings.hotkeys.windowSearchPlaceholder')}
             allowEmpty={true}
             showClearButton={true}
           />
           {!itemSearchHotkeyValidation.isValid && (
             <div className="validation-error">{itemSearchHotkeyValidation.reason}</div>
           )}
-          <div className="setting-description">
-            このホットキーでウィンドウ検索モードとして起動します。設定なしで無効化されます。
-          </div>
+          <div className="setting-description">{t('settings.hotkeys.windowSearchDescription')}</div>
         </div>
       </div>
 
       <div className="settings-section">
-        <h3>システム</h3>
+        <h3>{t('settings.system.heading')}</h3>
         <div className="setting-item">
           <label>
             <input
@@ -130,20 +128,20 @@ const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
               onChange={(e) => handleSettingChange('autoLaunch', e.target.checked)}
               disabled={isLoading}
             />
-            起動時に自動実行
+            {t('settings.system.autoLaunch')}
           </label>
           {blockedByWindows && (
             <div className="validation-error">
               {storeState === 'disabledByPolicy'
-                ? '組織のポリシーで自動起動が無効になっているため、ここからは有効にできません。'
-                : 'Windows の設定で自動起動が無効になっているため、ここからは有効にできません。Windows の［設定］→［アプリ］→［スタートアップ］で QuickDashLauncher をオンにしてください。'}
+                ? t('settings.system.autoLaunchBlockedByPolicy')
+                : t('settings.system.autoLaunchBlockedByWindows')}
             </div>
           )}
           {enabledByWindows && (
             <div className="setting-description">
               {storeState === 'enabledByPolicy'
-                ? '組織のポリシーで自動起動が有効になっています。'
-                : 'Windows の設定で自動起動が有効になっています。止めるときは、チェックを付けてから外すか、Windows の［設定］→［アプリ］→［スタートアップ］でオフにしてください。'}
+                ? t('settings.system.autoLaunchEnabledByPolicy')
+                : t('settings.system.autoLaunchEnabledByWindows')}
             </div>
           )}
         </div>
@@ -155,18 +153,14 @@ const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
               onChange={(e) => handleSettingChange('cliEnabled', e.target.checked)}
               disabled={isLoading}
             />
-            QuickDashLauncher CLI を使えるようにする
+            {t('settings.system.cli')}
           </label>
-          <div className="setting-description">
-            ターミナルや AI から qdl
-            コマンドで、アイテムやワークスペースを操作できるようにします（qdl を PATH
-            に追加します。新しく開いたターミナルから使えます）。
-          </div>
+          <div className="setting-description">{t('settings.system.cliDescription')}</div>
         </div>
       </div>
 
       <div className="settings-section">
-        <h3>表示</h3>
+        <h3>{t('settings.display.heading')}</h3>
         <div className="setting-item">
           <label>
             <input
@@ -175,11 +169,10 @@ const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
               onChange={(e) => handleSettingChange('showKeyboardHints', e.target.checked)}
               disabled={isLoading}
             />
-            操作のヒントを表示
+            {t('settings.display.keyboardHints')}
           </label>
           <div className="setting-description">
-            メインウィンドウの下に、気づきにくいキー操作（F2 で編集、Shift+Enter
-            で親フォルダを開くなど）を表示します。
+            {t('settings.display.keyboardHintsDescription')}
           </div>
         </div>
         <div className="setting-item">
@@ -190,16 +183,14 @@ const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
               onChange={(e) => handleSettingChange('showDataFileTabs', e.target.checked)}
               disabled={isLoading}
             />
-            複数タブを表示
+            {t('settings.display.dataFileTabs')}
           </label>
-          <div className="setting-description">
-            メインウィンドウでタブを切り替えて、別のデータファイルのアイテムを表示します。タブとデータファイルの追加・変更は「アイテム管理」で行います。
-          </div>
+          <div className="setting-description">{t('settings.display.dataFileTabsDescription')}</div>
         </div>
       </div>
 
       <div className="settings-section">
-        <h3>グループ起動</h3>
+        <h3>{t('settings.groupLaunch.heading')}</h3>
         <div className="setting-item">
           <label>
             <input
@@ -208,11 +199,9 @@ const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
               onChange={(e) => handleSettingChange('parallelGroupLaunch', e.target.checked)}
               disabled={isLoading}
             />
-            グループアイテムを並列起動
+            {t('settings.groupLaunch.parallel')}
           </label>
-          <div className="setting-description">
-            有効にすると、グループ内のアイテムを順次実行せずに並列で起動します。起動速度が向上しますが、順序が保証されません。
-          </div>
+          <div className="setting-description">{t('settings.groupLaunch.parallelDescription')}</div>
         </div>
       </div>
     </>

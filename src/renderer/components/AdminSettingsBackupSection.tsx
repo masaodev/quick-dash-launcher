@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { AppSettings, BackupStatus } from '@common/types';
 
 import type { HandleSettingChange } from '../hooks/useSettingsManager';
@@ -22,6 +23,7 @@ const AdminSettingsBackupSection: React.FC<AdminSettingsBackupSectionProps> = ({
   handleNumberInputChange,
   handleNumberInputBlur,
 }) => {
+  const { t, i18n } = useTranslation();
   const [backupStatus, setBackupStatus] = useState<BackupStatus | null>(null);
   const [showSnapshotModal, setShowSnapshotModal] = useState(false);
 
@@ -39,10 +41,8 @@ const AdminSettingsBackupSection: React.FC<AdminSettingsBackupSectionProps> = ({
 
   return (
     <div className="settings-section">
-      <h3>バックアップ</h3>
-      <p className="settings-section-description">
-        アプリ起動時に1日1回、データファイル・設定ファイルをスナップショットとしてバックアップします。
-      </p>
+      <h3>{t('settings.backup.heading')}</h3>
+      <p className="settings-section-description">{t('settings.backup.description')}</p>
       <div className="setting-item">
         <label>
           <input
@@ -51,14 +51,14 @@ const AdminSettingsBackupSection: React.FC<AdminSettingsBackupSectionProps> = ({
             onChange={(e) => handleSettingChange('backupEnabled', e.target.checked)}
             disabled={isLoading}
           />
-          バックアップ機能を有効にする
+          {t('settings.backup.enabled')}
         </label>
       </div>
 
       {editedSettings.backupEnabled && (
         <>
           <div className="setting-item indent">
-            <label htmlFor="backupRetention">バックアップ保存件数:</label>
+            <label htmlFor="backupRetention">{t('settings.backup.retention')}</label>
             <input
               id="backupRetention"
               type="number"
@@ -69,7 +69,7 @@ const AdminSettingsBackupSection: React.FC<AdminSettingsBackupSectionProps> = ({
               onBlur={handleNumberInputBlur}
               disabled={isLoading}
             />
-            <span className="unit">件</span>
+            <span className="unit">{t('settings.backup.retentionUnit')}</span>
           </div>
 
           <div className="setting-item indent">
@@ -80,22 +80,25 @@ const AdminSettingsBackupSection: React.FC<AdminSettingsBackupSectionProps> = ({
                 onChange={(e) => handleSettingChange('backupIncludeClipboard', e.target.checked)}
                 disabled={isLoading}
               />
-              クリップボードデータもバックアップに含める
+              {t('settings.backup.includeClipboard')}
             </label>
             <div className="setting-description">
-              クリップボードデータは容量が大きくなる可能性があります。
+              {t('settings.backup.includeClipboardDescription')}
             </div>
           </div>
 
           {backupStatus && (
             <div className="setting-item indent">
               <div className="backup-status-info">
-                <span>スナップショット: {backupStatus.snapshotCount} 件</span>
                 <span>
-                  最終バックアップ:{' '}
-                  {backupStatus.lastBackupTime
-                    ? new Date(backupStatus.lastBackupTime).toLocaleString('ja-JP')
-                    : 'なし'}
+                  {t('settings.backup.snapshotCount', { count: backupStatus.snapshotCount })}
+                </span>
+                <span>
+                  {t('settings.backup.lastBackup', {
+                    time: backupStatus.lastBackupTime
+                      ? new Date(backupStatus.lastBackupTime).toLocaleString(i18n.language)
+                      : t('settings.backup.neverBackedUp'),
+                  })}
                 </span>
               </div>
             </div>
@@ -103,7 +106,7 @@ const AdminSettingsBackupSection: React.FC<AdminSettingsBackupSectionProps> = ({
 
           <div className="setting-item indent">
             <Button variant="info" onClick={() => setShowSnapshotModal(true)} disabled={isLoading}>
-              スナップショット一覧
+              {t('settings.backup.openSnapshots')}
             </Button>
           </div>
         </>

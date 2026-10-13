@@ -4,7 +4,7 @@ import { TestUtils } from '../helpers/test-utils';
 /**
  * 表示言語の切り替え
  * - settings.json の language を変えて F5 すると、メインウィンドウ（検索欄・ヒント行）がその言語になる
- * - 基本設定の「表示言語」で変えると、開いているメインウィンドウにその場で反映される
+ * - 設定タブの「表示言語」で変えると、開いているメインウィンドウ・管理ウィンドウにその場で反映される
  */
 test.describe('QuickDashLauncher - 表示言語', () => {
   test('言語を切り替えると、開いているウィンドウにその場で反映される', async ({
@@ -33,14 +33,22 @@ test.describe('QuickDashLauncher - 表示言語', () => {
       );
     });
 
-    await test.step('基本設定の表示言語で日本語に戻すと、メインウィンドウも戻る', async () => {
+    await test.step('設定タブの表示言語で日本語に戻すと、メインウィンドウも戻る', async () => {
       const adminWindow = await utils.openAdminWindow(electronApp, 'settings');
       const select = adminWindow.locator('select#language');
       // 管理ウィンドウも英語で開く
       await expect(adminWindow.locator('label[for="language"]')).toHaveText('Display language:');
+      await expect(adminWindow.locator('.tab-button').first()).toHaveText('⚙️ Settings');
+      await expect(adminWindow.locator('.settings-menu .menu-item').first()).toHaveText(
+        '⚙️ General'
+      );
       await select.selectOption('ja');
 
       await expect(adminWindow.locator('label[for="language"]')).toHaveText('表示言語:');
+      await expect(adminWindow.locator('.tab-button').first()).toHaveText('⚙️ 設定');
+      await expect(adminWindow.locator('.settings-menu .menu-item').first()).toHaveText(
+        '⚙️ 基本設定'
+      );
       await expect(searchBox).toHaveAttribute('placeholder', '検索...');
       expect(configHelper.readSettings().language).toBe('ja');
     });

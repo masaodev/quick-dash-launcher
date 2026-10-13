@@ -534,7 +534,186 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     cannotDeleteMain: "The main data file can't be deleted",
     deleteFailed: "Couldn't delete the file: {{error}}",
   },
+  admin: {
+    tabs: {
+      settings: '⚙️ Settings',
+      itemManager: '✏️ Item Manager',
+      help: '📖 Help',
+    },
+    loading: 'Loading data...',
+    saveBlockedByLoadError:
+      "Couldn't save because a data file failed to load. Fix the file, and then reopen this window.",
+    externalChangeConflict:
+      "Your changes weren't saved because the data file was changed outside QuickDashLauncher (or in another window). The latest data was reloaded and your unsaved edits were reapplied. Review them, and then save again.",
+    itemSaveFailed: "Couldn't save the items. {{error}}",
+    hotkeyRegisterFailed:
+      'Couldn\'t register the new launch hotkey "{{hotkey}}". Another app might be using it.',
+    settingsSaveFailed: "Couldn't save the settings.",
+    unsavedCloseConfirm:
+      'Item Manager has unsaved changes. Discard them and close the window?\n\nTo save them, select Cancel, and then select "Save changes".',
+    discardAndClose: 'Discard and close',
+  },
   settings: {
+    categories: {
+      basic: '⚙️ General',
+      window: '🪟 Windows',
+      backup: '💾 Backup',
+      bookmarkAutoImport: '🔖 Bookmark auto-import',
+    },
+    processing: 'Working...',
+    saved: 'Settings saved',
+    saveFailed: "Couldn't save the settings.",
+    openSettingsFolderFailed: "Couldn't open the settings folder.",
+    hotkeys: {
+      heading: 'Launch hotkeys',
+      launcher: 'Launcher:',
+      windowSearch: 'Open in window search:',
+      windowSearchPlaceholder: 'None (optional)',
+      windowSearchDescription:
+        'Opens the launcher in window search. Leave it empty to turn it off.',
+      windowSearchSaved: 'Window search hotkey set',
+      windowSearchSameAsLauncher:
+        "Couldn't set the window search hotkey. It can't be the same as the launch hotkey.",
+      windowSearchChangeFailed: "Couldn't change the window search hotkey.",
+    },
+    system: {
+      heading: 'System',
+      autoLaunch: 'Start with Windows',
+      autoLaunchBlockedByPolicy:
+        "Your organization's policy turns off startup, so you can't turn it on here.",
+      autoLaunchBlockedByWindows:
+        "Startup is turned off in Windows settings, so you can't turn it on here. Turn on QuickDashLauncher in Windows Settings > Apps > Startup.",
+      autoLaunchEnabledByPolicy: "Your organization's policy turns on startup.",
+      autoLaunchEnabledByWindows:
+        'Startup is turned on in Windows settings. To stop it, select this check box and clear it again, or turn it off in Windows Settings > Apps > Startup.',
+      cli: 'Turn on QuickDashLauncher CLI',
+      cliDescription:
+        'Lets terminals and AI tools work with items and workspaces through the qdl command (adds qdl to PATH; use it from a new terminal window).',
+    },
+    display: {
+      heading: 'Display',
+      keyboardHints: 'Show keyboard hints',
+      keyboardHintsDescription:
+        'Shows easy-to-miss keys at the bottom of the launcher (such as F2 to edit, or Shift+Enter to open the containing folder).',
+      dataFileTabs: 'Show tabs',
+      dataFileTabsDescription:
+        'Shows tabs in the launcher so you can switch to items in other data files. Add and change tabs and data files in Item Manager.',
+    },
+    groupLaunch: {
+      heading: 'Group launch',
+      parallel: 'Open group items at the same time',
+      parallelDescription:
+        "When on, items in a group open all at once instead of one by one. This is faster, but the order isn't guaranteed.",
+    },
+    windowSize: {
+      heading: 'Window size',
+      launcher: 'Launcher',
+      admin: 'Settings window',
+      width: 'Width:',
+      height: 'Height:',
+    },
+    windowPosition: {
+      heading: 'Window position',
+      center: 'Center of the screen (fixed)',
+      centerDescription: 'Always shows the window in the center of the primary monitor',
+      cursorMonitorCenter: 'Center of the screen (follows the mouse)',
+      cursorMonitorCenterDescription:
+        'Shows the window in the center of the monitor with the mouse pointer (for multiple monitors)',
+      cursor: 'Near the mouse pointer',
+      cursorDescription: 'Shows the window near the mouse pointer',
+      fixed: 'Fixed position (manual)',
+      fixedDescription: 'Remembers where you moved the window and shows it there next time',
+    },
+    workspace: {
+      heading: 'Workspace window',
+      autoShow: 'Also show the workspace when the launcher opens',
+      autoShowDescription: "When on, opening the launcher also shows the workspace if it's hidden.",
+      hideDetached: 'Hide detached windows with the launcher',
+      hideDetachedDescription:
+        "When on, detached windows that aren't pinned are shown and hidden along with the launcher. They stay visible while focus moves between the launcher, the workspace, and detached windows, and hide when focus moves to another window.",
+      position: 'Position:',
+      displayEdge: 'Edge of a display (default)',
+      displayEdgeDescription:
+        'Places the workspace at the left or right edge of the selected display',
+      leftEdge: 'Left edge',
+      rightEdge: 'Right edge',
+      fixed: 'Fixed position (manual)',
+      fixedDescription: 'Remembers where you moved the workspace and shows it there next time',
+      opacity: 'Opacity:',
+      opacityDescription:
+        'Sets the opacity of the workspace window (0% = fully transparent, 100% = opaque).',
+      backgroundTransparent: 'Make only the background transparent (not items or groups)',
+      backgroundTransparentDescription:
+        'When on, only the background is transparent; items and groups appear as usual.',
+      visibleOnAllDesktops: 'Show on all virtual desktops',
+      visibleOnAllDesktopsDescription:
+        'When on, the workspace window appears on every virtual desktop.',
+      detachedVisibleOnAllDesktops: 'Also show detached windows on all virtual desktops',
+      detachedVisibleOnAllDesktopsDescription:
+        'When on, detached windows also appear on every virtual desktop.',
+      windowSnap: 'Snap windows to monitor edges',
+      windowSnapDescription:
+        'When on, the workspace window and detached windows snap to the edge of the monitor when you move them close to it.',
+    },
+    backup: {
+      heading: 'Backup',
+      description:
+        'Once a day when the app starts, backs up your data files and settings file as a snapshot.',
+      enabled: 'Turn on backup',
+      retention: 'Keep:',
+      retentionUnit: 'snapshots',
+      includeClipboard: 'Include clipboard item data in backups',
+      includeClipboardDescription: 'Clipboard item data can be large.',
+      snapshotCount_one: 'Snapshots: {{count}}',
+      snapshotCount_other: 'Snapshots: {{count}}',
+      lastBackup: 'Last backup: {{time}}',
+      neverBackedUp: 'None',
+      openSnapshots: 'Snapshots',
+    },
+    snapshots: {
+      title: 'Snapshots',
+      count_one: '{{count}} snapshot',
+      count_other: '{{count}} snapshots',
+      empty: 'No snapshots',
+      fileCount_one: '{{count}} file',
+      fileCount_other: '{{count}} files',
+      delete: 'Delete',
+      restore: 'Restore',
+      restoreTitle: 'Restore snapshot',
+      restoreConfirm:
+        'Restores your data from the selected snapshot ({{timestamp}}). Your current data is backed up automatically first. Continue?',
+      restoreConfirmButton: 'Restore',
+      restored: 'Restored. Restart the app to apply all settings.',
+      restoreFailed: "Couldn't restore: {{error}}",
+      restoreError: 'An error occurred while restoring',
+      deleteTitle: 'Delete snapshot',
+      deleteConfirm: "Deletes the selected snapshot ({{timestamp}}). You can't undo this.",
+      deleteConfirmButton: 'Delete',
+      deleted: 'Snapshot deleted',
+      deleteFailed: "Couldn't delete: {{error}}",
+      deleteError: 'An error occurred while deleting',
+    },
+    reset: {
+      description: 'Restores the {{category}} settings to their defaults.',
+      button: 'Restore {{category}} defaults',
+      confirm: 'Restore the {{category}} settings to their defaults?',
+      title: 'Restore defaults',
+      confirmButton: 'Restore defaults',
+      done: '{{category}} settings restored to defaults',
+      failed: "Couldn't restore the default settings.",
+      categories: {
+        basic: 'General',
+        window: 'Windows',
+        backup: 'Backup',
+      },
+      notes: {
+        basic: "Hotkeys aren't changed.",
+      },
+    },
+    bookmarkAutoImport: {
+      heading: 'Bookmark auto-import',
+      description: 'Reads your Chrome and Edge bookmarks and imports them as items automatically.',
+    },
     language: {
       heading: 'Language',
       label: 'Display language:',

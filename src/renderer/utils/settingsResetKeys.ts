@@ -1,3 +1,4 @@
+import type { TFunction } from 'i18next';
 import type { AppSettings } from '@common/types';
 
 /** 設定画面の左メニューのカテゴリ */
@@ -42,17 +43,16 @@ export const SETTINGS_RESET_KEYS: Record<
   backup: ['backupEnabled', 'backupRetention', 'backupIncludeClipboard'],
 };
 
-/** 確認ダイアログに出すカテゴリ名 */
-export const SETTINGS_RESET_LABELS: Record<ResettableSettingsCategory, string> = {
-  basic: '基本設定',
-  window: 'ウィンドウ',
-  backup: 'バックアップ',
-};
-
-/** 確認ダイアログに添える、戻らない項目の注記 */
-export const SETTINGS_RESET_NOTES: Partial<Record<ResettableSettingsCategory, string>> = {
-  basic: 'ホットキーは変更しません。',
-};
+/** 「既定値に戻す」に出すカテゴリ名と、戻らない項目の注記（無ければ空） */
+export function getResetCategoryText(
+  t: TFunction,
+  category: ResettableSettingsCategory
+): { label: string; note: string } {
+  return {
+    label: t(`settings.reset.categories.${category}`),
+    note: category === 'basic' ? t('settings.reset.notes.basic') : '',
+  };
+}
 
 export function isResettableCategory(
   category: SettingsCategory

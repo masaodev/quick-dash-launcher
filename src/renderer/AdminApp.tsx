@@ -3,6 +3,7 @@
  * 画面仕様: docs/screens/admin-window.md
  */
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { AppSettings } from '@common/types';
 import type { EditableJsonItem } from '@common/types/editableItem';
 import { EXTERNAL_CHANGE_CONFLICT_MARKER } from '@common/types/editableItem';
@@ -21,6 +22,7 @@ type AlertDialogState = {
 };
 
 const AdminApp: React.FC = () => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'settings' | 'edit' | 'other'>('settings');
   const [editableItems, setEditableItems] = useState<EditableJsonItem[]>([]);
   // 楽観ロック用: 読み込み時（または保存後）のデータファイルのハッシュ。保存時に渡して外部変更との競合を検知する
@@ -123,9 +125,7 @@ const AdminApp: React.FC = () => {
       // 読み込みに失敗した状態で全件を書くと、読めなかったファイルを空で上書きしてしまう
       setAlertDialog({
         isOpen: true,
-        message:
-          'データファイルの読み込みに失敗しているため保存できません。' +
-          'ファイルを修復してから、ウィンドウを開き直してください。',
+        message: t('admin.saveBlockedByLoadError'),
         type: 'error',
       });
       return false;
@@ -145,10 +145,7 @@ const AdminApp: React.FC = () => {
         // 未保存の編集は useAdminItemEditing が新しい内容の上に載せ直す
         setAlertDialog({
           isOpen: true,
-          message:
-            'データファイルが QDL の外で変更されていた（または他の画面で編集された）ため、' +
-            '今回の保存は行っていません。最新の内容を読み込み直し、未保存の編集は載せ直しました。' +
-            '内容を確認して、もう一度保存してください。',
+          message: t('admin.externalChangeConflict'),
           type: 'warning',
         });
         await loadData(false);
@@ -156,7 +153,7 @@ const AdminApp: React.FC = () => {
       }
       setAlertDialog({
         isOpen: true,
-        message: `アイテムの保存に失敗しました。${message}`,
+        message: t('admin.itemSaveFailed', { error: message }),
         type: 'error',
       });
       return false;
@@ -178,7 +175,7 @@ const AdminApp: React.FC = () => {
           logError('Failed to register new hotkey:', newSettings.hotkey);
           setAlertDialog({
             isOpen: true,
-            message: `新しいホットキー「${newSettings.hotkey}」の登録に失敗しました。他のアプリで使用されている可能性があります。`,
+            message: t('admin.hotkeyRegisterFailed', { hotkey: newSettings.hotkey }),
             type: 'error',
           });
           return;
@@ -192,7 +189,7 @@ const AdminApp: React.FC = () => {
       logError('Failed to save settings:', error);
       setAlertDialog({
         isOpen: true,
-        message: '設定の保存に失敗しました。',
+        message: t('admin.settingsSaveFailed'),
         type: 'error',
       });
     }
@@ -216,7 +213,7 @@ const AdminApp: React.FC = () => {
   if (isLoading) {
     return (
       <div className="loading-container">
-        <div className="loading-message">データを読み込み中...</div>
+        <div className="loading-message">{t('admin.loading')}</div>
       </div>
     );
   }
@@ -261,11 +258,8 @@ const AdminApp: React.FC = () => {
           editing.discardChanges();
           window.electronAPI.hideEditWindow();
         }}
-        message={
-          'アイテム管理に未保存の変更があります。変更を破棄してウィンドウを閉じますか？' +
-          '\n\n保存する場合はキャンセルして「変更を保存」を押してください。'
-        }
-        confirmText="破棄して閉じる"
+        message={t('admin.unsavedCloseConfirm')}
+        confirmText={t('admin.discardAndClose')}
         danger
       />
     </div>

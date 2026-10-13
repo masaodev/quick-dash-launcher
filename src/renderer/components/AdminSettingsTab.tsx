@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { AppSettings } from '@common/types';
 
 import { useDialogManager } from '../hooks/useDialogManager';
@@ -13,11 +14,11 @@ import AdminSettingsWindowSection from './AdminSettingsWindowSection';
 import AdminSettingsBackupSection from './AdminSettingsBackupSection';
 import AdminSettingsResetSection from './AdminSettingsResetSection';
 
-const SETTINGS_CATEGORIES: Array<{ key: SettingsCategory; label: string }> = [
-  { key: 'basic', label: '⚙️ 基本設定' },
-  { key: 'window', label: '🪟 ウィンドウ' },
-  { key: 'backup', label: '💾 バックアップ' },
-  { key: 'bookmarkAutoImport', label: '🔖 ブックマーク自動取込' },
+const SETTINGS_CATEGORIES: readonly SettingsCategory[] = [
+  'basic',
+  'window',
+  'backup',
+  'bookmarkAutoImport',
 ];
 
 interface SettingsTabProps {
@@ -40,6 +41,7 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({
   onSelectCategory,
   onOpenManualBookmarkImport,
 }) => {
+  const { t } = useTranslation();
   const [editedSettings, setEditedSettings] = useState<AppSettings>(settings);
 
   // settingsプロパティが変更されたときにeditedSettingsを更新
@@ -69,19 +71,16 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({
             ...prev,
             itemSearchHotkey: newHotkey,
           }));
-          toast.success('ウィンドウ検索の起動ホットキーを設定しました');
+          toast.success(t('settings.hotkeys.windowSearchSaved'));
         } else {
-          showAlert(
-            'ウィンドウ検索の起動ホットキーの設定に失敗しました。ランチャー起動と同じ値は設定できません。',
-            'error'
-          );
+          showAlert(t('settings.hotkeys.windowSearchSameAsLauncher'), 'error');
         }
       } catch (error) {
         console.error('ウィンドウ検索の起動ホットキーの変更に失敗しました:', error);
-        showAlert('ウィンドウ検索の起動ホットキーの変更に失敗しました。', 'error');
+        showAlert(t('settings.hotkeys.windowSearchChangeFailed'), 'error');
       }
     },
-    [setEditedSettings, toast, showAlert]
+    [setEditedSettings, toast, showAlert, t]
   );
 
   // カスタムフック: 基本設定管理
@@ -105,19 +104,19 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({
 
   return (
     <div className="settings-tab">
-      {isLoading && <div className="loading-overlay">処理中...</div>}
+      {isLoading && <div className="loading-overlay">{t('settings.processing')}</div>}
 
       <div className="settings-with-sidebar">
         {/* 左側メニュー */}
         <div className="settings-sidebar">
           <nav className="settings-menu">
-            {SETTINGS_CATEGORIES.map(({ key, label }) => (
+            {SETTINGS_CATEGORIES.map((key) => (
               <button
                 key={key}
                 className={`menu-item ${selectedCategory === key ? 'active' : ''}`}
                 onClick={() => onSelectCategory(key)}
               >
-                {label}
+                {t(`settings.categories.${key}`)}
               </button>
             ))}
           </nav>
@@ -158,9 +157,9 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({
 
           {selectedCategory === 'bookmarkAutoImport' && (
             <div className="settings-section">
-              <h3>ブックマーク自動取込</h3>
+              <h3>{t('settings.bookmarkAutoImport.heading')}</h3>
               <p className="settings-section-description">
-                Chrome / Edge のブックマークを読み取り、ランチャーのアイテムとして自動取込します。
+                {t('settings.bookmarkAutoImport.description')}
               </p>
               <BookmarkAutoImportSettings onOpenManualImport={onOpenManualBookmarkImport} />
             </div>

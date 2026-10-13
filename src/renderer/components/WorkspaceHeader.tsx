@@ -89,7 +89,7 @@ const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
                   handleMenuAction(() => window.electronAPI.openEditWindowWithTab('settings'))
                 }
               >
-                ⚙️ 基本設定
+                ⚙️ 設定
               </button>
               <div className="workspace-settings-menu-divider" />
               <button

@@ -57,7 +57,7 @@ Rendererプロセス（`src/renderer/`）のコンポーネント命名規則を
 | --- | --- |
 | メインウィンドウ | `Launcher*` |
 | 管理ウィンドウ（共通） | `Admin*` |
-| 管理 > 基本設定タブ | `AdminSettings*` |
+| 管理 > 設定タブ | `AdminSettings*` |
 | 管理 > アイテム管理タブ | `AdminItemManager*` |
 | 管理 > ヘルプタブ | `AdminOther*` |
 | ワークスペースウィンドウ | `Workspace*` |

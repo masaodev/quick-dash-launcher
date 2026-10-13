@@ -1,10 +1,7 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
-import {
-  SETTINGS_RESET_LABELS,
-  SETTINGS_RESET_NOTES,
-  type ResettableSettingsCategory,
-} from '../utils/settingsResetKeys';
+import { getResetCategoryText, type ResettableSettingsCategory } from '../utils/settingsResetKeys';
 
 import { Button } from './ui';
 
@@ -25,13 +22,14 @@ const AdminSettingsResetSection: React.FC<AdminSettingsResetSectionProps> = ({
   isLoading,
   onReset,
 }) => {
-  const label = SETTINGS_RESET_LABELS[category];
-  const note = SETTINGS_RESET_NOTES[category];
+  const { t } = useTranslation();
+  const { label, note } = getResetCategoryText(t, category);
 
   return (
     <div className="settings-section settings-reset-section">
       <div className="settings-reset-description">
-        「{label}」の項目を既定値に戻します。{note ?? ''}
+        {t('settings.reset.description', { category: label })}
+        {note}
       </div>
       <Button
         variant="danger"
@@ -40,7 +38,7 @@ const AdminSettingsResetSection: React.FC<AdminSettingsResetSectionProps> = ({
         onClick={() => onReset(category)}
         disabled={isLoading}
       >
-        {label}を既定値に戻す
+        {t('settings.reset.button', { category: label })}
       </Button>
     </div>
   );
