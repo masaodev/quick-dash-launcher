@@ -30,6 +30,7 @@ Viteベースのビルドシステムを使用:
 - **メインプロセス**: CommonJS形式で`dist/main/`に出力
 - **プリロードスクリプト**: CommonJS形式で`dist/main/preload.js`に出力
 - **レンダラープロセス**: 複数ウィンドウ分のHTMLを`dist/`に出力（エントリは`vite.config.mts`）
+- **CSP**: ビルドの最後に、出力した全 HTML へ CSP の meta を入れる（`scripts/viteCspPlugin.ts`。開発サーバーには入れない）。HTML に `<head>` が無いとビルドを失敗させる。HTML にインラインのハンドラー（`onclick` など）を書くと、ビルドした版では動かない（[システム概要 - CSP](../architecture/overview.md)）
 - **開発サーバー**: デフォルトポート9000（環境変数`VITE_PORT`で変更可能）
 
 ## パッケージング

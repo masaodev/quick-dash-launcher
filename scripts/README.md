@@ -12,6 +12,7 @@ npm scripts から呼ばれる主なもの：
 | `generate-appx-assets.mjs` | `npm run dist:appx`（の途中） | `assets/icon.svg` から Store 版（appx）のロゴ画像を拡大率・大きさ別に`build/appx/`へ生成。Electron で描くので `electron scripts/generate-appx-assets.mjs` で実行する |
 | `run-e2e-test.js` | `npm run test:e2e:single <テスト名>` | ビルド後に E2E テストを1ファイルだけ実行（引数なしでテスト名の一覧を表示） |
 | `debug-windows.mjs` | `npm run debug:windows` | ウィンドウ検索のデバッグ（下記） |
+| `viteCspPlugin.ts` | `npm run build`（`vite.config.mts` から） | ビルドした画面の HTML に CSP の meta を入れる Vite プラグイン（[architecture/overview.md](../docs/architecture/overview.md) の「CSP」） |
 
 ## ウィンドウデバッグツール
 
