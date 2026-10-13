@@ -24,3 +24,27 @@ export function normalizeWindowTitleForProcessOnly(
   const hasProcess = typeof processName === 'string' && processName.trim() !== '';
   return titleEmpty && hasProcess ? ANY_WINDOW_TITLE : undefined;
 }
+
+/**
+ * ワイルドカードパターンを正規表現に変換（* = 任意の文字列、? = 任意の1文字。大文字小文字は区別しない完全一致）
+ */
+function wildcardToRegex(pattern: string): RegExp {
+  // 正規表現の特殊文字をエスケープ（*と?以外）
+  const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&');
+  const regexPattern = escaped.replace(/\*/g, '.*').replace(/\?/g, '.');
+  return new RegExp(`^${regexPattern}$`, 'i');
+}
+
+/**
+ * ウィンドウタイトルのマッチング関数を作成する（main のウィンドウ検索と renderer の一覧の照合で共通）
+ *
+ * ワイルドカード（* または ?）を含めばワイルドカード照合、含まなければ完全一致。どちらも大文字小文字は区別しない。
+ * ポーリングループなど同じタイトルで繰り返し検索する場合に、正規表現のプリコンパイルにも使う
+ */
+export function createTitleMatcher(windowTitle: string): (title: string) => boolean {
+  const hasWildcard = windowTitle.includes('*') || windowTitle.includes('?');
+  const regex = hasWildcard ? wildcardToRegex(windowTitle) : null;
+  const lowerWindowTitle = windowTitle.toLowerCase();
+  return (title: string): boolean =>
+    regex ? regex.test(title) : title.toLowerCase() === lowerWindowTitle;
+}

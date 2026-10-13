@@ -14,6 +14,11 @@ import type {
 } from './launcher';
 import type { WindowInfo } from './window';
 
+/** 配列でないオブジェクト（JSON の読み込みで、キーを持つ値か確かめる） */
+export function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 /**
  * WindowInfoかどうかを判定する型ガード
  *

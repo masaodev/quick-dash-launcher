@@ -18,6 +18,7 @@ import {
   type ProgressEventType,
 } from '@common/ipcChannels';
 import { PathUtils } from '@common/utils/pathUtils';
+import { createTitleMatcher } from '@common/utils/windowTitle';
 
 import { tryActivateWindow } from '../utils/windowActivator.js';
 import { isBareFileName, resolveFromPath } from '../utils/pathResolver.js';
@@ -25,7 +26,7 @@ import { checkPathsExist } from '../services/data/pathExistenceChecker.js';
 import { expandEnvironmentVariables } from '../services/icon/iconFileCache.js';
 import { launchItem } from '../utils/itemLauncher.js';
 import { SettingsService } from '../services/settingsService.js';
-import { findWindowByTitle, createTitleMatcher } from '../utils/windowMatcher.js';
+import { findWindowByTitle } from '../utils/windowMatcher.js';
 import { findWindowHwndByTitle } from '../utils/nativeWindowControl.js';
 import {
   showLayoutProgressWindow,

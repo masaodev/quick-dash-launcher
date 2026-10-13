@@ -1,5 +1,6 @@
 import type { DetachedWindowState, WorkspaceUiStateFile } from '@common/types';
 import { WORKSPACE_UI_STATE_VERSION } from '@common/types';
+import { isRecord } from '@common/types/guards';
 
 import { PathManager } from '../../config/pathManager.js';
 import { JsonFileStore } from '../jsonFileStore.js';
@@ -20,10 +21,6 @@ const DEFAULT_DETACHED_BOUNDS: DetachedWindowState['bounds'] = {
   width: 380,
   height: 200,
 };
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
 
 function coerceBooleanRecord(raw: unknown): Record<string, boolean> {
   const out: Record<string, boolean> = {};

@@ -2,16 +2,13 @@ import i18next from 'i18next';
 import {
   convertEditingAppItemToRegisterItem,
   convertEditableJsonItemToRegisterItem,
+  getDefaultTab,
 } from '@common/utils/dataConverters';
-import { DEFAULT_DATA_FILE, isEditingLauncherItem } from '@common/types';
+import { isEditingLauncherItem } from '@common/types';
 import type { RegisterItem, EditingAppItem, DataFileTab, EditableJsonItem } from '@common/types';
 import { detectItemType } from '@common/utils/itemTypeDetector';
 
 import { debugInfo, logWarn, logError } from '../utils/debug';
-
-function getDefaultTab(currentTab: string | undefined, tabs: DataFileTab[]): string {
-  return currentTab || (tabs.length > 0 ? tabs[0].files[0] : DEFAULT_DATA_FILE);
-}
 
 /**
  * ドロップされたパスから表示名の初期値を作る
