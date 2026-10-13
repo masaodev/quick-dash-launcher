@@ -7,6 +7,7 @@ import type {
   ConfirmWindowResult,
   WindowPinMode,
   WorkspacePositionMode,
+  AdminTab,
 } from '@common/types';
 import { windowLogger } from '@common/logger';
 import { IPC_CHANNELS } from '@common/ipcChannels';
@@ -76,9 +77,8 @@ export function setupWindowHandlers(
   ipcMain.handle(IPC_CHANNELS.TOGGLE_EDIT_WINDOW, () => toggleAdminWindow());
   ipcMain.handle(IPC_CHANNELS.IS_EDIT_WINDOW_SHOWN, () => isAdminWindowShown());
 
-  ipcMain.handle(
-    IPC_CHANNELS.OPEN_EDIT_WINDOW_WITH_TAB,
-    async (_event, tab: 'settings' | 'edit' | 'other') => showAdminWindowWithTab(tab)
+  ipcMain.handle(IPC_CHANNELS.OPEN_EDIT_WINDOW_WITH_TAB, async (_event, tab: AdminTab) =>
+    showAdminWindowWithTab(tab)
   );
 
   ipcMain.handle(

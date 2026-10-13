@@ -12,7 +12,11 @@ import {
 import type { LayoutItem, LayoutWindowEntry } from '@common/types';
 import { GROUP_LAUNCH_DELAY_MS } from '@common/constants';
 import { isLauncherItem, isWindowItem } from '@common/types/guards';
-import { IPC_CHANNELS } from '@common/ipcChannels';
+import {
+  IPC_CHANNELS,
+  LAYOUT_PROGRESS_CHANNELS,
+  type ProgressEventType,
+} from '@common/ipcChannels';
 import { PathUtils } from '@common/utils/pathUtils';
 
 import { tryActivateWindow } from '../utils/windowActivator.js';
@@ -235,20 +239,10 @@ const LAYOUT_CONCURRENCY = 3;
 /** レイアウトキャンセルフラグ */
 let layoutCancelled = false;
 
-/** レイアウト進捗イベントのチャンネルマップ */
-const LAYOUT_PROGRESS_CHANNELS = {
-  start: IPC_CHANNELS.EVENT_LAYOUT_PROGRESS_START,
-  update: IPC_CHANNELS.EVENT_LAYOUT_PROGRESS_UPDATE,
-  complete: IPC_CHANNELS.EVENT_LAYOUT_PROGRESS_COMPLETE,
-} as const;
-
 /**
  * レイアウト進捗をミニウィンドウに送信する
  */
-function sendLayoutProgress(
-  eventType: 'start' | 'update' | 'complete',
-  progress: LayoutExecutionProgress
-): void {
+function sendLayoutProgress(eventType: ProgressEventType, progress: LayoutExecutionProgress): void {
   const win = getLayoutProgressWindow();
   if (!win) return;
   // overlay.html のボタンの文言（表示言語に合わせる）

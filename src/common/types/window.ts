@@ -1,3 +1,6 @@
+/** 管理ウィンドウのタブ */
+export type AdminTab = 'settings' | 'edit' | 'other';
+
 /**
  * ウィンドウの状態
  */

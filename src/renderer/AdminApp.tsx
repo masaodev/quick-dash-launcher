@@ -4,7 +4,7 @@
  */
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { AppSettings } from '@common/types';
+import type { AdminTab, AppSettings } from '@common/types';
 import type { EditableJsonItem } from '@common/types/editableItem';
 import { EXTERNAL_CHANGE_CONFLICT_MARKER } from '@common/types/editableItem';
 
@@ -23,7 +23,7 @@ type AlertDialogState = {
 
 const AdminApp: React.FC = () => {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<'settings' | 'edit' | 'other'>('settings');
+  const [activeTab, setActiveTab] = useState<AdminTab>('settings');
   const [editableItems, setEditableItems] = useState<EditableJsonItem[]>([]);
   // 楽観ロック用: 読み込み時（または保存後）のデータファイルのハッシュ。保存時に渡して外部変更との競合を検知する
   const [fileHashes, setFileHashes] = useState<Record<string, string> | undefined>(undefined);

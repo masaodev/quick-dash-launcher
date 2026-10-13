@@ -4,6 +4,7 @@
  */
 import type { PathKind } from '../utils/itemTypeDetector';
 import type { AppLanguage } from '../i18n/languages';
+import type { ProgressEventType } from '../ipcChannels';
 
 import type {
   EditableJsonItem,
@@ -41,7 +42,8 @@ import type {
   RegisterItem,
   IconFetchErrorRecord,
   JsonDirOptions,
-  ToastItemType,
+  NotificationType,
+  ToastOptions,
   ToastEventData,
   ClipboardCaptureResult,
   ClipboardRestoreResult,
@@ -66,6 +68,7 @@ import type {
   MainChildWindowReturn,
   ConfirmWindowRequest,
   ConfirmWindowResult,
+  AdminTab,
 } from './index';
 
 export interface ElectronAPI {
@@ -112,11 +115,11 @@ export interface ElectronAPI {
   getIconFetchErrors: () => Promise<IconFetchErrorRecord[]>;
   // 進捗イベントリスナー
   onIconProgress: (
-    eventType: 'start' | 'update' | 'complete',
+    eventType: ProgressEventType,
     callback: (data: IconProgress) => void
   ) => () => void;
   onLayoutProgress: (
-    eventType: 'start' | 'update' | 'complete',
+    eventType: ProgressEventType,
     callback: (data: LayoutExecutionProgress) => void
   ) => () => void;
   cancelLayout: () => void;
@@ -124,7 +127,7 @@ export interface ElectronAPI {
   onWindowShown: (callback: (startTime?: number) => void) => () => void;
   onWindowShownItemSearch: (callback: (startTime?: number) => void) => () => void;
   onWindowHidden: (callback: () => void) => () => void;
-  onSetActiveTab: (callback: (tab: 'settings' | 'edit' | 'other') => void) => () => void;
+  onSetActiveTab: (callback: (tab: AdminTab) => void) => () => void;
   /** 管理ウィンドウの × が押されたとき。閉じてよければ hideEditWindow を呼ぶ */
   onAdminCloseRequested: (callback: () => void) => () => void;
   onOpenImportModal: (callback: (modal: 'bookmark' | 'app') => void) => () => void;
@@ -213,9 +216,9 @@ export interface ElectronAPI {
   hideEditWindow: () => Promise<void>;
   toggleEditWindow: () => Promise<void>;
   isEditWindowShown: () => Promise<boolean>;
-  openEditWindowWithTab: (tab: 'settings' | 'edit' | 'archive' | 'other') => Promise<void>;
+  openEditWindowWithTab: (tab: AdminTab) => Promise<void>;
   openEditWindowWithImportModal: (modal: 'bookmark' | 'app') => Promise<void>;
-  getInitialTab: () => Promise<'settings' | 'edit' | 'other'>;
+  getInitialTab: () => Promise<AdminTab>;
   getPendingImportModal: () => Promise<'bookmark' | 'app' | null>;
   copyToClipboard: (text: string) => Promise<boolean>;
   /**
@@ -376,23 +379,9 @@ export interface ElectronAPI {
   /** ウィンドウが閉じる（か隠れる）のを、まとめて最大 1 秒待つ */
   waitForWindowsClosed: (hwnds: (number | bigint)[]) => Promise<void>;
   // システム通知API
-  showNotification: (
-    title: string,
-    body: string,
-    type?: 'success' | 'error' | 'info' | 'warning'
-  ) => Promise<void>;
+  showNotification: (title: string, body: string, type?: NotificationType) => Promise<void>;
   // トーストウィンドウAPI（メインウィンドウが閉じた後も表示可能）
-  showToastWindow: (options: {
-    message?: string;
-    type?: 'success' | 'error' | 'info' | 'warning';
-    duration?: number;
-    itemType?: ToastItemType;
-    displayName?: string;
-    path?: string;
-    icon?: string;
-    itemCount?: number;
-    itemNames?: string[];
-  }) => Promise<void>;
+  showToastWindow: (options: ToastOptions) => Promise<void>;
   // トーストウィンドウ用イベントリスナー（toast.html用）
   onShowToast: (callback: (data: ToastEventData) => void) => () => void;
   // ワークスペースウィンドウ制御API
