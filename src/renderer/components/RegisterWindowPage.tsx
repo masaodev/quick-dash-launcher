@@ -6,6 +6,7 @@ import type {
   EditableJsonItem,
   RegisterWindowRequest,
 } from '@common/types';
+import { isEditableJsonItem } from '@common/types';
 
 import { useToast } from '../hooks/useToast';
 import { logError } from '../utils/debug';
@@ -17,11 +18,6 @@ import RegisterModal from './RegisterModal';
 interface RegisterWindowPageProps {
   requestId: string;
   request: RegisterWindowRequest;
-}
-
-/** 管理画面から渡された編集対象か（メイン画面からは EditingAppItem） */
-function isEditableJsonItem(item: EditingAppItem | EditableJsonItem): item is EditableJsonItem {
-  return 'item' in item && 'meta' in item;
 }
 
 /**

@@ -3,8 +3,10 @@ import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect } from 'react';
 import type { CurrentClipboardState, ClipboardFormat } from '@common/types';
 
-import { Button } from './ui';
 import '../styles/components/ClipboardItemEditor.css';
+import { logError } from '../utils/debug';
+
+import { Button } from './ui';
 
 interface CapturedDataInfo {
   dataFileRef: string;
@@ -141,7 +143,7 @@ const ClipboardItemEditor: React.FC<ClipboardItemEditorProps> = ({
       const state = await window.electronAPI.clipboardAPI.checkCurrent();
       setCurrentState(state);
     } catch (error) {
-      console.error('クリップボード状態の確認に失敗:', error);
+      logError('クリップボード状態の確認に失敗:', error);
     } finally {
       setLoading(false);
     }

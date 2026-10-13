@@ -182,6 +182,7 @@ export {
   isEditingGroupItem,
   isEditingWindowItem,
   isEditingLayoutItem,
+  isEditableJsonItem,
 } from './editingItem';
 
 // 編集可能なJSONアイテムの型

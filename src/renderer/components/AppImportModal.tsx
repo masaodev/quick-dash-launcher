@@ -11,6 +11,7 @@ import { logError } from '../utils/debug';
 
 import AlertDialog from './AlertDialog';
 import { Button } from './ui';
+import DuplicateHandlingSection from './DuplicateHandlingSection';
 
 /**
  * 画面: アプリ取込画面
@@ -527,35 +528,12 @@ function AppImportModal({
 
         {/* 登録済みを選んだときの扱い */}
         {selectedRegisteredCount > 0 && (
-          <div className="duplicate-warning-section">
-            <div className="duplicate-warning-message">
-              <span className="duplicate-warning-icon">&#9888;</span>
-              <span>{t('appImport.registeredSelected', { count: selectedRegisteredCount })}</span>
-            </div>
-            <div className="duplicate-options-section">
-              <span className="duplicate-options-label">{t('importCommon.duplicateHandling')}</span>
-              <label className="duplicate-option">
-                <input
-                  type="radio"
-                  name="appDuplicateHandling"
-                  value="skip"
-                  checked={duplicateHandling === 'skip'}
-                  onChange={() => setDuplicateHandling('skip')}
-                />
-                <span>{t('importCommon.skip')}</span>
-              </label>
-              <label className="duplicate-option">
-                <input
-                  type="radio"
-                  name="appDuplicateHandling"
-                  value="overwrite"
-                  checked={duplicateHandling === 'overwrite'}
-                  onChange={() => setDuplicateHandling('overwrite')}
-                />
-                <span>{t('importCommon.overwrite')}</span>
-              </label>
-            </div>
-          </div>
+          <DuplicateHandlingSection
+            message={t('appImport.registeredSelected', { count: selectedRegisteredCount })}
+            value={duplicateHandling}
+            onChange={setDuplicateHandling}
+            name="appDuplicateHandling"
+          />
         )}
 
         <div className="app-import-footer">
