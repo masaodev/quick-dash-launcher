@@ -91,12 +91,28 @@ jobs:
             NOTES="$(git tag -l --format='%(contents:body)' "$TAG")"
           fi
           if [ -z "$(printf '%s' "$NOTES" | tr -d '[:space:]')" ]; then
-            NOTES="## 更新内容
-          QuickDashLauncher $TAG のリリースです。"
+            NOTES="## What's new
+          QuickDashLauncher $TAG release."
           fi
+          # 本文と同じく、英語を先に書き、日本語は折りたたむ
           {
             printf '%s\n\n' "$NOTES"
             cat <<EOF
+          ## Installation
+
+          ### Installer
+          Download and run \`QuickDashLauncher.Setup.$VERSION.exe\`.
+
+          ### Portable
+          Download \`QuickDashLauncher.$VERSION.exe\` and put it in any folder. No installation is needed.
+
+          ## License
+          This software is released under the MIT License.
+          For the licenses of the dependencies, see \`THIRD-PARTY-NOTICES.md\`.
+
+          <details>
+          <summary>日本語</summary>
+
           ## インストール方法
 
           ### インストーラー版
@@ -108,6 +124,8 @@ jobs:
           ## ライセンス情報
           このソフトウェアはMITライセンスの下で公開されています。
           依存パッケージのライセンスについては、\`THIRD-PARTY-NOTICES.md\`を参照してください。
+
+          </details>
           EOF
           } > release-notes.md
           echo "--- release-notes.md ---"
