@@ -243,7 +243,7 @@
 ### タブ指定での表示機能
 
 1. **メニューからのタブ指定**
-   - 「基本設定」メニュー → `window.electronAPI.openEditWindowWithTab('settings')`（IPC → メインの `showAdminWindowWithTab()`）
+   - 「設定」メニュー → `window.electronAPI.openEditWindowWithTab('settings')`（IPC → メインの `showAdminWindowWithTab()`）
    - 「アイテム管理」メニュー → `window.electronAPI.openEditWindowWithTab('edit')`（同上）
 
 2. **タブ変更の通信フロー**

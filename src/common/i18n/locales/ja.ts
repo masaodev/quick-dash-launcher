@@ -90,7 +90,7 @@ export const ja = {
     },
     settingsMenu: {
       title: '設定',
-      settings: '⚙️ 基本設定',
+      settings: '⚙️ 設定',
       itemManager: '✏️ アイテム管理（Ctrl+E）',
       toggleWorkspace: '🗂️ ワークスペースを表示（Ctrl+W）',
       quit: '🚪 アプリを終了',
@@ -537,7 +537,36 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     cannotDeleteMain: 'メインデータファイルは削除できません',
     deleteFailed: 'ファイルの削除に失敗しました: {{error}}',
   },
+  admin: {
+    tabs: {
+      settings: '⚙️ 設定',
+      itemManager: '✏️ アイテム管理',
+      help: '📖 ヘルプ',
+    },
+    loading: 'データを読み込み中...',
+    saveBlockedByLoadError:
+      'データファイルの読み込みに失敗しているため保存できません。ファイルを修復してから、ウィンドウを開き直してください。',
+    externalChangeConflict:
+      'データファイルが QDL の外で変更されていた（または他の画面で編集された）ため、今回の保存は行っていません。最新の内容を読み込み直し、未保存の編集は載せ直しました。内容を確認して、もう一度保存してください。',
+    itemSaveFailed: 'アイテムの保存に失敗しました。{{error}}',
+    hotkeyRegisterFailed:
+      '新しいホットキー「{{hotkey}}」の登録に失敗しました。他のアプリで使用されている可能性があります。',
+    settingsSaveFailed: '設定の保存に失敗しました。',
+    unsavedCloseConfirm:
+      'アイテム管理に未保存の変更があります。変更を破棄してウィンドウを閉じますか？\n\n保存する場合はキャンセルして「変更を保存」を押してください。',
+    discardAndClose: '破棄して閉じる',
+  },
   settings: {
+    categories: {
+      basic: '⚙️ 基本設定',
+      window: '🪟 ウィンドウ',
+      backup: '💾 バックアップ',
+      bookmarkAutoImport: '🔖 ブックマーク自動取込',
+    },
+    processing: '処理中...',
+    saved: '設定を保存しました',
+    saveFailed: '設定の保存に失敗しました。',
+    openSettingsFolderFailed: '設定フォルダを開くのに失敗しました。',
     language: {
       heading: '言語',
       label: '表示言語:',
@@ -548,6 +577,158 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
         ja: '日本語',
         en: 'English',
       },
+    },
+    hotkeys: {
+      heading: '起動ホットキー',
+      launcher: 'ランチャー起動:',
+      windowSearch: 'ウィンドウ検索で起動:',
+      windowSearchPlaceholder: '設定なし（オプション）',
+      windowSearchDescription:
+        'このホットキーでウィンドウ検索モードとして起動します。設定なしで無効化されます。',
+      windowSearchSaved: 'ウィンドウ検索の起動ホットキーを設定しました',
+      windowSearchSameAsLauncher:
+        'ウィンドウ検索の起動ホットキーの設定に失敗しました。ランチャー起動と同じ値は設定できません。',
+      windowSearchChangeFailed: 'ウィンドウ検索の起動ホットキーの変更に失敗しました。',
+    },
+    system: {
+      heading: 'システム',
+      autoLaunch: '起動時に自動実行',
+      autoLaunchBlockedByPolicy:
+        '組織のポリシーで自動起動が無効になっているため、ここからは有効にできません。',
+      autoLaunchBlockedByWindows:
+        'Windows の設定で自動起動が無効になっているため、ここからは有効にできません。Windows の［設定］→［アプリ］→［スタートアップ］で QuickDashLauncher をオンにしてください。',
+      autoLaunchEnabledByPolicy: '組織のポリシーで自動起動が有効になっています。',
+      autoLaunchEnabledByWindows:
+        'Windows の設定で自動起動が有効になっています。止めるときは、チェックを付けてから外すか、Windows の［設定］→［アプリ］→［スタートアップ］でオフにしてください。',
+      cli: 'QuickDashLauncher CLI を使えるようにする',
+      cliDescription:
+        'ターミナルや AI から qdl コマンドで、アイテムやワークスペースを操作できるようにします（qdl を PATH に追加します。新しく開いたターミナルから使えます）。',
+    },
+    display: {
+      heading: '表示',
+      keyboardHints: '操作のヒントを表示',
+      keyboardHintsDescription:
+        'メインウィンドウの下に、気づきにくいキー操作（F2 で編集、Shift+Enter で親フォルダを開くなど）を表示します。',
+      dataFileTabs: '複数タブを表示',
+      dataFileTabsDescription:
+        'メインウィンドウでタブを切り替えて、別のデータファイルのアイテムを表示します。タブとデータファイルの追加・変更は「アイテム管理」で行います。',
+    },
+    groupLaunch: {
+      heading: 'グループ起動',
+      parallel: 'グループアイテムを並列起動',
+      parallelDescription:
+        '有効にすると、グループ内のアイテムを順次実行せずに並列で起動します。起動速度が向上しますが、順序が保証されません。',
+    },
+    windowSize: {
+      heading: 'ウィンドウサイズ',
+      launcher: 'メインウィンドウ',
+      admin: '管理ウィンドウ',
+      width: '幅:',
+      height: '高さ:',
+    },
+    windowPosition: {
+      heading: 'ウィンドウ表示位置',
+      center: '画面中央（固定）',
+      centerDescription: '常にプライマリモニターの中央にウィンドウを表示します',
+      cursorMonitorCenter: '画面中央（自動切替）',
+      cursorMonitorCenterDescription:
+        'マウスカーソルがあるモニターの中央にウィンドウを表示します（マルチモニター推奨）',
+      cursor: 'カーソル付近',
+      cursorDescription: 'マウスカーソルの近くにウィンドウを表示します（検索入力がしやすい位置）',
+      fixed: '固定位置（手動設定）',
+      fixedDescription: 'ウィンドウを移動した位置を記憶して、次回も同じ位置に表示します',
+    },
+    workspace: {
+      heading: 'ワークスペースウィンドウ',
+      autoShow: 'メインウィンドウ表示時にワークスペースを自動表示',
+      autoShowDescription:
+        '有効にすると、メインウィンドウを開いたときにワークスペースが非表示なら自動で表示します。',
+      hideDetached: 'メインウィンドウ非表示時に切り離しウィンドウも連動して非表示にする',
+      hideDetachedDescription:
+        '有効にすると、メインウィンドウの表示/非表示に連動して、固定していない切り離しウィンドウも表示/非表示します。フォーカスがメインウィンドウ・ワークスペース・切り離しウィンドウの間を移っている間は隠さず、それ以外のウィンドウへ移ったときに隠します。',
+      position: '表示位置:',
+      displayEdge: 'ディスプレイの端に配置（デフォルト）',
+      displayEdgeDescription: '選択したディスプレイの左端または右端にワークスペースを配置します',
+      leftEdge: '左端',
+      rightEdge: '右端',
+      fixed: '固定位置（手動設定）',
+      fixedDescription: 'ワークスペースを移動した位置を記憶して、次回も同じ位置に表示します',
+      opacity: '透過度:',
+      opacityDescription:
+        'ワークスペースウィンドウの透過度を調整します（0%=完全透明、100%=完全不透明）。',
+      backgroundTransparent: '背景のみを透過（アイテムやグループは通常表示）',
+      backgroundTransparentDescription:
+        '有効にすると、背景のみが透過され、アイテムやグループは通常通り表示されます。',
+      visibleOnAllDesktops: '全ての仮想デスクトップに表示',
+      visibleOnAllDesktopsDescription:
+        '有効にすると、ワークスペースウィンドウが全ての仮想デスクトップで表示されます（Windows 10/11の仮想デスクトップ機能）。',
+      detachedVisibleOnAllDesktops: '切り離しウィンドウも全ての仮想デスクトップに表示',
+      detachedVisibleOnAllDesktopsDescription:
+        '有効にすると、切り離しウィンドウも全ての仮想デスクトップで表示されます。',
+      windowSnap: 'ウィンドウ吸着（モニター端へのスナップ）',
+      windowSnapDescription:
+        '有効にすると、ワークスペースウィンドウや切り離しウィンドウをモニター端に近づけたとき、自動的に吸着します。',
+    },
+    backup: {
+      heading: 'バックアップ',
+      description:
+        'アプリ起動時に1日1回、データファイル・設定ファイルをスナップショットとしてバックアップします。',
+      enabled: 'バックアップ機能を有効にする',
+      retention: 'バックアップ保存件数:',
+      retentionUnit: '件',
+      includeClipboard: 'クリップボードデータもバックアップに含める',
+      includeClipboardDescription: 'クリップボードデータは容量が大きくなる可能性があります。',
+      snapshotCount_one: 'スナップショット: {{count}} 件',
+      snapshotCount_other: 'スナップショット: {{count}} 件',
+      lastBackup: '最終バックアップ: {{time}}',
+      neverBackedUp: 'なし',
+      openSnapshots: 'スナップショット一覧',
+    },
+    snapshots: {
+      title: 'スナップショット一覧',
+      count_one: '{{count}} 件',
+      count_other: '{{count}} 件',
+      empty: 'スナップショットはありません',
+      fileCount_one: '{{count}} ファイル',
+      fileCount_other: '{{count}} ファイル',
+      delete: '削除',
+      restore: '復元',
+      restoreTitle: 'スナップショットの復元',
+      restoreConfirm:
+        '選択したスナップショット（{{timestamp}}）からデータを復元します。復元前に現在の状態が自動バックアップされます。続行しますか？',
+      restoreConfirmButton: '復元する',
+      restored: 'リストアが完了しました。設定を反映するためにアプリの再起動を推奨します。',
+      restoreFailed: 'リストアに失敗しました: {{error}}',
+      restoreError: 'リストア中にエラーが発生しました',
+      deleteTitle: 'スナップショットの削除',
+      deleteConfirm:
+        '選択したスナップショット（{{timestamp}}）を削除します。この操作は元に戻せません。',
+      deleteConfirmButton: '削除する',
+      deleted: 'スナップショットを削除しました',
+      deleteFailed: '削除に失敗しました: {{error}}',
+      deleteError: '削除中にエラーが発生しました',
+    },
+    reset: {
+      description: '「{{category}}」の設定を既定値に戻します。',
+      button: '{{category}}を既定値に戻す',
+      confirm: '「{{category}}」の設定を既定値に戻しますか？',
+      title: '既定値に戻す',
+      confirmButton: '既定値に戻す',
+      done: '「{{category}}」を既定値に戻しました',
+      failed: '設定のリセットに失敗しました。',
+      categories: {
+        basic: '基本設定',
+        window: 'ウィンドウ',
+        backup: 'バックアップ',
+      },
+      notes: {
+        basic: 'ホットキーは変更しません。',
+      },
+    },
+    bookmarkAutoImport: {
+      heading: 'ブックマーク自動取込',
+      description:
+        'Chrome / Edge のブックマークを読み取り、ランチャーのアイテムとして自動取込します。',
     },
   },
 } as const;

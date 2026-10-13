@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type {
   AppSettings,
   DisplayInfo,
@@ -11,78 +12,50 @@ import type { HandleSettingChange } from '../hooks/useSettingsManager';
 type WindowSizeKey = 'windowWidth' | 'windowHeight' | 'editModeWidth' | 'editModeHeight';
 
 const WINDOW_SIZE_GROUPS: Array<{
-  title: string;
-  fields: Array<{ label: string; min: number; max: number; key: WindowSizeKey }>;
+  title: 'launcher' | 'admin';
+  fields: Array<{ label: 'width' | 'height'; min: number; max: number; key: WindowSizeKey }>;
 }> = [
   {
-    title: 'メイン画面',
+    title: 'launcher',
     fields: [
-      { label: '幅', min: 400, max: 2000, key: 'windowWidth' },
-      { label: '高さ', min: 300, max: 1200, key: 'windowHeight' },
+      { label: 'width', min: 400, max: 2000, key: 'windowWidth' },
+      { label: 'height', min: 300, max: 1200, key: 'windowHeight' },
     ],
   },
   {
-    title: '管理画面',
+    title: 'admin',
     fields: [
-      { label: '幅', min: 800, max: 2000, key: 'editModeWidth' },
-      { label: '高さ', min: 600, max: 1200, key: 'editModeHeight' },
+      { label: 'width', min: 800, max: 2000, key: 'editModeWidth' },
+      { label: 'height', min: 600, max: 1200, key: 'editModeHeight' },
     ],
   },
 ];
 
-const WINDOW_POSITION_OPTIONS: Array<{ value: WindowPositionMode; title: string; desc: string }> = [
-  {
-    value: 'center',
-    title: '画面中央（固定）',
-    desc: '常にプライマリモニターの中央にウィンドウを表示します',
-  },
-  {
-    value: 'cursorMonitorCenter',
-    title: '画面中央（自動切替）',
-    desc: 'マウスカーソルがあるモニターの中央にウィンドウを表示します（マルチモニター推奨）',
-  },
-  {
-    value: 'cursor',
-    title: 'カーソル付近',
-    desc: 'マウスカーソルの近くにウィンドウを表示します（検索入力がしやすい位置）',
-  },
-  {
-    value: 'fixed',
-    title: '固定位置（手動設定）',
-    desc: 'ウィンドウを移動した位置を記憶して、次回も同じ位置に表示します',
-  },
+/** ウィンドウの表示位置の選択肢（文言は settings.windowPosition.<値>・<値>Description） */
+const WINDOW_POSITION_OPTIONS: readonly WindowPositionMode[] = [
+  'center',
+  'cursorMonitorCenter',
+  'cursor',
+  'fixed',
 ];
 
-/** ワークスペースの表示・連動に関するチェックボックス設定 */
+/** ワークスペースの表示・連動に関するチェックボックス設定（文言は settings.workspace.<文言キー>・<文言キー>Description） */
 const WORKSPACE_TOGGLES: Array<{
   key:
     | 'workspaceBackgroundTransparent'
     | 'workspaceVisibleOnAllDesktops'
     | 'detachedVisibleOnAllDesktops'
     | 'windowSnapEnabled';
-  label: string;
-  desc: string;
+  text:
+    | 'backgroundTransparent'
+    | 'visibleOnAllDesktops'
+    | 'detachedVisibleOnAllDesktops'
+    | 'windowSnap';
 }> = [
-  {
-    key: 'workspaceBackgroundTransparent',
-    label: '背景のみを透過（アイテムやグループは通常表示）',
-    desc: '有効にすると、背景のみが透過され、アイテムやグループは通常通り表示されます。',
-  },
-  {
-    key: 'workspaceVisibleOnAllDesktops',
-    label: '全ての仮想デスクトップに表示',
-    desc: '有効にすると、ワークスペースウィンドウが全ての仮想デスクトップで表示されます（Windows 10/11の仮想デスクトップ機能）。',
-  },
-  {
-    key: 'detachedVisibleOnAllDesktops',
-    label: '切り離しウィンドウも全ての仮想デスクトップに表示',
-    desc: '有効にすると、切り離しウィンドウも全ての仮想デスクトップで表示されます。',
-  },
-  {
-    key: 'windowSnapEnabled',
-    label: 'ウィンドウ吸着（モニター端へのスナップ）',
-    desc: '有効にすると、ワークスペースウィンドウや切り離しウィンドウをモニター端に近づけたとき、自動的に吸着します。',
-  },
+  { key: 'workspaceBackgroundTransparent', text: 'backgroundTransparent' },
+  { key: 'workspaceVisibleOnAllDesktops', text: 'visibleOnAllDesktops' },
+  { key: 'detachedVisibleOnAllDesktops', text: 'detachedVisibleOnAllDesktops' },
+  { key: 'windowSnapEnabled', text: 'windowSnap' },
 ];
 
 interface AdminSettingsWindowSectionProps {
@@ -101,6 +74,7 @@ const AdminSettingsWindowSection: React.FC<AdminSettingsWindowSectionProps> = ({
   handleNumberInputChange,
   handleNumberInputBlur,
 }) => {
+  const { t } = useTranslation();
   const [displays, setDisplays] = useState<DisplayInfo[]>([]);
 
   // ディスプレイ一覧を取得（ワークスペースの配置先の選択肢）
@@ -130,15 +104,15 @@ const AdminSettingsWindowSection: React.FC<AdminSettingsWindowSectionProps> = ({
   return (
     <>
       <div className="settings-section">
-        <h3>ウィンドウサイズ</h3>
+        <h3>{t('settings.windowSize.heading')}</h3>
         <div className="window-size-grid">
           {WINDOW_SIZE_GROUPS.map(({ title, fields }) => (
             <div key={title} className="window-size-group">
-              <div className="window-size-group-title">{title}</div>
+              <div className="window-size-group-title">{t(`settings.windowSize.${title}`)}</div>
               <div className="window-size-inputs">
                 {fields.map(({ label, min, max, key }) => (
                   <div key={key} className="window-size-field">
-                    <label htmlFor={key}>{label}:</label>
+                    <label htmlFor={key}>{t(`settings.windowSize.${label}`)}</label>
                     <input
                       id={key}
                       type="number"
@@ -159,10 +133,10 @@ const AdminSettingsWindowSection: React.FC<AdminSettingsWindowSectionProps> = ({
       </div>
 
       <div className="settings-section">
-        <h3>ウィンドウ表示位置</h3>
+        <h3>{t('settings.windowPosition.heading')}</h3>
         <div className="setting-item">
           <div className="position-options">
-            {WINDOW_POSITION_OPTIONS.map(({ value, title, desc }) => (
+            {WINDOW_POSITION_OPTIONS.map((value) => (
               <label key={value} className="position-option">
                 <input
                   type="radio"
@@ -175,8 +149,10 @@ const AdminSettingsWindowSection: React.FC<AdminSettingsWindowSectionProps> = ({
                   disabled={isLoading}
                 />
                 <div className="option-content">
-                  <div className="option-title">{title}</div>
-                  <div className="option-description">{desc}</div>
+                  <div className="option-title">{t(`settings.windowPosition.${value}`)}</div>
+                  <div className="option-description">
+                    {t(`settings.windowPosition.${value}Description`)}
+                  </div>
                 </div>
               </label>
             ))}
@@ -185,7 +161,7 @@ const AdminSettingsWindowSection: React.FC<AdminSettingsWindowSectionProps> = ({
       </div>
 
       <div className="settings-section">
-        <h3>ワークスペースウィンドウ</h3>
+        <h3>{t('settings.workspace.heading')}</h3>
 
         {/* 自動表示設定 */}
         <div className="setting-item">
@@ -196,11 +172,9 @@ const AdminSettingsWindowSection: React.FC<AdminSettingsWindowSectionProps> = ({
               onChange={(e) => handleSettingChange('autoShowWorkspace', e.target.checked)}
               disabled={isLoading}
             />
-            メイン画面表示時にワークスペースを自動表示
+            {t('settings.workspace.autoShow')}
           </label>
-          <div className="setting-description">
-            有効にすると、メイン画面を開いたときにワークスペースが非表示なら自動で表示します。
-          </div>
+          <div className="setting-description">{t('settings.workspace.autoShowDescription')}</div>
         </div>
 
         {/* 切り離しウィンドウ連動設定 */}
@@ -212,18 +186,16 @@ const AdminSettingsWindowSection: React.FC<AdminSettingsWindowSectionProps> = ({
               onChange={(e) => handleSettingChange('hideDetachedWithMainWindow', e.target.checked)}
               disabled={isLoading}
             />
-            メインウィンドウ非表示時に切り離しウィンドウも連動して非表示にする
+            {t('settings.workspace.hideDetached')}
           </label>
           <div className="setting-description">
-            有効にすると、メイン画面の表示/非表示に連動して、固定していない切り離しウィンドウも表示/非表示します。
-            フォーカスがメイン画面・ワークスペース・切り離しウィンドウの間を移っている間は隠さず、
-            それ以外のウィンドウへ移ったときに隠します。
+            {t('settings.workspace.hideDetachedDescription')}
           </div>
         </div>
 
         {/* 表示位置設定 */}
         <div className="setting-item">
-          <label>表示位置:</label>
+          <label>{t('settings.workspace.position')}</label>
           <div className="position-options">
             <label className="position-option">
               <input
@@ -235,9 +207,9 @@ const AdminSettingsWindowSection: React.FC<AdminSettingsWindowSectionProps> = ({
                 disabled={isLoading}
               />
               <div className="option-content">
-                <div className="option-title">ディスプレイの端に配置（デフォルト）</div>
+                <div className="option-title">{t('settings.workspace.displayEdge')}</div>
                 <div className="option-description">
-                  選択したディスプレイの左端または右端にワークスペースを配置します
+                  {t('settings.workspace.displayEdgeDescription')}
                 </div>
                 {isDisplayEdgeMode && (
                   <div className="display-edge-options">
@@ -267,7 +239,7 @@ const AdminSettingsWindowSection: React.FC<AdminSettingsWindowSectionProps> = ({
                           }
                           disabled={isLoading}
                         />
-                        左端
+                        {t('settings.workspace.leftEdge')}
                       </label>
                       <label className="edge-option">
                         <input
@@ -280,7 +252,7 @@ const AdminSettingsWindowSection: React.FC<AdminSettingsWindowSectionProps> = ({
                           }
                           disabled={isLoading}
                         />
-                        右端
+                        {t('settings.workspace.rightEdge')}
                       </label>
                     </div>
                   </div>
@@ -302,10 +274,8 @@ const AdminSettingsWindowSection: React.FC<AdminSettingsWindowSectionProps> = ({
                 disabled={isLoading}
               />
               <div className="option-content">
-                <div className="option-title">固定位置（手動設定）</div>
-                <div className="option-description">
-                  ワークスペースを移動した位置を記憶して、次回も同じ位置に表示します
-                </div>
+                <div className="option-title">{t('settings.workspace.fixed')}</div>
+                <div className="option-description">{t('settings.workspace.fixedDescription')}</div>
               </div>
             </label>
           </div>
@@ -313,7 +283,7 @@ const AdminSettingsWindowSection: React.FC<AdminSettingsWindowSectionProps> = ({
 
         {/* 透過度設定 */}
         <div className="setting-item">
-          <label htmlFor="workspaceOpacity">透過度:</label>
+          <label htmlFor="workspaceOpacity">{t('settings.workspace.opacity')}</label>
           <div className="opacity-control">
             <input
               id="workspaceOpacity"
@@ -327,12 +297,10 @@ const AdminSettingsWindowSection: React.FC<AdminSettingsWindowSectionProps> = ({
             />
             <span className="opacity-value">{editedSettings.workspaceOpacity}%</span>
           </div>
-          <div className="setting-description">
-            ワークスペースウィンドウの透過度を調整します（0%=完全透明、100%=完全不透明）。
-          </div>
+          <div className="setting-description">{t('settings.workspace.opacityDescription')}</div>
         </div>
 
-        {WORKSPACE_TOGGLES.map(({ key, label, desc }) => (
+        {WORKSPACE_TOGGLES.map(({ key, text }) => (
           <div key={key} className="setting-item">
             <label>
               <input
@@ -341,9 +309,9 @@ const AdminSettingsWindowSection: React.FC<AdminSettingsWindowSectionProps> = ({
                 onChange={(e) => handleSettingChange(key, e.target.checked)}
                 disabled={isLoading}
               />
-              {label}
+              {t(`settings.workspace.${text}`)}
             </label>
-            <div className="setting-description">{desc}</div>
+            <div className="setting-description">{t(`settings.workspace.${text}Description`)}</div>
           </div>
         ))}
       </div>

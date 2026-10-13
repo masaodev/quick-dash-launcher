@@ -1,11 +1,11 @@
 import { useState, useCallback, Dispatch, SetStateAction } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AppSettings } from '@common/types';
 
 import { logError } from '../utils/debug';
 import {
   SETTINGS_RESET_KEYS,
-  SETTINGS_RESET_LABELS,
-  SETTINGS_RESET_NOTES,
+  getResetCategoryText,
   type ResettableSettingsCategory,
 } from '../utils/settingsResetKeys';
 
@@ -38,6 +38,7 @@ export function useSettingsManager({
   showConfirm,
   showToast,
 }: UseSettingsManagerProps) {
+  const { t } = useTranslation();
   const [hotkeyValidation, setHotkeyValidation] = useState<{ isValid: boolean; reason?: string }>({
     isValid: true,
   });
@@ -52,10 +53,10 @@ export function useSettingsManager({
         }
       } catch (error) {
         logError('設定の保存に失敗しました:', error);
-        showAlert('設定の保存に失敗しました。', 'error');
+        showAlert(t('settings.saveFailed'), 'error');
       }
     },
-    [onSave, showAlert, showToast]
+    [onSave, showAlert, showToast, t]
   );
 
   const handleSettingChange = useCallback(
@@ -66,9 +67,9 @@ export function useSettingsManager({
     ): Promise<void> => {
       const newSettings = { ...editedSettings, [key]: value };
       setEditedSettings(newSettings);
-      await saveSettings(newSettings, options?.silent ? undefined : '設定を保存しました');
+      await saveSettings(newSettings, options?.silent ? undefined : t('settings.saved'));
     },
-    [editedSettings, setEditedSettings, saveSettings]
+    [editedSettings, setEditedSettings, saveSettings, t]
   );
 
   const handleNumberInputChange = useCallback(
@@ -82,8 +83,8 @@ export function useSettingsManager({
   );
 
   const handleNumberInputBlur = useCallback(async (): Promise<void> => {
-    await saveSettings(editedSettings, '設定を保存しました');
-  }, [editedSettings, saveSettings]);
+    await saveSettings(editedSettings, t('settings.saved'));
+  }, [editedSettings, saveSettings, t]);
 
   const handleHotkeyValidation = useCallback((isValid: boolean, reason?: string): void => {
     setHotkeyValidation({ isValid, reason });
@@ -96,17 +97,14 @@ export function useSettingsManager({
    */
   const handleReset = useCallback(
     async (category: ResettableSettingsCategory): Promise<void> => {
-      const label = SETTINGS_RESET_LABELS[category];
-      const note = SETTINGS_RESET_NOTES[category];
-      const confirmed = await showConfirm(
-        `「${label}」の項目を既定値に戻しますか？${note ? `\n${note}` : ''}`,
-        {
-          title: '既定値に戻す',
-          confirmText: '既定値に戻す',
-          cancelText: 'キャンセル',
-          danger: true,
-        }
-      );
+      const { label, note } = getResetCategoryText(t, category);
+      const question = t('settings.reset.confirm', { category: label });
+      const confirmed = await showConfirm(note ? `${question}\n${note}` : question, {
+        title: t('settings.reset.title'),
+        confirmText: t('settings.reset.confirmButton'),
+        cancelText: t('common.cancel'),
+        danger: true,
+      });
       if (!confirmed) return;
 
       try {
@@ -116,15 +114,15 @@ export function useSettingsManager({
         ]);
         setEditedSettings(resetSettings);
         onSettingsReplaced?.(resetSettings);
-        showToast?.(`「${label}」を既定値に戻しました`);
+        showToast?.(t('settings.reset.done', { category: label }));
       } catch (error) {
         logError('設定のリセットに失敗しました:', error);
-        showAlert('設定のリセットに失敗しました。', 'error');
+        showAlert(t('settings.reset.failed'), 'error');
       } finally {
         setIsLoading(false);
       }
     },
-    [setEditedSettings, onSettingsReplaced, showAlert, showConfirm, showToast]
+    [setEditedSettings, onSettingsReplaced, showAlert, showConfirm, showToast, t]
   );
 
   const handleOpenConfigFolder = useCallback(async (): Promise<void> => {
@@ -132,9 +130,9 @@ export function useSettingsManager({
       await window.electronAPI.openConfigFolder();
     } catch (error) {
       logError('設定フォルダを開くのに失敗しました:', error);
-      showAlert('設定フォルダを開くのに失敗しました。', 'error');
+      showAlert(t('settings.openSettingsFolderFailed'), 'error');
     }
-  }, [showAlert]);
+  }, [showAlert, t]);
 
   return {
     hotkeyValidation,

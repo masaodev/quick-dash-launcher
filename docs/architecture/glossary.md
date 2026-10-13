@@ -78,8 +78,9 @@
 
 | 日本語 | English | 使わない表記 | 意味 | コード上の名前 |
 | --- | --- | --- | --- | --- |
-| 管理ウィンドウ | settings window | 管理画面、設定画面、admin window | 基本設定・アイテム管理・ヘルプのタブを持つウィンドウ | `AdminApp.tsx` |
-| 基本設定 | Settings | 設定タブ | 管理ウィンドウの設定のタブ | `AdminSettingsTab` |
+| 管理ウィンドウ | settings window | 管理画面、設定画面、admin window | 設定・アイテム管理・ヘルプのタブを持つウィンドウ | `AdminApp.tsx` |
+| 設定（タブ） | Settings | 基本設定タブ | 管理ウィンドウの設定のタブ。左のメニューで基本設定・ウィンドウ・バックアップ・ブックマーク自動取込を切り替える | `AdminSettingsTab` |
+| 基本設定 | General | — | 設定タブの最初のカテゴリ（表示言語・起動ホットキー・システム・表示・グループ起動） | `AdminSettingsBasicSection` |
 | アイテム管理 | Item Manager | 編集画面、編集モード、アイテム編集 | 管理ウィンドウでアイテムとタブを編集するタブ（Ctrl+E） | `AdminItemManagerView` |
 | 起動ホットキー | launch hotkey | ショートカットキー、hot key | メインウィンドウを出すキーの組み合わせ | `hotkey` |
 | 表示言語 | display language | — | 画面に使う言語（自動・日本語・English） | `language` |

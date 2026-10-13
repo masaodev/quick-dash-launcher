@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { SnapshotInfo } from '@common/types';
 
 import '../styles/components/Modal.css';
@@ -17,18 +18,8 @@ function formatSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function formatDate(date: Date): string {
-  const d = new Date(date);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  const h = String(d.getHours()).padStart(2, '0');
-  const min = String(d.getMinutes()).padStart(2, '0');
-  const sec = String(d.getSeconds()).padStart(2, '0');
-  return `${y}/${m}/${day} ${h}:${min}:${sec}`;
-}
-
 const BackupSnapshotModal: React.FC<BackupSnapshotModalProps> = ({ isOpen, onClose }) => {
+  const { t, i18n } = useTranslation();
   const [snapshots, setSnapshots] = useState<SnapshotInfo[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedTimestamp, setSelectedTimestamp] = useState<string | null>(null);
@@ -80,7 +71,7 @@ const BackupSnapshotModal: React.FC<BackupSnapshotModalProps> = ({ isOpen, onClo
   const executeSnapshotAction = async (
     action: () => Promise<{ success: boolean; error?: string }>,
     successMessage: string,
-    failPrefix: string,
+    failMessage: (error: string | undefined) => string,
     errorMessage: string,
     clearSelection = false
   ) => {
@@ -95,7 +86,7 @@ const BackupSnapshotModal: React.FC<BackupSnapshotModalProps> = ({ isOpen, onClo
         setMessage(successMessage);
         if (clearSelection) setSelectedTimestamp(null);
       } else {
-        setMessage(`${failPrefix}: ${result.error}`);
+        setMessage(failMessage(result.error));
       }
     } catch (error) {
       setMessage(errorMessage);
@@ -109,17 +100,17 @@ const BackupSnapshotModal: React.FC<BackupSnapshotModalProps> = ({ isOpen, onClo
   const handleRestore = () =>
     executeSnapshotAction(
       () => window.electronAPI.backupAPI.restoreSnapshot(selectedTimestamp!),
-      'リストアが完了しました。設定を反映するためにアプリの再起動を推奨します。',
-      'リストアに失敗しました',
-      'リストア中にエラーが発生しました'
+      t('settings.snapshots.restored'),
+      (error) => t('settings.snapshots.restoreFailed', { error: error ?? '' }),
+      t('settings.snapshots.restoreError')
     );
 
   const handleDelete = () =>
     executeSnapshotAction(
       () => window.electronAPI.backupAPI.deleteSnapshot(selectedTimestamp!),
-      'スナップショットを削除しました',
-      '削除に失敗しました',
-      '削除中にエラーが発生しました',
+      t('settings.snapshots.deleted'),
+      (error) => t('settings.snapshots.deleteFailed', { error: error ?? '' }),
+      t('settings.snapshots.deleteError'),
       true
     );
 
@@ -134,17 +125,21 @@ const BackupSnapshotModal: React.FC<BackupSnapshotModalProps> = ({ isOpen, onClo
         tabIndex={-1}
       >
         <div className="backup-snapshot-header">
-          <h2>スナップショット一覧</h2>
-          <span className="backup-snapshot-count">{snapshots.length} 件</span>
+          <h2>{t('settings.snapshots.title')}</h2>
+          <span className="backup-snapshot-count">
+            {t('settings.snapshots.count', { count: snapshots.length })}
+          </span>
         </div>
 
         {message && <div className="backup-snapshot-message">{message}</div>}
 
         <div className="backup-snapshot-list">
-          {isLoading && snapshots.length === 0 && <div className="loading">読み込み中...</div>}
+          {isLoading && snapshots.length === 0 && (
+            <div className="loading">{t('common.loading')}</div>
+          )}
 
           {!isLoading && snapshots.length === 0 && (
-            <div className="backup-snapshot-empty">スナップショットはありません</div>
+            <div className="backup-snapshot-empty">{t('settings.snapshots.empty')}</div>
           )}
 
           {snapshots.map((snapshot) => (
@@ -154,11 +149,13 @@ const BackupSnapshotModal: React.FC<BackupSnapshotModalProps> = ({ isOpen, onClo
               onClick={() => setSelectedTimestamp(snapshot.timestamp)}
             >
               <div className="backup-snapshot-item-main">
-                <span className="backup-snapshot-date">{formatDate(snapshot.createdAt)}</span>
+                <span className="backup-snapshot-date">
+                  {new Date(snapshot.createdAt).toLocaleString(i18n.language)}
+                </span>
                 <span className="backup-snapshot-timestamp">{snapshot.timestamp}</span>
               </div>
               <div className="backup-snapshot-item-meta">
-                <span>{snapshot.fileCount} ファイル</span>
+                <span>{t('settings.snapshots.fileCount', { count: snapshot.fileCount })}</span>
                 <span>{formatSize(snapshot.totalSize)}</span>
               </div>
             </div>
@@ -171,17 +168,17 @@ const BackupSnapshotModal: React.FC<BackupSnapshotModalProps> = ({ isOpen, onClo
             onClick={() => setConfirmAction('delete')}
             disabled={!selectedTimestamp || isLoading}
           >
-            削除
+            {t('settings.snapshots.delete')}
           </Button>
           <Button
             variant="primary"
             onClick={() => setConfirmAction('restore')}
             disabled={!selectedTimestamp || isLoading}
           >
-            復元
+            {t('settings.snapshots.restore')}
           </Button>
           <Button variant="cancel" onClick={onClose}>
-            閉じる
+            {t('common.close')}
           </Button>
         </div>
 
@@ -189,20 +186,20 @@ const BackupSnapshotModal: React.FC<BackupSnapshotModalProps> = ({ isOpen, onClo
           isOpen={confirmAction === 'restore'}
           onClose={() => setConfirmAction(null)}
           onConfirm={handleRestore}
-          title="スナップショットの復元"
-          message={`選択したスナップショット（${selectedTimestamp}）からデータを復元します。復元前に現在の状態が自動バックアップされます。続行しますか？`}
-          confirmText="復元する"
-          cancelText="キャンセル"
+          title={t('settings.snapshots.restoreTitle')}
+          message={t('settings.snapshots.restoreConfirm', { timestamp: selectedTimestamp ?? '' })}
+          confirmText={t('settings.snapshots.restoreConfirmButton')}
+          cancelText={t('common.cancel')}
         />
 
         <ConfirmDialog
           isOpen={confirmAction === 'delete'}
           onClose={() => setConfirmAction(null)}
           onConfirm={handleDelete}
-          title="スナップショットの削除"
-          message={`選択したスナップショット（${selectedTimestamp}）を削除します。この操作は元に戻せません。`}
-          confirmText="削除する"
-          cancelText="キャンセル"
+          title={t('settings.snapshots.deleteTitle')}
+          message={t('settings.snapshots.deleteConfirm', { timestamp: selectedTimestamp ?? '' })}
+          confirmText={t('settings.snapshots.deleteConfirmButton')}
+          cancelText={t('common.cancel')}
           danger
         />
       </div>
