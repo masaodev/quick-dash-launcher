@@ -386,15 +386,14 @@ const WINDOW_BOOLEAN_FIELDS = [
  */
 function validateOptionalString(
   source: Record<string, unknown>,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  target: any,
+  target: object,
   field: string
 ): void {
   if (source[field] !== undefined) {
     if (typeof source[field] !== 'string') {
       throw new Error(`${field} must be a string`);
     }
-    target[field] = source[field];
+    (target as Record<string, unknown>)[field] = source[field];
   }
 }
 
@@ -403,8 +402,7 @@ function validateOptionalString(
  */
 function validateTypedFields(
   source: Record<string, unknown>,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  target: any,
+  target: object,
   fields: readonly string[],
   expectedType: 'number' | 'boolean',
   prefix: string = ''
@@ -414,7 +412,7 @@ function validateTypedFields(
       if (typeof source[field] !== expectedType) {
         throw new Error(`${prefix}${field} must be a ${expectedType}`);
       }
-      target[field] = source[field];
+      (target as Record<string, unknown>)[field] = source[field];
     }
   }
 }

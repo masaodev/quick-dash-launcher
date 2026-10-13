@@ -13,6 +13,7 @@ import type { LayoutItem, LayoutWindowEntry } from '@common/types';
 import { GROUP_LAUNCH_DELAY_MS } from '@common/constants';
 import { isLauncherItem, isWindowItem } from '@common/types/guards';
 import { IPC_CHANNELS } from '@common/ipcChannels';
+import { createTitleMatcher } from '@common/utils/windowTitle';
 import { PathUtils } from '@common/utils/pathUtils';
 
 import { tryActivateWindow } from '../utils/windowActivator.js';
@@ -21,7 +22,7 @@ import { checkPathsExist } from '../services/data/pathExistenceChecker.js';
 import { expandEnvironmentVariables } from '../services/icon/iconFileCache.js';
 import { launchItem } from '../utils/itemLauncher.js';
 import { SettingsService } from '../services/settingsService.js';
-import { findWindowByTitle, createTitleMatcher } from '../utils/windowMatcher.js';
+import { findWindowByTitle } from '../utils/windowMatcher.js';
 import { findWindowHwndByTitle } from '../utils/nativeWindowControl.js';
 import {
   showLayoutProgressWindow,

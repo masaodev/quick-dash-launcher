@@ -1,4 +1,5 @@
 import { DESKTOP_TAB } from '@common/constants';
+import { createTitleMatcher } from '@common/utils/windowTitle';
 import type { RegisterItem, WindowConfig, WindowInfo, WindowOperationConfig } from '@common/types';
 
 /**
@@ -22,33 +23,18 @@ export function filterWindowsByDesktopTab(
 }
 
 /**
- * ワイルドカードパターンを正規表現に変換
- * メインプロセス側の windowMatcher.ts と同じロジック
- */
-function wildcardToRegex(pattern: string): RegExp {
-  const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&');
-  const regexPattern = escaped.replace(/\*/g, '.*').replace(/\?/g, '.');
-  return new RegExp(`^${regexPattern}$`, 'i');
-}
-
-/**
  * ウィンドウ一覧からタイトル/プロセス名でマッチするウィンドウを検索
- * メインプロセス側の findWindowByTitle と同等のマッチングロジック
+ * メインプロセス側の findWindowByTitle と同じタイトルの照合（createTitleMatcher）を使う
  */
 export function findMatchingWindow(
   windows: WindowInfo[],
   title?: string,
   processName?: string
 ): WindowInfo | null {
+  const titleMatches = title?.trim() ? createTitleMatcher(title) : null;
   return (
     windows.find((win) => {
-      if (title?.trim()) {
-        const hasWildcard = title.includes('*') || title.includes('?');
-        const titleMatches = hasWildcard
-          ? wildcardToRegex(title).test(win.title)
-          : win.title.toLowerCase() === title.toLowerCase();
-        if (!titleMatches) return false;
-      }
+      if (titleMatches && !titleMatches(win.title)) return false;
 
       if (processName?.trim()) {
         if (!win.processName) return false;
