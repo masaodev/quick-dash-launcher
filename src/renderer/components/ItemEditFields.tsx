@@ -1,9 +1,15 @@
 import i18next from 'i18next';
 import { useTranslation } from 'react-i18next';
 import React from 'react';
-import type { DataFileTab, RegisterItem, WindowInfo } from '@common/types';
+import type {
+  ClipboardFormat,
+  DataFileTab,
+  LayoutWindowEntry,
+  RegisterItem,
+  WindowConfig,
+  WindowInfo,
+} from '@common/types';
 
-import type { useRegisterForm } from '../hooks/useRegisterForm';
 import { debugLog } from '../utils/debug';
 import { toWindowConfig, toWindowOperationConfig } from '../utils/windowFilter';
 
@@ -15,7 +21,22 @@ import IconFetchButton from './IconFetchButton';
 import ClipboardItemEditor from './ClipboardItemEditor';
 import LayoutEntryEditor from './LayoutEntryEditor';
 
-type RegisterFormApi = ReturnType<typeof useRegisterForm>;
+/** フォームの 1 項目に入れられる値 */
+export type ItemFieldValue =
+  | string
+  | boolean
+  | number
+  | RegisterItem['dirOptions']
+  | WindowConfig
+  | RegisterItem['windowOperationConfig']
+  | ClipboardFormat[]
+  | LayoutWindowEntry[];
+
+export interface ItemEditFieldErrors {
+  displayName?: string;
+  path?: string;
+  groupItemNames?: string;
+}
 
 function getDisplayNamePlaceholder(itemCategory: string): string {
   switch (itemCategory) {
@@ -28,20 +49,16 @@ function getDisplayNamePlaceholder(itemCategory: string): string {
   }
 }
 
-interface RegisterItemFormProps {
+interface ItemEditFieldsProps {
   item: RegisterItem;
-  index: number;
-  errors: RegisterFormApi['errors'][number] | undefined;
-  form: Pick<
-    RegisterFormApi,
-    | 'handleItemChange'
-    | 'handlePathBlur'
-    | 'handleTargetTabChange'
-    | 'handleFetchIcon'
-    | 'handleAddGroupItem'
-    | 'handleRemoveGroupItem'
-    | 'updateItem'
-  >;
+  errors: ItemEditFieldErrors | undefined;
+  onFieldChange: (field: keyof RegisterItem, value: ItemFieldValue) => void;
+  onUpdate: (fields: Partial<RegisterItem>) => void;
+  onPathBlur: () => void;
+  onTargetTabChange: (targetTab: string) => void;
+  onFetchIcon: () => void;
+  onAddGroupItem: () => void;
+  onRemoveGroupItem: (groupItemNameIndex: number) => void;
   availableTabs: DataFileTab[];
   dataFileLabels: Record<string, string>;
   /** ドロップしたファイルから登録するときはパスを書き換えさせない */
@@ -60,12 +77,20 @@ interface RegisterItemFormProps {
   showSeparator: boolean;
 }
 
-/** 登録・編集モーダルのアイテム 1 件分のフォーム */
-const RegisterItemForm: React.FC<RegisterItemFormProps> = ({
+/**
+ * アイテム 1 件分の編集欄（登録・編集画面の中身）。
+ * 状態は持たず、読み込み・保存は呼び出し側に任せる
+ */
+const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
   item,
-  index,
   errors,
-  form,
+  onFieldChange,
+  onUpdate,
+  onPathBlur,
+  onTargetTabChange,
+  onFetchIcon,
+  onAddGroupItem,
+  onRemoveGroupItem,
   availableTabs,
   dataFileLabels,
   isPathReadOnly,
@@ -83,7 +108,6 @@ const RegisterItemForm: React.FC<RegisterItemFormProps> = ({
   showSeparator,
 }) => {
   const { t } = useTranslation();
-  const { handleItemChange, updateItem } = form;
   const selectedTab = availableTabs.find((tab) => tab.files.includes(item.targetTab));
   const hasPath =
     item.itemCategory !== 'group' &&
@@ -108,10 +132,7 @@ const RegisterItemForm: React.FC<RegisterItemFormProps> = ({
       <div className="form-row">
         <div className="form-group">
           <label>{t('register.targetTab')}</label>
-          <select
-            value={item.targetTab}
-            onChange={(e) => form.handleTargetTabChange(index, e.target.value)}
-          >
+          <select value={item.targetTab} onChange={(e) => onTargetTabChange(e.target.value)}>
             {availableTabs.map((tab) => (
               <option key={tab.files[0]} value={tab.files[0]}>
                 {tab.name}
@@ -125,7 +146,7 @@ const RegisterItemForm: React.FC<RegisterItemFormProps> = ({
             <label>{t('register.targetFile')}</label>
             <select
               value={item.targetFile || selectedTab.files[0]}
-              onChange={(e) => handleItemChange(index, 'targetFile', e.target.value)}
+              onChange={(e) => onFieldChange('targetFile', e.target.value)}
             >
               {selectedTab.files.map((file) => (
                 <option key={file} value={file}>
@@ -142,7 +163,7 @@ const RegisterItemForm: React.FC<RegisterItemFormProps> = ({
         <select
           value={item.itemCategory}
           onChange={(e) =>
-            handleItemChange(index, 'itemCategory', e.target.value as RegisterItem['itemCategory'])
+            onFieldChange('itemCategory', e.target.value as RegisterItem['itemCategory'])
           }
         >
           <option value="item">{t('register.types.item')}</option>
@@ -161,7 +182,7 @@ const RegisterItemForm: React.FC<RegisterItemFormProps> = ({
             type="text"
             value={item.displayName}
             className={errors?.displayName ? 'error' : ''}
-            onChange={(e) => handleItemChange(index, 'displayName', e.target.value)}
+            onChange={(e) => onFieldChange('displayName', e.target.value)}
             placeholder={getDisplayNamePlaceholder(item.itemCategory)}
           />
           {errors?.displayName && <span className="error-message">{errors.displayName}</span>}
@@ -176,19 +197,19 @@ const RegisterItemForm: React.FC<RegisterItemFormProps> = ({
             value={item.path}
             readOnly={isPathReadOnly}
             className={errors?.path ? 'error' : isPathReadOnly ? 'readonly' : ''}
-            onChange={(e) => handleItemChange(index, 'path', e.target.value)}
-            onBlur={() => form.handlePathBlur(index)}
+            onChange={(e) => onFieldChange('path', e.target.value)}
+            onBlur={() => onPathBlur()}
             placeholder={t('register.pathPlaceholder')}
           />
           <IconFetchButton
             path={item.path}
             loading={iconFetchLoading}
-            onFetch={() => form.handleFetchIcon(index)}
+            onFetch={() => onFetchIcon()}
             itemType={item.type}
           />
           <UrlConverterMenu
             url={item.path}
-            onConvert={(convertedUrl) => handleItemChange(index, 'path', convertedUrl)}
+            onConvert={(convertedUrl) => onFieldChange('path', convertedUrl)}
             itemType={item.type}
           />
           {errors?.path && <span className="error-message">{errors.path}</span>}
@@ -207,7 +228,7 @@ const RegisterItemForm: React.FC<RegisterItemFormProps> = ({
                     <button
                       type="button"
                       className="remove-group-item-btn"
-                      onClick={() => form.handleRemoveGroupItem(index, nameIndex)}
+                      onClick={() => onRemoveGroupItem(nameIndex)}
                       title={t('register.removeGroupItem')}
                     >
                       ×
@@ -218,11 +239,7 @@ const RegisterItemForm: React.FC<RegisterItemFormProps> = ({
             ) : (
               <div className="no-group-items">{t('register.noGroupItems')}</div>
             )}
-            <button
-              type="button"
-              className="add-group-item-btn"
-              onClick={() => form.handleAddGroupItem(index)}
-            >
+            <button type="button" className="add-group-item-btn" onClick={() => onAddGroupItem()}>
               {t('register.addGroupItem')}
             </button>
           </div>
@@ -247,7 +264,7 @@ const RegisterItemForm: React.FC<RegisterItemFormProps> = ({
                     <input
                       type="text"
                       value={item.args || ''}
-                      onChange={(e) => handleItemChange(index, 'args', e.target.value)}
+                      onChange={(e) => onFieldChange('args', e.target.value)}
                       placeholder={t('register.argsPlaceholder')}
                     />
                   </div>
@@ -258,7 +275,7 @@ const RegisterItemForm: React.FC<RegisterItemFormProps> = ({
               {item.itemCategory === 'dir' && (
                 <DirOptionsEditor
                   dirOptions={item.dirOptions}
-                  onChange={(newDirOptions) => handleItemChange(index, 'dirOptions', newDirOptions)}
+                  onChange={(newDirOptions) => onFieldChange('dirOptions', newDirOptions)}
                 />
               )}
             </div>
@@ -269,7 +286,7 @@ const RegisterItemForm: React.FC<RegisterItemFormProps> = ({
       {item.itemCategory === 'item' && (
         <WindowConfigEditor
           windowConfig={item.windowConfig}
-          onChange={(windowConfig) => handleItemChange(index, 'windowConfig', windowConfig)}
+          onChange={(windowConfig) => onFieldChange('windowConfig', windowConfig)}
           onGetWindowClick={onOpenWindowSelector}
           onFetchFromWindow={onFetchFromWindow}
           defaultExpanded={false}
@@ -285,11 +302,7 @@ const RegisterItemForm: React.FC<RegisterItemFormProps> = ({
                 : { title: '' }
             }
             onChange={(wc) =>
-              handleItemChange(
-                index,
-                'windowOperationConfig',
-                toWindowOperationConfig(item.displayName, wc)
-              )
+              onFieldChange('windowOperationConfig', toWindowOperationConfig(item.displayName, wc))
             }
             onGetWindowClick={onOpenWindowSelector}
             onFetchFromWindow={onFetchFromWindow}
@@ -345,7 +358,7 @@ const RegisterItemForm: React.FC<RegisterItemFormProps> = ({
                 updates.displayName =
                   preview.length > 30 ? preview.substring(0, 30) + '...' : preview;
               }
-              updateItem(index, updates);
+              onUpdate(updates);
             }}
             onError={(error) => {
               debugLog('クリップボードキャプチャエラー:', error);
@@ -360,7 +373,7 @@ const RegisterItemForm: React.FC<RegisterItemFormProps> = ({
         <>
           <LayoutEntryEditor
             entries={item.layoutEntries || []}
-            onChange={(entries) => updateItem(index, { layoutEntries: entries })}
+            onChange={(entries) => onUpdate({ layoutEntries: entries })}
             onCaptureClick={onLayoutCapture}
             onSelectWindow={onLayoutEntryWindowSelect}
           />
@@ -375,7 +388,7 @@ const RegisterItemForm: React.FC<RegisterItemFormProps> = ({
         <label>{t('register.note')}</label>
         <textarea
           value={item.memo || ''}
-          onChange={(e) => handleItemChange(index, 'memo', e.target.value)}
+          onChange={(e) => onFieldChange('memo', e.target.value)}
           placeholder={t('register.notePlaceholder')}
           rows={3}
           className="memo-textarea"
@@ -387,4 +400,4 @@ const RegisterItemForm: React.FC<RegisterItemFormProps> = ({
   );
 };
 
-export default RegisterItemForm;
+export default ItemEditFields;
