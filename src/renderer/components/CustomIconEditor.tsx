@@ -1,6 +1,8 @@
 import { useTranslation } from 'react-i18next';
 import React from 'react';
 
+import { Button } from './ui';
+
 interface CustomIconEditorProps {
   /** カスタムアイコンのプレビューURL */
   customIconPreview?: string;
@@ -32,16 +34,28 @@ const CustomIconEditor: React.FC<CustomIconEditorProps> = ({
               alt={t('customIcon.alt')}
               className="custom-icon-img-inline"
             />
-            <button type="button" className="delete-icon-btn-inline" onClick={onDeleteClick}>
+            <Button
+              variant="danger"
+              size="sm"
+              type="button"
+              className="delete-icon-btn-inline"
+              onClick={onDeleteClick}
+            >
               {t('customIcon.delete')}
-            </button>
+            </Button>
           </>
         ) : (
           <span className="no-custom-icon-inline">{t('customIcon.notSet')}</span>
         )}
-        <button type="button" className="select-icon-btn-inline" onClick={onSelectClick}>
+        <Button
+          variant="secondary"
+          size="sm"
+          type="button"
+          className="select-icon-btn-inline"
+          onClick={onSelectClick}
+        >
           {t('customIcon.selectFile')}
-        </button>
+        </Button>
       </div>
     </div>
   );

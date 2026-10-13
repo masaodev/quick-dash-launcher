@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import type { LayoutWindowEntry } from '@common/types';
 
 import '../styles/components/LayoutEntryEditor.css';
+import { Button } from './ui';
 
 interface LayoutEntryEditorProps {
   entries: LayoutWindowEntry[];
@@ -191,13 +192,15 @@ const LayoutEntryEditor: React.FC<LayoutEntryEditorProps> = ({
                       />
                     </div>
                     {onSelectWindow && (
-                      <button
+                      <Button
+                        variant="secondary"
+                        size="sm"
                         type="button"
                         className="add-group-item-btn"
                         onClick={() => onSelectWindow(index)}
                       >
                         {t('layoutEditor.selectWindow')}
-                      </button>
+                      </Button>
                     )}
                   </div>
                 )}
@@ -207,9 +210,15 @@ const LayoutEntryEditor: React.FC<LayoutEntryEditorProps> = ({
         )}
 
         <div className="layout-capture-button">
-          <button type="button" className="add-group-item-btn" onClick={onCaptureClick}>
+          <Button
+            variant="secondary"
+            size="sm"
+            type="button"
+            className="add-group-item-btn"
+            onClick={onCaptureClick}
+          >
             {t('layoutEditor.addFromCurrent')}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

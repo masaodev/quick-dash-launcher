@@ -232,7 +232,9 @@ const BookmarkAutoImportSettings: React.FC<BookmarkAutoImportSettingsProps> = ({
                 <span className="auto-import-rule-name">{rule.name}</span>
 
                 <div className="auto-import-rule-actions">
-                  <button
+                  <Button
+                    variant="secondary"
+                    size="sm"
                     onClick={() => handleExecuteRule(rule)}
                     disabled={executingRuleId !== null}
                     title={t('bookmarkAutoImport.runNow')}
@@ -240,17 +242,23 @@ const BookmarkAutoImportSettings: React.FC<BookmarkAutoImportSettingsProps> = ({
                     {executingRuleId === rule.id
                       ? t('bookmarkAutoImport.running')
                       : t('bookmarkAutoImport.run')}
-                  </button>
-                  <button onClick={() => setEditingRule(rule)} title={t('bookmarkAutoImport.edit')}>
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setEditingRule(rule)}
+                    title={t('bookmarkAutoImport.edit')}
+                  >
                     {t('bookmarkAutoImport.edit')}
-                  </button>
-                  <button
-                    className="danger"
+                  </Button>
+                  <Button
+                    variant="danger"
+                    size="sm"
                     onClick={() => handleDeleteRule(rule.id)}
                     title={t('bookmarkAutoImport.delete')}
                   >
                     {t('bookmarkAutoImport.delete')}
-                  </button>
+                  </Button>
                 </div>
               </div>
 

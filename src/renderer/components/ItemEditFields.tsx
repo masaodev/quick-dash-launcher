@@ -20,6 +20,7 @@ import UrlConverterMenu from './UrlConverterMenu';
 import IconFetchButton from './IconFetchButton';
 import ClipboardItemEditor from './ClipboardItemEditor';
 import LayoutEntryEditor from './LayoutEntryEditor';
+import { Button } from './ui';
 
 /** フォームの 1 項目に入れられる値 */
 export type ItemFieldValue =
@@ -252,9 +253,15 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
             ) : (
               <div className="no-group-items">{t('register.noGroupItems')}</div>
             )}
-            <button type="button" className="add-group-item-btn" onClick={() => onAddGroupItem()}>
+            <Button
+              variant="secondary"
+              size="sm"
+              type="button"
+              className="add-group-item-btn"
+              onClick={() => onAddGroupItem()}
+            >
               {t('register.addGroupItem')}
-            </button>
+            </Button>
           </div>
           {errors?.groupItemNames && <span className="error-message">{errors.groupItemNames}</span>}
           <small>{groupItemsHint ?? t('register.groupItemsHint')}</small>

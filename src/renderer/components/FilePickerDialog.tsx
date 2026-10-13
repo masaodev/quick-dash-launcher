@@ -81,13 +81,14 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
 
         <div className="file-picker-body">
           {description && <p className="file-picker-description">{description}</p>}
-          <button
+          <Button
+            variant="primary"
             className="browse-button"
             onClick={handleBrowseClick}
             data-testid="file-picker-browse-button"
           >
             {t('filePicker.browse')}
-          </button>
+          </Button>
         </div>
 
         <div className="modal-actions">

@@ -213,7 +213,7 @@
   align-items: flex-start;
   gap: var(--spacing-md);
   padding: var(--spacing-md);
-  background-color: var(--bg-primary);
+  background-color: var(--bg-app);
   border: 2px solid var(--color-gray-300);
   border-radius: var(--border-radius);
   cursor: pointer;
@@ -265,7 +265,7 @@
   gap: var(--spacing-md);
   margin-top: var(--spacing-md);
   padding: var(--spacing-md);
-  background-color: var(--bg-secondary);
+  background-color: var(--bg-section);
   border-radius: var(--border-radius);
 }
 
@@ -274,7 +274,7 @@
   font-size: var(--font-size-sm);
   border: var(--border-light);
   border-radius: var(--border-radius);
-  background-color: var(--bg-primary);
+  background-color: var(--bg-app);
   color: var(--text-primary);
   cursor: pointer;
   min-width: 180px;
@@ -368,7 +368,7 @@
 
 /* ショートカットセクション */
 .help-section-shortcuts {
-  background: linear-gradient(135deg, var(--bg-section) 0%, var(--bg-secondary) 100%);
+  background: linear-gradient(135deg, var(--bg-section) 0%, var(--bg-section) 100%);
 }
 
 .shortcuts-grid {
@@ -382,7 +382,7 @@
   align-items: center;
   gap: var(--spacing-lg);
   padding: var(--spacing-sm) var(--spacing-md);
-  background-color: var(--bg-primary);
+  background-color: var(--bg-app);
   border-radius: var(--border-radius);
   transition: background-color 0.15s ease;
 }
@@ -499,7 +499,7 @@
   border: var(--border-normal);
   border-radius: var(--border-radius);
   overflow: hidden;
-  background-color: var(--bg-primary);
+  background-color: var(--bg-app);
 }
 
 .data-file-table-header {
@@ -617,7 +617,7 @@
 }
 
 .delete-tab-button-text:hover:not(:disabled) {
-  background-color: var(--color-red-100);
+  background-color: var(--bg-danger-light);
   border-color: var(--color-danger);
   color: var(--color-danger);
 }
@@ -629,7 +629,7 @@
 
 .move-button {
   padding: 2px 6px;
-  background-color: var(--bg-primary);
+  background-color: var(--bg-app);
   border: var(--border-normal);
   border-radius: var(--border-radius-sm);
   cursor: pointer;
@@ -665,7 +665,7 @@
   font-family: inherit;
   font-size: var(--font-size-base);
   outline: none;
-  background-color: var(--bg-primary);
+  background-color: var(--bg-app);
 }
 
 .tab-name-input:focus {
@@ -697,7 +697,7 @@
 
 .delete-file-button:hover {
   opacity: 1;
-  background-color: var(--color-red-100);
+  background-color: var(--bg-danger-light);
 }
 
 .data-file-actions {
@@ -710,7 +710,7 @@
   padding: var(--spacing-sm) var(--spacing-md);
   border: var(--border-normal);
   border-radius: var(--border-radius);
-  background-color: var(--bg-primary);
+  background-color: var(--bg-app);
   color: var(--text-primary);
   cursor: pointer;
   font-family: inherit;
@@ -752,35 +752,6 @@
   gap: 4px;
 }
 
-.confirm-button,
-.cancel-button {
-  padding: 4px 8px;
-  border: none;
-  border-radius: var(--border-radius-sm);
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: bold;
-  transition: var(--transition-normal);
-}
-
-.confirm-button {
-  background-color: var(--color-green-500);
-  color: white;
-}
-
-.confirm-button:hover {
-  background-color: var(--color-green-600);
-}
-
-.cancel-button {
-  background-color: var(--color-gray-400);
-  color: white;
-}
-
-.cancel-button:hover {
-  background-color: var(--color-gray-500);
-}
-
 /* ファイル管理モーダル */
 /* .modal-overlay と .modal-content は Modal.css で定義されています */
 
@@ -795,27 +766,6 @@
 .modal-header h3 {
   margin: 0;
   font-size: var(--font-size-xl);
-  color: var(--text-primary);
-}
-
-.modal-close-button {
-  background: transparent;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-  color: var(--text-muted);
-  padding: 0;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--border-radius);
-  transition: var(--transition-normal);
-}
-
-.modal-close-button:hover {
-  background-color: var(--bg-hover);
   color: var(--text-primary);
 }
 
@@ -962,50 +912,6 @@
   gap: var(--spacing-xs);
 }
 
-.btn-secondary-sm {
-  padding: 4px 12px;
-  background-color: var(--color-gray-200);
-  color: var(--text-primary);
-  border: var(--border-normal);
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  font-size: var(--font-size-sm);
-  font-family: inherit;
-  transition: var(--transition-normal);
-  white-space: nowrap;
-}
-
-.btn-secondary-sm:hover:not(:disabled) {
-  background-color: var(--color-gray-300);
-}
-
-.btn-secondary-sm:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btn-danger-sm {
-  padding: 4px 12px;
-  background-color: var(--color-danger);
-  color: var(--color-white);
-  border: none;
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  font-size: var(--font-size-sm);
-  font-family: inherit;
-  transition: var(--transition-normal);
-  white-space: nowrap;
-}
-
-.btn-danger-sm:hover:not(:disabled) {
-  background-color: var(--color-danger-hover);
-}
-
-.btn-danger-sm:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 .add-file-section {
   display: flex;
   flex-direction: column;
@@ -1022,7 +928,7 @@
   padding: var(--spacing-sm) var(--spacing-md);
   border: var(--border-normal);
   border-radius: var(--border-radius);
-  background-color: var(--bg-primary);
+  background-color: var(--bg-app);
   font-family: inherit;
   font-size: var(--font-size-base);
   cursor: pointer;
@@ -1038,9 +944,9 @@
 .modal-info {
   margin-top: var(--spacing-lg);
   padding: var(--spacing-md);
-  background-color: var(--color-blue-50);
+  background-color: var(--bg-info-light);
   border-radius: var(--border-radius);
-  border: 1px solid var(--color-blue-200);
+  border: 1px solid var(--color-info-light);
 }
 
 .modal-info p {

@@ -98,7 +98,7 @@
 
 /* ウィンドウアイテムのスタイル */
 .item.window-item {
-  border-left: 3px solid var(--color-accent);
+  border-left: 3px solid var(--color-primary);
 }
 
 /* ウィンドウ検索の複数選択: 選んだ行は淡い背景とチェック。カーソル（.selected）は塗りのまま */

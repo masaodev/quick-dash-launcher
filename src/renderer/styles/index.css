@@ -88,8 +88,8 @@ body {
 }
 
 .shortcut-hint kbd {
-  background-color: var(--bg-input);
-  border: 1px solid var(--border-color);
+  background-color: var(--color-white);
+  border: 1px solid var(--color-gray-400);
   border-radius: var(--border-radius-sm);
   padding: 1px 4px;
   font-family: var(--font-family);

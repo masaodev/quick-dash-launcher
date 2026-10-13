@@ -76,6 +76,7 @@
   --text-disabled: #999;
   --text-error: #e74c3c;
   --text-success: #388e3c;
+  --text-warning: #856404;
   --text-info: #6c757d;
   --text-light-hover: #ffe6e6;
 
@@ -112,6 +113,8 @@
   --font-size-xl: 16px;
   --font-size-2xl: 18px;
   --font-size-3xl: 20px;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
 
   /* 行の高さ */
   --line-height-tight: 1;

@@ -34,12 +34,13 @@ QuickDashLauncherのスタイルは、CSS変数（カスタムプロパティ）
 | 背景 | `--bg-{用途}`（例 `--bg-app`、`--bg-selected`、`--bg-hover`、`--bg-danger-light`） |
 | 文字色 | `--text-{用途}`（例 `--text-primary`、`--text-muted`、`--text-error`） |
 | 余白 | `--spacing-{xxs\|xs\|sm\|md\|lg\|xl\|2xl\|3xl}` |
-| タイポグラフィ | `--font-family`、`--font-family-mono`、`--font-size-{xxs〜3xl\|base}`、`--line-height-{tight\|normal\|relaxed}` |
+| タイポグラフィ | `--font-family`、`--font-family-mono`、`--font-size-{xxs〜3xl\|base}`、`--font-weight-{medium\|semibold}`、`--line-height-{tight\|normal\|relaxed}` |
 | 枠と角丸 | `--border-{light\|normal\|dark\|primary\|danger}`、`--border-radius`、`--border-radius-{sm\|lg\|xl}` |
 | 影・フォーカス・トランジション | `--shadow`、`--shadow-{sm\|lg\|xl}`、`--focus-ring*`、`--transition-{fast\|normal\|slow\|width}` |
 | z-index と寸法 | `--z-{dropdown\|modal}`、`--input-height*`、`--button-height`、`--icon-size*`、`--modal-*`、`--menu-*` |
 | ワークスペースのグループ色トークン | `--group-color-{トークン}` |
 
+- `variables.css` に無い変数名（`--border-color`・`--text-color` など）は使わない。定義されていない変数は何も指定していないのと同じになり、枠や色が黙って消える（2026-10 に約 30 種類を既存の変数へ付け替えた）
 - ワークスペースのグループ色トークンは、`workspace.json` の `groups[].color` に保存される値に対応する。`primary`/`success`/`danger`/`warning`/`info`/`secondary` はテーマ色（`--color-*`）を参照し、それ以外（`purple` など）は固有色を持つ。トークンから CSS 変数への解決は `src/common/groupColors.ts` の `resolveGroupColorCss()` が行う。
 - 必要な値が変数にないときは、直書きせず `variables.css` に既存の命名の型に沿って変数を足す。
 
@@ -49,7 +50,7 @@ QuickDashLauncherのスタイルは、CSS変数（カスタムプロパティ）
 
 ### ボタンクラス
 
-> **推奨**: モーダルのアクションボタンやフォームの送信ボタンには、[Buttonコンポーネント](ui-components.md#buttonコンポーネント)を使用する。以下のクラスは特殊なケース（ツールバー、タブ等）向けである。
+> **推奨**: 文字のあるボタンは、モーダルのアクションボタンでも入力欄の横の小さなボタンでも [Buttonコンポーネント](ui-components.md#buttonコンポーネント)を使う。色はコンポーネントの CSS に書かず、配置（余白・幅・寄せ）だけを `className` で足す。以下のクラスは特殊なケース（アイコンだけのボタン、タブ等）向けである。
 
 | クラス | 定義 | 用途 |
 | --- | --- | --- |
@@ -57,7 +58,6 @@ QuickDashLauncherのスタイルは、CSS変数（カスタムプロパティ）
 | `.btn-primary` / `.btn-secondary` / `.btn-danger` / `.btn-danger-solid` | `Button.css` | 種類別の色（Buttonコンポーネントの `variant`。使い分けは [ui-components.md](ui-components.md#buttonコンポーネント)）。無効の見た目は `.btn:disabled` で全種類共通 |
 | `.btn-sm` / `.btn-lg` | `Button.css` | サイズ（`md` はクラスなし） |
 | `.btn-full-width` | `Button.css` | 幅いっぱいに広げる |
-| `.btn-base` | `common.css` | Buttonコンポーネントを使わないボタン向けのベース（レガシー） |
 | `.action-btn` | `common.css` | 32x32 の正方形アイコンボタン（メインウィンドウのヘッダー：登録・設定・更新・ピン留めなど） |
 
 ### その他の共通クラス
@@ -74,8 +74,6 @@ QuickDashLauncherのスタイルは、CSS変数（カスタムプロパティ）
 
 ### 閉じる・削除ボタンクラス
 
-`.close-btn`（`common.css`）はモーダルを閉じるボタンの共通クラスである。背景・枠なしで、ホバー時に背景色と文字色が変わる。
-
 画面ごとの×ボタン（`.search-clear-button`、`.modal-close-btn`、`.progress-close-btn`、`.workspace-item-delete-btn`、`.remove-group-item-btn` など）は各コンポーネントの CSS で定義している。これらは次の規約でそろえる。
 
 - 丸いボタンにする（`border-radius: 50%`）
@@ -89,9 +87,9 @@ QuickDashLauncherのスタイルは、CSS変数（カスタムプロパティ）
 - **変数名**: `--category-property-variant` 形式（例 `--color-primary-hover`、`--spacing-lg`、`--border-radius-xl`）
 - **クラス名**: ハイフン区切りのケバブケース（例 `.btn-primary`、`.modal-overlay`、`.form-group`）
 - **サイズのサフィックス**: `-sm` / `-lg` に統一する。`-small` / `-large` は使わない
-  - 正: `.btn-sm`、`.btn-danger-sm`、`.btn-secondary-sm`
+  - 正: `.btn-sm`、`.btn-lg`
   - 誤: `.btn-danger-small`、`.btn-primary-large`
-- **ボタン**: 基本形は `.btn-{variant}`。コンポーネント固有のサイズ違いは `.btn-{variant}-sm` / `.btn-{variant}-lg`
+- **ボタン**: 基本形は `.btn-{variant}`。サイズは `.btn-sm` / `.btn-lg` を組み合わせる（`.btn-{variant}-sm` のような色とサイズを兼ねるクラスは作らない）
 - **アクションボタン**: 32x32 の正方形アイコンボタンは `.action-btn` に一本化する。`.action-button` のような紛らわしい別名は作らない
 - **コンポーネント要素**: `.{component}-{element}`（例 `.modal-overlay`、`.item-icon`）
 - **状態クラス**: `.{component}.{state}`（例 `.item.selected`、`.tab-button.active`）

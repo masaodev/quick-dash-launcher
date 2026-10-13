@@ -115,11 +115,11 @@
 }
 
 .layout-capture-window-item:hover {
-  background-color: var(--color-hover);
+  background-color: var(--bg-hover);
 }
 
 .layout-capture-window-item.selected {
-  background-color: var(--color-primary-light, #e3f2fd);
+  background-color: var(--bg-info-light);
   border-color: var(--color-primary);
 }
 

@@ -104,25 +104,6 @@
   margin-left: auto;
 }
 
-.auto-import-rule-actions button {
-  padding: var(--spacing-xs) var(--spacing-sm);
-  font-size: var(--font-size-xs);
-  border: var(--border-light);
-  border-radius: var(--border-radius);
-  background: var(--bg-app);
-  cursor: pointer;
-  color: var(--text-secondary);
-}
-
-.auto-import-rule-actions button:hover {
-  background: var(--bg-hover);
-}
-
-.auto-import-rule-actions button.danger:hover {
-  background: var(--bg-danger-light);
-  color: var(--color-danger);
-}
-
 .auto-import-rule-detail {
   font-size: var(--font-size-xs);
   color: var(--text-muted);

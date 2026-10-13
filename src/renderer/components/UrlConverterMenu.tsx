@@ -3,6 +3,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { findMatchingRule, applyConversionPrefix } from '@common/urlConversionRules';
 import type { ConversionRule } from '@common/urlConversionRules';
 
+import { Button } from './ui';
+
 interface UrlConverterMenuProps {
   url: string;
   onConvert: (convertedUrl: string) => void;
@@ -49,7 +51,9 @@ const UrlConverterMenu: React.FC<UrlConverterMenuProps> = ({ url, onConvert, ite
 
   return (
     <div className="url-converter-menu-container" ref={menuRef}>
-      <button
+      <Button
+        variant="secondary"
+        size="sm"
         type="button"
         className="url-converter-btn"
         onClick={handleButtonClick}
@@ -58,7 +62,7 @@ const UrlConverterMenu: React.FC<UrlConverterMenuProps> = ({ url, onConvert, ite
       >
         <span className="url-converter-emoji">🔗</span>
         <span>{t('urlConverter.button')}</span>
-      </button>
+      </Button>
 
       {isOpen && (
         <div className="url-converter-menu">

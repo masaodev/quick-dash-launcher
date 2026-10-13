@@ -54,7 +54,7 @@
   cursor: pointer;
   user-select: none;
   font-size: var(--font-size-base);
-  color: var(--text-color);
+  color: var(--text-primary);
 }
 
 /* チェックボックス入力 */
