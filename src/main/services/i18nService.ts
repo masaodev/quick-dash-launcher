@@ -21,11 +21,6 @@ async function resolveFromSettings(): Promise<AppLanguage> {
   return resolveLanguage(setting, app.getPreferredSystemLanguages());
 }
 
-/** 今の表示言語 */
-export function getCurrentLanguage(): AppLanguage {
-  return mainI18n.language as AppLanguage;
-}
-
 /**
  * 設定に合わせて言語を切り替える（起動時と、設定の language が変わったとき）
  *

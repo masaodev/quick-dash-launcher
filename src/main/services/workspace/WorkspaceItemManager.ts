@@ -256,10 +256,6 @@ export class WorkspaceItemManager {
     }
   }
 
-  public getItemsByGroup(groupId?: string): WorkspaceItem[] {
-    return this.loadItems().filter((item) => item.groupId === groupId);
-  }
-
   public moveItemToGroup(itemId: string, groupId?: string, groups?: { id: string }[]): void {
     try {
       const items = this.loadItems();

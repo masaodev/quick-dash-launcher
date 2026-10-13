@@ -3,13 +3,7 @@
  */
 
 import { DEFAULT_DATA_FILE } from '../types';
-import type {
-  LauncherItem,
-  DataFileTab,
-  JsonDirOptions,
-  JsonItem,
-  ClipboardFormat,
-} from '../types';
+import type { DataFileTab, JsonDirOptions, JsonItem, ClipboardFormat } from '../types';
 import type { RegisterItem, WindowOperationConfig } from '../types/register.js';
 import type { LayoutWindowEntry, LayoutWindowEntryWithoutIcon } from '../types/launcher.js';
 import type { EditingAppItem, EditingWindowItem } from '../types/editingItem.js';
@@ -255,19 +249,6 @@ export function convertEditingAppItemToRegisterItem(
 
   const _exhaustiveCheck: never = item;
   throw new Error(`Unexpected item type: ${_exhaustiveCheck}`);
-}
-
-/**
- * AppItemからEditingAppItemを作成する
- */
-export function createEditingAppItem(
-  item: LauncherItem & { sourceFile?: string; lineNumber?: number }
-): EditingAppItem {
-  return {
-    ...item,
-    sourceFile: item.sourceFile || DEFAULT_DATA_FILE,
-    lineNumber: item.lineNumber || 1,
-  } as EditingAppItem;
 }
 
 /**

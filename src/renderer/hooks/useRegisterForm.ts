@@ -431,22 +431,6 @@ export function useRegisterForm(
     );
   };
 
-  const addItemsFromPaths = async (paths: string[]) => {
-    if (paths.length === 0) return;
-
-    setLoading(true);
-    try {
-      const itemsWithIcons = await createItemsFromPaths(paths);
-      setItems((prevItems) => [...prevItems, ...itemsWithIcons]);
-      setIconFetchLoading((prev) => [...prev, ...itemsWithIcons.map(() => false)]);
-    } catch (error) {
-      debugInfo('ファイル追加エラー:', error);
-      showError(t('register.errors.addFileError'));
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const replaceFirstItemFromPath = async (path: string) => {
     setLoading(true);
     try {
@@ -488,7 +472,6 @@ export function useRegisterForm(
     handleFetchIcon,
     setEditingItemIndex,
     setSelectorModalOpen,
-    addItemsFromPaths,
     replaceFirstItemFromPath,
   };
 }

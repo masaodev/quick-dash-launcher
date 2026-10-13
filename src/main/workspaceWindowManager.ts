@@ -31,8 +31,6 @@ let pendingCreate: Promise<BrowserWindow> | null = null;
 let isWorkspaceWindowVisible: boolean = false;
 let detachedRestored: boolean = false;
 let isWorkspacePinned: boolean = false;
-/** 確認ダイアログ表示前のサイズ（広げたときだけ保持し、閉じるときに戻す） */
-let isWorkspaceFocused: boolean = false;
 let windowSnapEnabled: boolean = true;
 
 /**
@@ -121,14 +119,6 @@ async function createWorkspaceWindowInternal(): Promise<BrowserWindow> {
     isWorkspaceWindowVisible = false;
   });
 
-  workspaceWindow.on('focus', () => {
-    isWorkspaceFocused = true;
-  });
-
-  workspaceWindow.on('blur', () => {
-    isWorkspaceFocused = false;
-  });
-
   attachCommonKeyHandlers(workspaceWindow);
 
   workspaceWindow.on('moved', () => {
@@ -201,11 +191,6 @@ export async function toggleWorkspaceWindow(): Promise<void> {
   } else {
     await showWorkspaceWindow();
   }
-}
-
-/** ワークスペースウィンドウの表示状態を取得する */
-export function isWorkspaceWindowShown(): boolean {
-  return isWorkspaceWindowVisible;
 }
 
 /** ワークスペースウィンドウのピン留め状態を設定する */
@@ -341,11 +326,6 @@ export async function saveWorkspacePosition(): Promise<void> {
 /** ワークスペースウィンドウのインスタンスを取得する */
 export function getWorkspaceWindow(): BrowserWindow | null {
   return workspaceWindow;
-}
-
-/** ワークスペースウィンドウにフォーカスがあるかどうかを返す */
-export function getIsWorkspaceWindowFocused(): boolean {
-  return isWorkspaceFocused;
 }
 
 /** ウィンドウスナップの有効/無効キャッシュを更新する */

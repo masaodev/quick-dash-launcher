@@ -12,10 +12,6 @@ import {
   parseJsonDataFileLenient,
   serializeJsonDataFile,
   createEmptyJsonDataFile,
-  createJsonLauncherItem,
-  createJsonDirItem,
-  createJsonGroupItem,
-  createJsonWindowItem,
 } from '@common/utils/jsonParser';
 import type {
   JsonDataFile,
@@ -307,80 +303,6 @@ describe('jsonParser: パースとシリアライズ', () => {
       expect(result).not.toHaveProperty('$schema');
       expect(result.version).toBe(JSON_DATA_VERSION);
       expect(result.items).toEqual([]);
-    });
-  });
-});
-
-describe('jsonParser: アイテム作成ヘルパー', () => {
-  describe('createJsonLauncherItem', () => {
-    it('IDを自動生成すること', () => {
-      const item = createJsonLauncherItem('Test', '/path');
-      expect(isValidId(item.id)).toBe(true);
-      expect(item.type).toBe('item');
-      expect(item.displayName).toBe('Test');
-      expect(item.path).toBe('/path');
-    });
-
-    it('オプションフィールドを設定できること', () => {
-      const item = createJsonLauncherItem('Test', '/path', {
-        args: '--flag',
-        customIcon: 'icon.png',
-      });
-      expect(item.args).toBe('--flag');
-      expect(item.customIcon).toBe('icon.png');
-    });
-  });
-
-  describe('createJsonDirItem', () => {
-    it('IDを自動生成すること', () => {
-      const item = createJsonDirItem('C:\\tools');
-      expect(isValidId(item.id)).toBe(true);
-      expect(item.type).toBe('dir');
-      expect(item.path).toBe('C:\\tools');
-    });
-
-    it('オプションを設定できること', () => {
-      const item = createJsonDirItem('C:\\tools', {
-        depth: 2,
-        types: 'file',
-        filter: '*.exe',
-      });
-      expect(item.options?.depth).toBe(2);
-      expect(item.options?.types).toBe('file');
-      expect(item.options?.filter).toBe('*.exe');
-    });
-  });
-
-  describe('createJsonGroupItem', () => {
-    it('IDを自動生成すること', () => {
-      const item = createJsonGroupItem('Dev Tools', ['VS Code', 'Chrome']);
-      expect(isValidId(item.id)).toBe(true);
-      expect(item.type).toBe('group');
-      expect(item.displayName).toBe('Dev Tools');
-      expect(item.itemNames).toEqual(['VS Code', 'Chrome']);
-    });
-  });
-
-  describe('createJsonWindowItem', () => {
-    it('IDを自動生成すること', () => {
-      const item = createJsonWindowItem('Chrome', 'Google Chrome');
-      expect(isValidId(item.id)).toBe(true);
-      expect(item.type).toBe('window');
-      expect(item.displayName).toBe('Chrome');
-      expect(item.windowTitle).toBe('Google Chrome');
-    });
-
-    it('オプションフィールドを設定できること', () => {
-      const item = createJsonWindowItem('Chrome', 'Google Chrome', {
-        x: 100,
-        y: 200,
-        width: 800,
-        height: 600,
-        activateWindow: false,
-      });
-      expect(item.x).toBe(100);
-      expect(item.y).toBe(200);
-      expect(item.activateWindow).toBe(false);
     });
   });
 });

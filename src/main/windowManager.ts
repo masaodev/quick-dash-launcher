@@ -164,9 +164,6 @@ export async function createWindow(): Promise<BrowserWindow> {
   // アイコンパスを取得（開発モード時は専用のアイコンを使用）
   const iconPath = PathManager.getAppIconPath();
 
-  windowLogger.info(`アイコンパス: ${iconPath}`);
-  windowLogger.info(`ファイル存在確認: ${require('fs').existsSync(iconPath)}`);
-
   mainWindow = new BrowserWindow({
     width: windowWidth,
     height: windowHeight,

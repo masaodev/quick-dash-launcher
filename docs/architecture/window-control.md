@@ -418,7 +418,6 @@ Slack (右半分),slack://,,,"{""title"":""Slack"",""x"":960,""y"":0,""width"":9
 | `src/main/utils/itemLauncher.ts` | URL/ファイル/アプリ/カスタムURIの起動処理を統一 |
 | `src/main/utils/windowMatcher.ts` | ウィンドウタイトルによるウィンドウ検索 |
 | `src/main/utils/nativeWindowControl.ts` | ネイティブWindows API経由のウィンドウ制御 |
-| `src/common/utils/windowConfigUtils.ts` | JSON⇔文字列変換、ウィンドウ設定の処理 |
 
 **処理フロー:**
 

@@ -131,7 +131,6 @@ export const IPC_CHANNELS = {
 
   // 検索履歴
   LOAD_SEARCH_HISTORY: 'load-search-history',
-  LOAD_SEARCH_HISTORY_BY_TAB: 'load-search-history-by-tab',
   SAVE_SEARCH_HISTORY: 'save-search-history',
   ADD_SEARCH_HISTORY_ENTRY: 'add-search-history-entry',
   CLEAR_SEARCH_HISTORY: 'clear-search-history',
@@ -275,7 +274,6 @@ export const IPC_CHANNELS = {
   SHOW_WORKSPACE_GROUP_CONTEXT_MENU: 'show-workspace-group-context-menu',
   EVENT_WORKSPACE_GROUP_MENU_RENAME: 'workspace-group-menu-rename',
   EVENT_WORKSPACE_GROUP_MENU_SHOW_COLOR_PICKER: 'workspace-group-menu-show-color-picker',
-  EVENT_WORKSPACE_GROUP_MENU_CHANGE_COLOR: 'workspace-group-menu-change-color',
   EVENT_WORKSPACE_GROUP_MENU_COPY_AS_TEXT: 'workspace-group-menu-copy-as-text',
   EVENT_WORKSPACE_GROUP_MENU_ARCHIVE: 'workspace-group-menu-archive',
   EVENT_WORKSPACE_GROUP_MENU_DELETE: 'workspace-group-menu-delete',
