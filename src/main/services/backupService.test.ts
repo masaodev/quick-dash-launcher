@@ -68,4 +68,26 @@ describe('BackupService の変更前スナップショット', () => {
     expect(isRegular('2026-10-13T01-30-00-2_pre-restore')).toBe(false);
     expect(isRegular('2026-10-13T01-30-00_pre-external')).toBe(false);
   });
+  it('フォルダ名の日時を UTC として読む（作るときと同じ）', async () => {
+    const service = await BackupService.getInstance();
+    const name = await service.createPreExternalChangeSnapshot([
+      { relativePath: 'workspace.json', content: '{}' },
+    ]);
+    const [snapshot] = await service.listSnapshots();
+
+    expect(snapshot.timestamp).toBe(name);
+    expect(snapshot.createdAt.toISOString()).toBe('2026-10-13T01:30:00.000Z');
+  });
+
+  it('規則に合わない名前・フォルダの外を指す名前では、復元も削除もしない', async () => {
+    const service = await BackupService.getInstance();
+    const outside = path.join(tempDir, 'outside');
+    fs.mkdirSync(outside, { recursive: true });
+
+    for (const name of ['..', '../outside', '2026-10-13T01-30-00_/../../outside', 'outside']) {
+      expect((await service.deleteSnapshot(name)).success).toBe(false);
+      expect((await service.restoreSnapshot(name)).success).toBe(false);
+    }
+    expect(fs.existsSync(outside)).toBe(true);
+  });
 });

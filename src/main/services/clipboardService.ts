@@ -32,7 +32,8 @@ import PathManager from '../config/pathManager.js';
 
 import { mainI18n } from './mainI18n.js';
 
-const DATA_FILE_REF_PATTERN = /clipboard-data\/(.+)\.json$/;
+// ID は英数字だけ（generateId）。`../` などでフォルダの外を指す参照は受け付けない
+const DATA_FILE_REF_PATTERN = /^clipboard-data\/([A-Za-z0-9_-]+)\.json$/;
 
 interface SessionData {
   clipboardData: SerializableClipboard;

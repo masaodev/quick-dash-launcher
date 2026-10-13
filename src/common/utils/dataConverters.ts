@@ -132,12 +132,14 @@ function createLayoutRegisterItem(
   entries: LayoutWindowEntry[],
   targetTab: string,
   targetFile: string | undefined,
-  memo?: string
+  memo?: string,
+  customIcon?: string
 ): RegisterItem {
   return {
     ...createBaseRegisterItem(displayName, targetTab, targetFile),
     itemCategory: 'layout',
     layoutEntries: [...entries],
+    customIcon,
     memo,
   };
 }
@@ -220,7 +222,8 @@ export function convertEditingAppItemToRegisterItem(
       item.entries,
       defaultTab,
       item.sourceFile,
-      item.memo
+      item.memo,
+      item.customIcon
     );
   }
 
@@ -325,7 +328,8 @@ export function convertEditableJsonItemToRegisterItem(
       jsonItem.entries,
       defaultTab,
       sourceFile,
-      jsonItem.memo
+      jsonItem.memo,
+      jsonItem.customIcon
     );
   }
 

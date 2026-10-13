@@ -678,7 +678,9 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     discardButton: '破棄',
     discarded: '変更を破棄しました',
     noDuplicates: '重複するアイテムはありません',
-    dedupeConfirm:
+    dedupeConfirm_one:
+      '{{file}} に、種類・名前・パスが同じアイテムが {{count}} 件あります。先にある 1 件を残して削除しますか？（保存で確定）',
+    dedupeConfirm_other:
       '{{file}} に、種類・名前・パスが同じアイテムが {{count}} 件あります。先にある 1 件を残して削除しますか？（保存で確定）',
     deduped_one: '重複 {{count}} 件を削除しました',
     deduped_other: '重複 {{count}} 件を削除しました',
@@ -694,7 +696,8 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     quotedName: '「{{name}}」',
     rebaseConflicts:
       '他で変更・削除されたアイテムがあるため、次の未保存の変更は取り消しました: {{names}}',
-    rebaseApplied: '他で変更された内容を取り込みました（未保存の変更 {{count}} 件は保持）',
+    rebaseApplied_one: '他で変更された内容を取り込みました（未保存の変更 {{count}} 件は保持）',
+    rebaseApplied_other: '他で変更された内容を取り込みました（未保存の変更 {{count}} 件は保持）',
     tabs: {
       noExistingFiles: '（入れられる既存のファイルはありません）',
       newFile: '📄 新しいデータファイルを作る',
@@ -719,8 +722,10 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       fileHeading: '「{{label}}」（{{file}}）',
     },
     tabStructure: {
-      deletionLine: '・「{{label}}」（{{file}}）: アイテム {{count}} 件{{unsaved}}',
-      deletionUnsaved: '。保存していない変更 {{count}} 件も失われます',
+      deletionLine_one: '・「{{label}}」（{{file}}）: アイテム {{count}} 件{{unsaved}}',
+      deletionLine_other: '・「{{label}}」（{{file}}）: アイテム {{count}} 件{{unsaved}}',
+      deletionUnsaved_one: '。保存していない変更 {{count}} 件も失われます',
+      deletionUnsaved_other: '。保存していない変更 {{count}} 件も失われます',
       deletionWarning: '⚠️ 次のデータファイルがディスクから消えます。元に戻せません。\n{{lines}}',
       createFailed: '{{file}} を作れませんでした',
       deleteFailed: '{{file}} を削除できませんでした。{{error}}',
