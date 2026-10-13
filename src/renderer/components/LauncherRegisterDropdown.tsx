@@ -32,12 +32,17 @@ const LauncherRegisterDropdown: React.FC<RegisterDropdownProps> = ({ onOpenRegis
         className="action-btn"
         onClick={dropdown.toggle}
         title={t('launcher.registerMenu.title')}
+        data-testid="register-menu-button"
       >
         ➕
       </button>
       {dropdown.isOpen && (
         <div className="dropdown-menu">
-          <button className="dropdown-item" onClick={handleSimpleRegister}>
+          <button
+            className="dropdown-item"
+            onClick={handleSimpleRegister}
+            data-testid="register-menu-quick-add"
+          >
             {t('launcher.registerMenu.quickAdd')}
           </button>
           <button className="dropdown-item" onClick={handleImportBookmarks}>

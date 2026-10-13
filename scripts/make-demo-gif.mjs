@@ -2,13 +2,13 @@
  * test-results/demo-gif/<name>/ の動画（meta.json が指す範囲）から docs/images/demo-<name>.gif を作る。
  * ffmpeg が PATH にあること
  *
- * 使い方: node scripts/make-demo-gif.mjs [name]（既定は main）
+ * 使い方: node scripts/make-demo-gif.mjs [name]（既定は main。環境変数 DEMO_LANG=en のときは main-en）
  */
 import { execFileSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 
-const name = process.argv[2] ?? 'main';
+const name = process.argv[2] ?? (process.env.DEMO_LANG === 'en' ? 'main-en' : 'main');
 const FPS = 15;
 const dir = path.join(process.cwd(), 'test-results', 'demo-gif', name);
 const meta = JSON.parse(fs.readFileSync(path.join(dir, 'meta.json'), 'utf8'));

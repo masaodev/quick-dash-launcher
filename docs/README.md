@@ -38,11 +38,11 @@ docs/
 | --- | --- |
 | 画面・モーダル・ダイアログの UI や操作の変更 | screens/<該当画面>.md |
 | 画面の見た目の変更（画面イメージのある画面） | `npm run docs:screenshots` で撮り直す（[画面イメージ](screens/WRITING-GUIDE.md#画面イメージ)） |
-| メイン画面の見た目・検索・タブの動作の変更 | `npm run docs:demo-gif` で README のデモ GIF を撮り直す（[テストガイド](testing/README.md)） |
-| 登録画面・管理画面（アイテム管理）の見た目の変更 | `npm run docs:readme-images` で README の画面イメージを撮り直す（[テストガイド](testing/README.md)） |
+| メイン画面の見た目・検索・タブの動作の変更 | `npm run docs:demo-gif`（日本語）と `npm run docs:demo-gif:en`（英語）で README のデモ GIF を撮り直す（[テストガイド](testing/README.md)） |
+| 登録画面・管理画面（アイテム管理）の見た目の変更 | `npm run docs:readme-images`（日本語）と `npm run docs:readme-images:en`（英語）で README の画面イメージを撮り直す（[テストガイド](testing/README.md)） |
 | 画面・モーダルの追加・削除 | screens/ の仕様書を追加・削除し、screens/README.md の一覧と screens/screen-transitions.md を直す（[新しい画面を足したとき](screens/WRITING-GUIDE.md#新しい画面を足したとき)） |
 | 複数画面にまたがる機能の追加・変更 | features/<該当機能>.md、features/README.md |
-| 登録種別の追加・変更、種別ごとにできることの変更 | features/item-categories.md（README の「ほかにできること」も） |
+| 登録種別の追加・変更、種別ごとにできることの変更 | features/item-categories.md（README.ja.md・README.md の「ほかにできること」も） |
 | キーボードショートカットの変更 | features/keyboard-shortcuts.md |
 | アイコン処理の変更 | features/icons.md |
 | ワークスペース機能の変更 | features/workspace.md、screens/workspace-window.md |
@@ -57,6 +57,7 @@ docs/
 | npm scripts・環境変数・開発手順の変更 | setup/development.md |
 | ビルド・配布の変更 | setup/build-deploy.md |
 | テスト構成・テストコマンドの変更 | testing/README.md（リポジトリ直下の tests/README.md・tests/e2e/README.md も） |
+| リポジトリ直下の README.ja.md（日本語。正本）の変更 | README.md（英語の訳）。用語は architecture/glossary.md の English にそろえる。片方だけの変更は PR のチェック（README sync）で止まる |
 
 直し漏れは、リリース前の `/docs-check`（前回の点検以降に変わったコードに触れている文書の照合）でも拾う。
 
