@@ -225,7 +225,7 @@ const WindowSelectorModal: React.FC<WindowSelectorModalProps> = ({ isOpen, onClo
       >
         <div className="window-selector-header">
           <h3>{t('windowPicker.selectTitle')}</h3>
-          <button className="close-button" onClick={onClose}>
+          <button className="close-btn close-button" onClick={onClose}>
             ×
           </button>
         </div>

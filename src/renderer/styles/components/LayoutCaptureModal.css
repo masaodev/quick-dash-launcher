@@ -41,42 +41,44 @@
   color: var(--text-primary);
 }
 
-.layout-capture-header .close-button {
-  background: none;
-  border: none;
-  font-size: var(--font-size-xl);
-  color: var(--text-secondary);
-  cursor: pointer;
-  padding: 0;
-}
-
 .layout-capture-body {
   padding: var(--spacing-md);
   overflow-y: auto;
   flex: 1;
 }
 
+/* 仮想デスクトップタブ（ウィンドウ選択の .desktop-tab と同じ下線型。WindowSelectorModal.css はここでは読まれないので同じ値を置く） */
 .layout-capture-body .desktop-tabs {
   display: flex;
-  gap: var(--spacing-xs);
+  gap: 2px;
   margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: var(--border-light);
   flex-wrap: wrap;
 }
 
 .layout-capture-body .desktop-tab {
-  padding: var(--spacing-xs) var(--spacing-sm);
-  border: var(--border-light);
-  border-radius: var(--border-radius-sm);
-  background: var(--color-white);
+  padding: var(--spacing-xs) var(--spacing-lg);
+  border: none;
+  background-color: var(--color-gray-300);
+  color: var(--text-muted);
   cursor: pointer;
-  font-size: var(--font-size-sm);
-  color: var(--text-secondary);
+  border-radius: var(--border-radius) var(--border-radius) 0 0;
+  font-family: inherit;
+  font-size: var(--font-size-base);
+  transition: var(--transition-normal);
+  white-space: nowrap;
+}
+
+.layout-capture-body .desktop-tab:hover {
+  background-color: var(--color-gray-400);
+  color: var(--text-primary);
 }
 
 .layout-capture-body .desktop-tab.active {
-  background: var(--color-primary);
-  color: var(--color-white);
-  border-color: var(--color-primary);
+  background-color: var(--color-white);
+  color: var(--text-primary);
+  border-bottom: 2px solid var(--color-primary);
 }
 
 .layout-capture-body .desktop-tab .tab-count {

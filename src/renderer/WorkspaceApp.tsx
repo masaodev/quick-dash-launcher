@@ -448,11 +448,11 @@ const WorkspaceApp: React.FC = () => {
   function getPinClassName(mode: number): string {
     switch (mode) {
       case 1:
-        return 'workspace-pin-btn stay-visible';
+        return 'action-btn workspace-pin-btn pin-stay-visible';
       case 2:
-        return 'workspace-pin-btn pinned';
+        return 'action-btn workspace-pin-btn pin-always-on-top';
       default:
-        return 'workspace-pin-btn';
+        return 'action-btn workspace-pin-btn';
     }
   }
 
@@ -486,7 +486,7 @@ const WorkspaceApp: React.FC = () => {
             📌
           </button>
           <button
-            className="workspace-close-btn"
+            className="action-btn workspace-close-btn"
             onClick={handleCloseDetached}
             title={t('workspace.detached.close')}
             aria-label={t('workspace.detached.closeLabel')}

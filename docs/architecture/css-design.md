@@ -58,7 +58,8 @@ QuickDashLauncherのスタイルは、CSS変数（カスタムプロパティ）
 | `.btn-primary` / `.btn-secondary` / `.btn-danger` / `.btn-danger-solid` | `Button.css` | 種類別の色（Buttonコンポーネントの `variant`。使い分けは [ui-components.md](ui-components.md#buttonコンポーネント)）。無効の見た目は `.btn:disabled` で全種類共通 |
 | `.btn-sm` / `.btn-lg` | `Button.css` | サイズ（`md` はクラスなし） |
 | `.btn-full-width` | `Button.css` | 幅いっぱいに広げる |
-| `.action-btn` | `common.css` | 32x32 の正方形アイコンボタン（メインウィンドウのヘッダー：登録・設定・更新・ピン留めなど） |
+| `.action-btn` | `common.css` | 32x32 の正方形アイコンボタン（メインウィンドウとワークスペースのヘッダー：登録・設定・更新・ピン留めなど）。押している状態は `.active`（青）。ピンの状態は `.pin-stay-visible`（表示固定・青）と `.pin-always-on-top`（最上面・赤） |
+| `.close-btn` | `common.css` | 閉じる・削除の ×（下の「閉じる・削除ボタンクラス」） |
 
 ### その他の共通クラス
 
@@ -74,12 +75,16 @@ QuickDashLauncherのスタイルは、CSS変数（カスタムプロパティ）
 
 ### 閉じる・削除ボタンクラス
 
-画面ごとの×ボタン（`.search-clear-button`、`.modal-close-btn`、`.progress-close-btn`、`.workspace-item-delete-btn`、`.remove-group-item-btn` など）は各コンポーネントの CSS で定義している。これらは次の規約でそろえる。
+× のボタンは `common.css` の `.close-btn` を付ける。見た目（枠なしの丸・太字の ×・グレー、hover で薄い背景）はここで決め、コンポーネントの CSS には位置（`position`・余白）だけを書く。
 
-- 丸いボタンにする（`border-radius: 50%`）
-- ×は太字にする（`font-weight: bold`）
-- ホバー時は背景色を変えて拡大し（`scale(1.1)`）、クリック時は縮小する（`scale(0.95)`）
-- 削除系は赤、それ以外（閉じる・クリア）はグレーにする
+| クラス | 用途 |
+| --- | --- |
+| `.close-btn` | モーダル・パネルを閉じる（28x28） |
+| `.close-btn.close-btn-sm` | 入力欄の中のクリア、一覧の行の × など（22x22） |
+| `.close-btn.close-btn-danger` | 削除の ×。普段はグレーで、hover で赤くなる |
+
+- 文字は「×」（U+00D7）にそろえ、英字の x は使わない
+- ワークスペースのヘッダーの閉じるボタン（`.workspace-close-btn`）は、隣のボタンとそろえて `.action-btn` にし、hover だけ赤にする
 - カードの上に重ねる削除ボタンは、白背景・枠線・影で背景から浮かせる（例 `.workspace-item-delete-btn`）
 
 ## 命名規則

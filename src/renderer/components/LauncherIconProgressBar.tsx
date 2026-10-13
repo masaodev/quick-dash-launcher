@@ -130,7 +130,11 @@ const LauncherIconProgressBar: React.FC<IconProgressBarProps> = ({ progress, onC
                 {t('common.details')}
               </Button>
             )}
-            <button className="progress-close-btn" onClick={onClose} aria-label={t('common.close')}>
+            <button
+              className="close-btn progress-close-btn"
+              onClick={onClose}
+              aria-label={t('common.close')}
+            >
               ×
             </button>
           </div>

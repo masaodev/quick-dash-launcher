@@ -52,7 +52,11 @@ const IconProgressDetailModal: React.FC<IconProgressDetailModalProps> = ({
       >
         <div className="modal-header">
           <h2>{t('launcher.iconResults.title')}</h2>
-          <button className="modal-close-btn" onClick={onClose} aria-label={t('common.close')}>
+          <button
+            className="close-btn modal-close-btn"
+            onClick={onClose}
+            aria-label={t('common.close')}
+          >
             ×
           </button>
         </div>

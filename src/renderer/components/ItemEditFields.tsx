@@ -241,7 +241,7 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
                     <span>{itemName}</span>
                     <button
                       type="button"
-                      className="remove-group-item-btn"
+                      className="close-btn close-btn-sm close-btn-danger remove-group-item-btn"
                       onClick={() => onRemoveGroupItem(nameIndex)}
                       title={t('register.removeGroupItem')}
                     >

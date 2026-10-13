@@ -41,26 +41,6 @@
   color: var(--text-primary);
 }
 
-.window-selector-header .close-button {
-  background: none;
-  border: none;
-  font-size: var(--font-size-xl);
-  color: var(--text-secondary);
-  cursor: pointer;
-  padding: 0;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--border-radius-sm);
-}
-
-.window-selector-header .close-button:hover {
-  background-color: var(--bg-hover);
-  color: var(--text-primary);
-}
-
 .window-selector-body {
   flex: 1;
   overflow: hidden;
@@ -223,4 +203,3 @@
   display: flex;
   justify-content: flex-end;
 }
-
