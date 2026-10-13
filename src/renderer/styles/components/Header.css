@@ -103,34 +103,7 @@
   right: var(--spacing-sm);
   top: 50%;
   transform: translateY(-50%);
-  width: 24px;
-  height: 24px;
   margin: 0;
-  padding: 0;
-  background: transparent;
-  border: none;
-  border-radius: 50%;
-  font-size: 18px;
-  font-weight: bold;
-  line-height: 1;
-  color: var(--color-gray-600);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: var(--transition-normal);
-  -webkit-app-region: no-drag;
-}
-
-.search-clear-button:hover {
-  background-color: var(--color-gray-600);
-  color: var(--color-white);
-  transform: translateY(-50%) scale(1.1);
-}
-
-.search-clear-button:active {
-  background-color: var(--color-gray-700);
-  transform: translateY(-50%) scale(0.95);
 }
 
 .action-buttons {
@@ -139,64 +112,7 @@
   margin: 0;
 }
 
-.action-btn {
-  width: 40px;
-  height: 40px;
-  margin: 0;
-  padding: 0;
-  border: var(--border-normal);
-  background-color: var(--color-white);
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  font-size: var(--font-size-2xl);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: var(--transition-normal);
-  -webkit-app-region: no-drag;
-}
-
-.action-btn:hover {
-  background-color: var(--bg-hover);
-  border-color: var(--color-gray-600);
-}
-
-.action-btn:active {
-  background-color: var(--color-gray-400);
-}
-
-/* ピンボタンのモード別スタイル（normalモードはaction-btnのデフォルトスタイルを使用） */
-.action-btn.pin-always-on-top {
-  background-color: var(--color-danger);
-  color: var(--color-white);
-  border-color: var(--color-danger);
-}
-
-.action-btn.pin-always-on-top:hover {
-  background-color: var(--color-danger-alt) !important;
-  border-color: var(--color-danger-alt);
-  box-shadow: var(--shadow);
-  transform: scale(1.05);
-}
-
-.action-btn.pin-stay-visible {
-  background-color: var(--color-primary); /* 青色 */
-  color: var(--color-white);
-  border-color: var(--color-primary);
-}
-
-.action-btn.pin-stay-visible:hover {
-  background-color: var(--color-info-light) !important;
-  border-color: var(--color-info-light);
-  box-shadow: var(--shadow);
-  transform: scale(1.05);
-}
-
-/* アクティブ状態のフィードバック */
-.action-btn.pin-always-on-top:active,
-.action-btn.pin-stay-visible:active {
-  transform: scale(0.95);
-}
+/* .action-btn とピンの状態色は common.css で定義 */
 
 /* Settings Dropdown */
 .settings-dropdown {

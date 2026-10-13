@@ -53,35 +53,35 @@ const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
       <h1>Workspace</h1>
       <div className="workspace-header-controls">
         <button
-          className={`workspace-control-btn ${isFilterVisible ? 'active' : ''}`}
+          className={`action-btn workspace-control-btn ${isFilterVisible ? 'active' : ''}`}
           onClick={onToggleFilter}
           title={t('workspace.header.filter')}
         >
           🔍
         </button>
         <button
-          className="workspace-control-btn"
+          className="action-btn workspace-control-btn"
           onClick={onExpandAll}
           title={t('workspace.header.expandAll')}
         >
           🔽
         </button>
         <button
-          className="workspace-control-btn"
+          className="action-btn workspace-control-btn"
           onClick={onCollapseAll}
           title={t('workspace.header.collapseAll')}
         >
           🔼
         </button>
         <button
-          className="workspace-control-btn"
+          className="action-btn workspace-control-btn"
           onClick={onAddGroup}
           title={t('workspace.header.addGroup')}
         >
           ➕
         </button>
         <button
-          className={`workspace-pin-btn ${isPinned ? 'pinned' : ''}`}
+          className={`action-btn workspace-pin-btn ${isPinned ? 'pin-always-on-top' : ''}`}
           onClick={onTogglePin}
           title={isPinned ? t('workspace.header.unpin') : t('workspace.header.pin')}
         >
@@ -89,7 +89,7 @@ const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
         </button>
         <div className="workspace-settings-container" ref={settingsMenuRef}>
           <button
-            className={`workspace-control-btn ${isSettingsMenuOpen ? 'active' : ''}`}
+            className={`action-btn workspace-control-btn ${isSettingsMenuOpen ? 'active' : ''}`}
             onClick={() => setIsSettingsMenuOpen(!isSettingsMenuOpen)}
             title={t('workspace.header.menu')}
           >
@@ -147,7 +147,7 @@ const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
           )}
         </div>
         <button
-          className="workspace-close-btn"
+          className="action-btn workspace-close-btn"
           onClick={onClose}
           title={t('workspace.header.close')}
         >

@@ -173,7 +173,7 @@ const LayoutCaptureModal: React.FC<LayoutCaptureModalProps> = ({ isOpen, onClose
       >
         <div className="layout-capture-header">
           <h3>{t('windowPicker.captureTitle')}</h3>
-          <button className="close-button" onClick={onClose}>
+          <button className="close-btn close-button" onClick={onClose}>
             ×
           </button>
         </div>

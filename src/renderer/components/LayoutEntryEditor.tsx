@@ -133,7 +133,7 @@ const LayoutEntryEditor: React.FC<LayoutEntryEditorProps> = ({
                     </label>
                     <button
                       type="button"
-                      className="remove-entry-btn"
+                      className="close-btn close-btn-sm close-btn-danger remove-entry-btn"
                       onClick={() => removeEntry(index)}
                       title={t('layoutEditor.delete')}
                     >

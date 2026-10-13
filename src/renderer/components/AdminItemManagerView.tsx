@@ -679,7 +679,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
               />
               {searchQuery && (
                 <button
-                  className="search-clear-button"
+                  className="close-btn close-btn-sm search-clear-button"
                   onClick={() => onSearchChange('')}
                   type="button"
                   aria-label={t('itemManager.toolbar.clearSearch')}

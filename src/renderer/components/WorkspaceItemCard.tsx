@@ -176,7 +176,7 @@ const WorkspaceItemCard: React.FC<WorkspaceItemCardProps> = ({
         onClick={handleRemoveClick}
         title={t('workspace.itemCard.remove')}
       >
-        x
+        ×
       </button>
     </div>
   );

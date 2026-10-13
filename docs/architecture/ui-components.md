@@ -41,9 +41,9 @@ props はコードを正とし、ここには写さない。決まりとして�
 
 | 用途 | 推奨クラス |
 | --- | --- |
-| ヘッダーの正方形アイコンボタン | `.action-btn` |
+| ヘッダーの正方形アイコンボタン（メイン・ワークスペース） | `.action-btn` |
 | タブ切り替えボタン | `.menu-item`, `.desktop-tab` |
-| 検索クリアボタン | `.search-clear-button` |
+| 閉じる・削除の ×（検索クリアを含む） | `.close-btn`（[css-design.md](css-design.md#閉じる削除ボタンクラス)） |
 | ドロップダウントリガー | `.dropdown-trigger-btn` |
 | 一覧の行の削除アイコンボタン（🗑） | `.delete-button` |
 

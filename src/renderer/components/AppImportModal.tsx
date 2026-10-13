@@ -372,7 +372,7 @@ function AppImportModal({
               />
               {searchQuery && (
                 <button
-                  className="search-clear-button"
+                  className="close-btn close-btn-sm search-clear-button"
                   onClick={() => setSearchQuery('')}
                   type="button"
                   aria-label={t('appImport.clearSearch')}

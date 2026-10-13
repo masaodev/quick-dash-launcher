@@ -57,7 +57,7 @@ const WorkspaceFilterBar: React.FC<WorkspaceFilterBarProps> = ({
         <option value="item">{t('workspace.filter.scopes.item')}</option>
       </select>
       <button
-        className="workspace-filter-close-btn"
+        className="close-btn close-btn-sm workspace-filter-close-btn"
         onClick={onClose}
         title={t('workspace.filter.close')}
       >

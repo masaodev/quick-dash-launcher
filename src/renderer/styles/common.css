@@ -119,18 +119,21 @@
    ========================= */
 /* 注意: .btn-* クラスは Button.css で定義 */
 
-/* アクションボタン（32x32の正方形） */
+/* アイコンだけの四角いボタン（32x32。メインウィンドウとワークスペースのヘッダーで共通） */
 .action-btn {
   width: var(--button-height);
   height: var(--button-height);
+  margin: 0;
+  padding: 0;
   border: var(--border-normal);
   background-color: var(--color-white);
   border-radius: var(--border-radius);
   cursor: pointer;
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-xl);
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
   transition: var(--transition-normal);
   -webkit-app-region: no-drag;
 }
@@ -141,18 +144,76 @@
 }
 
 .action-btn:active {
-  background-color: var(--color-gray-400);
+  transform: scale(0.95);
 }
 
-.action-btn.active {
+/* 押している状態（フィルタ・設定メニューを開いている）と、ピンの「表示固定」 */
+.action-btn.active,
+.action-btn.pin-stay-visible {
   background-color: var(--color-primary);
   color: var(--color-white);
   border-color: var(--color-primary);
 }
 
-.action-btn.active:hover {
+.action-btn.active:hover,
+.action-btn.pin-stay-visible:hover {
   background-color: var(--color-primary-hover);
   border-color: var(--color-primary-hover);
+}
+
+/* ピンの「最上面に固定」 */
+.action-btn.pin-always-on-top {
+  background-color: var(--color-danger);
+  color: var(--color-white);
+  border-color: var(--color-danger);
+}
+
+.action-btn.pin-always-on-top:hover {
+  background-color: var(--color-danger-hover);
+  border-color: var(--color-danger-hover);
+}
+
+/* 閉じる・削除の × ボタン（枠なし。hover で薄い背景、削除は赤） */
+.close-btn {
+  width: 28px;
+  height: 28px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--font-size-3xl);
+  font-weight: bold;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: var(--transition-normal);
+  -webkit-app-region: no-drag;
+}
+
+.close-btn:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.close-btn:active {
+  background-color: var(--color-gray-400);
+}
+
+/* 入力欄の中や一覧の行に置く小さい × */
+.close-btn.close-btn-sm {
+  width: 22px;
+  height: 22px;
+  font-size: var(--font-size-xl);
+}
+
+.close-btn.close-btn-danger:hover {
+  background-color: var(--bg-danger-light);
+  color: var(--color-danger);
 }
 
 /* =========================

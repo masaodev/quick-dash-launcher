@@ -52,104 +52,17 @@ html:has(.workspace-window.background-transparent) {
   -webkit-app-region: no-drag;
 }
 
-/* コントロールボタン（共通スタイル） */
-.workspace-control-btn,
-.workspace-pin-btn {
-  width: 32px;
-  height: 32px;
-  margin: 0;
-  padding: 0;
-  border: 1px solid var(--color-gray-400);
-  background-color: var(--color-white);
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  font-size: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: var(--transition-normal);
-  flex-shrink: 0;
-}
-
-.workspace-control-btn:hover,
-.workspace-pin-btn:hover {
-  background-color: var(--bg-hover);
-  border-color: var(--color-gray-600);
-}
-
-.workspace-control-btn:active,
-.workspace-pin-btn:active {
-  transform: scale(0.95);
-}
-
-/* 表示固定状態のスタイル（青色） */
-.workspace-pin-btn.stay-visible {
-  background-color: var(--color-info);
-  color: var(--color-white);
-  border-color: var(--color-info);
-}
-
-.workspace-pin-btn.stay-visible:hover {
-  background-color: var(--color-info-hover);
-  border-color: var(--color-info-hover);
-  box-shadow: var(--shadow);
-  transform: scale(1.05);
-}
-
-/* 最上面固定状態のスタイル（赤色） */
-.workspace-pin-btn.pinned {
-  background-color: var(--color-danger);
-  color: var(--color-white);
-  border-color: var(--color-danger);
-}
-
-.workspace-pin-btn.pinned:hover {
-  background-color: var(--color-danger-hover);
-  border-color: var(--color-danger-hover);
-  box-shadow: var(--shadow);
-  transform: scale(1.05);
-}
-
-/* 閉じるボタン */
+/* コントロールボタン・ピンは .action-btn（common.css）。閉じるボタンだけ hover を赤にする */
 .workspace-close-btn {
-  width: 32px;
-  height: 32px;
-  margin: 0;
-  padding: 0;
-  border: 1px solid var(--color-gray-400);
-  background-color: var(--color-white);
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  font-size: 20px;
+  font-size: var(--font-size-3xl);
   font-weight: bold;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: var(--transition-normal);
-  flex-shrink: 0;
-  color: var(--color-gray-600);
+  color: var(--text-muted);
 }
 
 .workspace-close-btn:hover {
   background-color: var(--color-danger);
   color: var(--color-white);
   border-color: var(--color-danger);
-}
-
-.workspace-close-btn:active {
-  transform: scale(0.95);
-}
-
-/* コントロールボタン アクティブ状態 */
-.workspace-control-btn.active {
-  background-color: var(--color-primary);
-  color: var(--color-white);
-  border-color: var(--color-primary);
-}
-
-.workspace-control-btn.active:hover {
-  background-color: var(--color-primary-hover);
-  border-color: var(--color-primary-hover);
 }
 
 /* 設定ボタンとドロップダウンメニュー */
@@ -301,26 +214,6 @@ html:has(.workspace-window.background-transparent) {
 .workspace-filter-scope:focus {
   outline: none;
   border-color: var(--color-primary);
-}
-
-.workspace-filter-close-btn {
-  width: 24px;
-  height: 24px;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  font-size: 16px;
-  color: var(--text-secondary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--border-radius);
-  transition: var(--transition-fast);
-}
-
-.workspace-filter-close-btn:hover {
-  background-color: var(--bg-hover);
-  color: var(--text-primary);
 }
 
 /* アイテムリスト */

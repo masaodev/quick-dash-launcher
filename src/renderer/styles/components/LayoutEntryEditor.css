@@ -113,20 +113,6 @@
   margin: 0;
 }
 
-.layout-entry-item .remove-entry-btn {
-  background: none;
-  border: none;
-  color: var(--color-danger, #dc3545);
-  cursor: pointer;
-  font-size: var(--font-size-base);
-  padding: 2px 4px;
-  line-height: 1;
-}
-
-.layout-entry-item .remove-entry-btn:hover {
-  color: var(--color-danger-hover);
-}
-
 /* 展開時の詳細セクション */
 .layout-entry-item .entry-expanded-details {
   display: flex;

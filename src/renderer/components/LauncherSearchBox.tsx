@@ -73,7 +73,7 @@ const LauncherSearchBox = forwardRef<HTMLInputElement, SearchBoxProps>(
           />
           {value && (
             <button
-              className="search-clear-button"
+              className="close-btn close-btn-sm search-clear-button"
               onClick={handleClear}
               type="button"
               aria-label={t('launcher.search.clear')}
