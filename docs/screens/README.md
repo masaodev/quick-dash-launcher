@@ -83,11 +83,11 @@
 | 画面名 | 表示条件 | 仕様書 |
 | --- | --- | --- |
 | **右クリックメニュー** | アイテムの右クリック操作<br>（パスコピー、フォルダーを開く、編集） | [context-menu.md](./context-menu.md) |
-| **URLコンバーターメニュー** | アイテム登録・編集、ワークスペースアイテム編集のパス入力欄の「🔗 URL変換」 | [register-modal.md](./register-modal.md#533-url変換ボタンをクリック)（`src/renderer/components/UrlConverterMenu.tsx`） |
+| **URLコンバーターメニュー**（`UrlConverterMenu`） | アイテム登録・編集、ワークスペースアイテム編集のパス入力欄の「🔗 URL変換」 | [register-modal.md](./register-modal.md#533-url変換ボタンをクリック) |
 | **フォルダ取込オプションエディタ** | フォルダ取込アイテムのオプション設定 | [dir-options-editor.md](./dir-options-editor.md) |
 | **ホットキー入力** | 起動ホットキー・アイテム検索ホットキーの設定入力 | [hotkey-input.md](./hotkey-input.md) |
-| **クリップボードアイテムエディター** | アイテム登録・編集で種別「📋 クリップボード」を選んだとき | [register-modal.md](./register-modal.md#519-クリップボードを取り込む)（`src/renderer/components/ClipboardItemEditor.tsx`） |
-| **カラーピッカー** | ワークスペースウィンドウ・切り離しウィンドウでグループを右クリック→「🎨 カラーを変更」 | [workspace-window.md](./workspace-window.md#583-グループを右クリックして色を変更)（`src/renderer/components/ColorPicker.tsx`） |
+| **クリップボードアイテムエディター**（`ClipboardItemEditor`） | アイテム登録・編集で種別「📋 クリップボード」を選んだとき | [register-modal.md](./register-modal.md#519-クリップボードを取り込む) |
+| **カラーピッカー**（`ColorPicker`） | ワークスペースウィンドウ・切り離しウィンドウでグループを右クリック→「🎨 カラーを変更」 | [workspace-window.md](./workspace-window.md#583-グループを右クリックして色を変更) |
 | **ウィンドウ設定エディター** | ウィンドウ設定（タイトル・位置・サイズ）の編集 | [register-modal.md](./register-modal.md#55-ウィンドウ設定を入力) |
 | **カスタムアイコンエディター** | カスタムアイコンの選択・削除 | [register-modal.md](./register-modal.md#512-カスタムアイコンを設定) |
 
