@@ -27,7 +27,7 @@ interface BookmarkAutoImportSettingsProps {
 const BookmarkAutoImportSettings: React.FC<BookmarkAutoImportSettingsProps> = ({
   onOpenManualImport,
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const {
     settings,
     isLoading,
@@ -89,19 +89,28 @@ const BookmarkAutoImportSettings: React.FC<BookmarkAutoImportSettingsProps> = ({
     async (rule: BookmarkAutoImportRule) => {
       const result = await executeRule(rule);
       if (result.success) {
-        const message = `ブックマーク取込（${rule.name}）: ${result.importedCount}件登録, ${result.deletedCount}件削除`;
+        const message = t('bookmarkAutoImport.ruleResult', {
+          name: rule.name,
+          imported: result.importedCount,
+          deleted: result.deletedCount,
+        });
         if (result.manualDuplicateCount) {
           showWarning(
-            `${message}（手動で登録済みの URL と ${result.manualDuplicateCount} 件重複しています）`
+            t('bookmarkAutoImport.manualDuplicates', {
+              message,
+              count: result.manualDuplicateCount,
+            })
           );
         } else {
           showSuccess(message);
         }
       } else {
-        showError(`ブックマーク取込（${rule.name}）: エラー - ${result.errorMessage}`);
+        showError(
+          t('bookmarkAutoImport.ruleError', { name: rule.name, error: result.errorMessage ?? '' })
+        );
       }
     },
-    [executeRule, showSuccess, showWarning, showError]
+    [executeRule, showSuccess, showWarning, showError, t]
   );
 
   const handleExecuteAll = useCallback(async () => {
@@ -116,18 +125,33 @@ const BookmarkAutoImportSettings: React.FC<BookmarkAutoImportSettingsProps> = ({
   }, [executeAllRules, showSuccess, showWarning, t]);
 
   const formatLastResult = (rule: BookmarkAutoImportRule): string => {
-    if (!rule.lastExecutedAt) return '未実行';
+    if (!rule.lastExecutedAt) return t('bookmarkAutoImport.neverRun');
 
-    const date = new Date(rule.lastExecutedAt);
-    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+    const dateStr = new Date(rule.lastExecutedAt).toLocaleString(i18n.language, {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
 
     if (rule.lastResult?.success) {
       const duplicates = rule.lastResult.manualDuplicateCount
-        ? `, 手動分と重複 ${rule.lastResult.manualDuplicateCount}件`
+        ? t('bookmarkAutoImport.lastResultDuplicates', {
+            count: rule.lastResult.manualDuplicateCount,
+          })
         : '';
-      return `${dateStr} - ${rule.lastResult.importedCount}件登録, ${rule.lastResult.deletedCount}件削除${duplicates}`;
+      return t('bookmarkAutoImport.lastResult', {
+        date: dateStr,
+        imported: rule.lastResult.importedCount,
+        deleted: rule.lastResult.deletedCount,
+        duplicates,
+      });
     } else if (rule.lastResult) {
-      return `${dateStr} - エラー: ${rule.lastResult.errorMessage}`;
+      return t('bookmarkAutoImport.lastError', {
+        date: dateStr,
+        error: rule.lastResult.errorMessage ?? '',
+      });
     }
     return dateStr;
   };
@@ -144,7 +168,7 @@ const BookmarkAutoImportSettings: React.FC<BookmarkAutoImportSettingsProps> = ({
   };
 
   if (isLoading) {
-    return <div className="auto-import-empty">読み込み中...</div>;
+    return <div className="auto-import-empty">{t('bookmarkAutoImport.loading')}</div>;
   }
 
   return (
@@ -157,7 +181,7 @@ const BookmarkAutoImportSettings: React.FC<BookmarkAutoImportSettingsProps> = ({
             checked={settings.autoRunOnStartup}
             onChange={toggleAutoRunOnStartup}
           />
-          起動時に自動実行する
+          {t('bookmarkAutoImport.autoRunOnStartup')}
         </label>
         <Button
           variant="primary"
@@ -167,32 +191,29 @@ const BookmarkAutoImportSettings: React.FC<BookmarkAutoImportSettingsProps> = ({
             executingRuleId !== null || settings.rules.filter((r) => r.enabled).length === 0
           }
         >
-          {executingRuleId === 'all' ? '実行中...' : '今すぐ全ルール実行'}
+          {executingRuleId === 'all'
+            ? t('bookmarkAutoImport.running')
+            : t('bookmarkAutoImport.runAll')}
         </Button>
       </div>
 
       {/* 手動取込との使い分け。ルールは「そのルールで入れた分を全削除して入れ直す」置き換え方式 */}
       <div className="auto-import-hint">
-        <span>
-          ルールは実行のたびに、そのルールで取り込んだアイテムを入れ替えます。
-          一度だけ取り込んで自分で編集するなら、アイテム管理の手動取込を使ってください。
-        </span>
+        <span>{t('bookmarkAutoImport.hint')}</span>
         {onOpenManualImport && (
           <Button variant="info" size="sm" onClick={onOpenManualImport}>
-            手動で取り込む
+            {t('bookmarkAutoImport.manualImport')}
           </Button>
         )}
       </div>
 
       {/* ルール一覧 */}
       <div className="auto-import-rules-header">
-        <h4>ルール一覧</h4>
+        <h4>{t('bookmarkAutoImport.rules')}</h4>
       </div>
 
       {settings.rules.length === 0 ? (
-        <div className="auto-import-empty">
-          ルールがまだ登録されていません。「+ ルールを追加」で新しいルールを作成してください。
-        </div>
+        <div className="auto-import-empty">{t('bookmarkAutoImport.noRules')}</div>
       ) : (
         <div className="auto-import-rule-list">
           {settings.rules.map((rule) => (
@@ -214,15 +235,21 @@ const BookmarkAutoImportSettings: React.FC<BookmarkAutoImportSettingsProps> = ({
                   <button
                     onClick={() => handleExecuteRule(rule)}
                     disabled={executingRuleId !== null}
-                    title="今すぐ実行"
+                    title={t('bookmarkAutoImport.runNow')}
                   >
-                    {executingRuleId === rule.id ? '実行中...' : '実行'}
+                    {executingRuleId === rule.id
+                      ? t('bookmarkAutoImport.running')
+                      : t('bookmarkAutoImport.run')}
                   </button>
-                  <button onClick={() => setEditingRule(rule)} title="編集">
-                    編集
+                  <button onClick={() => setEditingRule(rule)} title={t('bookmarkAutoImport.edit')}>
+                    {t('bookmarkAutoImport.edit')}
                   </button>
-                  <button className="danger" onClick={() => handleDeleteRule(rule.id)} title="削除">
-                    削除
+                  <button
+                    className="danger"
+                    onClick={() => handleDeleteRule(rule.id)}
+                    title={t('bookmarkAutoImport.delete')}
+                  >
+                    {t('bookmarkAutoImport.delete')}
                   </button>
                 </div>
               </div>
@@ -230,20 +257,21 @@ const BookmarkAutoImportSettings: React.FC<BookmarkAutoImportSettingsProps> = ({
               <div className="auto-import-rule-detail">
                 <div className="rule-source">
                   {getBrowserDisplayName(rule.browserId)}
-                  {rule.profileIds.length > 0 ? ` > ${getProfileNames(rule)}` : ' > 全プロファイル'}
-                  {rule.folderPaths.length > 0
-                    ? ` > ${rule.folderPaths.join(', ')}`
-                    : ' > 全フォルダ'}
+                  {` > ${rule.profileIds.length > 0 ? getProfileNames(rule) : t('bookmarkAutoImport.allProfiles')}`}
+                  {` > ${rule.folderPaths.length > 0 ? rule.folderPaths.join(', ') : t('bookmarkAutoImport.allFolders')}`}
                 </div>
                 <div className="rule-target">
                   {dataFileLabels[rule.targetFile]
-                    ? `${dataFileLabels[rule.targetFile]}（${rule.targetFile}）`
+                    ? t('importCommon.fileWithName', {
+                        label: dataFileLabels[rule.targetFile],
+                        file: rule.targetFile,
+                      })
                     : rule.targetFile}
                 </div>
                 <div
                   className={`rule-last-result ${rule.lastResult && !rule.lastResult.success ? 'error' : ''}`}
                 >
-                  前回: {formatLastResult(rule)}
+                  {t('bookmarkAutoImport.previous', { result: formatLastResult(rule) })}
                 </div>
               </div>
             </div>
@@ -253,7 +281,7 @@ const BookmarkAutoImportSettings: React.FC<BookmarkAutoImportSettingsProps> = ({
 
       {/* ルール追加ボタン */}
       <div className="auto-import-add-rule">
-        <button onClick={() => setEditingRule('new')}>+ ルールを追加</button>
+        <button onClick={() => setEditingRule('new')}>{t('bookmarkAutoImport.addRule')}</button>
       </div>
 
       {/* ルール編集モーダル */}
@@ -272,12 +300,12 @@ const BookmarkAutoImportSettings: React.FC<BookmarkAutoImportSettingsProps> = ({
         isOpen={deleteConfirmRuleId !== null}
         onClose={() => setDeleteConfirmRuleId(null)}
         onConfirm={handleDeleteConfirm}
-        title="ルールの削除"
-        message="このルールを削除しますか？"
-        confirmText="削除"
+        title={t('bookmarkAutoImport.deleteTitle')}
+        message={t('bookmarkAutoImport.deleteConfirm')}
+        confirmText={t('bookmarkAutoImport.delete')}
         danger
         showCheckbox
-        checkboxLabel="取り込まれたアイテムも削除する"
+        checkboxLabel={t('bookmarkAutoImport.deleteItemsToo')}
         checkboxChecked={deleteAlsoItems}
         onCheckboxChange={setDeleteAlsoItems}
       />

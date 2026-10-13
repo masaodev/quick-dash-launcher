@@ -1,21 +1,29 @@
 import React, { useEffect, useState } from 'react';
-import { AppDistribution, AppInfo } from '@common/types';
+import { useTranslation } from 'react-i18next';
+import { AppInfo } from '@common/types';
 
 import { Button } from './ui/Button';
-
-const DISTRIBUTION_LABELS: Record<AppDistribution, string> = {
-  store: 'Microsoft Store 版',
-  portable: 'ポータブル版',
-  installer: 'インストーラー版',
-  dev: '開発版',
-};
 
 /** 設定のホットキー（"Alt+Space"）を表示用（"Alt + Space"）にする */
 function formatHotkey(hotkey: string): string {
   return hotkey.split('+').join(' + ');
 }
 
+/** ショートカット一覧の固定のキー（説明は辞書の help.keys） */
+const FIXED_SHORTCUTS = [
+  { keys: 'Ctrl + E', text: 'toggleAdmin' },
+  { keys: 'Ctrl + W', text: 'toggleWorkspace' },
+  { keys: 'Enter', text: 'open' },
+  { keys: 'Shift + Enter', text: 'openFolder' },
+  { keys: '↑ / ↓', text: 'select' },
+  { keys: 'Tab', text: 'switchTab' },
+  { keys: 'Shift + Tab', text: 'switchMode' },
+  { keys: 'F5', text: 'reload' },
+  { keys: 'Esc', text: 'close' },
+] as const;
+
 const AdminOtherTab: React.FC = () => {
+  const { t } = useTranslation();
   const [appInfo, setAppInfo] = useState<AppInfo | null>(null);
   const [hotkeys, setHotkeys] = useState<{ launch: string; itemSearch: string }>({
     launch: '',
@@ -45,7 +53,7 @@ const AdminOtherTab: React.FC = () => {
   };
 
   const handleQuitApp = () => {
-    if (confirm('アプリケーションを終了しますか？')) {
+    if (confirm(t('help.quitConfirm'))) {
       window.electronAPI.quitApp();
     }
   };
@@ -61,54 +69,24 @@ const AdminOtherTab: React.FC = () => {
       <div className="help-content">
         {/* キーボードショートカット - 最上部に大きく表示 */}
         <div className="help-section help-section-shortcuts">
-          <h3>⌨️ キーボードショートカット</h3>
+          <h3>{t('help.shortcuts')}</h3>
           <div className="shortcuts-grid">
             <div className="shortcut-item">
-              <kbd>{hotkeys.launch ? formatHotkey(hotkeys.launch) : '（未設定）'}</kbd>
-              <span>メインウィンドウの表示/非表示</span>
+              <kbd>{hotkeys.launch ? formatHotkey(hotkeys.launch) : t('help.notSet')}</kbd>
+              <span>{t('help.keys.toggleLauncher')}</span>
             </div>
             {hotkeys.itemSearch && (
               <div className="shortcut-item">
                 <kbd>{formatHotkey(hotkeys.itemSearch)}</kbd>
-                <span>ウィンドウ検索で起動</span>
+                <span>{t('help.keys.windowSearch')}</span>
               </div>
             )}
-            <div className="shortcut-item">
-              <kbd>Ctrl + E</kbd>
-              <span>管理ウィンドウの表示/非表示（メイン画面で）</span>
-            </div>
-            <div className="shortcut-item">
-              <kbd>Ctrl + W</kbd>
-              <span>ワークスペースの表示/非表示（メイン画面で）</span>
-            </div>
-            <div className="shortcut-item">
-              <kbd>Enter</kbd>
-              <span>選択したアイテムを開く</span>
-            </div>
-            <div className="shortcut-item">
-              <kbd>Shift + Enter</kbd>
-              <span>選択したアイテムの親フォルダを開く</span>
-            </div>
-            <div className="shortcut-item">
-              <kbd>↑ / ↓</kbd>
-              <span>アイテムを選択</span>
-            </div>
-            <div className="shortcut-item">
-              <kbd>Tab</kbd>
-              <span>タブを切り替え（タブ表示有効時）</span>
-            </div>
-            <div className="shortcut-item">
-              <kbd>Shift + Tab</kbd>
-              <span>検索モードを切り替え（通常 / ウィンドウ）</span>
-            </div>
-            <div className="shortcut-item">
-              <kbd>F5</kbd>
-              <span>再読込</span>
-            </div>
-            <div className="shortcut-item">
-              <kbd>Esc</kbd>
-              <span>メインウィンドウを閉じる</span>
-            </div>
+            {FIXED_SHORTCUTS.map(({ keys, text }) => (
+              <div key={keys} className="shortcut-item">
+                <kbd>{keys}</kbd>
+                <span>{t(`help.keys.${text}`)}</span>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -116,22 +94,22 @@ const AdminOtherTab: React.FC = () => {
         <div className="help-cards">
           {/* アプリについて */}
           <div className="help-card">
-            <h3>ℹ️ アプリについて</h3>
+            <h3>{t('help.about')}</h3>
             <div className="help-card-content">
               <div className="app-info-details">
                 <div className="app-info-item">
-                  <span className="app-info-label">バージョン</span>
-                  <span className="app-info-value">{appInfo?.version || '読込中...'}</span>
+                  <span className="app-info-label">{t('help.version')}</span>
+                  <span className="app-info-value">{appInfo?.version || t('help.loading')}</span>
                 </div>
                 <div className="app-info-item">
-                  <span className="app-info-label">配布形式</span>
+                  <span className="app-info-label">{t('help.distribution')}</span>
                   <span className="app-info-value">
-                    {appInfo ? DISTRIBUTION_LABELS[appInfo.distribution] : '読込中...'}
+                    {appInfo ? t(`help.distributions.${appInfo.distribution}`) : t('help.loading')}
                   </span>
                 </div>
                 <div className="app-info-item">
-                  <span className="app-info-label">ライセンス</span>
-                  <span className="app-info-value">{appInfo?.license || '読込中...'}</span>
+                  <span className="app-info-label">{t('help.license')}</span>
+                  <span className="app-info-value">{appInfo?.license || t('help.loading')}</span>
                 </div>
               </div>
               <Button variant="info" onClick={handleOpenGitHub} disabled={!appInfo}>
@@ -142,20 +120,13 @@ const AdminOtherTab: React.FC = () => {
 
           {/* データ管理 */}
           <div className="help-card">
-            <h3>📁 データ管理</h3>
+            <h3>{t('help.data')}</h3>
             <div className="help-card-content">
-              <p className="help-card-description">
-                設定ファイルやデータファイルが保存されているフォルダを開きます。
-              </p>
+              <p className="help-card-description">{t('help.dataDescription')}</p>
               <Button variant="info" onClick={handleOpenConfigFolder}>
-                📂 設定フォルダを開く
+                {t('help.openSettingsFolder')}
               </Button>
-              <p className="help-card-description">
-                AI
-                エージェントにアイテムやワークスペースを変えさせるときは、ファイルを直接書かせずに
-                CLI（qdl）を使わせてください（基本設定の「QuickDashLauncher CLI
-                を使えるようにする」をオンにします）。
-              </p>
+              <p className="help-card-description">{t('help.cliNote')}</p>
             </div>
           </div>
         </div>
@@ -163,7 +134,7 @@ const AdminOtherTab: React.FC = () => {
         {/* 終了ボタン - 下部に分離 */}
         <div className="help-footer">
           <Button variant="danger" onClick={handleQuitApp}>
-            🚪 アプリケーションを終了
+            {t('help.quit')}
           </Button>
         </div>
       </div>

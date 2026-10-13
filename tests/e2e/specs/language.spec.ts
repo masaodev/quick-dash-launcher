@@ -47,6 +47,11 @@ test.describe('QuickDashLauncher - 表示言語', () => {
       await expect(adminWindow.locator('.tab-button').nth(1)).toHaveText('✏️ Item Manager');
       await expect(adminWindow.locator('th.name-column')).toContainText('Name');
       await expect(adminWindow.locator('.total-count')).toContainText('Total:');
+      // ヘルプも英語になる
+      await adminWindow.locator('.tab-button').nth(2).click();
+      await expect(adminWindow.locator('.help-section-shortcuts h3')).toHaveText(
+        '⌨️ Keyboard shortcuts'
+      );
       await adminWindow.locator('.tab-button').first().click();
       await select.selectOption('ja');
 

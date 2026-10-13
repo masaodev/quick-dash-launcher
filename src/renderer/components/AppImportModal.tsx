@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react';
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import { useTranslation } from 'react-i18next';
 import type { ScannedAppItem, DuplicateHandlingOption } from '@common/types';
 import type { EditableJsonItem } from '@common/types/editableItem';
 import { checkAppDuplicates } from '@common/utils/appDuplicateDetector';
@@ -46,6 +47,7 @@ function AppImportModal({
   existingItems,
   importDestination,
 }: AppImportModalProps): ReactElement | null {
+  const { t } = useTranslation();
   const [apps, setApps] = useState<ScannedAppItem[]>([]);
   // 初期は未選択。使うアプリだけを選んで取り込む（登録型のランチャーなので全部は入れない）
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -202,7 +204,7 @@ function AppImportModal({
         if (result.apps.length === 0) {
           setAlertDialog({
             isOpen: true,
-            message: 'インストール済みアプリが見つかりませんでした',
+            message: t('appImport.notFound'),
             type: 'info',
           });
         }
@@ -214,7 +216,7 @@ function AppImportModal({
         logError('Error scanning installed apps:', error);
         setAlertDialog({
           isOpen: true,
-          message: 'アプリのスキャンに失敗しました',
+          message: t('appImport.scanFailed'),
           type: 'error',
         });
       } finally {
@@ -323,23 +325,19 @@ function AppImportModal({
         ref={modalRef}
         tabIndex={-1}
       >
-        <h3>インストール済みアプリの追加</h3>
+        <h3>{t('appImport.title')}</h3>
 
-        <div className="app-import-hint">
-          使うアプリにチェックを入れて取り込みます。取り込んだアプリは未保存の変更として追加され、「変更を保存」で確定します。
-        </div>
+        <div className="app-import-hint">{t('appImport.hint')}</div>
 
         <div className="app-import-body">
           {/* 取込元と取込先は横に並べ、一覧の高さを残す */}
           <div className="app-import-row">
             {/* 取込元 */}
             <div className="app-import-section">
-              <h4>取込元</h4>
+              <h4>{t('importCommon.source')}</h4>
               <div className="app-import-source">
                 <span className="app-import-status">
-                  {loading
-                    ? 'スタートメニューをスキャン中...'
-                    : `スタートメニューから ${apps.length} 件見つかりました`}
+                  {loading ? t('appImport.scanning') : t('appImport.found', { count: apps.length })}
                 </span>
                 <Button
                   variant="info"
@@ -347,29 +345,27 @@ function AppImportModal({
                   onClick={() => setScanCount((c) => c + 1)}
                   disabled={loading}
                 >
-                  再スキャン
+                  {t('appImport.rescan')}
                 </Button>
               </div>
             </div>
             {/* 取込先（アイテム管理で開いているデータファイルに固定） */}
             <div className="app-import-section">
-              <h4>取込先</h4>
+              <h4>{t('importCommon.destination')}</h4>
               <div className="app-import-destination">
                 <span className="app-import-destination-value">{importDestination}</span>
-                <span className="app-import-note">
-                  別のファイルへは、アイテム管理で切り替えてから開いてください
-                </span>
+                <span className="app-import-note">{t('appImport.destinationNote')}</span>
               </div>
             </div>
           </div>
 
           {/* 絞り込み */}
           <div className="app-import-section">
-            <h4>絞り込み</h4>
+            <h4>{t('appImport.filter')}</h4>
             <div className="search-input-container">
               <input
                 type="text"
-                placeholder="アプリ名またはパスで検索..."
+                placeholder={t('appImport.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="search-input"
@@ -379,7 +375,7 @@ function AppImportModal({
                   className="search-clear-button"
                   onClick={() => setSearchQuery('')}
                   type="button"
-                  aria-label="検索をクリア"
+                  aria-label={t('appImport.clearSearch')}
                 >
                   ×
                 </button>
@@ -390,17 +386,17 @@ function AppImportModal({
                 [
                   {
                     key: 'excludeUninstallers',
-                    label: 'アンインストーラーを除外',
+                    label: t('appImport.excludeUninstallers'),
                     count: filterCounts.uninstallerCount,
                   },
                   {
                     key: 'deduplicateLnkPriority',
-                    label: '重複を統合（ショートカット版を優先）',
+                    label: t('appImport.deduplicateLnkPriority'),
                     count: filterCounts.deduplicateCount,
                   },
                   {
                     key: 'excludeNonApps',
-                    label: 'アプリ以外を除外',
+                    label: t('appImport.excludeNonApps'),
                     count: filterCounts.nonAppCount,
                   },
                 ] as const
@@ -415,7 +411,7 @@ function AppImportModal({
                   />
                   <span>
                     {label}
-                    {count > 0 && ` (${count}件)`}
+                    {count > 0 && t('appImport.filterCount', { count })}
                   </span>
                 </label>
               ))}
@@ -426,8 +422,8 @@ function AppImportModal({
                   onChange={(e) => setShowExcluded(e.target.checked)}
                 />
                 <span>
-                  除外したものも表示
-                  {excludedIds.size > 0 && ` (${excludedIds.size}件)`}
+                  {t('appImport.showExcluded')}
+                  {excludedIds.size > 0 && t('appImport.filterCount', { count: excludedIds.size })}
                 </span>
               </label>
             </div>
@@ -435,7 +431,7 @@ function AppImportModal({
 
           {/* アプリ一覧 */}
           <div className="app-import-section app-import-list-section">
-            <h4>アプリ一覧（{visibleApps.length}件）</h4>
+            <h4>{t('appImport.list', { count: visibleApps.length })}</h4>
             <div className="app-list-container" ref={listRef}>
               <table className="app-table">
                 <thead>
@@ -447,14 +443,14 @@ function AppImportModal({
                         checked={allVisibleSelected}
                         onChange={handleToggleVisible}
                         disabled={visibleApps.length === 0}
-                        title="表示中のアプリをまとめて選ぶ・外す"
-                        aria-label="表示中のアプリをまとめて選ぶ・外す"
+                        title={t('appImport.toggleVisible')}
+                        aria-label={t('appImport.toggleVisible')}
                       />
                     </th>
                     <th className="icon-column"></th>
-                    <th className="name-column">アプリ名</th>
-                    <th className="type-column">種別</th>
-                    <th className="path-column">ターゲットパス</th>
+                    <th className="name-column">{t('appImport.appName')}</th>
+                    <th className="type-column">{t('appImport.type')}</th>
+                    <th className="path-column">{t('appImport.targetPath')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -498,7 +494,9 @@ function AppImportModal({
                         <td className="name-column">
                           {app.displayName}
                           {registeredIds.has(app.id) && (
-                            <span className="app-registered-badge">登録済み</span>
+                            <span className="app-registered-badge">
+                              {t('appImport.registered')}
+                            </span>
                           )}
                         </td>
                         <td className="type-column">
@@ -521,7 +519,7 @@ function AppImportModal({
                 </tbody>
               </table>
               {!loading && apps.length > 0 && visibleApps.length === 0 && (
-                <div className="app-list-empty">条件に一致するアプリはありません</div>
+                <div className="app-list-empty">{t('appImport.noMatches')}</div>
               )}
             </div>
           </div>
@@ -532,10 +530,10 @@ function AppImportModal({
           <div className="duplicate-warning-section">
             <div className="duplicate-warning-message">
               <span className="duplicate-warning-icon">&#9888;</span>
-              <span>選んだアプリのうち {selectedRegisteredCount} 件は取込先に登録済みです</span>
+              <span>{t('appImport.registeredSelected', { count: selectedRegisteredCount })}</span>
             </div>
             <div className="duplicate-options-section">
-              <span className="duplicate-options-label">重複時の処理:</span>
+              <span className="duplicate-options-label">{t('importCommon.duplicateHandling')}</span>
               <label className="duplicate-option">
                 <input
                   type="radio"
@@ -544,7 +542,7 @@ function AppImportModal({
                   checked={duplicateHandling === 'skip'}
                   onChange={() => setDuplicateHandling('skip')}
                 />
-                <span>スキップ（重複アイテムはインポートしない）</span>
+                <span>{t('importCommon.skip')}</span>
               </label>
               <label className="duplicate-option">
                 <input
@@ -554,7 +552,7 @@ function AppImportModal({
                   checked={duplicateHandling === 'overwrite'}
                   onChange={() => setDuplicateHandling('overwrite')}
                 />
-                <span>上書き（既存アイテムを新しい情報で更新）</span>
+                <span>{t('importCommon.overwrite')}</span>
               </label>
             </div>
           </div>
@@ -564,23 +562,23 @@ function AppImportModal({
           <div className="status-info">
             {selectedCount > 0 && (
               <>
-                <span>{selectedCount} 件を選択中</span>
+                <span>{t('appImport.selected', { count: selectedCount })}</span>
                 <button
                   type="button"
                   className="app-clear-selection"
                   onClick={() => setSelectedIds(new Set())}
                 >
-                  選択を解除
+                  {t('appImport.clearSelection')}
                 </button>
               </>
             )}
           </div>
           <div className="app-modal-actions">
             <Button variant="cancel" onClick={handleClose}>
-              キャンセル
+              {t('common.cancel')}
             </Button>
             <Button variant="primary" onClick={handleImport} disabled={selectedCount === 0}>
-              取り込む ({selectedCount}件)
+              {t('appImport.import', { count: selectedCount })}
             </Button>
           </div>
         </div>

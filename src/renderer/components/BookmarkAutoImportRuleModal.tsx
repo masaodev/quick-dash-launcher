@@ -15,6 +15,7 @@
  */
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { generateId } from '@common/utils/jsonParser';
 import { DEFAULT_DATA_FILE } from '@common/types';
 import type { BrowserInfo, DuplicateHandlingOption, SimpleBookmarkItem } from '@common/types';
@@ -92,6 +93,7 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
   onImportOnce,
   onOpenAutoImportSettings,
 }) => {
+  const { t } = useTranslation();
   const isImportMode = mode === 'import';
   const modalRef = useRef<HTMLDivElement>(null);
   const [editingRule, setEditingRule] = useState<BookmarkAutoImportRule>(
@@ -166,9 +168,7 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
         logError('ブックマークの読み込みに失敗しました:', error);
         if (!cancelled) {
           setAllBookmarks([]);
-          setLoadError(
-            error instanceof Error ? error.message : 'ブックマークの読み込みに失敗しました'
-          );
+          setLoadError(error instanceof Error ? error.message : t('bookmarkRule.loadFailed'));
         }
       })
       .finally(() => {
@@ -292,14 +292,16 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
   const canSaveAsRule = editingRule.name.trim().length > 0 && sourceKind === 'browser';
   const saveDisabledReason =
     sourceKind === 'html'
-      ? 'HTML ファイルはルールにできません（ルールは Chrome / Edge から直接読みます）'
+      ? t('bookmarkRule.htmlCannotBeRule')
       : !editingRule.name.trim()
-        ? 'ルール名を入力してください'
+        ? t('bookmarkRule.nameRequired')
         : undefined;
 
   const title = isImportMode
-    ? 'ブラウザのブックマークの追加'
-    : `ブックマーク自動取込 - ${rule ? 'ルールを編集' : '新規ルール作成'}`;
+    ? t('bookmarkRule.importTitle')
+    : rule
+      ? t('bookmarkRule.editTitle')
+      : t('bookmarkRule.newTitle');
 
   // フォルダツリーレンダリング
   const renderFolderTree = (
@@ -344,11 +346,7 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
 
         {isImportMode && (
           <div className="auto-import-import-hint">
-            <span>
-              条件で絞り込んだブックマークを取り込みます。「今回だけ取り込む」は未保存の変更として追加し、
-              あとは自分で編集します。「ルールとして保存」は設定にルールを追加してすぐ実行し、
-              以後はルールがブラウザ側の変更に追従します。
-            </span>
+            <span>{t('bookmarkRule.importHint')}</span>
             {onOpenAutoImportSettings && (
               <Button
                 variant="info"
@@ -358,7 +356,7 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
                   onOpenAutoImportSettings();
                 }}
               >
-                自動取込の設定を開く
+                {t('bookmarkRule.openAutoImportSettings')}
               </Button>
             )}
           </div>
@@ -367,24 +365,22 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
         <div className="auto-import-rule-form">
           {/* ルール名 */}
           <div className="auto-import-form-field">
-            <label>
-              {isImportMode ? 'ルール名（ルールとして保存するときに使います）:' : 'ルール名:'}
-            </label>
+            <label>{isImportMode ? t('bookmarkRule.nameForImport') : t('bookmarkRule.name')}</label>
             <input
               type="text"
               value={editingRule.name}
               onChange={(e) => updateRule({ name: e.target.value })}
-              placeholder="例: 開発系ブックマーク"
+              placeholder={t('bookmarkRule.namePlaceholder')}
             />
           </div>
 
           {/* ソース */}
           <div className="auto-import-form-section">
-            <h4>取込元</h4>
+            <h4>{t('importCommon.source')}</h4>
 
             {isImportMode && (
               <div className="auto-import-form-field">
-                <label>種類:</label>
+                <label>{t('bookmarkRule.sourceKind')}</label>
                 <div className="browser-radio-group">
                   <label>
                     <input
@@ -394,7 +390,7 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
                       checked={sourceKind === 'browser'}
                       onChange={() => handleSourceKindChange('browser')}
                     />
-                    ブラウザから直接読む
+                    {t('bookmarkRule.fromBrowser')}
                   </label>
                   <label>
                     <input
@@ -404,7 +400,7 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
                       checked={sourceKind === 'html'}
                       onChange={() => handleSourceKindChange('html')}
                     />
-                    HTML ファイル（他ブラウザからのエクスポート）
+                    {t('bookmarkRule.fromHtml')}
                   </label>
                 </div>
               </div>
@@ -413,7 +409,7 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
             {sourceKind === 'browser' && (
               <>
                 <div className="auto-import-form-field">
-                  <label>ブラウザ:</label>
+                  <label>{t('bookmarkRule.browser')}</label>
                   <div className="browser-radio-group">
                     {installedBrowsers.map((browser) => (
                       <label key={browser.id}>
@@ -428,16 +424,14 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
                       </label>
                     ))}
                     {browsersLoaded && installedBrowsers.length === 0 && (
-                      <span className="field-description">
-                        インストール済みブラウザが見つかりません
-                      </span>
+                      <span className="field-description">{t('bookmarkRule.noBrowsers')}</span>
                     )}
                   </div>
                 </div>
 
                 {selectedBrowser && selectedBrowser.profiles.length > 0 && (
                   <div className="auto-import-form-field">
-                    <label>プロファイル:</label>
+                    <label>{t('bookmarkRule.profile')}</label>
                     <div className="profile-checkboxes">
                       {selectedBrowser.profiles.length > 1 && (
                         <label>
@@ -446,7 +440,7 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
                             checked={isAllProfiles}
                             onChange={handleAllProfilesToggle}
                           />
-                          すべてのプロファイル
+                          {t('bookmarkRule.allProfiles')}
                         </label>
                       )}
                       {selectedBrowser.profiles.map((profile) => {
@@ -472,8 +466,9 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
                     </div>
                     {!isAllProfiles && selectedProfileIds.length === 0 && (
                       <span className="field-description">
-                        保存されているプロファイル（{editingRule.profileIds.join(', ')}
-                        ）が見つかりません。選び直してください
+                        {t('bookmarkRule.profilesNotFound', {
+                          profiles: editingRule.profileIds.join(', '),
+                        })}
                       </span>
                     )}
                   </div>
@@ -483,13 +478,13 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
 
             {sourceKind === 'html' && (
               <div className="auto-import-form-field">
-                <label>ファイル:</label>
+                <label>{t('bookmarkRule.file')}</label>
                 <div className="auto-import-file-select">
                   <Button variant="info" size="sm" onClick={handleSelectHtmlFile}>
-                    ファイルを選択
+                    {t('bookmarkRule.selectFile')}
                   </Button>
                   <span className="auto-import-file-name">
-                    {htmlFile ? htmlFile.name : '未選択'}
+                    {htmlFile ? htmlFile.name : t('bookmarkRule.noFile')}
                   </span>
                 </div>
               </div>
@@ -497,20 +492,20 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
 
             <div className="field-description auto-import-load-status">
               {isLoadingBookmarks
-                ? 'ブックマークを読み込み中...'
+                ? t('bookmarkRule.loading')
                 : loadError
-                  ? `読み込みに失敗: ${loadError}`
-                  : `${allBookmarks.length} 件のブックマークを読み込みました`}
+                  ? t('bookmarkRule.loadError', { error: loadError })
+                  : t('bookmarkRule.loaded', { count: allBookmarks.length })}
             </div>
           </div>
 
           {/* フィルタ条件 */}
           <div className="auto-import-form-section">
-            <h4>フィルタ条件</h4>
+            <h4>{t('bookmarkRule.filters')}</h4>
 
             {folders.length > 0 && (
               <div className="auto-import-form-field">
-                <label>フォルダ:</label>
+                <label>{t('bookmarkRule.folder')}</label>
                 <div className="folder-filter-mode">
                   <label>
                     <input
@@ -520,7 +515,7 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
                       checked={editingRule.folderFilterMode === 'include'}
                       onChange={() => updateRule({ folderFilterMode: 'include' })}
                     />
-                    選択フォルダのみ
+                    {t('bookmarkRule.includeFolders')}
                   </label>
                   <label>
                     <input
@@ -530,7 +525,7 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
                       checked={editingRule.folderFilterMode === 'exclude'}
                       onChange={() => updateRule({ folderFilterMode: 'exclude' })}
                     />
-                    選択フォルダを除外
+                    {t('bookmarkRule.excludeFolders')}
                   </label>
                 </div>
                 <div className="folder-tree-container">{renderFolderTree(folders)}</div>
@@ -540,48 +535,48 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
                     checked={editingRule.includeSubfolders}
                     onChange={(e) => updateRule({ includeSubfolders: e.target.checked })}
                   />
-                  サブフォルダのブックマークも含める
+                  {t('bookmarkRule.includeSubfolders')}
                 </label>
                 <div className="field-description">
                   {editingRule.folderPaths.length === 0
-                    ? '未選択の場合は全フォルダが対象になります'
-                    : `${editingRule.folderPaths.length}フォルダ選択中`}
+                    ? t('bookmarkRule.noFolderSelected')
+                    : t('bookmarkRule.foldersSelected', { count: editingRule.folderPaths.length })}
                 </div>
               </div>
             )}
 
             <div className="form-row">
               <div className="auto-import-form-field">
-                <label>URLパターン（正規表現）:</label>
+                <label>{t('bookmarkRule.urlPattern')}</label>
                 <input
                   type="text"
                   value={editingRule.urlPattern}
                   onChange={(e) => updateRule({ urlPattern: e.target.value })}
-                  placeholder="例: github\.com"
+                  placeholder={t('bookmarkRule.urlPatternPlaceholder')}
                 />
                 <div
                   className={`field-description${patternValidity.urlPatternValid ? '' : ' auto-import-pattern-error'}`}
                 >
                   {patternValidity.urlPatternValid
-                    ? '未入力時は全URL対象'
-                    : '正規表現として読めないため、この条件は無視されます'}
+                    ? t('bookmarkRule.urlPatternEmpty')
+                    : t('bookmarkRule.invalidPattern')}
                 </div>
               </div>
 
               <div className="auto-import-form-field">
-                <label>名前パターン（正規表現）:</label>
+                <label>{t('bookmarkRule.namePattern')}</label>
                 <input
                   type="text"
                   value={editingRule.namePattern}
                   onChange={(e) => updateRule({ namePattern: e.target.value })}
-                  placeholder="例: 開発|ツール"
+                  placeholder={t('bookmarkRule.namePatternPlaceholder')}
                 />
                 <div
                   className={`field-description${patternValidity.namePatternValid ? '' : ' auto-import-pattern-error'}`}
                 >
                   {patternValidity.namePatternValid
-                    ? '未入力時は全名前対象'
-                    : '正規表現として読めないため、この条件は無視されます'}
+                    ? t('bookmarkRule.namePatternEmpty')
+                    : t('bookmarkRule.invalidPattern')}
                 </div>
               </div>
             </div>
@@ -589,16 +584,18 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
 
           {/* インポート先 */}
           <div className="auto-import-form-section">
-            <h4>インポート先</h4>
+            <h4>{t('bookmarkRule.target')}</h4>
             <div className="auto-import-form-field">
-              <label>データファイル:</label>
+              <label>{t('bookmarkRule.dataFile')}</label>
               <select
                 value={editingRule.targetFile}
                 onChange={(e) => updateRule({ targetFile: e.target.value })}
               >
                 {dataFiles.map((file) => (
                   <option key={file} value={file}>
-                    {dataFileLabels[file] ? `${dataFileLabels[file]}（${file}）` : file}
+                    {dataFileLabels[file]
+                      ? t('importCommon.fileWithName', { label: dataFileLabels[file], file })
+                      : file}
                   </option>
                 ))}
               </select>
@@ -607,29 +604,29 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
 
           {/* 表示名の設定 */}
           <div className="auto-import-form-section">
-            <h4>表示名の設定</h4>
+            <h4>{t('bookmarkRule.displayName')}</h4>
             <div className="form-row">
               <div className="auto-import-form-field">
-                <label>接頭辞:</label>
+                <label>{t('bookmarkRule.prefix')}</label>
                 <input
                   type="text"
                   value={editingRule.prefix}
                   onChange={(e) => updateRule({ prefix: e.target.value })}
-                  placeholder="例: [Chrome] "
+                  placeholder={t('bookmarkRule.prefixPlaceholder')}
                 />
               </div>
               <div className="auto-import-form-field">
-                <label>接尾辞:</label>
+                <label>{t('bookmarkRule.suffix')}</label>
                 <input
                   type="text"
                   value={editingRule.suffix}
                   onChange={(e) => updateRule({ suffix: e.target.value })}
-                  placeholder="例:  (自動)"
+                  placeholder={t('bookmarkRule.suffixPlaceholder')}
                 />
               </div>
             </div>
             <div className="auto-import-form-field">
-              <label>フォルダ名付与:</label>
+              <label>{t('bookmarkRule.folderNameMode')}</label>
               <select
                 value={editingRule.folderNameMode}
                 onChange={(e) =>
@@ -638,25 +635,25 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
                   })
                 }
               >
-                <option value="none">なし</option>
-                <option value="parent">直近の親フォルダ</option>
-                <option value="fullPath">フルパス</option>
-                <option value="relativePath">ルート除外パス</option>
+                {(['none', 'parent', 'fullPath', 'relativePath'] as const).map((mode) => (
+                  <option key={mode} value={mode}>
+                    {t(`bookmarkRule.folderNameModes.${mode}`)}
+                  </option>
+                ))}
               </select>
-              <div className="field-description">
-                表示名にフォルダ名を付与（例: [Tools] ブックマーク名）
-              </div>
+              <div className="field-description">{t('bookmarkRule.folderNameModeDescription')}</div>
             </div>
           </div>
 
           {/* プレビュー（常時） */}
           <div className="auto-import-form-section">
-            <h4>プレビュー</h4>
+            <h4>{t('bookmarkRule.preview')}</h4>
             <div className="auto-import-preview" data-testid="bookmark-preview">
               <div className="auto-import-preview-header">
                 <span className="auto-import-preview-count">
-                  マッチ: {previewItems.length}件
-                  {allBookmarks.length > 0 && ` / ${allBookmarks.length}件`}
+                  {t('bookmarkRule.matched', { count: previewItems.length })}
+                  {allBookmarks.length > 0 &&
+                    t('bookmarkRule.ofTotal', { count: allBookmarks.length })}
                 </span>
               </div>
               {previewItems.length > 0 ? (
@@ -669,15 +666,15 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
                   ))}
                   {previewItems.length > PREVIEW_LIMIT && (
                     <div className="auto-import-preview-more">
-                      ...他 {previewItems.length - PREVIEW_LIMIT}件
+                      {t('bookmarkRule.more', { count: previewItems.length - PREVIEW_LIMIT })}
                     </div>
                   )}
                 </div>
               ) : (
                 <div className="field-description">
                   {allBookmarks.length === 0
-                    ? '取込元を選ぶとブックマークが読み込まれます'
-                    : '条件に一致するブックマークはありません'}
+                    ? t('bookmarkRule.selectSource')
+                    : t('bookmarkRule.noMatches')}
                 </div>
               )}
             </div>
@@ -689,12 +686,13 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
               <div className="duplicate-warning-message">
                 <span className="duplicate-warning-icon">&#9888;</span>
                 <span>
-                  取込先に同じ URL が {duplicateCheckResult.duplicateCount}
-                  件あります（「今回だけ取り込む」のときの扱い）
+                  {t('bookmarkRule.duplicates', { count: duplicateCheckResult.duplicateCount })}
                 </span>
               </div>
               <div className="duplicate-options-section">
-                <span className="duplicate-options-label">重複時の処理:</span>
+                <span className="duplicate-options-label">
+                  {t('importCommon.duplicateHandling')}
+                </span>
                 <label className="duplicate-option">
                   <input
                     type="radio"
@@ -703,7 +701,7 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
                     checked={duplicateHandling === 'skip'}
                     onChange={() => setDuplicateHandling('skip')}
                   />
-                  <span>スキップ（重複アイテムはインポートしない）</span>
+                  <span>{t('importCommon.skip')}</span>
                 </label>
                 <label className="duplicate-option">
                   <input
@@ -713,7 +711,7 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
                     checked={duplicateHandling === 'overwrite'}
                     onChange={() => setDuplicateHandling('overwrite')}
                   />
-                  <span>上書き（既存アイテムを新しい情報で更新）</span>
+                  <span>{t('importCommon.overwrite')}</span>
                 </label>
               </div>
             </div>
@@ -723,7 +721,7 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
         {/* フッター */}
         <div className="auto-import-modal-footer">
           <Button variant="cancel" onClick={onCancel}>
-            キャンセル
+            {t('common.cancel')}
           </Button>
           {isImportMode ? (
             <>
@@ -731,17 +729,17 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
                 variant="primary"
                 onClick={handleImportOnce}
                 disabled={importCandidates.length === 0 || isSaving}
-                title="絞り込んだブックマークを未保存の変更として追加します（印は付きません）"
+                title={t('bookmarkRule.importOnceTitle')}
               >
-                今回だけ取り込む ({importCandidates.length}件)
+                {t('bookmarkRule.importOnce', { count: importCandidates.length })}
               </Button>
               <Button
                 variant="info"
                 onClick={handleSave}
                 disabled={!canSaveAsRule || isSaving}
-                title={saveDisabledReason ?? '設定にルールを追加してすぐ実行します'}
+                title={saveDisabledReason ?? t('bookmarkRule.saveAsRuleTitle')}
               >
-                {isSaving ? '保存中...' : 'ルールとして保存'}
+                {isSaving ? t('importCommon.saving') : t('bookmarkRule.saveAsRule')}
               </Button>
             </>
           ) : (
@@ -750,7 +748,7 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
               onClick={handleSave}
               disabled={!editingRule.name.trim() || isSaving}
             >
-              {isSaving ? '保存中...' : '保存'}
+              {isSaving ? t('importCommon.saving') : t('importCommon.save')}
             </Button>
           )}
         </div>

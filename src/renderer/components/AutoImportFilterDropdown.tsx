@@ -1,13 +1,15 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import type { BookmarkAutoImportRule } from '@common/types';
 
 import { useDropdown } from '../hooks/useDropdown';
 import type { AutoImportFilter } from '../utils/editableItemOperations';
 
+/** 取込元の基本の絞り込み（文言は辞書の autoImportFilter） */
 const BASIC_FILTERS = [
-  { value: 'all', label: '全て' },
-  { value: 'auto-import-only', label: '自動取込のみ' },
-  { value: 'manual-only', label: '手動登録のみ' },
+  { value: 'all', label: 'all' },
+  { value: 'auto-import-only', label: 'autoImportOnly' },
+  { value: 'manual-only', label: 'manualOnly' },
 ] as const;
 
 interface AutoImportFilterDropdownProps {
@@ -26,20 +28,15 @@ const AutoImportFilterDropdown: React.FC<AutoImportFilterDropdownProps> = ({
   rules,
   ruleNames,
 }) => {
+  const { t } = useTranslation();
   const dropdown = useDropdown();
 
-  const label = (() => {
-    switch (filter) {
-      case 'all':
-        return '取込元: 全て';
-      case 'auto-import-only':
-        return '取込元: 自動取込のみ';
-      case 'manual-only':
-        return '取込元: 手動登録のみ';
-      default:
-        return `取込元: ${ruleNames.get(filter) ?? '不明なルール'}`;
-    }
-  })();
+  const basic = BASIC_FILTERS.find((item) => item.value === filter);
+  const label = t('autoImportFilter.label', {
+    filter: basic
+      ? t(`autoImportFilter.${basic.label}`)
+      : (ruleNames.get(filter) ?? t('autoImportFilter.unknownRule')),
+  });
 
   const select = (value: AutoImportFilter) => {
     onChange(value);
@@ -48,7 +45,11 @@ const AutoImportFilterDropdown: React.FC<AutoImportFilterDropdownProps> = ({
 
   return (
     <div className="auto-import-filter" ref={dropdown.ref}>
-      <button className="dropdown-trigger-btn" onClick={dropdown.toggle} title="自動取込フィルタ">
+      <button
+        className="dropdown-trigger-btn"
+        onClick={dropdown.toggle}
+        title={t('autoImportFilter.title')}
+      >
         <span className="dropdown-trigger-text">{label}</span>
         <span className="dropdown-trigger-icon">{dropdown.isOpen ? '▲' : '▼'}</span>
       </button>
@@ -60,7 +61,7 @@ const AutoImportFilterDropdown: React.FC<AutoImportFilterDropdownProps> = ({
               className={`dropdown-item ${filter === value ? 'selected' : ''}`}
               onClick={() => select(value)}
             >
-              {itemLabel}
+              {t(`autoImportFilter.${itemLabel}`)}
             </button>
           ))}
           {rules.length > 0 && (
