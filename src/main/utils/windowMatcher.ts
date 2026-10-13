@@ -2,41 +2,9 @@
  * ウィンドウタイトルに基づいてウィンドウを検索するユーティリティ
  * 既存のウィンドウ検索機能を再利用し、アイテム起動時のウィンドウアクティブ化機能を提供する
  */
+import { createTitleMatcher } from '@common/utils/windowTitle';
+
 import { findWindowHwndByTitle } from './nativeWindowControl.js';
-
-/**
- * ワイルドカードパターンを正規表現に変換
- * @param pattern ワイルドカードパターン（* = 任意の文字列、? = 任意の1文字）
- * @returns 正規表現
- */
-function wildcardToRegex(pattern: string): RegExp {
-  // 正規表現の特殊文字をエスケープ（*と?以外）
-  const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&');
-  // *を.*に、?を.に変換
-  const regexPattern = escaped.replace(/\*/g, '.*').replace(/\?/g, '.');
-  // 完全一致として扱う（^と$で囲む）
-  return new RegExp(`^${regexPattern}$`, 'i');
-}
-
-/**
- * ワイルドカード文字が含まれているかチェック
- * @param text チェックする文字列
- * @returns ワイルドカード文字が含まれている場合true
- */
-function hasWildcard(text: string): boolean {
-  return text.includes('*') || text.includes('?');
-}
-
-/**
- * ウィンドウタイトルのマッチング関数を作成する
- * ポーリングループなど同じタイトルで繰り返し検索する場合に、正規表現のプリコンパイルに使用する
- */
-export function createTitleMatcher(windowTitle: string): (title: string) => boolean {
-  const regex = hasWildcard(windowTitle) ? wildcardToRegex(windowTitle) : null;
-  const lowerWindowTitle = windowTitle.toLowerCase();
-  return (title: string): boolean =>
-    regex ? regex.test(title) : title.toLowerCase() === lowerWindowTitle;
-}
 
 /**
  * ウィンドウタイトルとプロセス名に基づいてウィンドウを検索

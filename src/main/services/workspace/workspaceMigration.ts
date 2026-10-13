@@ -31,6 +31,7 @@ import {
 import { generateUniqueId, isValidId } from '@common/utils/jsonParser';
 import { stripIconFromLayoutEntries } from '@common/utils/dataConverters';
 import { normalizeWindowTitleForProcessOnly } from '@common/utils/windowTitle';
+import { isRecord } from '@common/types/guards';
 import type { LayoutWindowEntry } from '@common/types/launcher';
 
 type Raw = Record<string, unknown>;
@@ -67,10 +68,6 @@ export interface WorkspaceV1MigrationResult {
 /** 旧形式（version を持たない）か */
 export function isLegacyWorkspaceFile(raw: unknown): boolean {
   return isRecord(raw) && typeof raw.version !== 'string';
-}
-
-function isRecord(value: unknown): value is Raw {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function recordsOf(value: unknown): Raw[] {

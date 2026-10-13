@@ -55,8 +55,8 @@ function toJsonDirOptions(options: DirOptionsForProcessing | undefined): JsonDir
   };
 }
 
-/** デフォルトのタブを取得する */
-function getDefaultTab(sourceFile: string | undefined, tabs: DataFileTab[]): string {
+/** 取り込み先のデータファイル（指定が無ければ最初のタブの最初のファイル） */
+export function getDefaultTab(sourceFile: string | undefined, tabs: DataFileTab[]): string {
   return sourceFile || (tabs.length > 0 ? tabs[0].files[0] : DEFAULT_DATA_FILE);
 }
 

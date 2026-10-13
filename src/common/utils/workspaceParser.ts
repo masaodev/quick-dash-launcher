@@ -30,6 +30,8 @@ import { MAX_GROUP_DEPTH } from '@common/utils/groupTreeUtils';
 import { getFallbackT } from '@common/i18n';
 import type { TFunction } from 'i18next';
 
+import { isRecord } from '../types/guards';
+
 import {
   generateUniqueId,
   isValidId,
@@ -185,10 +187,6 @@ function normalizeHeader(obj: Record<string, unknown>, issues: IssueCollector): 
           })
     );
   }
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 /**
