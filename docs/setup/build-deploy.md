@@ -91,10 +91,11 @@ v0.2.10 で `com.example.quick-dash-launcher` から変えた。App ID は自動
 
 `v*` 形式のタグをプッシュすると `.github/workflows/release.yml` がビルドし、GitHub Release を作成する（`/release-version` コマンドがこの手順を担う）。
 
+- **リリースノートは英語を先に書き、日本語（正本）を `<details><summary>日本語</summary>…</details>` で折りたたんで併記する**（ベータ版・正式版とも。英語 UI を出した後の版から）。日本語で書いて確認してから英訳する。形は [`/release-version`](../../.claude/commands/git-workflow/release-version.md) の「リリースノートの形」
 - **リリースノートの本文はタグの注釈から取る**。`git tag -a v{version} --cleanup=verbatim -F notes.md` で作った注釈付きタグのメッセージ本文（1 行目の件名を除く）が、そのまま Release の「更新内容」になる
   - `--cleanup=verbatim` が無いと `#` で始まる Markdown 見出し行がコメント扱いで削られる
-  - 軽量タグ（注釈なし）の場合は「QuickDashLauncher vX.Y.Z のリリースです。」の定型文にフォールバックする
-- ワークフローが末尾にインストール方法・ライセンスの節を付け、`release-notes.md` として `softprops/action-gh-release` の `body_path` に渡す
+  - 軽量タグ（注釈なし）の場合は「QuickDashLauncher vX.Y.Z release.」の定型文にフォールバックする
+- ワークフローが末尾にインストール方法・ライセンスの節（英語と、折りたたんだ日本語）を付け、`release-notes.md` として `softprops/action-gh-release` の `body_path` に渡す
 - `workflow_dispatch` の手動実行はビルド検証のみで、Release は作らない
 
 ### 正式版とベータ版

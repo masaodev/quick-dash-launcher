@@ -46,13 +46,14 @@ allowed-tools: ['Bash', 'Read', 'Edit', 'TodoWrite', 'AskUserQuestion', 'Skill',
      - **このまま出す**: 残った指摘はそのままにして先へ進む（直すべきものはオープンな課題として控える）
    - 点検の記録は docs-check が自分で更新する（指摘が残っていても更新する）。更新されたら、手順 5 のバージョン更新のコミットに含める
 
-4. **リリースノートの作成**
+4. **リリースノートの作成**（日本語を正本に書き、英訳を先に置いて日本語を折りたたむ。形は下の「リリースノートの形」）
    - ベータ版: 前のタグ（ベータ版でも正式版でも）からのコミット（`git log v{prev}..HEAD --oneline`）を元に書く
    - 正式版: **前の正式版から**のコミット（`git log v{prevStable}..HEAD --oneline`）を元に、ベータ版の分も含めてまとめて書く
-   - どちらも「## 更新内容」の下に、変更点を機能単位でまとめる（コミットの羅列にしない。ファイル形式の変更・自動移行・注意事項があれば必ず書く）
-   - `--yes` でなければユーザーに本文を確認してもらう（`--yes` のときは書いた本文をそのまま使う）
+   - まず日本語で「## 更新内容」の下に、変更点を機能単位でまとめる（コミットの羅列にしない。ファイル形式の変更・自動移行・注意事項があれば必ず書く）
+   - `--yes` でなければユーザーに日本語の本文を確認してもらう（`--yes` のときは書いた本文をそのまま使う）
+   - 確認が済んだ日本語を英訳し、「## What's new」の下に置く。画面の言葉は用語集（`docs/architecture/glossary.md`）の English にそろえ、Microsoft Writing Style Guide に合わせる。英訳は改めて確認を取らず、タグを作る前に全文をユーザーに示す
    - 本文は注釈付きタグのメッセージになり、GitHub Release の本文に使われる
-     （`release.yml` がタグ本文を取り出し、インストール方法・ライセンス節を末尾に付ける）
+     （`release.yml` がタグ本文を取り出し、インストール方法・ライセンス節（英語と、折りたたんだ日本語）を末尾に付ける）
 
 5. **バージョン更新**
    - `npm version {version} --no-git-tag-version` で `package.json` と `package-lock.json` を更新
@@ -75,6 +76,33 @@ allowed-tools: ['Bash', 'Read', 'Edit', 'TodoWrite', 'AskUserQuestion', 'Skill',
 9. **正式版にするかの確認（ベータ版のとき）**
    - 直前の正式版から何本のベータ版が出ているかと、その間の主な変更を短く示し、そろそろ正式版にするかをユーザーに尋ねる（毎回でなくてよい。テーマが一区切りついたとき・ベータ版が何本かたまったときに）
 
+## リリースノートの形
+
+英語を先に書き、日本語（正本）は `<details>` で折りたたむ。ベータ版・正式版とも同じ形にする。`<summary>` の後と `</details>` の前の空行は消さない（無いと中の Markdown が描かれない）。
+
+```markdown
+## What's new
+
+Added English README and ...
+
+### Search
+
+- ...
+
+<details>
+<summary>日本語</summary>
+
+## 更新内容
+
+英語の README を足し、…
+
+### 検索
+
+- …
+
+</details>
+```
+
 ## 事前要件
 
 - 現在のブランチが `main` である
@@ -96,7 +124,7 @@ git tag --list 'v*' --sort=-v:refname | grep -v -- '-' | head -1   # 直前の�
 # 3. リリースノート本文を書く（作業用の一時ファイル。リポジトリには入れない）
 git log v{prev}..HEAD --oneline          # ベータ版
 git log v{prevStable}..HEAD --oneline    # 正式版
-#   → 1 行目 v{version}、空行、本文（## 更新内容 …）の順で notes.md に書く
+#   → 1 行目 v{version}、空行、本文（## What's new … <details> の中に ## 更新内容 …）の順で notes.md に書く
 
 # 4. バージョン更新
 npm version {version} --no-git-tag-version
