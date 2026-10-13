@@ -7,6 +7,9 @@ import renderer from 'vite-plugin-electron-renderer';
 
 import { cspPlugin } from './scripts/viteCspPlugin';
 
+/** パスエイリアス（tsconfig.json の paths と合わせる） */
+const ALIAS = { '@common': resolve(process.cwd(), './src/common') };
+
 export default defineConfig({
   plugins: [
     react(),
@@ -15,12 +18,7 @@ export default defineConfig({
         entry: 'src/main/main.ts',
         vite: {
           resolve: {
-            alias: {
-              '@common': resolve(process.cwd(), './src/common'),
-              '@main': resolve(process.cwd(), './src/main'),
-              '@renderer': resolve(process.cwd(), './src/renderer'),
-              '@test': resolve(process.cwd(), './src/test'),
-            },
+            alias: ALIAS,
           },
           build: {
             outDir: 'dist/main',
@@ -56,12 +54,7 @@ export default defineConfig({
         },
         vite: {
           resolve: {
-            alias: {
-              '@common': resolve(process.cwd(), './src/common'),
-              '@main': resolve(process.cwd(), './src/main'),
-              '@renderer': resolve(process.cwd(), './src/renderer'),
-              '@test': resolve(process.cwd(), './src/test'),
-            },
+            alias: ALIAS,
           },
           build: {
             outDir: 'dist/main',
@@ -107,11 +100,6 @@ export default defineConfig({
     watch: { ignored: ['**/tests/**'] },
   },
   resolve: {
-    alias: {
-      '@common': resolve(process.cwd(), './src/common'),
-      '@main': resolve(process.cwd(), './src/main'),
-      '@renderer': resolve(process.cwd(), './src/renderer'),
-      '@test': resolve(process.cwd(), './src/test'),
-    },
+    alias: ALIAS,
   },
 });

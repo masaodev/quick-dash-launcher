@@ -8,7 +8,6 @@ npm run dev             # 開発モード（ポート9001、ホットキー: Ctr
 npm run dev2            # 開発モード第2インスタンス（ポート9002、ホットキー: Ctrl+Alt+S）
 npm run dev:test        # テストデータで開発モード起動（全機能を含むテストデータ、ポート9003、ホットキー: Ctrl+Alt+T）
 npm run build           # 型チェック（tsc）→ Viteビルド。prebuildでTHIRD-PARTY-NOTICES.mdを生成
-npm run preview         # ビルド済みアプリケーションのプレビュー
 npm run start           # ビルドして実行
 npm run dist            # Windowsインストーラー（NSIS）とポータブル版の作成（x64）。build と build:cli を含む
 npm run dist:appx       # Store 版（MSIX の appx、x64）の作成。ロゴ画像を build/appx/ に作ってからパッケージにする（試作中）。build と build:cli を含む

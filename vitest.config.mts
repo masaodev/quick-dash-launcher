@@ -62,7 +62,6 @@ export default defineConfig({
   resolve: {
     alias: {
       '@common': resolve(process.cwd(), './src/common'),
-      '@': resolve(process.cwd(), './src'),
     },
   },
 

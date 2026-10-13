@@ -1,7 +1,7 @@
 import path from 'path';
 
 import { test as base, _electron as electron } from '@playwright/test';
-import type { ElectronApplication, Page } from 'playwright';
+import type { ElectronApplication, Page } from '@playwright/test';
 
 import { ConfigFileHelper } from '../helpers/config-file-helper';
 
