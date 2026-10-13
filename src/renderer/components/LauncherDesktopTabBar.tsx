@@ -1,4 +1,6 @@
 import React, { useMemo } from 'react';
+import type { TFunction } from 'i18next';
+import { useTranslation } from 'react-i18next';
 import { DESKTOP_TAB } from '@common/constants';
 import type { WindowInfo, VirtualDesktopInfo } from '@common/types';
 
@@ -24,18 +26,22 @@ interface DesktopTab {
   count: number;
 }
 
-function getTabTooltip(tabId: number, desktopNames?: Record<number, string | undefined>): string {
+function getTabTooltip(
+  t: TFunction,
+  tabId: number,
+  desktopNames?: Record<number, string | undefined>
+): string {
   if (tabId === DESKTOP_TAB.ALL) {
-    return 'すべてのデスクトップのウィンドウ';
+    return t('launcher.desktopTabs.allTooltip');
   }
   if (tabId === DESKTOP_TAB.PINNED) {
-    return '全仮想デスクトップにピン止めされたウィンドウ';
+    return t('launcher.desktopTabs.onAllDesktopsTooltip');
   }
   const name = desktopNames?.[tabId];
   if (name) {
-    return `デスクトップ ${tabId}「${name}」のウィンドウ`;
+    return t('launcher.desktopTabs.namedDesktopTooltip', { number: tabId, name });
   }
-  return `デスクトップ ${tabId} のウィンドウ`;
+  return t('launcher.desktopTabs.desktopTooltip', { number: tabId });
 }
 
 /**
@@ -49,19 +55,24 @@ const LauncherDesktopTabBar: React.FC<DesktopTabBarProps> = ({
   searchQuery,
   onTabChange,
 }) => {
+  const { t } = useTranslation();
   // タブリストを生成（useMemoで最適化）
   const tabs = useMemo((): DesktopTab[] => {
     // 検索クエリでフィルタリング
     const filteredWindows = filterItems(windowList, searchQuery, 'window') as WindowInfo[];
 
     const tabList: DesktopTab[] = [
-      { id: DESKTOP_TAB.ALL, label: 'すべて', count: filteredWindows.length },
+      { id: DESKTOP_TAB.ALL, label: t('launcher.desktopTabs.all'), count: filteredWindows.length },
     ];
 
-    // 「ピン止め」タブ（ピン止めされたウィンドウがある場合のみ表示）
+    // 「全デスクトップ」タブ（すべてのデスクトップに表示するウィンドウがある場合のみ表示）
     const pinnedCount = filteredWindows.filter((w) => w.isPinned === true).length;
     if (pinnedCount > 0) {
-      tabList.push({ id: DESKTOP_TAB.PINNED, label: 'ピン止め', count: pinnedCount });
+      tabList.push({
+        id: DESKTOP_TAB.PINNED,
+        label: t('launcher.desktopTabs.onAllDesktops'),
+        count: pinnedCount,
+      });
     }
 
     // 各デスクトップのタブを追加
@@ -72,7 +83,7 @@ const LauncherDesktopTabBar: React.FC<DesktopTabBarProps> = ({
       const baseLabel = desktopName || `${i}`;
       tabList.push({
         id: i,
-        label: isCurrent ? `${baseLabel} (現在)` : baseLabel,
+        label: isCurrent ? t('launcher.desktopTabs.current', { name: baseLabel }) : baseLabel,
         count,
       });
     }
@@ -84,6 +95,7 @@ const LauncherDesktopTabBar: React.FC<DesktopTabBarProps> = ({
     desktopInfo.desktopCount,
     desktopInfo.currentDesktop,
     desktopInfo.desktopNames,
+    t,
   ]);
 
   return (
@@ -95,7 +107,7 @@ const LauncherDesktopTabBar: React.FC<DesktopTabBarProps> = ({
             key={tab.id}
             className={`tab-button ${countClass} ${activeDesktopTab === tab.id ? 'active' : ''}`}
             onClick={() => onTabChange(tab.id)}
-            title={getTabTooltip(tab.id, desktopInfo.desktopNames)}
+            title={getTabTooltip(t, tab.id, desktopInfo.desktopNames)}
           >
             {tab.label}
             <span className={`tab-count ${countClass}`}>({tab.count})</span>

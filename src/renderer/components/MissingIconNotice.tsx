@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from './ui/Button';
 
@@ -14,6 +15,7 @@ interface MissingIconNoticeProps {
  * 起動時に未取得アイコンがあれば画面下部に表示し、クリックで取得を開始できる
  */
 const MissingIconNotice: React.FC<MissingIconNoticeProps> = ({ missingCount, onFetchClick }) => {
+  const { t } = useTranslation();
   // 未取得がなければ非表示
   if (missingCount === 0) {
     return null;
@@ -23,11 +25,18 @@ const MissingIconNotice: React.FC<MissingIconNoticeProps> = ({ missingCount, onF
     <div className="missing-icon-notice">
       <div className="missing-icon-notice__content">
         <span className="missing-icon-notice__icon">⚠</span>
-        <span className="missing-icon-notice__label">アイコン未取得:</span>
-        <span className="missing-icon-notice__count">{missingCount}件</span>
+        <span className="missing-icon-notice__label">{t('launcher.missingIcons.label')}</span>
+        <span className="missing-icon-notice__count">
+          {t('common.itemCount', { count: missingCount })}
+        </span>
       </div>
-      <Button variant="info" size="sm" onClick={onFetchClick} title="アイコンを取得">
-        取得
+      <Button
+        variant="info"
+        size="sm"
+        onClick={onFetchClick}
+        title={t('launcher.missingIcons.fetchTooltip')}
+      >
+        {t('launcher.missingIcons.fetch')}
       </Button>
     </div>
   );

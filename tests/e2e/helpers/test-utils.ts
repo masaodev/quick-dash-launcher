@@ -356,7 +356,7 @@ export class TestUtils {
    * 設定ドロップダウンを開いて指定タブをクリック
    * @private
    */
-  private async openSettingsDropdownAndClick(tab: 'settings' | 'edit' | 'other'): Promise<void> {
+  private async openSettingsDropdownAndClick(tab: 'settings' | 'edit'): Promise<void> {
     // 設定ボタン（⚙）をクリック
     const settingsButton = this.page
       .locator('.settings-dropdown')
@@ -364,21 +364,20 @@ export class TestUtils {
     await settingsButton.click();
     await this.wait(200);
 
-    // ドロップダウンから選択
-    const menuText = tab === 'settings' ? '基本設定' : tab === 'edit' ? 'アイテム管理' : 'その他';
-    const menuItem = this.page.locator('.dropdown-item', { hasText: menuText });
-    await menuItem.click();
+    // ドロップダウンから選択（表示言語によらないよう data-testid で選ぶ）
+    const testId = tab === 'settings' ? 'settings-menu-settings' : 'settings-menu-item-manager';
+    await this.page.getByTestId(testId).click();
   }
 
   /**
    * 管理ウィンドウを開く
    * @param electronApp Electronアプリケーションインスタンス
-   * @param tab 開くタブ ('settings' | 'edit' | 'other')
+   * @param tab 開くタブ ('settings' | 'edit')
    * @returns 新しく開かれた管理ウィンドウのPageオブジェクト
    */
   async openAdminWindow(
     electronApp: ElectronApplication,
-    tab: 'settings' | 'edit' | 'other' = 'settings'
+    tab: 'settings' | 'edit' = 'settings'
   ): Promise<Page> {
     const [adminWindow] = await Promise.all([
       electronApp.waitForEvent('window', {

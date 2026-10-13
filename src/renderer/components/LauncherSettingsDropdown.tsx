@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface SettingsDropdownProps {
   onOpenBasicSettings: () => void;
@@ -13,6 +14,7 @@ const LauncherSettingsDropdown: React.FC<SettingsDropdownProps> = ({
   onToggleWorkspace,
   onQuitApp,
 }) => {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -39,7 +41,11 @@ const LauncherSettingsDropdown: React.FC<SettingsDropdownProps> = ({
 
   return (
     <div className="settings-dropdown" ref={dropdownRef}>
-      <button className="action-btn" onClick={() => setIsOpen(!isOpen)} title="設定">
+      <button
+        className="action-btn"
+        onClick={() => setIsOpen(!isOpen)}
+        title={t('launcher.settingsMenu.title')}
+      >
         ⚙️
       </button>
       {isOpen && (
@@ -47,21 +53,23 @@ const LauncherSettingsDropdown: React.FC<SettingsDropdownProps> = ({
           <button
             className="dropdown-item"
             onClick={() => handleMenuItemClick(onOpenBasicSettings)}
+            data-testid="settings-menu-settings"
           >
-            ⚙️ 基本設定
+            {t('launcher.settingsMenu.settings')}
           </button>
           <button
             className="dropdown-item"
             onClick={() => handleMenuItemClick(onOpenItemManagement)}
+            data-testid="settings-menu-item-manager"
           >
-            ✏️ アイテム管理（Ctrl+E）
+            {t('launcher.settingsMenu.itemManager')}
           </button>
           <button className="dropdown-item" onClick={() => handleMenuItemClick(onToggleWorkspace)}>
-            🗂️ ワークスペースを表示（Ctrl+W）
+            {t('launcher.settingsMenu.toggleWorkspace')}
           </button>
           <div className="dropdown-divider"></div>
           <button className="dropdown-item" onClick={() => handleMenuItemClick(onQuitApp)}>
-            🚪 アプリを終了
+            {t('launcher.settingsMenu.quit')}
           </button>
         </div>
       )}
