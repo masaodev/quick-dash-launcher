@@ -13,8 +13,8 @@ import type { LayoutItem, LayoutWindowEntry } from '@common/types';
 import { GROUP_LAUNCH_DELAY_MS } from '@common/constants';
 import { isLauncherItem, isWindowItem } from '@common/types/guards';
 import { IPC_CHANNELS } from '@common/ipcChannels';
-import { createTitleMatcher } from '@common/utils/windowTitle';
 import { PathUtils } from '@common/utils/pathUtils';
+import { createTitleMatcher } from '@common/utils/windowTitle';
 
 import { tryActivateWindow } from '../utils/windowActivator.js';
 import { isBareFileName, resolveFromPath } from '../utils/pathResolver.js';
