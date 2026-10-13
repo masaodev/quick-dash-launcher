@@ -182,6 +182,11 @@ export function useWorkspaceItemEditForm(
       newErrors.path = t('register.errors.clipboardRequired');
     }
 
+    // 登録画面と同じく、ウィンドウが 1 つも無いレイアウトは保存させない
+    if (item.itemCategory === 'layout' && !item.layoutEntries?.length) {
+      newErrors.path = t('register.errors.layoutRequired');
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }, [item, t]);
