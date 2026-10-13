@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { debugLog } from '../utils/debug';
 import { getPathsFromDropEvent, getUrlsFromDropEvent } from '../utils/fileDropUtils';
@@ -9,6 +10,7 @@ export function useDragAndDrop(
   onDropError: (message: string) => void,
   isModalOpen: boolean = false
 ): { isDraggingOver: boolean } {
+  const { t } = useTranslation();
   const [isDraggingOver, setIsDraggingOver] = useState(false);
 
   useEffect(() => {
@@ -54,9 +56,7 @@ export function useDragAndDrop(
 
       // ファイルはあるがパス取得に失敗した場合のエラー通知
       if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
-        onDropError(
-          'ファイルパスを取得できませんでした。\nファイルを直接エクスプローラーからドラッグしてください。'
-        );
+        onDropError(t('launcher.dropPathUnavailable'));
       }
     }
 
@@ -69,7 +69,7 @@ export function useDragAndDrop(
       document.removeEventListener('dragleave', handleDragLeave);
       document.removeEventListener('drop', handleDrop);
     };
-  }, [onFilesDropped, onDropError, isModalOpen]);
+  }, [onFilesDropped, onDropError, isModalOpen, t]);
 
   return { isDraggingOver };
 }

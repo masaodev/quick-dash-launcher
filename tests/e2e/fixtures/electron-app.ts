@@ -48,7 +48,7 @@ export const test = base.extend<ElectronFixtures & ElectronOptions>({
   },
 
   // Electronアプリケーションを起動するフィクスチャ
-  electronApp: async ({ configHelper }, use) => {
+  electronApp: async ({ configHelper }, use, testInfo) => {
     // アプリケーションのメインファイルパス
     const electronAppPath = path.join(process.cwd(), 'dist', 'main', 'main.js');
 
@@ -85,13 +85,19 @@ export const test = base.extend<ElectronFixtures & ElectronOptions>({
     // テストでアプリケーションを使用
     await use(electronApp);
 
-    // トレースを停止して保存（アプリが既に終了している場合はスキップ）
+    // トレースを停止し、失敗したテストのものだけ保存する（アプリが既に終了している場合はスキップ）。
+    // 成功したテストの分まで残すと、全件実行のたびに数百 MB ずつ溜まる
     try {
       // アプリケーションがまだ実行中か確認
       if (!electronApp.process()?.killed) {
-        await context.tracing.stop({
-          path: path.join(process.cwd(), 'test-results', 'traces', `trace-${Date.now()}.zip`),
-        });
+        const failed = testInfo.status !== testInfo.expectedStatus;
+        await context.tracing.stop(
+          failed
+            ? {
+                path: path.join(process.cwd(), 'test-results', 'traces', `trace-${Date.now()}.zip`),
+              }
+            : undefined
+        );
       }
     } catch (error) {
       // トレース停止でエラーが発生しても続行

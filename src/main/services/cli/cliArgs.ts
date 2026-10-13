@@ -6,6 +6,8 @@
  * `--set key=value` と `--unset key` は何度でも書ける。
  */
 
+import { mainI18n } from '../mainI18n.js';
+
 /** 失敗の種類。文言を変えても変えない約束（AI・スクリプトが分岐に使う） */
 export type CliErrorCode =
   'usage' | 'not_found' | 'ambiguous' | 'invalid' | 'conflict' | 'unavailable' | 'internal';
@@ -64,7 +66,8 @@ export function parseArgs(args: readonly string[], spec: OptionSpec): ParsedArgs
     const takeValue = (): string => {
       if (inline !== undefined) return inline;
       const next = args[i + 1];
-      if (next === undefined) throw new CliError('usage', `--${name} に値がありません`);
+      if (next === undefined)
+        throw new CliError('usage', mainI18n.t('cli.args.missingValue', { name }));
       i++;
       return next;
     };
@@ -76,23 +79,23 @@ export function parseArgs(args: readonly string[], spec: OptionSpec): ParsedArgs
         continue;
       }
       const sep = value.indexOf('=');
-      if (sep <= 0)
-        throw new CliError('usage', `--set は key=value の形で書いてください: ${value}`);
+      if (sep <= 0) throw new CliError('usage', mainI18n.t('cli.args.setFormat', { value }));
       result.sets.push([value.slice(0, sep), value.slice(sep + 1)]);
       continue;
     }
     if (flags.has(name)) {
-      if (inline !== undefined) throw new CliError('usage', `--${name} は値を取りません`);
+      if (inline !== undefined)
+        throw new CliError('usage', mainI18n.t('cli.args.noValue', { name }));
       result.options.set(name, true);
       continue;
     }
     if (values.has(name)) {
       if (result.options.has(name))
-        throw new CliError('usage', `--${name} が 2 回指定されています`);
+        throw new CliError('usage', mainI18n.t('cli.args.duplicate', { name }));
       result.options.set(name, takeValue());
       continue;
     }
-    throw new CliError('usage', `知らないオプションです: --${name}`);
+    throw new CliError('usage', mainI18n.t('cli.args.unknownOption', { name }));
   }
   return result;
 }
@@ -110,19 +113,22 @@ export function optionInt(parsed: ParsedArgs, name: string): number | undefined 
   const value = optionString(parsed, name);
   if (value === undefined) return undefined;
   if (!/^-?\d+$/.test(value))
-    throw new CliError('usage', `--${name} は整数で指定してください: ${value}`);
+    throw new CliError('usage', mainI18n.t('cli.args.notInteger', { name, value }));
   return Number(value);
 }
 
 /** 位置引数がちょうど n 個か確かめる */
 export function expectPositionals(parsed: ParsedArgs, names: readonly string[]): string[] {
   if (parsed.positionals.length < names.length) {
-    throw new CliError('usage', `${names[parsed.positionals.length]} を指定してください`);
+    throw new CliError(
+      'usage',
+      mainI18n.t('cli.args.missingArg', { name: names[parsed.positionals.length] })
+    );
   }
   if (parsed.positionals.length > names.length) {
     throw new CliError(
       'usage',
-      `余分な引数があります: ${parsed.positionals.slice(names.length).join(' ')}`
+      mainI18n.t('cli.args.extraArgs', { args: parsed.positionals.slice(names.length).join(' ') })
     );
   }
   return parsed.positionals;

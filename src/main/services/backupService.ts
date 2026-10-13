@@ -11,6 +11,11 @@ import { SettingsService } from './settingsService.js';
 
 /** 外部変更の変更前スナップショットのフォルダ名サフィックス */
 const PRE_EXTERNAL_SUFFIX = '_pre-external';
+/**
+ * スナップショットのフォルダ名の規則: `<タイムスタンプ>[-<連番>][_<サフィックス>]`
+ * （1: タイムスタンプ 2: 同じ秒に作ったときの連番（2 から） 3: `_pre-restore` などのサフィックス）
+ */
+const SNAPSHOT_NAME_PATTERN = /^(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2})(?:-(\d+))?(_.+)?$/;
 
 /** 変更前スナップショットの保持上限（backupRetention とは別枠） */
 const PRE_EXTERNAL_SNAPSHOT_LIMIT = 10;
@@ -91,6 +96,7 @@ export class BackupService {
     try {
       const entries = fs.readdirSync(backupFolder, { withFileTypes: true });
       const snapshots: SnapshotInfo[] = [];
+      const createdOrder = new Map<string, number>();
 
       for (const entry of entries) {
         if (!entry.isDirectory()) continue;
@@ -105,10 +111,17 @@ export class BackupService {
           totalSize,
           fileCount,
         });
+        createdOrder.set(entry.name, this.getFolderBirthtime(folderPath));
       }
 
-      // 新しい順にソート
-      snapshots.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      // 新しい順にソート。名前は秒単位なので、同じ秒のものはフォルダの作成時刻、
+      // それも同じなら連番の大きい方を新しいとみなす（種類の違うサフィックスをまたいでも並ぶ）
+      snapshots.sort(
+        (a, b) =>
+          b.createdAt.getTime() - a.createdAt.getTime() ||
+          (createdOrder.get(b.timestamp) ?? 0) - (createdOrder.get(a.timestamp) ?? 0) ||
+          this.parseSequence(b.timestamp) - this.parseSequence(a.timestamp)
+      );
       return snapshots;
     } catch (error) {
       logger.error({ error }, 'スナップショット一覧の取得に失敗');
@@ -356,9 +369,10 @@ export class BackupService {
     if (!backupEnabled) return null;
 
     const backupFolder = PathManager.getBackupFolder();
-    const timestamp = `${this.createTimestamp()}${PRE_EXTERNAL_SUFFIX}`;
-    const snapshotFolder = path.join(backupFolder, timestamp);
-    FileUtils.ensureDirectory(snapshotFolder);
+    const { timestamp, snapshotFolder } = this.allocateSnapshotFolder(
+      backupFolder,
+      PRE_EXTERNAL_SUFFIX
+    );
 
     let writtenCount = 0;
     for (const file of files) {
@@ -444,9 +458,10 @@ export class BackupService {
     const backupFolder = PathManager.getBackupFolder();
     FileUtils.ensureDirectory(backupFolder);
 
-    const timestamp = suffix ? `${this.createTimestamp()}_${suffix}` : this.createTimestamp();
-    const snapshotFolder = path.join(backupFolder, timestamp);
-    FileUtils.ensureDirectory(snapshotFolder);
+    const { snapshotFolder } = this.allocateSnapshotFolder(
+      backupFolder,
+      suffix ? `_${suffix}` : ''
+    );
 
     const targets = await this.getBackupTargets();
     let copiedCount = 0;
@@ -471,13 +486,55 @@ export class BackupService {
     return new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
   }
 
+  /**
+   * スナップショットのフォルダを作る（名前の規則は SNAPSHOT_NAME_PATTERN）。
+   * フォルダ名は秒単位なので、同じ秒にもう 1 つ作ると前のものを上書きしてしまう
+   * （外部で壊した直後に直して読み込むと、壊れる前の内容が消える）。
+   * 同じ名前があれば `<タイムスタンプ>-2<サフィックス>` のように連番を付ける。
+   * 確かめてから作るのではなく、再帰なしの mkdir が「既にある」で失敗したら次の番号へ進むので、
+   * 同時に作っても同じフォルダを使わない
+   */
+  private allocateSnapshotFolder(
+    backupFolder: string,
+    suffix: string
+  ): { timestamp: string; snapshotFolder: string } {
+    FileUtils.ensureDirectory(backupFolder);
+    const base = this.createTimestamp();
+    for (let sequence = 1; ; sequence++) {
+      const timestamp = `${base}${sequence === 1 ? '' : `-${sequence}`}${suffix}`;
+      const snapshotFolder = path.join(backupFolder, timestamp);
+      try {
+        fs.mkdirSync(snapshotFolder);
+        return { timestamp, snapshotFolder };
+      } catch (error) {
+        if ((error as { code?: string }).code !== 'EEXIST') throw error;
+      }
+    }
+  }
+
+  /** 同じ秒に作ったスナップショットの連番（連番なしは 1） */
+  private parseSequence(name: string): number {
+    const sequence = SNAPSHOT_NAME_PATTERN.exec(name)?.[2];
+    return sequence ? Number(sequence) : 1;
+  }
+
+  /** フォルダの作成時刻（取れなければ 0） */
+  private getFolderBirthtime(folderPath: string): number {
+    try {
+      return fs.statSync(folderPath).birthtimeMs;
+    } catch {
+      return 0;
+    }
+  }
+
   private isTimestampFolder(name: string): boolean {
     return /^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}/.test(name);
   }
 
   /** サフィックスなしの通常（日次）スナップショットか */
   private isRegularSnapshot(name: string): boolean {
-    return /^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}$/.test(name);
+    const match = SNAPSHOT_NAME_PATTERN.exec(name);
+    return match !== null && match[3] === undefined;
   }
 
   private parseTimestamp(name: string): Date {

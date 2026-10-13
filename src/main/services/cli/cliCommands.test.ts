@@ -1,6 +1,7 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 
 import type { LoadReport } from '../loadReportService';
+import { mainI18n } from '../mainI18n';
 
 import { runCliCommand } from './cliCommands';
 import type { CliContext } from './cliCommands';
@@ -163,5 +164,25 @@ describe('runCliCommand', () => {
     expect(res.exitCode).toBe(CLI_EXIT.usage);
     expect(JSON.parse(res.stdout).error.code).toBe('ambiguous');
     expect(res.stderr).toContain('Aaaaaaa1');
+  });
+});
+
+describe('runCliCommand（表示言語）', () => {
+  afterEach(async () => {
+    await mainI18n.changeLanguage('ja');
+  });
+
+  it('アプリが英語なら、ヘルプとエラーの文言も英語になり、code は変わらない', async () => {
+    await mainI18n.changeLanguage('en');
+    const help = await runCliCommand(request(['help']), context());
+    expect(help.stdout).toContain('Usage: qdl <command>');
+
+    const res = await runCliCommand(request(['nope']), context());
+    expect(res.exitCode).toBe(CLI_EXIT.usage);
+    expect(JSON.parse(res.stdout).error).toMatchObject({
+      code: 'usage',
+      message: 'Unknown command: nope',
+    });
+    expect(res.stderr).toContain('Run qdl help to see how to use it');
   });
 });

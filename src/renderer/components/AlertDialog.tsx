@@ -3,6 +3,7 @@
  * 画面仕様: docs/screens/dialogs.md#2-alertdialog
  */
 import React, { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import '../styles/components/Modal.css';
 import '../styles/components/AlertDialog.css';
@@ -18,11 +19,11 @@ interface AlertDialogProps {
   type?: AlertType;
 }
 
-const ALERT_CONFIG: Record<AlertType, { icon: string; defaultTitle: string }> = {
-  error: { icon: '❌', defaultTitle: 'エラー' },
-  warning: { icon: '⚠️', defaultTitle: '警告' },
-  success: { icon: '✅', defaultTitle: '成功' },
-  info: { icon: 'ℹ️', defaultTitle: 'お知らせ' },
+const ALERT_ICONS: Record<AlertType, string> = {
+  error: '❌',
+  warning: '⚠️',
+  success: '✅',
+  info: 'ℹ️',
 };
 
 function AlertDialog({
@@ -32,6 +33,7 @@ function AlertDialog({
   message,
   type = 'info',
 }: AlertDialogProps): React.ReactElement | null {
+  const { t } = useTranslation();
   // Enter・Esc は capture 段階で受けて止める。後ろの画面のキー処理（メイン画面で Enter がアイテムを
   // 実行するなど）に先に取られると、ダイアログが閉じずに後ろの操作が走る
   useEffect(() => {
@@ -51,8 +53,6 @@ function AlertDialog({
 
   if (!isOpen) return null;
 
-  const config = ALERT_CONFIG[type];
-
   return (
     <div className="modal-overlay" onClick={onClose} data-testid="alert-dialog-overlay">
       <div
@@ -61,8 +61,8 @@ function AlertDialog({
         data-testid="alert-dialog"
       >
         <div className="alert-header">
-          <span className="alert-icon">{config.icon}</span>
-          <h2>{title || config.defaultTitle}</h2>
+          <span className="alert-icon">{ALERT_ICONS[type]}</span>
+          <h2>{title || t(`common.alertTitle.${type}`)}</h2>
         </div>
 
         <div className="alert-body">
@@ -71,7 +71,7 @@ function AlertDialog({
 
         <div className="modal-actions">
           <Button variant="primary" onClick={onClose} data-testid="alert-dialog-ok-button">
-            OK
+            {t('common.ok')}
           </Button>
         </div>
       </div>

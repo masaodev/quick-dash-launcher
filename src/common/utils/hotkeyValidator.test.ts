@@ -1,8 +1,22 @@
 import { describe, it, expect } from 'vitest';
 
+import { ja } from '../i18n/locales/ja';
+
 import { validateHotkey } from './hotkeyValidator';
+import type { HotkeyInvalidReason } from './hotkeyValidator';
 
 describe('validateHotkey', () => {
+  it('弾いた理由のコードごとに、辞書（hotkey.invalid.*）に文言がある', () => {
+    const reasons: Record<HotkeyInvalidReason, true> = {
+      missing: true,
+      format: true,
+      needKey: true,
+      needModifier: true,
+      oneKey: true,
+    };
+    expect(Object.keys(ja.hotkey.invalid).sort()).toEqual(Object.keys(reasons).sort());
+  });
+
   it('修飾キー 1 つ以上と通常キー 1 つの組み合わせを受け付ける', () => {
     expect(validateHotkey('Alt+Space')).toEqual({ isValid: true });
     expect(validateHotkey('Ctrl+Alt+A')).toEqual({ isValid: true });
@@ -17,37 +31,37 @@ describe('validateHotkey', () => {
   it('空や文字列でない値は「指定されていません」', () => {
     expect(validateHotkey('')).toEqual({
       isValid: false,
-      reason: 'ホットキーが指定されていません',
+      reason: 'missing',
     });
     expect(validateHotkey(undefined)).toEqual({
       isValid: false,
-      reason: 'ホットキーが指定されていません',
+      reason: 'missing',
     });
   });
 
   it('通常キーが 2 つ以上あると弾く', () => {
     expect(validateHotkey('Ctrl+A+B')).toEqual({
       isValid: false,
-      reason: '通常キーは 1 つだけにしてください',
+      reason: 'oneKey',
     });
   });
 
   it('通常キーが無いと弾く', () => {
     expect(validateHotkey('Ctrl+Shift')).toEqual({
       isValid: false,
-      reason: '修飾キーのほかに通常キーが 1 つ必要です',
+      reason: 'needKey',
     });
   });
 
   it('修飾キーが無いと弾く', () => {
     expect(validateHotkey('A')).toEqual({
       isValid: false,
-      reason: '修飾キー（Ctrl、Alt、Shift等）が必要です',
+      reason: 'needModifier',
     });
   });
 
   it('知らないキー名・空の区切り・同じ修飾キーの重複は形式エラー', () => {
-    const invalidFormat = { isValid: false, reason: 'ホットキーの形式が正しくありません' };
+    const invalidFormat = { isValid: false, reason: 'format' };
     expect(validateHotkey('Ctrl+PageUp')).toEqual(invalidFormat);
     expect(validateHotkey('Ctrl++A')).toEqual(invalidFormat);
     expect(validateHotkey('Ctrl+a')).toEqual(invalidFormat);

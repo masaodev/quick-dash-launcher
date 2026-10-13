@@ -52,8 +52,8 @@ const DirOptionsEditor: React.FC<DirOptionsEditorProps> = ({ dirOptions, onChang
           onChange={(e) => handleChange('types', e.target.value as 'file' | 'folder' | 'both')}
         >
           <option value="file">ファイルのみ</option>
-          <option value="folder">フォルダーのみ</option>
-          <option value="both">ファイルとフォルダー</option>
+          <option value="folder">フォルダのみ</option>
+          <option value="both">ファイルとフォルダ</option>
         </select>
       </div>
 

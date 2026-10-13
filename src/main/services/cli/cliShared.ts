@@ -4,6 +4,8 @@ import { validateJsonItem } from '@common/utils/jsonParser';
 import { validateEditableItem } from '@common/types/editableItem';
 import type { JsonItem } from '@common/types';
 
+import { mainI18n } from '../mainI18n.js';
+
 import { CliError } from './cliArgs.js';
 import type { CliCandidate, ParsedArgs } from './cliArgs.js';
 
@@ -22,11 +24,7 @@ export function resolveCliPath(value: string, cwd: string): string {
   if (/^%[^%]+%/.test(trimmed)) return trimmed;
   if (/^[a-zA-Z]:[\\/]/.test(trimmed) || trimmed.startsWith('\\\\')) return trimmed;
   if (trimmed.startsWith('.') || trimmed.includes('\\') || trimmed.includes('/')) {
-    if (!cwd)
-      throw new CliError(
-        'usage',
-        `相対パスを解決できません（実行したフォルダが分かりません）: ${value}`
-      );
+    if (!cwd) throw new CliError('usage', mainI18n.t('cli.errors.relativePath', { value }));
     return path.win32.resolve(cwd, trimmed);
   }
   return trimmed;
@@ -42,7 +40,7 @@ export function parseSetValue(raw: string): unknown {
     try {
       return JSON.parse(text);
     } catch {
-      throw new CliError('usage', `--set の値を JSON として読めません: ${raw}`);
+      throw new CliError('usage', mainI18n.t('cli.errors.setNotJson', { value: raw }));
     }
   }
   return raw;
@@ -73,12 +71,14 @@ export function applyPatch(
   }
   const setKeys: string[] = [];
   for (const [key, raw] of parsed.sets) {
-    if (PROTECTED_KEYS.has(key)) throw new CliError('usage', `--set では ${key} を変えられません`);
+    if (PROTECTED_KEYS.has(key))
+      throw new CliError('usage', mainI18n.t('cli.errors.setProtected', { key }));
     merged[key] = parseSetValue(raw);
     setKeys.push(key);
   }
   for (const key of parsed.unsets) {
-    if (PROTECTED_KEYS.has(key)) throw new CliError('usage', `--unset では ${key} を外せません`);
+    if (PROTECTED_KEYS.has(key))
+      throw new CliError('usage', mainI18n.t('cli.errors.unsetProtected', { key }));
     delete merged[key];
   }
   return { merged, setKeys };
@@ -105,12 +105,12 @@ export function describeValidationError(message: string): string {
   if (required) {
     const [, key, expected] = required;
     const example = expected.includes('array') ? '\'["…"]\'' : '…';
-    return `項目 ${key} がありません（${howToPass(key, example)} で渡してください）`;
+    return mainI18n.t('cli.errors.fieldMissing', { key, how: howToPass(key, example) });
   }
   const wrongType = /^([\w.[\]]+) must be (?:a |an )?(.+)$/.exec(message);
   if (wrongType) {
     const [, key, expected] = wrongType;
-    return `項目 ${key} の値が正しくありません（${expected} にしてください）`;
+    return mainI18n.t('cli.errors.fieldInvalid', { key, expected });
   }
   return message;
 }
@@ -129,18 +129,24 @@ export function validateAsDataItem(
   } catch (error) {
     throw new CliError(
       'invalid',
-      `内容が正しくありません: ${describeValidationError((error as Error).message)}`
+      mainI18n.t('cli.errors.invalidContent', {
+        reason: describeValidationError((error as Error).message),
+      })
     );
   }
   const unknown = setKeys.filter((key) => !(key in cleaned));
   if (unknown.length > 0) {
     throw new CliError(
       'invalid',
-      `種類 ${cleaned.type} には無い項目です: ${unknown.join(', ')}（docs の設定ファイルの形式を確認してください）`
+      mainI18n.t('cli.errors.unknownFields', { type: cleaned.type, fields: unknown.join(', ') })
     );
   }
   const result = validateEditableItem(cleaned);
-  if (!result.isValid) throw new CliError('invalid', `内容が正しくありません: ${result.error}`);
+  if (!result.isValid)
+    throw new CliError(
+      'invalid',
+      mainI18n.t('cli.errors.invalidContent', { reason: result.error ?? '' })
+    );
   return cleaned;
 }
 
@@ -160,14 +166,11 @@ export function resolveOne<T>(
   const byName = entries.filter((e) => getName(e) === key.trim());
   if (byName.length === 1) return byName[0];
   if (byName.length === 0) {
-    throw new CliError(
-      'not_found',
-      `${what}「${key}」が見つかりません（id か表示名の完全一致で指定します）`
-    );
+    throw new CliError('not_found', mainI18n.t('cli.errors.notFound', { what, key }));
   }
   throw new CliError(
     'ambiguous',
-    `${what}「${key}」が ${byName.length} 件あります。id で指定してください`,
+    mainI18n.t('cli.errors.ambiguous', { what, key, count: byName.length }),
     byName.map(toCandidate)
   );
 }

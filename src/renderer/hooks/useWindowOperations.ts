@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { ToastItemType, WindowInfo } from '@common/types';
 
 type Hwnd = WindowInfo['hwnd'];
@@ -35,12 +36,15 @@ export function useWindowOperations({
   removeWindowFromList,
   refreshWindowsKeepingSelection,
 }: UseWindowOperationsParams): WindowOperations {
+  const { t } = useTranslation();
   // Ctrl+D で閉じている途中のウィンドウ。処理が詰まっている間に押された Ctrl+D は
   // 一覧が更新される前の同じ描画のまま続けて実行されるので、ここで覚えて対象から外す
   const closingHwndsRef = useRef(new Set<Hwnd>());
 
   function displayNameOf(wins: WindowInfo[]): string {
-    return wins.length === 1 ? wins[0].title : `${wins.length} 個のウィンドウ`;
+    return wins.length === 1
+      ? wins[0].title
+      : t('launcher.windowActions.windowCount', { count: wins.length });
   }
 
   /** 順に実行し、成功したものと失敗したもの（最初のエラー）に分ける */
@@ -70,7 +74,7 @@ export function useWindowOperations({
 
   /**
    * 結果をトーストで知らせ、1 つでも成功していれば一覧を取り直す。
-   * すべて失敗したときは「<失敗の見出し>: <理由>」、一部だけ失敗したときは成功の文言に件数を添える
+   * すべて失敗したときは「<失敗の見出し>: <理由>」、一部だけ失敗したときは成功の文言に失敗の件数を添える
    * （成功の文言を省くとトーストの既定の文言になるので、件数だけのトーストにならないよう必ず渡す）
    */
   async function report(
@@ -84,11 +88,15 @@ export function useWindowOperations({
       await window.electronAPI.showToastWindow({
         displayName: displayNameOf(failed),
         itemType,
-        message: `${errorLabel}: ${firstError || '不明なエラー'}`,
+        message: t('launcher.windowActions.failedWithReason', {
+          label: errorLabel,
+          reason: firstError || t('common.unknownError'),
+        }),
       });
       return;
     }
-    const partial = failed.length > 0 ? `（${failed.length} 個は${errorLabel}）` : '';
+    const partial =
+      failed.length > 0 ? t('launcher.windowActions.partlyFailed', { count: failed.length }) : '';
     await window.electronAPI.showToastWindow({
       displayName: displayNameOf(done),
       itemType,
@@ -116,8 +124,8 @@ export function useWindowOperations({
       await report(
         outcome,
         'windowClose',
-        'ウィンドウを閉じるのに失敗しました',
-        'ウィンドウを閉じました'
+        t('launcher.windowActions.closeFailed'),
+        t('launcher.windowActions.closed')
       );
       return outcome.done;
     } finally {
@@ -139,8 +147,12 @@ export function useWindowOperations({
     await report(
       outcome,
       shouldPin ? 'windowPin' : 'windowUnpin',
-      shouldPin ? '固定に失敗しました' : '固定解除に失敗しました',
-      shouldPin ? 'ウィンドウを全デスクトップに固定しました' : 'ウィンドウの固定を解除しました'
+      shouldPin
+        ? t('launcher.windowActions.showOnAllDesktopsFailed')
+        : t('launcher.windowActions.stopShowingOnAllDesktopsFailed'),
+      shouldPin
+        ? t('launcher.windowActions.shownOnAllDesktops')
+        : t('launcher.windowActions.stoppedShowingOnAllDesktops')
     );
   }
 
@@ -157,12 +169,20 @@ export function useWindowOperations({
       moves.map((m) => m.win),
       (win) => window.electronAPI.moveWindowToDesktop(win.hwnd, desktopOf.get(win.hwnd)!)
     );
-    const destinations = [...new Set(outcome.done.map((w) => desktopOf.get(w.hwnd)))];
+    const destinations = [...new Set(outcome.done.map((w) => desktopOf.get(w.hwnd)!))];
+    const count = outcome.done.length;
     const successMessage =
-      destinations.length === 1
-        ? `${outcome.done.length === 1 ? 'ウィンドウ' : `${outcome.done.length} 個のウィンドウ`}をデスクトップ ${destinations[0]} に移動しました`
-        : `${outcome.done.length} 個のウィンドウを移動しました`;
-    await report(outcome, 'windowMoveDesktop', 'ウィンドウの移動に失敗しました', successMessage);
+      destinations.length !== 1
+        ? t('launcher.windowActions.moved', { count })
+        : count === 1
+          ? t('launcher.windowActions.movedOneToDesktop', { desktop: destinations[0] })
+          : t('launcher.windowActions.movedManyToDesktop', { count, desktop: destinations[0] });
+    await report(
+      outcome,
+      'windowMoveDesktop',
+      t('launcher.windowActions.moveFailed'),
+      successMessage
+    );
   }
 
   return {

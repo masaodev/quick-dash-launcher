@@ -175,7 +175,7 @@ $Shortcut.Save()
     expect(clipboardText).toBe('C:\\Windows\\System32\\notepad.exe');
   });
 
-  test('親フォルダーのパスをコピーメニュー操作', async ({ electronApp, mainWindow }) => {
+  test('親フォルダのパスをコピーメニュー操作', async ({ electronApp, mainWindow }) => {
     const menuHelper = new NativeMenuTestHelper(electronApp, mainWindow);
 
     const itemData = {
@@ -312,7 +312,7 @@ test.describe('QuickDashLauncher - 右クリックメニューの項目', () => 
   test('通常アイテムにはパス系の項目が出る', async ({ electronApp, mainWindow }) => {
     const labels = await captureMenuLabels(electronApp, mainWindow, 'メモ帳');
     expect(labels).toContain('📋 パスをコピー');
-    expect(labels).toContain('📂 親フォルダーを開く');
+    expect(labels).toContain('📂 親フォルダを開く');
   });
 
   for (const name of ['E2Eウィンドウ操作', 'E2Eウィンドウ配置']) {

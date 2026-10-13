@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { DEFAULT_DATA_FILE, AppItem, AppSettings, DataFileTab } from '@common/types';
 import { isWindowInfo } from '@common/types/guards';
 
@@ -44,6 +45,7 @@ export function useDataFileTabs() {
   const [dataFileTabs, setDataFileTabs] = useState<DataFileTab[]>([]);
   const [dataFileLabels, setDataFileLabels] = useState<Record<string, string>>({});
 
+  const { t } = useTranslation();
   const { showError } = useToast();
 
   /** タブ設定にあるデータファイルを、無ければ作る。作れなかったものは画面に知らせる */
@@ -54,7 +56,12 @@ export function useDataFileTabs() {
         const result = await window.electronAPI.createDataFile(fileName);
         if (!result.success && !result.alreadyExists) {
           logError(`${fileName}を作成できませんでした:`, result.error);
-          failed.push(`${fileName}（${result.error ?? '理由不明'}）`);
+          failed.push(
+            t('common.withReason', {
+              name: fileName,
+              reason: result.error ?? t('common.unknownReason'),
+            })
+          );
         }
       } catch (error) {
         logError(`${fileName}の作成/確認に失敗しました:`, error);
@@ -62,10 +69,15 @@ export function useDataFileTabs() {
       }
     }
     if (failed.length > 0) {
-      showError(`タブのデータファイルを作成できませんでした: ${failed.join('、')}`, {
-        id: 'data-file-create-error', // 設定の再適用のたびに重ねて出さない
-        duration: 10000,
-      });
+      showError(
+        t('launcher.messages.dataFilesCreateFailed', {
+          files: failed.join(t('common.listSeparator')),
+        }),
+        {
+          id: 'data-file-create-error', // 設定の再適用のたびに重ねて出さない
+          duration: 10000,
+        }
+      );
     }
   }
 

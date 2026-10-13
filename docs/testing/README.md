@@ -176,19 +176,22 @@ configHelper.cleanup();
 
 ## トレース機能
 
-### Electron環境での制限
+### 2 種類のトレース
 
-**重要**: Electronアプリケーションでは、Playwrightのトレース機能による自動スクリーンショット撮影に制限があります。
+失敗したテストには、トレースが 2 つ残ります（成功したテストの分は残しません）。
 
-**推奨回避策**: 明示的にスクリーンショットを撮影
+| 置き場 | 記録するもの | 中身 |
+| --- | --- | --- |
+| `test-results/test-artifacts/<テスト名>/trace.zip` | Playwright の設定（`trace: retain-on-failure`） | テストの手順とエラーだけ。Electron の画面は入らない |
+| `test-results/traces/trace-<タイムスタンプ>.zip` | フィクスチャ（`tests/e2e/fixtures/electron-app.ts`）がアプリの起動から終了まで | 画面のコマと DOM のスナップショットも入る。画面の様子はこちらで見る |
+
+失敗時のスクリーンショット・動画は `test-results/test-artifacts/<テスト名>/` に保存されます。途中の画面を確実に残したいときは、明示的に撮影します。
 
 ```typescript
 await utils.attachScreenshot(testInfo, 'モーダル表示');
 ```
 
 ### トレースビューアーの使用
-
-失敗したテストのスクリーンショット・動画・トレースは `test-results/test-artifacts/` に、フィクスチャが記録するトレースは `test-results/traces/` に保存されます。
 
 ```bash
 npx playwright show-trace test-results/test-artifacts/<テスト名>/trace.zip
@@ -234,7 +237,7 @@ npx playwright show-trace test-results/traces/trace-<タイムスタンプ>.zip
 
 ### トレースにスクリーンショットが表示されない
 
-- Electron環境の制限のため、明示的に撮影が必要
+- `test-results/test-artifacts/` のトレースには Electron の画面が入らない。`test-results/traces/` のトレースを開く（[2 種類のトレース](#2-種類のトレース)）
 
 ### テンプレートを変更したのに反映されない
 
