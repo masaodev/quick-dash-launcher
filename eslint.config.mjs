@@ -57,7 +57,6 @@ const I18N_EXEMPT_FILES = [
   'src/common/types/json-workspace.ts',
   'src/main/services/settingsService.ts',
   // ログ・開発者向けの内部エラーだけ（画面に出ない）
-  'src/common/utils/directiveUtils.ts',
   'src/main/ipc/{editHandlers,itemHandlers,workspaceHandlers}.ts',
   'src/main/main.ts',
   'src/main/workspaceWindowManager.ts',
