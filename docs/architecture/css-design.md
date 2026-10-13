@@ -42,6 +42,7 @@ QuickDashLauncherのスタイルは、CSS変数（カスタムプロパティ）
 
 - `variables.css` に無い変数名（`--border-color`・`--text-color` など）は使わない。定義されていない変数は何も指定していないのと同じになり、枠や色が黙って消える（2026-10 に約 30 種類を既存の変数へ付け替えた）
 - ワークスペースのグループ色トークンは、`workspace.json` の `groups[].color` に保存される値に対応する。`primary`/`success`/`danger`/`warning`/`info`/`secondary` はテーマ色（`--color-*`）を参照し、それ以外（`purple` など）は固有色を持つ。トークンから CSS 変数への解決は `src/common/groupColors.ts` の `resolveGroupColorCss()` が行う。
+- フォント（`--font-family`・`--font-family-mono`）は表示言語で変わる。英語の画面（`<html lang="en">`）では Segoe UI・Consolas を優先する（メイリオや日本語の等幅フォントは `\` を `¥` で描くため）。文字の並びに関わる指定でも `font-family` を直書きせず、この 2 つを使う。
 - 必要な値が変数にないときは、直書きせず `variables.css` に既存の命名の型に沿って変数を足す。
 
 ## 共通ユーティリティクラス

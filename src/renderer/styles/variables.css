@@ -161,3 +161,10 @@
   --menu-width-max: 450px;
   --menu-max-height: 400px;
 }
+
+/* 英語の画面では Windows 標準のフォントを優先する（メイリオや日本語の等幅フォントは \ を ¥ で描くため）。
+   日本語の文字はメイリオで描く */
+:root:lang(en) {
+  --font-family: 'Segoe UI', 'Meiryo', 'メイリオ', sans-serif;
+  --font-family-mono: Consolas, 'Meiryo', monospace;
+}

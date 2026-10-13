@@ -380,7 +380,7 @@
 
 .source-column {
   width: 90px;
-  font-family: monospace;
+  font-family: var(--font-family-mono);
   font-size: var(--font-size-xs);
   padding: var(--spacing-xs) 6px !important;
 }
@@ -422,7 +422,7 @@
   text-align: left;
   color: var(--text-info);
   font-style: italic;
-  font-family: monospace;
+  font-family: var(--font-family-mono);
   font-size: var(--font-size-sm);
   white-space: pre-wrap;
   padding: var(--spacing-xs) var(--spacing-sm);
@@ -601,7 +601,7 @@
 .line-number-column {
   width: 50px;
   text-align: center;
-  font-family: monospace;
+  font-family: var(--font-family-mono);
   color: var(--text-info);
   padding: var(--spacing-xs) 6px !important;
 }
@@ -659,7 +659,7 @@
 /* content-column のセル共通スタイル */
 .content-column .editable-cell,
 .content-column .edit-input {
-  font-family: monospace;
+  font-family: var(--font-family-mono);
   font-size: var(--font-size-sm);
 }
 
@@ -724,7 +724,7 @@
 
 .raw-items-table .line-number-column {
   width: 36px;
-  font-family: monospace;
+  font-family: var(--font-family-mono);
   color: var(--text-muted);
 }
 
@@ -948,7 +948,7 @@
 
 .edit-mode-load-error-detail {
   margin-top: var(--spacing-md);
-  font-family: monospace;
+  font-family: var(--font-family-mono);
   font-size: var(--font-size-sm);
   color: var(--text-muted);
   white-space: pre-wrap;
