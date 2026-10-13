@@ -294,6 +294,9 @@ export const IPC_CHANNELS = {
   EVENT_WINDOW_MENU_ACTIVATE: 'window-menu-activate',
   EVENT_WINDOW_MENU_ADD_TO_WORKSPACE: 'window-menu-add-to-workspace',
   EVENT_WINDOW_MENU_CLOSE: 'window-menu-close',
+  EVENT_WINDOW_MENU_MOVE_TO_DESKTOP: 'window-menu-move-to-desktop',
+  EVENT_WINDOW_MENU_PIN: 'window-menu-pin',
+  EVENT_WINDOW_MENU_UNPIN: 'window-menu-unpin',
   // コンテキストメニュー - 複数のウィンドウ（ウィンドウ検索で 2 つ以上を選んでいるとき）
   SHOW_WINDOWS_CONTEXT_MENU: 'show-windows-context-menu',
   EVENT_WINDOWS_MENU_CLOSE: 'windows-menu-close',
@@ -322,3 +325,20 @@ export const IPC_CHANNELS = {
  * IPCチャネル名の型
  */
 export type IpcChannelName = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS];
+
+/** 進捗イベントの段階 */
+export type ProgressEventType = 'start' | 'update' | 'complete';
+
+/** アイコン取得の進捗イベントのチャネル（段階ごと） */
+export const ICON_PROGRESS_CHANNELS = {
+  start: IPC_CHANNELS.EVENT_ICON_PROGRESS_START,
+  update: IPC_CHANNELS.EVENT_ICON_PROGRESS_UPDATE,
+  complete: IPC_CHANNELS.EVENT_ICON_PROGRESS_COMPLETE,
+} as const satisfies Record<ProgressEventType, IpcChannelName>;
+
+/** レイアウト実行の進捗イベントのチャネル（段階ごと） */
+export const LAYOUT_PROGRESS_CHANNELS = {
+  start: IPC_CHANNELS.EVENT_LAYOUT_PROGRESS_START,
+  update: IPC_CHANNELS.EVENT_LAYOUT_PROGRESS_UPDATE,
+  complete: IPC_CHANNELS.EVENT_LAYOUT_PROGRESS_COMPLETE,
+} as const satisfies Record<ProgressEventType, IpcChannelName>;

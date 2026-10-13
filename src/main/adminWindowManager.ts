@@ -3,6 +3,7 @@ import * as path from 'path';
 import { BrowserWindow } from 'electron';
 import { windowLogger } from '@common/logger';
 import { IPC_CHANNELS } from '@common/ipcChannels';
+import type { AdminTab } from '@common/types';
 
 import { EnvConfig } from './config/envConfig.js';
 import PathManager from './config/pathManager.js';
@@ -16,7 +17,6 @@ import {
   isAppQuitting,
 } from './utils/managedWindow.js';
 
-type AdminTab = 'settings' | 'edit' | 'other';
 type ImportModalType = 'bookmark' | 'app';
 
 const IDLE_DESTROY_MS = 5 * 60 * 1000;
@@ -147,8 +147,8 @@ export async function showAdminWindowWithTab(tab: AdminTab): Promise<void> {
   await showAdminWindow();
 
   if (isWindowValid()) {
-    adminWindow!.webContents.send('set-active-tab', tab);
-    adminWindow!.webContents.send('window-shown');
+    adminWindow!.webContents.send(IPC_CHANNELS.EVENT_SET_ACTIVE_TAB, tab);
+    adminWindow!.webContents.send(IPC_CHANNELS.EVENT_WINDOW_SHOWN);
   }
 }
 

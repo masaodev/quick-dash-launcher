@@ -8,8 +8,7 @@
 import * as path from 'path';
 
 import { Notification, nativeImage, app } from 'electron';
-
-export type NotificationType = 'success' | 'error' | 'info' | 'warning';
+import type { NotificationType } from '@common/types';
 
 export interface NotificationOptions {
   /** 通知タイトル */

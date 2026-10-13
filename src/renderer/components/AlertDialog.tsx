@@ -4,12 +4,13 @@
  */
 import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { NotificationType } from '@common/types';
 
 import '../styles/components/Modal.css';
 import '../styles/components/AlertDialog.css';
 import { Button } from './ui';
 
-type AlertType = 'info' | 'error' | 'warning' | 'success';
+type AlertType = NotificationType;
 
 interface AlertDialogProps {
   isOpen: boolean;

@@ -13,43 +13,15 @@
 
 import { BrowserWindow, screen } from 'electron';
 import type { BrowserWindowConstructorOptions } from 'electron';
-import type { ToastItemType } from '@common/types';
+import type { ToastItemType, ToastOptions } from '@common/types';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 import { windowLogger } from '@common/logger';
 
 import { WindowIdleDestroyer } from '../utils/windowIdleDestroyer.js';
 import { DEFAULT_WEB_PREFERENCES } from '../utils/managedWindow.js';
 
-import { NotificationType } from './notificationService.js';
 import { mainI18n } from './mainI18n.js';
 import { getRendererHtmlUrl, openChildWindow } from './childWindowService.js';
-
-/**
- * トースト表示オプション
- *
- * 必ず itemType + displayName を指定してリッチ形式で表示すること。
- * message + type のみの旧形式（シンプルデザイン）は非推奨。
- */
-export interface ToastOptions {
-  /** 補足メッセージ（リッチ形式のアクション文言として使用） */
-  message?: string;
-  /** トーストの種類（旧形式フォールバック用、通常は不要） */
-  type?: NotificationType;
-  /** 表示時間（ミリ秒） */
-  duration?: number;
-  /** アイテムタイプ */
-  itemType?: ToastItemType;
-  /** 表示名 */
-  displayName?: string;
-  /** パス（URL含む） */
-  path?: string;
-  /** アイコン（Base64データURLまたはURL） */
-  icon?: string;
-  /** グループ内アイテム数 */
-  itemCount?: number;
-  /** グループ内アイテム名（最大3件） */
-  itemNames?: string[];
-}
 
 /**
  * 種別ごとの既定の文言のキー（message が無いときに出す）。

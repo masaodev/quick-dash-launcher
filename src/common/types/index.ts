@@ -160,7 +160,7 @@ export type { ScannedAppItem, AppScanResult } from './appImport';
 export type { SearchHistoryEntry, SearchHistoryState, SearchMode } from './search';
 
 // ウィンドウ関連の型
-export type { WindowInfo, VirtualDesktopInfo, WindowState, Bounds } from './window';
+export type { WindowInfo, VirtualDesktopInfo, WindowState, Bounds, AdminTab } from './window';
 
 // アプリケーション情報
 export type { AppInfo, AppDistribution } from './app';
@@ -199,7 +199,7 @@ export type {
 export type { ConfirmWindowRequest, ConfirmWindowResult } from './confirmWindow';
 
 // トースト関連の型
-export type { ToastItemType, ToastEventData } from './toast';
+export type { ToastItemType, ToastEventData, NotificationType, ToastOptions } from './toast';
 
 // バックアップ関連の型
 export type { SnapshotInfo, BackupStatus } from './backup';
