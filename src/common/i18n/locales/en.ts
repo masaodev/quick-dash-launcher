@@ -266,6 +266,7 @@ export const en: LocaleMessages = {
     validationFailed: "Couldn't check the hotkey",
   },
   splash: {
+    windowTitle: 'QuickDashLauncher - Starting...',
     subtitle: 'Get to your apps, files, and sites fast',
     starting: 'Starting',
     loadingSettings: 'Loading settings',
@@ -535,6 +536,7 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     deleteFailed: "Couldn't delete the file: {{error}}",
   },
   admin: {
+    windowTitle: 'QuickDashLauncher - Settings',
     tabs: {
       settings: '⚙️ Settings',
       itemManager: '✏️ Item Manager',
@@ -896,6 +898,8 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     title: 'Filter by auto-import',
   },
   appImport: {
+    registeredApp: '(registered app)',
+    noExtension: '(none)',
     notFound: 'No installed apps were found',
     scanFailed: "Couldn't scan for apps",
     title: 'Add installed apps',
@@ -1127,6 +1131,15 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     prefixPlaceholder: 'Text before the display name',
     suffix: 'Suffix (example: Dev):',
     suffixPlaceholder: 'Text after the display name',
+    summary: {
+      depth: 'Depth: {{value}}',
+      types: 'Include: {{value}}',
+      filter: 'Filter: {{value}}',
+      exclude: 'Exclude: {{value}}',
+      prefix: 'Prefix: {{value}}',
+      suffix: 'Suffix: {{value}}',
+      separator: ', ',
+    },
   },
   layoutEditor: {
     windows: 'Windows to place:',
@@ -1185,6 +1198,30 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     button: 'Convert URL',
     noRule: 'No conversion rule matches this URL',
     hint: 'Supports URLs of Office files (Excel, Word, PowerPoint) on SharePoint',
+    options: {
+      sharePointEdit: 'Open for editing (SharePoint default)',
+      edit: 'Open for editing',
+      readOnly: 'Open as read-only',
+    },
+    descriptions: {
+      sharePointEdit: 'The standard way SharePoint opens files for editing',
+      edit: 'Opens in the {{app}} app for editing',
+      readOnly: 'Opens in the {{app}} app as read-only',
+    },
+  },
+  groupColors: {
+    primary: 'Primary',
+    success: 'Success',
+    danger: 'Danger',
+    warning: 'Warning',
+    info: 'Info',
+    secondary: 'Secondary',
+    purple: 'Purple',
+    teal: 'Teal',
+    pink: 'Pink',
+    indigo: 'Indigo',
+    orange: 'Orange',
+    cyan: 'Cyan',
   },
   filePicker: {
     title: 'Choose a file',
@@ -1193,6 +1230,117 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
   iconFetch: {
     title: 'Get the icon from the path automatically',
     button: 'Get icon',
+  },
+  dataErrors: {
+    jsonParseFailed: "Couldn't parse the JSON file: {{file}}",
+    loadFailed: "Couldn't load: {{error}}",
+    externalChange:
+      "A data file was changed outside QDL: {{files}}. Your edits weren't saved. Reload and try again.",
+    saveBlockedCorrupted:
+      'Saving was stopped because a data file may be corrupted: {{files}}. Repair (or delete) the file and try again.',
+    addBlockedCorrupted:
+      'Adding was stopped because the data file may be corrupted: {{file}}. Repair (or delete) the file and try again.',
+    writeFailed: "Couldn't write the data file: {{file}}",
+    itemNotFound: "The item with ID {{id}} wasn't found",
+    invalidTargetFile: 'The data file name to add to is invalid: {{files}}',
+    fileUnreadable: "Couldn't read the file",
+    convertFailed: 'Conversion failed: {{error}}',
+    configLoadFailed: "Couldn't load the settings files (they may be corrupted): {{files}}",
+  },
+  loadReport: {
+    accepted_one: '{{count}} item loaded',
+    accepted_other: '{{count}} items loaded',
+    skipped_one: '{{count}} skipped',
+    skipped_other: '{{count}} skipped',
+    idAssigned_one: 'IDs assigned to {{count}} item',
+    idAssigned_other: 'IDs assigned to {{count}} items',
+    separator: ', ',
+    summary: 'Data: {{parts}}',
+    externalSummary: 'Data edited outside QDL: {{parts}}',
+  },
+  workspaceErrors: {
+    externalChange:
+      '{{file}} was changed outside QDL. Press F5 in the launcher to reload, and then try again.',
+    writeFailed: "Couldn't write {{file}}. Check the free disk space and permissions.",
+    reloadInProgress: 'The workspace is reloading. Try again in a moment.',
+    corrupted:
+      "{{file}} is corrupted, so it can't be written. Repair the file and press F5 to reload.",
+    migrated:
+      'Converted from the old format (no version) to 2.0: reassigned IDs as 8-character alphanumerics, aligned the field names for window action coordinates and clipboard/window layout items with the data files, and moved the group collapse and detached window states to workspace-ui-state.json',
+    migrationNeedsArchive:
+      '{{file}} must also be readable to convert from the old format. Fix it first.',
+    migrationFailed: "Couldn't convert from the old format to 2.0: {{error}}",
+    migrationWriteFailed: "Couldn't write {{file}}",
+    archiveDeferred: "Loading was put off because {{file}} couldn't be read",
+    createFailed: "Couldn't create the file",
+  },
+  backupErrors: {
+    snapshotNotFound: "The snapshot wasn't found",
+    restoreFailed: "Couldn't restore",
+    deleteFailed: "Couldn't delete",
+    preMigrationCopyFailed: "Couldn't copy {{file}} to the pre-migration snapshot",
+  },
+  clipboardService: {
+    imagePreview: 'Image ({{width}}x{{height}})',
+    filesPreview_one: '{{count}} file: {{first}}...',
+    filesPreview_other: '{{count}} files: {{first}}...',
+    imageTooLarge: 'The image is larger than the limit ({{max}} MB)',
+    empty: 'The clipboard is empty',
+    saveFailed: "Couldn't save the clipboard data: {{file}}",
+    captureFailed: "Couldn't capture",
+    sessionNotFound: "The session wasn't found",
+    commitFailed: "Couldn't save",
+    invalidRef: 'The data file reference is invalid',
+    dataNotFound: "The clipboard data wasn't found",
+    filesMissing: 'None of the saved files were found. They may have been moved or deleted.',
+    nothingToRestore: 'There is no data to restore',
+    restoreFailed: "Couldn't restore",
+    imageData: 'Image data',
+  },
+  fileDialog: {
+    images: 'Image files',
+    allFiles: 'All files',
+  },
+  iconErrors: {
+    sourceNotFound: "The source file wasn't found: {{file}}",
+    tooLarge: 'The file is too large (up to {{max}} MB)',
+    faviconNotFound: "The favicon wasn't found",
+    faviconFailed: "Couldn't get the favicon",
+    iconNotFound: "The icon wasn't found",
+    iconFailed: "Couldn't extract the icon",
+  },
+  bookmarkErrors: {
+    pathNotAllowed: "This file path isn't allowed",
+    tooLarge: 'The file is too large',
+    invalidFormat: 'The bookmark file format is invalid',
+    readFailed: "Couldn't read the file",
+    selectFileTitle: 'Choose a bookmark file',
+  },
+  windowErrors: {
+    closeRequestFailed:
+      "Couldn't send the close request (for example, to an app running as administrator)",
+  },
+  sampleData: {
+    readme: {
+      name: 'How to use (README)',
+      url: 'https://github.com/masaodev/quick-dash-launcher#readme',
+    },
+    google: { name: 'Google Search', url: 'https://www.google.com/' },
+    maps: { name: 'Google Maps', url: 'https://www.google.com/maps' },
+    weather: { name: 'Weather', url: 'https://weather.com/' },
+    desktop: 'Desktop',
+    downloads: 'Downloads',
+    calculator: 'Calculator',
+    notepad: 'Notepad',
+    greetingName: 'Snippet: thanks',
+    greetingText: 'Thank you for your message.',
+  },
+  validation: {
+    emptyField: '{{field}} is empty',
+    emptyTypedField: '{{field}} of the {{type}} item is empty',
+    depthOutOfRange: 'depth must be -1 (unlimited) or 0 or greater',
+    invalidTypes: 'types must be file, folder, or both',
+    unknownType: 'Unknown item type: {{type}}',
   },
   workspace: {
     title: 'Workspace',
@@ -1259,6 +1407,8 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       hint: 'Right-click an item in the launcher and select "Add to workspace".',
     },
     restoresPosition: 'Moves it back to the saved position and brings it to the front',
+    restoredGroupName: '{{name}} (restored)',
+    defaultWorkspaceName: 'Default',
     detached: {
       pinStayVisible: 'Stay visible',
       pinAlwaysOnTop: 'Keep on top',
@@ -1461,6 +1611,8 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
         'The language used in QuickDashLauncher. Changes apply right away to all open windows.',
       options: {
         auto: 'Automatic (match the Windows display language)',
+        // 言語の選択肢は、どの表示言語でもその言語自身の名前で出す
+        // eslint-disable-next-line no-restricted-syntax
         ja: '日本語',
         en: 'English',
       },

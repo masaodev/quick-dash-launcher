@@ -7,6 +7,7 @@ import { IPC_CHANNELS } from '@common/ipcChannels';
 import { EnvConfig } from './config/envConfig.js';
 import PathManager from './config/pathManager.js';
 import { SettingsService } from './services/settingsService.js';
+import { mainI18n } from './services/mainI18n.js';
 import { registerChildWindowOpener } from './services/childWindowService.js';
 import { WindowIdleDestroyer } from './utils/windowIdleDestroyer.js';
 import {
@@ -62,7 +63,7 @@ export async function createAdminWindow(): Promise<BrowserWindow> {
     frame: true,
     autoHideMenuBar: true,
     show: false,
-    title: 'QuickDashLauncher - 設定・管理',
+    title: mainI18n.t('admin.windowTitle'),
     icon: PathManager.getAppIconPath(),
     webPreferences: DEFAULT_WEB_PREFERENCES,
   });

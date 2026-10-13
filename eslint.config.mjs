@@ -44,26 +44,30 @@ const I18N_RESTRICTED_SYNTAX = [
     message: I18N_MESSAGE,
   },
 ];
-/** 日本語の直書きを禁止するファイル（辞書へ移し終えたもの） */
-const I18N_ENFORCED_FILES = [
-  'src/common/i18n/languages.ts',
-  'src/common/i18n/index.ts',
-  'src/main/services/i18nService.ts',
-  'src/common/utils/bookmarkImportUtils.ts',
-  'src/common/utils/workspaceConverters.ts',
-  // renderer はすべて移し終えた（段階 2〜4）
-  'src/renderer/**/*.{ts,tsx}',
-  // メインプロセスの画面に出る文言（段階 2）
-  'src/common/utils/hotkeyValidator.ts',
-  'src/main/ipc/contextMenuHandlers.ts',
-  'src/main/ipc/dataHandlers.ts',
-  'src/main/ipc/settingsHandlers.ts',
-  'src/main/services/bookmarkAutoImportService.ts',
-  'src/main/services/mainI18n.ts',
-  'src/main/services/overlayWindowService.ts',
-  'src/main/windowManager.ts',
-  // CLI の応答（段階 2）。cliInstallService.ts は PATH の登録の内部エラーだけなので対象外
-  'src/main/services/cli/cli{Args,Commands,LauncherCommands,Protocol,Server,Shared,Stores,WorkspaceCommands}.ts',
+/**
+ * 日本語の直書きを禁止しないファイル（src 全体に禁止をかけ、ここに挙げたものだけ外す）
+ *
+ * 画面に出る文言はすべて辞書へ移した（段階 1〜4）。ここに残るのは、ログや開発者向けの内部エラー
+ * （利用者の画面に出ない）だけのファイルと、辞書そのもの
+ */
+const I18N_EXEMPT_FILES = [
+  // 辞書の正本
+  'src/common/i18n/locales/ja.ts',
+  // CLI の qdl reload・check にだけ出る読み込み時の理由（段階 4-3 で移す）
+  'src/common/utils/jsonParser.ts',
+  'src/common/utils/workspaceParser.ts',
+  // 既定の名前（初回起動で表示言語の名前に置き換える。workspace は main が表示言語の名前を渡す）
+  'src/common/types/json-workspace.ts',
+  'src/main/services/settingsService.ts',
+  // ログ・開発者向けの内部エラーだけ（画面に出ない）
+  'src/common/utils/directiveUtils.ts',
+  'src/main/ipc/{editHandlers,itemHandlers,workspaceHandlers}.ts',
+  'src/main/main.ts',
+  'src/main/workspaceWindowManager.ts',
+  'src/main/services/{childWindowService,faviconService}.ts',
+  'src/main/services/cli/cliInstallService.ts',
+  'src/main/utils/{itemLauncher,nativeWindowControl,progressManager,windowActivator}.ts',
+  'src/main/utils/virtualDesktop/{dllLoader,guidUtils,windowOperations}.ts',
 ];
 
 export default [
@@ -421,11 +425,11 @@ export default [
   },
 
   // 多言語化: 画面に出す日本語をコードに直接書かない（文言は src/common/i18n/locales/ の辞書に書き、t() で引く）。
-  // ログ（logger.info など）の文言は訳さないので対象外。辞書へ移し終えたファイル・フォルダから順に files へ足す
+  // ログ（logger.info など）の文言は訳さないので対象外。外すファイルは I18N_EXEMPT_FILES
   {
-    files: I18N_ENFORCED_FILES,
+    files: ['src/**/*.{ts,tsx}'],
     // テストは日本語の画面を確かめるので対象外
-    ignores: ['**/*.test.ts', '**/*.test.tsx'],
+    ignores: ['**/*.test.ts', '**/*.test.tsx', 'src/test/**', ...I18N_EXEMPT_FILES],
     rules: {
       'no-restricted-syntax': ['error', ...I18N_RESTRICTED_SYNTAX],
     },

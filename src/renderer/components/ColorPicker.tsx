@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { GROUP_COLOR_PALETTE, resolveGroupColorCss } from '@common/groupColors';
+import { useTranslation } from 'react-i18next';
+import { GROUP_COLOR_TOKENS, resolveGroupColorCss } from '@common/groupColors';
 
 interface ColorPickerProps {
   /** 色選択時のコールバック（色トークンを渡す） */
@@ -22,6 +23,7 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
   currentColor,
   disableEventListeners = false,
 }) => {
+  const { t } = useTranslation();
   const pickerRef = useRef<HTMLDivElement>(null);
 
   // ESCキーで閉じる（モーダルモードでは無効化）
@@ -65,13 +67,13 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
   return (
     <div className="color-picker-dropdown" ref={pickerRef}>
       <div className="color-picker-grid">
-        {GROUP_COLOR_PALETTE.map((color) => (
+        {GROUP_COLOR_TOKENS.map((token) => (
           <button
-            key={color.token}
-            className={`color-picker-option ${currentColor === color.token ? 'selected' : ''}`}
-            style={{ backgroundColor: resolveGroupColorCss(color.token) }}
-            onClick={() => onSelectColor(color.token)}
-            title={color.name}
+            key={token}
+            className={`color-picker-option ${currentColor === token ? 'selected' : ''}`}
+            style={{ backgroundColor: resolveGroupColorCss(token) }}
+            onClick={() => onSelectColor(token)}
+            title={t(`groupColors.${token}`)}
             type="button"
           />
         ))}

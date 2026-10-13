@@ -29,6 +29,7 @@ import {
   isJsonClipboardItem,
   isJsonLayoutItem,
   DIR_OPTIONS_DEFAULTS,
+  type DirOptionsForProcessing,
   type JsonWindowItem,
 } from '../types/json-data.js';
 
@@ -44,81 +45,20 @@ export function stripIconFromLayoutEntries(
   return entries.map(({ icon: _icon, ...rest }) => rest);
 }
 
-/** 深さ値のマッピング */
-const DEPTH_MAP: Record<string, number> = { 無制限: -1 };
-
-/** タイプ値のマッピング */
-const TYPES_MAP: Record<string, 'file' | 'folder' | 'both'> = {
-  ファイルのみ: 'file',
-  フォルダのみ: 'folder',
-  ファイルとフォルダ: 'both',
-};
-
-/** オプションキーと処理のマッピング */
-const OPTION_PARSERS: {
-  prefix: string;
-  handler: (value: string, options: JsonDirOptions) => void;
-}[] = [
-  {
-    prefix: '深さ:',
-    handler: (value, options) => {
-      options.depth = DEPTH_MAP[value] ?? (parseInt(value, 10) || 0);
-    },
-  },
-  {
-    prefix: 'タイプ:',
-    handler: (value, options) => {
-      if (TYPES_MAP[value]) options.types = TYPES_MAP[value];
-    },
-  },
-  {
-    prefix: 'フィルター:',
-    handler: (value, options) => {
-      options.filter = value;
-    },
-  },
-  {
-    prefix: '除外:',
-    handler: (value, options) => {
-      options.exclude = value;
-    },
-  },
-  {
-    prefix: '接頭辞:',
-    handler: (value, options) => {
-      options.prefix = value;
-    },
-  },
-  {
-    prefix: '接尾辞:',
-    handler: (value, options) => {
-      options.suffix = value;
-    },
-  },
-];
-
-/**
- * expandedOptionsの文字列をJsonDirOptionsに変換する
- */
-function parseExpandedOptionsToJsonDirOptions(optionsStr: string | undefined): JsonDirOptions {
-  const dirOptions: JsonDirOptions = {
-    depth: DIR_OPTIONS_DEFAULTS.depth,
-    types: DIR_OPTIONS_DEFAULTS.types,
-  };
-
-  if (!optionsStr) return dirOptions;
-
-  for (const option of optionsStr.split(',')) {
-    const trimmed = option.trim();
-    for (const parser of OPTION_PARSERS) {
-      if (trimmed.startsWith(parser.prefix)) {
-        parser.handler(trimmed.substring(parser.prefix.length).trim(), dirOptions);
-        break;
-      }
-    }
+/** 展開したアイテムが持つ取込の設定を、編集フォームのフォルダ取込のオプションにする */
+function toJsonDirOptions(options: DirOptionsForProcessing | undefined): JsonDirOptions {
+  if (!options) {
+    return { depth: DIR_OPTIONS_DEFAULTS.depth, types: DIR_OPTIONS_DEFAULTS.types };
   }
-
-  return dirOptions;
+  const { depth, types, filter, exclude, prefix, suffix } = options;
+  return {
+    depth,
+    types,
+    ...(filter && { filter }),
+    ...(exclude && { exclude }),
+    ...(prefix && { prefix }),
+    ...(suffix && { suffix }),
+  };
 }
 
 /** デフォルトのタブを取得する */
@@ -293,7 +233,7 @@ export function convertEditingAppItemToRegisterItem(
         targetTab: defaultTab,
         targetFile: item.sourceFile,
         folderProcessing: 'expand',
-        dirOptions: parseExpandedOptionsToJsonDirOptions(item.expandedOptions),
+        dirOptions: toJsonDirOptions(item.expandedOptions),
         itemCategory: 'dir',
       };
     }

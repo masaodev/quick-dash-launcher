@@ -11,6 +11,7 @@ import { isLauncherItem, isWindowInfo } from '@common/types/guards';
 import { SettingsService } from '../settingsService.js';
 import { WorkspaceService } from '../workspace/WorkspaceService.js';
 import { PathManager } from '../../config/pathManager.js';
+import { mainI18n } from '../mainI18n.js';
 import { showToastWindow } from '../overlayWindowService.js';
 import { BackupService } from '../backupService.js';
 import {
@@ -65,7 +66,7 @@ async function loadJsonDataFile(
   if (content === null) {
     dataLogger.warn({ filePath }, 'JSONファイルが読み込めませんでした');
     report.status = 'unreadable';
-    report.error = 'ファイルを読み込めませんでした';
+    report.error = mainI18n.t('dataErrors.fileUnreadable');
     return { items, report, previousContent: null };
   }
 
@@ -125,7 +126,9 @@ async function loadJsonDataFile(
         index: i,
         kind: 'invalid',
         id: jsonItem.id,
-        reason: `変換に失敗: ${error instanceof Error ? error.message : String(error)}`,
+        reason: mainI18n.t('dataErrors.convertFailed', {
+          error: error instanceof Error ? error.message : String(error),
+        }),
       });
     }
   }
@@ -382,7 +385,7 @@ async function reloadConfigFilesInternal(
   ];
   if (corruptedFiles.length > 0 || workspaceCorrupted) {
     showToastWindow({
-      message: `設定ファイルの読み込みに失敗しました（破損の可能性）: ${corruptedFiles.join(', ')}`,
+      message: mainI18n.t('dataErrors.configLoadFailed', { files: corruptedFiles.join(', ') }),
       type: 'error',
       duration: 6000,
     }).catch((error) => {

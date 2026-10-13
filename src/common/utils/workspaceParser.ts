@@ -74,9 +74,14 @@ export interface WorkspaceParseContext {
   defaultWorkspaceId: string;
   /** 補完に使う現在時刻 */
   now: number;
+  /** ワークスペースが 1 件も無いときに作る既定ワークスペースの名前（main が表示言語で渡す） */
+  defaultWorkspaceName: string;
 }
 
-export function createWorkspaceParseContext(now: number = Date.now()): WorkspaceParseContext {
+export function createWorkspaceParseContext(
+  now: number = Date.now(),
+  defaultWorkspaceName: string = DEFAULT_WORKSPACE_DISPLAY_NAME
+): WorkspaceParseContext {
   return {
     reservedIds: new Set(),
     idMap: new Map(),
@@ -85,6 +90,7 @@ export function createWorkspaceParseContext(now: number = Date.now()): Workspace
     invalidGroupIds: new Set(),
     defaultWorkspaceId: '',
     now,
+    defaultWorkspaceName,
   };
 }
 
@@ -749,7 +755,7 @@ export function parseWorkspaceFileLenient(
     ctx.reservedIds.add(id);
     workspaces.push({
       id,
-      displayName: DEFAULT_WORKSPACE_DISPLAY_NAME,
+      displayName: ctx.defaultWorkspaceName,
       order: 0,
       createdAt: ctx.now,
     });
@@ -956,13 +962,12 @@ export function serializeWorkspaceArchiveFile(
 /** 既定ワークスペース 1 件だけの空ファイルを作る */
 export function createEmptyWorkspaceFile(
   workspaceId: string,
-  now: number = Date.now()
+  now: number = Date.now(),
+  displayName: string = DEFAULT_WORKSPACE_DISPLAY_NAME
 ): JsonWorkspaceFile {
   return {
     version: JSON_WORKSPACE_VERSION,
-    workspaces: [
-      { id: workspaceId, displayName: DEFAULT_WORKSPACE_DISPLAY_NAME, order: 0, createdAt: now },
-    ],
+    workspaces: [{ id: workspaceId, displayName, order: 0, createdAt: now }],
     groups: [],
     items: [],
   };

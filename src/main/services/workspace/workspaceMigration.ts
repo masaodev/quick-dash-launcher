@@ -49,6 +49,8 @@ export interface WorkspaceV1MigrationOptions {
   now: number;
   /** 既に使われている id（採番時に避ける） */
   reservedIds?: Set<string>;
+  /** ワークスペースが無い旧ファイルに作る既定ワークスペースの名前（既定は日本語の「デフォルト」） */
+  defaultWorkspaceName?: string;
 }
 
 export interface WorkspaceV1MigrationResult {
@@ -107,7 +109,7 @@ export function migrateWorkspaceV1(
   input: WorkspaceV1Input,
   options: WorkspaceV1MigrationOptions
 ): WorkspaceV1MigrationResult {
-  const { now } = options;
+  const { now, defaultWorkspaceName = DEFAULT_WORKSPACE_DISPLAY_NAME } = options;
   const reserved = new Set(options.reservedIds ?? []);
   const idMap = new Map<string, string>();
 
@@ -132,7 +134,7 @@ export function migrateWorkspaceV1(
     // マルチワークスペース以前のファイル。旧コードと同じ固定 id で作り、下で採番される
     workspaces.push({
       id: 'default',
-      displayName: DEFAULT_WORKSPACE_DISPLAY_NAME,
+      displayName: defaultWorkspaceName,
       order: 0,
       createdAt: now,
     });

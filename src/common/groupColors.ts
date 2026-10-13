@@ -25,22 +25,6 @@ export const GROUP_COLOR_TOKENS = [
 
 export type GroupColorToken = (typeof GROUP_COLOR_TOKENS)[number];
 
-/** カラーピッカーに並べるプリセット（表示名付き） */
-export const GROUP_COLOR_PALETTE: ReadonlyArray<{ token: GroupColorToken; name: string }> = [
-  { token: 'primary', name: 'プライマリ' },
-  { token: 'success', name: 'サクセス' },
-  { token: 'danger', name: 'ダンジャー' },
-  { token: 'warning', name: 'ワーニング' },
-  { token: 'info', name: 'インフォ' },
-  { token: 'secondary', name: 'セカンダリ' },
-  { token: 'purple', name: 'パープル' },
-  { token: 'teal', name: 'ティール' },
-  { token: 'pink', name: 'ピンク' },
-  { token: 'indigo', name: 'インディゴ' },
-  { token: 'orange', name: 'オレンジ' },
-  { token: 'cyan', name: 'シアン' },
-];
-
 /**
  * トークンに対応する hex（variables.css の --group-color-* と同じ値）。
  * セマンティック色（primary 等）はテーマ変数を参照するのでここには無い。

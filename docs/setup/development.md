@@ -367,7 +367,7 @@ Dependabotは依存関係を以下のグループに分けてPRを作成しま�
 - **引き方**: renderer の部品・hook は `react-i18next` の `useTranslation()` の `t`、部品の外の関数（ツールチップの生成など）は `i18next.t`、main は `services/mainI18n.ts` の `mainI18n.t()`（言語の切り替えは `services/i18nService.ts`。トレイのメニューのように作り置くものは `mainI18n.on('languageChanged', …)` で作り直す。トーストの独立ウィンドウ `overlay.html` は文言を持たず、main が決めた文言を受け取って出す）。main と renderer の両方で使う `src/common` の関数は `t` を引数で受け取る。キーは型チェックされる
 - **言語の決め方**: 設定 `language`（`auto`・`ja`・`en`）。`auto` は Windows の最初の表示言語が日本語なら日本語、それ以外は英語（`src/common/i18n/languages.ts`）。各ウィンドウは描画の前に `src/renderer/i18n.ts` で初期化し、設定が変わったら言語を取り直す
 - **用語**: [用語集](../architecture/glossary.md)の言葉にそろえる。「使わない表記」が辞書に出ると単体テスト（`src/common/i18n/glossary.test.ts`）が失敗する。英語は Microsoft Writing Style Guide に合わせる（用語集の「書き方の決まり」）
-- **直書きの禁止**: 辞書へ移し終えたファイルは `eslint.config.mjs` の `I18N_ENFORCED_FILES` に足す。足したファイルでは、日本語の文字列・JSX のテキストを直接書くと lint が失敗する（`logger.info`・`console.error` やログ関数 `logError` などのログの文言は訳さないので対象外。テストファイルも対象外）
+- **直書きの禁止**: `src` の全ファイルで、日本語の文字列・JSX のテキストを直接書くと lint が失敗する（`logger.info`・`console.error` やログ関数 `logError` などのログの文言は訳さないので対象外。テストファイルも対象外）。ログや開発者向けの内部エラーだけで画面に出ないファイルは、`eslint.config.mjs` の `I18N_EXEMPT_FILES` で外している。画面に出る文言を足したら、そのファイルを外したままにしない
 - **訳さないもの**: ログ・docs・Issues・コードのコメント
 
 ### パフォーマンス最適化パターン

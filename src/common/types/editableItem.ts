@@ -4,6 +4,7 @@
  * RawDataLine型を廃止し、JSON構造を直接扱うための新しい型定義
  */
 
+import type { TFunction } from 'i18next';
 import type { JsonItem, LauncherItem } from '@common/types';
 
 /**
@@ -93,33 +94,37 @@ export interface ValidationResult {
  * EditableJsonItemをバリデーションする
  *
  * @param item - バリデーション対象のJsonItem
+ * @param t - エラーの文言を引く関数（main は mainI18n.t）
  * @returns バリデーション結果
  */
-export function validateEditableItem(item: JsonItem): ValidationResult {
+export function validateEditableItem(item: JsonItem, t: TFunction): ValidationResult {
   switch (item.type) {
     case 'item': {
       if (!item.displayName || !item.displayName.trim()) {
-        return { isValid: false, error: 'displayNameが空です' };
+        return { isValid: false, error: t('validation.emptyField', { field: 'displayName' }) };
       }
       if (!item.path || !item.path.trim()) {
-        return { isValid: false, error: 'pathが空です' };
+        return { isValid: false, error: t('validation.emptyField', { field: 'path' }) };
       }
       return { isValid: true };
     }
 
     case 'dir': {
       if (!item.path || !item.path.trim()) {
-        return { isValid: false, error: 'dirのpathが空です' };
+        return {
+          isValid: false,
+          error: t('validation.emptyTypedField', { type: 'dir', field: 'path' }),
+        };
       }
       if (item.options) {
         // -1 は無制限（登録画面の「無制限」）。それ未満の負の値だけを不正とする
         if (item.options.depth !== undefined && item.options.depth < -1) {
-          return { isValid: false, error: 'depthは-1（無制限）または0以上である必要があります' };
+          return { isValid: false, error: t('validation.depthOutOfRange') };
         }
         if (item.options.types && !['file', 'folder', 'both'].includes(item.options.types)) {
           return {
             isValid: false,
-            error: 'typesはfile, folder, bothのいずれかである必要があります',
+            error: t('validation.invalidTypes'),
           };
         }
       }
@@ -128,48 +133,78 @@ export function validateEditableItem(item: JsonItem): ValidationResult {
 
     case 'group': {
       if (!item.displayName || !item.displayName.trim()) {
-        return { isValid: false, error: 'groupのdisplayNameが空です' };
+        return {
+          isValid: false,
+          error: t('validation.emptyTypedField', { type: 'group', field: 'displayName' }),
+        };
       }
       if (!item.itemNames || item.itemNames.length === 0) {
-        return { isValid: false, error: 'groupのitemNamesが空です' };
+        return {
+          isValid: false,
+          error: t('validation.emptyTypedField', { type: 'group', field: 'itemNames' }),
+        };
       }
       return { isValid: true };
     }
 
     case 'window': {
       if (!item.displayName || !item.displayName.trim()) {
-        return { isValid: false, error: 'windowのdisplayNameが空です' };
+        return {
+          isValid: false,
+          error: t('validation.emptyTypedField', { type: 'window', field: 'displayName' }),
+        };
       }
       if (!item.windowTitle || !item.windowTitle.trim()) {
-        return { isValid: false, error: 'windowのwindowTitleが空です' };
+        return {
+          isValid: false,
+          error: t('validation.emptyTypedField', { type: 'window', field: 'windowTitle' }),
+        };
       }
       return { isValid: true };
     }
 
     case 'clipboard': {
       if (!item.displayName || !item.displayName.trim()) {
-        return { isValid: false, error: 'clipboardのdisplayNameが空です' };
+        return {
+          isValid: false,
+          error: t('validation.emptyTypedField', { type: 'clipboard', field: 'displayName' }),
+        };
       }
       if (!item.dataFileRef || !item.dataFileRef.trim()) {
-        return { isValid: false, error: 'clipboardのdataFileRefが空です' };
+        return {
+          isValid: false,
+          error: t('validation.emptyTypedField', { type: 'clipboard', field: 'dataFileRef' }),
+        };
       }
       if (!item.formats || item.formats.length === 0) {
-        return { isValid: false, error: 'clipboardのformatsが空です' };
+        return {
+          isValid: false,
+          error: t('validation.emptyTypedField', { type: 'clipboard', field: 'formats' }),
+        };
       }
       return { isValid: true };
     }
 
     case 'layout': {
       if (!item.displayName || !item.displayName.trim()) {
-        return { isValid: false, error: 'layoutのdisplayNameが空です' };
+        return {
+          isValid: false,
+          error: t('validation.emptyTypedField', { type: 'layout', field: 'displayName' }),
+        };
       }
       if (!item.entries || item.entries.length === 0) {
-        return { isValid: false, error: 'layoutのentriesが空です' };
+        return {
+          isValid: false,
+          error: t('validation.emptyTypedField', { type: 'layout', field: 'entries' }),
+        };
       }
       return { isValid: true };
     }
 
     default:
-      return { isValid: false, error: `未知のアイテムタイプ: ${(item as JsonItem).type}` };
+      return {
+        isValid: false,
+        error: t('validation.unknownType', { type: String((item as JsonItem).type) }),
+      };
   }
 }

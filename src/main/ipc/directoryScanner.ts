@@ -10,53 +10,6 @@ import { DIR_OPTIONS_DEFAULTS } from '@common/types/json-data';
 import { detectFileItemTypeSync, detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { LauncherItem } from '@common/types';
 
-/**
- * DirOptionsForProcessingを人間が読める形式の文字列に変換する
- *
- * @param options - DirOptionsForProcessingオブジェクト
- * @returns 人間が読める形式の文字列（例：「深さ:2, タイプ:ファイルのみ, フィルター:*.pdf」）
- */
-export function formatDirOptions(options: DirOptionsForProcessing): string {
-  const parts: string[] = [];
-
-  // 深さ
-  if (options.depth === -1) {
-    parts.push('深さ:無制限');
-  } else {
-    parts.push(`深さ:${options.depth}`);
-  }
-
-  // タイプ
-  const typeLabels: Record<typeof options.types, string> = {
-    file: 'ファイルのみ',
-    folder: 'フォルダのみ',
-    both: 'ファイルとフォルダ',
-  };
-  parts.push(`タイプ:${typeLabels[options.types]}`);
-
-  // フィルター
-  if (options.filter) {
-    parts.push(`フィルター:${options.filter}`);
-  }
-
-  // 除外
-  if (options.exclude) {
-    parts.push(`除外:${options.exclude}`);
-  }
-
-  // プレフィックス
-  if (options.prefix) {
-    parts.push(`接頭辞:${options.prefix}`);
-  }
-
-  // サフィックス
-  if (options.suffix) {
-    parts.push(`接尾辞:${options.suffix}`);
-  }
-
-  return parts.join(', ');
-}
-
 function applyPrefixSuffix(name: string, prefix?: string, suffix?: string): string {
   if (prefix) name = `${prefix}: ${name}`;
   if (suffix) name = `${name} (${suffix})`;
@@ -71,7 +24,7 @@ function processItem(
   prefix?: string,
   suffix?: string,
   expandedFrom?: string,
-  expandedOptions?: string,
+  expandedOptions?: DirOptionsForProcessing,
   expandedFromId?: string
 ): LauncherItem {
   return {
@@ -100,7 +53,7 @@ export function processShortcut(
   prefix?: string,
   suffix?: string,
   expandedFrom?: string,
-  expandedOptions?: string,
+  expandedOptions?: DirOptionsForProcessing,
   expandedFromId?: string
 ): LauncherItem | null {
   try {
@@ -151,7 +104,7 @@ export async function scanDirectory(
   options: DirOptionsForProcessing,
   sourceFile: string,
   rootDirPath?: string,
-  optionsText?: string,
+  expandedOptions?: DirOptionsForProcessing,
   lineNumber?: number,
   expandedFromId?: string,
   currentDepth = 0
@@ -201,7 +154,7 @@ export async function scanDirectory(
                 options.prefix,
                 options.suffix,
                 rootDirPath,
-                optionsText,
+                expandedOptions,
                 expandedFromId
               )
             );
@@ -214,7 +167,7 @@ export async function scanDirectory(
             options,
             sourceFile,
             rootDirPath,
-            optionsText,
+            expandedOptions,
             lineNumber,
             expandedFromId,
             currentDepth + 1
@@ -232,7 +185,7 @@ export async function scanDirectory(
               options.prefix,
               options.suffix,
               rootDirPath,
-              optionsText,
+              expandedOptions,
               expandedFromId
             );
             if (processedShortcut) {
@@ -248,7 +201,7 @@ export async function scanDirectory(
                 options.prefix,
                 options.suffix,
                 rootDirPath,
-                optionsText,
+                expandedOptions,
                 expandedFromId
               )
             );
@@ -298,13 +251,12 @@ export async function processDirectoryItem(
       prefix: options?.prefix,
       suffix: options?.suffix,
     };
-    const optionsText = formatDirOptions(processOptions);
     return await scanDirectory(
       normalizedPath,
       processOptions,
       sourceFile,
       normalizedPath,
-      optionsText,
+      processOptions,
       lineNumber,
       dirItemId
     );

@@ -141,7 +141,7 @@ export function validateAsDataItem(
       mainI18n.t('cli.errors.unknownFields', { type: cleaned.type, fields: unknown.join(', ') })
     );
   }
-  const result = validateEditableItem(cleaned);
+  const result = validateEditableItem(cleaned, mainI18n.t);
   if (!result.isValid)
     throw new CliError(
       'invalid',

@@ -5,6 +5,9 @@
 import { describe, it, expect } from 'vitest';
 import { validateEditableItem } from '@common/types/editableItem';
 import type { JsonItem } from '@common/types';
+import { createI18n } from '@common/i18n';
+
+const t = createI18n('ja').t;
 
 describe('validateEditableItem', () => {
   describe('通常アイテムのバリデーション', () => {
@@ -15,7 +18,7 @@ describe('validateEditableItem', () => {
         displayName: 'Chrome',
         path: 'C:\\Chrome\\chrome.exe',
       };
-      const result = validateEditableItem(item);
+      const result = validateEditableItem(item, t);
       expect(result.isValid).toBe(true);
       expect(result.error).toBeUndefined();
     });
@@ -27,7 +30,7 @@ describe('validateEditableItem', () => {
         displayName: '',
         path: 'C:\\Chrome\\chrome.exe',
       };
-      const result = validateEditableItem(item);
+      const result = validateEditableItem(item, t);
       expect(result.isValid).toBe(false);
       expect(result.error).toBe('displayNameが空です');
     });
@@ -39,7 +42,7 @@ describe('validateEditableItem', () => {
         displayName: '   ',
         path: 'C:\\Chrome\\chrome.exe',
       };
-      const result = validateEditableItem(item);
+      const result = validateEditableItem(item, t);
       expect(result.isValid).toBe(false);
       expect(result.error).toBe('displayNameが空です');
     });
@@ -51,7 +54,7 @@ describe('validateEditableItem', () => {
         displayName: 'Chrome',
         path: '',
       };
-      const result = validateEditableItem(item);
+      const result = validateEditableItem(item, t);
       expect(result.isValid).toBe(false);
       expect(result.error).toBe('pathが空です');
     });
@@ -63,7 +66,7 @@ describe('validateEditableItem', () => {
         displayName: 'Chrome',
         path: '   ',
       };
-      const result = validateEditableItem(item);
+      const result = validateEditableItem(item, t);
       expect(result.isValid).toBe(false);
       expect(result.error).toBe('pathが空です');
     });
@@ -76,7 +79,7 @@ describe('validateEditableItem', () => {
         path: 'C:\\Chrome\\chrome.exe',
         args: '--profile-default',
       };
-      const result = validateEditableItem(item);
+      const result = validateEditableItem(item, t);
       expect(result.isValid).toBe(true);
     });
 
@@ -88,7 +91,7 @@ describe('validateEditableItem', () => {
         path: 'C:\\App\\app.exe',
         customIcon: 'icon.png',
       };
-      const result = validateEditableItem(item);
+      const result = validateEditableItem(item, t);
       expect(result.isValid).toBe(true);
     });
   });
@@ -100,7 +103,7 @@ describe('validateEditableItem', () => {
         type: 'dir',
         path: 'C:\\Documents',
       };
-      const result = validateEditableItem(item);
+      const result = validateEditableItem(item, t);
       expect(result.isValid).toBe(true);
       expect(result.error).toBeUndefined();
     });
@@ -111,7 +114,7 @@ describe('validateEditableItem', () => {
         type: 'dir',
         path: '',
       };
-      const result = validateEditableItem(item);
+      const result = validateEditableItem(item, t);
       expect(result.isValid).toBe(false);
       expect(result.error).toBe('dirのpathが空です');
     });
@@ -122,7 +125,7 @@ describe('validateEditableItem', () => {
         type: 'dir',
         path: '   ',
       };
-      const result = validateEditableItem(item);
+      const result = validateEditableItem(item, t);
       expect(result.isValid).toBe(false);
       expect(result.error).toBe('dirのpathが空です');
     });
@@ -134,7 +137,7 @@ describe('validateEditableItem', () => {
         path: 'C:\\Documents',
         options: { depth: 0 },
       };
-      const result = validateEditableItem(item);
+      const result = validateEditableItem(item, t);
       expect(result.isValid).toBe(true);
     });
 
@@ -145,7 +148,7 @@ describe('validateEditableItem', () => {
         path: 'C:\\Documents',
         options: { depth: -1 },
       };
-      const result = validateEditableItem(item);
+      const result = validateEditableItem(item, t);
       expect(result.isValid).toBe(true);
     });
 
@@ -156,7 +159,7 @@ describe('validateEditableItem', () => {
         path: 'C:\\Documents',
         options: { depth: -2 },
       };
-      const result = validateEditableItem(item);
+      const result = validateEditableItem(item, t);
       expect(result.isValid).toBe(false);
       expect(result.error).toBe('depthは-1（無制限）または0以上である必要があります');
     });
@@ -168,7 +171,7 @@ describe('validateEditableItem', () => {
         path: 'C:\\Documents',
         options: { types: 'file' },
       };
-      const result = validateEditableItem(item);
+      const result = validateEditableItem(item, t);
       expect(result.isValid).toBe(true);
     });
 
@@ -179,7 +182,7 @@ describe('validateEditableItem', () => {
         path: 'C:\\Documents',
         options: { types: 'folder' },
       };
-      const result = validateEditableItem(item);
+      const result = validateEditableItem(item, t);
       expect(result.isValid).toBe(true);
     });
 
@@ -190,7 +193,7 @@ describe('validateEditableItem', () => {
         path: 'C:\\Documents',
         options: { types: 'both' },
       };
-      const result = validateEditableItem(item);
+      const result = validateEditableItem(item, t);
       expect(result.isValid).toBe(true);
     });
 
@@ -201,7 +204,7 @@ describe('validateEditableItem', () => {
         path: 'C:\\Documents',
         options: { types: 'invalid' as 'file' },
       };
-      const result = validateEditableItem(item);
+      const result = validateEditableItem(item, t);
       expect(result.isValid).toBe(false);
       expect(result.error).toBe('typesはfile, folder, bothのいずれかである必要があります');
     });
@@ -218,7 +221,7 @@ describe('validateEditableItem', () => {
           exclude: 'temp',
         },
       };
-      const result = validateEditableItem(item);
+      const result = validateEditableItem(item, t);
       expect(result.isValid).toBe(true);
     });
   });
@@ -231,7 +234,7 @@ describe('validateEditableItem', () => {
         displayName: 'Work',
         itemNames: ['Gmail', 'Slack'],
       };
-      const result = validateEditableItem(item);
+      const result = validateEditableItem(item, t);
       expect(result.isValid).toBe(true);
       expect(result.error).toBeUndefined();
     });
@@ -243,7 +246,7 @@ describe('validateEditableItem', () => {
         displayName: '',
         itemNames: ['Gmail', 'Slack'],
       };
-      const result = validateEditableItem(item);
+      const result = validateEditableItem(item, t);
       expect(result.isValid).toBe(false);
       expect(result.error).toBe('groupのdisplayNameが空です');
     });
@@ -255,7 +258,7 @@ describe('validateEditableItem', () => {
         displayName: '   ',
         itemNames: ['Gmail', 'Slack'],
       };
-      const result = validateEditableItem(item);
+      const result = validateEditableItem(item, t);
       expect(result.isValid).toBe(false);
       expect(result.error).toBe('groupのdisplayNameが空です');
     });
@@ -267,7 +270,7 @@ describe('validateEditableItem', () => {
         displayName: 'Work',
         itemNames: [],
       };
-      const result = validateEditableItem(item);
+      const result = validateEditableItem(item, t);
       expect(result.isValid).toBe(false);
       expect(result.error).toBe('groupのitemNamesが空です');
     });
@@ -279,7 +282,7 @@ describe('validateEditableItem', () => {
         displayName: 'Single',
         itemNames: ['OnlyOne'],
       };
-      const result = validateEditableItem(item);
+      const result = validateEditableItem(item, t);
       expect(result.isValid).toBe(true);
     });
   });
@@ -292,7 +295,7 @@ describe('validateEditableItem', () => {
         displayName: 'MyWindow',
         windowTitle: 'Title',
       };
-      const result = validateEditableItem(item);
+      const result = validateEditableItem(item, t);
       expect(result.isValid).toBe(true);
       expect(result.error).toBeUndefined();
     });
@@ -304,7 +307,7 @@ describe('validateEditableItem', () => {
         displayName: '',
         windowTitle: 'Title',
       };
-      const result = validateEditableItem(item);
+      const result = validateEditableItem(item, t);
       expect(result.isValid).toBe(false);
       expect(result.error).toBe('windowのdisplayNameが空です');
     });
@@ -316,7 +319,7 @@ describe('validateEditableItem', () => {
         displayName: '   ',
         windowTitle: 'Title',
       };
-      const result = validateEditableItem(item);
+      const result = validateEditableItem(item, t);
       expect(result.isValid).toBe(false);
       expect(result.error).toBe('windowのdisplayNameが空です');
     });
@@ -328,7 +331,7 @@ describe('validateEditableItem', () => {
         displayName: 'MyWindow',
         windowTitle: '',
       };
-      const result = validateEditableItem(item);
+      const result = validateEditableItem(item, t);
       expect(result.isValid).toBe(false);
       expect(result.error).toBe('windowのwindowTitleが空です');
     });
@@ -340,7 +343,7 @@ describe('validateEditableItem', () => {
         displayName: 'MyWindow',
         windowTitle: '   ',
       };
-      const result = validateEditableItem(item);
+      const result = validateEditableItem(item, t);
       expect(result.isValid).toBe(false);
       expect(result.error).toBe('windowのwindowTitleが空です');
     });
@@ -357,7 +360,7 @@ describe('validateEditableItem', () => {
         height: 600,
         moveToActiveMonitorCenter: true,
       };
-      const result = validateEditableItem(item);
+      const result = validateEditableItem(item, t);
       expect(result.isValid).toBe(true);
     });
   });
@@ -368,7 +371,7 @@ describe('validateEditableItem', () => {
         id: 'test-29',
         type: 'unknown',
       } as unknown as JsonItem;
-      const result = validateEditableItem(item);
+      const result = validateEditableItem(item, t);
       expect(result.isValid).toBe(false);
       expect(result.error).toBe('未知のアイテムタイプ: unknown');
     });

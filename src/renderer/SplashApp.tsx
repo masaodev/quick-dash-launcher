@@ -21,6 +21,11 @@ function SplashApp({ onReady }: SplashAppProps): React.ReactElement {
   const minTimeElapsedRef = useRef(false);
   const hasCalledReadyRef = useRef(false);
 
+  // splash.html の <title> は日本語なので、表示言語のタイトルに差し替える
+  useEffect(() => {
+    document.title = t('splash.windowTitle');
+  }, [t]);
+
   useEffect(() => {
     const tryFinish = () => {
       if (hasCalledReadyRef.current) return;

@@ -6,6 +6,7 @@ import type {
   WindowItem,
   LauncherItem,
   ClipboardItem,
+  DirOptionsForProcessing,
 } from '@common/types';
 import { isWindowInfo, isGroupItem, isWindowItem, isClipboardItem } from '@common/types/guards';
 import { PathUtils } from '@common/utils/pathUtils';
@@ -20,7 +21,22 @@ interface MetaInfo {
   expandedFromId?: string;
   lineNumber?: number;
   expandedFrom?: string;
-  expandedOptions?: string;
+  expandedOptions?: DirOptionsForProcessing;
+}
+
+/** フォルダ取込の設定を 1 行で表す（例「深さ:2, タイプ:ファイルのみ, フィルター:*.pdf」） */
+export function formatDirOptions(options: DirOptionsForProcessing): string {
+  const parts: string[] = [
+    t('dirOptions.summary.depth', {
+      value: options.depth === -1 ? t('dirOptions.depths.unlimited') : options.depth,
+    }),
+    t('dirOptions.summary.types', { value: t(`dirOptions.typeOptions.${options.types}`) }),
+  ];
+  if (options.filter) parts.push(t('dirOptions.summary.filter', { value: options.filter }));
+  if (options.exclude) parts.push(t('dirOptions.summary.exclude', { value: options.exclude }));
+  if (options.prefix) parts.push(t('dirOptions.summary.prefix', { value: options.prefix }));
+  if (options.suffix) parts.push(t('dirOptions.summary.suffix', { value: options.suffix }));
+  return parts.join(t('dirOptions.summary.separator'));
 }
 
 /**
@@ -53,7 +69,7 @@ function appendMetaInfo(lines: string[], meta: MetaInfo): void {
     lines.push(t('launcher.tooltip.expandedFrom', { value: expandedFrom }));
   }
   if (expandedOptions) {
-    lines.push(t('launcher.tooltip.expandedOptions', { value: expandedOptions }));
+    lines.push(t('launcher.tooltip.expandedOptions', { value: formatDirOptions(expandedOptions) }));
   }
 }
 

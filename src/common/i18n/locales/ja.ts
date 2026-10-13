@@ -266,6 +266,7 @@ export const ja = {
     validationFailed: 'ホットキーの検証に失敗しました',
   },
   splash: {
+    windowTitle: 'QuickDashLauncher - 起動中...',
     subtitle: '素早いアクセスを実現するランチャーアプリ',
     starting: '起動中',
     loadingSettings: '設定を読み込み中',
@@ -538,6 +539,7 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     deleteFailed: 'ファイルの削除に失敗しました: {{error}}',
   },
   admin: {
+    windowTitle: 'QuickDashLauncher - 設定・管理',
     tabs: {
       settings: '⚙️ 設定',
       itemManager: '✏️ アイテム管理',
@@ -898,6 +900,8 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     title: '自動取込フィルタ',
   },
   appImport: {
+    registeredApp: '(登録アプリ)',
+    noExtension: '(なし)',
     notFound: 'インストール済みアプリが見つかりませんでした',
     scanFailed: 'アプリのスキャンに失敗しました',
     title: 'インストール済みアプリの追加',
@@ -1129,6 +1133,15 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     prefixPlaceholder: '表示名の前に付ける文字',
     suffix: 'サフィックス (例: Dev):',
     suffixPlaceholder: '表示名の後に付ける文字',
+    summary: {
+      depth: '深さ:{{value}}',
+      types: 'タイプ:{{value}}',
+      filter: 'フィルター:{{value}}',
+      exclude: '除外:{{value}}',
+      prefix: '接頭辞:{{value}}',
+      suffix: '接尾辞:{{value}}',
+      separator: ', ',
+    },
   },
   layoutEditor: {
     windows: '並べるウィンドウ:',
@@ -1187,6 +1200,30 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     button: 'URL変換',
     noRule: 'このURLに対応する変換ルールが見つかりませんでした',
     hint: 'SharePoint上のOfficeファイル（Excel、Word、PowerPoint）のURLに対応しています',
+    options: {
+      sharePointEdit: '編集用に開く（SharePoint標準）',
+      edit: '編集用に開く',
+      readOnly: '読み取り専用',
+    },
+    descriptions: {
+      sharePointEdit: 'SharePointで使用される標準的な編集用の開き方',
+      edit: '{{app}}アプリで編集用に開く',
+      readOnly: '{{app}}アプリで読み取り専用で開く',
+    },
+  },
+  groupColors: {
+    primary: 'プライマリ',
+    success: 'サクセス',
+    danger: 'ダンジャー',
+    warning: 'ワーニング',
+    info: 'インフォ',
+    secondary: 'セカンダリ',
+    purple: 'パープル',
+    teal: 'ティール',
+    pink: 'ピンク',
+    indigo: 'インディゴ',
+    orange: 'オレンジ',
+    cyan: 'シアン',
   },
   filePicker: {
     title: 'ファイルを選択',
@@ -1195,6 +1232,116 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
   iconFetch: {
     title: 'パスからアイコンを自動取得',
     button: 'アイコン取得',
+  },
+  dataErrors: {
+    jsonParseFailed: 'JSONファイルのパースに失敗しました: {{file}}',
+    loadFailed: '読み込みに失敗しました: {{error}}',
+    externalChange:
+      'データファイルが QDL の外で変更されています: {{files}}。編集内容は保存していません。再読込してからやり直してください',
+    saveBlockedCorrupted:
+      'データファイルが破損している可能性があるため保存を中止しました: {{files}}。ファイルを修復（または削除）してから再試行してください',
+    addBlockedCorrupted:
+      'データファイルが破損している可能性があるため登録を中止しました: {{file}}。ファイルを修復（または削除）してから再試行してください',
+    writeFailed: 'データファイルの書き込みに失敗しました: {{file}}',
+    itemNotFound: 'ID {{id}} のアイテムが見つかりません',
+    invalidTargetFile: '登録先のデータファイル名が正しくありません: {{files}}',
+    fileUnreadable: 'ファイルを読み込めませんでした',
+    convertFailed: '変換に失敗: {{error}}',
+    configLoadFailed: '設定ファイルの読み込みに失敗しました（破損の可能性）: {{files}}',
+  },
+  loadReport: {
+    accepted_one: '{{count}} 件読込',
+    accepted_other: '{{count}} 件読込',
+    skipped_one: '{{count}} 件スキップ',
+    skipped_other: '{{count}} 件スキップ',
+    idAssigned_one: '{{count}} 件に ID を採番',
+    idAssigned_other: '{{count}} 件に ID を採番',
+    separator: '・',
+    summary: 'データ: {{parts}}',
+    externalSummary: '外部編集されたデータ: {{parts}}',
+  },
+  workspaceErrors: {
+    externalChange:
+      '{{file}} が QDL の外で変更されています。メインウィンドウで F5 を押して再読込してから操作してください',
+    writeFailed: '{{file}} の書き込みに失敗しました。ディスクの空き容量や権限を確認してください',
+    reloadInProgress: 'ワークスペースを再読込中です。もう一度お試しください',
+    corrupted:
+      '{{file}} が壊れているため書き込めません。ファイルを修復してから F5 で再読込してください',
+    migrated:
+      '旧形式（version なし）から 2.0 に変換しました: id を 8 文字英数字に採番し直し、ウィンドウ操作の座標名とクリップボード/ウィンドウ配置のフィールド名をデータファイルと揃え、グループの折りたたみと切り離しウィンドウの状態を workspace-ui-state.json に移しました',
+    migrationNeedsArchive:
+      '旧形式からの変換には {{file}} も読める必要があります。先に直してください',
+    migrationFailed: '旧形式から 2.0 への変換に失敗しました: {{error}}',
+    migrationWriteFailed: '{{file}} の書き込みに失敗しました',
+    archiveDeferred: '{{file}} が読めないため読み込みを保留しました',
+    createFailed: 'ファイルを作成できませんでした',
+  },
+  backupErrors: {
+    snapshotNotFound: 'スナップショットが見つかりません',
+    restoreFailed: 'リストアに失敗しました',
+    deleteFailed: '削除に失敗しました',
+    preMigrationCopyFailed: '移行前スナップショットに {{file}} をコピーできませんでした',
+  },
+  clipboardService: {
+    imagePreview: '画像 ({{width}}x{{height}})',
+    filesPreview_one: '{{count}}個のファイル: {{first}}...',
+    filesPreview_other: '{{count}}個のファイル: {{first}}...',
+    imageTooLarge: '画像サイズが上限（{{max}}MB）を超えています',
+    empty: 'クリップボードが空です',
+    saveFailed: 'クリップボードデータの保存に失敗しました: {{file}}',
+    captureFailed: 'キャプチャに失敗しました',
+    sessionNotFound: 'セッションが見つかりません',
+    commitFailed: 'コミットに失敗しました',
+    invalidRef: '無効なデータファイル参照です',
+    dataNotFound: 'クリップボードデータが見つかりません',
+    filesMissing: '保存したファイルがすべて見つかりません（移動・削除された可能性があります）',
+    nothingToRestore: '復元できるデータがありません',
+    restoreFailed: '復元に失敗しました',
+    imageData: '画像データ',
+  },
+  fileDialog: {
+    images: '画像ファイル',
+    allFiles: 'すべてのファイル',
+  },
+  iconErrors: {
+    sourceNotFound: 'ソースファイルが見つかりません: {{file}}',
+    tooLarge: 'ファイルサイズが大きすぎます（最大{{max}}MB）',
+    faviconNotFound: 'ファビコンが見つかりませんでした',
+    faviconFailed: 'ファビコン取得に失敗しました',
+    iconNotFound: 'アイコンが見つかりませんでした',
+    iconFailed: 'アイコン抽出に失敗しました',
+  },
+  bookmarkErrors: {
+    pathNotAllowed: '許可されていないファイルパスです',
+    tooLarge: 'ファイルサイズが大きすぎます',
+    invalidFormat: '無効なブックマークファイル形式です',
+    readFailed: 'ファイルの読み込みに失敗しました',
+    selectFileTitle: 'ブックマークファイルを選択',
+  },
+  windowErrors: {
+    closeRequestFailed: '閉じる要求を送れませんでした（管理者として実行中のアプリなど）',
+  },
+  sampleData: {
+    readme: {
+      name: '使い方（README）',
+      url: 'https://github.com/masaodev/quick-dash-launcher#readme',
+    },
+    google: { name: 'Google 検索（google）', url: 'https://www.google.com/' },
+    maps: { name: 'Google マップ（map）', url: 'https://www.google.co.jp/maps' },
+    weather: { name: '天気予報（tenki）', url: 'https://weathernews.jp/' },
+    desktop: 'デスクトップ（desktop）',
+    downloads: 'ダウンロード（download）',
+    calculator: '電卓（dentaku）',
+    notepad: 'メモ帳（memo）',
+    greetingName: '定型文: あいさつ（aisatsu）',
+    greetingText: 'いつもお世話になっております。',
+  },
+  validation: {
+    emptyField: '{{field}}が空です',
+    emptyTypedField: '{{type}}の{{field}}が空です',
+    depthOutOfRange: 'depthは-1（無制限）または0以上である必要があります',
+    invalidTypes: 'typesはfile, folder, bothのいずれかである必要があります',
+    unknownType: '未知のアイテムタイプ: {{type}}',
   },
   workspace: {
     title: 'ワークスペース',
@@ -1261,6 +1408,8 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       hint: 'メインウィンドウのアイテムを右クリックして「ワークスペースに追加」を選択してください',
     },
     restoresPosition: '記録した位置に戻して前面に出します',
+    restoredGroupName: '{{name}} (復元)',
+    defaultWorkspaceName: 'デフォルト',
     detached: {
       pinStayVisible: '表示固定',
       pinAlwaysOnTop: '最前面に固定',

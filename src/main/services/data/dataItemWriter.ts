@@ -24,6 +24,7 @@ import {
 } from '@common/utils/dataConverters';
 
 import { PathManager } from '../../config/pathManager.js';
+import { mainI18n } from '../mainI18n.js';
 import { writeDataFile } from '../dataFileTracker.js';
 
 import { clearDataFileCorrupted, markDataFileCorrupted } from './corruptedDataFiles.js';
@@ -62,7 +63,7 @@ export function replaceItemById(configFolder: string, newItem: JsonItem): void {
     }
   }
 
-  throw new Error(`ID ${newItem.id} のアイテムが見つかりません`);
+  throw new Error(mainI18n.t('dataErrors.itemNotFound', { id: newItem.id }));
 }
 
 /** IDでdirアイテムを更新する */
@@ -178,7 +179,7 @@ export function registerItems(configFolder: string, items: RegisterItem[]): void
   // 画面から受け取った名前なので、書き込む前にすべて確かめる（datafiles フォルダの外に書かせない）
   const invalidFiles = [...itemsByFile.keys()].filter((fileName) => !isValidDataFileName(fileName));
   if (invalidFiles.length > 0) {
-    throw new Error(`登録先のデータファイル名が正しくありません: ${invalidFiles.join(', ')}`);
+    throw new Error(mainI18n.t('dataErrors.invalidTargetFile', { files: invalidFiles.join(', ') }));
   }
 
   for (const [targetFile, targetItems] of itemsByFile) {
@@ -213,10 +214,7 @@ function appendToJsonFile(dataPath: string, fileName: string, items: JsonItem[])
       // 破損ファイルを新規データで上書きすると既存アイテムが復旧不能になるため中止する
       dataLogger.error({ error, dataPath }, 'JSONファイルのパースに失敗したため登録を中止します');
       markDataFileCorrupted(fileName);
-      throw new Error(
-        `データファイルが破損している可能性があるため登録を中止しました: ${fileName}。` +
-          'ファイルを修復（または削除）してから再試行してください'
-      );
+      throw new Error(mainI18n.t('dataErrors.addBlockedCorrupted', { file: fileName }));
     }
   }
 
@@ -231,7 +229,7 @@ function appendToJsonFile(dataPath: string, fileName: string, items: JsonItem[])
  */
 export function appendJsonItems(configFolder: string, fileName: string, items: JsonItem[]): void {
   if (!isValidDataFileName(fileName)) {
-    throw new Error(`登録先のデータファイル名が正しくありません: ${fileName}`);
+    throw new Error(mainI18n.t('dataErrors.invalidTargetFile', { files: fileName }));
   }
   appendToJsonFile(path.join(configFolder, fileName), fileName, items);
 }

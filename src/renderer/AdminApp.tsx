@@ -28,6 +28,11 @@ const AdminApp: React.FC = () => {
   // 楽観ロック用: 読み込み時（または保存後）のデータファイルのハッシュ。保存時に渡して外部変更との競合を検知する
   const [fileHashes, setFileHashes] = useState<Record<string, string> | undefined>(undefined);
   const [loadError, setLoadError] = useState<string | null>(null);
+
+  // admin.html の <title> は日本語なので、表示言語のタイトルに差し替える（言語を変えたときも）
+  useEffect(() => {
+    document.title = t('admin.windowTitle');
+  }, [t]);
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');

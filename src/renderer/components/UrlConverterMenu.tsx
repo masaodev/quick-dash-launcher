@@ -72,11 +72,13 @@ const UrlConverterMenu: React.FC<UrlConverterMenuProps> = ({ url, onConvert, ite
                     className="url-converter-option"
                     onClick={() => handleOptionClick(option.prefix)}
                   >
-                    <div className="url-converter-option-label">{option.label}</div>
+                    <div className="url-converter-option-label">
+                      {t(`urlConverter.options.${option.kind}`)}
+                    </div>
                     <div className="url-converter-option-prefix">{option.prefix}</div>
-                    {option.description && (
-                      <div className="url-converter-option-description">{option.description}</div>
-                    )}
+                    <div className="url-converter-option-description">
+                      {t(`urlConverter.descriptions.${option.kind}`, { app: matchedRule.app })}
+                    </div>
                   </div>
                 ))}
               </div>

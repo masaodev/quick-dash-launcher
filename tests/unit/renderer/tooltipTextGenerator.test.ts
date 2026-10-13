@@ -233,7 +233,7 @@ describe('tooltipTextGenerator', () => {
         sourceFile: 'data.json',
         lineNumber: 20,
         expandedFrom: 'C:\\folder',
-        expandedOptions: 'recursive',
+        expandedOptions: { depth: -1, types: 'both' },
       };
 
       const result = getTooltipText(item);
@@ -242,7 +242,7 @@ describe('tooltipTextGenerator', () => {
       expect(result).toContain('データファイル: data.json');
       expect(result).toContain('行番号: 20');
       expect(result).toContain('取込元: C:\\folder');
-      expect(result).toContain('設定: recursive');
+      expect(result).toContain('設定: 深さ:無制限, タイプ:ファイルとフォルダ');
     });
 
     it('IDが設定されている場合、IDが表示され行番号は表示されない', () => {
@@ -269,7 +269,7 @@ describe('tooltipTextGenerator', () => {
         sourceFile: 'data.json',
         expandedFromId: 'dir-abc1',
         expandedFrom: 'C:\\folder',
-        expandedOptions: '深さ:2, タイプ:ファイルのみ',
+        expandedOptions: { depth: 2, types: 'file', filter: '*.pdf' },
         lineNumber: 20,
       };
 
@@ -277,7 +277,7 @@ describe('tooltipTextGenerator', () => {
 
       expect(result).toContain('展開元ID: dir-abc1');
       expect(result).toContain('取込元: C:\\folder');
-      expect(result).toContain('設定: 深さ:2, タイプ:ファイルのみ');
+      expect(result).toContain('設定: 深さ:2, タイプ:ファイルのみ, フィルター:*.pdf');
       // 個別IDフィールドは持たないことを確認（展開元IDとは異なる）
       expect(result).not.toMatch(/^ID: /m); // 行頭に"ID: "がないことを確認
       expect(result).not.toContain('行番号:');

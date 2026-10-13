@@ -4,6 +4,7 @@ import { WORKSPACE_EDITOR_WINDOW_NAME_PREFIX } from '@common/constants';
 
 import { calculateEditorBounds } from './utils/editorWindowBounds.js';
 import { ModalChildWindows, resolveWorkArea } from './utils/modalChildWindows.js';
+import { mainI18n } from './services/mainI18n.js';
 
 /**
  * ワークスペースアイテムの編集ウィンドウ
@@ -35,7 +36,7 @@ export async function openWorkspaceItemEditor(caller: WebContents, itemId: strin
     name: `${WORKSPACE_EDITOR_WINDOW_NAME_PREFIX}${itemId}`,
     html: 'workspace.html',
     fallbackQuery: `editItemId=${encodeURIComponent(itemId)}`,
-    title: 'アイテムの編集',
+    title: mainI18n.t('register.editTitle'),
     bounds: calculateEditorBounds(resolveWorkArea(callerWindow)),
     // 開き元に対してモーダルにする（開き元より前に出て、閉じるまで開き元を操作させない）
     parent: callerWindow,

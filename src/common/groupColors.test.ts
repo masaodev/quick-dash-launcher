@@ -1,18 +1,8 @@
 import { describe, it, expect } from 'vitest';
 
-import {
-  GROUP_COLOR_PALETTE,
-  GROUP_COLOR_TOKENS,
-  getDefaultGroupColor,
-  isValidGroupColor,
-  resolveGroupColorCss,
-} from './groupColors';
+import { getDefaultGroupColor, isValidGroupColor, resolveGroupColorCss } from './groupColors';
 
 describe('groupColors', () => {
-  it('パレットはトークンをすべて 1 回ずつ含むこと', () => {
-    expect(GROUP_COLOR_PALETTE.map((p) => p.token).sort()).toEqual([...GROUP_COLOR_TOKENS].sort());
-  });
-
   it('isValidGroupColor はトークンと 6 桁 hex だけを許すこと', () => {
     expect(isValidGroupColor('primary')).toBe(true);
     expect(isValidGroupColor('#00897b')).toBe(true);

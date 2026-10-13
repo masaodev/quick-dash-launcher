@@ -1,5 +1,7 @@
 import type { MainChildWindowRequest } from '@common/types';
 
+import { mainI18n } from '../services/mainI18n.js';
+
 /** メイン画面の子ウィンドウの標準サイズ・タイトル */
 export interface MainChildWindowSpec {
   title: string;
@@ -17,12 +19,12 @@ export function resolveMainChildWindowSpec(request: MainChildWindowRequest): Mai
   switch (request.kind) {
     case 'register':
       return {
-        title: request.editingItem ? 'アイテムの編集' : 'アイテムの登録',
+        title: mainI18n.t(request.editingItem ? 'register.editTitle' : 'register.addTitle'),
         size: { width: 850, height: 900 },
       };
     case 'iconProgressDetail':
       return {
-        title: 'アイコン取得結果',
+        title: mainI18n.t('register.iconResultTitle'),
         size: { width: 760, height: 700 },
       };
   }
