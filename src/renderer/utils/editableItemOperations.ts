@@ -14,7 +14,7 @@ import {
 } from '@common/types';
 import type { EditableJsonItem } from '@common/types/editableItem';
 import { validateEditableItem } from '@common/types/editableItem';
-import { jsonItemToDisplayText } from '@common/utils/displayTextConverter';
+import { safeJsonItemToDisplayText } from '@common/utils/displayTextConverter';
 import { generateId } from '@common/utils/jsonParser';
 import {
   checkDuplicates,
@@ -56,7 +56,7 @@ export function toEditableItem(jsonItem: JsonItem, sourceFile: string): Editable
   const validation = validateEditableItem(jsonItem, i18next.t);
   return {
     item: jsonItem,
-    displayText: safeDisplayText(jsonItem),
+    displayText: safeJsonItemToDisplayText(jsonItem),
     meta: {
       sourceFile,
       lineNumber: 0,
@@ -79,7 +79,7 @@ export function refreshEditableItem(
   const validation = validateEditableItem(jsonItem, i18next.t);
   return {
     item: jsonItem,
-    displayText: safeDisplayText(jsonItem),
+    displayText: safeJsonItemToDisplayText(jsonItem),
     meta: {
       ...item.meta,
       sourceFile,
@@ -87,14 +87,6 @@ export function refreshEditableItem(
       validationError: validation.error,
     },
   };
-}
-
-function safeDisplayText(jsonItem: JsonItem): string {
-  try {
-    return jsonItemToDisplayText(jsonItem);
-  } catch {
-    return JSON.stringify(jsonItem);
-  }
 }
 
 /** 先頭に追加する空の新規アイテム（id はこの時点で本採番する） */

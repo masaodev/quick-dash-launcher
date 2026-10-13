@@ -4,7 +4,7 @@ import {
   convertEditableJsonItemToRegisterItem,
   getDefaultTab,
 } from '@common/utils/dataConverters';
-import { isEditingLauncherItem } from '@common/types';
+import { DIR_OPTIONS_DEFAULTS, isEditableJsonItem, isEditingLauncherItem } from '@common/types';
 import type { RegisterItem, EditingAppItem, DataFileTab, EditableJsonItem } from '@common/types';
 import { detectItemType } from '@common/utils/itemTypeDetector';
 
@@ -43,7 +43,7 @@ export function useModalInitializer() {
       let item: RegisterItem;
       let customIconFileName: string | undefined;
 
-      if ('item' in editingItem && 'meta' in editingItem) {
+      if (isEditableJsonItem(editingItem)) {
         item = convertEditableJsonItemToRegisterItem(editingItem, tabs);
         const itemType = editingItem.item.type;
         if ((itemType === 'item' || itemType === 'clipboard') && 'customIcon' in editingItem.item) {
@@ -105,17 +105,7 @@ export function useModalInitializer() {
           folderProcessing: itemType === 'folder' ? 'folder' : undefined,
           icon,
           itemCategory: 'item',
-          dirOptions:
-            itemType === 'folder'
-              ? {
-                  depth: 0,
-                  types: 'both',
-                  filter: undefined,
-                  exclude: undefined,
-                  prefix: undefined,
-                  suffix: undefined,
-                }
-              : undefined,
+          dirOptions: itemType === 'folder' ? { ...DIR_OPTIONS_DEFAULTS } : undefined,
         });
       }
 

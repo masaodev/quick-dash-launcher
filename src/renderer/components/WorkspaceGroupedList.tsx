@@ -24,6 +24,7 @@ import {
 } from '@common/utils/groupTreeUtils';
 
 import { useWorkspaceItemGroups } from '../hooks/workspace';
+import { useLatestRef } from '../hooks/useLatestRef';
 import { logError } from '../utils/debug';
 
 import WorkspaceGroupHeader from './WorkspaceGroupHeader';
@@ -192,15 +193,35 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     []
   );
 
+  // コンテキストメニューの購読は一度だけ張り、ハンドラーの中で最新の値を読む
+  const latest = useLatestRef({
+    itemsMap,
+    groupsMap,
+    groups,
+    itemsByGroup,
+    setEditingItemId,
+    onMoveItemToGroup,
+    onRemoveItem,
+    onEditItem,
+    onArchiveGroup,
+    onDeleteGroup,
+    onAddSubgroup,
+    t,
+  });
+
   React.useEffect(() => {
     const withItem = (fn: (item: WorkspaceItem) => void) => (itemId: string) => {
-      const item = itemsMap.get(itemId);
+      const item = latest.current.itemsMap.get(itemId);
       if (item) fn(item);
     };
 
     const cleanups = [
-      window.electronAPI.onWorkspaceMenuRenameItem(setEditingItemId),
-      window.electronAPI.onWorkspaceMenuEditItem(withItem(onEditItem)),
+      window.electronAPI.onWorkspaceMenuRenameItem((itemId) =>
+        latest.current.setEditingItemId(itemId)
+      ),
+      window.electronAPI.onWorkspaceMenuEditItem(
+        withItem((item) => latest.current.onEditItem(item))
+      ),
       window.electronAPI.onWorkspaceMenuShowMemo(withItem(setMemoItem)),
       window.electronAPI.onWorkspaceMenuCopyPath(
         withItem((item) => handlePathOperation(item, 'copy', 'item'))
@@ -222,10 +243,10 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
       ),
       window.electronAPI.onWorkspaceMenuRemoveFromGroup(
         withItem((item) => {
-          if (item.groupId) onMoveItemToGroup(item.id, undefined);
+          if (item.groupId) latest.current.onMoveItemToGroup(item.id, undefined);
         })
       ),
-      window.electronAPI.onWorkspaceMenuRemoveItem(onRemoveItem),
+      window.electronAPI.onWorkspaceMenuRemoveItem((itemId) => latest.current.onRemoveItem(itemId)),
       window.electronAPI.onWorkspaceMenuMoveToWorkspace(async (itemId, targetWorkspaceId) => {
         try {
           await window.electronAPI.workspaceAPI.moveItemToWorkspace(itemId, targetWorkspaceId);
@@ -236,20 +257,14 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     ];
 
     return () => cleanups.forEach((cleanup) => cleanup());
-  }, [
-    itemsMap,
-    handlePathOperation,
-    setEditingItemId,
-    onMoveItemToGroup,
-    onRemoveItem,
-    onEditItem,
-  ]);
+  }, [latest, handlePathOperation]);
 
   React.useEffect(() => {
     const cleanups = [
       window.electronAPI.onWorkspaceGroupMenuRename(setEditingGroupId),
       window.electronAPI.onWorkspaceGroupMenuShowColorPicker(setColorPickerGroupId),
       window.electronAPI.onWorkspaceGroupMenuCopyAsText((groupId) => {
+        const { groupsMap, itemsByGroup, t } = latest.current;
         const group = groupsMap.get(groupId);
         if (group) {
           const groupItems = itemsByGroup[groupId] || [];
@@ -266,9 +281,14 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
           window.electronAPI.copyToClipboard(text);
         }
       }),
-      window.electronAPI.onWorkspaceGroupMenuArchive(onArchiveGroup),
-      window.electronAPI.onWorkspaceGroupMenuDelete(onDeleteGroup),
+      window.electronAPI.onWorkspaceGroupMenuArchive((groupId) =>
+        latest.current.onArchiveGroup(groupId)
+      ),
+      window.electronAPI.onWorkspaceGroupMenuDelete((groupId) =>
+        latest.current.onDeleteGroup(groupId)
+      ),
       window.electronAPI.onWorkspaceGroupMenuAddSubgroup((parentGroupId) => {
+        const { groups, onAddSubgroup } = latest.current;
         const childCount = groups.filter((g) => g.parentGroupId === parentGroupId).length;
         onAddSubgroup(parentGroupId, childCount);
       }),
@@ -282,7 +302,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     ];
 
     return () => cleanups.forEach((cleanup) => cleanup());
-  }, [groupsMap, groups, itemsByGroup, onArchiveGroup, onDeleteGroup, onAddSubgroup, t]);
+  }, [latest]);
 
   /** グループヘッダーの dragEnd でウィンドウ外ドロップを検出 */
   const handleGroupDragEndForDetach = (e: React.DragEvent, groupId: string) => {

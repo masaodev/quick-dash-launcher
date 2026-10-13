@@ -7,7 +7,7 @@ import {
   serializeJsonDataFile,
   createEmptyJsonDataFile,
 } from '@common/utils/jsonParser';
-import { jsonItemToDisplayText } from '@common/utils/displayTextConverter';
+import { safeJsonItemToDisplayText } from '@common/utils/displayTextConverter';
 import type {
   EditableJsonItem,
   LoadEditableItemsResult,
@@ -18,7 +18,6 @@ import {
   isJsonClipboardItem,
   isJsonLauncherItem,
   type JsonDataFile,
-  type JsonItem,
   type JsonLauncherItem,
 } from '@common/types';
 
@@ -108,7 +107,7 @@ export async function loadEditableItems(configFolder: string): Promise<LoadEdita
 
           items.push({
             item: jsonItem,
-            displayText: safeDisplayText(jsonItem),
+            displayText: safeJsonItemToDisplayText(jsonItem),
             meta: {
               sourceFile: fileName,
               lineNumber: index,
@@ -137,17 +136,6 @@ export async function loadEditableItems(configFolder: string): Promise<LoadEdita
       items: [],
       error: mainI18n.t('dataErrors.loadFailed', { error: String(error) }),
     };
-  }
-}
-
-/**
- * 表示テキストへの変換。不正なアイテム（type 不明など）でも落ちないようにする
- */
-function safeDisplayText(jsonItem: JsonItem): string {
-  try {
-    return jsonItemToDisplayText(jsonItem);
-  } catch {
-    return JSON.stringify(jsonItem);
   }
 }
 

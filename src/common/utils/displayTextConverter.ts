@@ -84,3 +84,14 @@ export function jsonItemToDisplayText(item: JsonItem): string {
       throw new Error(`Unknown item type: ${(item as JsonItem).type}`);
   }
 }
+
+/**
+ * JsonItem を displayText に変換する。不正なアイテム（type 不明など）でも落ちず、JSON 文字列を返す
+ */
+export function safeJsonItemToDisplayText(item: JsonItem): string {
+  try {
+    return jsonItemToDisplayText(item);
+  } catch {
+    return JSON.stringify(item);
+  }
+}
