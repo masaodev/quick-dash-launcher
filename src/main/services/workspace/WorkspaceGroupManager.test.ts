@@ -191,21 +191,6 @@ describe('WorkspaceGroupManager', () => {
     });
   });
 
-  describe('reorderGroups', () => {
-    it('指定順に order を振り、未指定のグループは保持し、不明な id は無視すること', () => {
-      const a = manager.createGroup('a');
-      const b = manager.createGroup('b');
-      const c = manager.createGroup('c');
-
-      manager.reorderGroups([c.id, 'missing1', a.id]);
-      const byId = new Map(manager.loadGroups().map((g) => [g.id, g.order]));
-      expect(byId.get(c.id)).toBe(0);
-      expect(byId.get(a.id)).toBe(1);
-      expect(byId.get(b.id)).toBe(b.order);
-      expect(readGroups()).toHaveLength(3);
-    });
-  });
-
   describe('applyOrders（混在並べ替え）', () => {
     it('該当する要素だけ order を書き換え、更新件数を返すこと', () => {
       const list = [

@@ -126,39 +126,6 @@ export async function deleteItemsById(
   );
 }
 
-export async function batchUpdateItemsById(
-  configFolder: string,
-  requests: UpdateItemByIdRequest[]
-): Promise<void> {
-  const updateMap = new Map(requests.map((r) => [r.id, r.newItem]));
-
-  await processDataFiles(
-    configFolder,
-    (jsonData) => jsonData.items.some((item) => updateMap.has(item.id)),
-    async ({ jsonData }) => {
-      const newItems = [];
-      for (const item of jsonData.items) {
-        const newItem = updateMap.get(item.id);
-        if (!newItem) {
-          newItems.push(item);
-          continue;
-        }
-        // 一括更新はパスが変わったものだけ確かめる
-        const previousPath = 'path' in item ? item.path : undefined;
-        const path =
-          newItem.path === previousPath ? newItem.path : await withFolderMarker(newItem.path);
-        newItems.push(
-          convertLauncherItemToJsonItem(
-            path === newItem.path ? newItem : { ...newItem, path, type: 'folder' },
-            item.id
-          )
-        );
-      }
-      return { ...jsonData, items: newItems };
-    }
-  );
-}
-
 export function registerEditHandlers(configFolder: string): void {
   createSafeIpcHandler(
     IPC_CHANNELS.UPDATE_ITEM_BY_ID,
@@ -178,15 +145,5 @@ export function registerEditHandlers(configFolder: string): void {
       return { success: true };
     },
     'アイテムの削除（IDベース）'
-  );
-
-  createSafeIpcHandler(
-    IPC_CHANNELS.BATCH_UPDATE_ITEMS_BY_ID,
-    async (requests: UpdateItemByIdRequest[]) => {
-      await batchUpdateItemsById(configFolder, requests);
-      notifyDataChanged();
-      return { success: true };
-    },
-    'アイテムの一括更新（IDベース）'
   );
 }

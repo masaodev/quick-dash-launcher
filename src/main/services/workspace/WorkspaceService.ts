@@ -245,11 +245,6 @@ export class WorkspaceService {
     this.itemManager!.updateItem(id, marked);
   }
 
-  public async reorderItems(itemIds: string[]): Promise<void> {
-    await this.initializeStore();
-    this.itemManager!.reorderItems(itemIds);
-  }
-
   // --- グループ管理 ---
 
   /** グループ一覧（UI 状態の折りたたみを合成して返す） */
@@ -289,11 +284,6 @@ export class WorkspaceService {
   public async setGroupsCollapsed(ids: string[], collapsed: boolean): Promise<void> {
     await this.initializeStore();
     this.uiState!.setGroupsCollapsed(ids, collapsed);
-  }
-
-  public async reorderGroups(groupIds: string[]): Promise<void> {
-    await this.initializeStore();
-    this.groupManager!.reorderGroups(groupIds);
   }
 
   public async reorderMixed(
@@ -421,13 +411,6 @@ export class WorkspaceService {
   public async loadArchivedItems(): Promise<ArchivedWorkspaceItem[]> {
     await this.initializeStore();
     return this.archiveManager!.getAllArchivedItems();
-  }
-
-  public async restoreGroup(groupId: string): Promise<void> {
-    await this.initializeStore();
-    const groups = this.groupManager!.loadGroups();
-    const items = this.itemManager!.loadItems();
-    this.archiveManager!.restoreGroup(groupId, groups, items);
   }
 
   public async deleteArchivedGroup(groupId: string): Promise<void> {

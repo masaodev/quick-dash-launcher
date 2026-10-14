@@ -261,37 +261,6 @@ export class WorkspaceGroupManager {
   }
 
   /**
-   * グループの並び順を変更（同一親グループ内での並び替え）
-   * @param groupIds 新しい順序でのグループIDの配列
-   */
-  public reorderGroups(groupIds: string[]): void {
-    try {
-      const groups = this.loadGroups();
-      const groupMap = new Map(groups.map((group) => [group.id, group]));
-      const groupIdSet = new Set(groupIds);
-
-      // 指定されたIDの順序でグループを並べ、含まれていないグループは変更なし
-      const orderedGroups = groupIds
-        .map((id) => groupMap.get(id))
-        .filter((group): group is WorkspaceGroup => group !== undefined);
-
-      // 並び替え対象のグループにのみ新しいorderを付与
-      orderedGroups.forEach((group, index) => {
-        group.order = index;
-      });
-
-      // 非対象グループはそのまま保持
-      const remainingGroups = groups.filter((group) => !groupIdSet.has(group.id));
-
-      this.store.set('groups', [...orderedGroups, ...remainingGroups]);
-      logger.info({ count: groupIds.length }, 'Reordered workspace groups');
-    } catch (error) {
-      logger.error({ error }, 'Failed to reorder workspace groups');
-      throw error;
-    }
-  }
-
-  /**
    * グループIDからグループを取得
    * @param groupId グループID
    * @returns グループまたはundefined

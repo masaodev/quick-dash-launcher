@@ -11,12 +11,6 @@ export function setupClipboardHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.CLIPBOARD_RESTORE, (_e, ref: string) =>
     service.restoreClipboard(ref)
   );
-  ipcMain.handle(IPC_CHANNELS.CLIPBOARD_DELETE_DATA, (_e, ref: string) =>
-    service.deleteClipboardData(ref)
-  );
-  ipcMain.handle(IPC_CHANNELS.CLIPBOARD_GET_PREVIEW, (_e, ref: string) =>
-    service.getClipboardPreview(ref)
-  );
   ipcMain.handle(IPC_CHANNELS.CLIPBOARD_CAPTURE_TO_SESSION, () => service.captureToSession());
   ipcMain.handle(IPC_CHANNELS.CLIPBOARD_COMMIT_SESSION, (_e, id: string) =>
     service.commitSession(id)

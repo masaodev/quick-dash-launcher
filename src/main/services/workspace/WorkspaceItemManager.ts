@@ -178,36 +178,6 @@ export class WorkspaceItemManager {
     }
   }
 
-  public reorderItems(itemIds: string[]): void {
-    try {
-      const items = this.loadItems();
-      const itemMap = new Map(items.map((item) => [item.id, item]));
-      const itemIdSet = new Set(itemIds);
-      const reorderedItems: WorkspaceItem[] = [];
-
-      for (let i = 0; i < itemIds.length; i++) {
-        const item = itemMap.get(itemIds[i]);
-        if (item) {
-          item.order = i;
-          reorderedItems.push(item);
-        }
-      }
-
-      for (const item of items) {
-        if (!itemIdSet.has(item.id)) {
-          item.order = reorderedItems.length;
-          reorderedItems.push(item);
-        }
-      }
-
-      this.store.set('items', reorderedItems);
-      logger.info({ count: itemIds.length }, 'Reordered workspace items');
-    } catch (error) {
-      logger.error({ error }, 'Failed to reorder workspace items');
-      throw error;
-    }
-  }
-
   public duplicateItem(
     sourceItemId: string,
     targetGroupId?: string,
