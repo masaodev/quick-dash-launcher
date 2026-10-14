@@ -84,6 +84,23 @@ function makeDeps(windows: { hwnd: bigint; title: string; processName: string }[
 const resolve = (id: string) => items[id];
 
 describe('executeSet', () => {
+  it('名前だけ残した行（旧グループで見つからなかった名前）は、参照先が見つからないとして失敗し、残りは続ける', async () => {
+    const { deps, calls } = makeDeps();
+    const set: SetItem = {
+      type: 'set',
+      displayName: '旧グループ',
+      entries: [{ label: '消したアイテム' }, { itemId: 'gmail1aa' }],
+    };
+    const result = await executeSet(set, resolve, deps, logger);
+    expect(calls).toEqual(['launch:https://mail.google.com/']);
+    expect(result.entries[0]).toEqual({
+      index: 0,
+      success: false,
+      error: 'set.errors.itemNotFound',
+    });
+    expect(result.successCount).toBe(1);
+  });
+
   it('置き場所の無い行は、ウィンドウ設定があれば前面に出し、無ければ開く', async () => {
     const { deps, calls } = makeDeps([
       { hwnd: 1n, title: 'Windows Terminal', processName: 'WindowsTerminal.exe' },

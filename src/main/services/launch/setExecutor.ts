@@ -32,6 +32,7 @@ import {
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { ANY_WINDOW_TITLE, createTitleMatcher } from '@common/utils/windowTitle';
 import { pickWindowPlacement } from '@common/utils/windowPlacement';
+import { isUnresolvedEntry } from '@common/utils/setWindowMatching';
 
 import { applyWindowConfig, tryActivateWindow } from '../../utils/windowActivator.js';
 import { findWindowHwndByTitle, maximizeWindow } from '../../utils/nativeWindowControl.js';
@@ -139,6 +140,10 @@ export function resolveSetEntry(entry: SetEntry, resolve: SetItemResolver): Reso
     };
   }
   const title = entry.window?.title ?? entry.window?.processName ?? entry.label ?? '';
+  // 旧グループの名前でアイテムが見つからず、名前だけ残した行
+  if (isUnresolvedEntry(entry)) {
+    return { name: title, error: mainI18n.t('set.errors.itemNotFound') };
+  }
   return { name: title };
 }
 

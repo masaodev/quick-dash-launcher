@@ -11,6 +11,7 @@ import {
   type ScreenArea,
 } from '@common/utils/placementLabel';
 import {
+  isUnresolvedEntry,
   opensAsTab,
   decideWindowMatch,
   placementFromWindow,
@@ -179,6 +180,10 @@ export function describeSetEntry(
       missing: false,
       path: entry.open.path,
     };
+  }
+  // 旧グループの名前でアイテムが見つからなかった行は、参照先が無い行として出す
+  if (isUnresolvedEntry(entry)) {
+    return { name: entry.label ?? '', kind: 'none', holding: 'ref', missing: true };
   }
   return {
     name: entry.label ?? entry.window?.title ?? entry.window?.processName ?? '',

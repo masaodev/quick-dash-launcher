@@ -99,6 +99,15 @@ export function entryMatchesWindow(entry: MatchableEntry, window: MatchableWindo
   return matchesTarget(entry.target, window);
 }
 
+/**
+ * 指す先の無い行か（旧グループの名前でアイテムが見つからず、名前だけ残した行）
+ *
+ * 開くものも見つけ方も置き場所も無いので、何もできない
+ */
+export function isUnresolvedEntry(entry: SetEntry): boolean {
+  return !entry.itemId && !entry.open && !entry.window && !entry.placement;
+}
+
 /** 位置を記録できない行の理由（url は自動では探さない行。手で結び付ければ記録できる） */
 export type UnlinkedReason = 'url' | 'notFound';
 

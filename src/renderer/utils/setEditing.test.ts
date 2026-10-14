@@ -1,7 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import type { SetEntry, WindowInfo } from '@common/types';
 
-import { entryOpensAsTab, linkEntryToWindow, windowPickNotes } from './setEditing';
+import {
+  describeSetEntry,
+  entryOpensAsTab,
+  linkEntryToWindow,
+  windowPickNotes,
+} from './setEditing';
 
 function win(over: Partial<WindowInfo>): WindowInfo {
   return {
@@ -39,6 +44,19 @@ describe('linkEntryToWindow', () => {
       window: { processName: 'Obsidian.exe' },
     });
     expect(linkEntryToWindow(entry, w, [w]).placement).toBeUndefined();
+  });
+});
+
+describe('describeSetEntry', () => {
+  it('名前だけ残した行は参照先が見つからない行として出し、並べるだけの行とは分ける', () => {
+    expect(describeSetEntry({ label: '消したアイテム' }, new Map())).toMatchObject({
+      name: '消したアイテム',
+      holding: 'ref',
+      missing: true,
+    });
+    expect(
+      describeSetEntry({ window: { processName: 'notepad.exe' }, placement: { x: 0 } }, new Map())
+    ).toMatchObject({ holding: 'none', missing: false });
   });
 });
 
