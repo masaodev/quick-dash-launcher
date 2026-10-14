@@ -107,13 +107,13 @@ describe('launcher item add --type set', () => {
   });
 });
 
-describe('launcher set entry list', () => {
+describe('launcher set row list', () => {
   it('行番号と名前を付けて返し、見つからないアイテムの行に missing を付ける', async () => {
     (entries[3].item as { entries: unknown[] }).entries.push({
       itemId: 'Gone0001',
       label: '消した',
     });
-    const r = await runLauncherSetCommand('entry', 'list', ['朝'], ctx);
+    const r = await runLauncherSetCommand('row', 'list', ['朝'], ctx);
     expect(r).toMatchObject({
       set: { id: 'Set00001', displayName: '朝', file: 'datafiles/data2.json', tab: '仕事' },
       entries: [
@@ -125,15 +125,15 @@ describe('launcher set entry list', () => {
   });
 
   it('セットでないアイテムの名前は not_found', async () => {
-    expect((await errorOf(runLauncherSetCommand('entry', 'list', ['メモ帳'], ctx))).code).toBe(
+    expect((await errorOf(runLauncherSetCommand('row', 'list', ['メモ帳'], ctx))).code).toBe(
       'not_found'
     );
   });
 });
 
-describe('launcher set entry add', () => {
+describe('launcher set row add', () => {
   it('末尾に足し、トーストで知らせる', async () => {
-    await runLauncherSetCommand('entry', 'add', ['朝', '--item', 'Win00001'], ctx);
+    await runLauncherSetCommand('row', 'add', ['朝', '--item', 'Win00001'], ctx);
     expect(setEntries()).toEqual([
       { itemId: 'Memo0001' },
       { open: { path: 'C:\\a\\議事録.txt' } },
@@ -144,30 +144,30 @@ describe('launcher set entry add', () => {
 
   it('--position で差し込む。範囲外は usage', async () => {
     await runLauncherSetCommand(
-      'entry',
+      'row',
       'add',
       ['朝', '--path', 'https://example.com/', '--position', '0'],
       ctx
     );
     expect(setEntries()).toMatchObject([{ open: { path: 'https://example.com/' } }, {}, {}]);
     const e = await errorOf(
-      runLauncherSetCommand('entry', 'add', ['朝', '--item', 'メモ帳', '--position', '9'], ctx)
+      runLauncherSetCommand('row', 'add', ['朝', '--item', 'メモ帳', '--position', '9'], ctx)
     );
     expect(e.code).toBe('usage');
   });
 
   it('フォルダ取込（dir）やセットは行にできない', async () => {
     expect(
-      (await errorOf(runLauncherSetCommand('entry', 'add', ['朝', '--item', 'Dir00001'], ctx))).code
+      (await errorOf(runLauncherSetCommand('row', 'add', ['朝', '--item', 'Dir00001'], ctx))).code
     ).toBe('invalid');
     expect(
-      (await errorOf(runLauncherSetCommand('entry', 'add', ['朝', '--item', '朝'], ctx))).code
+      (await errorOf(runLauncherSetCommand('row', 'add', ['朝', '--item', '朝'], ctx))).code
     ).toBe('invalid');
   });
 
   it('--dry-run では書き込まない', async () => {
     const r = await runLauncherSetCommand(
-      'entry',
+      'row',
       'add',
       ['朝', '--item', 'メモ帳', '--dry-run'],
       ctx
@@ -178,27 +178,27 @@ describe('launcher set entry add', () => {
   });
 });
 
-describe('launcher set entry remove', () => {
+describe('launcher set row remove', () => {
   it('行番号で消す', async () => {
-    await runLauncherSetCommand('entry', 'remove', ['朝', '1'], ctx);
+    await runLauncherSetCommand('row', 'remove', ['朝', '1'], ctx);
     expect(setEntries()).toEqual([{ itemId: 'Memo0001' }]);
     expect(ctx.changed).toHaveBeenCalledWith(expect.stringContaining('議事録.txt'));
   });
 
   it('範囲外の行番号は usage、最後の 1 行は conflict', async () => {
-    expect((await errorOf(runLauncherSetCommand('entry', 'remove', ['朝', '5'], ctx))).code).toBe(
+    expect((await errorOf(runLauncherSetCommand('row', 'remove', ['朝', '5'], ctx))).code).toBe(
       'usage'
     );
-    await runLauncherSetCommand('entry', 'remove', ['朝', '0'], ctx);
-    expect((await errorOf(runLauncherSetCommand('entry', 'remove', ['朝', '0'], ctx))).code).toBe(
+    await runLauncherSetCommand('row', 'remove', ['朝', '0'], ctx);
+    expect((await errorOf(runLauncherSetCommand('row', 'remove', ['朝', '0'], ctx))).code).toBe(
       'conflict'
     );
   });
 });
 
 describe('launcher set の語の誤り', () => {
-  it('entry 以外・操作なしは usage', async () => {
+  it('row 以外・操作なしは usage', async () => {
     expect((await errorOf(runLauncherSetCommand('row', 'list', [], ctx))).code).toBe('usage');
-    expect((await errorOf(runLauncherSetCommand('entry', undefined, [], ctx))).code).toBe('usage');
+    expect((await errorOf(runLauncherSetCommand('row', undefined, [], ctx))).code).toBe('usage');
   });
 });

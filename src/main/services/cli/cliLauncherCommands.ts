@@ -231,7 +231,7 @@ async function add(args: readonly string[], ctx: LauncherCommandContext): Promis
 
 /**
  * セットを足す。最初の行は --item か --path（--args）で渡す（--set entries='[…]' でもよい）。
- * 2 行目からは qdl launcher set entry add で足す
+ * 2 行目からは qdl launcher set row add で足す
  */
 async function addSet(parsed: ParsedArgs, ctx: LauncherCommandContext): Promise<unknown> {
   const name = optionString(parsed, 'name');

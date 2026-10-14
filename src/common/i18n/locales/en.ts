@@ -393,7 +393,7 @@ QuickDashLauncher CLI. Sends requests to the running QuickDashLauncher app, and 
 
 Commands:
   launcher item list|add|update|remove     Items in the launcher (qdl launcher --help)
-  launcher set entry list|add|remove       Rows of a set in the launcher
+  launcher set row list|add|remove       Rows of a set in the launcher
   workspace list                           List workspaces
   workspace item list|add|update|remove    Items in workspaces (qdl workspace --help)
   workspace group list|add|update|remove   Groups in workspaces
@@ -409,7 +409,7 @@ Commands that write accept --dry-run to check the result without writing.
 Exit codes: 0 success / 1 failure / 2 wrong command or target / 3 can't connect to the app / 4 CLI and app versions don't match
 `,
       launcher: `Usage: qdl launcher item <action> [arguments]
-       qdl launcher set entry <action> <set> [arguments]
+       qdl launcher set row <action> <set> [arguments]
 
 Works with the items in the launcher (datafiles/data*.json).
 
@@ -418,14 +418,14 @@ Works with the items in the launcher (datafiles/data*.json).
                                 --type item|dir|set|window, --set key=value, --dry-run)
   item update <id or name>      Change an item (--name --path --args --memo --set key=value --unset key --dry-run)
   item remove <id or name>      Delete an item (--dry-run)
-  set entry list <set>          List the rows of a set (row numbers are 0-based)
-  set entry add <set>           Add a row to a set (--item <id or name> | --path <path> [--args],
+  set row list <set>          List the rows of a set (row numbers are 0-based)
+  set row add <set>           Add a row to a set (--item <id or name> | --path <path> [--args],
                                 --label <row name> --position <0-based> --dry-run)
-  set entry remove <set> <row>  Delete a row from a set (--dry-run)
+  set row remove <set> <row>  Delete a row from a set (--dry-run)
 
 A relative --path is resolved from the folder where you run qdl. With --type set, --path isn't required;
 pass the first row with --item or --path (for example --type set --name Morning --item Notepad), and add
-more rows with set entry add. The window to move and its position are set with "Record current positions"
+more rows with set row add. The window to move and its position are set with "Record current positions"
 on screen. For --type dir|window, pass the required fields with --set (for example --set windowTitle=Notepad).
 `,
       workspace: `Usage: qdl workspace <target> <action> [arguments]
@@ -478,7 +478,7 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       unknownCommand: 'Unknown command: {{command}}',
       unknownLauncherNoun:
         'Unknown command: launcher {{noun}} (only launcher item and launcher set)',
-      missingSetNoun: 'Specify entry after launcher set',
+      missingSetNoun: 'Specify row after launcher set',
       missingSetVerb: 'Specify an action (list / add / remove)',
       unknownVerb: 'Unknown action: {{command}}',
       missingVerb: 'Specify an action (list / add / update / remove)',
@@ -810,7 +810,7 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     },
     row: {
       typeSelectTitle:
-        'Changes the type. Single item, folder import, and group switch right away; window action, clipboard, and window layout (places several windows at saved positions) open Edit details.',
+        'Changes the type. Single item and folder import switch right away; set (opens several items together and places their windows), window action, and clipboard open Edit details.',
       dirHasNoName: "Folder imports don't have names (the imported file names are shown)",
       namePlaceholder: 'Enter a name (Enter moves to the path)',
       invalid: 'This item has a problem: {{error}}',

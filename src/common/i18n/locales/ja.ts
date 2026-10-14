@@ -393,7 +393,7 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
 
 コマンド:
   launcher item list|add|update|remove     メインウィンドウのアイテム（qdl launcher --help）
-  launcher set entry list|add|remove       メインウィンドウのセットの行
+  launcher set row list|add|remove       メインウィンドウのセットの行
   workspace list                           ワークスペースの一覧
   workspace item list|add|update|remove    ワークスペースのアイテム（qdl workspace --help）
   workspace group list|add|update|remove   ワークスペースのグループ
@@ -409,7 +409,7 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
 終了コード: 0 成功 / 1 失敗 / 2 コマンドの誤り・対象の指定の誤り / 3 本体に接続できない / 4 CLI と本体の版の不一致
 `,
       launcher: `使い方: qdl launcher item <操作> [引数]
-        qdl launcher set entry <操作> <セット> [引数]
+        qdl launcher set row <操作> <セット> [引数]
 
 メインウィンドウのアイテム（datafiles/data*.json）を扱います。
 
@@ -418,13 +418,13 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
                                 --type item|dir|set|window、--set key=value、--dry-run）
   item update <id か表示名>     変更（--name --path --args --memo --set key=value --unset key --dry-run）
   item remove <id か表示名>     削除（--dry-run）
-  set entry list <セット>       セットの行の一覧（行番号は 0 始まり）
-  set entry add <セット>        セットに行を足す（--item <id か表示名> | --path <パス> [--args]、
+  set row list <セット>       セットの行の一覧（行番号は 0 始まり）
+  set row add <セット>        セットに行を足す（--item <id か表示名> | --path <パス> [--args]、
                                 --label <行の名前> --position <0 始まり> --dry-run）
-  set entry remove <セット> <行番号>  セットの行を消す（--dry-run）
+  set row remove <セット> <行番号>  セットの行を消す（--dry-run）
 
 --path の相対パスは qdl を実行したフォルダが基準です。--type set では --path を求めず、最初の行を
---item か --path で渡します（例 --type set --name 朝 --item メモ帳）。2 行目からは set entry add で
+--item か --path で渡します（例 --type set --name 朝 --item メモ帳）。2 行目からは set row add で
 足します。動かすウィンドウと位置は、画面の「今の位置を記録」で付けます。--type dir|window のときに
 要るキーは --set で渡します（例 --set windowTitle=メモ帳）。
 `,
@@ -478,7 +478,7 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       unknownCommand: '不明なコマンドです: {{command}}',
       unknownLauncherNoun:
         '不明なコマンドです: launcher {{noun}}（launcher item と launcher set のみ）',
-      missingSetNoun: 'launcher set の後に entry を指定してください',
+      missingSetNoun: 'launcher set の後に row を指定してください',
       missingSetVerb: '操作を指定してください（list / add / remove）',
       unknownVerb: '不明な操作です: {{command}}',
       missingVerb: '操作を指定してください（list / add / update / remove）',
@@ -814,7 +814,7 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     },
     row: {
       typeSelectTitle:
-        '種類を変更します。単一アイテム・フォルダ取込・グループはその場で切り替わり、ウィンドウ操作・クリップボード・ウィンドウ配置（複数のウィンドウを保存した位置に一括で並べる）は詳細編集が開きます',
+        '種類を変更します。単一アイテム・フォルダ取込はその場で切り替わり、セット（複数のアイテムをまとめて開き、決まった位置に並べる）・ウィンドウ操作・クリップボードは詳細編集が開きます',
       dirHasNoName: 'フォルダ取込は名前を持ちません（取り込んだファイル名で表示）',
       namePlaceholder: '名前を入力（Enter でパスへ）',
       invalid: '入力に不備があります: {{error}}',

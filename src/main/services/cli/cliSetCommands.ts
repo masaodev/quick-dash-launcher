@@ -15,7 +15,7 @@ import type { LauncherCommandContext, LauncherEntry } from './cliLauncherCommand
 import { resolveCliPath, resolveOne, validateAsDataItem } from './cliShared.js';
 
 /**
- * qdl launcher set entry … — メイン画面のセットの行
+ * qdl launcher set row … — メイン画面のセットの行
  *
  * 行に入れられるのは、開くもの（登録済みのアイテムか、パス）だけ。
  * 動かすウィンドウと位置は、画面の「今の位置を記録」で付ける（CLI からは付けない）。
@@ -160,7 +160,7 @@ export async function runLauncherSetCommand(
   args: readonly string[],
   ctx: LauncherCommandContext
 ): Promise<unknown> {
-  if (noun !== 'entry') {
+  if (noun !== 'row') {
     throw new CliError(
       'usage',
       noun
@@ -179,7 +179,7 @@ export async function runLauncherSetCommand(
       throw new CliError(
         'usage',
         verb
-          ? mainI18n.t('cli.errors.unknownVerb', { command: `launcher set entry ${verb}` })
+          ? mainI18n.t('cli.errors.unknownVerb', { command: `launcher set row ${verb}` })
           : mainI18n.t('cli.errors.missingSetVerb')
       );
   }
