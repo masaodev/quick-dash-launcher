@@ -14,7 +14,12 @@ function launcher(id: string, displayName: string, path: string): EditableJsonIt
   return toEditableItem({ id, type: 'item', displayName, path } as JsonItem, FILE);
 }
 
-const key = (k: string) => ({ key: k, preventDefault: vi.fn() }) as unknown as ReactKeyboardEvent;
+const key = (k: string, isComposing = false) =>
+  ({
+    key: k,
+    nativeEvent: { isComposing },
+    preventDefault: vi.fn(),
+  }) as unknown as ReactKeyboardEvent;
 
 describe('useAdminCellEditing', () => {
   it('名前セルの編集を確定すると onItemEdit に名前だけ変えたアイテムを渡すこと', () => {
@@ -54,6 +59,31 @@ describe('useAdminCellEditing', () => {
     expect(onItemEdit.mock.calls[0][0].item).toMatchObject({ displayName: '新規' });
     expect(result.current.editingCell).toEqual({ itemId: 'a1', column: 'path' });
     expect(result.current.editingValue).toBe('');
+  });
+
+  it('日本語入力の変換を確定する Enter では名前を確定しないこと', () => {
+    const onItemEdit = vi.fn();
+    const item = launcher('a1', 'GitHub', 'https://github.com');
+    const { result } = renderHook(() => useAdminCellEditing(onItemEdit));
+
+    act(() => result.current.startNameEdit(item));
+    act(() => result.current.setEditingValue('ぎっとはぶ'));
+    act(() => result.current.handleNameKeyDown(key('Enter', true), item));
+
+    expect(onItemEdit).not.toHaveBeenCalled();
+    expect(result.current.editingCell).toEqual({ itemId: 'a1', column: 'name' });
+  });
+
+  it('名前を空にして確定しても元の名前のままにすること', () => {
+    const onItemEdit = vi.fn();
+    const item = launcher('a1', 'GitHub', 'https://github.com');
+    const { result } = renderHook(() => useAdminCellEditing(onItemEdit));
+
+    act(() => result.current.startNameEdit(item));
+    act(() => result.current.setEditingValue('  '));
+    act(() => result.current.commitNameEdit(item));
+
+    expect(onItemEdit).not.toHaveBeenCalled();
   });
 
   it('別のセルへ移った後に届いた古い確定（blur）は無視すること', () => {

@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Workspace } from '@common/types';
 
+import { isCommitEnter, resolveInlineName } from '../utils/inlineName';
+
 import ConfirmDialog from './ConfirmDialog';
 
 interface WorkspaceTabBarProps {
@@ -67,11 +69,10 @@ const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({
   };
 
   const handleSaveEdit = () => {
-    if (editingId !== null && editName.trim()) {
-      const ws = workspaces.find((w) => w.id === editingId);
-      if (ws && editName.trim() !== ws.displayName) {
-        onRenameWorkspace(editingId, editName.trim());
-      }
+    const ws = workspaces.find((w) => w.id === editingId);
+    const name = ws ? resolveInlineName(editName, ws.displayName) : null;
+    if (ws && name) {
+      onRenameWorkspace(ws.id, name);
     }
     setEditingId(null);
   };
@@ -82,7 +83,7 @@ const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({
 
   const handleEditKeyDown = (e: React.KeyboardEvent) => {
     e.stopPropagation();
-    if (e.key === 'Enter') {
+    if (isCommitEnter(e)) {
       handleSaveEdit();
     } else if (e.key === 'Escape') {
       handleCancelEdit();
