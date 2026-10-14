@@ -5,7 +5,7 @@ import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { mainI18n } from '../mainI18n.js';
 
 import { CliError, expectPositionals, optionFlag, optionString, parseArgs } from './cliArgs.js';
-import type { CliCandidate } from './cliArgs.js';
+import type { CliCandidate, ParsedArgs } from './cliArgs.js';
 import {
   applyPatch,
   matchesGrep,
@@ -13,6 +13,7 @@ import {
   resolveOne,
   validateAsDataItem,
 } from './cliShared.js';
+import { entryFromOptions } from './cliSetCommands.js';
 
 /**
  * qdl launcher item … — メイン画面のアイテム（datafiles/data*.json）
@@ -166,7 +167,7 @@ async function list(args: readonly string[], ctx: LauncherCommandContext): Promi
 
 async function add(args: readonly string[], ctx: LauncherCommandContext): Promise<unknown> {
   const parsed = parseArgs(args, {
-    values: ['name', 'path', 'args', 'memo', 'file', 'tab', 'type'],
+    values: ['name', 'path', 'args', 'memo', 'file', 'tab', 'type', 'item', 'label'],
     flags: ['dry-run'],
     allowSet: true,
   });
@@ -177,6 +178,10 @@ async function add(args: readonly string[], ctx: LauncherCommandContext): Promis
       'usage',
       mainI18n.t('cli.errors.badType', { types: EDITABLE_TYPES.join(' / '), type })
     );
+  }
+  if (type === 'set') return addSet(parsed, ctx);
+  if (optionString(parsed, 'item') !== undefined || optionString(parsed, 'label') !== undefined) {
+    throw new CliError('usage', mainI18n.t('cli.errors.itemOnlySet'));
   }
   const name = optionString(parsed, 'name');
   const rawPath = optionString(parsed, 'path');
@@ -211,6 +216,50 @@ async function add(args: readonly string[], ctx: LauncherCommandContext): Promis
       path: itemPath,
       args: optionString(parsed, 'args'),
       memo: optionString(parsed, 'memo'),
+    },
+    parsed
+  );
+  const item = validateAsDataItem(merged, setKeys);
+  item.updatedAt = Date.now();
+  const result = view({ item, file: targetFile }, await ctx.store.tabs());
+  if (dryRun) return { dryRun: true, item: result };
+
+  ctx.store.append(targetFile, item);
+  ctx.changed(mainI18n.t('cli.changed.launcherAdded', { name: itemName(item) }));
+  return result;
+}
+
+/**
+ * セットを足す。最初の行は --item か --path（--args）で渡す（--set entries='[…]' でもよい）。
+ * 2 行目からは qdl launcher set entry add で足す
+ */
+async function addSet(parsed: ParsedArgs, ctx: LauncherCommandContext): Promise<unknown> {
+  const name = optionString(parsed, 'name');
+  if (!name) throw new CliError('usage', mainI18n.t('cli.errors.needName'));
+  const first = await entryFromOptions(parsed, ctx);
+  if (first && parsed.sets.some(([key]) => key === 'entries')) {
+    throw new CliError('usage', mainI18n.t('cli.errors.setEntriesTwice'));
+  }
+  if (!first && !parsed.sets.some(([key]) => key === 'entries')) {
+    throw new CliError('usage', mainI18n.t('cli.errors.setNeedFirstEntry'));
+  }
+
+  const targetFile = await resolveTargetFile(
+    ctx,
+    optionString(parsed, 'file'),
+    optionString(parsed, 'tab')
+  );
+  const dryRun = optionFlag(parsed, 'dry-run');
+  if (!dryRun) await ctx.syncBeforeWrite();
+  const entries = await ctx.store.load();
+  const id = ctx.store.newId(new Set(entries.map((e) => e.item.id)));
+
+  const { merged, setKeys } = applyPatch(
+    { id, type: 'set' },
+    {
+      displayName: name,
+      memo: optionString(parsed, 'memo'),
+      entries: first ? [first] : undefined,
     },
     parsed
   );

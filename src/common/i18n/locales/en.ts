@@ -393,6 +393,7 @@ QuickDashLauncher CLI. Sends requests to the running QuickDashLauncher app, and 
 
 Commands:
   launcher item list|add|update|remove     Items in the launcher (qdl launcher --help)
+  launcher set entry list|add|remove       Rows of a set in the launcher
   workspace list                           List workspaces
   workspace item list|add|update|remove    Items in workspaces (qdl workspace --help)
   workspace group list|add|update|remove   Groups in workspaces
@@ -408,18 +409,24 @@ Commands that write accept --dry-run to check the result without writing.
 Exit codes: 0 success / 1 failure / 2 wrong command or target / 3 can't connect to the app / 4 CLI and app versions don't match
 `,
       launcher: `Usage: qdl launcher item <action> [arguments]
+       qdl launcher set entry <action> <set> [arguments]
 
 Works with the items in the launcher (datafiles/data*.json).
 
-Actions:
-  list                     List items (--file <data2.json> | --tab <tab name>, --grep <text>)
-  add                      Add an item (--name and --path are required. --args --memo, --file | --tab,
-                           --type item|dir|set|window, --set key=value, --dry-run)
-  update <id or name>      Change an item (--name --path --args --memo --set key=value --unset key --dry-run)
-  remove <id or name>      Delete an item (--dry-run)
+  item list                     List items (--file <data2.json> | --tab <tab name>, --grep <text>)
+  item add                      Add an item (--name and --path are required. --args --memo, --file | --tab,
+                                --type item|dir|set|window, --set key=value, --dry-run)
+  item update <id or name>      Change an item (--name --path --args --memo --set key=value --unset key --dry-run)
+  item remove <id or name>      Delete an item (--dry-run)
+  set entry list <set>          List the rows of a set (row numbers are 0-based)
+  set entry add <set>           Add a row to a set (--item <id or name> | --path <path> [--args],
+                                --label <row name> --position <0-based> --dry-run)
+  set entry remove <set> <row>  Delete a row from a set (--dry-run)
 
-A relative --path is resolved from the folder where you run qdl. For --type dir|set|window, pass the
-required fields with --set (for example --set entries='[{"itemId":"Ab12Cd34"}]', --set windowTitle=Notepad).
+A relative --path is resolved from the folder where you run qdl. With --type set, --path isn't required;
+pass the first row with --item or --path (for example --type set --name Morning --item Notepad), and add
+more rows with set entry add. The window to move and its position are set with "Record current positions"
+on screen. For --type dir|window, pass the required fields with --set (for example --set windowTitle=Notepad).
 `,
       workspace: `Usage: qdl workspace <target> <action> [arguments]
 
@@ -453,6 +460,8 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       extraArgs: 'Too many arguments: {{args}}',
       idOrName: '<id or name>',
       idOrGroupName: '<id or name>',
+      setIdOrName: '<set id or name>',
+      entryIndex: '<row number>',
     },
     errors: {
       relativePath: "Can't resolve the relative path (the current folder is unknown): {{value}}",
@@ -467,7 +476,10 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       notFound: 'Couldn\'t find the {{what}} "{{key}}" (use the id or the exact display name)',
       ambiguous: '{{count}} matches for the {{what}} "{{key}}". Use the id',
       unknownCommand: 'Unknown command: {{command}}',
-      unknownLauncherNoun: 'Unknown command: launcher {{noun}} (only launcher item)',
+      unknownLauncherNoun:
+        'Unknown command: launcher {{noun}} (only launcher item and launcher set)',
+      missingSetNoun: 'Specify entry after launcher set',
+      missingSetVerb: 'Specify an action (list / add / remove)',
       unknownVerb: 'Unknown action: {{command}}',
       missingVerb: 'Specify an action (list / add / update / remove)',
       missingWorkspaceNoun: 'After workspace, specify list, item, or group',
@@ -488,7 +500,21 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       dirHasNoName: "Folder imports (dir) don't have a display name",
       needName: 'Specify --name',
       needPath: 'Specify --path',
-      argsOnlyItem: '--args can be used only with regular items (item)',
+      argsOnlyItem: '--args can be used only with regular items (item) and rows of a set (set)',
+      itemOnlySet: '--item and --label can be used only with sets (--type set)',
+      setItemAndPath: 'Specify either --item or --path, not both',
+      setNeedTarget: 'Specify what the row opens with --item <id or name> or --path <path>',
+      setNeedFirstEntry:
+        'A set needs at least one row. Specify the first row with --item <id or name> or --path <path>',
+      setEntriesTwice: 'Use either --item/--path or --set entries=…, not both',
+      setArgsWithItem:
+        "--args can be used only with --path rows (an --item row uses the item's arguments)",
+      setItemType:
+        "Items of type {{type}} can't be rows of a set (only {{types}}. Use --path for the contents of an imported folder)",
+      setBadPosition: '--position must be between 0 and {{max}}: {{value}}',
+      setBadIndex: 'The row number must be between 0 and {{max}}: {{value}}',
+      setLastEntry:
+        "Can't delete the last row of a set. To delete the whole set, use qdl launcher item remove",
       typeNotEditable: "Items of type {{type}} can't be changed from the CLI (use the app instead)",
       needChanges: 'Specify what to change ({{options}})',
       noPath: "Type {{type}} doesn't have --path",
@@ -500,6 +526,7 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     },
     targets: {
       launcherItem: 'launcher item',
+      set: 'set',
       workspace: 'workspace',
       group: 'group',
       workspaceItem: 'workspace item',
@@ -514,6 +541,8 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       groupAdded: 'CLI: Added the group "{{name}}" to the workspace',
       groupUpdated: 'CLI: Changed the group "{{name}}" in the workspace',
       groupRemoved: 'CLI: Deleted the group "{{name}}" from the workspace',
+      setEntryAdded: 'CLI: Added the row "{{name}}" to the set "{{set}}"',
+      setEntryRemoved: 'CLI: Deleted the row "{{name}}" from the set "{{set}}"',
     },
     enabled: 'QuickDashLauncher CLI is turned on. Use qdl from a new terminal window.',
     disabled: 'QuickDashLauncher CLI is turned off (qdl was removed from PATH).',

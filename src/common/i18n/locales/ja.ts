@@ -393,6 +393,7 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
 
 コマンド:
   launcher item list|add|update|remove     メインウィンドウのアイテム（qdl launcher --help）
+  launcher set entry list|add|remove       メインウィンドウのセットの行
   workspace list                           ワークスペースの一覧
   workspace item list|add|update|remove    ワークスペースのアイテム（qdl workspace --help）
   workspace group list|add|update|remove   ワークスペースのグループ
@@ -408,18 +409,24 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
 終了コード: 0 成功 / 1 失敗 / 2 コマンドの誤り・対象の指定の誤り / 3 本体に接続できない / 4 CLI と本体の版の不一致
 `,
       launcher: `使い方: qdl launcher item <操作> [引数]
+        qdl launcher set entry <操作> <セット> [引数]
 
 メインウィンドウのアイテム（datafiles/data*.json）を扱います。
 
-操作:
-  list                     一覧（--file <data2.json> | --tab <タブ名>、--grep <語>）
-  add                      追加（--name・--path は必須。--args --memo、--file | --tab、
-                           --type item|dir|set|window、--set key=value、--dry-run）
-  update <id か表示名>     変更（--name --path --args --memo --set key=value --unset key --dry-run）
-  remove <id か表示名>     削除（--dry-run）
+  item list                     一覧（--file <data2.json> | --tab <タブ名>、--grep <語>）
+  item add                      追加（--name・--path は必須。--args --memo、--file | --tab、
+                                --type item|dir|set|window、--set key=value、--dry-run）
+  item update <id か表示名>     変更（--name --path --args --memo --set key=value --unset key --dry-run）
+  item remove <id か表示名>     削除（--dry-run）
+  set entry list <セット>       セットの行の一覧（行番号は 0 始まり）
+  set entry add <セット>        セットに行を足す（--item <id か表示名> | --path <パス> [--args]、
+                                --label <行の名前> --position <0 始まり> --dry-run）
+  set entry remove <セット> <行番号>  セットの行を消す（--dry-run）
 
---path の相対パスは qdl を実行したフォルダが基準です。--type dir|set|window のときに要るキーは
---set で渡します（例 --set entries='[{"itemId":"Ab12Cd34"}]'、--set windowTitle=メモ帳）。
+--path の相対パスは qdl を実行したフォルダが基準です。--type set では --path を求めず、最初の行を
+--item か --path で渡します（例 --type set --name 朝 --item メモ帳）。2 行目からは set entry add で
+足します。動かすウィンドウと位置は、画面の「今の位置を記録」で付けます。--type dir|window のときに
+要るキーは --set で渡します（例 --set windowTitle=メモ帳）。
 `,
       workspace: `使い方: qdl workspace <もの> <操作> [引数]
 
@@ -453,6 +460,8 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       extraArgs: '余分な引数があります: {{args}}',
       idOrName: '<id か表示名>',
       idOrGroupName: '<id か名前>',
+      setIdOrName: '<セットの id か表示名>',
+      entryIndex: '<行番号>',
     },
     errors: {
       relativePath: '相対パスを解決できません（実行したフォルダが分かりません）: {{value}}',
@@ -467,7 +476,10 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       notFound: '{{what}}「{{key}}」が見つかりません（id か表示名の完全一致で指定します）',
       ambiguous: '{{what}}「{{key}}」が {{count}} 件あります。id で指定してください',
       unknownCommand: '不明なコマンドです: {{command}}',
-      unknownLauncherNoun: '不明なコマンドです: launcher {{noun}}（launcher item のみ）',
+      unknownLauncherNoun:
+        '不明なコマンドです: launcher {{noun}}（launcher item と launcher set のみ）',
+      missingSetNoun: 'launcher set の後に entry を指定してください',
+      missingSetVerb: '操作を指定してください（list / add / remove）',
       unknownVerb: '不明な操作です: {{command}}',
       missingVerb: '操作を指定してください（list / add / update / remove）',
       missingWorkspaceNoun: 'workspace の後に list / item / group を指定してください',
@@ -488,7 +500,21 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       dirHasNoName: 'フォルダ取込（dir）は表示名を持ちません',
       needName: '--name を指定してください',
       needPath: '--path を指定してください',
-      argsOnlyItem: '--args は通常のアイテム（item）だけに指定できます',
+      argsOnlyItem: '--args は通常のアイテム（item）とセット（set）の行だけに指定できます',
+      itemOnlySet: '--item と --label はセット（--type set）だけに指定できます',
+      setItemAndPath: '--item と --path はどちらか一方を指定してください',
+      setNeedTarget: '行に入れるものを --item <id か表示名> か --path <パス> で指定してください',
+      setNeedFirstEntry:
+        'セットには行が 1 つ以上要ります。最初の行を --item <id か表示名> か --path <パス> で指定してください',
+      setEntriesTwice: '--item・--path と --set entries=… はどちらか一方にしてください',
+      setArgsWithItem:
+        '--args は --path の行だけに指定できます（--item の行の引数はアイテムのもの）',
+      setItemType:
+        '種類 {{type}} のアイテムはセットの行にできません（{{types}} のみ。フォルダ取込の中身は --path で）',
+      setBadPosition: '--position は 0〜{{max}} で指定してください: {{value}}',
+      setBadIndex: '行番号は 0〜{{max}} で指定してください: {{value}}',
+      setLastEntry:
+        'セットの最後の行は消せません。セットごと消すときは qdl launcher item remove を使ってください',
       typeNotEditable:
         '種類 {{type}} のアイテムは CLI では変更できません（画面で操作してください）',
       needChanges: '変えるものを指定してください（{{options}}）',
@@ -501,6 +527,7 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     },
     targets: {
       launcherItem: 'メインウィンドウのアイテム',
+      set: 'セット',
       workspace: 'ワークスペース',
       group: 'グループ',
       workspaceItem: 'ワークスペースのアイテム',
@@ -515,6 +542,8 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       groupAdded: 'CLI: ワークスペースにグループ「{{name}}」を追加しました',
       groupUpdated: 'CLI: ワークスペースのグループ「{{name}}」を変更しました',
       groupRemoved: 'CLI: ワークスペースのグループ「{{name}}」を削除しました',
+      setEntryAdded: 'CLI: セット「{{set}}」に「{{name}}」の行を追加しました',
+      setEntryRemoved: 'CLI: セット「{{set}}」から「{{name}}」の行を削除しました',
     },
     enabled:
       'QuickDashLauncher CLI を使えるようにしました。新しく開いたターミナルから qdl で使えます',

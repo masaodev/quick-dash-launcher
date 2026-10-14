@@ -140,7 +140,7 @@ describe('launcher item add', () => {
       'キー windowTitle がありません（--set windowTitle=… で渡してください）'
     );
     const set = await errorOf(runLauncherItemCommand('add', ['--type', 'set', '--name', 'g'], ctx));
-    expect(set.message).toContain('--set entries=');
+    expect(set.message).toContain('--item');
     const path = await errorOf(
       runLauncherItemCommand('update', ['Memo0001', '--unset', 'path'], ctx)
     );
