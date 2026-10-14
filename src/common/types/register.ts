@@ -56,4 +56,6 @@ export interface RegisterItem {
   setEntries?: SetEntry[];
   /** セットの開き方（set専用） */
   setLaunchMode?: SetLaunchMode;
+  /** 登録し直すときに引き継ぐ id（保存先のファイルを変えた編集。セットの行が id で指しているので変えない） */
+  keepId?: string;
 }

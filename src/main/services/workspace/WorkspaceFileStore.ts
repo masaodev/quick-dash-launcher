@@ -123,7 +123,12 @@ export interface WorkspaceFileStoreHooks {
    * グループ・ウィンドウ配置をセットに変換する前の準備（スナップショットを作り、グループの名前の解決表を返す）。
    * 省略すると変換しない（テスト）。失敗したら変換しない
    */
-  prepareSetMigration?: () => Promise<{ resolveName: GroupNameResolver; parallel: boolean }>;
+  prepareSetMigration?: () => Promise<{
+    resolveName: GroupNameResolver;
+    parallel: boolean;
+    /** 変換する前のスナップショットを作る（変換するものがあるときだけ呼ぶ。失敗したら投げる） */
+    snapshot: () => Promise<void>;
+  }>;
   /** 補完・移行に使う現在時刻 */
   now?: () => number;
 }
@@ -360,19 +365,25 @@ export class WorkspaceFileStore {
         const archiveItems =
           isRecord(archive) && Array.isArray(archive.items) ? archive.items : undefined;
         if (hasLegacySetItems(mainItems) || hasLegacySetItems(archiveItems)) {
-          const { resolveName, parallel } = await this.hooks.prepareSetMigration();
+          const { resolveName, parallel, snapshot } = await this.hooks.prepareSetMigration();
           const mode = parallel ? 'parallel' : 'sequential';
-          if (mainItems && isRecord(main)) {
-            const converted = convertLegacySetItems(mainItems, resolveName, mode);
-            if (converted.changed) {
-              mainContent = JSON.stringify({ ...main, items: converted.items });
+          const mainConverted =
+            mainItems && isRecord(main)
+              ? convertLegacySetItems(mainItems, resolveName, mode)
+              : null;
+          const archiveConverted =
+            archiveItems && isRecord(archive)
+              ? convertLegacySetItems(archiveItems, resolveName, mode)
+              : null;
+          // 変換できるものが無い（壊れた旧アイテムだけ）なら、スナップショットも作らない（読み込みのたびに増えるのを防ぐ）
+          if (mainConverted?.changed || archiveConverted?.changed) {
+            await snapshot();
+            if (mainConverted?.changed && isRecord(main)) {
+              mainContent = JSON.stringify({ ...main, items: mainConverted.items });
               forceRewriteMain = true;
             }
-          }
-          if (archiveItems && isRecord(archive)) {
-            const converted = convertLegacySetItems(archiveItems, resolveName, mode);
-            if (converted.changed) {
-              archiveContent = JSON.stringify({ ...archive, items: converted.items });
+            if (archiveConverted?.changed && isRecord(archive)) {
+              archiveContent = JSON.stringify({ ...archive, items: archiveConverted.items });
               forceRewriteArchive = true;
             }
           }

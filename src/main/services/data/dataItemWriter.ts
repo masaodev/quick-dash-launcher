@@ -171,7 +171,7 @@ function registerItemsToJsonFile(dataPath: string, fileName: string, items: Regi
   appendToJsonFile(
     dataPath,
     fileName,
-    items.map((item) => convertRegisterItemToJsonItem(item))
+    items.map((item) => convertRegisterItemToJsonItem(item, item.keepId))
   );
 }
 

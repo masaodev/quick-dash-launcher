@@ -12,6 +12,7 @@ import { mainI18n } from './mainI18n.js';
 
 /** 外部変更の変更前スナップショットのフォルダ名サフィックス */
 const PRE_EXTERNAL_SUFFIX = '_pre-external';
+const PRE_SET_MIGRATION_SUFFIX = '_pre-set-migration';
 /**
  * スナップショットのフォルダ名の規則: `<タイムスタンプ>[-<連番>][_<サフィックス>]`
  * （1: タイムスタンプ 2: 同じ秒に作ったときの連番（2 から） 3: `_pre-restore` などのサフィックス）
@@ -251,14 +252,17 @@ export class BackupService {
    * 保持件数超過分の古いスナップショットを削除
    *
    * _pre-external は cleanupPreExternalSnapshots() が別枠で管理するため数に入れない
-   * （数に入れると、外部編集を繰り返したときに日次スナップショットが押し出される）
+   * （数に入れると、外部編集を繰り返したときに日次スナップショットが押し出される）。
+   * _pre-set-migration は前の版に戻すときの唯一の拠り所なので消さない（作るのは 1 回だけ）
    */
   private async cleanupOldSnapshots(): Promise<void> {
     if (!this.settingsService) return;
 
     const backupRetention = await this.settingsService.get('backupRetention');
     const snapshots = (await this.listSnapshots()).filter(
-      (s) => !s.timestamp.endsWith(PRE_EXTERNAL_SUFFIX)
+      (s) =>
+        !s.timestamp.endsWith(PRE_EXTERNAL_SUFFIX) &&
+        !s.timestamp.endsWith(PRE_SET_MIGRATION_SUFFIX)
     );
 
     const toDelete = snapshots.slice(backupRetention);

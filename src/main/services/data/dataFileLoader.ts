@@ -256,7 +256,23 @@ export async function loadDataFilesWithReport(configFolder: string): Promise<Dat
 
   // 旧形式のグループ・ウィンドウ配置をセットに変換したら、変換後の内容で読み直す（2 回目は変換するものが無い）
   if (await migrateLegacySetItemsInDataFiles(configFolder, allFiles, items)) {
-    return loadDataFilesWithReport(configFolder);
+    const again = await loadDataFilesWithReport(configFolder);
+    // 1 回目で見つけた外部変更・採番などは 2 回目では消えている（前回の内容を覚え直した）ので、足して返す
+    const changedFiles = new Set(externallyChanged.map((f) => f.relativePath));
+    for (const report of again.fileReports) {
+      const first = fileReports.find((r) => r.file === report.file);
+      if (!first) continue;
+      if (changedFiles.has(report.file)) report.externallyChanged = true;
+      report.issues = [...first.issues, ...report.issues];
+      report.rewritten = report.rewritten || first.rewritten;
+    }
+    return {
+      ...again,
+      externallyChanged: [
+        ...externallyChanged,
+        ...again.externallyChanged.filter((f) => !changedFiles.has(f.relativePath)),
+      ],
+    };
   }
 
   // displayNameでソート
@@ -296,6 +312,7 @@ async function migrateLegacySetItemsInDataFiles(
   loadedItems: readonly AppItem[]
 ): Promise<boolean> {
   const targets: { filePath: string; raw: Record<string, unknown> & { items: unknown[] } }[] = [];
+  let unreadable = false;
   for (const fileName of fileNames) {
     const filePath = path.join(configFolder, fileName);
     const content = FileUtils.safeReadTextFile(filePath);
@@ -307,9 +324,32 @@ async function migrateLegacySetItemsInDataFiles(
       }
     } catch {
       // 壊れたファイルは通常の読み込みが報告する
+      unreadable = true;
     }
   }
   if (targets.length === 0) return false;
+  // 読めないファイルがあると、そのファイルのアイテムを指すグループの名前を解決できず、名前だけの行に変えてしまう。直るまで待つ
+  if (unreadable) {
+    dataLogger.warn('読めないデータファイルがあるので、セットへの変換を保留します');
+    return false;
+  }
+
+  const settingsService = await SettingsService.getInstance();
+  const parallel = await settingsService.getLegacyParallelGroupLaunch();
+  const resolveName = buildGroupNameResolver(loadedItems);
+  const conversions = targets
+    .map(({ filePath, raw }) => ({
+      filePath,
+      raw,
+      converted: convertLegacySetItems(
+        raw.items,
+        resolveName,
+        parallel ? 'parallel' : 'sequential'
+      ),
+    }))
+    .filter(({ converted }) => converted.changed);
+  // 変換できるものが無い（壊れた旧アイテムだけ）なら、スナップショットも作らない（読み込みのたびに増えるのを防ぐ）
+  if (conversions.length === 0) return false;
 
   try {
     const backupService = await BackupService.getInstance();
@@ -322,17 +362,8 @@ async function migrateLegacySetItemsInDataFiles(
     return false;
   }
 
-  const settingsService = await SettingsService.getInstance();
-  const parallel = await settingsService.getLegacyParallelGroupLaunch();
-  const resolveName = buildGroupNameResolver(loadedItems);
   let rewritten = false;
-  for (const { filePath, raw } of targets) {
-    const converted = convertLegacySetItems(
-      raw.items,
-      resolveName,
-      parallel ? 'parallel' : 'sequential'
-    );
-    if (!converted.changed) continue;
+  for (const { filePath, raw, converted } of conversions) {
     const data = { ...raw, items: converted.items } as unknown as JsonDataFile;
     if (writeDataFile(filePath, serializeJsonDataFile(data))) {
       rewritten = true;

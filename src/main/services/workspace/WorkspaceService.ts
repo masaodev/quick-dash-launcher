@@ -110,12 +110,14 @@ export class WorkspaceService {
             await backupService.createPreMigrationSnapshot();
           },
           prepareSetMigration: async () => {
-            const backupService = await BackupService.getInstance();
-            await backupService.createPreSetMigrationSnapshot();
             const settingsService = await SettingsService.getInstance();
             return {
               resolveName: readDataFileNameResolver(),
               parallel: await settingsService.getLegacyParallelGroupLaunch(),
+              snapshot: async () => {
+                const backupService = await BackupService.getInstance();
+                await backupService.createPreSetMigrationSnapshot();
+              },
             };
           },
         }

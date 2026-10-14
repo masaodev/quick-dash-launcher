@@ -125,6 +125,21 @@ describe('dataItemWriter', () => {
     expect(getCorruptedDataFiles()).toContain('datafiles/data.json');
   });
 
+  it('keepId があれば、その id で登録すること（保存先を変えた編集でセットの行を切らない）', () => {
+    writeFile('datafiles/data2.json', JSON.stringify({ version: '1.0', items: [] }));
+    registerItems(tempRoot.dir, [
+      {
+        displayName: 'X',
+        path: 'C:/x.exe',
+        type: 'app',
+        targetTab: 'datafiles/data2.json',
+        itemCategory: 'item',
+        keepId: 'Keep0001',
+      },
+    ]);
+    expect(readItems('datafiles/data2.json').map((i) => i.id)).toEqual(['Keep0001']);
+  });
+
   it('登録先ファイルごとに追記すること', () => {
     writeFile('datafiles/data.json', JSON.stringify({ version: '1.0', items: [] }));
 

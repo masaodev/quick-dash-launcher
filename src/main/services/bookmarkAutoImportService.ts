@@ -136,6 +136,13 @@ export class BookmarkAutoImportService {
       const dataFilePath = this.getDataFilePath(rule.targetFile);
       const jsonData = this.loadDataFile(dataFilePath);
 
+      // 同じ URL のものは前回の id を引き継ぐ（セットの行が id で指しているので、取込のたびに切らない）
+      const previousIds = new Map<string, string[]>();
+      for (const item of jsonData.items) {
+        if (item.type !== 'item' || item.autoImportRuleId !== rule.id) continue;
+        previousIds.set(item.path, [...(previousIds.get(item.path) ?? []), item.id]);
+      }
+
       // autoImportRuleId === rule.id のアイテムを全削除
       const deletedCount = this.removeItemsByRuleId(jsonData, rule.id);
 
@@ -147,7 +154,7 @@ export class BookmarkAutoImportService {
       for (const bookmark of allBookmarks) {
         const displayName = buildBookmarkDisplayName(bookmark, rule);
         const newItem: JsonLauncherItem = {
-          id: generateId(),
+          id: previousIds.get(bookmark.url)?.shift() ?? generateId(),
           type: 'item',
           displayName,
           path: bookmark.url,

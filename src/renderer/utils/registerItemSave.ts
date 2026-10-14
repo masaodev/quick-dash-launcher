@@ -30,7 +30,8 @@ export async function saveRegisterItems(
 
   if (isFileChanged) {
     await window.electronAPI.deleteItemsById([{ id: itemId }]);
-    await window.electronAPI.registerItems([item]);
+    // id を引き継ぐ（変えるとセットの行が「アイテムが見つかりません」になる）
+    await window.electronAPI.registerItems([{ ...item, keepId: itemId }]);
   } else if (item.itemCategory === 'dir') {
     await window.electronAPI.updateDirItemById(itemId, item.path, item.dirOptions, item.memo);
   } else if (item.itemCategory === 'window') {
