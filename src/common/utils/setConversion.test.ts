@@ -93,10 +93,12 @@ describe('convertLayoutToSet', () => {
       entries: [
         {
           open: { path: 'wt.exe', args: '-p "Git Bash"' },
+          label: 'ai-workspace',
           window: { processName: 'WindowsTerminal.exe', title: '*ai-workspace*' },
           placement: { x: 0, y: 0, width: 960, height: 1040, virtualDesktopNumber: 2 },
         },
         {
+          label: '付箋',
           window: { processName: 'ApplicationFrameHost.exe', title: '*付箋*' },
           placement: { x: 1600, y: 0, width: 320, height: 400 },
         },

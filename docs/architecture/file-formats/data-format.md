@@ -423,7 +423,7 @@ CSV 形式（`data*.txt`）は v0.6.1 で廃止しました。経緯は v0.6.1 �
 `validateJsonSetItem`・`validateSetEntry`（`src/common/utils/jsonParser.ts`）が検証する。
 
 - `displayName` が空でない文字列でない、`entries` が配列でない、行がオブジェクトでないときは、セット全体が不正（5.1）
-- 行の中は知っているキーだけを写し、型の合わないものは黙って捨てる。捨てられるのは、空文字の文字列、有限の数でない数値、`path` の無い `open`、`"maximized"` 以外の `state`、`"move"`・`"openNew"` 以外の `ifOpen`、真偽値でない `activateWindow`、0 以下の `waitSeconds`、未知のキー
+- 行の中は知っているキーだけを写し、型の合わないものは黙って捨てる。捨てられるのは、空文字の文字列、有限の数でない数値、`path` の無い `open`、`"maximized"` 以外の `state`、`"move"`・`"openNew"` 以外の `ifOpen`、真偽値でない `activateWindow`、0 以下の `waitSeconds`、未知のキー。中身の無い `window`（`processName`・`title` のどちらも無い）と `placement`（キーが 1 つも無い）も捨てる（どのウィンドウにも合う・位置のある行に数えられるのを防ぐ）
 - `launchMode` は `"sequential"`・`"parallel"` 以外なら捨てる（順番に開く扱い）
 
 #### 3.3.5. 動作仕様
@@ -431,7 +431,7 @@ CSV 形式（`data*.txt`）は v0.6.1 で廃止しました。経緯は v0.6.1 �
 実行は `executeSet`（`src/main/services/launch/setExecutor.ts`）。
 
 1. **開き方**: 順番に開くときは、行を開いてから次の行を開くまで 100ms（`GROUP_LAUNCH_DELAY_MS`、`src/common/constants.ts`）あける。ウィンドウを待って位置を合わせる処理は並行して続け、次の行はその完了を待たない。同時に開くときは全部の行を一度に始める
-2. **位置の無い行**: 指すアイテムがウィンドウアイテムなら、そのウィンドウを探して前に出す。それ以外は、`ifOpen` が `"move"` で `window`（無ければアイテムの `windowConfig`）に合うウィンドウがあれば前に出すだけ、無ければ開く
+2. **位置の無い行**: 指すアイテムがウィンドウアイテムなら、そのウィンドウを探して前に出す。開くものの無い行（動かすだけ）は、`window` に合うウィンドウを前に出す（無ければ失敗）。それ以外は、`ifOpen` が `"move"` で `window`（無ければアイテムの `windowConfig`）に合うウィンドウが見つかれば前に出すだけ（Windows に前面化を断られても開き直さない）、無ければ開く
 3. **位置のある行**: `window` で探す（3.3.2）。`ifOpen` が `"move"` で見つかれば開かずに動かす。見つからない、または `"openNew"` なら開いて、500ms（`SET_WINDOW_POLL_MS`）おきに `waitSeconds` 秒まで探す。`"openNew"` のときは開く前からあったウィンドウを除く。見つかったら、最小化の解除・位置と大きさ・仮想デスクトップ・前面化を当て（`applyWindowConfig`、`src/main/utils/windowActivator.ts`）、`state` が `"maximized"` なら最大化する
 4. **取り合わない**: 1 回の実行の中で、ある行が使うと決めたウィンドウは、ほかの行の候補から外す
 5. **探す相手が決まらない行**: `window` が無く開くものが exe でない（URL など）行は、位置があっても開くだけ
@@ -445,7 +445,7 @@ CSV 形式（`data*.txt`）は v0.6.1 で廃止しました。経緯は v0.6.1 �
 | --- | --- |
 | 旧グループの `itemNames` の名前 | 全データファイルのアイテムから同じ表示名の通常アイテム・ウィンドウアイテムを探し（同じ名前が複数あれば後のもの）、`itemId` の行にする。フォルダ取込で展開したアイテムは `open`（パスと引数）と `label` の行、見つからない名前は `label` だけの行 |
 | 旧グループの開き方 | 削除した設定 `parallelGroupLaunch`（[設定ファイル形式 3.9](settings-format.md#39-旧グループの開き方削除した設定)）が true なら `launchMode: "parallel"`、それ以外は省略（順番に開く） |
-| 旧ウィンドウ配置の各ウィンドウ | `processName` と `windowTitle` を `window` に写す。タイトルは前後に `*` を付けて部分一致にする（もともと付いていれば付けない）。`x`・`y`・`width`・`height`・`virtualDesktopNumber` を `placement` に写す。`launchApp` が true で `executablePath` があれば、`executablePath`・`args` を `open` にする |
+| 旧ウィンドウ配置の各ウィンドウ | `processName` と `windowTitle` を `window` に写す。タイトルは前後に `*` を付けて部分一致にする（もともと付いていれば付けない）。前後の `*` と空白を除いたタイトルを `label` にする。`x`・`y`・`width`・`height`・`virtualDesktopNumber` を `placement` に写す（座標が 1 つも無ければ `placement` を付けない）。`launchApp` が true で `executablePath` があれば、`executablePath`・`args` を `open` にする |
 | 旧ウィンドウ配置の開き方 | `launchMode: "parallel"` |
 
 - `id`・`displayName`・`memo`・`updatedAt` は引き継ぐ。`customIcon` は旧ウィンドウ配置だけが持っていたので、そこからだけ引き継ぐ

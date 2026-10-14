@@ -63,6 +63,9 @@ export function convertLayoutEntryToSetEntry(entry: LayoutWindowEntry): SetEntry
       : { path: entry.executablePath };
   }
   const title = entry.windowTitle ? toPartialMatchTitle(entry.windowTitle) : undefined;
+  // 旧ウィンドウ配置の画面はウィンドウタイトルを行の名前として出していた（無いとパスの末尾になり、何の行か分からない）
+  const label = entry.windowTitle?.replace(/^[\s*]+|[\s*]+$/g, '');
+  if (label) result.label = label;
   if (entry.processName || title) {
     result.window = {
       ...(entry.processName ? { processName: entry.processName } : {}),
