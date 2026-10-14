@@ -21,6 +21,9 @@ import IconFetchButton from './IconFetchButton';
 import ClipboardItemEditor from './ClipboardItemEditor';
 import SetEntriesEditor from './SetEntriesEditor';
 
+/** 行の無いセットに渡す空の配列（描き直しのたびに新しい配列を渡すと、記録の画面が選んだ内容をやり直す） */
+const NO_SET_ENTRIES: SetEntry[] = [];
+
 /** フォームの 1 項目に入れられる値 */
 export type ItemFieldValue =
   | string
@@ -221,7 +224,7 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
 
       {item.itemCategory === 'set' && (
         <SetEntriesEditor
-          entries={item.setEntries ?? []}
+          entries={item.setEntries ?? NO_SET_ENTRIES}
           launchMode={item.setLaunchMode}
           onChange={(patch) => onUpdate(patch)}
           currentFile={setIncludesWorkspace ? undefined : item.targetFile || item.targetTab}

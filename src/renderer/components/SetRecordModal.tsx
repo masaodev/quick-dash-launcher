@@ -378,7 +378,10 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
                       : view.holding === 'none'
                         ? t('set.record.outcomeFrontOnly')
                         : t('set.record.outcomeOpenOnly');
-                    const sub = t('set.record.reasonWithOutcome', { reason, outcome });
+                    // アイテムが見つからない行は、記録しても開けないので理由だけを出す
+                    const sub = view.missing
+                      ? t('set.editor.missing')
+                      : t('set.record.reasonWithOutcome', { reason, outcome });
                     return (
                       <div key={`f${i}`} className="set-record-row">
                         {iconOf(i)}
