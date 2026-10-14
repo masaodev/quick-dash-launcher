@@ -11,6 +11,7 @@ import type {
   WindowItem,
   ClipboardItem,
   LayoutItem,
+  SetItem,
 } from './launcher';
 import type { WindowInfo } from './window';
 
@@ -55,7 +56,8 @@ export function isLauncherItem(item: AppItem): item is LauncherItem {
     item.type !== 'group' &&
     item.type !== 'window' &&
     item.type !== 'clipboard' &&
-    item.type !== 'layout'
+    item.type !== 'layout' &&
+    item.type !== 'set'
   );
 }
 
@@ -118,4 +120,14 @@ export function isClipboardItem(item: AppItem): item is ClipboardItem {
  */
 export function isLayoutItem(item: AppItem): item is LayoutItem {
   return !isWindowInfo(item) && item.type === 'layout';
+}
+
+/**
+ * SetItemかどうかを判定する型ガード
+ *
+ * @param item - 判定対象のAppItem
+ * @returns SetItemの場合true
+ */
+export function isSetItem(item: AppItem): item is SetItem {
+  return !isWindowInfo(item) && item.type === 'set';
 }

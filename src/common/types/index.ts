@@ -19,6 +19,12 @@ export type {
   LayoutEntryStatus,
   LayoutEntryProgress,
   LayoutExecutionProgress,
+  SetItem,
+  SetEntry,
+  SetWindowMatch,
+  SetPlacement,
+  SetOpenTarget,
+  SetLaunchMode,
   AppItem,
 } from './launcher';
 
@@ -82,6 +88,7 @@ export type {
   JsonWindowItem,
   JsonClipboardItem,
   JsonLayoutItem,
+  JsonSetItem,
   DirOptionsForProcessing,
 } from './json-data';
 export {
@@ -91,6 +98,7 @@ export {
   isJsonWindowItem,
   isJsonClipboardItem,
   isJsonLayoutItem,
+  isJsonSetItem,
   JSON_DATA_VERSION,
   JSON_ID_LENGTH,
   DIR_OPTIONS_DEFAULTS,
@@ -212,4 +220,5 @@ export {
   isWindowItem,
   isClipboardItem,
   isLayoutItem,
+  isSetItem,
 } from './guards';

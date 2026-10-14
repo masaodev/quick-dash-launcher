@@ -5,7 +5,7 @@
  * CSV形式からの移行後に使用される
  */
 
-import type { WindowConfig, LayoutWindowEntry } from './launcher';
+import type { WindowConfig, LayoutWindowEntry, SetEntry, SetLaunchMode } from './launcher';
 import type { ClipboardFormat } from './clipboard';
 
 // ============================================================
@@ -35,7 +35,8 @@ export type JsonItem =
   | JsonGroupItem
   | JsonWindowItem
   | JsonClipboardItem
-  | JsonLayoutItem;
+  | JsonLayoutItem
+  | JsonSetItem;
 
 // ============================================================
 // 共通フィールド
@@ -268,6 +269,30 @@ export interface JsonLayoutItem extends JsonItemBase {
 }
 
 // ============================================================
+// セット (type: "set")
+// ============================================================
+
+/**
+ * セットアイテム
+ * 複数のアイテムをまとめて開き、必要なら決まった位置に並べる（グループとウィンドウ配置を統合した種別）
+ */
+export interface JsonSetItem extends JsonItemBase {
+  /** アイテムタイプ */
+  type: 'set';
+  /**
+   * セットの表示名
+   * @minLength 1
+   */
+  displayName: string;
+  /** 行の一覧（上から順に開く） */
+  entries: SetEntry[];
+  /** 開き方（省略時は順番に） */
+  launchMode?: SetLaunchMode;
+  /** カスタムアイコンファイル名（オプション） */
+  customIcon?: string;
+}
+
+// ============================================================
 // 型ガード関数
 // ============================================================
 
@@ -311,6 +336,13 @@ export function isJsonClipboardItem(item: JsonItem): item is JsonClipboardItem {
  */
 export function isJsonLayoutItem(item: JsonItem): item is JsonLayoutItem {
   return item.type === 'layout';
+}
+
+/**
+ * JsonSetItemかどうかを判定
+ */
+export function isJsonSetItem(item: JsonItem): item is JsonSetItem {
+  return item.type === 'set';
 }
 
 // ============================================================
