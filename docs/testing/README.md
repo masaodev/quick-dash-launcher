@@ -11,7 +11,7 @@ QuickDashLauncherのテスト関連ドキュメントです。
 npm run test            # ウォッチモード（ファイル変更のたびに再実行）
 npm run test:unit       # ワンショット実行
 npm run test:ui         # Vitest UI（ブラウザで結果を確認）
-npm run test:coverage   # カバレッジレポート付き
+npm run test:coverage   # カバレッジレポート付き（閾値を下回ると失敗）
 
 # CLI（cli/、Rust の cargo test。Rust が要る）
 npm run test:cli
@@ -51,8 +51,10 @@ npx playwright test -g "新規アイテムを登録できる"                   
 
 個別モジュールや関数レベルのテスト。
 
-- **テストファイル**: `src/**/*.{test,spec}.{js,ts,jsx,tsx}` と `tests/unit/**/*.{test,spec}.{js,ts,jsx,tsx}`（`vitest.config.mts` の `include`）。`tests/e2e/` は対象外
-- **セットアップ**: `tests/unit/setup.ts`（jsdom 環境。React Testing Library のクリーンアップと `window.matchMedia`・`electronAPI` のモックを設定）
+- **テストファイル**: `src/**/*.{test,spec}.{js,ts,jsx,tsx}` と `tests/unit/**/*.{test,spec}.{js,ts,jsx,tsx}`。`tests/e2e/` は対象外
+- **実行環境**: `vitest.config.mts` の `projects` で 2 つに分ける。`src/main/` と `tests/unit/main/` のテストは node（プロジェクト名 `main`）、それ以外は jsdom（`renderer`）。片方だけ流すときは `npx vitest run --project main`
+- **カバレッジの閾値**: `vitest.config.mts` の `coverage.thresholds`（`src/main/` は対象外）
+- **セットアップ**: `tests/unit/setup.ts`（`renderer` だけ。React Testing Library のクリーンアップと `window.matchMedia`・`electronAPI` のモックを設定）
 - **ヘルパー**: `src/test/helpers/pathTestHelper.ts`
 - **実行**: `npm run test:unit`
 
