@@ -13,20 +13,10 @@ import { windowInfoToWindowItem } from '@common/utils/windowInfoConverter';
 
 import { getTooltipText } from '../utils/tooltipTextGenerator';
 import { logError } from '../utils/debug';
+import { ITEM_TYPE_ICONS } from '../utils/itemTypeIcons';
 
 import MemoViewModal from './MemoViewModal';
 import '../styles/components/MemoViewModal.css';
-
-const DEFAULT_ICONS: Record<string, string> = {
-  url: '🌐',
-  folder: '📁',
-  app: '⚙️',
-  file: '📄',
-  customUri: '🔗',
-  window: '🪟',
-  clipboard: '📋',
-  set: '📦',
-};
 
 interface ItemListProps {
   items: AppItem[];
@@ -276,7 +266,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
       return '🪟';
     }
 
-    return DEFAULT_ICONS[item.type] || '❓';
+    return ITEM_TYPE_ICONS[item.type] || '❓';
   }
 
   // ドラッグ&ドロップハンドラー（ワークスペースへの追加用）

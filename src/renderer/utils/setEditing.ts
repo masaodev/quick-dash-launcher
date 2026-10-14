@@ -19,6 +19,8 @@ import {
   type SetTargetKind,
 } from '@common/utils/setWindowMatching';
 
+import { ITEM_TYPE_ICONS } from './itemTypeIcons';
+
 /** セットに追加できるアイテム（追加の画面の 1 行） */
 export interface SetCatalogItem {
   /** 一覧の中で一意のキー（id、展開分は "dir:" ＋パス） */
@@ -325,13 +327,5 @@ export function setEntryNames(entries: readonly SetEntry[], items: readonly AppI
     .filter((name) => name !== '');
 }
 
-/** アイコンが取れていないときの、種類ごとの絵文字（メイン画面と同じ） */
-export const SET_KIND_ICONS: Record<string, string> = {
-  url: '🌐',
-  folder: '📁',
-  app: '⚙️',
-  file: '📄',
-  customUri: '🔗',
-  window: '🪟',
-  none: '🖥️',
-};
+/** アイコンが取れていないときの、種類ごとの絵文字（メイン画面と同じ表に、動かすだけの行を足す） */
+export const SET_KIND_ICONS: Readonly<Record<string, string>> = { ...ITEM_TYPE_ICONS, none: '🖥️' };
