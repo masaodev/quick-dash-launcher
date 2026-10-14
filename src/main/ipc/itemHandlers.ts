@@ -12,7 +12,7 @@ import { expandEnvironmentVariables } from '../services/icon/iconFileCache.js';
 import { launchItem } from '../utils/itemLauncher.js';
 import { hideLayoutProgressWindow, showToastWindow } from '../services/overlayWindowService.js';
 import { hideMainWindowOnExecute } from '../windowManager.js';
-import { executeSet } from '../services/launch/setExecutor.js';
+import { executeSet, notifySetFailures } from '../services/launch/setExecutor.js';
 import { mainI18n } from '../services/mainI18n.js';
 
 /**
@@ -114,7 +114,8 @@ export function setupItemHandlers(): void {
     for (const appItem of allItems) {
       if ('id' in appItem && appItem.id) byId.set(appItem.id, appItem);
     }
-    await executeSet(item, (itemId) => byId.get(itemId));
+    const result = await executeSet(item, (itemId) => byId.get(itemId));
+    await notifySetFailures(item, result);
   });
 
   ipcMain.on(IPC_CHANNELS.CLOSE_LAYOUT_PROGRESS_WINDOW, () => {

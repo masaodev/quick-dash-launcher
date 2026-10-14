@@ -37,7 +37,13 @@ import { isUnresolvedEntry } from '@common/utils/setWindowMatching';
 import { applyWindowConfig, tryActivateWindow } from '../../utils/windowActivator.js';
 import { findWindowHwndByTitle, maximizeWindow } from '../../utils/nativeWindowControl.js';
 import { launchItem, type LaunchableItem } from '../../utils/itemLauncher.js';
-import { getLayoutProgressWindow, showLayoutProgressWindow } from '../overlayWindowService.js';
+import {
+  getLayoutProgressWindow,
+  LONG_TOAST_DURATION_MS,
+  markLayoutProgressFinished,
+  showLayoutProgressWindow,
+  showToastWindow,
+} from '../overlayWindowService.js';
 import { mainI18n } from '../mainI18n.js';
 
 /** 開いてからウィンドウが出るのを待つ既定の秒数 */
@@ -62,6 +68,8 @@ interface ResolvedEntry {
 /** 行の結果 */
 export interface SetEntryResult {
   index: number;
+  /** 行の名前（失敗を知らせるときに使う） */
+  name: string;
   success: boolean;
   error?: string;
 }
@@ -198,6 +206,7 @@ const defaultDeps: SetExecutorDeps = {
       if (!win) return;
       const labels = { cancel: mainI18n.t('common.cancel'), close: mainI18n.t('common.close') };
       win.webContents.send(LAYOUT_PROGRESS_CHANNELS[eventType], { ...progress, labels });
+      if (eventType === 'complete') markLayoutProgressFinished();
     },
     onCancel: (handler) => {
       ipcMain.once(IPC_CHANNELS.LAYOUT_CANCEL, handler);
@@ -249,13 +258,30 @@ export async function executeSet(
   }
 
   const results: SetEntryResult[] = [];
+  /**
+   * どれかの行が位置を合わせると決めたウィンドウ。同じアプリのウィンドウが 2 つあり、見つけ方が同じ行が 2 つ
+   * あるとき、2 つの行が同じウィンドウを取り合わないように、ほかの行が取ったものは除いて探す
+   */
+  const claimed = new Set<bigint>();
+  const findUnclaimed = (config: WindowConfig, exclude?: ReadonlySet<bigint>) => {
+    const skip = new Set<bigint>(claimed);
+    for (const hwnd of exclude ?? []) skip.add(hwnd);
+    const found = deps.findWindow(config, skip);
+    if (found !== null) claimed.add(found);
+    return found;
+  };
   const update = (index: number, status: LayoutEntryProgress['status'], error?: string) => {
     progress.entries[index].status = status;
     if (error) progress.entries[index].errorMessage = error;
     if (showProgress) deps.progress!.send('update', progress);
   };
   const finish = (index: number, error?: string) => {
-    results.push({ index, success: !error, ...(error ? { error } : {}) });
+    results.push({
+      index,
+      name: resolved[index].name,
+      success: !error,
+      ...(error ? { error } : {}),
+    });
     update(index, error ? 'failed' : 'success', error);
   };
 
@@ -311,7 +337,7 @@ export async function executeSet(
         return finish(index);
       }
 
-      let hwnd = entry.ifOpen === 'openNew' ? null : deps.findWindow(config);
+      let hwnd = entry.ifOpen === 'openNew' ? null : findUnclaimed(config);
       if (hwnd === null) {
         if (!r.launch) return finish(index, mainI18n.t('layout.windowNotFound'));
         // もう 1 つ開くときは、開く前からあるウィンドウを除いて新しいものを待つ
@@ -351,7 +377,7 @@ export async function executeSet(
     const deadline = waitSeconds * 1000;
     for (let elapsed = 0; elapsed < deadline; elapsed += SET_WINDOW_POLL_MS) {
       if (cancelled) return null;
-      const found = deps.findWindow(config, exclude);
+      const found = findUnclaimed(config, exclude);
       if (found !== null) return found;
       await deps.sleep(SET_WINDOW_POLL_MS);
     }
@@ -389,4 +415,27 @@ export async function executeSet(
     'セットの実行が終わりました'
   );
   return summary;
+}
+
+/**
+ * 開けなかった行をトーストで知らせる
+ *
+ * 置き場所のある行があるセットは進み具合の表示に結果が出るので、ここでは知らせない
+ */
+export async function notifySetFailures(
+  item: Pick<SetItem, 'displayName' | 'entries'>,
+  result: SetExecutionResult
+): Promise<void> {
+  if (result.cancelled || result.errorCount === 0) return;
+  if (item.entries.some((entry) => entry.placement)) return;
+  const names = result.entries.filter((r) => !r.success).map((r) => r.name || '?');
+  await showToastWindow({
+    displayName: item.displayName,
+    type: 'warning',
+    message: `${item.displayName}: ${mainI18n.t('set.errors.someFailed', {
+      count: names.length,
+      names: names.join(', '),
+    })}`,
+    duration: LONG_TOAST_DURATION_MS,
+  });
 }

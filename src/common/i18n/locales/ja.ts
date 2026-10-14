@@ -537,6 +537,8 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     errors: {
       itemNotFound: '参照先のアイテムが見つかりません',
       unsupportedType: 'この種類のアイテムはセットから開けません',
+      someFailed_one: '{{count}} 件を開けませんでした: {{names}}',
+      someFailed_other: '{{count}} 件を開けませんでした: {{names}}',
     },
     picker: {
       title: 'セットに追加するアイテム',

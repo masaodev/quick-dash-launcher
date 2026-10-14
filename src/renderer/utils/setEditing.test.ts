@@ -5,6 +5,7 @@ import {
   describeSetEntry,
   entryOpensAsTab,
   linkEntryToWindow,
+  setEntryNames,
   windowPickNotes,
 } from './setEditing';
 
@@ -84,5 +85,24 @@ describe('entryOpensAsTab', () => {
     expect(entryOpensAsTab(view('customUri'))).toBe(false);
     expect(entryOpensAsTab(view('app'))).toBe(false);
     expect(entryOpensAsTab(view('none'))).toBe(false);
+  });
+});
+
+describe('setEntryNames', () => {
+  it('登録済みはアイテムの名前、それ以外は行の名前かパスの最後を使う', () => {
+    const items = [
+      { id: 'aaaa1111', type: 'url', displayName: 'Gmail', path: 'https://mail.google.com/' },
+    ] as unknown as Parameters<typeof setEntryNames>[1];
+    expect(
+      setEntryNames(
+        [
+          { itemId: 'aaaa1111' },
+          { label: '消した議事録' },
+          { open: { path: 'C:\\Windows\\System32\\WFS.exe' } },
+          { window: { processName: 'notepad.exe' } },
+        ],
+        items
+      )
+    ).toEqual(['Gmail', '消した議事録', 'WFS.exe', 'notepad.exe']);
   });
 });

@@ -27,7 +27,7 @@ import { getIconForItem } from '../services/iconService.js';
 import { withFolderMarker } from '../utils/folderPathProbe.js';
 import { closeDetachedGroupWindow } from '../detachedGroupWindowManager.js';
 import { reloadConfigFiles } from '../services/data/dataFileLoader.js';
-import { executeSet } from '../services/launch/setExecutor.js';
+import { executeSet, notifySetFailures } from '../services/launch/setExecutor.js';
 
 import { notifyWorkspaceChanged } from './notifications.js';
 
@@ -285,6 +285,7 @@ export function setupWorkspaceHandlers(): void {
           if (converted) byId.set(wsItem.id, converted);
         }
         const result = await executeSet(item, (itemId) => byId.get(itemId));
+        await notifySetFailures(item, result);
         logger.info(
           { id: item.id, name: item.displayName, ...result, entries: undefined },
           'Executed set from workspace item'

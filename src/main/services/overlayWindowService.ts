@@ -92,6 +92,8 @@ let overlayWindow: BrowserWindow | null = null;
 let isWindowReady = false;
 let pendingEnsure: Promise<BrowserWindow> | null = null;
 let currentMode: OverlayMode | null = null;
+/** 進み具合の表示が終わった（失敗・中止で「閉じる」を待っている）か。終わった表示はトーストに場所を譲る */
+let progressFinished = false;
 let toastHideTimeout: ReturnType<typeof setTimeout> | null = null;
 
 // 非表示のまま放置されたウィンドウを破棄して DOM・描画面のメモリを解放する
@@ -246,14 +248,25 @@ function applyProgressMode(win: BrowserWindow): void {
   win.setMovable(true);
   applyBounds(win, PROGRESS_WIDTH, PROGRESS_HEIGHT, x, y);
   currentMode = 'progress';
+  progressFinished = false;
+}
+
+/** 進み具合の表示が終わったことを覚える（このあとのトーストは表示を置き換えてよい） */
+export function markLayoutProgressFinished(): void {
+  progressFinished = true;
 }
 
 /**
  * トースト通知を表示する
  */
 export async function showToastWindow(options: ToastOptions): Promise<void> {
-  // 進捗表示中はウィンドウを奪わない（トーストは破棄する）
-  if (currentMode === 'progress' && isWindowValid() && overlayWindow!.isVisible()) {
+  // 進捗表示中はウィンドウを奪わない（トーストは破棄する）。終わった表示はトーストに置き換える
+  if (
+    currentMode === 'progress' &&
+    !progressFinished &&
+    isWindowValid() &&
+    overlayWindow!.isVisible()
+  ) {
     return;
   }
 

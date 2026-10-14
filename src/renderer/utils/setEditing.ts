@@ -308,3 +308,17 @@ export function indexById(items: readonly AppItem[]): Map<string, AppItem> {
   }
   return map;
 }
+
+/** セットの行の名前（トーストで中身を見せる） */
+export function setEntryNames(entries: readonly SetEntry[], items: readonly AppItem[]): string[] {
+  const byId = indexById(items);
+  return entries
+    .map((entry) => {
+      const item = entry.itemId ? byId.get(entry.itemId) : undefined;
+      if (item && 'displayName' in item) return item.displayName;
+      if (entry.label) return entry.label;
+      if (entry.open) return lastSegment(entry.open.path);
+      return entry.window?.title ?? entry.window?.processName ?? '';
+    })
+    .filter((name) => name !== '');
+}

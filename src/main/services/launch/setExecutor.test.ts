@@ -18,6 +18,9 @@ vi.mock('../../utils/itemLauncher.js', () => ({ launchItem: vi.fn() }));
 vi.mock('../overlayWindowService.js', () => ({
   getLayoutProgressWindow: vi.fn(),
   showLayoutProgressWindow: vi.fn(),
+  showToastWindow: vi.fn(),
+  markLayoutProgressFinished: vi.fn(),
+  LONG_TOAST_DURATION_MS: 6000,
 }));
 vi.mock('../mainI18n.js', () => ({ mainI18n: { t: (key: string) => key } }));
 
@@ -95,6 +98,7 @@ describe('executeSet', () => {
     expect(calls).toEqual(['launch:https://mail.google.com/']);
     expect(result.entries[0]).toEqual({
       index: 0,
+      name: '消したアイテム',
       success: false,
       error: 'set.errors.itemNotFound',
     });
@@ -113,6 +117,26 @@ describe('executeSet', () => {
     const result = await executeSet(set, resolve, deps, logger);
     expect(calls).toEqual(['launch:https://mail.google.com/', 'activate:*Terminal*:true']);
     expect(result.successCount).toBe(2);
+  });
+
+  it('同じアプリのウィンドウが 2 つあり、見つけ方が同じ行が 2 つあると、別々のウィンドウを動かす', async () => {
+    const { deps, calls } = makeDeps([
+      { hwnd: 1n, title: '文字コード表', processName: 'charmap.exe' },
+      { hwnd: 2n, title: '文字コード表', processName: 'charmap.exe' },
+    ]);
+    const set: SetItem = {
+      type: 'set',
+      displayName: '並べる',
+      entries: [
+        { window: { processName: 'charmap.exe' }, placement: { x: 0, y: 0 } },
+        {
+          window: { processName: 'charmap.exe', title: '文字コード表' },
+          placement: { x: 500, y: 0 },
+        },
+      ],
+    };
+    await executeSet(set, resolve, deps, logger);
+    expect(calls).toEqual(['place:1', 'place:2']);
   });
 
   it('置き場所のある行は、開いていれば開き直さず位置を合わせ、最大化も当てる', async () => {
@@ -170,8 +194,8 @@ describe('executeSet', () => {
     };
     const result = await executeSet(set, resolve, deps, logger);
     expect(result.entries).toEqual([
-      { index: 0, success: false, error: 'layout.timedOut' },
-      { index: 1, success: true },
+      { index: 0, name: 'never.exe', success: false, error: 'layout.timedOut' },
+      { index: 1, name: 'Gmail', success: true },
     ]);
   });
 

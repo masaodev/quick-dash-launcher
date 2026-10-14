@@ -534,6 +534,8 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     errors: {
       itemNotFound: "Couldn't find the item this row points to",
       unsupportedType: "This kind of item can't be opened from a set",
+      someFailed_one: "Couldn't open {{count}} row: {{names}}",
+      someFailed_other: "Couldn't open {{count}} rows: {{names}}",
     },
     picker: {
       title: 'Items to add to the set',

@@ -36,6 +36,7 @@ import AlertDialog from './components/AlertDialog';
 import { filterItems } from './utils/dataParser';
 import { filterWindowsByDesktopTab } from './utils/windowFilter';
 import { debugLog, logError } from './utils/debug';
+import { setEntryNames } from './utils/setEditing';
 import { useIconProgress } from './hooks/useIconProgress';
 import { useSearchHistory } from './hooks/useSearchHistory';
 import { useRegisterWindow } from './hooks/useRegisterWindow';
@@ -255,6 +256,7 @@ function App(): React.ReactElement {
           displayName: item.displayName,
           itemType: 'set',
           itemCount: item.entries.length,
+          itemNames: setEntryNames(item.entries, mainItems).slice(0, 3),
         });
         await window.electronAPI.executeSet(item, mainItems);
       } else if (isLauncherItem(item)) {
