@@ -99,7 +99,7 @@ export function entryMatchesWindow(entry: MatchableEntry, window: MatchableWindo
   return matchesTarget(entry.target, window);
 }
 
-/** 位置を記録できない行の理由 */
+/** 位置を記録できない行の理由（url は自動では探さない行。手で結び付ければ記録できる） */
 export type UnlinkedReason = 'url' | 'notFound';
 
 /** 自動の結び付けの結果 */
@@ -114,9 +114,18 @@ export interface AutoLinkResult {
   unlinkedEntries: { index: number; reason: UnlinkedReason }[];
 }
 
-/** URL・カスタム URI の行は置き場所を持てない */
-export function canHavePlacement(kind: SetTargetKind): boolean {
+/**
+ * 開くものからウィンドウを自動で探せるか
+ *
+ * URL・カスタム URI は、どのアプリのどのウィンドウが開くか分からないので自動では探さない（手で結び付ける）
+ */
+export function canAutoLink(kind: SetTargetKind): boolean {
   return kind !== 'url' && kind !== 'customUri';
+}
+
+/** 既にあるウィンドウにタブとして開くことがある種類（そのウィンドウごと動く） */
+export function opensAsTab(kind: SetTargetKind): boolean {
+  return kind === 'folder' || kind === 'url';
 }
 
 /**
@@ -134,7 +143,7 @@ export function autoLinkWindows(
 
   for (const entry of entries) {
     // 見つけ方を持つ行（並べるだけの行を含む）は種類によらず探す
-    if (!entry.window && !canHavePlacement(entry.target.kind)) {
+    if (!entry.window && !canAutoLink(entry.target.kind)) {
       unlinkedEntries.push({ index: entry.index, reason: 'url' });
       continue;
     }

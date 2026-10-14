@@ -11,7 +11,7 @@ import {
   type ScreenArea,
 } from '@common/utils/placementLabel';
 import {
-  canHavePlacement,
+  opensAsTab,
   decideWindowMatch,
   placementFromWindow,
   type MatchableEntry,
@@ -199,10 +199,10 @@ export function toMatchableEntry(
   return { index, window: entry.window, target: { kind, path: view.path } };
 }
 
-/** 行に置き場所を付けられるか（URL・カスタム URI は付けない） */
-export function entryCanHavePlacement(view: SetEntryView): boolean {
-  if (view.kind === 'window' || view.kind === 'none') return true;
-  return canHavePlacement(view.kind);
+/** 既にあるウィンドウにタブとして開くことがある行か（フォルダ・Web の URL） */
+export function entryOpensAsTab(view: SetEntryView): boolean {
+  if (view.kind === 'window' || view.kind === 'none') return false;
+  return opensAsTab(view.kind);
 }
 
 /** 位置の表示を文言にする */
@@ -269,17 +269,30 @@ export function entryFromWindow(window: WindowInfo, allWindows: readonly WindowI
   return entry;
 }
 
-/** 行にウィンドウを結び付ける（見つけ方が無ければ決め、置き場所を今の位置にする） */
+/**
+ * 行にウィンドウを結び付ける（見つけ方が無ければ決め、置き場所を今の位置にする）
+ *
+ * 最小化中のウィンドウは座標が画面の外になるので、見つけ方だけ決めて置き場所は前のままにする
+ */
 export function linkEntryToWindow(
   entry: SetEntry,
   window: WindowInfo,
   allWindows: readonly WindowInfo[]
 ): SetEntry {
-  return {
+  const linked: SetEntry = {
     ...entry,
     window: entry.window ?? decideWindowMatch(window, allWindows),
-    placement: placementFromWindow(window),
   };
+  if (window.windowState !== 'minimized') linked.placement = placementFromWindow(window);
+  return linked;
+}
+
+/** 選んだウィンドウについて知らせること（最小化中・管理者権限） */
+export function windowPickNotes(window: WindowInfo): Array<'minimized' | 'elevated'> {
+  const notes: Array<'minimized' | 'elevated'> = [];
+  if (window.windowState === 'minimized') notes.push('minimized');
+  if (window.isElevated) notes.push('elevated');
+  return notes;
 }
 
 /** AppItem の一覧から id で引く表を作る（実行時と同じく id を持つものだけ） */

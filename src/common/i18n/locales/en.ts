@@ -587,10 +587,14 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       newRow: 'Add as a new row',
       linkTo: 'Link to row: {{name}}',
       pickWindow: 'Choose a window',
-      reasonUrl: "URL rows can't be placed",
+      reasonUrl: 'URLs are not matched automatically. Use "Choose window" to link one',
       reasonNotFound: 'No matching window',
       keepPrevious: 'Keeps its previous position',
       placeOnlyNote: "This window can't be reopened, so the row will only place it",
+      noPlacement: 'No position recorded',
+      tabNote: 'If it opens as a tab in an existing window, that whole window moves',
+      minimizedNote: 'Minimized, so its position is not recorded. Restore it first, then record',
+      elevatedNote: 'Runs as administrator, so QDL may not be able to move it',
       confirm: 'Record',
     },
     detail: {
@@ -620,7 +624,8 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       activateYes: 'Yes',
       activateNo: 'No',
       wait: 'Wait for the window (seconds)',
-      urlNoPlacement: "URL rows can't have a position",
+      minimizedPicked:
+        'This window is minimized, so only how to find it was taken. Restore it before taking the position',
       registerAsItem: 'Register as an item',
     },
     placement: {

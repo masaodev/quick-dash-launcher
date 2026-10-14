@@ -8,8 +8,9 @@ import { decideWindowMatch, placementFromWindow } from '@common/utils/setWindowM
 import { useModalKeyboard } from '../hooks/useModalKeyboard';
 import {
   describeSetEntry,
-  entryCanHavePlacement,
+  entryOpensAsTab,
   placementText,
+  windowPickNotes,
   type SetCatalogItem,
 } from '../utils/setEditing';
 import '../styles/components/SetEditor.css';
@@ -44,8 +45,13 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
   const modalRef = useRef<HTMLDivElement>(null);
   const [draft, setDraft] = useState<SetEntry | null>(entry);
   const [picking, setPicking] = useState(false);
+  /** 最後に選んだウィンドウについて知らせること */
+  const [pickNotes, setPickNotes] = useState<Array<'minimized' | 'elevated'>>([]);
 
-  useEffect(() => setDraft(entry), [entry]);
+  useEffect(() => {
+    setDraft(entry);
+    setPickNotes([]);
+  }, [entry]);
   const close = () => {
     if (draft) onChange(draft);
     onClose();
@@ -55,7 +61,6 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
   if (!entry || !draft) return null;
 
   const view = describeSetEntry(draft, catalog);
-  const placeable = entryCanHavePlacement(view);
   const update = (patch: Partial<SetEntry>) =>
     setDraft((prev) => (prev ? { ...prev, ...patch } : prev));
   const updateWindow = (patch: Partial<NonNullable<SetEntry['window']>>) => {
@@ -119,7 +124,7 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
               </>
             )}
 
-            {placeable ? (
+            {
               <>
                 <span className="set-detail-section">{t('set.detail.find')}</span>
                 <label className="set-muted set-detail-sub" htmlFor="set-detail-process">
@@ -179,6 +184,22 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
                     </Button>
                   )}
                 </span>
+                {(entryOpensAsTab(view) || pickNotes.length > 0) && (
+                  <>
+                    <span />
+                    <span>
+                      {entryOpensAsTab(view) && (
+                        <span className="set-note">{t('set.record.tabNote')}</span>
+                      )}
+                      {pickNotes.includes('minimized') && (
+                        <span className="set-note">{t('set.detail.minimizedPicked')}</span>
+                      )}
+                      {pickNotes.includes('elevated') && (
+                        <span className="set-note">{t('set.record.elevatedNote')}</span>
+                      )}
+                    </span>
+                  </>
+                )}
 
                 {draft.placement && (
                   <>
@@ -232,12 +253,7 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
                   </>
                 )}
               </>
-            ) : (
-              <>
-                <span className="set-muted">{t('set.detail.placement')}</span>
-                <span className="set-muted">{t('set.detail.urlNoPlacement')}</span>
-              </>
-            )}
+            }
           </div>
           <div className="modal-actions">
             <Button variant="primary" onClick={close}>
@@ -250,7 +266,13 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
         isOpen={picking}
         onClose={() => setPicking(false)}
         onSelect={(w) => {
-          update({ window: decideWindowMatch(w, [w]), placement: placementFromWindow(w) });
+          // 最小化中は座標が画面の外になるので、見つけ方だけ取る
+          update(
+            w.windowState === 'minimized'
+              ? { window: decideWindowMatch(w, [w]) }
+              : { window: decideWindowMatch(w, [w]), placement: placementFromWindow(w) }
+          );
+          setPickNotes(windowPickNotes(w));
           setPicking(false);
         }}
       />

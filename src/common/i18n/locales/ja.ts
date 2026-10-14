@@ -590,10 +590,14 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       newRow: '新しい行として追加',
       linkTo: '行に結び付ける: {{name}}',
       pickWindow: 'ウィンドウを選ぶ',
-      reasonUrl: 'URL の行は記録できません',
+      reasonUrl: 'URL は自動では探せません。「ウィンドウを選ぶ」で結び付けます',
       reasonNotFound: '合うウィンドウが見つかりません',
       keepPrevious: '前の位置のまま',
       placeOnlyNote: '開き直せないので、並べるだけの行になります',
+      noPlacement: '位置は記録しない',
+      tabNote: '既にあるウィンドウにタブとして開くと、そのウィンドウごと動きます',
+      minimizedNote: '最小化中なので位置は記録しません。元の大きさに戻してから記録してください',
+      elevatedNote: '管理者権限で動いているため、QDL から動かせないことがあります',
       confirm: '記録する',
     },
     detail: {
@@ -623,7 +627,8 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       activateYes: '出す',
       activateNo: '出さない',
       wait: '開くのを待つ（秒）',
-      urlNoPlacement: 'URL の行には置き場所を付けられません',
+      minimizedPicked:
+        '最小化中のウィンドウなので、見つけ方だけ取りました。位置は元の大きさに戻してから取ってください',
       registerAsItem: 'アイテムとして登録',
     },
     placement: {

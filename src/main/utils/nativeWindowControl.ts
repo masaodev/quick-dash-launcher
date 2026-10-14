@@ -19,6 +19,7 @@ const user32 = koffi.load('user32.dll');
 const kernel32 = koffi.load('kernel32.dll');
 const gdiplus = koffi.load('gdiplus.dll');
 const dwmapi = koffi.load('dwmapi.dll');
+const advapi32 = koffi.load('advapi32.dll');
 
 // RECT構造体の定義
 const RECT = koffi.struct('RECT', {
@@ -77,6 +78,22 @@ const QueryFullProcessImageNameW = kernel32.func('QueryFullProcessImageNameW', '
   'uint32', // dwFlags
   'void*', // lpExeName (バッファポインタ)
   koffi.inout(koffi.pointer('uint32', 1)), // lpdwSize (入出力)
+]);
+
+const GetCurrentProcess = kernel32.func('GetCurrentProcess', 'void*', []);
+
+// Win32 API関数の定義（advapi32.dll）
+const OpenProcessToken = advapi32.func('OpenProcessToken', 'bool', [
+  'void*', // ProcessHandle
+  'uint32', // DesiredAccess
+  koffi.out(koffi.pointer('void*', 1)), // TokenHandle
+]);
+const GetTokenInformation = advapi32.func('GetTokenInformation', 'bool', [
+  'void*', // TokenHandle
+  'int', // TokenInformationClass
+  koffi.out(koffi.pointer('uint32', 1)), // TokenInformation（TOKEN_ELEVATION は DWORD 1 つ）
+  'uint32', // TokenInformationLength
+  koffi.out(koffi.pointer('uint32', 1)), // ReturnLength
 ]);
 
 // Win32 API関数の定義（dwmapi.dll）
@@ -368,6 +385,62 @@ export function getExecutablePathFromProcessId(processId: number): string | unde
   }
 }
 
+const TOKEN_QUERY = 0x0008;
+const TOKEN_ELEVATION_CLASS = 20;
+
+/**
+ * プロセスが管理者権限（昇格済み）で動いているか
+ *
+ * @returns 調べられなければ undefined
+ */
+function isProcessHandleElevated(hProcess: unknown): boolean | undefined {
+  const tokenArr: unknown[] = [null];
+  if (!OpenProcessToken(hProcess, TOKEN_QUERY, tokenArr)) return undefined;
+  const token = tokenArr[0];
+  try {
+    const elevation = [0];
+    const returned = [0];
+    if (!GetTokenInformation(token, TOKEN_ELEVATION_CLASS, elevation, 4, returned)) {
+      return undefined;
+    }
+    return elevation[0] !== 0;
+  } finally {
+    CloseHandle(token);
+  }
+}
+
+let selfElevated: boolean | undefined;
+/** QDL 自身が管理者権限で動いているか（一度だけ調べる） */
+function isSelfElevated(): boolean {
+  if (selfElevated === undefined) {
+    try {
+      selfElevated = isProcessHandleElevated(GetCurrentProcess()) ?? false;
+    } catch {
+      selfElevated = false;
+    }
+  }
+  return selfElevated;
+}
+
+/**
+ * ウィンドウのプロセスが QDL より高い権限で動いていて、QDL から動かせないか
+ *
+ * QDL 自身が管理者権限なら常に false。調べられないプロセスも false（知らせない）
+ */
+export function isProcessAboveSelf(processId: number): boolean {
+  if (isSelfElevated()) return false;
+  let hProcess = null;
+  try {
+    hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, processId);
+    if (!hProcess || koffi.address(hProcess) === 0n) return false;
+    return isProcessHandleElevated(hProcess) === true;
+  } catch {
+    return false;
+  } finally {
+    if (hProcess && koffi.address(hProcess) !== 0n) CloseHandle(hProcess);
+  }
+}
+
 /**
  * ウィンドウのクラス名を取得
  * @param hwnd ウィンドウハンドル
@@ -527,6 +600,7 @@ export function getAllWindows(options?: { includeAllVirtualDesktops?: boolean })
         icon,
         desktopNumber,
         isPinned,
+        ...(isProcessAboveSelf(processId) ? { isElevated: true } : {}),
       });
     } catch (error) {
       console.error('Error processing window:', error);

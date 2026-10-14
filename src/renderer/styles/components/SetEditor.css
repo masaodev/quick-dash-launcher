@@ -131,6 +131,12 @@
   display: block;
   color: var(--text-warning);
   font-size: var(--font-size-xs);
+  white-space: normal;
+}
+
+/* 記録の画面は理由や注意を省略せずに折り返す */
+.set-record-row .set-row-name {
+  white-space: normal;
 }
 
 .set-empty {

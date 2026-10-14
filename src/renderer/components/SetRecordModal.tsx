@@ -3,17 +3,18 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import type { SetEntry, WindowInfo } from '@common/types';
 import type { ScreenArea } from '@common/utils/placementLabel';
-import { autoLinkWindows, matchesWindow } from '@common/utils/setWindowMatching';
+import { autoLinkWindows, canAutoLink, matchesWindow } from '@common/utils/setWindowMatching';
 
 import { useModalKeyboard } from '../hooks/useModalKeyboard';
 import {
   describeSetEntry,
-  entryCanHavePlacement,
+  entryOpensAsTab,
   entryFromWindow,
   linkEntryToWindow,
   placementText,
   toMatchableEntry,
   windowDisplayName,
+  windowPickNotes,
   type SetCatalogItem,
 } from '../utils/setEditing';
 import { logError } from '../utils/debug';
@@ -41,13 +42,33 @@ function windowKey(window: WindowInfo): string {
   return String(window.hwnd);
 }
 
+/** ウィンドウについて知らせること（タブとして開く・最小化中・管理者権限） */
+export const WindowNotes: React.FC<{ window: WindowInfo; opensAsTab: boolean }> = ({
+  window: w,
+  opensAsTab,
+}) => {
+  const { t } = useTranslation();
+  const notes = windowPickNotes(w);
+  return (
+    <>
+      {opensAsTab && <span className="set-note">{t('set.record.tabNote')}</span>}
+      {notes.includes('minimized') && (
+        <span className="set-note">{t('set.record.minimizedNote')}</span>
+      )}
+      {notes.includes('elevated') && (
+        <span className="set-note">{t('set.record.elevatedNote')}</span>
+      )}
+    </>
+  );
+};
+
 /**
  * 「今の位置を記録」の確認画面
  *
  * 開いているウィンドウを行と自動で結び付けて 3 つに分けて出し、ウィンドウごとにどうするかを選ばせる
  * - 行と結び付けたウィンドウ: 結び付けたまま／外す
  * - 行に無いウィンドウ: 追加しない（既定）／新しい行として追加／まだ結び付いていない行に結び付ける
- * - 位置を記録できなかった行: 理由を出す。URL 以外は「ウィンドウを選ぶ」で手で結び付けられる
+ * - 位置を記録できなかった行: 理由を出す。「ウィンドウを選ぶ」で手で結び付けられる（URL の行は自動では探さないので、いつもここに出る）
  */
 const SetRecordModal: React.FC<SetRecordModalProps> = ({
   isOpen,
@@ -106,14 +127,16 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
   const assignedKeys = new Set(
     [...assign.values()].filter((w): w is WindowInfo => !!w).map(windowKey)
   );
-  const minimized = (windows ?? []).filter((w) => w.windowState === 'minimized');
+  const minimized = (windows ?? []).filter(
+    (w) => w.windowState === 'minimized' && !assignedKeys.has(windowKey(w))
+  );
   const unlinkedWindows = (windows ?? []).filter(
     (w) => w.windowState !== 'minimized' && !assignedKeys.has(windowKey(w))
   );
   const linkedIndexes = entries.map((_, i) => i).filter((i) => assign.get(i));
   const failedIndexes = entries.map((_, i) => i).filter((i) => !assign.get(i));
-  /** まだウィンドウと結び付いていない、置き場所を付けられる行 */
-  const linkableIndexes = failedIndexes.filter((i) => entryCanHavePlacement(views[i]));
+  /** まだウィンドウと結び付いていない行 */
+  const linkableIndexes = failedIndexes;
 
   const setWindowFor = (index: number, w: WindowInfo | null) => {
     setAssign((prev) => {
@@ -202,13 +225,23 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
               </div>
               {linkedIndexes.map((i) => {
                 const w = assign.get(i)!;
+                const minimizedPick = w.windowState === 'minimized';
                 return (
                   <div key={`l${i}`} className="set-record-row">
                     <span className="set-ok">✓</span>
                     <span className="set-row-name">
                       {nameOf(i)} <span className="set-muted">— {w.title}</span>
+                      <WindowNotes window={w} opensAsTab={entryOpensAsTab(views[i])} />
                     </span>
-                    <span className="set-chip set-chip-place">📍 {placeOf(w)}</span>
+                    {minimizedPick ? (
+                      <span className="set-chip set-chip-muted">
+                        {entries[i].placement
+                          ? t('set.record.keepPrevious')
+                          : t('set.record.noPlacement')}
+                      </span>
+                    ) : (
+                      <span className="set-chip set-chip-place">📍 {placeOf(w)}</span>
+                    )}
                     <select
                       value="keep"
                       onChange={(e) => {
@@ -237,6 +270,7 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
                     {newRows.has(windowKey(w)) && cannotReopen(w) && (
                       <span className="set-note">{t('set.record.placeOnlyNote')}</span>
                     )}
+                    <WindowNotes window={w} opensAsTab={false} />
                   </span>
                   <span className="set-chip set-chip-place">📍 {placeOf(w)}</span>
                   <select
@@ -258,29 +292,37 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
                 {t('set.record.failed', { count: failedIndexes.length })}
               </div>
               {failedIndexes.map((i) => {
-                const placeable = entryCanHavePlacement(views[i]);
+                const view = views[i];
+                // URL の行は自動では探さない（手で結び付ける）
+                const urlRow =
+                  !entries[i].window &&
+                  view.kind !== 'window' &&
+                  view.kind !== 'none' &&
+                  !canAutoLink(view.kind);
+                const reason =
+                  assign.get(i) === null
+                    ? t('set.record.unlink')
+                    : urlRow
+                      ? t('set.record.reasonUrl')
+                      : t('set.record.reasonNotFound');
                 return (
                   <div key={`f${i}`} className="set-record-row">
-                    <span className="set-muted">{placeable ? '!' : '–'}</span>
+                    <span className="set-muted">{urlRow ? '–' : '!'}</span>
                     <span className="set-row-name">
                       {nameOf(i)}{' '}
                       <span className="set-muted">
-                        —{' '}
-                        {placeable
-                          ? assign.get(i) === null
-                            ? t('set.record.unlink')
-                            : t('set.record.reasonNotFound')
-                          : t('set.record.reasonUrl')}
-                        {placeable && entries[i].placement && assign.get(i) !== null
+                        — {reason}
+                        {entries[i].placement && assign.get(i) !== null
                           ? `（${t('set.record.keepPrevious')}）`
                           : ''}
                       </span>
+                      {entryOpensAsTab(view) && (
+                        <span className="set-note">{t('set.record.tabNote')}</span>
+                      )}
                     </span>
-                    {placeable && (
-                      <Button variant="secondary" size="sm" onClick={() => setPickingFor(i)}>
-                        {t('set.record.pickWindow')}
-                      </Button>
-                    )}
+                    <Button variant="secondary" size="sm" onClick={() => setPickingFor(i)}>
+                      {t('set.record.pickWindow')}
+                    </Button>
                   </div>
                 );
               })}
