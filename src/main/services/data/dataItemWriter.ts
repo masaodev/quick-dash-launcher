@@ -22,6 +22,7 @@ import {
   stripIconFromLayoutEntries,
   convertRegisterItemToJsonItem,
 } from '@common/utils/dataConverters';
+import { pickWindowPlacement } from '@common/utils/windowPlacement';
 
 import { PathManager } from '../../config/pathManager.js';
 import { mainI18n } from '../mainI18n.js';
@@ -116,15 +117,7 @@ export function updateWindowItemById(
     windowTitle:
       normalizeWindowTitleForProcessOnly(config.windowTitle, config.processName) ??
       config.windowTitle,
-    processName: config.processName,
-    x: config.x,
-    y: config.y,
-    width: config.width,
-    height: config.height,
-    moveToActiveMonitorCenter: config.moveToActiveMonitorCenter,
-    virtualDesktopNumber: config.virtualDesktopNumber,
-    activateWindow: config.activateWindow,
-    pinToAllDesktops: config.pinToAllDesktops,
+    ...pickWindowPlacement(config),
     memo: memo || undefined,
     updatedAt: Date.now(),
   });

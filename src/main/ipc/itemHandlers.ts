@@ -19,6 +19,7 @@ import {
 } from '@common/ipcChannels';
 import { PathUtils } from '@common/utils/pathUtils';
 import { createTitleMatcher } from '@common/utils/windowTitle';
+import { pickWindowPlacement } from '@common/utils/windowPlacement';
 
 import { tryActivateWindow } from '../utils/windowActivator.js';
 import { isBareFileName, resolveFromPath } from '../utils/pathResolver.js';
@@ -45,15 +46,7 @@ import { mainI18n } from '../services/mainI18n.js';
 function createWindowConfig(item: WindowItem): WindowConfig {
   return {
     title: item.windowTitle,
-    processName: item.processName,
-    x: item.x,
-    y: item.y,
-    width: item.width,
-    height: item.height,
-    moveToActiveMonitorCenter: item.moveToActiveMonitorCenter,
-    virtualDesktopNumber: item.virtualDesktopNumber,
-    activateWindow: item.activateWindow,
-    pinToAllDesktops: item.pinToAllDesktops,
+    ...pickWindowPlacement(item),
   };
 }
 

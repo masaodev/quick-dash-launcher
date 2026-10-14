@@ -33,6 +33,7 @@ import type { RegisterItem, WindowOperationConfig } from '../types/register';
 
 import { stripIconFromLayoutEntries } from './dataConverters';
 import { windowInfoToWindowItem } from './windowInfoConverter';
+import { pickWindowPlacement } from './windowPlacement.js';
 
 /** undefined の値を持つキーを落とす（ファイルに `"args": undefined` のような穴を残さないため） */
 function compact<T extends object>(obj: T): T {
@@ -61,15 +62,7 @@ function windowBody(item: WindowItem): WorkspaceItemUpdate {
     type: 'window',
     displayName: item.displayName,
     windowTitle: item.windowTitle,
-    processName: item.processName,
-    x: item.x,
-    y: item.y,
-    width: item.width,
-    height: item.height,
-    moveToActiveMonitorCenter: item.moveToActiveMonitorCenter,
-    virtualDesktopNumber: item.virtualDesktopNumber,
-    activateWindow: item.activateWindow,
-    pinToAllDesktops: item.pinToAllDesktops,
+    ...pickWindowPlacement(item),
     memo: item.memo,
   });
 }
@@ -136,15 +129,7 @@ export function workspaceItemToRegisterItem(item: WorkspaceItem): RegisterItem {
       const windowOperationConfig: WindowOperationConfig = {
         displayName: item.displayName,
         windowTitle: item.windowTitle,
-        processName: item.processName,
-        x: item.x,
-        y: item.y,
-        width: item.width,
-        height: item.height,
-        moveToActiveMonitorCenter: item.moveToActiveMonitorCenter,
-        virtualDesktopNumber: item.virtualDesktopNumber,
-        activateWindow: item.activateWindow,
-        pinToAllDesktops: item.pinToAllDesktops,
+        ...pickWindowPlacement(item),
       };
       return {
         displayName: item.displayName,
@@ -222,15 +207,8 @@ export function registerItemToWorkspaceItemUpdate(registerItem: RegisterItem): W
         type: 'window',
         displayName: config?.displayName || registerItem.displayName,
         windowTitle: config?.windowTitle ?? '',
+        ...pickWindowPlacement(config ?? {}),
         processName: config?.processName || undefined,
-        x: config?.x,
-        y: config?.y,
-        width: config?.width,
-        height: config?.height,
-        moveToActiveMonitorCenter: config?.moveToActiveMonitorCenter,
-        virtualDesktopNumber: config?.virtualDesktopNumber,
-        activateWindow: config?.activateWindow,
-        pinToAllDesktops: config?.pinToAllDesktops,
         memo,
       });
     }

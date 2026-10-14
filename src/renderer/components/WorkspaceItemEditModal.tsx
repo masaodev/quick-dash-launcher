@@ -5,6 +5,7 @@ import {
   mergeWindowInfoIntoLayoutEntry,
   buildLayoutItemFromRegisterItem,
 } from '@common/utils/layoutUtils';
+import { pickWindowPlacement } from '@common/utils/windowPlacement';
 
 import { useCustomIcon } from '../hooks/useCustomIcon';
 import { useModalKeyboard } from '../hooks/useModalKeyboard';
@@ -193,15 +194,7 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
           displayName: item.displayName,
           type: 'window',
           windowTitle: item.windowOperationConfig.windowTitle,
-          processName: item.windowOperationConfig.processName,
-          x: item.windowOperationConfig.x,
-          y: item.windowOperationConfig.y,
-          width: item.windowOperationConfig.width,
-          height: item.windowOperationConfig.height,
-          moveToActiveMonitorCenter: item.windowOperationConfig.moveToActiveMonitorCenter,
-          virtualDesktopNumber: item.windowOperationConfig.virtualDesktopNumber,
-          activateWindow: item.windowOperationConfig.activateWindow,
-          pinToAllDesktops: item.windowOperationConfig.pinToAllDesktops,
+          ...pickWindowPlacement(item.windowOperationConfig),
         });
       } else if (item.itemCategory === 'layout') {
         await window.electronAPI.executeLayout(buildLayoutItemFromRegisterItem(item));

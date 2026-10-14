@@ -29,6 +29,7 @@ import {
 
 import { generateId } from './jsonParser.js';
 import { normalizeWindowTitleForProcessOnly } from './windowTitle.js';
+import { pickWindowPlacement } from './windowPlacement.js';
 
 /**
  * LayoutWindowEntryの配列からiconフィールドを除去する（JSON保存用）
@@ -67,15 +68,7 @@ function createWindowOperationConfig(
   return {
     displayName: item.displayName,
     windowTitle: item.windowTitle,
-    processName: item.processName,
-    x: item.x,
-    y: item.y,
-    width: item.width,
-    height: item.height,
-    moveToActiveMonitorCenter: item.moveToActiveMonitorCenter,
-    virtualDesktopNumber: item.virtualDesktopNumber,
-    activateWindow: item.activateWindow,
-    pinToAllDesktops: item.pinToAllDesktops,
+    ...pickWindowPlacement(item),
   };
 }
 
@@ -424,15 +417,7 @@ export function convertRegisterItemToJsonItem(
       windowTitle:
         normalizeWindowTitleForProcessOnly(config.windowTitle, config.processName) ??
         config.windowTitle,
-      processName: config.processName,
-      x: config.x,
-      y: config.y,
-      width: config.width,
-      height: config.height,
-      moveToActiveMonitorCenter: config.moveToActiveMonitorCenter,
-      virtualDesktopNumber: config.virtualDesktopNumber,
-      activateWindow: config.activateWindow,
-      pinToAllDesktops: config.pinToAllDesktops,
+      ...pickWindowPlacement(config),
       ...(memo && { memo }),
       updatedAt: now,
     };

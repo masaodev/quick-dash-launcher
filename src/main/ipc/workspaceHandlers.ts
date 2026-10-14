@@ -10,6 +10,7 @@ import type {
 import { IPC_CHANNELS } from '@common/ipcChannels';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { getDescendantGroupIds } from '@common/utils/groupTreeUtils';
+import { pickWindowPlacement } from '@common/utils/windowPlacement';
 
 import { tryActivateWindow } from '../utils/windowActivator.js';
 import { launchItem } from '../utils/itemLauncher.js';
@@ -202,15 +203,7 @@ export function setupWorkspaceHandlers(): void {
         const activationResult = await tryActivateWindow(
           {
             title: windowTitle,
-            processName: item.processName,
-            x: item.x,
-            y: item.y,
-            width: item.width,
-            height: item.height,
-            virtualDesktopNumber: item.virtualDesktopNumber,
-            activateWindow: item.activateWindow,
-            moveToActiveMonitorCenter: item.moveToActiveMonitorCenter,
-            pinToAllDesktops: item.pinToAllDesktops,
+            ...pickWindowPlacement(item),
           },
           item.displayName,
           logger

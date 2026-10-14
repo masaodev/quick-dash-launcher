@@ -43,6 +43,7 @@ import {
 } from './jsonParser';
 import type { JsonItemIssue } from './jsonParser';
 import { normalizeWindowTitleForProcessOnly } from './windowTitle';
+import { WINDOW_PLACEMENT_KEYS } from './windowPlacement.js';
 
 // ============================================================
 // 型
@@ -342,18 +343,7 @@ function validateItemBody(raw: Record<string, unknown>, id: string): Record<stri
 
 const ITEM_TYPE_KEYS: Record<JsonWorkspaceItem['type'], string[]> = {
   item: ['path', 'args', 'originalPath', 'customIcon', 'windowConfig'],
-  window: [
-    'windowTitle',
-    'processName',
-    'x',
-    'y',
-    'width',
-    'height',
-    'moveToActiveMonitorCenter',
-    'virtualDesktopNumber',
-    'activateWindow',
-    'pinToAllDesktops',
-  ],
+  window: ['windowTitle', ...WINDOW_PLACEMENT_KEYS],
   group: ['itemNames'],
   clipboard: ['dataFileRef', 'savedAt', 'preview', 'formats', 'customIcon'],
   layout: ['entries', 'customIcon'],
