@@ -104,13 +104,15 @@ test.describe('QuickDashLauncher - ワークスペースファイルの 2.0 移�
       expect(byName('配置')).toMatchObject({
         type: 'set',
         launchMode: 'parallel',
-        entries: [{ window: { title: '*a*' } }],
+        // 旧ウィンドウ配置のタイトルは行の名前（label）として引き継ぐ
+        entries: [{ label: 'a', window: { title: '*a*' } }],
       });
 
+      // 旧形式のアイテム直下の label は消える（セットの行の label は別物）
+      expect(main.items.every((i) => !('label' in i))).toBe(true);
       const raw = JSON.stringify(main);
       for (const legacy of [
         'originalName',
-        'label',
         'windowX',
         'clipboardDataRef',
         'layoutEntries',
